@@ -1,0 +1,41 @@
+Ty(Tybad)
+Ty(Tyvoid)
+
+/* start integer types.
+ * Keep them ordered between start
+ * and end for faster
+ * comparisons.*/
+Ty(Tybool)
+Ty(Tychar)
+
+Ty(Tyint8)
+Ty(Tyint16)
+Ty(Tyint)
+Ty(Tyint32)
+Ty(Tyint64)
+Ty(Tylong)
+
+Ty(Tybyte)
+Ty(Tyuint8)
+Ty(Tyuint16)
+Ty(Tyuint)
+Ty(Tyuint32)
+Ty(Tyuint64)
+Ty(Tyulong)
+/*end integer types*/
+Ty(Tyfloat32)
+Ty(Tyfloat64)
+Ty(Tyvalist)
+/*end numerical types*/
+Ty(Typtr)
+Ty(Tyslice)
+Ty(Tyarray)
+Ty(Tyfunc)
+Ty(Tytuple)
+Ty(Tyvar)
+Ty(Typaram)
+Ty(Tyname)
+Ty(Tystruct)
+Ty(Tyunion)
+Ty(Tyenum)
+
