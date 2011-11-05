@@ -115,15 +115,15 @@ Stab *curscope;
 
 %type <node> exprln retexpr expr atomicexpr literal asnexpr lorexpr landexpr borexpr
 %type <node> bandexpr cmpexpr addexpr mulexpr shiftexpr prefixexpr postfixexpr
-%type <node> funclit arraylit arglist name
+%type <node> funclit arraylit name
 %type <node> decl declvariants declbody declcore structelt enumelt unionelt
 
-%type <nodelist> argdefs structbody enumbody unionbody
+%type <nodelist> arglist argdefs structbody enumbody unionbody
 
 %union {
     struct {
-        Node **nodes;
-        size_t nnodes;
+        Node **nl;
+        size_t nn;
     } nodelist;
     struct {
         Type **types;
@@ -219,21 +219,21 @@ compoundtype
 functype: TOparen funcsig TCparen {$$ = $2;}
         ;
 
-funcsig : argdefs {$$ = mktyfunc(line, $1.nodes, $1.nnodes, mktyvar(line));}
-        | argdefs TRet type {$$ = mktyfunc(line, $1.nodes, $1.nnodes, $3);}
+funcsig : argdefs {$$ = mktyfunc(line, $1.nl, $1.nn, mktyvar(line));}
+        | argdefs TRet type {$$ = mktyfunc(line, $1.nl, $1.nn, $3);}
         ;
 
-argdefs : declcore {$$.nodes = NULL; $$.nnodes = 0; nlappend(&$$.nodes, &$$.nnodes, $1);}
-        | argdefs TComma declcore {nlappend(&$$.nodes, &$$.nnodes, $3);}
+argdefs : declcore {$$.nl = NULL; $$.nn = 0; nlappend(&$$.nl, &$$.nn, $1);}
+        | argdefs TComma declcore {nlappend(&$$.nl, &$$.nn, $3);}
         ;
 
 structdef
-        : TStruct structbody TEndblk {$$ = mktystruct($1->line, $2.nodes, $2.nnodes);}
+        : TStruct structbody TEndblk {$$ = mktystruct($1->line, $2.nl, $2.nn);}
         ;
 
 structbody
-        : structelt {$$.nnodes = 0; nlappend(&$$.nodes, &$$.nnodes, $1);}
-        | structbody structelt {if ($2) {nlappend(&$$.nodes, &$$.nnodes, $2);}}
+        : structelt {$$.nl = NULL; $$.nn = 0; nlappend(&$$.nl, &$$.nn, $1);}
+        | structbody structelt {if ($2) {nlappend(&$$.nl, &$$.nn, $2);}}
         ;
 
 structelt
@@ -242,12 +242,12 @@ structelt
         ;
 
 uniondef
-        : TUnion unionbody TEndblk {$$ = mktyunion(line, $2.nodes, $2.nnodes);}
+        : TUnion unionbody TEndblk {$$ = mktyunion(line, $2.nl, $2.nn);}
         ;
 
 unionbody
-        : unionelt {$$.nnodes = 0; nlappend(&$$.nodes, &$$.nnodes, $1);}
-        | unionbody unionelt {if ($2) {nlappend(&$$.nodes, &$$.nnodes, $2);}}
+        : unionelt {$$.nl = NULL; $$.nn = 0; nlappend(&$$.nl, &$$.nn, $1);}
+        | unionbody unionelt {if ($2) {nlappend(&$$.nl, &$$.nn, $2);}}
         ;
 
 unionelt
@@ -255,11 +255,11 @@ unionelt
         | visdef TEndln {$$ = NULL;}
         ;
 
-enumdef : TEnum enumbody TEndblk {$$ = mktyenum($1->line, $2.nodes, $2.nnodes);}
+enumdef : TEnum enumbody TEndblk {$$ = mktyenum($1->line, $2.nl, $2.nn);}
         ;
 
-enumbody: enumelt {$$.nnodes = 0; nlappend(&$$.nodes, &$$.nnodes, $1);}
-        | enumbody enumelt {if ($2) {nlappend(&$$.nodes, &$$.nnodes, $2);}}
+enumbody: enumelt {$$.nl = NULL; $$.nn = 0; if ($1) nlappend(&$$.nl, &$$.nn, $1);}
+        | enumbody enumelt {if ($2) {nlappend(&$$.nl, &$$.nn, $2);}}
         ;
 
 enumelt : TIdent TEndln {$$ = NULL; die("enumelt impl");}
@@ -357,12 +357,13 @@ postfixexpr
         | postfixexpr TOsqbrac expr TComma expr TCsqbrac {
                 $$ = mkexpr($1->line, Oslice, $1, $3, $5, NULL);
             }
-        | postfixexpr TOparen arglist TCparen {$$ = mkexpr($1->line, Ocall, $1, $3);}
+        | postfixexpr TOparen arglist TCparen {$$ = mkcall($1->line, $1, $3.nl, $3.nn);}
         | atomicexpr
         ;
 
-arglist : asnexpr
-        | arglist TComma asnexpr
+arglist : asnexpr {$$.nl = NULL; $$.nn = 0; nlappend(&$$.nl, &$$.nn, $1);}
+        | arglist TComma asnexpr {nlappend(&$$.nl, &$$.nn, $3);}
+        | /* empty */ {$$.nl = NULL; $$.nn = 0;}
         ;
 
 atomicexpr

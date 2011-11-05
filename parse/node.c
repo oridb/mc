@@ -58,6 +58,17 @@ Node *mkexpr(int line, Op op, ...)
     return n;
 }
 
+Node *mkcall(int line, Node *fn, Node **args, size_t nargs) 
+{
+    Node *n;
+    int i;
+
+    n = mkexpr(line, Ocall, fn, NULL);
+    for (i = 0; i < nargs; i++)
+        nlappend(&n->expr.args, &n->expr.nargs, args[i]);
+    return n;
+}
+
 Node *mkif(int line, Node *cond, Node *iftrue, Node *iffalse)
 {
     Node *n;
@@ -141,8 +152,11 @@ Node *mkname(int line, char *name)
 
 Node *mkdecl(int line, Sym *sym)
 {
-    die("Fixme: mkdecl");
-    return NULL;
+    Node *n;
+
+    n = mknode(line, Ndecl);
+    n->decl.sym = sym;
+    return n;
 }
 
 void setns(Node *n, char *name)
@@ -169,13 +183,18 @@ Node *mkbool(int line, int val)
 
 Sym *mksym(int line, Node *name, Type *ty)
 {
-    die("Fixme: mksym");
-    return NULL;
+    Sym *sym;
+
+    sym = zalloc(sizeof(Sym));
+    sym->name = name;
+    sym->type = ty;
+    sym->line = line;
+    return sym;
 }
 
 void nlappend(Node ***nl, size_t *len, Node *n)
 {
-    *nl = xrealloc(nl, (*len + 1)*sizeof(Node*));
+    *nl = xrealloc(*nl, (*len + 1)*sizeof(Node*));
     (*nl)[*len] = n;
     (*len)++;
 }

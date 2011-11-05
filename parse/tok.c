@@ -13,7 +13,7 @@
 
 #include "parse.h"
 
-#include "gram.h"
+#include "y.tab.h"
 
 char *filename;
 int line;
@@ -226,7 +226,7 @@ Tok *charlit()
         else if (c == '\n')
             fatal(line, "Newlines not allowed in char lit");
     };
-    t = mktok(TChrlit);
+    t = mktok(TStrlit);
     t->str = strndup(&fbuf[sstart], fidx - sstart);
     return t;
 }
@@ -461,6 +461,8 @@ void tokinit(char *file)
     fd = open(file, O_RDONLY);
     if (fd == -1)
         err(errno, "Unable to open file %s", file);
+
+    nread = 0;
     fbuf = malloc(4096);
     while (1) {
         n = read(fd, fbuf, 4096);
