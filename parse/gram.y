@@ -115,10 +115,11 @@ Stab *curscope;
 
 %type <node> exprln retexpr expr atomicexpr literal asnexpr lorexpr landexpr borexpr
 %type <node> bandexpr cmpexpr addexpr mulexpr shiftexpr prefixexpr postfixexpr
-%type <node> funclit arraylit name
+%type <node> funclit arraylit name block blockbody stmt label
 %type <node> decl declvariants declbody declcore structelt enumelt unionelt
+%type <node> ifstmt falsebranch
 
-%type <nodelist> arglist argdefs structbody enumbody unionbody
+%type <nodelist> arglist argdefs structbody enumbody unionbody params
 
 %union {
     struct {
@@ -152,7 +153,7 @@ toplev
         | TEndln
         ;
 
-decl    : declvariants TEndln
+decl    : declvariants TEndln {dump($1, stdout);}
         ;
 
 use     : TUse TIdent TEndln
@@ -273,7 +274,7 @@ retexpr : TRet exprln {$$ = mkexpr(line, Oret, $2, NULL);}
 exprln  : expr TEndln
         ;
 
-expr    : asnexpr{dump($1, stdout);}
+expr    : asnexpr
         ;
 
 asnexpr : lorexpr asnop asnexpr {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
@@ -382,11 +383,11 @@ literal : funclit       {$$ = $1;}
         | TBoollit      {$$ = mkbool($1->line, !strcmp($1->str, "true"));}
         ;
 
-funclit : TObrace params TEndln blockbody TCbrace {$$ = NULL; die("unimpl funclit");}
+funclit : TObrace params TEndln blockbody TCbrace {$$ = mkfunc($1->line, $2.nl, $2.nn, $4);}
         ;
 
-params  : declcore
-        | params TComma declcore
+params  : declcore {$$.nl = NULL; $$.nn = 0; nlappend(&$$.nl, &$$.nn, $1);}
+        | params TComma declcore {nlappend(&$$.nl, &$$.nn, $3);}
         ;
 
 arraylit : TOsqbrac arraybody TCsqbrac {$$ = NULL; die("Unimpl arraylit");}
@@ -402,11 +403,16 @@ stmt    : retexpr
         | ifstmt
         ;
 
-ifstmt  : TIf exprln blockbody elifblocks TElse block
-        | TIf exprln blockbody elifblocks TEndblk
-        | TIf exprln blockbody TElse block
-        | TIf exprln block
+ifstmt  : TIf exprln blockbody falsebranch {$$ = mkif($1->line, $2, $3, $4);}
         ;
+
+falsebranch
+        : elifblocks TEndblk {$$ = NULL;}
+        | elifblocks TElse  block {$$ = NULL;}
+        | TElse block {$$ = $2;}
+        | TEndblk {$$ = NULL;}
+        ;
+        
 
 elifblocks
         : TElif exprln blockbody
@@ -417,11 +423,11 @@ block   : blockbody TEndblk
         ;
 
 blockbody
-        : stmt
-        | blockbody stmt
+        : stmt {$$ = mkblock(line, NULL); nlappend(&$$->block.stmts, &$$->block.nstmts, $1);}
+        | blockbody stmt {nlappend(&$$->block.stmts, &$$->block.nstmts, $2);}
         ;
 
-label   : TColon TIdent
+label   : TColon TIdent {$$ = mklabel($1->line, $1->str);}
         ;
 
 %%

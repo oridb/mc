@@ -106,6 +106,8 @@ struct Node {
                 uint32_t chrval;
                 char    *strval;
                 int      boolval;
+                Node    *fnval;
+                Node    *arrval;
             };
         } lit;
 
@@ -129,10 +131,21 @@ struct Node {
         } block;
 
         struct {
+            char *name;
+        } lbl;
+
+        struct {
             Sym *sym;
             Node *init;
             int isconst;
         } decl;
+
+        struct {
+            Stab *scope;
+            Node **args;
+            size_t nargs;
+            Node *body;
+        } func;
     };
 };
 
@@ -183,16 +196,18 @@ Node *mkcall(int line, Node *fn, Node **args, size_t nargs);
 Node *mklit(int line, Littype lt, void *val);
 Node *mkif(int line, Node *cond, Node *iftrue, Node *iffalse);
 Node *mkloop(int line, Node *init, Node *cond, Node *incr, Node *body);
+Node *mkblock(int line, Stab *scope);
 
 Node *mkbool(int line, int val);
 Node *mkint(int line, uint64_t val);
 Node *mkchar(int line, uint32_t val);
 Node *mkstr(int line, char *s);
 Node *mkfloat(int line, double flt);
-Node *mkfunc(int line, Node **args, Node *body);
+Node *mkfunc(int line, Node **args, size_t nargs, Node *body);
 Node *mkarray(int line, Node **vals);
 Node *mkname(int line, char *name);
 Node *mkdecl(int line, Sym *sym);
+Node *mklabel(int line, char *lbl);
 
 
 void addstmt(Node *file, Node *stmt);

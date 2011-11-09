@@ -94,6 +94,40 @@ Node *mkloop(int line, Node *init, Node *cond, Node *incr, Node *body)
     return n;
 }
 
+Node *mkfunc(int line, Node **args, size_t nargs, Node *body)
+{
+    Node *n;
+    Node *f;
+
+    f = mknode(line, Nfunc);
+    f->func.args = args;
+    f->func.nargs = nargs;
+    f->func.body = body;
+
+    n = mknode(line, Nlit);
+    n->lit.littype = Lfunc;
+    n->lit.fnval = f;
+    return n;
+}
+
+Node *mkblock(int line, Stab *scope)
+{
+    Node *n;
+
+    n = mknode(line, Nblock);
+    n->block.scope = scope;
+    return n;
+}
+
+Node *mklabel(int line, char *lbl)
+{
+    Node *n;
+
+    n = mknode(line, Nlbl);
+    n->lbl.name = strdup(lbl);
+    return n;
+}
+
 Node *mkstr(int line, char *val)
 {
     Node *n;
