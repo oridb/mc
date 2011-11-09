@@ -21,6 +21,7 @@ static void indent(FILE *fd, int depth)
 static void dumpsym(Sym *s, FILE *fd, int depth)
 {
     int i;
+    char buf[1024];
 
     indent(fd, depth);
     fprintf(fd, "Sym ");
@@ -29,7 +30,7 @@ static void dumpsym(Sym *s, FILE *fd, int depth)
         if (i != s->name->name.nparts - 1)
             fprintf(fd, ".");
     }
-    fprintf(fd, " : TYPE\n");
+    fprintf(fd, " : %s\n", tyfmt(buf, 1024, s->type));
 }
 
 static void dumpnode(Node *n, FILE *fd, int depth)

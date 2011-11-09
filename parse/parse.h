@@ -186,6 +186,9 @@ Type *mktystruct(int line, Node **decls, size_t ndecls);
 Type *mktyunion(int line, Node **decls, size_t ndecls);
 Type *mktyenum(int line, Node **decls, size_t ndecls);
 
+char *tyfmt(char *buf, size_t len, Type *t);
+char *tystr(Type *t);
+
 void tlappend(Type ***tl, int *len, Type *t);
 
 /* tree creation */

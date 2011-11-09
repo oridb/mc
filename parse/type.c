@@ -155,3 +155,74 @@ void tlappend(Type ***tl, int *len, Type *t)
     (*tl)[*len] = t;
     (*len)++;
 }
+
+int tybfmt(char *buf, size_t len, Type *t)
+{
+    size_t n;
+    char *p;
+
+    n = 0;
+    p = buf;
+    switch (t->type) {
+        case Tybad:     n += snprintf(p, len - n, "BAD");       break;
+        case Tyvoid:    n += snprintf(p, len - n, "void");      break;
+        case Tybool:    n += snprintf(p, len - n, "bool");      break;
+        case Tychar:    n += snprintf(p, len - n, "char");      break;
+        case Tyint8:    n += snprintf(p, len - n, "int8");      break;
+        case Tyint16:   n += snprintf(p, len - n, "int16");     break;
+        case Tyint:     n += snprintf(p, len - n, "int");       break;
+        case Tyint32:   n += snprintf(p, len - n, "int32");     break;
+        case Tyint64:   n += snprintf(p, len - n, "int64");     break;
+        case Tylong:    n += snprintf(p, len - n, "long");      break;
+        case Tybyte:    n += snprintf(p, len - n, "byte");      break;
+        case Tyuint8:   n += snprintf(p, len - n, "uint8");     break;
+        case Tyuint16:  n += snprintf(p, len - n, "uint16");    break;
+        case Tyuint:    n += snprintf(p, len - n, "uint");      break;
+        case Tyuint32:  n += snprintf(p, len - n, "uint32");    break;
+        case Tyuint64:  n += snprintf(p, len - n, "uint64");    break;
+        case Tyulong:   n += snprintf(p, len - n, "ulong");     break;
+        case Tyfloat32: n += snprintf(p, len - n, "float32");   break;
+        case Tyfloat64: n += snprintf(p, len - n, "float64");   break;
+        case Tyvalist:  n += snprintf(p, len - n, "...");       break;
+
+        case Typtr:     
+            n += tybfmt(p, len - n, t->pbase);
+            n += snprintf(p, len - n, "*");
+            break;
+        case Tyslice:
+            n += tybfmt(p, len - n, t->sbase);
+            p = &buf[n];
+            n += snprintf(p, len - n, "[,]");
+            break;
+        case Tyarray:
+            n += tybfmt(p, len - n, t->abase);
+            p = &buf[n];
+            n += snprintf(p, len - n, "[LEN]");
+            break;
+        case Tyfunc:
+        case Tytuple:
+        case Tyvar:
+        case Typaram:
+        case Tyname:
+        case Tystruct:
+        case Tyunion:
+        case Tyenum:
+            snprintf(p, len - n, "TYPE ?");
+            break;
+    }
+
+    return n;
+}
+
+char *tyfmt(char *buf, size_t len, Type *t)
+{
+    tyfmt(buf, len, t);
+    return buf;
+}
+
+char *tystr(Type *t)
+{
+    char buf[1024];
+    tyfmt(buf, 1024, t);
+    return strdup(buf);
+}
