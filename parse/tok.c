@@ -13,7 +13,7 @@
 
 #include "parse.h"
 
-#include "y.tab.h"
+#include "gram.h"
 
 char *filename;
 int line;
@@ -200,7 +200,7 @@ Tok *strlit()
             fatal(line, "Newlines not allowed in strings");
     };
     t = mktok(TStrlit);
-    t->str = strndup(&fbuf[sstart], fidx - sstart);
+    t->str = strdupn(&fbuf[sstart], fidx - sstart);
     return t;
 }
 
@@ -227,7 +227,7 @@ Tok *charlit()
             fatal(line, "Newlines not allowed in char lit");
     };
     t = mktok(TStrlit);
-    t->str = strndup(&fbuf[sstart], fidx - sstart);
+    t->str = strdupn(&fbuf[sstart], fidx - sstart);
     return t;
 }
 
@@ -274,7 +274,7 @@ Tok *oper()
         case '-':
                   if (match('='))
                       tt = TSubeq;
-                  else if (match('+'))
+                  else if (match('-'))
                       tt = TDec;
                   else if (match('>'))
                       tt = TRet;
@@ -388,13 +388,13 @@ Tok *number(int base)
         strtod(&fbuf[start], &endp);
         if (endp == &fbuf[fidx]) {
             t = mktok(TFloatlit);
-            t->str = strndup(&fbuf[start], fidx - start);
+            t->str = strdupn(&fbuf[start], fidx - start);
         }
     } else {
         strtol(&fbuf[start], &endp, base);
         if (endp == &fbuf[fidx]) {
             t = mktok(TIntlit);
-            t->str = strndup(&fbuf[start], fidx - start);
+            t->str = strdupn(&fbuf[start], fidx - start);
         }
     }
 

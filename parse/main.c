@@ -13,6 +13,7 @@
 
 Node *file;
 char *outfile;
+int debug;
 
 static void usage(char *prog)
 {
@@ -26,12 +27,15 @@ int main(int argc, char **argv)
     int opt;
     int i;
 
-    while ((opt = getopt(argc, argv, "ho:")) != -1) {
+    while ((opt = getopt(argc, argv, "dho:")) != -1) {
         switch (opt) {
             case 'o':
                 outfile = optarg;
                 break;
             case 'h':
+            case 'd':
+                debug++;
+                break;
             default:
                 usage(argv[0]);
                 exit(0);

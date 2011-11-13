@@ -54,10 +54,12 @@ static void dumpnode(Node *n, FILE *fd, int depth)
             dumpnode(n->decl.init, fd, depth + 1);
             break;
         case Nblock:
+            fprintf(fd, "\n");
             for (i = 0; i < n->block.nstmts; i++)
                 dumpnode(n->block.stmts[i], fd, depth+1);
             break;
         case Nifstmt:
+            fprintf(fd, "\n");
             dumpnode(n->ifstmt.cond, fd, depth+1);
             dumpnode(n->ifstmt.iftrue, fd, depth+1);
             dumpnode(n->ifstmt.iffalse, fd, depth+1);
@@ -80,7 +82,7 @@ static void dumpnode(Node *n, FILE *fd, int depth)
             switch (n->lit.littype) {
                 case Lchr:      fprintf(fd, " Lchr %c\n", n->lit.chrval); break;
                 case Lbool:     fprintf(fd, " Lbool %s\n", n->lit.boolval ? "true" : "false"); break;
-                case Lint:      fprintf(fd, " Lint %ld\n", n->lit.intval); break;
+                case Lint:      fprintf(fd, " Lint %llu\n", n->lit.intval); break;
                 case Lflt:      fprintf(fd, " Lflt %lf\n", n->lit.fltval); break;
                 case Lfunc:
                     fprintf(fd, " Lfunc\n");

@@ -64,3 +64,13 @@ void fatal(int line, char *msg, ...)
     va_end(ap);
     exit(1);
 }
+
+/* Some systems don't have strndup. */
+char *strdupn(char *s, size_t len)
+{
+    char *ret;
+
+    ret = xalloc(len);
+    memcpy(ret, s, len);
+    return ret;
+}

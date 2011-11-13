@@ -76,11 +76,11 @@ Stab *curscope;
 %token<tok> TDefault /* default */
 %token<tok> TGoto            /* goto */
 
-%token<tok><tok> TIntlit
-%token<tok><tok> TStrlit
-%token<tok><tok> TFloatlit
-%token<tok><tok> TChrlit
-%token<tok><tok> TBoollit
+%token<tok> TIntlit
+%token<tok> TStrlit
+%token<tok> TFloatlit
+%token<tok> TChrlit
+%token<tok> TBoollit
 
 %token<tok> TEnum    /* enum */
 %token<tok> TStruct  /* struct */
@@ -102,7 +102,7 @@ Stab *curscope;
 %token<tok> TRet             /* -> */
 %token<tok> TUse             /* use */
 %token<tok> TPkg             /* pkg */
-%token<tok><tok> TSizeof  /* sizeof */
+%token<tok> TSizeof  /* sizeof */
 
 %token<tok> TIdent
 %token<tok> TEof
@@ -117,7 +117,7 @@ Stab *curscope;
 %type <node> bandexpr cmpexpr addexpr mulexpr shiftexpr prefixexpr postfixexpr
 %type <node> funclit arraylit name block blockbody stmt label
 %type <node> decl declvariants declbody declcore structelt enumelt unionelt
-%type <node> ifstmt falsebranch
+%type <node> ifstmt forstmt whilestmt elifs optexprln
 
 %type <nodelist> arglist argdefs structbody enumbody unionbody params
 
@@ -401,29 +401,44 @@ arraybody
 stmt    : retexpr
         | label
         | ifstmt
+        | forstmt
+        | whilestmt
+        | TEndln {$$ = NULL;}
         ;
 
-ifstmt  : TIf exprln blockbody falsebranch {$$ = mkif($1->line, $2, $3, $4);}
+forstmt : TFor optexprln optexprln optexprln block 
+            {$$ = mkloop($1->line, $2, $3, $4, $5);}
+        | TFor decl optexprln optexprln block
+            {$$ = mkloop($1->line, $2, $3, $4, $5);}
         ;
 
-falsebranch
-        : elifblocks TEndblk {$$ = NULL;}
-        | elifblocks TElse  block {$$ = NULL;}
-        | TElse block {$$ = $2;}
-        | TEndblk {$$ = NULL;}
-        ;
-        
+optexprln: exprln {$$ = $1;}
+         | TEndln {$$ = NULL;}
+         ;
 
-elifblocks
-        : TElif exprln blockbody
-        | elifblocks TElif exprln blockbody
+whilestmt
+        : TWhile exprln block
+            {$$ = mkloop($1->line, NULL, $2, NULL, $3);}
+        ;
+
+ifstmt  : TIf exprln blockbody elifs
+            {$$ = mkif($1->line, $2, $3, $4);}
+        ;
+
+elifs   : TElif exprln blockbody elifs
+            {$$ = mkif($1->line, $2, $3, $4);}
+        | TElse blockbody TEndblk
+            {$$ = $2;}
+        | TEndblk
+            {$$ = NULL;}
         ;
 
 block   : blockbody TEndblk
         ;
 
 blockbody
-        : stmt {$$ = mkblock(line, NULL); nlappend(&$$->block.stmts, &$$->block.nstmts, $1);}
+        : stmt {$$ = mkblock(line, NULL); 
+                nlappend(&$$->block.stmts, &$$->block.nstmts, $1);}
         | blockbody stmt {nlappend(&$$->block.stmts, &$$->block.nstmts, $2);}
         ;
 

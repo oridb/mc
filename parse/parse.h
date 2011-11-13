@@ -1,5 +1,6 @@
-
-typedef unsigned char uchar;
+typedef uint32_t        unichar;
+typedef long long       vlong;
+typedef unsigned long long uvlong;
 typedef struct Tok Tok;
 typedef struct Node Node;
 typedef struct Type Type;
@@ -52,6 +53,7 @@ struct Sym {
 struct Type {
     Ty type;
     int tid;
+    size_t nsub;      /* type sub-parts. For fnsub, tusub, sdecls, udecls, edecls. */
     union {
         Node *name;   /* Tyname: unresolved name */
         Type **fnsub; /* Tyfunc: return, args */
@@ -101,9 +103,9 @@ struct Node {
             Littype littype;
             Type    *type;
             union {
-                uint64_t intval;
+                uvlong   intval;
                 double   fltval;
-                uint32_t chrval;
+                unichar  chrval;
                 char    *strval;
                 int      boolval;
                 Node    *fnval;
@@ -150,6 +152,7 @@ struct Node {
 };
 
 /* globals */
+extern int debug;
 extern char *filename;
 extern int line;
 extern int ignorenl;
@@ -162,6 +165,7 @@ void *xalloc(size_t size);
 void *xrealloc(void *p, size_t size);
 void  die(char *msg, ...);
 void  fatal(int line, char *fmt, ...);
+char *strdupn(char *s, size_t len);
 
 /* parsing etc */
 void tokinit(char *file);
