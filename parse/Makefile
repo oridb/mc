@@ -1,11 +1,13 @@
 BIN=pt
 OBJ=dump.o \
+    infer.o \
     main.o \
     names.o \
     node.o \
     gram.o \
     tok.o \
     type.o \
+    use.o \
     util.o
 
 CLEAN=gram.c

@@ -47,6 +47,10 @@ static void dumpnode(Node *n, FILE *fd, int depth)
     switch(n->type) {
         case Nfile:
             fprintf(fd, "(name = %s)\n", n->file.name);
+            for (i = 0; i < n->file.nuses; i++)
+                dumpnode(n->file.uses[i], fd, depth + 1);
+            for (i = 0; i < n->file.nstmts; i++)
+                dumpnode(n->file.stmts[i], fd, depth + 1);
             break;
         case Ndecl:
             fprintf(fd, "\n");
@@ -67,7 +71,7 @@ static void dumpnode(Node *n, FILE *fd, int depth)
         case Nloopstmt:
             dumpnode(n->loopstmt.init, fd, depth+1);
             dumpnode(n->loopstmt.cond, fd, depth+1);
-            dumpnode(n->loopstmt.incr, fd, depth+1);
+            dumpnode(n->loopstmt.step, fd, depth+1);
             dumpnode(n->loopstmt.body, fd, depth+1);
             break;
         case Nuse:

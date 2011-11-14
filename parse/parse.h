@@ -53,7 +53,7 @@ struct Sym {
 struct Type {
     Ty type;
     int tid;
-    size_t nsub;      /* type sub-parts. For fnsub, tusub, sdecls, udecls, edecls. */
+    size_t nsub;      /* For fnsub, tusub, sdecls, udecls, edecls. */
     union {
         Node *name;   /* Tyname: unresolved name */
         Type **fnsub; /* Tyfunc: return, args */
@@ -76,10 +76,12 @@ struct Node {
     int type;
     union {
         struct {
-            char *name;
+            char  *name;
+            size_t nuses;
+            Node **uses;
             size_t nstmts;
             Node **stmts;
-            Stab **globals;
+            Stab  *globls;
         } file;
 
         struct {
@@ -116,7 +118,7 @@ struct Node {
         struct {
             Node *init;
             Node *cond;
-            Node *incr;
+            Node *step;
             Node *body;
         } loopstmt;
 
@@ -216,9 +218,14 @@ Node *mkname(int line, char *name);
 Node *mkdecl(int line, Sym *sym);
 Node *mklabel(int line, char *lbl);
 
-
 void addstmt(Node *file, Node *stmt);
 void setns(Node *n, char *name);
+
+/* usefiles */
+void readuse(Node *use, Stab *into);
+
+/* typechecking/inference */
+void infer(Node *file);
 
 /* debug */
 void dump(Node *t, FILE *fd);
@@ -227,7 +234,7 @@ char *nodestr(Ntype nt);
 char *litstr(Littype lt);
 char *tidstr(Ty tid);
 
-/* convenience macro */
+/* convenience func */
 void nlappend(Node ***nl, size_t *len, Node *n);
 
 /* backend functions */
