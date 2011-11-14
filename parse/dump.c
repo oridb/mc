@@ -78,7 +78,7 @@ static void dumpnode(Node *n, FILE *fd, int depth)
             fprintf(fd, " (name = %s, islocal = %d)\n", n->use.name, n->use.islocal);
             break;
         case Nexpr:
-            fprintf(fd, " (op = %s, isconst = %d)\n", opstr(n->expr.op), n->expr.isconst);
+            fprintf(fd, " (op = %s, flags = %d)\n", opstr(n->expr.op), n->expr.isconst);
             for (i = 0; i < n->expr.nargs; i++)
                 dumpnode(n->expr.args[i], fd, depth+1);
             break;

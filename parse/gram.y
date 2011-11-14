@@ -115,8 +115,8 @@ Stab *curscope;
 
 %type <node> exprln retexpr expr atomicexpr literal asnexpr lorexpr landexpr borexpr
 %type <node> bandexpr cmpexpr addexpr mulexpr shiftexpr prefixexpr postfixexpr
-%type <node> funclit arraylit name block blockbody stmt label
-%type <node> decl declvariants declbody declcore structelt enumelt unionelt
+%type <node> funclit arraylit name block blockbody stmt label use
+%type <node> decl declbody declcore structelt enumelt unionelt
 %type <node> ifstmt forstmt whilestmt elifs optexprln
 
 %type <nodelist> arglist argdefs structbody enumbody unionbody params
@@ -146,18 +146,35 @@ file    : toplev
         ;
 
 toplev
-        : decl
-        | use
+        : decl          
+            {nlappend(&file->file.stmts, &file->file.nstmts, $1);}
+        | use           
+            {nlappend(&file->file.uses, &file->file.nuses, $1);}
         | package
+            {die("package unimplemented");}
         | typedef
+            {die("typedef unimplemented");}
         | TEndln
         ;
 
-decl    : declvariants TEndln {dump($1, stdout);}
+decl    : TVar declbody TEndln
+            {$2->decl.flags = 0;
+             $$ = $2;}
+        | TConst declbody TEndln      
+            {$2->decl.flags = Dclconst;
+             $$ = $2;}
+        | TExtern TVar declbody TEndln  
+            {$3->decl.flags = Dclextern;
+             $$ = $3;}
+        | TExtern TConst declbody TEndln
+            {$3->decl.flags = Dclconst | Dclextern;
+             $$ = $3;}
         ;
 
-use     : TUse TIdent TEndln
-        | TUse TStrlit TEndln
+use     : TUse TIdent TEndln 
+            {$$ = mkuse($1->line, $2->str, 0);}
+        | TUse TStrlit TEndln 
+            {$$ = mkuse($1->line, $2->str, 1);}
         ;
 
 package : TPkg TIdent TAsn pkgbody TEndblk {}
@@ -178,13 +195,6 @@ visdef  : TExport TColon
         | TProtect TColon
         ;
 
-
-declvariants
-        : TVar declbody         {$2->decl.isconst = 0; $$ = $2;}
-        | TConst declbody       {$2->decl.isconst = 1; $$ = $2;}
-        | TExtern TVar declbody   {$3->decl.isconst = 0; $$ = $3;}
-        | TExtern TConst declbody {$3->decl.isconst = 0; $$ = $3;}
-        ;
 
 declbody: declcore TAsn expr {$$ = $1; $1->decl.init = $3;}
         | declcore

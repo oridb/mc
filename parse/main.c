@@ -47,6 +47,7 @@ int main(int argc, char **argv)
         tokinit(argv[i]);
         file = mkfile(argv[i]);
         yyparse();
+        dump(file, stdout);
         gen();
     }
 

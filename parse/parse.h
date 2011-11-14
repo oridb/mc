@@ -31,6 +31,12 @@ typedef enum {
 #undef Ty
 } Ty;
 
+typedef enum {
+    Dclconst = 1 << 0,
+    Dclextern = 1 << 1,
+} Dclflags;
+
+
 struct Tok {
     int type;
     int line;
@@ -141,7 +147,7 @@ struct Node {
         struct {
             Sym *sym;
             Node *init;
-            int isconst;
+            int flags;
         } decl;
 
         struct {
