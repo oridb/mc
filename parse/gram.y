@@ -196,16 +196,21 @@ visdef  : TExport TColon
         ;
 
 
-declbody: declcore TAsn expr {$$ = $1; $1->decl.init = $3;}
+declbody: declcore TAsn expr
+            {$$ = $1; $1->decl.init = $3;}
         | declcore
         ;
 
-declcore: name {$$ = mkdecl(line, mksym(line, $1, mktyvar(line)));}
-        | name TColon type {$$ = mkdecl(line, mksym(line, $1, $3));}
+declcore: name 
+            {$$ = mkdecl(line, mksym(line, $1, mktyvar(line)));}
+        | name TColon type
+            {$$ = mkdecl(line, mksym(line, $1, $3));}
         ;
 
-name    : TIdent {$$ = mkname(line, $1->str);}
-        | TIdent TDot name {$$ = $3; setns($3, $1->str);}
+name    : TIdent
+            {$$ = mkname(line, $1->str);}
+        | TIdent TDot name
+            {$$ = $3; setns($3, $1->str);}
         ;
 
 typedef : TType TIdent TAsn type TEndln
@@ -230,54 +235,74 @@ compoundtype
 functype: TOparen funcsig TCparen {$$ = $2;}
         ;
 
-funcsig : argdefs {$$ = mktyfunc(line, $1.nl, $1.nn, mktyvar(line));}
-        | argdefs TRet type {$$ = mktyfunc(line, $1.nl, $1.nn, $3);}
+funcsig : argdefs 
+            {$$ = mktyfunc(line, $1.nl, $1.nn, mktyvar(line));}
+        | argdefs TRet type 
+            {$$ = mktyfunc(line, $1.nl, $1.nn, $3);}
         ;
 
-argdefs : declcore {$$.nl = NULL; $$.nn = 0; nlappend(&$$.nl, &$$.nn, $1);}
-        | argdefs TComma declcore {nlappend(&$$.nl, &$$.nn, $3);}
+argdefs : declcore 
+            {$$.nl = NULL; $$.nn = 0; nlappend(&$$.nl, &$$.nn, $1);}
+        | argdefs TComma declcore 
+            {nlappend(&$$.nl, &$$.nn, $3);}
         ;
 
 structdef
-        : TStruct structbody TEndblk {$$ = mktystruct($1->line, $2.nl, $2.nn);}
+        : TStruct structbody TEndblk 
+            {$$ = mktystruct($1->line, $2.nl, $2.nn);}
         ;
 
 structbody
-        : structelt {$$.nl = NULL; $$.nn = 0; nlappend(&$$.nl, &$$.nn, $1);}
-        | structbody structelt {if ($2) {nlappend(&$$.nl, &$$.nn, $2);}}
+        : structelt
+            {$$.nl = NULL; $$.nn = 0; nlappend(&$$.nl, &$$.nn, $1);}
+        | structbody structelt 
+            {if ($2) {nlappend(&$$.nl, &$$.nn, $2);}}
         ;
 
 structelt
-        : declcore TEndln {$$ = $1;}
-        | visdef TEndln {$$ = NULL;}
+        : declcore TEndln 
+            {$$ = $1;}
+        | visdef TEndln 
+            {$$ = NULL;}
         ;
 
 uniondef
-        : TUnion unionbody TEndblk {$$ = mktyunion(line, $2.nl, $2.nn);}
+        : TUnion unionbody TEndblk 
+            {$$ = mktyunion(line, $2.nl, $2.nn);}
         ;
 
 unionbody
-        : unionelt {$$.nl = NULL; $$.nn = 0; nlappend(&$$.nl, &$$.nn, $1);}
-        | unionbody unionelt {if ($2) {nlappend(&$$.nl, &$$.nn, $2);}}
+        : unionelt 
+            {$$.nl = NULL; $$.nn = 0; nlappend(&$$.nl, &$$.nn, $1);}
+        | unionbody unionelt 
+            {if ($2) {nlappend(&$$.nl, &$$.nn, $2);}}
         ;
 
 unionelt
-        : TIdent type TEndln {$$ = NULL; die("unionelt impl");}
-        | visdef TEndln {$$ = NULL;}
+        : TIdent type TEndln 
+            {$$ = NULL; die("unionelt impl");}
+        | visdef TEndln 
+            {$$ = NULL;}
         ;
 
-enumdef : TEnum enumbody TEndblk {$$ = mktyenum($1->line, $2.nl, $2.nn);}
+enumdef : TEnum enumbody TEndblk
+            {$$ = mktyenum($1->line, $2.nl, $2.nn);}
         ;
 
-enumbody: enumelt {$$.nl = NULL; $$.nn = 0; if ($1) nlappend(&$$.nl, &$$.nn, $1);}
-        | enumbody enumelt {if ($2) {nlappend(&$$.nl, &$$.nn, $2);}}
+enumbody: enumelt 
+            {$$.nl = NULL; $$.nn = 0; if ($1) nlappend(&$$.nl, &$$.nn, $1);}
+        | enumbody enumelt 
+            {if ($2) {nlappend(&$$.nl, &$$.nn, $2);}}
         ;
 
-enumelt : TIdent TEndln {$$ = NULL; die("enumelt impl");}
-        | TIdent TAsn exprln {$$ = NULL; die("enumelt impl");}
+enumelt : TIdent TEndln
+            {$$ = NULL; die("enumelt impl");}
+        | TIdent TAsn exprln
+            {$$ = NULL; die("enumelt impl");}
         ;
 
-retexpr : TRet exprln {$$ = mkexpr(line, Oret, $2, NULL);}
+retexpr : TRet exprln
+            {$$ = mkexpr(line, Oret, $2, NULL);}
         | exprln
         ;
 
@@ -287,7 +312,8 @@ exprln  : expr TEndln
 expr    : asnexpr
         ;
 
-asnexpr : lorexpr asnop asnexpr {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
+asnexpr : lorexpr asnop asnexpr
+            {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
         | lorexpr
         ;
 
@@ -304,35 +330,42 @@ asnop   : TAsn
         | TBsreq        /* >>= */
         ;
 
-lorexpr : lorexpr TLor landexpr {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
+lorexpr : lorexpr TLor landexpr
+            {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
         | landexpr
         ;
 
-landexpr: landexpr TLand borexpr {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
+landexpr: landexpr TLand borexpr 
+            {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
         | borexpr
         ;
 
-borexpr : borexpr TBor bandexpr {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
+borexpr : borexpr TBor bandexpr 
+            {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
         | bandexpr
         ;
 
-bandexpr: bandexpr TBand cmpexpr {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
+bandexpr: bandexpr TBand cmpexpr 
+            {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
         | cmpexpr
         ;
 
-cmpexpr : cmpexpr cmpop addexpr {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
+cmpexpr : cmpexpr cmpop addexpr 
+            {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
         | addexpr
         ;
 
 cmpop   : TEq | TGt | TLt | TGe | TLe | TNe ;
 
-addexpr : addexpr addop mulexpr {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
+addexpr : addexpr addop mulexpr 
+            {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
         | mulexpr
         ;
 
 addop   : TPlus | TMinus ;
 
-mulexpr : mulexpr mulop shiftexpr {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
+mulexpr : mulexpr mulop shiftexpr
+            {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
         | shiftexpr
         ;
 
@@ -340,48 +373,57 @@ mulop   : TStar | TDiv | TMod
         ;
 
 shiftexpr
-        : shiftexpr shiftop prefixexpr {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
+        : shiftexpr shiftop prefixexpr
+            {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
         | prefixexpr
         ;
 
 shiftop : TBsl | TBsr;
 
 prefixexpr
-        : TInc postfixexpr {$$ = mkexpr($1->line, Opreinc, $2, NULL);}
-        | TDec postfixexpr {$$ = mkexpr($1->line, Opredec, $2, NULL);}
-        | TStar postfixexpr {$$ = mkexpr($1->line, Oderef, $2, NULL);}
-        | TBand postfixexpr {$$ = mkexpr($1->line, Oaddr, $2, NULL);}
-        | TLnot postfixexpr {$$ = mkexpr($1->line, Olnot, $2, NULL);}
-        | TBnot postfixexpr {$$ = mkexpr($1->line, Obnot, $2, NULL);}
-        | TMinus postfixexpr {$$ = mkexpr($1->line, Oneg, $2, NULL);}
-        | TPlus postfixexpr {$$ = $2;}
+        : TInc postfixexpr      {$$ = mkexpr($1->line, Opreinc, $2, NULL);}
+        | TDec postfixexpr      {$$ = mkexpr($1->line, Opredec, $2, NULL);}
+        | TStar postfixexpr     {$$ = mkexpr($1->line, Oderef, $2, NULL);}
+        | TBand postfixexpr     {$$ = mkexpr($1->line, Oaddr, $2, NULL);}
+        | TLnot postfixexpr     {$$ = mkexpr($1->line, Olnot, $2, NULL);}
+        | TBnot postfixexpr     {$$ = mkexpr($1->line, Obnot, $2, NULL);}
+        | TMinus postfixexpr    {$$ = mkexpr($1->line, Oneg, $2, NULL);}
+        | TPlus postfixexpr     {$$ = $2;} /* positive is a nop */
         | postfixexpr
         ;
 
 postfixexpr
-        : postfixexpr TDot TIdent {
-                $$ = mkexpr($1->line, Omemb, $1, mkname($3->line, $3->str), NULL);
-            }
-        | postfixexpr TInc {$$ = mkexpr($1->line, Opostinc, $1, NULL);}
-        | postfixexpr TDec {$$ = mkexpr($1->line, Opostdec, $1, NULL);}
-        | postfixexpr TOsqbrac expr TCsqbrac {$$ = mkexpr($1->line, Oidx, $1, $3);}
-        | postfixexpr TOsqbrac expr TComma expr TCsqbrac {
-                $$ = mkexpr($1->line, Oslice, $1, $3, $5, NULL);
-            }
-        | postfixexpr TOparen arglist TCparen {$$ = mkcall($1->line, $1, $3.nl, $3.nn);}
+        : postfixexpr TDot TIdent 
+            {$$ = mkexpr($1->line, Omemb, $1, mkname($3->line, $3->str), NULL);}
+        | postfixexpr TInc 
+            {$$ = mkexpr($1->line, Opostinc, $1, NULL);}
+        | postfixexpr TDec 
+            {$$ = mkexpr($1->line, Opostdec, $1, NULL);}
+        | postfixexpr TOsqbrac expr TCsqbrac 
+            {$$ = mkexpr($1->line, Oidx, $1, $3);}
+        | postfixexpr TOsqbrac expr TComma expr TCsqbrac 
+            {$$ = mkexpr($1->line, Oslice, $1, $3, $5, NULL);}
+        | postfixexpr TOparen arglist TCparen 
+            {$$ = mkcall($1->line, $1, $3.nl, $3.nn);}
         | atomicexpr
         ;
 
-arglist : asnexpr {$$.nl = NULL; $$.nn = 0; nlappend(&$$.nl, &$$.nn, $1);}
-        | arglist TComma asnexpr {nlappend(&$$.nl, &$$.nn, $3);}
-        | /* empty */ {$$.nl = NULL; $$.nn = 0;}
+arglist : asnexpr 
+            {$$.nl = NULL; $$.nn = 0; nlappend(&$$.nl, &$$.nn, $1);}
+        | arglist TComma asnexpr 
+            {nlappend(&$$.nl, &$$.nn, $3);}
+        | /* empty */
+            {$$.nl = NULL; $$.nn = 0;}
         ;
 
 atomicexpr
-        : TIdent        {$$ = mkexpr(line, Ovar, mkname(line, $1->str), NULL);}
+        : TIdent        
+            {$$ = mkexpr(line, Ovar, mkname(line, $1->str), NULL);}
         | literal
-        | TOparen expr TCparen {$$ = $2;}
-        | TSizeof atomicexpr {$$ = mkexpr($1->line, Osize, $2, NULL);}
+        | TOparen expr TCparen 
+            {$$ = $2;}
+        | TSizeof atomicexpr
+            {$$ = mkexpr($1->line, Osize, $2, NULL);}
         ;
 
 literal : funclit       {$$ = $1;}
@@ -393,14 +435,18 @@ literal : funclit       {$$ = $1;}
         | TBoollit      {$$ = mkbool($1->line, !strcmp($1->str, "true"));}
         ;
 
-funclit : TObrace params TEndln blockbody TCbrace {$$ = mkfunc($1->line, $2.nl, $2.nn, $4);}
+funclit : TObrace params TEndln blockbody TCbrace 
+            {$$ = mkfunc($1->line, $2.nl, $2.nn, $4);}
         ;
 
-params  : declcore {$$.nl = NULL; $$.nn = 0; nlappend(&$$.nl, &$$.nn, $1);}
-        | params TComma declcore {nlappend(&$$.nl, &$$.nn, $3);}
+params  : declcore
+            {$$.nl = NULL; $$.nn = 0; nlappend(&$$.nl, &$$.nn, $1);}
+        | params TComma declcore 
+            {nlappend(&$$.nl, &$$.nn, $3);}
         ;
 
-arraylit : TOsqbrac arraybody TCsqbrac {$$ = NULL; die("Unimpl arraylit");}
+arraylit : TOsqbrac arraybody TCsqbrac 
+            {$$ = NULL; die("Unimpl arraylit");}
          ;
 
 arraybody
@@ -447,12 +493,17 @@ block   : blockbody TEndblk
         ;
 
 blockbody
-        : stmt {$$ = mkblock(line, NULL); 
-                nlappend(&$$->block.stmts, &$$->block.nstmts, $1);}
-        | blockbody stmt {nlappend(&$$->block.stmts, &$$->block.nstmts, $2);}
+        : stmt 
+            {
+                $$ = mkblock(line, NULL); 
+                nlappend(&$$->block.stmts, &$$->block.nstmts, $1);
+            }
+        | blockbody stmt 
+            {nlappend(&$$->block.stmts, &$$->block.nstmts, $2);}
         ;
 
-label   : TColon TIdent {$$ = mklabel($1->line, $1->str);}
+label   : TColon TIdent 
+            {$$ = mklabel($1->line, $1->str);}
         ;
 
 %%
