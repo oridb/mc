@@ -1,11 +1,15 @@
 typedef uint32_t        unichar;
 typedef long long       vlong;
 typedef unsigned long long uvlong;
+
 typedef struct Tok Tok;
 typedef struct Node Node;
-typedef struct Type Type;
 typedef struct Stab Stab;
 typedef struct Sym Sym;
+
+typedef struct Type Type;
+typedef struct Cstr Cstr;
+
 
 typedef enum {
 #define O(op) op,
@@ -75,6 +79,16 @@ struct Type {
         Node **udecls; /* Tyunion: decls in union */
         Node **edecls; /* Tyenum: decls in enum */
     };
+};
+
+struct Cstr {
+    int cid;    /* unique id */
+    /* required members */
+    size_t nreqmemb;
+    Node **reqmemb;
+    /* required functions */
+    size_t nreqfn;
+    Node **reqfn;
 };
 
 struct Node {
@@ -186,7 +200,10 @@ Stab *stput(Sym *decl);
 Sym  *stget(char *name);
 Sym *mksym(int line, Node *name, Type *ty);
 
-/* type ccreation */
+/* type creation */
+void tyinit(); /* sets up built in types */
+Type *optype(Op o);
+
 Type *mktyvar(int line);
 Type *mktyparam(int line, char *name);
 Type *mktynamed(int line, Node *name);
@@ -198,6 +215,9 @@ Type *mktystruct(int line, Node **decls, size_t ndecls);
 Type *mktyunion(int line, Node **decls, size_t ndecls);
 Type *mktyenum(int line, Node **decls, size_t ndecls);
 
+Cstr *mkcstr(int line, char *name, Node **reqmemb, size_t nreqmemb, Node **reqdecl, size_t nreqdecl); 
+
+int hascstr(Type *t, Cstr *c);
 char *tyfmt(char *buf, size_t len, Type *t);
 char *tystr(Type *t);
 

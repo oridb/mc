@@ -34,6 +34,10 @@ Typename typenames[] = {
     {Tybad, NULL}
 };
 
+Type **types;
+int ntypes;
+Cstr **cstr;
+int ncstr;
 
 static int nexttid = 0;
 static Type *mktype(Ty ty)
