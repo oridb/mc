@@ -44,7 +44,7 @@ static Type *mktype(Ty ty)
 {
     Type *t;
 
-    t = xalloc(sizeof(Type));
+    t = zalloc(sizeof(Type));
     t->type = ty;
     t->tid = nexttid++;
     return t;
@@ -162,17 +162,33 @@ void tlappend(Type ***tl, int *len, Type *t)
     (*len)++;
 }
 
+static int namefmt(char *buf, size_t len, Node *name)
+{
+    int i;
+    char *p;
+    char *end;
+
+    p = buf;
+    end = p + len;
+    for (i = 0; i < name->name.nparts; i++) {
+        p += snprintf(p, end - p, name->name.parts[i]);
+        if (i < name->name.nparts - 1)
+            p += snprintf(p, end - p, ".");
+    }
+    return len - (end - p);
+}
+
 int tybfmt(char *buf, size_t len, Type *t)
 {
     char *p;
     char *end;
-    //Type *sub;
+    int i;
 
     p = buf;
     end = p + len;
     if (!t) {
         p += snprintf(p, end - p, "tynil");
-        return end - p;
+        return len - (end - p);
     }
     switch (t->type) {
         case Tybad:     p += snprintf(p, end - p, "BAD");       break;
@@ -210,19 +226,33 @@ int tybfmt(char *buf, size_t len, Type *t)
             break;
         case Tyfunc:
             p += snprintf(p, end - p, "(");
+            for (i = 1; i < t->nsub; i++) {
+                p += tybfmt(p, end - p, t->fnsub[i]);
+                if (i < t->nsub - 1)
+                    p += snprintf(p, end - p, ", ");
+            }
+            p += snprintf(p, end - p, " -> ");
+            p += tybfmt(p, end - p, t->fnsub[0]);
             p += snprintf(p, end - p, ")");
             break;
         case Tytuple:
             p += snprintf(p, end - p, "[");
+            for (i = 1; i < t->nsub; i++) {
+                p += tybfmt(p, end - p, t->tusub[i]);
+                if (i < t->nsub - 1)
+                    p += snprintf(p, end - p, ", ");
+            }
             p += snprintf(p, end - p, "]");
             break;
         case Tyvar:
-            p += snprintf(p, end - p, "@.%d", t->tid);
+            p += snprintf(p, end - p, "@$%d", t->tid);
             break;
         case Typaram:
             p += snprintf(p, end - p, "@%s", t->pname);
             break;
         case Tyname:
+            p += namefmt(p, end - p, t->name);
+            break;
         case Tystruct:
         case Tyunion:
         case Tyenum:
@@ -230,7 +260,7 @@ int tybfmt(char *buf, size_t len, Type *t)
             break;
     }
 
-    return end - p;
+    return len - (end - p);
 }
 
 char *tyfmt(char *buf, size_t len, Type *t)
