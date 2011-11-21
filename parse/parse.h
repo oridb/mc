@@ -53,12 +53,13 @@ struct Stab {
 
     /* Contents of stab.
      * Types and values are in separate namespaces. */
-    int ntypes;
-    Type **types;
-    int nsyms;
+    size_t ntypes;
+    Sym **types;
+    size_t nsyms;
     Sym **syms;
 };
 
+/* reused for both decls and types */
 struct Sym {
     int   line;
     Node *name;
@@ -256,7 +257,7 @@ Type *decltype(Node *n);
 void addstmt(Node *file, Node *stmt);
 void setns(Node *n, char *name);
 void def(Stab *s, Node *n);
-void deftype(Stab *s, char *name, Type *t);
+void deftype(int line, Stab *s, char *name, Type *t);
 
 /* usefiles */
 void readuse(Node *use, Stab *into);
@@ -266,6 +267,7 @@ void infer(Node *file);
 
 /* debug */
 void dump(Node *t, FILE *fd);
+void dumpsym(Sym *s, FILE *fd);
 char *opstr(Op o);
 char *nodestr(Ntype nt);
 char *litstr(Littype lt);
@@ -273,6 +275,7 @@ char *tidstr(Ty tid);
 
 /* convenience func */
 void nlappend(Node ***nl, size_t *len, Node *n);
+void slappend(Sym ***sl, size_t *len, Sym *s);
 
 /* backend functions */
 void gen();

@@ -18,7 +18,7 @@ static void indent(FILE *fd, int depth)
         fprintf(fd, " ");
 }
 
-static void dumpsym(Sym *s, FILE *fd, int depth)
+static void outsym(Sym *s, FILE *fd, int depth)
 {
     int i;
     char buf[1024];
@@ -33,7 +33,39 @@ static void dumpsym(Sym *s, FILE *fd, int depth)
     fprintf(fd, " : %s\n", tyfmt(buf, 1024, s->type));
 }
 
-static void dumpnode(Node *n, FILE *fd, int depth)
+void dumpsym(Sym *s, FILE *fd)
+{
+    outsym(s, fd, 0);
+}
+
+static void outstab(Stab *st, FILE *fd, int depth)
+{
+    int i;
+
+    indent(fd, depth);
+    fprintf(fd, "Stab %p (super = %p)\n", st, st ? st->super : NULL);
+    if (!st)
+        return;
+    for (i = 0; i < st->ntypes; i++) {
+        indent(fd, depth + 1);
+        fprintf(fd, "T ");
+        /* already indented */
+        outsym(st->types[i], fd, 0);
+    }
+    for (i = 0; i < st->nsyms; i++) {
+        indent(fd, depth + 1);
+        fprintf(fd, "V ");
+        /* already indented */
+        outsym(st->syms[i], fd, 0);
+    }
+}
+
+void dumpstab(Stab *st, FILE *fd)
+{
+    outstab(st, fd, 0);
+}
+
+static void outnode(Node *n, FILE *fd, int depth)
 {
     int i;
 
@@ -47,32 +79,39 @@ static void dumpnode(Node *n, FILE *fd, int depth)
     switch(n->type) {
         case Nfile:
             fprintf(fd, "(name = %s)\n", n->file.name);
+            indent(fd, depth + 1);
+            fprintf(fd, "Globls:\n");
+            outstab(n->file.globls, fd, depth + 2);
+            indent(fd, depth + 1);
+            fprintf(fd, "Exports:\n");
+            outstab(n->file.exports, fd, depth + 2);
             for (i = 0; i < n->file.nuses; i++)
-                dumpnode(n->file.uses[i], fd, depth + 1);
+                outnode(n->file.uses[i], fd, depth + 1);
             for (i = 0; i < n->file.nstmts; i++)
-                dumpnode(n->file.stmts[i], fd, depth + 1);
+                outnode(n->file.stmts[i], fd, depth + 1);
             break;
         case Ndecl:
             fprintf(fd, "\n");
-            dumpsym(n->decl.sym, fd, depth + 1);
-            dumpnode(n->decl.init, fd, depth + 1);
+            outsym(n->decl.sym, fd, depth + 1);
+            outnode(n->decl.init, fd, depth + 1);
             break;
         case Nblock:
             fprintf(fd, "\n");
+            outstab(n->block.scope, fd, depth + 1);
             for (i = 0; i < n->block.nstmts; i++)
-                dumpnode(n->block.stmts[i], fd, depth+1);
+                outnode(n->block.stmts[i], fd, depth+1);
             break;
         case Nifstmt:
             fprintf(fd, "\n");
-            dumpnode(n->ifstmt.cond, fd, depth+1);
-            dumpnode(n->ifstmt.iftrue, fd, depth+1);
-            dumpnode(n->ifstmt.iffalse, fd, depth+1);
+            outnode(n->ifstmt.cond, fd, depth+1);
+            outnode(n->ifstmt.iftrue, fd, depth+1);
+            outnode(n->ifstmt.iffalse, fd, depth+1);
             break;
         case Nloopstmt:
-            dumpnode(n->loopstmt.init, fd, depth+1);
-            dumpnode(n->loopstmt.cond, fd, depth+1);
-            dumpnode(n->loopstmt.step, fd, depth+1);
-            dumpnode(n->loopstmt.body, fd, depth+1);
+            outnode(n->loopstmt.init, fd, depth+1);
+            outnode(n->loopstmt.cond, fd, depth+1);
+            outnode(n->loopstmt.step, fd, depth+1);
+            outnode(n->loopstmt.body, fd, depth+1);
             break;
         case Nuse:
             fprintf(fd, " (name = %s, islocal = %d)\n", n->use.name, n->use.islocal);
@@ -80,7 +119,7 @@ static void dumpnode(Node *n, FILE *fd, int depth)
         case Nexpr:
             fprintf(fd, " (op = %s, flags = %d)\n", opstr(n->expr.op), n->expr.isconst);
             for (i = 0; i < n->expr.nargs; i++)
-                dumpnode(n->expr.args[i], fd, depth+1);
+                outnode(n->expr.args[i], fd, depth+1);
             break;
         case Nlit:
             switch (n->lit.littype) {
@@ -90,22 +129,23 @@ static void dumpnode(Node *n, FILE *fd, int depth)
                 case Lflt:      fprintf(fd, " Lflt %lf\n", n->lit.fltval); break;
                 case Lfunc:
                     fprintf(fd, " Lfunc\n");
-                    dumpnode(n->lit.fnval, fd, depth+1);
+                    outnode(n->lit.fnval, fd, depth+1);
                     break;
                 case Larray:
                     fprintf(fd, " Larray\n");
-                    dumpnode(n->lit.arrval, fd, depth+1);
+                    outnode(n->lit.arrval, fd, depth+1);
                     break;
                 default: die("Bad literal type"); break;
             }
             break;
         case Nfunc:
             fprintf(fd, " (args =\n");
+            outstab(n->func.scope, fd, depth + 1);
             for (i = 0; i < n->func.nargs; i++)
-                dumpnode(n->func.args[i], fd, depth+1);
+                outnode(n->func.args[i], fd, depth+1);
             indent(fd, depth);
             fprintf(fd, ")\n");
-            dumpnode(n->func.body, fd, depth+1);
+            outnode(n->func.body, fd, depth+1);
         case Nname:
             fprintf(fd, "(");
             for (i = 0; i < n->name.nparts; i++) {
@@ -120,5 +160,5 @@ static void dumpnode(Node *n, FILE *fd, int depth)
 
 void dump(Node *n, FILE *fd)
 {
-    dumpnode(n, fd, 0);
+    outnode(n, fd, 0);
 }

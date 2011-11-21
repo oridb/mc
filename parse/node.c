@@ -201,11 +201,15 @@ Type *decltype(Node *n)
 void def(Stab *s, Node *n)
 {
     assert(n->type == Ndecl);
+    slappend(&s->syms, &s->nsyms, n->decl.sym);
 }
 
-void deftype(Stab *s, char *name, Type *ty)
+void deftype(int line, Stab *s, char *name, Type *ty)
 {
-    assert(name != NULL);
+    Sym *tysym;
+
+    tysym = mksym(line, mkname(line, name), ty);
+    slappend(&s->types, &s->ntypes, tysym);
 }
 
 Stab *mkstab(Stab *super)
@@ -254,5 +258,12 @@ void nlappend(Node ***nl, size_t *len, Node *n)
 {
     *nl = xrealloc(*nl, (*len + 1)*sizeof(Node*));
     (*nl)[*len] = n;
+    (*len)++;
+}
+
+void slappend(Sym ***sl, size_t *len, Sym *s)
+{
+    *sl = xrealloc(*sl, (*len + 1)*sizeof(Node*));
+    (*sl)[*len] = s;
     (*len)++;
 }

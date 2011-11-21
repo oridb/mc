@@ -170,6 +170,10 @@ int tybfmt(char *buf, size_t len, Type *t)
 
     p = buf;
     end = p + len;
+    if (!t) {
+        p += snprintf(p, end - p, "tynil");
+        return end - p;
+    }
     switch (t->type) {
         case Tybad:     p += snprintf(p, end - p, "BAD");       break;
         case Tyvoid:    p += snprintf(p, end - p, "void");      break;

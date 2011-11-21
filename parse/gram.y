@@ -194,8 +194,8 @@ pkgbody : pkgitem
         | pkgbody pkgitem
         ;
 
-pkgitem : decl {def(file->file.globls, $1);}
-        | tydef {deftype(file->file.globls, $1.name, $1.type);}
+pkgitem : decl {def(file->file.exports, $1);}
+        | tydef {deftype($1.line, file->file.exports, $1.name, $1.type);}
         | visdef {die("Unimplemented visdef");}
         | TEndln
         ;
