@@ -113,13 +113,15 @@ Stab *curscope;
 
 %type <tok> asnop cmpop addop mulop shiftop
 
+%type <tydef> tydef
+
 %type <node> exprln retexpr expr atomicexpr literal asnexpr lorexpr landexpr borexpr
 %type <node> bandexpr cmpexpr addexpr mulexpr shiftexpr prefixexpr postfixexpr
 %type <node> funclit arraylit name block blockbody stmt label use
 %type <node> decl declbody declcore structelt enumelt unionelt
 %type <node> ifstmt forstmt whilestmt elifs optexprln
 
-%type <nodelist> arglist argdefs structbody enumbody unionbody params
+%type <nodelist> arglist argdefs structbody enumbody unionbody params 
 
 %union {
     struct {
@@ -132,6 +134,11 @@ Stab *curscope;
         Type **types;
         size_t ntypes;
     } tylist;
+    struct { /* FIXME: unused */
+        int line;
+        char *name;
+        Type *type;
+    } tydef;
     Node *node;
     Tok  *tok;
     Type *ty;
@@ -150,13 +157,12 @@ file    : toplev
 toplev
         : decl          
             {nlappend(&file->file.stmts, &file->file.nstmts, $1);
-             def($1);}
+             def(file->file.globls, $1);}
         | use           
             {nlappend(&file->file.uses, &file->file.nuses, $1);}
         | package
-            {die("package unimplemented");}
-        | typedef
-            {die("typedef unimplemented");}
+        | tydef
+            {die("tydef unimplemented");}
         | TEndln
         ;
 
@@ -180,7 +186,7 @@ use     : TUse TIdent TEndln
             {$$ = mkuse($1->line, $2->str, 1);}
         ;
 
-package : TPkg TIdent TAsn pkgbody TEndblk {}
+package : TPkg TIdent TAsn pkgbody TEndblk
         ;
 
 
@@ -188,9 +194,9 @@ pkgbody : pkgitem
         | pkgbody pkgitem
         ;
 
-pkgitem : decl
-        | typedef
-        | visdef
+pkgitem : decl {def(file->file.globls, $1);}
+        | tydef {deftype(file->file.globls, $1.name, $1.type);}
+        | visdef {die("Unimplemented visdef");}
         | TEndln
         ;
 
@@ -216,8 +222,14 @@ name    : TIdent
             {$$ = $3; setns($3, $1->str);}
         ;
 
-typedef : TType TIdent TAsn type TEndln
+tydef   : TType TIdent TAsn type TEndln 
+            {$$.line = $1->line;
+             $$.name = $2->str;
+             $$.type = $4;}
         | TType TIdent TEndln
+            {$$.line = $1->line;
+             $$.name = $2->str;
+             $$.type = NULL;}
         ;
 
 type    : structdef

@@ -48,6 +48,11 @@ struct Tok {
 };
 
 struct Stab {
+    Stab *super;
+    char *name;
+
+    /* Contents of stab.
+     * Types and values are in separate namespaces. */
     int ntypes;
     Type **types;
     int nsyms;
@@ -102,6 +107,7 @@ struct Node {
             size_t nstmts;
             Node **stmts;
             Stab  *globls;
+            Stab  *exports;
         } file;
 
         struct {
@@ -197,7 +203,7 @@ int yylex(void);
 int yyparse(void);
 
 /* stab creation */
-Stab *mkstab();
+Stab *mkstab(Stab *super);
 Stab *stput(Sym *decl);
 Sym  *stget(char *name);
 Sym *mksym(int line, Node *name, Type *ty);
@@ -249,7 +255,8 @@ Node *mklabel(int line, char *lbl);
 Type *decltype(Node *n);
 void addstmt(Node *file, Node *stmt);
 void setns(Node *n, char *name);
-void def(Node *n);
+void def(Stab *s, Node *n);
+void deftype(Stab *s, char *name, Type *t);
 
 /* usefiles */
 void readuse(Node *use, Stab *into);

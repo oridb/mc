@@ -198,9 +198,23 @@ Type *decltype(Node *n)
     return n->decl.sym->type;
 }
 
-void def(Node *n)
+void def(Stab *s, Node *n)
 {
     assert(n->type == Ndecl);
+}
+
+void deftype(Stab *s, char *name, Type *ty)
+{
+    assert(name != NULL);
+}
+
+Stab *mkstab(Stab *super)
+{
+    Stab *st;
+
+    st = zalloc(sizeof(Stab));
+    st->super = super;
+    return st;
 }
 
 void setns(Node *n, char *name)

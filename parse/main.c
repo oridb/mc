@@ -46,6 +46,8 @@ int main(int argc, char **argv)
     for (i = optind; i < argc; i++) {
         tokinit(argv[i]);
         file = mkfile(argv[i]);
+        file->file.exports = mkstab(NULL);
+        file->file.globls = mkstab(NULL);
         yyparse();
         dump(file, stdout);
         gen();
