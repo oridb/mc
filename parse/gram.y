@@ -471,7 +471,8 @@ arraybody
         | arraybody TComma expr
         ;
 
-stmt    : retexpr
+stmt    : decl
+        | retexpr
         | label
         | ifstmt
         | forstmt
