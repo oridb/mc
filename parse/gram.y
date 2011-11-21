@@ -149,7 +149,8 @@ file    : toplev
 
 toplev
         : decl          
-            {nlappend(&file->file.stmts, &file->file.nstmts, $1);}
+            {nlappend(&file->file.stmts, &file->file.nstmts, $1);
+             def($1);}
         | use           
             {nlappend(&file->file.uses, &file->file.nuses, $1);}
         | package
@@ -188,7 +189,7 @@ pkgbody : pkgitem
         ;
 
 pkgitem : decl
-        | type
+        | typedef
         | visdef
         | TEndln
         ;
@@ -499,7 +500,7 @@ block   : blockbody TEndblk
 blockbody
         : stmt 
             {
-                $$ = mkblock($1->line, NULL); 
+                $$ = mkblock(line, NULL); 
                 nlappend(&$$->block.stmts, &$$->block.nstmts, $1);
             }
         | blockbody stmt 

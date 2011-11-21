@@ -74,3 +74,11 @@ char *strdupn(char *s, size_t len)
     memcpy(ret, s, len);
     return ret;
 }
+
+void *memdup(void *mem, size_t len)
+{
+    void *ret;
+
+    ret = xalloc(len);
+    return memcpy(ret, mem, len);
+}

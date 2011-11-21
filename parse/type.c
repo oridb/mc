@@ -116,13 +116,14 @@ Type *mktyptr(int line, Type *base)
 Type *mktyfunc(int line, Node **args, size_t nargs, Type *ret)
 {
     Type *t;
-    Type **sub;
+    int i;
 
     t = mktype(Tyfunc);
-    sub = xalloc((1 + nargs)*sizeof(Type));
-    sub[0] = ret;
-    die("pull out subtypes for fn");
-    t->fnsub = sub;
+    t->nsub = nargs + 1;
+    t->fnsub = xalloc((1 + nargs)*sizeof(Type));
+    t->fnsub[0] = ret;
+    for (i = 0; i < nargs; i++)
+        t->fnsub[i + 1] = decltype(args[i]);
     return t;
 }
 
@@ -131,7 +132,8 @@ Type *mktystruct(int line, Node **decls, size_t ndecls)
     Type *t;
 
     t = mktype(Tystruct);
-    t->sdecls = decls;
+    t->nsub = ndecls;
+    t->sdecls = memdup(decls, ndecls*sizeof(Node *));
     return t;
 }
 

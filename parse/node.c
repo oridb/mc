@@ -193,6 +193,16 @@ Node *mkdecl(int line, Sym *sym)
     return n;
 }
 
+Type *decltype(Node *n)
+{
+    return n->decl.sym->type;
+}
+
+void def(Node *n)
+{
+    assert(n->type == Ndecl);
+}
+
 void setns(Node *n, char *name)
 {
     int i;

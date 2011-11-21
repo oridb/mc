@@ -180,6 +180,7 @@ extern int ignorenl;
 extern int line;
 extern Tok *curtok;
 extern Node *file;
+extern Stab *scope;
 
 /* util functions */
 void *zalloc(size_t size);
@@ -188,6 +189,7 @@ void *xrealloc(void *p, size_t size);
 void  die(char *msg, ...);
 void  fatal(int line, char *fmt, ...);
 char *strdupn(char *s, size_t len);
+void *memdup(void *mem, size_t len);
 
 /* parsing etc */
 void tokinit(char *file);
@@ -244,8 +246,10 @@ Node *mkname(int line, char *name);
 Node *mkdecl(int line, Sym *sym);
 Node *mklabel(int line, char *lbl);
 
+Type *decltype(Node *n);
 void addstmt(Node *file, Node *stmt);
 void setns(Node *n, char *name);
+void def(Node *n);
 
 /* usefiles */
 void readuse(Node *use, Stab *into);
