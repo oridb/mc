@@ -123,10 +123,12 @@ Stab *curscope;
 
 %union {
     struct {
+        int line;
         Node **nl;
         size_t nn;
     } nodelist;
     struct {
+        int line;
         Type **types;
         size_t ntypes;
     } tylist;
@@ -202,13 +204,13 @@ declbody: declcore TAsn expr
         ;
 
 declcore: name 
-            {$$ = mkdecl(line, mksym(line, $1, mktyvar(line)));}
+            {$$ = mkdecl($1->line, mksym($1->line, $1, mktyvar($1->line)));}
         | name TColon type
-            {$$ = mkdecl(line, mksym(line, $1, $3));}
+            {$$ = mkdecl($1->line, mksym($1->line, $1, $3));}
         ;
 
 name    : TIdent
-            {$$ = mkname(line, $1->str);}
+            {$$ = mkname($1->line, $1->str);}
         | TIdent TDot name
             {$$ = $3; setns($3, $1->str);}
         ;
@@ -225,24 +227,26 @@ type    : structdef
 
 compoundtype
         : functype   {$$ = $1;}
-        | type TOsqbrac TComma TCsqbrac {$$ = mktyslice(line, $1);}
-        | type TOsqbrac expr TCsqbrac {$$ = mktyarray(line, $1, $3);}
-        | type TStar {$$ = mktyptr(line, $1);}
-        | name       {$$ = mktynamed(line, $1);}
-        | TAt TIdent {$$ = mktyparam(line, $2->str);}
+        | type TOsqbrac TComma TCsqbrac {$$ = mktyslice($2->line, $1);}
+        | type TOsqbrac expr TCsqbrac {$$ = mktyarray($2->line, $1, $3);}
+        | type TStar {$$ = mktyptr($2->line, $1);}
+        | name       {$$ = mktynamed($1->line, $1);}
+        | TAt TIdent {$$ = mktyparam($1->line, $2->str);}
         ;
 
 functype: TOparen funcsig TCparen {$$ = $2;}
         ;
 
 funcsig : argdefs 
-            {$$ = mktyfunc(line, $1.nl, $1.nn, mktyvar(line));}
+            {$$ = mktyfunc($1.line, $1.nl, $1.nn, mktyvar($1.line));}
         | argdefs TRet type 
-            {$$ = mktyfunc(line, $1.nl, $1.nn, $3);}
+            {$$ = mktyfunc($1.line, $1.nl, $1.nn, $3);}
         ;
 
 argdefs : declcore 
-            {$$.nl = NULL; $$.nn = 0; nlappend(&$$.nl, &$$.nn, $1);}
+            {$$.line = $1->line;
+             $$.nl = NULL;
+             $$.nn = 0; nlappend(&$$.nl, &$$.nn, $1);}
         | argdefs TComma declcore 
             {nlappend(&$$.nl, &$$.nn, $3);}
         ;
@@ -268,7 +272,7 @@ structelt
 
 uniondef
         : TUnion unionbody TEndblk 
-            {$$ = mktyunion(line, $2.nl, $2.nn);}
+            {$$ = mktyunion($1->line, $2.nl, $2.nn);}
         ;
 
 unionbody
@@ -302,7 +306,7 @@ enumelt : TIdent TEndln
         ;
 
 retexpr : TRet exprln
-            {$$ = mkexpr(line, Oret, $2, NULL);}
+            {$$ = mkexpr($1->line, Oret, $2, NULL);}
         | exprln
         ;
 
@@ -418,7 +422,7 @@ arglist : asnexpr
 
 atomicexpr
         : TIdent        
-            {$$ = mkexpr(line, Ovar, mkname(line, $1->str), NULL);}
+            {$$ = mkexpr($1->line, Ovar, mkname($1->line, $1->str), NULL);}
         | literal
         | TOparen expr TCparen 
             {$$ = $2;}
@@ -495,7 +499,7 @@ block   : blockbody TEndblk
 blockbody
         : stmt 
             {
-                $$ = mkblock(line, NULL); 
+                $$ = mkblock($1->line, NULL); 
                 nlappend(&$$->block.stmts, &$$->block.nstmts, $1);
             }
         | blockbody stmt 

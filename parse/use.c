@@ -13,4 +13,11 @@
 
 void readuse(Node *use, Stab *st)
 {
+    die("Unimplmented use loading");
 }
+
+void writeuse(Node *file, FILE *out)
+{
+    die("Unimplemented use writing");
+}
+

@@ -176,8 +176,8 @@ struct Node {
 /* globals */
 extern int debug;
 extern char *filename;
-extern int line;
 extern int ignorenl;
+extern int line;
 extern Tok *curtok;
 extern Node *file;
 
