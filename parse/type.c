@@ -167,13 +167,14 @@ static int namefmt(char *buf, size_t len, Node *name)
     int i;
     char *p;
     char *end;
+    char *sep;
 
     p = buf;
     end = p + len;
+    sep = "";
     for (i = 0; i < name->name.nparts; i++) {
-        p += snprintf(p, end - p, name->name.parts[i]);
-        if (i < name->name.nparts - 1)
-            p += snprintf(p, end - p, ".");
+        p += snprintf(p, end - p, "%s%s", sep, name->name.parts[i]);
+        sep = ".";
     }
     return len - (end - p);
 }
