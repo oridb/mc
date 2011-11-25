@@ -281,6 +281,8 @@ structelt
             {$$ = $1;}
         | visdef TEndln 
             {$$ = NULL;}
+        | TEndln
+            {$$ = NULL;}
         ;
 
 uniondef
@@ -300,6 +302,8 @@ unionelt
             {$$ = NULL; die("unionelt impl");}
         | visdef TEndln 
             {$$ = NULL;}
+        | TEndln
+            {$$ = NULL;}
         ;
 
 enumdef : TEnum enumbody TEndblk
@@ -316,6 +320,8 @@ enumelt : TIdent TEndln
             {$$ = NULL; die("enumelt impl");}
         | TIdent TAsn exprln
             {$$ = NULL; die("enumelt impl");}
+        | TEndln
+            {$$ = NULL;}
         ;
 
 retexpr : TRet exprln
