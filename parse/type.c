@@ -167,13 +167,14 @@ static int namefmt(char *buf, size_t len, Node *name)
     int i;
     char *p;
     char *end;
+    char *sep;
 
     p = buf;
     end = p + len;
+    sep = "";
     for (i = 0; i < name->name.nparts; i++) {
-        p += snprintf(p, end - p, name->name.parts[i]);
-        if (i < name->name.nparts - 1)
-            p += snprintf(p, end - p, ".");
+        p += snprintf(p, end - p, "%s%s", sep, name->name.parts[i]);
+        sep = ".";
     }
     return len - (end - p);
 }
@@ -183,9 +184,11 @@ int tybfmt(char *buf, size_t len, Type *t)
     char *p;
     char *end;
     int i;
+    char *sep;
 
     p = buf;
     end = p + len;
+    sep = "";
     if (!t) {
         p += snprintf(p, end - p, "tynil");
         return len - (end - p);
@@ -227,9 +230,9 @@ int tybfmt(char *buf, size_t len, Type *t)
         case Tyfunc:
             p += snprintf(p, end - p, "(");
             for (i = 1; i < t->nsub; i++) {
+                p += snprintf(p, end - p, "%s", sep);
                 p += tybfmt(p, end - p, t->fnsub[i]);
-                if (i < t->nsub - 1)
-                    p += snprintf(p, end - p, ", ");
+                sep = ", ";
             }
             p += snprintf(p, end - p, " -> ");
             p += tybfmt(p, end - p, t->fnsub[0]);
@@ -238,9 +241,9 @@ int tybfmt(char *buf, size_t len, Type *t)
         case Tytuple:
             p += snprintf(p, end - p, "[");
             for (i = 1; i < t->nsub; i++) {
+                p += snprintf(p, end - p, "%s", sep);
                 p += tybfmt(p, end - p, t->tusub[i]);
-                if (i < t->nsub - 1)
-                    p += snprintf(p, end - p, ", ");
+                sep = ", ";
             }
             p += snprintf(p, end - p, "]");
             break;
