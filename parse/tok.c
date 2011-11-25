@@ -29,7 +29,7 @@ static int peekn(int n)
     if (fidx + n >= fbufsz)
         return '\0';
     else
-        return fbuf[fidx];
+        return fbuf[fidx + n];
 }
 
 static int peek()
@@ -95,6 +95,8 @@ static void eatcomment()
             case '*':
                 if (peekn(1) == '/')
                     depth--;
+                if (depth == 0)
+                    goto done;
                 break;
             case '\n':
                 line++;
@@ -104,6 +106,8 @@ static void eatcomment()
                 break;
         }
     }
+done:
+    return;
 }
 
 void eatspace()
