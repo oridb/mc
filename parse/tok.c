@@ -88,26 +88,27 @@ static void eatcomment()
     while (1) {
         c = next();
         switch (c) {
+            /* enter level of nesting */
             case '/':
-                if (peekn(1) == '*')
+                if (match('*'))
                     depth++;
                 break;
+            /* leave level of nesting */
             case '*':
-                if (peekn(1) == '/')
+                if (match('/'))
                     depth--;
-                if (depth == 0)
-                    goto done;
                 break;
+            /* have to keep line numbers synced */
             case '\n':
                 line++;
                 break;
-            case EOF:
+            case '\0':
                 fatal(line, "File ended within comment starting at line %d", startln);
                 break;
         }
+        if (depth == 0)
+            break;
     }
-done:
-    return;
 }
 
 void eatspace()
