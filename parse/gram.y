@@ -18,6 +18,7 @@ void yyerror(const char *s);
 int yylex(void);
 Op binop(int toktype);
 Stab *curscope;
+int n = 0;
 %}
 
 %token<tok> TError
@@ -121,7 +122,7 @@ Stab *curscope;
 %type <node> decl declbody declcore structelt enumelt unionelt
 %type <node> ifstmt forstmt whilestmt elifs optexprln
 
-%type <nodelist> arglist argdefs structbody enumbody unionbody params 
+%type <nodelist> arglist argdefs structbody enumbody unionbody params
 
 %union {
     struct {
@@ -155,10 +156,10 @@ file    : toplev
         ;
 
 toplev
-        : decl          
+        : decl
             {nlappend(&file->file.stmts, &file->file.nstmts, $1);
              def(file->file.globls, $1);}
-        | use           
+        | use
             {nlappend(&file->file.uses, &file->file.nuses, $1);}
         | package
         | tydef
@@ -169,10 +170,10 @@ toplev
 decl    : TVar declbody TEndln
             {$2->decl.flags = 0;
              $$ = $2;}
-        | TConst declbody TEndln      
+        | TConst declbody TEndln
             {$2->decl.flags = Dclconst;
              $$ = $2;}
-        | TExtern TVar declbody TEndln  
+        | TExtern TVar declbody TEndln
             {$3->decl.flags = Dclextern;
              $$ = $3;}
         | TExtern TConst declbody TEndln
@@ -180,9 +181,9 @@ decl    : TVar declbody TEndln
              $$ = $3;}
         ;
 
-use     : TUse TIdent TEndln 
+use     : TUse TIdent TEndln
             {$$ = mkuse($1->line, $2->str, 0);}
-        | TUse TStrlit TEndln 
+        | TUse TStrlit TEndln
             {$$ = mkuse($1->line, $2->str, 1);}
         ;
 
@@ -210,7 +211,7 @@ declbody: declcore TAsn expr
         | declcore
         ;
 
-declcore: name 
+declcore: name
             {$$ = mkdecl($1->line, mksym($1->line, $1, mktyvar($1->line)));}
         | name TColon type
             {$$ = mkdecl($1->line, mksym($1->line, $1, $3));}
@@ -222,7 +223,7 @@ name    : TIdent
             {$$ = $3; setns($3, $1->str);}
         ;
 
-tydef   : TType TIdent TAsn type TEndln 
+tydef   : TType TIdent TAsn type TEndln
             {$$.line = $1->line;
              $$.name = $2->str;
              $$.type = $4;}
@@ -250,57 +251,57 @@ compoundtype
 functype: TOparen funcsig TCparen {$$ = $2;}
         ;
 
-funcsig : argdefs 
+funcsig : argdefs
             {$$ = mktyfunc($1.line, $1.nl, $1.nn, mktyvar($1.line));}
-        | argdefs TRet type 
+        | argdefs TRet type
             {$$ = mktyfunc($1.line, $1.nl, $1.nn, $3);}
         ;
 
-argdefs : declcore 
+argdefs : declcore
             {$$.line = $1->line;
              $$.nl = NULL;
              $$.nn = 0; nlappend(&$$.nl, &$$.nn, $1);}
-        | argdefs TComma declcore 
+        | argdefs TComma declcore
             {nlappend(&$$.nl, &$$.nn, $3);}
         ;
 
 structdef
-        : TStruct structbody TEndblk 
+        : TStruct structbody TEndblk
             {$$ = mktystruct($1->line, $2.nl, $2.nn);}
         ;
 
 structbody
         : structelt
             {$$.nl = NULL; $$.nn = 0; nlappend(&$$.nl, &$$.nn, $1);}
-        | structbody structelt 
+        | structbody structelt
             {if ($2) {nlappend(&$$.nl, &$$.nn, $2);}}
         ;
 
 structelt
-        : declcore TEndln 
+        : declcore TEndln
             {$$ = $1;}
-        | visdef TEndln 
+        | visdef TEndln
             {$$ = NULL;}
         | TEndln
             {$$ = NULL;}
         ;
 
 uniondef
-        : TUnion unionbody TEndblk 
+        : TUnion unionbody TEndblk
             {$$ = mktyunion($1->line, $2.nl, $2.nn);}
         ;
 
 unionbody
-        : unionelt 
+        : unionelt
             {$$.nl = NULL; $$.nn = 0; nlappend(&$$.nl, &$$.nn, $1);}
-        | unionbody unionelt 
+        | unionbody unionelt
             {if ($2) {nlappend(&$$.nl, &$$.nn, $2);}}
         ;
 
 unionelt
-        : TIdent type TEndln 
+        : TIdent type TEndln
             {$$ = NULL; die("unionelt impl");}
-        | visdef TEndln 
+        | visdef TEndln
             {$$ = NULL;}
         | TEndln
             {$$ = NULL;}
@@ -310,9 +311,9 @@ enumdef : TEnum enumbody TEndblk
             {$$ = mktyenum($1->line, $2.nl, $2.nn);}
         ;
 
-enumbody: enumelt 
+enumbody: enumelt
             {$$.nl = NULL; $$.nn = 0; if ($1) nlappend(&$$.nl, &$$.nn, $1);}
-        | enumbody enumelt 
+        | enumbody enumelt
             {if ($2) {nlappend(&$$.nl, &$$.nn, $2);}}
         ;
 
@@ -358,29 +359,29 @@ lorexpr : lorexpr TLor landexpr
         | landexpr
         ;
 
-landexpr: landexpr TLand borexpr 
+landexpr: landexpr TLand borexpr
             {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
         | borexpr
         ;
 
-borexpr : borexpr TBor bandexpr 
+borexpr : borexpr TBor bandexpr
             {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
         | bandexpr
         ;
 
-bandexpr: bandexpr TBand cmpexpr 
+bandexpr: bandexpr TBand cmpexpr
             {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
         | cmpexpr
         ;
 
-cmpexpr : cmpexpr cmpop addexpr 
+cmpexpr : cmpexpr cmpop addexpr
             {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
         | addexpr
         ;
 
 cmpop   : TEq | TGt | TLt | TGe | TLe | TNe ;
 
-addexpr : addexpr addop mulexpr 
+addexpr : addexpr addop mulexpr
             {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
         | mulexpr
         ;
@@ -416,34 +417,34 @@ prefixexpr
         ;
 
 postfixexpr
-        : postfixexpr TDot TIdent 
+        : postfixexpr TDot TIdent
             {$$ = mkexpr($1->line, Omemb, $1, mkname($3->line, $3->str), NULL);}
-        | postfixexpr TInc 
+        | postfixexpr TInc
             {$$ = mkexpr($1->line, Opostinc, $1, NULL);}
-        | postfixexpr TDec 
+        | postfixexpr TDec
             {$$ = mkexpr($1->line, Opostdec, $1, NULL);}
-        | postfixexpr TOsqbrac expr TCsqbrac 
+        | postfixexpr TOsqbrac expr TCsqbrac
             {$$ = mkexpr($1->line, Oidx, $1, $3);}
-        | postfixexpr TOsqbrac expr TComma expr TCsqbrac 
+        | postfixexpr TOsqbrac expr TComma expr TCsqbrac
             {$$ = mkexpr($1->line, Oslice, $1, $3, $5, NULL);}
-        | postfixexpr TOparen arglist TCparen 
+        | postfixexpr TOparen arglist TCparen
             {$$ = mkcall($1->line, $1, $3.nl, $3.nn);}
         | atomicexpr
         ;
 
-arglist : asnexpr 
+arglist : asnexpr
             {$$.nl = NULL; $$.nn = 0; nlappend(&$$.nl, &$$.nn, $1);}
-        | arglist TComma asnexpr 
+        | arglist TComma asnexpr
             {nlappend(&$$.nl, &$$.nn, $3);}
         | /* empty */
             {$$.nl = NULL; $$.nn = 0;}
         ;
 
 atomicexpr
-        : TIdent        
+        : TIdent
             {$$ = mkexpr($1->line, Ovar, mkname($1->line, $1->str), NULL);}
         | literal
-        | TOparen expr TCparen 
+        | TOparen expr TCparen
             {$$ = $2;}
         | TSizeof atomicexpr
             {$$ = mkexpr($1->line, Osize, $2, NULL);}
@@ -458,17 +459,17 @@ literal : funclit       {$$ = $1;}
         | TBoollit      {$$ = mkbool($1->line, !strcmp($1->str, "true"));}
         ;
 
-funclit : TObrace params TEndln blockbody TCbrace 
+funclit : TObrace params TEndln blockbody TCbrace
             {$$ = mkfunc($1->line, $2.nl, $2.nn, $4);}
         ;
 
 params  : declcore
             {$$.nl = NULL; $$.nn = 0; nlappend(&$$.nl, &$$.nn, $1);}
-        | params TComma declcore 
+        | params TComma declcore
             {nlappend(&$$.nl, &$$.nn, $3);}
         ;
 
-arraylit : TOsqbrac arraybody TCsqbrac 
+arraylit : TOsqbrac arraybody TCsqbrac
             {$$ = NULL; die("Unimpl arraylit");}
          ;
 
@@ -486,7 +487,7 @@ stmt    : decl
         | TEndln {$$ = NULL;}
         ;
 
-forstmt : TFor optexprln optexprln optexprln block 
+forstmt : TFor optexprln optexprln optexprln block
             {$$ = mkloop($1->line, $2, $3, $4, $5);}
         | TFor decl optexprln optexprln block
             {$$ = mkloop($1->line, $2, $3, $4, $5);}
@@ -517,16 +518,16 @@ block   : blockbody TEndblk
         ;
 
 blockbody
-        : stmt 
+        : stmt
             {
-                $$ = mkblock(line, NULL); 
+                $$ = mkblock(line, NULL);
                 nlappend(&$$->block.stmts, &$$->block.nstmts, $1);
             }
-        | blockbody stmt 
+        | blockbody stmt
             {nlappend(&$$->block.stmts, &$$->block.nstmts, $2);}
         ;
 
-label   : TColon TIdent 
+label   : TColon TIdent
             {$$ = mklabel($1->line, $1->str);}
         ;
 
