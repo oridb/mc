@@ -451,7 +451,6 @@ Tok *toknext()
 
     if (!t || t->type == TError)
         fatal(line, "Unable to parse token starting with %c", c);
-
     return t;
 }
 
@@ -469,7 +468,7 @@ void tokinit(char *file)
     nread = 0;
     fbuf = malloc(4096);
     while (1) {
-        n = read(fd, fbuf, 4096);
+        n = read(fd, fbuf + nread, 4096);
         if (n < 0)
             fatal(errno, "Error reading file %s", file);
         if (n == 0)
