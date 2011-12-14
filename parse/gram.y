@@ -468,7 +468,7 @@ params  : declcore
         | params TComma declcore
             {nlappend(&$$.nl, &$$.nn, $3);}
         | /* empty */
-            {$$.nl = NULL; $$.nn = 0; nlappend(&$$.nl, &$$.nn, $1);}
+            {$$.nl = NULL; $$.nn = 0;}
         ;
 
 arraylit : TOsqbrac arraybody TCsqbrac

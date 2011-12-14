@@ -35,6 +35,10 @@ static void inferfunc(Node *n)
 {
 }
 
+static void loaduse(Node *n)
+{
+}
+
 static void infernode(Node *n)
 {
     int i;
@@ -42,7 +46,7 @@ static void infernode(Node *n)
     switch (n->type) {
         case Nfile:
             for (i = 0; i < n->file.nuses; i++)
-                infernode(n->file.uses[i]);
+                loaduse(n->file.uses[i]);
             for (i = 0; i < n->file.nstmts; i++)
                 infernode(n->file.stmts[i]);
             break;
