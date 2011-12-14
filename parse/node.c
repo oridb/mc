@@ -195,6 +195,7 @@ Node *mkdecl(int line, Sym *sym)
 
 Type *decltype(Node *n)
 {
+    assert(n->type == Ndecl);
     return n->decl.sym->type;
 }
 

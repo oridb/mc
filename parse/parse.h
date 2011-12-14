@@ -211,7 +211,6 @@ Sym *mksym(int line, Node *name, Type *ty);
 
 /* type creation */
 void tyinit(); /* sets up built in types */
-Type *optype(Op o);
 
 Type *mktyvar(int line);
 Type *mktyparam(int line, char *name);
@@ -223,16 +222,16 @@ Type *mktyfunc(int line, Node **args, size_t nargs, Type *ret);
 Type *mktystruct(int line, Node **decls, size_t ndecls);
 Type *mktyunion(int line, Node **decls, size_t ndecls);
 Type *mktyenum(int line, Node **decls, size_t ndecls);
-
 Cstr *mkcstr(int line, char *name, Node **reqmemb, size_t nreqmemb, Node **reqdecl, size_t nreqdecl); 
 
+/* type manipulation */
 int hascstr(Type *t, Cstr *c);
 char *tyfmt(char *buf, size_t len, Type *t);
 char *tystr(Type *t);
 
 void tlappend(Type ***tl, int *len, Type *t);
 
-/* tree creation */
+/* node creation */
 Node *mkfile(char *name);
 Node *mkuse(int line, char *use, int islocal);
 Node *mkexpr(int line, Op op, ...); /* NULL terminated */
@@ -253,6 +252,7 @@ Node *mkname(int line, char *name);
 Node *mkdecl(int line, Sym *sym);
 Node *mklabel(int line, char *lbl);
 
+/* node util functions */
 Type *decltype(Node *n);
 void addstmt(Node *file, Node *stmt);
 void setns(Node *n, char *name);
