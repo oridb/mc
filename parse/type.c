@@ -40,7 +40,7 @@ Cstr **cstr;
 int ncstr;
 
 static int nexttid = 0;
-static Type *mktype(Ty ty)
+Type *mkty(int line, Ty ty)
 {
     Type *t;
 
@@ -54,7 +54,7 @@ Type *mktyvar(int line)
 {
     Type *t;
 
-    t = mktype(Tyvar);
+    t = mkty(line, Tyvar);
     return t;
 }
 
@@ -62,7 +62,7 @@ Type *mktyparam(int line, char *name)
 {
     Type *t;
 
-    t = mktype(Tyvar);
+    t = mkty(line, Tyvar);
     t->pname = strdup(name);
     return t;
 }
@@ -76,10 +76,10 @@ Type *mktynamed(int line, Node *name)
     if (name->name.nparts == 1)
         for (i = 0; typenames[i].name; i++)
             if (!strcmp(typenames[i].name, name->name.parts[0]))
-                return mktype(typenames[i].ty);
+                return mkty(line, typenames[i].ty);
 
     /* if not, resolve it in the type inference stage */
-    t = mktype(Tyname);
+    t = mkty(line, Tyname);
     t->name = name;
     return t;
 }
@@ -88,7 +88,7 @@ Type *mktyarray(int line, Type *base, Node *sz)
 {
     Type *t;
 
-    t = mktype(Tyarray);
+    t = mkty(line, Tyarray);
     t->abase = base;
     t->asize = sz;
 
@@ -99,7 +99,7 @@ Type *mktyslice(int line, Type *base)
 {
     Type *t;
 
-    t = mktype(Tyslice);
+    t = mkty(line, Tyslice);
     t->sbase = base;
     return t;
 }
@@ -108,7 +108,7 @@ Type *mktyptr(int line, Type *base)
 {
     Type *t;
 
-    t = mktype(Typtr);
+    t = mkty(line, Typtr);
     t->pbase = base;
     return t;
 }
@@ -118,7 +118,7 @@ Type *mktyfunc(int line, Node **args, size_t nargs, Type *ret)
     Type *t;
     int i;
 
-    t = mktype(Tyfunc);
+    t = mkty(line, Tyfunc);
     t->nsub = nargs + 1;
     t->fnsub = xalloc((1 + nargs)*sizeof(Type));
     t->fnsub[0] = ret;
@@ -131,7 +131,7 @@ Type *mktystruct(int line, Node **decls, size_t ndecls)
 {
     Type *t;
 
-    t = mktype(Tystruct);
+    t = mkty(line, Tystruct);
     t->nsub = ndecls;
     t->sdecls = memdup(decls, ndecls*sizeof(Node *));
     return t;
@@ -141,7 +141,7 @@ Type *mktyunion(int line, Node **decls, size_t ndecls)
 {
     Type *t;
 
-    t = mktype(Tyunion);
+    t = mkty(line, Tyunion);
     t->udecls = decls;
     return t;
 }
@@ -150,7 +150,7 @@ Type *mktyenum(int line, Node **decls, size_t ndecls)
 {
     Type *t;
 
-    t = mktype(Tyenum);
+    t = mkty(line, Tyenum);
     t->edecls = decls;
     return t;
 }

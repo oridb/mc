@@ -39,8 +39,43 @@ static Op exprop(Node *e)
     return e->expr.op;
 }
 
-static void inferexpr(Node *n)
+static Type *type(Node *n)
 {
+    die("Unimplemented type()");
+    return NULL;
+}
+
+static Type *littype(Node *lit)
+{
+    return NULL;
+}
+
+static Type *unify(Type *a, Type *b)
+{
+    die("Unimplemented unify");
+    return NULL;
+}
+
+static Type *tyfind(Type *t)
+{
+    die("Unimplemented tyfind");
+    return t;
+}
+
+static void unifycall(Node *n)
+{
+}
+
+static void inferexpr(Node *n, Type *ret)
+{
+    Node **args;
+    int nargs;
+    Type *t;
+    int i;
+
+    assert(n->type == Nexpr);
+    args = n->expr.args;
+    nargs = n->expr.nargs;
     switch (exprop(n)) {
         /* all operands are same type */
         case Oadd:      /* @a + @a -> @a */
@@ -59,17 +94,6 @@ static void inferexpr(Node *n)
         case Opredec:   /* --@a -> @a */
         case Opostinc:  /* @a++ -> @a */
         case Opostdec:  /* @a-- -> @a */
-        case Oaddr:     /* &@a -> @a* */
-        case Oderef:    /* *@a* ->  @a */
-        case Olor:      /* @a || @b -> bool */
-        case Oland:     /* @a && @b -> bool */
-        case Olnot:     /* !@a -> bool */
-        case Oeq:       /* @a == @a -> bool */
-        case One:       /* @a != @a -> bool */
-        case Ogt:       /* @a > @a -> bool */
-        case Oge:       /* @a >= @a -> bool */
-        case Olt:       /* @a < @a -> bool */
-        case Ole:       /* @a <= @b -> bool */
         case Oasn:      /* @a = @a -> @a */
         case Oaddeq:    /* @a += @a -> @a */
         case Osubeq:    /* @a -= @a -> @a */
@@ -81,24 +105,73 @@ static void inferexpr(Node *n)
         case Obxoreq:   /* @a ^= @a -> @a */
         case Obsleq:    /* @a <<= @a -> @a */
         case Obsreq:    /* @a >>= @a -> @a */
+            t = type(args[0]);
+            for (i = 1; i < nargs; i++)
+                t = unify(t, type(args[i]));
+            settype(n, tyfind(t));
+            break;
+
+        /* operands same type, returning bool */
+        case Olor:      /* @a || @b -> bool */
+        case Oland:     /* @a && @b -> bool */
+        case Olnot:     /* !@a -> bool */
+        case Oeq:       /* @a == @a -> bool */
+        case One:       /* @a != @a -> bool */
+        case Ogt:       /* @a > @a -> bool */
+        case Oge:       /* @a >= @a -> bool */
+        case Olt:       /* @a < @a -> bool */
+        case Ole:       /* @a <= @b -> bool */
+            t = type(args[0]);
+            for (i = 1; i < nargs; i++)
+                unify(t, type(args[i]));
+            settype(n, mkty(-1, Tybool));
+            break;
+
+        /* reach into a type and pull out subtypes */
+        case Oaddr:     /* &@a -> @a* */
+            settype(n, mktyptr(n->line, type(args[0])));
+            break;
+        case Oderef:    /* *@a* ->  @a */
+            t = unify(type(args[0]), mktyptr(n->line, mktyvar(n->line)));
+            settype(n, t);
+            break;
         case Oidx:      /* @a[@b::tcint] -> @a */
+            die("inference of indexes not done yet");
+            break;
         case Oslice:    /* @a[@b::tcint,@b::tcint] -> @a[,] */
+            die("inference of slices not done yet");
+            break;
+
+        /* special cases */
         case Omemb:     /* @a.Ident -> @b, verify type(@a.Ident)==@b later */
+            die("members not done yet");
+            break;
         case Osize:     /* sizeof @a -> size */
+            die("inference of sizes not done yet");
+            break;
         case Ocall:     /* (@a, @b, @c, ... -> @r)(@a,@b,@c, ... -> @r) -> @r */
+            unifycall(n);
+            break;
         case Ocast:     /* cast(@a, @b) -> @b */
+            die("casts not implemented");
+            break;
         case Oret:      /* -> @a -> void */
+            settype(n, mkty(-1, Tyvoid));
+            break;
         case Ogoto:     /* goto void* -> void */
+            settype(n, mkty(-1, Tyvoid));
+            break;
         case Ovar:      /* a:@a -> @a */
+            settype(n, decltype(n));
+            break;
         case Olit:      /* <lit>:@a::tyclass -> @a */
+            settype(n, littype(n));
+            break;
         case Olbl:      /* :lbl -> void* */
+            settype(n, mktyptr(n->line, mkty(-1, Tyvoid)));
         case Obad:      /* error! */
             break;
     }
-}
-
-static void inferlit(Node *n)
-{
 }
 
 static void inferfunc(Node *n)
@@ -140,12 +213,11 @@ static void infernode(Node *n)
             infernode(n->loopstmt.body);
             break;
         case Nexpr:
-            inferexpr(n);
-        case Nlit:
-            inferlit(n);
+            inferexpr(n, NULL);
         case Nfunc:
             inferfunc(n);
         case Nname:
+        case Nlit:
         case Nuse:
             break;
     }

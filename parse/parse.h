@@ -212,6 +212,7 @@ Sym *mksym(int line, Node *name, Type *ty);
 /* type creation */
 void tyinit(); /* sets up built in types */
 
+Type *mkty(int line, Ty ty);
 Type *mktyvar(int line);
 Type *mktyparam(int line, char *name);
 Type *mktynamed(int line, Node *name);
