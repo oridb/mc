@@ -443,7 +443,7 @@ arglist : asnexpr
 atomicexpr
         : TIdent
             {$$ = mkexpr($1->line, Ovar, mkname($1->line, $1->str), NULL);}
-        | literal
+        | literal {$$ = mkexpr($1->line, Olit, $1, NULL);}
         | TOparen expr TCparen
             {$$ = $2;}
         | TSizeof atomicexpr
