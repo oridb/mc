@@ -50,6 +50,8 @@ int main(int argc, char **argv)
         file->file.globls = mkstab(NULL);
         yyparse();
         dump(file, stdout);
+        infer(file);
+        dump(file, stdout);
         gen();
     }
 
