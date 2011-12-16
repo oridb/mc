@@ -146,6 +146,10 @@ static void outnode(Node *n, FILE *fd, int depth)
             indent(fd, depth);
             fprintf(fd, ")\n");
             outnode(n->func.body, fd, depth+1);
+            break;
+        case Nlbl:
+            fprintf(fd, "(lbl = %s)\n", n->lbl.name);
+            break;
         case Nname:
             fprintf(fd, "(");
             for (i = 0; i < n->name.nparts; i++) {

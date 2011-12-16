@@ -99,7 +99,7 @@ struct Cstr {
 
 struct Node {
     int line;
-    int type;
+    Ntype type;
     union {
         struct {
             char  *name;

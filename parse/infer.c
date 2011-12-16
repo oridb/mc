@@ -17,20 +17,13 @@ static void loaduses(Node *n)
     int i;
     /* uses only allowed at top level. Do we want to keep it this way? */
     for (i = 0; i < n->file.nuses; i++)
-        readuse(n->file.uses[i], n->file.globls);
+        fprintf(stderr, "INTERNAL: implement use loading\n");
+        /* readuse(n->file.uses[i], n->file.globls); */
 }
 
 /* a => b */
 static void settype(Node *n, Type *t)
 {
-}
-
-static void inferdecl(Node *n)
-{
-    Type *t;
-
-    t = decltype(n);
-    settype(n, t);
 }
 
 static Op exprop(Node *e)
@@ -178,9 +171,13 @@ static void inferfunc(Node *n)
 {
 }
 
-static void loaduse(Node *n)
+static void inferdecl(Node *n)
 {
-    fprintf(stderr, "INTERNAL: implement usefiles");
+    Type *t;
+
+    t = decltype(n);
+    settype(n, t);
+    inferexpr(n->decl.init, NULL);
 }
 
 static void infernode(Node *n)
@@ -189,8 +186,6 @@ static void infernode(Node *n)
 
     switch (n->type) {
         case Nfile:
-            for (i = 0; i < n->file.nuses; i++)
-                loaduse(n->file.uses[i]);
             for (i = 0; i < n->file.nstmts; i++)
                 infernode(n->file.stmts[i]);
             break;
@@ -219,6 +214,7 @@ static void infernode(Node *n)
         case Nname:
         case Nlit:
         case Nuse:
+        case Nlbl:
             break;
     }
 }
@@ -238,6 +234,7 @@ static void typesub(Node *n)
 void infer(Node *file)
 {
     assert(file->type == Nfile);
+
     loaduses(file);
     infernode(file);
     infercompn(file);
