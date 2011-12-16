@@ -8,6 +8,20 @@
 
 #define Uintbits (CHAR_BIT*sizeof(int))
 
+static void eqsz(Bitset *a, Bitset *b)
+{
+    int sz;
+
+    if (a->nchunks > b->nchunks)
+        sz = a->nchunks;
+    else
+        sz = b->nchunks;
+    a->chunks = zrealloc(a->chunks, a->nchunks*sizeof(uint), sz*sizeof(uint));
+    a->nchunks = sz;
+    b->chunks = zrealloc(b->chunks, a->nchunks*sizeof(uint), sz*sizeof(uint));
+    b->nchunks = sz;
+}
+
 Bitset *mkbs()
 {
     Bitset *bs;
@@ -26,9 +40,11 @@ void delbs(Bitset *bs)
 
 void bsput(Bitset *bs, uint elt)
 {
+    size_t sz;
     if (elt >= bs->nchunks*Uintbits) {
-        bs->nchunks = (elt/Uintbits)+1;
-        bs->chunks = xrealloc(bs->chunks, bs->nchunks*sizeof(uint));
+        sz = (elt/Uintbits)+1;
+        bs->chunks = zrealloc(bs->chunks, bs->nchunks*sizeof(uint), sz*sizeof(uint));
+        bs->nchunks = sz;
     }
     bs->chunks[elt/Uintbits] |= 1 << (elt % Uintbits);
 }
@@ -47,4 +63,29 @@ int bshas(Bitset *bs, uint elt)
         return bs->chunks[elt/Uintbits] & (1 << (elt % Uintbits));
 }
 
+void bsunion(Bitset *a, Bitset *b)
+{
+    int i;
 
+    eqsz(a, b);
+    for (i = 0; i < a->nchunks; i++)
+        a->chunks[i] |= b->chunks[i];
+}
+
+void bsintersect(Bitset *a, Bitset *b)
+{
+    int i;
+
+    eqsz(a, b);
+    for (i = 0; i < a->nchunks; i++)
+        a->chunks[i] &= b->chunks[i];
+}
+
+void bsdiff(Bitset *a, Bitset *b)
+{
+    int i;
+
+    eqsz(a, b);
+    for (i = 0; i < a->nchunks; i++)
+        a->chunks[i] &= ~b->chunks[i];
+}

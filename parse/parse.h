@@ -191,10 +191,14 @@ struct Node {
 
 /* data structures */
 Bitset *mkbs();
+Bitset *dupbs(Bitset *bs);
 void delbs(Bitset *bs);
 void bsput(Bitset *bs, uint elt);
 void bsdel(Bitset *bs, uint elt);
-int bshas(Bitset *bs, uint elt);
+int  bshas(Bitset *bs, uint elt);
+void bsunion(Bitset *a, Bitset *b);
+void bsintersect(Bitset *a, Bitset *b);
+void bsdiff(Bitset *a, Bitset *b);
 
 /* globals */
 extern int debug;
@@ -208,6 +212,7 @@ extern Stab *scope;
 /* util functions */
 void *zalloc(size_t size);
 void *xalloc(size_t size);
+void *zrealloc(void *p, size_t oldsz, size_t size);
 void *xrealloc(void *p, size_t size);
 void  die(char *msg, ...);
 void  fatal(int line, char *fmt, ...);

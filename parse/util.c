@@ -34,6 +34,16 @@ void *xalloc(size_t sz)
     return mem;
 }
 
+void *zrealloc(void *mem, size_t oldsz, size_t sz)
+{
+    char *p;
+
+    p = xrealloc(mem, sz);
+    if ((ssize_t)sz - (ssize_t)oldsz > 0)
+        bzero(&p[oldsz], sz - oldsz);
+    return p;
+}
+
 void *xrealloc(void *mem, size_t sz)
 {
     mem = realloc(mem, sz);
