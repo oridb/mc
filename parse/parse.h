@@ -1,6 +1,9 @@
 typedef uint32_t        unichar;
+typedef unsigned int    uint;
 typedef long long       vlong;
 typedef unsigned long long uvlong;
+
+typedef struct Bitset Bitset;
 
 typedef struct Tok Tok;
 typedef struct Node Node;
@@ -40,6 +43,10 @@ typedef enum {
     Dclextern = 1 << 1,
 } Dclflags;
 
+struct Bitset {
+    int nchunks;
+    uint *chunks;
+};
 
 struct Tok {
     int type;
@@ -70,6 +77,7 @@ struct Type {
     Ty type;
     int tid;
     size_t nsub;      /* For fnsub, tusub, sdecls, udecls, edecls. */
+    Bitset cstrs;     /* the type constraints matched on this type */
     union {
         Node *name;   /* Tyname: unresolved name */
         Type **fnsub; /* Tyfunc: return, args */
@@ -113,6 +121,7 @@ struct Node {
 
         struct {
             Op op;
+            Type *type;
             int isconst;
             size_t nargs;
             Node **args;
@@ -179,6 +188,13 @@ struct Node {
         } func;
     };
 };
+
+/* data structures */
+Bitset *mkbs();
+void delbs(Bitset *bs);
+void bsput(Bitset *bs, uint elt);
+void bsdel(Bitset *bs, uint elt);
+int bshas(Bitset *bs, uint elt);
 
 /* globals */
 extern int debug;

@@ -1,5 +1,6 @@
 BIN=pt
 OBJ=dump.o \
+    ds.o \
     infer.o \
     main.o \
     names.o \
