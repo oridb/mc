@@ -189,6 +189,17 @@ struct Node {
     };
 };
 
+/* globals */
+extern int debug;
+extern char *filename;
+extern int ignorenl;   
+extern Tok *curtok;    /* the last token we tokenized */
+extern int line;       /* the last line number we tokenized */
+extern Node *file;     /* the current file we're compiling */
+extern Stab *scope;    /* the current scope to insert symbols into */
+extern Type **typetab; /* type -> type map used by inference. size maintained by type creation code */
+extern Type *littypes[]; /* literal type -> type map */
+
 /* data structures */
 Bitset *mkbs();
 Bitset *dupbs(Bitset *bs);
@@ -199,15 +210,6 @@ int  bshas(Bitset *bs, uint elt);
 void bsunion(Bitset *a, Bitset *b);
 void bsintersect(Bitset *a, Bitset *b);
 void bsdiff(Bitset *a, Bitset *b);
-
-/* globals */
-extern int debug;
-extern char *filename;
-extern int ignorenl;
-extern int line;
-extern Tok *curtok;
-extern Node *file;
-extern Stab *scope;
 
 /* util functions */
 void *zalloc(size_t size);

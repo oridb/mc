@@ -12,6 +12,15 @@
 
 #include "parse.h"
 
+/* find the most accurate type mapping */
+static Type *tf(Type *t)
+{
+    while (typetab[t->tid])
+        t = typetab[t->tid];
+    return t;
+}
+
+
 static void loaduses(Node *n)
 {
     int i;
@@ -34,25 +43,50 @@ static Op exprop(Node *e)
 
 static Type *type(Node *n)
 {
-    die("Unimplemented type()");
-    return NULL;
+    Type *t;
+
+    switch (n->type) {
+      case Nlit:        t = littypes[n->lit.littype];   break;
+      case Nexpr:       t = n->expr.type;               break;
+      case Ndecl:       t = decltype(n);                break;
+      default:
+        die("untypeable %s", nodestr(n->type));
+        break;
+    };
+    return tf(t);
 }
 
-static Type *littype(Node *lit)
+static char *ctxstr(Node *n)
 {
-    return NULL;
+    return nodestr(n->type);
 }
 
-static Type *unify(Type *a, Type *b)
+static Type *unify(Node *ctx, Type *a, Type *b)
 {
-    die("Unimplemented unify");
-    return NULL;
-}
+    Type *t;
+    int i;
 
-static Type *tyfind(Type *t)
-{
-    die("Unimplemented tyfind");
-    return t;
+    /* a ==> b */
+    a = tf(a);
+    b = tf(b);
+    if (b->type == Tyvar) {
+        t = a;
+        a = b;
+        b = t;
+    }
+    if (a->type != b->type && a->type != Tyvar)
+        fatal(ctx->line, "%s incompatible with %s near %s", tystr(a), tystr(b), ctxstr(ctx));
+
+    typetab[a->tid] = b;
+    for (i = 0; i < b->nsub; i++) {
+        if (i >= a->nsub)
+            fatal(ctx->line, "%s incompatible with %s near %s", tystr(a), tystr(b), ctxstr(ctx));
+        /*
+         * FIXME: recurse properly.
+        unify(ctx, a->sub[i], b->sub[i]);
+        */
+    }
+    return b;
 }
 
 static void unifycall(Node *n)
@@ -100,8 +134,8 @@ static void inferexpr(Node *n, Type *ret)
         case Obsreq:    /* @a >>= @a -> @a */
             t = type(args[0]);
             for (i = 1; i < nargs; i++)
-                t = unify(t, type(args[i]));
-            settype(n, tyfind(t));
+                t = unify(n, t, type(args[i]));
+            settype(n, tf(t));
             break;
 
         /* operands same type, returning bool */
@@ -116,7 +150,7 @@ static void inferexpr(Node *n, Type *ret)
         case Ole:       /* @a <= @b -> bool */
             t = type(args[0]);
             for (i = 1; i < nargs; i++)
-                unify(t, type(args[i]));
+                unify(n, t, type(args[i]));
             settype(n, mkty(-1, Tybool));
             break;
 
@@ -125,7 +159,7 @@ static void inferexpr(Node *n, Type *ret)
             settype(n, mktyptr(n->line, type(args[0])));
             break;
         case Oderef:    /* *@a* ->  @a */
-            t = unify(type(args[0]), mktyptr(n->line, mktyvar(n->line)));
+            t = unify(n, type(args[0]), mktyptr(n->line, mktyvar(n->line)));
             settype(n, t);
             break;
         case Oidx:      /* @a[@b::tcint] -> @a */
@@ -158,7 +192,7 @@ static void inferexpr(Node *n, Type *ret)
             settype(n, decltype(n));
             break;
         case Olit:      /* <lit>:@a::tyclass -> @a */
-            settype(n, littype(n));
+            settype(n, type(n));
             break;
         case Olbl:      /* :lbl -> void* */
             settype(n, mktyptr(n->line, mkty(-1, Tyvoid)));

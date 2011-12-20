@@ -17,7 +17,10 @@ struct Typename {
     char *name;
 };
 
-Typename typenames[] = {
+Type *littypes[Nlit] = {0,};
+Type **typetab = NULL;
+
+static Typename typenames[] = {
     {Tyvoid, "void"},
     {Tychar, "char"},
     {Tybyte, "byte"},
