@@ -15,6 +15,7 @@
 /* find the most accurate type mapping */
 static Type *tf(Type *t)
 {
+    assert(t != NULL);
     while (typetab[t->tid])
         t = typetab[t->tid];
     return t;
@@ -211,7 +212,10 @@ static void inferdecl(Node *n)
 
     t = decltype(n);
     settype(n, t);
-    inferexpr(n->decl.init, NULL);
+    if (n->decl.init) {
+        inferexpr(n->decl.init, NULL);
+        unify(n, type(n), type(n->decl.init));
+    }
 }
 
 static void infernode(Node *n)
