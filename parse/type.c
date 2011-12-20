@@ -50,6 +50,7 @@ Type *mkty(int line, Ty ty)
     t = zalloc(sizeof(Type));
     t->type = ty;
     t->tid = nexttid++;
+    typetab = realloc(typetab, nexttid*sizeof(Type*));
     return t;
 }
 
