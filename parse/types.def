@@ -38,4 +38,4 @@ Ty(Tyname)
 Ty(Tystruct)
 Ty(Tyunion)
 Ty(Tyenum)
-
+Ty(Ntypes)

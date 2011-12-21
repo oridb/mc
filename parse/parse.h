@@ -39,6 +39,12 @@ typedef enum {
 } Ty;
 
 typedef enum {
+#define Tc(c) c,
+#include "cstr.def"
+#undef Tc
+} Tc;
+
+typedef enum {
     Dclconst = 1 << 0,
     Dclextern = 1 << 1,
 } Dclflags;

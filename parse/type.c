@@ -265,6 +265,9 @@ int tybfmt(char *buf, size_t len, Type *t)
         case Tyenum:
             snprintf(p, end - p, "TYPE ?");
             break;
+        case Ntypes:
+            die("Ntypes is not a type");
+            break;
     }
 
     return len - (end - p);
@@ -281,4 +284,53 @@ char *tystr(Type *t)
     char buf[1024];
     tyfmt(buf, 1024, t);
     return strdup(buf);
+}
+
+static Type *tybuiltins[Ntypes];
+#if 0
+static Cstr *cstrbuiltins[Ncstr];
+#endif
+void tyinit()
+{
+#if 0
+    int i;
+#define Tc(c) \
+    cstrbuiltins[c] = mkcstr(-1, c);
+#include "cstr.def"
+#undef Tc
+#endif
+
+#define Ty(t) \
+    tybuiltins[t] = mkty(-1, t);
+#include "types.def"
+#undef Ty
+
+#if 0
+    /* bool :: tctest */
+    constrain(tybuiltins[Tybool], cstrbuiltins[Tctest]);
+
+    /* <integer types> :: tcnum, tcint, tctest */
+    for (i = Tyint8; i < Tyfloat32; i++) {
+        constrain(tybuiltins[i], cstrbuiltins[Tcnum]);
+        constrain(tybuiltins[i], cstrbuiltins[Tcint]);
+        constrain(tybuiltins[i], cstrbuiltins[Tctest]);
+    }
+
+    /* <floats> :: tcnum */
+    constrain(tybuiltins[Tyfloat32], cstrbuiltins[Tcnum]);
+    constrain(tybuiltins[Tyfloat64], cstrbuiltins[Tcnum]);
+
+    /* @a* :: tctest, tcslice */
+    constrain(tybuiltins[Typtr], cstrbuiltins[Tctest]);
+    constrain(tybuiltins[Typtr], cstrbuiltins[Tcslice]);
+
+    /* @a[,] :: tctest, tcslice, tcidx */
+    constrain(tybuiltins[Tyslice], cstrbuiltins[Tctest]);
+    constrain(tybuiltins[Tyslice], cstrbuiltins[Tcslice]);
+    constrain(tybuiltins[Tyslice], cstrbuiltins[Tcidx]);
+
+    /* enum */
+    constrain(tybuiltins[Tyenum], cstrbuiltins[Tcint]);
+    constrain(tybuiltins[Tyenum], cstrbuiltins[Tcnum]);
+#endif
 }
