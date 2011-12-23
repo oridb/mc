@@ -1,0 +1,6 @@
+Tc(Tcnum)   /* arith ops */
+Tc(Tcint)   /* bitwise ops */
+Tc(Tctest)  /* if condition */
+Tc(Tcidx)   /* indexable */
+Tc(Tcslice) /* sliceable */
+Tc(Ncstr)
