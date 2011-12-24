@@ -32,12 +32,12 @@ static int peekn(int n)
         return fbuf[fidx + n];
 }
 
-static int peek()
+static int peek(void)
 {
     return peekn(0);
 }
 
-static int next()
+static int next(void)
 {
     int c;
 
@@ -46,13 +46,13 @@ static int next()
     return c;
 }
 
-void unget()
+static void unget(void)
 {
     fidx--;
     assert(fidx >= 0);
 }
 
-int match(char c)
+static int match(char c)
 {
     if (peek() == c) {
         next();
@@ -62,7 +62,7 @@ int match(char c)
     }
 }
 
-Tok *mktok(int tt)
+static Tok *mktok(int tt)
 {
     Tok *t;
 
@@ -77,7 +77,7 @@ static int identchar(int c)
     return isalnum(c) || c == '_';
 }
 
-static void eatcomment()
+static void eatcomment(void)
 {
     int depth;
     int startln;
@@ -111,7 +111,7 @@ static void eatcomment()
     }
 }
 
-void eatspace()
+static void eatspace(void)
 {
     int c;
 
@@ -122,13 +122,13 @@ void eatspace()
         else if (isspace(c))
             next();
         else if (c == '/' && peekn(1) == '*')
-            eatcomment(c);
+            eatcomment();
         else
             break;
     }
 }
 
-int kwd(char *s)
+static int kwd(char *s)
 {
     int i;
     struct {char* kw; int tt;} kwmap[] = {
@@ -164,7 +164,7 @@ int kwd(char *s)
     return TIdent;
 }
 
-Tok *kwident()
+static Tok *kwident(void)
 {
     char buf[1024];
     char c;
@@ -182,7 +182,7 @@ Tok *kwident()
     return t;
 }
 
-Tok *strlit()
+static Tok *strlit()
 {
     Tok *t;
     int sstart; /* start of string within input buf */
@@ -209,7 +209,7 @@ Tok *strlit()
     return t;
 }
 
-Tok *charlit()
+static Tok *charlit()
 {
     Tok *t;
     int sstart; /* start of string within input buf */
@@ -236,7 +236,7 @@ Tok *charlit()
     return t;
 }
 
-Tok *oper()
+static Tok *oper(void)
 {
     int tt;
     char c;
@@ -260,10 +260,12 @@ Tok *oper()
                   break;
         case '.':
                   if (match('.')) {
-                      if (match('.'))
+                      if (match('.')) {
                           tt = TEllipsis;
-                      else
+                      } else { 
                           unget();
+                          tt = TDot;
+                      }
                   } else {
                       tt = TDot;
                   }
@@ -371,7 +373,7 @@ Tok *oper()
     return mktok(tt);
 };
 
-Tok *number(int base)
+static Tok *number(int base)
 {
     Tok *t;
     int start;
@@ -406,7 +408,7 @@ Tok *number(int base)
     return t;
 }
 
-Tok *numlit()
+static Tok *numlit(void)
 {
     Tok *t;
 
@@ -425,7 +427,7 @@ Tok *numlit()
     return t;
 }
 
-Tok *toknext()
+static Tok *toknext()
 {
     Tok *t;
     int c;
@@ -477,16 +479,17 @@ void tokinit(char *file)
         if (!fbuf)
             die("Out of memory reading %s", file);
         nread += n;
-        fbuf = realloc(fbuf, nread + 4096);
+        fbuf = xrealloc(fbuf, nread + 4096);
     }
 
     fbufsz = nread;
     line = 1;
     fidx = 0;
+    close(fd);
     filename = strdup(file);
 }
 
-int yylex()
+int yylex(void)
 {
     curtok = toknext();
     yylval.tok = curtok;

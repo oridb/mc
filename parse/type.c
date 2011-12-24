@@ -17,8 +17,12 @@ struct Typename {
     char *name;
 };
 
-Type *littypes[Nlit] = {0,};
+Type *littypes[Nlit] = {NULL,};
 Type **typetab = NULL;
+int ntypes;
+static Cstr **cstrtab;
+static int ncstr;
+
 
 static Typename typenames[] = {
     {Tyvoid, "void"},
@@ -37,21 +41,32 @@ static Typename typenames[] = {
     {Tybad, NULL}
 };
 
-Type **types;
-int ntypes;
-Cstr **cstr;
-int ncstr;
-
-static int nexttid = 0;
 Type *mkty(int line, Ty ty)
 {
     Type *t;
 
     t = zalloc(sizeof(Type));
     t->type = ty;
-    t->tid = nexttid++;
-    typetab = realloc(typetab, nexttid*sizeof(Type*));
+    t->tid = ntypes++;
+
+    typetab = xrealloc(typetab, ntypes*sizeof(Type*));
     return t;
+}
+
+/* steals memb, funcs */
+Cstr *mkcstr(int line, char *name, Node **memb, size_t nmemb, Node **funcs, size_t nfuncs)
+{
+    Cstr *c;
+
+    c = zalloc(sizeof(Cstr));
+    c->name = strdup(name);
+    c->memb = memb;
+    c->nmemb = nmemb;
+    c->funcs = funcs;
+    c->nfuncs = nfuncs;
+    c->cid = ncstr++;
+    cstrtab = xrealloc(cstrtab, ncstr*sizeof(Cstr*));
+    return c;
 }
 
 Type *mktyvar(int line)
@@ -183,7 +198,12 @@ static int namefmt(char *buf, size_t len, Node *name)
     return len - (end - p);
 }
 
-int tybfmt(char *buf, size_t len, Type *t)
+static int cstrfmt(char *buf, size_t len, Type *t)
+{
+    return 0;
+}
+
+static int tybfmt(char *buf, size_t len, Type *t)
 {
     char *p;
     char *end;
@@ -270,6 +290,8 @@ int tybfmt(char *buf, size_t len, Type *t)
             break;
     }
 
+    p += cstrfmt(p, end - p, t);
+
     return len - (end - p);
 }
 
@@ -290,7 +312,7 @@ static Type *tybuiltins[Ntypes];
 #if 0
 static Cstr *cstrbuiltins[Ncstr];
 #endif
-void tyinit()
+void tyinit(void)
 {
 #if 0
     int i;

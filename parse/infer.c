@@ -51,6 +51,7 @@ static Type *type(Node *n)
       case Nexpr:       t = n->expr.type;               break;
       case Ndecl:       t = decltype(n);                break;
       default:
+        t = NULL;
         die("untypeable %s", nodestr(n->type));
         break;
     };

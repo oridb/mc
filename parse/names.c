@@ -11,25 +11,25 @@
 
 #include "parse.h"
 
-char *optab[] =  {
+static char *optab[] =  {
 #define O(op) #op,
 #include "ops.def"
 #undef O
 };
 
-char *nodetab[] =  {
+static char *nodetab[] =  {
 #define N(nt) #nt,
 #include "nodes.def"
 #undef N
 };
 
-char *littab[] =  {
+static char *littab[] =  {
 #define L(lt) #lt,
 #include "lits.def"
 #undef L
 };
 
-char *tidtab[] =  {
+static char *tidtab[] =  {
 #define Ty(t) #t,
 #include "types.def"
 #undef Ty

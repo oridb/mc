@@ -18,7 +18,7 @@ void yyerror(const char *s);
 int yylex(void);
 Op binop(int toktype);
 Stab *curscope;
-int n = 0;
+//int n = 0;
 %}
 
 %token<tok> TError
@@ -546,6 +546,8 @@ void yyerror(const char *s)
 Op binop(int tt)
 {
     Op o;
+
+    o = Obad;
     switch (tt) {
         case TPlus:     o = Oadd;       break;
         case TMinus:    o = Osub;       break;

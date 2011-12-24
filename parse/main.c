@@ -12,7 +12,7 @@
 #include "parse.h"
 
 Node *file;
-char *outfile;
+static char *outfile;
 int debug;
 
 static void usage(char *prog)
@@ -58,7 +58,7 @@ int main(int argc, char **argv)
     return 0;
 }
 
-void gen()
+void gen(void)
 {
     printf("GEN!\n");
 }

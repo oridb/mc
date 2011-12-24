@@ -103,12 +103,11 @@ struct Type {
 
 struct Cstr {
     int cid;    /* unique id */
-    /* required members */
-    size_t nreqmemb;
-    Node **reqmemb;
-    /* required functions */
-    size_t nreqfn;
-    Node **reqfn;
+    char *name;
+    Node **memb;        /* type must have these members */
+    size_t nmemb;
+    Node **funcs;       /* and declare these funcs */
+    size_t nfuncs;
 };
 
 struct Node {
@@ -202,8 +201,10 @@ extern int ignorenl;
 extern Tok *curtok;    /* the last token we tokenized */
 extern int line;       /* the last line number we tokenized */
 extern Node *file;     /* the current file we're compiling */
-extern Stab *scope;    /* the current scope to insert symbols into */
+extern Stab *curscope; /* the current scope to insert symbols into */
 extern Type **typetab; /* type -> type map used by inference. size maintained by type creation code */
+extern int ntypes;
+
 extern Type *littypes[]; /* literal type -> type map */
 
 /* data structures */
@@ -252,7 +253,7 @@ Type *mktyfunc(int line, Node **args, size_t nargs, Type *ret);
 Type *mktystruct(int line, Node **decls, size_t ndecls);
 Type *mktyunion(int line, Node **decls, size_t ndecls);
 Type *mktyenum(int line, Node **decls, size_t ndecls);
-Cstr *mkcstr(int line, char *name, Node **reqmemb, size_t nreqmemb, Node **reqdecl, size_t nreqdecl); 
+Cstr *mkcstr(int line, char *name, Node **memb, size_t nmemb, Node **funcs, size_t nfuncs);
 
 /* type manipulation */
 int hascstr(Type *t, Cstr *c);
@@ -298,6 +299,7 @@ void infer(Node *file);
 /* debug */
 void dump(Node *t, FILE *fd);
 void dumpsym(Sym *s, FILE *fd);
+void dumpstab(Stab *st, FILE *fd);
 char *opstr(Op o);
 char *nodestr(Ntype nt);
 char *litstr(Littype lt);
