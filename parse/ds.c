@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <assert.h>
 #include <limits.h>
+#include <string.h>
 
 #include "parse.h"
 
@@ -30,6 +31,29 @@ Bitset *mkbs()
     bs->nchunks = 1;
     bs->chunks = xalloc(1*sizeof(uint));
     return bs;
+}
+
+Bitset *dupbs(Bitset *a)
+{
+    Bitset *bs;
+
+    bs = xalloc(sizeof(Bitset));
+    bs->nchunks = a->nchunks;
+    bs->chunks = xalloc(a->nchunks*sizeof(uint));
+    memcpy(bs->chunks, a->chunks, a->nchunks*sizeof(uint));
+    return bs;
+}
+
+int bscount(Bitset *bs)
+{
+    int i, j, n;
+
+    n = 0;
+    for (i = 0; i < bs->nchunks; i++)
+        for (j = 1; j < sizeof(uint)*CHAR_BIT; j++)
+            if (bs->chunks[i] & 1 << j)
+                n++;
+    return n;
 }
 
 void delbs(Bitset *bs)
@@ -89,3 +113,4 @@ void bsdiff(Bitset *a, Bitset *b)
     for (i = 0; i < a->nchunks; i++)
         a->chunks[i] &= ~b->chunks[i];
 }
+

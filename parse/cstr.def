@@ -1,6 +1,6 @@
-Tc(Tcnum)   /* arith ops */
-Tc(Tcint)   /* bitwise ops */
-Tc(Tctest)  /* if condition */
-Tc(Tcidx)   /* indexable */
-Tc(Tcslice) /* sliceable */
-Tc(Ncstr)
+Tc(Tcnum, "tcnum")   /* arith ops */
+Tc(Tcint, "tcint")   /* bitwise ops */
+Tc(Tctest, "tctest")  /* if condition */
+Tc(Tcidx, "tcidx")   /* indexable */
+Tc(Tcslice, "tcslice") /* sliceable */
+Tc(Ncstr, "")

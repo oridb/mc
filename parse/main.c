@@ -44,6 +44,7 @@ int main(int argc, char **argv)
     }
 
     for (i = optind; i < argc; i++) {
+        tyinit();
         tokinit(argv[i]);
         file = mkfile(argv[i]);
         file->file.exports = mkstab(NULL);

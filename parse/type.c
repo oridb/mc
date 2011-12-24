@@ -18,11 +18,10 @@ struct Typename {
 };
 
 Type *littypes[Nlit] = {NULL,};
-Type **typetab = NULL;
+Type **tytab = NULL;
 int ntypes;
-static Cstr **cstrtab;
-static int ncstr;
-
+Cstr **cstrtab;
+int ncstr;
 
 static Typename typenames[] = {
     {Tyvoid, "void"},
@@ -41,15 +40,21 @@ static Typename typenames[] = {
     {Tybad, NULL}
 };
 
+static Cstr *tycstrs[Ntypes][4];
+
 Type *mkty(int line, Ty ty)
 {
     Type *t;
+    int i;
 
     t = zalloc(sizeof(Type));
     t->type = ty;
     t->tid = ntypes++;
+    tytab = xrealloc(tytab, ntypes*sizeof(Type*));
 
-    typetab = xrealloc(typetab, ntypes*sizeof(Type*));
+    for(i = 0; tycstrs[ty][i]; i++)
+        constrain(t, tycstrs[ty][i]);
+
     return t;
 }
 
@@ -65,6 +70,7 @@ Cstr *mkcstr(int line, char *name, Node **memb, size_t nmemb, Node **funcs, size
     c->funcs = funcs;
     c->nfuncs = nfuncs;
     c->cid = ncstr++;
+
     cstrtab = xrealloc(cstrtab, ncstr*sizeof(Cstr*));
     return c;
 }
@@ -198,6 +204,21 @@ static int namefmt(char *buf, size_t len, Node *name)
     return len - (end - p);
 }
 
+int constrain(Type *t, Cstr *c)
+{
+    if (!t->cstrs)
+        t->cstrs = mkbs();
+    if (t->type != Tyvar && t->type != Typaram)
+        return 0;
+    bsput(t->cstrs, c->cid);
+    return 1;
+}
+
+int hascstr(Type *t, Cstr *c)
+{
+    return t->cstrs && bshas(t->cstrs, c->cid);
+}
+
 static int cstrfmt(char *buf, size_t len, Type *t)
 {
     return 0;
@@ -308,51 +329,57 @@ char *tystr(Type *t)
     return strdup(buf);
 }
 
-static Type *tybuiltins[Ntypes];
-#if 0
-static Cstr *cstrbuiltins[Ncstr];
-#endif
 void tyinit(void)
 {
-#if 0
     int i;
-#define Tc(c) \
-    cstrbuiltins[c] = mkcstr(-1, c);
+
+#define Tc(c, n) \
+    mkcstr(-1, n, NULL, 0, NULL, 0);
 #include "cstr.def"
 #undef Tc
-#endif
 
 #define Ty(t) \
-    tybuiltins[t] = mkty(-1, t);
+    mkty(-1, t);
 #include "types.def"
 #undef Ty
 
-#if 0
     /* bool :: tctest */
-    constrain(tybuiltins[Tybool], cstrbuiltins[Tctest]);
+    tycstrs[Tybool][0] = cstrtab[Tctest];
 
     /* <integer types> :: tcnum, tcint, tctest */
     for (i = Tyint8; i < Tyfloat32; i++) {
-        constrain(tybuiltins[i], cstrbuiltins[Tcnum]);
-        constrain(tybuiltins[i], cstrbuiltins[Tcint]);
-        constrain(tybuiltins[i], cstrbuiltins[Tctest]);
+        tycstrs[i][0] = cstrtab[Tcnum];
+        tycstrs[i][1] = cstrtab[Tcint];
+        tycstrs[i][2] = cstrtab[Tctest];
     }
 
     /* <floats> :: tcnum */
-    constrain(tybuiltins[Tyfloat32], cstrbuiltins[Tcnum]);
-    constrain(tybuiltins[Tyfloat64], cstrbuiltins[Tcnum]);
+    tycstrs[Tyfloat32][0] = cstrtab[Tcnum];
+    tycstrs[Tyfloat64][1] = cstrtab[Tcnum];
 
-    /* @a* :: tctest, tcslice */
-    constrain(tybuiltins[Typtr], cstrbuiltins[Tctest]);
-    constrain(tybuiltins[Typtr], cstrbuiltins[Tcslice]);
+    /* @a* :: tctest[0] = tcslice */
+    tycstrs[Typtr][0] = cstrtab[Tctest];
+    tycstrs[Typtr][1] = cstrtab[Tcslice];
 
-    /* @a[,] :: tctest, tcslice, tcidx */
-    constrain(tybuiltins[Tyslice], cstrbuiltins[Tctest]);
-    constrain(tybuiltins[Tyslice], cstrbuiltins[Tcslice]);
-    constrain(tybuiltins[Tyslice], cstrbuiltins[Tcidx]);
+    /* @a[,] :: tctest[0] = tcslice[0] = tcidx */
+    tycstrs[Tyslice][0] = cstrtab[Tctest];
+    tycstrs[Tyslice][1] = cstrtab[Tcslice];
+    tycstrs[Tyslice][2] = cstrtab[Tcidx];
 
-    /* enum */
-    constrain(tybuiltins[Tyenum], cstrbuiltins[Tcint]);
-    constrain(tybuiltins[Tyenum], cstrbuiltins[Tcnum]);
-#endif
+    /* enum :: tcint, tcnum */
+    tycstrs[Tyenum][0] = cstrtab[Tcint];
+    tycstrs[Tyenum][1] = cstrtab[Tcnum];
+
+    /* array :: tcidx, tcslice */
+    tycstrs[Tyarray][0] = cstrtab[Tcidx];
+    tycstrs[Tyarray][1] = cstrtab[Tcslice];
+
+    /* ptr :: tcslice, tctest */
+    tycstrs[Typtr][0] = cstrtab[Tcidx];
+    tycstrs[Typtr][1] = cstrtab[Tctest];
+
+    /* slice :: tcidx, tcslice, tctest */
+    tycstrs[Tyslice][0] = cstrtab[Tcidx];
+    tycstrs[Tyslice][1] = cstrtab[Tcslice];
+    tycstrs[Tyslice][1] = cstrtab[Tctest];
 }

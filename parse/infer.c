@@ -17,10 +17,10 @@ static Type *tf(Type *t)
 {
     assert(t != NULL);
     
-    if (typetab[t->tid]) {
+    if (tytab[t->tid]) {
         printf ("%s => ", tystr(t));
-        while (typetab[t->tid]) {
-            t = typetab[t->tid];
+        while (tytab[t->tid]) {
+            t = tytab[t->tid];
             printf("%s => ", tystr(t));
         }
         printf("nil\n");
@@ -28,6 +28,21 @@ static Type *tf(Type *t)
     return t;
 }
 
+/* does b satisfy all the constraints of a? */
+static int cstrcheck(Type *a, Type *b)
+{
+    Bitset *s;
+    int n;
+
+    /* if b->cstrs \ a->cstrs == 0, then all of
+     * a's constraints are satisfied. */
+    s = dupbs(b->cstrs);
+    bsdiff(s, a->cstrs);
+    n = bscount(s);
+    delbs(s);
+
+    return n == 0;
+}
 
 static void loaduses(Node *n)
 {
@@ -108,7 +123,7 @@ static Type *unify(Node *ctx, Type *a, Type *b)
     if (a->type != b->type && a->type != Tyvar)
         fatal(ctx->line, "%s incompatible with %s near %s", tystr(a), tystr(b), ctxstr(ctx));
 
-    typetab[a->tid] = b;
+    tytab[a->tid] = b;
     for (i = 0; i < b->nsub; i++) {
         if (i >= a->nsub)
             fatal(ctx->line, "%s incompatible with %s near %s", tystr(a), tystr(b), ctxstr(ctx));
@@ -299,6 +314,18 @@ static void checkcast(Node *n)
 {
 }
 
+/* returns the final type for t, after all unifications
+ * and default constraint selections */
+static Type *tyfin(Type *t)
+{
+    t = tf(t);
+    if (t->type == Tyvar) {
+        if (hascstr(t, cstrtab[Tcint]) && cstrcheck(t, tytab[Tyint]))
+            return mkty(-1, Tyint);
+    }
+    return t;
+}
+
 static void typesub(Node *n)
 {
     int i;
@@ -309,7 +336,7 @@ static void typesub(Node *n)
                 typesub(n->file.stmts[i]);
             break;
         case Ndecl:
-            settype(n, tf(type(n)));
+            settype(n, tyfin(type(n)));
             if (n->decl.init)
                 typesub(n->decl.init);
             break;
@@ -329,7 +356,7 @@ static void typesub(Node *n)
             typesub(n->loopstmt.body);
             break;
         case Nexpr:
-            settype(n, tf(type(n)));
+            settype(n, tyfin(type(n)));
             for (i = 0; i < n->expr.nargs; i++)
                 typesub(n->expr.args[i]);
             break;

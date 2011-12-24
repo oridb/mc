@@ -39,7 +39,7 @@ typedef enum {
 } Ty;
 
 typedef enum {
-#define Tc(c) c,
+#define Tc(c, n) c,
 #include "cstr.def"
 #undef Tc
 } Tc;
@@ -65,7 +65,7 @@ struct Stab {
     char *name;
 
     /* Contents of stab.
-     * Types and values are in separate namespaces. */
+     * types and values are in separate namespaces. */
     size_t ntypes;
     Sym **types;
     size_t nsyms;
@@ -83,7 +83,7 @@ struct Type {
     Ty type;
     int tid;
     size_t nsub;      /* For fnsub, tusub, sdecls, udecls, edecls. */
-    Bitset cstrs;     /* the type constraints matched on this type */
+    Bitset *cstrs;    /* the type constraints matched on this type */
     union {
         Node *name;   /* Tyname: unresolved name */
         Type **fnsub; /* Tyfunc: return, args */
@@ -197,13 +197,15 @@ struct Node {
 /* globals */
 extern int debug;
 extern char *filename;
-extern int ignorenl;   
-extern Tok *curtok;    /* the last token we tokenized */
-extern int line;       /* the last line number we tokenized */
-extern Node *file;     /* the current file we're compiling */
-extern Stab *curscope; /* the current scope to insert symbols into */
-extern Type **typetab; /* type -> type map used by inference. size maintained by type creation code */
+extern int ignorenl;    /* are '\n' chars currently stmt separators? */
+extern Tok *curtok;     /* the last token we tokenized */
+extern int line;        /* the last line number we tokenized */
+extern Node *file;      /* the current file we're compiling */
+extern Stab *curscope;  /* the current scope to insert symbols into */
+extern Type **tytab;    /* type -> type map used by inference. size maintained by type creation code */
 extern int ntypes;
+extern Cstr **cstrtab;  /* int -> cstr map */
+extern int ncstrs;
 
 extern Type *littypes[]; /* literal type -> type map */
 
@@ -217,6 +219,7 @@ int  bshas(Bitset *bs, uint elt);
 void bsunion(Bitset *a, Bitset *b);
 void bsintersect(Bitset *a, Bitset *b);
 void bsdiff(Bitset *a, Bitset *b);
+int  bscount(Bitset *bs);
 
 /* util functions */
 void *zalloc(size_t size);
@@ -257,6 +260,8 @@ Cstr *mkcstr(int line, char *name, Node **memb, size_t nmemb, Node **funcs, size
 
 /* type manipulation */
 int hascstr(Type *t, Cstr *c);
+int cstreq(Type *t, Cstr **cstrs, size_t len);
+int constrain(Type *t, Cstr *c);
 char *tyfmt(char *buf, size_t len, Type *t);
 char *tystr(Type *t);
 
