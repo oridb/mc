@@ -68,7 +68,7 @@ void dumpstab(Stab *st, FILE *fd)
 static void outnode(Node *n, FILE *fd, int depth)
 {
     int i;
-
+    char *ty;
 
     indent(fd, depth);
     if (!n) {
@@ -117,7 +117,9 @@ static void outnode(Node *n, FILE *fd, int depth)
             fprintf(fd, " (name = %s, islocal = %d)\n", n->use.name, n->use.islocal);
             break;
         case Nexpr:
-            fprintf(fd, " (op = %s, flags = %d)\n", opstr(n->expr.op), n->expr.isconst);
+            ty = tystr(n->expr.type);
+            fprintf(fd, " (type = %s, op = %s, flags = %d)\n", ty, opstr(n->expr.op), n->expr.isconst);
+            free(ty);
             for (i = 0; i < n->expr.nargs; i++)
                 outnode(n->expr.args[i], fd, depth+1);
             break;

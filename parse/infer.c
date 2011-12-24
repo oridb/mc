@@ -16,8 +16,15 @@
 static Type *tf(Type *t)
 {
     assert(t != NULL);
-    while (typetab[t->tid])
-        t = typetab[t->tid];
+    
+    if (typetab[t->tid]) {
+        printf ("%s => ", tystr(t));
+        while (typetab[t->tid]) {
+            t = typetab[t->tid];
+            printf("%s => ", tystr(t));
+        }
+        printf("nil\n");
+    }
     return t;
 }
 
@@ -34,6 +41,14 @@ static void loaduses(Node *n)
 /* a => b */
 static void settype(Node *n, Type *t)
 {
+    switch (n->type) {
+        case Nexpr:     n->expr.type = t;       break;
+        case Ndecl:     n->decl.sym->type = t;  break;
+        default:
+            die("can't set type of %s", nodestr(n->type));
+            break;
+    }
+
 }
 
 static Op exprop(Node *e)
@@ -42,14 +57,28 @@ static Op exprop(Node *e)
     return e->expr.op;
 }
 
+static Type *littype(Node *n)
+{
+    switch (n->lit.littype) {
+        case Lchr:      return mktyvar(n->line);       break;
+        case Lbool:     return mktyvar(n->line);       break;
+        case Lint:      return mktyvar(n->line);       break;
+        case Lflt:      return mktyvar(n->line);       break;
+        case Lstr:      return mktyvar(n->line);       break;
+        case Lfunc:     return NULL; break;
+        case Larray:    return NULL; break;
+    };
+    return NULL;
+}
+
 static Type *type(Node *n)
 {
     Type *t;
 
     switch (n->type) {
-      case Nlit:        t = littypes[n->lit.littype];   break;
-      case Nexpr:       t = n->expr.type;               break;
-      case Ndecl:       t = decltype(n);                break;
+      case Nlit:        t = littype(n);         break;
+      case Nexpr:       t = n->expr.type;       break;
+      case Ndecl:       t = decltype(n);        break;
       default:
         t = NULL;
         die("untypeable %s", nodestr(n->type));
@@ -105,6 +134,10 @@ static void inferexpr(Node *n, Type *ret)
     assert(n->type == Nexpr);
     args = n->expr.args;
     nargs = n->expr.nargs;
+    for (i = 0; i < nargs; i++)
+        /* Nlit, Nvar, etc should not be inferred as exprs */
+        if (args[i]->type == Nexpr)
+            inferexpr(args[i], ret);
     switch (exprop(n)) {
         /* all operands are same type */
         case Oadd:      /* @a + @a -> @a */
@@ -194,7 +227,7 @@ static void inferexpr(Node *n, Type *ret)
             settype(n, decltype(n));
             break;
         case Olit:      /* <lit>:@a::tyclass -> @a */
-            settype(n, type(n));
+            settype(n, type(args[0]));
             break;
         case Olbl:      /* :lbl -> void* */
             settype(n, mktyptr(n->line, mkty(-1, Tyvoid)));
@@ -268,6 +301,48 @@ static void checkcast(Node *n)
 
 static void typesub(Node *n)
 {
+    int i;
+
+    switch (n->type) {
+        case Nfile:
+            for (i = 0; i < n->file.nstmts; i++)
+                typesub(n->file.stmts[i]);
+            break;
+        case Ndecl:
+            settype(n, tf(type(n)));
+            if (n->decl.init)
+                typesub(n->decl.init);
+            break;
+        case Nblock:
+            for (i = 0; i < n->block.nstmts; i++)
+                typesub(n->block.stmts[i]);
+            break;
+        case Nifstmt:
+            typesub(n->ifstmt.cond);
+            typesub(n->ifstmt.iftrue);
+            typesub(n->ifstmt.iffalse);
+            break;
+        case Nloopstmt:
+            typesub(n->loopstmt.cond);
+            typesub(n->loopstmt.init);
+            typesub(n->loopstmt.step);
+            typesub(n->loopstmt.body);
+            break;
+        case Nexpr:
+            settype(n, tf(type(n)));
+            for (i = 0; i < n->expr.nargs; i++)
+                typesub(n->expr.args[i]);
+            break;
+        case Nfunc:
+            die("don't do funcs yet...");
+            typesub(n);
+            break;
+        case Nname:
+        case Nlit:
+        case Nuse:
+        case Nlbl:
+            break;
+    }
 }
 
 void infer(Node *file)
