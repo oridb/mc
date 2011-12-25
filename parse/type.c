@@ -21,7 +21,7 @@ Type *littypes[Nlit] = {NULL,};
 Type **tytab = NULL;
 int ntypes;
 Cstr **cstrtab;
-int ncstr;
+int ncstrs;
 
 static Typename typenames[] = {
     {Tyvoid, "void"},
@@ -58,6 +58,15 @@ Type *mkty(int line, Ty ty)
     return t;
 }
 
+Type *tylike(Type *t, Ty like)
+{
+    int i;
+
+    for (i = 0; tycstrs[like][i]; i++)
+        constrain(t, tycstrs[like][i]);
+    return t;
+}
+
 /* steals memb, funcs */
 Cstr *mkcstr(int line, char *name, Node **memb, size_t nmemb, Node **funcs, size_t nfuncs)
 {
@@ -69,9 +78,10 @@ Cstr *mkcstr(int line, char *name, Node **memb, size_t nmemb, Node **funcs, size
     c->nmemb = nmemb;
     c->funcs = funcs;
     c->nfuncs = nfuncs;
-    c->cid = ncstr++;
+    c->cid = ncstrs++;
 
-    cstrtab = xrealloc(cstrtab, ncstr*sizeof(Cstr*));
+    cstrtab = xrealloc(cstrtab, ncstrs*sizeof(Cstr*));
+    cstrtab[c->cid] = c;
     return c;
 }
 
@@ -221,7 +231,29 @@ int hascstr(Type *t, Cstr *c)
 
 static int cstrfmt(char *buf, size_t len, Type *t)
 {
-    return 0;
+    char *p;
+    char *end;
+    int first;
+    int i;
+
+    if (!t->cstrs || !bscount(t->cstrs))
+        return 0;
+
+    p = buf;
+    end = p + len;
+    first = 1;
+
+    p += snprintf(p, end - p, " :: ");
+    for (i = 0; i < ncstrs; i++) {
+        if (bshas(t->cstrs, i)) {
+            if (!first) {
+                first = 0;
+                p += snprintf(p, end - p, ", ");
+            }
+            p += snprintf(p, end - p, "%s", cstrtab[i]->name);
+        }
+    }
+    return end - p;
 }
 
 static int tybfmt(char *buf, size_t len, Type *t)
@@ -311,7 +343,9 @@ static int tybfmt(char *buf, size_t len, Type *t)
             break;
     }
 
-    p += cstrfmt(p, end - p, t);
+    /* we only show constraints on non-builtin typarams */
+    if (t->type == Tyvar || t->type == Typaram)
+        p += cstrfmt(p, end - p, t);
 
     return len - (end - p);
 }

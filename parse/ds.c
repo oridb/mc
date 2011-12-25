@@ -29,7 +29,7 @@ Bitset *mkbs()
 
     bs = xalloc(sizeof(Bitset));
     bs->nchunks = 1;
-    bs->chunks = xalloc(1*sizeof(uint));
+    bs->chunks = zalloc(1*sizeof(uint));
     return bs;
 }
 

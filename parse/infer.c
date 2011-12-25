@@ -34,6 +34,10 @@ static int cstrcheck(Type *a, Type *b)
     Bitset *s;
     int n;
 
+    if (a->cstrs)
+        return 1;
+    if (!b->cstrs)
+        return 0;
     /* if b->cstrs \ a->cstrs == 0, then all of
      * a's constraints are satisfied. */
     s = dupbs(b->cstrs);
@@ -75,11 +79,11 @@ static Op exprop(Node *e)
 static Type *littype(Node *n)
 {
     switch (n->lit.littype) {
-        case Lchr:      return mktyvar(n->line);       break;
-        case Lbool:     return mktyvar(n->line);       break;
-        case Lint:      return mktyvar(n->line);       break;
-        case Lflt:      return mktyvar(n->line);       break;
-        case Lstr:      return mktyvar(n->line);       break;
+        case Lchr:      return mkty(n->line, Tychar);                           break;
+        case Lbool:     return mkty(n->line, Tybool);                           break;
+        case Lint:      return tylike(mktyvar(n->line), Tyint);                 break;
+        case Lflt:      return tylike(mktyvar(n->line), Tyfloat32);             break;
+        case Lstr:      return mktyslice(n->line, mkty(n->line, Tychar));       break;
         case Lfunc:     return NULL; break;
         case Larray:    return NULL; break;
     };
@@ -107,6 +111,19 @@ static char *ctxstr(Node *n)
     return nodestr(n->type);
 }
 
+static void matchcstrs(Node *ctx, Type *a, Type *b)
+{
+    if (b->type == Tyvar) {
+        if (!b->cstrs)
+            b->cstrs = dupbs(a->cstrs);
+        else
+            bsunion(b->cstrs, a->cstrs);
+    } else {
+        if (!cstrcheck(b, a))
+            fatal(ctx->line, "%s incompatible with %s near %s", tystr(a), tystr(b), ctxstr(ctx));
+    }
+}
+
 static Type *unify(Node *ctx, Type *a, Type *b)
 {
     Type *t;
@@ -120,15 +137,19 @@ static Type *unify(Node *ctx, Type *a, Type *b)
         a = b;
         b = t;
     }
+
+    matchcstrs(ctx, a, b);
     if (a->type != b->type && a->type != Tyvar)
         fatal(ctx->line, "%s incompatible with %s near %s", tystr(a), tystr(b), ctxstr(ctx));
 
     tytab[a->tid] = b;
     for (i = 0; i < b->nsub; i++) {
+        /* types must have same arity */
         if (i >= a->nsub)
             fatal(ctx->line, "%s incompatible with %s near %s", tystr(a), tystr(b), ctxstr(ctx));
-        /*
-         * FIXME: recurse properly.
+
+        /* FIXME: recurse properly.
+        matchcstrs(ctx, a, b);
         unify(ctx, a->sub[i], b->sub[i]);
         */
     }
