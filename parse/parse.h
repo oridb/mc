@@ -84,16 +84,10 @@ struct Type {
     int tid;
     size_t nsub;      /* For fnsub, tusub, sdecls, udecls, edecls. */
     Bitset *cstrs;    /* the type constraints matched on this type */
+    Type **sub;       /* sub-types; shared by all composite types */
     union {
-        Node *name;   /* Tyname: unresolved name */
-        Type **fnsub; /* Tyfunc: return, args */
-        Type **tusub; /* Tytuple: element types */
-        Type *pbase;  /* Typtr: pointer target */
-        Type *sbase;  /* Tyslice: slice target */
-        struct {      /* Tyarray: array target and size */
-            Type *abase;
-            Node *asize;
-        };
+        Node *name;    /* Tyname: unresolved name */
+        Node *asize;   /* array size */
         char *pname;   /* Typaram: name of type parameter */
         Node **sdecls; /* Tystruct: decls in struct */
         Node **udecls; /* Tyunion: decls in union */

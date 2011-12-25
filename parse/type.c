@@ -124,7 +124,8 @@ Type *mktyarray(int line, Type *base, Node *sz)
     Type *t;
 
     t = mkty(line, Tyarray);
-    t->abase = base;
+    t->sub = xalloc(sizeof(Type*));
+    t->sub[0] = base;
     t->asize = sz;
 
     return t;
@@ -135,7 +136,8 @@ Type *mktyslice(int line, Type *base)
     Type *t;
 
     t = mkty(line, Tyslice);
-    t->sbase = base;
+    t->sub = xalloc(sizeof(Type*));
+    t->sub[0] = base;
     return t;
 }
 
@@ -144,7 +146,8 @@ Type *mktyptr(int line, Type *base)
     Type *t;
 
     t = mkty(line, Typtr);
-    t->pbase = base;
+    t->sub = xalloc(sizeof(Type*));
+    t->sub[0] = base;
     return t;
 }
 
@@ -155,10 +158,10 @@ Type *mktyfunc(int line, Node **args, size_t nargs, Type *ret)
 
     t = mkty(line, Tyfunc);
     t->nsub = nargs + 1;
-    t->fnsub = xalloc((1 + nargs)*sizeof(Type));
-    t->fnsub[0] = ret;
+    t->sub = xalloc((1 + nargs)*sizeof(Type));
+    t->sub[0] = ret;
     for (i = 0; i < nargs; i++)
-        t->fnsub[i + 1] = decltype(args[i]);
+        t->sub[i + 1] = decltype(args[i]);
     return t;
 }
 
@@ -293,33 +296,33 @@ static int tybfmt(char *buf, size_t len, Type *t)
         case Tyvalist:  p += snprintf(p, end - p, "...");       break;
 
         case Typtr:     
-            p += tybfmt(p, end - p, t->pbase);
+            p += tybfmt(p, end - p, t->sub[0]);
             p += snprintf(p, end - p, "*");
             break;
         case Tyslice:
-            p += tybfmt(p, end - p, t->sbase);
+            p += tybfmt(p, end - p, t->sub[0]);
             p += snprintf(p, end - p, "[,]");
             break;
         case Tyarray:
-            p += tybfmt(p, end - p, t->abase);
+            p += tybfmt(p, end - p, t->sub[0]);
             p += snprintf(p, end - p, "[LEN]");
             break;
         case Tyfunc:
             p += snprintf(p, end - p, "(");
             for (i = 1; i < t->nsub; i++) {
                 p += snprintf(p, end - p, "%s", sep);
-                p += tybfmt(p, end - p, t->fnsub[i]);
+                p += tybfmt(p, end - p, t->sub[i]);
                 sep = ", ";
             }
             p += snprintf(p, end - p, " -> ");
-            p += tybfmt(p, end - p, t->fnsub[0]);
+            p += tybfmt(p, end - p, t->sub[0]);
             p += snprintf(p, end - p, ")");
             break;
         case Tytuple:
             p += snprintf(p, end - p, "[");
             for (i = 1; i < t->nsub; i++) {
                 p += snprintf(p, end - p, "%s", sep);
-                p += tybfmt(p, end - p, t->tusub[i]);
+                p += tybfmt(p, end - p, t->sub[i]);
                 sep = ", ";
             }
             p += snprintf(p, end - p, "]");
