@@ -324,6 +324,9 @@ static void infernode(Node *n)
         case Nuse:
         case Nlbl:
             break;
+        case Nnone:
+            die("Nnone should not be seen as node type!");
+            break;
     }
 }
 
@@ -389,6 +392,9 @@ static void typesub(Node *n)
         case Nlit:
         case Nuse:
         case Nlbl:
+            break;
+        case Nnone:
+            die("Nnone should not be seen as node type!");
             break;
     }
 }

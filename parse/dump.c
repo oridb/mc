@@ -161,6 +161,9 @@ static void outnode(Node *n, FILE *fd, int depth)
             }
             fprintf(fd, ")\n");
             break;
+        case Nnone:
+            die("Nnone a real node type!");
+            break;
     }
 }
 

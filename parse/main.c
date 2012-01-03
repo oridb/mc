@@ -26,6 +26,8 @@ int main(int argc, char **argv)
 {
     int opt;
     int i;
+    Node *rdback;
+    FILE *tmp;
 
     while ((opt = getopt(argc, argv, "dho:")) != -1) {
         switch (opt) {
@@ -50,7 +52,18 @@ int main(int argc, char **argv)
         file->file.exports = mkstab(NULL);
         file->file.globls = mkstab(NULL);
         yyparse();
+
         dump(file, stdout);
+
+        tmp = fopen("test.pkl", "w");
+        pickle(file, tmp);
+        fclose(tmp);
+
+        tmp = fopen("test.pkl", "r");
+        rdback = unpickle(tmp);
+        dump(rdback, stdout);
+        fclose(tmp);
+
         infer(file);
         dump(file, stdout);
         gen();

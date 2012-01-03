@@ -175,14 +175,14 @@ struct Node {
 
         struct {
             Sym *sym;
-            Node *init;
             int flags;
+            Node *init;
         } decl;
 
         struct {
             Stab *scope;
-            Node **args;
             size_t nargs;
+            Node **args;
             Node *body;
         } func;
     };
@@ -263,6 +263,7 @@ char *tystr(Type *t);
 void tlappend(Type ***tl, int *len, Type *t);
 
 /* node creation */
+Node *mknode(int line, Ntype nt);
 Node *mkfile(char *name);
 Node *mkuse(int line, char *use, int islocal);
 Node *mkexpr(int line, Op op, ...); /* NULL terminated */
@@ -304,6 +305,10 @@ char *opstr(Op o);
 char *nodestr(Ntype nt);
 char *litstr(Littype lt);
 char *tidstr(Ty tid);
+
+/* serialization/usefiles */
+void pickle(Node *n, FILE *fd);
+Node *unpickle(FILE *fd);
 
 /* convenience func */
 void nlappend(Node ***nl, size_t *len, Node *n);

@@ -12,7 +12,7 @@
 
 #include "parse.h"
 
-static Node *mknode(int line, Ntype nt)
+Node *mknode(int line, Ntype nt)
 {
     Node *n;
 

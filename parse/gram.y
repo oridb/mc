@@ -149,6 +149,7 @@ Stab *curscope;
 %%
 
 module  : file
+        | /* empty */
         ;
 
 file    : toplev
