@@ -171,11 +171,22 @@ static void wrsym(FILE *fd, Sym *val)
 
 static void wrtype(FILE *fd, Type *t)
 {
+    char *enc;
+
+    enc = tyenc(t);
+    wrstr(fd, enc);
+    free(enc);
 }
 
 /*static*/ Type *rdtype(FILE *fd)
 {
-    return mktyvar(-1);
+    Type *t;
+    char *s;
+
+    s = rdstr(fd);
+    t = tydec(s);
+    free(s);
+    return t;
 }
 
 /* pickle format:

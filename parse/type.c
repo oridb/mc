@@ -366,6 +366,151 @@ char *tystr(Type *t)
     return strdup(buf);
 }
 
+static struct {
+    char enc;    /* character to encode */
+    int special; /* 0 => atomic, 1 => unary, 2 => nary, -1 => special-cased */
+} enctab[] = {
+    [Tybad]     = {'\0',0},
+    [Tyvoid]    = {'z', 0},
+
+    [Tybool]    = {'t', 0},
+    [Tychar]    = {'c', 0},
+
+    [Tyint8]    = {'h', 0},
+    [Tyint16]   = {'s', 0},
+    [Tyint]     = {'i', 0},
+    [Tyint32]   = {'l', 0},
+    [Tyint64]   = {'q', 0},
+    [Tylong]    = {'v', 0},
+
+    [Tybyte]    = {'b', 0},
+    [Tyuint8]   = {'H', 0},
+    [Tyuint16]  = {'S', 0},
+    [Tyuint]    = {'I', 0},
+    [Tyuint32]  = {'L', 0},
+    [Tyuint64]  = {'Q', 0},
+    [Tyulong]   = {'V', 0},
+
+    [Tyfloat32] = {'f', 0},
+    [Tyfloat64] = {'F', 0},
+
+    [Tyvalist]  = {'.', 1},
+    [Typtr]     = {'*', 1},
+    [Tyslice]   = {':', 1},
+    [Tyarray]   = {'$', 1},
+    [Tyfunc]    = {'<', 2},
+    [Tytuple]   = {',', 2},
+    [Tyvar]     = {'#', -1},
+    [Typaram]   = {'@', -1},
+    [Tyname]    = {'%', -1},
+    [Tystruct]  = {'^', -1},
+    [Tyunion]   = {'!', -1},
+    [Tyenum]    = {'/', -1},
+    [Ntypes]    = {'\0', 0}
+};
+
+static int encbuf(Type *t, char *buf, size_t len)
+{
+    char *p;
+    char *end;
+    int i;
+
+    p = buf;
+    end = buf + len;
+
+    if (len <= 0)
+        return 0;
+    *p++ = enctab[t->type].enc;
+    if (enctab[t->type].special == 1) {
+        encbuf(t->sub[0], p, end - p);
+    } else if (enctab[t->type].special == 2) {
+        p += snprintf(p, end - p, "%zd", t->nsub);
+        for (i = 0; i < t->nsub; i++)
+            encbuf(t->sub[i], p, end - p);
+    } else if (enctab[t->type].special == -1) {
+        switch (t->type) {
+            case Tyname:        p += namefmt(p, end - p, t->name); break;
+            default:
+                die("type %s should not be special", tystr(t));
+        }
+        /* all special forms end with ';' */
+        snprintf(p, end - p, ";");
+    } else {
+        die("Don't know how to encode %s", tystr(t));
+    }
+    return p - buf;
+}
+
+char *tyenc(Type *t)
+{
+    char buf[1024];
+
+    encbuf(t, buf, 1024);
+    return strdup(buf);
+}
+
+static Type *decname(char *p)
+{
+    char *name;
+    char *parts[16];
+    char *startp;
+    int i;
+    Node *n;
+
+    i = 0;
+    name = p;
+    startp = p;
+    while (1) {
+        if (*p == '.' || *p == ';') {
+            if (i == 16)
+                die("too many parts to name %s", name);
+            parts[i++] = strdupn(startp, p - startp);
+            startp = p;
+        }
+        if (!*p)
+            die("bad decoded name %s", name);
+        if (*p == ';')
+            break;
+        if (*p == '.')
+            p++;
+        p++;
+    }
+
+    n = mkname(-1, parts[i - 1]);
+    i--;
+    for (; i > 0; i--)
+        setns(n, parts[i - 1]);
+    return mktynamed(-1, n);
+}
+
+Type *tydec(char *p)
+{
+    Ty i;
+    Type *t;
+
+    for (i = 0; i < Ntypes; i++) {
+        if (enctab[i].enc == *p)
+            break;
+    }
+    p++;
+    if (enctab[i].special == 0) {
+        t = mkty(-1, i);
+    } else if (enctab[i].special == 1) {
+        t = mkty(-1, i);
+        t->nsub = 1;
+        t->sub = xalloc(sizeof(Type*));
+        t->sub[0] = tydec(p);
+    } else {
+        switch (i) {
+            case Tyname: t = decname(p); break;
+            default:
+                die("Unimplemented tydec for %s", p);
+                break;
+        }
+    }
+    return t;
+}
+
 void tyinit(void)
 {
     int i;

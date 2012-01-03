@@ -259,6 +259,8 @@ int cstreq(Type *t, Cstr **cstrs, size_t len);
 int constrain(Type *t, Cstr *c);
 char *tyfmt(char *buf, size_t len, Type *t);
 char *tystr(Type *t);
+char *tyenc(Type *t);
+Type *tydec(char *s);
 
 void tlappend(Type ***tl, int *len, Type *t);
 
