@@ -334,6 +334,7 @@ static int tybfmt(char *buf, size_t len, Type *t)
             p += snprintf(p, end - p, "@%s", t->pname);
             break;
         case Tyname:
+            p += snprintf(p, end - p, "?"); /* indicate unresolved name. should not be seen by user. */
             p += namefmt(p, end - p, t->name);
             break;
         case Tystruct:
