@@ -523,7 +523,7 @@ block   : blockbody TEndblk
 blockbody
         : stmt
             {
-                $$ = mkblock(line, NULL);
+                $$ = mkblock(line, mkstab(curscope));
                 nlappend(&$$->block.stmts, &$$->block.nstmts, $1);
             }
         | blockbody stmt

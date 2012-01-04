@@ -103,6 +103,7 @@ Node *mkfunc(int line, Node **args, size_t nargs, Node *body)
     f->func.args = args;
     f->func.nargs = nargs;
     f->func.body = body;
+    f->func.scope = mkstab(curscope);
 
     n = mknode(line, Nlit);
     n->lit.littype = Lfunc;
