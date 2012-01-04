@@ -9,18 +9,42 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-#ifndef _BSD_SOURCE
-#define _BSD_SOURCE
-#endif
-#include <endian.h>
+#include <arpa/inet.h>
 
 #include "parse.h"
+
 static void wrtype(FILE *fd, Type *val);
 static Type *rdtype(FILE *fd);
 static void wrstab(FILE *fd, Stab *val);
 static Stab *rdstab(FILE *fd);
 static void wrsym(FILE *fd, Sym *val);
 static Sym *rdsym(FILE *fd);
+
+static vlong be64(vlong v)
+{
+    if (htonl(42) != 42)
+        return ((vlong)htonl(v >> 32) << 32) | htonl((uint32_t)v);
+    else
+        return v;
+}
+
+static vlong host64(vlong v)
+{
+    if (htonl(42) != 42) /* we need to swap */
+        return (vlong)ntohl(v >> 32) << 32 | htonl((uint32_t)v);
+    else
+        return v;
+}
+
+static long be32(long v)
+{
+    return htonl(v);
+}
+
+static long host32(long v)
+{
+    return ntohl(v);
+}
 
 static void wrbyte(FILE *fd, char val)
 {
@@ -39,7 +63,7 @@ static void wrbyte(FILE *fd, char val)
 
 static void wrint(FILE *fd, int32_t val)
 {
-    val = htobe32(val);
+    val = be32(val);
     if (fwrite(&val, sizeof(int32_t), 1, fd) == EOF)
         die("Unexpected EOF");
 }
@@ -50,7 +74,7 @@ static void wrint(FILE *fd, int32_t val)
 
     if (fread(&val, sizeof(uint32_t), 1, fd) == EOF)
         die("Unexpected EOF");
-    return be32toh(val);
+    return host32(val);
 }
 
 static void wrstr(FILE *fd, char *val)
@@ -90,7 +114,7 @@ static void wrflt(FILE *fd, double val)
     } u;
 
     u.fval = val;
-    u.ival = htobe64(u.ival);
+    u.ival = be64(u.ival);
     if (fwrite(&u.ival, sizeof(uvlong), 1, fd) == EOF)
         die("Unexpected EOF");
 }
@@ -104,7 +128,7 @@ static void wrflt(FILE *fd, double val)
 
     if (fread(&u.ival, sizeof(uvlong), 1, fd) == EOF)
         die("Unexpected EOF");
-    u.ival = be64toh(u.ival);
+    u.ival = host64(u.ival);
     return u.fval;
 }
 
