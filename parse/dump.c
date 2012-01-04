@@ -18,18 +18,24 @@ static void indent(FILE *fd, int depth)
         fprintf(fd, " ");
 }
 
-static void outsym(Sym *s, FILE *fd, int depth)
+static void outname(Node *n, FILE *fd)
 {
     int i;
+    char *sep;
+    
+    sep = "";
+    for (i = 0; i < n->name.nparts; i++) {
+        fprintf(fd, "%s%s", sep, n->name.parts[i]);
+        sep = ".";
+    }
+}
+
+static void outsym(Sym *s, FILE *fd, int depth)
+{
     char buf[1024];
 
     indent(fd, depth);
-    fprintf(fd, "Sym ");
-    for (i = 0; i < s->name->name.nparts; i++) {
-        fprintf(fd, "%s", s->name->name.parts[i]);
-        if (i != s->name->name.nparts - 1)
-            fprintf(fd, ".");
-    }
+    outname(s->name, fd);
     fprintf(fd, " : %s\n", tyfmt(buf, 1024, s->type));
 }
 
@@ -40,24 +46,38 @@ void dumpsym(Sym *s, FILE *fd)
 
 static void outstab(Stab *st, FILE *fd, int depth)
 {
-    int i;
+    int i, n;
+    void **k;
+    char *ty;
 
     indent(fd, depth);
     fprintf(fd, "Stab %p (super = %p)\n", st, st ? st->super : NULL);
     if (!st)
         return;
-    for (i = 0; i < st->ntypes; i++) {
+
+    /* print types */
+    k = htkeys(st->ty, &n);
+    for (i = 0; i < n; i++) {
         indent(fd, depth + 1);
         fprintf(fd, "T ");
         /* already indented */
-        outsym(st->types[i], fd, 0);
+        outname(k[i], fd); 
+        ty = tystr(gettype(st, k[i]));
+        fprintf(fd, " = %s", ty);
+        free(ty);
     }
-    for (i = 0; i < st->nsyms; i++) {
+    free(k);
+
+    k = htkeys(st->dcl, &n);
+    for (i = 0; i < n; i++) {
         indent(fd, depth + 1);
-        fprintf(fd, "V ");
+        fprintf(fd, "S ");
         /* already indented */
-        outsym(st->syms[i], fd, 0);
+        outsym(getdcl(st, k[i]), fd, 0);
     }
+    
+    /* FIXME: dump namespaces */
+    free(k);
 }
 
 void dumpstab(Stab *st, FILE *fd)

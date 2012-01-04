@@ -74,17 +74,15 @@ struct Tok {
 
 struct Stab {
     Stab *super;
-    char *name;
+    Node *name;
 
     /* Contents of stab.
      * types and values are in separate namespaces. */
-    size_t ntypes;
-    Sym **types;
-    size_t nsyms;
-    Sym **syms;
+    Htab *ns;
+    Htab *dcl;
+    Htab *ty;
 };
 
-/* reused for both decls and types */
 struct Sym {
     int   line;
     Node *name;
@@ -94,8 +92,8 @@ struct Sym {
 struct Type {
     Ty type;
     int tid;
-    size_t nsub;      /* For fnsub, tusub, sdecls, udecls, edecls. */
     Bitset *cstrs;    /* the type constraints matched on this type */
+    size_t nsub;      /* For fnsub, tusub, sdecls, udecls, edecls. */
     Type **sub;       /* sub-types; shared by all composite types */
     union {
         Node *name;    /* Tyname: unresolved name */
@@ -231,7 +229,7 @@ Htab *mkht(ulong (*hash)(void *key), int (*cmp)(void *k1, void *k2));
 int htput(Htab *ht, void *k, void *v);
 void *htget(Htab *ht, void *k);
 int hthas(Htab *ht, void *k);
-void **htkeys(Htab *ht);
+void **htkeys(Htab *ht, int *nkeys);
 /* useful key types */
 ulong strhash(void *str);
 int streq(void *s1, void *s2);
@@ -253,8 +251,15 @@ int yyparse(void);
 
 /* stab creation */
 Stab *mkstab(Stab *super);
-Stab *stput(Sym *decl);
-Sym  *stget(char *name);
+
+void putns(Stab *st, Stab *scope);
+void puttype(Stab *st, Node *n, Type *ty);
+void putdcl(Stab *st, Sym *s);
+
+Stab *getns(Stab *st, Node *n);
+Sym *getdcl(Stab *st, Node *n);
+Type *gettype(Stab *st, Node *n);
+
 Sym *mksym(int line, Node *name, Type *ty);
 
 /* type creation */
@@ -280,8 +285,6 @@ int cstreq(Type *t, Cstr **cstrs, size_t len);
 int constrain(Type *t, Cstr *c);
 char *tyfmt(char *buf, size_t len, Type *t);
 char *tystr(Type *t);
-char *tyenc(Type *t);
-Type *tydec(char *s);
 
 void tlappend(Type ***tl, int *len, Type *t);
 
@@ -311,8 +314,6 @@ Node *mklabel(int line, char *lbl);
 Type *decltype(Node *n);
 void addstmt(Node *file, Node *stmt);
 void setns(Node *n, char *name);
-void def(Stab *s, Node *n);
-void deftype(int line, Stab *s, char *name, Type *t);
 
 /* usefiles */
 void readuse(Node *use, Stab *into);
@@ -335,7 +336,6 @@ Node *unpickle(FILE *fd);
 
 /* convenience func */
 void nlappend(Node ***nl, size_t *len, Node *n);
-void slappend(Sym ***sl, size_t *len, Sym *s);
 
 /* backend functions */
 void gen();

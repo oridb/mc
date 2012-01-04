@@ -52,7 +52,7 @@ static void wrbyte(FILE *fd, char val)
         die("Unexpected EOF");
 }
 
-/*static*/ char rdbyte(FILE *fd)
+static char rdbyte(FILE *fd)
 {
     int c;
     c = fgetc(fd);
@@ -68,7 +68,7 @@ static void wrint(FILE *fd, int32_t val)
         die("Unexpected EOF");
 }
 
-/*static*/ int32_t rdint(FILE *fd)
+static int32_t rdint(FILE *fd)
 {
     uint32_t val;
 
@@ -137,39 +137,70 @@ static void wrbool(FILE *fd, int val)
     wrbyte(fd, val);
 }
 
-/*static*/ int rdbool(FILE *fd)
+static int rdbool(FILE *fd)
 {
     return rdbyte(fd);
 }
 
 static void wrstab(FILE *fd, Stab *val)
 {
-    int i;
+    int n, i;
+    void **keys;
 
-    wrstr(fd, val->name);
-    wrint(fd, val->ntypes);
-    for (i = 0; i < val->ntypes; i++)
-        wrsym(fd, val->types[i]);
-    wrint(fd, val->nsyms);
-    for (i = 0; i < val->nsyms; i++)
-        wrsym(fd, val->syms[i]);
+    pickle(val->name, fd);
+
+    /* write decls */
+    keys = htkeys(val->dcl, &n);
+    wrint(fd, n);
+    for (i = 0; i < n; i++)
+        wrsym(fd, htget(val->dcl, keys[i]));
+    free(keys);
+
+    /* write types */
+    keys = htkeys(val->ty, &n);
+    wrint(fd, n);
+    for (i = 0; i < n; i++) {
+        pickle(keys[i], fd); /* name */
+        wrtype(fd, htget(val->ty, keys[i])); /* type */
+    }
+    free(keys);
+
+    /* write stabs */
+    keys = htkeys(val->ns, &n);
+    wrint(fd, n);
+    for (i = 0; i < n; i++)
+        wrstab(fd, htget(val->ns, keys[i]));
+    free(keys);
 }
 
-/*static*/ Stab *rdstab(FILE *fd)
+static Stab *rdstab(FILE *fd)
 {
     Stab *st;
+    Type *ty;
+    Node *nm;
+    int n;
     int i;
 
+    /* read dcls */
     st = mkstab(NULL);
-    st->name = rdstr(fd);
-    st->ntypes = rdint(fd);
-    st->types = xalloc(sizeof(Sym*)*st->ntypes);
-    for (i = 0; i < st->ntypes; i++)
-        st->types[i] = rdsym(fd);
-    st->nsyms = rdint(fd);
-    st->syms = xalloc(sizeof(Sym*)*st->nsyms);
-    for (i = 0; i < st->nsyms; i++)
-        st->syms[i] = rdsym(fd);
+    st->name = unpickle(fd);
+    n = rdint(fd);
+    for (i = 0; i < n; i++)
+         putdcl(st, rdsym(fd));
+
+    /* read types */
+    n = rdint(fd);
+    for (i = 0; i < n; i++) {
+        nm = unpickle(fd);
+        ty = rdtype(fd);
+        puttype(st, nm, ty);
+    }
+
+    /* read stabs */
+    n = rdint(fd);
+    for (i = 0; i < n; i++)
+        putns(st, rdstab(fd));
+
     return st;
 }
 
@@ -180,7 +211,7 @@ static void wrsym(FILE *fd, Sym *val)
     wrtype(fd, val->type);
 }
 
-/*static*/ Sym *rdsym(FILE *fd)
+static Sym *rdsym(FILE *fd)
 {
     int line;
     Node *name;
@@ -193,24 +224,90 @@ static void wrsym(FILE *fd, Sym *val)
 }
 
 
-static void wrtype(FILE *fd, Type *t)
+static void wrtype(FILE *fd, Type *ty)
 {
-    char *enc;
+    int i;
 
-    enc = tyenc(t);
-    wrstr(fd, enc);
-    free(enc);
+    if (!ty) {
+        wrbyte(fd, Tybad);
+        return;
+    }
+    wrbyte(fd, ty->type);
+    /* tid is generated; don't write */
+    /* cstrs are left out for now: FIXME */
+    wrint(fd, ty->nsub);
+    switch (ty->type) {
+        case Tyname:
+            pickle(ty->name, fd);
+            break;
+        case Typaram:   
+            wrstr(fd, ty->pname);
+            break;
+        case Tystruct: 
+            for (i = 0; i < ty->nsub; i++)
+                pickle(ty->sdecls[i], fd);
+            break;
+        case Tyunion: 
+            for (i = 0; i < ty->nsub; i++)
+                pickle(ty->udecls[i], fd);
+            break;
+        case Tyenum: 
+            for (i = 0; i < ty->nsub; i++)
+                pickle(ty->edecls[i], fd);
+            break;
+        case Tyarray:
+            wrtype(fd, ty->sub[0]);
+            pickle(ty->asize, fd);
+            break;
+        default:
+            for (i = 0; i < ty->nsub; i++)
+                wrtype(fd, ty->sub[i]);
+            break;
+    }
 }
 
-/*static*/ Type *rdtype(FILE *fd)
+static Type *rdtype(FILE *fd)
 {
-    Type *t;
-    char *s;
+    Type *ty;
+    Ty t;
+    int i;
 
-    s = rdstr(fd);
-    t = tydec(s);
-    free(s);
-    return t;
+    t = rdbyte(fd);
+    if (t == Tybad)
+        return NULL;
+    ty = mkty(-1, t);
+    /* tid is generated; don't write */
+    /* cstrs are left out for now: FIXME */
+    ty->nsub = rdint(fd);
+    switch (ty->type) {
+        case Tyname:
+            ty->name = unpickle(fd);
+            break;
+        case Typaram:   
+            ty->pname = rdstr(fd);
+            break;
+        case Tystruct: 
+            for (i = 0; i < ty->nsub; i++)
+                ty->sdecls[i] = unpickle(fd);
+            break;
+        case Tyunion: 
+            for (i = 0; i < ty->nsub; i++)
+                ty->udecls[i] = unpickle(fd);
+            break;
+        case Tyenum: 
+            for (i = 0; i < ty->nsub; i++)
+                ty->edecls[i] = unpickle(fd);
+            break;
+        case Tyarray:
+            ty->sub[0] = rdtype(fd);
+            ty->asize = unpickle(fd);
+            break;
+        default:
+            for (i = 0; i < ty->nsub; i++)
+                ty->sub[i] = rdtype(fd);
+            break;
+    }
+    return ty;
 }
 
 /* pickle format:
