@@ -1,7 +1,8 @@
 BIN=pt
-OBJ=dump.o \
-    ds.o \
+OBJ=bitset.o \
+    dump.o \
     gram.o \
+    htab.o \
     infer.o \
     main.o \
     names.o \

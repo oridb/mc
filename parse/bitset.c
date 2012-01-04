@@ -113,4 +113,3 @@ void bsdiff(Bitset *a, Bitset *b)
     for (i = 0; i < a->nchunks; i++)
         a->chunks[i] &= ~b->chunks[i];
 }
-

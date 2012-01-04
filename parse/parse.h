@@ -4,6 +4,7 @@ typedef long long       vlong;
 typedef unsigned long long uvlong;
 
 typedef struct Bitset Bitset;
+typedef struct Htab Htab;
 
 typedef struct Tok Tok;
 typedef struct Node Node;
@@ -52,6 +53,16 @@ typedef enum {
 struct Bitset {
     int nchunks;
     uint *chunks;
+};
+
+struct Htab {
+    size_t nelt;
+    size_t sz;
+    ulong (*hash)(void *k);
+    int (*cmp)(void *a, void *b);
+    void **keys;
+    void **vals;
+    ulong *hashes;
 };
 
 struct Tok {
@@ -214,6 +225,15 @@ void bsunion(Bitset *a, Bitset *b);
 void bsintersect(Bitset *a, Bitset *b);
 void bsdiff(Bitset *a, Bitset *b);
 int  bscount(Bitset *bs);
+
+Htab *mkht(ulong (*hash)(void *key), int (*cmp)(void *k1, void *k2));
+int htput(Htab *ht, void *k, void *v);
+void *htget(Htab *ht, void *k);
+int hthas(Htab *ht, void *k);
+void **htkeys(Htab *ht);
+/* useful key types */
+ulong strhash(void *str);
+ulong streq(void *s1, void *s2);
 
 /* util functions */
 void *zalloc(size_t size);
