@@ -228,6 +228,10 @@ static void wrtype(FILE *fd, Type *ty)
 {
     int i;
 
+    if (!ty) {
+        wrbyte(fd, Tybad);
+        return;
+    }
     wrbyte(fd, ty->type);
     /* tid is generated; don't write */
     /* cstrs are left out for now: FIXME */
@@ -269,6 +273,8 @@ static Type *rdtype(FILE *fd)
     int i;
 
     t = rdbyte(fd);
+    if (t == Tybad)
+        return NULL;
     ty = mkty(-1, t);
     /* tid is generated; don't write */
     /* cstrs are left out for now: FIXME */

@@ -34,10 +34,12 @@ static int cstrcheck(Type *a, Type *b)
     Bitset *s;
     int n;
 
-    if (a->cstrs)
+    /* a has no cstrs to satisfy */
+    if (!a->cstrs)
         return 1;
+    /* b satisfies no cstrs; only valid if a requires none */
     if (!b->cstrs)
-        return 0;
+        return bscount(a->cstrs) == 0;
     /* if b->cstrs \ a->cstrs == 0, then all of
      * a's constraints are satisfied. */
     s = dupbs(b->cstrs);
