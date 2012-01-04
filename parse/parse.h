@@ -233,7 +233,7 @@ int hthas(Htab *ht, void *k);
 void **htkeys(Htab *ht);
 /* useful key types */
 ulong strhash(void *str);
-ulong streq(void *s1, void *s2);
+int streq(void *s1, void *s2);
 
 /* util functions */
 void *zalloc(size_t size);

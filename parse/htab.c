@@ -134,3 +134,26 @@ void **htkeys(Htab *ht)
             k[j++] = ht->keys[i];
     return k;
 }
+
+ulong strhash(void *_s)
+{
+    char *s;
+    ulong h;
+    ulong g;
+
+    s = _s;
+    while (s && *s) {
+        h = ((h << 4) + *s++);
+
+        if ((g = (h & 0xF0000000)))
+            h ^= (g >> 24);
+
+        h &= ~g;
+    }
+    return h;
+}
+
+int streq(void *a, void *b)
+{
+    return !strcmp(a, b);
+}
