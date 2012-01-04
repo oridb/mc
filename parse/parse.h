@@ -94,8 +94,8 @@ struct Sym {
 struct Type {
     Ty type;
     int tid;
-    size_t nsub;      /* For fnsub, tusub, sdecls, udecls, edecls. */
     Bitset *cstrs;    /* the type constraints matched on this type */
+    size_t nsub;      /* For fnsub, tusub, sdecls, udecls, edecls. */
     Type **sub;       /* sub-types; shared by all composite types */
     union {
         Node *name;    /* Tyname: unresolved name */
@@ -280,8 +280,6 @@ int cstreq(Type *t, Cstr **cstrs, size_t len);
 int constrain(Type *t, Cstr *c);
 char *tyfmt(char *buf, size_t len, Type *t);
 char *tystr(Type *t);
-char *tyenc(Type *t);
-Type *tydec(char *s);
 
 void tlappend(Type ***tl, int *len, Type *t);
 

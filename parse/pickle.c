@@ -193,24 +193,84 @@ static void wrsym(FILE *fd, Sym *val)
 }
 
 
-static void wrtype(FILE *fd, Type *t)
+static void wrtype(FILE *fd, Type *ty)
 {
-    char *enc;
+    int i;
 
-    enc = tyenc(t);
-    wrstr(fd, enc);
-    free(enc);
+    wrbyte(fd, ty->type);
+    /* tid is generated; don't write */
+    /* cstrs are left out for now: FIXME */
+    wrint(fd, ty->nsub);
+    switch (ty->type) {
+        case Tyname:
+            pickle(ty->name, fd);
+            break;
+        case Typaram:   
+            wrstr(fd, ty->pname);
+            break;
+        case Tystruct: 
+            for (i = 0; i < ty->nsub; i++)
+                pickle(ty->sdecls[i], fd);
+            break;
+        case Tyunion: 
+            for (i = 0; i < ty->nsub; i++)
+                pickle(ty->udecls[i], fd);
+            break;
+        case Tyenum: 
+            for (i = 0; i < ty->nsub; i++)
+                pickle(ty->edecls[i], fd);
+            break;
+        case Tyarray:
+            wrtype(fd, ty->sub[0]);
+            pickle(ty->asize, fd);
+            break;
+        default:
+            for (i = 0; i < ty->nsub; i++)
+                wrtype(fd, ty->sub[i]);
+            break;
+    }
 }
 
 /*static*/ Type *rdtype(FILE *fd)
 {
-    Type *t;
-    char *s;
+    Type *ty;
+    Ty t;
+    int i;
 
-    s = rdstr(fd);
-    t = tydec(s);
-    free(s);
-    return t;
+    t = rdbyte(fd);
+    ty = mkty(-1, t);
+    /* tid is generated; don't write */
+    /* cstrs are left out for now: FIXME */
+    ty->nsub = rdint(fd);
+    switch (ty->type) {
+        case Tyname:
+            ty->name = unpickle(fd);
+            break;
+        case Typaram:   
+            ty->pname = rdstr(fd);
+            break;
+        case Tystruct: 
+            for (i = 0; i < ty->nsub; i++)
+                ty->sdecls[i] = unpickle(fd);
+            break;
+        case Tyunion: 
+            for (i = 0; i < ty->nsub; i++)
+                ty->udecls[i] = unpickle(fd);
+            break;
+        case Tyenum: 
+            for (i = 0; i < ty->nsub; i++)
+                ty->edecls[i] = unpickle(fd);
+            break;
+        case Tyarray:
+            ty->sub[0] = rdtype(fd);
+            ty->asize = unpickle(fd);
+            break;
+        default:
+            for (i = 0; i < ty->nsub; i++)
+                ty->sub[i] = rdtype(fd);
+            break;
+    }
+    return ty;
 }
 
 /* pickle format:
