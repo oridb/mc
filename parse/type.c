@@ -430,7 +430,12 @@ static int encbuf(Type *t, char *buf, size_t len)
             encbuf(t->sub[i], p, end - p);
     } else if (enctab[t->type].special == -1) {
         switch (t->type) {
-            case Tyname:        p += namefmt(p, end - p, t->name); break;
+            case Tyname:  p += namefmt(p, end - p, t->name); break;
+            case Tyvar:   die("Tyvar is not encodable");  break;
+            case Typaram: p += snprintf(p, end - p, "%s;", t->pname); break;
+            case Tystruct:
+            case Tyunion:
+            case Tyenum:
             default:
                 die("type %s should not be special", tystr(t));
         }
