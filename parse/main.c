@@ -53,18 +53,23 @@ int main(int argc, char **argv)
         file->file.globls = mkstab(NULL);
         yyparse();
 
+        /* before we do anything to the parse */
         dump(file, stdout);
 
+        infer(file);
+
+        /* test storing tree to file */
         tmp = fopen("test.pkl", "w");
         pickle(file, tmp);
         fclose(tmp);
 
+        /* and reading it back */
         tmp = fopen("test.pkl", "r");
         rdback = unpickle(tmp);
         dump(rdback, stdout);
         fclose(tmp);
 
-        infer(file);
+        /* after all processing */
         dump(file, stdout);
         gen();
     }
