@@ -159,7 +159,7 @@ file    : toplev
 toplev
         : decl
             {nlappend(&file->file.stmts, &file->file.nstmts, $1);
-             def(file->file.globls, $1);}
+             putdcl(file->file.globls, $1->decl.sym);}
         | use
             {nlappend(&file->file.uses, &file->file.nuses, $1);}
         | package
@@ -196,8 +196,8 @@ pkgbody : pkgitem
         | pkgbody pkgitem
         ;
 
-pkgitem : decl {def(file->file.exports, $1);}
-        | tydef {deftype($1.line, file->file.exports, $1.name, $1.type);}
+pkgitem : decl {putdcl(file->file.exports, $1->decl.sym);}
+        | tydef {puttype(file->file.exports, $1.name, $1.type);}
         | visdef {die("Unimplemented visdef");}
         | TEndln
         ;

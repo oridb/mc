@@ -199,29 +199,6 @@ Type *decltype(Node *n)
     return n->decl.sym->type;
 }
 
-void def(Stab *s, Node *n)
-{
-    assert(n->type == Ndecl);
-    slappend(&s->syms, &s->nsyms, n->decl.sym);
-}
-
-void deftype(int line, Stab *s, char *name, Type *ty)
-{
-    Sym *tysym;
-
-    tysym = mksym(line, mkname(line, name), ty);
-    slappend(&s->types, &s->ntypes, tysym);
-}
-
-Stab *mkstab(Stab *super)
-{
-    Stab *st;
-
-    st = zalloc(sizeof(Stab));
-    st->super = super;
-    return st;
-}
-
 void setns(Node *n, char *name)
 {
     int i;
@@ -244,17 +221,6 @@ Node *mkbool(int line, int val)
     return n;
 }
 
-Sym *mksym(int line, Node *name, Type *ty)
-{
-    Sym *sym;
-
-    sym = zalloc(sizeof(Sym));
-    sym->name = name;
-    sym->type = ty;
-    sym->line = line;
-    return sym;
-}
-
 void nlappend(Node ***nl, size_t *len, Node *n)
 {
     *nl = xrealloc(*nl, (*len + 1)*sizeof(Node*));
@@ -262,9 +228,3 @@ void nlappend(Node ***nl, size_t *len, Node *n)
     (*len)++;
 }
 
-void slappend(Sym ***sl, size_t *len, Sym *s)
-{
-    *sl = xrealloc(*sl, (*len + 1)*sizeof(Node*));
-    (*sl)[*len] = s;
-    (*len)++;
-}

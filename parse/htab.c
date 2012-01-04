@@ -122,7 +122,7 @@ int hthas(Htab *ht, void *k)
     return htidx(ht, k) >= 0;
 }
 
-void **htkeys(Htab *ht)
+void **htkeys(Htab *ht, int *nkeys)
 {
     void **k;
     int i, j;
@@ -132,6 +132,7 @@ void **htkeys(Htab *ht)
     for (i = 0; i < ht->sz; i++)
         if (ht->hashes[i])
             k[j++] = ht->keys[i];
+    *nkeys = ht->nelt;
     return k;
 }
 
@@ -142,6 +143,7 @@ ulong strhash(void *_s)
     ulong g;
 
     s = _s;
+    h = 0;
     while (s && *s) {
         h = ((h << 4) + *s++);
 
