@@ -19,6 +19,24 @@ struct Tydefn {
     Type *type;
 };
 
+#define Maxstabdepth 128
+static Stab *stabstk[Maxstabdepth];
+static int stabstkoff;
+Stab *curstab()
+{
+    return stabstk[stabstkoff - 1];
+}
+
+void pushstab(Stab *st)
+{
+    stabstk[stabstkoff++] = st;
+}
+
+void popstab(void)
+{
+    stabstkoff--;
+}
+
 
 static char *name(Node *n)
 {
