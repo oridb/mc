@@ -197,7 +197,9 @@ pkgbody : pkgitem
         ;
 
 pkgitem : decl {putdcl(file->file.exports, $1->decl.sym);}
-        | tydef {puttype(file->file.exports, $1.name, $1.type);}
+        | tydef {puttype(file->file.exports, 
+                         mkname($1.line, $1.name),
+                         $1.type);}
         | visdef {die("Unimplemented visdef");}
         | TEndln
         ;
@@ -523,7 +525,7 @@ block   : blockbody TEndblk
 blockbody
         : stmt
             {
-                $$ = mkblock(line, mkstab(curscope));
+                $$ = mkblock(line, mkstab(curstab()));
                 nlappend(&$$->block.stmts, &$$->block.nstmts, $1);
             }
         | blockbody stmt

@@ -12,6 +12,7 @@
 
 #include "parse.h"
 
+
 /* find the most accurate type mapping */
 static Type *tf(Type *t)
 {
@@ -165,6 +166,7 @@ static void unifycall(Node *n)
 static void inferexpr(Node *n, Type *ret)
 {
     Node **args;
+    Sym *s;
     int nargs;
     Type *t;
     int i;
@@ -262,7 +264,11 @@ static void inferexpr(Node *n, Type *ret)
             settype(n, mkty(-1, Tyvoid));
             break;
         case Ovar:      /* a:@a -> @a */
-            settype(n, decltype(n));
+            s = getdcl(curstab(), n);
+            if (!s)
+                fatal(n->line, "Undeclared var");
+            else
+                settype(n, s->type);
             break;
         case Olit:      /* <lit>:@a::tyclass -> @a */
             settype(n, type(args[0]));
@@ -296,8 +302,10 @@ static void infernode(Node *n)
 
     switch (n->type) {
         case Nfile:
+            pushstab(n->file.globls);
             for (i = 0; i < n->file.nstmts; i++)
                 infernode(n->file.stmts[i]);
+            popstab();
             break;
         case Ndecl:
             inferdecl(n);

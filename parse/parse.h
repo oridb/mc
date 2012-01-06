@@ -80,6 +80,7 @@ struct Stab {
      * types and values are in separate namespaces. */
     Htab *ns;
     Htab *dcl;
+    Htab *closure; /* the syms we close over */
     Htab *ty;
 };
 
@@ -205,7 +206,6 @@ extern int ignorenl;    /* are '\n' chars currently stmt separators? */
 extern Tok *curtok;     /* the last token we tokenized */
 extern int line;        /* the last line number we tokenized */
 extern Node *file;      /* the current file we're compiling */
-extern Stab *curscope;  /* the current scope to insert symbols into */
 extern Type **tytab;    /* type -> type map used by inference. size maintained by type creation code */
 extern int ntypes;
 extern Cstr **cstrtab;  /* int -> cstr map */
@@ -259,6 +259,10 @@ void putdcl(Stab *st, Sym *s);
 Stab *getns(Stab *st, Node *n);
 Sym *getdcl(Stab *st, Node *n);
 Type *gettype(Stab *st, Node *n);
+
+Stab *curstab(void);
+void pushstab(Stab *st);
+void popstab(void);
 
 Sym *mksym(int line, Node *name, Type *ty);
 
