@@ -133,6 +133,12 @@ static void matchcstrs(Node *ctx, Type *a, Type *b)
     }
 }
 
+void breakhere()
+{
+    volatile int a;
+    a++;
+}
+
 static Type *unify(Node *ctx, Type *a, Type *b)
 {
     Type *t;
@@ -147,22 +153,27 @@ static Type *unify(Node *ctx, Type *a, Type *b)
         b = t;
     }
 
+    breakhere();
     matchcstrs(ctx, a, b);
-    if (a->type != b->type && a->type != Tyvar)
-        fatal(ctx->line, "%s incompatible with %s near %s", tystr(a), tystr(b), ctxstr(ctx));
-
-    tytab[a->tid] = b;
-    for (i = 0; i < b->nsub; i++) {
-        /* types must have same arity */
-        if (i >= a->nsub)
+    if (a->type != b->type) {
+        if (a->type == Tyvar)
+            tytab[a->tid] = b;
+        else
             fatal(ctx->line, "%s incompatible with %s near %s", tystr(a), tystr(b), ctxstr(ctx));
+        return b;
+    } else {
+        for (i = 0; i < b->nsub; i++) {
+            /* types must have same arity */
+            if (i >= a->nsub)
+                fatal(ctx->line, "%s incompatible with %s near %s", tystr(a), tystr(b), ctxstr(ctx));
 
-        /* FIXME: recurse properly.
-        matchcstrs(ctx, a, b);
-        unify(ctx, a->sub[i], b->sub[i]);
-        */
+            /* FIXME: recurse properly.
+               matchcstrs(ctx, a, b);
+               unify(ctx, a->sub[i], b->sub[i]);
+               */
+        }
+        return b;
     }
-    return b;
 }
 
 static void unifycall(Node *n)
