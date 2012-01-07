@@ -64,15 +64,15 @@ Sym *mksym(int line, Node *name, Type *ty)
     return sym;
 }
 
-Stab *mkstab(Stab *super)
+Stab *mkstab()
 {
     Stab *st;
 
     st = zalloc(sizeof(Stab));
-    st->super = super;
     st->ns = mkht(namehash, nameeq);
     st->dcl = mkht(namehash, nameeq);
     st->ty = mkht(namehash, nameeq);
+    st->closure = mkht(namehash, nameeq);
     return st;
 }
 

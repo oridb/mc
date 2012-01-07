@@ -527,7 +527,7 @@ block   : blockbody TEndblk
 blockbody
         : stmt
             {
-                $$ = mkblock(line, mkstab(curstab()));
+                $$ = mkblock(line, mkstab());
                 nlappend(&$$->block.stmts, &$$->block.nstmts, $1);
             }
         | blockbody stmt

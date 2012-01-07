@@ -49,8 +49,8 @@ int main(int argc, char **argv)
         tyinit();
         tokinit(argv[i]);
         file = mkfile(argv[i]);
-        file->file.exports = mkstab(NULL);
-        file->file.globls = mkstab(NULL);
+        file->file.exports = mkstab();
+        file->file.globls = mkstab();
         yyparse();
 
         /* before we do anything to the parse */

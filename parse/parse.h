@@ -215,7 +215,7 @@ extern int ncstrs;
 extern Type *littypes[]; /* literal type -> type map */
 
 /* data structures */
-Bitset *mkbs();
+Bitset *mkbs(void);
 Bitset *dupbs(Bitset *bs);
 void delbs(Bitset *bs);
 void bsput(Bitset *bs, uint elt);
@@ -251,7 +251,7 @@ int yylex(void);
 int yyparse(void);
 
 /* stab creation */
-Stab *mkstab(Stab *super);
+Stab *mkstab(void);
 
 void putns(Stab *st, Stab *scope);
 void puttype(Stab *st, Node *n, Type *ty);
@@ -268,7 +268,7 @@ void popstab(void);
 Sym *mksym(int line, Node *name, Type *ty);
 
 /* type creation */
-void tyinit(); /* sets up built in types */
+void tyinit(void); /* sets up built in types */
 
 Type *mkty(int line, Ty ty);
 Type *mktyvar(int line);
@@ -343,4 +343,4 @@ Node *unpickle(FILE *fd);
 void nlappend(Node ***nl, size_t *len, Node *n);
 
 /* backend functions */
-void gen();
+void gen(void);

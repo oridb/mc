@@ -182,7 +182,7 @@ static Stab *rdstab(FILE *fd)
     int i;
 
     /* read dcls */
-    st = mkstab(NULL);
+    st = mkstab();
     st->name = unpickle(fd);
     n = rdint(fd);
     for (i = 0; i < n; i++)
@@ -260,7 +260,8 @@ static void wrtype(FILE *fd, Type *ty)
             pickle(ty->asize, fd);
             break;
         case Tyvar:
-            fprintf(stderr, "WARNING: Attempting to pickle Tyvar. This will not read back reliably.");
+            fprintf(stderr, "WARNING: Attempting to pickle Tyvar. This will not read back reliably.\n");
+            break;
         default:
             for (i = 0; i < ty->nsub; i++)
                 wrtype(fd, ty->sub[i]);

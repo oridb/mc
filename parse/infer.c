@@ -91,7 +91,7 @@ static Type *littype(Node *n)
         case Lfunc:
             /* we figure out the return type to infer for the body in
              * infernode() */
-            infernode(n, NULL);
+            infernode(n->lit.fnval, NULL);
             return n->lit.fnval->func.type;
             break;
         case Larray:    return NULL; break;
@@ -289,7 +289,7 @@ static void inferexpr(Node *n, Type *ret)
         case Ovar:      /* a:@a -> @a */
             s = getdcl(curstab(), args[0]);
             if (!s)
-                fatal(n->line, "Undeclared var");
+                fatal(n->line, "Undeclared var %s", args[0]->name.parts[args[0]->name.nparts - 1]);
             else
                 settype(n, s->type);
             break;
@@ -339,8 +339,10 @@ static void infernode(Node *n, Type *ret)
             inferdecl(n);
             break;
         case Nblock:
+            pushstab(n->block.scope);
             for (i = 0; i < n->block.nstmts; i++)
                 infernode(n->block.stmts[i], ret);
+            popstab();
             break;
         case Nifstmt:
             infernode(n->ifstmt.cond, NULL);
@@ -354,11 +356,13 @@ static void infernode(Node *n, Type *ret)
             infernode(n->loopstmt.body, ret);
             break;
         case Nexpr:
-            inferexpr(n, NULL);
+            inferexpr(n, ret);
+            break;
         case Nfunc:
             pushstab(n->func.scope);
             inferfunc(n);
             popstab();
+            break;
         case Nname:
         case Nlit:
         case Nuse:

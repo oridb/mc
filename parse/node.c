@@ -98,13 +98,17 @@ Node *mkfunc(int line, Node **args, size_t nargs, Type *ret, Node *body)
 {
     Node *n;
     Node *f;
+    int i;
 
     f = mknode(line, Nfunc);
     f->func.args = args;
     f->func.nargs = nargs;
     f->func.body = body;
-    f->func.scope = mkstab(curstab());
+    f->func.scope = mkstab();
     f->func.type = mktyfunc(line, args, nargs, ret);
+
+    for (i = 0; i < nargs; i++)
+        putdcl(f->func.scope, args[i]->decl.sym);
 
     n = mknode(line, Nlit);
     n->lit.littype = Lfunc;
