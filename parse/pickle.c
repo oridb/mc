@@ -259,6 +259,8 @@ static void wrtype(FILE *fd, Type *ty)
             wrtype(fd, ty->sub[0]);
             pickle(ty->asize, fd);
             break;
+        case Tyvar:
+            fprintf(stderr, "WARNING: Attempting to pickle Tyvar. This will not read back reliably.");
         default:
             for (i = 0; i < ty->nsub; i++)
                 wrtype(fd, ty->sub[i]);
@@ -279,6 +281,8 @@ static Type *rdtype(FILE *fd)
     /* tid is generated; don't write */
     /* cstrs are left out for now: FIXME */
     ty->nsub = rdint(fd);
+    if (ty->nsub > 0)
+        ty->sub = xalloc(ty->nsub * sizeof(Type*));
     switch (ty->type) {
         case Tyname:
             ty->name = unpickle(fd);
