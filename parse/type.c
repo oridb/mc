@@ -237,7 +237,6 @@ static int cstrfmt(char *buf, size_t len, Type *t)
     char *p;
     char *end;
     char *sep;
-    int first;
     int i;
 
     if (!t->cstrs || !bscount(t->cstrs))
@@ -245,7 +244,6 @@ static int cstrfmt(char *buf, size_t len, Type *t)
 
     p = buf;
     end = p + len;
-    first = 1;
 
     p += snprintf(p, end - p, " :: ");
     sep = "";

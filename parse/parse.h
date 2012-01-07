@@ -192,6 +192,7 @@ struct Node {
 
         struct {
             Stab *scope;
+            Type *type;
             size_t nargs;
             Node **args;
             Node *body;
@@ -308,7 +309,7 @@ Node *mkint(int line, uint64_t val);
 Node *mkchar(int line, uint32_t val);
 Node *mkstr(int line, char *s);
 Node *mkfloat(int line, double flt);
-Node *mkfunc(int line, Node **args, size_t nargs, Node *body);
+Node *mkfunc(int line, Node **args, size_t nargs, Type *ret, Node *body);
 Node *mkarray(int line, Node **vals);
 Node *mkname(int line, char *name);
 Node *mkdecl(int line, Sym *sym);

@@ -463,7 +463,9 @@ literal : funclit       {$$ = $1;}
         ;
 
 funclit : TObrace params TEndln blockbody TCbrace
-            {$$ = mkfunc($1->line, $2.nl, $2.nn, $4);}
+            {$$ = mkfunc($1->line, $2.nl, $2.nn, NULL, $4);}
+        | TObrace params TRet type TEndln blockbody TCbrace
+            {$$ = mkfunc($1->line, $2.nl, $2.nn, $4, $6);}
         ;
 
 params  : declcore

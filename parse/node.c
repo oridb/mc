@@ -94,7 +94,7 @@ Node *mkloop(int line, Node *init, Node *cond, Node *incr, Node *body)
     return n;
 }
 
-Node *mkfunc(int line, Node **args, size_t nargs, Node *body)
+Node *mkfunc(int line, Node **args, size_t nargs, Type *ret, Node *body)
 {
     Node *n;
     Node *f;
@@ -104,6 +104,7 @@ Node *mkfunc(int line, Node **args, size_t nargs, Node *body)
     f->func.nargs = nargs;
     f->func.body = body;
     f->func.scope = mkstab(curstab());
+    f->func.type = mktyfunc(line, args, nargs, ret);
 
     n = mknode(line, Nlit);
     n->lit.littype = Lfunc;

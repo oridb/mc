@@ -12,6 +12,7 @@
 
 #include "parse.h"
 
+static void infernode(Node *n, Type *ret);
 
 /* find the most accurate type mapping */
 static Type *tf(Type *t)
@@ -87,7 +88,12 @@ static Type *littype(Node *n)
         case Lint:      return tylike(mktyvar(n->line), Tyint);                 break;
         case Lflt:      return tylike(mktyvar(n->line), Tyfloat32);             break;
         case Lstr:      return mktyslice(n->line, mkty(n->line, Tychar));       break;
-        case Lfunc:     return NULL; break;
+        case Lfunc:
+            /* we figure out the return type to infer for the body in
+             * infernode() */
+            infernode(n, NULL);
+            return n->lit.fnval->func.type;
+            break;
         case Larray:    return NULL; break;
     };
     return NULL;
@@ -258,7 +264,13 @@ static void inferexpr(Node *n, Type *ret)
             die("casts not implemented");
             break;
         case Oret:      /* -> @a -> void */
-            settype(n, mkty(-1, Tyvoid));
+            if (!ret)
+                fatal(n->line, "Not allowed to return value here");
+            if (nargs)
+                t = unify(n, type(args[0]), ret);
+            else
+                t =  unify(n, mkty(-1, Tyvoid), ret);
+            settype(n, t);
             break;
         case Ogoto:     /* goto void* -> void */
             settype(n, mkty(-1, Tyvoid));
@@ -282,6 +294,11 @@ static void inferexpr(Node *n, Type *ret)
 
 static void inferfunc(Node *n)
 {
+    int i;
+
+    for (i = 0; i < n->func.nargs; i++)
+        infernode(n->func.args[i], NULL);
+    infernode(n->func.body, n->func.type->sub[0]);
 }
 
 static void inferdecl(Node *n)
@@ -296,7 +313,7 @@ static void inferdecl(Node *n)
     }
 }
 
-static void infernode(Node *n)
+static void infernode(Node *n, Type *ret)
 {
     int i;
 
@@ -304,7 +321,7 @@ static void infernode(Node *n)
         case Nfile:
             pushstab(n->file.globls);
             for (i = 0; i < n->file.nstmts; i++)
-                infernode(n->file.stmts[i]);
+                infernode(n->file.stmts[i], NULL);
             popstab();
             break;
         case Ndecl:
@@ -312,23 +329,25 @@ static void infernode(Node *n)
             break;
         case Nblock:
             for (i = 0; i < n->block.nstmts; i++)
-                infernode(n->block.stmts[i]);
+                infernode(n->block.stmts[i], ret);
             break;
         case Nifstmt:
-            infernode(n->ifstmt.cond);
-            infernode(n->ifstmt.iftrue);
-            infernode(n->ifstmt.iffalse);
+            infernode(n->ifstmt.cond, NULL);
+            infernode(n->ifstmt.iftrue, ret);
+            infernode(n->ifstmt.iffalse, ret);
             break;
         case Nloopstmt:
-            infernode(n->loopstmt.cond);
-            infernode(n->loopstmt.init);
-            infernode(n->loopstmt.step);
-            infernode(n->loopstmt.body);
+            infernode(n->loopstmt.cond, NULL);
+            infernode(n->loopstmt.init, ret);
+            infernode(n->loopstmt.step, ret);
+            infernode(n->loopstmt.body, ret);
             break;
         case Nexpr:
             inferexpr(n, NULL);
         case Nfunc:
+            pushstab(n->func.scope);
             inferfunc(n);
+            popstab();
         case Nname:
         case Nlit:
         case Nuse:
@@ -418,7 +437,7 @@ void infer(Node *file)
     assert(file->type == Nfile);
 
     loaduses(file);
-    infernode(file);
+    infernode(file, NULL);
     infercompn(file);
     checkcast(file);
     typesub(file);
