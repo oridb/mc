@@ -264,7 +264,7 @@ static void inferexpr(Node *n, Type *ret)
             settype(n, mkty(-1, Tyvoid));
             break;
         case Ovar:      /* a:@a -> @a */
-            s = getdcl(curstab(), n);
+            s = getdcl(curstab(), args[0]);
             if (!s)
                 fatal(n->line, "Undeclared var");
             else
@@ -352,10 +352,14 @@ static void checkcast(Node *n)
  * and default constraint selections */
 static Type *tyfin(Type *t)
 {
+    static Type *tyint;
+
     t = tf(t);
+    if (!tyint)
+        tyint = mkty(-1, Tyint);
     if (t->type == Tyvar) {
-        if (hascstr(t, cstrtab[Tcint]) && cstrcheck(t, tytab[Tyint]))
-            return mkty(-1, Tyint);
+        if (hascstr(t, cstrtab[Tcint]) && cstrcheck(t, tyint))
+            return tyint;
     }
     return t;
 }

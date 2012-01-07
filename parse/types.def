@@ -26,7 +26,8 @@ Ty(Tyulong)
 Ty(Tyfloat32)
 Ty(Tyfloat64)
 Ty(Tyvalist)
-/*end numerical types*/
+
+/*end atomic types*/
 Ty(Typtr)
 Ty(Tyslice)
 Ty(Tyarray)

@@ -236,6 +236,7 @@ static int cstrfmt(char *buf, size_t len, Type *t)
 {
     char *p;
     char *end;
+    char *sep;
     int first;
     int i;
 
@@ -247,13 +248,11 @@ static int cstrfmt(char *buf, size_t len, Type *t)
     first = 1;
 
     p += snprintf(p, end - p, " :: ");
+    sep = "";
     for (i = 0; i < ncstrs; i++) {
         if (bshas(t->cstrs, i)) {
-            if (!first) {
-                first = 0;
-                p += snprintf(p, end - p, ", ");
-            }
-            p += snprintf(p, end - p, "%s", cstrtab[i]->name);
+            p += snprintf(p, end - p, "%s%s", sep, cstrtab[i]->name);
+            sep = ",";
         }
     }
     return end - p;

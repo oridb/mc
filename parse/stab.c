@@ -48,9 +48,9 @@ static ulong namehash(void *n)
     return strhash(name(n));
 }
 
-static int ptreq(void *a, void *b)
+static int nameeq(void *a, void *b)
 {
-    return a == b;
+    return a == b || !strcmp(name(a), name(b));
 }
 
 Sym *mksym(int line, Node *name, Type *ty)
@@ -70,9 +70,9 @@ Stab *mkstab(Stab *super)
 
     st = zalloc(sizeof(Stab));
     st->super = super;
-    st->ns = mkht(namehash, ptreq);
-    st->dcl = mkht(namehash, ptreq);
-    st->ty = mkht(namehash, ptreq);
+    st->ns = mkht(namehash, nameeq);
+    st->dcl = mkht(namehash, nameeq);
+    st->ty = mkht(namehash, nameeq);
     return st;
 }
 
