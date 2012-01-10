@@ -137,10 +137,10 @@ static void matchcstrs(Node *ctx, Type *a, Type *b)
     if (b->type == Tyvar) {
         if (!b->cstrs)
             b->cstrs = dupbs(a->cstrs);
-        else
+        else if (a->cstrs)
             bsunion(b->cstrs, a->cstrs);
     } else {
-        if (!cstrcheck(b, a))
+        if (!cstrcheck(a, b))
             fatal(ctx->line, "%s incompatible with %s near %s", tystr(a), tystr(b), ctxstr(ctx));
     }
 }
