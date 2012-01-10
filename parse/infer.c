@@ -411,7 +411,7 @@ static Type *tyfin(Node *ctx, Type *t)
 {
     static Type *tyint;
     int i;
-    //char buf[1024];
+    char buf[1024];
 
     if (!tyint)
         tyint = mkty(-1, Tyint);

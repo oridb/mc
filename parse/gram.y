@@ -526,12 +526,12 @@ block   : blockbody TEndblk
 
 blockbody
         : stmt
-            {
-                $$ = mkblock(line, mkstab());
-                nlappend(&$$->block.stmts, &$$->block.nstmts, $1);
-            }
+            {$$ = mkblock(line, mkstab());
+             if ($1)
+                nlappend(&$$->block.stmts, &$$->block.nstmts, $1);}
         | blockbody stmt
-            {nlappend(&$$->block.stmts, &$$->block.nstmts, $2);}
+            {if ($2)
+                nlappend(&$$->block.stmts, &$$->block.nstmts, $2);}
         ;
 
 label   : TColon TIdent
