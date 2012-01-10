@@ -77,6 +77,8 @@ static void settype(Node *n, Type *t)
     switch (n->type) {
         case Nexpr:     n->expr.type = t;       break;
         case Ndecl:     n->decl.sym->type = t;  break;
+        case Nlit:      n->lit.type = t;        break;
+        case Nfunc:     n->func.type = t;       break;
         default:
             die("can't set type of %s", nodestr(n->type));
             break;
@@ -445,11 +447,20 @@ static void typesub(Node *n)
                 typesub(n->expr.args[i]);
             break;
         case Nfunc:
-            die("don't do funcs yet...");
-            typesub(n);
+            settype(n, tyfin(n->func.type));
+            for (i = 0; i < n->func.nargs; i++)
+                typesub(n->func.args[i]);
+            typesub(n->func.body);
+            break;
+        case Nlit:
+            settype(n, tyfin(type(n)));
+            switch (n->lit.littype) {
+                case Lfunc:     typesub(n->lit.fnval); break;
+                case Larray:    typesub(n->lit.arrval); break;
+                default:        break;
+            }
             break;
         case Nname:
-        case Nlit:
         case Nuse:
         case Nlbl:
             break;

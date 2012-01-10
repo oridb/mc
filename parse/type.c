@@ -51,6 +51,7 @@ Type *mkty(int line, Ty ty)
     t->type = ty;
     t->tid = ntypes++;
     tytab = xrealloc(tytab, ntypes*sizeof(Type*));
+    tytab[t->tid] = NULL;
 
     for(i = 0; tycstrs[ty][i]; i++)
         constrain(t, tycstrs[ty][i]);
@@ -253,7 +254,7 @@ static int cstrfmt(char *buf, size_t len, Type *t)
             sep = ",";
         }
     }
-    return end - p;
+    return p - buf;
 }
 
 static int tybfmt(char *buf, size_t len, Type *t)
@@ -348,7 +349,7 @@ static int tybfmt(char *buf, size_t len, Type *t)
     if (t->type == Tyvar || t->type == Typaram)
         p += cstrfmt(p, end - p, t);
 
-    return len - (end - p);
+    return p - buf;
 }
 
 char *tyfmt(char *buf, size_t len, Type *t)
