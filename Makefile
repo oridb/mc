@@ -1,4 +1,5 @@
-SUB = parse
+SUB = parse \
+      8
 
 -include config.mk
 include mk/c.mk

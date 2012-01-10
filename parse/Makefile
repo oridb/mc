@@ -1,10 +1,9 @@
-BIN=pt
+LIB=libparse.a
 OBJ=bitset.o \
     dump.o \
     gram.o \
     htab.o \
     infer.o \
-    main.o \
     names.o \
     node.o \
     pickle.o \
@@ -18,6 +17,3 @@ CLEAN=gram.c
 
 include ../mk/lexyacc.mk
 include ../mk/c.mk
-
-ops.o: ../mc/ops.c
-	$(CC) -c $(CFLAGS) $<
