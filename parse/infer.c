@@ -145,7 +145,7 @@ static char *ctxstr(Node *n)
     return s;
 }
 
-static void matchcstrs(Node *ctx, Type *a, Type *b)
+static void mergecstrs(Node *ctx, Type *a, Type *b)
 {
     if (b->type == Tyvar) {
         /* make sure that if a = b, both have same cstrs */
@@ -181,7 +181,7 @@ static Type *unify(Node *ctx, Type *a, Type *b)
         b = t;
     }
 
-    matchcstrs(ctx, a, b);
+    mergecstrs(ctx, a, b);
     if (a->type != b->type) {
         if (a->type == Tyvar)
             tytab[a->tid] = b;
@@ -195,7 +195,7 @@ static Type *unify(Node *ctx, Type *a, Type *b)
                 fatal(ctx->line, "%s incompatible with %s near %s", tystr(a), tystr(b), ctxstr(ctx));
 
             /* FIXME: recurse properly.
-               matchcstrs(ctx, a, b);
+               mergecstrs(ctx, a, b);
                unify(ctx, a->sub[i], b->sub[i]);
                */
         }
@@ -382,12 +382,14 @@ static void infernode(Node *n, Type *ret, int *sawret)
             infernode(n->ifstmt.cond, NULL, sawret);
             infernode(n->ifstmt.iftrue, ret, sawret);
             infernode(n->ifstmt.iffalse, ret, sawret);
+            constrain(type(n->ifstmt.cond), cstrtab[Tctest]);
             break;
         case Nloopstmt:
-            infernode(n->loopstmt.cond, NULL, sawret);
             infernode(n->loopstmt.init, ret, sawret);
+            infernode(n->loopstmt.cond, NULL, sawret);
             infernode(n->loopstmt.step, ret, sawret);
             infernode(n->loopstmt.body, ret, sawret);
+            constrain(type(n->loopstmt.cond), cstrtab[Tctest]);
             break;
         case Nexpr:
             inferexpr(n, ret, sawret);
