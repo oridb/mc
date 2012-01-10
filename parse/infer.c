@@ -13,6 +13,7 @@
 #include "parse.h"
 
 static void infernode(Node *n, Type *ret, int *sawret);
+static void inferexpr(Node *n, Type *ret, int *sawret);
 
 static void setsuper(Stab *st, Stab *super)
 {
@@ -81,6 +82,7 @@ static void loaduses(Node *n)
 /* a => b */
 static void settype(Node *n, Type *t)
 {
+    t = tf(t);
     switch (n->type) {
         case Nexpr:     n->expr.type = t;       break;
         case Ndecl:     n->decl.sym->type = t;  break;
@@ -108,9 +110,6 @@ static Type *littype(Node *n)
         case Lflt:      return tylike(mktyvar(n->line), Tyfloat32);             break;
         case Lstr:      return mktyslice(n->line, mkty(n->line, Tychar));       break;
         case Lfunc:
-            /* we figure out the return type to infer for the body in
-             * infernode() */
-            infernode(n->lit.fnval, NULL, NULL);
             return n->lit.fnval->func.type;
             break;
         case Larray:    return NULL; break;
@@ -181,6 +180,7 @@ static Type *unify(Node *ctx, Type *a, Type *b)
         b = t;
     }
 
+    printf("--- unify %s => %s\n", tystr(a), tystr(b));
     mergecstrs(ctx, a, b);
     if (a->type != b->type) {
         if (a->type == Tyvar)
@@ -205,6 +205,16 @@ static Type *unify(Node *ctx, Type *a, Type *b)
 
 static void unifycall(Node *n)
 {
+    int i;
+    Type *ft;
+
+    inferexpr(n->expr.args[0], NULL, NULL);
+    ft = type(n->expr.args[0]);
+    for (i = 1; i < n->expr.nargs; i++) {
+        inferexpr(n->expr.args[i], NULL, NULL);
+        unify(n, ft->sub[i], type(n->expr.args[i]));
+    }
+    settype(n, ft->sub[0]);
 }
 
 static void inferexpr(Node *n, Type *ret, int *sawret)
@@ -323,6 +333,11 @@ static void inferexpr(Node *n, Type *ret, int *sawret)
                 settype(n, s->type);
             break;
         case Olit:      /* <lit>:@a::tyclass -> @a */
+            switch (args[0]->lit.littype) {
+                case Lfunc: infernode(args[0]->lit.fnval, NULL, NULL); break;
+                case Larray: die("array types not implemented yet"); break;
+                default: break;
+            }
             settype(n, type(args[0]));
             break;
         case Olbl:      /* :lbl -> void* */
@@ -343,12 +358,15 @@ static void inferfunc(Node *n)
     infernode(n->func.body, n->func.type->sub[0], &sawret);
     if (!sawret)
         unify(n, type(n)->sub[0], mkty(-1, Tyvoid));
+    else
+        printf("SAWRET!!!\n");
 }
 
 static void inferdecl(Node *n)
 {
     Type *t;
 
+    printf("====== decl %s\n", n->decl.sym->name->name.parts[n->decl.sym->name->name.nparts-1]);
     t = decltype(n);
     settype(n, t);
     if (n->decl.init) {
