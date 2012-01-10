@@ -229,6 +229,8 @@ Node *mkbool(int line, int val)
 
 void nlappend(Node ***nl, size_t *len, Node *n)
 {
+    assert(n != NULL);
+
     *nl = xrealloc(*nl, (*len + 1)*sizeof(Node*));
     (*nl)[*len] = n;
     (*len)++;
