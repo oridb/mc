@@ -93,6 +93,7 @@ struct Sym {
 struct Type {
     Ty type;
     int tid;
+    int line;
     Bitset *cstrs;    /* the type constraints matched on this type */
     size_t nsub;      /* For fnsub, tusub, sdecls, udecls, edecls. */
     Type **sub;       /* sub-types; shared by all composite types */

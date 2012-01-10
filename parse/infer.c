@@ -27,6 +27,7 @@ static void setsuper(Stab *st, Stab *super)
 /* find the most accurate type mapping */
 static Type *tf(Type *t)
 {
+    char buf[1024];
     Type *lu;
     assert(t != NULL);
 
@@ -37,7 +38,7 @@ static Type *tf(Type *t)
             tytab[t->tid] = lu;
         }
 
-        printf("%s => ", tystr(t));
+        printf("%s => ", tyfmt(buf, 1024, t));
         if (!tytab[t->tid])
             break;
         t = tytab[t->tid];
@@ -141,10 +142,13 @@ static char *ctxstr(Node *n)
 static void matchcstrs(Node *ctx, Type *a, Type *b)
 {
     if (b->type == Tyvar) {
-        if (!b->cstrs)
-            b->cstrs = dupbs(a->cstrs);
-        else if (a->cstrs)
+        /* make sure that if a = b, both have same cstrs */
+        if (a->cstrs && b->cstrs)
             bsunion(b->cstrs, a->cstrs);
+        else if (a->cstrs)
+            b->cstrs = dupbs(a->cstrs);
+        else if (b->cstrs)
+            a->cstrs = dupbs(b->cstrs);
     } else {
         if (!cstrcheck(a, b))
             fatal(ctx->line, "%s incompatible with %s near %s", tystr(a), tystr(b), ctxstr(ctx));
@@ -171,7 +175,6 @@ static Type *unify(Node *ctx, Type *a, Type *b)
         b = t;
     }
 
-    breakhere();
     matchcstrs(ctx, a, b);
     if (a->type != b->type) {
         if (a->type == Tyvar)
@@ -404,10 +407,11 @@ static void checkcast(Node *n)
 
 /* returns the final type for t, after all unifications
  * and default constraint selections */
-static Type *tyfin(Type *t)
+static Type *tyfin(Node *ctx, Type *t)
 {
     static Type *tyint;
     int i;
+    //char buf[1024];
 
     if (!tyint)
         tyint = mkty(-1, Tyint);
@@ -418,8 +422,10 @@ static Type *tyfin(Type *t)
             return tyint;
     } else {
         for (i = 0; i < t->nsub; i++)
-            t->sub[i] = tyfin(t->sub[i]);
+            t->sub[i] = tyfin(ctx, t->sub[i]);
     }
+    //if (t->type == Tyvar)
+        // fatal(t->line, "underconstrained type %s near %s", tyfmt(buf, 1024, t), ctxstr(ctx));
     return t;
 }
 
@@ -433,7 +439,7 @@ static void typesub(Node *n)
                 typesub(n->file.stmts[i]);
             break;
         case Ndecl:
-            settype(n, tyfin(type(n)));
+            settype(n, tyfin(n, type(n)));
             if (n->decl.init)
                 typesub(n->decl.init);
             break;
@@ -453,18 +459,18 @@ static void typesub(Node *n)
             typesub(n->loopstmt.body);
             break;
         case Nexpr:
-            settype(n, tyfin(type(n)));
+            settype(n, tyfin(n, type(n)));
             for (i = 0; i < n->expr.nargs; i++)
                 typesub(n->expr.args[i]);
             break;
         case Nfunc:
-            settype(n, tyfin(n->func.type));
+            settype(n, tyfin(n, n->func.type));
             for (i = 0; i < n->func.nargs; i++)
                 typesub(n->func.args[i]);
             typesub(n->func.body);
             break;
         case Nlit:
-            settype(n, tyfin(type(n)));
+            settype(n, tyfin(n, type(n)));
             switch (n->lit.littype) {
                 case Lfunc:     typesub(n->lit.fnval); break;
                 case Larray:    typesub(n->lit.arrval); break;

@@ -50,6 +50,7 @@ Type *mkty(int line, Ty ty)
     t = zalloc(sizeof(Type));
     t->type = ty;
     t->tid = ntypes++;
+    t->line = line;
     tytab = xrealloc(tytab, ntypes*sizeof(Type*));
     tytab[t->tid] = NULL;
 
