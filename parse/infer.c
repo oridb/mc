@@ -27,16 +27,22 @@ static void setsuper(Stab *st, Stab *super)
 /* find the most accurate type mapping */
 static Type *tf(Type *t)
 {
+    Type *lu;
     assert(t != NULL);
-    
-    if (tytab[t->tid]) {
-        printf ("%s => ", tystr(t));
-        while (tytab[t->tid]) {
-            t = tytab[t->tid];
-            printf("%s => ", tystr(t));
+
+    while (1) {
+        if (!tytab[t->tid] && t->type == Tyname) {
+            if (!(lu = gettype(curstab(), t->name)))
+                fatal(t->name->line, "Could not find type %s", t->name->name.parts[t->name->name.nparts - 1]);
+            tytab[t->tid] = lu;
         }
-        printf("nil\n");
+
+        printf("%s => ", tystr(t));
+        if (!tytab[t->tid])
+            break;
+        t = tytab[t->tid];
     }
+    printf("nil\n");
     return t;
 }
 
