@@ -424,8 +424,8 @@ static Type *tyfin(Node *ctx, Type *t)
         for (i = 0; i < t->nsub; i++)
             t->sub[i] = tyfin(ctx, t->sub[i]);
     }
-    //if (t->type == Tyvar)
-        // fatal(t->line, "underconstrained type %s near %s", tyfmt(buf, 1024, t), ctxstr(ctx));
+    if (t->type == Tyvar)
+         fatal(t->line, "underconstrained type %s near %s", tyfmt(buf, 1024, t), ctxstr(ctx));
     return t;
 }
 
