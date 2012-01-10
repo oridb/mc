@@ -401,13 +401,18 @@ static void checkcast(Node *n)
 static Type *tyfin(Type *t)
 {
     static Type *tyint;
+    int i;
 
-    t = tf(t);
     if (!tyint)
         tyint = mkty(-1, Tyint);
+
+    t = tf(t);
     if (t->type == Tyvar) {
         if (hascstr(t, cstrtab[Tcint]) && cstrcheck(t, tyint))
             return tyint;
+    } else {
+        for (i = 0; i < t->nsub; i++)
+            t->sub[i] = tyfin(t->sub[i]);
     }
     return t;
 }
