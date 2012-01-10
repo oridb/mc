@@ -14,6 +14,16 @@
 
 static void infernode(Node *n, Type *ret);
 
+static void setsuper(Stab *st, Stab *super)
+{
+    Stab *s;
+    
+    /* verify that we don't accidentally create loops */
+    for (s = super; s; s = s->super)
+        assert(s->super != st);
+    st->super = super;
+}
+
 /* find the most accurate type mapping */
 static Type *tf(Type *t)
 {
@@ -339,6 +349,7 @@ static void infernode(Node *n, Type *ret)
             inferdecl(n);
             break;
         case Nblock:
+            setsuper(n->block.scope, curstab());
             pushstab(n->block.scope);
             for (i = 0; i < n->block.nstmts; i++)
                 infernode(n->block.stmts[i], ret);
@@ -359,6 +370,7 @@ static void infernode(Node *n, Type *ret)
             inferexpr(n, ret);
             break;
         case Nfunc:
+            setsuper(n->func.scope, curstab());
             pushstab(n->func.scope);
             inferfunc(n);
             popstab();

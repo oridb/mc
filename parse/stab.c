@@ -83,7 +83,8 @@ Sym *getdcl(Stab *st, Node *n)
     do {
         if ((s = htget(st->dcl, n)))
             return s;
-    } while (st->super);
+        st = st->super;
+    } while (st);
     return NULL;
 }
 
@@ -94,7 +95,8 @@ Type *gettype(Stab *st, Node *n)
     do {
         if ((t = htget(st->ty, n)))
             return t->type;
-    } while (st->super);
+        st = st->super;
+    } while (st);
     return NULL;
 }
 
@@ -104,7 +106,8 @@ Stab *getstab(Stab *st, Node *n)
     do {
         if ((s = htget(st->ns, n)))
             return s;
-    } while (st->super);
+        st = st->super;
+    } while (st);
     return NULL;
 }
 
