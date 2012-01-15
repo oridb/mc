@@ -92,3 +92,15 @@ void *memdup(void *mem, size_t len)
     ret = xalloc(len);
     return memcpy(ret, mem, len);
 }
+
+void lappend(void *l, size_t *len, void *n)
+{
+    void ***pl;
+
+    assert(n != NULL);
+    pl = l;
+    *pl = xrealloc(*pl, (*len + 1)*sizeof(Node*));
+    (*pl)[*len] = n;
+    (*len)++;
+}
+
