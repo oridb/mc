@@ -52,7 +52,7 @@ Node *mkexpr(int line, Op op, ...)
     n->expr.op = op;
     va_start(ap, op);
     while ((arg = va_arg(ap, Node*)) != NULL)
-        nlappend(&n->expr.args, &n->expr.nargs, arg);
+        lappend(&n->expr.args, &n->expr.nargs, arg);
     va_end(ap);
 
     return n;
@@ -65,7 +65,7 @@ Node *mkcall(int line, Node *fn, Node **args, size_t nargs)
 
     n = mkexpr(line, Ocall, fn, NULL);
     for (i = 0; i < nargs; i++)
-        nlappend(&n->expr.args, &n->expr.nargs, args[i]);
+        lappend(&n->expr.args, &n->expr.nargs, args[i]);
     return n;
 }
 
@@ -227,12 +227,14 @@ Node *mkbool(int line, int val)
     return n;
 }
 
-void nlappend(Node ***nl, size_t *len, Node *n)
+void lappend(void *l, size_t *len, void *n)
 {
-    assert(n != NULL);
+    void ***pl;
 
-    *nl = xrealloc(*nl, (*len + 1)*sizeof(Node*));
-    (*nl)[*len] = n;
+    assert(n != NULL);
+    pl = l;
+    *pl = xrealloc(*pl, (*len + 1)*sizeof(Node*));
+    (*pl)[*len] = n;
     (*len)++;
 }
 

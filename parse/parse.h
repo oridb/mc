@@ -341,7 +341,7 @@ void pickle(Node *n, FILE *fd);
 Node *unpickle(FILE *fd);
 
 /* convenience func */
-void nlappend(Node ***nl, size_t *len, Node *n);
+void lappend(void *nl, size_t *len, void *n); /* ugly hack; nl is void* because void*** != @a*** */
 
 /* backend functions */
 void gen(void);

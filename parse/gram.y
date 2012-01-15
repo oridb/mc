@@ -158,10 +158,10 @@ file    : toplev
 
 toplev
         : decl
-            {nlappend(&file->file.stmts, &file->file.nstmts, $1);
+            {lappend(&file->file.stmts, &file->file.nstmts, $1);
              putdcl(file->file.globls, $1->decl.sym);}
         | use
-            {nlappend(&file->file.uses, &file->file.nuses, $1);}
+            {lappend(&file->file.uses, &file->file.nuses, $1);}
         | package
         | tydef
             {die("tydef unimplemented");}
@@ -263,9 +263,9 @@ funcsig : argdefs
 argdefs : declcore
             {$$.line = $1->line;
              $$.nl = NULL;
-             $$.nn = 0; nlappend(&$$.nl, &$$.nn, $1);}
+             $$.nn = 0; lappend(&$$.nl, &$$.nn, $1);}
         | argdefs TComma declcore
-            {nlappend(&$$.nl, &$$.nn, $3);}
+            {lappend(&$$.nl, &$$.nn, $3);}
         ;
 
 structdef
@@ -275,9 +275,9 @@ structdef
 
 structbody
         : structelt
-            {$$.nl = NULL; $$.nn = 0; nlappend(&$$.nl, &$$.nn, $1);}
+            {$$.nl = NULL; $$.nn = 0; lappend(&$$.nl, &$$.nn, $1);}
         | structbody structelt
-            {if ($2) {nlappend(&$$.nl, &$$.nn, $2);}}
+            {if ($2) {lappend(&$$.nl, &$$.nn, $2);}}
         ;
 
 structelt
@@ -296,9 +296,9 @@ uniondef
 
 unionbody
         : unionelt
-            {$$.nl = NULL; $$.nn = 0; nlappend(&$$.nl, &$$.nn, $1);}
+            {$$.nl = NULL; $$.nn = 0; lappend(&$$.nl, &$$.nn, $1);}
         | unionbody unionelt
-            {if ($2) {nlappend(&$$.nl, &$$.nn, $2);}}
+            {if ($2) {lappend(&$$.nl, &$$.nn, $2);}}
         ;
 
 unionelt
@@ -315,9 +315,9 @@ enumdef : TEnum enumbody TEndblk
         ;
 
 enumbody: enumelt
-            {$$.nl = NULL; $$.nn = 0; if ($1) nlappend(&$$.nl, &$$.nn, $1);}
+            {$$.nl = NULL; $$.nn = 0; if ($1) lappend(&$$.nl, &$$.nn, $1);}
         | enumbody enumelt
-            {if ($2) {nlappend(&$$.nl, &$$.nn, $2);}}
+            {if ($2) {lappend(&$$.nl, &$$.nn, $2);}}
         ;
 
 enumelt : TIdent TEndln
@@ -436,9 +436,9 @@ postfixexpr
         ;
 
 arglist : asnexpr
-            {$$.nl = NULL; $$.nn = 0; nlappend(&$$.nl, &$$.nn, $1);}
+            {$$.nl = NULL; $$.nn = 0; lappend(&$$.nl, &$$.nn, $1);}
         | arglist TComma asnexpr
-            {nlappend(&$$.nl, &$$.nn, $3);}
+            {lappend(&$$.nl, &$$.nn, $3);}
         | /* empty */
             {$$.nl = NULL; $$.nn = 0;}
         ;
@@ -469,9 +469,9 @@ funclit : TObrace params TEndln blockbody TCbrace
         ;
 
 params  : declcore
-            {$$.nl = NULL; $$.nn = 0; nlappend(&$$.nl, &$$.nn, $1);}
+            {$$.nl = NULL; $$.nn = 0; lappend(&$$.nl, &$$.nn, $1);}
         | params TComma declcore
-            {nlappend(&$$.nl, &$$.nn, $3);}
+            {lappend(&$$.nl, &$$.nn, $3);}
         | /* empty */
             {$$.nl = NULL; $$.nn = 0;}
         ;
@@ -528,10 +528,10 @@ blockbody
         : stmt
             {$$ = mkblock(line, mkstab());
              if ($1)
-                nlappend(&$$->block.stmts, &$$->block.nstmts, $1);}
+                lappend(&$$->block.stmts, &$$->block.nstmts, $1);}
         | blockbody stmt
             {if ($2)
-                nlappend(&$$->block.stmts, &$$->block.nstmts, $2);}
+                lappend(&$$->block.stmts, &$$->block.nstmts, $2);}
         ;
 
 label   : TColon TIdent
