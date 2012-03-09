@@ -1,5 +1,7 @@
 BIN=8m
-OBJ=main.o
+OBJ=main.o \
+    simp.o \
+    gen.o \
 
 CFLAGS+=-I../parse
 LDFLAGS+=-L../parse -lparse

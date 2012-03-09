@@ -86,6 +86,7 @@ struct Stab {
 
 struct Sym {
     int   line;
+    int   isconst;
     Node *name;
     Type *type;
 };
@@ -314,12 +315,13 @@ Node *mkfunc(int line, Node **args, size_t nargs, Type *ret, Node *body);
 Node *mkarray(int line, Node **vals);
 Node *mkname(int line, char *name);
 Node *mkdecl(int line, Sym *sym);
-Node *mklabel(int line, char *lbl);
+Node *mklbl(int line, char *lbl);
 
 /* node util functions */
 Type *decltype(Node *n);
 void addstmt(Node *file, Node *stmt);
 void setns(Node *n, char *name);
+Op exprop(Node *n);
 
 /* usefiles */
 void readuse(Node *use, Stab *into);
@@ -342,6 +344,3 @@ Node *unpickle(FILE *fd);
 
 /* convenience func */
 void lappend(void *nl, size_t *len, void *n); /* ugly hack; nl is void* because void*** != @a*** */
-
-/* backend functions */
-void gen(void);

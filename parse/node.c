@@ -125,7 +125,7 @@ Node *mkblock(int line, Stab *scope)
     return n;
 }
 
-Node *mklabel(int line, char *lbl)
+Node *mklbl(int line, char *lbl)
 {
     Node *n;
 
@@ -199,6 +199,17 @@ Node *mkdecl(int line, Sym *sym)
     return n;
 }
 
+Node *mkbool(int line, int val)
+{
+    Node *n;
+
+    n = mknode(line, Nlit);
+    n->lit.littype = Lbool;
+    n->lit.boolval = val;
+
+    return n;
+}
+
 Type *decltype(Node *n)
 {
     assert(n->type == Ndecl);
@@ -216,25 +227,9 @@ void setns(Node *n, char *name)
     n->name.parts[0] = strdup(name);
 }
 
-Node *mkbool(int line, int val)
+Op exprop(Node *e)
 {
-    Node *n;
-
-    n = mknode(line, Nlit);
-    n->lit.littype = Lbool;
-    n->lit.boolval = val;
-
-    return n;
-}
-
-void lappend(void *l, size_t *len, void *n)
-{
-    void ***pl;
-
-    assert(n != NULL);
-    pl = l;
-    *pl = xrealloc(*pl, (*len + 1)*sizeof(Node*));
-    (*pl)[*len] = n;
-    (*len)++;
+    assert(e->type == Nexpr);
+    return e->expr.op;
 }
 

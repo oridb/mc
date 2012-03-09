@@ -95,12 +95,6 @@ static void settype(Node *n, Type *t)
 
 }
 
-static Op exprop(Node *e)
-{
-    assert(e->type == Nexpr);
-    return e->expr.op;
-}
-
 static Type *littype(Node *n)
 {
     switch (n->lit.littype) {
@@ -322,7 +316,10 @@ static void inferexpr(Node *n, Type *ret, int *sawret)
                 t =  unify(n, mkty(-1, Tyvoid), ret);
             settype(n, t);
             break;
-        case Ogoto:     /* goto void* -> void */
+        case Ocjmp:
+            die("Should not see cjmp in fe");
+            break;
+        case Ojmp:     /* goto void* -> void */
             settype(n, mkty(-1, Tyvoid));
             break;
         case Ovar:      /* a:@a -> @a */

@@ -535,7 +535,7 @@ blockbody
         ;
 
 label   : TColon TIdent
-            {$$ = mklabel($1->line, $1->str);}
+            {$$ = mklbl($1->line, $1->str);}
         ;
 
 %%

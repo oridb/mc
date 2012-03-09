@@ -10,6 +10,7 @@
 #include <unistd.h>
 
 #include "parse.h"
+#include "gen.h"
 
 Node *file;
 static char *outfile;
@@ -71,13 +72,9 @@ int main(int argc, char **argv)
 
         /* after all processing */
         dump(file, stdout);
-        gen();
+        gen(file, "a.s");
     }
 
     return 0;
 }
 
-void gen(void)
-{
-    printf("GEN!\n");
-}
