@@ -35,6 +35,10 @@ static void outsym(Sym *s, FILE *fd, int depth)
     char buf[1024];
 
     indent(fd, depth);
+    if (s->isconst)
+        fprintf(fd, "const ");
+    else
+        fprintf(fd, "var ");
     outname(s->name, fd);
     fprintf(fd, " : %s\n", tyfmt(buf, 1024, s->type));
 }

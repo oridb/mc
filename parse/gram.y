@@ -172,7 +172,8 @@ decl    : TVar declbody TEndln
             {$2->decl.flags = 0;
              $$ = $2;}
         | TConst declbody TEndln
-            {$2->decl.flags = Dclconst;
+            {$2->decl.sym->isconst = 1;
+             $2->decl.flags = 0;
              $$ = $2;}
         | TExtern TVar declbody TEndln
             {$3->decl.flags = Dclextern;
