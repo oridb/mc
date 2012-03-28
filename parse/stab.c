@@ -72,7 +72,6 @@ Stab *mkstab()
     st->ns = mkht(namehash, nameeq);
     st->dcl = mkht(namehash, nameeq);
     st->ty = mkht(namehash, nameeq);
-    st->closure = mkht(namehash, nameeq);
     return st;
 }
 
@@ -80,9 +79,18 @@ Stab *mkstab()
 Sym *getdcl(Stab *st, Node *n)
 {
     Sym *s;
+    Stab *orig;
+
+    orig = st;
     do {
-        if ((s = htget(st->dcl, n)))
+        if ((s = htget(st->dcl, n))) {
+            /* record that this is in the closure of this scope */
+            if (!st->closure)
+                st->closure = mkht(namehash, nameeq);
+            if (st != orig)
+                htput(st->closure, s->name, s);
             return s;
+        }
         st = st->super;
     } while (st);
     return NULL;
@@ -145,4 +153,3 @@ void putns(Stab *st, Stab *scope)
         fatal(scope->name->line, "Ns %s already defined", name(s->name));
     htput(st->ns, scope->name, scope);
 }
-
