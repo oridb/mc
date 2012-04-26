@@ -43,7 +43,7 @@ struct Bb {
     /* edges */
     Bb **in;
     size_t nin;
-    Bb *out;
+    Bb **out;
     size_t nout;
 };
 
@@ -51,6 +51,7 @@ struct Bb {
 Comp *mkcomp(Node *f);
 void gen(Node *file, char *out);
 void assemble(char *asmfile, char *out);
+void compdump(Comp *c, FILE *fd);
 
 /* cfg */
 Fn *mkfn(char *name);

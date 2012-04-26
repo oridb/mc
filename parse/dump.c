@@ -153,6 +153,7 @@ static void outnode(Node *n, FILE *fd, int depth)
                 case Lbool:     fprintf(fd, " Lbool %s\n", n->lit.boolval ? "true" : "false"); break;
                 case Lint:      fprintf(fd, " Lint %llu\n", n->lit.intval); break;
                 case Lflt:      fprintf(fd, " Lflt %lf\n", n->lit.fltval); break;
+                case Lstr:      fprintf(fd, " Lstr %s\n", n->lit.strval); break;
                 case Lfunc:
                     fprintf(fd, " Lfunc\n");
                     outnode(n->lit.fnval, fd, depth+1);

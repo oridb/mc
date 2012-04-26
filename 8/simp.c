@@ -86,12 +86,10 @@ static Node *genlbl()
     return mklbl(-1, strdup(buf));
 }
 
-/* support functions */
 static void jmp(Comp *c, Fn *fn, Node *targ)
 {
 }
 
-/* support functions */
 static void cjmp(Comp *c, Fn *fn, Node *cond, Node *iftrue, Node *iffalse)
 {
 }
@@ -242,6 +240,66 @@ int isconstfn(Sym *s)
     return s->isconst && s->type->type == Tyfunc;
 }
 
+void blobdump(Blob *b, FILE *fd)
+{
+    int i;
+    char *p;
+
+    p = b->data;
+    fprintf(fd, "\t%s => ", b->name);
+    for (i = 0; i < b->ndata; i++)
+        if (isprint(p[i]))
+            fprintf(fd, "%c", p[i]);
+        else
+            fprintf(fd, "\\%x", p[i]);
+    fprintf(fd, "\n");
+}
+
+void bbdump(Bb *bb, FILE *fd)
+{
+    int i;
+    char *sep = "";
+
+    fprintf(fd, "\t\tbb %d\n", bb->id);
+    fprintf(fd, "\t\t\tin = [ ");
+    for (i = 0; i < bb->nin; i++) {
+        fprintf(fd, "%s%d ", sep, bb->in[i]->id);
+        sep = ",";
+    }
+    fprintf(fd, "]\n");
+    sep = "";
+    fprintf(fd, "\t\t\tout = [ ");
+    for (i = 0; i < bb->nout; i++) {
+        fprintf(fd, "%s%d ", sep, bb->out[i]->id);
+        sep = ",";
+    }
+    fprintf(fd, "]\n");
+
+    for (i = 0; i < bb->nn; i++)
+        dump(bb->n[i], fd);
+}
+
+void fndump(Fn *f, FILE *fd)
+{
+    int i;
+
+    fprintf(fd, "\tfn %s\n", f->name);
+    for (i = 0; i < f->nbb; i++)
+        bbdump(f->bb[i], fd);
+}
+
+void compdump(Comp *c, FILE *fd)
+{
+    int i;
+
+    fprintf(fd, "** globals **:\n");
+    for (i = 0; i < c->nglobl; i++)
+        blobdump(c->globl[i], fd);
+    fprintf(fd, "** funcs **:\n");
+    for (i = 0; i < c->nfunc; i++)
+        fndump(c->func[i], fd);
+}
+
 void gen(Node *file, char *out)
 {
     Node **n;
@@ -274,6 +332,7 @@ void gen(Node *file, char *out)
                 break;
         }
     }
+    compdump(c, stdout);
 
     /*
     isel();
