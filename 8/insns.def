@@ -1,0 +1,26 @@
+/* Table of instructions. Each instruction
+   is defined by the following macro:
+        Insn(enumval, fmt, attr)
+    The format string 'fmt' has the following expansions:
+        %r            - A register
+        %m            - A memory location.
+        %l            - A location (either register or memory)
+        %x            - Any value.
+        %[0-9]*t      - Mode of an operand. The optional number
+                        preceeding it is the operand desired for
+                        the mode.
+        %v            - a value (ie, immediate integer or label)
+
+   */
+
+/* Note, the mov instruction is specified in an overly general manner. */
+Insn(Imov,      "mov%m %x,%x",          0)
+Insn(Imovz,     "movz%0m%1m %x,%x",     0)
+Insn(Imovs,     "movs%0m%1m %x,%x",     0)
+
+/* arithmetic instructions. */
+Insn(Iadd,      "add%m %r,%x",          0)
+Insn(Iret,      "ret",                  0)
+
+/* not really an insn... */
+Insn(Ilbl,      "%s:",                  0)

@@ -18,7 +18,7 @@ static void lowerlocal(Comp *c, Fn *fn, Node *init);
 static void lowerglobl(Comp *c, char *name, Node *init);
 static void lowerif(Comp *c, Fn *fn, Node *cond);
 static void lowerloop(Comp *c, Fn *fn, Node *loop);
-static void lowerblock(Comp *c, Fn *fn, Node *blk);
+void lowerblock(Comp *c, Fn *fn, Node *blk);
 static void lowerfn(Comp *c, char *name, Node *n);
 
 Fn *mkfn(char *name)
@@ -166,7 +166,7 @@ static void label(Comp *c, Fn *fn, Node *lbl)
     fn->cur = mkbb();
 }
 
-static void lowerblock(Comp *c, Fn *fn, Node *blk)
+void lowerblock(Comp *c, Fn *fn, Node *blk)
 {
     Node **n;
     size_t nn;
@@ -202,14 +202,12 @@ static void lowerblock(Comp *c, Fn *fn, Node *blk)
 static void lowerfn(Comp *c, char *name, Node *n)
 {
     Fn *fn;
+    Node **nl;
+    int nn;
     int i;
-    Bb *fix;
-    Node *last;
 
     /* unwrap to the function body */
-    assert(n->type == Nexpr && exprop(n) == Olit);
     n = n->expr.args[0];
-    assert(n->type == Nlit && n->lit.littype == Lfunc);
     n = n->lit.fnval;
     assert(n->type == Nfunc);
 
@@ -217,21 +215,11 @@ static void lowerfn(Comp *c, char *name, Node *n)
     fn = mkfn(name);
     fn = zalloc(sizeof(Fn));
     fn->name = strdup(name);
-    lowerblock(c, fn, n->func.body);
-    lappend(&c->func, &c->nfunc, fn);
 
-    for (i = 0; i < fn->nfixup; i++) {
-        fix = fn->fixup[i];
-        last = fix->n[fix->nn - 1];
-        switch (exprop(last)) {
-            case Ocjmp:
-                break;
-            case Ojmp:
-                break;
-            default:
-                die("Invalid last node in BB");
-                break;
-        }
+    nl = reduce(n->func.body, &nn);
+
+    for (i = 0; i < nn; i++) {
+        dump(nl[i], stdout);
     }
 }
 

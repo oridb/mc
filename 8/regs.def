@@ -1,0 +1,25 @@
+Reg(Rnone, "%NOREG")
+/* byte regs */
+Reg(Ral, "%al")
+Reg(Rcl, "%cl")
+Reg(Rdl, "%dl")
+Reg(Rbl, "%bl")
+
+/* short regs */
+Reg(Rax, "%ax")
+Reg(Rbx, "%bx")
+Reg(Rcx, "%cx")
+Reg(Rdx, "%dx")
+Reg(Rsi, "%si")
+Reg(Rdi, "%di")
+
+/* long regs */
+Reg(Reax, "%eax")
+Reg(Recx, "%ecx")
+Reg(Redx, "%edx")
+Reg(Rebx, "%ebx")
+Reg(Resi, "%esi")
+Reg(Redi, "%edi")
+Reg(Resp, "%esp")
+Reg(Rebp, "%ebp")
+
