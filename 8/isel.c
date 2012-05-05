@@ -55,16 +55,6 @@ Loc *locreg(Loc *l, Reg r)
     return l;
 }
 
-Loc *locpseudo(Loc *l, Mode mode)
-{
-    static long nextpseudo;
-
-    l->type = Locpseudo;
-    l->mode = mode;
-    l->pseudo = nextpseudo++;
-    return l;
-}
-
 Loc *locmem(Loc *l, long disp, Reg base, Reg idx, Mode mode)
 {
     l->type = Locmem;
@@ -90,6 +80,43 @@ Loc *loclit(Loc *l, long val)
     l->type = Loclit;
     l->mode = ModeL; /* FIXME: what do we do for mode? */
     l->lit = val;
+    return l;
+}
+
+Loc loc(Isel *s, Node *n)
+{
+    Loc l;
+    Node *v;
+    switch (exprop(n)) {
+        case Ovar:
+            locmem(&l, 0, Reax, Rnone, ModeL);
+            break;
+        case Olit:
+            v = n->expr.args[0];
+            switch (v->lit.littype) {
+                case Lchr:      loclit(&l, v->lit.chrval); break;
+                case Lbool:     loclit(&l, v->lit.boolval); break;
+                case Lint:      loclit(&l, v->lit.intval); break;
+                default:
+                    die("Literal type %s should be blob", litstr(v->lit.littype));
+            }
+            break;
+        default:
+            die("Node %s not leaf in loc()", opstr(exprop(n)));
+            break;
+    }
+    return l;
+}
+
+Mode mode(Node *n)
+{
+    return ModeL;
+}
+
+Loc getreg(Isel *s, Mode m)
+{
+    Loc l;
+    locreg(&l, Reax);
     return l;
 }
 
@@ -130,134 +157,83 @@ void g(Isel *s, AsmOp op, ...)
     lappend(&s->il, &s->ni, i);
 }
 
-void selexpr(Isel *s, Node *n)
+Loc selexpr(Isel *s, Node *n)
 {
-    Loc a, b;
+    Loc a, b, r;
     Node **args;
 
     args = n->expr.args;
+    r = (Loc){Locnone, };
     switch (exprop(n)) {
         case Oadd:
-            die("Unimplemented op %s", opstr(exprop(n)));
+            a = selexpr(s, args[0]);
+            b = selexpr(s, args[1]);
+            g(s, Iadd, &b, &a, NULL);
+            r = b;
             break;
+
         case Osub:
-            die("Unimplemented op %s", opstr(exprop(n)));
-            break;
-        case Omul:
-            die("Unimplemented op %s", opstr(exprop(n)));
-            break;
-        case Odiv:
-            die("Unimplemented op %s", opstr(exprop(n)));
-            break;
-        case Omod:
-            die("Unimplemented op %s", opstr(exprop(n)));
-            break;
-        case Oneg:
-            die("Unimplemented op %s", opstr(exprop(n)));
+            a = selexpr(s, args[0]);
+            b = selexpr(s, args[1]);
+            g(s, Iadd, &b, &a, NULL);
+            r = b;
             break;
 
-        case Obor:
-            die("Unimplemented op %s", opstr(exprop(n)));
-            break;
-        case Oband:
-            die("Unimplemented op %s", opstr(exprop(n)));
-            break;
-        case Obxor:
-            die("Unimplemented op %s", opstr(exprop(n)));
-            break;
-        case Obsl:
-            die("Unimplemented op %s", opstr(exprop(n)));
-            break;
-        case Obsr:
-            die("Unimplemented op %s", opstr(exprop(n)));
-            break;
-        case Obnot:
-            die("Unimplemented op %s", opstr(exprop(n)));
-            break;
+        case Omul: die("Unimplemented op %s", opstr(exprop(n))); break;
+        case Odiv: die("Unimplemented op %s", opstr(exprop(n))); break;
+        case Omod: die("Unimplemented op %s", opstr(exprop(n))); break;
+        case Oneg: die("Unimplemented op %s", opstr(exprop(n))); break;
 
-        case Oaddr:
-            die("Unimplemented op %s", opstr(exprop(n)));
-            break;
-        case Oderef:
-            die("Unimplemented op %s", opstr(exprop(n)));
-            break;
+        case Obor: die("Unimplemented op %s", opstr(exprop(n))); break;
+        case Oband: die("Unimplemented op %s", opstr(exprop(n))); break;
+        case Obxor: die("Unimplemented op %s", opstr(exprop(n))); break;
+        case Obsl: die("Unimplemented op %s", opstr(exprop(n))); break;
+        case Obsr: die("Unimplemented op %s", opstr(exprop(n))); break;
+        case Obnot: die("Unimplemented op %s", opstr(exprop(n))); break;
 
-        case Oeq:
-            die("Unimplemented op %s", opstr(exprop(n)));
-            break;
-        case One:
-            die("Unimplemented op %s", opstr(exprop(n)));
-            break;
-        case Ogt:
-            die("Unimplemented op %s", opstr(exprop(n)));
-            break;
-        case Oge:
-            die("Unimplemented op %s", opstr(exprop(n)));
-            break;
-        case Olt:
-            die("Unimplemented op %s", opstr(exprop(n)));
-            break;
-        case Ole:
-            die("Unimplemented op %s", opstr(exprop(n)));
-            break;
+        case Oaddr: die("Unimplemented op %s", opstr(exprop(n))); break;
+        case Oderef: die("Unimplemented op %s", opstr(exprop(n))); break;
+
+        case Oeq: die("Unimplemented op %s", opstr(exprop(n))); break;
+        case One: die("Unimplemented op %s", opstr(exprop(n))); break;
+        case Ogt: die("Unimplemented op %s", opstr(exprop(n))); break;
+        case Oge: die("Unimplemented op %s", opstr(exprop(n))); break;
+        case Olt: die("Unimplemented op %s", opstr(exprop(n))); break;
+        case Ole: die("Unimplemented op %s", opstr(exprop(n))); break;
 
         case Oasn:
-            g(s, Imov, locreg(&b, Rebx), locreg(&a, Reax), NULL);
+            a = selexpr(s, args[0]);
+            b = selexpr(s, args[1]);
+            g(s, Imov, &b, &a, NULL);
+            r = b;
             break;
-        case Oidx:
-            die("Unimplemented op %s", opstr(exprop(n)));
-            break;
-        case Oslice:
-            die("Unimplemented op %s", opstr(exprop(n)));
-            break;
-        case Osize:
-            die("Unimplemented op %s", opstr(exprop(n)));
-            break;
-        case Ocall:
-            die("Unimplemented op %s", opstr(exprop(n)));
-            break;
-        case Ocast:
-            die("Unimplemented op %s", opstr(exprop(n)));
-            break;
+
+        case Oidx: die("Unimplemented op %s", opstr(exprop(n))); break;
+        case Oslice: die("Unimplemented op %s", opstr(exprop(n))); break;
+        case Osize: die("Unimplemented op %s", opstr(exprop(n))); break;
+        case Ocall: die("Unimplemented op %s", opstr(exprop(n))); break;
+        case Ocast: die("Unimplemented op %s", opstr(exprop(n))); break;
         case Ojmp:
             g(s, Ijmp, loclbl(&a, args[0]->lbl.name), NULL);
             break;
-        case Ocjmp:
-            die("Unimplemented op %s", opstr(exprop(n)));
-            break;
-        case Ovar:
-            die("Unimplemented op %s", opstr(exprop(n)));
-            break;
+        case Ocjmp: die("Unimplemented op %s", opstr(exprop(n))); break;
         case Olit:
-            die("Unimplemented op %s", opstr(exprop(n)));
+        case Ovar:
+            a = loc(s, n);
+            b = getreg(s, mode(args[0]));
+            g(s, Imov, &a, &b, NULL);
+            r = b;
             break;
-        case Olbl:
-            die("Unimplemented op %s", opstr(exprop(n)));
-            break;
+        case Olbl: die("Unimplemented op %s", opstr(exprop(n))); break;
 
-        case Obad:
-        case Oret:
-        case Opreinc:
-        case Opostinc:
-        case Opredec:
-        case Opostdec:
-        case Olor:
-        case Oland:
-        case Olnot:
-        case Oaddeq:
-        case Osubeq:
-        case Omuleq:
-        case Odiveq:
-        case Omodeq:
-        case Oboreq:
-        case Obandeq:
-        case Obxoreq:
-        case Obsleq:
-        case Obsreq:
-        case Omemb:
+        case Obad: case Oret: case Opreinc: case Opostinc: case Opredec:
+        case Opostdec: case Olor: case Oland: case Olnot: case Oaddeq:
+        case Osubeq: case Omuleq: case Odiveq: case Omodeq: case Oboreq:
+        case Obandeq: case Obxoreq: case Obsleq: case Obsreq: case Omemb:
             die("Should not see %s in isel", opstr(exprop(n)));
             break;
     }
+    return r;
 }
 
 void locprint(FILE *fd, Loc *l)
@@ -269,9 +245,6 @@ void locprint(FILE *fd, Loc *l)
             break;
         case Locreg:
             fprintf(fd, "%s", regnames[l->reg]);
-            break;
-        case Locpseudo:
-            fprintf(fd, "%%P%ld", l->pseudo);
             break;
         case Locmem:
         case Locmeml:
@@ -290,6 +263,10 @@ void locprint(FILE *fd, Loc *l)
                 fprintf(fd, ")");
             break;
         case Loclit:
+            fprintf(fd, "$%ld", l->lit);
+            break;
+        case Locnone:
+            die("Bad location in locprint()");
             break;
     }
 }
@@ -344,18 +321,16 @@ done:
     return;
 }
 
-void isel(Node *n)
+void isel(Isel *s, Node *n)
 {
-    struct Isel is = {0,};
     Loc lbl;
-    int i;
 
     switch (n->type) {
         case Nlbl:
-            g(&is, Ilbl, loclbl(&lbl, n->lbl.name), NULL);
+            g(s, Ilbl, loclbl(&lbl, n->lbl.name), NULL);
             break;
         case Nexpr:
-            selexpr(&is, n);
+            selexpr(s, n);
             break;
         case Ndecl:
             break;
@@ -363,14 +338,45 @@ void isel(Node *n)
             die("Bad node type in isel()");
             break;
     }
-    for (i = 0; i < is.ni; i++)
-        iprintf(stdout, is.il[i]);
+}
+
+void prologue(Isel *s)
+{
+    Loc resp;
+    Loc rebp;
+    Loc stksz;
+
+    locreg(&resp, Resp);
+    locreg(&rebp, Rebp);
+    loclit(&stksz, 16);
+    g(s, Ipush, &rebp, NULL);
+    g(s, Imov, &resp, &rebp, NULL);
+    g(s, Isub, &stksz, &resp, NULL);
+}
+
+void epilogue(Isel *s)
+{
+    Loc resp;
+    Loc rebp;
+    Loc stksz;
+
+    locreg(&resp, Resp);
+    locreg(&rebp, Rebp);
+    loclit(&stksz, 16);
+    g(s, Imov, &rebp, &resp, NULL);
+    g(s, Ipop, &rebp, NULL);
 }
 
 void genasm(Node **nl, int nn)
 {
+    struct Isel is = {0,};
     int i;
 
+    prologue(&is);
     for (i = 0; i < nn; i++)
-        isel(nl[i]);
+        isel(&is, nl[i]);
+    epilogue(&is);
+
+    for (i = 0; i < is.ni; i++)
+        iprintf(stdout, is.il[i]);
 }

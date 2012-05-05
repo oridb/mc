@@ -18,10 +18,12 @@ Insn(Imov,      "\tmov%t %x,%x\n",          0)
 Insn(Imovz,     "\tmovz%0t%1t %x,%x\n",     0)
 Insn(Imovs,     "\tmovs%0t%1t %x,%x\n",     0)
 
-/* arithmetic instructions. */
 Insn(Iadd,      "\tadd%t %r,%x\n",          0)
+Insn(Isub,      "\tsub%t %r,%x\n",          0)
+Insn(Ipush,     "\tpush%t %r\n",            0)
+Insn(Ipop,      "\tpop%t %r\n",             0)
 
-/* flow instructions */
+/* branch instructions */
 Insn(Ijmp,      "\tjmp %v\n",               0)
 Insn(Iret,      "\tret\n",                  0)
 
