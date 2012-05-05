@@ -14,13 +14,16 @@
    */
 
 /* Note, the mov instruction is specified in an overly general manner. */
-Insn(Imov,      "mov%m %x,%x",          0)
-Insn(Imovz,     "movz%0m%1m %x,%x",     0)
-Insn(Imovs,     "movs%0m%1m %x,%x",     0)
+Insn(Imov,      "\tmov%t %x,%x\n",          0)
+Insn(Imovz,     "\tmovz%0t%1t %x,%x\n",     0)
+Insn(Imovs,     "\tmovs%0t%1t %x,%x\n",     0)
 
 /* arithmetic instructions. */
-Insn(Iadd,      "add%m %r,%x",          0)
-Insn(Iret,      "ret",                  0)
+Insn(Iadd,      "\tadd%t %r,%x\n",          0)
+
+/* flow instructions */
+Insn(Ijmp,      "\tjmp %v\n",               0)
+Insn(Iret,      "\tret\n",                  0)
 
 /* not really an insn... */
-Insn(Ilbl,      "%s:",                  0)
+Insn(Ilbl,      "%v:\n",                  0)

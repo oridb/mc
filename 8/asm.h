@@ -7,7 +7,7 @@ typedef enum {
 } AsmOp;
 
 typedef enum {
-#define Reg(r, name) r,
+#define Reg(r, name, mode) r,
 #include "regs.def"
 #undef Reg 
 } Reg;
@@ -52,5 +52,7 @@ struct Loc {
 struct Insn {
     AsmOp op;
     Loc args[MaxArg];
-    int nloc;
+    int narg;
 };
+
+void genasm(Node **nl, int nn);

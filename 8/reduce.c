@@ -143,17 +143,20 @@ void simpblk(Simp *s, Node *n)
 
     for (i = 0; i < n->block.nstmts; i++) {
         e = simp(s, n->block.stmts[i]);
-        append(s, e);
+        if (e)
+            append(s, e);
     }
 }
 
 Node *simpexpr(Simp *s, Node *n)
 {
-    Node *r, *t;
+    Node *r, *t, *v;
     int i;
 
+    r = NULL;
     switch (exprop(n)) {
         case Ovar:
+            r = n;
             break;
         case Oret:
             if (n->expr.args[0]) {
@@ -164,16 +167,17 @@ Node *simpexpr(Simp *s, Node *n)
             break;
         default:
             if (isimpure(n)) {
-                r = simp(s, n);
-                t = storetmp(r);
+                v = simp(s, n);
+                t = storetmp(v);
                 append(s, t);
-                return t;
+                r = t;
             } else {
                 for (i = 0; i < n->expr.nargs; i++)
                     n->expr.args[i] = simp(s, n->expr.args[i]);
+                r = n;
             }
     }
-    return n;
+    return r;
 }
 
 Node *simp(Simp *s, Node *n)
