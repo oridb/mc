@@ -340,6 +340,7 @@ static void inferexpr(Node *n, Type *ret, int *sawret)
         case Olbl:      /* :lbl -> void* */
             settype(n, mktyptr(n->line, mkty(-1, Tyvoid)));
         case Obad:      /* error! */
+        case Numops:
             break;
     }
 }
