@@ -56,4 +56,4 @@ struct Insn {
     int narg;
 };
 
-void genasm(Node **nl, int nn);
+void genasm(Fn *fn);

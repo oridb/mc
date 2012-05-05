@@ -14,12 +14,15 @@
 #include "gen.h"
 #include "asm.h"
 
+/* instruction selection state */
 typedef struct Isel Isel;
 struct Isel {
     Insn **il;
     size_t ni;
+    Htab *locs; /* Node => int stkoff */
 };
 
+/* string tables */
 char *regnames[] = {
 #define Reg(r, name, mode) name,
 #include "regs.def"
@@ -37,6 +40,25 @@ char *insnfmts[] = {
 #include "insns.def"
 #undef Insn
 };
+
+/* used to decide which operator is appropriate
+ * for implementing various conditional operators */
+struct {
+    AsmOp test; 
+    AsmOp jmp;
+    AsmOp getflag;
+} reloptab[Numops] = {
+    [Oeq] = {Itest, Ijnz, Isetnz},
+    [One] = {Itest, Ijz, Isetz},
+    [Ogt] = {Icmp, Ijgt, Isetgt},
+    [Oge] = {Icmp, Ijge, Isetge},
+    [Olt] = {Icmp, Ijlt, Isetlt},
+    [Ole] = {Icmp, Ijle, Isetle}
+};
+
+
+/* forward decls */
+Loc selexpr(Isel *s, Node *n);
 
 
 Loc *loclbl(Loc *l, char *lbl)
@@ -113,6 +135,36 @@ Mode mode(Node *n)
     return ModeL;
 }
 
+Loc coreg(Loc r, Mode m)
+{
+    Loc l;
+
+    Reg crtab[][4] = {
+        [Ral] = {Ral, Rax, Reax},
+        [Rcl] = {Rcl, Rcx, Recx},
+        [Rdl] = {Rdl, Rdx, Redx},
+        [Rbl] = {Rbl, Rbx, Rebx},
+
+        [Rax] = {Ral, Rax, Reax},
+        [Rcx] = {Rcl, Rcx, Recx},
+        [Rdx] = {Rdl, Rdx, Redx},
+        [Rbx] = {Rbl, Rbx, Rebx},
+        [Rsi] = {0, Rsi, Resi},
+        [Rdi] = {0, Rdi, Redi},
+
+        [Reax] = {Ral, Rax, Reax},
+        [Recx] = {Rcl, Rcx, Recx},
+        [Redx] = {Rdl, Rdx, Redx},
+        [Rebx] = {Rbl, Rbx, Rebx},
+        [Resi] = {0, Rsi, Resi},
+        [Redi] = {0, Rdi, Redi},
+    };
+    if (r.type != Locreg)
+        die("Non-reg passed to coreg()");
+    locreg(&l, crtab[r.reg][m]);
+    return l;
+}
+
 Loc getreg(Isel *s, Mode m)
 {
     Loc l;
@@ -157,9 +209,56 @@ void g(Isel *s, AsmOp op, ...)
     lappend(&s->il, &s->ni, i);
 }
 
+void mov(Isel *s, Loc *a, Loc *b)
+{
+    if (a->type == Locreg && b->type == Locreg)
+        if (a->reg == b->reg)
+            return;
+    g(s, Imov, a, b, NULL);
+}
+
+
+/* If we're testing equality, etc, it's a bit silly
+ * to generate the test, store it to a bite, expand it
+ * to the right width, and then test it again. Try to optimize
+ * for these common cases.
+ *
+ * if we're doing the optimization to avoid
+ * multiple tests, we want to eval the children
+ * of the first arg, instead of the first arg
+ * directly */
+void selcjmp(Isel *s, Node *n, Node **args)
+{
+    Loc a, b;
+    Loc l1, l2;
+    AsmOp cond, jmp;
+
+    cond = reloptab[exprop(n)].test;
+    jmp = reloptab[exprop(n)].jmp;
+    /* if we have a cond, we're knocking off the redundant test,
+     * and want to eval the children */
+    if (cond) {
+        a = selexpr(s, args[0]->expr.args[0]);
+        b = selexpr(s, args[0]->expr.args[1]);
+    } else {
+        cond = Itest;
+        jmp = Ijnz;
+        a = selexpr(s, args[0]); /* cond */
+        b = a;
+    }
+
+    /* the jump targets will always be evaluated the same way */
+    l1 = selexpr(s, args[1]); /* if true */
+    l2 = selexpr(s, args[2]); /* if false */
+
+    g(s, cond, &a, &b, NULL);
+    g(s, jmp, &l1, NULL);
+    g(s, Ijmp, &l2, NULL);
+}
+
 Loc selexpr(Isel *s, Node *n)
 {
-    Loc a, b, r;
+    Loc a, b, c, r;
     Node **args;
 
     args = n->expr.args;
@@ -194,42 +293,51 @@ Loc selexpr(Isel *s, Node *n)
         case Oaddr: die("Unimplemented op %s", opstr(exprop(n))); break;
         case Oderef: die("Unimplemented op %s", opstr(exprop(n))); break;
 
-        case Oeq: die("Unimplemented op %s", opstr(exprop(n))); break;
-        case One: die("Unimplemented op %s", opstr(exprop(n))); break;
-        case Ogt: die("Unimplemented op %s", opstr(exprop(n))); break;
-        case Oge: die("Unimplemented op %s", opstr(exprop(n))); break;
-        case Olt: die("Unimplemented op %s", opstr(exprop(n))); break;
-        case Ole: die("Unimplemented op %s", opstr(exprop(n))); break;
+        case Oeq: case One: case Ogt: case Oge: case Olt: case Ole:
+            a = selexpr(s, args[0]);
+            b = selexpr(s, args[1]);
+            c = getreg(s, ModeB);
+            r = coreg(c, mode(n));
+            g(s, reloptab[exprop(n)].test, &a, &b, NULL);
+            g(s, reloptab[exprop(n)].getflag, &c, NULL);
+            g(s, Imovz, &c, &r);
+            return r;
 
         case Oasn:
             a = selexpr(s, args[0]);
             b = selexpr(s, args[1]);
-            g(s, Imov, &b, &a, NULL);
+            mov(s, &b, &a);
             r = b;
             break;
 
-        case Oidx: die("Unimplemented op %s", opstr(exprop(n))); break;
-        case Oslice: die("Unimplemented op %s", opstr(exprop(n))); break;
-        case Osize: die("Unimplemented op %s", opstr(exprop(n))); break;
         case Ocall: die("Unimplemented op %s", opstr(exprop(n))); break;
         case Ocast: die("Unimplemented op %s", opstr(exprop(n))); break;
         case Ojmp:
             g(s, Ijmp, loclbl(&a, args[0]->lbl.name), NULL);
             break;
-        case Ocjmp: die("Unimplemented op %s", opstr(exprop(n))); break;
-        case Olit:
+        case Ocjmp:
+            selcjmp(s, n, args);
+            break;
+
+        case Olit: /* fall through */
         case Ovar:
-            a = loc(s, n);
-            b = getreg(s, mode(args[0]));
-            g(s, Imov, &a, &b, NULL);
+            b = loc(s, n);
+            a = getreg(s, mode(args[0]));
+            mov(s, &b, &a);
             r = b;
             break;
-        case Olbl: die("Unimplemented op %s", opstr(exprop(n))); break;
+        case Olbl:
+            loclbl(&r, args[0]->lbl.name);
+            break;
 
+        /* These operators should never show up in the reduced trees,
+         * since they should have been replaced with more primitive
+         * expressions by now */
         case Obad: case Oret: case Opreinc: case Opostinc: case Opredec:
         case Opostdec: case Olor: case Oland: case Olnot: case Oaddeq:
         case Osubeq: case Omuleq: case Odiveq: case Omodeq: case Oboreq:
         case Obandeq: case Obxoreq: case Obsleq: case Obsreq: case Omemb:
+        case Oslice: case Oidx: case Osize: case Numops:
             die("Should not see %s in isel", opstr(exprop(n)));
             break;
     }
@@ -340,43 +448,51 @@ void isel(Isel *s, Node *n)
     }
 }
 
-void prologue(Isel *s)
+void prologue(Isel *s, size_t sz)
 {
-    Loc resp;
-    Loc rebp;
+    Loc esp;
+    Loc ebp;
     Loc stksz;
 
-    locreg(&resp, Resp);
-    locreg(&rebp, Rebp);
-    loclit(&stksz, 16);
-    g(s, Ipush, &rebp, NULL);
-    g(s, Imov, &resp, &rebp, NULL);
-    g(s, Isub, &stksz, &resp, NULL);
+    locreg(&esp, Resp);
+    locreg(&ebp, Rebp);
+    loclit(&stksz, sz);
+    g(s, Ipush, &ebp, NULL);
+    g(s, Imov, &esp, &ebp, NULL);
+    g(s, Isub, &stksz, &esp, NULL);
 }
 
 void epilogue(Isel *s)
 {
-    Loc resp;
-    Loc rebp;
+    Loc esp;
+    Loc ebp;
     Loc stksz;
 
-    locreg(&resp, Resp);
-    locreg(&rebp, Rebp);
+    locreg(&esp, Resp);
+    locreg(&ebp, Rebp);
     loclit(&stksz, 16);
-    g(s, Imov, &rebp, &resp, NULL);
-    g(s, Ipop, &rebp, NULL);
+    g(s, Imov, &ebp, &esp, NULL);
+    g(s, Ipop, &ebp, NULL);
 }
 
-void genasm(Node **nl, int nn)
+/* genasm requires all nodes in 'nl' to map cleanly to operations that are
+ * natively supported, as promised in the output of reduce().  No 64-bit
+ * operations on x32, no structures, and so on. */
+void genasm(Fn *fn)
 {
     struct Isel is = {0,};
     int i;
 
-    prologue(&is);
-    for (i = 0; i < nn; i++)
-        isel(&is, nl[i]);
+    is.locs = fn->locs;
+
+    prologue(&is, fn->stksz);
+    for (i = 0; i < fn->nn; i++)
+        isel(&is, fn->nl[i]);
     epilogue(&is);
 
+    if (fn->isglobl)
+        fprintf(stdout, ".globl %s\n", fn->name);
+    fprintf(stdout, "%s:\n", fn->name);
     for (i = 0; i < is.ni; i++)
         iprintf(stdout, is.il[i]);
 }

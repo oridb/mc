@@ -22,6 +22,7 @@ Fn *mkfn(char *name)
 
     f = zalloc(sizeof(Fn));
     f->name = strdup(name);
+    f->isglobl = 1;
 
     return f;
 }
@@ -65,7 +66,6 @@ static void lowerfn(Comp *c, char *name, Node *n)
 
     /* lower */
     fn = mkfn(name);
-    fn = zalloc(sizeof(Fn));
     fn->name = strdup(name);
 
     nl = reduce(n->func.body, &nn);
@@ -74,7 +74,9 @@ static void lowerfn(Comp *c, char *name, Node *n)
         dump(nl[i], stdout);
     }
 
-    genasm(nl, nn);
+    fn->nl = nl;
+    fn->nn = nn;
+    genasm(fn);
 }
 
 int isconstfn(Sym *s)

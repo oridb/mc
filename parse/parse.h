@@ -19,6 +19,7 @@ typedef struct Cstr Cstr;
 typedef enum {
 #define O(op) op,
 #include "ops.def"
+    Numops,
 #undef O
 } Op;
 

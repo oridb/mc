@@ -19,18 +19,27 @@ struct Blob {
 
 struct Fn {
     char *name; /* assembly name; mangled */
+    int isglobl;
     
+    /* filled in by the lowering process */
+    size_t stksz;
+    Htab *locs;
+
     Htab *bbnames; /* char* => Bb* map */
     Bb *start;
     Bb *end;
     Bb *cur;
     Bb **bb;
     size_t nbb;
-
     /* we can't know all the edges as we
      * construct the bb list, so we fix up later */
     Bb **fixup;
     size_t nfixup;
+
+    /* FIXME: do we want the node list raw here? For now, it's here. */
+    Node **nl;
+    size_t nn;
+
 };
 
 struct Bb {
