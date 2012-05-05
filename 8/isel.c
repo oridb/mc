@@ -55,6 +55,16 @@ Loc *locreg(Loc *l, Reg r)
     return l;
 }
 
+Loc *locpseudo(Loc *l, Mode mode)
+{
+    static long nextpseudo;
+
+    l->type = Locpseudo;
+    l->mode = mode;
+    l->pseudo = nextpseudo++;
+    return l;
+}
+
 Loc *locmem(Loc *l, long disp, Reg base, Reg idx, Mode mode)
 {
     l->type = Locmem;
@@ -260,6 +270,9 @@ void locprint(FILE *fd, Loc *l)
         case Locreg:
             fprintf(fd, "%s", regnames[l->reg]);
             break;
+        case Locpseudo:
+            fprintf(fd, "%%P%ld", l->pseudo);
+            break;
         case Locmem:
         case Locmeml:
             if (l->type == Locmem) {
@@ -275,7 +288,6 @@ void locprint(FILE *fd, Loc *l)
                 fprintf(fd, ",%s", regnames[l->mem.idx]);
             if (l->mem.base)
                 fprintf(fd, ")");
-            break;
             break;
         case Loclit:
             break;

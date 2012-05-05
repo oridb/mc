@@ -15,6 +15,7 @@ typedef enum {
 
 typedef enum {
     Loclbl,
+    Locpseudo,
     Locreg,
     Locmem,
     Locmeml, /* label offset */
@@ -38,6 +39,7 @@ struct Loc {
         char *lbl;
         Reg   reg;
         long  lit;
+        long  pseudo;
         /* disp(base + index) */
         struct {
             /* only one of lbldisp and constdisp may be used */
