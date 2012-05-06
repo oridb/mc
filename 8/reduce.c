@@ -23,8 +23,14 @@ typedef struct Simp Simp;
 struct Simp {
     Node **blk;
     size_t nblk;
+
+    /* return handling */
     Node *endlbl;
     Node *retval;
+
+    /* pre/postinc handling */
+    Node **incqueue;
+    size_t nqueue;
 };
 
 Node *simp(Simp *s, Node *n);
@@ -152,9 +158,72 @@ Node *simpexpr(Simp *s, Node *n)
 {
     Node *r, *t, *v;
     int i;
+    Node **args;
+    const Op fusedmap[] = {
+        [Osubeq]        = Osub,
+        [Omuleq]        = Omul,
+        [Odiveq]        = Odiv,
+        [Omodeq]        = Omod,
+        [Oboreq]        = Obor,
+        [Obandeq]       = Oband,
+        [Obxoreq]       = Obxor,
+        [Obsleq]        = Obsl,
+    };
+
 
     r = NULL;
+    args = n->expr.args;
     switch (exprop(n)) {
+        case Obad: 
+        case Olor: case Oland: case Oaddeq:
+        case Obsreq: case Omemb:
+        case Oslice: case Oidx: case Osize:
+            die("Have not implemented lowering op %s", opstr(exprop(n)));
+            break;
+
+        /* fused ops:
+         * foo ?= blah
+         *    =>
+         *     foo = foo ? blah*/
+        case Osubeq: case Omuleq: case Odiveq: case Omodeq: case Oboreq:
+        case Obandeq: case Obxoreq: case Obsleq:
+            v = mkexpr(-1, fusedmap[exprop(n)], args[0], args[1], NULL);
+            r = mkexpr(-1, Oasn, args[0], v, NULL);
+            break;
+
+        /* ++expr(x)
+         *  => x = x + 1
+         *     expr(x) */
+        case Opreinc:
+            t = simp(s, args[0]);
+            v = mkexpr(-1, Oadd, mkint(-1, 1), args[0], NULL);
+            r = mkexpr(-1, Oasn, args[0], v, NULL);
+            lappend(&s->incqueue, &s->nqueue, t); 
+            break;
+        case Opredec:
+            t = simp(s, args[0]);
+            v = mkexpr(-1, Oadd, mkint(-1, -1), args[0], NULL);
+            r = mkexpr(-1, Oasn, args[0], v, NULL);
+            lappend(&s->incqueue, &s->nqueue, t); 
+            break;
+
+        /* expr(x++)
+         *     => 
+         *      expr
+         *      x = x + 1 
+         */
+        case Opostinc:
+            r = simp(s, args[0]);
+            v = mkexpr(-1, Oadd, mkint(-1, 1), r, NULL);
+            t = mkexpr(-1, Oasn, args[0], v, NULL);
+            lappend(&s->incqueue, &s->nqueue, t); 
+            break;
+        case Opostdec:
+            r = simp(s, args[0]);
+            v = mkexpr(-1, Osub, mkint(-1, -1), args[0], NULL);
+            t = mkexpr(-1, Oasn, args[0], v, NULL);
+            lappend(&s->incqueue, &s->nqueue, t); 
+            break;
         case Ovar:
             r = n;
             break;
@@ -221,31 +290,11 @@ Node **reduce(Node *n, int *ret_nn)
     s.nblk = 0;
     s.endlbl = genlbl();
     s.retval = NULL;
-    switch (n->type) {
-        /* these should never be inside functions */
-        case Nnone:
-        case Nfile:
-            die("Bad node type in func");
-            break;
-        case Nfunc:
-            die("FIXME: generate thunks");
-            break;
-            /* no code generated */
-        case Nuse:
-            break;
-            /* complex nodes */
-        case Nblock:
-            simp(&s, n);
-            break;
-        case Nifstmt:
-        case Nloopstmt:
-        case Nexpr:
-        case Nlit:
-        case Nname:
-        case Ndecl:
-        case Nlbl:
-            break;
-    }
+    if (n->type == Nblock)
+        simp(&s, n);
+    else
+        die("Got a non-block (%s) to reduce", nodestr(n->type));
+
     append(&s, s.endlbl);
 
     *ret_nn = s.nblk;

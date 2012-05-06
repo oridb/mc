@@ -302,7 +302,6 @@ Node *mkfile(char *name);
 Node *mkuse(int line, char *use, int islocal);
 Node *mkexpr(int line, Op op, ...); /* NULL terminated */
 Node *mkcall(int line, Node *fn, Node **args, size_t nargs);
-Node *mklit(int line, Littype lt, void *val);
 Node *mkif(int line, Node *cond, Node *iftrue, Node *iffalse);
 Node *mkloop(int line, Node *init, Node *cond, Node *incr, Node *body);
 Node *mkblock(int line, Stab *scope);

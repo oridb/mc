@@ -48,6 +48,7 @@ struct {
     AsmOp jmp;
     AsmOp getflag;
 } reloptab[Numops] = {
+    [Olnot] = {Itest, Ijz, Isetz},
     [Oeq] = {Itest, Ijnz, Isetnz},
     [One] = {Itest, Ijz, Isetz},
     [Ogt] = {Icmp, Ijgt, Isetgt},
@@ -61,11 +62,12 @@ struct {
 Loc selexpr(Isel *s, Node *n);
 
 
-Loc *loclbl(Loc *l, char *lbl)
+Loc *loclbl(Loc *l, Node *lbl)
 {
+    assert(lbl->type = Nlbl);
     l->type = Loclbl;
     l->mode = ModeL;
-    l->lbl = strdup(lbl);
+    l->lbl = strdup(lbl->lbl.name);
     return l;
 }
 
@@ -248,8 +250,8 @@ void selcjmp(Isel *s, Node *n, Node **args)
     }
 
     /* the jump targets will always be evaluated the same way */
-    l1 = selexpr(s, args[1]); /* if true */
-    l2 = selexpr(s, args[2]); /* if false */
+    loclbl(&l1, args[1]); /* if true */
+    loclbl(&l2, args[2]); /* if false */
 
     g(s, cond, &a, &b, NULL);
     g(s, jmp, &l1, NULL);
@@ -293,6 +295,15 @@ Loc selexpr(Isel *s, Node *n)
         case Oaddr: die("Unimplemented op %s", opstr(exprop(n))); break;
         case Oderef: die("Unimplemented op %s", opstr(exprop(n))); break;
 
+        case Olnot: 
+            a = selexpr(s, args[0]);
+            b = getreg(s, ModeB);
+            r = coreg(b, mode(n));
+            g(s, reloptab[exprop(n)].test, &a, &a, NULL);
+            g(s, reloptab[exprop(n)].getflag, &b, NULL);
+            g(s, Imovz, &b, &r, NULL);
+            break;
+
         case Oeq: case One: case Ogt: case Oge: case Olt: case Ole:
             a = selexpr(s, args[0]);
             b = selexpr(s, args[1]);
@@ -300,7 +311,7 @@ Loc selexpr(Isel *s, Node *n)
             r = coreg(c, mode(n));
             g(s, reloptab[exprop(n)].test, &a, &b, NULL);
             g(s, reloptab[exprop(n)].getflag, &c, NULL);
-            g(s, Imovz, &c, &r);
+            g(s, Imovz, &c, &r, NULL);
             return r;
 
         case Oasn:
@@ -313,13 +324,15 @@ Loc selexpr(Isel *s, Node *n)
         case Ocall: die("Unimplemented op %s", opstr(exprop(n))); break;
         case Ocast: die("Unimplemented op %s", opstr(exprop(n))); break;
         case Ojmp:
-            g(s, Ijmp, loclbl(&a, args[0]->lbl.name), NULL);
+            g(s, Ijmp, loclbl(&a, args[0]), NULL);
             break;
         case Ocjmp:
             selcjmp(s, n, args);
             break;
 
         case Olit: /* fall through */
+            r = loc(s, n);
+            break;
         case Ovar:
             b = loc(s, n);
             a = getreg(s, mode(args[0]));
@@ -327,14 +340,14 @@ Loc selexpr(Isel *s, Node *n)
             r = b;
             break;
         case Olbl:
-            loclbl(&r, args[0]->lbl.name);
-            break;
+            loclbl(&r, args[0]);
+            break; 
 
         /* These operators should never show up in the reduced trees,
          * since they should have been replaced with more primitive
          * expressions by now */
         case Obad: case Oret: case Opreinc: case Opostinc: case Opredec:
-        case Opostdec: case Olor: case Oland: case Olnot: case Oaddeq:
+        case Opostdec: case Olor: case Oland: case Oaddeq:
         case Osubeq: case Omuleq: case Odiveq: case Omodeq: case Oboreq:
         case Obandeq: case Obxoreq: case Obsleq: case Obsreq: case Omemb:
         case Oslice: case Oidx: case Osize: case Numops:
@@ -435,7 +448,7 @@ void isel(Isel *s, Node *n)
 
     switch (n->type) {
         case Nlbl:
-            g(s, Ilbl, loclbl(&lbl, n->lbl.name), NULL);
+            g(s, Ilbl, loclbl(&lbl, n), NULL);
             break;
         case Nexpr:
             selexpr(s, n);

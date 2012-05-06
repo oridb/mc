@@ -36,13 +36,13 @@ Insn(Isetgt,      "\tsetgt\n",                  0)
 Insn(Isetge,      "\tsetge\n",                  0)
 
 /* branch instructions */
-Insn(Ijmp,      "\tjmp\n",                      0)
-Insn(Ijz,       "\tjz\n",                       0)
-Insn(Ijnz,      "\tjnz\n",                      0)
-Insn(Ijlt,      "\tjlt\n",                      0)
-Insn(Ijle,      "\tjle\n",                      0)
-Insn(Ijgt,      "\tjgt\n",                      0)
-Insn(Ijge,      "\tjge\n",                      0)
+Insn(Ijmp,      "\tjmp %v\n",                   0)
+Insn(Ijz,       "\tjz %v\n",                    0)
+Insn(Ijnz,      "\tjnz %v\n",                   0)
+Insn(Ijlt,      "\tjlt %v\n",                   0)
+Insn(Ijle,      "\tjle %v\n",                   0)
+Insn(Ijgt,      "\tjgt %v\n",                   0)
+Insn(Ijge,      "\tjge %v\n",                   0)
 Insn(Iret,      "\tret\n",                      0)
 
 /* not really an insn... */
