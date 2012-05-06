@@ -66,4 +66,4 @@ void compdump(Comp *c, FILE *fd);
 Fn *mkfn(char *name);
 Bb *mkbb(void);
 void edge(Bb *from, Bb *to);
-Node **reduce(Node *n, int *ret_nn);
+Node **reduce(Fn *fn, Node *n, int *ret_nn);

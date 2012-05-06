@@ -24,6 +24,9 @@ struct Simp {
     Node **blk;
     size_t nblk;
 
+    /* the function that we're reducing the body for */
+    Fn *fn;
+
     /* return handling */
     Node *endlbl;
     Node *retval;
@@ -70,27 +73,16 @@ Node *temp(Node *e)
     return mkexpr(-1, Ovar, t, NULL);
 }
 
+void jmp(Simp *s, Node *lbl) { append(s, mkexpr(-1, Ojmp, lbl, NULL)); }
+Node *store(Node *t, Node *n) { return mkexpr(-1, Oasn, t, n, NULL); }
+Node *storetmp(Node *n) { return store(temp(n), n); }
+
 void cjmp(Simp *s, Node *cond, Node *iftrue, Node *iffalse)
 {
     Node *jmp;
 
     jmp = mkexpr(-1, Ocjmp, cond, iftrue, iffalse, NULL);
     append(s, jmp);
-}
-
-void jmp(Simp *s, Node *lbl)
-{
-    append(s, mkexpr(-1, Ojmp, lbl, NULL));
-}
-
-Node *store(Node *t, Node *n)
-{
-    return mkexpr(-1, Oasn, t, n, NULL);
-}
-
-Node *storetmp(Node *n)
-{
-    return store(temp(n), n);
 }
 
 /* if foo; bar; else baz;;
@@ -249,6 +241,10 @@ Node *simpexpr(Simp *s, Node *n)
     return r;
 }
 
+void declare(Simp *s, Node *n)
+{
+}
+
 Node *simp(Simp *s, Node *n)
 {
     Node *r;
@@ -271,7 +267,7 @@ Node *simp(Simp *s, Node *n)
             r = n;
             break;
         case Ndecl:
-            //declare(s, n);
+            declare(s, n);
             break;
         case Nlbl:
             append(s, n);
@@ -283,13 +279,15 @@ Node *simp(Simp *s, Node *n)
     return r;
 }
 
-Node **reduce(Node *n, int *ret_nn)
+Node **reduce(Fn *fn, Node *n, int *ret_nn)
 {
     Simp s = {0,};
 
     s.nblk = 0;
     s.endlbl = genlbl();
     s.retval = NULL;
+    s.fn = fn;
+
     if (n->type == Nblock)
         simp(&s, n);
     else
