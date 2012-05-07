@@ -41,6 +41,9 @@ char *insnfmts[] = {
 #undef Insn
 };
 
+void locprint(FILE *fd, Loc *l);
+void iprintf(FILE *fd, Insn *insn);
+
 /* used to decide which operator is appropriate
  * for implementing various conditional operators */
 struct {
@@ -111,9 +114,12 @@ Loc loc(Isel *s, Node *n)
 {
     Loc l;
     Node *v;
+    size_t stkoff;
+
     switch (exprop(n)) {
         case Ovar:
-            locmem(&l, 0, Reax, Rnone, ModeL);
+            stkoff = (size_t)htget(s->locs, n->expr.args[0]);
+            locmem(&l, stkoff, Resp, Rnone, ModeL);
             break;
         case Olit:
             v = n->expr.args[0];
@@ -211,12 +217,29 @@ void g(Isel *s, AsmOp op, ...)
     lappend(&s->il, &s->ni, i);
 }
 
-void mov(Isel *s, Loc *a, Loc *b)
+void load(Isel *s, Loc *a, Loc *b)
 {
-    if (a->type == Locreg && b->type == Locreg)
-        if (a->reg == b->reg)
-            return;
+    assert(a->type == Loclit || a->type == Locmem || a->type == Loclbl);
+    assert(b->type == Locreg);
     g(s, Imov, a, b, NULL);
+}
+
+void stor(Isel *s, Loc *a, Loc *b)
+{
+    assert(a->type == Locreg || a->type == Loclit);
+    assert(b->type == Loclit || b->type == Locmem || b->type == Loclbl);
+    g(s, Imov, a, b, NULL);
+}
+
+Loc inreg(Isel *s, Loc a)
+{
+    Loc r;
+
+    if (a.type == Locreg)
+        return a;
+    r = getreg(s, a.mode);
+    load(s, &a, &r);
+    return r;
 }
 
 
@@ -258,6 +281,17 @@ void selcjmp(Isel *s, Node *n, Node **args)
     g(s, Ijmp, &l2, NULL);
 }
 
+static Loc binop(Isel *s, AsmOp op, Node *x, Node *y)
+{
+    Loc a, b;
+
+    a = selexpr(s, x);
+    b = selexpr(s, y);
+    a = inreg(s, a);
+    g(s, op, &b, &a, NULL);
+    return a;
+}
+
 Loc selexpr(Isel *s, Node *n)
 {
     Loc a, b, c, r;
@@ -266,19 +300,8 @@ Loc selexpr(Isel *s, Node *n)
     args = n->expr.args;
     r = (Loc){Locnone, };
     switch (exprop(n)) {
-        case Oadd:
-            a = selexpr(s, args[0]);
-            b = selexpr(s, args[1]);
-            g(s, Iadd, &b, &a, NULL);
-            r = b;
-            break;
-
-        case Osub:
-            a = selexpr(s, args[0]);
-            b = selexpr(s, args[1]);
-            g(s, Iadd, &b, &a, NULL);
-            r = b;
-            break;
+        case Oadd: r = binop(s, Iadd, args[0], args[1]); break;
+        case Osub: r = binop(s, Isub, args[0], args[1]); break;
 
         case Omul: die("Unimplemented op %s", opstr(exprop(n))); break;
         case Odiv: die("Unimplemented op %s", opstr(exprop(n))); break;
@@ -314,10 +337,17 @@ Loc selexpr(Isel *s, Node *n)
             g(s, Imovz, &c, &r, NULL);
             return r;
 
-        case Oasn:
+        case Oasn:  /* relabel */
+        case Ostor: /* reg -> mem */
             a = selexpr(s, args[0]);
             b = selexpr(s, args[1]);
-            mov(s, &b, &a);
+            stor(s, &b, &a);
+            r = b;
+            break;
+        case Oload: /* mem -> reg */
+            a = selexpr(s, args[0]);
+            b = selexpr(s, args[1]);
+            load(s, &b, &a);
             r = b;
             break;
 
@@ -331,13 +361,8 @@ Loc selexpr(Isel *s, Node *n)
             break;
 
         case Olit: /* fall through */
-            r = loc(s, n);
-            break;
         case Ovar:
-            b = loc(s, n);
-            a = getreg(s, mode(args[0]));
-            mov(s, &b, &a);
-            r = b;
+            r = loc(s, n);
             break;
         case Olbl:
             loclbl(&r, args[0]);

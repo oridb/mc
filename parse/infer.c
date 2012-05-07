@@ -316,9 +316,6 @@ static void inferexpr(Node *n, Type *ret, int *sawret)
                 t =  unify(n, mkty(-1, Tyvoid), ret);
             settype(n, t);
             break;
-        case Ocjmp:
-            die("Should not see cjmp in fe");
-            break;
         case Ojmp:     /* goto void* -> void */
             settype(n, mkty(-1, Tyvoid));
             break;
@@ -339,8 +336,9 @@ static void inferexpr(Node *n, Type *ret, int *sawret)
             break;
         case Olbl:      /* :lbl -> void* */
             settype(n, mktyptr(n->line, mkty(-1, Tyvoid)));
-        case Obad:      /* error! */
-        case Numops:
+        case Obad: case Numops: case Ocjmp:
+        case Oload: case Ostor:
+            die("Should not see %s in fe", opstr(exprop(n)));
             break;
     }
 }

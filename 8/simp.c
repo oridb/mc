@@ -16,6 +16,16 @@
 static void lowerglobl(Comp *c, char *name, Node *init);
 static void lowerfn(Comp *c, char *name, Node *n);
 
+static ulong ptrhash(void *key)
+{
+    return (ulong)key;
+}
+
+static int ptreq(void *a, void *b)
+{
+    return a == b;
+}
+
 Fn *mkfn(char *name)
 {
     Fn *f;
@@ -23,6 +33,7 @@ Fn *mkfn(char *name)
     f = zalloc(sizeof(Fn));
     f->name = strdup(name);
     f->isglobl = 1;
+    f->locs = mkht(ptrhash, ptreq);
 
     return f;
 }

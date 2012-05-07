@@ -11,6 +11,7 @@
 
 #include "parse.h"
 #include "gen.h"
+#include "asm.h"
 
 
 /* takes a list of nodes, and reduces it (and it's subnodes) to a list
@@ -37,6 +38,7 @@ struct Simp {
 };
 
 Node *simp(Simp *s, Node *n);
+void declare(Simp *s, Node *n);
 
 void append(Simp *s, Node *n)
 {
@@ -48,6 +50,60 @@ int isimpure(Node *n)
     return 0;
 }
 
+size_t size(Node *n)
+{
+    Type *t;
+
+    if (n->type == Nexpr)
+        t = n->expr.type;
+    else
+        t = n->decl.sym->type;
+
+    switch (t->type) {
+        case Tyvoid:
+            return 1;
+        case Tybool: case Tychar: case Tyint8:
+        case Tybyte: case Tyuint8:
+            return 1;
+        case Tyint16: case Tyuint16:
+            return 2;
+        case Tyint: case Tyint32:
+        case Tyuint: case Tyuint32:
+        case Typtr: case Tyenum:
+        case Tyfunc:
+            return 4;
+
+        case Tyint64: case Tylong:
+        case Tyuint64: case Tyulong:
+            return 8;
+
+            /*end integer types*/
+        case Tyfloat32:
+            return 4;
+        case Tyfloat64:
+            return 8;
+        case Tyvalist:
+            return 4; /* ptr to first element of valist */
+
+        case Tyslice:
+            return 8; /* len; ptr */
+        case Tyarray:
+        case Tytuple:
+        case Tystruct:
+        case Tyunion:
+            die("Sizes for composite types not implemented yet");
+            break;
+        case Tybad:
+        case Tyvar:
+        case Typaram:
+        case Tyname:
+        case Ntypes:
+            die("Type %s does not have size; why did it get down to here?", tystr(t));
+            break;
+    }
+    return -1;
+}
+
 Node *genlbl(void)
 {
     char buf[128];
@@ -57,7 +113,7 @@ Node *genlbl(void)
     return mklbl(-1, buf);
 }
 
-Node *temp(Node *e)
+Node *temp(Simp *simp, Node *e)
 {
     char buf[128];
     static int nexttmp;
@@ -70,12 +126,13 @@ Node *temp(Node *e)
     n = mkname(-1, buf);
     s = mksym(-1, n, e->expr.type);
     t = mkdecl(-1, s);
+    declare(simp, t);
     return mkexpr(-1, Ovar, t, NULL);
 }
 
 void jmp(Simp *s, Node *lbl) { append(s, mkexpr(-1, Ojmp, lbl, NULL)); }
-Node *store(Node *t, Node *n) { return mkexpr(-1, Oasn, t, n, NULL); }
-Node *storetmp(Node *n) { return store(temp(n), n); }
+Node *store(Node *t, Node *n) { return mkexpr(-1, Ostor, t, n, NULL); }
+Node *storetmp(Simp *s, Node *n) { return store(temp(s, n), n); }
 
 void cjmp(Simp *s, Node *cond, Node *iftrue, Node *iffalse)
 {
@@ -221,7 +278,7 @@ Node *simpexpr(Simp *s, Node *n)
             break;
         case Oret:
             if (n->expr.args[0]) {
-                t = storetmp(simp(s, n->expr.args[0]));
+                t = storetmp(s, simp(s, n->expr.args[0]));
                 append(s, t);
             }
             jmp(s, s->endlbl);
@@ -229,7 +286,7 @@ Node *simpexpr(Simp *s, Node *n)
         default:
             if (isimpure(n)) {
                 v = simp(s, n);
-                t = storetmp(v);
+                t = storetmp(s, v);
                 append(s, t);
                 r = t;
             } else {
@@ -243,6 +300,11 @@ Node *simpexpr(Simp *s, Node *n)
 
 void declare(Simp *s, Node *n)
 {
+    Fn *f;
+
+    f = s->fn;
+    htput(f->locs, n, (void*)f->stksz);
+    f->stksz += size(n);
 }
 
 Node *simp(Simp *s, Node *n)

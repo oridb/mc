@@ -45,7 +45,10 @@ O(Ocall)
 O(Ocast)
 O(Oret)
 O(Ojmp)
-O(Ocjmp)
 O(Ovar)
 O(Olit)
 O(Olbl)
+/* backend-only */
+O(Ocjmp)        /* conditional jump */
+O(Oload)        /* load from memory */
+O(Ostor)        /* store to memory */

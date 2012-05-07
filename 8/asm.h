@@ -57,3 +57,9 @@ struct Insn {
 };
 
 void genasm(Fn *fn);
+
+Loc *loclbl(Loc *l, Node *lbl);
+Loc *locreg(Loc *l, Reg r);
+Loc *locmem(Loc *l, long disp, Reg base, Reg idx, Mode mode);
+Loc *locmeml(Loc *l, char *disp, Reg base, Reg idx, Mode mode);
+Loc *loclit(Loc *l, long val);

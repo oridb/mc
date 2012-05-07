@@ -16,7 +16,7 @@
 
 void yyerror(const char *s);
 int yylex(void);
-Op binop(int toktype);
+static Op binop(int toktype);
 Stab *curscope;
 //int n = 0;
 %}
@@ -549,7 +549,7 @@ void yyerror(const char *s)
     fprintf(stderr, "\n");
 }
 
-Op binop(int tt)
+static Op binop(int tt)
 {
     Op o;
 
