@@ -20,10 +20,11 @@ struct Blob {
 struct Fn {
     char *name; /* assembly name; mangled */
     int isglobl;
-    
+
     /* filled in by the lowering process */
     size_t stksz;
     Htab *locs;
+    Node *ret;
 
     Htab *bbnames; /* char* => Bb* map */
     Bb *start;

@@ -278,7 +278,11 @@ Node *simpexpr(Simp *s, Node *n)
             break;
         case Oret:
             if (n->expr.args[0]) {
-                t = storetmp(s, simp(s, n->expr.args[0]));
+                if (s->fn->ret)
+                    t = s->fn->ret;
+                else
+                    t = s->fn->ret = temp(s, args[0]);
+                t = store(t, simp(s, args[0]));
                 append(s, t);
             }
             jmp(s, s->endlbl);

@@ -19,6 +19,7 @@ typedef struct Isel Isel;
 struct Isel {
     Insn **il;
     size_t ni;
+    Node *ret;
     Htab *locs; /* Node => int stkoff */
 };
 
@@ -502,13 +503,15 @@ void prologue(Isel *s, size_t sz)
 
 void epilogue(Isel *s)
 {
-    Loc esp;
-    Loc ebp;
-    Loc stksz;
+    Loc esp, ebp, eax;
+    Loc ret;
 
     locreg(&esp, Resp);
     locreg(&ebp, Rebp);
-    loclit(&stksz, 16);
+    locreg(&eax, Reax);
+    ret = loc(s, s->ret);
+    if (s->ret)
+      g(s, Imov, &ret, &eax, NULL);
     g(s, Imov, &ebp, &esp, NULL);
     g(s, Ipop, &ebp, NULL);
 }
@@ -522,6 +525,7 @@ void genasm(Fn *fn)
     int i;
 
     is.locs = fn->locs;
+    is.ret = fn->ret;
 
     prologue(&is, fn->stksz);
     for (i = 0; i < fn->nn; i++)
