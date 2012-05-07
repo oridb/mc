@@ -232,7 +232,8 @@ void stor(Isel *s, Loc *a, Loc *b)
     g(s, Imov, a, b, NULL);
 }
 
-Loc inreg(Isel *s, Loc a)
+/* ensures that a location is within a reg */
+Loc inr(Isel *s, Loc a)
 {
     Loc r;
 
@@ -243,6 +244,14 @@ Loc inreg(Isel *s, Loc a)
     return r;
 }
 
+/* ensures that a location is within a reg or an imm */
+Loc inri(Isel *s, Loc a)
+{
+    if (a.type == Locreg || a.type == Loclit)
+        return a;
+    else
+        return inr(s, a);
+}
 
 /* If we're testing equality, etc, it's a bit silly
  * to generate the test, store it to a bite, expand it
@@ -288,7 +297,7 @@ static Loc binop(Isel *s, AsmOp op, Node *x, Node *y)
 
     a = selexpr(s, x);
     b = selexpr(s, y);
-    a = inreg(s, a);
+    a = inri(s, a);
     g(s, op, &b, &a, NULL);
     return a;
 }
@@ -339,9 +348,11 @@ Loc selexpr(Isel *s, Node *n)
             return r;
 
         case Oasn:  /* relabel */
+            die("Unimplemented op %s", opstr(exprop(n))); break;
         case Ostor: /* reg -> mem */
             a = selexpr(s, args[0]);
             b = selexpr(s, args[1]);
+            b = inri(s, b);
             stor(s, &b, &a);
             r = b;
             break;
@@ -514,6 +525,7 @@ void epilogue(Isel *s)
       g(s, Imov, &ret, &eax, NULL);
     g(s, Imov, &ebp, &esp, NULL);
     g(s, Ipop, &ebp, NULL);
+    g(s, Iret, NULL);
 }
 
 /* genasm requires all nodes in 'nl' to map cleanly to operations that are
