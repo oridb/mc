@@ -13,6 +13,11 @@
 #include "gen.h"
 #include "asm.h"
 
+void breakhere()
+{
+    volatile int x = 0;
+    x++;
+}
 
 /* takes a list of nodes, and reduces it (and it's subnodes) to a list
  * following these constraints:
@@ -38,6 +43,8 @@ struct Simp {
 };
 
 Node *simp(Simp *s, Node *n);
+Node *rval(Simp *s, Node *n);
+Node *lval(Simp *s, Node *n);
 void declare(Simp *s, Node *n);
 
 void append(Simp *s, Node *n)
@@ -203,12 +210,18 @@ void simpblk(Simp *s, Node *n)
     }
 }
 
-Node *simpexpr(Simp *s, Node *n)
+Node *lval(Simp *s, Node *n)
 {
-    Node *r, *t, *v;
+    return rval(s, n);
+}
+
+Node *rval(Simp *s, Node *n)
+{
+    Node *r, *t, *u, *v;
     int i;
     Node **args;
     const Op fusedmap[] = {
+        [Oaddeq]        = Oadd,
         [Osubeq]        = Osub,
         [Omuleq]        = Omul,
         [Odiveq]        = Odiv,
@@ -224,7 +237,7 @@ Node *simpexpr(Simp *s, Node *n)
     args = n->expr.args;
     switch (exprop(n)) {
         case Obad: 
-        case Olor: case Oland: case Oaddeq:
+        case Olor: case Oland:
         case Obsreq: case Omemb:
         case Oslice: case Oidx: case Osize:
             die("Have not implemented lowering op %s", opstr(exprop(n)));
@@ -234,10 +247,14 @@ Node *simpexpr(Simp *s, Node *n)
          * foo ?= blah
          *    =>
          *     foo = foo ? blah*/
-        case Osubeq: case Omuleq: case Odiveq: case Omodeq: case Oboreq:
-        case Obandeq: case Obxoreq: case Obsleq:
-            v = mkexpr(-1, fusedmap[exprop(n)], args[0], args[1], NULL);
-            r = mkexpr(-1, Oasn, args[0], v, NULL);
+        case Oaddeq: case Osubeq: case Omuleq: case Odiveq: case Omodeq:
+        case Oboreq: case Obandeq: case Obxoreq: case Obsleq:
+            breakhere();
+            assert(fusedmap[exprop(n)] != Obad);
+            u = simp(s, args[0]);
+            v = simp(s, args[1]);
+            v = mkexpr(-1, fusedmap[exprop(n)], u, v, NULL);
+            r = mkexpr(-1, Ostor, u, v, NULL);
             break;
 
         /* ++expr(x)
@@ -245,14 +262,14 @@ Node *simpexpr(Simp *s, Node *n)
          *     expr(x) */
         case Opreinc:
             t = simp(s, args[0]);
-            v = mkexpr(-1, Oadd, mkint(-1, 1), args[0], NULL);
-            r = mkexpr(-1, Oasn, args[0], v, NULL);
+            v = mkexpr(-1, Oadd, mkint(-1, 1), t, NULL);
+            r = mkexpr(-1, Ostor, t, v, NULL);
             lappend(&s->incqueue, &s->nqueue, t); 
             break;
         case Opredec:
             t = simp(s, args[0]);
-            v = mkexpr(-1, Oadd, mkint(-1, -1), args[0], NULL);
-            r = mkexpr(-1, Oasn, args[0], v, NULL);
+            v = mkexpr(-1, Oadd, mkint(-1, -1), t, NULL);
+            r = mkexpr(-1, Ostor, t, v, NULL);
             lappend(&s->incqueue, &s->nqueue, t); 
             break;
 
@@ -264,13 +281,13 @@ Node *simpexpr(Simp *s, Node *n)
         case Opostinc:
             r = simp(s, args[0]);
             v = mkexpr(-1, Oadd, mkint(-1, 1), r, NULL);
-            t = mkexpr(-1, Oasn, args[0], v, NULL);
+            t = mkexpr(-1, Ostor, r, v, NULL);
             lappend(&s->incqueue, &s->nqueue, t); 
             break;
         case Opostdec:
             r = simp(s, args[0]);
-            v = mkexpr(-1, Osub, mkint(-1, -1), args[0], NULL);
-            t = mkexpr(-1, Oasn, args[0], v, NULL);
+            v = mkexpr(-1, Oadd, mkint(-1, -1), args[0], NULL);
+            t = mkexpr(-1, Ostor, r, v, NULL);
             lappend(&s->incqueue, &s->nqueue, t); 
             break;
         case Ovar:
@@ -286,6 +303,12 @@ Node *simpexpr(Simp *s, Node *n)
                 append(s, t);
             }
             jmp(s, s->endlbl);
+            break;
+        case Oasn:
+            breakhere();
+            t = rval(s, args[0]);
+            v = lval(s, args[1]);
+            r = mkexpr(-1, Ostor, r, v, NULL);
             break;
         default:
             if (isimpure(n)) {
@@ -327,7 +350,7 @@ Node *simp(Simp *s, Node *n)
             simploop(s, n);
             break;
         case Nexpr:
-            r = simpexpr(s, n);
+            r = rval(s, n);
             break;
         case Nlit:
             r = n;

@@ -154,12 +154,6 @@ static void mergecstrs(Node *ctx, Type *a, Type *b)
     }
 }
 
-void breakhere()
-{
-    volatile int a;
-    a++;
-}
-
 static Type *unify(Node *ctx, Type *a, Type *b)
 {
     Type *t;

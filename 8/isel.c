@@ -576,9 +576,10 @@ void epilogue(Isel *s)
     locreg(&esp, Resp);
     locreg(&ebp, Rebp);
     locreg(&eax, Reax);
-    ret = loc(s, s->ret);
-    if (s->ret)
-      g(s, Imov, &ret, &eax, NULL);
+    if (s->ret) {
+        ret = loc(s, s->ret);
+        g(s, Imov, &ret, &eax, NULL);
+    }
     g(s, Imov, &ebp, &esp, NULL);
     g(s, Ipop, &ebp, NULL);
     g(s, Iret, NULL);
