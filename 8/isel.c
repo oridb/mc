@@ -361,23 +361,23 @@ Loc selexpr(Isel *s, Node *n)
     args = n->expr.args;
     r = (Loc){Locnone, };
     switch (exprop(n)) {
-        case Oadd: r = binop(s, Iadd, args[0], args[1]); break;
-        case Osub: r = binop(s, Isub, args[0], args[1]); break;
+        case Oadd:      r = binop(s, Iadd, args[0], args[1]); break;
+        case Osub:      r = binop(s, Isub, args[0], args[1]); break;
 
-        case Omul: die("Unimplemented op %s", opstr(exprop(n))); break;
-        case Odiv: die("Unimplemented op %s", opstr(exprop(n))); break;
-        case Omod: die("Unimplemented op %s", opstr(exprop(n))); break;
-        case Oneg: die("Unimplemented op %s", opstr(exprop(n))); break;
+        case Omul:      die("Unimplemented op %s", opstr(exprop(n))); break;
+        case Odiv:      die("Unimplemented op %s", opstr(exprop(n))); break;
+        case Omod:      die("Unimplemented op %s", opstr(exprop(n))); break;
+        case Oneg:      die("Unimplemented op %s", opstr(exprop(n))); break;
 
-        case Obor: die("Unimplemented op %s", opstr(exprop(n))); break;
-        case Oband: die("Unimplemented op %s", opstr(exprop(n))); break;
-        case Obxor: die("Unimplemented op %s", opstr(exprop(n))); break;
-        case Obsl: die("Unimplemented op %s", opstr(exprop(n))); break;
-        case Obsr: die("Unimplemented op %s", opstr(exprop(n))); break;
-        case Obnot: die("Unimplemented op %s", opstr(exprop(n))); break;
+        case Obor:      r = binop(s, Ior,  args[0], args[1]); break;
+        case Oband:     r = binop(s, Iand, args[0], args[1]); break;
+        case Obxor:     r = binop(s, Ixor, args[0], args[1]); break;
+        case Obsl:      die("Unimplemented op %s", opstr(exprop(n))); break;
+        case Obsr:      die("Unimplemented op %s", opstr(exprop(n))); break;
+        case Obnot:     die("Unimplemented op %s", opstr(exprop(n))); break;
 
-        case Oaddr: die("Unimplemented op %s", opstr(exprop(n))); break;
-        case Oderef: die("Unimplemented op %s", opstr(exprop(n))); break;
+        case Oaddr:     die("Unimplemented op %s", opstr(exprop(n))); break;
+        case Oderef:    die("Unimplemented op %s", opstr(exprop(n))); break;
 
         case Olnot: 
             a = selexpr(s, args[0]);

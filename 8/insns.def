@@ -22,10 +22,15 @@ Insn(Imovs,     "\tmovs%0t%1t %x,%x\n",         0)
 
 Insn(Iadd,      "\tadd%t %r,%x\n",              0)
 Insn(Isub,      "\tsub%t %r,%x\n",              0)
-Insn(Ipush,     "\tpush%t %r\n",                0)
-Insn(Ipop,      "\tpop%t %r\n",                 0)
+Insn(Iand,      "\tand%d %r,%x\n",              0)
+Insn(Ior,       "\tor%d %r,%x\n",               0)
+Insn(Ixor,      "\txor%d %r,%x\n",              0)
+
 Insn(Itest,     "\ttest%t %r,%r",               0)
 Insn(Icmp,      "\tcmp%t %r,%r",                0)
+
+Insn(Ipush,     "\tpush%t %r\n",                0)
+Insn(Ipop,      "\tpop%t %r\n",                 0)
 
 /* branch instructions */
 Insn(Isetz,       "\tsetz\n",                   0)
