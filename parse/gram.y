@@ -534,9 +534,10 @@ blockbody
                 putdcl($$->block.scope, $1->decl.sym);}
         | blockbody stmt
             {if ($2)
-                lappend(&$$->block.stmts, &$$->block.nstmts, $2);
-             if ($1->type == Ndecl)
-                putdcl($$->block.scope, $1->decl.sym);}
+                lappend(&$1->block.stmts, &$1->block.nstmts, $2);
+             if ($2 && $2->type == Ndecl)
+                putdcl($1->block.scope, $2->decl.sym);
+             $$ = $1;}
         ;
 
 label   : TColon TIdent
