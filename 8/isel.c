@@ -156,7 +156,7 @@ Loc loc(Isel *s, Node *n)
                 case Lbool:     loclit(&l, v->lit.boolval); break;
                 case Lint:      loclit(&l, v->lit.intval); break;
                 default:
-                    die("Literal type %s should be blob", litstr(v->lit.littype));
+                                die("Literal type %s should be blob", litstr(v->lit.littype));
             }
             break;
         default:
@@ -176,24 +176,24 @@ Loc coreg(Loc r, Mode m)
     Loc l;
 
     Reg crtab[][Nmode + 1] = {
-        [Ral] = {Ral, Rax, Reax},
-        [Rcl] = {Rcl, Rcx, Recx},
-        [Rdl] = {Rdl, Rdx, Redx},
-        [Rbl] = {Rbl, Rbx, Rebx},
+        [Ral] = {Rnone, Ral, Rax, Reax},
+        [Rcl] = {Rnone, Rcl, Rcx, Recx},
+        [Rdl] = {Rnone, Rdl, Rdx, Redx},
+        [Rbl] = {Rnone, Rbl, Rbx, Rebx},
 
-        [Rax] = {Ral, Rax, Reax},
-        [Rcx] = {Rcl, Rcx, Recx},
-        [Rdx] = {Rdl, Rdx, Redx},
-        [Rbx] = {Rbl, Rbx, Rebx},
-        [Rsi] = {0, Rsi, Resi},
-        [Rdi] = {0, Rdi, Redi},
+        [Rax] = {Rnone, Ral, Rax, Reax},
+        [Rcx] = {Rnone, Rcl, Rcx, Recx},
+        [Rdx] = {Rnone, Rdl, Rdx, Redx},
+        [Rbx] = {Rnone, Rbl, Rbx, Rebx},
+        [Rsi] = {Rnone, Rnone, Rsi, Resi},
+        [Rdi] = {Rnone, Rnone, Rdi, Redi},
 
-        [Reax] = {Ral, Rax, Reax},
-        [Recx] = {Rcl, Rcx, Recx},
-        [Redx] = {Rdl, Rdx, Redx},
-        [Rebx] = {Rbl, Rbx, Rebx},
-        [Resi] = {0, Rsi, Resi},
-        [Redi] = {0, Rdi, Redi},
+        [Reax] = {Rnone, Ral, Rax, Reax},
+        [Recx] = {Rnone, Rcl, Rcx, Recx},
+        [Redx] = {Rnone, Rdl, Rdx, Redx},
+        [Rebx] = {Rnone, Rbl, Rbx, Rebx},
+        [Resi] = {Rnone, Rnone, Rsi, Resi},
+        [Redi] = {Rnone, Rnone, Rdi, Redi},
     };
     if (r.type != Locreg)
         die("Non-reg passed to coreg()");
@@ -214,7 +214,7 @@ Loc getreg(Isel *s, Mode m)
         }
     }
     for (i = 0; i < Nmode; i++)
-       s->rtaken[reginterferes[l.reg][i]] = 1;
+        s->rtaken[reginterferes[l.reg][i]] = 1;
 
     return l;
 }
@@ -227,7 +227,7 @@ Loc claimreg(Isel *s, Reg r)
     if (s->rtaken[r])
         die("Reg %s is already taken", regnames[r]);
     for (i = 0; i < Nmode; i++)
-       s->rtaken[reginterferes[r][i]] = 1;
+        s->rtaken[reginterferes[r][i]] = 1;
     locreg(&l, r);
     return l;
 }
@@ -319,17 +319,18 @@ void selcjmp(Isel *s, Node *n, Node **args)
     Loc l1, l2;
     AsmOp cond, jmp;
 
-    cond = reloptab[exprop(n)].test;
-    jmp = reloptab[exprop(n)].jmp;
+    cond = reloptab[exprop(args[0])].test;
+    jmp = reloptab[exprop(args[0])].jmp;
     /* if we have a cond, we're knocking off the redundant test,
      * and want to eval the children */
     if (cond) {
         a = selexpr(s, args[0]->expr.args[0]);
         b = selexpr(s, args[0]->expr.args[1]);
+        b = inr(s, b);
     } else {
         cond = Itest;
         jmp = Ijnz;
-        a = selexpr(s, args[0]); /* cond */
+        a = inr(s, selexpr(s, args[0])); /* cond */
         b = a;
     }
 
@@ -360,6 +361,9 @@ Loc selexpr(Isel *s, Node *n)
 
     args = n->expr.args;
     r = (Loc){Locnone, };
+    printf("===================\n");
+    dump(n, stdout);
+    printf("===================\n");
     switch (exprop(n)) {
         case Oadd:      r = binop(s, Iadd, args[0], args[1]); break;
         case Osub:      r = binop(s, Isub, args[0], args[1]); break;
@@ -391,6 +395,7 @@ Loc selexpr(Isel *s, Node *n)
         case Oeq: case One: case Ogt: case Oge: case Olt: case Ole:
             a = selexpr(s, args[0]);
             b = selexpr(s, args[1]);
+            b = inr(s, b);
             c = getreg(s, ModeB);
             r = coreg(c, mode(n));
             g(s, reloptab[exprop(n)].test, &a, &b, NULL);

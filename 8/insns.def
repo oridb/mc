@@ -16,6 +16,7 @@
    */
 
 /* Note, the mov instruction is specified in an overly general manner. */
+Insn(Inone,     "BAD_INSN",                     0)
 Insn(Imov,      "\tmov%t %x,%x\n",              0)
 Insn(Imovz,     "\tmovz%0t%1t %x,%x\n",         0)
 Insn(Imovs,     "\tmovs%0t%1t %x,%x\n",         0)
@@ -26,8 +27,8 @@ Insn(Iand,      "\tand%d %r,%x\n",              0)
 Insn(Ior,       "\tor%d %r,%x\n",               0)
 Insn(Ixor,      "\txor%d %r,%x\n",              0)
 
-Insn(Itest,     "\ttest%t %r,%r",               0)
-Insn(Icmp,      "\tcmp%t %r,%r",                0)
+Insn(Itest,     "\ttest%t %r,%r\n",             0)
+Insn(Icmp,      "\tcmp%t %r,%r\n",              0)
 
 Insn(Ipush,     "\tpush%t %r\n",                0)
 Insn(Ipop,      "\tpop%t %r\n",                 0)

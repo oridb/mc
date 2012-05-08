@@ -87,7 +87,7 @@ Node *mkloop(int line, Node *init, Node *cond, Node *incr, Node *body)
 
     n = mknode(line, Nloopstmt);
     n->loopstmt.init = init;
-    n->loopstmt.cond = init;
+    n->loopstmt.cond = cond;
     n->loopstmt.step = incr;
     n->loopstmt.body = body;
 

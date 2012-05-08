@@ -168,7 +168,6 @@ static Type *unify(Node *ctx, Type *a, Type *b)
         b = t;
     }
 
-    printf("--- unify %s => %s\n", tystr(a), tystr(b));
     mergecstrs(ctx, a, b);
     if (a->type != b->type) {
         if (a->type == Tyvar)

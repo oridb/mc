@@ -193,7 +193,14 @@ void simploop(Simp *s, Node *n)
     simp(s, n->loopstmt.body);
     simp(s, n->loopstmt.step);
     simp(s, lcond);
-    c = simp(s, n->loopstmt.cond);
+    printf("*********************\n");
+    dump(n->loopstmt.cond, stdout);
+    printf("*********************\n");
+    breakhere();
+    c = rval(s, n->loopstmt.cond);
+    printf("*********************\n");
+    dump(c, stdout);
+    printf("*********************\n");
     cjmp(s, c, lbody, lend);
     simp(s, lend);
 }
@@ -249,7 +256,6 @@ Node *rval(Simp *s, Node *n)
          *     foo = foo ? blah*/
         case Oaddeq: case Osubeq: case Omuleq: case Odiveq: case Omodeq:
         case Oboreq: case Obandeq: case Obxoreq: case Obsleq:
-            breakhere();
             assert(fusedmap[exprop(n)] != Obad);
             u = simp(s, args[0]);
             v = simp(s, args[1]);
@@ -279,6 +285,7 @@ Node *rval(Simp *s, Node *n)
          *      x = x + 1 
          */
         case Opostinc:
+            breakhere();
             r = simp(s, args[0]);
             v = mkexpr(-1, Oadd, mkint(-1, 1), r, NULL);
             t = mkexpr(-1, Ostor, r, v, NULL);
@@ -305,10 +312,9 @@ Node *rval(Simp *s, Node *n)
             jmp(s, s->endlbl);
             break;
         case Oasn:
-            breakhere();
-            t = rval(s, args[0]);
-            v = lval(s, args[1]);
-            r = mkexpr(-1, Ostor, r, v, NULL);
+            t = lval(s, args[0]);
+            v = rval(s, args[1]);
+            r = mkexpr(-1, Ostor, t, v, NULL);
             break;
         default:
             if (isimpure(n)) {
