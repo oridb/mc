@@ -10,6 +10,7 @@ typedef enum {
 #define Reg(r, name, mode) r,
 #include "regs.def"
 #undef Reg 
+    Nreg
 } Reg;
 
 
@@ -23,10 +24,12 @@ typedef enum {
 } LocType;
 
 typedef enum {
+    ModeNone,
     ModeB,
     ModeS,
     ModeL,
     ModeQ,
+    Nmode
 } Mode;
 
 typedef struct Insn Insn;

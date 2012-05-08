@@ -21,19 +21,46 @@ struct Isel {
     size_t ni;
     Node *ret;
     Htab *locs; /* Node => int stkoff */
+
+    /* 6 general purpose regs */
+    Reg rtaken[Nreg];
 };
 
 /* string tables */
-char *regnames[] = {
+const char *regnames[] = {
 #define Reg(r, name, mode) name,
 #include "regs.def"
 #undef Reg
 };
 
-Mode regmodes[] = {
+const Mode regmodes[] = {
 #define Reg(r, name, mode) mode,
 #include "regs.def"
 #undef Reg
+};
+
+const Reg reginterferes[][Nmode + 1] = {
+    /* byte */
+    [Ral] = {Ral, Rax, Reax},
+    [Rcl] = {Rcl, Rcx, Recx},
+    [Rdl] = {Rdl, Rdx, Redx},
+    [Rbl] = {Rbl, Rbx, Rebx},
+
+    /* word */
+    [Rax] = {Ral, Rax, Reax},
+    [Rcx] = {Rcl, Rcx, Recx},
+    [Rdx] = {Rdl, Rdx, Redx},
+    [Rbx] = {Rbl, Rbx, Rebx},
+    [Rsi] = {Rsi, Resi},
+    [Rdi] = {Rdi, Redi},
+
+    /* dword */
+    [Reax] = {Ral, Rax, Reax},
+    [Recx] = {Rcl, Rcx, Recx},
+    [Redx] = {Rdl, Rdx, Redx},
+    [Rebx] = {Rbl, Rbx, Rebx},
+    [Resi] = {Rsi, Resi},
+    [Redi] = {Rdi, Redi},
 };
 
 char *insnfmts[] = {
@@ -148,7 +175,7 @@ Loc coreg(Loc r, Mode m)
 {
     Loc l;
 
-    Reg crtab[][4] = {
+    Reg crtab[][Nmode + 1] = {
         [Ral] = {Ral, Rax, Reax},
         [Rcl] = {Rcl, Rcx, Recx},
         [Rdl] = {Rdl, Rdx, Redx},
@@ -176,8 +203,32 @@ Loc coreg(Loc r, Mode m)
 
 Loc getreg(Isel *s, Mode m)
 {
+
     Loc l;
-    locreg(&l, Reax);
+    int i;
+
+    for (i = 0; i < Nreg; i++) {
+        if (!s->rtaken[i] && regmodes[i] == m) {
+            locreg(&l, i);
+            break;
+        }
+    }
+    for (i = 0; i < Nmode; i++)
+       s->rtaken[reginterferes[l.reg][i]] = 1;
+
+    return l;
+}
+
+Loc claimreg(Isel *s, Reg r)
+{
+    Loc l;
+    int i;
+
+    if (s->rtaken[r])
+        die("Reg %s is already taken", regnames[r]);
+    for (i = 0; i < Nmode; i++)
+       s->rtaken[reginterferes[r][i]] = 1;
+    locreg(&l, r);
     return l;
 }
 
@@ -297,7 +348,7 @@ static Loc binop(Isel *s, AsmOp op, Node *x, Node *y)
 
     a = selexpr(s, x);
     b = selexpr(s, y);
-    a = inri(s, a);
+    a = inr(s, a);
     g(s, op, &b, &a, NULL);
     return a;
 }
@@ -431,7 +482,12 @@ void locprint(FILE *fd, Loc *l)
 
 void modeprint(FILE *fd, Loc *l)
 {
-    char mode[] = {'b', 's', 'l', 'q'};
+    char mode[] = {
+        [ModeB] = 'b',
+        [ModeS] = 's',
+        [ModeL] = 'l',
+        [ModeQ] = 'q'
+    };
     fputc(mode[l->mode], fd);
 }
 
@@ -540,8 +596,10 @@ void genasm(Fn *fn)
     is.ret = fn->ret;
 
     prologue(&is, fn->stksz);
-    for (i = 0; i < fn->nn; i++)
+    for (i = 0; i < fn->nn; i++) {
+        bzero(is.rtaken, sizeof is.rtaken);
         isel(&is, fn->nl[i]);
+    }
     epilogue(&is);
 
     if (fn->isglobl)
