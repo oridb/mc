@@ -318,6 +318,7 @@ static void inferexpr(Node *n, Type *ret, int *sawret)
                 fatal(n->line, "Undeclared var %s", args[0]->name.parts[args[0]->name.nparts - 1]);
             else
                 settype(n, s->type);
+            n->expr.did = s->id;
             break;
         case Olit:      /* <lit>:@a::tyclass -> @a */
             switch (args[0]->lit.littype) {

@@ -55,9 +55,11 @@ static int nameeq(void *a, void *b)
 
 Sym *mksym(int line, Node *name, Type *ty)
 {
+    static int nextid;
     Sym *sym;
 
     sym = zalloc(sizeof(Sym));
+    sym->id = nextid++;
     sym->name = name;
     sym->type = ty;
     sym->line = line;

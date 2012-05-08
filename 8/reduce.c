@@ -335,8 +335,9 @@ void declare(Simp *s, Node *n)
 {
     Fn *f;
 
+    assert(n->type == Ndecl);
     f = s->fn;
-    htput(f->locs, n, (void*)f->stksz);
+    htput(f->locs, (void*)n->decl.sym->id, (void*)f->stksz);
     f->stksz += size(n);
 }
 

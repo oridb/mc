@@ -86,6 +86,7 @@ struct Stab {
 };
 
 struct Sym {
+    long  id;
     int   line;
     int   isconst;
     Node *name;
@@ -136,6 +137,7 @@ struct Node {
             Op op;
             Type *type;
             int isconst;
+            long   did; /* for Ovar, we want a mapping to the decl id */
             size_t nargs;
             Node **args;
         } expr;

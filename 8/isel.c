@@ -146,7 +146,7 @@ Loc loc(Isel *s, Node *n)
 
     switch (exprop(n)) {
         case Ovar:
-            stkoff = (size_t)htget(s->locs, n->expr.args[0]);
+            stkoff = (size_t)htget(s->locs, (void*)n->expr.did);
             locmem(&l, stkoff, Resp, Rnone, ModeL);
             break;
         case Olit:
@@ -361,9 +361,6 @@ Loc selexpr(Isel *s, Node *n)
 
     args = n->expr.args;
     r = (Loc){Locnone, };
-    printf("===================\n");
-    dump(n, stdout);
-    printf("===================\n");
     switch (exprop(n)) {
         case Oadd:      r = binop(s, Iadd, args[0], args[1]); break;
         case Osub:      r = binop(s, Isub, args[0], args[1]); break;
