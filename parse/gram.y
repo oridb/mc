@@ -276,7 +276,7 @@ structdef
 
 structbody
         : structelt
-            {$$.nl = NULL; $$.nn = 0; lappend(&$$.nl, &$$.nn, $1);}
+            {if ($1) {$$.nl = NULL; $$.nn = 0; lappend(&$$.nl, &$$.nn, $1);}}
         | structbody structelt
             {if ($2) {lappend(&$$.nl, &$$.nn, $2);}}
         ;
