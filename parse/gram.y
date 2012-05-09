@@ -523,6 +523,7 @@ elifs   : TElif exprln blockbody elifs
         ;
 
 block   : blockbody TEndblk
+        | TEndblk
         ;
 
 blockbody
@@ -530,7 +531,7 @@ blockbody
             {$$ = mkblock(line, mkstab());
              if ($1)
                 lappend(&$$->block.stmts, &$$->block.nstmts, $1);
-             if ($1->type == Ndecl)
+             if ($1 && $1->type == Ndecl)
                 putdcl($$->block.scope, $1->decl.sym);}
         | blockbody stmt
             {if ($2)

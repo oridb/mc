@@ -196,3 +196,8 @@ void dump(Node *n, FILE *fd)
 {
     outnode(n, fd, 0);
 }
+
+void o(Node *n)
+{
+    dump(n, stdout);
+}

@@ -82,9 +82,9 @@ struct {
     [Olnot] = {Itest, Ijz, Isetz},
     [Oeq] = {Itest, Ijnz, Isetnz},
     [One] = {Itest, Ijz, Isetz},
-    [Ogt] = {Icmp, Ijgt, Isetgt},
+    [Ogt] = {Icmp, Ijg, Isetgt},
     [Oge] = {Icmp, Ijge, Isetge},
-    [Olt] = {Icmp, Ijlt, Isetlt},
+    [Olt] = {Icmp, Ijl, Isetlt},
     [Ole] = {Icmp, Ijle, Isetle}
 };
 
@@ -324,8 +324,8 @@ void selcjmp(Isel *s, Node *n, Node **args)
     /* if we have a cond, we're knocking off the redundant test,
      * and want to eval the children */
     if (cond) {
-        a = selexpr(s, args[0]->expr.args[0]);
-        b = selexpr(s, args[0]->expr.args[1]);
+        a = selexpr(s, args[0]->expr.args[1]);
+        b = selexpr(s, args[0]->expr.args[0]);
         b = inr(s, b);
     } else {
         cond = Itest;
@@ -594,6 +594,7 @@ void genasm(Fn *fn)
 {
     struct Isel is = {0,};
     int i;
+    FILE *fd;
 
     is.locs = fn->locs;
     is.ret = fn->ret;
@@ -610,4 +611,12 @@ void genasm(Fn *fn)
     fprintf(stdout, "%s:\n", fn->name);
     for (i = 0; i < is.ni; i++)
         iprintf(stdout, is.il[i]);
+
+    fd = fopen("a.s", "w");
+    if (fn->isglobl)
+        fprintf(fd, ".globl %s\n", fn->name);
+    fprintf(fd, "%s:\n", fn->name);
+    for (i = 0; i < is.ni; i++)
+        iprintf(fd, is.il[i]);
+    fclose(fd);
 }
