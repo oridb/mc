@@ -290,6 +290,7 @@ Node *rval(Simp *s, Node *n)
             t = mkexpr(-1, Ostor, r, v, NULL);
             lappend(&s->incqueue, &s->nqueue, t); 
             break;
+        case Olit:
         case Ovar:
             r = n;
             break;
@@ -351,7 +352,8 @@ Node *simp(Simp *s, Node *n)
             break;
         case Nexpr:
             r = rval(s, n);
-            append(s, r);
+            if (r)
+                append(s, r);
             break;
         case Nlit:
             r = n;
