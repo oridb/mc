@@ -181,28 +181,21 @@ void simploop(Simp *s, Node *n)
     Node *lbody;
     Node *lend;
     Node *lcond;
-    Node *c;
+    Node *t;
 
     lbody = genlbl();
     lcond = genlbl();
     lend = genlbl();
 
-    simp(s, n->loopstmt.init);
-    jmp(s, lcond);
-    simp(s, lbody);
-    simp(s, n->loopstmt.body);
-    simp(s, n->loopstmt.step);
-    simp(s, lcond);
-    printf("*********************\n");
-    dump(n->loopstmt.cond, stdout);
-    printf("*********************\n");
-    breakhere();
-    c = rval(s, n->loopstmt.cond);
-    printf("*********************\n");
-    dump(c, stdout);
-    printf("*********************\n");
-    cjmp(s, c, lbody, lend);
-    simp(s, lend);
+    simp(s, n->loopstmt.init);  /* init */
+    jmp(s, lcond);              /* goto test */
+    simp(s, lbody);             /* body lbl */
+    simp(s, n->loopstmt.body);  /* body */
+    simp(s, n->loopstmt.step);  /* step */
+    simp(s, lcond);             /* test lbl */
+    t = rval(s, n->loopstmt.cond);  /* test */
+    cjmp(s, t, lbody, lend);    /* repeat? */
+    simp(s, lend);              /* exit */
 }
 
 void simpblk(Simp *s, Node *n)
@@ -257,8 +250,8 @@ Node *rval(Simp *s, Node *n)
         case Oaddeq: case Osubeq: case Omuleq: case Odiveq: case Omodeq:
         case Oboreq: case Obandeq: case Obxoreq: case Obsleq:
             assert(fusedmap[exprop(n)] != Obad);
-            u = simp(s, args[0]);
-            v = simp(s, args[1]);
+            u = rval(s, args[0]);
+            v = rval(s, args[1]);
             v = mkexpr(-1, fusedmap[exprop(n)], u, v, NULL);
             r = mkexpr(-1, Ostor, u, v, NULL);
             break;
@@ -267,13 +260,13 @@ Node *rval(Simp *s, Node *n)
          *  => x = x + 1
          *     expr(x) */
         case Opreinc:
-            t = simp(s, args[0]);
+            t = rval(s, args[0]);
             v = mkexpr(-1, Oadd, mkint(-1, 1), t, NULL);
             r = mkexpr(-1, Ostor, t, v, NULL);
             lappend(&s->incqueue, &s->nqueue, t); 
             break;
         case Opredec:
-            t = simp(s, args[0]);
+            t = rval(s, args[0]);
             v = mkexpr(-1, Oadd, mkint(-1, -1), t, NULL);
             r = mkexpr(-1, Ostor, t, v, NULL);
             lappend(&s->incqueue, &s->nqueue, t); 
@@ -286,13 +279,13 @@ Node *rval(Simp *s, Node *n)
          */
         case Opostinc:
             breakhere();
-            r = simp(s, args[0]);
+            r = rval(s, args[0]);
             v = mkexpr(-1, Oadd, mkint(-1, 1), r, NULL);
             t = mkexpr(-1, Ostor, r, v, NULL);
             lappend(&s->incqueue, &s->nqueue, t); 
             break;
         case Opostdec:
-            r = simp(s, args[0]);
+            r = rval(s, args[0]);
             v = mkexpr(-1, Oadd, mkint(-1, -1), args[0], NULL);
             t = mkexpr(-1, Ostor, r, v, NULL);
             lappend(&s->incqueue, &s->nqueue, t); 
@@ -306,7 +299,7 @@ Node *rval(Simp *s, Node *n)
                     t = s->fn->ret;
                 else
                     t = s->fn->ret = temp(s, args[0]);
-                t = store(t, simp(s, args[0]));
+                t = store(t, rval(s, args[0]));
                 append(s, t);
             }
             jmp(s, s->endlbl);
@@ -318,13 +311,13 @@ Node *rval(Simp *s, Node *n)
             break;
         default:
             if (isimpure(n)) {
-                v = simp(s, n);
+                v = rval(s, n);
                 t = storetmp(s, v);
                 append(s, t);
                 r = t;
             } else {
                 for (i = 0; i < n->expr.nargs; i++)
-                    n->expr.args[i] = simp(s, n->expr.args[i]);
+                    n->expr.args[i] = rval(s, n->expr.args[i]);
                 r = n;
             }
     }
@@ -358,6 +351,7 @@ Node *simp(Simp *s, Node *n)
             break;
         case Nexpr:
             r = rval(s, n);
+            append(s, r);
             break;
         case Nlit:
             r = n;
