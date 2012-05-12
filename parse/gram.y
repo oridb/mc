@@ -523,7 +523,7 @@ elifs   : TElif exprln blockbody elifs
         ;
 
 block   : blockbody TEndblk
-        | TEndblk
+        | TEndblk {$$ = NULL;}
         ;
 
 blockbody
