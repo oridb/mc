@@ -201,12 +201,9 @@ void simploop(Simp *s, Node *n)
 void simpblk(Simp *s, Node *n)
 {
     int i;
-    Node *e;
 
     for (i = 0; i < n->block.nstmts; i++) {
-        e = simp(s, n->block.stmts[i]);
-        if (e)
-            append(s, e);
+        simp(s, n->block.stmts[i]);
     }
 }
 
