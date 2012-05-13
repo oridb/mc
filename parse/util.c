@@ -104,3 +104,12 @@ void lappend(void *l, size_t *len, void *n)
     (*len)++;
 }
 
+void lfree(void *l, size_t *len)
+{
+    void ***pl;
+
+    assert(l != NULL);
+    pl = l;
+    free(*pl);
+    *len = 0;
+}

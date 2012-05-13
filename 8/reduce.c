@@ -360,9 +360,7 @@ Node *simp(Simp *s, Node *n)
             /* drain the increment queue for this expr */
             for (i = 0; i < s->nqueue; i++)
                 append(s, s->incqueue[i]);
-            free(s->incqueue);
-            s->nqueue = 0;
-            s->incqueue = NULL;
+            lfree(&s->incqueue, &s->nqueue);
             break;
         case Nlit:
             r = n;

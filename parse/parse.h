@@ -296,8 +296,6 @@ int constrain(Type *t, Cstr *c);
 char *tyfmt(char *buf, size_t len, Type *t);
 char *tystr(Type *t);
 
-void tlappend(Type ***tl, int *len, Type *t);
-
 /* node creation */
 Node *mknode(int line, Ntype nt);
 Node *mkfile(char *name);
@@ -345,4 +343,5 @@ void pickle(Node *n, FILE *fd);
 Node *unpickle(FILE *fd);
 
 /* convenience func */
-void lappend(void *nl, size_t *len, void *n); /* ugly hack; nl is void* because void*** != @a*** */
+void lappend(void *l, size_t *len, void *n); /* ugly hack; nl is void* because void*** != @a*** */
+void lfree(void *l, size_t *len);
