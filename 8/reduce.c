@@ -212,6 +212,8 @@ Node *lval(Simp *s, Node *n)
     return rval(s, n);
 }
 
+static Node *one;
+
 Node *rval(Simp *s, Node *n)
 {
     Node *r, *t, *u, *v;
@@ -230,6 +232,8 @@ Node *rval(Simp *s, Node *n)
     };
 
 
+    if (!one)
+        one = mkexpr(-1, Olit, mkint(-1, 1), NULL);
     r = NULL;
     args = n->expr.args;
     switch (exprop(n)) {
@@ -254,17 +258,17 @@ Node *rval(Simp *s, Node *n)
             break;
 
         /* ++expr(x)
-         *  => x = x + 1
+         *  => args[0] = args[0] + 1
          *     expr(x) */
         case Opreinc:
-            t = rval(s, args[0]);
-            v = mkexpr(-1, Oadd, mkint(-1, 1), t, NULL);
+            t = lval(s, args[0]);
+            v = mkexpr(-1, Oadd, one, t, NULL);
             r = mkexpr(-1, Ostor, t, v, NULL);
             lappend(&s->incqueue, &s->nqueue, t); 
             break;
         case Opredec:
-            t = rval(s, args[0]);
-            v = mkexpr(-1, Oadd, mkint(-1, -1), t, NULL);
+            t = lval(s, args[0]);
+            v = mkexpr(-1, Osub, one, t, NULL);
             r = mkexpr(-1, Ostor, t, v, NULL);
             lappend(&s->incqueue, &s->nqueue, t); 
             break;
@@ -275,15 +279,14 @@ Node *rval(Simp *s, Node *n)
          *      x = x + 1 
          */
         case Opostinc:
-            breakhere();
-            r = rval(s, args[0]);
-            v = mkexpr(-1, Oadd, mkint(-1, 1), r, NULL);
+            r = lval(s, args[0]);
+            v = mkexpr(-1, Oadd, one, r, NULL);
             t = mkexpr(-1, Ostor, r, v, NULL);
             lappend(&s->incqueue, &s->nqueue, t); 
             break;
         case Opostdec:
-            r = rval(s, args[0]);
-            v = mkexpr(-1, Oadd, mkint(-1, -1), args[0], NULL);
+            r = lval(s, args[0]);
+            v = mkexpr(-1, Osub, one, args[0], NULL);
             t = mkexpr(-1, Ostor, r, v, NULL);
             lappend(&s->incqueue, &s->nqueue, t); 
             break;
@@ -335,7 +338,10 @@ void declare(Simp *s, Node *n)
 Node *simp(Simp *s, Node *n)
 {
     Node *r;
+    int i;
 
+    if (!n)
+        return NULL;
     r = NULL;
     switch (n->type) {
         case Nblock:
@@ -351,6 +357,12 @@ Node *simp(Simp *s, Node *n)
             r = rval(s, n);
             if (r)
                 append(s, r);
+            /* drain the increment queue for this expr */
+            for (i = 0; i < s->nqueue; i++)
+                append(s, s->incqueue[i]);
+            free(s->incqueue);
+            s->nqueue = 0;
+            s->incqueue = NULL;
             break;
         case Nlit:
             r = n;

@@ -369,6 +369,8 @@ static void infernode(Node *n, Type *ret, int *sawret)
 {
     int i;
 
+    if (!n)
+        return;
     switch (n->type) {
         case Nfile:
             pushstab(n->file.globls);
@@ -455,6 +457,8 @@ static void typesub(Node *n)
 {
     int i;
 
+    if (!n)
+        return;
     switch (n->type) {
         case Nfile:
             for (i = 0; i < n->file.nstmts; i++)

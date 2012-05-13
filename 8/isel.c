@@ -207,12 +207,15 @@ Loc getreg(Isel *s, Mode m)
     Loc l;
     int i;
 
+    l.reg = Rnone;
     for (i = 0; i < Nreg; i++) {
         if (!s->rtaken[i] && regmodes[i] == m) {
             locreg(&l, i);
             break;
         }
     }
+    if (l.reg == Rnone)
+        die("Not enough registers. Please split your expression and try again (FIXME: implement spilling)");
     for (i = 0; i < Nmode; i++)
         s->rtaken[reginterferes[l.reg][i]] = 1;
 
