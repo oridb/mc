@@ -12,6 +12,9 @@
 
 #include "parse.h"
 
+static Node **checkmemb;
+static size_t ncheckmemb;
+
 static void infernode(Node *n, Type *ret, int *sawret);
 static void inferexpr(Node *n, Type *ret, int *sawret);
 
@@ -25,18 +28,23 @@ static void setsuper(Stab *st, Stab *super)
     st->super = super;
 }
 
+static Node **aggrmemb(Type *t, int *n)
+{
+    *n = t->nmemb;
+    switch (t->type) {
+        case Tystruct: return t->sdecls; break;
+        case Tyunion: return t->udecls; break;
+        case Tyenum: return t->edecls; break;
+        default: return NULL;
+    }
+}
+
 static void tyresolve(Type *t)
 {
     int i, nn;
     Node **n;
 
-    nn = t->nmemb;
-    switch (t->type) {
-        case Tystruct: n = t->sdecls; break;
-        case Tyunion: n = t->udecls; break;
-        case Tyenum: n = t->edecls; break;
-        default: return;
-    }
+    n = aggrmemb(t, &nn);
     for (i = 0; i < nn; i++)
         infernode(n[i], NULL, NULL);
 }
@@ -127,6 +135,7 @@ static Type *littype(Node *n)
     };
     return NULL;
 }
+
 
 static Type *type(Node *n)
 {
@@ -304,7 +313,8 @@ static void inferexpr(Node *n, Type *ret, int *sawret)
 
         /* special cases */
         case Omemb:     /* @a.Ident -> @b, verify type(@a.Ident)==@b later */
-            die("members not done yet");
+            settype(n, mktyvar(n->line));
+            lappend(&checkmemb, &ncheckmemb, n);
             break;
         case Osize:     /* sizeof @a -> size */
             die("inference of sizes not done yet");
@@ -454,10 +464,6 @@ static void infernode(Node *n, Type *ret, int *sawret)
     }
 }
 
-static void infercompn(Node *n)
-{
-}
-
 static void checkcast(Node *n)
 {
 }
@@ -484,6 +490,34 @@ static Type *tyfin(Node *ctx, Type *t)
     if (t->type == Tyvar)
          fatal(t->line, "underconstrained type %s near %s", tyfmt(buf, 1024, t), ctxstr(ctx));
     return t;
+}
+
+static char *namestr(Node *name)
+{
+    assert(name->type == Nname);
+    return name->name.parts[0];
+}
+
+static void infercompn(Node *file)
+{
+    int i, j, nn;
+    Node *aggr;
+    Node *memb;
+    Node *n;
+    Node **nl;
+
+    for (i = 0; i < ncheckmemb; i++) {
+        n = checkmemb[i];
+        aggr = checkmemb[i]->expr.args[0];
+        memb = checkmemb[i]->expr.args[1];
+
+        nl = aggrmemb(aggr->expr.type, &nn);
+        for (j = 0; j < nn; j++) {
+            if (!strcmp(namestr(memb), declname(nl[i])))
+                break;
+        }
+        unify(n, n->expr.type, decltype(nl[i]));
+    }
 }
 
 static void typesub(Node *n)

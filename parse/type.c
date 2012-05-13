@@ -413,15 +413,6 @@ void tyinit(Stab *st)
 #include "cstr.def"
 #undef Tc
 
-/* define and register the type */
-#define Ty(t, n) {\
-    ty = mkty(-1, t); \
-    if (n) { \
-        puttype(st, mkname(-1, n), ty); \
-    }}
-#include "types.def"
-#undef Ty
-
     /* bool :: tctest */
     tycstrs[Tybool][0] = cstrtab[Tctest];
 
@@ -461,4 +452,15 @@ void tyinit(Stab *st)
     tycstrs[Tyslice][0] = cstrtab[Tcidx];
     tycstrs[Tyslice][1] = cstrtab[Tcslice];
     tycstrs[Tyslice][1] = cstrtab[Tctest];
+
+/* Definining and registering the types has to go after we define the
+ * constraints, otherwise they will have no constraints set on them. */
+#define Ty(t, n) {\
+    ty = mkty(-1, t); \
+    if (n) { \
+        puttype(st, mkname(-1, n), ty); \
+    }}
+#include "types.def"
+#undef Ty
+
 }
