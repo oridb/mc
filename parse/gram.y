@@ -164,7 +164,7 @@ toplev
             {lappend(&file->file.uses, &file->file.nuses, $1);}
         | package
         | tydef
-            {die("tydef unimplemented");}
+            {puttype(file->file.globls, mkname($1.line, $1.name), $1.type);}
         | TEndln
         ;
 

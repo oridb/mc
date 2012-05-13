@@ -210,6 +210,14 @@ Node *mkbool(int line, int val)
     return n;
 }
 
+char *declname(Node *n)
+{
+    Node *name;
+    assert(n->type == Ndecl);
+    name = n->decl.sym->name;
+    return name->name.parts[name->name.nparts - 1];
+}
+
 Type *decltype(Node *n)
 {
     assert(n->type == Ndecl);

@@ -318,6 +318,7 @@ Node *mkdecl(int line, Sym *sym);
 Node *mklbl(int line, char *lbl);
 
 /* node util functions */
+char *declname(Node *n);
 Type *decltype(Node *n);
 void addstmt(Node *file, Node *stmt);
 void setns(Node *n, char *name);
@@ -343,5 +344,5 @@ void pickle(Node *n, FILE *fd);
 Node *unpickle(FILE *fd);
 
 /* convenience func */
-void lappend(void *l, size_t *len, void *n); /* ugly hack; nl is void* because void*** != @a*** */
+void lappend(void *l, size_t *len, void *n); /* ugly hack; nl is void* because void*** is incompatible with T*** */
 void lfree(void *l, size_t *len);

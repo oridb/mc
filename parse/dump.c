@@ -67,7 +67,7 @@ static void outstab(Stab *st, FILE *fd, int depth)
         /* already indented */
         outname(k[i], fd); 
         ty = tystr(gettype(st, k[i]));
-        fprintf(fd, " = %s", ty);
+        fprintf(fd, " = %s\n", ty);
         free(ty);
     }
     free(k);

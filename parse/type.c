@@ -258,6 +258,43 @@ static int cstrfmt(char *buf, size_t len, Type *t)
     return p - buf;
 }
 
+static int fmtstruct(char *buf, size_t len, Type *t)
+{
+    int i;
+    char *end, *p;
+    char *name, *ty;
+
+    p = buf;
+    end = p + len;
+    p += snprintf(p, end - p, "struct ");
+    for (i = 0; i < t->nsub; i++) {
+        name = declname(t->edecls[i]);
+        ty = tystr(decltype(t->edecls[i]));
+        p += snprintf(p, end - p, "%s:%s; ", name, ty);
+        free(ty);
+    }
+    p += snprintf(p, end - p, ";;");
+    return p - buf;
+}
+
+static int fmtunion(char *buf, size_t len, Type *t)
+{
+    int i;
+    *buf = 0;
+    for (i = 0; i < t->nsub; i++)
+        dump(t->sdecls[i], stdout);
+    return 0;
+}
+
+static int fmtenum(char *buf, size_t len, Type *t)
+{
+    int i;
+    *buf = 0;
+    for (i = 0; i < t->nsub; i++)
+        dump(t->sdecls[i], stdout);
+    return 0;
+}
+
 static int tybfmt(char *buf, size_t len, Type *t)
 {
     char *p;
@@ -336,11 +373,9 @@ static int tybfmt(char *buf, size_t len, Type *t)
             p += snprintf(p, end - p, "?"); /* indicate unresolved name. should not be seen by user. */
             p += namefmt(p, end - p, t->name);
             break;
-        case Tystruct:
-        case Tyunion:
-        case Tyenum:
-            snprintf(p, end - p, "TYPE ?");
-            break;
+        case Tystruct:  p += fmtstruct(p, end - p, t);  break;
+        case Tyunion:   p += fmtunion(p, end - p, t);   break;
+        case Tyenum:    p += fmtenum(p, end - p, t);    break;
         case Ntypes:
             die("Ntypes is not a type");
             break;
