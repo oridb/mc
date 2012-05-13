@@ -30,7 +30,7 @@ static char *littab[] =  {
 };
 
 static char *tidtab[] =  {
-#define Ty(t) #t,
+#define Ty(t, n) n,
 #include "types.def"
 #undef Ty
 };

@@ -172,7 +172,7 @@ Type *mktystruct(int line, Node **decls, size_t ndecls)
     Type *t;
 
     t = mkty(line, Tystruct);
-    t->nsub = ndecls;
+    t->nmemb = ndecls;
     t->sdecls = memdup(decls, ndecls*sizeof(Node *));
     return t;
 }
@@ -182,6 +182,7 @@ Type *mktyunion(int line, Node **decls, size_t ndecls)
     Type *t;
 
     t = mkty(line, Tyunion);
+    t->nmemb = ndecls;
     t->udecls = decls;
     return t;
 }
@@ -191,6 +192,7 @@ Type *mktyenum(int line, Node **decls, size_t ndecls)
     Type *t;
 
     t = mkty(line, Tyenum);
+    t->nmemb = ndecls;
     t->edecls = decls;
     return t;
 }
@@ -267,7 +269,7 @@ static int fmtstruct(char *buf, size_t len, Type *t)
     p = buf;
     end = p + len;
     p += snprintf(p, end - p, "struct ");
-    for (i = 0; i < t->nsub; i++) {
+    for (i = 0; i < t->nmemb; i++) {
         name = declname(t->edecls[i]);
         ty = tystr(decltype(t->edecls[i]));
         p += snprintf(p, end - p, "%s:%s; ", name, ty);
@@ -281,7 +283,7 @@ static int fmtunion(char *buf, size_t len, Type *t)
 {
     int i;
     *buf = 0;
-    for (i = 0; i < t->nsub; i++)
+    for (i = 0; i < t->nmemb; i++)
         dump(t->sdecls[i], stdout);
     return 0;
 }
@@ -290,7 +292,7 @@ static int fmtenum(char *buf, size_t len, Type *t)
 {
     int i;
     *buf = 0;
-    for (i = 0; i < t->nsub; i++)
+    for (i = 0; i < t->nmemb; i++)
         dump(t->sdecls[i], stdout);
     return 0;
 }
@@ -401,17 +403,22 @@ char *tystr(Type *t)
     return strdup(buf);
 }
 
-void tyinit(void)
+void tyinit(Stab *st)
 {
     int i;
+    Type *ty;
 
 #define Tc(c, n) \
     mkcstr(-1, n, NULL, 0, NULL, 0);
 #include "cstr.def"
 #undef Tc
 
-#define Ty(t) \
-    mkty(-1, t);
+/* define and register the type */
+#define Ty(t, n) {\
+    ty = mkty(-1, t); \
+    if (n) { \
+        puttype(st, mkname(-1, n), ty); \
+    }}
 #include "types.def"
 #undef Ty
 

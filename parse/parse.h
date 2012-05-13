@@ -36,7 +36,7 @@ typedef enum {
 } Littype;
 
 typedef enum {
-#define Ty(t) t,
+#define Ty(t, n) t,
 #include "types.def"
 #undef Ty
 } Ty;
@@ -98,7 +98,8 @@ struct Type {
     int tid;
     int line;
     Bitset *cstrs;    /* the type constraints matched on this type */
-    size_t nsub;      /* For fnsub, tusub, sdecls, udecls, edecls. */
+    size_t nsub;      /* For compound types */
+    size_t nmemb;     /* for aggregate types (struct, union, enum) */
     Type **sub;       /* sub-types; shared by all composite types */
     union {
         Node *name;    /* Tyname: unresolved name */
@@ -260,6 +261,7 @@ Stab *mkstab(void);
 
 void putns(Stab *st, Stab *scope);
 void puttype(Stab *st, Node *n, Type *ty);
+void updatetype(Stab *st, Node *n, Type *t);
 void putdcl(Stab *st, Sym *s);
 
 Stab *getns(Stab *st, Node *n);
@@ -273,7 +275,7 @@ void popstab(void);
 Sym *mksym(int line, Node *name, Type *ty);
 
 /* type creation */
-void tyinit(void); /* sets up built in types */
+void tyinit(Stab *st); /* sets up built in types */
 
 Type *mkty(int line, Ty ty);
 Type *mktyvar(int line);

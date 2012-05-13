@@ -25,6 +25,22 @@ static void setsuper(Stab *st, Stab *super)
     st->super = super;
 }
 
+static void tyresolve(Type *t)
+{
+    int i, nn;
+    Node **n;
+
+    nn = t->nmemb;
+    switch (t->type) {
+        case Tystruct: n = t->sdecls; break;
+        case Tyunion: n = t->udecls; break;
+        case Tyenum: n = t->edecls; break;
+        default: return;
+    }
+    for (i = 0; i < nn; i++)
+        infernode(n[i], NULL, NULL);
+}
+
 /* find the most accurate type mapping */
 static Type *tf(Type *t)
 {
@@ -37,6 +53,7 @@ static Type *tf(Type *t)
             if (!(lu = gettype(curstab(), t->name)))
                 fatal(t->name->line, "Could not find type %s", t->name->name.parts[t->name->name.nparts - 1]);
             tytab[t->tid] = lu;
+            tyresolve(lu);
         }
 
         printf("%s => ", tyfmt(buf, 1024, t));
@@ -365,6 +382,19 @@ static void inferdecl(Node *n)
     }
 }
 
+static void inferstab(Stab *s)
+{
+    void **k;
+    int n, i;
+    Type *t;
+
+    k = htkeys(s->ty, &n);
+    for (i = 0; i < n; i++) {
+        t = tf(gettype(s, k[i]));
+        updatetype(s, k[i], t);
+    }
+}
+
 static void infernode(Node *n, Type *ret, int *sawret)
 {
     int i;
@@ -374,6 +404,7 @@ static void infernode(Node *n, Type *ret, int *sawret)
     switch (n->type) {
         case Nfile:
             pushstab(n->file.globls);
+            inferstab(n->file.globls);
             for (i = 0; i < n->file.nstmts; i++)
                 infernode(n->file.stmts[i], NULL, sawret);
             popstab();
@@ -384,6 +415,7 @@ static void infernode(Node *n, Type *ret, int *sawret)
         case Nblock:
             setsuper(n->block.scope, curstab());
             pushstab(n->block.scope);
+            inferstab(n->block.scope);
             for (i = 0; i < n->block.nstmts; i++)
                 infernode(n->block.stmts[i], ret, sawret);
             popstab();
@@ -407,6 +439,7 @@ static void infernode(Node *n, Type *ret, int *sawret)
         case Nfunc:
             setsuper(n->func.scope, curstab());
             pushstab(n->func.scope);
+            inferstab(n->block.scope);
             inferfunc(n);
             popstab();
             break;

@@ -244,15 +244,18 @@ static void wrtype(FILE *fd, Type *ty)
             wrstr(fd, ty->pname);
             break;
         case Tystruct: 
-            for (i = 0; i < ty->nsub; i++)
+            wrint(fd, ty->nmemb);
+            for (i = 0; i < ty->nmemb; i++)
                 pickle(ty->sdecls[i], fd);
             break;
         case Tyunion: 
-            for (i = 0; i < ty->nsub; i++)
+            wrint(fd, ty->nmemb);
+            for (i = 0; i < ty->nmemb; i++)
                 pickle(ty->udecls[i], fd);
             break;
         case Tyenum: 
-            for (i = 0; i < ty->nsub; i++)
+            wrint(fd, ty->nmemb);
+            for (i = 0; i < ty->nmemb; i++)
                 pickle(ty->edecls[i], fd);
             break;
         case Tyarray:
@@ -282,6 +285,8 @@ static Type *rdtype(FILE *fd)
     /* tid is generated; don't write */
     /* cstrs are left out for now: FIXME */
     ty->nsub = rdint(fd);
+    if (ty->nsub > 0)
+        ty->sub = xalloc(ty->nsub * sizeof(Type*));
     switch (ty->type) {
         case Tyname:
             ty->name = unpickle(fd);
@@ -290,18 +295,21 @@ static Type *rdtype(FILE *fd)
             ty->pname = rdstr(fd);
             break;
         case Tystruct: 
-            ty->sdecls = xalloc(ty->nsub * sizeof(Node*));
-            for (i = 0; i < ty->nsub; i++)
+            ty->nmemb = rdint(fd);
+            ty->sdecls = xalloc(ty->nmemb * sizeof(Node*));
+            for (i = 0; i < ty->nmemb; i++)
                 ty->sdecls[i] = unpickle(fd);
             break;
         case Tyunion: 
-            ty->udecls = xalloc(ty->nsub * sizeof(Node*));
-            for (i = 0; i < ty->nsub; i++)
+            ty->nmemb = rdint(fd);
+            ty->udecls = xalloc(ty->nmemb * sizeof(Node*));
+            for (i = 0; i < ty->nmemb; i++)
                 ty->udecls[i] = unpickle(fd);
             break;
         case Tyenum: 
-            ty->edecls = xalloc(ty->nsub * sizeof(Node*));
-            for (i = 0; i < ty->nsub; i++)
+            ty->nmemb = rdint(fd);
+            ty->edecls = xalloc(ty->nmemb * sizeof(Node*));
+            for (i = 0; i < ty->nmemb; i++)
                 ty->edecls[i] = unpickle(fd);
             break;
         case Tyarray:
@@ -309,8 +317,6 @@ static Type *rdtype(FILE *fd)
             ty->asize = unpickle(fd);
             break;
         default:
-            if (ty->nsub > 0)
-                ty->sub = xalloc(ty->nsub * sizeof(Type*));
             for (i = 0; i < ty->nsub; i++)
                 ty->sub[i] = rdtype(fd);
             break;

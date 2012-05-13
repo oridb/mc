@@ -28,6 +28,7 @@ int main(int argc, char **argv)
     int opt;
     int i;
     Node *rdback;
+    Stab *globls;
     FILE *tmp;
 
     while ((opt = getopt(argc, argv, "dho:")) != -1) {
@@ -47,11 +48,12 @@ int main(int argc, char **argv)
     }
 
     for (i = optind; i < argc; i++) {
-        tyinit();
+        globls = mkstab();
+        tyinit(globls);
         tokinit(argv[i]);
         file = mkfile(argv[i]);
         file->file.exports = mkstab();
-        file->file.globls = mkstab();
+        file->file.globls = globls;
         yyparse();
 
         /* before we do anything to the parse */

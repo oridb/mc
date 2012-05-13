@@ -131,11 +131,22 @@ void putdcl(Stab *st, Sym *s)
     htput(st->dcl, s->name, s);
 }
 
+void updatetype(Stab *st, Node *n, Type *t)
+{
+    Tydefn *td;
+
+    td = htget(st->ty, n);
+    if (!td)
+        die("No type %s to update", name(n));
+    td->type = t;
+}
+
 void puttype(Stab *st, Node *n, Type *t)
 {
     Type *ty;
     Tydefn *td;
 
+    assert(t != NULL);
     ty = gettype(st, n);
     if (ty)
         fatal(n->line, "Type %s already defined", name(n));

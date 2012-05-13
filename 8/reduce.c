@@ -60,12 +60,15 @@ int isimpure(Node *n)
 size_t size(Node *n)
 {
     Type *t;
+    size_t sz;
+    int i;
 
     if (n->type == Nexpr)
         t = n->expr.type;
     else
         t = n->decl.sym->type;
 
+    sz = 0;
     switch (t->type) {
         case Tyvoid:
             return 1;
@@ -97,6 +100,9 @@ size_t size(Node *n)
         case Tyarray:
         case Tytuple:
         case Tystruct:
+            for (i = 0; i < t->nmemb; i++)
+                sz += size(t->sdecls[i]);
+            break;
         case Tyunion:
             die("Sizes for composite types not implemented yet");
             break;
