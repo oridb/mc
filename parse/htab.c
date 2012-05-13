@@ -68,6 +68,7 @@ int htput(Htab *ht, void *k, void *v)
     ulong h;
     int di;
 
+    di = 0;
     h = hash(ht, k);
     i = h & (ht->sz - 1);
     while (ht->hashes[i]) {
@@ -92,6 +93,7 @@ ssize_t htidx(Htab *ht, void *k)
     ulong h;
     int di;
 
+    di = 0;
     h = hash(ht, k);
     i = h & (ht->sz - 1);
     while (ht->hashes[i] && ht->hashes[i] != h) {
