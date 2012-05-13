@@ -153,7 +153,7 @@ static void wrstab(FILE *fd, Stab *val)
     keys = htkeys(val->dcl, &n);
     wrint(fd, n);
     for (i = 0; i < n; i++)
-        wrsym(fd, htget(val->dcl, keys[i]));
+        wrsym(fd, getdcl(val, keys[i]));
     free(keys);
 
     /* write types */
@@ -161,7 +161,7 @@ static void wrstab(FILE *fd, Stab *val)
     wrint(fd, n);
     for (i = 0; i < n; i++) {
         pickle(keys[i], fd); /* name */
-        wrtype(fd, htget(val->ty, keys[i])); /* type */
+        wrtype(fd, gettype(val, keys[i])); /* type */
     }
     free(keys);
 
@@ -169,7 +169,7 @@ static void wrstab(FILE *fd, Stab *val)
     keys = htkeys(val->ns, &n);
     wrint(fd, n);
     for (i = 0; i < n; i++)
-        wrstab(fd, htget(val->ns, keys[i]));
+        wrstab(fd, getns(val, keys[i]));
     free(keys);
 }
 
@@ -282,8 +282,6 @@ static Type *rdtype(FILE *fd)
     /* tid is generated; don't write */
     /* cstrs are left out for now: FIXME */
     ty->nsub = rdint(fd);
-    if (ty->nsub > 0)
-        ty->sub = xalloc(ty->nsub * sizeof(Type*));
     switch (ty->type) {
         case Tyname:
             ty->name = unpickle(fd);
@@ -292,14 +290,17 @@ static Type *rdtype(FILE *fd)
             ty->pname = rdstr(fd);
             break;
         case Tystruct: 
+            ty->sdecls = xalloc(ty->nsub * sizeof(Node*));
             for (i = 0; i < ty->nsub; i++)
                 ty->sdecls[i] = unpickle(fd);
             break;
         case Tyunion: 
+            ty->udecls = xalloc(ty->nsub * sizeof(Node*));
             for (i = 0; i < ty->nsub; i++)
                 ty->udecls[i] = unpickle(fd);
             break;
         case Tyenum: 
+            ty->edecls = xalloc(ty->nsub * sizeof(Node*));
             for (i = 0; i < ty->nsub; i++)
                 ty->edecls[i] = unpickle(fd);
             break;
@@ -308,6 +309,8 @@ static Type *rdtype(FILE *fd)
             ty->asize = unpickle(fd);
             break;
         default:
+            if (ty->nsub > 0)
+                ty->sub = xalloc(ty->nsub * sizeof(Type*));
             for (i = 0; i < ty->nsub; i++)
                 ty->sub[i] = rdtype(fd);
             break;

@@ -110,7 +110,7 @@ Type *gettype(Stab *st, Node *n)
     return NULL;
 }
 
-Stab *getstab(Stab *st, Node *n)
+Stab *getns(Stab *st, Node *n)
 {
     Stab *s;
     do {
@@ -150,7 +150,7 @@ void putns(Stab *st, Stab *scope)
 {
     Stab *s;
 
-    s = getstab(st, scope->name);
+    s = getns(st, scope->name);
     if (s)
         fatal(scope->name->line, "Ns %s already defined", name(s->name));
     htput(st->ns, scope->name, scope);
