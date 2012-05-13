@@ -102,6 +102,7 @@ size_t size(Node *n)
         case Tystruct:
             for (i = 0; i < t->nmemb; i++)
                 sz += size(t->sdecls[i]);
+            return sz;
             break;
         case Tyunion:
             die("Sizes for composite types not implemented yet");
