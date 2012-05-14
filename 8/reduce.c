@@ -131,8 +131,7 @@ Node *temp(Simp *simp, Node *e)
 {
     char buf[128];
     static int nexttmp;
-    Node *n;
-    Node *t;
+    Node *t, *r, *n;
     Sym *s;
 
     assert(e->type == Nexpr);
@@ -141,7 +140,9 @@ Node *temp(Simp *simp, Node *e)
     s = mksym(-1, n, e->expr.type);
     t = mkdecl(-1, s);
     declare(simp, t);
-    return mkexpr(-1, Ovar, t, NULL);
+    r = mkexpr(-1, Ovar, t, NULL);
+    r->expr.did = s->id;
+    return r;
 }
 
 void jmp(Simp *s, Node *lbl) { append(s, mkexpr(-1, Ojmp, lbl, NULL)); }
@@ -237,12 +238,43 @@ static size_t offsetof(Node *aggr, Node *memb)
     return -1;
 }
 
-Node *lval(Simp *s, Node *n)
+static Node *one;
+
+static Node *membaddr(Simp *s, Node *n)
 {
-    return rval(s, n);
+    Node *t, *u, *r;
+    Node **args;
+
+    args = n->expr.args;
+    if (n->expr.type->type != Typtr)
+        t = mkexpr(-1, Oaddr, args[0], NULL);
+    else
+        t = args[0];
+    u = mkint(-1, offsetof(args[0], args[1]));
+    u = mkexpr(-1, Olit, u, NULL);
+    r = mkexpr(-1, Oadd, t, u, NULL);
+    return r;
 }
 
-static Node *one;
+Node *lval(Simp *s, Node *n)
+{
+    Node *r;
+
+    if (!one)
+        one = mkexpr(-1, Olit, mkint(-1, 1), NULL);
+    switch (exprop(n)) {
+        case Ovar:
+            r = n;
+        case Omemb:
+            r = membaddr(s, n);
+            break;
+        default:
+            die("%s cannot be an lval", opstr(exprop(n)));
+            break;
+    }
+    return r;
+}
+
 
 Node *rval(Simp *s, Node *n)
 {
@@ -273,13 +305,8 @@ Node *rval(Simp *s, Node *n)
             die("Have not implemented lowering op %s", opstr(exprop(n)));
             break;
         case Omemb:
-            if (n->expr.type->type != Typtr)
-                t = mkexpr(-1, Oaddr, args[0], NULL);
-            else
-                t = args[0];
-            u = mkint(-1, offsetof(args[0], args[1]));
-            u = mkexpr(-1, Olit, u, NULL);
-            r = mkexpr(-1, Oadd, t, u, NULL);
+            t = membaddr(s, n);
+            r = mkexpr(-1, Oload, t, NULL);
             break;
 
         /* fused ops:
@@ -369,6 +396,7 @@ void declare(Simp *s, Node *n)
 
     assert(n->type == Ndecl);
     f = s->fn;
+    printf("DECLARE %s(%ld) at %zd\n", declname(n), n->decl.sym->id, f->stksz);
     htput(f->locs, (void*)n->decl.sym->id, (void*)f->stksz);
     f->stksz += size(n);
 }

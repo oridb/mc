@@ -146,6 +146,8 @@ Loc loc(Isel *s, Node *n)
 
     switch (exprop(n)) {
         case Ovar:
+            if (!hthas(s->locs, (void*)n->expr.did))
+                die("%s(%ld) not found", declname(n->expr.args[0]), n->expr.did);
             stkoff = (size_t)htget(s->locs, (void*)n->expr.did);
             locmem(&l, stkoff, Resp, Rnone, ModeL);
             break;
@@ -275,9 +277,13 @@ void g(Isel *s, AsmOp op, ...)
 
 void load(Isel *s, Loc *a, Loc *b)
 {
-    assert(a->type == Loclit || a->type == Locmem || a->type == Loclbl);
+    Loc l;
     assert(b->type == Locreg);
-    g(s, Imov, a, b, NULL);
+    if (a->type == Locreg)
+        locmem(&l, 0, b->reg, Rnone, a->mode);
+    else
+        l = *a;
+    g(s, Imov, &l, b, NULL);
 }
 
 void stor(Isel *s, Loc *a, Loc *b)
@@ -424,7 +430,7 @@ Loc selexpr(Isel *s, Node *n)
             break;
         case Oload: /* mem -> reg */
             a = selexpr(s, args[0]);
-            b = selexpr(s, args[1]);
+            b = getreg(s, a.mode);
             load(s, &b, &a);
             r = b;
             break;

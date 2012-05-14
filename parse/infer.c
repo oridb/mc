@@ -195,10 +195,7 @@ static Type *unify(Node *ctx, Type *a, Type *b)
             if (i >= a->nsub)
                 fatal(ctx->line, "%s incompatible with %s near %s", tystr(a), tystr(b), ctxstr(ctx));
 
-            /* FIXME: recurse properly.
-               mergecstrs(ctx, a, b);
-               unify(ctx, a->sub[i], b->sub[i]);
-               */
+            unify(ctx, a->sub[i], b->sub[i]);
         }
         return b;
     } else {
