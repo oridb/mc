@@ -428,7 +428,7 @@ postfixexpr
         | postfixexpr TDec
             {$$ = mkexpr($1->line, Opostdec, $1, NULL);}
         | postfixexpr TOsqbrac expr TCsqbrac
-            {$$ = mkexpr($1->line, Oidx, $1, $3);}
+            {$$ = mkexpr($1->line, Oidx, $1, $3, NULL);}
         | postfixexpr TOsqbrac expr TComma expr TCsqbrac
             {$$ = mkexpr($1->line, Oslice, $1, $3, $5, NULL);}
         | postfixexpr TOparen arglist TCparen
