@@ -432,7 +432,7 @@ Loc selexpr(Isel *s, Node *n)
             a = selexpr(s, args[0]);
             b = getreg(s, a.mode);
             load(s, &b, &a);
-            r = b;
+            r = a;
             break;
 
         case Ocall: die("Unimplemented op %s", opstr(exprop(n))); break;
