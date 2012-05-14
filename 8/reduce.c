@@ -214,6 +214,29 @@ void simpblk(Simp *s, Node *n)
     }
 }
 
+static size_t offsetof(Node *aggr, Node *memb)
+{
+    Type *ty;
+    Node **nl;
+    int nn, i;
+    size_t off;
+
+    if (aggr->expr.type->type == Typtr)
+        aggr = aggr->expr.args[0];
+    ty = aggr->expr.type;
+
+    assert(ty->type == Tystruct);
+    nl = aggrmemb(ty, &nn);
+    off = 0;
+    for (i = 0; i < nn; i++) {
+        if (!strcmp(namestr(memb), declname(nl[i])))
+            return off;
+        off += size(nl[i]);
+    }
+    die("Could not find member %s in struct", namestr(memb));
+    return -1;
+}
+
 Node *lval(Simp *s, Node *n)
 {
     return rval(s, n);
@@ -246,9 +269,17 @@ Node *rval(Simp *s, Node *n)
     switch (exprop(n)) {
         case Obad: 
         case Olor: case Oland:
-        case Obsreq: case Omemb:
         case Oslice: case Oidx: case Osize:
             die("Have not implemented lowering op %s", opstr(exprop(n)));
+            break;
+        case Omemb:
+            if (n->expr.type->type != Typtr)
+                t = mkexpr(-1, Oaddr, args[0], NULL);
+            else
+                t = args[0];
+            u = mkint(-1, offsetof(args[0], args[1]));
+            u = mkexpr(-1, Olit, u, NULL);
+            r = mkexpr(-1, Oadd, t, u, NULL);
             break;
 
         /* fused ops:
@@ -256,7 +287,7 @@ Node *rval(Simp *s, Node *n)
          *    =>
          *     foo = foo ? blah*/
         case Oaddeq: case Osubeq: case Omuleq: case Odiveq: case Omodeq:
-        case Oboreq: case Obandeq: case Obxoreq: case Obsleq:
+        case Oboreq: case Obandeq: case Obxoreq: case Obsleq: case Obsreq:
             assert(fusedmap[exprop(n)] != Obad);
             u = rval(s, args[0]);
             v = rval(s, args[1]);

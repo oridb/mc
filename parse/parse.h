@@ -325,6 +325,8 @@ Type *decltype(Node *n);
 void addstmt(Node *file, Node *stmt);
 void setns(Node *n, char *name);
 Op exprop(Node *n);
+Node **aggrmemb(Type *t, int *n);
+char *namestr(Node *name);
 
 /* usefiles */
 void readuse(Node *use, Stab *into);

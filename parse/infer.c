@@ -28,17 +28,6 @@ static void setsuper(Stab *st, Stab *super)
     st->super = super;
 }
 
-static Node **aggrmemb(Type *t, int *n)
-{
-    *n = t->nmemb;
-    switch (t->type) {
-        case Tystruct: return t->sdecls; break;
-        case Tyunion: return t->udecls; break;
-        case Tyenum: return t->edecls; break;
-        default: return NULL;
-    }
-}
-
 static void tyresolve(Type *t)
 {
     int i, nn;
@@ -194,14 +183,13 @@ static Type *unify(Node *ctx, Type *a, Type *b)
         b = t;
     }
 
+    printf("UNIFY %s ===> %s\n", tystr(a), tystr(b));
     mergecstrs(ctx, a, b);
-    if (a->type != b->type) {
+    if (a->type == Tyvar) {
         if (a->type == Tyvar)
             tytab[a->tid] = b;
-        else
-            fatal(ctx->line, "%s incompatible with %s near %s", tystr(a), tystr(b), ctxstr(ctx));
         return b;
-    } else {
+    } else if (a->type == b->type) {
         for (i = 0; i < b->nsub; i++) {
             /* types must have same arity */
             if (i >= a->nsub)
@@ -213,6 +201,9 @@ static Type *unify(Node *ctx, Type *a, Type *b)
                */
         }
         return b;
+    } else {
+        fatal(ctx->line, "%s incompatible with %s near %s", tystr(a), tystr(b), ctxstr(ctx));
+        return NULL;
     }
 }
 
@@ -326,15 +317,17 @@ static void inferexpr(Node *n, Type *ret, int *sawret)
             die("casts not implemented");
             break;
         case Oret:      /* -> @a -> void */
+            printf("INFERRING RET\n");
             if (sawret)
                 *sawret = 1;
             if (!ret)
                 fatal(n->line, "Not allowed to return value here");
             if (nargs)
-                t = unify(n, type(args[0]), ret);
+                t = unify(n, ret, type(args[0]));
             else
                 t =  unify(n, mkty(-1, Tyvoid), ret);
             settype(n, t);
+            printf("DONE");
             break;
         case Ojmp:     /* goto void* -> void */
             settype(n, mkty(-1, Tyvoid));
@@ -342,7 +335,7 @@ static void inferexpr(Node *n, Type *ret, int *sawret)
         case Ovar:      /* a:@a -> @a */
             s = getdcl(curstab(), args[0]);
             if (!s)
-                fatal(n->line, "Undeclared var %s", args[0]->name.parts[args[0]->name.nparts - 1]);
+                fatal(n->line, "Undeclared var %s", declname(args[0]));
             else
                 settype(n, s->type);
             n->expr.did = s->id;
@@ -373,10 +366,9 @@ static void inferfunc(Node *n)
     for (i = 0; i < n->func.nargs; i++)
         infernode(n->func.args[i], NULL, NULL);
     infernode(n->func.body, n->func.type->sub[0], &sawret);
+    /* if there's no return stmt in the function, assume void ret */
     if (!sawret)
         unify(n, type(n)->sub[0], mkty(-1, Tyvoid));
-    else
-        printf("SAWRET!!!\n");
 }
 
 static void inferdecl(Node *n)
@@ -487,15 +479,11 @@ static Type *tyfin(Node *ctx, Type *t)
         for (i = 0; i < t->nsub; i++)
             t->sub[i] = tyfin(ctx, t->sub[i]);
     }
-    if (t->type == Tyvar)
-         fatal(t->line, "underconstrained type %s near %s", tyfmt(buf, 1024, t), ctxstr(ctx));
+    if (t->type == Tyvar) {
+        dump(ctx, stdout);
+        fatal(t->line, "underconstrained type %s near %s", tyfmt(buf, 1024, t), ctxstr(ctx));
+    }
     return t;
-}
-
-static char *namestr(Node *name)
-{
-    assert(name->type == Nname);
-    return name->name.parts[0];
 }
 
 static void infercompn(Node *file)
@@ -506,18 +494,24 @@ static void infercompn(Node *file)
     Node *n;
     Node **nl;
 
+    printf("COMPONENTS INFERRED\n");
     for (i = 0; i < ncheckmemb; i++) {
         n = checkmemb[i];
+        printf("EXPR TYPE: %s\n", tystr(type(n)));
+        if (n->expr.type->type == Typtr)
+            n = n->expr.args[0];
         aggr = checkmemb[i]->expr.args[0];
         memb = checkmemb[i]->expr.args[1];
 
         nl = aggrmemb(aggr->expr.type, &nn);
         for (j = 0; j < nn; j++) {
-            if (!strcmp(namestr(memb), declname(nl[i])))
+            if (!strcmp(namestr(memb), declname(nl[j]))) {
+                unify(n, type(n), decltype(nl[j]));
                 break;
+            }
         }
-        unify(n, n->expr.type, decltype(nl[i]));
     }
+    printf("DONE\n");
 }
 
 static void typesub(Node *n)

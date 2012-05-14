@@ -23,7 +23,7 @@ struct Isel {
     Htab *locs; /* Node => int stkoff */
 
     /* 6 general purpose regs */
-    Reg rtaken[Nreg];
+    int rtaken[Nreg];
 };
 
 /* string tables */
@@ -219,6 +219,7 @@ Loc getreg(Isel *s, Mode m)
     for (i = 0; i < Nmode; i++)
         s->rtaken[reginterferes[l.reg][i]] = 1;
 
+    printf("Got reg %s\n", regnames[l.reg]);
     return l;
 }
 
@@ -281,9 +282,14 @@ void load(Isel *s, Loc *a, Loc *b)
 
 void stor(Isel *s, Loc *a, Loc *b)
 {
+    Loc l;
+
     assert(a->type == Locreg || a->type == Loclit);
-    assert(b->type == Loclit || b->type == Locmem || b->type == Loclbl);
-    g(s, Imov, a, b, NULL);
+    if (b->type == Locreg)
+        locmem(&l, 0, b->reg, Rnone, b->mode);
+    else
+        l = *b;
+    g(s, Imov, a, &l, NULL);
 }
 
 /* ensures that a location is within a reg */
@@ -380,8 +386,12 @@ Loc selexpr(Isel *s, Node *n)
         case Obsr:      die("Unimplemented op %s", opstr(exprop(n))); break;
         case Obnot:     die("Unimplemented op %s", opstr(exprop(n))); break;
 
-        case Oaddr:     die("Unimplemented op %s", opstr(exprop(n))); break;
         case Oderef:    die("Unimplemented op %s", opstr(exprop(n))); break;
+        case Oaddr:
+            a = selexpr(s, args[0]);
+            r = getreg(s, ModeL);
+            g(s, Ilea, &a, &r, NULL);
+            break;
 
         case Olnot: 
             a = selexpr(s, args[0]);

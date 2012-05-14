@@ -241,3 +241,20 @@ Op exprop(Node *e)
     return e->expr.op;
 }
 
+Node **aggrmemb(Type *t, int *n)
+{
+    *n = t->nmemb;
+    switch (t->type) {
+        case Tystruct: return t->sdecls; break;
+        case Tyunion: return t->udecls; break;
+        case Tyenum: return t->edecls; break;
+        default: return NULL;
+    }
+}
+
+char *namestr(Node *name)
+{
+    assert(name->type == Nname);
+    return name->name.parts[0];
+}
+

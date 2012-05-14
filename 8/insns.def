@@ -20,6 +20,7 @@ Insn(Inone,     "BAD_INSN",                     0)
 Insn(Imov,      "\tmov%t %x,%x\n",              0)
 Insn(Imovz,     "\tmovz%0t%1t %x,%x\n",         0)
 Insn(Imovs,     "\tmovs%0t%1t %x,%x\n",         0)
+Insn(Ilea,      "\tlea%t %x,%x\n",              0)
 
 Insn(Iadd,      "\tadd%t %r,%x\n",              0)
 Insn(Isub,      "\tsub%t %r,%x\n",              0)
