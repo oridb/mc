@@ -86,6 +86,7 @@ Stab *curscope;
 %token<tok> Tenum    /* enum */
 %token<tok> Tstruct  /* struct */
 %token<tok> Tunion   /* union */
+%token<tok> Ttyparam /* @typename */
 
 %token<tok> Tconst   /* const */
 %token<tok> Tvar     /* var */
@@ -94,6 +95,7 @@ Stab *curscope;
 
 %token<tok> Texport  /* export */
 %token<tok> Tprotect /* protect */
+
 
 %token<tok> Tellipsis        /* ... */
 %token<tok> Tendln           /* ; or \n */
@@ -112,6 +114,7 @@ Stab *curscope;
 %start module
 
 %type <ty> type structdef uniondef enumdef compoundtype functype funcsig
+%type <ty> generictype
 
 %type <tok> asnop cmpop addop mulop shiftop
 
@@ -246,6 +249,12 @@ type    : structdef
         | uniondef
         | enumdef
         | compoundtype
+        | generictype
+        ;
+
+generictype
+        : Ttyparam {$$ = mktyparam($1->line, $1->str);}
+        /* FIXME: allow constrained typarmas */
         ;
 
 compoundtype

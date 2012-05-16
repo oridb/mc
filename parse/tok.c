@@ -165,19 +165,27 @@ static int kwd(char *s)
     return Tident;
 }
 
-static Tok *kwident(void)
+static int identstr(char *buf, size_t sz)
 {
-    char buf[1024];
-    char c;
     int i;
-    Tok *t;
-
+    char c;
+    
     i = 0;
     for (c = peek(); i < 1023 && identchar(c); c = peek()) {
         next();
         buf[i++] = c;
     }
     buf[i] = '\0';
+    return i;
+}
+
+static Tok *kwident(void)
+{
+    char buf[1024];
+    Tok *t;
+
+    if (!identstr(buf, sizeof buf))
+        return NULL;
     t = mktok(kwd(buf));
     t->str = strdup(buf);
     return t;
@@ -428,6 +436,21 @@ static Tok *numlit(void)
     return t;
 }
 
+static Tok *typaram()
+{
+    Tok *t;
+    char buf[1024];
+
+    t = NULL;
+    if (!match('@'))
+        return NULL;
+    if (!identstr(buf, 1024))
+        return NULL;
+    t = mktok(Ttyparam);
+    t->str = strdup(buf);
+    return t;
+}
+
 static Tok *toknext()
 {
     Tok *t;
@@ -449,6 +472,8 @@ static Tok *toknext()
         t = charlit();
     } else if (isdigit(c)) {
         t =  numlit();
+    } else if (c == '@') {
+        t = typaram();
     } else {
         t = oper();
     }
