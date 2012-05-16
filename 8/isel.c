@@ -420,7 +420,8 @@ Loc selexpr(Isel *s, Node *n)
             return r;
 
         case Oasn:  /* relabel */
-            die("Unimplemented op %s", opstr(exprop(n))); break;
+            die("Unimplemented op %s", opstr(exprop(n)));
+            break;
         case Ostor: /* reg -> mem */
             a = selexpr(s, args[0]);
             b = selexpr(s, args[1]);
@@ -431,7 +432,8 @@ Loc selexpr(Isel *s, Node *n)
         case Oload: /* mem -> reg */
             a = selexpr(s, args[0]);
             b = getreg(s, a.mode);
-            load(s, &b, &a);
+            /* load() doesn't always do the mov */
+            g(s, Imov, &a, &b, NULL);
             r = b;
             break;
 
