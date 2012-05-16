@@ -99,7 +99,7 @@ Type *mktyparam(int line, char *name)
 {
     Type *t;
 
-    t = mkty(line, Tyvar);
+    t = mkty(line, Typaram);
     t->pname = strdup(name);
     return t;
 }

@@ -263,11 +263,8 @@ Node *lval(Simp *s, Node *n)
     if (!one)
         one = mkexpr(-1, Olit, mkint(-1, 1), NULL);
     switch (exprop(n)) {
-        case Ovar:
-            r = n;
-        case Omemb:
-            r = membaddr(s, n);
-            break;
+        case Ovar: r = n; break;
+        case Omemb: r = membaddr(s, n); break;
         default:
             die("%s cannot be an lval", opstr(exprop(n)));
             break;
