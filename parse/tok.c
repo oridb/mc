@@ -132,28 +132,29 @@ static int kwd(char *s)
 {
     int i;
     struct {char* kw; int tt;} kwmap[] = {
-        {"type",        TType},
-        {"for",         TFor},
-        {"while",       TWhile},
-        {"if",          TIf},
-        {"else",        TElse},
-        {"elif",        TElif},
-        {"match",       TMatch},
-        {"default",     TDefault},
-        {"goto",        TGoto},
-        {"enum",        TEnum},
-        {"struct",      TStruct},
-        {"union",       TUnion},
-        {"const",       TConst},
-        {"var",         TVar},
-        {"extern",      TExtern},
-        {"export",      TExport},
-        {"protect",     TProtect},
-        {"use",         TUse},
-        {"pkg",         TPkg},
-        {"sizeof",      TSizeof},
-        {"true",        TBoollit},
-        {"false",       TBoollit},
+        {"type",        Ttype},
+        {"for",         Tfor},
+        {"while",       Twhile},
+        {"if",          Tif},
+        {"else",        Telse},
+        {"elif",        Telif},
+        {"match",       Tmatch},
+        {"default",     Tdefault},
+        {"goto",        Tgoto},
+        {"enum",        Tenum},
+        {"struct",      Tstruct},
+        {"union",       Tunion},
+        {"const",       Tconst},
+        {"var",         Tvar},
+        {"generic",     Tgeneric},
+        {"extern",      Textern},
+        {"export",      Texport},
+        {"protect",     Tprotect},
+        {"use",         Tuse},
+        {"pkg",         Tpkg},
+        {"sizeof",      Tsizeof},
+        {"true",        Tboollit},
+        {"false",       Tboollit},
         {NULL, 0}
     };
 
@@ -161,7 +162,7 @@ static int kwd(char *s)
         if (!strcmp(kwmap[i].kw, s))
             return kwmap[i].tt;
 
-    return TIdent;
+    return Tident;
 }
 
 static Tok *kwident(void)
@@ -204,7 +205,7 @@ static Tok *strlit()
         else if (c == '\n')
             fatal(line, "Newlines not allowed in strings");
     };
-    t = mktok(TStrlit);
+    t = mktok(Tstrlit);
     t->str = strdupn(&fbuf[sstart], fidx - sstart);
     return t;
 }
@@ -231,7 +232,7 @@ static Tok *charlit()
         else if (c == '\n')
             fatal(line, "Newlines not allowed in char lit");
     };
-    t = mktok(TStrlit);
+    t = mktok(Tstrlit);
     t->str = strdupn(&fbuf[sstart], fidx - sstart);
     return t;
 }
@@ -243,130 +244,130 @@ static Tok *oper(void)
 
     c = next();
     switch (c) {
-        case '{': tt = TObrace; break;
-        case '}': tt = TCbrace; break;
-        case '(': tt = TOparen; break;
-        case ')': tt = TCparen; break;
-        case '[': tt = TOsqbrac; break;
-        case ']': tt = TCsqbrac; break;
-        case ',': tt = TComma; break;
-        case ':': tt = TColon; break;
-        case '~': tt = TBnot; break;
+        case '{': tt = Tobrace; break;
+        case '}': tt = Tcbrace; break;
+        case '(': tt = Toparen; break;
+        case ')': tt = Tcparen; break;
+        case '[': tt = Tosqbrac; break;
+        case ']': tt = Tcsqbrac; break;
+        case ',': tt = Tcomma; break;
+        case ':': tt = Tcolon; break;
+        case '~': tt = Tbnot; break;
         case ';':
                   if (match(';'))
-                      tt = TEndblk;
+                      tt = Tendblk;
                   else
-                      tt = TEndln;
+                      tt = Tendln;
                   break;
         case '.':
                   if (match('.')) {
                       if (match('.')) {
-                          tt = TEllipsis;
+                          tt = Tellipsis;
                       } else { 
                           unget();
-                          tt = TDot;
+                          tt = Tdot;
                       }
                   } else {
-                      tt = TDot;
+                      tt = Tdot;
                   }
                   break;
         case '+':
                   if (match('='))
-                      tt = TAddeq;
+                      tt = Taddeq;
                   else if (match('+'))
-                      tt = TInc;
+                      tt = Tinc;
                   else
-                      tt = TPlus;
+                      tt = Tplus;
                   break;
         case '-':
                   if (match('='))
-                      tt = TSubeq;
+                      tt = Tsubeq;
                   else if (match('-'))
-                      tt = TDec;
+                      tt = Tdec;
                   else if (match('>'))
-                      tt = TRet;
+                      tt = Tret;
                   else
-                      tt = TMinus;
+                      tt = Tminus;
                   break;
         case '*':
                   if (match('='))
-                      tt = TMuleq;
+                      tt = Tmuleq;
                   else
-                      tt = TStar;
+                      tt = Tstar;
                   break;
         case '/':
                   if (match('='))
-                      tt = TDiveq;
+                      tt = Tdiveq;
                   else
-                      tt = TDiv;
+                      tt = Tdiv;
                   break;
         case '%':
                   if (match('='))
-                      tt = TModeq;
+                      tt = Tmodeq;
                   else
-                      tt = TMod;
+                      tt = Tmod;
                   break;
         case '=':
                   if (match('='))
-                      tt = TEq;
+                      tt = Teq;
                   else
-                      tt = TAsn;
+                      tt = Tasn;
                   break;
         case '|':
                   if (match('='))
-                      tt = TBoreq;
+                      tt = Tboreq;
                   else if (match('|'))
-                      tt = TLor;
+                      tt = Tlor;
                   else
-                      tt = TBor;
+                      tt = Tbor;
                   break;
         case '&':
                   if (match('='))
-                      tt = TBandeq;
+                      tt = Tbandeq;
                   else if (match('|'))
-                      tt = TLand;
+                      tt = Tland;
                   else
-                      tt = TBand;
+                      tt = Tband;
                   break;
         case '^':
                   if (match('='))
-                      tt = TBxoreq;
+                      tt = Tbxoreq;
                   else
-                      tt = TBxor;
+                      tt = Tbxor;
                   break;
         case '<':
                   if (match('=')) {
-                      tt = TLe;
+                      tt = Tle;
                   } else if (match('<')) {
                       if (match('='))
-                          tt = TBsleq;
+                          tt = Tbsleq;
                       else
-                          tt = TBsl;
+                          tt = Tbsl;
                   } else {
-                      tt = TLt;
+                      tt = Tlt;
                   }
                   break;
         case '>':
                   if (match('=')) {
-                      tt = TGe;
+                      tt = Tge;
                   } else if (match('<')) {
                       if (match('='))
-                          tt = TBsreq;
+                          tt = Tbsreq;
                       else
-                          tt = TBsr;
+                          tt = Tbsr;
                   } else {
-                      tt = TGt;
+                      tt = Tgt;
                   }
                   break;
 
         case '!':
                   if (match('='))
-                      tt = TNe;
+                      tt = Tne;
                   else
-                      tt = TLnot;
+                      tt = Tlnot;
                   break;
         default:
-                  tt = TError;
+                  tt = Terror;
                   fatal(line, "Junk character %c", c);
                   break;
     }
@@ -394,13 +395,13 @@ static Tok *number(int base)
     if (isfloat && base == 10) {
         strtod(&fbuf[start], &endp);
         if (endp == &fbuf[fidx]) {
-            t = mktok(TFloatlit);
+            t = mktok(Tfloatlit);
             t->str = strdupn(&fbuf[start], fidx - start);
         }
     } else {
         strtol(&fbuf[start], &endp, base);
         if (endp == &fbuf[fidx]) {
-            t = mktok(TIntlit);
+            t = mktok(Tintlit);
             t->str = strdupn(&fbuf[start], fidx - start);
         }
     }
@@ -439,7 +440,7 @@ static Tok *toknext()
     } else if (c == '\n') {
         line++;
         next();
-        t =  mktok(TEndln);
+        t =  mktok(Tendln);
     } else if (isalpha(c) || c == '_') {
         t =  kwident();
     } else if (c == '"') {
@@ -452,7 +453,7 @@ static Tok *toknext()
         t = oper();
     }
 
-    if (!t || t->type == TError)
+    if (!t || t->type == Terror)
         fatal(line, "Unable to parse token starting with %c", c);
     return t;
 }
