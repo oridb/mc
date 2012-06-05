@@ -252,6 +252,24 @@ static Node *membaddr(Simp *s, Node *n)
     return r;
 }
 
+static Node *idxaddr(Simp *s, Node *n)
+{
+    Node *t, *u, *r;
+    Node **args;
+
+    assert(exprop(n) == Oidx);
+    args = n->expr.args;
+    if (args[0]->expr.type->type == Tyarray)
+        t = mkexpr(-1, Oaddr, args[0], NULL);
+    else if (args[0]->expr.type->type == Tyslice)
+        die("Slice indexing not implemeneted yet");
+    else
+        die("Can't index type %s\n", tystr(n->expr.type));
+    u = rval(s, args[1]);
+    r = mkexpr(-1, Oadd, t, u, NULL);
+    return r;
+}
+
 Node *lval(Simp *s, Node *n)
 {
     Node *r;
@@ -259,8 +277,9 @@ Node *lval(Simp *s, Node *n)
     if (!one)
         one = mkexpr(-1, Olit, mkint(-1, 1), NULL);
     switch (exprop(n)) {
-        case Ovar: r = n; break;
-        case Omemb: r = membaddr(s, n); break;
+        case Ovar:      r = n;  break;
+        case Omemb:     r = membaddr(s, n);     break;
+        case Oidx:      r = idxaddr(s, n);      break;
         default:
             die("%s cannot be an lval", opstr(exprop(n)));
             break;
@@ -292,10 +311,14 @@ Node *rval(Simp *s, Node *n)
     r = NULL;
     args = n->expr.args;
     switch (exprop(n)) {
-        case Obad: 
+        case Obad:
         case Olor: case Oland:
-        case Oslice: case Oidx: case Osize:
+        case Oslice: case Osize:
             die("Have not implemented lowering op %s", opstr(exprop(n)));
+            break;
+        case Oidx:
+            t = idxaddr(s, n);
+            r = mkexpr(-1, Oload, t, NULL);
             break;
         case Omemb:
             t = membaddr(s, n);
