@@ -1,0 +1,8 @@
+const main = {
+	var a
+	var b
+
+	a = 42
+	b = 11
+	-> a + b
+}
