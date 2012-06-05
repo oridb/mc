@@ -221,7 +221,6 @@ Loc getreg(Isel *s, Mode m)
         die("Not enough registers. Please split your expression and try again (FIXME: implement spilling)");
     for (i = 0; i < Nmode; i++)
         s->rtaken[reginterferes[l.reg][i]] = 1;
-    printf("Got reg %s\n", regnames[l.reg]);
 
     return l;
 }
@@ -229,8 +228,7 @@ Loc getreg(Isel *s, Mode m)
 void freereg(Isel *s, Reg r)
 {
     int i;
-    return;
-    printf("Freed reg %s\n", regnames[r]);
+
     for (i = 0; i < Nmode; i++)
         s->rtaken[reginterferes[r][i]] = 0;
 }
