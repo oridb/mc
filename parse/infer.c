@@ -169,6 +169,23 @@ static void mergecstrs(Node *ctx, Type *a, Type *b)
     }
 }
 
+int idxhacked(Type **pa, Type **pb)
+{
+    Type *a, *b;
+
+    a = *pa;
+    b = *pb;
+    /* we want to unify Tyidxhack => concrete indexable. Flip 
+     * to make this happen, if needed */
+    if (b->type == Tyidxhack) {
+	a = *pb;
+	b = *pa;
+    }
+    return a->type == Tyidxhack || a->type == Tyarray || a->type == Tyslice;
+}
+	    
+
+
 static Type *unify(Node *ctx, Type *a, Type *b)
 {
     Type *t;
@@ -186,10 +203,9 @@ static Type *unify(Node *ctx, Type *a, Type *b)
     printf("UNIFY %s ===> %s\n", tystr(a), tystr(b));
     mergecstrs(ctx, a, b);
     if (a->type == Tyvar) {
-        if (a->type == Tyvar)
-            tytab[a->tid] = b;
-        return b;
-    } else if (a->type == b->type) {
+	tytab[a->tid] = b;
+	return b;
+    } else if (a->type == b->type || idxhacked(&a, &b)) {
         for (i = 0; i < b->nsub; i++) {
             /* types must have same arity */
             if (i >= a->nsub)
