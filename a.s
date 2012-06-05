@@ -1,24 +1,25 @@
-.globl _main
-_main:
+.globl main
+main:
 	pushl %ebp
 	movl %esp,%ebp
 	subl $12,%esp
-	jmp .L2
-.L1:
-	movl 4(%esp),%eax
-	addl (%esp),%eax
-	movl %eax,4(%esp)
-.L2:
-	movl (%esp),%eax
-	cmpl $10,%eax
-	jl .L1
-	jmp .L3
-.L3:
-	movl 4(%esp),%eax
-	movl %eax,(%esp)
+	leal (%esp),%eax
+	addl $0,%eax
+	movl $12,(%eax)
+	leal (%esp),%eax
+	addl $4,%eax
+	movl $30,(%eax)
+	leal (%esp),%eax
+	addl $0,%eax
+	movl %eax,%ecx
+	leal (%esp),%edx
+	addl $4,%edx
+	movl %edx,%ebx
+	addl %ebx,%ecx
+	movl %ecx,8(%esp)
 	jmp .L0
 .L0:
-	movl (%esp),%eax
+	movl 8(%esp),%eax
 	movl %ebp,%esp
 	popl %ebp
 	ret

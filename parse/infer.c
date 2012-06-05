@@ -41,7 +41,6 @@ static void tyresolve(Type *t)
 /* find the most accurate type mapping */
 static Type *tf(Type *t)
 {
-    char buf[1024];
     Type *lu;
     assert(t != NULL);
 
@@ -53,12 +52,10 @@ static Type *tf(Type *t)
             tyresolve(lu);
         }
 
-        printf("%s => ", tyfmt(buf, 1024, t));
         if (!tytab[t->tid])
             break;
         t = tytab[t->tid];
     }
-    printf("nil\n");
     return t;
 }
 
@@ -200,7 +197,6 @@ static Type *unify(Node *ctx, Type *a, Type *b)
         b = t;
     }
 
-    printf("UNIFY %s ===> %s\n", tystr(a), tystr(b));
     mergecstrs(ctx, a, b);
     if (a->type == Tyvar) {
 	tytab[a->tid] = b;
@@ -334,7 +330,6 @@ static void inferexpr(Node *n, Type *ret, int *sawret)
             die("casts not implemented");
             break;
         case Oret:      /* -> @a -> void */
-            printf("INFERRING RET\n");
             if (sawret)
                 *sawret = 1;
             if (!ret)
@@ -344,7 +339,6 @@ static void inferexpr(Node *n, Type *ret, int *sawret)
             else
                 t =  unify(n, mkty(-1, Tyvoid), ret);
             settype(n, t);
-            printf("DONE");
             break;
         case Ojmp:     /* goto void* -> void */
             settype(n, mkty(-1, Tyvoid));
@@ -392,7 +386,6 @@ static void inferdecl(Node *n)
 {
     Type *t;
 
-    printf("====== decl %s\n", n->decl.sym->name->name.parts[n->decl.sym->name->name.nparts-1]);
     t = decltype(n);
     settype(n, t);
     if (n->decl.init) {
@@ -511,10 +504,8 @@ static void infercompn(Node *file)
     Node *n;
     Node **nl;
 
-    printf("COMPONENTS INFERRED\n");
     for (i = 0; i < ncheckmemb; i++) {
         n = checkmemb[i];
-        printf("EXPR TYPE: %s\n", tystr(type(n)));
         if (n->expr.type->type == Typtr)
             n = n->expr.args[0];
         aggr = checkmemb[i]->expr.args[0];
@@ -528,7 +519,6 @@ static void infercompn(Node *file)
             }
         }
     }
-    printf("DONE\n");
 }
 
 static void typesub(Node *n)

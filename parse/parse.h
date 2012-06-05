@@ -351,3 +351,6 @@ Node *unpickle(FILE *fd);
 /* convenience func */
 void lappend(void *l, size_t *len, void *n); /* ugly hack; nl is void* because void*** is incompatible with T*** */
 void lfree(void *l, size_t *len);
+
+/* Options to control the compilation */
+extern int debug;

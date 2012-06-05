@@ -81,8 +81,10 @@ static void lowerfn(Comp *c, char *name, Node *n)
 
     nl = reduce(fn, n->func.body, &nn);
 
-    for (i = 0; i < nn; i++) {
+    if (debug) {
+      for (i = 0; i < nn; i++) {
         dump(nl[i], stdout);
+      }
     }
 
     fn->nl = nl;

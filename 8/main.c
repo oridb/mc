@@ -20,6 +20,7 @@ static void usage(char *prog)
 {
     printf("%s [-h] [-o outfile] inputs\n", prog);
     printf("\t-h\tPrint this help\n");
+    printf("\t-d\tPrint debug dumps\n");
     printf("\t-o\tOutput to outfile\n");
 }
 
@@ -56,27 +57,30 @@ int main(int argc, char **argv)
         file->file.globls = globls;
         yyparse();
 
-        /* before we do anything to the parse */
-        dump(file, stdout);
+        if (debug) {
+          /* before we do anything to the parse */
+          dump(file, stdout);
+        }
 
         infer(file);
 
         /* test storing tree to file */
-        tmp = fopen("test.pkl", "w");
+        tmp = fopen("a.pkl", "w");
         pickle(file, tmp);
         fclose(tmp);
 
-        /* and reading it back */
-        tmp = fopen("test.pkl", "r");
-        rdback = unpickle(tmp);
-        dump(rdback, stdout);
-        fclose(tmp);
+        if (debug) {
+          /* and reading it back */
+          tmp = fopen("test.pkl", "r");
+          rdback = unpickle(tmp);
+          dump(rdback, stdout);
+          fclose(tmp);
 
-        /* after all processing */
-        dump(file, stdout);
+          /* after all processing */
+          dump(file, stdout);
+        }
         gen(file, "a.s");
     }
 
     return 0;
 }
-

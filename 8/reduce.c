@@ -389,7 +389,8 @@ void declare(Simp *s, Node *n)
 
     assert(n->type == Ndecl);
     f = s->fn;
-    printf("DECLARE %s(%ld) at %zd\n", declname(n), n->decl.sym->id, f->stksz);
+    if (debug)
+        printf("DECLARE %s(%ld) at %zd\n", declname(n), n->decl.sym->id, f->stksz);
     htput(f->locs, (void*)n->decl.sym->id, (void*)f->stksz);
     f->stksz += size(n);
 }

@@ -221,7 +221,6 @@ Loc getreg(Isel *s, Mode m)
     for (i = 0; i < Nmode; i++)
         s->rtaken[reginterferes[l.reg][i]] = 1;
 
-    printf("Got reg %s\n", regnames[l.reg]);
     return l;
 }
 
@@ -608,6 +607,17 @@ void epilogue(Isel *s)
     g(s, Iret, NULL);
 }
 
+static void writeasm(Fn *fn, Isel *is, FILE *fd)
+{
+    int i;
+
+    if (fn->isglobl)
+        fprintf(fd, ".globl %s\n", fn->name);
+    fprintf(fd, "%s:\n", fn->name);
+    for (i = 0; i < is->ni; i++)
+        iprintf(fd, is->il[i]);
+}
+
 /* genasm requires all nodes in 'nl' to map cleanly to operations that are
  * natively supported, as promised in the output of reduce().  No 64-bit
  * operations on x32, no structures, and so on. */
@@ -627,17 +637,10 @@ void genasm(Fn *fn)
     }
     epilogue(&is);
 
-    if (fn->isglobl)
-        fprintf(stdout, ".globl %s\n", fn->name);
-    fprintf(stdout, "%s:\n", fn->name);
-    for (i = 0; i < is.ni; i++)
-        iprintf(stdout, is.il[i]);
+    if (debug)
+      writeasm(fn, &is, stdout);
 
     fd = fopen("a.s", "w");
-    if (fn->isglobl)
-        fprintf(fd, ".globl %s\n", fn->name);
-    fprintf(fd, "%s:\n", fn->name);
-    for (i = 0; i < is.ni; i++)
-        iprintf(fd, is.il[i]);
+    writeasm(fn, &is, fd);
     fclose(fd);
 }
