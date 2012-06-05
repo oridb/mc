@@ -1,0 +1,9 @@
+type val = struct
+	a : int
+;;
+
+const main = {
+	var s : val
+	s.a = 12
+	-> s.a
+}
