@@ -220,8 +220,24 @@ Loc getreg(Isel *s, Mode m)
         die("Not enough registers. Please split your expression and try again (FIXME: implement spilling)");
     for (i = 0; i < Nmode; i++)
         s->rtaken[reginterferes[l.reg][i]] = 1;
+    printf("Got reg %s\n", regnames[l.reg]);
 
     return l;
+}
+
+void freereg(Isel *s, Reg r)
+{
+    int i;
+    return;
+    printf("Freed reg %s\n", regnames[r]);
+    for (i = 0; i < Nmode; i++)
+        s->rtaken[reginterferes[r][i]] = 0;
+}
+
+void freeloc(Isel *s, Loc l)
+{
+    if (l.type == Locreg)
+        freereg(s, l.reg);
 }
 
 Loc claimreg(Isel *s, Reg r)
@@ -365,12 +381,13 @@ static Loc binop(Isel *s, AsmOp op, Node *x, Node *y)
     b = selexpr(s, y);
     a = inr(s, a);
     g(s, op, &b, &a, NULL);
+    freeloc(s, b);
     return a;
 }
 
 Loc selexpr(Isel *s, Node *n)
 {
-    Loc a, b, c, r;
+    Loc a, b, c, r, t;
     Node **args;
 
     args = n->expr.args;
@@ -429,8 +446,12 @@ Loc selexpr(Isel *s, Node *n)
             r = b;
             break;
         case Oload: /* mem -> reg */
-            a = selexpr(s, args[0]);
-            b = getreg(s, a.mode);
+            t = selexpr(s, args[0]);
+            b = getreg(s, t.mode);
+            if (t.type == Locreg)
+                locmem(&a, 0, t.reg, Rnone, t.mode);
+            else
+                a = t;
             /* load() doesn't always do the mov */
             g(s, Imov, &a, &b, NULL);
             r = b;
