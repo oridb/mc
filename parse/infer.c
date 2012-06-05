@@ -293,10 +293,14 @@ static void inferexpr(Node *n, Type *ret, int *sawret)
             settype(n, t);
             break;
         case Oidx:      /* @a[@b::tcint] -> @a */
-            die("inference of indexes not done yet");
+	    t = mktyidxhack(n->line, type(args[1]));
+	    t = unify(n, type(args[0]), t);
+	    settype(n, t);
             break;
         case Oslice:    /* @a[@b::tcint,@b::tcint] -> @a[,] */
-            die("inference of slices not done yet");
+	    t = mktyidxhack(n->line, type(args[1]));
+	    t = unify(n, type(args[0]), t);
+	    settype(n, t);
             break;
 
         /* special cases */

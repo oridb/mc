@@ -283,6 +283,7 @@ Type *mktyparam(int line, char *name);
 Type *mktynamed(int line, Node *name);
 Type *mktyarray(int line, Type *base, Node *sz);
 Type *mktyslice(int line, Type *base);
+Type *mktyidxhack(int line, Type *base);
 Type *mktyptr(int line, Type *base);
 Type *mktyfunc(int line, Node **args, size_t nargs, Type *ret);
 Type *mktystruct(int line, Node **decls, size_t ndecls);

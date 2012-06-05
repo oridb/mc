@@ -143,6 +143,16 @@ Type *mktyslice(int line, Type *base)
     return t;
 }
 
+Type *mktyidxhack(int line, Type *base)
+{
+    Type *t;
+
+    t = mkty(line, Tyidxhack);
+    t->sub = xalloc(sizeof(Type*));
+    t->sub[0] = base;
+    return t;
+}
+
 Type *mktyptr(int line, Type *base)
 {
     Type *t;
@@ -344,6 +354,11 @@ static int tybfmt(char *buf, size_t len, Type *t)
         case Tyarray:
             p += tybfmt(p, end - p, t->sub[0]);
             p += snprintf(p, end - p, "[LEN]");
+            break;
+        case Tyidxhack:
+	    p += snprintf(p, end - p, "Tyidxhack(");
+            p += tybfmt(p, end - p, t->sub[0]);
+            p += snprintf(p, end - p, ")[]");
             break;
         case Tyfunc:
             p += snprintf(p, end - p, "(");
