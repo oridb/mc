@@ -295,12 +295,12 @@ static void inferexpr(Node *n, Type *ret, int *sawret)
         case Oidx:      /* @a[@b::tcint] -> @a */
 	    t = mktyidxhack(n->line, type(args[1]));
 	    t = unify(n, type(args[0]), t);
-	    settype(n, t);
+	    settype(n, type(args[1]));
             break;
         case Oslice:    /* @a[@b::tcint,@b::tcint] -> @a[,] */
 	    t = mktyidxhack(n->line, type(args[1]));
 	    t = unify(n, type(args[0]), t);
-	    settype(n, t);
+	    settype(n, mktyslice(n->line, type(args[1])));
             break;
 
         /* special cases */
