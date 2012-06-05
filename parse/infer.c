@@ -175,13 +175,11 @@ int idxhacked(Type **pa, Type **pb)
     /* we want to unify Tyidxhack => concrete indexable. Flip 
      * to make this happen, if needed */
     if (b->type == Tyidxhack) {
-	a = *pb;
-	b = *pa;
+        a = *pb;
+        b = *pa;
     }
     return a->type == Tyidxhack || a->type == Tyarray || a->type == Tyslice;
 }
-	    
-
 
 static Type *unify(Node *ctx, Type *a, Type *b)
 {
@@ -199,8 +197,8 @@ static Type *unify(Node *ctx, Type *a, Type *b)
 
     mergecstrs(ctx, a, b);
     if (a->type == Tyvar) {
-	tytab[a->tid] = b;
-	return b;
+        tytab[a->tid] = b;
+        return b;
     } else if (a->type == b->type || idxhacked(&a, &b)) {
         for (i = 0; i < b->nsub; i++) {
             /* types must have same arity */
@@ -305,14 +303,14 @@ static void inferexpr(Node *n, Type *ret, int *sawret)
             settype(n, t);
             break;
         case Oidx:      /* @a[@b::tcint] -> @a */
-	    t = mktyidxhack(n->line, type(args[1]));
-	    t = unify(n, type(args[0]), t);
-	    settype(n, type(args[1]));
+            t = mktyidxhack(n->line, type(args[1]));
+            t = unify(n, type(args[0]), t);
+            settype(n, type(args[1]));
             break;
         case Oslice:    /* @a[@b::tcint,@b::tcint] -> @a[,] */
-	    t = mktyidxhack(n->line, type(args[1]));
-	    t = unify(n, type(args[0]), t);
-	    settype(n, mktyslice(n->line, type(args[1])));
+            t = mktyidxhack(n->line, type(args[1]));
+            t = unify(n, type(args[0]), t);
+            settype(n, mktyslice(n->line, type(args[1])));
             break;
 
         /* special cases */
