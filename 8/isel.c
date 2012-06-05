@@ -415,7 +415,7 @@ Loc selexpr(Isel *s, Node *n)
             g(s, Ilea, &a, &r, NULL);
             break;
 
-        case Olnot: 
+        case Olnot:
             a = selexpr(s, args[0]);
             b = getreg(s, ModeB);
             r = coreg(b, mode(n));
