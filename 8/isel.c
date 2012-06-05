@@ -209,6 +209,7 @@ Loc getreg(Isel *s, Mode m)
     Loc l;
     int i;
 
+    assert(m != ModeNone);
     l.reg = Rnone;
     for (i = 0; i < Nreg; i++) {
         if (!s->rtaken[i] && regmodes[i] == m) {
@@ -385,9 +386,44 @@ static Loc binop(Isel *s, AsmOp op, Node *x, Node *y)
     return a;
 }
 
+/* We have a few common cases to optimize here:
+ *    Oadd(
+ *        reg,
+ *        reg||const))
+ * TODO:
+ *    Oadd(
+ *        reg,
+ *        Omul(reg,
+ *             2 || 4 || 8)))
+ */
+static Loc memloc(Isel *s, Node *e, Mode m)
+{
+    Node **args;
+    Loc l, b, o; /* location, base, offset */
+
+    if (exprop(e) == Oadd) {
+        args = e->expr.args;
+        b = selexpr(s, args[0]);
+        o = selexpr(s, args[1]);
+        if (b.type != Locreg)
+            b = inr(s, b);
+        if (o.type == Loclit) {
+            locmem(&l, o.lit, b.reg, Rnone, m);
+        } else if (o.type == Locreg) {
+            b = inr(s, b);
+            locmem(&l, 0, b.reg, o.reg, m);
+        }
+    } else {
+        l = selexpr(s, e);
+        if (l.type == Locreg)
+            locmem(&l, 0, l.reg, Rnone, m);
+    }
+    return l;
+}
+
 Loc selexpr(Isel *s, Node *n)
 {
-    Loc a, b, c, r, t;
+    Loc a, b, c, r;
     Node **args;
 
     args = n->expr.args;
@@ -439,22 +475,16 @@ Loc selexpr(Isel *s, Node *n)
             die("Unimplemented op %s", opstr(exprop(n)));
             break;
         case Ostor: /* reg -> mem */
-            a = selexpr(s, args[0]);
+            a = memloc(s, args[0], mode(n));
             b = selexpr(s, args[1]);
             b = inri(s, b);
-            stor(s, &b, &a);
+            g(s, Imov, &b, &a, NULL);
             r = b;
             break;
         case Oload: /* mem -> reg */
-            t = selexpr(s, args[0]);
-            b = getreg(s, t.mode);
-            if (t.type == Locreg)
-                locmem(&a, 0, t.reg, Rnone, t.mode);
-            else
-                a = t;
-            /* load() doesn't always do the mov */
-            g(s, Imov, &a, &b, NULL);
-            r = b;
+            b = memloc(s, args[0], mode(n));
+            r = getreg(s, mode(n));
+            g(s, Imov, &b, &r, NULL);
             break;
 
         case Ocall: die("Unimplemented op %s", opstr(exprop(n))); break;
