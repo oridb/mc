@@ -126,6 +126,7 @@ Type *mktyarray(int line, Type *base, Node *sz)
     Type *t;
 
     t = mkty(line, Tyarray);
+    t->nsub = 1;
     t->sub = xalloc(sizeof(Type*));
     t->sub[0] = base;
     t->asize = sz;
@@ -138,6 +139,7 @@ Type *mktyslice(int line, Type *base)
     Type *t;
 
     t = mkty(line, Tyslice);
+    t->nsub = 1;
     t->sub = xalloc(sizeof(Type*));
     t->sub[0] = base;
     return t;
@@ -148,6 +150,7 @@ Type *mktyidxhack(int line, Type *base)
     Type *t;
 
     t = mkty(line, Tyidxhack);
+    t->nsub = 1;
     t->sub = xalloc(sizeof(Type*));
     t->sub[0] = base;
     return t;
