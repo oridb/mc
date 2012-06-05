@@ -22,3 +22,4 @@ returns main 0
 returns add 53
 returns struct_oneval 12
 returns struct 42
+returns array 7
