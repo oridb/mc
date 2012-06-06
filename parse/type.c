@@ -176,7 +176,7 @@ Type *mktyfunc(int line, Node **args, size_t nargs, Type *ret)
     t->sub = xalloc((1 + nargs)*sizeof(Type));
     t->sub[0] = ret;
     for (i = 0; i < nargs; i++)
-        t->sub[i + 1] = decltype(args[i]);
+        t->sub[i + 1] = nodetype(args[i]);
     return t;
 }
 

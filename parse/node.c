@@ -221,7 +221,24 @@ char *declname(Node *n)
 Type *decltype(Node *n)
 {
     assert(n->type == Ndecl);
-    return n->decl.sym->type;
+    return nodetype(n);
+}
+
+Type *exprtype(Node *n)
+{
+    assert(n->type == Ndecl);
+    return nodetype(n);
+}
+
+Type *nodetype(Node *n)
+{
+    switch (n->type) {
+        case Ndecl:     return n->decl.sym->type;       break;
+        case Nexpr:     return n->expr.type;            break;
+        case Nlit:      return n->lit.type;             break;
+        default:        die("Node %s has no type", nodestr(n->type)); break;
+    }
+    return NULL;
 }
 
 void setns(Node *n, char *name)

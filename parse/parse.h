@@ -323,6 +323,7 @@ Node *mklbl(int line, char *lbl);
 /* node util functions */
 char *declname(Node *n);
 Type *decltype(Node *n);
+Type *nodetype(Node *n);
 void addstmt(Node *file, Node *stmt);
 void setns(Node *n, char *name);
 Op exprop(Node *n);
