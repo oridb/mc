@@ -47,7 +47,7 @@ static char *asmname(Node *n)
     char *sep;
     int len;
 
-    len += strlen(Fprefix);
+    len = strlen(Fprefix);
     for (i = 0; i < n->name.nparts; i++)
         len += strlen(n->name.parts[i]) + 1;
 
