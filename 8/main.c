@@ -10,7 +10,7 @@
 #include <unistd.h>
 
 #include "parse.h"
-#include "gen.h"
+#include "asm.h"
 
 Node *file;
 static char *outfile;

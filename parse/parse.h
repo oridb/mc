@@ -240,6 +240,8 @@ void **htkeys(Htab *ht, int *nkeys);
 /* useful key types */
 ulong strhash(void *str);
 int streq(void *s1, void *s2);
+ulong ptrhash(void *ptr);
+int ptreq(void *s1, void *s2);
 
 /* util functions */
 void *zalloc(size_t size);

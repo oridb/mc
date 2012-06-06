@@ -10,8 +10,9 @@
 #include <unistd.h>
 
 #include "parse.h"
-#include "gen.h"
 #include "asm.h"
+
+#include "platform.h" /* HACK. We need some platform specific code gen behavior. *sigh.* */
 
 void breakhere()
 {
@@ -27,11 +28,10 @@ void breakhere()
  */
 typedef struct Simp Simp;
 struct Simp {
-    Node **blk;
-    size_t nblk;
+    int isglobl;
 
-    /* the function that we're reducing the body for */
-    Fn *fn;
+    Node **stmts;
+    size_t nstmts;
 
     /* return handling */
     Node *endlbl;
@@ -40,6 +40,12 @@ struct Simp {
     /* pre/postinc handling */
     Node **incqueue;
     size_t nqueue;
+
+    /* location handling */
+    size_t stksz;
+    size_t argsz;
+    Htab *locs;
+    Node *ret;
 };
 
 Node *simp(Simp *s, Node *n);
@@ -49,13 +55,40 @@ void declarelocal(Simp *s, Node *n);
 
 void append(Simp *s, Node *n)
 {
-    lappend(&s->blk, &s->nblk, n);
+    lappend(&s->stmts, &s->nstmts, n);
 }
 
 int isimpure(Node *n)
 {
     return 0;
 }
+
+int isconstfn(Sym *s)
+{
+    return s->isconst && s->type->type == Tyfunc;
+}
+
+static char *asmname(Node *n)
+{
+    int i;
+    char *s;
+    char *sep;
+    int len;
+
+    len = strlen(Fprefix);
+    for (i = 0; i < n->name.nparts; i++)
+        len += strlen(n->name.parts[i]) + 1;
+
+    s = xalloc(len);
+    s[0] = '\0';
+    sep = Fprefix;
+    for (i = 0; i < n->name.nparts; i++) {
+        sprintf(s, "%s%s", sep, n->name.parts[i]);
+        sep = "$";
+    }
+    return s;
+}
+
 
 size_t size(Node *n)
 {
@@ -377,10 +410,10 @@ Node *rval(Simp *s, Node *n)
             break;
         case Oret:
             if (n->expr.args[0]) {
-                if (s->fn->ret)
-                    t = s->fn->ret;
+                if (s->ret)
+                    t = s->ret;
                 else
-                    t = s->fn->ret = temp(s, args[0]);
+                    t = s->ret = temp(s, args[0]);
                 t = store(t, rval(s, args[0]));
                 append(s, t);
             }
@@ -408,26 +441,20 @@ Node *rval(Simp *s, Node *n)
 
 void declarelocal(Simp *s, Node *n)
 {
-    Fn *f;
-
     assert(n->type == Ndecl);
-    f = s->fn;
     if (debug)
-        printf("DECLARE %s(%ld) at %zd\n", declname(n), n->decl.sym->id, f->stksz);
-    htput(f->locs, (void*)n->decl.sym->id, (void*)f->stksz);
-    f->stksz += size(n);
+        printf("DECLARE %s(%ld) at %zd\n", declname(n), n->decl.sym->id, s->stksz);
+    htput(s->locs, (void*)n->decl.sym->id, (void*)s->stksz);
+    s->stksz += size(n);
 }
 
 void declarearg(Simp *s, Node *n)
 {
-    Fn *f;
-
     assert(n->type == Ndecl);
-    f = s->fn;
     if (debug)
-        printf("DECLARE %s(%ld) at %zd\n", declname(n), n->decl.sym->id, -f->argsz);
-    htput(f->locs, (void*)n->decl.sym->id, (void*)-f->argsz);
-    f->argsz += size(n);
+        printf("DECLARE %s(%ld) at %zd\n", declname(n), n->decl.sym->id, -s->argsz);
+    htput(s->locs, (void*)n->decl.sym->id, (void*)-s->argsz);
+    s->argsz += size(n);
 }
 
 Node *simp(Simp *s, Node *n)
@@ -473,27 +500,104 @@ Node *simp(Simp *s, Node *n)
     return r;
 }
 
-Node **reduce(Fn *fn, Node *f, int *ret_nn)
+void reduce(Simp *s, Node *f)
 {
-    Simp s = {0,};
     int i;
 
-    s.nblk = 0;
-    s.endlbl = genlbl();
-    s.retval = NULL;
-    s.fn = fn;
+    assert(f->type == Nfunc);
+    s->nstmts = 0;
+    s->stmts = NULL;
+    s->endlbl = genlbl();
+    s->retval = NULL;
 
     if (f->type == Nfunc) {
         for (i = 0; i < f->func.nargs; i++) {
-            declarearg(&s, f->func.args[i]);
+            declarearg(s, f->func.args[i]);
         }
-        simp(&s, f->func.body);
+        simp(s, f->func.body);
     } else {
-        die("Got a non-block (%s) to reduce", nodestr(f->type));
+        die("Got a non-func (%s) to reduce", nodestr(f->type));
     }
 
-    append(&s, s.endlbl);
+    append(s, s->endlbl);
+}
 
-    *ret_nn = s.nblk;
-    return s.blk;
+static void lowerfn(char *name, Node *n, Htab *globls)
+{
+    int i;
+    Simp s = {0,};
+    Func fn;
+
+    /* set up the simp context */
+    s.locs = mkht(ptrhash, ptreq);
+
+    /* unwrap to the function body */
+    n = n->expr.args[0];
+    n = n->lit.fnval;
+    reduce(&s, n);
+
+    if (debug)
+      for (i = 0; i < s.nstmts; i++)
+        dump(s.stmts[i], stdout);
+
+    fn.name = name;
+    fn.isglobl = 1; /* FIXME: we should actually use the visibility of the sym... */
+    fn.stksz = s.stksz;
+    fn.locs = s.locs;
+    fn.ret = s.ret;
+    fn.nl = s.stmts;
+    fn.nn = s.nstmts;
+    genasm(&fn, globls);
+}
+
+void blobdump(Blob *b, FILE *fd)
+{
+    int i;
+    char *p;
+
+    p = b->data;
+    for (i = 0; i < b->ndata; i++)
+        if (isprint(p[i]))
+            fprintf(fd, "%c", p[i]);
+        else
+            fprintf(fd, "\\%x", p[i]);
+    fprintf(fd, "\n");
+}
+
+void gen(Node *file, char *out)
+{
+    Node **n;
+    int nn, i;
+    Sym *s;
+    char *name;
+    Htab *globls;
+
+    n = file->file.stmts;
+    nn = file->file.nstmts;
+
+    globls = mkht(ptrhash, ptreq);
+    /* We need to declare all variables before use */
+    for (i = 0; i < nn; i++)
+        if (n[i]->type == Ndecl)
+            htput(globls, (void*)n[i]->decl.sym->id, asmname(n[i]->decl.sym->name));
+
+    for (i = 0; i < nn; i++) {
+        switch (n[i]->type) {
+            case Nuse: /* nothing to do */ 
+                break;
+            case Ndecl:
+                s = n[i]->decl.sym;
+                name = asmname(s->name);
+                if (isconstfn(s)) {
+                    lowerfn(name, n[i]->decl.init, globls);
+                    free(name);
+                } else {
+                    die("We don't lower globls yet...");
+                }
+                break;
+            default:
+                die("Bad node %s in toplevel", nodestr(n[i]->type));
+                break;
+        }
+    }
 }

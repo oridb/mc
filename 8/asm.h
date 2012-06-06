@@ -13,7 +13,6 @@ typedef enum {
     Nreg
 } Reg;
 
-
 typedef enum {
     Locnone,
     Loclbl,
@@ -34,6 +33,14 @@ typedef enum {
 
 typedef struct Insn Insn;
 typedef struct Loc Loc;
+typedef struct Func Func;
+typedef struct Blob Blob;
+
+struct Blob {
+    char *name; /* mangled asm name */
+    void *data;
+    size_t ndata;
+};
 
 struct Loc {
     LocType type;
@@ -59,10 +66,22 @@ struct Insn {
     int narg;
 };
 
-void genasm(Fn *fn, Htab *globls);
+struct Func {
+    char *name;
+    int   isglobl;
+    size_t stksz;
+    Htab *locs;
+    Node *ret;
+    Node **nl;
+    size_t nn;
+};
+
+void genasm(Func *fn, Htab *globls);
+void gen(Node *file, char *out);
 
 Loc *loclbl(Loc *l, Node *lbl);
 Loc *locreg(Loc *l, Reg r);
 Loc *locmem(Loc *l, long disp, Reg base, Reg idx, Mode mode);
 Loc *locmeml(Loc *l, char *disp, Reg base, Reg idx, Mode mode);
 Loc *loclit(Loc *l, long val);
+

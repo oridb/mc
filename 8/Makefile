@@ -1,7 +1,6 @@
 BIN=8m
 OBJ=isel.o \
     main.o \
-    simp.o \
     reduce.o \
 
 CFLAGS+=-I../parse

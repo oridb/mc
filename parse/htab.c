@@ -161,3 +161,14 @@ int streq(void *a, void *b)
 {
     return !strcmp(a, b);
 }
+
+ulong ptrhash(void *key)
+{
+    return (ulong)key;
+}
+
+int ptreq(void *a, void *b)
+{
+    return a == b;
+}
+

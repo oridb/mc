@@ -11,7 +11,6 @@
 #include <unistd.h>
 
 #include "parse.h"
-#include "gen.h"
 #include "asm.h"
 
 /* instruction selection state */
@@ -662,7 +661,7 @@ void epilogue(Isel *s)
     g(s, Iret, NULL);
 }
 
-static void writeasm(Fn *fn, Isel *is, FILE *fd)
+static void writeasm(Func *fn, Isel *is, FILE *fd)
 {
     int i;
 
@@ -676,7 +675,7 @@ static void writeasm(Fn *fn, Isel *is, FILE *fd)
 /* genasm requires all nodes in 'nl' to map cleanly to operations that are
  * natively supported, as promised in the output of reduce().  No 64-bit
  * operations on x32, no structures, and so on. */
-void genasm(Fn *fn, Htab *globls)
+void genasm(Func *fn, Htab *globls)
 {
     struct Isel is = {0,};
     int i;
