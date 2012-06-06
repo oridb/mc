@@ -23,7 +23,7 @@ static Type *tf(Type *t);
 static void setsuper(Stab *st, Stab *super)
 {
     Stab *s;
-    
+
     /* verify that we don't accidentally create loops */
     for (s = super; s; s = s->super)
         assert(s->super != st);
@@ -491,18 +491,14 @@ static Type *tyfin(Node *ctx, Type *t)
     static Type *tyint;
     int i;
     char buf[1024];
-    Type *orig;
 
-    orig = t;
     if (!tyint)
         tyint = mkty(-1, Tyint);
 
     t = tf(t);
     if (t->type == Tyvar) {
-        if (hascstr(t, cstrtab[Tcint]) && cstrcheck(t, tyint)) {
-            printf("int\n");
+        if (hascstr(t, cstrtab[Tcint]) && cstrcheck(t, tyint))
             return tyint;
-        }
     } else {
         if (t->type == Tyarray)
             typesub(t->asize);
@@ -514,7 +510,6 @@ static Type *tyfin(Node *ctx, Type *t)
         fatal(t->line, "underconstrained type %s near %s", tyfmt(buf, 1024, t), ctxstr(ctx));
     }
 
-    printf("fixing %s to %s\n", tystr(orig), tystr(t));
     return t;
 }
 

@@ -58,26 +58,26 @@ int main(int argc, char **argv)
         yyparse();
 
         if (debug) {
-          /* before we do anything to the parse */
-          dump(file, stdout);
+            /* before we do anything to the parse */
+            dump(file, stdout);
         }
 
         infer(file);
 
-        /* test storing tree to file */
-        tmp = fopen("a.pkl", "w");
-        pickle(file, tmp);
-        fclose(tmp);
-
         if (debug) {
-          /* and reading it back */
-          tmp = fopen("test.pkl", "r");
-          rdback = unpickle(tmp);
-          dump(rdback, stdout);
-          fclose(tmp);
+            /* test storing tree to file */
+            tmp = fopen("a.pkl", "w");
+            pickle(file, tmp);
+            fclose(tmp);
 
-          /* after all processing */
-          dump(file, stdout);
+            /* and reading it back */
+            tmp = fopen("test.pkl", "r");
+            rdback = unpickle(tmp);
+            dump(rdback, stdout);
+            fclose(tmp);
+
+            /* after all processing */
+            dump(file, stdout);
         }
         gen(file, "a.s");
     }

@@ -229,9 +229,10 @@ static void wrtype(FILE *fd, Type *ty)
     int i;
 
     if (!ty) {
-        wrbyte(fd, Tybad);
+        die("trying to pickle null type\n");
         return;
     }
+    printf("Writing %s\n", tystr(ty));
     wrbyte(fd, ty->type);
     /* tid is generated; don't write */
     /* cstrs are left out for now: FIXME */
@@ -283,8 +284,6 @@ static Type *rdtype(FILE *fd)
     int i;
 
     t = rdbyte(fd);
-    if (t == Tybad)
-        return NULL;
     ty = mkty(-1, t);
     /* tid is generated; don't write */
     /* cstrs are left out for now: FIXME */
@@ -295,22 +294,22 @@ static Type *rdtype(FILE *fd)
         case Tyname:
             ty->name = unpickle(fd);
             break;
-        case Typaram:   
+        case Typaram:
             ty->pname = rdstr(fd);
             break;
-        case Tystruct: 
+        case Tystruct:
             ty->nmemb = rdint(fd);
             ty->sdecls = xalloc(ty->nmemb * sizeof(Node*));
             for (i = 0; i < ty->nmemb; i++)
                 ty->sdecls[i] = unpickle(fd);
             break;
-        case Tyunion: 
+        case Tyunion:
             ty->nmemb = rdint(fd);
             ty->udecls = xalloc(ty->nmemb * sizeof(Node*));
             for (i = 0; i < ty->nmemb; i++)
                 ty->udecls[i] = unpickle(fd);
             break;
-        case Tyenum: 
+        case Tyenum:
             ty->nmemb = rdint(fd);
             ty->edecls = xalloc(ty->nmemb * sizeof(Node*));
             for (i = 0; i < ty->nmemb; i++)
@@ -328,6 +327,7 @@ static Type *rdtype(FILE *fd)
                 ty->sub[i] = rdtype(fd);
             break;
     }
+    printf("Read %s\n", tystr(ty));
     return ty;
 }
 
