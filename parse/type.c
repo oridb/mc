@@ -23,23 +23,6 @@ int ntypes;
 Cstr **cstrtab;
 int ncstrs;
 
-static Typename typenames[] = {
-    {Tyvoid, "void"},
-    {Tychar, "char"},
-    {Tybyte, "byte"},
-    {Tyint8, "int8"},
-    {Tyint16, "int16"},
-    {Tyint32, "int32"},
-    {Tyint64, "int64"},
-    {Tyuint8, "uint8"},
-    {Tyuint16, "uint16"},
-    {Tyuint32, "uint32"},
-    {Tyuint64, "uint64"},
-    {Tyfloat32, "float32"},
-    {Tyfloat64, "float64"},
-    {Tybad, NULL}
-};
-
 static Cstr *tycstrs[Ntypes][4];
 
 Type *mkty(int line, Ty ty)
@@ -106,16 +89,9 @@ Type *mktyparam(int line, char *name)
 
 Type *mktynamed(int line, Node *name)
 {
-    int i;
     Type *t;
 
-    /* is it a built in type? */
-    if (name->name.nparts == 1)
-        for (i = 0; typenames[i].name; i++)
-            if (!strcmp(typenames[i].name, name->name.parts[0]))
-                return mkty(line, typenames[i].ty);
-
-    /* if not, resolve it in the type inference stage */
+    /* resolve it in the type inference stage */
     t = mkty(line, Tyname);
     t->name = name;
     return t;
