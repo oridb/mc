@@ -13,6 +13,8 @@
 #include "gen.h"
 #include "asm.h"
 
+#include "platform.h" /* HACK. We need some platform specific code gen behavior. *sigh.* */
+
 static void lowerglobl(Comp *c, char *name, Node *init);
 static void lowerfn(Comp *c, char *name, Node *n);
 
@@ -45,12 +47,13 @@ static char *asmname(Node *n)
     char *sep;
     int len;
 
+    len += strlen(Fprefix);
     for (i = 0; i < n->name.nparts; i++)
         len += strlen(n->name.parts[i]) + 1;
 
     s = xalloc(len);
     s[0] = '\0';
-    sep = "";
+    sep = Fprefix;
     for (i = 0; i < n->name.nparts; i++) {
         sprintf(s, "%s%s", sep, n->name.parts[i]);
         sep = "$";
