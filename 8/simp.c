@@ -82,7 +82,7 @@ static void lowerfn(Comp *c, char *name, Node *n, Htab *globls)
     fn = mkfn(name);
     fn->name = strdup(name);
 
-    nl = reduce(fn, n->func.body, &nn);
+    nl = reduce(fn, n, &nn);
 
     if (debug) {
       for (i = 0; i < nn; i++) {

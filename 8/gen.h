@@ -23,6 +23,7 @@ struct Fn {
 
     /* filled in by the lowering process */
     size_t stksz;
+    size_t argsz;
     Htab *locs;
     Node *ret;
 

@@ -45,7 +45,7 @@ struct Simp {
 Node *simp(Simp *s, Node *n);
 Node *rval(Simp *s, Node *n);
 Node *lval(Simp *s, Node *n);
-void declare(Simp *s, Node *n);
+void declarelocal(Simp *s, Node *n);
 
 void append(Simp *s, Node *n)
 {
@@ -135,7 +135,7 @@ Node *temp(Simp *simp, Node *e)
     n = mkname(-1, buf);
     s = mksym(-1, n, e->expr.type);
     t = mkdecl(-1, s);
-    declare(simp, t);
+    declarelocal(simp, t);
     r = mkexpr(-1, Ovar, t, NULL);
     r->expr.did = s->id;
     return r;
@@ -406,7 +406,7 @@ Node *rval(Simp *s, Node *n)
     return r;
 }
 
-void declare(Simp *s, Node *n)
+void declarelocal(Simp *s, Node *n)
 {
     Fn *f;
 
@@ -416,6 +416,18 @@ void declare(Simp *s, Node *n)
         printf("DECLARE %s(%ld) at %zd\n", declname(n), n->decl.sym->id, f->stksz);
     htput(f->locs, (void*)n->decl.sym->id, (void*)f->stksz);
     f->stksz += size(n);
+}
+
+void declarearg(Simp *s, Node *n)
+{
+    Fn *f;
+
+    assert(n->type == Ndecl);
+    f = s->fn;
+    if (debug)
+        printf("DECLARE %s(%ld) at %zd\n", declname(n), n->decl.sym->id, -f->argsz);
+    htput(f->locs, (void*)n->decl.sym->id, (void*)-f->argsz);
+    f->argsz += size(n);
 }
 
 Node *simp(Simp *s, Node *n)
@@ -449,7 +461,7 @@ Node *simp(Simp *s, Node *n)
             r = n;
             break;
         case Ndecl:
-            declare(s, n);
+            declarelocal(s, n);
             break;
         case Nlbl:
             append(s, n);
@@ -461,19 +473,24 @@ Node *simp(Simp *s, Node *n)
     return r;
 }
 
-Node **reduce(Fn *fn, Node *n, int *ret_nn)
+Node **reduce(Fn *fn, Node *f, int *ret_nn)
 {
     Simp s = {0,};
+    int i;
 
     s.nblk = 0;
     s.endlbl = genlbl();
     s.retval = NULL;
     s.fn = fn;
 
-    if (n->type == Nblock)
-        simp(&s, n);
-    else
-        die("Got a non-block (%s) to reduce", nodestr(n->type));
+    if (f->type == Nfunc) {
+        for (i = 0; i < f->func.nargs; i++) {
+            declarearg(&s, f->func.args[i]);
+        }
+        simp(&s, f->func.body);
+    } else {
+        die("Got a non-block (%s) to reduce", nodestr(f->type));
+    }
 
     append(&s, s.endlbl);
 
