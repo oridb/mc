@@ -18,5 +18,6 @@ build array
 build call
 build loop
 build fib
+build slice
 
 exit 0

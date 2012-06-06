@@ -1,0 +1,10 @@
+const msin = {
+	var a : int[3]
+	var s
+
+	s = a[0,3]
+	s[0] = 3
+	s[1] = 4
+	s[2] = s[0] + s[1]
+	-> s[2]
+}

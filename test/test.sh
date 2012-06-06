@@ -26,3 +26,4 @@ returns array 7
 returns call 42
 returns loop 45
 returns fib 21
+returns slice 7
