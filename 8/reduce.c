@@ -131,6 +131,7 @@ size_t size(Node *n)
         case Tyslice:
             return 8; /* len; ptr */
         case Tyarray:
+            return 42;
         case Tytuple:
         case Tystruct:
             for (i = 0; i < t->nmemb; i++)
@@ -366,8 +367,9 @@ Node *rval(Simp *s, Node *n)
         case Oslice:
             args[1] = rval(s, args[1]);
             args[2] = rval(s, args[2]);
-            t = mkexpr(-1, Osub, args[2], args[1]);
+            t = mkexpr(-1, Osub, args[2], args[1], NULL);
             args[0] = slicebase(s, args[0], t);
+            r = n;
             break;
         case Oidx:
             t = idxaddr(s, n);
