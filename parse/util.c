@@ -109,8 +109,9 @@ void lfree(void *l, size_t *len)
 {
     void ***pl;
 
-    assert(l != NULL);
     pl = l;
+    assert(pl != NULL);
     free(*pl);
+    *pl = NULL;
     *len = 0;
 }
