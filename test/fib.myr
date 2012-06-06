@@ -9,6 +9,6 @@ const fib = {n
 }
 
 const main = {
-	-> fib(2)
+	-> fib(8)
 }
 

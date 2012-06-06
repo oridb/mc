@@ -80,8 +80,8 @@ struct {
     AsmOp getflag;
 } reloptab[Numops] = {
     [Olnot] = {Itest, Ijz, Isetz},
-    [Oeq] = {Itest, Ijnz, Isetnz},
-    [One] = {Itest, Ijz, Isetz},
+    [Oeq] = {Icmp, Ijz, Isetz},
+    [One] = {Icmp, Ijnz, Isetnz},
     [Ogt] = {Icmp, Ijg, Isetgt},
     [Oge] = {Icmp, Ijge, Isetge},
     [Olt] = {Icmp, Ijl, Isetlt},
