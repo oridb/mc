@@ -17,6 +17,8 @@ static size_t ncheckmemb;
 
 static void infernode(Node *n, Type *ret, int *sawret);
 static void inferexpr(Node *n, Type *ret, int *sawret);
+static void typesub(Node *n);
+static Type *tf(Type *t);
 
 static void setsuper(Stab *st, Stab *super)
 {
@@ -33,29 +35,35 @@ static void tyresolve(Type *t)
     int i, nn;
     Node **n;
 
+    if (t->resolved)
+        return;
     n = aggrmemb(t, &nn);
     for (i = 0; i < nn; i++)
         infernode(n[i], NULL, NULL);
+    for (i = 0; i < t->nsub; i++)
+        t->sub[i] = tf(t->sub[i]);
+    t->resolved = 1;
 }
 
 /* find the most accurate type mapping */
 static Type *tf(Type *t)
 {
     Type *lu;
-    assert(t != NULL);
 
+    assert(t != NULL);
+    lu = NULL;
     while (1) {
         if (!tytab[t->tid] && t->type == Tyname) {
             if (!(lu = gettype(curstab(), t->name)))
-                fatal(t->name->line, "Could not find type %s", t->name->name.parts[t->name->name.nparts - 1]);
+                fatal(t->name->line, "Could not find type %s", namestr(t->name));
             tytab[t->tid] = lu;
-            tyresolve(lu);
         }
 
         if (!tytab[t->tid])
             break;
         t = tytab[t->tid];
     }
+    tyresolve(t);
     return t;
 }
 
@@ -392,7 +400,7 @@ static void inferdecl(Node *n)
 {
     Type *t;
 
-    t = decltype(n);
+    t = tf(decltype(n));
     settype(n, t);
     if (n->decl.init) {
         inferexpr(n->decl.init, NULL, NULL);
@@ -483,22 +491,30 @@ static Type *tyfin(Node *ctx, Type *t)
     static Type *tyint;
     int i;
     char buf[1024];
+    Type *orig;
 
+    orig = t;
     if (!tyint)
         tyint = mkty(-1, Tyint);
 
     t = tf(t);
     if (t->type == Tyvar) {
-        if (hascstr(t, cstrtab[Tcint]) && cstrcheck(t, tyint))
+        if (hascstr(t, cstrtab[Tcint]) && cstrcheck(t, tyint)) {
+            printf("int\n");
             return tyint;
+        }
     } else {
+        if (t->type == Tyarray)
+            typesub(t->asize);
         for (i = 0; i < t->nsub; i++)
             t->sub[i] = tyfin(ctx, t->sub[i]);
     }
-    if (t->type == Tyvar) {
+    if (t->type == Tyvar || t->type == Tyidxhack) {
         dump(ctx, stdout);
         fatal(t->line, "underconstrained type %s near %s", tyfmt(buf, 1024, t), ctxstr(ctx));
     }
+
+    printf("fixing %s to %s\n", tystr(orig), tystr(t));
     return t;
 }
 

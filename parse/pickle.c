@@ -240,20 +240,20 @@ static void wrtype(FILE *fd, Type *ty)
         case Tyname:
             pickle(ty->name, fd);
             break;
-        case Typaram:   
+        case Typaram:
             wrstr(fd, ty->pname);
             break;
-        case Tystruct: 
+        case Tystruct:
             wrint(fd, ty->nmemb);
             for (i = 0; i < ty->nmemb; i++)
                 pickle(ty->sdecls[i], fd);
             break;
-        case Tyunion: 
+        case Tyunion:
             wrint(fd, ty->nmemb);
             for (i = 0; i < ty->nmemb; i++)
                 pickle(ty->udecls[i], fd);
             break;
-        case Tyenum: 
+        case Tyenum:
             wrint(fd, ty->nmemb);
             for (i = 0; i < ty->nmemb; i++)
                 pickle(ty->edecls[i], fd);
@@ -262,8 +262,12 @@ static void wrtype(FILE *fd, Type *ty)
             wrtype(fd, ty->sub[0]);
             pickle(ty->asize, fd);
             break;
+        case Tyslice:
+            wrtype(fd, ty->sub[0]);
+            break;
         case Tyvar:
-            fprintf(stderr, "WARNING: Attempting to pickle Tyvar. This will not read back reliably.\n");
+        case Tyidxhack:
+            die("Attempting to pickle %s. This will not work.\n", tystr(ty));
             break;
         default:
             for (i = 0; i < ty->nsub; i++)
@@ -315,6 +319,9 @@ static Type *rdtype(FILE *fd)
         case Tyarray:
             ty->sub[0] = rdtype(fd);
             ty->asize = unpickle(fd);
+            break;
+        case Tyslice:
+            ty->sub[0] = rdtype(fd);
             break;
         default:
             for (i = 0; i < ty->nsub; i++)

@@ -103,6 +103,7 @@ Type *mktyarray(int line, Type *base, Node *sz)
 
     t = mkty(line, Tyarray);
     t->nsub = 1;
+    t->nmemb = 1; /* the size is a "member" */
     t->sub = xalloc(sizeof(Type*));
     t->sub[0] = base;
     t->asize = sz;

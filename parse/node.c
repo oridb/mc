@@ -265,6 +265,7 @@ Node **aggrmemb(Type *t, int *n)
         case Tystruct: return t->sdecls; break;
         case Tyunion: return t->udecls; break;
         case Tyenum: return t->edecls; break;
+        case Tyarray: return &t->asize; break;
         default: return NULL;
     }
 }
@@ -274,4 +275,3 @@ char *namestr(Node *name)
     assert(name->type == Nname);
     return name->name.parts[0];
 }
-

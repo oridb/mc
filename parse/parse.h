@@ -97,6 +97,7 @@ struct Type {
     Ty type;
     int tid;
     int line;
+    int resolved;     /* Have we resolved the subtypes? Idempotent, but slow to repeat. */
     Bitset *cstrs;    /* the type constraints matched on this type */
     size_t nsub;      /* For compound types */
     size_t nmemb;     /* for aggregate types (struct, union, enum) */
