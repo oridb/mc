@@ -152,7 +152,7 @@ Loc loc(Isel *s, Node *n)
         case Ovar:
             if (hthas(s->locs, (void*)n->expr.did)) {
                 stkoff = (size_t)htget(s->locs, (void*)n->expr.did);
-                locmem(&l, -stkoff, Resp, Rnone, ModeL);
+                locmem(&l, -stkoff, Rebp, Rnone, ModeL);
             } else if (hthas(s->globls, (void*)n->expr.did)) {
                 locstrlbl(&l, htget(s->globls, (void*)n->expr.did));
             } else {
@@ -439,6 +439,7 @@ Loc gencall(Isel *s, Node *n)
 
     locreg(&esp, Resp);
     locreg(&eax, Reax);
+    claimreg(s, Reax);
     argsz = 0;
     /* Have to calculate the amount to bump the stack
      * pointer by in one pass first, otherwise if we push

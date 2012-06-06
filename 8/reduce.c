@@ -58,9 +58,9 @@ void append(Simp *s, Node *n)
     lappend(&s->stmts, &s->nstmts, n);
 }
 
-int isimpure(Node *n)
+int ispure(Node *n)
 {
-    return 0;
+    return ispureop[exprop(n)];
 }
 
 int isconstfn(Sym *s)
@@ -176,7 +176,6 @@ Node *temp(Simp *simp, Node *e)
 
 void jmp(Simp *s, Node *lbl) { append(s, mkexpr(-1, Ojmp, lbl, NULL)); }
 Node *store(Node *t, Node *n) { return mkexpr(-1, Ostor, t, n, NULL); }
-Node *storetmp(Simp *s, Node *n) { return store(temp(s, n), n); }
 
 void cjmp(Simp *s, Node *cond, Node *iftrue, Node *iffalse)
 {
@@ -195,7 +194,7 @@ void simpif(Simp *s, Node *n)
 
     l1 = genlbl();
     l2 = genlbl();
-    c = simp(s, n->ifstmt.cond);
+    c = rval(s, n->ifstmt.cond);
     cjmp(s, c, l1, l2);
     simp(s, l1);
     simp(s, n->ifstmt.iftrue);
@@ -425,15 +424,13 @@ Node *rval(Simp *s, Node *n)
             r = mkexpr(-1, Ostor, t, v, NULL);
             break;
         default:
-            if (isimpure(n)) {
-                v = rval(s, n);
-                t = storetmp(s, v);
-                append(s, t);
-                r = t;
-            } else {
-                for (i = 0; i < n->expr.nargs; i++)
-                    n->expr.args[i] = rval(s, n->expr.args[i]);
+            for (i = 0; i < n->expr.nargs; i++)
+                n->expr.args[i] = rval(s, n->expr.args[i]);
+            if (ispure(n)) {
                 r = n;
+            } else {
+                r = temp(s, n);
+                append(s, store(r, n));
             }
     }
     return r;
@@ -443,8 +440,8 @@ void declarelocal(Simp *s, Node *n)
 {
     assert(n->type == Ndecl);
     if (debug)
-        printf("DECLARE %s(%ld) at %zd\n", declname(n), n->decl.sym->id, s->stksz);
-    htput(s->locs, (void*)n->decl.sym->id, (void*)s->stksz);
+        printf("DECLARE %s(%ld) at %zd\n", declname(n), n->decl.sym->id, s->stksz + 4);
+    htput(s->locs, (void*)n->decl.sym->id, (void*)(s->stksz + 4));
     s->stksz += size(n);
 }
 
@@ -453,7 +450,7 @@ void declarearg(Simp *s, Node *n)
     assert(n->type == Ndecl);
     if (debug)
         printf("DECLARE %s(%ld) at %zd\n", declname(n), n->decl.sym->id, -(s->argsz + 8));
-    htput(s->locs, (void*)n->decl.sym->id, (void*)-s->argsz);
+    htput(s->locs, (void*)n->decl.sym->id, (void*)-(s->argsz + 8));
     s->argsz += size(n);
 }
 
@@ -527,6 +524,9 @@ static void lowerfn(char *name, Node *n, Htab *globls, FILE *fd)
     int i;
     Simp s = {0,};
     Func fn;
+
+    if(debug)
+        printf("\n\nfunction %s\n", name);
 
     /* set up the simp context */
     s.locs = mkht(ptrhash, ptreq);

@@ -17,7 +17,7 @@ typedef struct Cstr Cstr;
 
 
 typedef enum {
-#define O(op) op,
+#define O(op, pure) op,
 #include "ops.def"
     Numops,
 #undef O
@@ -219,6 +219,7 @@ extern Cstr **cstrtab;  /* int -> cstr map */
 extern int ncstrs;
 
 extern Type *littypes[]; /* literal type -> type map */
+extern int ispureop[];
 
 /* data structures */
 Bitset *mkbs(void);

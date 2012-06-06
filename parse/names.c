@@ -12,7 +12,13 @@
 #include "parse.h"
 
 static char *optab[] =  {
-#define O(op) #op,
+#define O(op, pure) #op,
+#include "ops.def"
+#undef O
+};
+
+int ispureop[] = {
+#define O(op, pure) pure,
 #include "ops.def"
 #undef O
 };
