@@ -16,3 +16,5 @@ build struct_oneval
 build struct
 build array
 build fib
+
+exit 0
