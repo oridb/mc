@@ -221,6 +221,11 @@ static void unifycall(Node *n)
 
     inferexpr(n->expr.args[0], NULL, NULL);
     ft = type(n->expr.args[0]);
+    if (ft->type == Tyvar) {
+        /* the first arg is the function itself, so it shouldn't be counted */
+        ft = mktyfunc(n->line, &n->expr.args[1], n->expr.nargs - 1, mktyvar(n->line));
+        unify(n, type(n->expr.args[0]), ft);
+    }
     for (i = 1; i < n->expr.nargs; i++) {
         inferexpr(n->expr.args[i], NULL, NULL);
         unify(n, ft->sub[i], type(n->expr.args[i]));
