@@ -189,6 +189,8 @@ static Type *unify(Node *ctx, Type *a, Type *b)
     /* a ==> b */
     a = tf(a);
     b = tf(b);
+    if (a == b)
+        return a;
     if (b->type == Tyvar) {
         t = a;
         a = b;

@@ -59,7 +59,7 @@ struct Insn {
     int narg;
 };
 
-void genasm(Fn *fn);
+void genasm(Fn *fn, Htab *globls);
 
 Loc *loclbl(Loc *l, Node *lbl);
 Loc *locreg(Loc *l, Reg r);

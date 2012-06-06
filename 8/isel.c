@@ -20,7 +20,8 @@ struct Isel {
     Insn **il;
     size_t ni;
     Node *ret;
-    Htab *locs; /* Node => int stkoff */
+    Htab *locs; /* decl id => int stkoff */
+    Htab *globls; /* decl id => char *globlname */
 
     /* 6 general purpose regs */
     int rtaken[Nreg];
@@ -146,10 +147,14 @@ Loc loc(Isel *s, Node *n)
 
     switch (exprop(n)) {
         case Ovar:
-            if (!hthas(s->locs, (void*)n->expr.did))
-                die("%s(%ld) not found", declname(n->expr.args[0]), n->expr.did);
-            stkoff = (size_t)htget(s->locs, (void*)n->expr.did);
-            locmem(&l, stkoff, Resp, Rnone, ModeL);
+            if (hthas(s->locs, (void*)n->expr.did)) {
+                stkoff = (size_t)htget(s->locs, (void*)n->expr.did);
+                locmem(&l, stkoff, Resp, Rnone, ModeL);
+            } else if (hthas(s->globls, (void*)n->expr.did)) {
+                loclbl(&l, htget(s->globls, (void*)n->expr.did));
+            } else {
+                die("%s (id=%ld) not found", namestr(n->expr.args[0]), n->expr.did);
+            }
             break;
         case Olit:
             v = n->expr.args[0];
@@ -671,13 +676,14 @@ static void writeasm(Fn *fn, Isel *is, FILE *fd)
 /* genasm requires all nodes in 'nl' to map cleanly to operations that are
  * natively supported, as promised in the output of reduce().  No 64-bit
  * operations on x32, no structures, and so on. */
-void genasm(Fn *fn)
+void genasm(Fn *fn, Htab *globls)
 {
     struct Isel is = {0,};
     int i;
     FILE *fd;
 
     is.locs = fn->locs;
+    is.globls = globls;
     is.ret = fn->ret;
 
     prologue(&is, fn->stksz);

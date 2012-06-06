@@ -16,7 +16,7 @@
 #include "platform.h" /* HACK. We need some platform specific code gen behavior. *sigh.* */
 
 static void lowerglobl(Comp *c, char *name, Node *init);
-static void lowerfn(Comp *c, char *name, Node *n);
+static void lowerfn(Comp *c, char *name, Node *n, Htab *globls);
 
 static ulong ptrhash(void *key)
 {
@@ -66,7 +66,7 @@ static void lowerglobl(Comp *c, char *name, Node *init)
     printf("gen globl %s\n", name);
 }
 
-static void lowerfn(Comp *c, char *name, Node *n)
+static void lowerfn(Comp *c, char *name, Node *n, Htab *globls)
 {
     Fn *fn;
     Node **nl;
@@ -92,7 +92,7 @@ static void lowerfn(Comp *c, char *name, Node *n)
 
     fn->nl = nl;
     fn->nn = nn;
-    genasm(fn);
+    genasm(fn, globls);
 }
 
 int isconstfn(Sym *s)
@@ -122,11 +122,22 @@ void gen(Node *file, char *out)
     Sym *s;
     char *name;
     Comp *c;
+    Htab *globls;
 
     c = zalloc(sizeof(Comp));
 
     n = file->file.stmts;
     nn = file->file.nstmts;
+
+    globls = mkht(ptrhash, ptreq);
+    /* We need to declare all variables before use */
+    printf("nn = %d\n", nn);
+    for (i = 0; i < nn; i++) {
+        if (n[i]->type == Ndecl) {
+            printf("declaring %ld => %s\n", n[i]->decl.sym->id, asmname(n[i]->decl.sym->name));
+            htput(globls, (void*)n[i]->decl.sym->id, asmname(n[i]->decl.sym->name));
+        }
+    }
 
     for (i = 0; i < nn; i++) {
         switch (n[i]->type) {
@@ -136,7 +147,7 @@ void gen(Node *file, char *out)
                 s = n[i]->decl.sym;
                 name = asmname(s->name);
                 if (isconstfn(s)) {
-                    lowerfn(c, name, n[i]->decl.init);
+                    lowerfn(c, name, n[i]->decl.init, globls);
                     free(name);
                 } else {
                     lowerglobl(c, name, n[i]);
