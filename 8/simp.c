@@ -131,11 +131,9 @@ void gen(Node *file, char *out)
 
     globls = mkht(ptrhash, ptreq);
     /* We need to declare all variables before use */
-    for (i = 0; i < nn; i++) {
-        if (n[i]->type == Ndecl) {
+    for (i = 0; i < nn; i++)
+        if (n[i]->type == Ndecl)
             htput(globls, (void*)n[i]->decl.sym->id, asmname(n[i]->decl.sym->name));
-        }
-    }
 
     for (i = 0; i < nn; i++) {
         switch (n[i]->type) {
