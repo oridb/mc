@@ -322,6 +322,7 @@ Node *mkarray(int line, Node **vals);
 Node *mkname(int line, char *name);
 Node *mkdecl(int line, Sym *sym);
 Node *mklbl(int line, char *lbl);
+Node *mkslice(int line, Node *base, Node *off);
 
 /* node util functions */
 char *declname(Node *n);

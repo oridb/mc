@@ -1,4 +1,4 @@
-const msin = {
+const main = {
 	var a : int[3]
 	var s
 

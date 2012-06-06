@@ -368,6 +368,7 @@ static void inferexpr(Node *n, Type *ret, int *sawret)
             settype(n, mktyptr(n->line, mkty(-1, Tyvoid)));
         case Obad: case Numops: case Ocjmp:
         case Oload: case Ostor:
+        case Oslbase: case Osllen:
             die("Should not see %s in fe", opstr(exprop(n)));
             break;
     }

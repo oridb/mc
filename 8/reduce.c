@@ -294,12 +294,27 @@ static Node *idxaddr(Simp *s, Node *n)
     if (args[0]->expr.type->type == Tyarray)
         t = mkexpr(-1, Oaddr, args[0], NULL);
     else if (args[0]->expr.type->type == Tyslice)
-        die("Slice indexing not implemeneted yet");
+        t = mkexpr(-1, Oslbase, args[0], NULL);
     else
         die("Can't index type %s\n", tystr(n->expr.type));
     u = rval(s, args[1]);
     r = mkexpr(-1, Oadd, t, u, NULL);
     return r;
+}
+
+static Node *slicebase(Simp *s, Node *n, Node *off)
+{
+    Node *t, *u;
+
+    t = rval(s, n);
+    u = NULL;
+    switch (n->expr.type->type) {
+        case Typtr:     u = n;
+        case Tyarray:   u = mkexpr(-1, Oaddr, n, NULL); break;
+        case Tyslice:   u = mkexpr(-1, Oslbase, n, NULL); break;
+        default: die("Unslicable type %s", tystr(n->expr.type));
+    }
+    return mkexpr(-1, Oadd, u, off, NULL);
 }
 
 Node *lval(Simp *s, Node *n)
@@ -319,10 +334,10 @@ Node *lval(Simp *s, Node *n)
     return r;
 }
 
-
 Node *rval(Simp *s, Node *n)
 {
-    Node *r, *t, *u, *v;
+    Node *r; /* expression result */
+    Node *t, *u, *v; /* temporary nodes */
     int i;
     Node **args;
     const Op fusedmap[] = {
@@ -345,8 +360,14 @@ Node *rval(Simp *s, Node *n)
     switch (exprop(n)) {
         case Obad:
         case Olor: case Oland:
-        case Oslice: case Osize:
+        case Osize:
             die("Have not implemented lowering op %s", opstr(exprop(n)));
+            break;
+        case Oslice:
+            args[1] = rval(s, args[1]);
+            args[2] = rval(s, args[2]);
+            t = mkexpr(-1, Osub, args[2], args[1]);
+            args[0] = slicebase(s, args[0], t);
             break;
         case Oidx:
             t = idxaddr(s, n);
