@@ -76,12 +76,16 @@ struct Func {
     size_t nn;
 };
 
-void genasm(Func *fn, Htab *globls);
+/* entry points */
+void genasm(FILE *fd, Func *fn, Htab *globls);
 void gen(Node *file, char *out);
 
+/* location generation */
 Loc *loclbl(Loc *l, Node *lbl);
 Loc *locreg(Loc *l, Reg r);
 Loc *locmem(Loc *l, long disp, Reg base, Reg idx, Mode mode);
 Loc *locmeml(Loc *l, char *disp, Reg base, Reg idx, Mode mode);
 Loc *loclit(Loc *l, long val);
 
+/* useful functions */
+size_t size(Node *n);

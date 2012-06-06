@@ -522,7 +522,7 @@ void reduce(Simp *s, Node *f)
     append(s, s->endlbl);
 }
 
-static void lowerfn(char *name, Node *n, Htab *globls)
+static void lowerfn(char *name, Node *n, Htab *globls, FILE *fd)
 {
     int i;
     Simp s = {0,};
@@ -547,7 +547,7 @@ static void lowerfn(char *name, Node *n, Htab *globls)
     fn.ret = s.ret;
     fn.nl = s.stmts;
     fn.nn = s.nstmts;
-    genasm(&fn, globls);
+    genasm(fd, &fn, globls);
 }
 
 void blobdump(Blob *b, FILE *fd)
@@ -566,11 +566,12 @@ void blobdump(Blob *b, FILE *fd)
 
 void gen(Node *file, char *out)
 {
+    FILE *fd;
     Node **n;
     int nn, i;
-    Sym *s;
     char *name;
     Htab *globls;
+    Sym *s;
 
     n = file->file.stmts;
     nn = file->file.nstmts;
@@ -581,6 +582,9 @@ void gen(Node *file, char *out)
         if (n[i]->type == Ndecl)
             htput(globls, (void*)n[i]->decl.sym->id, asmname(n[i]->decl.sym->name));
 
+    fd = fopen(out, "w");
+    if (!fd)
+        die("Couldn't open fd %s", out);
     for (i = 0; i < nn; i++) {
         switch (n[i]->type) {
             case Nuse: /* nothing to do */ 
@@ -589,7 +593,7 @@ void gen(Node *file, char *out)
                 s = n[i]->decl.sym;
                 name = asmname(s->name);
                 if (isconstfn(s)) {
-                    lowerfn(name, n[i]->decl.init, globls);
+                    lowerfn(name, n[i]->decl.init, globls, fd);
                     free(name);
                 } else {
                     die("We don't lower globls yet...");
@@ -600,4 +604,6 @@ void gen(Node *file, char *out)
                 break;
         }
     }
+    if (fd)
+        fclose(fd);
 }

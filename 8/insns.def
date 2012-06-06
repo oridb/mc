@@ -43,6 +43,7 @@ Insn(Isetgt,      "\tsetgt\n",                  0)
 Insn(Isetge,      "\tsetge\n",                  0)
 
 /* branch instructions */
+Insn(Icall,     "\tcall %v\n",                  0)
 Insn(Ijmp,      "\tjmp %v\n",                   0)
 Insn(Ijz,       "\tjz %v\n",                    0)
 Insn(Ijnz,      "\tjnz %v\n",                   0)

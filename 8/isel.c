@@ -92,14 +92,18 @@ struct {
 /* forward decls */
 Loc selexpr(Isel *s, Node *n);
 
+Loc *locstrlbl(Loc *l, char *lbl)
+{
+    l->type = Loclbl;
+    l->mode = ModeL;
+    l->lbl = strdup(lbl);
+    return l;
+}
 
 Loc *loclbl(Loc *l, Node *lbl)
 {
     assert(lbl->type = Nlbl);
-    l->type = Loclbl;
-    l->mode = ModeL;
-    l->lbl = strdup(lbl->lbl.name);
-    return l;
+    return locstrlbl(l, lbl->lbl.name);
 }
 
 Loc *locreg(Loc *l, Reg r)
@@ -150,7 +154,7 @@ Loc loc(Isel *s, Node *n)
                 stkoff = (size_t)htget(s->locs, (void*)n->expr.did);
                 locmem(&l, stkoff, Resp, Rnone, ModeL);
             } else if (hthas(s->globls, (void*)n->expr.did)) {
-                loclbl(&l, htget(s->globls, (void*)n->expr.did));
+                locstrlbl(&l, htget(s->globls, (void*)n->expr.did));
             } else {
                 die("%s (id=%ld) not found", namestr(n->expr.args[0]), n->expr.did);
             }
@@ -423,6 +427,45 @@ static Loc memloc(Isel *s, Node *e, Mode m)
     return l;
 }
 
+Loc gencall(Isel *s, Node *n)
+{
+    int argsz;
+    int i;
+    Loc eax, esp;       /* hard-coded registers */
+    Loc stkbump;        /* calculated stack offset */
+    Loc dst, arg, fn;   /* values we reduced */
+
+    locreg(&esp, Resp);
+    locreg(&eax, Reax);
+    argsz = 0;
+    /* Have to calculate the amount to bump the stack
+     * pointer by in one pass first, otherwise if we push
+     * one at a time, we evaluate the args in reverse order.
+     * Not good.
+     *
+     * We skip the first operand, since it's the function itself */
+    for (i = 1; i < n->expr.nargs; i++)
+        argsz += size(n->expr.args[i]);
+    loclit(&stkbump, argsz);
+    if (argsz)
+        g(s, Isub, &stkbump, &esp, NULL);
+
+    /* Now, we can evaluate the arguments */
+    argsz = 0;
+    for (i = 1; i < n->expr.nargs; i++) {
+        argsz += size(n->expr.args[i]);
+        arg = selexpr(s, n->expr.args[i]);
+        arg = inri(s, arg);
+        locmem(&dst, argsz, Resp, Rnone, arg.mode);
+        stor(s, &arg, &dst);
+    }
+    fn = selexpr(s, n->expr.args[0]);
+    g(s, Icall, &fn, NULL);
+    if (argsz)
+        g(s, Iadd, &stkbump, &esp, NULL);
+    return eax;
+}
+
 Loc selexpr(Isel *s, Node *n)
 {
     Loc a, b, c, r;
@@ -489,7 +532,9 @@ Loc selexpr(Isel *s, Node *n)
             g(s, Imov, &b, &r, NULL);
             break;
 
-        case Ocall: die("Unimplemented op %s", opstr(exprop(n))); break;
+        case Ocall:
+            r = gencall(s, n);
+            break;
         case Ocast: die("Unimplemented op %s", opstr(exprop(n))); break;
         case Ojmp:
             g(s, Ijmp, loclbl(&a, args[0]), NULL);
@@ -675,11 +720,10 @@ static void writeasm(Func *fn, Isel *is, FILE *fd)
 /* genasm requires all nodes in 'nl' to map cleanly to operations that are
  * natively supported, as promised in the output of reduce().  No 64-bit
  * operations on x32, no structures, and so on. */
-void genasm(Func *fn, Htab *globls)
+void genasm(FILE *fd, Func *fn, Htab *globls)
 {
     struct Isel is = {0,};
     int i;
-    FILE *fd;
 
     is.locs = fn->locs;
     is.globls = globls;
@@ -695,7 +739,5 @@ void genasm(Func *fn, Htab *globls)
     if (debug)
       writeasm(fn, &is, stdout);
 
-    fd = fopen("a.s", "w");
     writeasm(fn, &is, fd);
-    fclose(fd);
 }

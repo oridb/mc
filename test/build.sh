@@ -15,6 +15,7 @@ build add
 build struct_oneval
 build struct
 build array
+build call
 build fib
 
 exit 0

@@ -80,8 +80,9 @@ char *strdupn(char *s, size_t len)
 {
     char *ret;
 
-    ret = xalloc(len);
+    ret = xalloc(len + 1);
     memcpy(ret, s, len);
+    ret[len] = '\0';
     return ret;
 }
 
