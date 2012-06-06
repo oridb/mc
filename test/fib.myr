@@ -1,5 +1,5 @@
 const fib = {n
-	if n == 0
+	if n <= 0
 		-> 0
 	elif n == 1
 		-> 1
@@ -9,6 +9,6 @@ const fib = {n
 }
 
 const main = {
-	-> fib(4)
+	-> fib(2)
 }
 

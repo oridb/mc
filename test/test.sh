@@ -24,4 +24,5 @@ returns struct_oneval 12
 returns struct 42
 returns array 7
 returns call 42
+returns loop 45
 returns fib 8

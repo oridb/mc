@@ -452,7 +452,7 @@ void declarearg(Simp *s, Node *n)
 {
     assert(n->type == Ndecl);
     if (debug)
-        printf("DECLARE %s(%ld) at %zd\n", declname(n), n->decl.sym->id, -s->argsz);
+        printf("DECLARE %s(%ld) at %zd\n", declname(n), n->decl.sym->id, -(s->argsz + 8));
     htput(s->locs, (void*)n->decl.sym->id, (void*)-s->argsz);
     s->argsz += size(n);
 }

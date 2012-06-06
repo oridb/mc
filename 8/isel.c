@@ -152,7 +152,7 @@ Loc loc(Isel *s, Node *n)
         case Ovar:
             if (hthas(s->locs, (void*)n->expr.did)) {
                 stkoff = (size_t)htget(s->locs, (void*)n->expr.did);
-                locmem(&l, stkoff, Resp, Rnone, ModeL);
+                locmem(&l, -stkoff, Resp, Rnone, ModeL);
             } else if (hthas(s->globls, (void*)n->expr.did)) {
                 locstrlbl(&l, htget(s->globls, (void*)n->expr.did));
             } else {
@@ -269,6 +269,8 @@ Insn *mkinsnv(AsmOp op, va_list ap)
     n = 0;
     i = malloc(sizeof(Insn));
     i->op = op;
+    if (op == Isetnz)
+        breakhere();
     while ((l = va_arg(ap, Loc*)) != NULL)
         i->args[n++] = *l;
     i->narg = n;
@@ -429,7 +431,7 @@ static Loc memloc(Isel *s, Node *e, Mode m)
 
 Loc gencall(Isel *s, Node *n)
 {
-    int argsz;
+    int argsz, argoff;
     int i;
     Loc eax, esp;       /* hard-coded registers */
     Loc stkbump;        /* calculated stack offset */
@@ -451,13 +453,13 @@ Loc gencall(Isel *s, Node *n)
         g(s, Isub, &stkbump, &esp, NULL);
 
     /* Now, we can evaluate the arguments */
-    argsz = 0;
+    argoff = 0;
     for (i = 1; i < n->expr.nargs; i++) {
-        argsz += size(n->expr.args[i]);
         arg = selexpr(s, n->expr.args[i]);
         arg = inri(s, arg);
-        locmem(&dst, argsz, Resp, Rnone, arg.mode);
+        locmem(&dst, argoff, Resp, Rnone, arg.mode);
         stor(s, &arg, &dst);
+        argsz += size(n->expr.args[i]);
     }
     fn = selexpr(s, n->expr.args[0]);
     g(s, Icall, &fn, NULL);

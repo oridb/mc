@@ -89,3 +89,4 @@ Loc *loclit(Loc *l, long val);
 
 /* useful functions */
 size_t size(Node *n);
+void breakhere();

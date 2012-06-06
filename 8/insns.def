@@ -35,12 +35,12 @@ Insn(Ipush,     "\tpush%t %r\n",                0)
 Insn(Ipop,      "\tpop%t %r\n",                 0)
 
 /* branch instructions */
-Insn(Isetz,       "\tsetz\n",                   0)
-Insn(Isetnz,      "\tsetnz\n",                  0)
-Insn(Isetlt,      "\tsetlt\n",                  0)
-Insn(Isetle,      "\tsetle\n",                  0)
-Insn(Isetgt,      "\tsetgt\n",                  0)
-Insn(Isetge,      "\tsetge\n",                  0)
+Insn(Isetz,       "\tsetz %v\n",                0)
+Insn(Isetnz,      "\tsetnz %v\n",               0)
+Insn(Isetlt,      "\tsetlt %v\n",               0)
+Insn(Isetle,      "\tsetle %v\n",               0)
+Insn(Isetgt,      "\tsetgt %v\n",               0)
+Insn(Isetge,      "\tsetge %v\n",               0)
 
 /* branch instructions */
 Insn(Icall,     "\tcall %v\n",                  0)
