@@ -1,5 +1,6 @@
 main	E	0
 add	E	53
+mul     E       84
 struct1	E	12
 struct	E	42
 array	E	7

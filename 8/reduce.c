@@ -125,7 +125,6 @@ size_t tysize(Type *t)
         case Tyslice:
             return 8; /* len; ptr */
         case Tyarray:
-            dump(t->asize, stdout);
             assert(exprop(t->asize) == Olit);
             return t->asize->expr.args[0]->lit.intval * tysize(t->sub[0]);
         case Tytuple:

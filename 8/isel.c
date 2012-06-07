@@ -517,6 +517,7 @@ Loc selexpr(Isel *s, Node *n)
 
     args = n->expr.args;
     r = (Loc){Locnone, };
+    locreg(&eax, Reax);
     switch (exprop(n)) {
         case Oadd:      r = binop(s, Iadd, args[0], args[1]); break;
         case Osub:      r = binop(s, Isub, args[0], args[1]); break;
@@ -527,7 +528,11 @@ Loc selexpr(Isel *s, Node *n)
             claimreg(s, Redx);
             a = selexpr(s, args[0]);
             b = selexpr(s, args[1]);
-            r = 
+            b = inr(s, b);
+            g(s, Imov, &a, &eax, NULL);
+            g(s, Imul, &b, NULL);
+            freereg(s, Redx);
+            r = eax;
             break;
         case Odiv:      die("Unimplemented op %s", opstr(exprop(n))); break;
         case Omod:      die("Unimplemented op %s", opstr(exprop(n))); break;
