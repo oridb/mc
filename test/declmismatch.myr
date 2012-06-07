@@ -1,0 +1,6 @@
+const main = {
+	var a : int
+	var b : char
+
+	a = b
+}

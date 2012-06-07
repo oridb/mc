@@ -1,0 +1,8 @@
+const main = {
+	var a
+	var b
+
+	a = 1
+	b = 'a'
+	a = b
+}
