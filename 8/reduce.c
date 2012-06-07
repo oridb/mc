@@ -327,7 +327,8 @@ static Node *slicebase(Simp *s, Node *n, Node *off)
         case Tyslice:   u = mkexpr(-1, Oslbase, t, NULL); break;
         default: die("Unslicable type %s", tystr(n->expr.type));
     }
-    sz = tysize(n->expr.args[0]->expr.type->sub[0]);
+    /* safe: all types have a sub[0] that we want to grab */
+    sz = tysize(n->expr.type->sub[0]);
     v = mkexpr(-1, Omul, u, mkexpr(-1, Olit, mkint(-1, sz), NULL));
     return mkexpr(-1, Oadd, u, v, NULL);
 }
@@ -383,6 +384,7 @@ Node *rval(Simp *s, Node *n)
             args[2] = rval(s, args[2]);
             t = mkexpr(-1, Osub, args[2], args[1]);
             args[0] = slicebase(s, args[0], t);
+            r = n;
             break;
         case Oidx:
             t = idxaddr(s, n);
