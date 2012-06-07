@@ -32,11 +32,11 @@ function exitswith {
     fi
 }
 
-for i in `awk '/B/{print $2}' tests`; do
+for i in `awk '/^B/{print $2}' tests`; do
     build $i
 done
 
-for i in `awk '/F/{print $2}' tests`; do
+for i in `awk '/^F/{print $2}' tests`; do
     build $i
     if [ $? -ne '0' ]; then
         echo "PASS: $i"
@@ -47,7 +47,7 @@ done
 
 export IFS='
 '
-for i in `awk '/B/{print $0}' tests`; do
+for i in `awk '/^B/{print $0}' tests`; do
     tst=`echo $i | awk '{print $2}'`
     type=`echo $i | awk '{print $3}'`
     val=`echo $i | awk '{print $4}'`
