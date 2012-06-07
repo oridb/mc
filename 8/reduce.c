@@ -183,7 +183,7 @@ Node *temp(Simp *simp, Node *e)
 }
 
 void jmp(Simp *s, Node *lbl) { append(s, mkexpr(-1, Ojmp, lbl, NULL)); }
-Node *store(Node *t, Node *n) { return mkexpr(-1, Ostor, t, n, NULL); }
+Node *store(Node *dst, Node *src) { return mkexpr(-1, Ostor, dst, src, NULL); }
 
 void cjmp(Simp *s, Node *cond, Node *iftrue, Node *iffalse)
 {
@@ -350,6 +350,27 @@ Node *lval(Simp *s, Node *n)
     return r;
 }
 
+Node *simplazy(Simp *s, Node *n, Node *r)
+{
+    Node *a, *b;
+    Node *next;
+    Node *end;
+
+    next = genlbl();
+    end = genlbl();
+    a = rval(s, n->expr.args[0]);
+    append(s, store(r, a));
+    if (exprop(n) == Oland)
+        cjmp(s, a, next, end);
+    else if (exprop(n) == Olor)
+        cjmp(s, a, end, next);
+    append(s, next);
+    b = rval(s, n->expr.args[1]);
+    append(s, store(r, b));
+    append(s, end);
+    return r;
+}
+
 Node *rval(Simp *s, Node *n)
 {
     Node *r; /* expression result */
@@ -376,7 +397,8 @@ Node *rval(Simp *s, Node *n)
     switch (exprop(n)) {
         case Obad:
         case Olor: case Oland:
-            die("Have not implemented lowering op %s", opstr(exprop(n)));
+            r = temp(s, n);
+            simplazy(s, n, r);
             break;
         case Osize:
             r = mkexpr(-1, Olit, mkint(-1, size(args[0])), NULL);

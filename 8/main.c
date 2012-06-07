@@ -28,9 +28,7 @@ int main(int argc, char **argv)
 {
     int opt;
     int i;
-    Node *rdback;
     Stab *globls;
-    FILE *tmp;
 
     while ((opt = getopt(argc, argv, "dho:")) != -1) {
         switch (opt) {
@@ -57,28 +55,13 @@ int main(int argc, char **argv)
         file->file.globls = globls;
         yyparse();
 
-        if (debug) {
-            /* before we do anything to the parse */
+        /* before we do anything to the parse */
+        if (debug)
             dump(file, stdout);
-        }
-
         infer(file);
-
-        if (debug) {
-            /* test storing tree to file */
-            tmp = fopen("a.pkl", "w");
-            pickle(file, tmp);
-            fclose(tmp);
-
-            /* and reading it back */
-            tmp = fopen("a.pkl", "r");
-            rdback = unpickle(tmp);
-            dump(rdback, stdout);
-            fclose(tmp);
-
-            /* after all processing */
+        /* after all processing */
+        if (debug)
             dump(file, stdout);
-        }
         gen(file, "a.s");
     }
 

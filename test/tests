@@ -13,3 +13,5 @@ fib	E	21
 slice	E	7
 float   E       1
 structasn       E       42
+log-and E       0
+log-or  E       1
