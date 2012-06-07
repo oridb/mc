@@ -506,7 +506,6 @@ static Type *tyfin(Node *ctx, Type *t)
             t->sub[i] = tyfin(ctx, t->sub[i]);
     }
     if (t->type == Tyvar || t->type == Tyidxhack) {
-        dump(ctx, stdout);
         fatal(t->line, "underconstrained type %s near %s", tyfmt(buf, 1024, t), ctxstr(ctx));
     }
 
