@@ -309,7 +309,7 @@ static Node *idxaddr(Simp *s, Node *n)
         die("Can't index type %s\n", tystr(n->expr.type));
     u = rval(s, args[1]);
     sz = size(n);
-    v = mkexpr(-1, Omul, u, mkexpr(-1, Olit, mkint(-1, sz), NULL));
+    v = mkexpr(-1, Omul, u, mkexpr(-1, Olit, mkint(-1, sz), NULL), NULL);
     r = mkexpr(-1, Oadd, t, v, NULL);
     return r;
 }
@@ -329,7 +329,7 @@ static Node *slicebase(Simp *s, Node *n, Node *off)
     }
     /* safe: all types have a sub[0] that we want to grab */
     sz = tysize(n->expr.type->sub[0]);
-    v = mkexpr(-1, Omul, u, mkexpr(-1, Olit, mkint(-1, sz), NULL));
+    v = mkexpr(-1, Omul, u, mkexpr(-1, Olit, mkint(-1, sz), NULL), NULL);
     return mkexpr(-1, Oadd, u, v, NULL);
 }
 

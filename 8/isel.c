@@ -75,7 +75,7 @@ void iprintf(FILE *fd, Insn *insn);
 /* used to decide which operator is appropriate
  * for implementing various conditional operators */
 struct {
-    AsmOp test; 
+    AsmOp test;
     AsmOp jmp;
     AsmOp getflag;
 } reloptab[Numops] = {
