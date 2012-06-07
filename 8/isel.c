@@ -518,6 +518,34 @@ Loc gencall(Isel *s, Node *n)
     return eax;
 }
 
+void blit(Isel *s, Loc a, Loc b, int sz)
+{
+    int i;
+    Reg sp, dp; /* pointers to src, dst */
+    Loc tmp, src, dst; /* source memory, dst memory */
+
+    sp = inr(s, a).reg;
+    dp = inr(s, b).reg;
+
+    /* Slightly funny loop condition: We might have trailing bytes
+     * that we can't blit word-wise. */
+    tmp = getreg(s, ModeL);
+    for (i = 0; i + 4 <= sz; i+= 4) {
+        locmem(&src, i, sp, Rnone, ModeL);
+        locmem(&dst, i, dp, Rnone, ModeL);
+        g(s, Imov, &src, &tmp, NULL);
+        g(s, Imov, &tmp, &dst, NULL);
+    }
+    /* now, the trailing bytes */
+    tmp = coreg(tmp, ModeB);
+    for (; i < sz; i++) {
+        locmem(&src, i, sp, Rnone, ModeB);
+        locmem(&dst, i, dp, Rnone, ModeB);
+        g(s, Imov, &src, &tmp, NULL);
+        g(s, Imov, &tmp, &dst, NULL);
+    }
+}
+
 Loc selexpr(Isel *s, Node *n)
 {
     Loc a, b, c, r;
@@ -666,7 +694,12 @@ Loc selexpr(Isel *s, Node *n)
             break;
         case Olbl:
             loclbl(&r, args[0]);
-            break; 
+            break;
+        case Oblit:
+            a = selexpr(s, args[0]);
+            b = selexpr(s, args[1]);
+            blit(s, a, b, args[2]->expr.args[0]->lit.intval);
+            break;
 
         /* These operators should never show up in the reduced trees,
          * since they should have been replaced with more primitive
