@@ -1,17 +1,17 @@
-main	E	0
-add	E	53
-mul     E       84
-div     E       42
-mod     E       6
-bsr     E       5
-struct1	E	12
-struct	E	42
-array	E	7
-call	E	42
-loop	E	45
-fib	E	21
-slice	E	7
-float   E       1
-structasn       E       42
-log-and E       0
-log-or  E       1
+B main		E	0
+B add		E	53
+B mul     	E       84
+B div     	E       42
+B mod     	E       6
+B bsr     	E       5
+B struct1		E	12
+B struct		E	42
+B array		E	7
+B call		E	42
+B loop		E	45
+B fib		E	21
+B slice		E	7
+B float   	E       1
+B structasn	E       42
+B log-and 	E       0
+B log-or  	E       1
