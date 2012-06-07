@@ -358,7 +358,7 @@ static Tok *oper(void)
         case '>':
                   if (match('=')) {
                       tt = Tge;
-                  } else if (match('<')) {
+                  } else if (match('>')) {
                       if (match('='))
                           tt = Tbsreq;
                       else

@@ -121,6 +121,14 @@ Loc *locmem(Loc *l, long disp, Reg base, Reg idx, Mode mode)
     l->mem.constdisp = disp;
     l->mem.base = base;
     l->mem.idx = idx;
+    l->mem.scale = 0;
+    return l;
+}
+
+Loc *locmems(Loc *l, long disp, Reg base, Reg idx, int scale, Mode mode)
+{
+    locmem(l, disp, base, idx, mode);
+    l->mem.scale = scale;
     return l;
 }
 
@@ -131,8 +139,17 @@ Loc *locmeml(Loc *l, char *disp, Reg base, Reg idx, Mode mode)
     l->mem.lbldisp = strdup(disp);
     l->mem.base = base;
     l->mem.idx = idx;
+    l->mem.scale = 0;
     return l;
 }
+
+Loc *locmemls(Loc *l, char *disp, Reg base, Reg idx, int scale, Mode mode)
+{
+    locmeml(l, disp, base, idx, mode);
+    l->mem.scale = scale;
+    return l;
+}
+
 
 Loc *loclit(Loc *l, long val)
 {
@@ -343,6 +360,15 @@ Loc inri(Isel *s, Loc a)
         return inr(s, a);
 }
 
+/* ensures that a location is within a reg or an imm */
+Loc inrm(Isel *s, Loc a)
+{
+    if (a.type == Locreg || a.type == Locmem)
+        return a;
+    else
+        return inr(s, a);
+}
+
 /* If we're testing equality, etc, it's a bit silly
  * to generate the test, store it to a bite, expand it
  * to the right width, and then test it again. Try to optimize
@@ -394,11 +420,29 @@ static Loc binop(Isel *s, AsmOp op, Node *x, Node *y)
     return a;
 }
 
+static int ismergablemul(Node *n, int *r)
+{
+    int v;
+
+    if (exprop(n) != Omul)
+        return 0;
+    if (exprop(n->expr.args[1]) != Olit)
+        return 0;
+    if (n->expr.args[1]->expr.args[0]->type != Nlit)
+        return 0;
+    if (n->expr.args[1]->expr.args[0]->lit.littype != Lint)
+        return 0;
+    v = n->expr.args[1]->expr.args[0]->lit.intval;
+    if (v != 2 && v != 4 && v != 8)
+        return 0;
+    *r = v;
+    return 1;
+}
 /* We have a few common cases to optimize here:
  *    Oadd(
  *        reg,
  *        reg||const))
- * TODO:
+ * or:
  *    Oadd(
  *        reg,
  *        Omul(reg,
@@ -408,18 +452,23 @@ static Loc memloc(Isel *s, Node *e, Mode m)
 {
     Node **args;
     Loc l, b, o; /* location, base, offset */
+    int scale;
 
+    scale = 0;
     if (exprop(e) == Oadd) {
         args = e->expr.args;
         b = selexpr(s, args[0]);
-        o = selexpr(s, args[1]);
+        if (ismergablemul(args[1], &scale))
+            o = selexpr(s, args[1]->expr.args[0]);
+        else
+            o = selexpr(s, args[1]);
         if (b.type != Locreg)
             b = inr(s, b);
         if (o.type == Loclit) {
             locmem(&l, o.lit, b.reg, Rnone, m);
         } else if (o.type == Locreg) {
             b = inr(s, b);
-            locmem(&l, 0, b.reg, o.reg, m);
+            locmems(&l, 0, b.reg, o.reg, scale, m);
         }
     } else {
         l = selexpr(s, e);
@@ -472,27 +521,92 @@ Loc gencall(Isel *s, Node *n)
 Loc selexpr(Isel *s, Node *n)
 {
     Loc a, b, c, r;
+    Loc eax, edx, cl; /* x86 wanst some hard-coded regs */
     Node **args;
 
     args = n->expr.args;
     r = (Loc){Locnone, };
+    locreg(&eax, Reax);
+    locreg(&edx, Redx);
+    locreg(&cl, Rcl);
     switch (exprop(n)) {
         case Oadd:      r = binop(s, Iadd, args[0], args[1]); break;
         case Osub:      r = binop(s, Isub, args[0], args[1]); break;
 
-        case Omul:      die("Unimplemented op %s", opstr(exprop(n))); break;
-        case Odiv:      die("Unimplemented op %s", opstr(exprop(n))); break;
-        case Omod:      die("Unimplemented op %s", opstr(exprop(n))); break;
-        case Oneg:      die("Unimplemented op %s", opstr(exprop(n))); break;
+        case Omul:
+            /* these get clobbered by the mul insn */
+            claimreg(s, Reax);
+            claimreg(s, Redx);
+            a = selexpr(s, args[0]);
+            b = selexpr(s, args[1]);
+            b = inr(s, b);
+            c = coreg(eax, mode(n));
+            g(s, Imov, &a, &c, NULL);
+            g(s, Imul, &b, NULL);
+            freereg(s, Redx);
+            r = eax;
+            break;
+        case Odiv:
+        case Omod:
+            /* these get clobbered by the div insn */
+            claimreg(s, Reax);
+            claimreg(s, Redx);
+            a = selexpr(s, args[0]);
+            b = selexpr(s, args[1]);
+            b = inr(s, b);
+            c = coreg(eax, mode(n));
+            g(s, Imov, &a, &c, NULL);
+            g(s, Ixor, &edx, &edx, NULL);
+            g(s, Idiv, &b, NULL);
+            freereg(s, Redx);
+            if (exprop(n) == Odiv)
+                r = eax;
+            else
+                r = edx;
+            break;
+        case Oneg:
+            r = selexpr(s, args[0]);
+            r = inr(s, r);
+            g(s, Ineg, &r, NULL);
+            break;
 
         case Obor:      r = binop(s, Ior,  args[0], args[1]); break;
         case Oband:     r = binop(s, Iand, args[0], args[1]); break;
         case Obxor:     r = binop(s, Ixor, args[0], args[1]); break;
-        case Obsl:      die("Unimplemented op %s", opstr(exprop(n))); break;
-        case Obsr:      die("Unimplemented op %s", opstr(exprop(n))); break;
-        case Obnot:     die("Unimplemented op %s", opstr(exprop(n))); break;
+        case Obsl:      
+        case Obsr:
+            claimreg(s, Rcl); /* shift requires cl as it's arg. stupid. */
+            a = selexpr(s, args[0]);
+            a = inr(s, a);
+            b = selexpr(s, args[1]);
+            c = coreg(cl, b.mode);
+            g(s, Imov, &b, &c, NULL);
+            if (exprop(n) == Obsr) {
+                if (istysigned(n->expr.type))
+                    g(s, Isar, &cl, &a, NULL);
+                else
+                    g(s, Ishr, &cl, &a, NULL);
+            } else {
+                g(s, Ishl, &cl, &a, NULL);
+            }
+            freeloc(s, cl);
+            freeloc(s, b);
+            r = a;
+            break;
+        case Obnot:
+            r = selexpr(s, args[0]);
+            r = inrm(s, r);
+            g(s, Inot, &r, NULL);
+            break;
 
-        case Oderef:    die("Unimplemented op %s", opstr(exprop(n))); break;
+        case Oderef:
+            a = selexpr(s, args[0]);
+            a = inr(s, a);
+            r = getreg(s, a.mode);
+            locmem(&c, 0, a.reg, Rnone, a.mode);
+            g(s, Imov, &c, &r, NULL);
+            break;
+
         case Oaddr:
             a = selexpr(s, args[0]);
             r = getreg(s, ModeL);
@@ -593,6 +707,8 @@ void locprint(FILE *fd, Loc *l)
                 fprintf(fd, "(%s", regnames[l->mem.base]);
             if (l->mem.idx)
                 fprintf(fd, ",%s", regnames[l->mem.idx]);
+            if (l->mem.scale)
+                fprintf(fd, ",%d", l->mem.scale);
             if (l->mem.base)
                 fprintf(fd, ")");
             break;

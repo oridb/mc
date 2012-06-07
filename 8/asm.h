@@ -54,6 +54,7 @@ struct Loc {
             /* only one of lbldisp and constdisp may be used */
             char *lbldisp;
             long constdisp;
+            int scale;
             Reg base;
             Reg idx;
         } mem;
@@ -85,8 +86,11 @@ Loc *loclbl(Loc *l, Node *lbl);
 Loc *locreg(Loc *l, Reg r);
 Loc *locmem(Loc *l, long disp, Reg base, Reg idx, Mode mode);
 Loc *locmeml(Loc *l, char *disp, Reg base, Reg idx, Mode mode);
+Loc *locmems(Loc *l, long disp, Reg base, Reg idx, int scale, Mode mode);
+Loc *locmemls(Loc *l, char *disp, Reg base, Reg idx, int scale, Mode mode);
 Loc *loclit(Loc *l, long val);
 
 /* useful functions */
 size_t size(Node *n);
 void breakhere();
+

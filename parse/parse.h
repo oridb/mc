@@ -295,6 +295,7 @@ Type *mktyunion(int line, Node **decls, size_t ndecls);
 Type *mktyenum(int line, Node **decls, size_t ndecls);
 Cstr *mkcstr(int line, char *name, Node **memb, size_t nmemb, Node **funcs, size_t nfuncs);
 Type *tylike(Type *t, Ty ty); /* constrains tyvar t like it was builtin ty */
+int   istysigned(Type *t);
 
 /* type manipulation */
 int hascstr(Type *t, Cstr *c);

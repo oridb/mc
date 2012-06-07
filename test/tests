@@ -1,0 +1,14 @@
+main	E	0
+add	E	53
+mul     E       84
+div     E       42
+mod     E       6
+bsr     E       5
+struct1	E	12
+struct	E	42
+array	E	7
+call	E	42
+loop	E	45
+fib	E	21
+slice	E	7
+float   E       1
