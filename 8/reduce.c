@@ -382,10 +382,10 @@ Node *rval(Simp *s, Node *n)
             r = mkexpr(-1, Olit, mkint(-1, size(args[0])), NULL);
             break;
         case Oslice:
-            args[1] = rval(s, args[1]);
-            args[2] = rval(s, args[2]);
-            t = mkexpr(-1, Osub, args[2], args[1], NULL);
-            args[0] = slicebase(s, args[0], t);
+            /* normalize to '(base + off)[0,len]' */
+            args[0] = slicebase(s, args[0], args[1]);
+            args[2] = mkexpr(-1, Osub, args[2], args[1], NULL);
+            args[1] = mkexpr(-1, Olit, mkint(-1, 0), NULL);
             r = n;
             break;
         case Oidx:
