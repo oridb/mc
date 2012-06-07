@@ -512,12 +512,13 @@ Loc gencall(Isel *s, Node *n)
 Loc selexpr(Isel *s, Node *n)
 {
     Loc a, b, c, r;
-    Loc eax;
+    Loc eax, edx;
     Node **args;
 
     args = n->expr.args;
     r = (Loc){Locnone, };
     locreg(&eax, Reax);
+    locreg(&edx, Redx);
     switch (exprop(n)) {
         case Oadd:      r = binop(s, Iadd, args[0], args[1]); break;
         case Osub:      r = binop(s, Isub, args[0], args[1]); break;
@@ -534,8 +535,23 @@ Loc selexpr(Isel *s, Node *n)
             freereg(s, Redx);
             r = eax;
             break;
-        case Odiv:      die("Unimplemented op %s", opstr(exprop(n))); break;
-        case Omod:      die("Unimplemented op %s", opstr(exprop(n))); break;
+        case Odiv:
+        case Omod:
+            /* these get clobbered by the div insn */
+            claimreg(s, Reax);
+            claimreg(s, Redx);
+            a = selexpr(s, args[0]);
+            b = selexpr(s, args[1]);
+            b = inr(s, b);
+            g(s, Ixor, &edx, &edx, NULL);
+            g(s, Imov, &a, &eax, NULL);
+            g(s, Idiv, &b, NULL);
+            freereg(s, Redx);
+            if (exprop(n) == Odiv)
+                r = eax;
+            else
+                r = edx;
+            break;
         case Oneg:      die("Unimplemented op %s", opstr(exprop(n))); break;
 
         case Obor:      r = binop(s, Ior,  args[0], args[1]); break;
