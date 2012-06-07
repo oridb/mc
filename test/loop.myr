@@ -1,7 +1,6 @@
 const main = {
 	var i
 	var n
-	i = f
 
 	n = 0
 	for i = 0; i < 10; ++i

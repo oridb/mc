@@ -666,6 +666,8 @@ void locprint(FILE *fd, Loc *l)
                 fprintf(fd, "(%s", regnames[l->mem.base]);
             if (l->mem.idx)
                 fprintf(fd, ",%s", regnames[l->mem.idx]);
+            if (l->mem.scale)
+                fprintf(fd, ",%d", l->mem.scale);
             if (l->mem.base)
                 fprintf(fd, ")");
             break;
