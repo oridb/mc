@@ -382,7 +382,7 @@ Node *rval(Simp *s, Node *n)
         case Oslice:
             args[1] = rval(s, args[1]);
             args[2] = rval(s, args[2]);
-            t = mkexpr(-1, Osub, args[2], args[1]);
+            t = mkexpr(-1, Osub, args[2], args[1], NULL);
             args[0] = slicebase(s, args[0], t);
             r = n;
             break;
@@ -415,31 +415,31 @@ Node *rval(Simp *s, Node *n)
             t = lval(s, args[0]);
             v = mkexpr(-1, Oadd, one, t, NULL);
             r = mkexpr(-1, Ostor, t, v, NULL);
-            lappend(&s->incqueue, &s->nqueue, t); 
+            lappend(&s->incqueue, &s->nqueue, t);
             break;
         case Opredec:
             t = lval(s, args[0]);
             v = mkexpr(-1, Osub, one, t, NULL);
             r = mkexpr(-1, Ostor, t, v, NULL);
-            lappend(&s->incqueue, &s->nqueue, t); 
+            lappend(&s->incqueue, &s->nqueue, t);
             break;
 
         /* expr(x++)
-         *     => 
+         *     =>
          *      expr
-         *      x = x + 1 
+         *      x = x + 1
          */
         case Opostinc:
             r = lval(s, args[0]);
             v = mkexpr(-1, Oadd, one, r, NULL);
             t = mkexpr(-1, Ostor, r, v, NULL);
-            lappend(&s->incqueue, &s->nqueue, t); 
+            lappend(&s->incqueue, &s->nqueue, t);
             break;
         case Opostdec:
             r = lval(s, args[0]);
             v = mkexpr(-1, Osub, one, args[0], NULL);
             t = mkexpr(-1, Ostor, r, v, NULL);
-            lappend(&s->incqueue, &s->nqueue, t); 
+            lappend(&s->incqueue, &s->nqueue, t);
             break;
         case Olit:
         case Ovar:
@@ -458,8 +458,15 @@ Node *rval(Simp *s, Node *n)
             break;
         case Oasn:
             t = lval(s, args[0]);
-            v = rval(s, args[1]);
-            r = mkexpr(-1, Ostor, t, v, NULL);
+            u = rval(s, args[1]);
+            if (size(n) > 4) {
+                t = mkexpr(-1, Oaddr, t, NULL);
+                u = mkexpr(-1, Oaddr, u, NULL);
+                v = mkexpr(-1, Olit, mkint(-1, size(n)), NULL);
+                r = mkexpr(-1, Oblit, t, u, v, NULL);
+            } else {
+              r = mkexpr(-1, Ostor, t, u, NULL);
+            }
             break;
         default:
             for (i = 0; i < n->expr.nargs; i++)
@@ -478,7 +485,7 @@ void declarelocal(Simp *s, Node *n)
 {
     assert(n->type == Ndecl);
     if (debug)
-        printf("DECLARE %s(%ld) at %zd\n", declname(n), n->decl.sym->id, s->stksz + 4);
+        printf("DECLARE %s(%ld) at %zd\n", declname(n), n->decl.sym->id, s->stksz);
     htput(s->locs, (void*)n->decl.sym->id, (void*)(s->stksz + 4));
     s->stksz += size(n);
 }
@@ -486,10 +493,10 @@ void declarelocal(Simp *s, Node *n)
 void declarearg(Simp *s, Node *n)
 {
     assert(n->type == Ndecl);
+    s->argsz += size(n);
     if (debug)
         printf("DECLARE %s(%ld) at %zd\n", declname(n), n->decl.sym->id, -(s->argsz + 8));
     htput(s->locs, (void*)n->decl.sym->id, (void*)-(s->argsz + 8));
-    s->argsz += size(n);
 }
 
 Node *simp(Simp *s, Node *n)

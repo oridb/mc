@@ -12,3 +12,4 @@ loop	E	45
 fib	E	21
 slice	E	7
 float   E       1
+structasn       E       42

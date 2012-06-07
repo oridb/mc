@@ -374,9 +374,10 @@ static void inferexpr(Node *n, Type *ret, int *sawret)
             break;
         case Olbl:      /* :lbl -> void* */
             settype(n, mktyptr(n->line, mkty(-1, Tyvoid)));
-        case Obad: case Numops: case Ocjmp:
+        case Obad: case Ocjmp:
         case Oload: case Ostor:
         case Oslbase: case Osllen:
+        case Oblit: case Numops:
             die("Should not see %s in fe", opstr(exprop(n)));
             break;
     }

@@ -52,5 +52,6 @@ O(Olbl, 1)
 O(Ocjmp, 1)        /* conditional jump */
 O(Oload, 1)        /* load from memory */
 O(Ostor, 1)        /* store to memory */
-O(Osllen, 1)
-O(Oslbase, 1)
+O(Osllen, 1)       /* size of slice */
+O(Oslbase, 1)      /* base of sice */
+O(Oblit, 1)        /* block copy of memory */

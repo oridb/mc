@@ -4,5 +4,5 @@ SUB = parse \
 -include config.mk
 include mk/c.mk
 
-check:
+check: all
 	make -C test check
