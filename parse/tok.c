@@ -332,7 +332,7 @@ static Tok *oper(void)
         case '&':
                   if (match('='))
                       tt = Tbandeq;
-                  else if (match('|'))
+                  else if (match('&'))
                       tt = Tland;
                   else
                       tt = Tband;
