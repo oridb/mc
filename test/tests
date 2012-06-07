@@ -7,3 +7,4 @@ call	E	42
 loop	E	45
 fib	E	21
 slice	E	7
+float   E       1

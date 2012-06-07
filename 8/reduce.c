@@ -131,6 +131,9 @@ size_t size(Node *n)
         case Tyslice:
             return 8; /* len; ptr */
         case Tyarray:
+            dump(t->asize, stdout);
+            assert(exprop(t->asize) == Olit);
+            return t->asize->expr.args[0]->lit.intval;
         case Tytuple:
         case Tystruct:
             for (i = 0; i < t->nmemb; i++)
