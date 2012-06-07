@@ -360,6 +360,15 @@ Loc inri(Isel *s, Loc a)
         return inr(s, a);
 }
 
+/* ensures that a location is within a reg or an imm */
+Loc inrm(Isel *s, Loc a)
+{
+    if (a.type == Locreg || a.type == Locmem)
+        return a;
+    else
+        return inr(s, a);
+}
+
 /* If we're testing equality, etc, it's a bit silly
  * to generate the test, store it to a bite, expand it
  * to the right width, and then test it again. Try to optimize
@@ -584,9 +593,20 @@ Loc selexpr(Isel *s, Node *n)
             freeloc(s, b);
             r = a;
             break;
-        case Obnot:     die("Unimplemented op %s", opstr(exprop(n))); break;
+        case Obnot:
+            r = selexpr(s, args[0]);
+            r = inrm(s, r);
+            g(s, Inot, &r, NULL);
+            break;
 
-        case Oderef:    die("Unimplemented op %s", opstr(exprop(n))); break;
+        case Oderef:
+            a = selexpr(s, args[0]);
+            a = inr(s, a);
+            r = getreg(s, a.mode);
+            locmem(&c, 0, a.reg, Rnone, a.mode);
+            g(s, Imov, &c, &r, NULL);
+            break;
+
         case Oaddr:
             a = selexpr(s, args[0]);
             r = getreg(s, ModeL);
