@@ -530,7 +530,8 @@ Loc selexpr(Isel *s, Node *n)
             a = selexpr(s, args[0]);
             b = selexpr(s, args[1]);
             b = inr(s, b);
-            g(s, Imov, &a, &eax, NULL);
+            c = coreg(eax, mode(n));
+            g(s, Imov, &a, &c, NULL);
             g(s, Imul, &b, NULL);
             freereg(s, Redx);
             r = eax;
@@ -543,8 +544,9 @@ Loc selexpr(Isel *s, Node *n)
             a = selexpr(s, args[0]);
             b = selexpr(s, args[1]);
             b = inr(s, b);
+            c = coreg(eax, mode(n));
             g(s, Ixor, &edx, &edx, NULL);
-            g(s, Imov, &a, &eax, NULL);
+            g(s, Imov, &a, &c, NULL);
             g(s, Idiv, &b, NULL);
             freereg(s, Redx);
             if (exprop(n) == Odiv)
