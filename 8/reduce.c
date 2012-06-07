@@ -295,8 +295,10 @@ static Node *membaddr(Simp *s, Node *n)
 
 static Node *idxaddr(Simp *s, Node *n)
 {
-    Node *t, *u, *r;
+    Node *t, *u, *v; /* temps */
+    Node *r; /* result */
     Node **args;
+    size_t sz;
 
     assert(exprop(n) == Oidx);
     args = n->expr.args;
@@ -307,23 +309,28 @@ static Node *idxaddr(Simp *s, Node *n)
     else
         die("Can't index type %s\n", tystr(n->expr.type));
     u = rval(s, args[1]);
-    r = mkexpr(-1, Oadd, t, u, NULL);
+    sz = size(n);
+    v = mkexpr(-1, Omul, u, mkexpr(-1, Olit, mkint(-1, sz), NULL));
+    r = mkexpr(-1, Oadd, t, v, NULL);
     return r;
 }
 
 static Node *slicebase(Simp *s, Node *n, Node *off)
 {
-    Node *t, *u;
+    Node *t, *u, *v;
+    int sz;
 
     t = rval(s, n);
     u = NULL;
     switch (n->expr.type->type) {
         case Typtr:     u = n;
-        case Tyarray:   u = mkexpr(-1, Oaddr, n, NULL); break;
-        case Tyslice:   u = mkexpr(-1, Oslbase, n, NULL); break;
+        case Tyarray:   u = mkexpr(-1, Oaddr, t, NULL); break;
+        case Tyslice:   u = mkexpr(-1, Oslbase, t, NULL); break;
         default: die("Unslicable type %s", tystr(n->expr.type));
     }
-    return mkexpr(-1, Oadd, u, off, NULL);
+    sz = tysize(n->expr.args[0]->expr.type->sub[0]);
+    v = mkexpr(-1, Omul, u, mkexpr(-1, Olit, mkint(-1, sz), NULL));
+    return mkexpr(-1, Oadd, u, v, NULL);
 }
 
 Node *lval(Simp *s, Node *n)

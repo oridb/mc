@@ -1,0 +1,7 @@
+const f = {
+	-> 21
+}
+
+const main = {
+	-> f() + f()
+}
