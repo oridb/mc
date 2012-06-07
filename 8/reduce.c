@@ -327,7 +327,7 @@ static Node *slicebase(Simp *s, Node *n, Node *off)
         case Tyslice:   u = mkexpr(-1, Oslbase, t, NULL); break;
         default: die("Unslicable type %s", tystr(n->expr.type));
     }
-    /* safe: all types have a sub[0] that we want to grab */
+    /* safe: all types we allow here have a sub[0] that we want to grab */
     sz = tysize(n->expr.type->sub[0]);
     v = mkexpr(-1, Omul, u, mkexpr(-1, Olit, mkint(-1, sz), NULL), NULL);
     return mkexpr(-1, Oadd, u, v, NULL);
@@ -376,8 +376,10 @@ Node *rval(Simp *s, Node *n)
     switch (exprop(n)) {
         case Obad:
         case Olor: case Oland:
-        case Osize:
             die("Have not implemented lowering op %s", opstr(exprop(n)));
+            break;
+        case Osize:
+            r = mkexpr(-1, Olit, mkint(-1, size(args[0])), NULL);
             break;
         case Oslice:
             args[1] = rval(s, args[1]);
@@ -441,8 +443,7 @@ Node *rval(Simp *s, Node *n)
             t = mkexpr(-1, Ostor, r, v, NULL);
             lappend(&s->incqueue, &s->nqueue, t);
             break;
-        case Olit:
-        case Ovar:
+        case Olit: case Ovar:
             r = n;
             break;
         case Oret:
