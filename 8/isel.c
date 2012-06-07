@@ -696,8 +696,8 @@ Loc selexpr(Isel *s, Node *n)
             loclbl(&r, args[0]);
             break;
         case Oblit:
-            a = selexpr(s, args[0]);
-            b = selexpr(s, args[1]);
+            b = selexpr(s, args[0]);
+            a = selexpr(s, args[1]);
             blit(s, a, b, args[2]->expr.args[0]->lit.intval);
             break;
 
