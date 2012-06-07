@@ -20,9 +20,13 @@ function prints {
 }
 
 function exitswith {
-    ./$1
-    if [ $? -eq $2 ]; then
-        echo "PASS: $1"
+    if [ -e $1 ]; then
+        ./$1
+        if [ $? -eq $2 ]; then
+            echo "PASS: $1"
+        else
+            echo "FAIL: $1"
+        fi
     else
         echo "FAIL: $1"
     fi

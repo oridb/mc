@@ -552,7 +552,11 @@ Loc selexpr(Isel *s, Node *n)
             else
                 r = edx;
             break;
-        case Oneg:      die("Unimplemented op %s", opstr(exprop(n))); break;
+        case Oneg:
+            r = selexpr(s, args[0]);
+            r = inr(s, r);
+            g(s, Ineg, &r, NULL);
+            break;
 
         case Obor:      r = binop(s, Ior,  args[0], args[1]); break;
         case Oband:     r = binop(s, Iand, args[0], args[1]); break;
