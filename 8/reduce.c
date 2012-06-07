@@ -52,6 +52,7 @@ Node *simp(Simp *s, Node *n);
 Node *rval(Simp *s, Node *n);
 Node *lval(Simp *s, Node *n);
 void declarelocal(Simp *s, Node *n);
+size_t size(Node *n);
 
 void append(Simp *s, Node *n)
 {
@@ -89,17 +90,10 @@ static char *asmname(Node *n)
     return s;
 }
 
-
-size_t size(Node *n)
+size_t tysize(Type *t)
 {
-    Type *t;
     size_t sz;
     int i;
-
-    if (n->type == Nexpr)
-        t = n->expr.type;
-    else
-        t = n->decl.sym->type;
 
     sz = 0;
     switch (t->type) {
@@ -133,7 +127,7 @@ size_t size(Node *n)
         case Tyarray:
             dump(t->asize, stdout);
             assert(exprop(t->asize) == Olit);
-            return t->asize->expr.args[0]->lit.intval;
+            return t->asize->expr.args[0]->lit.intval * tysize(t->sub[0]);
         case Tytuple:
         case Tystruct:
             for (i = 0; i < t->nmemb; i++)
@@ -148,6 +142,18 @@ size_t size(Node *n)
             break;
     }
     return -1;
+}
+
+size_t size(Node *n)
+{
+    Type *t;
+
+    if (n->type == Nexpr)
+        t = n->expr.type;
+    else
+        t = n->decl.sym->type;
+
+    return tysize(t);
 }
 
 Node *genlbl(void)
