@@ -38,7 +38,7 @@ done
 
 for i in `awk '/^F/{print $2}' tests`; do
     build $i
-    if [ $? -ne '0' ]; then
+    if [ $? -eq '1' ]; then
         echo "PASS: $i"
     else
         echo "FAIL: $i"

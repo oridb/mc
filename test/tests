@@ -30,3 +30,5 @@ B float   	E       1
 B structasn	E       42
 B log-and 	E       0
 B log-or  	E       1
+F declmismatch
+F infermismatch
