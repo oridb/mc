@@ -71,7 +71,7 @@ int main(int argc, char **argv)
             fclose(tmp);
 
             /* and reading it back */
-            tmp = fopen("test.pkl", "r");
+            tmp = fopen("a.pkl", "r");
             rdback = unpickle(tmp);
             dump(rdback, stdout);
             fclose(tmp);
