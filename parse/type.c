@@ -187,6 +187,17 @@ Type *mktyenum(int line, Node **decls, size_t ndecls)
     return t;
 }
 
+int istysigned(Type *t)
+{
+    switch (t->type) {
+        case Tyint8: case Tyint16: case Tyint:
+        case Tyint32: case Tyint64: case Tylong:
+            return 1;
+        default:
+            return 0;
+    }
+}
+
 void tlappend(Type ***tl, int *len, Type *t)
 {
     *tl = xrealloc(tl, (*len + 1)*sizeof(Type*));
