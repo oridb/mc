@@ -448,6 +448,11 @@ void tyinit(Stab *st)
     tycstrs[Tyarray][0] = cstrtab[Tcidx];
     tycstrs[Tyarray][1] = cstrtab[Tcslice];
 
+    /* index hack :: tcidx, tcslice, tctest */
+    tycstrs[Tyidxhack][0] = cstrtab[Tcidx];
+    tycstrs[Tyidxhack][1] = cstrtab[Tcslice];
+    tycstrs[Tyidxhack][2] = cstrtab[Tctest];
+
     /* ptr :: tcslice, tctest */
     tycstrs[Typtr][0] = cstrtab[Tcidx];
     tycstrs[Typtr][1] = cstrtab[Tctest];
