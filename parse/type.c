@@ -226,8 +226,6 @@ int constrain(Type *t, Cstr *c)
 {
     if (!t->cstrs)
         t->cstrs = mkbs();
-    if (t->type != Tyvar && t->type != Typaram)
-        return 0;
     bsput(t->cstrs, c->cid);
     return 1;
 }
@@ -449,6 +447,11 @@ void tyinit(Stab *st)
     /* array :: tcidx, tcslice */
     tycstrs[Tyarray][0] = cstrtab[Tcidx];
     tycstrs[Tyarray][1] = cstrtab[Tcslice];
+
+    /* index hack :: tcidx, tcslice, tctest */
+    tycstrs[Tyidxhack][0] = cstrtab[Tcidx];
+    tycstrs[Tyidxhack][1] = cstrtab[Tcslice];
+    tycstrs[Tyidxhack][2] = cstrtab[Tctest];
 
     /* ptr :: tcslice, tctest */
     tycstrs[Typtr][0] = cstrtab[Tcidx];
