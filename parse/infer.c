@@ -171,16 +171,17 @@ int idxhacked(Type **pa, Type **pb)
     b = *pb;
     /* we want to unify Tyidxhack => concrete indexable. Flip 
      * to make this happen, if needed */
-    if (b->type == Tyidxhack) {
+    if (b->type == Tyvar && b->nsub > 0) {
         a = *pb;
         b = *pa;
     }
-    return a->type == Tyidxhack || a->type == Tyarray || a->type == Tyslice;
+    return (a->type == Tyvar && a->nsub > 0) || a->type == Tyarray || a->type == Tyslice;
 }
 
 static Type *unify(Node *ctx, Type *a, Type *b)
 {
     Type *t;
+    Type *r;
     int i;
 
     /* a ==> b */
@@ -194,11 +195,13 @@ static Type *unify(Node *ctx, Type *a, Type *b)
         b = t;
     }
 
+    r = NULL;
     mergecstrs(ctx, a, b);
     if (a->type == Tyvar) {
         tytab[a->tid] = b;
-        return b;
-    } else if (a->type == b->type || idxhacked(&a, &b)) {
+        r = b;
+    }
+    if (a->type == b->type || idxhacked(&a, &b)) {
         for (i = 0; i < b->nsub; i++) {
             /* types must have same arity */
             if (i >= a->nsub)
@@ -206,11 +209,11 @@ static Type *unify(Node *ctx, Type *a, Type *b)
 
             unify(ctx, a->sub[i], b->sub[i]);
         }
-        return b;
-    } else {
+        r = b;
+    } else if (a->type != Tyvar) {
         fatal(ctx->line, "%s incompatible with %s near %s", tystr(a), tystr(b), ctxstr(ctx));
-        return NULL;
     }
+    return r;
 }
 
 static void unifycall(Node *n)
@@ -495,7 +498,7 @@ static Type *tyfin(Node *ctx, Type *t)
         for (i = 0; i < t->nsub; i++)
             t->sub[i] = tyfin(ctx, t->sub[i]);
     }
-    if (t->type == Tyvar || t->type == Tyidxhack) {
+    if (t->type == Tyvar) {
         fatal(t->line, "underconstrained type %s near %s", tyfmt(buf, 1024, t), ctxstr(ctx));
     }
 

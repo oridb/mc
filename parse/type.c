@@ -126,7 +126,7 @@ Type *mktyidxhack(int line, Type *base)
 {
     Type *t;
 
-    t = mkty(line, Tyidxhack);
+    t = mkty(line, Tyvar);
     t->nsub = 1;
     t->sub = xalloc(sizeof(Type*));
     t->sub[0] = base;
@@ -344,11 +344,6 @@ static int tybfmt(char *buf, size_t len, Type *t)
             p += tybfmt(p, end - p, t->sub[0]);
             p += snprintf(p, end - p, "[LEN]");
             break;
-        case Tyidxhack:
-	    p += snprintf(p, end - p, "Tyidxhack(");
-            p += tybfmt(p, end - p, t->sub[0]);
-            p += snprintf(p, end - p, ")[]");
-            break;
         case Tyfunc:
             p += snprintf(p, end - p, "(");
             for (i = 1; i < t->nsub; i++) {
@@ -371,6 +366,15 @@ static int tybfmt(char *buf, size_t len, Type *t)
             break;
         case Tyvar:
             p += snprintf(p, end - p, "@$%d", t->tid);
+            if (t->nsub) {
+                p += snprintf(p, end - p, "(");
+                for (i = 1; i < t->nsub; i++) {
+                    p += snprintf(p, end - p, "%s", sep);
+                    p += tybfmt(p, end - p, t->sub[i]);
+                    sep = ", ";
+                }
+                p += snprintf(p, end - p, ")[]");
+            }
             break;
         case Typaram:
             p += snprintf(p, end - p, "@%s", t->pname);
@@ -447,11 +451,6 @@ void tyinit(Stab *st)
     /* array :: tcidx, tcslice */
     tycstrs[Tyarray][0] = cstrtab[Tcidx];
     tycstrs[Tyarray][1] = cstrtab[Tcslice];
-
-    /* index hack :: tcidx, tcslice, tctest */
-    tycstrs[Tyidxhack][0] = cstrtab[Tcidx];
-    tycstrs[Tyidxhack][1] = cstrtab[Tcslice];
-    tycstrs[Tyidxhack][2] = cstrtab[Tctest];
 
     /* ptr :: tcslice, tctest */
     tycstrs[Typtr][0] = cstrtab[Tcidx];

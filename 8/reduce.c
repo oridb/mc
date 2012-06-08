@@ -136,7 +136,7 @@ size_t tysize(Type *t)
         case Tyunion:
             die("Sizes for composite types not implemented yet");
             break;
-        case Tybad: case Tyvar: case Typaram: case Tyname: case Tyidxhack: case Ntypes:
+        case Tybad: case Tyvar: case Typaram: case Tyname: case Ntypes:
             die("Type %s does not have size; why did it get down to here?", tystr(t));
             break;
     }

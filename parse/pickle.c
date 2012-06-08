@@ -267,7 +267,6 @@ static void wrtype(FILE *fd, Type *ty)
             wrtype(fd, ty->sub[0]);
             break;
         case Tyvar:
-        case Tyidxhack:
             die("Attempting to pickle %s. This will not work.\n", tystr(ty));
             break;
         default:

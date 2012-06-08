@@ -37,7 +37,7 @@ for i in `awk '/^B/{print $2}' tests`; do
 done
 
 for i in `awk '/^F/{print $2}' tests`; do
-    build $i
+    build $i > /dev/null
     if [ $? -eq '1' ]; then
         echo "PASS: $i"
     else
