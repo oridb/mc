@@ -629,7 +629,7 @@ void iprintf(FILE *fd, Insn *insn)
         p++;
         switch (*p) {
             case '\0':
-                goto done;
+                goto done; /* skip the final p++ */
             case 'r':
             case 'm':
             case 'l':
