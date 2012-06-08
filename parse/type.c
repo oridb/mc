@@ -23,7 +23,7 @@ int ntypes;
 Cstr **cstrtab;
 int ncstrs;
 
-static Cstr *tycstrs[Ntypes][4];
+static Cstr *tycstrs[Ntypes + 1][4];
 
 Type *mkty(int line, Ty ty)
 {
@@ -463,11 +463,13 @@ void tyinit(Stab *st)
 
 /* Definining and registering the types has to go after we define the
  * constraints, otherwise they will have no constraints set on them. */
-#define Ty(t, n) {\
-    ty = mkty(-1, t); \
-    if (n) { \
-        puttype(st, mkname(-1, n), ty); \
-    }}
+#define Ty(t, n) \
+    if (t != Ntypes) {\
+      ty = mkty(-1, t); \
+      if (n) { \
+          puttype(st, mkname(-1, n), ty); \
+      } \
+    }
 #include "types.def"
 #undef Ty
 
