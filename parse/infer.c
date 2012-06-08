@@ -81,8 +81,8 @@ static int cstrcheck(Type *a, Type *b)
         return bscount(a->cstrs) == 0;
     /* if b->cstrs \ a->cstrs == 0, then all of
      * a's constraints are satisfied. */
-    s = dupbs(b->cstrs);
-    bsdiff(s, a->cstrs);
+    s = dupbs(a->cstrs);
+    bsdiff(s, b->cstrs);
     n = bscount(s);
     delbs(s);
 

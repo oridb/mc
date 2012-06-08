@@ -226,8 +226,6 @@ int constrain(Type *t, Cstr *c)
 {
     if (!t->cstrs)
         t->cstrs = mkbs();
-    if (t->type != Tyvar && t->type != Typaram)
-        return 0;
     bsput(t->cstrs, c->cid);
     return 1;
 }
