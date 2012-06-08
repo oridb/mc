@@ -507,19 +507,19 @@ Node *rval(Simp *s, Node *n)
 void declarelocal(Simp *s, Node *n)
 {
     assert(n->type == Ndecl);
+    s->stksz += size(n);
     if (debug)
         printf("DECLARE %s(%ld) at %zd\n", declname(n), n->decl.sym->id, s->stksz);
-    htput(s->locs, (void*)n->decl.sym->id, (void*)(s->stksz + 4));
-    s->stksz += size(n);
+    htput(s->locs, (void*)n->decl.sym->id, (void*)s->stksz);
 }
 
 void declarearg(Simp *s, Node *n)
 {
     assert(n->type == Ndecl);
-    s->argsz += size(n);
     if (debug)
         printf("DECLARE %s(%ld) at %zd\n", declname(n), n->decl.sym->id, -(s->argsz + 8));
     htput(s->locs, (void*)n->decl.sym->id, (void*)-(s->argsz + 8));
+    s->argsz += size(n);
 }
 
 Node *simp(Simp *s, Node *n)
