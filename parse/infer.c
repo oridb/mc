@@ -70,23 +70,15 @@ static Type *tf(Type *t)
 /* does b satisfy all the constraints of a? */
 static int cstrcheck(Type *a, Type *b)
 {
-    Bitset *s;
-    int n;
-
     /* a has no cstrs to satisfy */
     if (!a->cstrs)
         return 1;
     /* b satisfies no cstrs; only valid if a requires none */
     if (!b->cstrs)
         return bscount(a->cstrs) == 0;
-    /* if a->cstrs \ b->cstrs == 0, then all of
-     * a's constraints are satisfied. */
-    s = dupbs(a->cstrs);
-    bsdiff(s, b->cstrs);
-    n = bscount(s);
-    delbs(s);
-
-    return n == 0;
+    /* if a->cstrs is a subset of b->cstrs, all of
+     * a's constraints are satisfied by b. */
+    return bsissubset(b->cstrs, a->cstrs);
 }
 
 static void loaduses(Node *n)

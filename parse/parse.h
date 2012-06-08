@@ -233,6 +233,7 @@ void bsunion(Bitset *a, Bitset *b);
 void bsintersect(Bitset *a, Bitset *b);
 void bsdiff(Bitset *a, Bitset *b);
 int  bscount(Bitset *bs);
+int  bsissubset(Bitset *set, Bitset *sub);
 
 Htab *mkht(ulong (*hash)(void *key), int (*cmp)(void *k1, void *k2));
 int htput(Htab *ht, void *k, void *v);

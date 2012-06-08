@@ -113,3 +113,14 @@ void bsdiff(Bitset *a, Bitset *b)
     for (i = 0; i < a->nchunks; i++)
         a->chunks[i] &= ~b->chunks[i];
 }
+
+int bsissubset(Bitset *set, Bitset *sub)
+{
+    int i;
+
+    eqsz(set, sub);
+    for (i = 0; i < set->nchunks; i++)
+        if ((sub->chunks[i] & set->chunks[i]) != set->chunks[i])
+            return 0;
+    return 1;
+}
