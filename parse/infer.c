@@ -79,10 +79,10 @@ static int cstrcheck(Type *a, Type *b)
     /* b satisfies no cstrs; only valid if a requires none */
     if (!b->cstrs)
         return bscount(a->cstrs) == 0;
-    /* if b->cstrs \ a->cstrs == 0, then all of
+    /* if a->cstrs \ b->cstrs == 0, then all of
      * a's constraints are satisfied. */
-    s = dupbs(b->cstrs);
-    bsdiff(s, a->cstrs);
+    s = dupbs(a->cstrs);
+    bsdiff(s, b->cstrs);
     n = bscount(s);
     delbs(s);
 
@@ -122,9 +122,7 @@ static Type *littype(Node *n)
         case Lint:      return tylike(mktyvar(n->line), Tyint);                 break;
         case Lflt:      return tylike(mktyvar(n->line), Tyfloat32);             break;
         case Lstr:      return mktyslice(n->line, mkty(n->line, Tychar));       break;
-        case Lfunc:
-            return n->lit.fnval->func.type;
-            break;
+        case Lfunc:     return n->lit.fnval->func.type;                         break;
         case Larray:    return NULL; break;
     };
     return NULL;
