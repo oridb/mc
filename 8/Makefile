@@ -2,6 +2,7 @@ BIN=8m
 OBJ=isel.o \
     main.o \
     reduce.o \
+    regalloc.o \
 
 CFLAGS+=-I../parse
 LDFLAGS+=-L../parse -lparse

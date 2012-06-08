@@ -35,6 +35,7 @@ typedef struct Insn Insn;
 typedef struct Loc Loc;
 typedef struct Func Func;
 typedef struct Blob Blob;
+typedef struct Isel Isel;
 
 struct Blob {
     char *name; /* mangled asm name */
@@ -77,20 +78,43 @@ struct Func {
     size_t nn;
 };
 
+/* instruction selection state */
+struct Isel {
+    Insn **il;
+    size_t ni;
+    Node *ret;
+    Htab *locs; /* decl id => int stkoff */
+    Htab *globls; /* decl id => char *globlname */
+
+    /* 6 general purpose regs */
+    int rtaken[Nreg];
+};
+
 /* entry points */
 void genasm(FILE *fd, Func *fn, Htab *globls);
 void gen(Node *file, char *out);
 
 /* location generation */
 Loc *loclbl(Loc *l, Node *lbl);
+Loc *locstrlbl(Loc *l, char *lbl);
 Loc *locreg(Loc *l, Reg r);
 Loc *locmem(Loc *l, long disp, Reg base, Reg idx, Mode mode);
 Loc *locmeml(Loc *l, char *disp, Reg base, Reg idx, Mode mode);
 Loc *locmems(Loc *l, long disp, Reg base, Reg idx, int scale, Mode mode);
 Loc *locmemls(Loc *l, char *disp, Reg base, Reg idx, int scale, Mode mode);
 Loc *loclit(Loc *l, long val);
+void locprint(FILE *fd, Loc *l);
+void iprintf(FILE *fd, Insn *insn);
+
+/* register allocation */
+Loc getreg(Isel *s, Mode m);
+void freeloc(Isel *s, Loc l);
+Loc claimreg(Isel *s, Reg r);
+void freereg(Isel *s, Reg r);
+extern const char *regnames[];
+extern const Mode regmodes[];
+
 
 /* useful functions */
 size_t size(Node *n);
 void breakhere();
-
