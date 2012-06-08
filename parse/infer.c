@@ -45,7 +45,7 @@ static void tyresolve(Type *t)
     t->resolved = 1;
 }
 
-/* find the most accurate type mapping */
+/* find the most accurate type mapping we have */
 static Type *tf(Type *t)
 {
     Type *lu;
@@ -90,7 +90,6 @@ static void loaduses(Node *n)
         /* readuse(n->file.uses[i], n->file.globls); */
 }
 
-/* a => b */
 static void settype(Node *n, Type *t)
 {
     t = tf(t);
@@ -598,3 +597,4 @@ void infer(Node *file)
     checkcast(file);
     typesub(file);
 }
+
