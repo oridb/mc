@@ -260,6 +260,16 @@ static Loc binop(Isel *s, AsmOp op, Node *x, Node *y)
     return a;
 }
 
+/* We have a few common cases to optimize here:
+ *    Oadd(
+ *        reg,
+ *        reg||const))
+ * or:
+ *    Oadd(
+ *        reg,
+ *        Omul(reg,
+ *             2 || 4 || 8)))
+ */
 static int ismergablemul(Node *n, int *r)
 {
     int v;
@@ -278,16 +288,7 @@ static int ismergablemul(Node *n, int *r)
     *r = v;
     return 1;
 }
-/* We have a few common cases to optimize here:
- *    Oadd(
- *        reg,
- *        reg||const))
- * or:
- *    Oadd(
- *        reg,
- *        Omul(reg,
- *             2 || 4 || 8)))
- */
+
 static Loc memloc(Isel *s, Node *e, Mode m)
 {
     Node **args;
@@ -441,7 +442,7 @@ Loc selexpr(Isel *s, Node *n)
         case Obor:      r = binop(s, Ior,  args[0], args[1]); break;
         case Oband:     r = binop(s, Iand, args[0], args[1]); break;
         case Obxor:     r = binop(s, Ixor, args[0], args[1]); break;
-        case Obsl:      
+        case Obsl:
         case Obsr:
             claimreg(s, Rcl); /* shift requires cl as it's arg. stupid. */
             a = selexpr(s, args[0]);
@@ -610,11 +611,6 @@ void locprint(FILE *fd, Loc *l)
     }
 }
 
-void modeprint(FILE *fd, Loc *l)
-{
-    fputc(modenames[l->mode], fd);
-}
-
 void iprintf(FILE *fd, Insn *insn)
 {
     char *p;
@@ -649,7 +645,7 @@ void iprintf(FILE *fd, Insn *insn)
                     modeidx = strtol(p, &p, 10);
 
                 if (*p == 't')
-                    modeprint(fd, &insn->args[modeidx]);
+                    fputc(modenames[insn->args[modeidx].mode], fd);
                 else
                     die("Invalid %%-specifier '%c'", *p);
                 break;
