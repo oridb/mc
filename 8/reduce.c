@@ -371,6 +371,25 @@ Node *simplazy(Simp *s, Node *n, Node *r)
     return r;
 }
 
+Node *lowerslice(Simp *s, Node *n)
+{
+    Node *t;
+    Node *base;
+    Node *len;
+    Node *stbase;
+    Node *stlen;
+
+    t = temp(s, n);
+    /* base = (void*)base + off*sz */
+    base = slicebase(s, n->expr.args[0], n->expr.args[1]);
+    len = mkexpr(-1, Osub, n->expr.args[2], n->expr.args[1], NULL);
+    stbase = mkexpr(-1, Ostor, mkexpr(-1, Oaddr, mkexpr(-1, Oslbase, t, NULL), NULL), base, NULL);
+    stlen = mkexpr(-1, Ostor, mkexpr(-1, Oaddr, mkexpr(-1, Osllen, t, NULL), NULL), len, NULL);
+    append(s, stbase);
+    append(s, stlen);
+    return t;
+}
+
 Node *rval(Simp *s, Node *n)
 {
     Node *r; /* expression result */
@@ -404,11 +423,7 @@ Node *rval(Simp *s, Node *n)
             r = mkexpr(-1, Olit, mkint(-1, size(args[0])), NULL);
             break;
         case Oslice:
-            /* normalize to '(base + off)[0,len]' */
-            args[0] = slicebase(s, args[0], args[1]);
-            args[2] = mkexpr(-1, Osub, args[2], args[1], NULL);
-            args[1] = mkexpr(-1, Olit, mkint(-1, 0), NULL);
-            r = n;
+            r = lowerslice(s, n);
             break;
         case Oidx:
             t = idxaddr(s, n);

@@ -39,7 +39,7 @@ const Mode regmodes[] = {
 #undef Reg
 };
 
-const Reg reginterferes[][Nmode + 1] = {
+const Reg reginterferes[Nreg][Nmode + 1] = {
     /* byte */
     [Ral] = {Ral, Rax, Reax},
     [Rcl] = {Rcl, Rcx, Recx},
@@ -61,6 +61,8 @@ const Reg reginterferes[][Nmode + 1] = {
     [Rebx] = {Rbl, Rbx, Rebx},
     [Resi] = {Rsi, Resi},
     [Redi] = {Rdi, Redi},
+    [Resp] = {Resp},
+    [Rebp] = {Rebp},
 };
 
 char *insnfmts[] = {
@@ -699,6 +701,17 @@ Loc selexpr(Isel *s, Node *n)
             b = selexpr(s, args[0]);
             a = selexpr(s, args[1]);
             blit(s, a, b, args[2]->expr.args[0]->lit.intval);
+            r = b;
+            break;
+        case Oslbase:
+            a = selexpr(s, args[0]);
+            a = inr(s, a);
+            locmem(&r, 0, a.reg, Rnone, ModeL);
+            break;
+        case Osllen:
+            a = selexpr(s, args[0]);
+            a = inr(s, a);
+            locmem(&r, 4, a.reg, Rnone, ModeL);
             break;
 
         /* These operators should never show up in the reduced trees,
@@ -709,7 +722,6 @@ Loc selexpr(Isel *s, Node *n)
         case Osubeq: case Omuleq: case Odiveq: case Omodeq: case Oboreq:
         case Obandeq: case Obxoreq: case Obsleq: case Obsreq: case Omemb:
         case Oslice: case Oidx: case Osize: case Numops:
-        case Oslbase: case Osllen:
             dump(n, stdout);
             die("Should not see %s in isel", opstr(exprop(n)));
             break;
