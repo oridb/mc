@@ -20,6 +20,13 @@ char *insnfmts[] = {
 #undef Insn
 };
 
+char modenames[] = {
+  [ModeB] = 'b',
+  [ModeS] = 's',
+  [ModeL] = 'l',
+  [ModeF] = 'f',
+  [ModeD] = 'd'
+};
 
 /* forward decls */
 Loc selexpr(Isel *s, Node *n);
@@ -570,6 +577,12 @@ void locprint(FILE *fd, Loc *l)
         case Locreg:
             fprintf(fd, "%s", regnames[l->reg]);
             break;
+        case Locpseu:
+            if (debug)
+              fprintf(fd, "%c%lu", modenames[l->mode], l->pseudo);
+            else
+              die("Trying to print pseudoreg %lu", l->pseudo);
+            break;
         case Locmem:
         case Locmeml:
             if (l->type == Locmem) {
@@ -599,13 +612,7 @@ void locprint(FILE *fd, Loc *l)
 
 void modeprint(FILE *fd, Loc *l)
 {
-    char mode[] = {
-        [ModeB] = 'b',
-        [ModeS] = 's',
-        [ModeL] = 'l',
-        [ModeQ] = 'q'
-    };
-    fputc(mode[l->mode], fd);
+    fputc(modenames[l->mode], fd);
 }
 
 void iprintf(FILE *fd, Insn *insn)

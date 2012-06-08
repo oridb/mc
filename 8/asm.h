@@ -3,32 +3,34 @@
 typedef enum {
 #define Insn(val, fmt, attr) val,
 #include "insns.def"
-#undef Insn 
+#undef Insn
 } AsmOp;
 
 typedef enum {
 #define Reg(r, name, mode) r,
 #include "regs.def"
-#undef Reg 
+#undef Reg
     Nreg
 } Reg;
 
 typedef enum {
     Locnone,
-    Loclbl,
-    Locreg,
-    Locmem,
-    Locmeml, /* label offset */
+    Loclbl,  /* label */
+    Locreg,  /* register */
+    Locpseu, /* pseudo-reg */
+    Locmem,  /* reg offset mem */
+    Locmeml, /* label offset mem */
     Loclit,
 } LocType;
 
 typedef enum {
     ModeNone,
-    ModeB,
-    ModeS,
-    ModeL,
-    ModeQ,
-    Nmode
+    ModeB, /* byte */
+    ModeS, /* short */
+    ModeL, /* long */
+    ModeF, /* float32 */
+    ModeD, /* float64 */
+    Nmode,
 } Mode;
 
 typedef struct Insn Insn;
@@ -49,6 +51,7 @@ struct Loc {
     union {
         char *lbl;
         Reg   reg;
+        long  pseudo;
         long  lit;
         /* disp(base + index) */
         struct {
