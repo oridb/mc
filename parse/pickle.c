@@ -80,7 +80,7 @@ static char rdbyte(FILE *fd)
     return c;
 }
 
-static void wrint(FILE *fd, int32_t val)
+static void wrint(FILE *fd, long val)
 {
     char buf[4];
     be32(val, buf);
@@ -88,10 +88,10 @@ static void wrint(FILE *fd, int32_t val)
         die("Unexpected EOF");
 }
 
-static int32_t rdint(FILE *fd)
+static long rdint(FILE *fd)
 {
     char buf[4];
-    if (fread(buf, sizeof(uint32_t), 1, fd) < 4)
+    if (fread(buf, 4, 1, fd) < 4)
         die("Unexpected EOF");
     return host32(buf);
 }
