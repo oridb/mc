@@ -56,6 +56,14 @@ int bscount(Bitset *bs)
     return n;
 }
 
+/* Returns the largest value that the bitset can possibly
+ * hold. It's conservative, but scanning the entire bitset
+ * is a bit slow. This is mostly an aid to iterate over it. */
+int bsmax(Bitset *bs)
+{
+    return bs->nchunks*sizeof(uint)*CHAR_BIT;
+}
+
 void delbs(Bitset *bs)
 {
     free(bs->chunks);

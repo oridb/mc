@@ -11,6 +11,7 @@
 
 #include "parse.h"
 #include "asm.h"
+#include "opt.h"
 
 #include "platform.h" /* HACK. We need some platform specific code gen behavior. *sigh.* */
 
@@ -607,6 +608,7 @@ static void lowerfn(char *name, Node *n, Htab *globls, FILE *fd)
     int i;
     Simp s = {0,};
     Func fn;
+    Cfg *cfg;
 
     if(debug)
         printf("\n\nfunction %s\n", name);
@@ -622,6 +624,9 @@ static void lowerfn(char *name, Node *n, Htab *globls, FILE *fd)
     if (debug)
       for (i = 0; i < s.nstmts; i++)
         dump(s.stmts[i], stdout);
+    cfg = mkcfg(s.stmts, s.nstmts);
+    if (debug)
+        dumpcfg(cfg, stdout);
 
     fn.name = name;
     fn.isglobl = 1; /* FIXME: we should actually use the visibility of the sym... */

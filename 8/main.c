@@ -11,6 +11,7 @@
 
 #include "parse.h"
 #include "asm.h"
+#include "opt.h"
 
 Node *file;
 static char *outfile;

@@ -1,4 +1,5 @@
 SUB = parse \
+      opt \
       8
 
 -include config.mk
