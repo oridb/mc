@@ -87,9 +87,9 @@ int htput(Htab *ht, void *k, void *v)
     return 1;
 }
 
-ssize_t htidx(Htab *ht, void *k)
+static ssize_t htidx(Htab *ht, void *k)
 {
-    int i;
+    ssize_t i;
     ulong h;
     int di;
 

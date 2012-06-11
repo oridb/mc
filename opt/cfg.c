@@ -14,7 +14,7 @@
 #include "opt.h"
 
 
-Bb *mkbb(Cfg *cfg)
+static Bb *mkbb(Cfg *cfg)
 {
     static int nextbbid = 0;
     Bb *bb;
@@ -27,13 +27,13 @@ Bb *mkbb(Cfg *cfg)
     return bb;
 }
 
-void label(Cfg *cfg, Node *lbl, Bb *bb)
+static void label(Cfg *cfg, Node *lbl, Bb *bb)
 {
     htput(cfg->lblmap, lbl->lbl.name, bb);
     lappend(&bb->lbls, &bb->nlbls, lbl->lbl.name);
 }
 
-int addnode(Cfg *cfg, Bb *bb, Node *n)
+static int addnode(Cfg *cfg, Bb *bb, Node *n)
 {
     switch (exprop(n)) {
         case Ojmp:

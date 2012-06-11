@@ -164,7 +164,7 @@ static void mergecstrs(Node *ctx, Type *a, Type *b)
     }
 }
 
-int idxhacked(Type **pa, Type **pb)
+static int idxhacked(Type **pa, Type **pb)
 {
     Type *a, *b;
 

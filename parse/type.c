@@ -198,13 +198,6 @@ int istysigned(Type *t)
     }
 }
 
-void tlappend(Type ***tl, int *len, Type *t)
-{
-    *tl = xrealloc(tl, (*len + 1)*sizeof(Type*));
-    (*tl)[*len] = t;
-    (*len)++;
-}
-
 static int namefmt(char *buf, size_t len, Node *name)
 {
     size_t i;

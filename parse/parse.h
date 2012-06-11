@@ -331,6 +331,7 @@ Node *mkslice(int line, Node *base, Node *off);
 /* node util functions */
 char *declname(Node *n);
 Type *decltype(Node *n);
+Type *exprtype(Node *n);
 Type *nodetype(Node *n);
 void addstmt(Node *file, Node *stmt);
 void setns(Node *n, char *name);
@@ -340,6 +341,7 @@ char *namestr(Node *name);
 
 /* usefiles */
 void readuse(Node *use, Stab *into);
+void writeuse(Node *file, FILE *out);
 
 /* typechecking/inference */
 void infer(Node *file);

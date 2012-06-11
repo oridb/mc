@@ -48,7 +48,7 @@ struct {
 };
 
 
-Loc loc(Isel *s, Node *n)
+static Loc loc(Isel *s, Node *n)
 {
     Loc l;
     Node *v;
@@ -82,12 +82,12 @@ Loc loc(Isel *s, Node *n)
     return l;
 }
 
-Mode mode(Node *n)
+static Mode mode(Node *n)
 {
     return ModeL;
 }
 
-Loc coreg(Loc r, Mode m)
+static Loc coreg(Loc r, Mode m)
 {
     Loc l;
 
@@ -117,7 +117,7 @@ Loc coreg(Loc r, Mode m)
     return l;
 }
 
-Insn *mkinsnv(AsmOp op, va_list ap)
+static Insn *mkinsnv(AsmOp op, va_list ap)
 {
     Loc *l;
     Insn *i;
@@ -126,26 +126,13 @@ Insn *mkinsnv(AsmOp op, va_list ap)
     n = 0;
     i = malloc(sizeof(Insn));
     i->op = op;
-    if (op == Isetnz)
-        breakhere();
     while ((l = va_arg(ap, Loc*)) != NULL)
         i->args[n++] = *l;
     i->narg = n;
     return i;
 }
 
-Insn *mkinsn(AsmOp op, ...)
-{
-    va_list ap;
-    Insn *i;
-
-    va_start(ap, op);
-    i = mkinsnv(op, ap);
-    va_end(ap);
-    return i;
-}
-
-void g(Isel *s, AsmOp op, ...)
+static void g(Isel *s, AsmOp op, ...)
 {
     va_list ap;
     Insn *i;
@@ -156,7 +143,7 @@ void g(Isel *s, AsmOp op, ...)
     lappend(&s->il, &s->ni, i);
 }
 
-void load(Isel *s, Loc *a, Loc *b)
+static void load(Isel *s, Loc *a, Loc *b)
 {
     Loc l;
     assert(b->type == Locreg);
@@ -167,7 +154,7 @@ void load(Isel *s, Loc *a, Loc *b)
     g(s, Imov, &l, b, NULL);
 }
 
-void stor(Isel *s, Loc *a, Loc *b)
+static void stor(Isel *s, Loc *a, Loc *b)
 {
     Loc l;
 
@@ -180,7 +167,7 @@ void stor(Isel *s, Loc *a, Loc *b)
 }
 
 /* ensures that a location is within a reg */
-Loc inr(Isel *s, Loc a)
+static Loc inr(Isel *s, Loc a)
 {
     Loc r;
 
@@ -192,7 +179,7 @@ Loc inr(Isel *s, Loc a)
 }
 
 /* ensures that a location is within a reg or an imm */
-Loc inri(Isel *s, Loc a)
+static Loc inri(Isel *s, Loc a)
 {
     if (a.type == Locreg || a.type == Loclit)
         return a;
@@ -201,7 +188,7 @@ Loc inri(Isel *s, Loc a)
 }
 
 /* ensures that a location is within a reg or an imm */
-Loc inrm(Isel *s, Loc a)
+static Loc inrm(Isel *s, Loc a)
 {
     if (a.type == Locreg || a.type == Locmem)
         return a;
@@ -218,7 +205,7 @@ Loc inrm(Isel *s, Loc a)
  * multiple tests, we want to eval the children
  * of the first arg, instead of the first arg
  * directly */
-void selcjmp(Isel *s, Node *n, Node **args)
+static void selcjmp(Isel *s, Node *n, Node **args)
 {
     Loc a, b;
     Loc l1, l2;
@@ -319,7 +306,7 @@ static Loc memloc(Isel *s, Node *e, Mode m)
     return l;
 }
 
-Loc gencall(Isel *s, Node *n)
+static Loc gencall(Isel *s, Node *n)
 {
     int argsz, argoff;
     size_t i;
@@ -359,7 +346,7 @@ Loc gencall(Isel *s, Node *n)
     return eax;
 }
 
-void blit(Isel *s, Loc a, Loc b, int sz)
+static void blit(Isel *s, Loc a, Loc b, int sz)
 {
     int i;
     Reg sp, dp; /* pointers to src, dst */
@@ -655,7 +642,7 @@ done:
     return;
 }
 
-void isel(Isel *s, Node *n)
+static void isel(Isel *s, Node *n)
 {
     Loc lbl;
 
@@ -674,7 +661,7 @@ void isel(Isel *s, Node *n)
     }
 }
 
-void prologue(Isel *s, size_t sz)
+static void prologue(Isel *s, size_t sz)
 {
     Loc esp;
     Loc ebp;
@@ -688,7 +675,7 @@ void prologue(Isel *s, size_t sz)
     g(s, Isub, &stksz, &esp, NULL);
 }
 
-void epilogue(Isel *s)
+static void epilogue(Isel *s)
 {
     Loc esp, ebp, eax;
     Loc ret;

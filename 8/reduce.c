@@ -15,12 +15,6 @@
 
 #include "platform.h" /* HACK. We need some platform specific code gen behavior. *sigh.* */
 
-void breakhere()
-{
-    volatile int x = 0;
-    x++;
-}
-
 /* takes a list of nodes, and reduces it (and it's subnodes) to a list
  * following these constraints:
  *      - All nodes are expression nodes
@@ -49,23 +43,22 @@ struct Simp {
     Node *ret;
 };
 
-Node *simp(Simp *s, Node *n);
-Node *rval(Simp *s, Node *n);
-Node *lval(Simp *s, Node *n);
-void declarelocal(Simp *s, Node *n);
-size_t size(Node *n);
+static Node *simp(Simp *s, Node *n);
+static Node *rval(Simp *s, Node *n);
+static Node *lval(Simp *s, Node *n);
+static void declarelocal(Simp *s, Node *n);
 
-void append(Simp *s, Node *n)
+static void append(Simp *s, Node *n)
 {
     lappend(&s->stmts, &s->nstmts, n);
 }
 
-int ispure(Node *n)
+static int ispure(Node *n)
 {
     return ispureop[exprop(n)];
 }
 
-int isconstfn(Sym *s)
+static int isconstfn(Sym *s)
 {
     return s->isconst && s->type->type == Tyfunc;
 }
@@ -91,7 +84,7 @@ static char *asmname(Node *n)
     return s;
 }
 
-size_t tysize(Type *t)
+static size_t tysize(Type *t)
 {
     size_t sz;
     size_t i;
@@ -156,7 +149,7 @@ size_t size(Node *n)
     return tysize(t);
 }
 
-Node *genlbl(void)
+static Node *genlbl(void)
 {
     char buf[128];
     static int nextlbl;
@@ -165,7 +158,7 @@ Node *genlbl(void)
     return mklbl(-1, buf);
 }
 
-Node *temp(Simp *simp, Node *e)
+static Node *temp(Simp *simp, Node *e)
 {
     char buf[128];
     static int nexttmp;
@@ -183,10 +176,17 @@ Node *temp(Simp *simp, Node *e)
     return r;
 }
 
-void jmp(Simp *s, Node *lbl) { append(s, mkexpr(-1, Ojmp, lbl, NULL)); }
-Node *store(Node *dst, Node *src) { return mkexpr(-1, Ostor, dst, src, NULL); }
+static void jmp(Simp *s, Node *lbl)
+{
+    append(s, mkexpr(-1, Ojmp, lbl, NULL));
+}
 
-void cjmp(Simp *s, Node *cond, Node *iftrue, Node *iffalse)
+static Node *store(Node *dst, Node *src)
+{
+    return mkexpr(-1, Ostor, dst, src, NULL);
+}
+
+static void cjmp(Simp *s, Node *cond, Node *iftrue, Node *iffalse)
 {
     Node *jmp;
 
@@ -196,7 +196,7 @@ void cjmp(Simp *s, Node *cond, Node *iftrue, Node *iffalse)
 
 /* if foo; bar; else baz;;
  *      => cjmp (foo) :bar :baz */
-void simpif(Simp *s, Node *n)
+static void simpif(Simp *s, Node *n)
 {
     Node *l1, *l2;
     Node *c;
@@ -221,7 +221,7 @@ void simpif(Simp *s, Node *n)
  *       cjmp (cond) :body :end
  *       :end
  */
-void simploop(Simp *s, Node *n)
+static void simploop(Simp *s, Node *n)
 {
     Node *lbody;
     Node *lend;
@@ -243,7 +243,7 @@ void simploop(Simp *s, Node *n)
     simp(s, lend);              /* exit */
 }
 
-void simpblk(Simp *s, Node *n)
+static void simpblk(Simp *s, Node *n)
 {
     size_t i;
 
@@ -351,7 +351,7 @@ Node *lval(Simp *s, Node *n)
     return r;
 }
 
-Node *simplazy(Simp *s, Node *n, Node *r)
+static Node *simplazy(Simp *s, Node *n, Node *r)
 {
     Node *a, *b;
     Node *next;
@@ -372,7 +372,7 @@ Node *simplazy(Simp *s, Node *n, Node *r)
     return r;
 }
 
-Node *lowerslice(Simp *s, Node *n)
+static Node *lowerslice(Simp *s, Node *n)
 {
     Node *t;
     Node *base;
@@ -391,7 +391,7 @@ Node *lowerslice(Simp *s, Node *n)
     return t;
 }
 
-Node *rval(Simp *s, Node *n)
+static Node *rval(Simp *s, Node *n)
 {
     Node *r; /* expression result */
     Node *t, *u, *v; /* temporary nodes */
@@ -520,7 +520,7 @@ Node *rval(Simp *s, Node *n)
     return r;
 }
 
-void declarelocal(Simp *s, Node *n)
+static void declarelocal(Simp *s, Node *n)
 {
     assert(n->type == Ndecl);
     s->stksz += size(n);
@@ -529,7 +529,7 @@ void declarelocal(Simp *s, Node *n)
     htput(s->locs, (void*)n->decl.sym->id, (void*)s->stksz);
 }
 
-void declarearg(Simp *s, Node *n)
+static void declarearg(Simp *s, Node *n)
 {
     assert(n->type == Ndecl);
     if (debug)
@@ -538,7 +538,7 @@ void declarearg(Simp *s, Node *n)
     s->argsz += size(n);
 }
 
-Node *simp(Simp *s, Node *n)
+static Node *simp(Simp *s, Node *n)
 {
     Node *r;
     size_t i;
@@ -581,7 +581,7 @@ Node *simp(Simp *s, Node *n)
     return r;
 }
 
-void reduce(Simp *s, Node *f)
+static void reduce(Simp *s, Node *f)
 {
     size_t i;
 

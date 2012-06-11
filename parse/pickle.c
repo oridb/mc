@@ -115,7 +115,7 @@ static void wrstr(FILE *fd, char *val)
     }
 }
 
-/*static */char *rdstr(FILE *fd)
+static char *rdstr(FILE *fd)
 {
     ssize_t len;
     char *s;
@@ -147,7 +147,7 @@ static void wrflt(FILE *fd, double val)
         die("Unexpected EOF");
 }
 
-/*static */double rdflt(FILE *fd)
+static double rdflt(FILE *fd)
 {
     char buf[8];
     union {
