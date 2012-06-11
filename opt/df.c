@@ -118,7 +118,13 @@ void dumpcfg(Cfg *cfg, FILE *fd)
     for (j = 0; j < cfg->nbb; j++) {
         bb = cfg->bb[j];
         fprintf(fd, "\n");
-        fprintf(fd, "Bb: %d\n", bb->id);
+        fprintf(fd, "Bb: %d labels=(", bb->id);
+        sep = "";
+        for (i = 0; i < bb->nlbls; i++) {
+            fprintf(fd, "%s%s", bb->lbls[i], sep);
+            sep = ",";
+        }
+        fprintf(fd, ")\n");
 
         /* in edges */
         fprintf(fd, "In:  ");
@@ -134,7 +140,7 @@ void dumpcfg(Cfg *cfg, FILE *fd)
         fprintf(fd, "Out: ");
         sep = "";
         for (i = 0; i < bsmax(bb->out); i++) {
-             if (bshas(bb->in, i)) {
+             if (bshas(bb->out, i)) {
                 fprintf(fd, "%d%s", i, sep);
                 sep = ",";
              }
