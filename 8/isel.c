@@ -401,6 +401,9 @@ Loc selexpr(Isel *s, Node *n)
     switch (exprop(n)) {
         case Oadd:      r = binop(s, Iadd, args[0], args[1]); break;
         case Osub:      r = binop(s, Isub, args[0], args[1]); break;
+        case Obor:      r = binop(s, Ior,  args[0], args[1]); break;
+        case Oband:     r = binop(s, Iand, args[0], args[1]); break;
+        case Obxor:     r = binop(s, Ixor, args[0], args[1]); break;
 
         case Omul:
             /* these get clobbered by the mul insn */
@@ -439,9 +442,6 @@ Loc selexpr(Isel *s, Node *n)
             g(s, Ineg, &r, NULL);
             break;
 
-        case Obor:      r = binop(s, Ior,  args[0], args[1]); break;
-        case Oband:     r = binop(s, Iand, args[0], args[1]); break;
-        case Obxor:     r = binop(s, Ixor, args[0], args[1]); break;
         case Obsl:
         case Obsr:
             claimreg(s, Rcl); /* shift requires cl as it's arg. stupid. */
