@@ -32,7 +32,7 @@ static void setsuper(Stab *st, Stab *super)
 
 static void tyresolve(Type *t)
 {
-    int i, nn;
+    size_t i, nn;
     Node **n;
 
     if (t->resolved)
@@ -83,7 +83,8 @@ static int cstrcheck(Type *a, Type *b)
 
 static void loaduses(Node *n)
 {
-    int i;
+    size_t i;
+
     /* uses only allowed at top level. Do we want to keep it this way? */
     for (i = 0; i < n->file.nuses; i++)
         fprintf(stderr, "INTERNAL: implement use loading\n");
@@ -182,7 +183,7 @@ static Type *unify(Node *ctx, Type *a, Type *b)
 {
     Type *t;
     Type *r;
-    int i;
+    size_t i;
 
     /* a ==> b */
     a = tf(a);
@@ -218,7 +219,7 @@ static Type *unify(Node *ctx, Type *a, Type *b)
 
 static void unifycall(Node *n)
 {
-    int i;
+    size_t i;
     Type *ft;
 
     inferexpr(n->expr.args[0], NULL, NULL);
@@ -377,7 +378,7 @@ static void inferexpr(Node *n, Type *ret, int *sawret)
 
 static void inferfunc(Node *n)
 {
-    int i;
+    size_t i;
     int sawret;
 
     sawret = 0;
@@ -416,7 +417,7 @@ static void inferstab(Stab *s)
 
 static void infernode(Node *n, Type *ret, int *sawret)
 {
-    int i;
+    size_t i;
 
     if (!n)
         return;
@@ -482,7 +483,7 @@ static void checkcast(Node *n)
 static Type *tyfin(Node *ctx, Type *t)
 {
     static Type *tyint;
-    int i;
+    size_t i;
     char buf[1024];
 
     if (!tyint)
@@ -507,7 +508,7 @@ static Type *tyfin(Node *ctx, Type *t)
 
 static void infercompn(Node *file)
 {
-    int i, j, nn;
+    size_t i, j, nn;
     Node *aggr;
     Node *memb;
     Node *n;
@@ -532,7 +533,7 @@ static void infercompn(Node *file)
 
 static void typesub(Node *n)
 {
-    int i;
+    size_t i;
 
     if (!n)
         return;
@@ -600,4 +601,3 @@ void infer(Node *file)
     checkcast(file);
     typesub(file);
 }
-

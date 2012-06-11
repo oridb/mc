@@ -1,7 +1,7 @@
 DEPSDIR = .deps
 DEPS=$(addprefix $(DEPSDIR)/, $(OBJ:.o=.d))
 
-CFLAGS += -Wall -Werror
+CFLAGS += -Wall -Werror -Wextra -Wno-unused-parameter -Wno-missing-field-initializers
 CFLAGS += -g
 CFLAGS += -MMD -MP -MF ${DEPSDIR}/$(subst /,-,$*).d
 

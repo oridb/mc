@@ -24,6 +24,6 @@ struct Bb {
 };
 
 /* Takes a reduced block, and returns a flow graph. */
-Cfg *mkcfg(Node **nl, int nn);
+Cfg *mkcfg(Node **nl, size_t nn);
 void dumpcfg(Cfg *c, FILE *fd);
 void flow(Cfg *cfg);

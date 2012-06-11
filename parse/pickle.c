@@ -20,30 +20,49 @@ static Stab *rdstab(FILE *fd);
 static void wrsym(FILE *fd, Sym *val);
 static Sym *rdsym(FILE *fd);
 
-static vlong be64(vlong v)
+static void be64(vlong v, char buf[8])
 {
-    if (htonl(42) != 42)
-        return ((vlong)htonl(v >> 32) << 32) | htonl((uint32_t)v);
-    else
-        return v;
+    buf[0] = (v >> 56) & 0xff;
+    buf[1] = (v >> 48) & 0xff;
+    buf[2] = (v >> 40) & 0xff;
+    buf[3] = (v >> 32) & 0xff;
+    buf[4] = (v >> 24) & 0xff;
+    buf[5] = (v >> 16) & 0xff;
+    buf[6] = (v >> 8)  & 0xff;
+    buf[7] = (v >> 0)  & 0xff;
 }
 
-static vlong host64(vlong v)
+static vlong host64(char buf[8])
 {
-    if (htonl(42) != 42) /* we need to swap */
-        return (vlong)ntohl(v >> 32) << 32 | htonl((uint32_t)v);
-    else
-        return v;
+    vlong v = 0;
+
+    v |= ((vlong)buf[0] << 56LL) & 0xff;
+    v |= ((vlong)buf[1] << 48LL) & 0xff;
+    v |= ((vlong)buf[2] << 40LL) & 0xff;
+    v |= ((vlong)buf[3] << 32LL) & 0xff;
+    v |= ((vlong)buf[4] << 24LL) & 0xff;
+    v |= ((vlong)buf[5] << 16LL) & 0xff;
+    v |= ((vlong)buf[6] << 8LL)  & 0xff;
+    v |= ((vlong)buf[7] << 0LL)  & 0xff;
+    return v;
 }
 
-static long be32(long v)
+static void be32(long v, char buf[4])
 {
-    return htonl(v);
+    buf[0] = (v >> 24) & 0xff;
+    buf[1] = (v >> 16) & 0xff;
+    buf[2] = (v >> 8)  & 0xff;
+    buf[3] = (v >> 0)  & 0xff;
 }
 
-static long host32(long v)
+static long host32(char buf[4])
 {
-    return ntohl(v);
+    long v = 0;
+    v |= (buf[4] << 24) & 0xff;
+    v |= (buf[5] << 16) & 0xff;
+    v |= (buf[6] << 8)  & 0xff;
+    v |= (buf[7] << 0)  & 0xff;
+    return v;
 }
 
 static void wrbyte(FILE *fd, char val)
@@ -63,34 +82,42 @@ static char rdbyte(FILE *fd)
 
 static void wrint(FILE *fd, int32_t val)
 {
-    val = be32(val);
-    if (fwrite(&val, sizeof(int32_t), 1, fd) == EOF)
+    char buf[4];
+    be32(val, buf);
+    if (fwrite(buf, 4, 1, fd) < 4)
         die("Unexpected EOF");
 }
 
 static int32_t rdint(FILE *fd)
 {
-    uint32_t val;
-
-    if (fread(&val, sizeof(uint32_t), 1, fd) == EOF)
+    char buf[4];
+    if (fread(buf, sizeof(uint32_t), 1, fd) < 4)
         die("Unexpected EOF");
-    return host32(val);
+    return host32(buf);
 }
 
 static void wrstr(FILE *fd, char *val)
 {
+    size_t len;
+    size_t n;
+
     if (!val) {
         wrint(fd, -1);
     } else {
         wrint(fd, strlen(val));
-        if (fwrite(val, strlen(val), 1, fd) == EOF)
-            die("Unexpected EOF");
+        len = strlen(val);
+        n = 0;
+        while (n < len) {
+            n += fwrite(val, len - n, 1, fd);
+            if (feof(fd) || ferror(fd))
+                die("Unexpected EOF");
+        }
     }
 }
 
 /*static */char *rdstr(FILE *fd)
 {
-    int len;
+    ssize_t len;
     char *s;
 
     len = rdint(fd);
@@ -98,7 +125,7 @@ static void wrstr(FILE *fd, char *val)
         return NULL;
     } else {
         s = xalloc(len + 1);
-        if (fread(s, len, 1, fd) == EOF)
+        if (fread(s, len, 1, fd) != (size_t)len)
             die("Unexpected EOF");
         s[len] = '\0';
         return s;
@@ -107,6 +134,7 @@ static void wrstr(FILE *fd, char *val)
 
 static void wrflt(FILE *fd, double val)
 {
+    char buf[8];
     /* Assumption: We have 'val' in 64 bit IEEE format */
     union {
         uvlong ival;
@@ -114,21 +142,22 @@ static void wrflt(FILE *fd, double val)
     } u;
 
     u.fval = val;
-    u.ival = be64(u.ival);
-    if (fwrite(&u.ival, sizeof(uvlong), 1, fd) == EOF)
+    be64(u.ival, buf);
+    if (fwrite(buf, 8, 1, fd) < 8)
         die("Unexpected EOF");
 }
 
 /*static */double rdflt(FILE *fd)
 {
+    char buf[8];
     union {
         uvlong ival;
         double fval;
     } u;
 
-    if (fread(&u.ival, sizeof(uvlong), 1, fd) == EOF)
+    if (fread(buf, 8, 1, fd) < 8)
         die("Unexpected EOF");
-    u.ival = host64(u.ival);
+    u.ival = host64(buf);
     return u.fval;
 }
 
@@ -226,7 +255,7 @@ static Sym *rdsym(FILE *fd)
 
 static void wrtype(FILE *fd, Type *ty)
 {
-    int i;
+    size_t i;
 
     if (!ty) {
         die("trying to pickle null type\n");
@@ -280,7 +309,7 @@ static Type *rdtype(FILE *fd)
 {
     Type *ty;
     Ty t;
-    int i;
+    size_t i;
 
     t = rdbyte(fd);
     ty = mkty(-1, t);
@@ -338,7 +367,7 @@ static Type *rdtype(FILE *fd)
  */
 void pickle(Node *n, FILE *fd)
 {
-    int i;
+    size_t i;
 
     if (!n) {
         wrbyte(fd, Nnone);
@@ -429,7 +458,7 @@ void pickle(Node *n, FILE *fd)
 
 Node *unpickle(FILE *fd)
 {
-    int i;
+    size_t i;
     Ntype type;
     Node *n;
 

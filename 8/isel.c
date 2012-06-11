@@ -322,7 +322,7 @@ static Loc memloc(Isel *s, Node *e, Mode m)
 Loc gencall(Isel *s, Node *n)
 {
     int argsz, argoff;
-    int i;
+    size_t i;
     Loc eax, esp;       /* hard-coded registers */
     Loc stkbump;        /* calculated stack offset */
     Loc dst, arg, fn;   /* values we reduced */
@@ -707,7 +707,7 @@ void epilogue(Isel *s)
 
 static void writeasm(Func *fn, Isel *is, FILE *fd)
 {
-    int i;
+    size_t i;
 
     if (fn->isglobl)
         fprintf(fd, ".globl %s\n", fn->name);
@@ -722,7 +722,7 @@ static void writeasm(Func *fn, Isel *is, FILE *fd)
 void genasm(FILE *fd, Func *fn, Htab *globls)
 {
     struct Isel is = {0,};
-    int i;
+    size_t i;
 
     is.locs = fn->locs;
     is.globls = globls;

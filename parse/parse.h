@@ -53,7 +53,7 @@ typedef enum {
 } Dclflags;
 
 struct Bitset {
-    int nchunks;
+    size_t nchunks;
     uint *chunks;
 };
 
@@ -228,13 +228,13 @@ Bitset *dupbs(Bitset *bs);
 void delbs(Bitset *bs);
 void bsput(Bitset *bs, uint elt);
 void bsdel(Bitset *bs, uint elt);
-int  bshas(Bitset *bs, uint elt);
 void bsunion(Bitset *a, Bitset *b);
 void bsintersect(Bitset *a, Bitset *b);
 void bsdiff(Bitset *a, Bitset *b);
-int  bscount(Bitset *bs);
-int  bsmax(Bitset *bs);
+int  bshas(Bitset *bs, uint elt);
 int  bsissubset(Bitset *set, Bitset *sub);
+size_t bscount(Bitset *bs);
+size_t bsmax(Bitset *bs);
 
 Htab *mkht(ulong (*hash)(void *key), int (*cmp)(void *k1, void *k2));
 int htput(Htab *ht, void *k, void *v);
@@ -335,7 +335,7 @@ Type *nodetype(Node *n);
 void addstmt(Node *file, Node *stmt);
 void setns(Node *n, char *name);
 Op exprop(Node *n);
-Node **aggrmemb(Type *t, int *n);
+Node **aggrmemb(Type *t, size_t *n);
 char *namestr(Node *name);
 
 /* usefiles */

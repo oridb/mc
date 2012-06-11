@@ -146,7 +146,7 @@ Type *mktyptr(int line, Type *base)
 Type *mktyfunc(int line, Node **args, size_t nargs, Type *ret)
 {
     Type *t;
-    int i;
+    size_t i;
 
     t = mkty(line, Tyfunc);
     t->nsub = nargs + 1;
@@ -207,7 +207,7 @@ void tlappend(Type ***tl, int *len, Type *t)
 
 static int namefmt(char *buf, size_t len, Node *name)
 {
-    int i;
+    size_t i;
     char *p;
     char *end;
     char *sep;
@@ -261,7 +261,7 @@ static int cstrfmt(char *buf, size_t len, Type *t)
 
 static int fmtstruct(char *buf, size_t len, Type *t)
 {
-    int i;
+    size_t i;
     char *end, *p;
     char *name, *ty;
 
@@ -280,7 +280,7 @@ static int fmtstruct(char *buf, size_t len, Type *t)
 
 static int fmtunion(char *buf, size_t len, Type *t)
 {
-    int i;
+    size_t i;
     *buf = 0;
     for (i = 0; i < t->nmemb; i++)
         dump(t->sdecls[i], stdout);
@@ -289,7 +289,7 @@ static int fmtunion(char *buf, size_t len, Type *t)
 
 static int fmtenum(char *buf, size_t len, Type *t)
 {
-    int i;
+    size_t i;
     *buf = 0;
     for (i = 0; i < t->nmemb; i++)
         dump(t->sdecls[i], stdout);
@@ -298,9 +298,9 @@ static int fmtenum(char *buf, size_t len, Type *t)
 
 static int tybfmt(char *buf, size_t len, Type *t)
 {
+    size_t i;
     char *p;
     char *end;
-    int i;
     char *sep;
 
     p = buf;

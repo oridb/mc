@@ -44,9 +44,9 @@ Bitset *dupbs(Bitset *a)
     return bs;
 }
 
-int bscount(Bitset *bs)
+size_t bscount(Bitset *bs)
 {
-    int i, j, n;
+    size_t i, j, n;
 
     n = 0;
     for (i = 0; i < bs->nchunks; i++)
@@ -59,7 +59,7 @@ int bscount(Bitset *bs)
 /* Returns the largest value that the bitset can possibly
  * hold. It's conservative, but scanning the entire bitset
  * is a bit slow. This is mostly an aid to iterate over it. */
-int bsmax(Bitset *bs)
+size_t bsmax(Bitset *bs)
 {
     return bs->nchunks*sizeof(uint)*CHAR_BIT;
 }
@@ -97,7 +97,7 @@ int bshas(Bitset *bs, uint elt)
 
 void bsunion(Bitset *a, Bitset *b)
 {
-    int i;
+    size_t i;
 
     eqsz(a, b);
     for (i = 0; i < a->nchunks; i++)
@@ -106,7 +106,7 @@ void bsunion(Bitset *a, Bitset *b)
 
 void bsintersect(Bitset *a, Bitset *b)
 {
-    int i;
+    size_t i;
 
     eqsz(a, b);
     for (i = 0; i < a->nchunks; i++)
@@ -115,7 +115,7 @@ void bsintersect(Bitset *a, Bitset *b)
 
 void bsdiff(Bitset *a, Bitset *b)
 {
-    int i;
+    size_t i;
 
     eqsz(a, b);
     for (i = 0; i < a->nchunks; i++)
@@ -124,7 +124,7 @@ void bsdiff(Bitset *a, Bitset *b)
 
 int bsissubset(Bitset *set, Bitset *sub)
 {
-    int i;
+    size_t i;
 
     eqsz(set, sub);
     for (i = 0; i < set->nchunks; i++)

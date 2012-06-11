@@ -50,12 +50,12 @@ int addnode(Cfg *cfg, Bb *bb, Node *n)
     return 0;
 }
 
-Cfg *mkcfg(Node **nl, int nn)
+Cfg *mkcfg(Node **nl, size_t nn)
 {
     Cfg *cfg;
     Bb *bb, *targ;
     Node *a, *b;
-    int i;
+    size_t i;
 
     cfg = zalloc(sizeof(Cfg));
     cfg->lblmap = mkht(strhash, streq);
@@ -116,7 +116,7 @@ Cfg *mkcfg(Node **nl, int nn)
 }
 void dumpcfg(Cfg *cfg, FILE *fd)
 {
-    int i, j;
+    size_t i, j;
     Bb *bb;
     char *sep;
 
@@ -125,7 +125,7 @@ void dumpcfg(Cfg *cfg, FILE *fd)
         fprintf(fd, "\n");
         fprintf(fd, "Bb: %d labels=(", bb->id);
         sep = "";
-        for (i = 0; i < bb->nlbls; i++) {
+        for (i = 0; i < bb->nlbls; i++) {;
             fprintf(fd, "%s%s", bb->lbls[i], sep);
             sep = ",";
         }
@@ -136,7 +136,7 @@ void dumpcfg(Cfg *cfg, FILE *fd)
         sep = "";
         for (i = 0; i < bsmax(bb->in); i++) {
             if (bshas(bb->in, i)) {
-                fprintf(fd, "%s%d", sep, i);
+                fprintf(fd, "%s%zd", sep, i);
                 sep = ",";
             }
         }
@@ -147,7 +147,7 @@ void dumpcfg(Cfg *cfg, FILE *fd)
         sep = "";
         for (i = 0; i < bsmax(bb->out); i++) {
              if (bshas(bb->out, i)) {
-                fprintf(fd, "%s%d", sep, i);
+                fprintf(fd, "%s%zd", sep, i);
                 sep = ",";
              }
         }

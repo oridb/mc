@@ -127,7 +127,7 @@ int hthas(Htab *ht, void *k)
 void **htkeys(Htab *ht, int *nkeys)
 {
     void **k;
-    int i, j;
+    size_t i, j;
 
     j = 0;
     k = xalloc(sizeof(void*)*ht->nelt);
@@ -171,4 +171,3 @@ int ptreq(void *a, void *b)
 {
     return a == b;
 }
-

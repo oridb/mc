@@ -72,7 +72,7 @@ int isconstfn(Sym *s)
 
 static char *asmname(Node *n)
 {
-    int i;
+    size_t i;
     char *s;
     char *sep;
     int len;
@@ -94,7 +94,7 @@ static char *asmname(Node *n)
 size_t tysize(Type *t)
 {
     size_t sz;
-    int i;
+    size_t i;
 
     sz = 0;
     switch (t->type) {
@@ -245,7 +245,7 @@ void simploop(Simp *s, Node *n)
 
 void simpblk(Simp *s, Node *n)
 {
-    int i;
+    size_t i;
 
     for (i = 0; i < n->block.nstmts; i++) {
         simp(s, n->block.stmts[i]);
@@ -256,7 +256,7 @@ static size_t offsetof(Node *aggr, Node *memb)
 {
     Type *ty;
     Node **nl;
-    int nn, i;
+    size_t nn, i;
     size_t off;
 
     if (aggr->expr.type->type == Typtr)
@@ -395,7 +395,7 @@ Node *rval(Simp *s, Node *n)
 {
     Node *r; /* expression result */
     Node *t, *u, *v; /* temporary nodes */
-    int i;
+    size_t i;
     Node **args;
     const Op fusedmap[] = {
         [Oaddeq]        = Oadd,
@@ -541,7 +541,7 @@ void declarearg(Simp *s, Node *n)
 Node *simp(Simp *s, Node *n)
 {
     Node *r;
-    int i;
+    size_t i;
 
     if (!n)
         return NULL;
@@ -583,7 +583,7 @@ Node *simp(Simp *s, Node *n)
 
 void reduce(Simp *s, Node *f)
 {
-    int i;
+    size_t i;
 
     assert(f->type == Nfunc);
     s->nstmts = 0;
@@ -605,7 +605,7 @@ void reduce(Simp *s, Node *f)
 
 static void lowerfn(char *name, Node *n, Htab *globls, FILE *fd)
 {
-    int i;
+    size_t i;
     Simp s = {0,};
     Func fn;
     Cfg *cfg;
@@ -622,8 +622,8 @@ static void lowerfn(char *name, Node *n, Htab *globls, FILE *fd)
     reduce(&s, n);
 
     if (debug)
-      for (i = 0; i < s.nstmts; i++)
-        dump(s.stmts[i], stdout);
+        for (i = 0; i < s.nstmts; i++)
+            dump(s.stmts[i], stdout);
     cfg = mkcfg(s.stmts, s.nstmts);
     if (debug)
         dumpcfg(cfg, stdout);
@@ -640,7 +640,7 @@ static void lowerfn(char *name, Node *n, Htab *globls, FILE *fd)
 
 void blobdump(Blob *b, FILE *fd)
 {
-    int i;
+    size_t i;
     char *p;
 
     p = b->data;

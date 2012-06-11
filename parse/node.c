@@ -61,7 +61,7 @@ Node *mkexpr(int line, Op op, ...)
 Node *mkcall(int line, Node *fn, Node **args, size_t nargs) 
 {
     Node *n;
-    int i;
+    size_t i;
 
     n = mkexpr(line, Ocall, fn, NULL);
     for (i = 0; i < nargs; i++)
@@ -98,7 +98,7 @@ Node *mkfunc(int line, Node **args, size_t nargs, Type *ret, Node *body)
 {
     Node *n;
     Node *f;
-    int i;
+    size_t i;
 
     f = mknode(line, Nfunc);
     f->func.args = args;
@@ -258,7 +258,7 @@ Op exprop(Node *e)
     return e->expr.op;
 }
 
-Node **aggrmemb(Type *t, int *n)
+Node **aggrmemb(Type *t, size_t *n)
 {
     *n = t->nmemb;
     switch (t->type) {

@@ -20,9 +20,9 @@ static void indent(FILE *fd, int depth)
 
 static void outname(Node *n, FILE *fd)
 {
-    int i;
+    size_t i;
     char *sep;
-    
+
     sep = "";
     for (i = 0; i < n->name.nparts; i++) {
         fprintf(fd, "%s%s", sep, n->name.parts[i]);
@@ -91,7 +91,7 @@ void dumpstab(Stab *st, FILE *fd)
 
 static void outnode(Node *n, FILE *fd, int depth)
 {
-    int i;
+    size_t i;
     char *ty;
 
     indent(fd, depth);
