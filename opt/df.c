@@ -63,6 +63,12 @@ Cfg *mkcfg(Node **nl, int nn)
     for (i = 0; i < nn; i++) {
         switch (nl[i]->type) {
             case Nlbl:
+                /* if the current block assumes fall-through, insert an explicit
+                 * jump */
+                if (i > 0 && nl[i - 1]->type == Nexpr) {
+                    if (exprop(nl[i - 1]) != Ocjmp && exprop(nl[i - 1]) != Ojmp)
+                        addnode(cfg, bb, mkexpr(-1, Ojmp, mklbl(-1, nl[i]->lbl.name), NULL));
+                }
                 if (bb->nnl)
                     bb = mkbb(cfg);
                 label(cfg, nl[i], bb);
@@ -130,9 +136,10 @@ void dumpcfg(Cfg *cfg, FILE *fd)
         fprintf(fd, "In:  ");
         sep = "";
         for (i = 0; i < bsmax(bb->in); i++) {
-             if (bshas(bb->in, i))
-                fprintf(fd, "%d%s", i, sep);
-             sep = ",";
+            if (bshas(bb->in, i)) {
+                fprintf(fd, "%s%d", sep, i);
+                sep = ",";
+            }
         }
         fprintf(fd, "\n");
 
@@ -141,7 +148,7 @@ void dumpcfg(Cfg *cfg, FILE *fd)
         sep = "";
         for (i = 0; i < bsmax(bb->out); i++) {
              if (bshas(bb->out, i)) {
-                fprintf(fd, "%d%s", i, sep);
+                fprintf(fd, "%s%d", sep, i);
                 sep = ",";
              }
         }
