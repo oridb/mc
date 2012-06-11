@@ -1,0 +1,4 @@
+const main = {
+	var a : int
+	-> a
+}
