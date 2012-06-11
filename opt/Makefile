@@ -1,5 +1,6 @@
 LIB=libopt.a
-OBJ=df.o \
+OBJ=cfg.o \
+    df.o \
 
 CFLAGS+=-I../parse
 LDFLAGS+=-L../parse -lparse
