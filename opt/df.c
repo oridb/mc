@@ -85,8 +85,8 @@ Cfg *mkcfg(Node **nl, int nn)
                 b = NULL;
                 break;
             case Ocjmp:
-                a = cfg->fixjmp[i]->expr.args[0];
-                b = cfg->fixjmp[i]->expr.args[1];
+                a = cfg->fixjmp[i]->expr.args[1];
+                b = cfg->fixjmp[i]->expr.args[2];
                 break;
             default:
                 die("Bad jump fix thingy");
