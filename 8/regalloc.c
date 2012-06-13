@@ -52,30 +52,49 @@ const Reg reginterferes[Nreg][Nmode + 1] = {
     [Rebp] = {Rebp},
 };
 
-Loc *locstrlbl(Loc *l, char *lbl)
+Loc *locstrlbl(char *lbl)
 {
+    Loc *l;
+
+    l = zalloc(sizeof(Loc));
     l->type = Loclbl;
     l->mode = ModeL;
     l->lbl = strdup(lbl);
     return l;
 }
 
-Loc *loclbl(Loc *l, Node *lbl)
+Loc *loclbl(Node *lbl)
 {
     assert(lbl->type = Nlbl);
-    return locstrlbl(l, lbl->lbl.name);
+    return locstrlbl(lbl->lbl.name);
 }
 
-Loc *locreg(Loc *l, Reg r)
+Loc *locreg(Mode m)
 {
+    Loc *l;
+    static long nextpseudo;
+
+    l = zalloc(sizeof(Loc));
     l->type = Locreg;
-    l->mode = regmodes[r];
-    l->reg = r;
+    l->mode = m;
+    l->reg.pseudo = nextpseudo++;
     return l;
 }
 
-Loc *locmem(Loc *l, long disp, Reg base, Reg idx, Mode mode)
+Loc *locphysreg(Reg r)
 {
+    Loc *l;
+
+    l = locreg(regmodes[r]);
+    l->reg.colour = r;
+    return l;
+}
+
+Loc *locmem(long disp, Loc *base, Loc *idx, Mode mode)
+{
+    Loc *l;
+
+    l = zalloc(sizeof(Loc));
     l->type = Locmem;
     l->mode = mode;
     l->mem.constdisp = disp;
@@ -85,15 +104,20 @@ Loc *locmem(Loc *l, long disp, Reg base, Reg idx, Mode mode)
     return l;
 }
 
-Loc *locmems(Loc *l, long disp, Reg base, Reg idx, int scale, Mode mode)
+Loc *locmems(long disp, Loc *base, Loc *idx, int scale, Mode mode)
 {
-    locmem(l, disp, base, idx, mode);
+    Loc *l;
+
+    l = locmem(disp, base, idx, mode);
     l->mem.scale = scale;
     return l;
 }
 
-Loc *locmeml(Loc *l, char *disp, Reg base, Reg idx, Mode mode)
+Loc *locmeml(char *disp, Loc *base, Loc *idx, Mode mode)
 {
+    Loc *l;
+
+    l = zalloc(sizeof(Loc));
     l->type = Locmem;
     l->mode = mode;
     l->mem.lbldisp = strdup(disp);
@@ -103,67 +127,23 @@ Loc *locmeml(Loc *l, char *disp, Reg base, Reg idx, Mode mode)
     return l;
 }
 
-Loc *locmemls(Loc *l, char *disp, Reg base, Reg idx, int scale, Mode mode)
+Loc *locmemls(char *disp, Loc *base, Loc *idx, int scale, Mode mode)
 {
-    locmeml(l, disp, base, idx, mode);
+    Loc *l;
+
+    l = locmeml(disp, base, idx, mode);
     l->mem.scale = scale;
     return l;
 }
 
 
-Loc *loclit(Loc *l, long val)
+Loc *loclit(long val)
 {
+    Loc *l;
+
+    l = zalloc(sizeof(Loc));
     l->type = Loclit;
     l->mode = ModeL; /* FIXME: what do we do for mode? */
     l->lit = val;
     return l;
-}
-
-Loc getreg(Isel *s, Mode m)
-{
-
-    Loc l;
-    int i;
-
-    assert(m != ModeNone);
-    l.reg = Rnone;
-    for (i = 0; i < Nreg; i++) {
-        if (!s->rtaken[i] && regmodes[i] == m) {
-            locreg(&l, i);
-            break;
-        }
-    }
-    if (l.reg == Rnone)
-        die("Not enough registers. Please split your expression and try again (FIXME: implement spilling)");
-    for (i = 0; i < Nmode; i++)
-        s->rtaken[reginterferes[l.reg][i]] = 1;
-
-    return l;
-}
-
-Loc claimreg(Isel *s, Reg r)
-{
-    Loc l;
-    int i;
-
-    if (s->rtaken[r])
-        die("Reg %s is already taken", regnames[r]);
-    for (i = 0; i < Nmode; i++)
-        s->rtaken[reginterferes[r][i]] = 1;
-    locreg(&l, r);
-    return l;
-}
-
-void freereg(Isel *s, Reg r)
-{
-    int i;
-
-    for (i = 0; i < Nmode; i++)
-        s->rtaken[reginterferes[r][i]] = 0;
-}
-
-void freeloc(Isel *s, Loc l)
-{
-    if (l.type == Locreg)
-        freereg(s, l.reg);
 }

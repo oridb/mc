@@ -17,7 +17,6 @@ typedef enum {
     Locnone,
     Loclbl,  /* label */
     Locreg,  /* register */
-    Locpseu, /* pseudo-reg */
     Locmem,  /* reg offset mem */
     Locmeml, /* label offset mem */
     Loclit,
@@ -50,24 +49,26 @@ struct Loc {
     Mode mode;
     union {
         char *lbl;
-        Reg   reg;
-        long  pseudo;
+        struct {
+            long  pseudo;
+            Reg   colour;
+        } reg;
         long  lit;
         /* disp(base + index) */
         struct {
             /* only one of lbldisp and constdisp may be used */
             char *lbldisp;
             long constdisp;
-            int scale;
-            Reg base;
-            Reg idx;
+            int scale; /* 0,1,2,4, or 8 */
+            Loc *base; /* needed */
+            Loc *idx;  /* optional */
         } mem;
     };
 };
 
 struct Insn {
     AsmOp op;
-    Loc args[MaxArg];
+    Loc *args[MaxArg];
     int narg;
 };
 
@@ -89,6 +90,8 @@ struct Isel {
     Htab *locs; /* decl id => int stkoff */
     Htab *globls; /* decl id => char *globlname */
 
+    /* increased when we spill */
+    Loc *stksz;
     /* 6 general purpose regs */
     int rtaken[Nreg];
 };
@@ -98,22 +101,20 @@ void genasm(FILE *fd, Func *fn, Htab *globls);
 void gen(Node *file, char *out);
 
 /* location generation */
-Loc *loclbl(Loc *l, Node *lbl);
-Loc *locstrlbl(Loc *l, char *lbl);
-Loc *locreg(Loc *l, Reg r);
-Loc *locmem(Loc *l, long disp, Reg base, Reg idx, Mode mode);
-Loc *locmeml(Loc *l, char *disp, Reg base, Reg idx, Mode mode);
-Loc *locmems(Loc *l, long disp, Reg base, Reg idx, int scale, Mode mode);
-Loc *locmemls(Loc *l, char *disp, Reg base, Reg idx, int scale, Mode mode);
-Loc *loclit(Loc *l, long val);
+Loc *loclbl(Node *lbl);
+Loc *locstrlbl(char *lbl);
+Loc *locreg(Mode m);
+Loc *locphysreg(Reg r);
+Loc *locmem(long disp, Loc *base, Loc *idx, Mode mode);
+Loc *locmeml(char *disp, Loc *base, Loc *idx, Mode mode);
+Loc *locmems(long disp, Loc *base, Loc *idx, int scale, Mode mode);
+Loc *locmemls(char *disp, Loc *base, Loc *idx, int scale, Mode mode);
+Loc *loclit(long val);
+
 void locprint(FILE *fd, Loc *l);
 void iprintf(FILE *fd, Insn *insn);
 
 /* register allocation */
-Loc getreg(Isel *s, Mode m);
-void freeloc(Isel *s, Loc l);
-Loc claimreg(Isel *s, Reg r);
-void freereg(Isel *s, Reg r);
 extern const char *regnames[];
 extern const Mode regmodes[];
 
