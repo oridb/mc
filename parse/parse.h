@@ -124,6 +124,7 @@ struct Cstr {
 struct Node {
     int line;
     Ntype type;
+    int nid;
     union {
         struct {
             char  *name;

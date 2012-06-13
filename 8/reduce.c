@@ -84,7 +84,7 @@ static char *asmname(Node *n)
     return s;
 }
 
-static size_t tysize(Type *t)
+size_t tysize(Type *t)
 {
     size_t sz;
     size_t i;

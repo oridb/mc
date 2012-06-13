@@ -89,8 +89,11 @@ struct Isel {
     Htab *locs; /* decl id => int stkoff */
     Htab *globls; /* decl id => char *globlname */
 
-    /* 6 general purpose regs */
+    /* register and spill states */
+    size_t stksz;
     int rtaken[Nreg];
+    Node *rcontains[Nreg];
+    Loc *locmap;
 };
 
 /* entry points */
@@ -111,13 +114,17 @@ void iprintf(FILE *fd, Insn *insn);
 
 /* register allocation */
 Loc getreg(Isel *s, Mode m);
-void freeloc(Isel *s, Loc l);
 Loc claimreg(Isel *s, Reg r);
+void freeloc(Isel *s, Loc l);
 void freereg(Isel *s, Reg r);
 extern const char *regnames[];
 extern const Mode regmodes[];
 
+/* code gen */
+void spill(Isel *s, Reg r);
+void g(Isel *s, AsmOp op, ...);
 
 /* useful functions */
 size_t size(Node *n);
+size_t tysize(Type *t);
 void breakhere();

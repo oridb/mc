@@ -119,6 +119,25 @@ Loc *loclit(Loc *l, long val)
     return l;
 }
 
+void spill(Isel *s, Reg r)
+{
+    size_t i;
+    Loc l;
+    Node *n;
+
+    for (i = 0; i < Nmode; i++) {
+        if (!s->rcontains[i])
+            continue;
+        n = s->rcontains[i];
+        if (exprop(n) != Ovar) {
+            s->stksz += tysize(exprtype(n));
+            locmem(&s->locmap[n->nid], s->stksz, Rebp, Rnone, ModeL);
+            g(s, Imov, locreg(&l, r), &s->locmap[n->nid], NULL);
+        }
+        s->rcontains[i] = NULL;
+    }
+}
+
 Loc getreg(Isel *s, Mode m)
 {
 
@@ -147,7 +166,7 @@ Loc claimreg(Isel *s, Reg r)
     int i;
 
     if (s->rtaken[r])
-        die("Reg %s is already taken", regnames[r]);
+        spill(s, r);
     for (i = 0; i < Nmode; i++)
         s->rtaken[reginterferes[r][i]] = 1;
     locreg(&l, r);
