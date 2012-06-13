@@ -4,9 +4,7 @@ OBJ=isel.o \
     reduce.o \
     regalloc.o \
 
-CFLAGS+=-I../parse -I../opt
-LDFLAGS+=-L../parse -lparse -L../opt -lopt
-EXTRADEP=../parse/libparse.a ../opt/libopt.a
+LIBDEPS=../parse/libparse.a ../opt/libopt.a
 
 include ../mk/lexyacc.mk
 include ../mk/c.mk
