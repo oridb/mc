@@ -1,3 +1,4 @@
+.DEFAULT_GOAL=all
 _DEPSDIR = .deps
 _DEPS=$(addprefix $(_DEPSDIR)/, $(OBJ:.o=.d))
 
