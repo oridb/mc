@@ -126,9 +126,9 @@ void spill(Isel *s, Reg r)
     Node *n;
 
     for (i = 0; i < Nmode; i++) {
-        if (!s->rcontains[i])
+        n = s->rcontains[reginterferes[r][i]];
+        if (!n)
             continue;
-        n = s->rcontains[i];
         if (exprop(n) != Ovar) {
             s->stksz += tysize(exprtype(n));
             locmem(&s->locmap[n->nid], s->stksz, Rebp, Rnone, ModeL);
@@ -136,6 +136,13 @@ void spill(Isel *s, Reg r)
         }
         s->rcontains[i] = NULL;
     }
+}
+
+void in(Isel *s, Node *n, Loc l)
+{
+    s->locmap[n->nid] = l;
+    if (l.type == Locreg)
+        s->rcontains[l.reg] = n;
 }
 
 Loc getreg(Isel *s, Mode m)
@@ -177,8 +184,10 @@ void freereg(Isel *s, Reg r)
 {
     int i;
 
-    for (i = 0; i < Nmode; i++)
+    for (i = 0; i < Nmode; i++) {
         s->rtaken[reginterferes[r][i]] = 0;
+        s->rcontains[reginterferes[r][i]] = NULL;
+    }
 }
 
 void freeloc(Isel *s, Loc l)

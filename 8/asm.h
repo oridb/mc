@@ -91,6 +91,7 @@ struct Isel {
 
     /* register and spill states */
     size_t stksz;
+    Loc stkszloc;
     int rtaken[Nreg];
     Node *rcontains[Nreg];
     Loc *locmap;
@@ -117,6 +118,7 @@ Loc getreg(Isel *s, Mode m);
 Loc claimreg(Isel *s, Reg r);
 void freeloc(Isel *s, Loc l);
 void freereg(Isel *s, Reg r);
+void in(Isel *s, Node *n, Loc l);
 extern const char *regnames[];
 extern const Mode regmodes[];
 

@@ -29,7 +29,7 @@ char modenames[] = {
 };
 
 /* forward decls */
-Loc selexpr(Isel *s, Node *n);
+void selexpr(Isel *s, Node *n);
 
 /* used to decide which operator is appropriate
  * for implementing various conditional operators */
@@ -46,7 +46,6 @@ struct {
     [Olt] = {Icmp, Ijl, Isetlt},
     [Ole] = {Icmp, Ijle, Isetle}
 };
-
 
 static Loc loc(Isel *s, Node *n)
 {
@@ -80,6 +79,17 @@ static Loc loc(Isel *s, Node *n)
             break;
     }
     return l;
+}
+
+static Loc getloc(Isel *s, Node *n)
+{
+    if (s->locmap[n->nid].type != Locnone)
+        return s->locmap[n->nid];
+    else if (exprop(n) == Ndecl)
+        return loc(s, n);
+    else
+        die("Unevaluated node %s", opstr(exprop(n)));
+    return (Loc){Locnone,};
 }
 
 static Mode mode(Node *n)
@@ -216,13 +226,15 @@ static void selcjmp(Isel *s, Node *n, Node **args)
     /* if we have a cond, we're knocking off the redundant test,
      * and want to eval the children */
     if (cond) {
-        a = selexpr(s, args[0]->expr.args[1]);
-        b = selexpr(s, args[0]->expr.args[0]);
-        b = inr(s, b);
+        selexpr(s, args[0]->expr.args[1]);
+        selexpr(s, args[0]->expr.args[0]);
+        a = getloc(s, args[0]->expr.args[1]);
+        b = inr(s, getloc(s, args[0]->expr.args[0]));
     } else {
         cond = Itest;
         jmp = Ijnz;
-        a = inr(s, selexpr(s, args[0])); /* cond */
+        selexpr(s, args[0]);
+        a = inr(s, getloc(s, args[0])); /* cond */
         b = a;
     }
 
@@ -239,9 +251,10 @@ static Loc binop(Isel *s, AsmOp op, Node *x, Node *y)
 {
     Loc a, b;
 
-    a = selexpr(s, x);
-    b = selexpr(s, y);
-    a = inr(s, a);
+    selexpr(s, x);
+    selexpr(s, y);
+    a = inr(s, getloc(s, x));
+    b = getloc(s, y);
     g(s, op, &b, &a, NULL);
     freeloc(s, b);
     return a;
@@ -285,13 +298,16 @@ static Loc memloc(Isel *s, Node *e, Mode m)
     scale = 0;
     if (exprop(e) == Oadd) {
         args = e->expr.args;
-        b = selexpr(s, args[0]);
-        if (ismergablemul(args[1], &scale))
-            o = selexpr(s, args[1]->expr.args[0]);
-        else
-            o = selexpr(s, args[1]);
-        if (b.type != Locreg)
-            b = inr(s, b);
+        selexpr(s, args[0]);
+        if (ismergablemul(args[1], &scale)) {
+            selexpr(s, args[1]->expr.args[0]);
+            o = getloc(s, args[1]->expr.args[0]);
+        } else {
+            selexpr(s, args[1]);
+            o = getloc(s, args[1]);
+        }
+
+        b = inr(s, getloc(s, args[0]));
         if (o.type == Loclit) {
             locmem(&l, o.lit, b.reg, Rnone, m);
         } else if (o.type == Locreg) {
@@ -299,7 +315,8 @@ static Loc memloc(Isel *s, Node *e, Mode m)
             locmems(&l, 0, b.reg, o.reg, scale, m);
         }
     } else {
-        l = selexpr(s, e);
+        selexpr(s, e);
+        l = getloc(s, e);
         if (l.type == Locreg)
             locmem(&l, 0, l.reg, Rnone, m);
     }
@@ -316,7 +333,6 @@ static Loc gencall(Isel *s, Node *n)
 
     locreg(&esp, Resp);
     locreg(&eax, Reax);
-    claimreg(s, Reax);
     argsz = 0;
     /* Have to calculate the amount to bump the stack
      * pointer by in one pass first, otherwise if we push
@@ -333,13 +349,15 @@ static Loc gencall(Isel *s, Node *n)
     /* Now, we can evaluate the arguments */
     argoff = 0;
     for (i = 1; i < n->expr.nargs; i++) {
-        arg = selexpr(s, n->expr.args[i]);
-        arg = inri(s, arg);
+        selexpr(s, n->expr.args[i]);
+        arg = inri(s, getloc(s, n->expr.args[i]));
         locmem(&dst, argoff, Resp, Rnone, arg.mode);
         stor(s, &arg, &dst);
         argsz += size(n->expr.args[i]);
     }
-    fn = selexpr(s, n->expr.args[0]);
+    selexpr(s, n->expr.args[0]);
+    fn = getloc(s, n->expr.args[0]);
+    claimreg(s, Reax);
     g(s, Icall, &fn, NULL);
     if (argsz)
         g(s, Iadd, &stkbump, &esp, NULL);
@@ -374,7 +392,7 @@ static void blit(Isel *s, Loc a, Loc b, int sz)
     }
 }
 
-Loc selexpr(Isel *s, Node *n)
+void selexpr(Isel *s, Node *n)
 {
     Loc a, b, c, r;
     Loc eax, edx, cl; /* x86 wanst some hard-coded regs */
@@ -394,11 +412,12 @@ Loc selexpr(Isel *s, Node *n)
 
         case Omul:
             /* these get clobbered by the mul insn */
+            selexpr(s, args[0]);
+            selexpr(s, args[1]);
             claimreg(s, Reax);
             claimreg(s, Redx);
-            a = selexpr(s, args[0]);
-            b = selexpr(s, args[1]);
-            b = inr(s, b);
+            a = getloc(s, args[0]);
+            b = inr(s, getloc(s, args[1]));
             c = coreg(eax, mode(n));
             g(s, Imov, &a, &c, NULL);
             g(s, Imul, &b, NULL);
@@ -408,11 +427,12 @@ Loc selexpr(Isel *s, Node *n)
         case Odiv:
         case Omod:
             /* these get clobbered by the div insn */
+            selexpr(s, args[0]);
+            selexpr(s, args[1]);
             claimreg(s, Reax);
             claimreg(s, Redx);
-            a = selexpr(s, args[0]);
-            b = selexpr(s, args[1]);
-            b = inr(s, b);
+            a = getloc(s, args[0]);
+            b = inr(s, getloc(s, args[1]));
             c = coreg(eax, mode(n));
             g(s, Imov, &a, &c, NULL);
             g(s, Ixor, &edx, &edx, NULL);
@@ -424,17 +444,19 @@ Loc selexpr(Isel *s, Node *n)
                 r = edx;
             break;
         case Oneg:
-            r = selexpr(s, args[0]);
-            r = inr(s, r);
+            selexpr(s, args[0]);
+            r = inr(s, getloc(s, args[0]));
             g(s, Ineg, &r, NULL);
             break;
 
         case Obsl:
         case Obsr:
+            selexpr(s, args[0]);
+            selexpr(s, args[1]);
+            a = inr(s, getloc(s, args[0]));
+            b = getloc(s, args[1]);
+            /* FIXME: we can shift by constants */
             claimreg(s, Rcl); /* shift requires cl as it's arg. stupid. */
-            a = selexpr(s, args[0]);
-            a = inr(s, a);
-            b = selexpr(s, args[1]);
             c = coreg(cl, b.mode);
             g(s, Imov, &b, &c, NULL);
             if (exprop(n) == Obsr) {
@@ -450,27 +472,29 @@ Loc selexpr(Isel *s, Node *n)
             r = a;
             break;
         case Obnot:
-            r = selexpr(s, args[0]);
-            r = inrm(s, r);
+            selexpr(s, args[0]);
+            r = inrm(s, getloc(s, args[0]));
             g(s, Inot, &r, NULL);
             break;
 
         case Oderef:
-            a = selexpr(s, args[0]);
-            a = inr(s, a);
+            selexpr(s, args[0]);
+            a = inr(s, getloc(s, args[0]));
             r = getreg(s, a.mode);
             locmem(&c, 0, a.reg, Rnone, a.mode);
             g(s, Imov, &c, &r, NULL);
             break;
 
         case Oaddr:
-            a = selexpr(s, args[0]);
+            selexpr(s, args[0]);
+            a = getloc(s, args[0]);
             r = getreg(s, ModeL);
             g(s, Ilea, &a, &r, NULL);
             break;
 
         case Olnot:
-            a = selexpr(s, args[0]);
+            selexpr(s, args[0]);
+            a = getloc(s, args[0]);
             b = getreg(s, ModeB);
             r = coreg(b, mode(n));
             g(s, reloptab[exprop(n)].test, &a, &a, NULL);
@@ -479,23 +503,24 @@ Loc selexpr(Isel *s, Node *n)
             break;
 
         case Oeq: case One: case Ogt: case Oge: case Olt: case Ole:
-            a = selexpr(s, args[0]);
-            b = selexpr(s, args[1]);
-            b = inr(s, b);
+            selexpr(s, args[0]);
+            selexpr(s, args[1]);
+            a = getloc(s, args[0]);
+            b = inr(s, getloc(s, args[1]));
             c = getreg(s, ModeB);
             r = coreg(c, mode(n));
             g(s, reloptab[exprop(n)].test, &a, &b, NULL);
             g(s, reloptab[exprop(n)].getflag, &c, NULL);
             g(s, Imovz, &c, &r, NULL);
-            return r;
+            break;
 
         case Oasn:  /* relabel */
             die("Unimplemented op %s", opstr(exprop(n)));
             break;
         case Ostor: /* reg -> mem */
+            selexpr(s, args[1]);
             a = memloc(s, args[0], mode(n));
-            b = selexpr(s, args[1]);
-            b = inri(s, b);
+            b = inri(s, getloc(s, args[1]));
             g(s, Imov, &b, &a, NULL);
             r = b;
             break;
@@ -524,19 +549,21 @@ Loc selexpr(Isel *s, Node *n)
             loclbl(&r, args[0]);
             break;
         case Oblit:
-            b = selexpr(s, args[0]);
-            a = selexpr(s, args[1]);
+            selexpr(s, args[0]);
+            selexpr(s, args[1]);
+            b = getloc(s, args[0]);
+            a = getloc(s, args[1]);
             blit(s, a, b, args[2]->expr.args[0]->lit.intval);
             r = b;
             break;
         case Oslbase:
-            a = selexpr(s, args[0]);
-            a = inr(s, a);
+            selexpr(s, args[0]);
+            a = inr(s, getloc(s, args[0]));
             locmem(&r, 0, a.reg, Rnone, ModeL);
             break;
         case Osllen:
-            a = selexpr(s, args[0]);
-            a = inr(s, a);
+            selexpr(s, args[0]);
+            a = inr(s, getloc(s, args[0]));
             locmem(&r, 4, a.reg, Rnone, ModeL);
             break;
 
@@ -552,7 +579,7 @@ Loc selexpr(Isel *s, Node *n)
             die("Should not see %s in isel", opstr(exprop(n)));
             break;
     }
-    return r;
+    in(s, n, r);
 }
 
 void locprint(FILE *fd, Loc *l)
@@ -661,18 +688,17 @@ static void isel(Isel *s, Node *n)
     }
 }
 
-static void prologue(Isel *s, size_t sz)
+static void prologue(Isel *s)
 {
     Loc esp;
     Loc ebp;
-    Loc stksz;
 
     locreg(&esp, Resp);
     locreg(&ebp, Rebp);
-    loclit(&stksz, sz);
+    loclit(&s->stkszloc, s->stksz);
     g(s, Ipush, &ebp, NULL);
     g(s, Imov, &esp, &ebp, NULL);
-    g(s, Isub, &stksz, &esp, NULL);
+    g(s, Isub, &s->stkszloc, &esp, NULL);
 }
 
 static void epilogue(Isel *s)
@@ -714,8 +740,10 @@ void genasm(FILE *fd, Func *fn, Htab *globls)
     is.locs = fn->locs;
     is.globls = globls;
     is.ret = fn->ret;
+    is.stksz = fn->stksz;
+    is.locmap = zalloc(maxnid * sizeof(Loc));
 
-    prologue(&is, fn->stksz);
+    prologue(&is);
     for (i = 0; i < fn->nn; i++) {
         bzero(is.rtaken, sizeof is.rtaken);
         isel(&is, fn->nl[i]);

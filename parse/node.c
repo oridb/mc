@@ -12,11 +12,14 @@
 
 #include "parse.h"
 
+int maxnid;
+
 Node *mknode(int line, Ntype nt)
 {
     Node *n;
 
     n = zalloc(sizeof(Node));
+    n->nid = maxnid++;
     n->type = nt;
     n->line = line;
     return n;
@@ -226,7 +229,7 @@ Type *decltype(Node *n)
 
 Type *exprtype(Node *n)
 {
-    assert(n->type == Ndecl);
+    assert(n->type == Nexpr);
     return nodetype(n);
 }
 

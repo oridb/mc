@@ -15,7 +15,7 @@
 #       evident.
 B main		E	0
 B add		E	53
-B mul     	E       84
+B mul     	E       42
 B div     	E       42
 B mod     	E       6
 B bsr     	E       5
