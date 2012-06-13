@@ -72,7 +72,7 @@ Loc *loclbl(Node *lbl)
 Loc *locreg(Mode m)
 {
     Loc *l;
-    static long nextpseudo;
+    static long nextpseudo = 0;
 
     l = zalloc(sizeof(Loc));
     l->type = Locreg;
@@ -83,11 +83,13 @@ Loc *locreg(Mode m)
 
 Loc *locphysreg(Reg r)
 {
-    Loc *l;
+    static Loc *physregs[Nreg] = {0,};
 
-    l = locreg(regmodes[r]);
-    l->reg.colour = r;
-    return l;
+    if (physregs[r])
+        return physregs[r];
+    physregs[r] = locreg(regmodes[r]);
+    physregs[r]->reg.colour = r;
+    return physregs[r];
 }
 
 Loc *locmem(long disp, Loc *base, Loc *idx, Mode mode)
