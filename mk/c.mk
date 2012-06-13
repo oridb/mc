@@ -1,9 +1,9 @@
 _DEPSDIR = .deps
 _DEPS=$(addprefix $(_DEPSDIR)/, $(OBJ:.o=.d))
 
-_LIBSRCHPATHS=$(addprefix -L, $(dir $(LIBDEPS)))
-_LIBINCPATHS=$(addprefix -I, $(dir $(LIBDEPS)))
-_LIBPATHS=$(addprefix -l, $(patsubst lib%.a,%,$(notdir $(LIBDEPS))))
+_LIBSRCHPATHS=$(addprefix -L, $(dir $(DEPS)))
+_LIBINCPATHS=$(addprefix -I, $(dir $(DEPS)))
+_LIBPATHS=$(addprefix -l, $(patsubst lib%.a,%,$(notdir $(DEPS))))
 
 CFLAGS += -Wall -Werror -Wextra -Wno-unused-parameter -Wno-missing-field-initializers
 CFLAGS += -g
@@ -21,8 +21,8 @@ $(LIB): $(OBJ) libs
 $(BIN): $(OBJ) $(EXTRADEP) libs
 	$(CC) -o $@ $(OBJ) $(_LIBSRCHPATHS) $(_LIBPATHS)
 
-libs: $(LIBDEPS)
-	@for i in $(dir $(LIBDEPS)); do (\
+libs: $(DEPS)
+	@for i in $(dir $(DEPS)); do (\
 	    cd $$i && \
 	    $(MAKE) || \
 	    exit 1 \

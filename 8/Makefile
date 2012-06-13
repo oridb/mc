@@ -4,7 +4,7 @@ OBJ=isel.o \
     reduce.o \
     regalloc.o \
 
-LIBDEPS=../parse/libparse.a ../opt/libopt.a
+DEPS=../parse/libparse.a ../opt/libopt.a
 
 include ../mk/lexyacc.mk
 include ../mk/c.mk
