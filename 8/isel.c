@@ -354,11 +354,13 @@ static Loc gencall(Isel *s, Node *n)
         locmem(&dst, argoff, Resp, Rnone, arg.mode);
         stor(s, &arg, &dst);
         argsz += size(n->expr.args[i]);
+        freeloc(s, arg);
+        freeloc(s, dst);
     }
     selexpr(s, n->expr.args[0]);
     fn = getloc(s, n->expr.args[0]);
-    claimreg(s, Reax);
     g(s, Icall, &fn, NULL);
+    claimreg(s, Reax);
     if (argsz)
         g(s, Iadd, &stkbump, &esp, NULL);
     return eax;
