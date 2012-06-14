@@ -86,8 +86,8 @@ Cfg *mkcfg(Node **nl, size_t nn)
     post = mkbb(cfg);
     bsput(pre->succ, cfg->bb[1]->id);
     bsput(cfg->bb[1]->pred, pre->id);
-    bsput(post->succ, cfg->bb[cfg->nbb - 2]->id);
-    bsput(cfg->bb[cfg->nbb - 2]->pred, post->id);
+    bsput(cfg->bb[cfg->nbb - 2]->succ, post->id);
+    bsput(post->pred, cfg->bb[cfg->nbb - 2]->id);
     for (i = 0; i < cfg->nfixjmp; i++) {
         bb = cfg->fixblk[i];
         switch (exprop(cfg->fixjmp[i])) {
@@ -120,6 +120,7 @@ Cfg *mkcfg(Node **nl, size_t nn)
     }
     return cfg;
 }
+
 void dumpcfg(Cfg *cfg, FILE *fd)
 {
     size_t i, j;

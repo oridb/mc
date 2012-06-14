@@ -161,7 +161,55 @@ void liveness(Isel *s)
     }
 }
 
+void asmdump(Asmbb **bbs, size_t nbb, FILE *fd)
+{
+    size_t i, j;
+    Asmbb *bb;
+    char *sep;
+
+    fprintf(fd, "ASM -------- \n");
+    for (j = 0; j < nbb; j++) {
+        bb = bbs[j];
+        fprintf(fd, "\n");
+        fprintf(fd, "Bb: %d labels=(", bb->id);
+        sep = "";
+        for (i = 0; i < bb->nlbls; i++) {;
+            fprintf(fd, "%s%s", bb->lbls[i], sep);
+            sep = ",";
+        }
+        fprintf(fd, ")\n");
+
+        /* in edges */
+        fprintf(fd, "In:  ");
+        sep = "";
+        for (i = 0; i < bsmax(bb->pred); i++) {
+            if (bshas(bb->pred, i)) {
+                fprintf(fd, "%s%zd", sep, i);
+                sep = ",";
+            }
+        }
+        fprintf(fd, "\n");
+
+        /* out edges */
+        fprintf(fd, "Out: ");
+        sep = "";
+        for (i = 0; i < bsmax(bb->succ); i++) {
+             if (bshas(bb->succ, i)) {
+                fprintf(fd, "%s%zd", sep, i);
+                sep = ",";
+             }
+        }
+        fprintf(fd, "\n");
+
+        for (i = 0; i < bb->ni; i++)
+            iprintf(fd, bb->il[i]);
+    }
+    fprintf(fd, "ENDASM -------- \n");
+}
+
 void regalloc(Isel *s)
 {
     liveness(s);
+    if (debug)
+	asmdump(s->bb, s->nbb, stdout);
 }

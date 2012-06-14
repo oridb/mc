@@ -689,9 +689,12 @@ static void writeasm(Func *fn, Isel *s, FILE *fd)
     if (fn->isglobl)
         fprintf(fd, ".globl %s\n", fn->name);
     fprintf(fd, "%s:\n", fn->name);
-    for (j = 0; j < s->cfg->nbb; j++)
+    for (j = 0; j < s->cfg->nbb; j++) {
+        for (i = 0; i < s->bb[j]->nlbls; i++)
+            fprintf(fd, "%s:\n", s->bb[j]->lbls[i]);
         for (i = 0; i < s->bb[j]->ni; i++)
             iprintf(fd, s->bb[j]->il[i]);
+    }
 }
 
 static Asmbb *mkasmbb(Bb *bb)
@@ -726,7 +729,7 @@ void genasm(FILE *fd, Func *fn, Htab *globls)
     is.curbb = is.bb[0];
     prologue(&is, fn->stksz);
     for (j = 0; j < fn->cfg->nbb; j++) {
-        is.curbb = is.bb[j + 1];
+        is.curbb = is.bb[j];
         for (i = 0; i < fn->cfg->bb[j]->nnl; i++) {
             isel(&is, fn->cfg->bb[j]->nl[i]);
         }
