@@ -81,7 +81,7 @@ size_t defs(Insn *insn, long *d)
     int k;
 
     j = 0;
-    /* Add all the registers dsed and defined. Ddplicates
+    /* Add all the registers dsed and defined. Duplicates
      * in this list are fine, since they're being added to
      * a set anyways */
     for (i = 0; i < Maxarg; i++) {
@@ -162,6 +162,71 @@ void liveness(Isel *s)
     }
 }
 
+int ismove(Insn *i)
+{
+    return i->op == Imov;
+}
+
+void addedge(Isel *s, int u, int v)
+{
+}
+
+void build(Isel *s)
+{
+    /* uses/defs */
+    long u[2*Maxarg], d[2*Maxarg];
+    size_t nu, nd;
+    /* indexes */
+    size_t i, k;
+    ssize_t j;
+    /* liveness */
+    Bitset *live;
+    /* convenience vars */
+    Asmbb **bb;
+    size_t nbb;
+    Insn *insn;
+    uint l;
+
+    bb = s->bb;
+    nbb = s->nbb;
+    s->moves = zalloc(maxregid * sizeof(Loc **));
+    s->nmoves = zalloc(maxregid * sizeof(size_t));
+    for (i = 0; i < nbb; i++) {
+	live = bsdup(bb[i]->liveout);
+	for (j = bb[i]->ni - 1; j >= 0; j--) {
+	    insn = bb[i]->il[j];
+	    nu = uses(insn, u);
+	    nd = defs(insn, d);
+	    if (ismove(insn)) {
+		/* live \= uses(i) */
+		for (k = 0; k < nu; k++)
+		    bsdel(live, u[k]);
+
+		for (k = 0; k < nu; k++)
+		    lappend(&s->moves[u[k]], &s->nmoves[u[k]], insn);
+		for (k = 0; k < nd; k++)
+		    lappend(&s->moves[d[k]], &s->nmoves[d[k]], insn);
+		lappend(&s->wlmove, &s->nwlmove, insn);
+	    }
+	    for (k = 0; k < nd; k++)
+		bsput(live, d[k]);
+
+	    for (k = 0; k < nd; k++)
+		for (l = 0; bsiter(live, &l); l++)
+		    addedge(s, d[k], l);
+	}
+    }
+
+}
+
+void regalloc(Isel *s)
+{
+    liveness(s);
+    if (debug)
+	dumpasm(s->bb, s->nbb, stdout);
+    build(s);
+}
+
 void setprint(FILE *fd, Bitset *s)
 {
     char *sep;
@@ -230,9 +295,3 @@ void dumpasm(Asmbb **bbs, size_t nbb, FILE *fd)
     fprintf(fd, "ENDASM -------- \n");
 }
 
-void regalloc(Isel *s)
-{
-    liveness(s);
-    if (debug)
-	dumpasm(s->bb, s->nbb, stdout);
-}

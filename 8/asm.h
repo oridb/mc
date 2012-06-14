@@ -110,6 +110,12 @@ struct Isel {
 
     /* increased when we spill */
     Loc *stksz;
+
+    /* register allocator state */
+    Insn ***moves;
+    size_t *nmoves;
+    Insn **wlmove;
+    size_t nwlmove;
 };
 
 /* entry points */
@@ -117,6 +123,9 @@ void genasm(FILE *fd, Func *fn, Htab *globls);
 void gen(Node *file, char *out);
 
 /* location generation */
+extern int maxregid;
+extern Loc **loctab; /* mapping from reg id => Loc * */
+
 Loc *loclbl(Node *lbl);
 Loc *locstrlbl(char *lbl);
 Loc *locreg(Mode m);
@@ -131,12 +140,12 @@ void locprint(FILE *fd, Loc *l);
 void iprintf(FILE *fd, Insn *insn);
 
 /* register allocation */
+extern char *regnames[]; /* name table */
+extern Mode regmodes[];  /* mode table */
+
 void regalloc(Isel *s);
 size_t uses(Insn *i, long *uses);
 size_t defs(Insn *i, long *defs);
-extern char *regnames[];
-extern Mode regmodes[];
-extern Loc **loctab;
 
 
 /* useful functions */

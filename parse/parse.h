@@ -235,8 +235,9 @@ void bsdiff(Bitset *a, Bitset *b);
 int  bshas(Bitset *bs, uint elt);
 int  bseq(Bitset *a, Bitset *b);
 int  bsissubset(Bitset *set, Bitset *sub);
-size_t bscount(Bitset *bs);
+int  bsiter(Bitset *bs, uint *elt);
 size_t bsmax(Bitset *bs);
+size_t bscount(Bitset *bs);
 
 Htab *mkht(ulong (*hash)(void *key), int (*cmp)(void *k1, void *k2));
 int htput(Htab *ht, void *k, void *v);

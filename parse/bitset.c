@@ -67,6 +67,19 @@ size_t bscount(Bitset *bs)
     return n;
 }
 
+int bsiter(Bitset *bs, uint *elt)
+{
+    uint i;
+
+    for (i = *elt; i < bsmax(bs); i++) {
+	if (bshas(bs, i)) {
+	    *elt = i;
+	    return 1;
+	}
+    }
+    return 0;
+}
+
 /* Returns the largest value that the bitset can possibly
  * hold. It's conservative, but scanning the entire bitset
  * is a bit slow. This is mostly an aid to iterate over it. */

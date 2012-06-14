@@ -71,16 +71,17 @@ Loc *loclbl(Node *lbl)
 }
 
 Loc **loctab = NULL;
+int maxregid = 0;
+
 Loc *locreg(Mode m)
 {
     Loc *l;
-    static long nextid = 0;
 
     l = zalloc(sizeof(Loc));
     l->type = Locreg;
     l->mode = m;
-    l->reg.id = nextid++;
-    loctab = xrealloc(loctab, nextid * sizeof(Loc*));
+    l->reg.id = maxregid++;
+    loctab = xrealloc(loctab, maxregid * sizeof(Loc*));
     loctab[l->reg.id] = l;
     return l;
 }
