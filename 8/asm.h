@@ -1,4 +1,5 @@
 #define Maxarg 4
+#define K 4 /* 4 general purpose regs with all modes available */
 
 typedef struct Insn Insn;
 typedef struct Loc Loc;
@@ -101,21 +102,38 @@ struct Asmbb {
 /* instruction selection state */
 struct Isel {
     Cfg  *cfg;
-    Asmbb **bb;
+
+    Asmbb **bb;         /* 1:1 mappings with the Node bbs in the CFG */
     size_t nbb;
     Asmbb *curbb;
-    Node *ret;
-    Htab *locs; /* decl id => int stkoff */
-    Htab *globls; /* decl id => char *globlname */
+
+    Node *ret;          /* we store the return into here */
+    Htab *locs;         /* decl id => int stkoff */
+    Htab *globls;       /* decl id => char *globlname */
 
     /* increased when we spill */
     Loc *stksz;
 
     /* register allocator state */
     Insn ***moves;
+    Bitset *prepainted; /* locations that need to be a specific colour */
     size_t *nmoves;
+
+    Bitset **igraph;    /* adjacency set for igraph */
+    int *degree;        /* degree of nodes */
+
+    /* worklists */
     Insn **wlmove;
     size_t nwlmove;
+
+    Loc **wlspill;
+    size_t nwlspill;
+
+    Loc **wlfreeze;
+    size_t nwlfreeze;
+
+    Loc **wlsimp;
+    size_t nwlsimp;
 };
 
 /* entry points */
@@ -123,8 +141,8 @@ void genasm(FILE *fd, Func *fn, Htab *globls);
 void gen(Node *file, char *out);
 
 /* location generation */
-extern int maxregid;
-extern Loc **loctab; /* mapping from reg id => Loc * */
+extern size_t maxregid;
+extern Loc **locmap; /* mapping from reg id => Loc * */
 
 Loc *loclbl(Node *lbl);
 Loc *locstrlbl(char *lbl);
@@ -144,8 +162,6 @@ extern char *regnames[]; /* name table */
 extern Mode regmodes[];  /* mode table */
 
 void regalloc(Isel *s);
-size_t uses(Insn *i, long *uses);
-size_t defs(Insn *i, long *defs);
 
 
 /* useful functions */

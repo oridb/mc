@@ -17,9 +17,9 @@ static void eqsz(Bitset *a, Bitset *b)
         sz = a->nchunks;
     else
         sz = b->nchunks;
-    a->chunks = zrealloc(a->chunks, a->nchunks*sizeof(uint), sz*sizeof(uint));
+    a->chunks = zrealloc(a->chunks, a->nchunks*sizeof(size_t), sz*sizeof(size_t));
     a->nchunks = sz;
-    b->chunks = zrealloc(b->chunks, a->nchunks*sizeof(uint), sz*sizeof(uint));
+    b->chunks = zrealloc(b->chunks, a->nchunks*sizeof(size_t), sz*sizeof(size_t));
     b->nchunks = sz;
 }
 
@@ -29,7 +29,7 @@ Bitset *mkbs()
 
     bs = xalloc(sizeof(Bitset));
     bs->nchunks = 1;
-    bs->chunks = zalloc(1*sizeof(uint));
+    bs->chunks = zalloc(1*sizeof(size_t));
     return bs;
 }
 
@@ -39,8 +39,8 @@ Bitset *bsdup(Bitset *a)
 
     bs = xalloc(sizeof(Bitset));
     bs->nchunks = a->nchunks;
-    bs->chunks = xalloc(a->nchunks*sizeof(uint));
-    memcpy(bs->chunks, a->chunks, a->nchunks*sizeof(uint));
+    bs->chunks = xalloc(a->nchunks*sizeof(size_t));
+    memcpy(bs->chunks, a->chunks, a->nchunks*sizeof(size_t));
     return bs;
 }
 
@@ -61,15 +61,15 @@ size_t bscount(Bitset *bs)
 
     n = 0;
     for (i = 0; i < bs->nchunks; i++)
-        for (j = 1; j < sizeof(uint)*CHAR_BIT; j++)
+        for (j = 1; j < sizeof(size_t)*CHAR_BIT; j++)
             if (bs->chunks[i] & 1 << j)
                 n++;
     return n;
 }
 
-int bsiter(Bitset *bs, uint *elt)
+int bsiter(Bitset *bs, size_t *elt)
 {
-    uint i;
+    size_t i;
 
     for (i = *elt; i < bsmax(bs); i++) {
 	if (bshas(bs, i)) {
@@ -85,7 +85,7 @@ int bsiter(Bitset *bs, uint *elt)
  * is a bit slow. This is mostly an aid to iterate over it. */
 size_t bsmax(Bitset *bs)
 {
-    return bs->nchunks*sizeof(uint)*CHAR_BIT;
+    return bs->nchunks*sizeof(size_t)*CHAR_BIT;
 }
 
 void delbs(Bitset *bs)
@@ -94,24 +94,25 @@ void delbs(Bitset *bs)
     free(bs);
 }
 
-void bsput(Bitset *bs, uint elt)
+void bsput(Bitset *bs, size_t elt)
 {
     size_t sz;
+    assert(elt < 100);
     if (elt >= bs->nchunks*Uintbits) {
         sz = (elt/Uintbits)+1;
-        bs->chunks = zrealloc(bs->chunks, bs->nchunks*sizeof(uint), sz*sizeof(uint));
+        bs->chunks = zrealloc(bs->chunks, bs->nchunks*sizeof(size_t), sz*sizeof(size_t));
         bs->nchunks = sz;
     }
     bs->chunks[elt/Uintbits] |= 1 << (elt % Uintbits);
 }
 
-void bsdel(Bitset *bs, uint elt)
+void bsdel(Bitset *bs, size_t elt)
 {
     if (elt < bs->nchunks*Uintbits)
         bs->chunks[elt/Uintbits] &= ~(1 << (elt % Uintbits));
 }
 
-int bshas(Bitset *bs, uint elt)
+int bshas(Bitset *bs, size_t elt)
 {
     if (elt >= bs->nchunks*Uintbits)
         return 0;

@@ -36,7 +36,7 @@ Usage deftab[] = {
 #undef Def
 };
 
-size_t uses(Insn *insn, long *u)
+static size_t uses(Insn *insn, long *u)
 {
     size_t i, j;
     int k;
@@ -75,7 +75,7 @@ size_t uses(Insn *insn, long *u)
     return j;
 }
 
-size_t defs(Insn *insn, long *d)
+static size_t defs(Insn *insn, long *d)
 {
     size_t i, j;
     int k;
@@ -102,7 +102,7 @@ size_t defs(Insn *insn, long *d)
     return j;
 }
 
-void usedef(Asmbb *bb)
+static void udcalc(Asmbb *bb)
 {
     /* up to 2 registers per memloc, so 
      * 2*Maxarg is the maximum number of
@@ -124,7 +124,7 @@ void usedef(Asmbb *bb)
     }
 }
 
-void liveness(Isel *s)
+static void liveness(Isel *s)
 {
     Bitset *old;
     Asmbb **bb;
@@ -135,7 +135,7 @@ void liveness(Isel *s)
     bb = s->bb;
     nbb = s->nbb;
     for (i = 0; i < nbb; i++) {
-	usedef(s->bb[i]);
+	udcalc(s->bb[i]);
 	bb[i]->livein = bsclear(bb[i]->livein);
 	bb[i]->liveout = bsclear(bb[i]->liveout);
     }
@@ -146,32 +146,35 @@ void liveness(Isel *s)
 	for (i = 0; i < nbb; i++) {
 	    old = bsdup(bb[i]->liveout);
 	    /* liveout[b] = U(s in succ) livein[s] */
-	    for (j = 0; j < bsmax(bb[i]->succ); j++) {
-		if (!bshas(bb[i]->succ, j))
-		    continue;
+	    for (j = 0; bsiter(bb[i]->succ, &j); j++)
 		bsunion(bb[i]->liveout, bb[j]->livein);
-	    }
 	    /* livein[b] = use[b] U (out[b] \ def[b]) */
 	    bb[i]->livein = bsclear(bb[i]->livein);
 	    bsunion(bb[i]->livein, bb[i]->liveout);
-	    bsdiff(bb[i]->liveout, bb[i]->def);
-	    bsunion(bb[i]->liveout, bb[i]->use);
+	    bsdiff(bb[i]->livein, bb[i]->def);
+	    bsunion(bb[i]->livein, bb[i]->use);
 	    if (!changed)
 		changed = !bseq(old, bb[i]->liveout);
 	}
     }
 }
 
-int ismove(Insn *i)
+static int ismove(Insn *i)
 {
     return i->op == Imov;
 }
 
-void addedge(Isel *s, int u, int v)
+static void addedge(Isel *s, int u, int v)
 {
+    if (u == v)
+	return;
+    locprint(stdout, locmap[u]);
+    fprintf(stdout, " -- ");
+    locprint(stdout, locmap[v]);
+    fprintf(stdout, "\n");
 }
 
-void build(Isel *s)
+static void build(Isel *s)
 {
     /* uses/defs */
     long u[2*Maxarg], d[2*Maxarg];
@@ -185,12 +188,13 @@ void build(Isel *s)
     Asmbb **bb;
     size_t nbb;
     Insn *insn;
-    uint l;
+    size_t l;
 
     bb = s->bb;
     nbb = s->nbb;
     s->moves = zalloc(maxregid * sizeof(Loc **));
     s->nmoves = zalloc(maxregid * sizeof(size_t));
+    //s->graph = zalloc(maxregid * sizeof(size_t));
     for (i = 0; i < nbb; i++) {
 	live = bsdup(bb[i]->liveout);
 	for (j = bb[i]->ni - 1; j >= 0; j--) {
@@ -216,7 +220,32 @@ void build(Isel *s)
 		    addedge(s, d[k], l);
 	}
     }
+}
 
+static int degree(int id)
+{
+    die("Unimplemented");
+    return 42;
+}
+
+static int moverelated(int id)
+{
+    die("blah");
+    return 42;
+}
+
+/* static */ void mkworklist(Isel *s)
+{
+    size_t i;
+
+    for (i = 0; i < maxregid; i++) {
+	if (degree(locmap[i]->reg.id) >= K)
+	    lappend(&s->wlspill, &s->nwlspill, locmap[i]);
+	else if (moverelated(locmap[i]->reg.id))
+	    lappend(&s->wlfreeze, &s->nwlfreeze, locmap[i]);
+	else
+	    lappend(&s->wlsimp, &s->nwlsimp, locmap[i]);
+    }
 }
 
 void regalloc(Isel *s)
@@ -225,9 +254,10 @@ void regalloc(Isel *s)
     if (debug)
 	dumpasm(s->bb, s->nbb, stdout);
     build(s);
+    //mkworklist(s);
 }
 
-void setprint(FILE *fd, Bitset *s)
+static void setprint(FILE *fd, Bitset *s)
 {
     char *sep;
     size_t i;
@@ -242,7 +272,7 @@ void setprint(FILE *fd, Bitset *s)
     fprintf(fd, "\n");
 }
 
-void locsetprint(FILE *fd, Bitset *s)
+static void locsetprint(FILE *fd, Bitset *s)
 {
     char *sep;
     size_t i;
@@ -251,7 +281,7 @@ void locsetprint(FILE *fd, Bitset *s)
     for (i = 0; i < bsmax(s); i++) {
 	if (bshas(s, i)) {
 	    fprintf(fd, "%s", sep);
-	    locprint(fd, loctab[i]);
+	    locprint(fd, locmap[i]);
 	    sep = ",";
 	}
     }

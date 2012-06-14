@@ -70,8 +70,8 @@ Loc *loclbl(Node *lbl)
     return locstrlbl(lbl->lbl.name);
 }
 
-Loc **loctab = NULL;
-int maxregid = 0;
+Loc **locmap = NULL;
+size_t maxregid = 0;
 
 Loc *locreg(Mode m)
 {
@@ -81,8 +81,8 @@ Loc *locreg(Mode m)
     l->type = Locreg;
     l->mode = m;
     l->reg.id = maxregid++;
-    loctab = xrealloc(loctab, maxregid * sizeof(Loc*));
-    loctab[l->reg.id] = l;
+    locmap = xrealloc(locmap, maxregid * sizeof(Loc*));
+    locmap[l->reg.id] = l;
     return l;
 }
 
