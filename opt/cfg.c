@@ -16,11 +16,10 @@
 
 static Bb *mkbb(Cfg *cfg)
 {
-    static int nextbbid = 0;
     Bb *bb;
 
     bb = zalloc(sizeof(Bb));
-    bb->id = nextbbid++;
+    bb->id = cfg->nextbbid++;
     bb->pred = mkbs();
     bb->succ = mkbs();
     lappend(&cfg->bb, &cfg->nbb, bb);
@@ -53,12 +52,14 @@ static int addnode(Cfg *cfg, Bb *bb, Node *n)
 Cfg *mkcfg(Node **nl, size_t nn)
 {
     Cfg *cfg;
+    Bb *pre, *post;
     Bb *bb, *targ;
     Node *a, *b;
     size_t i;
 
     cfg = zalloc(sizeof(Cfg));
     cfg->lblmap = mkht(strhash, streq);
+    pre = mkbb(cfg);
     bb = mkbb(cfg);
     for (i = 0; i < nn; i++) {
         switch (nl[i]->type) {
@@ -82,6 +83,11 @@ Cfg *mkcfg(Node **nl, size_t nn)
                 die("Invalid node type %s in mkcfg", nodestr(nl[i]->type));
         }
     }
+    post = mkbb(cfg);
+    bsput(pre->succ, cfg->bb[1]->id);
+    bsput(cfg->bb[1]->pred, pre->id);
+    bsput(post->succ, cfg->bb[cfg->nbb - 2]->id);
+    bsput(cfg->bb[cfg->nbb - 2]->pred, post->id);
     for (i = 0; i < cfg->nfixjmp; i++) {
         bb = cfg->fixblk[i];
         switch (exprop(cfg->fixjmp[i])) {

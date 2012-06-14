@@ -6,6 +6,7 @@ struct  Cfg {
     size_t nbb;
 
     /* for building bb */
+    int nextbbid;
     Htab *lblmap; /* label => Bb mapping */
     Node **fixjmp;
     size_t nfixjmp;

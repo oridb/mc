@@ -615,6 +615,8 @@ void iprintf(FILE *fd, Insn *insn)
             case 't':
                 modeidx = 0;
             default:
+                /* the  asm description uses 1-based indexing, so that 0
+                 * can be used as a sentinel. */
                 if (isdigit(*p))
                     modeidx = strtol(p, &p, 10) - 1;
 
