@@ -162,11 +162,42 @@ void liveness(Isel *s)
     }
 }
 
+void setprint(FILE *fd, Bitset *s)
+{
+    char *sep;
+    size_t i;
+
+    sep = "";
+    for (i = 0; i < bsmax(s); i++) {
+	if (bshas(s, i)) {
+	    fprintf(fd, "%s%zd", sep, i);
+	    sep = ",";
+	}
+    }
+    fprintf(fd, "\n");
+}
+
+void locsetprint(FILE *fd, Bitset *s)
+{
+    char *sep;
+    size_t i;
+
+    sep = "";
+    for (i = 0; i < bsmax(s); i++) {
+	if (bshas(s, i)) {
+	    fprintf(fd, "%s", sep);
+	    locprint(fd, loctab[i]);
+	    sep = ",";
+	}
+    }
+    fprintf(fd, "\n");
+}
+
 void dumpasm(Asmbb **bbs, size_t nbb, FILE *fd)
 {
     size_t i, j;
-    Asmbb *bb;
     char *sep;
+    Asmbb *bb;
 
     fprintf(fd, "ASM -------- \n");
     for (j = 0; j < nbb; j++) {
@@ -180,69 +211,19 @@ void dumpasm(Asmbb **bbs, size_t nbb, FILE *fd)
         }
         fprintf(fd, ")\n");
 
-        /* in edges */
         fprintf(fd, "Pred: ");
-        sep = "";
-        for (i = 0; i < bsmax(bb->pred); i++) {
-            if (bshas(bb->pred, i)) {
-                fprintf(fd, "%s%zd", sep, i);
-                sep = ",";
-            }
-        }
-        fprintf(fd, "\n");
-
-        /* out edges */
+	setprint(fd, bb->pred);
         fprintf(fd, "Succ: ");
-        sep = "";
-        for (i = 0; i < bsmax(bb->succ); i++) {
-             if (bshas(bb->succ, i)) {
-                fprintf(fd, "%s%zd", sep, i);
-                sep = ",";
-             }
-        }
-        fprintf(fd, "\n");
+	setprint(fd, bb->succ);
 
         fprintf(fd, "Use: ");
-        sep = "";
-        for (i = 0; i < bsmax(bb->use); i++) {
-             if (bshas(bb->use, i)) {
-                fprintf(fd, "%s", sep);
-		locprint(fd, loctab[i]);
-                sep = ",";
-             }
-        }
-        fprintf(fd, "\n");
+	locsetprint(fd, bb->use);
         fprintf(fd, "Def: ");
-        sep = "";
-        for (i = 0; i < bsmax(bb->def); i++) {
-             if (bshas(bb->def, i)) {
-                fprintf(fd, "%s", sep);
-		locprint(fd, loctab[i]);
-                sep = ",";
-             }
-        }
-        fprintf(fd, "\n");
-
+	locsetprint(fd, bb->def);
         fprintf(fd, "Livein:  ");
-        sep = "";
-        for (i = 0; i < bsmax(bb->livein); i++) {
-             if (bshas(bb->livein, i)) {
-                fprintf(fd, "%s", sep);
-		locprint(fd, loctab[i]);
-                sep = ",";
-             }
-        }
-        fprintf(fd, "\n");
+	locsetprint(fd, bb->livein);
         fprintf(fd, "Liveout: ");
-        sep = "";
-        for (i = 0; i < bsmax(bb->liveout); i++) {
-             if (bshas(bb->liveout, i)) {
-                fprintf(fd, "%s", sep);
-		locprint(fd, loctab[i]);
-                sep = ",";
-             }
-        }
-        fprintf(fd, "\n");
+	locsetprint(fd, bb->liveout);
         for (i = 0; i < bb->ni; i++)
             iprintf(fd, bb->il[i]);
     }
