@@ -11,6 +11,7 @@
 #include <unistd.h>
 
 #include "parse.h"
+#include "opt.h"
 #include "asm.h"
 
 /* string tables */
@@ -125,6 +126,8 @@ static Insn *mkinsnv(AsmOp op, va_list ap)
     i->op = op;
     while ((l = va_arg(ap, Loc*)) != NULL)
         i->args[n++] = l;
+    if (op == Imov)
+        assert(i->args[1] != NULL);
     i->narg = n;
     return i;
 }
@@ -137,7 +140,7 @@ static void g(Isel *s, AsmOp op, ...)
     va_start(ap, op);
     i = mkinsnv(op, ap);
     va_end(ap);
-    lappend(&s->il, &s->ni, i);
+    lappend(&s->curbb->il, &s->curbb->ni, i);
 }
 
 static void load(Isel *s, Loc *a, Loc *b)
@@ -279,6 +282,7 @@ static Loc *memloc(Isel *s, Node *e, Mode m)
     int scale;
 
     scale = 0;
+    l = NULL;
     if (exprop(e) == Oadd) {
         args = e->expr.args;
         b = selexpr(s, args[0]);
@@ -286,10 +290,11 @@ static Loc *memloc(Isel *s, Node *e, Mode m)
             o = selexpr(s, args[1]->expr.args[0]);
         else
             o = selexpr(s, args[1]);
+
         if (b->type != Locreg)
             b = inr(s, b);
         if (o->type == Loclit) {
-            locmem(o->lit, b, Rnone, m);
+            l = locmem(o->lit, b, Rnone, m);
         } else if (o->type == Locreg) {
             b = inr(s, b);
             l = locmems(0, b, o, scale, m);
@@ -297,7 +302,7 @@ static Loc *memloc(Isel *s, Node *e, Mode m)
     } else {
         l = selexpr(s, e);
         if (l->type == Locreg)
-            locmem(0, l, Rnone, m);
+            l = locmem(0, l, Rnone, m);
     }
     return l;
 }
@@ -345,7 +350,7 @@ static void blit(Isel *s, Loc *a, Loc *b, int sz)
 {
     int i;
     Loc *sp, *dp; /* pointers to src, dst */
-    Loc *tmp, src, dst; /* source memory, dst memory */
+    Loc *tmp, *src, *dst; /* source memory, dst memory */
 
     sp = inr(s, a);
     dp = inr(s, b);
@@ -354,16 +359,16 @@ static void blit(Isel *s, Loc *a, Loc *b, int sz)
      * that we can't blit word-wise. */
     tmp = locreg(ModeL);
     for (i = 0; i + 4 <= sz; i+= 4) {
-        locmem(i, sp, NULL, ModeL);
-        locmem(i, dp, NULL, ModeL);
+        src = locmem(i, sp, NULL, ModeL);
+        dst = locmem(i, dp, NULL, ModeL);
         g(s, Imov, src, tmp, NULL);
         g(s, Imov, tmp, dst, NULL);
     }
     /* now, the trailing bytes */
     tmp = locreg(ModeB);
     for (; i < sz; i++) {
-        locmem(i, sp, NULL, ModeB);
-        locmem(i, dp, NULL, ModeB);
+        src = locmem(i, sp, NULL, ModeB);
+        dst = locmem(i, dp, NULL, ModeB);
         g(s, Imov, src, tmp, NULL);
         g(s, Imov, tmp, dst, NULL);
     }
@@ -376,7 +381,6 @@ Loc *selexpr(Isel *s, Node *n)
     Node **args;
 
     args = n->expr.args;
-    r = NULL;
     eax = locphysreg(Reax);
     edx = locphysreg(Redx);
     cl = locphysreg(Rcl);
@@ -518,12 +522,12 @@ Loc *selexpr(Isel *s, Node *n)
         case Oslbase:
             a = selexpr(s, args[0]);
             a = inr(s, a);
-            locmem(0, a, Rnone, ModeL);
+            r = locmem(0, a, Rnone, ModeL);
             break;
         case Osllen:
             a = selexpr(s, args[0]);
             a = inr(s, a);
-            locmem(4, a, Rnone, ModeL);
+            r = locmem(4, a, Rnone, ModeL);
             break;
 
         /* These operators should never show up in the reduced trees,
@@ -678,15 +682,21 @@ static void epilogue(Isel *s)
     g(s, Iret, NULL);
 }
 
-static void writeasm(Func *fn, Isel *is, FILE *fd)
+static void writeasm(Func *fn, Isel *s, FILE *fd)
 {
-    size_t i;
+    size_t i, j;
 
     if (fn->isglobl)
         fprintf(fd, ".globl %s\n", fn->name);
     fprintf(fd, "%s:\n", fn->name);
-    for (i = 0; i < is->ni; i++)
-        iprintf(fd, is->il[i]);
+    for (j = 0; j < s->cfg->nbb; j++)
+        for (i = 0; i < s->bb[j]->ni; i++)
+            iprintf(fd, s->bb[j]->il[i]);
+}
+
+static Asmbb *mkasmbb()
+{
+    return zalloc(sizeof(Asmbb));
 }
 
 /* genasm requires all nodes in 'nl' to map cleanly to operations that are
@@ -695,17 +705,28 @@ static void writeasm(Func *fn, Isel *is, FILE *fd)
 void genasm(FILE *fd, Func *fn, Htab *globls)
 {
     struct Isel is = {0,};
-    size_t i;
+    size_t i, j;
 
     is.locs = fn->locs;
     is.globls = globls;
     is.ret = fn->ret;
+    is.cfg = fn->cfg;
 
+    is.bb = zalloc(fn->cfg->nbb * sizeof(Asmbb*));
+
+    lappend(&is.bb, &is.nbb, mkasmbb());
+    is.curbb = is.bb[is.nbb - 1];
     prologue(&is, fn->stksz);
-    for (i = 0; i < fn->nn; i++) {
-        bzero(is.rtaken, sizeof is.rtaken);
-        isel(&is, fn->nl[i]);
+
+    for (j = 0; j < fn->cfg->nbb; j++) {
+        lappend(&is.bb, &is.nbb, mkasmbb());
+        is.curbb = is.bb[is.nbb - 1];
+        for (i = 0; i < fn->cfg->bb[j]->nnl; i++) {
+            isel(&is, fn->cfg->bb[j]->nl[i]);
+        }
     }
+    lappend(&is.bb, &is.nbb, mkasmbb());
+    is.curbb = is.bb[is.nbb - 1];
     epilogue(&is);
 
     if (debug)

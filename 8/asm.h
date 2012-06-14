@@ -1,5 +1,12 @@
 #define MaxArg 4
 
+typedef struct Insn Insn;
+typedef struct Loc Loc;
+typedef struct Func Func;
+typedef struct Blob Blob;
+typedef struct Isel Isel;
+typedef struct Asmbb Asmbb;
+
 typedef enum {
 #define Insn(val, fmt, attr) val,
 #include "insns.def"
@@ -31,12 +38,6 @@ typedef enum {
     ModeD, /* float64 */
     Nmode,
 } Mode;
-
-typedef struct Insn Insn;
-typedef struct Loc Loc;
-typedef struct Func Func;
-typedef struct Blob Blob;
-typedef struct Isel Isel;
 
 struct Blob {
     char *name; /* mangled asm name */
@@ -78,22 +79,35 @@ struct Func {
     size_t stksz;
     Htab *locs;
     Node *ret;
-    Node **nl;
-    size_t nn;
+    Cfg  *cfg;
 };
+
+struct Asmbb {
+    int id;
+    char **lbls;
+    size_t nlbls;
+    Insn **il;
+    size_t ni;
+
+    Bitset *in;
+    Bitset *out;
+    Bitset *livein;
+    Bitset *liveout;
+};
+
 
 /* instruction selection state */
 struct Isel {
-    Insn **il;
-    size_t ni;
+    Cfg  *cfg;
+    Asmbb **bb;
+    size_t nbb;
+    Asmbb *curbb;
     Node *ret;
     Htab *locs; /* decl id => int stkoff */
     Htab *globls; /* decl id => char *globlname */
 
     /* increased when we spill */
     Loc *stksz;
-    /* 6 general purpose regs */
-    int rtaken[Nreg];
 };
 
 /* entry points */

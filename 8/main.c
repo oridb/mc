@@ -10,8 +10,8 @@
 #include <unistd.h>
 
 #include "parse.h"
-#include "asm.h"
 #include "opt.h"
+#include "asm.h"
 
 Node *file;
 static char *outfile;

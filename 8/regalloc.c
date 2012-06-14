@@ -11,6 +11,7 @@
 #include <unistd.h>
 
 #include "parse.h"
+#include "opt.h"
 #include "asm.h"
 
 const Mode regmodes[] = {
