@@ -1,4 +1,4 @@
-#define MaxArg 4
+#define Maxarg 4
 
 typedef struct Insn Insn;
 typedef struct Loc Loc;
@@ -8,7 +8,7 @@ typedef struct Isel Isel;
 typedef struct Asmbb Asmbb;
 
 typedef enum {
-#define Insn(val, fmt, attr) val,
+#define Insn(val, fmt, use, def) val,
 #include "insns.def"
 #undef Insn
 } AsmOp;
@@ -51,7 +51,7 @@ struct Loc {
     union {
         char *lbl;
         struct {
-            long  pseudo;
+            long  id;
             Reg   colour;
         } reg;
         long  lit;
@@ -69,8 +69,8 @@ struct Loc {
 
 struct Insn {
     AsmOp op;
-    Loc *args[MaxArg];
-    int narg;
+    Loc *args[Maxarg];
+    size_t nargs;
 };
 
 struct Func {
@@ -89,8 +89,8 @@ struct Asmbb {
     Insn **il;
     size_t ni;
 
-    Bitset *in;
-    Bitset *out;
+    Bitset *use;
+    Bitset *def;
     Bitset *livein;
     Bitset *liveout;
 };
@@ -129,6 +129,9 @@ void locprint(FILE *fd, Loc *l);
 void iprintf(FILE *fd, Insn *insn);
 
 /* register allocation */
+void regalloc(Isel *s);
+size_t uses(Insn *i, long *uses);
+size_t defs(Insn *i, long *defs);
 extern const char *regnames[];
 extern const Mode regmodes[];
 

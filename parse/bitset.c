@@ -44,6 +44,17 @@ Bitset *dupbs(Bitset *a)
     return bs;
 }
 
+Bitset *bsclear(Bitset *bs)
+{
+    size_t i;
+
+    if (!bs)
+	return mkbs();
+    for (i = 0; i < bs->nchunks; i++)
+	bs->chunks[i] = 0;
+    return bs;
+}
+
 size_t bscount(Bitset *bs)
 {
     size_t i, j, n;

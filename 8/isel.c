@@ -16,7 +16,7 @@
 
 /* string tables */
 char *insnfmts[] = {
-#define Insn(val, fmt, attr) fmt,
+#define Insn(val, fmt, use, def) fmt,
 #include "insns.def"
 #undef Insn
 };
@@ -126,9 +126,7 @@ static Insn *mkinsnv(AsmOp op, va_list ap)
     i->op = op;
     while ((l = va_arg(ap, Loc*)) != NULL)
         i->args[n++] = l;
-    if (op == Imov)
-        assert(i->args[1] != NULL);
-    i->narg = n;
+    i->nargs = n;
     return i;
 }
 
@@ -554,7 +552,7 @@ void locprint(FILE *fd, Loc *l)
             break;
         case Locreg:
             if (l->reg.colour == Rnone)
-                fprintf(fd, "%%P.%ld", l->reg.pseudo);
+                fprintf(fd, "%%P.%ld", l->reg.id);
             else
                 fprintf(fd, "%s", regnames[l->reg.colour]);
             break;

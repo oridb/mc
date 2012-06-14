@@ -225,6 +225,7 @@ extern int ispureop[];
 /* data structures */
 Bitset *mkbs(void);
 Bitset *dupbs(Bitset *bs);
+Bitset *bsclear(Bitset *bs);
 void delbs(Bitset *bs);
 void bsput(Bitset *bs, uint elt);
 void bsdel(Bitset *bs, uint elt);

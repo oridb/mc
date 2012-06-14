@@ -73,12 +73,12 @@ Loc *loclbl(Node *lbl)
 Loc *locreg(Mode m)
 {
     Loc *l;
-    static long nextpseudo = 0;
+    static long nextid = 0;
 
     l = zalloc(sizeof(Loc));
     l->type = Locreg;
     l->mode = m;
-    l->reg.pseudo = nextpseudo++;
+    l->reg.id = nextid++;
     return l;
 }
 

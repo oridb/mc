@@ -1,6 +1,7 @@
 BIN=8m
 OBJ=isel.o \
     main.o \
+    ra.o \
     reduce.o \
     regalloc.o \
 
