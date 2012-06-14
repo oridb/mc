@@ -142,3 +142,4 @@ extern Loc **loctab;
 /* useful functions */
 size_t size(Node *n);
 void breakhere();
+void dumpasm(Asmbb **bbs, size_t nbb, FILE *fd);

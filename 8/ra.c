@@ -140,10 +140,10 @@ void liveness(Isel *s)
 	bb[i]->liveout = bsclear(bb[i]->liveout);
     }
 
-    changed = 0;
+    changed = 1;
     while (changed) {
 	changed = 0;
-	for (i = 0; i < nbb; i--) {
+	for (i = 0; i < nbb; i++) {
 	    old = bsdup(bb[i]->liveout);
 	    /* liveout[b] = U(s in succ) livein[s] */
 	    for (j = 0; j < bsmax(bb[i]->succ); j++) {
@@ -162,7 +162,7 @@ void liveness(Isel *s)
     }
 }
 
-void asmdump(Asmbb **bbs, size_t nbb, FILE *fd)
+void dumpasm(Asmbb **bbs, size_t nbb, FILE *fd)
 {
     size_t i, j;
     Asmbb *bb;
@@ -253,5 +253,5 @@ void regalloc(Isel *s)
 {
     liveness(s);
     if (debug)
-	asmdump(s->bb, s->nbb, stdout);
+	dumpasm(s->bb, s->nbb, stdout);
 }
