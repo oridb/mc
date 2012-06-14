@@ -14,13 +14,13 @@
 #include "opt.h"
 #include "asm.h"
 
-const Mode regmodes[] = {
+Mode regmodes[] = {
 #define Reg(r, name, mode) mode,
 #include "regs.def"
 #undef Reg
 };
 
-const char *regnames[] = {
+char *regnames[] = {
 #define Reg(r, name, mode) name,
 #include "regs.def"
 #undef Reg
@@ -70,6 +70,7 @@ Loc *loclbl(Node *lbl)
     return locstrlbl(lbl->lbl.name);
 }
 
+Loc **loctab = NULL;
 Loc *locreg(Mode m)
 {
     Loc *l;
@@ -79,6 +80,8 @@ Loc *locreg(Mode m)
     l->type = Locreg;
     l->mode = m;
     l->reg.id = nextid++;
+    loctab = xrealloc(loctab, nextid * sizeof(Loc*));
+    loctab[l->reg.id] = l;
     return l;
 }
 

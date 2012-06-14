@@ -134,8 +134,9 @@ void iprintf(FILE *fd, Insn *insn);
 void regalloc(Isel *s);
 size_t uses(Insn *i, long *uses);
 size_t defs(Insn *i, long *defs);
-extern const char *regnames[];
-extern const Mode regmodes[];
+extern char *regnames[];
+extern Mode regmodes[];
+extern Loc **loctab;
 
 
 /* useful functions */

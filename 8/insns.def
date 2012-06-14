@@ -19,10 +19,10 @@
 
 /* Note, the mov instruction is specified in an overly general manner. */
 Insn(Inone,     "BAD_INSN",                     Use(), Def())
-Insn(Imov,      "\tmov%t %x,%x\n", 		Use(.l={1,2}),			Def(.l={2}))
-Insn(Imovz,     "\tmovz%1t%2t %x,%x\n",         Use(.l={1,2}),			Def(.l={2}))
-Insn(Imovs,     "\tmovs%1t%2t %x,%x\n",         Use(.l={1,2}),			Def(.l={2}))
-Insn(Ilea,      "\tlea%t %x,%x\n",              Use(.l={1,2}),			Def(.l={2}))
+Insn(Imov,      "\tmov%t %x,%x\n", 		Use(.l={1}),			Def(.l={2}))
+Insn(Imovz,     "\tmovz%1t%2t %x,%x\n",         Use(.l={1}),			Def(.l={2}))
+Insn(Imovs,     "\tmovs%1t%2t %x,%x\n",         Use(.l={1}),			Def(.l={2}))
+Insn(Ilea,      "\tlea%t %x,%x\n",              Use(.l={1}),			Def(.l={2}))
 
 Insn(Iadd,      "\tadd%t %r,%x\n",              Use(.l={1,2}),			Def(.l={2}))
 Insn(Isub,      "\tsub%t %r,%x\n",              Use(.l={1,2}),			Def(.l={2}))

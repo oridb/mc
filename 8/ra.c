@@ -67,7 +67,7 @@ size_t uses(Insn *insn, long *u)
     for (i = 0; i < insn->nargs; i++) {
 	m = insn->args[i];
 	if (m->type != Locmem && m->type != Locmeml)
-	    break;
+	    continue;
 	u[j++] = m->mem.base->reg.id;
 	if (m->mem.idx)
 	    u[j++] = m->mem.idx->reg.id;
@@ -80,6 +80,7 @@ size_t defs(Insn *insn, long *d)
     size_t i, j;
     int k;
 
+    j = 0;
     /* Add all the registers dsed and defined. Ddplicates
      * in this list are fine, since they're being added to
      * a set anyways */
@@ -101,7 +102,7 @@ size_t defs(Insn *insn, long *d)
     return j;
 }
 
-void bbliveness(Asmbb *bb)
+void usedef(Asmbb *bb)
 {
     /* up to 2 registers per memloc, so 
      * 2*Maxarg is the maximum number of
@@ -114,7 +115,7 @@ void bbliveness(Asmbb *bb)
     bb->def = bsclear(bb->def);
     for (i = 0; i < bb->ni; i++) {
 	nu = uses(bb->il[i], u);
-	nd = uses(bb->il[i], d);
+	nd = defs(bb->il[i], d);
 	for (j = 0; j < nu; j++)
 	    if (!bshas(bb->def, u[j]))
 		bsput(bb->use, u[j]);
@@ -134,12 +135,12 @@ void liveness(Isel *s)
     bb = s->bb;
     nbb = s->nbb;
     for (i = 0; i < nbb; i++) {
-	bbliveness(s->bb[i]);
+	usedef(s->bb[i]);
 	bb[i]->livein = bsclear(bb[i]->livein);
 	bb[i]->liveout = bsclear(bb[i]->liveout);
     }
 
-    changed = 1;
+    changed = 0;
     while (changed) {
 	changed = 0;
 	for (i = 0; i < nbb; i--) {
@@ -201,6 +202,47 @@ void asmdump(Asmbb **bbs, size_t nbb, FILE *fd)
         }
         fprintf(fd, "\n");
 
+        fprintf(fd, "Use: ");
+        sep = "";
+        for (i = 0; i < bsmax(bb->use); i++) {
+             if (bshas(bb->use, i)) {
+                fprintf(fd, "%s", sep);
+		locprint(fd, loctab[i]);
+                sep = ",";
+             }
+        }
+        fprintf(fd, "\n");
+        fprintf(fd, "Def: ");
+        sep = "";
+        for (i = 0; i < bsmax(bb->def); i++) {
+             if (bshas(bb->def, i)) {
+                fprintf(fd, "%s", sep);
+		locprint(fd, loctab[i]);
+                sep = ",";
+             }
+        }
+        fprintf(fd, "\n");
+
+        fprintf(fd, "Livein:  ");
+        sep = "";
+        for (i = 0; i < bsmax(bb->livein); i++) {
+             if (bshas(bb->livein, i)) {
+                fprintf(fd, "%s", sep);
+		locprint(fd, loctab[i]);
+                sep = ",";
+             }
+        }
+        fprintf(fd, "\n");
+        fprintf(fd, "Liveout: ");
+        sep = "";
+        for (i = 0; i < bsmax(bb->liveout); i++) {
+             if (bshas(bb->liveout, i)) {
+                fprintf(fd, "%s", sep);
+		locprint(fd, loctab[i]);
+                sep = ",";
+             }
+        }
+        fprintf(fd, "\n");
         for (i = 0; i < bb->ni; i++)
             iprintf(fd, bb->il[i]);
     }
