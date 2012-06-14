@@ -139,7 +139,7 @@ void dumpcfg(Cfg *cfg, FILE *fd)
         fprintf(fd, ")\n");
 
         /* in edges */
-        fprintf(fd, "In:  ");
+        fprintf(fd, "Pred: ");
         sep = "";
         for (i = 0; i < bsmax(bb->pred); i++) {
             if (bshas(bb->pred, i)) {
@@ -150,7 +150,7 @@ void dumpcfg(Cfg *cfg, FILE *fd)
         fprintf(fd, "\n");
 
         /* out edges */
-        fprintf(fd, "Out: ");
+        fprintf(fd, "Succ: ");
         sep = "";
         for (i = 0; i < bsmax(bb->succ); i++) {
              if (bshas(bb->succ, i)) {
