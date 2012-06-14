@@ -224,7 +224,7 @@ extern int ispureop[];
 
 /* data structures */
 Bitset *mkbs(void);
-Bitset *dupbs(Bitset *bs);
+Bitset *bsdup(Bitset *bs);
 Bitset *bsclear(Bitset *bs);
 void delbs(Bitset *bs);
 void bsput(Bitset *bs, uint elt);
@@ -233,6 +233,7 @@ void bsunion(Bitset *a, Bitset *b);
 void bsintersect(Bitset *a, Bitset *b);
 void bsdiff(Bitset *a, Bitset *b);
 int  bshas(Bitset *bs, uint elt);
+int  bseq(Bitset *a, Bitset *b);
 int  bsissubset(Bitset *set, Bitset *sub);
 size_t bscount(Bitset *bs);
 size_t bsmax(Bitset *bs);

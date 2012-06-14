@@ -155,9 +155,9 @@ static void mergecstrs(Node *ctx, Type *a, Type *b)
         if (a->cstrs && b->cstrs)
             bsunion(b->cstrs, a->cstrs);
         else if (a->cstrs)
-            b->cstrs = dupbs(a->cstrs);
+            b->cstrs = bsdup(a->cstrs);
         else if (b->cstrs)
-            a->cstrs = dupbs(b->cstrs);
+            a->cstrs = bsdup(b->cstrs);
     } else {
         if (!cstrcheck(a, b))
             fatal(ctx->line, "%s incompatible with %s near %s", tystr(a), tystr(b), ctxstr(ctx));

@@ -19,8 +19,8 @@ struct Bb {
     size_t nlbls;
     Node **nl;
     size_t nnl;
-    Bitset *in;
-    Bitset *out;
+    Bitset *pred;
+    Bitset *succ;
 };
 
 /* Takes a reduced block, and returns a flow graph. */

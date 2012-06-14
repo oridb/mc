@@ -33,7 +33,7 @@ Bitset *mkbs()
     return bs;
 }
 
-Bitset *dupbs(Bitset *a)
+Bitset *bsdup(Bitset *a)
 {
     Bitset *bs;
 
@@ -131,6 +131,17 @@ void bsdiff(Bitset *a, Bitset *b)
     eqsz(a, b);
     for (i = 0; i < a->nchunks; i++)
         a->chunks[i] &= ~b->chunks[i];
+}
+
+int bseq(Bitset *a, Bitset *b)
+{
+    size_t i;
+
+    eqsz(a, b);
+    for (i = 0; i < a->nchunks; i++)
+	if (a->chunks[i] != b->chunks[i])
+	    return 0;
+    return 1;
 }
 
 int bsissubset(Bitset *set, Bitset *sub)

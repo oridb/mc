@@ -21,8 +21,8 @@ static Bb *mkbb(Cfg *cfg)
 
     bb = zalloc(sizeof(Bb));
     bb->id = nextbbid++;
-    bb->in = mkbs();
-    bb->out = mkbs();
+    bb->pred = mkbs();
+    bb->succ = mkbs();
     lappend(&cfg->bb, &cfg->nbb, bb);
     return bb;
 }
@@ -101,15 +101,15 @@ Cfg *mkcfg(Node **nl, size_t nn)
             targ = htget(cfg->lblmap, a->lbl.name);
             if (!targ)
                 die("No bb with label %s", a->lbl.name);
-            bsput(bb->out, targ->id);
-            bsput(targ->in, bb->id);
+            bsput(bb->succ, targ->id);
+            bsput(targ->pred, bb->id);
         }
         if (b) {
             targ = htget(cfg->lblmap, b->lbl.name);
             if (!targ)
                 die("No bb with label %s", b->lbl.name);
-            bsput(bb->out, targ->id);
-            bsput(targ->in, bb->id);
+            bsput(bb->succ, targ->id);
+            bsput(targ->pred, bb->id);
         }
     }
     return cfg;
@@ -134,8 +134,8 @@ void dumpcfg(Cfg *cfg, FILE *fd)
         /* in edges */
         fprintf(fd, "In:  ");
         sep = "";
-        for (i = 0; i < bsmax(bb->in); i++) {
-            if (bshas(bb->in, i)) {
+        for (i = 0; i < bsmax(bb->pred); i++) {
+            if (bshas(bb->pred, i)) {
                 fprintf(fd, "%s%zd", sep, i);
                 sep = ",";
             }
@@ -145,8 +145,8 @@ void dumpcfg(Cfg *cfg, FILE *fd)
         /* out edges */
         fprintf(fd, "Out: ");
         sep = "";
-        for (i = 0; i < bsmax(bb->out); i++) {
-             if (bshas(bb->out, i)) {
+        for (i = 0; i < bsmax(bb->succ); i++) {
+             if (bshas(bb->succ, i)) {
                 fprintf(fd, "%s%zd", sep, i);
                 sep = ",";
              }

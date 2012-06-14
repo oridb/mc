@@ -89,6 +89,8 @@ struct Asmbb {
     Insn **il;
     size_t ni;
 
+    Bitset *pred;
+    Bitset *succ;
     Bitset *use;
     Bitset *def;
     Bitset *livein;

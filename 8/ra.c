@@ -49,7 +49,8 @@ size_t uses(Insn *insn, long *u)
     for (i = 0; i < Maxarg; i++) {
 	if (!usetab[insn->op].l[i])
 	    break;
-	k = usetab[insn->op].l[i];
+	k = usetab[insn->op].l[i] - 1;
+	/* non-registers are handled later */
 	if (insn->args[k]->type == Locreg)
 	    u[j++] = insn->args[k]->reg.id;
     }
@@ -85,7 +86,7 @@ size_t defs(Insn *insn, long *d)
     for (i = 0; i < Maxarg; i++) {
 	if (!deftab[insn->op].l[i])
 	    break;
-	k = deftab[insn->op].l[i];
+	k = deftab[insn->op].l[i] - 1;
 	if (insn->args[k]->type == Locreg)
 	    d[j++] = insn->args[k]->reg.id;
     }
@@ -124,20 +125,39 @@ void bbliveness(Asmbb *bb)
 
 void liveness(Isel *s)
 {
-    Cfg *cfg;
-    ssize_t i;
+    Bitset *old;
+    Asmbb **bb;
+    size_t nbb;
+    size_t i, j;
     int changed;
 
-    cfg = s->cfg;
-    cfg = cfg; /* shut up GCC for now */
-    for (i = s->nbb - 1; i >= 0; i--)
+    bb = s->bb;
+    nbb = s->nbb;
+    for (i = 0; i < nbb; i++) {
 	bbliveness(s->bb[i]);
+	bb[i]->livein = bsclear(bb[i]->livein);
+	bb[i]->liveout = bsclear(bb[i]->liveout);
+    }
 
     changed = 1;
     while (changed) {
-	for (i = s->nbb - 1; i >= 0; i--) {
-	}
 	changed = 0;
+	for (i = 0; i < nbb; i--) {
+	    old = bsdup(bb[i]->liveout);
+	    /* liveout[b] = U(s in succ) livein[s] */
+	    for (j = 0; j < bsmax(bb[i]->succ); j++) {
+		if (!bshas(bb[i]->succ, j))
+		    continue;
+		bsunion(bb[i]->liveout, bb[j]->livein);
+	    }
+	    /* livein[b] = use[b] U (out[b] \ def[b]) */
+	    bb[i]->livein = bsclear(bb[i]->livein);
+	    bsunion(bb[i]->livein, bb[i]->liveout);
+	    bsdiff(bb[i]->liveout, bb[i]->def);
+	    bsunion(bb[i]->liveout, bb[i]->use);
+	    if (!changed)
+		changed = !bseq(old, bb[i]->liveout);
+	}
     }
 }
 

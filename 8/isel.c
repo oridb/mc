@@ -616,7 +616,7 @@ void iprintf(FILE *fd, Insn *insn)
                 modeidx = 0;
             default:
                 if (isdigit(*p))
-                    modeidx = strtol(p, &p, 10);
+                    modeidx = strtol(p, &p, 10) - 1;
 
                 if (*p == 't')
                     fputc(modenames[insn->args[modeidx]->mode], fd);
@@ -692,9 +692,17 @@ static void writeasm(Func *fn, Isel *s, FILE *fd)
             iprintf(fd, s->bb[j]->il[i]);
 }
 
-static Asmbb *mkasmbb()
+static Asmbb *mkasmbb(Bb *bb)
 {
-    return zalloc(sizeof(Asmbb));
+    Asmbb *as;
+
+    as = zalloc(sizeof(Asmbb));
+    as->id = bb->id;
+    as->pred = bsdup(bb->pred);
+    as->succ = bsdup(bb->succ);
+    as->lbls = memdup(bb->lbls, bb->nlbls*sizeof(char*));
+    as->nlbls = bb->nlbls;
+    return as;
 }
 
 /* genasm requires all nodes in 'nl' to map cleanly to operations that are
@@ -710,23 +718,21 @@ void genasm(FILE *fd, Func *fn, Htab *globls)
     is.ret = fn->ret;
     is.cfg = fn->cfg;
 
-    is.bb = zalloc(fn->cfg->nbb * sizeof(Asmbb*));
+    for (i = 0; i < fn->cfg->nbb; i++)
+        lappend(&is.bb, &is.nbb, mkasmbb(fn->cfg->bb[i]));
 
-    lappend(&is.bb, &is.nbb, mkasmbb());
-    is.curbb = is.bb[is.nbb - 1];
+    is.curbb = is.bb[0];
     prologue(&is, fn->stksz);
-
     for (j = 0; j < fn->cfg->nbb; j++) {
-        lappend(&is.bb, &is.nbb, mkasmbb());
-        is.curbb = is.bb[is.nbb - 1];
+        is.curbb = is.bb[j + 1];
         for (i = 0; i < fn->cfg->bb[j]->nnl; i++) {
             isel(&is, fn->cfg->bb[j]->nl[i]);
         }
     }
-    lappend(&is.bb, &is.nbb, mkasmbb());
     is.curbb = is.bb[is.nbb - 1];
     epilogue(&is);
 
+    regalloc(&is);
     if (debug)
       writeasm(fn, &is, stdout);
 
