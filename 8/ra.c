@@ -210,7 +210,7 @@ static int ismove(Insn *i)
     return i->args[0]->type == Locreg && i->args[1]->type == Locreg;
 }
 
-/* static */ int gbhasedge(Isel *s, size_t u, size_t v)
+static int gbhasedge(Isel *s, size_t u, size_t v)
 {
     size_t i;
     i = (maxregid * v) + u;
@@ -244,7 +244,7 @@ static void addedge(Isel *s, size_t u, size_t v)
     }
 }
 
-void setup(Isel *s)
+static void setup(Isel *s)
 {
     Bitset **gadj;
     size_t gchunks;
@@ -330,7 +330,7 @@ static void build(Isel *s)
     }
 }
 
-Bitset *adjacent(Isel *s, regid n)
+static Bitset *adjacent(Isel *s, regid n)
 {
     Bitset *r;
     size_t i;
@@ -342,7 +342,7 @@ Bitset *adjacent(Isel *s, regid n)
     return r;
 }
 
-size_t nodemoves(Isel *s, regid n, Insn ***pil)
+static size_t nodemoves(Isel *s, regid n, Insn ***pil)
 {
     size_t i, j;
     size_t count;
@@ -375,7 +375,7 @@ static int moverelated(Isel *s, regid n)
     return nodemoves(s, n, NULL) != 0;
 }
 
-/* static */ void mkworklist(Isel *s)
+static void mkworklist(Isel *s)
 {
     size_t i;
 
@@ -391,7 +391,7 @@ static int moverelated(Isel *s, regid n)
     }
 }
 
-void enablemove(Isel *s, regid n)
+static void enablemove(Isel *s, regid n)
 {
     size_t i, j;
     Insn **il;
@@ -408,7 +408,7 @@ void enablemove(Isel *s, regid n)
     }
 }
 
-void decdegree(Isel *s, regid n)
+static void decdegree(Isel *s, regid n)
 {
     int d;
     regid m;
@@ -426,7 +426,7 @@ void decdegree(Isel *s, regid n)
     }
 }
 
-void simp(Isel *s)
+static void simp(Isel *s)
 {
     Loc *l;
     Bitset *adj;
@@ -440,7 +440,7 @@ void simp(Isel *s)
     bsfree(adj);
 }
 
-regid getalias(Isel *s, regid id)
+static regid getalias(Isel *s, regid id)
 {
     while (1) {
 	if (!s->aliasmap[id])
@@ -450,7 +450,7 @@ regid getalias(Isel *s, regid id)
     return id;
 }
 
-void wladd(Isel *s, regid u)
+static void wladd(Isel *s, regid u)
 {
     size_t i;
 
@@ -466,7 +466,7 @@ void wladd(Isel *s, regid u)
     lappend(&s->wlsimp, &s->nwlsimp, locmap[u]);
 }
 
-int conservative(Isel *s, regid u, regid v)
+static int conservative(Isel *s, regid u, regid v)
 {
     int k;
     regid n;
@@ -489,7 +489,7 @@ int conservative(Isel *s, regid u, regid v)
 }
 
 /* FIXME: is this actually correct? */
-int ok(Isel *s, regid t, regid r)
+static int ok(Isel *s, regid t, regid r)
 {
     if (s->degree[t] >= K)
 	return 0;
@@ -500,7 +500,7 @@ int ok(Isel *s, regid t, regid r)
     return 1;
 }
 
-int combinable(Isel *s, regid u, regid v)
+static int combinable(Isel *s, regid u, regid v)
 {
     regid t;
     Bitset *adj;
@@ -518,7 +518,7 @@ int combinable(Isel *s, regid u, regid v)
     return 1;
 }
 
-int wlhas(Loc **wl, size_t nwl, regid v, size_t *idx)
+static int wlhas(Loc **wl, size_t nwl, regid v, size_t *idx)
 {
     size_t i;
 
@@ -531,7 +531,7 @@ int wlhas(Loc **wl, size_t nwl, regid v, size_t *idx)
     return 0;
 }
 
-void combine(Isel *s, regid u, regid v)
+static void combine(Isel *s, regid u, regid v)
 {
     Bitset *adj;
     regid t;
@@ -576,7 +576,7 @@ void combine(Isel *s, regid u, regid v)
 
 }
 
-void coalesce(Isel *s)
+static void coalesce(Isel *s)
 {
     Insn *m;
     regid u, v, tmp;
@@ -609,7 +609,7 @@ void coalesce(Isel *s)
     }
 }
 
-int mldel(Insn ***ml, size_t *nml, Insn *m)
+static int mldel(Insn ***ml, size_t *nml, Insn *m)
 {
     size_t i;
     for (i = 0; i < *nml; i++) {
@@ -621,7 +621,7 @@ int mldel(Insn ***ml, size_t *nml, Insn *m)
     return 0;
 }
 
-void freezemoves(Isel *s, Loc *u)
+static void freezemoves(Isel *s, Loc *u)
 {
     size_t i;
     Insn **ml;
@@ -654,7 +654,7 @@ void freezemoves(Isel *s, Loc *u)
     lfree(&ml, &nml);
 }
 
-void freeze(Isel *s)
+static void freeze(Isel *s)
 {
     Loc *l;
 
@@ -663,7 +663,7 @@ void freeze(Isel *s)
     freezemoves(s, l);
 }
 
-void selspill(Isel *s)
+static void selspill(Isel *s)
 {
     size_t i;
     Loc *m;
@@ -681,7 +681,7 @@ void selspill(Isel *s)
     freezemoves(s, m);
 }
 
-int paint(Isel *s)
+static int paint(Isel *s)
 {
     int taken[K + 2]; /* esp, ebp aren't "real colours" */
     Bitset *adj;
@@ -728,7 +728,7 @@ int paint(Isel *s)
     return spilled;
 }
 
-void rewrite(Isel *s)
+static void rewrite(Isel *s)
 {
     die("Rewrite spills!");
 }

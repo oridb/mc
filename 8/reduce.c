@@ -84,7 +84,7 @@ static char *asmname(Node *n)
     return s;
 }
 
-size_t tysize(Type *t)
+static size_t tysize(Type *t)
 {
     size_t sz;
     size_t i;
@@ -637,6 +637,7 @@ static void lowerfn(char *name, Node *n, Htab *globls, FILE *fd)
     genasm(fd, &fn, globls);
 }
 
+void blobdump(Blob *b, FILE *fd); /* shut up compiler warnings */
 void blobdump(Blob *b, FILE *fd)
 {
     size_t i;
