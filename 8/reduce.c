@@ -48,9 +48,9 @@ static Node *rval(Simp *s, Node *n);
 static Node *lval(Simp *s, Node *n);
 static void declarelocal(Simp *s, Node *n);
 
+/* useful constants */
 static Node *one;
 static Node *ptrsz;
-
 
 static void append(Simp *s, Node *n)
 {

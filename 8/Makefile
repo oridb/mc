@@ -1,9 +1,9 @@
 BIN=8m
 OBJ=isel.o \
+    locs.o \
     main.o \
     ra.o \
     reduce.o \
-    regalloc.o \
 
 DEPS=../parse/libparse.a ../opt/libopt.a
 
