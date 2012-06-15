@@ -18,7 +18,7 @@ void *zalloc(size_t sz)
     void *mem;
 
     mem = calloc(1, sz);
-    if (!mem)
+    if (!mem && sz)
         die("Out of memory");
     return mem;
 }
@@ -29,7 +29,7 @@ void *xalloc(size_t sz)
     void *mem;
 
     mem = malloc(sz);
-    if (!mem)
+    if (!mem && sz)
         die("Out of memory");
     return mem;
 }
@@ -47,7 +47,7 @@ void *zrealloc(void *mem, size_t oldsz, size_t sz)
 void *xrealloc(void *mem, size_t sz)
 {
     mem = realloc(mem, sz);
-    if (!mem)
+    if (!mem && sz)
         die("Out of memory");
     return mem;
 }
@@ -100,17 +100,44 @@ void lappend(void *l, size_t *len, void *n)
 
     assert(n != NULL);
     pl = l;
-    *pl = xrealloc(*pl, (*len + 1)*sizeof(Node*));
+    *pl = xrealloc(*pl, (*len + 1)*sizeof(void*));
     (*pl)[*len] = n;
     (*len)++;
 }
+
+void *lpop(void *l, size_t *len)
+{
+    void ***pl;
+    void *v;
+
+    pl = l;
+    (*len)--;
+    v = (*pl)[*len];
+    *pl = xrealloc(*pl, *len * sizeof(void*));
+    return v;
+}
+
+void ldel(void *l, size_t *len, size_t idx)
+{
+    void ***pl;
+    size_t i;
+
+    assert(l != NULL);
+    assert(idx < *len);
+    pl = l;
+    for (i = idx; i < *len - 1; i++)
+	pl[i] = pl[i + 1];
+    (*len)--;
+    *pl = xrealloc(*pl, *len * sizeof(void*));
+}
+
 
 void lfree(void *l, size_t *len)
 {
     void ***pl;
 
+    assert(l != NULL);
     pl = l;
-    assert(pl != NULL);
     free(*pl);
     *pl = NULL;
     *len = 0;

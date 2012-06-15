@@ -10,8 +10,8 @@
 #include <unistd.h>
 
 #include "parse.h"
-#include "asm.h"
 #include "opt.h"
+#include "asm.h"
 
 #include "platform.h" /* HACK. We need some platform specific code gen behavior. *sigh.* */
 
@@ -633,8 +633,7 @@ static void lowerfn(char *name, Node *n, Htab *globls, FILE *fd)
     fn.stksz = s.stksz;
     fn.locs = s.locs;
     fn.ret = s.ret;
-    fn.nl = s.stmts;
-    fn.nn = s.nstmts;
+    fn.cfg = cfg;
     genasm(fd, &fn, globls);
 }
 

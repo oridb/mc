@@ -54,7 +54,7 @@ typedef enum {
 
 struct Bitset {
     size_t nchunks;
-    uint *chunks;
+    size_t *chunks;
 };
 
 struct Htab {
@@ -226,17 +226,21 @@ extern int ispureop[];
 
 /* data structures */
 Bitset *mkbs(void);
-Bitset *dupbs(Bitset *bs);
+void    bsfree(Bitset *bs);
+Bitset *bsdup(Bitset *bs);
+Bitset *bsclear(Bitset *bs);
 void delbs(Bitset *bs);
-void bsput(Bitset *bs, uint elt);
-void bsdel(Bitset *bs, uint elt);
+void bsput(Bitset *bs, size_t elt);
+void bsdel(Bitset *bs, size_t elt);
 void bsunion(Bitset *a, Bitset *b);
 void bsintersect(Bitset *a, Bitset *b);
 void bsdiff(Bitset *a, Bitset *b);
-int  bshas(Bitset *bs, uint elt);
+int  bshas(Bitset *bs, size_t elt);
+int  bseq(Bitset *a, Bitset *b);
 int  bsissubset(Bitset *set, Bitset *sub);
-size_t bscount(Bitset *bs);
+int  bsiter(Bitset *bs, size_t *elt);
 size_t bsmax(Bitset *bs);
+size_t bscount(Bitset *bs);
 
 Htab *mkht(ulong (*hash)(void *key), int (*cmp)(void *k1, void *k2));
 int htput(Htab *ht, void *k, void *v);
@@ -363,6 +367,8 @@ Node *unpickle(FILE *fd);
 
 /* convenience func */
 void lappend(void *l, size_t *len, void *n); /* ugly hack; nl is void* because void*** is incompatible with T*** */
+void *lpop(void *l, size_t *len);
+void ldel(void *l, size_t *len, size_t idx);
 void lfree(void *l, size_t *len);
 
 /* Options to control the compilation */

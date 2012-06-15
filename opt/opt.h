@@ -6,6 +6,7 @@ struct  Cfg {
     size_t nbb;
 
     /* for building bb */
+    int nextbbid;
     Htab *lblmap; /* label => Bb mapping */
     Node **fixjmp;
     size_t nfixjmp;
@@ -19,8 +20,8 @@ struct Bb {
     size_t nlbls;
     Node **nl;
     size_t nnl;
-    Bitset *in;
-    Bitset *out;
+    Bitset *pred;
+    Bitset *succ;
 };
 
 /* Takes a reduced block, and returns a flow graph. */
