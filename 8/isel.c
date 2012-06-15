@@ -292,7 +292,7 @@ static Loc *memloc(Isel *s, Node *e, Mode m)
         if (b->type != Locreg)
             b = inr(s, b);
         if (o->type == Loclit) {
-            l = locmem(o->lit, b, Rnone, m);
+            l = locmems(o->lit, b, Rnone, scale, m);
         } else if (o->type == Locreg) {
             b = inr(s, b);
             l = locmems(0, b, o, scale, m);
