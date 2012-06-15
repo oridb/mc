@@ -539,7 +539,7 @@ static void declarearg(Simp *s, Node *n)
 
 static Node *simp(Simp *s, Node *n)
 {
-    Node *r;
+    Node *r, *v;
     size_t i;
 
     if (!n)
@@ -568,7 +568,14 @@ static Node *simp(Simp *s, Node *n)
             r = n;
             break;
         case Ndecl:
-            declarelocal(s, n);
+            /* Should already have happened */
+	    declarelocal(s, n);
+	    if (n->decl.init) {
+		v = rval(s, n->decl.init);
+		r = mkexpr(n->line, Ovar, n, NULL);
+		r->expr.did = n->decl.sym->id;
+		append(s, store(r, v));
+	    }
             break;
         case Nlbl:
             append(s, n);
@@ -626,12 +633,16 @@ static void lowerfn(char *name, Node *n, Htab *globls, FILE *fd)
     for (i = 0; i < s.nstmts; i++) {
 	if (s.stmts[i]->type != Nexpr)
 	    continue;
-	printf("FOLD FROM ----------\n");
-	dump(s.stmts[i], stdout);
+	if (debug) {
+	    printf("FOLD FROM ----------\n");
+	    dump(s.stmts[i], stdout);
+	}
 	s.stmts[i] = fold(s.stmts[i]);
-	printf("FOLD TO ------------\n");
-	dump(s.stmts[i], stdout);
-	printf("END ----------------\n");
+	if (debug) {
+	    printf("FOLD TO ------------\n");
+	    dump(s.stmts[i], stdout);
+	    printf("END ----------------\n");
+	}
     }
     cfg = mkcfg(s.stmts, s.nstmts);
     if (debug)
@@ -677,7 +688,7 @@ void gen(Node *file, char *out)
     nn = file->file.nstmts;
     globls = mkht(ptrhash, ptreq);
 
-    /* We need to declare all variables before use */
+    /* We need to define all global variables before use */
     for (i = 0; i < nn; i++)
         if (n[i]->type == Ndecl)
             htput(globls, (void*)n[i]->decl.sym->id, asmname(n[i]->decl.sym->name));

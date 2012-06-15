@@ -1,3 +1,6 @@
 const main = {
-	-> 7 * 2 * 3
+	var a = 7
+	var b = 2
+	var c = 3
+	-> a * b * c
 }
