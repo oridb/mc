@@ -321,6 +321,7 @@ Node *mkcall(int line, Node *fn, Node **args, size_t nargs);
 Node *mkif(int line, Node *cond, Node *iftrue, Node *iffalse);
 Node *mkloop(int line, Node *init, Node *cond, Node *incr, Node *body);
 Node *mkblock(int line, Stab *scope);
+Node *mkintlit(int line, uvlong val);
 
 Node *mkbool(int line, int val);
 Node *mkint(int line, uint64_t val);

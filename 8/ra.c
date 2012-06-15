@@ -539,11 +539,13 @@ void combine(Isel *s, regid u, regid v)
     size_t i, j;
     int has;
 
-    printf("Want to combine ");
-    locprint(stdout, locmap[u]);
-    printf(" with ");
-    locprint(stdout, locmap[v]);
-    printf("\n");
+    if (debug) {
+	printf("Combine ");
+	locprint(stdout, locmap[u]);
+	printf(" ==> ");
+	locprint(stdout, locmap[v]);
+	printf("\n");
+    }
     if (wlhas(s->wlfreeze, s->nwlfreeze, v, &idx))
 	ldel(&s->wlfreeze, &s->nwlfreeze, idx);
     else if (wlhas(s->wlspill, s->nwlspill, v, &idx))
@@ -707,11 +709,13 @@ int paint(Isel *s)
 	found = 0;
 	for (i = 0; i < K; i++) {
 	    if (!taken[i]) {
-		locprint(stdout, n);
-		printf(" ==> ");
-		n->reg.colour = regmap[i][n->mode];
-		locprint(stdout, n);
-		printf("\n");
+		if (debug) {
+		    locprint(stdout, n);
+		    printf(" ==> ");
+		    n->reg.colour = regmap[i][n->mode];
+		    locprint(stdout, n);
+		    printf("\n");
+		}
 		found = 1;
 		break;
 	    }

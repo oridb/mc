@@ -48,6 +48,10 @@ static Node *rval(Simp *s, Node *n);
 static Node *lval(Simp *s, Node *n);
 static void declarelocal(Simp *s, Node *n);
 
+static Node *one;
+static Node *ptrsz;
+
+
 static void append(Simp *s, Node *n)
 {
     lappend(&s->stmts, &s->nstmts, n);
@@ -275,8 +279,6 @@ static size_t offsetof(Node *aggr, Node *memb)
     return -1;
 }
 
-static Node *one;
-
 static Node *membaddr(Simp *s, Node *n)
 {
     Node *t, *u, *r;
@@ -287,8 +289,7 @@ static Node *membaddr(Simp *s, Node *n)
         t = mkexpr(-1, Oaddr, args[0], NULL);
     else
         t = args[0];
-    u = mkint(-1, offsetof(args[0], args[1]));
-    u = mkexpr(-1, Olit, u, NULL);
+    u = mkintlit(-1, offsetof(args[0], args[1]));
     r = mkexpr(-1, Oadd, t, u, NULL);
     return r;
 }
@@ -310,7 +311,7 @@ static Node *idxaddr(Simp *s, Node *n)
         die("Can't index type %s\n", tystr(n->expr.type));
     u = rval(s, args[1]);
     sz = size(n);
-    v = mkexpr(-1, Omul, u, mkexpr(-1, Olit, mkint(-1, sz), NULL), NULL);
+    v = mkexpr(-1, Omul, u, mkintlit(-1, sz), NULL);
     r = mkexpr(-1, Oadd, t, v, NULL);
     return r;
 }
@@ -330,7 +331,7 @@ static Node *slicebase(Simp *s, Node *n, Node *off)
     }
     /* safe: all types we allow here have a sub[0] that we want to grab */
     sz = tysize(n->expr.type->sub[0]);
-    v = mkexpr(-1, Omul, off, mkexpr(-1, Olit, mkint(-1, sz), NULL), NULL);
+    v = mkexpr(-1, Omul, off, mkintlit(-1, sz), NULL);
     return mkexpr(-1, Oadd, u, v, NULL);
 }
 
@@ -338,8 +339,6 @@ Node *lval(Simp *s, Node *n)
 {
     Node *r;
 
-    if (!one)
-        one = mkexpr(-1, Olit, mkint(-1, 1), NULL);
     switch (exprop(n)) {
         case Ovar:      r = n;  break;
         case Omemb:     r = membaddr(s, n);     break;
@@ -384,8 +383,8 @@ static Node *lowerslice(Simp *s, Node *n)
     /* base = (void*)base + off*sz */
     base = slicebase(s, n->expr.args[0], n->expr.args[1]);
     len = mkexpr(-1, Osub, n->expr.args[2], n->expr.args[1], NULL);
-    stbase = mkexpr(-1, Ostor, mkexpr(-1, Oaddr, mkexpr(-1, Oslbase, t, NULL), NULL), base, NULL);
-    stlen = mkexpr(-1, Ostor, mkexpr(-1, Oaddr, mkexpr(-1, Osllen, t, NULL), NULL), len, NULL);
+    stbase = mkexpr(-1, Ostor, mkexpr(-1, Oaddr, t, NULL), base, NULL);
+    stlen = mkexpr(-1, Ostor, mkexpr(-1, Oaddr, mkexpr(-1, Oadd, t, ptrsz, NULL), NULL), len, NULL);
     append(s, stbase);
     append(s, stlen);
     return t;
@@ -411,7 +410,7 @@ static Node *rval(Simp *s, Node *n)
 
 
     if (!one)
-        one = mkexpr(-1, Olit, mkint(-1, 1), NULL);
+        one = mkintlit(-1, 1);
     r = NULL;
     args = n->expr.args;
     switch (exprop(n)) {
@@ -421,7 +420,7 @@ static Node *rval(Simp *s, Node *n)
             simplazy(s, n, r);
             break;
         case Osize:
-            r = mkexpr(-1, Olit, mkint(-1, size(args[0])), NULL);
+            r = mkintlit(-1, size(args[0]));
             break;
         case Oslice:
             r = lowerslice(s, n);
@@ -501,7 +500,7 @@ static Node *rval(Simp *s, Node *n)
             if (size(n) > 4) {
                 t = mkexpr(-1, Oaddr, t, NULL);
                 u = mkexpr(-1, Oaddr, u, NULL);
-                v = mkexpr(-1, Olit, mkint(-1, size(n)), NULL);
+		v = mkintlit(-1, size(n));
                 r = mkexpr(-1, Oblit, t, u, v, NULL);
             } else {
               r = mkexpr(-1, Ostor, t, u, NULL);
@@ -624,6 +623,11 @@ static void lowerfn(char *name, Node *n, Htab *globls, FILE *fd)
     if (debug)
         for (i = 0; i < s.nstmts; i++)
             dump(s.stmts[i], stdout);
+    for (i = 0; i < s.nstmts; i++) {
+	if (s.stmts[i]->type != Nexpr)
+	    continue;
+	s.stmts[i] = fold(s.stmts[i]);
+    }
     cfg = mkcfg(s.stmts, s.nstmts);
     if (debug)
         dumpcfg(cfg, stdout);
@@ -660,10 +664,14 @@ void gen(Node *file, char *out)
     Htab *globls;
     Sym *s;
 
+    /* declrae useful constants */
+    one = mkintlit(-1, 1);
+    ptrsz = mkintlit(-1, 4);
+
     n = file->file.stmts;
     nn = file->file.nstmts;
-
     globls = mkht(ptrhash, ptreq);
+
     /* We need to declare all variables before use */
     for (i = 0; i < nn; i++)
         if (n[i]->type == Ndecl)

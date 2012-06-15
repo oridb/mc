@@ -128,6 +128,11 @@ Node *mkblock(int line, Stab *scope)
     return n;
 }
 
+Node *mkintlit(int line, uvlong val)
+{
+    return mkexpr(line, Olit, mkint(line, val), NULL);
+}
+
 Node *mklbl(int line, char *lbl)
 {
     Node *n;

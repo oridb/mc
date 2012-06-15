@@ -1,5 +1,6 @@
 LIB=libopt.a
 OBJ=cfg.o \
+    fold.o \
     df.o \
 
 DEPS=../parse/libparse.a

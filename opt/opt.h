@@ -24,6 +24,8 @@ struct Bb {
     Bitset *succ;
 };
 
+/* expression folding */
+Node *fold(Node *n);
 /* Takes a reduced block, and returns a flow graph. */
 Cfg *mkcfg(Node **nl, size_t nn);
 void dumpcfg(Cfg *c, FILE *fd);
