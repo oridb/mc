@@ -711,11 +711,9 @@ static int paint(Isel *s)
 	    if (!taken[i]) {
 		if (debug) {
 		    locprint(stdout, n);
-		    printf(" ==> ");
-		    n->reg.colour = regmap[i][n->mode];
-		    locprint(stdout, n);
-		    printf("\n");
+		    printf(" ==> %s\n", regnames[regmap[i][n->mode]]);
 		}
+		n->reg.colour = regmap[i][n->mode];
 		found = 1;
 		break;
 	    }
