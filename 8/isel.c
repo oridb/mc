@@ -245,9 +245,12 @@ static Loc *binop(Isel *s, AsmOp op, Node *x, Node *y)
 }
 
 /* We have a few common cases to optimize here:
+ *    Oaddr(expr)
+ * or:
  *    Oadd(
  *        reg,
  *        reg||const))
+ *
  * or:
  *    Oadd(
  *        reg,
@@ -281,8 +284,10 @@ static Loc *memloc(Isel *s, Node *e, Mode m)
 
     scale = 1;
     l = NULL;
-    if (exprop(e) == Oadd) {
-        args = e->expr.args;
+    args = e->expr.args;
+    if (exprop(e) == Oaddr) {
+        l = selexpr(s, args[0]);
+    } else if (exprop(e) == Oadd) {
         b = selexpr(s, args[0]);
         if (ismergablemul(args[1], &scale))
             o = selexpr(s, args[1]->expr.args[0]);
@@ -739,7 +744,7 @@ void genasm(FILE *fd, Func *fn, Htab *globls)
         is.curbb = is.bb[j];
         for (i = 0; i < fn->cfg->bb[j]->nnl; i++) {
             isel(&is, fn->cfg->bb[j]->nl[i]);
-            //g(&is, Ilbl, locstrlbl("_"), NULL);
+            g(&is, Ilbl, locstrlbl("#_"), NULL);
         }
     }
     is.curbb = is.bb[is.nbb - 1];

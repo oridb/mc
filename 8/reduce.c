@@ -306,7 +306,7 @@ static Node *idxaddr(Simp *s, Node *n)
     if (args[0]->expr.type->type == Tyarray)
         t = mkexpr(-1, Oaddr, args[0], NULL);
     else if (args[0]->expr.type->type == Tyslice)
-        t = mkexpr(-1, Oslbase, args[0], NULL);
+        t = mkexpr(-1, Oload, mkexpr(1, Oaddr, args[0], NULL), NULL);
     else
         die("Can't index type %s\n", tystr(n->expr.type));
     u = rval(s, args[1]);
