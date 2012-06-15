@@ -115,11 +115,18 @@ struct Isel {
     Loc *stksz;
 
     /* register allocator state */
-    Insn ***moves;
-    size_t *nmoves;
     Bitset *prepainted; /* locations that need to be a specific colour */
+
     size_t *gbits;      /* igraph matrix repr */
     Bitset **gadj;      /* igraph adj set repr */
+
+    Insn ***moves;
+    size_t *nmoves;
+    Insn **activemoves;
+    size_t nactivemoves;
+
+    Bitset *selstk;
+    Bitset *coalesced;
 
     int *degree;        /* degree of nodes */
 

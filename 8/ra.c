@@ -162,23 +162,24 @@ static int ismove(Insn *i)
     return i->op == Imov;
 }
 
-static void gbputedge(size_t *g, int u, int v)
+/* static */ int gbhasedge(size_t *g, size_t u, size_t v)
+{
+    size_t i;
+    i = (maxregid * v) + u;
+    return g[i/Sizetbits] & (1ULL <<(i % Sizetbits));
+}
+
+static void gbputedge(size_t *g, size_t u, size_t v)
 {
     size_t i, j;
     i = (maxregid * v) + u;
     j = (maxregid * u) + v;
-    g[i/Sizetbits] |= 1 << (i % Sizetbits);
-    g[j/Sizetbits] |= 1 << (j % Sizetbits);
+    g[i/Sizetbits] |= 1ULL <<(i % Sizetbits);
+    g[j/Sizetbits] |= 1ULL <<(j % Sizetbits);
+    assert(!gbhasedge(g, 5, 5));
 }
 
-/* static */ int gbhasedge(size_t *g, int u, int v)
-{
-    size_t i;
-    i = (maxregid * v) + u;
-    return g[i/Sizetbits] & (1 << (i % Sizetbits));
-}
-
-static void addedge(Isel *s, int u, int v)
+static void addedge(Isel *s, size_t u, size_t v)
 {
     if (u == v)
 	return;
@@ -214,7 +215,7 @@ void setup(Isel *s)
     s->gadj = gadj;
 
     s->prepainted = bsclear(s->prepainted);
-    s->degree = xalloc(maxregid * sizeof(int));
+    s->degree = zalloc(maxregid * sizeof(int));
     s->moves = zalloc(maxregid * sizeof(Loc **));
     s->nmoves = zalloc(maxregid * sizeof(size_t));
 }
@@ -264,16 +265,45 @@ static void build(Isel *s)
     }
 }
 
-static int degree(int id)
+Bitset *adjacent(Isel *s, size_t n)
 {
-    die("Unimplemented");
-    return 42;
+    Bitset *r;
+
+    r = bsdup(s->gadj[n]);
+    bsdiff(r, s->selstk);
+    bsdiff(r, s->coalesced);
+    return r;
 }
 
-static int moverelated(int id)
+size_t nodemoves(Isel *s, size_t nid, Insn ***pil)
 {
-    die("blah");
-    return 42;
+    size_t i, j;
+    size_t n;
+
+    /* FIXME: inefficient. Do I care? */
+    n = 0;
+    for (i = 0; i < s->nmoves[nid]; i++) {
+	for (j = 0; j < s->nactivemoves; j++) {
+	    if (s->activemoves[j] == s->moves[nid][i]) {
+		if (pil)
+		    lappend(pil, &n, s->moves[nid][i]);
+		continue;
+	    }
+	}
+	for (j = 0; j < s->nwlmove; j++) {
+	    if (s->wlmove[j] == s->moves[nid][i]) {
+		if (pil)
+		    lappend(pil, &n, s->moves[nid][i]);
+		continue;
+	    }
+	}
+    }
+    return n;
+}
+
+static int moverelated(Isel *s, size_t n)
+{
+    return nodemoves(s, n, NULL) != 0;
 }
 
 /* static */ void mkworklist(Isel *s)
@@ -281,22 +311,49 @@ static int moverelated(int id)
     size_t i;
 
     for (i = 0; i < maxregid; i++) {
-	if (degree(locmap[i]->reg.id) >= K)
+	if (s->degree[i] >= K)
 	    lappend(&s->wlspill, &s->nwlspill, locmap[i]);
-	else if (moverelated(locmap[i]->reg.id))
+	else if (moverelated(s, i))
 	    lappend(&s->wlfreeze, &s->nwlfreeze, locmap[i]);
 	else
 	    lappend(&s->wlsimp, &s->nwlsimp, locmap[i]);
     }
 }
 
+void simp(Isel *s)
+{
+}
+
+void coalesce(Isel *s)
+{
+}
+
+void freeze(Isel *s)
+{
+}
+
+void spill(Isel *s)
+{
+}
+
 void regalloc(Isel *s)
 {
     liveness(s);
+    build(s);
     if (debug)
 	dumpasm(s, stdout);
-    build(s);
-    //mkworklist(s);
+    do {
+	if (s->nwlsimp)
+	    simp(s);
+	else if (s->nwlmove)
+	    coalesce(s);
+	else if (s->nwlfreeze)
+	    freeze(s);
+	else if (s->nwlspill)
+	    spill(s);
+	break;
+    } while (s->nwlsimp || s->nwlmove || s->nwlfreeze || s->nwlspill);
+    mkworklist(s);
 }
 
 static void setprint(FILE *fd, Bitset *s)
@@ -336,6 +393,17 @@ void dumpasm(Isel *s, FILE *fd)
     char *sep;
     Asmbb *bb;
 
+    fprintf(fd, "IGRAPH ----- \n");
+    for (i = 0; i < maxregid; i++) {
+	for (j = i; j < maxregid; j++) {
+	    if (gbhasedge(s->gbits, i, j)) {
+		locprint(fd, locmap[i]);
+		fprintf(fd, " -- ");
+		locprint(fd, locmap[j]);
+		fprintf(fd, "\n");
+	    }
+	}
+    }
     fprintf(fd, "ASM -------- \n");
     for (j = 0; j < s->nbb; j++) {
         bb = s->bb[j];
