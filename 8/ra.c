@@ -325,7 +325,7 @@ static void build(Isel *s)
 	    for (k = 0; k < nd; k++)
 		bsdel(live, d[k]);
 	    for (k = 0; k < nu; k++)
-		bsdel(live, u[k]);
+		bsput(live, u[k]);
 	}
     }
 }
@@ -607,6 +607,7 @@ int paint(Isel *s)
 	    if (!taken[i]) {
 		n->reg.colour = regmap[i][n->mode];
 		found = 1;
+		break;
 	    }
 	}
 	if (!found) {
