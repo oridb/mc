@@ -1,3 +1,5 @@
 const main = {
-	-> 42 % 9
+	var a = 42
+	var b = 9
+	-> a % b
 }

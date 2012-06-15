@@ -425,16 +425,20 @@ Loc *selexpr(Isel *s, Node *n)
 
         case Obsl:
         case Obsr:
-            a = selexpr(s, args[0]);
-            a = inr(s, a);
+            a = inr(s, selexpr(s, args[0]));
             b = selexpr(s, args[1]);
-            c = coreg(Rcl, b->mode);
-            g(s, Imov, b, c, NULL);
+            if (b->type == Loclit) {
+                d = b;
+            } else {
+                c = coreg(Rcl, b->mode);
+                g(s, Imov, b, c, NULL);
+                d = cl;
+            }
             if (exprop(n) == Obsr) {
                 if (istysigned(n->expr.type))
-                    g(s, Isar, cl, a, NULL);
+                    g(s, Isar, d, a, NULL);
                 else
-                    g(s, Ishr, cl, a, NULL);
+                    g(s, Ishr, d, a, NULL);
             } else {
                 g(s, Ishl, cl, a, NULL);
             }
