@@ -484,8 +484,8 @@ Loc *selexpr(Isel *s, Node *n)
             die("Unimplemented op %s", opstr(exprop(n)));
             break;
         case Ostor: /* reg -> mem */
-            a = memloc(s, args[0], mode(n));
             b = selexpr(s, args[1]);
+            a = memloc(s, args[0], mode(n));
             b = inri(s, b);
             g(s, Imov, b, a, NULL);
             r = b;
