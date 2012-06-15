@@ -330,7 +330,7 @@ static Node *slicebase(Simp *s, Node *n, Node *off)
     }
     /* safe: all types we allow here have a sub[0] that we want to grab */
     sz = tysize(n->expr.type->sub[0]);
-    v = mkexpr(-1, Omul, u, mkexpr(-1, Olit, mkint(-1, sz), NULL), NULL);
+    v = mkexpr(-1, Omul, off, mkexpr(-1, Olit, mkint(-1, sz), NULL), NULL);
     return mkexpr(-1, Oadd, u, v, NULL);
 }
 

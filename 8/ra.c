@@ -518,13 +518,62 @@ int combinable(Isel *s, regid u, regid v)
     return 1;
 }
 
+int wlhas(Loc **wl, size_t nwl, regid v, size_t *idx)
+{
+    size_t i;
+
+    for (i = 0; i < nwl; i++) {
+	if (wl[i]->reg.id == v) { 
+	    *idx = i;
+	    return 1;
+	}
+    }
+    return 0;
+}
+
 void combine(Isel *s, regid u, regid v)
 {
+    Bitset *adj;
+    regid t;
+    size_t idx;
+    size_t i, j;
+    int has;
+
     printf("Want to combine ");
     locprint(stdout, locmap[u]);
     printf(" with ");
     locprint(stdout, locmap[v]);
     printf("\n");
+    if (wlhas(s->wlfreeze, s->nwlfreeze, v, &idx))
+	ldel(&s->wlfreeze, &s->nwlfreeze, idx);
+    else if (wlhas(s->wlspill, s->nwlspill, v, &idx))
+	ldel(&s->wlspill, &s->nwlspill, idx);
+    bsput(s->coalesced, v);
+    s->aliasmap[v] = locmap[u];
+
+    /* nodemoves[u] = nodemoves[u] U nodemoves[v] */
+    for (i = 0; i < s->nrmoves[v]; i++) {
+	has = 0;
+	for (j = 0; j < s->nrmoves[u]; j++) {
+	    if (s->rmoves[v][i] == s->rmoves[u][j]) {
+		has = 1;
+		break;
+	    }
+	}
+	if (!has)
+	    lappend(&s->rmoves[u], &s->nrmoves[u], s->rmoves[v][i]);
+    }
+    
+    adj = adjacent(s, v);
+    for (t = 0; bsiter(adj, &t); t++) {
+	gbputedge(s, t, u);
+	decdegree(s, t);
+    }
+    if (s->degree[u] >= K && wlhas(s->wlfreeze, s->nwlfreeze, u, &idx)) {
+	ldel(&s->wlfreeze, &s->nwlfreeze, idx);
+	lappend(&s->wlspill, &s->nwlspill, locmap[u]);
+    }
+
 }
 
 void coalesce(Isel *s)
@@ -560,9 +609,49 @@ void coalesce(Isel *s)
     }
 }
 
-void freezemoves(Isel *s, regid u)
+int mldel(Insn ***ml, size_t *nml, Insn *m)
 {
-    die("Implement freeze moves\n");
+    size_t i;
+    for (i = 0; i < *nml; i++) {
+	if (m == (*ml)[i]) {
+	    ldel(ml, nml, i);
+	    return 1;
+	}
+    }
+    return 0;
+}
+
+void freezemoves(Isel *s, Loc *u)
+{
+    size_t i;
+    Insn **ml;
+    Insn *m;
+    size_t nml;
+    size_t idx;
+    Loc *v;
+    
+    nml = nodemoves(s, u->reg.id, &ml);
+    for (i = 0; i < nml; i++) {
+	m = ml[i];
+	if (m->args[0] == u)
+	    v = m->args[1];
+	else if (m->args[1] == u)
+	    v = m->args[0];
+	else
+	    continue;
+
+	if (!mldel(&s->mactive, &s->nmactive, m))
+	    mldel(&s->wlmove, &s->nwlmove, m);
+	lappend(&s->mfrozen, &s->nmfrozen, m);
+	if (!nodemoves(s, v->reg.id, NULL) && s->degree[v->reg.id] < K) {
+	    if (!wlhas(s->wlfreeze, s->nwlfreeze, v->reg.id, &idx))
+		die("Reg %zd not in freeze wl\n", v->reg.id);
+	    ldel(&s->wlfreeze, &s->nwlfreeze, idx);
+	    lappend(&s->wlsimp, &s->nwlsimp, v);
+	}
+
+    }
+    lfree(&ml, &nml);
 }
 
 void freeze(Isel *s)
@@ -571,12 +660,25 @@ void freeze(Isel *s)
 
     l = lpop(&s->wlfreeze, &s->nwlfreeze);
     lappend(&s->wlsimp, &s->nwlsimp, l);
-    freezemoves(s, l->reg.id);
+    freezemoves(s, l);
 }
 
-void spill(Isel *s)
+void selspill(Isel *s)
 {
-    die("Implement spilling\n");
+    size_t i;
+    Loc *m;
+
+    /* FIXME: pick a better heuristic for spilling */
+    for (i = 0; i < s->nwlspill; i++) {
+	if (!bshas(s->spilled, s->wlspill[i]->reg.id)) {
+	    m = s->wlspill[i];
+	    ldel(&s->wlspill, &s->nwlspill, i);
+	    break;
+	}
+    }
+    assert(m != NULL);
+    lappend(&s->wlsimp, &s->nwlsimp, m);
+    freezemoves(s, m);
 }
 
 int paint(Isel *s)
@@ -605,7 +707,11 @@ int paint(Isel *s)
 	found = 0;
 	for (i = 0; i < K; i++) {
 	    if (!taken[i]) {
+		locprint(stdout, n);
+		printf(" ==> ");
 		n->reg.colour = regmap[i][n->mode];
+		locprint(stdout, n);
+		printf("\n");
 		found = 1;
 		break;
 	    }
@@ -651,7 +757,7 @@ void regalloc(Isel *s)
 	    else if (s->nwlfreeze)
 		freeze(s);
 	    else if (s->nwlspill)
-		spill(s);
+		selspill(s);
 	} while (s->nwlsimp || s->nwlmove || s->nwlfreeze || s->nwlspill);
 	spilled = paint(s);
 	if (spilled)
