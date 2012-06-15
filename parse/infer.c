@@ -142,8 +142,9 @@ static char *ctxstr(Node *n)
 {
     char *s;
     switch (n->type) {
-        case Nexpr:     s = opstr(exprop(n)); break;
-        default:        s = nodestr(n->type); break;
+        case Nexpr:     s = opstr(exprop(n)); 	break;
+        case Nname:     s = namestr(n); 	break;
+        default:        s = nodestr(n->type); 	break;
     }
     return s;
 }
@@ -352,7 +353,7 @@ static void inferexpr(Node *n, Type *ret, int *sawret)
         case Ovar:      /* a:@a -> @a */
             s = getdcl(curstab(), args[0]);
             if (!s)
-                fatal(n->line, "Undeclared var %s", declname(args[0]));
+                fatal(n->line, "Undeclared var %s", ctxstr(args[0]));
             else
                 settype(n, s->type);
             n->expr.did = s->id;
