@@ -65,6 +65,16 @@ int colourmap[Nreg] = {
     [Rebp] = 5,
 };
 
+/* %esp, %ebp are not in the allocatable pool */
+static int isfixreg(Loc *l)
+{
+    if (l->reg.colour == Resp)
+	return 1;
+    if (l->reg.colour == Rebp)
+	return 1;
+    return 0;
+}
+
 static size_t uses(Insn *insn, long *u)
 {
     size_t i, j;
@@ -81,7 +91,8 @@ static size_t uses(Insn *insn, long *u)
 	k = usetab[insn->op].l[i] - 1;
 	/* non-registers are handled later */
 	if (insn->args[k]->type == Locreg)
-	    u[j++] = insn->args[k]->reg.id;
+	    if (!isfixreg(insn->args[k]))
+		u[j++] = insn->args[k]->reg.id;
     }
     /* some insns don't reflect their defs in the args.
      * These are explictly listed in the insn description */
@@ -97,9 +108,11 @@ static size_t uses(Insn *insn, long *u)
 	m = insn->args[i];
 	if (m->type != Locmem && m->type != Locmeml)
 	    continue;
-	u[j++] = m->mem.base->reg.id;
+	if (!isfixreg(m->mem.base))
+	    u[j++] = m->mem.base->reg.id;
 	if (m->mem.idx)
-	    u[j++] = m->mem.idx->reg.id;
+	    if (!isfixreg(m->mem.base))
+		u[j++] = m->mem.idx->reg.id;
     }
     return j;
 }
@@ -118,7 +131,8 @@ static size_t defs(Insn *insn, long *d)
 	    break;
 	k = deftab[insn->op].l[i] - 1;
 	if (insn->args[k]->type == Locreg)
-	    d[j++] = insn->args[k]->reg.id;
+	    if (!isfixreg(insn->args[k]))
+		d[j++] = insn->args[k]->reg.id;
     }
     /* some insns don't reflect their defs in the args.
      * These are explictly listed in the insn description */
@@ -200,23 +214,26 @@ static int ismove(Insn *i)
 {
     size_t i;
     i = (maxregid * v) + u;
-    return s->gbits[i/Sizetbits] & (1ULL <<(i % Sizetbits));
+    return (s->gbits[i/Sizetbits] & (1ULL <<(i % Sizetbits))) != 0;
 }
 
 static void gbputedge(Isel *s, size_t u, size_t v)
 {
     size_t i, j;
-    i = (maxregid * v) + u;
-    j = (maxregid * u) + v;
+
+    i = (maxregid * u) + v;
+    j = (maxregid * v) + u;
     s->gbits[i/Sizetbits] |= 1ULL <<(i % Sizetbits);
     s->gbits[j/Sizetbits] |= 1ULL <<(j % Sizetbits);
+    assert(gbhasedge(s, u, v) && gbhasedge(s, v, u));
 }
 
 static void addedge(Isel *s, size_t u, size_t v)
 {
-    if (u == v)
+    if (u == v || gbhasedge(s, u, v))
 	return;
     gbputedge(s, u, v);
+    gbputedge(s, v, u);
     if (!bshas(s->prepainted, u)) {
 	bsput(s->gadj[u], v);
 	s->degree[u]++;
@@ -328,6 +345,8 @@ size_t nodemoves(Isel *s, regid n, Insn ***pil)
 
     /* FIXME: inefficient. Do I care? */
     count = 0;
+    if (pil)
+	*pil = NULL;
     for (i = 0; i < s->nrmoves[n]; i++) {
 	for (j = 0; j < s->nmactive; j++) {
 	    if (s->mactive[j] == s->rmoves[n][i]) {
@@ -395,8 +414,8 @@ void decdegree(Isel *s, regid n)
     s->degree[n]--;
 
     if (d == K) {
-	adj = adjacent(s, m);
-	enablemove(s, m);
+	enablemove(s, n);
+	adj = adjacent(s, n);
 	for (m = 0; bsiter(adj, &m); m++)
 	    enablemove(s, n);
 	bsfree(adj);

@@ -117,7 +117,6 @@ struct Isel {
     Loc *stksz;
 
     /* register allocator state */
-    Bitset *initial; /* locations that need to be a specific colour */
     Bitset *prepainted; /* locations that need to be a specific colour */
 
     size_t *gbits;      /* igraph matrix repr */
