@@ -374,17 +374,17 @@ static Node *simplazy(Simp *s, Node *n, Node *r)
 static Node *lowerslice(Simp *s, Node *n)
 {
     Node *t;
-    Node *base;
-    Node *len;
-    Node *stbase;
-    Node *stlen;
+    Node *base, *sz, *len;
+    Node *stbase, *stlen;
 
     t = temp(s, n);
-    /* base = (void*)base + off*sz */
+    /* *(&slice) = (void*)base + off*sz */
     base = slicebase(s, n->expr.args[0], n->expr.args[1]);
     len = mkexpr(-1, Osub, n->expr.args[2], n->expr.args[1], NULL);
     stbase = mkexpr(-1, Ostor, mkexpr(-1, Oaddr, t, NULL), base, NULL);
-    stlen = mkexpr(-1, Ostor, mkexpr(-1, Oaddr, mkexpr(-1, Oadd, t, ptrsz, NULL), NULL), len, NULL);
+    /* *(&slice + ptrsz) = len */
+    sz = mkexpr(-1, Oadd, mkexpr(-1, Oaddr, t, NULL), ptrsz, NULL);
+    stlen = mkexpr(-1, Ostor, sz, len, NULL);
     append(s, stbase);
     append(s, stlen);
     return t;

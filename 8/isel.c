@@ -739,6 +739,7 @@ void genasm(FILE *fd, Func *fn, Htab *globls)
         is.curbb = is.bb[j];
         for (i = 0; i < fn->cfg->bb[j]->nnl; i++) {
             isel(&is, fn->cfg->bb[j]->nl[i]);
+            //g(&is, Ilbl, locstrlbl("_"), NULL);
         }
     }
     is.curbb = is.bb[is.nbb - 1];
