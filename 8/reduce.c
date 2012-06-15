@@ -88,7 +88,7 @@ static char *asmname(Node *n)
     return s;
 }
 
-static size_t tysize(Type *t)
+size_t tysize(Type *t)
 {
     size_t sz;
     size_t i;
@@ -626,7 +626,12 @@ static void lowerfn(char *name, Node *n, Htab *globls, FILE *fd)
     for (i = 0; i < s.nstmts; i++) {
 	if (s.stmts[i]->type != Nexpr)
 	    continue;
+	printf("FOLD FROM ----------\n");
+	dump(s.stmts[i], stdout);
 	s.stmts[i] = fold(s.stmts[i]);
+	printf("FOLD TO ------------\n");
+	dump(s.stmts[i], stdout);
+	printf("END ----------------\n");
     }
     cfg = mkcfg(s.stmts, s.nstmts);
     if (debug)
@@ -641,7 +646,6 @@ static void lowerfn(char *name, Node *n, Htab *globls, FILE *fd)
     genasm(fd, &fn, globls);
 }
 
-void blobdump(Blob *b, FILE *fd); /* shut up compiler warnings */
 void blobdump(Blob *b, FILE *fd)
 {
     size_t i;
