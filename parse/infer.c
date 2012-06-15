@@ -143,6 +143,7 @@ static char *ctxstr(Node *n)
     char *s;
     switch (n->type) {
         case Nexpr:     s = opstr(exprop(n)); 	break;
+        case Ndecl:     s = declstr(n); 	break;
         case Nname:     s = namestr(n); 	break;
         default:        s = nodestr(n->type); 	break;
     }
