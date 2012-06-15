@@ -214,7 +214,7 @@ static Tok *strlit()
             fatal(line, "Newlines not allowed in strings");
     };
     t = mktok(Tstrlit);
-    t->str = strdupn(&fbuf[sstart], fidx - sstart);
+    t->str = strdupn(&fbuf[sstart], fidx - sstart - 1);
     return t;
 }
 
