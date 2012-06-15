@@ -279,7 +279,7 @@ static Loc *memloc(Isel *s, Node *e, Mode m)
     Loc *l, *b, *o; /* location, base, offset */
     int scale;
 
-    scale = 0;
+    scale = 1;
     l = NULL;
     if (exprop(e) == Oadd) {
         args = e->expr.args;
@@ -292,7 +292,7 @@ static Loc *memloc(Isel *s, Node *e, Mode m)
         if (b->type != Locreg)
             b = inr(s, b);
         if (o->type == Loclit) {
-            l = locmems(o->lit, b, Rnone, scale, m);
+            l = locmem(scale*o->lit, b, Rnone, m);
         } else if (o->type == Locreg) {
             b = inr(s, b);
             l = locmems(0, b, o, scale, m);
@@ -574,7 +574,7 @@ void locprint(FILE *fd, Loc *l)
                 fprintf(fd, ",");
                 locprint(fd, l->mem.idx);
             }
-            if (l->mem.scale)
+            if (l->mem.scale > 1)
                 fprintf(fd, ",%d", l->mem.scale);
             if (l->mem.base)
                 fprintf(fd, ")");
