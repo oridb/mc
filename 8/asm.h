@@ -1,6 +1,8 @@
 #define Maxarg 4
 #define K 4 /* 4 general purpose regs with all modes available */
 
+typedef size_t regid;
+
 typedef struct Insn Insn;
 typedef struct Loc Loc;
 typedef struct Func Func;
@@ -52,7 +54,7 @@ struct Loc {
     union {
         char *lbl;
         struct {
-            long  id;
+            regid id;
             Reg   colour;
         } reg;
         long  lit;
@@ -115,20 +117,36 @@ struct Isel {
     Loc *stksz;
 
     /* register allocator state */
+    Bitset *initial; /* locations that need to be a specific colour */
     Bitset *prepainted; /* locations that need to be a specific colour */
 
     size_t *gbits;      /* igraph matrix repr */
     Bitset **gadj;      /* igraph adj set repr */
-
-    Insn ***moves;
-    size_t *nmoves;
-    Insn **activemoves;
-    size_t nactivemoves;
-
-    Bitset *selstk;
-    Bitset *coalesced;
-
     int *degree;        /* degree of nodes */
+    Loc **aliasmap;   /* mapping of aliases */
+
+    Loc  **selstk;
+    size_t nselstk;
+
+    Bitset *coalesced;
+    Bitset *spilled;
+
+    Insn ***rmoves;
+    size_t *nrmoves;
+
+    /* move sets */
+    Insn **mcoalesced;
+    size_t nmcoalesced;
+
+    Insn **mconstrained;
+    size_t nmconstrained;
+
+    Insn **mfrozen;
+    size_t nmfrozen;
+
+    Insn **mactive;
+    size_t nmactive;
+
 
     /* worklists */
     Insn **wlmove;

@@ -8,7 +8,7 @@ function build {
     echo $MC $1.myr && \
     $MC $1.myr && \
     mv a.s $1.s #&& \
-#    cc $ASOPT -m32 -o $1 $1.s
+    cc $ASOPT -m32 -o $1 $1.s
 }
 
 function prints {

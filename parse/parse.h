@@ -224,6 +224,7 @@ extern int ispureop[];
 
 /* data structures */
 Bitset *mkbs(void);
+void    bsfree(Bitset *bs);
 Bitset *bsdup(Bitset *bs);
 Bitset *bsclear(Bitset *bs);
 void delbs(Bitset *bs);
@@ -364,6 +365,8 @@ Node *unpickle(FILE *fd);
 
 /* convenience func */
 void lappend(void *l, size_t *len, void *n); /* ugly hack; nl is void* because void*** is incompatible with T*** */
+void *lpop(void *l, size_t *len);
+void ldel(void *l, size_t *len, size_t idx);
 void lfree(void *l, size_t *len);
 
 /* Options to control the compilation */

@@ -33,6 +33,12 @@ Bitset *mkbs()
     return bs;
 }
 
+void bsfree(Bitset *bs)
+{
+    free(bs->chunks);
+    free(bs);
+}
+
 Bitset *bsdup(Bitset *a)
 {
     Bitset *bs;
