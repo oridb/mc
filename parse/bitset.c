@@ -7,7 +7,7 @@
 
 #include "parse.h"
 
-#define Uintbits (CHAR_BIT*sizeof(int))
+#define Sizetbits (CHAR_BIT*sizeof(size_t)) /* used in graph reprs */
 
 static void eqsz(Bitset *a, Bitset *b)
 {
@@ -62,7 +62,7 @@ size_t bscount(Bitset *bs)
     n = 0;
     for (i = 0; i < bs->nchunks; i++)
         for (j = 1; j < sizeof(size_t)*CHAR_BIT; j++)
-            if (bs->chunks[i] & 1 << j)
+            if (bs->chunks[i] & 1ULL << j)
                 n++;
     return n;
 }
@@ -85,7 +85,7 @@ int bsiter(Bitset *bs, size_t *elt)
  * is a bit slow. This is mostly an aid to iterate over it. */
 size_t bsmax(Bitset *bs)
 {
-    return bs->nchunks*sizeof(size_t)*CHAR_BIT;
+    return bs->nchunks*Sizetbits;
 }
 
 void delbs(Bitset *bs)
@@ -97,27 +97,26 @@ void delbs(Bitset *bs)
 void bsput(Bitset *bs, size_t elt)
 {
     size_t sz;
-    assert(elt < 100);
-    if (elt >= bs->nchunks*Uintbits) {
-        sz = (elt/Uintbits)+1;
+    if (elt >= bs->nchunks*Sizetbits) {
+        sz = (elt/Sizetbits)+1;
         bs->chunks = zrealloc(bs->chunks, bs->nchunks*sizeof(size_t), sz*sizeof(size_t));
         bs->nchunks = sz;
     }
-    bs->chunks[elt/Uintbits] |= 1 << (elt % Uintbits);
+    bs->chunks[elt/Sizetbits] |= 1ULL << (elt % Sizetbits);
 }
 
 void bsdel(Bitset *bs, size_t elt)
 {
-    if (elt < bs->nchunks*Uintbits)
-        bs->chunks[elt/Uintbits] &= ~(1 << (elt % Uintbits));
+    if (elt < bs->nchunks*Sizetbits)
+        bs->chunks[elt/Sizetbits] &= ~(1ULL << (elt % Sizetbits));
 }
 
 int bshas(Bitset *bs, size_t elt)
 {
-    if (elt >= bs->nchunks*Uintbits)
+    if (elt >= bs->nchunks*Sizetbits)
         return 0;
     else
-        return bs->chunks[elt/Uintbits] & (1 << (elt % Uintbits));
+        return bs->chunks[elt/Sizetbits] & (1ULL << (elt % Sizetbits));
 }
 
 void bsunion(Bitset *a, Bitset *b)

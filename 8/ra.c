@@ -2,17 +2,15 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdarg.h>
-#include <ctype.h>
-#include <string.h>
 #include <assert.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
+#include <limits.h>
+#include <string.h>
 
 #include "parse.h"
 #include "opt.h"
 #include "asm.h"
+
+#define Sizetbits (CHAR_BIT*sizeof(size_t)) /* used in graph reprs */
 
 typedef struct Usage Usage;
 struct Usage {
@@ -164,36 +162,80 @@ static int ismove(Insn *i)
     return i->op == Imov;
 }
 
+static void gbputedge(size_t *g, int u, int v)
+{
+    size_t i, j;
+    i = (maxregid * v) + u;
+    j = (maxregid * u) + v;
+    g[i/Sizetbits] |= 1 << (i % Sizetbits);
+    g[j/Sizetbits] |= 1 << (j % Sizetbits);
+}
+
+/* static */ int gbhasedge(size_t *g, int u, int v)
+{
+    size_t i;
+    i = (maxregid * v) + u;
+    return g[i/Sizetbits] & (1 << (i % Sizetbits));
+}
+
 static void addedge(Isel *s, int u, int v)
 {
     if (u == v)
 	return;
-    locprint(stdout, locmap[u]);
-    fprintf(stdout, " -- ");
-    locprint(stdout, locmap[v]);
-    fprintf(stdout, "\n");
+    gbputedge(s->gbits, u, v);
+    if (!bshas(s->prepainted, u)) {
+	bsput(s->gadj[u], v);
+	s->degree[u]++;
+    }
+    if (!bshas(s->prepainted, v)) {
+	bsput(s->gadj[v], u);
+	s->degree[v]++;
+    }
+}
+
+void setup(Isel *s)
+{
+    Bitset **gadj;
+    size_t gchunks;
+    size_t i;
+
+    free(s->gbits);
+    gchunks = (maxregid*maxregid)/Sizetbits + 1;
+    s->gbits = zalloc(gchunks*sizeof(size_t));
+    /* fresh adj list repr. try to avoid reallocating all the bitsets */
+    gadj = zalloc(maxregid * sizeof(Bitset*));
+    if (s->gadj)
+	for (i = 0; i < maxregid; i++)
+	    gadj[i] = bsclear(s->gadj[i]);
+    else
+	for (i = 0; i < maxregid; i++)
+	    gadj[i] = mkbs();
+    free(s->gadj);
+    s->gadj = gadj;
+
+    s->prepainted = bsclear(s->prepainted);
+    s->degree = xalloc(maxregid * sizeof(int));
+    s->moves = zalloc(maxregid * sizeof(Loc **));
+    s->nmoves = zalloc(maxregid * sizeof(size_t));
 }
 
 static void build(Isel *s)
 {
-    /* uses/defs */
     long u[2*Maxarg], d[2*Maxarg];
     size_t nu, nd;
-    /* indexes */
     size_t i, k;
     ssize_t j;
-    /* liveness */
     Bitset *live;
-    /* convenience vars */
     Asmbb **bb;
     size_t nbb;
     Insn *insn;
     size_t l;
 
+    setup(s);
+    /* set up convenience vars */
     bb = s->bb;
     nbb = s->nbb;
-    s->moves = zalloc(maxregid * sizeof(Loc **));
-    s->nmoves = zalloc(maxregid * sizeof(size_t));
+
     //s->graph = zalloc(maxregid * sizeof(size_t));
     for (i = 0; i < nbb; i++) {
 	live = bsdup(bb[i]->liveout);
@@ -252,7 +294,7 @@ void regalloc(Isel *s)
 {
     liveness(s);
     if (debug)
-	dumpasm(s->bb, s->nbb, stdout);
+	dumpasm(s, stdout);
     build(s);
     //mkworklist(s);
 }
@@ -288,15 +330,15 @@ static void locsetprint(FILE *fd, Bitset *s)
     fprintf(fd, "\n");
 }
 
-void dumpasm(Asmbb **bbs, size_t nbb, FILE *fd)
+void dumpasm(Isel *s, FILE *fd)
 {
     size_t i, j;
     char *sep;
     Asmbb *bb;
 
     fprintf(fd, "ASM -------- \n");
-    for (j = 0; j < nbb; j++) {
-        bb = bbs[j];
+    for (j = 0; j < s->nbb; j++) {
+        bb = s->bb[j];
         fprintf(fd, "\n");
         fprintf(fd, "Bb: %d labels=(", bb->id);
         sep = "";

@@ -101,7 +101,7 @@ struct Asmbb {
 
 /* instruction selection state */
 struct Isel {
-    Cfg  *cfg;
+    Cfg  *cfg;          /* cfg built with nodes */
 
     Asmbb **bb;         /* 1:1 mappings with the Node bbs in the CFG */
     size_t nbb;
@@ -116,10 +116,11 @@ struct Isel {
 
     /* register allocator state */
     Insn ***moves;
-    Bitset *prepainted; /* locations that need to be a specific colour */
     size_t *nmoves;
+    Bitset *prepainted; /* locations that need to be a specific colour */
+    size_t *gbits;      /* igraph matrix repr */
+    Bitset **gadj;      /* igraph adj set repr */
 
-    Bitset **igraph;    /* adjacency set for igraph */
     int *degree;        /* degree of nodes */
 
     /* worklists */
@@ -167,4 +168,4 @@ void regalloc(Isel *s);
 /* useful functions */
 size_t size(Node *n);
 void breakhere();
-void dumpasm(Asmbb **bbs, size_t nbb, FILE *fd);
+void dumpasm(Isel *s, FILE *fd);

@@ -54,7 +54,7 @@ typedef enum {
 
 struct Bitset {
     size_t nchunks;
-    uint *chunks;
+    size_t *chunks;
 };
 
 struct Htab {
