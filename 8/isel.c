@@ -529,16 +529,6 @@ Loc *selexpr(Isel *s, Node *n)
             blit(s, a, b, args[2]->expr.args[0]->lit.intval);
             r = b;
             break;
-        case Oslbase:
-            a = selexpr(s, args[0]);
-            a = inr(s, a);
-            r = locmem(0, a, Rnone, ModeL);
-            break;
-        case Osllen:
-            a = selexpr(s, args[0]);
-            a = inr(s, a);
-            r = locmem(4, a, Rnone, ModeL);
-            break;
 
         /* These operators should never show up in the reduced trees,
          * since they should have been replaced with more primitive
@@ -548,6 +538,7 @@ Loc *selexpr(Isel *s, Node *n)
         case Osubeq: case Omuleq: case Odiveq: case Omodeq: case Oboreq:
         case Obandeq: case Obxoreq: case Obsleq: case Obsreq: case Omemb:
         case Oslice: case Oidx: case Osize: case Numops:
+        case Oslbase: case Osllen:
             dump(n, stdout);
             die("Should not see %s in isel", opstr(exprop(n)));
             break;
@@ -729,6 +720,7 @@ void genasm(FILE *fd, Func *fn, Htab *globls)
 {
     struct Isel is = {0,};
     size_t i, j;
+    char buf[128];
 
     is.locs = fn->locs;
     is.globls = globls;
@@ -744,7 +736,8 @@ void genasm(FILE *fd, Func *fn, Htab *globls)
         is.curbb = is.bb[j];
         for (i = 0; i < fn->cfg->bb[j]->nnl; i++) {
             isel(&is, fn->cfg->bb[j]->nl[i]);
-            g(&is, Ilbl, locstrlbl("#_"), NULL);
+            snprintf(buf, sizeof buf, "# bbidx = %zd, line=%d", i, fn->cfg->bb[j]->nl[i]->line);
+            g(&is, Ilbl, locstrlbl(buf), NULL);
         }
     }
     is.curbb = is.bb[is.nbb - 1];

@@ -171,30 +171,30 @@ static Node *temp(Simp *simp, Node *e)
 
     assert(e->type == Nexpr);
     snprintf(buf, 128, ".t%d", nexttmp++);
-    n = mkname(-1, buf);
-    s = mksym(-1, n, e->expr.type);
-    t = mkdecl(-1, s);
+    n = mkname(e->line, buf);
+    s = mksym(e->line, n, e->expr.type);
+    t = mkdecl(e->line, s);
     declarelocal(simp, t);
-    r = mkexpr(-1, Ovar, t, NULL);
+    r = mkexpr(e->line, Ovar, t, NULL);
     r->expr.did = s->id;
     return r;
 }
 
 static void jmp(Simp *s, Node *lbl)
 {
-    append(s, mkexpr(-1, Ojmp, lbl, NULL));
+    append(s, mkexpr(lbl->line, Ojmp, lbl, NULL));
 }
 
 static Node *store(Node *dst, Node *src)
 {
-    return mkexpr(-1, Ostor, dst, src, NULL);
+    return mkexpr(dst->line, Ostor, dst, src, NULL);
 }
 
 static void cjmp(Simp *s, Node *cond, Node *iftrue, Node *iffalse)
 {
     Node *jmp;
 
-    jmp = mkexpr(-1, Ocjmp, cond, iftrue, iffalse, NULL);
+    jmp = mkexpr(cond->line, Ocjmp, cond, iftrue, iffalse, NULL);
     append(s, jmp);
 }
 
@@ -286,11 +286,11 @@ static Node *membaddr(Simp *s, Node *n)
 
     args = n->expr.args;
     if (n->expr.type->type != Typtr)
-        t = mkexpr(-1, Oaddr, args[0], NULL);
+        t = mkexpr(n->line, Oaddr, args[0], NULL);
     else
         t = args[0];
-    u = mkintlit(-1, offsetof(args[0], args[1]));
-    r = mkexpr(-1, Oadd, t, u, NULL);
+    u = mkintlit(n->line, offsetof(args[0], args[1]));
+    r = mkexpr(n->line, Oadd, t, u, NULL);
     return r;
 }
 
@@ -304,15 +304,15 @@ static Node *idxaddr(Simp *s, Node *n)
     assert(exprop(n) == Oidx);
     args = n->expr.args;
     if (args[0]->expr.type->type == Tyarray)
-        t = mkexpr(-1, Oaddr, args[0], NULL);
+        t = mkexpr(n->line, Oaddr, args[0], NULL);
     else if (args[0]->expr.type->type == Tyslice)
-        t = mkexpr(-1, Oload, mkexpr(1, Oaddr, args[0], NULL), NULL);
+        t = mkexpr(n->line, Oload, mkexpr(n->line, Oaddr, args[0], NULL), NULL);
     else
         die("Can't index type %s\n", tystr(n->expr.type));
     u = rval(s, args[1]);
     sz = size(n);
-    v = mkexpr(-1, Omul, u, mkintlit(-1, sz), NULL);
-    r = mkexpr(-1, Oadd, t, v, NULL);
+    v = mkexpr(n->line, Omul, u, mkintlit(n->line, sz), NULL);
+    r = mkexpr(n->line, Oadd, t, v, NULL);
     return r;
 }
 
@@ -325,14 +325,14 @@ static Node *slicebase(Simp *s, Node *n, Node *off)
     u = NULL;
     switch (n->expr.type->type) {
         case Typtr:     u = n;
-        case Tyarray:   u = mkexpr(-1, Oaddr, t, NULL); break;
-        case Tyslice:   u = mkexpr(-1, Oslbase, t, NULL); break;
+        case Tyarray:   u = mkexpr(n->line, Oaddr, t, NULL); break;
+        case Tyslice:   u = mkexpr(n->line, Oslbase, t, NULL); break;
         default: die("Unslicable type %s", tystr(n->expr.type));
     }
     /* safe: all types we allow here have a sub[0] that we want to grab */
     sz = tysize(n->expr.type->sub[0]);
-    v = mkexpr(-1, Omul, off, mkintlit(-1, sz), NULL);
-    return mkexpr(-1, Oadd, u, v, NULL);
+    v = mkexpr(n->line, Omul, off, mkintlit(n->line, sz), NULL);
+    return mkexpr(n->line, Oadd, u, v, NULL);
 }
 
 Node *lval(Simp *s, Node *n)
@@ -380,11 +380,11 @@ static Node *lowerslice(Simp *s, Node *n)
     t = temp(s, n);
     /* *(&slice) = (void*)base + off*sz */
     base = slicebase(s, n->expr.args[0], n->expr.args[1]);
-    len = mkexpr(-1, Osub, n->expr.args[2], n->expr.args[1], NULL);
-    stbase = mkexpr(-1, Ostor, mkexpr(-1, Oaddr, t, NULL), base, NULL);
+    len = mkexpr(n->line, Osub, n->expr.args[2], n->expr.args[1], NULL);
+    stbase = mkexpr(n->line, Ostor, mkexpr(n->line, Oaddr, t, NULL), base, NULL);
     /* *(&slice + ptrsz) = len */
-    sz = mkexpr(-1, Oadd, mkexpr(-1, Oaddr, t, NULL), ptrsz, NULL);
-    stlen = mkexpr(-1, Ostor, sz, len, NULL);
+    sz = mkexpr(n->line, Oadd, mkexpr(n->line, Oaddr, t, NULL), ptrsz, NULL);
+    stlen = mkexpr(n->line, Ostor, sz, len, NULL);
     append(s, stbase);
     append(s, stlen);
     return t;
@@ -420,18 +420,18 @@ static Node *rval(Simp *s, Node *n)
             simplazy(s, n, r);
             break;
         case Osize:
-            r = mkintlit(-1, size(args[0]));
+            r = mkintlit(n->line, size(args[0]));
             break;
         case Oslice:
             r = lowerslice(s, n);
             break;
         case Oidx:
             t = idxaddr(s, n);
-            r = mkexpr(-1, Oload, t, NULL);
+            r = mkexpr(n->line, Oload, t, NULL);
             break;
         case Omemb:
             t = membaddr(s, n);
-            r = mkexpr(-1, Oload, t, NULL);
+            r = mkexpr(n->line, Oload, t, NULL);
             break;
 
         /* fused ops:
@@ -443,8 +443,8 @@ static Node *rval(Simp *s, Node *n)
             assert(fusedmap[exprop(n)] != Obad);
             u = rval(s, args[0]);
             v = rval(s, args[1]);
-            v = mkexpr(-1, fusedmap[exprop(n)], u, v, NULL);
-            r = mkexpr(-1, Ostor, u, v, NULL);
+            v = mkexpr(n->line, fusedmap[exprop(n)], u, v, NULL);
+            r = mkexpr(n->line, Ostor, u, v, NULL);
             break;
 
         /* ++expr(x)
@@ -452,14 +452,14 @@ static Node *rval(Simp *s, Node *n)
          *     expr(x) */
         case Opreinc:
             t = lval(s, args[0]);
-            v = mkexpr(-1, Oadd, one, t, NULL);
-            r = mkexpr(-1, Ostor, t, v, NULL);
+            v = mkexpr(n->line, Oadd, one, t, NULL);
+            r = mkexpr(n->line, Ostor, t, v, NULL);
             lappend(&s->incqueue, &s->nqueue, t);
             break;
         case Opredec:
             t = lval(s, args[0]);
-            v = mkexpr(-1, Osub, one, t, NULL);
-            r = mkexpr(-1, Ostor, t, v, NULL);
+            v = mkexpr(n->line, Osub, one, t, NULL);
+            r = mkexpr(n->line, Ostor, t, v, NULL);
             lappend(&s->incqueue, &s->nqueue, t);
             break;
 
@@ -470,14 +470,14 @@ static Node *rval(Simp *s, Node *n)
          */
         case Opostinc:
             r = lval(s, args[0]);
-            v = mkexpr(-1, Oadd, one, r, NULL);
-            t = mkexpr(-1, Ostor, r, v, NULL);
+            v = mkexpr(n->line, Oadd, one, r, NULL);
+            t = mkexpr(n->line, Ostor, r, v, NULL);
             lappend(&s->incqueue, &s->nqueue, t);
             break;
         case Opostdec:
             r = lval(s, args[0]);
-            v = mkexpr(-1, Osub, one, args[0], NULL);
-            t = mkexpr(-1, Ostor, r, v, NULL);
+            v = mkexpr(n->line, Osub, one, args[0], NULL);
+            t = mkexpr(n->line, Ostor, r, v, NULL);
             lappend(&s->incqueue, &s->nqueue, t);
             break;
         case Olit: case Ovar:
@@ -498,12 +498,12 @@ static Node *rval(Simp *s, Node *n)
             t = lval(s, args[0]);
             u = rval(s, args[1]);
             if (size(n) > 4) {
-                t = mkexpr(-1, Oaddr, t, NULL);
-                u = mkexpr(-1, Oaddr, u, NULL);
-		v = mkintlit(-1, size(n));
-                r = mkexpr(-1, Oblit, t, u, v, NULL);
+                t = mkexpr(n->line, Oaddr, t, NULL);
+                u = mkexpr(n->line, Oaddr, u, NULL);
+		v = mkintlit(n->line, size(n));
+                r = mkexpr(n->line, Oblit, t, u, v, NULL);
             } else {
-              r = mkexpr(-1, Ostor, t, u, NULL);
+              r = mkexpr(n->line, Ostor, t, u, NULL);
             }
             break;
         default:
