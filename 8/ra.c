@@ -265,7 +265,6 @@ void setup(Isel *s)
     s->gadj = gadj;
 
     s->spilled = bsclear(s->spilled);
-    s->prepainted = bsclear(s->prepainted);
     s->coalesced = bsclear(s->coalesced);
     /*
     s->wlspill = bsclear(s->wlspill);
@@ -291,7 +290,6 @@ static void build(Isel *s)
     Insn *insn;
     size_t l;
 
-    setup(s);
     /* set up convenience vars */
     bb = s->bb;
     nbb = s->nbb;
@@ -316,12 +314,18 @@ static void build(Isel *s)
 		    lappend(&s->rmoves[d[k]], &s->nrmoves[d[k]], insn);
 		lappend(&s->wlmove, &s->nwlmove, insn);
 	    }
+	    /* live = live U def(i) */
 	    for (k = 0; k < nd; k++)
 		bsput(live, d[k]);
 
 	    for (k = 0; k < nd; k++)
 		for (l = 0; bsiter(live, &l); l++)
 		    addedge(s, d[k], l);
+	    /* live = use(i) U (live \ def(i)) */
+	    for (k = 0; k < nd; k++)
+		bsdel(live, d[k]);
+	    for (k = 0; k < nu; k++)
+		bsdel(live, u[k]);
 	}
     }
 }
@@ -376,8 +380,8 @@ static int moverelated(Isel *s, regid n)
     size_t i;
 
     for (i = 0; i < maxregid; i++) {
-	if (locmap[i]->reg.colour)
-	    bsput(s->prepainted, i);
+	if (bshas(s->prepainted, i))
+	    continue;
 	else if (s->degree[i] >= K)
 	    lappend(&s->wlspill, &s->nwlspill, locmap[i]);
 	else if (moverelated(s, i))
@@ -624,9 +628,15 @@ void rewrite(Isel *s)
 
 void regalloc(Isel *s)
 {
+    size_t i;
     int spilled;
 
+    s->prepainted = mkbs();
+    for (i = 0; i < maxregid; i++)
+	if (locmap[i]->reg.colour)
+	    bsput(s->prepainted, i);
     do {
+	setup(s);
 	liveness(s);
 	build(s);
 	mkworklist(s);
