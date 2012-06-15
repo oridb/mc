@@ -374,7 +374,7 @@ static void blit(Isel *s, Loc *a, Loc *b, int sz)
 
 Loc *selexpr(Isel *s, Node *n)
 {
-    Loc *a, *b, *c, *r;
+    Loc *a, *b, *c, *d, *r;
     Loc *eax, *edx, *cl; /* x86 wanst some hard-coded regs */
     Node **args;
 
@@ -395,9 +395,10 @@ Loc *selexpr(Isel *s, Node *n)
             b = selexpr(s, args[1]);
             b = inr(s, b);
             c = coreg(Reax, mode(n));
+            r = locreg(a->mode);
             g(s, Imov, a, c, NULL);
             g(s, Imul, b, NULL);
-            r = eax;
+            g(s, Imov, eax, r, NULL);
             break;
         case Odiv:
         case Omod:
@@ -406,13 +407,15 @@ Loc *selexpr(Isel *s, Node *n)
             b = selexpr(s, args[1]);
             b = inr(s, b);
             c = coreg(Reax, mode(n));
+            r = locreg(a->mode);
             g(s, Imov, a, c, NULL);
             g(s, Ixor, edx, edx, NULL);
             g(s, Idiv, b, NULL);
             if (exprop(n) == Odiv)
-                r = eax;
+                d = eax;
             else
-                r = edx;
+                d = edx;
+            g(s, Imov, d, r, NULL);
             break;
         case Oneg:
             r = selexpr(s, args[0]);
