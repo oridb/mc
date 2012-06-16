@@ -86,6 +86,18 @@ char *strdupn(char *s, size_t len)
     return ret;
 }
 
+char *strjoin(char *u, char *v)
+{
+    size_t n;
+    char *s;
+
+    n = strlen(u) + strlen(v) + 1;
+    s = xalloc(n);
+    strcpy(s, u);
+    strcat(s, v);
+    return s;
+}
+
 void *memdup(void *mem, size_t len)
 {
     void *ret;

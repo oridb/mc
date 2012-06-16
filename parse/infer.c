@@ -87,8 +87,7 @@ static void loaduses(Node *n)
 
     /* uses only allowed at top level. Do we want to keep it this way? */
     for (i = 0; i < n->file.nuses; i++)
-        fprintf(stderr, "INTERNAL: implement use loading\n");
-        /* readuse(n->file.uses[i], n->file.globls); */
+        readuse(n->file.uses[i], n->file.globls);
 }
 
 static void settype(Node *n, Type *t)
@@ -143,7 +142,7 @@ static char *ctxstr(Node *n)
     char *s;
     switch (n->type) {
         case Nexpr:     s = opstr(exprop(n)); 	break;
-        case Ndecl:     s = declstr(n); 	break;
+        case Ndecl:     s = declname(n); 	break;
         case Nname:     s = namestr(n); 	break;
         default:        s = nodestr(n->type); 	break;
     }

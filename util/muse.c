@@ -11,14 +11,18 @@
 
 #include "parse.h"
 
+/* FIXME: move into one place...? */
 Node *file;
-static char *outfile;
+char *outfile;
 int debug;
+char **incpaths;
+size_t nincpaths;
 
 static void usage(char *prog)
 {
     printf("%s [-h] [-o outfile] inputs\n", prog);
     printf("\t-h\tPrint this help\n");
+    printf("\t-I path\tAdd 'path' to use search path\n");
     printf("\t-d\tPrint debug dumps\n");
     printf("\t-o\tOutput to outfile\n");
 }

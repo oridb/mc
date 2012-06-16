@@ -13,14 +13,18 @@
 #include "opt.h"
 #include "asm.h"
 
+/* FIXME: move into one place...? */
 Node *file;
-static char *outfile;
 int debug;
+char *outfile;
+char **incpaths;
+size_t nincpaths;
 
 static void usage(char *prog)
 {
     printf("%s [-h] [-o outfile] inputs\n", prog);
     printf("\t-h\tPrint this help\n");
+    printf("\t-I path\tAdd 'path' to use search path\n");
     printf("\t-d\tPrint debug dumps\n");
     printf("\t-o\tOutput to outfile\n");
 }
@@ -31,15 +35,21 @@ int main(int argc, char **argv)
     int i;
     Stab *globls;
 
-    while ((opt = getopt(argc, argv, "dho:")) != -1) {
+    while ((opt = getopt(argc, argv, "dho:I:")) != -1) {
         switch (opt) {
             case 'o':
                 outfile = optarg;
                 break;
             case 'h':
+		usage(argv[0]);
+		exit(0);
+		break;
             case 'd':
                 debug++;
                 break;
+	    case 'I':
+		lappend(&incpaths, &nincpaths, optarg);
+		break;
             default:
                 usage(argv[0]);
                 exit(0);

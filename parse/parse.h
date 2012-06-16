@@ -261,6 +261,7 @@ void *xrealloc(void *p, size_t size);
 void  die(char *msg, ...);
 void  fatal(int line, char *fmt, ...);
 char *strdupn(char *s, size_t len);
+char *strjoin(char *u, char *v);
 void *memdup(void *mem, size_t len);
 
 /* parsing etc */
@@ -374,3 +375,6 @@ void lfree(void *l, size_t *len);
 
 /* Options to control the compilation */
 extern int debug;
+extern char *outfile;
+extern char **incpaths;
+extern size_t nincpaths;

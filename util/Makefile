@@ -1,5 +1,5 @@
 BIN=muse
-OBJ=main.o
+OBJ=muse.o
 
 DEPS=../parse/libparse.a
 
