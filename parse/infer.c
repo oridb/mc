@@ -406,7 +406,7 @@ static void inferdecl(Node *n)
 static void inferstab(Stab *s)
 {
     void **k;
-    int n, i;
+    size_t n, i;
     Type *t;
 
     k = htkeys(s->ty, &n);
@@ -419,6 +419,7 @@ static void inferstab(Stab *s)
 static void infernode(Node *n, Type *ret, int *sawret)
 {
     size_t i;
+    Sym *s;
 
     if (!n)
         return;
@@ -432,6 +433,9 @@ static void infernode(Node *n, Type *ret, int *sawret)
             break;
         case Ndecl:
             inferdecl(n);
+            s = getdcl(file->file.exports, n->decl.sym->name);
+	    if (s)
+		unify(n, type(n), s->type);
             break;
         case Nblock:
             setsuper(n->block.scope, curstab());
