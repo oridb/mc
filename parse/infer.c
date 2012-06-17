@@ -12,8 +12,8 @@
 
 #include "parse.h"
 
-static Node **checkmemb;
-static size_t ncheckmemb;
+static Node **postcheck;
+static size_t npostcheck;
 
 static void infernode(Node *n, Type *ret, int *sawret);
 static void inferexpr(Node *n, Type *ret, int *sawret);
@@ -140,10 +140,15 @@ static char *ctxstr(Node *n)
 {
     char *s;
     switch (n->type) {
-        case Nexpr:     s = opstr(exprop(n)); 	break;
+        default:        s = nodestr(n->type); 	break;
         case Ndecl:     s = declname(n); 	break;
         case Nname:     s = namestr(n); 	break;
-        default:        s = nodestr(n->type); 	break;
+        case Nexpr:
+            if (exprop(n) == Ovar)
+                s = namestr(n->expr.args[0]);
+            else
+                s = opstr(exprop(n));
+            break;
     }
     return s;
 }
@@ -244,6 +249,8 @@ void checkns(Node *n, Node **ret)
     Stab *st;
     Sym *s;
 
+    if (n->type != Nexpr)
+        return;
     args = n->expr.args;
     if (exprop(args[0]) != Ovar)
         return;
@@ -253,6 +260,8 @@ void checkns(Node *n, Node **ret)
         return;
     nsname = mknsname(n->line, namestr(name), namestr(args[1]));
     s = getdcl(st, args[1]);
+    if (!s)
+        fatal(n->line, "Undeclared var %s.%s", nsname->name.ns, nsname->name.name);
     var = mkexpr(n->line, Ovar, nsname, NULL);
     var->expr.did = s->id;
     settype(var, s->type);
@@ -353,7 +362,7 @@ static void inferexpr(Node *n, Type *ret, int *sawret)
         /* special cases */
         case Omemb:     /* @a.Ident -> @b, verify type(@a.Ident)==@b later */
             settype(n, mktyvar(n->line));
-            lappend(&checkmemb, &ncheckmemb, n);
+            lappend(&postcheck, &npostcheck, n);
             break;
         case Osize:     /* sizeof @a -> size */
             die("inference of sizes not done yet");
@@ -362,7 +371,7 @@ static void inferexpr(Node *n, Type *ret, int *sawret)
             unifycall(n);
             break;
         case Ocast:     /* cast(@a, @b) -> @b */
-            die("casts not implemented");
+            lappend(&postcheck, &npostcheck, n);
             break;
         case Oret:      /* -> @a -> void */
             if (sawret)
@@ -379,6 +388,9 @@ static void inferexpr(Node *n, Type *ret, int *sawret)
             settype(n, mkty(-1, Tyvoid));
             break;
         case Ovar:      /* a:@a -> @a */
+            /* if we created this from a namespaced var, the type should be
+             * set, and the normal lookup is expected to fail. Since we're
+             * already done with this node, we can just return. */
             if (n->expr.type)
                 return;
             s = getdcl(curstab(), args[0]);
@@ -490,8 +502,10 @@ static void infernode(Node *n, Type *ret, int *sawret)
             setsuper(n->block.scope, curstab());
             pushstab(n->block.scope);
             inferstab(n->block.scope);
-            for (i = 0; i < n->block.nstmts; i++)
+            for (i = 0; i < n->block.nstmts; i++) {
+                checkns(n->block.stmts[i], &n->block.stmts[i]);
                 infernode(n->block.stmts[i], ret, sawret);
+            }
             popstab();
             break;
         case Nifstmt:
@@ -567,21 +581,38 @@ static void infercompn(Node *file)
     Node *memb;
     Node *n;
     Node **nl;
+    int found;
 
-    for (i = 0; i < ncheckmemb; i++) {
-        n = checkmemb[i];
-        if (n->expr.type->type == Typtr)
+    for (i = 0; i < npostcheck; i++) {
+        n = postcheck[i];
+        if (exprop(n) != Omemb)
+            continue;
+        if (type(n)->type == Typtr)
             n = n->expr.args[0];
-        aggr = checkmemb[i]->expr.args[0];
-        memb = checkmemb[i]->expr.args[1];
+        aggr = postcheck[i]->expr.args[0];
+        memb = postcheck[i]->expr.args[1];
 
-        nl = aggrmemb(aggr->expr.type, &nn);
-        for (j = 0; j < nn; j++) {
-            if (!strcmp(namestr(memb), declname(nl[j]))) {
-                unify(n, type(n), decltype(nl[j]));
-                break;
+        found = 0;
+        if (type(aggr)->type == Tyslice || type(aggr)->type == Tyarray) {
+            if (!strcmp(namestr(memb), "len")) {
+                constrain(type(n), cstrtab[Tcnum]);
+                constrain(type(n), cstrtab[Tcint]);
+                constrain(type(n), cstrtab[Tctest]);
+                found = 1;
+            }
+        } else {
+            nl = aggrmemb(aggr->expr.type, &nn);
+            for (j = 0; j < nn; j++) {
+                if (!strcmp(namestr(memb), declname(nl[j]))) {
+                    unify(n, type(n), decltype(nl[j]));
+                    found = 1;
+                    break;
+                }
             }
         }
+        if (!found)
+            fatal(aggr->line, "Type %s has no member \"%s\" near %s",
+                  tystr(type(aggr)), ctxstr(memb), ctxstr(aggr));
     }
 }
 

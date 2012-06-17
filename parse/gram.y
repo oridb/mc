@@ -92,6 +92,7 @@ Stab *curscope;
 %token<tok> Tvar     /* var */
 %token<tok> Tgeneric /* var */
 %token<tok> Textern  /* extern */
+%token<tok> Tcast    /* castto */
 
 %token<tok> Texport  /* export */
 %token<tok> Tprotect /* protect */
@@ -124,6 +125,7 @@ Stab *curscope;
 %type <node> funclit arraylit name block blockbody stmt label use
 %type <node> decl declbody declcore structelt enumelt unionelt
 %type <node> ifstmt forstmt whilestmt elifs optexprln
+%type <node> castexpr
 
 %type <nodelist> arglist argdefs structbody enumbody unionbody params
 
@@ -379,8 +381,14 @@ lorexpr : lorexpr Tlor landexpr
         | landexpr
         ;
 
-landexpr: landexpr Tland borexpr
+landexpr: landexpr Tland castexpr
             {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
+        | castexpr
+        ;
+
+castexpr: landexpr Tcast Toparen type Tcparen
+            {$$ = mkexpr($1->line, Ocast, $1, NULL);
+             $$->expr.type = $4;}
         | borexpr
         ;
 
@@ -569,8 +577,9 @@ void yyerror(const char *s)
 {
     fprintf(stderr, "%d: %s", line, s);
     if (curtok->str)
-        fprintf(stderr, " near %s", curtok->str);
+        fprintf(stderr, " near \"%s\"", curtok->str);
     fprintf(stderr, "\n");
+    exit(1);
 }
 
 static Op binop(int tt)

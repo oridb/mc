@@ -17,7 +17,6 @@ struct Typename {
     char *name;
 };
 
-Type *littypes[Nlit] = {NULL,};
 Type **tytab = NULL;
 int ntypes;
 Cstr **cstrtab;

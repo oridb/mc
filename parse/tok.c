@@ -147,6 +147,7 @@ static int kwd(char *s)
         {"const",       Tconst},
         {"var",         Tvar},
         {"generic",     Tgeneric},
+        {"castto",      Tcast},
         {"extern",      Textern},
         {"export",      Texport},
         {"protect",     Tprotect},

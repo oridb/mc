@@ -222,7 +222,6 @@ extern Cstr **cstrtab;  /* int -> cstr map */
 extern int ncstrs;
 extern int maxnid;      /* the maximum node id generated so far */
 
-extern Type *littypes[]; /* literal type -> type map */
 extern int ispureop[];
 
 /* data structures */
