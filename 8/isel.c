@@ -517,6 +517,8 @@ Loc *selexpr(Isel *s, Node *n)
             break;
 
         case Olit: /* fall through */
+            r = loc(s, n);
+            break;
         case Ovar:
             r = loc(s, n);
             break;
@@ -711,6 +713,55 @@ static Asmbb *mkasmbb(Bb *bb)
     as->lbls = memdup(bb->lbls, bb->nlbls*sizeof(char*));
     as->nlbls = bb->nlbls;
     return as;
+}
+
+void writeblob(FILE *fd, char *p, size_t sz)
+{
+    size_t i;
+
+    for (i = 0; i < sz; i++) {
+        if (i % 60 == 0)
+            fprintf(fd, "\t.string \"");
+        if (isprint(p[i]))
+            fprintf(fd, "%c", p[i]);
+        else
+            fprintf(fd, "\\%x", p[i]);
+        if (i % 60 == 59 || i == sz - 1)
+            fprintf(fd, "\"\n");
+    }
+}
+
+void writelit(FILE *fd, Node *v)
+{
+    char lbl[128];
+    switch (v->lit.littype) {
+        case Lbool:     fprintf(fd, "\t.long %d\n", v->lit.boolval);    break;
+        case Lchr:      fprintf(fd, "\t.byte %d\n",  v->lit.chrval);     break;
+        case Lint:      fprintf(fd, "\t.long %lld\n", v->lit.intval);     break;
+        case Lflt:      fprintf(fd, "\t.double %f\n", v->lit.fltval);    break;
+        case Lstr:      fprintf(fd, "\t.long $%s\n", genlblstr(lbl, 128));
+                        fprintf(fd, "\t.long %zd\n", strlen(v->lit.strval));
+                        writeblob(fd, v->lit.strval, strlen(v->lit.strval));
+                        break;
+        case Larray:
+        case Lfunc:
+                        die("Generating this shit ain't ready yet ");
+    }
+}
+
+void genblob(FILE *fd, Node *blob, Htab *globls)
+{
+    char *lbl;
+
+    /* lits and such also get wrapped in decls */
+    assert(blob->type == Ndecl);
+    assert(blob->decl.init != NULL);
+
+    lbl = htget(globls, blob);
+    fprintf(fd, "%s:\n", lbl);
+    if (exprop(blob->decl.init) != Olit)
+        die("Nonliteral initializer for global");
+    writelit(fd, blob->decl.init->expr.args[0]);
 }
 
 /* genasm requires all nodes in 'nl' to map cleanly to operations that are

@@ -42,12 +42,6 @@ typedef enum {
     Nmode,
 } Mode;
 
-struct Blob {
-    char *name; /* mangled asm name */
-    void *data;
-    size_t ndata;
-};
-
 struct Loc {
     LocType type;
     Mode mode;
@@ -162,6 +156,7 @@ struct Isel {
 };
 
 /* entry points */
+void genblob(FILE *fd, Node *blob, Htab *globls);
 void genasm(FILE *fd, Func *fn, Htab *globls);
 void gen(Node *file, char *out);
 
@@ -169,6 +164,8 @@ void gen(Node *file, char *out);
 extern size_t maxregid;
 extern Loc **locmap; /* mapping from reg id => Loc * */
 
+char *genlblstr(char *buf, size_t sz);
+Node *genlbl(void);
 Loc *loclbl(Node *lbl);
 Loc *locstrlbl(char *lbl);
 Loc *locreg(Mode m);

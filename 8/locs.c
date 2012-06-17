@@ -53,6 +53,22 @@ const Reg reginterferes[Nreg][Nmode + 1] = {
     [Rebp] = {Rebp},
 };
 
+
+char *genlblstr(char *buf, size_t sz)
+{
+    static int nextlbl;
+    snprintf(buf, 128, ".L%d", nextlbl++);
+    return buf;
+}
+
+Node *genlbl(void)
+{
+    char buf[128];
+
+    genlblstr(buf, 128);
+    return mklbl(-1, buf);
+}
+
 Loc *locstrlbl(char *lbl)
 {
     Loc *l;

@@ -37,10 +37,12 @@ struct Simp {
     size_t nqueue;
 
     /* location handling */
+    Node **blobs;
+    size_t nblobs;
     size_t stksz;
     size_t argsz;
-    Htab *locs;
     Htab *globls;
+    Htab *locs;
     Node *ret;
 };
 
@@ -172,17 +174,7 @@ size_t size(Node *n)
         t = n->expr.type;
     else
         t = n->decl.type;
-
     return tysize(t);
-}
-
-static Node *genlbl(void)
-{
-    char buf[128];
-    static int nextlbl;
-
-    snprintf(buf, 128, ".L%d", nextlbl++);
-    return mklbl(-1, buf);
 }
 
 static Node *temp(Simp *simp, Node *e)
@@ -275,6 +267,21 @@ static void simpblk(Simp *s, Node *n)
     for (i = 0; i < n->block.nstmts; i++) {
         simp(s, n->block.stmts[i]);
     }
+}
+
+static Node *bloblit(Simp *s, Node *lit)
+{
+    Node *n, *t, *r;
+    char lbl[128];
+
+    n = mkname(lit->line, genlblstr(lbl, 128));
+    t = mkdecl(lit->line, n, lit->expr.type);
+    r = mkexpr(lit->line, Ovar, t, NULL);
+    t->decl.init = lit;
+    r->expr.did = t->decl.did;
+    htput(s->globls, t, strdup(lbl));
+    lappend(&s->blobs, &s->nblobs, t);
+    return r;
 }
 
 static size_t offsetof(Node *aggr, Node *memb)
@@ -519,7 +526,20 @@ static Node *rval(Simp *s, Node *n)
             t = mkexpr(n->line, Ostor, r, v, NULL);
             lappend(&s->incqueue, &s->nqueue, t);
             break;
-        case Olit: case Ovar:
+        case Olit:
+            switch (args[0]->lit.littype) {
+                case Lchr: case Lbool: case Lint: case Lflt:
+                    r = n;
+                    break;
+                case Lstr: case Larray:
+                    r = bloblit(s, n);
+                    break;
+                case Lfunc:
+                    die("Func lits not handled yet");
+                    break;
+            }
+            break;
+        case Ovar:
             r = n;
             break;
         case Oret:
@@ -694,20 +714,6 @@ static Func *lowerfn(Simp *s, char *name, Node *n)
     return fn;
 }
 
-void blobdump(Blob *b, FILE *fd)
-{
-    size_t i;
-    char *p;
-
-    p = b->data;
-    for (i = 0; i < b->ndata; i++)
-        if (isprint(p[i]))
-            fprintf(fd, "%c", p[i]);
-        else
-            fprintf(fd, "\\%x", p[i]);
-    fprintf(fd, "\n");
-}
-
 void fillglobls(Stab *st, Htab *globls)
 {
     void **k;
@@ -739,13 +745,20 @@ void lowerdcl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***blob, si
     name = asmname(dcl->decl.name);
     s.locs = mkht(dclhash, dcleq);
     s.globls = globls;
+    s.blobs = *blob;
+    s.nblobs = *nblob;
 
     if (isconstfn(dcl)) {
         f = lowerfn(&s, name, dcl->decl.init);
         lappend(fn, nfn, f);
     } else {
-        die("We don't lower globls yet...");
+        if (dcl->decl.init && exprop(dcl->decl.init) == Olit)
+            lappend(blob, nblob, dcl);
+        else
+            die("We don't lower globls with nonlit inits yet...");
     }
+    *blob = s.blobs;
+    *nblob = s.nblobs;
     free(name);
 }
 
@@ -789,6 +802,8 @@ void gen(Node *file, char *out)
         }
     }
 
+    for (i = 0; i < nblob; i++)
+        genblob(fd, blob[i], globls);
     for (i = 0; i < nfn; i++)
         genasm(fd, fn[i], globls);
     fclose(fd);
