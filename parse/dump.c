@@ -50,7 +50,7 @@ void dumpsym(Sym *s, FILE *fd)
 
 static void outstab(Stab *st, FILE *fd, int depth)
 {
-    int i, n;
+    size_t i, n;
     void **k;
     char *ty;
 

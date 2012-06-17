@@ -27,6 +27,7 @@ static void usage(char *prog)
     printf("\t-o\tOutput to outfile\n");
 }
 
+
 int main(int argc, char **argv)
 {
     int opt;
@@ -34,6 +35,7 @@ int main(int argc, char **argv)
     Stab *globls;
     Node *rdback;
     FILE *tmp;
+    FILE *f;
 
     while ((opt = getopt(argc, argv, "dho:")) != -1) {
         switch (opt) {
@@ -44,6 +46,9 @@ int main(int argc, char **argv)
             case 'd':
                 debug++;
                 break;
+	    case 'I':
+		lappend(&incpaths, &nincpaths, optarg);
+		break;
             default:
                 usage(argv[0]);
                 exit(0);
@@ -60,6 +65,8 @@ int main(int argc, char **argv)
         file->file.globls = globls;
         yyparse();
 
+        infer(file);
+	/* before we do anything to the parse */
         if (debug) {
             /* test storing tree to file */
             tmp = fopen("a.pkl", "w");
@@ -71,12 +78,15 @@ int main(int argc, char **argv)
             rdback = unpickle(tmp);
             dump(rdback, stdout);
             fclose(tmp);
-
-            /* before we do anything to the parse */
-            dump(file, stdout);
+	    dump(file, stdout);
         }
-        infer(file);
-        die("FIXME: IMPLEMENT ME!");
+	if (!outfile)
+	    die("need output file name right now. FIX THIS.");
+	f = fopen(outfile, "w");
+	writeuse(file, f);
+	fclose(f);
+	readuse(mkuse(-1, outfile, 1), file->file.globls);
+
     }
 
     return 0;

@@ -20,160 +20,9 @@ static Stab *rdstab(FILE *fd);
 static void wrsym(FILE *fd, Sym *val);
 static Sym *rdsym(FILE *fd);
 
-static void be64(vlong v, char buf[8])
-{
-    buf[0] = (v >> 56) & 0xff;
-    buf[1] = (v >> 48) & 0xff;
-    buf[2] = (v >> 40) & 0xff;
-    buf[3] = (v >> 32) & 0xff;
-    buf[4] = (v >> 24) & 0xff;
-    buf[5] = (v >> 16) & 0xff;
-    buf[6] = (v >> 8)  & 0xff;
-    buf[7] = (v >> 0)  & 0xff;
-}
-
-static vlong host64(char buf[8])
-{
-    vlong v = 0;
-
-    v |= ((vlong)buf[0] << 56LL) & 0xff;
-    v |= ((vlong)buf[1] << 48LL) & 0xff;
-    v |= ((vlong)buf[2] << 40LL) & 0xff;
-    v |= ((vlong)buf[3] << 32LL) & 0xff;
-    v |= ((vlong)buf[4] << 24LL) & 0xff;
-    v |= ((vlong)buf[5] << 16LL) & 0xff;
-    v |= ((vlong)buf[6] << 8LL)  & 0xff;
-    v |= ((vlong)buf[7] << 0LL)  & 0xff;
-    return v;
-}
-
-static void be32(long v, char buf[4])
-{
-    buf[0] = (v >> 24) & 0xff;
-    buf[1] = (v >> 16) & 0xff;
-    buf[2] = (v >> 8)  & 0xff;
-    buf[3] = (v >> 0)  & 0xff;
-}
-
-static long host32(char buf[4])
-{
-    long v = 0;
-    v |= (buf[4] << 24) & 0xff;
-    v |= (buf[5] << 16) & 0xff;
-    v |= (buf[6] << 8)  & 0xff;
-    v |= (buf[7] << 0)  & 0xff;
-    return v;
-}
-
-static void wrbyte(FILE *fd, char val)
-{
-    if (fputc(val, fd) == EOF)
-        die("Unexpected EOF");
-}
-
-static char rdbyte(FILE *fd)
-{
-    int c;
-    c = fgetc(fd);
-    if (c == EOF)
-        die("Unexpected EOF");
-    return c;
-}
-
-static void wrint(FILE *fd, long val)
-{
-    char buf[4];
-    be32(val, buf);
-    if (fwrite(buf, 4, 1, fd) < 4)
-        die("Unexpected EOF");
-}
-
-static long rdint(FILE *fd)
-{
-    char buf[4];
-    if (fread(buf, 4, 1, fd) < 4)
-        die("Unexpected EOF");
-    return host32(buf);
-}
-
-static void wrstr(FILE *fd, char *val)
-{
-    size_t len;
-    size_t n;
-
-    if (!val) {
-        wrint(fd, -1);
-    } else {
-        wrint(fd, strlen(val));
-        len = strlen(val);
-        n = 0;
-        while (n < len) {
-            n += fwrite(val, len - n, 1, fd);
-            if (feof(fd) || ferror(fd))
-                die("Unexpected EOF");
-        }
-    }
-}
-
-static char *rdstr(FILE *fd)
-{
-    ssize_t len;
-    char *s;
-
-    len = rdint(fd);
-    if (len == -1) {
-        return NULL;
-    } else {
-        s = xalloc(len + 1);
-        if (fread(s, len, 1, fd) != (size_t)len)
-            die("Unexpected EOF");
-        s[len] = '\0';
-        return s;
-    }
-}
-
-static void wrflt(FILE *fd, double val)
-{
-    char buf[8];
-    /* Assumption: We have 'val' in 64 bit IEEE format */
-    union {
-        uvlong ival;
-        double fval;
-    } u;
-
-    u.fval = val;
-    be64(u.ival, buf);
-    if (fwrite(buf, 8, 1, fd) < 8)
-        die("Unexpected EOF");
-}
-
-static double rdflt(FILE *fd)
-{
-    char buf[8];
-    union {
-        uvlong ival;
-        double fval;
-    } u;
-
-    if (fread(buf, 8, 1, fd) < 8)
-        die("Unexpected EOF");
-    u.ival = host64(buf);
-    return u.fval;
-}
-
-static void wrbool(FILE *fd, int val)
-{
-    wrbyte(fd, val);
-}
-
-static int rdbool(FILE *fd)
-{
-    return rdbyte(fd);
-}
-
 static void wrstab(FILE *fd, Stab *val)
 {
-    int n, i;
+    size_t n, i;
     void **keys;
 
     pickle(val->name, fd);
@@ -252,6 +101,15 @@ static Sym *rdsym(FILE *fd)
     return mksym(line, name, type);
 }
 
+Type *tyunpickle(FILE *fd)
+{
+    return rdtype(fd);
+}
+
+Sym *symunpickle(FILE *fd)
+{
+    return rdsym(fd);
+}
 
 static void wrtype(FILE *fd, Type *ty)
 {
@@ -261,7 +119,6 @@ static void wrtype(FILE *fd, Type *ty)
         die("trying to pickle null type\n");
         return;
     }
-    printf("Writing %s\n", tystr(ty));
     wrbyte(fd, ty->type);
     /* tid is generated; don't write */
     /* cstrs are left out for now: FIXME */
@@ -355,8 +212,17 @@ static Type *rdtype(FILE *fd)
                 ty->sub[i] = rdtype(fd);
             break;
     }
-    printf("Read %s\n", tystr(ty));
     return ty;
+}
+
+void typickle(Type *t, FILE *fd)
+{
+    wrtype(fd, t);
+}
+
+void sympickle(Sym *s, FILE *fd)
+{
+    wrsym(fd, s);
 }
 
 /* pickle format:

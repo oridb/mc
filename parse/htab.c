@@ -124,7 +124,7 @@ int hthas(Htab *ht, void *k)
     return htidx(ht, k) >= 0;
 }
 
-void **htkeys(Htab *ht, int *nkeys)
+void **htkeys(Htab *ht, size_t *nkeys)
 {
     void **k;
     size_t i, j;

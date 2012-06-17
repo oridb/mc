@@ -1,3 +1,4 @@
+typedef uint8_t         byte;
 typedef uint32_t        unichar;
 typedef unsigned int    uint;
 typedef unsigned long   ulong;
@@ -89,6 +90,7 @@ struct Sym {
     long  id;
     int   line;
     int   isconst;
+    int   isgeneric;
     Node *name;
     Type *type;
 };
@@ -246,7 +248,7 @@ Htab *mkht(ulong (*hash)(void *key), int (*cmp)(void *k1, void *k2));
 int htput(Htab *ht, void *k, void *v);
 void *htget(Htab *ht, void *k);
 int hthas(Htab *ht, void *k);
-void **htkeys(Htab *ht, int *nkeys);
+void **htkeys(Htab *ht, size_t *nkeys);
 /* useful key types */
 ulong strhash(void *str);
 int streq(void *s1, void *s2);
@@ -363,15 +365,36 @@ char *nodestr(Ntype nt);
 char *litstr(Littype lt);
 char *tidstr(Ty tid);
 
-/* serialization/usefiles */
-void pickle(Node *n, FILE *fd);
-Node *unpickle(FILE *fd);
-
-/* convenience func */
+/* convenience funcs */
 void lappend(void *l, size_t *len, void *n); /* ugly hack; nl is void* because void*** is incompatible with T*** */
 void *lpop(void *l, size_t *len);
 void ldel(void *l, size_t *len, size_t idx);
 void lfree(void *l, size_t *len);
+
+/* serialization/usefiles */
+void typickle(Type *t, FILE *fd);
+void sympickle(Sym *s, FILE *fd);
+void pickle(Node *n, FILE *fd);
+Type *tyunpickle(FILE *fd);
+Sym  *symunpickle(FILE *fd);
+Node *unpickle(FILE *fd);
+
+/* serializing/unserializing */
+void be64(vlong v, byte buf[8]);
+vlong host64(byte buf[8]);
+void be32(long v, byte buf[4]);
+long host32(byte buf[4]);
+
+void wrbyte(FILE *fd, char val);
+char rdbyte(FILE *fd);
+void wrint(FILE *fd, long val);
+long rdint(FILE *fd);
+void wrstr(FILE *fd, char *val);
+char *rdstr(FILE *fd);
+void wrflt(FILE *fd, double val);
+double rdflt(FILE *fd);
+void wrbool(FILE *fd, int val);
+int rdbool(FILE *fd);
 
 /* Options to control the compilation */
 extern int debug;

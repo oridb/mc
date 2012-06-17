@@ -428,13 +428,14 @@ static void infernode(Node *n, Type *ret, int *sawret)
         case Nfile:
             pushstab(n->file.globls);
             inferstab(n->file.globls);
+	    inferstab(n->file.exports);
 	    for (i = 0; i < n->file.nstmts; i++) {
 		d  = n->file.stmts[i];
 		infernode(d, NULL, sawret);
 		if (d->type == Ndecl)  {
 		    s = getdcl(file->file.exports, d->decl.sym->name);
 		    if (s)
-			unify(n, type(n), s->type);
+			unify(d, type(d), s->type);
 		}
 	    }
             popstab();
@@ -541,6 +542,28 @@ static void infercompn(Node *file)
     }
 }
 
+static void stabsub(Stab *s)
+{
+    void **k;
+    size_t n, i;
+    Type *t;
+    Sym *d;
+
+    k = htkeys(s->ty, &n);
+    for (i = 0; i < n; i++) {
+        t = tf(gettype(s, k[i]));
+        updatetype(s, k[i], t);
+    }
+    free(k);
+
+    k = htkeys(s->dcl, &n);
+    for (i = 0; i < n; i++) {
+	d = getdcl(s, k[i]);
+	d->type = tyfin(d->name, d->type);
+    }
+    free(k);
+}
+
 static void typesub(Node *n)
 {
     size_t i;
@@ -549,6 +572,8 @@ static void typesub(Node *n)
         return;
     switch (n->type) {
         case Nfile:
+	    stabsub(n->file.globls);
+	    stabsub(n->file.exports);
             for (i = 0; i < n->file.nstmts; i++)
                 typesub(n->file.stmts[i]);
             break;

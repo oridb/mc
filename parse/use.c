@@ -11,8 +11,29 @@
 
 #include "parse.h"
 
-int loaduse(FILE *fd, Stab *st)
+int loaduse(FILE *f, Stab *st)
 {
+    char *pkg;
+    int c;
+
+    if (fgetc(f) != 'U')
+	return 0;
+    pkg = rdstr(f);
+    /* if the package names match up, or the usefile has no declared
+     * package, then we simply add to the current stab. Otherwise,
+     * we add a new stab under the current one */
+    if (pkg) {
+	printf("package name %s\n", pkg);
+    }
+    while ((c = fgetc(f)) != 'Z') {
+	switch(c) {
+	    case 'G': die("We didn't implement generics yet!"); break;
+	    case 'D': dumpsym(symunpickle(f), stdout); break;
+	    case 'T': fprintf(stdout, "%s\n", tystr(tyunpickle(f))); break;
+	    case EOF:
+		break;
+	}
+    }
     return 1;
 }
 
@@ -38,11 +59,49 @@ void readuse(Node *use, Stab *st)
 	}
     }
 
-    if (loaduse(fd, st))
+    if (!loaduse(fd, st))
 	die("Could not load usefile %s", use->use.name);
 }
 
-void writeuse(Node *file, FILE *out)
+/* Usefile format:
+ * U<pkgname>
+ * T<typename><pickled-type>
+ * D<picled-decl>
+ * G<pickled-decl><pickled-initializer>
+ * Z
+ */
+void writeuse(Node *file, FILE *f)
 {
+    Stab *st;
+    void **k;
+    Type *t;
+    Sym *s;
+    size_t i, n;
+
+    st = file->file.exports;
+    wrbyte(f, 'U');
+    if (st->name)
+	wrstr(f, namestr(st->name));
+    else
+	wrstr(f, NULL);
+
+    k = htkeys(st->ty, &n);
+    for (i = 0; i < n; i++) {
+	t = htget(st->ty, k[i]);
+	wrbyte(f, 'T');
+	typickle(t, f);
+    }
+    free(k);
+    k = htkeys(st->dcl, &n);
+    for (i = 0; i < n; i++) {
+	s = getdcl(st, k[i]);
+	if (s->isgeneric)
+	    wrbyte(f, 'G');
+	else
+	    wrbyte(f, 'D');
+	sympickle(s, f);
+    }
+    free(k);
+    wrbyte(f, 'Z');
 }
 
