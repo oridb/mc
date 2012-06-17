@@ -333,14 +333,24 @@ static Node *slicebase(Simp *s, Node *n, Node *off)
     return mkexpr(n->line, Oadd, u, v, NULL);
 }
 
+static Node *slicelen(Simp *s, Node *sl)
+{
+    Node *base, *memb, *load;
+
+    base = mkexpr(sl->line, Oaddr, sl, NULL);
+    memb = mkexpr(sl->line, Oadd, base, ptrsz, NULL);
+    load = mkexpr(sl->line, Oload, memb, NULL);
+    return load;
+}
+
 Node *lval(Simp *s, Node *n)
 {
     Node *r;
 
     switch (exprop(n)) {
         case Ovar:      r = n;  break;
-        case Omemb:     r = membaddr(s, n);     break;
         case Oidx:      r = idxaddr(s, n);      break;
+        case Omemb:     r = membaddr(s, n);     break;
         default:
             die("%s cannot be an lval", opstr(exprop(n)));
             break;
@@ -428,8 +438,16 @@ static Node *rval(Simp *s, Node *n)
             r = mkexpr(n->line, Oload, t, NULL);
             break;
         case Omemb:
-            t = membaddr(s, n);
-            r = mkexpr(n->line, Oload, t, NULL);
+            if (exprtype(args[0])->type == Tyslice) {
+                assert(!strcmp(namestr(args[1]), "len"));
+                r = slicelen(s, args[0]);
+            } else if (exprtype(args[0])->type == Tyarray) {
+                assert(!strcmp(namestr(args[1]), "len"));
+                r = exprtype(n)->asize;
+            } else {
+                t = membaddr(s, n);
+                r = mkexpr(n->line, Oload, t, NULL);
+            }
             break;
 
         /* fused ops:
