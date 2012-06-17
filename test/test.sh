@@ -7,7 +7,7 @@ export ASOPT="-g"
 function use {
     rm -f $1
     echo $MU $1.myr -o $1.use && \
-    $MU $1.myr -o $1.use && \
+    $MU $1.myr -o $1.use
 }
 
 function build {

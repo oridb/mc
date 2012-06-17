@@ -57,11 +57,11 @@ static Loc *loc(Isel *s, Node *n)
 
     switch (exprop(n)) {
         case Ovar:
-            if (hthas(s->locs, (void*)n->expr.did)) {
-                stkoff = (size_t)htget(s->locs, (void*)n->expr.did);
+            if (hthas(s->locs, n)) {
+                stkoff = (size_t)htget(s->locs, n);
                 l = locmem(-stkoff, locphysreg(Rebp), NULL, ModeL);
-            } else if (hthas(s->globls, (void*)n->expr.did)) {
-                l = locstrlbl(htget(s->globls, (void*)n->expr.did));
+            } else if (hthas(s->globls, n)) {
+                l = locstrlbl(htget(s->globls, n));
             } else {
                 die("%s (id=%ld) not found", namestr(n->expr.args[0]), n->expr.did);
             }
@@ -751,3 +751,4 @@ void genasm(FILE *fd, Func *fn, Htab *globls)
 
     writeasm(fn, &is, fd);
 }
+

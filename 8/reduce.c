@@ -52,6 +52,30 @@ static void declarelocal(Simp *s, Node *n);
 static Node *one;
 static Node *ptrsz;
 
+static size_t did(Node *n)
+{
+    if (n->type == Ndecl) {
+        return n->decl.did;
+    } else if (n->type == Nexpr) {
+        assert(exprop(n) == Ovar);
+        return n->expr.did;
+    }
+    dump(n, stderr);
+    die("Can't get did");
+    return 0;
+}
+
+static ulong dclhash(void *dcl)
+{
+    /* large-prime hash. meh. */
+    return did(dcl) * 366787;
+}
+
+static int dcleq(void *a, void *b)
+{
+    return did(a) == did(b);
+}
+
 static void append(Simp *s, Node *n)
 {
     lappend(&s->stmts, &s->nstmts, n);
@@ -539,7 +563,7 @@ static void declarelocal(Simp *s, Node *n)
     s->stksz += size(n);
     if (debug)
         printf("DECLARE %s(%ld) at %zd\n", declname(n), n->decl.did, s->stksz);
-    htput(s->locs, (void*)n->decl.did, (void*)s->stksz);
+    htput(s->locs, n, (void*)s->stksz);
 }
 
 static void declarearg(Simp *s, Node *n)
@@ -547,7 +571,7 @@ static void declarearg(Simp *s, Node *n)
     assert(n->type == Ndecl);
     if (debug)
         printf("DECLARE %s(%ld) at %zd\n", declname(n), n->decl.did, -(s->argsz + 8));
-    htput(s->locs, (void*)n->decl.did, (void*)-(s->argsz + 8));
+    htput(s->locs, n, (void*)-(s->argsz + 8));
     s->argsz += size(n);
 }
 
@@ -634,7 +658,7 @@ static void lowerfn(char *name, Node *n, Htab *globls, FILE *fd)
         printf("\n\nfunction %s\n", name);
 
     /* set up the simp context */
-    s.locs = mkht(ptrhash, ptreq);
+    s.locs = mkht(dclhash, dcleq);
 
     /* unwrap to the function body */
     n = n->expr.args[0];
@@ -695,7 +719,7 @@ void fillglobls(Stab *st, Htab *globls)
     k = htkeys(st->dcl, &nk);
     for (i = 0; i < nk; i++) {
         s = htget(st->dcl, k[i]);
-        htput(globls, (void*)s->decl.did, asmname(s->decl.name));
+        htput(globls, s, asmname(s->decl.name));
     }
     free(k);
 
@@ -721,7 +745,7 @@ void gen(Node *file, char *out)
 
     n = file->file.stmts;
     nn = file->file.nstmts;
-    globls = mkht(ptrhash, ptreq);
+    globls = mkht(dclhash, dcleq);
 
     /* We need to define all global variables before use */
     fillglobls(file->file.globls, globls);
