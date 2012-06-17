@@ -198,6 +198,7 @@ use     : Tuse Tident Tendln
         ;
 
 package : Tpkg Tident Tasn pkgbody Tendblk
+            {file->file.exports->name = mkname($2->line, $1->str);}
         ;
 
 
