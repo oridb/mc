@@ -162,3 +162,25 @@ void putns(Stab *st, Stab *scope)
         fatal(scope->name->line, "Ns %s already defined", namestr(s->name));
     htput(st->ns, scope->name, scope);
 }
+
+void updatens(Stab *st, char *name)
+{
+    void **k;
+    size_t i, nk;
+
+    if (st->name)
+        die("Stab %s already has namespace; Can't set to %s", namestr(st->name), name);
+    st->name = mkname(-1, name);
+    k = htkeys(st->dcl, &nk);
+    for (i = 0; i < nk; i++)
+        setns(k[i], name);
+    free(k);
+    k = htkeys(st->ty, &nk);
+    for (i = 0; i < nk; i++)
+        setns(k[i], name);
+    free(k);
+    k = htkeys(st->ns, &nk);
+    for (i = 0; i < nk; i++)
+        setns(k[i], name);
+    free(k);
+}

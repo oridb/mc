@@ -198,7 +198,11 @@ use     : Tuse Tident Tendln
         ;
 
 package : Tpkg Tident Tasn pkgbody Tendblk
-            {file->file.exports->name = mkname($2->line, $2->str);}
+            {if (file->file.exports->name)
+                 fatal($1->line, "Package already declared\n");
+             updatens(file->file.exports, $2->str);
+             updatens(file->file.globls, $2->str);
+            }
         ;
 
 

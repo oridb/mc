@@ -347,6 +347,7 @@ Type *exprtype(Node *n);
 Type *nodetype(Node *n);
 void addstmt(Node *file, Node *stmt);
 void setns(Node *n, char *ns);
+void updatens(Stab *st, char *ns);
 Op exprop(Node *n);
 Node **aggrmemb(Type *t, size_t *n);
 
