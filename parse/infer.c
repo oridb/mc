@@ -45,7 +45,7 @@ static void tyresolve(Type *t)
     t->resolved = 1;
 }
 
-/* find the most accurate type mapping we have */
+/* fixd the most accurate type mapping we have */
 static Type *tf(Type *t)
 {
     Type *lu;
@@ -55,7 +55,7 @@ static Type *tf(Type *t)
     while (1) {
         if (!tytab[t->tid] && t->type == Tyname) {
             if (!(lu = gettype(curstab(), t->name)))
-                fatal(t->name->line, "Could not find type %s", namestr(t->name));
+                fatal(t->name->line, "Could not fixd type %s", namestr(t->name));
             tytab[t->tid] = lu;
         }
 
@@ -118,7 +118,6 @@ static Type *littype(Node *n)
     };
     return NULL;
 }
-
 
 static Type *type(Node *n)
 {
@@ -440,12 +439,10 @@ static void inferstab(Stab *s)
 
     k = htkeys(s->ty, &n);
     for (i = 0; i < n; i++) {
-        t = gettype(s, k[i]);
-        if (!t)
-            t = gettype(file->file.globls, k[i]);
-        t = tf(t);
+        t = tf(gettype(s, k[i]));
         updatetype(s, k[i], t);
     }
+    free(k);
 }
 
 static void infernode(Node *n, Type *ret, int *sawret)
@@ -460,15 +457,17 @@ static void infernode(Node *n, Type *ret, int *sawret)
         return;
     switch (n->type) {
         case Nfile:
+            pushstab(n->file.globls);
+            /* exports allow us to specify types later in the body, so we
+             * need to patch the types in. */
             k = htkeys(file->file.exports->ty, &nk);
             for (i = 0; i < nk; i++) {
                 ty = gettype(file->file.globls, k[i]);
                 if (!ty) 
                     fatal(((Node*)k[i])->line, "Exported type %s not declared", namestr(k[i]));
-                updatetype(file->file.exports, k[i], ty);
+                updatetype(file->file.exports, k[i], tf(ty));
             }
             free(k);
-            pushstab(n->file.globls);
             inferstab(n->file.globls);
             inferstab(n->file.exports);
 	    for (i = 0; i < n->file.nstmts; i++) {
@@ -531,9 +530,9 @@ static void checkcast(Node *n)
 {
 }
 
-/* returns the final type for t, after all unifications
+/* returns the fixal type for t, after all unifications
  * and default constraint selections */
-static Type *tyfin(Node *ctx, Type *t)
+static Type *tyfix(Node *ctx, Type *t)
 {
     static Type *tyint;
     size_t i;
@@ -550,7 +549,7 @@ static Type *tyfin(Node *ctx, Type *t)
         if (t->type == Tyarray)
             typesub(t->asize);
         for (i = 0; i < t->nsub; i++)
-            t->sub[i] = tyfin(ctx, t->sub[i]);
+            t->sub[i] = tyfix(ctx, t->sub[i]);
     }
     if (t->type == Tyvar) {
         fatal(t->line, "underconstrained type %s near %s", tyfmt(buf, 1024, t), ctxstr(ctx));
@@ -601,7 +600,7 @@ static void stabsub(Stab *s)
     k = htkeys(s->dcl, &n);
     for (i = 0; i < n; i++) {
 	d = getdcl(s, k[i]);
-	d->type = tyfin(d->name, d->type);
+	d->type = tyfix(d->name, d->type);
     }
     free(k);
 }
@@ -614,19 +613,23 @@ static void typesub(Node *n)
         return;
     switch (n->type) {
         case Nfile:
+            pushstab(n->file.globls);
 	    stabsub(n->file.globls);
 	    stabsub(n->file.exports);
             for (i = 0; i < n->file.nstmts; i++)
                 typesub(n->file.stmts[i]);
+            popstab();
             break;
         case Ndecl:
-            settype(n, tyfin(n, type(n)));
+            settype(n, tyfix(n, type(n)));
             if (n->decl.init)
                 typesub(n->decl.init);
             break;
         case Nblock:
+            pushstab(n->block.scope);
             for (i = 0; i < n->block.nstmts; i++)
                 typesub(n->block.stmts[i]);
+            popstab();
             break;
         case Nifstmt:
             typesub(n->ifstmt.cond);
@@ -640,18 +643,20 @@ static void typesub(Node *n)
             typesub(n->loopstmt.body);
             break;
         case Nexpr:
-            settype(n, tyfin(n, type(n)));
+            settype(n, tyfix(n, type(n)));
             for (i = 0; i < n->expr.nargs; i++)
                 typesub(n->expr.args[i]);
             break;
         case Nfunc:
-            settype(n, tyfin(n, n->func.type));
+            pushstab(n->func.scope);
+            settype(n, tyfix(n, n->func.type));
             for (i = 0; i < n->func.nargs; i++)
                 typesub(n->func.args[i]);
             typesub(n->func.body);
+            popstab();
             break;
         case Nlit:
-            settype(n, tyfin(n, type(n)));
+            settype(n, tyfix(n, type(n)));
             switch (n->lit.littype) {
                 case Lfunc:     typesub(n->lit.fnval); break;
                 case Larray:    typesub(n->lit.arrval); break;

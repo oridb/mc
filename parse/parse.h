@@ -16,7 +16,6 @@ typedef struct Sym Sym;
 typedef struct Type Type;
 typedef struct Cstr Cstr;
 
-
 typedef enum {
 #define O(op, pure) op,
 #include "ops.def"

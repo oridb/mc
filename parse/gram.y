@@ -96,7 +96,6 @@ Stab *curscope;
 %token<tok> Texport  /* export */
 %token<tok> Tprotect /* protect */
 
-
 %token<tok> Tellipsis        /* ... */
 %token<tok> Tendln           /* ; or \n */
 %token<tok> Tendblk  /* ;; */
@@ -148,7 +147,6 @@ Stab *curscope;
     Tok  *tok;
     Type *ty;
 }
-
 
 %%
 
@@ -205,7 +203,6 @@ package : Tpkg Tident Tasn pkgbody Tendblk
             }
         ;
 
-
 pkgbody : pkgitem
         | pkgbody pkgitem
         ;
@@ -221,7 +218,6 @@ pkgitem : decl {putdcl(file->file.exports, $1->decl.sym);}
 visdef  : Texport Tcolon
         | Tprotect Tcolon
         ;
-
 
 declbody: declcore Tasn expr
             {$$ = $1; $1->decl.init = $3;}
@@ -255,6 +251,7 @@ type    : structdef
         | enumdef
         | compoundtype
         | generictype
+        | Tellipsis {$$ = mkty($1->line, Tyvalist);}
         ;
 
 generictype
