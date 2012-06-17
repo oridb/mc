@@ -419,6 +419,7 @@ static void inferstab(Stab *s)
 static void infernode(Node *n, Type *ret, int *sawret)
 {
     size_t i;
+    Node *d;
     Sym *s;
 
     if (!n)
@@ -427,15 +428,19 @@ static void infernode(Node *n, Type *ret, int *sawret)
         case Nfile:
             pushstab(n->file.globls);
             inferstab(n->file.globls);
-            for (i = 0; i < n->file.nstmts; i++)
-                infernode(n->file.stmts[i], NULL, sawret);
+	    for (i = 0; i < n->file.nstmts; i++) {
+		d  = n->file.stmts[i];
+		infernode(d, NULL, sawret);
+		if (d->type == Ndecl)  {
+		    s = getdcl(file->file.exports, d->decl.sym->name);
+		    if (s)
+			unify(n, type(n), s->type);
+		}
+	    }
             popstab();
             break;
         case Ndecl:
             inferdecl(n);
-            s = getdcl(file->file.exports, n->decl.sym->name);
-	    if (s)
-		unify(n, type(n), s->type);
             break;
         case Nblock:
             setsuper(n->block.scope, curstab());
