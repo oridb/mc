@@ -14,6 +14,10 @@
 int loaduse(FILE *f, Stab *st)
 {
     char *pkg;
+    Stab *s;
+    Sym *dcl;
+    Type *t;
+    Node *n;
     int c;
 
     if (fgetc(f) != 'U')
@@ -22,14 +26,37 @@ int loaduse(FILE *f, Stab *st)
     /* if the package names match up, or the usefile has no declared
      * package, then we simply add to the current stab. Otherwise,
      * we add a new stab under the current one */
-    if (pkg) {
-	printf("package name %s\n", pkg);
+    if (st->name) {
+        if (pkg && !strcmp(pkg, namestr(st->name))) {
+            s = st;
+        } else {
+            s = mkstab();
+            s->name = mkname(-1, pkg);
+            putns(st, s);
+        }
+    } else {
+        if (pkg) {
+            s = mkstab();
+            s->name = mkname(-1, pkg);
+            putns(st, s);
+        } else {
+            s = st;
+        }
     }
     while ((c = fgetc(f)) != 'Z') {
 	switch(c) {
-	    case 'G': die("We didn't implement generics yet!"); break;
-	    case 'D': dumpsym(symunpickle(f), stdout); break;
-	    case 'T': fprintf(stdout, "%s\n", tystr(tyunpickle(f))); break;
+	    case 'G':
+                die("We didn't implement generics yet!");
+                break;
+	    case 'D':
+                dcl = symunpickle(f);
+                putdcl(s, dcl);
+                break;
+	    case 'T':
+                n = mkname(-1, rdstr(f));
+                t = tyunpickle(f);
+                puttype(s, n, t);
+                break;
 	    case EOF:
 		break;
 	}
@@ -89,6 +116,7 @@ void writeuse(Node *file, FILE *f)
     for (i = 0; i < n; i++) {
 	t = htget(st->ty, k[i]);
 	wrbyte(f, 'T');
+        wrstr(f, namestr(k[i]));
 	typickle(t, f);
     }
     free(k);

@@ -55,7 +55,7 @@ static void outstab(Stab *st, FILE *fd, int depth)
     char *ty;
 
     indent(fd, depth);
-    fprintf(fd, "Stab %p (super = %p)\n", st, st ? st->super : NULL);
+    fprintf(fd, "Stab %p (super = %p, name=\"%s\")\n", st, st->super, namestr(st->name));
     if (!st)
         return;
 
@@ -79,8 +79,14 @@ static void outstab(Stab *st, FILE *fd, int depth)
         /* already indented */
         outsym(getdcl(st, k[i]), fd, 0);
     }
-    
-    /* FIXME: dump namespaces */
+    free(k);
+
+    k = htkeys(st->ns, &n);
+    for (i = 0; i < n; i++) {
+        indent(fd, depth + 1);
+        fprintf(fd, "N  %s\n", namestr(k[i]));
+        outstab(getns(st, k[i]), fd, depth + 1);
+    }
     free(k);
 }
 

@@ -280,6 +280,8 @@ Node **aggrmemb(Type *t, size_t *n)
 
 char *namestr(Node *name)
 {
+    if (!name)
+        return "";
     assert(name->type == Nname);
     return name->name.parts[0];
 }

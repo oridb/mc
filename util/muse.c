@@ -32,6 +32,7 @@ int main(int argc, char **argv)
 {
     int opt;
     int i;
+    Stab *s;
     Stab *globls;
     Node *rdback;
     FILE *tmp;
@@ -85,8 +86,9 @@ int main(int argc, char **argv)
 	f = fopen(outfile, "w");
 	writeuse(file, f);
 	fclose(f);
-	readuse(mkuse(-1, outfile, 1), file->file.globls);
-
+        s = mkstab();
+	readuse(mkuse(-1, outfile, 1), s);
+        dumpstab(s, stdout);
     }
 
     return 0;
