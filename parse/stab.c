@@ -37,20 +37,14 @@ void popstab(void)
     stabstkoff--;
 }
 
-
-static char *name(Node *n)
-{
-    return n->name.parts[n->name.nparts - 1];
-}
-
 static ulong namehash(void *n)
 {
-    return strhash(name(n));
+    return strhash(namestr(n));
 }
 
 static int nameeq(void *a, void *b)
 {
-    return a == b || !strcmp(name(a), name(b));
+    return a == b || !strcmp(namestr(a), namestr(b));
 }
 
 Sym *mksym(int line, Node *name, Type *ty)
@@ -127,7 +121,9 @@ void putdcl(Stab *st, Sym *s)
 
     d = getdcl(st, s->name);
     if (d)
-        fatal(s->line, "%s already declared (line %d", name(s->name), d->line);
+        fatal(s->line, "%s already declared (line %d", namestr(s->name), d->line);
+    if (st->name)
+        setns(s->name, namestr(st->name));
     htput(st->dcl, s->name, s);
 }
 
@@ -137,7 +133,7 @@ void updatetype(Stab *st, Node *n, Type *t)
 
     td = htget(st->ty, n);
     if (!td)
-        die("No type %s to update", name(n));
+        die("No type %s to update", namestr(n));
     td->type = t;
 }
 
@@ -149,7 +145,7 @@ void puttype(Stab *st, Node *n, Type *t)
     assert(t != NULL);
     ty = gettype(st, n);
     if (ty)
-        fatal(n->line, "Type %s already defined", name(n));
+        fatal(n->line, "Type %s already defined", namestr(n));
     td = xalloc(sizeof(Tydefn));
     td->line = n->line;
     td->name = n;
@@ -163,6 +159,6 @@ void putns(Stab *st, Stab *scope)
 
     s = getns(st, scope->name);
     if (s)
-        fatal(scope->name->line, "Ns %s already defined", name(s->name));
+        fatal(scope->name->line, "Ns %s already defined", namestr(s->name));
     htput(st->ns, scope->name, scope);
 }

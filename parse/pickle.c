@@ -263,9 +263,11 @@ void pickle(Node *n, FILE *fd)
                 pickle(n->expr.args[i], fd);
             break;
         case Nname:
-            wrint(fd, n->name.nparts);
-            for (i = 0; i < n->name.nparts; i++)
-                wrstr(fd, n->name.parts[i]);
+            wrbool(fd, n->name.ns != NULL);
+            if (n->name.ns) {
+                wrstr(fd, n->name.ns);
+            }
+            wrstr(fd, n->name.name);
             break;
         case Nuse:
             wrbool(fd, n->use.islocal);
@@ -358,10 +360,9 @@ Node *unpickle(FILE *fd)
                 n->expr.args[i] = unpickle(fd);
             break;
         case Nname:
-            n->name.nparts = rdint(fd);
-            n->name.parts = xalloc(sizeof(Node *)*n->name.nparts);
-            for (i = 0; i < n->name.nparts; i++)
-                n->name.parts[i] = rdstr(fd);
+            if (rdbool(fd))
+                n->name.ns = rdstr(fd);
+            n->name.name = rdstr(fd);
             break;
         case Nuse:
             n->use.islocal = rdbool(fd);

@@ -191,9 +191,18 @@ Node *mkname(int line, char *name)
     Node *n;
 
     n = mknode(line, Nname);
-    n->name.nparts = 1;
-    n->name.parts = xalloc(sizeof(char*));
-    n->name.parts[0] = strdup(name);
+    n->name.name = strdup(name);
+
+    return n;
+}
+
+Node *mknsname(int line, char *ns, char *name)
+{
+    Node *n;
+
+    n = mknode(line, Nname);
+    n->name.ns = strdup(ns);
+    n->name.name = strdup(name);
 
     return n;
 }
@@ -223,7 +232,7 @@ char *declname(Node *n)
     Node *name;
     assert(n->type == Ndecl);
     name = n->decl.sym->name;
-    return name->name.parts[name->name.nparts - 1];
+    return name->name.name;
 }
 
 Type *decltype(Node *n)
@@ -249,15 +258,9 @@ Type *nodetype(Node *n)
     return NULL;
 }
 
-void setns(Node *n, char *name)
+void setns(Node *n, char *ns)
 {
-    int i;
-
-    n->name.nparts++;
-    n->name.parts = xrealloc(n->name.parts, n->name.nparts);
-    for (i = n->name.nparts - 1; i > 0; i++)
-        n->name.parts[i] = n->name.parts[i-1];
-    n->name.parts[0] = strdup(name);
+    n->name.ns = strdup(ns);
 }
 
 Op exprop(Node *e)
@@ -283,5 +286,5 @@ char *namestr(Node *name)
     if (!name)
         return "";
     assert(name->type == Nname);
-    return name->name.parts[0];
+    return name->name.name;
 }

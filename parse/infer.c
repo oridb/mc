@@ -223,7 +223,6 @@ static void unifycall(Node *n)
     size_t i;
     Type *ft;
 
-    inferexpr(n->expr.args[0], NULL, NULL);
     ft = type(n->expr.args[0]);
     if (ft->type == Tyvar) {
         /* the first arg is the function itself, so it shouldn't be counted */
@@ -237,21 +236,49 @@ static void unifycall(Node *n)
     settype(n, ft->sub[0]);
 }
 
+void checkns(Node *n, Node **ret)
+{
+    Node *var, *name, *nsname;
+    Node **args;
+    Stab *st;
+    Sym *s;
+
+    args = n->expr.args;
+    if (exprop(args[0]) != Ovar)
+        return;
+    name = args[0]->expr.args[0];
+    st = getns(curstab(), name);
+    if (!st)
+        return;
+    nsname = mknsname(n->line, namestr(name), namestr(args[1]));
+    s = getdcl(st, args[1]);
+    var = mkexpr(n->line, Ovar, nsname, NULL);
+    var->expr.did = s->id;
+    settype(var, s->type);
+    *ret = var;
+}
+
 static void inferexpr(Node *n, Type *ret, int *sawret)
 {
     Node **args;
-    Sym *s;
     int nargs;
     Type *t;
+    Sym *s;
     int i;
 
     assert(n->type == Nexpr);
     args = n->expr.args;
     nargs = n->expr.nargs;
-    for (i = 0; i < nargs; i++)
+    for (i = 0; i < nargs; i++) {
         /* Nlit, Nvar, etc should not be inferred as exprs */
-        if (args[i]->type == Nexpr)
+        if (args[i]->type == Nexpr) {
+            /* Omemb can sometimes resolve to a namespace. We have to check
+             * this. Icky. */
+            if (exprop(args[i]) == Omemb)
+                checkns(args[i], &args[i]);
             inferexpr(args[i], ret, sawret);
+        }
+    }
     switch (exprop(n)) {
         /* all operands are same type */
         case Oadd:      /* @a + @a -> @a */
@@ -351,6 +378,8 @@ static void inferexpr(Node *n, Type *ret, int *sawret)
             settype(n, mkty(-1, Tyvoid));
             break;
         case Ovar:      /* a:@a -> @a */
+            if (n->expr.type)
+                return;
             s = getdcl(curstab(), args[0]);
             if (!s)
                 fatal(n->line, "Undeclared var %s", ctxstr(args[0]));

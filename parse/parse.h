@@ -148,8 +148,8 @@ struct Node {
         } expr;
 
         struct {
-            size_t nparts;
-            char **parts;
+            char *ns;
+            char *name;
         } name;
 
         struct {
@@ -334,6 +334,7 @@ Node *mkfloat(int line, double flt);
 Node *mkfunc(int line, Node **args, size_t nargs, Type *ret, Node *body);
 Node *mkarray(int line, Node **vals);
 Node *mkname(int line, char *name);
+Node *mknsname(int line, char *ns, char *name);
 Node *mkdecl(int line, Sym *sym);
 Node *mklbl(int line, char *lbl);
 Node *mkslice(int line, Node *base, Node *off);
@@ -345,7 +346,7 @@ Type *decltype(Node *n);
 Type *exprtype(Node *n);
 Type *nodetype(Node *n);
 void addstmt(Node *file, Node *stmt);
-void setns(Node *n, char *name);
+void setns(Node *n, char *ns);
 Op exprop(Node *n);
 Node **aggrmemb(Type *t, size_t *n);
 

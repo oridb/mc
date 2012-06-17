@@ -69,22 +69,20 @@ static int isconstfn(Sym *s)
 
 static char *asmname(Node *n)
 {
-    size_t i;
     char *s;
-    char *sep;
     int len;
 
     len = strlen(Fprefix);
-    for (i = 0; i < n->name.nparts; i++)
-        len += strlen(n->name.parts[i]) + 1;
+    if (n->name.ns)
+        len += strlen(n->name.ns);
+    len += strlen(n->name.name);
 
     s = xalloc(len);
     s[0] = '\0';
-    sep = Fprefix;
-    for (i = 0; i < n->name.nparts; i++) {
-        sprintf(s, "%s%s", sep, n->name.parts[i]);
-        sep = "$";
-    }
+    sprintf(s, "%s", Fprefix);
+    if (n->name.ns)
+        sprintf(s, "%s%s$", s, n->name.ns);
+    sprintf(s, "%s%s", s, n->name.name);
     return s;
 }
 
@@ -671,13 +669,35 @@ void blobdump(Blob *b, FILE *fd)
     fprintf(fd, "\n");
 }
 
+void fillglobls(Stab *st, Htab *globls)
+{
+    void **k;
+    size_t i, nk;
+    Stab *stab;
+    Sym *s;
+
+    k = htkeys(st->dcl, &nk);
+    for (i = 0; i < nk; i++) {
+        s = htget(st->dcl, k[i]);
+        htput(globls, (void*)s->id, asmname(s->name));
+    }
+    free(k);
+
+    k = htkeys(st->ns, &nk);
+    for (i = 0; i < nk; i++) {
+        stab = htget(st->ns, k[i]);
+        fillglobls(stab, globls);
+    }
+    free(k);
+}
+
 void gen(Node *file, char *out)
 {
+    Htab *globls;
+    size_t nn, i;
+    char *name;
     FILE *fd;
     Node **n;
-    int nn, i;
-    char *name;
-    Htab *globls;
     Sym *s;
 
     /* declrae useful constants */
@@ -689,9 +709,7 @@ void gen(Node *file, char *out)
     globls = mkht(ptrhash, ptreq);
 
     /* We need to define all global variables before use */
-    for (i = 0; i < nn; i++)
-        if (n[i]->type == Ndecl)
-            htput(globls, (void*)n[i]->decl.sym->id, asmname(n[i]->decl.sym->name));
+    fillglobls(file->file.globls, globls);
 
     fd = fopen(out, "w");
     if (!fd)

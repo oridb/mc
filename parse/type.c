@@ -198,20 +198,16 @@ int istysigned(Type *t)
     }
 }
 
-static int namefmt(char *buf, size_t len, Node *name)
+static int namefmt(char *buf, size_t len, Node *n)
 {
-    size_t i;
     char *p;
     char *end;
-    char *sep;
 
     p = buf;
     end = p + len;
-    sep = "";
-    for (i = 0; i < name->name.nparts; i++) {
-        p += snprintf(p, end - p, "%s%s", sep, name->name.parts[i]);
-        sep = ".";
-    }
+    if (n->name.ns)
+        p += snprintf(p, end - p, "%s.", n->name.ns);
+    p += snprintf(p, end - p, "%s", n->name.name);
     return len - (end - p);
 }
 

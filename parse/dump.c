@@ -20,14 +20,9 @@ static void indent(FILE *fd, int depth)
 
 static void outname(Node *n, FILE *fd)
 {
-    size_t i;
-    char *sep;
-
-    sep = "";
-    for (i = 0; i < n->name.nparts; i++) {
-        fprintf(fd, "%s%s", sep, n->name.parts[i]);
-        sep = ".";
-    }
+    if (n->name.ns)
+        fprintf(fd, "%s.", n->name.ns);
+    fprintf(fd, "%s", n->name.name);
 }
 
 static void outsym(Sym *s, FILE *fd, int depth)
@@ -185,11 +180,9 @@ static void outnode(Node *n, FILE *fd, int depth)
             break;
         case Nname:
             fprintf(fd, "(");
-            for (i = 0; i < n->name.nparts; i++) {
-                if (i != 0)
-                    fprintf(fd, ".");
-                fprintf(fd, "%s", n->name.parts[i]);
-            }
+            if (n->name.ns)
+                fprintf(fd, "%s.", n->name.ns);
+            fprintf(fd, "%s", n->name.name);
             fprintf(fd, ")\n");
             break;
         case Nnone:
