@@ -229,6 +229,8 @@ static void unifycall(Node *n)
         unify(n, type(n->expr.args[0]), ft);
     }
     for (i = 1; i < n->expr.nargs; i++) {
+        if (ft->sub[i]->type == Tyvalist)
+            break;
         inferexpr(n->expr.args[i], NULL, NULL);
         unify(n, ft->sub[i], type(n->expr.args[i]));
     }

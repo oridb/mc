@@ -340,7 +340,7 @@ static Loc *gencall(Isel *s, Node *n)
         arg = inri(s, arg);
         dst = locmem(argoff, esp, NULL, arg->mode);
         stor(s, arg, dst);
-        argsz += size(n->expr.args[i]);
+        argoff += size(n->expr.args[i]);
     }
     fn = selexpr(s, n->expr.args[0]);
     g(s, Icall, fn, NULL);

@@ -543,7 +543,9 @@ block   : blockbody Tendblk
         ;
 
 blockbody
-        : stmt
+        : /* empty */
+            {$$ = mkblock(line, mkstab());}
+        | stmt
             {$$ = mkblock(line, mkstab());
              if ($1)
                 lappend(&$$->block.stmts, &$$->block.nstmts, $1);
