@@ -40,6 +40,7 @@ struct Simp {
     size_t stksz;
     size_t argsz;
     Htab *locs;
+    Htab *globls;
     Node *ret;
 };
 
@@ -647,52 +648,50 @@ static void reduce(Simp *s, Node *f)
     append(s, s->endlbl);
 }
 
-static void lowerfn(char *name, Node *n, Htab *globls, FILE *fd)
+static Func *lowerfn(Simp *s, char *name, Node *n)
 {
     size_t i;
-    Simp s = {0,};
-    Func fn;
+    Func *fn;
     Cfg *cfg;
 
     if(debug)
         printf("\n\nfunction %s\n", name);
 
     /* set up the simp context */
-    s.locs = mkht(dclhash, dcleq);
-
     /* unwrap to the function body */
     n = n->expr.args[0];
     n = n->lit.fnval;
-    reduce(&s, n);
+    reduce(s, n);
 
     if (debug)
-        for (i = 0; i < s.nstmts; i++)
-            dump(s.stmts[i], stdout);
-    for (i = 0; i < s.nstmts; i++) {
-	if (s.stmts[i]->type != Nexpr)
+        for (i = 0; i < s->nstmts; i++)
+            dump(s->stmts[i], stdout);
+    for (i = 0; i < s->nstmts; i++) {
+	if (s->stmts[i]->type != Nexpr)
 	    continue;
 	if (debug) {
 	    printf("FOLD FROM ----------\n");
-	    dump(s.stmts[i], stdout);
+	    dump(s->stmts[i], stdout);
 	}
-	s.stmts[i] = fold(s.stmts[i]);
+	s->stmts[i] = fold(s->stmts[i]);
 	if (debug) {
 	    printf("FOLD TO ------------\n");
-	    dump(s.stmts[i], stdout);
+	    dump(s->stmts[i], stdout);
 	    printf("END ----------------\n");
 	}
     }
-    cfg = mkcfg(s.stmts, s.nstmts);
+    cfg = mkcfg(s->stmts, s->nstmts);
     if (debug)
         dumpcfg(cfg, stdout);
 
-    fn.name = name;
-    fn.isglobl = 1; /* FIXME: we should actually use the visibility of the sym... */
-    fn.stksz = s.stksz;
-    fn.locs = s.locs;
-    fn.ret = s.ret;
-    fn.cfg = cfg;
-    genasm(fd, &fn, globls);
+    fn = zalloc(sizeof(Func));
+    fn->name = strdup(name);
+    fn->isglobl = 1; /* FIXME: we should actually use the visibility of the sym... */
+    fn->stksz = s->stksz;
+    fn->locs = s->locs;
+    fn->ret = s->ret;
+    fn->cfg = cfg;
+    return fn;
 }
 
 void blobdump(Blob *b, FILE *fd)
@@ -731,18 +730,42 @@ void fillglobls(Stab *st, Htab *globls)
     free(k);
 }
 
+void lowerdcl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***blob, size_t *nblob)
+{
+    Simp s = {0,};
+    char *name;
+    Func *f;
+
+    name = asmname(dcl->decl.name);
+    s.locs = mkht(dclhash, dcleq);
+    s.globls = globls;
+
+    if (isconstfn(dcl)) {
+        f = lowerfn(&s, name, dcl->decl.init);
+        lappend(fn, nfn, f);
+    } else {
+        die("We don't lower globls yet...");
+    }
+    free(name);
+}
+
 void gen(Node *file, char *out)
 {
     Htab *globls;
-    size_t nn, i;
-    char *name;
+    Node **n, **blob;
+    Func **fn;
+    size_t nn, nfn, nblob;
+    size_t i;
     FILE *fd;
-    Node **n;
 
-    /* declrae useful constants */
+    /* declare useful constants */
     one = mkintlit(-1, 1);
     ptrsz = mkintlit(-1, 4);
 
+    fn = NULL;
+    nfn = 0;
+    blob = NULL;
+    nblob = 0;
     n = file->file.stmts;
     nn = file->file.nstmts;
     globls = mkht(dclhash, dcleq);
@@ -758,19 +781,15 @@ void gen(Node *file, char *out)
             case Nuse: /* nothing to do */ 
                 break;
             case Ndecl:
-                name = asmname(n[i]->decl.name);
-                if (isconstfn(n[i])) {
-                    lowerfn(name, n[i]->decl.init, globls, fd);
-                    free(name);
-                } else {
-                    die("We don't lower globls yet...");
-                }
+                lowerdcl(n[i], globls, &fn, &nfn, &blob, &nblob);
                 break;
             default:
                 die("Bad node %s in toplevel", nodestr(n[i]->type));
                 break;
         }
     }
-    if (fd)
-        fclose(fd);
+
+    for (i = 0; i < nfn; i++)
+        genasm(fd, fn[i], globls);
+    fclose(fd);
 }

@@ -685,7 +685,7 @@ static void epilogue(Isel *s)
     g(s, Iret, NULL);
 }
 
-static void writeasm(Func *fn, Isel *s, FILE *fd)
+static void writeasm(FILE *fd, Isel *s, Func *fn)
 {
     size_t i, j;
 
@@ -718,7 +718,7 @@ static Asmbb *mkasmbb(Bb *bb)
  * operations on x32, no structures, and so on. */
 void genasm(FILE *fd, Func *fn, Htab *globls)
 {
-    struct Isel is = {0,};
+    Isel is = {0,};
     size_t i, j;
     char buf[128];
 
@@ -744,11 +744,10 @@ void genasm(FILE *fd, Func *fn, Htab *globls)
     }
     is.curbb = is.bb[is.nbb - 1];
     epilogue(&is);
-
     regalloc(&is);
-    if (debug)
-      writeasm(fn, &is, stdout);
 
-    writeasm(fn, &is, fd);
+    if (debug)
+        writeasm(stdout, &is, fn);
+    writeasm(fd, &is, fn);
 }
 
