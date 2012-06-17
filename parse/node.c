@@ -111,7 +111,7 @@ Node *mkfunc(int line, Node **args, size_t nargs, Type *ret, Node *body)
     f->func.type = mktyfunc(line, args, nargs, ret);
 
     for (i = 0; i < nargs; i++)
-        putdcl(f->func.scope, args[i]->decl.sym);
+        putdcl(f->func.scope, args[i]);
 
     n = mknode(line, Nlit);
     n->lit.littype = Lfunc;
@@ -207,12 +207,15 @@ Node *mknsname(int line, char *ns, char *name)
     return n;
 }
 
-Node *mkdecl(int line, Sym *sym)
+Node *mkdecl(int line, Node *name, Type *ty)
 {
+    static int nextdid;
     Node *n;
 
     n = mknode(line, Ndecl);
-    n->decl.sym = sym;
+    n->decl.did = nextdid++;
+    n->decl.name = name;
+    n->decl.type = ty;
     return n;
 }
 
@@ -231,7 +234,7 @@ char *declname(Node *n)
 {
     Node *name;
     assert(n->type == Ndecl);
-    name = n->decl.sym->name;
+    name = n->decl.name;
     return name->name.name;
 }
 
@@ -250,7 +253,7 @@ Type *exprtype(Node *n)
 Type *nodetype(Node *n)
 {
     switch (n->type) {
-        case Ndecl:     return n->decl.sym->type;       break;
+        case Ndecl:     return n->decl.type;            break;
         case Nexpr:     return n->expr.type;            break;
         case Nlit:      return n->lit.type;             break;
         default:        die("Node %s has no type", nodestr(n->type)); break;

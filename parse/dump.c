@@ -25,20 +25,20 @@ static void outname(Node *n, FILE *fd)
     fprintf(fd, "%s", n->name.name);
 }
 
-static void outsym(Sym *s, FILE *fd, int depth)
+static void outsym(Node *s, FILE *fd, int depth)
 {
     char buf[1024];
 
     indent(fd, depth);
-    if (s->isconst)
+    if (s->decl.isconst)
         fprintf(fd, "const ");
     else
         fprintf(fd, "var ");
-    outname(s->name, fd);
-    fprintf(fd, " : %s\n", tyfmt(buf, 1024, s->type));
+    outname(s->decl.name, fd);
+    fprintf(fd, " : %s\n", tyfmt(buf, 1024, s->decl.type));
 }
 
-void dumpsym(Sym *s, FILE *fd)
+void dumpsym(Node *s, FILE *fd)
 {
     outsym(s, fd, 0);
 }
@@ -117,7 +117,7 @@ static void outnode(Node *n, FILE *fd, int depth)
             break;
         case Ndecl:
             fprintf(fd, "\n");
-            outsym(n->decl.sym, fd, depth + 1);
+            outsym(n, fd, depth + 1);
             outnode(n->decl.init, fd, depth + 1);
             break;
         case Nblock:

@@ -163,7 +163,7 @@ file    : toplev
 toplev
         : decl
             {lappend(&file->file.stmts, &file->file.nstmts, $1);
-             putdcl(file->file.globls, $1->decl.sym);}
+             putdcl(file->file.globls, $1);}
         | use
             {lappend(&file->file.uses, &file->file.nuses, $1);}
         | package
@@ -173,21 +173,19 @@ toplev
         ;
 
 decl    : Tvar declbody Tendln
-            {$2->decl.flags = 0;
-             $$ = $2;}
+            {$$ = $2;}
         | Tconst declbody Tendln
-            {$2->decl.sym->isconst = 1;
-             $2->decl.flags = 0;
+            {$2->decl.isconst = 1;
              $$ = $2;}
         | Tgeneric declbody Tendln
-            {$2->decl.sym->isconst = 1;
-             $2->decl.flags = 0;
+            {$2->decl.isconst = 1;
              $$ = $2;}
         | Textern Tvar declbody Tendln
-            {$3->decl.flags = Dclextern;
+            {$3->decl.isextern = 1;
              $$ = $3;}
         | Textern Tconst declbody Tendln
-            {$3->decl.flags = Dclconst | Dclextern;
+            {$3->decl.isconst = 1;
+             $3->decl.isextern = 1;
              $$ = $3;}
         ;
 
@@ -209,7 +207,7 @@ pkgbody : pkgitem
         | pkgbody pkgitem
         ;
 
-pkgitem : decl {putdcl(file->file.exports, $1->decl.sym);}
+pkgitem : decl {putdcl(file->file.exports, $1);}
         | tydef {puttype(file->file.exports, 
                          mkname($1.line, $1.name),
                          $1.type);}
@@ -227,9 +225,9 @@ declbody: declcore Tasn expr
         ;
 
 declcore: name
-            {$$ = mkdecl($1->line, mksym($1->line, $1, mktyvar($1->line)));}
+            {$$ = mkdecl($1->line, $1, mktyvar($1->line));}
         | name Tcolon type
-            {$$ = mkdecl($1->line, mksym($1->line, $1, $3));}
+            {$$ = mkdecl($1->line, $1, $3);}
         ;
 
 name    : Tident
@@ -558,12 +556,12 @@ blockbody
              if ($1)
                 lappend(&$$->block.stmts, &$$->block.nstmts, $1);
              if ($1 && $1->type == Ndecl)
-                putdcl($$->block.scope, $1->decl.sym);}
+                putdcl($$->block.scope, $1);}
         | blockbody stmt
             {if ($2)
                 lappend(&$1->block.stmts, &$1->block.nstmts, $2);
              if ($2 && $2->type == Ndecl)
-                putdcl($1->block.scope, $2->decl.sym);
+                putdcl($1->block.scope, $2);
              $$ = $1;}
         ;
 

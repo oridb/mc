@@ -11,7 +11,6 @@ typedef struct Htab Htab;
 typedef struct Tok Tok;
 typedef struct Node Node;
 typedef struct Stab Stab;
-typedef struct Sym Sym;
 
 typedef struct Type Type;
 typedef struct Cstr Cstr;
@@ -86,12 +85,6 @@ struct Stab {
 };
 
 struct Sym {
-    long  id;
-    int   line;
-    int   isconst;
-    int   isgeneric;
-    Node *name;
-    Type *type;
 };
 
 struct Type {
@@ -194,8 +187,12 @@ struct Node {
         } lbl;
 
         struct {
-            Sym *sym;
-            int flags;
+            long  did;
+            int   isconst;
+            int   isgeneric;
+            int   isextern;
+            Node *name;
+            Type *type;
             Node *init;
         } decl;
 
@@ -275,17 +272,16 @@ Stab *mkstab(void);
 void putns(Stab *st, Stab *scope);
 void puttype(Stab *st, Node *n, Type *ty);
 void updatetype(Stab *st, Node *n, Type *t);
-void putdcl(Stab *st, Sym *s);
+void putdcl(Stab *st, Node *s);
 
 Stab *getns(Stab *st, Node *n);
-Sym *getdcl(Stab *st, Node *n);
+Node *getdcl(Stab *st, Node *n);
 Type *gettype(Stab *st, Node *n);
 
 Stab *curstab(void);
 void pushstab(Stab *st);
 void popstab(void);
 
-Sym *mksym(int line, Node *name, Type *ty);
 
 /* type creation */
 void tyinit(Stab *st); /* sets up built in types */
@@ -333,7 +329,7 @@ Node *mkfunc(int line, Node **args, size_t nargs, Type *ret, Node *body);
 Node *mkarray(int line, Node **vals);
 Node *mkname(int line, char *name);
 Node *mknsname(int line, char *ns, char *name);
-Node *mkdecl(int line, Sym *sym);
+Node *mkdecl(int line, Node *name, Type *ty);
 Node *mklbl(int line, char *lbl);
 Node *mkslice(int line, Node *base, Node *off);
 
@@ -358,7 +354,7 @@ void infer(Node *file);
 
 /* debug */
 void dump(Node *t, FILE *fd);
-void dumpsym(Sym *s, FILE *fd);
+void dumpsym(Node *s, FILE *fd);
 void dumpstab(Stab *st, FILE *fd);
 char *opstr(Op o);
 char *nodestr(Ntype nt);
@@ -373,10 +369,10 @@ void lfree(void *l, size_t *len);
 
 /* serialization/usefiles */
 void typickle(Type *t, FILE *fd);
-void sympickle(Sym *s, FILE *fd);
+void sympickle(Node *s, FILE *fd);
 void pickle(Node *n, FILE *fd);
 Type *tyunpickle(FILE *fd);
-Sym  *symunpickle(FILE *fd);
+Node *symunpickle(FILE *fd);
 Node *unpickle(FILE *fd);
 
 /* serializing/unserializing */

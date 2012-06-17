@@ -1,7 +1,14 @@
 #!/bin/bash
 export PATH=.:$PATH
 export MC=../8/8m
+export MU=../util/muse
 export ASOPT="-g"
+
+function use {
+    rm -f $1
+    echo $MU $1.myr -o $1.use && \
+    $MU $1.myr -o $1.use && \
+}
 
 function build {
     rm -f $1
@@ -34,6 +41,10 @@ function exitswith {
 
 for i in `awk '/^B/{print $2}' tests`; do
     build $i
+done
+
+for i in `awk '/^U/{print $2}' tests`; do
+    use $i
 done
 
 for i in `awk '/^F/{print $2}' tests`; do

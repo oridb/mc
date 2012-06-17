@@ -62,9 +62,9 @@ static int ispure(Node *n)
     return ispureop[exprop(n)];
 }
 
-static int isconstfn(Sym *s)
+static int isconstfn(Node *s)
 {
-    return s->isconst && s->type->type == Tyfunc;
+    return s->decl.isconst && decltype(s)->type == Tyfunc;
 }
 
 static char *asmname(Node *n)
@@ -146,7 +146,7 @@ size_t size(Node *n)
     if (n->type == Nexpr)
         t = n->expr.type;
     else
-        t = n->decl.sym->type;
+        t = n->decl.type;
 
     return tysize(t);
 }
@@ -165,16 +165,14 @@ static Node *temp(Simp *simp, Node *e)
     char buf[128];
     static int nexttmp;
     Node *t, *r, *n;
-    Sym *s;
 
     assert(e->type == Nexpr);
     snprintf(buf, 128, ".t%d", nexttmp++);
     n = mkname(e->line, buf);
-    s = mksym(e->line, n, e->expr.type);
-    t = mkdecl(e->line, s);
+    t = mkdecl(e->line, n, e->expr.type);
     declarelocal(simp, t);
     r = mkexpr(e->line, Ovar, t, NULL);
-    r->expr.did = s->id;
+    r->expr.did = t->decl.did;
     return r;
 }
 
@@ -540,16 +538,16 @@ static void declarelocal(Simp *s, Node *n)
     assert(n->type == Ndecl);
     s->stksz += size(n);
     if (debug)
-        printf("DECLARE %s(%ld) at %zd\n", declname(n), n->decl.sym->id, s->stksz);
-    htput(s->locs, (void*)n->decl.sym->id, (void*)s->stksz);
+        printf("DECLARE %s(%ld) at %zd\n", declname(n), n->decl.did, s->stksz);
+    htput(s->locs, (void*)n->decl.did, (void*)s->stksz);
 }
 
 static void declarearg(Simp *s, Node *n)
 {
     assert(n->type == Ndecl);
     if (debug)
-        printf("DECLARE %s(%ld) at %zd\n", declname(n), n->decl.sym->id, -(s->argsz + 8));
-    htput(s->locs, (void*)n->decl.sym->id, (void*)-(s->argsz + 8));
+        printf("DECLARE %s(%ld) at %zd\n", declname(n), n->decl.did, -(s->argsz + 8));
+    htput(s->locs, (void*)n->decl.did, (void*)-(s->argsz + 8));
     s->argsz += size(n);
 }
 
@@ -589,7 +587,7 @@ static Node *simp(Simp *s, Node *n)
 	    if (n->decl.init) {
 		v = rval(s, n->decl.init);
 		r = mkexpr(n->line, Ovar, n, NULL);
-		r->expr.did = n->decl.sym->id;
+		r->expr.did = n->decl.did;
 		append(s, store(r, v));
 	    }
             break;
@@ -692,12 +690,12 @@ void fillglobls(Stab *st, Htab *globls)
     void **k;
     size_t i, nk;
     Stab *stab;
-    Sym *s;
+    Node *s;
 
     k = htkeys(st->dcl, &nk);
     for (i = 0; i < nk; i++) {
         s = htget(st->dcl, k[i]);
-        htput(globls, (void*)s->id, asmname(s->name));
+        htput(globls, (void*)s->decl.did, asmname(s->decl.name));
     }
     free(k);
 
@@ -716,7 +714,6 @@ void gen(Node *file, char *out)
     char *name;
     FILE *fd;
     Node **n;
-    Sym *s;
 
     /* declrae useful constants */
     one = mkintlit(-1, 1);
@@ -737,9 +734,8 @@ void gen(Node *file, char *out)
             case Nuse: /* nothing to do */ 
                 break;
             case Ndecl:
-                s = n[i]->decl.sym;
-                name = asmname(s->name);
-                if (isconstfn(s)) {
+                name = asmname(n[i]->decl.name);
+                if (isconstfn(n[i])) {
                     lowerfn(name, n[i]->decl.init, globls, fd);
                     free(name);
                 } else {

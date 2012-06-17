@@ -17,8 +17,8 @@ static void wrtype(FILE *fd, Type *val);
 static Type *rdtype(FILE *fd);
 static void wrstab(FILE *fd, Stab *val);
 static Stab *rdstab(FILE *fd);
-static void wrsym(FILE *fd, Sym *val);
-static Sym *rdsym(FILE *fd);
+static void wrsym(FILE *fd, Node *val);
+static Node *rdsym(FILE *fd);
 
 static void wrstab(FILE *fd, Stab *val)
 {
@@ -82,23 +82,35 @@ static Stab *rdstab(FILE *fd)
     return st;
 }
 
-static void wrsym(FILE *fd, Sym *val)
+static void wrsym(FILE *fd, Node *val)
 {
+    /* sym */
     wrint(fd, val->line);
-    pickle(val->name, fd);
-    wrtype(fd, val->type);
+    pickle(val->decl.name, fd);
+    wrtype(fd, val->decl.type);
+
+    /* symflags */
+    wrint(fd, val->decl.isconst);
+    wrint(fd, val->decl.isgeneric);
+    wrint(fd, val->decl.isextern);
 }
 
-static Sym *rdsym(FILE *fd)
+static Node *rdsym(FILE *fd)
 {
     int line;
     Node *name;
     Type *type;
+    Node *n;
 
     line = rdint(fd);
     name = unpickle(fd);
     type = rdtype(fd);
-    return mksym(line, name, type);
+    n = mkdecl(line, name, type);
+    
+    n->decl.isconst = rdint(fd);
+    n->decl.isgeneric = rdint(fd);
+    n->decl.isextern = rdint(fd);
+    return n;
 }
 
 Type *tyunpickle(FILE *fd)
@@ -106,7 +118,7 @@ Type *tyunpickle(FILE *fd)
     return rdtype(fd);
 }
 
-Sym *symunpickle(FILE *fd)
+Node *symunpickle(FILE *fd)
 {
     return rdsym(fd);
 }
@@ -220,7 +232,7 @@ void typickle(Type *t, FILE *fd)
     wrtype(fd, t);
 }
 
-void sympickle(Sym *s, FILE *fd)
+void sympickle(Node *s, FILE *fd)
 {
     wrsym(fd, s);
 }
@@ -307,8 +319,16 @@ void pickle(Node *n, FILE *fd)
             wrstr(fd, n->lbl.name);
             break;
         case Ndecl:
-            wrsym(fd, n->decl.sym);
-            wrint(fd, n->decl.flags);
+            /* sym */
+            pickle(n->decl.name, fd);
+            wrtype(fd, n->decl.type);
+
+            /* symflags */
+            wrint(fd, n->decl.isconst);
+            wrint(fd, n->decl.isgeneric);
+            wrint(fd, n->decl.isextern);
+
+            /* init */
             pickle(n->decl.init, fd);
             break;
         case Nfunc:
@@ -403,8 +423,16 @@ Node *unpickle(FILE *fd)
             n->lbl.name = rdstr(fd);
             break;
         case Ndecl:
-            n->decl.sym = rdsym(fd);
-            n->decl.flags = rdint(fd);
+            /* sym */
+            n->decl.name = unpickle(fd);
+            n->decl.type = rdtype(fd);
+
+            /* symflags */
+            n->decl.isconst = rdint(fd);
+            n->decl.isgeneric = rdint(fd);
+            n->decl.isextern = rdint(fd);
+
+            /* init */
             n->decl.init = unpickle(fd);
             break;
         case Nfunc:

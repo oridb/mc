@@ -47,19 +47,6 @@ static int nameeq(void *a, void *b)
     return a == b || !strcmp(namestr(a), namestr(b));
 }
 
-Sym *mksym(int line, Node *name, Type *ty)
-{
-    static int nextid;
-    Sym *sym;
-
-    sym = zalloc(sizeof(Sym));
-    sym->id = nextid++;
-    sym->name = name;
-    sym->type = ty;
-    sym->line = line;
-    return sym;
-}
-
 Stab *mkstab()
 {
     Stab *st;
@@ -72,9 +59,9 @@ Stab *mkstab()
 }
 
 /* FIXME: do namespaces */
-Sym *getdcl(Stab *st, Node *n)
+Node *getdcl(Stab *st, Node *n)
 {
-    Sym *s;
+    Node *s;
     Stab *orig;
 
     orig = st;
@@ -84,7 +71,7 @@ Sym *getdcl(Stab *st, Node *n)
             if (!st->closure)
                 st->closure = mkht(namehash, nameeq);
             if (st != orig)
-                htput(st->closure, s->name, s);
+                htput(st->closure, s->decl.name, s);
             return s;
         }
         st = st->super;
@@ -115,16 +102,16 @@ Stab *getns(Stab *st, Node *n)
     return NULL;
 }
 
-void putdcl(Stab *st, Sym *s)
+void putdcl(Stab *st, Node *s)
 {
-    Sym *d;
+    Node *d;
 
-    d = getdcl(st, s->name);
+    d = getdcl(st, s->decl.name);
     if (d)
-        fatal(s->line, "%s already declared (line %d", namestr(s->name), d->line);
+        fatal(s->line, "%s already declared (line %d", namestr(s->decl.name), d->line);
     if (st->name)
-        setns(s->name, namestr(st->name));
-    htput(st->dcl, s->name, s);
+        setns(s->decl.name, namestr(st->name));
+    htput(st->dcl, s->decl.name, s);
 }
 
 void updatetype(Stab *st, Node *n, Type *t)

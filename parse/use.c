@@ -15,7 +15,7 @@ int loaduse(FILE *f, Stab *st)
 {
     char *pkg;
     Stab *s;
-    Sym *dcl;
+    Node *dcl;
     Type *t;
     Node *n;
     int c;
@@ -106,7 +106,7 @@ void writeuse(Node *file, FILE *f)
     Stab *st;
     void **k;
     Type *t;
-    Sym *s;
+    Node *s;
     size_t i, n;
 
     st = file->file.exports;
@@ -127,7 +127,7 @@ void writeuse(Node *file, FILE *f)
     k = htkeys(st->dcl, &n);
     for (i = 0; i < n; i++) {
 	s = getdcl(st, k[i]);
-	if (s->isgeneric)
+	if (s->decl.isgeneric)
 	    wrbyte(f, 'G');
 	else
 	    wrbyte(f, 'D');

@@ -95,7 +95,7 @@ static void settype(Node *n, Type *t)
     t = tf(t);
     switch (n->type) {
         case Nexpr:     n->expr.type = t;       break;
-        case Ndecl:     n->decl.sym->type = t;  break;
+        case Ndecl:     n->decl.type = t;       break;
         case Nlit:      n->lit.type = t;        break;
         case Nfunc:     n->func.type = t;       break;
         default:
@@ -247,7 +247,7 @@ void checkns(Node *n, Node **ret)
     Node *var, *name, *nsname;
     Node **args;
     Stab *st;
-    Sym *s;
+    Node *s;
 
     if (n->type != Nexpr)
         return;
@@ -263,8 +263,8 @@ void checkns(Node *n, Node **ret)
     if (!s)
         fatal(n->line, "Undeclared var %s.%s", nsname->name.ns, nsname->name.name);
     var = mkexpr(n->line, Ovar, nsname, NULL);
-    var->expr.did = s->id;
-    settype(var, s->type);
+    var->expr.did = s->decl.did;
+    settype(var, s->decl.type);
     *ret = var;
 }
 
@@ -272,8 +272,8 @@ static void inferexpr(Node *n, Type *ret, int *sawret)
 {
     Node **args;
     int nargs;
+    Node *s;
     Type *t;
-    Sym *s;
     int i;
 
     assert(n->type == Nexpr);
@@ -397,8 +397,8 @@ static void inferexpr(Node *n, Type *ret, int *sawret)
             if (!s)
                 fatal(n->line, "Undeclared var %s", ctxstr(args[0]));
             else
-                settype(n, s->type);
-            n->expr.did = s->id;
+                settype(n, s->decl.type);
+            n->expr.did = s->decl.did;
             break;
         case Olit:      /* <lit>:@a::tyclass -> @a */
             switch (args[0]->lit.littype) {
@@ -463,9 +463,9 @@ static void infernode(Node *n, Type *ret, int *sawret)
 {
     void **k;
     size_t i, nk;
-    Node *d;
     Type *ty;
-    Sym *s;
+    Node *d;
+    Node *s;
 
     if (!n)
         return;
@@ -488,9 +488,9 @@ static void infernode(Node *n, Type *ret, int *sawret)
 		d  = n->file.stmts[i];
 		infernode(d, NULL, sawret);
 		if (d->type == Ndecl)  {
-		    s = getdcl(file->file.exports, d->decl.sym->name);
+		    s = getdcl(file->file.exports, d->decl.name);
 		    if (s)
-			unify(d, type(d), s->type);
+			unify(d, type(d), s->decl.type);
 		}
 	    }
             popstab();
@@ -621,7 +621,7 @@ static void stabsub(Stab *s)
     void **k;
     size_t n, i;
     Type *t;
-    Sym *d;
+    Node *d;
 
     k = htkeys(s->ty, &n);
     for (i = 0; i < n; i++) {
@@ -633,7 +633,7 @@ static void stabsub(Stab *s)
     k = htkeys(s->dcl, &n);
     for (i = 0; i < n; i++) {
 	d = getdcl(s, k[i]);
-	d->type = tyfix(d->name, d->type);
+	d->decl.type = tyfix(d->decl.name, d->decl.type);
     }
     free(k);
 }
