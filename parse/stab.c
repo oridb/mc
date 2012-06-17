@@ -142,7 +142,6 @@ void puttype(Stab *st, Node *n, Type *t)
     Type *ty;
     Tydefn *td;
 
-    assert(t != NULL);
     ty = gettype(st, n);
     if (ty)
         fatal(n->line, "Type %s already defined", namestr(n));

@@ -440,24 +440,37 @@ static void inferstab(Stab *s)
 
     k = htkeys(s->ty, &n);
     for (i = 0; i < n; i++) {
-        t = tf(gettype(s, k[i]));
+        t = gettype(s, k[i]);
+        if (!t)
+            t = gettype(file->file.globls, k[i]);
+        t = tf(t);
         updatetype(s, k[i], t);
     }
 }
 
 static void infernode(Node *n, Type *ret, int *sawret)
 {
-    size_t i;
+    void **k;
+    size_t i, nk;
     Node *d;
+    Type *ty;
     Sym *s;
 
     if (!n)
         return;
     switch (n->type) {
         case Nfile:
+            k = htkeys(file->file.exports->ty, &nk);
+            for (i = 0; i < nk; i++) {
+                ty = gettype(file->file.globls, k[i]);
+                if (!ty) 
+                    fatal(((Node*)k[i])->line, "Exported type %s not declared", namestr(k[i]));
+                updatetype(file->file.exports, k[i], ty);
+            }
+            free(k);
             pushstab(n->file.globls);
             inferstab(n->file.globls);
-	    inferstab(n->file.exports);
+            inferstab(n->file.exports);
 	    for (i = 0; i < n->file.nstmts; i++) {
 		d  = n->file.stmts[i];
 		infernode(d, NULL, sawret);
