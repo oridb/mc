@@ -698,7 +698,7 @@ static void declarearg(Simp *s, Node *n)
 
 static Node *simp(Simp *s, Node *n)
 {
-    Node *r, *t, *u, *v;
+    Node *r, *t, *u;
     size_t i;
 
     if (!n)
@@ -728,21 +728,14 @@ static Node *simp(Simp *s, Node *n)
             break;
         case Ndecl:
 	    declarelocal(s, n);
-	    if (n->decl.init) {
-		t = mkexpr(n->line, Ovar, n, NULL);
-		t->expr.did = n->decl.did;
+            if (n->decl.init) {
+                t = mkexpr(n->line, Ovar, n->decl.name, NULL);
+                u = mkexpr(n->line, Oasn, t, n->decl.init, NULL);
+                u->expr.type = n->decl.type;
                 t->expr.type = n->decl.type;
-		u = rval(s, n->decl.init);
-                if (size(n) > 4) {
-                    t = addr(t, exprtype(n));
-                    u = addr(u, exprtype(n));
-                    v = word(n->line, size(n));
-                    r = mkexpr(n->line, Oblit, t, u, v, NULL);
-                } else {
-                    r = store(t, u);
-                }
-		append(s, r);
-	    }
+                t->expr.did = n->decl.did;
+                simp(s, u);
+            }
             break;
         case Nlbl:
             append(s, n);
