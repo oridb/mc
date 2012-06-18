@@ -384,7 +384,7 @@ landexpr: landexpr Tland castexpr
         | castexpr
         ;
 
-castexpr: landexpr Tcast Toparen type Tcparen
+castexpr: borexpr Tcast Toparen type Tcparen
             {$$ = mkexpr($1->line, Ocast, $1, NULL);
              $$->expr.type = $4;}
         | borexpr
@@ -549,9 +549,7 @@ block   : blockbody Tendblk
         ;
 
 blockbody
-        : /* empty */
-            {$$ = mkblock(line, mkstab());}
-        | stmt
+        : stmt
             {$$ = mkblock(line, mkstab());
              if ($1)
                 lappend(&$$->block.stmts, &$$->block.nstmts, $1);
