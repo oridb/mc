@@ -22,6 +22,7 @@ B bsr     	E       5
 B struct1	E	12
 B struct	E	42
 B array		E	7
+B arraylen	E	12
 B call		E	42
 B loop		E	45
 B fib		E	21

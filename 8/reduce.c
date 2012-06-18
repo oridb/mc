@@ -53,6 +53,7 @@ static void declarelocal(Simp *s, Node *n);
 
 /* useful constants */
 static Node *one;
+static Node *zero;
 static Node *ptrsz;
 static Type *tyword;
 
@@ -115,8 +116,8 @@ Node *store(Node *a, Node *b)
 {
     Node *n;
 
+    assert(a != NULL && b != NULL);
     n = mkexpr(a->line, Ostor, a, b, NULL);
-    n->expr.type = b->expr.type;
     return n;
 }
 
@@ -499,6 +500,35 @@ static Node *lowerslice(Simp *s, Node *n)
     return t;
 }
 
+static Node *lowercast(Simp *s, Node *n)
+{
+    Node **args;
+    Node *r;
+
+    r = NULL;
+    args = n->expr.args;
+    switch (exprtype(n)->type) {
+        case Typtr:
+            switch (exprtype(args[0])->type) {
+                case Tyslice:
+                    r = slicebase(s, args[0], zero);
+                    break;
+                case Tyint:
+                    args[0]->expr.type = n->expr.type;
+                    r = args[0];
+                    break;
+                default:
+                    fatal(n->line, "Bad cast from %s to %s",
+                          tystr(exprtype(args[0])), tystr(exprtype(n)));
+            }
+            break;
+        default:
+            fatal(n->line, "Bad cast from %s to %s",
+                  tystr(exprtype(args[0])), tystr(exprtype(n)));
+    }
+    return r;
+}
+
 static Node *rval(Simp *s, Node *n)
 {
     Node *r; /* expression result */
@@ -542,11 +572,15 @@ static Node *rval(Simp *s, Node *n)
                 r = slicelen(s, args[0]);
             } else if (exprtype(args[0])->type == Tyarray) {
                 assert(!strcmp(namestr(args[1]), "len"));
-                r = exprtype(n)->asize;
+                r = exprtype(args[0])->asize;
             } else {
                 t = membaddr(s, n);
                 r = load(t);
             }
+            break;
+        case Ocast:
+            /* slice -> ptr cast */
+            r = lowercast(s, n);
             break;
 
         /* fused ops:
@@ -664,7 +698,7 @@ static void declarearg(Simp *s, Node *n)
 
 static Node *simp(Simp *s, Node *n)
 {
-    Node *r, *v;
+    Node *r, *t, *u, *v;
     size_t i;
 
     if (!n)
@@ -695,11 +729,19 @@ static Node *simp(Simp *s, Node *n)
         case Ndecl:
 	    declarelocal(s, n);
 	    if (n->decl.init) {
-		v = rval(s, n->decl.init);
-		r = mkexpr(n->line, Ovar, n, NULL);
-		r->expr.did = n->decl.did;
-                r->expr.type = n->decl.type;
-		append(s, store(r, v));
+		t = mkexpr(n->line, Ovar, n, NULL);
+		t->expr.did = n->decl.did;
+                t->expr.type = n->decl.type;
+		u = rval(s, n->decl.init);
+                if (size(n) > 4) {
+                    t = addr(t, exprtype(n));
+                    u = addr(u, exprtype(n));
+                    v = word(n->line, size(n));
+                    r = mkexpr(n->line, Oblit, t, u, v, NULL);
+                } else {
+                    r = store(t, u);
+                }
+		append(s, r);
 	    }
             break;
         case Nlbl:
@@ -840,6 +882,7 @@ void gen(Node *file, char *out)
     /* declare useful constants */
     tyword = mkty(-1, Tyint);
     one = word(-1, 1);
+    zero = word(-1, 0);
     ptrsz = word(-1, 4);
 
     fn = NULL;

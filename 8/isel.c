@@ -368,7 +368,7 @@ static void blit(Isel *s, Loc *a, Loc *b, int sz)
     /* Slightly funny loop condition: We might have trailing bytes
      * that we can't blit word-wise. */
     tmp = locreg(ModeL);
-    for (i = 0; i + 4 <= sz; i+= 4) {
+    for (i = 0; i < sz/4; i++) {
         src = locmem(i, sp, NULL, ModeL);
         dst = locmem(i, dp, NULL, ModeL);
         g(s, Imov, src, tmp, NULL);
@@ -376,7 +376,7 @@ static void blit(Isel *s, Loc *a, Loc *b, int sz)
     }
     /* now, the trailing bytes */
     tmp = locreg(ModeB);
-    for (; i < sz; i++) {
+    for (; i < sz%4; i++) {
         src = locmem(i, sp, NULL, ModeB);
         dst = locmem(i, dp, NULL, ModeB);
         g(s, Imov, src, tmp, NULL);
@@ -515,7 +515,6 @@ Loc *selexpr(Isel *s, Node *n)
         case Ocall:
             r = gencall(s, n);
             break;
-        case Ocast: die("Unimplemented op %s", opstr(exprop(n))); break;
         case Ojmp:
             g(s, Ijmp, a = loclbl(args[0]), NULL);
             break;
@@ -547,7 +546,7 @@ Loc *selexpr(Isel *s, Node *n)
         case Osubeq: case Omuleq: case Odiveq: case Omodeq: case Oboreq:
         case Obandeq: case Obxoreq: case Obsleq: case Obsreq: case Omemb:
         case Oslice: case Oidx: case Osize: case Numops:
-        case Oslbase: case Osllen:
+        case Oslbase: case Osllen: case Ocast:
             dump(n, stdout);
             die("Should not see %s in isel", opstr(exprop(n)));
             break;
@@ -742,12 +741,13 @@ void writelit(FILE *fd, Node *v)
 {
     char lbl[128];
     switch (v->lit.littype) {
-        case Lbool:     fprintf(fd, "\t.long %d\n", v->lit.boolval);    break;
+        case Lbool:     fprintf(fd, "\t.long %d\n", v->lit.boolval);     break;
         case Lchr:      fprintf(fd, "\t.byte %d\n",  v->lit.chrval);     break;
-        case Lint:      fprintf(fd, "\t.long %lld\n", v->lit.intval);     break;
+        case Lint:      fprintf(fd, "\t.long %lld\n", v->lit.intval);    break;
         case Lflt:      fprintf(fd, "\t.double %f\n", v->lit.fltval);    break;
-        case Lstr:      fprintf(fd, "\t.long $%s\n", genlblstr(lbl, 128));
+        case Lstr:      fprintf(fd, "\t.long %s\n", genlblstr(lbl, 128));
                         fprintf(fd, "\t.long %zd\n", strlen(v->lit.strval));
+                        fprintf(fd, "%s:\n", lbl);
                         writeblob(fd, v->lit.strval, strlen(v->lit.strval));
                         break;
         case Larray:
