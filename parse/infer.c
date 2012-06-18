@@ -153,6 +153,18 @@ static char *ctxstr(Node *n)
     return s;
 }
 
+
+static void constrainby(Node *ctx, Type *a, Cstr *c)
+{
+    if (a->type == Tyvar) {
+        if (!a->cstrs)
+            a->cstrs = mkbs();
+        constrain(a, c);
+    } else if (!bshas(a->cstrs, c->cid)) {
+            fatal(ctx->line, "%s needs %s near %s", tystr(a), c->name, ctxstr(ctx));
+    }
+}
+
 static void mergecstrs(Node *ctx, Type *a, Type *b)
 {
     if (b->type == Tyvar) {
@@ -349,9 +361,10 @@ static void inferexpr(Node *n, Type *ret, int *sawret)
             settype(n, t);
             break;
         case Oidx:      /* @a[@b::tcint] -> @a */
-            t = mktyidxhack(n->line, type(args[1]));
+            t = mktyidxhack(n->line, mktyvar(n->line));
             unify(n, type(args[0]), t);
-            settype(n, type(args[1]));
+            constrainby(n, type(args[1]), cstrtab[Tcint]);
+            settype(n, tf(t->sub[0]));
             break;
         case Oslice:    /* @a[@b::tcint,@b::tcint] -> @a[,] */
             t = mktyidxhack(n->line, type(args[1]));
