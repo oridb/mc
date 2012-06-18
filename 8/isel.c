@@ -85,10 +85,16 @@ static Loc *loc(Isel *s, Node *n)
 
 static Mode mode(Node *n)
 {
-    switch (size(n)) {
-        case 1: return ModeB; break;
-        case 2: return ModeS; break;
-        case 4: return ModeL; break;
+    switch (exprtype(n)->type) {
+        case Tyfloat32: return ModeF; break;
+        case Tyfloat64: return ModeD; break;
+        default:
+            switch (size(n)) {
+                case 1: return ModeB; break;
+                case 2: return ModeS; break;
+                case 4: return ModeL; break;
+            }
+            break;
     }
     dump(n, stdout);
     die("No mode for node");
