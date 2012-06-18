@@ -53,6 +53,7 @@ Node *mkexpr(int line, Op op, ...)
 
     n = mknode(line, Nexpr);
     n->expr.op = op;
+    n->expr.did = -1;
     va_start(ap, op);
     while ((arg = va_arg(ap, Node*)) != NULL)
         lappend(&n->expr.args, &n->expr.nargs, arg);
