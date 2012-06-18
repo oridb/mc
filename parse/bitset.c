@@ -67,7 +67,7 @@ size_t bscount(Bitset *bs)
 
     n = 0;
     for (i = 0; i < bs->nchunks; i++)
-        for (j = 1; j < sizeof(size_t)*CHAR_BIT; j++)
+        for (j = 0; j < sizeof(size_t)*CHAR_BIT; j++)
             if (bs->chunks[i] & 1ULL << j)
                 n++;
     return n;
