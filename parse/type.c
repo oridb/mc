@@ -422,7 +422,7 @@ void tyinit(Stab *st)
 
     /* <floats> :: tcnum */
     tycstrs[Tyfloat32][0] = cstrtab[Tcnum];
-    tycstrs[Tyfloat64][1] = cstrtab[Tcnum];
+    tycstrs[Tyfloat64][0] = cstrtab[Tcnum];
 
     /* @a* :: tctest[0] = tcslice */
     tycstrs[Typtr][0] = cstrtab[Tctest];
