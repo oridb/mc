@@ -85,7 +85,14 @@ static Loc *loc(Isel *s, Node *n)
 
 static Mode mode(Node *n)
 {
-    return ModeL;
+    switch (size(n)) {
+        case 1: return ModeB; break;
+        case 2: return ModeS; break;
+        case 4: return ModeL; break;
+    }
+    dump(n, stdout);
+    die("No mode for node");
+    return ModeNone;
 }
 
 static Loc *coreg(Reg r, Mode m)
@@ -494,7 +501,7 @@ Loc *selexpr(Isel *s, Node *n)
             break;
         case Ostor: /* reg -> mem */
             b = selexpr(s, args[1]);
-            a = memloc(s, args[0], mode(n));
+            a = memloc(s, args[0], mode(args[0]));
             b = inri(s, b);
             g(s, Imov, b, a, NULL);
             r = b;

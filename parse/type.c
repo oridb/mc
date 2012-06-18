@@ -137,6 +137,7 @@ Type *mktyptr(int line, Type *base)
     Type *t;
 
     t = mkty(line, Typtr);
+    t->nsub = 1;
     t->sub = xalloc(sizeof(Type*));
     t->sub[0] = base;
     return t;
