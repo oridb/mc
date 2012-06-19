@@ -599,6 +599,7 @@ static void infercompn(Node *file)
     Node *memb;
     Node *n;
     Node **nl;
+    Type *t;
     int found;
 
     for (i = 0; i < npostcheck; i++) {
@@ -611,7 +612,8 @@ static void infercompn(Node *file)
         memb = postcheck[i]->expr.args[1];
 
         found = 0;
-        if (type(aggr)->type == Tyslice || type(aggr)->type == Tyarray) {
+        t = tf(type(aggr));
+        if (t->type == Tyslice || t->type == Tyarray) {
             if (!strcmp(namestr(memb), "len")) {
                 constrain(type(n), cstrtab[Tcnum]);
                 constrain(type(n), cstrtab[Tcint]);
@@ -619,7 +621,9 @@ static void infercompn(Node *file)
                 found = 1;
             }
         } else {
-            nl = aggrmemb(aggr->expr.type, &nn);
+            if (t->type == Typtr)
+                t = tf(t->sub[0]);
+            nl = aggrmemb(t, &nn);
             for (j = 0; j < nn; j++) {
                 if (!strcmp(namestr(memb), declname(nl[j]))) {
                     unify(n, type(n), decltype(nl[j]));
