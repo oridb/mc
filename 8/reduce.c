@@ -777,6 +777,8 @@ static Func *lowerfn(Simp *s, char *name, Node *n)
     if(debug)
         printf("\n\nfunction %s\n", name);
 
+    if (!n->decl.init)
+        return NULL;
     /* set up the simp context */
     /* unwrap to the function body */
     n = n->expr.args[0];
@@ -849,8 +851,10 @@ void lowerdcl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***blob, si
     s.nblobs = *nblob;
 
     if (isconstfn(dcl)) {
-        f = lowerfn(&s, name, dcl->decl.init);
-        lappend(fn, nfn, f);
+        if (!dcl->decl.isextern) {
+            f = lowerfn(&s, name, dcl->decl.init);
+            lappend(fn, nfn, f);
+        }
     } else {
         if (dcl->decl.init && exprop(dcl->decl.init) == Olit)
             lappend(blob, nblob, dcl);

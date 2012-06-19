@@ -162,6 +162,7 @@ Type *mktystruct(int line, Node **decls, size_t ndecls)
     Type *t;
 
     t = mkty(line, Tystruct);
+    t->nsub = 0;
     t->nmemb = ndecls;
     t->sdecls = memdup(decls, ndecls*sizeof(Node *));
     return t;

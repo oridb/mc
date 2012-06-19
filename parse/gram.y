@@ -18,7 +18,7 @@ void yyerror(const char *s);
 int yylex(void);
 static Op binop(int toktype);
 Stab *curscope;
-//int n = 0;
+
 %}
 
 %token<tok> Terror

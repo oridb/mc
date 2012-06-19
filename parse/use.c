@@ -118,7 +118,7 @@ void writeuse(Node *file, FILE *f)
 
     k = htkeys(st->ty, &n);
     for (i = 0; i < n; i++) {
-	t = htget(st->ty, k[i]);
+	t = gettype(st, k[i]);
 	wrbyte(f, 'T');
         wrstr(f, namestr(k[i]));
 	typickle(t, f);

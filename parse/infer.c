@@ -455,6 +455,9 @@ static void inferdecl(Node *n)
     if (n->decl.init) {
         inferexpr(n->decl.init, NULL, NULL);
         unify(n, type(n), type(n->decl.init));
+    } else {
+        if (n->decl.isconst && !n->decl.isextern)
+            fatal(n->line, "non-extern \"%s\" has no initializer", ctxstr(n));
     }
 }
 
@@ -474,9 +477,7 @@ static void inferstab(Stab *s)
 
 static void infernode(Node *n, Type *ret, int *sawret)
 {
-    void **k;
-    size_t i, nk;
-    Type *ty;
+    size_t i;
     Node *d;
     Node *s;
 
@@ -486,15 +487,7 @@ static void infernode(Node *n, Type *ret, int *sawret)
         case Nfile:
             pushstab(n->file.globls);
             /* exports allow us to specify types later in the body, so we
-             * need to patch the types in. */
-            k = htkeys(file->file.exports->ty, &nk);
-            for (i = 0; i < nk; i++) {
-                ty = gettype(file->file.globls, k[i]);
-                if (!ty) 
-                    fatal(((Node*)k[i])->line, "Exported type %s not declared", namestr(k[i]));
-                updatetype(file->file.exports, k[i], tf(ty));
-            }
-            free(k);
+             * need to patch the types in if they don't have a definition */
             inferstab(n->file.globls);
             inferstab(n->file.exports);
 	    for (i = 0; i < n->file.nstmts; i++) {
@@ -719,11 +712,55 @@ static void typesub(Node *n)
     }
 }
 
+void mergeexports(Node *file)
+{
+    Stab *exports, *globls;
+    size_t i, nk;
+    void **k;
+    Node *n;
+    Type *ty, *t;
+
+    exports = file->file.exports;
+    globls = file->file.globls;
+
+    pushstab(globls);
+    k = htkeys(exports->ty, &nk);
+    for (i = 0; i < nk; i++) {
+        ty = gettype(exports, k[i]);
+        n = k[i];
+        if (ty) {
+            if (!gettype(globls, n))
+                puttype(globls, n, ty);
+            else
+                unify(file, gettype(globls, n), ty);
+        } else {
+            t = gettype(globls, n);
+            if (t) 
+                updatetype(exports, n, tf(t));
+            else
+                fatal(n->line, "Exported type %s not declared", namestr(n));
+        }
+    }
+    free(k);
+
+    k = htkeys(exports->dcl, &nk);
+    for (i = 0; i < nk; i++) {
+        n = getdcl(exports, k[i]);
+        if (!getdcl(globls, k[i]))
+            putdcl(globls, n);
+        else
+            unify(n, type(getdcl(globls, k[i])), type(n));
+    }
+    free(k);
+    popstab();
+}
+
 void infer(Node *file)
 {
     assert(file->type == Nfile);
 
     loaduses(file);
+    mergeexports(file);
     infernode(file, NULL, NULL);
     infercompn(file);
     checkcast(file);
