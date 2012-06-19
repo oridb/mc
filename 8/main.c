@@ -41,15 +41,15 @@ int main(int argc, char **argv)
                 outfile = optarg;
                 break;
             case 'h':
-		usage(argv[0]);
-		exit(0);
-		break;
+                usage(argv[0]);
+                exit(0);
+                break;
             case 'd':
                 debug++;
                 break;
-	    case 'I':
-		lappend(&incpaths, &nincpaths, optarg);
-		break;
+            case 'I':
+                lappend(&incpaths, &nincpaths, optarg);
+                break;
             default:
                 usage(argv[0]);
                 exit(0);
