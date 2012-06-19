@@ -22,13 +22,8 @@ $(LIB): $(OBJ) $(DEPS)
 $(BIN): $(OBJ) $(EXTRADEP) $(DEPS)
 	$(CC) -o $@ $(OBJ) $(_LIBSRCHPATHS) $(_LIBPATHS)
 
-.PHONY: $(DEPS)
 $(DEPS):
-	@for i in $(dir $(DEPS)); do (\
-	    cd $$i && \
-	    $(MAKE) || \
-	    exit 1 \
-	) || exit 1; done
+	@cd $(dir $@) && $(MAKE)
 
 subdirs:
 	@for i in $(SUB); do (\
