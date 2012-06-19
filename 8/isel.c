@@ -353,11 +353,11 @@ static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size
 
 static Loc *gencall(Isel *s, Node *n)
 {
-    int argsz, argoff;
-    size_t i;
+    Loc *src, *dst, *arg, *fn;   /* values we reduced */
     Loc *eax, *esp;       /* hard-coded registers */
     Loc *stkbump;        /* calculated stack offset */
-    Loc *dst, *arg, *fn;   /* values we reduced */
+    int argsz, argoff;
+    size_t i;
 
     esp = locphysreg(Resp);
     eax = locphysreg(Reax);
@@ -380,7 +380,9 @@ static Loc *gencall(Isel *s, Node *n)
         arg = selexpr(s, n->expr.args[i]);
         if (size(n->expr.args[i]) > 4) {
             dst = locreg(ModeL);
-            blit(s, esp, arg, argoff, 0, size(n->expr.args[i]));
+            src = locreg(ModeL);
+            g(s, Ilea, arg, src, NULL);
+            blit(s, esp, src, argoff, 0, size(n->expr.args[i]));
         } else {
             dst = locmem(argoff, esp, NULL, arg->mode);
             arg = inri(s, arg);
@@ -819,4 +821,3 @@ void genasm(FILE *fd, Func *fn, Htab *globls)
         writeasm(stdout, &is, fn);
     writeasm(fd, &is, fn);
 }
-
