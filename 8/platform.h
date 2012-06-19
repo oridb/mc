@@ -1,5 +1,8 @@
 #if defined(__APPLE__) && defined(__MACH__)
-#define Fprefix "_"
+/* for OSX */
+#   define Fprefix "_"
 #else
-#define Fprefix ""
+/* Default to linux */
+#   define Fprefix ""
 #endif
+#define Assembler "as --32 -g -o %s -"

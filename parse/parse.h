@@ -397,6 +397,7 @@ int rdbool(FILE *fd);
 
 /* Options to control the compilation */
 extern int debug;
+extern int asmonly;
 extern char *outfile;
 extern char **incpaths;
 extern size_t nincpaths;

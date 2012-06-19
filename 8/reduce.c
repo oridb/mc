@@ -871,6 +871,7 @@ void gen(Node *file, char *out)
     size_t nn, nfn, nblob;
     size_t i;
     FILE *fd;
+    char cmd[1024];
 
     /* declare useful constants */
     tyword = mkty(-1, Tyint);
@@ -889,9 +890,6 @@ void gen(Node *file, char *out)
     /* We need to define all global variables before use */
     fillglobls(file->file.globls, globls);
 
-    fd = fopen(out, "w");
-    if (!fd)
-        die("Couldn't open fd %s", out);
     for (i = 0; i < nn; i++) {
         switch (n[i]->type) {
             case Nuse: /* nothing to do */ 
@@ -905,9 +903,21 @@ void gen(Node *file, char *out)
         }
     }
 
+    sprintf(cmd, Assembler, out);
+    if (asmonly)
+      fd = fopen(out, "w");
+    else
+      fd = popen(cmd, "w");
+    if (!fd)
+        die("Couldn't open fd %s", out);
+
     for (i = 0; i < nblob; i++)
         genblob(fd, blob[i], globls);
     for (i = 0; i < nfn; i++)
         genasm(fd, fn[i], globls);
-    fclose(fd);
+    fflush(fd);
+    if (asmonly)
+      fclose(fd);
+    else
+      pclose(fd);
 }
