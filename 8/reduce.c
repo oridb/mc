@@ -659,7 +659,7 @@ static Node *rval(Simp *s, Node *n)
             if (size(n) > 4) {
                 t = addr(t, exprtype(n));
                 u = addr(u, exprtype(n));
-		v = word(n->line, size(n));
+                v = word(n->line, size(n));
                 r = mkexpr(n->line, Oblit, t, u, v, NULL);
             } else {
               r = store(t, u);
@@ -727,7 +727,7 @@ static Node *simp(Simp *s, Node *n)
             r = n;
             break;
         case Ndecl:
-	    declarelocal(s, n);
+            declarelocal(s, n);
             if (n->decl.init) {
                 t = mkexpr(n->line, Ovar, n->decl.name, NULL);
                 u = mkexpr(n->line, Oasn, t, n->decl.init, NULL);
@@ -788,18 +788,18 @@ static Func *lowerfn(Simp *s, char *name, Node *n)
         for (i = 0; i < s->nstmts; i++)
             dump(s->stmts[i], stdout);
     for (i = 0; i < s->nstmts; i++) {
-	if (s->stmts[i]->type != Nexpr)
-	    continue;
-	if (debug) {
-	    printf("FOLD FROM ----------\n");
-	    dump(s->stmts[i], stdout);
-	}
-	s->stmts[i] = fold(s->stmts[i]);
-	if (debug) {
-	    printf("FOLD TO ------------\n");
-	    dump(s->stmts[i], stdout);
-	    printf("END ----------------\n");
-	}
+        if (s->stmts[i]->type != Nexpr)
+            continue;
+        if (debug) {
+            printf("FOLD FROM ----------\n");
+            dump(s->stmts[i], stdout);
+        }
+        s->stmts[i] = fold(s->stmts[i]);
+        if (debug) {
+            printf("FOLD TO ------------\n");
+            dump(s->stmts[i], stdout);
+            printf("END ----------------\n");
+        }
     }
     cfg = mkcfg(s->stmts, s->nstmts);
     if (debug)
