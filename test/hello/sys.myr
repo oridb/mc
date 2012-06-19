@@ -1,0 +1,70 @@
+
+pkg sys =
+	type scno = int
+	type fdopt = int
+
+	const Rdonly  	: fdopt = 0x0
+	const Wronly  	: fdopt = 0x1
+	const Rdwr    	: fdopt = 0x2
+	const Append  	: fdopt = 0x80
+	const Creat   	: fdopt = 0x40
+	const Nofollow	: fdopt = 0x20000
+	const Ndelay  	: fdopt = 0x800
+	const Trunc   	: fdopt = 0x200
+
+	const Sexit	: scno = 1
+	const Sread	: scno = 3
+	const Swrite	: scno = 4
+	const Sopen	: scno = 5
+	const Sclose	: scno = 6
+	const Screat	: scno = 8
+	const Slseek	: scno = 19
+	const Sfstat	: scno = 108
+	const Skill	: scno = 37
+	const Sgetpid	: scno = 20
+
+	type statbuf = struct
+		 dev     : uint
+		 ino     : uint
+		 mode    : uint16
+		 nlink   : uint16
+		 uid     : uint16
+		 gid     : uint16
+		 rdev    : uint
+		 size    : uint
+		 blksize : uint
+		 blocks  : uint
+		 atime   : uint
+		 atimens : uint
+		 mtime   : uint
+		 mtimens : uint
+		 ctime   : uint
+		 ctimens : uint
+		 _unused1: uint
+		 _unused2: uint
+	 ;;
+
+	extern const syscall : (sc:scno, count:int, args:... -> int)
+
+	const exit	: (status:int)
+	const getpid	: ()
+	const kill	: (pid:int, sig:int)
+	const open	: (path:char[,], opts:fdopt)
+	const close	: (fd:int)
+	const creat	: (path:char[,], mode:int)
+	const read	: (fd:int, buf:char[,])
+	const write	: (fd:int, buf:char[,])
+	const lseek	: (fd:int, off:uint, whence:int)
+	const fstat	: (fd:int, sb:statbuf*)
+;;
+
+const exit	= {status;		-> syscall(Sexit, 1);}
+const getpid	= {;			-> syscall(Sgetpid, 1);}
+const kill	= {pid, sig;		-> syscall(Skill,  2, pid, sig);}
+const open	= {path, opts:fdopt;	-> syscall(Sopen,  2, path castto(char*), opts);}
+const close	= {fd;			-> syscall(Sclose, 1, fd);}
+const creat	= {path, mode;		-> syscall(Screat, 2, path castto(char*), mode);}
+const read	= {fd, buf;		-> syscall(Sread,  3, fd, buf castto(char*), buf.len);}
+const write	= {fd, buf;		-> syscall(Swrite, 3, fd, buf castto(char*), buf.len);}
+const lseek	= {fd, off:uint, whence;-> syscall(Slseek, 2, fd, off, whence);}
+const fstat	= {fd, sb;		-> syscall(Sfstat, 2, fd, sb);}
