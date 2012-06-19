@@ -204,8 +204,7 @@ size_t tysize(Type *t)
             return 2;
         case Tyint: case Tyint32:
         case Tyuint: case Tyuint32:
-        case Typtr: case Tyenum:
-        case Tyfunc:
+        case Typtr: case Tyfunc:
             return 4;
 
         case Tyint64: case Tylong:

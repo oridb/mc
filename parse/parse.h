@@ -94,7 +94,7 @@ struct Type {
     int resolved;     /* Have we resolved the subtypes? Idempotent, but slow to repeat. */
     Bitset *cstrs;    /* the type constraints matched on this type */
     size_t nsub;      /* For compound types */
-    size_t nmemb;     /* for aggregate types (struct, union, enum) */
+    size_t nmemb;     /* for aggregate types (struct, union) */
     Type **sub;       /* sub-types; shared by all composite types */
     union {
         Node *name;    /* Tyname: unresolved name */
@@ -102,7 +102,6 @@ struct Type {
         char *pname;   /* Typaram: name of type parameter */
         Node **sdecls; /* Tystruct: decls in struct */
         Node **udecls; /* Tyunion: decls in union */
-        Node **edecls; /* Tyenum: decls in enum */
     };
 };
 
@@ -297,7 +296,6 @@ Type *mktyptr(int line, Type *base);
 Type *mktyfunc(int line, Node **args, size_t nargs, Type *ret);
 Type *mktystruct(int line, Node **decls, size_t ndecls);
 Type *mktyunion(int line, Node **decls, size_t ndecls);
-Type *mktyenum(int line, Node **decls, size_t ndecls);
 Cstr *mkcstr(int line, char *name, Node **memb, size_t nmemb, Node **funcs, size_t nfuncs);
 Type *tylike(Type *t, Ty ty); /* constrains tyvar t like it was builtin ty */
 int   istysigned(Type *t);

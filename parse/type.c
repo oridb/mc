@@ -177,16 +177,6 @@ Type *mktyunion(int line, Node **decls, size_t ndecls)
     return t;
 }
 
-Type *mktyenum(int line, Node **decls, size_t ndecls)
-{
-    Type *t;
-
-    t = mkty(line, Tyenum);
-    t->nmemb = ndecls;
-    t->edecls = decls;
-    return t;
-}
-
 int istysigned(Type *t)
 {
     switch (t->type) {
@@ -258,8 +248,8 @@ static int fmtstruct(char *buf, size_t len, Type *t)
     end = p + len;
     p += snprintf(p, end - p, "struct ");
     for (i = 0; i < t->nmemb; i++) {
-        name = declname(t->edecls[i]);
-        ty = tystr(decltype(t->edecls[i]));
+        name = declname(t->sdecls[i]);
+        ty = tystr(decltype(t->sdecls[i]));
         p += snprintf(p, end - p, "%s:%s; ", name, ty);
         free(ty);
     }
@@ -272,16 +262,7 @@ static int fmtunion(char *buf, size_t len, Type *t)
     size_t i;
     *buf = 0;
     for (i = 0; i < t->nmemb; i++)
-        dump(t->sdecls[i], stdout);
-    return 0;
-}
-
-static int fmtenum(char *buf, size_t len, Type *t)
-{
-    size_t i;
-    *buf = 0;
-    for (i = 0; i < t->nmemb; i++)
-        dump(t->sdecls[i], stdout);
+        dump(t->udecls[i], stdout);
     return 0;
 }
 
@@ -374,7 +355,6 @@ static int tybfmt(char *buf, size_t len, Type *t)
             break;
         case Tystruct:  p += fmtstruct(p, end - p, t);  break;
         case Tyunion:   p += fmtunion(p, end - p, t);   break;
-        case Tyenum:    p += fmtenum(p, end - p, t);    break;
         case Ntypes:
             die("Ntypes is not a type");
             break;
@@ -432,10 +412,6 @@ void tyinit(Stab *st)
     tycstrs[Tyslice][0] = cstrtab[Tctest];
     tycstrs[Tyslice][1] = cstrtab[Tcslice];
     tycstrs[Tyslice][2] = cstrtab[Tcidx];
-
-    /* enum :: tcint, tcnum */
-    tycstrs[Tyenum][0] = cstrtab[Tcint];
-    tycstrs[Tyenum][1] = cstrtab[Tcnum];
 
     /* array :: tcidx, tcslice */
     tycstrs[Tyarray][0] = cstrtab[Tcidx];

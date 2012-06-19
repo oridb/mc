@@ -564,21 +564,16 @@ static void checkcast(Node *n)
 static Type *tyfix(Node *ctx, Type *t)
 {
     static Type *tyint;
-    static Type *tyfloat;
     size_t i;
     char buf[1024];
 
     if (!tyint)
         tyint = mkty(-1, Tyint);
-    if (!tyfloat)
-        tyfloat = mkty(-1, Tyfloat64);
 
     t = tf(t);
     if (t->type == Tyvar) {
         if (hascstr(t, cstrtab[Tcint]) && cstrcheck(t, tyint))
             return tyint;
-        if (hascstr(t, cstrtab[Tcnum]) && cstrcheck(t, tyfloat))
-            return tyfloat;
     } else {
         if (t->type == Tyarray)
             typesub(t->asize);

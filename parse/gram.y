@@ -83,7 +83,6 @@ Stab *curscope;
 %token<tok> Tchrlit
 %token<tok> Tboollit
 
-%token<tok> Tenum    /* enum */
 %token<tok> Tstruct  /* struct */
 %token<tok> Tunion   /* union */
 %token<tok> Ttyparam /* @typename */
@@ -113,7 +112,7 @@ Stab *curscope;
 
 %start module
 
-%type <ty> type structdef uniondef enumdef compoundtype functype funcsig
+%type <ty> type structdef uniondef compoundtype functype funcsig
 %type <ty> generictype
 
 %type <tok> asnop cmpop addop mulop shiftop
@@ -123,11 +122,11 @@ Stab *curscope;
 %type <node> exprln retexpr expr atomicexpr literal asnexpr lorexpr landexpr borexpr
 %type <node> bandexpr cmpexpr addexpr mulexpr shiftexpr prefixexpr postfixexpr
 %type <node> funclit arraylit name block blockbody stmt label use
-%type <node> decl declbody declcore structelt enumelt unionelt
+%type <node> decl declbody declcore structelt unionelt
 %type <node> ifstmt forstmt whilestmt elifs optexprln
 %type <node> castexpr
 
-%type <nodelist> arglist argdefs structbody enumbody unionbody params
+%type <nodelist> arglist argdefs structbody unionbody params
 
 %union {
     struct {
@@ -248,7 +247,6 @@ tydef   : Ttype Tident Tasn type Tendln
 
 type    : structdef
         | uniondef
-        | enumdef
         | compoundtype
         | generictype
         | Tellipsis {$$ = mkty($1->line, Tyvalist);}
@@ -323,24 +321,6 @@ unionelt
             {$$ = NULL; die("unionelt impl");}
         | visdef Tendln
             {$$ = NULL;}
-        | Tendln
-            {$$ = NULL;}
-        ;
-
-enumdef : Tenum enumbody Tendblk
-            {$$ = mktyenum($1->line, $2.nl, $2.nn);}
-        ;
-
-enumbody: enumelt
-            {$$.nl = NULL; $$.nn = 0; if ($1) lappend(&$$.nl, &$$.nn, $1);}
-        | enumbody enumelt
-            {if ($2) {lappend(&$$.nl, &$$.nn, $2);}}
-        ;
-
-enumelt : Tident Tendln
-            {$$ = NULL; die("enumelt impl");}
-        | Tident Tasn exprln
-            {$$ = NULL; die("enumelt impl");}
         | Tendln
             {$$ = NULL;}
         ;

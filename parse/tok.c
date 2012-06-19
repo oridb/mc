@@ -141,7 +141,6 @@ static int kwd(char *s)
         {"match",       Tmatch},
         {"default",     Tdefault},
         {"goto",        Tgoto},
-        {"enum",        Tenum},
         {"struct",      Tstruct},
         {"union",       Tunion},
         {"const",       Tconst},
