@@ -108,7 +108,7 @@ void putdcl(Stab *st, Node *s)
 
     d = getdcl(st, s->decl.name);
     if (d)
-        fatal(s->line, "%s already declared (line %d", namestr(s->decl.name), d->line);
+        fatal(s->line, "%s already declared (on line %d)", namestr(s->decl.name), d->line);
     if (st->name)
         setns(s->decl.name, namestr(st->name));
     htput(st->dcl, s->decl.name, s);

@@ -717,8 +717,9 @@ void mergeexports(Node *file)
     Stab *exports, *globls;
     size_t i, nk;
     void **k;
-    Node *n;
-    Type *ty, *t;
+    /* local, global version */
+    Node *nl, *ng;
+    Type *tl, *tg;
 
     exports = file->file.exports;
     globls = file->file.globls;
@@ -726,30 +727,36 @@ void mergeexports(Node *file)
     pushstab(globls);
     k = htkeys(exports->ty, &nk);
     for (i = 0; i < nk; i++) {
-        ty = gettype(exports, k[i]);
-        n = k[i];
-        if (ty) {
-            if (!gettype(globls, n))
-                puttype(globls, n, ty);
+        tl = gettype(exports, k[i]);
+        nl = k[i];
+        if (tl) {
+            tg = gettype(globls, nl);
+            if (!tg)
+                puttype(globls, nl, tl);
             else
-                unify(file, gettype(globls, n), ty);
+                fatal(nl->line, "Exported type %s double-declared on line %d", namestr(nl), tg->line);
         } else {
-            t = gettype(globls, n);
-            if (t) 
-                updatetype(exports, n, tf(t));
+            tg = gettype(globls, nl);
+            if (tg) 
+                updatetype(exports, nl, tf(tg));
             else
-                fatal(n->line, "Exported type %s not declared", namestr(n));
+                fatal(nl->line, "Exported type %s not declared", namestr(nl));
         }
     }
     free(k);
 
     k = htkeys(exports->dcl, &nk);
     for (i = 0; i < nk; i++) {
-        n = getdcl(exports, k[i]);
-        if (!getdcl(globls, k[i]))
-            putdcl(globls, n);
+        nl = getdcl(exports, k[i]);
+        ng = getdcl(globls, k[i]);
+        /* if an export has an initializer, it shouldn't be declared in the
+         * body */
+        if (nl->decl.init && ng)
+            fatal(nl->line, "Export %s double-defined on line %d", ctxstr(nl), ng->line);
+        if (!ng)
+            putdcl(globls, nl);
         else
-            unify(n, type(getdcl(globls, k[i])), type(n));
+            unify(nl, type(ng), type(nl));
     }
     free(k);
     popstab();

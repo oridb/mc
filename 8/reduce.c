@@ -346,10 +346,10 @@ static Node *bloblit(Simp *s, Node *lit)
 
     n = mkname(lit->line, genlblstr(lbl, 128));
     t = mkdecl(lit->line, n, lit->expr.type);
-    r = mkexpr(lit->line, Ovar, t, NULL);
-    t->decl.init = lit;
+    r = mkexpr(lit->line, Ovar, n, NULL);
+    r->expr.type = lit->expr.type;
     r->expr.did = t->decl.did;
-    r->expr.type = t->expr.type;
+    t->decl.init = lit;
     htput(s->globls, t, strdup(lbl));
     lappend(&s->blobs, &s->nblobs, t);
     return r;
@@ -857,7 +857,7 @@ void lowerdcl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***blob, si
         }
     } else {
         if (dcl->decl.init && exprop(dcl->decl.init) == Olit)
-            lappend(blob, nblob, dcl);
+            lappend(&s.blobs, &s.nblobs, dcl);
         else
             die("We don't lower globls with nonlit inits yet...");
     }

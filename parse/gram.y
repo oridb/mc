@@ -206,10 +206,11 @@ pkgbody : pkgitem
         | pkgbody pkgitem
         ;
 
-pkgitem : decl {putdcl(file->file.exports, $1);}
-        | tydef {puttype(file->file.exports, 
-                         mkname($1.line, $1.name),
-                         $1.type);}
+pkgitem : decl 
+            {putdcl(file->file.exports, $1);
+            if ($1->decl.init)
+                 lappend(&file->file.stmts, &file->file.nstmts, $1);}
+        | tydef {puttype(file->file.exports, mkname($1.line, $1.name), $1.type);}
         | visdef {die("Unimplemented visdef");}
         | Tendln
         ;
@@ -281,6 +282,10 @@ argdefs : declcore
              $$.nn = 0; lappend(&$$.nl, &$$.nn, $1);}
         | argdefs Tcomma declcore
             {lappend(&$$.nl, &$$.nn, $3);}
+        | /* empty */
+            {$$.line = line;
+             $$.nl = NULL;
+             $$.nn = 0;}
         ;
 
 structdef
