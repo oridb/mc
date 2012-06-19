@@ -628,10 +628,10 @@ static Node *rval(Simp *s, Node *n)
             break;
         case Olit:
             switch (args[0]->lit.littype) {
-                case Lchr: case Lbool: case Lint: case Lflt:
+                case Lchr: case Lbool: case Lint:
                     r = n;
                     break;
-                case Lstr: case Larray:
+                case Lstr: case Larray: case Lflt:
                     r = bloblit(s, n);
                     break;
                 case Lfunc:
