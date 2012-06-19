@@ -323,6 +323,34 @@ static Loc *memloc(Isel *s, Node *e, Mode m)
     return l;
 }
 
+static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size_t sz)
+{
+    size_t i;
+    Loc *sp, *dp; /* pointers to src, dst */
+    Loc *tmp, *src, *dst; /* source memory, dst memory */
+
+    sp = inr(s, from);
+    dp = inr(s, to);
+
+    /* Slightly funny loop condition: We might have trailing bytes
+     * that we can't blit word-wise. */
+    tmp = locreg(ModeL);
+    for (i = 0; i < sz/4; i++) {
+        src = locmem(i*4 + srcoff, sp, NULL, ModeL);
+        dst = locmem(i*4 + dstoff, dp, NULL, ModeL);
+        g(s, Imov, src, tmp, NULL);
+        g(s, Imov, tmp, dst, NULL);
+    }
+    /* now, the trailing bytes */
+    tmp = locreg(ModeB);
+    for (; i < sz%4; i++) {
+        src = locmem(i, sp, NULL, ModeB);
+        dst = locmem(i, dp, NULL, ModeB);
+        g(s, Imov, src, tmp, NULL);
+        g(s, Imov, tmp, dst, NULL);
+    }
+}
+
 static Loc *gencall(Isel *s, Node *n)
 {
     int argsz, argoff;
@@ -350,9 +378,14 @@ static Loc *gencall(Isel *s, Node *n)
     argoff = 0;
     for (i = 1; i < n->expr.nargs; i++) {
         arg = selexpr(s, n->expr.args[i]);
-        arg = inri(s, arg);
-        dst = locmem(argoff, esp, NULL, arg->mode);
-        stor(s, arg, dst);
+        if (size(n->expr.args[i]) > 4) {
+            dst = locreg(ModeL);
+            blit(s, esp, arg, argoff, 0, size(n->expr.args[i]));
+        } else {
+            dst = locmem(argoff, esp, NULL, arg->mode);
+            arg = inri(s, arg);
+            stor(s, arg, dst);
+        }
         argoff += size(n->expr.args[i]);
     }
     fn = selexpr(s, n->expr.args[0]);
@@ -360,34 +393,6 @@ static Loc *gencall(Isel *s, Node *n)
     if (argsz)
         g(s, Iadd, stkbump, esp, NULL);
     return eax;
-}
-
-static void blit(Isel *s, Loc *a, Loc *b, int sz)
-{
-    int i;
-    Loc *sp, *dp; /* pointers to src, dst */
-    Loc *tmp, *src, *dst; /* source memory, dst memory */
-
-    sp = inr(s, a);
-    dp = inr(s, b);
-
-    /* Slightly funny loop condition: We might have trailing bytes
-     * that we can't blit word-wise. */
-    tmp = locreg(ModeL);
-    for (i = 0; i < sz/4; i++) {
-        src = locmem(i, sp, NULL, ModeL);
-        dst = locmem(i, dp, NULL, ModeL);
-        g(s, Imov, src, tmp, NULL);
-        g(s, Imov, tmp, dst, NULL);
-    }
-    /* now, the trailing bytes */
-    tmp = locreg(ModeB);
-    for (; i < sz%4; i++) {
-        src = locmem(i, sp, NULL, ModeB);
-        dst = locmem(i, dp, NULL, ModeB);
-        g(s, Imov, src, tmp, NULL);
-        g(s, Imov, tmp, dst, NULL);
-    }
 }
 
 Loc *selexpr(Isel *s, Node *n)
@@ -538,9 +543,9 @@ Loc *selexpr(Isel *s, Node *n)
             r = loclbl(args[0]);
             break;
         case Oblit:
-            b = selexpr(s, args[0]);
-            a = selexpr(s, args[1]);
-            blit(s, a, b, args[2]->expr.args[0]->lit.intval);
+            a = selexpr(s, args[0]);
+            b = selexpr(s, args[1]);
+            blit(s, a, b, 0, 0, args[2]->expr.args[0]->lit.intval);
             r = b;
             break;
 
