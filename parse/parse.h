@@ -381,6 +381,9 @@ vlong host64(byte buf[8]);
 void be32(long v, byte buf[4]);
 long host32(byte buf[4]);
 
+void wrbuf(FILE *fd, void *buf, size_t sz);
+void rdbuf(FILE *fd, void *buf, size_t sz);
+char rdbyte(FILE *fd);
 void wrbyte(FILE *fd, char val);
 char rdbyte(FILE *fd);
 void wrint(FILE *fd, long val);

@@ -727,7 +727,7 @@ static Asmbb *mkasmbb(Bb *bb)
     return as;
 }
 
-void writeblob(FILE *fd, char *p, size_t sz)
+static void writeblob(FILE *fd, char *p, size_t sz)
 {
     size_t i;
 
@@ -743,7 +743,7 @@ void writeblob(FILE *fd, char *p, size_t sz)
     }
 }
 
-void writelit(FILE *fd, Node *v)
+static void writelit(FILE *fd, Node *v)
 {
     char lbl[128];
     switch (v->lit.littype) {

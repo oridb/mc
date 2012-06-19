@@ -57,13 +57,13 @@ static Node *zero;
 static Node *ptrsz;
 static Type *tyword;
 
-Type *base(Type *t)
+static Type *base(Type *t)
 {
     assert(t->nsub == 1);
     return t->sub[0];
 }
 
-Node *add(Node *a, Node *b)
+static Node *add(Node *a, Node *b)
 {
     Node *n;
 
@@ -72,7 +72,7 @@ Node *add(Node *a, Node *b)
     return n;
 }
 
-Node *sub(Node *a, Node *b)
+static Node *sub(Node *a, Node *b)
 {
     Node *n;
 
@@ -81,7 +81,7 @@ Node *sub(Node *a, Node *b)
     return n;
 }
 
-Node *mul(Node *a, Node *b)
+static Node *mul(Node *a, Node *b)
 {
     Node *n;
 
@@ -90,7 +90,7 @@ Node *mul(Node *a, Node *b)
     return n;
 }
 
-Node *addr(Node *a, Type *bt)
+static Node *addr(Node *a, Type *bt)
 {
     Node *n;
 
@@ -102,7 +102,7 @@ Node *addr(Node *a, Type *bt)
     return n;
 }
 
-Node *load(Node *a)
+static Node *load(Node *a)
 {
     Node *n;
 
@@ -112,7 +112,7 @@ Node *load(Node *a)
     return n;
 }
 
-Node *store(Node *a, Node *b)
+static Node *store(Node *a, Node *b)
 {
     Node *n;
 
@@ -121,7 +121,7 @@ Node *store(Node *a, Node *b)
     return n;
 }
 
-Node *word(int line, uint v)
+static Node *word(int line, uint v)
 {
     Node *n;
     n = mkintlit(line, v);
@@ -815,7 +815,7 @@ static Func *lowerfn(Simp *s, char *name, Node *n)
     return fn;
 }
 
-void fillglobls(Stab *st, Htab *globls)
+static void fillglobls(Stab *st, Htab *globls)
 {
     void **k;
     size_t i, nk;
@@ -837,7 +837,7 @@ void fillglobls(Stab *st, Htab *globls)
     free(k);
 }
 
-void lowerdcl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***blob, size_t *nblob)
+static void lowerdcl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***blob, size_t *nblob)
 {
     Simp s = {0,};
     char *name;

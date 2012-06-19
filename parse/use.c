@@ -11,7 +11,7 @@
 
 #include "parse.h"
 
-int loaduse(FILE *f, Stab *st)
+static int loaduse(FILE *f, Stab *st)
 {
     char *pkg;
     Stab *s;

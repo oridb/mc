@@ -254,7 +254,7 @@ static void unifycall(Node *n)
     settype(n, ft->sub[0]);
 }
 
-void checkns(Node *n, Node **ret)
+static void checkns(Node *n, Node **ret)
 {
     Node *var, *name, *nsname;
     Node **args;
