@@ -898,7 +898,7 @@ void gen(Node *file, char *out)
 
     /* declare useful constants */
     tyword = mkty(-1, Tyint);
-    tyword = mkty(-1, Tyvoid);
+    tyvoid = mkty(-1, Tyvoid);
     one = word(-1, 1);
     zero = word(-1, 0);
     ptrsz = word(-1, 4);
