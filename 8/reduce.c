@@ -551,6 +551,7 @@ static Node *visit(Simp *s, Node *n)
         r = n;
     } else {
         if (exprtype(n)->type == Tyvoid) {
+            r = NULL;
             append(s, n);
         } else {
             r = temp(s, n);
