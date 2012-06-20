@@ -25,12 +25,13 @@ B structasn	E       42
 B structret	E	42
 B array		E	7
 B arraylen	E	12
+B slice		E	7
+B slicelen	E	5
 B call		E	42
 B voidcall	E	12
 B callbig	E	42
 B loop		E	45
 B fib		E	21
-B slice		E	7
 B float   	E       1
 B log-and 	E       0
 B log-or  	E       1
