@@ -5,8 +5,8 @@
 # testing purposes on every run as things stand.
 
 export PATH=.:$PATH
-export MC=../8/8m
-export MU=../util/muse
+export MC=../../8/8m
+export MU=../../util/muse
 export CC=cc
 export ASOPT="-g"
 
@@ -21,9 +21,7 @@ function build {
     N=`basename $1 .myr`
 
     echo $MC $1 && \
-    $MC $1 -I. && \
-    mv a.s $N.s && \
-    $CC $ASOPT -m32 -c $N.s
+    $MC $1 -I.
 }
 
 function assem {

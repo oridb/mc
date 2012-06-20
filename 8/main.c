@@ -53,7 +53,8 @@ char *outfmt(char *buf, size_t sz, char *infile, char *outfile)
         len = strlen(infile);
     if (len + strlen(suffix) >= sz)
         die("Output file name too long");
-    strncpy(buf, infile, len);
+    buf[0] = '\0';
+    strncat(buf, infile, len);
     strcat(buf, suffix);
 
     return buf;
