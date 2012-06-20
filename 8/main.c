@@ -12,11 +12,11 @@
 #include "parse.h"
 #include "opt.h"
 #include "asm.h"
+#include "platform.h"
 
 /* FIXME: move into one place...? */
 Node *file;
 int debug;
-int asmonly;
 char *outfile;
 char **incpaths;
 size_t nincpaths;
@@ -31,33 +31,15 @@ static void usage(char *prog)
     printf("\t-S\tGenerate assembly instead of object code\n");
 }
 
-char *outfmt(char *buf, size_t sz, char *infile, char *outfile)
+static void assem(char *f)
 {
-    char *p, *suffix;
-    size_t len;
+    char objfile[1024];
+    char cmd[1024];
 
-    if (outfile) {
-        snprintf(buf, sz, "%s", outfile);
-        return buf;
-    }
 
-    if (asmonly)
-        suffix = ".s";
-    else
-        suffix = ".o";
-
-    p = strrchr(infile, '.');
-    if (p)
-        len = (p - infile);
-    else
-        len = strlen(infile);
-    if (len + strlen(suffix) >= sz)
-        die("Output file name too long");
-    buf[0] = '\0';
-    strncat(buf, infile, len);
-    strcat(buf, suffix);
-
-    return buf;
+    swapsuffix(objfile, 1024, f, ".s", ".o");
+    snprintf(cmd, 1024, Asmcmd, objfile, f);
+    system(cmd);
 }
 
 int main(int argc, char **argv)
@@ -78,9 +60,6 @@ int main(int argc, char **argv)
                 break;
             case 'd':
                 debug++;
-                break;
-            case 'S':
-                asmonly++;
                 break;
             case 'I':
                 lappend(&incpaths, &nincpaths, optarg);
@@ -109,7 +88,9 @@ int main(int argc, char **argv)
         if (debug)
             dump(file, stdout);
 
-        gen(file, outfmt(buf, 1024, argv[i], outfile));
+        swapsuffix(buf, 1024, argv[i], ".myr", ".s");
+        gen(file, buf);
+        assem(buf);
     }
 
     return 0;

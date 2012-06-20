@@ -394,6 +394,9 @@ double rdflt(FILE *fd);
 void wrbool(FILE *fd, int val);
 int rdbool(FILE *fd);
 
+/* suffix replacement */
+char *swapsuffix(char *buf, size_t sz, char *s, char *suf, char *swap);
+
 /* Options to control the compilation */
 extern int debug;
 extern int asmonly;

@@ -338,3 +338,28 @@ int rdbool(FILE *fd)
     return rdbyte(fd);
 }
 
+char *swapsuffix(char *buf, size_t sz, char *s, char *suf, char *swap)
+{
+    size_t slen, suflen, swaplen;
+
+    slen = strlen(s);
+    suflen = strlen(suf);
+    swaplen = strlen(swap);
+
+    if (slen < suflen)
+        return NULL;
+    if (slen + swaplen >= sz)
+        die("swapsuffix: buf too small");
+
+    buf[0] = '\0';
+    if (suflen < slen && !strcmp(suf, &s[slen - suflen])) {
+        strncat(buf, s, slen - suflen);
+        strcat(buf, swap);
+    } else {
+        strncat(buf, s, slen);
+        strcat(buf, swap);
+    }
+
+    return buf;
+}
+
