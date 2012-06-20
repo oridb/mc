@@ -363,6 +363,7 @@ char *tidstr(Ty tid);
 
 /* convenience funcs */
 void lappend(void *l, size_t *len, void *n); /* ugly hack; nl is void* because void*** is incompatible with T*** */
+void linsert(void *l, size_t *len, size_t idx, void *n);
 void *lpop(void *l, size_t *len);
 void ldel(void *l, size_t *len, size_t idx);
 void lfree(void *l, size_t *len);

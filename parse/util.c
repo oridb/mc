@@ -129,6 +129,20 @@ void *lpop(void *l, size_t *len)
     return v;
 }
 
+void linsert(void *p, size_t *len, size_t idx, void *v)
+{
+    void ***pl, **l;
+    size_t i;
+
+    pl = p;
+    *pl = xrealloc(*pl, (*len + 1)*sizeof(void*));
+    l = *pl;
+    for (i = idx; i < *len; i++)
+        l[i + 1] = l[i];
+    l[idx] = v;
+    (*len)++;
+}
+
 void ldel(void *l, size_t *len, size_t idx)
 {
     void ***pl;

@@ -56,6 +56,7 @@ static Node *one;
 static Node *zero;
 static Node *ptrsz;
 static Type *tyword;
+static Type *tyvoid;
 
 static Type *base(Type *t)
 {
@@ -529,11 +530,27 @@ static Node *lowercast(Simp *s, Node *n)
     return r;
 }
 
+static Node *visit(Simp *s, Node *n)
+{
+    size_t i;
+    Node *r;
+
+    for (i = 0; i < n->expr.nargs; i++)
+        n->expr.args[i] = rval(s, n->expr.args[i]);
+    if (ispure(n)) {
+        r = n;
+    } else {
+        r = temp(s, n);
+        append(s, store(r, n));
+    }
+    return r;
+}
+
 static Node *rval(Simp *s, Node *n)
 {
     Node *r; /* expression result */
     Node *t, *u, *v; /* temporary nodes */
-    size_t i;
+    Type *ty;
     Node **args;
     const Op fusedmap[] = {
         [Oaddeq]        = Oadd,
@@ -665,15 +682,19 @@ static Node *rval(Simp *s, Node *n)
               r = store(t, u);
             }
             break;
-        default:
-            for (i = 0; i < n->expr.nargs; i++)
-                n->expr.args[i] = rval(s, n->expr.args[i]);
-            if (ispure(n)) {
-                r = n;
-            } else {
+        case Ocall:
+            if (size(n) > 4) {
                 r = temp(s, n);
-                append(s, store(r, n));
+                ty = mktyptr(n->line, exprtype(r));
+                linsert(&args[0]->expr.args, &n->expr.nargs, 1, addr(r, ty));
+                linsert(&args[0]->expr.type->sub, &n->expr.type->nsub, 1, ty);
+                args[0]->expr.type->sub[0] = tyvoid;
+                n->expr.type = tyvoid;
             }
+            r = visit(s, n);
+            break;
+        default:
+            r = visit(s, n);
     }
     return r;
 }
@@ -875,6 +896,7 @@ void gen(Node *file, char *out)
 
     /* declare useful constants */
     tyword = mkty(-1, Tyint);
+    tyword = mkty(-1, Tyvoid);
     one = word(-1, 1);
     zero = word(-1, 0);
     ptrsz = word(-1, 4);
