@@ -42,7 +42,6 @@ static void assem(char *f)
     char objfile[1024];
     char cmd[1024];
 
-
     swapsuffix(objfile, 1024, f, ".s", ".o");
     snprintf(cmd, 1024, Asmcmd, objfile, f);
     system(cmd);
