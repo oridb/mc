@@ -65,5 +65,5 @@ const close	= {fd;			-> syscall(Sysclose, 1, fd);}
 const creat	= {path, mode;		-> syscall(Syscreat, 2, path castto(char*), mode);}
 const read	= {fd, buf;		-> syscall(Sysread,  3, fd, buf castto(char*), buf.len);}
 const write	= {fd, buf;		-> syscall(Syswrite, 3, fd, buf castto(char*), buf.len);}
-const lseek	= {fd, off:uint, whence;-> syscall(Syslseek, 2, fd, off, whence);}
+const lseek	= {fd, off, whence;	-> syscall(Syslseek, 2, fd, off, whence);}
 const fstat	= {fd, sb;		-> syscall(Sysfstat, 2, fd, sb);}
