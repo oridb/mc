@@ -30,7 +30,8 @@ struct Simp {
 
     /* return handling */
     Node *endlbl;
-    Node *retval;
+    Node *ret;
+    int   isbigret;
 
     /* pre/postinc handling */
     Node **incqueue;
@@ -43,7 +44,6 @@ struct Simp {
     size_t argsz;
     Htab *globls;
     Htab *locs;
-    Node *ret;
 };
 
 static Node *simp(Simp *s, Node *n);
@@ -197,6 +197,7 @@ size_t tysize(Type *t)
     sz = 0;
     switch (t->type) {
         case Tyvoid:
+            die("void has no size");
             return 1;
         case Tybool: case Tychar: case Tyint8:
         case Tybyte: case Tyuint8:
@@ -252,21 +253,31 @@ size_t size(Node *n)
     return tysize(t);
 }
 
-static Node *temp(Simp *simp, Node *e)
+static Node *gentemp(Simp *simp, Node *e, Type *ty, Node **dcl)
 {
     char buf[128];
     static int nexttmp;
     Node *t, *r, *n;
 
-    assert(e->type == Nexpr);
     snprintf(buf, 128, ".t%d", nexttmp++);
     n = mkname(e->line, buf);
-    t = mkdecl(e->line, n, e->expr.type);
-    declarelocal(simp, t);
-    r = mkexpr(e->line, Ovar, t, NULL);
+    t = mkdecl(e->line, n, ty);
+    r = mkexpr(e->line, Ovar, n, NULL);
     r->expr.type = t->decl.type;
     r->expr.did = t->decl.did;
+    if (dcl)
+        *dcl = t;
     return r;
+}
+
+static Node *temp(Simp *simp, Node *e)
+{
+    Node *t, *dcl;
+
+    assert(e->type == Nexpr);
+    t = gentemp(simp, e, e->expr.type, &dcl);
+    declarelocal(simp, dcl);
+    return t;
 }
 
 static void jmp(Simp *s, Node *lbl)
@@ -539,8 +550,12 @@ static Node *visit(Simp *s, Node *n)
     if (ispure(n)) {
         r = n;
     } else {
-        r = temp(s, n);
-        append(s, store(r, n));
+        if (exprtype(n)->type == Tyvoid) {
+            append(s, n);
+        } else {
+            r = temp(s, n);
+            append(s, store(r, n));
+        }
     }
     return r;
 }
@@ -551,6 +566,7 @@ static Node *rval(Simp *s, Node *n)
     Node *t, *u, *v; /* temporary nodes */
     Type *ty;
     Node **args;
+    size_t i;
     const Op fusedmap[] = {
         [Oaddeq]        = Oadd,
         [Osubeq]        = Osub,
@@ -659,11 +675,14 @@ static Node *rval(Simp *s, Node *n)
             r = n;
             break;
         case Oret:
-            if (n->expr.args[0]) {
-                if (s->ret)
-                    t = s->ret;
-                else
-                    t = s->ret = temp(s, args[0]);
+            if (s->isbigret) {
+                t = rval(s, args[0]);
+                t = addr(t, exprtype(args[0]));
+                u = word(n->line, size(args[0]));
+                v = mkexpr(n->line, Oblit, s->ret, t, u, NULL);
+                append(s, v);
+            } else if (n->expr.args[0]) {
+                t = s->ret;
                 t = store(t, rval(s, args[0]));
                 append(s, t);
             }
@@ -682,15 +701,16 @@ static Node *rval(Simp *s, Node *n)
             }
             break;
         case Ocall:
-            if (size(n) > 4) {
+            if (exprtype(n)->type != Tyvoid && size(n) > 4) {
                 r = temp(s, n);
                 ty = mktyptr(n->line, exprtype(r));
                 linsert(&n->expr.args, &n->expr.nargs, 1, addr(r, exprtype(n)));
-                linsert(&args[0]->expr.type->sub, &n->expr.type->nsub, 1, ty);
-                args[0]->expr.type->sub[0] = tyvoid;
-                n->expr.type = tyvoid;
+                for (i = 0; i < n->expr.nargs; i++)
+                    n->expr.args[i] = rval(s, n->expr.args[i]);
+                append(s, n);
+            } else {
+                r = visit(s, n);
             }
-            r = visit(s, n);
             break;
         default:
             r = visit(s, n);
@@ -769,22 +789,33 @@ static Node *simp(Simp *s, Node *n)
 
 static void reduce(Simp *s, Node *f)
 {
+    Node *dcl;
+    Type *ty;
     size_t i;
 
     assert(f->type == Nfunc);
     s->nstmts = 0;
     s->stmts = NULL;
     s->endlbl = genlbl();
-    s->retval = NULL;
+    s->ret = NULL;
 
-    if (f->type == Nfunc) {
-        for (i = 0; i < f->func.nargs; i++) {
-            declarearg(s, f->func.args[i]);
-        }
-        simp(s, f->func.body);
-    } else {
-        die("Got a non-func (%s) to reduce", nodestr(f->type));
+    assert(f->type == Nfunc);
+
+    ty = f->func.type->sub[0];
+    if (ty->type != Tyvoid && tysize(ty) > 4) {
+        s->isbigret = 1;
+        s->ret = gentemp(s, f, mktyptr(f->line, ty), &dcl);
+        declarearg(s, dcl);
+    } else if (ty->type != Tyvoid) {
+        s->isbigret = 0;
+        s->ret = gentemp(s, f, ty, &dcl);
+        declarelocal(s, dcl);
     }
+
+    for (i = 0; i < f->func.nargs; i++) {
+      declarearg(s, f->func.args[i]);
+    }
+    simp(s, f->func.body);
 
     append(s, s->endlbl);
 }
