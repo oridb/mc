@@ -279,7 +279,6 @@ Node **aggrmemb(Type *t, size_t *n)
     switch (t->type) {
         case Tystruct: return t->sdecls; break;
         case Tyunion: return t->udecls; break;
-        case Tyenum: return t->edecls; break;
         case Tyarray: return &t->asize; break;
         default: return NULL;
     }

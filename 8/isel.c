@@ -803,7 +803,7 @@ void genasm(FILE *fd, Func *fn, Htab *globls)
 
     is.curbb = is.bb[0];
     prologue(&is, fn->stksz);
-    for (j = 0; j < fn->cfg->nbb; j++) {
+    for (j = 0; j < fn->cfg->nbb - 1; j++) {
         is.curbb = is.bb[j];
         for (i = 0; i < fn->cfg->bb[j]->nnl; i++) {
             /* put in a comment that says where this line comes from */
@@ -817,7 +817,5 @@ void genasm(FILE *fd, Func *fn, Htab *globls)
     epilogue(&is);
     regalloc(&is);
 
-    if (debug)
-        writeasm(stdout, &is, fn);
     writeasm(fd, &is, fn);
 }

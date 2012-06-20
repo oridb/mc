@@ -15,6 +15,7 @@
 Node *file;
 char *outfile;
 int debug;
+char debugopt[128];
 char **incpaths;
 size_t nincpaths;
 
@@ -32,20 +33,21 @@ int main(int argc, char **argv)
 {
     int opt;
     int i;
-    Stab *s;
     Stab *globls;
     Node *rdback;
     FILE *tmp;
     FILE *f;
 
-    while ((opt = getopt(argc, argv, "dho:")) != -1) {
+    while ((opt = getopt(argc, argv, "d::ho:I:")) != -1) {
         switch (opt) {
             case 'o':
                 outfile = optarg;
                 break;
             case 'h':
             case 'd':
-                debug++;
+                debug = 1;
+                while (optarg && *optarg)
+                    debugopt[*optarg++ & 0x7f] = 1;
                 break;
 	    case 'I':
 		lappend(&incpaths, &nincpaths, optarg);
@@ -68,7 +70,7 @@ int main(int argc, char **argv)
 
         infer(file);
 	/* before we do anything to the parse */
-        if (debug) {
+        if (debugopt['p']) {
             /* test storing tree to file */
             tmp = fopen("a.pkl", "w");
             pickle(file, tmp);
@@ -86,9 +88,6 @@ int main(int argc, char **argv)
 	f = fopen(outfile, "w");
 	writeuse(file, f);
 	fclose(f);
-        s = mkstab();
-	readuse(mkuse(-1, outfile, 1), s);
-        dumpstab(s, stdout);
     }
 
     return 0;

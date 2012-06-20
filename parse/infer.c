@@ -455,6 +455,9 @@ static void inferdecl(Node *n)
     if (n->decl.init) {
         inferexpr(n->decl.init, NULL, NULL);
         unify(n, type(n), type(n->decl.init));
+    } else {
+        if (n->decl.isconst && !n->decl.isextern)
+            fatal(n->line, "non-extern \"%s\" has no initializer", ctxstr(n));
     }
 }
 
@@ -474,9 +477,7 @@ static void inferstab(Stab *s)
 
 static void infernode(Node *n, Type *ret, int *sawret)
 {
-    void **k;
-    size_t i, nk;
-    Type *ty;
+    size_t i;
     Node *d;
     Node *s;
 
@@ -486,15 +487,7 @@ static void infernode(Node *n, Type *ret, int *sawret)
         case Nfile:
             pushstab(n->file.globls);
             /* exports allow us to specify types later in the body, so we
-             * need to patch the types in. */
-            k = htkeys(file->file.exports->ty, &nk);
-            for (i = 0; i < nk; i++) {
-                ty = gettype(file->file.globls, k[i]);
-                if (!ty) 
-                    fatal(((Node*)k[i])->line, "Exported type %s not declared", namestr(k[i]));
-                updatetype(file->file.exports, k[i], tf(ty));
-            }
-            free(k);
+             * need to patch the types in if they don't have a definition */
             inferstab(n->file.globls);
             inferstab(n->file.exports);
 	    for (i = 0; i < n->file.nstmts; i++) {
@@ -564,21 +557,16 @@ static void checkcast(Node *n)
 static Type *tyfix(Node *ctx, Type *t)
 {
     static Type *tyint;
-    static Type *tyfloat;
     size_t i;
     char buf[1024];
 
     if (!tyint)
         tyint = mkty(-1, Tyint);
-    if (!tyfloat)
-        tyfloat = mkty(-1, Tyfloat64);
 
     t = tf(t);
     if (t->type == Tyvar) {
         if (hascstr(t, cstrtab[Tcint]) && cstrcheck(t, tyint))
             return tyint;
-        if (hascstr(t, cstrtab[Tcnum]) && cstrcheck(t, tyfloat))
-            return tyfloat;
     } else {
         if (t->type == Tyarray)
             typesub(t->asize);
@@ -728,11 +716,62 @@ static void typesub(Node *n)
     }
 }
 
+void mergeexports(Node *file)
+{
+    Stab *exports, *globls;
+    size_t i, nk;
+    void **k;
+    /* local, global version */
+    Node *nl, *ng;
+    Type *tl, *tg;
+
+    exports = file->file.exports;
+    globls = file->file.globls;
+
+    pushstab(globls);
+    k = htkeys(exports->ty, &nk);
+    for (i = 0; i < nk; i++) {
+        tl = gettype(exports, k[i]);
+        nl = k[i];
+        if (tl) {
+            tg = gettype(globls, nl);
+            if (!tg)
+                puttype(globls, nl, tl);
+            else
+                fatal(nl->line, "Exported type %s double-declared on line %d", namestr(nl), tg->line);
+        } else {
+            tg = gettype(globls, nl);
+            if (tg) 
+                updatetype(exports, nl, tf(tg));
+            else
+                fatal(nl->line, "Exported type %s not declared", namestr(nl));
+        }
+    }
+    free(k);
+
+    k = htkeys(exports->dcl, &nk);
+    for (i = 0; i < nk; i++) {
+        nl = getdcl(exports, k[i]);
+        ng = getdcl(globls, k[i]);
+        /* if an export has an initializer, it shouldn't be declared in the
+         * body */
+        if (nl->decl.init && ng)
+            fatal(nl->line, "Export %s double-defined on line %d", ctxstr(nl), ng->line);
+        if (!ng)
+            putdcl(globls, nl);
+        else
+            unify(nl, type(ng), type(nl));
+    }
+    free(k);
+    popstab();
+}
+
 void infer(Node *file)
 {
     assert(file->type == Nfile);
 
     loaduses(file);
+    mergeexports(file);
     infernode(file, NULL, NULL);
     infercompn(file);
     checkcast(file);

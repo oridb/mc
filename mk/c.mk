@@ -16,18 +16,14 @@ CFLAGS += -MMD -MP -MF ${_DEPSDIR}/$(subst /,-,$*).d
 all: subdirs $(BIN) $(LIB) $(EXTRA)
 install: subdirs-install install-bin install-lib install-hdr install-pc
 
-$(LIB): $(OBJ) libs
+$(LIB): $(OBJ) $(DEPS)
 	$(AR) -rcs $@ $(OBJ)
 
-$(BIN): $(OBJ) $(EXTRADEP) libs
+$(BIN): $(OBJ) $(EXTRADEP) $(DEPS)
 	$(CC) -o $@ $(OBJ) $(_LIBSRCHPATHS) $(_LIBPATHS)
 
-libs: $(DEPS)
-	@for i in $(dir $(DEPS)); do (\
-	    cd $$i && \
-	    $(MAKE) || \
-	    exit 1 \
-	) || exit 1; done
+$(DEPS):
+	@cd $(dir $@) && $(MAKE)
 
 subdirs:
 	@for i in $(SUB); do (\

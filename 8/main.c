@@ -12,52 +12,39 @@
 #include "parse.h"
 #include "opt.h"
 #include "asm.h"
+#include "platform.h"
 
 /* FIXME: move into one place...? */
 Node *file;
 int debug;
-int asmonly;
+char debugopt[128];
 char *outfile;
 char **incpaths;
 size_t nincpaths;
 
 static void usage(char *prog)
 {
-    printf("%s [-h] [-o outfile] inputs\n", prog);
+    printf("%s [-h] [-o outfile] [-d[dbgopts]] inputs\n", prog);
     printf("\t-h\tPrint this help\n");
     printf("\t-I path\tAdd 'path' to use search path\n");
-    printf("\t-d\tPrint debug dumps\n");
+    printf("\t-d\tPrint debug dumps. Recognized options: f r p i\n");
+    printf("\t\t\tno options: print most common debug information\n");
+    printf("\t\t\tf: additionally log folded trees\n");
+    printf("\t\t\tl: additionally log lowered pre-cfg trees\n");
+    printf("\t\t\tT: additionally log tree immediately\n");
+    printf("\t\t\tr: additionally log register allocation activity\n");
     printf("\t-o\tOutput to outfile\n");
     printf("\t-S\tGenerate assembly instead of object code\n");
 }
 
-char *outfmt(char *buf, size_t sz, char *infile, char *outfile)
+static void assem(char *f)
 {
-    char *p, *suffix;
-    size_t len;
+    char objfile[1024];
+    char cmd[1024];
 
-    if (outfile) {
-        snprintf(buf, sz, "%s", outfile);
-        return buf;
-    }
-
-    if (asmonly)
-        suffix = ".s";
-    else
-        suffix = ".o";
-
-    p = strrchr(infile, '.');
-    if (p)
-        len = (p - infile);
-    else
-        len = strlen(infile);
-    if (len + strlen(suffix) >= sz)
-        die("Output file name too long");
-    buf[0] = '\0';
-    strncat(buf, infile, len);
-    strcat(buf, suffix);
-
-    return buf;
+    swapsuffix(objfile, 1024, f, ".s", ".o");
+    snprintf(cmd, 1024, Asmcmd, objfile, f);
+    system(cmd);
 }
 
 int main(int argc, char **argv)
@@ -67,7 +54,7 @@ int main(int argc, char **argv)
     Stab *globls;
     char buf[1024];
 
-    while ((opt = getopt(argc, argv, "dhSo:I:")) != -1) {
+    while ((opt = getopt(argc, argv, "d::hSo:I:")) != -1) {
         switch (opt) {
             case 'o':
                 outfile = optarg;
@@ -77,10 +64,9 @@ int main(int argc, char **argv)
                 exit(0);
                 break;
             case 'd':
-                debug++;
-                break;
-            case 'S':
-                asmonly++;
+                debug = 1;
+                while (optarg && *optarg)
+                    debugopt[*optarg++ & 0x7f] = 1;
                 break;
             case 'I':
                 lappend(&incpaths, &nincpaths, optarg);
@@ -102,14 +88,16 @@ int main(int argc, char **argv)
         yyparse();
 
         /* before we do anything to the parse */
-        if (debug)
+        if (debugopt['T'])
             dump(file, stdout);
         infer(file);
         /* after all processing */
         if (debug)
             dump(file, stdout);
 
-        gen(file, outfmt(buf, 1024, argv[i], outfile));
+        swapsuffix(buf, 1024, argv[i], ".myr", ".s");
+        gen(file, buf);
+        assem(buf);
     }
 
     return 0;

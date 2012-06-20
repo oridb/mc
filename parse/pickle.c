@@ -152,11 +152,6 @@ static void wrtype(FILE *fd, Type *ty)
             for (i = 0; i < ty->nmemb; i++)
                 pickle(ty->udecls[i], fd);
             break;
-        case Tyenum:
-            wrint(fd, ty->nmemb);
-            for (i = 0; i < ty->nmemb; i++)
-                pickle(ty->edecls[i], fd);
-            break;
         case Tyarray:
             wrtype(fd, ty->sub[0]);
             pickle(ty->asize, fd);
@@ -205,12 +200,6 @@ static Type *rdtype(FILE *fd)
             ty->udecls = xalloc(ty->nmemb * sizeof(Node*));
             for (i = 0; i < ty->nmemb; i++)
                 ty->udecls[i] = unpickle(fd);
-            break;
-        case Tyenum:
-            ty->nmemb = rdint(fd);
-            ty->edecls = xalloc(ty->nmemb * sizeof(Node*));
-            for (i = 0; i < ty->nmemb; i++)
-                ty->edecls[i] = unpickle(fd);
             break;
         case Tyarray:
             ty->sub[0] = rdtype(fd);

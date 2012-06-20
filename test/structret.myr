@@ -1,0 +1,19 @@
+type pair = struct
+	a : int
+	b : int
+;;
+
+const f = {
+	var s
+
+	s.a = 12
+	s.b = 30
+	-> s
+}
+
+const main = {
+	var s : pair
+
+	s = f()
+	-> s.a + s.b
+}

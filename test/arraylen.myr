@@ -1,0 +1,5 @@
+const main = {
+	var a : int[12]
+
+	-> a.len
+}

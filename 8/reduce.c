@@ -56,6 +56,7 @@ static Node *one;
 static Node *zero;
 static Node *ptrsz;
 static Type *tyword;
+static Type *tyvoid;
 
 static Type *base(Type *t)
 {
@@ -204,8 +205,7 @@ size_t tysize(Type *t)
             return 2;
         case Tyint: case Tyint32:
         case Tyuint: case Tyuint32:
-        case Typtr: case Tyenum:
-        case Tyfunc:
+        case Typtr: case Tyfunc:
             return 4;
 
         case Tyint64: case Tylong:
@@ -347,10 +347,10 @@ static Node *bloblit(Simp *s, Node *lit)
 
     n = mkname(lit->line, genlblstr(lbl, 128));
     t = mkdecl(lit->line, n, lit->expr.type);
-    r = mkexpr(lit->line, Ovar, t, NULL);
-    t->decl.init = lit;
+    r = mkexpr(lit->line, Ovar, n, NULL);
+    r->expr.type = lit->expr.type;
     r->expr.did = t->decl.did;
-    r->expr.type = t->expr.type;
+    t->decl.init = lit;
     htput(s->globls, t, strdup(lbl));
     lappend(&s->blobs, &s->nblobs, t);
     return r;
@@ -529,11 +529,27 @@ static Node *lowercast(Simp *s, Node *n)
     return r;
 }
 
+static Node *visit(Simp *s, Node *n)
+{
+    size_t i;
+    Node *r;
+
+    for (i = 0; i < n->expr.nargs; i++)
+        n->expr.args[i] = rval(s, n->expr.args[i]);
+    if (ispure(n)) {
+        r = n;
+    } else {
+        r = temp(s, n);
+        append(s, store(r, n));
+    }
+    return r;
+}
+
 static Node *rval(Simp *s, Node *n)
 {
     Node *r; /* expression result */
     Node *t, *u, *v; /* temporary nodes */
-    size_t i;
+    Type *ty;
     Node **args;
     const Op fusedmap[] = {
         [Oaddeq]        = Oadd,
@@ -665,15 +681,19 @@ static Node *rval(Simp *s, Node *n)
               r = store(t, u);
             }
             break;
-        default:
-            for (i = 0; i < n->expr.nargs; i++)
-                n->expr.args[i] = rval(s, n->expr.args[i]);
-            if (ispure(n)) {
-                r = n;
-            } else {
+        case Ocall:
+            if (size(n) > 4) {
                 r = temp(s, n);
-                append(s, store(r, n));
+                ty = mktyptr(n->line, exprtype(r));
+                linsert(&args[0]->expr.args, &n->expr.nargs, 1, addr(r, ty));
+                linsert(&args[0]->expr.type->sub, &n->expr.type->nsub, 1, ty);
+                args[0]->expr.type->sub[0] = tyvoid;
+                n->expr.type = tyvoid;
             }
+            r = visit(s, n);
+            break;
+        default:
+            r = visit(s, n);
     }
     return r;
 }
@@ -683,7 +703,7 @@ static void declarelocal(Simp *s, Node *n)
     assert(n->type == Ndecl);
     s->stksz += size(n);
     if (debug)
-        printf("DECLARE %s(%ld) at %zd\n", declname(n), n->decl.did, s->stksz);
+        printf("declare %s(%ld) at %zd\n", declname(n), n->decl.did, s->stksz);
     htput(s->locs, n, (void*)s->stksz);
 }
 
@@ -691,7 +711,7 @@ static void declarearg(Simp *s, Node *n)
 {
     assert(n->type == Ndecl);
     if (debug)
-        printf("DECLARE %s(%ld) at %zd\n", declname(n), n->decl.did, -(s->argsz + 8));
+        printf("declare %s(%ld) at %zd\n", declname(n), n->decl.did, -(s->argsz + 8));
     htput(s->locs, n, (void*)-(s->argsz + 8));
     s->argsz += size(n);
 }
@@ -778,6 +798,8 @@ static Func *lowerfn(Simp *s, char *name, Node *n)
     if(debug)
         printf("\n\nfunction %s\n", name);
 
+    if (!n->decl.init)
+        return NULL;
     /* set up the simp context */
     /* unwrap to the function body */
     n = n->expr.args[0];
@@ -790,12 +812,12 @@ static Func *lowerfn(Simp *s, char *name, Node *n)
     for (i = 0; i < s->nstmts; i++) {
         if (s->stmts[i]->type != Nexpr)
             continue;
-        if (debug) {
+        if (debugopt['f']) {
             printf("FOLD FROM ----------\n");
             dump(s->stmts[i], stdout);
         }
         s->stmts[i] = fold(s->stmts[i]);
-        if (debug) {
+        if (debugopt['f']) {
             printf("FOLD TO ------------\n");
             dump(s->stmts[i], stdout);
             printf("END ----------------\n");
@@ -850,11 +872,13 @@ static void lowerdcl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***b
     s.nblobs = *nblob;
 
     if (isconstfn(dcl)) {
-        f = lowerfn(&s, name, dcl->decl.init);
-        lappend(fn, nfn, f);
+        if (!dcl->decl.isextern) {
+            f = lowerfn(&s, name, dcl->decl.init);
+            lappend(fn, nfn, f);
+        }
     } else {
         if (dcl->decl.init && exprop(dcl->decl.init) == Olit)
-            lappend(blob, nblob, dcl);
+            lappend(&s.blobs, &s.nblobs, dcl);
         else
             die("We don't lower globls with nonlit inits yet...");
     }
@@ -871,10 +895,10 @@ void gen(Node *file, char *out)
     size_t nn, nfn, nblob;
     size_t i;
     FILE *fd;
-    char cmd[1024];
 
     /* declare useful constants */
     tyword = mkty(-1, Tyint);
+    tyvoid = mkty(-1, Tyvoid);
     one = word(-1, 1);
     zero = word(-1, 0);
     ptrsz = word(-1, 4);
@@ -903,21 +927,19 @@ void gen(Node *file, char *out)
         }
     }
 
-    sprintf(cmd, Assembler, out);
-    if (asmonly)
-      fd = fopen(out, "w");
-    else
-      fd = popen(cmd, "w");
+    fd = fopen(out, "w");
     if (!fd)
         die("Couldn't open fd %s", out);
 
+    if (debug) {
+        for (i = 0; i < nblob; i++)
+            genblob(stdout, blob[i], globls);
+        for (i = 0; i < nfn; i++)
+            genasm(stdout, fn[i], globls);
+    }
     for (i = 0; i < nblob; i++)
         genblob(fd, blob[i], globls);
     for (i = 0; i < nfn; i++)
         genasm(fd, fn[i], globls);
-    fflush(fd);
-    if (asmonly)
-      fclose(fd);
-    else
-      pclose(fd);
+    fclose(fd);
 }

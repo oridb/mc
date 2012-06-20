@@ -129,6 +129,20 @@ void *lpop(void *l, size_t *len)
     return v;
 }
 
+void linsert(void *p, size_t *len, size_t idx, void *v)
+{
+    void ***pl, **l;
+    size_t i;
+
+    pl = p;
+    *pl = xrealloc(*pl, (*len + 1)*sizeof(void*));
+    l = *pl;
+    for (i = idx; i < *len; i++)
+        l[i + 1] = l[i];
+    l[idx] = v;
+    (*len)++;
+}
+
 void ldel(void *l, size_t *len, size_t idx)
 {
     void ***pl;
@@ -322,5 +336,30 @@ void wrbool(FILE *fd, int val)
 int rdbool(FILE *fd)
 {
     return rdbyte(fd);
+}
+
+char *swapsuffix(char *buf, size_t sz, char *s, char *suf, char *swap)
+{
+    size_t slen, suflen, swaplen;
+
+    slen = strlen(s);
+    suflen = strlen(suf);
+    swaplen = strlen(swap);
+
+    if (slen < suflen)
+        return NULL;
+    if (slen + swaplen >= sz)
+        die("swapsuffix: buf too small");
+
+    buf[0] = '\0';
+    if (suflen < slen && !strcmp(suf, &s[slen - suflen])) {
+        strncat(buf, s, slen - suflen);
+        strcat(buf, swap);
+    } else {
+        strncat(buf, s, slen);
+        strcat(buf, swap);
+    }
+
+    return buf;
 }
 
