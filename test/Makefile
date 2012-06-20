@@ -5,7 +5,7 @@ check:
 	./test.sh
 .PHONY: clean
 clean:
-	@for i in `awk '{print $$1}' tests`; do \
+	@for i in `awk '/^[A-Z]/{print $$2}' tests`; do \
 	    echo rm -f $$i; \
 	    rm -f $$i; \
 	done
