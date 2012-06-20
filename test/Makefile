@@ -1,5 +1,6 @@
 # don't build anything for 'all'
 all: 
+	$(MAKE) -C ..
 
 check:
 	./test.sh
