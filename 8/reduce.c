@@ -685,7 +685,7 @@ static Node *rval(Simp *s, Node *n)
             if (size(n) > 4) {
                 r = temp(s, n);
                 ty = mktyptr(n->line, exprtype(r));
-                linsert(&args[0]->expr.args, &n->expr.nargs, 1, addr(r, ty));
+                linsert(&n->expr.args, &n->expr.nargs, 1, addr(r, exprtype(n)));
                 linsert(&args[0]->expr.type->sub, &n->expr.type->nsub, 1, ty);
                 args[0]->expr.type->sub[0] = tyvoid;
                 n->expr.type = tyvoid;
