@@ -1,0 +1,6 @@
+const main = {
+	var str
+
+	str = "asdf"
+	-> str[3]
+}
