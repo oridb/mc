@@ -2,27 +2,6 @@
 pkg sys =
 	type scno = int
 	type fdopt = int
-
-	const Rdonly  	: fdopt = 0x0
-	const Wronly  	: fdopt = 0x1
-	const Rdwr    	: fdopt = 0x2
-	const Append  	: fdopt = 0x80
-	const Creat   	: fdopt = 0x40
-	const Nofollow	: fdopt = 0x20000
-	const Ndelay  	: fdopt = 0x800
-	const Trunc   	: fdopt = 0x200
-
-	const Sexit	: scno = 1
-	const Sread	: scno = 3
-	const Swrite	: scno = 4
-	const Sopen	: scno = 5
-	const Sclose	: scno = 6
-	const Screat	: scno = 8
-	const Slseek	: scno = 19
-	const Sfstat	: scno = 108
-	const Skill	: scno = 37
-	const Sgetpid	: scno = 20
-
 	type statbuf = struct
 		 dev     : uint
 		 ino     : uint
@@ -42,29 +21,49 @@ pkg sys =
 		 ctimens : uint
 		 _unused1: uint
 		 _unused2: uint
-	 ;;
+	;;
+
+	const Rdonly  	: fdopt = 0x0
+	const Wronly  	: fdopt = 0x1
+	const Rdwr    	: fdopt = 0x2
+	const Append  	: fdopt = 0x80
+	const Creat   	: fdopt = 0x40
+	const Nofollow	: fdopt = 0x20000
+	const Ndelay  	: fdopt = 0x800
+	const Trunc   	: fdopt = 0x200
+
+	const Sysexit	: scno = 1
+	const Sysread	: scno = 3
+	const Syswrite	: scno = 4
+	const Sysopen	: scno = 5
+	const Sysclose	: scno = 6
+	const Syscreat	: scno = 8
+	const Syslseek	: scno = 19
+	const Sysfstat	: scno = 108
+	const Syskill	: scno = 37
+	const Sysgetpid	: scno = 20
 
 	extern const syscall : (sc:scno, count:int, args:... -> int)
 
-	const exit	: (status:int)
-	const getpid	: ()
-	const kill	: (pid:int, sig:int)
-	const open	: (path:char[,], opts:fdopt)
-	const close	: (fd:int)
-	const creat	: (path:char[,], mode:int)
-	const read	: (fd:int, buf:char[,])
-	const write	: (fd:int, buf:char[,])
-	const lseek	: (fd:int, off:uint, whence:int)
-	const fstat	: (fd:int, sb:statbuf*)
+	const exit	: (status:int -> int)
+	const getpid	: ( -> int)
+	const kill	: (pid:int, sig:int -> int)
+	const open	: (path:char[,], opts:fdopt -> int)
+	const close	: (fd:int -> int)
+	const creat	: (path:char[,], mode:int -> int)
+	const read	: (fd:int, buf:char[,] -> int)
+	const write	: (fd:int, buf:char[,] -> int)
+	const lseek	: (fd:int, off:uint, whence:int -> int)
+	const fstat	: (fd:int, sb:statbuf* -> int)
 ;;
 
-const exit	= {status;		-> syscall(Sexit, 1);}
-const getpid	= {;			-> syscall(Sgetpid, 1);}
-const kill	= {pid, sig;		-> syscall(Skill,  2, pid, sig);}
-const open	= {path, opts:fdopt;	-> syscall(Sopen,  2, path castto(char*), opts);}
-const close	= {fd;			-> syscall(Sclose, 1, fd);}
-const creat	= {path, mode;		-> syscall(Screat, 2, path castto(char*), mode);}
-const read	= {fd, buf;		-> syscall(Sread,  3, fd, buf castto(char*), buf.len);}
-const write	= {fd, buf;		-> syscall(Swrite, 3, fd, buf castto(char*), buf.len);}
-const lseek	= {fd, off:uint, whence;-> syscall(Slseek, 2, fd, off, whence);}
-const fstat	= {fd, sb;		-> syscall(Sfstat, 2, fd, sb);}
+const exit	= {status;		-> syscall(Sysexit, 1);}
+const getpid	= {;			-> syscall(Sysgetpid, 1);}
+const kill	= {pid, sig;		-> syscall(Syskill,  2, pid, sig);}
+const open	= {path, opts:fdopt;	-> syscall(Sysopen,  2, path castto(char*), opts);}
+const close	= {fd;			-> syscall(Sysclose, 1, fd);}
+const creat	= {path, mode;		-> syscall(Syscreat, 2, path castto(char*), mode);}
+const read	= {fd, buf;		-> syscall(Sysread,  3, fd, buf castto(char*), buf.len);}
+const write	= {fd, buf;		-> syscall(Syswrite, 3, fd, buf castto(char*), buf.len);}
+const lseek	= {fd, off:uint, whence;-> syscall(Syslseek, 2, fd, off, whence);}
+const fstat	= {fd, sb;		-> syscall(Sysfstat, 2, fd, sb);}

@@ -17,16 +17,22 @@
 /* FIXME: move into one place...? */
 Node *file;
 int debug;
+char debugopt[128];
 char *outfile;
 char **incpaths;
 size_t nincpaths;
 
 static void usage(char *prog)
 {
-    printf("%s [-h] [-o outfile] inputs\n", prog);
+    printf("%s [-h] [-o outfile] [-d[dbgopts]] inputs\n", prog);
     printf("\t-h\tPrint this help\n");
     printf("\t-I path\tAdd 'path' to use search path\n");
-    printf("\t-d\tPrint debug dumps\n");
+    printf("\t-d\tPrint debug dumps. Recognized options: f r p i\n");
+    printf("\t\t\tno options: print most common debug information\n");
+    printf("\t\t\tf: additionally log folded trees\n");
+    printf("\t\t\tr: additionally log reduced pre-cfg trees\n");
+    printf("\t\t\tp: additionally log tree immediately before parsing\n");
+    printf("\t\t\ti: additionally log tree after type inference\n");
     printf("\t-o\tOutput to outfile\n");
     printf("\t-S\tGenerate assembly instead of object code\n");
 }
@@ -49,7 +55,7 @@ int main(int argc, char **argv)
     Stab *globls;
     char buf[1024];
 
-    while ((opt = getopt(argc, argv, "dhSo:I:")) != -1) {
+    while ((opt = getopt(argc, argv, "d::hSo:I:")) != -1) {
         switch (opt) {
             case 'o':
                 outfile = optarg;
@@ -59,7 +65,9 @@ int main(int argc, char **argv)
                 exit(0);
                 break;
             case 'd':
-                debug++;
+                debug = 1;
+                while (optarg && *optarg)
+                    debugopt[*optarg++ & 0x7f] = 1;
                 break;
             case 'I':
                 lappend(&incpaths, &nincpaths, optarg);
@@ -81,11 +89,11 @@ int main(int argc, char **argv)
         yyparse();
 
         /* before we do anything to the parse */
-        if (debug)
+        if (debugopt['p'])
             dump(file, stdout);
         infer(file);
         /* after all processing */
-        if (debug)
+        if (debugopt['i'])
             dump(file, stdout);
 
         swapsuffix(buf, 1024, argv[i], ".myr", ".s");
