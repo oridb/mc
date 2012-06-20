@@ -323,13 +323,41 @@ static Loc *memloc(Isel *s, Node *e, Mode m)
     return l;
 }
 
+static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size_t sz)
+{
+    size_t i;
+    Loc *sp, *dp; /* pointers to src, dst */
+    Loc *tmp, *src, *dst; /* source memory, dst memory */
+
+    sp = inr(s, from);
+    dp = inr(s, to);
+
+    /* Slightly funny loop condition: We might have trailing bytes
+     * that we can't blit word-wise. */
+    tmp = locreg(ModeL);
+    for (i = 0; i < sz/4; i++) {
+        src = locmem(i*4 + srcoff, sp, NULL, ModeL);
+        dst = locmem(i*4 + dstoff, dp, NULL, ModeL);
+        g(s, Imov, src, tmp, NULL);
+        g(s, Imov, tmp, dst, NULL);
+    }
+    /* now, the trailing bytes */
+    tmp = locreg(ModeB);
+    for (; i < sz%4; i++) {
+        src = locmem(i, sp, NULL, ModeB);
+        dst = locmem(i, dp, NULL, ModeB);
+        g(s, Imov, src, tmp, NULL);
+        g(s, Imov, tmp, dst, NULL);
+    }
+}
+
 static Loc *gencall(Isel *s, Node *n)
 {
-    int argsz, argoff;
-    size_t i;
+    Loc *src, *dst, *arg, *fn;   /* values we reduced */
     Loc *eax, *esp;       /* hard-coded registers */
     Loc *stkbump;        /* calculated stack offset */
-    Loc *dst, *arg, *fn;   /* values we reduced */
+    int argsz, argoff;
+    size_t i;
 
     esp = locphysreg(Resp);
     eax = locphysreg(Reax);
@@ -350,9 +378,16 @@ static Loc *gencall(Isel *s, Node *n)
     argoff = 0;
     for (i = 1; i < n->expr.nargs; i++) {
         arg = selexpr(s, n->expr.args[i]);
-        arg = inri(s, arg);
-        dst = locmem(argoff, esp, NULL, arg->mode);
-        stor(s, arg, dst);
+        if (size(n->expr.args[i]) > 4) {
+            dst = locreg(ModeL);
+            src = locreg(ModeL);
+            g(s, Ilea, arg, src, NULL);
+            blit(s, esp, src, argoff, 0, size(n->expr.args[i]));
+        } else {
+            dst = locmem(argoff, esp, NULL, arg->mode);
+            arg = inri(s, arg);
+            stor(s, arg, dst);
+        }
         argoff += size(n->expr.args[i]);
     }
     fn = selexpr(s, n->expr.args[0]);
@@ -360,34 +395,6 @@ static Loc *gencall(Isel *s, Node *n)
     if (argsz)
         g(s, Iadd, stkbump, esp, NULL);
     return eax;
-}
-
-static void blit(Isel *s, Loc *a, Loc *b, int sz)
-{
-    int i;
-    Loc *sp, *dp; /* pointers to src, dst */
-    Loc *tmp, *src, *dst; /* source memory, dst memory */
-
-    sp = inr(s, a);
-    dp = inr(s, b);
-
-    /* Slightly funny loop condition: We might have trailing bytes
-     * that we can't blit word-wise. */
-    tmp = locreg(ModeL);
-    for (i = 0; i < sz/4; i++) {
-        src = locmem(i, sp, NULL, ModeL);
-        dst = locmem(i, dp, NULL, ModeL);
-        g(s, Imov, src, tmp, NULL);
-        g(s, Imov, tmp, dst, NULL);
-    }
-    /* now, the trailing bytes */
-    tmp = locreg(ModeB);
-    for (; i < sz%4; i++) {
-        src = locmem(i, sp, NULL, ModeB);
-        dst = locmem(i, dp, NULL, ModeB);
-        g(s, Imov, src, tmp, NULL);
-        g(s, Imov, tmp, dst, NULL);
-    }
 }
 
 Loc *selexpr(Isel *s, Node *n)
@@ -538,9 +545,9 @@ Loc *selexpr(Isel *s, Node *n)
             r = loclbl(args[0]);
             break;
         case Oblit:
-            b = selexpr(s, args[0]);
-            a = selexpr(s, args[1]);
-            blit(s, a, b, args[2]->expr.args[0]->lit.intval);
+            a = selexpr(s, args[0]);
+            b = selexpr(s, args[1]);
+            blit(s, a, b, 0, 0, args[2]->expr.args[0]->lit.intval);
             r = b;
             break;
 
@@ -727,7 +734,7 @@ static Asmbb *mkasmbb(Bb *bb)
     return as;
 }
 
-void writeblob(FILE *fd, char *p, size_t sz)
+static void writeblob(FILE *fd, char *p, size_t sz)
 {
     size_t i;
 
@@ -743,7 +750,7 @@ void writeblob(FILE *fd, char *p, size_t sz)
     }
 }
 
-void writelit(FILE *fd, Node *v)
+static void writelit(FILE *fd, Node *v)
 {
     char lbl[128];
     switch (v->lit.littype) {
@@ -814,4 +821,3 @@ void genasm(FILE *fd, Func *fn, Htab *globls)
         writeasm(stdout, &is, fn);
     writeasm(fd, &is, fn);
 }
-

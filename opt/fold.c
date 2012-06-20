@@ -13,7 +13,7 @@
 #include "parse.h"
 #include "opt.h"
 
-int islit(Node *n, vlong *v)
+static int islit(Node *n, vlong *v)
 {
     Node *l;
 
@@ -26,7 +26,7 @@ int islit(Node *n, vlong *v)
     return 1;
 }
 
-int isval(Node *n, vlong val)
+static int isval(Node *n, vlong val)
 {
     vlong v;
 
@@ -35,7 +35,7 @@ int isval(Node *n, vlong val)
     return v == val;
 }
 
-Node *val(int line, vlong val)
+static Node *val(int line, vlong val)
 {
     Node *n;
 

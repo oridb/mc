@@ -187,6 +187,7 @@ void regalloc(Isel *s);
 
 
 /* useful functions */
+size_t tysize(Type *t);
 size_t size(Node *n);
 void breakhere();
 void dumpasm(Isel *s, FILE *fd);

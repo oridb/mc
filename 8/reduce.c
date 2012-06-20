@@ -56,14 +56,15 @@ static Node *one;
 static Node *zero;
 static Node *ptrsz;
 static Type *tyword;
+static Type *tyvoid;
 
-Type *base(Type *t)
+static Type *base(Type *t)
 {
     assert(t->nsub == 1);
     return t->sub[0];
 }
 
-Node *add(Node *a, Node *b)
+static Node *add(Node *a, Node *b)
 {
     Node *n;
 
@@ -72,7 +73,7 @@ Node *add(Node *a, Node *b)
     return n;
 }
 
-Node *sub(Node *a, Node *b)
+static Node *sub(Node *a, Node *b)
 {
     Node *n;
 
@@ -81,7 +82,7 @@ Node *sub(Node *a, Node *b)
     return n;
 }
 
-Node *mul(Node *a, Node *b)
+static Node *mul(Node *a, Node *b)
 {
     Node *n;
 
@@ -90,7 +91,7 @@ Node *mul(Node *a, Node *b)
     return n;
 }
 
-Node *addr(Node *a, Type *bt)
+static Node *addr(Node *a, Type *bt)
 {
     Node *n;
 
@@ -102,7 +103,7 @@ Node *addr(Node *a, Type *bt)
     return n;
 }
 
-Node *load(Node *a)
+static Node *load(Node *a)
 {
     Node *n;
 
@@ -112,7 +113,7 @@ Node *load(Node *a)
     return n;
 }
 
-Node *store(Node *a, Node *b)
+static Node *store(Node *a, Node *b)
 {
     Node *n;
 
@@ -121,7 +122,7 @@ Node *store(Node *a, Node *b)
     return n;
 }
 
-Node *word(int line, uint v)
+static Node *word(int line, uint v)
 {
     Node *n;
     n = mkintlit(line, v);
@@ -528,11 +529,27 @@ static Node *lowercast(Simp *s, Node *n)
     return r;
 }
 
+static Node *visit(Simp *s, Node *n)
+{
+    size_t i;
+    Node *r;
+
+    for (i = 0; i < n->expr.nargs; i++)
+        n->expr.args[i] = rval(s, n->expr.args[i]);
+    if (ispure(n)) {
+        r = n;
+    } else {
+        r = temp(s, n);
+        append(s, store(r, n));
+    }
+    return r;
+}
+
 static Node *rval(Simp *s, Node *n)
 {
     Node *r; /* expression result */
     Node *t, *u, *v; /* temporary nodes */
-    size_t i;
+    Type *ty;
     Node **args;
     const Op fusedmap[] = {
         [Oaddeq]        = Oadd,
@@ -658,21 +675,25 @@ static Node *rval(Simp *s, Node *n)
             if (size(n) > 4) {
                 t = addr(t, exprtype(n));
                 u = addr(u, exprtype(n));
-		v = word(n->line, size(n));
+                v = word(n->line, size(n));
                 r = mkexpr(n->line, Oblit, t, u, v, NULL);
             } else {
               r = store(t, u);
             }
             break;
-        default:
-            for (i = 0; i < n->expr.nargs; i++)
-                n->expr.args[i] = rval(s, n->expr.args[i]);
-            if (ispure(n)) {
-                r = n;
-            } else {
+        case Ocall:
+            if (size(n) > 4) {
                 r = temp(s, n);
-                append(s, store(r, n));
+                ty = mktyptr(n->line, exprtype(r));
+                linsert(&args[0]->expr.args, &n->expr.nargs, 1, addr(r, ty));
+                linsert(&args[0]->expr.type->sub, &n->expr.type->nsub, 1, ty);
+                args[0]->expr.type->sub[0] = tyvoid;
+                n->expr.type = tyvoid;
             }
+            r = visit(s, n);
+            break;
+        default:
+            r = visit(s, n);
     }
     return r;
 }
@@ -726,7 +747,7 @@ static Node *simp(Simp *s, Node *n)
             r = n;
             break;
         case Ndecl:
-	    declarelocal(s, n);
+            declarelocal(s, n);
             if (n->decl.init) {
                 t = mkexpr(n->line, Ovar, n->decl.name, NULL);
                 u = mkexpr(n->line, Oasn, t, n->decl.init, NULL);
@@ -789,18 +810,18 @@ static Func *lowerfn(Simp *s, char *name, Node *n)
         for (i = 0; i < s->nstmts; i++)
             dump(s->stmts[i], stdout);
     for (i = 0; i < s->nstmts; i++) {
-	if (s->stmts[i]->type != Nexpr)
-	    continue;
-	if (debug) {
-	    printf("FOLD FROM ----------\n");
-	    dump(s->stmts[i], stdout);
-	}
-	s->stmts[i] = fold(s->stmts[i]);
-	if (debug) {
-	    printf("FOLD TO ------------\n");
-	    dump(s->stmts[i], stdout);
-	    printf("END ----------------\n");
-	}
+        if (s->stmts[i]->type != Nexpr)
+            continue;
+        if (debug) {
+            printf("FOLD FROM ----------\n");
+            dump(s->stmts[i], stdout);
+        }
+        s->stmts[i] = fold(s->stmts[i]);
+        if (debug) {
+            printf("FOLD TO ------------\n");
+            dump(s->stmts[i], stdout);
+            printf("END ----------------\n");
+        }
     }
     cfg = mkcfg(s->stmts, s->nstmts);
     if (debug)
@@ -816,7 +837,7 @@ static Func *lowerfn(Simp *s, char *name, Node *n)
     return fn;
 }
 
-void fillglobls(Stab *st, Htab *globls)
+static void fillglobls(Stab *st, Htab *globls)
 {
     void **k;
     size_t i, nk;
@@ -838,7 +859,7 @@ void fillglobls(Stab *st, Htab *globls)
     free(k);
 }
 
-void lowerdcl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***blob, size_t *nblob)
+static void lowerdcl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***blob, size_t *nblob)
 {
     Simp s = {0,};
     char *name;
@@ -874,9 +895,11 @@ void gen(Node *file, char *out)
     size_t nn, nfn, nblob;
     size_t i;
     FILE *fd;
+    char cmd[1024];
 
     /* declare useful constants */
     tyword = mkty(-1, Tyint);
+    tyword = mkty(-1, Tyvoid);
     one = word(-1, 1);
     zero = word(-1, 0);
     ptrsz = word(-1, 4);
@@ -892,9 +915,6 @@ void gen(Node *file, char *out)
     /* We need to define all global variables before use */
     fillglobls(file->file.globls, globls);
 
-    fd = fopen(out, "w");
-    if (!fd)
-        die("Couldn't open fd %s", out);
     for (i = 0; i < nn; i++) {
         switch (n[i]->type) {
             case Nuse: /* nothing to do */ 
@@ -908,9 +928,21 @@ void gen(Node *file, char *out)
         }
     }
 
+    sprintf(cmd, Assembler, out);
+    if (asmonly)
+      fd = fopen(out, "w");
+    else
+      fd = popen(cmd, "w");
+    if (!fd)
+        die("Couldn't open fd %s", out);
+
     for (i = 0; i < nblob; i++)
         genblob(fd, blob[i], globls);
     for (i = 0; i < nfn; i++)
         genasm(fd, fn[i], globls);
-    fclose(fd);
+    fflush(fd);
+    if (asmonly)
+      fclose(fd);
+    else
+      pclose(fd);
 }

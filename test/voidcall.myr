@@ -1,0 +1,10 @@
+const f = {
+	var a
+
+	a = a + 1
+}
+
+const main = {
+	f()
+	-> 12
+}

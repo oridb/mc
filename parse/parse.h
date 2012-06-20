@@ -361,6 +361,7 @@ char *tidstr(Ty tid);
 
 /* convenience funcs */
 void lappend(void *l, size_t *len, void *n); /* ugly hack; nl is void* because void*** is incompatible with T*** */
+void linsert(void *l, size_t *len, size_t idx, void *n);
 void *lpop(void *l, size_t *len);
 void ldel(void *l, size_t *len, size_t idx);
 void lfree(void *l, size_t *len);
@@ -379,6 +380,9 @@ vlong host64(byte buf[8]);
 void be32(long v, byte buf[4]);
 long host32(byte buf[4]);
 
+void wrbuf(FILE *fd, void *buf, size_t sz);
+void rdbuf(FILE *fd, void *buf, size_t sz);
+char rdbyte(FILE *fd);
 void wrbyte(FILE *fd, char val);
 char rdbyte(FILE *fd);
 void wrint(FILE *fd, long val);
@@ -392,6 +396,7 @@ int rdbool(FILE *fd);
 
 /* Options to control the compilation */
 extern int debug;
+extern int asmonly;
 extern char *outfile;
 extern char **incpaths;
 extern size_t nincpaths;
