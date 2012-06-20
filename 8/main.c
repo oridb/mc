@@ -30,9 +30,9 @@ static void usage(char *prog)
     printf("\t-d\tPrint debug dumps. Recognized options: f r p i\n");
     printf("\t\t\tno options: print most common debug information\n");
     printf("\t\t\tf: additionally log folded trees\n");
-    printf("\t\t\tr: additionally log reduced pre-cfg trees\n");
-    printf("\t\t\tp: additionally log tree immediately before parsing\n");
-    printf("\t\t\ti: additionally log tree after type inference\n");
+    printf("\t\t\tl: additionally log lowered pre-cfg trees\n");
+    printf("\t\t\tT: additionally log tree immediately\n");
+    printf("\t\t\tr: additionally log register allocation activity\n");
     printf("\t-o\tOutput to outfile\n");
     printf("\t-S\tGenerate assembly instead of object code\n");
 }
@@ -89,11 +89,11 @@ int main(int argc, char **argv)
         yyparse();
 
         /* before we do anything to the parse */
-        if (debugopt['p'])
+        if (debugopt['T'])
             dump(file, stdout);
         infer(file);
         /* after all processing */
-        if (debugopt['i'])
+        if (debug)
             dump(file, stdout);
 
         swapsuffix(buf, 1024, argv[i], ".myr", ".s");

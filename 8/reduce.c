@@ -703,7 +703,7 @@ static void declarelocal(Simp *s, Node *n)
     assert(n->type == Ndecl);
     s->stksz += size(n);
     if (debug)
-        printf("DECLARE %s(%ld) at %zd\n", declname(n), n->decl.did, s->stksz);
+        printf("declare %s(%ld) at %zd\n", declname(n), n->decl.did, s->stksz);
     htput(s->locs, n, (void*)s->stksz);
 }
 
@@ -711,7 +711,7 @@ static void declarearg(Simp *s, Node *n)
 {
     assert(n->type == Ndecl);
     if (debug)
-        printf("DECLARE %s(%ld) at %zd\n", declname(n), n->decl.did, -(s->argsz + 8));
+        printf("declare %s(%ld) at %zd\n", declname(n), n->decl.did, -(s->argsz + 8));
     htput(s->locs, n, (void*)-(s->argsz + 8));
     s->argsz += size(n);
 }
@@ -812,12 +812,12 @@ static Func *lowerfn(Simp *s, char *name, Node *n)
     for (i = 0; i < s->nstmts; i++) {
         if (s->stmts[i]->type != Nexpr)
             continue;
-        if (debug) {
+        if (debugopt['f']) {
             printf("FOLD FROM ----------\n");
             dump(s->stmts[i], stdout);
         }
         s->stmts[i] = fold(s->stmts[i]);
-        if (debug) {
+        if (debugopt['f']) {
             printf("FOLD TO ------------\n");
             dump(s->stmts[i], stdout);
             printf("END ----------------\n");

@@ -539,7 +539,7 @@ static void combine(Isel *s, regid u, regid v)
     size_t i, j;
     int has;
 
-    if (debug) {
+    if (debugopt['r']) {
 	printf("Combine ");
 	locprint(stdout, locmap[u]);
 	printf(" ==> ");
@@ -709,7 +709,7 @@ static int paint(Isel *s)
 	found = 0;
 	for (i = 0; i < K; i++) {
 	    if (!taken[i]) {
-		if (debug) {
+		if (debugopt['r']) {
 		    locprint(stdout, n);
 		    printf(" ==> %s\n", regnames[regmap[i][n->mode]]);
 		}
@@ -749,7 +749,7 @@ void regalloc(Isel *s)
 	liveness(s);
 	build(s);
 	mkworklist(s);
-	if (debug)
+	if (debugopt['r'])
 	    dumpasm(s, stdout);
 	do {
 	    if (s->nwlsimp)
