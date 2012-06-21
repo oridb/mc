@@ -74,6 +74,7 @@ struct Func {
     char *name;
     int   isglobl;
     size_t stksz;
+    Type *type;
     Htab *locs;
     Node *ret;
     Cfg  *cfg;
