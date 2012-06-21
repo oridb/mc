@@ -12,7 +12,7 @@ sys$syscall:
 	.long .a3
 	.long .a4
 	.long .a5
-	.long .a5 
+	.long .a6
 	/*
 	   hack: 6 args uses %ebp, so we index
 	   relative to %esp. This means that if
