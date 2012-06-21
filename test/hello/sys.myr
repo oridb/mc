@@ -1,4 +1,3 @@
-
 pkg sys =
 	type scno = int
 	type fdopt = int
@@ -42,6 +41,8 @@ pkg sys =
 	const Sysfstat	: scno = 108
 	const Syskill	: scno = 37
 	const Sysgetpid	: scno = 20
+	const Sysmmap2	: scno = 192
+	const Sysmunmap	: scno = 91
 
 	extern const syscall : (sc:scno, count:int, args:... -> int)
 
@@ -55,6 +56,8 @@ pkg sys =
 	const write	: (fd:int, buf:char[,] -> int)
 	const lseek	: (fd:int, off:uint, whence:int -> int)
 	const fstat	: (fd:int, sb:statbuf* -> int)
+	const munmap	: (addr:byte*, len:uint -> int)
+	const mmap	: (add:byte*, len:uint, prot:uint, flags:uint, fd:int, off:uint)
 ;;
 
 const exit	= {status;		-> syscall(Sysexit, 1);}
@@ -67,3 +70,5 @@ const read	= {fd, buf;		-> syscall(Sysread,  3, fd, buf castto(char*), buf.len);
 const write	= {fd, buf;		-> syscall(Syswrite, 3, fd, buf castto(char*), buf.len);}
 const lseek	= {fd, off, whence;	-> syscall(Syslseek, 2, fd, off, whence);}
 const fstat	= {fd, sb;		-> syscall(Sysfstat, 2, fd, sb);}
+const munmap	= {addr, len;		-> syscall(Sysmunmap,   2, addr, len);}
+const mmap	= {addr, len, prot, flags, fd, off;	-> syscall(Sysmmap2, 6, addr, len, prot, flags, fd, off);}
