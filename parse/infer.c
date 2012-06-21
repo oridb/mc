@@ -14,6 +14,9 @@
 
 static Node **postcheck;
 static size_t npostcheck;
+/* bound type schemes */
+static Htab **binds;
+static size_t nbinds;
 
 static void infernode(Node *n, Type *ret, int *sawret);
 static void inferexpr(Node *n, Type *ret, int *sawret);
@@ -140,9 +143,9 @@ static char *ctxstr(Node *n)
 {
     char *s;
     switch (n->type) {
-        default:        s = nodestr(n->type); 	break;
-        case Ndecl:     s = declname(n); 	break;
-        case Nname:     s = namestr(n); 	break;
+        default:        s = nodestr(n->type);   break;
+        case Ndecl:     s = declname(n);        break;
+        case Nname:     s = namestr(n);         break;
         case Nexpr:
             if (exprop(n) == Ovar)
                 s = namestr(n->expr.args[0]);
@@ -490,15 +493,15 @@ static void infernode(Node *n, Type *ret, int *sawret)
              * need to patch the types in if they don't have a definition */
             inferstab(n->file.globls);
             inferstab(n->file.exports);
-	    for (i = 0; i < n->file.nstmts; i++) {
-		d  = n->file.stmts[i];
-		infernode(d, NULL, sawret);
-		if (d->type == Ndecl)  {
-		    s = getdcl(file->file.exports, d->decl.name);
-		    if (s)
-			unify(d, type(d), s->decl.type);
-		}
-	    }
+            for (i = 0; i < n->file.nstmts; i++) {
+                d  = n->file.stmts[i];
+                infernode(d, NULL, sawret);
+                if (d->type == Ndecl)  {
+                    s = getdcl(file->file.exports, d->decl.name);
+                    if (s)
+                        unify(d, type(d), s->decl.type);
+                }
+            }
             popstab();
             break;
         case Ndecl:
@@ -642,8 +645,8 @@ static void stabsub(Stab *s)
 
     k = htkeys(s->dcl, &n);
     for (i = 0; i < n; i++) {
-	d = getdcl(s, k[i]);
-	d->decl.type = tyfix(d->decl.name, d->decl.type);
+        d = getdcl(s, k[i]);
+        d->decl.type = tyfix(d->decl.name, d->decl.type);
     }
     free(k);
 }
@@ -657,8 +660,8 @@ static void typesub(Node *n)
     switch (n->type) {
         case Nfile:
             pushstab(n->file.globls);
-	    stabsub(n->file.globls);
-	    stabsub(n->file.exports);
+            stabsub(n->file.globls);
+            stabsub(n->file.exports);
             for (i = 0; i < n->file.nstmts; i++)
                 typesub(n->file.stmts[i]);
             popstab();
