@@ -1,4 +1,6 @@
+/* x86 sure likes 4 */
 #define Maxarg 4
+#define Wordsz 4
 #define K 4 /* 4 general purpose regs with all modes available */
 
 typedef size_t regid;

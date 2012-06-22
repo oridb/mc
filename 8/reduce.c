@@ -691,7 +691,7 @@ static Node *rval(Simp *s, Node *n)
         case Oasn:
             t = lval(s, args[0]);
             u = rval(s, args[1]);
-            if (size(n) > 4) {
+            if (size(n) > Wordsz) {
                 t = addr(t, exprtype(n));
                 u = addr(u, exprtype(n));
                 v = word(n->line, size(n));
@@ -701,7 +701,7 @@ static Node *rval(Simp *s, Node *n)
             }
             break;
         case Ocall:
-            if (exprtype(n)->type != Tyvoid && size(n) > 4) {
+            if (exprtype(n)->type != Tyvoid && size(n) > Wordsz) {
                 r = temp(s, n);
                 linsert(&n->expr.args, &n->expr.nargs, 1, addr(r, exprtype(n)));
                 for (i = 0; i < n->expr.nargs; i++)
@@ -801,7 +801,7 @@ static void reduce(Simp *s, Node *f)
     assert(f->type == Nfunc);
 
     ty = f->func.type->sub[0];
-    if (ty->type != Tyvoid && tysize(ty) > 4) {
+    if (ty->type != Tyvoid && tysize(ty) > Wordsz) {
         s->isbigret = 1;
         s->ret = gentemp(s, f, mktyptr(f->line, ty), &dcl);
         declarearg(s, dcl);
@@ -931,7 +931,7 @@ void gen(Node *file, char *out)
     tyvoid = mkty(-1, Tyvoid);
     one = word(-1, 1);
     zero = word(-1, 0);
-    ptrsz = word(-1, 4);
+    ptrsz = word(-1, Wordsz);
 
     fn = NULL;
     nfn = 0;
