@@ -32,7 +32,7 @@ static void setsuper(Stab *st, Stab *super)
     st->super = super;
 }
 
-static int bound(Type *t)
+static int isbound(Type *t)
 {
     ssize_t i;
     Type *p;
@@ -44,6 +44,27 @@ static int bound(Type *t)
     }
     return 0;
 }
+
+static Type *freshen(Type *t)
+{
+    Type *ret;
+    size_t i;
+
+    t = tf(t);
+    if (t->type == Typaram && !isbound(t))
+        return mktyvar(t->line);
+    if (t->nsub == 0)
+        return t;
+
+    ret = zalloc(sizeof(Type));
+    *ret = *t;
+    ret->sub = zalloc(t->nsub * sizeof(Type *));
+    for (i = 0; i < t->nsub; i++)
+        ret->sub[i] = freshen(t->sub[i]);
+    printf("Freshened %s to %s\n", tystr(t), tystr(ret));
+    return ret;
+}
+
 
 static void tyresolve(Type *t)
 {
@@ -117,7 +138,6 @@ static void settype(Node *n, Type *t)
             die("can't set type of %s", nodestr(n->type));
             break;
     }
-
 }
 
 static Type *littype(Node *n)
@@ -191,8 +211,10 @@ static void mergecstrs(Node *ctx, Type *a, Type *b)
         else if (b->cstrs)
             a->cstrs = bsdup(b->cstrs);
     } else {
-        if (!cstrcheck(a, b))
-            fatal(ctx->line, "%s incompatible with %s near %s", tystr(a), tystr(b), ctxstr(ctx));
+        if (!cstrcheck(a, b)) {
+            dump(file, stdout);
+            fatal(ctx->line, "%s does not match constraints for %s near %s", tystr(a), tystr(b), ctxstr(ctx));
+        }
     }
 }
 
@@ -238,7 +260,7 @@ static Type *unify(Node *ctx, Type *a, Type *b)
         for (i = 0; i < b->nsub; i++) {
             /* types must have same arity */
             if (i >= a->nsub)
-                fatal(ctx->line, "%s incompatible with %s near %s", tystr(a), tystr(b), ctxstr(ctx));
+                fatal(ctx->line, "%s has wrong subtypes for %s near %s", tystr(a), tystr(b), ctxstr(ctx));
 
             unify(ctx, a->sub[i], b->sub[i]);
         }
@@ -258,7 +280,6 @@ static void unifycall(Node *n)
     if (ft->type == Tyvar) {
         /* the first arg is the function itself, so it shouldn't be counted */
         ft = mktyfunc(n->line, &n->expr.args[1], n->expr.nargs - 1, mktyvar(n->line));
-        unify(n, type(n->expr.args[0]), ft);
     }
     for (i = 1; i < n->expr.nargs; i++) {
         if (ft->sub[i]->type == Tyvalist)
@@ -293,13 +314,6 @@ static void checkns(Node *n, Node **ret)
     var->expr.did = s->decl.did;
     settype(var, s->decl.type);
     *ret = var;
-}
-
-static Type *freshen(Type *t)
-{
-    if (t->type != Typaram || bound(t))
-        return t;
-    return mktyvar(t->line);
 }
 
 static void inferexpr(Node *n, Type *ret, int *sawret)
@@ -431,8 +445,12 @@ static void inferexpr(Node *n, Type *ret, int *sawret)
             s = getdcl(curstab(), args[0]);
             if (!s)
                 fatal(n->line, "Undeclared var %s", ctxstr(args[0]));
+
+            if (s->decl.isgeneric)
+                t = freshen(s->decl.type);
             else
-                settype(n, freshen(s->decl.type));
+                t = s->decl.type;
+            settype(n, t);
             n->expr.did = s->decl.did;
             break;
         case Olit:      /* <lit>:@a::tyclass -> @a */
@@ -508,7 +526,7 @@ static void tybind(Htab *bt, Type *t)
 
     if (hthas(bt, t->pname))
         unify(NULL, htget(bt, t->pname), t);
-    else if (bound(t))
+    else if (isbound(t))
         return;
 
     htput(bt, t->pname, t);
