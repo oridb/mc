@@ -15,13 +15,13 @@
 #       evident.
 B main		E	0
 B add		E	53
-B mul     	E       42
-B div     	E       42
-B mod     	E       6
-B bsr     	E       5
+B mul		E	42
+B div		E	42
+B mod		E	6
+B bsr		E	5
 B struct1	E	12
 B struct	E	42
-B structasn	E       42
+B structasn	E	42
 B structret	E	42
 B array		E	7
 B arraylen	E	12
@@ -32,10 +32,11 @@ B voidcall	E	12
 B callbig	E	42
 B loop		E	45
 B fib		E	21
-B float   	E       1
-B log-and 	E       0
-B log-or  	E       1
-B str   	E       102
+B float		E	1
+B log-and	E	0
+B log-or	E	1
+B str		E	102
+B generic	E	102
 F declmismatch
 F infermismatch
 F flow

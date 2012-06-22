@@ -1,13 +1,9 @@
-generic max = {a:@a::tcnum, b::@a::tcnum
-	if (a > b)
-		-> a
-	else
-		-> b
-	;;
+generic id = {a:@a
+	-> a
 }
 
 const main = {
-	max('a', 'b')
-	-> max(1, 2)
+	id("adsf")
+	-> id(42)
 }
 
