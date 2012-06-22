@@ -43,6 +43,8 @@ Bitset *bsdup(Bitset *a)
 {
     Bitset *bs;
 
+    if (!a)
+        return NULL;
     bs = xalloc(sizeof(Bitset));
     bs->nchunks = a->nchunks;
     bs->chunks = xalloc(a->nchunks*sizeof(size_t));
