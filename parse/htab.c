@@ -25,6 +25,14 @@ Htab *mkht(ulong (*hash)(void *key), int (*cmp)(void *k1, void *k2))
     return ht;
 }
 
+void htfree(Htab *ht)
+{
+    free(ht->keys);
+    free(ht->vals);
+    free(ht->hashes);
+    free(ht);
+}
+
 static ulong hash(Htab *ht, void *k)
 {
     ulong h;

@@ -14,6 +14,8 @@
 
 static Node **postcheck;
 static size_t npostcheck;
+static Htab **tybindings;
+static size_t ntybindings;
 
 static void infernode(Node *n, Type *ret, int *sawret);
 static void inferexpr(Node *n, Type *ret, int *sawret);
@@ -28,6 +30,19 @@ static void setsuper(Stab *st, Stab *super)
     for (s = super; s; s = s->super)
         assert(s->super != st);
     st->super = super;
+}
+
+static int bound(Type *t)
+{
+    ssize_t i;
+    Type *p;
+
+    for (i = ntybindings - 1; i >= 0; i--) {
+        p = htget(tybindings[i], t->pname);
+        if (p == t)
+            return 1;
+    }
+    return 0;
 }
 
 static void tyresolve(Type *t)
@@ -280,6 +295,13 @@ static void checkns(Node *n, Node **ret)
     *ret = var;
 }
 
+static Type *freshen(Type *t)
+{
+    if (t->type != Typaram || bound(t))
+        return t;
+    return mktyvar(t->line);
+}
+
 static void inferexpr(Node *n, Type *ret, int *sawret)
 {
     Node **args;
@@ -410,7 +432,7 @@ static void inferexpr(Node *n, Type *ret, int *sawret)
             if (!s)
                 fatal(n->line, "Undeclared var %s", ctxstr(args[0]));
             else
-                settype(n, s->decl.type);
+                settype(n, freshen(s->decl.type));
             n->expr.did = s->decl.did;
             break;
         case Olit:      /* <lit>:@a::tyclass -> @a */
@@ -475,6 +497,50 @@ static void inferstab(Stab *s)
     free(k);
 }
 
+static void tybind(Htab *bt, Type *t)
+{
+    size_t i;
+
+    if (!t)
+        return;
+    if (t->type != Typaram)
+        return;
+
+    if (hthas(bt, t->pname))
+        unify(NULL, htget(bt, t->pname), t);
+    else if (bound(t))
+        return;
+
+    htput(bt, t->pname, t);
+    for (i = 0; i < t->nsub; i++)
+        tybind(bt, t->sub[i]);
+    printf("Bound @%s\n", t->pname);
+}
+
+static void bind(Node *n)
+{
+    Htab *bt;
+
+    if (!n->decl.isgeneric)
+        return;
+    if (!n->decl.init)
+        fatal(n->line, "generic %s has no initializer", n->decl);
+
+    bt = mkht(strhash, streq);
+    lappend(&tybindings, &ntybindings, bt);
+
+    tybind(bt, n->decl.type);
+    tybind(bt, n->decl.init->expr.type);
+}
+
+static void unbind(Node *n)
+{
+    if (!n->decl.isgeneric)
+        return;
+    htfree(tybindings[ntybindings - 1]);
+    lpop(&tybindings, &ntybindings);
+}
+
 static void infernode(Node *n, Type *ret, int *sawret)
 {
     size_t i;
@@ -502,7 +568,9 @@ static void infernode(Node *n, Type *ret, int *sawret)
             popstab();
             break;
         case Ndecl:
+            bind(n);
             inferdecl(n);
+            unbind(n);
             break;
         case Nblock:
             setsuper(n->block.scope, curstab());
@@ -532,6 +600,8 @@ static void infernode(Node *n, Type *ret, int *sawret)
             break;
         case Nfunc:
             setsuper(n->func.scope, curstab());
+            for (i = 0; i < n->func.nargs; i++)
+                tybind(tybindings[ntybindings - 1], n->func.args[i]->decl.type);
             pushstab(n->func.scope);
             inferstab(n->block.scope);
             inferfunc(n);

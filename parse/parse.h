@@ -239,6 +239,7 @@ size_t bsmax(Bitset *bs);
 size_t bscount(Bitset *bs);
 
 Htab *mkht(ulong (*hash)(void *key), int (*cmp)(void *k1, void *k2));
+void htfree(Htab *ht);
 int htput(Htab *ht, void *k, void *v);
 void *htget(Htab *ht, void *k);
 int hthas(Htab *ht, void *k);

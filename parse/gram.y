@@ -178,6 +178,7 @@ decl    : Tvar declbody Tendln
              $$ = $2;}
         | Tgeneric declbody Tendln
             {$2->decl.isconst = 1;
+             $2->decl.isgeneric = 1;
              $$ = $2;}
         | Textern Tvar declbody Tendln
             {$3->decl.isextern = 1;
