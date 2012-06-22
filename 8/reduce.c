@@ -565,7 +565,6 @@ static Node *rval(Simp *s, Node *n)
 {
     Node *r; /* expression result */
     Node *t, *u, *v; /* temporary nodes */
-    Type *ty;
     Node **args;
     size_t i;
     const Op fusedmap[] = {
@@ -704,7 +703,6 @@ static Node *rval(Simp *s, Node *n)
         case Ocall:
             if (exprtype(n)->type != Tyvoid && size(n) > 4) {
                 r = temp(s, n);
-                ty = mktyptr(n->line, exprtype(r));
                 linsert(&n->expr.args, &n->expr.nargs, 1, addr(r, exprtype(n)));
                 for (i = 0; i < n->expr.nargs; i++)
                     n->expr.args[i] = rval(s, n->expr.args[i]);
