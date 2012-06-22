@@ -633,8 +633,9 @@ static void infernode(Node *n, Type *ret, int *sawret)
             break;
         case Nfunc:
             setsuper(n->func.scope, curstab());
-            for (i = 0; i < n->func.nargs; i++)
-                tybind(tybindings[ntybindings - 1], n->func.args[i]->decl.type);
+            if (ntybindings > 0)
+                for (i = 0; i < n->func.nargs; i++)
+                    tybind(tybindings[ntybindings - 1], n->func.args[i]->decl.type);
             pushstab(n->func.scope);
             inferstab(n->block.scope);
             inferfunc(n);
