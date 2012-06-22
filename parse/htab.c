@@ -172,7 +172,15 @@ int streq(void *a, void *b)
 
 ulong ptrhash(void *key)
 {
-    return (ulong)key;
+    intptr_t h;
+
+    h = (intptr_t) key;
+    h *= 357913941;
+    h ^= h << 24;
+    h += ~357913941;
+    h ^= h >> 31;
+    h ^= h << 31;
+    return h;
 }
 
 int ptreq(void *a, void *b)

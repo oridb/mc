@@ -7,6 +7,7 @@ OBJ=bitset.o \
     names.o \
     node.o \
     pickle.o \
+    specialize.o \
     stab.o \
     tok.o \
     type.o \

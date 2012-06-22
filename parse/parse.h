@@ -345,6 +345,9 @@ void updatens(Stab *st, char *ns);
 Op exprop(Node *n);
 Node **aggrmemb(Type *t, size_t *n);
 
+/* specialize generics */
+Node *specialize(Node *n, Type *to, Type *from);
+
 /* usefiles */
 void readuse(Node *use, Stab *into);
 void writeuse(Node *file, FILE *out);
@@ -362,7 +365,7 @@ char *litstr(Littype lt);
 char *tidstr(Ty tid);
 
 /* convenience funcs */
-void lappend(void *l, size_t *len, void *n); /* ugly hack; nl is void* because void*** is incompatible with T*** */
+void lappend(void *l, size_t *len, void *n); /* hack; nl is void* b/c void*** is incompatible with T*** */
 void linsert(void *l, size_t *len, size_t idx, void *n);
 void *lpop(void *l, size_t *len);
 void ldel(void *l, size_t *len, size_t idx);
