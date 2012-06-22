@@ -902,7 +902,7 @@ static void lowerdcl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***b
     s.nblobs = *nblob;
 
     if (isconstfn(dcl)) {
-        if (!dcl->decl.isextern) {
+        if (!dcl->decl.isextern && !dcl->decl.isgeneric) {
             f = lowerfn(&s, name, dcl->decl.init);
             lappend(fn, nfn, f);
         }
