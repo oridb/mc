@@ -55,9 +55,9 @@ Bitset *bsclear(Bitset *bs)
     size_t i;
 
     if (!bs)
-	return mkbs();
+        return mkbs();
     for (i = 0; i < bs->nchunks; i++)
-	bs->chunks[i] = 0;
+        bs->chunks[i] = 0;
     return bs;
 }
 
@@ -78,10 +78,10 @@ int bsiter(Bitset *bs, size_t *elt)
     size_t i;
 
     for (i = *elt; i < bsmax(bs); i++) {
-	if (bshas(bs, i)) {
-	    *elt = i;
-	    return 1;
-	}
+        if (bshas(bs, i)) {
+            *elt = i;
+            return 1;
+        }
     }
     return 0;
 }
@@ -158,8 +158,8 @@ int bseq(Bitset *a, Bitset *b)
 
     eqsz(a, b);
     for (i = 0; i < a->nchunks; i++)
-	if (a->chunks[i] != b->chunks[i])
-	    return 0;
+        if (a->chunks[i] != b->chunks[i])
+            return 0;
     return 1;
 }
 
