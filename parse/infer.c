@@ -62,12 +62,9 @@ static Type *tyfreshen(Htab *ht, Type *t)
         return ret;
     }
 
-    ret = zalloc(sizeof(Type));
-    *ret = *t;
-    ret->sub = zalloc(t->nsub * sizeof(Type *));
+    ret = tydup(t);
     for (i = 0; i < t->nsub; i++)
         ret->sub[i] = tyfreshen(ht, t->sub[i]);
-    printf("Freshened %s to %s\n", tystr(t), tystr(ret));
     return ret;
 }
 

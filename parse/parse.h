@@ -287,6 +287,7 @@ void popstab(void);
 void tyinit(Stab *st); /* sets up built in types */
 
 Type *mkty(int line, Ty ty);
+Type *tydup(Type *t); /* shallow duplicate; all subtypes/members/... kept */
 Type *mktyvar(int line);
 Type *mktyparam(int line, char *name);
 Type *mktynamed(int line, Node *name);
