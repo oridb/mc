@@ -969,8 +969,10 @@ void gen(Node *file, char *out)
         for (i = 0; i < nfn; i++)
             genasm(stdout, fn[i], globls);
     }
+    fprintf(fd, ".data\n");
     for (i = 0; i < nblob; i++)
         genblob(fd, blob[i], globls);
+    fprintf(fd, ".text\n");
     for (i = 0; i < nfn; i++)
         genasm(fd, fn[i], globls);
     fclose(fd);

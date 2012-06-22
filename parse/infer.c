@@ -45,26 +45,41 @@ static int isbound(Type *t)
     return 0;
 }
 
-static Type *freshen(Type *t)
+static Type *tyfreshen(Htab *ht, Type *t)
 {
     Type *ret;
     size_t i;
 
     t = tf(t);
-    if (t->type == Typaram && !isbound(t))
-        return mktyvar(t->line);
-    if (t->nsub == 0)
+    if (t->type != Typaram && t->nsub == 0)
         return t;
+
+    if (t->type == Typaram) {
+        if (hthas(ht, t->pname))
+            return htget(ht, t->pname);
+        ret = mktyvar(t->line);
+        htput(ht, t->pname, ret);
+        return ret;
+    }
 
     ret = zalloc(sizeof(Type));
     *ret = *t;
     ret->sub = zalloc(t->nsub * sizeof(Type *));
     for (i = 0; i < t->nsub; i++)
-        ret->sub[i] = freshen(t->sub[i]);
+        ret->sub[i] = tyfreshen(ht, t->sub[i]);
     printf("Freshened %s to %s\n", tystr(t), tystr(ret));
     return ret;
 }
 
+static Type *freshen(Type *t)
+{
+    Htab *ht;
+
+    ht = mkht(strhash, streq);
+    t = tyfreshen(ht, t);
+    htfree(ht);
+    return t;
+}
 
 static void tyresolve(Type *t)
 {
@@ -175,9 +190,9 @@ static char *ctxstr(Node *n)
 {
     char *s;
     switch (n->type) {
-        default:        s = nodestr(n->type); 	break;
-        case Ndecl:     s = declname(n); 	break;
-        case Nname:     s = namestr(n); 	break;
+        default:        s = nodestr(n->type);   break;
+        case Ndecl:     s = declname(n);        break;
+        case Nname:     s = namestr(n);         break;
         case Nexpr:
             if (exprop(n) == Ovar)
                 s = namestr(n->expr.args[0]);
@@ -574,15 +589,15 @@ static void infernode(Node *n, Type *ret, int *sawret)
              * need to patch the types in if they don't have a definition */
             inferstab(n->file.globls);
             inferstab(n->file.exports);
-	    for (i = 0; i < n->file.nstmts; i++) {
-		d  = n->file.stmts[i];
-		infernode(d, NULL, sawret);
-		if (d->type == Ndecl)  {
-		    s = getdcl(file->file.exports, d->decl.name);
-		    if (s)
-			unify(d, type(d), s->decl.type);
-		}
-	    }
+            for (i = 0; i < n->file.nstmts; i++) {
+                d  = n->file.stmts[i];
+                infernode(d, NULL, sawret);
+                if (d->type == Ndecl)  {
+                    s = getdcl(file->file.exports, d->decl.name);
+                    if (s)
+                        unify(d, type(d), s->decl.type);
+                }
+            }
             popstab();
             break;
         case Ndecl:
@@ -730,8 +745,8 @@ static void stabsub(Stab *s)
 
     k = htkeys(s->dcl, &n);
     for (i = 0; i < n; i++) {
-	d = getdcl(s, k[i]);
-	d->decl.type = tyfix(d->decl.name, d->decl.type);
+        d = getdcl(s, k[i]);
+        d->decl.type = tyfix(d->decl.name, d->decl.type);
     }
     free(k);
 }
@@ -745,8 +760,8 @@ static void typesub(Node *n)
     switch (n->type) {
         case Nfile:
             pushstab(n->file.globls);
-	    stabsub(n->file.globls);
-	    stabsub(n->file.exports);
+            stabsub(n->file.globls);
+            stabsub(n->file.exports);
             for (i = 0; i < n->file.nstmts; i++)
                 typesub(n->file.stmts[i]);
             popstab();
