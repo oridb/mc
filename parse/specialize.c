@@ -201,10 +201,15 @@ Node *specializedcl(Node *n, Type *to, Node **name)
     assert(n->decl.isgeneric);
 
     *name = genericname(n, to);
+    d = getdcl(file->file.globls, *name);
+    if (d)
+        return d;
     tsmap = mkht(tidhash, tideq);
     fillsubst(tsmap, to, n->decl.type);
     d = specializenode(n, tsmap);
     d->decl.name = *name;
     dump(d, stdout);
+    putdcl(file->file.globls, d);
+    lappend(&n->file.stmts, &n->file.nstmts, d);
     return d;
 }
