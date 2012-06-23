@@ -152,6 +152,7 @@ static Node *specializenode(Node *n, Htab *tsmap)
             break;
         case Nfunc:
             r->func.scope = mkstab();
+            r->func.type = tysubst(n->func.type, tsmap);
             r->func.nargs = n->func.nargs;
             r->func.args = xalloc(sizeof(Node *)*n->func.nargs);
             for (i = 0; i < n->func.nargs; i++)

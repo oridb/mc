@@ -36,7 +36,7 @@ B float		E	1
 B log-and	E	0
 B log-or	E	1
 B str		E	102
-B generic	E	102
+B generic	E	42
 F declmismatch
 F infermismatch
 F flow
