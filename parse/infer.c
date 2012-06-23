@@ -16,6 +16,10 @@ static Node **postcheck;
 static size_t npostcheck;
 static Htab **tybindings;
 static size_t ntybindings;
+static Node **genericdecls;
+static size_t ngenericdecls;
+static Node **specializations;
+static size_t nspecializations;
 
 static void infernode(Node *n, Type *ret, int *sawret);
 static void inferexpr(Node *n, Type *ret, int *sawret);
@@ -464,6 +468,10 @@ static void inferexpr(Node *n, Type *ret, int *sawret)
                 t = s->decl.type;
             settype(n, t);
             n->expr.did = s->decl.did;
+            if (s->decl.isgeneric) {
+                lappend(&specializations, &nspecializations, n);
+                lappend(&genericdecls, &ngenericdecls, s);
+            }
             break;
         case Olit:      /* <lit>:@a::tyclass -> @a */
             switch (args[0]->lit.littype) {
@@ -867,6 +875,17 @@ void mergeexports(Node *file)
     popstab();
 }
 
+void specialize(Node *f)
+{
+    Node *n;
+    size_t i;
+
+    for (i = 0; i < nspecializations; i++) {
+        n = specializedcl(genericdecls[i], specializations[i]->expr.type, NULL);
+        dump(n, stdout);
+    }
+}
+
 void infer(Node *file)
 {
     assert(file->type == Nfile);
@@ -877,4 +896,5 @@ void infer(Node *file)
     infercompn(file);
     checkcast(file);
     typesub(file);
+    specialize(file);
 }

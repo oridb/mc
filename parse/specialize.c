@@ -45,12 +45,14 @@ static Type *dosubst(Type *t, Htab *tsmap)
     Type *ret;
     size_t i;
 
-    if (t->type == Typaram)
-        return htget(tsmap, t);
-
-    ret = tydup(t);
-    for (i = 0; i < t->nsub; i++)
-        ret->sub[i] = dosubst(t->sub[i], tsmap);
+    if (t->type == Typaram) {
+        ret = htget(tsmap, t);
+    } else {
+        ret = tydup(t);
+        for (i = 0; i < t->nsub; i++)
+            ret->sub[i] = dosubst(t->sub[i], tsmap);
+    }
+    assert(ret != NULL);
     return ret;
 }
 
@@ -79,6 +81,8 @@ static Node *specializenode(Node *n, Htab *tsmap)
     Node *r;
     size_t i;
 
+    if (!n)
+        return NULL;
     r = mknode(n->line, n->type);
     switch (n->type) {
         case Nfile:
@@ -103,13 +107,13 @@ static Node *specializenode(Node *n, Htab *tsmap)
             r->lit.littype = n->lit.littype;
             r->lit.type = tysubst(n->expr.type, tsmap);
             switch (n->lit.littype) {
-                case Lchr:      n->lit.chrval = n->lit.chrval;       break;
-                case Lint:      n->lit.intval = n->lit.intval;       break;
-                case Lflt:      n->lit.fltval = n->lit.fltval;       break;
-                case Lstr:      n->lit.strval = n->lit.strval;       break;
-                case Lbool:     n->lit.boolval = n->lit.boolval;     break;
-                case Lfunc:     n->lit.fnval = specializenode(n->lit.fnval, tsmap);       break;
-                case Larray:    n->lit.arrval = specializenode(n->lit.arrval, tsmap);     break;
+                case Lchr:      r->lit.chrval = n->lit.chrval;       break;
+                case Lint:      r->lit.intval = n->lit.intval;       break;
+                case Lflt:      r->lit.fltval = n->lit.fltval;       break;
+                case Lstr:      r->lit.strval = n->lit.strval;       break;
+                case Lbool:     r->lit.boolval = n->lit.boolval;     break;
+                case Lfunc:     r->lit.fnval = specializenode(n->lit.fnval, tsmap);       break;
+                case Larray:    r->lit.arrval = specializenode(n->lit.arrval, tsmap);     break;
             }
             break;
         case Nloopstmt:
@@ -136,7 +140,7 @@ static Node *specializenode(Node *n, Htab *tsmap)
         case Ndecl:
             /* sym */
             r->decl.name = specializenode(n->decl.name, tsmap);
-            n->decl.type = tysubst(n->decl.type, tsmap);
+            r->decl.type = tysubst(n->decl.type, tsmap);
 
             /* symflags */
             r->decl.isconst = n->decl.isconst;
@@ -161,11 +165,14 @@ static Node *specializenode(Node *n, Htab *tsmap)
     return r;
 }
 
-Node *specialize(Node *n, Type *to, Type *from)
+Node *specializedcl(Node *n, Type *to, Node **dcl)
 {
     Htab *tsmap;
 
+    assert(n->type == Ndecl);
+    assert(n->decl.isgeneric);
+
     tsmap = mkht(tidhash, tideq);
-    fillsubst(tsmap, to, from);
+    fillsubst(tsmap, to, n->decl.type);
     return specializenode(n, tsmap);
 }
