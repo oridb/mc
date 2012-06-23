@@ -249,6 +249,18 @@ static int idxhacked(Type **pa, Type **pb)
     return (a->type == Tyvar && a->nsub > 0) || a->type == Tyarray || a->type == Tyslice;
 }
 
+static int occurs(Type *a, Type *b)
+{
+    size_t i;
+
+    if (a == b)
+        return 1;
+    for (i = 0; i < b->nsub; i++)
+        if (occurs(a, b->sub[i]))
+            return 1;
+    return 0;
+}
+
 static Type *unify(Node *ctx, Type *a, Type *b)
 {
     Type *t;
@@ -272,6 +284,10 @@ static Type *unify(Node *ctx, Type *a, Type *b)
         tytab[a->tid] = b;
         r = b;
     }
+    if (b->type != Tyvar) 
+        if (occurs(a, b))
+            fatal(ctx->line, "Infinite type %s in %s near %s", tystr(a), tystr(b), ctxstr(ctx));
+
     if (a->type == b->type || idxhacked(&a, &b)) {
         for (i = 0; i < b->nsub; i++) {
             /* types must have same arity */
