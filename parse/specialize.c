@@ -173,9 +173,9 @@ size_t tidappend(char *buf, size_t sz, Type *t)
 
     p = buf;
     end = buf + sz;
-    p += snprintf(buf, end - p, "$%d", t->tid);
+    p += snprintf(p, end - p, "$%d", t->tid);
     for (i = 0; i < t->nsub; i++)
-        p += tidappend(buf, end - p, t->sub[i]);
+        p += tidappend(p, end - p, t->sub[i]);
     return end - p;
 }
 
@@ -208,8 +208,8 @@ Node *specializedcl(Node *n, Type *to, Node **name)
     fillsubst(tsmap, to, n->decl.type);
     d = specializenode(n, tsmap);
     d->decl.name = *name;
-    dump(d, stdout);
+    d->decl.isgeneric = 0; /* we've specialized it */
     putdcl(file->file.globls, d);
-    lappend(&n->file.stmts, &n->file.nstmts, d);
+    lappend(&file->file.stmts, &file->file.nstmts, d);
     return d;
 }
