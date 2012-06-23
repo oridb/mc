@@ -37,7 +37,7 @@ Type *mkty(int line, Ty ty)
     tytab[t->tid] = NULL;
 
     for(i = 0; tycstrs[ty][i]; i++)
-        constrain(t, tycstrs[ty][i]);
+        setcstr(t, tycstrs[ty][i]);
 
     return t;
 }
@@ -68,7 +68,7 @@ Type *tylike(Type *t, Ty like)
     int i;
 
     for (i = 0; tycstrs[like][i]; i++)
-        constrain(t, tycstrs[like][i]);
+        setcstr(t, tycstrs[like][i]);
     return t;
 }
 
@@ -223,7 +223,7 @@ static int namefmt(char *buf, size_t len, Node *n)
     return len - (end - p);
 }
 
-int constrain(Type *t, Cstr *c)
+int setcstr(Type *t, Cstr *c)
 {
     if (!t->cstrs)
         t->cstrs = mkbs();

@@ -282,7 +282,6 @@ Stab *curstab(void);
 void pushstab(Stab *st);
 void popstab(void);
 
-
 /* type creation */
 void tyinit(Stab *st); /* sets up built in types */
 
@@ -305,7 +304,7 @@ int   istysigned(Type *t);
 /* type manipulation */
 int hascstr(Type *t, Cstr *c);
 int cstreq(Type *t, Cstr **cstrs, size_t len);
-int constrain(Type *t, Cstr *c);
+int setcstr(Type *t, Cstr *c);
 char *tyfmt(char *buf, size_t len, Type *t);
 char *tystr(Type *t);
 

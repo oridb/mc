@@ -204,13 +204,12 @@ static char *ctxstr(Node *n)
     return s;
 }
 
-
-static void constrainby(Node *ctx, Type *a, Cstr *c)
+static void constrain(Node *ctx, Type *a, Cstr *c)
 {
     if (a->type == Tyvar) {
         if (!a->cstrs)
             a->cstrs = mkbs();
-        constrain(a, c);
+        setcstr(a, c);
     } else if (!bshas(a->cstrs, c->cid)) {
             fatal(ctx->line, "%s needs %s near %s", tystr(a), c->name, ctxstr(ctx));
     }
@@ -431,7 +430,7 @@ static void inferexpr(Node *n, Type *ret, int *sawret)
         case Oidx:      /* @a[@b::tcint] -> @a */
             t = mktyidxhack(n->line, mktyvar(n->line));
             unify(n, type(args[0]), t);
-            constrainby(n, type(args[1]), cstrtab[Tcint]);
+            constrain(n, type(args[1]), cstrtab[Tcint]);
             settype(n, tf(t->sub[0]));
             break;
         case Oslice:    /* @a[@b::tcint,@b::tcint] -> @a[,] */
@@ -640,14 +639,14 @@ static void infernode(Node *n, Type *ret, int *sawret)
             infernode(n->ifstmt.cond, NULL, sawret);
             infernode(n->ifstmt.iftrue, ret, sawret);
             infernode(n->ifstmt.iffalse, ret, sawret);
-            constrain(type(n->ifstmt.cond), cstrtab[Tctest]);
+            constrain(n, type(n->ifstmt.cond), cstrtab[Tctest]);
             break;
         case Nloopstmt:
             infernode(n->loopstmt.init, ret, sawret);
             infernode(n->loopstmt.cond, NULL, sawret);
             infernode(n->loopstmt.step, ret, sawret);
             infernode(n->loopstmt.body, ret, sawret);
-            constrain(type(n->loopstmt.cond), cstrtab[Tctest]);
+            constrain(n, type(n->loopstmt.cond), cstrtab[Tctest]);
             break;
         case Nexpr:
             inferexpr(n, ret, sawret);
@@ -728,9 +727,9 @@ static void infercompn(Node *file)
         t = tf(type(aggr));
         if (t->type == Tyslice || t->type == Tyarray) {
             if (!strcmp(namestr(memb), "len")) {
-                constrain(type(n), cstrtab[Tcnum]);
-                constrain(type(n), cstrtab[Tcint]);
-                constrain(type(n), cstrtab[Tctest]);
+                constrain(n, type(n), cstrtab[Tcnum]);
+                constrain(n, type(n), cstrtab[Tcint]);
+                constrain(n, type(n), cstrtab[Tctest]);
                 found = 1;
             }
         } else {
