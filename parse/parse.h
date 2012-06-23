@@ -346,7 +346,7 @@ Op exprop(Node *n);
 Node **aggrmemb(Type *t, size_t *n);
 
 /* specialize generics */
-Node *specializedcl(Node *n, Type *to, Node **dcl);
+Node *specializedcl(Node *n, Type *to, Node **name);
 
 /* usefiles */
 void readuse(Node *use, Stab *into);

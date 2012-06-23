@@ -165,14 +165,46 @@ static Node *specializenode(Node *n, Htab *tsmap)
     return r;
 }
 
-Node *specializedcl(Node *n, Type *to, Node **dcl)
+size_t tidappend(char *buf, size_t sz, Type *t)
+{
+    char *p;
+    char *end;
+    size_t i;
+
+    p = buf;
+    end = buf + sz;
+    p += snprintf(buf, end - p, "$%d", t->tid);
+    for (i = 0; i < t->nsub; i++)
+        p += tidappend(buf, end - p, t->sub[i]);
+    return end - p;
+}
+
+Node *genericname(Node *n, Type *t)
+{
+    char buf[1024];
+    char *p;
+    char *end;
+
+    p = buf;
+    end = buf + 1024;
+    p += snprintf(p, end - p, "%s", n->decl.name->name.name);
+    tidappend(p, end - p, t);
+    return mkname(n->line, buf);
+}
+
+Node *specializedcl(Node *n, Type *to, Node **name)
 {
     Htab *tsmap;
+    Node *d;
 
     assert(n->type == Ndecl);
     assert(n->decl.isgeneric);
 
+    *name = genericname(n, to);
     tsmap = mkht(tidhash, tideq);
     fillsubst(tsmap, to, n->decl.type);
-    return specializenode(n, tsmap);
+    d = specializenode(n, tsmap);
+    d->decl.name = *name;
+    dump(d, stdout);
+    return d;
 }

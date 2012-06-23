@@ -877,12 +877,12 @@ void mergeexports(Node *file)
 
 void specialize(Node *f)
 {
-    Node *n;
+    Node *d, *name;
     size_t i;
 
     for (i = 0; i < nspecializations; i++) {
-        n = specializedcl(genericdecls[i], specializations[i]->expr.type, NULL);
-        dump(n, stdout);
+        d = specializedcl(genericdecls[i], specializations[i]->expr.type, &name);
+        specializations[i]->expr.args[0] = name;
     }
 }
 
