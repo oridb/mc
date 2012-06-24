@@ -684,7 +684,7 @@ static Node *rval(Simp *s, Node *n)
                 u = word(n->line, size(args[0]));
                 v = mkexpr(n->line, Oblit, s->ret, t, u, NULL);
                 append(s, v);
-            } else if (n->expr.args[0]) {
+            } else if (n->expr.nargs && n->expr.args[0]) {
                 t = s->ret;
                 t = store(t, rval(s, args[0]));
                 append(s, t);

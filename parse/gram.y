@@ -335,6 +335,8 @@ unionelt
 retexpr : Tret exprln
             {$$ = mkexpr($1->line, Oret, $2, NULL);}
         | exprln
+        | Tret Tendln
+            {$$ = mkexpr($1->line, Oret, NULL);}
         ;
 
 exprln  : expr Tendln

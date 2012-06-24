@@ -339,6 +339,8 @@ static void checkns(Node *n, Node **ret)
 
     if (n->type != Nexpr)
         return;
+    if (!n->expr.nargs)
+        return;
     args = n->expr.args;
     if (exprop(args[0]) != Ovar)
         return;
