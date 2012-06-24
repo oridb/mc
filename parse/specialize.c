@@ -11,21 +11,21 @@
 
 #include "parse.h"
 
-static ulong tidhash(void *p)
+static ulong tyhash(void *p)
 {
     Type *t;
 
     t = p;
-    return ptrhash((void*)(intptr_t)t->tid);
+    return strhash(t->pname);
 }
 
-static int tideq(void *pa, void *pb)
+static int tyeq(void *pa, void *pb)
 {
     Type *a, *b;
 
     a = pa;
     b = pb;
-    return a->tid == b->tid;
+    return streq(a->pname, b->pname);
 }
 
 static int hasparams(Type *t)
@@ -68,8 +68,10 @@ static void fillsubst(Htab *tsmap, Type *to, Type *from)
 {
     size_t i;
 
-    printf("Specialize %s => %s\n", tystr(from), tystr(to));
-    htput(tsmap, from, to);
+    if (from->type == Typaram) {
+        printf("Specialize %s => %s\n", tystr(from), tystr(to));
+        htput(tsmap, from, to);
+    }
     if (to->nsub != from->nsub)
         return;
     for (i = 0; i < to->nsub; i++)
@@ -138,6 +140,7 @@ static Node *specializenode(Node *n, Htab *tsmap)
             r->lbl.name = strdup(n->lbl.name);
             break;
         case Ndecl:
+            r->decl.did = maxdid++;
             /* sym */
             r->decl.name = specializenode(n->decl.name, tsmap);
             r->decl.type = tysubst(n->decl.type, tsmap);
@@ -205,7 +208,7 @@ Node *specializedcl(Node *n, Type *to, Node **name)
     d = getdcl(file->file.globls, *name);
     if (d)
         return d;
-    tsmap = mkht(tidhash, tideq);
+    tsmap = mkht(tyhash, tyeq);
     fillsubst(tsmap, to, n->decl.type);
     d = specializenode(n, tsmap);
     d->decl.name = *name;

@@ -412,6 +412,7 @@ Node *unpickle(FILE *fd)
             n->lbl.name = rdstr(fd);
             break;
         case Ndecl:
+            n->decl.did = maxdid++; /* unique within file */
             /* sym */
             n->decl.name = unpickle(fd);
             n->decl.type = rdtype(fd);

@@ -13,6 +13,7 @@
 #include "parse.h"
 
 int maxnid;
+int maxdid;
 
 Node *mknode(int line, Ntype nt)
 {
@@ -210,11 +211,10 @@ Node *mknsname(int line, char *ns, char *name)
 
 Node *mkdecl(int line, Node *name, Type *ty)
 {
-    static int nextdid;
     Node *n;
 
     n = mknode(line, Ndecl);
-    n->decl.did = nextdid++;
+    n->decl.did = maxdid++;
     n->decl.name = name;
     n->decl.type = ty;
     return n;

@@ -217,6 +217,7 @@ extern int ntypes;
 extern Cstr **cstrtab;  /* int -> cstr map */
 extern int ncstrs;
 extern int maxnid;      /* the maximum node id generated so far */
+extern int maxdid;      /* the maximum decl id generated so far */
 
 extern int ispureop[];
 
