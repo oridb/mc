@@ -97,6 +97,7 @@ struct Type {
     size_t nmemb;     /* for aggregate types (struct, union) */
     Type **sub;       /* sub-types; shared by all composite types */
     union {
+        Node *aname;   /* Tyalias: alias name */
         Node *name;    /* Tyname: unresolved name */
         Node *asize;   /* array size */
         char *pname;   /* Typaram: name of type parameter */
@@ -290,6 +291,7 @@ Type *mkty(int line, Ty ty);
 Type *tydup(Type *t); /* shallow duplicate; all subtypes/members/... kept */
 Type *mktyvar(int line);
 Type *mktyparam(int line, char *name);
+Type *mktyalias(int line, Node *name, Type *base);
 Type *mktynamed(int line, Node *name);
 Type *mktyarray(int line, Type *base, Node *sz);
 Type *mktyslice(int line, Type *base);
@@ -303,6 +305,7 @@ Type *tylike(Type *t, Ty ty); /* constrains tyvar t like it was builtin ty */
 int   istysigned(Type *t);
 
 /* type manipulation */
+Type *tybase(Type *t);
 int hascstr(Type *t, Cstr *c);
 int cstreq(Type *t, Cstr **cstrs, size_t len);
 int setcstr(Type *t, Cstr *c);

@@ -223,6 +223,8 @@ size_t tysize(Type *t)
 
         case Tyslice:
             return 8; /* len; ptr */
+        case Tyalias:
+            return tysize(t->sub[0]);
         case Tyarray:
             assert(exprop(t->asize) == Olit);
             return t->asize->expr.args[0]->lit.intval * tysize(t->sub[0]);
@@ -377,6 +379,7 @@ static size_t offsetof(Node *aggr, Node *memb)
     if (aggr->expr.type->type == Typtr)
         aggr = aggr->expr.args[0];
     ty = aggr->expr.type;
+    ty = tybase(ty);
 
     assert(ty->type == Tystruct);
     nl = aggrmemb(ty, &nn);

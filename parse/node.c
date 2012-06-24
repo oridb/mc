@@ -272,17 +272,6 @@ Op exprop(Node *e)
     return e->expr.op;
 }
 
-Node **aggrmemb(Type *t, size_t *n)
-{
-    *n = t->nmemb;
-    switch (t->type) {
-        case Tystruct: return t->sdecls; break;
-        case Tyunion: return t->udecls; break;
-        case Tyarray: return &t->asize; break;
-        default: return NULL;
-    }
-}
-
 char *namestr(Node *name)
 {
     if (!name)

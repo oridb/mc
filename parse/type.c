@@ -117,6 +117,19 @@ Type *mktynamed(int line, Node *name)
     return t;
 }
 
+Type *mktyalias(int line, Node *name, Type *base)
+{
+    Type *t;
+
+    t = mkty(line, Tyalias);
+    t->name = name;
+    t->nsub = 1;
+    t->cstrs = bsdup(base->cstrs);
+    t->sub = xalloc(sizeof(Type*));
+    t->sub[0] = base;
+    return t;
+}
+
 Type *mktyarray(int line, Type *base, Node *sz)
 {
     Type *t;
@@ -207,6 +220,25 @@ int istysigned(Type *t)
             return 1;
         default:
             return 0;
+    }
+}
+
+Type *tybase(Type *t)
+{
+    while (t->type == Tyalias)
+        t = t->sub[0];
+    return t;
+}
+
+Node **aggrmemb(Type *t, size_t *n)
+{
+    t = tybase(t);
+    *n = t->nmemb;
+    switch (t->type) {
+        case Tystruct:  return t->sdecls;               break;
+        case Tyunion:   return t->udecls;               break;
+        case Tyarray:   return &t->asize;               break;
+        default: return NULL;
     }
 }
 
@@ -374,6 +406,9 @@ static int tybfmt(char *buf, size_t len, Type *t)
         case Tyname:
             p += snprintf(p, end - p, "?"); /* indicate unresolved name. should not be seen by user. */
             p += namefmt(p, end - p, t->name);
+            break;
+        case Tyalias:  
+            p += snprintf(p, end - p, "%s", namestr(t->aname));
             break;
         case Tystruct:  p += fmtstruct(p, end - p, t);  break;
         case Tyunion:   p += fmtunion(p, end - p, t);   break;

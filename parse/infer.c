@@ -92,12 +92,12 @@ static void tyresolve(Type *t)
 
     if (t->resolved)
         return;
+    t->resolved = 1;
     n = aggrmemb(t, &nn);
     for (i = 0; i < nn; i++)
         infernode(n[i], NULL, NULL);
     for (i = 0; i < t->nsub; i++)
         t->sub[i] = tf(t->sub[i]);
-    t->resolved = 1;
 }
 
 /* fixd the most accurate type mapping we have */

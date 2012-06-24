@@ -241,7 +241,7 @@ name    : Tident
 tydef   : Ttype Tident Tasn type Tendln
             {$$.line = $1->line;
              $$.name = $2->str;
-             $$.type = $4;}
+             $$.type = mktyalias($2->line, mkname($2->line, $2->str), $4);}
         | Ttype Tident Tendln
             {$$.line = $1->line;
              $$.name = $2->str;
