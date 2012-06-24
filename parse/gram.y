@@ -100,6 +100,7 @@ Stab *curscope;
 %token<tok> Tendln           /* ; or \n */
 %token<tok> Tendblk  /* ;; */
 %token<tok> Tcolon   /* : */
+%token<tok> Tcoloncolon   /* :: */
 %token<tok> Tdot             /* . */
 %token<tok> Tcomma   /* , */
 %token<tok> Tret             /* -> */

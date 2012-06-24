@@ -240,8 +240,8 @@ static Tok *charlit()
         else if (c == '\n')
             fatal(line, "Newlines not allowed in char lit");
     };
-    t = mktok(Tstrlit);
-    t->str = strdupn(&fbuf[sstart], fidx - sstart);
+    t = mktok(Tchrlit);
+    t->str = strdupn(&fbuf[sstart], fidx - sstart - 1);
     return t;
 }
 
@@ -259,7 +259,12 @@ static Tok *oper(void)
         case '[': tt = Tosqbrac; break;
         case ']': tt = Tcsqbrac; break;
         case ',': tt = Tcomma; break;
-        case ':': tt = Tcolon; break;
+        case ':':
+                  if (match(':'))
+                      tt = Tcoloncolon;
+                  else 
+                      tt = Tcolon;
+                  break;
         case '~': tt = Tbnot; break;
         case ';':
                   if (match(';'))

@@ -19,7 +19,10 @@ static size_t ntybindings;
 static Node **genericdecls;
 static size_t ngenericdecls;
 static Node **specializations;
+static Node **specializations;
 static size_t nspecializations;
+static Stab **specializationscope;
+static size_t nspecializationscope;
 
 static void infernode(Node *n, Type *ret, int *sawret);
 static void inferexpr(Node *n, Type *ret, int *sawret);
@@ -119,20 +122,6 @@ static Type *tf(Type *t)
     return t;
 }
 
-/* does b satisfy all the constraints of a? */
-static int cstrcheck(Type *a, Type *b)
-{
-    /* a has no cstrs to satisfy */
-    if (!a->cstrs)
-        return 1;
-    /* b satisfies no cstrs; only valid if a requires none */
-    if (!b->cstrs)
-        return bscount(a->cstrs) == 0;
-    /* if a->cstrs is a subset of b->cstrs, all of
-     * a's constraints are satisfied by b. */
-    return bsissubset(b->cstrs, a->cstrs);
-}
-
 static void loaduses(Node *n)
 {
     size_t i;
@@ -215,6 +204,20 @@ static void constrain(Node *ctx, Type *a, Cstr *c)
     }
 }
 
+/* does b satisfy all the constraints of a? */
+static int cstrcheck(Type *a, Type *b)
+{
+    /* a has no cstrs to satisfy */
+    if (!a->cstrs)
+        return 1;
+    /* b satisfies no cstrs; only valid if a requires none */
+    if (!b->cstrs)
+        return bscount(a->cstrs) == 0;
+    /* if a->cstrs is a subset of b->cstrs, all of
+     * a's constraints are satisfied by b. */
+    return bsissubset(b->cstrs, a->cstrs);
+}
+
 static void mergecstrs(Node *ctx, Type *a, Type *b)
 {
     if (b->type == Tyvar) {
@@ -228,7 +231,7 @@ static void mergecstrs(Node *ctx, Type *a, Type *b)
     } else {
         if (!cstrcheck(a, b)) {
             dump(file, stdout);
-            fatal(ctx->line, "%s does not match constraints for %s near %s", tystr(a), tystr(b), ctxstr(ctx));
+            fatal(ctx->line, "%s missing constraints for %s near %s", tystr(b), tystr(a), ctxstr(ctx));
         }
     }
 }
@@ -445,7 +448,7 @@ static void inferexpr(Node *n, Type *ret, int *sawret)
             lappend(&postcheck, &npostcheck, n);
             break;
         case Osize:     /* sizeof @a -> size */
-            die("inference of sizes not done yet");
+            settype(n, mkty(n->line, Tyuint));
             break;
         case Ocall:     /* (@a, @b, @c, ... -> @r)(@a,@b,@c, ... -> @r) -> @r */
             unifycall(n);
@@ -484,6 +487,7 @@ static void inferexpr(Node *n, Type *ret, int *sawret)
             settype(n, t);
             n->expr.did = s->decl.did;
             if (s->decl.isgeneric) {
+                lappend(&specializationscope, &nspecializationscope, curstab());
                 lappend(&specializations, &nspecializations, n);
                 lappend(&genericdecls, &ngenericdecls, s);
             }
@@ -689,7 +693,7 @@ static Type *tyfix(Node *ctx, Type *t)
 
     t = tf(t);
     if (t->type == Tyvar) {
-        if (hascstr(t, cstrtab[Tcint]) && cstrcheck(t, tyint))
+        if (hascstr(t, cstrtab[Tcint]) || cstrcheck(t, tyint))
             return tyint;
     } else {
         if (t->type == Tyarray)
@@ -892,12 +896,15 @@ void mergeexports(Node *file)
 
 void specialize(Node *f)
 {
-    Node *name;
+    Node *d, *name;
     size_t i;
 
     for (i = 0; i < nspecializations; i++) {
-        specializedcl(genericdecls[i], specializations[i]->expr.type, &name);
+        pushstab(specializationscope[i]);
+        d = specializedcl(genericdecls[i], specializations[i]->expr.type, &name);
         specializations[i]->expr.args[0] = name;
+        specializations[i]->expr.did = d->decl.did;
+        popstab();
     }
 }
 

@@ -62,6 +62,7 @@ static Loc *loc(Isel *s, Node *n)
                 l = locmem(-stkoff, locphysreg(Rebp), NULL, ModeL);
             } else if (hthas(s->globls, n)) {
                 l = locstrlbl(htget(s->globls, n));
+                assert(!strcmp(namestr(n->expr.args[0]), l->lbl));
             } else {
                 die("%s (id=%ld) not found", namestr(n->expr.args[0]), n->expr.did);
             }

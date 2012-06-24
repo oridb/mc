@@ -13,10 +13,17 @@
 #include "parse.h"
 
 typedef struct Tydefn Tydefn;
+typedef struct Cstrdefn Cstrdefn;
 struct Tydefn {
     int line;
     Node *name;
     Type *type;
+};
+
+struct Cstrdefn {
+    int line;
+    Node *name;
+    Cstr *cstr;
 };
 
 #define Maxstabdepth 128
@@ -91,6 +98,18 @@ Type *gettype(Stab *st, Node *n)
     return NULL;
 }
 
+Cstr *getcstr(Stab *st, Node *n)
+{
+    Cstrdefn *c;
+    
+    do {
+        if ((c = htget(st->ty, n)))
+            return c->cstr;
+        st = st->super;
+    } while (st);
+    return NULL;
+}
+
 Stab *getns(Stab *st, Node *n)
 {
     Stab *s;
@@ -126,17 +145,28 @@ void updatetype(Stab *st, Node *n, Type *t)
 
 void puttype(Stab *st, Node *n, Type *t)
 {
-    Type *ty;
     Tydefn *td;
 
-    ty = gettype(st, n);
-    if (ty)
+    if (gettype(st, n))
         fatal(n->line, "Type %s already defined", namestr(n));
     td = xalloc(sizeof(Tydefn));
     td->line = n->line;
     td->name = n;
     td->type = t;
     htput(st->ty, td->name, td);
+}
+
+void putcstr(Stab *st, Node *n, Cstr *c)
+{
+    Cstrdefn *cd;
+
+    if (gettype(st, n))
+        fatal(n->line, "Type %s already defined", namestr(n));
+    cd = xalloc(sizeof(Tydefn));
+    cd->line = n->line;
+    cd->name = n;
+    cd->cstr = c;
+    htput(st->ty, cd->name, cd);
 }
 
 void putns(Stab *st, Stab *scope)
