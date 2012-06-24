@@ -17,6 +17,7 @@
 void yyerror(const char *s);
 int yylex(void);
 static Op binop(int toktype);
+static Node *mkpseudodecl(Type *t);
 Stab *curscope;
 
 %}
@@ -461,8 +462,8 @@ atomicexpr
         | literal {$$ = mkexpr($1->line, Olit, $1, NULL);}
         | Toparen expr Tcparen
             {$$ = $2;}
-        | Tsizeof atomicexpr
-            {$$ = mkexpr($1->line, Osize, $2, NULL);}
+        | Tsizeof Toparen type Tcparen
+            {$$ = mkexpr($1->line, Osize, mkpseudodecl($3), NULL);}
         ;
 
 literal : funclit       {$$ = $1;}
@@ -557,6 +558,16 @@ label   : Tcolon Tident
         ;
 
 %%
+
+static Node *mkpseudodecl(Type *t)
+{
+    static int nextpseudoid;
+    char buf[128];
+
+    snprintf(buf, 128, ".pdecl%d", nextpseudoid++);
+    return mkdecl(-1, mkname(-1, buf), t);
+}
+
 
 void yyerror(const char *s)
 {
