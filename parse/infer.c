@@ -88,6 +88,7 @@ static Type *freshen(Type *t)
 static void tyresolve(Type *t)
 {
     size_t i, nn;
+    Type *base;
     Node **n;
 
     if (t->resolved)
@@ -98,6 +99,11 @@ static void tyresolve(Type *t)
         infernode(n[i], NULL, NULL);
     for (i = 0; i < t->nsub; i++)
         t->sub[i] = tf(t->sub[i]);
+    base = tybase(t);
+    if (t->cstrs)
+        bsunion(t->cstrs, base->cstrs);
+    else
+        t->cstrs = bsdup(base->cstrs);
 }
 
 /* fixd the most accurate type mapping we have */
