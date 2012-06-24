@@ -292,7 +292,7 @@ static Type *unify(Node *ctx, Type *a, Type *b)
         tytab[a->tid] = b;
         r = b;
     }
-    if (b->type != Tyvar) 
+    if (a->type == Tyvar && b->type != Tyvar) 
         if (occurs(a, b))
             fatal(ctx->line, "Infinite type %s in %s near %s", tystr(a), tystr(b), ctxstr(ctx));
 
