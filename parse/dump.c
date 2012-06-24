@@ -116,7 +116,8 @@ static void outnode(Node *n, FILE *fd, int depth)
                 outnode(n->file.stmts[i], fd, depth + 1);
             break;
         case Ndecl:
-            fprintf(fd, "\n");
+            fprintf(fd, "(did = %zd, isconst = %d, isgeneric = %d, isextern = %d\n",
+                    n->decl.did, n->decl.isconst, n->decl.isgeneric, n->decl.isextern);
             outsym(n, fd, depth + 1);
             outnode(n->decl.init, fd, depth + 1);
             break;
@@ -143,7 +144,8 @@ static void outnode(Node *n, FILE *fd, int depth)
             break;
         case Nexpr:
             ty = tystr(n->expr.type);
-            fprintf(fd, " (type = %s, op = %s, flags = %d)\n", ty, opstr(n->expr.op), n->expr.isconst);
+            fprintf(fd, " (type = %s, op = %s, flags = %d, did=%zd)\n",
+                    ty, opstr(n->expr.op), n->expr.isconst, n->expr.did);
             free(ty);
             for (i = 0; i < n->expr.nargs; i++)
                 outnode(n->expr.args[i], fd, depth+1);

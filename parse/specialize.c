@@ -69,13 +69,72 @@ static void fillsubst(Htab *tsmap, Type *to, Type *from)
     size_t i;
 
     if (from->type == Typaram) {
-        printf("Specialize %s => %s\n", tystr(from), tystr(to));
         htput(tsmap, from, to);
     }
     if (to->nsub != from->nsub)
         return;
     for (i = 0; i < to->nsub; i++)
         fillsubst(tsmap, to->sub[i], from->sub[i]);
+}
+
+static void fixup(Node *n)
+{
+    size_t i;
+    Node *d;
+
+    if (!n)
+        return;
+    switch (n->type) {
+        case Nfile:
+        case Nuse:
+            die("Node %s not allowed here\n", nodestr(n->type));
+            break;
+        case Nexpr:
+            for (i = 0; i < n->expr.nargs; i++)
+                fixup(n->expr.args[i]);
+            if (n->expr.op == Ovar) {
+                d = getdcl(curstab(), n->expr.args[0]);
+                if (!d)
+                    die("Missing decl %s\n", namestr(n->expr.args[0]));
+                n->expr.did = d->decl.did;
+            }
+            break;
+        case Nlit:
+            switch (n->lit.littype) {
+                case Lfunc:     fixup(n->lit.fnval);          break;
+                case Larray:    fixup(n->lit.arrval);         break;
+                case Lchr: case Lint: case Lflt: case Lstr: case Lbool:
+                    break;
+            }
+            break;
+        case Nloopstmt:
+            fixup(n->loopstmt.init);
+            fixup(n->loopstmt.cond);
+            fixup(n->loopstmt.step);
+            fixup(n->loopstmt.body);
+            break;
+        case Nifstmt:
+            fixup(n->ifstmt.cond);
+            fixup(n->ifstmt.iftrue);
+            fixup(n->ifstmt.iffalse);
+            break;
+        case Nblock:
+            pushstab(n->block.scope);
+            for (i = 0; i < n->block.nstmts; i++)
+                fixup(n->block.stmts[i]);
+            popstab();
+            break;
+        case Ndecl:
+            fixup(n->decl.init);
+            break;
+        case Nfunc:
+            pushstab(n->func.scope);
+            fixup(n->func.body);
+            popstab();
+            break;
+        case Nnone: case Nlbl: case Nname:
+            break;
+    }
 }
 
 static Node *specializenode(Node *n, Htab *tsmap)
@@ -131,10 +190,13 @@ static Node *specializenode(Node *n, Htab *tsmap)
             break;
         case Nblock:
             r->block.scope = mkstab();
+            r->block.scope->super = curstab();
+            pushstab(r->block.scope);
             r->block.nstmts = n->block.nstmts;
             r->block.stmts = xalloc(sizeof(Node *)*n->block.nstmts);
             for (i = 0; i < n->block.nstmts; i++)
                 r->block.stmts[i] = specializenode(n->block.stmts[i], tsmap);
+            popstab();
             break;
         case Nlbl:
             r->lbl.name = strdup(n->lbl.name);
@@ -149,18 +211,22 @@ static Node *specializenode(Node *n, Htab *tsmap)
             r->decl.isconst = n->decl.isconst;
             r->decl.isgeneric = n->decl.isgeneric;
             r->decl.isextern = n->decl.isextern;
+            putdcl(curstab(), r);
 
             /* init */
             r->decl.init = specializenode(n->decl.init, tsmap);
             break;
         case Nfunc:
             r->func.scope = mkstab();
+            r->func.scope->super = curstab();
+            pushstab(r->func.scope);
             r->func.type = tysubst(n->func.type, tsmap);
             r->func.nargs = n->func.nargs;
             r->func.args = xalloc(sizeof(Node *)*n->func.nargs);
             for (i = 0; i < n->func.nargs; i++)
                 r->func.args[i] = specializenode(n->func.args[i], tsmap);
             r->func.body = specializenode(n->func.body, tsmap);
+            popstab();
             break;
         case Nnone:
             die("Nnone should not be seen as node type!");
@@ -208,11 +274,16 @@ Node *specializedcl(Node *n, Type *to, Node **name)
     d = getdcl(file->file.globls, *name);
     if (d)
         return d;
+
     tsmap = mkht(tyhash, tyeq);
     fillsubst(tsmap, to, n->decl.type);
-    d = specializenode(n, tsmap);
-    d->decl.name = *name;
-    d->decl.isgeneric = 0; /* we've specialized it */
+
+    d = mkdecl(n->line, *name, tysubst(n->decl.type, tsmap));
+    d->decl.isconst = n->decl.isconst;
+    d->decl.isextern = n->decl.isextern;
+    d->decl.init = specializenode(n->decl.init, tsmap);
+    fixup(d);
+
     putdcl(file->file.globls, d);
     lappend(&file->file.stmts, &file->file.nstmts, d);
     return d;

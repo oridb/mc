@@ -571,7 +571,6 @@ static void tybind(Htab *bt, Type *t)
     htput(bt, t->pname, t);
     for (i = 0; i < t->nsub; i++)
         tybind(bt, t->sub[i]);
-    printf("Bound @%s\n", t->pname);
 }
 
 static void bind(Node *n)
