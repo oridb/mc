@@ -500,6 +500,9 @@ static void inferexpr(Node *n, Type *ret, int *sawret)
                 lappend(&genericdecls, &ngenericdecls, s);
             }
             break;
+        case Ocons:
+            die("Union constructors not yet supported\n");
+            break;
         case Olit:      /* <lit>:@a::tyclass -> @a */
             switch (args[0]->lit.littype) {
                 case Lfunc: infernode(args[0]->lit.fnval, NULL, NULL); break;

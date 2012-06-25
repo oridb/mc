@@ -259,6 +259,7 @@ static Tok *oper(void)
         case '[': tt = Tosqbrac; break;
         case ']': tt = Tcsqbrac; break;
         case ',': tt = Tcomma; break;
+        case '`': tt = Ttick; break;
         case ':':
                   if (match(':'))
                       tt = Tcoloncolon;

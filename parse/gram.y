@@ -67,6 +67,7 @@ Stab *curscope;
 %token<tok> Tosqbrac /* [ */
 %token<tok> Tcsqbrac /* ] */
 %token<tok> Tat      /* @ */
+%token<tok> Ttick    /* ` */
 
 %token<tok> Ttype            /* type */
 %token<tok> Tfor             /* for */
@@ -122,7 +123,7 @@ Stab *curscope;
 %type <tydef> tydef
 
 %type <node> exprln retexpr expr atomicexpr literal asnexpr lorexpr landexpr borexpr
-%type <node> bandexpr cmpexpr addexpr mulexpr shiftexpr prefixexpr postfixexpr
+%type <node> bandexpr cmpexpr unioncons addexpr mulexpr shiftexpr prefixexpr postfixexpr
 %type <node> funclit arraylit name block blockbody stmt label use
 %type <node> decl declbody declcore structelt unionelt
 %type <node> ifstmt forstmt whilestmt elifs optexprln
@@ -319,14 +320,15 @@ uniondef
 
 unionbody
         : unionelt
-            {$$.nl = NULL; $$.nn = 0; lappend(&$$.nl, &$$.nn, $1);}
+            {$$.nl = NULL; $$.nn = 0;
+             if ($1) {lappend(&$$.nl, &$$.nn, $1);}}
         | unionbody unionelt
             {if ($2) {lappend(&$$.nl, &$$.nn, $2);}}
         ;
 
 unionelt
         : Tident type Tendln
-            {$$ = NULL; die("unionelt impl");}
+            {$$ = mkdecl($1->line, mkname($1->line, $1->str), $2);}
         | visdef Tendln
             {$$ = NULL;}
         | Tendln
@@ -390,12 +392,18 @@ bandexpr: bandexpr Tband cmpexpr
         | cmpexpr
         ;
 
-cmpexpr : cmpexpr cmpop addexpr
+cmpexpr : cmpexpr cmpop unioncons
             {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
-        | addexpr
+        | unioncons
         ;
 
 cmpop   : Teq | Tgt | Tlt | Tge | Tle | Tne ;
+
+unioncons
+        : Ttick Tident addexpr
+            {$$ = mkexpr($1->line, Ocons, $2, $3, NULL);}
+        | addexpr
+        ;
 
 addexpr : addexpr addop mulexpr
             {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}

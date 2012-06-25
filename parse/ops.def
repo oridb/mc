@@ -48,6 +48,7 @@ O(Ojmp, 1)
 O(Ovar, 1)
 O(Olit, 1)
 O(Olbl, 1)
+O(Ocons, 1)
 /* backend-only */
 O(Ocjmp, 1)        /* conditional jump */
 O(Oload, 1)        /* load from memory */
