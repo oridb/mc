@@ -1,0 +1,7 @@
+generic sz = {a:@a
+	-> sizeof(@a)
+}
+
+const main = {
+	-> sz(123) + sz('a')
+}
