@@ -327,8 +327,10 @@ unionbody
         ;
 
 unionelt
-        : Tident type Tendln
-            {$$ = mkdecl($1->line, mkname($1->line, $1->str), $2);}
+        : Ttick Tident type Tendln
+            {$$ = mkdecl($2->line, mkname($2->line, $2->str), $3);}
+        | Ttick Tident Tendln
+            {$$ = mkdecl($2->line, mkname($2->line, $2->str), NULL);}
         | visdef Tendln
             {$$ = NULL;}
         | Tendln
@@ -402,6 +404,8 @@ cmpop   : Teq | Tgt | Tlt | Tge | Tle | Tne ;
 unioncons
         : Ttick Tident addexpr
             {$$ = mkexpr($1->line, Ocons, $2, $3, NULL);}
+        | Ttick Tident
+            {$$ = mkexpr($1->line, Ocons, $2, NULL);}
         | addexpr
         ;
 

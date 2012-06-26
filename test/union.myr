@@ -1,0 +1,10 @@
+type u = union
+	`Some int
+	`None
+;;
+
+const main = {
+	var v : u
+
+	v = `None
+}
