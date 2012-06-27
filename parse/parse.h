@@ -84,9 +84,6 @@ struct Stab {
     Htab *ty;
 };
 
-struct Sym {
-};
-
 struct Type {
     Ty type;
     int tid;
