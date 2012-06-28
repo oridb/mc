@@ -1,0 +1,7 @@
+type u = union
+	`Foo
+;;
+
+const main = {
+	`Foo 123
+}
