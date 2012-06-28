@@ -600,6 +600,7 @@ static void installucons(Stab *st, Type *t)
         return;
     for (i = 0; i < b->nmemb; i++) {
         b->udecls[i]->utype = t;
+        b->udecls[i]->id = i;
         putucon(st, b->udecls[i]);
     }
 }
