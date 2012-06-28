@@ -39,6 +39,7 @@ B str		E	102
 B generic	E	42
 B sizeof	E	4
 B gsizeof	E	5
+B mkunion       E       0
 F declmismatch
 F infermismatch
 F flow
