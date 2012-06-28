@@ -249,6 +249,7 @@ size_t tysize(Type *t)
             sz = Wordsz;
             for (i = 0; i < t->nmemb; i++)
                 sz = max(sz, tysize(t->udecls[i]->etype) + Wordsz);
+            return sz;
             break;
         case Tybad: case Tyvar: case Typaram: case Tyname: case Ntypes:
             die("Type %s does not have size; why did it get down to here?", tystr(t));
@@ -610,6 +611,7 @@ static Node *lowerucon(Simp *s, Node *n)
     } else {
         r = store(u, elt);
     }
+    append(s, r);
     return tmp;
 }
 
