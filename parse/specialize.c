@@ -235,7 +235,7 @@ static Node *specializenode(Node *n, Htab *tsmap)
     return r;
 }
 
-size_t tidappend(char *buf, size_t sz, Type *t)
+static size_t tidappend(char *buf, size_t sz, Type *t)
 {
     char *p;
     char *end;
@@ -249,7 +249,7 @@ size_t tidappend(char *buf, size_t sz, Type *t)
     return end - p;
 }
 
-Node *genericname(Node *n, Type *t)
+static Node *genericname(Node *n, Type *t)
 {
     char buf[1024];
     char *p;

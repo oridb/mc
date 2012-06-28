@@ -99,8 +99,11 @@ static void tyresolve(Type *t)
     } else if (t->type == Tyunion) {
         for (i = 0; i < t->nmemb; i++) {
             tyresolve(t->udecls[i]->utype);
-            if (t->udecls[i]->etype)
+            t->udecls[i]->utype = tf(t->udecls[i]->utype);
+            if (t->udecls[i]->etype) {
                 tyresolve(t->udecls[i]->etype);
+                t->udecls[i]->etype = tf(t->udecls[i]->etype);
+            }
         }
     } else if (t->type == Tyarray) {
         infernode(t->asize, NULL, NULL);
@@ -710,7 +713,7 @@ static void checkcast(Node *n)
 {
 }
 
-/* returns the fixal type for t, after all unifications
+/* returns the final type for t, after all unifications
  * and default constraint selections */
 static Type *tyfix(Node *ctx, Type *t)
 {
@@ -726,8 +729,17 @@ static Type *tyfix(Node *ctx, Type *t)
         if (hascstr(t, cstrtab[Tcint]) || cstrcheck(t, tyint))
             return tyint;
     } else {
-        if (t->type == Tyarray)
+        if (t->type == Tyarray) {
             typesub(t->asize);
+        } else if (t->type == Tystruct) {
+            for (i = 0; i < t->nmemb; i++)
+                typesub(t->sdecls[i]);
+        } else if (t->type == Tyunion) {
+            for (i = 0; i < t->nmemb; i++) {
+                if (t->udecls[i]->etype)
+                    t->udecls[i]->etype = tyfix(ctx, t->udecls[i]->etype);
+            }
+        }
         for (i = 0; i < t->nsub; i++)
             t->sub[i] = tyfix(ctx, t->sub[i]);
     }
@@ -875,7 +887,7 @@ static void typesub(Node *n)
     }
 }
 
-void mergeexports(Node *file)
+static void mergeexports(Node *file)
 {
     Stab *exports, *globls;
     size_t i, nk;
@@ -925,7 +937,7 @@ void mergeexports(Node *file)
     popstab();
 }
 
-void specialize(Node *f)
+static void specialize(Node *f)
 {
     Node *d, *name;
     size_t i;

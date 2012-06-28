@@ -55,8 +55,17 @@ static void declarelocal(Simp *s, Node *n);
 static Node *one;
 static Node *zero;
 static Node *ptrsz;
+static Node *wordsz;
 static Type *tyword;
 static Type *tyvoid;
+
+static int max(int a, int b)
+{
+    if (a > b)
+        return a;
+    else
+        return b;
+}
 
 static Type *base(Type *t)
 {
@@ -195,6 +204,8 @@ size_t tysize(Type *t)
     size_t i;
 
     sz = 0;
+    if (!t)
+        return 0;
     switch (t->type) {
         case Tyvoid:
             die("void has no size");
@@ -235,7 +246,9 @@ size_t tysize(Type *t)
             return sz;
             break;
         case Tyunion:
-            die("Sizes for composite types not implemented yet");
+            sz = Wordsz;
+            for (i = 0; i < t->nmemb; i++)
+                sz = max(sz, tysize(t->udecls[i]->etype) + Wordsz);
             break;
         case Tybad: case Tyvar: case Typaram: case Tyname: case Ntypes:
             die("Type %s does not have size; why did it get down to here?", tystr(t));
@@ -564,6 +577,42 @@ static Node *visit(Simp *s, Node *n)
     return r;
 }
 
+static Node *lowerucon(Simp *s, Node *n)
+{
+    Node *tmp, *u, *tag, *elt, *sz;
+    Node *r;
+    Type *ty;
+    Ucon *uc;
+    size_t i;
+
+    /* find the ucon we're constructing here */
+    ty = tybase(n->expr.type);
+    for (i = 0; i < ty->nmemb; i++) {
+        if (!strcmp(namestr(n->expr.args[0]), namestr(ty->udecls[i]->name))) {
+            uc = ty->udecls[i];
+            break;
+        }
+    }
+
+    tmp = temp(s, n);
+    u = addr(tmp, exprtype(n));
+    tag = word(n->line, uc->id);
+    store(u, tag);
+    if (!uc->etype)
+        return tmp;
+
+    elt = rval(s, n->expr.args[1]);
+    u = add(u, wordsz);
+    if (tysize(uc->etype) > Wordsz) {
+        elt = addr(elt, uc->etype);
+        sz = word(n->line, tysize(uc->utype));
+        r = mkexpr(n->line, Oblit, u, elt, sz, NULL);
+    } else {
+        r = store(u, elt);
+    }
+    return tmp;
+}
+
 static Node *rval(Simp *s, Node *n)
 {
     Node *r; /* expression result */
@@ -612,6 +661,9 @@ static Node *rval(Simp *s, Node *n)
                 t = membaddr(s, n);
                 r = load(t);
             }
+            break;
+        case Ocons:
+            r = lowerucon(s, n);
             break;
         case Ocast:
             /* slice -> ptr cast */
@@ -935,6 +987,7 @@ void gen(Node *file, char *out)
     one = word(-1, 1);
     zero = word(-1, 0);
     ptrsz = word(-1, Wordsz);
+    wordsz = word(-1, Wordsz);
 
     fn = NULL;
     nfn = 0;
