@@ -371,6 +371,7 @@ static void checkns(Node *n, Node **ret)
 static void inferexpr(Node *n, Type *ret, int *sawret)
 {
     Node **args;
+    Ucon *uc;
     int nargs;
     Node *s;
     Type *t;
@@ -511,7 +512,16 @@ static void inferexpr(Node *n, Type *ret, int *sawret)
             }
             break;
         case Ocons:
-            die("Union constructors not yet supported\n");
+            uc = getucon(curstab(), args[0]);
+            if (!uc)
+                fatal(n->line, "No union constructor %s", namestr(n));
+            if (!uc->etype && n->expr.nargs > 1)
+                fatal(n->line, "nullary union constructor %s passed arg ", ctxstr(args[0]));
+            else if (uc->etype && n->expr.nargs != 2)
+                fatal(n->line, "union constructor %s needs arg ", ctxstr(args[0]));
+            else
+                unify(n, uc->etype, type(args[1]));
+            settype(n, uc->utype);
             break;
         case Olit:      /* <lit>:@a::tyclass -> @a */
             switch (args[0]->lit.littype) {

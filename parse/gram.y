@@ -413,9 +413,9 @@ cmpop   : Teq | Tgt | Tlt | Tge | Tle | Tne ;
 
 unioncons
         : Ttick Tident addexpr
-            {$$ = mkexpr($1->line, Ocons, $2, $3, NULL);}
+            {$$ = mkexpr($1->line, Ocons, mkname($2->line, $2->str), $3, NULL);}
         | Ttick Tident
-            {$$ = mkexpr($1->line, Ocons, $2, NULL);}
+            {$$ = mkexpr($1->line, Ocons, mkname($2->line, $2->str), NULL);}
         | addexpr
         ;
 
