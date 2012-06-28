@@ -62,6 +62,7 @@ Stab *mkstab()
     st->ns = mkht(namehash, nameeq);
     st->dcl = mkht(namehash, nameeq);
     st->ty = mkht(namehash, nameeq);
+    st->uc = mkht(namehash, nameeq);
     return st;
 }
 
@@ -93,6 +94,18 @@ Type *gettype(Stab *st, Node *n)
     do {
         if ((t = htget(st->ty, n)))
             return t->type;
+        st = st->super;
+    } while (st);
+    return NULL;
+}
+
+Ucon *getucon(Stab *st, Node *n)
+{
+    Ucon *uc;
+    
+    do {
+        if ((uc = htget(st->uc, n)))
+            return uc;
         st = st->super;
     } while (st);
     return NULL;
@@ -154,6 +167,13 @@ void puttype(Stab *st, Node *n, Type *t)
     td->name = n;
     td->type = t;
     htput(st->ty, td->name, td);
+}
+
+void putucon(Stab *st, Ucon *uc)
+{
+    if (getucon(st, uc->name))
+        fatal(uc->line, "union constructor %s already defined", namestr(uc->name));
+    htput(st->uc, uc->name, uc);
 }
 
 void putcstr(Stab *st, Node *n, Cstr *c)

@@ -373,7 +373,7 @@ static size_t offsetof(Node *aggr, Node *memb)
 {
     Type *ty;
     Node **nl;
-    size_t nn, i;
+    size_t i;
     size_t off;
 
     if (aggr->expr.type->type == Typtr)
@@ -382,9 +382,9 @@ static size_t offsetof(Node *aggr, Node *memb)
     ty = tybase(ty);
 
     assert(ty->type == Tystruct);
-    nl = aggrmemb(ty, &nn);
+    nl = ty->sdecls;
     off = 0;
-    for (i = 0; i < nn; i++) {
+    for (i = 0; i < ty->nmemb; i++) {
         if (!strcmp(namestr(memb), declname(nl[i])))
             return off;
         off += size(nl[i]);

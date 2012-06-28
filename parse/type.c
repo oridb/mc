@@ -202,7 +202,7 @@ Type *mktystruct(int line, Node **decls, size_t ndecls)
     return t;
 }
 
-Type *mktyunion(int line, Node **decls, size_t ndecls)
+Type *mktyunion(int line, Ucon **decls, size_t ndecls)
 {
     Type *t;
 
@@ -228,18 +228,6 @@ Type *tybase(Type *t)
     while (t->type == Tyalias)
         t = t->sub[0];
     return t;
-}
-
-Node **aggrmemb(Type *t, size_t *n)
-{
-    t = tybase(t);
-    *n = t->nmemb;
-    switch (t->type) {
-        case Tystruct:  return t->sdecls;               break;
-        case Tyunion:   return t->udecls;               break;
-        case Tyarray:   return &t->asize;               break;
-        default: return NULL;
-    }
 }
 
 static int namefmt(char *buf, size_t len, Node *n)
@@ -314,10 +302,20 @@ static int fmtstruct(char *buf, size_t len, Type *t)
 static int fmtunion(char *buf, size_t len, Type *t)
 {
     size_t i;
-    *buf = 0;
-    for (i = 0; i < t->nmemb; i++)
-        dump(t->udecls[i], stdout);
-    return 0;
+    char *end, *p;
+    char *name, *ty;
+
+    p = buf;
+    end = p + len;
+    p += snprintf(p, end - p, "struct ");
+    for (i = 0; i < t->nmemb; i++) {
+        name = namestr(t->udecls[i]->name);
+        ty = tystr(t->udecls[i]->etype);
+        p += snprintf(p, end - p, "`%s %s; ", name, ty);
+        free(ty);
+    }
+    p += snprintf(p, end - p, ";;");
+    return p - buf;
 }
 
 static int tybfmt(char *buf, size_t len, Type *t)

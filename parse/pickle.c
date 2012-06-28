@@ -82,6 +82,33 @@ static Stab *rdstab(FILE *fd)
     return st;
 }
 
+static void wrucon(FILE *fd, Ucon *uc)
+{
+    wrint(fd, uc->line);
+    wrint(fd, uc->id);
+    pickle(uc->name, fd);
+    wrtype(fd, uc->utype);
+    wrtype(fd, uc->etype);
+}
+
+static Ucon *rducon(FILE *fd)
+{
+    Type *ut, *et;
+    Node *name;
+    Ucon *uc;
+    size_t id;
+    int line;
+
+    line = rdint(fd);
+    id = rdint(fd);
+    name = unpickle(fd);
+    ut = rdtype(fd);
+    et = rdtype(fd);
+    uc = mkucon(line, name, ut, et);
+    uc->id = id;
+    return uc;
+}
+
 static void wrsym(FILE *fd, Node *val)
 {
     /* sym */
@@ -150,7 +177,7 @@ static void wrtype(FILE *fd, Type *ty)
         case Tyunion:
             wrint(fd, ty->nmemb);
             for (i = 0; i < ty->nmemb; i++)
-                pickle(ty->udecls[i], fd);
+                wrucon(fd, ty->udecls[i]);
             break;
         case Tyarray:
             wrtype(fd, ty->sub[0]);
@@ -199,7 +226,7 @@ static Type *rdtype(FILE *fd)
             ty->nmemb = rdint(fd);
             ty->udecls = xalloc(ty->nmemb * sizeof(Node*));
             for (i = 0; i < ty->nmemb; i++)
-                ty->udecls[i] = unpickle(fd);
+                ty->udecls[i] = rducon(fd);
             break;
         case Tyarray:
             ty->sub[0] = rdtype(fd);

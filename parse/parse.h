@@ -10,6 +10,7 @@ typedef struct Htab Htab;
 
 typedef struct Tok Tok;
 typedef struct Node Node;
+typedef struct Ucon Ucon;
 typedef struct Stab Stab;
 
 typedef struct Type Type;
@@ -78,10 +79,11 @@ struct Stab {
 
     /* Contents of stab.
      * types and values are in separate namespaces. */
-    Htab *ns;
     Htab *dcl;
     Htab *closure; /* the syms we close over */
+    Htab *ns;
     Htab *ty;
+    Htab *uc;
 };
 
 struct Type {
@@ -99,8 +101,16 @@ struct Type {
         Node *asize;   /* array size */
         char *pname;   /* Typaram: name of type parameter */
         Node **sdecls; /* Tystruct: decls in struct */
-        Node **udecls; /* Tyunion: decls in union */
+        Ucon **udecls; /* Tyunion: decls in union */
     };
+};
+
+struct Ucon {
+    int line;
+    size_t id;
+    Node *name;
+    Type *utype;
+    Type *etype;
 };
 
 struct Cstr {
@@ -194,6 +204,13 @@ struct Node {
         } decl;
 
         struct {
+            long  uid;
+            Node *name;
+            Type *elt;
+            Type *alt;
+        } uelt;
+
+        struct {
             Stab *scope;
             Type *type;
             size_t nargs;
@@ -271,11 +288,13 @@ Stab *mkstab(void);
 void putns(Stab *st, Stab *scope);
 void puttype(Stab *st, Node *n, Type *ty);
 void updatetype(Stab *st, Node *n, Type *t);
-void putdcl(Stab *st, Node *s);
+void putdcl(Stab *st, Node *dcl);
+void putucon(Stab *st, Ucon *uc);
 
 Stab *getns(Stab *st, Node *n);
 Node *getdcl(Stab *st, Node *n);
 Type *gettype(Stab *st, Node *n);
+Ucon *getucon(Stab *st, Node *n);
 
 Stab *curstab(void);
 void pushstab(Stab *st);
@@ -296,7 +315,7 @@ Type *mktyidxhack(int line, Type *base);
 Type *mktyptr(int line, Type *base);
 Type *mktyfunc(int line, Node **args, size_t nargs, Type *ret);
 Type *mktystruct(int line, Node **decls, size_t ndecls);
-Type *mktyunion(int line, Node **decls, size_t ndecls);
+Type *mktyunion(int line, Ucon **decls, size_t ndecls);
 Cstr *mkcstr(int line, char *name, Node **memb, size_t nmemb, Node **funcs, size_t nfuncs);
 Type *tylike(Type *t, Ty ty); /* constrains tyvar t like it was builtin ty */
 int   istysigned(Type *t);
@@ -332,6 +351,7 @@ Node *mknsname(int line, char *ns, char *name);
 Node *mkdecl(int line, Node *name, Type *ty);
 Node *mklbl(int line, char *lbl);
 Node *mkslice(int line, Node *base, Node *off);
+Ucon *mkucon(int line, Node *name, Type *ut, Type *uet);
 
 /* node util functions */
 char *namestr(Node *name);
@@ -343,7 +363,6 @@ void addstmt(Node *file, Node *stmt);
 void setns(Node *n, char *ns);
 void updatens(Stab *st, char *ns);
 Op exprop(Node *n);
-Node **aggrmemb(Type *t, size_t *n);
 
 /* specialize generics */
 Node *specializedcl(Node *n, Type *to, Node **name);

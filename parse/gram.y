@@ -18,6 +18,7 @@ void yyerror(const char *s);
 int yylex(void);
 static Op binop(int toktype);
 static Node *mkpseudodecl(Type *t);
+static void installucons(Stab *st, Type *t);
 Stab *curscope;
 
 %}
@@ -125,11 +126,13 @@ Stab *curscope;
 %type <node> exprln retexpr expr atomicexpr literal asnexpr lorexpr landexpr borexpr
 %type <node> bandexpr cmpexpr unioncons addexpr mulexpr shiftexpr prefixexpr postfixexpr
 %type <node> funclit arraylit name block blockbody stmt label use
-%type <node> decl declbody declcore structelt unionelt
+%type <node> decl declbody declcore structelt
 %type <node> ifstmt forstmt whilestmt elifs optexprln
 %type <node> castexpr
+%type <ucon> unionelt
 
-%type <nodelist> arglist argdefs structbody unionbody params
+%type <nodelist> arglist argdefs structbody params
+%type <uconlist> unionbody
 
 %union {
     struct {
@@ -137,6 +140,11 @@ Stab *curscope;
         Node **nl;
         size_t nn;
     } nodelist;
+    struct {
+        int line;
+        Ucon **ucl;
+        size_t nucl;
+    } uconlist;
     struct {
         int line;
         Type **types;
@@ -150,6 +158,7 @@ Stab *curscope;
     Node *node;
     Tok  *tok;
     Type *ty;
+    Ucon *ucon;
 }
 
 %%
@@ -170,7 +179,8 @@ toplev
             {lappend(&file->file.uses, &file->file.nuses, $1);}
         | package
         | tydef
-            {puttype(file->file.globls, mkname($1.line, $1.name), $1.type);}
+            {puttype(file->file.globls, mkname($1.line, $1.name), $1.type);
+             installucons(file->file.globls, $1.type);}
         | Tendln
         ;
 
@@ -315,22 +325,22 @@ structelt
 
 uniondef
         : Tunion unionbody Tendblk
-            {$$ = mktyunion($1->line, $2.nl, $2.nn);}
+            {$$ = mktyunion($1->line, $2.ucl, $2.nucl);}
         ;
 
 unionbody
         : unionelt
-            {$$.nl = NULL; $$.nn = 0;
-             if ($1) {lappend(&$$.nl, &$$.nn, $1);}}
+            {$$.ucl = NULL; $$.nucl = 0;
+             if ($1) {lappend(&$$.ucl, &$$.nucl, $1);}}
         | unionbody unionelt
-            {if ($2) {lappend(&$$.nl, &$$.nn, $2);}}
+            {if ($2) {lappend(&$$.ucl, &$$.nucl, $2);}}
         ;
 
-unionelt
+unionelt /* nb: the ucon union type gets filled in when we have context */
         : Ttick Tident type Tendln
-            {$$ = mkdecl($2->line, mkname($2->line, $2->str), $3);}
+            {$$ = mkucon($2->line, mkname($2->line, $2->str), NULL, $3);}
         | Ttick Tident Tendln
-            {$$ = mkdecl($2->line, mkname($2->line, $2->str), NULL);}
+            {$$ = mkucon($2->line, mkname($2->line, $2->str), NULL, NULL);}
         | visdef Tendln
             {$$ = NULL;}
         | Tendln
@@ -580,6 +590,19 @@ static Node *mkpseudodecl(Type *t)
     return mkdecl(-1, mkname(-1, buf), t);
 }
 
+static void installucons(Stab *st, Type *t)
+{
+    Type *b;
+    size_t i;
+
+    b = tybase(t);
+    if (b->type != Tyunion)
+        return;
+    for (i = 0; i < b->nmemb; i++) {
+        b->udecls[i]->utype = t;
+        putucon(st, b->udecls[i]);
+    }
+}
 
 void yyerror(const char *s)
 {

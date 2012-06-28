@@ -219,6 +219,18 @@ Node *mkdecl(int line, Node *name, Type *ty)
     return n;
 }
 
+Ucon *mkucon(int line, Node *name, Type *ut, Type *et)
+{
+    Ucon *uc;
+
+    uc = zalloc(sizeof(Ucon));
+    uc->line = line;
+    uc->name = name;
+    uc->utype = ut;
+    uc->etype = et;
+    return uc;
+}
+
 Node *mkbool(int line, int val)
 {
     Node *n;

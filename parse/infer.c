@@ -87,19 +87,29 @@ static Type *freshen(Type *t)
 
 static void tyresolve(Type *t)
 {
-    size_t i, nn;
+    size_t i;
     Type *base;
-    Node **n;
 
     if (t->resolved)
         return;
     t->resolved = 1;
-    n = aggrmemb(t, &nn);
-    for (i = 0; i < nn; i++)
-        infernode(n[i], NULL, NULL);
+    if (t->type == Tystruct) {
+        for (i = 0; i < t->nmemb; i++)
+            infernode(t->sdecls[i], NULL, NULL);
+    } else if (t->type == Tyunion) {
+        for (i = 0; i < t->nmemb; i++) {
+            tyresolve(t->udecls[i]->utype);
+            if (t->udecls[i]->etype)
+                tyresolve(t->udecls[i]->etype);
+        }
+    } else if (t->type == Tyarray) {
+        infernode(t->asize, NULL, NULL);
+    }
+
     for (i = 0; i < t->nsub; i++)
         t->sub[i] = tf(t->sub[i]);
     base = tybase(t);
+    /* no-ops if base == t */
     if (t->cstrs)
         bsunion(t->cstrs, base->cstrs);
     else
@@ -720,7 +730,7 @@ static Type *tyfix(Node *ctx, Type *t)
 
 static void infercompn(Node *file)
 {
-    size_t i, j, nn;
+    size_t i, j;
     Node *aggr;
     Node *memb;
     Node *n;
@@ -747,10 +757,11 @@ static void infercompn(Node *file)
                 found = 1;
             }
         } else {
+            t = tybase(t);
             if (t->type == Typtr)
                 t = tf(t->sub[0]);
-            nl = aggrmemb(t, &nn);
-            for (j = 0; j < nn; j++) {
+            nl = t->sdecls;
+            for (j = 0; j < t->nmemb; j++) {
                 if (!strcmp(namestr(memb), declname(nl[j]))) {
                     unify(n, type(n), decltype(nl[j]));
                     found = 1;
