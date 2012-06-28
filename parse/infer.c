@@ -352,7 +352,7 @@ static void checkns(Node *n, Node **ret)
     if (!n->expr.nargs)
         return;
     args = n->expr.args;
-    if (exprop(args[0]) != Ovar)
+    if (args[0]->type != Nexpr || exprop(args[0]) != Ovar)
         return;
     name = args[0]->expr.args[0];
     st = getns(curstab(), name);
