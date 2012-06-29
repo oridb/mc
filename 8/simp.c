@@ -370,13 +370,15 @@ static void simpmatch(Simp *s, Node *n)
     for (i = 0; i < n->matchstmt.nmatches; i++) {
         m = n->matchstmt.matches[i];
 
+        /* check pattern */
         if (exprop(m->match.pat) != Olit)
             die("Unsupported non-lit pat");
         cond = mkexpr(m->line, Oeq, val, m->match.pat, NULL);
-
         cur = genlbl();
         next = genlbl();
         cjmp(s, cond, cur, next);
+
+        /* do the action if it matches */
         append(s, cur);
         simp(s, m->match.block);
         jmp(s, end);
