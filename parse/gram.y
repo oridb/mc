@@ -445,14 +445,14 @@ shiftexpr
 shiftop : Tbsl | Tbsr;
 
 prefixexpr
-        : Tinc postfixexpr      {$$ = mkexpr($1->line, Opreinc, $2, NULL);}
-        | Tdec postfixexpr      {$$ = mkexpr($1->line, Opredec, $2, NULL);}
-        | Tstar postfixexpr     {$$ = mkexpr($1->line, Oderef, $2, NULL);}
-        | Tband postfixexpr     {$$ = mkexpr($1->line, Oaddr, $2, NULL);}
-        | Tlnot postfixexpr     {$$ = mkexpr($1->line, Olnot, $2, NULL);}
-        | Tbnot postfixexpr     {$$ = mkexpr($1->line, Obnot, $2, NULL);}
-        | Tminus postfixexpr    {$$ = mkexpr($1->line, Oneg, $2, NULL);}
-        | Tplus postfixexpr     {$$ = $2;} /* positive is a nop */
+        : Tinc prefixexpr      {$$ = mkexpr($1->line, Opreinc, $2, NULL);}
+        | Tdec prefixexpr      {$$ = mkexpr($1->line, Opredec, $2, NULL);}
+        | Tstar prefixexpr     {$$ = mkexpr($1->line, Oderef, $2, NULL);}
+        | Tband prefixexpr     {$$ = mkexpr($1->line, Oaddr, $2, NULL);}
+        | Tlnot prefixexpr     {$$ = mkexpr($1->line, Olnot, $2, NULL);}
+        | Tbnot prefixexpr     {$$ = mkexpr($1->line, Obnot, $2, NULL);}
+        | Tminus prefixexpr    {$$ = mkexpr($1->line, Oneg, $2, NULL);}
+        | Tplus prefixexpr     {$$ = $2;} /* positive is a nop */
         | postfixexpr
         ;
 
