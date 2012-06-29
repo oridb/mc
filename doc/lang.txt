@@ -1,0 +1,150 @@
+                    The Myrddin Programming Language
+                              Jun 2012
+                            Ori Bernstein
+
+Overview:
+
+        Myrddin is designed to be a simple, low level programming
+        language.  It is designed to provide the programmer with
+        predictable behavior and a transparent compilation model,
+        while at the same time providing the benefits of strong
+        type checking, generics, type inference, and similar.
+        Myrddin is not a language designed to explore the forefront
+        of type theory, or compiler technology. It is not a language
+        that is focused on guaranteeing perfect safety. It's focus
+        is on being a practical, small, fairly well defined, and
+        easy to understand language for work that needs to be close
+        to the hardware.
+
+Introduction:
+
+    We begin with the archetypical "Hello world" example, deconstructing
+    it as we go:
+
+        use std
+
+        const main = {
+            /* say hello */
+            std.write(1, "Hello World\n")
+        }
+
+    The first line, `use std`, tells the compiler to import the standard
+    library, which at the time of this writing only barely exists as a
+    copy-paste group of files that works only on Linux, implementing almost
+    no useful functions.  One of the functions that it does provide,
+    however, is the 'write' system call.
+
+    The next line, 'const main = ...' declares a constant value called
+    'main'. These constant values must be initialized at their declaration
+    to a literal value. In this case, it is intialized to a constant
+    function '{;std.write(1, "Hello World\n");}'
+
+    In Myrddin, all functions begin with a '{', followed by a list
+    of arguments, which is terminated by a newline (or semicolon. The
+    two are equivalent). This is followed by any number of statements,
+    and closed by a '}'.
+
+    The text '/* say hello */' is a comment. It is ignored by the compiler,
+    and is used to add useful information for the programmer. In Myrddin,
+    unlike many popular languages, comments nest. This makes code like
+    /* outer /* inner coment */ comment */ valid.
+
+    The text 'std.write' refers the 'write' function from the 'std' library.
+    In Myrddin, a name can belong to an imported namespace. The language,
+    for reasons of parsimony, only allows one level of namespace. I saw
+    Java package names and ran screaming in horror, possibly too far to
+    the other extreme. This function is statically typed, taking a single
+    integer argument, and a byte slice to write.
+
+    The text '(1, "Hello World)' is the function call itself. It takes
+    the literal "1", and the byte slice "Hello World\n", and calls the
+    function 'std.write' with them as arguments.
+
+    It would be useful now to specify that the value '1' is an integer-like
+    constant, but it is not an integer. It is polymorphic, and can be used
+    at any point where a value of any integer type is needed.
+
+Declarations:
+
+    In Myrddin, declarations take the following form:
+
+        var|const|generic name [: type] [= expr]
+
+    To give a few examples:
+
+        var x
+        var foo : int
+        const c = 123
+        const pi : float32 = 3.1415
+        generic id : (@a -> @a) = {a:@a -> @a; -> a}
+
+    The first example, 'var x', declares a variable named x. The type is not
+    set explicitly, but it will be determined by the compiler (or the code
+    will fail to compile, saying that the type of the variable could not
+    be determined).
+
+    The second example, 'var foo : int' explicitly sets the type of a
+    variable named 'foo' to an integer. It does not initialize it. However,
+    it is [FIXME: make this not a lie] a compilation error to use a
+    variable without prior intialization, so this is not dangerous.
+
+    The third example, 'cosnt c = 123' declares a constant named c,
+    and initializes it to the value 123. All constants require initializers,
+    as they cannot be assigned to later in the code.
+
+    The fourth example, 'const pi : float32 = 3.1415', shows the full form
+    of declarations. It includes both the type and initializer components.
+
+    The final "overdeclared" example declares a generic function called
+    'id', which takes any type '@a' and returns the same type. It is
+    initialized to a function which specifies these types again, and
+    has a body that returns it's argument. This is not idiomatic code,
+    and is only provided as an example of what is possible. The normal
+    declaration would look something like this:
+
+        generic id = {a:@a; -> a}
+
+Types:
+
+    Myrddin comes with a large number of built in types. These are
+    listed below:
+
+        void
+            The void type. This type represents an empty value.
+            For reasons of consistency when specializing generics, void
+            values can be created, assigned to, and manipulated like
+            any other value.
+
+        bool
+            A Boolean type. The value of this is either 'true' (equivalent
+            to any non-zero) or 'false', equivalent to a zero value. The
+            size of this type is undefined.
+
+        char
+            A value representing a single code point in the default
+            encoding. The encoding is undefined, and the value of the
+            character is opaque.
+
+
+        int8 int16 int32 int64 int
+        uint8 uint16 uint32 uint64 uint
+            Integer types. For the above types, the number at the end
+            represents the size of the type. The ones without a number at
+            the end are of undefined type. These values can be assumed to
+            be in two's complement. The semantics of overflowing are yet to
+            be specified.
+
+        float32 float64
+            Floating-point types. The exact semantics are yet to be
+            defined.
+
+        @<ident>
+            A generic type. This is only allowed in the scope of 'generic'
+            constants.
+
+    It also allows composite types to be defined. These are listed below:
+
+        @a
+
+Constants:
+
