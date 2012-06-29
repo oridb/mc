@@ -687,8 +687,10 @@ static void infernode(Node *n, Type *ret, int *sawret)
             break;
         case Nmatchstmt:
             infernode(n->matchstmt.val, NULL, sawret);
-            for (i = 0; i < n->matchstmt.nmatches; i++)
+            for (i = 0; i < n->matchstmt.nmatches; i++) {
                 infernode(n->matchstmt.matches[i], ret, sawret);
+                unify(n, type(n->matchstmt.val), type(n->matchstmt.matches[i]->match.pat));
+            }
             break;
         case Nmatch:
             infernode(n->match.pat, NULL, sawret);
