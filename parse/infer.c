@@ -688,7 +688,8 @@ static void infernode(Node *n, Type *ret, int *sawret)
         case Nmatchstmt:
             infernode(n->matchstmt.val, NULL, sawret);
             for (i = 0; i < n->matchstmt.nmatches; i++)
-                infernode(n->matchstmt.matches[i], NULL, sawret);
+                infernode(n->matchstmt.matches[i], ret, sawret);
+            break;
         case Nmatch:
             infernode(n->match.pat, NULL, sawret);
             infernode(n->match.block, ret, sawret);
@@ -868,9 +869,11 @@ static void typesub(Node *n)
             typesub(n->matchstmt.val);
             for (i = 0; i < n->matchstmt.nmatches; i++)
                 typesub(n->matchstmt.matches[i]);
+            break;
         case Nmatch:
             typesub(n->match.pat);
             typesub(n->match.block);
+            break;
         case Nexpr:
             settype(n, tyfix(n, type(n)));
             for (i = 0; i < n->expr.nargs; i++)

@@ -561,7 +561,7 @@ elifs   : Telif exprln blockbody elifs
         ;
 
 matchstmt: Tmatch exprln matches Tendblk
-            {$$ = NULL;}
+            {$$ = mkmatchstmt($1->line, $2, $3.nl, $3.nn);}
          ;
 
 matches : match
@@ -573,11 +573,11 @@ matches : match
                  lappend(&$$.nl, &$$.nn, $2);}
         ;
 
-match   : pat Tcolon block {$$ = NULL;}
+match   : pat Tcolon block {$$ = mkmatch($1->line, $1, $3);}
         | Tendln {$$ = NULL;}
         ;
 
-pat     : literal {$$ = NULL;}
+pat     : literal {$$ = $1;}
         ;
 
 block   : blockbody Tendblk
