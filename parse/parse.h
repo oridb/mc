@@ -184,6 +184,17 @@ struct Node {
         } ifstmt;
 
         struct {
+            Node *val;
+            Node **matches;
+            size_t nmatches;
+        } matchstmt;
+
+        struct {
+            Node *pat; /* literal expr. FIXME: this isn't an appropriate type */
+            Node *block;
+        } match;
+
+        struct {
             Stab *scope;
             size_t nstmts;
             Node **stmts;

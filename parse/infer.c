@@ -685,6 +685,14 @@ static void infernode(Node *n, Type *ret, int *sawret)
             infernode(n->loopstmt.body, ret, sawret);
             constrain(n, type(n->loopstmt.cond), cstrtab[Tctest]);
             break;
+        case Nmatchstmt:
+            infernode(n->matchstmt.val, NULL, sawret);
+            for (i = 0; i < n->matchstmt.nmatches; i++)
+                infernode(n->matchstmt.matches[i], NULL, sawret);
+        case Nmatch:
+            infernode(n->match.pat, NULL, sawret);
+            infernode(n->match.block, ret, sawret);
+            break;
         case Nexpr:
             inferexpr(n, ret, sawret);
             break;
@@ -856,6 +864,13 @@ static void typesub(Node *n)
             typesub(n->loopstmt.step);
             typesub(n->loopstmt.body);
             break;
+        case Nmatchstmt:
+            typesub(n->matchstmt.val);
+            for (i = 0; i < n->matchstmt.nmatches; i++)
+                typesub(n->matchstmt.matches[i]);
+        case Nmatch:
+            typesub(n->match.pat);
+            typesub(n->match.block);
         case Nexpr:
             settype(n, tyfix(n, type(n)));
             for (i = 0; i < n->expr.nargs; i++)

@@ -320,6 +320,16 @@ void pickle(Node *n, FILE *fd)
             pickle(n->loopstmt.step, fd);
             pickle(n->loopstmt.body, fd);
             break;
+        case Nmatchstmt:
+            pickle(n->matchstmt.val, fd);
+            wrint(fd, n->matchstmt.nmatches);
+            for (i = 0; i < n->matchstmt.nmatches; i++)
+                pickle(n->matchstmt.matches[i], fd);
+            break;
+        case Nmatch:
+            pickle(n->match.pat, fd);
+            pickle(n->match.block, fd);
+            break;
         case Nifstmt:
             pickle(n->ifstmt.cond, fd);
             pickle(n->ifstmt.iftrue, fd);
@@ -422,6 +432,16 @@ Node *unpickle(FILE *fd)
             n->loopstmt.cond = unpickle(fd);
             n->loopstmt.step = unpickle(fd);
             n->loopstmt.body = unpickle(fd);
+            break;
+        case Nmatchstmt:
+            n->matchstmt.val = unpickle(fd);
+            n->matchstmt.nmatches = rdint(fd);
+            for (i = 0; i < n->matchstmt.nmatches; i++)
+                n->matchstmt.matches[i] = unpickle(fd);
+            break;
+        case Nmatch:
+            n->match.pat = unpickle(fd);
+            n->match.block = unpickle(fd);
             break;
         case Nifstmt:
             n->ifstmt.cond = unpickle(fd);

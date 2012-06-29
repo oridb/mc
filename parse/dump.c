@@ -134,10 +134,22 @@ static void outnode(Node *n, FILE *fd, int depth)
             outnode(n->ifstmt.iffalse, fd, depth+1);
             break;
         case Nloopstmt:
+            fprintf(fd, "\n");
             outnode(n->loopstmt.init, fd, depth+1);
             outnode(n->loopstmt.cond, fd, depth+1);
             outnode(n->loopstmt.step, fd, depth+1);
             outnode(n->loopstmt.body, fd, depth+1);
+            break;
+        case Nmatchstmt:
+            fprintf(fd, "\n");
+            outnode(n->matchstmt.val, fd, depth+1);
+            for (i = 0; i < n->matchstmt.nmatches; i++)
+                outnode(n->matchstmt.matches[i], fd, depth+1);
+            break;
+        case Nmatch:
+            fprintf(fd, "\n");
+            outnode(n->match.pat, fd, depth+1);
+            outnode(n->match.block, fd, depth+1);
             break;
         case Nuse:
             fprintf(fd, " (name = %s, islocal = %d)\n", n->use.name, n->use.islocal);

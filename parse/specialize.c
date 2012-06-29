@@ -107,16 +107,24 @@ static void fixup(Node *n)
                     break;
             }
             break;
+        case Nifstmt:
+            fixup(n->ifstmt.cond);
+            fixup(n->ifstmt.iftrue);
+            fixup(n->ifstmt.iffalse);
+            break;
         case Nloopstmt:
             fixup(n->loopstmt.init);
             fixup(n->loopstmt.cond);
             fixup(n->loopstmt.step);
             fixup(n->loopstmt.body);
             break;
-        case Nifstmt:
-            fixup(n->ifstmt.cond);
-            fixup(n->ifstmt.iftrue);
-            fixup(n->ifstmt.iffalse);
+        case Nmatchstmt:
+            fixup(n->matchstmt.val);
+            for (i = 0; i < n->matchstmt.nmatches; i++)
+                fixup(n->matchstmt.matches[i]);
+        case Nmatch:
+            fixup(n->match.pat);
+            fixup(n->match.block);
             break;
         case Nblock:
             pushstab(n->block.scope);
@@ -177,16 +185,27 @@ static Node *specializenode(Node *n, Htab *tsmap)
                 case Larray:    r->lit.arrval = specializenode(n->lit.arrval, tsmap);     break;
             }
             break;
+        case Nifstmt:
+            r->ifstmt.cond = specializenode(n->ifstmt.cond, tsmap);
+            r->ifstmt.iftrue = specializenode(n->ifstmt.iftrue, tsmap);
+            r->ifstmt.iffalse = specializenode(n->ifstmt.iffalse, tsmap);
+            break;
         case Nloopstmt:
             r->loopstmt.init = specializenode(n->loopstmt.init, tsmap);
             r->loopstmt.cond = specializenode(n->loopstmt.cond, tsmap);
             r->loopstmt.step = specializenode(n->loopstmt.step, tsmap);
             r->loopstmt.body = specializenode(n->loopstmt.body, tsmap);
             break;
-        case Nifstmt:
-            r->ifstmt.cond = specializenode(n->ifstmt.cond, tsmap);
-            r->ifstmt.iftrue = specializenode(n->ifstmt.iftrue, tsmap);
-            r->ifstmt.iffalse = specializenode(n->ifstmt.iffalse, tsmap);
+        case Nmatchstmt:
+            r->matchstmt.val = specializenode(n->matchstmt.val, tsmap);
+            r->matchstmt.nmatches = n->matchstmt.nmatches;
+            r->matchstmt.matches = xalloc(n->matchstmt.nmatches * sizeof(Node*));
+            for (i = 0; i < n->matchstmt.nmatches; i++)
+                r->matchstmt.matches[i] = specializenode(n->matchstmt.matches[i], tsmap);
+            break;
+        case Nmatch:
+            r->match.pat = specializenode(n->match.pat, tsmap);
+            r->match.block = specializenode(n->match.block, tsmap);
             break;
         case Nblock:
             r->block.scope = mkstab();
