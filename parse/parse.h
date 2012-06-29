@@ -423,6 +423,7 @@ char *swapsuffix(char *buf, size_t sz, char *s, char *suf, char *swap);
 
 /* Options to control the compilation */
 extern int debug;
+extern int yydebug;
 extern char debugopt[128];
 extern int asmonly;
 extern char *outfile;

@@ -127,11 +127,12 @@ Stab *curscope;
 %type <node> bandexpr cmpexpr unioncons addexpr mulexpr shiftexpr prefixexpr postfixexpr
 %type <node> funclit arraylit name block blockbody stmt label use
 %type <node> decl declbody declcore structelt
-%type <node> ifstmt forstmt whilestmt elifs optexprln
+%type <node> ifstmt forstmt whilestmt matchstmt elifs optexprln
+%type <node> pat match
 %type <node> castexpr
 %type <ucon> unionelt
 
-%type <nodelist> arglist argdefs structbody params
+%type <nodelist> arglist argdefs structbody params matches
 %type <uconlist> unionbody
 
 %union {
@@ -528,6 +529,7 @@ stmt    : decl
         | ifstmt
         | forstmt
         | whilestmt
+        | matchstmt
         | Tendln {$$ = NULL;}
         ;
 
@@ -556,6 +558,26 @@ elifs   : Telif exprln blockbody elifs
             {$$ = $2;}
         | Tendblk
             {$$ = NULL;}
+        ;
+
+matchstmt: Tmatch exprln matches Tendblk
+            {$$ = NULL;}
+         ;
+
+matches : match
+            {$$.nl = NULL; $$.nn = 0;
+             if ($1)
+                 lappend(&$$.nl, &$$.nn, $1);}
+        | matches match
+            {if ($2)
+                 lappend(&$$.nl, &$$.nn, $2);}
+        ;
+
+match   : pat Tcolon block {$$ = NULL;}
+        | Tendln {$$ = NULL;}
+        ;
+
+pat     : literal {$$ = NULL;}
         ;
 
 block   : blockbody Tendblk

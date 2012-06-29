@@ -65,8 +65,11 @@ int main(int argc, char **argv)
                 break;
             case 'd':
                 debug = 1;
-                while (optarg && *optarg)
+                while (optarg && *optarg) {
+                    if (*optarg == 'y')
+                        yydebug = 1;
                     debugopt[*optarg++ & 0x7f] = 1;
+                }
                 break;
             case 'I':
                 lappend(&incpaths, &nincpaths, optarg);

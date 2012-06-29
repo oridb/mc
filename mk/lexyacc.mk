@@ -1,9 +1,9 @@
 NECFLAGS = $(subst -Werror,,$(subst -Wall,,$(CFLAGS)))
 
-%.o: %.y .deps
-	yacc -d -o$*.c $<
+%.o: %.y
+	yacc -dt -o$*.c $<
 	$(CC) -c $(NECFLAGS) $*.c
 
-%.o: %.l .deps
+%.o: %.l
 	flex -o$*.c $<
 	$(CC) -c $(NECFLAGS) $*.c
