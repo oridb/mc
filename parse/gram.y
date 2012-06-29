@@ -577,7 +577,7 @@ match   : pat Tcolon block {$$ = mkmatch($1->line, $1, $3);}
         | Tendln {$$ = NULL;}
         ;
 
-pat     : literal {$$ = $1;}
+pat     : literal {$$ = mkexpr($1->line, Olit, $1, NULL);}
         ;
 
 block   : blockbody Tendblk

@@ -358,6 +358,33 @@ static void simploop(Simp *s, Node *n)
     simp(s, lend);              /* exit */
 }
 
+static void simpmatch(Simp *s, Node *n)
+{
+    Node *end, *cur, *next; /* labels */
+    Node *val, *cond; /* intermediates */
+    Node *m;
+    size_t i;
+
+    end = genlbl();
+    val = rval(s, n->matchstmt.val); /* FIXME: don't recompute, even if pure */
+    for (i = 0; i < n->matchstmt.nmatches; i++) {
+        m = n->matchstmt.matches[i];
+
+        if (exprop(m->match.pat) != Olit)
+            die("Unsupported non-lit pat");
+        cond = mkexpr(m->line, Oeq, val, m->match.pat, NULL);
+
+        cur = genlbl();
+        next = genlbl();
+        cjmp(s, cond, cur, next);
+        append(s, cur);
+        simp(s, m->match.block);
+        jmp(s, end);
+        append(s, next);
+    }
+    append(s, end);
+}
+
 static void simpblk(Simp *s, Node *n)
 {
     size_t i;
@@ -801,15 +828,12 @@ static Node *simp(Simp *s, Node *n)
         return NULL;
     r = NULL;
     switch (n->type) {
-        case Nblock:
-            simpblk(s, n);
-            break;
-        case Nifstmt:
-            simpif(s, n);
-            break;
-        case Nloopstmt:
-            simploop(s, n);
-            break;
+        case Nlit:       r = n;                 break;
+        case Nlbl:       append(s, n);          break;
+        case Nblock:     simpblk(s, n);         break;
+        case Nifstmt:    simpif(s, n);          break;
+        case Nloopstmt:  simploop(s, n);        break;
+        case Nmatchstmt: simpmatch(s, n);       break;
         case Nexpr:
             r = rval(s, n);
             if (r)
@@ -819,9 +843,7 @@ static Node *simp(Simp *s, Node *n)
                 append(s, s->incqueue[i]);
             lfree(&s->incqueue, &s->nqueue);
             break;
-        case Nlit:
-            r = n;
-            break;
+
         case Ndecl:
             declarelocal(s, n);
             if (n->decl.init) {
@@ -832,9 +854,6 @@ static Node *simp(Simp *s, Node *n)
                 t->expr.did = n->decl.did;
                 simp(s, u);
             }
-            break;
-        case Nlbl:
-            append(s, n);
             break;
         default:
             die("Bad node passsed to simp()");
