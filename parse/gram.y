@@ -383,39 +383,41 @@ lorexpr : lorexpr Tlor landexpr
         | landexpr
         ;
 
-landexpr: landexpr Tland castexpr
+landexpr: landexpr Tland cmpexpr
+            {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
+        | cmpexpr
+        ;
+
+cmpexpr : cmpexpr cmpop castexpr
             {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
         | castexpr
         ;
 
-castexpr: borexpr Tcast Toparen type Tcparen
+castexpr: unioncons Tcast Toparen type Tcparen
             {$$ = mkexpr($1->line, Ocast, $1, NULL);
              $$->expr.type = $4;}
+        | unioncons 
+        ;
+
+
+cmpop   : Teq | Tgt | Tlt | Tge | Tle | Tne ;
+
+unioncons
+        : Ttick Tident borexpr
+            {$$ = mkexpr($1->line, Ocons, mkname($2->line, $2->str), $3, NULL);}
+        | Ttick Tident
+            {$$ = mkexpr($1->line, Ocons, mkname($2->line, $2->str), NULL);}
         | borexpr
         ;
+
 
 borexpr : borexpr Tbor bandexpr
             {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
         | bandexpr
         ;
 
-bandexpr: bandexpr Tband cmpexpr
+bandexpr: bandexpr Tband addexpr
             {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
-        | cmpexpr
-        ;
-
-cmpexpr : cmpexpr cmpop unioncons
-            {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
-        | unioncons
-        ;
-
-cmpop   : Teq | Tgt | Tlt | Tge | Tle | Tne ;
-
-unioncons
-        : Ttick Tident addexpr
-            {$$ = mkexpr($1->line, Ocons, mkname($2->line, $2->str), $3, NULL);}
-        | Ttick Tident
-            {$$ = mkexpr($1->line, Ocons, mkname($2->line, $2->str), NULL);}
         | addexpr
         ;
 
