@@ -681,7 +681,7 @@ static Node *lowerucon(Simp *s, Node *n)
     tmp = temp(s, n);
     u = addr(tmp, exprtype(n));
     tag = word(n->line, uc->id);
-    store(u, tag);
+    append(s, store(u, tag));
     if (!uc->etype)
         return tmp;
 
