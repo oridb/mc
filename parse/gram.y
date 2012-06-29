@@ -578,6 +578,7 @@ match   : pat Tcolon block {$$ = mkmatch($1->line, $1, $3);}
         ;
 
 pat     : literal {$$ = mkexpr($1->line, Olit, $1, NULL);}
+        | unioncons {$$ = $1;}
         ;
 
 block   : blockbody Tendblk

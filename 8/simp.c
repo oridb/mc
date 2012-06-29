@@ -358,6 +358,62 @@ static void simploop(Simp *s, Node *n)
     simp(s, lend);              /* exit */
 }
 
+static Node *uconid(Node *n)
+{
+    size_t i;
+    Ucon *uc;
+    Type *t;
+
+    t = tybase(n->expr.type);
+    if (exprop(n) != Ocons)
+        return load(addr(n, tyword));
+
+    for (i = 0; i  < t->nmemb; i++) {
+        uc = t->udecls[i];
+        if (!strcmp(namestr(uc->name), namestr(n->expr.args[0])))
+            return mkintlit(uc->line, uc->id);
+    }
+    return NULL;
+}
+
+static Node *compare(Simp *s, Node *a, Node *b)
+{
+    Node *r, *v, *x, *y;
+    Type *t;
+
+    assert(a->type == Nexpr);
+    t = tybase(a->expr.type);
+    r = NULL;
+    switch (t->type) {
+        case Tyvoid: case Tybad: case Tyvalist: case Tyvar:
+        case Typaram: case Tyname: case Tyalias: case Ntypes:
+        case Tyint64: case Tyuint64: case Tylong:  case Tyulong:
+        case Tyfloat32: case Tyfloat64:
+        case Tyslice: case Tyarray: case Tytuple: case Tystruct:
+            die("Unsupported type for compare");
+            break;
+        case Tybool: case Tychar: case Tybyte:
+        case Tyint8: case Tyint16: case Tyint32: case Tyint:
+        case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint:
+        case Typtr: case Tyfunc:
+            r = mkexpr(a->line, Oeq, a, b, NULL);
+            break;
+        case Tyunion:
+            x = uconid(a);
+            y = uconid(b);
+
+            r = mkexpr(a->line, Oeq, x, y, NULL);
+            if (a->expr.nargs == 2) {
+                v = compare(s, a->expr.args[1], b->expr.args[1]);
+                r = mkexpr(a->line, Oland, r, v, NULL);
+                r = rval(s, r); /* Oandl needs to be reduced */
+            }
+            break;
+    }
+    return r;
+            
+}
+
 static void simpmatch(Simp *s, Node *n)
 {
     Node *end, *cur, *next; /* labels */
@@ -371,9 +427,7 @@ static void simpmatch(Simp *s, Node *n)
         m = n->matchstmt.matches[i];
 
         /* check pattern */
-        if (exprop(m->match.pat) != Olit)
-            die("Unsupported non-lit pat");
-        cond = mkexpr(m->line, Oeq, val, m->match.pat, NULL);
+        cond = compare(s, val, m->match.pat);
         cur = genlbl();
         next = genlbl();
         cjmp(s, cond, cur, next);

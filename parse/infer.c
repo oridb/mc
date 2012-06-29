@@ -517,12 +517,12 @@ static void inferexpr(Node *n, Type *ret, int *sawret)
         case Ocons:
             uc = getucon(curstab(), args[0]);
             if (!uc)
-                fatal(n->line, "No union constructor %s", namestr(n));
+                fatal(n->line, "No union constructor %s", ctxstr(args[0]));
             if (!uc->etype && n->expr.nargs > 1)
                 fatal(n->line, "nullary union constructor %s passed arg ", ctxstr(args[0]));
             else if (uc->etype && n->expr.nargs != 2)
                 fatal(n->line, "union constructor %s needs arg ", ctxstr(args[0]));
-            else
+            else if (uc->etype)
                 unify(n, uc->etype, type(args[1]));
             settype(n, uc->utype);
             break;

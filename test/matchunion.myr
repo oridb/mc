@@ -2,7 +2,7 @@ type u = union
 	`Foo
 	`Bar
 	`Baz
-	`Quuz
+	`Quux
 ;;
 
 const main = {
@@ -13,7 +13,7 @@ const main = {
 	`Bar:
 		-> 42
 		;;
-	`Baz;
+	`Baz:
 		-> 81
 		;;
 	`Foo:
