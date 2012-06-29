@@ -73,7 +73,7 @@ Node *mkcall(int line, Node *fn, Node **args, size_t nargs)
     return n;
 }
 
-Node *mkif(int line, Node *cond, Node *iftrue, Node *iffalse)
+Node *mkifstmt(int line, Node *cond, Node *iftrue, Node *iffalse)
 {
     Node *n;
 
@@ -85,7 +85,7 @@ Node *mkif(int line, Node *cond, Node *iftrue, Node *iffalse)
     return n;
 }
 
-Node *mkloop(int line, Node *init, Node *cond, Node *incr, Node *body)
+Node *mkloopstmt(int line, Node *init, Node *cond, Node *incr, Node *body)
 {
     Node *n;
 
@@ -95,6 +95,27 @@ Node *mkloop(int line, Node *init, Node *cond, Node *incr, Node *body)
     n->loopstmt.step = incr;
     n->loopstmt.body = body;
 
+    return n;
+}
+
+Node *mkmatchstmt(int line, Node *val, Node **matches, size_t nmatches)
+{
+    Node *n;
+
+    n = mknode(line, Nmatchstmt);
+    n->matchstmt.val = val;
+    n->matchstmt.matches = matches;
+    n->matchstmt.nmatches = nmatches;
+    return n;
+}
+
+Node *mkmatch(int line, Node *pat, Node *body)
+{
+    Node *n;
+
+    n = mknode(line, Nmatch);
+    n->match.pat = pat;
+    n->match.block = body;
     return n;
 }
 

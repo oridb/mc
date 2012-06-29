@@ -534,9 +534,9 @@ stmt    : decl
         ;
 
 forstmt : Tfor optexprln optexprln optexprln block
-            {$$ = mkloop($1->line, $2, $3, $4, $5);}
+            {$$ = mkloopstmt($1->line, $2, $3, $4, $5);}
         | Tfor decl optexprln optexprln block
-            {$$ = mkloop($1->line, $2, $3, $4, $5);}
+            {$$ = mkloopstmt($1->line, $2, $3, $4, $5);}
         ;
 
 optexprln: exprln {$$ = $1;}
@@ -545,15 +545,15 @@ optexprln: exprln {$$ = $1;}
 
 whilestmt
         : Twhile exprln block
-            {$$ = mkloop($1->line, NULL, $2, NULL, $3);}
+            {$$ = mkloopstmt($1->line, NULL, $2, NULL, $3);}
         ;
 
 ifstmt  : Tif exprln blockbody elifs
-            {$$ = mkif($1->line, $2, $3, $4);}
+            {$$ = mkifstmt($1->line, $2, $3, $4);}
         ;
 
 elifs   : Telif exprln blockbody elifs
-            {$$ = mkif($1->line, $2, $3, $4);}
+            {$$ = mkifstmt($1->line, $2, $3, $4);}
         | Telse blockbody Tendblk
             {$$ = $2;}
         | Tendblk

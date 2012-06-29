@@ -345,8 +345,10 @@ Node *mkfile(char *name);
 Node *mkuse(int line, char *use, int islocal);
 Node *mkexpr(int line, Op op, ...); /* NULL terminated */
 Node *mkcall(int line, Node *fn, Node **args, size_t nargs);
-Node *mkif(int line, Node *cond, Node *iftrue, Node *iffalse);
-Node *mkloop(int line, Node *init, Node *cond, Node *incr, Node *body);
+Node *mkifstmt(int line, Node *cond, Node *iftrue, Node *iffalse);
+Node *mkloopstmt(int line, Node *init, Node *cond, Node *incr, Node *body);
+Node *mkmatchstmt(int line, Node *val, Node **matches, size_t nmatches);
+Node *mkmatch(int line, Node *pat, Node *body);
 Node *mkblock(int line, Stab *scope);
 Node *mkintlit(int line, uvlong val);
 
