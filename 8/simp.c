@@ -48,7 +48,7 @@ struct Simp {
 };
 
 static Node *simp(Simp *s, Node *n);
-static Node *rval(Simp *s, Node *n);
+static Node *rval(Simp *s, Node *n, Node *dst);
 static Node *lval(Simp *s, Node *n);
 static void declarelocal(Simp *s, Node *n);
 
@@ -319,7 +319,7 @@ static void simpif(Simp *s, Node *n)
 
     l1 = genlbl();
     l2 = genlbl();
-    c = rval(s, n->ifstmt.cond);
+    c = rval(s, n->ifstmt.cond, NULL);
     cjmp(s, c, l1, l2);
     simp(s, l1);
     simp(s, n->ifstmt.iftrue);
@@ -354,7 +354,7 @@ static void simploop(Simp *s, Node *n)
     simp(s, n->loopstmt.body);  /* body */
     simp(s, n->loopstmt.step);  /* step */
     simp(s, lcond);             /* test lbl */
-    t = rval(s, n->loopstmt.cond);  /* test */
+    t = rval(s, n->loopstmt.cond, NULL);  /* test */
     cjmp(s, t, lbody, lend);    /* repeat? */
     simp(s, lend);              /* exit */
 }
@@ -441,7 +441,7 @@ static Node *ucompare(Simp *s, Node *a, Node *b, Type *t, size_t off)
                 v = ucompare(s, a, b, uc->etype, off);
                 r = mkexpr(a->line, Oland, r, v, NULL);
                 r->expr.type = tyword;
-                r = rval(s, r); /* Oland needs to be reduced */
+                r = rval(s, r, NULL); /* Oland needs to be reduced */
             }
             break;
     }
@@ -460,7 +460,7 @@ static void simpmatch(Simp *s, Node *n)
     f = stdout;
 
     end = genlbl();
-    val = rval(s, n->matchstmt.val); /* FIXME: don't recompute, even if pure */
+    val = rval(s, n->matchstmt.val, NULL); /* FIXME: don't recompute, even if pure */
     for (i = 0; i < n->matchstmt.nmatches; i++) {
         m = n->matchstmt.matches[i];
 
@@ -562,7 +562,7 @@ static Node *idxaddr(Simp *s, Node *n)
     else
         die("Can't index type %s\n", tystr(n->expr.type));
     assert(t->expr.type->type == Typtr);
-    u = rval(s, args[1]);
+    u = rval(s, args[1], NULL);
     sz = size(n);
     v = mul(u, word(n->line, sz));
     r = add(t, v);
@@ -574,7 +574,7 @@ static Node *slicebase(Simp *s, Node *n, Node *off)
     Node *t, *u, *v;
     int sz;
 
-    t = rval(s, n);
+    t = rval(s, n, NULL);
     u = NULL;
     switch (exprtype(n)->type) {
         case Typtr:     u = n; break;
@@ -617,26 +617,29 @@ static Node *simplazy(Simp *s, Node *n, Node *r)
 
     next = genlbl();
     end = genlbl();
-    a = rval(s, n->expr.args[0]);
+    a = rval(s, n->expr.args[0], NULL);
     append(s, store(r, a));
     if (exprop(n) == Oland)
         cjmp(s, a, next, end);
     else if (exprop(n) == Olor)
         cjmp(s, a, end, next);
     append(s, next);
-    b = rval(s, n->expr.args[1]);
+    b = rval(s, n->expr.args[1], NULL);
     append(s, store(r, b));
     append(s, end);
     return r;
 }
 
-static Node *lowerslice(Simp *s, Node *n)
+static Node *lowerslice(Simp *s, Node *n, Node *dst)
 {
     Node *t;
     Node *base, *sz, *len;
     Node *stbase, *stlen;
 
-    t = temp(s, n);
+    if (dst)
+        t = dst;
+    else
+        t = temp(s, n);
     /* *(&slice) = (void*)base + off*sz */
     base = slicebase(s, n->expr.args[0], n->expr.args[1]);
     len = sub(n->expr.args[2], n->expr.args[1]);
@@ -684,7 +687,7 @@ static Node *visit(Simp *s, Node *n)
     Node *r;
 
     for (i = 0; i < n->expr.nargs; i++)
-        n->expr.args[i] = rval(s, n->expr.args[i]);
+        n->expr.args[i] = rval(s, n->expr.args[i], NULL);
     if (ispure(n)) {
         r = n;
     } else {
@@ -699,7 +702,7 @@ static Node *visit(Simp *s, Node *n)
     return r;
 }
 
-static Node *lowerucon(Simp *s, Node *n)
+static Node *lowerucon(Simp *s, Node *n, Node *dst)
 {
     Node *tmp, *u, *tag, *elt, *sz;
     Node *r;
@@ -716,14 +719,17 @@ static Node *lowerucon(Simp *s, Node *n)
         }
     }
 
-    tmp = temp(s, n);
+    if (dst)
+        tmp = dst;
+    else
+        tmp = temp(s, n);
     u = addr(tmp, exprtype(n));
     tag = word(n->line, uc->id);
     append(s, store(u, tag));
     if (!uc->etype)
         return tmp;
 
-    elt = rval(s, n->expr.args[1]);
+    elt = rval(s, n->expr.args[1], NULL);
     u = add(u, wordsz);
     if (tysize(uc->etype) > Wordsz) {
         elt = addr(elt, uc->etype);
@@ -736,7 +742,7 @@ static Node *lowerucon(Simp *s, Node *n)
     return tmp;
 }
 
-static Node *rval(Simp *s, Node *n)
+static Node *rval(Simp *s, Node *n, Node *dst)
 {
     Node *r; /* expression result */
     Node *t, *u, *v; /* temporary nodes */
@@ -767,7 +773,7 @@ static Node *rval(Simp *s, Node *n)
             r = word(n->line, size(args[0]));
             break;
         case Oslice:
-            r = lowerslice(s, n);
+            r = lowerslice(s, n, dst);
             break;
         case Oidx:
             t = idxaddr(s, n);
@@ -786,7 +792,7 @@ static Node *rval(Simp *s, Node *n)
             }
             break;
         case Ocons:
-            r = lowerucon(s, n);
+            r = lowerucon(s, n, dst);
             break;
         case Ocast:
             /* slice -> ptr cast */
@@ -800,8 +806,8 @@ static Node *rval(Simp *s, Node *n)
         case Oaddeq: case Osubeq: case Omuleq: case Odiveq: case Omodeq:
         case Oboreq: case Obandeq: case Obxoreq: case Obsleq: case Obsreq:
             assert(fusedmap[exprop(n)] != Obad);
-            u = rval(s, args[0]);
-            v = rval(s, args[1]);
+            u = rval(s, args[0], NULL);
+            v = rval(s, args[1], NULL);
             v = mkexpr(n->line, fusedmap[exprop(n)], u, v, NULL);
             v->expr.type = u->expr.type;
             r = store(u, v);
@@ -854,22 +860,27 @@ static Node *rval(Simp *s, Node *n)
             break;
         case Oret:
             if (s->isbigret) {
-                t = rval(s, args[0]);
+                t = rval(s, args[0], NULL);
                 t = addr(t, exprtype(args[0]));
                 u = word(n->line, size(args[0]));
                 v = mkexpr(n->line, Oblit, s->ret, t, u, NULL);
                 append(s, v);
             } else if (n->expr.nargs && n->expr.args[0]) {
                 t = s->ret;
-                t = store(t, rval(s, args[0]));
+                t = store(t, rval(s, args[0], NULL));
                 append(s, t);
             }
             jmp(s, s->endlbl);
             break;
         case Oasn:
             t = lval(s, args[0]);
-            u = rval(s, args[1]);
-            if (size(n) > Wordsz) {
+            u = rval(s, args[1], t);
+
+            /* if we stored the result into t, rval() should return that,
+             * and we know our work is done. */
+            if (u == t) {
+                r = t;
+            } else if (size(n) > Wordsz) {
                 t = addr(t, exprtype(n));
                 u = addr(u, exprtype(n));
                 v = word(n->line, size(n));
@@ -883,7 +894,7 @@ static Node *rval(Simp *s, Node *n)
                 r = temp(s, n);
                 linsert(&n->expr.args, &n->expr.nargs, 1, addr(r, exprtype(n)));
                 for (i = 0; i < n->expr.nargs; i++)
-                    n->expr.args[i] = rval(s, n->expr.args[i]);
+                    n->expr.args[i] = rval(s, n->expr.args[i], NULL);
                 append(s, n);
             } else {
                 r = visit(s, n);
@@ -929,7 +940,7 @@ static Node *simp(Simp *s, Node *n)
         case Nloopstmt:  simploop(s, n);        break;
         case Nmatchstmt: simpmatch(s, n);       break;
         case Nexpr:
-            r = rval(s, n);
+            r = rval(s, n, NULL);
             if (r)
                 append(s, r);
             /* drain the increment queue for this expr */
