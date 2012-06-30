@@ -15,6 +15,7 @@
 
 #include "platform.h" /* HACK. We need some platform specific code gen behavior. *sigh.* */
 
+
 /* takes a list of nodes, and reduces it (and it's subnodes) to a list
  * following these constraints:
  *      - All nodes are expression nodes
@@ -376,37 +377,38 @@ static Ucon *finducon(Node *n)
     return NULL;
 }
 
-static Node *uconid(Node *n)
+static Node *uconid(Node *n, size_t off)
 {
     Ucon *uc;
     Type *t;
 
     t = tybase(n->expr.type);
     if (exprop(n) != Ocons)
-        return load(addr(n, tyword));
+        return load(add(addr(n, tyword), word(n->line, off)));
 
     uc = finducon(n);
-    return mkintlit(uc->line, uc->id);
+    return word(uc->line, uc->id);
 }
 
-static Node *uval(Node *n)
+static Node *uval(Node *n, size_t off)
 {
     if (exprop(n) == Ocons)
         return n->expr.args[1];
+    else if (exprop(n) == Olit)
+        return n;
     else
         /* FIXME: WRONG WRONG WRONG. Union vals 
          * aren't only words. */
-        return load(add(addr(n, tyword), wordsz));
+        return load(add(addr(n, tyword), word(n->line, off)));
 }
 
-static Node *compare(Simp *s, Node *a, Node *b)
+static Node *ucompare(Simp *s, Node *a, Node *b, Type *t, size_t off)
 {
     Node *r, *v, *x, *y;
     Ucon *uc;
-    Type *t;
 
     assert(a->type == Nexpr);
-    t = tybase(a->expr.type);
+    t = tybase(t);
     r = NULL;
     switch (t->type) {
         case Tyvoid: case Tybad: case Tyvalist: case Tyvar:
@@ -420,12 +422,14 @@ static Node *compare(Simp *s, Node *a, Node *b)
         case Tyint8: case Tyint16: case Tyint32: case Tyint:
         case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint:
         case Typtr: case Tyfunc:
-            r = mkexpr(a->line, Oeq, a, b, NULL);
+            x = uval(a, off);
+            y = uval(b, off);
+            r = mkexpr(a->line, Oeq, x, y, NULL);
             r->expr.type = tyword;
             break;
         case Tyunion:
-            x = uconid(a);
-            y = uconid(b);
+            x = uconid(a, off);
+            y = uconid(b, off);
             uc = finducon(a);
             if (!uc)
                 uc = finducon(b);
@@ -433,10 +437,11 @@ static Node *compare(Simp *s, Node *a, Node *b)
             r = mkexpr(a->line, Oeq, x, y, NULL);
             r->expr.type = tyword;
             if (uc->etype) {
-                v = compare(s, uval(a), uval(b));
+                off += Wordsz;
+                v = ucompare(s, a, b, uc->etype, off);
                 r = mkexpr(a->line, Oland, r, v, NULL);
                 r->expr.type = tyword;
-                r = rval(s, r); /* Oandl needs to be reduced */
+                r = rval(s, r); /* Oland needs to be reduced */
             }
             break;
     }
@@ -444,12 +449,15 @@ static Node *compare(Simp *s, Node *a, Node *b)
             
 }
 
+
+FILE *f;
 static void simpmatch(Simp *s, Node *n)
 {
     Node *end, *cur, *next; /* labels */
     Node *val, *cond; /* intermediates */
     Node *m;
     size_t i;
+    f = stdout;
 
     end = genlbl();
     val = rval(s, n->matchstmt.val); /* FIXME: don't recompute, even if pure */
@@ -457,7 +465,7 @@ static void simpmatch(Simp *s, Node *n)
         m = n->matchstmt.matches[i];
 
         /* check pattern */
-        cond = compare(s, val, m->match.pat);
+        cond = ucompare(s, val, m->match.pat, val->expr.type, 0);
         cur = genlbl();
         next = genlbl();
         cjmp(s, cond, cur, next);
