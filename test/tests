@@ -42,6 +42,7 @@ B gsizeof	E	5
 B mkunion	E	0
 B matchint	E	84
 B matchunion	E	84
+B matchargunion	E	69
 F declmismatch
 F infermismatch
 F flow
