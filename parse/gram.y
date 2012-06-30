@@ -123,12 +123,12 @@ Stab *curscope;
 
 %type <tydef> tydef
 
-%type <node> exprln retexpr expr atomicexpr literal asnexpr lorexpr landexpr borexpr
-%type <node> bandexpr cmpexpr unioncons addexpr mulexpr shiftexpr prefixexpr postfixexpr
+%type <node> exprln retexpr expr atomicexpr littok literal asnexpr lorexpr landexpr borexpr
+%type <node> bandexpr cmpexpr unionexpr addexpr mulexpr shiftexpr prefixexpr postfixexpr
 %type <node> funclit arraylit name block blockbody stmt label use
 %type <node> decl declbody declcore structelt
 %type <node> ifstmt forstmt whilestmt matchstmt elifs optexprln
-%type <node> pat match
+%type <node> pat unionpat match
 %type <node> castexpr
 %type <ucon> unionelt
 
@@ -394,16 +394,16 @@ cmpexpr : cmpexpr cmpop castexpr
         | castexpr
         ;
 
-castexpr: unioncons Tcast Toparen type Tcparen
+castexpr: unionexpr Tcast Toparen type Tcparen
             {$$ = mkexpr($1->line, Ocast, $1, NULL);
              $$->expr.type = $4;}
-        | unioncons 
+        | unionexpr 
         ;
 
 
 cmpop   : Teq | Tgt | Tlt | Tge | Tle | Tne ;
 
-unioncons
+unionexpr
         : Ttick Tident borexpr
             {$$ = mkexpr($1->line, Ocons, mkname($2->line, $2->str), $3, NULL);}
         | Ttick Tident
@@ -493,7 +493,10 @@ atomicexpr
 
 literal : funclit       {$$ = $1;}
         | arraylit      {$$ = $1;}
-        | Tstrlit       {$$ = mkstr($1->line, $1->str);}
+        | littok        {$$ = $1;}
+        ;
+
+littok  : Tstrlit       {$$ = mkstr($1->line, $1->str);}
         | Tintlit       {$$ = mkint($1->line, strtol($1->str, NULL, 0));}
         | Tchrlit       {$$ = mkchar($1->line, *$1->str);} /* FIXME: expand escapes, unicode  */
         | Tfloatlit     {$$ = mkfloat($1->line, strtod($1->str, NULL));}
@@ -577,8 +580,15 @@ match   : pat Tcolon block {$$ = mkmatch($1->line, $1, $3);}
         | Tendln {$$ = NULL;}
         ;
 
-pat     : literal {$$ = mkexpr($1->line, Olit, $1, NULL);}
-        | unioncons {$$ = $1;}
+pat     : unionpat {$$ = $1;}
+        | littok {$$ = mkexpr($1->line, Olit, $1, NULL);}
+        | Tident {$$ = mkexpr($1->line, Ovar, mkname($1->line, $1->str), NULL);}
+        ;
+
+unionpat: Ttick Tident pat
+            {$$ = mkexpr($1->line, Ocons, mkname($2->line, $2->str), $3, NULL);}
+        | Ttick Tident
+            {$$ = mkexpr($1->line, Ocons, mkname($2->line, $2->str), NULL);}
         ;
 
 block   : blockbody Tendblk
