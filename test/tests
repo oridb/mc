@@ -1,18 +1,18 @@
 # Format:
 # [B|F] testname [E|P] result
 #    [B|F]: Compiler outcome.
-#       B: Expect that this test will build.
-#       F: Expect that this test will not build.
+#	B: Expect that this test will build.
+#	F: Expect that this test will not build.
 #    testname: Test case
-#       The test that will run. We will try to
-#       compile 'testname.myr' to 'testname',
-#       and then execute it, verifying the result
+#	The test that will run. We will try to
+#	compile 'testname.myr' to 'testname',
+#	and then execute it, verifying the result
 #    [E|P]: Result type
-#       E tells us that the result is an exit status
-#       E tells us that the result output on stdout
+#	E tells us that the result is an exit status
+#	E tells us that the result output on stdout
 #    result: Result value
-#       What we compare with. This should be self-
-#       evident.
+#	What we compare with. This should be self-
+#	evident.
 B main		E	0
 B add		E	53
 B mul		E	42
@@ -45,6 +45,8 @@ B matchconst	E	88
 B matchunion	E	84
 B matchargunion	E	69
 B matchbind	E	8
+B arraylit	E	3
+B structlit	E	42
 F declmismatch
 F infermismatch
 F flow

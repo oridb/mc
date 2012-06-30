@@ -1,0 +1,13 @@
+type t = struct
+	a	: int
+	b	: char
+	c	: char[,]
+;;
+
+const main = {
+	var v : t
+
+	v = [.a=42, .b='x', .c="foo"]
+	-> v.a
+}
+
