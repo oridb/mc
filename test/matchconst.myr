@@ -1,0 +1,18 @@
+/* some misc constants */
+const Ca = 123
+const Cb = 8
+const Cc = 42
+
+const main = {
+	var v
+
+	v = 8
+	match v
+	Ca: 	-> 123
+		;;
+	Cb:	-> 88
+		;;
+	Cc:	-> 42
+		;;
+	;;
+}
