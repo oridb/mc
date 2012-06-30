@@ -728,16 +728,20 @@ static void checkcast(Node *n)
  * and default constraint selections */
 static Type *tyfix(Node *ctx, Type *t)
 {
-    static Type *tyint;
+    static Type *tyint, *tyflt;
     size_t i;
     char buf[1024];
 
     if (!tyint)
         tyint = mkty(-1, Tyint);
+    if (!tyflt)
+        tyflt = mkty(-1, Tyfloat64);
 
     t = tf(t);
     if (t->type == Tyvar) {
-        if (hascstr(t, cstrtab[Tcint]) || cstrcheck(t, tyint))
+        if (hascstr(t, cstrtab[Tcint]) && cstrcheck(t, tyint))
+            return tyint;
+        if (hascstr(t, cstrtab[Tcfloat]) && cstrcheck(t, tyflt))
             return tyint;
     } else {
         if (t->type == Tyarray) {
