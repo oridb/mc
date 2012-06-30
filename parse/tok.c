@@ -260,6 +260,7 @@ static Tok *oper(void)
         case ']': tt = Tcsqbrac; break;
         case ',': tt = Tcomma; break;
         case '`': tt = Ttick; break;
+        case '#': tt = Thash; break;
         case ':':
                   if (match(':'))
                       tt = Tcoloncolon;

@@ -69,6 +69,7 @@ Stab *curscope;
 %token<tok> Tcsqbrac /* ] */
 %token<tok> Tat      /* @ */
 %token<tok> Ttick    /* ` */
+%token<tok> Thash    /* # */
 
 %token<tok> Ttype            /* type */
 %token<tok> Tfor             /* for */
@@ -125,7 +126,7 @@ Stab *curscope;
 
 %type <node> exprln retexpr expr atomicexpr littok literal asnexpr lorexpr landexpr borexpr
 %type <node> bandexpr cmpexpr unionexpr addexpr mulexpr shiftexpr prefixexpr postfixexpr
-%type <node> funclit arraylit name block blockbody stmt label use
+%type <node> funclit seqlit name block blockbody stmt label use
 %type <node> decl declbody declcore structelt
 %type <node> ifstmt forstmt whilestmt matchstmt elifs optexprln
 %type <node> pat unionpat match
@@ -492,7 +493,7 @@ atomicexpr
         ;
 
 literal : funclit       {$$ = $1;}
-        | arraylit      {$$ = $1;}
+        | seqlit        {$$ = $1;}
         | littok        {$$ = $1;}
         ;
 
@@ -517,13 +518,19 @@ params  : declcore
             {$$.nl = NULL; $$.nn = 0;}
         ;
 
-arraylit : Tosqbrac arraybody Tcsqbrac
-            {$$ = NULL; die("Unimpl arraylit");}
-         ;
+seqlit  : Tosqbrac seqbody Tcsqbrac
+            {$$ = NULL; die("Unimpl seqlit");}
+        ;
 
-arraybody
-        : expr
-        | arraybody Tcomma expr
+seqbody : seqelt
+        | seqbody Tcomma seqelt
+        ;
+
+seqelt  : Tdot Tident Tasn expr
+        | Thash atomicexpr Tasn expr
+        | expr
+        | Tendln seqelt
+        | seqelt Tendln
         ;
 
 stmt    : decl
