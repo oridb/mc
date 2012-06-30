@@ -3,6 +3,7 @@ export PATH=.:$PATH
 export MC=../8/8m
 export MU=../util/muse
 export CC=cc
+NFAILURES=0
 
 function use {
     rm -f $1 $1.o $1.s $1.use
@@ -20,6 +21,8 @@ function build {
 function prints {
     if [ `./$1` -ne $2 ]; then
         echo "FAIL: $1"
+        FAILED="$FAILED $1"
+        NFAILED=$[$NFAILED + 1]
     else
         echo "PASS: $1"
     fi
@@ -32,9 +35,13 @@ function exitswith {
             echo "PASS: $1"
         else
             echo "FAIL: $1"
+            FAILED="$FAILED $1"
+            NFAILED=$[$NFAILED + 1]
         fi
     else
         echo "FAIL: $1"
+        FAILED="$FAILED $1"
+        NFAILED=$[$NFAILED + 1]
     fi
 }
 
@@ -66,3 +73,4 @@ for i in `awk '/^B/{print $0}' tests`; do
         P) prints $tst $val ;;
     esac
 done
+echo "FAILURES ($NFAILED)": $FAILED
