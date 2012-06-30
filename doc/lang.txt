@@ -138,13 +138,64 @@ Types:
             Floating-point types. The exact semantics are yet to be
             defined.
 
-        @<ident>
+        @<name>
             A generic type. This is only allowed in the scope of 'generic'
             constants.
 
     It also allows composite types to be defined. These are listed below:
 
-        @a
+        <type>*
 
-Constants:
+            A pointer to a type This type does not support C-style pointer
+            arithmetic, indexing, or any other such manipulation. However,
+            slices of it can be taken, which subsumes the majority of uses
+            for pointer arithmetic. The pointer is passed by value, but as
+            expected, the pointed to value is not.
+
+        <type>[,]
+
+            A slice of a type. Slices point to a number of objects. They
+            can be indexed, sliced, and assigned. They carry their range,
+            and can in principle be bounds-checked (although the compiler
+            currently does not do this, due to the lack of a runtime library
+            that will allow a 'panic' function to be called).
+
+        <type>[size]
+
+            An array of <type>. Unlike most languages other than Pascal, the
+            size of the array is a part of it's type, and arrays of
+            different sizes may not be assigned between each other. Arrays
+            are passed by value, and copied when assigned.
+
+        <type0>,<type1>,...,<typeN>
+
+            A tuple of type t0, t1, t2, ....
+
+    Finally, there are aggregate types that can be defined:
+
+        struct
+
+        union
+
+    Any of these types can be given a name. This naming defines a completely
+    new incompatible type
+
+Type Constraints
+
+
+Literals:
+
+    character
+    bool
+    int
+    float
+    func
+    sequence
+
+Symbols
+
+Imports
+
+Exports
+
 
