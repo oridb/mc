@@ -394,6 +394,8 @@ static Node *uval(Node *n)
     if (exprop(n) == Ocons)
         return n->expr.args[1];
     else
+        /* FIXME: WRONG WRONG WRONG. Union vals 
+         * aren't only words. */
         return load(add(addr(n, tyword), wordsz));
 }
 

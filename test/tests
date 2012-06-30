@@ -41,8 +41,10 @@ B sizeof	E	4
 B gsizeof	E	5
 B mkunion	E	0
 B matchint	E	84
+B matchconst	E	88
 B matchunion	E	84
 B matchargunion	E	69
+B matchbind	E	8
 F declmismatch
 F infermismatch
 F flow
