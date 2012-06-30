@@ -1,0 +1,26 @@
+type u = union
+	`Int int
+	`Chr char
+	`Nil
+;;
+
+const main = {
+	var v
+
+	v = `Int 11
+	match v
+	`Int 127:
+		-> 42
+		;;
+	`Int (var x):
+		-> x
+		;;
+	`Chr 'a':
+		-> 4
+		;;
+	`Nil:
+		-> 6
+		;;
+	;;
+}
+

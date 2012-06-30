@@ -583,6 +583,7 @@ match   : pat Tcolon block {$$ = mkmatch($1->line, $1, $3);}
 pat     : unionpat {$$ = $1;}
         | littok {$$ = mkexpr($1->line, Olit, $1, NULL);}
         | Tident {$$ = mkexpr($1->line, Ovar, mkname($1->line, $1->str), NULL);}
+        | Toparen pat Tcparen {$$ = $2;}
         ;
 
 unionpat: Ttick Tident pat
