@@ -12,7 +12,7 @@ const main = {
 	`Int 127:
 		-> 42
 		;;
-	`Int (var x):
+	`Int x:
 		-> x
 		;;
 	`Chr 'a':
