@@ -358,9 +358,26 @@ static void simploop(Simp *s, Node *n)
     simp(s, lend);              /* exit */
 }
 
-static Node *uconid(Node *n)
+static Ucon *finducon(Node *n)
 {
     size_t i;
+    Type *t;
+    Ucon *uc;
+
+    t = tybase(n->expr.type);
+    if (exprop(n) != Ocons)
+        return NULL;
+    for (i = 0; i  < t->nmemb; i++) {
+        uc = t->udecls[i];
+        if (!strcmp(namestr(uc->name), namestr(n->expr.args[0])))
+            return uc;
+    }
+    die("No ucon?!?");
+    return NULL;
+}
+
+static Node *uconid(Node *n)
+{
     Ucon *uc;
     Type *t;
 
@@ -368,17 +385,22 @@ static Node *uconid(Node *n)
     if (exprop(n) != Ocons)
         return load(addr(n, tyword));
 
-    for (i = 0; i  < t->nmemb; i++) {
-        uc = t->udecls[i];
-        if (!strcmp(namestr(uc->name), namestr(n->expr.args[0])))
-            return mkintlit(uc->line, uc->id);
-    }
-    return NULL;
+    uc = finducon(n);
+    return mkintlit(uc->line, uc->id);
+}
+
+static Node *uval(Node *n)
+{
+    if (exprop(n) == Ocons)
+        return n->expr.args[1];
+    else
+        return load(add(addr(n, tyword), wordsz));
 }
 
 static Node *compare(Simp *s, Node *a, Node *b)
 {
     Node *r, *v, *x, *y;
+    Ucon *uc;
     Type *t;
 
     assert(a->type == Nexpr);
@@ -397,15 +419,21 @@ static Node *compare(Simp *s, Node *a, Node *b)
         case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint:
         case Typtr: case Tyfunc:
             r = mkexpr(a->line, Oeq, a, b, NULL);
+            r->expr.type = tyword;
             break;
         case Tyunion:
             x = uconid(a);
             y = uconid(b);
+            uc = finducon(a);
+            if (!uc)
+                uc = finducon(b);
 
             r = mkexpr(a->line, Oeq, x, y, NULL);
-            if (a->expr.nargs == 2) {
-                v = compare(s, a->expr.args[1], b->expr.args[1]);
+            r->expr.type = tyword;
+            if (uc->etype) {
+                v = compare(s, uval(a), uval(b));
                 r = mkexpr(a->line, Oland, r, v, NULL);
+                r->expr.type = tyword;
                 r = rval(s, r); /* Oandl needs to be reduced */
             }
             break;
