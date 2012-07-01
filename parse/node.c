@@ -208,6 +208,15 @@ Node *mkfloat(int line, double val)
     return n;
 }
 
+Node *mkarray(int line, Node **vals, size_t nvals)
+{
+    Node *n;
+
+    n = NULL;
+    die("Yeah, I need an array repr...");
+    return n;
+}
+
 Node *mkname(int line, char *name)
 {
     Node *n;

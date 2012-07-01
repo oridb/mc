@@ -1,3 +1,5 @@
+#define FATAL __attribute__((noreturn))
+
 typedef uint8_t         byte;
 typedef uint32_t        unichar;
 typedef unsigned int    uint;
@@ -159,6 +161,7 @@ struct Node {
         struct {
             Littype littype;
             Type    *type;
+            size_t   nelt;
             union {
                 uvlong   intval;
                 double   fltval;
@@ -190,7 +193,7 @@ struct Node {
         } matchstmt;
 
         struct {
-            Node *pat; /* literal expr. FIXME: this isn't an appropriate type */
+            Node *pat;
             Node *block;
         } match;
 
@@ -282,8 +285,8 @@ void *zalloc(size_t size);
 void *xalloc(size_t size);
 void *zrealloc(void *p, size_t oldsz, size_t size);
 void *xrealloc(void *p, size_t size);
-void  die(char *msg, ...);
-void  fatal(int line, char *fmt, ...);
+void  die(char *msg, ...) FATAL;
+void  fatal(int line, char *fmt, ...) FATAL;
 char *strdupn(char *s, size_t len);
 char *strjoin(char *u, char *v);
 void *memdup(void *mem, size_t len);
@@ -298,6 +301,7 @@ Stab *mkstab(void);
 
 void putns(Stab *st, Stab *scope);
 void puttype(Stab *st, Node *n, Type *ty);
+void putcstr(Stab *st, Node *n, Cstr *cstr);
 void updatetype(Stab *st, Node *n, Type *t);
 void putdcl(Stab *st, Node *dcl);
 void putucon(Stab *st, Ucon *uc);
@@ -305,6 +309,7 @@ void putucon(Stab *st, Ucon *uc);
 Stab *getns(Stab *st, Node *n);
 Node *getdcl(Stab *st, Node *n);
 Type *gettype(Stab *st, Node *n);
+Cstr *getcstr(Stab *st, Node *n);
 Ucon *getucon(Stab *st, Node *n);
 
 Stab *curstab(void);
@@ -358,7 +363,7 @@ Node *mkchar(int line, uint32_t val);
 Node *mkstr(int line, char *s);
 Node *mkfloat(int line, double flt);
 Node *mkfunc(int line, Node **args, size_t nargs, Type *ret, Node *body);
-Node *mkarray(int line, Node **vals);
+Node *mkarray(int line, Node **vals, size_t nvals);
 Node *mkname(int line, char *name);
 Node *mknsname(int line, char *ns, char *name);
 Node *mkdecl(int line, Node *name, Type *ty);

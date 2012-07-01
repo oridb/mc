@@ -127,13 +127,13 @@ Stab *curscope;
 %type <node> exprln retexpr expr atomicexpr littok literal asnexpr lorexpr landexpr borexpr
 %type <node> bandexpr cmpexpr unionexpr addexpr mulexpr shiftexpr prefixexpr postfixexpr
 %type <node> funclit seqlit name block blockbody stmt label use
-%type <node> decl declbody declcore structelt
+%type <node> decl declbody declcore structelt seqelt
 %type <node> ifstmt forstmt whilestmt matchstmt elifs optexprln
 %type <node> pat unionpat match
 %type <node> castexpr
 %type <ucon> unionelt
 
-%type <nodelist> arglist argdefs structbody params matches
+%type <nodelist> arglist argdefs structbody params matches seqbody
 %type <uconlist> unionbody
 
 %union {
@@ -519,18 +519,23 @@ params  : declcore
         ;
 
 seqlit  : Tosqbrac seqbody Tcsqbrac
-            {$$ = NULL; die("Unimpl seqlit");}
+            {$$ = mkarray($1->line, $2.nl, $2.nn);}
         ;
 
 seqbody : seqelt
+            {$$.nl = NULL; $$.nn = 0;
+             lappend(&$$.nl, &$$.nn, $1);}
         | seqbody Tcomma seqelt
+             {lappend(&$$.nl, &$$.nn, $3);}
         ;
 
-seqelt  : Tdot Tident Tasn expr
-        | Thash atomicexpr Tasn expr
-        | expr
-        | Tendln seqelt
-        | seqelt Tendln
+seqelt  : Tdot Tident Tasn expr 
+            {die("Unimplemented struct member init");}
+        | Thash atomicexpr Tasn expr 
+            {die("Unimplmented array member init");}
+        | expr {$$ = $1;}
+        | Tendln seqelt {$$ = $2;}
+        | seqelt Tendln {$$ = $1;}
         ;
 
 stmt    : decl
