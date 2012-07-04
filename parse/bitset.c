@@ -80,7 +80,7 @@ int bsiter(Bitset *bs, size_t *elt)
     size_t i;
 
     for (i = *elt; i < bsmax(bs); i++) {
-        while (!bs->chunks[i/Sizetbits])
+        while (i < bsmax(bs) && !bs->chunks[i/Sizetbits])
             i = (i + Sizetbits) & ~(Sizetbits - 1);
         if (bshas(bs, i)) {
             *elt = i;
