@@ -349,18 +349,6 @@ next:
     return 0;
 }
 
-static Bitset *adjacent(Isel *s, regid n)
-{
-    Bitset *r;
-    size_t i;
-
-    r = bsdup(s->gadj[n]);
-    for (i = 0; i < s->nselstk; i++)
-	bsdel(r, s->selstk[i]->reg.id);
-    bsdiff(r, s->coalesced);
-    return r;
-}
-
 static size_t nodemoves(Isel *s, regid n, Insn ***pil)
 {
     size_t i, j;
@@ -572,7 +560,6 @@ static void combine(Isel *s, regid u, regid v)
     }
     
     size_t x;
-    adj = adjacent(s, v);
     for (t = 0; adjiter(s, v, &t); t++) {
         bsiter(adj, &x);
         assert(t == x);
@@ -583,7 +570,6 @@ static void combine(Isel *s, regid u, regid v)
 	ldel(&s->wlfreeze, &s->nwlfreeze, idx);
 	lappend(&s->wlspill, &s->nwlspill, locmap[u]);
     }
-
 }
 
 static void coalesce(Isel *s)
@@ -694,7 +680,6 @@ static void selspill(Isel *s)
 static int paint(Isel *s)
 {
     int taken[K + 2]; /* esp, ebp aren't "real colours" */
-    Bitset *adj;
     Loc *n, *w;
     regid l;
     size_t i;
@@ -706,13 +691,11 @@ static int paint(Isel *s)
 	bzero(taken, K*sizeof(int));
 	n = lpop(&s->selstk, &s->nselstk);
 
-	adj = adjacent(s, n->reg.id);
-	for (l = 0; bsiter(adj, &l); l++) {
+	for (l = 0; adjiter(s, n->reg.id, &l); l++) {
 	    w = locmap[getalias(s, l)];
 	    if (w->reg.colour)
 		taken[colourmap[w->reg.colour]] = 1;
 	}
-	bsfree(adj);
 
 	found = 0;
 	for (i = 0; i < K; i++) {
