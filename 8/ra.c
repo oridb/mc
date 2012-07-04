@@ -330,6 +330,25 @@ static void build(Isel *s)
     }
 }
 
+static int adjiter(Isel *s, regid n, regid *m)
+{
+    size_t i, r;
+
+    for (r = *m; bsiter(s->gadj[n], &r); r++) {
+        for (i = 0; i < s->nselstk; i++)
+            if (r == s->selstk[i]->reg.id)
+                goto next;
+        if (bshas(s->coalesced, r))
+            goto next;
+        assert(r < maxregid);
+        *m = r;
+        return 1;
+next:
+        continue;
+    }
+    return 0;
+}
+
 static Bitset *adjacent(Isel *s, regid n)
 {
     Bitset *r;
@@ -412,32 +431,27 @@ static void decdegree(Isel *s, regid n)
 {
     int d;
     regid m;
-    Bitset *adj;
 
+    assert(n < maxregid);
     d = s->degree[n];
     s->degree[n]--;
 
     if (d == K) {
 	enablemove(s, n);
-	adj = adjacent(s, n);
-	for (m = 0; bsiter(adj, &m); m++)
+	for (m = 0; adjiter(s, n, &m); m++)
 	    enablemove(s, n);
-	bsfree(adj);
     }
 }
 
 static void simp(Isel *s)
 {
     Loc *l;
-    Bitset *adj;
     regid m;
 
     l = lpop(&s->wlsimp, &s->nwlsimp);
     lappend(&s->selstk, &s->nselstk, l);
-    adj = adjacent(s, l->reg.id);
-    for (m = 0; bsiter(adj, &m); m++)
+    for (m = 0; adjiter(s, l->reg.id, &m); m++)
 	decdegree(s, m);
-    bsfree(adj);
 }
 
 static regid getalias(Isel *s, regid id)
@@ -471,20 +485,14 @@ static int conservative(Isel *s, regid u, regid v)
     int k;
     regid n;
     size_t i;
-    Bitset *uadj;
-    Bitset *vadj;
 
-    uadj = adjacent(s, u);
-    vadj = adjacent(s, u);
     k = 0;
-    for (i = 0; bsiter(uadj, &n); i++)
+    for (i = 0; adjiter(s, u, &n); i++)
 	if (s->degree[n] >= K)
 	    k++;
-    for (i = 0; bsiter(vadj, &n); i++)
+    for (i = 0; adjiter(s, v, &n); i++)
 	if (s->degree[n] >= K)
 	    k++;
-    bsfree(uadj);
-    bsfree(vadj);
     return k < K;
 }
 
@@ -503,18 +511,15 @@ static int ok(Isel *s, regid t, regid r)
 static int combinable(Isel *s, regid u, regid v)
 {
     regid t;
-    Bitset *adj;
 
     /* if u isn't prepainted, can we conservatively coalesce? */
     if (!bshas(s->prepainted, u) && conservative(s, u, v))
 	return 1;
 
     /* if it is, are the adjacent nodes ok to combine with this? */
-    adj = adjacent(s, u);
-    for (t = 0; bsiter(adj, &t); t++)
+    for (t = 0; adjiter(s, u, &t); t++)
 	if (!ok(s, t, u))
 	    return 0;
-    bsfree(adj);
     return 1;
 }
 
@@ -566,8 +571,11 @@ static void combine(Isel *s, regid u, regid v)
 	    lappend(&s->rmoves[u], &s->nrmoves[u], s->rmoves[v][i]);
     }
     
+    size_t x;
     adj = adjacent(s, v);
-    for (t = 0; bsiter(adj, &t); t++) {
+    for (t = 0; adjiter(s, v, &t); t++) {
+        bsiter(adj, &x);
+        assert(t == x);
 	gbputedge(s, t, u);
 	decdegree(s, t);
     }
