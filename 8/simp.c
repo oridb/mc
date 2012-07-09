@@ -1090,6 +1090,9 @@ static void lowerdcl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***b
     } else {
         if (dcl->decl.init && exprop(dcl->decl.init) == Olit)
             lappend(&s.blobs, &s.nblobs, dcl);
+        /* uninitialized global vars get zero-initialized decls */
+        else if (!dcl->decl.isconst && !dcl->decl.init)
+            lappend(&s.blobs, &s.nblobs, dcl);
         else
             die("We don't lower globls with nonlit inits yet...");
     }

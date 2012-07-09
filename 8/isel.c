@@ -771,17 +771,22 @@ static void writelit(FILE *fd, Node *v)
 
 void genblob(FILE *fd, Node *blob, Htab *globls)
 {
+    size_t i;
     char *lbl;
 
     /* lits and such also get wrapped in decls */
     assert(blob->type == Ndecl);
-    assert(blob->decl.init != NULL);
 
     lbl = htget(globls, blob);
     fprintf(fd, "%s:\n", lbl);
-    if (exprop(blob->decl.init) != Olit)
-        die("Nonliteral initializer for global");
-    writelit(fd, blob->decl.init->expr.args[0]);
+    if (blob->decl.init) {
+        if (exprop(blob->decl.init) != Olit)
+            die("Nonliteral initializer for global");
+        writelit(fd, blob->decl.init->expr.args[0]);
+    } else {
+        for (i = 0; i < size(blob); i++)
+            fprintf(fd, "\t.byte 0\n");
+    }
 }
 
 /* genasm requires all nodes in 'nl' to map cleanly to operations that are
