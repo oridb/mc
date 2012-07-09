@@ -263,7 +263,7 @@ static Tok *oper(void)
         case '#': tt = Thash; break;
         case ':':
                   if (match(':'))
-                      tt = Tcoloncolon;
+                      tt = Ttrait;
                   else 
                       tt = Tcolon;
                   break;
