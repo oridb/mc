@@ -750,9 +750,14 @@ static void writeblob(FILE *fd, char *p, size_t sz)
     }
 }
 
+void breakhere(){}
+
 static void writelit(FILE *fd, Node *v)
 {
     char lbl[128];
+    size_t i;
+
+    assert(v->type == Nlit);
     switch (v->lit.littype) {
         case Lbool:     fprintf(fd, "\t.long %d\n", v->lit.boolval);     break;
         case Lchr:      fprintf(fd, "\t.byte %d\n",  v->lit.chrval);     break;
@@ -764,6 +769,9 @@ static void writelit(FILE *fd, Node *v)
                         writeblob(fd, v->lit.strval, strlen(v->lit.strval));
                         break;
         case Lseq:
+            for (i = 0; i < v->lit.nelt; i++)
+                writelit(fd, v->lit.seqval[i]->expr.args[0]);
+            break;
         case Lfunc:
                         die("Generating this shit ain't ready yet ");
     }

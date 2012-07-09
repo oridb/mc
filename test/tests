@@ -47,7 +47,7 @@ B matchunion	E	84
 B matchargunion	E	69
 B matchbind	E	8
 B arraylit	E	3
-B arraylit-ni	E	3
+B arraylit-ni	E	2
 B structlit	E	42
 F declmismatch
 F infermismatch
