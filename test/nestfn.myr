@@ -1,0 +1,6 @@
+const main = {
+	const ret42 = {
+		-> 42
+	}
+	-> ret42()
+}

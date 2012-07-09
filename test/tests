@@ -31,6 +31,7 @@ B slicelen	E	5
 B call		E	42
 B voidcall	E	12
 B callbig	E	42
+B nestfn	E	42
 B loop		E	45
 B fib		E	21
 B float		E	1

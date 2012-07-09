@@ -264,7 +264,7 @@ static Tok *oper(void)
         case ':':
                   if (match(':'))
                       tt = Ttrait;
-                  else 
+                  else
                       tt = Tcolon;
                   break;
         case '~': tt = Tbnot; break;
@@ -278,7 +278,7 @@ static Tok *oper(void)
                   if (match('.')) {
                       if (match('.')) {
                           tt = Tellipsis;
-                      } else { 
+                      } else {
                           unget();
                           tt = Tdot;
                       }
