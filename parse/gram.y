@@ -71,15 +71,15 @@ Stab *curscope;
 %token<tok> Ttick    /* ` */
 %token<tok> Thash    /* # */
 
-%token<tok> Ttype            /* type */
-%token<tok> Tfor             /* for */
-%token<tok> Twhile           /* while */
-%token<tok> Tif              /* if */
-%token<tok> Telse            /* else */
-%token<tok> Telif            /* else */
-%token<tok> Tmatch           /* match */
+%token<tok> Ttype    /* type */
+%token<tok> Tfor     /* for */
+%token<tok> Twhile   /* while */
+%token<tok> Tif      /* if */
+%token<tok> Telse    /* else */
+%token<tok> Telif    /* else */
+%token<tok> Tmatch   /* match */
 %token<tok> Tdefault /* default */
-%token<tok> Tgoto            /* goto */
+%token<tok> Tgoto    /* goto */
 
 %token<tok> Tintlit
 %token<tok> Tstrlit
@@ -100,16 +100,16 @@ Stab *curscope;
 %token<tok> Texport  /* export */
 %token<tok> Tprotect /* protect */
 
-%token<tok> Tellipsis        /* ... */
-%token<tok> Tendln           /* ; or \n */
+%token<tok> Tellipsis/* ... */
+%token<tok> Tendln   /* ; or \n */
 %token<tok> Tendblk  /* ;; */
 %token<tok> Tcolon   /* : */
-%token<tok> Tcoloncolon   /* :: */
-%token<tok> Tdot             /* . */
+%token<tok> Ttrait   /* :: */
+%token<tok> Tdot     /* . */
 %token<tok> Tcomma   /* , */
-%token<tok> Tret             /* -> */
-%token<tok> Tuse             /* use */
-%token<tok> Tpkg             /* pkg */
+%token<tok> Tret     /* -> */
+%token<tok> Tuse     /* use */
+%token<tok> Tpkg     /* pkg */
 %token<tok> Tsizeof  /* sizeof */
 
 %token<tok> Tident
