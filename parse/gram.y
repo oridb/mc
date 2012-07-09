@@ -176,6 +176,7 @@ file    : toplev
 toplev
         : decl
             {lappend(&file->file.stmts, &file->file.nstmts, $1);
+             $1->decl.isglobl = 1;
              putdcl(file->file.globls, $1);}
         | use
             {lappend(&file->file.uses, &file->file.nuses, $1);}
@@ -224,7 +225,7 @@ pkgbody : pkgitem
 
 pkgitem : decl 
             {putdcl(file->file.exports, $1);
-            if ($1->decl.init)
+             if ($1->decl.init)
                  lappend(&file->file.stmts, &file->file.nstmts, $1);}
         | tydef {puttype(file->file.exports, mkname($1.line, $1.name), $1.type);}
         | visdef {die("Unimplemented visdef");}

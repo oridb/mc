@@ -32,6 +32,7 @@ B call		E	42
 B voidcall	E	12
 B callbig	E	42
 B nestfn	E	42
+B closure	E	55
 B loop		E	45
 B fib		E	21
 B float		E	1

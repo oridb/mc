@@ -209,9 +209,10 @@ struct Node {
 
         struct {
             long  did;
-            int   isconst;
-            int   isgeneric;
-            int   isextern;
+            char  isglobl;
+            char  isconst;
+            char  isgeneric;
+            char  isextern;
             Node *name;
             Type *type;
             Node *init;
