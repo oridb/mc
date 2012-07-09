@@ -519,7 +519,7 @@ params  : declcore
         ;
 
 seqlit  : Tosqbrac seqbody Tcsqbrac
-            {$$ = mkarray($1->line, $2.nl, $2.nn);}
+            {$$ = mkseq($1->line, $2.nl, $2.nn);}
         ;
 
 seqbody : seqelt

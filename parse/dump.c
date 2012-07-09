@@ -175,7 +175,8 @@ static void outnode(Node *n, FILE *fd, int depth)
                     break;
                 case Lseq:
                     fprintf(fd, " Lseq\n");
-                    outnode(n->lit.arrval, fd, depth+1);
+                    for (i = 0; i < n->lit.nelt; i++)
+                        outnode(n->lit.seqval[i], fd, depth+1);
                     break;
                 default: die("Bad literal type"); break;
             }

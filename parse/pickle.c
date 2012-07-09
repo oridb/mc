@@ -304,6 +304,7 @@ void pickle(Node *n, FILE *fd)
         case Nlit:
             wrbyte(fd, n->lit.littype);
             wrtype(fd, n->lit.type);
+            wrint(fd, n->lit.nelt);
             switch (n->lit.littype) {
                 case Lchr:      wrint(fd, n->lit.chrval);       break;
                 case Lint:      wrint(fd, n->lit.intval);       break;
@@ -311,7 +312,10 @@ void pickle(Node *n, FILE *fd)
                 case Lstr:      wrstr(fd, n->lit.strval);       break;
                 case Lbool:     wrbool(fd, n->lit.boolval);     break;
                 case Lfunc:     pickle(n->lit.fnval, fd);       break;
-                case Lseq:      pickle(n->lit.arrval, fd);      break;
+                case Lseq:
+                    for (i = 0; i < n->lit.nelt; i++)
+                        pickle(n->lit.seqval[i], fd);
+                    break;
             }
             break;
         case Nloopstmt:
@@ -417,6 +421,7 @@ Node *unpickle(FILE *fd)
         case Nlit:
             n->lit.littype = rdbyte(fd);
             n->lit.type = rdtype(fd);
+            n->lit.nelt = rdint(fd);
             switch (n->lit.littype) {
                 case Lchr:      n->lit.chrval = rdint(fd);       break;
                 case Lint:      n->lit.intval = rdint(fd);       break;
@@ -424,7 +429,10 @@ Node *unpickle(FILE *fd)
                 case Lstr:      n->lit.strval = rdstr(fd);       break;
                 case Lbool:     n->lit.boolval = rdbool(fd);     break;
                 case Lfunc:     n->lit.fnval = unpickle(fd);       break;
-                case Lseq:      n->lit.arrval = unpickle(fd);      break;
+                case Lseq:
+                    for (i = 0; i < n->lit.nelt; i++)
+                        n->lit.seqval[i] = unpickle(fd);
+                    break;
             }
             break;
         case Nloopstmt:

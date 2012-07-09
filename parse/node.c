@@ -208,12 +208,15 @@ Node *mkfloat(int line, double val)
     return n;
 }
 
-Node *mkarray(int line, Node **vals, size_t nvals)
+Node *mkseq(int line, Node **vals, size_t nvals)
 {
     Node *n;
 
-    n = NULL;
-    die("Yeah, I need an array repr...");
+    n = mknode(line, Nlit);
+    n->lit.littype = Lseq;
+    n->lit.nelt = nvals;
+    n->lit.seqval = vals;
+
     return n;
 }
 

@@ -102,7 +102,10 @@ static void fixup(Node *n)
         case Nlit:
             switch (n->lit.littype) {
                 case Lfunc:     fixup(n->lit.fnval);          break;
-                case Lseq:      fixup(n->lit.arrval);         break;
+                case Lseq:
+                    for (i = 0; i < n->lit.nelt; i++)
+                        fixup(n->lit.seqval[i]);
+                    break;
                 case Lchr: case Lint: case Lflt: case Lstr: case Lbool:
                     break;
             }
@@ -182,7 +185,10 @@ static Node *specializenode(Node *n, Htab *tsmap)
                 case Lstr:      r->lit.strval = n->lit.strval;       break;
                 case Lbool:     r->lit.boolval = n->lit.boolval;     break;
                 case Lfunc:     r->lit.fnval = specializenode(n->lit.fnval, tsmap);       break;
-                case Lseq:      r->lit.arrval = specializenode(n->lit.arrval, tsmap);     break;
+                case Lseq:
+                    for (i = 0; i < n->lit.nelt; i++)
+                        r->lit.seqval[i] = specializenode(n->lit.seqval[i], tsmap);
+                    break;
             }
             break;
         case Nifstmt:

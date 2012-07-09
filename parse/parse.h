@@ -169,7 +169,7 @@ struct Node {
                 char    *strval;
                 int      boolval;
                 Node    *fnval;
-                Node    *arrval;
+                Node    **seqval;
             };
         } lit;
 
@@ -363,7 +363,7 @@ Node *mkchar(int line, uint32_t val);
 Node *mkstr(int line, char *s);
 Node *mkfloat(int line, double flt);
 Node *mkfunc(int line, Node **args, size_t nargs, Type *ret, Node *body);
-Node *mkarray(int line, Node **vals, size_t nvals);
+Node *mkseq(int line, Node **vals, size_t nvals);
 Node *mkname(int line, char *name);
 Node *mknsname(int line, char *ns, char *name);
 Node *mkdecl(int line, Node *name, Type *ty);
