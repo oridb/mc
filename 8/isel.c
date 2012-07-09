@@ -763,7 +763,7 @@ static void writelit(FILE *fd, Node *v)
                         fprintf(fd, "%s:\n", lbl);
                         writeblob(fd, v->lit.strval, strlen(v->lit.strval));
                         break;
-        case Larray:
+        case Lseq:
         case Lfunc:
                         die("Generating this shit ain't ready yet ");
     }

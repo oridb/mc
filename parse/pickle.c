@@ -311,7 +311,7 @@ void pickle(Node *n, FILE *fd)
                 case Lstr:      wrstr(fd, n->lit.strval);       break;
                 case Lbool:     wrbool(fd, n->lit.boolval);     break;
                 case Lfunc:     pickle(n->lit.fnval, fd);       break;
-                case Larray:    pickle(n->lit.arrval, fd);      break;
+                case Lseq:      pickle(n->lit.arrval, fd);      break;
             }
             break;
         case Nloopstmt:
@@ -424,7 +424,7 @@ Node *unpickle(FILE *fd)
                 case Lstr:      n->lit.strval = rdstr(fd);       break;
                 case Lbool:     n->lit.boolval = rdbool(fd);     break;
                 case Lfunc:     n->lit.fnval = unpickle(fd);       break;
-                case Larray:    n->lit.arrval = unpickle(fd);      break;
+                case Lseq:      n->lit.arrval = unpickle(fd);      break;
             }
             break;
         case Nloopstmt:

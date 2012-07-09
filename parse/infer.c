@@ -173,7 +173,7 @@ static Type *littype(Node *n)
         case Lflt:      return tylike(mktyvar(n->line), Tyfloat32);             break;
         case Lstr:      return mktyslice(n->line, mkty(n->line, Tychar));       break;
         case Lfunc:     return n->lit.fnval->func.type;                         break;
-        case Larray:    return NULL; break;
+        case Lseq:      return NULL; break;
     };
     return NULL;
 }
@@ -529,7 +529,7 @@ static void inferexpr(Node *n, Type *ret, int *sawret)
         case Olit:      /* <lit>:@a::tyclass -> @a */
             switch (args[0]->lit.littype) {
                 case Lfunc: infernode(args[0]->lit.fnval, NULL, NULL); break;
-                case Larray: die("array types not implemented yet"); break;
+                case Lseq: die("array types not implemented yet"); break;
                 default: break;
             }
             settype(n, type(args[0]));
@@ -897,7 +897,7 @@ static void typesub(Node *n)
             settype(n, tyfix(n, type(n)));
             switch (n->lit.littype) {
                 case Lfunc:     typesub(n->lit.fnval); break;
-                case Larray:    typesub(n->lit.arrval); break;
+                case Lseq:      typesub(n->lit.arrval); break;
                 default:        break;
             }
             break;

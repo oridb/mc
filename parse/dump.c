@@ -173,8 +173,8 @@ static void outnode(Node *n, FILE *fd, int depth)
                     fprintf(fd, " Lfunc\n");
                     outnode(n->lit.fnval, fd, depth+1);
                     break;
-                case Larray:
-                    fprintf(fd, " Larray\n");
+                case Lseq:
+                    fprintf(fd, " Lseq\n");
                     outnode(n->lit.arrval, fd, depth+1);
                     break;
                 default: die("Bad literal type"); break;
