@@ -166,6 +166,8 @@ static void settype(Node *n, Type *t)
 
 static Type *littype(Node *n)
 {
+    if (n->lit.type)
+        return n->lit.type;
     switch (n->lit.littype) {
         case Lchr:      return mkty(n->line, Tychar);                           break;
         case Lbool:     return mkty(n->line, Tybool);                           break;
@@ -175,6 +177,7 @@ static Type *littype(Node *n)
         case Lfunc:     return n->lit.fnval->func.type;                         break;
         case Lseq:      return NULL; break;
     };
+    die("Bad lit type %d", n->lit.littype);
     return NULL;
 }
 
@@ -371,6 +374,17 @@ static void checkns(Node *n, Node **ret)
     *ret = var;
 }
 
+static void inferseq(Node *n)
+{
+    size_t i;
+
+    for (i = 0; i < n->lit.nelt; i++) {
+        infernode(n->lit.seqval[i], NULL, NULL);
+        unify(n, type(n->lit.seqval[0]), type(n->lit.seqval[i]));
+    }
+    settype(n, mktyarray(n->line, type(n->lit.seqval[0]), mkintlit(n->line, n->lit.nelt)));
+}
+
 static void inferexpr(Node *n, Type *ret, int *sawret)
 {
     Node **args;
@@ -528,9 +542,9 @@ static void inferexpr(Node *n, Type *ret, int *sawret)
             break;
         case Olit:      /* <lit>:@a::tyclass -> @a */
             switch (args[0]->lit.littype) {
-                case Lfunc: infernode(args[0]->lit.fnval, NULL, NULL); break;
-                case Lseq: die("seq lits not implemented yet"); break;
-                default: break;
+                case Lfunc:     infernode(args[0]->lit.fnval, NULL, NULL); break;
+                case Lseq:      inferseq(args[0]);                         break;
+                default:        /* pass */                                 break;
             }
             settype(n, type(args[0]));
             break;
