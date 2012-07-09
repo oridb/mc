@@ -529,9 +529,9 @@ seqbody : seqelt
              {lappend(&$$.nl, &$$.nn, $3);}
         ;
 
-seqelt  : Tdot Tident Tasn expr 
+seqelt  : Tdot Tident Tasn expr
             {die("Unimplemented struct member init");}
-        | Thash atomicexpr Tasn expr 
+        | Thash atomicexpr Tasn expr
             {die("Unimplmented array member init");}
         | expr {$$ = $1;}
         | Tendln seqelt {$$ = $2;}
