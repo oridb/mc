@@ -407,6 +407,7 @@ Loc *selexpr(Isel *s, Node *n)
     eax = locphysreg(Reax);
     edx = locphysreg(Redx);
     cl = locphysreg(Rcl);
+    r = NULL;
     switch (exprop(n)) {
         case Oadd:      r = binop(s, Iadd, args[0], args[1]); break;
         case Osub:      r = binop(s, Isub, args[0], args[1]); break;
@@ -617,6 +618,7 @@ void iprintf(FILE *fd, Insn *insn)
 
     p = insnfmts[insn->op];
     i = 0;
+    modeidx = 0;
     for (; *p; p++) {
         if (*p !=  '%') {
             fputc(*p, fd);
@@ -637,7 +639,6 @@ void iprintf(FILE *fd, Insn *insn)
                 i++;
                 break;
             case 't':
-                modeidx = 0;
             default:
                 /* the  asm description uses 1-based indexing, so that 0
                  * can be used as a sentinel. */

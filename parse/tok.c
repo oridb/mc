@@ -130,38 +130,48 @@ static void eatspace(void)
 
 static int kwd(char *s)
 {
-    int i;
-    struct {char* kw; int tt;} kwmap[] = {
-        {"type",        Ttype},
-        {"for",         Tfor},
-        {"while",       Twhile},
-        {"if",          Tif},
-        {"else",        Telse},
-        {"elif",        Telif},
-        {"match",       Tmatch},
-        {"default",     Tdefault},
-        {"goto",        Tgoto},
-        {"struct",      Tstruct},
-        {"union",       Tunion},
-        {"const",       Tconst},
-        {"var",         Tvar},
-        {"generic",     Tgeneric},
+    static const struct {char* kw; int tt;} kwmap[] = {
         {"castto",      Tcast},
-        {"extern",      Textern},
+        {"const",       Tconst},
+        {"default",     Tdefault},
+        {"elif",        Telif},
+        {"else",        Telse},
         {"export",      Texport},
-        {"protect",     Tprotect},
-        {"use",         Tuse},
-        {"pkg",         Tpkg},
-        {"sizeof",      Tsizeof},
-        {"true",        Tboollit},
+        {"extern",      Textern},
         {"false",       Tboollit},
-        {NULL, 0}
+        {"for",         Tfor},
+        {"generic",     Tgeneric},
+        {"goto",        Tgoto},
+        {"if",          Tif},
+        {"match",       Tmatch},
+        {"pkg",         Tpkg},
+        {"protect",     Tprotect},
+        {"sizeof",      Tsizeof},
+        {"struct",      Tstruct},
+        {"true",        Tboollit},
+        {"type",        Ttype},
+        {"union",       Tunion},
+        {"use",         Tuse},
+        {"var",         Tvar},
+        {"while",       Twhile},
     };
 
-    for (i = 0; kwmap[i].kw; i++)
-        if (!strcmp(kwmap[i].kw, s))
-            return kwmap[i].tt;
+    size_t min, max, mid;
+    int cmp;
 
+
+    min = 0;
+    max = sizeof(kwmap)/sizeof(kwmap[0]);
+    while (max > min) {
+        mid = (max + min) / 2;
+        cmp = strcmp(s, kwmap[mid].kw);
+        if (cmp == 0)
+            return kwmap[mid].tt;
+        else if (cmp > 0)
+            min = mid + 1;
+        else if (cmp < 0)
+            max = mid;
+    }
     return Tident;
 }
 
@@ -389,11 +399,20 @@ static Tok *oper(void)
     return mktok(tt);
 };
 
+static int ord(char c)
+{
+    if (c >= '0' && c <= '9')
+        return c - '0';
+    else if (c >= 'a' && c <= 'z')
+        return c - 'a';
+    else
+        return c - 'A';
+}
+
 static Tok *number(int base)
 {
     Tok *t;
     int start;
-    char *endp;
     int c;
     int isfloat;
 
@@ -404,21 +423,17 @@ static Tok *number(int base)
         next();
         if (c == '.')
             isfloat = 1;
+        if (ord(c) > base)
+            fatal(line, "Integer digit '%c' outside of base %d", c, base);
     }
 
     /* we only support base 10 floats */
     if (isfloat && base == 10) {
-        strtod(&fbuf[start], &endp);
-        if (endp == &fbuf[fidx]) {
-            t = mktok(Tfloatlit);
-            t->str = strdupn(&fbuf[start], fidx - start);
-        }
+        t = mktok(Tfloatlit);
+        t->str = strdupn(&fbuf[start], fidx - start);
     } else {
-        strtol(&fbuf[start], &endp, base);
-        if (endp == &fbuf[fidx]) {
-            t = mktok(Tintlit);
-            t->str = strdupn(&fbuf[start], fidx - start);
-        }
+        t = mktok(Tintlit);
+        t->str = strdupn(&fbuf[start], fidx - start);
     }
 
     return t;
