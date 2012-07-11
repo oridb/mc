@@ -176,6 +176,7 @@ static Type *littype(Node *n)
         case Lstr:      return mktyslice(n->line, mkty(n->line, Tychar));       break;
         case Lfunc:     return n->lit.fnval->func.type;                         break;
         case Lseq:      return NULL; break;
+        case Ltup:      return NULL; break;
     };
     die("Bad lit type %d", n->lit.littype);
     return NULL;
@@ -385,6 +386,19 @@ static void inferseq(Node *n)
     settype(n, mktyarray(n->line, type(n->lit.seqval[0]), mkintlit(n->line, n->lit.nelt)));
 }
 
+static void infertup(Node *n)
+{
+    size_t i;
+    Type **t;
+
+    t = xalloc(sizeof(Type *)*n->lit.nelt);
+    for (i = 0; i < n->lit.nelt; i++) {
+        infernode(n->lit.tupval[i], NULL, NULL);
+        t[i] = type(n->lit.tupval[i]);
+    }
+    settype(n, mktytuple(n->line, t, n->lit.nelt));
+}
+
 static void inferexpr(Node *n, Type *ret, int *sawret)
 {
     Node **args;
@@ -544,6 +558,7 @@ static void inferexpr(Node *n, Type *ret, int *sawret)
             switch (args[0]->lit.littype) {
                 case Lfunc:     infernode(args[0]->lit.fnval, NULL, NULL); break;
                 case Lseq:      inferseq(args[0]);                         break;
+                case Ltup:      infertup(args[0]);                         break;
                 default:        /* pass */                                 break;
             }
             settype(n, type(args[0]));

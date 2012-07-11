@@ -106,6 +106,10 @@ static void fixup(Node *n)
                     for (i = 0; i < n->lit.nelt; i++)
                         fixup(n->lit.seqval[i]);
                     break;
+                case Ltup:
+                    for (i = 0; i < n->lit.nelt; i++)
+                        fixup(n->lit.tupval[i]);
+                    break;
                 case Lchr: case Lint: case Lflt: case Lstr: case Lbool:
                     break;
             }
@@ -188,6 +192,9 @@ static Node *specializenode(Node *n, Htab *tsmap)
                 case Lseq:
                     for (i = 0; i < n->lit.nelt; i++)
                         r->lit.seqval[i] = specializenode(n->lit.seqval[i], tsmap);
+                case Ltup:
+                    for (i = 0; i < n->lit.nelt; i++)
+                        r->lit.tupval[i] = specializenode(n->lit.tupval[i], tsmap);
                     break;
             }
             break;

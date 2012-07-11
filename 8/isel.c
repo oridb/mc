@@ -768,6 +768,10 @@ static void writelit(FILE *fd, Node *v)
                         fprintf(fd, "%s:\n", lbl);
                         writeblob(fd, v->lit.strval, strlen(v->lit.strval));
                         break;
+        case Ltup:
+            for (i = 0; i < v->lit.nelt; i++)
+                writelit(fd, v->lit.tupval[i]->expr.args[0]);
+            break;
         case Lseq:
             for (i = 0; i < v->lit.nelt; i++)
                 writelit(fd, v->lit.seqval[i]->expr.args[0]);

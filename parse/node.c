@@ -220,6 +220,18 @@ Node *mkseq(int line, Node **vals, size_t nvals)
     return n;
 }
 
+Node *mktuple(int line, Node **vals, size_t nvals)
+{
+    Node *n;
+
+    n = mknode(line, Nlit);
+    n->lit.littype = Ltup;
+    n->lit.nelt = nvals;
+    n->lit.seqval = vals;
+
+    return n;
+}
+
 Node *mkname(int line, char *name)
 {
     Node *n;

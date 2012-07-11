@@ -117,8 +117,9 @@ Stab *curscope;
 
 %start module
 
-%type <ty> type structdef uniondef compoundtype functype funcsig
+%type <ty> type structdef uniondef tupledef compoundtype functype funcsig
 %type <ty> generictype
+%type <tylist> tuptybody
 
 %type <tok> asnop cmpop addop mulop shiftop
 
@@ -127,14 +128,15 @@ Stab *curscope;
 %type <node> exprln retexpr expr atomicexpr littok literal asnexpr lorexpr landexpr borexpr
 %type <node> bandexpr cmpexpr unionexpr addexpr mulexpr shiftexpr prefixexpr postfixexpr
 %type <node> funclit seqlit name block blockbody stmt label use
-%type <node> decl declbody declcore structelt seqelt
+%type <node> decl declbody declcore structelt seqelt tuphead
 %type <node> ifstmt forstmt whilestmt matchstmt elifs optexprln
 %type <node> pat unionpat match
 %type <node> castexpr
 %type <ucon> unionelt
 
-%type <nodelist> arglist argdefs structbody params matches seqbody
-%type <uconlist> unionbody
+%type <nodelist> arglist argdefs params matches
+%type <nodelist> structbody seqbody tupbody tuprest
+%type <uconlist> unionbody 
 
 %union {
     struct {
@@ -264,6 +266,7 @@ tydef   : Ttype Tident Tasn type Tendln
         ;
 
 type    : structdef
+        | tupledef
         | uniondef
         | compoundtype
         | generictype
@@ -303,6 +306,18 @@ argdefs : declcore
             {$$.line = line;
              $$.nl = NULL;
              $$.nn = 0;}
+        ;
+
+tupledef: Tosqbrac tuptybody Tcsqbrac
+            {$$ = mktytuple($1->line, $2.types, $2.ntypes);}
+        ;
+
+tuptybody
+        : type 
+            {$$.types = NULL; $$.ntypes = 0;
+             lappend(&$$.types, &$$.ntypes, $1);}
+        | tuptybody Tcomma type
+            {lappend(&$$.types, &$$.ntypes, $3);}
         ;
 
 structdef
@@ -489,8 +504,24 @@ atomicexpr
         | literal {$$ = mkexpr($1->line, Olit, $1, NULL);}
         | Toparen expr Tcparen
             {$$ = $2;}
+        | Toparen tupbody Tcparen
+            {$$ = mkexpr($1->line, Olit, mktuple($1->line, $2.nl, $2.nn), NULL);}
         | Tsizeof Toparen type Tcparen
             {$$ = mkexpr($1->line, Osize, mkpseudodecl($3), NULL);}
+        ;
+
+tupbody : tuphead tuprest
+            {$$ = $2;
+             linsert(&$$.nl, &$$.nn, 0, $1);}
+        ;
+
+tuphead : expr Tcomma {$$ = $1;}
+        ;
+
+tuprest : expr
+            {$$.nl = NULL; $$.nn = 0; lappend(&$$.nl, &$$.nn, $1);}
+        | tuprest Tcomma expr
+            {lappend(&$$.nl, &$$.nn, $3);}
         ;
 
 literal : funclit       {$$ = $1;}
@@ -521,11 +552,10 @@ params  : declcore
 
 seqlit  : Tosqbrac seqbody Tcsqbrac
             {$$ = mkseq($1->line, $2.nl, $2.nn);}
-        | Tosqbrac Tcsqbrac
-            {$$ = mkseq($1->line, NULL, 0);}
         ;
 
-seqbody : seqelt
+seqbody : /* empty */ {$$.nl = NULL; $$.nn = 0;}
+        | seqelt
             {$$.nl = NULL; $$.nn = 0;
              lappend(&$$.nl, &$$.nn, $1);}
         | seqbody Tcomma seqelt

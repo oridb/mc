@@ -177,6 +177,19 @@ Type *mktyptr(int line, Type *base)
     return t;
 }
 
+Type *mktytuple(int line, Type **sub, size_t nsub)
+{
+    Type *t;
+    size_t i;
+
+    t = mkty(line, Tyfunc);
+    t->nsub = nsub;
+    t->sub = xalloc(nsub*sizeof(Type));
+    for (i = 0; i < nsub; i++)
+        t->sub[i] = sub[i];
+    return t;
+}
+
 Type *mktyfunc(int line, Node **args, size_t nargs, Type *ret)
 {
     Type *t;
