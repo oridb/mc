@@ -380,9 +380,7 @@ static Ucon *finducon(Node *n)
 static Node *uconid(Node *n, size_t off)
 {
     Ucon *uc;
-    Type *t;
 
-    t = tybase(n->expr.type);
     if (exprop(n) != Ocons)
         return load(add(addr(n, tyword), word(n->line, off)));
 
