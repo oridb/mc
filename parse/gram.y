@@ -521,6 +521,8 @@ params  : declcore
 
 seqlit  : Tosqbrac seqbody Tcsqbrac
             {$$ = mkseq($1->line, $2.nl, $2.nn);}
+        | Tosqbrac Tcsqbrac
+            {$$ = mkseq($1->line, NULL, 0);}
         ;
 
 seqbody : seqelt
@@ -534,9 +536,11 @@ seqelt  : Tdot Tident Tasn expr
             {die("Unimplemented struct member init");}
         | Thash atomicexpr Tasn expr
             {die("Unimplmented array member init");}
-        | expr {$$ = $1;}
-        | Tendln seqelt {$$ = $2;}
-        | seqelt Tendln {$$ = $1;}
+        | endlns expr endlns{$$ = $2;}
+        ;
+
+endlns  : /* none */
+        | endlns Tendln
         ;
 
 stmt    : decl
