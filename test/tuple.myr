@@ -1,0 +1,6 @@
+const main = {
+	var v
+
+	v = (1, 2)
+	-> 42
+}

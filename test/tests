@@ -51,6 +51,7 @@ B matchbind	E	8
 B arraylit	E	3
 B arraylit-ni	E	2
 B structlit	E	42
+B tuple		E	42
 F declmismatch
 F infermismatch
 F flow
