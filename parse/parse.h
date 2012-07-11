@@ -170,6 +170,7 @@ struct Node {
                 int      boolval;
                 Node    *fnval;
                 Node    **seqval;
+                Node    **tupval;
             };
         } lit;
 
@@ -209,9 +210,10 @@ struct Node {
 
         struct {
             long  did;
-            int   isconst;
-            int   isgeneric;
-            int   isextern;
+            char  isglobl;
+            char  isconst;
+            char  isgeneric;
+            char  isextern;
             Node *name;
             Type *type;
             Node *init;
@@ -329,6 +331,7 @@ Type *mktyarray(int line, Type *base, Node *sz);
 Type *mktyslice(int line, Type *base);
 Type *mktyidxhack(int line, Type *base);
 Type *mktyptr(int line, Type *base);
+Type *mktytuple(int line, Type **sub, size_t nsub);
 Type *mktyfunc(int line, Node **args, size_t nargs, Type *ret);
 Type *mktystruct(int line, Node **decls, size_t ndecls);
 Type *mktyunion(int line, Ucon **decls, size_t ndecls);
@@ -364,6 +367,7 @@ Node *mkstr(int line, char *s);
 Node *mkfloat(int line, double flt);
 Node *mkfunc(int line, Node **args, size_t nargs, Type *ret, Node *body);
 Node *mkseq(int line, Node **vals, size_t nvals);
+Node *mktuple(int line, Node **vals, size_t nvals);
 Node *mkname(int line, char *name);
 Node *mknsname(int line, char *ns, char *name);
 Node *mkdecl(int line, Node *name, Type *ty);

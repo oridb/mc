@@ -78,7 +78,7 @@ Node *getdcl(Stab *st, Node *n)
             /* record that this is in the closure of this scope */
             if (!st->closure)
                 st->closure = mkht(namehash, nameeq);
-            if (st != orig)
+            if (st != orig && !n->decl.isglobl)
                 htput(st->closure, s->decl.name, s);
             return s;
         }
