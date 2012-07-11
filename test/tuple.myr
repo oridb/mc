@@ -1,6 +1,11 @@
 const main = {
 	var v
+	var x
+	var a
+	var b
 
-	v = (1, 2)
-	-> 42
+	x = 15
+	v = (x, x + 12)
+	(a, b) = v
+	-> a + b
 }
