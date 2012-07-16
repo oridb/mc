@@ -399,7 +399,7 @@ static Loc *gencall(Isel *s, Node *n)
     if (fn->type == Loclbl)
         g(s, Icall, fn, NULL);
     else
-        g(s, Icallind, inr(s, fn), NULL);
+        g(s, Icallind, fn, NULL);
     if (argsz)
         g(s, Iadd, stkbump, esp, NULL);
     return eax;
@@ -494,8 +494,12 @@ Loc *selexpr(Isel *s, Node *n)
 
         case Oaddr:
             a = selexpr(s, args[0]);
-            r = locreg(ModeL);
-            g(s, Ilea, a, r, NULL);
+            if (a->type == Loclbl) {
+                r = loclitl(a->lbl);
+            } else {
+                r = locreg(ModeL);
+                g(s, Ilea, a, r, NULL);
+            }
             break;
 
         case Olnot:
@@ -580,7 +584,12 @@ Loc *selexpr(Isel *s, Node *n)
 void locprint(FILE *fd, Loc *l, char spec)
 {
     switch (l->type) {
+        case Loclitl:
+            assert(spec == 'i' || spec == 'x' || spec == 'u');
+            fprintf(fd, "$%s", l->lbl);
+            break;
         case Loclbl:
+            assert(spec == 'm' || spec == 'v' || spec == 'x');
             fprintf(fd, "%s", l->lbl);
             break;
         case Locreg:
@@ -758,6 +767,7 @@ static void writeblob(FILE *fd, char *p, size_t sz)
             fprintf(fd, "%c", p[i]);
         else
             fprintf(fd, "\\%x", p[i]);
+        /* line wrapping for readability */
         if (i % 60 == 59 || i == sz - 1)
             fprintf(fd, "\"\n");
     }

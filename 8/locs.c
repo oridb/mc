@@ -80,6 +80,17 @@ Loc *locstrlbl(char *lbl)
     return l;
 }
 
+Loc *loclitl(char *lbl)
+{
+    Loc *l;
+
+    l = zalloc(sizeof(Loc));
+    l->type = Loclitl;
+    l->mode = ModeL;
+    l->lbl = strdup(lbl);
+    return l;
+}
+
 Loc *loclbl(Node *lbl)
 {
     assert(lbl->type = Nlbl);

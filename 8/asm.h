@@ -32,8 +32,8 @@ typedef enum {
     Locmem,  /* reg offset mem */
     Locmeml, /* label offset mem */
     Loclit,  /* literal value */
-    // FIXME: later. Loclitl  /* label address */
-} LocType;
+    Loclitl  /* label address */
+} Loctype;
 
 typedef enum {
     ModeNone,
@@ -46,7 +46,7 @@ typedef enum {
 } Mode;
 
 struct Loc {
-    LocType type;
+    Loctype type;
     Mode mode;
     union {
         char *lbl;
@@ -179,7 +179,7 @@ Loc *locmeml(char *disp, Loc *base, Loc *idx, Mode mode);
 Loc *locmems(long disp, Loc *base, Loc *idx, int scale, Mode mode);
 Loc *locmemls(char *disp, Loc *base, Loc *idx, int scale, Mode mode);
 Loc *loclit(long val);
-/*Loc *loclitl(char *lbl); FIXME: later */
+Loc *loclitl(char *lbl);
 
 void locprint(FILE *fd, Loc *l, char spec);
 void iprintf(FILE *fd, Insn *insn);
