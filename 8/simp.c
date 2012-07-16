@@ -700,6 +700,62 @@ static Node *visit(Simp *s, Node *n)
     return r;
 }
 
+Node *assign(Simp *s, Node *lhs, Node *rhs)
+{
+    Node *t, *u, *v, *r;
+
+    if (exprop(lhs) == Otup) {
+        /* destructuring bind */
+        die("No destructuring binds implemented yet");
+        r = NULL;
+    } else {
+        t = lval(s, lhs);
+        u = rval(s, rhs, t);
+
+        /* if we stored the result into t, rval() should return that,
+         * so we know our work is done. */
+        if (u == t) {
+            r = t;
+        } else if (size(lhs) > Wordsz) {
+            t = addr(t, exprtype(lhs));
+            u = addr(u, exprtype(lhs));
+            v = word(lhs->line, size(lhs));
+            r = mkexpr(lhs->line, Oblit, t, u, v, NULL);
+        } else {
+            r = store(t, u);
+        }
+    }
+    return r;
+}
+
+static Node *lowertup(Simp *s, Node *n, Node *dst)
+{
+    Node *pdst, *pval, *val, *sz, *stor, **args;
+    Node *r;
+    size_t i, off;
+
+    args = n->expr.args;
+    if (!dst)
+        dst = temp(s, n);
+    r = addr(dst, exprtype(dst));
+
+    off = 0;
+    for (i = 0; i < n->expr.nargs; i++) {
+        val = rval(s, args[i], NULL);
+        pdst = add(r, word(n->line, off));
+        if (size(args[i]) > Wordsz) {
+            sz = word(n->line, size(val));
+            pval = addr(val, exprtype(val));
+            stor = mkexpr(n->line, Oblit, pdst, pval, sz, NULL);
+        } else {
+            stor = store(pdst, val);
+        }
+        append(s, stor);
+        off += size(args[i]);
+    }
+    return r;
+}
+
 static Node *lowerucon(Simp *s, Node *n, Node *dst)
 {
     Node *tmp, *u, *tag, *elt, *sz;
@@ -738,34 +794,6 @@ static Node *lowerucon(Simp *s, Node *n, Node *dst)
     }
     append(s, r);
     return tmp;
-}
-
-Node *assign(Simp *s, Node *lhs, Node *rhs)
-{
-    Node *t, *u, *v, *r;
-
-    if (exprop(lhs) == Otup) {
-        /* destructuring bind */
-        die("No destructuring binds implemented yet");
-        r = NULL;
-    } else {
-        t = lval(s, lhs);
-        u = rval(s, rhs, t);
-
-        /* if we stored the result into t, rval() should return that,
-         * so we know our work is done. */
-        if (u == t) {
-            r = t;
-        } else if (size(lhs) > Wordsz) {
-            t = addr(t, exprtype(lhs));
-            u = addr(u, exprtype(lhs));
-            v = word(lhs->line, size(lhs));
-            r = mkexpr(lhs->line, Oblit, t, u, v, NULL);
-        } else {
-            r = store(t, u);
-        }
-    }
-    return r;
 }
 
 static Node *rval(Simp *s, Node *n, Node *dst)
@@ -819,6 +847,9 @@ static Node *rval(Simp *s, Node *n, Node *dst)
             break;
         case Ocons:
             r = lowerucon(s, n, dst);
+            break;
+        case Otup:
+            r = lowertup(s, n, dst);
             break;
         case Ocast:
             /* slice -> ptr cast */
