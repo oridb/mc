@@ -241,6 +241,10 @@ size_t tysize(Type *t)
             assert(exprop(t->asize) == Olit);
             return t->asize->expr.args[0]->lit.intval * tysize(t->sub[0]);
         case Tytuple:
+            for (i = 0; i < t->nsub; i++)
+                sz += tysize(t->sub[i]);
+            return sz;
+            break;
         case Tystruct:
             for (i = 0; i < t->nmemb; i++)
                 sz += size(t->sdecls[i]);
@@ -719,7 +723,7 @@ Node *destructure(Simp *s, Node *lhs, Node *rhs)
             stor = store(lv, load(prv));
         }
         append(s, stor);
-        off += size(args[i]);
+        off += size(lv);
     }
 
     return NULL;
@@ -776,7 +780,7 @@ static Node *lowertup(Simp *s, Node *n, Node *dst)
         append(s, stor);
         off += size(args[i]);
     }
-    return r;
+    return dst;
 }
 
 static Node *lowerucon(Simp *s, Node *n, Node *dst)
@@ -980,7 +984,7 @@ static void declarelocal(Simp *s, Node *n)
     assert(n->type == Ndecl);
     s->stksz += size(n);
     if (debug)
-        printf("declare %s(%ld) at %zd\n", declname(n), n->decl.did, s->stksz);
+        printf("declare %s:%s(%ld) at %zd\n", declname(n), tystr(decltype(n)), n->decl.did, s->stksz);
     htput(s->locs, n, (void*)s->stksz);
 }
 

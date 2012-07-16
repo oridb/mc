@@ -151,6 +151,10 @@ static void g(Isel *s, AsmOp op, ...)
     va_start(ap, op);
     i = mkinsnv(op, ap);
     va_end(ap);
+    if (debugopt['i']) {
+        printf("GEN ");
+        iprintf(stdout, i);
+    }
     lappend(&s->curbb->il, &s->curbb->ni, i);
 }
 

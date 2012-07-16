@@ -518,7 +518,9 @@ tupbody : tuphead tuprest
 tuphead : expr Tcomma {$$ = $1;}
         ;
 
-tuprest : expr
+tuprest : /*empty */
+            {$$.nl = NULL; $$.nn = 0;}
+        | expr
             {$$.nl = NULL; $$.nn = 0; lappend(&$$.nl, &$$.nn, $1);}
         | tuprest Tcomma expr
             {lappend(&$$.nl, &$$.nn, $3);}
