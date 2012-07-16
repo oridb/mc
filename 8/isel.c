@@ -157,9 +157,10 @@ static void g(Isel *s, AsmOp op, ...)
 static void load(Isel *s, Loc *a, Loc *b)
 {
     Loc *l;
+
     assert(b->type == Locreg);
     if (a->type == Locreg)
-        locmem(0, b, Rnone, a->mode);
+        l = locmem(0, b, Rnone, a->mode);
     else
         l = a;
     g(s, Imov, l, b, NULL);
@@ -171,7 +172,7 @@ static void stor(Isel *s, Loc *a, Loc *b)
 
     assert(a->type == Locreg || a->type == Loclit);
     if (b->type == Locreg)
-        locmem(0, b, Rnone, b->mode);
+        l = locmem(0, b, Rnone, b->mode);
     else
         l = b;
     g(s, Imov, a, l, NULL);

@@ -544,7 +544,7 @@ static void inferexpr(Node *n, Type *ret, int *sawret)
             types = xalloc(sizeof(Type *)*n->expr.nargs);
             for (i = 0; i < n->expr.nargs; i++)
                 types[i] = type(n->expr.args[i]);
-            settype(n, mktytuple(n->line, types, n->lit.nelt));
+            settype(n, mktytuple(n->line, types, n->expr.nargs));
             break;
         case Oarr:
             for (i = 0; i < n->expr.nargs; i++)

@@ -182,7 +182,7 @@ Type *mktytuple(int line, Type **sub, size_t nsub)
     Type *t;
     size_t i;
 
-    t = mkty(line, Tyfunc);
+    t = mkty(line, Tytuple);
     t->nsub = nsub;
     t->sub = xalloc(nsub*sizeof(Type));
     for (i = 0; i < nsub; i++)
@@ -392,7 +392,7 @@ static int tybfmt(char *buf, size_t len, Type *t)
             break;
         case Tytuple:
             p += snprintf(p, end - p, "[");
-            for (i = 1; i < t->nsub; i++) {
+            for (i = 0; i < t->nsub; i++) {
                 p += snprintf(p, end - p, "%s", sep);
                 p += tybfmt(p, end - p, t->sub[i]);
                 sep = ", ";

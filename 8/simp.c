@@ -700,14 +700,37 @@ static Node *visit(Simp *s, Node *n)
     return r;
 }
 
+Node *destructure(Simp *s, Node *lhs, Node *rhs)
+{
+    Node *plv, *prv, *lv, *sz, *stor, **args;
+    size_t off, i;
+
+    args = lhs->expr.args;
+    rhs = rval(s, rhs, NULL);
+    off = 0;
+    for (i = 0; i < lhs->expr.nargs; i++) {
+        lv = lval(s, args[i]);
+        prv = add(addr(rhs, exprtype(args[i])), word(rhs->line, off));
+        if (size(args[i]) > Wordsz) {
+            sz = word(lhs->line, size(lv));
+            plv = addr(lv, exprtype(lv));
+            stor = mkexpr(lhs->line, Oblit, plv, prv, sz, NULL);
+        } else {
+            stor = store(lv, load(prv));
+        }
+        append(s, stor);
+        off += size(args[i]);
+    }
+
+    return NULL;
+}
+
 Node *assign(Simp *s, Node *lhs, Node *rhs)
 {
     Node *t, *u, *v, *r;
 
     if (exprop(lhs) == Otup) {
-        /* destructuring bind */
-        die("No destructuring binds implemented yet");
-        r = NULL;
+        r = destructure(s, lhs, rhs);
     } else {
         t = lval(s, lhs);
         u = rval(s, rhs, t);
@@ -766,12 +789,15 @@ static Node *lowerucon(Simp *s, Node *n, Node *dst)
 
     /* find the ucon we're constructing here */
     ty = tybase(n->expr.type);
+    uc = NULL;
     for (i = 0; i < ty->nmemb; i++) {
         if (!strcmp(namestr(n->expr.args[0]), namestr(ty->udecls[i]->name))) {
             uc = ty->udecls[i];
             break;
         }
     }
+    if (!uc)
+        die("Couldn't find union constructor");
 
     if (dst)
         tmp = dst;

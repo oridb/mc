@@ -661,6 +661,7 @@ static void selspill(Isel *s)
     Loc *m;
 
     /* FIXME: pick a better heuristic for spilling */
+    m = NULL;
     for (i = 0; i < s->nwlspill; i++) {
         if (!bshas(s->spilled, s->wlspill[i]->reg.id)) {
             m = s->wlspill[i];
