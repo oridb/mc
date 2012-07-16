@@ -316,10 +316,6 @@ void pickle(Node *n, FILE *fd)
                     for (i = 0; i < n->lit.nelt; i++)
                         pickle(n->lit.seqval[i], fd);
                     break;
-                case Ltup:
-                    for (i = 0; i < n->lit.nelt; i++)
-                        pickle(n->lit.tupval[i], fd);
-                    break;
             }
             break;
         case Nloopstmt:
@@ -436,10 +432,6 @@ Node *unpickle(FILE *fd)
                 case Lseq:
                     for (i = 0; i < n->lit.nelt; i++)
                         n->lit.seqval[i] = unpickle(fd);
-                    break;
-                case Ltup:
-                    for (i = 0; i < n->lit.nelt; i++)
-                        n->lit.tupval[i] = unpickle(fd);
                     break;
             }
             break;

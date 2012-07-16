@@ -178,11 +178,6 @@ static void outnode(Node *n, FILE *fd, int depth)
                     for (i = 0; i < n->lit.nelt; i++)
                         outnode(n->lit.seqval[i], fd, depth+1);
                     break;
-                case Ltup:
-                    fprintf(fd, " Ltup\n");
-                    for (i = 0; i < n->lit.nelt; i++)
-                        outnode(n->lit.tupval[i], fd, depth+1);
-                    break;
             }
             break;
         case Nfunc:

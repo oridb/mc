@@ -740,6 +740,34 @@ static Node *lowerucon(Simp *s, Node *n, Node *dst)
     return tmp;
 }
 
+Node *assign(Simp *s, Node *lhs, Node *rhs)
+{
+    Node *t, *u, *v, *r;
+
+    if (exprop(lhs) == Otup) {
+        /* destructuring bind */
+        die("No destructuring binds implemented yet");
+        r = NULL;
+    } else {
+        t = lval(s, lhs);
+        u = rval(s, rhs, t);
+
+        /* if we stored the result into t, rval() should return that,
+         * so we know our work is done. */
+        if (u == t) {
+            r = t;
+        } else if (size(lhs) > Wordsz) {
+            t = addr(t, exprtype(lhs));
+            u = addr(u, exprtype(lhs));
+            v = word(lhs->line, size(lhs));
+            r = mkexpr(lhs->line, Oblit, t, u, v, NULL);
+        } else {
+            r = store(t, u);
+        }
+    }
+    return r;
+}
+
 static Node *rval(Simp *s, Node *n, Node *dst)
 {
     Node *r; /* expression result */
@@ -845,7 +873,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
                 case Lchr: case Lbool: case Lint:
                     r = n;
                     break;
-                case Lstr: case Lseq: case Ltup: case Lflt:
+                case Lstr: case Lseq: case Lflt:
                     r = bloblit(s, n);
                     break;
                 case Lfunc:
@@ -871,21 +899,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
             jmp(s, s->endlbl);
             break;
         case Oasn:
-            t = lval(s, args[0]);
-            u = rval(s, args[1], t);
-
-            /* if we stored the result into t, rval() should return that,
-             * and we know our work is done. */
-            if (u == t) {
-                r = t;
-            } else if (size(n) > Wordsz) {
-                t = addr(t, exprtype(n));
-                u = addr(u, exprtype(n));
-                v = word(n->line, size(n));
-                r = mkexpr(n->line, Oblit, t, u, v, NULL);
-            } else {
-              r = store(t, u);
-            }
+            r = assign(s, args[0], args[1]);
             break;
         case Ocall:
             if (exprtype(n)->type != Tyvoid && size(n) > Wordsz) {

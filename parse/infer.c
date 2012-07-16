@@ -176,7 +176,6 @@ static Type *littype(Node *n)
         case Lstr:      return mktyslice(n->line, mkty(n->line, Tychar));       break;
         case Lfunc:     return n->lit.fnval->func.type;                         break;
         case Lseq:      return NULL; break;
-        case Ltup:      return NULL; break;
     };
     die("Bad lit type %d", n->lit.littype);
     return NULL;
@@ -386,27 +385,14 @@ static void inferseq(Node *n)
     settype(n, mktyarray(n->line, type(n->lit.seqval[0]), mkintlit(n->line, n->lit.nelt)));
 }
 
-static void infertup(Node *n)
-{
-    size_t i;
-    Type **t;
-
-    t = xalloc(sizeof(Type *)*n->lit.nelt);
-    for (i = 0; i < n->lit.nelt; i++) {
-        infernode(n->lit.tupval[i], NULL, NULL);
-        t[i] = type(n->lit.tupval[i]);
-    }
-    settype(n, mktytuple(n->line, t, n->lit.nelt));
-}
-
 static void inferexpr(Node *n, Type *ret, int *sawret)
 {
     Node **args;
+    Type **types;
+    size_t i, nargs;
     Ucon *uc;
-    int nargs;
     Node *s;
     Type *t;
-    int i;
 
     assert(n->type == Nexpr);
     args = n->expr.args;
@@ -554,11 +540,21 @@ static void inferexpr(Node *n, Type *ret, int *sawret)
                 unify(n, uc->etype, type(args[1]));
             settype(n, uc->utype);
             break;
+        case Otup:
+            types = xalloc(sizeof(Type *)*n->expr.nargs);
+            for (i = 0; i < n->expr.nargs; i++)
+                types[i] = type(n->expr.args[i]);
+            settype(n, mktytuple(n->line, types, n->lit.nelt));
+            break;
+        case Oarr:
+            for (i = 0; i < n->expr.nargs; i++)
+                unify(n, type(n->expr.args[0]), type(n->expr.args[i]));
+            settype(n, mktyarray(n->line, type(n->expr.args[0]), mkintlit(n->line, n->expr.nargs)));
+            break;
         case Olit:      /* <lit>:@a::tyclass -> @a */
             switch (args[0]->lit.littype) {
                 case Lfunc:     infernode(args[0]->lit.fnval, NULL, NULL); break;
                 case Lseq:      inferseq(args[0]);                         break;
-                case Ltup:      infertup(args[0]);                         break;
                 default:        /* pass */                                 break;
             }
             settype(n, type(args[0]));

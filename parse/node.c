@@ -46,6 +46,17 @@ Node *mkuse(int line, char *use, int islocal)
     return n;
 }
 
+Node *mkexprl(int line, Op op, Node **args, size_t nargs)
+{
+    Node *n;
+
+    n = mknode(line, Nexpr);
+    n->expr.op = op;
+    n->expr.args = args;
+    n->expr.nargs = nargs;
+    return n;
+}
+
 Node *mkexpr(int line, Op op, ...)
 {
     Node *n;
@@ -214,18 +225,6 @@ Node *mkseq(int line, Node **vals, size_t nvals)
 
     n = mknode(line, Nlit);
     n->lit.littype = Lseq;
-    n->lit.nelt = nvals;
-    n->lit.seqval = vals;
-
-    return n;
-}
-
-Node *mktuple(int line, Node **vals, size_t nvals)
-{
-    Node *n;
-
-    n = mknode(line, Nlit);
-    n->lit.littype = Ltup;
     n->lit.nelt = nvals;
     n->lit.seqval = vals;
 

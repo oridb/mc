@@ -505,7 +505,7 @@ atomicexpr
         | Toparen expr Tcparen
             {$$ = $2;}
         | Toparen tupbody Tcparen
-            {$$ = mkexpr($1->line, Olit, mktuple($1->line, $2.nl, $2.nn), NULL);}
+            {$$ = mkexprl($1->line, Otup, $2.nl, $2.nn);}
         | Tsizeof Toparen type Tcparen
             {$$ = mkexpr($1->line, Osize, mkpseudodecl($3), NULL);}
         ;

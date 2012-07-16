@@ -560,7 +560,8 @@ Loc *selexpr(Isel *s, Node *n)
         case Osubeq: case Omuleq: case Odiveq: case Omodeq: case Oboreq:
         case Obandeq: case Obxoreq: case Obsleq: case Obsreq: case Omemb:
         case Oslice: case Oidx: case Osize: case Numops:
-        case Oslbase: case Osllen: case Ocast: case Ocons:
+        case Ocons: case Otup: case Oarr:
+        case Oslbase: case Osllen: case Ocast:
             dump(n, stdout);
             die("Should not see %s in isel", opstr(exprop(n)));
             break;
@@ -751,8 +752,6 @@ static void writeblob(FILE *fd, char *p, size_t sz)
     }
 }
 
-void breakhere(){}
-
 static void writelit(FILE *fd, Node *v)
 {
     char lbl[128];
@@ -769,10 +768,6 @@ static void writelit(FILE *fd, Node *v)
                         fprintf(fd, "%s:\n", lbl);
                         writeblob(fd, v->lit.strval, strlen(v->lit.strval));
                         break;
-        case Ltup:
-            for (i = 0; i < v->lit.nelt; i++)
-                writelit(fd, v->lit.tupval[i]->expr.args[0]);
-            break;
         case Lseq:
             for (i = 0; i < v->lit.nelt; i++)
                 writelit(fd, v->lit.seqval[i]->expr.args[0]);

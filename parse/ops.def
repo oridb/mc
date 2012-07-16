@@ -49,6 +49,8 @@ O(Ovar, 1)
 O(Olit, 1)
 O(Olbl, 1)
 O(Ocons, 1)
+O(Otup, 1)
+O(Oarr, 1)
 /* backend-only */
 O(Ocjmp, 1)        /* conditional jump */
 O(Oload, 1)        /* load from memory */
