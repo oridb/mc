@@ -2,14 +2,15 @@
    is defined by the following macro:
         Insn(enumval, fmt, attr)
     The format string 'fmt' has the following expansions:
-        %r            - A register
-        %m            - A memory location.
-        %l            - A location (either register or memory)
-        %x            - Any value.
+        %r            - reg
+        %m            - mem
+        %i            - imm
+        %v            - reg/mem
+        %u            - reg/imm
+        %x            - reg/mem/imm
         %[1-9]*t      - Mode of an operand. The optional number
                         preceeding it is the operand desired for
                         the mode.
-        %v            - a value (ie, immediate integer or label)
     Currently, there aren't any attrs, because none were needed yet.
     Eventually, they'll probably include flag setting and so on.
 
@@ -17,34 +18,34 @@
     instead of 0-based. (0 is the sentinel value).
 */
 
-/* Note, the mov instruction is specified in an overly general manner. */
 Insn(Inone,     "BAD_INSN",                     Use(), Def())
+/* Note, the mov instruction is specified in an overly general manner. */
 Insn(Imov,      "\tmov%t %x,%x\n", 		Use(.l={1}),			Def(.l={2}))
 Insn(Imovz,     "\tmovz%1t%2t %x,%x\n",         Use(.l={1}),			Def(.l={2}))
 Insn(Imovs,     "\tmovs%1t%2t %x,%x\n",         Use(.l={1}),			Def(.l={2}))
-Insn(Ilea,      "\tlea%t %x,%x\n",              Use(.l={1}),			Def(.l={2}))
+Insn(Ilea,      "\tlea%t %m,%r\n",              Use(.l={1}),			Def(.l={2}))
 
-Insn(Iadd,      "\tadd%t %r,%x\n",              Use(.l={1,2}),			Def(.l={2}))
-Insn(Isub,      "\tsub%t %r,%x\n",              Use(.l={1,2}),			Def(.l={2}))
+Insn(Iadd,      "\tadd%t %x,%r\n",              Use(.l={1,2}),			Def(.l={2}))
+Insn(Isub,      "\tsub%t %x,%r\n",              Use(.l={1,2}),			Def(.l={2}))
 Insn(Imul,      "\tmul%t %r\n",              	Use(.l={1},.r={Reax}),		Def(.r={Reax,Redx}))
 Insn(Idiv,      "\tdiv%t %r\n",              	Use(.l={1},.r={Reax,Redx}),	Def(.r={Reax,Redx}))
 Insn(Ineg,      "\tneg%t %r\n",              	Use(.l={1}),			Def(.l={1}))
-Insn(Iand,      "\tand%t %r,%x\n",              Use(.l={1,2}),			Def(.l={2}))
-Insn(Ior,       "\tor%t %r,%x\n",               Use(.l={1,2}),			Def(.l={2}))
-Insn(Ixor,      "\txor%t %r,%x\n",              Use(.l={1,2}),			Def(.l={2}))
-Insn(Inot,      "\tnot%t %x\n",              	Use(.l={1}),			Def(.l={1}))
-Insn(Ishl,      "\tsal%2t %r,%x\n",             Use(.l={1,2}),			Def(.l={2}))
-Insn(Isar,      "\tshr%2t %r,%x\n",             Use(.l={1,2}),			Def(.l={2}))
-Insn(Ishr,      "\tshr%2t %r,%x\n",             Use(.l={1,2}),			Def(.l={2}))
+Insn(Iand,      "\tand%t %x,%r\n",              Use(.l={1,2}),			Def(.l={2}))
+Insn(Ior,       "\tor%t  %x,%r\n",              Use(.l={1,2}),			Def(.l={2}))
+Insn(Ixor,      "\txor%t %x,%r\n",              Use(.l={1,2}),			Def(.l={2}))
+Insn(Inot,      "\tnot%t %v\n",              	Use(.l={1}),			Def(.l={1}))
+Insn(Ishl,      "\tsal%2t %u,%r\n",             Use(.l={1,2}),			Def(.l={2}))
+Insn(Isar,      "\tshr%2t %u,%r\n",             Use(.l={1,2}),			Def(.l={2}))
+Insn(Ishr,      "\tshr%2t %u,%r\n",             Use(.l={1,2}),			Def(.l={2}))
 
-Insn(Itest,     "\ttest%t %r,%r\n",             Use(.l={1,2}),			Def(.l={2}))
-Insn(Icmp,      "\tcmp%t %r,%r\n",              Use(.l={1,2}),			Def(.l={2}))
+Insn(Itest,     "\ttest%t %u,%r\n",             Use(.l={1,2}),			Def(.l={2}))
+Insn(Icmp,      "\tcmp%t  %u,%r\n",             Use(.l={1,2}),			Def(.l={2}))
 
 Insn(Ipush,     "\tpush%t %r\n",                Use(.l={1}),			Def())
 Insn(Ipop,      "\tpop%t %r\n",                 Use(.l={1}),			Def())
 
 /* branch instructions */
-Insn(Isetz,       "\tsetz %v\n",                Use(),	Def(.l={1}))
+Insn(Isetz,       "\tsetz  %v\n",               Use(),	Def(.l={1}))
 Insn(Isetnz,      "\tsetnz %v\n",               Use(),	Def(.l={1}))
 Insn(Isetlt,      "\tsetlt %v\n",               Use(),	Def(.l={1}))
 Insn(Isetle,      "\tsetle %v\n",               Use(),	Def(.l={1}))

@@ -533,9 +533,9 @@ static void combine(Isel *s, regid u, regid v)
 
     if (debugopt['r']) {
         printf("Combine ");
-        locprint(stdout, locmap[u]);
+        locprint(stdout, locmap[u], 'x');
         printf(" ==> ");
-        locprint(stdout, locmap[v]);
+        locprint(stdout, locmap[v], 'x');
         printf("\n");
     }
     if (wlhas(s->wlfreeze, s->nwlfreeze, v, &idx))
@@ -698,7 +698,7 @@ static int paint(Isel *s)
         for (i = 0; i < K; i++) {
             if (!taken[i]) {
                 if (debugopt['r']) {
-                    locprint(stdout, n);
+                    locprint(stdout, n, 'x');
                     printf(" ==> %s\n", regnames[regmap[i][n->mode]]);
                 }
                 n->reg.colour = regmap[i][n->mode];
@@ -780,7 +780,7 @@ static void locsetprint(FILE *fd, Bitset *s)
     for (i = 0; i < bsmax(s); i++) {
         if (bshas(s, i)) {
             fprintf(fd, "%s", sep);
-            locprint(fd, locmap[i]);
+            locprint(fd, locmap[i], 'x');
             sep = ",";
         }
     }
@@ -797,9 +797,9 @@ void dumpasm(Isel *s, FILE *fd)
     for (i = 0; i < maxregid; i++) {
         for (j = i; j < maxregid; j++) {
             if (gbhasedge(s, i, j)) {
-                locprint(fd, locmap[i]);
+                locprint(fd, locmap[i], 'x');
                 fprintf(fd, " -- ");
-                locprint(fd, locmap[j]);
+                locprint(fd, locmap[j], 'x');
                 fprintf(fd, "\n");
             }
         }

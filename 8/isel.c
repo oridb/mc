@@ -570,14 +570,14 @@ Loc *selexpr(Isel *s, Node *n)
     return r;
 }
 
-void locprint(FILE *fd, Loc *l)
+void locprint(FILE *fd, Loc *l, char spec)
 {
-
     switch (l->type) {
         case Loclbl:
             fprintf(fd, "%s", l->lbl);
             break;
         case Locreg:
+            assert(spec == 'r' || spec == 'v' || spec == 'x' || spec == 'u');
             if (l->reg.colour == Rnone)
                 fprintf(fd, "%%P.%ld", l->reg.id);
             else
@@ -585,6 +585,7 @@ void locprint(FILE *fd, Loc *l)
             break;
         case Locmem:
         case Locmeml:
+            assert(spec == 'm' || spec == 'v' || spec == 'x');
             if (l->type == Locmem) {
                 if (l->mem.constdisp)
                     fprintf(fd, "%ld", l->mem.constdisp);
@@ -593,10 +594,10 @@ void locprint(FILE *fd, Loc *l)
                     fprintf(fd, "%s", l->mem.lbldisp);
             }
             fprintf(fd, "(");
-            locprint(fd, l->mem.base);
+            locprint(fd, l->mem.base, 'r');
             if (l->mem.idx) {
                 fprintf(fd, ",");
-                locprint(fd, l->mem.idx);
+                locprint(fd, l->mem.idx, 'r');
             }
             if (l->mem.scale > 1)
                 fprintf(fd, ",%d", l->mem.scale);
@@ -604,6 +605,7 @@ void locprint(FILE *fd, Loc *l)
                 fprintf(fd, ")");
             break;
         case Loclit:
+            assert(spec == 'i' || spec == 'x' || spec == 'u');
             fprintf(fd, "$%ld", l->lit);
             break;
         case Locnone:
@@ -632,12 +634,13 @@ void iprintf(FILE *fd, Insn *insn)
         switch (*p) {
             case '\0':
                 goto done; /* skip the final p++ */
-            case 'r':
-            case 'm':
-            case 'l':
-            case 'x':
-            case 'v':
-                locprint(fd, insn->args[i]);
+            case 'r': /* register */
+            case 'm': /* memory */
+            case 'i': /* imm */
+            case 'v': /* reg/mem */
+            case 'u': /* reg/imm */
+            case 'x': /* reg/mem/imm */
+                locprint(fd, insn->args[i], *p);
                 i++;
                 break;
             case 't':
