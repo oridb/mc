@@ -490,19 +490,25 @@ static void simpblk(Simp *s, Node *n)
     }
 }
 
-static Node *bloblit(Simp *s, Node *lit)
+static Node *lowerlit(Simp *s, Node *lit, Node ***l, size_t *nl)
 {
-    Node *n, *t, *r;
+    Node *n, *d, *r;
     char lbl[128];
 
     n = mkname(lit->line, genlblstr(lbl, 128));
-    t = mkdecl(lit->line, n, lit->expr.type);
+    d = mkdecl(lit->line, n, lit->expr.type);
     r = mkexpr(lit->line, Ovar, n, NULL);
+
+    d->decl.init = lit;
+    d->decl.type = lit->expr.type;
+    d->decl.isconst = 1;
+    r->expr.did = d->decl.did;
     r->expr.type = lit->expr.type;
-    r->expr.did = t->decl.did;
-    t->decl.init = lit;
-    htput(s->globls, t, strdup(lbl));
-    lappend(&s->blobs, &s->nblobs, t);
+    if (tybase(r->expr.type)->type == Tyfunc)
+        r = addr(r, tybase(r->expr.type));
+
+    htput(s->globls, d, strdup(lbl));
+    lappend(l, nl, d);
     return r;
 }
 
@@ -935,10 +941,10 @@ static Node *rval(Simp *s, Node *n, Node *dst)
                     r = n;
                     break;
                 case Lstr: case Lseq: case Lflt:
-                    r = bloblit(s, n);
+                    r = lowerlit(s, n, &s->blobs, &s->nblobs);
                     break;
                 case Lfunc:
-                    die("Func lits not handled yet");
+                    r = lowerlit(s, n, &file->file.stmts, &file->file.nstmts);
                     break;
             }
             break;
@@ -1177,9 +1183,9 @@ static void lowerdcl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***b
 void gen(Node *file, char *out)
 {
     Htab *globls;
-    Node **n, **blob;
+    Node *n, **blob;
     Func **fn;
-    size_t nn, nfn, nblob;
+    size_t nfn, nblob;
     size_t i;
     FILE *fd;
 
@@ -1195,22 +1201,21 @@ void gen(Node *file, char *out)
     nfn = 0;
     blob = NULL;
     nblob = 0;
-    n = file->file.stmts;
-    nn = file->file.nstmts;
     globls = mkht(dclhash, dcleq);
 
     /* We need to define all global variables before use */
     fillglobls(file->file.globls, globls);
 
-    for (i = 0; i < nn; i++) {
-        switch (n[i]->type) {
+    for (i = 0; i < file->file.nstmts; i++) {
+        n = file->file.stmts[i];
+        switch (n->type) {
             case Nuse: /* nothing to do */ 
                 break;
             case Ndecl:
-                lowerdcl(n[i], globls, &fn, &nfn, &blob, &nblob);
+                lowerdcl(n, globls, &fn, &nfn, &blob, &nblob);
                 break;
             default:
-                die("Bad node %s in toplevel", nodestr(n[i]->type));
+                die("Bad node %s in toplevel", nodestr(n->type));
                 break;
         }
     }

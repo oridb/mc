@@ -396,7 +396,10 @@ static Loc *gencall(Isel *s, Node *n)
         argoff += size(n->expr.args[i]);
     }
     fn = selexpr(s, n->expr.args[0]);
-    g(s, Icall, fn, NULL);
+    if (fn->type == Loclbl)
+        g(s, Icall, fn, NULL);
+    else
+        g(s, Icallind, inr(s, fn), NULL);
     if (argsz)
         g(s, Iadd, stkbump, esp, NULL);
     return eax;
@@ -405,7 +408,7 @@ static Loc *gencall(Isel *s, Node *n)
 Loc *selexpr(Isel *s, Node *n)
 {
     Loc *a, *b, *c, *d, *r;
-    Loc *eax, *edx, *cl; /* x86 wanst some hard-coded regs */
+    Loc *eax, *edx, *cl; /* x86 wants some hard-coded regs */
     Node **args;
 
     args = n->expr.args;
