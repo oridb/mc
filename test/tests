@@ -60,3 +60,4 @@ F occur
 F union-extraarg
 F union-missingarg
 F match-badtypes
+F generic-in-const

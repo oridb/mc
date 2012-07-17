@@ -680,13 +680,13 @@ static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
     switch (n->type) {
         case Nfile:
             pushstab(n->file.globls);
-            /* exports allow us to specify types later in the body, so we
-             * need to patch the types in if they don't have a definition */
             inferstab(st, n->file.globls);
             inferstab(st, n->file.exports);
             for (i = 0; i < n->file.nstmts; i++) {
                 d  = n->file.stmts[i];
                 infernode(st, d, NULL, sawret);
+                /* exports allow us to specify types later in the body, so we
+                 * need to patch the types in if they don't have a definition */
                 if (d->type == Ndecl)  {
                     s = getdcl(file->file.exports, d->decl.name);
                     if (s)
@@ -696,9 +696,15 @@ static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
             popstab();
             break;
         case Ndecl:
+            if (n->decl.isgeneric)
+                st->ingeneric++;
             bind(st, n);
             inferdecl(st, n);
             unbind(st, n);
+            if (type(st, n)->type == Typaram && !st->ingeneric)
+                fatal(n->line, "Generic type %s in non-generic near %s\n", tystr(type(st, n)), ctxstr(n));
+            if (n->decl.isgeneric)
+                st->ingeneric--;
             break;
         case Nblock:
             setsuper(n->block.scope, curstab());
