@@ -267,7 +267,7 @@ static Loc *binop(Isel *s, AsmOp op, Node *x, Node *y)
  * or:
  *    Oadd(
  *        reg,
- *        reg||const))
+ *        reg||const)
  *
  * or:
  *    Oadd(
