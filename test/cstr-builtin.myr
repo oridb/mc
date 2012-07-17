@@ -1,4 +1,4 @@
-const max = {a:@a::tcnum, b:@a::tcnum
+generic max = {a:@a::tcnum, b:@a::tcnum
 	if a > b
 		-> a
 	else

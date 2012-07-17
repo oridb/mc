@@ -20,6 +20,7 @@ static Op binop(int toktype);
 static Node *mkpseudodecl(Type *t);
 static void installucons(Stab *st, Type *t);
 Stab *curscope;
+static void constrainwith(Type *t, char *str);
 
 %}
 
@@ -120,6 +121,7 @@ Stab *curscope;
 %type <ty> type structdef uniondef tupledef compoundtype functype funcsig
 %type <ty> generictype
 %type <tylist> tuptybody
+%type <node> typaramlist
 
 %type <tok> asnop cmpop addop mulop shiftop
 
@@ -274,8 +276,16 @@ type    : structdef
         ;
 
 generictype
-        : Ttyparam {$$ = mktyparam($1->line, $1->str);}
-        /* FIXME: allow constrained typarmas */
+        : Ttyparam typaramlist 
+            {$$ = mktyparam($1->line, $1->str);
+            /* FIXME: this will only work for builtin cstrs */
+             if ($2)
+                constrainwith($$, $2->name.name);}
+        ;
+
+typaramlist
+        : /* empty */ {$$ = NULL;}
+        | Ttrait name {$$ = $2;}
         ;
 
 compoundtype
@@ -313,7 +323,7 @@ tupledef: Tosqbrac tuptybody Tcsqbrac
         ;
 
 tuptybody
-        : type 
+        : type
             {$$.types = NULL; $$.ntypes = 0;
              lappend(&$$.types, &$$.ntypes, $1);}
         | tuptybody Tcomma type
@@ -355,10 +365,10 @@ unionbody
         ;
 
 unionelt /* nb: the ucon union type gets filled in when we have context */
-        : Ttick Tident type Tendln
-            {$$ = mkucon($2->line, mkname($2->line, $2->str), NULL, $3);}
-        | Ttick Tident Tendln
-            {$$ = mkucon($2->line, mkname($2->line, $2->str), NULL, NULL);}
+        : Ttick name type Tendln
+            {$$ = mkucon($2->line, $2, NULL, $3);}
+        | Ttick name Tendln
+            {$$ = mkucon($2->line, $2, NULL, NULL);}
         | visdef Tendln
             {$$ = NULL;}
         | Tendln
@@ -421,10 +431,10 @@ castexpr: unionexpr Tcast Toparen type Tcparen
 cmpop   : Teq | Tgt | Tlt | Tge | Tle | Tne ;
 
 unionexpr
-        : Ttick Tident borexpr
-            {$$ = mkexpr($1->line, Ocons, mkname($2->line, $2->str), $3, NULL);}
-        | Ttick Tident
-            {$$ = mkexpr($1->line, Ocons, mkname($2->line, $2->str), NULL);}
+        : Ttick name borexpr
+            {$$ = mkexpr($1->line, Ocons, $2, $3, NULL);}
+        | Ttick name
+            {$$ = mkexpr($1->line, Ocons, $2, NULL);}
         | borexpr
         ;
 
@@ -665,6 +675,19 @@ label   : Tcolon Tident
         ;
 
 %%
+
+static void constrainwith(Type *t, char *str)
+{
+    size_t i;
+
+    for (i = 0; i < ncstrs; i++) {
+        if (!strcmp(cstrtab[i]->name, str)) {
+            setcstr(t, cstrtab[i]);
+            return;
+        }
+    }
+    fatal(t->line, "Constraint %s does not exist", str);
+}
 
 static Node *mkpseudodecl(Type *t)
 {

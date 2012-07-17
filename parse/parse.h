@@ -94,6 +94,8 @@ struct Type {
     int line;
     int resolved;     /* Have we resolved the subtypes? Idempotent, but slow to repeat. */
     Bitset *cstrs;    /* the type constraints matched on this type */
+    Node **cstrlist;  /* The names of the constraints on the type. Used to resolve/fill the bitset */
+    size_t ncstrlist; /* The length of the constraint list above */
     size_t nsub;      /* For compound types */
     size_t nmemb;     /* for aggregate types (struct, union) */
     Type **sub;       /* sub-types; shared by all composite types */
@@ -244,9 +246,9 @@ extern Tok *curtok;     /* the last token we tokenized */
 extern int line;        /* the last line number we tokenized */
 extern Node *file;      /* the current file we're compiling */
 extern Type **tytab;    /* type -> type map used by inference. size maintained by type creation code */
-extern int ntypes;
+extern size_t ntypes;
 extern Cstr **cstrtab;  /* int -> cstr map */
-extern int ncstrs;
+extern size_t ncstrs;
 extern int maxnid;      /* the maximum node id generated so far */
 extern int maxdid;      /* the maximum decl id generated so far */
 

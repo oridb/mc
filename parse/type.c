@@ -18,9 +18,9 @@ struct Typename {
 };
 
 Type **tytab = NULL;
-int ntypes;
+size_t ntypes;
 Cstr **cstrtab;
-int ncstrs;
+size_t ncstrs;
 
 static Cstr *tycstrs[Ntypes + 1][4];
 
@@ -271,10 +271,10 @@ int hascstr(Type *t, Cstr *c)
 
 static int cstrfmt(char *buf, size_t len, Type *t)
 {
+    size_t i;
     char *p;
     char *end;
     char *sep;
-    int i;
 
     if (!t->cstrs || !bscount(t->cstrs))
         return 0;
