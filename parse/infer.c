@@ -412,6 +412,7 @@ static void unifycall(Inferstate *st, Node *n)
     if (ft->type == Tyvar) {
         /* the first arg is the function itself, so it shouldn't be counted */
         ft = mktyfunc(n->line, &n->expr.args[1], n->expr.nargs - 1, mktyvar(n->line));
+        unify(st, n, ft, type(st, n->expr.args[0]));
     }
     for (i = 1; i < n->expr.nargs; i++) {
         if (ft->sub[i]->type == Tyvalist)
