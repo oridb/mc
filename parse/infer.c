@@ -768,6 +768,7 @@ static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
 
 static void checkcast(Inferstate *st, Node *n)
 {
+    /* FIXME: actually verify the casts */
 }
 
 /* returns the final type for t, after all unifications
@@ -793,7 +794,7 @@ static Type *tyfix(Inferstate *st, Node *ctx, Type *t)
         if (t->type == Tyarray) {
             typesub(st, t->asize);
         } else if (t->type == Tystruct) {
-            for (i = 0; i < t->nmemb; i++)
+            for (i = 0; i < t->nmemb && t->visits < st->subpass; i++)
                 typesub(st, t->sdecls[i]);
         } else if (t->type == Tyunion) {
             for (i = 0; i < t->nmemb; i++) {
@@ -831,7 +832,7 @@ static void infercompn(Inferstate *st, Node *file)
         memb = st->postcheck[i]->expr.args[1];
 
         found = 0;
-        t = tf(st, type(st, aggr));
+        t = tybase(tf(st, type(st, aggr)));
         if (t->type == Tyslice || t->type == Tyarray) {
             if (!strcmp(namestr(memb), "len")) {
                 constrain(n, type(st, n), cstrtab[Tcnum]);
@@ -840,9 +841,8 @@ static void infercompn(Inferstate *st, Node *file)
                 found = 1;
             }
         } else {
-            t = tybase(t);
             if (t->type == Typtr)
-                t = tf(st, t->sub[0]);
+                t = tybase(tf(st, t->sub[0]));
             nl = t->sdecls;
             for (j = 0; j < t->nmemb; j++) {
                 if (!strcmp(namestr(memb), declname(nl[j]))) {

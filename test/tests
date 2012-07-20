@@ -57,6 +57,7 @@ F declmismatch
 F infermismatch
 F flow
 F occur
+F tyoccur
 F union-extraarg
 F union-missingarg
 F match-badtypes
