@@ -100,6 +100,44 @@ static Type *freshen(Inferstate *st, Type *t)
     return t;
 }
 
+static int tyoccurs(Inferstate *st, Type *t, Type *sub)
+{
+    size_t i;
+
+    assert(t != NULL);
+    if (t == sub) /* FIXME: is this actually right? */
+        return 1;
+    /* if we're on the first iteration, the subtype is the type
+     * itself. The assignment must come after the equality check
+     * for obvious reasons. */
+    if (!sub)
+        sub = t;
+
+    switch (sub->type) {
+        case Tystruct:
+            for (i = 0; i < sub->nmemb; i++)
+                if (tyoccurs(st, t, decltype(sub->sdecls[i])))
+                    return 1;
+            break;
+        case Tyunion:
+            for (i = 0; i < t->nmemb; i++) {
+                if (sub->udecls[i]->etype && tyoccurs(st, t, sub->udecls[i]->etype))
+                    return 1;
+            }
+            break;
+
+        case Typtr:
+        case Tyslice:
+            return 0;
+        default:
+            for (i = 0; i < sub->nsub; i++)
+                if (tyoccurs(st, t, sub->sub[i]))
+                    return 1;
+            break;
+    }
+    return 0;
+}
+
 static void tyresolve(Inferstate *st, Type *t)
 {
     size_t i;
@@ -132,6 +170,8 @@ static void tyresolve(Inferstate *st, Type *t)
         bsunion(t->cstrs, base->cstrs);
     else
         t->cstrs = bsdup(base->cstrs);
+    if (tyoccurs(st, t, NULL))
+        fatal(t->line, "Type %s includes itself", tystr(t));
 }
 
 /* fixd the most accurate type mapping we have */
@@ -790,11 +830,12 @@ static Type *tyfix(Inferstate *st, Node *ctx, Type *t)
             return tyint;
         if (hascstr(t, cstrtab[Tcfloat]) && cstrcheck(t, tyflt))
             return tyint;
-    } else {
+    } else if (!t->fixed) {
+        t->fixed = 1;
         if (t->type == Tyarray) {
             typesub(st, t->asize);
         } else if (t->type == Tystruct) {
-            for (i = 0; i < t->nmemb && t->visits < st->subpass; i++)
+            for (i = 0; i < t->nmemb; i++)
                 typesub(st, t->sdecls[i]);
         } else if (t->type == Tyunion) {
             for (i = 0; i < t->nmemb; i++) {

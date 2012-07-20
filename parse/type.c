@@ -320,7 +320,7 @@ static int fmtunion(char *buf, size_t len, Type *t)
 
     p = buf;
     end = p + len;
-    p += snprintf(p, end - p, "struct ");
+    p += snprintf(p, end - p, "union ");
     for (i = 0; i < t->nmemb; i++) {
         name = namestr(t->udecls[i]->name);
         ty = tystr(t->udecls[i]->etype);

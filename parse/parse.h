@@ -92,7 +92,8 @@ struct Type {
     Ty type;
     int tid;
     int line;
-    int resolved;     /* Have we resolved the subtypes? Idempotent, but slow to repeat. */
+    int resolved;     /* Have we resolved the subtypes? Prevents infinite recursion. */
+    int fixed;        /* Have we fixed the subtypes? Prevents infinite recursion. */
     Bitset *cstrs;    /* the type constraints matched on this type */
     Node **cstrlist;  /* The names of the constraints on the type. Used to resolve/fill the bitset */
     size_t ncstrlist; /* The length of the constraint list above */
