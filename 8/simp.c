@@ -519,10 +519,9 @@ static size_t offsetof(Node *aggr, Node *memb)
     size_t i;
     size_t off;
 
-    if (aggr->expr.type->type == Typtr)
-        aggr = aggr->expr.args[0];
-    ty = aggr->expr.type;
-    ty = tybase(ty);
+    ty = tybase(exprtype(aggr));
+    if (ty->type == Typtr)
+        ty = tybase(ty->sub[0]);
 
     assert(ty->type == Tystruct);
     nl = ty->sdecls;
