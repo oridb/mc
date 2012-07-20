@@ -14,27 +14,29 @@
 
 typedef struct Inferstate Inferstate;
 struct Inferstate {
-	int inpattern;
-	int ingeneric;
+    /* what sort of constructs we're inside. incremented when we enter,
+     * decremented when we leave, in order to allow nesting */
+    int inpat;
+    int ingeneric;
 
-	/* bound by patterns turn into decls in the action block */
-	Node **binds;
-	size_t nbinds;
-	/* nodes that need post-inference checking/unification */
-	Node **postcheck;
-	size_t npostcheck;
-	/* the type parmas bound at the current point */
-	Htab **tybindings;
-	size_t ntybindings;
-	/* generic declarations to be specialized */
-	Node **genericdecls;
-	size_t ngenericdecls;
-	/* the nodes that we've specialized them to, and the scopes they
-	 * appear in */
-	Node **specializations;
-	size_t nspecializations;
-	Stab **specializationscope;
-	size_t nspecializationscope;
+    /* bound by patterns turn into decls in the action block */
+    Node **binds;
+    size_t nbinds;
+    /* nodes that need post-inference checking/unification */
+    Node **postcheck;
+    size_t npostcheck;
+    /* the type parmas bound at the current point */
+    Htab **tybindings;
+    size_t ntybindings;
+    /* generic declarations to be specialized */
+    Node **genericdecls;
+    size_t ngenericdecls;
+    /* the nodes that we've specialized them to, and the scopes they
+     * appear in */
+    Node **specializations;
+    size_t nspecializations;
+    Stab **specializationscope;
+    size_t nspecializationscope;
 };
 
 static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret);
@@ -737,7 +739,9 @@ static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
             }
             break;
         case Nmatch:
+            st->inpat++;
             infernode(st, n->match.pat, NULL, sawret);
+            st->inpat--;
             infernode(st, n->match.block, ret, sawret);
             break;
         case Nexpr:
