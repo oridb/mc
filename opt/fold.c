@@ -50,6 +50,8 @@ Node *fold(Node *n)
     vlong a, b;
     size_t i;
 
+    if (!n)
+        return NULL;
     assert(n->type == Nexpr);
     r = NULL;
     args = n->expr.args;
@@ -111,6 +113,12 @@ Node *fold(Node *n)
         case Oneg:
             if (islit(args[0], &a))
                 r = val(n->line, -a);
+            break;
+        case Ocast:
+            /* FIXME: we currentl assume that the bits of the
+             * val are close enough. */
+            r = args[0];
+            r->expr.type = exprtype(n);
             break;
         default:
             break;

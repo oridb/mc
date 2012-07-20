@@ -519,10 +519,9 @@ static size_t offsetof(Node *aggr, Node *memb)
     size_t i;
     size_t off;
 
-    if (aggr->expr.type->type == Typtr)
-        aggr = aggr->expr.args[0];
-    ty = aggr->expr.type;
-    ty = tybase(ty);
+    ty = tybase(exprtype(aggr));
+    if (ty->type == Typtr)
+        ty = tybase(ty->sub[0]);
 
     assert(ty->type == Tystruct);
     nl = ty->sdecls;
@@ -540,11 +539,12 @@ static Node *membaddr(Simp *s, Node *n)
 {
     Node *t, *u, *r;
     Node **args;
+    Type *ty;
 
     args = n->expr.args;
-    if (n->expr.type->type == Typtr) {
+    ty = tybase(exprtype(args[0]));
+    if (ty->type == Typtr) {
         t = args[0];
-        t->expr.type = mktyptr(n->line, exprtype(n));
     } else {
         t = addr(args[0], exprtype(n));
     }
@@ -1167,6 +1167,7 @@ static void lowerdcl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***b
             lappend(fn, nfn, f);
         }
     } else {
+        dcl->decl.init = fold(dcl->decl.init);
         if (dcl->decl.init && exprop(dcl->decl.init) == Olit)
             lappend(&s.blobs, &s.nblobs, dcl);
         /* uninitialized global vars get zero-initialized decls */

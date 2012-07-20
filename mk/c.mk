@@ -52,20 +52,32 @@ clean: subdirs-clean
 
 
 install-bin: $(INSTBIN)
-	mkdir -p $(INST_ROOT)/bin
-	test -z "$(INSTBIN)" || install $(INSTBIN) $(INST_ROOT)/bin
+	@if [ ! -z "$(INSTBIN)" ]; then \
+		echo install $(INSTBIN) $(INST_ROOT)/bin; \
+		mkdir -p $(INST_ROOT)/bin; \
+		install $(INSTBIN) $(INST_ROOT)/bin; \
+	fi
 
 install-lib: $(INSTLIB)
-	mkdir -p $(INST_ROOT)/lib
-	test -z "$(INSTLIB)" || install $(INSTLIB) $(INST_ROOT)/lib
+	@if [ ! -z "$(INSTLIB)" ]; then \
+		echo install $(INSTLIB) $(INST_ROOT)/lib; \
+		mkdir -p $(INST_ROOT)/lib; \
+		install $(INSTLIB) $(INST_ROOT)/lib; \
+	fi
 
 install-hdr: $(INSTHDR)
-	mkdir -p $(INST_ROOT)/$(HDRDIR)/include
-	test -z "$(INSTHDR)" || install $(INSTHDR) $(INST_ROOT)/include
+	@if [ ! -z "$(INSTHDR)" ]; then \
+		echo install $(INSTHDR) $(INST_ROOT)/include; \
+		mkdir -p $(INST_ROOT)/include; \
+		install $(INSTHDR) $(INST_ROOT)/include; \
+	fi
 
 install-pc: $(INSTPKG)
-	mkdir -p $(INST_ROOT)/pkgconfig
-	test -z "$(INSTPC)" || install $(INSTPC) $(INST_ROOT)/pkgconfig
+	@if [ ! -z "$(INSTPKG)" ]; then \
+		echo install $(INSTPKG) $(INST_ROOT)/lib/pkgconfig; \
+		mkdir -p $(INST_ROOT)/lib/pkgconfig; \
+		install $(INSTPKG) $(INST_ROOT)/lib/pkgconfig; \
+	fi
 
 clean-backups:
 	find ./ -name .*.sw* -exec rm -f {} \;

@@ -1,0 +1,9 @@
+/* we just want to see if this file compiles */
+type foo = struct
+	v : foo*
+;;
+
+const main = {
+	var v : foo
+	-> 42
+}

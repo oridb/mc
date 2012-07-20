@@ -92,16 +92,19 @@ struct Type {
     Ty type;
     int tid;
     int line;
-    int resolved;     /* Have we resolved the subtypes? Idempotent, but slow to repeat. */
+
+    int resolved;     /* Have we resolved the subtypes? Prevents infinite recursion. */
+    int fixed;        /* Have we fixed the subtypes? Prevents infinite recursion. */
+
     Bitset *cstrs;    /* the type constraints matched on this type */
-    Node **cstrlist;  /* The names of the constraints on the type. Used to resolve/fill the bitset */
+    Node **cstrlist;  /* The names of the constraints on the type. Used to fill the bitset */
     size_t ncstrlist; /* The length of the constraint list above */
+
+    Type **sub;       /* sub-types; shared by all composite types */
     size_t nsub;      /* For compound types */
     size_t nmemb;     /* for aggregate types (struct, union) */
-    Type **sub;       /* sub-types; shared by all composite types */
     union {
-        Node *aname;   /* Tyalias: alias name */
-        Node *name;    /* Tyname: unresolved name */
+        Node *name;    /* Tyname: unresolved name. Tyalias: alias name */
         Node *asize;   /* array size */
         char *pname;   /* Typaram: name of type parameter */
         Node **sdecls; /* Tystruct: decls in struct */

@@ -1,3 +1,4 @@
+INSTBIN=muse
 BIN=muse
 OBJ=muse.o
 

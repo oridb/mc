@@ -1,3 +1,4 @@
+INSTBIN=8m
 BIN=8m
 OBJ=isel.o \
     locs.o \

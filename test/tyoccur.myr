@@ -1,0 +1,5 @@
+type t = struct
+	memb : t
+;;
+
+var v : t
