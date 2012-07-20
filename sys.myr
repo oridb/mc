@@ -1,6 +1,8 @@
-pkg sys =
+pkg std =
 	type scno = int
 	type fdopt = int
+	type mprot = int
+	type mopt = int
 	type statbuf = struct
 		 dev     : uint
 		 ino     : uint
@@ -22,6 +24,7 @@ pkg sys =
 		 _unused2: uint
 	;;
 
+	/* open options */
 	const Rdonly  	: fdopt = 0x0
 	const Wronly  	: fdopt = 0x1
 	const Rdwr    	: fdopt = 0x2
@@ -31,6 +34,25 @@ pkg sys =
 	const Ndelay  	: fdopt = 0x800
 	const Trunc   	: fdopt = 0x200
 
+	/* mmap protection */
+	const Mprotexec	: mprot = 0x1
+	const Mprotrd	: mprot = 0x2
+	const Mprotwr	: mprot = 0x4
+	const Mprotrw	: mprot = 0x6
+	const Mprotnone	: mprot = 0x0
+	
+	/* mmap options */
+	const Mshared	: mopt = 0x1
+	const Mpriv	: mopt = 0x2
+	const Mfixed	: mopt = 0x10
+	const Mfile	: mopt = 0x0
+	const Manon	: mopt = 0x20
+	const M32bit	: mopt = 0x40
+
+	/* return value for a failed mapping */
+	const Mapbad	: byte* = -1 castto(byte*)
+
+	/* syscalls */
 	const Sysexit	: scno = 1
 	const Sysread	: scno = 3
 	const Syswrite	: scno = 4
@@ -57,7 +79,7 @@ pkg sys =
 	const lseek	: (fd:int, off:uint, whence:int -> int)
 	const fstat	: (fd:int, sb:statbuf* -> int)
 	const munmap	: (addr:byte*, len:uint -> int)
-	const mmap	: (add:byte*, len:uint, prot:uint, flags:uint, fd:int, off:uint)
+	const mmap	: (addr:byte*, len:uint, prot:uint, flags:uint, fd:int, off:uint)
 ;;
 
 const exit	= {status;		-> syscall(Sysexit, 1);}

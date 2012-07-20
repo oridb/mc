@@ -1,5 +1,5 @@
-.globl sys$syscall
-sys$syscall:
+.globl std$syscall
+std$syscall:
 	pushl %ebp
 	movl %esp,%ebp
 	movl 12(%ebp),%eax #count

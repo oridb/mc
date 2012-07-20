@@ -1,0 +1,64 @@
+use "sys.use"
+
+pkg std =
+	type size = uint
+
+	generic alloc	: (		-> @a*)
+	generic free	: (v:@a*	-> void)
+
+	const bytealloc	: (sz:size	-> byte*)
+	const bytefree	: (ptr:byte*	-> void)
+;;
+
+/* null pointers */
+const Zbyte = 0 castto(byte*)
+const Zslab = 0 castto(slab*)
+const Zbin = 0 castto(bin*)
+const Pagesz = 4096 /* on the systems this supports, anyways... */
+
+type bucket = struct
+	sz	: size	/* aligned size */
+	nper	: size	/* max number of elements per slab */
+	slabs	: slab*	/* partially filled or free slabs */
+	cache	: slab* /* cache of empty slabs, to prevent thrashing */
+	ncache	: size  /* size of cache */
+;;
+
+type slab = struct
+	freehd	: bin*
+	next	: slab*
+	nfree	: int
+;;
+
+type bin = struct
+	next	: bin*
+;;
+
+const allocinit = {b : bucket*, sz
+	b.sz = align(sz, 16)
+	b.nper = (Pagesz - sizeof(slab))/b.sz
+	b.slabs = Zslab
+	b.cache = Zslab
+	b.ncache = 0
+}
+
+const mkslab = {b : bucket*
+	var p
+	var s
+
+	p = mmap(Zbyte, Mprotrw, Mpriv | Manon, -1, 0)
+	if p == Mapbad
+		die("Unable to mmap")
+	;;
+
+	s = p castto(slab*)
+	s.nfree = b.nper
+}
+
+const delslab = {s : slab*
+
+}
+
+const align = {v, align
+	-> (v + align - 1) & ~(align - 1)
+}

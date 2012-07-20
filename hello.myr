@@ -1,5 +1,5 @@
 use "sys.use"
 
 const main = {
-	sys.write(1, "Hello world\n")
+	std.write(1, "Hello world\n")
 }

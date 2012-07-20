@@ -32,5 +32,6 @@ assem syscall.s
 use sys.myr
 build sys.myr
 build hello.myr
+build alloc.myr
 
 $CC -m32 -o hello sys.o hello.o syscall.o
