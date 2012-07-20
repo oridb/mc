@@ -189,6 +189,10 @@ static void wrtype(FILE *fd, Type *ty)
         case Tyvar:
             die("Attempting to pickle %s. This will not work.\n", tystr(ty));
             break;
+        case Tyalias:
+            pickle(ty->name, fd);
+            wrtype(fd, ty->sub[0]);
+            break;
         default:
             for (i = 0; i < ty->nsub; i++)
                 wrtype(fd, ty->sub[i]);
@@ -233,6 +237,10 @@ static Type *rdtype(FILE *fd)
             ty->asize = unpickle(fd);
             break;
         case Tyslice:
+            ty->sub[0] = rdtype(fd);
+            break;
+        case Tyalias:
+            ty->name = unpickle(fd);
             ty->sub[0] = rdtype(fd);
             break;
         default:
