@@ -14,27 +14,29 @@
 
 typedef struct Inferstate Inferstate;
 struct Inferstate {
-	int inpattern;
-	int ingeneric;
+        int inpattern;
+        int ingeneric;
+        int sawret;
+        Type *ret;
 
-	/* bound by patterns turn into decls in the action block */
-	Node **binds;
-	size_t nbinds;
-	/* nodes that need post-inference checking/unification */
-	Node **postcheck;
-	size_t npostcheck;
-	/* the type parmas bound at the current point */
-	Htab **tybindings;
-	size_t ntybindings;
-	/* generic declarations to be specialized */
-	Node **genericdecls;
-	size_t ngenericdecls;
-	/* the nodes that we've specialized them to, and the scopes they
-	 * appear in */
-	Node **specializations;
-	size_t nspecializations;
-	Stab **specializationscope;
-	size_t nspecializationscope;
+        /* bound by patterns turn into decls in the action block */
+        Node **binds;
+        size_t nbinds;
+        /* nodes that need post-inference checking/unification */
+        Node **postcheck;
+        size_t npostcheck;
+        /* the type parmas bound at the current point */
+        Htab **tybindings;
+        size_t ntybindings;
+        /* generic declarations to be specialized */
+        Node **genericdecls;
+        size_t ngenericdecls;
+        /* the nodes that we've specialized them to, and the scopes they
+         * appear in */
+        Node **specializations;
+        size_t nspecializations;
+        Stab **specializationscope;
+        size_t nspecializationscope;
 };
 
 static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret);
@@ -497,7 +499,7 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
             lappend(&st->postcheck, &st->npostcheck, n);
             break;
         case Osize:     /* sizeof @a -> size */
-            settype(st, n, mkty(n->line, Tyuint));
+            settype(st, n, tylike(mktyvar(n->line), Tyuint));
             break;
         case Ocall:     /* (@a, @b, @c, ... -> @r)(@a,@b,@c, ... -> @r) -> @r */
             unifycall(st, n);
@@ -980,10 +982,10 @@ static void mergeexports(Inferstate *st, Node *file)
             if (!tg)
                 puttype(globls, nl, tl);
             else
-                fatal(nl->line, "Exported type %s double-declared on line %d", namestr(nl), tg->line);
+                fatal(nl->line, "Exported type %s already declared on line %d", namestr(nl), tg->line);
         } else {
             tg = gettype(globls, nl);
-            if (tg) 
+            if (tg)
                 updatetype(exports, nl, tf(st, tg));
             else
                 fatal(nl->line, "Exported type %s not declared", namestr(nl));
