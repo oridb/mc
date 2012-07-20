@@ -100,7 +100,8 @@ static Type *freshen(Inferstate *st, Type *t)
     return t;
 }
 
-static int tyoccurs(Inferstate *st, Type *t, Type *sub)
+/* prevents types that directly contain themselves. */
+static int tyinfinite(Inferstate *st, Type *t, Type *sub)
 {
     size_t i;
 
@@ -116,12 +117,12 @@ static int tyoccurs(Inferstate *st, Type *t, Type *sub)
     switch (sub->type) {
         case Tystruct:
             for (i = 0; i < sub->nmemb; i++)
-                if (tyoccurs(st, t, decltype(sub->sdecls[i])))
+                if (tyinfinite(st, t, decltype(sub->sdecls[i])))
                     return 1;
             break;
         case Tyunion:
             for (i = 0; i < t->nmemb; i++) {
-                if (sub->udecls[i]->etype && tyoccurs(st, t, sub->udecls[i]->etype))
+                if (sub->udecls[i]->etype && tyinfinite(st, t, sub->udecls[i]->etype))
                     return 1;
             }
             break;
@@ -131,7 +132,7 @@ static int tyoccurs(Inferstate *st, Type *t, Type *sub)
             return 0;
         default:
             for (i = 0; i < sub->nsub; i++)
-                if (tyoccurs(st, t, sub->sub[i]))
+                if (tyinfinite(st, t, sub->sub[i]))
                     return 1;
             break;
     }
@@ -170,7 +171,7 @@ static void tyresolve(Inferstate *st, Type *t)
         bsunion(t->cstrs, base->cstrs);
     else
         t->cstrs = bsdup(base->cstrs);
-    if (tyoccurs(st, t, NULL))
+    if (tyinfinite(st, t, NULL))
         fatal(t->line, "Type %s includes itself", tystr(t));
 }
 
@@ -328,6 +329,8 @@ static int idxhacked(Type **pa, Type **pb)
     return (a->type == Tyvar && a->nsub > 0) || a->type == Tyarray || a->type == Tyslice;
 }
 
+/* prevents types that contain themselves in the unification;
+ * eg @a U (@a -> foo) */
 static int occurs(Type *a, Type *b)
 {
     size_t i;
