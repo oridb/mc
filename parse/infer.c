@@ -254,31 +254,49 @@ static Type *type(Inferstate *st, Node *n)
     return tf(st, t);
 }
 
-static char *ctxstr(Node *n)
+static char *ctxstr(Inferstate *st, Node *n)
 {
     char *s;
+    char *t;
+    char *u;
+    char buf[512];
+
     switch (n->type) {
-        default:        s = nodestr(n->type);   break;
-        case Ndecl:     s = declname(n);        break;
-        case Nname:     s = namestr(n);         break;
+        default:
+            s = nodestr(n->type);
+            break;
+        case Ndecl:
+            u = declname(n);
+            t = tystr(tf(st, decltype(n)));
+            snprintf(buf, 512, "%s:%s", u, t);
+            s = strdup(buf);
+            free(t);
+            break;
+        case Nname:
+            s = namestr(n);
+            break;
         case Nexpr:
             if (exprop(n) == Ovar)
-                s = namestr(n->expr.args[0]);
+                u = namestr(n->expr.args[0]);
             else
-                s = opstr(exprop(n));
+                u = opstr(exprop(n));
+            t = tystr(tf(st, exprtype(n)));
+            snprintf(buf, 512, "%s:%s", u, t);
+            s = strdup(buf);
+            free(t);
             break;
     }
     return s;
 }
 
-static void constrain(Node *ctx, Type *a, Cstr *c)
+static void constrain(Inferstate *st, Node *ctx, Type *a, Cstr *c)
 {
     if (a->type == Tyvar) {
         if (!a->cstrs)
             a->cstrs = mkbs();
         setcstr(a, c);
     } else if (!bshas(a->cstrs, c->cid)) {
-            fatal(ctx->line, "%s needs %s near %s", tystr(a), c->name, ctxstr(ctx));
+            fatal(ctx->line, "%s needs %s near %s", tystr(a), c->name, ctxstr(st, ctx));
     }
 }
 
@@ -296,7 +314,7 @@ static int cstrcheck(Type *a, Type *b)
     return bsissubset(b->cstrs, a->cstrs);
 }
 
-static void mergecstrs(Node *ctx, Type *a, Type *b)
+static void mergecstrs(Inferstate *st, Node *ctx, Type *a, Type *b)
 {
     if (b->type == Tyvar) {
         /* make sure that if a = b, both have same cstrs */
@@ -309,7 +327,7 @@ static void mergecstrs(Node *ctx, Type *a, Type *b)
     } else {
         if (!cstrcheck(a, b)) {
             dump(file, stdout);
-            fatal(ctx->line, "%s missing constraints for %s near %s", tystr(b), tystr(a), ctxstr(ctx));
+            fatal(ctx->line, "%s missing constraints for %s near %s", tystr(b), tystr(a), ctxstr(st, ctx));
         }
     }
 }
@@ -361,26 +379,26 @@ static Type *unify(Inferstate *st, Node *ctx, Type *a, Type *b)
     }
 
     r = NULL;
-    mergecstrs(ctx, a, b);
+    mergecstrs(st, ctx, a, b);
     if (a->type == Tyvar) {
         tytab[a->tid] = b;
         r = b;
     }
     if (a->type == Tyvar && b->type != Tyvar) 
         if (occurs(a, b))
-            fatal(ctx->line, "Infinite type %s in %s near %s", tystr(a), tystr(b), ctxstr(ctx));
+            fatal(ctx->line, "Infinite type %s in %s near %s", tystr(a), tystr(b), ctxstr(st, ctx));
 
     if (a->type == b->type || idxhacked(&a, &b)) {
         for (i = 0; i < b->nsub; i++) {
             /* types must have same arity */
             if (i >= a->nsub)
-                fatal(ctx->line, "%s has wrong subtypes for %s near %s", tystr(a), tystr(b), ctxstr(ctx));
+                fatal(ctx->line, "%s has wrong subtypes for %s near %s", tystr(a), tystr(b), ctxstr(st, ctx));
 
             unify(st, ctx, a->sub[i], b->sub[i]);
         }
         r = b;
     } else if (a->type != Tyvar) {
-        fatal(ctx->line, "%s incompatible with %s near %s", tystr(a), tystr(b), ctxstr(ctx));
+        fatal(ctx->line, "%s incompatible with %s near %s", tystr(a), tystr(b), ctxstr(st, ctx));
     }
     return r;
 }
@@ -527,7 +545,7 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
         case Oidx:      /* @a[@b::tcint] -> @a */
             t = mktyidxhack(n->line, mktyvar(n->line));
             unify(st, n, type(st, args[0]), t);
-            constrain(n, type(st, args[1]), cstrtab[Tcint]);
+            constrain(st, n, type(st, args[1]), cstrtab[Tcint]);
             settype(st, n, tf(st, t->sub[0]));
             break;
         case Oslice:    /* @a[@b::tcint,@b::tcint] -> @a[,] */
@@ -572,7 +590,7 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
                 return;
             s = getdcl(curstab(), args[0]);
             if (!s)
-                fatal(n->line, "Undeclared var %s", ctxstr(args[0]));
+                fatal(n->line, "Undeclared var %s", ctxstr(st, args[0]));
 
             if (s->decl.isgeneric)
                 t = freshen(st, s->decl.type);
@@ -589,11 +607,11 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
         case Ocons:
             uc = getucon(curstab(), args[0]);
             if (!uc)
-                fatal(n->line, "No union constructor %s", ctxstr(args[0]));
+                fatal(n->line, "No union constructor %s", ctxstr(st, args[0]));
             if (!uc->etype && n->expr.nargs > 1)
-                fatal(n->line, "nullary union constructor %s passed arg ", ctxstr(args[0]));
+                fatal(n->line, "nullary union constructor %s passed arg ", ctxstr(st, args[0]));
             else if (uc->etype && n->expr.nargs != 2)
-                fatal(n->line, "union constructor %s needs arg ", ctxstr(args[0]));
+                fatal(n->line, "union constructor %s needs arg ", ctxstr(st, args[0]));
             else if (uc->etype)
                 unify(st, n, uc->etype, type(st, args[1]));
             settype(st, n, uc->utype);
@@ -653,7 +671,7 @@ static void inferdecl(Inferstate *st, Node *n)
         unify(st, n, type(st, n), type(st, n->decl.init));
     } else {
         if (n->decl.isconst && !n->decl.isextern)
-            fatal(n->line, "non-extern \"%s\" has no initializer", ctxstr(n));
+            fatal(n->line, "non-extern \"%s\" has no initializer", ctxstr(st, n));
     }
 }
 
@@ -747,7 +765,7 @@ static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
             inferdecl(st, n);
             unbind(st, n);
             if (type(st, n)->type == Typaram && !st->ingeneric)
-                fatal(n->line, "Generic type %s in non-generic near %s\n", tystr(type(st, n)), ctxstr(n));
+                fatal(n->line, "Generic type %s in non-generic near %s\n", tystr(type(st, n)), ctxstr(st, n));
             if (n->decl.isgeneric)
                 st->ingeneric--;
             break;
@@ -765,14 +783,14 @@ static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
             infernode(st, n->ifstmt.cond, NULL, sawret);
             infernode(st, n->ifstmt.iftrue, ret, sawret);
             infernode(st, n->ifstmt.iffalse, ret, sawret);
-            constrain(n, type(st, n->ifstmt.cond), cstrtab[Tctest]);
+            constrain(st, n, type(st, n->ifstmt.cond), cstrtab[Tctest]);
             break;
         case Nloopstmt:
             infernode(st, n->loopstmt.init, ret, sawret);
             infernode(st, n->loopstmt.cond, NULL, sawret);
             infernode(st, n->loopstmt.step, ret, sawret);
             infernode(st, n->loopstmt.body, ret, sawret);
-            constrain(n, type(st, n->loopstmt.cond), cstrtab[Tctest]);
+            constrain(st, n, type(st, n->loopstmt.cond), cstrtab[Tctest]);
             break;
         case Nmatchstmt:
             infernode(st, n->matchstmt.val, NULL, sawret);
@@ -850,7 +868,7 @@ static Type *tyfix(Inferstate *st, Node *ctx, Type *t)
             t->sub[i] = tyfix(st, ctx, t->sub[i]);
     }
     if (t->type == Tyvar) {
-        fatal(t->line, "underconstrained type %s near %s", tyfmt(buf, 1024, t), ctxstr(ctx));
+        fatal(t->line, "underconstrained type %s near %s", tyfmt(buf, 1024, t), ctxstr(st, ctx));
     }
 
     return t;
@@ -879,9 +897,9 @@ static void infercompn(Inferstate *st, Node *file)
         t = tybase(tf(st, type(st, aggr)));
         if (t->type == Tyslice || t->type == Tyarray) {
             if (!strcmp(namestr(memb), "len")) {
-                constrain(n, type(st, n), cstrtab[Tcnum]);
-                constrain(n, type(st, n), cstrtab[Tcint]);
-                constrain(n, type(st, n), cstrtab[Tctest]);
+                constrain(st, n, type(st, n), cstrtab[Tcnum]);
+                constrain(st, n, type(st, n), cstrtab[Tcint]);
+                constrain(st, n, type(st, n), cstrtab[Tctest]);
                 found = 1;
             }
         } else {
@@ -898,7 +916,7 @@ static void infercompn(Inferstate *st, Node *file)
         }
         if (!found)
             fatal(aggr->line, "Type %s has no member \"%s\" near %s",
-                  tystr(type(st, aggr)), ctxstr(memb), ctxstr(aggr));
+                  tystr(type(st, aggr)), ctxstr(st, memb), ctxstr(st, aggr));
     }
 }
 
@@ -919,7 +937,7 @@ static void stabsub(Inferstate *st, Stab *s)
     k = htkeys(s->dcl, &n);
     for (i = 0; i < n; i++) {
         d = getdcl(s, k[i]);
-        d->decl.type = tyfix(st, d->decl.name, d->decl.type);
+        d->decl.type = tyfix(st, d, d->decl.type);
     }
     free(k);
 }
@@ -1044,7 +1062,7 @@ static void mergeexports(Inferstate *st, Node *file)
         /* if an export has an initializer, it shouldn't be declared in the
          * body */
         if (nl->decl.init && ng)
-            fatal(nl->line, "Export %s double-defined on line %d", ctxstr(nl), ng->line);
+            fatal(nl->line, "Export %s double-defined on line %d", ctxstr(st, nl), ng->line);
         if (!ng)
             putdcl(globls, nl);
         else
