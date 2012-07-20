@@ -104,8 +104,7 @@ struct Type {
     size_t nsub;      /* For compound types */
     size_t nmemb;     /* for aggregate types (struct, union) */
     union {
-        Node *aname;   /* Tyalias: alias name */
-        Node *name;    /* Tyname: unresolved name */
+        Node *name;    /* Tyname: unresolved name. Tyalias: alias name */
         Node *asize;   /* array size */
         char *pname;   /* Typaram: name of type parameter */
         Node **sdecls; /* Tystruct: decls in struct */

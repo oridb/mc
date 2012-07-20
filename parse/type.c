@@ -419,7 +419,7 @@ static int tybfmt(char *buf, size_t len, Type *t)
             p += namefmt(p, end - p, t->name);
             break;
         case Tyalias:  
-            p += snprintf(p, end - p, "%s", namestr(t->aname));
+            p += snprintf(p, end - p, "%s", namestr(t->name));
             break;
         case Tystruct:  p += fmtstruct(p, end - p, t);  break;
         case Tyunion:   p += fmtunion(p, end - p, t);   break;

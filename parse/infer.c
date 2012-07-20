@@ -185,7 +185,7 @@ static Type *tf(Inferstate *st, Type *t)
     while (1) {
         if (!tytab[t->tid] && t->type == Tyname) {
             if (!(lu = gettype(curstab(), t->name)))
-                fatal(t->name->line, "Could not fixd type %s", namestr(t->name));
+                fatal(t->name->line, "Could not fixed type %s", namestr(t->name));
             tytab[t->tid] = lu;
         }
 
@@ -280,7 +280,10 @@ static char *ctxstr(Inferstate *st, Node *n)
                 u = namestr(n->expr.args[0]);
             else
                 u = opstr(exprop(n));
-            t = tystr(tf(st, exprtype(n)));
+            if (exprtype(n))
+                t = tystr(tf(st, exprtype(n)));
+            else
+                t = strdup("unknown");
             snprintf(buf, 512, "%s:%s", u, t);
             s = strdup(buf);
             free(t);
@@ -418,7 +421,7 @@ static void unifycall(Inferstate *st, Node *n)
         if (ft->sub[i]->type == Tyvalist)
             break;
         inferexpr(st, n->expr.args[i], NULL, NULL);
-        unify(st, n, ft->sub[i], type(st, n->expr.args[i]));
+        unify(st, n->expr.args[0], ft->sub[i], type(st, n->expr.args[i]));
     }
     settype(st, n, ft->sub[0]);
 }
