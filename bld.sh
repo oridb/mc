@@ -13,15 +13,15 @@ export ASOPT="-g"
 function use {
     N=`basename $1 .myr`
 
-    echo $MU $1 -o $N.use && \
-    $MU $1 -o $N.use
+    echo $MU -o $N.use $1 && \
+    $MU -o $N.use $1
 }
 
 function build {
     N=`basename $1 .myr`
 
     echo $MC $1 && \
-    $MC $1 -I.
+    $MC -I. $1
 }
 
 function assem {
