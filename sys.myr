@@ -1,3 +1,5 @@
+use "types.use"
+
 pkg std =
 	type scno = int
 	type fdopt = int
@@ -79,7 +81,7 @@ pkg std =
 	const lseek	: (fd:int, off:uint, whence:int -> int)
 	const fstat	: (fd:int, sb:statbuf* -> int)
 	const munmap	: (addr:byte*, len:uint -> int)
-	const mmap	: (addr:byte*, len:uint, prot:uint, flags:uint, fd:int, off:uint)
+	const mmap	: (addr:byte*, len:size, prot:mprot, flags:mopt, fd:int, off:off -> byte*)
 ;;
 
 const exit	= {status;		-> syscall(Sysexit, 1);}
@@ -93,4 +95,4 @@ const write	= {fd, buf;		-> syscall(Syswrite, 3, fd, buf castto(char*), buf.len)
 const lseek	= {fd, off, whence;	-> syscall(Syslseek, 2, fd, off, whence);}
 const fstat	= {fd, sb;		-> syscall(Sysfstat, 2, fd, sb);}
 const munmap	= {addr, len;		-> syscall(Sysmunmap,   2, addr, len);}
-const mmap	= {addr, len, prot, flags, fd, off;	-> syscall(Sysmmap2, 6, addr, len, prot, flags, fd, off);}
+const mmap	= {addr, len, prot, flags, fd, off;	-> syscall(Sysmmap2, 6, addr, len, prot, flags, fd, off) castto(byte*);}

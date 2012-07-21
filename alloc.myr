@@ -1,8 +1,7 @@
 use "sys.use"
+use "types.use"
 
 pkg std =
-	type size = uint
-
 	generic alloc	: (		-> @a*)
 	generic free	: (v:@a*	-> void)
 
@@ -27,7 +26,7 @@ type bucket = struct
 type slab = struct
 	freehd	: bin*
 	next	: slab*
-	nfree	: int
+	nfree	: size
 ;;
 
 type bin = struct
@@ -46,10 +45,12 @@ const mkslab = {b : bucket*
 	var p
 	var s
 
-	p = mmap(Zbyte, Mprotrw, Mpriv | Manon, -1, 0)
+	p = mmap(Zbyte, Pagesz, Mprotrw, Mpriv | Manon, -1, 0)
+	/*
 	if p == Mapbad
 		die("Unable to mmap")
 	;;
+	*/
 
 	s = p castto(slab*)
 	s.nfree = b.nper

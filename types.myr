@@ -1,0 +1,4 @@
+pkg std =
+	type size = uint32	/* spans entire address space */
+	type off = uint32	/* file offsets */
+;;

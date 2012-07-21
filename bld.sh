@@ -28,8 +28,9 @@ function assem {
     $CC $ASOPT -m32 -c $1
 }
 
-assem syscall.s
 use sys.myr
+use types.myr 
+assem syscall.s
 build sys.myr
 build hello.myr
 build alloc.myr
