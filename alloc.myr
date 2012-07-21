@@ -47,11 +47,9 @@ const mkslab = {b : bucket*
 	var s
 
 	p = mmap(Zbyte, Pagesz, Mprotrw, Mpriv | Manon, -1, 0)
-	/*
 	if p == Mapbad
 		die("Unable to mmap")
 	;;
-	*/
 
 	s = p castto(slab*)
 	s.nfree = b.nper
