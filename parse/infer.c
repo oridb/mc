@@ -229,7 +229,7 @@ static Type *littype(Node *n)
         case Lbool:     return mkty(n->line, Tybool);                           break;
         case Lint:      return tylike(mktyvar(n->line), Tyint);                 break;
         case Lflt:      return tylike(mktyvar(n->line), Tyfloat32);             break;
-        case Lstr:      return mktyslice(n->line, mkty(n->line, Tychar));       break;
+        case Lstr:      return mktyslice(n->line, mkty(n->line, Tybyte));       break;
         case Lfunc:     return n->lit.fnval->func.type;                         break;
         case Lseq:      return NULL; break;
     };

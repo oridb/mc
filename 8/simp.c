@@ -211,7 +211,7 @@ size_t tysize(Type *t)
         case Tyvoid:
             die("void has no size");
             return 1;
-        case Tybool: case Tychar: case Tyint8:
+        case Tybool: case Tyint8:
         case Tybyte: case Tyuint8:
             return 1;
         case Tyint16: case Tyuint16:
@@ -219,6 +219,7 @@ size_t tysize(Type *t)
         case Tyint: case Tyint32:
         case Tyuint: case Tyuint32:
         case Typtr: case Tyfunc:
+        case Tychar:  /* utf32 */
             return 4;
 
         case Tyint64: case Tylong:
@@ -556,17 +557,18 @@ static Node *membaddr(Simp *s, Node *n)
 
 static Node *idxaddr(Simp *s, Node *n)
 {
-    Node *t, *u, *v; /* temps */
+    Node *a, *t, *u, *v; /* temps */
     Node *r; /* result */
     Node **args;
     size_t sz;
 
     assert(exprop(n) == Oidx);
     args = n->expr.args;
+    a = rval(s, args[0], NULL);
     if (exprtype(args[0])->type == Tyarray)
-        t = addr(args[0], exprtype(n));
+        t = addr(a, exprtype(n));
     else if (args[0]->expr.type->type == Tyslice)
-        t = load(addr(args[0], mktyptr(n->line, exprtype(n))));
+        t = load(addr(a, mktyptr(n->line, exprtype(n))));
     else
         die("Can't index type %s\n", tystr(n->expr.type));
     assert(t->expr.type->type == Typtr);

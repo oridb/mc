@@ -3,5 +3,5 @@ generic sz = {a:@a
 }
 
 const main = {
-	-> sz(123) + sz('a')
+	-> sz(123) + sz("asdf"[0])
 }
