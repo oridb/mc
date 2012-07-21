@@ -30,9 +30,11 @@ function assem {
 
 use sys.myr
 use types.myr 
+use die.myr 
 assem syscall.s
 build sys.myr
 build hello.myr
 build alloc.myr
+build die.myr
 
 $CC -m32 -o hello sys.o hello.o syscall.o
