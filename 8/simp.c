@@ -677,6 +677,10 @@ static Node *lowercast(Simp *s, Node *n)
                     args[0]->expr.type = n->expr.type;
                     r = args[0];
                     break;
+                case Typtr:
+                    args[0]->expr.type = n->expr.type;
+                    r = args[0];
+                    break;
                 default:
                     fatal(n->line, "Bad cast from %s to %s",
                           tystr(exprtype(args[0])), tystr(exprtype(n)));
