@@ -68,7 +68,7 @@ pkg std =
 	const Sysmmap2	: scno = 192
 	const Sysmunmap	: scno = 91
 
-	extern const syscall : (sc:scno, count:int, args:... -> int)
+	extern const syscall : (sc:scno, args:... -> int)
 
 	const exit	: (status:int -> int)
 	const getpid	: ( -> int)
@@ -86,13 +86,13 @@ pkg std =
 
 const exit	= {status;		-> syscall(Sysexit, 1);}
 const getpid	= {;			-> syscall(Sysgetpid, 1);}
-const kill	= {pid, sig;		-> syscall(Syskill,  2, pid, sig);}
-const open	= {path, opts:fdopt;	-> syscall(Sysopen,  2, path castto(char*), opts);}
-const close	= {fd;			-> syscall(Sysclose, 1, fd);}
-const creat	= {path, mode;		-> syscall(Syscreat, 2, path castto(char*), mode);}
-const read	= {fd, buf;		-> syscall(Sysread,  3, fd, buf castto(char*), buf.len);}
-const write	= {fd, buf;		-> syscall(Syswrite, 3, fd, buf castto(char*), buf.len);}
-const lseek	= {fd, off, whence;	-> syscall(Syslseek, 2, fd, off, whence);}
-const fstat	= {fd, sb;		-> syscall(Sysfstat, 2, fd, sb);}
-const munmap	= {addr, len;		-> syscall(Sysmunmap,   2, addr, len);}
-const mmap	= {addr, len, prot, flags, fd, off;	-> syscall(Sysmmap2, 6, addr, len, prot, flags, fd, off) castto(byte*);}
+const kill	= {pid, sig;		-> syscall(Syskill, pid, sig);}
+const open	= {path, opts:fdopt;	-> syscall(Sysopen, path castto(char*), opts);}
+const close	= {fd;			-> syscall(Sysclose, fd);}
+const creat	= {path, mode;		-> syscall(Syscreat, path castto(char*), mode);}
+const read	= {fd, buf;		-> syscall(Sysread, fd, buf castto(char*), buf.len);}
+const write	= {fd, buf;		-> syscall(Syswrite, fd, buf castto(char*), buf.len);}
+const lseek	= {fd, off, whence;	-> syscall(Syslseek, fd, off, whence);}
+const fstat	= {fd, sb;		-> syscall(Sysfstat, fd, sb);}
+const munmap	= {addr, len;		-> syscall(Sysmunmap, addr, len);}
+const mmap	= {addr, len, prot, flags, fd, off;	-> syscall(Sysmmap2, addr, len, prot, flags, fd, off) castto(byte*);}
