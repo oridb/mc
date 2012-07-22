@@ -5,75 +5,87 @@ pkg std =
 	type fdopt = int
 	type mprot = int
 	type mopt = int
+
+	type timespec = struct
+		secs	: uint64
+		nsecs	: uint32
+	;;
+
 	type statbuf = struct
-		 dev     : uint
-		 ino     : uint
-		 mode    : uint16
-		 nlink   : uint16
-		 uid     : uint16
-		 gid     : uint16
-		 rdev    : uint
-		 size    : uint
-		 blksize : uint
-		 blocks  : uint
-		 atime   : uint
-		 atimens : uint
-		 mtime   : uint
-		 mtimens : uint
-		 ctime   : uint
-		 ctimens : uint
-		 _unused1: uint
-		 _unused2: uint
+		dev	: int32
+		mode	: uint16
+		nlink	: uint32
+		ino	: uint64 /* 32/64? which do I use? */
+		uid	: uint32
+		gid	: uint32
+		rdev	: int32
+		atimesspec	: timespec
+		mtimesspec	: timespec
+		ctimesspec	: timespec
+		btimesspec	: timespec
+		size	: off
+		blocks	: uint
+		blocksz	: uint
+		flags	: uint32
+		gen	: uint32
+		lspare	: int32
+		qspare0	: int64
+		qspare1	: int64
 	;;
 
 	/* open options */
-	const Rdonly  	: fdopt = 0x0
-	const Wronly  	: fdopt = 0x1
-	const Rdwr    	: fdopt = 0x2
-	const Append  	: fdopt = 0x80
-	const Creat   	: fdopt = 0x40
-	const Nofollow	: fdopt = 0x20000
-	const Ndelay  	: fdopt = 0x800
-	const Trunc   	: fdopt = 0x200
+	const Ordonly  	: fdopt = 0x0
+	const Owronly  	: fdopt = 0x1
+	const Ordwr    	: fdopt = 0x2
+	const Ondelay  	: fdopt = 0x4
+	const Oappend  	: fdopt = 0x8
+	const Ocreat   	: fdopt = 0x200
+	const Onofollow	: fdopt = 0x100
+	const Otrunc   	: fdopt = 0x400
 
 	/* mmap protection */
-	const Mprotexec	: mprot = 0x1
-	const Mprotrd	: mprot = 0x2
-	const Mprotwr	: mprot = 0x4
-	const Mprotrw	: mprot = 0x6
 	const Mprotnone	: mprot = 0x0
+	const Mprotrd	: mprot = 0x1
+	const Mprotwr	: mprot = 0x2
+	const Mprotexec	: mprot = 0x4
+	const Mprotrw	: mprot = 0x3
 	
 	/* mmap options */
 	const Mshared	: mopt = 0x1
 	const Mpriv	: mopt = 0x2
 	const Mfixed	: mopt = 0x10
 	const Mfile	: mopt = 0x0
-	const Manon	: mopt = 0x20
+	const Manon	: mopt = 0x1000
+	/* Only on Linux
 	const M32bit	: mopt = 0x40
+	*/
+
 
 	/* return value for a failed mapping */
 	const Mapbad	: byte* = -1 castto(byte*)
 
 	/* syscalls */
 	const Sysexit	: scno = 1
+	const Sysfork	: scno = 2
 	const Sysread	: scno = 3
 	const Syswrite	: scno = 4
 	const Sysopen	: scno = 5
 	const Sysclose	: scno = 6
-	const Syscreat	: scno = 8
-	const Syslseek	: scno = 19
-	const Sysfstat	: scno = 108
+	const Syswait4	: scno = 7
+	/* creat() implemented as open(path, Creat|Trunc|Wronly) */
+	const Syslseek	: scno = 199
+	const Sysfstat	: scno = 189
 	const Syskill	: scno = 37
 	const Sysgetpid	: scno = 20
 	const Sysmmap2	: scno = 192
-	const Sysmunmap	: scno = 91
+	const Sysmunmap	: scno = 73
 
 	extern const syscall : (sc:scno, args:... -> int)
 
 	const exit	: (status:int -> int)
 	const getpid	: ( -> int)
 	const kill	: (pid:int, sig:int -> int)
-	const open	: (path:byte[,], opts:fdopt -> int)
+	const open	: (path:byte[,], opts:fdopt, mode:int -> int)
 	const close	: (fd:int -> int)
 	const creat	: (path:byte[,], mode:int -> int)
 	const read	: (fd:int, buf:byte[,] -> int)
@@ -87,9 +99,9 @@ pkg std =
 const exit	= {status;		-> syscall(Sysexit, 1);}
 const getpid	= {;			-> syscall(Sysgetpid, 1);}
 const kill	= {pid, sig;		-> syscall(Syskill, pid, sig);}
-const open	= {path, opts:fdopt;	-> syscall(Sysopen, path castto(char*), opts);}
+const open	= {path, opts, mode;	-> syscall(Sysopen, path castto(char*), opts);}
 const close	= {fd;			-> syscall(Sysclose, fd);}
-const creat	= {path, mode;		-> syscall(Syscreat, path castto(char*), mode);}
+const creat	= {path, mode;		-> open(path, Ocreat | Otrunc | Owronly, mode);}
 const read	= {fd, buf;		-> syscall(Sysread, fd, buf castto(char*), buf.len);}
 const write	= {fd, buf;		-> syscall(Syswrite, fd, buf castto(char*), buf.len);}
 const lseek	= {fd, off, whence;	-> syscall(Syslseek, fd, off, whence);}
