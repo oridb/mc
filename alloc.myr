@@ -25,9 +25,9 @@ type bucket = struct
 ;;
 
 type slab = struct
-	freehd	: bin*
-	next	: slab*
-	nfree	: size
+	freehd	: bin*	/* the nodes we're allocating */
+	next	: slab* /* the next slab on the chain */
+	nfree	: size  /* the number of free nodes */
 ;;
 
 type bin = struct
