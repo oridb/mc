@@ -11,6 +11,22 @@
 
 #include "parse.h"
 
+static Stab *findstab(Stab *st, char *pkg)
+{
+    Node *n;
+    Stab *s;
+
+    n = mkname(-1, pkg);
+    if (getns(st, n)) {
+        s = getns(st, n);
+    } else {
+        s = mkstab();
+        s->name = n;
+        putns(st, s);
+    }
+    return s;
+}
+
 static int loaduse(FILE *f, Stab *st)
 {
     char *pkg;
@@ -30,15 +46,11 @@ static int loaduse(FILE *f, Stab *st)
         if (pkg && !strcmp(pkg, namestr(st->name))) {
             s = st;
         } else {
-            s = mkstab();
-            s->name = mkname(-1, pkg);
-            putns(st, s);
+            s = findstab(st, pkg);
         }
     } else {
         if (pkg) {
-            s = mkstab();
-            s->name = mkname(-1, pkg);
-            putns(st, s);
+            s = findstab(st, pkg);
         } else {
             s = st;
         }
@@ -46,8 +58,6 @@ static int loaduse(FILE *f, Stab *st)
     while ((c = fgetc(f)) != 'Z') {
 	switch(c) {
 	    case 'G':
-                die("We didn't implement generics yet!");
-                break;
 	    case 'D':
                 dcl = symunpickle(f);
                 putdcl(s, dcl);
