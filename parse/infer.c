@@ -441,6 +441,7 @@ static void checkns(Inferstate *st, Node *n, Node **ret)
     Stab *stab;
     Node *s;
 
+    /* check that this is a namespaced declaration */
     if (n->type != Nexpr)
         return;
     if (!n->expr.nargs)
@@ -452,13 +453,18 @@ static void checkns(Inferstate *st, Node *n, Node **ret)
     stab = getns(curstab(), name);
     if (!stab)
         return;
+
+    /* substitute the namespaced name */
     nsname = mknsname(n->line, namestr(name), namestr(args[1]));
     s = getdcl(stab, args[1]);
     if (!s)
         fatal(n->line, "Undeclared var %s.%s", nsname->name.ns, nsname->name.name);
     var = mkexpr(n->line, Ovar, nsname, NULL);
     var->expr.did = s->decl.did;
-    settype(st, var, s->decl.type);
+    if (s->decl.isgeneric)
+        settype(st, var, freshen(st, s->decl.type));
+    else
+        settype(st, var, s->decl.type);
     *ret = var;
 }
 

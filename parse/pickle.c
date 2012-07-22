@@ -117,9 +117,12 @@ static void wrsym(FILE *fd, Node *val)
     wrtype(fd, val->decl.type);
 
     /* symflags */
-    wrint(fd, val->decl.isconst);
-    wrint(fd, val->decl.isgeneric);
-    wrint(fd, val->decl.isextern);
+    wrbool(fd, val->decl.isconst);
+    wrbool(fd, val->decl.isgeneric);
+    wrbool(fd, val->decl.isextern);
+
+    if (val->decl.isgeneric)
+        pickle(val->decl.init, fd);
 }
 
 static Node *rdsym(FILE *fd)
@@ -134,9 +137,13 @@ static Node *rdsym(FILE *fd)
     type = rdtype(fd);
     n = mkdecl(line, name, type);
     
-    n->decl.isconst = rdint(fd);
-    n->decl.isgeneric = rdint(fd);
-    n->decl.isextern = rdint(fd);
+    n->decl.isconst = rdbool(fd);
+    n->decl.isgeneric = rdbool(fd);
+    n->decl.isextern = rdbool(fd);
+
+
+    if (n->decl.isgeneric)
+        n->decl.init = unpickle(fd);
     return n;
 }
 
