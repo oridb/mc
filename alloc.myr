@@ -7,14 +7,16 @@ pkg std =
 	generic free	: (v:@a*	-> void)
 
 	const bytealloc	: (sz:size	-> byte*)
-	const bytefree	: (ptr:byte*	-> void)
+	const bytefree	: (m:byte*, sz:size	-> void)
 ;;
 
 /* null pointers */
-const Zbyte = 0 castto(byte*)
-const Zslab = 0 castto(slab*)
-const Zbin = 0 castto(bin*)
-const Pagesz = 4096 /* on the systems this supports, anyways... */
+const Zbyte	= 0 castto(byte*)
+const Zslab	= 0 castto(slab*)
+const Zbin	= 0 castto(bin*)
+const Pagesz 	= 4096 /* on the systems this supports, anyways... */
+const Bucketmax	= 1024 /* Pagesz / 4; a tolerable balance. */
+const Align	= 16 /* minimum allocation alignment */
 
 type bucket = struct
 	sz	: size	/* aligned size */
@@ -34,8 +36,41 @@ type bin = struct /* NB: must be smaller than sizeof(slab) */
 	next	: bin* /* the next bin in the free list */
 ;;
 
+var buckets : bucket[32] /* excessive number of buckets. */
+var initdone : int
+
+const bytealloc = {sz
+	var i
+	var bkt
+
+	if !initdone
+		for i = 0; i < buckets.len && (Align << i) < Bucketmax; i++
+			allocinit(&buckets[i], Align << i)
+		;;
+		initdone = 1
+	;;
+
+	if (sz < Bucketmax)
+		bkt = &buckets[bucketnum(sz)]
+		-> bktalloc(bkt)
+	else
+		die("Size too big for now")
+	;;
+}
+
+const bytefree = {m, sz
+	var bkt
+
+	if (sz < Bucketmax)
+		bkt = &buckets[bucketnum(sz)]
+		bktfree(bkt, m)
+	else
+		die("Size too big for now")
+	;;
+}
+
 const allocinit = {b : bucket*, sz
-	b.sz = align(sz, 16)
+	b.sz = align(sz, Align)
 	b.nper = (Pagesz - sizeof(slab))/b.sz
 	b.slabs = Zslab
 	b.cache = Zslab
@@ -58,7 +93,7 @@ const mkslab = {bkt : bucket*
 	s = p castto(slab*)
 	s.nfree = bkt.nper
 	/* skip past the slab header */
-	off = align(sizeof(slab), 16)
+	off = align(sizeof(slab), Align)
 	b = nextbin(s castto(bin*), off)
 	for i = 0; i < bkt.nper; i++
 		b = nextbin(b, bkt.sz)
@@ -112,6 +147,20 @@ const bktfree = {bkt : bucket*, m : byte*
 
 const delslab = {s : slab*
 
+}
+
+const bucketnum = {sz
+	var i
+	var bktsz
+
+	bktsz = Align
+	for i = 0; bktsz < Bucketmax; i++
+		if bktsz >= sz
+			-> i
+		;;
+		bktsz *= 2
+	;;
+	die("Size does not match any buckets")
 }
 
 /* bins are variable sizes, so we can't just take a slice */
