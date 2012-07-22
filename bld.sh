@@ -38,8 +38,9 @@ use types.myr
 use die.myr 
 assem syscall-$SYS.s
 build sys-$SYS.myr
-build hello.myr
 build alloc.myr
 build die.myr
+
+build hello.myr
 
 $CC -m32 -o hello sys.o hello.o syscall.o

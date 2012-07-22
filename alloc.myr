@@ -66,16 +66,63 @@ const mkslab = {bkt : bucket*
 		bprev = b
 	;;
 	bprev.next = Zbin
+	-> s
 }
 
-const nextbin = {b, sz
-	-> ((b castto(intptr)) + sz) castto(bin*)
+const bktalloc = {bkt : bucket*
+	var s
+	var b
+
+	/* find a slab */
+	s = bkt.slabs
+	if s == Zslab
+		s = mkslab(bkt)
+		if !s
+			die("No memory left")
+		;;
+		bkt.slabs = s
+	;;
+
+	/* grab the first bin on the slab */
+	b = s.next
+	s.next = b.next
+	s.nfree--
+	if !s.nfree
+		bkt.slabs = s.next
+		s.next = Zslab
+	;;
+
+	-> b castto(byte*)
+}
+
+const bktfree = {bkt : bucket*, m : byte*
+	var s
+	var b
+
+	s = mtrunc(m, Pagesz) castto(slab*)
+	b = m castto(bin*)
+	if s.nfree == 0
+		s.next = bkt.slabs
+		bkt.slabs = s
+	;;
+	s.nfree++
+	b.next = s.freehd
+	s.freehd = b
 }
 
 const delslab = {s : slab*
 
 }
 
+/* bins are variable sizes, so we can't just take a slice */
+const nextbin = {b, sz
+	-> ((b castto(intptr)) + sz) castto(bin*)
+}
+
 const align = {v, align
 	-> (v + align - 1) & ~(align - 1)
+}
+
+const mtrunc = {m, align
+	-> ((m castto(intptr)) & ~(align - 1)) castto(byte*)
 }
