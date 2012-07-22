@@ -232,21 +232,24 @@ static void selcjmp(Isel *s, Node *n, Node **args)
     /* if we have a cond, we're knocking off the redundant test,
      * and want to eval the children */
     if (cond) {
-        a = selexpr(s, args[0]->expr.args[1]);
-        b = selexpr(s, args[0]->expr.args[0]);
-        b = inr(s, b);
+        a = selexpr(s, args[0]->expr.args[0]);
+        if (args[0]->expr.nargs == 2)
+            b = selexpr(s, args[0]->expr.args[1]);
+        else
+            b = a;
+        a = inr(s, a);
     } else {
         cond = Itest;
         jmp = Ijnz;
-        a = inr(s, selexpr(s, args[0])); /* cond */
-        b = a;
+        b = inr(s, selexpr(s, args[0])); /* cond */
+        a = b;
     }
 
     /* the jump targets will always be evaluated the same way */
     l1 = loclbl(args[1]); /* if true */
     l2 = loclbl(args[2]); /* if false */
 
-    g(s, cond, a, b, NULL);
+    g(s, cond, b, a, NULL);
     g(s, jmp, l1, NULL);
     g(s, Ijmp, l2, NULL);
 }
@@ -537,7 +540,6 @@ Loc *selexpr(Isel *s, Node *n)
             r = locreg(mode(n));
             g(s, Imov, b, r, NULL);
             break;
-
         case Ocall:
             r = gencall(s, n);
             break;

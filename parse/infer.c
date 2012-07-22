@@ -329,7 +329,7 @@ static void mergecstrs(Inferstate *st, Node *ctx, Type *a, Type *b)
             a->cstrs = bsdup(b->cstrs);
     } else {
         if (!cstrcheck(a, b)) {
-            dump(file, stdout);
+            /* FIXME: say WHICH constraints we're missing */
             fatal(ctx->line, "%s missing constraints for %s near %s", tystr(b), tystr(a), ctxstr(st, ctx));
         }
     }

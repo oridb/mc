@@ -24,6 +24,7 @@ B struct	E	42
 B structasn	E	42
 B structret	E	42
 B array		E	7
+B arrayaddr	E	42
 B global-arrayvar	E	7
 B arraylen	E	12
 B slice		E	7

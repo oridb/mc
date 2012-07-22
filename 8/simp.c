@@ -666,16 +666,20 @@ static Node *lowercast(Simp *s, Node *n)
 {
     Node **args;
     Node *r;
+    Type *t;
 
     r = NULL;
     args = n->expr.args;
     switch (exprtype(n)->type) {
         case Typtr:
-            switch (exprtype(args[0])->type) {
+            t = tybase(exprtype(args[0]));
+            switch (t->type) {
                 case Tyslice:
                     r = slicebase(s, args[0], zero);
                     break;
-                case Tyint:
+                case Tyint8: case Tyint16: case Tyint32: case Tyint64:
+                case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint64:
+                case Tyint: case Tyuint: case Tylong: case Tyulong:
                     args[0]->expr.type = n->expr.type;
                     r = args[0];
                     break;
@@ -984,6 +988,13 @@ static Node *rval(Simp *s, Node *n, Node *dst)
             } else {
                 r = visit(s, n);
             }
+            break;
+        case Oaddr:
+            t = lval(s, args[0]);
+            if (exprop(t) == Ovar) /* Ovar is the only one that doesn't return the address directly */
+                r = addr(t, exprtype(t));
+            else
+                r = t;
             break;
         default:
             r = visit(s, n);
