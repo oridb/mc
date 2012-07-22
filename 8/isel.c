@@ -818,6 +818,7 @@ void genblob(FILE *fd, Node *blob, Htab *globls)
     assert(blob->type == Ndecl);
 
     lbl = htget(globls, blob);
+    fprintf(fd, ".globl %s\n", lbl);
     fprintf(fd, "%s:\n", lbl);
     if (blob->decl.init) {
         if (exprop(blob->decl.init) != Olit)
