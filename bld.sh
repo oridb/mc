@@ -9,6 +9,10 @@ export MC=8m
 export MU=muse
 export CC=cc
 export ASOPT="-g"
+case `uname` in
+    Darwin) export SYS=osx;;
+    Linux) export SYS=linux;;
+esac
 
 function use {
     N=`basename $1 .myr`
@@ -28,11 +32,12 @@ function assem {
     $CC $ASOPT -m32 -c $1
 }
 
-use sys.myr
+
+use sys-$SYS.myr
 use types.myr 
 use die.myr 
-assem syscall.s
-build sys.myr
+assem syscall-$SYS.s
+build sys-$SYS.myr
 build hello.myr
 build alloc.myr
 build die.myr
