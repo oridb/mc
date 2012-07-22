@@ -1,0 +1,7 @@
+const f = {a:int
+
+}
+
+const main = {
+	-> f(1, 2, 3)
+}

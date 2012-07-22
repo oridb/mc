@@ -419,13 +419,18 @@ static void unifycall(Inferstate *st, Node *n)
     }
     for (i = 1; i < n->expr.nargs; i++) {
         if (i == ft->nsub)
-            fatal(n->line, "Calling %s with too many arguments (expected %zd, got %zd)",
-                  ctxstr(st, n->expr.args[0]), ft->nsub, n->expr.nargs);
-        if (ft->sub[i]->type == Tyvalist)
+            fatal(n->line, "%s arity mismatch (expected %zd args, got %zd)",
+                  ctxstr(st, n->expr.args[0]), ft->nsub - 1, n->expr.nargs - 1);
+        if (ft->sub[i]->type == Tyvalist) {
+            i++; /* to prevent triggering the arity mismatch on exit */
             break;
+        }
         inferexpr(st, n->expr.args[i], NULL, NULL);
         unify(st, n->expr.args[0], ft->sub[i], type(st, n->expr.args[i]));
     }
+    if (i < ft->nsub)
+        fatal(n->line, "%s arity mismatch (expected %zd args, got %zd)",
+              ctxstr(st, n->expr.args[0]), ft->nsub - 1, n->expr.nargs - 1);
     settype(st, n, ft->sub[0]);
 }
 
