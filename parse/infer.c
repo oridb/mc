@@ -418,6 +418,9 @@ static void unifycall(Inferstate *st, Node *n)
         unify(st, n, ft, type(st, n->expr.args[0]));
     }
     for (i = 1; i < n->expr.nargs; i++) {
+        if (i == ft->nsub)
+            fatal(n->line, "Calling %s with too many arguments (expected %zd, got %zd)",
+                  ctxstr(st, n->expr.args[0]), ft->nsub, n->expr.nargs);
         if (ft->sub[i]->type == Tyvalist)
             break;
         inferexpr(st, n->expr.args[i], NULL, NULL);
