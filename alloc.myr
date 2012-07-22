@@ -30,8 +30,8 @@ type slab = struct
 	nfree	: size  /* the number of free nodes */
 ;;
 
-type bin = struct
-	next	: bin*
+type bin = struct /* NB: must be smaller than sizeof(slab) */
+	next	: bin* /* the next bin in the free list */
 ;;
 
 const allocinit = {b : bucket*, sz
@@ -42,9 +42,13 @@ const allocinit = {b : bucket*, sz
 	b.ncache = 0
 }
 
-const mkslab = {b : bucket*
+const mkslab = {bkt : bucket*
 	var p
 	var s
+	var b
+	var i
+	var bprev
+	var off /* offset of bin head */
 
 	p = mmap(Zbyte, Pagesz, Mprotrw, Mpriv | Manon, -1, 0)
 	if p == Mapbad
@@ -52,7 +56,20 @@ const mkslab = {b : bucket*
 	;;
 
 	s = p castto(slab*)
-	s.nfree = b.nper
+	s.nfree = bkt.nper
+	/* skip past the slab header */
+	off = align(sizeof(slab), 16)
+	b = nextbin(s castto(bin*), off)
+	for i = 0; i < bkt.nper; i++
+		b = nextbin(b, bkt.sz)
+		bprev.next = b
+		bprev = b
+	;;
+	bprev.next = Zbin
+}
+
+const nextbin = {b, sz
+	-> ((b castto(intptr)) + sz) castto(bin*)
 }
 
 const delslab = {s : slab*
