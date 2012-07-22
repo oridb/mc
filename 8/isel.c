@@ -44,7 +44,7 @@ struct {
     [One] = {Icmp, Ijnz, Isetnz},
     [Ogt] = {Icmp, Ijg, Isetgt},
     [Oge] = {Icmp, Ijge, Isetge},
-    [Olt] = {Icmp, Ijl, Isetlt},
+    [Olt] = {Icmp, Ijl, Isetl},
     [Ole] = {Icmp, Ijle, Isetle}
 };
 
@@ -157,6 +157,15 @@ static void g(Isel *s, AsmOp op, ...)
     }
     lappend(&s->curbb->il, &s->curbb->ni, i);
 }
+
+static void movz(Isel *s, Loc *src, Loc *dst)
+{
+    if (src->mode == dst->mode)
+        g(s, Imov, src, dst, NULL);
+    else
+        g(s, Imovz, src, dst, NULL);
+}
+
 
 static void load(Isel *s, Loc *a, Loc *b)
 {
@@ -511,7 +520,7 @@ Loc *selexpr(Isel *s, Node *n)
             r = locreg(mode(n));
             g(s, reloptab[exprop(n)].test, a, a, NULL);
             g(s, reloptab[exprop(n)].getflag, b, NULL);
-            g(s, Imovz, b, r, NULL);
+            movz(s, b, r);
             break;
 
         case Oeq: case One: case Ogt: case Oge: case Olt: case Ole:
@@ -522,7 +531,7 @@ Loc *selexpr(Isel *s, Node *n)
             r = locreg(mode(n));
             g(s, reloptab[exprop(n)].test, a, b, NULL);
             g(s, reloptab[exprop(n)].getflag, c, NULL);
-            g(s, Imovz, c, r, NULL);
+            movz(s, c, r);
             return r;
 
         case Oasn:  /* relabel */

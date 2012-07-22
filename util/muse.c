@@ -26,6 +26,7 @@ static void usage(char *prog)
     printf("\t-I path\tAdd 'path' to use search path\n");
     printf("\t-d\tPrint debug dumps\n");
     printf("\t-o\tOutput to outfile\n");
+    printf("\t-s\tShow the contents of usefiles `inputs`\n");
 }
 
 
@@ -34,8 +35,6 @@ int main(int argc, char **argv)
     int opt;
     int i;
     Stab *globls;
-    Node *rdback;
-    FILE *tmp;
     FILE *f;
 
     while ((opt = getopt(argc, argv, "d::ho:I:")) != -1) {
@@ -44,6 +43,9 @@ int main(int argc, char **argv)
                 outfile = optarg;
                 break;
             case 'h':
+                usage(argv[0]);
+                exit(0);
+                break;
             case 'd':
                 debug = 1;
                 while (optarg && *optarg)
@@ -59,6 +61,16 @@ int main(int argc, char **argv)
         }
     }
 
+    if (debugopt['s']) {
+        for (i = optind; i < argc; i++) {
+            globls = mkstab();
+            f = fopen(argv[i], "r");
+            readuse(file, globls);
+            dumpstab(globls, stdout);
+        }
+        exit(0);
+    }
+
     for (i = optind; i < argc; i++) {
         globls = mkstab();
         tyinit(globls);
@@ -69,20 +81,6 @@ int main(int argc, char **argv)
         yyparse();
 
         infer(file);
-	/* before we do anything to the parse */
-        if (debugopt['p']) {
-            /* test storing tree to file */
-            tmp = fopen("a.pkl", "w");
-            pickle(file, tmp);
-            fclose(tmp);
-
-            /* and reading it back */
-            tmp = fopen("a.pkl", "r");
-            rdback = unpickle(tmp);
-            dump(rdback, stdout);
-            fclose(tmp);
-	    dump(file, stdout);
-        }
 	if (!outfile)
 	    die("need output file name right now. FIX THIS.");
 	f = fopen(outfile, "w");

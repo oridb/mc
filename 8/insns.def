@@ -47,7 +47,7 @@ Insn(Ipop,      "\tpop%t %r\n",                 Use(.l={1}),                    
 /* branch instructions */
 Insn(Isetz,     "\tsetz  %v\n",                 Use(),  Def(.l={1}))
 Insn(Isetnz,    "\tsetnz %v\n",                 Use(),  Def(.l={1}))
-Insn(Isetlt,    "\tsetlt %v\n",                 Use(),  Def(.l={1}))
+Insn(Isetl,     "\tsetl  %v\n",                 Use(),  Def(.l={1}))
 Insn(Isetle,    "\tsetle %v\n",                 Use(),  Def(.l={1}))
 Insn(Isetgt,    "\tsetgt %v\n",                 Use(),  Def(.l={1}))
 Insn(Isetge,    "\tsetge %v\n",                 Use(),  Def(.l={1}))
