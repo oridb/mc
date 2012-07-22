@@ -15,31 +15,41 @@ case `uname` in
 esac
 
 function use {
-    N=`basename $1 .myr`
+    for i in $@; do
+        N=`basename $i .myr`
 
-    echo $MU -o $N.use $1 && \
-    $MU -o $N.use $1
+        echo $MU -o $N.use $i && \
+        $MU -o $N.use $i
+    done
 }
 
 function build {
-    N=`basename $1 .myr`
+    for i in $@; do
+        N=`basename $i .myr`
 
-    echo $MC $1 && \
-    $MC -I. $1
+        echo $MC $i && \
+            $MC -I. $i
+    done
 }
 
 function assem {
-    $CC $ASOPT -m32 -c $1
+    for i in $@; do
+        $CC $ASOPT -m32 -c $i
+    done
 }
 
+ASM=syscall-$SYS.s
+# Myrddin source must be specified in dependency order
+MYR="sys-$SYS.myr \
+    types.myr \
+    alloc.myr \
+    die.myr \
+    hello.myr"
+OBJ="$(echo $ASM | sed 's/\.s/.o /g') $(echo $MYR | sed 's/\.myr/.o /g')"
+assem $ASM
+use $MYR
+build $MYR
 
-use sys-$SYS.myr
-use types.myr 
-use die.myr 
-assem syscall-$SYS.s
-build sys-$SYS.myr
-build hello.myr
-build alloc.myr
-build die.myr
+echo $CC -m32 -o hello $OBJ
+$CC -m32 -o hello $OBJ
 
-$CC -m32 -o hello sys.o hello.o syscall.o

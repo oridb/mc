@@ -1,4 +1,5 @@
 pkg std =
-	type size = uint32	/* spans entire address space */
-	type off = uint32	/* file offsets */
+	type size	= uint32 /* spans entire address space */
+	type off	= uint32 /* file offsets */
+	type intptr	= uint32 /* can hold any pointer losslessly */
 ;;

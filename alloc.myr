@@ -7,14 +7,16 @@ pkg std =
 	generic free	: (v:@a*	-> void)
 
 	const bytealloc	: (sz:size	-> byte*)
-	const bytefree	: (ptr:byte*	-> void)
+	const bytefree	: (m:byte*, sz:size	-> void)
 ;;
 
 /* null pointers */
-const Zbyte = 0 castto(byte*)
-const Zslab = 0 castto(slab*)
-const Zbin = 0 castto(bin*)
-const Pagesz = 4096 /* on the systems this supports, anyways... */
+const Zbyte	= 0 castto(byte*)
+const Zslab	= 0 castto(slab*)
+const Zbin	= 0 castto(bin*)
+const Pagesz 	= 4096	/* on the systems this supports, anyways... */
+const Bucketmax	= 1024	/* Pagesz / 4; a tolerable balance. */
+const Align	= 16	/* minimum allocation alignment */
 
 type bucket = struct
 	sz	: size	/* aligned size */
@@ -30,21 +32,66 @@ type slab = struct
 	nfree	: size  /* the number of free nodes */
 ;;
 
-type bin = struct
-	next	: bin*
+type bin = struct	/* NB: must be smaller than sizeof(slab) */
+	next	: bin*	/* the next bin in the free list */
 ;;
 
+var buckets : bucket[32] /* excessive */
+var initdone : int
+
+generic alloc = {-> @a*
+	-> bytealloc(sizeof(@a)) castto(@a*)
+}
+
+generic free = {v:@a* -> void
+	bytefree(v castto(byte*), sizeof(@a))
+}
+
+const bytealloc = {sz
+	var i
+	var bkt
+
+	if !initdone
+		for i = 0; i < buckets.len && (Align << i) < Bucketmax; i++
+			allocinit(&buckets[i], Align << i)
+		;;
+		initdone = 1
+	;;
+
+	if (sz < Bucketmax)
+		bkt = &buckets[bucketnum(sz)]
+		-> bktalloc(bkt)
+	else
+		-> mmap(Zbyte, sz, Mprotrw, Mpriv | Manon, -1, 0)
+	;;
+}
+
+const bytefree = {m, sz
+	var bkt
+
+	if (sz < Bucketmax)
+		bkt = &buckets[bucketnum(sz)]
+		bktfree(bkt, m)
+	else
+		munmap(m, sz)
+	;;
+}
+
 const allocinit = {b : bucket*, sz
-	b.sz = align(sz, 16)
+	b.sz = align(sz, Align)
 	b.nper = (Pagesz - sizeof(slab))/b.sz
 	b.slabs = Zslab
 	b.cache = Zslab
 	b.ncache = 0
 }
 
-const mkslab = {b : bucket*
+const mkslab = {bkt : bucket*
 	var p
 	var s
+	var b
+	var i
+	var bprev
+	var off /* offset of bin head */
 
 	p = mmap(Zbyte, Pagesz, Mprotrw, Mpriv | Manon, -1, 0)
 	if p == Mapbad
@@ -52,13 +99,87 @@ const mkslab = {b : bucket*
 	;;
 
 	s = p castto(slab*)
-	s.nfree = b.nper
+	s.nfree = bkt.nper
+	/* skip past the slab header */
+	off = align(sizeof(slab), Align)
+	b = nextbin(s castto(bin*), off)
+	for i = 0; i < bkt.nper; i++
+		b = nextbin(b, bkt.sz)
+		bprev.next = b
+		bprev = b
+	;;
+	bprev.next = Zbin
+	-> s
+}
+
+const bktalloc = {bkt : bucket*
+	var s
+	var b
+
+	/* find a slab */
+	s = bkt.slabs
+	if s == Zslab
+		s = mkslab(bkt)
+		if !s
+			die("No memory left")
+		;;
+		bkt.slabs = s
+	;;
+
+	/* grab the first bin on the slab */
+	b = s.next
+	s.next = b.next
+	s.nfree--
+	if !s.nfree
+		bkt.slabs = s.next
+		s.next = Zslab
+	;;
+
+	-> b castto(byte*)
+}
+
+const bktfree = {bkt : bucket*, m : byte*
+	var s
+	var b
+
+	s = mtrunc(m, Pagesz) castto(slab*)
+	b = m castto(bin*)
+	if s.nfree == 0
+		s.next = bkt.slabs
+		bkt.slabs = s
+	;;
+	s.nfree++
+	b.next = s.freehd
+	s.freehd = b
 }
 
 const delslab = {s : slab*
 
 }
 
+const bucketnum = {sz
+	var i
+	var bktsz
+
+	bktsz = Align
+	for i = 0; bktsz < Bucketmax; i++
+		if bktsz >= sz
+			-> i
+		;;
+		bktsz *= 2
+	;;
+	die("Size does not match any buckets")
+}
+
+/* bins are variable sizes, so we can't just take a slice */
+const nextbin = {b, sz
+	-> ((b castto(intptr)) + sz) castto(bin*)
+}
+
 const align = {v, align
 	-> (v + align - 1) & ~(align - 1)
+}
+
+const mtrunc = {m, align
+	-> ((m castto(intptr)) & ~(align - 1)) castto(byte*)
 }
