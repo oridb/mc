@@ -2,7 +2,7 @@ use "sys.use"
 use "alloc.use"
 
 const main = {
-	var x : int*
-	x = std.alloc()
+	var x
+	x = std.bytealloc(32)
 	std.write(1, "Hello world\n")
 }

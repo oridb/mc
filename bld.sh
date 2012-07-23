@@ -17,6 +17,7 @@ esac
 function use {
     for i in $@; do
         N=`basename $i .myr`
+        N=${N%%-$SYS}
 
         echo $MU -o $N.use $i && \
         $MU -o $N.use $i
@@ -40,10 +41,11 @@ function assem {
 
 ASM=syscall-$SYS.s
 # Myrddin source must be specified in dependency order
-MYR="sys-$SYS.myr \
+MYR="\
     types.myr \
-    alloc.myr \
+    sys-$SYS.myr \
     die.myr \
+    alloc.myr \
     hello.myr"
 OBJ="$(echo $ASM | sed 's/\.s/.o /g') $(echo $MYR | sed 's/\.myr/.o /g')"
 assem $ASM
