@@ -80,7 +80,7 @@ pkg std =
 	const write	: (fd:int, buf:byte[,] -> int)
 	const lseek	: (fd:int, off:uint, whence:int -> int)
 	const fstat	: (fd:int, sb:statbuf* -> int)
-	const munmap	: (addr:byte*, len:uint -> int)
+	const munmap	: (addr:byte*, len:size -> int)
 	const mmap	: (addr:byte*, len:size, prot:mprot, flags:mopt, fd:int, off:off -> byte*)
 ;;
 
