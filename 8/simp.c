@@ -128,7 +128,10 @@ static Node *store(Node *a, Node *b)
     Node *n;
 
     assert(a != NULL && b != NULL);
-    n = mkexpr(a->line, Ostor, a, b, NULL);
+    if (exprop(a) == Ovar)
+        n = mkexpr(a->line, Oset, a, b, NULL);
+    else
+        n = mkexpr(a->line, Ostor, a, b, NULL);
     return n;
 }
 

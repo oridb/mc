@@ -334,8 +334,8 @@ static Loc *memloc(Isel *s, Node *e, Mode m)
         }
     } else {
         l = selexpr(s, e);
-        if (l->type == Locreg)
-            l = locmem(0, l, Rnone, m);
+        l = inr(s, l);
+        l = locmem(0, l, Rnone, m);
     }
     return l;
 }
@@ -537,6 +537,14 @@ Loc *selexpr(Isel *s, Node *n)
         case Oasn:  /* relabel */
             die("Unimplemented op %s", opstr(exprop(n)));
             break;
+        case Oset:
+            assert(exprop(args[0]) == Ovar);
+            b = selexpr(s, args[1]);
+            a = selexpr(s, args[0]);
+            b = inri(s, b);
+            g(s, Imov, b, a, NULL);
+            r = b;
+            break;
         case Ostor: /* reg -> mem */
             b = selexpr(s, args[1]);
             a = memloc(s, args[0], mode(args[0]));
@@ -545,9 +553,9 @@ Loc *selexpr(Isel *s, Node *n)
             r = b;
             break;
         case Oload: /* mem -> reg */
-            b = memloc(s, args[0], mode(n));
+            a = memloc(s, args[0], mode(n));
             r = locreg(mode(n));
-            g(s, Imov, b, r, NULL);
+            g(s, Imov, a, r, NULL);
             break;
         case Ocall:
             r = gencall(s, n);

@@ -54,7 +54,8 @@ O(Oarr, 1)
 /* backend-only */
 O(Ocjmp, 1)        /* conditional jump */
 O(Oload, 1)        /* load from memory */
-O(Ostor, 1)        /* store to memory */
+O(Ostor, 1)        /* store through to memory */
+O(Oset, 1)         /* store to var */
 O(Osllen, 1)       /* size of slice */
 O(Oslbase, 1)      /* base of sice */
 O(Oblit, 1)        /* block copy of memory */

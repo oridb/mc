@@ -126,7 +126,7 @@ int bshas(Bitset *bs, size_t elt)
     if (elt >= bs->nchunks*Sizetbits)
         return 0;
     else
-        return bs->chunks[elt/Sizetbits] & (1ULL << (elt % Sizetbits));
+        return (bs->chunks[elt/Sizetbits] & (1ULL << (elt % Sizetbits))) != 0;
 }
 
 void bsunion(Bitset *a, Bitset *b)
