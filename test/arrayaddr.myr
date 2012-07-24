@@ -1,0 +1,9 @@
+const main = {
+	var v : int[3]
+	var p
+
+	v[1] = 42
+	p = &v[1]
+	-> *p
+}
+

@@ -472,13 +472,12 @@ static int conservative(Isel *s, regid u, regid v)
 {
     int k;
     regid n;
-    size_t i;
 
     k = 0;
-    for (i = 0; adjiter(s, u, &n); i++)
+    for (n = 0; adjiter(s, u, &n); n++)
         if (s->degree[n] >= K)
             k++;
-    for (i = 0; adjiter(s, v, &n); i++)
+    for (n = 0; adjiter(s, v, &n); n++)
         if (s->degree[n] >= K)
             k++;
     return k < K;
