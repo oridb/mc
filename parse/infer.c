@@ -656,7 +656,7 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
         case Olbl:      /* :lbl -> void* */
             settype(st, n, mktyptr(n->line, mkty(-1, Tyvoid)));
         case Obad: case Ocjmp:
-        case Oload: case Ostor:
+        case Oload: case Ostor: case Oset:
         case Oslbase: case Osllen:
         case Oblit: case Numops:
             die("Should not see %s in fe", opstr(exprop(n)));
