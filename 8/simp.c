@@ -209,7 +209,7 @@ size_t tysize(Type *t)
 
     sz = 0;
     if (!t)
-        return 0;
+        die("size of empty type => bailing.");
     switch (t->type) {
         case Tyvoid:
             die("void has no size");
@@ -257,7 +257,8 @@ size_t tysize(Type *t)
         case Tyunion:
             sz = Wordsz;
             for (i = 0; i < t->nmemb; i++)
-                sz = max(sz, tysize(t->udecls[i]->etype) + Wordsz);
+                if (t->udecls[i]->etype)
+                    sz = max(sz, tysize(t->udecls[i]->etype) + Wordsz);
             return sz;
             break;
         case Tybad: case Tyvar: case Typaram: case Tyname: case Ntypes:
