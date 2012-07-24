@@ -86,11 +86,11 @@ const allocinit = {b : bucket*, sz
 }
 
 const mkslab = {bkt : bucket*
+	var i
 	var p
 	var s
 	var b
-	var i
-	var bprev
+	var bnext
 	var off /* offset of bin head */
 
 	p = mmap(Zbyte, Pagesz, Mprotrw, Mpriv | Manon, -1, 0)
@@ -104,11 +104,11 @@ const mkslab = {bkt : bucket*
 	off = align(sizeof(slab), Align)
 	b = nextbin(s castto(bin*), off)
 	for i = 0; i < bkt.nper; i++
-		b = nextbin(b, bkt.sz)
-		bprev.next = b
-		bprev = b
+		b = bnext
+		bnext = nextbin(b, bkt.sz)
+		b.next = bnext
 	;;
-	bprev.next = Zbin
+	b.next = Zbin
 	-> s
 }
 

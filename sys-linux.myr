@@ -38,10 +38,10 @@ pkg std =
 
 	/* mmap protection */
 	const Mprotnone	: mprot = 0x0
-	const Mprotexec	: mprot = 0x1
-	const Mprotrd	: mprot = 0x2
-	const Mprotwr	: mprot = 0x4
-	const Mprotrw	: mprot = 0x6
+	const Mprotrd	: mprot = 0x1
+	const Mprotwr	: mprot = 0x2
+	const Mprotexec	: mprot = 0x4
+	const Mprotrw	: mprot = 0x3 /* convenience */
 	
 	/* mmap options */
 	const Mshared	: mopt = 0x1
@@ -67,6 +67,7 @@ pkg std =
 	const Sysfstat	: scno = 108
 	const Syskill	: scno = 37
 	const Sysgetpid	: scno = 20
+	const Sysmmap	: scno = 90
 	const Sysmmap2	: scno = 192
 	const Sysmunmap	: scno = 91
 
