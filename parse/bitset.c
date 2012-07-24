@@ -11,15 +11,25 @@
 
 static void eqsz(Bitset *a, Bitset *b)
 {
-    int sz;
+    size_t sz;
+    size_t i;
+    size_t *p;
 
     if (a->nchunks > b->nchunks)
         sz = a->nchunks;
     else
         sz = b->nchunks;
-    a->chunks = zrealloc(a->chunks, a->nchunks*sizeof(size_t), sz*sizeof(size_t));
+
+    p = zalloc(sz * sizeof(size_t));
+    for (i = 0; i < a->nchunks; i++)
+        p[i] = a->chunks[i];
+    a->chunks = p;
     a->nchunks = sz;
-    b->chunks = zrealloc(b->chunks, a->nchunks*sizeof(size_t), sz*sizeof(size_t));
+
+    p = zalloc(sz * sizeof(size_t));
+    for (i = 0; i < b->nchunks; i++)
+        p[i] = b->chunks[i];
+    b->chunks = p;
     b->nchunks = sz;
 }
 
@@ -126,7 +136,7 @@ int bshas(Bitset *bs, size_t elt)
     if (elt >= bs->nchunks*Sizetbits)
         return 0;
     else
-        return bs->chunks[elt/Sizetbits] & (1ULL << (elt % Sizetbits));
+        return (bs->chunks[elt/Sizetbits] & (1ULL << (elt % Sizetbits))) != 0;
 }
 
 void bsunion(Bitset *a, Bitset *b)
@@ -159,11 +169,18 @@ void bsdiff(Bitset *a, Bitset *b)
 int bseq(Bitset *a, Bitset *b)
 {
     size_t i;
+    volatile int x;
 
     eqsz(a, b);
-    for (i = 0; i < a->nchunks; i++)
+    for (i = 0; i < a->nchunks; i++) {
+        if (a->chunks[i] == 42)
+            x = 1;
+        if (b->chunks[i] == 42)
+            x = 1;
         if (a->chunks[i] != b->chunks[i])
             return 0;
+        x = x;
+    }
     return 1;
 }
 
