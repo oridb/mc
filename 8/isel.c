@@ -740,7 +740,7 @@ static void epilogue(Isel *s)
     eax = locphysreg(Reax);
     if (s->ret) {
         ret = loc(s, s->ret);
-        g(s, Imov, ret, eax, NULL);
+        movz(s, ret, eax);
     }
     g(s, Imov, ebp, esp, NULL);
     g(s, Ipop, ebp, NULL);
