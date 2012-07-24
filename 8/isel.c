@@ -863,8 +863,8 @@ void genasm(FILE *fd, Func *fn, Htab *globls)
             /* put in a comment that says where this line comes from */
             snprintf(buf, sizeof buf, "\n\t# bb = %zd, bbidx = %zd, line=%d",
                      j, i, fn->cfg->bb[j]->nl[i]->line);
-            isel(&is, fn->cfg->bb[j]->nl[i]);
             g(&is, Ilbl, locstrlbl(buf), NULL);
+            isel(&is, fn->cfg->bb[j]->nl[i]);
         }
     }
     is.curbb = is.bb[is.nbb - 1];
