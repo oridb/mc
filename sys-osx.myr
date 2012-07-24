@@ -77,7 +77,7 @@ pkg std =
 	const Sysfstat	: scno = 189
 	const Syskill	: scno = 37
 	const Sysgetpid	: scno = 20
-	const Sysmmap2	: scno = 192
+	const Sysmmap	: scno = 197
 	const Sysmunmap	: scno = 73
 
 	extern const syscall : (sc:scno, args:... -> int)
@@ -107,4 +107,4 @@ const write	= {fd, buf;		-> syscall(Syswrite, fd, buf castto(char*), buf.len);}
 const lseek	= {fd, off, whence;	-> syscall(Syslseek, fd, off, whence);}
 const fstat	= {fd, sb;		-> syscall(Sysfstat, fd, sb);}
 const munmap	= {addr, len;		-> syscall(Sysmunmap, addr, len);}
-const mmap	= {addr, len, prot, flags, fd, off;	-> syscall(Sysmmap2, addr, len, prot, flags, fd, off) castto(byte*);}
+const mmap	= {addr, len, prot, flags, fd, off;	-> syscall(Sysmmap, addr, len, prot, flags, fd, off) castto(byte*);}
