@@ -73,6 +73,8 @@ struct Tok {
     int type;
     int line;
     char *str;
+    vlong intval;
+    double fltval;
 };
 
 struct Stab {

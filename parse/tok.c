@@ -431,9 +431,11 @@ static Tok *number(int base)
     if (isfloat && base == 10) {
         t = mktok(Tfloatlit);
         t->str = strdupn(&fbuf[start], fidx - start);
+	t->fltval = strtod(t->str, NULL);
     } else {
         t = mktok(Tintlit);
         t->str = strdupn(&fbuf[start], fidx - start);
+	t->intval = strtol(t->str, NULL, base);
     }
 
     return t;

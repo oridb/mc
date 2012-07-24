@@ -542,9 +542,9 @@ literal : funclit       {$$ = $1;}
         ;
 
 littok  : Tstrlit       {$$ = mkstr($1->line, $1->str);}
-        | Tintlit       {$$ = mkint($1->line, strtol($1->str, NULL, 0));}
+        | Tintlit       {$$ = mkint($1->line, $1->intval);}
         | Tchrlit       {$$ = mkchar($1->line, *$1->str);} /* FIXME: expand escapes, unicode  */
-        | Tfloatlit     {$$ = mkfloat($1->line, strtod($1->str, NULL));}
+        | Tfloatlit     {$$ = mkfloat($1->line, $1->fltval);}
         | Tboollit      {$$ = mkbool($1->line, !strcmp($1->str, "true"));}
         ;
 
