@@ -102,7 +102,7 @@ const mkslab = {bkt : bucket*
 	s.nfree = bkt.nper
 	/* skip past the slab header */
 	off = align(sizeof(slab), Align)
-	b = nextbin(s castto(bin*), off)
+	bnext = nextbin(s castto(bin*), off)
 	for i = 0; i < bkt.nper; i++
 		b = bnext
 		bnext = nextbin(b, bkt.sz)
