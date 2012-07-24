@@ -35,12 +35,13 @@ static int isval(Node *n, vlong val)
     return v == val;
 }
 
-static Node *val(int line, vlong val)
+static Node *val(int line, vlong val, Type *t)
 {
     Node *n;
 
     n = mkint(line, val);
     n = mkexpr(line, Olit, n, NULL);
+    n->expr.type = t;
     return n;
 }
 
@@ -70,14 +71,14 @@ Node *fold(Node *n)
             if (isval(args[1], 0))
                 r = args[0];
             if (islit(args[0], &a) && islit(args[1], &b))
-                r = val(n->line, a + b);
+                r = val(n->line, a + b, exprtype(n));
             break;
         case Osub:
             /* x - 0 = 0 */
             if (isval(args[1], 0))
                 r = args[0];
             if (islit(args[0], &a) && islit(args[1], &b))
-                r = val(n->line, a - b);
+                r = val(n->line, a - b, exprtype(n));
             break;
         case Omul:
             /* 1 * x = x */
@@ -91,7 +92,7 @@ Node *fold(Node *n)
             if (isval(args[1], 0))
                 r = args[1];
             if (islit(args[0], &a) && islit(args[1], &b))
-                r = val(n->line, a * b);
+                r = val(n->line, a * b, exprtype(n));
             break;
         case Odiv:
             /* x/1 = x */
@@ -101,18 +102,18 @@ Node *fold(Node *n)
             if (isval(args[1], 0))
                 r = args[1];
             if (islit(args[0], &a) && islit(args[1], &b))
-                r = val(n->line, a / b);
+                r = val(n->line, a / b, exprtype(n));
             break;
         case Omod:
             /* x%1 = x */
             if (isval(args[1], 0))
                 r = args[0];
             if (islit(args[0], &a) && islit(args[1], &b))
-                r = val(n->line, a % b);
+                r = val(n->line, a % b, exprtype(n));
             break;
         case Oneg:
             if (islit(args[0], &a))
-                r = val(n->line, -a);
+                r = val(n->line, -a, exprtype(n));
             break;
         case Ocast:
             /* FIXME: we currentl assume that the bits of the
