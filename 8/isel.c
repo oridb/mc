@@ -48,41 +48,6 @@ struct {
     [Ole] = {Icmp, Ijle, Isetle}
 };
 
-
-static Loc *loc(Isel *s, Node *n)
-{
-    Loc *l;
-    Node *v;
-    size_t stkoff;
-
-    switch (exprop(n)) {
-        case Ovar:
-            if (hthas(s->locs, n)) {
-                stkoff = (size_t)htget(s->locs, n);
-                l = locmem(-stkoff, locphysreg(Rebp), NULL, ModeL);
-            } else if (hthas(s->globls, n)) {
-                l = locstrlbl(htget(s->globls, n));
-            } else {
-                die("%s (id=%ld) not found", namestr(n->expr.args[0]), n->expr.did);
-            }
-            break;
-        case Olit:
-            v = n->expr.args[0];
-            switch (v->lit.littype) {
-                case Lchr:      l = loclit(v->lit.chrval); break;
-                case Lbool:     l = loclit(v->lit.boolval); break;
-                case Lint:      l = loclit(v->lit.intval); break;
-                default:
-                                die("Literal type %s should be blob", litstr(v->lit.littype));
-            }
-            break;
-        default:
-            die("Node %s not leaf in loc()", opstr(exprop(n)));
-            break;
-    }
-    return l;
-}
-
 static Mode mode(Node *n)
 {
     switch (exprtype(n)->type) {
@@ -96,9 +61,10 @@ static Mode mode(Node *n)
             }
             break;
     }
-    dump(n, stdout);
-    die("No mode for node");
-    return ModeNone;
+    /* FIXME: huh. what should the mode for, say, structs
+     * be when we have no intention of loading /through/ the
+     * pointer? */
+    return ModeL;
 }
 
 static Loc *coreg(Reg r, Mode m)
@@ -126,6 +92,40 @@ static Loc *coreg(Reg r, Mode m)
 
     assert(crtab[r][m] != Rnone);
     return locphysreg(crtab[r][m]);
+}
+
+static Loc *loc(Isel *s, Node *n)
+{
+    Loc *l;
+    Node *v;
+    size_t stkoff;
+
+    switch (exprop(n)) {
+        case Ovar:
+            if (hthas(s->locs, n)) {
+                stkoff = (size_t)htget(s->locs, n);
+                l = locmem(-stkoff, locphysreg(Rebp), NULL, mode(n));
+            } else if (hthas(s->globls, n)) {
+                l = locstrlbl(htget(s->globls, n));
+            } else {
+                die("%s (id=%ld) not found", namestr(n->expr.args[0]), n->expr.did);
+            }
+            break;
+        case Olit:
+            v = n->expr.args[0];
+            switch (v->lit.littype) {
+                case Lchr:      l = loclit(v->lit.chrval); break;
+                case Lbool:     l = loclit(v->lit.boolval); break;
+                case Lint:      l = loclit(v->lit.intval); break;
+                default:
+                                die("Literal type %s should be blob", litstr(v->lit.littype));
+            }
+            break;
+        default:
+            die("Node %s not leaf in loc()", opstr(exprop(n)));
+            break;
+    }
+    return l;
 }
 
 static Insn *mkinsnv(AsmOp op, va_list ap)

@@ -633,7 +633,7 @@ static Node *simplazy(Simp *s, Node *n, Node *r)
     a = rval(s, n->expr.args[0], NULL);
     append(s, store(r, a));
     if (exprop(n) == Oland)
-        cjmp(s, a, next, end);
+        cjmp(s, r, next, end);
     else if (exprop(n) == Olor)
         cjmp(s, a, end, next);
     append(s, next);
