@@ -49,7 +49,7 @@ Insn(Isetz,     "\tsetz  %v\n",                 Use(),  Def(.l={1}))
 Insn(Isetnz,    "\tsetnz %v\n",                 Use(),  Def(.l={1}))
 Insn(Isetl,     "\tsetl  %v\n",                 Use(),  Def(.l={1}))
 Insn(Isetle,    "\tsetle %v\n",                 Use(),  Def(.l={1}))
-Insn(Isetgt,    "\tsetgt %v\n",                 Use(),  Def(.l={1}))
+Insn(Isetg,     "\tsetg %v\n",                  Use(),  Def(.l={1}))
 Insn(Isetge,    "\tsetge %v\n",                 Use(),  Def(.l={1}))
 
 /* branch instructions */

@@ -1,0 +1,10 @@
+
+var x = 3
+var y = 9
+const main = {
+	if x < 5 && y > 7
+		-> 7
+	else
+		-> 9
+	;;
+}

@@ -42,7 +42,7 @@ struct {
     [Olnot] = {Itest, Ijz, Isetz},
     [Oeq] = {Icmp, Ijz, Isetz},
     [One] = {Icmp, Ijnz, Isetnz},
-    [Ogt] = {Icmp, Ijg, Isetgt},
+    [Ogt] = {Icmp, Ijg, Isetg},
     [Oge] = {Icmp, Ijge, Isetge},
     [Olt] = {Icmp, Ijl, Isetl},
     [Ole] = {Icmp, Ijle, Isetle}
@@ -526,10 +526,10 @@ Loc *selexpr(Isel *s, Node *n)
         case Oeq: case One: case Ogt: case Oge: case Olt: case Ole:
             a = selexpr(s, args[0]);
             b = selexpr(s, args[1]);
-            b = inr(s, b);
+            a = inr(s, a);
             c = locreg(ModeB);
             r = locreg(mode(n));
-            g(s, reloptab[exprop(n)].test, a, b, NULL);
+            g(s, reloptab[exprop(n)].test, b, a, NULL);
             g(s, reloptab[exprop(n)].getflag, c, NULL);
             movz(s, c, r);
             return r;
