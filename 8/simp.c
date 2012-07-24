@@ -1246,12 +1246,6 @@ void gen(Node *file, char *out)
     if (!fd)
         die("Couldn't open fd %s", out);
 
-    if (debug) {
-        for (i = 0; i < nblob; i++)
-            genblob(stdout, blob[i], globls);
-        for (i = 0; i < nfn; i++)
-            genasm(stdout, fn[i], globls);
-    }
     fprintf(fd, ".data\n");
     for (i = 0; i < nblob; i++)
         genblob(fd, blob[i], globls);
