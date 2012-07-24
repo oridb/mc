@@ -36,6 +36,7 @@ B callbig	E	42
 B nestfn	E	42
 B closure	E	55
 B loop		E	45
+B condif	E	7
 B fib		E	21
 B float		E	1
 B log-and	E	0

@@ -1,0 +1,9 @@
+var x = 5
+var y = 7
+const main = {
+	if x == 7 && y == 5
+		-> 7
+	else
+		-> 9
+	;;
+}
