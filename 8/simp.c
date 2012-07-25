@@ -1104,7 +1104,7 @@ static void reduce(Simp *s, Node *f)
     append(s, s->endlbl);
 }
 
-static Func *lowerfn(Simp *s, char *name, Node *n)
+static Func *lowerfn(Simp *s, char *name, Node *n, int export)
 {
     size_t i;
     Func *fn;
@@ -1144,7 +1144,7 @@ static Func *lowerfn(Simp *s, char *name, Node *n)
 
     fn = zalloc(sizeof(Func));
     fn->name = strdup(name);
-    fn->isglobl = 1; /* FIXME: we should actually use the visibility of the sym... */
+    fn->isexport = export;
     fn->stksz = s->stksz;
     fn->locs = s->locs;
     fn->ret = s->ret;
@@ -1188,7 +1188,7 @@ static void lowerdcl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***b
 
     if (isconstfn(dcl)) {
         if (!dcl->decl.isextern && !dcl->decl.isgeneric) {
-            f = lowerfn(&s, name, dcl->decl.init);
+            f = lowerfn(&s, name, dcl->decl.init, dcl->decl.isexport);
             lappend(fn, nfn, f);
         }
     } else {

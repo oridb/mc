@@ -75,7 +75,7 @@ struct Insn {
 
 struct Func {
     char *name;
-    int   isglobl;
+    int   isexport;
     size_t stksz;
     Type *type;
     Htab *locs;

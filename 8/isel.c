@@ -753,7 +753,7 @@ static void writeasm(FILE *fd, Isel *s, Func *fn)
 {
     size_t i, j;
 
-    if (fn->isglobl)
+    if (fn->isexport || !strcmp(fn->name, "main"))
         fprintf(fd, ".globl %s\n", fn->name);
     fprintf(fd, "%s:\n", fn->name);
     for (j = 0; j < s->cfg->nbb; j++) {
@@ -828,7 +828,8 @@ void genblob(FILE *fd, Node *blob, Htab *globls)
     assert(blob->type == Ndecl);
 
     lbl = htget(globls, blob);
-    fprintf(fd, ".globl %s\n", lbl);
+    if (blob->decl.isexport)
+        fprintf(fd, ".globl %s\n", lbl);
     fprintf(fd, "%s:\n", lbl);
     if (blob->decl.init) {
         if (exprop(blob->decl.init) != Olit)

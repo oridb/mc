@@ -218,6 +218,7 @@ struct Node {
         struct {
             size_t did;
             char  isglobl;
+	    char isexport;
             char  isconst;
             char  isgeneric;
             char  isextern;

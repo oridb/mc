@@ -770,8 +770,11 @@ static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
                  * need to patch the types in if they don't have a definition */
                 if (d->type == Ndecl)  {
                     s = getdcl(file->file.exports, d->decl.name);
-                    if (s)
+                    if (s) {
+                        s->decl.isexport = 1;
+                        d->decl.isexport = 1;
                         unify(st, d, type(st, d), s->decl.type);
+                    }
                 }
             }
             popstab();
