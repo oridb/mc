@@ -15,6 +15,7 @@ const Zbyte	= 0 castto(byte*)
 const Zslab	= 0 castto(slab*)
 const Zbin	= 0 castto(bin*)
 const Pagesz 	= 4096	/* on the systems this supports, anyways... */
+const Cachemax	= 16	/* maximum number of slabs in the cache */
 const Bucketmax	= 1024	/* Pagesz / 8; a balance. */
 const Align	= 16	/* minimum allocation alignment */
 
@@ -93,6 +94,11 @@ const mkslab = {bkt : bucket*
 	var bnext
 	var off /* offset of bin head */
 
+	if bkt.ncache > 0
+		s = bkt.cache
+		bkt.cache = s.next
+		bkt.ncache--
+	;;
 	p = mmap(Zbyte, Pagesz, Mprotrw, Mpriv | Manon, -1, 0)
 	if p == Mapbad
 		die("Unable to mmap")
@@ -113,7 +119,7 @@ const mkslab = {bkt : bucket*
 	-> s
 }
 
-const bktalloc = {bkt : bucket*
+const bktalloc = {bkt
 	var s
 	var b
 
@@ -139,7 +145,7 @@ const bktalloc = {bkt : bucket*
 	-> b castto(byte*)
 }
 
-const bktfree = {bkt : bucket*, m : byte*
+const bktfree = {bkt, m
 	var s
 	var b
 
@@ -148,6 +154,13 @@ const bktfree = {bkt : bucket*, m : byte*
 	if s.nfree == 0
 		s.next = bkt.slabs
 		bkt.slabs = s
+	elif s.nfree == bkt.nper
+		if bkt.ncache < Cachemax
+			s.next = bkt.cache
+			bkt.cache = s
+		else
+			delslab(s)
+		;;
 	;;
 	s.nfree++
 	b.next = s.freehd
