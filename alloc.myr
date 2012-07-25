@@ -60,7 +60,7 @@ const bytealloc = {sz
 	;;
 
 	if (sz <= Bucketmax)
-		bkt = &buckets[bucketnum(sz)]
+		bkt = &buckets[bktnum(sz)]
 		-> bktalloc(bkt)
 	else
 		-> mmap(Zbyte, sz, Mprotrw, Mpriv | Manon, -1, 0)
@@ -71,7 +71,7 @@ const bytefree = {m, sz
 	var bkt
 
 	if (sz < Bucketmax)
-		bkt = &buckets[bucketnum(sz)]
+		bkt = &buckets[bktnum(sz)]
 		bktfree(bkt, m)
 	else
 		munmap(m, sz)
@@ -159,7 +159,7 @@ const bktfree = {bkt, m
 			s.next = bkt.cache
 			bkt.cache = s
 		else
-			delslab(s)
+			munmap(s castto(byte*), Pagesz)
 		;;
 	;;
 	s.nfree++
@@ -167,11 +167,7 @@ const bktfree = {bkt, m
 	s.freehd = b
 }
 
-const delslab = {s : slab*
-
-}
-
-const bucketnum = {sz
+const bktnum = {sz
 	var i
 	var bktsz
 
