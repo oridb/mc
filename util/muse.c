@@ -27,7 +27,7 @@ static void usage(char *prog)
     printf("\t-m\ttreat the inputs as usefiles and merge them\n");
     printf("\t-I path\tAdd 'path' to use search path\n");
     printf("\t-d\tPrint debug dumps\n");
-    printf("\t-o\tOutput to outfile\n");
+    printf("\t-o out\tOutput to outfile\n");
     printf("\t-s\tShow the contents of usefiles `inputs`\n");
 }
 
@@ -37,7 +37,7 @@ static void dumpuse(char *path)
     FILE *f;
 
     globls = file->file.globls;
-    readuse(file, globls);
+    loaduse(f, globls);
     f = fopen(path, "r");
     dumpstab(globls, stdout);
     fclose(f);
@@ -57,16 +57,19 @@ static void genuse(char *path)
     if (!outfile)
         die("need output file name right now. FIX THIS.");
     f = fopen(outfile, "w");
-    writeuse(file, f);
+    writeuse(f, file);
     fclose(f);
 }
 
 static void mergeuse(char *path)
 {
-    Stab *globls;
+    FILE *f;
+    Stab *st;
 
-    globls = file->file.globls;
-    readuse(file, globls);
+    st = file->file.exports;
+    f = fopen(path, "r");
+    loaduse(f, st);
+    fclose(f);
 }
 
 int main(int argc, char **argv)
@@ -75,7 +78,7 @@ int main(int argc, char **argv)
     int opt;
     int i;
 
-    while ((opt = getopt(argc, argv, "d::ho:I:")) != -1) {
+    while ((opt = getopt(argc, argv, "d::hmo:I:")) != -1) {
         switch (opt) {
             case 'h':
                 usage(argv[0]);
@@ -115,7 +118,7 @@ int main(int argc, char **argv)
     }
     if (merge) {
         f = fopen(outfile, "w");
-        writeuse(file, f);
+        writeuse(f, file);
         fclose(f);
     }
 

@@ -399,8 +399,9 @@ Op exprop(Node *n);
 Node *specializedcl(Node *n, Type *to, Node **name);
 
 /* usefiles */
+int  loaduse(FILE *f, Stab *into);
 void readuse(Node *use, Stab *into);
-void writeuse(Node *file, FILE *out);
+void writeuse(FILE *fd, Node *file);
 
 /* typechecking/inference */
 void infer(Node *file);
