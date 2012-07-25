@@ -924,12 +924,12 @@ static Node *rval(Simp *s, Node *n, Node *dst)
          *  => args[0] = args[0] + 1
          *     expr(x) */
         case Opreinc:
-            t = lval(s, args[0]);
+            t = load(lval(s, args[0]));
             r = store(t, add(t, one));
             lappend(&s->incqueue, &s->nqueue, t);
             break;
         case Opredec:
-            t = lval(s, args[0]);
+            t = load(lval(s, args[0]));
             r = store(t, sub(t, one));
             lappend(&s->incqueue, &s->nqueue, t);
             break;
@@ -940,13 +940,13 @@ static Node *rval(Simp *s, Node *n, Node *dst)
          *      x = x + 1
          */
         case Opostinc:
-            r = lval(s, args[0]);
-            t = store(r, add(one, r));
+            r = rval(s, args[0], NULL);
+            t = store(lval(s, args[0]), add(r, one));
             lappend(&s->incqueue, &s->nqueue, t);
             break;
         case Opostdec:
-            r = lval(s, args[0]);
-            t = store(r, sub(one, r));
+            r = rval(s, args[0], NULL);
+            t = store(lval(s, args[0]), sub(r, one));
             lappend(&s->incqueue, &s->nqueue, t);
             break;
         case Olit:

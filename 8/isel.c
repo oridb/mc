@@ -328,8 +328,9 @@ static Loc *memloc(Isel *s, Node *e, Mode m)
             b = inr(s, b);
         if (o->type == Loclit) {
             l = locmem(scale*o->lit, b, Rnone, m);
-        } else if (o->type == Locreg) {
+        } else {
             b = inr(s, b);
+            o = inr(s, o);
             l = locmems(0, b, o, scale, m);
         }
     } else {
@@ -337,6 +338,7 @@ static Loc *memloc(Isel *s, Node *e, Mode m)
         l = inr(s, l);
         l = locmem(0, l, Rnone, m);
     }
+    assert(l != NULL);
     return l;
 }
 
