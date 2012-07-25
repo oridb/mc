@@ -216,7 +216,7 @@ struct Node {
         } lbl;
 
         struct {
-            long  did;
+            size_t did;
             char  isglobl;
             char  isconst;
             char  isgeneric;
