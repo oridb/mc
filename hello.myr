@@ -2,12 +2,14 @@ use "sys.use"
 use "alloc.use"
 
 const main = {
-	var x
+	var x : byte*[1024]
 	var i
 
-	for i = 0; i < 200; i++
-		x = std.bytealloc(32)
+	for i = 0; i < 1024; i++
+		x[i] = std.bytealloc(32)
 	;;
-	std.bytefree(x, 32)
+	for i = 0; i < 1024; i++
+		std.bytefree(x[i], 32)
+	;;
 	std.write(1, "Hello world\n")
 }
