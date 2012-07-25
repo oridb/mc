@@ -59,6 +59,8 @@ for i in `awk '/^F/{print $2}' tests`; do
         echo "PASS: $i"
     else
         echo "FAIL: $i"
+        FAILED="$FAILED $i"
+        NFAILED=$[$NFAILED + 1]
     fi
 done
 
