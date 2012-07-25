@@ -18,6 +18,8 @@ struct Usage {
     int r[Maxarg + 1];
 };
 
+static void printedge(FILE *fd, char *msg, size_t a, size_t b);
+
 Usage usetab[] = {
 #define Use(...) {__VA_ARGS__}
 #define Insn(i, fmt, use, def) use,
@@ -530,13 +532,8 @@ static void combine(Isel *s, regid u, regid v)
     size_t i, j;
     int has;
 
-    if (debugopt['r']) {
-        printf("Combine ");
-        locprint(stdout, locmap[u], 'x');
-        printf(" ==> ");
-        locprint(stdout, locmap[v], 'x');
-        printf("\n");
-    }
+    if (debugopt['r'])
+        printedge(stdout, "combining:", u, v);
     if (wlhas(s->wlfreeze, s->nwlfreeze, v, &idx))
         ldel(&s->wlfreeze, &s->nwlfreeze, idx);
     else if (wlhas(s->wlspill, s->nwlspill, v, &idx))
@@ -558,7 +555,9 @@ static void combine(Isel *s, regid u, regid v)
     }
 
     for (t = 0; adjiter(s, v, &t); t++) {
-        gbputedge(s, t, u);
+        if (debugopt['r'])
+            printedge(stdout, "combine-putedge:", v, t);
+        addedge(s, t, u);
         decdegree(s, t);
     }
     if (s->degree[u] >= K && wlhas(s->wlfreeze, s->nwlfreeze, u, &idx)) {
@@ -687,7 +686,9 @@ static int paint(Isel *s)
         bzero(taken, K*sizeof(int));
         n = lpop(&s->selstk, &s->nselstk);
 
-        for (l = 0; adjiter(s, n->reg.id, &l); l++) {
+        for (l = 0; bsiter(s->gadj[n->reg.id], &l); l++) {
+            if (debugopt['r'] > 1)
+                printedge(stdout, "paint-edge:", n->reg.id, l);
             w = locmap[getalias(s, l)];
             if (w->reg.colour)
                 taken[colourmap[w->reg.colour]] = 1;
@@ -697,8 +698,9 @@ static int paint(Isel *s)
         for (i = 0; i < K; i++) {
             if (!taken[i]) {
                 if (debugopt['r']) {
+                    fprintf(stdout, "\tselecting ");
                     locprint(stdout, n, 'x');
-                    printf(" ==> %s\n", regnames[regmap[i][n->mode]]);
+                    fprintf(stdout, " = %s\n", regnames[regmap[i][n->mode]]);
                 }
                 n->reg.colour = regmap[i][n->mode];
                 found = 1;
@@ -786,6 +788,15 @@ static void locsetprint(FILE *fd, Bitset *s)
     fprintf(fd, "\n");
 }
 
+static void printedge(FILE *fd, char *msg, size_t a, size_t b)
+{
+    fprintf(fd, "\t%s ", msg);
+    locprint(fd, locmap[a], 'x');
+    fprintf(fd, " -- ");
+    locprint(fd, locmap[b], 'x');
+    fprintf(fd, "\n");
+}
+
 void dumpasm(Isel *s, FILE *fd)
 {
     size_t i, j;
@@ -795,12 +806,8 @@ void dumpasm(Isel *s, FILE *fd)
     fprintf(fd, "IGRAPH ----- \n");
     for (i = 0; i < maxregid; i++) {
         for (j = i; j < maxregid; j++) {
-            if (gbhasedge(s, i, j)) {
-                locprint(fd, locmap[i], 'x');
-                fprintf(fd, " -- ");
-                locprint(fd, locmap[j], 'x');
-                fprintf(fd, "\n");
-            }
+            if (gbhasedge(s, i, j))
+                printedge(stdout, "", i, j);
         }
     }
     fprintf(fd, "ASM -------- \n");
