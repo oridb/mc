@@ -3,7 +3,11 @@ use "alloc.use"
 
 const main = {
 	var x
-	x = std.bytealloc(32)
+	var i
+
+	for i = 0; i < 200; i++
+		x = std.bytealloc(32)
+	;;
 	std.bytefree(x, 32)
 	std.write(1, "Hello world\n")
 }

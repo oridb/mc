@@ -27,8 +27,8 @@ type bucket = struct
 ;;
 
 type slab = struct
-	freehd	: bin*	/* the nodes we're allocating */
 	next	: slab* /* the next slab on the chain */
+	freehd	: bin*	/* the nodes we're allocating */
 	nfree	: size  /* the number of free nodes */
 ;;
 
@@ -103,7 +103,7 @@ const mkslab = {bkt : bucket*
 	/* skip past the slab header */
 	off = align(sizeof(slab), Align)
 	bnext = nextbin(s castto(bin*), off)
-	s.next = bnext
+	s.freehd = bnext
 	for i = 0; i < bkt.nper; i++
 		b = bnext
 		bnext = nextbin(b, bkt.sz)
@@ -121,15 +121,15 @@ const bktalloc = {bkt : bucket*
 	s = bkt.slabs
 	if s == Zslab
 		s = mkslab(bkt)
-		if !s
+		if s == Zslab
 			die("No memory left")
 		;;
 		bkt.slabs = s
 	;;
 
 	/* grab the first bin on the slab */
-	b = s.next
-	s.next = b.next
+	b = s.freehd
+	s.freehd = b.next
 	s.nfree--
 	if !s.nfree
 		bkt.slabs = s.next
