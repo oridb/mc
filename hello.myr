@@ -6,7 +6,7 @@ const main = {
 	var sz
 	var i
 
-	for sz = 1; sz < 10000; sz++
+	for sz = 1; sz < 65536; sz *= 2
 		for i = 0; i < 1024; i++
 			x[i] = std.bytealloc(sz)
 		;;

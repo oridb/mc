@@ -15,7 +15,7 @@ const Zbyte	= 0 castto(byte*)
 const Zslab	= 0 castto(slab*)
 const Zbin	= 0 castto(bin*)
 const Pagesz 	= 4096	/* on the systems this supports, anyways... */
-const Bucketmax	= 1024	/* Pagesz / 4; a tolerable balance. */
+const Bucketmax	= 1024	/* Pagesz / 8; a balance. */
 const Align	= 16	/* minimum allocation alignment */
 
 type bucket = struct
@@ -52,13 +52,13 @@ const bytealloc = {sz
 	var bkt
 
 	if !initdone
-		for i = 0; i < buckets.len && (Align << i) < Bucketmax; i++
+		for i = 0; i < buckets.len && (Align << i) <= Bucketmax; i++
 			bktinit(&buckets[i], Align << i)
 		;;
 		initdone = 1
 	;;
 
-	if (sz < Bucketmax)
+	if (sz <= Bucketmax)
 		bkt = &buckets[bucketnum(sz)]
 		-> bktalloc(bkt)
 	else
@@ -163,7 +163,7 @@ const bucketnum = {sz
 	var bktsz
 
 	bktsz = Align
-	for i = 0; bktsz < Bucketmax; i++
+	for i = 0; bktsz <= Bucketmax; i++
 		if bktsz >= sz
 			-> i
 		;;
