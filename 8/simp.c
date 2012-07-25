@@ -117,8 +117,8 @@ static Node *load(Node *a)
 {
     Node *n;
 
-    n = mkexpr(a->line, Oload, a, NULL);
     assert(a->expr.type->type == Typtr);
+    n = mkexpr(a->line, Oload, a, NULL);
     n->expr.type = base(a->expr.type);
     return n;
 }
@@ -924,14 +924,18 @@ static Node *rval(Simp *s, Node *n, Node *dst)
          *  => args[0] = args[0] + 1
          *     expr(x) */
         case Opreinc:
-            t = load(lval(s, args[0]));
-            r = store(t, add(t, one));
-            lappend(&s->incqueue, &s->nqueue, t);
+            t = rval(s, args[0], NULL);
+            u = lval(s, args[0]);
+            v = store(u, add(t, one));
+            append(s, v);
+            r = rval(s, args[0], NULL);
             break;
         case Opredec:
-            t = load(lval(s, args[0]));
-            r = store(t, sub(t, one));
-            lappend(&s->incqueue, &s->nqueue, t);
+            t = rval(s, args[0], NULL);
+            u = lval(s, args[0]);
+            v = store(u, add(t, one));
+            append(s, v);
+            r = rval(s, args[0], NULL);
             break;
 
         /* expr(x++)
