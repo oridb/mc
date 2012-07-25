@@ -14,10 +14,14 @@ pkg std =
 const Zbyte	= 0 castto(byte*)
 const Zslab	= 0 castto(slab*)
 const Zchunk	= 0 castto(chunk*)
+
 const Pagesz 	= 4096	/* on the systems this supports, anyways... */
 const Cachemax	= 16	/* maximum number of slabs in the cache */
 const Bucketmax	= 1024	/* Pagesz / 8; a balance. */
 const Align	= 16	/* minimum allocation alignment */
+
+var buckets	: bucket[32] /* excessive */
+var initdone	: int
 
 type bucket = struct
 	sz	: size	/* aligned size */
@@ -36,9 +40,6 @@ type slab = struct
 type chunk = struct	/* NB: must be smaller than sizeof(slab) */
 	next	: chunk*	/* the next chunk in the free list */
 ;;
-
-var buckets : bucket[32] /* excessive */
-var initdone : int
 
 generic alloc = {-> @a*
 	-> bytealloc(sizeof(@a)) castto(@a*)
