@@ -614,8 +614,9 @@ Node *lval(Simp *s, Node *n)
 
     switch (exprop(n)) {
         case Ovar:      r = n;  break;
-        case Oidx:      r = idxaddr(s, n);      break;
-        case Omemb:     r = membaddr(s, n);     break;
+        case Oidx:      r = idxaddr(s, n); break;
+        case Oderef:    r = rval(s, n->expr.args[0], NULL); break;
+        case Omemb:     r = membaddr(s, n); break;
         default:
             die("%s cannot be an lval", opstr(exprop(n)));
             break;

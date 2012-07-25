@@ -1,0 +1,10 @@
+const ppreinc = {p
+	-> ++*p
+}
+
+const main = {
+	var x = 8
+
+	-> ppreinc(&x)
+}
+

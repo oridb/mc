@@ -19,6 +19,7 @@ B mul		E	42
 B div		E	42
 B mod		E	6
 B bsr		E	5
+B ptrpreinc	E       9
 B struct1	E	12
 B struct	E	42
 B structptr	E	42
