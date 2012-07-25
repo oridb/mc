@@ -616,7 +616,7 @@ void locprint(FILE *fd, Loc *l, char spec)
         case Locreg:
             assert(spec == 'r' || spec == 'v' || spec == 'x' || spec == 'u');
             if (l->reg.colour == Rnone)
-                fprintf(fd, "%%P.%ld", l->reg.id);
+                fprintf(fd, "%%P.%zd", l->reg.id);
             else
                 fprintf(fd, "%s", regnames[l->reg.colour]);
             break;
