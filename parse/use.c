@@ -16,6 +16,13 @@ static Stab *findstab(Stab *st, char *pkg)
     Node *n;
     Stab *s;
 
+    if (!pkg) {
+        if (!st->name)
+            return st;
+        else
+            return NULL;
+    }
+
     n = mkname(-1, pkg);
     if (getns(st, n)) {
         s = getns(st, n);
