@@ -3,13 +3,16 @@ use "alloc.use"
 
 const main = {
 	var x : byte*[1024]
+	var sz
 	var i
 
-	for i = 0; i < 1024; i++
-		x[i] = std.bytealloc(32)
-	;;
-	for i = 0; i < 1024; i++
-		std.bytefree(x[i], 32)
+	for sz = 1; sz < 10000; sz++
+		for i = 0; i < 1024; i++
+			x[i] = std.bytealloc(sz)
+		;;
+		for i = 0; i < 1024; i++
+			std.bytefree(x[i], sz)
+		;;
 	;;
 	std.write(1, "Hello world\n")
 }
