@@ -1011,7 +1011,7 @@ static void declarelocal(Simp *s, Node *n)
     assert(n->type == Ndecl);
     s->stksz += size(n);
     if (debug)
-        printf("declare %s:%s(%ld) at %zd\n", declname(n), tystr(decltype(n)), n->decl.did, s->stksz);
+        printf("declare %s:%s(%zd) at %zd\n", declname(n), tystr(decltype(n)), n->decl.did, s->stksz);
     htput(s->locs, n, (void*)s->stksz);
 }
 
@@ -1019,7 +1019,7 @@ static void declarearg(Simp *s, Node *n)
 {
     assert(n->type == Ndecl);
     if (debug)
-        printf("declare %s(%ld) at %zd\n", declname(n), n->decl.did, -(s->argsz + 8));
+        printf("declare %s(%zd) at %zd\n", declname(n), n->decl.did, -(s->argsz + 8));
     htput(s->locs, n, (void*)-(s->argsz + 8));
     s->argsz += size(n);
 }
