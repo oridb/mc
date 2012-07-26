@@ -5,6 +5,7 @@ const main = {
 	var sz
 	var i
 
+	/* try the byte allocator for large variety of sizes. */
 	for sz = 1; sz < 65536; sz *= 2
 		for i = 0; i < 1024; i++
 			x[i] = std.bytealloc(sz)
@@ -12,6 +13,14 @@ const main = {
 		for i = 0; i < 1024; i++
 			std.bytefree(x[i], sz)
 		;;
+	;;
+	
+	/* make sure the generic allocator works */
+	for i = 0; i < 1024; i++
+		x[i] = std.alloc()
+	;;
+	for i = 0; i < 1024; i++
+		std.free(x[i])
 	;;
 	std.write(1, "Hello world\n")
 }
