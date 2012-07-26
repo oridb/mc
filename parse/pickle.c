@@ -377,6 +377,7 @@ void pickle(Node *n, FILE *fd)
             pickle(n->decl.init, fd);
             break;
         case Nfunc:
+            wrtype(fd, n->func.type);
             wrstab(fd, n->func.scope);
             wrint(fd, n->func.nargs);
             for (i = 0; i < n->func.nargs; i++)
@@ -496,6 +497,7 @@ Node *unpickle(FILE *fd)
             n->decl.init = unpickle(fd);
             break;
         case Nfunc:
+            n->func.type = rdtype(fd);
             n->func.scope = rdstab(fd);
             n->func.nargs = rdint(fd);
             n->func.args = xalloc(sizeof(Node *)*n->func.nargs);

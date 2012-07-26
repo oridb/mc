@@ -465,6 +465,11 @@ static void checkns(Inferstate *st, Node *n, Node **ret)
         settype(st, var, freshen(st, s->decl.type));
     else
         settype(st, var, s->decl.type);
+    if (s->decl.isgeneric) {
+        lappend(&st->specializationscope, &st->nspecializationscope, curstab());
+        lappend(&st->specializations, &st->nspecializations, var);
+        lappend(&st->genericdecls, &st->ngenericdecls, s);
+    }
     *ret = var;
 }
 
@@ -771,8 +776,9 @@ static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
                 if (d->type == Ndecl)  {
                     s = getdcl(file->file.exports, d->decl.name);
                     if (s) {
-                        s->decl.isexport = 1;
                         d->decl.isexport = 1;
+                        s->decl.isexport = 1;
+                        s->decl.init = d->decl.init;
                         unify(st, d, type(st, d), s->decl.type);
                     }
                 }
