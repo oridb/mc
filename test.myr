@@ -1,12 +1,17 @@
 use std
 
 const main = {
-	var x
+	var x : byte*[1024]
+	var sz
 	var i
 
-	for i = 0; i < 128; i++
-		x = std.bytealloc(32)
+	for sz = 1; sz < 65536; sz *= 2
+		for i = 0; i < 1024; i++
+			x[i] = std.bytealloc(sz)
+		;;
+		for i = 0; i < 1024; i++
+			std.bytefree(x[i], sz)
+		;;
 	;;
-	std.bytefree(x, 32)
 	std.write(1, "Hello world\n")
 }

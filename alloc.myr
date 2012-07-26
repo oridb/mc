@@ -13,10 +13,15 @@ pkg std =
 /* null pointers */
 const Zbyte	= 0 castto(byte*)
 const Zslab	= 0 castto(slab*)
-const Zbin	= 0 castto(bin*)
+const Zchunk	= 0 castto(chunk*)
+
 const Pagesz 	= 4096	/* on the systems this supports, anyways... */
-const Bucketmax	= 1024	/* Pagesz / 4; a tolerable balance. */
+const Cachemax	= 16	/* maximum number of slabs in the cache */
+const Bucketmax	= 1024	/* Pagesz / 8; a balance. */
 const Align	= 16	/* minimum allocation alignment */
+
+var buckets	: bucket[32] /* excessive */
+var initdone	: int
 
 type bucket = struct
 	sz	: size	/* aligned size */
@@ -28,16 +33,13 @@ type bucket = struct
 
 type slab = struct
 	next	: slab* /* the next slab on the chain */
-	freehd	: bin*	/* the nodes we're allocating */
+	freehd	: chunk*	/* the nodes we're allocating */
 	nfree	: size  /* the number of free nodes */
 ;;
 
-type bin = struct	/* NB: must be smaller than sizeof(slab) */
-	next	: bin*	/* the next bin in the free list */
+type chunk = struct	/* NB: must be smaller than sizeof(slab) */
+	next	: chunk*	/* the next chunk in the free list */
 ;;
-
-var buckets : bucket[32] /* excessive */
-var initdone : int
 
 generic alloc = {-> @a*
 	-> bytealloc(sizeof(@a)) castto(@a*)
@@ -52,14 +54,14 @@ const bytealloc = {sz
 	var bkt
 
 	if !initdone
-		for i = 0; i < buckets.len && (Align << i) < Bucketmax; i++
-			allocinit(&buckets[i], Align << i)
+		for i = 0; i < buckets.len && (Align << i) <= Bucketmax; i++
+			bktinit(&buckets[i], Align << i)
 		;;
 		initdone = 1
 	;;
 
-	if (sz < Bucketmax)
-		bkt = &buckets[bucketnum(sz)]
+	if (sz <= Bucketmax)
+		bkt = &buckets[bktnum(sz)]
 		-> bktalloc(bkt)
 	else
 		-> mmap(Zbyte, sz, Mprotrw, Mpriv | Manon, -1, 0)
@@ -70,14 +72,14 @@ const bytefree = {m, sz
 	var bkt
 
 	if (sz < Bucketmax)
-		bkt = &buckets[bucketnum(sz)]
+		bkt = &buckets[bktnum(sz)]
 		bktfree(bkt, m)
 	else
 		munmap(m, sz)
 	;;
 }
 
-const allocinit = {b : bucket*, sz
+const bktinit = {b : bucket*, sz
 	b.sz = align(sz, Align)
 	b.nper = (Pagesz - sizeof(slab))/b.sz
 	b.slabs = Zslab
@@ -91,8 +93,13 @@ const mkslab = {bkt : bucket*
 	var s
 	var b
 	var bnext
-	var off /* offset of bin head */
+	var off /* offset of chunk head */
 
+	if bkt.ncache > 0
+		s = bkt.cache
+		bkt.cache = s.next
+		bkt.ncache--
+	;;
 	p = mmap(Zbyte, Pagesz, Mprotrw, Mpriv | Manon, -1, 0)
 	if p == Mapbad
 		die("Unable to mmap")
@@ -102,18 +109,18 @@ const mkslab = {bkt : bucket*
 	s.nfree = bkt.nper
 	/* skip past the slab header */
 	off = align(sizeof(slab), Align)
-	bnext = nextbin(s castto(bin*), off)
+	bnext = nextchunk(s castto(chunk*), off)
 	s.freehd = bnext
 	for i = 0; i < bkt.nper; i++
 		b = bnext
-		bnext = nextbin(b, bkt.sz)
+		bnext = nextchunk(b, bkt.sz)
 		b.next = bnext
 	;;
-	b.next = Zbin
+	b.next = Zchunk
 	-> s
 }
 
-const bktalloc = {bkt : bucket*
+const bktalloc = {bkt
 	var s
 	var b
 
@@ -127,7 +134,7 @@ const bktalloc = {bkt : bucket*
 		bkt.slabs = s
 	;;
 
-	/* grab the first bin on the slab */
+	/* grab the first chunk on the slab */
 	b = s.freehd
 	s.freehd = b.next
 	s.nfree--
@@ -139,31 +146,34 @@ const bktalloc = {bkt : bucket*
 	-> b castto(byte*)
 }
 
-const bktfree = {bkt : bucket*, m : byte*
+const bktfree = {bkt, m
 	var s
 	var b
 
 	s = mtrunc(m, Pagesz) castto(slab*)
-	b = m castto(bin*)
+	b = m castto(chunk*)
 	if s.nfree == 0
 		s.next = bkt.slabs
 		bkt.slabs = s
+	elif s.nfree == bkt.nper
+		if bkt.ncache < Cachemax
+			s.next = bkt.cache
+			bkt.cache = s
+		else
+			munmap(s castto(byte*), Pagesz)
+		;;
 	;;
 	s.nfree++
 	b.next = s.freehd
 	s.freehd = b
 }
 
-const delslab = {s : slab*
-
-}
-
-const bucketnum = {sz
+const bktnum = {sz
 	var i
 	var bktsz
 
 	bktsz = Align
-	for i = 0; bktsz < Bucketmax; i++
+	for i = 0; bktsz <= Bucketmax; i++
 		if bktsz >= sz
 			-> i
 		;;
@@ -172,9 +182,9 @@ const bucketnum = {sz
 	die("Size does not match any buckets")
 }
 
-/* bins are variable sizes, so we can't just take a slice */
-const nextbin = {b, sz
-	-> ((b castto(intptr)) + sz) castto(bin*)
+/* chunks are variable sizes, so we can't just take a slice */
+const nextchunk = {b, sz
+	-> ((b castto(intptr)) + sz) castto(chunk*)
 }
 
 const align = {v, align
