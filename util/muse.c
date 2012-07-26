@@ -24,7 +24,8 @@ static void usage(char *prog)
 {
     printf("%s [-hIdos] [-o outfile] [-m] inputs\n", prog);
     printf("\t-h\tprint this help\n");
-    printf("\t-m\ttreat the inputs as usefiles and merge them\n");
+    printf("\t-m\ttreat the inputs as usefiles and merge them into outfile\n");
+    printf("\t\tThe outfile must be the same name as each package merged.\n");
     printf("\t-I path\tAdd 'path' to use search path\n");
     printf("\t-d\tPrint debug dumps\n");
     printf("\t-o out\tOutput to outfile\n");
@@ -105,21 +106,26 @@ int main(int argc, char **argv)
         }
     }
 
-    for (i = optind; i < argc; i++) {
+    if (merge) {
         file = mkfile(argv[i]);
         file->file.exports = mkstab();
         file->file.globls = mkstab();
-        if (merge)
+        updatens(file->file.exports, outfile);
+        for (i = optind; i < argc; i++)
             mergeuse(argv[i]);
-        else if (debugopt['s'])
-            dumpuse(argv[i]);
-        else
-            genuse(argv[i]);
-    }
-    if (merge) {
         f = fopen(outfile, "w");
         writeuse(f, file);
         fclose(f);
+    } else {
+        for (i = optind; i < argc; i++) {
+            file = mkfile(argv[i]);
+            file->file.exports = mkstab();
+            file->file.globls = mkstab();
+            if (debugopt['s'])
+                dumpuse(argv[i]);
+            else
+                genuse(argv[i]);
+        }
     }
 
     return 0;
