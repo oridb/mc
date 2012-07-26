@@ -39,19 +39,29 @@ function assem {
     done
 }
 
+# Library source.
 ASM=syscall-$SYS.s
-# Myrddin source must be specified in dependency order
 MYR="\
     types.myr \
     sys-$SYS.myr \
     die.myr \
-    alloc.myr \
-    hello.myr"
+    alloc.myr"
+
 OBJ="$(echo $ASM | sed 's/\.s/.o /g') $(echo $MYR | sed 's/\.myr/.o /g')"
+USE="$(echo $MYR | sed 's/\.myr/.use /g')"
 assem $ASM
 use $MYR
 build $MYR
 
-echo $CC -m32 -o hello $OBJ
-$CC -m32 -o hello $OBJ
+echo $MU -mo std $USE
+$MU -mo std $USE
+echo ar -rcs libstd.a $OBJ
+ar -rcs libstd.a $OBJ
+
+# build test program
+build test.myr
+COMP="$CC -m32 -o test test.o -L. -lstd"
+echo $COMP
+$COMP
+
 

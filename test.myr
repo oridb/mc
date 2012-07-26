@@ -1,11 +1,10 @@
-use "sys.use"
-use "alloc.use"
+use std
 
 const main = {
 	var x
 	var i
 
-	for i = 0; i < 200; i++
+	for i = 0; i < 128; i++
 		x = std.bytealloc(32)
 	;;
 	std.bytefree(x, 32)
