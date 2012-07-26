@@ -53,13 +53,13 @@ Node *fold(Node *n)
 
     if (!n)
         return NULL;
-    assert(n->type == Nexpr);
+    if (n->type != Nexpr)
+        return n;
+
     r = NULL;
     args = n->expr.args;
-    if (exprop(n) != Ovar && exprop(n) != Ocjmp &&
-        exprop(n) != Ojmp && exprop(n) != Olit)
-        for (i = 0; i < n->expr.nargs; i++)
-            args[i] = fold(args[i]);
+    for (i = 0; i < n->expr.nargs; i++)
+        args[i] = fold(args[i]);
     switch (exprop(n)) {
         case Ovar:
             /* FIXME: chase small consts */

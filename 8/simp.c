@@ -686,11 +686,11 @@ static Node *lowercast(Simp *s, Node *n)
                 case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint64:
                 case Tyint: case Tyuint: case Tylong: case Tyulong:
                     args[0]->expr.type = n->expr.type;
-                    r = args[0];
+                    r = rval(s, args[0], NULL);
                     break;
                 case Typtr:
                     args[0]->expr.type = n->expr.type;
-                    r = args[0];
+                    r = rval(s, args[0], NULL);
                     break;
                 default:
                     fatal(n->line, "Bad cast from %s to %s",
