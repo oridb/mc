@@ -476,8 +476,11 @@ Node *unpickle(FILE *fd)
             n->block.scope = rdstab(fd);
             n->block.nstmts = rdint(fd);
             n->block.stmts = xalloc(sizeof(Node *)*n->block.nstmts);
+            n->func.scope->super = curstab();
+            pushstab(n->func.scope->super);
             for (i = 0; i < n->block.nstmts; i++)
                 n->block.stmts[i] = unpickle(fd);
+            popstab();
             break;
         case Nlbl:
             n->lbl.name = rdstr(fd);
@@ -501,9 +504,12 @@ Node *unpickle(FILE *fd)
             n->func.scope = rdstab(fd);
             n->func.nargs = rdint(fd);
             n->func.args = xalloc(sizeof(Node *)*n->func.nargs);
+            n->func.scope->super = curstab();
+            pushstab(n->func.scope->super);
             for (i = 0; i < n->func.nargs; i++)
                 n->func.args[i] = unpickle(fd);
             n->func.body = unpickle(fd);
+            popstab();
             break;
         case Nnone:
             die("Nnone should not be seen as node type!");

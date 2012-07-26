@@ -291,6 +291,8 @@ Node *specializedcl(Node *n, Type *to, Node **name)
 {
     Htab *tsmap;
     Node *d;
+    Node *ns;
+    Stab *st;
 
     assert(n->type == Ndecl);
     assert(n->decl.isgeneric);
@@ -299,6 +301,15 @@ Node *specializedcl(Node *n, Type *to, Node **name)
     d = getdcl(file->file.globls, *name);
     if (d)
         return d;
+    /* namespaced names need to be looked up in their correct
+     * context. */
+    if (n->decl.name->name.ns) {
+        ns = mkname(n->line, n->decl.name->name.ns);
+        st = getns(file->file.globls, ns);
+        pushstab(st);
+    }
+
+
 
     tsmap = mkht(tyhash, tyeq);
     fillsubst(tsmap, to, n->decl.type);
@@ -311,5 +322,7 @@ Node *specializedcl(Node *n, Type *to, Node **name)
 
     putdcl(file->file.globls, d);
     lappend(&file->file.stmts, &file->file.nstmts, d);
+    if (d->decl.name->name.ns)
+        popstab();
     return d;
 }
