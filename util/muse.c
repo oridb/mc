@@ -14,6 +14,7 @@
 /* FIXME: move into one place...? */
 Node *file;
 char *outfile;
+int merge;
 int debug;
 char debugopt[128];
 char **incpaths;
@@ -21,30 +22,73 @@ size_t nincpaths;
 
 static void usage(char *prog)
 {
-    printf("%s [-h] [-o outfile] inputs\n", prog);
-    printf("\t-h\tPrint this help\n");
+    printf("%s [-hIdos] [-o outfile] [-m] inputs\n", prog);
+    printf("\t-h\tprint this help\n");
+    printf("\t-m\ttreat the inputs as usefiles and merge them\n");
     printf("\t-I path\tAdd 'path' to use search path\n");
     printf("\t-d\tPrint debug dumps\n");
-    printf("\t-o\tOutput to outfile\n");
+    printf("\t-o out\tOutput to outfile\n");
     printf("\t-s\tShow the contents of usefiles `inputs`\n");
 }
 
-
-int main(int argc, char **argv)
+static void dumpuse(char *path)
 {
-    int opt;
-    int i;
     Stab *globls;
     FILE *f;
 
-    while ((opt = getopt(argc, argv, "d::ho:I:")) != -1) {
+    globls = file->file.globls;
+    loaduse(f, globls);
+    f = fopen(path, "r");
+    dumpstab(globls, stdout);
+    fclose(f);
+}
+
+static void genuse(char *path)
+{
+    Stab *globls;
+    FILE *f;
+
+    globls = file->file.globls;
+    tyinit(globls);
+    tokinit(path);
+    yyparse();
+
+    infer(file);
+    if (!outfile)
+        die("need output file name right now. FIX THIS.");
+    f = fopen(outfile, "w");
+    writeuse(f, file);
+    fclose(f);
+}
+
+static void mergeuse(char *path)
+{
+    FILE *f;
+    Stab *st;
+
+    st = file->file.exports;
+    f = fopen(path, "r");
+    loaduse(f, st);
+    fclose(f);
+}
+
+int main(int argc, char **argv)
+{
+    FILE *f;
+    int opt;
+    int i;
+
+    while ((opt = getopt(argc, argv, "d::hmo:I:")) != -1) {
         switch (opt) {
-            case 'o':
-                outfile = optarg;
-                break;
             case 'h':
                 usage(argv[0]);
                 exit(0);
+                break;
+            case 'm':
+                merge = 1;
+                break;
+            case 'o':
+                outfile = optarg;
                 break;
             case 'd':
                 debug = 1;
@@ -61,31 +105,21 @@ int main(int argc, char **argv)
         }
     }
 
-    if (debugopt['s']) {
-        for (i = optind; i < argc; i++) {
-            globls = mkstab();
-            f = fopen(argv[i], "r");
-            readuse(file, globls);
-            dumpstab(globls, stdout);
-        }
-        exit(0);
-    }
-
     for (i = optind; i < argc; i++) {
-        globls = mkstab();
-        tyinit(globls);
-        tokinit(argv[i]);
         file = mkfile(argv[i]);
         file->file.exports = mkstab();
-        file->file.globls = globls;
-        yyparse();
-
-        infer(file);
-	if (!outfile)
-	    die("need output file name right now. FIX THIS.");
-	f = fopen(outfile, "w");
-	writeuse(file, f);
-	fclose(f);
+        file->file.globls = mkstab();
+        if (merge)
+            mergeuse(argv[i]);
+        else if (debugopt['s'])
+            dumpuse(argv[i]);
+        else
+            genuse(argv[i]);
+    }
+    if (merge) {
+        f = fopen(outfile, "w");
+        writeuse(f, file);
+        fclose(f);
     }
 
     return 0;

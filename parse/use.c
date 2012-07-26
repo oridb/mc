@@ -27,7 +27,7 @@ static Stab *findstab(Stab *st, char *pkg)
     return s;
 }
 
-static int loaduse(FILE *f, Stab *st)
+int loaduse(FILE *f, Stab *st)
 {
     char *pkg;
     Stab *s;
@@ -111,7 +111,7 @@ void readuse(Node *use, Stab *st)
  * G<pickled-decl><pickled-initializer>
  * Z
  */
-void writeuse(Node *file, FILE *f)
+void writeuse(FILE *f, Node *file)
 {
     Stab *st;
     void **k;
