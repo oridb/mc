@@ -38,10 +38,10 @@ static void dumpuse(char *path)
     FILE *f;
 
     globls = file->file.globls;
-    loaduse(f, globls);
     f = fopen(path, "r");
-    dumpstab(globls, stdout);
+    loaduse(f, globls);
     fclose(f);
+    dumpstab(globls, stdout);
 }
 
 static void genuse(char *path)
@@ -107,7 +107,7 @@ int main(int argc, char **argv)
     }
 
     if (merge) {
-        file = mkfile(argv[i]);
+        file = mkfile("internal");
         file->file.exports = mkstab();
         file->file.globls = mkstab();
         updatens(file->file.exports, outfile);
