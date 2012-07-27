@@ -563,7 +563,7 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
             break;
         case Oderef:    /* *@a* ->  @a */
             t = unify(st, n, type(st, args[0]), mktyptr(n->line, mktyvar(n->line)));
-            settype(st, n, t);
+            settype(st, n, t->sub[0]);
             break;
         case Oidx:      /* @a[@b::tcint] -> @a */
             t = mktyidxhack(n->line, mktyvar(n->line));

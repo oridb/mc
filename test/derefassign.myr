@@ -1,0 +1,8 @@
+const main = {
+	var p
+	var v
+
+	p = &v
+	*p = 123
+	-> v
+}
