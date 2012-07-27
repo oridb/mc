@@ -792,8 +792,10 @@ Node *assign(Simp *s, Node *lhs, Node *rhs)
             u = addr(u, exprtype(lhs));
             v = word(lhs->line, size(lhs));
             r = mkexpr(lhs->line, Oblit, t, u, v, NULL);
+        } else if (exprop(lhs) == Ovar) {
+            r = mkexpr(lhs->line, Oset, t, u, NULL);
         } else {
-            r = store(t, u);
+            r = mkexpr(lhs->line, Ostor, t, u, NULL);
         }
     }
     return r;
@@ -948,16 +950,12 @@ static Node *rval(Simp *s, Node *n, Node *dst)
          *  => args[0] = args[0] + 1
          *     expr(x) */
         case Opreinc:
-            t = rval(s, args[0], NULL);
-            u = lval(s, args[0]);
-            v = store(u, add(t, one));
+            v = assign(s, args[0], add(args[0], one));
             append(s, v);
             r = rval(s, args[0], NULL);
             break;
         case Opredec:
-            t = rval(s, args[0], NULL);
-            u = lval(s, args[0]);
-            v = store(u, add(t, one));
+            v = assign(s, args[0], sub(args[0], one));
             append(s, v);
             r = rval(s, args[0], NULL);
             break;
