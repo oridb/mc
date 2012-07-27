@@ -675,19 +675,25 @@ static Node *lowercast(Simp *s, Node *n)
 
     r = NULL;
     args = n->expr.args;
-    switch (exprtype(n)->type) {
+    switch (tybase(exprtype(n))->type) {
+        case Tyint8: case Tyint16: case Tyint32: case Tyint64:
+        case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint64:
+        case Tyint: case Tyuint: case Tylong: case Tyulong:
+        case Tychar: case Tybyte:
         case Typtr:
             t = tybase(exprtype(args[0]));
             switch (t->type) {
                 case Tyslice:
-                    r = slicebase(s, args[0], zero);
+                    if (t->type != Typtr)
+                        r = slicebase(s, args[0], zero);
+                    else
+                        fatal(n->line, "Bad cast from %s to %s",
+                              tystr(exprtype(args[0])), tystr(exprtype(n)));
                     break;
                 case Tyint8: case Tyint16: case Tyint32: case Tyint64:
                 case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint64:
                 case Tyint: case Tyuint: case Tylong: case Tyulong:
-                    args[0]->expr.type = n->expr.type;
-                    r = rval(s, args[0], NULL);
-                    break;
+                case Tychar: case Tybyte:
                 case Typtr:
                     args[0]->expr.type = n->expr.type;
                     r = rval(s, args[0], NULL);
