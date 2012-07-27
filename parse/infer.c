@@ -572,9 +572,11 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
             settype(st, n, tf(st, t->sub[0]));
             break;
         case Oslice:    /* @a[@b::tcint,@b::tcint] -> @a[,] */
-            t = mktyidxhack(n->line, type(st, args[1]));
+            t = mktyidxhack(n->line, mktyvar(n->line));
             unify(st, n, type(st, args[0]), t);
-            settype(st, n, mktyslice(n->line, type(st, args[1])));
+            constrain(st, n, type(st, args[1]), cstrtab[Tcint]);
+            constrain(st, n, type(st, args[2]), cstrtab[Tcint]);
+            settype(st, n, mktyslice(n->line, tf(st, t->sub[0])));
             break;
 
         /* special cases */
