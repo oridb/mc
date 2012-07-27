@@ -116,9 +116,9 @@ static Loc *loc(Isel *s, Node *n)
         case Olit:
             v = n->expr.args[0];
             switch (v->lit.littype) {
-                case Lchr:      l = loclit(v->lit.chrval); break;
-                case Lbool:     l = loclit(v->lit.boolval); break;
-                case Lint:      l = loclit(v->lit.intval); break;
+                case Lchr:      l = loclit(v->lit.chrval, mode(n)); break;
+                case Lbool:     l = loclit(v->lit.boolval, mode(n)); break;
+                case Lint:      l = loclit(v->lit.intval, mode(n)); break;
                 default:
                                 die("Literal type %s should be blob", litstr(v->lit.littype));
             }
@@ -391,7 +391,7 @@ static Loc *gencall(Isel *s, Node *n)
      * We skip the first operand, since it's the function itself */
     for (i = 1; i < n->expr.nargs; i++)
         argsz += size(n->expr.args[i]);
-    stkbump = loclit(argsz);
+    stkbump = loclit(argsz, ModeL);
     if (argsz)
         g(s, Isub, stkbump, esp, NULL);
 
@@ -448,7 +448,7 @@ Loc *selexpr(Isel *s, Node *n)
             r = locreg(a->mode);
             g(s, Imov, a, c, NULL);
             g(s, Imul, b, NULL);
-            g(s, Imov, eax, r, NULL);
+            g(s, Imov, coreg(Reax, mode(n)), r, NULL);
             break;
         case Odiv:
         case Omod:
@@ -458,13 +458,17 @@ Loc *selexpr(Isel *s, Node *n)
             b = inr(s, b);
             c = coreg(Reax, mode(n));
             r = locreg(a->mode);
+            if (r->mode == ModeB)
+                g(s, Ixor, eax, eax, NULL);
             g(s, Imov, a, c, NULL);
             g(s, Ixor, edx, edx, NULL);
             g(s, Idiv, b, NULL);
             if (exprop(n) == Odiv)
-                d = eax;
+                d = coreg(Reax, mode(n));
+            else if (r->mode != ModeB)
+                d = coreg(Redx, mode(n));
             else
-                d = edx;
+                d = locphysreg(Rah);
             g(s, Imov, d, r, NULL);
             break;
         case Oneg:
@@ -584,6 +588,21 @@ Loc *selexpr(Isel *s, Node *n)
             a = selexpr(s, args[0]);
             b = selexpr(s, args[1]);
             blit(s, a, b, 0, 0, args[2]->expr.args[0]->lit.intval);
+            r = b;
+            break;
+        case Otrunc:
+            r = selexpr(s, args[0]);
+            r->mode = mode(n);
+            break;
+        case Ozwiden:
+            a = selexpr(s, args[0]);
+            b = locreg(mode(n));
+            g(s, Imovz, b, a, NULL);
+            r = b;
+        case Oswiden:
+            a = selexpr(s, args[0]);
+            b = locreg(mode(n));
+            g(s, Imovs, b, a, NULL);
             r = b;
             break;
 
@@ -727,7 +746,7 @@ static void prologue(Isel *s, size_t sz)
 
     esp = locphysreg(Resp);
     ebp = locphysreg(Rebp);
-    stksz = loclit(sz);
+    stksz = loclit(sz, ModeL);
     g(s, Ipush, ebp, NULL);
     g(s, Imov, esp, ebp, NULL);
     g(s, Isub, stksz, esp, NULL);

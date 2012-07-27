@@ -53,7 +53,6 @@ const Reg reginterferes[Nreg][Nmode + 1] = {
     [Rebp] = {Rebp},
 };
 
-
 char *genlblstr(char *buf, size_t sz)
 {
     static int nextlbl;
@@ -171,13 +170,13 @@ Loc *locmemls(char *disp, Loc *base, Loc *idx, int scale, Mode mode)
 }
 
 
-Loc *loclit(long val)
+Loc *loclit(long val, Mode m)
 {
     Loc *l;
 
     l = zalloc(sizeof(Loc));
     l->type = Loclit;
-    l->mode = ModeL; /* FIXME: what do we do for mode? */
+    l->mode = m;
     l->lit = val;
     return l;
 }

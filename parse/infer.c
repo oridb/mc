@@ -664,6 +664,7 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
         case Oload: case Ostor: case Oset:
         case Oslbase: case Osllen:
         case Oblit: case Numops:
+        case Otrunc: case Oswiden: case Ozwiden:
             die("Should not see %s in fe", opstr(exprop(n)));
             break;
     }

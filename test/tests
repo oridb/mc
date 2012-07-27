@@ -19,6 +19,9 @@ B mul		E	42
 B div		E	42
 B mod		E	6
 B bsr		E	5
+B trunccast	E	15
+B zwidencast	E	99
+B swidencast	E	99
 B ptrpreinc	E       9
 B struct1	E	12
 B struct	E	42

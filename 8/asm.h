@@ -178,7 +178,7 @@ Loc *locmem(long disp, Loc *base, Loc *idx, Mode mode);
 Loc *locmeml(char *disp, Loc *base, Loc *idx, Mode mode);
 Loc *locmems(long disp, Loc *base, Loc *idx, int scale, Mode mode);
 Loc *locmemls(char *disp, Loc *base, Loc *idx, int scale, Mode mode);
-Loc *loclit(long val);
+Loc *loclit(long val, Mode m);
 Loc *loclitl(char *lbl);
 
 void locprint(FILE *fd, Loc *l, char spec);

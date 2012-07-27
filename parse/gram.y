@@ -441,6 +441,8 @@ unionexpr
 
 borexpr : borexpr Tbor bandexpr
             {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
+        | borexpr Tbxor bandexpr
+            {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
         | bandexpr
         ;
 

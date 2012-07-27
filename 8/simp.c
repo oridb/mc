@@ -648,6 +648,7 @@ static Node *simplazy(Simp *s, Node *n, Node *r)
 static Node *lowerslice(Simp *s, Node *n, Node *dst)
 {
     Node *t;
+    Node *start, *end;
     Node *base, *sz, *len;
     Node *stbase, *stlen;
 
@@ -657,7 +658,9 @@ static Node *lowerslice(Simp *s, Node *n, Node *dst)
         t = temp(s, n);
     /* *(&slice) = (void*)base + off*sz */
     base = slicebase(s, n->expr.args[0], n->expr.args[1]);
-    len = sub(n->expr.args[2], n->expr.args[1]);
+    start = rval(s, n->expr.args[1], NULL);
+    end = rval(s, n->expr.args[2], NULL);
+    len = sub(end, start);
     stbase = store(addr(t, tyword), base);
     /* *(&slice + ptrsz) = len */
     sz = add(addr(t, tyword), ptrsz);
@@ -672,7 +675,10 @@ static Node *lowercast(Simp *s, Node *n)
     Node **args;
     Node *r;
     Type *t;
+    int issigned;
+    size_t fromsz, tosz;
 
+    issigned = 0;
     r = NULL;
     args = n->expr.args;
     switch (tybase(exprtype(n))->type) {
@@ -691,12 +697,24 @@ static Node *lowercast(Simp *s, Node *n)
                               tystr(exprtype(args[0])), tystr(exprtype(n)));
                     break;
                 case Tyint8: case Tyint16: case Tyint32: case Tyint64:
+                case Tyint: case Tylong:
+                    issigned = 1;
                 case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint64:
-                case Tyint: case Tyuint: case Tylong: case Tyulong:
-                case Tychar: case Tybyte:
+                case Tyuint: case Tyulong: case Tychar: case Tybyte:
                 case Typtr:
-                    args[0]->expr.type = n->expr.type;
+                    fromsz = size(args[0]);
+                    tosz = size(n);
                     r = rval(s, args[0], NULL);
+                    r->expr.type = n->expr.type;
+                    if (fromsz > tosz) {
+                        r = mkexpr(n->line, Otrunc, r, NULL);
+                    } else if (tosz > fromsz) {
+                        if (issigned)
+                            r = mkexpr(n->line, Oswiden, r, NULL);
+                        else
+                            r = mkexpr(n->line, Ozwiden, r, NULL);
+                    }
+                    r->expr.type = n->expr.type;
                     break;
                 default:
                     fatal(n->line, "Bad cast from %s to %s",
@@ -1078,7 +1096,7 @@ static Node *simp(Simp *s, Node *n)
     return r;
 }
 
-static void reduce(Simp *s, Node *f)
+static void flatten(Simp *s, Node *f)
 {
     Node *dcl;
     Type *ty;
@@ -1126,7 +1144,7 @@ static Func *lowerfn(Simp *s, char *name, Node *n, int export)
     /* unwrap to the function body */
     n = n->expr.args[0];
     n = n->lit.fnval;
-    reduce(s, n);
+    flatten(s, n);
 
     if (debug)
         for (i = 0; i < s->nstmts; i++)

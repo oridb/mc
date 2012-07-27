@@ -5,6 +5,12 @@ Reg(Rcl, "%cl", ModeB)
 Reg(Rdl, "%dl", ModeB)
 Reg(Rbl, "%bl", ModeB)
 
+/* high byte regs. We *NEVER* allocate these */
+Reg(Rah, "%ah", ModeB)
+Reg(Rch, "%ch", ModeB)
+Reg(Rdh, "%dh", ModeB)
+Reg(Rbh, "%bh", ModeB)
+
 /* short regs */
 Reg(Rax, "%ax", ModeS)
 Reg(Rbx, "%bx", ModeS)

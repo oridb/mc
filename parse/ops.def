@@ -59,3 +59,6 @@ O(Oset, 1)         /* store to var */
 O(Osllen, 1)       /* size of slice */
 O(Oslbase, 1)      /* base of sice */
 O(Oblit, 1)        /* block copy of memory */
+O(Otrunc, 1)       /* truncating cast */
+O(Ozwiden, 1)      /* zero-extending widening cast */
+O(Oswiden, 1)      /* sign-extending widening cast */
