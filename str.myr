@@ -17,13 +17,13 @@ const striter = {str
 	var tmp
 
 	c = str[0]
-	if c & 0x80 == 0 /* ascii range */
+	if c & 0x80 == 0	/* 0b0xxx_xxxx */
 		len = 1
-	elif c & 0xe0 == 0xc0 /* 0b110x_xxxx */
+	elif c & 0xe0 == 0xc0	/* 0b110x_xxxx */
 		len = 2
-	elif c & 0xf0 == 0xe0 /* 0b1110_xxxx */
+	elif c & 0xf0 == 0xe0 	/* 0b1110_xxxx */
 		len = 3
-	elif c & 0xf8 == 0xf0 /* 0b1111_0xxx */
+	elif c & 0xf8 == 0xf0 	/* 0b1111_0xxx */
 		len = 4
 	else
 		/* skip one char forward so we can try
