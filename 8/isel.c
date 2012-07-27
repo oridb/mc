@@ -809,7 +809,7 @@ static void writeblob(FILE *fd, char *p, size_t sz)
         if (isprint(p[i]))
             fprintf(fd, "%c", p[i]);
         else
-            fprintf(fd, "\\%x", p[i]);
+            fprintf(fd, "\\x%x", p[i] & 0xff);
         /* line wrapping for readability */
         if (i % 60 == 59 || i == sz - 1)
             fprintf(fd, "\"\n");
@@ -824,7 +824,7 @@ static void writelit(FILE *fd, Node *v)
     assert(v->type == Nlit);
     switch (v->lit.littype) {
         case Lbool:     fprintf(fd, "\t.long %d\n", v->lit.boolval);     break;
-        case Lchr:      fprintf(fd, "\t.byte %d\n",  v->lit.chrval);     break;
+        case Lchr:      fprintf(fd, "\t.long %d\n",  v->lit.chrval);     break;
         case Lint:      fprintf(fd, "\t.long %lld\n", v->lit.intval);    break;
         case Lflt:      fprintf(fd, "\t.double %f\n", v->lit.fltval);    break;
         case Lstr:      fprintf(fd, "\t.long %s\n", genlblstr(lbl, 128));
