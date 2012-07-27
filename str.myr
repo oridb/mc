@@ -1,0 +1,50 @@
+use "die.use"
+use "sys.use"
+use "types.use"
+
+pkg std =
+	const Badchar	: char = -1 castto(char)
+
+	const nextc	: (str : byte[,] -> [char, byte[,]])
+	const chrlen	: (chr : char -> size)
+;;
+
+/* utf8 conversion constants */
+const Utfx = 0xe0	/* mask for "rest" chars */
+const Utf1 = 0x80	/* mask for length 1 char */
+const Utf2 = 0xe0	/* mask for length 1 char */
+const Utf3 = 0xf0	/* mask for length 1 char */
+const Utf4 = 0xf8	/* mask for length 1 char */
+
+const nextc = {str
+	var len : size
+	var mask
+	var chr
+	var i
+	var c
+	var tmp
+
+	c = str[0]
+	if c & 0x80 == 0
+		len = 1
+	elif c & 0xe0 == 0xc0
+		len = 2
+	elif c & 0xf0 == 0xe0
+		len = 3
+	elif c & 0xf8 == 0xf0
+		len = 4
+	else
+		/* skip one char forward so we can try
+		   resyncing the character stream */
+		-> (Badchar, str[1,str.len])
+	;;
+
+	mask = ((1 << (8 - len)) - 1) ^ 0xff
+	chr = c castto(uint32)
+	for i = 1; i < len; i++
+		tmp = str[i]
+		chr = chr << 8 | tmp castto(uint32)
+	;;
+
+	-> (chr castto(char), str[len, str.len])
+}
