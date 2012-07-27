@@ -597,12 +597,13 @@ Loc *selexpr(Isel *s, Node *n)
         case Ozwiden:
             a = selexpr(s, args[0]);
             b = locreg(mode(n));
-            g(s, Imovz, b, a, NULL);
+            g(s, Imovz, a, b, NULL);
             r = b;
+            break;
         case Oswiden:
             a = selexpr(s, args[0]);
             b = locreg(mode(n));
-            g(s, Imovs, b, a, NULL);
+            g(s, Imovs, a, b, NULL);
             r = b;
             break;
 

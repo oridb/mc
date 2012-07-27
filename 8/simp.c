@@ -705,7 +705,6 @@ static Node *lowercast(Simp *s, Node *n)
                     fromsz = size(args[0]);
                     tosz = size(n);
                     r = rval(s, args[0], NULL);
-                    r->expr.type = n->expr.type;
                     if (fromsz > tosz) {
                         r = mkexpr(n->line, Otrunc, r, NULL);
                     } else if (tosz > fromsz) {

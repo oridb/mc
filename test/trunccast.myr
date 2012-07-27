@@ -1,0 +1,8 @@
+const main = {
+	var x : int8
+	var y : int32
+
+	y = 9999
+	x = y castto(int8)
+	-> x % 73
+}
