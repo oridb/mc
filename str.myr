@@ -5,11 +5,11 @@ use "types.use"
 pkg std =
 	const Badchar	: char = -1 castto(char)
 
-	const nextc	: (str : byte[,] -> [char, byte[,]])
+	const striter	: (str : byte[,] -> [char, byte[,]])
 ;;
 
-const nextc = {str
-	var len : size
+const striter = {str
+	var len
 	var mask
 	var chr
 	var i
