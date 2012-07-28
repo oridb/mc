@@ -321,19 +321,40 @@ static void cjmp(Simp *s, Node *cond, Node *iftrue, Node *iffalse)
 
 /* if foo; bar; else baz;;
  *      => cjmp (foo) :bar :baz */
-static void simpif(Simp *s, Node *n)
+static void simpif(Simp *s, Node *n, Node *exit)
 {
-    Node *l1, *l2;
+    Node *l1, *l2, *l3;
+    Node *iftrue, *iffalse;
     Node *c;
 
     l1 = genlbl();
     l2 = genlbl();
+    if (exit)
+        l3 = exit;
+    else
+        l3 = genlbl();
+
+    iftrue = n->ifstmt.iftrue;
+    iffalse = n->ifstmt.iffalse;
+
     c = rval(s, n->ifstmt.cond, NULL);
     cjmp(s, c, l1, l2);
     simp(s, l1);
-    simp(s, n->ifstmt.iftrue);
+    simp(s, iftrue);
+    jmp(s, l3);
     simp(s, l2);
-    simp(s, n->ifstmt.iffalse);
+    /* because lots of bunched up end labels are ugly,
+     * coalesce them by handling 'elif'-like constructs
+     * separately */
+    if (iffalse && iffalse->type == Nifstmt) {
+        simpif(s, iffalse, exit);
+    } else {
+        simp(s, iffalse);
+        jmp(s, l3);
+    }
+
+    if (!exit)
+        simp(s, l3);
 }
 
 /* init; while cond; body;; 
@@ -1062,7 +1083,7 @@ static Node *simp(Simp *s, Node *n)
         case Nlit:       r = n;                 break;
         case Nlbl:       append(s, n);          break;
         case Nblock:     simpblk(s, n);         break;
-        case Nifstmt:    simpif(s, n);          break;
+        case Nifstmt:    simpif(s, n, NULL);    break;
         case Nloopstmt:  simploop(s, n);        break;
         case Nmatchstmt: simpmatch(s, n);       break;
         case Nexpr:
