@@ -494,7 +494,7 @@ Loc *selexpr(Isel *s, Node *n)
                 else
                     g(s, Ishr, d, a, NULL);
             } else {
-                g(s, Ishl, cl, a, NULL);
+                g(s, Ishl, d, a, NULL);
             }
             r = a;
             break;
