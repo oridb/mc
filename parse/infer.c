@@ -389,19 +389,24 @@ static Type *unify(Inferstate *st, Node *ctx, Type *a, Type *b)
     }
     if (a->type == Tyvar && b->type != Tyvar) 
         if (occurs(a, b))
-            fatal(ctx->line, "Infinite type %s in %s near %s", tystr(a), tystr(b), ctxstr(st, ctx));
+            fatal(ctx->line, "Infinite type %s in %s near %s",
+                  tystr(a), tystr(b), ctxstr(st, ctx));
 
+    /* if the tyrank of a is 0 (ie, a raw tyvar), we just unify, and don't
+     * try to match up the nonexistent subtypes */
     if ((a->type == b->type || idxhacked(a, b)) && tyrank(a) != 0) {
         for (i = 0; i < b->nsub; i++) {
             /* types must have same arity */
             if (i >= a->nsub)
-                fatal(ctx->line, "%s has wrong subtypes for %s near %s", tystr(a), tystr(b), ctxstr(st, ctx));
+                fatal(ctx->line, "%s has wrong subtypes for %s near %s",
+                      tystr(a), tystr(b), ctxstr(st, ctx));
 
             unify(st, ctx, a->sub[i], b->sub[i]);
         }
         r = b;
     } else if (a->type != Tyvar) {
-        fatal(ctx->line, "%s incompatible with %s near %s", tystr(a), tystr(b), ctxstr(st, ctx));
+        fatal(ctx->line, "%s incompatible with %s near %s",
+              tystr(a), tystr(b), ctxstr(st, ctx));
     }
     return r;
 }
