@@ -403,7 +403,7 @@ static int tybfmt(char *buf, size_t len, Type *t)
             p += snprintf(p, end - p, "@$%d", t->tid);
             if (t->nsub) {
                 p += snprintf(p, end - p, "(");
-                for (i = 1; i < t->nsub; i++) {
+                for (i = 0; i < t->nsub; i++) {
                     p += snprintf(p, end - p, "%s", sep);
                     p += tybfmt(p, end - p, t->sub[i]);
                     sep = ", ";

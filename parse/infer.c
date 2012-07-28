@@ -335,18 +335,8 @@ static void mergecstrs(Inferstate *st, Node *ctx, Type *a, Type *b)
     }
 }
 
-static int idxhacked(Type **pa, Type **pb)
+static int idxhacked(Type *a, Type *b)
 {
-    Type *a, *b;
-
-    a = *pa;
-    b = *pb;
-    /* we want to unify Tyidxhack => concrete indexable. Flip 
-     * to make this happen, if needed */
-    if (b->type == Tyvar && b->nsub > 0) {
-        *pb = a;
-        *pa = b;
-    }
     return (a->type == Tyvar && a->nsub > 0) || a->type == Tyarray || a->type == Tyslice;
 }
 
@@ -364,6 +354,16 @@ static int occurs(Type *a, Type *b)
     return 0;
 }
 
+static int tyrank(Type *t)
+{
+    if (t->type == Tyvar && t->nsub == 0)
+        return 0;
+    if (t->type == Tyvar && t->nsub > 0)
+        return 1;
+    else
+        return 2;
+}
+
 static Type *unify(Inferstate *st, Node *ctx, Type *a, Type *b)
 {
     Type *t;
@@ -375,7 +375,7 @@ static Type *unify(Inferstate *st, Node *ctx, Type *a, Type *b)
     b = tf(st, b);
     if (a == b)
         return a;
-    if (b->type == Tyvar) {
+    if (tyrank(b) < tyrank(a)) {
         t = a;
         a = b;
         b = t;
@@ -391,7 +391,7 @@ static Type *unify(Inferstate *st, Node *ctx, Type *a, Type *b)
         if (occurs(a, b))
             fatal(ctx->line, "Infinite type %s in %s near %s", tystr(a), tystr(b), ctxstr(st, ctx));
 
-    if (a->type == b->type || idxhacked(&a, &b)) {
+    if ((a->type == b->type || idxhacked(a, b)) && tyrank(a) != 0) {
         for (i = 0; i < b->nsub; i++) {
             /* types must have same arity */
             if (i >= a->nsub)
