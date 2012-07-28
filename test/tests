@@ -42,6 +42,7 @@ B nestfn	E	42
 B closure	E	55
 B loop		E	45
 B condiftrue	E	7
+B overlappingif	E	2
 B condiffalse	E	9
 B condifrel	E	7
 B fib		E	21
