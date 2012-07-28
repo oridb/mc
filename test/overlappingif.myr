@@ -1,0 +1,15 @@
+const main = {
+	var v
+	var x
+
+	v = 0xff
+
+	if v & 0xff00 != 0
+		x = 1
+	elif v & 0xfff0 != 0
+		x = 2
+	elif v & 0xffff != 0
+		x = 3
+	;;
+	-> 0
+}
