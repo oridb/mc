@@ -11,5 +11,5 @@ const main = {
 	elif v & 0xffff != 0
 		x = 3
 	;;
-	-> 0
+	-> x
 }
