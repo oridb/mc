@@ -22,5 +22,17 @@ const main = {
 	for i = 0; i < 1024; i++
 		std.free(x[i])
 	;;
+	chartypes()
+
 	std.write(1, "Hello, 世界\n")
+}
+
+const chartypes = {
+	var s
+	var c
+
+	s = "世界 123\n"
+	for (c, s) = std.striter(s); s.len != 0; (c, s) = std.striter(s)
+		c = c
+	;;
 }
