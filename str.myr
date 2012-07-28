@@ -6,6 +6,10 @@ pkg std =
 	const Badchar	: char = -1 castto(char)
 
 	const striter	: (str : byte[,] -> [char, byte[,]])
+	const strjoin	: (lst : byte[,][,], delim:byte[,] -> byte[,])
+	const strsep	: (str : byte[,], delim:byte[,] -> byte[,][,])
+	const strbjoin	: (lst : byte[,][,], delim:byte[,] -> byte[,])
+	const strbsep	: (str : byte[,], delim:byte[,] -> byte[,][,])
 ;;
 
 const striter = {str

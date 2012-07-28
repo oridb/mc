@@ -55,7 +55,7 @@ generic free = {v:@a* -> void
 generic mkslice = {n
 	var p
 
-	p = (bytealloc(n*sizeof(@a)) castto(@a*))
+	p = bytealloc(n*sizeof(@a)) castto(@a*)
 	-> p[0,n]
 }
 

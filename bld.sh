@@ -41,12 +41,12 @@ function assem {
 
 # Library source.
 ASM=syscall-$SYS.s
-MYR="\
-    types.myr \
+MYR="types.myr \
     sys-$SYS.myr \
     die.myr \
+    alloc.myr\
     str.myr \
-    alloc.myr"
+    chartype.myr"
 
 OBJ="$(echo $ASM | sed 's/\.s/.o /g') $(echo $MYR | sed 's/\.myr/.o /g')"
 USE="$(echo $MYR | sed 's/\.myr/.use /g')"
