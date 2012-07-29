@@ -450,6 +450,10 @@ double rdflt(FILE *fd);
 void wrbool(FILE *fd, int val);
 int rdbool(FILE *fd);
 
+size_t max(size_t a, size_t b);
+size_t min(size_t a, size_t b);
+size_t align(size_t sz, size_t align);
+
 /* suffix replacement */
 char *swapsuffix(char *buf, size_t sz, char *s, char *suf, char *swap);
 

@@ -363,3 +363,24 @@ char *swapsuffix(char *buf, size_t sz, char *s, char *suf, char *swap)
     return buf;
 }
 
+size_t max(size_t a, size_t b)
+{
+    if (a < b)
+        return a;
+    else
+        return b;
+}
+
+size_t min(size_t a, size_t b)
+{
+    if (a < b)
+        return a;
+    else
+        return b;
+}
+
+size_t align(size_t sz, size_t align)
+{
+    return (sz + align - 1) & ~(align - 1);
+}
+
