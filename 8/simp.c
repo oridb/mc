@@ -60,14 +60,6 @@ static Node *wordsz;
 static Type *tyword;
 static Type *tyvoid;
 
-static int max(int a, int b)
-{
-    if (a > b)
-        return a;
-    else
-        return b;
-}
-
 static Type *base(Type *t)
 {
     assert(t->nsub == 1);
@@ -200,19 +192,6 @@ static char *asmname(Node *n)
         sprintf(s, "%s%s$", s, n->name.ns);
     sprintf(s, "%s%s", s, n->name.name);
     return s;
-}
-
-static size_t min(size_t a, size_t b)
-{
-    if (a < b)
-        return a;
-    else
-        return b;
-}
-
-static size_t align(size_t sz, size_t align)
-{
-    return (sz + align - 1) & ~(align - 1);
 }
 
 size_t tysize(Type *t)
@@ -1203,7 +1182,7 @@ static Func *lowerfn(Simp *s, char *name, Node *n, int export)
     fn = zalloc(sizeof(Func));
     fn->name = strdup(name);
     fn->isexport = export;
-    fn->stksz = s->stksz;
+    fn->stksz = align(s->stksz, 8);
     fn->locs = s->locs;
     fn->ret = s->ret;
     fn->cfg = cfg;
