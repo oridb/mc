@@ -461,6 +461,14 @@ void tyinit(Stab *st)
     /* bool :: tctest */
     tycstrs[Tybool][0] = cstrtab[Tctest];
 
+    tycstrs[Tychar][0] = cstrtab[Tcnum];
+    tycstrs[Tychar][1] = cstrtab[Tcint];
+    tycstrs[Tychar][2] = cstrtab[Tctest];
+
+    tycstrs[Tybyte][0] = cstrtab[Tcnum];
+    tycstrs[Tybyte][1] = cstrtab[Tcint];
+    tycstrs[Tybyte][2] = cstrtab[Tctest];
+
     /* <integer types> :: tcnum, tcint, tctest */
     for (i = Tyint8; i < Tyfloat32; i++) {
         tycstrs[i][0] = cstrtab[Tcnum];
