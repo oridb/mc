@@ -530,7 +530,7 @@ static Node *lowerlit(Simp *s, Node *lit, Node ***l, size_t *nl)
     return r;
 }
 
-static size_t offsetof(Node *aggr, Node *memb)
+static size_t offset(Node *aggr, Node *memb)
 {
     Type *ty;
     Node **nl;
@@ -566,7 +566,7 @@ static Node *membaddr(Simp *s, Node *n)
     } else {
         t = addr(args[0], exprtype(n));
     }
-    u = word(n->line, offsetof(args[0], args[1]));
+    u = word(n->line, offset(args[0], args[1]));
     r = add(t, u);
     r->expr.type = mktyptr(n->line, n->expr.type);
     return r;
@@ -891,7 +891,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
     Node *t, *u, *v; /* temporary nodes */
     Node **args;
     size_t i;
-    const Op fusedmap[] = {
+    const Op fusedmap[Numops] = {
         [Oaddeq]        = Oadd,
         [Osubeq]        = Osub,
         [Omuleq]        = Omul,
@@ -901,6 +901,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
         [Obandeq]       = Oband,
         [Obxoreq]       = Obxor,
         [Obsleq]        = Obsl,
+        [Obsreq]        = Obsr,
     };
 
 

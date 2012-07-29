@@ -169,17 +169,11 @@ void bsdiff(Bitset *a, Bitset *b)
 int bseq(Bitset *a, Bitset *b)
 {
     size_t i;
-    volatile int x;
 
     eqsz(a, b);
     for (i = 0; i < a->nchunks; i++) {
-        if (a->chunks[i] == 42)
-            x = 1;
-        if (b->chunks[i] == 42)
-            x = 1;
         if (a->chunks[i] != b->chunks[i])
             return 0;
-        x = x;
     }
     return 1;
 }
