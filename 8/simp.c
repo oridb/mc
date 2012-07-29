@@ -202,6 +202,19 @@ static char *asmname(Node *n)
     return s;
 }
 
+static size_t min(size_t a, size_t b)
+{
+    if (a < b)
+        return a;
+    else
+        return b;
+}
+
+static size_t align(size_t sz, size_t align)
+{
+    return (sz + align - 1) & ~(align - 1);
+}
+
 size_t tysize(Type *t)
 {
     size_t sz;
@@ -251,7 +264,7 @@ size_t tysize(Type *t)
             break;
         case Tystruct:
             for (i = 0; i < t->nmemb; i++)
-                sz += size(t->sdecls[i]);
+                sz += align(size(t->sdecls[i]), Wordsz);
             return sz;
             break;
         case Tyunion:
@@ -259,7 +272,7 @@ size_t tysize(Type *t)
             for (i = 0; i < t->nmemb; i++)
                 if (t->udecls[i]->etype)
                     sz = max(sz, tysize(t->udecls[i]->etype) + Wordsz);
-            return sz;
+            return align(sz, Wordsz);
             break;
         case Tybad: case Tyvar: case Typaram: case Tyname: case Ntypes:
             die("Type %s does not have size; why did it get down to here?", tystr(t));
@@ -1057,6 +1070,7 @@ static void declarelocal(Simp *s, Node *n)
 {
     assert(n->type == Ndecl);
     s->stksz += size(n);
+    s->stksz = align(s->stksz, min(size(n), Wordsz));
     if (debug)
         printf("declare %s:%s(%zd) at %zd\n", declname(n), tystr(decltype(n)), n->decl.did, s->stksz);
     htput(s->locs, n, (void*)s->stksz);
@@ -1065,6 +1079,7 @@ static void declarelocal(Simp *s, Node *n)
 static void declarearg(Simp *s, Node *n)
 {
     assert(n->type == Ndecl);
+    s->argsz = align(s->argsz, min(size(n), Wordsz));
     if (debug)
         printf("declare %s(%zd) at %zd\n", declname(n), n->decl.did, -(s->argsz + 8));
     htput(s->locs, n, (void*)-(s->argsz + 8));
