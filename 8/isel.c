@@ -438,18 +438,7 @@ Loc *selexpr(Isel *s, Node *n)
         case Obor:      r = binop(s, Ior,  args[0], args[1]); break;
         case Oband:     r = binop(s, Iand, args[0], args[1]); break;
         case Obxor:     r = binop(s, Ixor, args[0], args[1]); break;
-
-        case Omul:
-            /* these get clobbered by the mul insn */
-            a = selexpr(s, args[0]);
-            b = selexpr(s, args[1]);
-            b = inr(s, b);
-            c = coreg(Reax, mode(n));
-            r = locreg(a->mode);
-            g(s, Imov, a, c, NULL);
-            g(s, Imul, b, NULL);
-            g(s, Imov, coreg(Reax, mode(n)), r, NULL);
-            break;
+        case Omul:      r = binop(s, Iimul, args[0], args[1]); break;
         case Odiv:
         case Omod:
             /* these get clobbered by the div insn */
@@ -563,6 +552,7 @@ Loc *selexpr(Isel *s, Node *n)
         case Oload: /* mem -> reg */
             a = memloc(s, args[0], mode(n));
             r = locreg(mode(n));
+            /* FIXME: we should be moving the correct 'coreg' */
             g(s, Imov, a, r, NULL);
             break;
         case Ocall:
@@ -591,8 +581,9 @@ Loc *selexpr(Isel *s, Node *n)
             r = b;
             break;
         case Otrunc:
-            r = selexpr(s, args[0]);
-            r->mode = mode(n);
+            a = selexpr(s, args[0]);
+            r = locreg(mode(n));
+            g(s, Imov, a, r, NULL);
             break;
         case Ozwiden:
             a = selexpr(s, args[0]);
