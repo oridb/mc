@@ -622,9 +622,8 @@ Loc *selexpr(Isel *s, Node *n)
             r = b;
             break;
         case Otrunc:
-            a = selexpr(s, args[0]);
-            r = locreg(mode(n));
-            g(s, Imov, a, r, NULL);
+            r = selexpr(s, args[0]);
+            r->mode = mode(n);
             break;
         case Ozwiden:
             a = selexpr(s, args[0]);
