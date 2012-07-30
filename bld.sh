@@ -46,6 +46,7 @@ MYR="types.myr \
     die.myr \
     alloc.myr\
     str.myr \
+    fmt.myr \
     chartype.myr"
 
 OBJ="$(echo $ASM | sed 's/\.s/.o /g') $(echo $MYR | sed 's/\.myr/.o /g')"
@@ -65,4 +66,8 @@ COMP="$CC -m32 -o test test.o -L. -lstd"
 echo $COMP
 $COMP
 
+build f.myr 
+COMP="$CC -m32 -o f f.o -L. -lstd"
+echo $COMP
+$COMP
 

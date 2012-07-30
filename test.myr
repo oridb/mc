@@ -2,6 +2,7 @@ use std
 
 const main = {
 	var x : byte*[1024]
+	var buf : byte[1024]
 	var sz
 	var i
 
@@ -22,9 +23,9 @@ const main = {
 	for i = 0; i < 1024; i++
 		std.free(x[i])
 	;;
-	chartypes()
 
 	std.write(1, "Hello, 世界\n")
+	chartypes()
 }
 
 const chartypes = {
@@ -33,6 +34,12 @@ const chartypes = {
 
 	s = "世界 123\n"
 	for (c, s) = std.striter(s); s.len != 0; (c, s) = std.striter(s)
-		c = c
+		if std.isspace(c)
+			std.write(1, "Space\n")
+		elif std.isalpha(c)
+			std.write(1, "Alpha\n")
+		elif std.isnum(c)
+			std.write(1, "Num\n")
+		;;
 	;;
 }

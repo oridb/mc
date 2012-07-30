@@ -1036,11 +1036,12 @@ const tabtolower1 = [
 	0x1ffc, 491	/* ῼ ῳ */
 ]
 
-const bsearch = {c, t, sz, nelt, ret
+const findc = {c, t, sz, nelt, ret
 	var l
 	var m
 
-	while l.len > 1
+	l = t
+	while l.len > nelt
 		m = l.len/2
 		l = t[m+nelt, t.len]
 		if c >= l[0]
@@ -1059,18 +1060,16 @@ const bsearch = {c, t, sz, nelt, ret
 }
 
 
-const isalpha = {chr
+const isalpha = {c
 	var l
-	var c
 
-	c = chr castto(int)
-	if isupper(chr) || islower(chr)
+	if isupper(c) || islower(c)
 		-> true
-	elif bsearch(c, tabalpha2[0, tabalpha2.len], tabalpha2.len, 2, &l)
+	elif findc(c, tabalpha2[0, tabalpha2.len], tabalpha2.len, 2, &l)
 		if (c >= l[0] && c <= l[1])
 			-> true
 		;;
-	elif bsearch(c, tabalpha1[0, tabalpha1.len], tabalpha1.len, 1, &l)
+	elif findc(c, tabalpha1[0, tabalpha1.len], tabalpha1.len, 1, &l)
 		if (c == l[0])
 			-> true
 		;;
@@ -1078,25 +1077,11 @@ const isalpha = {chr
 	-> false
 }
 
-const isnum = {chr
+const isnum = {c
 	var l
 	var c
 
-	if bsearch(c, tabisdigitr[0, tabisdigitr.len], tabisdigitr.len/2, 2, &l)
-		if(c >= l[0] && c <= l[1])
-			-> true
-		;;
-	;;
-	-> false
-}
-const isalnum = {chr
-	-> isalpha(chr) || isnum(chr)
-}
-const isspace = {chr
-	var l
-	var c
-
-	if bsearch(c, tabspace2[0,tabspace2.len], tabspace2.len/2, 2, &l)
+	if findc(c, tabisdigitr[0, tabisdigitr.len], tabisdigitr.len/2, 2, &l)
 		if(c >= l[0] && c <= l[1])
 			-> true
 		;;
@@ -1104,16 +1089,35 @@ const isspace = {chr
 	-> false
 }
 
-const islower = {chr
+const isalnum = {c
+	-> isalpha(c) || isnum(c)
+}
+
+const isspace = {c
+	var l
+	var c
+	var sl
+	var len
+
+	sl = tabspace2[0,tabspace2.len]
+	len = tabspace2.len/2
+	if findc(c, sl, len, 2, &l)
+		if(c >= l[0] && c <= l[1])
+			-> true
+		;;
+	;;
+	-> false
+}
+
+const islower = {c
 	var l
 	var c
 
-	c = chr castto(int)
-	if bsearch(c, tabtoupper2[0, tabtoupper2.len], tabtoupper2.len, 2, &l)
+	if findc(c, tabtoupper2[0, tabtoupper2.len], tabtoupper2.len, 2, &l)
 		if (c >= l[0] && c <= l[1])
 			-> true
 		;;
-	elif bsearch(c, tabtoupper1[0, tabtoupper1.len], tabtoupper1.len, 1, &l)
+	elif findc(c, tabtoupper1[0, tabtoupper1.len], tabtoupper1.len, 1, &l)
 		if (c == l[0])
 			-> true
 		;;
@@ -1121,15 +1125,15 @@ const islower = {chr
 	-> false
 }
 
-const isupper = {chr
+const isupper = {c
 	var l
 	var c
 
-	if bsearch(c, tabtolower2[0, tabtolower2.len], tabtolower2.len, 2, &l)
+	if findc(c, tabtolower2[0, tabtolower2.len], tabtolower2.len, 2, &l)
 		if (c >= l[0] && c <= l[1])
 			-> true
 		;;
-	elif bsearch(c, tabtolower1[0, tabtolower1.len], tabtolower1.len, 1, &l)
+	elif findc(c, tabtolower1[0, tabtolower1.len], tabtolower1.len, 1, &l)
 		if (c == l[0])
 			-> true
 		;;
