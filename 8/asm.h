@@ -40,6 +40,7 @@ typedef enum {
     ModeB, /* byte */
     ModeS, /* short */
     ModeL, /* long */
+    ModeQ, /* quad */
     ModeF, /* float32 */
     ModeD, /* float64 */
     Nmode,
