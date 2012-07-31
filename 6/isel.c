@@ -358,19 +358,23 @@ static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size
 
 static Loc *gencall(Isel *s, Node *n)
 {
-    Loc *src, *dst, *arg, *fn;   /* values we reduced */
-    Loc *rax, *rsp;       /* hard-coded registers */
+    Loc *src, *dst, *arg, *fn;  /* values we reduced */
+    Loc *rax, *rsp, *ret;       /* hard-coded registers */
     Loc *stkbump;        /* calculated stack offset */
     int argsz, argoff;
     size_t i;
 
     rsp = locphysreg(Rrsp);
-    if (tybase(exprtype(n))->type == Tyvoid)
+    if (tybase(exprtype(n))->type == Tyvoid) {
         rax = NULL;
-    else if (stacktype(exprtype(n)))
+        ret = NULL;
+    } else if (stacktype(exprtype(n))) {
         rax = locphysreg(Rrax);
-    else
+        ret = locreg(ModeQ);
+    } else {
         rax = coreg(Rrax, mode(n));
+        ret = locreg(mode(n));
+    }
     argsz = 0;
     /* Have to calculate the amount to bump the stack
      * pointer by in one pass first, otherwise if we push
@@ -407,7 +411,9 @@ static Loc *gencall(Isel *s, Node *n)
         g(s, Icallind, fn, NULL);
     if (argsz)
         g(s, Iadd, stkbump, rsp, NULL);
-    return rax;
+    if (rax)
+        g(s, Imov, rax, ret, NULL);
+    return ret;
 }
 
 Loc *selexpr(Isel *s, Node *n)
@@ -572,6 +578,7 @@ Loc *selexpr(Isel *s, Node *n)
             break;
         case Otrunc:
             a = selexpr(s, args[0]);
+            a = inr(s, a);
             r = locreg(mode(n));
             g(s, Imov, a, r, NULL);
             break;
@@ -892,6 +899,10 @@ void genasm(FILE *fd, Func *fn, Htab *globls)
     is.globls = globls;
     is.ret = fn->ret;
     is.cfg = fn->cfg;
+    /* ensure that all physical registers have a loc created, so we
+     * don't get any surprises referring to them in the allocator */
+    for (i = 0; i < Nreg; i++)
+        locphysreg(i);
 
     for (i = 0; i < fn->cfg->nbb; i++)
         lappend(&is.bb, &is.nbb, mkasmbb(fn->cfg->bb[i]));

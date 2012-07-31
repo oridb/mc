@@ -54,8 +54,8 @@ Insn(Isetg,     "\tsetg %v\n",                  Use(),  Def(.l={1}))
 Insn(Isetge,    "\tsetge %v\n",                 Use(),  Def(.l={1}))
 
 /* branch instructions */
-Insn(Icall,     "\tcall %v\n",                  Use(.l={1}), Def())
-Insn(Icallind,  "\tcall *%v\n",                 Use(.l={1}), Def())
+Insn(Icall,     "\tcall %v\n",                  Use(.l={1}), Def(.r={Rrax}))
+Insn(Icallind,  "\tcall *%v\n",                 Use(.l={1}), Def(.r={Rrax}))
 Insn(Ijmp,      "\tjmp %v\n",                   Use(.l={1}), Def())
 Insn(Ijz,       "\tjz %v\n",                    Use(.l={1}), Def())
 Insn(Ijnz,      "\tjnz %v\n",                   Use(.l={1}), Def())
