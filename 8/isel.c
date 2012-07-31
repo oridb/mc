@@ -71,7 +71,7 @@ static Mode mode(Node *n)
     /* FIXME: huh. what should the mode for, say, structs
      * be when we have no intention of loading /through/ the
      * pointer? */
-    return ModeQ;
+    return ModeNone;
 }
 
 static Loc *loc(Isel *s, Node *n)

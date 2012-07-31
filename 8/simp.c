@@ -232,6 +232,7 @@ size_t tysize(Type *t)
             return 4;
 
         case Typtr: case Tyfunc:
+        case Tyvalist: /* ptr to first element of valist */
             return Ptrsz;
 
         case Tyint64: case Tylong:
@@ -243,11 +244,9 @@ size_t tysize(Type *t)
             return 4;
         case Tyfloat64:
             return 8;
-        case Tyvalist:
-            return 4; /* ptr to first element of valist */
 
         case Tyslice:
-            return 8; /* len; ptr */
+            return 2*Ptrsz; /* len; ptr */
         case Tyalias:
             return tysize(t->sub[0]);
         case Tyarray:
