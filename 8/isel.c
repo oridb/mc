@@ -357,7 +357,10 @@ static Loc *gencall(Isel *s, Node *n)
     size_t i;
 
     rsp = locphysreg(Rrsp);
-    rax = locphysreg(Rrax);
+    if (tybase(exprtype(n))->type == Tyvoid)
+        rax = NULL;
+    else
+        rax = coreg(Rrax, mode(n));
     argsz = 0;
     /* Have to calculate the amount to bump the stack
      * pointer by in one pass first, otherwise if we push
