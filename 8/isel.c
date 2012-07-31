@@ -27,6 +27,7 @@ char modenames[] = {
   [ModeB] = 'b',
   [ModeS] = 's',
   [ModeL] = 'l',
+  [ModeQ] = 'q',
   [ModeF] = 'f',
   [ModeD] = 'd'
 };
@@ -60,6 +61,7 @@ static Mode mode(Node *n)
                 case 1: return ModeB; break;
                 case 2: return ModeS; break;
                 case 4: return ModeL; break;
+                case 8: return ModeQ; break;
             }
             break;
     }
@@ -147,7 +149,7 @@ static Loc *loc(Isel *s, Node *n)
         case Ovar:
             if (hthas(s->locs, n)) {
                 stkoff = (size_t)htget(s->locs, n);
-                l = locmem(-stkoff, locphysreg(Rebp), NULL, mode(n));
+                l = locmem(-stkoff, locphysreg(Rrbp), NULL, mode(n));
             } else if (hthas(s->globls, n)) {
                 l = locstrlbl(htget(s->globls, n));
             } else {
@@ -203,7 +205,8 @@ static void g(Isel *s, AsmOp op, ...)
 
 static void movz(Isel *s, Loc *src, Loc *dst)
 {
-    if (src->mode == dst->mode)
+    if (src->mode == dst->mode ||
+        (src->mode == ModeL && dst->mode == ModeQ))
         g(s, Imov, src, dst, NULL);
     else
         g(s, Imovz, src, dst, NULL);
@@ -416,13 +419,13 @@ static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size
 static Loc *gencall(Isel *s, Node *n)
 {
     Loc *src, *dst, *arg, *fn;   /* values we reduced */
-    Loc *eax, *esp;       /* hard-coded registers */
+    Loc *rax, *rsp;       /* hard-coded registers */
     Loc *stkbump;        /* calculated stack offset */
     int argsz, argoff;
     size_t i;
 
-    esp = locphysreg(Resp);
-    eax = locphysreg(Reax);
+    rsp = locphysreg(Rrsp);
+    rax = locphysreg(Rrax);
     argsz = 0;
     /* Have to calculate the amount to bump the stack
      * pointer by in one pass first, otherwise if we push
@@ -434,7 +437,7 @@ static Loc *gencall(Isel *s, Node *n)
         argsz += size(n->expr.args[i]);
     stkbump = loclit(argsz, ModeL);
     if (argsz)
-        g(s, Isub, stkbump, esp, NULL);
+        g(s, Isub, stkbump, rsp, NULL);
 
     /* Now, we can evaluate the arguments */
     argoff = 0;
@@ -444,9 +447,9 @@ static Loc *gencall(Isel *s, Node *n)
             dst = locreg(ModeL);
             src = locreg(ModeL);
             g(s, Ilea, arg, src, NULL);
-            blit(s, esp, src, argoff, 0, size(n->expr.args[i]));
+            blit(s, rsp, src, argoff, 0, size(n->expr.args[i]));
         } else {
-            dst = locmem(argoff, esp, NULL, arg->mode);
+            dst = locmem(argoff, rsp, NULL, arg->mode);
             arg = inri(s, arg);
             stor(s, arg, dst);
         }
@@ -458,8 +461,8 @@ static Loc *gencall(Isel *s, Node *n)
     else
         g(s, Icallind, fn, NULL);
     if (argsz)
-        g(s, Iadd, stkbump, esp, NULL);
-    return eax;
+        g(s, Iadd, stkbump, rsp, NULL);
+    return rax;
 }
 
 Loc *selexpr(Isel *s, Node *n)
@@ -772,33 +775,33 @@ static void isel(Isel *s, Node *n)
 
 static void prologue(Isel *s, size_t sz)
 {
-    Loc *esp;
-    Loc *ebp;
+    Loc *rsp;
+    Loc *rbp;
     Loc *stksz;
 
-    esp = locphysreg(Resp);
-    ebp = locphysreg(Rebp);
-    stksz = loclit(sz, ModeL);
-    g(s, Ipush, ebp, NULL);
-    g(s, Imov, esp, ebp, NULL);
-    g(s, Isub, stksz, esp, NULL);
+    rsp = locphysreg(Rrsp);
+    rbp = locphysreg(Rrbp);
+    stksz = loclit(sz, ModeQ);
+    g(s, Ipush, rbp, NULL);
+    g(s, Imov, rsp, rbp, NULL);
+    g(s, Isub, stksz, rsp, NULL);
     s->stksz = stksz; /* need to update if we spill */
 }
 
 static void epilogue(Isel *s)
 {
-    Loc *esp, *ebp, *eax;
+    Loc *rsp, *rbp, *rax;
     Loc *ret;
 
-    esp = locphysreg(Resp);
-    ebp = locphysreg(Rebp);
-    eax = locphysreg(Reax);
+    rsp = locphysreg(Rrsp);
+    rbp = locphysreg(Rrbp);
+    rax = locphysreg(Rrax);
     if (s->ret) {
         ret = loc(s, s->ret);
-        movz(s, ret, eax);
+        g(s, Imov, ret, coreg(Rax, ret->mode), NULL);
     }
-    g(s, Imov, ebp, esp, NULL);
-    g(s, Ipop, ebp, NULL);
+    g(s, Imov, rbp, rsp, NULL);
+    g(s, Ipop, rbp, NULL);
     g(s, Iret, NULL);
 }
 

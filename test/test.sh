@@ -15,7 +15,7 @@ function build {
     rm -f $1 $1.o $1.s $1.use
     echo $MC $1.myr && \
     $MC $1.myr && \
-    $CC -g -m32 -o $1 $1.o
+    $CC -g -o $1 $1.o
 }
 
 function prints {

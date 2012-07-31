@@ -36,13 +36,23 @@ Usage deftab[] = {
 #undef Def
 };
 
-Reg regmap[6][Nmode] = {
-    [0] = {Rnone, Ral, Rax, Reax},
-    [1] = {Rnone, Rcl, Rcx, Recx},
-    [2] = {Rnone, Rdl, Rdx, Redx},
-    [3] = {Rnone, Rbl, Rbx, Rebx},
-    [4] = {Rnone, Rnone, Rnone, Resp},
-    [5] = {Rnone, Rnone, Rnone, Rebp},
+Reg regmap[][Nmode] = {
+    [0]  = {Rnone, Ral, Rax, Reax, Rrax},
+    [1]  = {Rnone, Rcl, Rcx, Recx, Rrcx},
+    [2]  = {Rnone, Rdl, Rdx, Redx, Rrdx},
+    [3]  = {Rnone, Rbl, Rbx, Rebx, Rrbx},
+    [4]  = {Rnone, Rsil, Rsi, Resi, Rrsi},
+    [5]  = {Rnone, Rdil, Rdi, Redi, Rrdi},
+    [6]  = {Rnone, R8b, R8w, R8d, R8},
+    [7]  = {Rnone, R9b, R9w, R9d, R9},
+    [8]  = {Rnone, R10b, R10w, R10d, R10},
+    [9]  = {Rnone, R11b, R11w, R11d, R11},
+    [10]  = {Rnone, R12b, R12w, R12d, R12},
+    [11]  = {Rnone, R13b, R13w, R13d, R13},
+    [12]  = {Rnone, R14b, R14w, R14d, R14},
+    [13]  = {Rnone, R15b, R15w, R15d, R15},
+    [14]  = {Rnone, Rnone, Rnone, Resp},
+    [15]  = {Rnone, Rnone, Rnone, Rebp},
 };
 
 int colourmap[Nreg] = {
