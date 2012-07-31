@@ -427,16 +427,14 @@ static Node *uconid(Node *n, size_t off)
     return disp(uc->line, uc->id);
 }
 
-static Node *uval(Node *n, size_t off)
+static Node *uval(Node *n, size_t off, Type *t)
 {
     if (exprop(n) == Ocons)
         return n->expr.args[1];
     else if (exprop(n) == Olit)
         return n;
     else
-        /* FIXME: WRONG WRONG WRONG. Union vals 
-         * aren't only disps. */
-        return load(add(addr(n, tyintptr), disp(n->line, off)));
+        return load(addk(addr(n, t), off));
 }
 
 static Node *ucompare(Simp *s, Node *a, Node *b, Type *t, size_t off)
@@ -459,8 +457,8 @@ static Node *ucompare(Simp *s, Node *a, Node *b, Type *t, size_t off)
         case Tyint8: case Tyint16: case Tyint32: case Tyint:
         case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint:
         case Typtr: case Tyfunc:
-            x = uval(a, off);
-            y = uval(b, off);
+            x = uval(a, off, t);
+            y = uval(b, off, t);
             r = mkexpr(a->line, Oeq, x, y, NULL);
             r->expr.type = tyintptr;
             break;
@@ -639,6 +637,7 @@ static Node *slicebase(Simp *s, Node *n, Node *off)
         default: die("Unslicable type %s", tystr(n->expr.type));
     }
     /* safe: all types we allow here have a sub[0] that we want to grab */
+    off = ptrsized(s, off);
     sz = tysize(n->expr.type->sub[0]);
     v = mul(off, disp(n->line, sz));
     return add(u, v);
@@ -646,7 +645,7 @@ static Node *slicebase(Simp *s, Node *n, Node *off)
 
 static Node *slicelen(Simp *s, Node *sl)
 {
-    /* *(&sl + 4) */
+    /* *(&sl + sizeof(size_t)) */
     return load(addk(addr(sl, tyintptr), Ptrsz));
 }
 
@@ -700,8 +699,8 @@ static Node *lowerslice(Simp *s, Node *n, Node *dst)
         t = temp(s, n);
     /* *(&slice) = (void*)base + off*sz */
     base = slicebase(s, n->expr.args[0], n->expr.args[1]);
-    start = rval(s, n->expr.args[1], NULL);
-    end = rval(s, n->expr.args[2], NULL);
+    start = ptrsized(s, rval(s, n->expr.args[1], NULL));
+    end = ptrsized(s, rval(s, n->expr.args[2], NULL));
     len = sub(end, start);
     stbase = store(addr(t, tyintptr), base);
     /* *(&slice + ptrsz) = len */

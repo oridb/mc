@@ -167,8 +167,9 @@ static size_t uses(Insn *insn, long *u)
         m = insn->args[i];
         if (m->type != Locmem && m->type != Locmeml)
             continue;
-        if (!isfixreg(m->mem.base))
-            u[j++] = m->mem.base->reg.id;
+        if (m->mem.base)
+            if (!isfixreg(m->mem.base))
+                u[j++] = m->mem.base->reg.id;
         if (m->mem.idx)
             if (!isfixreg(m->mem.base))
                 u[j++] = m->mem.idx->reg.id;

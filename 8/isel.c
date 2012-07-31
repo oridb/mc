@@ -86,7 +86,7 @@ static Loc *loc(Isel *s, Node *n)
                 stkoff = (size_t)htget(s->locs, n);
                 l = locmem(-stkoff, locphysreg(Rrbp), NULL, mode(n));
             } else if (hthas(s->globls, n)) {
-                l = locstrlbl(htget(s->globls, n));
+                l = locmeml(htget(s->globls, n), NULL, NULL, mode(n));
             } else {
                 die("%s (id=%ld) not found", namestr(n->expr.args[0]), n->expr.did);
             }
@@ -388,7 +388,7 @@ static Loc *gencall(Isel *s, Node *n)
         argoff += size(n->expr.args[i]);
     }
     fn = selexpr(s, n->expr.args[0]);
-    if (fn->type == Loclbl)
+    if (fn->type == Loclbl || fn->type == Locmeml)
         g(s, Icall, fn, NULL);
     else
         g(s, Icallind, fn, NULL);
@@ -618,16 +618,20 @@ void locprint(FILE *fd, Loc *l, char spec)
                 if (l->mem.lbldisp)
                     fprintf(fd, "%s", l->mem.lbldisp);
             }
-            fprintf(fd, "(");
-            locprint(fd, l->mem.base, 'r');
-            if (l->mem.idx) {
-                fprintf(fd, ",");
-                locprint(fd, l->mem.idx, 'r');
+            if (l->mem.base) {
+                fprintf(fd, "(");
+                locprint(fd, l->mem.base, 'r');
+                if (l->mem.idx) {
+                    fprintf(fd, ",");
+                    locprint(fd, l->mem.idx, 'r');
+                }
+                if (l->mem.scale > 1)
+                    fprintf(fd, ",%d", l->mem.scale);
+                if (l->mem.base)
+                    fprintf(fd, ")");
+            } else if (l->type != Locmeml) {
+                die("Only locmeml can have unspecified base reg");
             }
-            if (l->mem.scale > 1)
-                fprintf(fd, ",%d", l->mem.scale);
-            if (l->mem.base)
-                fprintf(fd, ")");
             break;
         case Loclit:
             assert(spec == 'i' || spec == 'x' || spec == 'u');

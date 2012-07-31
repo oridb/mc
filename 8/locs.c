@@ -156,7 +156,7 @@ Loc *locmeml(char *disp, Loc *base, Loc *idx, Mode mode)
     Loc *l;
 
     l = zalloc(sizeof(Loc));
-    l->type = Locmem;
+    l->type = Locmeml;
     l->mode = mode;
     l->mem.lbldisp = strdup(disp);
     l->mem.base = base;
