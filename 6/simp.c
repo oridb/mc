@@ -311,8 +311,7 @@ static Node *temp(Simp *simp, Node *e)
 
     assert(e->type == Nexpr);
     t = gentemp(simp, e, e->expr.type, &dcl);
-    if (stacknode(e))
-        declarelocal(simp, dcl);
+    declarelocal(simp, dcl);
     return t;
 }
 
@@ -1086,13 +1085,11 @@ static Node *rval(Simp *s, Node *n, Node *dst)
 static void declarelocal(Simp *s, Node *n)
 {
     assert(n->type == Ndecl);
-    if (stacknode(n)) {
-        s->stksz += size(n);
-        s->stksz = align(s->stksz, min(size(n), Ptrsz));
-        if (debug)
-            printf("declare %s:%s(%zd) at %zd\n", declname(n), tystr(decltype(n)), n->decl.did, s->stksz);
-        htput(s->locs, n, (void*)s->stksz);
-    }
+    s->stksz += size(n);
+    s->stksz = align(s->stksz, min(size(n), Ptrsz));
+    if (debug)
+        printf("declare %s:%s(%zd) at %zd\n", declname(n), tystr(decltype(n)), n->decl.did, s->stksz);
+    htput(s->locs, n, (void*)s->stksz);
 }
 
 static void declarearg(Simp *s, Node *n)

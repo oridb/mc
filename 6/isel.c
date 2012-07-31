@@ -438,8 +438,9 @@ Loc *selexpr(Isel *s, Node *n)
             r = locreg(a->mode);
             if (r->mode == ModeB)
                 g(s, Ixor, eax, eax, NULL);
+            else
+                g(s, Ixor, edx, edx, NULL);
             g(s, Imov, a, c, NULL);
-            g(s, Ixor, edx, edx, NULL);
             g(s, Idiv, b, NULL);
             if (exprop(n) == Odiv)
                 d = coreg(Reax, mode(n));
@@ -570,8 +571,9 @@ Loc *selexpr(Isel *s, Node *n)
             r = b;
             break;
         case Otrunc:
-            r = selexpr(s, args[0]);
-            r->mode = mode(n);
+            a = selexpr(s, args[0]);
+            r = locreg(mode(n));
+            g(s, Imov, a, r, NULL);
             break;
         case Ozwiden:
             a = selexpr(s, args[0]);
@@ -666,13 +668,26 @@ void iprintf(FILE *fd, Insn *insn)
      * means that we need to do a movl when we really want a movzlq. Since
      * we don't know the name of the reg to use, we need to sub it in when
      * writing... */
-    if (insn->op == Imovz) {
-        if (insn->args[0]->mode == ModeL && insn->args[1]->mode == ModeQ) {
-            if (insn->args[1]->reg.colour) {
-                insn->op = Imov;
-                insn->args[1] = coreg(insn->args[1]->reg.colour, ModeL);
+    switch (insn->op) {
+        case Imovz:
+            if (insn->args[0]->mode == ModeL && insn->args[1]->mode == ModeQ) {
+                if (insn->args[1]->reg.colour) {
+                    insn->op = Imov;
+                    insn->args[1] = coreg(insn->args[1]->reg.colour, ModeL);
+                }
             }
-        }
+            break;
+        case Imov:
+            if (insn->args[0]->type == Locreg && insn->args[1]->type == Locreg &&
+                insn->args[0]->reg.colour != Rnone && insn->args[1]->reg.colour != Rnone) {
+                if (insn->args[0]->mode != insn->args[1]->mode)
+                    insn->args[0] = coreg(insn->args[1]->reg.colour, insn->args[1]->mode);
+                /* moving a reg to itself is dumb. */
+                if (insn->args[0]->reg.colour == insn->args[1]->reg.colour)
+                    return;
+            }
+        default:
+            break;
     }
     p = insnfmts[insn->op];
     i = 0;
