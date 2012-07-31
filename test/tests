@@ -67,7 +67,7 @@ B tuple		E	42
 B tyrec		E	42
 F declmismatch
 F infermismatch
-F flow
+F usedef
 F occur
 F tyoccur
 F union-extraarg
