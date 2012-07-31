@@ -1,6 +1,6 @@
 #!/bin/bash
 export PATH=.:$PATH
-export MC=../8/8m
+export MC=../6/6m
 export MU=../util/muse
 export CC=cc
 NFAILURES=0

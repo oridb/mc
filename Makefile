@@ -1,6 +1,6 @@
 SUB = parse \
       opt \
-      8 \
+      6 \
       util
 
 -include config.mk
