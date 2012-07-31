@@ -54,6 +54,7 @@ static void declarelocal(Simp *s, Node *n);
 
 /* useful constants */
 static Type *tyintptr;
+static Type *tyword;
 static Type *tyvoid;
 
 static Type *base(Type *t)
@@ -148,6 +149,15 @@ static Node *disp(int line, uint v)
 
     n = mkintlit(line, v);
     n->expr.type = tyintptr;
+    return n;
+}
+
+static Node *word(int line, uint v)
+{
+    Node *n;
+
+    n = mkintlit(line, v);
+    n->expr.type = tyword;
     return n;
 }
 
@@ -435,10 +445,10 @@ static Node *uconid(Node *n, size_t off)
     Ucon *uc;
 
     if (exprop(n) != Ocons)
-        return load(add(addr(n, tyintptr), disp(n->line, off)));
+        return load(addk(addr(n, mkty(n->line, Tyuint)), off));
 
     uc = finducon(n);
-    return disp(uc->line, uc->id);
+    return word(uc->line, uc->id);
 }
 
 static Node *uval(Node *n, size_t off, Type *t)
@@ -486,7 +496,7 @@ static Node *ucompare(Simp *s, Node *a, Node *b, Type *t, size_t off)
             r = mkexpr(a->line, Oeq, x, y, NULL);
             r->expr.type = tyintptr;
             if (uc->etype) {
-                off += Ptrsz;
+                off += Wordsz;
                 v = ucompare(s, a, b, uc->etype, off);
                 r = mkexpr(a->line, Oland, r, v, NULL);
                 r->expr.type = tyintptr;
@@ -910,14 +920,19 @@ static Node *lowerucon(Simp *s, Node *n, Node *dst)
         tmp = dst;
     else
         tmp = temp(s, n);
-    u = addr(tmp, exprtype(n));
-    tag = disp(n->line, uc->id);
+
+    /* Set the tag on the ucon */
+    u = addr(tmp, mkty(n->line, Tyuint));
+    tag = mkintlit(n->line, uc->id);
+    tag->expr.type = mkty(n->line, Tyuint);
     append(s, store(u, tag));
+
+
+    /* fill the value, if needed */
     if (!uc->etype)
         return tmp;
-
     elt = rval(s, n->expr.args[1], NULL);
-    u = addk(u, Ptrsz);
+    u = addk(u, Wordsz);
     if (stacktype(uc->etype)) {
         elt = addr(elt, uc->etype);
         sz = disp(n->line, tysize(uc->utype));
@@ -1300,6 +1315,7 @@ void gen(Node *file, char *out)
 
     /* declare useful constants */
     tyintptr = mkty(-1, Tyuint64);
+    tyword = mkty(-1, Tyuint);
     tyvoid = mkty(-1, Tyvoid);
 
     fn = NULL;
