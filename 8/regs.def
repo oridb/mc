@@ -78,4 +78,4 @@ Reg(R13, "%r13", ModeQ)
 Reg(R14, "%r14", ModeQ)
 Reg(R15, "%r15", ModeQ)
 
-
+Reg(Rrip, "%rip", ModeQ)

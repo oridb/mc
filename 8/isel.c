@@ -78,9 +78,9 @@ static Mode mode(Node *n)
 
 static Loc *loc(Isel *s, Node *n)
 {
-    Loc *l;
-    Node *v;
     size_t stkoff;
+    Loc *l, *rip;
+    Node *v;
 
     switch (exprop(n)) {
         case Ovar:
@@ -88,7 +88,11 @@ static Loc *loc(Isel *s, Node *n)
                 stkoff = (size_t)htget(s->locs, n);
                 l = locmem(-stkoff, locphysreg(Rrbp), NULL, mode(n));
             } else if (hthas(s->globls, n)) {
-                l = locmeml(htget(s->globls, n), NULL, NULL, mode(n));
+                if (tybase(exprtype(n))->type == Tyfunc)
+                    rip = NULL;
+                else
+                    rip = locphysreg(Rrip);
+                l = locmeml(htget(s->globls, n), rip, NULL, mode(n));
             } else {
                 die("%s (id=%ld) not found", namestr(n->expr.args[0]), n->expr.did);
             }
