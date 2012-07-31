@@ -209,6 +209,20 @@ static char *asmname(Node *n)
     return s;
 }
 
+int stacktype(Type *t)
+{
+    /* the types are arranged in types.def such that this is true */
+    return t->type >= Tyslice;
+}
+
+int stacknode(Node *n)
+{
+    if (n->type == Nexpr)
+        return stacktype(n->expr.type);
+    else
+        return stacktype(n->decl.type);
+}
+
 size_t tysize(Type *t)
 {
     size_t sz;
@@ -801,7 +815,7 @@ Node *destructure(Simp *s, Node *lhs, Node *rhs)
     for (i = 0; i < lhs->expr.nargs; i++) {
         lv = lval(s, args[i]);
         prv = add(addr(rhs, exprtype(args[i])), disp(rhs->line, off));
-        if (size(args[i]) > Ptrsz) {
+        if (stacknode(args[i])) {
             sz = disp(lhs->line, size(lv));
             plv = addr(lv, exprtype(lv));
             stor = mkexpr(lhs->line, Oblit, plv, prv, sz, NULL);
@@ -829,7 +843,7 @@ Node *assign(Simp *s, Node *lhs, Node *rhs)
          * so we know our work is done. */
         if (u == t) {
             r = t;
-        } else if (size(lhs) > Ptrsz) {
+        } else if (stacknode(lhs)) {
             t = addr(t, exprtype(lhs));
             u = addr(u, exprtype(lhs));
             v = disp(lhs->line, size(lhs));
@@ -858,7 +872,7 @@ static Node *lowertup(Simp *s, Node *n, Node *dst)
     for (i = 0; i < n->expr.nargs; i++) {
         val = rval(s, args[i], NULL);
         pdst = add(r, disp(n->line, off));
-        if (size(args[i]) > Ptrsz) {
+        if (stacknode(args[i])) {
             sz = disp(n->line, size(val));
             pval = addr(val, exprtype(val));
             stor = mkexpr(n->line, Oblit, pdst, pval, sz, NULL);
@@ -903,7 +917,7 @@ static Node *lowerucon(Simp *s, Node *n, Node *dst)
 
     elt = rval(s, n->expr.args[1], NULL);
     u = addk(u, Ptrsz);
-    if (tysize(uc->etype) > Ptrsz) {
+    if (stacktype(uc->etype)) {
         elt = addr(elt, uc->etype);
         sz = disp(n->line, tysize(uc->utype));
         r = mkexpr(n->line, Oblit, u, elt, sz, NULL);
@@ -1154,7 +1168,7 @@ static void flatten(Simp *s, Node *f)
     assert(f->type == Nfunc);
 
     ty = f->func.type->sub[0];
-    if (ty->type != Tyvoid && tysize(ty) > Ptrsz) {
+    if (stacktype(ty)) {
         s->isbigret = 1;
         s->ret = gentemp(s, f, mktyptr(f->line, ty), &dcl);
         declarearg(s, dcl);

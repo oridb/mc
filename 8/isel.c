@@ -51,12 +51,6 @@ struct {
     [Ole] = {Icmp, Ijle, Isetle}
 };
 
-static int stacktype(Type *t)
-{
-    /* the types are arranged in types.def such that this is true */
-    return t->type >= Tyslice;
-}
-
 static Mode mode(Node *n)
 {
     Type *t;
@@ -388,7 +382,7 @@ static Loc *gencall(Isel *s, Node *n)
     argoff = 0;
     for (i = 1; i < n->expr.nargs; i++) {
         arg = selexpr(s, n->expr.args[i]);
-        if (size(n->expr.args[i]) > Ptrsz) {
+        if (stacknode(n->expr.args[i])) {
             dst = locreg(ModeQ);
             src = locreg(ModeQ);
             g(s, Ilea, arg, src, NULL);
