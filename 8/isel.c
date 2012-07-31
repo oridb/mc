@@ -486,7 +486,7 @@ Loc *selexpr(Isel *s, Node *n)
 
         case Oaddr:
             a = selexpr(s, args[0]);
-            if (a->type == Loclbl) {
+            if (a->type == Loclbl || (a->type == Locmeml && !a->mem.base)) {
                 r = loclitl(a->lbl);
             } else {
                 r = locreg(ModeQ);
