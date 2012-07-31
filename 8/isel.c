@@ -810,25 +810,31 @@ static void writeblob(FILE *fd, char *p, size_t sz)
     }
 }
 
-static void writelit(FILE *fd, Node *v)
+static void writelit(FILE *fd, Node *v, size_t sz)
 {
     char lbl[128];
     size_t i;
+    char *intsz[] = {
+        [1] = ".byte",
+        [2] = ".short",
+        [4] = ".long",
+        [8] = ".quad"
+    };
 
     assert(v->type == Nlit);
     switch (v->lit.littype) {
-        case Lbool:     fprintf(fd, "\t.long %d\n", v->lit.boolval);     break;
+        case Lbool:     fprintf(fd, "\t.byte %d\n", v->lit.boolval);     break;
         case Lchr:      fprintf(fd, "\t.long %d\n",  v->lit.chrval);     break;
-        case Lint:      fprintf(fd, "\t.long %lld\n", v->lit.intval);    break;
+        case Lint:      fprintf(fd, "\t%s %lld\n", intsz[sz], v->lit.intval);    break;
         case Lflt:      fprintf(fd, "\t.double %f\n", v->lit.fltval);    break;
-        case Lstr:      fprintf(fd, "\t.long %s\n", genlblstr(lbl, 128));
-                        fprintf(fd, "\t.long %zd\n", strlen(v->lit.strval));
+        case Lstr:      fprintf(fd, "\t.quad %s\n", genlblstr(lbl, 128));
+                        fprintf(fd, "\t.quad %zd\n", strlen(v->lit.strval));
                         fprintf(fd, "%s:\n", lbl);
                         writeblob(fd, v->lit.strval, strlen(v->lit.strval));
                         break;
         case Lseq:
             for (i = 0; i < v->lit.nelt; i++)
-                writelit(fd, v->lit.seqval[i]->expr.args[0]);
+                writelit(fd, v->lit.seqval[i]->expr.args[0], size(v->lit.seqval[i]));
             break;
         case Lfunc:
                         die("Generating this shit ain't ready yet ");
@@ -850,7 +856,7 @@ void genblob(FILE *fd, Node *blob, Htab *globls)
     if (blob->decl.init) {
         if (exprop(blob->decl.init) != Olit)
             die("Nonliteral initializer for global");
-        writelit(fd, blob->decl.init->expr.args[0]);
+        writelit(fd, blob->decl.init->expr.args[0], size(blob));
     } else {
         for (i = 0; i < size(blob); i++)
             fprintf(fd, "\t.byte 0\n");
