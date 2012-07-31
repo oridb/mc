@@ -23,7 +23,7 @@ Insn(Inone,     "BAD_INSN",                     Use(), Def())
 Insn(Imov,      "\tmov%t %x,%x\n",              Use(.l={1}),                    Def(.l={2}))
 Insn(Imovz,     "\tmovz%1t%2t %x,%x\n",         Use(.l={1}),                    Def(.l={2}))
 Insn(Imovs,     "\tmovs%1t%2t %x,%x\n",         Use(.l={1}),                    Def(.l={2}))
-Insn(Ilea,      "\tlea%t %m,%r\n",              Use(.l={1}),                    Def(.l={2}))
+Insn(Ilea,      "\tlea%2t %m,%r\n",             Use(.l={1}),                    Def(.l={2}))
 
 Insn(Iadd,      "\tadd%t %x,%r\n",              Use(.l={1,2}),                  Def(.l={2}))
 Insn(Isub,      "\tsub%t %x,%r\n",              Use(.l={1,2}),                  Def(.l={2}))

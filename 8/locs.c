@@ -74,7 +74,7 @@ Loc *locstrlbl(char *lbl)
 
     l = zalloc(sizeof(Loc));
     l->type = Loclbl;
-    l->mode = ModeL;
+    l->mode = ModeQ;
     l->lbl = strdup(lbl);
     return l;
 }
@@ -85,7 +85,7 @@ Loc *loclitl(char *lbl)
 
     l = zalloc(sizeof(Loc));
     l->type = Loclitl;
-    l->mode = ModeL;
+    l->mode = ModeQ;
     l->lbl = strdup(lbl);
     return l;
 }
@@ -99,17 +99,22 @@ Loc *loclbl(Node *lbl)
 Loc **locmap = NULL;
 size_t maxregid = 0;
 
-Loc *locreg(Mode m)
+static Loc *locregid(regid id, Mode m)
 {
     Loc *l;
 
     l = zalloc(sizeof(Loc));
     l->type = Locreg;
     l->mode = m;
-    l->reg.id = maxregid++;
+    l->reg.id = id;
     locmap = xrealloc(locmap, maxregid * sizeof(Loc*));
     locmap[l->reg.id] = l;
     return l;
+}
+
+Loc *locreg(Mode m)
+{
+    return locregid(maxregid++, m);
 }
 
 Loc *locphysreg(Reg r)
@@ -180,3 +185,72 @@ Loc *loclit(long val, Mode m)
     l->lit = val;
     return l;
 }
+
+Loc *coreg(Reg r, Mode m)
+{
+    Reg crtab[][Nmode + 1] = {
+        [Ral]  = {Rnone, Ral, Rax, Reax, Rrax},
+        [Rcl]  = {Rnone, Rcl, Rcx, Recx, Rrcx},
+        [Rdl]  = {Rnone, Rdl, Rdx, Redx, Rrdx},
+        [Rbl]  = {Rnone, Rbl, Rbx, Rebx, Rrbx},
+        [Rsil] = {Rnone, Rsil, Rsi, Resi, Rrsi},
+        [Rdil] = {Rnone, Rdil, Rdi, Redi, Rrdi},
+        [R8b]  = {Rnone, R8b, R8w, R8d, R8},
+        [R9b]  = {Rnone, R9b, R9w, R9d, R9},
+        [R10b] = {Rnone, R10b, R10w, R10d, R10},
+        [R11b] = {Rnone, R11b, R11w, R11d, R11},
+        [R12b] = {Rnone, R12b, R12w, R12d, R12},
+        [R13b] = {Rnone, R13b, R13w, R13d, R13},
+        [R14b] = {Rnone, R14b, R14w, R14d, R14},
+        [R15b] = {Rnone, R15b, R15w, R15d, R15},
+
+        [Rax]  = {Rnone, Ral,  Rax, Reax, Rrax},
+        [Rcx]  = {Rnone, Rcl,  Rcx, Recx, Rrcx},
+        [Rdx]  = {Rnone, Rdl,  Rdx, Redx, Rrdx},
+        [Rbx]  = {Rnone, Rbl,  Rbx, Rebx, Rrbx},
+        [Rsi]  = {Rnone, Rsil, Rsi, Resi, Rrsi},
+        [Rdi]  = {Rnone, Rsil, Rdi, Redi, Rrdi},
+        [R8w]  = {Rnone, R8b, R8w, R8d, R8},
+        [R9w]  = {Rnone, R9b, R9w, R9d, R9},
+        [R10w] = {Rnone, R10b, R10w, R10d, R10},
+        [R11w] = {Rnone, R11b, R11w, R11d, R11},
+        [R12w] = {Rnone, R12b, R12w, R12d, R12},
+        [R13w] = {Rnone, R13b, R13w, R13d, R13},
+        [R14w] = {Rnone, R14b, R14w, R14d, R14},
+        [R15w] = {Rnone, R15b, R15w, R15d, R15},
+
+        [Reax] = {Rnone, Ral, Rax, Reax},
+        [Recx] = {Rnone, Rcl, Rcx, Recx},
+        [Redx] = {Rnone, Rdl, Rdx, Redx},
+        [Rebx] = {Rnone, Rbl, Rbx, Rebx},
+        [Resi] = {Rnone, Rsil, Rsi, Resi},
+        [Redi] = {Rnone, Rsil, Rdi, Redi},
+        [R8d]  = {Rnone, R8b, R8w, R8d, R8},
+        [R9d]  = {Rnone, R9b, R9w, R9d, R9},
+        [R10d] = {Rnone, R10b, R10w, R10d, R10},
+        [R11d] = {Rnone, R11b, R11w, R11d, R11},
+        [R12d] = {Rnone, R12b, R12w, R12d, R12},
+        [R13d] = {Rnone, R13b, R13w, R13d, R13},
+        [R14d] = {Rnone, R14b, R14w, R14d, R14},
+        [R15d] = {Rnone, R15b, R15w, R15d, R15},
+
+        [Rrax] = {Rnone, Ral, Rax, Reax},
+        [Rrcx] = {Rnone, Rcl, Rcx, Recx},
+        [Rrdx] = {Rnone, Rdl, Rdx, Redx},
+        [Rrbx] = {Rnone, Rbl, Rbx, Rebx},
+        [Rrsi] = {Rnone, Rsil, Rsi, Resi},
+        [Rrdi] = {Rnone, Rsil, Rdi, Redi},
+        [R8]   = {Rnone, R8b, R8w, R8d, R8},
+        [R9]   = {Rnone, R9b, R9w, R9d, R9},
+        [R10]  = {Rnone, R10b, R10w, R10d, R10},
+        [R11]  = {Rnone, R11b, R11w, R11d, R11},
+        [R12]  = {Rnone, R12b, R12w, R12d, R12},
+        [R13]  = {Rnone, R13b, R13w, R13d, R13},
+        [R14]  = {Rnone, R14b, R14w, R14d, R14},
+        [R15]  = {Rnone, R15b, R15w, R15d, R15},
+    };
+
+    assert(crtab[r][m] != Rnone);
+    return locphysreg(crtab[r][m]);
+}
+

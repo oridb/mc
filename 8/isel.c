@@ -53,7 +53,10 @@ struct {
 
 static Mode mode(Node *n)
 {
-    switch (exprtype(n)->type) {
+    Type *t;
+
+    t = tybase(exprtype(n));
+    switch (t->type) {
         case Tyfloat32: return ModeF; break;
         case Tyfloat64: return ModeD; break;
         default:
@@ -68,75 +71,7 @@ static Mode mode(Node *n)
     /* FIXME: huh. what should the mode for, say, structs
      * be when we have no intention of loading /through/ the
      * pointer? */
-    return ModeL;
-}
-
-static Loc *coreg(Reg r, Mode m)
-{
-    Reg crtab[][Nmode + 1] = {
-        [Ral]  = {Rnone, Ral, Rax, Reax, Rrax},
-        [Rcl]  = {Rnone, Rcl, Rcx, Recx, Rrcx},
-        [Rdl]  = {Rnone, Rdl, Rdx, Redx, Rrdx},
-        [Rbl]  = {Rnone, Rbl, Rbx, Rebx, Rrbx},
-        [Rsil] = {Rnone, Rsil, Rsi, Resi, Rrsi},
-        [Rdil] = {Rnone, Rdil, Rdi, Redi, Rrdi},
-        [R8b]  = {Rnone, R8b, R8w, R8d, R8},
-        [R9b]  = {Rnone, R9b, R9w, R9d, R9},
-        [R10b] = {Rnone, R10b, R10w, R10d, R10},
-        [R11b] = {Rnone, R11b, R11w, R11d, R11},
-        [R12b] = {Rnone, R12b, R12w, R12d, R12},
-        [R13b] = {Rnone, R13b, R13w, R13d, R13},
-        [R14b] = {Rnone, R14b, R14w, R14d, R14},
-        [R15b] = {Rnone, R15b, R15w, R15d, R15},
-
-        [Rax]  = {Rnone, Ral,  Rax, Reax},
-        [Rcx]  = {Rnone, Rcl,  Rcx, Recx},
-        [Rdx]  = {Rnone, Rdl,  Rdx, Redx},
-        [Rbx]  = {Rnone, Rbl,  Rbx, Rebx},
-        [Rsi]  = {Rnone, Rsil, Rsi, Resi},
-        [Rdi]  = {Rnone, Rsil, Rdi, Redi},
-        [R8w]  = {Rnone, R8b, R8w, R8d, R8},
-        [R9w]  = {Rnone, R9b, R9w, R9d, R9},
-        [R10w] = {Rnone, R10b, R10w, R10d, R10},
-        [R11w] = {Rnone, R11b, R11w, R11d, R11},
-        [R12w] = {Rnone, R12b, R12w, R12d, R12},
-        [R13w] = {Rnone, R13b, R13w, R13d, R13},
-        [R14w] = {Rnone, R14b, R14w, R14d, R14},
-        [R15w] = {Rnone, R15b, R15w, R15d, R15},
-
-        [Reax] = {Rnone, Ral, Rax, Reax},
-        [Recx] = {Rnone, Rcl, Rcx, Recx},
-        [Redx] = {Rnone, Rdl, Rdx, Redx},
-        [Rebx] = {Rnone, Rbl, Rbx, Rebx},
-        [Resi] = {Rnone, Rsil, Rsi, Resi},
-        [Redi] = {Rnone, Rsil, Rdi, Redi},
-        [R8d]  = {Rnone, R8b, R8w, R8d, R8},
-        [R9d]  = {Rnone, R9b, R9w, R9d, R9},
-        [R10d] = {Rnone, R10b, R10w, R10d, R10},
-        [R11d] = {Rnone, R11b, R11w, R11d, R11},
-        [R12d] = {Rnone, R12b, R12w, R12d, R12},
-        [R13d] = {Rnone, R13b, R13w, R13d, R13},
-        [R14d] = {Rnone, R14b, R14w, R14d, R14},
-        [R15d] = {Rnone, R15b, R15w, R15d, R15},
-
-        [Rrax] = {Rnone, Ral, Rax, Reax},
-        [Rrcx] = {Rnone, Rcl, Rcx, Recx},
-        [Rrdx] = {Rnone, Rdl, Rdx, Redx},
-        [Rrbx] = {Rnone, Rbl, Rbx, Rebx},
-        [Rrsi] = {Rnone, Rsil, Rsi, Resi},
-        [Rrdi] = {Rnone, Rsil, Rdi, Redi},
-        [R8]   = {Rnone, R8b, R8w, R8d, R8},
-        [R9]   = {Rnone, R9b, R9w, R9d, R9},
-        [R10]  = {Rnone, R10b, R10w, R10d, R10},
-        [R11]  = {Rnone, R11b, R11w, R11d, R11},
-        [R12]  = {Rnone, R12b, R12w, R12d, R12},
-        [R13]  = {Rnone, R13b, R13w, R13d, R13},
-        [R14]  = {Rnone, R14b, R14w, R14d, R14},
-        [R15]  = {Rnone, R15b, R15w, R15d, R15},
-    };
-
-    assert(crtab[r][m] != Rnone);
-    return locphysreg(crtab[r][m]);
+    return ModeQ;
 }
 
 static Loc *loc(Isel *s, Node *n)
@@ -205,8 +140,7 @@ static void g(Isel *s, AsmOp op, ...)
 
 static void movz(Isel *s, Loc *src, Loc *dst)
 {
-    if (src->mode == dst->mode ||
-        (src->mode == ModeL && dst->mode == ModeQ))
+    if (src->mode == dst->mode)
         g(s, Imov, src, dst, NULL);
     else
         g(s, Imovz, src, dst, NULL);
@@ -361,9 +295,7 @@ static Loc *memloc(Isel *s, Node *e, Mode m)
     scale = 1;
     l = NULL;
     args = e->expr.args;
-    if (exprop(e) == Oaddr) {
-        l = selexpr(s, args[0]);
-    } else if (exprop(e) == Oadd) {
+    if (exprop(e) == Oadd) {
         b = selexpr(s, args[0]);
         if (ismergablemul(args[1], &scale))
             o = selexpr(s, args[1]->expr.args[0]);
@@ -435,7 +367,7 @@ static Loc *gencall(Isel *s, Node *n)
      * We skip the first operand, since it's the function itself */
     for (i = 1; i < n->expr.nargs; i++)
         argsz += size(n->expr.args[i]);
-    stkbump = loclit(argsz, ModeL);
+    stkbump = loclit(argsz, ModeQ);
     if (argsz)
         g(s, Isub, stkbump, rsp, NULL);
 
@@ -443,9 +375,9 @@ static Loc *gencall(Isel *s, Node *n)
     argoff = 0;
     for (i = 1; i < n->expr.nargs; i++) {
         arg = selexpr(s, n->expr.args[i]);
-        if (size(n->expr.args[i]) > 4) {
-            dst = locreg(ModeL);
-            src = locreg(ModeL);
+        if (size(n->expr.args[i]) > Ptrsz) {
+            dst = locreg(ModeQ);
+            src = locreg(ModeQ);
             g(s, Ilea, arg, src, NULL);
             blit(s, rsp, src, argoff, 0, size(n->expr.args[i]));
         } else {
@@ -540,8 +472,8 @@ Loc *selexpr(Isel *s, Node *n)
         case Oderef:
             a = selexpr(s, args[0]);
             a = inr(s, a);
-            r = locreg(a->mode);
-            c = locmem(0, a, Rnone, a->mode);
+            r = locreg(mode(n));
+            c = locmem(0, a, Rnone, mode(n));
             g(s, Imov, c, r, NULL);
             break;
 
@@ -550,7 +482,7 @@ Loc *selexpr(Isel *s, Node *n)
             if (a->type == Loclbl) {
                 r = loclitl(a->lbl);
             } else {
-                r = locreg(ModeL);
+                r = locreg(ModeQ);
                 g(s, Ilea, a, r, NULL);
             }
             break;
@@ -631,7 +563,7 @@ Loc *selexpr(Isel *s, Node *n)
         case Ozwiden:
             a = selexpr(s, args[0]);
             b = locreg(mode(n));
-            g(s, Imovz, a, b, NULL);
+            movz(s, a, b);
             r = b;
             break;
         case Oswiden:
@@ -713,6 +645,18 @@ void iprintf(FILE *fd, Insn *insn)
     int i;
     int modeidx;
 
+    /* x64 has a quirk; it has no movzlq because mov zero extends. This
+     * means that we need to do a movl when we really want a movzlq. Since
+     * we don't know the name of the reg to use, we need to sub it in when
+     * writing... */
+    if (insn->op == Imovz) {
+        if (insn->args[0]->mode == ModeL && insn->args[1]->mode == ModeQ) {
+            if (insn->args[1]->reg.colour) {
+                insn->op = Imov;
+                insn->args[1] = coreg(insn->args[1]->reg.colour, ModeL);
+            }
+        }
+    }
     p = insnfmts[insn->op];
     i = 0;
     modeidx = 0;
@@ -790,12 +734,11 @@ static void prologue(Isel *s, size_t sz)
 
 static void epilogue(Isel *s)
 {
-    Loc *rsp, *rbp, *rax;
+    Loc *rsp, *rbp;
     Loc *ret;
 
     rsp = locphysreg(Rrsp);
     rbp = locphysreg(Rrbp);
-    rax = locphysreg(Rrax);
     if (s->ret) {
         ret = loc(s, s->ret);
         g(s, Imov, ret, coreg(Rax, ret->mode), NULL);

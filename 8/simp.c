@@ -53,11 +53,7 @@ static Node *lval(Simp *s, Node *n);
 static void declarelocal(Simp *s, Node *n);
 
 /* useful constants */
-static Node *one;
-static Node *zero;
-static Node *ptrsz;
-static Node *wordsz;
-static Type *tyword;
+static Type *tyintptr;
 static Type *tyvoid;
 
 static Type *base(Type *t)
@@ -70,9 +66,19 @@ static Node *add(Node *a, Node *b)
 {
     Node *n;
 
+    assert(size(a) == size(b));
     n = mkexpr(a->line, Oadd, a, b, NULL);
     n->expr.type = a->expr.type;
     return n;
+}
+
+static Node *addk(Node *n, uvlong v)
+{
+    Node *k;
+
+    k = mkintlit(n->line, v);
+    k->expr.type = exprtype(n);
+    return add(n, k);
 }
 
 static Node *sub(Node *a, Node *b)
@@ -82,6 +88,15 @@ static Node *sub(Node *a, Node *b)
     n = mkexpr(a->line, Osub, a, b, NULL);
     n->expr.type = a->expr.type;
     return n;
+}
+
+static Node *subk(Node *n, uvlong v)
+{
+    Node *k;
+
+    k = mkintlit(n->line, v);
+    k->expr.type = exprtype(n);
+    return sub(n, k);
 }
 
 static Node *mul(Node *a, Node *b)
@@ -127,14 +142,14 @@ static Node *store(Node *a, Node *b)
     return n;
 }
 
-static Node *word(int line, uint v)
+static Node *disp(int line, uint v)
 {
     Node *n;
+
     n = mkintlit(line, v);
-    n->expr.type = tyword;
+    n->expr.type = tyintptr;
     return n;
 }
-
 
 static size_t did(Node *n)
 {
@@ -213,9 +228,11 @@ size_t tysize(Type *t)
             return 2;
         case Tyint: case Tyint32:
         case Tyuint: case Tyuint32:
-        case Typtr: case Tyfunc:
         case Tychar:  /* utf32 */
             return 4;
+
+        case Typtr: case Tyfunc:
+            return Ptrsz;
 
         case Tyint64: case Tylong:
         case Tyuint64: case Tyulong:
@@ -243,15 +260,15 @@ size_t tysize(Type *t)
             break;
         case Tystruct:
             for (i = 0; i < t->nmemb; i++)
-                sz += align(size(t->sdecls[i]), Wordsz);
+                sz += align(size(t->sdecls[i]), Ptrsz);
             return sz;
             break;
         case Tyunion:
-            sz = Wordsz;
+            sz = Ptrsz;
             for (i = 0; i < t->nmemb; i++)
                 if (t->udecls[i]->etype)
-                    sz = max(sz, tysize(t->udecls[i]->etype) + Wordsz);
-            return align(sz, Wordsz);
+                    sz = max(sz, tysize(t->udecls[i]->etype) + Ptrsz);
+            return align(sz, Ptrsz);
             break;
         case Tybad: case Tyvar: case Typaram: case Tyname: case Ntypes:
             die("Type %s does not have size; why did it get down to here?", tystr(t));
@@ -404,10 +421,10 @@ static Node *uconid(Node *n, size_t off)
     Ucon *uc;
 
     if (exprop(n) != Ocons)
-        return load(add(addr(n, tyword), word(n->line, off)));
+        return load(add(addr(n, tyintptr), disp(n->line, off)));
 
     uc = finducon(n);
-    return word(uc->line, uc->id);
+    return disp(uc->line, uc->id);
 }
 
 static Node *uval(Node *n, size_t off)
@@ -418,8 +435,8 @@ static Node *uval(Node *n, size_t off)
         return n;
     else
         /* FIXME: WRONG WRONG WRONG. Union vals 
-         * aren't only words. */
-        return load(add(addr(n, tyword), word(n->line, off)));
+         * aren't only disps. */
+        return load(add(addr(n, tyintptr), disp(n->line, off)));
 }
 
 static Node *ucompare(Simp *s, Node *a, Node *b, Type *t, size_t off)
@@ -445,7 +462,7 @@ static Node *ucompare(Simp *s, Node *a, Node *b, Type *t, size_t off)
             x = uval(a, off);
             y = uval(b, off);
             r = mkexpr(a->line, Oeq, x, y, NULL);
-            r->expr.type = tyword;
+            r->expr.type = tyintptr;
             break;
         case Tyunion:
             x = uconid(a, off);
@@ -455,12 +472,12 @@ static Node *ucompare(Simp *s, Node *a, Node *b, Type *t, size_t off)
                 uc = finducon(b);
 
             r = mkexpr(a->line, Oeq, x, y, NULL);
-            r->expr.type = tyword;
+            r->expr.type = tyintptr;
             if (uc->etype) {
-                off += Wordsz;
+                off += Ptrsz;
                 v = ucompare(s, a, b, uc->etype, off);
                 r = mkexpr(a->line, Oland, r, v, NULL);
-                r->expr.type = tyword;
+                r->expr.type = tyintptr;
                 r = rval(s, r, NULL); /* Oland needs to be reduced */
             }
             break;
@@ -468,7 +485,6 @@ static Node *ucompare(Simp *s, Node *a, Node *b, Type *t, size_t off)
     return r;
             
 }
-
 
 FILE *f;
 static void simpmatch(Simp *s, Node *n)
@@ -553,6 +569,18 @@ static size_t offset(Node *aggr, Node *memb)
     return -1;
 }
 
+static Node *ptrsized(Simp *s, Node *v)
+{
+    if (size(v) == Ptrsz)
+        return v;
+    else if (size(v) < Ptrsz)
+        v = mkexpr(v->line, Ozwiden, v, NULL);
+    else if (size(v) > Ptrsz)
+        v = mkexpr(v->line, Otrunc, v, NULL);
+    v->expr.type = tyintptr;
+    return v;
+}
+
 static Node *membaddr(Simp *s, Node *n)
 {
     Node *t, *u, *r;
@@ -566,7 +594,7 @@ static Node *membaddr(Simp *s, Node *n)
     } else {
         t = addr(args[0], exprtype(n));
     }
-    u = word(n->line, offset(args[0], args[1]));
+    u = disp(n->line, offset(args[0], args[1]));
     r = add(t, u);
     r->expr.type = mktyptr(n->line, n->expr.type);
     return r;
@@ -590,8 +618,9 @@ static Node *idxaddr(Simp *s, Node *n)
         die("Can't index type %s\n", tystr(n->expr.type));
     assert(t->expr.type->type == Typtr);
     u = rval(s, args[1], NULL);
+    u = ptrsized(s, u);
     sz = size(n);
-    v = mul(u, word(n->line, sz));
+    v = mul(u, disp(n->line, sz));
     r = add(t, v);
     return r;
 }
@@ -611,14 +640,14 @@ static Node *slicebase(Simp *s, Node *n, Node *off)
     }
     /* safe: all types we allow here have a sub[0] that we want to grab */
     sz = tysize(n->expr.type->sub[0]);
-    v = mul(off, word(n->line, sz));
+    v = mul(off, disp(n->line, sz));
     return add(u, v);
 }
 
 static Node *slicelen(Simp *s, Node *sl)
 {
     /* *(&sl + 4) */
-    return load(add(addr(sl, tyword), ptrsz));
+    return load(addk(addr(sl, tyintptr), Ptrsz));
 }
 
 Node *lval(Simp *s, Node *n)
@@ -674,9 +703,9 @@ static Node *lowerslice(Simp *s, Node *n, Node *dst)
     start = rval(s, n->expr.args[1], NULL);
     end = rval(s, n->expr.args[2], NULL);
     len = sub(end, start);
-    stbase = store(addr(t, tyword), base);
+    stbase = store(addr(t, tyintptr), base);
     /* *(&slice + ptrsz) = len */
-    sz = add(addr(t, tyword), ptrsz);
+    sz = addk(addr(t, tyintptr), Ptrsz);
     stlen = store(sz, len);
     append(s, stbase);
     append(s, stlen);
@@ -686,6 +715,7 @@ static Node *lowerslice(Simp *s, Node *n, Node *dst)
 static Node *lowercast(Simp *s, Node *n)
 {
     Node **args;
+    Node *sz;
     Node *r;
     Type *t;
     int issigned;
@@ -703,11 +733,12 @@ static Node *lowercast(Simp *s, Node *n)
             t = tybase(exprtype(args[0]));
             switch (t->type) {
                 case Tyslice:
-                    if (t->type != Typtr)
-                        r = slicebase(s, args[0], zero);
-                    else
+                    if (t->type == Typtr)
                         fatal(n->line, "Bad cast from %s to %s",
                               tystr(exprtype(args[0])), tystr(exprtype(n)));
+                    sz = mkintlit(n->line, Ptrsz);
+                    sz->expr.type = exprtype(args[0]);
+                    r = slicebase(s, args[0], sz);
                     break;
                 case Tyint8: case Tyint16: case Tyint32: case Tyint64:
                 case Tyint: case Tylong:
@@ -771,9 +802,9 @@ Node *destructure(Simp *s, Node *lhs, Node *rhs)
     off = 0;
     for (i = 0; i < lhs->expr.nargs; i++) {
         lv = lval(s, args[i]);
-        prv = add(addr(rhs, exprtype(args[i])), word(rhs->line, off));
-        if (size(args[i]) > Wordsz) {
-            sz = word(lhs->line, size(lv));
+        prv = add(addr(rhs, exprtype(args[i])), disp(rhs->line, off));
+        if (size(args[i]) > Ptrsz) {
+            sz = disp(lhs->line, size(lv));
             plv = addr(lv, exprtype(lv));
             stor = mkexpr(lhs->line, Oblit, plv, prv, sz, NULL);
         } else {
@@ -800,10 +831,10 @@ Node *assign(Simp *s, Node *lhs, Node *rhs)
          * so we know our work is done. */
         if (u == t) {
             r = t;
-        } else if (size(lhs) > Wordsz) {
+        } else if (size(lhs) > Ptrsz) {
             t = addr(t, exprtype(lhs));
             u = addr(u, exprtype(lhs));
-            v = word(lhs->line, size(lhs));
+            v = disp(lhs->line, size(lhs));
             r = mkexpr(lhs->line, Oblit, t, u, v, NULL);
         } else if (exprop(lhs) == Ovar) {
             r = mkexpr(lhs->line, Oset, t, u, NULL);
@@ -828,9 +859,9 @@ static Node *lowertup(Simp *s, Node *n, Node *dst)
     off = 0;
     for (i = 0; i < n->expr.nargs; i++) {
         val = rval(s, args[i], NULL);
-        pdst = add(r, word(n->line, off));
-        if (size(args[i]) > Wordsz) {
-            sz = word(n->line, size(val));
+        pdst = add(r, disp(n->line, off));
+        if (size(args[i]) > Ptrsz) {
+            sz = disp(n->line, size(val));
             pval = addr(val, exprtype(val));
             stor = mkexpr(n->line, Oblit, pdst, pval, sz, NULL);
         } else {
@@ -867,16 +898,16 @@ static Node *lowerucon(Simp *s, Node *n, Node *dst)
     else
         tmp = temp(s, n);
     u = addr(tmp, exprtype(n));
-    tag = word(n->line, uc->id);
+    tag = disp(n->line, uc->id);
     append(s, store(u, tag));
     if (!uc->etype)
         return tmp;
 
     elt = rval(s, n->expr.args[1], NULL);
-    u = add(u, wordsz);
-    if (tysize(uc->etype) > Wordsz) {
+    u = addk(u, Ptrsz);
+    if (tysize(uc->etype) > Ptrsz) {
         elt = addr(elt, uc->etype);
-        sz = word(n->line, tysize(uc->utype));
+        sz = disp(n->line, tysize(uc->utype));
         r = mkexpr(n->line, Oblit, u, elt, sz, NULL);
     } else {
         r = store(u, elt);
@@ -914,7 +945,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
             simplazy(s, n, r);
             break;
         case Osize:
-            r = word(n->line, size(args[0]));
+            r = disp(n->line, size(args[0]));
             break;
         case Oslice:
             r = lowerslice(s, n, dst);
@@ -964,12 +995,12 @@ static Node *rval(Simp *s, Node *n, Node *dst)
          *  => args[0] = args[0] + 1
          *     expr(x) */
         case Opreinc:
-            v = assign(s, args[0], add(args[0], one));
+            v = assign(s, args[0], addk(args[0], 1));
             append(s, v);
             r = rval(s, args[0], NULL);
             break;
         case Opredec:
-            v = assign(s, args[0], sub(args[0], one));
+            v = assign(s, args[0], subk(args[0], 1));
             append(s, v);
             r = rval(s, args[0], NULL);
             break;
@@ -981,12 +1012,12 @@ static Node *rval(Simp *s, Node *n, Node *dst)
          */
         case Opostinc:
             r = rval(s, args[0], NULL);
-            t = store(lval(s, args[0]), add(r, one));
+            t = store(lval(s, args[0]), addk(r, 1));
             lappend(&s->incqueue, &s->nqueue, t);
             break;
         case Opostdec:
             r = rval(s, args[0], NULL);
-            t = store(lval(s, args[0]), sub(r, one));
+            t = store(lval(s, args[0]), subk(r, 1));
             lappend(&s->incqueue, &s->nqueue, t);
             break;
         case Olit:
@@ -1009,7 +1040,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
             if (s->isbigret) {
                 t = rval(s, args[0], NULL);
                 t = addr(t, exprtype(args[0]));
-                u = word(n->line, size(args[0]));
+                u = disp(n->line, size(args[0]));
                 v = mkexpr(n->line, Oblit, s->ret, t, u, NULL);
                 append(s, v);
             } else if (n->expr.nargs && n->expr.args[0]) {
@@ -1023,7 +1054,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
             r = assign(s, args[0], args[1]);
             break;
         case Ocall:
-            if (exprtype(n)->type != Tyvoid && size(n) > Wordsz) {
+            if (exprtype(n)->type != Tyvoid && size(n) > Ptrsz) {
                 r = temp(s, n);
                 linsert(&n->expr.args, &n->expr.nargs, 1, addr(r, exprtype(n)));
                 for (i = 0; i < n->expr.nargs; i++)
@@ -1050,7 +1081,7 @@ static void declarelocal(Simp *s, Node *n)
 {
     assert(n->type == Ndecl);
     s->stksz += size(n);
-    s->stksz = align(s->stksz, min(size(n), Wordsz));
+    s->stksz = align(s->stksz, min(size(n), Ptrsz));
     if (debug)
         printf("declare %s:%s(%zd) at %zd\n", declname(n), tystr(decltype(n)), n->decl.did, s->stksz);
     htput(s->locs, n, (void*)s->stksz);
@@ -1059,10 +1090,10 @@ static void declarelocal(Simp *s, Node *n)
 static void declarearg(Simp *s, Node *n)
 {
     assert(n->type == Ndecl);
-    s->argsz = align(s->argsz, min(size(n), Wordsz));
+    s->argsz = align(s->argsz, min(size(n), Ptrsz));
     if (debug)
-        printf("declare %s(%zd) at %zd\n", declname(n), n->decl.did, -(s->argsz + 8));
-    htput(s->locs, n, (void*)-(s->argsz + 8));
+        printf("declare %s(%zd) at %zd\n", declname(n), n->decl.did, -(s->argsz + 2*Ptrsz));
+    htput(s->locs, n, (void*)-(s->argsz + 2*Ptrsz));
     s->argsz += size(n);
 }
 
@@ -1124,7 +1155,7 @@ static void flatten(Simp *s, Node *f)
     assert(f->type == Nfunc);
 
     ty = f->func.type->sub[0];
-    if (ty->type != Tyvoid && tysize(ty) > Wordsz) {
+    if (ty->type != Tyvoid && tysize(ty) > Ptrsz) {
         s->isbigret = 1;
         s->ret = gentemp(s, f, mktyptr(f->line, ty), &dcl);
         declarearg(s, dcl);
@@ -1254,12 +1285,8 @@ void gen(Node *file, char *out)
     FILE *fd;
 
     /* declare useful constants */
-    tyword = mkty(-1, Tyint);
+    tyintptr = mkty(-1, Tyuint64);
     tyvoid = mkty(-1, Tyvoid);
-    one = word(-1, 1);
-    zero = word(-1, 0);
-    ptrsz = word(-1, Wordsz);
-    wordsz = word(-1, Wordsz);
 
     fn = NULL;
     nfn = 0;
