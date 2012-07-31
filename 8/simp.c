@@ -212,6 +212,7 @@ static char *asmname(Node *n)
 int stacktype(Type *t)
 {
     /* the types are arranged in types.def such that this is true */
+    t = tybase(t);
     return t->type >= Tyslice;
 }
 
