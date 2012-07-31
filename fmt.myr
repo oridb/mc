@@ -1,0 +1,34 @@
+use "die.use"
+use "sys.use"
+use "types.use"
+use "str.use"
+
+pkg std =
+	const bfmt	: (buf : byte[,], fmt : byte[,], args:... -> size)
+	const fmt	: (fmt : byte[,], args:... -> size)
+;;
+
+const fmt = {fmt, args
+	var c
+	var s
+	var n
+
+	n = 0
+	for (c, s) = striter(fmt); s.len; (c, s) = striter(s)
+		if c == '%'
+			(c, s) = striter(s)
+			match c
+			's':
+				write(1, "str")
+				;;
+			'd':
+				write(1, "int")
+				;;
+			'p':
+				write(1, "ptr")
+				;;
+			;;
+		;;
+	;;
+	-> n
+}
