@@ -94,7 +94,9 @@ static Loc *loc(Isel *s, Node *n)
                     rip = locphysreg(Rrip);
                 l = locmeml(htget(s->globls, n), rip, NULL, mode(n));
             } else {
-                die("%s (id=%ld) not found", namestr(n->expr.args[0]), n->expr.did);
+                if (!hthas(s->reglocs, n))
+                    htput(s->reglocs, n, locreg(mode(n)));
+                return htget(s->reglocs, n);
             }
             break;
         case Olit:
@@ -870,6 +872,7 @@ void genasm(FILE *fd, Func *fn, Htab *globls)
     size_t i, j;
     char buf[128];
 
+    is.reglocs = mkht(dclhash, dcleq);
     is.locs = fn->locs;
     is.globls = globls;
     is.ret = fn->ret;

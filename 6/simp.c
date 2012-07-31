@@ -151,30 +151,6 @@ static Node *disp(int line, uint v)
     return n;
 }
 
-static size_t did(Node *n)
-{
-    if (n->type == Ndecl) {
-        return n->decl.did;
-    } else if (n->type == Nexpr) {
-        assert(exprop(n) == Ovar);
-        return n->expr.did;
-    }
-    dump(n, stderr);
-    die("Can't get did");
-    return 0;
-}
-
-static ulong dclhash(void *dcl)
-{
-    /* large-prime hash. meh. */
-    return did(dcl) * 366787;
-}
-
-static int dcleq(void *a, void *b)
-{
-    return did(a) == did(b);
-}
-
 static void append(Simp *s, Node *n)
 {
     lappend(&s->stmts, &s->nstmts, n);
@@ -325,7 +301,8 @@ static Node *temp(Simp *simp, Node *e)
 
     assert(e->type == Nexpr);
     t = gentemp(simp, e, e->expr.type, &dcl);
-    declarelocal(simp, dcl);
+    if (stacknode(e))
+        declarelocal(simp, dcl);
     return t;
 }
 
@@ -1094,11 +1071,13 @@ static Node *rval(Simp *s, Node *n, Node *dst)
 static void declarelocal(Simp *s, Node *n)
 {
     assert(n->type == Ndecl);
-    s->stksz += size(n);
-    s->stksz = align(s->stksz, min(size(n), Ptrsz));
-    if (debug)
-        printf("declare %s:%s(%zd) at %zd\n", declname(n), tystr(decltype(n)), n->decl.did, s->stksz);
-    htput(s->locs, n, (void*)s->stksz);
+    if (stacknode(n)) {
+        s->stksz += size(n);
+        s->stksz = align(s->stksz, min(size(n), Ptrsz));
+        if (debug)
+            printf("declare %s:%s(%zd) at %zd\n", declname(n), tystr(decltype(n)), n->decl.did, s->stksz);
+        htput(s->locs, n, (void*)s->stksz);
+    }
 }
 
 static void declarearg(Simp *s, Node *n)

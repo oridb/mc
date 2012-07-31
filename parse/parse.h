@@ -393,6 +393,8 @@ Type *nodetype(Node *n);
 void addstmt(Node *file, Node *stmt);
 void setns(Node *n, char *ns);
 void updatens(Stab *st, char *ns);
+ulong dclhash(void *dcl);
+int dcleq(void *a, void *b);
 Op exprop(Node *n);
 
 /* specialize generics */
