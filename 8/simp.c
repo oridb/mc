@@ -943,7 +943,8 @@ static Node *rval(Simp *s, Node *n, Node *dst)
             simplazy(s, n, r);
             break;
         case Osize:
-            r = disp(n->line, size(args[0]));
+            r = mkintlit(n->line, size(args[0]));
+            r->expr.type = exprtype(n);
             break;
         case Oslice:
             r = lowerslice(s, n, dst);
