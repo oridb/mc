@@ -51,6 +51,12 @@ struct {
     [Ole] = {Icmp, Ijle, Isetle}
 };
 
+static int stacktype(Type *t)
+{
+    /* the types are arranged in types.def such that this is true */
+    return t->type >= Tyslice;
+}
+
 static Mode mode(Node *n)
 {
     Type *t;
@@ -60,6 +66,8 @@ static Mode mode(Node *n)
         case Tyfloat32: return ModeF; break;
         case Tyfloat64: return ModeD; break;
         default:
+            if (stacktype(t))
+                return ModeNone;
             switch (size(n)) {
                 case 1: return ModeB; break;
                 case 2: return ModeS; break;
@@ -359,6 +367,8 @@ static Loc *gencall(Isel *s, Node *n)
     rsp = locphysreg(Rrsp);
     if (tybase(exprtype(n))->type == Tyvoid)
         rax = NULL;
+    else if (stacktype(exprtype(n)))
+        rax = locphysreg(Rrax);
     else
         rax = coreg(Rrax, mode(n));
     argsz = 0;
