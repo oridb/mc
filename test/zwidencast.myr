@@ -1,0 +1,8 @@
+const main = {
+	var u : uint8
+	var v : uint32
+	
+	u = 99
+	v = u castto(uint32)
+	-> v
+}
