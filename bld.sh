@@ -46,7 +46,6 @@ MYR="types.myr \
     die.myr \
     alloc.myr\
     str.myr \
-    fmt.myr \
     chartype.myr"
 
 OBJ="$(echo $ASM | sed 's/\.s/.o /g') $(echo $MYR | sed 's/\.myr/.o /g')"

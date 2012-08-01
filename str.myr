@@ -5,7 +5,7 @@ use "types.use"
 pkg std =
 	const Badchar	: char = -1 castto(char)
 
-	const charlen	: (chr : char -> int)
+	const charlen	: (chr : char -> size)
 	const encode	: (chr : char, buf : byte[,] -> bool)
 	const decode	: (buf : byte[,] -> char)
 	const striter	: (str : byte[,] -> [char, byte[,]])
