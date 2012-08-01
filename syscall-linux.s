@@ -16,6 +16,7 @@ std$syscall:
 	movq 56(%rsp),%r8
 	movq 64(%rsp),%r9
 
-	int $0x80
+	sysenter
+
 	popq %rbp
 	ret
