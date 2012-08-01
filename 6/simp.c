@@ -522,7 +522,7 @@ static void simpblk(Simp *s, Node *n)
     }
 }
 
-static Node *lowerlit(Simp *s, Node *lit, Node ***l, size_t *nl)
+static Node *simplit(Simp *s, Node *lit, Node ***l, size_t *nl)
 {
     Node *n, *d, *r;
     char lbl[128];
@@ -686,7 +686,7 @@ static Node *simplazy(Simp *s, Node *n, Node *r)
     return r;
 }
 
-static Node *lowerslice(Simp *s, Node *n, Node *dst)
+static Node *simpslice(Simp *s, Node *n, Node *dst)
 {
     Node *t;
     Node *start, *end;
@@ -711,7 +711,7 @@ static Node *lowerslice(Simp *s, Node *n, Node *dst)
     return t;
 }
 
-static Node *lowercast(Simp *s, Node *n)
+static Node *simpcast(Simp *s, Node *n)
 {
     Node **args;
     Node *sz;
@@ -844,7 +844,7 @@ Node *assign(Simp *s, Node *lhs, Node *rhs)
     return r;
 }
 
-static Node *lowertup(Simp *s, Node *n, Node *dst)
+static Node *simptup(Simp *s, Node *n, Node *dst)
 {
     Node *pdst, *pval, *val, *sz, *stor, **args;
     Node *r;
@@ -872,7 +872,7 @@ static Node *lowertup(Simp *s, Node *n, Node *dst)
     return dst;
 }
 
-static Node *lowerucon(Simp *s, Node *n, Node *dst)
+static Node *simpucon(Simp *s, Node *n, Node *dst)
 {
     Node *tmp, *u, *tag, *elt, *sz;
     Node *r;
@@ -953,7 +953,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
             r->expr.type = exprtype(n);
             break;
         case Oslice:
-            r = lowerslice(s, n, dst);
+            r = simpslice(s, n, dst);
             break;
         case Oidx:
             t = idxaddr(s, n);
@@ -972,14 +972,14 @@ static Node *rval(Simp *s, Node *n, Node *dst)
             }
             break;
         case Ocons:
-            r = lowerucon(s, n, dst);
+            r = simpucon(s, n, dst);
             break;
         case Otup:
-            r = lowertup(s, n, dst);
+            r = simptup(s, n, dst);
             break;
         case Ocast:
             /* slice -> ptr cast */
-            r = lowercast(s, n);
+            r = simpcast(s, n);
             break;
 
         /* fused ops:
@@ -1031,10 +1031,10 @@ static Node *rval(Simp *s, Node *n, Node *dst)
                     r = n;
                     break;
                 case Lstr: case Lseq: case Lflt:
-                    r = lowerlit(s, n, &s->blobs, &s->nblobs);
+                    r = simplit(s, n, &s->blobs, &s->nblobs);
                     break;
                 case Lfunc:
-                    r = lowerlit(s, n, &file->file.stmts, &file->file.nstmts);
+                    r = simplit(s, n, &file->file.stmts, &file->file.nstmts);
                     break;
             }
             break;
@@ -1178,7 +1178,7 @@ static void flatten(Simp *s, Node *f)
     append(s, s->endlbl);
 }
 
-static Func *lowerfn(Simp *s, char *name, Node *n, int export)
+static Func *simpfn(Simp *s, char *name, Node *n, int export)
 {
     size_t i;
     Func *fn;
@@ -1248,7 +1248,7 @@ static void fillglobls(Stab *st, Htab *globls)
     free(k);
 }
 
-static void lowerdcl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***blob, size_t *nblob)
+static void simpdcl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***blob, size_t *nblob)
 {
     Simp s = {0,};
     char *name;
@@ -1262,7 +1262,7 @@ static void lowerdcl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***b
 
     if (isconstfn(dcl)) {
         if (!dcl->decl.isextern && !dcl->decl.isgeneric) {
-            f = lowerfn(&s, name, dcl->decl.init, dcl->decl.isexport);
+            f = simpfn(&s, name, dcl->decl.init, dcl->decl.isexport);
             lappend(fn, nfn, f);
         }
     } else {
@@ -1273,7 +1273,7 @@ static void lowerdcl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***b
         else if (!dcl->decl.isconst && !dcl->decl.init)
             lappend(&s.blobs, &s.nblobs, dcl);
         else
-            die("We don't lower globls with nonlit inits yet...");
+            die("We don't simp globls with nonlit inits yet...");
     }
     *blob = s.blobs;
     *nblob = s.nblobs;
@@ -1309,7 +1309,7 @@ void gen(Node *file, char *out)
             case Nuse: /* nothing to do */ 
                 break;
             case Ndecl:
-                lowerdcl(n, globls, &fn, &nfn, &blob, &nblob);
+                simpdcl(n, globls, &fn, &nfn, &blob, &nblob);
                 break;
             default:
                 die("Bad node %s in toplevel", nodestr(n->type));

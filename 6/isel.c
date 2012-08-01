@@ -56,12 +56,15 @@ static Mode mode(Node *n)
     Type *t;
 
     t = tybase(exprtype(n));
+    /* FIXME: What should the mode for, say, structs be when we have no
+     * intention of loading /through/ the pointer? For now, we'll just say it's
+     * the pointer mode, since we expect to address through the pointer */
     switch (t->type) {
         case Tyfloat32: return ModeF; break;
         case Tyfloat64: return ModeD; break;
         default:
             if (stacktype(t))
-                return ModeNone;
+                return ModeQ;
             switch (size(n)) {
                 case 1: return ModeB; break;
                 case 2: return ModeS; break;
@@ -70,10 +73,7 @@ static Mode mode(Node *n)
             }
             break;
     }
-    /* FIXME: huh. what should the mode for, say, structs
-     * be when we have no intention of loading /through/ the
-     * pointer? */
-    return ModeNone;
+    return ModeQ;
 }
 
 static Loc *loc(Isel *s, Node *n)
@@ -614,6 +614,7 @@ Loc *selexpr(Isel *s, Node *n)
 
 void locprint(FILE *fd, Loc *l, char spec)
 {
+    assert(l->mode);
     switch (l->type) {
         case Loclitl:
             assert(spec == 'i' || spec == 'x' || spec == 'u');
