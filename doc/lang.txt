@@ -177,8 +177,15 @@ Types:
 
         union
 
-    Any of these types can be given a name. This naming defines a completely
-    new incompatible type
+    Any of these types can be given a name. This naming defines a new
+    type which inherits all the constraints of the previous type, but
+    does not unify with it. Eg:
+
+        type t = int
+        var x : t
+        var y : int
+        x = y  // type error
+        x = 42 // sure, why not?
 
 Type Constraints
 

@@ -33,6 +33,7 @@ static void usage(char *prog)
     printf("\t\t\tl: additionally log lowered pre-cfg trees\n");
     printf("\t\t\tT: additionally log tree immediately\n");
     printf("\t\t\tr: additionally log register allocation activity\n");
+    printf("\t\t\ti: additionally log instruction selection activity\n");
     printf("\t-o\tOutput to outfile\n");
     printf("\t-S\tGenerate assembly instead of object code\n");
 }
@@ -69,7 +70,7 @@ int main(int argc, char **argv)
                 while (optarg && *optarg) {
                     if (*optarg == 'y')
                         yydebug = 1;
-                    debugopt[*optarg++ & 0x7f] = 1;
+                    debugopt[*optarg++ & 0x7f]++;
                 }
                 break;
             case 'I':
