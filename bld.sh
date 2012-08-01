@@ -5,7 +5,7 @@
 # testing purposes on every run as things stand.
 
 export PATH=.:$PATH
-export MC=8m
+export MC=6m
 export MU=muse
 export CC=cc
 export ASOPT="-g"
@@ -35,7 +35,7 @@ function build {
 
 function assem {
     for i in $@; do
-        $CC $ASOPT -m32 -c $i
+        $CC $ASOPT -c $i
     done
 }
 
