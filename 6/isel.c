@@ -154,7 +154,6 @@ static void movz(Isel *s, Loc *src, Loc *dst)
         g(s, Imovz, src, dst, NULL);
 }
 
-
 static void load(Isel *s, Loc *a, Loc *b)
 {
     Loc *l;
@@ -584,12 +583,14 @@ Loc *selexpr(Isel *s, Node *n)
             break;
         case Ozwiden:
             a = selexpr(s, args[0]);
+            a = inr(s, a);
             b = locreg(mode(n));
             movz(s, a, b);
             r = b;
             break;
         case Oswiden:
             a = selexpr(s, args[0]);
+            a = inr(s, a);
             b = locreg(mode(n));
             g(s, Imovs, a, b, NULL);
             r = b;

@@ -711,9 +711,8 @@ static Node *simpslice(Simp *s, Node *n, Node *dst)
     return t;
 }
 
-static Node *simpcast(Simp *s, Node *n)
+static Node *simpcast(Simp *s, Node *val, Type *to)
 {
-    Node **args;
     Node *sz;
     Node *r;
     Type *t;
@@ -722,22 +721,21 @@ static Node *simpcast(Simp *s, Node *n)
 
     issigned = 0;
     r = NULL;
-    args = n->expr.args;
-    switch (tybase(exprtype(n))->type) {
+    switch (tybase(to)->type) {
         case Tyint8: case Tyint16: case Tyint32: case Tyint64:
         case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint64:
         case Tyint: case Tyuint: case Tylong: case Tyulong:
         case Tychar: case Tybyte:
         case Typtr:
-            t = tybase(exprtype(args[0]));
+            t = tybase(exprtype(val));
             switch (t->type) {
                 case Tyslice:
                     if (t->type == Typtr)
-                        fatal(n->line, "Bad cast from %s to %s",
-                              tystr(exprtype(args[0])), tystr(exprtype(n)));
-                    sz = mkintlit(n->line, Ptrsz);
-                    sz->expr.type = exprtype(args[0]);
-                    r = slicebase(s, args[0], sz);
+                        fatal(val->line, "Bad cast from %s to %s",
+                              tystr(exprtype(val)), tystr(to));
+                    sz = mkintlit(val->line, Ptrsz);
+                    sz->expr.type = exprtype(val);
+                    r = slicebase(s, val, sz);
                     break;
                 case Tyint8: case Tyint16: case Tyint32: case Tyint64:
                 case Tyint: case Tylong:
@@ -745,27 +743,27 @@ static Node *simpcast(Simp *s, Node *n)
                 case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint64:
                 case Tyuint: case Tyulong: case Tychar: case Tybyte:
                 case Typtr:
-                    fromsz = size(args[0]);
-                    tosz = size(n);
-                    r = rval(s, args[0], NULL);
+                    fromsz = size(val);
+                    tosz = tysize(to);
+                    r = rval(s, val, NULL);
                     if (fromsz > tosz) {
-                        r = mkexpr(n->line, Otrunc, r, NULL);
+                        r = mkexpr(val->line, Otrunc, r, NULL);
                     } else if (tosz > fromsz) {
                         if (issigned)
-                            r = mkexpr(n->line, Oswiden, r, NULL);
+                            r = mkexpr(val->line, Oswiden, r, NULL);
                         else
-                            r = mkexpr(n->line, Ozwiden, r, NULL);
+                            r = mkexpr(val->line, Ozwiden, r, NULL);
                     }
-                    r->expr.type = n->expr.type;
+                    r->expr.type = to;
                     break;
                 default:
-                    fatal(n->line, "Bad cast from %s to %s",
-                          tystr(exprtype(args[0])), tystr(exprtype(n)));
+                    fatal(val->line, "Bad cast from %s to %s",
+                          tystr(exprtype(val)), tystr(to));
             }
             break;
         default:
-            fatal(n->line, "Bad cast from %s to %s",
-                  tystr(exprtype(args[0])), tystr(exprtype(n)));
+            fatal(val->line, "Bad cast from %s to %s",
+                  tystr(exprtype(val)), tystr(to));
     }
     return r;
 }
@@ -962,10 +960,12 @@ static Node *rval(Simp *s, Node *n, Node *dst)
         case Omemb:
             if (exprtype(args[0])->type == Tyslice) {
                 assert(!strcmp(namestr(args[1]), "len"));
-                r = slicelen(s, args[0]);
+                t = slicelen(s, args[0]);
+                r = simpcast(s, t, exprtype(n));
             } else if (exprtype(args[0])->type == Tyarray) {
                 assert(!strcmp(namestr(args[1]), "len"));
-                r = exprtype(args[0])->asize;
+                t = exprtype(args[0])->asize;
+                r = simpcast(s, t, exprtype(n));
             } else {
                 t = membaddr(s, n);
                 r = load(t);
@@ -978,8 +978,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
             r = simptup(s, n, dst);
             break;
         case Ocast:
-            /* slice -> ptr cast */
-            r = simpcast(s, n);
+            r = simpcast(s, args[0], exprtype(n));
             break;
 
         /* fused ops:
