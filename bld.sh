@@ -67,8 +67,3 @@ COMP="$CC -m32 -o test test.o -L. -lstd"
 echo $COMP
 $COMP
 
-build f.myr 
-COMP="$CC -m32 -o f f.o -L. -lstd"
-echo $COMP
-$COMP
-

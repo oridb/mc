@@ -1,24 +1,22 @@
 .globl std$syscall
 std$syscall:
-	pushl %ebp
+	pushq %rbp
 	/*
-	   hack: 6 args uses %ebp, so we index
-	   relative to %esp.
-
-           hack: We load 6 args regardless of
-           how many we actually have. This may
-           load junk values, but if the syscall
-           doesn't use them, it's going to be
-           harmless.
+	hack: We load 6 args regardless of
+	how many we actually have. This may
+	load junk values, but if the syscall
+	doesn't use them, it's going to be
+	harmless.
 	 */
-	movl 8(%esp),%eax
-	movl 12(%esp),%ebx
-	movl 16(%esp),%ecx
-	movl 20(%esp),%edx
-	movl 24(%esp),%esi
-	movl 28(%esp),%edi
-	movl 32(%esp),%ebp
+	movq 16(%rsp),%rax
+	movq 24(%rsp),%rdi
+	movq 32(%rsp),%rsi
+	movq 40(%rsp),%rdx
+	movq 48(%rsp),%r10
+	movq 56(%rsp),%r8
+	movq 64(%rsp),%r9
 
-        int $0x80
-	popl %ebp
+	sysenter
+
+	popq %rbp
 	ret
