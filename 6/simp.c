@@ -626,21 +626,27 @@ static Node *idxaddr(Simp *s, Node *n)
 static Node *slicebase(Simp *s, Node *n, Node *off)
 {
     Node *t, *u, *v;
+    Type *ty;
     int sz;
 
     t = rval(s, n, NULL);
     u = NULL;
-    switch (exprtype(n)->type) {
+    ty = tybase(exprtype(n));
+    switch (ty->type) {
         case Typtr:     u = n; break;
         case Tyarray:   u = addr(t, base(exprtype(n))); break;
         case Tyslice:   u = load(addr(t, mktyptr(n->line, base(exprtype(n))))); break;
         default: die("Unslicable type %s", tystr(n->expr.type));
     }
     /* safe: all types we allow here have a sub[0] that we want to grab */
-    off = ptrsized(s, off);
-    sz = tysize(n->expr.type->sub[0]);
-    v = mul(off, disp(n->line, sz));
-    return add(u, v);
+    if (off) {
+      off = ptrsized(s, off);
+      sz = tysize(n->expr.type->sub[0]);
+      v = mul(off, disp(n->line, sz));
+      return add(u, v);
+    } else {
+      return u;
+    }
 }
 
 static Node *slicelen(Simp *s, Node *sl)
@@ -713,7 +719,6 @@ static Node *simpslice(Simp *s, Node *n, Node *dst)
 
 static Node *simpcast(Simp *s, Node *val, Type *to)
 {
-    Node *sz;
     Node *r;
     Type *t;
     int issigned;
@@ -733,9 +738,7 @@ static Node *simpcast(Simp *s, Node *val, Type *to)
                     if (t->type == Typtr)
                         fatal(val->line, "Bad cast from %s to %s",
                               tystr(exprtype(val)), tystr(to));
-                    sz = mkintlit(val->line, Ptrsz);
-                    sz->expr.type = exprtype(val);
-                    r = slicebase(s, val, sz);
+                    r = slicebase(s, val, NULL);
                     break;
                 case Tyint8: case Tyint16: case Tyint32: case Tyint64:
                 case Tyint: case Tylong:
