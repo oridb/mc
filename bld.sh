@@ -5,7 +5,7 @@
 # testing purposes on every run as things stand.
 
 export PATH=.:$PATH
-export MC=8m
+export MC=6m
 export MU=muse
 export CC=cc
 export ASOPT="-g"
@@ -35,7 +35,7 @@ function build {
 
 function assem {
     for i in $@; do
-        $CC $ASOPT -m32 -c $i
+        $CC $ASOPT -c $i
     done
 }
 
@@ -45,12 +45,13 @@ MYR="types.myr \
     sys-$SYS.myr \
     die.myr \
     alloc.myr\
-    str.myr \
-    fmt.myr \
-    chartype.myr"
-
+    fmt.myr"
+#disable
+    #chartype.myr"
+    #str.myr \
 OBJ="$(echo $ASM | sed 's/\.s/.o /g') $(echo $MYR | sed 's/\.myr/.o /g')"
 USE="$(echo $MYR | sed 's/\.myr/.use /g')"
+rm $OBJ test libstd.a
 assem $ASM
 use $MYR
 build $MYR
