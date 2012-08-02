@@ -338,16 +338,17 @@ static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size
 
     /* Slightly funny loop condition: We might have trailing bytes
      * that we can't blit word-wise. */
-    tmp = locreg(ModeL);
-    for (i = 0; i < sz/4; i++) {
-        src = locmem(i*4 + srcoff, sp, NULL, ModeL);
-        dst = locmem(i*4 + dstoff, dp, NULL, ModeL);
+    tmp = locreg(ModeQ);
+    for (i = 0; i < sz/Ptrsz; i++) {
+        src = locmem(i*Ptrsz + srcoff, sp, NULL, ModeQ);
+        dst = locmem(i*Ptrsz + dstoff, dp, NULL, ModeQ);
         g(s, Imov, src, tmp, NULL);
         g(s, Imov, tmp, dst, NULL);
     }
     /* now, the trailing bytes */
     tmp = locreg(ModeB);
-    for (; i < sz%4; i++) {
+    i *= Ptrsz; /* we counted in Ptrsz chunks; now we need a byte offset */
+    for (; i < sz; i++) {
         src = locmem(i, sp, NULL, ModeB);
         dst = locmem(i, dp, NULL, ModeB);
         g(s, Imov, src, tmp, NULL);
