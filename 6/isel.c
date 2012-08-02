@@ -56,12 +56,15 @@ static Mode mode(Node *n)
     Type *t;
 
     t = tybase(exprtype(n));
+    /* FIXME: What should the mode for, say, structs be when we have no
+     * intention of loading /through/ the pointer? For now, we'll just say it's
+     * the pointer mode, since we expect to address through the pointer */
     switch (t->type) {
         case Tyfloat32: return ModeF; break;
         case Tyfloat64: return ModeD; break;
         default:
             if (stacktype(t))
-                return ModeNone;
+                return ModeQ;
             switch (size(n)) {
                 case 1: return ModeB; break;
                 case 2: return ModeS; break;
@@ -70,10 +73,7 @@ static Mode mode(Node *n)
             }
             break;
     }
-    /* FIXME: huh. what should the mode for, say, structs
-     * be when we have no intention of loading /through/ the
-     * pointer? */
-    return ModeNone;
+    return ModeQ;
 }
 
 static Loc *loc(Isel *s, Node *n)
@@ -94,7 +94,9 @@ static Loc *loc(Isel *s, Node *n)
                     rip = locphysreg(Rrip);
                 l = locmeml(htget(s->globls, n), rip, NULL, mode(n));
             } else {
-                die("%s (id=%ld) not found", namestr(n->expr.args[0]), n->expr.did);
+                if (!hthas(s->reglocs, n))
+                    htput(s->reglocs, n, locreg(mode(n)));
+                return htget(s->reglocs, n);
             }
             break;
         case Olit:
@@ -356,19 +358,23 @@ static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size
 
 static Loc *gencall(Isel *s, Node *n)
 {
-    Loc *src, *dst, *arg, *fn;   /* values we reduced */
-    Loc *rax, *rsp;       /* hard-coded registers */
+    Loc *src, *dst, *arg, *fn;  /* values we reduced */
+    Loc *rax, *rsp, *ret;       /* hard-coded registers */
     Loc *stkbump;        /* calculated stack offset */
     int argsz, argoff;
     size_t i;
 
     rsp = locphysreg(Rrsp);
-    if (tybase(exprtype(n))->type == Tyvoid)
+    if (tybase(exprtype(n))->type == Tyvoid) {
         rax = NULL;
-    else if (stacktype(exprtype(n)))
+        ret = NULL;
+    } else if (stacktype(exprtype(n))) {
         rax = locphysreg(Rrax);
-    else
+        ret = locreg(ModeQ);
+    } else {
         rax = coreg(Rrax, mode(n));
+        ret = locreg(mode(n));
+    }
     argsz = 0;
     /* Have to calculate the amount to bump the stack
      * pointer by in one pass first, otherwise if we push
@@ -405,7 +411,9 @@ static Loc *gencall(Isel *s, Node *n)
         g(s, Icallind, fn, NULL);
     if (argsz)
         g(s, Iadd, stkbump, rsp, NULL);
-    return rax;
+    if (rax)
+        g(s, Imov, rax, ret, NULL);
+    return ret;
 }
 
 Loc *selexpr(Isel *s, Node *n)
@@ -436,8 +444,9 @@ Loc *selexpr(Isel *s, Node *n)
             r = locreg(a->mode);
             if (r->mode == ModeB)
                 g(s, Ixor, eax, eax, NULL);
+            else
+                g(s, Ixor, edx, edx, NULL);
             g(s, Imov, a, c, NULL);
-            g(s, Ixor, edx, edx, NULL);
             g(s, Idiv, b, NULL);
             if (exprop(n) == Odiv)
                 d = coreg(Reax, mode(n));
@@ -568,8 +577,10 @@ Loc *selexpr(Isel *s, Node *n)
             r = b;
             break;
         case Otrunc:
-            r = selexpr(s, args[0]);
-            r->mode = mode(n);
+            a = selexpr(s, args[0]);
+            a = inr(s, a);
+            r = locreg(mode(n));
+            g(s, Imov, a, r, NULL);
             break;
         case Ozwiden:
             a = selexpr(s, args[0]);
@@ -603,6 +614,7 @@ Loc *selexpr(Isel *s, Node *n)
 
 void locprint(FILE *fd, Loc *l, char spec)
 {
+    assert(l->mode);
     switch (l->type) {
         case Loclitl:
             assert(spec == 'i' || spec == 'x' || spec == 'u');
@@ -664,13 +676,26 @@ void iprintf(FILE *fd, Insn *insn)
      * means that we need to do a movl when we really want a movzlq. Since
      * we don't know the name of the reg to use, we need to sub it in when
      * writing... */
-    if (insn->op == Imovz) {
-        if (insn->args[0]->mode == ModeL && insn->args[1]->mode == ModeQ) {
-            if (insn->args[1]->reg.colour) {
-                insn->op = Imov;
-                insn->args[1] = coreg(insn->args[1]->reg.colour, ModeL);
+    switch (insn->op) {
+        case Imovz:
+            if (insn->args[0]->mode == ModeL && insn->args[1]->mode == ModeQ) {
+                if (insn->args[1]->reg.colour) {
+                    insn->op = Imov;
+                    insn->args[1] = coreg(insn->args[1]->reg.colour, ModeL);
+                }
             }
-        }
+            break;
+        case Imov:
+            if (insn->args[0]->type == Locreg && insn->args[1]->type == Locreg &&
+                insn->args[0]->reg.colour != Rnone && insn->args[1]->reg.colour != Rnone) {
+                if (insn->args[0]->mode != insn->args[1]->mode)
+                    insn->args[0] = coreg(insn->args[1]->reg.colour, insn->args[1]->mode);
+                /* moving a reg to itself is dumb. */
+                if (insn->args[0]->reg.colour == insn->args[1]->reg.colour)
+                    return;
+            }
+        default:
+            break;
     }
     p = insnfmts[insn->op];
     i = 0;
@@ -870,10 +895,15 @@ void genasm(FILE *fd, Func *fn, Htab *globls)
     size_t i, j;
     char buf[128];
 
+    is.reglocs = mkht(dclhash, dcleq);
     is.locs = fn->locs;
     is.globls = globls;
     is.ret = fn->ret;
     is.cfg = fn->cfg;
+    /* ensure that all physical registers have a loc created, so we
+     * don't get any surprises referring to them in the allocator */
+    for (i = 0; i < Nreg; i++)
+        locphysreg(i);
 
     for (i = 0; i < fn->cfg->nbb; i++)
         lappend(&is.bb, &is.nbb, mkasmbb(fn->cfg->bb[i]));

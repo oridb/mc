@@ -110,6 +110,7 @@ struct Isel {
 
     Node *ret;          /* we store the return into here */
     Htab *locs;         /* decl id => int stkoff */
+    Htab *reglocs;      /* decl id => Loc *reg */
     Htab *globls;       /* decl id => char *globlname */
 
     /* increased when we spill */

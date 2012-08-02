@@ -69,6 +69,8 @@ static void mergeuse(char *path)
 
     st = file->file.exports;
     f = fopen(path, "r");
+    if (!f)
+        die("Couldn't open %s\n", path);
     loaduse(f, st);
     fclose(f);
 }

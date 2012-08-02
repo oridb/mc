@@ -559,6 +559,11 @@ static int combinable(Isel *s, regid u, regid v)
 {
     regid t;
 
+    /* Regs of different modes can't be combined as things stand.
+     * In principle they should be combinable, but it confused the
+     * whole mode dance. */
+    if (locmap[u]->mode != locmap[v]->mode)
+        return 0;
     /* if u isn't prepainted, can we conservatively coalesce? */
     if (!bshas(s->prepainted, u) && conservative(s, u, v))
         return 1;

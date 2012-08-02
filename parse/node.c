@@ -335,3 +335,28 @@ char *namestr(Node *name)
     assert(name->type == Nname);
     return name->name.name;
 }
+
+static size_t did(Node *n)
+{
+    if (n->type == Ndecl) {
+        return n->decl.did;
+    } else if (n->type == Nexpr) {
+        assert(exprop(n) == Ovar);
+        return n->expr.did;
+    }
+    dump(n, stderr);
+    die("Can't get did");
+    return 0;
+}
+
+ulong dclhash(void *dcl)
+{
+    /* large-prime hash. meh. */
+    return did(dcl) * 366787;
+}
+
+int dcleq(void *a, void *b)
+{
+    return did(a) == did(b);
+}
+
