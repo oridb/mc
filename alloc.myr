@@ -18,9 +18,9 @@ const Zbyte	= 0 castto(byte*)
 const Zslab	= 0 castto(slab*)
 const Zchunk	= 0 castto(chunk*)
 
-const Pagesz 	= 4096	/* on the systems this supports, anyways... */
+const Slabsz 	= 4096	/* on the systems this supports, anyways... */
 const Cachemax	= 16	/* maximum number of slabs in the cache */
-const Bucketmax	= 1024	/* Pagesz / 8; a balance. */
+const Bucketmax	= 1024	/* Slabsz / 8; a balance. */
 const Align	= 16	/* minimum allocation alignment */
 
 var buckets	: bucket[32] /* excessive */
@@ -95,7 +95,7 @@ const bytefree = {m, sz
 
 const bktinit = {b : bucket*, sz
 	b.sz = align(sz, Align)
-	b.nper = (Pagesz - sizeof(slab))/b.sz
+	b.nper = (Slabsz - sizeof(slab))/b.sz
 	b.slabs = Zslab
 	b.cache = Zslab
 	b.ncache = 0
@@ -114,7 +114,7 @@ const mkslab = {bkt : bucket*
 		bkt.cache = s.next
 		bkt.ncache--
 	;;
-	p = mmap(Zbyte, Pagesz, Mprotrw, Mpriv | Manon, -1, 0)
+	p = mmap(Zbyte, Slabsz, Mprotrw, Mpriv | Manon, -1, 0)
 	if p == Mapbad
 		die("Unable to mmap")
 	;;
@@ -164,7 +164,7 @@ const bktfree = {bkt, m
 	var s
 	var b
 
-	s = mtrunc(m, Pagesz) castto(slab*)
+	s = mtrunc(m, Slabsz) castto(slab*)
 	b = m castto(chunk*)
 	if s.nfree == 0
 		s.next = bkt.slabs
@@ -174,7 +174,7 @@ const bktfree = {bkt, m
 			s.next = bkt.cache
 			bkt.cache = s
 		else
-			munmap(s castto(byte*), Pagesz)
+			munmap(s castto(byte*), Slabsz)
 		;;
 	;;
 	s.nfree++
