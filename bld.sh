@@ -50,6 +50,7 @@ MYR="types.myr \
 
 OBJ="$(echo $ASM | sed 's/\.s/.o /g') $(echo $MYR | sed 's/\.myr/.o /g')"
 USE="$(echo $MYR | sed 's/\.myr/.use /g')"
+rm $OBJ test libstd.a
 assem $ASM
 use $MYR
 build $MYR
