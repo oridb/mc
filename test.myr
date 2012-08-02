@@ -1,6 +1,7 @@
 use std
 
 const main = {
+	/*
 	var x : byte*[1024]
 	var buf : byte[1024]
 	var sz
@@ -23,7 +24,7 @@ const main = {
 	for i = 0; i < 1024; i++
 		std.free(x[i])
 	;;
-
+	*/
 	std.write(1, "Hello, 世界\n")
 	chartypes()
 }

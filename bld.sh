@@ -49,7 +49,7 @@ MYR="types.myr \
     chartype.myr"
 
 OBJ="$(echo $ASM | sed 's/\.s/.o /g') $(echo $MYR | sed 's/\.myr/.o /g')"
-USE="$(echo $MYR | sed 's/\.myr/.use /g')"
+USE="$(echo $MYR | sed 's/\.myr/.use /g' | sed "s/-$SYS//g")"
 rm $OBJ test libstd.a
 assem $ASM
 use $MYR
@@ -62,7 +62,7 @@ ar -rcs libstd.a $OBJ
 
 # build test program
 build test.myr
-COMP="$CC -m32 -o test test.o -L. -lstd"
+COMP="$CC -o test test.o -L. -lstd"
 echo $COMP
 $COMP
 
