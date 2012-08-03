@@ -1,4 +1,5 @@
 use "die.use"
+use "sys.use"
 
 /* 
    Tables adapted from plan 9's runetype.c,
