@@ -382,8 +382,10 @@ static Loc *gencall(Isel *s, Node *n)
      * Not good.
      *
      * We skip the first operand, since it's the function itself */
-    for (i = 1; i < n->expr.nargs; i++)
+    for (i = 1; i < n->expr.nargs; i++) {
+        argsz = align(argsz, min(size(n->expr.args[i]), Ptrsz));
         argsz += size(n->expr.args[i]);
+    }
     stkbump = loclit(argsz, ModeQ);
     if (argsz)
         g(s, Isub, stkbump, rsp, NULL);
@@ -392,6 +394,7 @@ static Loc *gencall(Isel *s, Node *n)
     argoff = 0;
     for (i = 1; i < n->expr.nargs; i++) {
         arg = selexpr(s, n->expr.args[i]);
+        argoff = align(argoff, min(size(n->expr.args[i]), Ptrsz));
         if (stacknode(n->expr.args[i])) {
             dst = locreg(ModeQ);
             src = locreg(ModeQ);
