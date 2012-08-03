@@ -33,14 +33,16 @@ const chartypes = {
 	var s
 	var c
 
-	s = "世界 123\n"
+	s = "  \n"
 	for (c, s) = std.striter(s); s.len != 0; (c, s) = std.striter(s)
 		if std.isspace(c)
 			std.write(1, "Space\n")
+		/*
 		elif std.isalpha(c)
 			std.write(1, "Alpha\n")
 		elif std.isnum(c)
 			std.write(1, "Num\n")
+		*/
 		;;
 	;;
 }

@@ -1,4 +1,5 @@
 use "die.use"
+use "sys.use"
 
 /* 
    Tables adapted from plan 9's runetype.c,
@@ -1040,19 +1041,24 @@ const findc = {c, t, sz, nelt, ret
 	var l
 	var m
 
-	l = t
-	while l.len > nelt
-		m = l.len/2
-		l = t[m+nelt, t.len]
-		if c >= l[0]
-			t = l[m, l.len]
-		else
-			t = l[0,m]
+	/* we're processing in chunks of size 
+	   nelt, so 1 chunk is of length 'nelt' */
+	while t.len > nelt
+		sz /= 2
+		m = sz*nelt
+		l = t[m, t.len]
+		if c == l[0]
+			t = l[0, nelt]
+		elif c > l[0]
+			t = l[1,t.len]
+		elif c < l[0]
+			t = t[0,m]
 		;;
 	;;
 
-	if l.len != 0 && c >= t[0]
-		*ret = l
+	write(1, "found")
+	if t.len != 0 && c >= t[0]
+		*ret = t
 		-> true
 	else
 		-> false
@@ -1095,10 +1101,10 @@ const isalnum = {c
 
 const isspace = {c
 	var l
-	var c
 	var sl
 	var len
 
+	l = tabspace2[0,tabspace2.len]
 	sl = tabspace2[0,tabspace2.len]
 	len = tabspace2.len/2
 	if findc(c, sl, len, 2, &l)
