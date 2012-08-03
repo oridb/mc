@@ -298,7 +298,7 @@ static void constrain(Inferstate *st, Node *ctx, Type *a, Cstr *c)
         if (!a->cstrs)
             a->cstrs = mkbs();
         setcstr(a, c);
-    } else if (!bshas(a->cstrs, c->cid)) {
+    } else if (!a->cstrs || !bshas(a->cstrs, c->cid)) {
             fatal(ctx->line, "%s needs %s near %s", tystr(a), c->name, ctxstr(st, ctx));
     }
 }
