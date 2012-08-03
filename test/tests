@@ -22,8 +22,10 @@ B bsr		E	5
 B trunccast	E	15
 B zwidencast	E	99
 B swidencast	E	99
-B derefassign	E       123
-B ptrpreinc	E       9
+B derefassign	E	123
+B ptrpreinc	E	9
+B outparam	E	42
+B outparam-sl	E	2
 B struct1	E	12
 B struct	E	42
 B structptr	E	42

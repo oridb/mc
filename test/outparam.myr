@@ -1,0 +1,11 @@
+const f = {out
+	*out = 42
+}
+
+const main = {
+	var v
+
+	v = 16
+	f(&v)
+	-> v
+}
