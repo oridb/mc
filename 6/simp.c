@@ -131,17 +131,26 @@ static Node *load(Node *a)
     return n;
 }
 
-static Node *store(Node *a, Node *b)
+static Node *set(Node *a, Node *b)
 {
     Node *n;
 
     assert(a != NULL && b != NULL);
-    if (exprop(a) == Ovar)
-        n = mkexpr(a->line, Oset, a, b, NULL);
-    else
-        n = mkexpr(a->line, Ostor, a, b, NULL);
+    assert(exprop(a) == Ovar);
+    n = mkexpr(a->line, Oset, a, b, NULL);
     return n;
 }
+
+Node *store(Node *a, Node *b)
+{
+    Node *n;
+
+    assert(a != NULL && b != NULL);
+    assert(tybase(exprtype(a))->type == Typtr);
+    n = mkexpr(a->line, Ostor, a, b, NULL);
+    return n;
+}
+
 
 static Node *disp(int line, uint v)
 {
@@ -680,41 +689,16 @@ static Node *simplazy(Simp *s, Node *n, Node *r)
     next = genlbl();
     end = genlbl();
     a = rval(s, n->expr.args[0], NULL);
-    append(s, store(r, a));
+    append(s, set(r, a));
     if (exprop(n) == Oland)
         cjmp(s, r, next, end);
     else if (exprop(n) == Olor)
         cjmp(s, a, end, next);
     append(s, next);
     b = rval(s, n->expr.args[1], NULL);
-    append(s, store(r, b));
+    append(s, set(r, b));
     append(s, end);
     return r;
-}
-
-static Node *simpslice(Simp *s, Node *n, Node *dst)
-{
-    Node *t;
-    Node *start, *end;
-    Node *base, *sz, *len;
-    Node *stbase, *stlen;
-
-    if (dst)
-        t = dst;
-    else
-        t = temp(s, n);
-    /* *(&slice) = (void*)base + off*sz */
-    base = slicebase(s, n->expr.args[0], n->expr.args[1]);
-    start = ptrsized(s, rval(s, n->expr.args[1], NULL));
-    end = ptrsized(s, rval(s, n->expr.args[2], NULL));
-    len = sub(end, start);
-    stbase = store(addr(t, tyintptr), base);
-    /* *(&slice + ptrsz) = len */
-    sz = addk(addr(t, tyintptr), Ptrsz);
-    stlen = store(sz, len);
-    append(s, stbase);
-    append(s, stlen);
-    return t;
 }
 
 static Node *simpcast(Simp *s, Node *val, Type *to)
@@ -771,6 +755,38 @@ static Node *simpcast(Simp *s, Node *val, Type *to)
     return r;
 }
 
+static Node *simpslice(Simp *s, Node *n, Node *dst)
+{
+    Node *t;
+    Node *start, *end;
+    Node *base, *sz, *len;
+    Node *stbase, *stlen;
+
+    if (dst)
+        t = dst;
+    else
+        t = temp(s, n);
+    /* *(&slice) = (void*)base + off*sz */
+    base = slicebase(s, n->expr.args[0], n->expr.args[1]);
+    start = ptrsized(s, rval(s, n->expr.args[1], NULL));
+    end = ptrsized(s, rval(s, n->expr.args[2], NULL));
+    len = sub(end, start);
+    /* we can be storing through a pointer, in the case
+     * of '*foo = bar'. */
+    if (tybase(exprtype(t))->type == Typtr) {
+        stbase = store(simpcast(s, t, mktyptr(t->line, tyintptr)), base);
+        sz = addk(simpcast(s, t, mktyptr(t->line, tyintptr)), Ptrsz);
+    } else {
+        stbase = store(addr(t, tyintptr), base);
+        sz = addk(addr(t, tyintptr), Ptrsz);
+    }
+    /* *(&slice + ptrsz) = len */
+    stlen = store(sz, len);
+    append(s, stbase);
+    append(s, stlen);
+    return t;
+}
+
 static Node *visit(Simp *s, Node *n)
 {
     size_t i;
@@ -786,7 +802,7 @@ static Node *visit(Simp *s, Node *n)
             append(s, n);
         } else {
             r = temp(s, n);
-            append(s, store(r, n));
+            append(s, set(r, n));
         }
     }
     return r;
@@ -808,7 +824,7 @@ Node *destructure(Simp *s, Node *lhs, Node *rhs)
             plv = addr(lv, exprtype(lv));
             stor = mkexpr(lhs->line, Oblit, plv, prv, sz, NULL);
         } else {
-            stor = store(lv, load(prv));
+            stor = set(lv, load(prv));
         }
         append(s, stor);
         off += size(lv);
@@ -995,7 +1011,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
             v = rval(s, args[1], NULL);
             v = mkexpr(n->line, fusedmap[exprop(n)], u, v, NULL);
             v->expr.type = u->expr.type;
-            r = store(u, v);
+            r = set(u, v);
             break;
 
         /* ++expr(x)
@@ -1019,12 +1035,12 @@ static Node *rval(Simp *s, Node *n, Node *dst)
          */
         case Opostinc:
             r = rval(s, args[0], NULL);
-            t = store(lval(s, args[0]), addk(r, 1));
+            t = set(lval(s, args[0]), addk(r, 1));
             lappend(&s->incqueue, &s->nqueue, t);
             break;
         case Opostdec:
             r = rval(s, args[0], NULL);
-            t = store(lval(s, args[0]), subk(r, 1));
+            t = set(lval(s, args[0]), subk(r, 1));
             lappend(&s->incqueue, &s->nqueue, t);
             break;
         case Olit:
@@ -1052,7 +1068,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
                 append(s, v);
             } else if (n->expr.nargs && n->expr.args[0]) {
                 t = s->ret;
-                t = store(t, rval(s, args[0], NULL));
+                t = set(t, rval(s, args[0], NULL));
                 append(s, t);
             }
             jmp(s, s->endlbl);
