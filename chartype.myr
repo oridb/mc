@@ -25,7 +25,7 @@ pkg std =
  * alpha ranges -
  *	only covers ranges not in lower||upper
  */
-const tabalpha2 = [
+const rlpha2 = [
 	0x00d8,	0x00f6,	/* Ø - ö */
 	0x00f8,	0x01f5,	/* ø - ǵ */
 	0x0250,	0x02a8,	/* ɐ - ʨ */
@@ -184,7 +184,7 @@ const tabalpha2 = [
  * alpha singlets -
  *	only covers ranges not in lower||upper
  */
-const tabalpha1 = [
+const rlpha1 = [
 	0x00aa,	/* ª */
 	0x00b5,	/* µ */
 	0x00ba,	/* º */
@@ -222,8 +222,8 @@ const tabalpha1 = [
 /*
  * space ranges
  */
-const tabspace2 = [
-	0x0009,	0x000a,	/* tab and newline */
+const rpace2 = [
+	0x0009,	0x000a,	/* rand newline */
 	0x0020,	0x0020,	/* space */
 	0x0085, 0x0085,
 	0x00a0,	0x00a0,	/*   */
@@ -241,7 +241,7 @@ const tabspace2 = [
  * lower case ranges
  *	3rd col is conversion excess 500
  */
-const tabtoupper2 = [
+const roupper2 = [
 	0x0061,	0x007a, 468,	/* a-z A-Z */
 	0x00e0,	0x00f6, 468,	/* à-ö À-Ö */
 	0x00f8,	0x00fe, 468,	/* ø-þ Ø-Þ */
@@ -283,7 +283,7 @@ const tabtoupper2 = [
  * lower case singlets
  *	2nd col is conversion excess 500
  */
-const tabtoupper1 = [
+const roupper1 = [
 	0x00ff, 621,	/* ÿ Ÿ */
 	0x0101, 499,	/* ā Ā */
 	0x0103, 499,	/* ă Ă */
@@ -626,7 +626,7 @@ const tabtoupper1 = [
 	0x1ff3, 509	/* ῳ ῼ */
 ]
 
-const tabisdigitr = [
+const rsdigitr = [
 	0x0030, 0x0039,
 	0x0660, 0x0669,
 	0x06f0, 0x06f9,
@@ -658,7 +658,7 @@ const tabisdigitr = [
  * upper case ranges
  *	3rd col is conversion excess 500
  */
-const tabtolower2 = [
+const rolower2 = [
 	0x0041,	0x005a, 532,	/* A-Z a-z */
 	0x00c0,	0x00d6, 532,	/* À-Ö à-ö */
 	0x00d8,	0x00de, 532,	/* Ø-Þ ø-þ */
@@ -701,7 +701,7 @@ const tabtolower2 = [
  * upper case singlets
  *	2nd col is conversion excess 500
  */
-const tabtolower1 = [
+const rolower1 = [
 	0x0100, 501,	/* Ā ā */
 	0x0102, 501,	/* Ă ă */
 	0x0104, 501,	/* Ą ą */
@@ -1047,16 +1047,13 @@ const findc = {c, t, sz, nelt, ret
 		sz /= 2
 		m = sz*nelt
 		l = t[m, t.len]
-		if c == l[0]
-			t = l[0, nelt]
-		elif c > l[0]
-			t = l[1,t.len]
-		elif c < l[0]
+		if c >= l[0]
+			t = l[0,m]
+		else
 			t = t[0,m]
 		;;
 	;;
 
-	write(1, "found")
 	if t.len != 0 && c >= t[0]
 		*ret = t
 		-> true
@@ -1071,11 +1068,11 @@ const isalpha = {c
 
 	if isupper(c) || islower(c)
 		-> true
-	elif findc(c, tabalpha2[0, tabalpha2.len], tabalpha2.len, 2, &l)
+	elif findc(c, rlpha2[0, rlpha2.len], rlpha2.len, 2, &l)
 		if (c >= l[0] && c <= l[1])
 			-> true
 		;;
-	elif findc(c, tabalpha1[0, tabalpha1.len], tabalpha1.len, 1, &l)
+	elif findc(c, rlpha1[0, rlpha1.len], rlpha1.len, 1, &l)
 		if (c == l[0])
 			-> true
 		;;
@@ -1087,7 +1084,7 @@ const isnum = {c
 	var l
 	var c
 
-	if findc(c, tabisdigitr[0, tabisdigitr.len], tabisdigitr.len/2, 2, &l)
+	if findc(c, rsdigitr[0, rsdigitr.len], rsdigitr.len/2, 2, &l)
 		if(c >= l[0] && c <= l[1])
 			-> true
 		;;
@@ -1104,9 +1101,9 @@ const isspace = {c
 	var sl
 	var len
 
-	l = tabspace2[0,tabspace2.len]
-	sl = tabspace2[0,tabspace2.len]
-	len = tabspace2.len/2
+	l = rpace2[0,rpace2.len]
+	sl = rpace2[0,rpace2.len]
+	len = rpace2.len/2
 	if findc(c, sl, len, 2, &l)
 		if(c >= l[0] && c <= l[1])
 			-> true
@@ -1119,11 +1116,11 @@ const islower = {c
 	var l
 	var c
 
-	if findc(c, tabtoupper2[0, tabtoupper2.len], tabtoupper2.len, 2, &l)
+	if findc(c, roupper2[0, roupper2.len], roupper2.len, 2, &l)
 		if (c >= l[0] && c <= l[1])
 			-> true
 		;;
-	elif findc(c, tabtoupper1[0, tabtoupper1.len], tabtoupper1.len, 1, &l)
+	elif findc(c, roupper1[0, roupper1.len], roupper1.len, 1, &l)
 		if (c == l[0])
 			-> true
 		;;
@@ -1135,11 +1132,11 @@ const isupper = {c
 	var l
 	var c
 
-	if findc(c, tabtolower2[0, tabtolower2.len], tabtolower2.len, 2, &l)
+	if findc(c, rolower2[0, rolower2.len], rolower2.len, 2, &l)
 		if (c >= l[0] && c <= l[1])
 			-> true
 		;;
-	elif findc(c, tabtolower1[0, tabtolower1.len], tabtolower1.len, 1, &l)
+	elif findc(c, rolower1[0, rolower1.len], rolower1.len, 1, &l)
 		if (c == l[0])
 			-> true
 		;;

@@ -30,9 +30,11 @@ const main = {
 const chartypes = {
 	var s
 	var c
+	var d
 
-	s = "  \n"
+	s = "   "/*"  1世界\n"*/
 	for (c, s) = std.striter(s); s.len != 0; (c, s) = std.striter(s)
+		d = c
 		if std.isspace(c)
 			std.write(1, "Space\n")
 		/*
