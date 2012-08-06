@@ -34,7 +34,7 @@ const chartypes = {
 
 	s = " 1世界\n"
 	for (c, s) = std.striter(s); s.len != 0; (c, s) = std.striter(s)
-		d = c
+		d = s.len
 		if std.isspace(c)
 			std.write(1, "Space\n")
 		elif std.isalpha(c)

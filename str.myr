@@ -91,7 +91,7 @@ const striter = {str
 	;;
 
 	if len == 0 || len > str.len
-		-> (Badchar, str)
+		-> (Badchar, str[1,str.len])
 	;;
 
 	mask = (1 << (7 - len)) - 1
