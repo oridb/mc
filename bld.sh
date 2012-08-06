@@ -45,7 +45,7 @@ MYR="types.myr \
     sys-$SYS.myr \
     die.myr \
     alloc.myr\
-    str.myr \
+    utf.myr \
     fmt.myr \
     chartype.myr"
 
