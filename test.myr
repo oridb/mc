@@ -30,11 +30,10 @@ const main = {
 const chartypes = {
 	var s
 	var c
-	var d
+	var buf : byte[32]
 
 	s = " 1世界\n"
 	for (c, s) = std.striter(s); s.len != 0; (c, s) = std.striter(s)
-		d = s.len
 		if std.isspace(c)
 			std.write(1, "Space\n")
 		elif std.isalpha(c)
@@ -42,5 +41,10 @@ const chartypes = {
 		elif std.isnum(c)
 			std.write(1, "Num\n")
 		;;
+		if !std.encode(c, buf[0,std.charlen(c)])
+			std.write(1, "couldn't encode\n")
+		;;
+		std.write(1, buf[0,std.charlen(c)])
+		std.write(1, "\n")
 	;;
 }

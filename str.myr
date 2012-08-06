@@ -72,6 +72,7 @@ const striter = {str
 	var tmp
 
 	if !str.len
+		/* empty string: no resync needed */
 		-> (Badchar, str)
 	;;
 	c = str[0]
@@ -91,6 +92,7 @@ const striter = {str
 	;;
 
 	if len == 0 || len > str.len
+		/* again, we want to try to resync */
 		-> (Badchar, str[1,str.len])
 	;;
 
