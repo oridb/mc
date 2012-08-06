@@ -626,7 +626,7 @@ const roupper1 = [
 	0x1ff3, 509	/* ῳ ῼ */
 ]
 
-const rsdigitr = [
+const rnums = [
 	0x0030, 0x0039,
 	0x0660, 0x0669,
 	0x06f0, 0x06f9,
@@ -1082,9 +1082,8 @@ const isalpha = {c
 
 const isnum = {c
 	var l
-	var c
 
-	if findc(c, rsdigitr[0, rsdigitr.len], rsdigitr.len/2, 2, &l)
+	if findc(c, rnums[0, rnums.len], rnums.len/2, 2, &l)
 		if(c >= l[0] && c <= l[1])
 			-> true
 		;;
@@ -1114,7 +1113,6 @@ const isspace = {c
 
 const islower = {c
 	var l
-	var c
 
 	if findc(c, roupper2[0, roupper2.len], roupper2.len, 2, &l)
 		if (c >= l[0] && c <= l[1])
@@ -1130,7 +1128,6 @@ const islower = {c
 
 const isupper = {c
 	var l
-	var c
 
 	if findc(c, rolower2[0, rolower2.len], rolower2.len, 2, &l)
 		if (c >= l[0] && c <= l[1])
