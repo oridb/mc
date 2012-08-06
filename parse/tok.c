@@ -201,57 +201,127 @@ static Tok *kwident(void)
     return t;
 }
 
+static void append(char **buf, size_t *len, size_t *sz, int c)
+{
+    if (!*sz) {
+        *sz = 16;
+        *buf = malloc(*sz);
+    }
+    if (*len == *sz - 1) {
+        *sz = *sz * 2;
+        *buf = realloc(*buf, *sz);
+    }
+
+    buf[0][len[0]++] = c;
+}
+
+static int hexval(char c)
+{
+    if (c >= 'a' && c <= 'f')
+        return c - 'a' + 10;
+    else if (c >= 'A' && c <= 'F')
+        return c - 'A' + 10;
+    else if (c >= '0' && c <= '9')
+        return c - '0';
+    die("passed non-hex value to hexval()");
+    return -1;
+}
+
+static void decode(char **buf, size_t *len, size_t *sz)
+{
+    char c, c1, c2;
+    int v;
+
+    c = next();
+    /* we've already seen the '\' */
+    switch (c) {
+        case 'x': /* arbitrary hex */
+            c1 = next();
+            if (!isxdigit(c1))
+                fatal(line, "expected hex digit, got %c", c1);
+            c2 = next();
+            if (!isxdigit(c2))
+                fatal(line, "expected hex digit, got %c", c1);
+            v = 16*hexval(c1) + hexval(c2);
+            append(buf, len, sz, v);
+            break;
+        case 'n': append(buf, len, sz, '\n'); break;
+        case 'r': append(buf, len, sz, '\r'); break;
+        case 't': append(buf, len, sz, '\t'); break;
+        case 'b': append(buf, len, sz, '\b'); break;
+        case '"': append(buf, len, sz, '\"'); break;
+        case '\'': append(buf, len, sz, '\''); break;
+        case 'v': append(buf, len, sz, '\v'); break;
+        case '\\': append(buf, len, sz, '\\'); break;
+        case '0': append(buf, len, sz, '\0'); break;
+        default: fatal(line, "unknown escape code \\%c", c);
+    }
+}
+
 static Tok *strlit()
 {
     Tok *t;
-    int sstart; /* start of string within input buf */
     int c;
+    size_t len, sz;
+    char *buf;
 
     assert(next() == '"');
 
-    sstart = fidx;
+    buf = NULL;
+    len = 0;
+    sz = 0;
     while (1) {
         c = next();
         /* we don't unescape here, but on output */
         if (c == '"')
             break;
-        else if (c == '\\')
-            c = next();
-
-        if (c == '\0')
+        else if (c == '\0')
             fatal(line, "Unexpected EOF within string");
         else if (c == '\n')
             fatal(line, "Newlines not allowed in strings");
+        else if (c == '\\')
+            decode(&buf, &len, &sz);
+        else
+            append(&buf, &len, &sz, c);
     };
+    buf[len] = '\0';
+
     t = mktok(Tstrlit);
-    t->str = strdupn(&fbuf[sstart], fidx - sstart - 1);
+    t->str = buf;
     return t;
 }
 
 static Tok *charlit()
 {
     Tok *t;
-    int sstart; /* start of string within input buf */
     int c;
+    size_t len, sz;
+    char *buf;
 
     assert(next() == '\'');
 
-    sstart = fidx;
+    buf = NULL;
+    len = 0;
+    sz = 0;
     while (1) {
         c = next();
         /* we don't unescape here, but on output */
         if (c == '\'')
             break;
-        else if (c == '\\')
-            c = next();
-
-        if (c == '\0')
+        else if (c == '\0')
             fatal(line, "Unexpected EOF within char lit");
         else if (c == '\n')
             fatal(line, "Newlines not allowed in char lit");
+        else if (c == '\\')
+            decode(&buf, &len, &sz);
+        else
+            append(&buf, &len, &sz, c);
+
     };
+    buf[len] = '\0';
+
     t = mktok(Tchrlit);
-    t->str = strdupn(&fbuf[sstart], fidx - sstart - 1);
+    t->str = buf;
     return t;
 }
 
