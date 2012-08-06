@@ -25,7 +25,7 @@ const main = {
 	;;
 	std.write(1, "Hello, 世界\n")
 	chartypes()
-	std.fmt("format output %d\n", 123)
+	std.put("format output %s\n", "x")
 }
 
 const chartypes = {
