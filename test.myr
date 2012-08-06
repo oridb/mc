@@ -40,11 +40,16 @@ const chartypes = {
 			std.write(1, "Alpha\n")
 		elif std.isnum(c)
 			std.write(1, "Num\n")
+		else
+			std.write(1, "Dunno\n")
 		;;
 		if !std.encode(c, buf[0,std.charlen(c)])
 			std.write(1, "couldn't encode\n")
 		;;
 		std.write(1, buf[0,std.charlen(c)])
 		std.write(1, "\n")
+	;;
+	if !std.encode(-1, buf[0,3])
+		std.write(1, "couldn't encode\n")
 	;;
 }
