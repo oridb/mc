@@ -10,13 +10,13 @@ pkg std =
 
 const fmt = {fmt, args
 	var c
-	var s
 	var n
 
 	n = 0
-	for (c, s) = striter(fmt); s.len; (c, s) = striter(s)
+	while fmt.len
+		(c, fmt) = striter(fmt)
 		if c == '%'
-			(c, s) = striter(s)
+			(c, fmt) = striter(fmt)
 			match c
 			's':
 				write(1, "str")
@@ -30,5 +30,6 @@ const fmt = {fmt, args
 			;;
 		;;
 	;;
+	write(1, "\n")
 	-> n
 }
