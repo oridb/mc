@@ -495,9 +495,7 @@ Loc *selexpr(Isel *s, Node *n)
         case Oderef:
             a = selexpr(s, args[0]);
             a = inr(s, a);
-            r = locreg(mode(n));
-            c = locmem(0, a, Rnone, mode(n));
-            g(s, Imov, c, r, NULL);
+            r = locmem(0, a, Rnone, mode(n));
             break;
 
         case Oaddr:
@@ -534,16 +532,12 @@ Loc *selexpr(Isel *s, Node *n)
             die("Unimplemented op %s", opstr(exprop(n)));
             break;
         case Oset:
-            assert(exprop(args[0]) == Ovar);
+            assert(exprop(args[0]) == Ovar || exprop(args[0]) == Oderef);
             b = selexpr(s, args[1]);
-            a = selexpr(s, args[0]);
-            b = inri(s, b);
-            g(s, Imov, b, a, NULL);
-            r = b;
-            break;
-        case Ostor: /* reg -> mem */
-            b = selexpr(s, args[1]);
-            a = memloc(s, args[0], mode(args[0]));
+            if (exprop(args[0]) == Oderef)
+                a = memloc(s, args[0]->expr.args[0], mode(n));
+            else
+                a = selexpr(s, args[0]);
             b = inri(s, b);
             g(s, Imov, b, a, NULL);
             r = b;

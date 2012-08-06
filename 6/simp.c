@@ -131,26 +131,26 @@ static Node *load(Node *a)
     return n;
 }
 
+static Node *deref(Node *a)
+{
+    Node *n;
+
+    assert(a->expr.type->type == Typtr);
+    n = mkexpr(a->line, Oderef, a, NULL);
+    n->expr.type = base(a->expr.type);
+    return n;
+}
+
 static Node *set(Node *a, Node *b)
 {
     Node *n;
 
     assert(a != NULL && b != NULL);
-    assert(exprop(a) == Ovar);
+    assert(exprop(a) == Ovar || exprop(a) == Oderef);
     n = mkexpr(a->line, Oset, a, b, NULL);
+    n->expr.type = exprtype(a);
     return n;
 }
-
-Node *store(Node *a, Node *b)
-{
-    Node *n;
-
-    assert(a != NULL && b != NULL);
-    assert(tybase(exprtype(a))->type == Typtr);
-    n = mkexpr(a->line, Ostor, a, b, NULL);
-    return n;
-}
-
 
 static Node *disp(int line, uint v)
 {
@@ -670,9 +670,9 @@ Node *lval(Simp *s, Node *n)
 
     switch (exprop(n)) {
         case Ovar:      r = n;  break;
-        case Oidx:      r = idxaddr(s, n); break;
-        case Oderef:    r = rval(s, n->expr.args[0], NULL); break;
-        case Omemb:     r = membaddr(s, n); break;
+        case Oidx:      r = deref(idxaddr(s, n)); break;
+        case Oderef:    r = deref(rval(s, n->expr.args[0], NULL)); break;
+        case Omemb:     r = deref(membaddr(s, n)); break;
         default:
             die("%s cannot be an lval", opstr(exprop(n)));
             break;
@@ -774,14 +774,14 @@ static Node *simpslice(Simp *s, Node *n, Node *dst)
     /* we can be storing through a pointer, in the case
      * of '*foo = bar'. */
     if (tybase(exprtype(t))->type == Typtr) {
-        stbase = store(simpcast(s, t, mktyptr(t->line, tyintptr)), base);
+        stbase = set(simpcast(s, t, mktyptr(t->line, tyintptr)), base);
         sz = addk(simpcast(s, t, mktyptr(t->line, tyintptr)), Ptrsz);
     } else {
-        stbase = store(addr(t, tyintptr), base);
+        stbase = set(deref(addr(t, tyintptr)), base);
         sz = addk(addr(t, tyintptr), Ptrsz);
     }
     /* *(&slice + ptrsz) = len */
-    stlen = store(sz, len);
+    stlen = set(deref(sz), len);
     append(s, stbase);
     append(s, stlen);
     return t;
@@ -852,10 +852,8 @@ Node *assign(Simp *s, Node *lhs, Node *rhs)
             u = addr(u, exprtype(lhs));
             v = disp(lhs->line, size(lhs));
             r = mkexpr(lhs->line, Oblit, t, u, v, NULL);
-        } else if (exprop(lhs) == Ovar) {
-            r = mkexpr(lhs->line, Oset, t, u, NULL);
         } else {
-            r = mkexpr(lhs->line, Ostor, t, u, NULL);
+            r = set(t, u);
         }
     }
     return r;
@@ -863,7 +861,7 @@ Node *assign(Simp *s, Node *lhs, Node *rhs)
 
 static Node *simptup(Simp *s, Node *n, Node *dst)
 {
-    Node *pdst, *pval, *val, *sz, *stor, **args;
+    Node *pdst, *pval, *val, *sz, *st, **args;
     Node *r;
     size_t i, off;
 
@@ -879,11 +877,11 @@ static Node *simptup(Simp *s, Node *n, Node *dst)
         if (stacknode(args[i])) {
             sz = disp(n->line, size(val));
             pval = addr(val, exprtype(val));
-            stor = mkexpr(n->line, Oblit, pdst, pval, sz, NULL);
+            st = mkexpr(n->line, Oblit, pdst, pval, sz, NULL);
         } else {
-            stor = store(pdst, val);
+            st = set(deref(pdst), val);
         }
-        append(s, stor);
+        append(s, st);
         off += size(args[i]);
     }
     return dst;
@@ -918,7 +916,7 @@ static Node *simpucon(Simp *s, Node *n, Node *dst)
     u = addr(tmp, mkty(n->line, Tyuint));
     tag = mkintlit(n->line, uc->id);
     tag->expr.type = mkty(n->line, Tyuint);
-    append(s, store(u, tag));
+    append(s, set(deref(u), tag));
 
 
     /* fill the value, if needed */
@@ -931,7 +929,7 @@ static Node *simpucon(Simp *s, Node *n, Node *dst)
         sz = disp(n->line, tysize(uc->utype));
         r = mkexpr(n->line, Oblit, u, elt, sz, NULL);
     } else {
-        r = store(u, elt);
+        r = set(deref(u), elt);
     }
     append(s, r);
     return tmp;
@@ -1087,10 +1085,10 @@ static Node *rval(Simp *s, Node *n, Node *dst)
             break;
         case Oaddr:
             t = lval(s, args[0]);
-            if (exprop(t) == Ovar) /* Ovar is the only one that doesn't return the address directly */
+            if (exprop(t) == Ovar) /* Ovar is the only one that doesn't return Oderef(Oaddr(...)) */
                 r = addr(t, exprtype(t));
             else
-                r = t;
+                r = t->expr.args[0];
             break;
         default:
             r = visit(s, n);
