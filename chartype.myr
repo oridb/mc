@@ -25,7 +25,7 @@ pkg std =
  * alpha ranges -
  *	only covers ranges not in lower||upper
  */
-const rlpha2 = [
+const ralpha2 = [
 	0x00d8,	0x00f6,	/* Ø - ö */
 	0x00f8,	0x01f5,	/* ø - ǵ */
 	0x0250,	0x02a8,	/* ɐ - ʨ */
@@ -184,7 +184,7 @@ const rlpha2 = [
  * alpha singlets -
  *	only covers ranges not in lower||upper
  */
-const rlpha1 = [
+const ralpha1 = [
 	0x00aa,	/* ª */
 	0x00b5,	/* µ */
 	0x00ba,	/* º */
@@ -222,7 +222,7 @@ const rlpha1 = [
 /*
  * space ranges
  */
-const rpace2 = [
+const rspace2 = [
 	0x0009,	0x000a,	/* rand newline */
 	0x0020,	0x0020,	/* space */
 	0x0085, 0x0085,
@@ -241,7 +241,7 @@ const rpace2 = [
  * lower case ranges
  *	3rd col is conversion excess 500
  */
-const roupper2 = [
+const rtoupper2 = [
 	0x0061,	0x007a, 468,	/* a-z A-Z */
 	0x00e0,	0x00f6, 468,	/* à-ö À-Ö */
 	0x00f8,	0x00fe, 468,	/* ø-þ Ø-Þ */
@@ -283,7 +283,7 @@ const roupper2 = [
  * lower case singlets
  *	2nd col is conversion excess 500
  */
-const roupper1 = [
+const rtoupper1 = [
 	0x00ff, 621,	/* ÿ Ÿ */
 	0x0101, 499,	/* ā Ā */
 	0x0103, 499,	/* ă Ă */
@@ -658,7 +658,7 @@ const rnums = [
  * upper case ranges
  *	3rd col is conversion excess 500
  */
-const rolower2 = [
+const rtolower2 = [
 	0x0041,	0x005a, 532,	/* A-Z a-z */
 	0x00c0,	0x00d6, 532,	/* À-Ö à-ö */
 	0x00d8,	0x00de, 532,	/* Ø-Þ ø-þ */
@@ -701,7 +701,7 @@ const rolower2 = [
  * upper case singlets
  *	2nd col is conversion excess 500
  */
-const rolower1 = [
+const rtolower1 = [
 	0x0100, 501,	/* Ā ā */
 	0x0102, 501,	/* Ă ă */
 	0x0104, 501,	/* Ą ą */
@@ -1068,11 +1068,11 @@ const isalpha = {c
 
 	if isupper(c) || islower(c)
 		-> true
-	elif findc(c, rlpha2[0, rlpha2.len], rlpha2.len, 2, &l)
+	elif findc(c, ralpha2[0, ralpha2.len], ralpha2.len, 2, &l)
 		if (c >= l[0] && c <= l[1])
 			-> true
 		;;
-	elif findc(c, rlpha1[0, rlpha1.len], rlpha1.len, 1, &l)
+	elif findc(c, ralpha1[0, ralpha1.len], ralpha1.len, 1, &l)
 		if (c == l[0])
 			-> true
 		;;
@@ -1100,9 +1100,9 @@ const isspace = {c
 	var sl
 	var len
 
-	l = rpace2[0,rpace2.len]
-	sl = rpace2[0,rpace2.len]
-	len = rpace2.len/2
+	l = rspace2[0,rspace2.len]
+	sl = rspace2[0,rspace2.len]
+	len = rspace2.len/2
 	if findc(c, sl, len, 2, &l)
 		if(c >= l[0] && c <= l[1])
 			-> true
@@ -1114,11 +1114,11 @@ const isspace = {c
 const islower = {c
 	var l
 
-	if findc(c, roupper2[0, roupper2.len], roupper2.len, 2, &l)
+	if findc(c, rtoupper2[0, rtoupper2.len], rtoupper2.len, 2, &l)
 		if (c >= l[0] && c <= l[1])
 			-> true
 		;;
-	elif findc(c, roupper1[0, roupper1.len], roupper1.len, 1, &l)
+	elif findc(c, rtoupper1[0, rtoupper1.len], rtoupper1.len, 1, &l)
 		if (c == l[0])
 			-> true
 		;;
@@ -1129,11 +1129,11 @@ const islower = {c
 const isupper = {c
 	var l
 
-	if findc(c, rolower2[0, rolower2.len], rolower2.len, 2, &l)
+	if findc(c, rtolower2[0, rtolower2.len], rtolower2.len, 2, &l)
 		if (c >= l[0] && c <= l[1])
 			-> true
 		;;
-	elif findc(c, rolower1[0, rolower1.len], rolower1.len, 1, &l)
+	elif findc(c, rtolower1[0, rtolower1.len], rtolower1.len, 1, &l)
 		if (c == l[0])
 			-> true
 		;;
