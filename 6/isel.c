@@ -815,20 +815,25 @@ static Asmbb *mkasmbb(Bb *bb)
     return as;
 }
 
+#define Nper 30
 static void writeblob(FILE *fd, char *p, size_t sz)
 {
     size_t i;
+    char sep;
 
     for (i = 0; i < sz; i++) {
-        if (i % 60 == 0)
-            fprintf(fd, "\t.ascii \"");
+        if (i % Nper == 0) {
+            sep = ' ';
+            fprintf(fd, "\t.byte");
+        }
         if (isprint(p[i]))
-            fprintf(fd, "%c", p[i]);
+            fprintf(fd, "%c'%c'", sep, p[i]);
         else
-            fprintf(fd, "\\x%x", p[i] & 0xff);
+            fprintf(fd, "%c0x%x", sep, (unsigned)p[i] & 0xff);
         /* line wrapping for readability */
-        if (i % 60 == 59 || i == sz - 1)
-            fprintf(fd, "\"\n");
+        if (i % Nper == Nper - 1 || i == sz - 1)
+            fprintf(fd, "\n");
+        sep = ',';
     }
 }
 
