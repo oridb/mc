@@ -1068,7 +1068,7 @@ const isalpha = {c
 
 	if isupper(c) || islower(c)
 		-> true
-	elif findc(c, ralpha2[0, ralpha2.len], ralpha2.len, 2, &l)
+	elif findc(c, ralpha2[0, ralpha2.len], ralpha2.len/2, 2, &l)
 		if (c >= l[0] && c <= l[1])
 			-> true
 		;;
