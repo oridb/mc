@@ -1,10 +1,10 @@
 use "types.use"
 
 pkg std =
-	type scno = int
-	type fdopt = int
-	type mprot = int
-	type mopt = int
+	type scno = int64
+	type fdopt = int64
+	type mprot = int64
+	type mopt = int64
 
 	type timespec = struct
 		secs	: uint64
@@ -414,30 +414,30 @@ pkg std =
 	const Sysfileport_makeport	: scno = 0x20001b0
 	const Sysfileport_makefd	: scno = 0x20001b1
 
-	extern const syscall : (sc:scno, args:... -> int)
+	extern const syscall : (sc:scno, args:... -> int64)
 
-	const exit	: (status:int -> int)
-	const getpid	: ( -> int)
-	const kill	: (pid:int, sig:int -> int)
-	const open	: (path:byte[,], opts:fdopt, mode:int -> int)
-	const close	: (fd:int -> int)
-	const creat	: (path:byte[,], mode:int -> int)
-	const read	: (fd:int, buf:byte[,] -> int)
-	const write	: (fd:int, buf:byte[,] -> int)
-	const lseek	: (fd:int, off:uint, whence:int -> int)
-	const fstat	: (fd:int, sb:statbuf* -> int)
-	const munmap	: (addr:byte*, len:size -> int)
-	const mmap	: (addr:byte*, len:size, prot:mprot, flags:mopt, fd:int, off:off -> byte*)
+	const exit	: (status:int64 -> void)
+	const getpid	: ( -> int64)
+	const kill	: (pid:int64, sig:int64 -> int64)
+	const open	: (path:byte[,], opts:fdopt, mode:int64 -> int64)
+	const close	: (fd:int64 -> int64)
+	const creat	: (path:byte[,], mode:int64 -> int64)
+	const read	: (fd:int64, buf:byte[,] -> int64)
+	const write	: (fd:int64, buf:byte[,] -> int64)
+	const lseek	: (fd:int64, off:uint64, whence:int64 -> int64)
+	const fstat	: (fd:int64, sb:statbuf* -> int64)
+	const munmap	: (addr:byte*, len:size -> int64)
+	const mmap	: (addr:byte*, len:size, prot:mprot, flags:mopt, fd:int64, off:off -> byte*)
 ;;
 
-const exit	= {status;		-> syscall(Sysexit, 1);}
+const exit	= {status;		syscall(Sysexit, 1);}
 const getpid	= {;			-> syscall(Sysgetpid, 1);}
 const kill	= {pid, sig;		-> syscall(Syskill, pid, sig);}
 const open	= {path, opts, mode;	-> syscall(Sysopen, path castto(char*), opts);}
 const close	= {fd;			-> syscall(Sysclose, fd);}
 const creat	= {path, mode;		-> open(path, Ocreat | Otrunc | Owronly, mode);}
 const read	= {fd, buf;		-> syscall(Sysread, fd, buf castto(char*), buf.len);}
-const write	= {fd, buf;		-> syscall(Syswrite, fd, buf castto(char*), buf.len);}
+const write	= {fd, buf;		-> syscall(Syswrite, fd, buf castto(char*), buf.len castto(size));}
 const lseek	= {fd, off, whence;	-> syscall(Syslseek, fd, off, whence);}
 const fstat	= {fd, sb;		-> syscall(Sysfstat, fd, sb);}
 const munmap	= {addr, len;		-> syscall(Sysmunmap, addr, len);}
