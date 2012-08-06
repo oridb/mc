@@ -1037,6 +1037,21 @@ const rtolower1 = [
 	0x1ffc, 491	/* ῼ ῳ */
 ]
 
+/*
+ * title characters are those between
+ * upper and lower case. ie DZ Dz dz
+ */
+const rtotitle1 = [
+	0x01c4, 501,	/* Ǆ ǅ */
+	0x01c6, 499,	/* ǆ ǅ */
+	0x01c7, 501,	/* Ǉ ǈ */
+	0x01c9, 499,	/* ǉ ǈ */
+	0x01ca, 501,	/* Ǌ ǋ */
+	0x01cc, 499,	/* ǌ ǋ */
+	0x01f1, 501,	/* Ǳ ǲ */
+	0x01f3, 499	/* ǳ ǲ */
+]
+
 const findc = {c, t, sz, nelt, ret
 	var l
 	var m
@@ -1146,17 +1161,43 @@ const istitle = {c
 }
 
 const tolower = {c
-	die("Stub")
+	var l
+
+	if findc(c, rtolower2[0, rtolower2.len], rtolower2.len/3, 3, &l)
+		if c >= l[0] && c <= l[1]
+			-> c + l[2] - 500;
+		;;
+	elif findc(c, rtolower1[0, rtolower1.len], rtolower1.len/2, 2, &l) 
+		if c == l[0]
+			-> c + l[1] - 500;
+		;;
+	;;
 	-> c
 }
 
 const toupper = {c
-	die("Stub")
+	var l
+
+	if findc(c, rtoupper2[0,rtoupper2.len], rtoupper2.len/3, 3, &l);
+		if c >= l[0] && c <= l[1]
+			-> c + l[2] - 500;
+		;;
+	elif findc(c, rtoupper1[0,rtoupper1.len], rtoupper1.len/2, 2, &l);
+		if c == l[0]
+			-> c + l[1] - 500;
+		;;
+	;;
 	-> c
 }
 
 const totitle = {c
-	die("Stub")
+	var l
+
+	if findc(c, rtotitle1[0,rtotitle1.len], rtotitle1.len/2, 2, &l);
+		if c == l[0]
+			-> c + l[1] - 500;
+		;;
+	;;
 	-> c
 }
 
