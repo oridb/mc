@@ -1,14 +1,14 @@
 use "die.use"
 use "sys.use"
 use "types.use"
-use "str.use"
+use "utf.use"
 
 pkg std =
 	const bfmt	: (buf : byte[,], fmt : byte[,], args:... -> size)
 	const fmt	: (fmt : byte[,], args:... -> size)
 ;;
 
-const fmt = {fmt, args
+const bfmt = {buf, fmt, args
 	var c
 	var n
 
@@ -19,17 +19,27 @@ const fmt = {fmt, args
 			(c, fmt) = striter(fmt)
 			match c
 			's':
-				write(1, "str")
+				write(1, "str\n")
 				;;
 			'd':
-				write(1, "int")
+				write(1, "int\n")
 				;;
 			'p':
-				write(1, "ptr")
+				write(1, "ptr\n")
 				;;
 			;;
+		else
+			n += encode(buf[n,buf.len], c)
 		;;
 	;;
-	write(1, "\n")
+	-> n
+}
+
+const fmt = {fmt, args
+	var buf : byte[2048]
+	var n
+	
+	n = bfmt(buf[0,2048], fmt, args)
+	write(1, buf[0,n])
 	-> n
 }

@@ -6,7 +6,7 @@ pkg std =
 	const Badchar	: char = -1 castto(char)
 
 	const charlen	: (chr : char -> size)
-	const encode	: (chr : char, buf : byte[,] -> bool)
+	const encode	: (buf : byte[,], chr : char -> size)
 	const decode	: (buf : byte[,] -> char)
 	const striter	: (str : byte[,] -> [char, byte[,]])
 
@@ -30,14 +30,14 @@ const charlen = {c
 	;;
 }
 
-const encode = {c, buf
+const encode = {buf, c
 	var len
 	var mark
 	var i
 
 	len = charlen(c)
 	if len < 0 || buf.len < len
-		-> false
+		-> -1
 	;;
 
 	if (len == 1)
@@ -52,7 +52,7 @@ const encode = {c, buf
 	;;
 
 	buf[0] = (c | mark) castto(byte)
-	-> true
+	-> len
 }
 
 const decode = {buf
