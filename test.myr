@@ -32,7 +32,7 @@ const chartypes = {
 	var c
 	var buf : byte[32]
 
-	s = " 1世界\n"
+	s = " 1世界 äa\n"
 	for (c, s) = std.striter(s); s.len != 0; (c, s) = std.striter(s)
 		if std.isspace(c)
 			std.write(1, "Space\n")
