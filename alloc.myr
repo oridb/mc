@@ -18,9 +18,9 @@ const Zbyte	= 0 castto(byte*)
 const Zslab	= 0 castto(slab*)
 const Zchunk	= 0 castto(chunk*)
 
-const Slabsz 	= 4096	/* on the systems this supports, anyways... */
+const Slabsz 	= 1048576	/* 1 meg slabs */
 const Cachemax	= 16	/* maximum number of slabs in the cache */
-const Bucketmax	= 1024	/* Slabsz / 8; a balance. */
+const Bucketmax	= 32768	/* Slabsz / 8; a balance. */
 const Align	= 16	/* minimum allocation alignment */
 
 var buckets	: bucket[32] /* excessive */
@@ -35,6 +35,7 @@ type bucket = struct
 ;;
 
 type slab = struct
+	head	: byte* /* head of virtual addresses, so we don't leak address space */
 	next	: slab* /* the next slab on the chain */
 	freehd	: chunk*	/* the nodes we're allocating */
 	nfree	: size  /* the number of free nodes */
@@ -114,12 +115,19 @@ const mkslab = {bkt : bucket*
 		bkt.cache = s.next
 		bkt.ncache--
 	;;
-	p = mmap(Zbyte, Slabsz, Mprotrw, Mpriv | Manon, -1, 0)
+	/* tricky: we need power of two alignment, so we allocate double the
+	   needed size, chop off the unaligned ends, and waste the address
+	   space. Since the OS is "smart enough", this shouldn't actually
+	   cost us memory, and 64 bits of address space means that we're not
+	   going to have issues with running out of address space for a
+	   while. On a 32 bit system this would be a bad idea. */
+	p = mmap(Zbyte, Slabsz*2, Mprotrw, Mpriv | Manon, -1, 0)
 	if p == Mapbad
 		die("Unable to mmap")
 	;;
 
-	s = p castto(slab*)
+	s = align(p castto(intptr), Slabsz) castto(slab*)
+	s.head = p
 	s.nfree = bkt.nper
 	/* skip past the slab header */
 	off = align(sizeof(slab), Align)
@@ -174,7 +182,7 @@ const bktfree = {bkt, m
 			s.next = bkt.cache
 			bkt.cache = s
 		else
-			munmap(s castto(byte*), Slabsz)
+			munmap(s.head, Slabsz)
 		;;
 	;;
 	s.nfree++
