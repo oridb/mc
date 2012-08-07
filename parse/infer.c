@@ -930,6 +930,7 @@ static void infercompn(Inferstate *st, Node *file)
 
         found = 0;
         t = tybase(tf(st, type(st, aggr)));
+        /* all array-like types have a fake "len" member that we emulate */
         if (t->type == Tyslice || t->type == Tyarray) {
             if (!strcmp(namestr(memb), "len")) {
                 constrain(st, n, type(st, n), cstrtab[Tcnum]);
@@ -937,6 +938,13 @@ static void infercompn(Inferstate *st, Node *file)
                 constrain(st, n, type(st, n), cstrtab[Tctest]);
                 found = 1;
             }
+        /* otherwise, we search aggregate types for the member, and unify
+         * the expression with the member type; ie:
+         *
+         *     x: aggrtype    y : memb in aggrtype
+         *     ---------------------------------------
+         *               x.y : membtype
+         */
         } else {
             if (t->type == Typtr)
                 t = tybase(tf(st, t->sub[0]));
