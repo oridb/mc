@@ -925,8 +925,6 @@ static void infercompn(Inferstate *st, Node *file)
         n = st->postcheck[i];
         if (exprop(n) != Omemb)
             continue;
-        if (type(st, n)->type == Typtr)
-            n = n->expr.args[0];
         aggr = st->postcheck[i]->expr.args[0];
         memb = st->postcheck[i]->expr.args[1];
 
