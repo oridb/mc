@@ -72,7 +72,6 @@ struct Htab {
 struct Tok {
     int type;
     int line;
-    char *strsz;
     char *str;
 
     /* values parsed out */

@@ -284,7 +284,7 @@ static Tok *strlit()
         else
             append(&buf, &len, &sz, c);
     };
-    buf[len] = '\0';
+    append(&buf, &len, &sz, '\0');
 
     t = mktok(Tstrlit);
     t->str = buf;
@@ -318,7 +318,7 @@ static Tok *charlit()
             append(&buf, &len, &sz, c);
 
     };
-    buf[len] = '\0';
+    append(&buf, &len, &sz, '\0');
 
     t = mktok(Tchrlit);
     t->str = buf;
