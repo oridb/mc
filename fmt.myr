@@ -21,13 +21,8 @@ const bfmt = {buf, fmt, args
 	var c
 	var n
 	var ap
-	var s_val;
-	var b_val;
-	/*
-	var w_val;
-	*/
 	var i_val;
-	var l_val;
+	var s_val;
 
 	n = 0
 	while fmt.len
@@ -42,25 +37,27 @@ const bfmt = {buf, fmt, args
 				;;
 			/* format integers */
 			'b':
-				b_val = *(ap castto(int8*))
-				write(1, "int\n")
+				i_val = *(ap castto(int8*)) castto(int64)
+				n += intfmt(buf[n, buf.len], i_val, 10)
 				;;
 			/*
 			'w':
-				w_val = *(ap castto(int16*))
-				write(1, "int\n")
+				i_val = *(ap castto(int16*)) castto(int64)
+				n += intfmt(buf[n, buf.len], i_val, 10)
 				;;
 			*/
 			'i':
-				i_val = *(ap castto(int32*))
+				i_val = *(ap castto(int32*)) castto(int64)
 				n += intfmt(buf[n, buf.len], i_val, 10)
 				;;
 			'l':
-				l_val = *(ap castto(int64*))
-				write(1, "int\n")
+				i_val = *(ap castto(int64*))
+				n += intfmt(buf[n, buf.len], i_val, 10)
 				;;
 			'p':
-				write(1, "ptr\n")
+				strfmt(buf[n,buf.len], "0x")
+				i_val = *(ap castto(int64*))
+				n += intfmt(buf[n, buf.len], i_val, 16)
 				;;
 			;;
 		else
@@ -90,7 +87,11 @@ const intfmt = {buf, val, base
 
 	n = 0
 	i = 0
-	while val > 0
+	if val < 0
+		b[i] = '-'
+		i++
+	;;
+	while val != 0
 		b[i] = digits[val % base]
 		val /= base
 		i++
