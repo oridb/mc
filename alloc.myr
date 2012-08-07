@@ -182,7 +182,8 @@ const bktfree = {bkt, m
 			s.next = bkt.cache
 			bkt.cache = s
 		else
-			/* we allocated 2*Slabs so we could align it */
+			/* we mapped 2*Slabsz so we could align it,
+			 so we need to unmap the same */
 			munmap(s.head, Slabsz*2)
 		;;
 	;;
