@@ -5,6 +5,7 @@ use "utf.use"
 
 pkg std =
 	const bfmt	: (buf : byte[,], fmt : byte[,], args:... -> size)
+	const bfmtv	: (buf : byte[,], fmt : byte[,], ap:byte* -> size)
 	const put	: (fmt : byte[,], args:... -> size)
 ;;
 
@@ -12,20 +13,22 @@ const put = {fmt, args
 	var buf : byte[2048]
 	var n
 	
-	n = bfmt(buf[0,2048], fmt, args)
+	n = bfmtv(buf[0,2048], fmt, &args castto(byte*))
 	write(1, buf[0,n])
 	-> n
 }
 
 const bfmt = {buf, fmt, args
+	-> bfmtv(buf, fmt, &args castto(byte*))
+}
+
+const bfmtv = {buf, fmt, ap
 	var c
 	var n
-	var ap
 	var i_val;
 	var s_val;
 
 	n = 0
-	ap = &args castto(byte*)
 	while fmt.len
 		(c, fmt) = striter(fmt)
 		if c == '%'
@@ -44,14 +47,12 @@ const bfmt = {buf, fmt, args
 				n += intfmt(buf[n, buf.len], i_val, 10)
 				ap = add(ap, sizeof(int8))
 				;;
-			/*
 			'w':
 				ap = align(ap, sizeof(int16));
 				i_val = *(ap castto(int16*)) castto(int64)
 				n += intfmt(buf[n, buf.len], i_val, 10)
 				ap = add(ap, sizeof(int16))
 				;;
-			*/
 			'i':
 				ap = align(ap, sizeof(int32));
 				i_val = *(ap castto(int32*)) castto(int64)
