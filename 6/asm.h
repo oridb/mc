@@ -38,7 +38,7 @@ typedef enum {
 typedef enum {
     ModeNone,
     ModeB, /* byte */
-    ModeS, /* short */
+    ModeW, /* short */
     ModeL, /* long */
     ModeQ, /* quad */
     ModeF, /* float32 */

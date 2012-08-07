@@ -25,7 +25,7 @@ char *insnfmts[] = {
 
 char modenames[] = {
   [ModeB] = 'b',
-  [ModeS] = 's',
+  [ModeW] = 'w',
   [ModeL] = 'l',
   [ModeQ] = 'q',
   [ModeF] = 'f',
@@ -67,7 +67,7 @@ static Mode mode(Node *n)
                 return ModeQ;
             switch (size(n)) {
                 case 1: return ModeB; break;
-                case 2: return ModeS; break;
+                case 2: return ModeW; break;
                 case 4: return ModeL; break;
                 case 8: return ModeQ; break;
             }
