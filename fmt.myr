@@ -25,39 +25,51 @@ const bfmt = {buf, fmt, args
 	var s_val;
 
 	n = 0
+	ap = &args castto(byte*)
 	while fmt.len
 		(c, fmt) = striter(fmt)
 		if c == '%'
 			(c, fmt) = striter(fmt)
-			ap = &args
 			match c
 			's':
+				ap = align(ap, sizeof(void*))
 				s_val = *(ap castto(byte[,]*))
 				n += strfmt(buf[n, buf.len], s_val)
+				ap = add(ap, sizeof(byte[,]))
 				;;
 			/* format integers */
 			'b':
+				ap = align(ap, sizeof(int8));
 				i_val = *(ap castto(int8*)) castto(int64)
 				n += intfmt(buf[n, buf.len], i_val, 10)
+				ap = add(ap, sizeof(int8))
 				;;
 			/*
 			'w':
+				ap = align(ap, sizeof(int16));
 				i_val = *(ap castto(int16*)) castto(int64)
 				n += intfmt(buf[n, buf.len], i_val, 10)
+				ap = add(ap, sizeof(int16))
 				;;
 			*/
 			'i':
+				ap = align(ap, sizeof(int32));
 				i_val = *(ap castto(int32*)) castto(int64)
 				n += intfmt(buf[n, buf.len], i_val, 10)
+				ap = add(ap, sizeof(int32))
 				;;
 			'l':
+				ap = align(ap, sizeof(int64));
 				i_val = *(ap castto(int64*))
 				n += intfmt(buf[n, buf.len], i_val, 10)
+				ap = add(ap, sizeof(int64))
 				;;
 			'p':
-				strfmt(buf[n,buf.len], "0x")
+				ap = align(ap, sizeof(byte*));
 				i_val = *(ap castto(int64*))
+				strfmt(buf[n,buf.len], "0x")
 				n += intfmt(buf[n, buf.len], i_val, 16)
+				ap = add(ap, sizeof(byte*))
 				;;
 			;;
 		else
@@ -109,4 +121,16 @@ const min = {a : size, b : size
 	else
 		-> a
 	;;
+}
+
+const align = {p, align
+	var v
+	
+	v = p castto(intptr)
+	v = (v + align - 1) & ~(align - 1)
+	-> v castto(byte*)
+}
+
+const add = {p, sz
+	-> ((p castto(intptr)) + sz) castto(byte*)
 }
