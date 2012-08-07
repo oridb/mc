@@ -44,6 +44,7 @@ ASM=syscall-$SYS.s
 MYR="types.myr \
     sys-$SYS.myr \
     die.myr \
+    varargs.myr \
     alloc.myr\
     utf.myr \
     fmt.myr \

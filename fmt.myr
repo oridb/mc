@@ -2,10 +2,11 @@ use "die.use"
 use "sys.use"
 use "types.use"
 use "utf.use"
+use "varargs.use"
 
 pkg std =
 	const bfmt	: (buf : byte[,], fmt : byte[,], args:... -> size)
-	const bfmtv	: (buf : byte[,], fmt : byte[,], ap:byte* -> size)
+	const bfmtv	: (buf : byte[,], fmt : byte[,], ap:valist -> size)
 	const put	: (fmt : byte[,], args:... -> size)
 ;;
 
@@ -13,20 +14,24 @@ const put = {fmt, args
 	var buf : byte[2048]
 	var n
 	
-	n = bfmtv(buf[0,2048], fmt, &args castto(byte*))
+	n = bfmtv(buf[0,2048], fmt, vastart(&args))
 	write(1, buf[0,n])
 	-> n
 }
 
 const bfmt = {buf, fmt, args
-	-> bfmtv(buf, fmt, &args castto(byte*))
+	-> bfmtv(buf, fmt, vastart(&args))
 }
 
 const bfmtv = {buf, fmt, ap
 	var c
 	var n
-	var i_val;
-	var s_val;
+	var s_val : byte[,]
+	var b_val : int8
+	var w_val : int16
+	var i_val : int32
+	var l_val : int64
+	var p_val : byte*
 
 	n = 0
 	while fmt.len
@@ -35,42 +40,29 @@ const bfmtv = {buf, fmt, ap
 			(c, fmt) = striter(fmt)
 			match c
 			's':
-				ap = align(ap, sizeof(void*))
-				s_val = *(ap castto(byte[,]*))
+				(s_val, ap) = vanext(ap)
 				n += strfmt(buf[n, buf.len], s_val)
-				ap = add(ap, sizeof(byte[,]))
 				;;
 			/* format integers */
 			'b':
-				ap = align(ap, sizeof(int8));
-				i_val = *(ap castto(int8*)) castto(int64)
-				n += intfmt(buf[n, buf.len], i_val, 10)
-				ap = add(ap, sizeof(int8))
+				(b_val, ap) = vanext(ap)
+				n += intfmt(buf[n, buf.len], b_val castto(int64), 10)
 				;;
 			'w':
-				ap = align(ap, sizeof(int16));
-				i_val = *(ap castto(int16*)) castto(int64)
-				n += intfmt(buf[n, buf.len], i_val, 10)
-				ap = add(ap, sizeof(int16))
+				(w_val, ap) = vanext(ap)
+				n += intfmt(buf[n, buf.len], i_val castto(int64), 10)
 				;;
 			'i':
-				ap = align(ap, sizeof(int32));
-				i_val = *(ap castto(int32*)) castto(int64)
-				n += intfmt(buf[n, buf.len], i_val, 10)
-				ap = add(ap, sizeof(int32))
+				(i_val, ap) = vanext(ap)
+				n += intfmt(buf[n, buf.len], i_val castto(int64), 10)
 				;;
 			'l':
-				ap = align(ap, sizeof(int64));
-				i_val = *(ap castto(int64*))
-				n += intfmt(buf[n, buf.len], i_val, 10)
-				ap = add(ap, sizeof(int64))
+				(l_val, ap) = vanext(ap)
+				n += intfmt(buf[n, buf.len], i_val castto(int64), 10)
 				;;
 			'p':
-				ap = align(ap, sizeof(byte*));
-				i_val = *(ap castto(int64*))
-				strfmt(buf[n,buf.len], "0x")
-				n += intfmt(buf[n, buf.len], i_val, 16)
-				ap = add(ap, sizeof(byte*))
+				(p_val, ap) = vanext(ap)
+				n += intfmt(buf[n, buf.len], p_val castto(int64), 16)
 				;;
 			;;
 		else
@@ -124,14 +116,3 @@ const min = {a : size, b : size
 	;;
 }
 
-const align = {p, align
-	var v
-	
-	v = p castto(intptr)
-	v = (v + align - 1) & ~(align - 1)
-	-> v castto(byte*)
-}
-
-const add = {p, sz
-	-> ((p castto(intptr)) + sz) castto(byte*)
-}
