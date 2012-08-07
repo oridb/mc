@@ -2,9 +2,11 @@ use "die.use"
 use "sys.use"
 use "types.use"
 use "utf.use"
+use "varargs.use"
 
 pkg std =
 	const bfmt	: (buf : byte[,], fmt : byte[,], args:... -> size)
+	const bfmtv	: (buf : byte[,], fmt : byte[,], ap:valist -> size)
 	const put	: (fmt : byte[,], args:... -> size)
 ;;
 
@@ -12,52 +14,55 @@ const put = {fmt, args
 	var buf : byte[2048]
 	var n
 	
-	n = bfmt(buf[0,2048], fmt, args)
+	n = bfmtv(buf[0,2048], fmt, vastart(&args))
 	write(1, buf[0,n])
 	-> n
 }
 
 const bfmt = {buf, fmt, args
+	-> bfmtv(buf, fmt, vastart(&args))
+}
+
+const bfmtv = {buf, fmt, ap
 	var c
 	var n
-	var ap
-	var i_val;
-	var s_val;
+	var s_val : byte[,]
+	var b_val : int8
+	var w_val : int16
+	var i_val : int32
+	var l_val : int64
+	var p_val : byte*
 
 	n = 0
 	while fmt.len
 		(c, fmt) = striter(fmt)
 		if c == '%'
 			(c, fmt) = striter(fmt)
-			ap = &args
 			match c
 			's':
-				s_val = *(ap castto(byte[,]*))
+				(s_val, ap) = vanext(ap)
 				n += strfmt(buf[n, buf.len], s_val)
 				;;
 			/* format integers */
 			'b':
-				i_val = *(ap castto(int8*)) castto(int64)
-				n += intfmt(buf[n, buf.len], i_val, 10)
+				(b_val, ap) = vanext(ap)
+				n += intfmt(buf[n, buf.len], b_val castto(int64), 10)
 				;;
-			/*
 			'w':
-				i_val = *(ap castto(int16*)) castto(int64)
-				n += intfmt(buf[n, buf.len], i_val, 10)
+				(w_val, ap) = vanext(ap)
+				n += intfmt(buf[n, buf.len], i_val castto(int64), 10)
 				;;
-			*/
 			'i':
-				i_val = *(ap castto(int32*)) castto(int64)
-				n += intfmt(buf[n, buf.len], i_val, 10)
+				(i_val, ap) = vanext(ap)
+				n += intfmt(buf[n, buf.len], i_val castto(int64), 10)
 				;;
 			'l':
-				i_val = *(ap castto(int64*))
-				n += intfmt(buf[n, buf.len], i_val, 10)
+				(l_val, ap) = vanext(ap)
+				n += intfmt(buf[n, buf.len], i_val castto(int64), 10)
 				;;
 			'p':
-				n += strfmt(buf[n,buf.len], "0x")
-				i_val = *(ap castto(int64*))
-				n += intfmt(buf[n, buf.len], i_val, 16)
+				(p_val, ap) = vanext(ap)
+				n += intfmt(buf[n, buf.len], p_val castto(int64), 16)
 				;;
 			;;
 		else
@@ -113,3 +118,4 @@ const min = {a : size, b : size
 		-> b
 	;;
 }
+

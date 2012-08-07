@@ -1,0 +1,35 @@
+use "types.use"
+
+pkg std =
+	type valist
+
+	const vastart	: (args : ...* -> valist)
+	generic vanext	: (ap : valist -> [@a, valist])
+;;
+
+type valist = byte*
+
+const vastart = {args
+	-> args castto(valist)
+}
+
+generic vanext = {ap -> [@a, valist]
+	var v : @a
+	var sz
+	var p
+
+	if sizeof(@a) > 8
+		sz = 8
+	else
+		sz = sizeof(@a)
+	;;
+
+	p = ap castto(intptr)
+	p = (p + sz - 1) & ~(sz - 1)
+	ap = p castto(valist)
+
+	v = *(ap castto(@a*))
+
+	ap = ((p castto(intptr)) + sz) castto(valist)
+	-> (v, ap)
+}
