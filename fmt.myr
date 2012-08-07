@@ -53,7 +53,7 @@ const bfmt = {buf, fmt, args
 			*/
 			'i':
 				i_val = *(ap castto(int32*))
-				write(1, "int\n")
+				n += intfmt(buf[n, buf.len], i_val, 10)
 				;;
 			'l':
 				l_val = *(ap castto(int64*))
@@ -79,12 +79,28 @@ const strfmt = {buf, str
 	-> i
 }
 
-/*
-generic intfmt = {buf, val:@a::tcnum, base
-	write("int \n")
-	-> 0
+const intfmt = {buf, val, base
+	var digits = [
+		'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'
+	]
+	var b : char[32]
+	var i
+	var j
+	var n
+
+	n = 0
+	i = 0
+	while val > 0
+		b[i] = digits[val % base]
+		val /= base
+		i++
+	;;
+	n = 0
+	for j = i-1; j >= 0; j--
+		n += encode(buf[n,buf.len], b[j])
+	;;
+	-> n 
 }
-*/
 
 const min = {a : size, b : size
 	if a < b
