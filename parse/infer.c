@@ -183,7 +183,7 @@ static Type *tf(Inferstate *st, Type *t)
     assert(t != NULL);
     lu = NULL;
     while (1) {
-        if (!tytab[t->tid] && t->type == Tyname) {
+        if (!tytab[t->tid] && t->type == Tyunres) {
             if (!(lu = gettype(curstab(), t->name)))
                 fatal(t->name->line, "Could not fixed type %s", namestr(t->name));
             tytab[t->tid] = lu;

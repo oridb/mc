@@ -170,7 +170,7 @@ static void wrtype(FILE *fd, Type *ty)
     /* cstrs are left out for now: FIXME */
     wrint(fd, ty->nsub);
     switch (ty->type) {
-        case Tyname:
+        case Tyunres:
             pickle(ty->name, fd);
             break;
         case Typaram:
@@ -196,7 +196,7 @@ static void wrtype(FILE *fd, Type *ty)
         case Tyvar:
             die("Attempting to pickle %s. This will not work.\n", tystr(ty));
             break;
-        case Tyalias:
+        case Tyname:
             pickle(ty->name, fd);
             wrtype(fd, ty->sub[0]);
             break;
@@ -221,7 +221,7 @@ static Type *rdtype(FILE *fd)
     if (ty->nsub > 0)
         ty->sub = xalloc(ty->nsub * sizeof(Type*));
     switch (ty->type) {
-        case Tyname:
+        case Tyunres:
             ty->name = unpickle(fd);
             break;
         case Typaram:
@@ -246,7 +246,7 @@ static Type *rdtype(FILE *fd)
         case Tyslice:
             ty->sub[0] = rdtype(fd);
             break;
-        case Tyalias:
+        case Tyname:
             ty->name = unpickle(fd);
             ty->sub[0] = rdtype(fd);
             break;

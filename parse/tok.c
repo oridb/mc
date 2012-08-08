@@ -148,6 +148,7 @@ static int kwd(char *s)
         {"protect",     Tprotect},
         {"sizeof",      Tsizeof},
         {"struct",      Tstruct},
+        {"trait",       Ttrait},
         {"true",        Tboollit},
         {"type",        Ttype},
         {"union",       Tunion},

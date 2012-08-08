@@ -1,8 +1,8 @@
                     The Myrddin Programming Language
-                              Jun 2012
+                              Aug 2012
                             Ori Bernstein
 
-Overview:
+1. OVERVIEW:
 
         Myrddin is designed to be a simple, low level programming
         language.  It is designed to provide the programmer with
@@ -16,193 +16,342 @@ Overview:
         easy to understand language for work that needs to be close
         to the hardware.
 
-Introduction:
-
-    We begin with the archetypical "Hello world" example, deconstructing
-    it as we go:
-
-        use std
-
-        const main = {
-            /* say hello */
-            std.write(1, "Hello World\n")
-        }
-
-    The first line, `use std`, tells the compiler to import the standard
-    library, which at the time of this writing only barely exists as a
-    copy-paste group of files that works only on Linux, implementing almost
-    no useful functions.  One of the functions that it does provide,
-    however, is the 'write' system call.
-
-    The next line, 'const main = ...' declares a constant value called
-    'main'. These constant values must be initialized at their declaration
-    to a literal value. In this case, it is intialized to a constant
-    function '{;std.write(1, "Hello World\n");}'
-
-    In Myrddin, all functions begin with a '{', followed by a list
-    of arguments, which is terminated by a newline (or semicolon. The
-    two are equivalent). This is followed by any number of statements,
-    and closed by a '}'.
-
-    The text '/* say hello */' is a comment. It is ignored by the compiler,
-    and is used to add useful information for the programmer. In Myrddin,
-    unlike many popular languages, comments nest. This makes code like
-    /* outer /* inner coment */ comment */ valid.
-
-    The text 'std.write' refers the 'write' function from the 'std' library.
-    In Myrddin, a name can belong to an imported namespace. The language,
-    for reasons of parsimony, only allows one level of namespace. I saw
-    Java package names and ran screaming in horror, possibly too far to
-    the other extreme. This function is statically typed, taking a single
-    integer argument, and a byte slice to write.
-
-    The text '(1, "Hello World)' is the function call itself. It takes
-    the literal "1", and the byte slice "Hello World\n", and calls the
-    function 'std.write' with them as arguments.
-
-    It would be useful now to specify that the value '1' is an integer-like
-    constant, but it is not an integer. It is polymorphic, and can be used
-    at any point where a value of any integer type is needed.
-
-Declarations:
-
-    In Myrddin, declarations take the following form:
-
-        var|const|generic name [: type] [= expr]
-
-    To give a few examples:
-
-        var x
-        var foo : int
-        const c = 123
-        const pi : float32 = 3.1415
-        generic id : (@a -> @a) = {a:@a -> @a; -> a}
-
-    The first example, 'var x', declares a variable named x. The type is not
-    set explicitly, but it will be determined by the compiler (or the code
-    will fail to compile, saying that the type of the variable could not
-    be determined).
-
-    The second example, 'var foo : int' explicitly sets the type of a
-    variable named 'foo' to an integer. It does not initialize it. However,
-    it is [FIXME: make this not a lie] a compilation error to use a
-    variable without prior intialization, so this is not dangerous.
-
-    The third example, 'cosnt c = 123' declares a constant named c,
-    and initializes it to the value 123. All constants require initializers,
-    as they cannot be assigned to later in the code.
-
-    The fourth example, 'const pi : float32 = 3.1415', shows the full form
-    of declarations. It includes both the type and initializer components.
-
-    The final "overdeclared" example declares a generic function called
-    'id', which takes any type '@a' and returns the same type. It is
-    initialized to a function which specifies these types again, and
-    has a body that returns it's argument. This is not idiomatic code,
-    and is only provided as an example of what is possible. The normal
-    declaration would look something like this:
-
-        generic id = {a:@a; -> a}
-
-Types:
-
-    Myrddin comes with a large number of built in types. These are
-    listed below:
-
-        void
-            The void type. This type represents an empty value.
-            For reasons of consistency when specializing generics, void
-            values can be created, assigned to, and manipulated like
-            any other value.
-
-        bool
-            A Boolean type. The value of this is either 'true' (equivalent
-            to any non-zero) or 'false', equivalent to a zero value. The
-            size of this type is undefined.
-
-        char
-            A value representing a single code point in the default
-            encoding. The encoding is undefined, and the value of the
-            character is opaque.
+        Myrddin is a computer language influenced strongly by C
+        and ML, with ideas from Rust, Go, C++, and numerous other
+        sources and resources.
 
 
-        int8 int16 int32 int64 int
-        uint8 uint16 uint32 uint64 uint
-            Integer types. For the above types, the number at the end
-            represents the size of the type. The ones without a number at
-            the end are of undefined type. These values can be assumed to
-            be in two's complement. The semantics of overflowing are yet to
-            be specified.
+2. LEXICAL CONVENTIONS:
 
-        float32 float64
-            Floating-point types. The exact semantics are yet to be
-            defined.
+    The language is composed of several classes of token. There
+    are comments, identifiers, keywords, punctuation, and whitespace.
+    
+    Comments, begin with "/*" and end with "*/". They may nest.
 
-        @<name>
-            A generic type. This is only allowed in the scope of 'generic'
-            constants.
+        /* this is a comment /* with another inside */ */
 
-    It also allows composite types to be defined. These are listed below:
+    Identifiers begin with any alphabetic character or underscore,
+    and continue with any number of alphanumeric characters or
+    underscores. Currently the compiler places a limit of 1024
+    bytes on the length of the identifier.
 
-        <type>*
+        some_id_234__
 
-            A pointer to a type This type does not support C-style pointer
-            arithmetic, indexing, or any other such manipulation. However,
-            slices of it can be taken, which subsumes the majority of uses
-            for pointer arithmetic. The pointer is passed by value, but as
-            expected, the pointed to value is not.
+    Keywords are a special class of identifier that is reserved
+    by the language and given a special meaning. The set of
+    keywords in Myrddin are as follows:
 
-        <type>[,]
-
-            A slice of a type. Slices point to a number of objects. They
-            can be indexed, sliced, and assigned. They carry their range,
-            and can in principle be bounds-checked (although the compiler
-            currently does not do this, due to the lack of a runtime library
-            that will allow a 'panic' function to be called).
-
-        <type>[size]
-
-            An array of <type>. Unlike most languages other than Pascal, the
-            size of the array is a part of it's type, and arrays of
-            different sizes may not be assigned between each other. Arrays
-            are passed by value, and copied when assigned.
-
-        <type0>,<type1>,...,<typeN>
-
-            A tuple of type t0, t1, t2, ....
-
-    Finally, there are aggregate types that can be defined:
-
-        struct
-
-        union
-
-    Any of these types can be given a name. This naming defines a new
-    type which inherits all the constraints of the previous type, but
-    does not unify with it. Eg:
-
-        type t = int
-        var x : t
-        var y : int
-        x = y  // type error
-        x = 42 // sure, why not?
-
-Type Constraints
+        castto          match
+        const           pkg
+        default         protect
+        elif            sizeof
+        else            struct
+        export          trait
+        extern          true
+        false           type
+        for             union
+        generic         use
+        goto            var
+        if              while
 
 
-Literals:
+    At the current stage of development, not all of these keywords
+    are implemented within the language.[1]
 
-    character
-    bool
-    int
-    float
-    func
-    sequence
+    Literals are a direct representation of a data object within the
+    source of the program. There are several literals implemented
+    within the Myrddin language:
 
-Symbols
+        Integers literals are a sequence of digits, beginning with a
+        digit and possibly separated by underscores. They are of a
+        generic type, and can be used where any numeric type is
+        expected. They may be prefixed with "0x" to indicate that the
+        following number is a hexadecimal value, or 0b to indicate a
+        binary value. Decimal values are not prefixed, and octal values
+        are not supported.
 
-Imports
+            eg: 0x123_fff, 0b1111, 1234
 
-Exports
+        Float literals are also a sequence of digits beginning with a
+        digit and possibly separated by underscores. They are also of a
+        generic type, and may be used whenever a floating point type is
+        expected. Floating point literals are always in decimal, and
+        as of this writing, exponential notation is not supported[2]
 
+            eg: 123.456
+
+        String literals represent a byte array describing a string in
+        the compile time character set. Any byte values are allowed in
+        a string literal. There are a number of escape sequences
+        supported:
+            \n          newline
+            \r          carriage return
+            \t          tab
+            \b          backspace
+            \"          double quote
+            \'          single quote
+            \v          vertical tab
+            \\          single slash
+            \0          nul character
+            \xDD        single byte value, where DD are two hex digits.
+        String literals begin with a ", and continue to the next
+        unescaped ".
+
+            eg: "foo\"bar"
+
+        Character literals represent a single codepoint in the character
+        set. A character starts with a single quote, contains a single
+        codepoint worth of text, encoded either as an escape sequence
+        or in the input character set for the compiler (generally UTF8).
+
+            eg: 'א', '\n', '\u1234'[3]
+
+        Boolean literals are either the keyword "true" or the keyword
+        "false".
+
+            eg: true, false
+
+        Funciton literals describe a function. They begin with a '{',
+        followed by a newline-terminated argument list, followed by a
+        body and closing '}'. They will be described in more detail
+        later in this manual.
+
+            eg: {a : int, b
+                    -> a + b
+                }
+        
+        Sequence literals describe either an array or a structure
+        literal. They begin with a '[', followed by an initializer
+        sequence and closing ']'. For array literals, the initializer
+        sequence is either an indexed initializer sequence[4], or an
+        unindexed initializer sequence. For struct literals, the
+        initializer sequence is always a named initializer sequence.
+
+        An unindexed initializer sequence is simply a comma separated
+        list of values. An indexed initializer sequence contains a
+        '#number=value' comma separated sequence, which indicates the
+        index of the array into which the value is inserted. A named
+        initializer sequence contains a comma separated list of
+        '.name=value' pairs.
+
+            eg: [1,2,3], [#2=3, #1=2, #0=1], [.a = 42, .b="str"]
+
+        A tuple literal is a parentheses separated list of values.
+        A single element tuple contains a trailing comma.
+
+            eg: (1,), (1,'b',"three")
+
+3. SYNTAX OVERVIEW:
+
+    Myrddin syntax will likely have a familiar-but-strange taste
+    to many people. Many of the concepts and constructions will be
+    similar to those present in C, but different.
+
+    3.1: Declarations:
+
+        A declaration consists of a declaration class (ie, one
+        of 'const', 'var', or 'generic'), followed by a declaration
+        name, optionally followed by a type and assignment. One thing
+        you may note is that unlike most other languages, there is no
+        special function declaration syntax. Instead, a function is
+        declared like any other value: By assigning its name to a
+        constant or variable.
+
+            const:      Declares a constant value, which may not be
+                        modified at run time. Constants must have
+                        initializers defined.
+            var:        Declares a variable value. This value may be
+                        assigned to, copied from, and 
+            generic:    Declares a specializable value. This value
+                        has the same restricitions as a const, but
+                        taking its address is not defined. The type
+                        parameters for a generic must be explicitly
+                        named in the declaration in order for their
+                        substitution to be allowed.
+
+        Examples:
+
+            Declare a constant with a value 123. The type is not defined,
+            and will be inferred.
+
+                const x = 123
+                
+            Declares a variable with no value and no type defined. The 
+            value can be assigned later (and must be assigned before use),
+            and the type will be inferred.
+
+                var y
+
+            Declares a generic with type '@a', and assigns it the value
+            'blah'. Every place that 'z' is used, it will be specialized,
+            and the type parameter '@a' will be substituted.
+
+                generic z : @a = blah
+
+            Declares a function f with and without type inference. Both
+            forms are equivalent. 'f' takes two parameters, both of type
+            int, and returns their sum as an int
+
+                const f = {a, b
+                    var c : int = 42
+                    -> a + b + c
+                }
+
+                const f : (a : int, b : int -> int) = {a : int, b : int -> int
+                    var c : int  = 42
+                    -> a + b + c
+                }
+
+    3.2: Data Types:
+
+        The language defines a number of built in primitive types. These
+        are not keywords, and in fact live in a separate namespace from
+        the variable names. Yes, this does mean that you could, if you want,
+        define a variable named 'int'.
+
+        There are no implicit conversions within the language. All types
+        must be explicitly cast if you want to convert, and the casts must
+        be of compatible types, as will be described later.
+
+            3.2.1. Primitive types:
+
+                    void        
+                    bool            char
+                    int8            uint8
+                    int16           uint16
+                    int32           uint32
+                    int64           uint64
+                    int             uint
+                    long            ulong
+                    float32         float64
+
+                These types are as you would expect. 'void' represents a
+                lack of type, although for the sake of genericity, you can
+                assign between void, return void, and so on. This allows
+                generics to not have to somehow work around void being a
+                toxic type.
+
+                bool is a boolean type, and can only be used for assignment
+                and comparison. 
+
+                char is a 32 bit integer type, and is guaranteed to be able
+                to hold exactly one codepoint. It can be assigned integer
+                literals, tested against, compared, and all the other usual
+                numeric types.
+
+                The various [u]intXX types hold, as expected, signed and
+                unsigned integers of the named sizes respectively.
+                Similarly, floats hold floating point types with the
+                indicated precision.
+
+                    var x : int         declare x as an int
+                    var y : float32     declare y as a 32 bit float
+
+
+            3.2.2. Composite types:
+
+                    pointer
+                    slice           array
+
+                Pointers are, as expected, values that hold the address of
+                the pointed to value. They are declared by appending a '*'
+                to the type. Pointer arithmetic is not allowed. They are
+                declared by appending a '*' to the base type
+
+                Arrays are a group of N values, where N is part of the type.
+                Arrays of different sizes are incompatible. Arrays in
+                Myrddin, unlike many other languages, are passed by value.
+                They are declared by appending a '[SIZE]' to the base type.
+
+                Slices are similar to arrays in many contemporary languages.
+                They are reference types that store the length of their
+                contents. They are declared by appending a '[,]' to the base
+                type.
+                    
+                    foo*        type: pointer to foo
+                    foo[123]    type: array of 123 foo
+                    foo[,]      type: slice of foo
+
+            3.2.3. Aggregate types:
+
+                    tuple           struct
+                    union
+
+                Tuples are the traditional product type. They are declared
+                by putting the comma separated list of types within square
+                brackets.
+
+                Structs are aggregations of types with named members. They
+                are declared by putting the word 'struct' before a block of
+                declaration cores (ie, declarations without the storage type
+                specifier).
+
+                Unions are the traditional sum type. They consist of a tag
+                (a keyword prefixed with a '`' (backtick)) indicating their
+                current contents, and a type to hold. They are declared by
+                placing the keyword 'union' before a list of tag-type pairs.
+
+                    [int, int, char]            a tuple of 2 ints and a char
+
+                    struct                      a struct containing an int named
+                        a : int                 'a', and a char named 'b'.
+                        b : char                
+                    ;;
+
+                    union                       a union containing one of
+                        `Thing int              int or char. The values are not
+                        `Other float32          named, but they are tagged.
+                    ;;
+
+
+            3.2.4. Magic types:
+
+                    tyvar           typaram
+                    tyname
+
+                A tyname is a named type, similar to a typedef in C, however
+                it genuinely creates a new type, and not an alias. There are
+                no implicit conversions, but a tyname will inherit all
+                constraints of its underlying type.
+
+                A typaram is a parametric type. It is used in generics as
+                a placeholder for a type that will be substituted in later.
+                It is an identifier prefixed with '@'. These are only valid
+                within generic contexts, and may not appear elsewhere.
+
+                A tyvar is an internal implementation detail that currently
+                leaks out during type inference, and is a major cause of
+                confusing error messages. It should not be in this manual,
+                except that the current incarnation of the compiler will
+                make you aware of it. It looks like '@$type', and is a
+                variable that holds an incompletely inferred type.
+
+                    type mine = int             creates a tyname named
+                                                'mine', equivalent to int.
+
+
+                    @foo                        creates a type parameter
+                                                named '@foo'.
+
+            3.2.5. Traits:
+
+    3.3: Control Constructs:
+    3.4: Packages and Uses:
+    3.5: Expressions
+
+4. TYPES:
+
+5. EXAMPLES:
+        
+6. GRAMMAR:
+
+7. FUTURE DIRECTIONS:
+
+BUGS:
+
+[1] TODO: trait, default, protect,
+[2] TODO: exponential notation.
+[3] TODO: \uDDDD escape sequences not yet recognized
+[4] TODO: currently the only sequence literal implemented is the
+          unindexed one
 

@@ -53,7 +53,7 @@ Type *tydup(Type *t)
     r->nmemb = t->nmemb;
     r->sub = memdup(t->sub, t->nsub * sizeof(Type*));
     switch (t->type) {
-        case Tyname:    r->name = t->name;              break;
+        case Tyunres:    r->name = t->name;              break;
         case Tyarray:   r->asize = t->asize;            break;
         case Typaram:   r->pname = strdup(t->pname);    break;
         case Tystruct:  r->sdecls = memdup(t->sdecls, t->nmemb*sizeof(Node*));   break;
@@ -112,7 +112,7 @@ Type *mktynamed(int line, Node *name)
     Type *t;
 
     /* resolve it in the type inference stage */
-    t = mkty(line, Tyname);
+    t = mkty(line, Tyunres);
     t->name = name;
     return t;
 }
@@ -121,7 +121,7 @@ Type *mktyalias(int line, Node *name, Type *base)
 {
     Type *t;
 
-    t = mkty(line, Tyalias);
+    t = mkty(line, Tyname);
     t->name = name;
     t->nsub = 1;
     t->cstrs = bsdup(base->cstrs);
@@ -238,7 +238,7 @@ int istysigned(Type *t)
 
 Type *tybase(Type *t)
 {
-    while (t->type == Tyalias)
+    while (t->type == Tyname)
         t = t->sub[0];
     return t;
 }
@@ -414,11 +414,11 @@ static int tybfmt(char *buf, size_t len, Type *t)
         case Typaram:
             p += snprintf(p, end - p, "@%s", t->pname);
             break;
-        case Tyname:
+        case Tyunres:
             p += snprintf(p, end - p, "?"); /* indicate unresolved name. should not be seen by user. */
             p += namefmt(p, end - p, t->name);
             break;
-        case Tyalias:  
+        case Tyname:  
             p += snprintf(p, end - p, "%s", namestr(t->name));
             break;
         case Tystruct:  p += fmtstruct(p, end - p, t);  break;

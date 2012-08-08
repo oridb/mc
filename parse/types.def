@@ -41,6 +41,6 @@ Ty(Tyunion, NULL)
 /* these have no memory repr */
 Ty(Tyvar, NULL)
 Ty(Typaram, NULL)
+Ty(Tyunres, NULL) /* unresolved */
 Ty(Tyname, NULL)
-Ty(Tyalias, NULL)
 Ty(Ntypes, NULL)
