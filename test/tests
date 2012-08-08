@@ -55,6 +55,7 @@ B log-or	E	1
 B str		E	102
 B generic	E	42
 B cstr-builtin	E	42
+B genericcall	E	42
 B sizeof	E	4
 B gsizeof	E	5
 B mkunion	E	0
