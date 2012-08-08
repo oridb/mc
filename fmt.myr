@@ -85,6 +85,7 @@ const intfmt = {buf, val, base
 	var digits = [
 		'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'
 	]
+	var isneg
 	var b : char[32]
 	var i
 	var j
@@ -93,8 +94,7 @@ const intfmt = {buf, val, base
 	n = 0
 	i = 0
 	if val < 0
-		b[i] = '-'
-		i++
+		isneg = true
 	;;
 	while val != 0
 		b[i] = digits[val % base]
@@ -102,6 +102,9 @@ const intfmt = {buf, val, base
 		i++
 	;;
 	n = 0
+	if isneg
+		n += encode(buf[n,buf.len], '-')
+	;;
 	for j = i-1; j >= 0; j--
 		n += encode(buf[n,buf.len], b[j])
 	;;
