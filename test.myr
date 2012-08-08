@@ -2,7 +2,6 @@ use std
 
 const main = {
 	var x : byte*[1024]
-	var buf : byte[1024]
 	var sz
 	var i
 
@@ -25,7 +24,7 @@ const main = {
 	;;
 	std.write(1, "Hello, 世界\n")
 	chartypes()
-	std.put("format output %i %i %s\n", 123, 321, "asdf")
+	std.put("format output %i %i %s %s\n", 123, 321, "asdf", "ghij")
 }
 
 const chartypes = {

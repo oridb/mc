@@ -15,21 +15,21 @@ const vastart = {args
 
 generic vanext = {ap -> [@a, valist]
 	var v : @a
-	var sz
+	var align
 	var p
 
 	if sizeof(@a) > 8
-		sz = 8
+		align = 8
 	else
-		sz = sizeof(@a)
+		align = sizeof(@a)
 	;;
 
 	p = ap castto(intptr)
-	p = (p + sz - 1) & ~(sz - 1)
+	p = (p + align - 1) & ~(align - 1)
 	ap = p castto(valist)
 
 	v = *(ap castto(@a*))
 
-	ap = ((p castto(intptr)) + sz) castto(valist)
+	ap = ((p castto(intptr)) + sizeof(@a)) castto(valist)
 	-> (v, ap)
 }
