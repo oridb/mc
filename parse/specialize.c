@@ -271,7 +271,7 @@ static size_t tidappend(char *buf, size_t sz, Type *t)
     p += snprintf(p, end - p, "$%d", t->tid);
     for (i = 0; i < t->nsub; i++)
         p += tidappend(p, end - p, t->sub[i]);
-    return end - p;
+    return p - buf;
 }
 
 static Node *genericname(Node *n, Type *t)
