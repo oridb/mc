@@ -95,6 +95,9 @@ const intfmt = {buf, val, base
 	i = 0
 	if val < 0
 		isneg = true
+	elif val == 0
+		b[0] = '0'
+		i++
 	;;
 	while val != 0
 		b[i] = digits[val % base]
