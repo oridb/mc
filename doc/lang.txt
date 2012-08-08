@@ -104,6 +104,8 @@ Declarations:
 
         generic id = {a:@a; -> a}
 
+Control Structures:
+
 Types:
 
     Myrddin comes with a large number of built in types. These are

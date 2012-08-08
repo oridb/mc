@@ -257,7 +257,7 @@ size_t tysize(Type *t)
 
         case Tyslice:
             return 2*Ptrsz; /* len; ptr */
-        case Tyalias:
+        case Tyname:
             return tysize(t->sub[0]);
         case Tyarray:
             assert(exprop(t->asize) == Olit);
@@ -279,7 +279,7 @@ size_t tysize(Type *t)
                     sz = max(sz, tysize(t->udecls[i]->etype) + Ptrsz);
             return align(sz, Ptrsz);
             break;
-        case Tybad: case Tyvar: case Typaram: case Tyname: case Ntypes:
+        case Tybad: case Tyvar: case Typaram: case Tyunres: case Ntypes:
             die("Type %s does not have size; why did it get down to here?", tystr(t));
             break;
     }
@@ -456,7 +456,7 @@ static Node *ucompare(Simp *s, Node *a, Node *b, Type *t, size_t off)
     r = NULL;
     switch (t->type) {
         case Tyvoid: case Tybad: case Tyvalist: case Tyvar:
-        case Typaram: case Tyname: case Tyalias: case Ntypes:
+        case Typaram: case Tyunres: case Tyname: case Ntypes:
         case Tyint64: case Tyuint64: case Tylong:  case Tyulong:
         case Tyfloat32: case Tyfloat64:
         case Tyslice: case Tyarray: case Tytuple: case Tystruct:

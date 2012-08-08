@@ -88,6 +88,7 @@ static void constrainwith(Type *t, char *str);
 %token<tok> Tchrlit
 %token<tok> Tboollit
 
+%token<tok> Ttrait   /* trait */
 %token<tok> Tstruct  /* struct */
 %token<tok> Tunion   /* union */
 %token<tok> Ttyparam /* @typename */
@@ -105,7 +106,7 @@ static void constrainwith(Type *t, char *str);
 %token<tok> Tendln   /* ; or \n */
 %token<tok> Tendblk  /* ;; */
 %token<tok> Tcolon   /* : */
-%token<tok> Ttrait   /* :: */
+%token<tok> Twith    /* :: */
 %token<tok> Tdot     /* . */
 %token<tok> Tcomma   /* , */
 %token<tok> Tret     /* -> */
@@ -285,7 +286,7 @@ generictype
 
 typaramlist
         : /* empty */ {$$ = NULL;}
-        | Ttrait name {$$ = $2;}
+        | Twith name {$$ = $2;}
         ;
 
 compoundtype
