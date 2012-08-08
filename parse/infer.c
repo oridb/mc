@@ -411,6 +411,7 @@ static Type *unify(Inferstate *st, Node *ctx, Type *a, Type *b)
     return r;
 }
 
+
 static void unifycall(Inferstate *st, Node *n)
 {
     size_t i;
@@ -426,16 +427,15 @@ static void unifycall(Inferstate *st, Node *n)
         if (i == ft->nsub)
             fatal(n->line, "%s arity mismatch (expected %zd args, got %zd)",
                   ctxstr(st, n->expr.args[0]), ft->nsub - 1, n->expr.nargs - 1);
+
+        if (ft->sub[i]->type == Tyvalist)
+            break;
         inferexpr(st, n->expr.args[i], NULL, NULL);
         unify(st, n->expr.args[0], ft->sub[i], type(st, n->expr.args[i]));
-        if (i + 1 < n->expr.nargs && ft->sub[i + 1]->type == Tyvalist) {
-            i += 2; /* to prevent triggering the arity mismatch on exit */
-            break;
-        }
     }
-    if (i < ft->nsub)
+    if (i < ft->nsub && ft->sub[i]->type != Tyvalist)
         fatal(n->line, "%s arity mismatch (expected %zd args, got %zd)",
-              ctxstr(st, n->expr.args[0]), ft->nsub - 1, n->expr.nargs - 1);
+              ctxstr(st, n->expr.args[0]), ft->nsub - 1, i - 1);
     settype(st, n, ft->sub[0]);
 }
 
