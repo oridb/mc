@@ -269,7 +269,7 @@ int hascstr(Type *t, Cstr *c)
     return t->cstrs && bshas(t->cstrs, c->cid);
 }
 
-static int cstrfmt(char *buf, size_t len, Type *t)
+int cstrfmt(char *buf, size_t len, Type *t)
 {
     size_t i;
     char *p;
@@ -439,6 +439,13 @@ char *tyfmt(char *buf, size_t len, Type *t)
 {
     tybfmt(buf, len, t);
     return buf;
+}
+
+char *cstrstr(Type *t)
+{
+    char buf[1024];
+    cstrfmt(buf, 1024, t);
+    return strdup(buf);
 }
 
 char *tystr(Type *t)

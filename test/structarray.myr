@@ -1,0 +1,12 @@
+type t = struct
+	a : int[42]
+;;
+
+const main = {
+	var v : t
+
+	v.a[0] = 12
+	v.a[1] = 20
+
+	-> 2*v.a[0] + v.a[1]
+}

@@ -30,6 +30,7 @@ B struct1	E	12
 B struct	E	42
 B structptr	E	42
 B structasn	E	42
+B structarray	E	42
 B structret	E	42
 B array		E	7
 B arrayaddr	E	42

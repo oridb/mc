@@ -355,6 +355,8 @@ int hascstr(Type *t, Cstr *c);
 int cstreq(Type *t, Cstr **cstrs, size_t len);
 int setcstr(Type *t, Cstr *c);
 char *tyfmt(char *buf, size_t len, Type *t);
+int cstrfmt(char *buf, size_t len, Type *t);
+char *cstrstr(Type *t);
 char *tystr(Type *t);
 
 /* node creation */

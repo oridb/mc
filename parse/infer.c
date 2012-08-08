@@ -314,7 +314,7 @@ static int cstrcheck(Type *a, Type *b)
         return bscount(a->cstrs) == 0;
     /* if a->cstrs is a subset of b->cstrs, all of
      * a's constraints are satisfied by b. */
-    return bsissubset(b->cstrs, a->cstrs);
+    return bsissubset(a->cstrs, b->cstrs);
 }
 
 static void mergecstrs(Inferstate *st, Node *ctx, Type *a, Type *b)
