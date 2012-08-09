@@ -1,6 +1,23 @@
                     The Myrddin Programming Language
-                              Aug 2012
+                              Jul 2012
                             Ori Bernstein
+
+TABLE OF CONTENTS:
+
+    1. OVERVIEW
+    2. LEXICAL CONVENTIONS
+    3. SYNTAX
+        3.1. Declarations
+        3.2. Literal Values
+        3.3. Control Constructs and Blocks
+        3.4. Data Types
+        3.5. Packages and Uses
+        3.6. Expressions
+    4. TYPE SYSTEM
+    5. TOOLCHAIN
+    6. EXAMPLES
+    7. STYLE GUIDE
+    8. FUTURE DIRECTIONS
 
 1. OVERVIEW:
 
@@ -60,7 +77,76 @@
 
     Literals are a direct representation of a data object within the
     source of the program. There are several literals implemented
-    within the Myrddin language:
+    within the Myrddin language. These are fully described in sectio
+
+3. SYNTAX OVERVIEW:
+
+    Myrddin syntax will likely have a familiar-but-strange taste
+    to many people. Many of the concepts and constructions will be
+    similar to those present in C, but different.
+
+    3.1. Declarations:
+
+        A declaration consists of a declaration class (ie, one
+        of 'const', 'var', or 'generic'), followed by a declaration
+        name, optionally followed by a type and assignment. One thing
+        you may note is that unlike most other languages, there is no
+        special function declaration syntax. Instead, a function is
+        declared like any other value: By assigning its name to a
+        constant or variable.
+
+            const:      Declares a constant value, which may not be
+                        modified at run time. Constants must have
+                        initializers defined.
+            var:        Declares a variable value. This value may be
+                        assigned to, copied from, and 
+            generic:    Declares a specializable value. This value
+                        has the same restricitions as a const, but
+                        taking its address is not defined. The type
+                        parameters for a generic must be explicitly
+                        named in the declaration in order for their
+                        substitution to be allowed.
+
+        In addition, there is one modifier allowed on declarations:
+        'extern'. Extern declarations are used to declare symbols from
+        another module which cannot be provided via the 'use' mechanism.
+        Typical uses would be to expose a function written in assembly. They
+        can also be used as a workaround for external dependencies.
+
+        Examples:
+
+            Declare a constant with a value 123. The type is not defined,
+            and will be inferred.
+
+                const x = 123
+                
+            Declares a variable with no value and no type defined. The 
+            value can be assigned later (and must be assigned before use),
+            and the type will be inferred.
+
+                var y
+
+            Declares a generic with type '@a', and assigns it the value
+            'blah'. Every place that 'z' is used, it will be specialized,
+            and the type parameter '@a' will be substituted.
+
+                generic z : @a = blah
+
+            Declares a function f with and without type inference. Both
+            forms are equivalent. 'f' takes two parameters, both of type
+            int, and returns their sum as an int
+
+                const f = {a, b
+                    var c : int = 42
+                    -> a + b + c
+                }
+
+                const f : (a : int, b : int -> int) = {a : int, b : int -> int
+                    var c : int  = 42
+                    -> a + b + c
+                }
+
+    3.2. Literal Values
 
         Integers literals are a sequence of digits, beginning with a
         digit and possibly separated by underscores. They are of a
@@ -141,68 +227,56 @@
 
             eg: (1,), (1,'b',"three")
 
-3. SYNTAX OVERVIEW:
+    3.3. Control Constructs and Blocks:
+    
+            if          for
+            while       match
+            goto        
 
-    Myrddin syntax will likely have a familiar-but-strange taste
-    to many people. Many of the concepts and constructions will be
-    similar to those present in C, but different.
+        The control statements in Myrddin are similar to those in many other
+        popular languages, and with the exception of 'match', there should
+        be no surprises to a user of any of the Algol derived languages.
+        Where a truth value is required, any type with the builtin trait
+        'tctest' can be used in all of these.
 
-    3.1: Declarations:
+        Blocks are the "carriers of code" in Myrddin programs. They consist
+        of series of expressions, typically ending with a ';;', although the
+        function-level block ends at the function's '}', and in if
+        statemments, an 'elif' may terminate a block. They can contain any
+        number of declarations, expressions, control constructs, and empty
+        lines. Every control statement example below will (and, in fact,
+        must) have a block attached to the control statement.
+        
+        If statements branch one way or the other depending on the truth
+        value of their argument. The truth statement is separated from the
+        block body 
 
-        A declaration consists of a declaration class (ie, one
-        of 'const', 'var', or 'generic'), followed by a declaration
-        name, optionally followed by a type and assignment. One thing
-        you may note is that unlike most other languages, there is no
-        special function declaration syntax. Instead, a function is
-        declared like any other value: By assigning its name to a
-        constant or variable.
+            if true
+                std.put("The program always get here")
+            elif elephant != mouse
+                std.put("...eh.")
+            else
+                std.put("The program never gets here")
+            ;;
 
-            const:      Declares a constant value, which may not be
-                        modified at run time. Constants must have
-                        initializers defined.
-            var:        Declares a variable value. This value may be
-                        assigned to, copied from, and 
-            generic:    Declares a specializable value. This value
-                        has the same restricitions as a const, but
-                        taking its address is not defined. The type
-                        parameters for a generic must be explicitly
-                        named in the declaration in order for their
-                        substitution to be allowed.
+        For statements begin with an initializer, followed by a test
+        condition, followed by an increment action. For statements run the
+        initializer once before the loop is run, the test each on each
+        iteration through the loop before the body, and the increment on
+        each iteration after the body. If the loop is broken out of early
+        (for example, by a goto), the final increment will not be run. The
+        syntax is as follows:
 
-        Examples:
+            for init; test; increment
+                blockbody()
+            ;;
 
-            Declare a constant with a value 123. The type is not defined,
-            and will be inferred.
+        While loops are equivalent to for loops with empty initializers
+        and increments. They run the test on every iteration of the loop,
+        and 
 
-                const x = 123
-                
-            Declares a variable with no value and no type defined. The 
-            value can be assigned later (and must be assigned before use),
-            and the type will be inferred.
 
-                var y
-
-            Declares a generic with type '@a', and assigns it the value
-            'blah'. Every place that 'z' is used, it will be specialized,
-            and the type parameter '@a' will be substituted.
-
-                generic z : @a = blah
-
-            Declares a function f with and without type inference. Both
-            forms are equivalent. 'f' takes two parameters, both of type
-            int, and returns their sum as an int
-
-                const f = {a, b
-                    var c : int = 42
-                    -> a + b + c
-                }
-
-                const f : (a : int, b : int -> int) = {a : int, b : int -> int
-                    var c : int  = 42
-                    -> a + b + c
-                }
-
-    3.2: Data Types:
+    3.4. Data Types:
 
         The language defines a number of built in primitive types. These
         are not keywords, and in fact live in a separate namespace from
@@ -213,7 +287,7 @@
         must be explicitly cast if you want to convert, and the casts must
         be of compatible types, as will be described later.
 
-            3.2.1. Primitive types:
+            3.4.1. Primitive types:
 
                     void        
                     bool            char
@@ -248,7 +322,7 @@
                     var y : float32     declare y as a 32 bit float
 
 
-            3.2.2. Composite types:
+            3.4.2. Composite types:
 
                     pointer
                     slice           array
@@ -272,7 +346,7 @@
                     foo[123]    type: array of 123 foo
                     foo[,]      type: slice of foo
 
-            3.2.3. Aggregate types:
+            3.4.3. Aggregate types:
 
                     tuple           struct
                     union
@@ -290,6 +364,8 @@
                 (a keyword prefixed with a '`' (backtick)) indicating their
                 current contents, and a type to hold. They are declared by
                 placing the keyword 'union' before a list of tag-type pairs.
+                They may also omit the type, in which case, the tag is
+                suficient to determine which option was selected.
 
                     [int, int, char]            a tuple of 2 ints and a char
 
@@ -304,7 +380,7 @@
                     ;;
 
 
-            3.2.4. Magic types:
+            3.4.4. Magic types:
 
                     tyvar           typaram
                     tyname
@@ -333,19 +409,176 @@
                     @foo                        creates a type parameter
                                                 named '@foo'.
 
-            3.2.5. Traits:
+            3.4.5. :
 
-    3.3: Control Constructs:
-    3.4: Packages and Uses:
-    3.5: Expressions
+    3.6. Packages and Uses:
 
-4. TYPES:
+            pkg     use
+
+        There are two keywords for module system. 'use' is the simpler
+        of the two, and has two cases:
+
+            use syspkg
+            use "localfile"
+
+        The unquoted form searches all system include paths for 'syspkg'
+        and imports it into the namespace. By convention, the namespace
+        defined by 'syspkg' is 'syspkg', and is unique and unmerged. This
+        is not enforced, however. Typical usage of unquoted names is to
+        import a library that already exists.
+
+        The quoted form searches the local directory for "localpkg".  By
+        convention, the package it imports does not match the name
+        "localpkg", but instead is used as partial of the definition of the
+        importer's package. This is a confusing description.
+
+        A typical use of a quoted import is to allow splitting one package
+        into multiple files. In order to support this behavior, if a package
+        is defined in the current file, and a use statements imports a
+        package with the same namespace, the two namespaces are merged.
+
+        The 'pkg' keyword allows you to define a (partial) package by
+        listing the symbols and types for export. For example,
+
+            pkg mypkg =
+                type mytype
+
+                const Myconst   : int = 42
+                const myfunc    : (v : int -> bool)
+            ;;
+
+        declares a package "mypkg", which defines three exports, "mytype",
+        "Myconst", and "myfunc". The definitions of the values may be
+        defined in the 'pkg' specification, but it is preferred to implement
+        them in the body of the code for readability. Scanning the export
+        list is desirable from a readability perspective.
+
+    3.7. Expressions:
+
+        Myrddin expressions are relatively similar to expressions in C.  The
+        operators are listed below in order of precedence, and a short
+        summary of what they do is listed given. For the sake of clarity,
+        'x' will stand in for any expression composed entirely of
+        subexpressions with higher precedence than the current current
+        operator. 'e' will stand in for any expression. Unless marked
+        otherwise, expressions are left associative.
+
+        BUG: There are too many precedence levels.
+
+
+            Precedence 0: (*ok, not really operators)
+                (,,,)           Tuple Construction
+                (e)             Grouping
+                name            Bare names
+                literal         Values
+
+            Precedence 1:
+                x.name          Member lookup
+                x++             Postincrement
+                x--             Postdecrement
+                x[e]            Index
+                x[from,to]      Slice
+
+            Precedence 2:
+                ++x             Preincrement
+                --x             Predecrement
+                *x              Dereference
+                &x              Address
+                !x              Logical negation
+                ~x              Bitwise negation
+                +x              Positive (no operation)
+                -x              Negate x
+
+            Precedence 3:
+                x << x          Shift left
+                x >> x          Shift right
+
+            Precedence 4:
+                x * x           Multiply
+                x / x           Divide
+                x % x           Modulo
+
+            Precedence 5:
+                x + x           Add
+                x - x           Subtract
+                
+            Precedence 6:
+                x & y           Bitwise and
+
+            Precedence 7:
+                x | y           Bitwise or
+                x ^ y           Bitwise or
+
+            Precedence 8:
+                `Name x         Union construction
+
+            Precedence 9:
+                x casttto(type) Cast expression
+
+            Precedence 10:
+                x == x          Equality
+                x != x          Inequality
+                x > x           Greater than
+                x >= x          Greater than or equal to
+                x < x           Less than
+                x <= x          Less than or equal to
+
+            Precedence 11:
+                x && x          Logical and
+
+            Precedence 12:
+                x || x          Logical or
+
+            Precedence 13:
+                x = x           Assign                  Right assoc
+                x += x          Fused add/assign        Right assoc
+                x -= x          Fused sub/assign        Right assoc
+                x *= x          Fused mul/assign        Right assoc
+                x /= x          Fused div/assign        Right assoc
+                x %= x          Fused mod/assign        Right assoc
+                x |= x          Fused or/assign         Right assoc
+                x ^= x          Fused xor/assign        Right assoc
+                x &= x          Fused and/assign        Right assoc
+                x <<= x         Fused shl/assign        Right assoc
+                x >>= x         Fused shr/assign        Right assoc
+
+            Precedence 14:
+                -> x            Return expression
+
+        All expressions on integers act on complement-two values which wrap
+        on overflow. Right shift expressions fill with the sign bit on
+        signed types, and fill with zeros on unsigned types.
+
+4. TYPE SYSTEM:
+
+    The myrddin type system is a system similar to the Hindley Milner
+    system, however, types are not implicitly generalized. Instead, type
+    schemes (type parameters, in Myrddin lingo) must be explicitly provided
+    in the declarations. For purposes of brevity, instead of specifying type
+    rules for every operator, we group operators which behave identically
+    from the type system perspective into a small set of classes
+
+        Binop:
+            +           -
+
+5. TOOLCHAIN:
+
+    The toolchain used is inspired by the Plan 9 toolchain in name. There
+    is currently one compiler for x64, called '6m'. This compiler outputs
+    standard elf .o files, and supports these options:
+
+        6m [-h] [-o outfile] [-d[dbgopts]] inputs
+            -I path	Add 'path' to use search path
+            -o	Output to outfile
+        
 
 5. EXAMPLES:
         
-6. GRAMMAR:
+6. STYLE GUIDE:
 
-7. FUTURE DIRECTIONS:
+7. GRAMMAR:
+
+8. FUTURE DIRECTIONS:
 
 BUGS:
 
