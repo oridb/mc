@@ -463,6 +463,9 @@ TABLE OF CONTENTS:
         operator. 'e' will stand in for any expression. Unless marked
         otherwise, expressions are left associative.
 
+        BUG: There are too many precedence levels.
+
+
             Precedence 0: (*ok, not really operators)
                 (,,,)           Tuple Construction
                 (e)             Grouping
@@ -548,7 +551,26 @@ TABLE OF CONTENTS:
 
 4. TYPE SYSTEM:
 
+    The myrddin type system is a system similar to the Hindley Milner
+    system, however, types are not implicitly generalized. Instead, type
+    schemes (type parameters, in Myrddin lingo) must be explicitly provided
+    in the declarations. For purposes of brevity, instead of specifying type
+    rules for every operator, we group operators which behave identically
+    from the type system perspective into a small set of classes
+
+        Binop:
+            +           -
+
 5. TOOLCHAIN:
+
+    The toolchain used is inspired by the Plan 9 toolchain in name. There
+    is currently one compiler for x64, called '6m'. This compiler outputs
+    standard elf .o files, and supports these options:
+
+        6m [-h] [-o outfile] [-d[dbgopts]] inputs
+            -I path	Add 'path' to use search path
+            -o	Output to outfile
+        
 
 5. EXAMPLES:
         

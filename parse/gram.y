@@ -422,14 +422,14 @@ cmpexpr : cmpexpr cmpop castexpr
         | castexpr
         ;
 
+
+cmpop   : Teq | Tgt | Tlt | Tge | Tle | Tne ;
+
 castexpr: unionexpr Tcast Toparen type Tcparen
             {$$ = mkexpr($1->line, Ocast, $1, NULL);
              $$->expr.type = $4;}
         | unionexpr 
         ;
-
-
-cmpop   : Teq | Tgt | Tlt | Tge | Tle | Tne ;
 
 unionexpr
         : Ttick name borexpr
