@@ -1,0 +1,13 @@
+const f = {
+	-> 42
+}
+
+generic id = {a:@a
+	-> f()
+}
+
+const main = {
+	id("adsf")
+	-> id(42)
+}
+
