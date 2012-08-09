@@ -2,6 +2,23 @@
                               Jul 2012
                             Ori Bernstein
 
+TABLE OF CONTENTS:
+
+    1. OVERVIEW
+    2. LEXICAL CONVENTIONS
+    3. SYNTAX
+        3.1. Declarations
+        3.2. Literal Values
+        3.3. Control Constructs and Blocks
+        3.4. Data Types
+        3.5. Packages and Uses
+        3.6. Expressions
+    4. TYPE SYSTEM
+    5. TOOLCHAIN
+    6. EXAMPLES
+    7. STYLE GUIDE
+    8. FUTURE DIRECTIONS
+
 1. OVERVIEW:
 
         Myrddin is designed to be a simple, low level programming
@@ -398,17 +415,148 @@
 
             pkg     use
 
-        A usefile imports a 
+        There are two keywords for module system. 'use' is the simpler
+        of the two, and has two cases:
+
+            use syspkg
+            use "localfile"
+
+        The unquoted form searches all system include paths for 'syspkg'
+        and imports it into the namespace. By convention, the namespace
+        defined by 'syspkg' is 'syspkg', and is unique and unmerged. This
+        is not enforced, however. Typical usage of unquoted names is to
+        import a library that already exists.
+
+        The quoted form searches the local directory for "localpkg".  By
+        convention, the package it imports does not match the name
+        "localpkg", but instead is used as partial of the definition of the
+        importer's package. This is a confusing description.
+
+        A typical use of a quoted import is to allow splitting one package
+        into multiple files. In order to support this behavior, if a package
+        is defined in the current file, and a use statements imports a
+        package with the same namespace, the two namespaces are merged.
+
+        The 'pkg' keyword allows you to define a (partial) package by
+        listing the symbols and types for export. For example,
+
+            pkg mypkg =
+                type mytype
+
+                const Myconst   : int = 42
+                const myfunc    : (v : int -> bool)
+            ;;
+
+        declares a package "mypkg", which defines three exports, "mytype",
+        "Myconst", and "myfunc". The definitions of the values may be
+        defined in the 'pkg' specification, but it is preferred to implement
+        them in the body of the code for readability. Scanning the export
+        list is desirable from a readability perspective.
 
     3.7. Expressions:
 
-4. TYPES:
+        Myrddin expressions are relatively similar to expressions in C.  The
+        operators are listed below in order of precedence, and a short
+        summary of what they do is listed given. For the sake of clarity,
+        'x' will stand in for any expression composed entirely of
+        subexpressions with higher precedence than the current current
+        operator. 'e' will stand in for any expression. Unless marked
+        otherwise, expressions are left associative.
+
+            Precedence 0: (*ok, not really operators)
+                (,,,)           Tuple Construction
+                (e)             Grouping
+                name            Bare names
+                literal         Values
+
+            Precedence 1:
+                x.name          Member lookup
+                x++             Postincrement
+                x--             Postdecrement
+                x[e]            Index
+                x[from,to]      Slice
+
+            Precedence 2:
+                ++x             Preincrement
+                --x             Predecrement
+                *x              Dereference
+                &x              Address
+                !x              Logical negation
+                ~x              Bitwise negation
+                +x              Positive (no operation)
+                -x              Negate x
+
+            Precedence 3:
+                x << x          Shift left
+                x >> x          Shift right
+
+            Precedence 4:
+                x * x           Multiply
+                x / x           Divide
+                x % x           Modulo
+
+            Precedence 5:
+                x + x           Add
+                x - x           Subtract
+                
+            Precedence 6:
+                x & y           Bitwise and
+
+            Precedence 7:
+                x | y           Bitwise or
+                x ^ y           Bitwise or
+
+            Precedence 8:
+                `Name x         Union construction
+
+            Precedence 9:
+                x casttto(type) Cast expression
+
+            Precedence 10:
+                x == x          Equality
+                x != x          Inequality
+                x > x           Greater than
+                x >= x          Greater than or equal to
+                x < x           Less than
+                x <= x          Less than or equal to
+
+            Precedence 11:
+                x && x          Logical and
+
+            Precedence 12:
+                x || x          Logical or
+
+            Precedence 13:
+                x = x           Assign                  Right assoc
+                x += x          Fused add/assign        Right assoc
+                x -= x          Fused sub/assign        Right assoc
+                x *= x          Fused mul/assign        Right assoc
+                x /= x          Fused div/assign        Right assoc
+                x %= x          Fused mod/assign        Right assoc
+                x |= x          Fused or/assign         Right assoc
+                x ^= x          Fused xor/assign        Right assoc
+                x &= x          Fused and/assign        Right assoc
+                x <<= x         Fused shl/assign        Right assoc
+                x >>= x         Fused shr/assign        Right assoc
+
+            Precedence 14:
+                -> x            Return expression
+
+        All expressions on integers act on complement-two values which wrap
+        on overflow. Right shift expressions fill with the sign bit on
+        signed types, and fill with zeros on unsigned types.
+
+4. TYPE SYSTEM:
+
+5. TOOLCHAIN:
 
 5. EXAMPLES:
         
-6. GRAMMAR:
+6. STYLE GUIDE:
 
-7. FUTURE DIRECTIONS:
+7. GRAMMAR:
+
+8. FUTURE DIRECTIONS:
 
 BUGS:
 
