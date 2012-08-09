@@ -24,7 +24,8 @@ const main = {
 	;;
 	std.write(1, "Hello, 世界\n")
 	chartypes()
-		std.put("format output %i %i %s %s\n", 123, 321, "asdf", "מִלָּה")
+	std.put("format output %i %i %s %s\n", 123, 321, "asdf", "מִלָּה")
+	std.put("format with no args\n")
 }
 
 const chartypes = {
