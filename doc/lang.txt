@@ -556,10 +556,25 @@ TABLE OF CONTENTS:
     schemes (type parameters, in Myrddin lingo) must be explicitly provided
     in the declarations. For purposes of brevity, instead of specifying type
     rules for every operator, we group operators which behave identically
-    from the type system perspective into a small set of classes
+    from the type system perspective into a small set of classes. and define
+    the constraints that they require.
 
-        Binop:
-            +           -
+        num-binop:
+            +           -               *               /               %
+            +=          -=              *=              /=              %
+        num-unary:
+            -           +
+
+        int-binop:
+            |           &               ^               <<              >>
+            |=          &=              ^=              <<=             >>
+        int-unary:
+            ~           ++              --
+
+        bool-binop:
+            ||          &&              ==              !=
+            <           <=              >               >=
+
 
 5. TOOLCHAIN:
 
@@ -570,9 +585,46 @@ TABLE OF CONTENTS:
         6m [-h] [-o outfile] [-d[dbgopts]] inputs
             -I path	Add 'path' to use search path
             -o	Output to outfile
-        
 
 5. EXAMPLES:
+
+    5.1. Hello World:
+
+        use std
+        const main = {
+            std.put("Hello World!\n")
+            -> 0
+        }
+
+    5.2. Conditions
+
+        const intmax = {a, b
+            if a > b
+                -> a
+            else
+                -> b
+            ;;
+        }
+
+        const main = {
+            var x = 123
+            var y = 456
+            std.put("The max of %i, %i is %i\n", x, y, max(x, y))
+        }
+
+    5.3. Looping
+
+        const innerprod = {a, b
+            var i
+            var sum
+            for i = 0; i < a.len; i++
+                sum += a[i]*b[i]
+            ;;
+        }
+
+        const main = {
+            std.put("The inner product is %i\n", innerprod([1,2,3], [4,5,6]))
+        }
         
 6. STYLE GUIDE:
 
