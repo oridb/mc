@@ -595,7 +595,6 @@ stmt    : decl
         | forstmt
         | whilestmt
         | matchstmt
-        | Tendln {$$ = NULL;}
         ;
 
 forstmt : Tfor optexprln optexprln optexprln block
@@ -659,18 +658,16 @@ block   : blockbody Tendblk
         ;
 
 blockbody
-        : stmt
-            {$$ = mkblock(line, mkstab());
-             if ($1)
-                lappend(&$$->block.stmts, &$$->block.nstmts, $1);
-             if ($1 && $1->type == Ndecl)
-                putdcl($$->block.scope, $1);}
+        : /* empty */
+            {$$ = mkblock(line, mkstab());}
         | blockbody stmt
             {if ($2)
                 lappend(&$1->block.stmts, &$1->block.nstmts, $2);
              if ($2 && $2->type == Ndecl)
                 putdcl($1->block.scope, $2);
              $$ = $1;}
+        | blockbody Tendln 
+            {$$ = $1;}
         ;
 
 label   : Tcolon Tident
