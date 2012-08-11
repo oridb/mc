@@ -1,5 +1,6 @@
 %{
 #define YYERROR_VERBOSE
+#define YYDEBUG 1
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -117,7 +118,7 @@ static void constrainwith(Type *t, char *str);
 %token<tok> Tident
 %token<tok> Teof
 
-%start module
+%start file
 
 %type <ty> type structdef uniondef tupledef compoundtype functype funcsig
 %type <ty> generictype
@@ -130,12 +131,13 @@ static void constrainwith(Type *t, char *str);
 
 %type <node> exprln retexpr expr atomicexpr littok literal asnexpr lorexpr landexpr borexpr
 %type <node> bandexpr cmpexpr unionexpr addexpr mulexpr shiftexpr prefixexpr postfixexpr
-%type <node> funclit seqlit name block blockbody stmt label use
+%type <node> funclit seqlit name block stmt label use
 %type <node> decl declbody declcore structelt seqelt tuphead
 %type <node> ifstmt forstmt whilestmt matchstmt elifs optexprln
 %type <node> pat unionpat match
 %type <node> castexpr
 %type <ucon> unionelt
+%type <node> body 
 
 %type <nodelist> arglist argdefs params matches
 %type <nodelist> structbody seqbody tupbody tuprest
@@ -170,12 +172,8 @@ static void constrainwith(Type *t, char *str);
 
 %%
 
-module  : file
-        | /* empty */
-        ;
-
 file    : toplev
-        | file toplev
+        | file Tendln toplev
         ;
 
 toplev
@@ -189,28 +187,28 @@ toplev
         | tydef
             {puttype(file->file.globls, mkname($1.line, $1.name), $1.type);
              installucons(file->file.globls, $1.type);}
-        | Tendln
+        | /* empty */
         ;
 
-decl    : Tvar declbody Tendln
+decl    : Tvar declbody
             {$$ = $2;}
-        | Tconst declbody Tendln
+        | Tconst declbody
             {$2->decl.isconst = 1;
              $$ = $2;}
-        | Tgeneric declbody Tendln
+        | Tgeneric declbody
             {$2->decl.isconst = 1;
              $2->decl.isgeneric = 1;
              $$ = $2;}
-        | Textern Tvar declbody Tendln
+        | Textern Tvar declbody
             {$3->decl.isextern = 1;
              $$ = $3;}
-        | Textern Tconst declbody Tendln
+        | Textern Tconst declbody
             {$3->decl.isconst = 1;
              $3->decl.isextern = 1;
              $$ = $3;}
         ;
 
-use     : Tuse Tident Tendln
+use     : Tuse Tident
             {$$ = mkuse($1->line, $2->str, 0);}
         | Tuse Tstrlit Tendln
             {$$ = mkuse($1->line, $2->str, 1);}
@@ -228,7 +226,7 @@ pkgbody : pkgitem
         | pkgbody pkgitem
         ;
 
-pkgitem : decl 
+pkgitem : decl Tendln 
             {putdcl(file->file.exports, $1);
              if ($1->decl.init)
                  lappend(&file->file.stmts, &file->file.nstmts, $1);}
@@ -258,11 +256,11 @@ name    : Tident
             {$$ = $3; setns($3, $1->str);}
         ;
 
-tydef   : Ttype Tident Tasn type Tendln
+tydef   : Ttype Tident Tasn type
             {$$.line = $1->line;
              $$.name = $2->str;
              $$.type = mktyalias($2->line, mkname($2->line, $2->str), $4);}
-        | Ttype Tident Tendln
+        | Ttype Tident
             {$$.line = $1->line;
              $$.name = $2->str;
              $$.type = NULL;}
@@ -376,10 +374,10 @@ unionelt /* nb: the ucon union type gets filled in when we have context */
             {$$ = NULL;}
         ;
 
-retexpr : Tret exprln
+retexpr : Tret expr
             {$$ = mkexpr($1->line, Oret, $2, NULL);}
-        | exprln
-        | Tret Tendln
+        | expr
+        | Tret
             {$$ = mkexpr($1->line, Oret, NULL);}
         ;
 
@@ -551,9 +549,9 @@ littok  : Tstrlit       {$$ = mkstr($1->line, $1->str);}
         | Tboollit      {$$ = mkbool($1->line, !strcmp($1->str, "true"));}
         ;
 
-funclit : Tobrace params Tendln blockbody Tcbrace
+funclit : Tobrace params Tendln body Tcbrace
             {$$ = mkfunc($1->line, $2.nl, $2.nn, mktyvar($3->line), $4);}
-        | Tobrace params Tret type Tendln blockbody Tcbrace
+        | Tobrace params Tret type Tendln block Tcbrace
             {$$ = mkfunc($1->line, $2.nl, $2.nn, $4, $6);}
         ;
 
@@ -595,12 +593,13 @@ stmt    : decl
         | forstmt
         | whilestmt
         | matchstmt
+        | /* empty */ {$$ = NULL;}
         ;
 
 forstmt : Tfor optexprln optexprln optexprln block
             {$$ = mkloopstmt($1->line, $2, $3, $4, $5);}
-        | Tfor decl optexprln optexprln block
-            {$$ = mkloopstmt($1->line, $2, $3, $4, $5);}
+        | Tfor decl Tendln optexprln optexprln block
+            {$$ = mkloopstmt($1->line, $2, $4, $5, $6);}
         ;
 
 optexprln: exprln {$$ = $1;}
@@ -612,13 +611,13 @@ whilestmt
             {$$ = mkloopstmt($1->line, NULL, $2, NULL, $3);}
         ;
 
-ifstmt  : Tif exprln blockbody elifs
+ifstmt  : Tif exprln body elifs
             {$$ = mkifstmt($1->line, $2, $3, $4);}
         ;
 
-elifs   : Telif exprln blockbody elifs
+elifs   : Telif exprln body elifs
             {$$ = mkifstmt($1->line, $2, $3, $4);}
-        | Telse blockbody Tendblk
+        | Telse block
             {$$ = $2;}
         | Tendblk
             {$$ = NULL;}
@@ -653,21 +652,21 @@ unionpat: Ttick Tident pat
             {$$ = mkexpr($1->line, Ocons, mkname($2->line, $2->str), NULL);}
         ;
 
-block   : blockbody Tendblk
-        | Tendblk {$$ = NULL;}
+block   : body Tendblk
         ;
 
-blockbody
-        : /* empty */
-            {$$ = mkblock(line, mkstab());}
-        | blockbody stmt
-            {if ($2)
-                lappend(&$1->block.stmts, &$1->block.nstmts, $2);
-             if ($2 && $2->type == Ndecl)
-                putdcl($1->block.scope, $2);
+body    : stmt
+            {$$ = mkblock(line, mkstab());
+             if ($1)
+                lappend(&$$->block.stmts, &$$->block.nstmts, $1);
+             if ($1 && $1->type == Ndecl)
+                putdcl($$->block.scope, $1);}
+        | body Tendln stmt
+            {if ($3)
+                lappend(&$1->block.stmts, &$1->block.nstmts, $3);
+             if ($3 && $3->type == Ndecl)
+                putdcl($1->block.scope, $3);
              $$ = $1;}
-        | blockbody Tendln 
-            {$$ = $1;}
         ;
 
 label   : Tcolon Tident
