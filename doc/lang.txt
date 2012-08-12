@@ -553,11 +553,11 @@ TABLE OF CONTENTS:
                 within generic contexts, and may not appear elsewhere.
 
                 A tyvar is an internal implementation detail that currently
-                leaks out during type inference, and is a major cause of
-                confusing error messages. It should not be in this manual,
-                except that the current incarnation of the compiler will
-                make you aware of it. It looks like '@$type', and is a
-                variable that holds an incompletely inferred type.
+                leaks in error messages out during type inference, and is a
+                major cause of confusing error messages. It should not be in
+                this manual, except that the current incarnation of the
+                compiler will make you aware of it. It looks like '@$type',
+                and is a variable that holds an incompletely inferred type.
 
                     type mine = int             creates a tyname named
                                                 'mine', equivalent to int.
