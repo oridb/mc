@@ -73,14 +73,16 @@ TABLE OF CONTENTS:
         if              while
 
 
-    At the current stage of development, not all of these keywords
-    are implemented within the language.[1]
+    At the current stage of development, not all of these keywords are
+    implemented within the language.[1]
 
-    Literals are a direct representation of a data object within the
-    source of the program. There are several literals implemented
-    within the Myrddin language. These are fully described in section
-    3.2 of this manual.
+    Literals are a direct representation of a data object within the source of
+    the program. There are several literals implemented within the language.
+    These are fully described in section 3.2 of this manual.
 
+    In the compiler, single semicolons (';') , semicolons and newlines (\x10)
+    characters are treated identically, and are therefore interchangable.
+    They will both be referred to "endline"s thoughout this manual.
     
 
 3. SYNTAX OVERVIEW:
