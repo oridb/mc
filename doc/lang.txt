@@ -78,7 +78,10 @@ TABLE OF CONTENTS:
 
     Literals are a direct representation of a data object within the
     source of the program. There are several literals implemented
-    within the Myrddin language. These are fully described in sectio
+    within the Myrddin language. These are fully described in section
+    3.2 of this manual.
+
+    
 
 3. SYNTAX OVERVIEW:
 
@@ -117,11 +120,11 @@ TABLE OF CONTENTS:
         Examples:
 
             Declare a constant with a value 123. The type is not defined,
-            and will be inferred.
+            and will be inferred:
 
                 const x = 123
                 
-            Declares a variable with no value and no type defined. The 
+            Declare a variable with no value and no type defined. The 
             value can be assigned later (and must be assigned before use),
             and the type will be inferred.
 
@@ -167,10 +170,13 @@ TABLE OF CONTENTS:
 
             eg: 123.456
 
-        String literals represent a byte array describing a string in
-        the compile time character set. Any byte values are allowed in
-        a string literal. There are a number of escape sequences
-        supported:
+        String literals represent a compact method of representing a byte
+        array. Any byte values are allowed in a string literal, and will be
+        spit out again by the compiler unmodified, with the exception of
+        escape sequences.
+
+        There are a number of escape sequences supported for both character
+        and string literals:
             \n          newline
             \r          carriage return
             \t          tab
@@ -181,6 +187,7 @@ TABLE OF CONTENTS:
             \\          single slash
             \0          nul character
             \xDD        single byte value, where DD are two hex digits.
+
         String literals begin with a ", and continue to the next
         unescaped ".
 
@@ -190,6 +197,7 @@ TABLE OF CONTENTS:
         set. A character starts with a single quote, contains a single
         codepoint worth of text, encoded either as an escape sequence
         or in the input character set for the compiler (generally UTF8).
+        They share the same set of escape sequences as string literals.
 
             eg: 'א', '\n', '\u1234'[3]
 
@@ -447,12 +455,13 @@ TABLE OF CONTENTS:
 
                 These types are as you would expect. 'void' represents a
                 lack of type, although for the sake of genericity, you can
-                assign between void, return void, and so on. This allows
-                generics to not have to somehow work around void being a
-                toxic type.
+                assign between void types, return values of void, and so on.
+                This allows generics to not have to somehow work around void
+                being a toxic type.
 
-                bool is a boolean type, and can only be used for assignment
-                and comparison. 
+                bool is a type that can only hold true and false. It can be
+                assigned, tested for equality, and used in the various boolean
+                operators.
 
                 char is a 32 bit integer type, and is guaranteed to be able
                 to hold exactly one codepoint. It can be assigned integer
