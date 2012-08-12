@@ -319,7 +319,8 @@ TABLE OF CONTENTS:
                 `Val a:         std.put("Matched pattern with capture\n")
                                 std.put("Captured value: a = %i\n", a)
                                 ;;
-                a               std.put("A top level binding matches anything.");
+                a               std.put("A top level bind matches anything.");;
+                `Val 111        std.put("Unreachable block");;
             ;;
 
 
@@ -622,10 +623,7 @@ TABLE OF CONTENTS:
         them in the body of the code for readability. Scanning the export
         list is desirable from a readability perspective.
 
-4. TYPE SYSTEM:
-
-
-5. TOOLCHAIN:
+4. TOOLCHAIN:
 
     The toolchain used is inspired by the Plan 9 toolchain in name. There
     is currently one compiler for x64, called '6m'. This compiler outputs
