@@ -696,6 +696,59 @@ TABLE OF CONTENTS:
         
 6. STYLE GUIDE:
 
+    6.1. Brevity:
+
+        Myrddin is a simple language which aims to strip away abstraction when
+        possible, and it is not well served by overly abstract or bulky code.
+        The code written should be a readable description of an algorithm,
+        aimed at conveying the essential operations in a linear and
+        straightforward fasion.
+
+        Write for humans, not machines. Write linearly, so that an algorithm
+        can be understood with minimal function-chasing.
+
+    6.2. Naming:
+
+        Names should be brief and evocative. A good name serves as a reminder
+        to what the function does. For functions, a single verb is ideal. For
+        local variables, a single character might suffice.  Compact notation
+        is simpler to read, typographically.
+        
+        Variables names should describe the value contained, and function
+        names should describe the value returned.
+
+            Good: spawn(myfunc)
+            Bad:  create_new_thread_starting_at_function(myfunc)
+    
+        The identifiers used for constant values are put in Initialcase.
+        Functions and types are in singleword style, although underscores are
+        occasionally necessary to specify additional information within
+        functions, due to the lack of overloading.
+
+            Good:
+                type mytype = int
+                var myvar : mytype
+                const Myconst = 42
+                union
+                    `Tagone int
+                ;;
+
+            Bad:
+                type MyType = int       /* types are 'singleword' */
+                const my_func = {;...}  /* function names should avoid _ */
+                const myconst           /* constants start with Uppercase */
+                union
+                    `sometag            /* tags start with uppercase */
+                ;;
+
+            Acceptable:
+                const length_mm = {;...} /* '_' disambiguates returned values.  */
+                cosnt length_cm = {;...}
+
+    6.3. Collections:
+
+        
+
 7. STANDARD LIBRARY:
 
 8. GRAMMAR:
