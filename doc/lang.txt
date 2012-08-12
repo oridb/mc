@@ -272,7 +272,56 @@ TABLE OF CONTENTS:
 
         While loops are equivalent to for loops with empty initializers
         and increments. They run the test on every iteration of the loop,
-        and 
+        and exit only if it returns false.
+
+        Match statements do pattern matching on values. They take as an
+        argument a value of type 't', and match it against a list of other
+        values of the same type. The patterns matched against can also contain
+        free names, which will be bound to the sub-value matched against. The
+        patterns are checked in order, and the first matching pattern has its
+        body executed, after which no other patterns will be matched. This
+        implies that if you have specific patterns mixed with by more general
+        ones, the specific patterns must come first.
+
+        Match patterns can be one of the following:
+
+            - Union patterns
+
+                These look like union constructors, only they define
+                a value to match against.
+
+            - Literal patterns
+                
+                Any literal value can be matched against.
+
+            - Constant patterns
+
+                Any constant value can be matched against.
+
+        More types of pattern to match will be added over time.
+
+        Match statements consist of the keyord 'match', followed by
+        the expression to match against the patterns, followed by a
+        newline. The body of the match statement consists of a list
+        of pattern clauses. A patterned clause is a pattern, followed
+        by a ':', followed by a block body.
+
+        An example of the syntax follows:
+
+            const Val234 = `Val 234     /* set up a constant value */
+            var v = `Val 123            /* set up variable to match */
+            match v
+                /* pattern clauses */
+                `Val 123:       std.put("Matched literal union pat\n");;
+
+                Val234:         std.put("Matched const value pat\n");;
+
+                `Val a:         std.put("Matched pattern with capture\n")
+                                std.put("Captured value: a = %i\n", a)
+                                ;;
+                a               std.put("A top level binding matches anything.");
+            ;;
+
 
     3.4. Expressions:
 
@@ -369,8 +418,6 @@ TABLE OF CONTENTS:
         All expressions on integers act on complement-two values which wrap
         on overflow. Right shift expressions fill with the sign bit on
         signed types, and fill with zeros on unsigned types.
-
-
 
     3.5. Data Types:
 
