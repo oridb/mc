@@ -51,6 +51,7 @@ static Node *simp(Simp *s, Node *n);
 static Node *rval(Simp *s, Node *n, Node *dst);
 static Node *lval(Simp *s, Node *n);
 static void declarelocal(Simp *s, Node *n);
+static void simpcond(Simp *s, Node *n, Node *ltrue, Node *lfalse);
 
 /* useful constants */
 static Type *tyintptr;
@@ -343,7 +344,6 @@ static void simpif(Simp *s, Node *n, Node *exit)
 {
     Node *l1, *l2, *l3;
     Node *iftrue, *iffalse;
-    Node *c;
 
     l1 = genlbl();
     l2 = genlbl();
@@ -355,8 +355,7 @@ static void simpif(Simp *s, Node *n, Node *exit)
     iftrue = n->ifstmt.iftrue;
     iffalse = n->ifstmt.iffalse;
 
-    c = rval(s, n->ifstmt.cond, NULL);
-    cjmp(s, c, l1, l2);
+    simpcond(s, n->ifstmt.cond, l1, l2);
     simp(s, l1);
     simp(s, iftrue);
     jmp(s, l3);
@@ -390,7 +389,6 @@ static void simploop(Simp *s, Node *n)
     Node *lbody;
     Node *lend;
     Node *lcond;
-    Node *t;
 
     lbody = genlbl();
     lcond = genlbl();
@@ -402,8 +400,7 @@ static void simploop(Simp *s, Node *n)
     simp(s, n->loopstmt.body);  /* body */
     simp(s, n->loopstmt.step);  /* step */
     simp(s, lcond);             /* test lbl */
-    t = rval(s, n->loopstmt.cond, NULL);  /* test */
-    cjmp(s, t, lbody, lend);    /* repeat? */
+    simpcond(s, n->loopstmt.cond, lbody, lend);    /* repeat? */
     simp(s, lend);              /* exit */
 }
 
@@ -446,14 +443,14 @@ static Node *uval(Node *n, size_t off, Type *t)
         return load(addk(addr(n, t), off));
 }
 
-static Node *ucompare(Simp *s, Node *a, Node *b, Type *t, size_t off)
+static void ucompare(Simp *s, Node *a, Node *b, Type *t, size_t off, Node *iftrue, Node *iffalse)
 {
-    Node *r, *v, *x, *y;
+    Node *v, *x, *y;
+    Node *next;
     Ucon *uc;
 
     assert(a->type == Nexpr);
     t = tybase(t);
-    r = NULL;
     switch (t->type) {
         case Tyvoid: case Tybad: case Tyvalist: case Tyvar:
         case Typaram: case Tyunres: case Tyname: case Ntypes:
@@ -468,8 +465,8 @@ static Node *ucompare(Simp *s, Node *a, Node *b, Type *t, size_t off)
         case Typtr: case Tyfunc:
             x = uval(a, off, t);
             y = uval(b, off, t);
-            r = mkexpr(a->line, Oeq, x, y, NULL);
-            r->expr.type = tyintptr;
+            v = mkexpr(a->line, Oeq, x, y, NULL);
+            cjmp(s, v, iftrue, iffalse);
             break;
         case Tyunion:
             x = uconid(a, off);
@@ -478,26 +475,24 @@ static Node *ucompare(Simp *s, Node *a, Node *b, Type *t, size_t off)
             if (!uc)
                 uc = finducon(b);
 
-            r = mkexpr(a->line, Oeq, x, y, NULL);
-            r->expr.type = tyintptr;
+            next = genlbl();
+            v = mkexpr(a->line, Oeq, x, y, NULL);
+            v->expr.type = tyintptr;
+            cjmp(s, v, next, iffalse);
+            append(s, next);
             if (uc->etype) {
                 off += Wordsz;
-                v = ucompare(s, a, b, uc->etype, off);
-                r = mkexpr(a->line, Oland, r, v, NULL);
-                r->expr.type = tyintptr;
-                r = rval(s, r, NULL); /* Oland needs to be reduced */
+                ucompare(s, a, b, uc->etype, off, iftrue, iffalse);
             }
             break;
     }
-    return r;
-            
 }
 
 FILE *f;
 static void simpmatch(Simp *s, Node *n)
 {
     Node *end, *cur, *next; /* labels */
-    Node *val, *cond; /* intermediates */
+    Node *val;
     Node *m;
     size_t i;
     f = stdout;
@@ -508,10 +503,9 @@ static void simpmatch(Simp *s, Node *n)
         m = n->matchstmt.matches[i];
 
         /* check pattern */
-        cond = ucompare(s, val, m->match.pat, val->expr.type, 0);
         cur = genlbl();
         next = genlbl();
-        cjmp(s, cond, cur, next);
+        ucompare(s, val, m->match.pat, val->expr.type, 0, cur, next);
 
         /* do the action if it matches */
         append(s, cur);
@@ -680,25 +674,33 @@ Node *lval(Simp *s, Node *n)
     return r;
 }
 
-static Node *simplazy(Simp *s, Node *n, Node *r)
+static void simpcond(Simp *s, Node *n, Node *ltrue, Node *lfalse)
 {
-    Node *a, *b;
-    Node *next;
-    Node *end;
+    Node **args;
+    Node *v, *lnext;
 
-    next = genlbl();
-    end = genlbl();
-    a = rval(s, n->expr.args[0], NULL);
-    append(s, set(r, a));
-    if (exprop(n) == Oland)
-        cjmp(s, r, next, end);
-    else if (exprop(n) == Olor)
-        cjmp(s, a, end, next);
-    append(s, next);
-    b = rval(s, n->expr.args[1], NULL);
-    append(s, set(r, b));
-    append(s, end);
-    return r;
+    args = n->expr.args;
+    switch (exprop(n)) {
+        case Oland:
+            lnext = genlbl();
+            simpcond(s, args[0], lnext, lfalse);
+            append(s, lnext);
+            simpcond(s, args[1], ltrue, lfalse);
+            break;
+        case Olor:
+            lnext = genlbl();
+            simpcond(s, args[0], ltrue, lnext);
+            append(s, lnext);
+            simpcond(s, args[1], ltrue, lfalse);
+            break;
+        case Olnot:
+            simpcond(s, n, lfalse, ltrue);
+            break;
+        default:
+            v = rval(s, n, NULL);
+            cjmp(s, v, ltrue, lfalse);
+            break;
+    }
 }
 
 static Node *simpcast(Simp *s, Node *val, Type *to)
@@ -935,6 +937,50 @@ static Node *simpucon(Simp *s, Node *n, Node *dst)
     return tmp;
 }
 
+/* simplifies 
+ *      a || b
+ * to
+ *      if a || b
+ *              t = true
+ *      else
+ *              t = false
+ *      ;;
+ */
+static Node *simplazy(Simp *s, Node *n)
+{
+    Node *r, *t, *u;
+    Node *ltrue, *lfalse, *ldone;
+
+    /* set up temps and labels */
+    r = temp(s, n);
+    ltrue = genlbl();
+    lfalse = genlbl();
+    ldone = genlbl();
+
+    /* simp the conditional */
+    simpcond(s, n, ltrue, lfalse);
+
+    /* if true */
+    append(s, ltrue);
+    u = mkexpr(n->line, Olit, mkbool(n->line, 1), NULL);
+    u->expr.type = mkty(n->line, Tybool);
+    t = set(r, u);
+    append(s, t);
+    jmp(s, ldone);
+
+    /* if false */
+    append(s, lfalse);
+    u = mkexpr(n->line, Olit, mkbool(n->line, 0), NULL);
+    u->expr.type = mkty(n->line, Tybool);
+    t = set(r, u);
+    append(s, t);
+    jmp(s, ldone);
+
+    /* finish */
+    append(s, ldone);
+    return r;
+}
+
 static Node *rval(Simp *s, Node *n, Node *dst)
 {
     Node *r; /* expression result */
@@ -960,8 +1006,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
     switch (exprop(n)) {
         case Obad:
         case Olor: case Oland:
-            r = temp(s, n);
-            simplazy(s, n, r);
+            r = simplazy(s, n);
             break;
         case Osize:
             r = mkintlit(n->line, size(args[0]));
