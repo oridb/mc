@@ -210,7 +210,7 @@ decl    : Tvar declbody
 
 use     : Tuse Tident
             {$$ = mkuse($1->line, $2->str, 0);}
-        | Tuse Tstrlit Tendln
+        | Tuse Tstrlit
             {$$ = mkuse($1->line, $2->str, 1);}
         ;
 
@@ -551,7 +551,7 @@ littok  : Tstrlit       {$$ = mkstr($1->line, $1->str);}
 
 funclit : Tobrace params Tendln body Tcbrace
             {$$ = mkfunc($1->line, $2.nl, $2.nn, mktyvar($3->line), $4);}
-        | Tobrace params Tret type Tendln block Tcbrace
+        | Tobrace params Tret type Tendln body Tcbrace
             {$$ = mkfunc($1->line, $2.nl, $2.nn, $4, $6);}
         ;
 
