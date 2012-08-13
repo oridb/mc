@@ -697,7 +697,7 @@ static void simpcond(Simp *s, Node *n, Node *ltrue, Node *lfalse)
             simpcond(s, args[1], ltrue, lfalse);
             break;
         case Olnot:
-            simpcond(s, n, lfalse, ltrue);
+            simpcond(s, args[0], lfalse, ltrue);
             break;
         default:
             v = rval(s, n, NULL);
