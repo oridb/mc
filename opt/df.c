@@ -15,5 +15,5 @@
 
 void flow(Cfg *cfg)
 {
-    die("Flow analysis not implemented");
 }
+

@@ -492,13 +492,16 @@ FILE *f;
 static void simpmatch(Simp *s, Node *n)
 {
     Node *end, *cur, *next; /* labels */
-    Node *val;
+    Node *val, *tmp;
     Node *m;
     size_t i;
     f = stdout;
 
     end = genlbl();
-    val = rval(s, n->matchstmt.val, NULL); /* FIXME: don't recompute, even if pure */
+    val = temp(s, n->matchstmt.val);
+    tmp = rval(s, n->matchstmt.val, val);
+    if (val != tmp)
+        append(s, set(val, tmp));
     for (i = 0; i < n->matchstmt.nmatches; i++) {
         m = n->matchstmt.matches[i];
 
