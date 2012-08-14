@@ -363,6 +363,7 @@ char *tystr(Type *t);
 Node *mknode(int line, Ntype nt);
 Node *mkfile(char *name);
 Node *mkuse(int line, char *use, int islocal);
+Node *mksliceexpr(int line, Node *sl, Node *base, Node *off);
 Node *mkexprl(int line, Op op, Node **args, size_t nargs);
 Node *mkexpr(int line, Op op, ...); /* NULL terminated */
 Node *mkcall(int line, Node *fn, Node **args, size_t nargs);

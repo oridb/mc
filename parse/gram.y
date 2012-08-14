@@ -133,7 +133,7 @@ static void constrainwith(Type *t, char *str);
 %type <node> bandexpr cmpexpr unionexpr addexpr mulexpr shiftexpr prefixexpr postfixexpr
 %type <node> funclit seqlit name block stmt label use
 %type <node> decl declbody declcore structelt seqelt tuphead
-%type <node> ifstmt forstmt whilestmt matchstmt elifs optexprln
+%type <node> ifstmt forstmt whilestmt matchstmt elifs optexprln optexpr
 %type <node> pat unionpat match
 %type <node> castexpr
 %type <ucon> unionelt
@@ -381,6 +381,14 @@ retexpr : Tret expr
             {$$ = mkexpr($1->line, Oret, NULL);}
         ;
 
+optexpr : expr {$$ = $1;}
+        | /* empty */ {$$ = NULL;}
+        ;
+
+optexprln: exprln {$$ = $1;}
+         | Tendln {$$ = NULL;}
+         ;
+
 exprln  : expr Tendln
         ;
 
@@ -494,8 +502,8 @@ postfixexpr
             {$$ = mkexpr($1->line, Opostdec, $1, NULL);}
         | postfixexpr Tosqbrac expr Tcsqbrac
             {$$ = mkexpr($1->line, Oidx, $1, $3, NULL);}
-        | postfixexpr Tosqbrac expr Tcomma expr Tcsqbrac
-            {$$ = mkexpr($1->line, Oslice, $1, $3, $5, NULL);}
+        | postfixexpr Tosqbrac optexpr Tcomma optexpr Tcsqbrac
+            {$$ = mksliceexpr($1->line, $1, $3, $5);}
         | postfixexpr Toparen arglist Tcparen
             {$$ = mkcall($1->line, $1, $3.nl, $3.nn);}
         | atomicexpr
@@ -601,10 +609,6 @@ forstmt : Tfor optexprln optexprln optexprln block
         | Tfor decl Tendln optexprln optexprln block
             {$$ = mkloopstmt($1->line, $2, $4, $5, $6);}
         ;
-
-optexprln: exprln {$$ = $1;}
-         | Tendln {$$ = NULL;}
-         ;
 
 whilestmt
         : Twhile exprln block

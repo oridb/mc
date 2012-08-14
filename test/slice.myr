@@ -2,9 +2,9 @@ const main = {
 	var a : int[3]
 	var s
 
-	s = a[0,3]
+	s = a[,]
 	s[0] = 3
 	s[1] = 4
-	s[2] = s[0] + s[1]
+	s[2] = s[0] + s[1] + s.len
 	-> s[2]
 }

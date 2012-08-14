@@ -46,6 +46,15 @@ Node *mkuse(int line, char *use, int islocal)
     return n;
 }
 
+Node *mksliceexpr(int line, Node *sl, Node *base, Node *off)
+{
+    if (!base)
+        base = mkintlit(line, 0);
+    if (!off)
+        off = mkexpr(line, Omemb, sl, mkname(line, "len"), NULL);
+    return mkexpr(line, Oslice, sl, base, off, NULL);
+}
+
 Node *mkexprl(int line, Op op, Node **args, size_t nargs)
 {
     Node *n;
@@ -359,4 +368,3 @@ int dcleq(void *a, void *b)
 {
     return did(a) == did(b);
 }
-

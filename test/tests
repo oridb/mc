@@ -36,7 +36,7 @@ B array		E	7
 B arrayaddr	E	42
 B global-arrayvar	E	7
 B arraylen	E	12
-B slice		E	7
+B slice		E	10
 B slicelen	E	5
 B call		E	42
 B voidcall	E	12
