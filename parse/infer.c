@@ -522,7 +522,6 @@ static void unifycall(Inferstate *st, Node *n)
     settype(st, n, ft->sub[0]);
 }
 
-/* load all usefiles */
 static void loaduses(Node *n)
 {
     size_t i;
