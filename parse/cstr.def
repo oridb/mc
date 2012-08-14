@@ -1,3 +1,4 @@
+/* Definitions of built in constraints */
 Tc(Tcnum, "tcnum")   /* arith ops */
 Tc(Tcint, "tcint")   /* behaves like an int, defaults to int as fallback */
 Tc(Tcfloat, "tcfloat")   /* behaves like a float, defaults to float as fallback */

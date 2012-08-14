@@ -9,6 +9,9 @@
 
 #define Initsz 16
 
+/* Creates a new empty hash table, using 'hash' as the
+ * hash funciton, and 'cmp' to verify that there are no
+ * hash collisions. */
 Htab *mkht(ulong (*hash)(void *key), int (*cmp)(void *k1, void *k2))
 {
     Htab *ht;
@@ -25,14 +28,20 @@ Htab *mkht(ulong (*hash)(void *key), int (*cmp)(void *k1, void *k2))
     return ht;
 }
 
+/* Frees a hash table. Passing this function
+ * NULL is a no-op. */
 void htfree(Htab *ht)
 {
+    if (!ht)
+        return;
     free(ht->keys);
     free(ht->vals);
     free(ht->hashes);
     free(ht);
 }
 
+/* Offsets the hash so that '0' can be
+ * used as a 'no valid value */
 static ulong hash(Htab *ht, void *k)
 {
     ulong h;
@@ -43,6 +52,9 @@ static ulong hash(Htab *ht, void *k)
         return h;
 }
 
+/* Resizes the hash table by copying all
+ * the old keys into the right slots in a
+ * new table. */
 static void grow(Htab *ht, int sz)
 {
     void **oldk;
@@ -70,6 +82,9 @@ static void grow(Htab *ht, int sz)
     free(oldv);
 }
 
+/* Inserts 'k' into the hash table, possibly
+ * killing any previous key that compares
+ * as equal. */
 int htput(Htab *ht, void *k, void *v)
 {
     int i;
@@ -95,6 +110,8 @@ int htput(Htab *ht, void *k, void *v)
     return 1;
 }
 
+/* Finds the index that we would insert
+ * the key into */
 static ssize_t htidx(Htab *ht, void *k)
 {
     ssize_t i;
@@ -116,6 +133,11 @@ searchmore:
     return i;
 }
 
+/* Looks up a key, returning NULL if
+ * the value is not present. Note,
+ * if NULL is a valid value, you need
+ * to check with hthas() to see if it's
+ * not there */
 void *htget(Htab *ht, void *k)
 {
     ssize_t i;
@@ -127,11 +149,17 @@ void *htget(Htab *ht, void *k)
         return ht->vals[i];
 }
 
+/* Tests for 'k's presence in 'ht' */
 int hthas(Htab *ht, void *k)
 {
     return htidx(ht, k) >= 0;
 }
 
+/* Returns a list of all keys in the hash
+ * table, storing the size of the returned
+ * array in 'nkeys'. NB: the value returned
+ * is allocated on the heap, and it is the
+ * job of the caller to free it */
 void **htkeys(Htab *ht, size_t *nkeys)
 {
     void **k;

@@ -14,10 +14,11 @@
 static void indent(FILE *fd, int depth)
 {
     int i;
-    for (i = 0; i < 4*depth; i++)
-        fprintf(fd, " ");
+    for (i = 0; i < depth; i++)
+        fprintf(fd, "    ");
 }
 
+/* outputs a fully qualified name */
 static void outname(Node *n, FILE *fd)
 {
     if (n->name.ns)
@@ -25,6 +26,9 @@ static void outname(Node *n, FILE *fd)
     fprintf(fd, "%s", n->name.name);
 }
 
+/* outputs a sym in a one-line short form (ie,
+ * the initializer is not printed, and the node is not
+ * expressed in indented tree. */
 static void outsym(Node *s, FILE *fd, int depth)
 {
     char buf[1024];
@@ -43,6 +47,15 @@ void dumpsym(Node *s, FILE *fd)
     outsym(s, fd, 0);
 }
 
+/* Outputs a symbol table, and it's sub-tables
+ * recursively, with a sigil describing the symbol
+ * type, as follows:
+ *      T       type
+ *      S       symbol
+ *      N       namespace
+ *
+ * Does not print captured variables.
+ */
 static void outstab(Stab *st, FILE *fd, int depth)
 {
     size_t i, n;
@@ -90,6 +103,9 @@ void dumpstab(Stab *st, FILE *fd)
     outstab(st, fd, 0);
 }
 
+/* Outputs a node in indented tree form. This is
+ * not a full serialization, but mainly an aid for
+ * understanding and debugging. */
 static void outnode(Node *n, FILE *fd, int depth)
 {
     size_t i;

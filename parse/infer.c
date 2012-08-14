@@ -42,8 +42,11 @@ struct Inferstate {
 static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret);
 static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret);
 static void typesub(Inferstate *st, Node *n);
+static Type *unify(Inferstate *st, Node *ctx, Type *a, Type *b);
 static Type *tf(Inferstate *st, Type *t);
 
+/* Set a scope's enclosing scope up correctly.
+ * We don't do this in the parser for some reason. */
 static void setsuper(Stab *st, Stab *super)
 {
     Stab *s;
@@ -54,6 +57,8 @@ static void setsuper(Stab *st, Stab *super)
     st->super = super;
 }
 
+/* If the current environment binds a type,
+ * we return true */
 static int isbound(Inferstate *st, Type *t)
 {
     ssize_t i;
@@ -67,6 +72,10 @@ static int isbound(Inferstate *st, Type *t)
     return 0;
 }
 
+/* Returns a fresh type with all unbound type
+ * parameters (type schemes in most literature)
+ * replaced with type variables that we can unify
+ * against */
 static Type *tyfreshen(Inferstate *st, Htab *ht, Type *t)
 {
     Type *ret;
@@ -90,6 +99,7 @@ static Type *tyfreshen(Inferstate *st, Htab *ht, Type *t)
     return ret;
 }
 
+/* Freshens the type of a declaration. */
 static Type *freshen(Inferstate *st, Type *t)
 {
     Htab *ht;
@@ -100,7 +110,10 @@ static Type *freshen(Inferstate *st, Type *t)
     return t;
 }
 
-/* prevents types that directly contain themselves. */
+/* Checks if a type that directly contains itself.
+ * Recursive types that contain themselves through
+ * pointers or slices are fine, but any other self-inclusion
+ * would lead to a value of infinite size */
 static int tyinfinite(Inferstate *st, Type *t, Type *sub)
 {
     size_t i;
@@ -139,6 +152,7 @@ static int tyinfinite(Inferstate *st, Type *t, Type *sub)
     return 0;
 }
 
+/* Resolves a type and all it's subtypes recursively.*/
 static void tyresolve(Inferstate *st, Type *t)
 {
     size_t i;
@@ -147,6 +161,7 @@ static void tyresolve(Inferstate *st, Type *t)
     if (t->resolved)
         return;
     t->resolved = 1;
+    /* Walk through aggregate type members */
     if (t->type == Tystruct) {
         for (i = 0; i < t->nmemb; i++)
             infernode(st, t->sdecls[i], NULL, NULL);
@@ -175,7 +190,8 @@ static void tyresolve(Inferstate *st, Type *t)
         fatal(t->line, "Type %s includes itself", tystr(t));
 }
 
-/* fixd the most accurate type mapping we have */
+/* fixd the most accurate type mapping we have (ie,
+ * the end of the unification chain */
 static Type *tf(Inferstate *st, Type *t)
 {
     Type *lu;
@@ -185,7 +201,7 @@ static Type *tf(Inferstate *st, Type *t)
     while (1) {
         if (!tytab[t->tid] && t->type == Tyunres) {
             if (!(lu = gettype(curstab(), t->name)))
-                fatal(t->name->line, "Could not fixed type %s", namestr(t->name));
+                fatal(t->name->line, "Could not resolve type %s", namestr(t->name));
             tytab[t->tid] = lu;
         }
 
@@ -197,15 +213,7 @@ static Type *tf(Inferstate *st, Type *t)
     return t;
 }
 
-static void loaduses(Node *n)
-{
-    size_t i;
-
-    /* uses only allowed at top level. Do we want to keep it this way? */
-    for (i = 0; i < n->file.nuses; i++)
-        readuse(n->file.uses[i], n->file.globls);
-}
-
+/* set the type of any typable node */
 static void settype(Inferstate *st, Node *n, Type *t)
 {
     t = tf(st, t);
@@ -215,11 +223,12 @@ static void settype(Inferstate *st, Node *n, Type *t)
         case Nlit:      n->lit.type = t;        break;
         case Nfunc:     n->func.type = t;       break;
         default:
-            die("can't set type of %s", nodestr(n->type));
+            die("untypable node %s", nodestr(n->type));
             break;
     }
 }
 
+/* Gets the type of a literal value */
 static Type *littype(Node *n)
 {
     if (n->lit.type)
@@ -237,6 +246,7 @@ static Type *littype(Node *n)
     return NULL;
 }
 
+/* Finds the type of any typable node */
 static Type *type(Inferstate *st, Node *n)
 {
     Type *t;
@@ -248,12 +258,14 @@ static Type *type(Inferstate *st, Node *n)
       case Nfunc:       t = n->func.type;       break;
       default:
         t = NULL;
-        die("untypeable %s", nodestr(n->type));
+        die("untypeable node %s", nodestr(n->type));
         break;
     };
     return tf(st, t);
 }
 
+/* Tries to give a good string describing the context
+ * for the sake of error messages. */
 static char *ctxstr(Inferstate *st, Node *n)
 {
     char *s;
@@ -292,6 +304,65 @@ static char *ctxstr(Inferstate *st, Node *n)
     return s;
 }
 
+/* Binds the type parameters present in the
+ * current type into the type environment */
+static void tybind(Inferstate *st, Htab *bt, Type *t)
+{
+    size_t i;
+
+    if (!t)
+        return;
+    if (t->type != Typaram)
+        return;
+
+    if (hthas(bt, t->pname))
+        unify(st, NULL, htget(bt, t->pname), t);
+    else if (isbound(st, t))
+        return;
+
+    htput(bt, t->pname, t);
+    for (i = 0; i < t->nsub; i++)
+        tybind(st, bt, t->sub[i]);
+}
+
+/* Binds the type parameters in the
+ * declaration into the type environment */
+static void bind(Inferstate *st, Node *n)
+{
+    Htab *bt;
+
+    assert(n->type == Ndecl);
+    if (!n->decl.isgeneric)
+        return;
+    if (!n->decl.init)
+        fatal(n->line, "generic %s has no initializer", n->decl);
+
+    bt = mkht(strhash, streq);
+    lappend(&st->tybindings, &st->ntybindings, bt);
+
+    tybind(st, bt, n->decl.type);
+    tybind(st, bt, n->decl.init->expr.type);
+}
+
+/* Rolls back the binding of type parameters in
+ * the type environment */
+static void unbind(Inferstate *st, Node *n)
+{
+    if (!n->decl.isgeneric)
+        return;
+    htfree(st->tybindings[st->ntybindings - 1]);
+    lpop(&st->tybindings, &st->ntybindings);
+}
+
+static void checkcast(Inferstate *st, Node *n)
+{
+    /* FIXME: actually verify the casts */
+}
+
+/* Constrains a type to implement the required constraints. On
+ * type variables, the constraint is added to the required
+ * constraint list. Otherwise, the type is checked to see
+ * if it has the required constraint */
 static void constrain(Inferstate *st, Node *ctx, Type *a, Cstr *c)
 {
     if (a->type == Tyvar) {
@@ -317,6 +388,7 @@ static int cstrcheck(Type *a, Type *b)
     return bsissubset(a->cstrs, b->cstrs);
 }
 
+/* Merges the constraints on types */
 static void mergecstrs(Inferstate *st, Node *ctx, Type *a, Type *b)
 {
     if (b->type == Tyvar) {
@@ -335,6 +407,7 @@ static void mergecstrs(Inferstate *st, Node *ctx, Type *a, Type *b)
     }
 }
 
+/* Tells us if we have an index hack on the type */
 static int idxhacked(Type *a, Type *b)
 {
     return (a->type == Tyvar && a->nsub > 0) || a->type == Tyarray || a->type == Tyslice;
@@ -354,16 +427,23 @@ static int occurs(Type *a, Type *b)
     return 0;
 }
 
+/* Computes the 'rank' of the type; ie, in which
+ * direction should we unify. A lower ranked type
+ * should be mapped to the higher ranked (ie, more
+ * specific) type. */
 static int tyrank(Type *t)
 {
+    /* plain tyvar */
     if (t->type == Tyvar && t->nsub == 0)
         return 0;
+    /* parameterized tyvar */
     if (t->type == Tyvar && t->nsub > 0)
         return 1;
-    else
-        return 2;
+    /* concrete type */
+    return 2;
 }
 
+/* Unifies two types, or errors if the types are not unifiable. */
 static Type *unify(Inferstate *st, Node *ctx, Type *a, Type *b)
 {
     Type *t;
@@ -382,18 +462,18 @@ static Type *unify(Inferstate *st, Node *ctx, Type *a, Type *b)
     }
 
     r = NULL;
-    mergecstrs(st, ctx, a, b);
     if (a->type == Tyvar) {
         tytab[a->tid] = b;
         r = b;
     }
+    /* Disallow recursive types */
     if (a->type == Tyvar && b->type != Tyvar) 
         if (occurs(a, b))
             fatal(ctx->line, "Infinite type %s in %s near %s",
                   tystr(a), tystr(b), ctxstr(st, ctx));
 
-    /* if the tyrank of a is 0 (ie, a raw tyvar), we just unify, and don't
-     * try to match up the nonexistent subtypes */
+    /* if the tyrank of a is 0 (ie, a raw tyvar), just unify.
+     * Otherwise, match up subtypes. */
     if ((a->type == b->type || idxhacked(a, b)) && tyrank(a) != 0) {
         for (i = 0; i < b->nsub; i++) {
             /* types must have same arity */
@@ -408,10 +488,13 @@ static Type *unify(Inferstate *st, Node *ctx, Type *a, Type *b)
         fatal(ctx->line, "%s incompatible with %s near %s",
               tystr(a), tystr(b), ctxstr(st, ctx));
     }
+    mergecstrs(st, ctx, a, b);
     return r;
 }
 
-
+/* Applies unifications to function calls.
+ * Funciton application requires a slightly
+ * different approach to unification. */
 static void unifycall(Inferstate *st, Node *n)
 {
     size_t i;
@@ -439,6 +522,77 @@ static void unifycall(Inferstate *st, Node *n)
     settype(st, n, ft->sub[0]);
 }
 
+/* load all usefiles */
+static void loaduses(Node *n)
+{
+    size_t i;
+
+    /* uses only allowed at top level. Do we want to keep it this way? */
+    for (i = 0; i < n->file.nuses; i++)
+        readuse(n->file.uses[i], n->file.globls);
+}
+
+/* The exports in package declarations
+ * need to be merged with the declarations
+ * at the global scope. Declarations in
+ * one may set the type of the other,
+ * so this should be done early in the
+ * process */
+static void mergeexports(Inferstate *st, Node *file)
+{
+    Stab *exports, *globls;
+    size_t i, nk;
+    void **k;
+    /* local, global version */
+    Node *nl, *ng;
+    Type *tl, *tg;
+
+    exports = file->file.exports;
+    globls = file->file.globls;
+
+    pushstab(globls);
+    k = htkeys(exports->ty, &nk);
+    for (i = 0; i < nk; i++) {
+        tl = gettype(exports, k[i]);
+        nl = k[i];
+        if (tl) {
+            tg = gettype(globls, nl);
+            if (!tg)
+                puttype(globls, nl, tl);
+            else
+                fatal(nl->line, "Exported type %s already declared on line %d", namestr(nl), tg->line);
+        } else {
+            tg = gettype(globls, nl);
+            if (tg)
+                updatetype(exports, nl, tf(st, tg));
+            else
+                fatal(nl->line, "Exported type %s not declared", namestr(nl));
+        }
+    }
+    free(k);
+
+    k = htkeys(exports->dcl, &nk);
+    for (i = 0; i < nk; i++) {
+        nl = getdcl(exports, k[i]);
+        ng = getdcl(globls, k[i]);
+        /* if an export has an initializer, it shouldn't be declared in the
+         * body */
+        if (nl->decl.init && ng)
+            fatal(nl->line, "Export %s double-defined on line %d", ctxstr(st, nl), ng->line);
+        if (!ng)
+            putdcl(globls, nl);
+        else
+            unify(st, nl, type(st, ng), type(st, nl));
+    }
+    free(k);
+    popstab();
+}
+
+/* Finds out if the member reference is actually
+ * referring to a namespaced name, instead of a struct
+ * member. If it is, it transforms it into the variable
+ * reference we should have, instead of the Omemb expr
+ * that we do have */
 static void checkns(Inferstate *st, Node *n, Node **ret)
 {
     Node *var, *name, *nsname;
@@ -720,49 +874,6 @@ static void inferstab(Inferstate *st, Stab *s)
     free(k);
 }
 
-static void tybind(Inferstate *st, Htab *bt, Type *t)
-{
-    size_t i;
-
-    if (!t)
-        return;
-    if (t->type != Typaram)
-        return;
-
-    if (hthas(bt, t->pname))
-        unify(st, NULL, htget(bt, t->pname), t);
-    else if (isbound(st, t))
-        return;
-
-    htput(bt, t->pname, t);
-    for (i = 0; i < t->nsub; i++)
-        tybind(st, bt, t->sub[i]);
-}
-
-static void bind(Inferstate *st, Node *n)
-{
-    Htab *bt;
-
-    if (!n->decl.isgeneric)
-        return;
-    if (!n->decl.init)
-        fatal(n->line, "generic %s has no initializer", n->decl);
-
-    bt = mkht(strhash, streq);
-    lappend(&st->tybindings, &st->ntybindings, bt);
-
-    tybind(st, bt, n->decl.type);
-    tybind(st, bt, n->decl.init->expr.type);
-}
-
-static void unbind(Inferstate *st, Node *n)
-{
-    if (!n->decl.isgeneric)
-        return;
-    htfree(st->tybindings[st->ntybindings - 1]);
-    lpop(&st->tybindings, &st->ntybindings);
-}
-
 static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
 {
     size_t i;
@@ -864,11 +975,6 @@ static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
     }
 }
 
-static void checkcast(Inferstate *st, Node *n)
-{
-    /* FIXME: actually verify the casts */
-}
-
 /* returns the final type for t, after all unifications
  * and default constraint selections */
 static Type *tyfix(Inferstate *st, Node *ctx, Type *t)
@@ -963,6 +1069,9 @@ static void infercompn(Inferstate *st, Node *file)
     }
 }
 
+/* After inference, replace all
+ * types in symbol tables with
+ * the final computed types */
 static void stabsub(Inferstate *st, Stab *s)
 {
     void **k;
@@ -985,6 +1094,8 @@ static void stabsub(Inferstate *st, Stab *s)
     free(k);
 }
 
+/* After type inference, replace all types
+ * with the final computed type */
 static void typesub(Inferstate *st, Node *n)
 {
     size_t i;
@@ -1065,56 +1176,9 @@ static void typesub(Inferstate *st, Node *n)
     }
 }
 
-static void mergeexports(Inferstate *st, Node *file)
-{
-    Stab *exports, *globls;
-    size_t i, nk;
-    void **k;
-    /* local, global version */
-    Node *nl, *ng;
-    Type *tl, *tg;
-
-    exports = file->file.exports;
-    globls = file->file.globls;
-
-    pushstab(globls);
-    k = htkeys(exports->ty, &nk);
-    for (i = 0; i < nk; i++) {
-        tl = gettype(exports, k[i]);
-        nl = k[i];
-        if (tl) {
-            tg = gettype(globls, nl);
-            if (!tg)
-                puttype(globls, nl, tl);
-            else
-                fatal(nl->line, "Exported type %s already declared on line %d", namestr(nl), tg->line);
-        } else {
-            tg = gettype(globls, nl);
-            if (tg)
-                updatetype(exports, nl, tf(st, tg));
-            else
-                fatal(nl->line, "Exported type %s not declared", namestr(nl));
-        }
-    }
-    free(k);
-
-    k = htkeys(exports->dcl, &nk);
-    for (i = 0; i < nk; i++) {
-        nl = getdcl(exports, k[i]);
-        ng = getdcl(globls, k[i]);
-        /* if an export has an initializer, it shouldn't be declared in the
-         * body */
-        if (nl->decl.init && ng)
-            fatal(nl->line, "Export %s double-defined on line %d", ctxstr(st, nl), ng->line);
-        if (!ng)
-            putdcl(globls, nl);
-        else
-            unify(st, nl, type(st, ng), type(st, nl));
-    }
-    free(k);
-    popstab();
-}
-
+/* Take generics and build new versions of them
+ * with the type parameters replaced with the
+ * specialized types */
 static void specialize(Inferstate *st, Node *f)
 {
     Node *d, *name;
