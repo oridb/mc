@@ -6,14 +6,14 @@ pkg std =
 	const Badchar	: char = -1 castto(char)
 
 	const charlen	: (chr : char -> size)
-	const encode	: (buf : byte[,], chr : char -> size)
-	const decode	: (buf : byte[,] -> char)
-	const striter	: (str : byte[,] -> [char, byte[,]])
+	const encode	: (buf : byte[:], chr : char -> size)
+	const decode	: (buf : byte[:] -> char)
+	const striter	: (str : byte[:] -> [char, byte[:]])
 
-	const strjoin	: (lst : byte[,][,], delim:byte[,] -> byte[,])
-	const strsep	: (str : byte[,], delim:byte[,] -> byte[,][,])
-	const strbjoin	: (lst : byte[,][,], delim:byte[,] -> byte[,])
-	const strbsep	: (str : byte[,], delim:byte[,] -> byte[,][,])
+	const strjoin	: (lst : byte[:][:], delim:byte[:] -> byte[:])
+	const strsep	: (str : byte[:], delim:byte[:] -> byte[:][:])
+	const strbjoin	: (lst : byte[:][:], delim:byte[:] -> byte[:])
+	const strbsep	: (str : byte[:], delim:byte[:] -> byte[:][:])
 ;;
 
 const charlen = {c
@@ -88,12 +88,12 @@ const striter = {str
 	else
 		/* skip one char forward so we can try
 		   resyncing the character stream */
-		-> (Badchar, str[1,str.len])
+		-> (Badchar, str[1:])
 	;;
 
 	if len == 0 || len > str.len
 		/* again, we want to try to resync */
-		-> (Badchar, str[1,str.len])
+		-> (Badchar, str[1:])
 	;;
 
 	mask = (1 << (8 - len)) - 1
@@ -103,5 +103,5 @@ const striter = {str
 		chr = (chr << 6) | (tmp & 0x3f)
 	;;
 
-	-> (chr castto(char), str[len, str.len])
+	-> (chr castto(char), str[len:])
 }

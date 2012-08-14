@@ -5,17 +5,17 @@ use "utf.use"
 use "varargs.use"
 
 pkg std =
-	const bfmt	: (buf : byte[,], fmt : byte[,], args:... -> size)
-	const bfmtv	: (buf : byte[,], fmt : byte[,], ap:valist -> size)
-	const put	: (fmt : byte[,], args:... -> size)
+	const bfmt	: (buf : byte[:], fmt : byte[:], args:... -> size)
+	const bfmtv	: (buf : byte[:], fmt : byte[:], ap:valist -> size)
+	const put	: (fmt : byte[:], args:... -> size)
 ;;
 
 const put = {fmt, args
 	var buf : byte[2048]
 	var n
 	
-	n = bfmtv(buf[0,2048], fmt, vastart(&args))
-	write(1, buf[0,n])
+	n = bfmtv(buf[:], fmt, vastart(&args))
+	write(1, buf[:n])
 	-> n
 }
 
@@ -26,7 +26,7 @@ const bfmt = {buf, fmt, args
 const bfmtv = {buf, fmt, ap
 	var c
 	var n
-	var s_val : byte[,]
+	var s_val : byte[:]
 	var b_val : int8
 	var w_val : int16
 	var i_val : int32
@@ -41,32 +41,32 @@ const bfmtv = {buf, fmt, ap
 			match c
 			's':
 				(s_val, ap) = vanext(ap)
-				n += strfmt(buf[n, buf.len], s_val)
+				n += strfmt(buf[n:], s_val)
 				;;
 			/* format integers */
 			'b':
 				(b_val, ap) = vanext(ap)
-				n += intfmt(buf[n, buf.len], b_val castto(int64), 10)
+				n += intfmt(buf[n:], b_val castto(int64), 10)
 				;;
 			'w':
 				(w_val, ap) = vanext(ap)
-				n += intfmt(buf[n, buf.len], i_val castto(int64), 10)
+				n += intfmt(buf[n:], i_val castto(int64), 10)
 				;;
 			'i':
 				(i_val, ap) = vanext(ap)
-				n += intfmt(buf[n, buf.len], i_val castto(int64), 10)
+				n += intfmt(buf[n:], i_val castto(int64), 10)
 				;;
 			'l':
 				(l_val, ap) = vanext(ap)
-				n += intfmt(buf[n, buf.len], i_val castto(int64), 10)
+				n += intfmt(buf[n:], i_val castto(int64), 10)
 				;;
 			'p':
 				(p_val, ap) = vanext(ap)
-				n += intfmt(buf[n, buf.len], p_val castto(int64), 16)
+				n += intfmt(buf[n:], p_val castto(int64), 16)
 				;;
 			;;
 		else
-			n += encode(buf[n,buf.len], c)
+			n += encode(buf[n:], c)
 		;;
 	;;
 	-> n
@@ -106,10 +106,10 @@ const intfmt = {buf, val, base
 	;;
 	n = 0
 	if isneg
-		n += encode(buf[n,buf.len], '-')
+		n += encode(buf[n:], '-')
 	;;
 	for j = i-1; j >= 0; j--
-		n += encode(buf[n,buf.len], b[j])
+		n += encode(buf[n:], b[j])
 	;;
 	-> n 
 }

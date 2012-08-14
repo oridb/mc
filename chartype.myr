@@ -1061,11 +1061,11 @@ const findc = {c, t, sz, nelt, ret
 	while t.len > nelt
 		sz /= 2
 		m = sz*nelt
-		l = t[m, t.len]
+		l = t[m:]
 		if c >= l[0]
-			t = l[0,m]
+			t = l[0:m]
 		else
-			t = t[0,m]
+			t = t[0:m]
 		;;
 	;;
 
@@ -1083,11 +1083,11 @@ const isalpha = {c
 
 	if isupper(c) || islower(c)
 		-> true
-	elif findc(c, ralpha2[,], ralpha2.len/2, 2, &l)
+	elif findc(c, ralpha2[:], ralpha2.len/2, 2, &l)
 		if (c >= l[0] && c <= l[1])
 			-> true
 		;;
-	elif findc(c, ralpha1[,], ralpha1.len, 1, &l)
+	elif findc(c, ralpha1[:], ralpha1.len, 1, &l)
 		if (c == l[0])
 			-> true
 		;;
@@ -1098,7 +1098,7 @@ const isalpha = {c
 const isnum = {c
 	var l
 
-	if findc(c, rnums[,], rnums.len/2, 2, &l)
+	if findc(c, rnums[:], rnums.len/2, 2, &l)
 		if(c >= l[0] && c <= l[1])
 			-> true
 		;;
@@ -1115,8 +1115,8 @@ const isspace = {c
 	var sl
 	var len
 
-	l = rspace2[,]
-	sl = rspace2[,]
+	l = rspace2[:]
+	sl = rspace2[:]
 	len = rspace2.len/2
 	if findc(c, sl, len, 2, &l)
 		if(c >= l[0] && c <= l[1])
@@ -1129,11 +1129,11 @@ const isspace = {c
 const islower = {c
 	var l
 
-	if findc(c, rtoupper2[,], rtoupper2.len, 2, &l)
+	if findc(c, rtoupper2[:], rtoupper2.len, 2, &l)
 		if (c >= l[0] && c <= l[1])
 			-> true
 		;;
-	elif findc(c, rtoupper1[,], rtoupper1.len, 1, &l)
+	elif findc(c, rtoupper1[:], rtoupper1.len, 1, &l)
 		if (c == l[0])
 			-> true
 		;;
@@ -1144,11 +1144,11 @@ const islower = {c
 const isupper = {c
 	var l
 
-	if findc(c, rtolower2[,], rtolower2.len, 2, &l)
+	if findc(c, rtolower2[:], rtolower2.len, 2, &l)
 		if (c >= l[0] && c <= l[1])
 			-> true
 		;;
-	elif findc(c, rtolower1[,], rtolower1.len, 1, &l)
+	elif findc(c, rtolower1[:], rtolower1.len, 1, &l)
 		if (c == l[0])
 			-> true
 		;;
@@ -1163,11 +1163,11 @@ const istitle = {c
 const tolower = {c
 	var l
 
-	if findc(c, rtolower2[,], rtolower2.len/3, 3, &l)
+	if findc(c, rtolower2[:], rtolower2.len/3, 3, &l)
 		if c >= l[0] && c <= l[1]
 			-> c + l[2] - 500;
 		;;
-	elif findc(c, rtolower1[,], rtolower1.len/2, 2, &l) 
+	elif findc(c, rtolower1[:], rtolower1.len/2, 2, &l) 
 		if c == l[0]
 			-> c + l[1] - 500;
 		;;
@@ -1178,11 +1178,11 @@ const tolower = {c
 const toupper = {c
 	var l
 
-	if findc(c, rtoupper2[,], rtoupper2.len/3, 3, &l);
+	if findc(c, rtoupper2[:], rtoupper2.len/3, 3, &l);
 		if c >= l[0] && c <= l[1]
 			-> c + l[2] - 500;
 		;;
-	elif findc(c, rtoupper1[,], rtoupper1.len/2, 2, &l);
+	elif findc(c, rtoupper1[:], rtoupper1.len/2, 2, &l);
 		if c == l[0]
 			-> c + l[1] - 500;
 		;;
@@ -1193,7 +1193,7 @@ const toupper = {c
 const totitle = {c
 	var l
 
-	if findc(c, rtotitle1[,], rtotitle1.len/2, 2, &l);
+	if findc(c, rtotitle1[:], rtotitle1.len/2, 2, &l);
 		if c == l[0]
 			-> c + l[1] - 500;
 		;;
