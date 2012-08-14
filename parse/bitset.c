@@ -9,6 +9,13 @@
 
 #define Sizetbits (CHAR_BIT*sizeof(size_t)) /* used in graph reprs */
 
+/* Equalizes the size of a and b by
+ * growing the smaller to the size of the
+ * larger, zeroing out the new elements.
+ * This allows the code to simply iterate
+ * over both without keeping track of the
+ * minimum size.
+ */
 static void eqsz(Bitset *a, Bitset *b)
 {
     size_t sz;
@@ -35,6 +42,7 @@ static void eqsz(Bitset *a, Bitset *b)
     b->nchunks = sz;
 }
 
+/* Creates a new all-zero bit set */
 Bitset *mkbs()
 {
     Bitset *bs;
@@ -45,12 +53,16 @@ Bitset *mkbs()
     return bs;
 }
 
+/* Frees a bitset. Safe to call on NULL. */
 void bsfree(Bitset *bs)
 {
+    if (!bs)
+        return;
     free(bs->chunks);
     free(bs);
 }
 
+/* Duplicates a bitset. NULL is duplicated to NULL. */
 Bitset *bsdup(Bitset *a)
 {
     Bitset *bs;
@@ -64,6 +76,7 @@ Bitset *bsdup(Bitset *a)
     return bs;
 }
 
+/* Zeroes all values in a bit set */
 Bitset *bsclear(Bitset *bs)
 {
     size_t i;
@@ -75,6 +88,7 @@ Bitset *bsclear(Bitset *bs)
     return bs;
 }
 
+/* Counts the number of values held in a bit set */
 size_t bscount(Bitset *bs)
 {
     size_t i, j, n;
@@ -87,6 +101,23 @@ size_t bscount(Bitset *bs)
     return n;
 }
 
+/* A slightly tricky function to iterate over the contents
+ * of a bitset. It returns true immediately if 'elt' is in
+ * the bitset, otherwise it seeks forward to the next value
+ * held in the bitset and stores it in elt. If there are no
+ * more values, it returns false to stop iteration. Note,
+ * this means that you need to increment elt every time you
+ * pass through.
+ *
+ * Typical usage of this function:
+ *
+ *      for (i = 0; bsiter(set, &i); i++)
+ *          use(i);
+ *
+ * The increment of 'i' in the for loop is needed in order
+ * to prevent the function from returning the same value
+ * repeatedly.
+ */
 int bsiter(Bitset *bs, size_t *elt)
 {
     size_t i;
@@ -108,12 +139,6 @@ int bsiter(Bitset *bs, size_t *elt)
 size_t bsmax(Bitset *bs)
 {
     return bs->nchunks*Sizetbits;
-}
-
-void delbs(Bitset *bs)
-{
-    free(bs->chunks);
-    free(bs);
 }
 
 void bsput(Bitset *bs, size_t elt)
