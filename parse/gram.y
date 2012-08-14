@@ -502,7 +502,7 @@ postfixexpr
             {$$ = mkexpr($1->line, Opostdec, $1, NULL);}
         | postfixexpr Tosqbrac expr Tcsqbrac
             {$$ = mkexpr($1->line, Oidx, $1, $3, NULL);}
-        | postfixexpr Tosqbrac optexpr Tcomma optexpr Tcsqbrac
+        | postfixexpr Tosqbrac optexpr Tcolon optexpr Tcsqbrac
             {$$ = mksliceexpr($1->line, $1, $3, $5);}
         | postfixexpr Toparen arglist Tcparen
             {$$ = mkcall($1->line, $1, $3.nl, $3.nn);}

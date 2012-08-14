@@ -2,6 +2,6 @@ const main = {
 	var a : int[8]
 	var s
 
-	s = a[1,6]
+	s = a[1:6]
 	-> s.len
 }
