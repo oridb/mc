@@ -289,7 +289,7 @@ typaramlist
 
 compoundtype
         : functype   {$$ = $1;}
-        | type Tosqbrac Tcomma Tcsqbrac {$$ = mktyslice($2->line, $1);}
+        | type Tosqbrac Tcolon Tcsqbrac {$$ = mktyslice($2->line, $1);}
         | type Tosqbrac expr Tcsqbrac {$$ = mktyarray($2->line, $1, $3);}
         | type Tstar {$$ = mktyptr($2->line, $1);}
         | name       {$$ = mktynamed($1->line, $1);}
