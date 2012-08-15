@@ -542,12 +542,6 @@ Loc *selexpr(Isel *s, Node *n)
             g(s, Imov, b, a, NULL);
             r = b;
             break;
-        case Oload: /* mem -> reg */
-            a = memloc(s, args[0], mode(n));
-            r = locreg(mode(n));
-            /* FIXME: we should be moving the correct 'coreg' */
-            g(s, Imov, a, r, NULL);
-            break;
         case Ocall:
             r = gencall(s, n);
             break;

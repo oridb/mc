@@ -820,8 +820,7 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
             break;
         case Olbl:      /* :lbl -> void* */
             settype(st, n, mktyptr(n->line, mkty(-1, Tyvoid)));
-        case Obad: case Ocjmp:
-        case Oload: case Oset:
+        case Obad: case Ocjmp: case Oset:
         case Oslbase: case Osllen:
         case Oblit: case Numops:
         case Otrunc: case Oswiden: case Ozwiden:
