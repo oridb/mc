@@ -22,6 +22,7 @@ size_t ntypes;
 Cstr **cstrtab;
 size_t ncstrs;
 
+/* Built in type constraints */
 static Cstr *tycstrs[Ntypes + 1][4];
 
 Type *mkty(int line, Ty ty)
@@ -42,6 +43,10 @@ Type *mkty(int line, Ty ty)
     return t;
 }
 
+/*
+ * Duplicates a type, so we can frob
+ * its internals later
+ */
 Type *tydup(Type *t)
 {
     Type *r;
@@ -63,10 +68,16 @@ Type *tydup(Type *t)
     return r;
 }
 
-Type *tylike(Type *t, Ty like)
+/*
+ * Creates a Tyvar with the same
+ * constrants as the 'like' type
+ */
+Type *mktylike(int line, Ty like)
 {
+    Type *t;
     int i;
 
+    t = mktyvar(line);
     for (i = 0; tycstrs[like][i]; i++)
         setcstr(t, tycstrs[like][i]);
     return t;

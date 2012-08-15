@@ -236,8 +236,8 @@ static Type *littype(Node *n)
     switch (n->lit.littype) {
         case Lchr:      return mkty(n->line, Tychar);                           break;
         case Lbool:     return mkty(n->line, Tybool);                           break;
-        case Lint:      return tylike(mktyvar(n->line), Tyint);                 break;
-        case Lflt:      return tylike(mktyvar(n->line), Tyfloat32);             break;
+        case Lint:      return mktylike(n->line, Tyint);                        break;
+        case Lflt:      return mktylike(n->line, Tyfloat32);                    break;
         case Lstr:      return mktyslice(n->line, mkty(n->line, Tybyte));       break;
         case Lfunc:     return n->lit.fnval->func.type;                         break;
         case Lseq:      return NULL; break;
@@ -743,7 +743,7 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
             lappend(&st->postcheck, &st->npostcheck, n);
             break;
         case Osize:     /* sizeof @a -> size */
-            settype(st, n, tylike(mktyvar(n->line), Tyuint));
+            settype(st, n, mktylike(n->line, Tyuint));
             break;
         case Ocall:     /* (@a, @b, @c, ... -> @r)(@a,@b,@c, ... -> @r) -> @r */
             unifycall(st, n);
