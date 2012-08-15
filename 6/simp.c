@@ -114,6 +114,7 @@ static Node *addr(Node *a, Type *bt)
 {
     Node *n;
 
+    assert(exprop(a) != Oload);
     n = mkexpr(a->line, Oaddr, a, NULL);
     if (!bt)
         n->expr.type = mktyptr(a->line, a->expr.type);

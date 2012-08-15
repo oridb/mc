@@ -20,6 +20,9 @@ static Stab *rdstab(FILE *fd);
 static void wrsym(FILE *fd, Node *val);
 static Node *rdsym(FILE *fd);
 
+/* Outputs a symbol table to file in a way that can be
+ * read back usefully. Only writes declarations, types
+ * and sub-namespaces. Captured variables are ommitted. */
 static void wrstab(FILE *fd, Stab *val)
 {
     size_t n, i;
@@ -51,6 +54,8 @@ static void wrstab(FILE *fd, Stab *val)
     free(keys);
 }
 
+/* Reads a symbol table from file. The converse
+ * of wrstab. */
 static Stab *rdstab(FILE *fd)
 {
     Stab *st;
@@ -109,6 +114,10 @@ static Ucon *rducon(FILE *fd)
     return uc;
 }
 
+/* Writes the name and type of a variable,
+ * but only writes its intializer for things
+ * we want to inline cross-file (currently,
+ * the only cross-file inline is generics) */
 static void wrsym(FILE *fd, Node *val)
 {
     /* sym */
@@ -157,6 +166,9 @@ Node *symunpickle(FILE *fd)
     return rdsym(fd);
 }
 
+/* Writes types to a file. Errors on
+ * internal only types like Tyvar that
+ * will not be meaningful in another file */
 static void wrtype(FILE *fd, Type *ty)
 {
     size_t i;
@@ -207,6 +219,9 @@ static void wrtype(FILE *fd, Type *ty)
     }
 }
 
+/* Writes types to a file. Errors on
+ * internal only types like Tyvar that
+ * will not be meaningful in another file */
 static Type *rdtype(FILE *fd)
 {
     Type *ty;
@@ -268,12 +283,12 @@ void sympickle(Node *s, FILE *fd)
     wrsym(fd, s);
 }
 
-/* pickle format:
- *      type:byte
- *      node-attrs: string|size|
- *      nsub:int32_be
- *      sub:node[,]
- */
+/* Pickles a node to a file.  The format
+ * is more or less equivalen to to
+ * simplest serialization of the
+ * in-memory representation. Minimal
+ * checking is done, so a bad type can
+ * crash the compiler */
 void pickle(Node *n, FILE *fd)
 {
     size_t i;
@@ -390,6 +405,9 @@ void pickle(Node *n, FILE *fd)
     }
 }
 
+/* Unpickles a node from a file. Minimal checking
+ * is done. Specifically, no checks are done for
+ * sane arities, a bad file can crash the compiler */
 Node *unpickle(FILE *fd)
 {
     size_t i;

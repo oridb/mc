@@ -11,23 +11,30 @@
 
 #include "parse.h"
 
-static ulong tyhash(void *p)
+static ulong typaramhash(void *p)
 {
     Type *t;
 
     t = p;
+    assert(t->type == Typaram);
     return strhash(t->pname);
 }
 
-static int tyeq(void *pa, void *pb)
+static int typarameq(void *pa, void *pb)
 {
     Type *a, *b;
 
     a = pa;
     b = pb;
+    assert(a->type == Typaram);
+    assert(b->type == Typaram);
     return streq(a->pname, b->pname);
 }
 
+/*
+ * Checks if a type contains any type
+ * parameers at all (ie, if it generic).
+ */
 static int hasparams(Type *t)
 {
     size_t i;
@@ -40,6 +47,11 @@ static int hasparams(Type *t)
     return 0;
 }
 
+/*
+ * Duplicates the type 't', with all bound type
+ * parameters substituted with the substitions
+ * described in 'tsmap'
+ */
 static Type *dosubst(Type *t, Htab *tsmap)
 {
     Type *ret;
@@ -56,6 +68,9 @@ static Type *dosubst(Type *t, Htab *tsmap)
     return ret;
 }
 
+/* Checks if the type 't' is generic, and if it is
+ * substitutes the types. This is here for efficiency,
+ * so we don't gratuitously duplicate types */
 static Type *tysubst(Type *t, Htab *tsmap)
 {
     if (hasparams(t))
@@ -64,6 +79,10 @@ static Type *tysubst(Type *t, Htab *tsmap)
         return t;
 }
 
+/* 
+ * Fills the substitution map with a mapping from
+ * the type parameter 'from' to it's substititon 'to'
+ */
 static void fillsubst(Htab *tsmap, Type *to, Type *from)
 {
     size_t i;
@@ -77,6 +96,10 @@ static void fillsubst(Htab *tsmap, Type *to, Type *from)
         fillsubst(tsmap, to->sub[i], from->sub[i]);
 }
 
+/*
+ * Fixes up nodes. This involves fixing up the
+ * declaration identifiers once we specialize
+ */
 static void fixup(Node *n)
 {
     size_t i;
@@ -148,6 +171,12 @@ static void fixup(Node *n)
     }
 }
 
+
+/*
+ * Duplicates a node, replacing all things that
+ * need to be specialized to make it concrete
+ * instead of generic, and returns it.
+ */
 static Node *specializenode(Node *n, Htab *tsmap)
 {
     Node *r;
@@ -287,6 +316,11 @@ static Node *genericname(Node *n, Type *t)
     return mkname(n->line, buf);
 }
 
+/*
+ * Takes a generic declaration, and creates a specialized
+ * duplicate of it with type 'to'. It also generates
+ * a name for this specialized node, and returns it in '*name'.
+ */
 Node *specializedcl(Node *n, Type *to, Node **name)
 {
     Htab *tsmap;
@@ -309,9 +343,8 @@ Node *specializedcl(Node *n, Type *to, Node **name)
         pushstab(st);
     }
 
-
-
-    tsmap = mkht(tyhash, tyeq);
+    /* specialize */
+    tsmap = mkht(typaramhash, typarameq);
     fillsubst(tsmap, to, n->decl.type);
 
     d = mkdecl(n->line, *name, tysubst(n->decl.type, tsmap));

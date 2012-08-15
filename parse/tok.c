@@ -15,11 +15,14 @@
 
 #include "gram.h"
 
+#define End (-1)
+
 char *filename;
 int line;
 int ignorenl;
 Tok *curtok;
 
+/* the file contents are stored globally */
 static int   fidx;
 static int   fbufsz;
 static char *fbuf;
@@ -27,7 +30,7 @@ static char *fbuf;
 static int peekn(int n)
 {
     if (fidx + n >= fbufsz)
-        return '\0';
+        return End;
     else
         return fbuf[fidx + n];
 }
@@ -102,7 +105,7 @@ static void eatcomment(void)
             case '\n':
                 line++;
                 break;
-            case '\0':
+            case End:
                 fatal(line, "File ended within comment starting at line %d", startln);
                 break;
         }
@@ -276,7 +279,7 @@ static Tok *strlit()
         /* we don't unescape here, but on output */
         if (c == '"')
             break;
-        else if (c == '\0')
+        else if (c == End)
             fatal(line, "Unexpected EOF within string");
         else if (c == '\n')
             fatal(line, "Newlines not allowed in strings");
@@ -309,7 +312,7 @@ static Tok *charlit()
         /* we don't unescape here, but on output */
         if (c == '\'')
             break;
-        else if (c == '\0')
+        else if (c == End)
             fatal(line, "Unexpected EOF within char lit");
         else if (c == '\n')
             fatal(line, "Newlines not allowed in char lit");
@@ -553,7 +556,7 @@ static Tok *toknext()
 
     eatspace();
     c = peek();
-    if (c == '\0') {
+    if (c == End) {
         t =  mktok(0);
     } else if (c == '\n') {
         line++;

@@ -12,6 +12,7 @@
 
 #include "parse.h"
 
+/* Allows us to look up types/cstrs by name nodes */
 typedef struct Tydefn Tydefn;
 typedef struct Cstrdefn Cstrdefn;
 struct Tydefn {
@@ -29,6 +30,8 @@ struct Cstrdefn {
 #define Maxstabdepth 128
 static Stab *stabstk[Maxstabdepth];
 static int stabstkoff;
+
+/* scope management */
 Stab *curstab()
 {
     return stabstk[stabstkoff - 1];
@@ -36,6 +39,7 @@ Stab *curstab()
 
 void pushstab(Stab *st)
 {
+    assert(stabstkoff < Maxstabdepth);
     stabstk[stabstkoff++] = st;
 }
 
@@ -44,6 +48,7 @@ void popstab(void)
     stabstkoff--;
 }
 
+/* name hashing */
 static ulong namehash(void *n)
 {
     return strhash(namestr(n));
@@ -66,7 +71,16 @@ Stab *mkstab()
     return st;
 }
 
-/* FIXME: do namespaces */
+/* 
+ * Searches for declarations from current
+ * scope, and all enclosing scopes. Does
+ * not resolve namespaces -- that is the job
+ * of the caller of this function.
+ *
+ * If a resoved name is not global, and is
+ * not in the current scope, it is recorded
+ * in the scope's closure.
+ */
 Node *getdcl(Stab *st, Node *n)
 {
     Node *s;
@@ -199,6 +213,11 @@ void putns(Stab *st, Stab *scope)
     htput(st->ns, scope->name, scope);
 }
 
+/*
+ * Sets the namespace of a symbol table, and
+ * changes the namespace of all contained symbols
+ * to match it.
+ */
 void updatens(Stab *st, char *name)
 {
     void **k;
