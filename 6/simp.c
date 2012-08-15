@@ -127,7 +127,7 @@ static Node *load(Node *a)
     Node *n;
 
     assert(a->expr.type->type == Typtr);
-    n = mkexpr(a->line, Oload, a, NULL);
+    n = mkexpr(a->line, Oderef, a, NULL);
     n->expr.type = base(a->expr.type);
     return n;
 }
@@ -594,9 +594,9 @@ static Node *membaddr(Simp *s, Node *n)
     args = n->expr.args;
     ty = tybase(exprtype(args[0]));
     if (ty->type == Typtr) {
-        t = args[0];
+        t = lval(s, args[0]);
     } else {
-        t = addr(args[0], exprtype(n));
+        t = addr(lval(s, args[0]), exprtype(n));
     }
     u = disp(n->line, offset(args[0], args[1]));
     r = add(t, u);
