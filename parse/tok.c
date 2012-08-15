@@ -55,6 +55,12 @@ static void unget(void)
     assert(fidx >= 0);
 }
 
+/*
+ * Consumes the character iff
+ * the character is equal to 'c'.
+ * returns true if there was a match,
+ * false otherwise.
+ */
 static int match(char c)
 {
     if (peek() == c) {
@@ -114,6 +120,13 @@ static void eatcomment(void)
     }
 }
 
+/*
+ * Consumes all forms of whitespace,
+ * including comments. If we are in a
+ * state where we should ignore newlines,
+ * we also consume '\n'. ';' is still
+ * accepted as a line ending.
+ */
 static void eatspace(void)
 {
     int c;
@@ -131,6 +144,12 @@ static void eatspace(void)
     }
 }
 
+/*
+ * Decides if an identifier is a
+ * keyword or not. Returns the
+ * token type to use for the
+ * identifier.
+ */
 static int kwd(char *s)
 {
     static const struct {char* kw; int tt;} kwmap[] = {
@@ -181,11 +200,11 @@ static int kwd(char *s)
 
 static int identstr(char *buf, size_t sz)
 {
-    int i;
+    size_t i;
     char c;
     
     i = 0;
-    for (c = peek(); i < 1023 && identchar(c); c = peek()) {
+    for (c = peek(); i < sz && identchar(c); c = peek()) {
         next();
         buf[i++] = c;
     }
@@ -205,6 +224,10 @@ static Tok *kwident(void)
     return t;
 }
 
+/*
+ * Appends a character 'c' to a growable buffer 'buf',
+ * resizing if needed.
+ */
 static void append(char **buf, size_t *len, size_t *sz, int c)
 {
     if (!*sz) {
@@ -219,6 +242,9 @@ static void append(char **buf, size_t *len, size_t *sz, int c)
     buf[0][len[0]++] = c;
 }
 
+/*
+ * Converts a character to its hex value.
+ */
 static int hexval(char c)
 {
     if (c >= 'a' && c <= 'f')
@@ -227,10 +253,15 @@ static int hexval(char c)
         return c - 'A' + 10;
     else if (c >= '0' && c <= '9')
         return c - '0';
-    die("passed non-hex value to hexval()");
+    die("passed non-hex value '%c' to hexval()", c);
     return -1;
 }
 
+/*
+ * decodes an escape code. These are
+ * shared between strings and characters.
+ * Unknown escape codes are ignored.
+ */
 static void decode(char **buf, size_t *len, size_t *sz)
 {
     char c, c1, c2;
@@ -473,16 +504,6 @@ static Tok *oper(void)
     return mktok(tt);
 };
 
-static int ord(char c)
-{
-    if (c >= '0' && c <= '9')
-        return c - '0';
-    else if (c >= 'a' && c <= 'z')
-        return c - 'a';
-    else
-        return c - 'A';
-}
-
 static Tok *number(int base)
 {
     Tok *t;
@@ -497,7 +518,7 @@ static Tok *number(int base)
         next();
         if (c == '.')
             isfloat = 1;
-        if (ord(c) > base)
+        else if (hexval(c) > base)
             fatal(line, "Integer digit '%c' outside of base %d", c, base);
     }
 
@@ -613,6 +634,7 @@ void tokinit(char *file)
     filename = strdup(file);
 }
 
+/* Interface to yacc */
 int yylex(void)
 {
     curtok = toknext();
