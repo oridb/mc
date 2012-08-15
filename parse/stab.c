@@ -126,6 +126,9 @@ Cstr *getcstr(Stab *st, Node *n)
 Stab *getns(Stab *st, Node *n)
 {
     Stab *s;
+
+    if (nameeq(st->name, n))
+        return st;
     do {
         if ((s = htget(st->ns, n)))
             return s;
