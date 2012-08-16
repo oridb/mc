@@ -6,6 +6,13 @@ generic max = {a:@a::tcnum, b:@a::tcnum
 	;;
 }
 
+generic intlike_is42 = {a : @a::(tcnum,tctest,tcint)
+	-> a == 42
+}
 const main = {
-	-> max(12, 42)
+	if intlike_is42(123)
+	    -> 16
+	else
+	    -> max(12, 42)
+	;;
 }

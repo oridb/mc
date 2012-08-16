@@ -123,7 +123,7 @@ static void constrainwith(Type *t, char *str);
 %type <ty> type structdef uniondef tupledef compoundtype functype funcsig
 %type <ty> generictype
 %type <tylist> tuptybody
-%type <node> typaramlist
+%type <nodelist> typaramlist
 
 %type <tok> asnop cmpop addop mulop shiftop
 
@@ -275,16 +275,23 @@ type    : structdef
         ;
 
 generictype
-        : Ttyparam typaramlist 
+        : Ttyparam
+            {$$ = mktyparam($1->line, $1->str);}
+        | Ttyparam Twith name
             {$$ = mktyparam($1->line, $1->str);
-            /* FIXME: this will only work for builtin cstrs */
-             if ($2)
-                constrainwith($$, $2->name.name);}
+             constrainwith($$, $3->name.name);}
+        | Ttyparam Twith Toparen typaramlist Tcparen
+            {size_t i;
+             for (i = 0; i < $4.nn; i++)
+                constrainwith($$, $4.nl[i]->name.name);}
         ;
 
 typaramlist
-        : /* empty */ {$$ = NULL;}
-        | Twith name {$$ = $2;}
+        : name
+            {$$.nl = NULL; $$.nn = 0;
+             lappend(&$$.nl, &$$.nn, $1);}
+        | typaramlist Tcomma name
+            {lappend(&$$.nl, &$$.nn, $3);}
         ;
 
 compoundtype
