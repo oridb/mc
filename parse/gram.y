@@ -271,7 +271,7 @@ type    : structdef
         | uniondef
         | compoundtype
         | generictype
-        | Tellipsis {$$ = mkty($1->line, Tyvalist);}
+        | Tellipsis {$$ = mktype($1->line, Tyvalist);}
         ;
 
 generictype

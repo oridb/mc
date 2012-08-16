@@ -179,7 +179,6 @@ struct Node {
                 int      boolval;
                 Node    *fnval;
                 Node    **seqval;
-                Node    **tupval;
             };
         } lit;
 
@@ -198,8 +197,8 @@ struct Node {
 
         struct {
             Node *val;
-            Node **matches;
             size_t nmatches;
+            Node **matches;
         } matchstmt;
 
         struct {
@@ -220,7 +219,7 @@ struct Node {
         struct {
             size_t did;
             char  isglobl;
-	    char  isexport;
+            char  isexport;
             char  isconst;
             char  isgeneric;
             char  isextern;
@@ -319,6 +318,7 @@ void putdcl(Stab *st, Node *dcl);
 void putucon(Stab *st, Ucon *uc);
 
 Stab *getns(Stab *st, Node *n);
+Stab *getns_str(Stab *st, char *n);
 Node *getdcl(Stab *st, Node *n);
 Type *gettype(Stab *st, Node *n);
 Cstr *getcstr(Stab *st, Node *n);
@@ -331,7 +331,7 @@ void popstab(void);
 /* type creation */
 void tyinit(Stab *st); /* sets up built in types */
 
-Type *mkty(int line, Ty ty);
+Type *mktype(int line, Ty ty);
 Type *tydup(Type *t); /* shallow duplicate; all subtypes/members/... kept */
 Type *mktyvar(int line);
 Type *mktyparam(int line, char *name);

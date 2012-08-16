@@ -427,7 +427,7 @@ static Node *uconid(Node *n, size_t off)
     Ucon *uc;
 
     if (exprop(n) != Ocons)
-        return load(addk(addr(n, mkty(n->line, Tyuint)), off));
+        return load(addk(addr(n, mktype(n->line, Tyuint)), off));
 
     uc = finducon(n);
     return word(uc->line, uc->id);
@@ -918,9 +918,9 @@ static Node *simpucon(Simp *s, Node *n, Node *dst)
         tmp = temp(s, n);
 
     /* Set the tag on the ucon */
-    u = addr(tmp, mkty(n->line, Tyuint));
+    u = addr(tmp, mktype(n->line, Tyuint));
     tag = mkintlit(n->line, uc->id);
-    tag->expr.type = mkty(n->line, Tyuint);
+    tag->expr.type = mktype(n->line, Tyuint);
     append(s, set(deref(u), tag));
 
 
@@ -966,7 +966,7 @@ static Node *simplazy(Simp *s, Node *n)
     /* if true */
     append(s, ltrue);
     u = mkexpr(n->line, Olit, mkbool(n->line, 1), NULL);
-    u->expr.type = mkty(n->line, Tybool);
+    u->expr.type = mktype(n->line, Tybool);
     t = set(r, u);
     append(s, t);
     jmp(s, ldone);
@@ -974,7 +974,7 @@ static Node *simplazy(Simp *s, Node *n)
     /* if false */
     append(s, lfalse);
     u = mkexpr(n->line, Olit, mkbool(n->line, 0), NULL);
-    u->expr.type = mkty(n->line, Tybool);
+    u->expr.type = mktype(n->line, Tybool);
     t = set(r, u);
     append(s, t);
     jmp(s, ldone);
@@ -1352,9 +1352,9 @@ void gen(Node *file, char *out)
     FILE *fd;
 
     /* declare useful constants */
-    tyintptr = mkty(-1, Tyuint64);
-    tyword = mkty(-1, Tyuint);
-    tyvoid = mkty(-1, Tyvoid);
+    tyintptr = mktype(-1, Tyuint64);
+    tyword = mktype(-1, Tyuint);
+    tyvoid = mktype(-1, Tyvoid);
 
     fn = NULL;
     nfn = 0;

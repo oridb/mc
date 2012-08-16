@@ -214,7 +214,7 @@ static Type *rdtype(FILE *fd)
     size_t i;
 
     t = rdbyte(fd);
-    ty = mkty(-1, t);
+    ty = mktype(-1, t);
     /* tid is generated; don't write */
     /* cstrs are left out for now: FIXME */
     ty->nsub = rdint(fd);

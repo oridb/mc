@@ -195,11 +195,16 @@ static void tyresolve(Inferstate *st, Type *t)
 static Type *tf(Inferstate *st, Type *t)
 {
     Type *lu;
+    Stab *ns;
 
     assert(t != NULL);
     lu = NULL;
     while (1) {
         if (!tytab[t->tid] && t->type == Tyunres) {
+            ns = curstab();
+            if (t->name->name.ns) {
+                ns = getns_str(ns, t->name->name.ns);
+            }
             if (!(lu = gettype(curstab(), t->name)))
                 fatal(t->name->line, "Could not resolve type %s", namestr(t->name));
             tytab[t->tid] = lu;
@@ -234,11 +239,11 @@ static Type *littype(Node *n)
     if (n->lit.type)
         return n->lit.type;
     switch (n->lit.littype) {
-        case Lchr:      return mkty(n->line, Tychar);                           break;
-        case Lbool:     return mkty(n->line, Tybool);                           break;
+        case Lchr:      return mktype(n->line, Tychar);                           break;
+        case Lbool:     return mktype(n->line, Tybool);                           break;
         case Lint:      return tylike(mktyvar(n->line), Tyint);                 break;
         case Lflt:      return tylike(mktyvar(n->line), Tyfloat32);             break;
-        case Lstr:      return mktyslice(n->line, mkty(n->line, Tybyte));       break;
+        case Lstr:      return mktyslice(n->line, mktype(n->line, Tybyte));       break;
         case Lfunc:     return n->lit.fnval->func.type;                         break;
         case Lseq:      return NULL; break;
     };
@@ -712,7 +717,7 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
             t = type(st, args[0]);
             for (i = 1; i < nargs; i++)
                 unify(st, n, t, type(st, args[i]));
-            settype(st, n, mkty(-1, Tybool));
+            settype(st, n, mktype(-1, Tybool));
             break;
 
         /* reach into a type and pull out subtypes */
@@ -759,11 +764,11 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
             if (nargs)
                 t = unify(st, n, ret, type(st, args[0]));
             else
-                t =  unify(st, n, mkty(-1, Tyvoid), ret);
+                t =  unify(st, n, mktype(-1, Tyvoid), ret);
             settype(st, n, t);
             break;
         case Ojmp:     /* goto void* -> void */
-            settype(st, n, mkty(-1, Tyvoid));
+            settype(st, n, mktype(-1, Tyvoid));
             break;
         case Ovar:      /* a:@a -> @a */
             /* if we created this from a namespaced var, the type should be
@@ -819,7 +824,7 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
             settype(st, n, type(st, args[0]));
             break;
         case Olbl:      /* :lbl -> void* */
-            settype(st, n, mktyptr(n->line, mkty(-1, Tyvoid)));
+            settype(st, n, mktyptr(n->line, mktype(-1, Tyvoid)));
         case Obad: case Ocjmp: case Oset:
         case Oslbase: case Osllen:
         case Oblit: case Numops:
@@ -840,7 +845,7 @@ static void inferfunc(Inferstate *st, Node *n)
     infernode(st, n->func.body, n->func.type->sub[0], &sawret);
     /* if there's no return stmt in the function, assume void ret */
     if (!sawret)
-        unify(st, n, type(st, n)->sub[0], mkty(-1, Tyvoid));
+        unify(st, n, type(st, n)->sub[0], mktype(-1, Tyvoid));
 }
 
 static void inferdecl(Inferstate *st, Node *n)
@@ -982,9 +987,9 @@ static Type *tyfix(Inferstate *st, Node *ctx, Type *t)
     char buf[1024];
 
     if (!tyint)
-        tyint = mkty(-1, Tyint);
+        tyint = mktype(-1, Tyint);
     if (!tyflt)
-        tyflt = mkty(-1, Tyfloat64);
+        tyflt = mktype(-1, Tyfloat64);
 
     t = tf(st, t);
     if (t->type == Tyvar) {

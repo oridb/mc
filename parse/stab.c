@@ -59,7 +59,7 @@ Stab *mkstab()
     Stab *st;
 
     st = zalloc(sizeof(Stab));
-    st->ns = mkht(namehash, nameeq);
+    st->ns = mkht(strhash, streq);
     st->dcl = mkht(namehash, nameeq);
     st->ty = mkht(namehash, nameeq);
     st->uc = mkht(namehash, nameeq);
@@ -90,7 +90,7 @@ Node *getdcl(Stab *st, Node *n)
 Type *gettype(Stab *st, Node *n)
 {
     Tydefn *t;
-    
+
     do {
         if ((t = htget(st->ty, n)))
             return t->type;
@@ -102,7 +102,7 @@ Type *gettype(Stab *st, Node *n)
 Ucon *getucon(Stab *st, Node *n)
 {
     Ucon *uc;
-    
+
     do {
         if ((uc = htget(st->uc, n)))
             return uc;
@@ -114,7 +114,7 @@ Ucon *getucon(Stab *st, Node *n)
 Cstr *getcstr(Stab *st, Node *n)
 {
     Cstrdefn *c;
-    
+
     do {
         if ((c = htget(st->ty, n)))
             return c->cstr;
@@ -123,18 +123,23 @@ Cstr *getcstr(Stab *st, Node *n)
     return NULL;
 }
 
-Stab *getns(Stab *st, Node *n)
+Stab *getns_str(Stab *st, char *name)
 {
     Stab *s;
 
-    if (nameeq(st->name, n))
+    if (!strcmp(namestr(st->name), name))
         return st;
     do {
-        if ((s = htget(st->ns, n)))
+        if ((s = htget(st->ns, name)))
             return s;
         st = st->super;
     } while (st);
     return NULL;
+}
+
+Stab *getns(Stab *st, Node *n)
+{
+    return getns_str(st, namestr(n));
 }
 
 void putdcl(Stab *st, Node *s)
@@ -199,7 +204,7 @@ void putns(Stab *st, Stab *scope)
     s = getns(st, scope->name);
     if (s)
         fatal(scope->name->line, "Ns %s already defined", namestr(s->name));
-    htput(st->ns, scope->name, scope);
+    htput(st->ns, namestr(scope->name), scope);
 }
 
 void updatens(Stab *st, char *name)
