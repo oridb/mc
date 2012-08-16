@@ -62,7 +62,7 @@ type rng = struct
 const mksrng = {seed
 	var rng
 
-	rng = bytealloc(sizeof(rng)) castto(rng*)
+	rng = alloc()
 	init(rng, seed)
 	-> rng
 }

@@ -24,6 +24,7 @@ const main = {
 	;;
 	std.write(1, "Hello, 世界\n")
 	chartypes()
+	testrng()
 	std.put("format output %i %i %s %s\n", 123, 321, "asdf", "מִלָּה")
 	std.put("format with no args\n")
 }
@@ -53,5 +54,15 @@ const chartypes = {
 	;;
 	if !std.encode(buf[0:3], -1)
 		std.write(1, "couldn't encode\n")
+	;;
+}
+
+const testrng = {
+	var r : std.rng*
+	var i
+
+	r = std.mksrng(42)
+	for i = 0; i < 10; i++
+		std.put("r[%i] = %i\n", i, std.rand32(r))
 	;;
 }
