@@ -25,7 +25,7 @@ size_t ncstrs;
 /* Built in type constraints */
 static Cstr *tycstrs[Ntypes + 1][4];
 
-Type *mkty(int line, Ty ty)
+Type *mktype(int line, Ty ty)
 {
     Type *t;
     int i;
@@ -51,7 +51,7 @@ Type *tydup(Type *t)
 {
     Type *r;
 
-    r = mkty(t->line, t->type);
+    r = mktype(t->line, t->type);
     r->resolved = 0; /* re-resolving doesn't hurt */
     r->cstrs = bsdup(t->cstrs);
     r->nsub = t->nsub;
@@ -105,7 +105,7 @@ Type *mktyvar(int line)
 {
     Type *t;
 
-    t = mkty(line, Tyvar);
+    t = mktype(line, Tyvar);
     return t;
 }
 
@@ -113,7 +113,7 @@ Type *mktyparam(int line, char *name)
 {
     Type *t;
 
-    t = mkty(line, Typaram);
+    t = mktype(line, Typaram);
     t->pname = strdup(name);
     return t;
 }
@@ -123,7 +123,7 @@ Type *mktynamed(int line, Node *name)
     Type *t;
 
     /* resolve it in the type inference stage */
-    t = mkty(line, Tyunres);
+    t = mktype(line, Tyunres);
     t->name = name;
     return t;
 }
@@ -132,7 +132,7 @@ Type *mktyalias(int line, Node *name, Type *base)
 {
     Type *t;
 
-    t = mkty(line, Tyname);
+    t = mktype(line, Tyname);
     t->name = name;
     t->nsub = 1;
     t->cstrs = bsdup(base->cstrs);
@@ -145,7 +145,7 @@ Type *mktyarray(int line, Type *base, Node *sz)
 {
     Type *t;
 
-    t = mkty(line, Tyarray);
+    t = mktype(line, Tyarray);
     t->nsub = 1;
     t->nmemb = 1; /* the size is a "member" */
     t->sub = xalloc(sizeof(Type*));
@@ -159,7 +159,7 @@ Type *mktyslice(int line, Type *base)
 {
     Type *t;
 
-    t = mkty(line, Tyslice);
+    t = mktype(line, Tyslice);
     t->nsub = 1;
     t->sub = xalloc(sizeof(Type*));
     t->sub[0] = base;
@@ -170,7 +170,7 @@ Type *mktyidxhack(int line, Type *base)
 {
     Type *t;
 
-    t = mkty(line, Tyvar);
+    t = mktype(line, Tyvar);
     t->nsub = 1;
     t->sub = xalloc(sizeof(Type*));
     t->sub[0] = base;
@@ -181,7 +181,7 @@ Type *mktyptr(int line, Type *base)
 {
     Type *t;
 
-    t = mkty(line, Typtr);
+    t = mktype(line, Typtr);
     t->nsub = 1;
     t->sub = xalloc(sizeof(Type*));
     t->sub[0] = base;
@@ -193,7 +193,7 @@ Type *mktytuple(int line, Type **sub, size_t nsub)
     Type *t;
     size_t i;
 
-    t = mkty(line, Tytuple);
+    t = mktype(line, Tytuple);
     t->nsub = nsub;
     t->sub = xalloc(nsub*sizeof(Type));
     for (i = 0; i < nsub; i++)
@@ -206,7 +206,7 @@ Type *mktyfunc(int line, Node **args, size_t nargs, Type *ret)
     Type *t;
     size_t i;
 
-    t = mkty(line, Tyfunc);
+    t = mktype(line, Tyfunc);
     t->nsub = nargs + 1;
     t->sub = xalloc((1 + nargs)*sizeof(Type));
     t->sub[0] = ret;
@@ -219,7 +219,7 @@ Type *mktystruct(int line, Node **decls, size_t ndecls)
 {
     Type *t;
 
-    t = mkty(line, Tystruct);
+    t = mktype(line, Tystruct);
     t->nsub = 0;
     t->nmemb = ndecls;
     t->sdecls = memdup(decls, ndecls*sizeof(Node *));
@@ -230,7 +230,7 @@ Type *mktyunion(int line, Ucon **decls, size_t ndecls)
 {
     Type *t;
 
-    t = mkty(line, Tyunion);
+    t = mktype(line, Tyunion);
     t->nmemb = ndecls;
     t->udecls = decls;
     return t;
@@ -526,7 +526,7 @@ void tyinit(Stab *st)
  * constraints, otherwise they will have no constraints set on them. */
 #define Ty(t, n) \
     if (t != Ntypes) {\
-      ty = mkty(-1, t); \
+      ty = mktype(-1, t); \
       if (n) { \
           puttype(st, mkname(-1, n), ty); \
       } \

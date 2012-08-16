@@ -1,0 +1,19 @@
+type s1 = struct
+	x : s2
+;;
+
+type s2 = struct
+	a : int
+	b : int
+;;
+
+const main = {
+	var s1 : s1
+	var s2 : s2
+
+	s1.x.a = 1
+	s1.x.b = 2
+	s2 = s1.x
+
+	-> s2.a + s2.b
+}
