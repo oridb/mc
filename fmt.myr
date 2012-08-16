@@ -50,7 +50,7 @@ const bfmtv = {buf, fmt, ap
 				;;
 			'w':
 				(w_val, ap) = vanext(ap)
-				n += intfmt(buf[n:], i_val castto(int64), 10)
+				n += intfmt(buf[n:], w_val castto(int64), 10)
 				;;
 			'i':
 				(i_val, ap) = vanext(ap)
@@ -58,7 +58,7 @@ const bfmtv = {buf, fmt, ap
 				;;
 			'l':
 				(l_val, ap) = vanext(ap)
-				n += intfmt(buf[n:], i_val castto(int64), 10)
+				n += intfmt(buf[n:], l_val castto(int64), 10)
 				;;
 			'p':
 				(p_val, ap) = vanext(ap)

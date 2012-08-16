@@ -63,6 +63,6 @@ const testrng = {
 
 	r = std.mksrng(10)
 	for i = 0; i < 10; i++
-		std.put("r[%i] = %i\n", i, std.rand32(r))
+		std.put("r[%i] = %l\n", i, std.rand32(r) castto(int64))
 	;;
 }
