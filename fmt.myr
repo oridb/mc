@@ -95,7 +95,11 @@ const intfmt = {buf, val, base
 	i = 0
 	if val < 0
 		isneg = true
-	elif val == 0
+	else
+		isneg = false
+	;;
+
+	if val == 0
 		b[0] = '0'
 		i++
 	;;

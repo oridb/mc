@@ -61,7 +61,7 @@ const testrng = {
 	var r : std.rng*
 	var i
 
-	r = std.mksrng(42)
+	r = std.mksrng(10)
 	for i = 0; i < 10; i++
 		std.put("r[%i] = %i\n", i, std.rand32(r))
 	;;
