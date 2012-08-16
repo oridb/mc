@@ -282,6 +282,7 @@ generictype
              constrainwith($$, $3->name.name);}
         | Ttyparam Twith Toparen typaramlist Tcparen
             {size_t i;
+             $$ = mktyparam($1->line, $1->str);
              for (i = 0; i < $4.nn; i++)
                 constrainwith($$, $4.nl[i]->name.name);}
         ;
