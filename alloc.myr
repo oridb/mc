@@ -6,7 +6,7 @@ pkg std =
 	generic alloc	: (		-> @a*)
 	generic free	: (v:@a*	-> void)
 
-	generic mkslice	: (n : size	-> @a[:])
+	generic mkslice	: (len : size	-> @a[:])
 	generic freeslice: (sl : @a[:]	-> void)
 
 	const bytealloc	: (sz:size	-> byte*)
@@ -53,11 +53,11 @@ generic free = {v:@a* -> void
 	bytefree(v castto(byte*), sizeof(@a))
 }
 
-generic mkslice = {n
+generic mkslice = {len
 	var p
 
-	p = bytealloc(n*sizeof(@a)) castto(@a*)
-	-> p[0:n]
+	p = bytealloc(len*sizeof(@a)) castto(@a*)
+	-> p[0:len]
 }
 
 generic freeslice = {sl
