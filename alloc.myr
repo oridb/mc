@@ -35,10 +35,10 @@ type bucket = struct
 ;;
 
 type slab = struct
-	head	: byte* /* head of virtual addresses, so we don't leak address space */
-	next	: slab* /* the next slab on the chain */
+	head		: byte*	/* head of virtual addresses, so we don't leak address space */
+	next		: slab*	/* the next slab on the chain */
 	freehd	: chunk*	/* the nodes we're allocating */
-	nfree	: size  /* the number of free nodes */
+	nfree	: size	/* the number of free nodes */
 ;;
 
 type chunk = struct	/* NB: must be smaller than sizeof(slab) */
