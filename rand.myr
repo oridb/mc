@@ -3,7 +3,7 @@ use "fmt.use"
 use "types.use"
 use "alloc.use"
 /*
-   Translated by Ori Bernstein
+   Translated from C by Ori Bernstein
  */
 
 /* 
