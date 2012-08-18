@@ -1,3 +1,4 @@
+/* operator name, is it pure */
 O(Obad, 1)
 O(Oadd, 1)
 O(Osub, 1)
@@ -48,7 +49,8 @@ O(Ojmp, 1)
 O(Ovar, 1)
 O(Olit, 1)
 O(Olbl, 1)
-O(Ocons, 1)
+O(Oucon, 1)
+O(Ouget, 1)
 O(Otup, 1)
 O(Oarr, 1)
 /* backend-only */

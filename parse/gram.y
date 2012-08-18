@@ -447,9 +447,9 @@ castexpr: unionexpr Tcast Toparen type Tcparen
 
 unionexpr
         : Ttick name borexpr
-            {$$ = mkexpr($1->line, Ocons, $2, $3, NULL);}
+            {$$ = mkexpr($1->line, Oucon, $2, $3, NULL);}
         | Ttick name
-            {$$ = mkexpr($1->line, Ocons, $2, NULL);}
+            {$$ = mkexpr($1->line, Oucon, $2, NULL);}
         | borexpr
         ;
 
@@ -659,9 +659,9 @@ pat     : unionpat {$$ = $1;}
         ;
 
 unionpat: Ttick Tident pat
-            {$$ = mkexpr($1->line, Ocons, mkname($2->line, $2->str), $3, NULL);}
+            {$$ = mkexpr($1->line, Oucon, mkname($2->line, $2->str), $3, NULL);}
         | Ttick Tident
-            {$$ = mkexpr($1->line, Ocons, mkname($2->line, $2->str), NULL);}
+            {$$ = mkexpr($1->line, Oucon, mkname($2->line, $2->str), NULL);}
         ;
 
 block   : body Tendblk

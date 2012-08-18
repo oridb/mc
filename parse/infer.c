@@ -675,7 +675,7 @@ static void inferpat(Inferstate *st, Node *n, Node ***bind, size_t *nbind)
         if (args[i]->type == Nexpr)
             inferpat(st, args[i], bind, nbind);
     switch (exprop(n)) {
-        case Ocons:
+        case Oucon:
             uc = uconresolve(st, n);
             if (uc->etype)
                 unify(st, n, uc->etype, type(st, args[1]));
@@ -868,7 +868,7 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
                 lappend(&st->genericdecls, &st->ngenericdecls, s);
             }
             break;
-        case Ocons:
+        case Oucon:
             uc = uconresolve(st, n);
             if (uc->etype)
                 unify(st, n, uc->etype, type(st, args[1]));
@@ -899,6 +899,7 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
         case Oslbase: case Osllen:
         case Oblit: case Numops:
         case Otrunc: case Oswiden: case Ozwiden:
+        case Ouget:
             die("Should not see %s in fe", opstr(exprop(n)));
             break;
     }

@@ -411,7 +411,7 @@ static Ucon *finducon(Node *n)
     Ucon *uc;
 
     t = tybase(n->expr.type);
-    if (exprop(n) != Ocons)
+    if (exprop(n) != Oucon)
         return NULL;
     for (i = 0; i  < t->nmemb; i++) {
         uc = t->udecls[i];
@@ -426,7 +426,7 @@ static Node *uconid(Node *n, size_t off)
 {
     Ucon *uc;
 
-    if (exprop(n) != Ocons)
+    if (exprop(n) != Oucon)
         return load(addk(addr(n, mktype(n->line, Tyuint)), off));
 
     uc = finducon(n);
@@ -435,7 +435,7 @@ static Node *uconid(Node *n, size_t off)
 
 static Node *uval(Node *n, size_t off, Type *t)
 {
-    if (exprop(n) == Ocons)
+    if (exprop(n) == Oucon)
         return n->expr.args[1];
     else if (exprop(n) == Olit)
         return n;
@@ -940,6 +940,11 @@ static Node *simpucon(Simp *s, Node *n, Node *dst)
     return tmp;
 }
 
+static Node *simpuget(Simp *s, Node *n, Node *dst)
+{
+    die("No uget simplification yet");
+}
+
 /* simplifies 
  *      a || b
  * to
@@ -1036,8 +1041,11 @@ static Node *rval(Simp *s, Node *n, Node *dst)
                 r = load(t);
             }
             break;
-        case Ocons:
+        case Oucon:
             r = simpucon(s, n, dst);
+            break;
+        case Ouget:
+            r = simpuget(s, n, dst);
             break;
         case Otup:
             r = simptup(s, n, dst);
