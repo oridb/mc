@@ -9,7 +9,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <arpa/inet.h>
 
 #include "parse.h"
 
