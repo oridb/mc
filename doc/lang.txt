@@ -4,7 +4,7 @@
 
 TABLE OF CONTENTS:
 
-    1. OVERVIEW
+    1. ABOUT
     2. LEXICAL CONVENTIONS
     3. SYNTAX
         3.1. Declarations
@@ -20,7 +20,7 @@ TABLE OF CONTENTS:
     8. GRAMMAR
     9. FUTURE DIRECTIONS
 
-1. OVERVIEW:
+1. ABOUT:
 
         Myrddin is designed to be a simple, low level programming
         language.  It is designed to provide the programmer with
