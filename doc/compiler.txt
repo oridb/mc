@@ -9,10 +9,23 @@ TABLE OF CONTENTS:
         2.1. Lexing
         2.2. Parsing
         2.3. Type checking
+        2.4. Generic Specialization
+        2.5. Serialization
+        2.6. Usefiles
     3. FLATTENING
+        3.1. Control Flow
+        3.2. Complex Expressions
     4. OPTIMIZATION
+        4.1. Constant Folding
     5. CODE GENERATION
+        5.1. Instruction Selection
+        5.2. Register Allocation
     6. TUTORIAL: ADDING A STATEMENT
+        6.1. Stubbing in the node types
+        6.2. Parsing
+        6.3. Flattening
+        6.4. Optimization
+        6.5. Instruction Selection
 
 1. OVERVIEW:
 
@@ -96,11 +109,11 @@ TABLE OF CONTENTS:
         Type checking is done through unification of types. It's implemented
         in parse/infer.c 
 
-    2.4. Speciaization:
+    2.4. Generic Specialization:
 
-    2.4. Serialization:
+    2.5. Serialization:
 
-    2.5. Use Files:
+    2.6. Usefiles:
 
 3. FLATTENING:
 
