@@ -1,0 +1,64 @@
+.TH MC2 1
+.SH NAME
+6m
+.SH SYNOPSIS
+.B 6m
+.I -[hioS]
+.I [file...]
+.br
+.SH DESCRIPTION
+.PP
+The ?m family of compilers compile Myrddin source into object files
+for the corresponding architecture. There is one compiler for each
+architecture supported, with a unique name. By default, if the input
+file is named
+.I filename.myr
+then the the object file that is generated will be named
+.I filename.o.
+If the filename does not end with the suffix
+.I .myr
+then the suffix
+.I .o
+will simply be appended to it.
+
+.PP
+The following architectures are currently supported:
+.TP 
+6m
+x86-64
+
+.PP
+The compiler options are as follows:
+
+.TP
+.B -d [flTri]
+Prints debugging dumps. Additional options may be given to give more
+debugging information for specific intermediate states of the compilation.
+
+.TP
+.B -h
+Prints a summary of the available options.
+
+.TP
+.B -I path
+Add 'path' to the search path for unquoted use statments. This option
+does not affect the search path for local usefiles, which are always
+searched relative to the compiler's current working directory. Without
+any options, the search path defaults to /usr/include/myr.
+
+.TP
+.B -o output-file
+Specifies that the generated code should be placed in
+
+.TP
+.B -S
+Generate assembly instead of an object file.
+
+.SH EXAMPLE
+
+.SH FILES
+
+.SH SEE ALSO
+
+.SH BUGS
+
