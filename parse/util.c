@@ -93,8 +93,7 @@ char *strjoin(char *u, char *v)
 
     n = strlen(u) + strlen(v) + 1;
     s = xalloc(n);
-    strcpy(s, u);
-    strcat(s, v);
+    snprintf(s, n + 1, "%s%s", u, v);
     return s;
 }
 
@@ -352,12 +351,12 @@ char *swapsuffix(char *buf, size_t sz, char *s, char *suf, char *swap)
         die("swapsuffix: buf too small");
 
     buf[0] = '\0';
+    /* if we have matching suffixes */
     if (suflen < slen && !strcmp(suf, &s[slen - suflen])) {
         strncat(buf, s, slen - suflen);
-        strcat(buf, swap);
+        strncat(buf, swap, suflen);
     } else {
-        strncat(buf, s, slen);
-        strcat(buf, swap);
+        snprintf(buf, sz, "%s%s", s, swap);
     }
 
     return buf;

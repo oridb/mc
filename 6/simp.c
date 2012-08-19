@@ -194,14 +194,14 @@ static char *asmname(Node *n)
     len = strlen(Fprefix);
     if (n->name.ns)
         len += strlen(n->name.ns) + 1; /* +1 for separator */
-    len += strlen(n->name.name);
+    len += strlen(n->name.name) + 1;
 
     s = xalloc(len + 1);
     s[0] = '\0';
-    sprintf(s, "%s", Fprefix);
+    snprintf(s, len, "%s", Fprefix);
     if (n->name.ns)
-        sprintf(s, "%s%s$", s, n->name.ns);
-    sprintf(s, "%s%s", s, n->name.name);
+        snprintf(s, len, "%s%s$", s, n->name.ns);
+    snprintf(s, len, "%s%s", s, n->name.name);
     return s;
 }
 
