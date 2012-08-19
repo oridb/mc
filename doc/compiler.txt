@@ -186,9 +186,9 @@ TABLE OF CONTENTS:
 
     2.6. Usefiles:
 
-        Usefiles use tags that tell us what type of tree to deserialize.
-        Because serialized trees are compiler version dependant, so are
-        usefiles.
+        Usefiles are more or less files that consist of a single character tag
+        that tells us what type of tree to deserialize.  Because serialized
+        trees are compiler version dependant, so are usefiles.
 
 3. FLATTENING:
 
