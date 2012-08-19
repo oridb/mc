@@ -193,11 +193,42 @@ TABLE OF CONTENTS:
 3. FLATTENING:
 
     This phase is invoked repeatedly on each top level declaration that we
-    want to generate code for. 
+    want to generate code for. There is a good chance that this flattening
+    phase should be made machine independent, and passed as a parameter
+    a machine description describing known integer and pointer sizes, among
+    other machine attributes. However, for now, it is machine dependent,
+    and lives in 6/simp.c.
+
+    The goal of flattening a tree is to take semantically involved constructs
+    such as looping, and simplify things into something that is easy to
+    generate code for, as well as something that is easier to analyze for
+    optimization.
 
     3.1. Control Flow:
 
-        All control flow is simplified to 
+        All if statements, loops, and other complex constructs are simplified
+        to jumps and conditional jumps. Loops are generally simplified from
+        something that would look like this:
+
+            loop
+                init
+                cond
+                inc
+                body
+
+        To something that would look like this:
+
+                init
+                jmp cond
+            .loop:
+                body
+                inc
+            .cond:
+                cjmp cond .loop .end
+            .end:
+
+        Boolean expressions are simplified as described in section 8.4 of the
+        Dragon book[1]
 
     3.2. Complex Expressions:
 
@@ -222,4 +253,5 @@ TABLE OF CONTENTS:
 
     6.5. Instruction Selection:
 
-
+[1] Aho, Sethi, Ullman: Compilers: Principles, Techniques, and Tools, 1988.
+        ISBN 0-201-10088-6

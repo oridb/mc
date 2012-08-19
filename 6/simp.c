@@ -1282,6 +1282,7 @@ static Func *simpfn(Simp *s, char *name, Node *n, int export)
             printf("END ----------------\n");
         }
     }
+
     cfg = mkcfg(s->stmts, s->nstmts);
     if (debug)
         dumpcfg(cfg, stdout);
