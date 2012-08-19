@@ -7,7 +7,7 @@ TABLE OF CONTENTS:
     1. OVERVIEW
     2. PARSING
         2.1. Lexing
-        2.2. Parsing
+        2.2. AST Creation
         2.3. Type checking
         2.4. Generic Specialization
         2.5. Serialization
@@ -96,7 +96,7 @@ TABLE OF CONTENTS:
         character, matching the values read, and shoving them into the 'Tok'
         data structure.
 
-    2.2. Parsing:
+    2.2. AST Creation:
 
         The parser used is a traditional Yacc based parser. It is generated
         from the source in parse/gram.y. The starting production is 'file',
@@ -107,18 +107,99 @@ TABLE OF CONTENTS:
     2.3. Type Checking:
 
         Type checking is done through unification of types. It's implemented
-        in parse/infer.c 
+        in parse/infer.c. It proceeds through a simple unification algorithm,
+        which is documented in lang.txt. As a result, only the internal
+        details of this algorithm will be discussed here.
+
+        The first step done is loading and resolving use files. This is
+        deferred to the type checking phase for two reasons. First, we
+        do not want to force tools to have all dependencies compiled if they
+        use this parser, even though type full type checking is impossible
+        until all usefiles are loaded. And second, this is when the
+        information is actually needed.
+
+        Next, the types declared in the package section are merged with the
+        exported types, allowing us to start off with our type information as
+        complete as possible, and making sure that the types of globals
+        actually match up with the exported types.
+        
+        The next step is the actual type inference. We do a bottom up walk of
+        the tree, unifying types as we go. There are subtleties with the
+        member operator, however. Because the '.' operator is used for both
+        member lookups and namespace lookups, before we descend into a node
+        that has operator Omemb, we need to check if it's a namespaced name,
+        or an actual member reference. If it is a namespaced name, we replace
+        the expression with an Ovar expression. This check happens in the 
+        'checkns()' function. Second, because we need to know the LHS of a
+        member expression before we can check if the RHS is valid, and we
+        are not guaranteed to know this at the first time that we see it, the
+        expression is assumed to be valid, and this asumption is verified in
+        a post-processing pass. Casts are validated in a deferred manner
+        similarly.
+
+        Generic variables are added to a list of generic callsites to
+        specialize when they are seen in as a leaf of an Ovar node.
+
+        The type inference, to this point, has only built up a mapping
+        of types. So, for example, if we were to have the inferred types
+        for the following set of statements:
+
+            var a
+            var b
+            var c
+            a = b
+            c = b + 1
+
+        We would have the mappings:
+
+            $t0 -> $t1
+            $t1 -> $t2
+            $t2 -> int
+
+        So, in the 'typesub()' function, we iterate over the entire tree,
+        replacing every instance of a non-concrete type with the final
+        mapped type. If a type does not map to a fully concrete type,
+        this is where we error.
+
+        FIXME: DESCRIBE HOW YOU FIXED GENERICS ONCE YOU FIX GENERICS.
 
     2.4. Generic Specialization:
 
+        After type inference (well, technially, as the final step of it),
+        we walk through the list of callsites that need instantiations
+        of generics, and create a specialized generic instance for each of
+        them. This specialization is done, unsurprisingly, in specialize.c,
+        by the simple algorithm of cloning the entire tree that needs to
+        be specialized, and walking over all nodes substituting the types
+        that are replacing the type parameters.
+
     2.5. Serialization:
 
+        Trees of all sorts can be serialized and deserialized from files,
+        as long as they are fully typed. Trees containing type variables (ie,
+        uninferred types) cannot be serialized, as type variables cannot be
+        deserialized meaningfully.
+
+        The format for this is only documented in the source, and is a
+        straighforward dump of the trees to memory. It is constantly shifting,
+        and will not reliably work between compiler versions.
+
     2.6. Usefiles:
+
+        Usefiles use tags that tell us what type of tree to deserialize.
+        Because serialized trees are compiler version dependant, so are
+        usefiles.
 
 3. FLATTENING:
 
     This phase is invoked repeatedly on each top level declaration that we
     want to generate code for. 
+
+    3.1. Control Flow:
+
+        All control flow is simplified to 
+
+    3.2. Complex Expressions:
 
 4. OPTIMIZATION:
 
