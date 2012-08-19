@@ -55,10 +55,30 @@ Specifies that the generated code should be placed in
 Generate assembly instead of an object file.
 
 .SH EXAMPLE
+.EX
+    6m foo.myr
+    6m bar.myr
+    ld -o foobar foo.o bar.o
+.EE
 
 .SH FILES
+The source for this compiler is available from
+.B git://git.eigenstate.org/git/ori/mc2.git
 
 .SH SEE ALSO
+.IR muse(1)
+.IR ld(1)
+.IR as(1)
 
 .SH BUGS
-
+.PP
+The language is not yet complete, and the compilers often omit useful
+constructs in spite of their desirability.
+.PP
+There are virtually no optimizations done, and the generated source is
+often very poorly performing.
+.PP
+The current calling convention is stack, and not register, based, even
+on architectures where it should be register based.
+.PP
+The calling convention is not C compatible.
