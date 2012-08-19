@@ -47,7 +47,9 @@ static void dumpuse(char *path)
 static void genuse(char *path)
 {
     Stab *globls;
+    char *p;
     FILE *f;
+    char buf[1024];
 
     globls = file->file.globls;
     tyinit(globls);
@@ -55,9 +57,13 @@ static void genuse(char *path)
     yyparse();
 
     infer(file);
-    if (!outfile)
-        die("need output file name right now. FIX THIS.");
-    f = fopen(outfile, "w");
+    if (outfile) {
+        p = outfile;
+    } else {
+        swapsuffix(buf, sizeof buf, path, ".myr", ".use");
+        p = buf;
+    }
+    f = fopen(p, "w");
     writeuse(f, file);
     fclose(f);
 }
@@ -109,6 +115,11 @@ int main(int argc, char **argv)
     }
 
     if (merge) {
+        if (!outfile) {
+            fprintf(stderr, "Output file needed when merging usefiles.");
+            exit(1);
+        }
+
         file = mkfile("internal");
         file->file.exports = mkstab();
         file->file.globls = mkstab();
