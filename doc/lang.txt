@@ -577,21 +577,75 @@ TABLE OF CONTENTS:
         from the type system perspective into a small set of classes. and define
         the constraints that they require.
 
-            num-binop:
+        Type inference in Myrddin operates as a bottom up tree walk,
+        applying the type equations for the operator to its arguments.
+        It begins by initializing all leaf nodes with the most specific
+        known type for them as follows:
+
+        3.6.1 Types for leaf nodes:
+
+            Variable        Type 
+            ----------------------
+            var foo         $t
+            
+                A type variable is the most specific type for a declaration
+                or function without any specified type
+
+            var foo : t     t
+            
+                If a type is specified, that type is taken for the
+                declaration.
+
+            "asdf"          byte[:]
+
+                String literals are byte arrays.
+
+
+            'a'             char
+
+                Char literals are of type 'char'
+
+            true            bool
+            false           bool    
+
+                true/false are boolean literals
+
+            123             $t::(tcint,tcnum,tctest)
+
+                Integer literals get a fresh type variable of type with
+                the constraints for int-like types.
+            
+            123.1           $t::(tcfloat,tcnum,tctest)
+
+                Float literals get a fresh type variable of type with
+                the constraints for float-like types.
+
+            {a,b:t; }       ($a,t -> $b)
+
+                Function literals get the most specific type that can
+                be determined by their signature.
+
+
+        num-binop:
+
                 +           -               *               /               %
                 +=          -=              *=              /=              %
-            num-unary:
-                -           +
 
-            int-binop:
-                |           &               ^               <<              >>
-                |=          &=              ^=              <<=             >>
-            int-unary:
-                ~           ++              --
+            Number binops require the constraint 'tcnum' for both the 
+            
+        num-unary:
+            -           +
+            Number binops require the constraint 'tcnum'.
 
-            bool-binop:
-                ||          &&              ==              !=
-                <           <=              >               >=
+        int-binop:
+            |           &               ^               <<              >>
+            |=          &=              ^=              <<=             >>
+        int-unary:
+            ~           ++              --
+
+        bool-binop:
+            ||          &&              ==              !=
+            <           <=              >               >=
 
 
     3.7. Packages and Uses:
