@@ -227,19 +227,54 @@ TABLE OF CONTENTS:
                 cjmp cond .loop .end
             .end:
 
-        Boolean expressions are simplified as described in section 8.4 of the
-        Dragon book[1]
+        Boolean expressions are simplified to a location to jump to, as
+        described in section 8.4 of the Dragon book[1].
 
     3.2. Complex Expressions:
 
+        Complex expressions such as copying types larger than a single machine
+        word, pulling members out of structures, emulated multiplication and
+        division for larger integers sizes, and similar operations are reduced
+        to trees that are expressible in terms of simple machine operations.
+
+        By the end of the simplification pass, the following operators should
+        not be present in the trees:
+
+            Obad Oret Opreinc Opostinc Opredec Opostdec Olor Oland Oaddeq
+            Osubeq Omuleq Odiveq Omodeq Oboreq Obandeq Obxoreq Obsleq
+            Obsreq Omemb Oslice Oidx Osize Numops Oucon Ouget Otup Oarr
+            Oslbase Osllen Ocast
+
+
 4. OPTIMIZATION:
 
+    Currently, there is virtually no optimization done on the trees after
+    flattening. The only optimization that is done is constant folding.
+
     4.1. Constant Folding:
+
+        Expressions with constant values are simplified algebraically. For
+        example, the expression 'x*1' is simplified to simply 'x', '0/n' is
+        simplified to '0', and so on.
+
 
 5. CODE GENERATION:
 
     5.1. Instruction Selection:
+
+        Instruction selection is done via a simple hand written bottom up pass
+        over the tree. Common patterns such as scaled or offset indexing are
+        recognized by the patterns, but no attempts at finding an optimal
+        tiling are made.
+
     5.2. Register Allocation:
+
+        Register allocation is done via the algorithm described in "Iterated
+        Regster Coalescing", by Appel and George. As of the time of this
+        writing, the register allocator does not yet implement overlapping
+        register classes. This will be done as described in "A generalized
+        algorithm for graph-coloring register allocation", by Smith, Ramsey,
+        and Holloway.
 
 6: TUTORIAL: ADDING A STATEMENT:
 
