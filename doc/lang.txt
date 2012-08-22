@@ -349,20 +349,20 @@ TABLE OF CONTENTS:
         BUG: There are too many precedence levels.
 
 
-            Precedence 0: (*ok, not really operators)
+            Precedence 14: (*ok, not really operators)
                 (,,,)           Tuple Construction
                 (e)             Grouping
                 name            Bare names
                 literal         Values
 
-            Precedence 1:
+            Precedence 13:
                 x.name          Member lookup
                 x++             Postincrement
                 x--             Postdecrement
                 x[e]            Index
                 x[from,to]      Slice
 
-            Precedence 2:
+            Precedence 12:
                 ++x             Preincrement
                 --x             Predecrement
                 *x              Dereference
@@ -372,33 +372,33 @@ TABLE OF CONTENTS:
                 +x              Positive (no operation)
                 -x              Negate x
 
-            Precedence 3:
+            Precedence 11:
                 x << x          Shift left
                 x >> x          Shift right
 
-            Precedence 4:
+            Precedence 10:
                 x * x           Multiply
                 x / x           Divide
                 x % x           Modulo
 
-            Precedence 5:
+            Precedence 9:
                 x + x           Add
                 x - x           Subtract
                 
-            Precedence 6:
+            Precedence 8:
                 x & y           Bitwise and
 
             Precedence 7:
                 x | y           Bitwise or
-                x ^ y           Bitwise or
+                x ^ y           Bitwise xor
 
-            Precedence 8:
+            Precedence 6:
                 `Name x         Union construction
 
-            Precedence 9:
+            Precedence 5:
                 x casttto(type) Cast expression
 
-            Precedence 10:
+            Precedence 4:
                 x == x          Equality
                 x != x          Inequality
                 x > x           Greater than
@@ -406,13 +406,13 @@ TABLE OF CONTENTS:
                 x < x           Less than
                 x <= x          Less than or equal to
 
-            Precedence 11:
+            Precedence 3:
                 x && x          Logical and
 
-            Precedence 12:
+            Precedence 2:
                 x || x          Logical or
 
-            Precedence 13:
+            Precedence 1:
                 x = x           Assign                  Right assoc
                 x += x          Fused add/assign        Right assoc
                 x -= x          Fused sub/assign        Right assoc
@@ -425,7 +425,7 @@ TABLE OF CONTENTS:
                 x <<= x         Fused shl/assign        Right assoc
                 x >>= x         Fused shr/assign        Right assoc
 
-            Precedence 14:
+            Precedence 0:
                 -> x            Return expression
 
         All expressions on integers act on complement-two values which wrap
