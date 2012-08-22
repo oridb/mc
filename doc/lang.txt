@@ -43,7 +43,7 @@ TABLE OF CONTENTS:
 
     The language is composed of several classes of token. There
     are comments, identifiers, keywords, punctuation, and whitespace.
-    
+
     Comments, begin with "/*" and end with "*/". They may nest.
 
         /* this is a comment /* with another inside */ */
@@ -83,7 +83,7 @@ TABLE OF CONTENTS:
     In the compiler, single semicolons (';') , semicolons and newlines (\x10)
     characters are treated identically, and are therefore interchangable.
     They will both be referred to "endline"s thoughout this manual.
-    
+
 
 3. SYNTAX OVERVIEW:
 
@@ -105,7 +105,7 @@ TABLE OF CONTENTS:
                         modified at run time. Constants must have
                         initializers defined.
             var:        Declares a variable value. This value may be
-                        assigned to, copied from, and 
+                        assigned to, copied from, and
             generic:    Declares a specializable value. This value
                         has the same restricitions as a const, but
                         taking its address is not defined. The type
@@ -125,8 +125,8 @@ TABLE OF CONTENTS:
             and will be inferred:
 
                 const x = 123
-                
-            Declare a variable with no value and no type defined. The 
+
+            Declare a variable with no value and no type defined. The
             value can be assigned later (and must be assigned before use),
             and the type will be inferred.
 
@@ -216,7 +216,7 @@ TABLE OF CONTENTS:
             eg: {a : int, b
                     -> a + b
                 }
-        
+
         Sequence literals describe either an array or a structure
         literal. They begin with a '[', followed by an initializer
         sequence and closing ']'. For array literals, the initializer
@@ -239,10 +239,10 @@ TABLE OF CONTENTS:
             eg: (1,), (1,'b',"three")
 
     3.3. Control Constructs and Blocks:
-    
+
             if          for
             while       match
-            goto        
+            goto
 
         The control statements in Myrddin are similar to those in many other
         popular languages, and with the exception of 'match', there should
@@ -257,10 +257,10 @@ TABLE OF CONTENTS:
         number of declarations, expressions, control constructs, and empty
         lines. Every control statement example below will (and, in fact,
         must) have a block attached to the control statement.
-        
+
         If statements branch one way or the other depending on the truth
         value of their argument. The truth statement is separated from the
-        block body 
+        block body
 
             if true
                 std.put("The program always get here")
@@ -303,7 +303,7 @@ TABLE OF CONTENTS:
                 a value to match against.
 
             - Literal patterns
-                
+
                 Any literal value can be matched against.
 
             - Constant patterns
@@ -384,7 +384,7 @@ TABLE OF CONTENTS:
             Precedence 9:
                 x + x           Add
                 x - x           Subtract
-                
+
             Precedence 8:
                 x & y           Bitwise and
 
@@ -425,7 +425,7 @@ TABLE OF CONTENTS:
                 x <<= x         Fused shl/assign        Right assoc
                 x >>= x         Fused shr/assign        Right assoc
 
-            Precedence 0:
+            Precedence 14:
                 -> x            Return expression
 
         All expressions on integers act on complement-two values which wrap
@@ -445,7 +445,7 @@ TABLE OF CONTENTS:
 
             3.5.1. Primitive types:
 
-                    void        
+                    void
                     bool            char
                     int8            uint8
                     int16           uint16
@@ -498,7 +498,7 @@ TABLE OF CONTENTS:
                 They are reference types that store the length of their
                 contents. They are declared by appending a '[,]' to the base
                 type.
-                    
+
                     foo*        type: pointer to foo
                     foo[123]    type: array of 123 foo
                     foo[,]      type: slice of foo
@@ -528,7 +528,7 @@ TABLE OF CONTENTS:
 
                     struct                      a struct containing an int named
                         a : int                 'a', and a char named 'b'.
-                        b : char                
+                        b : char
                     ;;
 
                     union                       a union containing one of
@@ -567,7 +567,7 @@ TABLE OF CONTENTS:
                                                 named '@foo'.
 
 
-    3.6. 
+    3.6.
 
         The myrddin type system is a system similar to the Hindley Milner
         system, however, types are not implicitly generalized. Instead, type
@@ -584,15 +584,15 @@ TABLE OF CONTENTS:
 
         3.6.1 Types for leaf nodes:
 
-            Variable        Type 
+            Variable        Type
             ----------------------
             var foo         $t
-            
+
                 A type variable is the most specific type for a declaration
                 or function without any specified type
 
             var foo : t     t
-            
+
                 If a type is specified, that type is taken for the
                 declaration.
 
@@ -606,7 +606,7 @@ TABLE OF CONTENTS:
                 Char literals are of type 'char'
 
             true            bool
-            false           bool    
+            false           bool
 
                 true/false are boolean literals
 
@@ -614,7 +614,7 @@ TABLE OF CONTENTS:
 
                 Integer literals get a fresh type variable of type with
                 the constraints for int-like types.
-            
+
             123.1           $t::(tcfloat,tcnum,tctest)
 
                 Float literals get a fresh type variable of type with
@@ -631,8 +631,8 @@ TABLE OF CONTENTS:
                 +           -               *               /               %
                 +=          -=              *=              /=              %
 
-            Number binops require the constraint 'tcnum' for both the 
-            
+            Number binops require the constraint 'tcnum' for both the
+
         num-unary:
             -           +
             Number binops require the constraint 'tcnum'.
@@ -710,7 +710,7 @@ TABLE OF CONTENTS:
                 -> 0
             }
 
-        TODO: DESCRIBE CONSTRUCTS. 
+        TODO: DESCRIBE CONSTRUCTS.
 
     5.2. Conditions
 
@@ -729,7 +729,7 @@ TABLE OF CONTENTS:
                 std.put("The max of %i, %i is %i\n", x, y, max(x, y))
             }
 
-        TODO: DESCRIBE CONSTRUCTS. 
+        TODO: DESCRIBE CONSTRUCTS.
 
     5.3. Looping
 
@@ -746,8 +746,8 @@ TABLE OF CONTENTS:
                 std.put("The inner product is %i\n", innerprod([1,2,3], [4,5,6]))
             }
 
-        TODO: DESCRIBE CONSTRUCTS. 
-        
+        TODO: DESCRIBE CONSTRUCTS.
+
 6. STYLE GUIDE:
 
     6.1. Brevity:
@@ -767,13 +767,13 @@ TABLE OF CONTENTS:
         to what the function does. For functions, a single verb is ideal. For
         local variables, a single character might suffice.  Compact notation
         is simpler to read, typographically.
-        
+
         Variables names should describe the value contained, and function
         names should describe the value returned.
 
             Good: spawn(myfunc)
             Bad:  create_new_thread_starting_at_function(myfunc)
-    
+
         The identifiers used for constant values are put in Initialcase.
         Functions and types are in singleword style, although underscores are
         occasionally necessary to specify additional information within
@@ -801,7 +801,7 @@ TABLE OF CONTENTS:
 
     6.3. Collections:
 
-        
+
 
 7. STANDARD LIBRARY:
 
