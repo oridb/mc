@@ -662,7 +662,7 @@ static void inferseq(Inferstate *st, Node *n)
     settype(st, n, mktyarray(n->line, type(st, n->lit.seqval[0]), mkintlit(n->line, n->lit.nelt)));
 }
 
-static void inferpat(Inferstate *st, Node *n, Node ***bind, size_t *nbind)
+static void inferpat(Inferstate *st, Node *n, Node *val, Node ***bind, size_t *nbind)
 {
     size_t i;
     Ucon *uc;
@@ -693,6 +693,7 @@ static void inferpat(Inferstate *st, Node *n, Node ***bind, size_t *nbind)
             } else {
                 t = mktyvar(n->line);
                 s = mkdecl(n->line, n->expr.args[0], t);
+                s->decl.init = val;
                 settype(st, n, t);
                 lappend(bind, nbind, s);
             }
