@@ -198,10 +198,10 @@ static char *asmname(Node *n)
 
     s = xalloc(len + 1);
     s[0] = '\0';
-    snprintf(s, len, "%s", Fprefix);
     if (n->name.ns)
-        snprintf(s, len, "%s%s$", s, n->name.ns);
-    snprintf(s, len, "%s%s", s, n->name.name);
+        snprintf(s, len, "%s%s$%s", Fprefix, n->name.ns, n->name.name);
+    else
+        snprintf(s, len, "%s%s", Fprefix, n->name.name);
     return s;
 }
 
