@@ -673,7 +673,7 @@ static void inferpat(Inferstate *st, Node *n, Node *val, Node ***bind, size_t *n
     args = n->expr.args;
     for (i = 0; i < n->expr.nargs; i++)
         if (args[i]->type == Nexpr)
-            inferpat(st, args[i], bind, nbind);
+            inferpat(st, val, args[i], bind, nbind);
     switch (exprop(n)) {
         case Oucon:
             uc = uconresolve(st, n);
@@ -1025,7 +1025,7 @@ static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
         case Nmatch:
             bound = NULL;
             nbound = 0;
-            inferpat(st, n->match.pat, &bound, &nbound);
+            inferpat(st, n->match.pat, NULL, &bound, &nbound);
             addbindings(st, n->match.block, bound, nbound);
             infernode(st, n->match.block, ret, sawret);
             break;
