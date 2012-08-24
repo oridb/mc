@@ -132,13 +132,13 @@ TABLE OF CONTENTS:
 
                 var y
 
-            Declares a generic with type '@a', and assigns it the value
+            Declare a generic with type '@a', and assigns it the value
             'blah'. Every place that 'z' is used, it will be specialized,
             and the type parameter '@a' will be substituted.
 
                 generic z : @a = blah
 
-            Declares a function f with and without type inference. Both
+            Declare a function f with and without type inference. Both
             forms are equivalent. 'f' takes two parameters, both of type
             int, and returns their sum as an int
 
