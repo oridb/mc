@@ -5,6 +5,7 @@
 TABLE OF CONTENTS:
 
     1. OVERVIEW
+        1.1. Tree Structure
     2. PARSING
         2.1. Lexing
         2.2. AST Creation
@@ -13,9 +14,8 @@ TABLE OF CONTENTS:
         2.5. Serialization
         2.6. Usefiles
     3. FLATTENING
-        3.1. Flattening Conditionals
-        3.2. Flattening Complex Expressions
-        3.3. Building the Control Flow Graph
+        3.1. Control Flow
+        3.2. Complex Expressions
     4. OPTIMIZATION
         4.1. Constant Folding
     5. CODE GENERATION
@@ -46,8 +46,8 @@ TABLE OF CONTENTS:
 
 
     The compilation is divided into a small number of phases. The first phase
-    is parsing. The first phase is parsing, where the source code is first
-    tokenized, parsed, and semantically checked. The second phase is the
+    is parsing, where the source code is first tokenized, the abstract syntax
+    tree (AST) is generated, and semantically checked. The second phase is the
     machine dependent tree flattening. In this phase, the tree is decomposed
     function by function into simple operations that are relatively close to
     the machine. Sizes are fixed, and all loops, if statements, etc are
@@ -62,11 +62,54 @@ TABLE OF CONTENTS:
         opt             Optimize the flattened source trees
         gen             Generate the assembly code
 
+    1.1. Tree Structure.
+
+        File nodes (n->type == Nfile) represents the being compiled. The current
+        node is held in a global variable called, unsurprisingly, 'file'. The
+        global symbol table, export table, uses, and other compilation-specific
+        information is stored in this node. This implies that the compiler can
+        only process one file at a time.
+
+        Name nodes (n->type == Nname) are simply names, possibly with a namespace
+        attached. They are left as leaf nodes in the tree, specifying variable
+        names, union tags, and just about anything else with a name.
+
+        Use nodes (n->type == Nuse) simply tell the compiler that a usefile by the
+        name stored in this node will be loaded.
+
+        Expression nodes (n->type == Nexpr) represent expressions. They consist of
+        an operator, a type, a few flags, possibly a declaration ID, and a list of
+        arguments.
+        
+        Operators are defined in parse/ops.def, and start with an 'O' by
+        convention; eg: Oadd, Osub, etc.
+        
+        The declaration id (n->expr.did) is only valid on expressions representing
+        a single variable (n->expr.op == Ovar). The DID is a unique identifier
+        representing the declaration node that the variable refers to. This is used
+        for a variety of things, from fast comparisons to allowing us to put the
+        node into a bit set easily.
+
+        Literal nodes (n->type == Nlit) hold a literal value. The type held is
+        stored in littype, which are defined in parse/lits.def.
+
+        The various statement nodes (Nloopstmt, Nifstmt, Nmatchstmt, Nblock,
+        Nlbl) are all statements that may appear within a block node (Nblock).
+
+        Declaration nodes declare a name in a symbol table. TODO: MORE DETAIL.
+
+        Uelt nodes declare a union element. TODO: MORE DETAIL.
+
+        Func nodes declare a function. TODO: MORE DETAIL.
+        
+
 
 2. PARSING:
 
     This phase takes in a source file, and outputs a tree that is guaranteed
-    to be valid.
+    to be valid. The tree nodes are defined in parse/parse.h in struct Node,
+    and have one of the types defined in parse/nodetypes.def. Node types
+    start with 'N' by convention; eg: Nfile, Nifstmt, etc.
 
     2.1. Lexing:
         
@@ -198,15 +241,14 @@ TABLE OF CONTENTS:
     phase should be made machine independent, and passed as a parameter
     a machine description describing known integer and pointer sizes, among
     other machine attributes. However, for now, it is machine dependent,
-    and lives in 6/simp.c, implemented through the callees of simpnode(),
-    such as simpif(), simploop(), and so on.
+    and lives in 6/simp.c.
 
     The goal of flattening a tree is to take semantically involved constructs
     such as looping, and simplify things into something that is easy to
     generate code for, as well as something that is easier to analyze for
     optimization.
 
-    3.1. Flattening Conditionals:
+    3.1. Control Flow:
 
         All if statements, loops, and other complex constructs are simplified
         to jumps and conditional jumps. Loops are generally simplified from
@@ -232,17 +274,12 @@ TABLE OF CONTENTS:
         Boolean expressions are simplified to a location to jump to, as
         described in section 8.4 of the Dragon book[1].
 
-    3.2. Flattening Complex Expressions:
+    3.2. Complex Expressions:
 
-        Complex expressions such as copying types larger than a single
-        machine word, pulling members out of structures, emulated
-        multiplication and division for larger integers sizes, and similar
-        operations are reduced to trees that are expressible in terms of
-        simple machine operations.  This is implemented in lval() and rval()
-        in 6/simp.c, which reduce expressions to lvals (assignable
-        expressions which may appear on the left hand side of an assignemnt)
-        or rvals (value-yeilding expressions which may appear on the right
-        side of an assignment.
+        Complex expressions such as copying types larger than a single machine
+        word, pulling members out of structures, emulated multiplication and
+        division for larger integers sizes, and similar operations are reduced
+        to trees that are expressible in terms of simple machine operations.
 
         By the end of the simplification pass, the following operators should
         not be present in the trees:
@@ -253,81 +290,12 @@ TABLE OF CONTENTS:
             Oslbase Osllen Ocast
 
 
-        After flattening, all nodes must either be pure, or impure roots.
-        With the exception of assignments to a temporary, no inner nodes
-        may be impure. For example, the following sequence of root nodes
-        is valid, as all impure nodes are either roots, or children of
-        rooted assignments to temporaries:
-
-            Oadd
-                Ovar "temp0"
-                Olit int(123)
-            Oasn
-                Ovar "temp1"
-                Ocall
-                    Ovar "func"
-                    Ovar "arg1"
-                    Ovar "arg2"
-            Ocall
-                Ovar "std.put"
-                Olit "some string\n"
-
-        The following tree is invalid because the Ocall node is impure, but
-        it is not the root node or the direct child of a rooted assignment:
-
-            Oasn
-                Ovar "result"
-                Oadd
-                    Ovar "temp0"
-                    Oasn
-                        Ovar "temp1"
-                        Ocall
-                            Ovar "somefunc"
-                            Ovar "arg0"
-                            Ovar "arg1"
-                
-        In order to make it valid, it must be transformed to the following
-        form:
-
-            Oasn
-                Ovar "temp1"
-                Ocall
-                    Ovar "somefunc"
-                    Ovar "arg0"
-                    Ovar "arg1"
-            Oasn
-                Ovar "result"
-                Oadd
-                    Ovar "temp0"
-                    Ovar "temp1"
-
-        Note that Oasn, Oblit, and other assignment nodes may only appear as
-        rooted nodes.
-
-
-    3.3. Building the Control Flow Graph
-
-        Once everything is simplified to relatively flat trees made of
-        primitve operations, a control flow graph is built. The
-        structureless list is split into basic blocks (sequences of
-        instructions where the control flows straight through), and
-        put into the 'Cfg' data structure defined in opt/opt.h. The
-        fact that each Bb within the Cfg has linear flow makes it easier
-        to reason about the code, and thus generate code and implement
-        optimizations.
-
-        This pass is machine independent, as it looks only at the leaders
-        (ie, labels) and trailers (ie, jumps and conditional jumps) for
-        blocks. There are no machine independent components to this process.
-
 4. OPTIMIZATION:
 
     Currently, there is virtually no optimization done on the trees after
-    flattening. The only optimization that is done is constant folding. All
-    optimizations currently operate on a per-function basis, and preserve
-    [or are required to update] the control flow graph.
+    flattening. The only optimization that is done is constant folding.
 
-    4.2. Constant Folding:
+    4.1. Constant Folding:
 
         Expressions with constant values are simplified algebraically. For
         example, the expression 'x*1' is simplified to simply 'x', '0/n' is
@@ -341,16 +309,7 @@ TABLE OF CONTENTS:
         Instruction selection is done via a simple hand written bottom up pass
         over the tree. Common patterns such as scaled or offset indexing are
         recognized by the patterns, but no attempts at finding an optimal
-        tiling are made. This is implemented in 6/isel.c and is very machine
-        specific.
-
-        The structure of the control flow graph is preserved by the
-        instruction selection transformation, with each basic block in the
-        flattened-node flow graph mirrored by an assembly node in the flow
-        graph. This is because there is no need to make the assembly flow
-        graph different when translating, and it is simpler to simply
-        preserve the structure of the flow graph than to rebuild the
-        structure from scratch.
+        tiling are made.
 
     5.2. Register Allocation:
 
@@ -360,9 +319,6 @@ TABLE OF CONTENTS:
         register classes. This will be done as described in "A generalized
         algorithm for graph-coloring register allocation", by Smith, Ramsey,
         and Holloway.
-
-        The full description will not be mirrored here, as the papers do a
-        far more thorough job of describing the algorithm than I could.
 
 6: TUTORIAL: ADDING A STATEMENT:
 
