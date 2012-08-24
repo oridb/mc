@@ -92,8 +92,8 @@ static void outstab(Stab *st, FILE *fd, int depth)
     k = htkeys(st->ns, &n);
     for (i = 0; i < n; i++) {
         indent(fd, depth + 1);
-        fprintf(fd, "N  %s\n", namestr(k[i]));
-        outstab(getns(st, k[i]), fd, depth + 1);
+        fprintf(fd, "N  %s\n", (char*)k[i]);
+        outstab(getns_str(st, k[i]), fd, depth + 1);
     }
     free(k);
 }
