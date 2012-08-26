@@ -41,6 +41,7 @@ typedef enum {
 #define Ty(t, n) t,
 #include "types.def"
 #undef Ty
+    Ntypes
 } Ty;
 
 typedef enum {

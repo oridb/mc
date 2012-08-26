@@ -24,7 +24,7 @@ struct Inferstate {
     /* nodes that need post-inference checking/unification */
     Node **postcheck;
     size_t npostcheck;
-    /* the type parmas bound at the current point */
+    /* the type params bound at the current point */
     Htab **tybindings;
     size_t ntybindings;
     /* generic declarations to be specialized */
