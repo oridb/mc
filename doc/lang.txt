@@ -22,14 +22,14 @@ TABLE OF CONTENTS:
 
 1. ABOUT:
 
-        Myrddin is designed to be a simple, low level programming
+        Myrddin is designed to be a simple, low-level programming
         language.  It is designed to provide the programmer with
         predictable behavior and a transparent compilation model,
         while at the same time providing the benefits of strong
         type checking, generics, type inference, and similar.
         Myrddin is not a language designed to explore the forefront
-        of type theory, or compiler technology. It is not a language
-        that is focused on guaranteeing perfect safety. It's focus
+        of type theory or compiler technology. It is not a language
+        that is focused on guaranteeing perfect safety. Its focus
         is on being a practical, small, fairly well defined, and
         easy to understand language for work that needs to be close
         to the hardware.
@@ -41,10 +41,10 @@ TABLE OF CONTENTS:
 
 2. LEXICAL CONVENTIONS:
 
-    The language is composed of several classes of token. There
+    The language is composed of several classes of tokens. There
     are comments, identifiers, keywords, punctuation, and whitespace.
 
-    Comments, begin with "/*" and end with "*/". They may nest.
+    Comments begin with "/*" and end with "*/". They may nest.
 
         /* this is a comment /* with another inside */ */
 
@@ -80,32 +80,28 @@ TABLE OF CONTENTS:
     the program. There are several literals implemented within the language.
     These are fully described in section 3.2 of this manual.
 
-    In the compiler, single semicolons (';') , semicolons and newlines (\x10)
+    In the compiler, single semicolons (';') and newline (\x10)
     characters are treated identically, and are therefore interchangable.
     They will both be referred to "endline"s thoughout this manual.
 
 
 3. SYNTAX OVERVIEW:
 
-    Myrddin syntax will likely have a familiar-but-strange taste
-    to many people. Many of the concepts and constructions will be
-    similar to those present in C, but different.
-
     3.1. Declarations:
 
-        A declaration consists of a declaration class (ie, one
+        A declaration consists of a declaration class (i.e., one
         of 'const', 'var', or 'generic'), followed by a declaration
         name, optionally followed by a type and assignment. One thing
         you may note is that unlike most other languages, there is no
         special function declaration syntax. Instead, a function is
-        declared like any other value: By assigning its name to a
+        declared like any other value: by assigning its name to a
         constant or variable.
 
             const:      Declares a constant value, which may not be
                         modified at run time. Constants must have
                         initializers defined.
             var:        Declares a variable value. This value may be
-                        assigned to, copied from, and
+                        assigned to, copied from, and modified.
             generic:    Declares a specializable value. This value
                         has the same restricitions as a const, but
                         taking its address is not defined. The type
@@ -132,13 +128,13 @@ TABLE OF CONTENTS:
 
                 var y
 
-            Declares a generic with type '@a', and assigns it the value
+            Declare a generic with type '@a', and assigns it the value
             'blah'. Every place that 'z' is used, it will be specialized,
             and the type parameter '@a' will be substituted.
 
                 generic z : @a = blah
 
-            Declares a function f with and without type inference. Both
+            Declare a function f with and without type inference. Both
             forms are equivalent. 'f' takes two parameters, both of type
             int, and returns their sum as an int
 
@@ -164,9 +160,9 @@ TABLE OF CONTENTS:
 
             eg: 0x123_fff, 0b1111, 1234
 
-        Float literals are also a sequence of digits beginning with a
-        digit and possibly separated by underscores. They are also of a
-        generic type, and may be used whenever a floating point type is
+        Floating-point literals are also a sequence of digits beginning with
+        a digit and possibly separated by underscores. They are also of a
+        generic type, and may be used whenever a floating-point type is
         expected. Floating point literals are always in decimal, and
         as of this writing, exponential notation is not supported[2]
 
@@ -396,7 +392,7 @@ TABLE OF CONTENTS:
                 `Name x         Union construction
 
             Precedence 5:
-                x casttto(type) Cast expression
+                x castto(type)  Cast expression
 
             Precedence 4:
                 x == x          Equality
@@ -425,10 +421,10 @@ TABLE OF CONTENTS:
                 x <<= x         Fused shl/assign        Right assoc
                 x >>= x         Fused shr/assign        Right assoc
 
-            Precedence 14:
+            Precedence 0:
                 -> x            Return expression
 
-        All expressions on integers act on complement-two values which wrap
+        All expressions on integers act on two's complement values which wrap
         on overflow. Right shift expressions fill with the sign bit on
         signed types, and fill with zeros on unsigned types.
 
