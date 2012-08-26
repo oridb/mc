@@ -32,12 +32,12 @@ The compiler options are:
 
 .TP
 .B -d [flTri]
-Prints debugging dumps. Additional options may be given to give more
+Print debugging dumps. Additional options may be given to give more
 debugging information for specific intermediate states of the compilation.
 
 .TP
 .B -h
-Prints a summary of the available options.
+Print a summary of the available options.
 
 .TP
 .B -I path
@@ -48,11 +48,11 @@ any options, the search path defaults to /usr/include/myr.
 
 .TP
 .B -o output-file
-Specifies that the generated code should be placed in
+Specify that the generated code should be placed in
 
 .TP
 .B -S
-Generate assembly instead of an object file.
+Generate assembly code instead of an object file.
 
 .SH EXAMPLE
 .EX
@@ -62,7 +62,7 @@ Generate assembly instead of an object file.
 .EE
 
 .SH FILES
-The source for this compiler is available from
+The source code for this compiler is available from
 .B git://git.eigenstate.org/git/ori/mc2.git
 
 .SH SEE ALSO
@@ -78,7 +78,7 @@ constructs in spite of their desirability.
 There are virtually no optimizations done, and the generated source is
 often very poorly performing.
 .PP
-The current calling convention is stack, and not register, based, even
-on architectures where it should be register based.
+The current calling convention is stack-based and not register-based, even
+on architectures where it should be register-based.
 .PP
-The calling convention is not C compatible.
+The calling convention is not compatible with C.
