@@ -523,9 +523,11 @@ static void simpblk(Simp *s, Node *n)
 {
     size_t i;
 
+    pushstab(n->block.scope);
     for (i = 0; i < n->block.nstmts; i++) {
         simp(s, n->block.stmts[i]);
     }
+    popstab();
 }
 
 static Node *simplit(Simp *s, Node *lit, Node ***l, size_t *nl)
@@ -1263,7 +1265,9 @@ static Func *simpfn(Simp *s, char *name, Node *n, int export)
     /* unwrap to the function body */
     n = n->expr.args[0];
     n = n->lit.fnval;
+    pushstab(n->func.scope);
     flatten(s, n);
+    popstab();
 
     if (debug)
         for (i = 0; i < s->nstmts; i++)
@@ -1374,6 +1378,7 @@ void gen(Node *file, char *out)
     /* We need to define all global variables before use */
     fillglobls(file->file.globls, globls);
 
+    pushstab(file->file.globls);
     for (i = 0; i < file->file.nstmts; i++) {
         n = file->file.stmts[i];
         switch (n->type) {
@@ -1387,6 +1392,7 @@ void gen(Node *file, char *out)
                 break;
         }
     }
+    popstab();
 
     fd = fopen(out, "w");
     if (!fd)
