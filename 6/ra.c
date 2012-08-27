@@ -51,8 +51,6 @@ Reg regmap[][Nmode] = {
     [11]  = {Rnone, R13b, R13w, R13d, R13},
     [12]  = {Rnone, R14b, R14w, R14d, R14},
     [13]  = {Rnone, R15b, R15w, R15d, R15},
-    [14]  = {Rnone, Rnone, Rnone, Resp},
-    [15]  = {Rnone, Rnone, Rnone, Rebp},
 };
 
 int colourmap[Nreg] = {
@@ -119,9 +117,6 @@ int colourmap[Nreg] = {
     [R13] = 11,
     [R14] = 12,
     [R15] = 13,
-
-    [Rrsp] = 14,
-    [Rrbp] = 15,
 };
 
 /* %esp, %ebp are not in the allocatable pool */
