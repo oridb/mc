@@ -443,14 +443,24 @@ static Node *uval(Node *n, size_t off, Type *t)
         return load(addk(addr(n, t), off));
 }
 
-static void umatch(Simp *s, Node *a, Node *b, Type *t, size_t off, Node *iftrue, Node *iffalse)
+static void umatch(Simp *s, Node *pat, Node *val, Type *t, size_t off, Node *iftrue, Node *iffalse)
 {
     Node *v, *x, *y;
     Node *next;
     Ucon *uc;
 
-    assert(a->type == Nexpr);
+    assert(pat->type == Nexpr);
     t = tybase(t);
+#if 0
+    printf("PAT IS -------\n");
+    dump(pat, stdout);
+    printf("VAL IS -------\n");
+    dump(val, stdout);
+    if (exprop(pat) == Ovar) {
+        printf("DECL IS -------\n");
+        dump(decls[pat->expr.did], stdout);
+    }
+#endif
     switch (t->type) {
         case Tyvoid: case Tybad: case Tyvalist: case Tyvar:
         case Typaram: case Tyunres: case Tyname: case Ntypes:
@@ -463,26 +473,26 @@ static void umatch(Simp *s, Node *a, Node *b, Type *t, size_t off, Node *iftrue,
         case Tyint8: case Tyint16: case Tyint32: case Tyint:
         case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint:
         case Typtr: case Tyfunc:
-            x = uval(a, off, t);
-            y = uval(b, off, t);
-            v = mkexpr(a->line, Oeq, x, y, NULL);
+            x = uval(pat, off, t);
+            y = uval(val, off, t);
+            v = mkexpr(pat->line, Oeq, x, y, NULL);
             cjmp(s, v, iftrue, iffalse);
             break;
         case Tyunion:
-            x = uconid(a, off);
-            y = uconid(b, off);
-            uc = finducon(a);
+            x = uconid(pat, off);
+            y = uconid(val, off);
+            uc = finducon(pat);
             if (!uc)
-                uc = finducon(b);
+                uc = finducon(val);
 
             next = genlbl();
-            v = mkexpr(a->line, Oeq, x, y, NULL);
+            v = mkexpr(pat->line, Oeq, x, y, NULL);
             v->expr.type = tyintptr;
             cjmp(s, v, next, iffalse);
             append(s, next);
             if (uc->etype) {
                 off += Wordsz;
-                umatch(s, a, b, uc->etype, off, iftrue, iffalse);
+                umatch(s, pat, val, uc->etype, off, iftrue, iffalse);
             }
             break;
     }
@@ -508,7 +518,7 @@ static void simpmatch(Simp *s, Node *n)
         /* check pattern */
         cur = genlbl();
         next = genlbl();
-        umatch(s, val, m->match.pat, val->expr.type, 0, cur, next);
+        umatch(s, m->match.pat, val, val->expr.type, 0, cur, next);
 
         /* do the action if it matches */
         append(s, cur);

@@ -257,8 +257,10 @@ extern Type **tytab;    /* type -> type map used by inference. size maintained b
 extern size_t ntypes;
 extern Cstr **cstrtab;  /* int -> cstr map */
 extern size_t ncstrs;
-extern int maxnid;      /* the maximum node id generated so far */
-extern int maxdid;      /* the maximum decl id generated so far */
+extern Node **decls;    /* decl id -> decl map */
+extern size_t ndecls;
+extern size_t maxnid;      /* the maximum node id generated so far */
+extern size_t maxdid;      /* the maximum decl id generated so far */
 
 extern int ispureop[];
 
