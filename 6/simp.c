@@ -443,7 +443,7 @@ static Node *uval(Node *n, size_t off, Type *t)
         return load(addk(addr(n, t), off));
 }
 
-static void ucompare(Simp *s, Node *a, Node *b, Type *t, size_t off, Node *iftrue, Node *iffalse)
+static void umatch(Simp *s, Node *a, Node *b, Type *t, size_t off, Node *iftrue, Node *iffalse)
 {
     Node *v, *x, *y;
     Node *next;
@@ -482,7 +482,7 @@ static void ucompare(Simp *s, Node *a, Node *b, Type *t, size_t off, Node *iftru
             append(s, next);
             if (uc->etype) {
                 off += Wordsz;
-                ucompare(s, a, b, uc->etype, off, iftrue, iffalse);
+                umatch(s, a, b, uc->etype, off, iftrue, iffalse);
             }
             break;
     }
@@ -508,7 +508,7 @@ static void simpmatch(Simp *s, Node *n)
         /* check pattern */
         cur = genlbl();
         next = genlbl();
-        ucompare(s, val, m->match.pat, val->expr.type, 0, cur, next);
+        umatch(s, val, m->match.pat, val->expr.type, 0, cur, next);
 
         /* do the action if it matches */
         append(s, cur);
