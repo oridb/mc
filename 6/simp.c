@@ -443,14 +443,24 @@ static Node *uval(Node *n, size_t off, Type *t)
         return load(addk(addr(n, t), off));
 }
 
-static void ucompare(Simp *s, Node *a, Node *b, Type *t, size_t off, Node *iftrue, Node *iffalse)
+static void umatch(Simp *s, Node *pat, Node *val, Type *t, size_t off, Node *iftrue, Node *iffalse)
 {
     Node *v, *x, *y;
     Node *next;
     Ucon *uc;
 
-    assert(a->type == Nexpr);
+    assert(pat->type == Nexpr);
     t = tybase(t);
+#if 0
+    printf("PAT IS -------\n");
+    dump(pat, stdout);
+    printf("VAL IS -------\n");
+    dump(val, stdout);
+    if (exprop(pat) == Ovar) {
+        printf("DECL IS -------\n");
+        dump(decls[pat->expr.did], stdout);
+    }
+#endif
     switch (t->type) {
         case Tyvoid: case Tybad: case Tyvalist: case Tyvar:
         case Typaram: case Tyunres: case Tyname: case Ntypes:
@@ -463,26 +473,26 @@ static void ucompare(Simp *s, Node *a, Node *b, Type *t, size_t off, Node *iftru
         case Tyint8: case Tyint16: case Tyint32: case Tyint:
         case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint:
         case Typtr: case Tyfunc:
-            x = uval(a, off, t);
-            y = uval(b, off, t);
-            v = mkexpr(a->line, Oeq, x, y, NULL);
+            x = uval(pat, off, t);
+            y = uval(val, off, t);
+            v = mkexpr(pat->line, Oeq, x, y, NULL);
             cjmp(s, v, iftrue, iffalse);
             break;
         case Tyunion:
-            x = uconid(a, off);
-            y = uconid(b, off);
-            uc = finducon(a);
+            x = uconid(pat, off);
+            y = uconid(val, off);
+            uc = finducon(pat);
             if (!uc)
-                uc = finducon(b);
+                uc = finducon(val);
 
             next = genlbl();
-            v = mkexpr(a->line, Oeq, x, y, NULL);
+            v = mkexpr(pat->line, Oeq, x, y, NULL);
             v->expr.type = tyintptr;
             cjmp(s, v, next, iffalse);
             append(s, next);
             if (uc->etype) {
                 off += Wordsz;
-                ucompare(s, a, b, uc->etype, off, iftrue, iffalse);
+                umatch(s, pat, val, uc->etype, off, iftrue, iffalse);
             }
             break;
     }
@@ -508,7 +518,7 @@ static void simpmatch(Simp *s, Node *n)
         /* check pattern */
         cur = genlbl();
         next = genlbl();
-        ucompare(s, val, m->match.pat, val->expr.type, 0, cur, next);
+        umatch(s, m->match.pat, val, val->expr.type, 0, cur, next);
 
         /* do the action if it matches */
         append(s, cur);
@@ -523,9 +533,11 @@ static void simpblk(Simp *s, Node *n)
 {
     size_t i;
 
+    pushstab(n->block.scope);
     for (i = 0; i < n->block.nstmts; i++) {
         simp(s, n->block.stmts[i]);
     }
+    popstab();
 }
 
 static Node *simplit(Simp *s, Node *lit, Node ***l, size_t *nl)
@@ -1263,7 +1275,9 @@ static Func *simpfn(Simp *s, char *name, Node *n, int export)
     /* unwrap to the function body */
     n = n->expr.args[0];
     n = n->lit.fnval;
+    pushstab(n->func.scope);
     flatten(s, n);
+    popstab();
 
     if (debug)
         for (i = 0; i < s->nstmts; i++)
@@ -1374,6 +1388,7 @@ void gen(Node *file, char *out)
     /* We need to define all global variables before use */
     fillglobls(file->file.globls, globls);
 
+    pushstab(file->file.globls);
     for (i = 0; i < file->file.nstmts; i++) {
         n = file->file.stmts[i];
         switch (n->type) {
@@ -1387,6 +1402,7 @@ void gen(Node *file, char *out)
                 break;
         }
     }
+    popstab();
 
     fd = fopen(out, "w");
     if (!fd)

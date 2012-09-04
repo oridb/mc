@@ -24,7 +24,7 @@ struct Inferstate {
     /* nodes that need post-inference checking/unification */
     Node **postcheck;
     size_t npostcheck;
-    /* the type parmas bound at the current point */
+    /* the type params bound at the current point */
     Htab **tybindings;
     size_t ntybindings;
     /* generic declarations to be specialized */
@@ -673,7 +673,7 @@ static void inferpat(Inferstate *st, Node *n, Node *val, Node ***bind, size_t *n
     args = n->expr.args;
     for (i = 0; i < n->expr.nargs; i++)
         if (args[i]->type == Nexpr)
-            inferpat(st, val, args[i], bind, nbind);
+            inferpat(st, args[i], val, bind, nbind);
     switch (exprop(n)) {
         case Oucon:
             uc = uconresolve(st, n);

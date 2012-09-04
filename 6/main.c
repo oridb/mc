@@ -46,7 +46,7 @@ static void assem(char *f)
     swapsuffix(objfile, 1024, f, ".s", ".o");
     snprintf(cmd, 1024, Asmcmd, objfile, f);
     if (system(cmd) == -1)
-      die("Couldn't run assembler");
+        die("Couldn't run assembler");
 }
 
 int main(int argc, char **argv)
