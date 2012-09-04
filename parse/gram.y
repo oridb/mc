@@ -122,12 +122,12 @@ static void constrainwith(Type *t, char *str);
 
 %type <ty> type structdef uniondef tupledef compoundtype functype funcsig
 %type <ty> generictype
-%type <tylist> tuptybody
+%type <tylist> typelist
 %type <nodelist> typaramlist
 
 %type <tok> asnop cmpop addop mulop shiftop
 
-%type <tydef> tydef
+%type <tydef> tydef typeid
 
 %type <node> exprln retexpr expr atomicexpr littok literal asnexpr lorexpr landexpr borexpr
 %type <node> bandexpr cmpexpr unionexpr addexpr mulexpr shiftexpr prefixexpr postfixexpr
@@ -137,11 +137,11 @@ static void constrainwith(Type *t, char *str);
 %type <node> pat unionpat match
 %type <node> castexpr
 %type <ucon> unionelt
-%type <node> body 
+%type <node> body
 
 %type <nodelist> arglist argdefs params matches
 %type <nodelist> structbody seqbody tupbody tuprest
-%type <uconlist> unionbody 
+%type <uconlist> unionbody
 
 %union {
     struct {
@@ -163,6 +163,8 @@ static void constrainwith(Type *t, char *str);
         int line;
         char *name;
         Type *type;
+        Type **params;
+        size_t nparams;
     } tydef;
     Node *node;
     Tok  *tok;
@@ -256,14 +258,28 @@ name    : Tident
             {$$ = $3; setns($3, $1->str);}
         ;
 
-tydef   : Ttype Tident Tasn type
+tydef   : Ttype typeid Tasn type
+            {$$ = $2;
+             $$.type = mktyalias($2.line, mkname($2.line, $2.name), $4);}
+        | Ttype typeid
+            {$$ = $2;}
+        ;
+
+typeid  : Tident
             {$$.line = $1->line;
-             $$.name = $2->str;
-             $$.type = mktyalias($2->line, mkname($2->line, $2->str), $4);}
-        | Ttype Tident
-            {$$.line = $1->line;
-             $$.name = $2->str;
+             $$.name = $1->str;
+             $$.params = NULL;
              $$.type = NULL;}
+        | Tident Toparen typarams Tcparen
+            {$$.line = $1->line;
+             $$.name = $1->str;
+             $$.params = NULL;
+             $$.type = NULL;
+             die("Unimplemented generic types");}
+        ;
+
+typarams: generictype
+        | typarams Tcomma generictype
         ;
 
 type    : structdef
@@ -300,8 +316,9 @@ compoundtype
         | type Tosqbrac Tcolon Tcsqbrac {$$ = mktyslice($2->line, $1);}
         | type Tosqbrac expr Tcsqbrac {$$ = mktyarray($2->line, $1, $3);}
         | type Tstar {$$ = mktyptr($2->line, $1);}
-        | name       {$$ = mktynamed($1->line, $1);}
         | Tat Tident {$$ = mktyparam($1->line, $2->str);}
+        | name       {$$ = mktynamed($1->line, $1);}
+        | name Toparen typelist Tcparen {die("Generic types not supported");}
         ;
 
 functype: Toparen funcsig Tcparen {$$ = $2;}
@@ -325,15 +342,14 @@ argdefs : declcore
              $$.nn = 0;}
         ;
 
-tupledef: Tosqbrac tuptybody Tcsqbrac
+tupledef: Tosqbrac typelist Tcsqbrac
             {$$ = mktytuple($1->line, $2.types, $2.ntypes);}
         ;
 
-tuptybody
-        : type
+typelist: type
             {$$.types = NULL; $$.ntypes = 0;
              lappend(&$$.types, &$$.ntypes, $1);}
-        | tuptybody Tcomma type
+        | typelist Tcomma type
             {lappend(&$$.types, &$$.ntypes, $3);}
         ;
 
@@ -714,6 +730,8 @@ static void installucons(Stab *st, Type *t)
     Type *b;
     size_t i;
 
+    if (!t)
+        return;
     b = tybase(t);
     if (b->type != Tyunion)
         return;
