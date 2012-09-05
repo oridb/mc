@@ -1,0 +1,15 @@
+type option(@a) = union
+	`Some @a
+	`None
+;;
+
+const main = {
+	var v
+
+	v = `Some 123
+	match v
+	`None:		-> 1;;
+	`Some 123:	-> 0;;
+	;;
+	-> 60
+}
