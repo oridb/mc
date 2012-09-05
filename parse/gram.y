@@ -274,8 +274,7 @@ typeid  : Tident
             {$$.line = $1->line;
              $$.name = $1->str;
              $$.params = NULL;
-             $$.type = NULL;
-             die("Unimplemented generic types");}
+             $$.type = NULL;}
         ;
 
 typarams: generictype
@@ -318,7 +317,7 @@ compoundtype
         | type Tstar {$$ = mktyptr($2->line, $1);}
         | Tat Tident {$$ = mktyparam($1->line, $2->str);}
         | name       {$$ = mktynamed($1->line, $1);}
-        | name Toparen typelist Tcparen {die("Generic types not supported");}
+        | name Toparen typelist Tcparen {$$ = mktynamed($1->line, $1);}
         ;
 
 functype: Toparen funcsig Tcparen {$$ = $2;}
