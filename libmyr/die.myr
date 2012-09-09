@@ -1,0 +1,19 @@
+use "sys.use"
+use "types.use"
+
+pkg std = 
+	const die	: (msg : byte[:] -> void)
+	const assert	: (cond : bool, msg : byte[:] -> void)
+;;
+
+const die = {msg
+	write(2, msg)
+	kill(getpid(), 6)
+}
+
+const assert = {cond, msg
+	if cond
+		die(msg)
+	;;
+}
+

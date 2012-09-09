@@ -1,0 +1,52 @@
+use "types.use"
+
+pkg std =
+	type valist
+
+	const vastart	: (args : ...* -> valist)
+	generic vanext	: (ap : valist -> [@a, valist])
+;;
+
+type valist = byte*
+
+/* 
+ * a valist is really just a pointer to the varargs.
+ * we assume that these sit on the stack nicely,
+ * and don't need special handling to get to.
+ * 
+ * This will be a problem when we switch to a
+ * register based convention. We might want to
+ * force varargs onto the stack regardless.
+ */
+const vastart = {args
+	-> args castto(valist)
+}
+
+generic vanext = {ap -> [@a, valist]
+	var v : @a
+	var align
+	var p
+
+	/*
+	 Assumptions about the ABI:
+	 * all types smaller than a word are
+	 * aligned to their own size. Larger
+	 * types are aligned to word size.
+	 */
+	if sizeof(@a) > 8
+		align = 8
+	else
+		align = sizeof(@a)
+	;;
+
+	/* apply the alignment to the arg pointer */
+	p = ap castto(intptr)
+	p = (p + align - 1) & ~(align - 1)
+	ap = p castto(valist)
+
+	v = *(ap castto(@a*))
+
+	/* only move on after we read through the value */
+	ap = ((p castto(intptr)) + sizeof(@a)) castto(valist)
+	-> (v, ap)
+}
