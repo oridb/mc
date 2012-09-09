@@ -64,6 +64,9 @@ const bfmtv = {buf, fmt, ap
 				(p_val, ap) = vanext(ap)
 				n += intfmt(buf[n:], p_val castto(int64), 16)
 				;;
+                        _:
+                                die("Unknown format specifier")
+                                ;;
 			;;
 		else
 			n += encode(buf[n:], c)
