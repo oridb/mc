@@ -105,8 +105,8 @@ struct Type {
     Node **cstrlist;    /* The names of the constraints on the type. Used to fill the bitset */
     size_t ncstrlist;   /* The length of the constraint list above */
 
-    Type **params;      /* Tyname: the type parameters captured */
-    size_t nparams;     /* Tyname: the number of type parameters */
+    Type **param;       /* Tyname: the type parameters captured */
+    size_t nparam;      /* Tyname: the number of type parameters */
 
     Type **sub;         /* sub-types; shared by all composite types */
     size_t nsub;        /* For compound types */

@@ -342,6 +342,8 @@ static void tybind(Inferstate *st, Htab *bt, Type *t)
         return;
 
     htput(bt, t->pname, t);
+    for (i = 0; i < t->nparam; i++)
+        tybind(st, bt, t->param[i]);
     for (i = 0; i < t->nsub; i++)
         tybind(st, bt, t->sub[i]);
 }

@@ -128,7 +128,7 @@ Type *mktyunres(int line, Node *name)
     return t;
 }
 
-Type *mktytmpl(int line, Node *name, Type **params, size_t nparams, Type *base)
+Type *mktytmpl(int line, Node *name, Type **param, size_t nparam, Type *base)
 {
     Type *t;
 
@@ -138,8 +138,8 @@ Type *mktytmpl(int line, Node *name, Type **params, size_t nparams, Type *base)
     t->cstrs = bsdup(base->cstrs);
     t->sub = xalloc(sizeof(Type*));
     t->sub[0] = base;
-    t->params = params;
-    t->nparams = nparams;
+    t->param = param;
+    t->nparam = nparam;
     return t;
 }
 
@@ -439,11 +439,11 @@ static int tybfmt(char *buf, size_t len, Type *t)
             break;
         case Tyname:  
             p += snprintf(p, end - p, "%s", namestr(t->name));
-            if (t->nparams) {
+            if (t->nparam) {
                 p += snprintf(p, end - p, "(");
-                for (i = 0; i < t->nparams; i++)  {
+                for (i = 0; i < t->nparam; i++)  {
                     p += snprintf(p, end - p, "%s", sep);
-                    p += tybfmt(p, end - p, t->params[i]);
+                    p += tybfmt(p, end - p, t->param[i]);
                     sep = ", ";
                 }
                 p += snprintf(p, end - p, ")");
@@ -456,7 +456,7 @@ static int tybfmt(char *buf, size_t len, Type *t)
             break;
     }
 
-    /* we only show constraints on non-builtin typarams */
+    /* we only show constraints on non-builtin typaram */
     if (t->type == Tyvar || t->type == Typaram)
         p += cstrfmt(p, end - p, t);
 
