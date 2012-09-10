@@ -338,8 +338,8 @@ Type *mktype(int line, Ty ty);
 Type *tydup(Type *t); /* shallow duplicate; all subtypes/members/... kept */
 Type *mktyvar(int line);
 Type *mktyparam(int line, char *name);
-Type *mktyalias(int line, Node *name, Type *base);
-Type *mktynamed(int line, Node *name);
+Type *mktyname(int line, Node *name, Type *base);
+Type *mktyunres(int line, Node *name);
 Type *mktyarray(int line, Type *base, Node *sz);
 Type *mktyslice(int line, Type *base);
 Type *mktyidxhack(int line, Type *base);

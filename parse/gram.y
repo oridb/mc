@@ -260,7 +260,7 @@ name    : Tident
 
 tydef   : Ttype typeid Tasn type
             {$$ = $2;
-             $$.type = mktyalias($2.line, mkname($2.line, $2.name), $4);}
+             $$.type = mktyname($2.line, mkname($2.line, $2.name), $4);}
         | Ttype typeid
             {$$ = $2;}
         ;
@@ -316,8 +316,8 @@ compoundtype
         | type Tosqbrac expr Tcsqbrac {$$ = mktyarray($2->line, $1, $3);}
         | type Tstar {$$ = mktyptr($2->line, $1);}
         | Tat Tident {$$ = mktyparam($1->line, $2->str);}
-        | name       {$$ = mktynamed($1->line, $1);}
-        | name Toparen typelist Tcparen {$$ = mktynamed($1->line, $1);}
+        | name       {$$ = mktyunres($1->line, $1);}
+        | name Toparen typelist Tcparen {$$ = mktyunres($1->line, $1);}
         ;
 
 functype: Toparen funcsig Tcparen {$$ = $2;}

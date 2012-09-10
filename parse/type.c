@@ -118,7 +118,7 @@ Type *mktyparam(int line, char *name)
     return t;
 }
 
-Type *mktynamed(int line, Node *name)
+Type *mktyunres(int line, Node *name)
 {
     Type *t;
 
@@ -128,7 +128,7 @@ Type *mktynamed(int line, Node *name)
     return t;
 }
 
-Type *mktyalias(int line, Node *name, Type *base)
+Type *mktyname(int line, Node *name, Type *base)
 {
     Type *t;
 
