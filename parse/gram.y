@@ -260,7 +260,7 @@ name    : Tident
 
 tydef   : Ttype typeid Tasn type
             {$$ = $2;
-             $$.type = mktyname($2.line, mkname($2.line, $2.name), $4);}
+             $$.type = mktytmpl($2.line, mkname($2.line, $2.name), $2.params, $2.nparams, $4);}
         | Ttype typeid
             {$$ = $2;}
         ;

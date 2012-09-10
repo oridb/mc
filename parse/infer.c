@@ -200,6 +200,7 @@ static void tyresolve(Inferstate *st, Type *t)
     if (t->resolved)
         return;
     t->resolved = 1;
+    /* if this is a generic type, bind the params. */
     /* Walk through aggregate type members */
     if (t->type == Tystruct) {
         for (i = 0; i < t->nmemb; i++)

@@ -128,7 +128,7 @@ Type *mktyunres(int line, Node *name)
     return t;
 }
 
-Type *mktyname(int line, Node *name, Type *base)
+Type *mktytmpl(int line, Node *name, Type **params, size_t nparams, Type *base)
 {
     Type *t;
 
@@ -138,7 +138,14 @@ Type *mktyname(int line, Node *name, Type *base)
     t->cstrs = bsdup(base->cstrs);
     t->sub = xalloc(sizeof(Type*));
     t->sub[0] = base;
+    t->params = params;
+    t->nparams = nparams;
     return t;
+}
+
+Type *mktyname(int line, Node *name, Type *base)
+{
+    return mktytmpl(line, name, NULL, 0, base);
 }
 
 Type *mktyarray(int line, Type *base, Node *sz)
@@ -432,6 +439,15 @@ static int tybfmt(char *buf, size_t len, Type *t)
             break;
         case Tyname:  
             p += snprintf(p, end - p, "%s", namestr(t->name));
+            if (t->nparams) {
+                p += snprintf(p, end - p, "(");
+                for (i = 0; i < t->nparams; i++)  {
+                    p += snprintf(p, end - p, "%s", sep);
+                    p += tybfmt(p, end - p, t->params[i]);
+                    sep = ", ";
+                }
+                p += snprintf(p, end - p, ")");
+            }
             break;
         case Tystruct:  p += fmtstruct(p, end - p, t);  break;
         case Tyunion:   p += fmtunion(p, end - p, t);   break;

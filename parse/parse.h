@@ -98,22 +98,25 @@ struct Type {
     int tid;
     int line;
 
-    int resolved;     /* Have we resolved the subtypes? Prevents infinite recursion. */
-    int fixed;        /* Have we fixed the subtypes? Prevents infinite recursion. */
+    int resolved;       /* Have we resolved the subtypes? Prevents infinite recursion. */
+    int fixed;          /* Have we fixed the subtypes? Prevents infinite recursion. */
 
-    Bitset *cstrs;    /* the type constraints matched on this type */
-    Node **cstrlist;  /* The names of the constraints on the type. Used to fill the bitset */
-    size_t ncstrlist; /* The length of the constraint list above */
+    Bitset *cstrs;      /* the type constraints matched on this type */
+    Node **cstrlist;    /* The names of the constraints on the type. Used to fill the bitset */
+    size_t ncstrlist;   /* The length of the constraint list above */
 
-    Type **sub;       /* sub-types; shared by all composite types */
-    size_t nsub;      /* For compound types */
-    size_t nmemb;     /* for aggregate types (struct, union) */
+    Type **params;      /* Tyname: the type parameters captured */
+    size_t nparams;     /* Tyname: the number of type parameters */
+
+    Type **sub;         /* sub-types; shared by all composite types */
+    size_t nsub;        /* For compound types */
+    size_t nmemb;       /* for aggregate types (struct, union) */
     union {
-        Node *name;    /* Tyname: unresolved name. Tyalias: alias name */
-        Node *asize;   /* array size */
-        char *pname;   /* Typaram: name of type parameter */
-        Node **sdecls; /* Tystruct: decls in struct */
-        Ucon **udecls; /* Tyunion: decls in union */
+        Node *name;     /* Tyname: unresolved name. Tyalias: alias name */
+        Node *asize;    /* array size */
+        char *pname;    /* Typaram: name of type parameter */
+        Node **sdecls;  /* Tystruct: decls in struct */
+        Ucon **udecls;  /* Tyunion: decls in union */
     };
 };
 
@@ -339,6 +342,7 @@ Type *tydup(Type *t); /* shallow duplicate; all subtypes/members/... kept */
 Type *mktyvar(int line);
 Type *mktyparam(int line, char *name);
 Type *mktyname(int line, Node *name, Type *base);
+Type *mktytmpl(int line, Node *name, Type **params, size_t nparams, Type *base);
 Type *mktyunres(int line, Node *name);
 Type *mktyarray(int line, Type *base, Node *sz);
 Type *mktyslice(int line, Type *base);
