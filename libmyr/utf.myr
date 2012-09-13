@@ -1,0 +1,107 @@
+use "die.use"
+use "sys.use"
+use "types.use"
+
+pkg std =
+	const Badchar	: char = -1 castto(char)
+
+	const charlen	: (chr : char -> size)
+	const encode	: (buf : byte[:], chr : char -> size)
+	const decode	: (buf : byte[:] -> char)
+	const striter	: (str : byte[:] -> [char, byte[:]])
+
+	const strjoin	: (lst : byte[:][:], delim:byte[:] -> byte[:])
+	const strsep	: (str : byte[:], delim:byte[:] -> byte[:][:])
+	const strbjoin	: (lst : byte[:][:], delim:byte[:] -> byte[:])
+	const strbsep	: (str : byte[:], delim:byte[:] -> byte[:][:])
+;;
+
+const charlen = {c
+	if c < 0x80
+		-> 1
+	elif c < 0x800
+		-> 2
+	elif c < 0x10000
+		-> 3
+	elif c < 0x200000
+		-> 4
+	else
+		-> -1
+	;;
+}
+
+const encode = {buf, c
+	var len
+	var mark
+	var i
+
+	len = charlen(c)
+	if len < 0 || buf.len < len
+		-> -1
+	;;
+
+	if (len == 1)
+		mark = 0
+	else
+		mark = (((1 << (8 - len)) - 1) ^ 0xff) castto(char)
+	;;
+
+	for i = len - 1; i > 0; i--
+		buf[i] = (c & 0x3f | 0x80) castto(byte)
+		c >>= 6
+	;;
+
+	buf[0] = (c | mark) castto(byte)
+	-> len
+}
+
+const decode = {buf
+	var c
+	var b
+
+	(c, b) = striter(buf)
+	-> c
+}
+
+const striter = {str
+	var len
+	var mask
+	var chr
+	var i
+	var c
+	var tmp
+
+	if !str.len
+		/* empty string: no resync needed */
+		-> (Badchar, str)
+	;;
+	c = str[0]
+	len = 0
+	if c & 0x80 == 0	/* 0b0xxx_xxxx */
+		len = 1
+	elif c & 0xe0 == 0xc0	/* 0b110x_xxxx */
+		len = 2
+	elif c & 0xf0 == 0xe0 	/* 0b1110_xxxx */
+		len = 3
+	elif c & 0xf8 == 0xf0 	/* 0b1111_0xxx */
+		len = 4
+	else
+		/* skip one char forward so we can try
+		   resyncing the character stream */
+		-> (Badchar, str[1:])
+	;;
+
+	if len == 0 || len > str.len
+		/* again, we want to try to resync */
+		-> (Badchar, str[1:])
+	;;
+
+	mask = (1 << (8 - len)) - 1
+	chr = (c castto(uint32)) & mask
+	for i = 1; i < len; i++
+		tmp = str[i] castto(uint32)
+		chr = (chr << 6) | (tmp & 0x3f)
+	;;
+
+	-> (chr castto(char), str[len:])
+}

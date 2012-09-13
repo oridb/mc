@@ -1,0 +1,131 @@
+use "die.use"
+use "sys.use"
+use "types.use"
+use "utf.use"
+use "varargs.use"
+
+pkg std =
+	const bfmt	: (buf : byte[:], fmt : byte[:], args:... -> size)
+	const bfmtv	: (buf : byte[:], fmt : byte[:], ap:valist -> size)
+	const put	: (fmt : byte[:], args:... -> size)
+;;
+
+const put = {fmt, args
+	var buf : byte[2048]
+	var n
+	
+	n = bfmtv(buf[:], fmt, vastart(&args))
+	write(1, buf[:n])
+	-> n
+}
+
+const bfmt = {buf, fmt, args
+	-> bfmtv(buf, fmt, vastart(&args))
+}
+
+const bfmtv = {buf, fmt, ap
+	var c
+	var n
+	var s_val : byte[:]
+	var b_val : int8
+	var w_val : int16
+	var i_val : int32
+	var l_val : int64
+	var p_val : byte*
+
+	n = 0
+	while fmt.len
+		(c, fmt) = striter(fmt)
+		if c == '%'
+			(c, fmt) = striter(fmt)
+			match c
+			's':
+				(s_val, ap) = vanext(ap)
+				n += strfmt(buf[n:], s_val)
+				;;
+			/* format integers */
+			'b':
+				(b_val, ap) = vanext(ap)
+				n += intfmt(buf[n:], b_val castto(int64), 10)
+				;;
+			'w':
+				(w_val, ap) = vanext(ap)
+				n += intfmt(buf[n:], w_val castto(int64), 10)
+				;;
+			'i':
+				(i_val, ap) = vanext(ap)
+				n += intfmt(buf[n:], i_val castto(int64), 10)
+				;;
+			'l':
+				(l_val, ap) = vanext(ap)
+				n += intfmt(buf[n:], l_val castto(int64), 10)
+				;;
+			'p':
+				(p_val, ap) = vanext(ap)
+				n += intfmt(buf[n:], p_val castto(int64), 16)
+				;;
+                        _:
+                                die("Unknown format specifier")
+                                ;;
+			;;
+		else
+			n += encode(buf[n:], c)
+		;;
+	;;
+	-> n
+}
+
+const strfmt = {buf, str
+	var i
+	
+	for i = 0; i < min(str.len, buf.len); i++
+		buf[i] = str[i]
+	;;
+	-> i
+}
+
+const intfmt = {buf, val, base
+	var digits = [
+		'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'
+	]
+	var isneg
+	var b : char[32]
+	var i
+	var j
+	var n
+
+	n = 0
+	i = 0
+	if val < 0
+		isneg = true
+	else
+		isneg = false
+	;;
+
+	if val == 0
+		b[0] = '0'
+		i++
+	;;
+	while val != 0
+		b[i] = digits[val % base]
+		val /= base
+		i++
+	;;
+	n = 0
+	if isneg
+		n += encode(buf[n:], '-')
+	;;
+	for j = i-1; j >= 0; j--
+		n += encode(buf[n:], b[j])
+	;;
+	-> n 
+}
+
+const min = {a : size, b : size
+	if a < b
+		-> a
+	else
+		-> b
+	;;
+}
+

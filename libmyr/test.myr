@@ -1,0 +1,69 @@
+use std
+
+const main = {
+	var x : byte*[1024]
+	var sz
+	var i
+
+	/* try the byte allocator for large variety of sizes. */
+	for sz = 1; sz < 65536; sz *= 2
+		for i = 0; i < 1024; i++
+			x[i] = std.bytealloc(sz)
+		;;
+		for i = 0; i < 1024; i++
+			std.bytefree(x[i], sz)
+		;;
+	;;
+	
+	/* make sure the generic allocator works */
+	for i = 0; i < 1024; i++
+		x[i] = std.alloc()
+	;;
+	for i = 0; i < 1024; i++
+		std.free(x[i])
+	;;
+	std.write(1, "Hello, 世界\n")
+	chartypes()
+	testrng()
+	std.put("format output %i %i %s %s\n", 123, 321, "asdf", "מִלָּה")
+	std.put("format with no args\n")
+}
+
+const chartypes = {
+	var s
+	var c
+	var buf : byte[32]
+
+	s = " 1世界 äa\n"
+	while s.len != 0
+		(c, s) = std.striter(s)
+		if std.isspace(c)
+			std.write(1, "Space\n")
+		elif std.isalpha(c)
+			std.write(1, "Alpha\n")
+		elif std.isnum(c)
+			std.write(1, "Num\n")
+		else
+			std.write(1, "Dunno\n")
+		;;
+		if !std.encode(buf[:std.charlen(c)], c)
+			std.write(1, "couldn't encode\n")
+		;;
+		std.write(1, buf[:std.charlen(c)])
+		std.write(1, "\n")
+	;;
+	if !std.encode(buf[0:3], -1)
+		std.write(1, "couldn't encode\n")
+	;;
+}
+
+const testrng = {
+	var r : std.rng*
+	var i
+
+	r = std.mksrng(10)
+	for i = 0; i < 10; i++
+		std.put("r[%i] = %l\n", i, std.rand32(r) castto(int64))
+	;;
+	std.put("\n");
+}

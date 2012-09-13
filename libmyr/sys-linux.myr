@@ -1,0 +1,398 @@
+use "types.use"
+
+pkg std =
+	type scno = int64
+	type fdopt = int64
+	type mprot = int64
+	type mopt = int64
+	type statbuf = struct
+		 dev     : uint
+		 ino     : uint
+		 mode    : uint16
+		 nlink   : uint16
+		 uid     : uint16
+		 gid     : uint16
+		 rdev    : uint
+		 size    : uint
+		 blksize : uint
+		 blocks  : uint
+		 atime   : uint
+		 atimens : uint
+		 mtime   : uint
+		 mtimens : uint
+		 ctime   : uint
+		 ctimens : uint
+		 _unused1: uint
+		 _unused2: uint
+	;;
+
+	/* open options */
+	const Ordonly  	: fdopt = 0x0
+	const Owronly  	: fdopt = 0x1
+	const Ordwr    	: fdopt = 0x2
+	const Oappend  	: fdopt = 0x80
+	const Ocreat   	: fdopt = 0x40
+	const Onofollow	: fdopt = 0x20000
+	const Ondelay  	: fdopt = 0x800
+	const Otrunc   	: fdopt = 0x200
+
+	/* mmap protection */
+	const Mprotnone	: mprot = 0x0
+	const Mprotrd	: mprot = 0x1
+	const Mprotwr	: mprot = 0x2
+	const Mprotexec	: mprot = 0x4
+	const Mprotrw	: mprot = 0x3 /* convenience */
+	
+	/* mmap options */
+	const Mshared	: mopt = 0x1
+	const Mpriv	: mopt = 0x2
+	const Mfixed	: mopt = 0x10
+	const Mfile	: mopt = 0x0
+	const Manon	: mopt = 0x20
+	const M32bit	: mopt = 0x40
+
+	/* return value for a failed mapping */
+	const Mapbad	: byte* = -1 castto(byte*)
+
+	/* syscalls */
+	const Sysread			: scno = 0
+	const Syswrite			: scno = 1
+	const Sysopen			: scno = 2
+	const Sysclose			: scno = 3
+	const Sysstat			: scno = 4
+	const Sysfstat			: scno = 5
+	const Syslstat			: scno = 6
+	const Syspoll			: scno = 7
+	const Syslseek			: scno = 8
+	const Sysmmap			: scno = 9
+	const Sysmprotect		: scno = 10
+	const Sysmunmap			: scno = 11
+	const Sysbrk			: scno = 12
+	const Sysrt_sigaction		: scno = 13
+	const Sysrt_sigprocmask		: scno = 14
+	const Sysrt_sigreturn		: scno = 15
+	const Sysioctl			: scno = 16
+	const Syspread64		: scno = 17
+	const Syspwrite64		: scno = 18
+	const Sysreadv			: scno = 19
+	const Syswritev			: scno = 20
+	const Sysaccess			: scno = 21
+	const Syspipe			: scno = 22
+	const Sysselect			: scno = 23
+	const Syssched_yield		: scno = 24
+	const Sysmremap			: scno = 25
+	const Sysmsync			: scno = 26
+	const Sysmincore		: scno = 27
+	const Sysmadvise		: scno = 28
+	const Sysshmget			: scno = 29
+	const Sysshmat			: scno = 30
+	const Sysshmctl			: scno = 31
+	const Sysdup			: scno = 32
+	const Sysdup2			: scno = 33
+	const Syspause			: scno = 34
+	const Sysnanosleep		: scno = 35
+	const Sysgetitimer		: scno = 36
+	const Sysalarm			: scno = 37
+	const Syssetitimer		: scno = 38
+	const Sysgetpid			: scno = 39
+	const Syssendfile		: scno = 40
+	const Syssocket			: scno = 41
+	const Sysconnect		: scno = 42
+	const Sysaccept			: scno = 43
+	const Syssendto			: scno = 44
+	const Sysrecvfrom		: scno = 45
+	const Syssendmsg		: scno = 46
+	const Sysrecvmsg		: scno = 47
+	const Sysshutdown		: scno = 48
+	const Sysbind			: scno = 49
+	const Syslisten			: scno = 50
+	const Sysgetsockname		: scno = 51
+	const Sysgetpeername		: scno = 52
+	const Syssocketpair		: scno = 53
+	const Syssetsockopt		: scno = 54
+	const Sysgetsockopt		: scno = 55
+	const Sysclone			: scno = 56
+	const Sysfork			: scno = 57
+	const Sysvfork			: scno = 58
+	const Sysexecve			: scno = 59
+	const Sysexit			: scno = 60
+	const Syswait4			: scno = 61
+	const Syskill			: scno = 62
+	const Sysuname			: scno = 63
+	const Syssemget			: scno = 64
+	const Syssemop			: scno = 65
+	const Syssemctl			: scno = 66
+	const Sysshmdt			: scno = 67
+	const Sysmsgget			: scno = 68
+	const Sysmsgsnd			: scno = 69
+	const Sysmsgrcv			: scno = 70
+	const Sysmsgctl			: scno = 71
+	const Sysfcntl			: scno = 72
+	const Sysflock			: scno = 73
+	const Sysfsync			: scno = 74
+	const Sysfdatasync		: scno = 75
+	const Systruncate		: scno = 76
+	const Sysftruncate		: scno = 77
+	const Sysgetdents		: scno = 78
+	const Sysgetcwd			: scno = 79
+	const Syschdir			: scno = 80
+	const Sysfchdir			: scno = 81
+	const Sysrename			: scno = 82
+	const Sysmkdir			: scno = 83
+	const Sysrmdir			: scno = 84
+	const Syscreat			: scno = 85
+	const Syslink			: scno = 86
+	const Sysunlink			: scno = 87
+	const Syssymlink		: scno = 88
+	const Sysreadlink		: scno = 89
+	const Syschmod			: scno = 90
+	const Sysfchmod			: scno = 91
+	const Syschown			: scno = 92
+	const Sysfchown			: scno = 93
+	const Syslchown			: scno = 94
+	const Sysumask			: scno = 95
+	const Sysgettimeofday		: scno = 96
+	const Sysgetrlimit		: scno = 97
+	const Sysgetrusage		: scno = 98
+	const Syssysinfo		: scno = 99
+	const Systimes			: scno = 100
+	const Sysptrace			: scno = 101
+	const Sysgetuid			: scno = 102
+	const Syssyslog			: scno = 103
+	const Sysgetgid			: scno = 104
+	const Syssetuid			: scno = 105
+	const Syssetgid			: scno = 106
+	const Sysgeteuid		: scno = 107
+	const Sysgetegid		: scno = 108
+	const Syssetpgid		: scno = 109
+	const Sysgetppid		: scno = 110
+	const Sysgetpgrp		: scno = 111
+	const Syssetsid			: scno = 112
+	const Syssetreuid		: scno = 113
+	const Syssetregid		: scno = 114
+	const Sysgetgroups		: scno = 115
+	const Syssetgroups		: scno = 116
+	const Syssetresuid		: scno = 117
+	const Sysgetresuid		: scno = 118
+	const Syssetresgid		: scno = 119
+	const Sysgetresgid		: scno = 120
+	const Sysgetpgid		: scno = 121
+	const Syssetfsuid		: scno = 122
+	const Syssetfsgid		: scno = 123
+	const Sysgetsid			: scno = 124
+	const Syscapget			: scno = 125
+	const Syscapset			: scno = 126
+	const Sysrt_sigpending		: scno = 127
+	const Sysrt_sigtimedwait	: scno = 128
+	const Sysrt_sigqueueinfo	: scno = 129
+	const Sysrt_sigsuspend		: scno = 130
+	const Syssigaltstack		: scno = 131
+	const Sysutime			: scno = 132
+	const Sysmknod			: scno = 133
+	const Sysuselib			: scno = 134
+	const Syspersonality		: scno = 135
+	const Sysustat			: scno = 136
+	const Sysstatfs			: scno = 137
+	const Sysfstatfs		: scno = 138
+	const Syssysfs			: scno = 139
+	const Sysgetpriority		: scno = 140
+	const Syssetpriority		: scno = 141
+	const Syssched_setparam		: scno = 142
+	const Syssched_getparam		: scno = 143
+	const Syssched_setscheduler	: scno = 144
+	const Syssched_getscheduler	: scno = 145
+	const Syssched_get_priority_max	: scno = 146
+	const Syssched_get_priority_min	: scno = 147
+	const Syssched_rr_get_interval	: scno = 148
+	const Sysmlock			: scno = 149
+	const Sysmunlock		: scno = 150
+	const Sysmlockall		: scno = 151
+	const Sysmunlockall		: scno = 152
+	const Sysvhangup		: scno = 153
+	const Sysmodify_ldt		: scno = 154
+	const Syspivot_root		: scno = 155
+	const Sys_sysctl		: scno = 156
+	const Sysprctl			: scno = 157
+	const Sysarch_prctl		: scno = 158
+	const Sysadjtimex		: scno = 159
+	const Syssetrlimit		: scno = 160
+	const Syschroot			: scno = 161
+	const Syssync			: scno = 162
+	const Sysacct			: scno = 163
+	const Syssettimeofday		: scno = 164
+	const Sysmount			: scno = 165
+	const Sysumount2		: scno = 166
+	const Sysswapon			: scno = 167
+	const Sysswapoff		: scno = 168
+	const Sysreboot			: scno = 169
+	const Syssethostname		: scno = 170
+	const Syssetdomainname		: scno = 171
+	const Sysiopl			: scno = 172
+	const Sysioperm			: scno = 173
+	const Syscreate_module		: scno = 174
+	const Sysinit_module		: scno = 175
+	const Sysdelete_module		: scno = 176
+	const Sysget_kernel_syms	: scno = 177
+	const Sysquery_module		: scno = 178
+	const Sysquotactl		: scno = 179
+	const Sysnfsservctl		: scno = 180
+	const Sysgetpmsg		: scno = 181
+	const Sysputpmsg		: scno = 182
+	const Sysafs_syscall		: scno = 183
+	const Systuxcall		: scno = 184
+	const Syssecurity		: scno = 185
+	const Sysgettid			: scno = 186
+	const Sysreadahead		: scno = 187
+	const Syssetxattr		: scno = 188
+	const Syslsetxattr		: scno = 189
+	const Sysfsetxattr		: scno = 190
+	const Sysgetxattr		: scno = 191
+	const Syslgetxattr		: scno = 192
+	const Sysfgetxattr		: scno = 193
+	const Syslistxattr		: scno = 194
+	const Sysllistxattr		: scno = 195
+	const Sysflistxattr		: scno = 196
+	const Sysremovexattr		: scno = 197
+	const Syslremovexattr		: scno = 198
+	const Sysfremovexattr		: scno = 199
+	const Systkill			: scno = 200
+	const Systime			: scno = 201
+	const Sysfutex			: scno = 202
+	const Syssched_setaffinity	: scno = 203
+	const Syssched_getaffinity	: scno = 204
+	const Sysset_thread_area	: scno = 205
+	const Sysio_setup		: scno = 206
+	const Sysio_destroy		: scno = 207
+	const Sysio_getevents		: scno = 208
+	const Sysio_submit		: scno = 209
+	const Sysio_cancel		: scno = 210
+	const Sysget_thread_area	: scno = 211
+	const Syslookup_dcookie		: scno = 212
+	const Sysepoll_create		: scno = 213
+	const Sysepoll_ctl_old		: scno = 214
+	const Sysepoll_wait_old		: scno = 215
+	const Sysremap_file_pages	: scno = 216
+	const Sysgetdents64		: scno = 217
+	const Sysset_tid_address	: scno = 218
+	const Sysrestart_syscall	: scno = 219
+	const Syssemtimedop		: scno = 220
+	const Sysfadvise64		: scno = 221
+	const Systimer_create		: scno = 222
+	const Systimer_settime		: scno = 223
+	const Systimer_gettime		: scno = 224
+	const Systimer_getoverrun	: scno = 225
+	const Systimer_delete		: scno = 226
+	const Sysclock_settime		: scno = 227
+	const Sysclock_gettime		: scno = 228
+	const Sysclock_getres		: scno = 229
+	const Sysclock_nanosleep	: scno = 230
+	const Sysexit_group		: scno = 231
+	const Sysepoll_wait		: scno = 232
+	const Sysepoll_ctl		: scno = 233
+	const Systgkill			: scno = 234
+	const Sysutimes			: scno = 235
+	const Sysvserver		: scno = 236
+	const Sysmbind			: scno = 237
+	const Sysset_mempolicy		: scno = 238
+	const Sysget_mempolicy		: scno = 239
+	const Sysmq_open		: scno = 240
+	const Sysmq_unlink		: scno = 241
+	const Sysmq_timedsend		: scno = 242
+	const Sysmq_timedreceive	: scno = 243
+	const Sysmq_notify		: scno = 244
+	const Sysmq_getsetattr		: scno = 245
+	const Syskexec_load		: scno = 246
+	const Syswaitid			: scno = 247
+	const Sysadd_key		: scno = 248
+	const Sysrequest_key		: scno = 249
+	const Syskeyctl			: scno = 250
+	const Sysioprio_set		: scno = 251
+	const Sysioprio_get		: scno = 252
+	const Sysinotify_init		: scno = 253
+	const Sysinotify_add_watch	: scno = 254
+	const Sysinotify_rm_watch	: scno = 255
+	const Sysmigrate_pages		: scno = 256
+	const Sysopenat			: scno = 257
+	const Sysmkdirat		: scno = 258
+	const Sysmknodat		: scno = 259
+	const Sysfchownat		: scno = 260
+	const Sysfutimesat		: scno = 261
+	const Sysnewfstatat		: scno = 262
+	const Sysunlinkat		: scno = 263
+	const Sysrenameat		: scno = 264
+	const Syslinkat			: scno = 265
+	const Syssymlinkat		: scno = 266
+	const Sysreadlinkat		: scno = 267
+	const Sysfchmodat		: scno = 268
+	const Sysfaccessat		: scno = 269
+	const Syspselect6		: scno = 270
+	const Sysppoll			: scno = 271
+	const Sysunshare		: scno = 272
+	const Sysset_robust_list	: scno = 273
+	const Sysget_robust_list	: scno = 274
+	const Syssplice			: scno = 275
+	const Systee			: scno = 276
+	const Syssync_file_range	: scno = 277
+	const Sysvmsplice		: scno = 278
+	const Sysmove_pages		: scno = 279
+	const Sysutimensat		: scno = 280
+	const Sysepoll_pwait		: scno = 281
+	const Syssignalfd		: scno = 282
+	const Systimerfd_create		: scno = 283
+	const Syseventfd		: scno = 284
+	const Sysfallocate		: scno = 285
+	const Systimerfd_settime	: scno = 286
+	const Systimerfd_gettime	: scno = 287
+	const Sysaccept4		: scno = 288
+	const Syssignalfd4		: scno = 289
+	const Syseventfd2		: scno = 290
+	const Sysepoll_create1		: scno = 291
+	const Sysdup3			: scno = 292
+	const Syspipe2			: scno = 293
+	const Sysinotify_init1		: scno = 294
+	const Syspreadv			: scno = 295
+	const Syspwritev		: scno = 296
+	const Sysrt_tgsigqueueinfo	: scno = 297
+	const Sysperf_event_open	: scno = 298
+	const Sysrecvmmsg		: scno = 299
+	const Sysfanotify_init		: scno = 300
+	const Sysfanotify_mark		: scno = 301
+	const Sysprlimit64		: scno = 302
+	const Sysname_to_handle_at	: scno = 303
+	const Sysopen_by_handle_at	: scno = 304
+	const Sysclock_adjtime		: scno = 305
+	const Syssyncfs			: scno = 306
+	const Syssendmmsg		: scno = 307
+	const Syssetns			: scno = 308
+	const Sysgetcpu			: scno = 309
+	const Sysprocess_vm_readv	: scno = 310
+	const Sysprocess_vm_writev	: scno = 311
+
+	extern const syscall : (sc:scno, args:... -> int64)
+
+	const exit	: (status:int64 -> void)
+	const getpid	: ( -> int64)
+	const kill	: (pid:int64, sig:int64 -> int64)
+	const open	: (path:byte[:], opts:fdopt, mode:int64 -> int64)
+	const close	: (fd:int64 -> int64)
+	const creat	: (path:byte[:], mode:int64 -> int64)
+	const read	: (fd:int64, buf:byte[:] -> int64)
+	const write	: (fd:int64, buf:byte[:] -> int64)
+	const lseek	: (fd:int64, off:uint64, whence:int64 -> int64)
+	const fstat	: (fd:int64, sb:statbuf* -> int64)
+	const munmap	: (addr:byte*, len:size -> int64)
+	const mmap	: (addr:byte*, len:size, prot:mprot, flags:mopt, fd:int64, off:off -> byte*)
+;;
+
+const exit	= {status;		syscall(Sysexit, 1);}
+const getpid	= {;			-> syscall(Sysgetpid, 1);}
+const kill	= {pid, sig;		-> syscall(Syskill, pid, sig);}
+const open	= {path, opts, mode;	-> syscall(Sysopen, path castto(char*), opts);}
+const close	= {fd;			-> syscall(Sysclose, fd);}
+const creat	= {path, mode;		-> syscall(Syscreat, path castto(char*), mode);}
+const read	= {fd, buf;		-> syscall(Sysread, fd, buf castto(char*), buf.len);}
+const write	= {fd, buf;		-> syscall(Syswrite, fd, buf castto(char*), buf.len castto(size));}
+const lseek	= {fd, off, whence;	-> syscall(Syslseek, fd, off, whence);}
+const fstat	= {fd, sb;		-> syscall(Sysfstat, fd, sb);}
+const munmap	= {addr, len;		-> syscall(Sysmunmap, addr, len);}
+const mmap	= {addr, len, prot, flags, fd, off;	-> syscall(Sysmmap, addr, len, prot, flags, fd, off) castto(byte*);}
