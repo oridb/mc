@@ -1,7 +1,8 @@
 SUB = parse \
       opt \
       6 \
-      util
+      util \
+      libmyr
 
 -include config.mk
 include mk/c.mk
