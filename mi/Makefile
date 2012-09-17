@@ -1,4 +1,4 @@
-LIB=libopt.a
+LIB=libmi.a
 OBJ=cfg.o \
     fold.o \
     df.o \

@@ -6,7 +6,7 @@ OBJ=isel.o \
     ra.o \
     simp.o \
 
-DEPS=../parse/libparse.a ../opt/libopt.a
+DEPS=../parse/libparse.a ../mi/libmi.a
 
 include ../mk/lexyacc.mk
 include ../mk/c.mk

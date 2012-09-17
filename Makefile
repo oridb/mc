@@ -1,5 +1,5 @@
 SUB = parse \
-      opt \
+      mi \
       6 \
       util \
       libmyr
