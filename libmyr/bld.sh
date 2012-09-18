@@ -5,8 +5,8 @@
 # testing purposes on every run as things stand.
 
 export PATH=.:$PATH
-export MC=6m
-export MU=muse
+export MC=../6/6m
+export MU=../util/muse
 export CC=cc
 export ASOPT="-g"
 case `uname` in
