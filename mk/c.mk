@@ -89,5 +89,7 @@ clean-backups:
 .deps: 
 	mkdir -p $(_DEPSDIR)
 
-	
+config.mk: configure
+	./configure
+
 -include $(_DEPS)

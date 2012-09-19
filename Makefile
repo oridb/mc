@@ -4,8 +4,8 @@ SUB = parse \
       util \
       libmyr
 
--include config.mk
 include mk/c.mk
+include config.mk
 
 check: all
 	make -C test check
