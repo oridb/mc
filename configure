@@ -10,6 +10,8 @@ for i in `seq 300`; do
 done
 echo "Automake emulated successfully"
 
+INST_ROOT='/usr/local'
+
 for arg in $*; do
     shift 1
     case $arg in
@@ -28,9 +30,29 @@ for arg in $*; do
     esac
 done
 
+OS=`uname`
+
+echo export INST_ROOT=$prefix > config.mk
+echo \#define Instroot "\"$prefix\"" > config.h
+
+case $OS in
+    *Linux*)
+        echo '#define Asmcmd "as -g -o %s %s"' >> config.h
+        echo '#define Fprefix ""' >> config.h
+        ;;
+    *Darwin*)
+        echo '\#define Asmcmd "as -g -o %s %s"' >> config.h
+        echo '\#define Fprefix "_"' >> config.h
+        ;;
+    *)
+        echo 'Unknown architecture. Assuming Linux ABI.'
+        echo '#define Asmcmd "as -g -o %s %s"' >> config.h
+        echo '#define Fprefix "' >> config.h
+        ;;
+esac
+
 cat << EOF
     Building with:
         prefix=$prefix
 EOF
 
-echo export INST_ROOT=$prefix > config.mk

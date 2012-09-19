@@ -12,7 +12,8 @@
 #include "parse.h"
 #include "opt.h"
 #include "asm.h"
-#include "platform.h"
+
+#include "../config.h"
 
 /* FIXME: move into one place...? */
 Node *file;
@@ -56,6 +57,7 @@ int main(int argc, char **argv)
     Stab *globls;
     char buf[1024];
 
+    lappend(&incpaths, &nincpaths, Instroot "include/myr");
     while ((opt = getopt(argc, argv, "d::hSo:I:")) != -1) {
         switch (opt) {
             case 'o':
