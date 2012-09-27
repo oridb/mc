@@ -16,6 +16,7 @@ function build {
     rm -f $1 $1.o $1.s $1.use
     echo $MC $1.myr && \
     $MC $1.myr && \
+    echo $LD -o $1 $1.o -L../libstd -lstd
     $LD -o $1 $1.o -L../libstd -lstd
 }
 
@@ -45,6 +46,20 @@ function exitswith {
         NFAILED=$[$NFAILED + 1]
     fi
 }
+
+# When broken, these tests have taken down machines by
+# using all available resources. This should be disallowed.
+ulimit -c unlimited # core size
+ulimit -d 16382     # data segment: 16m
+ulimit -f 16382     # file size
+ulimit -l 1024      # locked memory
+ulimit -m 32768     # total memory
+ulimit -n 32768     # open files
+ulimit -p 8         # pipe size (512k chunks)
+ulimit -s 8192      # 8 meg stack
+ulimit -t 30        # 30 second CPU time
+ulimit -u 128       # user processes
+ulimit -v 32768     # virtual memory
 
 for i in `awk '/^B/{print $2}' tests`; do
     build $i
