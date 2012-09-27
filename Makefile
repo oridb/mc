@@ -2,7 +2,7 @@ SUB = parse \
       mi \
       6 \
       util \
-      libmyr
+      libstd
 
 include mk/c.mk
 include config.mk

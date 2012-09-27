@@ -7,7 +7,8 @@
 export PATH=.:$PATH
 export MC=../6/6m
 export MU=../util/muse
-export CC=cc
+export AS=as
+export LD=ld
 export ASOPT="-g"
 case `uname` in
     Darwin) export SYS=osx;;
@@ -26,21 +27,22 @@ function use {
 
 function build {
     for i in $@; do
-        N=`basename $i .myr`
-
-        echo $MC $i && \
-            $MC -I. $i
+        echo $MC $i
+        $MC -I. $i
     done
 }
 
 function assem {
     for i in $@; do
-        $CC $ASOPT -c $i
+        N=`basename $i .s`
+
+        echo $AS  -o $N.o $ASOPT $i
+        $AS -o $N.o $ASOPT $i
     done
 }
 
 # Library source.
-ASM=syscall-$SYS.s
+ASM="syscall-$SYS.s start-$SYS.s"
 MYR="types.myr \
     sys-$SYS.myr \
     die.myr \
@@ -65,7 +67,7 @@ ar -rcs libstd.a $OBJ
 
 # build test program
 build test.myr
-COMP="$CC -o test test.o -L. -lstd"
+COMP="$LD -o test test.o -L. -lstd"
 echo $COMP
 $COMP
 
