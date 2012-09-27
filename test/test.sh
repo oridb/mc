@@ -55,10 +55,8 @@ ulimit -f 16382     # file size
 ulimit -l 1024      # locked memory
 ulimit -m 32768     # total memory
 ulimit -n 32768     # open files
-ulimit -p 8         # pipe size (512k chunks)
 ulimit -s 8192      # 8 meg stack
 ulimit -t 30        # 30 second CPU time
-ulimit -u 128       # user processes
 ulimit -v 32768     # virtual memory
 
 for i in `awk '/^B/{print $2}' tests`; do
