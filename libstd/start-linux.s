@@ -5,7 +5,7 @@ _start:
     /* enter the main program */
     call	main
     /* exit */
-    movq	%rax,%rbx
+    movq	%rax,%rdi
     movq	$60,%rax
-    sysenter
+    syscall
 
