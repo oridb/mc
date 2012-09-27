@@ -14,9 +14,9 @@ function use {
 
 function build {
     rm -f $1 $1.o $1.s $1.use
-    echo $MC $1.myr && \
-    $MC $1.myr && \
-    echo $LD -o $1 $1.o -L../libstd -lstd
+    echo $MC $1.myr -I ../libstd && \
+    $MC $1.myr -I ../libstd && \
+    echo $LD -o $1 $1.o -L../libstd -lstd && \
     $LD -o $1 $1.o -L../libstd -lstd
 }
 
