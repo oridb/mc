@@ -2,7 +2,8 @@
 export PATH=.:$PATH
 export MC=../6/6m
 export MU=../util/muse
-export CC=cc
+export AS=AS
+export LD=ld
 NFAILURES=0
 
 function use {
@@ -15,7 +16,7 @@ function build {
     rm -f $1 $1.o $1.s $1.use
     echo $MC $1.myr && \
     $MC $1.myr && \
-    $CC -g -o $1 $1.o
+    $LD -o $1 $1.o -L../libstd -lstd
 }
 
 function prints {
