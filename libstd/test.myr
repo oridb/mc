@@ -1,10 +1,14 @@
 use std
 
-const main = {
+const main = {args : byte[:][:]
 	var x : byte*[1024]
 	var sz
 	var i
 
+	std.put("args.len = %i\n", args.len)
+	for i = 0; i < args.len; i++
+		std.put("args[%i] = %s\n", i, args[i])
+	;;
 	/* try the byte allocator for large variety of sizes. */
 	for sz = 1; sz < 65536; sz *= 2
 		for i = 0; i < 1024; i++
