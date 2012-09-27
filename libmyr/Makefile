@@ -1,9 +1,12 @@
 include ../config.mk
 
-all: 
+all: libstd.a
+
+libstd.a:
 	./bld.sh
 .PHONY: clean
 clean:
+	./bld.sh clean
 
 install:
 	mkdir -p  $(INST_ROOT)/myr/lib/
