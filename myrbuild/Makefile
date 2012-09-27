@@ -1,6 +1,6 @@
-INSTBIN=muse
-BIN=muse
-OBJ=muse.o
+INSTBIN=myrbuild
+BIN=myrbuild
+OBJ=myrbuild.o
 
 DEPS=../parse/libparse.a
 
