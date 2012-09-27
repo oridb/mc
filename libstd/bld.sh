@@ -6,7 +6,7 @@
 
 export PATH=.:$PATH
 export MC=../6/6m
-export MU=../util/muse
+export MU=../muse/muse
 export AS=as
 export LD=ld
 export ASOPT="-g"

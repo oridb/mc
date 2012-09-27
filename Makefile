@@ -1,7 +1,8 @@
 SUB = parse \
       mi \
       6 \
-      util \
+      muse \
+      myrbuild \
       libstd
 
 include mk/c.mk

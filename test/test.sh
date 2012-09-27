@@ -1,7 +1,7 @@
 #!/bin/bash
 export PATH=.:$PATH
 export MC=../6/6m
-export MU=../util/muse
+export MU=../muse/muse
 export AS=AS
 export LD=ld
 NFAILURES=0
