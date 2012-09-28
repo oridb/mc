@@ -197,7 +197,7 @@ void mergeuse(char **files, size_t nfiles)
 
     args = NULL;
     nargs = 0;
-    lappend(&args, &nargs, strdup("muse "));
+    lappend(&args, &nargs, strdup("muse"));
     lappend(&args, &nargs, strdup("-mo"));
     lappend(&args, &nargs, strdup(libname));
     for (i = 0; i < nfiles; i++) {
