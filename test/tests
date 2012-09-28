@@ -71,6 +71,7 @@ B arraylit-ni	E	2
 B structlit	E	42
 B tuple		E	42
 B tyrec		E	42
+B helloworld	P	Hello-世界
 F declmismatch
 F infermismatch
 F usedef

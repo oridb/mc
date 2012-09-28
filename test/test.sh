@@ -8,20 +8,20 @@ NFAILURES=0
 
 function use {
     rm -f $1 $1.o $1.s $1.use
-    echo $MU $1.myr -o $1.use && \
+    echo $MU -I ../libstd -o $1.use $1.myr && \
     $MU $1.myr -o $1.use
 }
 
 function build {
     rm -f $1 $1.o $1.s $1.use
-    echo $MC $1.myr -I ../libstd && \
-    $MC $1.myr -I ../libstd && \
+    echo $MC -I ../libstd $1.myr && \
+    $MC -I ../libstd $1.myr && \
     echo $LD -o $1 $1.o -L../libstd -lstd && \
     $LD -o $1 $1.o -L../libstd -lstd
 }
 
 function prints {
-    if [ `./$1` -ne $2 ]; then
+    if [ "`./$1`" != "$2" ]; then
         echo "FAIL: $1"
         FAILED="$FAILED $1"
         NFAILED=$[$NFAILED + 1]
@@ -54,7 +54,6 @@ ulimit -d 16382     # data segment: 16m
 ulimit -f 16382     # file size
 ulimit -l 1024      # locked memory
 ulimit -m 32768     # total memory
-ulimit -n 32768     # open files
 ulimit -s 8192      # 8 meg stack
 ulimit -t 30        # 30 second CPU time
 ulimit -v 32768     # virtual memory
