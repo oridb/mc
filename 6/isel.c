@@ -679,14 +679,24 @@ void iprintf(FILE *fd, Insn *insn)
             }
             break;
         case Imov:
-            if (insn->args[0]->type == Locreg && insn->args[1]->type == Locreg &&
-                insn->args[0]->reg.colour != Rnone && insn->args[1]->reg.colour != Rnone) {
-                if (insn->args[0]->mode != insn->args[1]->mode)
-                    insn->args[0] = coreg(insn->args[1]->reg.colour, insn->args[1]->mode);
-                /* moving a reg to itself is dumb. */
-                if (insn->args[0]->reg.colour == insn->args[1]->reg.colour)
-                    return;
+            if (insn->args[0]->type != Locreg || insn->args[1]->type != Locreg)
+                break;
+            if (insn->args[0]->reg.colour == Rnone || insn->args[1]->reg.colour == Rnone)
+                break;
+            /* if one reg is a subreg of another, we can just use the right
+             * mode to move between them. */
+            if (insn->args[0]->mode != insn->args[1]->mode)
+                insn->args[0] = coreg(insn->args[0]->reg.colour, insn->args[1]->mode);
+            /* moving a reg to itself is dumb. */
+            if (insn->args[0]->reg.colour == insn->args[1]->reg.colour) {
+                printf("SKIPPING mov ");
+                locprint(stdout, insn->args[0], 'x');
+                printf(" ");
+                locprint(stdout, insn->args[1], 'x');
+                printf("\n");
+                return;
             }
+            break;
         default:
             break;
     }
