@@ -57,7 +57,7 @@ OBJ="$(echo $ASM | sed 's/\.s/.o /g') $(echo $MYR | sed 's/\.myr/.o /g')"
 USE="$(echo $MYR | sed 's/\.myr/.use /g' | sed "s/-$SYS//g")"
 if [ "$1" = "clean" ]; then
     echo rm -f $OBJ test libstd.a
-    rm -f $OBJ test libstd.a
+    rm -f $OBJ $USE test libstd.a
 else
     assem $ASM
     use $MYR

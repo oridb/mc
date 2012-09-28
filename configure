@@ -33,7 +33,7 @@ done
 OS=`uname`
 
 echo export INST_ROOT=$prefix > config.mk
-echo '#define Instroot "' $prefix '"' > config.h
+echo '#define Instroot "'$prefix'"' > config.h
 
 case $OS in
     *Linux*)

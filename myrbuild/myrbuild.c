@@ -10,6 +10,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <regex.h>
+#include <err.h>
 
 #include "parse.h"
 
@@ -67,32 +68,44 @@ char *fromuse(char *path)
     return strdup(buf);
 }
 
-int run(char *bin, char **inc, size_t ninc, char *file)
+void printl(char **lst)
 {
-    char **args;
-    size_t i, nargs;
+    printf("\t");
+    printf("%s\t", *lst++);
+    while (*lst)
+        printf("%s ", *lst++);
+    printf("\n");
+}
+
+void gencmd(char ***cmd, size_t *ncmd, char *bin, char *file, char **extra, size_t nextra)
+{
+    size_t i;
+
+    *cmd = NULL;
+    *ncmd = 0;
+    lappend(cmd, ncmd, bin);
+    for (i = 0; i < nincpaths; i++) {
+        lappend(cmd, ncmd, "-I");
+        lappend(cmd, ncmd, incpaths[i]);
+    }
+    for (i = 0; i < nextra; i++)
+        lappend(cmd, ncmd, extra[i]);
+    lappend(cmd, ncmd, file);
+    lappend(cmd, ncmd, NULL); 
+}
+
+int run(char **cmd)
+{
     pid_t pid;
     int status;
 
-    nargs = 0;
-    args = NULL;
-    
-    lappend(&args, &nargs, bin);
-    for (i = 0; i < nincpaths; i++) {
-        lappend(&args, &nargs, "-I");
-        lappend(&args, &nargs, incpaths[i]);
-    }
-    lappend(&args, &nargs, file);
-    lappend(&args, &nargs, NULL); 
-    for (i = 0; args[i]; i++)
-        printf("%s\t", args[i]);
-    printf("\n");
+    printl(cmd);
     pid = fork();
     if (pid == -1) {
         die("Could not fork\n");
     } else if (pid == 0) {
-        if (execvp(bin, args) == -1)
-            die("Failed to exec %s\n", bin);
+        if (execvp(cmd[0], cmd) == -1)
+            err(1, "Failed to exec %s", cmd[0]);
     } else {
         waitpid(pid, &status, 0);
     }
@@ -137,9 +150,12 @@ void getdeps(char *file, char **deps, size_t depsz, size_t *ndeps)
 void compile(char *file)
 {
     size_t i, ndeps;
+    char **cmd;
+    size_t ncmd;
     char *localdep;
     char *deps[512];
     char buf[1024];
+    char *extra[2] = {"-o", "" /* filename */};
 
     if (hassuffix(file, ".myr")) {
         getdeps(file, deps, 512, &ndeps);
@@ -153,14 +169,126 @@ void compile(char *file)
             }
         }
         swapsuffix(buf, sizeof buf, file, ".myr", ".use");
-        if (isfresh(file, buf))
-            run("muse", incpaths, nincpaths, file);
+        if (isfresh(file, buf)) {
+            gencmd(&cmd, &ncmd, "muse", file, NULL, 0);
+            run(cmd);
+        }
 
         swapsuffix(buf, sizeof buf, file, ".myr", ".o");
-        if (isfresh(file, buf))
-            run("6m", incpaths, nincpaths, file);
+        if (isfresh(file, buf)) {
+            gencmd(&cmd, &ncmd, "6m", file, NULL, 0);
+            run(cmd);
+        }
     } else if (hassuffix(file, ".s")) {
+        swapsuffix(buf, sizeof buf, file, ".s", ".o");
+        if (isfresh(file, buf)) {
+            extra[1] = buf;
+            gencmd(&cmd, &ncmd, "as", file, extra, 2);
+            run(cmd);
+        }
     }
+}
+
+void mergeuse(char **files, size_t nfiles)
+{
+    char **args;
+    size_t i, nargs;
+    char buf[1024];
+
+    args = NULL;
+    nargs = 0;
+    lappend(&args, &nargs, strdup("muse "));
+    lappend(&args, &nargs, strdup("-mo"));
+    lappend(&args, &nargs, strdup(libname));
+    for (i = 0; i < nfiles; i++) {
+        if (hassuffix(files[i], ".myr"))
+            swapsuffix(buf, sizeof buf, files[i], ".myr", ".o");
+        else if (hassuffix(files[i], ".s"))
+            swapsuffix(buf, sizeof buf, files[i], ".s", ".o");
+        else
+            die("Unknown file type %s\n", files[i]);
+        lappend(&args, &nargs, strdup(buf));
+    }
+    lappend(&args, &nargs, NULL);
+
+    run(args);
+
+    for (i = 0; i < nargs; i++)
+        free(args[i]);
+    lfree(&args, &nargs);
+}
+
+void archive(char **files, size_t nfiles)
+{
+    char **args;
+    size_t i, nargs;
+    char buf[1024];
+
+    args = NULL;
+    nargs = 0;
+    snprintf(buf, sizeof buf, "lib%s.a", libname);
+    lappend(&args, &nargs, strdup("ar "));
+    lappend(&args, &nargs, strdup("-rcs"));
+    lappend(&args, &nargs, strdup(buf));
+    for (i = 0; i < nfiles; i++) {
+        if (hassuffix(files[i], ".myr"))
+            swapsuffix(buf, sizeof buf, files[i], ".myr", ".o");
+        else if (hassuffix(files[i], ".s"))
+            swapsuffix(buf, sizeof buf, files[i], ".s", ".o");
+        else
+            die("Unknown file type %s\n", files[i]);
+        lappend(&args, &nargs, strdup(buf));
+    }
+    lappend(&args, &nargs, NULL);
+
+    run(args);
+
+    for (i = 0; i < nargs; i++)
+        free(args[i]);
+    lfree(&args, &nargs);
+}
+
+void linkobj(char **files, size_t nfiles)
+{
+    char **args;
+    size_t i, nargs;
+    char buf[1024];
+
+    if (!binname)
+        binname = "a.out";
+
+    args = NULL;
+    nargs = 0;
+    lappend(&args, &nargs, strdup("ld"));
+    lappend(&args, &nargs, strdup("-o"));
+    lappend(&args, &nargs, strdup(binname));
+    for (i = 0; i < nfiles; i++) {
+        if (hassuffix(files[i], ".myr"))
+            swapsuffix(buf, sizeof buf, files[i], ".myr", ".o");
+        else if (hassuffix(files[i], ".s"))
+            swapsuffix(buf, sizeof buf, files[i], ".s", ".o");
+        else
+            die("Unknown file type %s\n", files[i]);
+        lappend(&args, &nargs, strdup(buf));
+    }
+    lappend(&args, &nargs, strdup("-L"));
+    snprintf(buf, sizeof buf, "%s%s", Instroot, "/myr/lib");
+    lappend(&args, &nargs, strdup(buf));
+    for (i = 0; i < nincpaths; i++) {
+        lappend(&args, &nargs, strdup("-L"));
+        lappend(&args, &nargs, strdup(incpaths[i]));
+    }
+    for (i = 0; i < nlibs; i++) {
+        lappend(&args, &nargs, strdup("-l"));
+        lappend(&args, &nargs, strdup(libs[i]));
+    }
+    lappend(&args, &nargs, NULL);
+
+    run(args);
+
+    for (i = 0; i < nargs; i++)
+        free(args[i]);
+    lfree(&args, &nargs);
 }
 
 int main(int argc, char **argv)
@@ -196,6 +324,12 @@ int main(int argc, char **argv)
     regcomp(&usepat, "^[[:space:]]*use[[:space:]]+([^[:space:]]+)", REG_EXTENDED);
     for (i = optind; i < argc; i++)
         compile(argv[i]);
+    if (libname) {
+        mergeuse(&argv[optind], argc - optind);
+        archive(&argv[optind], argc - optind);
+    } else {
+        linkobj(&argv[optind], argc - optind);
+    }
 
     return 0;
 }
