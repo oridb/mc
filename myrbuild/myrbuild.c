@@ -227,7 +227,7 @@ void archive(char **files, size_t nfiles)
     args = NULL;
     nargs = 0;
     snprintf(buf, sizeof buf, "lib%s.a", libname);
-    lappend(&args, &nargs, strdup("ar "));
+    lappend(&args, &nargs, strdup("ar"));
     lappend(&args, &nargs, strdup("-rcs"));
     lappend(&args, &nargs, strdup(buf));
     for (i = 0; i < nfiles; i++) {
