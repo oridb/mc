@@ -1,0 +1,22 @@
+use std
+
+const main = {args : byte[:][:]
+	chartypes()
+}
+
+const chartypes = {
+	var s
+	var c
+	var foo
+	var buf : byte[32]
+
+	s = "1世界äa\n"
+	while s.len != 0
+		(c, s) = std.striter(s)
+		foo = c
+		if !std.encode(buf[:std.charlen(c)], c)
+			std.write(1, "couldn't encode\n")
+		;;
+		std.write(1, buf[:std.charlen(c)])
+	;;
+}

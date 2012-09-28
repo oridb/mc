@@ -72,6 +72,7 @@ B structlit	E	42
 B tuple		E	42
 B tyrec		E	42
 B helloworld	P	Hello-世界
+B encodechar	P	1世界äa
 F declmismatch
 F infermismatch
 F usedef
