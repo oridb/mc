@@ -109,7 +109,6 @@ void lappend(void *l, size_t *len, void *n)
 {
     void ***pl;
 
-    assert(n != NULL);
     pl = l;
     *pl = xrealloc(*pl, (*len + 1)*sizeof(void*));
     (*pl)[*len] = n;
