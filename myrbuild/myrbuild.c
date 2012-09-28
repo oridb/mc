@@ -94,7 +94,7 @@ void gencmd(char ***cmd, size_t *ncmd, char *bin, char *file, char **extra, size
     lappend(cmd, ncmd, NULL); 
 }
 
-int run(char **cmd)
+void run(char **cmd)
 {
     pid_t pid;
     int status;
@@ -102,14 +102,15 @@ int run(char **cmd)
     printl(cmd);
     pid = fork();
     if (pid == -1) {
-        die("Could not fork\n");
+        err(1, "Could not fork");
     } else if (pid == 0) {
         if (execvp(cmd[0], cmd) == -1)
             err(1, "Failed to exec %s", cmd[0]);
     } else {
         waitpid(pid, &status, 0);
     }
-    return WIFEXITED(status) && WEXITSTATUS(status) == 0;
+    if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
+        die("Command failed");
 }
 
 int isfresh(char *from, char *to)
@@ -117,7 +118,7 @@ int isfresh(char *from, char *to)
     struct stat from_sb, to_sb;
 
     if (stat(from, &from_sb))
-        die("Could not find %s\n", from);
+        err(1, "Could not find %s", from);
     if (stat(to, &to_sb) == -1)
         return 1;
 
@@ -134,14 +135,14 @@ void getdeps(char *file, char **deps, size_t depsz, size_t *ndeps)
 
     f = fopen(file, "r");
     if (!f)
-        die("Could not open file %s\n", file);
+        err(1, "Could not open file %s", file);
 
     i = 0;
     while (fgets(buf, sizeof buf, f)) {
         if (regexec(&usepat, buf, 2, m, 0) == REG_NOMATCH)
             continue;
         if (i == depsz)
-            die("Too many deps for file %s\n", file);
+            die("Too many deps for file %s", file);
         deps[i++] = strdupn(&buf[m[1].rm_so], m[1].rm_eo - m[1].rm_so);
     }
     *ndeps = i;
@@ -206,7 +207,7 @@ void mergeuse(char **files, size_t nfiles)
         else if (hassuffix(files[i], ".s"))
             swapsuffix(buf, sizeof buf, files[i], ".s", ".o");
         else
-            die("Unknown file type %s\n", files[i]);
+            die("Unknown file type %s", files[i]);
         lappend(&args, &nargs, strdup(buf));
     }
     lappend(&args, &nargs, NULL);
@@ -236,7 +237,7 @@ void archive(char **files, size_t nfiles)
         else if (hassuffix(files[i], ".s"))
             swapsuffix(buf, sizeof buf, files[i], ".s", ".o");
         else
-            die("Unknown file type %s\n", files[i]);
+            die("Unknown file type %s", files[i]);
         lappend(&args, &nargs, strdup(buf));
     }
     lappend(&args, &nargs, NULL);
@@ -268,7 +269,7 @@ void linkobj(char **files, size_t nfiles)
         else if (hassuffix(files[i], ".s"))
             swapsuffix(buf, sizeof buf, files[i], ".s", ".o");
         else
-            die("Unknown file type %s\n", files[i]);
+            die("Unknown file type %s", files[i]);
         lappend(&args, &nargs, strdup(buf));
     }
     lappend(&args, &nargs, strdup("-L"));
