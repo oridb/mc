@@ -20,6 +20,12 @@
 Node *file;
 char *filename;
 
+/* binaries we call out to */
+char *mc = "6m";
+char *as = "as";
+char *ar = "ar";
+char *ld = "ld";
+char *muse = "muse";
 /* the name of the output file */
 char *libname;
 char *binname;
@@ -171,20 +177,20 @@ void compile(char *file)
         }
         swapsuffix(buf, sizeof buf, file, ".myr", ".use");
         if (isfresh(file, buf)) {
-            gencmd(&cmd, &ncmd, "muse", file, NULL, 0);
+            gencmd(&cmd, &ncmd, muse, file, NULL, 0);
             run(cmd);
         }
 
         swapsuffix(buf, sizeof buf, file, ".myr", ".o");
         if (isfresh(file, buf)) {
-            gencmd(&cmd, &ncmd, "6m", file, NULL, 0);
+            gencmd(&cmd, &ncmd, mc, file, NULL, 0);
             run(cmd);
         }
     } else if (hassuffix(file, ".s")) {
         swapsuffix(buf, sizeof buf, file, ".s", ".o");
         if (isfresh(file, buf)) {
             extra[1] = buf;
-            gencmd(&cmd, &ncmd, "as", file, extra, 2);
+            gencmd(&cmd, &ncmd, as, file, extra, 2);
             run(cmd);
         }
     }
@@ -198,7 +204,7 @@ void mergeuse(char **files, size_t nfiles)
 
     args = NULL;
     nargs = 0;
-    lappend(&args, &nargs, strdup("muse"));
+    lappend(&args, &nargs, strdup(muse));
     lappend(&args, &nargs, strdup("-mo"));
     lappend(&args, &nargs, strdup(libname));
     for (i = 0; i < nfiles; i++) {
@@ -228,7 +234,7 @@ void archive(char **files, size_t nfiles)
     args = NULL;
     nargs = 0;
     snprintf(buf, sizeof buf, "lib%s.a", libname);
-    lappend(&args, &nargs, strdup("ar"));
+    lappend(&args, &nargs, strdup(ar));
     lappend(&args, &nargs, strdup("-rcs"));
     lappend(&args, &nargs, strdup(buf));
     for (i = 0; i < nfiles; i++) {
@@ -260,7 +266,7 @@ void linkobj(char **files, size_t nfiles)
 
     args = NULL;
     nargs = 0;
-    lappend(&args, &nargs, strdup("ld"));
+    lappend(&args, &nargs, strdup(ld));
     lappend(&args, &nargs, strdup("-o"));
     lappend(&args, &nargs, strdup(binname));
     for (i = 0; i < nfiles; i++) {
@@ -297,15 +303,16 @@ int main(int argc, char **argv)
     int opt;
     int i;
 
-    while ((opt = getopt(argc, argv, "hb:l:I:")) != -1) {
+    while ((opt = getopt(argc, argv, "hb:l:I:C:A:M:L:R:")) != -1) {
         switch (opt) {
-            case 'b':
-                binname = optarg;
-                break;
-            case 'l':
-                libname = optarg;
-                break;
-            case 'I':
+            case 'b': binname = optarg; break;
+            case 'l': libname = optarg; break;
+            case 'C': mc = optarg; break;
+            case 'A': as = optarg; break;
+            case 'M': muse = optarg; break;
+            case 'L': ld = optarg; break;
+            case 'R': ar = optarg; break;
+            case 'I': 
                 lappend(&incpaths, &nincpaths, optarg);
                 break;
             case 'h':
