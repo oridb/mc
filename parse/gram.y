@@ -122,7 +122,7 @@ static void constrainwith(Type *t, char *str);
 
 %type <ty> type structdef uniondef tupledef compoundtype functype funcsig
 %type <ty> generictype
-%type <tylist> typelist
+%type <tylist> typelist typarams
 %type <nodelist> typaramlist
 
 %type <tok> asnop cmpop addop mulop shiftop
@@ -260,7 +260,10 @@ name    : Tident
 
 tydef   : Ttype typeid Tasn type
             {$$ = $2;
-             $$.type = mktytmpl($2.line, mkname($2.line, $2.name), $2.params, $2.nparams, $4);}
+             if ($2.params)
+                 $$.type = mktygeneric($2.line, mkname($2.line, $2.name), $2.params, $2.nparams, $4);
+             else
+                 $$.type = mktyname($2.line, mkname($2.line, $2.name), $4);}
         | Ttype typeid
             {$$ = $2;}
         ;
@@ -273,12 +276,16 @@ typeid  : Tident
         | Tident Toparen typarams Tcparen
             {$$.line = $1->line;
              $$.name = $1->str;
-             $$.params = NULL;
+             $$.params = $3.types;
+             $$.nparams = $3.ntypes;
              $$.type = NULL;}
         ;
 
 typarams: generictype
+            {$$.types = NULL; $$.ntypes = 0;
+             lappend(&$$.types, &$$.ntypes, $1);}
         | typarams Tcomma generictype
+            {lappend(&$$.types, &$$.ntypes, $3);}
         ;
 
 type    : structdef
