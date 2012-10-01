@@ -57,7 +57,7 @@ int main(int argc, char **argv)
     Stab *globls;
     char buf[1024];
 
-    lappend(&incpaths, &nincpaths, Instroot "include/myr");
+    lappend(&incpaths, &nincpaths, Instroot "/lib/myr");
     while ((opt = getopt(argc, argv, "d::hSo:I:")) != -1) {
         switch (opt) {
             case 'o':

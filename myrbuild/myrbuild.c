@@ -54,7 +54,7 @@ int hassuffix(char *path, char *suffix)
 
     pathlen = strlen(path);
     sufflen = strlen(suffix);
-    
+
     if (sufflen > pathlen)
         return 0;
     return !strcmp(&path[pathlen-sufflen], suffix);

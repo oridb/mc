@@ -44,7 +44,7 @@ int loaduse(FILE *f, Stab *st)
     int c;
 
     if (fgetc(f) != 'U')
-	return 0;
+        return 0;
     pkg = rdstr(f);
     /* if the package names match up, or the usefile has no declared
      * package, then we simply add to the current stab. Otherwise,
@@ -63,20 +63,20 @@ int loaduse(FILE *f, Stab *st)
         }
     }
     while ((c = fgetc(f)) != 'Z') {
-	switch(c) {
-	    case 'G':
-	    case 'D':
+        switch(c) {
+            case 'G':
+            case 'D':
                 dcl = symunpickle(f);
                 putdcl(s, dcl);
                 break;
-	    case 'T':
+            case 'T':
                 n = mkname(-1, rdstr(f));
                 t = tyunpickle(f);
                 puttype(s, n, t);
                 break;
-	    case EOF:
-		break;
-	}
+            case EOF:
+                break;
+        }
     }
     return 1;
 }
@@ -90,25 +90,25 @@ void readuse(Node *use, Stab *st)
     /* local (quoted) uses are always relative to the cwd */
     fd = NULL;
     if (use->use.islocal) {
-	fd = fopen(use->use.name, "r");
+        fd = fopen(use->use.name, "r");
     /* nonlocal (barename) uses are always searched on the include path */
     } else {
-	for (i = 0; i < nincpaths; i++) {
-	    p = strjoin(incpaths[i], "/");
+        for (i = 0; i < nincpaths; i++) {
+            p = strjoin(incpaths[i], "/");
             q = strjoin(p, use->use.name);
-	    fd = fopen(q, "r");
-	    if (fd) {
-		free(p);
-		free(q);
-		break;
-	    }
-	}
+            fd = fopen(q, "r");
+            if (fd) {
+                free(p);
+                free(q);
+                break;
+            }
+        }
     }
     if (!fd)
         fatal(use->line, "Could not open %s", use->use.name);
 
     if (!loaduse(fd, st))
-	die("Could not load usefile %s", use->use.name);
+        die("Could not load usefile %s", use->use.name);
 }
 
 /* Usefile format:
@@ -129,28 +129,27 @@ void writeuse(FILE *f, Node *file)
     st = file->file.exports;
     wrbyte(f, 'U');
     if (st->name)
-	wrstr(f, namestr(st->name));
+        wrstr(f, namestr(st->name));
     else
-	wrstr(f, NULL);
+        wrstr(f, NULL);
 
     k = htkeys(st->ty, &n);
     for (i = 0; i < n; i++) {
-	t = gettype(st, k[i]);
-	wrbyte(f, 'T');
+        t = gettype(st, k[i]);
+        wrbyte(f, 'T');
         wrstr(f, namestr(k[i]));
-	typickle(t, f);
+        typickle(t, f);
     }
     free(k);
     k = htkeys(st->dcl, &n);
     for (i = 0; i < n; i++) {
-	s = getdcl(st, k[i]);
-	if (s->decl.isgeneric)
-	    wrbyte(f, 'G');
-	else
-	    wrbyte(f, 'D');
-	sympickle(s, f);
+        s = getdcl(st, k[i]);
+        if (s->decl.isgeneric)
+            wrbyte(f, 'G');
+        else
+            wrbyte(f, 'D');
+        sympickle(s, f);
     }
     free(k);
     wrbyte(f, 'Z');
 }
-
