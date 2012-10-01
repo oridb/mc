@@ -8,15 +8,15 @@ NFAILURES=0
 
 function use {
     rm -f $1 $1.o $1.s $1.use
-    echo $MU -I ../libstd -o $1.use $1.myr && \
+    echo "	"$MU -I ../libstd -o $1.use $1.myr && \
     $MU $1.myr -o $1.use
 }
 
 function build {
     rm -f $1 $1.o $1.s $1.use
-    echo $MC -I ../libstd $1.myr && \
+    echo "	"$MC -I ../libstd $1.myr && \
     $MC -I ../libstd $1.myr && \
-    echo $LD -o $1 $1.o -L../libstd -lstd && \
+    echo "	"$LD -o $1 $1.o -L../libstd -lstd && \
     $LD -o $1 $1.o -L../libstd -lstd
 }
 
