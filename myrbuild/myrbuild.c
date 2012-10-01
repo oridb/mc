@@ -208,13 +208,12 @@ void mergeuse(char **files, size_t nfiles)
     lappend(&args, &nargs, strdup("-mo"));
     lappend(&args, &nargs, strdup(libname));
     for (i = 0; i < nfiles; i++) {
-        if (hassuffix(files[i], ".myr"))
-            swapsuffix(buf, sizeof buf, files[i], ".myr", ".o");
-        else if (hassuffix(files[i], ".s"))
-            swapsuffix(buf, sizeof buf, files[i], ".s", ".o");
-        else
+        if (hassuffix(files[i], ".myr")) {
+            swapsuffix(buf, sizeof buf, files[i], ".myr", ".use");
+            lappend(&args, &nargs, strdup(buf));
+        } else if (!hassuffix(files[i], ".s")) {
             die("Unknown file type %s", files[i]);
-        lappend(&args, &nargs, strdup(buf));
+        }
     }
     lappend(&args, &nargs, NULL);
 
