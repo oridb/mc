@@ -20,3 +20,4 @@ std$syscall:
 
 	popq %rbp
 	ret
+
