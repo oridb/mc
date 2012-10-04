@@ -415,6 +415,7 @@ pkg std =
 	const Sysfileport_makefd	: scno = 0x20001b1
 
 	extern const syscall : (sc:scno, args:... -> int64)
+	extern const cstring : (str : byte[:] -> byte*)
 
 	const exit	: (status:int64 -> void)
 	const getpid	: ( -> int64)
@@ -433,7 +434,7 @@ pkg std =
 const exit	= {status;		syscall(Sysexit, 1);}
 const getpid	= {;			-> syscall(Sysgetpid, 1);}
 const kill	= {pid, sig;		-> syscall(Syskill, pid, sig);}
-const open	= {path, opts, mode;	-> syscall(Sysopen, cstring(path) opts, mode);}
+const open	= {path, opts, mode;	-> syscall(Sysopen, cstring(path), opts, mode);}
 const close	= {fd;			-> syscall(Sysclose, fd);}
 const creat	= {path, mode;		-> open(path, Ocreat | Otrunc | Owronly, mode);}
 const read	= {fd, buf;		-> syscall(Sysread, fd, buf castto(char*), buf.len);}
