@@ -130,12 +130,29 @@ static Type *tyfreshen(Inferstate *st, Htab *ht, Type *t)
         ret = mktyvar(t->line);
         htput(ht, t->pname, ret);
         return ret;
+    } else if (t->type == Tygeneric) {
+        for (i = 0; i < t->nparam; i++)
+            if (!hthas(ht, t->param[i]->pname))
+                htput(ht, t->param[i]->pname, mktyvar(t->param[i]->line));
+        return mktyname(t->line, t->name, tyfreshen(st, ht, t->sub[0]));
+    } else {
+        ret = tydup(t);
+        for (i = 0; i < t->nsub; i++)
+            ret->sub[i] = tyfreshen(st, ht, t->sub[i]);
+        return ret;
     }
+}
 
-    ret = tydup(t);
-    for (i = 0; i < t->nsub; i++)
-        ret->sub[i] = tyfreshen(st, ht, t->sub[i]);
-    return ret;
+static Type *tyspecialize(Inferstate *st, Type *t)
+{
+    Htab *ht;
+
+    assert(t->type == Tygeneric);
+    ht = mkht(strhash, streq);
+    t = tyfreshen(st, ht, t);
+    htfree(ht);
+
+    return t;
 }
 
 /* Freshens the type of a declaration. */
@@ -484,11 +501,17 @@ static Type *unify(Inferstate *st, Node *ctx, Type *a, Type *b)
         b = t;
     }
 
+    if (a->type == Tygeneric)
+        a = tyspecialize(st, a);
+    if (b->type == Tygeneric)
+        b = tyspecialize(st, b);
+
     r = NULL;
     if (a->type == Tyvar) {
         tytab[a->tid] = b;
         r = b;
     }
+
     /* Disallow recursive types */
     if (a->type == Tyvar && b->type != Tyvar) 
         if (occurs(a, b))

@@ -132,7 +132,7 @@ static void outnode(Node *n, FILE *fd, int depth)
                 outnode(n->file.stmts[i], fd, depth + 1);
             break;
         case Ndecl:
-            fprintf(fd, "(did = %zd, isconst = %d, isgeneric = %d, isextern = %d\n, isexport = %d)",
+            fprintf(fd, "(did = %zd, isconst = %d, isgeneric = %d, isextern = %d, isexport = %d)\n",
                     n->decl.did, n->decl.isconst, n->decl.isgeneric, n->decl.isextern, n->decl.isexport);
             outsym(n, fd, depth + 1);
             outnode(n->decl.init, fd, depth + 1);

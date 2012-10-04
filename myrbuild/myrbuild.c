@@ -162,7 +162,7 @@ void compile(char *file)
     char *localdep;
     char *deps[512];
     char buf[1024];
-    char *extra[2] = {"-o", "" /* filename */};
+    char *extra[] = {"-g", "-o", "" /* filename */};
 
     if (hassuffix(file, ".myr")) {
         getdeps(file, deps, 512, &ndeps);
@@ -189,8 +189,8 @@ void compile(char *file)
     } else if (hassuffix(file, ".s")) {
         swapsuffix(buf, sizeof buf, file, ".s", ".o");
         if (isfresh(file, buf)) {
-            extra[1] = buf;
-            gencmd(&cmd, &ncmd, as, file, extra, 2);
+            extra[2] = buf;
+            gencmd(&cmd, &ncmd, as, file, extra, 3);
             run(cmd);
         }
     }

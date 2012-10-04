@@ -12,7 +12,8 @@ MYRSRC= \
 
 ASMSRC= \
     start.s \
-    syscall.s
+    syscall.s \
+    util.s
 
 include ../config.mk
 

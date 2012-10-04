@@ -53,12 +53,24 @@ Type *tydup(Type *t)
 
     r = mktype(t->line, t->type);
     r->resolved = 0; /* re-resolving doesn't hurt */
+    r->fixed = 0; /* re-resolving doesn't hurt */
+
     r->cstrs = bsdup(t->cstrs);
+    r->cstrlist = memdup(t->cstrlist, t->ncstrlist * sizeof(Node*));
+    r->ncstrlist = t->ncstrlist;
+
+    r->param = memdup(t->param, t->nparam * sizeof(Type*));
+    r->nparam = t->nparam;
+    r->inst = memdup(t->param, t->nparam * sizeof(Type*));
+    r->ninst = t->ninst;
+
+    r->sub = memdup(t->sub, t->nsub * sizeof(Type*));
     r->nsub = t->nsub;
     r->nmemb = t->nmemb;
-    r->sub = memdup(t->sub, t->nsub * sizeof(Type*));
     switch (t->type) {
-        case Tyunres:    r->name = t->name;              break;
+        case Tygeneric:   r->name = t->name;              break;
+        case Tyname:   r->name = t->name;              break;
+        case Tyunres:   r->name = t->name;              break;
         case Tyarray:   r->asize = t->asize;            break;
         case Typaram:   r->pname = strdup(t->pname);    break;
         case Tystruct:  r->sdecls = memdup(t->sdecls, t->nmemb*sizeof(Node*));   break;
