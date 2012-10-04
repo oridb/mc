@@ -130,12 +130,17 @@ static Type *tyfreshen(Inferstate *st, Htab *ht, Type *t)
         ret = mktyvar(t->line);
         htput(ht, t->pname, ret);
         return ret;
+    } else if (t->type == Tygeneric) {
+        for (i = 0; i < t->nparam; i++)
+            if (!hthas(ht, t->param[i]->pname))
+                htput(ht, t->param[i]->pname, mktyvar(t->param[i]->line));
+        return mktyname(t->line, t->name, tyfreshen(st, ht, t->sub[0]));
+    } else {
+        ret = tydup(t);
+        for (i = 0; i < t->nsub; i++)
+            ret->sub[i] = tyfreshen(st, ht, t->sub[i]);
+        return ret;
     }
-
-    ret = tydup(t);
-    for (i = 0; i < t->nsub; i++)
-        ret->sub[i] = tyfreshen(st, ht, t->sub[i]);
-    return ret;
 }
 
 static Type *tyspecialize(Inferstate *st, Type *t)
