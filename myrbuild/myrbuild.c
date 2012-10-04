@@ -154,6 +154,16 @@ void getdeps(char *file, char **deps, size_t depsz, size_t *ndeps)
     *ndeps = i;
 }
 
+int inlist(char **list, size_t sz, char *str)
+{
+    size_t i;
+
+    for (i = 0; i < sz; i++)
+        if (!strcmp(list[i], str))
+            return 1;
+    return 0;
+}
+
 void compile(char *file)
 {
     size_t i, ndeps;
@@ -171,7 +181,7 @@ void compile(char *file)
                 localdep = fromuse(deps[i]);
                 compile(localdep);
                 free(localdep);
-            } else {
+            } else if (!inlist(libs, nlibs, deps[i])) {
                 lappend(&libs, &nlibs, deps[i]);
             }
         }
