@@ -41,6 +41,10 @@ struct Inferstate {
 static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret);
 static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret);
 static void typesub(Inferstate *st, Node *n);
+static void tybind(Inferstate *st, Type *t);
+static void bind(Inferstate *st, Node *n);
+static void tyunbind(Inferstate *st, Type *t);
+static void unbind(Inferstate *st, Node *n);
 static Type *unify(Inferstate *st, Node *ctx, Type *a, Type *b);
 static Type *tf(Inferstate *st, Type *t);
 
@@ -227,6 +231,7 @@ static void tyresolve(Inferstate *st, Type *t)
     if (t->resolved)
         return;
     t->resolved = 1;
+    tybind(st, t);
     /* if this is a generic type, bind the params. */
     /* Walk through aggregate type members */
     if (t->type == Tystruct) {
@@ -256,6 +261,7 @@ static void tyresolve(Inferstate *st, Type *t)
         t->cstrs = bsdup(base->cstrs);
     if (tyinfinite(st, t, NULL))
         fatal(t->line, "Type %s includes itself", tystr(t));
+    tyunbind(st, t);
 }
 
 /* fixd the most accurate type mapping we have (ie,
@@ -355,7 +361,7 @@ static Ucon *uconresolve(Inferstate *st, Node *n)
 
 /* Binds the type parameters present in the
  * current type into the type environment */
-static void tybind(Inferstate *st, Htab *bt, Type *t)
+static void putbindings(Inferstate *st, Htab *bt, Type *t)
 {
     size_t i;
 
@@ -371,9 +377,21 @@ static void tybind(Inferstate *st, Htab *bt, Type *t)
 
     htput(bt, t->pname, t);
     for (i = 0; i < t->nparam; i++)
-        tybind(st, bt, t->param[i]);
+        putbindings(st, bt, t->param[i]);
     for (i = 0; i < t->nsub; i++)
-        tybind(st, bt, t->sub[i]);
+        putbindings(st, bt, t->sub[i]);
+}
+
+static void tybind(Inferstate *st, Type *t)
+{
+    Htab *bt;
+
+    if (t->type != Tygeneric)
+        return;
+    st->ingeneric++;
+    bt = mkht(strhash, streq);
+    lappend(&st->tybindings, &st->ntybindings, bt);
+    putbindings(st, bt, t);
 }
 
 /* Binds the type parameters in the
@@ -388,11 +406,12 @@ static void bind(Inferstate *st, Node *n)
     if (!n->decl.init)
         fatal(n->line, "generic %s has no initializer", n->decl);
 
+    st->ingeneric++;
     bt = mkht(strhash, streq);
     lappend(&st->tybindings, &st->ntybindings, bt);
 
-    tybind(st, bt, n->decl.type);
-    tybind(st, bt, n->decl.init->expr.type);
+    putbindings(st, bt, n->decl.type);
+    putbindings(st, bt, n->decl.init->expr.type);
 }
 
 /* Rolls back the binding of type parameters in
@@ -403,6 +422,16 @@ static void unbind(Inferstate *st, Node *n)
         return;
     htfree(st->tybindings[st->ntybindings - 1]);
     lpop(&st->tybindings, &st->ntybindings);
+    st->ingeneric--;
+}
+
+static void tyunbind(Inferstate *st, Type *t)
+{
+    if (t->type != Tygeneric)
+        return;
+    htfree(st->tybindings[st->ntybindings - 1]);
+    lpop(&st->tybindings, &st->ntybindings);
+    st->ingeneric--;
 }
 
 static void checkcast(Inferstate *st, Node *n)
@@ -1044,15 +1073,11 @@ static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
             popstab();
             break;
         case Ndecl:
-            if (n->decl.isgeneric)
-                st->ingeneric++;
             bind(st, n);
             inferdecl(st, n);
             unbind(st, n);
             if (type(st, n)->type == Typaram && !st->ingeneric)
                 fatal(n->line, "Generic type %s in non-generic near %s\n", tystr(type(st, n)), ctxstr(st, n));
-            if (n->decl.isgeneric)
-                st->ingeneric--;
             break;
         case Nblock:
             setsuper(n->block.scope, curstab());
@@ -1098,7 +1123,7 @@ static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
             setsuper(n->func.scope, curstab());
             if (st->ntybindings > 0)
                 for (i = 0; i < n->func.nargs; i++)
-                    tybind(st, st->tybindings[st->ntybindings - 1], n->func.args[i]->decl.type);
+                    putbindings(st, st->tybindings[st->ntybindings - 1], n->func.args[i]->decl.type);
             pushstab(n->func.scope);
             inferstab(st, n->block.scope);
             inferfunc(st, n);
