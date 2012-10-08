@@ -407,7 +407,8 @@ static void unbind(Inferstate *st, Node *n)
 
 static void checkcast(Inferstate *st, Node *n)
 {
-    /* FIXME: actually verify the casts */
+    /* FIXME: actually verify the casts. Right now, it's ok to leave this
+     * unimplemented because bad casts get caught by the backend. */
 }
 
 /* Constrains a type to implement the required constraints. On
