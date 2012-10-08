@@ -130,13 +130,15 @@ Type *mktyparam(int line, char *name)
     return t;
 }
 
-Type *mktyunres(int line, Node *name)
+Type *mktyunres(int line, Node *name, Type **param, size_t nparam)
 {
     Type *t;
 
     /* resolve it in the type inference stage */
     t = mktype(line, Tyunres);
     t->name = name;
+    t->param = param;
+    t->nparam = nparam;
     return t;
 }
 
@@ -456,19 +458,28 @@ static int tybfmt(char *buf, size_t len, Type *t)
         case Tyunres:
             p += snprintf(p, end - p, "?"); /* indicate unresolved name. should not be seen by user. */
             p += namefmt(p, end - p, t->name);
+            if (t->nparam) {
+                p += snprintf(p, end - p, "(");
+                for (i = 0; i < t->nparam; i++)  {
+                    p += snprintf(p, end - p, "%s", sep);
+                    p += tybfmt(p, end - p, t->param[i]);
+                    sep = ", ";
+                }
+                p += snprintf(p, end - p, ")");
+            }
             break;
         case Tyname:  
-            p += snprintf(p, end - p, "%s", namestr(t->name));
-            break;
         case Tygeneric:  
             p += snprintf(p, end - p, "%s", namestr(t->name));
-            p += snprintf(p, end - p, "(");
-            for (i = 0; i < t->nparam; i++)  {
-                p += snprintf(p, end - p, "%s", sep);
-                p += tybfmt(p, end - p, t->param[i]);
-                sep = ", ";
+            if (t->nparam) {
+                p += snprintf(p, end - p, "(");
+                for (i = 0; i < t->nparam; i++)  {
+                    p += snprintf(p, end - p, "%s", sep);
+                    p += tybfmt(p, end - p, t->param[i]);
+                    sep = ", ";
+                }
+                p += snprintf(p, end - p, ")");
             }
-            p += snprintf(p, end - p, ")");
             break;
         case Tystruct:  p += fmtstruct(p, end - p, t);  break;
         case Tyunion:   p += fmtunion(p, end - p, t);   break;

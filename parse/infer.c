@@ -134,7 +134,10 @@ static Type *tyfreshen(Inferstate *st, Htab *ht, Type *t)
         for (i = 0; i < t->nparam; i++)
             if (!hthas(ht, t->param[i]->pname))
                 htput(ht, t->param[i]->pname, mktyvar(t->param[i]->line));
-        return mktyname(t->line, t->name, tyfreshen(st, ht, t->sub[0]));
+        ret = mktyname(t->line, t->name, tyfreshen(st, ht, t->sub[0]));
+        for (i = 0; i < t->nparam; i++)
+            lappend(&ret->param, &ret->nparam, tyfreshen(st, ht, t->param[i]));
+        return ret;
     } else {
         ret = tydup(t);
         for (i = 0; i < t->nsub; i++)
@@ -568,6 +571,26 @@ static void unifycall(Inferstate *st, Node *n)
     settype(st, n, ft->sub[0]);
 }
 
+static void unifyparams(Inferstate *st, Node *ctx, Type *a, Type *b)
+{
+    size_t i;
+
+    /* The only types with unifiable params are Tyunres and Tyname.
+     * Tygeneric should always be freshened, and no other types have
+     * parameters attached. 
+     *
+     * FIXME: Is it possible to have parameterized typarams? */
+    if (a->type != Tyunres && a->type != Tyname)
+        return;
+    if (b->type != Tyunres && b->type != Tyname)
+        return;
+
+    if (a->nparam != b->nparam)
+        fatal(ctx->line, "Mismatched parameter list sizes: %s with %s near %s", tystr(a), tystr(b), ctxstr(st, ctx));
+    for (i = 0; i < a->nparam; i++)
+        unify(st, ctx, a->param[i], b->param[i]);
+}
+
 static void loaduses(Node *n)
 {
     size_t i;
@@ -951,6 +974,10 @@ static void inferdecl(Inferstate *st, Node *n)
     Type *t;
 
     t = tf(st, decltype(n));
+    if (t->type == Tygeneric) {
+        t = tyspecialize(st, t);
+        unifyparams(st, n, t, decltype(n));
+    }
     settype(st, n, t);
     if (n->decl.init) {
         inferexpr(st, n->decl.init, NULL, NULL);

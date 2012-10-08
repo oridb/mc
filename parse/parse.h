@@ -345,7 +345,7 @@ Type *mktyvar(int line);
 Type *mktyparam(int line, char *name);
 Type *mktyname(int line, Node *name, Type *base);
 Type *mktygeneric(int line, Node *name, Type **params, size_t nparams, Type *base);
-Type *mktyunres(int line, Node *name);
+Type *mktyunres(int line, Node *name, Type **params, size_t nparams);
 Type *mktyarray(int line, Type *base, Node *sz);
 Type *mktyslice(int line, Type *base);
 Type *mktyidxhack(int line, Type *base);

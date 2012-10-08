@@ -323,8 +323,8 @@ compoundtype
         | type Tosqbrac expr Tcsqbrac {$$ = mktyarray($2->line, $1, $3);}
         | type Tstar {$$ = mktyptr($2->line, $1);}
         | Tat Tident {$$ = mktyparam($1->line, $2->str);}
-        | name       {$$ = mktyunres($1->line, $1);}
-        | name Toparen typelist Tcparen {$$ = mktyunres($1->line, $1);}
+        | name       {$$ = mktyunres($1->line, $1, NULL, 0);}
+        | name Toparen typelist Tcparen {$$ = mktyunres($1->line, $1, $3.types, $3.ntypes);}
         ;
 
 functype: Toparen funcsig Tcparen {$$ = $2;}
