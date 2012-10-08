@@ -279,7 +279,7 @@ int istysigned(Type *t)
 Type *tybase(Type *t)
 {
     assert(t != NULL);
-    while (t->type == Tyname)
+    while (t->type == Tyname || t->type == Tygeneric)
         t = t->sub[0];
     return t;
 }
