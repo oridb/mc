@@ -123,27 +123,34 @@ static Type *tyfreshen(Inferstate *st, Htab *ht, Type *t)
     t = tf(st, t);
     if (t->type != Typaram && t->nsub == 0)
         return t;
-
-    if (t->type == Typaram) {
-        if (hthas(ht, t->pname))
-            return htget(ht, t->pname);
-        ret = mktyvar(t->line);
-        htput(ht, t->pname, ret);
-        return ret;
-    } else if (t->type == Tygeneric) {
-        for (i = 0; i < t->nparam; i++)
-            if (!hthas(ht, t->param[i]->pname))
-                htput(ht, t->param[i]->pname, mktyvar(t->param[i]->line));
-        ret = mktyname(t->line, t->name, tyfreshen(st, ht, t->sub[0]));
-        for (i = 0; i < t->nparam; i++)
-            lappend(&ret->param, &ret->nparam, tyfreshen(st, ht, t->param[i]));
-        return ret;
-    } else {
-        ret = tydup(t);
-        for (i = 0; i < t->nsub; i++)
-            ret->sub[i] = tyfreshen(st, ht, t->sub[i]);
-        return ret;
+    switch (t->type) {
+        case Typaram:
+            if (hthas(ht, t->pname))
+                return htget(ht, t->pname);
+            ret = mktyvar(t->line);
+            htput(ht, t->pname, ret);
+            break;
+        case Tygeneric:
+            for (i = 0; i < t->nparam; i++)
+                if (!hthas(ht, t->param[i]->pname))
+                    htput(ht, t->param[i]->pname, mktyvar(t->param[i]->line));
+            ret = mktyname(t->line, t->name, tyfreshen(st, ht, t->sub[0]));
+            for (i = 0; i < t->nparam; i++)
+                lappend(&ret->param, &ret->nparam, tyfreshen(st, ht, t->param[i]));
+            break;
+        case Tystruct:
+            die("Freshening structs is not yet implemented");
+            break;
+        case Tyunion:
+            die("Freshening unions is not yet implemented");
+            break;
+        default:
+            ret = tydup(t);
+            for (i = 0; i < t->nsub; i++)
+                ret->sub[i] = tyfreshen(st, ht, t->sub[i]);
+            break;
     }
+    return ret;
 }
 
 static Type *tyspecialize(Inferstate *st, Type *t)
@@ -227,7 +234,8 @@ static void tyresolve(Inferstate *st, Type *t)
             infernode(st, t->sdecls[i], NULL, NULL);
     } else if (t->type == Tyunion) {
         for (i = 0; i < t->nmemb; i++) {
-            tyresolve(st, t->udecls[i]->utype);
+            //tyresolve(st, t->udecls[i]->utype);
+            t->udecls[i]->utype = t;
             t->udecls[i]->utype = tf(st, t->udecls[i]->utype);
             if (t->udecls[i]->etype) {
                 tyresolve(st, t->udecls[i]->etype);
@@ -337,11 +345,11 @@ static Ucon *uconresolve(Inferstate *st, Node *n)
     args = n->expr.args;
     uc = getucon(curstab(), args[0]);
     if (!uc)
-        fatal(n->line, "No union constructor %s", ctxstr(st, args[0]));
+        fatal(n->line, "no union constructor `%s", ctxstr(st, args[0]));
     if (!uc->etype && n->expr.nargs > 1)
-        fatal(n->line, "nullary union constructor %s passed arg ", ctxstr(st, args[0]));
+        fatal(n->line, "nullary union constructor `%s passed arg ", ctxstr(st, args[0]));
     else if (uc->etype && n->expr.nargs != 2)
-        fatal(n->line, "union constructor %s needs arg ", ctxstr(st, args[0]));
+        fatal(n->line, "union constructor `%s needs arg ", ctxstr(st, args[0]));
     return uc;
 }
 

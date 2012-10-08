@@ -44,6 +44,6 @@ clean:
 
 
 install:
-	mkdir -p  $(INST_ROOT)/myr/lib/
-	install libstd.a $(INST_ROOT)/myr/lib/
-	install std $(INST_ROOT)/myr/lib/
+	mkdir -p  $(INST_ROOT)/lib/myr
+	install libstd.a $(INST_ROOT)/lib/myr
+	install std $(INST_ROOT)/lib/myr
