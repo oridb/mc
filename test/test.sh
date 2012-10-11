@@ -17,7 +17,11 @@ function build {
     echo "	"$MC -I ../libstd $1.myr && \
     $MC -I ../libstd $1.myr && \
     echo "	"$LD -o $1 $1.o -L../libstd -lstd && \
-    $LD -o $1 $1.o -L../libstd -lstd
+    if [ "x`uname`" = "xDarwin" ]; then
+        $LD -macosx_version_min 10.6 -o $1 $1.o -L../libstd -lstd
+    else
+        $LD -o $1 $1.o -L../libstd -lstd
+    fi
 }
 
 function prints {
