@@ -231,6 +231,8 @@ static void tyresolve(Inferstate *st, Type *t)
     if (t->resolved)
         return;
     t->resolved = 1;
+    if (t->type == Tygeneric)
+        t = tyspecialize(st, t);
     tybind(st, t);
     /* if this is a generic type, bind the params. */
     /* Walk through aggregate type members */
@@ -541,11 +543,6 @@ static Type *unify(Inferstate *st, Node *ctx, Type *a, Type *b)
         a = b;
         b = t;
     }
-
-    if (a->type == Tygeneric)
-        a = tyspecialize(st, a);
-    if (b->type == Tygeneric)
-        b = tyspecialize(st, b);
 
     r = NULL;
     if (a->type == Tyvar) {
@@ -1012,8 +1009,7 @@ static void inferdecl(Inferstate *st, Node *n)
     Type *t;
 
     t = tf(st, decltype(n));
-    if (t->type == Tygeneric) {
-        t = tyspecialize(st, t);
+    if (decltype(n)->type == Tygeneric) {
         unifyparams(st, n, t, decltype(n));
     }
     settype(st, n, t);
