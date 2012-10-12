@@ -4,6 +4,7 @@ MYRSRC= \
     chartype.myr \
     die.myr \
     fmt.myr \
+    option.myr \
     rand.myr \
     sys.myr \
     types.myr \

@@ -129,7 +129,7 @@ static void constrainwith(Type *t, char *str);
 
 %type <tydef> tydef typeid
 
-%type <node> exprln retexpr expr atomicexpr littok literal asnexpr lorexpr landexpr borexpr
+%type <node> exprln retexpr goto expr atomicexpr littok literal asnexpr lorexpr landexpr borexpr
 %type <node> bandexpr cmpexpr unionexpr addexpr mulexpr shiftexpr prefixexpr postfixexpr
 %type <node> funclit seqlit name block stmt label use
 %type <node> decl declbody declcore structelt seqelt tuphead
@@ -137,7 +137,7 @@ static void constrainwith(Type *t, char *str);
 %type <node> pat unionpat match
 %type <node> castexpr
 %type <ucon> unionelt
-%type <node> body
+%type <node> blkbody
 
 %type <nodelist> arglist argdefs params matches
 %type <nodelist> structbody seqbody tupbody tuprest
@@ -404,6 +404,10 @@ unionelt /* nb: the ucon union type gets filled in when we have context */
             {$$ = NULL;}
         ;
 
+goto	: Tgoto Tident
+     		{$$ = mkexpr($1->line, Ojmp, mklbl($2->line, $2->str), NULL);}
+     	;
+
 retexpr : Tret expr
             {$$ = mkexpr($1->line, Oret, $2, NULL);}
         | expr
@@ -587,9 +591,9 @@ littok  : Tstrlit       {$$ = mkstr($1->line, $1->str);}
         | Tboollit      {$$ = mkbool($1->line, !strcmp($1->str, "true"));}
         ;
 
-funclit : Tobrace params Tendln body Tcbrace
+funclit : Tobrace params Tendln blkbody Tcbrace
             {$$ = mkfunc($1->line, $2.nl, $2.nn, mktyvar($3->line), $4);}
-        | Tobrace params Tret type Tendln body Tcbrace
+        | Tobrace params Tret type Tendln blkbody Tcbrace
             {$$ = mkfunc($1->line, $2.nl, $2.nn, $4, $6);}
         ;
 
@@ -625,6 +629,7 @@ endlns  : /* none */
         ;
 
 stmt    : decl
+	| goto
         | retexpr
         | label
         | ifstmt
@@ -645,11 +650,11 @@ whilestmt
             {$$ = mkloopstmt($1->line, NULL, $2, NULL, $3);}
         ;
 
-ifstmt  : Tif exprln body elifs
+ifstmt  : Tif exprln blkbody elifs
             {$$ = mkifstmt($1->line, $2, $3, $4);}
         ;
 
-elifs   : Telif exprln body elifs
+elifs   : Telif exprln blkbody elifs
             {$$ = mkifstmt($1->line, $2, $3, $4);}
         | Telse block
             {$$ = $2;}
@@ -686,16 +691,16 @@ unionpat: Ttick Tident pat
             {$$ = mkexpr($1->line, Oucon, mkname($2->line, $2->str), NULL);}
         ;
 
-block   : body Tendblk
+block   : blkbody Tendblk
         ;
 
-body    : stmt
+blkbody : stmt
             {$$ = mkblock(line, mkstab());
              if ($1)
                 lappend(&$$->block.stmts, &$$->block.nstmts, $1);
              if ($1 && $1->type == Ndecl)
                 putdcl($$->block.scope, $1);}
-        | body Tendln stmt
+        | blkbody Tendln stmt
             {if ($3)
                 lappend(&$1->block.stmts, &$1->block.nstmts, $3);
              if ($3 && $3->type == Ndecl)
@@ -704,7 +709,7 @@ body    : stmt
         ;
 
 label   : Tcolon Tident
-            {$$ = mklbl($1->line, $1->str);}
+            {$$ = mklbl($2->line, $2->str);}
         ;
 
 %%

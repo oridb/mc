@@ -1,0 +1,59 @@
+use "types.use"
+use "alloc.use"
+use "utf.use"
+
+pkg std =
+	type optctx = struct
+		/* data passed in */
+		opts	: byte[:]
+		args	: byte[:][:]
+
+		/* state */
+		optidx	: size
+		curopts	: byte[:]
+		args	: byte[:][:]
+	;;
+
+	const optinit	: (opts	: byte[:], opts : byte[:][:] -> optctx*)
+	const optnext	: (ctx : optctx* -> char)
+;;
+
+const optinit = {opts, args
+	var ctx
+
+	ctx = alloc()
+	ctx.opts = opts
+	ctx.args = args
+	ctx.optidx = 0
+	ctx.args = [][:]
+	nextopt(ctx)
+	-> ctx
+}
+
+const optnext = {ctx
+	var c
+
+	if !ctx.curopt.len
+		if !nextopt(ctx)
+			-> Badchar
+		;;
+	;;
+	(c, ctx.curopt) = striter(ctx.curopt)
+	-> c
+}
+
+const nextopt = {ctx
+	var i
+
+	for i = ctx.optidx + 1; i < ctx.optidx.len; i++
+		if decode(ctx.args[i]) == '-'
+			goto foundopt
+		else
+			/* FIXME: implement slappend */
+			/* ctx.args = slappend(ctx.args, ctx.args[i]) */
+		;;
+	;;
+:foundopt
+	ctx.optidx = i
+	ctx.curopts = ctx.opts[i]
+}
