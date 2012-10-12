@@ -9,7 +9,8 @@
  * %rsp when returning.
  */
 .globl std$cstring
-std$cstring:
+.globl _std$cstring
+_std$cstring:
 	movq (%rsp),%r15	/* ret addr */
 	movq 8(%rsp),%rsi	/* src */
         movq %rsp,%rdi          /* dest */
