@@ -230,9 +230,9 @@ static void tyresolve(Inferstate *st, Type *t)
 
     if (t->resolved)
         return;
-    t->resolved = 1;
     if (t->type == Tygeneric)
         t = tyfreshen(st, t);
+    t->resolved = 1;
     tybind(st, t);
     /* if this is a generic type, bind the params. */
     /* Walk through aggregate type members */
@@ -275,21 +275,20 @@ static Type *tf(Inferstate *st, Type *t)
 
     assert(t != NULL);
     lu = NULL;
-    while (1) {
-        if (!tytab[t->tid] && t->type == Tyunres) {
-            ns = curstab();
-            if (t->name->name.ns) {
-                ns = getns_str(ns, t->name->name.ns);
-            }
-            if (!(lu = gettype(ns, t->name)))
-                fatal(t->name->line, "Could not resolve type %s", namestr(t->name));
-            tytab[t->tid] = lu;
-        }
-
-        if (!tytab[t->tid])
-            break;
+    while (tytab[t->tid])
         t = tytab[t->tid];
+
+    if (t->type == Tyunres) {
+        ns = curstab();
+        if (t->name->name.ns) {
+            ns = getns_str(ns, t->name->name.ns);
+        }
+        if (!(lu = gettype(ns, t->name)))
+            fatal(t->name->line, "Could not resolve type %s", namestr(t->name));
+        tytab[t->tid] = lu;
     }
+    if (t->type == Tygeneric)
+        t = tyfreshen(st, t);
     tyresolve(st, t);
     return t;
 }
