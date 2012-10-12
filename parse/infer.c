@@ -119,7 +119,7 @@ static int isbound(Inferstate *st, Type *t)
  * parameters (type schemes in most literature)
  * replaced with type variables that we can unify
  * against */
-static Type *tyfreshen(Inferstate *st, Htab *ht, Type *t)
+static Type *tyspecialize(Inferstate *st, Htab *ht, Type *t)
 {
     Type *ret;
     size_t i;
@@ -138,9 +138,9 @@ static Type *tyfreshen(Inferstate *st, Htab *ht, Type *t)
             for (i = 0; i < t->nparam; i++)
                 if (!hthas(ht, t->param[i]->pname))
                     htput(ht, t->param[i]->pname, mktyvar(t->param[i]->line));
-            ret = mktyname(t->line, t->name, tyfreshen(st, ht, t->sub[0]));
+            ret = mktyname(t->line, t->name, tyspecialize(st, ht, t->sub[0]));
             for (i = 0; i < t->nparam; i++)
-                lappend(&ret->param, &ret->nparam, tyfreshen(st, ht, t->param[i]));
+                lappend(&ret->param, &ret->nparam, tyspecialize(st, ht, t->param[i]));
             break;
         case Tystruct:
             die("Freshening structs is not yet implemented");
@@ -151,19 +151,19 @@ static Type *tyfreshen(Inferstate *st, Htab *ht, Type *t)
         default:
             ret = tydup(t);
             for (i = 0; i < t->nsub; i++)
-                ret->sub[i] = tyfreshen(st, ht, t->sub[i]);
+                ret->sub[i] = tyspecialize(st, ht, t->sub[i]);
             break;
     }
     return ret;
 }
 
-static Type *tyspecialize(Inferstate *st, Type *t)
+static Type *tyfreshen(Inferstate *st, Type *t)
 {
     Htab *ht;
 
     assert(t->type == Tygeneric);
     ht = mkht(strhash, streq);
-    t = tyfreshen(st, ht, t);
+    t = tyspecialize(st, ht, t);
     htfree(ht);
 
     return t;
@@ -175,7 +175,7 @@ static Type *freshen(Inferstate *st, Type *t)
     Htab *ht;
 
     ht = mkht(strhash, streq);
-    t = tyfreshen(st, ht, t);
+    t = tyspecialize(st, ht, t);
     htfree(ht);
     return t;
 }
@@ -232,7 +232,7 @@ static void tyresolve(Inferstate *st, Type *t)
         return;
     t->resolved = 1;
     if (t->type == Tygeneric)
-        t = tyspecialize(st, t);
+        t = tyfreshen(st, t);
     tybind(st, t);
     /* if this is a generic type, bind the params. */
     /* Walk through aggregate type members */
