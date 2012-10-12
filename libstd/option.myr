@@ -10,7 +10,7 @@ pkg std =
 
 		/* state */
 		optidx	: size
-		curopt	: byte[:]
+		curarg	: byte[:]
 		args	: byte[:][:]
 	;;
 
@@ -33,12 +33,12 @@ const optinit = {opts, args
 const optnext = {ctx
 	var c
 
-	if !ctx.curopt.len
+	if !ctx.curarg.len
 		if !nextopt(ctx)
 			-> Badchar
 		;;
 	;;
-	(c, ctx.curopt) = striter(ctx.curopt)
+	(c, ctx.curarg) = striter(ctx.curarg)
 	-> c
 }
 
@@ -56,6 +56,6 @@ const nextopt = {ctx
 	-> false
 :foundopt
 	ctx.optidx = i
-	ctx.curopt = ctx.opts[i]
+	ctx.curarg = ctx.args[i]
 	-> true
 }
