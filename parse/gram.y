@@ -129,7 +129,7 @@ static void constrainwith(Type *t, char *str);
 
 %type <tydef> tydef typeid
 
-%type <node> exprln retexpr expr atomicexpr littok literal asnexpr lorexpr landexpr borexpr
+%type <node> exprln retexpr goto expr atomicexpr littok literal asnexpr lorexpr landexpr borexpr
 %type <node> bandexpr cmpexpr unionexpr addexpr mulexpr shiftexpr prefixexpr postfixexpr
 %type <node> funclit seqlit name block stmt label use
 %type <node> decl declbody declcore structelt seqelt tuphead
@@ -404,6 +404,10 @@ unionelt /* nb: the ucon union type gets filled in when we have context */
             {$$ = NULL;}
         ;
 
+goto	: Tgoto Tident
+     		{$$ = mkexpr($1->line, Ojmp, mklbl($2->line, $2->str), NULL);}
+     	;
+
 retexpr : Tret expr
             {$$ = mkexpr($1->line, Oret, $2, NULL);}
         | expr
@@ -625,6 +629,7 @@ endlns  : /* none */
         ;
 
 stmt    : decl
+	| goto
         | retexpr
         | label
         | ifstmt
@@ -704,7 +709,7 @@ blkbody : stmt
         ;
 
 label   : Tcolon Tident
-            {$$ = mklbl($1->line, $1->str);}
+            {$$ = mklbl($2->line, $2->str);}
         ;
 
 %%

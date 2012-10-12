@@ -741,12 +741,16 @@ static void checkns(Inferstate *st, Node *n, Node **ret)
 static void inferseq(Inferstate *st, Node *n)
 {
     size_t i;
+    Type *t;
+    Node *len;
 
+    len = mkintlit(n->line, n->lit.nelt);
+    t = mktyarray(n->line, mktyvar(n->line), len);
     for (i = 0; i < n->lit.nelt; i++) {
         infernode(st, n->lit.seqval[i], NULL, NULL);
-        unify(st, n, type(st, n->lit.seqval[0]), type(st, n->lit.seqval[i]));
+        unify(st, n, t->sub[0], type(st, n->lit.seqval[i]));
     }
-    settype(st, n, mktyarray(n->line, type(st, n->lit.seqval[0]), mkintlit(n->line, n->lit.nelt)));
+    settype(st, n, t);
 }
 
 static void inferpat(Inferstate *st, Node *n, Node *val, Node ***bind, size_t *nbind)
