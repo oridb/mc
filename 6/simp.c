@@ -1117,6 +1117,9 @@ static Node *rval(Simp *s, Node *n, Node *dst)
                 case Lfunc:
                     r = simplit(s, n, &file->file.stmts, &file->file.nstmts);
                     break;
+                case Llbl:
+                    die("Don't support labels in expressions yet");
+                    break;
             }
             break;
         case Ovar:
@@ -1183,6 +1186,15 @@ static void declarearg(Simp *s, Node *n)
     s->argsz += size(n);
 }
 
+static int islbl(Node *n)
+{
+    Node *l;
+    if (exprop(n) != Olit)
+        return 0;
+    l = n->expr.args[0];
+    return l->type == Nlit && l->lit.littype == Llbl;
+}
+
 static Node *simp(Simp *s, Node *n)
 {
     Node *r, *t, *u;
@@ -1192,14 +1204,15 @@ static Node *simp(Simp *s, Node *n)
         return NULL;
     r = NULL;
     switch (n->type) {
-        case Nlit:       r = n;                 break;
-        case Nlbl:       append(s, n);          break;
         case Nblock:     simpblk(s, n);         break;
         case Nifstmt:    simpif(s, n, NULL);    break;
         case Nloopstmt:  simploop(s, n);        break;
         case Nmatchstmt: simpmatch(s, n);       break;
         case Nexpr:
-            r = rval(s, n, NULL);
+            if (islbl(n))
+                append(s, n);
+            else
+                r = rval(s, n, NULL);
             if (r)
                 append(s, r);
             /* drain the increment queue for this expr */

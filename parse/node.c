@@ -181,9 +181,11 @@ Node *mklbl(int line, char *lbl)
 {
     Node *n;
 
-    n = mknode(line, Nlbl);
-    n->lbl.name = strdup(lbl);
-    return n;
+    assert(lbl != NULL);
+    n = mknode(line, Nlit);
+    n->lit.littype = Llbl;
+    n->lit.lblval = strdup(lbl);
+    return mkexpr(line, Olit, n, NULL);
 }
 
 Node *mkstr(int line, char *val)

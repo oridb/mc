@@ -185,6 +185,7 @@ static void outnode(Node *n, FILE *fd, int depth)
                 case Lint:      fprintf(fd, " Lint %llu\n", n->lit.intval); break;
                 case Lflt:      fprintf(fd, " Lflt %lf\n", n->lit.fltval); break;
                 case Lstr:      fprintf(fd, " Lstr %s\n", n->lit.strval); break;
+                case Llbl:      fprintf(fd, " Llbl %s\n", n->lit.lblval); break;
                 case Lfunc:
                     fprintf(fd, " Lfunc\n");
                     outnode(n->lit.fnval, fd, depth+1);
@@ -204,9 +205,6 @@ static void outnode(Node *n, FILE *fd, int depth)
             indent(fd, depth);
             fprintf(fd, ")\n");
             outnode(n->func.body, fd, depth+1);
-            break;
-        case Nlbl:
-            fprintf(fd, "(lbl = %s)\n", n->lbl.name);
             break;
         case Nname:
             fprintf(fd, "(");

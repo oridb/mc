@@ -319,6 +319,7 @@ static Type *littype(Node *n)
         case Lint:      return mktylike(n->line, Tyint);                        break;
         case Lflt:      return mktylike(n->line, Tyfloat32);                    break;
         case Lstr:      return mktyslice(n->line, mktype(n->line, Tybyte));     break;
+        case Llbl:      return mktyptr(n->line, mktype(n->line, Tyvoid));       break;
         case Lfunc:     return n->lit.fnval->func.type;                         break;
         case Lseq:      return NULL; break;
     };
@@ -528,8 +529,8 @@ static int tyrank(Type *t)
 /* Unifies two types, or errors if the types are not unifiable. */
 static Type *unify(Inferstate *st, Node *ctx, Type *a, Type *b)
 {
-    Type *t;
-    Type *r;
+    Type *t, *r;
+    char *from, *to;
     size_t i;
 
     /* a ==> b */
@@ -537,10 +538,20 @@ static Type *unify(Inferstate *st, Node *ctx, Type *a, Type *b)
     b = tf(st, b);
     if (a == b)
         return a;
+
+    /* we unify from lower to higher ranked types */
     if (tyrank(b) < tyrank(a)) {
         t = a;
         a = b;
         b = t;
+    }
+
+    if (debugopt['u']) {
+        from = tystr(a);
+        to = tystr(b);
+        printf("Unify %s => %s", from, to);
+        free(from);
+        free(to);
     }
 
     r = NULL;
@@ -1131,7 +1142,6 @@ static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
         case Nname:
         case Nlit:
         case Nuse:
-        case Nlbl:
             break;
         case Nnone:
             die("Nnone should not be seen as node type!");
@@ -1332,7 +1342,6 @@ static void typesub(Inferstate *st, Node *n)
             break;
         case Nname:
         case Nuse:
-        case Nlbl:
             break;
         case Nnone:
             die("Nnone should not be seen as node type!");

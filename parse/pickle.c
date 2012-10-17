@@ -339,6 +339,7 @@ void pickle(Node *n, FILE *fd)
                 case Lint:      wrint(fd, n->lit.intval);       break;
                 case Lflt:      wrflt(fd, n->lit.fltval);       break;
                 case Lstr:      wrstr(fd, n->lit.strval);       break;
+                case Llbl:      wrstr(fd, n->lit.lblval);       break;
                 case Lbool:     wrbool(fd, n->lit.boolval);     break;
                 case Lfunc:     pickle(n->lit.fnval, fd);       break;
                 case Lseq:
@@ -373,9 +374,6 @@ void pickle(Node *n, FILE *fd)
             wrint(fd, n->block.nstmts);
             for (i = 0; i < n->block.nstmts; i++)
                 pickle(n->block.stmts[i], fd);
-            break;
-        case Nlbl:
-            wrstr(fd, n->lbl.name);
             break;
         case Ndecl:
             /* sym */
@@ -460,6 +458,7 @@ Node *unpickle(FILE *fd)
                 case Lint:      n->lit.intval = rdint(fd);       break;
                 case Lflt:      n->lit.fltval = rdflt(fd);       break;
                 case Lstr:      n->lit.strval = rdstr(fd);       break;
+                case Llbl:      n->lit.lblval = rdstr(fd);       break;
                 case Lbool:     n->lit.boolval = rdbool(fd);     break;
                 case Lfunc:     n->lit.fnval = unpickle(fd);       break;
                 case Lseq:
@@ -498,9 +497,6 @@ Node *unpickle(FILE *fd)
             for (i = 0; i < n->block.nstmts; i++)
                 n->block.stmts[i] = unpickle(fd);
             popstab();
-            break;
-        case Nlbl:
-            n->lbl.name = rdstr(fd);
             break;
         case Ndecl:
             n->decl.did = maxdid++; /* unique within file */

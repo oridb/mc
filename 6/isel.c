@@ -737,12 +737,7 @@ done:
 
 static void isel(Isel *s, Node *n)
 {
-    Loc *lbl;
-
     switch (n->type) {
-        case Nlbl:
-            g(s, Ilbl, lbl = loclbl(n), NULL);
-            break;
         case Nexpr:
             selexpr(s, n);
             break;
@@ -857,7 +852,11 @@ static void writelit(FILE *fd, Node *v, size_t sz)
                 writelit(fd, v->lit.seqval[i]->expr.args[0], size(v->lit.seqval[i]));
             break;
         case Lfunc:
-                        die("Generating this shit ain't ready yet ");
+            die("Generating this shit ain't ready yet ");
+            break;
+        case Llbl:
+            die("Can't generate literal labels, ffs. They're not data.");
+            break;
     }
 }
 

@@ -182,6 +182,7 @@ struct Node {
                 double   fltval;
                 unichar  chrval;
                 char    *strval;
+                char    *lblval;
                 int      boolval;
                 Node    *fnval;
                 Node    **seqval;
@@ -217,10 +218,6 @@ struct Node {
             size_t nstmts;
             Node **stmts;
         } block;
-
-        struct {
-            char *name;
-        } lbl;
 
         struct {
             size_t did;

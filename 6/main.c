@@ -30,11 +30,12 @@ static void usage(char *prog)
     printf("\t-I path\tAdd 'path' to use search path\n");
     printf("\t-d\tPrint debug dumps. Recognized options: f r p i\n");
     printf("\t\t\tno options: print most common debug information\n");
-    printf("\t\t\tf: additionally log folded trees\n");
-    printf("\t\t\tl: additionally log lowered pre-cfg trees\n");
-    printf("\t\t\tT: additionally log tree immediately\n");
-    printf("\t\t\tr: additionally log register allocation activity\n");
-    printf("\t\t\ti: additionally log instruction selection activity\n");
+    printf("\t\t\tf: log folded trees\n");
+    printf("\t\t\tl: log lowered pre-cfg trees\n");
+    printf("\t\t\tT: log tree immediately\n");
+    printf("\t\t\tr: log register allocation activity\n");
+    printf("\t\t\ti: log instruction selection activity\n");
+    printf("\t\t\tu: log type unifications\n");
     printf("\t-o\tOutput to outfile\n");
     printf("\t-S\tGenerate assembly instead of object code\n");
 }

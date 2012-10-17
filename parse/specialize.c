@@ -129,7 +129,8 @@ static void fixup(Node *n)
                     for (i = 0; i < n->lit.nelt; i++)
                         fixup(n->lit.seqval[i]);
                     break;
-                case Lchr: case Lint: case Lflt: case Lstr: case Lbool:
+                case Lchr: case Lint: case Lflt:
+                case Lstr: case Llbl: case Lbool:
                     break;
             }
             break;
@@ -166,7 +167,7 @@ static void fixup(Node *n)
             fixup(n->func.body);
             popstab();
             break;
-        case Nnone: case Nlbl: case Nname:
+        case Nnone: case Nname:
             break;
     }
 }
@@ -212,6 +213,7 @@ static Node *specializenode(Node *n, Htab *tsmap)
                 case Lint:      r->lit.intval = n->lit.intval;       break;
                 case Lflt:      r->lit.fltval = n->lit.fltval;       break;
                 case Lstr:      r->lit.strval = n->lit.strval;       break;
+                case Llbl:      r->lit.lblval = n->lit.lblval;       break;
                 case Lbool:     r->lit.boolval = n->lit.boolval;     break;
                 case Lfunc:     r->lit.fnval = specializenode(n->lit.fnval, tsmap);       break;
                 case Lseq:
@@ -251,9 +253,6 @@ static Node *specializenode(Node *n, Htab *tsmap)
             for (i = 0; i < n->block.nstmts; i++)
                 r->block.stmts[i] = specializenode(n->block.stmts[i], tsmap);
             popstab();
-            break;
-        case Nlbl:
-            r->lbl.name = strdup(n->lbl.name);
             break;
         case Ndecl:
             r->decl.did = maxdid++;

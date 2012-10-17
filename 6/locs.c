@@ -90,10 +90,14 @@ Loc *loclitl(char *lbl)
     return l;
 }
 
-Loc *loclbl(Node *lbl)
+Loc *loclbl(Node *e)
 {
-    assert(lbl->type = Nlbl);
-    return locstrlbl(lbl->lbl.name);
+    Node *lbl;
+    assert(e->type == Nexpr);
+    lbl = e->expr.args[0];
+    assert(lbl->type == Nlit);
+    assert(lbl->lit.littype = Llbl);
+    return locstrlbl(lbl->lit.lblval);
 }
 
 Loc **locmap = NULL;
