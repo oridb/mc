@@ -11,6 +11,8 @@
 
 #include "parse.h"
 
+static Node *specializenode(Node *n, Htab *tsmap);
+
 /*
  * Checks if a type contains any type
  * parameers at all (ie, if it generic).
@@ -38,36 +40,44 @@ static int hasparams(Type *t)
  * parameters (type schemes in most literature)
  * replaced with type variables that we can unify
  * against */
-Type *tyspecialize(Type *t, Htab *ht)
+Type *tyspecialize(Type *t, Htab *tsmap)
 {
     Type *ret;
 
     size_t i;
     switch (t->type) {
         case Typaram:
-            if (hthas(ht, t->pname))
-                return htget(ht, t->pname);
+            if (hthas(tsmap, t->pname))
+                return htget(tsmap, t->pname);
             ret = mktyvar(t->line);
-            htput(ht, t->pname, ret);
+            htput(tsmap, t->pname, ret);
             break;
         case Tygeneric:
             for (i = 0; i < t->nparam; i++)
-                if (!hthas(ht, t->param[i]->pname))
-                    htput(ht, t->param[i]->pname, mktyvar(t->param[i]->line));
-            ret = mktyname(t->line, t->name, tyspecialize(t->sub[0], ht));
+                if (!hthas(tsmap, t->param[i]->pname))
+                    htput(tsmap, t->param[i]->pname, mktyvar(t->param[i]->line));
+            ret = mktyname(t->line, t->name, tyspecialize(t->sub[0], tsmap));
             for (i = 0; i < t->nparam; i++)
-                lappend(&ret->param, &ret->nparam, tyspecialize(t->param[i], ht));
+                lappend(&ret->param, &ret->nparam, tyspecialize(t->param[i], tsmap));
             break;
         case Tystruct:
+            for (i = 0; i < t->nmemb; i++)
+                t->sdecls[i] = specializenode(t->sdecls[i], tsmap);
+            ret = t;
             break;
         case Tyunion:
-            die("Freshening unions is not yet implemented");
+            /* FIXME: specialize unions */
+#if 0
+            for (i = 0; i < t->nmemb; i++)
+                t->udecls[i] = specializenode(t->udecls[i], tsmap);
+#endif
+            die("We don't specialize unions yet");
             break;
         default:
             if (t->nsub > 0) {
                 ret = tydup(t);
                 for (i = 0; i < t->nsub; i++)
-                    ret->sub[i] = tyspecialize(t->sub[i], ht);
+                    ret->sub[i] = tyspecialize(t->sub[i], tsmap);
             } else {
                 ret = t;
             }
