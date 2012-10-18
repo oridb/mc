@@ -11,6 +11,7 @@
 .globl std$cstring
 .globl _std$cstring
 _std$cstring:
+std$cstring:
 	movq (%rsp),%r15	/* ret addr */
 	movq 8(%rsp),%rsi	/* src */
         movq %rsp,%rdi          /* dest */
