@@ -4,14 +4,12 @@ MYRSRC= \
     chartype.myr \
     die.myr \
     fmt.myr \
+    option.myr \
     rand.myr \
     sys.myr \
     types.myr \
     utf.myr \
     varargs.myr \
-
-    # FIXME: Temporarily disabled due to compiler bug.
-    # option.myr \
 
 ASMSRC= \
     start.s \

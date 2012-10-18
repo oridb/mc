@@ -1108,7 +1108,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
             break;
         case Olit:
             switch (args[0]->lit.littype) {
-                case Lchr: case Lbool: case Lint:
+                case Lchr: case Lbool: case Lint: case Llbl:
                     r = n;
                     break;
                 case Lstr: case Lseq: case Lflt:
@@ -1116,9 +1116,6 @@ static Node *rval(Simp *s, Node *n, Node *dst)
                     break;
                 case Lfunc:
                     r = simplit(s, n, &file->file.stmts, &file->file.nstmts);
-                    break;
-                case Llbl:
-                    die("Don't support labels in expressions yet");
                     break;
             }
             break;
