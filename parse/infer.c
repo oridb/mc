@@ -124,9 +124,10 @@ static Type *tyspecialize(Inferstate *st, Htab *ht, Type *t)
     Type *ret;
     size_t i;
 
+    st->ingeneric++;
     t = tf(st, t);
-    if (t->type != Typaram && t->nsub == 0)
-        return t;
+    st->ingeneric--;
+
     switch (t->type) {
         case Typaram:
             if (hthas(ht, t->pname))
@@ -149,9 +150,13 @@ static Type *tyspecialize(Inferstate *st, Htab *ht, Type *t)
             die("Freshening unions is not yet implemented");
             break;
         default:
-            ret = tydup(t);
-            for (i = 0; i < t->nsub; i++)
-                ret->sub[i] = tyspecialize(st, ht, t->sub[i]);
+            if (t->nsub > 0) {
+                ret = tydup(t);
+                for (i = 0; i < t->nsub; i++)
+                    ret->sub[i] = tyspecialize(st, ht, t->sub[i]);
+            } else {
+                ret = t;
+            }
             break;
     }
     return ret;
