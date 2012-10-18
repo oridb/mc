@@ -115,73 +115,19 @@ static int isbound(Inferstate *st, Type *t)
     return 0;
 }
 
-/* Returns a fresh type with all unbound type
- * parameters (type schemes in most literature)
- * replaced with type variables that we can unify
- * against */
-static Type *tyspecialize(Inferstate *st, Htab *ht, Type *t)
+/* Freshens the type of a declaration. */
+static Type *tyfreshen(Inferstate *st, Type *t)
 {
-    Type *ret;
-    size_t i;
+    Htab *ht;
 
     st->ingeneric++;
     t = tf(st, t);
     st->ingeneric--;
 
-    switch (t->type) {
-        case Typaram:
-            if (hthas(ht, t->pname))
-                return htget(ht, t->pname);
-            ret = mktyvar(t->line);
-            htput(ht, t->pname, ret);
-            break;
-        case Tygeneric:
-            for (i = 0; i < t->nparam; i++)
-                if (!hthas(ht, t->param[i]->pname))
-                    htput(ht, t->param[i]->pname, mktyvar(t->param[i]->line));
-            ret = mktyname(t->line, t->name, tyspecialize(st, ht, t->sub[0]));
-            for (i = 0; i < t->nparam; i++)
-                lappend(&ret->param, &ret->nparam, tyspecialize(st, ht, t->param[i]));
-            break;
-        case Tystruct:
-            die("Freshening structs is not yet implemented");
-            break;
-        case Tyunion:
-            die("Freshening unions is not yet implemented");
-            break;
-        default:
-            if (t->nsub > 0) {
-                ret = tydup(t);
-                for (i = 0; i < t->nsub; i++)
-                    ret->sub[i] = tyspecialize(st, ht, t->sub[i]);
-            } else {
-                ret = t;
-            }
-            break;
-    }
-    return ret;
-}
-
-static Type *tyfreshen(Inferstate *st, Type *t)
-{
-    Htab *ht;
-
-    assert(t->type == Tygeneric);
     ht = mkht(strhash, streq);
-    t = tyspecialize(st, ht, t);
+    t = tyspecialize(t, ht);
     htfree(ht);
 
-    return t;
-}
-
-/* Freshens the type of a declaration. */
-static Type *freshen(Inferstate *st, Type *t)
-{
-    Htab *ht;
-
-    ht = mkht(strhash, streq);
-    t = tyspecialize(st, ht, t);
-    htfree(ht);
     return t;
 }
 
@@ -740,7 +686,7 @@ static void checkns(Inferstate *st, Node *n, Node **ret)
     var = mkexpr(n->line, Ovar, nsname, NULL);
     var->expr.did = s->decl.did;
     if (s->decl.isgeneric)
-        settype(st, var, freshen(st, s->decl.type));
+        settype(st, var, tyfreshen(st, s->decl.type));
     else
         settype(st, var, s->decl.type);
     if (s->decl.isgeneric) {
@@ -789,7 +735,7 @@ static void inferpat(Inferstate *st, Node *n, Node *val, Node ***bind, size_t *n
             s = getdcl(curstab(), args[0]);
             if (s) {
                 if (s->decl.isgeneric)
-                    t = freshen(st, s->decl.type);
+                    t = tyfreshen(st, s->decl.type);
                 else if (s->decl.isconst)
                     t = s->decl.type;
                 else
@@ -962,7 +908,7 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
                 fatal(n->line, "Undeclared var %s", ctxstr(st, args[0]));
 
             if (s->decl.isgeneric)
-                t = freshen(st, s->decl.type);
+                t = tyfreshen(st, s->decl.type);
             else
                 t = s->decl.type;
             settype(st, n, t);

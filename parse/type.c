@@ -44,7 +44,7 @@ Type *mktype(int line, Ty ty)
 }
 
 /*
- * Duplicates a type, so we can frob
+ * Shallowly duplicates a type, so we can frob
  * its internals later
  */
 Type *tydup(Type *t)

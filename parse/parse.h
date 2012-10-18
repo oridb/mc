@@ -410,6 +410,7 @@ Op exprop(Node *n);
 
 /* specialize generics */
 Node *specializedcl(Node *n, Type *to, Node **name);
+Type *tyspecialize(Type *t, Htab *tymap);
 
 /* usefiles */
 int  loaduse(FILE *f, Stab *into);

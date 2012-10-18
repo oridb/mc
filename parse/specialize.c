@@ -11,26 +11,6 @@
 
 #include "parse.h"
 
-static ulong typaramhash(void *p)
-{
-    Type *t;
-
-    t = p;
-    assert(t->type == Typaram);
-    return strhash(t->pname);
-}
-
-static int typarameq(void *pa, void *pb)
-{
-    Type *a, *b;
-
-    a = pa;
-    b = pb;
-    assert(a->type == Typaram);
-    assert(b->type == Typaram);
-    return streq(a->pname, b->pname);
-}
-
 /*
  * Checks if a type contains any type
  * parameers at all (ie, if it generic).
@@ -40,6 +20,8 @@ static int hasparams(Type *t)
     size_t i;
 
     if (t->type == Typaram)
+        return 1;
+    if (t->type == Tygeneric)
         return 1;
     for (i = 0; i < t->nsub; i++)
         if (hasparams(t->sub[i]))
@@ -52,19 +34,45 @@ static int hasparams(Type *t)
  * parameters substituted with the substitions
  * described in 'tsmap'
  */
-static Type *dosubst(Type *t, Htab *tsmap)
+/* Returns a fresh type with all unbound type
+ * parameters (type schemes in most literature)
+ * replaced with type variables that we can unify
+ * against */
+Type *tyspecialize(Type *t, Htab *ht)
 {
     Type *ret;
-    size_t i;
 
-    if (t->type == Typaram) {
-        ret = htget(tsmap, t);
-    } else {
-        ret = tydup(t);
-        for (i = 0; i < t->nsub; i++)
-            ret->sub[i] = dosubst(t->sub[i], tsmap);
+    size_t i;
+    switch (t->type) {
+        case Typaram:
+            if (hthas(ht, t->pname))
+                return htget(ht, t->pname);
+            ret = mktyvar(t->line);
+            htput(ht, t->pname, ret);
+            break;
+        case Tygeneric:
+            for (i = 0; i < t->nparam; i++)
+                if (!hthas(ht, t->param[i]->pname))
+                    htput(ht, t->param[i]->pname, mktyvar(t->param[i]->line));
+            ret = mktyname(t->line, t->name, tyspecialize(t->sub[0], ht));
+            for (i = 0; i < t->nparam; i++)
+                lappend(&ret->param, &ret->nparam, tyspecialize(t->param[i], ht));
+            break;
+        case Tystruct:
+            break;
+        case Tyunion:
+            die("Freshening unions is not yet implemented");
+            break;
+        default:
+            if (t->nsub > 0) {
+                ret = tydup(t);
+                for (i = 0; i < t->nsub; i++)
+                    ret->sub[i] = tyspecialize(t->sub[i], ht);
+            } else {
+                ret = t;
+            }
+            break;
     }
-    assert(ret != NULL);
     return ret;
 }
 
@@ -74,7 +82,7 @@ static Type *dosubst(Type *t, Htab *tsmap)
 static Type *tysubst(Type *t, Htab *tsmap)
 {
     if (hasparams(t))
-        return dosubst(t, tsmap);
+        return tyspecialize(t, tsmap);
     else
         return t;
 }
@@ -88,7 +96,7 @@ static void fillsubst(Htab *tsmap, Type *to, Type *from)
     size_t i;
 
     if (from->type == Typaram) {
-        htput(tsmap, from, to);
+        htput(tsmap, from->pname, to);
     }
     if (to->nsub != from->nsub)
         return;
@@ -343,7 +351,7 @@ Node *specializedcl(Node *n, Type *to, Node **name)
     }
 
     /* specialize */
-    tsmap = mkht(typaramhash, typarameq);
+    tsmap = mkht(strhash, streq);
     fillsubst(tsmap, to, n->decl.type);
 
     d = mkdecl(n->line, *name, tysubst(n->decl.type, tsmap));
