@@ -10,6 +10,9 @@ MYRSRC= \
     utf.myr \
     varargs.myr \
 
+    # FIXME: Temporarily disabled due to compiler bug.
+    # option.myr \
+
 ASMSRC= \
     start.s \
     syscall.s \
