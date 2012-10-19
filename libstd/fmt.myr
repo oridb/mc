@@ -32,6 +32,7 @@ const bfmtv = {buf, fmt, ap
 	var i_val : int32
 	var l_val : int64
 	var p_val : byte*
+        var c_val : char
 
 	n = 0
 	while fmt.len
@@ -64,6 +65,9 @@ const bfmtv = {buf, fmt, ap
 				(p_val, ap) = vanext(ap)
 				n += intfmt(buf[n:], p_val castto(int64), 16)
 				;;
+                        'c':    (c_val, ap) = vanext(ap)
+                                n += encode(buf[n:], c)
+                                ;;
                         _:
                                 die("Unknown format specifier")
                                 ;;

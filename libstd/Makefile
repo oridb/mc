@@ -46,7 +46,6 @@ clean:
 	rm -f $(JUNKASM) test.s
 	rm -f lib$(MYRLIB).a
 
-
 install:
 	mkdir -p  $(INST_ROOT)/lib/myr
 	install libstd.a $(INST_ROOT)/lib/myr

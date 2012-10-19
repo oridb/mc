@@ -58,7 +58,6 @@ int main(int argc, char **argv)
     Stab *globls;
     char buf[1024];
 
-    lappend(&incpaths, &nincpaths, Instroot "/lib/myr");
     while ((opt = getopt(argc, argv, "d::hSo:I:")) != -1) {
         switch (opt) {
             case 'o':
@@ -86,6 +85,7 @@ int main(int argc, char **argv)
         }
     }
 
+    lappend(&incpaths, &nincpaths, Instroot "/lib/myr");
     for (i = optind; i < argc; i++) {
         globls = mkstab();
         tyinit(globls);

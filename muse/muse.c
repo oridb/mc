@@ -89,7 +89,6 @@ int main(int argc, char **argv)
     int opt;
     int i;
 
-    lappend(&incpaths, &nincpaths, Instroot "/lib/myr");
     while ((opt = getopt(argc, argv, "d::hmo:I:")) != -1) {
         switch (opt) {
             case 'h':
@@ -117,6 +116,7 @@ int main(int argc, char **argv)
         }
     }
 
+    lappend(&incpaths, &nincpaths, Instroot "/lib/myr");
     if (merge) {
         if (!outfile) {
             fprintf(stderr, "Output file needed when merging usefiles.");
