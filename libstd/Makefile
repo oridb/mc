@@ -18,7 +18,7 @@ ASMSRC= \
 
 include ../config.mk
 
-all: $(MYRLIB) $(MYRBIN)
+all: $(MYRLIB) $(MYRBIN) test
 
 sys.myr: sys-$(SYS).myr
 	cp sys-$(SYS).myr sys.myr
@@ -29,6 +29,9 @@ syscall.s: syscall-$(SYS).s
 start.s: start-$(SYS).s
 	cp start-$(SYS).s start.s
 
+test: libstd.a
+	myrbuild -b test test.myr -I.
+
 
 $(MYRLIB): $(MYRSRC) $(ASMSRC)
 	../myrbuild/myrbuild -C../6/6m -M../muse/muse -l $(MYRLIB) $^
@@ -38,9 +41,9 @@ JUNKASM=$(MYRSRC:.myr=.s)
 USE=$(MYRSRC:.myr=.use) $(MYRLIB)
 .PHONY: clean
 clean:
-	rm -f $(OBJ)
-	rm -f $(USE)
-	rm -f $(JUNKASM)
+	rm -f $(OBJ) test.o
+	rm -f $(USE) test.use
+	rm -f $(JUNKASM) test.s
 	rm -f lib$(MYRLIB).a
 
 
