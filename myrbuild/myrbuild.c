@@ -287,16 +287,15 @@ void linkobj(char **files, size_t nfiles)
             die("Unknown file type %s", files[i]);
         lappend(&args, &nargs, strdup(buf));
     }
-    lappend(&args, &nargs, strdup("-L"));
-    snprintf(buf, sizeof buf, "%s%s", Instroot, "/myr/lib");
+    snprintf(buf, sizeof buf, "-L%s%s", Instroot, "/lib/myr");
     lappend(&args, &nargs, strdup(buf));
     for (i = 0; i < nincpaths; i++) {
         lappend(&args, &nargs, strdup("-L"));
         lappend(&args, &nargs, strdup(incpaths[i]));
     }
     for (i = 0; i < nlibs; i++) {
-        lappend(&args, &nargs, strdup("-l"));
-        lappend(&args, &nargs, strdup(libs[i]));
+        snprintf(buf, sizeof buf, "-l%s", libs[i]);
+        lappend(&args, &nargs, strdup(buf));
     }
     lappend(&args, &nargs, NULL);
 

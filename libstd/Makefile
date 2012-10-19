@@ -30,7 +30,7 @@ start.s: start-$(SYS).s
 	cp start-$(SYS).s start.s
 
 test: libstd.a
-	myrbuild -b test test.myr -I.
+	../myrbuild/myrbuild -b test test.myr -I.
 
 
 $(MYRLIB): $(MYRSRC) $(ASMSRC)
