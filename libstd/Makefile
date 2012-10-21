@@ -3,6 +3,7 @@ MYRSRC= \
     alloc.myr \
     chartype.myr \
     die.myr \
+    extremum.myr \
     fmt.myr \
     option.myr \
     rand.myr \
