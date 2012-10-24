@@ -657,7 +657,7 @@ static Node *slicebase(Simp *s, Node *n, Node *off)
     }
     /* safe: all types we allow here have a sub[0] that we want to grab */
     if (off) {
-      off = ptrsized(s, off);
+      off = ptrsized(s, rval(s, off, NULL));
       sz = tysize(n->expr.type->sub[0]);
       v = mul(off, disp(n->line, sz));
       return add(u, v);
