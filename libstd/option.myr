@@ -1,6 +1,7 @@
 use "types.use"
 use "alloc.use"
 use "utf.use"
+use "fmt.use"
 
 pkg std =
 	type optctx = struct
@@ -11,7 +12,7 @@ pkg std =
 		/* state */
 		optidx	: size
 		curarg	: byte[:]
-		args	: byte[:][:]
+		arglist	: byte[:][:]
 	;;
 
 	const optinit	: (opts	: byte[:], opts : byte[:][:] -> optctx*)
@@ -25,7 +26,7 @@ const optinit = {opts, args
 	ctx.opts = opts
 	ctx.args = args
 	ctx.optidx = 0
-	ctx.args = [][:]
+	ctx.arglist = [][:]
 	nextopt(ctx)
 	-> ctx
 }
@@ -56,6 +57,6 @@ const nextopt = {ctx
 	-> false
 :foundopt
 	ctx.optidx = i
-	ctx.curarg = ctx.args[i]
+	ctx.curarg = ctx.args[i][1:]
 	-> true
 }
