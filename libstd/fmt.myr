@@ -3,6 +3,7 @@ use "sys.use"
 use "types.use"
 use "utf.use"
 use "varargs.use"
+use "extremum.use"
 
 pkg std =
 	const bfmt	: (buf : byte[:], fmt : byte[:], args:... -> size)
@@ -123,13 +124,5 @@ const intfmt = {buf, val, base
 		n += encode(buf[n:], b[j])
 	;;
 	-> n 
-}
-
-const min = {a : size, b : size
-	if a < b
-		-> a
-	else
-		-> b
-	;;
 }
 

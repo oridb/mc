@@ -689,7 +689,7 @@ static void checkns(Inferstate *st, Node *n, Node **ret)
         settype(st, var, tyfreshen(st, s->decl.type));
     else
         settype(st, var, s->decl.type);
-    if (s->decl.isgeneric) {
+    if (s->decl.isgeneric && !st->ingeneric) {
         lappend(&st->specializationscope, &st->nspecializationscope, curstab());
         lappend(&st->specializations, &st->nspecializations, var);
         lappend(&st->genericdecls, &st->ngenericdecls, s);
@@ -913,7 +913,7 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
                 t = s->decl.type;
             settype(st, n, t);
             n->expr.did = s->decl.did;
-            if (s->decl.isgeneric) {
+            if (s->decl.isgeneric && !st->ingeneric) {
                 lappend(&st->specializationscope, &st->nspecializationscope, curstab());
                 lappend(&st->specializations, &st->nspecializations, n);
                 lappend(&st->genericdecls, &st->ngenericdecls, s);

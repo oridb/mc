@@ -290,8 +290,8 @@ void linkobj(char **files, size_t nfiles)
     snprintf(buf, sizeof buf, "-L%s%s", Instroot, "/lib/myr");
     lappend(&args, &nargs, strdup(buf));
     for (i = 0; i < nincpaths; i++) {
-        lappend(&args, &nargs, strdup("-L"));
-        lappend(&args, &nargs, strdup(incpaths[i]));
+        snprintf(buf, sizeof buf, "-L%s", incpaths[i]);
+        lappend(&args, &nargs, strdup(buf));
     }
     for (i = 0; i < nlibs; i++) {
         snprintf(buf, sizeof buf, "-l%s", libs[i]);

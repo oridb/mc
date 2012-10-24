@@ -1,13 +1,15 @@
 use "die.use"
 use "sys.use"
 use "types.use"
+use "extremum.use"
 
 pkg std =
 	generic alloc	: (		-> @a*)
 	generic free	: (v:@a*	-> void)
 
-	generic mkslice	: (len : size	-> @a[:])
-	generic freeslice: (sl : @a[:]	-> void)
+	generic slalloc	: (len : size	-> @a[:])
+	generic slfree	: (sl : @a[:]	-> void)
+	generic slgrow	: (sl : @a[:], len : size	-> @a[:])
 
 	const bytealloc	: (sz:size	-> byte*)
 	const bytefree	: (m:byte*, sz:size	-> void)
@@ -35,8 +37,8 @@ type bucket = struct
 ;;
 
 type slab = struct
-	head		: byte*	/* head of virtual addresses, so we don't leak address space */
-	next		: slab*	/* the next slab on the chain */
+	head	: byte*	/* head of virtual addresses, so we don't leak address space */
+	next	: slab*	/* the next slab on the chain */
 	freehd	: chunk*	/* the nodes we're allocating */
 	nfree	: size	/* the number of free nodes */
 ;;
@@ -53,15 +55,28 @@ generic free = {v:@a* -> void
 	bytefree(v castto(byte*), sizeof(@a))
 }
 
-generic mkslice = {len
+generic slalloc = {len
 	var p
 
 	p = bytealloc(len*sizeof(@a)) castto(@a*)
 	-> p[0:len]
 }
 
-generic freeslice = {sl
+generic slfree	 = {sl
 	-> bytefree(sl castto(byte*), sl.len * sizeof(@a))
+}
+
+generic slgrow = {sl, len
+	var i
+	var n
+	var new
+
+	new = slalloc(len)
+	n = min(len, sl.len)
+	for i = 0; i < n; i++
+		new[i] = sl[i]
+	;;
+	-> new
 }
 
 const bytealloc = {sz
