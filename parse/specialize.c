@@ -61,17 +61,17 @@ Type *tyspecialize(Type *t, Htab *tsmap)
                 lappend(&ret->param, &ret->nparam, tyspecialize(t->param[i], tsmap));
             break;
         case Tystruct:
+            ret = tydup(t);
             for (i = 0; i < t->nmemb; i++)
-                t->sdecls[i] = specializenode(t->sdecls[i], tsmap);
-            ret = t;
+                ret->sdecls[i] = specializenode(t->sdecls[i], tsmap);
             break;
         case Tyunion:
-            /* FIXME: specialize unions */
-#if 0
-            for (i = 0; i < t->nmemb; i++)
-                t->udecls[i] = specializenode(t->udecls[i], tsmap);
-#endif
-            die("We don't specialize unions yet");
+            ret = tydup(t);
+            for (i = 0; i < t->nmemb; i++) {
+                ret->udecls[i]->utype = ret;
+                if (ret->udecls[i]->etype)
+                    ret->udecls[i]->etype = tyspecialize(t->udecls[i]->etype, tsmap);
+            }
             break;
         default:
             if (t->nsub > 0) {
