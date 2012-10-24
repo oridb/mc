@@ -30,7 +30,7 @@ syscall.s: syscall-$(SYS).s
 start.s: start-$(SYS).s
 	cp start-$(SYS).s start.s
 
-test: libstd.a
+test: libstd.a test.myr
 	../myrbuild/myrbuild -b test -I. test.myr
 
 

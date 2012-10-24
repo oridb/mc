@@ -1,7 +1,7 @@
 use "types.use"
 use "alloc.use"
 use "utf.use"
-use "fmt.use"
+use "die.use"
 
 pkg std =
 	type optctx = struct
@@ -10,13 +10,14 @@ pkg std =
 		args	: byte[:][:]
 
 		/* state */
-		optidx	: size
+		argidx	: size
 		curarg	: byte[:]
 		arglist	: byte[:][:]
 	;;
 
 	const optinit	: (opts	: byte[:], opts : byte[:][:] -> optctx*)
 	const optnext	: (ctx : optctx* -> char)
+	const optarg	: (ctx : optctx* -> byte[:])
 ;;
 
 const optinit = {opts, args
@@ -25,7 +26,7 @@ const optinit = {opts, args
 	ctx = alloc()
 	ctx.opts = opts
 	ctx.args = args
-	ctx.optidx = 0
+	ctx.argidx = 0
 	ctx.arglist = [][:]
 	nextopt(ctx)
 	-> ctx
@@ -43,10 +44,26 @@ const optnext = {ctx
 	-> c
 }
 
+const optarg = {ctx
+	var arg
+
+	if ctx.curarg.len > 0
+		arg = ctx.curarg
+		ctx.curarg = ctx.curarg[ctx.curarg.len:]
+	elif ctx.argidx > ctx.args.len
+		arg = ctx.args[ctx.argidx + 1]
+		ctx.argidx++
+		nextopt(ctx)
+	else
+		die("Arg needed")
+	;;
+	-> arg
+}
+
 const nextopt = {ctx
 	var i
 
-	for i = ctx.optidx + 1; i < ctx.args.len; i++
+	for i = ctx.argidx + 1; i < ctx.args.len; i++
 		if decode(ctx.args[i]) == '-'
 			goto foundopt
 		else
@@ -56,7 +73,7 @@ const nextopt = {ctx
 	;;
 	-> false
 :foundopt
-	ctx.optidx = i
+	ctx.argidx = i
 	ctx.curarg = ctx.args[i][1:]
 	-> true
 }

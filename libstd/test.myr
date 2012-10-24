@@ -15,6 +15,10 @@ const main = {args : byte[:][:]
         opt = std.optinit("asdf:", args)
         while (o = std.optnext(opt)) != std.Badchar
         	std.put("option %c\n", o)
+		match o
+		'a':	std.put("\targ=%s\n", std.optarg(opt));;
+		'b':	std.put("\targ=%s\n", std.optarg(opt));;
+		;;
         ;;
 
         
