@@ -320,7 +320,7 @@ int main(int argc, char **argv)
             case 'M': muse = optarg; break;
             case 'L': ld = optarg; break;
             case 'R': ar = optarg; break;
-            case 'I': 
+            case 'I':
                 lappend(&incpaths, &nincpaths, optarg);
                 break;
             case 'h':
