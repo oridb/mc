@@ -123,11 +123,11 @@ struct Type {
 };
 
 struct Ucon {
-    int line;
-    size_t id;
-    Node *name;
-    Type *utype;
-    Type *etype;
+    int line;   /* line declared on */
+    size_t id;  /* unique id */
+    Node *name; /* ucon name */
+    Type *utype;        /* type of the union this is an element of */
+    Type *etype;        /* type for the element */
 };
 
 struct Cstr {
