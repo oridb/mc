@@ -414,7 +414,7 @@ static int tybfmt(char *buf, size_t len, Type *t)
             break;
         case Tyslice:
             p += tybfmt(p, end - p, t->sub[0]);
-            p += snprintf(p, end - p, "[:]");
+            p += snprintf(p, end - p, "[,]");
             break;
         case Tyarray:
             p += tybfmt(p, end - p, t->sub[0]);
