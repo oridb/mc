@@ -441,7 +441,7 @@ static int tybfmt(char *buf, size_t len, Type *t)
             p += snprintf(p, end - p, "]");
             break;
         case Tyvar:
-            p += snprintf(p, end - p, "@$%d", t->tid);
+            p += snprintf(p, end - p, "$%d", t->tid);
             if (t->nsub) {
                 p += snprintf(p, end - p, "(");
                 for (i = 0; i < t->nsub; i++) {
