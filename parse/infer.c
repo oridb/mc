@@ -192,7 +192,6 @@ static void tyresolve(Inferstate *st, Type *t)
             infernode(st, t->sdecls[i], NULL, NULL);
     } else if (t->type == Tyunion) {
         for (i = 0; i < t->nmemb; i++) {
-            //tyresolve(st, t->udecls[i]->utype);
             t->udecls[i]->utype = t;
             t->udecls[i]->utype = tf(st, t->udecls[i]->utype);
             if (t->udecls[i]->etype) {
