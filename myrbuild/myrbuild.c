@@ -115,8 +115,10 @@ void run(char **cmd)
     } else {
         waitpid(pid, &status, 0);
     }
-    if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
-        die("Command failed");
+    if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
+        die("%s: exited with status %d\n", cmd[0], WEXITSTATUS(status));
+    else if (WIFSIGNALED(status))
+        die("%s: exited with signal %d\n", cmd[0], WTERMSIG(status));
 }
 
 int isfresh(char *from, char *to)
