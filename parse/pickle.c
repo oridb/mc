@@ -91,13 +91,14 @@ static void wrucon(FILE *fd, Ucon *uc)
     wrint(fd, uc->line);
     wrint(fd, uc->id);
     pickle(uc->name, fd);
-    wrtype(fd, uc->utype);
-    wrtype(fd, uc->etype);
+    wrbool(fd, uc->etype != NULL);
+    if (uc->etype)
+      wrtype(fd, uc->etype);
 }
 
-static Ucon *rducon(FILE *fd)
+static Ucon *rducon(FILE *fd, Type *ut)
 {
-    Type *ut, *et;
+    Type *et;
     Node *name;
     Ucon *uc;
     size_t id;
@@ -106,8 +107,8 @@ static Ucon *rducon(FILE *fd)
     line = rdint(fd);
     id = rdint(fd);
     name = unpickle(fd);
-    ut = rdtype(fd);
-    et = rdtype(fd);
+    if (rdbool(fd))
+      et = rdtype(fd);
     uc = mkucon(line, name, ut, et);
     uc->id = id;
     return uc;
@@ -251,7 +252,7 @@ static Type *rdtype(FILE *fd)
             ty->nmemb = rdint(fd);
             ty->udecls = xalloc(ty->nmemb * sizeof(Node*));
             for (i = 0; i < ty->nmemb; i++)
-                ty->udecls[i] = rducon(fd);
+                ty->udecls[i] = rducon(fd, ty);
             break;
         case Tyarray:
             ty->sub[0] = rdtype(fd);
