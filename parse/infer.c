@@ -115,24 +115,6 @@ static int isbound(Inferstate *st, Type *t)
     return 0;
 }
 
-/* Freshens the type of a declaration. */
-static Type *tyfreshen(Inferstate *st, Type *t)
-{
-    Htab *ht;
-
-    st->ingeneric++;
-    t = tf(st, t);
-    st->ingeneric--;
-
-    tybind(st, t);
-    ht = mkht(strhash, streq);
-    t = tyspecialize(t, ht);
-    htfree(ht);
-    tyunbind(st, t);
-
-    return t;
-}
-
 /* Checks if a type that directly contains itself.
  * Recursive types that contain themselves through
  * pointers or slices are fine, but any other self-inclusion
@@ -174,6 +156,55 @@ static int tyinfinite(Inferstate *st, Type *t, Type *sub)
     }
     return 0;
 }
+
+
+static int isgeneric(Inferstate *st, Type *t)
+{
+    size_t i;
+
+    switch (t->type) {
+        case Tygeneric: return 1;
+        case Typaram:   return 1;
+        case Tystruct:
+            for (i = 0; i < t->nmemb; i++)
+                if (isgeneric(st, decltype(t->sdecls[i])))
+                    return 1;
+            break;
+        case Tyunion:
+            for (i = 0; i < t->nmemb; i++)
+                if (isgeneric(st, t->udecls[i]->etype))
+                    return 1;
+            break;
+        default:
+            for (i = 0; i < t->nsub; i++)
+                if (isgeneric(st, t->sub[i]))
+                    return 1;
+            break;
+    }
+    return 0;
+}
+
+/* Freshens the type of a declaration. */
+static Type *tyfreshen(Inferstate *st, Type *t)
+{
+    Htab *ht;
+
+    st->ingeneric++;
+    t = tf(st, t);
+    st->ingeneric--;
+
+    if (!isgeneric(st, t))
+        return t;
+
+    tybind(st, t);
+    ht = mkht(strhash, streq);
+    t = tyspecialize(t, ht);
+    htfree(ht);
+    tyunbind(st, t);
+
+    return t;
+}
+
 
 /* Resolves a type and all it's subtypes recursively.*/
 static void tyresolve(Inferstate *st, Type *t)
