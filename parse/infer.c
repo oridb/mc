@@ -124,9 +124,11 @@ static Type *tyfreshen(Inferstate *st, Type *t)
     t = tf(st, t);
     st->ingeneric--;
 
+    tybind(st, t);
     ht = mkht(strhash, streq);
     t = tyspecialize(t, ht);
     htfree(ht);
+    tyunbind(st, t);
 
     return t;
 }
@@ -182,10 +184,6 @@ static void tyresolve(Inferstate *st, Type *t)
     if (t->resolved)
         return;
     t->resolved = 1;
-    /* if this is a generic type, bind the params. */
-    tybind(st, t);
-    if (t->type == Tygeneric)
-        t = tyfreshen(st, t);
     /* Walk through aggregate type members */
     if (t->type == Tystruct) {
         for (i = 0; i < t->nmemb; i++)
@@ -213,7 +211,6 @@ static void tyresolve(Inferstate *st, Type *t)
         t->cstrs = bsdup(base->cstrs);
     if (tyinfinite(st, t, NULL))
         fatal(t->line, "Type %s includes itself", tystr(t));
-    tyunbind(st, t);
 }
 
 /* fixd the most accurate type mapping we have (ie,
