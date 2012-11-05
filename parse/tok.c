@@ -546,6 +546,8 @@ static Tok *numlit(void)
             t = number(16);
         else if (match('b'))
             t = number(2);
+        else if (match('o'))
+            t = number(8);
         else
             t = number(10);
     } else {
