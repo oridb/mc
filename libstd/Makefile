@@ -7,6 +7,7 @@ MYRSRC= \
     fmt.myr \
     option.myr \
     rand.myr \
+    slurp.myr \
     sys.myr \
     types.myr \
     utf.myr \
@@ -31,7 +32,7 @@ start.s: start-$(SYS).s
 	cp start-$(SYS).s start.s
 
 test: libstd.a test.myr
-	../myrbuild/myrbuild -b test -I. test.myr
+	../myrbuild/myrbuild -C../6/6m -M../muse/muse -b test -I. test.myr
 
 
 $(MYRLIB): $(MYRSRC) $(ASMSRC)
