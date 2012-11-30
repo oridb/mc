@@ -137,6 +137,8 @@ static void fixup(Node *n)
                 d = getdcl(curstab(), n->expr.args[0]);
                 if (!d)
                     die("Missing decl %s\n", namestr(n->expr.args[0]));
+                if (d->decl.isgeneric)
+                    d = specializedcl(d, n->expr.type, &n->expr.args[0]);
                 n->expr.did = d->decl.did;
             }
             break;
@@ -326,9 +328,16 @@ static Node *genericname(Node *n, Type *t)
     char *p;
     char *end;
 
+    if (!n->decl.isgeneric)
+        return n->decl.name;
     p = buf;
     end = buf + 1024;
+    /* format of the generic uniqified name:
+     *    ns$name$did$tid$tid$tid...  */
+    if (n->decl.name->name.ns)
+        p += snprintf(p, end - p, "%s", n->decl.name->name.ns);
     p += snprintf(p, end - p, "%s", n->decl.name->name.name);
+    p += snprintf(p, end - p, "$%zd", n->decl.did);
     tidappend(p, end - p, t);
     return mkname(n->line, buf);
 }
