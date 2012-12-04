@@ -1,0 +1,8 @@
+use std
+
+const main = {
+	var sl : int[:]
+
+	sl = std.slalloc(123)
+	-> sl.len
+}
