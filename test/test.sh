@@ -56,7 +56,6 @@ function exitswith {
 ulimit -c unlimited # core size
 ulimit -d 16382     # data segment: 16m
 ulimit -f 16382     # file size
-ulimit -l 1024      # locked memory
 ulimit -m 32768     # total memory
 ulimit -s 8192      # 8 meg stack
 ulimit -t 30        # 30 second CPU time
