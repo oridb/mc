@@ -25,7 +25,6 @@ const slurp = {path
 	len = 0
 	buf = slalloc(Bufinc)
 	while true
-		put("", fd, n, buf.len)
 		n = read(fd, buf[len:])
 		if n == 0
 			goto done
