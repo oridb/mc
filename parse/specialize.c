@@ -332,10 +332,6 @@ static Node *genericname(Node *n, Type *t)
         return n->decl.name;
     p = buf;
     end = buf + 1024;
-    /* format of the generic uniqified name:
-     *    ns$name$did$tid$tid$tid...  */
-    if (n->decl.name->name.ns)
-        p += snprintf(p, end - p, "%s", n->decl.name->name.ns);
     p += snprintf(p, end - p, "%s", n->decl.name->name.name);
     p += snprintf(p, end - p, "$%zd", n->decl.did);
     tidappend(p, end - p, t);
