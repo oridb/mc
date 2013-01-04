@@ -199,11 +199,11 @@ static void outnode(Node *n, FILE *fd, int depth)
             break;
         case Nfunc:
             fprintf(fd, " (args =\n");
-            outstab(n->func.scope, fd, depth + 1);
             for (i = 0; i < n->func.nargs; i++)
                 outnode(n->func.args[i], fd, depth+1);
             indent(fd, depth);
             fprintf(fd, ")\n");
+            outstab(n->func.scope, fd, depth + 1);
             outnode(n->func.body, fd, depth+1);
             break;
         case Nname:
