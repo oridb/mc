@@ -1,0 +1,11 @@
+use std
+
+const main = {
+	var sl
+
+	sl = std.slalloc(42)
+	sl[0] = 12
+	sl = std.slgrow(sl, 123)
+	sl[122] = 30
+	-> sl[0] + sl[122]
+}
