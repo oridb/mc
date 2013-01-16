@@ -4,6 +4,27 @@ use "types.use"
 use "extremum.use"
 use "fmt.use"
 
+/* 
+The allocator implementation here is based on Bonwick's slab allocator.
+
+For small allocations (up to Bucketmax), it works by requesting large,
+power of two aligned chunks from the operating system, and breaking
+them into a linked list of equal sized chunks. Allocations are then
+satisfied by taking the head of the list of chunks. Empty slabs
+are removed from the freelist.
+
+The data structure looks something like this:
+   Buckets:
+	[16  byte] -> [slab hdr | chunk -> chunk -> chunk] -> [slab hdr | chunk -> chunk -> chunk]
+	[32  byte] -> Zslab
+	[64  byte] -> [slab hdr | chunk -> chunk]
+	...
+	[32k byte] -> ...
+
+Large allocations are simply satisfied by mmap().
+
+*/
+
 pkg std =
 	generic alloc	: (		-> @a*)
 	generic free	: (v:@a*	-> void)
@@ -16,7 +37,7 @@ pkg std =
 	const bytefree	: (m:byte*, sz:size	-> void)
 ;;
 
-/* null pointers */
+/* null pointers. only used internally. */
 const Zbyte	= 0 castto(byte*)
 const Zslab	= 0 castto(slab*)
 const Zchunk	= 0 castto(chunk*)
@@ -48,14 +69,17 @@ type chunk = struct	/* NB: must be smaller than sizeof(slab) */
 	next	: chunk*	/* the next chunk in the free list */
 ;;
 
+/* Allocates an object of type @a, returning a pointer to it. */
 generic alloc = {-> @a*
 	-> bytealloc(sizeof(@a)) castto(@a*)
 }
 
+/* Frees a value of type @a */
 generic free = {v:@a* -> void
 	bytefree(v castto(byte*), sizeof(@a))
 }
 
+/* allocates a slice of 'len' elements. */
 generic slalloc = {len
 	var p
 
@@ -63,10 +87,12 @@ generic slalloc = {len
 	-> p[0:len]
 }
 
+/* Frees a slice */
 generic slfree	 = {sl
 	-> bytefree(sl castto(byte*), sl.len * sizeof(@a))
 }
 
+/* Grows a slice */
 generic slgrow = {sl, len
 	var i
 	var n
@@ -74,13 +100,13 @@ generic slgrow = {sl, len
 
 	new = slalloc(len)
 	n = min(len, sl.len)
-	put("growing from min(%i,%i) to %i\n", sl.len, len, n)
 	for i = 0; i < n; i++
 		new[i] = sl[i]
 	;;
 	-> new
 }
 
+/* Allocates a blob that is 'sz' bytes long. Dies if the allocation fails */
 const bytealloc = {sz
 	var i
 	var bkt
@@ -100,6 +126,7 @@ const bytealloc = {sz
 	;;
 }
 
+/* frees a blob that is 'sz' bytes long. */
 const bytefree = {m, sz
 	var bkt
 
@@ -111,6 +138,7 @@ const bytefree = {m, sz
 	;;
 }
 
+/* Sets up a single empty bucket */
 const bktinit = {b : bucket*, sz
 	b.sz = align(sz, Align)
 	b.nper = (Slabsz - sizeof(slab))/b.sz
@@ -119,6 +147,7 @@ const bktinit = {b : bucket*, sz
 	b.ncache = 0
 }
 
+/* Creates a slab for bucket 'bkt', and fills the chunk list */
 const mkslab = {bkt : bucket*
 	var i
 	var p
@@ -159,6 +188,11 @@ const mkslab = {bkt : bucket*
 	-> s
 }
 
+/* 
+Allocates a node from bucket 'bkt', crashing if the
+allocation cannot be satisfied. Will create a new slab
+if there are no slabs on the freelist.
+*/
 const bktalloc = {bkt
 	var s
 	var b
@@ -185,6 +219,12 @@ const bktalloc = {bkt
 	-> b castto(byte*)
 }
 
+/*
+Frees a chunk of memory 'm' into bucket 'bkt'.
+Assumes that the memory already came from a slab
+that was created for bucket 'bkt'. Will crash
+if this is not the case.
+*/
 const bktfree = {bkt, m
 	var s
 	var b
@@ -209,6 +249,10 @@ const bktfree = {bkt, m
 	s.freehd = b
 }
 
+/*
+Finds the correct bucket index to allocate from
+for allocations of size 'sz'
+*/
 const bktnum = {sz
 	var i
 	var bktsz
@@ -223,15 +267,26 @@ const bktnum = {sz
 	die("Size does not match any buckets")
 }
 
-/* chunks are variable sizes, so we can't just take a slice */
+/*
+chunks are variable sizes, so we can't just
+index to get to the next one
+*/
 const nextchunk = {b, sz
 	-> ((b castto(intptr)) + sz) castto(chunk*)
 }
 
+/*
+aligns a size to a requested alignment.
+'align' must be a power of two
+*/
 const align = {v, align
 	-> (v + align - 1) & ~(align - 1)
 }
 
+/*
+truncates a pointer to 'align'. 'align' must
+be a power of two.
+*/
 const mtrunc = {m, align
 	-> ((m castto(intptr)) & ~(align - 1)) castto(byte*)
 }
