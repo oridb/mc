@@ -6,7 +6,7 @@ MYRSRC= \
     extremum.myr \
     fmt.myr \
     maybe.myr \
-    option.myr \
+    optparse.myr \
     rand.myr \
     slurp.myr \
     sys.myr \
