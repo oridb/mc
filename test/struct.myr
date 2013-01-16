@@ -1,3 +1,4 @@
+/* test reading and writing to struct members. exits with 42. */
 type pair = struct
 	a : int
 	b : int

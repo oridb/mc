@@ -1,3 +1,4 @@
+/* checks that matching integers works. exits with 84. */
 const main = {
 	var v
 

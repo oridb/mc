@@ -1,3 +1,8 @@
+/* checks that types do not contain themselves
+inline, because that would lead to an infinite
+sized type.
+*/
+
 type t = struct
 	memb : t
 ;;

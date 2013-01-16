@@ -5,6 +5,7 @@ MYRSRC= \
     die.myr \
     extremum.myr \
     fmt.myr \
+    maybe.myr \
     option.myr \
     rand.myr \
     slurp.myr \

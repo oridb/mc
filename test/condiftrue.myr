@@ -1,3 +1,4 @@
+/* checks that true complex boolean conditions work. exits with 7. */
 var x = 5
 var y = 7
 const main = {

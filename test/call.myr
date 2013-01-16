@@ -1,3 +1,4 @@
+/* checks that simple function calls work. should exit with 42. */
 const f = {
 	-> 21
 }

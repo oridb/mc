@@ -1,3 +1,4 @@
+/* checks that we can create tuples and destructure them. exits with 42. */
 const main = {
 	var v
 	var x

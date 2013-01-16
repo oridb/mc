@@ -1,3 +1,5 @@
+/* checks that union matching works, at least on the key.
+exits with 84. */
 type u = union
 	`Foo
 	`Bar

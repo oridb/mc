@@ -1,3 +1,4 @@
+/* tests that nested structs work. should exit with 3 */
 type s1 = struct
 	x : s2
 ;;

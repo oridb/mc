@@ -2,6 +2,7 @@ use "die.use"
 use "sys.use"
 use "types.use"
 use "extremum.use"
+use "fmt.use"
 
 pkg std =
 	generic alloc	: (		-> @a*)
@@ -73,6 +74,7 @@ generic slgrow = {sl, len
 
 	new = slalloc(len)
 	n = min(len, sl.len)
+	put("growing from min(%i,%i) to %i\n", sl.len, len, n)
 	for i = 0; i < n; i++
 		new[i] = sl[i]
 	;;

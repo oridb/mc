@@ -1,3 +1,4 @@
+/* should exit with status 53 */
 const main = {
 	var a
 	var b

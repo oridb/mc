@@ -1,3 +1,4 @@
+/* should assign to v through pointer p, exiting with 123 */
 const main = {
 	var p
 	var v

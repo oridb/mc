@@ -1,3 +1,5 @@
+/* checks that taking incomplete slices calculates the length correctly.
+* should exit with 5. */
 const main = {
 	var a : int[8]
 	var s
