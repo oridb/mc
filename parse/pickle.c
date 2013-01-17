@@ -493,7 +493,7 @@ Node *unpickle(FILE *fd)
             n->block.scope = rdstab(fd);
             n->block.nstmts = rdint(fd);
             n->block.stmts = xalloc(sizeof(Node *)*n->block.nstmts);
-            n->func.scope->super = curstab();
+            n->block.scope->super = curstab();
             pushstab(n->func.scope->super);
             for (i = 0; i < n->block.nstmts; i++)
                 n->block.stmts[i] = unpickle(fd);
