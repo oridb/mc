@@ -136,7 +136,7 @@ static void fixup(Node *n)
             if (n->expr.op == Ovar) {
                 d = getdcl(curstab(), n->expr.args[0]);
                 if (!d)
-                    die("Missing decl %s\n", namestr(n->expr.args[0]));
+                    die("Missing decl %s", namestr(n->expr.args[0]));
                 if (d->decl.isgeneric)
                     d = specializedcl(d, n->expr.type, &n->expr.args[0]);
                 n->expr.did = d->decl.did;
@@ -169,6 +169,7 @@ static void fixup(Node *n)
             fixup(n->matchstmt.val);
             for (i = 0; i < n->matchstmt.nmatches; i++)
                 fixup(n->matchstmt.matches[i]);
+            break;
         case Nmatch:
             fixup(n->match.pat);
             fixup(n->match.block);
@@ -316,7 +317,7 @@ static size_t tidappend(char *buf, size_t sz, Type *t)
 
     p = buf;
     end = buf + sz;
-    p += snprintf(p, end - p, "$%d", t->tid);
+    p += snprintf(p, end - p, "$%d", (int)t->type);
     for (i = 0; i < t->nsub; i++)
         p += tidappend(p, end - p, t->sub[i]);
     return p - buf;
@@ -327,6 +328,7 @@ static Node *genericname(Node *n, Type *t)
     char buf[1024];
     char *p;
     char *end;
+    Node *name;
 
     if (!n->decl.isgeneric)
         return n->decl.name;
@@ -335,7 +337,10 @@ static Node *genericname(Node *n, Type *t)
     p += snprintf(p, end - p, "%s", n->decl.name->name.name);
     p += snprintf(p, end - p, "$%zd", n->decl.did);
     tidappend(p, end - p, t);
-    return mkname(n->line, buf);
+    name = mkname(n->line, buf);
+    if (n->decl.name->name.ns)
+        setns(name, n->decl.name->name.ns);
+    return name;
 }
 
 /*
