@@ -1,3 +1,9 @@
+/*
+should fail to compile because
+all types matched over should be
+compatible. Strings are not compatible
+with integers.
+*/
 const foo = {
 	match 123
 	"asdf":	123

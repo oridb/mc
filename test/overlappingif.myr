@@ -1,3 +1,5 @@
+/* checks that if multiple if conditions are valid, only the first is
+* selected. should exit with 2. */
 const main = {
 	var v
 	var x

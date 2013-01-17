@@ -1,1 +1,2 @@
+/* should exit with status 0 */
 const main = {; -> 0 }

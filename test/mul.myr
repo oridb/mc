@@ -1,3 +1,4 @@
+/* should exit with status 42 */
 const main = {
 	var a = 7
 	var b = 2

@@ -1,3 +1,4 @@
+/* tests reading and writing to arrays. should exit with 7 */
 const main = {
 	var a : int[3]
 	a[0] = 3

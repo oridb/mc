@@ -1,3 +1,5 @@
+/* checks that calls with large return values (ie, ones that don't fit in a
+* register) works correctly. Should exit with 42. */
 type pair = struct
 	a : int
 	b : int

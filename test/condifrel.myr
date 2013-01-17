@@ -1,4 +1,4 @@
-
+/* checks if relatonal operators work. should exit with 9. */
 var x = 3
 var y = 9
 const main = {

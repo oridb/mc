@@ -1,8 +1,9 @@
+/* sign extending cast. should exit with status 99 */
 const main = {
-	var u : uint8
-	var v : uint32
+	var u : int8
+	var v : int32
 	
 	u = 99
-	v = u castto(uint32)
+	v = u castto(int32)
 	-> v
 }

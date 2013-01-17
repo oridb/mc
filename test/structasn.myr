@@ -1,3 +1,4 @@
+/* tests block assignment of structs. exits with 42.*/
 type pair = struct
 	a : int
 	b : int

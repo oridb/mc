@@ -1,3 +1,5 @@
+/* checks that we can bind values in pattern matches.
+exits with 11. */
 type u = union
 	`Int int
 	`Chr char

@@ -1,3 +1,5 @@
+/* checks that matching works when comparing against constants,
+instead of just literals. exits with 88. */
 /* some misc constants */
 const Ca = 123
 const Cb = 8

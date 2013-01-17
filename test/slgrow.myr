@@ -1,3 +1,4 @@
+/* checks that our slice grow function works. exits with 42. */
 use std
 
 const main = {

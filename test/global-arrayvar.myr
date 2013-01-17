@@ -1,3 +1,5 @@
+/* tests that global arrays work as expected, and are zero-initialized by
+* default. should exit with 7 */
 var a : int[10]
 
 const main = {

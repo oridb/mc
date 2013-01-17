@@ -1,3 +1,4 @@
+/* checks that loops work. exits with 45. */
 const main = {
 	var i
 	var n

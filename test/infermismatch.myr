@@ -1,3 +1,7 @@
+/*
+should fail to compile after infering that a is a float, b is a char, and
+the types are incompatible.
+*/
 const main = {
 	var a
 	var b

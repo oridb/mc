@@ -1,3 +1,4 @@
+/* checks if recursive functions work. should return 21. */
 const fib = {n
 	if n <= 0
 		-> 0

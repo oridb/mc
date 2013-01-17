@@ -1,3 +1,4 @@
+/* should preincrement through a pointer, exiting with status 9 */
 const ppreinc = {p
 	-> ++*p
 }

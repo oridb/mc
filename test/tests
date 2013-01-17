@@ -47,16 +47,16 @@ B nestfn	E	42
 B closure	E	55
 B loop		E	45
 B condiftrue	E	7
-B overlappingif	E	2
 B condiffalse	E	9
 B condifrel	E	7
+B overlappingif	E	2
 B fib		E	21
 B float		E	1
 B log-and	E	0
 B log-or	E	1
 B str		E	102
 B generic	E	42
-B cstr-builtin	E	42
+B trait-builtin	E	42
 B genericcall	E	42
 B generictype	E	0
 B genericrec	E	0
@@ -72,6 +72,7 @@ B arraylit	E	3
 B arraylit-ni	E	2
 B structlit	E	42
 B tuple		E	42
+B slgrow        E       42
 B tyrec		E	42
 B slgrow        E       42
 B helloworld	P	Hello-世界

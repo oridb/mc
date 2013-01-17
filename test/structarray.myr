@@ -1,3 +1,4 @@
+/* tests a struct containing an array. exit status should be 42. */
 type t = struct
 	a : int[42]
 ;;

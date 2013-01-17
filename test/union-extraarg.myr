@@ -1,3 +1,8 @@
+/*
+should fail to compile becuse
+we're constructing a union that
+with too many arguments.
+*/
 type u = union
 	`Foo
 ;;

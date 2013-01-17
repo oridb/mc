@@ -1,3 +1,4 @@
+/* checks that evaluating a logical and to a bool works. should return 0. */
 const main = {
 	-> 0 && 1
 }
