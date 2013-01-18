@@ -89,7 +89,7 @@ generic slalloc = {len
 
 /* Frees a slice */
 generic slfree	 = {sl
-	-> bytefree(sl castto(byte*), sl.len * sizeof(@a))
+	bytefree(sl castto(byte*), sl.len * sizeof(@a))
 }
 
 /* Grows a slice */
