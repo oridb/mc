@@ -12,15 +12,16 @@
 
 #define Sizetbits (CHAR_BIT*sizeof(size_t)) /* used in graph reprs */
 
-typedef struct Usage Usage;
-struct Usage {
-    int l[Maxarg + 1];
-    int r[Maxarg + 1];
+typedef struct Usemap Usemap;
+struct Usemap {
+    int l[Maxarg + 1]; /* location of arg used in instruction's arg list */
+    int r[Maxarg + 1]; /* list of registers used implicitly by instruction */
 };
 
 static void printedge(FILE *fd, char *msg, size_t a, size_t b);
 
-Usage usetab[] = {
+/* tables of uses/defs by instruction */
+Usemap usetab[] = {
 #define Use(...) {__VA_ARGS__}
 #define Insn(i, fmt, use, def) use,
 #include "insns.def"
@@ -28,7 +29,7 @@ Usage usetab[] = {
 #undef Use
 };
 
-Usage deftab[] = {
+Usemap deftab[] = {
 #define Def(...) {__VA_ARGS__}
 #define Insn(i, fmt, use, def) def,
 #include "insns.def"
@@ -36,6 +37,7 @@ Usage deftab[] = {
 #undef Def
 };
 
+/* A map of which registers interfere */
 Reg regmap[][Nmode] = {
     [0]  = {Rnone, Ral, Rax, Reax, Rrax},
     [1]  = {Rnone, Rcl, Rcx, Recx, Rrcx},
@@ -53,6 +55,7 @@ Reg regmap[][Nmode] = {
     [13]  = {Rnone, R15b, R15w, R15d, R15},
 };
 
+/* Which regmap entry a register maps to */
 int colourmap[Nreg] = {
     /* byte */
     [Ral] = 0,
