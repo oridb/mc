@@ -1,7 +1,5 @@
 #!/bin/sh
 
-prefix="/usr/local"
-
 for i in `seq 300`; do
     echo "Lots of output to emulate automake... ok"
     echo "Testing for things you'll never use... fail"
@@ -11,6 +9,7 @@ done
 echo "Automake emulated successfully"
 
 INST_ROOT='/usr/local'
+prefix="/usr/local"
 
 for arg in $*; do
     shift 1

@@ -133,6 +133,16 @@ int isfresh(char *from, char *to)
     return from_sb.st_mtime >= to_sb.st_mtime;
 }
 
+int inlist(char **list, size_t sz, char *str)
+{
+    size_t i;
+
+    for (i = 0; i < sz; i++)
+        if (!strcmp(list[i], str))
+            return 1;
+    return 0;
+}
+
 void getdeps(char *file, char **deps, size_t depsz, size_t *ndeps)
 {
     char buf[2048]; /* if you hit this limit, shoot yourself */
@@ -140,6 +150,7 @@ void getdeps(char *file, char **deps, size_t depsz, size_t *ndeps)
     regmatch_t m[2];
     size_t i;
     FILE *f;
+    char *dep;
 
     f = fopen(file, "r");
     if (!f)
@@ -151,19 +162,13 @@ void getdeps(char *file, char **deps, size_t depsz, size_t *ndeps)
             continue;
         if (i == depsz)
             die("Too many deps for file %s", file);
-        deps[i++] = strdupn(&buf[m[1].rm_so], m[1].rm_eo - m[1].rm_so);
+        dep = strdupn(&buf[m[1].rm_so], m[1].rm_eo - m[1].rm_so);
+        if (!inlist(deps, i, dep))
+            deps[i++] = dep;
+        else
+            free(dep);
     }
     *ndeps = i;
-}
-
-int inlist(char **list, size_t sz, char *str)
-{
-    size_t i;
-
-    for (i = 0; i < sz; i++)
-        if (!strcmp(list[i], str))
-            return 1;
-    return 0;
 }
 
 void compile(char *file)
@@ -183,7 +188,7 @@ void compile(char *file)
                 localdep = fromuse(deps[i]);
                 compile(localdep);
                 free(localdep);
-            } else if (!inlist(libs, nlibs, deps[i])) {
+            } else {
                 lappend(&libs, &nlibs, deps[i]);
             }
         }
