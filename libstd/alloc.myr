@@ -103,6 +103,7 @@ generic slgrow = {sl, len
 	for i = 0; i < n; i++
 		new[i] = sl[i]
 	;;
+	slfree(sl)
 	-> new
 }
 
