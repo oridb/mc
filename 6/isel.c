@@ -381,7 +381,7 @@ static Loc *gencall(Isel *s, Node *n)
      * one at a time, we evaluate the args in reverse order.
      * Not good.
      *
-     * We skip the first operand, since it's the function itself */
+     * Skip the first operand, since it's the function itself */
     for (i = 1; i < n->expr.nargs; i++) {
         argsz = align(argsz, min(size(n->expr.args[i]), Ptrsz));
         argsz += size(n->expr.args[i]);

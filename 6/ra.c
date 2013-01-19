@@ -203,6 +203,7 @@ static size_t defs(Insn *insn, long *d)
     return j;
 }
 
+/* The uses and defs for an entire BB. */
 static void udcalc(Asmbb *bb)
 {
     /* up to 2 registers per memloc, so

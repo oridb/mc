@@ -1140,7 +1140,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
             r = assign(s, args[0], args[1]);
             break;
         case Ocall:
-            if (exprtype(n)->type != Tyvoid && size(n) > Ptrsz) {
+            if (exprtype(n)->type != Tyvoid && stacktype(exprtype(n))) {
                 r = temp(s, n);
                 linsert(&n->expr.args, &n->expr.nargs, 1, addr(r, exprtype(n)));
                 for (i = 0; i < n->expr.nargs; i++)
