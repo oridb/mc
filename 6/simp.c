@@ -776,6 +776,8 @@ static Node *simpcast(Simp *s, Node *val, Type *to)
     return r;
 }
 
+/* Simplifies taking a slice of an array, pointer,
+ * or other slice down to primitive pointer operations */
 static Node *simpslice(Simp *s, Node *n, Node *dst)
 {
     Node *t;
@@ -829,6 +831,8 @@ static Node *visit(Simp *s, Node *n)
     return r;
 }
 
+/* Takes a tuple and binds the i'th element of it to the
+ * i'th name on the rhs of the assignment. */
 static Node *destructure(Simp *s, Node *lhs, Node *rhs)
 {
     Node *plv, *prv, *lv, *sz, *stor, **args;
@@ -880,6 +884,10 @@ static Node *assign(Simp *s, Node *lhs, Node *rhs)
     return r;
 }
 
+/* Simplify tuple construction to a stack allocated
+ * value by evaluating the rvalue of each node on the
+ * rhs and assigning it to the correct offset from the
+ * head of the tuple. */
 static Node *simptup(Simp *s, Node *n, Node *dst)
 {
     Node *pdst, *pval, *val, *sz, *st, **args;
@@ -895,6 +903,7 @@ static Node *simptup(Simp *s, Node *n, Node *dst)
     for (i = 0; i < n->expr.nargs; i++) {
         val = rval(s, args[i], NULL);
         pdst = add(r, disp(n->line, off));
+
         if (stacknode(args[i])) {
             sz = disp(n->line, size(val));
             pval = addr(val, exprtype(val));
@@ -1043,6 +1052,8 @@ static Node *rval(Simp *s, Node *n, Node *dst)
             t = idxaddr(s, n);
             r = load(t);
             break;
+        /* array.len slice.len are magic 'virtual' members.
+         * they need to be special cased. */
         case Omemb:
             if (exprtype(args[0])->type == Tyslice) {
                 assert(!strcmp(namestr(args[1]), "len"));
