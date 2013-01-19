@@ -566,6 +566,7 @@ static Node *simplit(Simp *s, Node *lit, Node ***l, size_t *nl)
     return r;
 }
 
+/* gets the byte offset of 'memb' within the aggregate type 'aggr' */
 static size_t offset(Node *aggr, Node *memb)
 {
     Type *ty;
@@ -780,6 +781,7 @@ static Node *simpcast(Simp *s, Node *val, Type *to)
                           tystr(exprtype(val)), tystr(to));
             }
             break;
+        /* no other destination types are handled as things stand */
         default:
             fatal(val->line, "Bad cast from %s to %s",
                   tystr(exprtype(val)), tystr(to));
