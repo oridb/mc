@@ -143,13 +143,11 @@ void linsert(void *p, size_t *len, size_t idx, void *v)
 void ldel(void *l, size_t *len, size_t idx)
 {
     void ***pl;
-    size_t i;
 
     assert(l != NULL);
     assert(idx < *len);
     pl = l;
-    for (i = idx; i < *len - 1; i++)
-	pl[0][i] = pl[0][i + 1];
+    memmove(&pl[idx - 1], &pl[idx], (*len - idx)*sizeof(void*));
     (*len)--;
     *pl = xrealloc(*pl, *len * sizeof(void*));
 }
