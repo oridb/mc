@@ -50,6 +50,7 @@ struct Simp {
 static Node *simp(Simp *s, Node *n);
 static Node *rval(Simp *s, Node *n, Node *dst);
 static Node *lval(Simp *s, Node *n);
+static Node *assign(Simp *s, Node *lhs, Node *rhs);
 static void declarelocal(Simp *s, Node *n);
 static void simpcond(Simp *s, Node *n, Node *ltrue, Node *lfalse);
 
@@ -473,8 +474,14 @@ static void umatch(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, Node *i
         case Tyint8: case Tyint16: case Tyint32: case Tyint:
         case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint:
         case Typtr: case Tyfunc:
-            v = mkexpr(pat->line, Oeq, pat, val, NULL);
-            cjmp(s, v, iftrue, iffalse);
+            if (exprop(pat) == Ovar && !decls[pat->expr.did]->decl.isconst) {
+                v = assign(s, pat, val);
+                append(s, v);
+                jmp(s, iftrue);
+            } else {
+                v = mkexpr(pat->line, Oeq, pat, val, NULL);
+                cjmp(s, v, iftrue, iffalse);
+            }
             break;
         case Tyunion:
             uc = finducon(pat);
@@ -497,14 +504,12 @@ static void umatch(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, Node *i
     }
 }
 
-FILE *f;
 static void simpmatch(Simp *s, Node *n)
 {
     Node *end, *cur, *next; /* labels */
     Node *val, *tmp;
     Node *m;
     size_t i;
-    f = stdout;
 
     end = genlbl();
     val = temp(s, n->matchstmt.val);
@@ -672,7 +677,7 @@ static Node *slicelen(Simp *s, Node *sl)
     return load(addk(addr(sl, tyintptr), Ptrsz));
 }
 
-Node *lval(Simp *s, Node *n)
+static Node *lval(Simp *s, Node *n)
 {
     Node *r;
 
@@ -824,7 +829,7 @@ static Node *visit(Simp *s, Node *n)
     return r;
 }
 
-Node *destructure(Simp *s, Node *lhs, Node *rhs)
+static Node *destructure(Simp *s, Node *lhs, Node *rhs)
 {
     Node *plv, *prv, *lv, *sz, *stor, **args;
     size_t off, i;
@@ -849,7 +854,7 @@ Node *destructure(Simp *s, Node *lhs, Node *rhs)
     return NULL;
 }
 
-Node *assign(Simp *s, Node *lhs, Node *rhs)
+static Node *assign(Simp *s, Node *lhs, Node *rhs)
 {
     Node *t, *u, *v, *r;
 

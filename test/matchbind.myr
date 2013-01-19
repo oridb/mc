@@ -9,7 +9,7 @@ type u = union
 const main = {
 	var v
 
-	v = `Int 11
+	v = `Int 8
 	match v
 	`Int 127:
 		-> 42
