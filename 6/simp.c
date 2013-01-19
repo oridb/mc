@@ -722,15 +722,33 @@ static void simpcond(Simp *s, Node *n, Node *ltrue, Node *lfalse)
     }
 }
 
+static Node *intconvert(Simp *s, Node *from, Type *to, int issigned)
+{
+    Node *r;
+    size_t fromsz, tosz;
+
+    fromsz = size(from);
+    tosz = tysize(to);
+    r = rval(s, from, NULL);
+    if (fromsz > tosz) {
+        r = mkexpr(from->line, Otrunc, r, NULL);
+    } else if (tosz > fromsz) {
+        if (issigned)
+            r = mkexpr(from->line, Oswiden, r, NULL);
+        else
+            r = mkexpr(from->line, Ozwiden, r, NULL);
+    }
+    r->expr.type = to;
+    return r;
+}
+
 static Node *simpcast(Simp *s, Node *val, Type *to)
 {
     Node *r;
     Type *t;
-    int issigned;
-    size_t fromsz, tosz;
 
-    issigned = 0;
     r = NULL;
+    /* do the type conversion */
     switch (tybase(to)->type) {
         case Tyint8: case Tyint16: case Tyint32: case Tyint64:
         case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint64:
@@ -739,30 +757,23 @@ static Node *simpcast(Simp *s, Node *val, Type *to)
         case Typtr:
             t = tybase(exprtype(val));
             switch (t->type) {
+                /* ptr -> slice conversion is disallowed */
                 case Tyslice:
                     if (t->type == Typtr)
                         fatal(val->line, "Bad cast from %s to %s",
                               tystr(exprtype(val)), tystr(to));
                     r = slicebase(s, val, NULL);
                     break;
+                /* signed conversions */
                 case Tyint8: case Tyint16: case Tyint32: case Tyint64:
                 case Tyint: case Tylong:
-                    issigned = 1;
+                    r = intconvert(s, val, to, 1);
+                    break;
+                /* unsigned conversions */
                 case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint64:
                 case Tyuint: case Tyulong: case Tychar: case Tybyte:
                 case Typtr:
-                    fromsz = size(val);
-                    tosz = tysize(to);
-                    r = rval(s, val, NULL);
-                    if (fromsz > tosz) {
-                        r = mkexpr(val->line, Otrunc, r, NULL);
-                    } else if (tosz > fromsz) {
-                        if (issigned)
-                            r = mkexpr(val->line, Oswiden, r, NULL);
-                        else
-                            r = mkexpr(val->line, Ozwiden, r, NULL);
-                    }
-                    r->expr.type = to;
+                    r = intconvert(s, val, to, 0);
                     break;
                 default:
                     fatal(val->line, "Bad cast from %s to %s",
