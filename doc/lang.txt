@@ -234,6 +234,14 @@ TABLE OF CONTENTS:
 
             eg: (1,), (1,'b',"three")
 
+        Finally, while strictly not a literal, it's not a control
+        flow construct either. Labels are identifiers preceded by
+        colons.
+
+            eg: :my_label
+
+        They can be used as targets for gotos.
+
     3.3. Control Constructs and Blocks:
 
             if          for
