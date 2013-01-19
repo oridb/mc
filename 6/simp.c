@@ -1197,7 +1197,7 @@ static void declarelocal(Simp *s, Node *n)
     assert(n->type == Ndecl);
     s->stksz += size(n);
     s->stksz = align(s->stksz, min(size(n), Ptrsz));
-    if (debug)
+    if (debugopt['i'])
         printf("declare %s:%s(%zd) at %zd\n", declname(n), tystr(decltype(n)), n->decl.did, s->stksz);
     htput(s->locs, n, (void*)s->stksz);
 }
@@ -1206,7 +1206,7 @@ static void declarearg(Simp *s, Node *n)
 {
     assert(n->type == Ndecl);
     s->argsz = align(s->argsz, min(size(n), Ptrsz));
-    if (debug)
+    if (debugopt['i'])
         printf("declare %s(%zd) at %zd\n", declname(n), n->decl.did, -(s->argsz + 2*Ptrsz));
     htput(s->locs, n, (void*)-(s->argsz + 2*Ptrsz));
     s->argsz += size(n);
@@ -1304,7 +1304,7 @@ static Func *simpfn(Simp *s, char *name, Node *n, int export)
     Func *fn;
     Cfg *cfg;
 
-    if(debug)
+    if(debugopt['i'])
         printf("\n\nfunction %s\n", name);
 
     if (!n->decl.init)
@@ -1317,7 +1317,7 @@ static Func *simpfn(Simp *s, char *name, Node *n, int export)
     flatten(s, n);
     popstab();
 
-    if (debug)
+    if (debugopt['f'])
         for (i = 0; i < s->nstmts; i++)
             dump(s->stmts[i], stdout);
     for (i = 0; i < s->nstmts; i++) {
@@ -1329,14 +1329,14 @@ static Func *simpfn(Simp *s, char *name, Node *n, int export)
         }
         s->stmts[i] = fold(s->stmts[i]);
         if (debugopt['f']) {
-            printf("FOLD TO ------------\n");
+            printf("TO ------------\n");
             dump(s->stmts[i], stdout);
-            printf("END ----------------\n");
+            printf("DONE ----------------\n");
         }
     }
 
     cfg = mkcfg(s->stmts, s->nstmts);
-    if (debug)
+    if (debugopt['t'])
         dumpcfg(cfg, stdout);
 
     fn = zalloc(sizeof(Func));

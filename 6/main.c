@@ -17,7 +17,6 @@
 
 /* FIXME: move into one place...? */
 Node *file;
-int debug;
 char debugopt[128];
 char *outfile;
 char **incpaths;
@@ -58,7 +57,7 @@ int main(int argc, char **argv)
     Stab *globls;
     char buf[1024];
 
-    while ((opt = getopt(argc, argv, "d::hSo:I:")) != -1) {
+    while ((opt = getopt(argc, argv, "d:hSo:I:")) != -1) {
         switch (opt) {
             case 'o':
                 outfile = optarg;
@@ -68,7 +67,6 @@ int main(int argc, char **argv)
                 exit(0);
                 break;
             case 'd':
-                debug = 1;
                 while (optarg && *optarg) {
                     if (*optarg == 'y')
                         yydebug = 1;
@@ -100,7 +98,7 @@ int main(int argc, char **argv)
             dump(file, stdout);
         infer(file);
         /* after all processing */
-        if (debug)
+        if (debugopt['t'])
             dump(file, stdout);
 
         swapsuffix(buf, 1024, argv[i], ".myr", ".s");

@@ -249,7 +249,6 @@ struct Node {
 };
 
 /* globals */
-extern int debug;
 extern char *filename;
 extern int ignorenl;    /* are '\n' chars currently stmt separators? */
 extern Tok *curtok;     /* the last token we tokenized */
@@ -472,7 +471,6 @@ size_t align(size_t sz, size_t align);
 char *swapsuffix(char *buf, size_t sz, char *s, char *suf, char *swap);
 
 /* Options to control the compilation */
-extern int debug;
 extern int yydebug;
 extern char debugopt[128];
 extern int asmonly;

@@ -920,7 +920,7 @@ void genasm(FILE *fd, Func *fn, Htab *globls)
     epilogue(&is);
     regalloc(&is);
 
-    if (debug)
+    if (debugopt['i'])
         writeasm(stdout, &is, fn);
     writeasm(fd, &is, fn);
 }
