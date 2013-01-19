@@ -5,12 +5,26 @@ use "utf.use"
 use "varargs.use"
 use "extremum.use"
 
+/*
+  printf-like functions. These use a different syntax from the C printf,
+  as described below:
+
+	  %s	- A string, ie, a utf8 encoded byte slice.
+	  %b	- A byte.
+	  %w	- A 16 bit integer
+	  %i	- A 32 bit integer
+	  %l	- A 64 bit integer
+	  %p	- A pointer
+	  %c	- A char
+*/
+
 pkg std =
 	const bfmt	: (buf : byte[:], fmt : byte[:], args:... -> size)
 	const bfmtv	: (buf : byte[:], fmt : byte[:], ap:valist -> size)
 	const put	: (fmt : byte[:], args:... -> size)
 ;;
 
+/* Writes a string of text up to 2 kb in size to stdout */
 const put = {fmt, args
 	var buf : byte[2048]
 	var n
@@ -20,10 +34,13 @@ const put = {fmt, args
 	-> n
 }
 
+/* formats a string of text as specified by 'fmt' into 'buf' */
 const bfmt = {buf, fmt, args
 	-> bfmtv(buf, fmt, vastart(&args))
 }
 
+/* formats a string of text as specified by 'fmt' into 'buf',
+   using a valist for the arguments */
 const bfmtv = {buf, fmt, ap
 	var c
 	var n
