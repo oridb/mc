@@ -1,0 +1,66 @@
+.TH MUSE 1
+.SH NAME
+myrbuild
+.SH SYNOPSIS
+.B myrbuild
+.I -[hblI]
+.I [file...]
+.br
+.SH DESCRIPTION
+.PP
+The 'myrbuild' tool takes as input a list of Myrddin or assembly sources,
+and compiles them in the correct dependency order into either a library or
+an executable. If the source files are myrddin sources, then the appropriate
+usefiles will be created as well. It expects Myrddin source to be in '.myr'
+files.
+
+.PP
+Myrbuild will default to building for the current architecture.
+
+.PP
+The myrbuild options are:
+
+.TP
+.B -h
+Print a summary of the available options.
+
+.TP
+.B -b name
+Compile source into a binary named 'name'. If neither this option nor
+the '-l' option are given, myrbuild will create a binary called 'a.out'.
+
+.TP
+.B -l 'name'
+Compile source given into a library called 'lib<name>.a', and a matching
+usefile called 'name'. Only static libraries are currently supported.
+
+.TP
+.B -I path
+Add 'path' to the search path for unquoted use statments. This option
+does not affect the search path for local usefiles, which are always
+searched relative to the compiler's current working directory. Without
+any options, the search path defaults to /usr/include/myr.
+
+.SH EXAMPLE
+.EX
+    myrbuild -b foo foo.myr
+    myrbuild -l foo bar.myr baz.myr
+    muse -mo library foo.use bar.use
+.EE
+
+.SH FILES
+The source for muse is available from
+.B git://git.eigenstate.org/git/ori/mc.git
+and lives in the
+.I myrbuild/
+directory within the source tree.
+
+.SH SEE ALSO
+.IR mc(1)
+.IR muse(1)
+.IR ld(1)
+.IR as(1)
+
+.SH BUGS
+.PP
+None known.

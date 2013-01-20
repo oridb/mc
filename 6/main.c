@@ -97,7 +97,7 @@ int main(int argc, char **argv)
         if (debugopt['T'])
             dump(file, stdout);
         infer(file);
-        /* after all processing */
+        /* after all type inference */
         if (debugopt['t'])
             dump(file, stdout);
 

@@ -3,7 +3,8 @@ SUB = parse \
       6 \
       muse \
       myrbuild \
-      libstd
+      libstd \
+      doc
 
 include mk/c.mk
 include config.mk
