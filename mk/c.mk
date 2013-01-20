@@ -60,9 +60,9 @@ install-bin: $(INSTBIN)
 
 install-lib: $(INSTLIB)
 	@if [ ! -z "$(INSTLIB)" ]; then \
-		echo install $(INSTLIB) $(INST_ROOT)/lib; \
+		echo install -m 644 $(INSTLIB) $(INST_ROOT)/lib; \
 		mkdir -p $(INST_ROOT)/lib; \
-		install $(INSTLIB) $(INST_ROOT)/lib; \
+		install -m 644 $(INSTLIB) $(INST_ROOT)/lib; \
 	fi
 
 install-hdr: $(INSTHDR)
