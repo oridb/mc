@@ -14,7 +14,7 @@ OBJ=bitset.o \
     use.o \
     util.o
 
-CLEAN=gram.c
+CLEAN=gram.c gram.h
 
 include ../mk/lexyacc.mk
 include ../mk/c.mk
