@@ -30,8 +30,8 @@ pkg std =
 	generic free	: (v:@a*	-> void)
 
 	generic slalloc	: (len : size	-> @a[:])
-	generic slfree	: (sl : @a[:]	-> void)
 	generic slgrow	: (sl : @a[:], len : size	-> @a[:])
+	generic slfree	: (sl : @a[:]	-> void)
 
 	const bytealloc	: (sz:size	-> byte*)
 	const bytefree	: (m:byte*, sz:size	-> void)
