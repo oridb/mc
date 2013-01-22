@@ -111,6 +111,8 @@ static Node *mul(Node *a, Node *b)
     return n;
 }
 
+/* takes the address of a node, possibly converting it to
+ * a pointer to the base type 'bt' */
 static Node *addr(Node *a, Type *bt)
 {
     Node *n;
@@ -187,12 +189,17 @@ static int isconstfn(Node *s)
     return s->decl.isconst && decltype(s)->type == Tyfunc;
 }
 
+/* For x86, the assembly names are generated as follows:
+ *      local symbols: .name
+ *      un-namespaced symbols: <symprefix>name
+ *      namespaced symbols: <symprefix>namespace$name
+ */
 static char *asmname(Node *n)
 {
     char *s;
     int len;
 
-    len = strlen(Fprefix);
+    len = strlen(Symprefix);
     if (n->name.ns)
         len += strlen(n->name.ns) + 1; /* +1 for separator */
     len += strlen(n->name.name) + 1;
@@ -200,9 +207,11 @@ static char *asmname(Node *n)
     s = xalloc(len + 1);
     s[0] = '\0';
     if (n->name.ns)
-        snprintf(s, len, "%s%s$%s", Fprefix, n->name.ns, n->name.name);
+        snprintf(s, len, "%s%s$%s", Symprefix, n->name.ns, n->name.name);
+    else if (n->name.name[0] == '.')
+        snprintf(s, len, "%s", n->name.name);
     else
-        snprintf(s, len, "%s%s", Fprefix, n->name.name);
+        snprintf(s, len, "%s%s", Symprefix, n->name.name);
     return s;
 }
 
