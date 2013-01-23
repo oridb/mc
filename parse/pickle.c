@@ -512,6 +512,7 @@ Node *unpickle(FILE *fd)
 
             /* init */
             n->decl.init = unpickle(fd);
+            lappend(&decls, &ndecls, n);
             break;
         case Nfunc:
             n->func.type = rdtype(fd);
