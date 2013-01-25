@@ -111,6 +111,7 @@ void run(char **cmd)
 
     printl(cmd);
     pid = fork();
+    status = 0;
     if (pid == -1) {
         err(1, "Could not fork");
     } else if (pid == 0) {

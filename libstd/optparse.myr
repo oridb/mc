@@ -15,7 +15,7 @@ pkg std =
 		arglist	: byte[:][:]
 	;;
 
-	const optinit	: (opts	: byte[:], opts : byte[:][:] -> optctx*)
+	const optinit	: (opts	: byte[:], args : byte[:][:] -> optctx*)
 	const optnext	: (ctx : optctx* -> char)
 	const optarg	: (ctx : optctx* -> byte[:])
 ;;

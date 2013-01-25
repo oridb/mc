@@ -240,7 +240,11 @@ TABLE OF CONTENTS:
 
             eg: :my_label
 
-        They can be used as targets for gotos.
+        They can be used as targets for gotos, as follows:
+
+            goto my_label
+
+        the ':' is not part of the label name.
 
     3.3. Control Constructs and Blocks:
 

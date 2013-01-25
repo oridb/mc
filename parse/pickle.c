@@ -104,6 +104,7 @@ static Ucon *rducon(FILE *fd, Type *ut)
     size_t id;
     int line;
 
+    et = NULL;
     line = rdint(fd);
     id = rdint(fd);
     name = unpickle(fd);
