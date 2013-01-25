@@ -65,11 +65,15 @@ int isquoted(char *path)
     return path[0] == '"' && path[strlen(path) - 1] == '"';
 }
 
-char *fromuse(char *path)
+char *usetomyr(char *path)
 {
     char buf[1024];
     /* skip initial quote */
     path++;
+    if (!hassuffix(path, ".use\"")) {
+        fprintf(stderr, "\"%s, should end with \".use\"\n", path);
+        exit(1);
+    }
     swapsuffix(buf, 1024, path, ".use\"", ".myr");
     return strdup(buf);
 }
@@ -185,7 +189,7 @@ void compile(char *file)
         getdeps(file, deps, 512, &ndeps);
         for (i = 0; i < ndeps; i++) {
             if (isquoted(deps[i])) {
-                localdep = fromuse(deps[i]);
+                localdep = usetomyr(deps[i]);
                 compile(localdep);
                 free(localdep);
             } else {
