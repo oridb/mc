@@ -115,6 +115,26 @@ Node *fold(Node *n)
             if (islit(args[0], &a))
                 r = val(n->line, -a, exprtype(n));
             break;
+        case Obsl:
+            if (islit(args[0], &a) && islit(args[1], &b))
+                r = val(n->line, a << b, exprtype(n));
+            break;
+        case Obsr:
+            if (islit(args[0], &a) && islit(args[1], &b))
+                r = val(n->line, a >> b, exprtype(n));
+            break;
+        case Obor:
+            if (islit(args[0], &a) && islit(args[1], &b))
+                r = val(n->line, a | b, exprtype(n));
+            break;
+        case Oband:
+            if (islit(args[0], &a) && islit(args[1], &b))
+                r = val(n->line, a & b, exprtype(n));
+            break;
+        case Obxor:
+            if (islit(args[0], &a) && islit(args[1], &b))
+                r = val(n->line, a ^ b, exprtype(n));
+            break;
         case Ocast:
             /* FIXME: we currentl assume that the bits of the
              * val are close enough. */
