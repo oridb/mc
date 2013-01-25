@@ -34,12 +34,12 @@ syscall.s: syscall-$(SYS).s
 start.s: start-$(SYS).s
 	cp start-$(SYS).s start.s
 
-test: libstd.a test.myr
+test: libstd.a test.myr ../6/6m
 	../myrbuild/myrbuild -C../6/6m -M../muse/muse -b test -I. test.myr
 
 
-$(MYRLIB): $(MYRSRC) $(ASMSRC)
-	../myrbuild/myrbuild -C../6/6m -M../muse/muse -l $(MYRLIB) $^
+$(MYRLIB): $(MYRSRC) $(ASMSRC) ../6/6m
+	../myrbuild/myrbuild -C../6/6m -M../muse/muse -l $(MYRLIB) $(MYRSRC) $(ASMSRC)
 
 OBJ=$(MYRSRC:.myr=.o) $(ASMSRC:.s=.o)
 JUNKASM=$(MYRSRC:.myr=.s)
@@ -55,3 +55,6 @@ install:
 	mkdir -p  $(INST_ROOT)/lib/myr
 	install libstd.a $(INST_ROOT)/lib/myr
 	install std $(INST_ROOT)/lib/myr
+
+../6/6m:
+	cd ..; make
