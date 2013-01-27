@@ -148,7 +148,7 @@ void ldel(void *p, size_t *len, size_t idx)
     assert(idx < *len);
     pl = p;
     l = *pl;
-    memmove(&l[idx - 1], &l[idx], (*len - idx)*sizeof(void*));
+    memmove(&l[idx], &l[idx + 1], (*len - idx - 1)*sizeof(void*));
     (*len)--;
     *pl = xrealloc(l, *len * sizeof(void*));
 }
