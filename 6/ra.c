@@ -996,8 +996,10 @@ void regalloc(Isel *s)
     s->prepainted = mkbs();
     s->shouldspill = mkbs();
     s->neverspill = mkbs();
+#if 0
     for (i = 0; i < Nsaved; i++)
         bsput(s->shouldspill, s->calleesave[i]->reg.id);
+#endif
     for (i = 0; i < maxregid; i++)
         if (locmap[i]->reg.colour)
             bsput(s->prepainted, i);

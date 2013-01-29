@@ -4,7 +4,7 @@
 #define Wordsz 4                /* the size of a "natural int" */
 #define Ptrsz 8                 /* the size of a machine word (ie, pointer size) */
 #define K 14                    /* the number of allocatable registers */
-#define Nsaved 14               /* number of registers saved in the ABI */
+#define Nsaved 13               /* number of registers saved in the ABI */
 
 typedef size_t regid;
 
@@ -195,7 +195,6 @@ void locprint(FILE *fd, Loc *l, char spec);
 void iprintf(FILE *fd, Insn *insn);
 
 /* emitting instructions */
-void g(Isel *s, AsmOp op, ...);
 Insn *mkinsn(AsmOp op, ...);
 
 /* register allocation */
