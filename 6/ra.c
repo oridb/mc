@@ -132,7 +132,7 @@ static int isfixreg(Loc *l)
     return 0;
 }
 
-static size_t uses(Insn *insn, long *u)
+static size_t uses(Insn *insn, regid *u)
 {
     size_t i, j;
     int k;
@@ -175,7 +175,7 @@ static size_t uses(Insn *insn, long *u)
     return j;
 }
 
-static size_t defs(Insn *insn, long *d)
+static size_t defs(Insn *insn, regid *d)
 {
     size_t i, j;
     int k;
@@ -209,7 +209,7 @@ static void udcalc(Asmbb *bb)
     /* up to 2 registers per memloc, so
      * 2*Maxarg is the maximum number of
      * uses or defs we can see */
-    long   u[2*Maxarg], d[2*Maxarg];
+    regid   u[Maxuse], d[Maxdef];
     size_t nu, nd;
     size_t i, j;
 
@@ -305,23 +305,17 @@ static void addedge(Isel *s, size_t u, size_t v)
 
 static void setup(Isel *s)
 {
-    Bitset **gadj;
     size_t gchunks;
     size_t i;
 
     free(s->gbits);
     gchunks = (maxregid*maxregid)/Sizetbits + 1;
     s->gbits = zalloc(gchunks*sizeof(size_t));
-    /* fresh adj list repr. try to avoid reallocating all the bitsets */
-    gadj = zalloc(maxregid * sizeof(Bitset*));
-    if (s->gadj)
-        for (i = 0; i < maxregid; i++)
-            gadj[i] = bsclear(s->gadj[i]);
-    else
-        for (i = 0; i < maxregid; i++)
-            gadj[i] = mkbs();
+    /* fresh adj list repr. */
     free(s->gadj);
-    s->gadj = gadj;
+    s->gadj = zalloc(maxregid * sizeof(Bitset*));
+    for (i = 0; i < maxregid; i++)
+        s->gadj[i] = mkbs();
 
     s->spilled = bsclear(s->spilled);
     s->coalesced = bsclear(s->coalesced);
@@ -339,7 +333,7 @@ static void setup(Isel *s)
 
 static void build(Isel *s)
 {
-    long u[2*Maxarg], d[2*Maxarg];
+    regid u[Maxuse], d[Maxdef];
     size_t nu, nd;
     size_t i, k;
     ssize_t j;
@@ -598,8 +592,9 @@ static void combine(Isel *s, regid u, regid v)
         printedge(stdout, "combining:", u, v);
     if (wlhas(s->wlfreeze, s->nwlfreeze, v, &idx))
         ldel(&s->wlfreeze, &s->nwlfreeze, idx);
-    else if (wlhas(s->wlspill, s->nwlspill, v, &idx))
+    else if (wlhas(s->wlspill, s->nwlspill, v, &idx)) {
         ldel(&s->wlspill, &s->nwlspill, idx);
+    }
     bsput(s->coalesced, v);
     s->aliasmap[v] = locmap[u];
 
@@ -634,7 +629,6 @@ static void coalesce(Isel *s)
     regid u, v, tmp;
 
     m = lpop(&s->wlmove, &s->nwlmove);
-    /* FIXME: src, dst? dst, src? Does it matter? */
     u = getalias(s, m->args[0]->reg.id);
     v = getalias(s, m->args[1]->reg.id);
 
@@ -715,6 +709,7 @@ static void freeze(Isel *s)
     freezemoves(s, l);
 }
 
+/* Select the spill candidates */
 static void selspill(Isel *s)
 {
     size_t i;
@@ -723,7 +718,17 @@ static void selspill(Isel *s)
     /* FIXME: pick a better heuristic for spilling */
     m = NULL;
     for (i = 0; i < s->nwlspill; i++) {
-        if (!bshas(s->spilled, s->wlspill[i]->reg.id)) {
+        printf("Trying to spill %zd\n", s->wlspill[i]->reg.id);
+        if (!bshas(s->shouldspill, s->wlspill[i]->reg.id))
+            continue;
+        m = s->wlspill[i];
+        ldel(&s->wlspill, &s->nwlspill, i);
+        break;
+    }
+    if (!m) {
+        for (i = 0; i < s->nwlspill; i++) {
+            if (bshas(s->neverspill, s->wlspill[i]->reg.id))
+                continue;
             m = s->wlspill[i];
             ldel(&s->wlspill, &s->nwlspill, i);
             break;
@@ -734,6 +739,10 @@ static void selspill(Isel *s)
     freezemoves(s, m);
 }
 
+/*
+ * Selects the colors for registers, spilling to the
+ * stack if no free registers can be found.
+ */
 static int paint(Isel *s)
 {
     int taken[K + 2]; /* esp, ebp aren't "real colours" */
@@ -781,9 +790,202 @@ static int paint(Isel *s)
     return spilled;
 }
 
+typedef struct Remapping Remapping;
+struct Remapping {
+    regid oldreg;
+    Loc *newreg;
+};
+
+static Loc *mapfind(Loc *old, Remapping *r, size_t nr)
+{
+    Loc *new;
+    Loc *base;
+    Loc *idx;
+    size_t i;
+
+    if (!old)
+        return NULL;
+
+    new = NULL;
+    if (old->type == Locreg) {
+        for (i = 0; i < nr; i++) {
+            if (old->reg.id == r[i].oldreg) {
+                return r[i].newreg;
+            }
+        }
+    } else if (old->type == Locmem || old->type == Locmeml) {
+        base = mapfind(old->mem.base, r, nr);
+        idx = mapfind(old->mem.idx, r, nr);
+        if (base != old->mem.base || idx != old->mem.idx) {
+            if (old->type == Locmem)
+                new = locmems(old->mem.constdisp, base, idx, old->mem.scale, old->mode);
+            else
+                new = locmemls(old->mem.lbldisp, base, idx, old->mem.scale, old->mode);
+        }
+        if (new)
+            return new;
+    }
+    return old;
+}
+
+static Loc *spillslot(Isel *s, regid reg)
+{
+    size_t stkoff;
+
+    stkoff = (size_t)htget(s->spillslots, (void*)reg);
+    return locmem(-stkoff, locphysreg(Rrbp), NULL, locmap[reg]->mode);
+}
+
+static void updatelocs(Isel *s, Insn *insn, Remapping *use, size_t nuse, Remapping *def, size_t ndef)
+{
+    size_t i;
+
+    for (i = 0; i < insn->nargs; i++) {
+        insn->args[i] = mapfind(insn->args[i], use, nuse);
+        insn->args[i] = mapfind(insn->args[i], def, ndef);
+    }
+}
+
+/*
+ * Takes two tables for remappings, of size Maxuse/Maxdef,
+ * and fills them, storign the number of uses or defs. Returns
+ * whether there are any remappings at all.
+ */
+static int remap(Isel *s, Insn *insn, Remapping *use, size_t *nuse, Remapping *def, size_t *ndef)
+{
+    regid u[Maxuse], d[Maxdef];
+    size_t nu, nd;
+    size_t useidx, defidx;
+    size_t i, j;
+    int found;
+
+    useidx = 0;
+    nu = uses(insn, u);
+    nd = defs(insn, d);
+    for (i = 0; i < nu; i++) {
+        if (!bshas(s->spilled, u[i]))
+            continue;
+        use[useidx].oldreg = u[i];
+        use[useidx].newreg = locreg(locmap[u[i]]->mode);
+        bsput(s->neverspill, use[useidx].newreg->reg.id);
+        useidx++;
+    }
+
+    defidx = 0; 
+    for (i = 0; i < nd; i++) {
+        if (!bshas(s->spilled, d[i]))
+            continue;
+        def[defidx].oldreg = d[i];
+
+        /* if we already have remapped a use for this register, we want to
+         * store the same register from the def. */
+        found = 0;
+        for (j = 0; j < defidx; j++) {
+            if (def[i].oldreg == d[i]) {
+                def[defidx].newreg = locreg(locmap[d[i]]->mode);
+                bsput(s->neverspill, def[defidx].newreg->reg.id);
+                found = 1;
+            }
+        }
+        if (!found) {
+            def[defidx].newreg = locreg(locmap[d[i]]->mode);
+            bsput(s->neverspill, def[defidx].newreg->reg.id);
+        }
+
+        defidx++;
+    }
+
+    *nuse = useidx;
+    *ndef = defidx;
+    return useidx > 0 || defidx > 0;
+}
+
+/*
+ * Rewrite instructions using spilled registers, inserting
+ * appropriate loads and stores into the BB
+ */
+static void rewritebb(Isel *s, Asmbb *bb)
+{
+    Remapping use[Maxuse], def[Maxdef];
+    Insn *insn;
+    size_t nuse, ndef;
+    size_t i, j;
+    Insn **new;
+    size_t nnew;
+
+    new = NULL;
+    nnew = 0;
+    for (j = 0; j < bb->ni; j++) {
+        /* if there is a remapping, insert the loads and stores as needed */
+        if (remap(s, bb->il[j], use, &nuse, def, &ndef)) {
+            for (i = 0; i < nuse; i++) {
+                insn = mkinsn(Imov, spillslot(s, use[i].oldreg), use[i].newreg, NULL);
+                lappend(&new, &nnew, insn);
+                printf("loading ");
+                locprint(stdout, locmap[use[i].oldreg], 'x');
+                printf(" -> ");
+                locprint(stdout, use[i].newreg, 'x');
+                printf("\n");
+            }
+            insn = bb->il[j];
+            updatelocs(s, insn, use, nuse, def, ndef);
+            lappend(&new, &nnew, insn);
+            for (i = 0; i < ndef; i++) {
+                insn = mkinsn(Imov, def[i].newreg, spillslot(s, def[i].oldreg), NULL);
+                lappend(&new, &nnew, insn);
+                printf("storing ");
+                locprint(stdout, locmap[def[i].oldreg], 'x');
+                printf(" -> ");
+                locprint(stdout, def[i].newreg, 'x');
+                printf("\n");
+            }
+        } else {
+            lappend(&new, &nnew, bb->il[j]);
+        }
+    }
+    lfree(&bb->il, &bb->ni);
+    bb->il = new;
+    bb->ni = nnew;
+}
+
+static void addspill(Isel *s, Loc *l)
+{
+    s->stksz->lit += modesize[l->mode];
+    s->stksz->lit = align(s->stksz->lit, modesize[l->mode]);
+    if (debugopt['r'] || 1) {
+        printf("spill ");
+        locprint(stdout, l, 'x');
+        printf(" to %zd(%%rbp)\n", s->stksz->lit);
+    }
+    htput(s->spillslots, (void *)l->reg.id, (void *)s->stksz->lit);
+}
+
+/* 
+ * Rewrites the function code so that it no longer contains
+ * references to spilled registers. Every use of spilled regs
+ *
+ *      insn %rX,%rY
+ *
+ * is rewritten to look like:
+ *
+ *      mov 123(%rsp),%rZ
+ *      insn %rZ,%rW
+ *      mov %rW,234(%rsp)
+ */
 static void rewrite(Isel *s)
 {
-    die("Rewrite spills!");
+    size_t i;
+
+    s->spillslots = mkht(ptrhash, ptreq);
+    /* set up stack locations for all spilled registers. */
+    for (i = 0; bsiter(s->spilled, &i); i++)
+        addspill(s, locmap[i]);
+
+    /* rewrite instructions using them */
+    for (i = 0; i < s->nbb; i++)
+        rewritebb(s, s->bb[i]);
+    htfree(s->spillslots);
+    bsclear(s->spilled);
 }
 
 void regalloc(Isel *s)
@@ -792,6 +994,10 @@ void regalloc(Isel *s)
     int spilled;
 
     s->prepainted = mkbs();
+    s->shouldspill = mkbs();
+    s->neverspill = mkbs();
+    for (i = 0; i < Nsaved; i++)
+        bsput(s->shouldspill, s->calleesave[i]->reg.id);
     for (i = 0; i < maxregid; i++)
         if (locmap[i]->reg.colour)
             bsput(s->prepainted, i);
@@ -816,7 +1022,9 @@ void regalloc(Isel *s)
         if (spilled)
             rewrite(s);
     } while (spilled);
-
+    bsfree(s->prepainted);
+    bsfree(s->shouldspill);
+    bsfree(s->neverspill);
 }
 
 static void setprint(FILE *fd, Bitset *s)
@@ -857,6 +1065,18 @@ static void printedge(FILE *fd, char *msg, size_t a, size_t b)
     fprintf(fd, " -- ");
     locprint(fd, locmap[b], 'x');
     fprintf(fd, "\n");
+}
+
+void dumpjustasm(Isel *s)
+{
+    size_t i, j;
+    Asmbb *bb;
+
+    for (j = 0; j < s->nbb; j++) {
+        bb = s->bb[j];
+        for (i = 0; i < bb->ni; i++)
+            iprintf(stdout, bb->il[i]);
+    }
 }
 
 void dumpasm(Isel *s, FILE *fd)

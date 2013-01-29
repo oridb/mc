@@ -26,6 +26,16 @@ char *regnames[] = {
 #undef Reg
 };
 
+size_t modesize[Nmode] = {
+    [ModeNone]  = 0,
+    [ModeB]     = 1,
+    [ModeW]     = 2,
+    [ModeL]     = 4,
+    [ModeQ]     = 8,
+    [ModeF]     = 4,
+    [ModeD]     = 8,
+};
+    
 
 const Reg reginterferes[Nreg][Nmode + 1] = {
     /* byte */

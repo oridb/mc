@@ -1,7 +1,10 @@
-#define Maxarg 4        /* maximum number of args an insn can have */
-#define Wordsz 4        /* the size of a "natural int" */
-#define Ptrsz 8         /* the size of a machine word (ie, pointer size) */
-#define K 14            /* the number of allocatable registers */
+#define Maxarg 4                /* maximum number of args an insn can have */
+#define Maxuse (2*Maxarg)       /* maximum number of registers an insn can use or def */
+#define Maxdef (2*Maxarg)       /* maximum number of registers an insn can use or def */
+#define Wordsz 4                /* the size of a "natural int" */
+#define Ptrsz 8                 /* the size of a machine word (ie, pointer size) */
+#define K 14                    /* the number of allocatable registers */
+#define Nsaved 14               /* number of registers saved in the ABI */
 
 typedef size_t regid;
 
@@ -110,11 +113,13 @@ struct Isel {
 
     Node *ret;          /* we store the return into here */
     Htab *locs;         /* decl id => int stkoff */
+    Htab *spillslots;   /* reg id  => int stkoff */
     Htab *reglocs;      /* decl id => Loc *reg */
     Htab *globls;       /* decl id => char *globlname */
 
     /* increased when we spill */
     Loc *stksz;
+    Loc *calleesave[Nsaved];
 
     /* register allocator state */
     Bitset *prepainted; /* locations that need to be a specific colour */
@@ -129,6 +134,8 @@ struct Isel {
 
     Bitset *coalesced;
     Bitset *spilled;
+    Bitset *shouldspill;        /* the first registers we should try to spill */
+    Bitset *neverspill;        /* registers we should never spill */
 
     Insn ***rmoves;
     size_t *nrmoves;
@@ -187,10 +194,14 @@ Loc *coreg(Reg r, Mode m);
 void locprint(FILE *fd, Loc *l, char spec);
 void iprintf(FILE *fd, Insn *insn);
 
+/* emitting instructions */
+void g(Isel *s, AsmOp op, ...);
+Insn *mkinsn(AsmOp op, ...);
+
 /* register allocation */
 extern char *regnames[]; /* name table */
 extern Mode regmodes[];  /* mode table */
-
+extern size_t modesize[]; /* mode size table */
 void regalloc(Isel *s);
 
 
