@@ -781,7 +781,7 @@ static void prologue(Isel *s, size_t sz)
     Loc *rsp;
     Loc *rbp;
     Loc *stksz;
-    //size_t i;
+    size_t i;
 
     rsp = locphysreg(Rrsp);
     rbp = locphysreg(Rrbp);
@@ -790,14 +790,11 @@ static void prologue(Isel *s, size_t sz)
     g(s, Ipush, rbp, NULL);
     g(s, Imov, rsp, rbp, NULL);
     g(s, Isub, stksz, rsp, NULL);
-#if 0
     /* save registers */
     for (i = 0; i < sizeof(savedregs)/sizeof(savedregs[0]); i++) {
         s->calleesave[i] = locreg(ModeQ);
         g(s, Imov, locphysreg(savedregs[i]), s->calleesave[i], NULL);
     }
-#endif
-
     s->stksz = stksz; /* need to update if we spill */
 }
 
@@ -805,7 +802,7 @@ static void epilogue(Isel *s)
 {
     Loc *rsp, *rbp;
     Loc *ret;
-    //size_t i;
+    size_t i;
 
     rsp = locphysreg(Rrsp);
     rbp = locphysreg(Rrbp);
@@ -813,12 +810,10 @@ static void epilogue(Isel *s)
         ret = loc(s, s->ret);
         g(s, Imov, ret, coreg(Rax, ret->mode), NULL);
     }
-#if 0
     /* restore registers */
     for (i = 0; i < Nsaved; i++)
         g(s, Imov, s->calleesave[i], locphysreg(savedregs[i]), NULL);
     /* leave function */
-#endif
     g(s, Imov, rbp, rsp, NULL);
     g(s, Ipop, rbp, NULL);
     g(s, Iret, NULL);
