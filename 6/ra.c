@@ -18,6 +18,7 @@ struct Usemap {
     int r[Maxarg + 1]; /* list of registers used implicitly by instruction */
 };
 
+void wlprint(FILE *fd, char *name, Loc **wl, size_t nwl);
 static void printedge(FILE *fd, char *msg, size_t a, size_t b);
 
 /* tables of uses/defs by instruction */
@@ -329,6 +330,16 @@ static void setup(Isel *s)
     s->degree = zalloc(maxregid * sizeof(int));
     s->rmoves = zalloc(maxregid * sizeof(Loc **));
     s->nrmoves = zalloc(maxregid * sizeof(size_t));
+
+    /* Initialize the degrees of prepainted registers */
+    bsput(s->prepainted, 0);
+    s->degree[0] = 1<<16;
+    for (i = 0; i < maxregid; i++) {
+        if (locmap[i]->reg.colour) {
+            bsput(s->prepainted, i);
+            s->degree[i] = 1<<16;
+        }
+    }
 }
 
 static void build(Isel *s)
@@ -393,7 +404,6 @@ static int adjiter(Isel *s, regid n, regid *m)
                 goto next;
         if (bshas(s->coalesced, r))
             goto next;
-        assert(r < maxregid);
         *m = r;
         return 1;
 next:
@@ -515,9 +525,12 @@ static void wladd(Isel *s, regid u)
         return;
     if (s->degree[u] >= K)
         return;
-    for (i = 0; i < s->nwlfreeze; i++)
-        if (s->wlfreeze[i]->reg.id == u)
+    for (i = 0; i < s->nwlfreeze; i++) {
+        if (s->wlfreeze[i]->reg.id == u) {
             ldel(&s->wlfreeze, &s->nwlfreeze, i);
+            break;
+        }
+    }
     lappend(&s->wlsimp, &s->nwlsimp, locmap[u]);
 }
 
@@ -562,7 +575,7 @@ static int combinable(Isel *s, regid u, regid v)
         return 1;
 
     /* if it is, are the adjacent nodes ok to combine with this? */
-    for (t = 0; adjiter(s, u, &t); t++)
+    for (t = 0; adjiter(s, v, &t); t++)
         if (!ok(s, t, u))
             return 0;
     return 1;
@@ -617,6 +630,9 @@ static void combine(Isel *s, regid u, regid v)
         addedge(s, t, u);
         decdegree(s, t);
     }
+    printf("Degree ");
+    locprint(stdout, locmap[u], 'x');
+    printf(" = %d\n", s->degree[u]);
     if (s->degree[u] >= K && wlhas(s->wlfreeze, s->nwlfreeze, u, &idx)) {
         ldel(&s->wlfreeze, &s->nwlfreeze, idx);
         lappend(&s->wlspill, &s->nwlspill, locmap[u]);
@@ -718,7 +734,6 @@ static void selspill(Isel *s)
     /* FIXME: pick a better heuristic for spilling */
     m = NULL;
     for (i = 0; i < s->nwlspill; i++) {
-        printf("Trying to spill %zd\n", s->wlspill[i]->reg.id);
         if (!bshas(s->shouldspill, s->wlspill[i]->reg.id))
             continue;
         m = s->wlspill[i];
@@ -990,19 +1005,14 @@ static void rewrite(Isel *s)
 
 void regalloc(Isel *s)
 {
-    size_t i;
     int spilled;
+    size_t i;
 
     s->prepainted = mkbs();
     s->shouldspill = mkbs();
     s->neverspill = mkbs();
-#if 0
     for (i = 0; i < Nsaved; i++)
         bsput(s->shouldspill, s->calleesave[i]->reg.id);
-#endif
-    for (i = 0; i < maxregid; i++)
-        if (locmap[i]->reg.colour)
-            bsput(s->prepainted, i);
     do {
         setup(s);
         liveness(s);
@@ -1027,6 +1037,21 @@ void regalloc(Isel *s)
     bsfree(s->prepainted);
     bsfree(s->shouldspill);
     bsfree(s->neverspill);
+}
+
+void wlprint(FILE *fd, char *name, Loc **wl, size_t nwl)
+{
+    size_t i;
+    char *sep;
+
+    sep = "";
+    fprintf(fd, "%s = [", name);
+    for (i = 0; i < nwl; i++) {
+        fprintf(fd, "%s", sep);
+        locprint(fd, wl[i], 'x');
+        sep = ",";
+    }
+    fprintf(fd, "]\n");
 }
 
 static void setprint(FILE *fd, Bitset *s)
@@ -1087,11 +1112,18 @@ void dumpasm(Isel *s, FILE *fd)
     char *sep;
     Asmbb *bb;
 
-    fprintf(fd, "IGRAPH ----- \n");
-    for (i = 0; i < maxregid; i++) {
-        for (j = i; j < maxregid; j++) {
-            if (gbhasedge(s, i, j))
-                printedge(stdout, "", i, j);
+    fprintf(fd, "WORKLISTS -- \n");
+    wlprint(stdout, "spill", s->wlspill, s->nwlspill);
+    wlprint(stdout, "simp", s->wlsimp, s->nwlsimp);
+    wlprint(stdout, "freeze", s->wlfreeze, s->nwlfreeze);
+    /* noisy to dump this all the time; only dump for higher debug levels */
+    if (debugopt['r'] > 2) {
+        fprintf(fd, "IGRAPH ----- \n");
+        for (i = 0; i < maxregid; i++) {
+            for (j = i; j < maxregid; j++) {
+                if (gbhasedge(s, i, j))
+                    printedge(stdout, "", i, j);
+            }
         }
     }
     fprintf(fd, "ASM -------- \n");
