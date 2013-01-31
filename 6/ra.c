@@ -289,10 +289,24 @@ static void gbputedge(Isel *s, size_t u, size_t v)
     assert(gbhasedge(s, u, v) && gbhasedge(s, v, u));
 }
 
-static void addedge(Isel *s, size_t u, size_t v)
+static int wlhas(Loc **wl, size_t nwl, regid v, size_t *idx)
+{
+    size_t i;
+
+    for (i = 0; i < nwl; i++) {
+        if (wl[i]->reg.id == v) { 
+            *idx = i;
+            return 1;
+        }
+    }
+    return 0;
+}
+
+static void addedge(Isel *s, regid u, regid v)
 {
     if (u == v || gbhasedge(s, u, v))
         return;
+    printf("edge %zd -- %zd\n", u, v);
     gbputedge(s, u, v);
     gbputedge(s, v, u);
     if (!bshas(s->prepainted, u)) {
@@ -321,26 +335,23 @@ static void setup(Isel *s)
 
     s->spilled = bsclear(s->spilled);
     s->coalesced = bsclear(s->coalesced);
-    /*
-    s->wlspill = bsclear(s->wlspill);
-    s->wlfreeze = bsclear(s->wlfreeze);
-    s->wlsimp = bsclear(s->wlsimp);
-    */
+    lfree(&s->wlspill, &s->nwlspill);
+    lfree(&s->wlfreeze, &s->nwlfreeze);
+    lfree(&s->wlsimp, &s->nwlsimp);
+
+    free(s->aliasmap);
+    free(s->degree);
+    free(s->rmoves);
+    free(s->nrmoves);
 
     s->aliasmap = zalloc(maxregid * sizeof(size_t));
     s->degree = zalloc(maxregid * sizeof(int));
     s->rmoves = zalloc(maxregid * sizeof(Loc **));
     s->nrmoves = zalloc(maxregid * sizeof(size_t));
 
-    /* Initialize the degrees of prepainted registers */
-    bsput(s->prepainted, 0);
-    s->degree[0] = 1<<16;
-    for (i = 0; i < maxregid; i++) {
-        if (locmap[i]->reg.colour) {
-            bsput(s->prepainted, i);
+    for (i = 0; i < maxregid; i++)
+        if (locmap[i]->reg.colour)
             s->degree[i] = 1<<16;
-        }
-    }
 }
 
 static void build(Isel *s)
@@ -451,8 +462,10 @@ static void mkworklist(Isel *s)
     size_t i;
 
     for (i = 0; i < maxregid; i++) {
-        if (bshas(s->prepainted, i))
+        if (bshas(s->prepainted, i)) {
+            printf("Prepainted %zd\n", i);
             continue;
+        }
         else if (s->degree[i] >= K)
             lappend(&s->wlspill, &s->nwlspill, locmap[i]);
         else if (moverelated(s, i))
@@ -487,6 +500,7 @@ static void decdegree(Isel *s, regid n)
     assert(n < maxregid);
     d = s->degree[n];
     s->degree[n]--;
+    printf("decdegree %zd (deg = %d)\n", n, d);
 
     if (d == K) {
         enablemove(s, n);
@@ -503,8 +517,10 @@ static void simp(Isel *s)
     check(s);
     l = lpop(&s->wlsimp, &s->nwlsimp);
     lappend(&s->selstk, &s->nselstk, l);
-    for (m = 0; adjiter(s, l->reg.id, &m); m++)
+    printf("simp %zd\n", l->reg.id);
+    for (m = 0; adjiter(s, l->reg.id, &m); m++) {
         decdegree(s, m);
+    }
     check(s);
 }
 
@@ -528,13 +544,12 @@ static void wladd(Isel *s, regid u)
         return;
     if (s->degree[u] >= K)
         return;
-    for (i = 0; i < s->nwlfreeze; i++) {
-        if (s->wlfreeze[i]->reg.id == u) {
-            ldel(&s->wlfreeze, &s->nwlfreeze, i);
-            break;
-        }
-    }
+
+    check(s);
+    assert(wlhas(s->wlfreeze, s->nwlfreeze, u, &i));
+    ldel(&s->wlfreeze, &s->nwlfreeze, i);
     lappend(&s->wlsimp, &s->nwlsimp, locmap[u]);
+    check(s);
 }
 
 static int conservative(Isel *s, regid u, regid v)
@@ -582,19 +597,6 @@ static int combinable(Isel *s, regid u, regid v)
         if (!ok(s, t, u))
             return 0;
     return 1;
-}
-
-static int wlhas(Loc **wl, size_t nwl, regid v, size_t *idx)
-{
-    size_t i;
-
-    for (i = 0; i < nwl; i++) {
-        if (wl[i]->reg.id == v) { 
-            *idx = i;
-            return 1;
-        }
-    }
-    return 0;
 }
 
 static void combine(Isel *s, regid u, regid v)
@@ -659,21 +661,25 @@ static void coalesce(Isel *s)
     }
 
     if (u == v) {
+        printf("same\n");
         lappend(&s->mcoalesced, &s->nmcoalesced, m);
         wladd(s, u);
         wladd(s, v);
     } else if (bshas(s->prepainted, v) || gbhasedge(s, u, v)) {
+        printf("prepaint\n");
         lappend(&s->mconstrained, &s->nmconstrained, m);
         wladd(s, u);
         wladd(s, v);
     } else if (combinable(s, u, v)) {
+        printf("combine\n");
         lappend(&s->mcoalesced, &s->nmcoalesced, m);
         combine(s, u, v);
+        check(s);
         wladd(s, u);
+        check(s);
     } else {
         lappend(&s->mactive, &s->nmactive, m);
     }
-    check(s);
 }
 
 static int mldel(Insn ***ml, size_t *nml, Insn *m)
@@ -700,12 +706,10 @@ static void freezemoves(Isel *s, Loc *u)
     nml = nodemoves(s, u->reg.id, &ml);
     for (i = 0; i < nml; i++) {
         m = ml[i];
-        if (getalias(m->args[0]) == getalias(u))
-            v = getalias(m->args[1]);
+        if (getalias(s, m->args[0]->reg.id) == getalias(s, u->reg.id))
+            v = locmap[getalias(s, m->args[1]->reg.id)];
         else
-            v = getalias(m->args[0]);
-        else
-            continue;
+            v = locmap[getalias(s, m->args[0]->reg.id)];
 
         if (!mldel(&s->mactive, &s->nmactive, m))
             mldel(&s->wlmove, &s->nwlmove, m);
@@ -752,8 +756,10 @@ static void selspill(Isel *s)
     }
     if (!m) {
         for (i = 0; i < s->nwlspill; i++) {
-            if (bshas(s->neverspill, s->wlspill[i]->reg.id))
+            if (bshas(s->neverspill, s->wlspill[i]->reg.id)) {
+                printf("Not spilling %zd\n", s->wlspill[i]->reg.id);
                 continue;
+            }
             m = s->wlspill[i];
             ldel(&s->wlspill, &s->nwlspill, i);
             break;
@@ -1019,16 +1025,27 @@ void regalloc(Isel *s)
     int spilled;
     size_t i;
 
+    /* Initialize the degrees of prepainted registers */
     s->prepainted = mkbs();
+    bsput(s->prepainted, 0);
+    for (i = 0; i < Nreg; i++)
+        bsput(s->prepainted, i);
+
     s->shouldspill = mkbs();
     s->neverspill = mkbs();
     for (i = 0; i < Nsaved; i++)
         bsput(s->shouldspill, s->calleesave[i]->reg.id);
+    spilled = 0;
     do {
         setup(s);
         liveness(s);
         build(s);
         mkworklist(s);
+        if (spilled) {
+            wlprint(stdout, "spill", s->wlspill, s->nwlspill);
+            wlprint(stdout, "simp", s->wlsimp, s->nwlsimp);
+            wlprint(stdout, "freeze", s->wlfreeze, s->nwlfreeze);
+        }
         if (debugopt['r'])
             dumpasm(s, stdout);
         do {
@@ -1045,6 +1062,7 @@ void regalloc(Isel *s)
         if (spilled)
             rewrite(s);
     } while (spilled);
+    printf("Done\n");
     bsfree(s->prepainted);
     bsfree(s->shouldspill);
     bsfree(s->neverspill);
@@ -1060,6 +1078,7 @@ void wlprint(FILE *fd, char *name, Loc **wl, size_t nwl)
     for (i = 0; i < nwl; i++) {
         fprintf(fd, "%s", sep);
         locprint(fd, wl[i], 'x');
+        fprintf(fd, "(%zd)", wl[i]->reg.id);
         sep = ",";
     }
     fprintf(fd, "]\n");
@@ -1185,38 +1204,44 @@ static void check(Isel *s)
     size_t i, j;
     size_t n;
     size_t idx;
+    char foo[5];
 
     for (i = 0; i < maxregid; i++) {
         /* check worklists are disjoint */
         n = 0;
-        if (bshas(s->prepainted, i))
+        if (bshas(s->prepainted, i)) {
+            foo[n] = 'p';
             n++;
+        }
         if (wlhas(s->wlsimp, s->nwlsimp, i, &idx)) {
+            foo[n] = 's';
             /* check simplify invariant */
-            assert("simp invariant" && s->degree[i] < K);
             for (j = 0; j < s->nrmoves[j]; j++)
                 assert("simp invariant" && !findmove(s, s->rmoves[i][j]));
             n++;
         }
         if (wlhas(s->wlfreeze, s->nwlfreeze, i, &idx)) {
+            foo[n] = 'f';
             /* check freeze invariant */
-            assert("freeze invariant" && s->degree[i] < K);
             for (j = 0; j < s->nrmoves[j]; j++)
                 assert("freeze invariant" && findmove(s, s->rmoves[i][j]));
             n++;
         }
         if (wlhas(s->wlspill, s->nwlspill, i, &idx)) {
-            assert("spill invariant" && s->degree[i] >= K);
+            foo[n] = 'd';
             n++;
         }
-        if (wlhas(s->selstk, s->nselstk, i, &idx))
+        if (wlhas(s->selstk, s->nselstk, i, &idx)) {
+            foo[n] = 't';
             n++;
-        if (bshas(s->spilled, i))
+        }
+        if (bshas(s->spilled, i)) {
+            foo[n] = 'l';
             n++;
-        if (bshas(s->coalesced, i))
-            n++;
-        if (locmap[i]->reg.colour && !bshas(s->prepainted, i))
-            n++;
+        }
+        foo[n]='\0';
+        if (n != 1)
+            printf("%s\n", foo);
         assert(n == 1);
     }
 }

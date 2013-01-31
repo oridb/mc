@@ -795,7 +795,6 @@ static void prologue(Isel *s, size_t sz)
         s->calleesave[i] = locreg(ModeQ);
         g(s, Imov, locphysreg(savedregs[i]), s->calleesave[i], NULL);
     }
-
     s->stksz = stksz; /* need to update if we spill */
 }
 
