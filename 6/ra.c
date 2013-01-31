@@ -20,6 +20,7 @@ struct Usemap {
 
 void wlprint(FILE *fd, char *name, Loc **wl, size_t nwl);
 static void printedge(FILE *fd, char *msg, size_t a, size_t b);
+static void check(Isel *s);
 
 /* tables of uses/defs by instruction */
 Usemap usetab[] = {
@@ -499,10 +500,12 @@ static void simp(Isel *s)
     Loc *l;
     regid m;
 
+    check(s);
     l = lpop(&s->wlsimp, &s->nwlsimp);
     lappend(&s->selstk, &s->nselstk, l);
     for (m = 0; adjiter(s, l->reg.id, &m); m++)
         decdegree(s, m);
+    check(s);
 }
 
 static regid getalias(Isel *s, regid id)
@@ -644,6 +647,7 @@ static void coalesce(Isel *s)
     Insn *m;
     regid u, v, tmp;
 
+    check(s);
     m = lpop(&s->wlmove, &s->nwlmove);
     u = getalias(s, m->args[0]->reg.id);
     v = getalias(s, m->args[1]->reg.id);
@@ -669,6 +673,7 @@ static void coalesce(Isel *s)
     } else {
         lappend(&s->mactive, &s->nmactive, m);
     }
+    check(s);
 }
 
 static int mldel(Insn ***ml, size_t *nml, Insn *m)
@@ -695,22 +700,24 @@ static void freezemoves(Isel *s, Loc *u)
     nml = nodemoves(s, u->reg.id, &ml);
     for (i = 0; i < nml; i++) {
         m = ml[i];
-        if (m->args[0] == u)
-            v = m->args[1];
-        else if (m->args[1] == u)
-            v = m->args[0];
+        if (getalias(m->args[0]) == getalias(u))
+            v = getalias(m->args[1]);
+        else
+            v = getalias(m->args[0]);
         else
             continue;
 
         if (!mldel(&s->mactive, &s->nmactive, m))
             mldel(&s->wlmove, &s->nwlmove, m);
         lappend(&s->mfrozen, &s->nmfrozen, m);
+        check(s);
         if (!nodemoves(s, v->reg.id, NULL) && s->degree[v->reg.id] < K) {
             if (!wlhas(s->wlfreeze, s->nwlfreeze, v->reg.id, &idx))
                 die("Reg %zd not in freeze wl\n", v->reg.id);
             ldel(&s->wlfreeze, &s->nwlfreeze, idx);
             lappend(&s->wlsimp, &s->nwlsimp, v);
         }
+        check(s);
 
     }
     lfree(&ml, &nml);
@@ -720,9 +727,11 @@ static void freeze(Isel *s)
 {
     Loc *l;
 
+    check(s);
     l = lpop(&s->wlfreeze, &s->nwlfreeze);
     lappend(&s->wlsimp, &s->nwlsimp, l);
     freezemoves(s, l);
+    check(s);
 }
 
 /* Select the spill candidates */
@@ -731,6 +740,7 @@ static void selspill(Isel *s)
     size_t i;
     Loc *m;
 
+    check(s);
     /* FIXME: pick a better heuristic for spilling */
     m = NULL;
     for (i = 0; i < s->nwlspill; i++) {
@@ -752,6 +762,7 @@ static void selspill(Isel *s)
     assert(m != NULL);
     lappend(&s->wlsimp, &s->nwlsimp, m);
     freezemoves(s, m);
+    check(s);
 }
 
 /*
@@ -1155,4 +1166,57 @@ void dumpasm(Isel *s, FILE *fd)
             iprintf(fd, bb->il[i]);
     }
     fprintf(fd, "ENDASM -------- \n");
+}
+
+static int findmove(Isel *s, Insn *m)
+{
+    size_t i;
+    for (i = 0; i < s->nmactive; i++)
+        if (s->mactive[i] == m)
+            return 1;
+    for (i = 0; i < s->nwlmove; i++)
+        if (s->wlmove[i] == m)
+            return 1;
+    return 0;
+}
+
+static void check(Isel *s)
+{
+    size_t i, j;
+    size_t n;
+    size_t idx;
+
+    for (i = 0; i < maxregid; i++) {
+        /* check worklists are disjoint */
+        n = 0;
+        if (bshas(s->prepainted, i))
+            n++;
+        if (wlhas(s->wlsimp, s->nwlsimp, i, &idx)) {
+            /* check simplify invariant */
+            assert("simp invariant" && s->degree[i] < K);
+            for (j = 0; j < s->nrmoves[j]; j++)
+                assert("simp invariant" && !findmove(s, s->rmoves[i][j]));
+            n++;
+        }
+        if (wlhas(s->wlfreeze, s->nwlfreeze, i, &idx)) {
+            /* check freeze invariant */
+            assert("freeze invariant" && s->degree[i] < K);
+            for (j = 0; j < s->nrmoves[j]; j++)
+                assert("freeze invariant" && findmove(s, s->rmoves[i][j]));
+            n++;
+        }
+        if (wlhas(s->wlspill, s->nwlspill, i, &idx)) {
+            assert("spill invariant" && s->degree[i] >= K);
+            n++;
+        }
+        if (wlhas(s->selstk, s->nselstk, i, &idx))
+            n++;
+        if (bshas(s->spilled, i))
+            n++;
+        if (bshas(s->coalesced, i))
+            n++;
+        if (locmap[i]->reg.colour && !bshas(s->prepainted, i))
+            n++;
+        assert(n == 1);
+    }
 }
