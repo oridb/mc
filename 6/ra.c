@@ -306,7 +306,6 @@ static void addedge(Isel *s, regid u, regid v)
 {
     if (u == v || gbhasedge(s, u, v))
         return;
-    printf("edge %zd -- %zd\n", u, v);
     gbputedge(s, u, v);
     gbputedge(s, v, u);
     if (!bshas(s->prepainted, u)) {
@@ -350,7 +349,7 @@ static void setup(Isel *s)
     s->nrmoves = zalloc(maxregid * sizeof(size_t));
 
     for (i = 0; i < maxregid; i++)
-        if (locmap[i]->reg.colour)
+        if (bshas(s->prepainted, i))
             s->degree[i] = 1<<16;
 }
 
@@ -376,6 +375,12 @@ static void build(Isel *s)
             insn = bb[i]->il[j];
             nu = uses(insn, u);
             nd = defs(insn, d);
+
+            /* add these to the initial set */
+            for (k = 0; k < nu; k++)
+                bsput(s->initial, u[k]);
+            for (k = 0; k < nd; k++)
+                bsput(s->initial, d[k]);
 
             /* moves get special treatment, since we don't want spurious
              * edges between the src and dest */
@@ -461,9 +466,8 @@ static void mkworklist(Isel *s)
 {
     size_t i;
 
-    for (i = 0; i < maxregid; i++) {
+    for (i = 0; bsiter(s->initial, &i); i++) {
         if (bshas(s->prepainted, i)) {
-            printf("Prepainted %zd\n", i);
             continue;
         }
         else if (s->degree[i] >= K)
@@ -500,7 +504,6 @@ static void decdegree(Isel *s, regid n)
     assert(n < maxregid);
     d = s->degree[n];
     s->degree[n]--;
-    printf("decdegree %zd (deg = %d)\n", n, d);
 
     if (d == K) {
         enablemove(s, n);
@@ -517,7 +520,6 @@ static void simp(Isel *s)
     check(s);
     l = lpop(&s->wlsimp, &s->nwlsimp);
     lappend(&s->selstk, &s->nselstk, l);
-    printf("simp %zd\n", l->reg.id);
     for (m = 0; adjiter(s, l->reg.id, &m); m++) {
         decdegree(s, m);
     }
@@ -537,6 +539,7 @@ static regid getalias(Isel *s, regid id)
 static void wladd(Isel *s, regid u)
 {
     size_t i;
+    size_t x;
 
     if (bshas(s->prepainted, u))
         return;
@@ -546,6 +549,12 @@ static void wladd(Isel *s, regid u)
         return;
 
     check(s);
+    if (wlhas(s->wlsimp, s->nwlfreeze, u, &x)) printf("%zd on simp\n", i);
+    if (wlhas(s->wlfreeze, s->nwlfreeze, u, &x)) printf("%zd on freeze\n", i);
+    if (wlhas(s->wlspill, s->nwlspill, u, &x)) printf("%zd on spill\n", i);
+    if (wlhas(s->selstk, s->nselstk, u, &x)) printf("%zd selecst stack\n", i);
+    if (bshas(s->coalesced, u)) printf("%zd coalesced\n", i);
+    if (bshas(s->spilled, u)) printf("%zd on stack\n", i);
     assert(wlhas(s->wlfreeze, s->nwlfreeze, u, &i));
     ldel(&s->wlfreeze, &s->nwlfreeze, i);
     lappend(&s->wlsimp, &s->nwlsimp, locmap[u]);
@@ -661,17 +670,14 @@ static void coalesce(Isel *s)
     }
 
     if (u == v) {
-        printf("same\n");
         lappend(&s->mcoalesced, &s->nmcoalesced, m);
         wladd(s, u);
         wladd(s, v);
     } else if (bshas(s->prepainted, v) || gbhasedge(s, u, v)) {
-        printf("prepaint\n");
         lappend(&s->mconstrained, &s->nmconstrained, m);
         wladd(s, u);
         wladd(s, v);
     } else if (combinable(s, u, v)) {
-        printf("combine\n");
         lappend(&s->mcoalesced, &s->nmcoalesced, m);
         combine(s, u, v);
         check(s);
@@ -1033,6 +1039,7 @@ void regalloc(Isel *s)
 
     s->shouldspill = mkbs();
     s->neverspill = mkbs();
+    s->initial = mkbs();
     for (i = 0; i < Nsaved; i++)
         bsput(s->shouldspill, s->calleesave[i]->reg.id);
     spilled = 0;
@@ -1206,7 +1213,7 @@ static void check(Isel *s)
     size_t idx;
     char foo[5];
 
-    for (i = 0; i < maxregid; i++) {
+    for (i = 0; bsiter(s->initial, &i); i++) {
         /* check worklists are disjoint */
         n = 0;
         if (bshas(s->prepainted, i)) {

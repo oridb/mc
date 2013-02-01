@@ -123,11 +123,12 @@ struct Isel {
 
     /* register allocator state */
     Bitset *prepainted; /* locations that need to be a specific colour */
+    Bitset *initial;    /* initial set of locations used by this fn */
 
     size_t *gbits;      /* igraph matrix repr */
     Bitset **gadj;      /* igraph adj set repr */
     int *degree;        /* degree of nodes */
-    Loc **aliasmap;   /* mapping of aliases */
+    Loc **aliasmap;     /* mapping of aliases */
 
     Loc  **selstk;
     size_t nselstk;
