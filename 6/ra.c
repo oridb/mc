@@ -562,7 +562,7 @@ static int combinable(Isel *s, regid u, regid v)
         return 1;
 
     /* if it is, are the adjacent nodes ok to combine with this? */
-    for (t = 0; adjiter(s, v, &t); t++)
+    for (t = 0; adjiter(s, u, &t); t++)
         if (!ok(s, t, u))
             return 0;
     return 1;
