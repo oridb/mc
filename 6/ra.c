@@ -19,6 +19,7 @@ struct Usemap {
 };
 
 void wlprint(FILE *fd, char *name, Loc **wl, size_t nwl);
+static int moverelated(Isel *s, regid n);
 static void printedge(FILE *fd, char *msg, size_t a, size_t b);
 static void check(Isel *s);
 
@@ -443,14 +444,16 @@ static size_t nodemoves(Isel *s, regid n, Insn ***pil)
             if (s->mactive[j] == s->rmoves[n][i]) {
                 if (pil)
                     lappend(pil, &count, s->rmoves[n][i]);
-                continue;
+                else
+                    count++;
             }
         }
         for (j = 0; j < s->nwlmove; j++) {
             if (s->wlmove[j] == s->rmoves[n][i]) {
                 if (pil)
                     lappend(pil, &count, s->rmoves[n][i]);
-                continue;
+                else
+                    count++;
             }
         }
     }
@@ -549,12 +552,12 @@ static void wladd(Isel *s, regid u)
         return;
 
     check(s);
-    if (wlhas(s->wlsimp, s->nwlfreeze, u, &x)) printf("%zd on simp\n", i);
-    if (wlhas(s->wlfreeze, s->nwlfreeze, u, &x)) printf("%zd on freeze\n", i);
-    if (wlhas(s->wlspill, s->nwlspill, u, &x)) printf("%zd on spill\n", i);
-    if (wlhas(s->selstk, s->nselstk, u, &x)) printf("%zd selecst stack\n", i);
-    if (bshas(s->coalesced, u)) printf("%zd coalesced\n", i);
-    if (bshas(s->spilled, u)) printf("%zd on stack\n", i);
+    if (wlhas(s->wlsimp, s->nwlsimp, u, &x)) printf("%zd on simp\n", u);
+    if (wlhas(s->wlfreeze, s->nwlfreeze, u, &x)) printf("%zd on freeze\n", u);
+    if (wlhas(s->wlspill, s->nwlspill, u, &x)) printf("%zd on spill\n", u);
+    if (wlhas(s->selstk, s->nselstk, u, &x)) printf("%zd on select stack\n", u);
+    if (bshas(s->coalesced, u)) printf("%zd on coalesced\n", u);
+    if (bshas(s->spilled, u)) printf("%zd on stack\n", u);
     assert(wlhas(s->wlfreeze, s->nwlfreeze, u, &i));
     ldel(&s->wlfreeze, &s->nwlfreeze, i);
     lappend(&s->wlsimp, &s->nwlsimp, locmap[u]);
@@ -1069,7 +1072,6 @@ void regalloc(Isel *s)
         if (spilled)
             rewrite(s);
     } while (spilled);
-    printf("Done\n");
     bsfree(s->prepainted);
     bsfree(s->shouldspill);
     bsfree(s->neverspill);
@@ -1240,6 +1242,10 @@ static void check(Isel *s)
         }
         if (wlhas(s->selstk, s->nselstk, i, &idx)) {
             foo[n] = 't';
+            n++;
+        }
+        if (bshas(s->coalesced, i)) {
+            foo[n] = 'k';
             n++;
         }
         if (bshas(s->spilled, i)) {

@@ -39,7 +39,7 @@ void *zrealloc(void *mem, size_t oldsz, size_t sz)
     char *p;
 
     p = xrealloc(mem, sz);
-    if ((ssize_t)sz - (ssize_t)oldsz > 0)
+    if (sz > oldsz)
         bzero(&p[oldsz], sz - oldsz);
     return p;
 }
