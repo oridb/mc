@@ -285,8 +285,8 @@ static void gbputedge(Isel *s, size_t u, size_t v)
 
     i = (maxregid * u) + v;
     j = (maxregid * v) + u;
-    s->gbits[i/Sizetbits] |= 1ULL <<(i % Sizetbits);
-    s->gbits[j/Sizetbits] |= 1ULL <<(j % Sizetbits);
+    s->gbits[i/Sizetbits] |= 1ULL << (i % Sizetbits);
+    s->gbits[j/Sizetbits] |= 1ULL << (j % Sizetbits);
     assert(gbhasedge(s, u, v) && gbhasedge(s, v, u));
 }
 
@@ -502,19 +502,28 @@ static void enablemove(Isel *s, regid n)
     }
 }
 
-static void decdegree(Isel *s, regid n)
+static void decdegree(Isel *s, regid m)
 {
     int d;
-    regid m;
+    size_t idx;
+    regid n;
 
-    assert(n < maxregid);
-    d = s->degree[n];
-    s->degree[n]--;
+    assert(m < maxregid);
+    d = s->degree[m];
+    s->degree[m]--;
 
     if (d == K) {
-        enablemove(s, n);
-        for (m = 0; adjiter(s, n, &m); m++)
+        enablemove(s, m);
+        for (n = 0; adjiter(s, m, &n); n++)
             enablemove(s, n);
+        if (!wlhas(s->wlspill, s->nwlspill, m, &idx))
+            die("%zd not in wlspill", m);
+        ldel(&s->wlspill, &s->nwlspill, idx);
+        if (moverelated(s, m)) {
+            lappend(&s->wlfreeze, &s->nwlfreeze, locmap[m]);
+        } else {
+            lappend(&s->wlsimp, &s->nwlsimp, locmap[m]);
+        }
     }
 }
 
@@ -540,6 +549,18 @@ static regid getalias(Isel *s, regid id)
         id = s->aliasmap[id]->reg.id;
     };
     return id;
+}
+
+void whichwl(Isel *s, regid u)
+{
+    size_t x;
+
+    if (wlhas(s->wlsimp, s->nwlsimp, u, &x)) printf("%zd on simp\n", u);
+    if (wlhas(s->wlfreeze, s->nwlfreeze, u, &x)) printf("%zd on freeze\n", u);
+    if (wlhas(s->wlspill, s->nwlspill, u, &x)) printf("%zd on spill\n", u);
+    if (wlhas(s->selstk, s->nselstk, u, &x)) printf("%zd on select stack\n", u);
+    if (bshas(s->coalesced, u)) printf("%zd on coalesced\n", u);
+    if (bshas(s->spilled, u)) printf("%zd on stack\n", u);
 }
 
 static void wladd(Isel *s, regid u)
@@ -1250,4 +1271,15 @@ static void check(Isel *s)
             printf("%s\n", foo);
         assert(n == 1);
     }
+}
+
+void edges(Isel *s, regid u)
+{
+    size_t i;
+
+    for (i = 0; i < maxregid; i++) {
+        if (gbhasedge(s, u, i))
+            printf("%zd ", i);
+    }
+    printf("\n");
 }
