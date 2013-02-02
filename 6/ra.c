@@ -307,6 +307,10 @@ static void addedge(Isel *s, regid u, regid v)
 {
     if (u == v || gbhasedge(s, u, v))
         return;
+    if (u == Rrbp || u == Rrsp || u == Rrip)
+        return;
+    if (v == Rrbp || v == Rrsp || v == Rrip)
+        return;
     gbputedge(s, u, v);
     gbputedge(s, v, u);
     if (!bshas(s->prepainted, u)) {
@@ -349,9 +353,8 @@ static void setup(Isel *s)
     s->rmoves = zalloc(maxregid * sizeof(Loc **));
     s->nrmoves = zalloc(maxregid * sizeof(size_t));
 
-    for (i = 0; i < maxregid; i++)
-        if (bshas(s->prepainted, i))
-            s->degree[i] = 1<<16;
+    for (i = 0; bsiter(s->prepainted, &i); i++)
+        s->degree[i] = 1<<16;
 }
 
 static void build(Isel *s)
@@ -385,6 +388,7 @@ static void build(Isel *s)
 
             /* moves get special treatment, since we don't want spurious
              * edges between the src and dest */
+            //iprintf(stdout, insn);
             if (ismove(insn)) {
                 /* live \= uses(i) */
                 for (k = 0; k < nu; k++)
@@ -470,9 +474,8 @@ static void mkworklist(Isel *s)
     size_t i;
 
     for (i = 0; bsiter(s->initial, &i); i++) {
-        if (bshas(s->prepainted, i)) {
+        if (bshas(s->prepainted, i))
             continue;
-        }
         else if (s->degree[i] >= K)
             lappend(&s->wlspill, &s->nwlspill, locmap[i]);
         else if (moverelated(s, i))
@@ -542,7 +545,6 @@ static regid getalias(Isel *s, regid id)
 static void wladd(Isel *s, regid u)
 {
     size_t i;
-    size_t x;
 
     if (bshas(s->prepainted, u))
         return;
@@ -552,12 +554,6 @@ static void wladd(Isel *s, regid u)
         return;
 
     check(s);
-    if (wlhas(s->wlsimp, s->nwlsimp, u, &x)) printf("%zd on simp\n", u);
-    if (wlhas(s->wlfreeze, s->nwlfreeze, u, &x)) printf("%zd on freeze\n", u);
-    if (wlhas(s->wlspill, s->nwlspill, u, &x)) printf("%zd on spill\n", u);
-    if (wlhas(s->selstk, s->nselstk, u, &x)) printf("%zd on select stack\n", u);
-    if (bshas(s->coalesced, u)) printf("%zd on coalesced\n", u);
-    if (bshas(s->spilled, u)) printf("%zd on stack\n", u);
     assert(wlhas(s->wlfreeze, s->nwlfreeze, u, &i));
     ldel(&s->wlfreeze, &s->nwlfreeze, i);
     lappend(&s->wlsimp, &s->nwlsimp, locmap[u]);
@@ -647,9 +643,6 @@ static void combine(Isel *s, regid u, regid v)
         addedge(s, t, u);
         decdegree(s, t);
     }
-    printf("Degree ");
-    locprint(stdout, locmap[u], 'x');
-    printf(" = %d\n", s->degree[u]);
     if (s->degree[u] >= K && wlhas(s->wlfreeze, s->nwlfreeze, u, &idx)) {
         ldel(&s->wlfreeze, &s->nwlfreeze, idx);
         lappend(&s->wlspill, &s->nwlspill, locmap[u]);
@@ -1034,7 +1027,7 @@ void regalloc(Isel *s)
     int spilled;
     size_t i;
 
-    /* Initialize the degrees of prepainted registers */
+    /* Initialize the list of prepainted registers */
     s->prepainted = mkbs();
     bsput(s->prepainted, 0);
     for (i = 0; i < Nreg; i++)
