@@ -303,6 +303,35 @@ static int wlhas(Loc **wl, size_t nwl, regid v, size_t *idx)
     return 0;
 }
 
+/*
+ * If we have an edge between two aliasing registers,
+ * we should not increment the degree, since that would
+ * be double counting.
+ */
+static int degreechange(Isel *s, regid u, regid v)
+{
+    regid phys, virt, r;
+    size_t i;
+
+    if (bshas(s->prepainted, u)) {
+        phys = u;
+        virt = v;
+    } else if (bshas(s->prepainted, v)) {
+        phys = v;
+        virt = u;
+    } else {
+        return 1;
+    }
+
+    for (i = 0; i < Nmode; i++) {
+        r = regmap[colourmap[phys]][i];
+        if (r != phys && gbhasedge(s, virt, regmap[colourmap[phys]][i])) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
 static void addedge(Isel *s, regid u, regid v)
 {
     if (u == v || gbhasedge(s, u, v))
@@ -311,15 +340,16 @@ static void addedge(Isel *s, regid u, regid v)
         return;
     if (v == Rrbp || v == Rrsp || v == Rrip)
         return;
+
     gbputedge(s, u, v);
     gbputedge(s, v, u);
     if (!bshas(s->prepainted, u)) {
         bsput(s->gadj[u], v);
-        s->degree[u]++;
+        s->degree[u] += degreechange(s, v, u);
     }
     if (!bshas(s->prepainted, v)) {
         bsput(s->gadj[v], u);
-        s->degree[v]++;
+        s->degree[v] += degreechange(s, u, v);
     }
 }
 
@@ -361,7 +391,7 @@ static void build(Isel *s)
 {
     regid u[Maxuse], d[Maxdef];
     size_t nu, nd;
-    size_t i, k;
+    size_t i, k, a;
     ssize_t j;
     Bitset *live;
     Asmbb **bb;
@@ -391,8 +421,15 @@ static void build(Isel *s)
             //iprintf(stdout, insn);
             if (ismove(insn)) {
                 /* live \= uses(i) */
-                for (k = 0; k < nu; k++)
-                    bsdel(live, u[k]);
+                for (k = 0; k < nu; k++) {
+                    /* remove all physical register aliases */
+                    if (bshas(s->prepainted, u[k])) {
+                        for (a = 0; a < Nmode; a++)
+                            bsdel(live, regmap[colourmap[u[k]]][a]);
+                    } else {
+                        bsdel(live, u[k]);
+                    }
+                }
 
                 for (k = 0; k < nu; k++)
                     lappend(&s->rmoves[u[k]], &s->nrmoves[u[k]], insn);
@@ -612,6 +649,8 @@ static int combinable(Isel *s, regid u, regid v)
 {
     regid t;
 
+    if (debugopt['r'])
+        printf("check combinable %zd <=> %zd\n", u, v);
     /* Regs of different modes can't be combined as things stand.
      * In principle they should be combinable, but it confused the
      * whole mode dance. */
@@ -635,7 +674,7 @@ static void combine(Isel *s, regid u, regid v)
     size_t i, j;
     int has;
 
-    if (debugopt['r'])
+    if (debugopt['r'] || 1)
         printedge(stdout, "combining:", u, v);
     if (wlhas(s->wlfreeze, s->nwlfreeze, v, &idx))
         ldel(&s->wlfreeze, &s->nwlfreeze, idx);
@@ -659,7 +698,7 @@ static void combine(Isel *s, regid u, regid v)
     }
 
     for (t = 0; adjiter(s, v, &t); t++) {
-        if (debugopt['r'])
+        if (debugopt['r'] || 1)
             printedge(stdout, "combine-putedge:", v, t);
         addedge(s, t, u);
         decdegree(s, t);
@@ -1065,11 +1104,6 @@ void regalloc(Isel *s)
         liveness(s);
         build(s);
         mkworklist(s);
-        if (spilled) {
-            wlprint(stdout, "spill", s->wlspill, s->nwlspill);
-            wlprint(stdout, "simp", s->wlsimp, s->nwlsimp);
-            wlprint(stdout, "freeze", s->wlfreeze, s->nwlfreeze);
-        }
         if (debugopt['r'])
             dumpasm(s, stdout);
         do {
