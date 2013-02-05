@@ -1020,11 +1020,13 @@ static void rewritebb(Isel *s, Asmbb *bb)
             for (i = 0; i < nuse; i++) {
                 insn = mkinsn(Imov, spillslot(s, use[i].oldreg), use[i].newreg, NULL);
                 lappend(&new, &nnew, insn);
-                printf("loading ");
-                locprint(stdout, locmap[use[i].oldreg], 'x');
-                printf(" -> ");
-                locprint(stdout, use[i].newreg, 'x');
-                printf("\n");
+                if (debugopt['r']) {
+                    printf("loading ");
+                    locprint(stdout, locmap[use[i].oldreg], 'x');
+                    printf(" -> ");
+                    locprint(stdout, use[i].newreg, 'x');
+                    printf("\n");
+                }
             }
             insn = bb->il[j];
             updatelocs(s, insn, use, nuse, def, ndef);
@@ -1032,11 +1034,13 @@ static void rewritebb(Isel *s, Asmbb *bb)
             for (i = 0; i < ndef; i++) {
                 insn = mkinsn(Imov, def[i].newreg, spillslot(s, def[i].oldreg), NULL);
                 lappend(&new, &nnew, insn);
-                printf("storing ");
-                locprint(stdout, locmap[def[i].oldreg], 'x');
-                printf(" -> ");
-                locprint(stdout, def[i].newreg, 'x');
-                printf("\n");
+                if (debugopt['r']) {
+                    printf("storing ");
+                    locprint(stdout, locmap[def[i].oldreg], 'x');
+                    printf(" -> ");
+                    locprint(stdout, def[i].newreg, 'x');
+                    printf("\n");
+                }
             }
         } else {
             lappend(&new, &nnew, bb->il[j]);
@@ -1051,7 +1055,7 @@ static void addspill(Isel *s, Loc *l)
 {
     s->stksz->lit += modesize[l->mode];
     s->stksz->lit = align(s->stksz->lit, modesize[l->mode]);
-    if (debugopt['r'] || 1) {
+    if (debugopt['r']) {
         printf("spill ");
         locprint(stdout, l, 'x');
         printf(" to %zd(%%rbp)\n", s->stksz->lit);
