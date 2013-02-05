@@ -1010,6 +1010,11 @@ static void rewritebb(Isel *s, Asmbb *bb)
     new = NULL;
     nnew = 0;
     for (j = 0; j < bb->ni; j++) {
+        insn = bb->il[j];
+        if (ismove(insn)) {
+            if (getalias(s, insn->args[0]->reg.id) == getalias(s, insn->args[1]->reg.id))
+                continue;
+        }
         /* if there is a remapping, insert the loads and stores as needed */
         if (remap(s, bb->il[j], use, &nuse, def, &ndef)) {
             for (i = 0; i < nuse; i++) {
@@ -1318,11 +1323,3 @@ void edges(Isel *s, regid u)
     printf("\n");
 }
 
-void whichwl(Isel *s, regid r)
-{
-  size_t o;
-  if (wlhas(s->wlspill, s->nwlspill, r, &o)) printf("on spill\n");
-  if (wlhas(s->wlsimp, s->nwlsimp, r, &o)) printf("on simp\n");
-  if (wlhas(s->wlfreeze, s->nwlfreeze, r, &o)) printf("on freeze\n");
-  if (wlhas(s->selstk, s->nselstk, r, &o)) printf("on selstk\n");
-}
