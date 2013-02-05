@@ -636,13 +636,13 @@ static int conservative(Isel *s, regid u, regid v)
 /* FIXME: is this actually correct? */
 static int ok(Isel *s, regid t, regid r)
 {
-    if (s->degree[t] >= K)
-        return 0;
-    if (!bshas(s->prepainted, t))
-        return 0;
-    if (!gbhasedge(s, t, r))
-        return 0;
-    return 1;
+    if (s->degree[t] < K)
+        return 1;
+    if (bshas(s->prepainted, t))
+        return 1;
+    if (gbhasedge(s, t, r))
+        return 1;
+    return 0;
 }
 
 static int combinable(Isel *s, regid u, regid v)
@@ -674,7 +674,7 @@ static void combine(Isel *s, regid u, regid v)
     size_t i, j;
     int has;
 
-    if (debugopt['r'] || 1)
+    if (debugopt['r'])
         printedge(stdout, "combining:", u, v);
     if (wlhas(s->wlfreeze, s->nwlfreeze, v, &idx))
         ldel(&s->wlfreeze, &s->nwlfreeze, idx);
@@ -698,7 +698,7 @@ static void combine(Isel *s, regid u, regid v)
     }
 
     for (t = 0; adjiter(s, v, &t); t++) {
-        if (debugopt['r'] || 1)
+        if (debugopt['r'])
             printedge(stdout, "combine-putedge:", v, t);
         addedge(s, t, u);
         decdegree(s, t);
@@ -1316,4 +1316,13 @@ void edges(Isel *s, regid u)
             printf("%zd ", i);
     }
     printf("\n");
+}
+
+void whichwl(Isel *s, regid r)
+{
+  size_t o;
+  if (wlhas(s->wlspill, s->nwlspill, r, &o)) printf("on spill\n");
+  if (wlhas(s->wlsimp, s->nwlsimp, r, &o)) printf("on simp\n");
+  if (wlhas(s->wlfreeze, s->nwlfreeze, r, &o)) printf("on freeze\n");
+  if (wlhas(s->selstk, s->nselstk, r, &o)) printf("on selstk\n");
 }
