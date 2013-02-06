@@ -120,7 +120,7 @@ struct Isel {
     Htab *spillslots;   /* reg id  => int stkoff */
     Htab *reglocs;      /* decl id => Loc *reg */
     Htab *stkoff;       /* decl id => int stkoff */
-    Htab *_globls;       /* decl id => char *globlname */
+    Htab *globls;       /* decl id => char *globlname */
 
     /* increased when we spill */
     Loc *stksz;

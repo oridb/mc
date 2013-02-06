@@ -44,7 +44,7 @@ struct Simp {
     size_t stksz;
     size_t argsz;
     Htab *globls;
-    Htab *locs;
+    Htab *stkoff;
 };
 
 static Node *simp(Simp *s, Node *n);
@@ -1208,7 +1208,7 @@ static void declarelocal(Simp *s, Node *n)
     s->stksz = align(s->stksz, min(size(n), Ptrsz));
     if (debugopt['i'])
         printf("declare %s:%s(%zd) at %zd\n", declname(n), tystr(decltype(n)), n->decl.did, s->stksz);
-    htput(s->locs, n, (void*)s->stksz);
+    htput(s->stkoff, n, (void*)s->stksz);
 }
 
 static void declarearg(Simp *s, Node *n)
@@ -1217,7 +1217,7 @@ static void declarearg(Simp *s, Node *n)
     s->argsz = align(s->argsz, min(size(n), Ptrsz));
     if (debugopt['i'])
         printf("declare %s(%zd) at %zd\n", declname(n), n->decl.did, -(s->argsz + 2*Ptrsz));
-    htput(s->locs, n, (void*)-(s->argsz + 2*Ptrsz));
+    htput(s->stkoff, n, (void*)-(s->argsz + 2*Ptrsz));
     s->argsz += size(n);
 }
 
@@ -1352,7 +1352,7 @@ static Func *simpfn(Simp *s, char *name, Node *n, int export)
     fn->name = strdup(name);
     fn->isexport = export;
     fn->stksz = align(s->stksz, 8);
-    fn->locs = s->locs;
+    fn->stkoff = s->stkoff;
     fn->ret = s->ret;
     fn->cfg = cfg;
     return fn;
@@ -1387,7 +1387,7 @@ static void simpdcl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***bl
     Func *f;
 
     name = asmname(dcl->decl.name);
-    s.locs = mkht(dclhash, dcleq);
+    s.stkoff = mkht(dclhash, dcleq);
     s.globls = globls;
     s.blobs = *blob;
     s.nblobs = *nblob;
