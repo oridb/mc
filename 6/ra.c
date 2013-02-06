@@ -233,8 +233,9 @@ static void liveness(Isel *s)
 {
     Bitset *old;
     Asmbb **bb;
-    size_t nbb;
-    size_t i, j;
+    ssize_t nbb;
+    ssize_t i;
+    size_t j;
     int changed;
 
     bb = s->bb;
@@ -248,7 +249,7 @@ static void liveness(Isel *s)
     changed = 1;
     while (changed) {
         changed = 0;
-        for (i = 0; i < nbb; i++) {
+        for (i = nbb - 1; i >= 0; i--) {
             old = bsdup(bb[i]->liveout);
             /* liveout[b] = U(s in succ) livein[s] */
             for (j = 0; bsiter(bb[i]->succ, &j); j++)
@@ -664,8 +665,6 @@ static int combinable(Isel *s, regid u, regid v)
 {
     regid t;
 
-    if (debugopt['r'])
-        printf("check combinable %zd <=> %zd\n", u, v);
     /* Regs of different modes can't be combined as things stand.
      * In principle they should be combinable, but it confused the
      * whole mode dance. */
@@ -689,7 +688,7 @@ static void combine(Isel *s, regid u, regid v)
     size_t i, j;
     int has;
 
-    if (debugopt['r'])
+    if (debugopt['r'] > 2)
         printedge(stdout, "combining:", u, v);
     if (wlhas(s->wlfreeze, s->nwlfreeze, v, &idx))
         ldel(&s->wlfreeze, &s->nwlfreeze, idx);
@@ -713,7 +712,7 @@ static void combine(Isel *s, regid u, regid v)
     }
 
     for (t = 0; adjiter(s, v, &t); t++) {
-        if (debugopt['r'])
+        if (debugopt['r'] > 2)
             printedge(stdout, "combine-putedge:", t, u);
         addedge(s, t, u);
         decdegree(s, t);
@@ -1026,17 +1025,6 @@ static void rewritebb(Isel *s, Asmbb *bb)
     nnew = 0;
     for (j = 0; j < bb->ni; j++) {
         insn = bb->il[j];
-        /*
-        if (ismove(insn)) {
-            if (getalias(s, insn->args[0]->reg.id) == getalias(s, insn->args[1]->reg.id)) {
-               if (debugopt['r']) {
-                    printf("dropping ");
-                    iprintf(stdout, insn);
-               }
-               continue;
-            }
-        }
-        */
         /* if there is a remapping, insert the loads and stores as needed */
         if (remap(s, bb->il[j], use, &nuse, def, &ndef)) {
             for (i = 0; i < nuse; i++) {
@@ -1113,6 +1101,41 @@ static void rewrite(Isel *s)
     bsclear(s->spilled);
 }
 
+/* 
+ * Coalescing registers leaves a lot
+ * of moves that look like
+ *
+ *      mov %r123,%r123.
+ *
+ * This is useless. This deletes them.
+ */
+static void delnops(Isel *s)
+{
+    size_t i, j;
+    Asmbb *bb;
+    Insn *insn;
+    Insn **new;
+    size_t nnew;
+
+    for (i = 0; i < s->nbb; i++) {
+        bb = s->bb[i];
+        new = NULL;
+        nnew = 0;
+        for (j = 0; j < bb->ni; j++) {
+            insn = bb->il[j];
+            if (ismove(insn))
+                if (insn->args[0]->reg.colour == insn->args[1]->reg.colour)
+                    continue;
+            lappend(&new, &nnew, insn);
+        }
+        lfree(&bb->il, &bb->ni);
+        bb->il = new;
+        bb->ni = nnew;
+    }
+    if (debugopt['r'])
+        dumpasm(s, stdout);
+}
+
 void regalloc(Isel *s)
 {
     int spilled;
@@ -1151,6 +1174,7 @@ void regalloc(Isel *s)
         if (spilled)
             rewrite(s);
     } while (spilled);
+    delnops(s);
     bsfree(s->prepainted);
     bsfree(s->shouldspill);
     bsfree(s->neverspill);
