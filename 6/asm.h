@@ -49,17 +49,22 @@ typedef enum {
     Nmode,
 } Mode;
 
+/* a register, label, or memory location */
 struct Loc {
-    Loctype type;
-    Mode mode;
+    Loctype type; /* the type of loc */
+    Mode mode;    /* the mode of this location */
     union {
-        char *lbl;
-        struct {
+        char *lbl;  /* for Loclbl, Loclitl */
+        struct {    /* for Locreg */
             regid id;
             Reg   colour;
         } reg;
-        long  lit;
-        /* disp(base + index) */
+        long  lit;  /* for Loclit */
+        /*
+         * for Locmem, Locmeml.
+         * address format is
+         *    disp(base + index)
+         */
         struct {
             /* only one of lbldisp and constdisp may be used */
             char *lbldisp;
@@ -78,28 +83,28 @@ struct Insn {
 };
 
 struct Func {
-    char *name;
-    int   isexport;
-    size_t stksz;
-    Type *type;
-    Htab *locs;
-    Node *ret;
-    Cfg  *cfg;
+    char *name;   /* function name */
+    int   isexport; /* is this exported from the asm? */
+    size_t stksz; /* stack size */
+    Type *type;   /* type of function */
+    Htab *stkoff; /* Loc* -> int stackoff map */
+    Node *ret;    /* return value */
+    Cfg  *cfg;    /* flow graph */
 };
 
 struct Asmbb {
-    int id;
-    char **lbls;
-    size_t nlbls;
-    Insn **il;
-    size_t ni;
+    int id;       /* unique identifier */
+    char **lbls;  /* list of BB labels */
+    size_t nlbls; /* number of labels */
+    Insn **il;    /* instructions */
+    size_t ni;    /* number of instructions */
 
-    Bitset *pred;
-    Bitset *succ;
-    Bitset *use;
-    Bitset *def;
-    Bitset *livein;
-    Bitset *liveout;
+    Bitset *pred; /* set of predecessor BB ids */
+    Bitset *succ; /* set of successor BB ids */
+    Bitset *use;  /* registers used by this BB */
+    Bitset *def;  /* registers defined by this BB */
+    Bitset *livein; /* variables live on entrance to BB */
+    Bitset *liveout;  /* variables live on exit from BB */
 };
 
 
@@ -112,10 +117,10 @@ struct Isel {
     Asmbb *curbb;
 
     Node *ret;          /* we store the return into here */
-    Htab *locs;         /* decl id => int stkoff */
     Htab *spillslots;   /* reg id  => int stkoff */
     Htab *reglocs;      /* decl id => Loc *reg */
-    Htab *globls;       /* decl id => char *globlname */
+    Htab *stkoff;       /* decl id => int stkoff */
+    Htab *_globls;       /* decl id => char *globlname */
 
     /* increased when we spill */
     Loc *stksz;

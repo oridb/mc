@@ -78,21 +78,21 @@ static Mode mode(Node *n)
 
 static Loc *loc(Isel *s, Node *n)
 {
-    size_t stkoff;
+    ssize_t stkoff;
     Loc *l, *rip;
     Node *v;
 
     switch (exprop(n)) {
         case Ovar:
-            if (hthas(s->locs, n)) {
-                stkoff = (size_t)htget(s->locs, n);
+            if (hthas(s->stkoff, n)) {
+                stkoff = (ssize_t)htget(s->stkoff, n);
                 l = locmem(-stkoff, locphysreg(Rrbp), NULL, mode(n));
-            } else if (hthas(s->globls, n)) {
+            } else if (hthas(s->_globls, n)) {
                 if (tybase(exprtype(n))->type == Tyfunc)
                     rip = NULL;
                 else
                     rip = locphysreg(Rrip);
-                l = locmeml(htget(s->globls, n), rip, NULL, mode(n));
+                l = locmeml(htget(s->_globls, n), rip, NULL, mode(n));
             } else {
                 if (!hthas(s->reglocs, n))
                     htput(s->reglocs, n, locreg(mode(n)));
@@ -931,7 +931,7 @@ void genasm(FILE *fd, Func *fn, Htab *globls)
     char buf[128];
 
     is.reglocs = mkht(dclhash, dcleq);
-    is.locs = fn->locs;
+    is.stkoff = fn->stkoff;
     is.globls = globls;
     is.ret = fn->ret;
     is.cfg = fn->cfg;
