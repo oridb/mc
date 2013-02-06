@@ -300,6 +300,7 @@ static int wlhas(Loc **wl, size_t nwl, regid v, size_t *idx)
             return 1;
         }
     }
+    *idx = -1;
     return 0;
 }
 
@@ -543,6 +544,7 @@ static void enablemove(Isel *s, regid n)
 static void decdegree(Isel *s, regid m)
 {
     int d;
+    int found;
     size_t idx;
     regid n;
 
@@ -554,13 +556,19 @@ static void decdegree(Isel *s, regid m)
         enablemove(s, m);
         for (n = 0; adjiter(s, m, &n); n++)
             enablemove(s, n);
-        if (!wlhas(s->wlspill, s->nwlspill, m, &idx))
-            die("%zd not in wlspill", m);
-        ldel(&s->wlspill, &s->nwlspill, idx);
+        found = wlhas(s->wlspill, s->nwlspill, m, &idx);
+        if (found)
+            ldel(&s->wlspill, &s->nwlspill, idx);
         if (moverelated(s, m)) {
-            lappend(&s->wlfreeze, &s->nwlfreeze, locmap[m]);
+            if (!found)
+                assert(wlhas(s->wlfreeze, s->nwlfreeze, m, &idx));
+            else
+                lappend(&s->wlfreeze, &s->nwlfreeze, locmap[m]);
         } else {
-            lappend(&s->wlsimp, &s->nwlsimp, locmap[m]);
+            if (!found)
+                assert(wlhas(s->wlsimp, s->nwlsimp, m, &idx));
+            else
+                lappend(&s->wlsimp, &s->nwlsimp, locmap[m]);
         }
     }
 }
@@ -637,7 +645,7 @@ static int conservative(Isel *s, regid u, regid v)
 /* FIXME: is this actually correct? */
 static int ok(Isel *s, regid t, regid r)
 {
-    return s->degree[t] < K - 1 || bshas(s->prepainted, t) || gbhasedge(s, t, r);
+    return s->degree[t] < K || bshas(s->prepainted, t) || gbhasedge(s, t, r);
 }
 
 static int combinable(Isel *s, regid u, regid v)
