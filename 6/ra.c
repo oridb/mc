@@ -519,6 +519,7 @@ static void mkworklist(Isel *s)
             lappend(&s->wlfreeze, &s->nwlfreeze, locmap[i]);
         else
             lappend(&s->wlsimp, &s->nwlsimp, locmap[i]);
+        locmap[i]->reg.colour = 0;
     }
 }
 
@@ -636,13 +637,7 @@ static int conservative(Isel *s, regid u, regid v)
 /* FIXME: is this actually correct? */
 static int ok(Isel *s, regid t, regid r)
 {
-    if (s->degree[t] < K)
-        return 1;
-    if (bshas(s->prepainted, t))
-        return 1;
-    if (gbhasedge(s, t, r))
-        return 1;
-    return 0;
+    return s->degree[t] < K - 1 || bshas(s->prepainted, t) || gbhasedge(s, t, r);
 }
 
 static int combinable(Isel *s, regid u, regid v)
@@ -699,7 +694,7 @@ static void combine(Isel *s, regid u, regid v)
 
     for (t = 0; adjiter(s, v, &t); t++) {
         if (debugopt['r'])
-            printedge(stdout, "combine-putedge:", v, t);
+            printedge(stdout, "combine-putedge:", t, u);
         addedge(s, t, u);
         decdegree(s, t);
     }
@@ -735,8 +730,8 @@ static void coalesce(Isel *s)
         wladd(s, v);
     } else if (combinable(s, u, v)) {
         lappend(&s->mcoalesced, &s->nmcoalesced, m);
-        combine(s, u, v);
         check(s);
+        combine(s, u, v);
         wladd(s, u);
         check(s);
     } else {
@@ -1011,10 +1006,17 @@ static void rewritebb(Isel *s, Asmbb *bb)
     nnew = 0;
     for (j = 0; j < bb->ni; j++) {
         insn = bb->il[j];
+        /*
         if (ismove(insn)) {
-            if (getalias(s, insn->args[0]->reg.id) == getalias(s, insn->args[1]->reg.id))
-                continue;
+            if (getalias(s, insn->args[0]->reg.id) == getalias(s, insn->args[1]->reg.id)) {
+               if (debugopt['r']) {
+                    printf("dropping ");
+                    iprintf(stdout, insn);
+               }
+               continue;
+            }
         }
+        */
         /* if there is a remapping, insert the loads and stores as needed */
         if (remap(s, bb->il[j], use, &nuse, def, &ndef)) {
             for (i = 0; i < nuse; i++) {
@@ -1287,6 +1289,7 @@ static void check(Isel *s)
             n++;
         }
         if (wlhas(s->wlfreeze, s->nwlfreeze, i, &idx)) {
+            assert(s->degree[i] < K);
             foo[n] = 'f';
             /* check freeze invariant */
             for (j = 0; j < s->nrmoves[j]; j++)
@@ -1295,6 +1298,7 @@ static void check(Isel *s)
         }
         if (wlhas(s->wlspill, s->nwlspill, i, &idx)) {
             foo[n] = 'd';
+            assert(s->degree[i] >= K);
             n++;
         }
         if (wlhas(s->selstk, s->nselstk, i, &idx)) {
@@ -1321,8 +1325,10 @@ void edges(Isel *s, regid u)
     size_t i;
 
     for (i = 0; i < maxregid; i++) {
-        if (gbhasedge(s, u, i))
-            printf("%zd ", i);
+        if (gbhasedge(s, u, i)) {
+            locprint(stdout, locmap[i], 'x');
+            printf("[%zd] ", i);
+        }
     }
     printf("\n");
 }
