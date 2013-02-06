@@ -91,4 +91,8 @@ for i in `awk '/^B/{print $0}' tests`; do
         P) prints $tst $val ;;
     esac
 done
-echo "FAILURES ($NFAILED)": $FAILED
+if [ -z "$NFAILED" ]; then
+    echo "SUCCESS"
+else
+    echo "FAILURES ($NFAILED)": $FAILED
+fi
