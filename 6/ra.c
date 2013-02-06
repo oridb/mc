@@ -556,6 +556,18 @@ static void decdegree(Isel *s, regid m)
         enablemove(s, m);
         for (n = 0; adjiter(s, m, &n); n++)
             enablemove(s, n);
+
+        /* Subtle:
+         *
+         * If this code is being called from coalesce(),
+         * then the degree could have been bumped up only
+         * temporarily. This means that the node can already
+         * be on wlfreeze or wlsimp.
+         *
+         * Therefore, if we don't find it on wlspill, we assert
+         * that the node is already on the list that we'd be
+         * moving it to.
+         */
         found = wlhas(s->wlspill, s->nwlspill, m, &idx);
         if (found)
             ldel(&s->wlspill, &s->nwlspill, idx);
