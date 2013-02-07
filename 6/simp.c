@@ -342,6 +342,8 @@ static Node *temp(Simp *simp, Node *e)
 
     assert(e->type == Nexpr);
     t = gentemp(simp, e, e->expr.type, &dcl);
+    if (stacknode(e))
+        declarelocal(simp, dcl);
     return t;
 }
 

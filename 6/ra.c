@@ -665,8 +665,6 @@ static int combinable(Isel *s, regid u, regid v)
 {
     regid t;
 
-    if (debugopt['r'])
-        printf("check combinable %zd <=> %zd\n", u, v);
     /* Regs of different modes can't be combined as things stand.
      * In principle they should be combinable, but it confused the
      * whole mode dance. */
@@ -690,7 +688,7 @@ static void combine(Isel *s, regid u, regid v)
     size_t i, j;
     int has;
 
-    if (debugopt['r'])
+    if (debugopt['r'] > 2)
         printedge(stdout, "combining:", u, v);
     if (wlhas(s->wlfreeze, s->nwlfreeze, v, &idx))
         ldel(&s->wlfreeze, &s->nwlfreeze, idx);
@@ -714,7 +712,7 @@ static void combine(Isel *s, regid u, regid v)
     }
 
     for (t = 0; adjiter(s, v, &t); t++) {
-        if (debugopt['r'])
+        if (debugopt['r'] > 2)
             printedge(stdout, "combine-putedge:", t, u);
         addedge(s, t, u);
         decdegree(s, t);
@@ -1027,17 +1025,6 @@ static void rewritebb(Isel *s, Asmbb *bb)
     nnew = 0;
     for (j = 0; j < bb->ni; j++) {
         insn = bb->il[j];
-        /*
-        if (ismove(insn)) {
-            if (getalias(s, insn->args[0]->reg.id) == getalias(s, insn->args[1]->reg.id)) {
-               if (debugopt['r']) {
-                    printf("dropping ");
-                    iprintf(stdout, insn);
-               }
-               continue;
-            }
-        }
-        */
         /* if there is a remapping, insert the loads and stores as needed */
         if (remap(s, bb->il[j], use, &nuse, def, &ndef)) {
             for (i = 0; i < nuse; i++) {
@@ -1114,7 +1101,15 @@ static void rewrite(Isel *s)
     bsclear(s->spilled);
 }
 
-void deldup(Isel *s)
+/* 
+ * Coalescing registers leaves a lot
+ * of moves that look like
+ *
+ *      mov %r123,%r123.
+ *
+ * This is useless. This deletes them.
+ */
+static void delnops(Isel *s)
 {
     Insn *insn;
     Asmbb *bb;
@@ -1136,6 +1131,8 @@ void deldup(Isel *s)
         bb->il = new;
         bb->ni = nnew;
     }
+    if (debugopt['r'])
+        dumpasm(s, stdout);
 }
 
 void regalloc(Isel *s)
@@ -1176,7 +1173,7 @@ void regalloc(Isel *s)
         if (spilled)
             rewrite(s);
     } while (spilled);
-    deldup(s);
+    delnops(s);
     bsfree(s->prepainted);
     bsfree(s->shouldspill);
     bsfree(s->neverspill);
