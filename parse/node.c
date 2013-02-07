@@ -363,13 +363,15 @@ static size_t did(Node *n)
     return 0;
 }
 
-ulong dclhash(void *dcl)
+/* Hashes a Ovar expr or an Ndecl  */
+ulong varhash(void *dcl)
 {
     /* large-prime hash. meh. */
     return did(dcl) * 366787;
 }
 
-int dcleq(void *a, void *b)
+/* Checks if the did of two vars are equal */
+int vareq(void *a, void *b)
 {
     return did(a) == did(b);
 }

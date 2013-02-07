@@ -233,8 +233,9 @@ static void liveness(Isel *s)
 {
     Bitset *old;
     Asmbb **bb;
-    size_t nbb;
-    size_t i, j;
+    ssize_t nbb;
+    ssize_t i;
+    size_t j;
     int changed;
 
     bb = s->bb;
@@ -248,7 +249,7 @@ static void liveness(Isel *s)
     changed = 1;
     while (changed) {
         changed = 0;
-        for (i = 0; i < nbb; i++) {
+        for (i = nbb - 1; i >= 0; i--) {
             old = bsdup(bb[i]->liveout);
             /* liveout[b] = U(s in succ) livein[s] */
             for (j = 0; bsiter(bb[i]->succ, &j); j++)
@@ -1113,6 +1114,30 @@ static void rewrite(Isel *s)
     bsclear(s->spilled);
 }
 
+void deldup(Isel *s)
+{
+    Insn *insn;
+    Asmbb *bb;
+    Insn **new;
+    size_t nnew;
+    size_t i, j;
+
+    for (i = 0; i < s->nbb; i++) {
+        new = NULL;
+        nnew = 0;
+        bb = s->bb[i];
+        for (j = 0; j < bb->ni; j++) {
+            insn = bb->il[j];
+            if (ismove(insn) && insn->args[0]->reg.colour == insn->args[1]->reg.colour)
+              continue;
+            lappend(&new, &nnew, insn);
+        }
+        lfree(&bb->il, &bb->ni);
+        bb->il = new;
+        bb->ni = nnew;
+    }
+}
+
 void regalloc(Isel *s)
 {
     int spilled;
@@ -1151,6 +1176,7 @@ void regalloc(Isel *s)
         if (spilled)
             rewrite(s);
     } while (spilled);
+    deldup(s);
     bsfree(s->prepainted);
     bsfree(s->shouldspill);
     bsfree(s->neverspill);

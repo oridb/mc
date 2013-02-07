@@ -930,7 +930,7 @@ void genasm(FILE *fd, Func *fn, Htab *globls)
     size_t i, j;
     char buf[128];
 
-    is.reglocs = mkht(dclhash, dcleq);
+    is.reglocs = mkht(varhash, vareq);
     is.stkoff = fn->stkoff;
     is.globls = globls;
     is.ret = fn->ret;

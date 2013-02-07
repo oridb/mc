@@ -47,6 +47,7 @@ struct Simp {
     Htab *stkoff;
 };
 
+static char *asmname(Node *n);
 static Node *simp(Simp *s, Node *n);
 static Node *rval(Simp *s, Node *n, Node *dst);
 static Node *lval(Simp *s, Node *n);
@@ -111,13 +112,23 @@ static Node *mul(Node *a, Node *b)
     return n;
 }
 
+static int addressable(Simp *s, Node *a)
+{
+    if (a->type == Ndecl || (a->type == Nexpr && exprop(a) == Ovar))
+        return hthas(s->stkoff, a) || hthas(s->globls, a);
+    else
+        return stacknode(a);
+}
+
 /* takes the address of a node, possibly converting it to
  * a pointer to the base type 'bt' */
-static Node *addr(Node *a, Type *bt)
+static Node *addr(Simp *s, Node *a, Type *bt)
 {
     Node *n;
 
     n = mkexpr(a->line, Oaddr, a, NULL);
+    if (!addressable(s, a))
+            declarelocal(s, a);
     if (!bt)
         n->expr.type = mktyptr(a->line, a->expr.type);
     else
@@ -331,7 +342,6 @@ static Node *temp(Simp *simp, Node *e)
 
     assert(e->type == Nexpr);
     t = gentemp(simp, e, e->expr.type, &dcl);
-    declarelocal(simp, dcl);
     return t;
 }
 
@@ -432,25 +442,25 @@ static Ucon *finducon(Node *n)
     return NULL;
 }
 
-static Node *uconid(Node *n)
+static Node *uconid(Simp *s, Node *n)
 {
     Ucon *uc;
 
     if (exprop(n) != Oucon)
-        return load(addr(n, mktype(n->line, Tyuint)));
+        return load(addr(s, n, mktype(n->line, Tyuint)));
 
     uc = finducon(n);
     return word(uc->line, uc->id);
 }
 
-static Node *patval(Node *n, Type *t)
+static Node *patval(Simp *s, Node *n, Type *t)
 {
     if (exprop(n) == Oucon)
         return n->expr.args[1];
     else if (exprop(n) == Olit)
         return n;
     else
-        return load(addk(addr(n, t), Wordsz));
+        return load(addk(addr(s, n, t), Wordsz));
 }
 
 static void umatch(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, Node *iffalse)
@@ -461,16 +471,6 @@ static void umatch(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, Node *i
 
     assert(pat->type == Nexpr);
     t = tybase(t);
-#if 0
-    printf("PAT IS -------\n");
-    dump(pat, stdout);
-    printf("VAL IS -------\n");
-    dump(val, stdout);
-    if (exprop(pat) == Ovar) {
-        printf("DECL IS -------\n");
-        dump(decls[pat->expr.did], stdout);
-    }
-#endif
     switch (t->type) {
         case Tyvoid: case Tybad: case Tyvalist: case Tyvar:
         case Tygeneric: case Typaram: case Tyunres: case Tyname: case Ntypes:
@@ -498,15 +498,15 @@ static void umatch(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, Node *i
                 uc = finducon(val);
             deeper = genlbl();
 
-            x = uconid(pat);
-            y = uconid(val);
+            x = uconid(s, pat);
+            y = uconid(s, val);
             v = mkexpr(pat->line, Oeq, x, y, NULL);
             v->expr.type = tyintptr;
             cjmp(s, v, deeper, iffalse);
             append(s, deeper);
             if (uc->etype) {
-                pat = patval(pat, uc->etype);
-                val = patval(val, uc->etype);
+                pat = patval(s, pat, uc->etype);
+                val = patval(s, val, uc->etype);
                 umatch(s, pat, val, uc->etype, iftrue, iffalse);
             }
             break;
@@ -565,12 +565,13 @@ static Node *simplit(Simp *s, Node *lit, Node ***l, size_t *nl)
     d->decl.init = lit;
     d->decl.type = lit->expr.type;
     d->decl.isconst = 1;
+    htput(s->globls, d, strdup(lbl));
+
     r->expr.did = d->decl.did;
     r->expr.type = lit->expr.type;
     if (tybase(r->expr.type)->type == Tyfunc)
-        r = addr(r, tybase(r->expr.type));
+        r = addr(s, r, tybase(r->expr.type));
 
-    htput(s->globls, d, strdup(lbl));
     lappend(l, nl, d);
     return r;
 }
@@ -622,7 +623,7 @@ static Node *membaddr(Simp *s, Node *n)
     if (ty->type == Typtr) {
         t = lval(s, args[0]);
     } else {
-        t = addr(lval(s, args[0]), exprtype(n));
+        t = addr(s, lval(s, args[0]), exprtype(n));
     }
     u = disp(n->line, offset(args[0], args[1]));
     r = add(t, u);
@@ -641,9 +642,9 @@ static Node *idxaddr(Simp *s, Node *n)
     args = n->expr.args;
     a = rval(s, args[0], NULL);
     if (exprtype(args[0])->type == Tyarray)
-        t = addr(a, exprtype(n));
+        t = addr(s, a, exprtype(n));
     else if (args[0]->expr.type->type == Tyslice)
-        t = load(addr(a, mktyptr(n->line, exprtype(n))));
+        t = load(addr(s, a, mktyptr(n->line, exprtype(n))));
     else
         die("Can't index type %s\n", tystr(n->expr.type));
     assert(t->expr.type->type == Typtr);
@@ -666,8 +667,8 @@ static Node *slicebase(Simp *s, Node *n, Node *off)
     ty = tybase(exprtype(n));
     switch (ty->type) {
         case Typtr:     u = n; break;
-        case Tyarray:   u = addr(t, base(exprtype(n))); break;
-        case Tyslice:   u = load(addr(t, mktyptr(n->line, base(exprtype(n))))); break;
+        case Tyarray:   u = addr(s, t, base(exprtype(n))); break;
+        case Tyslice:   u = load(addr(s, t, mktyptr(n->line, base(exprtype(n))))); break;
         default: die("Unslicable type %s", tystr(n->expr.type));
     }
     /* safe: all types we allow here have a sub[0] that we want to grab */
@@ -684,7 +685,7 @@ static Node *slicebase(Simp *s, Node *n, Node *off)
 static Node *slicelen(Simp *s, Node *sl)
 {
     /* *(&sl + sizeof(size_t)) */
-    return load(addk(addr(sl, tyintptr), Ptrsz));
+    return load(addk(addr(s, sl, tyintptr), Ptrsz));
 }
 
 static Node *lval(Simp *s, Node *n)
@@ -822,8 +823,8 @@ static Node *simpslice(Simp *s, Node *n, Node *dst)
         stbase = set(simpcast(s, t, mktyptr(t->line, tyintptr)), base);
         sz = addk(simpcast(s, t, mktyptr(t->line, tyintptr)), Ptrsz);
     } else {
-        stbase = set(deref(addr(t, tyintptr)), base);
-        sz = addk(addr(t, tyintptr), Ptrsz);
+        stbase = set(deref(addr(s, t, tyintptr)), base);
+        sz = addk(addr(s, t, tyintptr), Ptrsz);
     }
     /* *(&slice + ptrsz) = len */
     stlen = set(deref(sz), len);
@@ -865,10 +866,10 @@ static Node *destructure(Simp *s, Node *lhs, Node *rhs)
     off = 0;
     for (i = 0; i < lhs->expr.nargs; i++) {
         lv = lval(s, args[i]);
-        prv = add(addr(rhs, exprtype(args[i])), disp(rhs->line, off));
+        prv = add(addr(s, rhs, exprtype(args[i])), disp(rhs->line, off));
         if (stacknode(args[i])) {
             sz = disp(lhs->line, size(lv));
-            plv = addr(lv, exprtype(lv));
+            plv = addr(s, lv, exprtype(lv));
             stor = mkexpr(lhs->line, Oblit, plv, prv, sz, NULL);
         } else {
             stor = set(lv, load(prv));
@@ -895,8 +896,8 @@ static Node *assign(Simp *s, Node *lhs, Node *rhs)
         if (u == t) {
             r = t;
         } else if (stacknode(lhs)) {
-            t = addr(t, exprtype(lhs));
-            u = addr(u, exprtype(lhs));
+            t = addr(s, t, exprtype(lhs));
+            u = addr(s, u, exprtype(lhs));
             v = disp(lhs->line, size(lhs));
             r = mkexpr(lhs->line, Oblit, t, u, v, NULL);
         } else {
@@ -919,7 +920,7 @@ static Node *simptup(Simp *s, Node *n, Node *dst)
     args = n->expr.args;
     if (!dst)
         dst = temp(s, n);
-    r = addr(dst, exprtype(dst));
+    r = addr(s, dst, exprtype(dst));
 
     off = 0;
     for (i = 0; i < n->expr.nargs; i++) {
@@ -928,7 +929,7 @@ static Node *simptup(Simp *s, Node *n, Node *dst)
 
         if (stacknode(args[i])) {
             sz = disp(n->line, size(val));
-            pval = addr(val, exprtype(val));
+            pval = addr(s, val, exprtype(val));
             st = mkexpr(n->line, Oblit, pdst, pval, sz, NULL);
         } else {
             st = set(deref(pdst), val);
@@ -965,7 +966,7 @@ static Node *simpucon(Simp *s, Node *n, Node *dst)
         tmp = temp(s, n);
 
     /* Set the tag on the ucon */
-    u = addr(tmp, mktype(n->line, Tyuint));
+    u = addr(s, tmp, mktype(n->line, Tyuint));
     tag = mkintlit(n->line, uc->id);
     tag->expr.type = mktype(n->line, Tyuint);
     append(s, set(deref(u), tag));
@@ -977,7 +978,7 @@ static Node *simpucon(Simp *s, Node *n, Node *dst)
     elt = rval(s, n->expr.args[1], NULL);
     u = addk(u, Wordsz);
     if (stacktype(uc->etype)) {
-        elt = addr(elt, uc->etype);
+        elt = addr(s, elt, uc->etype);
         sz = disp(n->line, tysize(uc->utype));
         r = mkexpr(n->line, Oblit, u, elt, sz, NULL);
     } else {
@@ -1163,7 +1164,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
         case Oret:
             if (s->isbigret) {
                 t = rval(s, args[0], NULL);
-                t = addr(t, exprtype(args[0]));
+                t = addr(s, t, exprtype(args[0]));
                 u = disp(n->line, size(args[0]));
                 v = mkexpr(n->line, Oblit, s->ret, t, u, NULL);
                 append(s, v);
@@ -1180,7 +1181,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
         case Ocall:
             if (exprtype(n)->type != Tyvoid && stacktype(exprtype(n))) {
                 r = temp(s, n);
-                linsert(&n->expr.args, &n->expr.nargs, 1, addr(r, exprtype(n)));
+                linsert(&n->expr.args, &n->expr.nargs, 1, addr(s, r, exprtype(n)));
                 for (i = 0; i < n->expr.nargs; i++)
                     n->expr.args[i] = rval(s, n->expr.args[i], NULL);
                 append(s, n);
@@ -1191,7 +1192,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
         case Oaddr:
             t = lval(s, args[0]);
             if (exprop(t) == Ovar) /* Ovar is the only one that doesn't return Oderef(Oaddr(...)) */
-                r = addr(t, exprtype(t));
+                r = addr(s, t, exprtype(t));
             else
                 r = t->expr.args[0];
             break;
@@ -1203,21 +1204,25 @@ static Node *rval(Simp *s, Node *n, Node *dst)
 
 static void declarelocal(Simp *s, Node *n)
 {
-    assert(n->type == Ndecl);
+    assert(n->type == Ndecl || (n->type == Nexpr && exprop(n) == Ovar));
     s->stksz += size(n);
     s->stksz = align(s->stksz, min(size(n), Ptrsz));
-    if (debugopt['i'])
-        printf("declare %s:%s(%zd) at %zd\n", declname(n), tystr(decltype(n)), n->decl.did, s->stksz);
+    if (debugopt['i']) {
+        dump(n, stdout);
+        printf("declared at %zd\n", s->stksz);
+    }
     htput(s->stkoff, n, (void*)s->stksz);
 }
 
 static void declarearg(Simp *s, Node *n)
 {
-    assert(n->type == Ndecl);
+    assert(n->type == Ndecl || (n->type == Nexpr && exprop(n) == Ovar));
     s->argsz = align(s->argsz, min(size(n), Ptrsz));
-    if (debugopt['i'])
-        printf("declare %s(%zd) at %zd\n", declname(n), n->decl.did, -(s->argsz + 2*Ptrsz));
     htput(s->stkoff, n, (void*)-(s->argsz + 2*Ptrsz));
+    if (debugopt['i']) {
+        dump(n, stdout);
+        printf("declared at %zd\n", -(s->argsz + 2*Ptrsz));
+    }
     s->argsz += size(n);
 }
 
@@ -1274,6 +1279,11 @@ static Node *simp(Simp *s, Node *n)
     return r;
 }
 
+/*
+ * Turns a deeply nested function body into a flatter
+ * and simpler representation, which maps easily and
+ * directly to assembly instructions.
+ */
 static void flatten(Simp *s, Node *f)
 {
     Node *dcl;
@@ -1286,8 +1296,7 @@ static void flatten(Simp *s, Node *f)
     s->endlbl = genlbl();
     s->ret = NULL;
 
-    assert(f->type == Nfunc);
-
+    /* make a temp for the return type */
     ty = f->func.type->sub[0];
     if (stacktype(ty)) {
         s->isbigret = 1;
@@ -1296,7 +1305,6 @@ static void flatten(Simp *s, Node *f)
     } else if (ty->type != Tyvoid) {
         s->isbigret = 0;
         s->ret = gentemp(s, f, ty, &dcl);
-        declarelocal(s, dcl);
     }
 
     for (i = 0; i < f->func.nargs; i++) {
@@ -1387,7 +1395,7 @@ static void simpdcl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***bl
     Func *f;
 
     name = asmname(dcl->decl.name);
-    s.stkoff = mkht(dclhash, dcleq);
+    s.stkoff = mkht(varhash, vareq);
     s.globls = globls;
     s.blobs = *blob;
     s.nblobs = *nblob;
@@ -1430,7 +1438,7 @@ void gen(Node *file, char *out)
     nfn = 0;
     blob = NULL;
     nblob = 0;
-    globls = mkht(dclhash, dcleq);
+    globls = mkht(varhash, vareq);
 
     /* We need to define all global variables before use */
     fillglobls(file->file.globls, globls);
