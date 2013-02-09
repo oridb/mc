@@ -35,6 +35,8 @@ size_t nincpaths;
 /* libraries to link against. */
 char **libs;
 size_t nlibs;
+/* the linker script to use */
+char *ldscript;
 
 regex_t usepat;
 
@@ -44,6 +46,7 @@ static void usage(char *prog)
     printf("\t-h\tprint this help\n");
     printf("\t-b bin\tBuild a binary called 'bin'\n");
     printf("\t-l lib\tBuild a library called 'name'\n");
+    printf("\t-s script\tUse the linker script 'script' when linking\n");
     printf("\t-I path\tAdd 'path' to use search path\n");
 }
 
@@ -288,12 +291,18 @@ void linkobj(char **files, size_t nfiles)
     args = NULL;
     nargs = 0;
 
-    /* ld -o outfile */
+    /* ld -T ldscript -o outfile */
     lappend(&args, &nargs, strdup(ld));
     lappend(&args, &nargs, strdup("-o"));
     lappend(&args, &nargs, strdup(binname));
 
-    /* ld -o outfile foo.o bar.o baz.o */
+    /* ld -T ldscript */
+    if (ldscript) {
+        snprintf(buf, sizeof buf, "-T%s", ldscript);
+        lappend(&args, &nargs, strdup(buf));
+    }
+
+    /* ld -T ldscript -o outfile foo.o bar.o baz.o */
     for (i = 0; i < nfiles; i++) {
         if (hassuffix(files[i], ".myr"))
             swapsuffix(buf, sizeof buf, files[i], ".myr", ".o");
@@ -304,7 +313,7 @@ void linkobj(char **files, size_t nfiles)
         lappend(&args, &nargs, strdup(buf));
     }
 
-    /* ld -o outfile foo.o bar.o baz.o -L/path1 -L/path2 */
+    /* ld -T ldscript -o outfile foo.o bar.o baz.o -L/path1 -L/path2 */
     for (i = 0; i < nincpaths; i++) {
         snprintf(buf, sizeof buf, "-L%s", incpaths[i]);
         lappend(&args, &nargs, strdup(buf));
@@ -312,7 +321,7 @@ void linkobj(char **files, size_t nfiles)
     snprintf(buf, sizeof buf, "-L%s%s", Instroot, "/lib/myr");
     lappend(&args, &nargs, strdup(buf));
 
-    /* ld -o outfile foo.o bar.o baz.o -L/path1 -L/path2 -llib1 -llib2*/
+    /* ld -T ldscript -o outfile foo.o bar.o baz.o -L/path1 -L/path2 -llib1 -llib2*/
     for (i = 0; i < nlibs; i++) {
         snprintf(buf, sizeof buf, "-l%s", libs[i]);
         lappend(&args, &nargs, strdup(buf));
@@ -331,10 +340,11 @@ int main(int argc, char **argv)
     int opt;
     int i;
 
-    while ((opt = getopt(argc, argv, "hb:l:I:C:A:M:L:R:")) != -1) {
+    while ((opt = getopt(argc, argv, "hb:l:s:I:C:A:M:L:R:")) != -1) {
         switch (opt) {
             case 'b': binname = optarg; break;
             case 'l': libname = optarg; break;
+            case 's': ldscript = optarg; break;
             case 'C': mc = optarg; break;
             case 'A': as = optarg; break;
             case 'M': muse = optarg; break;
