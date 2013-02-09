@@ -21,7 +21,6 @@ struct Usemap {
 void wlprint(FILE *fd, char *name, Loc **wl, size_t nwl);
 static int moverelated(Isel *s, regid n);
 static void printedge(FILE *fd, char *msg, size_t a, size_t b);
-static void check(Isel *s);
 
 /* tables of uses/defs by instruction */
 Usemap usetab[] = {
@@ -591,13 +590,11 @@ static void simp(Isel *s)
     Loc *l;
     regid m;
 
-    check(s);
     l = lpop(&s->wlsimp, &s->nwlsimp);
     lappend(&s->selstk, &s->nselstk, l);
     for (m = 0; adjiter(s, l->reg.id, &m); m++) {
         decdegree(s, m);
     }
-    check(s);
 }
 
 static regid getalias(Isel *s, regid id)
@@ -608,18 +605,6 @@ static regid getalias(Isel *s, regid id)
         id = s->aliasmap[id]->reg.id;
     };
     return id;
-}
-
-void whichwl(Isel *s, regid u)
-{
-    size_t x;
-
-    if (wlhas(s->wlsimp, s->nwlsimp, u, &x)) printf("%zd on simp\n", u);
-    if (wlhas(s->wlfreeze, s->nwlfreeze, u, &x)) printf("%zd on freeze\n", u);
-    if (wlhas(s->wlspill, s->nwlspill, u, &x)) printf("%zd on spill\n", u);
-    if (wlhas(s->selstk, s->nselstk, u, &x)) printf("%zd on select stack\n", u);
-    if (bshas(s->coalesced, u)) printf("%zd on coalesced\n", u);
-    if (bshas(s->spilled, u)) printf("%zd on stack\n", u);
 }
 
 static void wladd(Isel *s, regid u)
@@ -633,11 +618,9 @@ static void wladd(Isel *s, regid u)
     if (s->degree[u] >= K)
         return;
 
-    check(s);
     assert(wlhas(s->wlfreeze, s->nwlfreeze, u, &i));
     ldel(&s->wlfreeze, &s->nwlfreeze, i);
     lappend(&s->wlsimp, &s->nwlsimp, locmap[u]);
-    check(s);
 }
 
 static int conservative(Isel *s, regid u, regid v)
@@ -728,7 +711,6 @@ static void coalesce(Isel *s)
     Insn *m;
     regid u, v, tmp;
 
-    check(s);
     m = lpop(&s->wlmove, &s->nwlmove);
     u = getalias(s, m->args[0]->reg.id);
     v = getalias(s, m->args[1]->reg.id);
@@ -749,10 +731,8 @@ static void coalesce(Isel *s)
         wladd(s, v);
     } else if (combinable(s, u, v)) {
         lappend(&s->mcoalesced, &s->nmcoalesced, m);
-        check(s);
         combine(s, u, v);
         wladd(s, u);
-        check(s);
     } else {
         lappend(&s->mactive, &s->nmactive, m);
     }
@@ -790,14 +770,12 @@ static void freezemoves(Isel *s, Loc *u)
         if (!mldel(&s->mactive, &s->nmactive, m))
             mldel(&s->wlmove, &s->nwlmove, m);
         lappend(&s->mfrozen, &s->nmfrozen, m);
-        check(s);
         if (!nodemoves(s, v->reg.id, NULL) && s->degree[v->reg.id] < K) {
             if (!wlhas(s->wlfreeze, s->nwlfreeze, v->reg.id, &idx))
                 die("Reg %zd not in freeze wl\n", v->reg.id);
             ldel(&s->wlfreeze, &s->nwlfreeze, idx);
             lappend(&s->wlsimp, &s->nwlsimp, v);
         }
-        check(s);
 
     }
     lfree(&ml, &nml);
@@ -807,11 +785,9 @@ static void freeze(Isel *s)
 {
     Loc *l;
 
-    check(s);
     l = lpop(&s->wlfreeze, &s->nwlfreeze);
     lappend(&s->wlsimp, &s->nwlsimp, l);
     freezemoves(s, l);
-    check(s);
 }
 
 /* Select the spill candidates */
@@ -820,7 +796,6 @@ static void selspill(Isel *s)
     size_t i;
     Loc *m;
 
-    check(s);
     /* FIXME: pick a better heuristic for spilling */
     m = NULL;
     for (i = 0; i < s->nwlspill; i++) {
@@ -844,7 +819,6 @@ static void selspill(Isel *s)
     assert(m != NULL);
     lappend(&s->wlsimp, &s->nwlsimp, m);
     freezemoves(s, m);
-    check(s);
 }
 
 /*
@@ -1235,18 +1209,6 @@ static void printedge(FILE *fd, char *msg, size_t a, size_t b)
     fprintf(fd, "\n");
 }
 
-void dumpjustasm(Isel *s)
-{
-    size_t i, j;
-    Asmbb *bb;
-
-    for (j = 0; j < s->nbb; j++) {
-        bb = s->bb[j];
-        for (i = 0; i < bb->ni; i++)
-            iprintf(stdout, bb->il[i]);
-    }
-}
-
 void dumpasm(Isel *s, FILE *fd)
 {
     size_t i, j;
@@ -1296,83 +1258,5 @@ void dumpasm(Isel *s, FILE *fd)
             iprintf(fd, bb->il[i]);
     }
     fprintf(fd, "ENDASM -------- \n");
-}
-
-static int findmove(Isel *s, Insn *m)
-{
-    size_t i;
-    for (i = 0; i < s->nmactive; i++)
-        if (s->mactive[i] == m)
-            return 1;
-    for (i = 0; i < s->nwlmove; i++)
-        if (s->wlmove[i] == m)
-            return 1;
-    return 0;
-}
-
-static void check(Isel *s)
-{
-    size_t i, j;
-    size_t n;
-    size_t idx;
-    char foo[5];
-
-    for (i = 0; bsiter(s->initial, &i); i++) {
-        /* check worklists are disjoint */
-        n = 0;
-        if (bshas(s->prepainted, i)) {
-            foo[n] = 'p';
-            n++;
-        }
-        if (wlhas(s->wlsimp, s->nwlsimp, i, &idx)) {
-            foo[n] = 's';
-            /* check simplify invariant */
-            for (j = 0; j < s->nrmoves[j]; j++)
-                assert("simp invariant" && !findmove(s, s->rmoves[i][j]));
-            n++;
-        }
-        if (wlhas(s->wlfreeze, s->nwlfreeze, i, &idx)) {
-            assert(s->degree[i] < K);
-            foo[n] = 'f';
-            /* check freeze invariant */
-            for (j = 0; j < s->nrmoves[j]; j++)
-                assert("freeze invariant" && findmove(s, s->rmoves[i][j]));
-            n++;
-        }
-        if (wlhas(s->wlspill, s->nwlspill, i, &idx)) {
-            foo[n] = 'd';
-            assert(s->degree[i] >= K);
-            n++;
-        }
-        if (wlhas(s->selstk, s->nselstk, i, &idx)) {
-            foo[n] = 't';
-            n++;
-        }
-        if (bshas(s->coalesced, i)) {
-            foo[n] = 'k';
-            n++;
-        }
-        if (bshas(s->spilled, i)) {
-            foo[n] = 'l';
-            n++;
-        }
-        foo[n]='\0';
-        if (n != 1)
-            printf("%s\n", foo);
-        assert(n == 1);
-    }
-}
-
-void edges(Isel *s, regid u)
-{
-    size_t i;
-
-    for (i = 0; i < maxregid; i++) {
-        if (gbhasedge(s, u, i)) {
-            locprint(stdout, locmap[i], 'x');
-            printf("[%zd] ", i);
-        }
-    }
-    printf("\n");
 }
 
