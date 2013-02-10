@@ -3,6 +3,7 @@ BIN=6m
 OBJ=isel.o \
     locs.o \
     main.o \
+    peep.o \
     ra.o \
     simp.o \
 

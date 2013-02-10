@@ -209,6 +209,8 @@ extern Mode regmodes[];  /* mode table */
 extern size_t modesize[]; /* mode size table */
 void regalloc(Isel *s);
 
+/* machine dependent optimization */
+void peep(Isel *s);
 
 /* useful functions */
 size_t tysize(Type *t);
