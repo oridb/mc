@@ -819,19 +819,25 @@ static void epilogue(Isel *s)
     g(s, Iret, NULL);
 }
 
+static void writebb(FILE *fd, Asmbb *bb)
+{
+    size_t i;
+
+    for (i = 0; i < bb->nlbls; i++)
+        fprintf(fd, "%s:\n", bb->lbls[i]);
+    for (i = 0; i < bb->ni; i++)
+        iprintf(fd, bb->il[i]);
+}
+
 static void writeasm(FILE *fd, Isel *s, Func *fn)
 {
-    size_t i, j;
+    size_t i;
 
     if (fn->isexport || !strcmp(fn->name, Symprefix "main"))
         fprintf(fd, ".globl %s\n", fn->name);
     fprintf(fd, "%s:\n", fn->name);
-    for (j = 0; j < s->cfg->nbb; j++) {
-        for (i = 0; i < s->bb[j]->nlbls; i++)
-            fprintf(fd, "%s:\n", s->bb[j]->lbls[i]);
-        for (i = 0; i < s->bb[j]->ni; i++)
-            iprintf(fd, s->bb[j]->il[i]);
-    }
+    for (i = 0; i < s->nbb; i++)
+        writebb(fd, s->bb[i]);
 }
 
 static Asmbb *mkasmbb(Bb *bb)
@@ -959,6 +965,7 @@ void genasm(FILE *fd, Func *fn, Htab *globls)
     epilogue(&is);
     regalloc(&is);
 
+    peep(&is);
     if (debugopt['i'])
         writeasm(stdout, &is, fn);
     writeasm(fd, &is, fn);
