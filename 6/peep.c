@@ -70,17 +70,12 @@ static void nopjmp(Isel *s, Asmbb *bb, size_t idx)
     }
 }
 
-static void bbpeep(Isel *s, Asmbb *bb, size_t idx)
-{
-    deadcode(s, bb);
-    nopjmp(s, bb, idx);
-}
-
 void peep(Isel *s)
 {
     size_t i;
 
     for (i = 0; i < s->nbb; i++) {
-        bbpeep(s, s->bb[i], i);
+        deadcode(s, s->bb[i]);
+        nopjmp(s, s->bb[i], i);
     }
 }
