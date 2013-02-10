@@ -19,7 +19,7 @@
  * a non-conditional jump. This code scans for
  * the non-conditional exit from the BB, and truncates
  * at that point */
-static void elimdead(Isel *s, Asmbb *bb)
+static void deadcode(Isel *s, Asmbb *bb)
 {
     size_t i;
 
@@ -38,7 +38,7 @@ static void elimdead(Isel *s, Asmbb *bb)
  *      .l1:
  * TODO: check for jumps over jumps.
  */     
-static void elimnopjmp(Isel *s, Asmbb *bb, size_t idx)
+static void nopjmp(Isel *s, Asmbb *bb, size_t idx)
 {
     Insn *jmp;
     Loc *targ;
@@ -72,8 +72,8 @@ static void elimnopjmp(Isel *s, Asmbb *bb, size_t idx)
 
 static void bbpeep(Isel *s, Asmbb *bb, size_t idx)
 {
-    elimdead(s, bb);
-    elimnopjmp(s, bb, idx);
+    deadcode(s, bb);
+    nopjmp(s, bb, idx);
 }
 
 void peep(Isel *s)
