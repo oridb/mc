@@ -1,0 +1,9 @@
+TODO:
+    - Closures                  [Tests: closure]
+    - Not-boneheaded asm        [Tests: none]
+    - Optimized asm             [Tests: none]
+    - Generic types             [Tests: generictype, genericrec]
+    - Floating point support    [Tests: float]
+    - Use-def analysis          [Tests: usedef]
+    - Deferred code             [Tests: none]
+    - Module-mains              [Tests: none]
