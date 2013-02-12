@@ -5,5 +5,4 @@ OBJ=cfg.o \
 
 DEPS=../parse/libparse.a
 
-include ../mk/lexyacc.mk
 include ../mk/c.mk
