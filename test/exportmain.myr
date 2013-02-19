@@ -1,0 +1,12 @@
+pkg =
+	foo	: (val:int -> int)
+;;
+
+
+const foo = {val
+	-> val
+}
+
+const main = {
+	-> foo(42)
+}
