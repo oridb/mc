@@ -1,3 +1,4 @@
+use std
 /* checks that array lengths work. should exit with 12. */
 const main = {
 	var a : int[12]

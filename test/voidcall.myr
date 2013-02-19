@@ -1,3 +1,4 @@
+use std
 /* checks that calling void functions works. should compile, and not die
 when running. the exit value is 12, but it's really a dummy. */
 const f = {

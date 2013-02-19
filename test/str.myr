@@ -1,3 +1,4 @@
+use std
 /* checks that string literals are compiled correctly.
 exits with ascii 'f', ie, 102. */
 const main = {

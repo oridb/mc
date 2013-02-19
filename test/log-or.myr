@@ -1,3 +1,4 @@
+use std
 /* checks that evaluating a logical or works. exits with 1. */
 const main = {
 	-> 0 || 1

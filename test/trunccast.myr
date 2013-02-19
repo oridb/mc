@@ -1,3 +1,4 @@
+use std
 /* should truncate y when casting to x, exiting with status 15 */
 const main = {
 	var x : int8

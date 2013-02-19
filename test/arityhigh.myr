@@ -1,3 +1,4 @@
+use std
 /* should fail because we call f with too many args */
 const f = {a:int
 

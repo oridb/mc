@@ -1,3 +1,4 @@
+use std
 /* checks that generic types with traits are compiled correctly.
 without the 'tcnum' trait on '@a', the '>' operator would not work
 within max. without the 'tctest' trait on '@a' in intlike_is42,

@@ -1,3 +1,4 @@
+use std
 /* should zero-extend u when casting to v, returning 99 */
 const main = {
 	var u : uint8

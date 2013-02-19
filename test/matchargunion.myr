@@ -1,3 +1,4 @@
+use std
 /* checks pattern matching on unions with arguments.
 exits with 42. */
 type u = union

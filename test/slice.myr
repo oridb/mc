@@ -1,3 +1,4 @@
+use std
 /* checks that taking slices of arrays works. should exit with 7 */
 const main = {
 	var a : int[3]

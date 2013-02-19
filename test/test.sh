@@ -14,14 +14,7 @@ function use {
 
 function build {
     rm -f $1 $1.o $1.s $1.use
-    echo "	"$MC -I ../libstd $1.myr && \
-    $MC -I ../libstd $1.myr && \
-    echo "	"$LD -o $1 $1.o -L../libstd -lstd && \
-    if [ "x`uname`" = "xDarwin" ]; then
-        $LD -macosx_version_min 10.6 -o $1 $1.o -L../libstd -lstd
-    else
-        $LD -o $1 $1.o -L../libstd -lstd
-    fi
+    ../myrbuild/myrbuild -b $1 $1.myr -C../6/6m -I../libstd
 }
 
 function prints {

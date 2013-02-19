@@ -1,3 +1,4 @@
+use std
 /* checks that sizeof works on generics. exits with 5. */
 generic sz = {a:@a
 	-> sizeof(@a)

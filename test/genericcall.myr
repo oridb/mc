@@ -1,3 +1,4 @@
+use std
 /* checks that generics can call non-generics. exits with 42. */
 const f = {
 	-> 42

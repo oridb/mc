@@ -1,3 +1,4 @@
+use std
 /* checks that false conditions lead to the false branch of an if statement.
 * should exit with 9. */
 var x = 5

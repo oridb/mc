@@ -1,3 +1,4 @@
+use std
 /* tests reading and writing through a struct pointer. exits with 42. */
 type pair = struct
 	a : int
