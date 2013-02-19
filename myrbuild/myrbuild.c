@@ -127,7 +127,7 @@ void run(char **cmd)
         waitpid(pid, &status, 0);
     }
     if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
-        die("%s: exited with status %d\n", cmd[0], WEXITSTATUS(status));
+        exit(WEXITSTATUS(status));
     else if (WIFSIGNALED(status))
         die("%s: exited with signal %d\n", cmd[0], WTERMSIG(status));
 }
