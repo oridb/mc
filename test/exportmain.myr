@@ -1,5 +1,7 @@
+use std
+
 pkg =
-	foo	: (val:int -> int)
+	const foo	: (val:int -> int)
 ;;
 
 

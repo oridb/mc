@@ -125,7 +125,7 @@ static void constrainwith(Type *t, char *str);
 %type <tylist> typelist typarams
 %type <nodelist> typaramlist
 
-%type <tok> asnop cmpop addop mulop shiftop
+%type <tok> asnop cmpop addop mulop shiftop optident
 
 %type <tydef> tydef typeid
 
@@ -216,11 +216,17 @@ use     : Tuse Tident
             {$$ = mkuse($1->line, $2->str, 1);}
         ;
 
-package : Tpkg Tident Tasn pkgbody Tendblk
+optident: Tident      {$$ = $1;}
+        | /* empty */ {$$ = NULL;}
+        ;
+
+package : Tpkg optident Tasn pkgbody Tendblk
             {if (file->file.exports->name)
                  fatal($1->line, "Package already declared\n");
-             updatens(file->file.exports, $2->str);
-             updatens(file->file.globls, $2->str);
+             if ($2) {
+                 updatens(file->file.exports, $2->str);
+                 updatens(file->file.globls, $2->str);
+             }
             }
         ;
 
