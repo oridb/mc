@@ -760,7 +760,7 @@ static void installucons(Stab *st, Type *t)
 
 void yyerror(const char *s)
 {
-    fprintf(stderr, "%d: %s", line, s);
+    fprintf(stderr, "%s:%d: %s", filename, line, s);
     if (curtok->str)
         fprintf(stderr, " near \"%s\"", curtok->str);
     fprintf(stderr, "\n");
