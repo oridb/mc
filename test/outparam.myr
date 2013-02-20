@@ -1,7 +1,7 @@
 use std
 /* should assign through an out pointer parameter, exiting with status 42 */
 const f = {out
-	*out = 42
+	out# = 42
 }
 
 const main = {

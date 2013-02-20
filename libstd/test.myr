@@ -1,7 +1,7 @@
 use std
 
 const main = {args : byte[:][:]
-	var x : byte*[1024]
+	var x : byte#[1024]
 	var sz
 	var i
         var opt
@@ -75,7 +75,7 @@ const chartypes = {
 }
 
 const testrng = {
-	var r : std.rng*
+	var r
 	var i
 
 	r = std.mksrng(10)

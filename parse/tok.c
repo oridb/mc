@@ -375,7 +375,7 @@ static Tok *oper(void)
         case ']': tt = Tcsqbrac; break;
         case ',': tt = Tcomma; break;
         case '`': tt = Ttick; break;
-        case '#': tt = Thash; break;
+        case '#': tt = Tderef; break;
         case ':':
                   if (match(':'))
                       tt = Twith;
@@ -423,7 +423,7 @@ static Tok *oper(void)
                   if (match('='))
                       tt = Tmuleq;
                   else
-                      tt = Tstar;
+                      tt = Tmul;
                   break;
         case '/':
                   if (match('='))

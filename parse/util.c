@@ -68,7 +68,7 @@ void fatal(int line, char *msg, ...)
     va_list ap;
 
     va_start(ap, msg);
-    fprintf(stdout, "%s:%d: ", filename, line);
+    fprintf(stdout, "%s:%d: ", file->file.name, line);
     vfprintf(stdout, msg, ap);
     fprintf(stdout, "\n");
     va_end(ap);

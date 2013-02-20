@@ -5,6 +5,6 @@ const main = {
 	var v
 
 	p = &v
-	*p = 123
+	p# = 123
 	-> v
 }

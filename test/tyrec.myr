@@ -1,7 +1,7 @@
 use std
 /* we just want to see if this file compiles */
 type foo = struct
-	v : foo*
+	v : foo#
 ;;
 
 const main = {

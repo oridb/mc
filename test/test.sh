@@ -14,7 +14,7 @@ function use {
 
 function build {
     rm -f $1 $1.o $1.s $1.use
-    ../myrbuild/myrbuild -b $1 $1.myr -C../6/6m -I../libstd
+    ../myrbuild/myrbuild -b $1 $1.myr -C../6/6m -M../muse/muse -I../libstd
 }
 
 function prints {

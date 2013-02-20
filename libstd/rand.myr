@@ -50,8 +50,8 @@ pkg std =
 
 	/* no mkrng() yet because we don't have anything to automatically
 	   seed it with yet */
-	const mksrng	: (seed : uint32 -> rng*)
-	const rand32	: (rng : rng* -> uint32)
+	const mksrng	: (seed : uint32 -> rng#)
+	const rand32	: (rng : rng# -> uint32)
 ;;
 
 type rng = struct

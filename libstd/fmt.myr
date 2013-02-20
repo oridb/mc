@@ -49,7 +49,7 @@ const bfmtv = {buf, fmt, ap
 	var w_val : int16
 	var i_val : int32
 	var l_val : int64
-	var p_val : byte*
+	var p_val : byte#
         var c_val : char
 
 	n = 0

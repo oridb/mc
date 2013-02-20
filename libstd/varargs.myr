@@ -3,11 +3,11 @@ use "types.use"
 pkg std =
 	type valist
 
-	const vastart	: (args : ...* -> valist)
+	const vastart	: (args : ...# -> valist)
 	generic vanext	: (ap : valist -> [@a, valist])
 ;;
 
-type valist = byte*
+type valist = byte#
 
 /* 
  * a valist is really just a pointer to the varargs.
@@ -44,7 +44,7 @@ generic vanext = {ap -> [@a, valist]
 	p = (p + align - 1) & ~(align - 1)
 	ap = p castto(valist)
 
-	v = *(ap castto(@a*))
+	v = (ap castto(@a#))#
 
 	/* only move on after we read through the value */
 	ap = ((p castto(intptr)) + sizeof(@a)) castto(valist)

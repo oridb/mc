@@ -26,21 +26,21 @@ Large allocations are simply satisfied by mmap().
 */
 
 pkg std =
-	generic alloc	: (		-> @a*)
-	generic free	: (v:@a*	-> void)
+	generic alloc	: (		-> @a#)
+	generic free	: (v:@a#	-> void)
 
 	generic slalloc	: (len : size	-> @a[:])
 	generic slgrow	: (sl : @a[:], len : size	-> @a[:])
 	generic slfree	: (sl : @a[:]	-> void)
 
-	const bytealloc	: (sz:size	-> byte*)
-	const bytefree	: (m:byte*, sz:size	-> void)
+	const bytealloc	: (sz:size	-> byte#)
+	const bytefree	: (m:byte#, sz:size	-> void)
 ;;
 
 /* null pointers. only used internally. */
-const Zbyte	= 0 castto(byte*)
-const Zslab	= 0 castto(slab*)
-const Zchunk	= 0 castto(chunk*)
+const Zbyte	= 0 castto(byte#)
+const Zslab	= 0 castto(slab#)
+const Zchunk	= 0 castto(chunk#)
 
 const Slabsz 	= 1048576	/* 1 meg slabs */
 const Cachemax	= 16	/* maximum number of slabs in the cache */
@@ -53,43 +53,43 @@ var initdone	: int
 type bucket = struct
 	sz	: size	/* aligned size */
 	nper	: size	/* max number of elements per slab */
-	slabs	: slab*	/* partially filled or free slabs */
-	cache	: slab* /* cache of empty slabs, to prevent thrashing */
+	slabs	: slab#	/* partially filled or free slabs */
+	cache	: slab# /* cache of empty slabs, to prevent thrashing */
 	ncache	: size  /* size of cache */
 ;;
 
 type slab = struct
-	head	: byte*	/* head of virtual addresses, so we don't leak address space */
-	next	: slab*	/* the next slab on the chain */
-	freehd	: chunk*	/* the nodes we're allocating */
+	head	: byte#	/* head of virtual addresses, so we don't leak address space */
+	next	: slab#	/* the next slab on the chain */
+	freehd	: chunk#	/* the nodes we're allocating */
 	nfree	: size	/* the number of free nodes */
 ;;
 
 type chunk = struct	/* NB: must be smaller than sizeof(slab) */
-	next	: chunk*	/* the next chunk in the free list */
+	next	: chunk#	/* the next chunk in the free list */
 ;;
 
 /* Allocates an object of type @a, returning a pointer to it. */
-generic alloc = {-> @a*
-	-> bytealloc(sizeof(@a)) castto(@a*)
+generic alloc = {-> @a#
+	-> bytealloc(sizeof(@a)) castto(@a#)
 }
 
 /* Frees a value of type @a */
-generic free = {v:@a* -> void
-	bytefree(v castto(byte*), sizeof(@a))
+generic free = {v:@a# -> void
+	bytefree(v castto(byte#), sizeof(@a))
 }
 
 /* allocates a slice of 'len' elements. */
 generic slalloc = {len
 	var p
 
-	p = bytealloc(len*sizeof(@a)) castto(@a*)
+	p = bytealloc(len*sizeof(@a)) castto(@a#)
 	-> p[0:len]
 }
 
 /* Frees a slice */
 generic slfree	 = {sl
-	bytefree(sl castto(byte*), sl.len * sizeof(@a))
+	bytefree(sl castto(byte#), sl.len * sizeof(@a))
 }
 
 /* Grows a slice */
@@ -140,7 +140,7 @@ const bytefree = {m, sz
 }
 
 /* Sets up a single empty bucket */
-const bktinit = {b : bucket*, sz
+const bktinit = {b, sz
 	b.sz = align(sz, Align)
 	b.nper = (Slabsz - sizeof(slab))/b.sz
 	b.slabs = Zslab
@@ -149,7 +149,7 @@ const bktinit = {b : bucket*, sz
 }
 
 /* Creates a slab for bucket 'bkt', and fills the chunk list */
-const mkslab = {bkt : bucket*
+const mkslab = {bkt
 	var i
 	var p
 	var s
@@ -173,12 +173,12 @@ const mkslab = {bkt : bucket*
 		die("Unable to mmap")
 	;;
 
-	s = align(p castto(intptr), Slabsz) castto(slab*)
+	s = align(p castto(intptr), Slabsz) castto(slab#)
 	s.head = p
 	s.nfree = bkt.nper
 	/* skip past the slab header */
 	off = align(sizeof(slab), Align)
-	bnext = nextchunk(s castto(chunk*), off)
+	bnext = nextchunk(s castto(chunk#), off)
 	s.freehd = bnext
 	for i = 0; i < bkt.nper; i++
 		b = bnext
@@ -217,7 +217,7 @@ const bktalloc = {bkt
 		s.next = Zslab
 	;;
 
-	-> b castto(byte*)
+	-> b castto(byte#)
 }
 
 /*
@@ -230,8 +230,8 @@ const bktfree = {bkt, m
 	var s
 	var b
 
-	s = mtrunc(m, Slabsz) castto(slab*)
-	b = m castto(chunk*)
+	s = mtrunc(m, Slabsz) castto(slab#)
+	b = m castto(chunk#)
 	if s.nfree == 0
 		s.next = bkt.slabs
 		bkt.slabs = s
@@ -273,7 +273,7 @@ chunks are variable sizes, so we can't just
 index to get to the next one
 */
 const nextchunk = {b, sz
-	-> ((b castto(intptr)) + sz) castto(chunk*)
+	-> ((b castto(intptr)) + sz) castto(chunk#)
 }
 
 /*
@@ -289,5 +289,5 @@ truncates a pointer to 'align'. 'align' must
 be a power of two.
 */
 const mtrunc = {m, align
-	-> ((m castto(intptr)) & ~(align - 1)) castto(byte*)
+	-> ((m castto(intptr)) & ~(align - 1)) castto(byte#)
 }

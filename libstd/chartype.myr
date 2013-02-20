@@ -1070,7 +1070,7 @@ const findc = {c, t, sz, nelt, ret
 	;;
 
 	if t.len != 0 && c >= t[0]
-		*ret = t
+		ret# = t
 		-> true
 	else
 		-> false
