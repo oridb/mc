@@ -52,7 +52,7 @@ pkg std =
 	const M32bit	: mopt = 0x40
 
 	/* return value for a failed mapping */
-	const Mapbad	: byte* = -1 castto(byte*)
+	const Mapbad	: byte# = -1 castto(byte#)
 
 	/* syscalls */
 	const Sysread			: scno = 0
@@ -369,7 +369,7 @@ pkg std =
 	const Sysprocess_vm_writev	: scno = 311
 
 	extern const syscall : (sc:scno, args:... -> int64)
-	extern const cstring : (str : byte[:] -> byte*)
+	extern const cstring : (str : byte[:] -> byte#)
 
 	const exit	: (status:int64 -> void)
 	const getpid	: ( -> int64)
@@ -380,9 +380,9 @@ pkg std =
 	const read	: (fd:int64, buf:byte[:] -> size)
 	const write	: (fd:int64, buf:byte[:] -> size)
 	const lseek	: (fd:int64, off:uint64, whence:int64 -> int64)
-	const fstat	: (fd:int64, sb:statbuf* -> int64)
-	const munmap	: (addr:byte*, len:size -> int64)
-	const mmap	: (addr:byte*, len:size, prot:mprot, flags:mopt, fd:int64, off:off -> byte*)
+	const fstat	: (fd:int64, sb:statbuf# -> int64)
+	const munmap	: (addr:byte#, len:size -> int64)
+	const mmap	: (addr:byte#, len:size, prot:mprot, flags:mopt, fd:int64, off:off -> byte#)
 ;;
 
 const exit	= {status;		syscall(Sysexit, 1)}
@@ -391,9 +391,9 @@ const kill	= {pid, sig;		-> syscall(Syskill, pid, sig)}
 const open	= {path, opts, mode;	-> syscall(Sysopen, cstring(path), opts, mode)}
 const close	= {fd;			-> syscall(Sysclose, fd)}
 const creat	= {path, mode;		-> syscall(Syscreat, cstring(path), mode)}
-const read	= {fd, buf;		-> syscall(Sysread, fd, buf castto(char*), buf.len castto(size)) castto(size)}
-const write	= {fd, buf;		-> syscall(Syswrite, fd, buf castto(char*), buf.len castto(size)) castto(size)}
+const read	= {fd, buf;		-> syscall(Sysread, fd, buf castto(byte#), buf.len castto(size)) castto(size)}
+const write	= {fd, buf;		-> syscall(Syswrite, fd, buf castto(byte#), buf.len castto(size)) castto(size)}
 const lseek	= {fd, off, whence;	-> syscall(Syslseek, fd, off, whence)}
 const fstat	= {fd, sb;		-> syscall(Sysfstat, fd, sb)}
 const munmap	= {addr, len;		-> syscall(Sysmunmap, addr, len)}
-const mmap	= {addr, len, prot, flags, fd, off;	-> syscall(Sysmmap, addr, len, prot, flags, fd, off) castto(byte*)}
+const mmap	= {addr, len, prot, flags, fd, off;	-> syscall(Sysmmap, addr, len, prot, flags, fd, off) castto(byte#)}
