@@ -68,6 +68,7 @@ B matchint	E	84
 B matchconst	E	88
 B matchunion	E	84
 B matchargunion	E	69
+B matchunion_sl	P	foo
 B matchbind	E	8
 B arraylit-ni	E	2
 # B arraylit	E	3       ## BUGGERED

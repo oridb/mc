@@ -479,7 +479,13 @@ static void umatch(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, Node *i
         case Tyint64: case Tyuint64: case Tylong:  case Tyulong:
         case Tyfloat32: case Tyfloat64:
         case Tyslice: case Tyarray: case Tytuple: case Tystruct:
-            die("Unsupported type for compare");
+            if (exprop(pat) == Ovar && !decls[pat->expr.did]->decl.isconst) {
+                v = assign(s, pat, val);
+                append(s, v);
+                jmp(s, iftrue);
+            } else {
+                die("Unsupported type for compare");
+            }
             break;
         case Tybool: case Tychar: case Tybyte:
         case Tyint8: case Tyint16: case Tyint32: case Tyint:

@@ -1,0 +1,26 @@
+use std
+/* checks pattern matching on unions with arguments.
+exits with 42. */
+type u = union
+	`Int int
+	`Str byte[:]
+	`Nil
+;;
+
+const main = {
+	var v
+
+	v = `Str "foo"
+	match v
+	`Int 127:
+		-> 42
+		;;
+	`Str s:
+		std.put("%s\n", s)
+		;;
+	`Nil:
+		;;
+	;;
+	-> 0
+}
+
