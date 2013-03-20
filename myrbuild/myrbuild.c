@@ -199,7 +199,7 @@ void compile(char *file)
                 localdep = usetomyr(deps[i]);
                 compile(localdep);
                 free(localdep);
-            } else {
+            } else if (!inlist(libs, nlibs, deps[i])) {
                 lappend(&libs, &nlibs, deps[i]);
             }
         }
