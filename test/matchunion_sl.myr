@@ -12,14 +12,18 @@ const main = {
 
 	v = `Str "foo"
 	match v
+	/*
 	`Int 127:
 		-> 42
 		;;
+	*/
 	`Str s:
 		std.put("%s\n", s)
 		;;
+	/*
 	`Nil:
 		;;
+	*/
 	;;
 	-> 0
 }
