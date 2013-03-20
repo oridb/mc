@@ -340,31 +340,34 @@ static Loc *memloc(Isel *s, Node *e, Mode m)
 
 static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size_t sz)
 {
-    size_t i;
-    Loc *sp, *dp; /* pointers to src, dst */
-    Loc *tmp, *src, *dst; /* source memory, dst memory */
+    AsmOp op;
+    Loc *sp, *dp, *len; /* pointers to src, dst */
 
+    if (sz % 8 == 0) {
+        sz /= 8;
+        op = Irepmovsq;
+    } else if (sz % 4 == 0) {
+        sz /= 4;
+        op = Irepmovsl;
+    } else if (sz % 2 == 0) {
+        sz /= 2;
+        op = Irepmovsw;
+    } else {
+        op = Irepmovsb;
+    }
+
+    len = loclit(sz, ModeQ);
     sp = inr(s, from);
     dp = inr(s, to);
 
-    /* Slightly funny loop condition: We might have trailing bytes
-     * that we can't blit word-wise. */
-    tmp = locreg(ModeQ);
-    for (i = 0; i < sz/Ptrsz; i++) {
-        src = locmem(i*Ptrsz + srcoff, sp, NULL, ModeQ);
-        dst = locmem(i*Ptrsz + dstoff, dp, NULL, ModeQ);
-        g(s, Imov, src, tmp, NULL);
-        g(s, Imov, tmp, dst, NULL);
-    }
-    /* now, the trailing bytes */
-    tmp = locreg(ModeB);
-    i *= Ptrsz; /* we counted in Ptrsz chunks; now we need a byte offset */
-    for (; i < sz; i++) {
-        src = locmem(i, sp, NULL, ModeB);
-        dst = locmem(i, dp, NULL, ModeB);
-        g(s, Imov, src, tmp, NULL);
-        g(s, Imov, tmp, dst, NULL);
-    }
+    g(s, Imov, len, locphysreg(Rrcx), NULL); /* length to blit */
+    g(s, Imov, sp, locphysreg(Rrsi), NULL); /* source index */
+    g(s, Imov, dp, locphysreg(Rrdi), NULL); /* dest index */
+    if (srcoff)
+        g(s, Iadd, loclit(srcoff, ModeQ), locphysreg(Rrsi), NULL);
+    if (dstoff)
+        g(s, Iadd, loclit(dstoff, ModeQ), locphysreg(Rrdi), NULL);
+    g(s, op, NULL);
 }
 
 static Loc *gencall(Isel *s, Node *n)
