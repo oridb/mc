@@ -295,10 +295,10 @@ size_t tysize(Type *t)
             return sz;
             break;
         case Tyunion:
-            sz = Ptrsz;
+            sz = Wordsz;
             for (i = 0; i < t->nmemb; i++)
                 if (t->udecls[i]->etype)
-                    sz = max(sz, tysize(t->udecls[i]->etype) + Ptrsz);
+                    sz = max(sz, tysize(t->udecls[i]->etype) + Wordsz);
             return align(sz, Ptrsz);
             break;
         case Tybad: case Tyvar: case Typaram: case Tyunres: case Tygeneric: case Ntypes:
@@ -987,7 +987,7 @@ static Node *simpucon(Simp *s, Node *n, Node *dst)
     u = addk(u, Wordsz);
     if (stacktype(uc->etype)) {
         elt = addr(s, elt, uc->etype);
-        sz = disp(n->line, tysize(uc->utype));
+        sz = disp(n->line, tysize(uc->etype));
         r = mkexpr(n->line, Oblit, u, elt, sz, NULL);
     } else {
         r = set(deref(u), elt);
