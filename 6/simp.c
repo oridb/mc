@@ -532,7 +532,7 @@ static void simpmatch(Simp *s, Node *n)
     val = temp(s, n->matchstmt.val);
     tmp = rval(s, n->matchstmt.val, val);
     if (val != tmp)
-        append(s, set(val, tmp));
+        append(s, assign(s, val, tmp));
     for (i = 0; i < n->matchstmt.nmatches; i++) {
         m = n->matchstmt.matches[i];
 
