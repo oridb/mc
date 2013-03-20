@@ -360,13 +360,18 @@ static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size
     sp = inr(s, from);
     dp = inr(s, to);
 
-    g(s, Imov, len, locphysreg(Rrcx), NULL); /* length to blit */
-    g(s, Imov, sp, locphysreg(Rrsi), NULL); /* source index */
-    g(s, Imov, dp, locphysreg(Rrdi), NULL); /* dest index */
+    /* length to blit */
+    g(s, Imov, len, locphysreg(Rrcx), NULL);
+    /* source address with offset */
     if (srcoff)
-        g(s, Iadd, loclit(srcoff, ModeQ), locphysreg(Rrsi), NULL);
+        g(s, Ilea, locmem(srcoff, sp, NULL, ModeQ), locphysreg(Rrsi), NULL);
+    else
+        g(s, Imov, sp, locphysreg(Rrsi), NULL);
+    /* dest address with offset */
     if (dstoff)
-        g(s, Iadd, loclit(dstoff, ModeQ), locphysreg(Rrdi), NULL);
+        g(s, Ilea, locmem(dstoff, dp, NULL, ModeQ), locphysreg(Rrdi), NULL);
+    else
+        g(s, Imov, dp, locphysreg(Rrdi), NULL);
     g(s, op, NULL);
 }
 
