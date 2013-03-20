@@ -361,7 +361,7 @@ char *swapsuffix(char *buf, size_t sz, char *s, char *suf, char *swap)
 
 size_t max(size_t a, size_t b)
 {
-    if (a < b)
+    if (a > b)
         return a;
     else
         return b;
