@@ -28,7 +28,6 @@ static void usage(char *prog)
     printf("\t-h\tPrint this help\n");
     printf("\t-I path\tAdd 'path' to use search path\n");
     printf("\t-d\tPrint debug dumps. Recognized options: f r p i\n");
-    printf("\t\t\tno options: print most common debug information\n");
     printf("\t\t\tf: log folded trees\n");
     printf("\t\t\tl: log lowered pre-cfg trees\n");
     printf("\t\t\tT: log tree immediately\n");
