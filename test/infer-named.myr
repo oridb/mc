@@ -1,0 +1,21 @@
+use std
+
+type u = union
+	`Foo
+	`Bar int
+;;
+
+const f = {v : int -> u
+	-> `Bar v
+}
+
+const main = {
+	var v
+
+	v = f(99)
+	match v
+	`Foo:	-> 1;;
+	`Bar x:	-> x;;
+	;;
+	-> 2
+}

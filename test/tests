@@ -76,6 +76,7 @@ B arraylit-ni	E	2
 B tuple		E	42
 B slgrow        E       42
 B tyrec		E	42
+B infer-named   E       99
 B helloworld	P	Hello-世界
 B catfile	P	Hello-世界
 B encodechar	P	1世界äa
