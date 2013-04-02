@@ -998,7 +998,6 @@ static void rewritebb(Isel *s, Asmbb *bb)
     new = NULL;
     nnew = 0;
     for (j = 0; j < bb->ni; j++) {
-        insn = bb->il[j];
         /* if there is a remapping, insert the loads and stores as needed */
         if (remap(s, bb->il[j], use, &nuse, def, &ndef)) {
             for (i = 0; i < nuse; i++) {
@@ -1125,7 +1124,6 @@ void regalloc(Isel *s)
     s->initial = mkbs();
     for (i = 0; i < Nsaved; i++)
         bsput(s->shouldspill, s->calleesave[i]->reg.id);
-    spilled = 0;
     do {
         setup(s);
         liveness(s);

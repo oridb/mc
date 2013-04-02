@@ -415,7 +415,6 @@ static Loc *gencall(Isel *s, Node *n)
         arg = selexpr(s, n->expr.args[i]);
         argoff = align(argoff, min(size(n->expr.args[i]), Ptrsz));
         if (stacknode(n->expr.args[i])) {
-            dst = locreg(ModeQ);
             src = locreg(ModeQ);
             g(s, Ilea, arg, src, NULL);
             blit(s, rsp, src, argoff, 0, size(n->expr.args[i]));
