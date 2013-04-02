@@ -30,6 +30,9 @@ struct Inferstate {
     /* generic declarations to be specialized */
     Node **genericdecls;
     size_t ngenericdecls;
+    /* delayed unification -- we fall back to these types in a post pass if we
+     * haven't unifed to something more specific */
+    Htab *delayed;
     /* the nodes that we've specialized them to, and the scopes they
      * appear in */
     Node **specializations;
@@ -304,6 +307,15 @@ static Type *littype(Node *n)
     };
     die("Bad lit type %d", n->lit.littype);
     return NULL;
+}
+
+static Type *delayed(Inferstate *st, Type *fallback)
+{
+    Type *t;
+
+    t = mktylike(fallback->line, fallback->type);
+    htput(st->delayed, t, fallback);
+    return t;
 }
 
 /* Finds the type of any typable node */
@@ -756,7 +768,7 @@ static void inferpat(Inferstate *st, Node *n, Node *val, Node ***bind, size_t *n
             uc = uconresolve(st, n);
             if (uc->etype)
                 unify(st, n, uc->etype, type(st, args[1]));
-            settype(st, n, uc->utype);
+            settype(st, n, delayed(st, uc->utype));
             break;
         case Ovar:
             s = getdcl(curstab(), args[0]);
@@ -950,7 +962,7 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
             uc = uconresolve(st, n);
             if (uc->etype)
                 unify(st, n, uc->etype, type(st, args[1]));
-            settype(st, n, uc->utype);
+            settype(st, n, delayed(st, uc->utype));
             break;
         case Otup:
             types = xalloc(sizeof(Type *)*n->expr.nargs);
@@ -1147,6 +1159,8 @@ static Type *tyfix(Inferstate *st, Node *ctx, Type *t)
             return tyint;
         if (hascstr(t, cstrtab[Tcfloat]) && cstrcheck(t, tyflt))
             return tyint;
+        if (hthas(st->delayed, t))
+            return htget(st->delayed, t);
     } else if (!t->fixed) {
         t->fixed = 1;
         if (t->type == Tyarray) {
@@ -1345,11 +1359,23 @@ static void specialize(Inferstate *st, Node *f)
     }
 }
 
+static ulong tyhash(void *t)
+{
+    /* hash is just multiplying by an arbitrary large prime */
+    return ((Type *)t)->tid * 38733031;
+}
+
+static int tyeq(void *a, void *b)
+{
+    return ((Type *)a)->tid == ((Type *)b)->tid;
+}
+
 void infer(Node *file)
 {
     Inferstate st = {0,};
 
     assert(file->type == Nfile);
+    st.delayed = mkht(tyhash, tyeq);
     loaduses(file);
     mergeexports(&st, file);
     infernode(&st, file, NULL, NULL);
