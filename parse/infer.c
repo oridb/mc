@@ -262,6 +262,8 @@ static Type *tf(Inferstate *st, Type *t)
             if (t->name->name.ns) {
                 ns = getns_str(ns, t->name->name.ns);
             }
+            if (!ns)
+                fatal(t->name->line, "Could not resolve namespace \"%s\"", t->name->name.ns);
             if (!(lu = gettype(ns, t->name)))
                 fatal(t->name->line, "Could not resolve type %s", namestr(t->name));
             tytab[t->tid] = lu;
