@@ -780,7 +780,7 @@ static void inferpat(Inferstate *st, Node *n, Node *val, Node ***bind, size_t *n
                 else if (s->decl.isconst)
                     t = s->decl.type;
                 else
-                    fatal(n->line, "Can't match against variables in nterns near %s", ctxstr(st, n));
+                    fatal(n->line, "Can't match against non-constant variables near %s", ctxstr(st, n));
             } else {
                 t = mktyvar(n->line);
                 s = mkdecl(n->line, n->expr.args[0], t);

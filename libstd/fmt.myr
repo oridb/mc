@@ -19,17 +19,34 @@ use "extremum.use"
 */
 
 pkg std =
-	const bfmt	: (buf : byte[:], fmt : byte[:], args:... -> size)
-	const bfmtv	: (buf : byte[:], fmt : byte[:], ap:valist -> size)
-	const put	: (fmt : byte[:], args:... -> size)
+	const bfmt	: (buf : byte[:], fmt : byte[:], args : ... -> size)
+	const bfmtv	: (buf : byte[:], fmt : byte[:], ap : valist -> size)
+	const put	: (fmt : byte[:], args : ... -> size)
+	const putv	: (fmt : byte[:], ap : valist -> size)
+	const fatal	: (status : int, fmt : byte[:], args : ... -> void)
+	const fatalv	: (status : int, fmt : byte[:], ap : valist -> void)
 ;;
 
-/* Writes a string of text up to 2 kb in size to stdout */
+const fatal = {status, fmt, args
+	putv(fmt, vastart(&args))
+	exit(status)
+}
+
+const fatalv = {status, fmt, ap
+	putv(fmt, ap)
+	exit(status)
+}
+
 const put = {fmt, args
+	-> putv(fmt, vastart(&args))
+}
+
+/* Writes a string of text up to 2 kb in size to stdout */
+const putv = {fmt, ap
 	var buf : byte[2048]
 	var n
 	
-	n = bfmtv(buf[:], fmt, vastart(&args))
+	n = bfmtv(buf[:], fmt, ap)
 	write(1, buf[:n])
 	-> n
 }
