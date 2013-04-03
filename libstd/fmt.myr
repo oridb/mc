@@ -1,3 +1,4 @@
+use "alloc.use"
 use "die.use"
 use "sys.use"
 use "types.use"
@@ -19,29 +20,23 @@ use "extremum.use"
 */
 
 pkg std =
-	const bfmt	: (buf : byte[:], fmt : byte[:], args : ... -> size)
-	const bfmtv	: (buf : byte[:], fmt : byte[:], ap : valist -> size)
 	const put	: (fmt : byte[:], args : ... -> size)
 	const putv	: (fmt : byte[:], ap : valist -> size)
 	const fatal	: (status : int, fmt : byte[:], args : ... -> void)
 	const fatalv	: (status : int, fmt : byte[:], ap : valist -> void)
+	const fmt	: (fmt : byte[:], args : ... -> byte[:])
+	const fmtv	: (fmt : byte[:], ap : valist -> byte[:])
+	const bfmt	: (buf : byte[:], fmt : byte[:], args : ... -> size)
+	const bfmtv	: (buf : byte[:], fmt : byte[:], ap : valist -> size)
 ;;
 
-const fatal = {status, fmt, args
-	putv(fmt, vastart(&args))
-	exit(status)
-}
-
-const fatalv = {status, fmt, ap
-	putv(fmt, ap)
-	exit(status)
-}
-
+/* Writes a string of text up to 2 kb in size to stdout */
 const put = {fmt, args
 	-> putv(fmt, vastart(&args))
 }
 
-/* Writes a string of text up to 2 kb in size to stdout */
+/* Writes a string of text up to 2kb long to stdout, using a valist
+   as the source of the arguments */
 const putv = {fmt, ap
 	var buf : byte[2048]
 	var n
@@ -49,6 +44,35 @@ const putv = {fmt, ap
 	n = bfmtv(buf[:], fmt, ap)
 	write(1, buf[:n])
 	-> n
+}
+
+/* same as 'put', but exits the program after printing */
+const fatal = {status, fmt, args
+	putv(fmt, vastart(&args))
+	exit(status)
+}
+
+/* same as 'putv', but exits the program after printing */
+const fatalv = {status, fmt, ap
+	putv(fmt, ap)
+	exit(status)
+}
+
+/* formats a string, allocating the slice. FIXME: calculate the
+   size needed. */
+const fmt = {fmt, args
+	-> fmtv(fmt, vastart(&args))
+}
+
+/* formats a string, allocating the slice. FIXME: calculate the
+   size needed. Takes a valist as it's last argument. */
+const fmtv = {fmt, ap
+	var buf
+	var sz
+
+	buf = slalloc(2048)
+	sz = bfmtv(buf, fmt, ap)
+	-> buf[:sz]
 }
 
 /* formats a string of text as specified by 'fmt' into 'buf' */

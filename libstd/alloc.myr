@@ -2,7 +2,6 @@ use "die.use"
 use "sys.use"
 use "types.use"
 use "extremum.use"
-use "fmt.use"
 
 /* 
 The allocator implementation here is based on Bonwick's slab allocator.
