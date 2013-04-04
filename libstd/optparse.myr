@@ -14,7 +14,8 @@ pkg std =
 		args	: byte[:][:]
 
 		/* state */
-		done	: bool	/* if we've seen '--', everything's an arg */
+		optdone	: bool	/* if we've seen '--', everything's an arg */
+		done	: bool	/* if we've processed all the args */
 		argidx	: size
 		curarg	: byte[:]
 		arglist	: byte[:][:]
@@ -22,6 +23,7 @@ pkg std =
 
 	const optinit	: (opts	: byte[:], args : byte[:][:] -> optctx#)
 	const optnext	: (ctx : optctx# -> [char, byte[:]])
+	const optdone	: (ctx : optctx# -> bool)
 ;;
 
 const optinit = {opts, args
@@ -31,10 +33,12 @@ const optinit = {opts, args
 	ctx.opts = opts
 	ctx.args = args
 
+	ctx.optdone = false
 	ctx.done = false
 	ctx.argidx = 0
 	ctx.arglist = [][:]
 	ctx.curarg = [][:]
+	next(ctx)
 	-> ctx
 }
 
@@ -44,13 +48,6 @@ const optnext = {ctx
 	var valid
 	var tryarg
 	var needarg
-
-	/* end of arguments */
-	if !ctx.curarg.len
-		if !next(ctx)
-			-> (Badchar, "")
-		;;
-	;;
 
 	(c, ctx.curarg) = striter(ctx.curarg)
 
@@ -72,7 +69,15 @@ const optnext = {ctx
 		arg = ""
 	;;
 
+	if !ctx.curarg.len
+		next(ctx)
+	;;
+
 	-> (c, arg)
+}
+
+const optdone = {ctx
+	-> !ctx.curarg.len && ctx.done
 }
 
 const optinfo = {ctx, arg
@@ -103,12 +108,13 @@ const next = {ctx
 	var i
 
 	for i = ctx.argidx + 1; i < ctx.args.len; i++
-		if !ctx.done && decode(ctx.args[i]) == '-'
+		if !ctx.optdone && decode(ctx.args[i]) == '-'
 			goto foundopt
 		else
 			ctx.arglist = slappend(ctx.arglist, ctx.args[i])
 		;;
 	;;
+	ctx.done = true
 	-> false
 :foundopt
 	ctx.argidx = i
