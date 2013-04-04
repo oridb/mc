@@ -1,19 +1,19 @@
 use "die.use"
+use "extremum.use"
 use "sys.use"
 use "types.use"
-use "extremum.use"
 
-/* 
+/*
 The allocator implementation here is based on Bonwick's slab allocator.
 
-For small allocations (up to Bucketmax), it works by requesting large,
+For small allocations (up to Bktmax), it works by requesting large,
 power of two aligned chunks from the operating system, and breaking
 them into a linked list of equal sized chunks. Allocations are then
 satisfied by taking the head of the list of chunks. Empty slabs
 are removed from the freelist.
 
 The data structure looks something like this:
-   Buckets:
+   Bkts:
 	[16  byte] -> [slab hdr | chunk -> chunk -> chunk] -> [slab hdr | chunk -> chunk -> chunk]
 	[32  byte] -> Zslab
 	[64  byte] -> [slab hdr | chunk -> chunk]
@@ -34,6 +34,9 @@ pkg std =
 
 	const bytealloc	: (sz:size	-> byte#)
 	const bytefree	: (m:byte#, sz:size	-> void)
+
+	/* FIXME: This should be automatically exported as a hidden decl. */
+	const samebucket
 ;;
 
 /* null pointers. only used internally. */
@@ -43,7 +46,7 @@ const Zchunk	= 0 castto(chunk#)
 
 const Slabsz 	= 1048576	/* 1 meg slabs */
 const Cachemax	= 16	/* maximum number of slabs in the cache */
-const Bucketmax	= 32768	/* Slabsz / 8; a balance. */
+const Bktmax	= 32768	/* Slabsz / 8; a balance. */
 const Align	= 16	/* minimum allocation alignment */
 
 var buckets	: bucket[32] /* excessive */
@@ -92,18 +95,33 @@ generic slfree	 = {sl
 }
 
 /* Grows a slice */
-generic slgrow = {sl, len
+generic slgrow = {sl : @a[:], len
 	var i
 	var n
 	var new
+
+	/* if the slice wouldn't change buckets, we don't need to realloc. */
+	if samebucket(sl.len * sizeof(@a), len * sizeof(@a))
+		-> sl
+	;;
 
 	new = slalloc(len)
 	n = min(len, sl.len)
 	for i = 0; i < n; i++
 		new[i] = sl[i]
 	;;
-	slfree(sl)
+	if sl.len > 0
+		slfree(sl)
+	;;
 	-> new
+}
+
+const samebucket = {oldsz, newsz
+	if oldsz > 0 && newsz < Bktmax
+		-> bktnum(oldsz) == bktnum(newsz)
+	else
+		-> false
+	;;
 }
 
 /* Allocates a blob that is 'sz' bytes long. Dies if the allocation fails */
@@ -112,13 +130,13 @@ const bytealloc = {sz
 	var bkt
 
 	if !initdone
-		for i = 0; i < buckets.len && (Align << i) <= Bucketmax; i++
+		for i = 0; i < buckets.len && (Align << i) <= Bktmax; i++
 			bktinit(&buckets[i], Align << i)
 		;;
 		initdone = 1
 	;;
 
-	if (sz <= Bucketmax)
+	if (sz <= Bktmax)
 		bkt = &buckets[bktnum(sz)]
 		-> bktalloc(bkt)
 	else
@@ -130,7 +148,7 @@ const bytealloc = {sz
 const bytefree = {m, sz
 	var bkt
 
-	if (sz < Bucketmax)
+	if (sz < Bktmax)
 		bkt = &buckets[bktnum(sz)]
 		bktfree(bkt, m)
 	else
@@ -258,7 +276,7 @@ const bktnum = {sz
 	var bktsz
 
 	bktsz = Align
-	for i = 0; bktsz <= Bucketmax; i++
+	for i = 0; bktsz <= Bktmax; i++
 		if bktsz >= sz
 			-> i
 		;;
