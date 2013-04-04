@@ -15,6 +15,7 @@ use "extremum.use"
 	  %w	- A 16 bit integer
 	  %i	- A 32 bit integer
 	  %l	- A 64 bit integer
+	  %z	- A size
 	  %p	- A pointer
 	  %c	- A char
 */
@@ -90,6 +91,7 @@ const bfmtv = {buf, fmt, ap
 	var w_val : int16
 	var i_val : int32
 	var l_val : int64
+	var z_val : size
 	var p_val : byte#
         var c_val : char
 
@@ -119,6 +121,10 @@ const bfmtv = {buf, fmt, ap
 			'l':
 				(l_val, ap) = vanext(ap)
 				n += intfmt(buf[n:], l_val castto(int64), 10)
+				;;
+			'z':
+				(z_val, ap) = vanext(ap)
+				n += intfmt(buf[n:], z_val castto(int64), 10)
 				;;
 			'p':
 				(p_val, ap) = vanext(ap)

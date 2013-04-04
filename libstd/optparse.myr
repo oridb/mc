@@ -1,7 +1,9 @@
 use "alloc.use"
 use "die.use"
 use "extremum.use"
+use "fmt.use"
 use "slappend.use"
+use "sys.use"
 use "types.use"
 use "utf.use"
 
@@ -12,14 +14,14 @@ pkg std =
 		args	: byte[:][:]
 
 		/* state */
+		done	: bool	/* if we've seen '--', everything's an arg */
 		argidx	: size
 		curarg	: byte[:]
 		arglist	: byte[:][:]
 	;;
 
 	const optinit	: (opts	: byte[:], args : byte[:][:] -> optctx#)
-	const optnext	: (ctx : optctx# -> char)
-	const optarg	: (ctx : optctx# -> byte[:])
+	const optnext	: (ctx : optctx# -> [char, byte[:]])
 ;;
 
 const optinit = {opts, args
@@ -28,49 +30,83 @@ const optinit = {opts, args
 	ctx = alloc()
 	ctx.opts = opts
 	ctx.args = args
+
+	ctx.done = false
 	ctx.argidx = 0
 	ctx.arglist = [][:]
 	ctx.curarg = [][:]
-	next(ctx)
 	-> ctx
 }
 
 const optnext = {ctx
 	var c
+	var arg
+	var valid
+	var tryarg
+	var needarg
 
+	/* end of arguments */
 	if !ctx.curarg.len
 		if !next(ctx)
-			-> Badchar
+			-> (Badchar, "")
 		;;
 	;;
+
 	(c, ctx.curarg) = striter(ctx.curarg)
-	-> c
-}
 
-const optarg = {ctx
-	var arg
-
-	if ctx.curarg.len > 0
+	(valid, tryarg, needarg) = optinfo(ctx, c)
+	if !valid
+		put("Unexpected argument %c\n", c)
+		exit(1)
+	elif tryarg && ctx.curarg.len > 0
 		arg = ctx.curarg
 		ctx.curarg = ctx.curarg[ctx.curarg.len:]
-	elif ctx.argidx > ctx.args.len
+	elif tryarg && ctx.argidx < (ctx.args.len - 1)
 		arg = ctx.args[ctx.argidx + 1]
 		ctx.argidx++
 		next(ctx)
+	elif needarg
+		put("Expected argument for %c\n", c)
+		exit(1)
 	else
-		die("Arg needed")
+		arg = ""
 	;;
-	-> arg
+
+	-> (c, arg)
+}
+
+const optinfo = {ctx, arg
+	var s
+	var c
+
+	s = ctx.opts
+	while s.len != 0
+		(c, s) = striter(s)
+		if c == arg
+			(c, s) = striter(s)
+			/* mandatory arg */
+			if c == ':'
+				-> (true, true, true)
+			/* optional arg */
+			elif c == '?'
+				-> (true, true, false)
+			/* no arg */
+			else
+				-> (true, false, false)
+			;;
+		;;
+	;;
+	-> (false, false)
 }
 
 const next = {ctx
 	var i
 
 	for i = ctx.argidx + 1; i < ctx.args.len; i++
-		if decode(ctx.args[i]) == '-'
+		if !ctx.done && decode(ctx.args[i]) == '-'
 			goto foundopt
 		else
-			ctx.args = slappend(ctx.args, ctx.args[i])
+			ctx.arglist = slappend(ctx.arglist, ctx.args[i])
 		;;
 	;;
 	-> false

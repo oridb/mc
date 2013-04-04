@@ -6,20 +6,26 @@ const main = {args : byte[:][:]
 	var i
         var opt
         var o
+	var a
 
 	std.put("args.len = %i\n", args.len)
 	for i = 0; i < args.len; i++
 		std.put("args[%i] = %s\n", i, args[i])
 	;;
 
-        opt = std.optinit("asdf:", args)
-        while (o = std.optnext(opt)) != std.Badchar
-        	std.put("option %c\n", o)
-		match o
-		'a':	std.put("\targ=%s\n", std.optarg(opt));;
-		'b':	std.put("\targ=%s\n", std.optarg(opt));;
+        opt = std.optinit("asdf:g?", args)
+	std.put("arglen = %i\n", opt.args.len)
+        while true
+		(o, a) = std.optnext(opt)
+		if o == std.Badchar
+			goto done
 		;;
+		std.put("option %c, arg = %s\n", o, a)
         ;;
+:done
+	for i = 0; i < opt.arglist.len; i++
+		std.put("arg %s\n", opt.arglist[i])
+	;;
 
         
 	/* try the byte allocator for large variety of sizes. */
