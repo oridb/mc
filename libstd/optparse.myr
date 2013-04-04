@@ -1,7 +1,9 @@
-use "types.use"
 use "alloc.use"
-use "utf.use"
 use "die.use"
+use "extremum.use"
+use "slappend.use"
+use "types.use"
+use "utf.use"
 
 pkg std =
 	type optctx = struct
@@ -28,7 +30,8 @@ const optinit = {opts, args
 	ctx.args = args
 	ctx.argidx = 0
 	ctx.arglist = [][:]
-	nextopt(ctx)
+	ctx.curarg = [][:]
+	next(ctx)
 	-> ctx
 }
 
@@ -36,7 +39,7 @@ const optnext = {ctx
 	var c
 
 	if !ctx.curarg.len
-		if !nextopt(ctx)
+		if !next(ctx)
 			-> Badchar
 		;;
 	;;
@@ -53,22 +56,21 @@ const optarg = {ctx
 	elif ctx.argidx > ctx.args.len
 		arg = ctx.args[ctx.argidx + 1]
 		ctx.argidx++
-		nextopt(ctx)
+		next(ctx)
 	else
 		die("Arg needed")
 	;;
 	-> arg
 }
 
-const nextopt = {ctx
+const next = {ctx
 	var i
 
 	for i = ctx.argidx + 1; i < ctx.args.len; i++
 		if decode(ctx.args[i]) == '-'
 			goto foundopt
 		else
-			/* FIXME: implement slappend */
-			/* ctx.args = slappend(ctx.args, ctx.args[i]) */
+			ctx.args = slappend(ctx.args, ctx.args[i])
 		;;
 	;;
 	-> false
