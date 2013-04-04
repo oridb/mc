@@ -18,6 +18,7 @@ std$cstring:
 	movq %rsp,%rax          /* ret val */
 	movq 16(%rsp),%rcx	/* len */
 
+        subq $16,%rsp           /* compensate for args */
 	subq %rcx,%rsp          /* get stack */
         subq $1,%rsp            /* nul */
         andq $(~15),%rsp        /* align */
