@@ -14,18 +14,19 @@ _std$cstring:
 std$cstring:
 	movq (%rsp),%r15	/* ret addr */
 	movq 8(%rsp),%rsi	/* src */
-        movq %rsp,%rdi          /* dest */
+	movq %rsp,%rdi          /* dest */
 	movq %rsp,%rax          /* ret val */
 	movq 16(%rsp),%rcx	/* len */
-
+	
+	subq $16,%rsp		/* "unpop" the args */
 	subq %rcx,%rsp          /* get stack */
-        subq $1,%rsp            /* nul */
-        andq $(~15),%rsp        /* align */
-
+	subq $1,%rsp            /* nul */
+	andq $(~15),%rsp        /* align */
+	
 	cld
 	rep movsb
-        movb $0,(%rdi)          /* terminate */
-
+	movb $0,(%rdi)          /* terminate */
+	
 	pushq %r15              /* ret addr */
 	ret
 
