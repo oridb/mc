@@ -39,8 +39,9 @@ int loaduse(FILE *f, Stab *st)
     char *pkg;
     Stab *s;
     Node *dcl;
-    Type *t;
+    Type *t, *u;
     int c;
+    size_t i;
 
     if (fgetc(f) != 'U')
         return 0;
@@ -72,6 +73,12 @@ int loaduse(FILE *f, Stab *st)
                 t = tyunpickle(f);
                 assert(t->type == Tyname || t->type == Tygeneric);
                 puttype(s, t->name, t);
+                u = tybase(t);
+                if (u->type == Tyunion)  {
+                    for (i = 0; i < u->nmemb; i++)
+                        putucon(s, u->udecls[i]);
+                }
+
                 break;
             case EOF:
                 break;
