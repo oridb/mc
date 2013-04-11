@@ -9,35 +9,39 @@ use "utf.use"
 
 pkg std =
 	type optctx = struct
-		/* data passed in */
-		opts	: byte[:]
+		/* public variables */
 		args	: byte[:][:]
+
+		/* data passed in */
+		optstr	: byte[:]
+		optargs	: byte[:][:]
 
 		/* state */
 		optdone	: bool	/* if we've seen '--', everything's an arg */
-		done	: bool	/* if we've processed all the args */
+		finished	: bool	/* if we've processed all theoptargs */
 		argidx	: size
 		curarg	: byte[:]
-		arglist	: byte[:][:]
 	;;
 
-	const optinit	: (opts	: byte[:], args : byte[:][:] -> optctx#)
+	const optinit	: (optstr: byte[:],optargs : byte[:][:] -> optctx#)
 	const optnext	: (ctx : optctx# -> [char, byte[:]])
 	const optdone	: (ctx : optctx# -> bool)
 ;;
 
-const optinit = {opts, args
+const optinit = {optstr, optargs
 	var ctx
 
 	ctx = alloc()
-	ctx.opts = opts
-	ctx.args = args
+	ctx.optstr= optstr
+	ctx.optargs =optargs
 
 	ctx.optdone = false
-	ctx.done = false
+	ctx.finished = false
 	ctx.argidx = 0
-	ctx.arglist = [][:]
 	ctx.curarg = [][:]
+
+	ctx.args = [][:]
+
 	next(ctx)
 	-> ctx
 }
@@ -58,8 +62,8 @@ const optnext = {ctx
 	elif tryarg && ctx.curarg.len > 0
 		arg = ctx.curarg
 		ctx.curarg = ctx.curarg[ctx.curarg.len:]
-	elif tryarg && ctx.argidx < (ctx.args.len - 1)
-		arg = ctx.args[ctx.argidx + 1]
+	elif tryarg && ctx.argidx < (ctx.optargs.len - 1)
+		arg = ctx.optargs[ctx.argidx + 1]
 		ctx.argidx++
 		next(ctx)
 	elif needarg
@@ -77,14 +81,14 @@ const optnext = {ctx
 }
 
 const optdone = {ctx
-	-> !ctx.curarg.len && ctx.done
+	-> !ctx.curarg.len && ctx.finished
 }
 
 const optinfo = {ctx, arg
 	var s
 	var c
 
-	s = ctx.opts
+	s = ctx.optstr
 	while s.len != 0
 		(c, s) = striter(s)
 		if c == arg
@@ -107,17 +111,17 @@ const optinfo = {ctx, arg
 const next = {ctx
 	var i
 
-	for i = ctx.argidx + 1; i < ctx.args.len; i++
-		if !ctx.optdone && decode(ctx.args[i]) == '-'
+	for i = ctx.argidx + 1; i < ctx.optargs.len; i++
+		if !ctx.optdone && decode(ctx.optargs[i]) == '-'
 			goto foundopt
 		else
-			ctx.arglist = slappend(ctx.arglist, ctx.args[i])
+			ctx.args = slappend(ctx.args, ctx.optargs[i])
 		;;
 	;;
-	ctx.done = true
+	ctx.finished = true
 	-> false
 :foundopt
 	ctx.argidx = i
-	ctx.curarg = ctx.args[i][1:]
+	ctx.curarg = ctx.optargs[i][1:]
 	-> true
 }
