@@ -1252,6 +1252,7 @@ static void stabsub(Inferstate *st, Stab *s)
     for (i = 0; i < n; i++) {
         t = tf(st, gettype(s, k[i]));
         updatetype(s, k[i], t);
+        tyfix(st, k[i], t);
     }
     free(k);
 
