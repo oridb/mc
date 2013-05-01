@@ -238,6 +238,7 @@ static Node *specializenode(Node *n, Htab *tsmap)
                 case Lbool:     r->lit.boolval = n->lit.boolval;     break;
                 case Lfunc:     r->lit.fnval = specializenode(n->lit.fnval, tsmap);       break;
                 case Lseq:
+                    r->lit.seqval = xalloc(n->lit.nelt * sizeof(Node*));
                     for (i = 0; i < n->lit.nelt; i++)
                         r->lit.seqval[i] = specializenode(n->lit.seqval[i], tsmap);
                     break;
