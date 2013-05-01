@@ -39,9 +39,9 @@ int loaduse(FILE *f, Stab *st)
     char *pkg;
     Stab *s;
     Node *dcl;
-    Type *t;
-    Node *n;
+    Type *t, *u;
     int c;
+    size_t i;
 
     if (fgetc(f) != 'U')
         return 0;
@@ -70,9 +70,15 @@ int loaduse(FILE *f, Stab *st)
                 putdcl(s, dcl);
                 break;
             case 'T':
-                n = mkname(-1, rdstr(f));
                 t = tyunpickle(f);
-                puttype(s, n, t);
+                assert(t->type == Tyname || t->type == Tygeneric);
+                puttype(s, t->name, t);
+                u = tybase(t);
+                if (u->type == Tyunion)  {
+                    for (i = 0; i < u->nmemb; i++)
+                        putucon(s, u->udecls[i]);
+                }
+
                 break;
             case EOF:
                 break;
@@ -113,7 +119,7 @@ void readuse(Node *use, Stab *st)
 
 /* Usefile format:
  * U<pkgname>
- * T<typename><pickled-type>
+ * T<pickled-type>
  * D<picled-decl>
  * G<pickled-decl><pickled-initializer>
  * Z
@@ -136,8 +142,8 @@ void writeuse(FILE *f, Node *file)
     k = htkeys(st->ty, &n);
     for (i = 0; i < n; i++) {
         t = gettype(st, k[i]);
+        assert(t->type == Tyname || t->type == Tygeneric);
         wrbyte(f, 'T');
-        wrstr(f, namestr(k[i]));
         typickle(t, f);
     }
     free(k);

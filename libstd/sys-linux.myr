@@ -371,7 +371,7 @@ pkg std =
 	extern const syscall : (sc:scno, args:... -> int64)
 	extern const cstring : (str : byte[:] -> byte#)
 
-	const exit	: (status:int64 -> void)
+	const exit	: (status:int -> void)
 	const getpid	: ( -> int64)
 	const kill	: (pid:int64, sig:int64 -> int64)
 	const open	: (path:byte[:], opts:fdopt, mode:int64 -> int64)
@@ -385,7 +385,7 @@ pkg std =
 	const mmap	: (addr:byte#, len:size, prot:mprot, flags:mopt, fd:int64, off:off -> byte#)
 ;;
 
-const exit	= {status;		syscall(Sysexit, 1)}
+const exit	= {status;		syscall(Sysexit, status castto(int64))}
 const getpid	= {;			-> syscall(Sysgetpid, 1)}
 const kill	= {pid, sig;		-> syscall(Syskill, pid, sig)}
 const open	= {path, opts, mode;	-> syscall(Sysopen, cstring(path), opts, mode)}

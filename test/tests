@@ -80,6 +80,7 @@ B infer-named   E       99
 B helloworld	P	Hello-世界
 B catfile	P	Hello-世界
 B encodechar	P	1世界äa
+B exportcycle   E       0
 F declmismatch
 F infermismatch
 # F usedef      ## BUGGERED
