@@ -6,7 +6,6 @@ OBJ=bitset.o \
     infer.o \
     names.o \
     node.o \
-    pickle.o \
     specialize.o \
     stab.o \
     tok.o \

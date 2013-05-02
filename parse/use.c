@@ -11,6 +11,528 @@
 
 #include "parse.h"
 
+static void wrtype(FILE *fd, Type *val);
+static Type *rdtype(FILE *fd);
+static void wrstab(FILE *fd, Stab *val);
+static Stab *rdstab(FILE *fd);
+static void wrsym(FILE *fd, Node *val);
+static Node *rdsym(FILE *fd);
+
+/* Outputs a symbol table to file in a way that can be
+ * read back usefully. Only writes declarations, types
+ * and sub-namespaces. Captured variables are ommitted. */
+static void wrstab(FILE *fd, Stab *val)
+{
+    size_t n, i;
+    void **keys;
+
+    pickle(val->name, fd);
+
+    /* write decls */
+    keys = htkeys(val->dcl, &n);
+    wrint(fd, n);
+    for (i = 0; i < n; i++)
+        wrsym(fd, getdcl(val, keys[i]));
+    free(keys);
+
+    /* write types */
+    keys = htkeys(val->ty, &n);
+    wrint(fd, n);
+    for (i = 0; i < n; i++) {
+        pickle(keys[i], fd); /* name */
+        wrtype(fd, gettype(val, keys[i])); /* type */
+    }
+    free(keys);
+
+    /* write stabs */
+    keys = htkeys(val->ns, &n);
+    wrint(fd, n);
+    for (i = 0; i < n; i++)
+        wrstab(fd, getns(val, keys[i]));
+    free(keys);
+}
+
+/* Reads a symbol table from file. The converse
+ * of wrstab. */
+static Stab *rdstab(FILE *fd)
+{
+    Stab *st;
+    Type *ty;
+    Node *nm;
+    int n;
+    int i;
+
+    /* read dcls */
+    st = mkstab();
+    st->name = unpickle(fd);
+    n = rdint(fd);
+    for (i = 0; i < n; i++)
+         putdcl(st, rdsym(fd));
+
+    /* read types */
+    n = rdint(fd);
+    for (i = 0; i < n; i++) {
+        nm = unpickle(fd);
+        ty = rdtype(fd);
+        puttype(st, nm, ty);
+    }
+
+    /* read stabs */
+    n = rdint(fd);
+    for (i = 0; i < n; i++)
+        putns(st, rdstab(fd));
+
+    return st;
+}
+
+static void wrucon(FILE *fd, Ucon *uc)
+{
+    wrint(fd, uc->line);
+    wrint(fd, uc->id);
+    pickle(uc->name, fd);
+    wrbool(fd, uc->etype != NULL);
+    if (uc->etype)
+      wrtype(fd, uc->etype);
+}
+
+static Ucon *rducon(FILE *fd, Type *ut)
+{
+    Type *et;
+    Node *name;
+    Ucon *uc;
+    size_t id;
+    int line;
+
+    et = NULL;
+    line = rdint(fd);
+    id = rdint(fd);
+    name = unpickle(fd);
+    if (rdbool(fd))
+      et = rdtype(fd);
+    uc = mkucon(line, name, ut, et);
+    uc->id = id;
+    return uc;
+}
+
+/* Writes the name and type of a variable,
+ * but only writes its intializer for things
+ * we want to inline cross-file (currently,
+ * the only cross-file inline is generics) */
+static void wrsym(FILE *fd, Node *val)
+{
+    /* sym */
+    wrint(fd, val->line);
+    pickle(val->decl.name, fd);
+    wrtype(fd, val->decl.type);
+
+    /* symflags */
+    wrbool(fd, val->decl.isconst);
+    wrbool(fd, val->decl.isgeneric);
+    wrbool(fd, val->decl.isextern);
+
+    if (val->decl.isgeneric)
+        pickle(val->decl.init, fd);
+}
+
+static Node *rdsym(FILE *fd)
+{
+    int line;
+    Node *name;
+    Type *type;
+    Node *n;
+
+    line = rdint(fd);
+    name = unpickle(fd);
+    type = rdtype(fd);
+    n = mkdecl(line, name, type);
+    
+    n->decl.isconst = rdbool(fd);
+    n->decl.isgeneric = rdbool(fd);
+    n->decl.isextern = rdbool(fd);
+
+
+    if (n->decl.isgeneric)
+        n->decl.init = unpickle(fd);
+    return n;
+}
+
+Type *tyunpickle(FILE *fd)
+{
+    return rdtype(fd);
+}
+
+Node *symunpickle(FILE *fd)
+{
+    return rdsym(fd);
+}
+
+/* Writes types to a file. Errors on
+ * internal only types like Tyvar that
+ * will not be meaningful in another file */
+static void wrtype(FILE *fd, Type *ty)
+{
+    size_t i;
+
+    if (!ty) {
+        die("trying to pickle null type\n");
+        return;
+    }
+    wrbyte(fd, ty->type);
+    /* tid is generated; don't write */
+    /* cstrs are left out for now: FIXME */
+    wrint(fd, ty->nsub);
+    switch (ty->type) {
+        case Tyunres:
+            pickle(ty->name, fd);
+            break;
+        case Typaram:
+            wrstr(fd, ty->pname);
+            break;
+        case Tystruct:
+            wrint(fd, ty->nmemb);
+            for (i = 0; i < ty->nmemb; i++)
+                pickle(ty->sdecls[i], fd);
+            break;
+        case Tyunion:
+            wrint(fd, ty->nmemb);
+            for (i = 0; i < ty->nmemb; i++)
+                wrucon(fd, ty->udecls[i]);
+            break;
+        case Tyarray:
+            wrtype(fd, ty->sub[0]);
+            pickle(ty->asize, fd);
+            break;
+        case Tyslice:
+            wrtype(fd, ty->sub[0]);
+            break;
+        case Tyvar:
+            die("Attempting to pickle %s. This will not work.\n", tystr(ty));
+            break;
+        case Tyname:
+            pickle(ty->name, fd);
+            wrtype(fd, ty->sub[0]);
+            break;
+        default:
+            for (i = 0; i < ty->nsub; i++)
+                wrtype(fd, ty->sub[i]);
+            break;
+    }
+}
+
+/* Writes types to a file. Errors on
+ * internal only types like Tyvar that
+ * will not be meaningful in another file */
+static Type *rdtype(FILE *fd)
+{
+    Type *ty;
+    Ty t;
+    size_t i;
+
+    t = rdbyte(fd);
+    ty = mktype(-1, t);
+    /* tid is generated; don't write */
+    /* cstrs are left out for now: FIXME */
+    ty->nsub = rdint(fd);
+    if (ty->nsub > 0)
+        ty->sub = xalloc(ty->nsub * sizeof(Type*));
+    switch (ty->type) {
+        case Tyunres:
+            ty->name = unpickle(fd);
+            break;
+        case Typaram:
+            ty->pname = rdstr(fd);
+            break;
+        case Tystruct:
+            ty->nmemb = rdint(fd);
+            ty->sdecls = xalloc(ty->nmemb * sizeof(Node*));
+            for (i = 0; i < ty->nmemb; i++)
+                ty->sdecls[i] = unpickle(fd);
+            break;
+        case Tyunion:
+            ty->nmemb = rdint(fd);
+            ty->udecls = xalloc(ty->nmemb * sizeof(Node*));
+            for (i = 0; i < ty->nmemb; i++)
+                ty->udecls[i] = rducon(fd, ty);
+            break;
+        case Tyarray:
+            ty->sub[0] = rdtype(fd);
+            ty->asize = unpickle(fd);
+            break;
+        case Tyslice:
+            ty->sub[0] = rdtype(fd);
+            break;
+        case Tyname:
+            ty->name = unpickle(fd);
+            ty->sub[0] = rdtype(fd);
+            break;
+        default:
+            for (i = 0; i < ty->nsub; i++)
+                ty->sub[i] = rdtype(fd);
+            break;
+    }
+    return ty;
+}
+
+void typickle(Type *t, FILE *fd)
+{
+    wrtype(fd, t);
+}
+
+void sympickle(Node *s, FILE *fd)
+{
+    wrsym(fd, s);
+}
+
+/* Pickles a node to a file.  The format
+ * is more or less equivalen to to
+ * simplest serialization of the
+ * in-memory representation. Minimal
+ * checking is done, so a bad type can
+ * crash the compiler */
+void pickle(Node *n, FILE *fd)
+{
+    size_t i;
+
+    if (!n) {
+        wrbyte(fd, Nnone);
+        return;
+    }
+    wrbyte(fd, n->type);
+    wrint(fd, n->line);
+    switch (n->type) {
+        case Nfile:
+            wrstr(fd, n->file.name);
+            wrint(fd, n->file.nuses);
+            for (i = 0; i < n->file.nuses; i++)
+                pickle(n->file.uses[i], fd);
+            wrint(fd, n->file.nstmts);
+            for (i = 0; i < n->file.nstmts; i++)
+                pickle(n->file.stmts[i], fd);
+            wrstab(fd, n->file.globls);
+            wrstab(fd, n->file.exports);
+            break;
+
+        case Nexpr:
+            wrbyte(fd, n->expr.op);
+            wrtype(fd, n->expr.type);
+            wrbool(fd, n->expr.isconst);
+            wrint(fd, n->expr.nargs);
+            for (i = 0; i < n->expr.nargs; i++)
+                pickle(n->expr.args[i], fd);
+            break;
+        case Nname:
+            wrbool(fd, n->name.ns != NULL);
+            if (n->name.ns) {
+                wrstr(fd, n->name.ns);
+            }
+            wrstr(fd, n->name.name);
+            break;
+        case Nuse:
+            wrbool(fd, n->use.islocal);
+            wrstr(fd, n->use.name);
+            break;
+        case Nlit:
+            wrbyte(fd, n->lit.littype);
+            wrtype(fd, n->lit.type);
+            wrint(fd, n->lit.nelt);
+            switch (n->lit.littype) {
+                case Lchr:      wrint(fd, n->lit.chrval);       break;
+                case Lint:      wrint(fd, n->lit.intval);       break;
+                case Lflt:      wrflt(fd, n->lit.fltval);       break;
+                case Lstr:      wrstr(fd, n->lit.strval);       break;
+                case Llbl:      wrstr(fd, n->lit.lblval);       break;
+                case Lbool:     wrbool(fd, n->lit.boolval);     break;
+                case Lfunc:     pickle(n->lit.fnval, fd);       break;
+                case Lseq:
+                    for (i = 0; i < n->lit.nelt; i++)
+                        pickle(n->lit.seqval[i], fd);
+                    break;
+            }
+            break;
+        case Nloopstmt:
+            pickle(n->loopstmt.init, fd);
+            pickle(n->loopstmt.cond, fd);
+            pickle(n->loopstmt.step, fd);
+            pickle(n->loopstmt.body, fd);
+            break;
+        case Nmatchstmt:
+            pickle(n->matchstmt.val, fd);
+            wrint(fd, n->matchstmt.nmatches);
+            for (i = 0; i < n->matchstmt.nmatches; i++)
+                pickle(n->matchstmt.matches[i], fd);
+            break;
+        case Nmatch:
+            pickle(n->match.pat, fd);
+            pickle(n->match.block, fd);
+            break;
+        case Nifstmt:
+            pickle(n->ifstmt.cond, fd);
+            pickle(n->ifstmt.iftrue, fd);
+            pickle(n->ifstmt.iffalse, fd);
+            break;
+        case Nblock:
+            wrstab(fd, n->block.scope);
+            wrint(fd, n->block.nstmts);
+            for (i = 0; i < n->block.nstmts; i++)
+                pickle(n->block.stmts[i], fd);
+            break;
+        case Ndecl:
+            /* sym */
+            pickle(n->decl.name, fd);
+            wrtype(fd, n->decl.type);
+
+            /* symflags */
+            wrint(fd, n->decl.isconst);
+            wrint(fd, n->decl.isgeneric);
+            wrint(fd, n->decl.isextern);
+
+            /* init */
+            pickle(n->decl.init, fd);
+            break;
+        case Nfunc:
+            wrtype(fd, n->func.type);
+            wrstab(fd, n->func.scope);
+            wrint(fd, n->func.nargs);
+            for (i = 0; i < n->func.nargs; i++)
+                pickle(n->func.args[i], fd);
+            pickle(n->func.body, fd);
+            break;
+        case Nnone:
+            die("Nnone should not be seen as node type!");
+            break;
+    }
+}
+
+/* Unpickles a node from a file. Minimal checking
+ * is done. Specifically, no checks are done for
+ * sane arities, a bad file can crash the compiler */
+Node *unpickle(FILE *fd)
+{
+    size_t i;
+    Ntype type;
+    Node *n;
+
+    type = rdbyte(fd);
+    if (type == Nnone)
+        return NULL;
+    n = mknode(-1, type);
+    n->line = rdint(fd);
+    switch (n->type) {
+        case Nfile:
+            n->file.name = rdstr(fd);
+            n->file.nuses = rdint(fd);
+            n->file.uses = xalloc(sizeof(Node*)*n->file.nuses);
+            for (i = 0; i < n->file.nuses; i++)
+                n->file.uses[i] = unpickle(fd);
+            n->file.nstmts = rdint(fd);
+            n->file.stmts = xalloc(sizeof(Node*)*n->file.nstmts);
+            for (i = 0; i < n->file.nstmts; i++)
+                n->file.stmts[i] = unpickle(fd);
+            n->file.globls = rdstab(fd);
+            n->file.exports = rdstab(fd);
+            break;
+
+        case Nexpr:
+            n->expr.op = rdbyte(fd);
+            n->expr.type = rdtype(fd);
+            n->expr.isconst = rdbool(fd);
+            n->expr.nargs = rdint(fd);
+            n->expr.args = xalloc(sizeof(Node *)*n->expr.nargs);
+            for (i = 0; i < n->expr.nargs; i++)
+                n->expr.args[i] = unpickle(fd);
+            break;
+        case Nname:
+            if (rdbool(fd))
+                n->name.ns = rdstr(fd);
+            n->name.name = rdstr(fd);
+            break;
+        case Nuse:
+            n->use.islocal = rdbool(fd);
+            n->use.name = rdstr(fd);
+            break;
+        case Nlit:
+            n->lit.littype = rdbyte(fd);
+            n->lit.type = rdtype(fd);
+            n->lit.nelt = rdint(fd);
+            switch (n->lit.littype) {
+                case Lchr:      n->lit.chrval = rdint(fd);       break;
+                case Lint:      n->lit.intval = rdint(fd);       break;
+                case Lflt:      n->lit.fltval = rdflt(fd);       break;
+                case Lstr:      n->lit.strval = rdstr(fd);       break;
+                case Llbl:      n->lit.lblval = rdstr(fd);       break;
+                case Lbool:     n->lit.boolval = rdbool(fd);     break;
+                case Lfunc:     n->lit.fnval = unpickle(fd);       break;
+                case Lseq:
+                    for (i = 0; i < n->lit.nelt; i++)
+                        n->lit.seqval[i] = unpickle(fd);
+                    break;
+            }
+            break;
+        case Nloopstmt:
+            n->loopstmt.init = unpickle(fd);
+            n->loopstmt.cond = unpickle(fd);
+            n->loopstmt.step = unpickle(fd);
+            n->loopstmt.body = unpickle(fd);
+            break;
+        case Nmatchstmt:
+            n->matchstmt.val = unpickle(fd);
+            n->matchstmt.nmatches = rdint(fd);
+            for (i = 0; i < n->matchstmt.nmatches; i++)
+                n->matchstmt.matches[i] = unpickle(fd);
+            break;
+        case Nmatch:
+            n->match.pat = unpickle(fd);
+            n->match.block = unpickle(fd);
+            break;
+        case Nifstmt:
+            n->ifstmt.cond = unpickle(fd);
+            n->ifstmt.iftrue = unpickle(fd);
+            n->ifstmt.iffalse = unpickle(fd);
+            break;
+        case Nblock:
+            n->block.scope = rdstab(fd);
+            n->block.nstmts = rdint(fd);
+            n->block.stmts = xalloc(sizeof(Node *)*n->block.nstmts);
+            n->block.scope->super = curstab();
+            pushstab(n->func.scope->super);
+            for (i = 0; i < n->block.nstmts; i++)
+                n->block.stmts[i] = unpickle(fd);
+            popstab();
+            break;
+        case Ndecl:
+            n->decl.did = maxdid++; /* unique within file */
+            /* sym */
+            n->decl.name = unpickle(fd);
+            n->decl.type = rdtype(fd);
+
+            /* symflags */
+            n->decl.isconst = rdint(fd);
+            n->decl.isgeneric = rdint(fd);
+            n->decl.isextern = rdint(fd);
+
+            /* init */
+            n->decl.init = unpickle(fd);
+            lappend(&decls, &ndecls, n);
+            break;
+        case Nfunc:
+            n->func.type = rdtype(fd);
+            n->func.scope = rdstab(fd);
+            n->func.nargs = rdint(fd);
+            n->func.args = xalloc(sizeof(Node *)*n->func.nargs);
+            n->func.scope->super = curstab();
+            pushstab(n->func.scope->super);
+            for (i = 0; i < n->func.nargs; i++)
+                n->func.args[i] = unpickle(fd);
+            n->func.body = unpickle(fd);
+            popstab();
+            break;
+        case Nnone:
+            die("Nnone should not be seen as node type!");
+            break;
+    }
+    return n;
+}
+
 static Stab *findstab(Stab *st, char *pkg)
 {
     Node *n;
