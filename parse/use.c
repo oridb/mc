@@ -17,6 +17,8 @@ static void wrstab(FILE *fd, Stab *val);
 static Stab *rdstab(FILE *fd);
 static void wrsym(FILE *fd, Node *val);
 static Node *rdsym(FILE *fd);
+static void pickle(Node *n, FILE *fd);
+static Node *unpickle(FILE *fd);
 
 /* Outputs a symbol table to file in a way that can be
  * read back usefully. Only writes declarations, types
@@ -156,16 +158,6 @@ static Node *rdsym(FILE *fd)
     return n;
 }
 
-Type *tyunpickle(FILE *fd)
-{
-    return rdtype(fd);
-}
-
-Node *symunpickle(FILE *fd)
-{
-    return rdsym(fd);
-}
-
 /* Writes types to a file. Errors on
  * internal only types like Tyvar that
  * will not be meaningful in another file */
@@ -273,23 +265,13 @@ static Type *rdtype(FILE *fd)
     return ty;
 }
 
-void typickle(Type *t, FILE *fd)
-{
-    wrtype(fd, t);
-}
-
-void sympickle(Node *s, FILE *fd)
-{
-    wrsym(fd, s);
-}
-
 /* Pickles a node to a file.  The format
  * is more or less equivalen to to
  * simplest serialization of the
  * in-memory representation. Minimal
  * checking is done, so a bad type can
  * crash the compiler */
-void pickle(Node *n, FILE *fd)
+static void pickle(Node *n, FILE *fd)
 {
     size_t i;
 
@@ -406,7 +388,7 @@ void pickle(Node *n, FILE *fd)
 /* Unpickles a node from a file. Minimal checking
  * is done. Specifically, no checks are done for
  * sane arities, a bad file can crash the compiler */
-Node *unpickle(FILE *fd)
+static Node *unpickle(FILE *fd)
 {
     size_t i;
     Ntype type;
@@ -588,11 +570,11 @@ int loaduse(FILE *f, Stab *st)
         switch(c) {
             case 'G':
             case 'D':
-                dcl = symunpickle(f);
+                dcl = rdsym(f);
                 putdcl(s, dcl);
                 break;
             case 'T':
-                t = tyunpickle(f);
+                t = rdtype(f);
                 assert(t->type == Tyname || t->type == Tygeneric);
                 puttype(s, t->name, t);
                 u = tybase(t);
@@ -666,7 +648,7 @@ void writeuse(FILE *f, Node *file)
         t = gettype(st, k[i]);
         assert(t->type == Tyname || t->type == Tygeneric);
         wrbyte(f, 'T');
-        typickle(t, f);
+        wrtype(f, t);
     }
     free(k);
     k = htkeys(st->dcl, &n);
@@ -676,7 +658,7 @@ void writeuse(FILE *f, Node *file)
             wrbyte(f, 'G');
         else
             wrbyte(f, 'D');
-        sympickle(s, f);
+        wrsym(f, s);
     }
     free(k);
     wrbyte(f, 'Z');

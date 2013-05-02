@@ -435,14 +435,6 @@ void *lpop(void *l, size_t *len);
 void ldel(void *l, size_t *len, size_t idx);
 void lfree(void *l, size_t *len);
 
-/* serialization/usefiles */
-void typickle(Type *t, FILE *fd);
-void sympickle(Node *s, FILE *fd);
-void pickle(Node *n, FILE *fd);
-Type *tyunpickle(FILE *fd);
-Node *symunpickle(FILE *fd);
-Node *unpickle(FILE *fd);
-
 /* serializing/unserializing */
 void be64(vlong v, byte buf[8]);
 vlong host64(byte buf[8]);
