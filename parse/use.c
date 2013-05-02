@@ -538,6 +538,12 @@ static Stab *findstab(Stab *st, char *pkg)
     return s;
 }
 
+/* Usefile format:
+ *     U<pkgname>
+ *     T<pickled-type>
+ *     D<picled-decl>
+ *     G<pickled-decl><pickled-initializer>
+ */
 int loaduse(FILE *f, Stab *st)
 {
     char *pkg;
@@ -566,7 +572,7 @@ int loaduse(FILE *f, Stab *st)
             s = st;
         }
     }
-    while ((c = fgetc(f)) != 'Z') {
+    while ((c = fgetc(f)) != EOF) {
         switch(c) {
             case 'G':
             case 'D':
@@ -621,13 +627,6 @@ void readuse(Node *use, Stab *st)
         die("Could not load usefile %s", use->use.name);
 }
 
-/* Usefile format:
- * U<pkgname>
- * T<pickled-type>
- * D<picled-decl>
- * G<pickled-decl><pickled-initializer>
- * Z
- */
 void writeuse(FILE *f, Node *file)
 {
     Stab *st;
@@ -661,5 +660,4 @@ void writeuse(FILE *f, Node *file)
         wrsym(f, s);
     }
     free(k);
-    wrbyte(f, 'Z');
 }
