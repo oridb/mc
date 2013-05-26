@@ -18,6 +18,7 @@ struct Typename {
 };
 
 Type **tytab = NULL;
+Type **types = NULL;
 size_t ntypes;
 Cstr **cstrtab;
 size_t ncstrs;
@@ -36,6 +37,10 @@ Type *mktype(int line, Ty ty)
     t->line = line;
     tytab = xrealloc(tytab, ntypes*sizeof(Type*));
     tytab[t->tid] = NULL;
+    types = xrealloc(types, ntypes*sizeof(Type*));
+    types[t->tid] = t;
+    if (ty <= Tyvalist) /* the last builtin atomic type */
+        t->vis = Visbuiltin;
 
     for(i = 0; tycstrs[ty][i]; i++)
         setcstr(t, tycstrs[ty][i]);

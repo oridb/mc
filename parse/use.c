@@ -211,6 +211,11 @@ static void wrtype(FILE *fd, Type *ty)
     }
 }
 
+static void typickle(Type *t, FILE *fd)
+{
+    wrtype(fd, t);
+}
+
 /* Writes types to a file. Errors on
  * internal only types like Tyvar that
  * will not be meaningful in another file */
@@ -627,11 +632,55 @@ void readuse(Node *use, Stab *st)
         die("Could not load usefile %s", use->use.name);
 }
 
+void taghidden(Type *t)
+{
+    size_t i;
+
+    if (t->vis != Visintern)
+        return;
+    t->vis = Vishidden;
+    for (i = 0; i < t->nsub; i++) {
+        taghidden(t->sub[i]);
+    }
+    if (t->type == Tystruct) {
+        for (i = 0; i < t->nmemb; i++)
+            taghidden(decltype(t->sdecls[i]));
+    } else if (t->type == Tyunion) {
+        for (i = 0; i < t->nmemb; i++) {
+            if (t->udecls[i]->etype)
+                taghidden(t->udecls[i]->etype);
+        }
+    }
+}
+
+void tagexports(Stab *st)
+{
+    void **k;
+    Type *t;
+    size_t i, j, n;
+
+    k = htkeys(st->ty, &n);
+    for (i = 0; i < n; i++) {
+        t = gettype(st, k[i]);
+        t->vis = Visexport;
+        for (j = 0; j < t->nsub; j++)
+            taghidden(t->sub[j]);
+    }
+    free(k);
+}
+
+
+/* Usefile format:
+ * U<pkgname>
+ * T<pickled-type>
+ * D<picled-decl>
+ * G<pickled-decl><pickled-initializer>
+ * Z
+ */
 void writeuse(FILE *f, Node *file)
 {
     Stab *st;
     void **k;
-    Type *t;
     Node *s;
     size_t i, n;
 
@@ -642,14 +691,14 @@ void writeuse(FILE *f, Node *file)
     else
         wrstr(f, NULL);
 
-    k = htkeys(st->ty, &n);
-    for (i = 0; i < n; i++) {
-        t = gettype(st, k[i]);
-        assert(t->type == Tyname || t->type == Tygeneric);
+    tagexports(st);
+    for (i = 0; i < ntypes; i++) {
+        if (types[i]->vis != Visexport)
+            continue;
+        assert(types[i]->type == Tyname || types[i]->type == Tygeneric);
         wrbyte(f, 'T');
-        wrtype(f, t);
+        typickle(types[i], f);
     }
-    free(k);
     k = htkeys(st->dcl, &n);
     for (i = 0; i < n; i++) {
         s = getdcl(st, k[i]);

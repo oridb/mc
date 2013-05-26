@@ -51,6 +51,13 @@ typedef enum {
 } Tc;
 
 typedef enum {
+    Visintern,
+    Visexport,
+    Vishidden,
+    Visbuiltin,
+} Vis;
+
+typedef enum {
     Dclconst = 1 << 0,
     Dclextern = 1 << 1,
 } Dclflags;
@@ -97,6 +104,7 @@ struct Type {
     Ty type;
     int tid;
     int line;
+    Vis vis;
 
     int resolved;       /* Have we resolved the subtypes? Prevents infinite recursion. */
     int fixed;          /* Have we fixed the subtypes? Prevents infinite recursion. */
@@ -255,6 +263,7 @@ extern Tok *curtok;     /* the last token we tokenized */
 extern int line;        /* the last line number we tokenized */
 extern Node *file;      /* the current file we're compiling */
 extern Type **tytab;    /* type -> type map used by inference. size maintained by type creation code */
+extern Type **types;
 extern size_t ntypes;
 extern Cstr **cstrtab;  /* int -> cstr map */
 extern size_t ncstrs;
