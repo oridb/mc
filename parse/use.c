@@ -629,8 +629,8 @@ int loaduse(FILE *f, Stab *st)
                 htput(tidmap, (void*)tid, t);
                 /* fix up types */
                 if (t->type == Tyname || t->type == Tygeneric)
-                    if (!gettype(st, t->name))
-                        puttype(st, t->name, t);
+                    if (!gettype(s, t->name))
+                        puttype(s, t->name, t);
                 /*
                 u = tybase(t);
                 if (u->type == Tyunion)  {
