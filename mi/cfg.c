@@ -135,14 +135,14 @@ Cfg *mkcfg(Node **nl, size_t nn)
         if (a) {
             targ = htget(cfg->lblmap, lblstr(a));
             if (!targ)
-                die("No bb with label %s", lblstr(a));
+                die("No bb with label \"%s\"", lblstr(a));
             bsput(bb->succ, targ->id);
             bsput(targ->pred, bb->id);
         }
         if (b) {
             targ = htget(cfg->lblmap, lblstr(b));
             if (!targ)
-                die("No bb with label %s", lblstr(b));
+                die("No bb with label \"%s\"", lblstr(b));
             bsput(bb->succ, targ->id);
             bsput(targ->pred, bb->id);
         }
