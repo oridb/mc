@@ -2,7 +2,7 @@ pkg std =
 	generic sleq	: (a : @a[:], b : @a[:] -> bool)
 ;;
 
-generic sleq = {
+generic sleq = {a, b
 	var i
 
 	if a.len != b.len
