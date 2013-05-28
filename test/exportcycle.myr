@@ -1,0 +1,13 @@
+use std
+/* This test checks that cyclic types will be output
+ * by muse. */
+pkg =
+	type list = struct
+		next	: list#
+		val	: int
+	;;
+;;
+
+const main = {
+	-> 0
+}
