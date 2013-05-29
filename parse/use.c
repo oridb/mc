@@ -12,13 +12,21 @@
 #include "parse.h"
 
 static void wrtype(FILE *fd, Type *val);
-static Type *rdtype(FILE *fd);
+static void rdtype(FILE *fd, Type **dest);
 static void wrstab(FILE *fd, Stab *val);
 static Stab *rdstab(FILE *fd);
 static void wrsym(FILE *fd, Node *val);
 static Node *rdsym(FILE *fd);
 static void pickle(Node *n, FILE *fd);
 static Node *unpickle(FILE *fd);
+
+/* type fixup list */
+static Htab *tidmap;    /* map from tid -> type */
+static Type ***typefixdest;  /* list of types we need to replace */
+static size_t ntypefixdest; /* size of replacement list */
+static intptr_t *typefixid;  /* list of types we need to replace */
+static size_t ntypefixid; /* size of replacement list */
+#define Builtinmask (1 << 30)
 
 /* Outputs a symbol table to file in a way that can be
  * read back usefully. Only writes declarations, types
@@ -75,7 +83,7 @@ static Stab *rdstab(FILE *fd)
     n = rdint(fd);
     for (i = 0; i < n; i++) {
         nm = unpickle(fd);
-        ty = rdtype(fd);
+        rdtype(fd, &ty);
         puttype(st, nm, ty);
     }
 
@@ -110,7 +118,7 @@ static Ucon *rducon(FILE *fd, Type *ut)
     id = rdint(fd);
     name = unpickle(fd);
     if (rdbool(fd))
-      et = rdtype(fd);
+      rdtype(fd, &et);
     uc = mkucon(line, name, ut, et);
     uc->id = id;
     return uc;
@@ -140,13 +148,12 @@ static Node *rdsym(FILE *fd)
 {
     int line;
     Node *name;
-    Type *type;
     Node *n;
 
     line = rdint(fd);
     name = unpickle(fd);
-    type = rdtype(fd);
-    n = mkdecl(line, name, type);
+    n = mkdecl(line, name, NULL);
+    rdtype(fd, &n->decl.type);
     
     n->decl.isconst = rdbool(fd);
     n->decl.isgeneric = rdbool(fd);
@@ -160,8 +167,8 @@ static Node *rdsym(FILE *fd)
 
 /* Writes types to a file. Errors on
  * internal only types like Tyvar that
- * will not be meaningful in another file */
-static void wrtype(FILE *fd, Type *ty)
+ * will not be meaningful in another file*/
+static void typickle(FILE *fd, Type *ty)
 {
     size_t i;
 
@@ -211,10 +218,33 @@ static void wrtype(FILE *fd, Type *ty)
     }
 }
 
+static void wrtype(FILE *fd, Type *ty)
+{
+    if (ty->tid >= Builtinmask)
+        die("Type id %d for %s too big", ty->tid, tystr(ty));
+    if (ty->vis == Visbuiltin)
+        wrint(fd, ty->type | Builtinmask);
+    else
+        wrint(fd, ty->tid);
+}
+
+static void rdtype(FILE *fd, Type **dest)
+{
+    intptr_t tid;
+
+    tid = rdint(fd);
+    if (tid & Builtinmask) {
+        *dest = mktype(-1, tid & ~Builtinmask);
+    } else {
+        lappend(&typefixdest, &ntypefixdest, dest);
+        lappend(&typefixid, &ntypefixid, (void*)tid);
+    }
+}
+
 /* Writes types to a file. Errors on
  * internal only types like Tyvar that
  * will not be meaningful in another file */
-static Type *rdtype(FILE *fd)
+static Type *tyunpickle(FILE *fd)
 {
     Type *ty;
     Ty t;
@@ -247,19 +277,19 @@ static Type *rdtype(FILE *fd)
                 ty->udecls[i] = rducon(fd, ty);
             break;
         case Tyarray:
-            ty->sub[0] = rdtype(fd);
+            rdtype(fd, &ty->sub[0]);
             ty->asize = unpickle(fd);
             break;
         case Tyslice:
-            ty->sub[0] = rdtype(fd);
+            rdtype(fd, &ty->sub[0]);
             break;
         case Tyname:
             ty->name = unpickle(fd);
-            ty->sub[0] = rdtype(fd);
+            rdtype(fd, &ty->sub[0]);
             break;
         default:
             for (i = 0; i < ty->nsub; i++)
-                ty->sub[i] = rdtype(fd);
+                rdtype(fd, &ty->sub[i]);
             break;
     }
     return ty;
@@ -372,8 +402,8 @@ static void pickle(Node *n, FILE *fd)
             pickle(n->decl.init, fd);
             break;
         case Nfunc:
-            wrstab(fd, n->func.scope);
             wrtype(fd, n->func.type);
+            wrstab(fd, n->func.scope);
             wrint(fd, n->func.nargs);
             for (i = 0; i < n->func.nargs; i++)
                 pickle(n->func.args[i], fd);
@@ -416,7 +446,7 @@ static Node *unpickle(FILE *fd)
 
         case Nexpr:
             n->expr.op = rdbyte(fd);
-            n->expr.type = rdtype(fd);
+            rdtype(fd, &n->expr.type);
             n->expr.isconst = rdbool(fd);
             n->expr.nargs = rdint(fd);
             n->expr.args = xalloc(sizeof(Node *)*n->expr.nargs);
@@ -434,7 +464,7 @@ static Node *unpickle(FILE *fd)
             break;
         case Nlit:
             n->lit.littype = rdbyte(fd);
-            n->lit.type = rdtype(fd);
+            rdtype(fd, &n->lit.type);
             n->lit.nelt = rdint(fd);
             switch (n->lit.littype) {
                 case Lchr:      n->lit.chrval = rdint(fd);       break;
@@ -485,7 +515,7 @@ static Node *unpickle(FILE *fd)
             n->decl.did = maxdid++; /* unique within file */
             /* sym */
             n->decl.name = unpickle(fd);
-            n->decl.type = rdtype(fd);
+            rdtype(fd, &n->decl.type);
 
             /* symflags */
             n->decl.isconst = rdint(fd);
@@ -497,8 +527,8 @@ static Node *unpickle(FILE *fd)
             lappend(&decls, &ndecls, n);
             break;
         case Nfunc:
+            rdtype(fd, &n->func.type);
             n->func.scope = rdstab(fd);
-            n->func.type = rdtype(fd);
             n->func.nargs = rdint(fd);
             n->func.args = xalloc(sizeof(Node *)*n->func.nargs);
             n->func.scope->super = curstab();
@@ -538,6 +568,19 @@ static Stab *findstab(Stab *st, char *pkg)
     return s;
 }
 
+static void fixmappings(Stab *st)
+{
+    size_t i;
+
+    for (i = 0; i < ntypefixdest; i++) {
+        *typefixdest[i] = htget(tidmap, (void*)typefixid[i]);
+        if (!*typefixdest[i])
+            die("Couldn't find type %d\n", (int)typefixid[i]);
+    }
+    lfree(&typefixdest, &ntypefixdest);
+    lfree(&typefixid, &ntypefixid);
+}
+
 /* Usefile format:
  *     U<pkgname>
  *     T<pickled-type>
@@ -549,9 +592,9 @@ int loaduse(FILE *f, Stab *st)
     char *pkg;
     Stab *s;
     Node *dcl;
-    Type *t, *u;
+    Type *t;
+    intptr_t tid;
     int c;
-    size_t i;
 
     if (fgetc(f) != 'U')
         return 0;
@@ -572,6 +615,7 @@ int loaduse(FILE *f, Stab *st)
             s = st;
         }
     }
+    tidmap = mkht(ptrhash, ptreq);
     while ((c = fgetc(f)) != EOF) {
         switch(c) {
             case 'G':
@@ -580,20 +624,27 @@ int loaduse(FILE *f, Stab *st)
                 putdcl(s, dcl);
                 break;
             case 'T':
-                t = rdtype(f);
-                assert(t->type == Tyname || t->type == Tygeneric);
-                puttype(s, t->name, t);
+                tid = rdint(f);
+                t = tyunpickle(f);
+                htput(tidmap, (void*)tid, t);
+                /* fix up types */
+                if (t->type == Tyname || t->type == Tygeneric)
+                    if (!gettype(s, t->name))
+                        puttype(s, t->name, t);
+                /*
                 u = tybase(t);
                 if (u->type == Tyunion)  {
                     for (i = 0; i < u->nmemb; i++)
                         putucon(s, u->udecls[i]);
                 }
-
+                */
                 break;
             case EOF:
                 break;
         }
     }
+    fixmappings(s);
+    htfree(tidmap);
     return 1;
 }
 
@@ -627,11 +678,131 @@ void readuse(Node *use, Stab *st)
         die("Could not load usefile %s", use->use.name);
 }
 
+static void taghidden(Type *t)
+{
+    size_t i;
+
+    if (t->vis != Visintern)
+        return;
+    t->vis = Vishidden;
+    for (i = 0; i < t->nsub; i++) {
+        taghidden(t->sub[i]);
+    }
+    if (t->type == Tystruct) {
+        for (i = 0; i < t->nmemb; i++)
+            taghidden(decltype(t->sdecls[i]));
+    } else if (t->type == Tyunion) {
+        for (i = 0; i < t->nmemb; i++) {
+            if (t->udecls[i]->etype)
+                taghidden(t->udecls[i]->etype);
+        }
+    }
+}
+
+static void nodetag(Node *n)
+{
+    size_t i;
+
+    if (!n)
+        return;
+    switch (n->type) {
+        case Nblock:
+            for (i = 0; i < n->block.nstmts; i++)
+                nodetag(n->block.stmts[i]);
+            break;
+        case Nifstmt:
+            nodetag(n->ifstmt.cond);
+            nodetag(n->ifstmt.iftrue);
+            nodetag(n->ifstmt.iffalse);
+            break;
+        case Nloopstmt:
+            nodetag(n->loopstmt.init);
+            nodetag(n->loopstmt.cond);
+            nodetag(n->loopstmt.step);
+            nodetag(n->loopstmt.body);
+            break;
+        case Nmatchstmt:
+            nodetag(n->matchstmt.val);
+            for (i = 0; i < n->matchstmt.nmatches; i++)
+                nodetag(n->matchstmt.matches[i]);
+            break;
+        case Nmatch:
+            nodetag(n->match.pat);
+            nodetag(n->match.block);
+            break;
+        case Nexpr:
+            taghidden(n->expr.type);
+            for (i = 0; i < n->expr.nargs; i++)
+                nodetag(n->expr.args[i]);
+            break;
+        case Nlit:
+            taghidden(n->lit.type);
+            switch (n->lit.littype) {
+                case Lfunc: nodetag(n->lit.fnval); break;
+                case Lseq:
+                    for (i = 0; i < n->lit.nelt; i++)
+                        nodetag(n->lit.seqval[i]);
+                    break;
+                default:
+                    break;
+            }
+            break;
+        case Ndecl:
+            taghidden(n->decl.type);
+            /* generics export their body. */
+            if (n->decl.isgeneric)
+                nodetag(n->decl.init);
+            break;
+        case Nfunc:
+            taghidden(n->func.type);
+            for (i = 0; i < n->func.nargs; i++)
+                nodetag(n->func.args[i]);
+            nodetag(n->func.body);
+
+        case Nuse: case Nname:
+            break;
+        case Nfile: case Nnone:
+            die("Invalid node for type export\n");
+            break;
+    }
+}
+
+static void tagexports(Stab *st)
+{
+    void **k;
+    Node *s;
+    Type *t;
+    size_t i, j, n;
+
+    /* get the explicitly exported symbols */
+    k = htkeys(st->ty, &n);
+    for (i = 0; i < n; i++) {
+        t = gettype(st, k[i]);
+        t->vis = Visexport;
+        for (j = 0; j < t->nsub; j++)
+            taghidden(t->sub[j]);
+    }
+    free(k);
+
+    k = htkeys(st->dcl, &n);
+    for (i = 0; i < n; i++) {
+        s = getdcl(st, k[i]);
+        nodetag(s);
+    }
+}
+
+
+/* Usefile format:
+ * U<pkgname>
+ * T<pickled-type>
+ * D<picled-decl>
+ * G<pickled-decl><pickled-initializer>
+ * Z
+ */
 void writeuse(FILE *f, Node *file)
 {
     Stab *st;
     void **k;
-    Type *t;
     Node *s;
     size_t i, n;
 
@@ -642,14 +813,14 @@ void writeuse(FILE *f, Node *file)
     else
         wrstr(f, NULL);
 
-    k = htkeys(st->ty, &n);
-    for (i = 0; i < n; i++) {
-        t = gettype(st, k[i]);
-        assert(t->type == Tyname || t->type == Tygeneric);
-        wrbyte(f, 'T');
-        wrtype(f, t);
+    tagexports(st);
+    for (i = 0; i < ntypes; i++) {
+        if (types[i]->vis == Visexport || types[i]->vis == Vishidden) {
+            wrbyte(f, 'T');
+            wrint(f, types[i]->tid);
+            typickle(f, types[i]);
+        }
     }
-    free(k);
     k = htkeys(st->dcl, &n);
     for (i = 0; i < n; i++) {
         s = getdcl(st, k[i]);
