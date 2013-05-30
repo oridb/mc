@@ -117,9 +117,9 @@ static Ucon *rducon(FILE *fd, Type *ut)
     line = rdint(fd);
     id = rdint(fd);
     name = unpickle(fd);
-    if (rdbool(fd))
-      rdtype(fd, &et);
     uc = mkucon(line, name, ut, et);
+    if (rdbool(fd))
+      rdtype(fd, &uc->etype);
     uc->id = id;
     return uc;
 }
@@ -589,11 +589,12 @@ static void fixmappings(Stab *st)
  */
 int loaduse(FILE *f, Stab *st)
 {
-    char *pkg;
-    Stab *s;
-    Node *dcl;
-    Type *t;
     intptr_t tid;
+    size_t i;
+    char *pkg;
+    Node *dcl;
+    Stab *s;
+    Type *t;
     int c;
 
     if (fgetc(f) != 'U')
@@ -631,13 +632,10 @@ int loaduse(FILE *f, Stab *st)
                 if (t->type == Tyname || t->type == Tygeneric)
                     if (!gettype(s, t->name))
                         puttype(s, t->name, t);
-                /*
-                u = tybase(t);
-                if (u->type == Tyunion)  {
-                    for (i = 0; i < u->nmemb; i++)
-                        putucon(s, u->udecls[i]);
+                if (t->type == Tyunion)  {
+                    for (i = 0; i < t->nmemb; i++)
+                        putucon(s, t->udecls[i]);
                 }
-                */
                 break;
             case EOF:
                 break;
