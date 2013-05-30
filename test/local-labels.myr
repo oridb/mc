@@ -1,0 +1,15 @@
+use std
+
+const main = {
+	goto foo
+	-> 123
+:foo
+	-> bar()
+}
+
+const bar = {
+	goto foo
+	-> 42
+:foo
+	-> 10
+}

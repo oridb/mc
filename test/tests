@@ -82,6 +82,7 @@ B catfile	P	Hello-世界
 B encodechar	P	1世界äa
 B exportcycle   E       0
 B import-type	E	0
+B local-labels	E	10
 F declmismatch
 F infermismatch
 # F usedef      ## BUGGERED
