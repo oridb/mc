@@ -527,7 +527,7 @@ Loc *selexpr(Isel *s, Node *n)
             break;
 
         case Olnot:
-            a = selexpr(s, args[0]);
+            a = inr(s, selexpr(s, args[0]));
             b = locreg(ModeB);
             r = locreg(mode(n));
             g(s, reloptab[exprop(n)].test, a, a, NULL);
