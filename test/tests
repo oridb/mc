@@ -72,7 +72,7 @@ B matchunion_sl	P	foo
 B matchbind	E	8
 B arraylit-ni	E	2
 # B arraylit	E	3       ## BUGGERED
-# B structlit	E	42      ## BUGGERED
+B structlit	E	42
 B tuple		E	42
 B slgrow        E       42
 B tyrec		E	42
