@@ -861,6 +861,8 @@ static void writeblob(FILE *fd, char *p, size_t sz)
     for (i = 0; i < sz; i++) {
         if (i % 60 == 0)
             fprintf(fd, "\t.ascii \"");
+	if (p[i] == '"')
+	    fprintf(fd, "\\");
         if (isprint(p[i]))
             fprintf(fd, "%c", p[i]);
         else
