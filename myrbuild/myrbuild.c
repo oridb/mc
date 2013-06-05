@@ -165,7 +165,7 @@ void getdeps(char *file, char **deps, size_t depsz, size_t *ndeps)
 
     f = fopen(file, "r");
     if (!f)
-        err(1, "Could not open file %s", file);
+        err(1, "Could not open file \"%s\"", file);
 
     i = 0;
     while (fgets(buf, sizeof buf, f)) {
@@ -179,6 +179,7 @@ void getdeps(char *file, char **deps, size_t depsz, size_t *ndeps)
         else
             free(dep);
     }
+    fclose(f);
     *ndeps = i;
 }
 
