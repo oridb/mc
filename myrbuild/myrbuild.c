@@ -139,9 +139,9 @@ int isfresh(char *from, char *to)
     if (stat(from, &from_sb))
         err(1, "Could not find %s", from);
     if (stat(to, &to_sb) == -1)
-        return 1;
+        return 0;
 
-    return from_sb.st_mtime >= to_sb.st_mtime;
+    return from_sb.st_mtime <= to_sb.st_mtime;
 }
 
 int inlist(char **list, size_t sz, char *str)
@@ -190,10 +190,17 @@ void compile(char *file)
     size_t ncmd;
     char *localdep;
     char *deps[512];
-    char buf[1024];
+    char use[1024];
+    char obj[1024];
     char *extra[] = {"-g", "-o", "" /* filename */};
 
     if (hassuffix(file, ".myr")) {
+        swapsuffix(use, sizeof use, file, ".myr", ".use");
+        swapsuffix(obj, sizeof obj, file, ".myr", ".o");
+        if (isfresh(file, use))
+            return;
+        if (isfresh(file, obj))
+            return;
         getdeps(file, deps, 512, &ndeps);
         for (i = 0; i < ndeps; i++) {
             if (isquoted(deps[i])) {
@@ -204,24 +211,18 @@ void compile(char *file)
                 lappend(&libs, &nlibs, deps[i]);
             }
         }
-        swapsuffix(buf, sizeof buf, file, ".myr", ".use");
-        if (isfresh(file, buf)) {
-            gencmd(&cmd, &ncmd, muse, file, NULL, 0);
-            run(cmd);
-        }
+        gencmd(&cmd, &ncmd, muse, file, NULL, 0);
+        run(cmd);
 
-        swapsuffix(buf, sizeof buf, file, ".myr", ".o");
-        if (isfresh(file, buf)) {
-            gencmd(&cmd, &ncmd, mc, file, NULL, 0);
-            run(cmd);
-        }
+        gencmd(&cmd, &ncmd, mc, file, NULL, 0);
+        run(cmd);
     } else if (hassuffix(file, ".s")) {
-        swapsuffix(buf, sizeof buf, file, ".s", ".o");
-        if (isfresh(file, buf)) {
-            extra[2] = buf;
-            gencmd(&cmd, &ncmd, as, file, extra, 3);
-            run(cmd);
-        }
+        swapsuffix(obj, sizeof obj, file, ".s", ".o");
+        if (isfresh(file, obj))
+            return;
+        extra[2] = obj;
+        gencmd(&cmd, &ncmd, as, file, extra, 3);
+        run(cmd);
     }
 }
 
