@@ -8,17 +8,21 @@ const main = {args : byte[:][:]
         var o
 	var a
 
+        ctx = std.optinit("asdf:g?h", args)
+	std.put("arglen = %i\n", ctx.args.len)
+        while !std.optdone(ctx)
+		(o, a) = std.optnext(ctx)
+		if o == 'h'
+			usage()
+		;;
+		std.put("option %c, arg = %s\n", o, a)
+        ;;
+
 	std.put("args.len = %i\n", args.len)
 	for i = 0; i < args.len; i++
 		std.put("args[%i] = %s\n", i, args[i])
 	;;
 
-        ctx = std.optinit("asdf:g?", args)
-	std.put("arglen = %i\n", ctx.args.len)
-        while !std.optdone(ctx)
-		(o, a) = std.optnext(ctx)
-		std.put("option %c, arg = %s\n", o, a)
-        ;;
 	for i = 0; i < ctx.args.len; i++
 		std.put("arg %s\n", ctx.args[i])
 	;;
@@ -85,4 +89,10 @@ const testrng = {
 		std.put("r[%i] = %l\n", i, std.rand32(r) castto(int64))
 	;;
 	std.put("\n");
+}
+
+const usage = {
+	std.put("Pokes a bit at the standard library.\n")
+	std.put("Option string is asdf:g?h\n")
+	std.exit(0)
 }
