@@ -1158,7 +1158,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
                 case Lchr: case Lbool: case Lint: case Llbl:
                     r = n;
                     break;
-                case Lstr: case Lseq: case Lflt:
+                case Lstr: case Lstruct: case Larray: case Lflt:
                     r = simplit(s, n, &s->blobs, &s->nblobs);
                     break;
                 case Lfunc:

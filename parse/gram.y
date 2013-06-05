@@ -132,7 +132,7 @@ static void constrainwith(Type *t, char *str);
 %type <node> exprln retexpr goto expr atomicexpr littok literal asnexpr lorexpr landexpr borexpr
 %type <node> bandexpr cmpexpr unionexpr addexpr mulexpr shiftexpr prefixexpr postfixexpr
 %type <node> funclit seqlit name block stmt label use
-%type <node> decl declbody declcore structelt seqelt tuphead
+%type <node> decl declbody declcore structent arrayelt structelt tuphead
 %type <node> ifstmt forstmt whilestmt matchstmt elifs optexprln optexpr
 %type <node> pat unionpat match
 %type <node> castexpr
@@ -140,7 +140,7 @@ static void constrainwith(Type *t, char *str);
 %type <node> blkbody
 
 %type <nodelist> arglist argdefs params matches
-%type <nodelist> structbody seqbody tupbody tuprest
+%type <nodelist> structbody structelts arrayelts tupbody tuprest
 %type <uconlist> unionbody
 
 %union {
@@ -371,13 +371,13 @@ structdef
         ;
 
 structbody
-        : structelt
+        : structent
             {if ($1) {$$.nl = NULL; $$.nn = 0; lappend(&$$.nl, &$$.nn, $1);}}
-        | structbody structelt
+        | structbody structent
             {if ($2) {lappend(&$$.nl, &$$.nn, $2);}}
         ;
 
-structelt
+structent
         : declcore Tendln
             {$$ = $1;}
         | visdef Tendln
@@ -612,22 +612,34 @@ params  : declcore
             {$$.nl = NULL; $$.nn = 0;}
         ;
 
-seqlit  : Tosqbrac seqbody Tcsqbrac
-            {$$ = mkseq($1->line, $2.nl, $2.nn);}
+seqlit  : Tosqbrac arrayelts Tcsqbrac
+            {$$ = mkarray($1->line, $2.nl, $2.nn);}
+        | Tosqbrac structelts Tcsqbrac
+            {$$ = mkstruct($1->line, $2.nl, $2.nn);}
         ;
 
-seqbody : /* empty */ {$$.nl = NULL; $$.nn = 0;}
-        | seqelt
+arrayelts
+        : /* empty */
+        | arrayelt
             {$$.nl = NULL; $$.nn = 0;
              lappend(&$$.nl, &$$.nn, $1);}
-        | seqbody Tcomma seqelt
+        | arrayelts Tcomma arrayelt
+             {lappend(&$$.nl, &$$.nn, $3);}
+
+arrayelt: endlns expr endlns {$$ = $2;}
+        ;
+
+structelts
+        : /* empty */ {$$.nl = NULL; $$.nn = 0;}
+        | structelt
+            {$$.nl = NULL; $$.nn = 0;
+             lappend(&$$.nl, &$$.nn, $1);}
+        | structelts Tcomma structelt
              {lappend(&$$.nl, &$$.nn, $3);}
         ;
 
-seqelt  : Tdot Tident Tasn expr
-            {die("Unimplemented struct member init");}
-        | endlns expr endlns{$$ = $2;}
-        ;
+structelt: endlns Tdot Tident Tasn expr endlns {$$ = $5;}
+         ;
 
 endlns  : /* none */
         | endlns Tendln

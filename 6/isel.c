@@ -893,7 +893,11 @@ static void writelit(FILE *fd, Node *v, size_t sz)
                         fprintf(fd, "%s:\n", lbl);
                         writeblob(fd, v->lit.strval, strlen(v->lit.strval));
                         break;
-        case Lseq:
+        case Larray:
+            for (i = 0; i < v->lit.nelt; i++)
+                writelit(fd, v->lit.seqval[i]->expr.args[0], size(v->lit.seqval[i]));
+            break;
+        case Lstruct:
             for (i = 0; i < v->lit.nelt; i++)
                 writelit(fd, v->lit.seqval[i]->expr.args[0], size(v->lit.seqval[i]));
             break;
