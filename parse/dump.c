@@ -190,8 +190,13 @@ static void outnode(Node *n, FILE *fd, int depth)
                     fprintf(fd, " Lfunc\n");
                     outnode(n->lit.fnval, fd, depth+1);
                     break;
-                case Lseq:
-                    fprintf(fd, " Lseq\n");
+                case Larray:
+                    fprintf(fd, " Larray\n");
+                    for (i = 0; i < n->lit.nelt; i++)
+                        outnode(n->lit.seqval[i], fd, depth+1);
+                    break;
+                case Lstruct:
+                    fprintf(fd, " Lstruct\n");
                     for (i = 0; i < n->lit.nelt; i++)
                         outnode(n->lit.seqval[i], fd, depth+1);
                     break;

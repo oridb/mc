@@ -305,7 +305,8 @@ static Type *littype(Node *n)
         case Lstr:      return mktyslice(n->line, mktype(n->line, Tybyte));     break;
         case Llbl:      return mktyptr(n->line, mktype(n->line, Tyvoid));       break;
         case Lfunc:     return n->lit.fnval->func.type;                         break;
-        case Lseq:      return NULL; break;
+        case Lstruct:   return NULL; break;
+        case Larray:    return NULL; break;
     };
     die("Bad lit type %d", n->lit.littype);
     return NULL;
@@ -738,7 +739,16 @@ static void checkns(Inferstate *st, Node *n, Node **ret)
     *ret = var;
 }
 
-static void inferseq(Inferstate *st, Node *n)
+static void inferstruct(Inferstate *st, Node *n)
+{
+    size_t i;
+
+    for (i = 0; i < n->lit.nelt; i++)
+        infernode(st, n->lit.seqval[i], NULL, NULL);
+    die("Don't know what to do with struct lits yet, when it comes to inference");
+}
+
+static void inferarray(Inferstate *st, Node *n)
 {
     size_t i;
     Type *t;
@@ -980,8 +990,9 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
         case Olit:      /* <lit>:@a::tyclass -> @a */
             switch (args[0]->lit.littype) {
                 case Lfunc:     infernode(st, args[0]->lit.fnval, NULL, NULL); break;
-                case Lseq:      inferseq(st, args[0]);                         break;
-                default:        /* pass */                                 break;
+                case Larray:    inferarray(st, args[0]);                       break;
+                case Lstruct:   inferstruct(st, args[0]);                      break;
+                default:        /* pass */                                     break;
             }
             settype(st, n, type(st, args[0]));
             break;
@@ -1329,7 +1340,11 @@ static void typesub(Inferstate *st, Node *n)
             settype(st, n, tyfix(st, n, type(st, n)));
             switch (n->lit.littype) {
                 case Lfunc:     typesub(st, n->lit.fnval); break;
-                case Lseq:
+                case Larray:
+                    for (i = 0; i < n->lit.nelt; i++)
+                        typesub(st, n->lit.seqval[i]);
+                    break;
+                case Lstruct:
                     for (i = 0; i < n->lit.nelt; i++)
                         typesub(st, n->lit.seqval[i]);
                     break;

@@ -355,7 +355,11 @@ static void pickle(Node *n, FILE *fd)
                 case Llbl:      wrstr(fd, n->lit.lblval);       break;
                 case Lbool:     wrbool(fd, n->lit.boolval);     break;
                 case Lfunc:     pickle(n->lit.fnval, fd);       break;
-                case Lseq:
+                case Larray:
+                    for (i = 0; i < n->lit.nelt; i++)
+                        pickle(n->lit.seqval[i], fd);
+                    break;
+                case Lstruct:
                     for (i = 0; i < n->lit.nelt; i++)
                         pickle(n->lit.seqval[i], fd);
                     break;
@@ -474,7 +478,11 @@ static Node *unpickle(FILE *fd)
                 case Llbl:      n->lit.lblval = rdstr(fd);       break;
                 case Lbool:     n->lit.boolval = rdbool(fd);     break;
                 case Lfunc:     n->lit.fnval = unpickle(fd);       break;
-                case Lseq:
+                case Larray:
+                    for (i = 0; i < n->lit.nelt; i++)
+                        n->lit.seqval[i] = unpickle(fd);
+                    break;
+                case Lstruct:
                     for (i = 0; i < n->lit.nelt; i++)
                         n->lit.seqval[i] = unpickle(fd);
                     break;
@@ -737,7 +745,11 @@ static void nodetag(Node *n)
             taghidden(n->lit.type);
             switch (n->lit.littype) {
                 case Lfunc: nodetag(n->lit.fnval); break;
-                case Lseq:
+                case Larray:
+                    for (i = 0; i < n->lit.nelt; i++)
+                        nodetag(n->lit.seqval[i]);
+                    break;
+                case Lstruct:
                     for (i = 0; i < n->lit.nelt; i++)
                         nodetag(n->lit.seqval[i]);
                     break;

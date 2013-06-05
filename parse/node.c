@@ -232,12 +232,24 @@ Node *mkfloat(int line, double val)
     return n;
 }
 
-Node *mkseq(int line, Node **vals, size_t nvals)
+Node *mkarray(int line, Node **vals, size_t nvals)
 {
     Node *n;
 
     n = mknode(line, Nlit);
-    n->lit.littype = Lseq;
+    n->lit.littype = Larray;
+    n->lit.nelt = nvals;
+    n->lit.seqval = vals;
+
+    return n;
+}
+
+Node *mkstruct(int line, Node **vals, size_t nvals)
+{
+    Node *n;
+
+    n = mknode(line, Nlit);
+    n->lit.littype = Lstruct;
     n->lit.nelt = nvals;
     n->lit.seqval = vals;
 

@@ -3,7 +3,7 @@
 type t = struct
 	a	: int
 	b	: char
-	c	: char[,]
+	c	: char[:]
 ;;
 
 const main = {
