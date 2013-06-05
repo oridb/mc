@@ -1,0 +1,28 @@
+use "sys.use"
+use "fmt.use"
+
+pkg std =
+	const blat : (path : byte[:], buf : byte[:] -> bool)
+;;
+
+const blat = {path, buf
+	var fd
+	var written
+	var n
+
+	fd = open(path, Ocreat|Owronly, 0o777)
+	if fd < 0
+		fatal(1, "Could not open file \"%s\"", path)
+	;;
+
+	n = 0
+	while true
+		written = write(fd, buf[n:])
+		if written <= 0
+			goto done
+		;;
+		n += written
+	;;
+:done
+	-> written == 0
+}
