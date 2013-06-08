@@ -339,6 +339,7 @@ static Type *type(Inferstate *st, Node *n)
       case Nexpr:       t = n->expr.type;       break;
       case Ndecl:       t = decltype(n);        break;
       case Nfunc:       t = n->func.type;       break;
+      case Nidxinit:    t = type(st, n->idxinit.init); break;
       default:
         t = NULL;
         die("untypeable node %s", nodestr(n->type));

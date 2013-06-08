@@ -622,9 +622,9 @@ arrayelts
         : /* empty */
         | arrayelt
             {$$.nl = NULL; $$.nn = 0;
-             lappend(&$$.nl, &$$.nn, $1);}
+             lappend(&$$.nl, &$$.nn, mkidxinit($1->line, mkint($1->line, 0), $1));}
         | arrayelts Tcomma arrayelt
-             {lappend(&$$.nl, &$$.nn, $3);}
+             {lappend(&$$.nl, &$$.nn, mkidxinit($3->line, mkint($3->line, $$.nn), $3));}
 
 arrayelt: endlns expr endlns {$$ = $2;}
         ;

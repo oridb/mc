@@ -877,6 +877,7 @@ static void writelit(FILE *fd, Node *v, size_t sz)
 {
     char lbl[128];
     size_t i;
+    Node *val;
     char *intsz[] = {
         [1] = ".byte",
         [2] = ".short",
@@ -896,12 +897,16 @@ static void writelit(FILE *fd, Node *v, size_t sz)
                         writeblob(fd, v->lit.strval, strlen(v->lit.strval));
                         break;
         case Larray:
-            for (i = 0; i < v->lit.nelt; i++)
-                writelit(fd, v->lit.seqval[i]->expr.args[0], size(v->lit.seqval[i]));
+            for (i = 0; i < v->lit.nelt; i++) {
+                val = v->lit.seqval[i]->idxinit.init;
+                writelit(fd, val->expr.args[0], size(val));
+            }
             break;
         case Lstruct:
-            for (i = 0; i < v->lit.nelt; i++)
-                writelit(fd, v->lit.seqval[i]->expr.args[0], size(v->lit.seqval[i]));
+            for (i = 0; i < v->lit.nelt; i++) {
+                val = v->lit.seqval[i]->idxinit.init;
+                writelit(fd, val->expr.args[0], size(val));
+            }
             break;
         case Lfunc:
             die("Generating this shit ain't ready yet ");
