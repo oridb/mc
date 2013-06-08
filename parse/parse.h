@@ -222,6 +222,11 @@ struct Node {
         } match;
 
         struct {
+            Node *idx;
+            Node *init;
+        } idxinit;
+
+        struct {
             Stab *scope;
             size_t nstmts;
             Node **stmts;
@@ -387,6 +392,7 @@ Node *mkmatchstmt(int line, Node *val, Node **matches, size_t nmatches);
 Node *mkmatch(int line, Node *pat, Node *body);
 Node *mkblock(int line, Stab *scope);
 Node *mkintlit(int line, uvlong val);
+Node *mkidxinit(int line, Node *idx, Node *init);
 
 Node *mkbool(int line, int val);
 Node *mkint(int line, uint64_t val);

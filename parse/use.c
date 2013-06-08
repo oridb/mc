@@ -413,6 +413,10 @@ static void pickle(Node *n, FILE *fd)
                 pickle(n->func.args[i], fd);
             pickle(n->func.body, fd);
             break;
+        case Nidxinit:
+            pickle(n->idxinit.idx, fd);
+            pickle(n->idxinit.init, fd);
+            break;
         case Nnone:
             die("Nnone should not be seen as node type!");
             break;
@@ -545,6 +549,10 @@ static Node *unpickle(FILE *fd)
                 n->func.args[i] = unpickle(fd);
             n->func.body = unpickle(fd);
             popstab();
+            break;
+        case Nidxinit:
+            n->idxinit.idx = unpickle(fd);
+            n->idxinit.init = unpickle(fd);
             break;
         case Nnone:
             die("Nnone should not be seen as node type!");
@@ -768,6 +776,11 @@ static void nodetag(Node *n)
             for (i = 0; i < n->func.nargs; i++)
                 nodetag(n->func.args[i]);
             nodetag(n->func.body);
+            break;
+        case Nidxinit:
+            nodetag(n->idxinit.idx);
+            nodetag(n->idxinit.init);
+            break;
 
         case Nuse: case Nname:
             break;

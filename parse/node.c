@@ -256,6 +256,17 @@ Node *mkstruct(int line, Node **vals, size_t nvals)
     return n;
 }
 
+Node *mkidxinit(int line, Node *idx, Node *init)
+{
+    Node *n;
+
+    n = mknode(line, Nidxinit);
+    n->idxinit.idx = idx;
+    n->idxinit.init = init;
+
+    return n;
+}
+
 Node *mkname(int line, char *name)
 {
     Node *n;

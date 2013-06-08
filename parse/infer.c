@@ -1143,6 +1143,10 @@ static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
             inferfunc(st, n);
             popstab();
             break;
+        case Nidxinit:
+            infernode(st, n->idxinit.idx, NULL, NULL);
+            infernode(st, n->idxinit.init, NULL, NULL);
+            break;
         case Nname:
         case Nlit:
         case Nuse:
@@ -1350,6 +1354,10 @@ static void typesub(Inferstate *st, Node *n)
                     break;
                 default:        break;
             }
+            break;
+        case Nidxinit:
+            typesub(st, n->idxinit.idx);
+            typesub(st, n->idxinit.init);
             break;
         case Nname:
         case Nuse:

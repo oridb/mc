@@ -638,7 +638,8 @@ structelts
              {lappend(&$$.nl, &$$.nn, $3);}
         ;
 
-structelt: endlns Tdot Tident Tasn expr endlns {$$ = $5;}
+structelt: endlns Tdot Tident Tasn expr endlns 
+            {$$ = mkidxinit($2->line, mkname($3->line, $3->str), $5);}
          ;
 
 endlns  : /* none */

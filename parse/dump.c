@@ -222,6 +222,11 @@ static void outnode(Node *n, FILE *fd, int depth)
             fprintf(stderr, "Nnone not a real node type!");
             fprintf(fd, "Nnone\n");
             break;
+        case Nidxinit:
+            fprintf(fd, "\n");
+            outnode(n->idxinit.idx, fd, depth + 1);
+            outnode(n->idxinit.init, fd, depth + 1);
+            break;
     }
 }
 
