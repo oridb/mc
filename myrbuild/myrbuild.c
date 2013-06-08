@@ -42,6 +42,7 @@ char *ldscript;
 char *sysname;
 
 regex_t usepat;
+Htab *compiled;
 
 static void usage(char *prog)
 {
@@ -188,19 +189,18 @@ void compile(char *file)
     size_t i, ndeps;
     char **cmd;
     size_t ncmd;
+    char *s;
     char *localdep;
     char *deps[512];
     char use[1024];
     char obj[1024];
     char *extra[] = {"-g", "-o", "" /* filename */};
 
+    if (hthas(compiled, file))
+        return;
     if (hassuffix(file, ".myr")) {
         swapsuffix(use, sizeof use, file, ".myr", ".use");
         swapsuffix(obj, sizeof obj, file, ".myr", ".o");
-        if (isfresh(file, use))
-            return;
-        if (isfresh(file, obj))
-            return;
         getdeps(file, deps, 512, &ndeps);
         for (i = 0; i < ndeps; i++) {
             if (isquoted(deps[i])) {
@@ -211,6 +211,10 @@ void compile(char *file)
                 lappend(&libs, &nlibs, deps[i]);
             }
         }
+        if (isfresh(file, use))
+            return;
+        if (isfresh(file, obj))
+            return;
         gencmd(&cmd, &ncmd, muse, file, NULL, 0);
         run(cmd);
 
@@ -224,6 +228,8 @@ void compile(char *file)
         gencmd(&cmd, &ncmd, as, file, extra, 3);
         run(cmd);
     }
+    s = strdup(file);
+    htput(compiled, s, s);
 }
 
 void mergeuse(char **files, size_t nfiles)
@@ -383,6 +389,7 @@ int main(int argc, char **argv)
     if (libname && binname)
         die("Can't specify both library and binary names");
 
+    compiled = mkht(strhash, streq);
     regcomp(&usepat, "^[[:space:]]*use[[:space:]]+([^[:space:]]+)", REG_EXTENDED);
     for (i = optind; i < argc; i++)
         compile(argv[i]);
