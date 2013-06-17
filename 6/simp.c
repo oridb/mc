@@ -1141,8 +1141,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
             break;
 
         /* expr(x++)
-         *     =>
-         *      expr
+         *   => expr
          *      x = x + 1
          */
         case Opostinc:

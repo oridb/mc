@@ -742,17 +742,21 @@ static void checkns(Inferstate *st, Node *n, Node **ret)
     *ret = var;
 }
 
-static void inferstruct(Inferstate *st, Node *n)
+static void inferstruct(Inferstate *st, Node *n, int *isconst)
 {
     size_t i;
 
-    for (i = 0; i < n->lit.nelt; i++)
+    *isconst = 1;
+    for (i = 0; i < n->lit.nelt; i++) {
         infernode(st, n->lit.seqval[i], NULL, NULL);
+        if (n->lit.seqval[i]->idxinit.init->expr.isconst)
+            *isconst = 0;
+    }
     settype(st, n, mktyvar(n->line));
     lappend(&st->postcheck, &st->npostcheck, n);
 }
 
-static void inferarray(Inferstate *st, Node *n)
+static void inferarray(Inferstate *st, Node *n, int *isconst)
 {
     size_t i;
     Type *t;
@@ -760,9 +764,12 @@ static void inferarray(Inferstate *st, Node *n)
 
     len = mkintlit(n->line, n->lit.nelt);
     t = mktyarray(n->line, mktyvar(n->line), len);
+    *isconst = 1;
     for (i = 0; i < n->lit.nelt; i++) {
         infernode(st, n->lit.seqval[i], NULL, NULL);
         unify(st, n, t->sub[0], type(st, n->lit.seqval[i]));
+        if (n->lit.seqval[i]->idxinit.init->expr.isconst)
+            *isconst = 0;
     }
     settype(st, n, t);
 }
@@ -993,10 +1000,19 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
             break;
         case Olit:      /* <lit>:@a::tyclass -> @a */
             switch (args[0]->lit.littype) {
-                case Lfunc:     infernode(st, args[0]->lit.fnval, NULL, NULL); break;
-                case Larray:    inferarray(st, args[0]);                       break;
-                case Lstruct:   inferstruct(st, args[0]);                      break;
-                default:        /* pass */                                     break;
+                case Lfunc:
+                    infernode(st, args[0]->lit.fnval, NULL, NULL); break;
+                    /* FIXME: env capture means this is non-const */
+                    n->expr.isconst = 1;
+                case Larray:
+                    inferarray(st, args[0], &n->expr.isconst);
+                    break;
+                case Lstruct:
+                    inferstruct(st, args[0], &n->expr.isconst);
+                    break;
+                default:
+                    n->expr.isconst = 1;
+                    break;
             }
             settype(st, n, type(st, args[0]));
             break;
@@ -1396,7 +1412,8 @@ static void typesub(Inferstate *st, Node *n)
         case Nlit:
             settype(st, n, tyfix(st, n, type(st, n)));
             switch (n->lit.littype) {
-                case Lfunc:     typesub(st, n->lit.fnval); break;
+                case Lfunc:
+                    typesub(st, n->lit.fnval); break;
                 case Larray:
                     for (i = 0; i < n->lit.nelt; i++)
                         typesub(st, n->lit.seqval[i]);
