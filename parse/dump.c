@@ -172,7 +172,7 @@ static void outnode(Node *n, FILE *fd, int depth)
             break;
         case Nexpr:
             ty = tystr(n->expr.type);
-            fprintf(fd, " (type = %s, op = %s, flags = %d, did=%zd)\n",
+            fprintf(fd, " (type = %s, op = %s, isconst = %d, did=%zd)\n",
                     ty, opstr(n->expr.op), n->expr.isconst, n->expr.did);
             free(ty);
             for (i = 0; i < n->expr.nargs; i++)

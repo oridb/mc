@@ -749,7 +749,7 @@ static void inferstruct(Inferstate *st, Node *n, int *isconst)
     *isconst = 1;
     for (i = 0; i < n->lit.nelt; i++) {
         infernode(st, n->lit.seqval[i], NULL, NULL);
-        if (n->lit.seqval[i]->idxinit.init->expr.isconst)
+        if (!n->lit.seqval[i]->idxinit.init->expr.isconst)
             *isconst = 0;
     }
     settype(st, n, mktyvar(n->line));
@@ -768,7 +768,7 @@ static void inferarray(Inferstate *st, Node *n, int *isconst)
     for (i = 0; i < n->lit.nelt; i++) {
         infernode(st, n->lit.seqval[i], NULL, NULL);
         unify(st, n, t->sub[0], type(st, n->lit.seqval[i]));
-        if (n->lit.seqval[i]->idxinit.init->expr.isconst)
+        if (!n->lit.seqval[i]->idxinit.init->expr.isconst)
             *isconst = 0;
     }
     settype(st, n, t);
