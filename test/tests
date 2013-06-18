@@ -52,7 +52,7 @@ B condiffalse	E	9
 B condifrel	E	7
 B overlappingif	E	2
 B fib		E	21
-# B float		E	1       ## BUGGERED
+B float		E	1       ## BUGGERED
 B log-and	E	0
 B log-or	E	1
 B str		E	102

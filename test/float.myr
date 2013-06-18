@@ -1,3 +1,5 @@
+use std
+
 /* basic sanity check on floating point operations. should return 84. */
 const main = {
 	-> (42.0 + 42.0) castto(int)
