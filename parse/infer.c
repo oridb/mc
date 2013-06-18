@@ -759,7 +759,7 @@ static void inferarray(Inferstate *st, Node *n, int *isconst)
     Type *t;
     Node *len;
 
-    len = mkintlit(n->line, n->lit.nelt);
+    len = mkintlit(n->line, n->expr.nargs);
     t = mktyarray(n->line, mktyvar(n->line), len);
     for (i = 0; i < n->expr.nargs; i++) {
         infernode(st, n->expr.args[i], NULL, NULL);

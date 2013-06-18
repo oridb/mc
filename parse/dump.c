@@ -112,6 +112,7 @@ static void outnode(Node *n, FILE *fd, int depth)
 {
     size_t i;
     char *ty;
+    int tid;
 
     indent(fd, depth);
     if (!n) {
@@ -174,8 +175,12 @@ static void outnode(Node *n, FILE *fd, int depth)
             break;
         case Nexpr:
             ty = tystr(n->expr.type);
+            if (n->expr.type)
+                tid = n->expr.type->tid;
+            else
+                tid = -1;
             fprintf(fd, " (type = %s [tid %d], op = %s, isconst = %d, did=%zd)\n",
-                    ty, n->expr.type->tid, opstr(n->expr.op), n->expr.isconst, n->expr.did);
+                    ty, tid, opstr(n->expr.op), n->expr.isconst, n->expr.did);
             free(ty);
             outnode(n->expr.idx, fd, depth + 1);
             for (i = 0; i < n->expr.nargs; i++)

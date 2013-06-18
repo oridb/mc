@@ -423,7 +423,7 @@ static int tybfmt(char *buf, size_t len, Type *t)
             break;
         case Tyarray:
             p += tybfmt(p, end - p, t->sub[0]);
-            p += snprintf(p, end - p, "[LEN]");
+            p += snprintf(p, end - p, "[%llu]", t->asize->expr.args[0]->lit.intval);
             break;
         case Tyfunc:
             p += snprintf(p, end - p, "(");

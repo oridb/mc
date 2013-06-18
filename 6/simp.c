@@ -916,13 +916,33 @@ static Node *assign(Simp *s, Node *lhs, Node *rhs)
     return r;
 }
 
+static Node *assignat(Simp *s, Node *r, size_t off, Node *val)
+{
+    Node *pval, *pdst;
+    Node *sz;
+    Node *st;
+
+    val = rval(s, val, NULL);
+    pdst = add(r, disp(val->line, off));
+
+    if (stacknode(val)) {
+        sz = disp(val->line, size(val));
+        pval = addr(s, val, exprtype(val));
+        st = mkexpr(val->line, Oblit, pdst, pval, sz, NULL);
+    } else {
+        st = set(deref(pdst), val);
+    }
+    append(s, st);
+    return r;
+}
+
 /* Simplify tuple construction to a stack allocated
  * value by evaluating the rvalue of each node on the
  * rhs and assigning it to the correct offset from the
  * head of the tuple. */
 static Node *simptup(Simp *s, Node *n, Node *dst)
 {
-    Node *pdst, *pval, *val, *sz, *st, **args;
+    Node **args;
     Node *r;
     size_t i, off;
 
@@ -933,17 +953,7 @@ static Node *simptup(Simp *s, Node *n, Node *dst)
 
     off = 0;
     for (i = 0; i < n->expr.nargs; i++) {
-        val = rval(s, args[i], NULL);
-        pdst = add(r, disp(n->line, off));
-
-        if (stacknode(args[i])) {
-            sz = disp(n->line, size(val));
-            pval = addr(s, val, exprtype(val));
-            st = mkexpr(n->line, Oblit, pdst, pval, sz, NULL);
-        } else {
-            st = set(deref(pdst), val);
-        }
-        append(s, st);
+        assignat(s, r, off, args[i]);
         off += size(args[i]);
     }
     return dst;
@@ -1000,26 +1010,6 @@ static Node *simpucon(Simp *s, Node *n, Node *dst)
 static Node *simpuget(Simp *s, Node *n, Node *dst)
 {
     die("No uget simplification yet");
-}
-
-static Node *assignat(Simp *s, Node *r, size_t off, Node *val)
-{
-    Node *pval, *pdst;
-    Node *sz;
-    Node *st;
-
-    val = rval(s, val, NULL);
-    pdst = add(r, disp(val->line, off));
-
-    if (stacknode(val)) {
-        sz = disp(val->line, size(val));
-        pval = addr(s, val, exprtype(val));
-        st = mkexpr(val->line, Oblit, pdst, pval, sz, NULL);
-    } else {
-        st = set(deref(pdst), val);
-    }
-    append(s, st);
-    return r;
 }
 
 /* simplifies 
@@ -1134,7 +1124,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
                 r = dst;
             else
                 r = temp(s, n);
-            t = addr(s, dst, exprtype(dst));
+            t = addr(s, r, exprtype(r));
             for (i = 0; i < n->expr.nargs; i++)
                 assignat(s, t, size(n->expr.args[i])*i, n->expr.args[i]);
             break;
@@ -1143,7 +1133,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
                 r = dst;
             else
                 r = temp(s, n);
-            t = addr(s, dst, exprtype(dst));
+            t = addr(s, r, exprtype(r));
             for (i = 0; i < n->expr.nargs; i++)
                 assignat(s, t, offset(n, n->expr.args[i]->expr.idx), n->expr.args[i]);
             break;
@@ -1255,7 +1245,7 @@ static void declarelocal(Simp *s, Node *n)
     s->stksz = align(s->stksz, min(size(n), Ptrsz));
     if (debugopt['i']) {
         dump(n, stdout);
-        printf("declared at %zd\n", s->stksz);
+        printf("declared at %zd, size = %zd\n", s->stksz, size(n));
     }
     htput(s->stkoff, n, (void*)s->stksz);
 }

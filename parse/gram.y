@@ -616,11 +616,12 @@ seqlit  : Tosqbrac arrayelts Tcsqbrac
             {$$ = mkexprl($1->line, Oarr, $2.nl, $2.nn);}
         | Tosqbrac structelts Tcsqbrac
             {$$ = mkexprl($1->line, Ostruct, $2.nl, $2.nn);}
+        | Tosqbrac Tcsqbrac /* [] is the empty array. */
+            {$$ = mkexprl($1->line, Oarr, NULL, 0);}
         ;
 
 arrayelts
-        : /* empty */
-        | arrayelt
+        : arrayelt
             {$$.nl = NULL; $$.nn = 0;
              lappend(&$$.nl, &$$.nn, mkidxinit($1->line, mkint($1->line, 0), $1));}
         | arrayelts Tcomma arrayelt
@@ -630,8 +631,7 @@ arrayelt: endlns expr endlns {$$ = $2;}
         ;
 
 structelts
-        : /* empty */ {$$.nl = NULL; $$.nn = 0;}
-        | structelt
+        : structelt
             {$$.nl = NULL; $$.nn = 0;
              lappend(&$$.nl, &$$.nn, $1);}
         | structelts Tcomma structelt
