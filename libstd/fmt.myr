@@ -153,10 +153,11 @@ const strfmt = {buf, str
 	-> i
 }
 
+const digitchars = [
+'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'
+]
+
 const intfmt = {buf, val, base
-	const digits = [
-		'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'
-	]
 	var isneg
 	var b : char[32]
 	var i
@@ -176,7 +177,7 @@ const intfmt = {buf, val, base
 		i++
 	;;
 	while val != 0
-		b[i] = digits[val % base]
+		b[i] = digitchars[val % base]
 		val /= base
 		i++
 	;;

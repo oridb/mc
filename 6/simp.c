@@ -933,7 +933,6 @@ static Node *simptup(Simp *s, Node *n, Node *dst)
 
     off = 0;
     for (i = 0; i < n->expr.nargs; i++) {
-        off = align(off, size(args[i]));
         val = rval(s, args[i], NULL);
         pdst = add(r, disp(n->line, off));
 
@@ -1001,6 +1000,26 @@ static Node *simpucon(Simp *s, Node *n, Node *dst)
 static Node *simpuget(Simp *s, Node *n, Node *dst)
 {
     die("No uget simplification yet");
+}
+
+static Node *assignat(Simp *s, Node *r, size_t off, Node *val)
+{
+    Node *pval, *pdst;
+    Node *sz;
+    Node *st;
+
+    val = rval(s, val, NULL);
+    pdst = add(r, disp(val->line, off));
+
+    if (stacknode(val)) {
+        sz = disp(val->line, size(val));
+        pval = addr(s, val, exprtype(val));
+        st = mkexpr(val->line, Oblit, pdst, pval, sz, NULL);
+    } else {
+        st = set(deref(pdst), val);
+    }
+    append(s, st);
+    return r;
 }
 
 /* simplifies 
@@ -1110,6 +1129,24 @@ static Node *rval(Simp *s, Node *n, Node *dst)
         case Otup:
             r = simptup(s, n, dst);
             break;
+        case Oarr:
+            if (dst)
+                r = dst;
+            else
+                r = temp(s, n);
+            t = addr(s, dst, exprtype(dst));
+            for (i = 0; i < n->expr.nargs; i++)
+                assignat(s, t, size(n->expr.args[i])*i, n->expr.args[i]);
+            break;
+        case Ostruct:
+            if (dst)
+                r = dst;
+            else
+                r = temp(s, n);
+            t = addr(s, dst, exprtype(dst));
+            for (i = 0; i < n->expr.nargs; i++)
+                assignat(s, t, offset(n, n->expr.args[i]->expr.idx), n->expr.args[i]);
+            break;
         case Ocast:
             r = simpcast(s, args[0], exprtype(n));
             break;
@@ -1204,20 +1241,6 @@ static Node *rval(Simp *s, Node *n, Node *dst)
                 r = addr(s, t, exprtype(t));
             else
                 r = t->expr.args[0];
-            break;
-        case Oarr:
-            if (dst)
-                r = dst;
-            else
-                r = temp(s, n);
-            die("No initialization done yet");
-            break;
-        case Ostruct:
-            if (dst)
-                r = dst;
-            else
-                r = temp(s, n);
-            die("No initialization done yet");
             break;
         default:
             r = visit(s, n);
