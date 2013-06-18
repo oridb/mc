@@ -309,7 +309,7 @@ static Type *littype(Node *n)
         case Lchr:      return mktype(n->line, Tychar);                         break;
         case Lbool:     return mktype(n->line, Tybool);                         break;
         case Lint:      return mktylike(n->line, Tyint);                        break;
-        case Lflt:      return mktylike(n->line, Tyfloat32);                    break;
+        case Lflt:      return mktylike(n->line, Tyfloat64);                    break;
         case Lstr:      return mktyslice(n->line, mktype(n->line, Tybyte));     break;
         case Llbl:      return mktyptr(n->line, mktype(n->line, Tyvoid));       break;
         case Lfunc:     return n->lit.fnval->func.type;                         break;
@@ -1192,7 +1192,7 @@ static Type *tyfix(Inferstate *st, Node *ctx, Type *t)
         if (hascstr(t, cstrtab[Tcint]) && cstrcheck(t, tyint))
             return tyint;
         if (hascstr(t, cstrtab[Tcfloat]) && cstrcheck(t, tyflt))
-            return tyint;
+            return tyflt;
         if (hthas(st->delayed, t))
             return htget(st->delayed, t);
     } else if (!t->fixed) {
