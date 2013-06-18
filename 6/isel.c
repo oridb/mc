@@ -23,13 +23,13 @@ char *insnfmts[] = {
 #undef Insn
 };
 
-char modenames[] = {
-  [ModeB] = 'b',
-  [ModeW] = 'w',
-  [ModeL] = 'l',
-  [ModeQ] = 'q',
-  [ModeF] = 'f',
-  [ModeD] = 'd'
+char* modenames[] = {
+  [ModeB] = "b",
+  [ModeW] = "w",
+  [ModeL] = "l",
+  [ModeQ] = "q",
+  [ModeF] = "ss",
+  [ModeD] = "sd"
 };
 
 /* forward decls */
@@ -745,7 +745,7 @@ void iprintf(FILE *fd, Insn *insn)
                     modeidx = strtol(p, &p, 10) - 1;
 
                 if (*p == 't')
-                    fputc(modenames[insn->args[modeidx]->mode], fd);
+                    fputs(modenames[insn->args[modeidx]->mode], fd);
                 else
                     die("Invalid %%-specifier '%c'", *p);
                 break;

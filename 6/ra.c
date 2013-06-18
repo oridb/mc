@@ -55,6 +55,15 @@ Reg regmap[][Nmode] = {
     [11]  = {Rnone, Rr13b, Rr13w, Rr13d, Rr13},
     [12]  = {Rnone, Rr14b, Rr14w, Rr14d, Rr14},
     [13]  = {Rnone, Rr15b, Rr15w, Rr15d, Rr15},
+    /* floating point */
+    [16]  = {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm0f, Rxmm0d},
+    [17]  = {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm1f, Rxmm1d},
+    [18]  = {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm2f, Rxmm2d},
+    [19]  = {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm3f, Rxmm3d},
+    [20]  = {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm4f, Rxmm4d},
+    [21]  = {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm5f, Rxmm5d},
+    [22]  = {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm6f, Rxmm6d},
+    [23]  = {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm7f, Rxmm7d},
 };
 
 /* Which regmap entry a register maps to */
@@ -122,6 +131,26 @@ int colourmap[Nreg] = {
     [Rr13] = 11,
     [Rr14] = 12,
     [Rr15] = 13,
+
+    /* float */
+    [Rxmm0f] = 16,
+    [Rxmm1f] = 17,
+    [Rxmm2f] = 18,
+    [Rxmm3f] = 19,
+    [Rxmm4f] = 20,
+    [Rxmm5f] = 21,
+    [Rxmm6f] = 22,
+    [Rxmm7f] = 23,
+
+    /* double */
+    [Rxmm0d] = 16,
+    [Rxmm1d] = 17,
+    [Rxmm2d] = 18,
+    [Rxmm3d] = 19,
+    [Rxmm4d] = 20,
+    [Rxmm5d] = 21,
+    [Rxmm6d] = 22,
+    [Rxmm7d] = 23,
 };
 
 /* %esp, %ebp are not in the allocatable pool */
@@ -758,7 +787,7 @@ static void freezemoves(Isel *s, Loc *u)
     size_t nml;
     size_t idx;
     Loc *v;
-    
+
     nml = nodemoves(s, u->reg.id, &ml);
     for (i = 0; i < nml; i++) {
         m = ml[i];

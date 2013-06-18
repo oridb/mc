@@ -76,6 +76,26 @@ Reg(Rr13, "%r13", ModeQ)
 Reg(Rr14, "%r14", ModeQ)
 Reg(Rr15, "%r15", ModeQ)
 
+/* floating point registers */
+Reg(Rxmm0f, "%xmm0", ModeF)
+Reg(Rxmm1f, "%xmm1", ModeF)
+Reg(Rxmm2f, "%xmm2", ModeF)
+Reg(Rxmm3f, "%xmm3", ModeF)
+Reg(Rxmm4f, "%xmm4", ModeF)
+Reg(Rxmm5f, "%xmm5", ModeF)
+Reg(Rxmm6f, "%xmm6", ModeF)
+Reg(Rxmm7f, "%xmm7", ModeF)
+
+/* double precision floating point registers */
+Reg(Rxmm0d, "%xmm0", ModeD)
+Reg(Rxmm1d, "%xmm1", ModeD)
+Reg(Rxmm2d, "%xmm2", ModeD)
+Reg(Rxmm3d, "%xmm3", ModeD)
+Reg(Rxmm4d, "%xmm4", ModeD)
+Reg(Rxmm5d, "%xmm5", ModeD)
+Reg(Rxmm6d, "%xmm6", ModeD)
+Reg(Rxmm7d, "%xmm7", ModeD)
+
 Reg(Rrip, "%rip", ModeQ)
 Reg(Rrsp, "%rsp", ModeQ)
 Reg(Rrbp, "%rbp", ModeQ)
