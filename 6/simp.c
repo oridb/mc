@@ -1120,20 +1120,16 @@ static Node *rval(Simp *s, Node *n, Node *dst)
             r = simptup(s, n, dst);
             break;
         case Oarr:
-            if (dst)
-                r = dst;
-            else
-                r = temp(s, n);
-            t = addr(s, r, exprtype(r));
+            if (!dst)
+                dst = temp(s, n);
+            t = addr(s, dst, exprtype(r));
             for (i = 0; i < n->expr.nargs; i++)
                 assignat(s, t, size(n->expr.args[i])*i, n->expr.args[i]);
             break;
         case Ostruct:
-            if (dst)
-                r = dst;
-            else
-                r = temp(s, n);
-            t = addr(s, r, exprtype(r));
+            if (!dst)
+                dst = temp(s, n);
+            t = addr(s, dst, exprtype(r));
             for (i = 0; i < n->expr.nargs; i++)
                 assignat(s, t, offset(n, n->expr.args[i]->expr.idx), n->expr.args[i]);
             break;
