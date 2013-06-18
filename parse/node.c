@@ -232,39 +232,10 @@ Node *mkfloat(int line, double val)
     return n;
 }
 
-Node *mkarray(int line, Node **vals, size_t nvals)
-{
-    Node *n;
-
-    n = mknode(line, Nlit);
-    n->lit.littype = Larray;
-    n->lit.nelt = nvals;
-    n->lit.seqval = vals;
-
-    return n;
-}
-
-Node *mkstruct(int line, Node **vals, size_t nvals)
-{
-    Node *n;
-
-    n = mknode(line, Nlit);
-    n->lit.littype = Lstruct;
-    n->lit.nelt = nvals;
-    n->lit.seqval = vals;
-
-    return n;
-}
-
 Node *mkidxinit(int line, Node *idx, Node *init)
 {
-    Node *n;
-
-    n = mknode(line, Nidxinit);
-    n->idxinit.idx = idx;
-    n->idxinit.init = init;
-
-    return n;
+    init->expr.idx = idx;
+    return init;
 }
 
 Node *mkname(int line, char *name)

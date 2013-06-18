@@ -71,6 +71,7 @@ B matchargunion	E	69
 B matchunion_sl	P	foo
 B matchbind	E	8
 B arraylit-ni	E	2
+B livearraylit	E	21
 # B arraylit	E	3       ## BUGGERED
 B structlit	E	42
 B livestructlit	E	21

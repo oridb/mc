@@ -58,8 +58,10 @@ static char *ctxstr(Inferstate *st, Node *n)
     char *s;
     char *t;
     char *u;
+    char *idx;
     char buf[512];
 
+    idx = NULL;
     switch (n->type) {
         default:
             s = nodestr(n->type);
@@ -75,6 +77,8 @@ static char *ctxstr(Inferstate *st, Node *n)
             s = namestr(n);
             break;
         case Nexpr:
+            if (n->expr.idx)
+                idx = ctxstr(st, n->expr.idx);
             if (exprop(n) == Ovar)
                 u = namestr(n->expr.args[0]);
             else
@@ -83,17 +87,13 @@ static char *ctxstr(Inferstate *st, Node *n)
                 t = tystr(tf(st, exprtype(n)));
             else
                 t = strdup("unknown");
-            snprintf(buf, sizeof buf, "%s:%s", u, t);
-            s = strdup(buf);
+            if (idx)
+                snprintf(buf, sizeof buf, ".%s=%s:%s", idx, u, t);
+            else
+                snprintf(buf, sizeof buf, "%s:%s", u, t);
+            free(idx);
             free(t);
-            break;
-        case Nidxinit:
-            t = ctxstr(st, n->idxinit.idx);
-            u = ctxstr(st, n->idxinit.init);
-            snprintf(buf, sizeof buf, "%s=%s", t, u);
             s = strdup(buf);
-            free(t);
-            free(u);
             break;
     }
     return s;
@@ -313,8 +313,6 @@ static Type *littype(Node *n)
         case Lstr:      return mktyslice(n->line, mktype(n->line, Tybyte));     break;
         case Llbl:      return mktyptr(n->line, mktype(n->line, Tyvoid));       break;
         case Lfunc:     return n->lit.fnval->func.type;                         break;
-        case Lstruct:   return NULL; break;
-        case Larray:    return NULL; break;
     };
     die("Bad lit type %d", n->lit.littype);
     return NULL;
@@ -339,7 +337,6 @@ static Type *type(Inferstate *st, Node *n)
       case Nexpr:       t = n->expr.type;       break;
       case Ndecl:       t = decltype(n);        break;
       case Nfunc:       t = n->func.type;       break;
-      case Nidxinit:    t = type(st, n->idxinit.init); break;
       default:
         t = NULL;
         die("untypeable node %s", nodestr(n->type));
@@ -747,9 +744,9 @@ static void inferstruct(Inferstate *st, Node *n, int *isconst)
     size_t i;
 
     *isconst = 1;
-    for (i = 0; i < n->lit.nelt; i++) {
-        infernode(st, n->lit.seqval[i], NULL, NULL);
-        if (!n->lit.seqval[i]->idxinit.init->expr.isconst)
+    for (i = 0; i < n->expr.nargs; i++) {
+        infernode(st, n->expr.args[i], NULL, NULL);
+        if (!n->expr.args[i]->expr.isconst)
             *isconst = 0;
     }
     settype(st, n, mktyvar(n->line));
@@ -764,14 +761,26 @@ static void inferarray(Inferstate *st, Node *n, int *isconst)
 
     len = mkintlit(n->line, n->lit.nelt);
     t = mktyarray(n->line, mktyvar(n->line), len);
-    *isconst = 1;
-    for (i = 0; i < n->lit.nelt; i++) {
-        infernode(st, n->lit.seqval[i], NULL, NULL);
-        unify(st, n, t->sub[0], type(st, n->lit.seqval[i]));
-        if (!n->lit.seqval[i]->idxinit.init->expr.isconst)
+    for (i = 0; i < n->expr.nargs; i++) {
+        infernode(st, n->expr.args[i], NULL, NULL);
+        unify(st, n, t->sub[0], type(st, n->expr.args[i]));
+        if (!n->expr.args[i]->expr.isconst)
             *isconst = 0;
     }
     settype(st, n, t);
+}
+
+static void infertuple(Inferstate *st, Node *n, int *isconst)
+{
+    Type **types;
+    size_t i;
+
+    types = xalloc(sizeof(Type *)*n->expr.nargs);
+    for (i = 0; i < n->expr.nargs; i++) {
+        n->expr.isconst = n->expr.isconst && n->expr.args[i]->expr.isconst;
+        types[i] = type(st, n->expr.args[i]);
+    }
+    settype(st, n, mktytuple(n->line, types, n->expr.nargs));
 }
 
 static void inferpat(Inferstate *st, Node *n, Node *val, Node ***bind, size_t *nbind)
@@ -839,7 +848,6 @@ void addbindings(Inferstate *st, Node *n, Node **bind, size_t nbind)
 static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
 {
     Node **args;
-    Type **types;
     size_t i, nargs;
     Ucon *uc;
     Node *s;
@@ -858,6 +866,7 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
             inferexpr(st, args[i], ret, sawret);
         }
     }
+    infernode(st, n->expr.idx, NULL, NULL);
     switch (exprop(n)) {
         /* all operands are same type */
         case Oadd:      /* @a + @a -> @a */
@@ -988,15 +997,13 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
             settype(st, n, delayed(st, uc->utype));
             break;
         case Otup:
-            types = xalloc(sizeof(Type *)*n->expr.nargs);
-            for (i = 0; i < n->expr.nargs; i++)
-                types[i] = type(st, n->expr.args[i]);
-            settype(st, n, mktytuple(n->line, types, n->expr.nargs));
+            infertuple(st, n, &n->expr.isconst);
+            break;
+        case Ostruct:
+            inferstruct(st, n, &n->expr.isconst);
             break;
         case Oarr:
-            for (i = 0; i < n->expr.nargs; i++)
-                unify(st, n, type(st, n->expr.args[0]), type(st, n->expr.args[i]));
-            settype(st, n, mktyarray(n->line, type(st, n->expr.args[0]), mkintlit(n->line, n->expr.nargs)));
+            inferarray(st, n, &n->expr.isconst);
             break;
         case Olit:      /* <lit>:@a::tyclass -> @a */
             switch (args[0]->lit.littype) {
@@ -1004,12 +1011,6 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
                     infernode(st, args[0]->lit.fnval, NULL, NULL); break;
                     /* FIXME: env capture means this is non-const */
                     n->expr.isconst = 1;
-                case Larray:
-                    inferarray(st, args[0], &n->expr.isconst);
-                    break;
-                case Lstruct:
-                    inferstruct(st, args[0], &n->expr.isconst);
-                    break;
                 default:
                     n->expr.isconst = 1;
                     break;
@@ -1163,10 +1164,6 @@ static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
             inferfunc(st, n);
             popstab();
             break;
-        case Nidxinit:
-            infernode(st, n->idxinit.idx, NULL, NULL);
-            infernode(st, n->idxinit.init, NULL, NULL);
-            break;
         case Nname:
         case Nlit:
         case Nuse:
@@ -1276,17 +1273,16 @@ static void infercompn(Inferstate *st, Node *n)
 static void checkstruct(Inferstate *st, Node *n)
 {
     Type *t, *et;
-    Node *elt, *name, *val;
+    Node *val, *name;
     size_t i, j;
 
     t = tybase(tf(st, n->lit.type));
     if (t->type != Tystruct)
         fatal(n->line, "Type %s for struct literal is not struct near %s", tystr(t), ctxstr(st, n));
 
-    for (i = 0; i < n->lit.nelt; i++) {
-        elt = n->lit.seqval[i];
-        name = elt->idxinit.idx;
-        val = elt->idxinit.init;
+    for (i = 0; i < n->expr.nargs; i++) {
+        val = n->expr.args[i];
+        name = val->expr.idx;
 
         et = NULL;
         for (j = 0; j < t->nmemb; j++) {
@@ -1300,7 +1296,7 @@ static void checkstruct(Inferstate *st, Node *n)
             fatal(n->line, "Could not find member %s in struct %s, near %s",
                   namestr(name), tystr(t), ctxstr(st, n));
 
-        unify(st, elt, et, type(st, val));
+        unify(st, val, et, type(st, val));
     }
 }
 
@@ -1315,7 +1311,7 @@ static void postcheck(Inferstate *st, Node *file)
             infercompn(st, n);
         else if (n->type == Nexpr && exprop(n) == Ocast)
             checkcast(st, n);
-        else if (n->type == Nlit && n->lit.littype == Lstruct)
+        else if (n->type == Nexpr && exprop(n) == Ostruct)
             checkstruct(st, n);
         else
             die("Thing we shouldn't be checking in postcheck\n");
@@ -1398,6 +1394,7 @@ static void typesub(Inferstate *st, Node *n)
             break;
         case Nexpr:
             settype(st, n, tyfix(st, n, type(st, n)));
+            typesub(st, n->expr.idx);
             for (i = 0; i < n->expr.nargs; i++)
                 typesub(st, n->expr.args[i]);
             break;
@@ -1414,20 +1411,8 @@ static void typesub(Inferstate *st, Node *n)
             switch (n->lit.littype) {
                 case Lfunc:
                     typesub(st, n->lit.fnval); break;
-                case Larray:
-                    for (i = 0; i < n->lit.nelt; i++)
-                        typesub(st, n->lit.seqval[i]);
-                    break;
-                case Lstruct:
-                    for (i = 0; i < n->lit.nelt; i++)
-                        typesub(st, n->lit.seqval[i]);
-                    break;
                 default:        break;
             }
-            break;
-        case Nidxinit:
-            typesub(st, n->idxinit.idx);
-            typesub(st, n->idxinit.init);
             break;
         case Nname:
         case Nuse:

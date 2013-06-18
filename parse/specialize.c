@@ -131,6 +131,7 @@ static void fixup(Node *n)
             die("Node %s not allowed here\n", nodestr(n->type));
             break;
         case Nexpr:
+            fixup(n->expr.idx);
             for (i = 0; i < n->expr.nargs; i++)
                 fixup(n->expr.args[i]);
             if (n->expr.op == Ovar) {
@@ -145,14 +146,6 @@ static void fixup(Node *n)
         case Nlit:
             switch (n->lit.littype) {
                 case Lfunc:     fixup(n->lit.fnval);          break;
-                case Larray:
-                    for (i = 0; i < n->lit.nelt; i++)
-                        fixup(n->lit.seqval[i]);
-                    break;
-                case Lstruct:
-                    for (i = 0; i < n->lit.nelt; i++)
-                        fixup(n->lit.seqval[i]);
-                    break;
                 case Lchr: case Lint: case Lflt:
                 case Lstr: case Llbl: case Lbool:
                     break;
@@ -192,9 +185,6 @@ static void fixup(Node *n)
             fixup(n->func.body);
             popstab();
             break;
-        case Nidxinit:
-            fixup(n->idxinit.idx);
-            fixup(n->idxinit.init);
         case Nnone: case Nname:
             break;
     }
@@ -224,6 +214,7 @@ static Node *specializenode(Node *n, Htab *tsmap)
             r->expr.type = tysubst(n->expr.type, tsmap);
             r->expr.isconst = n->expr.isconst;
             r->expr.nargs = n->expr.nargs;
+            r->expr.idx = specializenode(n->expr.idx, tsmap);
             r->expr.args = xalloc(n->expr.nargs * sizeof(Node*));
             for (i = 0; i < n->expr.nargs; i++)
                 r->expr.args[i] = specializenode(n->expr.args[i], tsmap);
@@ -244,16 +235,6 @@ static Node *specializenode(Node *n, Htab *tsmap)
                 case Llbl:      r->lit.lblval = n->lit.lblval;       break;
                 case Lbool:     r->lit.boolval = n->lit.boolval;     break;
                 case Lfunc:     r->lit.fnval = specializenode(n->lit.fnval, tsmap);       break;
-                case Larray:
-                    r->lit.seqval = xalloc(n->lit.nelt * sizeof(Node*));
-                    for (i = 0; i < n->lit.nelt; i++)
-                        r->lit.seqval[i] = specializenode(n->lit.seqval[i], tsmap);
-                    break;
-                case Lstruct:
-                    r->lit.seqval = xalloc(n->lit.nelt * sizeof(Node*));
-                    for (i = 0; i < n->lit.nelt; i++)
-                        r->lit.seqval[i] = specializenode(n->lit.seqval[i], tsmap);
-                    break;
             }
             break;
         case Nifstmt:
@@ -314,10 +295,6 @@ static Node *specializenode(Node *n, Htab *tsmap)
                 r->func.args[i] = specializenode(n->func.args[i], tsmap);
             r->func.body = specializenode(n->func.body, tsmap);
             popstab();
-            break;
-        case Nidxinit:
-            r->idxinit.idx = specializenode(n->idxinit.idx, tsmap);
-            r->idxinit.init = specializenode(n->idxinit.init, tsmap);
             break;
         case Nnone:
             die("Nnone should not be seen as node type!");

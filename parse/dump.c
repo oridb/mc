@@ -61,6 +61,7 @@ static void outstab(Stab *st, FILE *fd, int depth)
     size_t i, n;
     void **k;
     char *ty;
+    Type *t;
 
     indent(fd, depth);
     fprintf(fd, "Stab %p (super = %p, name=\"%s\")\n", st, st->super, namestr(st->name));
@@ -74,8 +75,9 @@ static void outstab(Stab *st, FILE *fd, int depth)
         fprintf(fd, "T ");
         /* already indented */
         outname(k[i], fd); 
-        ty = tystr(gettype(st, k[i]));
-        fprintf(fd, " = %s\n", ty);
+        t = gettype(st, k[i]);
+        ty = tystr(t);
+        fprintf(fd, " = %s [tid=%d]\n", ty, t->tid);
         free(ty);
     }
     free(k);
@@ -172,9 +174,10 @@ static void outnode(Node *n, FILE *fd, int depth)
             break;
         case Nexpr:
             ty = tystr(n->expr.type);
-            fprintf(fd, " (type = %s, op = %s, isconst = %d, did=%zd)\n",
-                    ty, opstr(n->expr.op), n->expr.isconst, n->expr.did);
+            fprintf(fd, " (type = %s [tid %d], op = %s, isconst = %d, did=%zd)\n",
+                    ty, n->expr.type->tid, opstr(n->expr.op), n->expr.isconst, n->expr.did);
             free(ty);
+            outnode(n->expr.idx, fd, depth + 1);
             for (i = 0; i < n->expr.nargs; i++)
                 outnode(n->expr.args[i], fd, depth+1);
             break;
@@ -189,16 +192,6 @@ static void outnode(Node *n, FILE *fd, int depth)
                 case Lfunc:
                     fprintf(fd, " Lfunc\n");
                     outnode(n->lit.fnval, fd, depth+1);
-                    break;
-                case Larray:
-                    fprintf(fd, " Larray\n");
-                    for (i = 0; i < n->lit.nelt; i++)
-                        outnode(n->lit.seqval[i], fd, depth+1);
-                    break;
-                case Lstruct:
-                    fprintf(fd, " Lstruct\n");
-                    for (i = 0; i < n->lit.nelt; i++)
-                        outnode(n->lit.seqval[i], fd, depth+1);
                     break;
             }
             break;
@@ -221,11 +214,6 @@ static void outnode(Node *n, FILE *fd, int depth)
         case Nnone:
             fprintf(stderr, "Nnone not a real node type!");
             fprintf(fd, "Nnone\n");
-            break;
-        case Nidxinit:
-            fprintf(fd, "\n");
-            outnode(n->idxinit.idx, fd, depth + 1);
-            outnode(n->idxinit.init, fd, depth + 1);
             break;
     }
 }

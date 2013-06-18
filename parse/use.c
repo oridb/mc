@@ -328,6 +328,7 @@ static void pickle(Node *n, FILE *fd)
             wrbyte(fd, n->expr.op);
             wrtype(fd, n->expr.type);
             wrbool(fd, n->expr.isconst);
+            pickle(n->expr.idx, fd);
             wrint(fd, n->expr.nargs);
             for (i = 0; i < n->expr.nargs; i++)
                 pickle(n->expr.args[i], fd);
@@ -355,14 +356,6 @@ static void pickle(Node *n, FILE *fd)
                 case Llbl:      wrstr(fd, n->lit.lblval);       break;
                 case Lbool:     wrbool(fd, n->lit.boolval);     break;
                 case Lfunc:     pickle(n->lit.fnval, fd);       break;
-                case Larray:
-                    for (i = 0; i < n->lit.nelt; i++)
-                        pickle(n->lit.seqval[i], fd);
-                    break;
-                case Lstruct:
-                    for (i = 0; i < n->lit.nelt; i++)
-                        pickle(n->lit.seqval[i], fd);
-                    break;
             }
             break;
         case Nloopstmt:
@@ -413,10 +406,6 @@ static void pickle(Node *n, FILE *fd)
                 pickle(n->func.args[i], fd);
             pickle(n->func.body, fd);
             break;
-        case Nidxinit:
-            pickle(n->idxinit.idx, fd);
-            pickle(n->idxinit.init, fd);
-            break;
         case Nnone:
             die("Nnone should not be seen as node type!");
             break;
@@ -456,6 +445,7 @@ static Node *unpickle(FILE *fd)
             n->expr.op = rdbyte(fd);
             rdtype(fd, &n->expr.type);
             n->expr.isconst = rdbool(fd);
+            n->expr.idx = unpickle(fd);
             n->expr.nargs = rdint(fd);
             n->expr.args = xalloc(sizeof(Node *)*n->expr.nargs);
             for (i = 0; i < n->expr.nargs; i++)
@@ -482,14 +472,6 @@ static Node *unpickle(FILE *fd)
                 case Llbl:      n->lit.lblval = rdstr(fd);       break;
                 case Lbool:     n->lit.boolval = rdbool(fd);     break;
                 case Lfunc:     n->lit.fnval = unpickle(fd);       break;
-                case Larray:
-                    for (i = 0; i < n->lit.nelt; i++)
-                        n->lit.seqval[i] = unpickle(fd);
-                    break;
-                case Lstruct:
-                    for (i = 0; i < n->lit.nelt; i++)
-                        n->lit.seqval[i] = unpickle(fd);
-                    break;
             }
             break;
         case Nloopstmt:
@@ -549,10 +531,6 @@ static Node *unpickle(FILE *fd)
                 n->func.args[i] = unpickle(fd);
             n->func.body = unpickle(fd);
             popstab();
-            break;
-        case Nidxinit:
-            n->idxinit.idx = unpickle(fd);
-            n->idxinit.init = unpickle(fd);
             break;
         case Nnone:
             die("Nnone should not be seen as node type!");
@@ -745,25 +723,15 @@ static void nodetag(Node *n)
             nodetag(n->match.block);
             break;
         case Nexpr:
+            nodetag(n->expr.idx);
             taghidden(n->expr.type);
             for (i = 0; i < n->expr.nargs; i++)
                 nodetag(n->expr.args[i]);
             break;
         case Nlit:
             taghidden(n->lit.type);
-            switch (n->lit.littype) {
-                case Lfunc: nodetag(n->lit.fnval); break;
-                case Larray:
-                    for (i = 0; i < n->lit.nelt; i++)
-                        nodetag(n->lit.seqval[i]);
-                    break;
-                case Lstruct:
-                    for (i = 0; i < n->lit.nelt; i++)
-                        nodetag(n->lit.seqval[i]);
-                    break;
-                default:
-                    break;
-            }
+            if (n->lit.littype == Lfunc)
+                nodetag(n->lit.fnval);
             break;
         case Ndecl:
             taghidden(n->decl.type);
@@ -776,10 +744,6 @@ static void nodetag(Node *n)
             for (i = 0; i < n->func.nargs; i++)
                 nodetag(n->func.args[i]);
             nodetag(n->func.body);
-            break;
-        case Nidxinit:
-            nodetag(n->idxinit.idx);
-            nodetag(n->idxinit.init);
             break;
 
         case Nuse: case Nname:

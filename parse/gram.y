@@ -561,7 +561,7 @@ arglist : asnexpr
 atomicexpr
         : Tident
             {$$ = mkexpr($1->line, Ovar, mkname($1->line, $1->str), NULL);}
-        | literal {$$ = mkexpr($1->line, Olit, $1, NULL);}
+        | literal
         | Toparen expr Tcparen
             {$$ = $2;}
         | Toparen tupbody Tcparen
@@ -586,9 +586,9 @@ tuprest : /*empty */
             {lappend(&$$.nl, &$$.nn, $3);}
         ;
 
-literal : funclit       {$$ = $1;}
+literal : funclit       {$$ = mkexpr($1->line, Olit, $1, NULL);}
+        | littok        {$$ = mkexpr($1->line, Olit, $1, NULL);}
         | seqlit        {$$ = $1;}
-        | littok        {$$ = $1;}
         ;
 
 littok  : Tstrlit       {$$ = mkstr($1->line, $1->str);}
@@ -613,9 +613,9 @@ params  : declcore
         ;
 
 seqlit  : Tosqbrac arrayelts Tcsqbrac
-            {$$ = mkarray($1->line, $2.nl, $2.nn);}
+            {$$ = mkexprl($1->line, Oarr, $2.nl, $2.nn);}
         | Tosqbrac structelts Tcsqbrac
-            {$$ = mkstruct($1->line, $2.nl, $2.nn);}
+            {$$ = mkexprl($1->line, Ostruct, $2.nl, $2.nn);}
         ;
 
 arrayelts

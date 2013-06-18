@@ -34,6 +34,8 @@ char modenames[] = {
 
 /* forward decls */
 Loc *selexpr(Isel *s, Node *n);
+static void writeblob(FILE *fd, Node *blob);
+
 
 /* used to decide which operator is appropriate
  * for implementing various conditional operators */
@@ -84,16 +86,16 @@ static Loc *loc(Isel *s, Node *n)
 
     switch (exprop(n)) {
         case Ovar:
-            if (hthas(s->stkoff, n)) {
-                stkoff = (ssize_t)htget(s->stkoff, n);
-                l = locmem(-stkoff, locphysreg(Rrbp), NULL, mode(n));
-            } else if (hthas(s->globls, n)) {
+            if (hthas(s->globls, n)) {
                 if (tybase(exprtype(n))->type == Tyfunc)
                     rip = NULL;
                 else
                     rip = locphysreg(Rrip);
                 l = locmeml(htget(s->globls, n), rip, NULL, mode(n));
-            } else {
+            } else if (hthas(s->stkoff, n)) {
+                stkoff = (ssize_t)htget(s->stkoff, n);
+                l = locmem(-stkoff, locphysreg(Rrbp), NULL, mode(n));
+            }  else {
                 if (!hthas(s->reglocs, n))
                     htput(s->reglocs, n, locreg(mode(n)));
                 return htget(s->reglocs, n);
@@ -614,7 +616,7 @@ Loc *selexpr(Isel *s, Node *n)
         case Osubeq: case Omuleq: case Odiveq: case Omodeq: case Oboreq:
         case Obandeq: case Obxoreq: case Obsleq: case Obsreq: case Omemb:
         case Oslice: case Oidx: case Osize: case Numops:
-        case Oucon: case Ouget: case Otup: case Oarr:
+        case Oucon: case Ouget: case Otup: case Oarr: case Ostruct:
         case Oslbase: case Osllen: case Ocast:
             dump(n, stdout);
             die("Should not see %s in isel", opstr(exprop(n)));
@@ -854,15 +856,15 @@ static Asmbb *mkasmbb(Bb *bb)
     return as;
 }
 
-static void writeblob(FILE *fd, char *p, size_t sz)
+static void writebytes(FILE *fd, char *p, size_t sz)
 {
     size_t i;
 
     for (i = 0; i < sz; i++) {
         if (i % 60 == 0)
             fprintf(fd, "\t.ascii \"");
-	if (p[i] == '"')
-	    fprintf(fd, "\\");
+        if (p[i] == '"')
+            fprintf(fd, "\\");
         if (isprint(p[i]))
             fprintf(fd, "%c", p[i]);
         else
@@ -876,8 +878,6 @@ static void writeblob(FILE *fd, char *p, size_t sz)
 static void writelit(FILE *fd, Node *v, size_t sz)
 {
     char lbl[128];
-    size_t i;
-    Node *val;
     char *intsz[] = {
         [1] = ".byte",
         [2] = ".short",
@@ -887,27 +887,15 @@ static void writelit(FILE *fd, Node *v, size_t sz)
 
     assert(v->type == Nlit);
     switch (v->lit.littype) {
+        case Lint:      fprintf(fd, "\t%s %lld\n", intsz[sz], v->lit.intval);    break;
         case Lbool:     fprintf(fd, "\t.byte %d\n", v->lit.boolval);     break;
         case Lchr:      fprintf(fd, "\t.long %d\n",  v->lit.chrval);     break;
-        case Lint:      fprintf(fd, "\t%s %lld\n", intsz[sz], v->lit.intval);    break;
         case Lflt:      fprintf(fd, "\t.double %f\n", v->lit.fltval);    break;
         case Lstr:      fprintf(fd, "\t.quad %s\n", genlblstr(lbl, 128));
                         fprintf(fd, "\t.quad %zd\n", strlen(v->lit.strval));
                         fprintf(fd, "%s:\n", lbl);
-                        writeblob(fd, v->lit.strval, strlen(v->lit.strval));
+                        writebytes(fd, v->lit.strval, strlen(v->lit.strval));
                         break;
-        case Larray:
-            for (i = 0; i < v->lit.nelt; i++) {
-                val = v->lit.seqval[i]->idxinit.init;
-                writelit(fd, val->expr.args[0], size(val));
-            }
-            break;
-        case Lstruct:
-            for (i = 0; i < v->lit.nelt; i++) {
-                val = v->lit.seqval[i]->idxinit.init;
-                writelit(fd, val->expr.args[0], size(val));
-            }
-            break;
         case Lfunc:
             die("Generating this shit ain't ready yet ");
             break;
@@ -917,9 +905,56 @@ static void writelit(FILE *fd, Node *v, size_t sz)
     }
 }
 
-void genblob(FILE *fd, Node *blob, Htab *globls)
+static void writepad(FILE *fd, size_t sz)
 {
     size_t i;
+
+    for (i = 0; i < sz; i++)
+        fprintf(fd, "\t.byte 0\n");
+}
+
+static void writetup(FILE *fd, Node *n)
+{
+    size_t i;
+
+    for (i = 0; i < n->expr.nargs; i++) {
+        writeblob(fd, n->expr.args[i]);
+    }
+}
+
+static void writearr(FILE *fd, Node *n)
+{
+    size_t i;
+
+    for (i = 0; i < n->expr.nargs; i++) {
+        writeblob(fd, n->expr.args[i]);
+    }
+}
+
+static void writestruct(FILE *fd, Node *n)
+{
+    size_t i;
+
+    for (i = 0; i < n->expr.nargs; i++) {
+        writeblob(fd, n->expr.args[i]);
+    }
+}
+
+static void writeblob(FILE *fd, Node *n)
+{
+    switch(exprop(n)) {
+        case Otup:  writetup(fd, n);  break;
+        case Oarr:  writearr(fd, n);  break;
+        case Ostruct: writestruct(fd, n); break;
+        case Olit:  writelit(fd, n->expr.args[0], size(n)); break;
+        default:
+                    die("Nonliteral initializer for global");
+                    break;
+    }
+}
+
+void genblob(FILE *fd, Node *blob, Htab *globls)
+{
     char *lbl;
 
     /* lits and such also get wrapped in decls */
@@ -929,14 +964,10 @@ void genblob(FILE *fd, Node *blob, Htab *globls)
     if (blob->decl.isexport)
         fprintf(fd, ".globl %s\n", lbl);
     fprintf(fd, "%s:\n", lbl);
-    if (blob->decl.init) {
-        if (exprop(blob->decl.init) != Olit)
-            die("Nonliteral initializer for global");
-        writelit(fd, blob->decl.init->expr.args[0], size(blob));
-    } else {
-        for (i = 0; i < size(blob); i++)
-            fprintf(fd, "\t.byte 0\n");
-    }
+    if (blob->decl.init)
+        writeblob(fd, blob->decl.init);
+    else
+        writepad(fd, size(blob));
 }
 
 /* genasm requires all nodes in 'nl' to map cleanly to operations that are

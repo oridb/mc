@@ -52,6 +52,7 @@ O(Olbl, 1)
 O(Oucon, 1)
 O(Ouget, 1)
 O(Otup, 1)
+O(Ostruct, 1)
 O(Oarr, 1)
 /* backend-only */
 O(Ocjmp, 1)        /* conditional jump */

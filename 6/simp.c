@@ -54,6 +54,7 @@ static Node *lval(Simp *s, Node *n);
 static Node *assign(Simp *s, Node *lhs, Node *rhs);
 static void declarelocal(Simp *s, Node *n);
 static void simpcond(Simp *s, Node *n, Node *ltrue, Node *lfalse);
+static void simpconstinit(Simp *s, Node *dcl);
 
 /* useful constants */
 static Type *tyintptr;
@@ -932,6 +933,7 @@ static Node *simptup(Simp *s, Node *n, Node *dst)
 
     off = 0;
     for (i = 0; i < n->expr.nargs; i++) {
+        off = align(off, size(args[i]));
         val = rval(s, args[i], NULL);
         pdst = add(r, disp(n->line, off));
 
@@ -1157,7 +1159,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
                 case Lchr: case Lbool: case Lint: case Llbl:
                     r = n;
                     break;
-                case Lstr: case Lstruct: case Larray: case Lflt:
+                case Lstr: case Lflt:
                     r = simplit(s, n, &s->blobs, &s->nblobs);
                     break;
                 case Lfunc:
@@ -1202,6 +1204,20 @@ static Node *rval(Simp *s, Node *n, Node *dst)
                 r = addr(s, t, exprtype(t));
             else
                 r = t->expr.args[0];
+            break;
+        case Oarr:
+            if (dst)
+                r = dst;
+            else
+                r = temp(s, n);
+            die("No initialization done yet");
+            break;
+        case Ostruct:
+            if (dst)
+                r = dst;
+            else
+                r = temp(s, n);
+            die("No initialization done yet");
             break;
         default:
             r = visit(s, n);
@@ -1270,14 +1286,14 @@ static Node *simp(Simp *s, Node *n)
 
         case Ndecl:
             declarelocal(s, n);
-            if (n->decl.init) {
-                t = mkexpr(n->line, Ovar, n->decl.name, NULL);
-                u = mkexpr(n->line, Oasn, t, n->decl.init, NULL);
-                u->expr.type = n->decl.type;
-                t->expr.type = n->decl.type;
-                t->expr.did = n->decl.did;
-                simp(s, u);
-            }
+            if (!n->decl.init)
+                break;
+            t = mkexpr(n->line, Ovar, n->decl.name, NULL);
+            u = mkexpr(n->line, Oasn, t, n->decl.init, NULL);
+            u->expr.type = n->decl.type;
+            t->expr.type = n->decl.type;
+            t->expr.did = n->decl.did;
+            simp(s, u);
             break;
         default:
             die("Bad node passsed to simp()");
@@ -1331,8 +1347,6 @@ static Func *simpfn(Simp *s, char *name, Node *n, int export)
     if(debugopt['i'])
         printf("\n\nfunction %s\n", name);
 
-    if (!n->decl.init)
-        return NULL;
     /* set up the simp context */
     /* unwrap to the function body */
     n = n->expr.args[0];
@@ -1395,7 +1409,30 @@ static void fillglobls(Stab *st, Htab *globls)
     free(k);
 }
 
-static void simpdcl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***blob, size_t *nblob)
+static void simpconstinit(Simp *s, Node *dcl)
+{
+    Node *e;
+
+    dcl->decl.init = fold(dcl->decl.init);;
+    e = dcl->decl.init;
+    if (e && exprop(e) == Olit) {
+        if (e->expr.args[0]->lit.littype == Lfunc)
+            simplit(s, e->expr.args[0], &file->file.stmts, &file->file.nstmts);
+        else
+            lappend(&s->blobs, &s->nblobs, dcl);
+    } else if (dcl->decl.isconst && exprop(e) == Oarr) {
+        lappend(&s->blobs, &s->nblobs, dcl);
+    } else if (dcl->decl.isconst && exprop(e) == Ostruct) {
+        lappend(&s->blobs, &s->nblobs, dcl);
+    /* uninitialized global vars get zero-initialized decls */
+    } else if (!dcl->decl.isconst && !e) {
+        lappend(&s->blobs, &s->nblobs, dcl);
+    } else {
+        fatal(dcl->line, "Declaration %s initialized with nonconstant value", declname(dcl));
+    }
+}
+
+static void simpglobl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***blob, size_t *nblob)
 {
     Simp s = {0,};
     char *name;
@@ -1413,14 +1450,7 @@ static void simpdcl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***bl
             lappend(fn, nfn, f);
         }
     } else {
-        dcl->decl.init = fold(dcl->decl.init);
-        if (dcl->decl.init && exprop(dcl->decl.init) == Olit)
-            lappend(&s.blobs, &s.nblobs, dcl);
-        /* uninitialized global vars get zero-initialized decls */
-        else if (!dcl->decl.isconst && !dcl->decl.init)
-            lappend(&s.blobs, &s.nblobs, dcl);
-        else
-            die("We don't simp globls with nonlit inits yet...");
+        simpconstinit(&s, dcl);
     }
     *blob = s.blobs;
     *nblob = s.nblobs;
@@ -1457,7 +1487,7 @@ void gen(Node *file, char *out)
             case Nuse: /* nothing to do */ 
                 break;
             case Ndecl:
-                simpdcl(n, globls, &fn, &nfn, &blob, &nblob);
+                simpglobl(n, globls, &fn, &nfn, &blob, &nblob);
                 break;
             default:
                 die("Bad node %s in toplevel", nodestr(n->type));

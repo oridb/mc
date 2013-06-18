@@ -168,6 +168,7 @@ struct Node {
             int isconst;
             size_t did; /* for Ovar, we want a mapping to the decl id */
             size_t nargs;
+            Node *idx; /* used when this is in an indexed initializer */
             Node **args;
         } expr;
 
@@ -220,11 +221,6 @@ struct Node {
             Node *pat;
             Node *block;
         } match;
-
-        struct {
-            Node *idx;
-            Node *init;
-        } idxinit;
 
         struct {
             Stab *scope;
@@ -400,9 +396,6 @@ Node *mkchar(int line, uint32_t val);
 Node *mkstr(int line, char *s);
 Node *mkfloat(int line, double flt);
 Node *mkfunc(int line, Node **args, size_t nargs, Type *ret, Node *body);
-Node *mkstruct(int line, Node **vals, size_t nvals);
-Node *mkarray(int line, Node **vals, size_t nvals);
-Node *mktuple(int line, Node **vals, size_t nvals);
 Node *mkname(int line, char *name);
 Node *mknsname(int line, char *ns, char *name);
 Node *mkdecl(int line, Node *name, Type *ty);
