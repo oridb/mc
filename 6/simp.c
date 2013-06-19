@@ -1385,7 +1385,7 @@ static Func *simpfn(Simp *s, char *name, Node *n, int export)
     }
 
     cfg = mkcfg(s->stmts, s->nstmts);
-    if (debugopt['t'])
+    if (debugopt['t'] || debugopt['s'])
         dumpcfg(cfg, stdout);
 
     fn = zalloc(sizeof(Func));
