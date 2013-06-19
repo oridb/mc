@@ -513,9 +513,7 @@ Loc *selexpr(Isel *s, Node *n)
             break;
 
         case Oderef:
-            a = selexpr(s, args[0]);
-            a = inr(s, a);
-            r = locmem(0, a, Rnone, mode(n));
+            r = memloc(s, args[0], mode(n));
             break;
 
         case Oaddr:
