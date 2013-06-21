@@ -514,8 +514,10 @@ static Tok *number(int base)
     t = NULL;
     isfloat = 0;
     start = fidx;
-    for (c = peek(); isxdigit(c) || c == '.'; c = peek()) {
+    for (c = peek(); isxdigit(c) || c == '.' || c == '_'; c = peek()) {
         next();
+        if (c == '_')
+            continue;
         if (c == '.')
             isfloat = 1;
         else if (hexval(c) > base)

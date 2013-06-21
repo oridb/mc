@@ -3,8 +3,10 @@ use std
 const main = {
 	var a
 	var b
+	var c
 
 	a = 42
 	b = 11
-	-> a + b
+	c = 0_0
+	-> a + b + c
 }
