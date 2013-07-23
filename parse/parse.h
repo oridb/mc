@@ -259,7 +259,6 @@ struct Node {
 
 /* globals */
 extern char *filename;
-extern int ignorenl;    /* are '\n' chars currently stmt separators? */
 extern Tok *curtok;     /* the last token we tokenized */
 extern int line;        /* the last line number we tokenized */
 extern Node *file;      /* the current file we're compiling */

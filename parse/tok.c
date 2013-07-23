@@ -19,7 +19,6 @@
 
 char *filename;
 int line;
-int ignorenl;
 Tok *curtok;
 
 /* the file contents are stored globally */
@@ -130,17 +129,24 @@ static void eatcomment(void)
 static void eatspace(void)
 {
     int c;
+    int ignorenl;
 
+    ignorenl = 0;
     while (1) {
         c = peek();
-        if ((!ignorenl && c == '\n'))
+        if (!ignorenl && c == '\n') {
+            ignorenl = 0;
             break;
-        else if (isspace(c))
+        } else if (c == '\\') {
+            ignorenl = 1;
             next();
-        else if (c == '/' && peekn(1) == '*')
+        } else if (isspace(c) || (ignorenl && c == '\n')) {
+            next();
+        } else if (c == '/' && peekn(1) == '*') {
             eatcomment();
-        else
+        } else {
             break;
+        }
     }
 }
 
