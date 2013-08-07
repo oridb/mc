@@ -167,6 +167,7 @@ const intfmt = {buf, val, base
 	n = 0
 	i = 0
 	if val < 0
+		val = -val
 		isneg = true
 	else
 		isneg = false
