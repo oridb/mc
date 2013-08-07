@@ -502,23 +502,30 @@ static void umatch(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, Node *i
             }
             break;
         case Tyunion:
-            uc = finducon(pat);
-            if (!uc)
-                uc = finducon(val);
-            deeper = genlbl();
+            if (exprop(pat) == Ovar && !decls[pat->expr.did]->decl.isconst) {
+                v = assign(s, pat, val);
+                append(s, v);
+                jmp(s, iftrue);
+            } else {
+                uc = finducon(pat);
+                if (!uc)
+                    uc = finducon(val);
 
-            x = uconid(s, pat);
-            y = uconid(s, val);
-            v = mkexpr(pat->line, Oeq, x, y, NULL);
-            v->expr.type = tyintptr;
-            cjmp(s, v, deeper, iffalse);
-            append(s, deeper);
-            if (uc->etype) {
-                pat = patval(s, pat, uc->etype);
-                val = patval(s, val, uc->etype);
-                umatch(s, pat, val, uc->etype, iftrue, iffalse);
+                deeper = genlbl();
+
+                x = uconid(s, pat);
+                y = uconid(s, val);
+                v = mkexpr(pat->line, Oeq, x, y, NULL);
+                v->expr.type = tyintptr;
+                cjmp(s, v, deeper, iffalse);
+                append(s, deeper);
+                if (uc->etype) {
+                    pat = patval(s, pat, uc->etype);
+                    val = patval(s, val, uc->etype);
+                    umatch(s, pat, val, uc->etype, iftrue, iffalse);
+                }
+                break;
             }
-            break;
     }
 }
 
