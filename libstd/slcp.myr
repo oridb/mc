@@ -1,0 +1,16 @@
+use "die.use"
+
+pkg std =
+	generic slcp : (a : @a[:], b : @a[:] -> void)
+;;
+
+generic slcp = {a, b
+	var i
+
+	assert(a.len == b.len, "arguments to slcp() must be of equal length")
+
+	for i = 0; i < a.len; i++
+		a[i] = b[i]
+	;;
+}
+
