@@ -1,0 +1,60 @@
+use "die.use"
+use "strcmp.use"
+use "types.use"
+use "utf.use"
+
+pkg std =
+	generic intparsebase	: (s : byte[:], base : int -> @a::(tcint,tcnum,tctest))
+	generic intparse	: (s : byte[:]	-> @a::(tcint,tcnum,tctest))
+;;
+
+generic parseint = {s
+	if hasprefix(s, "0x")
+		-> parsebase(s[2:], 16)
+	elif hasprefix(s, "0o")
+		-> parsebase(s[2:], 8)
+	elif hasprefix(s, "0b")
+		-> parsebase(s[2:], 2)
+	else
+		-> parsebase(s[2:], 10)
+	;;
+}
+
+
+generic charval = {c, base -> @a :: (tcint,tcnum,tctest)
+	var v = -1
+
+	if c >= '0' && c <= '9'
+		v =  (c - '0') castto(@a::(tcint,tcnum,tctest))
+	elif c >= 'a' && c <= 'z'
+		v =  (c - 'a') castto(@a::(tcint,tcnum,tctest))
+	elif c >= 'A' && c <= 'Z'
+		v =  (c - 'A') castto(@a::(tcint,tcnum,tctest))
+	;;
+
+	if v < 0 || v > (base castto(@a::(tcint,tcnum,tctest)))
+		die("Character out of range for base when parsing integer")
+	;;
+	-> v
+}
+
+generic parsebase = {s, base -> @a::(tcint,tcnum,tctest)
+	var v : @a::(tcint,tcnum,tctest)
+	var c
+	
+	assert(base <= 36, "Base for parsing values is too big")
+	v = 0
+	while s.len != 0
+		(c, s) = striter(s)
+		v *= base castto(@a::(tcint,tcnum,tctest))
+		v += charval(c, base)
+	;;
+	-> v
+}
+
+const hasprefix = {s, pre
+	if strncmp(s, pre, pre.len) == `Equal
+		-> true
+	;;
+}
+

@@ -26,9 +26,11 @@ Large allocations are simply satisfied by mmap().
 
 pkg std =
 	generic alloc	: (		-> @a#)
+	generic zalloc	: (		-> @a#)
 	generic free	: (v:@a#	-> void)
 
 	generic slalloc	: (len : size	-> @a[:])
+	generic slzalloc	: (len : size	-> @a[:])
 	generic slgrow	: (sl : @a[:], len : size	-> @a[:])
 	generic slfree	: (sl : @a[:]	-> void)
 
@@ -40,7 +42,7 @@ pkg std =
 ;;
 
 /* null pointers. only used internally. */
-const Zbyte	= 0 castto(byte#)
+const Zbyteptr	= 0 castto(byte#)
 const Zslab	= 0 castto(slab#)
 const Zchunk	= 0 castto(chunk#)
 
@@ -76,6 +78,10 @@ generic alloc = {-> @a#
 	-> bytealloc(sizeof(@a)) castto(@a#)
 }
 
+generic zalloc = {-> @a#
+	-> zbytealloc(sizeof(@a)) castto(@a#)
+}
+
 /* Frees a value of type @a */
 generic free = {v:@a# -> void
 	bytefree(v castto(byte#), sizeof(@a))
@@ -83,11 +89,13 @@ generic free = {v:@a# -> void
 
 /* allocates a slice of 'len' elements. */
 generic slalloc = {len
-	var p
-
-	p = bytealloc(len*sizeof(@a)) castto(@a#)
-	-> p[0:len]
+	-> (bytealloc(len*sizeof(@a)) castto(@a#))[0:len]
 }
+
+generic slzalloc = {len
+	-> (zbytealloc(len*sizeof(@a)) castto(@a#))[0:len]
+}
+
 
 /* Frees a slice */
 generic slfree	 = {sl
@@ -124,6 +132,19 @@ const samebucket = {oldsz, newsz
 	;;
 }
 
+const zbytealloc = {sz
+	var p
+	var sl
+	var i
+
+	p = bytealloc(sz)
+	sl = p[0:sz]
+	for i = 0; i < sl.len; i++
+		sl[i] = 0
+	;;
+	-> p
+}
+
 /* Allocates a blob that is 'sz' bytes long. Dies if the allocation fails */
 const bytealloc = {sz
 	var i
@@ -140,7 +161,7 @@ const bytealloc = {sz
 		bkt = &buckets[bktnum(sz)]
 		-> bktalloc(bkt)
 	else
-		-> mmap(Zbyte, sz, Mprotrw, Mpriv | Manon, -1, 0)
+		-> mmap(Zbyteptr, sz, Mprotrw, Mpriv | Manon, -1, 0)
 	;;
 }
 
@@ -185,7 +206,7 @@ const mkslab = {bkt
 	   cost us memory, and 64 bits of address space means that we're not
 	   going to have issues with running out of address space for a
 	   while. On a 32 bit system this would be a bad idea. */
-	p = mmap(Zbyte, Slabsz*2, Mprotrw, Mpriv | Manon, -1, 0)
+	p = mmap(Zbyteptr, Slabsz*2, Mprotrw, Mpriv | Manon, -1, 0)
 	if p == Mapbad
 		die("Unable to mmap")
 	;;

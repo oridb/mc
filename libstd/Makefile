@@ -6,12 +6,14 @@ MYRSRC= \
     die.myr \
     extremum.myr \
     fmt.myr \
+    intparse.myr \
     optparse.myr \
     rand.myr \
     slappend.myr \
     slcp.myr \
     sleq.myr \
     slurp.myr \
+    strcmp.myr \
     sys.myr \
     types.myr \
     utf.myr \

@@ -1,0 +1,48 @@
+use "extremum.use"
+use "types.use"
+
+pkg std =
+	type comparison
+
+	const strcmp	: (a : byte[:], b : byte[:] -> comparison)
+	const strncmp	: (a : byte[:], b : byte[:], n : size -> comparison)
+;;
+
+type comparison = union
+	`Equal
+	`Before
+	`After
+;;
+
+
+const strcmp = {a, b
+	var l
+	var i
+	var v
+
+	l = min(a.len, b.len)
+	for i = 0; i < l; i++
+		v = b[i] - a[i]
+		if v < 0
+			-> `Before
+		elif v < 0
+			-> `After
+		;;
+	;;
+
+	if a.len < b.len
+		-> `Before
+	elif a.len > b.len
+		-> `After
+	else
+		-> `Equal
+	;;
+		
+}
+
+const strncmp = {a, b, n
+	a = a[:min(a.len, n)]
+	b = b[:min(b.len, n)]
+	-> strcmp(a, b)
+}
+
