@@ -6,6 +6,9 @@ use "utf.use"
 pkg std =
 	generic intparsebase	: (s : byte[:], base : int -> @a::(tcint,tcnum,tctest))
 	generic intparse	: (s : byte[:]	-> @a::(tcint,tcnum,tctest))
+
+	/* FIXME: fix hidden exports */
+	generic charval
 ;;
 
 generic intparse = {s
