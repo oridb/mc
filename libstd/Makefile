@@ -9,6 +9,7 @@ MYRSRC= \
     optparse.myr \
     rand.myr \
     slappend.myr \
+    slcp.myr \
     sleq.myr \
     slurp.myr \
     sys.myr \

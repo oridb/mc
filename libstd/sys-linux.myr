@@ -1,10 +1,12 @@
 use "types.use"
 
 pkg std =
-	type scno = int64
-	type fdopt = int64
-	type mprot = int64
-	type mopt = int64
+	type scno	= int64
+	type fdopt	= int64
+	type mprot	= int64
+	type mopt	= int64
+	type fd	= int64
+
 	type statbuf = struct
 		 dev     : uint
 		 ino     : uint
@@ -374,23 +376,26 @@ pkg std =
 	const exit	: (status:int -> void)
 	const getpid	: ( -> int64)
 	const kill	: (pid:int64, sig:int64 -> int64)
-	const open	: (path:byte[:], opts:fdopt, mode:int64 -> int64)
-	const close	: (fd:int64 -> int64)
-	const creat	: (path:byte[:], mode:int64 -> int64)
-	const read	: (fd:int64, buf:byte[:] -> size)
-	const write	: (fd:int64, buf:byte[:] -> size)
-	const lseek	: (fd:int64, off:uint64, whence:int64 -> int64)
-	const fstat	: (fd:int64, sb:statbuf# -> int64)
+
+	/* fd manipulation */
+	const open	: (path:byte[:], opts:fdopt, mode:int64 -> fd)
+	const close	: (fd:fd -> int64)
+	const creat	: (path:byte[:], mode:int64 -> fd)
+	const read	: (fd:fd, buf:byte[:] -> size)
+	const write	: (fd:fd, buf:byte[:] -> size)
+	const lseek	: (fd:fd, off:uint64, whence:int64 -> int64)
+	const fstat	: (fd:fd, sb:statbuf# -> int64)
+
 	const munmap	: (addr:byte#, len:size -> int64)
-	const mmap	: (addr:byte#, len:size, prot:mprot, flags:mopt, fd:int64, off:off -> byte#)
+	const mmap	: (addr:byte#, len:size, prot:mprot, flags:mopt, fd:fd, off:off -> byte#)
 ;;
 
 const exit	= {status;		syscall(Sysexit, status castto(int64))}
 const getpid	= {;			-> syscall(Sysgetpid, 1)}
 const kill	= {pid, sig;		-> syscall(Syskill, pid, sig)}
-const open	= {path, opts, mode;	-> syscall(Sysopen, cstring(path), opts, mode)}
+const open	= {path, opts, mode;	-> syscall(Sysopen, cstring(path), opts, mode) castto(fd)}
 const close	= {fd;			-> syscall(Sysclose, fd)}
-const creat	= {path, mode;		-> syscall(Syscreat, cstring(path), mode)}
+const creat	= {path, mode;		-> syscall(Syscreat, cstring(path), mode) castto(fd)}
 const read	= {fd, buf;		-> syscall(Sysread, fd, buf castto(byte#), buf.len castto(size)) castto(size)}
 const write	= {fd, buf;		-> syscall(Syswrite, fd, buf castto(byte#), buf.len castto(size)) castto(size)}
 const lseek	= {fd, off, whence;	-> syscall(Syslseek, fd, off, whence)}
