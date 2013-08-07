@@ -12,18 +12,38 @@ pkg std =
 ;;
 
 generic intparse = {s
+	var isneg 
+
+	isneg = 0
+	if hasprefix(s, "-")
+		s = s[1:]
+		isneg = 1
+	;;
+
 	if hasprefix(s, "0x")
-		-> intparsebase(s[2:], 16)
+		-> doparse(s[2:], isneg, 16)
 	elif hasprefix(s, "0o")
-		-> intparsebase(s[2:], 8)
+		-> doparse(s[2:], isneg, 8)
 	elif hasprefix(s, "0b")
-		-> intparsebase(s[2:], 2)
+		-> doparse(s[2:], isneg, 2)
 	else
-		-> intparsebase(s[2:], 10)
+		-> doparse(s[2:], isneg, 10)
 	;;
 }
 
 generic intparsebase = {s, base -> @a::(tcint,tcnum,tctest)
+	var isneg 
+
+	isneg = 0
+	if hasprefix(s, "-")
+		s = s[1:]
+		isneg = 1
+	;;
+
+	-> doparse(s, isneg, base)
+}
+
+generic doparse = {s, isneg, base -> @a::(tcint,tcnum,tctest)
 	var v : @a::(tcint,tcnum,tctest)
 	var c
 	
@@ -34,7 +54,12 @@ generic intparsebase = {s, base -> @a::(tcint,tcnum,tctest)
 		v *= base castto(@a::(tcint,tcnum,tctest))
 		v += charval(c, base)
 	;;
-	-> v
+
+	if isneg
+		-> v
+	else
+		-> -v
+	;;
 }
 
 generic charval = {c, base -> @a :: (tcint,tcnum,tctest)
