@@ -8,18 +8,31 @@ pkg std =
 	generic intparse	: (s : byte[:]	-> @a::(tcint,tcnum,tctest))
 ;;
 
-generic parseint = {s
+generic intparse = {s
 	if hasprefix(s, "0x")
-		-> parsebase(s[2:], 16)
+		-> intparsebase(s[2:], 16)
 	elif hasprefix(s, "0o")
-		-> parsebase(s[2:], 8)
+		-> intparsebase(s[2:], 8)
 	elif hasprefix(s, "0b")
-		-> parsebase(s[2:], 2)
+		-> intparsebase(s[2:], 2)
 	else
-		-> parsebase(s[2:], 10)
+		-> intparsebase(s[2:], 10)
 	;;
 }
 
+generic intparsebase = {s, base -> @a::(tcint,tcnum,tctest)
+	var v : @a::(tcint,tcnum,tctest)
+	var c
+	
+	assert(base <= 36, "Base for parsing values is too big")
+	v = 0
+	while s.len != 0
+		(c, s) = striter(s)
+		v *= base castto(@a::(tcint,tcnum,tctest))
+		v += charval(c, base)
+	;;
+	-> v
+}
 
 generic charval = {c, base -> @a :: (tcint,tcnum,tctest)
 	var v = -1
@@ -37,24 +50,3 @@ generic charval = {c, base -> @a :: (tcint,tcnum,tctest)
 	;;
 	-> v
 }
-
-generic parsebase = {s, base -> @a::(tcint,tcnum,tctest)
-	var v : @a::(tcint,tcnum,tctest)
-	var c
-	
-	assert(base <= 36, "Base for parsing values is too big")
-	v = 0
-	while s.len != 0
-		(c, s) = striter(s)
-		v *= base castto(@a::(tcint,tcnum,tctest))
-		v += charval(c, base)
-	;;
-	-> v
-}
-
-const hasprefix = {s, pre
-	if strncmp(s, pre, pre.len) == `Equal
-		-> true
-	;;
-}
-

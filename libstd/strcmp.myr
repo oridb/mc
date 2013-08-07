@@ -6,6 +6,7 @@ pkg std =
 
 	const strcmp	: (a : byte[:], b : byte[:] -> comparison)
 	const strncmp	: (a : byte[:], b : byte[:], n : size -> comparison)
+	const hasprefix	: (a : byte[:], b : byte[:] -> bool)
 ;;
 
 type comparison = union
@@ -44,5 +45,11 @@ const strncmp = {a, b, n
 	a = a[:min(a.len, n)]
 	b = b[:min(b.len, n)]
 	-> strcmp(a, b)
+}
+
+const hasprefix = {s, pre
+	if strncmp(s, pre, pre.len) == `Equal
+		-> true
+	;;
 }
 
