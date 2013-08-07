@@ -1,5 +1,6 @@
 use "extremum.use"
 use "types.use"
+use "fmt.use"
 
 pkg std =
 	type comparison
@@ -48,8 +49,9 @@ const strncmp = {a, b, n
 }
 
 const hasprefix = {s, pre
-	if strncmp(s, pre, pre.len) == `Equal
-		-> true
+	match strncmp(s, pre, pre.len)
+		`Equal:	-> true;;
+		_:	-> false;;
 	;;
 }
 

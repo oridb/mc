@@ -2,6 +2,7 @@ use "die.use"
 use "strcmp.use"
 use "types.use"
 use "utf.use"
+use "fmt.use"
 
 pkg std =
 	generic intparsebase	: (s : byte[:], base : int -> @a::(tcint,tcnum,tctest))
@@ -9,15 +10,16 @@ pkg std =
 
 	/* FIXME: fix hidden exports */
 	generic charval
+	generic doparse
 ;;
 
 generic intparse = {s
 	var isneg 
 
-	isneg = 0
+	isneg = false
 	if hasprefix(s, "-")
 		s = s[1:]
-		isneg = 1
+		isneg = true
 	;;
 
 	if hasprefix(s, "0x")
@@ -27,17 +29,17 @@ generic intparse = {s
 	elif hasprefix(s, "0b")
 		-> doparse(s[2:], isneg, 2)
 	else
-		-> doparse(s[2:], isneg, 10)
+		-> doparse(s, isneg, 10)
 	;;
 }
 
 generic intparsebase = {s, base -> @a::(tcint,tcnum,tctest)
 	var isneg 
 
-	isneg = 0
+	isneg = false
 	if hasprefix(s, "-")
 		s = s[1:]
-		isneg = 1
+		isneg = true
 	;;
 
 	-> doparse(s, isneg, base)
@@ -47,7 +49,6 @@ generic doparse = {s, isneg, base -> @a::(tcint,tcnum,tctest)
 	var v : @a::(tcint,tcnum,tctest)
 	var c
 	
-	assert(base <= 36, "Base for parsing values is too big")
 	v = 0
 	while s.len != 0
 		(c, s) = striter(s)
@@ -56,9 +57,9 @@ generic doparse = {s, isneg, base -> @a::(tcint,tcnum,tctest)
 	;;
 
 	if isneg
-		-> v
-	else
 		-> -v
+	else
+		-> v
 	;;
 }
 
@@ -74,7 +75,7 @@ generic charval = {c, base -> @a :: (tcint,tcnum,tctest)
 	;;
 
 	if v < 0 || v > (base castto(@a::(tcint,tcnum,tctest)))
-		die("Character out of range for base when parsing integer")
+		fatal(1, "Character %c out of range", c)
 	;;
 	-> v
 }
