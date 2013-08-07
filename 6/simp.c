@@ -474,58 +474,46 @@ static void umatch(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, Node *i
 
     assert(pat->type == Nexpr);
     t = tybase(t);
+    if (exprop(pat) == Ovar && !decls[pat->expr.did]->decl.isconst) {
+        v = assign(s, pat, val);
+        append(s, v);
+        jmp(s, iftrue);
+        return;
+    }
     switch (t->type) {
         case Tyvoid: case Tybad: case Tyvalist: case Tyvar:
         case Tygeneric: case Typaram: case Tyunres: case Tyname: case Ntypes:
         case Tyint64: case Tyuint64: case Tylong:  case Tyulong:
         case Tyfloat32: case Tyfloat64:
         case Tyslice: case Tyarray: case Tytuple: case Tystruct:
-            if (exprop(pat) == Ovar && !decls[pat->expr.did]->decl.isconst) {
-                v = assign(s, pat, val);
-                append(s, v);
-                jmp(s, iftrue);
-            } else {
-                die("Unsupported type for compare");
-            }
+            die("Unsupported type for compare");
             break;
         case Tybool: case Tychar: case Tybyte:
         case Tyint8: case Tyint16: case Tyint32: case Tyint:
         case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint:
         case Typtr: case Tyfunc:
-            if (exprop(pat) == Ovar && !decls[pat->expr.did]->decl.isconst) {
-                v = assign(s, pat, val);
-                append(s, v);
-                jmp(s, iftrue);
-            } else {
-                v = mkexpr(pat->line, Oeq, pat, val, NULL);
-                cjmp(s, v, iftrue, iffalse);
-            }
+            v = mkexpr(pat->line, Oeq, pat, val, NULL);
+            cjmp(s, v, iftrue, iffalse);
             break;
         case Tyunion:
-            if (exprop(pat) == Ovar && !decls[pat->expr.did]->decl.isconst) {
-                v = assign(s, pat, val);
-                append(s, v);
-                jmp(s, iftrue);
-            } else {
-                uc = finducon(pat);
-                if (!uc)
-                    uc = finducon(val);
+            uc = finducon(pat);
+            if (!uc)
+                uc = finducon(val);
 
-                deeper = genlbl();
+            deeper = genlbl();
 
-                x = uconid(s, pat);
-                y = uconid(s, val);
-                v = mkexpr(pat->line, Oeq, x, y, NULL);
-                v->expr.type = tyintptr;
-                cjmp(s, v, deeper, iffalse);
-                append(s, deeper);
-                if (uc->etype) {
-                    pat = patval(s, pat, uc->etype);
-                    val = patval(s, val, uc->etype);
-                    umatch(s, pat, val, uc->etype, iftrue, iffalse);
-                }
-                break;
+            x = uconid(s, pat);
+            y = uconid(s, val);
+            v = mkexpr(pat->line, Oeq, x, y, NULL);
+            v->expr.type = tyintptr;
+            cjmp(s, v, deeper, iffalse);
+            append(s, deeper);
+            if (uc->etype) {
+                pat = patval(s, pat, uc->etype);
+                val = patval(s, val, uc->etype);
+                umatch(s, pat, val, uc->etype, iftrue, iffalse);
             }
+            break;
     }
 }
 
