@@ -15,12 +15,14 @@
 
 #include "parse.h"
 
+Stab *curscope;
+
 void yyerror(const char *s);
 int yylex(void);
+
 static Op binop(int toktype);
 static Node *mkpseudodecl(Type *t);
 static void installucons(Stab *st, Type *t);
-Stab *curscope;
 static void constrainwith(Type *t, char *str);
 
 %}
