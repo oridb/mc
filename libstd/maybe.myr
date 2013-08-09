@@ -1,0 +1,6 @@
+pkg std =
+	type maybe(@a) = union
+		`Val	@a
+		`Nil
+	;;
+;;
