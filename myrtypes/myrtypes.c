@@ -129,7 +129,7 @@ void dumpusetypes(Stab *st, int indent)
     for (i = 0; i < n; i++) {
         printindent(indent + 1);
         printf("namespace %s:\n", (char*)k[i]);
-        dumpusetypes(getns_str(st, k[i]), indent + 1);
+        dumpusetypes(getns_str(st, k[i]), indent + 2);
     }
     free(k);
 }
