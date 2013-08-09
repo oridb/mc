@@ -1,8 +1,9 @@
+use std
 /* test that generic types can be recursive, as long as they're not self
  * including. This just needs to compile and exit with 0. */
 type list(@t) = struct
 	val	: @t
-	next	: list(@t)*
+	next	: list(@t)#
 ;;
 
 const main = {
