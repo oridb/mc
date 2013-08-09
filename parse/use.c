@@ -825,7 +825,6 @@ void writeuse(FILE *f, Node *file)
     else
         wrstr(f, NULL);
 
-    printf("type 32 = %s\n", tystr(types[32]));
     tagexports(st);
     for (i = 0; i < ntypes; i++) {
         if (types[i]->vis == Visexport || types[i]->vis == Vishidden) {
