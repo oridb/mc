@@ -1,6 +1,8 @@
+use std
+
 /* checks that parameterized types work. exits with 0. */
 type option(@a) = union
-	`Some @a
+	`Some @a::(tcint,tcnum,tctest)
 	`None
 ;;
 
