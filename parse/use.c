@@ -154,7 +154,7 @@ static Node *rdsym(FILE *fd)
     name = unpickle(fd);
     n = mkdecl(line, name, NULL);
     rdtype(fd, &n->decl.type);
-    
+
     n->decl.isconst = rdbool(fd);
     n->decl.isgeneric = rdbool(fd);
     n->decl.isextern = rdbool(fd);
@@ -176,6 +176,7 @@ static void typickle(FILE *fd, Type *ty)
         die("trying to pickle null type\n");
         return;
     }
+    printf("Pickling %s\n", tystr(ty));
     wrbyte(fd, ty->type);
     /* tid is generated; don't write */
     /* cstrs are left out for now: FIXME */
@@ -209,6 +210,16 @@ static void typickle(FILE *fd, Type *ty)
             break;
         case Tyname:
             pickle(ty->name, fd);
+            wrint(fd, ty->nparam);
+            for (i = 0; i < ty->nparam; i++)
+                wrtype(fd, ty->param[i]);
+            wrtype(fd, ty->sub[0]);
+            break;
+        case Tygeneric:
+            pickle(ty->name, fd);
+            wrint(fd, ty->nparam);
+            for (i = 0; i < ty->nparam; i++)
+                wrtype(fd, ty->param[i]);
             wrtype(fd, ty->sub[0]);
             break;
         default:
@@ -256,7 +267,7 @@ static Type *tyunpickle(FILE *fd)
     /* cstrs are left out for now: FIXME */
     ty->nsub = rdint(fd);
     if (ty->nsub > 0)
-        ty->sub = xalloc(ty->nsub * sizeof(Type*));
+        ty->sub = zalloc(ty->nsub * sizeof(Type*));
     switch (ty->type) {
         case Tyunres:
             ty->name = unpickle(fd);
@@ -266,13 +277,13 @@ static Type *tyunpickle(FILE *fd)
             break;
         case Tystruct:
             ty->nmemb = rdint(fd);
-            ty->sdecls = xalloc(ty->nmemb * sizeof(Node*));
+            ty->sdecls = zalloc(ty->nmemb * sizeof(Node*));
             for (i = 0; i < ty->nmemb; i++)
                 ty->sdecls[i] = unpickle(fd);
             break;
         case Tyunion:
             ty->nmemb = rdint(fd);
-            ty->udecls = xalloc(ty->nmemb * sizeof(Node*));
+            ty->udecls = zalloc(ty->nmemb * sizeof(Node*));
             for (i = 0; i < ty->nmemb; i++)
                 ty->udecls[i] = rducon(fd, ty);
             break;
@@ -285,6 +296,18 @@ static Type *tyunpickle(FILE *fd)
             break;
         case Tyname:
             ty->name = unpickle(fd);
+            ty->nparam = rdint(fd);
+            ty->param = zalloc(ty->nparam * sizeof(Type *));
+            for (i = 0; i < ty->nparam; i++)
+                rdtype(fd, &ty->param[i]);
+            rdtype(fd, &ty->sub[0]);
+            break;
+        case Tygeneric:
+            ty->name = unpickle(fd);
+            ty->nparam = rdint(fd);
+            ty->param = zalloc(ty->nparam * sizeof(Type *));
+            for (i = 0; i < ty->nparam; i++)
+                rdtype(fd, &ty->param[i]);
             rdtype(fd, &ty->sub[0]);
             break;
         default:
@@ -430,11 +453,11 @@ static Node *unpickle(FILE *fd)
         case Nfile:
             n->file.name = rdstr(fd);
             n->file.nuses = rdint(fd);
-            n->file.uses = xalloc(sizeof(Node*)*n->file.nuses);
+            n->file.uses = zalloc(sizeof(Node*)*n->file.nuses);
             for (i = 0; i < n->file.nuses; i++)
                 n->file.uses[i] = unpickle(fd);
             n->file.nstmts = rdint(fd);
-            n->file.stmts = xalloc(sizeof(Node*)*n->file.nstmts);
+            n->file.stmts = zalloc(sizeof(Node*)*n->file.nstmts);
             for (i = 0; i < n->file.nstmts; i++)
                 n->file.stmts[i] = unpickle(fd);
             n->file.globls = rdstab(fd);
@@ -447,7 +470,7 @@ static Node *unpickle(FILE *fd)
             n->expr.isconst = rdbool(fd);
             n->expr.idx = unpickle(fd);
             n->expr.nargs = rdint(fd);
-            n->expr.args = xalloc(sizeof(Node *)*n->expr.nargs);
+            n->expr.args = zalloc(sizeof(Node *)*n->expr.nargs);
             for (i = 0; i < n->expr.nargs; i++)
                 n->expr.args[i] = unpickle(fd);
             break;
@@ -498,7 +521,7 @@ static Node *unpickle(FILE *fd)
         case Nblock:
             n->block.scope = rdstab(fd);
             n->block.nstmts = rdint(fd);
-            n->block.stmts = xalloc(sizeof(Node *)*n->block.nstmts);
+            n->block.stmts = zalloc(sizeof(Node *)*n->block.nstmts);
             n->block.scope->super = curstab();
             pushstab(n->func.scope->super);
             for (i = 0; i < n->block.nstmts; i++)
@@ -524,7 +547,7 @@ static Node *unpickle(FILE *fd)
             rdtype(fd, &n->func.type);
             n->func.scope = rdstab(fd);
             n->func.nargs = rdint(fd);
-            n->func.args = xalloc(sizeof(Node *)*n->func.nargs);
+            n->func.args = zalloc(sizeof(Node *)*n->func.nargs);
             n->func.scope->super = curstab();
             pushstab(n->func.scope->super);
             for (i = 0; i < n->func.nargs; i++)
