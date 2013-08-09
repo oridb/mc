@@ -183,7 +183,7 @@ static int isgeneric(Inferstate *st, Type *t)
             break;
         case Tyunion:
             for (i = 0; i < t->nmemb; i++)
-                if (isgeneric(st, t->udecls[i]->etype))
+                if (t->udecls[i]->etype && isgeneric(st, t->udecls[i]->etype))
                     return 1;
             break;
         default:
@@ -998,7 +998,7 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
             uc = uconresolve(st, n);
             if (uc->etype)
                 unify(st, n, uc->etype, type(st, args[1]));
-            settype(st, n, delayed(st, uc->utype));
+            settype(st, n, delayed(st, tyfreshen(st, uc->utype)));
             break;
         case Otup:
             infertuple(st, n, &n->expr.isconst);
