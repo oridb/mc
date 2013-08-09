@@ -82,6 +82,7 @@ static void outstab(Stab *st, FILE *fd, int depth)
     }
     free(k);
 
+    /* dump declarations */
     k = htkeys(st->dcl, &n);
     for (i = 0; i < n; i++) {
         indent(fd, depth + 1);
@@ -91,6 +92,7 @@ static void outstab(Stab *st, FILE *fd, int depth)
     }
     free(k);
 
+    /* dump sub-namespaces */
     k = htkeys(st->ns, &n);
     for (i = 0; i < n; i++) {
         indent(fd, depth + 1);
