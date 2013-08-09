@@ -1212,6 +1212,9 @@ static Type *tyfix(Inferstate *st, Node *ctx, Type *t)
                 if (t->udecls[i]->etype)
                     t->udecls[i]->etype = tyfix(st, ctx, t->udecls[i]->etype);
             }
+        } else if (t->type == Tyname) {
+            for (i = 0; i < t->nparam; i++)
+                t->param[i] = tyfix(st, ctx, t->param[i]);
         }
         for (i = 0; i < t->nsub; i++)
             t->sub[i] = tyfix(st, ctx, t->sub[i]);
