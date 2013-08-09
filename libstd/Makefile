@@ -7,6 +7,7 @@ MYRSRC= \
     extremum.myr \
     fmt.myr \
     intparse.myr \
+    maybe.myr \
     optparse.myr \
     rand.myr \
     slappend.myr \
@@ -18,9 +19,6 @@ MYRSRC= \
     types.myr \
     utf.myr \
     varargs.myr \
-
-# TEMPORARILY DISABLED: Broken.
-    # maybe.myr \
 
 ASMSRC= \
     start.s \

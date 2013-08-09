@@ -176,7 +176,6 @@ static void typickle(FILE *fd, Type *ty)
         die("trying to pickle null type\n");
         return;
     }
-    printf("Pickling %s\n", tystr(ty));
     wrbyte(fd, ty->type);
     /* tid is generated; don't write */
     /* cstrs are left out for now: FIXME */
@@ -700,9 +699,10 @@ static void taghidden(Type *t)
     if (t->vis != Visintern)
         return;
     t->vis = Vishidden;
-    for (i = 0; i < t->nsub; i++) {
+    for (i = 0; i < t->nsub; i++)
         taghidden(t->sub[i]);
-    }
+    for (i = 0; i < t->nparam; i++)
+        taghidden(t->param[i]);
     if (t->type == Tystruct) {
         for (i = 0; i < t->nmemb; i++)
             taghidden(decltype(t->sdecls[i]));
@@ -791,6 +791,8 @@ static void tagexports(Stab *st)
         t->vis = Visexport;
         for (j = 0; j < t->nsub; j++)
             taghidden(t->sub[j]);
+        for (j = 0; j < t->nparam; j++)
+            taghidden(t->param[j]);
     }
     free(k);
 
@@ -823,6 +825,7 @@ void writeuse(FILE *f, Node *file)
     else
         wrstr(f, NULL);
 
+    printf("type 32 = %s\n", tystr(types[32]));
     tagexports(st);
     for (i = 0; i < ntypes; i++) {
         if (types[i]->vis == Visexport || types[i]->vis == Vishidden) {
