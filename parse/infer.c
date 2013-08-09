@@ -353,9 +353,15 @@ static Ucon *uconresolve(Inferstate *st, Node *n)
 {
     Ucon *uc;
     Node **args;
+    Stab *ns;
 
     args = n->expr.args;
-    uc = getucon(curstab(), args[0]);
+    ns = curstab();
+    if (args[0]->name.ns)
+        ns = getns_str(ns, args[0]->name.ns);
+    if (!ns)
+        fatal(n->line, "No namespace %s\n", args[0]->name.ns);
+    uc = getucon(ns, args[0]);
     if (!uc)
         fatal(n->line, "no union constructor `%s", ctxstr(st, args[0]));
     if (!uc->etype && n->expr.nargs > 1)
