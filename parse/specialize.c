@@ -281,7 +281,7 @@ static Node *specializenode(Node *n, Htab *tsmap)
             r->decl.isconst = n->decl.isconst;
             r->decl.isgeneric = n->decl.isgeneric;
             r->decl.isextern = n->decl.isextern;
-	    if (curstab())
+            if (curstab())
                 putdcl(curstab(), r);
 
             /* init */
