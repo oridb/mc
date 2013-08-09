@@ -62,8 +62,10 @@ Type *tyspecialize(Type *t, Htab *tsmap)
             break;
         case Tystruct:
             ret = tydup(t);
+            pushstab(NULL);
             for (i = 0; i < t->nmemb; i++)
                 ret->sdecls[i] = specializenode(t->sdecls[i], tsmap);
+            popstab();
             break;
         case Tyunion:
             ret = tydup(t);
@@ -279,7 +281,8 @@ static Node *specializenode(Node *n, Htab *tsmap)
             r->decl.isconst = n->decl.isconst;
             r->decl.isgeneric = n->decl.isgeneric;
             r->decl.isextern = n->decl.isextern;
-            putdcl(curstab(), r);
+	    if (curstab())
+                putdcl(curstab(), r);
 
             /* init */
             r->decl.init = specializenode(n->decl.init, tsmap);

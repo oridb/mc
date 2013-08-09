@@ -281,7 +281,11 @@ static Type *tf(Inferstate *st, Type *t)
             break;
         t = tytab[t->tid];
     }
+    if (t->type == Tygeneric)
+        st->ingeneric++;
     tyresolve(st, t);
+    if (t->type == Tygeneric)
+        st->ingeneric--;
     return t;
 }
 
@@ -1048,7 +1052,8 @@ static void inferdecl(Inferstate *st, Node *n)
     Type *t;
 
     t = tf(st, decltype(n));
-    if (decltype(n)->type == Tygeneric) {
+    if (t->type == Tygeneric) {
+        t = tyfreshen(st, t);
         unifyparams(st, n, t, decltype(n));
     }
     settype(st, n, t);
