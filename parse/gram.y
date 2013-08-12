@@ -240,7 +240,8 @@ pkgitem : decl
             {putdcl(file->file.exports, $1);
              if ($1->decl.init)
                  lappend(&file->file.stmts, &file->file.nstmts, $1);}
-        | tydef {puttype(file->file.exports, mkname($1.line, $1.name), $1.type);}
+        | tydef {puttype(file->file.exports, mkname($1.line, $1.name), $1.type);
+             installucons(file->file.exports, $1.type);}
         | visdef {die("Unimplemented visdef");}
         | /* empty */
         ;

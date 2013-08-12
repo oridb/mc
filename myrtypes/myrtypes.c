@@ -112,7 +112,16 @@ static void dumptypes(Node *n, int indent)
     }
 }
 
-void dumpusetypes(Stab *st, int indent)
+void dumpucon(Ucon *uc, int indent)
+{
+    printindent(indent);
+    printf("`");
+    if (uc->name->name.ns)
+        printf("%s.", uc->name->name.ns);
+    printf("%s\n", uc->name->name.name);
+}
+
+void dumpsyms(Stab *st, int indent)
 {
     size_t i, n;
     void **k;
@@ -124,13 +133,20 @@ void dumpusetypes(Stab *st, int indent)
     }
     free(k);
 
+    /* union constructors */
+    k = htkeys(st->uc, &n);
+    for (i = 0; i < n; i++)
+        dumpucon(getucon(st, k[i]), indent + 1);
+
+
     /* sub-namespaces */
     k = htkeys(st->ns, &n);
     for (i = 0; i < n; i++) {
         printindent(indent + 1);
         printf("namespace %s:\n", (char*)k[i]);
-        dumpusetypes(getns_str(st, k[i]), indent + 2);
+        dumpsyms(getns_str(st, k[i]), indent + 2);
     }
+
     free(k);
 }
 
@@ -184,13 +200,13 @@ int main(int argc, char **argv)
             if (!f)
                 die("Unable to open usefile %s\n", argv[i]);
             loaduse(f, file->file.globls);
-            dumpusetypes(file->file.globls, 0);
+            dumpsyms(file->file.globls, 1);
         } else {
             tyinit(file->file.globls);
             tokinit(argv[i]);
             yyparse();
             infer(file);
-            dumptypes(file, 1);
+            dumpsyms(file->file.globls, 1);
         }
     }
 

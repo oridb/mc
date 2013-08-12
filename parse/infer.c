@@ -660,9 +660,10 @@ static void mergeexports(Inferstate *st, Node *file)
     Stab *exports, *globls;
     size_t i, nk;
     void **k;
-    /* local, global version */
-    Node *nl, *ng;
-    Type *tl, *tg;
+    /* export, global version */
+    Node *nx, *ng;
+    Type *tx, *tg;
+    Ucon *ux, *ug;
 
     exports = file->file.exports;
     globls = file->file.globls;
@@ -670,38 +671,55 @@ static void mergeexports(Inferstate *st, Node *file)
     pushstab(globls);
     k = htkeys(exports->ty, &nk);
     for (i = 0; i < nk; i++) {
-        tl = gettype(exports, k[i]);
-        nl = k[i];
-        if (tl) {
-            tg = gettype(globls, nl);
+        tx = gettype(exports, k[i]);
+        nx = k[i];
+        if (tx) {
+            tg = gettype(globls, nx);
             if (!tg)
-                puttype(globls, nl, tl);
+                puttype(globls, nx, tx);
             else
-                fatal(nl->line, "Exported type %s already declared on line %d", namestr(nl), tg->line);
+                fatal(nx->line, "Exported type %s already declared on line %d", namestr(nx), tg->line);
         } else {
-            tg = gettype(globls, nl);
+            tg = gettype(globls, nx);
             if (tg)
-                updatetype(exports, nl, tf(st, tg));
+                updatetype(exports, nx, tf(st, tg));
             else
-                fatal(nl->line, "Exported type %s not declared", namestr(nl));
+                fatal(nx->line, "Exported type %s not declared", namestr(nx));
         }
     }
     free(k);
 
     k = htkeys(exports->dcl, &nk);
     for (i = 0; i < nk; i++) {
-        nl = getdcl(exports, k[i]);
+        nx = getdcl(exports, k[i]);
         ng = getdcl(globls, k[i]);
         /* if an export has an initializer, it shouldn't be declared in the
          * body */
-        if (nl->decl.init && ng)
-            fatal(nl->line, "Export %s double-defined on line %d", ctxstr(st, nl), ng->line);
+        if (nx->decl.init && ng)
+            fatal(nx->line, "Export %s double-defined on line %d", ctxstr(st, nx), ng->line);
         if (!ng)
-            putdcl(globls, nl);
+            putdcl(globls, nx);
         else
-            unify(st, nl, type(st, ng), type(st, nl));
+            unify(st, nx, type(st, ng), type(st, nx));
     }
     free(k);
+
+
+    k = htkeys(exports->uc, &nk);
+    for (i = 0; i < nk; i++) {
+        ux = getucon(exports, k[i]);
+        ug = getucon(globls, k[i]);
+        /* if an export has an initializer, it shouldn't be declared in the
+         * body */
+        if (ux && ug)
+            fatal(ux->line, "Union constructor double defined on %d", ng->line);
+        else if (!ug)
+          putucon(globls, ux);
+        else
+            putucon(exports, ug);
+    }
+    free(k);
+
     popstab();
 }
 

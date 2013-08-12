@@ -4,10 +4,10 @@ MYRSRC= \
     blat.myr \
     chartype.myr \
     die.myr \
+    error.myr \
     extremum.myr \
     fmt.myr \
     intparse.myr \
-    maybe.myr \
     optparse.myr \
     rand.myr \
     slappend.myr \
