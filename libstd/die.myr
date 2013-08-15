@@ -12,7 +12,7 @@ const die = {msg
 }
 
 const assert = {cond, msg
-	if cond
+	if !cond
 		die(msg)
 	;;
 }
