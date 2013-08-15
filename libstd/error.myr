@@ -1,19 +1,9 @@
+use "die.use"
+
 pkg std =
-	type error(@a, @b)
-
-	generic try	: (val : error(@a, byte[:]) -> void)
-;;
-
-type error(@a, @b) = union
-	`Success	@a
-	`Failure	@b
-;;
-
-generic try = {val
-	/*
-	match val
-		`Success v:	-> v;;
-		`Failure msg:	die(msg);;
+	type error(@a, @b) = union
+		`Success	@a
+		`Failure	@b
 	;;
-	*/
-}
+;;
+
