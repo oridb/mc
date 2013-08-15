@@ -17,6 +17,9 @@ _std$syscall:
 	movq 64(%rsp),%r9
 
 	syscall
+	jae success
+	negq %rax
 
+success:
 	popq %rbp
 	ret
