@@ -4,6 +4,7 @@ use "types.use"
 
 pkg std =
 	const Badchar	: char = -1 castto(char)
+	const Maxcharlen : size= 4
 
 	const charlen	: (chr : char -> size)
 	const encode	: (buf : byte[:], chr : char -> size)
