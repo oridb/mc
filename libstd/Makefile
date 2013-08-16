@@ -13,6 +13,7 @@ MYRSRC= \
     slappend.myr \
     slcp.myr \
     sleq.myr \
+    sljoin.myr \
     slurp.myr \
     strcmp.myr \
     sys.myr \
