@@ -93,6 +93,14 @@ int colourmap[Nreg] = {
     [Rxmm5f] = 21,  [Rxmm5d] = 21,
     [Rxmm6f] = 22,  [Rxmm6d] = 22,
     [Rxmm7f] = 23,  [Rxmm7d] = 23,
+    [Rxmm8f] = 24,  [Rxmm8d] = 24,
+    [Rxmm9f] = 25,  [Rxmm9d] = 25,
+    [Rxmm10f] = 26,  [Rxmm10d] = 26,
+    [Rxmm11f] = 27,  [Rxmm11d] = 27,
+    [Rxmm12f] = 28,  [Rxmm12d] = 28,
+    [Rxmm13f] = 29,  [Rxmm13d] = 29,
+    [Rxmm14f] = 30,  [Rxmm14d] = 30,
+    [Rxmm15f] = 31,  [Rxmm15d] = 31,
 };
 
 /* %esp, %ebp are not in the allocatable pool */
