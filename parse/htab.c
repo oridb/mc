@@ -200,6 +200,11 @@ int streq(void *a, void *b)
 
 ulong ptrhash(void *key)
 {
+    return inthash((intptr_t)key);
+}
+
+ulong inthash(uint64_t key)
+{
     intptr_t h;
 
     h = (intptr_t) key;
@@ -209,6 +214,11 @@ ulong ptrhash(void *key)
     h ^= h >> 31;
     h ^= h << 31;
     return h;
+}
+
+int inteq(uint64_t a, uint64_t b)
+{
+    return a == b;
 }
 
 int ptreq(void *a, void *b)

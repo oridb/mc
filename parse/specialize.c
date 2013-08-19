@@ -43,25 +43,27 @@ static int hasparams(Type *t)
 Type *tyspecialize(Type *t, Htab *tsmap)
 {
     Type *ret;
-
     size_t i;
+
+    if (hthas(tsmap, t))
+        return htget(tsmap, t);
     switch (t->type) {
         case Typaram:
-            if (hthas(tsmap, t->pname))
-                return htget(tsmap, t->pname);
             ret = mktyvar(t->line);
-            htput(tsmap, t->pname, ret);
+            htput(tsmap, t, ret);
             break;
         case Tygeneric:
             for (i = 0; i < t->nparam; i++)
-                if (!hthas(tsmap, t->param[i]->pname))
-                    htput(tsmap, t->param[i]->pname, mktyvar(t->param[i]->line));
+                if (!hthas(tsmap, t->param[i]))
+                    htput(tsmap, t->param[i], mktyvar(t->param[i]->line));
             ret = mktyname(t->line, t->name, tyspecialize(t->sub[0], tsmap));
+            htput(tsmap, t, ret);
             for (i = 0; i < t->nparam; i++)
                 lappend(&ret->param, &ret->nparam, tyspecialize(t->param[i], tsmap));
             break;
         case Tystruct:
             ret = tydup(t);
+            htput(tsmap, t, ret);
             pushstab(NULL);
             for (i = 0; i < t->nmemb; i++)
                 ret->sdecls[i] = specializenode(t->sdecls[i], tsmap);
@@ -69,6 +71,7 @@ Type *tyspecialize(Type *t, Htab *tsmap)
             break;
         case Tyunion:
             ret = tydup(t);
+            htput(tsmap, t, ret);
             for (i = 0; i < t->nmemb; i++) {
                 ret->udecls[i]->utype = ret;
                 if (ret->udecls[i]->etype)
@@ -78,6 +81,7 @@ Type *tyspecialize(Type *t, Htab *tsmap)
         default:
             if (t->nsub > 0) {
                 ret = tydup(t);
+                htput(tsmap, t, ret);
                 for (i = 0; i < t->nsub; i++)
                     ret->sub[i] = tyspecialize(t->sub[i], tsmap);
             } else {
@@ -108,7 +112,7 @@ static void fillsubst(Htab *tsmap, Type *to, Type *from)
     size_t i;
 
     if (from->type == Typaram) {
-        htput(tsmap, from->pname, to);
+        htput(tsmap, from, to);
     }
     if (to->nsub != from->nsub)
         return;
@@ -340,6 +344,42 @@ static Node *genericname(Node *n, Type *t)
     return name;
 }
 
+ulong tyhash(void *ty)
+{
+    size_t i;
+    Type *t;
+    ulong hash;
+
+    t = (Type *)ty;
+    if (t->type == Typaram)
+        hash = strhash(t->pname);
+    else
+        hash = inthash(t->tid);
+
+    for (i = 0; i < t->nparam; i++)
+        hash ^= tyhash(t->param[i]);
+    return hash;
+}
+
+int tyeq(void *t1, void *t2)
+{
+    Type *a, *b;
+    size_t i;
+
+    a = (Type *)t1;
+    b = (Type *)t2;
+    if (a->type == Typaram && b->type == Typaram)
+        return streq(a->pname, b->pname);
+    if (a->tid == b->tid)
+        return 1;
+    if (a->nparam != b->nparam)
+        return 0;
+    for (i = 0; i < a->nparam; i++)
+        if (!tyeq(a->param[i], b->param[i]))
+            return 0;
+    return 1;
+}
+
 /*
  * Takes a generic declaration, and creates a specialized
  * duplicate of it with type 'to'. It also generates
@@ -368,7 +408,7 @@ Node *specializedcl(Node *n, Type *to, Node **name)
     }
 
     /* specialize */
-    tsmap = mkht(strhash, streq);
+    tsmap = mkht(tyhash, tyeq);
     fillsubst(tsmap, to, n->decl.type);
 
     d = mkdecl(n->line, *name, tysubst(n->decl.type, tsmap));

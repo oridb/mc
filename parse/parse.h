@@ -299,10 +299,12 @@ void *htget(Htab *ht, void *k);
 int hthas(Htab *ht, void *k);
 void **htkeys(Htab *ht, size_t *nkeys);
 /* useful key types */
-ulong strhash(void *str);
-int streq(void *s1, void *s2);
-ulong ptrhash(void *ptr);
-int ptreq(void *s1, void *s2);
+ulong strhash(void *key);
+int streq(void *a, void *b);
+ulong ptrhash(void *key);
+int ptreq(void *a, void *b);
+ulong inthash(uint64_t key);
+int inteq(uint64_t a, uint64_t b);
 
 /* util functions */
 void *zalloc(size_t size);
