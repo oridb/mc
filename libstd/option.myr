@@ -1,0 +1,6 @@
+pkg std =
+	type option(@a) = union
+		`Some @a
+		`None
+	;;
+;;

@@ -8,6 +8,7 @@ MYRSRC= \
     extremum.myr \
     fmt.myr \
     intparse.myr \
+    option.myr \
     optparse.myr \
     rand.myr \
     slappend.myr \
