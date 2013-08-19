@@ -199,6 +199,11 @@ static void udcalc(Asmbb *bb)
     }
 }
 
+static int istrivial(Isel *s, regid r)
+{
+    return s->degree[r] < _K;
+}
+
 static void liveness(Isel *s)
 {
     Bitset *old;
@@ -485,7 +490,7 @@ static void mkworklist(Isel *s)
     for (i = 0; bsiter(s->initial, &i); i++) {
         if (bshas(s->prepainted, i))
             continue;
-        else if (s->degree[i] >= K)
+        else if (!istrivial(s, i))
             lappend(&s->wlspill, &s->nwlspill, locmap[i]);
         else if (moverelated(s, i))
             lappend(&s->wlfreeze, &s->nwlfreeze, locmap[i]);
@@ -514,16 +519,17 @@ static void enablemove(Isel *s, regid n)
 
 static void decdegree(Isel *s, regid m)
 {
-    int d;
+    int before, after;
     int found;
     size_t idx;
     regid n;
 
     assert(m < maxregid);
-    d = s->degree[m];
+    before = istrivial(s, m);
     s->degree[m]--;
+    after = istrivial(s, m);
 
-    if (d == K) {
+    if (before != after) {
         enablemove(s, m);
         for (n = 0; adjiter(s, m, &n); n++)
             enablemove(s, n);
@@ -586,7 +592,7 @@ static void wladd(Isel *s, regid u)
         return;
     if (moverelated(s, u))
         return;
-    if (s->degree[u] >= K)
+    if (!istrivial(s, u))
         return;
 
     assert(wlhas(s->wlfreeze, s->nwlfreeze, u, &i));
@@ -601,18 +607,18 @@ static int conservative(Isel *s, regid u, regid v)
 
     k = 0;
     for (n = 0; adjiter(s, u, &n); n++)
-        if (s->degree[n] >= K)
+        if (!istrivial(s, n))
             k++;
     for (n = 0; adjiter(s, v, &n); n++)
-        if (s->degree[n] >= K)
+        if (!istrivial(s, n))
             k++;
-    return k < K;
+    return k < _K;
 }
 
 /* FIXME: is this actually correct? */
 static int ok(Isel *s, regid t, regid r)
 {
-    return s->degree[t] < K || bshas(s->prepainted, t) || gbhasedge(s, t, r);
+    return istrivial(s, t) || bshas(s->prepainted, t) || gbhasedge(s, t, r);
 }
 
 static int combinable(Isel *s, regid u, regid v)
@@ -671,7 +677,7 @@ static void combine(Isel *s, regid u, regid v)
         addedge(s, t, u);
         decdegree(s, t);
     }
-    if (s->degree[u] >= K && wlhas(s->wlfreeze, s->nwlfreeze, u, &idx)) {
+    if (!istrivial(s, u) && wlhas(s->wlfreeze, s->nwlfreeze, u, &idx)) {
         ldel(&s->wlfreeze, &s->nwlfreeze, idx);
         lappend(&s->wlspill, &s->nwlspill, locmap[u]);
     }
@@ -741,7 +747,7 @@ static void freezemoves(Isel *s, Loc *u)
         if (!mldel(&s->mactive, &s->nmactive, m))
             mldel(&s->wlmove, &s->nwlmove, m);
         lappend(&s->mfrozen, &s->nmfrozen, m);
-        if (!nodemoves(s, v->reg.id, NULL) && s->degree[v->reg.id] < K) {
+        if (!nodemoves(s, v->reg.id, NULL) && istrivial(s, v->reg.id)) {
             if (!wlhas(s->wlfreeze, s->nwlfreeze, v->reg.id, &idx))
                 die("Reg %zd not in freeze wl\n", v->reg.id);
             ldel(&s->wlfreeze, &s->nwlfreeze, idx);
@@ -798,7 +804,7 @@ static void selspill(Isel *s)
  */
 static int paint(Isel *s)
 {
-    int taken[K + 2]; /* esp, ebp aren't "real colours" */
+    int taken[_K + 2]; /* esp, ebp aren't "real colours" */
     Loc *n, *w;
     regid l;
     size_t i;
@@ -807,7 +813,7 @@ static int paint(Isel *s)
 
     spilled = 0;
     while (s->nselstk) {
-        bzero(taken, K*sizeof(int));
+        bzero(taken, _K*sizeof(int));
         n = lpop(&s->selstk, &s->nselstk);
 
         for (l = 0; bsiter(s->gadj[n->reg.id], &l); l++) {
@@ -819,7 +825,7 @@ static int paint(Isel *s)
         }
 
         found = 0;
-        for (i = 0; i < K; i++) {
+        for (i = 0; i < _K; i++) {
             if (!taken[i]) {
                 if (debugopt['r']) {
                     fprintf(stdout, "\tselecting ");
