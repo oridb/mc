@@ -706,10 +706,10 @@ pat     : unionpat {$$ = $1;}
         | Toparen pat Tcparen {$$ = $2;}
         ;
 
-unionpat: Ttick Tident pat
-            {$$ = mkexpr($1->line, Oucon, mkname($2->line, $2->str), $3, NULL);}
-        | Ttick Tident
-            {$$ = mkexpr($1->line, Oucon, mkname($2->line, $2->str), NULL);}
+unionpat: Ttick name pat
+            {$$ = mkexpr($1->line, Oucon, $2, $3, NULL);}
+        | Ttick name
+            {$$ = mkexpr($1->line, Oucon, $2, NULL);}
         ;
 
 block   : blkbody Tendblk
