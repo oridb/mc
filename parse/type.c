@@ -520,6 +520,42 @@ char *tystr(Type *t)
     return strdup(buf);
 }
 
+ulong tyhash(void *ty)
+{
+    size_t i;
+    Type *t;
+    ulong hash;
+
+    t = (Type *)ty;
+    if (t->type == Typaram)
+        hash = strhash(t->pname);
+    else
+        hash = inthash(t->tid);
+
+    for (i = 0; i < t->nparam; i++)
+        hash ^= tyhash(t->param[i]);
+    return hash;
+}
+
+int tyeq(void *t1, void *t2)
+{
+    Type *a, *b;
+    size_t i;
+
+    a = (Type *)t1;
+    b = (Type *)t2;
+    if (a->type == Typaram && b->type == Typaram)
+        return streq(a->pname, b->pname);
+    if (a->tid == b->tid)
+        return 1;
+    if (a->nparam != b->nparam)
+        return 0;
+    for (i = 0; i < a->nparam; i++)
+        if (!tyeq(a->param[i], b->param[i]))
+            return 0;
+    return 1;
+}
+
 void tyinit(Stab *st)
 {
     int i;

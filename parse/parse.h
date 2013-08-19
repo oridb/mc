@@ -305,6 +305,8 @@ ulong ptrhash(void *key);
 int ptreq(void *a, void *b);
 ulong inthash(uint64_t key);
 int inteq(uint64_t a, uint64_t b);
+ulong tyhash(void *t);
+int tyeq(void *a, void *b);
 
 /* util functions */
 void *zalloc(size_t size);

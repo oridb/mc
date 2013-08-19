@@ -208,7 +208,7 @@ static Type *tyfreshen(Inferstate *st, Type *t)
         return t;
 
     tybind(st, t);
-    ht = mkht(strhash, streq);
+    ht = mkht(tyhash, streq);
     t = tyspecialize(t, ht);
     htfree(ht);
     tyunbind(st, t);
