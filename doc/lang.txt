@@ -331,16 +331,21 @@ TABLE OF CONTENTS:
             const Val234 = `Val 234     /* set up a constant value */
             var v = `Val 123            /* set up variable to match */
             match v
-                /* pattern clauses */
-                `Val 123:       std.put("Matched literal union pat\n");;
-
-                Val234:         std.put("Matched const value pat\n");;
-
-                `Val a:         std.put("Matched pattern with capture\n")
-                                std.put("Captured value: a = %i\n", a)
-                                ;;
-                a               std.put("A top level bind matches anything.");;
-                `Val 111        std.put("Unreachable block");;
+            /* pattern clauses */
+            `Val 123:
+                std.put("Matched literal union pat\n");;
+            Val234:
+                std.put("Matched const value pat\n")
+                ;;
+            `Val a:
+                std.put("Matched pattern with capture\n")
+                std.put("Captured value: a = %i\n", a)
+                ;;
+            a
+                std.put("A top level bind matches anything.");;
+            `Val 111
+                std.put("Unreachable block.")
+                ;;
             ;;
 
 
