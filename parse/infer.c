@@ -99,6 +99,14 @@ static char *ctxstr(Inferstate *st, Node *n)
     return s;
 }
 
+
+static int nameeq(Node *a, Node *b)
+{
+    if (a == b)
+        return 1;
+    return streq(a->name.ns, b->name.ns) && streq(a->name.name, b->name.name);
+}
+
 /* Set a scope's enclosing scope up correctly.
  * We don't do this in the parser for some reason. */
 static void setsuper(Stab *st, Stab *super)
@@ -530,6 +538,11 @@ static int tyrank(Type *t)
     return 2;
 }
 
+static int hasparam(Type *t)
+{
+    return t->type == Tygeneric || t->type == Tyname;
+}
+
 /* Unifies two types, or errors if the types are not unifiable. */
 static Type *unify(Inferstate *st, Node *ctx, Type *a, Type *b)
 {
@@ -574,11 +587,22 @@ static Type *unify(Inferstate *st, Node *ctx, Type *a, Type *b)
      * Otherwise, match up subtypes. */
     if ((a->type == b->type || idxhacked(a, b)) && tyrank(a) != 0) {
         if (a->nsub != b->nsub)
-            fatal(ctx->line, "%s has wrong subtype count for %s (got %d, expected %d) near %s\n",
+            fatal(ctx->line, "%s has wrong subtype count for %s (got %d, expected %d) near %s",
                   tystr(a), tystr(b), a->nsub, b->nsub, ctxstr(st, ctx));
         for (i = 0; i < b->nsub; i++)
             unify(st, ctx, a->sub[i], b->sub[i]);
         r = b;
+    } else if (hasparam(a) && hasparam(b)) {
+        /* Only Tygeneric and Tyname should be able to unify. And they
+         * should have the same names for this to be true. */
+        if (!nameeq(a->name, b->name))
+            fatal(ctx->line, "%s incompatible with %s near %s",
+                  tystr(a), tystr(b), ctxstr(st, ctx));
+        if (a->nparam != b->nparam)
+            fatal(ctx->line, "%s has wrong parameter list for %s near %s",
+                  tystr(a), tystr(b), ctxstr(st, ctx));
+        for (i = 0; i < a->nparam; i++)
+            unify(st, ctx, a->param[i], b->param[i]);
     } else if (a->type != Tyvar) {
         fatal(ctx->line, "%s incompatible with %s near %s",
               tystr(a), tystr(b), ctxstr(st, ctx));

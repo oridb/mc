@@ -195,7 +195,7 @@ ulong strhash(void *_s)
 
 int streq(void *a, void *b)
 {
-    return !strcmp(a, b);
+    return a == b || !strcmp(a, b);
 }
 
 ulong ptrhash(void *key)
