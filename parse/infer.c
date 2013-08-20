@@ -1469,17 +1469,6 @@ static void specialize(Inferstate *st, Node *f)
     }
 }
 
-static ulong tyhash(void *t)
-{
-    /* hash is just multiplying by an arbitrary large prime */
-    return ((Type *)t)->tid * 38733031;
-}
-
-static int tyeq(void *a, void *b)
-{
-    return ((Type *)a)->tid == ((Type *)b)->tid;
-}
-
 void infer(Node *file)
 {
     Inferstate st = {0,};
