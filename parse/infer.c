@@ -398,8 +398,6 @@ static void putbindings(Inferstate *st, Htab *bt, Type *t)
     htput(bt, t->pname, t);
     for (i = 0; i < t->nparam; i++)
         putbindings(st, bt, t->param[i]);
-    for (i = 0; i < t->nsub; i++)
-        putbindings(st, bt, t->sub[i]);
 }
 
 static void tybind(Inferstate *st, Type *t)
