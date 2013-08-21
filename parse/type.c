@@ -146,18 +146,7 @@ Type *mktyunres(int line, Node *name, Type **param, size_t nparam)
     return t;
 }
 
-Type *mktygeneric(int line, Node *name, Type **param, size_t nparam, Type *base)
-{
-    Type *t;
-
-    t = mktyname(line, name, base);
-    t->param = param;
-    t->nparam = nparam;
-    t->isgeneric = 1;
-    return t;
-}
-
-Type *mktyname(int line, Node *name, Type *base)
+Type *mktyname(int line, Node *name, Type **param, size_t nparam, Type *base)
 {
     Type *t;
 
@@ -167,6 +156,8 @@ Type *mktyname(int line, Node *name, Type *base)
     t->cstrs = bsdup(base->cstrs);
     t->sub = xalloc(sizeof(Type*));
     t->sub[0] = base;
+    t->param = param;
+    t->nparam = nparam;
     return t;
 }
 

@@ -59,7 +59,7 @@ Type *tyspecialize(Type *t, Htab *tsmap)
 		for (i = 0; i < t->nparam; i++)
 		    if (!hthas(tsmap, t->param[i]))
 			htput(tsmap, t->param[i], mktyvar(t->param[i]->line));
-		ret = mktyname(t->line, t->name, tyspecialize(t->sub[0], tsmap));
+		ret = mktyname(t->line, t->name, NULL, 0, tyspecialize(t->sub[0], tsmap));
 		htput(tsmap, t, ret);
 		for (i = 0; i < t->nparam; i++)
 		    lappend(&ret->param, &ret->nparam, tyspecialize(t->param[i], tsmap));
