@@ -73,8 +73,7 @@ Type *tydup(Type *t)
     r->nsub = t->nsub;
     r->nmemb = t->nmemb;
     switch (t->type) {
-        case Tygeneric:   r->name = t->name;              break;
-        case Tyname:   r->name = t->name;              break;
+        case Tyname:   	r->name = t->name;              break;
         case Tyunres:   r->name = t->name;              break;
         case Tyarray:   r->asize = t->asize;            break;
         case Typaram:   r->pname = strdup(t->pname);    break;
@@ -151,14 +150,10 @@ Type *mktygeneric(int line, Node *name, Type **param, size_t nparam, Type *base)
 {
     Type *t;
 
-    t = mktype(line, Tygeneric);
-    t->name = name;
-    t->nsub = 1;
-    t->cstrs = bsdup(base->cstrs);
-    t->sub = xalloc(sizeof(Type*));
-    t->sub[0] = base;
+    t = mktyname(line, name, base);
     t->param = param;
     t->nparam = nparam;
+    t->isgeneric = 1;
     return t;
 }
 
@@ -284,7 +279,7 @@ int istysigned(Type *t)
 Type *tybase(Type *t)
 {
     assert(t != NULL);
-    while (t->type == Tyname || t->type == Tygeneric)
+    while (t->type == Tyname)
         t = t->sub[0];
     return t;
 }
@@ -474,7 +469,6 @@ static int tybfmt(char *buf, size_t len, Type *t)
             }
             break;
         case Tyname:  
-        case Tygeneric:  
             p += snprintf(p, end - p, "%s", namestr(t->name));
             if (t->nparam) {
                 p += snprintf(p, end - p, "(");

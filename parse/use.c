@@ -214,13 +214,6 @@ static void typickle(FILE *fd, Type *ty)
                 wrtype(fd, ty->param[i]);
             wrtype(fd, ty->sub[0]);
             break;
-        case Tygeneric:
-            pickle(ty->name, fd);
-            wrint(fd, ty->nparam);
-            for (i = 0; i < ty->nparam; i++)
-                wrtype(fd, ty->param[i]);
-            wrtype(fd, ty->sub[0]);
-            break;
         default:
             for (i = 0; i < ty->nsub; i++)
                 wrtype(fd, ty->sub[i]);
@@ -294,14 +287,6 @@ static Type *tyunpickle(FILE *fd)
             rdtype(fd, &ty->sub[0]);
             break;
         case Tyname:
-            ty->name = unpickle(fd);
-            ty->nparam = rdint(fd);
-            ty->param = zalloc(ty->nparam * sizeof(Type *));
-            for (i = 0; i < ty->nparam; i++)
-                rdtype(fd, &ty->param[i]);
-            rdtype(fd, &ty->sub[0]);
-            break;
-        case Tygeneric:
             ty->name = unpickle(fd);
             ty->nparam = rdint(fd);
             ty->param = zalloc(ty->nparam * sizeof(Type *));
@@ -645,7 +630,7 @@ int loaduse(FILE *f, Stab *st)
                 t = tyunpickle(f);
                 htput(tidmap, (void*)tid, t);
                 /* fix up types */
-                if (t->type == Tyname || t->type == Tygeneric)
+                if (t->type == Tyname)
                     if (!gettype(s, t->name))
                         puttype(s, t->name, t);
                 if (t->type == Tyunion)  {
