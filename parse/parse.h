@@ -113,10 +113,11 @@ struct Type {
     Node **cstrlist;    /* The names of the constraints on the type. Used to fill the bitset */
     size_t ncstrlist;   /* The length of the constraint list above */
 
-    Type **param;       /* Tygeneric: the type parameters captured */
-    size_t nparam;      /* Tygeneric: count of type parameters */
-    Type **inst;        /* Tygeneric: instances created */
-    size_t ninst;       /* Tygeneric: count of instances created */
+    int	 isgeneric;	/* Tyname: whether this is generic or not */
+    Type **param;       /* Tyname: the type parameters captured */
+    size_t nparam;      /* Tyname: count of type parameters */
+    Type **inst;        /* Tyname: instances created */
+    size_t ninst;       /* Tyname: count of instances created */
 
     Type **sub;         /* sub-types; shared by all composite types */
     size_t nsub;        /* For compound types */
@@ -352,8 +353,7 @@ Type *mktype(int line, Ty ty);
 Type *tydup(Type *t); /* shallow duplicate; all subtypes/members/... kept */
 Type *mktyvar(int line);
 Type *mktyparam(int line, char *name);
-Type *mktyname(int line, Node *name, Type *base);
-Type *mktygeneric(int line, Node *name, Type **params, size_t nparams, Type *base);
+Type *mktyname(int line, Node *name, Type **params, size_t nparams, Type *base);
 Type *mktyunres(int line, Node *name, Type **params, size_t nparams);
 Type *mktyarray(int line, Type *base, Node *sz);
 Type *mktyslice(int line, Type *base);

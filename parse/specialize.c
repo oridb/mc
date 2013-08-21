@@ -23,7 +23,7 @@ static int hasparams(Type *t)
 
     if (t->type == Typaram)
         return 1;
-    if (t->type == Tygeneric)
+    if (t->type == Tyname && t->isgeneric)
         return 1;
     for (i = 0; i < t->nsub; i++)
         if (hasparams(t->sub[i]))
@@ -35,8 +35,8 @@ static int hasparams(Type *t)
  * Duplicates the type 't', with all bound type
  * parameters substituted with the substitions
  * described in 'tsmap'
- */
-/* Returns a fresh type with all unbound type
+ *
+ * Returns a fresh type with all unbound type
  * parameters (type schemes in most literature)
  * replaced with type variables that we can unify
  * against */
@@ -52,14 +52,18 @@ Type *tyspecialize(Type *t, Htab *tsmap)
             ret = mktyvar(t->line);
             htput(tsmap, t, ret);
             break;
-        case Tygeneric:
-            for (i = 0; i < t->nparam; i++)
-                if (!hthas(tsmap, t->param[i]))
-                    htput(tsmap, t->param[i], mktyvar(t->param[i]->line));
-            ret = mktyname(t->line, t->name, tyspecialize(t->sub[0], tsmap));
-            htput(tsmap, t, ret);
-            for (i = 0; i < t->nparam; i++)
-                lappend(&ret->param, &ret->nparam, tyspecialize(t->param[i], tsmap));
+        case Tyname:
+	    if (!t->isgeneric) {
+		ret = t;
+	    } else {
+		for (i = 0; i < t->nparam; i++)
+		    if (!hthas(tsmap, t->param[i]))
+			htput(tsmap, t->param[i], mktyvar(t->param[i]->line));
+		ret = mktyname(t->line, t->name, NULL, 0, tyspecialize(t->sub[0], tsmap));
+		htput(tsmap, t, ret);
+		for (i = 0; i < t->nparam; i++)
+		    lappend(&ret->param, &ret->nparam, tyspecialize(t->param[i], tsmap));
+	    }
             break;
         case Tystruct:
             ret = tydup(t);

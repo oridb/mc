@@ -182,8 +182,8 @@ static int isgeneric(Inferstate *st, Type *t)
     size_t i;
 
     switch (t->type) {
-        case Tygeneric: return 1;
         case Typaram:   return 1;
+        case Tyname:    return t->isgeneric;
         case Tystruct:
             for (i = 0; i < t->nmemb; i++)
                 if (isgeneric(st, decltype(t->sdecls[i])))
@@ -216,7 +216,7 @@ static Type *tyfreshen(Inferstate *st, Type *t)
         return t;
 
     tybind(st, t);
-    ht = mkht(tyhash, streq);
+    ht = mkht(tyhash, tyeq);
     t = tyspecialize(t, ht);
     htfree(ht);
     tyunbind(st, t);
@@ -289,11 +289,9 @@ static Type *tf(Inferstate *st, Type *t)
             break;
         t = tytab[t->tid];
     }
-    if (t->type == Tygeneric)
-        st->ingeneric++;
+    st->ingeneric += t->isgeneric;
     tyresolve(st, t);
-    if (t->type == Tygeneric)
-        st->ingeneric--;
+    st->ingeneric -= t->isgeneric;
     return t;
 }
 
@@ -398,17 +396,14 @@ static void putbindings(Inferstate *st, Htab *bt, Type *t)
     htput(bt, t->pname, t);
     for (i = 0; i < t->nparam; i++)
         putbindings(st, bt, t->param[i]);
-    for (i = 0; i < t->nsub; i++)
-        putbindings(st, bt, t->sub[i]);
 }
 
 static void tybind(Inferstate *st, Type *t)
 {
     Htab *bt;
 
-    if (t->type != Tygeneric)
+    if (t->type != Tyname && !t->isgeneric)
         return;
-    st->ingeneric++;
     bt = mkht(strhash, streq);
     lappend(&st->tybindings, &st->ntybindings, bt);
     putbindings(st, bt, t);
@@ -447,7 +442,7 @@ static void unbind(Inferstate *st, Node *n)
 
 static void tyunbind(Inferstate *st, Type *t)
 {
-    if (t->type != Tygeneric)
+    if (t->type != Tyname && !t->isgeneric)
         return;
     htfree(st->tybindings[st->ntybindings - 1]);
     lpop(&st->tybindings, &st->ntybindings);
@@ -540,7 +535,7 @@ static int tyrank(Type *t)
 
 static int hasparam(Type *t)
 {
-    return t->type == Tygeneric || t->type == Tyname;
+    return t->type == Tyname && t->nparam > 0;
 }
 
 /* Unifies two types, or errors if the types are not unifiable. */
@@ -1097,7 +1092,7 @@ static void inferdecl(Inferstate *st, Node *n)
     Type *t;
 
     t = tf(st, decltype(n));
-    if (t->type == Tygeneric) {
+    if (t->type == Tyname && t->isgeneric && !n->decl.isgeneric) {
         t = tyfreshen(st, t);
         unifyparams(st, n, t, decltype(n));
     }

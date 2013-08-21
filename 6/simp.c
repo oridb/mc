@@ -302,7 +302,7 @@ size_t tysize(Type *t)
                     sz = max(sz, tysize(t->udecls[i]->etype) + Wordsz);
             return align(sz, Ptrsz);
             break;
-        case Tybad: case Tyvar: case Typaram: case Tyunres: case Tygeneric: case Ntypes:
+        case Tybad: case Tyvar: case Typaram: case Tyunres: case Ntypes:
             die("Type %s does not have size; why did it get down to here?", tystr(t));
             break;
     }
@@ -482,7 +482,7 @@ static void umatch(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, Node *i
     }
     switch (t->type) {
         case Tyvoid: case Tybad: case Tyvalist: case Tyvar:
-        case Tygeneric: case Typaram: case Tyunres: case Tyname: case Ntypes:
+        case Typaram: case Tyunres: case Tyname: case Ntypes:
         case Tyint64: case Tyuint64: case Tylong:  case Tyulong:
         case Tyfloat32: case Tyfloat64:
         case Tyslice: case Tyarray: case Tytuple: case Tystruct:

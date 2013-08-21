@@ -269,12 +269,13 @@ name    : Tident
 
 tydef   : Ttype typeid Tasn type
             {$$ = $2;
-             if ($2.params)
-                 $$.type = mktygeneric($2.line, mkname($2.line, $2.name), $2.params, $2.nparams, $4);
-             else
-                 $$.type = mktyname($2.line, mkname($2.line, $2.name), $4);}
+             $$.type = mktyname($2.line, mkname($2.line, $2.name), $2.params, $2.nparams, $4);
+	     if ($2.params)
+		$$.type->isgeneric = 1;}
         | Ttype typeid
-            {$$ = $2;}
+            {$$ = $2;
+	     if ($2.params)
+		$$.type->isgeneric = 1;}
         ;
 
 typeid  : Tident
