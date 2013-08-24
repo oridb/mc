@@ -263,9 +263,8 @@ static void tyresolve(Inferstate *st, Type *t)
         fatal(t->line, "Type %s includes itself", tystr(t));
 }
 
-/* fixd the most accurate type mapping we have (ie,
- * the end of the unification chain */
-static Type *tf(Inferstate *st, Type *t)
+/* Look up the best type to date in the unification table, returning it */
+static Type *tysearch(Inferstate *st, Type *t)
 {
     Type *lu;
     Stab *ns;
@@ -289,6 +288,14 @@ static Type *tf(Inferstate *st, Type *t)
             break;
         t = tytab[t->tid];
     }
+    return t;
+}
+
+/* fixd the most accurate type mapping we have (ie,
+ * the end of the unification chain */
+static Type *tf(Inferstate *st, Type *t)
+{
+    t = tysearch(st, t);
     st->ingeneric += t->isgeneric;
     tyresolve(st, t);
     st->ingeneric -= t->isgeneric;
