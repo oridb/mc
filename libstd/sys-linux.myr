@@ -7,6 +7,24 @@ pkg std =
 	type mopt	= int64
 	type fd	= int64
 
+	type clock = union
+		`Clockrealtime
+		`Clockmonotonic
+		`Clockproccpu
+		`Clockthreadcpu
+		`Clockmonotonicraw
+		`Clockrealtimecoarse
+		`Clockmonotoniccoarse
+		`Clockboottime
+		`Clockrealtimealarm
+		`Clockboottimealarm
+	;;
+
+	type timespec = struct
+		secs	: uint64
+		nsecs	: uint64
+	;;
+
 	type statbuf = struct
 		 dev     : uint
 		 ino     : uint
@@ -370,9 +388,11 @@ pkg std =
 	const Sysprocess_vm_readv	: scno = 310
 	const Sysprocess_vm_writev	: scno = 311
 
+	/* getting to the os */
 	extern const syscall : (sc:scno, args:... -> int64)
 	extern const cstring : (str : byte[:] -> byte#)
 
+	/* process management */
 	const exit	: (status:int -> void)
 	const getpid	: ( -> int64)
 	const kill	: (pid:int64, sig:int64 -> int64)
@@ -386,13 +406,22 @@ pkg std =
 	const lseek	: (fd:fd, off:uint64, whence:int64 -> int64)
 	const fstat	: (fd:fd, sb:statbuf# -> int64)
 
+	/* memory mapping */
 	const munmap	: (addr:byte#, len:size -> int64)
 	const mmap	: (addr:byte#, len:size, prot:mprot, flags:mopt, fd:fd, off:off -> byte#)
+
+	/* time */
+	const clock_getres	: (clk : clock, ts : timespec# -> int32)
+	const clock_gettime	: (clk : clock, ts : timespec# -> int32)
+	const clock_settime	: (clk : clock, ts : timespec# -> int32)
 ;;
 
+/* process management */
 const exit	= {status;		syscall(Sysexit, status castto(int64))}
 const getpid	= {;			-> syscall(Sysgetpid, 1)}
 const kill	= {pid, sig;		-> syscall(Syskill, pid, sig)}
+
+/* fd manipulation */
 const open	= {path, opts, mode;	-> syscall(Sysopen, cstring(path), opts, mode) castto(fd)}
 const close	= {fd;			-> syscall(Sysclose, fd)}
 const creat	= {path, mode;		-> syscall(Syscreat, cstring(path), mode) castto(fd)}
@@ -400,5 +429,28 @@ const read	= {fd, buf;		-> syscall(Sysread, fd, buf castto(byte#), buf.len castt
 const write	= {fd, buf;		-> syscall(Syswrite, fd, buf castto(byte#), buf.len castto(size)) castto(size)}
 const lseek	= {fd, off, whence;	-> syscall(Syslseek, fd, off, whence)}
 const fstat	= {fd, sb;		-> syscall(Sysfstat, fd, sb)}
+
+/* memory mapping */
 const munmap	= {addr, len;		-> syscall(Sysmunmap, addr, len)}
 const mmap	= {addr, len, prot, flags, fd, off;	-> syscall(Sysmmap, addr, len, prot, flags, fd, off) castto(byte#)}
+
+/* time */
+const clock_getres = {clk, ts;	-> syscall(Sysclock_getres, clockid(clk), ts) castto(int32)}
+const clock_gettime = {clk, ts;	-> syscall(Sysclock_gettime, clockid(clk), ts) castto(int32)}
+const clock_settime = {clk, ts;	-> syscall(Sysclock_settime, clockid(clk), ts) castto(int32)}
+
+const clockid = {clk
+	match clk
+	`Clockrealtime:		-> 0;;
+	`Clockmonotonic:	-> 1;;
+	`Clockproccpu:		-> 2;;
+	`Clockthreadcpu:	-> 3;;
+	`Clockmonotonicraw:	-> 4;;
+	`Clockrealtimecoarse:	-> 5;;
+	`Clockmonotoniccoarse:	-> 6;;
+	`Clockboottime:		-> 7;;
+	`Clockrealtimealarm:	-> 8;;
+	`Clockboottimealarm:	-> 9;;
+	;;
+	-> -1
+}

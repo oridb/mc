@@ -1,0 +1,18 @@
+use "sys.use"
+use "types.use"
+use "fmt.use"
+
+pkg std =
+
+	const now	: (-> time)
+;;
+
+const now = {
+	var tm
+
+	if clock_gettime(`Clockrealtime, &tm) == 0
+		-> (tm.sec*1000 + tm.nsec / (1000*1000)) castto(time)
+	else
+		-> -1
+	;;
+}

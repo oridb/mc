@@ -8,6 +8,7 @@ const main = {args : byte[:][:]
         var o
 	var a
 
+	std.put("The time is %l seconds past the epoch\n", std.now()/1000);
         ctx = std.optinit("asdf:g?h", args)
 	std.put("arglen = %i\n", ctx.args.len)
         while !std.optdone(ctx)
