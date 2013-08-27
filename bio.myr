@@ -1,0 +1,370 @@
+use std
+
+pkg bio =
+	type mode = int
+	const Biord	: mode = 1
+	const Biowr	: mode = 2
+	const Biorw	: mode = 1 | 2
+
+	type biofile = struct
+		/* backing fd */
+		fd	: std.fd
+		mode	: mode
+
+		/* read buffer */
+		rbuf	: byte[:]
+		rstart	: std.size
+		rend	: std.size
+
+		/* write buffer */
+		wbuf	: byte[:]
+		wend	: std.size
+	;;
+
+	/* creation */
+	const mkbiofile	: (fd : std.fd, mode : mode	-> biofile#)
+	const open	: (path : byte[:], mode : mode	-> biofile#)
+	const create	: (path : byte[:], mode : mode, perm : int	-> biofile#)
+	const close	: (f : biofile# -> bool)
+
+	/* basic i/o. Returns sub-buffer when applicable. */
+	const write	: (f : biofile#, src : byte[:]	-> std.size)
+	const read	: (f : biofile#, dst : byte[:]	-> byte[:])
+	const flush	: (f : biofile# -> bool)
+
+	/* single unit operations */
+	const putb	: (f : biofile#, b : byte	-> std.size)
+	const putc	: (f : biofile#, c : char	-> std.size)
+	const getb	: (f : biofile# -> byte)
+	const getc	: (f : biofile# -> char)
+
+	/* typed binary reads */
+	generic getbe	: (f : biofile# -> @a::(tctest,tcnum,tcint))
+	generic getle	: (f : biofile# -> @a::(tctest,tcnum,tcint))
+
+	/* peeking */
+	const peekb	: (f : biofile# -> byte)
+	const peekc	: (f : biofile# -> char)
+
+	/* delimited read; returns freshly allocated buffer. */
+	const readln	: (f : biofile#	-> byte[:])
+	const readto	: (f : biofile#, delim : char	-> byte[:])
+	const readtob	: (f : biofile#, delim : byte	-> byte[:])
+
+	/* formatted i/o */
+	const print	: (f : biofile#, fmt : byte[:], args : ... -> std.size)
+;;
+
+const Bufsz = 16*1024 /* 16k */
+const Small = 512
+
+const mkbiofile = {fd, mode
+	var f
+
+	f = std.alloc()
+
+	f.fd = fd
+	f.mode = mode
+	if mode & Biord
+		f.rbuf = std.slalloc(Bufsz)
+		f.rstart = 0
+		f.rend = 0
+	;;
+	if mode & Biowr
+		f.wbuf = std.slalloc(Bufsz)
+		f.wend = 0
+	;;
+	-> f
+}
+
+const open = {path, mode 
+	-> create(path, mode, 0o777)
+}
+
+const create = {path, mode, perm
+	var openmode
+
+	if mode == Biord
+		openmode = std.Ordonly
+	elif mode == Biowr
+		openmode = std.Owronly
+	elif mode == Biorw
+		openmode = std.Ordwr
+	;;
+	openmode |= std.Ocreat
+
+	-> mkbiofile(std.open(path, openmode, perm castto(int64)), mode)
+}
+
+const close = {f
+	flush(f)
+	if f.mode & Biord
+		std.slfree(f.rbuf)
+	;;
+
+	if f.mode & Biowr
+		std.slfree(f.wbuf)
+	;;
+	-> std.close(f.fd) == 0
+}
+
+const write = {f, src
+	std.assert(f.mode & Biowr != 0, "File is not in write mode")
+	/*
+	Tack small writes onto the buffer end. Big ones
+	flush the buffer and then go right to kernel.
+	*/
+	if src.len < (f.wbuf.len - f.wend)
+		std.slcp(f.wbuf[f.wend:f.wend+src.len], src)
+		f.wend += src.len
+		-> src.len
+	else
+		flush(f)
+		-> writebuf(f.fd, src)
+	;;
+}
+
+const read = {f, dst
+	var n
+	var d
+	var count
+
+	std.assert(f.mode & Biord != 0, "File is not in read mode")
+	/* 
+	 * small reads should try to fill, so we don't have to make a
+	 * syscall for every read
+	 */
+	if dst.len < Small
+		fill(f, f.rbuf.len - f.rend)
+	;;
+	/* Read as much as we can from the buffer */
+	count = std.min(dst.len, f.rend - f.rstart)
+	std.slcp(dst[:count], f.rbuf[f.rstart:f.rstart+count])
+	f.rstart += count
+
+	/* if we drained the buffer, reset it */
+	if f.rstart == f.rend
+		f.rstart = 0
+		f.rend = 0
+	;;
+
+	/* Read the rest directly from the fd */
+	d = dst[count:]
+	while dst.len > 0
+		n = std.read(f.fd, d)
+		if n <= 0
+			goto readdone
+		;;
+		count += n
+		d = d[n:]
+	;;
+:readdone
+	-> dst[:count]
+}
+
+const flush = {f
+	var ret
+
+	ret = (writebuf(f.fd, f.wbuf[:f.wend]) == f.wend)
+	f.wend = 0
+	-> ret
+}
+
+const putb = {f, b
+	ensurewrite(f, 1)
+	f.wbuf[f.wend++] = b
+	-> 1
+}
+
+const putc = {f, c
+	var sz
+	
+	sz = std.charlen(c)
+	ensurewrite(f, sz)
+	std.encode(f.wbuf[f.wend:], c)
+	f.wend += sz
+	-> sz
+}
+
+const getb = {f
+	if ensureread(f, 1)
+		-> f.rbuf[f.rstart++]
+	;;
+	-> -1
+}
+
+const getc = {f
+	var c
+
+	if ensureread(f, std.Maxcharlen)
+		c = std.decode(f.rbuf)
+		f.rstart += std.charlen(c)
+		-> c
+	;;
+	-> -1
+}
+
+generic getbe = {f -> @a::(tcnum,tcint,tctest)
+	var ret
+	var i
+
+	ret = 0
+	for i = 0; i < sizeof(@a); i++
+		ret <<= 8
+		ret |= (getb(f) castto(@a::(tcnum,tcint,tctest)))
+	;;
+	-> ret
+}
+
+generic getle = {f -> @a::(tcnum,tcint,tctest)
+	var ret
+	var i
+
+	ret = 0
+	for i = 0; i < sizeof(@a); i++
+		ret = ret | ((getb(f) << 8*i) castto(@a::(tcnum,tcint,tctest)))
+	;;
+	-> ret
+}
+
+
+const peekb = {f
+	ensureread(f, 1)
+	-> f.rbuf[f.rstart]
+}
+
+const peekc = {f
+	ensureread(f, std.Maxcharlen)
+	-> std.decode(f.rbuf)
+}
+
+const readto = {f, c
+	var buf : byte[4]
+	var srch
+	var ret : byte[:]
+	var i
+
+	srch = buf[:std.encode(buf[:], c)]
+	if srch.len == 0
+		-> [][:]
+	;;
+
+	ret = [][:]
+	while true
+		if !ensureread(f, srch.len)
+			-> readappend(f, ret, f.rend - f.rstart)
+		;;
+		for i = f.rstart; i < f.rend; i++
+			if f.rbuf[i] == srch[0] && std.sleq(f.rbuf[i + 1:i + srch.len - 1], srch[1:])
+				-> readappend(f, ret, i - f.rstart)
+			;;
+		;;
+		ret = readappend(f, ret, i - f.rstart)
+	;;
+	-> ret
+}
+
+const readtob = {f, b
+	var ret
+	var i
+
+	ret = [][:]
+	while true
+		if !ensureread(f, 1)
+			-> readappend(f, ret, f.rend - f.rstart)
+		;;
+		for i = f.rstart; i < f.rend; i++
+			if f.rbuf[i] == b
+				-> readappend(f, ret, f.rend - i)
+			;;
+		;;
+		ret = readappend(f, ret, i - f.rstart)
+	;;
+}
+
+const readln = {f
+	-> readto(f, '\n')
+}
+
+/* 
+appends n bytes from the read buffer onto the heap-allocated slice
+provided
+*/
+const readappend = {f, buf, n
+	var ret
+
+	std.assert(f.rstart + n < f.rend, "Reading too much from buffer")
+	ret = std.sljoin(ret, f.rbuf[f.rstart:f.rstart + n])
+	f.rstart += n
+	-> ret
+}
+
+/* makes sure we can bufferedly write at least n bytes */
+const ensurewrite = {f, n
+	std.assert(n < f.wbuf.len, "ensured write capacity > buffer size")
+	if n > f.wbuf.len - f.wend
+		flush(f)
+	;;
+}
+
+/*
+makes sure we have at least n bytes buffered. returns true if we succeed
+in buffering n bytes, false if we fail.
+*/
+const ensureread = {f, n
+	var held
+	var cap
+
+	std.assert(n < f.rbuf.len, "ensured read capacity > buffer size")
+	held = f.rend - f.rstart
+	if n > held
+		/* if we need to shift the slice down to the start, do it */
+		cap = f.rbuf.len - f.rend
+		if n > (cap + held)
+			std.slcp(f.rbuf[:cap], f.rbuf[f.rstart:f.rend])
+		;;
+		-> fill(f, n) > n
+	else
+		-> true
+	;;
+}
+
+/* blats a buffer to an fd */
+const writebuf = {fd, src
+	var n
+	var count
+
+	count = 0
+	while src.len
+		n = std.write(fd, src)
+		if n <= 0
+			goto writedone
+		;;
+		count += n
+		src = src[n:]
+	;;
+:writedone
+	-> count
+}
+
+/*
+Reads as many bytes as possible from the file into
+the read buffer.
+*/
+const fill = {f, n
+	var n
+	var count
+
+	count = 0
+	while count < n
+		n = std.read(f.fd, f.rbuf[f.rend:])
+		if n <= 0
+			goto filldone
+		;;
+		count += n
+		f.rend += n
+	;;
+:filldone
+	-> count
+}
+
