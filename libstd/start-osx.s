@@ -99,6 +99,6 @@ start:
 	call	_main
 	/* exit */
 	movq	%rax,%rdi
-	movq	$60,%rax
+	movq	$0x2000001,%rax
 	syscall
 
