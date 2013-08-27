@@ -8,8 +8,23 @@ pkg std =
 	type fd = int64
 
 	type timespec = struct
-		secs	: uint64
-		nsecs	: uint32
+		sec	: uint64
+		nsec	: uint32
+	;;
+
+	type timeval = struct
+		sec	: uint64
+		usec	: uint32
+	;;
+
+	type timezone = struct
+		minwest	: int32 /* of greenwich */
+		dsttime	: int32	/* nonzero if DST applies */
+	;;
+
+	type clock = union
+		`Clockrealtime
+		`Clockmonotonic
 	;;
 
 	type statbuf = struct
@@ -418,10 +433,12 @@ pkg std =
 	extern const syscall : (sc:scno, args:... -> int64)
 	extern const cstring : (str : byte[:] -> byte#)
 
+	/* process control */
 	const exit	: (status:int -> void)
 	const getpid	: ( -> int64)
 	const kill	: (pid:int64, sig:int64 -> int64)
 
+	/* fd manipulation */
 	const open	: (path:byte[:], opts:fdopt, mode:int64 -> fd)
 	const close	: (fd:fd -> int64)
 	const creat	: (path:byte[:], mode:int64 -> fd)
@@ -430,13 +447,25 @@ pkg std =
 	const lseek	: (fd:fd, off:uint64, whence:int64 -> int64)
 	const fstat	: (fd:fd, sb:statbuf# -> int64)
 
+	/* memory mapping */
 	const munmap	: (addr:byte#, len:size -> int64)
 	const mmap	: (addr:byte#, len:size, prot:mprot, flags:mopt, fd:fd, off:off -> byte#)
+
+	/* time */
+	const gettimeofday	: (tv : timeval#, tz : tz : timezone# -> int)
+	const settimeofday	: (tv : timeval#, tz : tz : timezone# -> int)
+	/* faked with gettimeofday */
+	const clock_getres	: (clk : clock, ts : timespec# -> int32)
+	const clock_gettime	: (clk : clock, ts : timespec# -> int32)
+	const clock_settime	: (clk : clock, ts : timespec# -> int32)
 ;;
 
+/* process control */
 const exit	= {status;		syscall(Sysexit, status castto(int64))}
 const getpid	= {;			-> syscall(Sysgetpid, 1)}
 const kill	= {pid, sig;		-> syscall(Syskill, pid, sig)}
+
+/* fd manipulation */
 const open	= {path, opts, mode;	-> syscall(Sysopen, cstring(path), opts, mode) castto(fd)}
 const close	= {fd;			-> syscall(Sysclose, fd)}
 const creat	= {path, mode;		-> open(path, Ocreat | Otrunc | Owronly, mode) castto(fd)}
@@ -444,5 +473,36 @@ const read	= {fd, buf;		-> syscall(Sysread, fd, buf castto(char#), buf.len castt
 const write	= {fd, buf;		-> syscall(Syswrite, fd, buf castto(char#), buf.len castto(size)) castto(size)}
 const lseek	= {fd, off, whence;	-> syscall(Syslseek, fd, off, whence)}
 const fstat	= {fd, sb;		-> syscall(Sysfstat, fd, sb)}
+
+/* memory management */
 const munmap	= {addr, len;		-> syscall(Sysmunmap, addr, len)}
 const mmap	= {addr, len, prot, flags, fd, off;	-> syscall(Sysmmap, addr, len, prot, flags, fd, off) castto(byte#)}
+
+/* time */
+const gettimeofday = {tv, tz;	-> syscall(Sysgettimeofday, tv, tz)}
+const settimeofday = {tv, tz;	-> syscall(Syssettimeofday, tv, tz)}
+/* faked  with gettimeofday */
+const clock_getres = {clk, ts
+	var ts
+	ts.sec = 0
+	ts.nsec = 1000*10 /* 10ms is reasonable resolution */
+}
+
+const clock_gettime = {clk, ts
+	var ts
+	var tv
+	var ret
+
+	ret = gettimeofday(&tv, 0 castto(void#))
+	ts.sec = tv.sec
+	ts.nsec = tv.usec * 1000
+	-> ret
+}
+
+const clock_settime = {clk, ts
+	var tv
+	
+	tv.sec = ts.sec
+	tv.usec = tv.nsec / 1000
+	-> settimeofday(&tv, 0 castto(void#)
+}
