@@ -31,6 +31,7 @@ const main = {args : byte[:][:]
 	for i = 0; i < ctx.args.len; i++
 		std.put("arg %s\n", ctx.args[i])
 	;;
+	printenv("SHELL")
 
         
 	/* try the byte allocator for large variety of sizes. */
@@ -100,4 +101,16 @@ const usage = {
 	std.put("Pokes a bit at the standard library.\n")
 	std.put("Option string is asdf:g?h\n")
 	std.exit(0)
+}
+
+const printenv = {name
+	var env
+	var ok
+
+	(env, ok) = std.getenv(name)
+	if !ok
+		std.put("No env var %s is set\n", name)
+	else
+		std.put("Value of %s is %s\n", name, env)
+	;;
 }
