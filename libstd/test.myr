@@ -8,6 +8,7 @@ const main = {args : byte[:][:]
         var o
 	var a
 
+	std.put("The time is %l seconds past the epoch\n", std.now()/1000);
         ctx = std.optinit("asdf:g?h", args)
 	std.put("arglen = %i\n", ctx.args.len)
         while !std.optdone(ctx)
@@ -18,6 +19,10 @@ const main = {args : byte[:][:]
 		std.put("option %c, arg = %s\n", o, a)
         ;;
 
+	std.put("env.len = %i\n", std._environment.len)
+	for i = 0; i < std._environment.len; i++
+		std.put("env[%i] = %s\n", i, std._environment[i])
+	;;
 	std.put("args.len = %i\n", args.len)
 	for i = 0; i < args.len; i++
 		std.put("args[%i] = %s\n", i, args[i])
