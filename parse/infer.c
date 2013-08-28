@@ -735,7 +735,7 @@ static void mergeexports(Inferstate *st, Node *file)
         /* if an export has an initializer, it shouldn't be declared in the
          * body */
         if (ux && ug)
-            fatal(ux->line, "Union constructor double defined on %d", ng->line);
+            fatal(ux->line, "Union constructor double defined on %d", ux->line);
         else if (!ug)
           putucon(globls, ux);
         else
@@ -1267,6 +1267,8 @@ static Type *tyfix(Inferstate *st, Node *ctx, Type *t)
             t->sub[i] = tyfix(st, ctx, t->sub[i]);
     }
     if (t->type == Tyvar) {
+        if (debugopt['T'])
+            dump(file, stdout);
         fatal(t->line, "underconstrained type %s near %s", tyfmt(buf, 1024, t), ctxstr(st, ctx));
     }
 
