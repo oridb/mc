@@ -3,10 +3,10 @@ use "types.use"
 use "fmt.use"
 
 pkg std =
-
 	const now	: (-> time)
 ;;
 
+/* milliseconds since epoch */
 const now = {
 	var tm
 
