@@ -42,7 +42,7 @@ static int hasparams(Type *t)
  * against */
 Type *tyspecialize(Type *t, Htab *tsmap)
 {
-    Type *ret;
+    Type *ret, *tmp;
     size_t i;
 
     if (hthas(tsmap, t))
@@ -77,9 +77,11 @@ Type *tyspecialize(Type *t, Htab *tsmap)
             ret = tydup(t);
             htput(tsmap, t, ret);
             for (i = 0; i < t->nmemb; i++) {
+                if (ret->udecls[i]->etype) {
+                    tmp = tyspecialize(t->udecls[i]->etype, tsmap);
+                    ret->udecls[i] = mkucon(t->line, t->udecls[i]->name, ret, tmp);
+                }
                 ret->udecls[i]->utype = ret;
-                if (ret->udecls[i]->etype)
-                    ret->udecls[i]->etype = tyspecialize(t->udecls[i]->etype, tsmap);
             }
             break;
         default:
