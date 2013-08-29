@@ -452,12 +452,12 @@ pkg std =
 	const mmap	: (addr:byte#, len:size, prot:mprot, flags:mopt, fd:fd, off:off -> byte#)
 
 	/* time */
-	const gettimeofday	: (tv : timeval#, tz : tz : timezone# -> int)
-	const settimeofday	: (tv : timeval#, tz : tz : timezone# -> int)
+	const gettimeofday	: (tv : timeval#, tz : timezone# -> int)
+	const settimeofday	: (tv : timeval#, tz : timezone# -> int)
 	/* faked with gettimeofday */
-	const clock_getres	: (clk : clock, ts : timespec# -> int32)
-	const clock_gettime	: (clk : clock, ts : timespec# -> int32)
-	const clock_settime	: (clk : clock, ts : timespec# -> int32)
+	const clock_getres	: (clk : clock, ts : timespec# -> int)
+	const clock_gettime	: (clk : clock, ts : timespec# -> int)
+	const clock_settime	: (clk : clock, ts : timespec# -> int)
 ;;
 
 /* process control */
@@ -479,21 +479,21 @@ const munmap	= {addr, len;		-> syscall(Sysmunmap, addr, len)}
 const mmap	= {addr, len, prot, flags, fd, off;	-> syscall(Sysmmap, addr, len, prot, flags, fd, off) castto(byte#)}
 
 /* time */
-const gettimeofday = {tv, tz;	-> syscall(Sysgettimeofday, tv, tz)}
-const settimeofday = {tv, tz;	-> syscall(Syssettimeofday, tv, tz)}
+const gettimeofday = {tv, tz;	-> syscall(Sysgettimeofday, tv, tz) castto(int)}
+const settimeofday = {tv, tz;	-> syscall(Syssettimeofday, tv, tz) castto(int)}
+
 /* faked  with gettimeofday */
 const clock_getres = {clk, ts
-	var ts
 	ts.sec = 0
 	ts.nsec = 1000*10 /* 10ms is reasonable resolution */
+	-> 0
 }
 
 const clock_gettime = {clk, ts
-	var ts
 	var tv
 	var ret
 
-	ret = gettimeofday(&tv, 0 castto(void#))
+	ret = gettimeofday(&tv, 0 castto(timezone#))
 	ts.sec = tv.sec
 	ts.nsec = tv.usec * 1000
 	-> ret
@@ -503,6 +503,6 @@ const clock_settime = {clk, ts
 	var tv
 	
 	tv.sec = ts.sec
-	tv.usec = tv.nsec / 1000
-	-> settimeofday(&tv, 0 castto(void#)
+	tv.usec = ts.nsec / 1000
+	-> settimeofday(&tv, 0 castto(timezone#))
 }
