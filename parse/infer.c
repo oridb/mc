@@ -401,8 +401,8 @@ static void putbindings(Inferstate *st, Htab *bt, Type *t)
         return;
 
     htput(bt, t->pname, t);
-    for (i = 0; i < t->nparam; i++)
-        putbindings(st, bt, t->param[i]);
+    for (i = 0; i < t->narg; i++)
+        putbindings(st, bt, t->arg[i]);
 }
 
 static void tybind(Inferstate *st, Type *t)
@@ -542,7 +542,7 @@ static int tyrank(Type *t)
 
 static int hasparam(Type *t)
 {
-    return t->type == Tyname && t->nparam > 0;
+    return t->type == Tyname && t->narg > 0;
 }
 
 /* Unifies two types, or errors if the types are not unifiable. */
@@ -600,11 +600,11 @@ static Type *unify(Inferstate *st, Node *ctx, Type *a, Type *b)
         if (!nameeq(a->name, b->name))
             fatal(ctx->line, "%s incompatible with %s near %s",
                   tystr(a), tystr(b), ctxstr(st, ctx));
-        if (a->nparam != b->nparam)
+        if (a->narg != b->narg)
             fatal(ctx->line, "%s has wrong parameter list for %s near %s",
                   tystr(a), tystr(b), ctxstr(st, ctx));
-        for (i = 0; i < a->nparam; i++)
-            unify(st, ctx, a->param[i], b->param[i]);
+        for (i = 0; i < a->narg; i++)
+            unify(st, ctx, a->arg[i], b->arg[i]);
     } else if (a->type != Tyvar) {
         fatal(ctx->line, "%s incompatible with %s near %s",
               tystr(a), tystr(b), ctxstr(st, ctx));
@@ -657,10 +657,10 @@ static void unifyparams(Inferstate *st, Node *ctx, Type *a, Type *b)
     if (b->type != Tyunres && b->type != Tyname)
         return;
 
-    if (a->nparam != b->nparam)
+    if (a->narg != b->narg)
         fatal(ctx->line, "Mismatched parameter list sizes: %s with %s near %s", tystr(a), tystr(b), ctxstr(st, ctx));
-    for (i = 0; i < a->nparam; i++)
-        unify(st, ctx, a->param[i], b->param[i]);
+    for (i = 0; i < a->narg; i++)
+        unify(st, ctx, a->arg[i], b->arg[i]);
 }
 
 static void loaduses(Node *n)
@@ -1260,8 +1260,8 @@ static Type *tyfix(Inferstate *st, Node *ctx, Type *t)
                     t->udecls[i]->etype = tyfix(st, ctx, t->udecls[i]->etype);
             }
         } else if (t->type == Tyname) {
-            for (i = 0; i < t->nparam; i++)
-                t->param[i] = tyfix(st, ctx, t->param[i]);
+            for (i = 0; i < t->narg; i++)
+                t->arg[i] = tyfix(st, ctx, t->arg[i]);
         }
         for (i = 0; i < t->nsub; i++)
             t->sub[i] = tyfix(st, ctx, t->sub[i]);

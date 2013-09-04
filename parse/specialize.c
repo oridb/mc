@@ -56,13 +56,13 @@ Type *tyspecialize(Type *t, Htab *tsmap)
             if (!t->isgeneric) {
                 ret = t;
             } else {
-                for (i = 0; i < t->nparam; i++)
-                    if (!hthas(tsmap, t->param[i]))
-                        htput(tsmap, t->param[i], mktyvar(t->param[i]->line));
+                for (i = 0; i < t->narg; i++)
+                    if (!hthas(tsmap, t->arg[i]))
+                        htput(tsmap, t->arg[i], mktyvar(t->arg[i]->line));
                 ret = mktyname(t->line, t->name, NULL, 0, tyspecialize(t->sub[0], tsmap));
                 htput(tsmap, t, ret);
-                for (i = 0; i < t->nparam; i++)
-                    lappend(&ret->param, &ret->nparam, tyspecialize(t->param[i], tsmap));
+                for (i = 0; i < t->narg; i++)
+                    lappend(&ret->arg, &ret->narg, tyspecialize(t->arg[i], tsmap));
             }
             break;
         case Tystruct:
