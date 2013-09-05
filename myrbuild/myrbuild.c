@@ -43,6 +43,7 @@ char *sysname;
 
 regex_t usepat;
 Htab *compiled;
+Htab *loopdetect;
 
 static void usage(char *prog)
 {
@@ -198,6 +199,9 @@ void compile(char *file)
 
     if (hthas(compiled, file))
         return;
+    if (hthas(loopdetect, file))
+        die("Cycle in dependency graph, involving %s\n", file);
+    htput(loopdetect, file, file);
     if (hassuffix(file, ".myr")) {
         swapsuffix(use, sizeof use, file, ".myr", ".use");
         swapsuffix(obj, sizeof obj, file, ".myr", ".o");
@@ -212,9 +216,9 @@ void compile(char *file)
             }
         }
         if (isfresh(file, use))
-            return;
+            goto done;
         if (isfresh(file, obj))
-            return;
+            goto done;
         gencmd(&cmd, &ncmd, muse, file, NULL, 0);
         run(cmd);
 
@@ -223,13 +227,15 @@ void compile(char *file)
     } else if (hassuffix(file, ".s")) {
         swapsuffix(obj, sizeof obj, file, ".s", ".o");
         if (isfresh(file, obj))
-            return;
+            goto done;
         extra[2] = obj;
         gencmd(&cmd, &ncmd, as, file, extra, 3);
         run(cmd);
     }
+done:
     s = strdup(file);
     htput(compiled, s, s);
+    htdel(loopdetect, file);
 }
 
 void mergeuse(char **files, size_t nfiles)
@@ -390,6 +396,7 @@ int main(int argc, char **argv)
         die("Can't specify both library and binary names");
 
     compiled = mkht(strhash, streq);
+    loopdetect = mkht(strhash, streq);
     regcomp(&usepat, "^[[:space:]]*use[[:space:]]+([^[:space:]]+)", REG_EXTENDED);
     for (i = optind; i < argc; i++)
         compile(argv[i]);
