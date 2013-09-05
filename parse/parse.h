@@ -75,6 +75,7 @@ struct Htab {
     void **keys;
     void **vals;
     ulong *hashes;
+    char  *dead;
 };
 
 struct Tok {
@@ -296,6 +297,7 @@ size_t bscount(Bitset *bs);
 Htab *mkht(ulong (*hash)(void *key), int (*cmp)(void *k1, void *k2));
 void htfree(Htab *ht);
 int htput(Htab *ht, void *k, void *v);
+void htdel(Htab *ht, void *k);
 void *htget(Htab *ht, void *k);
 int hthas(Htab *ht, void *k);
 void **htkeys(Htab *ht, size_t *nkeys);

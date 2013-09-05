@@ -24,6 +24,7 @@ Htab *mkht(ulong (*hash)(void *key), int (*cmp)(void *k1, void *k2))
     ht->keys = zalloc(Initsz*sizeof(void*));
     ht->vals = zalloc(Initsz*sizeof(void*));
     ht->hashes = zalloc(Initsz*sizeof(void*));
+    ht->dead = zalloc(Initsz*sizeof(char));
 
     return ht;
 }
@@ -37,6 +38,7 @@ void htfree(Htab *ht)
     free(ht->keys);
     free(ht->vals);
     free(ht->hashes);
+    free(ht->dead);
     free(ht);
 }
 
@@ -60,12 +62,14 @@ static void grow(Htab *ht, int sz)
     void **oldk;
     void **oldv;
     ulong *oldh;
+    char *oldd;
     int oldsz;
     int i;
 
     oldk = ht->keys;
     oldv = ht->vals;
     oldh = ht->hashes;
+    oldd = ht->dead;
     oldsz = ht->sz;
 
     ht->nelt = 0;
@@ -73,13 +77,15 @@ static void grow(Htab *ht, int sz)
     ht->keys = zalloc(sz*sizeof(void*));
     ht->vals = zalloc(sz*sizeof(void*));
     ht->hashes = zalloc(sz*sizeof(void*));
+    ht->dead = zalloc(sz*sizeof(void*));
 
     for (i = 0; i < oldsz; i++)
-        if (oldh[i])
+        if (oldh[i] && !oldd[i])
             htput(ht, oldk[i], oldv[i]);
     free(oldh);
     free(oldk);
     free(oldv);
+    free(oldd);
 }
 
 /* Inserts 'k' into the hash table, possibly
@@ -94,9 +100,10 @@ int htput(Htab *ht, void *k, void *v)
     di = 0;
     h = hash(ht, k);
     i = h & (ht->sz - 1);
-    while (ht->hashes[i]) {
-        /* second insertion overwrites first */
-        if (ht->hashes[i] == h && ht->cmp(ht->keys[i], k))
+    while (ht->hashes[i] && !ht->dead[i]) {
+        /* second insertion overwrites first. nb, we shouldn't touch the
+         * keys for dead values */
+        if (ht->hashes[i] == h && (ht->dead[i] || ht->cmp(ht->keys[i], k)))
                 break;
         di++;
         i = (h + di) & (ht->sz - 1);
@@ -104,6 +111,7 @@ int htput(Htab *ht, void *k, void *v)
     ht->hashes[i] = h;
     ht->keys[i] = k;
     ht->vals[i] = v;
+    ht->dead[i] = 0;
     ht->nelt++;
     if (ht->sz < ht->nelt*2)
         grow(ht, ht->sz*2);
@@ -121,12 +129,12 @@ static ssize_t htidx(Htab *ht, void *k)
     di = 0;
     h = hash(ht, k);
     i = h & (ht->sz - 1);
-    while (ht->hashes[i] && ht->hashes[i] != h) {
+    while (ht->hashes[i] && !ht->dead[i] && ht->hashes[i] != h) {
 searchmore:
         di++;
         i = (h + di) & (ht->sz - 1);
     }
-    if (!ht->hashes[i]) 
+    if (!ht->hashes[i] || ht->dead[i]) 
         return -1;
     if (!ht->cmp(ht->keys[i], k))
         goto searchmore; /* collision */
@@ -149,6 +157,17 @@ void *htget(Htab *ht, void *k)
         return ht->vals[i];
 }
 
+void htdel(Htab *ht, void *k)
+{
+    ssize_t i;
+
+    i = htidx(ht, k);
+    if (i < 0)
+        return;
+    ht->dead[i] = 1;
+}
+
+
 /* Tests for 'k's presence in 'ht' */
 int hthas(Htab *ht, void *k)
 {
@@ -168,7 +187,7 @@ void **htkeys(Htab *ht, size_t *nkeys)
     j = 0;
     k = xalloc(sizeof(void*)*ht->nelt);
     for (i = 0; i < ht->sz; i++)
-        if (ht->hashes[i])
+        if (ht->hashes[i] && !ht->dead[i])
             k[j++] = ht->keys[i];
     *nkeys = ht->nelt;
     return k;
