@@ -52,7 +52,7 @@ pkg bio =
 	const readtob	: (f : biofile#, delim : byte	-> byte[:])
 
 	/* formatted i/o */
-	const print	: (f : biofile#, fmt : byte[:], args : ... -> std.size)
+	const put	: (f : biofile#, fmt : byte[:], args : ... -> std.size)
 ;;
 
 const Bufsz = 16*1024 /* 16k */
@@ -284,6 +284,11 @@ const readtob = {f, b
 
 const readln = {f
 	-> readto(f, '\n')
+}
+
+const put = {f, fmt, args
+	std.fatal(1, "Formatted put on BIO unimplemented")
+	-> 0
 }
 
 /* 
