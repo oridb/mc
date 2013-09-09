@@ -2,11 +2,11 @@ use std
 
 pkg bio =
 	type mode = int
-	const Biord	: mode = 1
-	const Biowr	: mode = 2
-	const Biorw	: mode = 1 | 2
+	const Rd	: mode = 1
+	const Wr	: mode = 2
+	const Rw	: mode = 1 | 2
 
-	type biofile = struct
+	type file = struct
 		/* backing fd */
 		fd	: std.fd
 		mode	: mode
@@ -22,55 +22,55 @@ pkg bio =
 	;;
 
 	/* creation */
-	const mkbiofile	: (fd : std.fd, mode : mode	-> biofile#)
-	const open	: (path : byte[:], mode : mode	-> biofile#)
-	const create	: (path : byte[:], mode : mode, perm : int	-> biofile#)
-	const close	: (f : biofile# -> bool)
+	const mkfile	: (fd : std.fd, mode : mode	-> file#)
+	const open	: (path : byte[:], mode : mode	-> file#)
+	const create	: (path : byte[:], mode : mode, perm : int	-> file#)
+	const close	: (f : file# -> bool)
 
 	/* basic i/o. Returns sub-buffer when applicable. */
-	const write	: (f : biofile#, src : byte[:]	-> std.size)
-	const read	: (f : biofile#, dst : byte[:]	-> byte[:])
-	const flush	: (f : biofile# -> bool)
+	const write	: (f : file#, src : byte[:]	-> std.size)
+	const read	: (f : file#, dst : byte[:]	-> byte[:])
+	const flush	: (f : file# -> bool)
 
 	/* single unit operations */
-	const putb	: (f : biofile#, b : byte	-> std.size)
-	const putc	: (f : biofile#, c : char	-> std.size)
-	const getb	: (f : biofile# -> byte)
-	const getc	: (f : biofile# -> char)
+	const putb	: (f : file#, b : byte	-> std.size)
+	const putc	: (f : file#, c : char	-> std.size)
+	const getb	: (f : file# -> byte)
+	const getc	: (f : file# -> char)
 
 	/* typed binary reads */
-	generic getbe	: (f : biofile# -> @a::(tctest,tcnum,tcint))
-	generic getle	: (f : biofile# -> @a::(tctest,tcnum,tcint))
+	generic getbe	: (f : file# -> @a::(tctest,tcnum,tcint))
+	generic getle	: (f : file# -> @a::(tctest,tcnum,tcint))
 
 	/* peeking */
-	const peekb	: (f : biofile# -> byte)
-	const peekc	: (f : biofile# -> char)
+	const peekb	: (f : file# -> byte)
+	const peekc	: (f : file# -> char)
 
 	/* delimited read; returns freshly allocated buffer. */
-	const readln	: (f : biofile#	-> byte[:])
-	const readto	: (f : biofile#, delim : char	-> byte[:])
-	const readtob	: (f : biofile#, delim : byte	-> byte[:])
+	const readln	: (f : file#	-> byte[:])
+	const readto	: (f : file#, delim : char	-> byte[:])
+	const readtob	: (f : file#, delim : byte	-> byte[:])
 
 	/* formatted i/o */
-	const put	: (f : biofile#, fmt : byte[:], args : ... -> std.size)
+	const put	: (f : file#, fmt : byte[:], args : ... -> std.size)
 ;;
 
 const Bufsz = 16*1024 /* 16k */
 const Small = 512
 
-const mkbiofile = {fd, mode
+const mkfile = {fd, mode
 	var f
 
 	f = std.alloc()
 
 	f.fd = fd
 	f.mode = mode
-	if mode & Biord
+	if mode & Rd
 		f.rbuf = std.slalloc(Bufsz)
 		f.rstart = 0
 		f.rend = 0
 	;;
-	if mode & Biowr
+	if mode & Wr
 		f.wbuf = std.slalloc(Bufsz)
 		f.wend = 0
 	;;
@@ -84,32 +84,32 @@ const open = {path, mode
 const create = {path, mode, perm
 	var openmode
 
-	if mode == Biord
+	if mode == Rd
 		openmode = std.Ordonly
-	elif mode == Biowr
+	elif mode == Wr
 		openmode = std.Owronly
-	elif mode == Biorw
+	elif mode == Rw
 		openmode = std.Ordwr
 	;;
 	openmode |= std.Ocreat
 
-	-> mkbiofile(std.open(path, openmode, perm castto(int64)), mode)
+	-> mkfile(std.open(path, openmode, perm castto(int64)), mode)
 }
 
 const close = {f
 	flush(f)
-	if f.mode & Biord
+	if f.mode & Rd
 		std.slfree(f.rbuf)
 	;;
 
-	if f.mode & Biowr
+	if f.mode & Wr
 		std.slfree(f.wbuf)
 	;;
 	-> std.close(f.fd) == 0
 }
 
 const write = {f, src
-	std.assert(f.mode & Biowr != 0, "File is not in write mode")
+	std.assert(f.mode & Wr != 0, "File is not in write mode")
 	/*
 	Tack small writes onto the buffer end. Big ones
 	flush the buffer and then go right to kernel.
@@ -129,7 +129,7 @@ const read = {f, dst
 	var d
 	var count
 
-	std.assert(f.mode & Biord != 0, "File is not in read mode")
+	std.assert(f.mode & Rd != 0, "File is not in read mode")
 	/* 
 	 * small reads should try to fill, so we don't have to make a
 	 * syscall for every read
