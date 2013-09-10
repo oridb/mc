@@ -208,18 +208,21 @@ static Type *tyfreshen(Inferstate *st, Type *t)
 {
     Htab *ht;
 
-    st->ingeneric++;
-    t = tf(st, t);
-    st->ingeneric--;
-
-    if (!isgeneric(st, t))
+    if (!isgeneric(st, t)) {
+        if (debugopt['u'])
+            printf("%s isn't generic: skipping freshen\n", tystr(t));
         return t;
+    }
 
+    if (debugopt['u'])
+        printf("Freshen %s => ", tystr(t));
     tybind(st, t);
     ht = mkht(tyhash, tyeq);
     t = tyspecialize(t, ht);
     htfree(ht);
     tyunbind(st, t);
+    if (debugopt['u'])
+        printf("%s\n", tystr(t));
 
     return t;
 }
@@ -293,11 +296,21 @@ static Type *tysearch(Inferstate *st, Type *t)
 
 /* fixd the most accurate type mapping we have (ie,
  * the end of the unification chain */
-static Type *tf(Inferstate *st, Type *t)
+static Type *tf(Inferstate *st, Type *orig)
 {
-    t = tysearch(st, t);
+    Type *t;
+    size_t i;
+
+    t = tysearch(st, orig);
     st->ingeneric += t->isgeneric;
     tyresolve(st, t);
+    /* If this is an instantiation of a generic type, we want the params to
+     * match the instantiation */
+    if (orig->type == Tyunres && t->isgeneric) {
+        t = tyfreshen(st, t);
+        for (i = 0; i < t->narg; i++)
+             unify(st, NULL, t->arg[i], orig->arg[i]);
+    }
     st->ingeneric -= t->isgeneric;
     return t;
 }
@@ -568,7 +581,7 @@ static Type *unify(Inferstate *st, Node *ctx, Type *a, Type *b)
     if (debugopt['u']) {
         from = tystr(a);
         to = tystr(b);
-        printf("Unify %s => %s", from, to);
+        printf("Unify %s => %s\n", from, to);
         free(from);
         free(to);
     }
@@ -1030,7 +1043,7 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
                 fatal(n->line, "Undeclared var %s", ctxstr(st, args[0]));
 
             if (s->decl.isgeneric)
-                t = tyfreshen(st, s->decl.type);
+                t = tyfreshen(st, tf(st, s->decl.type));
             else
                 t = s->decl.type;
             settype(st, n, t);
@@ -1043,9 +1056,10 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
             break;
         case Oucon:
             uc = uconresolve(st, n);
+            t = tyfreshen(st, tf(st, uc->utype));
             if (uc->etype)
                 unify(st, n, uc->etype, type(st, args[1]));
-            settype(st, n, delayed(st, tyfreshen(st, uc->utype)));
+            settype(st, n, delayed(st, t));
             break;
         case Otup:
             infertuple(st, n, &n->expr.isconst);
@@ -1121,7 +1135,7 @@ static void inferstab(Inferstate *st, Stab *s)
 
     k = htkeys(s->ty, &n);
     for (i = 0; i < n; i++) {
-        t = tf(st, gettype(s, k[i]));
+        t = tysearch(st, gettype(s, k[i]));
         updatetype(s, k[i], t);
     }
     free(k);
@@ -1239,7 +1253,7 @@ static Type *tyfix(Inferstate *st, Node *ctx, Type *t)
     if (!tyflt)
         tyflt = mktype(-1, Tyfloat64);
 
-    t = tf(st, t);
+    t = tysearch(st, t);
     if (t->type == Tyvar) {
         if (hascstr(t, cstrtab[Tcint]) && cstrcheck(t, tyint))
             return tyint;
@@ -1387,7 +1401,7 @@ static void stabsub(Inferstate *st, Stab *s)
 
     k = htkeys(s->ty, &n);
     for (i = 0; i < n; i++) {
-        t = tf(st, gettype(s, k[i]));
+        t = tysearch(st, gettype(s, k[i]));
         updatetype(s, k[i], t);
         tyfix(st, k[i], t);
     }

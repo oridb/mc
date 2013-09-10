@@ -146,7 +146,7 @@ Type *mktyunres(int line, Node *name, Type **arg, size_t narg)
     return t;
 }
 
-Type *mktyname(int line, Node *name, Type **arg, size_t narg, Type *base)
+Type *mktyname(int line, Node *name, Type **param, size_t nparam, Type *base)
 {
     Type *t;
 
@@ -156,8 +156,8 @@ Type *mktyname(int line, Node *name, Type **arg, size_t narg, Type *base)
     t->cstrs = bsdup(base->cstrs);
     t->sub = xalloc(sizeof(Type*));
     t->sub[0] = base;
-    t->arg = arg;
-    t->narg = narg;
+    t->param = param;
+    t->nparam = nparam;
     return t;
 }
 
@@ -369,6 +369,8 @@ static int tybfmt(char *buf, size_t len, Type *t)
     char *p;
     char *end;
     char *sep;
+    size_t narg;
+    Type **arg;
 
     p = buf;
     end = p + len;
@@ -459,17 +461,24 @@ static int tybfmt(char *buf, size_t len, Type *t)
                 p += snprintf(p, end - p, ")");
             }
             break;
-        case Tyname:  
+        case Tyname:
             p += snprintf(p, end - p, "%s", namestr(t->name));
-            if (t->narg) {
-                p += snprintf(p, end - p, "(");
-                for (i = 0; i < t->narg; i++)  {
-                    p += snprintf(p, end - p, "%s", sep);
-                    p += tybfmt(p, end - p, t->arg[i]);
-                    sep = ", ";
-                }
-                p += snprintf(p, end - p, ")");
+            if (t->isgeneric) {
+                arg = t->param;
+                narg = t->nparam;
+            } else {
+                arg = t->arg;
+                narg = t->narg;
             }
+            if (!narg)
+                break;
+            p += snprintf(p, end - p, "(");
+            for (i = 0; i < narg; i++)  {
+                p += snprintf(p, end - p, "%s", sep);
+                p += tybfmt(p, end - p, arg[i]);
+                sep = ", ";
+            }
+            p += snprintf(p, end - p, ")");
             break;
         case Tystruct:  p += fmtstruct(p, end - p, t);  break;
         case Tyunion:   p += fmtunion(p, end - p, t);   break;

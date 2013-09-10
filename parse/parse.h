@@ -114,9 +114,11 @@ struct Type {
     Node **cstrlist;    /* The names of the constraints on the type. Used to fill the bitset */
     size_t ncstrlist;   /* The length of the constraint list above */
 
-    int	 isgeneric;	/* Tyname: whether this is generic or not */
-    Type **arg;       /* Tyname: the type parameters captured */
-    size_t narg;      /* Tyname: count of type parameters */
+    int  isgeneric;     /* Tyname: whether this is generic or not */
+    Type **param;       /* Tyname: type parameters that match the type args */
+    size_t nparam;      /* Tyname: count of type parameters */
+    Type **arg;         /* Tyname: type arguments instantiated */
+    size_t narg;        /* Tyname: count of type arguments */
     Type **inst;        /* Tyname: instances created */
     size_t ninst;       /* Tyname: count of instances created */
 

@@ -56,13 +56,16 @@ Type *tyspecialize(Type *t, Htab *tsmap)
             if (!t->isgeneric) {
                 ret = t;
             } else {
-                for (i = 0; i < t->narg; i++)
-                    if (!hthas(tsmap, t->arg[i]))
-                        htput(tsmap, t->arg[i], mktyvar(t->arg[i]->line));
+                for (i = 0; i < t->nparam; i++) {
+                    if (hthas(tsmap, t->param[i]))
+                        continue;
+                    tmp = mktyvar(t->param[i]->line);
+                    htput(tsmap, t->param[i], tmp);
+                }
                 ret = mktyname(t->line, t->name, NULL, 0, tyspecialize(t->sub[0], tsmap));
                 htput(tsmap, t, ret);
-                for (i = 0; i < t->narg; i++)
-                    lappend(&ret->arg, &ret->narg, tyspecialize(t->arg[i], tsmap));
+                for (i = 0; i < t->nparam; i++)
+                    lappend(&ret->arg, &ret->narg, tyspecialize(t->param[i], tsmap));
             }
             break;
         case Tystruct:
@@ -134,6 +137,7 @@ static void fixup(Node *n)
 {
     size_t i;
     Node *d;
+    Stab *ns;
 
     if (!n)
         return;
@@ -147,7 +151,12 @@ static void fixup(Node *n)
             for (i = 0; i < n->expr.nargs; i++)
                 fixup(n->expr.args[i]);
             if (n->expr.op == Ovar) {
-                d = getdcl(curstab(), n->expr.args[0]);
+                ns = curstab();
+                if (n->expr.args[0]->name.ns)
+                    ns = getns_str(ns, n->expr.args[0]->name.ns);
+                if (!ns)
+                    fatal(n->line, "No namespace %s\n", n->expr.args[0]->name.ns);
+                d = getdcl(ns, n->expr.args[0]);
                 if (!d)
                     die("Missing decl %s", namestr(n->expr.args[0]));
                 if (d->decl.isgeneric)
