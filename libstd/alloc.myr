@@ -35,6 +35,7 @@ pkg std =
 	generic slfree	: (sl : @a[:]	-> void)
 
 	const bytealloc	: (sz:size	-> byte#)
+	const zbytealloc	: (sz:size	-> byte#)
 	const bytefree	: (m:byte#, sz:size	-> void)
 
 	/* FIXME: This should be automatically exported as a hidden decl. */
