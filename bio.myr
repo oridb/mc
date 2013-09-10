@@ -39,6 +39,8 @@ pkg bio =
 	const getc	: (f : file# -> char)
 
 	/* typed binary reads */
+	generic putbe	: (f : file#, v : @a::(tctest,tcnum,tcint) -> std.size)
+	generic putle	: (f : file#, v : @a::(tctest,tcnum,tcint) -> std.size)
 	generic getbe	: (f : file# -> @a::(tctest,tcnum,tcint))
 	generic getle	: (f : file# -> @a::(tctest,tcnum,tcint))
 
@@ -202,6 +204,25 @@ const getc = {f
 		-> c
 	;;
 	-> -1
+}
+
+generic putle = {f, v : @a::(tcnum,tcint,tctest)
+	var i
+
+	for i = 0; i < sizeof(@a); i++
+		putb(f, (v & 0xff) castto(byte))
+		v >>= 8
+	;;
+	-> sizeof(@a)
+}
+
+generic putbe = {f, v : @a::(tcnum,tcint,tctest)
+	var i
+
+	for i = sizeof(@a); i != 0; i--
+		putb(f, ((v >> (i - 1)*8) & 0xff) castto(byte))
+	;;
+	-> sizeof(@a)
 }
 
 generic getbe = {f -> @a::(tcnum,tcint,tctest)
