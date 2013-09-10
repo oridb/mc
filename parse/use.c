@@ -209,9 +209,9 @@ static void typickle(FILE *fd, Type *ty)
             break;
         case Tyname:
             pickle(ty->name, fd);
-            wrint(fd, ty->nparam);
-            for (i = 0; i < ty->nparam; i++)
-                wrtype(fd, ty->param[i]);
+            wrint(fd, ty->narg);
+            for (i = 0; i < ty->narg; i++)
+                wrtype(fd, ty->arg[i]);
             wrtype(fd, ty->sub[0]);
             break;
         default:
@@ -288,10 +288,10 @@ static Type *tyunpickle(FILE *fd)
             break;
         case Tyname:
             ty->name = unpickle(fd);
-            ty->nparam = rdint(fd);
-            ty->param = zalloc(ty->nparam * sizeof(Type *));
-            for (i = 0; i < ty->nparam; i++)
-                rdtype(fd, &ty->param[i]);
+            ty->narg = rdint(fd);
+            ty->arg = zalloc(ty->narg * sizeof(Type *));
+            for (i = 0; i < ty->narg; i++)
+                rdtype(fd, &ty->arg[i]);
             rdtype(fd, &ty->sub[0]);
             break;
         default:
@@ -686,8 +686,8 @@ static void taghidden(Type *t)
     t->vis = Vishidden;
     for (i = 0; i < t->nsub; i++)
         taghidden(t->sub[i]);
-    for (i = 0; i < t->nparam; i++)
-        taghidden(t->param[i]);
+    for (i = 0; i < t->narg; i++)
+        taghidden(t->arg[i]);
     if (t->type == Tystruct) {
         for (i = 0; i < t->nmemb; i++)
             taghidden(decltype(t->sdecls[i]));
@@ -776,8 +776,8 @@ static void tagexports(Stab *st)
         t->vis = Visexport;
         for (j = 0; j < t->nsub; j++)
             taghidden(t->sub[j]);
-        for (j = 0; j < t->nparam; j++)
-            taghidden(t->param[j]);
+        for (j = 0; j < t->narg; j++)
+            taghidden(t->arg[j]);
     }
     free(k);
 

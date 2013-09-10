@@ -64,9 +64,9 @@ Type *tydup(Type *t)
     r->cstrlist = memdup(t->cstrlist, t->ncstrlist * sizeof(Node*));
     r->ncstrlist = t->ncstrlist;
 
-    r->param = memdup(t->param, t->nparam * sizeof(Type*));
-    r->nparam = t->nparam;
-    r->inst = memdup(t->param, t->nparam * sizeof(Type*));
+    r->arg = memdup(t->arg, t->narg * sizeof(Type*));
+    r->narg = t->narg;
+    r->inst = memdup(t->arg, t->narg * sizeof(Type*));
     r->ninst = t->ninst;
 
     r->sub = memdup(t->sub, t->nsub * sizeof(Type*));
@@ -134,19 +134,19 @@ Type *mktyparam(int line, char *name)
     return t;
 }
 
-Type *mktyunres(int line, Node *name, Type **param, size_t nparam)
+Type *mktyunres(int line, Node *name, Type **arg, size_t narg)
 {
     Type *t;
 
     /* resolve it in the type inference stage */
     t = mktype(line, Tyunres);
     t->name = name;
-    t->param = param;
-    t->nparam = nparam;
+    t->arg = arg;
+    t->narg = narg;
     return t;
 }
 
-Type *mktyname(int line, Node *name, Type **param, size_t nparam, Type *base)
+Type *mktyname(int line, Node *name, Type **arg, size_t narg, Type *base)
 {
     Type *t;
 
@@ -156,8 +156,8 @@ Type *mktyname(int line, Node *name, Type **param, size_t nparam, Type *base)
     t->cstrs = bsdup(base->cstrs);
     t->sub = xalloc(sizeof(Type*));
     t->sub[0] = base;
-    t->param = param;
-    t->nparam = nparam;
+    t->arg = arg;
+    t->narg = narg;
     return t;
 }
 
@@ -449,11 +449,11 @@ static int tybfmt(char *buf, size_t len, Type *t)
         case Tyunres:
             p += snprintf(p, end - p, "?"); /* indicate unresolved name. should not be seen by user. */
             p += namefmt(p, end - p, t->name);
-            if (t->nparam) {
+            if (t->narg) {
                 p += snprintf(p, end - p, "(");
-                for (i = 0; i < t->nparam; i++)  {
+                for (i = 0; i < t->narg; i++)  {
                     p += snprintf(p, end - p, "%s", sep);
-                    p += tybfmt(p, end - p, t->param[i]);
+                    p += tybfmt(p, end - p, t->arg[i]);
                     sep = ", ";
                 }
                 p += snprintf(p, end - p, ")");
@@ -461,11 +461,11 @@ static int tybfmt(char *buf, size_t len, Type *t)
             break;
         case Tyname:  
             p += snprintf(p, end - p, "%s", namestr(t->name));
-            if (t->nparam) {
+            if (t->narg) {
                 p += snprintf(p, end - p, "(");
-                for (i = 0; i < t->nparam; i++)  {
+                for (i = 0; i < t->narg; i++)  {
                     p += snprintf(p, end - p, "%s", sep);
-                    p += tybfmt(p, end - p, t->param[i]);
+                    p += tybfmt(p, end - p, t->arg[i]);
                     sep = ", ";
                 }
                 p += snprintf(p, end - p, ")");
@@ -517,8 +517,8 @@ ulong tyhash(void *ty)
     else
         hash = inthash(t->tid);
 
-    for (i = 0; i < t->nparam; i++)
-        hash ^= tyhash(t->param[i]);
+    for (i = 0; i < t->narg; i++)
+        hash ^= tyhash(t->arg[i]);
     return hash;
 }
 
@@ -533,10 +533,10 @@ int tyeq(void *t1, void *t2)
         return streq(a->pname, b->pname);
     if (a->tid == b->tid)
         return 1;
-    if (a->nparam != b->nparam)
+    if (a->narg != b->narg)
         return 0;
-    for (i = 0; i < a->nparam; i++)
-        if (!tyeq(a->param[i], b->param[i]))
+    for (i = 0; i < a->narg; i++)
+        if (!tyeq(a->arg[i], b->arg[i]))
             return 0;
     return 1;
 }
