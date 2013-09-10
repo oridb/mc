@@ -49,6 +49,14 @@ pkg std =
 		qspare1	: int64
 	;;
 
+	type utsname = struct
+		system	: byte[256]
+		node	: byte[256]
+		release	: byte[256]
+		version	: byte[256]
+		machine	: byte[256]
+	;;
+
 	/* open options */
 	const Ordonly  	: fdopt = 0x0
 	const Owronly  	: fdopt = 0x1
@@ -458,6 +466,9 @@ pkg std =
 	const clock_getres	: (clk : clock, ts : timespec# -> int)
 	const clock_gettime	: (clk : clock, ts : timespec# -> int)
 	const clock_settime	: (clk : clock, ts : timespec# -> int)
+
+	/* system information */
+	const uname 	: (buf : utsname# -> int)
 ;;
 
 /* process control */
@@ -506,3 +517,6 @@ const clock_settime = {clk, ts
 	tv.usec = ts.nsec / 1000
 	-> settimeofday(&tv, 0 castto(timezone#))
 }
+
+/* system information */
+const uname	= {buf;	-> syscall(Sysuname, buf) castto(int)}
