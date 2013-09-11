@@ -158,7 +158,7 @@ static int tyinfinite(Inferstate *st, Type *t, Type *sub)
                     return 1;
             break;
         case Tyunion:
-            for (i = 0; i < t->nmemb; i++) {
+            for (i = 0; i < sub->nmemb; i++) {
                 if (sub->udecls[i]->etype && tyinfinite(st, t, sub->udecls[i]->etype))
                     return 1;
             }
