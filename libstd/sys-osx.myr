@@ -469,6 +469,7 @@ pkg std =
 
 	/* system information */
 	const uname 	: (buf : utsname# -> int)
+	const sysctl	: (mib : int[:], old : byte[:]#, new : byte[:] -> int)
 ;;
 
 /* process control */
@@ -519,4 +520,74 @@ const clock_settime = {clk, ts
 }
 
 /* system information */
-const uname	= {buf;	-> syscall(Sysuname, buf) castto(int)}
+const uname	= {buf;	
+	var mib : int[2]
+	var ret
+	var sys
+	var nod
+	var rel
+	var ver
+	var mach
+
+	ret = 0
+	mib[0] = 1 /* CTL_KERN */
+	mib[1] = 1 /* KERN_OSTYPE */
+	sys = buf.system[:]
+	if sysctl(mib[:], &sys, [][:]) < 0
+		ret = -1
+	;;
+
+	mib[0] = 1 /* CTL_KERN */
+	mib[1] = 10 /* KERN_HOSTNAME */
+	nod = buf.node[:]
+	if sysctl(mib[:], &nod, [][:]) < 0
+		ret = -1
+	;;
+
+	mib[0] = 1 /* CTL_KERN */
+	mib[1] = 2 /* KERN_OSRELEASE */
+	rel = buf.release[:]
+	if sysctl(mib[:], &rel, [][:]) < 0
+		ret = -1
+	;;
+
+	mib[0] = 1 /* CTL_KERN */
+	mib[1] = 4 /* KERN_VERSION */
+	ver = buf.version[:]
+	if sysctl(mib[:], &ver, [][:]) < 0
+		ret = -1
+	;;
+
+	mib[0] = 6 /* CTL_HW */
+	mib[1] = 1 /* HW_MACHINE */
+	mach = buf.machine[:]
+	if sysctl(mib[:], &mach, [][:]) < 0
+		ret = -1
+	;;
+
+	-> ret
+}
+
+const sysctl = {mib, old, new
+	var mibp
+	var mibsz
+	var o
+	var oldp
+	var oldsz
+	var newp
+	var newsz
+	var ret
+
+	mibp = mib castto(byte#)
+	mibsz = mib.len castto(uint64)
+	o = old#
+	oldp = o castto(byte#)
+	oldsz = o.len castto(uint64)
+	newp = new castto(byte#)
+	newsz = new castto(uint64)
+
+	ret = syscall(Sys__sysctl, mibp, mibsz, oldp, &oldsz, newp, newsz) castto(int)
+
+	old# = o[:oldsz]
+	-> ret
+}
