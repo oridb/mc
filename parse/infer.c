@@ -1057,6 +1057,7 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
         case Oucon:
             uc = uconresolve(st, n);
             t = tyfreshen(st, tf(st, uc->utype));
+            uc = tybase(t)->udecls[uc->id];
             if (uc->etype)
                 unify(st, n, uc->etype, type(st, args[1]));
             settype(st, n, delayed(st, t));
@@ -1254,13 +1255,13 @@ static Type *tyfix(Inferstate *st, Node *ctx, Type *t)
         tyflt = mktype(-1, Tyfloat64);
 
     t = tysearch(st, t);
+    if (hthas(st->delayed, t))
+        t = htget(st->delayed, t);
     if (t->type == Tyvar) {
         if (hascstr(t, cstrtab[Tcint]) && cstrcheck(t, tyint))
             return tyint;
         if (hascstr(t, cstrtab[Tcfloat]) && cstrcheck(t, tyflt))
             return tyflt;
-        if (hthas(st->delayed, t))
-            return htget(st->delayed, t);
     } else if (!t->fixed) {
         t->fixed = 1;
         if (t->type == Tyarray) {
