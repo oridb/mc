@@ -99,6 +99,7 @@ static void wrucon(FILE *fd, Ucon *uc)
 {
     wrint(fd, uc->line);
     wrint(fd, uc->id);
+    wrbool(fd, uc->synth);
     pickle(uc->name, fd);
     wrbool(fd, uc->etype != NULL);
     if (uc->etype)
@@ -112,15 +113,18 @@ static Ucon *rducon(FILE *fd, Type *ut)
     Ucon *uc;
     size_t id;
     int line;
+    int synth;
 
     et = NULL;
     line = rdint(fd);
     id = rdint(fd);
+    synth = rdbool(fd);
     name = unpickle(fd);
     uc = mkucon(line, name, ut, et);
     if (rdbool(fd))
       rdtype(fd, &uc->etype);
     uc->id = id;
+    uc->synth = synth;
     return uc;
 }
 
@@ -636,7 +640,8 @@ int loaduse(FILE *f, Stab *st)
                         puttype(s, t->name, t);
                 if (t->type == Tyunion)  {
                     for (i = 0; i < t->nmemb; i++)
-                        putucon(s, t->udecls[i]);
+                        if (!t->udecls[i]->synth)
+                            putucon(s, t->udecls[i]);
                 }
                 break;
             case EOF:

@@ -80,11 +80,13 @@ Type *tyspecialize(Type *t, Htab *tsmap)
             ret = tydup(t);
             htput(tsmap, t, ret);
             for (i = 0; i < t->nmemb; i++) {
-                if (ret->udecls[i]->etype) {
+                tmp = NULL;
+                if (ret->udecls[i]->etype)
                     tmp = tyspecialize(t->udecls[i]->etype, tsmap);
-                    ret->udecls[i] = mkucon(t->line, t->udecls[i]->name, ret, tmp);
-                }
+                ret->udecls[i] = mkucon(t->line, t->udecls[i]->name, ret, tmp);
                 ret->udecls[i]->utype = ret;
+                ret->udecls[i]->id = i;
+                ret->udecls[i]->synth = 1;
             }
             break;
         default:
