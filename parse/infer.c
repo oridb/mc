@@ -844,13 +844,27 @@ static void infertuple(Inferstate *st, Node *n, int *isconst)
         n->expr.isconst = n->expr.isconst && n->expr.args[i]->expr.isconst;
         types[i] = type(st, n->expr.args[i]);
     }
+    *isconst = n->expr.isconst;
     settype(st, n, mktytuple(n->line, types, n->expr.nargs));
+}
+
+static void inferucon(Inferstate *st, Node *n, int *isconst)
+{
+    Ucon *uc;
+    Type *t;
+
+    uc = uconresolve(st, n);
+    t = tyfreshen(st, tf(st, uc->utype));
+    uc = tybase(t)->udecls[uc->id];
+    if (uc->etype)
+        unify(st, n, uc->etype, type(st, n->expr.args[1]));
+    *isconst = n->expr.args[0]->expr.isconst;
+    settype(st, n, delayed(st, t));
 }
 
 static void inferpat(Inferstate *st, Node *n, Node *val, Node ***bind, size_t *nbind)
 {
     size_t i;
-    Ucon *uc;
     Node **args;
     Node *s;
     Type *t;
@@ -861,10 +875,7 @@ static void inferpat(Inferstate *st, Node *n, Node *val, Node ***bind, size_t *n
             inferpat(st, args[i], val, bind, nbind);
     switch (exprop(n)) {
         case Oucon:
-            uc = uconresolve(st, n);
-            if (uc->etype)
-                unify(st, n, uc->etype, type(st, args[1]));
-            settype(st, n, delayed(st, uc->utype));
+            inferucon(st, n, &n->expr.isconst);
             break;
         case Ovar:
             s = getdcl(curstab(), args[0]);
@@ -913,7 +924,6 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
 {
     Node **args;
     size_t i, nargs;
-    Ucon *uc;
     Node *s;
     Type *t;
 
@@ -1055,12 +1065,7 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
             }
             break;
         case Oucon:
-            uc = uconresolve(st, n);
-            t = tyfreshen(st, tf(st, uc->utype));
-            uc = tybase(t)->udecls[uc->id];
-            if (uc->etype)
-                unify(st, n, uc->etype, type(st, args[1]));
-            settype(st, n, delayed(st, t));
+            inferucon(st, n, &n->expr.isconst);
             break;
         case Otup:
             infertuple(st, n, &n->expr.isconst);
