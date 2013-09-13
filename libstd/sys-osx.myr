@@ -521,6 +521,16 @@ const clock_settime = {clk, ts
 
 /* system information */
 const uname	= {buf;	
+	buf.system[0] = 'D' castto(byte)
+	buf.system[1] = 'a' castto(byte)
+	buf.system[2] = 'r' castto(byte)
+	buf.system[3] = 'w' castto(byte)
+	buf.system[4] = 'i' castto(byte)
+	buf.system[5] = 'n' castto(byte)
+	buf.system[6] = 0
+	-> 0
+	/*
+	FIXME: THIS IS BROKEN. Miscompiled? DEBUG IT.
 	var mib : int[2]
 	var ret
 	var sys
@@ -536,6 +546,7 @@ const uname	= {buf;
 	if sysctl(mib[:], &sys, [][:]) < 0
 		ret = -1
 	;;
+	std.put("%s\n", sys)
 
 	mib[0] = 1 /* CTL_KERN */
 	mib[1] = 10 /* KERN_HOSTNAME */
@@ -566,6 +577,7 @@ const uname	= {buf;
 	;;
 
 	-> ret
+	*/
 }
 
 const sysctl = {mib, old, new

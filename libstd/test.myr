@@ -1,5 +1,15 @@
 use std
 
+const ntstr = {s
+	var n
+
+	n = 0
+	while s[n] != 0 && n < s.len
+		n++
+	;;
+	-> s[:n]
+}
+
 const main = {args : byte[:][:]
 	var x : byte#[1024]
 	var sz
@@ -7,8 +17,15 @@ const main = {args : byte[:][:]
         var ctx
         var o
 	var a
+	var buf
 
 	std.put("The time is %l seconds past the epoch\n", std.now()/1000);
+	std.uname(&buf)
+	std.put("And you are running on:\n")
+	std.put("\tsystem:\t\"%s\"\n", ntstr(buf.system[:]))
+	std.put("\tnode:\t\"%s\"\n", ntstr(buf.node[:]))
+	std.put("\trelease:\t\"%s\"\n", ntstr(buf.release[:]))
+	std.put("\tmachine:\t\"%s\"\n", ntstr(buf.machine[:]))
         ctx = std.optinit("asdf:g?h", args)
 	std.put("arglen = %i\n", ctx.args.len)
         while !std.optdone(ctx)
