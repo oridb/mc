@@ -137,7 +137,7 @@ struct Type {
 struct Ucon {
     int line;   /* line declared on */
     size_t id;  /* unique id */
-    int synth;  /* is it generated? */
+    Vis vis;    /* is it generated? */
     Node *name; /* ucon name */
     Type *utype;        /* type of the union this is an element of */
     Type *etype;        /* type for the element */

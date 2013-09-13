@@ -1,0 +1,17 @@
+use std
+
+type t(@a) = union
+	`Val @a
+	`None
+;;
+
+const f = {-> t(int)
+	-> `None
+}
+
+const main = {
+	match f()
+	`None:	-> 42;;
+	;;
+	-> 0
+}
