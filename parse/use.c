@@ -490,6 +490,7 @@ static Node *unpickle(FILE *fd)
         case Nmatchstmt:
             n->matchstmt.val = unpickle(fd);
             n->matchstmt.nmatches = rdint(fd);
+            n->matchstmt.matches = zalloc(sizeof(Node *)*n->matchstmt.nmatches);
             for (i = 0; i < n->matchstmt.nmatches; i++)
                 n->matchstmt.matches[i] = unpickle(fd);
             break;
