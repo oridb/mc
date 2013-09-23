@@ -626,22 +626,22 @@ static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
     mergecstrs(st, ctx, a, b);
 
     if (hthas(st->delayed, u))
-	u = htget(st->delayed, u);
+        u = htget(st->delayed, u);
     u = tybase(u);
     if (hthas(st->delayed, v))
-	v = htget(st->delayed, v);
+        v = htget(st->delayed, v);
     v = tybase(v);
     if (u->type == Tyunion && v->type == Tyunion && u != v) {
-	assert(u->nmemb = v->nmemb);
-	for (i = 0; i < v->nmemb; i++) {
-	    if (u->udecls[i]->etype)
-		unify(st, NULL, u->udecls[i]->etype, v->udecls[i]->etype);
-	}
+        assert(u->nmemb = v->nmemb);
+        for (i = 0; i < v->nmemb; i++) {
+            if (u->udecls[i]->etype)
+                unify(st, NULL, u->udecls[i]->etype, v->udecls[i]->etype);
+        }
     } else if (u->type == Tystruct && v->type == Tystruct && u != v) {
-	assert(u->nmemb = v->nmemb);
-	for (i = 0; i < v->nmemb; i++) {
-	    unify(st, NULL, type(st, u->sdecls[i]), type(st, v->sdecls[i]));
-	}
+        assert(u->nmemb = v->nmemb);
+        for (i = 0; i < v->nmemb; i++) {
+            unify(st, NULL, type(st, u->sdecls[i]), type(st, v->sdecls[i]));
+        }
     }
 
     return r;
@@ -1483,9 +1483,9 @@ static void typesub(Inferstate *st, Node *n)
             break;
         case Nmatchstmt:
             typesub(st, n->matchstmt.val);
-	    for (i = 0; i < n->matchstmt.nmatches; i++) {
+            for (i = 0; i < n->matchstmt.nmatches; i++) {
                 typesub(st, n->matchstmt.matches[i]);
-	    }
+            }
             break;
         case Nmatch:
             typesub(st, n->match.pat);
