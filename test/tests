@@ -64,6 +64,8 @@ B generictype	E	0
 B genericret	E	42
 B genericmatch	E	15
 B genericrec	E	0
+B stdoption-some	E	42
+B stdoption-none	E	42
 B sizeof	E	4
 B gsizeof	E	5
 B mkunion	E	0

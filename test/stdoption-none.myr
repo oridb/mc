@@ -1,0 +1,13 @@
+use std
+
+const f = {
+	-> `std.None
+}
+
+const main = {
+	match f()
+	`std.Some x:	-> x;;
+	`std.None:	-> 42;;
+	;;
+}
+
