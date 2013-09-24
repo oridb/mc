@@ -1,15 +1,20 @@
 use std
 
-const main = {args : byte[:][:]
-	match getoption(123)
-	`std.Some val:	std.put("Got a value: %i\n", val);;
-	`std.None:	std.put("No value returned\n");;
+const f = {x
+	if x == 123
+		-> `std.Some 42
+	else
+		-> `std.None
 	;;
 }
 
-const getoption = {val
-	match val
-	0:	-> `std.None;;
-	_:	-> `std.Some val;;
+const main = {
+	var v
+	
+	v = f(123)
+	match v
+	`std.Some x:	-> x;;
+	`std.None:	-> 123;;
 	;;
 }
+
