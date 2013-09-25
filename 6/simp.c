@@ -234,6 +234,12 @@ int stacktype(Type *t)
     return t->type >= Tyslice;
 }
 
+int floattype(Type *t)
+{
+    t = tybase(t);
+    return t->type == Tyfloat32 || t->type == Tyfloat64;
+}
+
 int stacknode(Node *n)
 {
     if (n->type == Nexpr)
@@ -790,9 +796,32 @@ static Node *simpcast(Simp *s, Node *val, Type *to)
                 case Typtr:
                     r = intconvert(s, val, to, 0);
                     break;
+                case Tyfloat32: case Tyfloat64:
+                    if (tybase(to)->type == Typtr)
+                        fatal(val->line, "Bad cast from %s to %s",
+                              tystr(exprtype(val)), tystr(to));
+                    r = mkexpr(val->line, Oflt2int, rval(s, val, NULL), NULL);
+                    r->expr.type = to;
+                    break;
                 default:
                     fatal(val->line, "Bad cast from %s to %s",
                           tystr(exprtype(val)), tystr(to));
+            }
+            break;
+        case Tyfloat32: case Tyfloat64:
+            t = tybase(exprtype(val));
+            switch (t->type) {
+                case Tyint8: case Tyint16: case Tyint32: case Tyint64:
+                case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint64:
+                case Tyint: case Tyuint: case Tylong: case Tyulong:
+                case Tychar: case Tybyte:
+                    r = mkexpr(val->line, Oflt2int, rval(s, val, NULL), NULL);
+                    r->expr.type = to;
+                    break;
+                default:
+                    fatal(val->line, "Bad cast from %s to %s",
+                          tystr(exprtype(val)), tystr(to));
+                    break;
             }
             break;
         /* no other destination types are handled as things stand */

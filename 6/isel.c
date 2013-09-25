@@ -380,20 +380,23 @@ static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size
 static Loc *gencall(Isel *s, Node *n)
 {
     Loc *src, *dst, *arg, *fn;  /* values we reduced */
-    Loc *rax, *rsp, *ret;       /* hard-coded registers */
+    Loc *retloc, *rsp, *ret;       /* hard-coded registers */
     Loc *stkbump;        /* calculated stack offset */
     int argsz, argoff;
     size_t i;
 
     rsp = locphysreg(Rrsp);
     if (tybase(exprtype(n))->type == Tyvoid) {
-        rax = NULL;
+        retloc = NULL;
         ret = NULL;
     } else if (stacktype(exprtype(n))) {
-        rax = locphysreg(Rrax);
+        retloc = locphysreg(Rrax);
         ret = locreg(ModeQ);
+    } else if (floattype(exprtype(n))) {
+        retloc = coreg(Rxmm0d, mode(n));
+        ret = locreg(mode(n));
     } else {
-        rax = coreg(Rrax, mode(n));
+        retloc = coreg(Rrax, mode(n));
         ret = locreg(mode(n));
     }
     argsz = 0;
@@ -434,8 +437,8 @@ static Loc *gencall(Isel *s, Node *n)
         g(s, Icallind, fn, NULL);
     if (argsz)
         g(s, Iadd, stkbump, rsp, NULL);
-    if (rax)
-        g(s, Imov, rax, ret, NULL);
+    if (retloc)
+        g(s, Imov, retloc, ret, NULL);
     return ret;
 }
 
@@ -581,9 +584,8 @@ Loc *selexpr(Isel *s, Node *n)
             break;
         case Oblit:
             a = selexpr(s, args[0]);
-            b = selexpr(s, args[1]);
-            blit(s, a, b, 0, 0, args[2]->expr.args[0]->lit.intval);
-            r = b;
+            r = selexpr(s, args[1]);
+            blit(s, a, r, 0, 0, args[2]->expr.args[0]->lit.intval);
             break;
         case Otrunc:
             a = selexpr(s, args[0]);
@@ -594,16 +596,24 @@ Loc *selexpr(Isel *s, Node *n)
         case Ozwiden:
             a = selexpr(s, args[0]);
             a = inr(s, a);
-            b = locreg(mode(n));
-            movz(s, a, b);
-            r = b;
+            r = locreg(mode(n));
+            movz(s, a, r);
             break;
         case Oswiden:
             a = selexpr(s, args[0]);
             a = inr(s, a);
-            b = locreg(mode(n));
-            g(s, Imovs, a, b, NULL);
-            r = b;
+            r = locreg(mode(n));
+            g(s, Imovs, a, r, NULL);
+            break;
+        case Oint2flt:
+            a = selexpr(s, args[0]);
+            r = locreg(mode(n));
+            g(s, Icvttsi2sd, a, r, NULL);
+            break;
+        case Oflt2int:
+            a = selexpr(s, args[0]);
+            r = locreg(mode(n));
+            g(s, Icvttsi2sd, a, r, NULL);
             break;
 
         /* These operators should never show up in the reduced trees,
@@ -768,19 +778,11 @@ static void isel(Isel *s, Node *n)
 }
 
 Reg savedregs[] = {
-    Rrcx,
-    Rrdx,
-    Rrbx,
-    Rrsi,
-    Rrdi,
-    Rr8,
-    Rr9,
-    Rr10,
-    Rr11,
-    Rr12,
-    Rr13,
-    Rr14,
-    Rr15
+    Rrcx, Rrdx, Rrbx, Rrsi, Rrdi, Rr8, Rr9, Rr10, Rr11, Rr12, Rr13, Rr14, Rr15,
+    /*
+    Rxmm0d, Rxmm1d, Rxmm2d, Rxmm3d, Rxmm4d, Rxmm5d, Rxmm6d, Rxmm7d,
+    Rxmm8d, Rxmm9d, Rxmm10d, Rxmm11d, Rxmm12d, Rxmm13d, Rxmm14d, Rxmm15d,
+    */
 };
 
 static void prologue(Isel *s, size_t sz)
@@ -815,7 +817,10 @@ static void epilogue(Isel *s)
     rbp = locphysreg(Rrbp);
     if (s->ret) {
         ret = loc(s, s->ret);
-        g(s, Imov, ret, coreg(Rax, ret->mode), NULL);
+        if (floattype(exprtype(s->ret)))
+            g(s, Imov, ret, coreg(Rxmm0d, ret->mode), NULL);
+        else
+            g(s, Imov, ret, coreg(Rax, ret->mode), NULL);
     }
     /* restore registers */
     for (i = 0; i < Nsaved; i++)

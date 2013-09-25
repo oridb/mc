@@ -63,3 +63,5 @@ O(Oblit, 1)        /* block copy of memory */
 O(Otrunc, 1)       /* truncating cast */
 O(Ozwiden, 1)      /* zero-extending widening cast */
 O(Oswiden, 1)      /* sign-extending widening cast */
+O(Oflt2int, 1)     /* float to int conversion */
+O(Oint2flt, 1)     /* int to float conversion */
