@@ -1,9 +1,10 @@
 use std
 
+const get42 = {
+	-> 42.0
+}
+
 /* basic sanity check on floating point operations. should return 84. */
 const main = {
-	/*
-	-> (42.0 + 42.0) castto(int)
-	*/
-	var v = 123.0
+	-> (42.0 + get42()) castto(int)
 }
