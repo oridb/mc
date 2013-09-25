@@ -3,7 +3,6 @@
 #define Maxdef (2*Maxarg)       /* maximum number of registers an insn can use or def */
 #define Wordsz 4                /* the size of a "natural int" */
 #define Ptrsz 8                 /* the size of a machine word (ie, pointer size) */
-#define _K 14                    /* the number of allocatable registers */
 #define Nsaved 13               /* number of registers saved in the ABI */
 
 typedef size_t regid;
@@ -48,6 +47,13 @@ typedef enum {
     ModeD, /* float64 */
     Nmode,
 } Mode;
+
+typedef enum {
+    Classbad,
+    Classint,
+    Classflt,
+    Nclass,
+} Rclass;
 
 /* a register, label, or memory location */
 struct Loc {

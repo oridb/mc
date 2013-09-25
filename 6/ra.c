@@ -103,6 +103,28 @@ int colourmap[Nreg] = {
     [Rxmm15f] = 31,  [Rxmm15d] = 31,
 };
 
+static int _K[Nclass] = {
+    [Classbad] = 0,
+    [Classint] = 14,
+    [Classflt] = 16,
+};
+
+static Rclass rclass(Loc *l)
+{
+    switch (l->mode) {
+        case ModeNone:  return Classbad;
+        case Nmode:     return Classbad;
+        case ModeB:     return Classint;
+        case ModeW:     return Classint;
+        case ModeL:     return Classint;
+        case ModeQ:     return Classint;
+
+        case ModeF:     return Classflt;
+        case ModeD:     return Classflt;
+    }
+    return Classbad;
+}
+
 /* %esp, %ebp are not in the allocatable pool */
 static int isfixreg(Loc *l)
 {
@@ -209,7 +231,7 @@ static void udcalc(Asmbb *bb)
 
 static int istrivial(Isel *s, regid r)
 {
-    return s->degree[r] < _K;
+    return s->degree[r] < _K[rclass(locmap[r])];
 }
 
 static void liveness(Isel *s)
@@ -620,7 +642,7 @@ static int conservative(Isel *s, regid u, regid v)
     for (n = 0; adjiter(s, v, &n); n++)
         if (!istrivial(s, n))
             k++;
-    return k < _K;
+    return k < _K[rclass(locmap[u])];
 }
 
 /* FIXME: is this actually correct? */
@@ -812,16 +834,16 @@ static void selspill(Isel *s)
  */
 static int paint(Isel *s)
 {
-    int taken[_K + 2]; /* esp, ebp aren't "real colours" */
+    int taken[Nreg];
     Loc *n, *w;
     regid l;
-    size_t i;
+    int i;
     int spilled;
     int found;
 
     spilled = 0;
     while (s->nselstk) {
-        bzero(taken, _K*sizeof(int));
+        bzero(taken, Nreg*sizeof(int));
         n = lpop(&s->selstk, &s->nselstk);
 
         for (l = 0; bsiter(s->gadj[n->reg.id], &l); l++) {
@@ -833,7 +855,7 @@ static int paint(Isel *s)
         }
 
         found = 0;
-        for (i = 0; i < _K; i++) {
+        for (i = 0; i < _K[rclass(n)]; i++) {
             if (!taken[i]) {
                 if (debugopt['r']) {
                     fprintf(stdout, "\tselecting ");
