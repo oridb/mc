@@ -53,7 +53,8 @@ B condiffalse	E	9
 B condifrel	E	7
 B overlappingif	E	2
 B fib		E	21
-B float		E	84
+B basicfloat	E	84
+B sqrt		E	4
 B log-and	E	0
 B log-or	E	1
 B str		E	102

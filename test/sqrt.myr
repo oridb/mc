@@ -1,0 +1,32 @@
+use std
+
+const abs = {d
+	if d < 0.0
+		-> -d
+	else
+		-> d
+	;;
+}
+
+const Eps = 0.00001
+const Maxiter = 20
+
+const sqrt = {x : float64
+	var val
+	var iter
+	var i;
+
+	val = 1;
+	for i = 0; i < Maxiter; i++
+		iter = 0.5*(val - x/val)
+		if abs(val - iter) < Eps
+			-> val;
+			val = iter;
+		;;
+	;;
+}
+
+const main = {
+	-> sqrt(20.0) castto(int)
+}
+
