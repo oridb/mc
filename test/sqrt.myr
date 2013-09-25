@@ -16,7 +16,7 @@ const sqrt = {x : float64
 	var iter
 	var i;
 
-	val = 1;
+	val = 1.0;
 	for i = 0; i < Maxiter; i++
 		iter = 0.5*(val - x/val)
 		if abs(val - iter) < Eps
