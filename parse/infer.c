@@ -981,8 +981,14 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
         case Osub:      /* @a - @a -> @a */
         case Omul:      /* @a * @a -> @a */
         case Odiv:      /* @a / @a -> @a */
-        case Omod:      /* @a % @a -> @a */
         case Oneg:      /* -@a -> @a */
+            t = type(st, args[0]);
+            constrain(st, n, type(st, args[0]), cstrtab[Tcnum]);
+            for (i = 1; i < nargs; i++)
+                t = unify(st, n, t, type(st, args[i]));
+            settype(st, n, tf(st, t));
+            break;
+        case Omod:      /* @a % @a -> @a */
         case Obor:      /* @a | @a -> @a */
         case Oband:     /* @a & @a -> @a */
         case Obxor:     /* @a ^ @a -> @a */
@@ -993,7 +999,6 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
         case Opredec:   /* --@a -> @a */
         case Opostinc:  /* @a++ -> @a */
         case Opostdec:  /* @a-- -> @a */
-        case Oasn:      /* @a = @a -> @a */
         case Oaddeq:    /* @a += @a -> @a */
         case Osubeq:    /* @a -= @a -> @a */
         case Omuleq:    /* @a *= @a -> @a */
@@ -1004,6 +1009,14 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
         case Obxoreq:   /* @a ^= @a -> @a */
         case Obsleq:    /* @a <<= @a -> @a */
         case Obsreq:    /* @a >>= @a -> @a */
+            t = type(st, args[0]);
+            constrain(st, n, type(st, args[0]), cstrtab[Tcnum]);
+            constrain(st, n, type(st, args[0]), cstrtab[Tcint]);
+            for (i = 1; i < nargs; i++)
+                t = unify(st, n, t, type(st, args[i]));
+            settype(st, n, tf(st, t));
+            break;
+        case Oasn:      /* @a = @a -> @a */
             t = type(st, args[0]);
             for (i = 1; i < nargs; i++)
                 t = unify(st, n, t, type(st, args[i]));

@@ -1,0 +1,6 @@
+use std
+
+const main = {
+	var x
+	x = "a" + "b"
+}
