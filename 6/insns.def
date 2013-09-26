@@ -20,7 +20,7 @@
 
 Insn(Inone,     "BAD_INSN",                     Use(), Def())
 /* Note, the mov instruction is specified in an overly general manner. */
-Insn(Imov,      "\tmov%t %x,%x\n",              Use(.l={1}),                    Def(.l={2}))
+Insn(Imov,      "\tmov%t %x,%x\n",             Use(.l={1}),                    Def(.l={2}))
 Insn(Imovz,     "\tmovz%1t%2t %x,%x\n",         Use(.l={1}),                    Def(.l={2}))
 Insn(Imovs,     "\tmovs%1t%2t %x,%x\n",         Use(.l={1}),                    Def(.l={2}))
 Insn(Irepmovsb, "\trep movsb\n",                Use(.r={Rrcx,Rrsi,Rrdi}),       Def())
@@ -43,8 +43,8 @@ Insn(Ishl,      "\tsal%2t %u,%r\n",             Use(.l={1,2}),                  
 Insn(Isar,      "\tshr%2t %u,%r\n",             Use(.l={1,2}),                  Def(.l={2}))
 Insn(Ishr,      "\tshr%2t %u,%r\n",             Use(.l={1,2}),                  Def(.l={2}))
 
-Insn(Itest,     "\ttest%t %x,%r\n",             Use(.l={1,2}),                  Def(.l={2}))
-Insn(Icmp,      "\tcmp%t  %x,%r\n",             Use(.l={1,2}),                  Def(.l={2}))
+Insn(Itest,     "\ttest%t %x,%r\n",             Use(.l={1,2}),                  Def(.l={}))
+Insn(Icmp,      "\tcmp%t  %x,%r\n",             Use(.l={1,2}),                  Def(.l={}))
 
 Insn(Ipush,     "\tpush%t %r\n",                Use(.l={1}),                    Def())
 Insn(Ipop,      "\tpop%t %r\n",                 Use(.l={1}),                    Def())
@@ -58,8 +58,11 @@ Insn(Isetg,     "\tsetg %v\n",                  Use(),  Def(.l={1}))
 Insn(Isetge,    "\tsetge %v\n",                 Use(),  Def(.l={1}))
 
 /* fp specific instructions */
-Insn(Icvttsd2si, "\tcvttsd2si%2t %x,%r\n",         Use(.l={1}),    Def(.l={2}))
-Insn(Icvttsi2sd, "\tcvttsd2si%2t %x,%r\n",         Use(.l={1}),    Def(.l={2}))
+Insn(Icvttsd2si, "\tcvttsd2si%2t %x,%r\n",      Use(.l={1}),                    Def(.l={2}))
+Insn(Icvttsi2sd, "\tcvttsd2si%2t %x,%r\n",      Use(.l={1}),                    Def(.l={2}))
+Insn(Ifdiv,      "\tdiv%t %x,%r\n",             Use(.l={1},.r={Reax,Redx}),     Def(.r={Reax,Redx}))
+Insn(Ifmul,      "\tmul%t %x,%r\n",             Use(.l={1,2}),                  Def(.l={2}))
+Insn(Icomi,      "\tcomi%d %x,%r\n",            Use(.l={1,2}),                  Def())
 
 /* branch instructions */
 Insn(Icall,     "\tcall %v\n",                  Use(.l={1}), Def(.r={Rrax}))

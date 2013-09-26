@@ -459,28 +459,37 @@ Loc *selexpr(Isel *s, Node *n)
         case Obor:      r = binop(s, Ior,  args[0], args[1]); break;
         case Oband:     r = binop(s, Iand, args[0], args[1]); break;
         case Obxor:     r = binop(s, Ixor, args[0], args[1]); break;
-        case Omul:      r = binop(s, Iimul, args[0], args[1]); break;
+        case Omul:      
+            if (floattype(exprtype(n)))
+                r = binop(s, Ifmul, args[0], args[1]);
+            else
+                r = binop(s, Iimul, args[0], args[1]);
+            break;
         case Odiv:
         case Omod:
-            /* these get clobbered by the div insn */
-            a = selexpr(s, args[0]);
-            b = selexpr(s, args[1]);
-            b = inr(s, b);
-            c = coreg(Reax, mode(n));
-            r = locreg(a->mode);
-            if (r->mode == ModeB)
-                g(s, Ixor, eax, eax, NULL);
-            else
-                g(s, Ixor, edx, edx, NULL);
-            g(s, Imov, a, c, NULL);
-            g(s, Idiv, b, NULL);
-            if (exprop(n) == Odiv)
-                d = coreg(Reax, mode(n));
-            else if (r->mode != ModeB)
-                d = coreg(Redx, mode(n));
-            else
-                d = locphysreg(Rah);
-            g(s, Imov, d, r, NULL);
+            if (floattype(exprtype(n))) {
+                r = binop(s, Ifdiv, args[0], args[1]);
+            } else {
+                /* these get clobbered by the div insn */
+                a = selexpr(s, args[0]);
+                b = selexpr(s, args[1]);
+                b = inr(s, b);
+                c = coreg(Reax, mode(n));
+                r = locreg(a->mode);
+                if (r->mode == ModeB)
+                    g(s, Ixor, eax, eax, NULL);
+                else
+                    g(s, Ixor, edx, edx, NULL);
+                g(s, Imov, a, c, NULL);
+                g(s, Idiv, b, NULL);
+                if (exprop(n) == Odiv)
+                    d = coreg(Reax, mode(n));
+                else if (r->mode != ModeB)
+                    d = coreg(Redx, mode(n));
+                else
+                    d = locphysreg(Rah);
+                g(s, Imov, d, r, NULL);
+            }
             break;
         case Oneg:
             r = selexpr(s, args[0]);

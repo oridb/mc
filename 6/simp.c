@@ -248,6 +248,14 @@ int stacknode(Node *n)
         return stacktype(n->decl.type);
 }
 
+int floatnode(Node *n)
+{
+    if (n->type == Nexpr)
+        return floattype(n->expr.type);
+    else
+        return floattype(n->decl.type);
+}
+
 size_t tysize(Type *t)
 {
     size_t sz;

@@ -222,5 +222,6 @@ size_t size(Node *n);
 int stacktype(Type *t);
 int floattype(Type *t);
 int stacknode(Node *n);
+int floatnode(Node *n);
 void breakhere();
 void dumpasm(Isel *s, FILE *fd);
