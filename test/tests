@@ -103,3 +103,4 @@ F match-badtypes
 F generic-in-const
 F aritylow
 F arityhigh
+F badop
