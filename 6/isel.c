@@ -459,6 +459,7 @@ Loc *selexpr(Isel *s, Node *n)
     Loc *a, *b, *c, *d, *r;
     Loc *eax, *edx, *cl; /* x86 wants some hard-coded regs */
     Node **args;
+    int sz;
 
     args = n->expr.args;
     eax = locphysreg(Reax);
@@ -506,7 +507,22 @@ Loc *selexpr(Isel *s, Node *n)
         case Oneg:
             r = selexpr(s, args[0]);
             r = inr(s, r);
-            g(s, Ineg, r, NULL);
+            if (floatnode(args[0])) {
+                sz = size(args[0]);
+                if (sz == 4) {
+                    a = locreg(ModeD);
+                    b = loclit(1 << (8*sz-1), ModeD);
+                    g(s, Imov, r, a);
+                } else if (size(args[0]) == 8) {
+                    a = locreg(ModeQ);
+                    b = loclit(1 << (8*sz-1), ModeQ);
+                    g(s, Imov, r, a, NULL);
+                }
+                g(s, Ixor, b, a, NULL);
+                g(s, Imov, a, r, NULL);
+            } else {
+                g(s, Ineg, r, NULL);
+            }
             break;
 
         case Obsl:
