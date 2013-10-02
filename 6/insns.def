@@ -62,7 +62,7 @@ Insn(Icvttsd2si, "\tcvttsd2si%2t %x,%r\n",      Use(.l={1}),                    
 Insn(Icvttsi2sd, "\tcvttsd2si%2t %x,%r\n",      Use(.l={1}),                    Def(.l={2}))
 Insn(Ifdiv,      "\tdiv%t %x,%r\n",             Use(.l={1},.r={Reax,Redx}),     Def(.r={Reax,Redx}))
 Insn(Ifmul,      "\tmul%t %x,%r\n",             Use(.l={1,2}),                  Def(.l={2}))
-Insn(Icomi,      "\tcomi%d %x,%r\n",            Use(.l={1,2}),                  Def())
+Insn(Icomi,      "\tcomi%t %x,%r\n",            Use(.l={1,2}),                  Def())
 
 /* branch instructions */
 Insn(Icall,     "\tcall %v\n",                  Use(.l={1}), Def(.r={Rrax}))
