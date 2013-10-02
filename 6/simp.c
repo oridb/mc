@@ -507,6 +507,7 @@ static void umatch(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, Node *i
         case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint:
         case Typtr: case Tyfunc:
             v = mkexpr(pat->line, Oeq, pat, val, NULL);
+            v->expr.type = mktype(pat->line, Tybool);
             cjmp(s, v, iftrue, iffalse);
             break;
         case Tyunion:
