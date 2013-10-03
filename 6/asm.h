@@ -214,6 +214,7 @@ extern char *regnames[]; /* name table */
 extern Mode regmodes[];  /* mode table */
 extern size_t modesize[]; /* mode size table */
 void regalloc(Isel *s);
+Rclass rclass(Loc *l);
 
 
 /* useful functions */

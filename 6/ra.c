@@ -102,7 +102,7 @@ static int _K[Nclass] = {
     [Classflt] = 16,
 };
 
-static Rclass rclass(Loc *l)
+Rclass rclass(Loc *l)
 {
     switch (l->mode) {
         case ModeNone:  return Classbad;

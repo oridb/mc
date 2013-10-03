@@ -509,6 +509,8 @@ Loc *selexpr(Isel *s, Node *n)
             r = inr(s, r);
             if (floatnode(args[0])) {
                 sz = size(args[0]);
+                a = NULL;
+                b = NULL;
                 if (sz == 4) {
                     a = locreg(ModeD);
                     b = loclit(1 << (8*sz-1), ModeD);
@@ -728,6 +730,11 @@ void locprint(FILE *fd, Loc *l, char spec)
     }
 }
 
+int subreg(Loc *a, Loc *b)
+{
+    return rclass(a) == rclass(b) && a->mode != b->mode;
+}
+
 void iprintf(FILE *fd, Insn *insn)
 {
     char *p;
@@ -754,7 +761,7 @@ void iprintf(FILE *fd, Insn *insn)
                 break;
             /* if one reg is a subreg of another, we can just use the right
              * mode to move between them. */
-            if (insn->args[0]->mode != insn->args[1]->mode)
+            if (subreg(insn->args[0], insn->args[1]))
                 insn->args[0] = coreg(insn->args[0]->reg.colour, insn->args[1]->mode);
             /* moving a reg to itself is dumb. */
      //       if (insn->args[0]->reg.colour == insn->args[1]->reg.colour)
