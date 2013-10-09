@@ -1505,7 +1505,7 @@ static void simpglobl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***
 
 void gen(Node *file, char *out)
 {
-    Htab *globls;
+    Htab *globls, *strtab;
     Node *n, **blob;
     Func **fn;
     size_t nfn, nblob;
@@ -1546,11 +1546,13 @@ void gen(Node *file, char *out)
     if (!fd)
         die("Couldn't open fd %s", out);
 
+    strtab = mkht(strhash, streq);
     fprintf(fd, ".data\n");
     for (i = 0; i < nblob; i++)
-        genblob(fd, blob[i], globls);
+        genblob(fd, blob[i], globls, strtab);
     fprintf(fd, ".text\n");
     for (i = 0; i < nfn; i++)
-        genasm(fd, fn[i], globls);
+        genasm(fd, fn[i], globls, strtab);
+    genstrings(fd, strtab);
     fclose(fd);
 }

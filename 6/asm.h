@@ -181,8 +181,9 @@ struct Isel {
 };
 
 /* entry points */
-void genblob(FILE *fd, Node *blob, Htab *globls);
-void genasm(FILE *fd, Func *fn, Htab *globls);
+void genblob(FILE *fd, Node *blob, Htab *globls, Htab *strtab);
+void genasm(FILE *fd, Func *fn, Htab *globls, Htab *strtab);
+void genstrings(FILE *fd, Htab *strtab);
 void gen(Node *file, char *out);
 
 /* location generation */

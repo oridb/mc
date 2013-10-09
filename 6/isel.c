@@ -34,8 +34,7 @@ char* modenames[] = {
 
 /* forward decls */
 Loc *selexpr(Isel *s, Node *n);
-static void writeblob(FILE *fd, Node *blob);
-
+static void writeblob(FILE *fd, Htab *strtab, Node *blob);
 
 /* used to decide which operator is appropriate
  * for implementing various conditional operators */
@@ -926,9 +925,10 @@ static void writebytes(FILE *fd, char *p, size_t sz)
     }
 }
 
-static void writelit(FILE *fd, Node *v, size_t sz)
+static void writelit(FILE *fd, Htab *strtab, Node *v, size_t sz)
 {
-    char lbl[128];
+    char buf[128];
+    char *lbl;
     char *intsz[] = {
         [1] = ".byte",
         [2] = ".short",
@@ -942,11 +942,16 @@ static void writelit(FILE *fd, Node *v, size_t sz)
         case Lbool:     fprintf(fd, "\t.byte %d\n", v->lit.boolval);     break;
         case Lchr:      fprintf(fd, "\t.long %d\n",  v->lit.chrval);     break;
         case Lflt:      fprintf(fd, "\t.double %f\n", v->lit.fltval);    break;
-        case Lstr:      fprintf(fd, "\t.quad %s\n", genlblstr(lbl, 128));
-                        fprintf(fd, "\t.quad %zd\n", strlen(v->lit.strval));
-                        fprintf(fd, "%s:\n", lbl);
-                        writebytes(fd, v->lit.strval, strlen(v->lit.strval));
-                        break;
+        case Lstr:
+           if (hthas(strtab, v->lit.strval)) {
+               lbl = htget(strtab, v->lit.strval);
+           } else {
+               lbl = genlblstr(buf, sizeof buf);
+               htput(strtab, v->lit.strval, strdup(lbl));
+           }
+           fprintf(fd, "\t.quad %s\n", lbl);
+           fprintf(fd, "\t.quad %zd\n", strlen(v->lit.strval));
+           break;
         case Lfunc:
             die("Generating this shit ain't ready yet ");
             break;
@@ -964,47 +969,47 @@ static void writepad(FILE *fd, size_t sz)
         fprintf(fd, "\t.byte 0\n");
 }
 
-static void writetup(FILE *fd, Node *n)
+static void writetup(FILE *fd, Htab *strtab, Node *n)
 {
     size_t i;
 
     for (i = 0; i < n->expr.nargs; i++) {
-        writeblob(fd, n->expr.args[i]);
+        writeblob(fd, strtab, n->expr.args[i]);
     }
 }
 
-static void writearr(FILE *fd, Node *n)
+static void writearr(FILE *fd, Htab *strtab, Node *n)
 {
     size_t i;
 
     for (i = 0; i < n->expr.nargs; i++) {
-        writeblob(fd, n->expr.args[i]);
+        writeblob(fd, strtab, n->expr.args[i]);
     }
 }
 
-static void writestruct(FILE *fd, Node *n)
+static void writestruct(FILE *fd, Htab *strtab, Node *n)
 {
     size_t i;
 
     for (i = 0; i < n->expr.nargs; i++) {
-        writeblob(fd, n->expr.args[i]);
+        writeblob(fd, strtab, n->expr.args[i]);
     }
 }
 
-static void writeblob(FILE *fd, Node *n)
+static void writeblob(FILE *fd, Htab *strtab, Node *n)
 {
     switch(exprop(n)) {
-        case Otup:  writetup(fd, n);  break;
-        case Oarr:  writearr(fd, n);  break;
-        case Ostruct: writestruct(fd, n); break;
-        case Olit:  writelit(fd, n->expr.args[0], size(n)); break;
+        case Otup:  writetup(fd, strtab, n);  break;
+        case Oarr:  writearr(fd, strtab, n);  break;
+        case Ostruct: writestruct(fd, strtab, n); break;
+        case Olit:  writelit(fd, strtab, n->expr.args[0], size(n)); break;
         default:
                     die("Nonliteral initializer for global");
                     break;
     }
 }
 
-void genblob(FILE *fd, Node *blob, Htab *globls)
+void genblob(FILE *fd, Node *blob, Htab *globls, Htab *strtab)
 {
     char *lbl;
 
@@ -1016,7 +1021,7 @@ void genblob(FILE *fd, Node *blob, Htab *globls)
         fprintf(fd, ".globl %s\n", lbl);
     fprintf(fd, "%s:\n", lbl);
     if (blob->decl.init)
-        writeblob(fd, blob->decl.init);
+        writeblob(fd, strtab, blob->decl.init);
     else
         writepad(fd, size(blob));
 }
@@ -1024,7 +1029,7 @@ void genblob(FILE *fd, Node *blob, Htab *globls)
 /* genasm requires all nodes in 'nl' to map cleanly to operations that are
  * natively supported, as promised in the output of reduce().  No 64-bit
  * operations on x32, no structures, and so on. */
-void genasm(FILE *fd, Func *fn, Htab *globls)
+void genasm(FILE *fd, Func *fn, Htab *globls, Htab *strtab)
 {
     Isel is = {0,};
     size_t i, j;
@@ -1062,4 +1067,16 @@ void genasm(FILE *fd, Func *fn, Htab *globls)
     if (debugopt['i'])
         writeasm(stdout, &is, fn);
     writeasm(fd, &is, fn);
+}
+
+void genstrings(FILE *fd, Htab *strtab)
+{
+    void **k;
+    size_t i, nk;
+
+    k = htkeys(strtab, &nk);
+    for (i = 0; i < nk; i++) {
+        fprintf(fd, "%s:\n", (char*)htget(strtab, k[i]));
+        writebytes(fd, k[i], strlen(k[i]));
+    }
 }
