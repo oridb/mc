@@ -1205,12 +1205,12 @@ static Node *rval(Simp *s, Node *n, Node *dst)
          *      x = x + 1
          */
         case Opostinc:
-	    r = lval(s, args[0]);
+            r = lval(s, args[0]);
             t = assign(s, r, addk(r, 1));
             lappend(&s->incqueue, &s->nqueue, t);
             break;
         case Opostdec:
-	    r = lval(s, args[0]);
+            r = lval(s, args[0]);
             t = assign(s, r, subk(r, 1));
             lappend(&s->incqueue, &s->nqueue, t);
             break;
