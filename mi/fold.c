@@ -45,7 +45,7 @@ static Node *val(int line, vlong val, Type *t)
     return n;
 }
 
-Node *fold(Node *n)
+Node *fold(Node *n, int foldvar)
 {
     Node **args, *r;
     vlong a, b;
@@ -59,10 +59,11 @@ Node *fold(Node *n)
     r = NULL;
     args = n->expr.args;
     for (i = 0; i < n->expr.nargs; i++)
-        args[i] = fold(args[i]);
+        args[i] = fold(args[i], foldvar);
     switch (exprop(n)) {
         case Ovar:
-            /* FIXME: chase small consts */
+            if (foldvar && decls[n->expr.did]->decl.isconst)
+                r = fold(decls[n->expr.did]->decl.init, foldvar);
             break;
         case Oadd:
             /* x + 0 = 0 */

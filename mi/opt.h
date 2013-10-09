@@ -25,7 +25,7 @@ struct Bb {
 };
 
 /* expression folding */
-Node *fold(Node *n);
+Node *fold(Node *n, int foldvar);
 /* Takes a reduced block, and returns a flow graph. */
 Cfg *mkcfg(Node **nl, size_t nn);
 void dumpcfg(Cfg *c, FILE *fd);

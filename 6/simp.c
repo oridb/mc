@@ -1411,7 +1411,7 @@ static Func *simpfn(Simp *s, char *name, Node *n, int export)
             printf("FOLD FROM ----------\n");
             dump(s->stmts[i], stdout);
         }
-        s->stmts[i] = fold(s->stmts[i]);
+        s->stmts[i] = fold(s->stmts[i], 0);
         if (debugopt['f']) {
             printf("TO ------------\n");
             dump(s->stmts[i], stdout);
@@ -1459,7 +1459,7 @@ static void simpconstinit(Simp *s, Node *dcl)
 {
     Node *e;
 
-    dcl->decl.init = fold(dcl->decl.init);;
+    dcl->decl.init = fold(dcl->decl.init, 1);;
     e = dcl->decl.init;
     if (e && exprop(e) == Olit) {
         if (e->expr.args[0]->lit.littype == Lfunc)
