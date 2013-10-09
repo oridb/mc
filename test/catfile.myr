@@ -2,10 +2,13 @@
 use std
 
 const main = {args : byte[:][:]
-	var dat
+	var r
 
-	dat = std.slurp("data/catfile")
-	std.write(1, dat)
+	r = std.slurp("data/catfile")
+	match r
+	`std.Success dat: 	std.write(1, dat);;
+	`std.Failure msg:	std.put("Failed to read file: %s\n", msg);;
+	;;
 	-> 0
 }
 
