@@ -8,7 +8,9 @@ const strtab = [
 ]
 
 const main = {
+	var i
 	for i = 0; i < strtab.len; i++
 		std.put("%i: %s\n", i, strtab[i])
 	;;
+	-> 0
 }
