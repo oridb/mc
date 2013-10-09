@@ -1,4 +1,5 @@
 use "types.use"
+use "errno-osx.use"
 
 pkg std =
 	type scno = int64

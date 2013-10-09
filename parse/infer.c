@@ -825,6 +825,7 @@ static void checkns(Inferstate *st, Node *n, Node **ret)
         fatal(n->line, "Undeclared var %s.%s", nsname->name.ns, nsname->name.name);
     var = mkexpr(n->line, Ovar, nsname, NULL);
     var->expr.did = s->decl.did;
+    var->expr.isconst = s->decl.isconst;
     if (s->decl.isgeneric)
         settype(st, var, tyfreshen(st, s->decl.type));
     else
@@ -960,10 +961,12 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
     size_t i, nargs;
     Node *s;
     Type *t;
+    int isconst;
 
     assert(n->type == Nexpr);
     args = n->expr.args;
     nargs = n->expr.nargs;
+    isconst = 1;
     for (i = 0; i < nargs; i++) {
         /* Nlit, Nvar, etc should not be inferred as exprs */
         if (args[i]->type == Nexpr) {
@@ -972,8 +975,11 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
             if (exprop(args[i]) == Omemb)
                 checkns(st, args[i], &args[i]);
             inferexpr(st, args[i], ret, sawret);
+            isconst = isconst && args[i]->expr.isconst;
         }
     }
+    if (ispureop[exprop(n)])
+        n->expr.isconst = isconst;
     infernode(st, n->expr.idx, NULL, NULL);
     switch (exprop(n)) {
         /* all operands are same type */
@@ -984,8 +990,12 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
         case Oneg:      /* -@a -> @a */
             t = type(st, args[0]);
             constrain(st, n, type(st, args[0]), cstrtab[Tcnum]);
-            for (i = 1; i < nargs; i++)
+            isconst = args[0]->expr.isconst;
+            for (i = 1; i < nargs; i++) {
+                isconst = isconst && args[i]->expr.isconst;
                 t = unify(st, n, t, type(st, args[i]));
+            }
+            n->expr.isconst = isconst;
             settype(st, n, tf(st, t));
             break;
         case Omod:      /* @a % @a -> @a */
@@ -1012,8 +1022,12 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
             t = type(st, args[0]);
             constrain(st, n, type(st, args[0]), cstrtab[Tcnum]);
             constrain(st, n, type(st, args[0]), cstrtab[Tcint]);
-            for (i = 1; i < nargs; i++)
+            isconst = args[0]->expr.isconst;
+            for (i = 1; i < nargs; i++) {
+                isconst = isconst && args[i]->expr.isconst;
                 t = unify(st, n, t, type(st, args[i]));
+            }
+            n->expr.isconst = isconst;
             settype(st, n, tf(st, t));
             break;
         case Oasn:      /* @a = @a -> @a */
@@ -1021,6 +1035,8 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
             for (i = 1; i < nargs; i++)
                 t = unify(st, n, t, type(st, args[i]));
             settype(st, n, tf(st, t));
+            if (args[0]->expr.isconst)
+                fatal(n->line, "Attempting to assign constant \"%s\"", ctxstr(st, args[0]));
             break;
 
         /* operands same type, returning bool */
@@ -1099,10 +1115,12 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
             if (!s)
                 fatal(n->line, "Undeclared var %s", ctxstr(st, args[0]));
 
+            n->expr.isconst = s->decl.isconst;
             if (s->decl.isgeneric)
                 t = tyfreshen(st, tf(st, s->decl.type));
             else
                 t = s->decl.type;
+            n->expr.isconst = s->decl.isconst;
             settype(st, n, t);
             n->expr.did = s->decl.did;
             if (s->decl.isgeneric && !st->ingeneric) {
@@ -1175,6 +1193,8 @@ static void inferdecl(Inferstate *st, Node *n)
     if (n->decl.init) {
         inferexpr(st, n->decl.init, NULL, NULL);
         unify(st, n, type(st, n), type(st, n->decl.init));
+        if (n->decl.isconst && !n->decl.init->expr.isconst)
+            fatal(n->line, "non-const initializer for \"%s\"", ctxstr(st, n));
     } else {
         if (n->decl.isconst && !n->decl.isextern)
             fatal(n->line, "non-extern \"%s\" has no initializer", ctxstr(st, n));

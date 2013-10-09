@@ -1474,7 +1474,7 @@ static void simpconstinit(Simp *s, Node *dcl)
     } else if (!dcl->decl.isconst && !e) {
         lappend(&s->blobs, &s->nblobs, dcl);
     } else {
-        fatal(dcl->line, "Declaration %s initialized with nonconstant value", declname(dcl));
+        die("Non-constant initializer for %s\n", declname(dcl));
     }
 }
 
