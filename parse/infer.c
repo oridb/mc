@@ -576,7 +576,8 @@ static void membunify(Inferstate *st, Node *ctx, Type *u, Type *v) {
     } else if (u->type == Tystruct && v->type == Tystruct && u != v) {
         assert(u->nmemb = v->nmemb);
         for (i = 0; i < v->nmemb; i++) {
-            unify(st, ctx, type(st, u->sdecls[i]), type(st, v->sdecls[i]));
+            assert(!strcmp(namestr(u->sdecls[i]->decl.name), namestr(v->sdecls[i]->decl.name)));
+            unify(st, u->sdecls[i], type(st, u->sdecls[i]), type(st, v->sdecls[i]));
         }
     }
 }
