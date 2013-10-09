@@ -213,6 +213,7 @@ static void typickle(FILE *fd, Type *ty)
             break;
         case Tyname:
             pickle(ty->name, fd);
+            wrbool(fd, ty->isgeneric);
             wrint(fd, ty->narg);
             for (i = 0; i < ty->narg; i++)
                 wrtype(fd, ty->arg[i]);
@@ -292,6 +293,7 @@ static Type *tyunpickle(FILE *fd)
             break;
         case Tyname:
             ty->name = unpickle(fd);
+            ty->isgeneric = rdbool(fd);
             ty->narg = rdint(fd);
             ty->arg = zalloc(ty->narg * sizeof(Type *));
             for (i = 0; i < ty->narg; i++)
