@@ -23,8 +23,8 @@ pkg bio =
 
 	/* creation */
 	const mkfile	: (fd : std.fd, mode : mode	-> file#)
-	const open	: (path : byte[:], mode : mode	-> file#)
-	const create	: (path : byte[:], mode : mode, perm : int	-> file#)
+	const open	: (path : byte[:], mode : mode	-> std.option(file#))
+	const create	: (path : byte[:], mode : mode, perm : int	-> std.option(file#))
 	const close	: (f : file# -> bool)
 
 	/* basic i/o. Returns sub-buffer when applicable. */
@@ -85,6 +85,7 @@ const open = {path, mode
 
 const create = {path, mode, perm
 	var openmode
+	var fd
 
 	if mode == Rd
 		openmode = std.Ordonly
@@ -95,7 +96,12 @@ const create = {path, mode, perm
 	;;
 	openmode |= std.Ocreat
 
-	-> mkfile(std.open(path, openmode, perm castto(int64)), mode)
+	fd = std.open(path, openmode, perm castto(int64))
+	if fd < 0
+		-> `std.None
+	else
+		-> `std.Some mkfile(fd, mode)
+	;;
 }
 
 const close = {f
