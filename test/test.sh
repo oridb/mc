@@ -17,6 +17,16 @@ function build {
     ../myrbuild/myrbuild -b $1 -C../6/6m -M../muse/muse -I../libstd $1.myr
 }
 
+function comparedto {
+    if [ "`./$1`" != "`cat "$2"`" ]; then
+        echo "FAIL: $1"
+        FAILED="$FAILED $1"
+        NFAILED=$[$NFAILED + 1]
+    else
+        echo "PASS: $1"
+    fi
+}
+
 function prints {
     if [ "`./$1`" != "$2" ]; then
         echo "FAIL: $1"
@@ -82,6 +92,7 @@ for i in `awk '/^B/{print $0}' tests`; do
     case $type in
         E) exitswith $tst $val ;;
         P) prints $tst $val ;;
+        C) comparedto $tst $val ;;
     esac
 done
 if [ -z "$NFAILED" ]; then

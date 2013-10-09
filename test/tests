@@ -7,9 +7,14 @@
 #	The test that will run. We will try to
 #	compile 'testname.myr' to 'testname',
 #	and then execute it, verifying the result
-#    [E|P]: Result type
+#    [E|P|C]: Result type
 #	E tells us that the result is an exit status
-#	E tells us that the result output on stdout
+#	P tells us that the result is on stdout,
+#         and should be compared to the value on the
+#         line
+#	C tells us that the result is on stdout,
+#         and should be compared to the contents of
+#         the file passed on the line.
 #    result: Result value
 #	What we compare with. This should be self-
 #	evident.
@@ -86,11 +91,12 @@ B tuple		E	42
 B slgrow        E       42
 B tyrec		E	42
 B infer-named   E       99
-B helloworld	P	Hello-世界
-B catfile	P	Hello-世界
-B encodechar	P	1世界äa
 B exportcycle   E       0
 B import-type	E	0
+B helloworld	P	Hello-世界
+B encodechar	P	1世界äa
+B catfile	C	data/catfile
+B strtab	C	data/strtab-out
 # B local-labels	E	10 ## BUGGERED
 F declmismatch
 F infermismatch
