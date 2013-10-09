@@ -1,0 +1,14 @@
+use std
+
+const strtab = [
+	"foo",
+	"bar",
+	"baz",
+	"quux"
+]
+
+const main = {
+	for i = 0; i < strtab.len; i++
+		std.put("%i: %s\n", i, strtab[i])
+	;;
+}
