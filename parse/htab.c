@@ -214,7 +214,11 @@ ulong strhash(void *_s)
 
 int streq(void *a, void *b)
 {
-    return a == b || !strcmp(a, b);
+    if (a == b)
+        return 1;
+    if (a == NULL || b == NULL)
+        return 0;
+    return !strcmp(a, b);
 }
 
 ulong ptrhash(void *key)
