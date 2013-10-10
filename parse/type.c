@@ -538,15 +538,41 @@ int tyeq(void *t1, void *t2)
 
     a = (Type *)t1;
     b = (Type *)t2;
-    if (a->type == Typaram && b->type == Typaram)
-        return streq(a->pname, b->pname);
+    if (a == b)
+        return 1;
+    if (a->type != b->type)
+        return 0;
     if (a->tid == b->tid)
         return 1;
     if (a->narg != b->narg)
         return 0;
-    for (i = 0; i < a->narg; i++)
-        if (!tyeq(a->arg[i], b->arg[i]))
-            return 0;
+    if (a->nsub != b->nsub)
+        return 0;
+    if (a->nmemb != b->nmemb)
+        return 0;
+    switch (a->type) {
+        case Typaram:
+            return streq(a->pname, b->pname);
+            break;
+        case Tyunion:
+            for (i = 0; i < a->nmemb; i++)
+                if (!tyeq(a->udecls[i]->etype, b->udecls[i]->etype))
+                    return 0;
+            break;
+        case Tyname:
+            for (i = 0; i < a->narg; i++)
+                if (!tyeq(a->arg[i], b->arg[i]))
+                    return 0;
+            for (i = 0; i < a->nsub; i++)
+                if (!tyeq(a->sub[i], b->sub[i]))
+                    return 0;
+            break;
+        default:
+            for (i = 0; i < a->nsub; i++)
+                if (!tyeq(a->sub[i], b->sub[i]))
+                    return 0;
+            break;
+    }
     return 1;
 }
 
