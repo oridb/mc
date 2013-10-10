@@ -780,6 +780,7 @@ static Node *simpcast(Simp *s, Node *val, Type *to)
     r = NULL;
     /* do the type conversion */
     switch (tybase(to)->type) {
+        case Tybool:
         case Tyint8: case Tyint16: case Tyint32: case Tyint64:
         case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint64:
         case Tyint: case Tyuint: case Tylong: case Tyulong:
@@ -800,6 +801,7 @@ static Node *simpcast(Simp *s, Node *val, Type *to)
                     r = intconvert(s, val, to, 1);
                     break;
                 /* unsigned conversions */
+                case Tybool:
                 case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint64:
                 case Tyuint: case Tyulong: case Tychar: case Tybyte:
                 case Typtr:
