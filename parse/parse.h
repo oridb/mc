@@ -115,6 +115,7 @@ struct Type {
     size_t ncstrlist;   /* The length of the constraint list above */
 
     int  isgeneric;     /* Tyname: whether this is generic or not */
+    int  issynth;        /* Tyname: whether this is synthesized or not */
     Type **param;       /* Tyname: type parameters that match the type args */
     size_t nparam;      /* Tyname: count of type parameters */
     Type **arg;         /* Tyname: type arguments instantiated */
