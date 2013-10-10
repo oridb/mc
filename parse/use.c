@@ -581,11 +581,27 @@ static Stab *findstab(Stab *st, char *pkg)
 static void fixmappings(Stab *st)
 {
     size_t i;
+    Type *t, *old;
 
     for (i = 0; i < ntypefixdest; i++) {
-        *typefixdest[i] = htget(tidmap, (void*)typefixid[i]);
+        t = htget(tidmap, (void*)typefixid[i]);
+        if (t->type == Tyname && !t->issynth) {
+            old = gettype(st, t->name);
+            if (old)
+                t = old;
+        }
+        *typefixdest[i] = t;
         if (!*typefixdest[i])
             die("Couldn't find type %d\n", (int)typefixid[i]);
+    }
+    /* check for duplicate type names */
+    for (i = 0; i < ntypefixdest; i++) {
+        t = htget(tidmap, (void*)typefixid[i]);
+        if (t->type != Tyname || t->issynth)
+            continue;
+        old = gettype(st, t->name);
+        if (old && !tyeq(t, old))
+            fatal(-1, "Duplicate definition of type %s", tystr(old));
     }
     lfree(&typefixdest, &ntypefixdest);
     lfree(&typefixid, &ntypefixid);
@@ -639,10 +655,10 @@ int loaduse(FILE *f, Stab *st)
                 t = tyunpickle(f);
                 htput(tidmap, (void*)tid, t);
                 /* fix up types */
-                if (t->type == Tyname)
-                    if (!gettype(s, t->name))
+                if (t->type == Tyname) {
+                    if (!gettype(s, t->name) && !t->issynth)
                         puttype(s, t->name, t);
-                if (t->type == Tyunion)  {
+                } else if (t->type == Tyunion)  {
                     for (i = 0; i < t->nmemb; i++)
                         if (!t->udecls[i]->synth)
                             putucon(s, t->udecls[i]);
