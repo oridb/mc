@@ -669,7 +669,7 @@ int loaduse(FILE *f, Stab *st)
                         htput(dedup, t->name, t);
                 } else if (t->type == Tyunion)  {
                     for (i = 0; i < t->nmemb; i++)
-                        if (!t->udecls[i]->synth)
+                        if (!getucon(s, t->udecls[i]->name) && !t->udecls[i]->synth)
                             putucon(s, t->udecls[i]);
                 }
                 break;

@@ -562,6 +562,8 @@ int tyeq(void *t1, void *t2)
                     return 0;
             break;
         case Tyname:
+            if (!nameeq(a->name, b->name))
+                return 0;
             for (i = 0; i < a->narg; i++)
                 if (!tyeq(a->arg[i], b->arg[i]))
                     return 0;
