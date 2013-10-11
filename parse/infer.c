@@ -787,6 +787,25 @@ static void mergeexports(Inferstate *st, Node *file)
     popstab();
 }
 
+static Type *initvar(Inferstate *st, Node *n, Node *s)
+{
+    Type *t;
+
+    if (s->decl.isgeneric)
+        t = tyfreshen(st, tf(st, s->decl.type));
+    else
+        t = s->decl.type;
+    settype(st, n, t);
+    n->expr.did = s->decl.did;
+    n->expr.isconst = s->decl.isconst;
+    if (s->decl.isgeneric && !st->ingeneric) {
+        lappend(&st->specializationscope, &st->nspecializationscope, curstab());
+        lappend(&st->specializations, &st->nspecializations, n);
+        lappend(&st->genericdecls, &st->ngenericdecls, s);
+    }
+    return t;
+}
+
 /* Finds out if the member reference is actually
  * referring to a namespaced name, instead of a struct
  * member. If it is, it transforms it into the variable
@@ -818,17 +837,7 @@ static void checkns(Inferstate *st, Node *n, Node **ret)
     if (!s)
         fatal(n->line, "Undeclared var %s.%s", nsname->name.ns, nsname->name.name);
     var = mkexpr(n->line, Ovar, nsname, NULL);
-    var->expr.did = s->decl.did;
-    var->expr.isconst = s->decl.isconst;
-    if (s->decl.isgeneric)
-        settype(st, var, tyfreshen(st, s->decl.type));
-    else
-        settype(st, var, s->decl.type);
-    if (s->decl.isgeneric && !st->ingeneric) {
-        lappend(&st->specializationscope, &st->nspecializationscope, curstab());
-        lappend(&st->specializations, &st->nspecializations, var);
-        lappend(&st->genericdecls, &st->ngenericdecls, s);
-    }
+    initvar(st, var, s);
     *ret = var;
 }
 
@@ -1108,20 +1117,7 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
             s = getdcl(curstab(), args[0]);
             if (!s)
                 fatal(n->line, "Undeclared var %s", ctxstr(st, args[0]));
-
-            n->expr.isconst = s->decl.isconst;
-            if (s->decl.isgeneric)
-                t = tyfreshen(st, tf(st, s->decl.type));
-            else
-                t = s->decl.type;
-            n->expr.isconst = s->decl.isconst;
-            settype(st, n, t);
-            n->expr.did = s->decl.did;
-            if (s->decl.isgeneric && !st->ingeneric) {
-                lappend(&st->specializationscope, &st->nspecializationscope, curstab());
-                lappend(&st->specializations, &st->nspecializations, n);
-                lappend(&st->genericdecls, &st->ngenericdecls, s);
-            }
+            t = initvar(st, n, s);
             break;
         case Oucon:
             inferucon(st, n, &n->expr.isconst);
