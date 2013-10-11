@@ -587,6 +587,12 @@ static void fixmappings(Stab *st)
     size_t i;
     Type *t, *old;
 
+    /*
+     * merge duplicate definitions.
+     * This allows us to compare named types by id, instead
+     * of doing a deep walk through the type. This ability is
+     * depended on when we do type inference.
+     */
     for (i = 0; i < ntypefixdest; i++) {
         t = htget(tidmap, (void*)typefixid[i]);
         if (t->type == Tyname && !t->issynth) {
@@ -599,7 +605,7 @@ static void fixmappings(Stab *st)
         if (!*typefixdest[i])
             die("Couldn't find type %d\n", (int)typefixid[i]);
     }
-    /* check for duplicate type names */
+    /* check for duplicate type definitions */
     for (i = 0; i < ntypefixdest; i++) {
         t = htget(tidmap, (void*)typefixid[i]);
         if (t->type != Tyname || t->issynth)
