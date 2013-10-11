@@ -217,6 +217,9 @@ static void typickle(FILE *fd, Type *ty)
             pickle(ty->name, fd);
             wrbool(fd, ty->isgeneric);
             wrbool(fd, ty->issynth);
+            wrint(fd, ty->nparam);
+            for (i = 0; i < ty->nparam; i++)
+                wrtype(fd, ty->param[i]);
             wrint(fd, ty->narg);
             for (i = 0; i < ty->narg; i++)
                 wrtype(fd, ty->arg[i]);
@@ -300,6 +303,12 @@ static Type *tyunpickle(FILE *fd)
             ty->name = unpickle(fd);
             ty->isgeneric = rdbool(fd);
             ty->issynth = rdbool(fd);
+
+            ty->nparam = rdint(fd);
+            ty->param = zalloc(ty->nparam * sizeof(Type *));
+            for (i = 0; i < ty->nparam; i++)
+                rdtype(fd, &ty->param[i]);
+
             ty->narg = rdint(fd);
             ty->arg = zalloc(ty->narg * sizeof(Type *));
             for (i = 0; i < ty->narg; i++)
@@ -727,16 +736,24 @@ static void taghidden(Type *t)
     t->vis = Vishidden;
     for (i = 0; i < t->nsub; i++)
         taghidden(t->sub[i]);
-    for (i = 0; i < t->narg; i++)
-        taghidden(t->arg[i]);
-    if (t->type == Tystruct) {
-        for (i = 0; i < t->nmemb; i++)
-            taghidden(decltype(t->sdecls[i]));
-    } else if (t->type == Tyunion) {
-        for (i = 0; i < t->nmemb; i++) {
-            if (t->udecls[i]->etype)
-                taghidden(t->udecls[i]->etype);
-        }
+    switch (t->type) {
+        case Tystruct:
+            for (i = 0; i < t->nmemb; i++)
+                taghidden(decltype(t->sdecls[i]));
+            break;
+        case Tyunion:
+            for (i = 0; i < t->nmemb; i++)
+                if (t->udecls[i]->etype)
+                    taghidden(t->udecls[i]->etype);
+            break;
+        case Tyname:
+            for (i = 0; i < t->narg; i++)
+                taghidden(t->arg[i]);
+            for (i = 0; i < t->nparam; i++)
+                taghidden(t->param[i]);
+            break;
+        default:
+            break;
     }
 }
 
@@ -815,10 +832,13 @@ static void tagexports(Stab *st)
     for (i = 0; i < n; i++) {
         t = gettype(st, k[i]);
         t->vis = Visexport;
+        taghidden(t);
         for (j = 0; j < t->nsub; j++)
             taghidden(t->sub[j]);
         for (j = 0; j < t->narg; j++)
             taghidden(t->arg[j]);
+        for (j = 0; j < t->nparam; j++)
+            taghidden(t->param[j]);
     }
     free(k);
 
