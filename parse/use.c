@@ -21,6 +21,7 @@ static void pickle(Node *n, FILE *fd);
 static Node *unpickle(FILE *fd);
 
 /* type fixup list */
+static Htab *dedup;     /* map from name -> type, contains all Tynames loaded ever */
 static Htab *tidmap;    /* map from tid -> type */
 static Type ***typefixdest;  /* list of types we need to replace */
 static size_t ntypefixdest; /* size of replacement list */
@@ -181,6 +182,7 @@ static void typickle(FILE *fd, Type *ty)
         return;
     }
     wrbyte(fd, ty->type);
+    wrbyte(fd, ty->vis);
     /* tid is generated; don't write */
     /* cstrs are left out for now: FIXME */
     wrint(fd, ty->nsub);
@@ -261,6 +263,8 @@ static Type *tyunpickle(FILE *fd)
 
     t = rdbyte(fd);
     ty = mktype(-1, t);
+    if (rdbyte(fd) == Vishidden)
+        ty->ishidden = 1;
     /* tid is generated; don't write */
     /* cstrs are left out for now: FIXME */
     ty->nsub = rdint(fd);
@@ -586,8 +590,9 @@ static void fixmappings(Stab *st)
     for (i = 0; i < ntypefixdest; i++) {
         t = htget(tidmap, (void*)typefixid[i]);
         if (t->type == Tyname && !t->issynth) {
-            old = gettype(st, t->name);
-            if (old)
+            old = htget(dedup, t->name);
+            if (old != t)
+            if (t != old)
                 t = old;
         }
         *typefixdest[i] = t;
@@ -599,7 +604,7 @@ static void fixmappings(Stab *st)
         t = htget(tidmap, (void*)typefixid[i]);
         if (t->type != Tyname || t->issynth)
             continue;
-        old = gettype(st, t->name);
+        old = htget(dedup, t->name);
         if (old && !tyeq(t, old))
             fatal(-1, "Duplicate definition of type %s", tystr(old));
     }
@@ -623,6 +628,8 @@ int loaduse(FILE *f, Stab *st)
     Type *t;
     int c;
 
+    if (!dedup)
+        dedup = mkht(namehash, nameeq);
     if (fgetc(f) != 'U')
         return 0;
     pkg = rdstr(f);
@@ -656,8 +663,10 @@ int loaduse(FILE *f, Stab *st)
                 htput(tidmap, (void*)tid, t);
                 /* fix up types */
                 if (t->type == Tyname) {
-                    if (!gettype(s, t->name) && !t->issynth)
+                    if (!gettype(st, t->name) && !t->issynth && !t->ishidden)
                         puttype(s, t->name, t);
+                    if (!hthas(dedup, t->name))
+                        htput(dedup, t->name, t);
                 } else if (t->type == Tyunion)  {
                     for (i = 0; i < t->nmemb; i++)
                         if (!t->udecls[i]->synth)

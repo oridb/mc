@@ -115,7 +115,8 @@ struct Type {
     size_t ncstrlist;   /* The length of the constraint list above */
 
     int  isgeneric;     /* Tyname: whether this is generic or not */
-    int  issynth;        /* Tyname: whether this is synthesized or not */
+    int  issynth;       /* Tyname: whether this is synthesized or not */
+    int  ishidden;      /* Tyname: whether this is hidden or not */
     Type **param;       /* Tyname: type parameters that match the type args */
     size_t nparam;      /* Tyname: count of type parameters */
     Type **arg;         /* Tyname: type arguments instantiated */
@@ -314,6 +315,8 @@ ulong inthash(uint64_t key);
 int inteq(uint64_t a, uint64_t b);
 ulong tyhash(void *t);
 int tyeq(void *a, void *b);
+ulong namehash(void *t);
+int nameeq(void *a, void *b);
 
 /* util functions */
 void *zalloc(size_t size);
@@ -344,6 +347,7 @@ void putucon(Stab *st, Ucon *uc);
 Stab *getns(Stab *st, Node *n);
 Stab *getns_str(Stab *st, char *n);
 Node *getdcl(Stab *st, Node *n);
+Type *gettype_l(Stab *st, Node *n);
 Type *gettype(Stab *st, Node *n);
 Cstr *getcstr(Stab *st, Node *n);
 Ucon *getucon(Stab *st, Node *n);

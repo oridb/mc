@@ -48,13 +48,15 @@ void popstab(void)
     stabstkoff--;
 }
 
-/* name hashing */
-static ulong namehash(void *n)
+/* name hashing: we want namespaced lookups to find the
+ * name even if we haven't set the namespace up, since
+ * we can update it after the fact. */
+static ulong nsnamehash(void *n)
 {
     return strhash(namestr(n));
 }
 
-static int nameeq(void *a, void *b)
+static int nsnameeq(void *a, void *b)
 {
     return a == b || !strcmp(namestr(a), namestr(b));
 }
@@ -65,9 +67,9 @@ Stab *mkstab()
 
     st = zalloc(sizeof(Stab));
     st->ns = mkht(strhash, streq);
-    st->dcl = mkht(namehash, nameeq);
-    st->ty = mkht(namehash, nameeq);
-    st->uc = mkht(namehash, nameeq);
+    st->dcl = mkht(nsnamehash, nsnameeq);
+    st->ty = mkht(nsnamehash, nsnameeq);
+    st->uc = mkht(nsnamehash, nsnameeq);
     return st;
 }
 
@@ -91,7 +93,7 @@ Node *getdcl(Stab *st, Node *n)
         if ((s = htget(st->dcl, n))) {
             /* record that this is in the closure of this scope */
             if (!st->closure)
-                st->closure = mkht(namehash, nameeq);
+                st->closure = mkht(nsnamehash, nsnameeq);
             if (st != orig && !n->decl.isglobl)
                 htput(st->closure, s->decl.name, s);
             return s;
@@ -100,6 +102,16 @@ Node *getdcl(Stab *st, Node *n)
     } while (st);
     return NULL;
 }
+
+Type *gettype_l(Stab *st, Node *n)
+{
+    Tydefn *t;
+
+    if ((t = htget(st->ty, n)))
+        return t->type;
+    return NULL;
+}
+
 
 Type *gettype(Stab *st, Node *n)
 {
@@ -183,11 +195,13 @@ void puttype(Stab *st, Node *n, Type *t)
     Tydefn *td;
 
     if (gettype(st, n))
-        fatal(n->line, "Type %s already defined", namestr(n));
+        fatal(n->line, "Type %s already defined", tystr(gettype(st, n)));
     td = xalloc(sizeof(Tydefn));
     td->line = n->line;
     td->name = n;
     td->type = t;
+    if (st->name)
+        setns(n, namestr(st->name));
     htput(st->ty, td->name, td);
 }
 

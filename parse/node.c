@@ -325,6 +325,26 @@ Type *nodetype(Node *n)
     return NULL;
 }
 
+/* name hashing */
+ulong namehash(void *p)
+{
+    Node *n;
+
+    n = p;
+    return strhash(namestr(n)) ^ strhash(n->name.ns);
+}
+
+int nameeq(void *p1, void *p2)
+{
+    Node *a, *b;
+    a = p1;
+    b = p2;
+    if (a == b)
+        return 1;
+
+    return streq(namestr(a), namestr(b)) && streq(a->name.ns, b->name.ns);
+}
+
 void setns(Node *n, char *ns)
 {
     n->name.ns = strdup(ns);

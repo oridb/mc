@@ -100,13 +100,6 @@ static char *ctxstr(Inferstate *st, Node *n)
 }
 
 
-static int nameeq(Node *a, Node *b)
-{
-    if (a == b)
-        return 1;
-    return streq(a->name.ns, b->name.ns) && streq(a->name.name, b->name.name);
-}
-
 /* Set a scope's enclosing scope up correctly.
  * We don't do this in the parser for some reason. */
 static void setsuper(Stab *st, Stab *super)

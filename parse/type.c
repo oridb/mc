@@ -462,6 +462,8 @@ static int tybfmt(char *buf, size_t len, Type *t)
             }
             break;
         case Tyname:
+            if (t->name->name.ns)
+                p += snprintf(p, end - p, "%s.", t->name->name.ns);
             p += snprintf(p, end - p, "%s", namestr(t->name));
             if (t->isgeneric) {
                 arg = t->param;
