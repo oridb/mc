@@ -73,6 +73,7 @@ B genericrec	E	0
 B stdopt-some	E	42
 B stdopt-none	E	42
 B stdopt-mk	E	42
+B stdopt-struct	E	42
 B sizeof	E	4
 B gsizeof	E	5
 B mkunion	E	0
