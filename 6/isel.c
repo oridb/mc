@@ -421,6 +421,7 @@ static Loc *gencall(Isel *s, Node *n)
         argsz = align(argsz, min(size(n->expr.args[i]), Ptrsz));
         argsz += size(n->expr.args[i]);
     }
+    argsz = align(argsz, 16);
     stkbump = loclit(argsz, ModeQ);
     if (argsz)
         g(s, Isub, stkbump, rsp, NULL);
