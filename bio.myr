@@ -55,6 +55,8 @@ pkg bio =
 
 	/* formatted i/o */
 	const put	: (f : file#, fmt : byte[:], args : ... -> std.size)
+
+	const fill	: (f : file#, sz : std.size -> std.size)
 ;;
 
 const Bufsz = 16*1024 /* 16k */
@@ -295,14 +297,19 @@ const readtob = {f, b
 	var ret
 	var i
 
-	ret = [][:]
+	i = 0
+	ret = std.slalloc(0)
 	while true
+		fill(f, 1)
 		if !ensureread(f, 1)
-			-> readappend(f, ret, f.rend - f.rstart)
+			-> readappend(f, ret, 0)
 		;;
 		for i = f.rstart; i < f.rend; i++
 			if f.rbuf[i] == b
-				-> readappend(f, ret, f.rend - i)
+				ret = readappend(f, ret, i - f.rstart)
+				/* skip past the recognized byte */
+				f.rstart += 1
+				-> ret
 			;;
 		;;
 		ret = readappend(f, ret, i - f.rstart)
@@ -325,8 +332,8 @@ provided
 const readappend = {f, buf, n
 	var ret
 
-	std.assert(f.rstart + n < f.rend, "Reading too much from buffer")
-	ret = std.sljoin(ret, f.rbuf[f.rstart:f.rstart + n])
+	std.assert(f.rstart + n <= f.rend, "Reading too much from buffer")
+	ret = std.sljoin(buf, f.rbuf[f.rstart:f.rstart + n])
 	f.rstart += n
 	-> ret
 }
@@ -354,6 +361,8 @@ const ensureread = {f, n
 		cap = f.rbuf.len - f.rend
 		if n > (cap + held)
 			std.slcp(f.rbuf[:cap], f.rbuf[f.rstart:f.rend])
+			f.rstart = 0
+			f.rend = cap
 		;;
 		-> fill(f, n) > n
 	else
@@ -383,12 +392,12 @@ const writebuf = {fd, src
 Reads as many bytes as possible from the file into
 the read buffer.
 */
-const fill = {f, n
+const fill = {f, min
 	var n
 	var count
 
 	count = 0
-	while count < n
+	while count < min
 		n = std.read(f.fd, f.rbuf[f.rend:])
 		if n <= 0
 			goto filldone
