@@ -50,13 +50,14 @@ function expectprint {
 
 
 function expectcompare {
-    t=`tempfile`
+    t=$TMPDIR/myrtest-$1-$RANDOM
     ./$1 $3 > $t
     if cmp $t data/$1-expected; then
         pass $1
     else
         fail $1
     fi
+    rm -f $t
 }
 
 function expectfcompare {
