@@ -90,6 +90,9 @@ generic free = {v:@a# -> void
 
 /* allocates a slice of 'len' elements. */
 generic slalloc = {len
+	if len == 0
+		-> [][:]
+	;;
 	-> (bytealloc(len*sizeof(@a)) castto(@a#))[0:len]
 }
 
@@ -100,6 +103,9 @@ generic slzalloc = {len
 
 /* Frees a slice */
 generic slfree	 = {sl
+	if sl.len == 0
+		->
+	;;
 	bytefree(sl castto(byte#), sl.len * sizeof(@a))
 }
 
