@@ -1,0 +1,57 @@
+use "sleq.use"
+use "types.use"
+
+pkg std =
+	const strhash	: (s : byte[:]	-> uint32)
+	const streq	: (a : byte[:], b : byte[:]	-> bool)
+
+	generic ptrhash	: (p : @a#	-> uint32)
+	generic ptreq	: (a : @a#, b : @a#	-> bool)
+
+	generic inthash	: (v : @a::(tcint,tcnum,tctest)	-> uint32)
+	generic inteq	: (a : @a::(tcint,tcnum,tctest), b : @a::(tcint,tcnum,tctest) -> bool)
+;;
+
+/* Supremely simple djb hash. */
+const strhash = {s
+	var h
+	var i
+	
+	h = 5381
+	for i = 0; i < s.len; i++
+		h = (h << 5) + h + (s[i] castto(uint32))
+	;;
+	-> h
+}
+
+const streq = {a, b
+	-> sleq(a, b)
+}
+
+/* FIXME: come up with a *good* hash function */
+generic ptrhash = {p
+	var x
+
+	x = p castto(intptr)
+	/* Mix the top bits in to the bottom, and multiply by a large prime. */
+	x = x ^ (x >> 32) * 357913941	
+	-> x castto(uint32)
+}
+
+generic ptreq = {a, b
+	-> a == b
+}
+
+/* FIXME: come up with a *good* hash function */
+generic inthash = {v
+	var x
+
+	x = v castto(uint64)
+	/* Mix the top bits in to the bottom, and multiply by a large prime. */
+	x = x ^ (x >> 32) * 357913941	
+	-> x castto(uint32)
+}
+
+generic inteq = {a, b
+	-> a == b
+}

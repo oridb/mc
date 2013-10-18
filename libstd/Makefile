@@ -8,6 +8,7 @@ MYRSRC= \
     error.myr \
     extremum.myr \
     fmt.myr \
+    hashfuncs.myr \
     htab.myr \
     intparse.myr \
     now.myr \
