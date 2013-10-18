@@ -761,6 +761,8 @@ static void mergeexports(Inferstate *st, Node *file)
          * body */
         if (nx->decl.init && ng)
             fatal(nx->line, "Export %s double-defined on line %d", ctxstr(st, nx), ng->line);
+        if (ng && nx->decl.isgeneric != ng->decl.isgeneric)
+            fatal(nx->line, "Export %s defined with different genericness on line %d", ctxstr(st, nx), ng->line);
         if (!ng)
             putdcl(globls, nx);
         else
