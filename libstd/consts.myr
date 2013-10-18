@@ -1,0 +1,11 @@
+pkg std =
+	/* JEDEC 100B.1 memory sizes */
+	generic KiB	: @a::(tcint,tcnum,tctest)	= 1024 
+	generic MiB	: @a::(tcint,tcnum,tctest)	= KiB*1024
+	generic GiB	: @a::(tcint,tcnum,tctest)	= MiB*1024
+	generic TiB	: @a::(tcint,tcnum,tctest)	= GiB*1024
+	generic PiB	: @a::(tcint,tcnum,tctest)	= TiB*1024
+	generic EiB	: @a::(tcint,tcnum,tctest)	= PiB*1024
+	generic ZiB	: @a::(tcint,tcnum,tctest)	= EiB*1024
+	generic YiB	: @a::(tcint,tcnum,tctest)	= ZiB*1024
+;;

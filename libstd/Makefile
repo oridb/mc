@@ -3,6 +3,7 @@ MYRSRC= \
     alloc.myr \
     blat.myr \
     chartype.myr \
+    consts.myr \
     die.myr \
     env.myr \
     error.myr \

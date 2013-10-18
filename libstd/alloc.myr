@@ -1,3 +1,4 @@
+use "consts.use"
 use "die.use"
 use "extremum.use"
 use "sys.use"
@@ -47,9 +48,9 @@ const Zbyteptr	= 0 castto(byte#)
 const Zslab	= 0 castto(slab#)
 const Zchunk	= 0 castto(chunk#)
 
-const Slabsz 	= 1048576	/* 1 meg slabs */
+const Slabsz 	= 1*MiB	/* 1 meg slabs */
 const Cachemax	= 16	/* maximum number of slabs in the cache */
-const Bktmax	= 32768	/* Slabsz / 8; a balance. */
+const Bktmax	= 32*KiB	/* Slabsz / 8; a balance. */
 const Align	= 16	/* minimum allocation alignment */
 
 var buckets	: bucket[32] /* excessive */
