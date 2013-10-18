@@ -18,6 +18,7 @@
 /* FIXME: move into one place...? */
 Node *file;
 char debugopt[128];
+int writeasm;
 char *outfile;
 char **incpaths;
 size_t nincpaths;
@@ -26,6 +27,7 @@ static void usage(char *prog)
 {
     printf("%s [-h] [-o outfile] [-d[dbgopts]] inputs\n", prog);
     printf("\t-h\tPrint this help\n");
+    printf("\t-S\tWrite out `input.s` when compiling\n");
     printf("\t-I path\tAdd 'path' to use search path\n");
     printf("\t-d\tPrint debug dumps. Recognized options: f r p i\n");
     printf("\t\t\tf: log folded trees\n");
@@ -38,15 +40,27 @@ static void usage(char *prog)
     printf("\t-S\tGenerate assembly instead of object code\n");
 }
 
-static void assem(char *f)
+static void assem(char *asmsrc, char *input)
 {
     char objfile[1024];
-    char cmd[1024];
+    char cmd[2048];
 
-    swapsuffix(objfile, 1024, f, ".s", ".o");
-    snprintf(cmd, 1024, Asmcmd, objfile, f);
+    swapsuffix(objfile, 1024, input, ".myr", ".o");
+    snprintf(cmd, 1024, Asmcmd, objfile, asmsrc);
+    printf("ASSEM COMMAND: %s\n", cmd);
     if (system(cmd) == -1)
         die("Couldn't run assembler");
+}
+
+static char *gentemp(char *buf, size_t bufsz, char *base, char *suffix)
+{
+    char *tmpdir;
+
+    tmpdir = getenv("TMPDIR");
+    if (!tmpdir)
+        tmpdir = "/tmp";
+    snprintf(buf, bufsz, "%s/tmp%lx-%s%s", tmpdir, random(), base, suffix);
+    return buf;
 }
 
 int main(int argc, char **argv)
@@ -60,6 +74,9 @@ int main(int argc, char **argv)
         switch (opt) {
             case 'o':
                 outfile = optarg;
+                break;
+            case 'S':
+                writeasm = 1;
                 break;
             case 'h':
                 usage(argv[0]);
@@ -100,9 +117,13 @@ int main(int argc, char **argv)
         if (debugopt['t'])
             dump(file, stdout);
 
-        swapsuffix(buf, 1024, argv[i], ".myr", ".s");
+        if (writeasm) {
+            swapsuffix(buf, sizeof buf, argv[i], ".myr", ".s");
+        } else {
+            gentemp(buf, sizeof buf, argv[i], ".s");
+        }
         gen(file, buf);
-        assem(buf);
+        assem(buf, argv[i]);
     }
 
     return 0;
