@@ -1492,11 +1492,11 @@ static void simpglobl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***
     s.blobs = *blob;
     s.nblobs = *nblob;
 
+    if (dcl->decl.isextern || dcl->decl.isgeneric)
+        return;
     if (isconstfn(dcl)) {
-        if (!dcl->decl.isextern && !dcl->decl.isgeneric) {
-            f = simpfn(&s, name, dcl->decl.init, dcl->decl.isexport);
-            lappend(fn, nfn, f);
-        }
+        f = simpfn(&s, name, dcl->decl.init, dcl->decl.isexport);
+        lappend(fn, nfn, f);
     } else {
         simpconstinit(&s, dcl);
     }

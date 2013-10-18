@@ -1240,9 +1240,9 @@ static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
         case Ndecl:
             bind(st, n);
             inferdecl(st, n);
-            unbind(st, n);
             if (type(st, n)->type == Typaram && !st->ingeneric)
                 fatal(n->line, "Generic type %s in non-generic near %s\n", tystr(type(st, n)), ctxstr(st, n));
+            unbind(st, n);
             break;
         case Nblock:
             setsuper(n->block.scope, curstab());
