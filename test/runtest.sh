@@ -50,7 +50,11 @@ function expectprint {
 
 
 function expectcompare {
-    t=$TMPDIR/myrtest-$1-$RANDOM
+    if [ x"" !=  x"$TMPDIR" ]; then 
+        t=$TMPDIR/myrtest-$1-$RANDOM
+    else
+        t=/tmp/myrtest-$1-$RANDOM
+    fi
     ./$1 $3 > $t
     if cmp $t data/$1-expected; then
         pass $1
