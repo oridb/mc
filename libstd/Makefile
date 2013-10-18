@@ -50,13 +50,11 @@ $(MYRLIB): $(MYRSRC) $(ASMSRC) ../6/6m
 	../myrbuild/myrbuild -C../6/6m -M../muse/muse -l $(MYRLIB) $(MYRSRC) $(ASMSRC)
 
 OBJ=$(MYRSRC:.myr=.o) $(ASMSRC:.s=.o)
-JUNKASM=$(MYRSRC:.myr=.s)
 USE=$(MYRSRC:.myr=.use) $(MYRLIB)
 .PHONY: clean
 clean:
 	rm -f $(OBJ) test.o
 	rm -f $(USE) test.use
-	rm -f $(JUNKASM) test.s
 	rm -f lib$(MYRLIB).a
 
 install:
