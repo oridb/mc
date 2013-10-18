@@ -8,6 +8,7 @@ MYRSRC= \
     error.myr \
     extremum.myr \
     fmt.myr \
+    htab.myr \
     intparse.myr \
     now.myr \
     option.myr \

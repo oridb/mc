@@ -1,0 +1,158 @@
+use "alloc.use"
+use "option.use"
+use "types.use"
+
+pkg std =
+	type htab(@k, @v) = struct
+		hash	: (k : @k	-> uint32)
+		eq	: (a : @k, b : @k -> bool)
+
+		nelt	: size
+		keys	: @k[:]
+		vals	: @v[:]
+		hashes	: uint32[:]
+		dead	: bool[:]
+	;;
+
+	generic mkht	: (h : (k : @k -> uint32), eq : (a : @k, b : @k -> bool) -> htab(@k, @v)#)
+	generic htfree	: (ht : htab(@k, @v)# -> void)
+	generic htput	: (ht : htab(@k, @v)#, k : @k, v : @v -> void)
+	generic htget	: (ht : htab(@k, @v)#, k : @k -> option(@v))
+;;
+
+const Initsz = 32
+
+generic hash = {ht, k
+	var h
+
+	h = ht.hash(k)
+	if h == 0
+		-> 1
+	else
+		-> h
+	;;
+}
+
+generic grow = {ht
+	var oldk
+	var oldv
+	var oldh
+	var oldd
+	var sz
+	var i
+
+	oldk = ht.keys
+	oldv = ht.vals
+	oldh = ht.hashes
+	oldd = ht.dead
+	sz = 2*ht.keys.len
+
+	ht.nelt = 0
+	for i = 0; i < ht.keys.len; i++
+		if oldh[i] != 0 && !oldd[i]
+			htput(ht, oldk[i], oldv[i])
+		;;
+	;;
+	slfree(oldk)
+	slfree(oldv)
+	slfree(oldh)
+	slfree(oldd)
+}
+
+generic idx = {ht, k
+	var i
+	var h
+	var di
+
+	di = 0
+	h = hash(ht, k)
+	i = h & (ht.keys.len - 1)
+	while ht.hashes[i] != 0 && !ht.dead[i] && ht.hashes[i] != h
+:idxsearchmore
+		di++
+		i = (h + di) & (ht.keys.len - 1)
+	;;
+
+	if ht.hashes[i] == 0 || ht.dead[i]
+		-> `None
+	;;
+	if !ht.eq(ht.keys[i], k)
+		goto idxsearchmore /* collision */
+	;;
+	-> `Some i
+}
+
+generic mkht = {h, eq
+	var ht
+
+	ht = alloc()
+
+	ht.hash = h
+	ht.eq = eq
+
+	ht.nelt = 0
+	ht.keys = slalloc(Initsz)
+	ht.vals = slalloc(Initsz)
+	ht.hashes = slalloc(Initsz)
+	ht.dead = slalloc(Initsz)
+	-> ht
+}
+
+generic htfree = {ht
+	slfree(ht.keys)
+	slfree(ht.vals)
+	slfree(ht.hashes)
+	slfree(ht.dead)
+	free(ht)
+}
+
+generic htput = {ht, k, v
+	var i
+	var di
+	var h
+
+	di = 0
+	h = hash(ht, k)
+	i = h & (ht.keys.len - 1)
+	while ht.hashes[i] != 0 && !ht.dead[i]
+		/*
+		second insertion just overwrites first.
+		nb: comparing keys for dead values is bad.
+		*/
+		if ht.hashes[i] == h && (ht.dead[i] || ht.eq(ht.keys[i], k))
+			goto foundfreeslot
+		;;
+		di++
+		i = (h + di) & (ht.keys.len - 1)
+	;;
+:foundfreeslot
+	ht.hashes[i] = h
+	ht.keys[i] = k
+	ht.vals[i] = v
+	ht.dead[i] = false
+	ht.nelt++
+	if ht.keys.len < ht.nelt * 2
+		grow(ht)
+	;;
+}
+
+generic htdel = {ht, k
+	match idx(ht, k)
+	`Some i:	ht.dead[i] = true;;
+	_:	/* do nothing */;;
+	;;
+}
+
+generic htget = {ht, k
+	match idx(ht, k)
+	`Some i:	-> `Some ht.vals[i];;
+	`None:		-> `None;;
+	;;
+}
+
+generic hthas = {ht, k
+	match idx(ht, k)
+	`Some i:	-> true;;
+	`None:		-> false;;
+	;;
+}
