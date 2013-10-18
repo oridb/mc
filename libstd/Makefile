@@ -3,7 +3,6 @@ MYRSRC= \
     alloc.myr \
     blat.myr \
     chartype.myr \
-    consts.myr \
     die.myr \
     env.myr \
     error.myr \
@@ -22,6 +21,7 @@ MYRSRC= \
     strcmp.myr \
     sys.myr \
     types.myr \
+    units.myr \
     utf.myr \
     varargs.myr \
 
