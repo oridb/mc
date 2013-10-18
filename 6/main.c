@@ -47,7 +47,6 @@ static void assem(char *asmsrc, char *input)
 
     swapsuffix(objfile, 1024, input, ".myr", ".o");
     snprintf(cmd, 1024, Asmcmd, objfile, asmsrc);
-    printf("ASSEM COMMAND: %s\n", cmd);
     if (system(cmd) == -1)
         die("Couldn't run assembler");
 }
