@@ -17,6 +17,7 @@ MYRSRC= \
     rand.myr \
     slappend.myr \
     slcp.myr \
+    sldup.myr \
     sleq.myr \
     sljoin.myr \
     slurp.myr \
