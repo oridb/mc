@@ -7,15 +7,17 @@ use "sys.use"
 */
 
 pkg std =
+	/* predicates */
 	const isalpha	: (c : char -> bool)
 	const isnum	: (c : char -> bool)
 	const isalnum	: (c : char -> bool)
 	const isspace	: (c : char -> bool)
-
+	const isblank	: (c : char -> bool)
 	const islower	: (c : char -> bool)
 	const isupper	: (c : char -> bool)
 	const istitle	: (c : char -> bool)
 
+	/* transforms */
 	const tolower	: (c : char -> char)
 	const toupper	: (c : char -> char)
 	const totitle	: (c : char -> char)
@@ -223,7 +225,7 @@ const ralpha1 = [
  * space ranges
  */
 const rspace2 = [
-	0x0009,	0x000a,	/* rand newline */
+	0x0009,	0x0009,	/* tab */
 	0x0020,	0x0020,	/* space */
 	0x0085, 0x0085,
 	0x00a0,	0x00a0,	/*   */
@@ -1110,7 +1112,7 @@ const isalnum = {c
 	-> isalpha(c) || isnum(c)
 }
 
-const isspace = {c
+const isblank = {c
 	var l
 	var sl
 	var len
@@ -1124,6 +1126,10 @@ const isspace = {c
 		;;
 	;;
 	-> false
+}
+
+const isspace = {c
+	-> c == '\n' || isblank(c)
 }
 
 const islower = {c
