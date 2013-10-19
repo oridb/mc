@@ -11,6 +11,7 @@ use "extremum.use"
   as described below:
 
 	  %s	- A string, ie, a utf8 encoded byte slice.
+	  %t	- A boolean
 	  %b	- A byte.
 	  %w	- A 16 bit integer
 	  %i	- A 32 bit integer
@@ -87,6 +88,7 @@ const bfmtv = {buf, fmt, ap
 	var c
 	var n
 	var s_val : byte[:]
+	var t_val : bool
 	var b_val : int8
 	var w_val : int16
 	var i_val : int32
@@ -104,6 +106,10 @@ const bfmtv = {buf, fmt, ap
 			's':
 				(s_val, ap) = vanext(ap)
 				n += strfmt(buf[n:], s_val)
+				;;
+			't':
+				(t_val, ap) = vanext(ap)
+				n += boolfmt(buf[n:], t_val)
 				;;
 			/* format integers */
 			'b':
@@ -152,6 +158,18 @@ const strfmt = {buf, str
 	;;
 	-> i
 }
+
+const boolfmt = {buf, val
+	var s
+
+	if val
+		s = "true"
+	else
+		s = "false"
+	;;
+	-> strfmt(buf, s)
+}
+
 
 const digitchars = [
 '0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'
