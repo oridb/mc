@@ -1271,6 +1271,8 @@ static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
             break;
         case Nmatchstmt:
             infernode(st, n->matchstmt.val, NULL, sawret);
+	    if (tybase(type(st, n->matchstmt.val))->type == Tyvoid)
+		fatal(n->line, "Can't match against a void type near %s", ctxstr(st, n->matchstmt.val));
             for (i = 0; i < n->matchstmt.nmatches; i++) {
                 infernode(st, n->matchstmt.matches[i], ret, sawret);
                 unify(st, n, type(st, n->matchstmt.val), type(st, n->matchstmt.matches[i]->match.pat));
