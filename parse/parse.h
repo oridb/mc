@@ -242,6 +242,7 @@ struct Node {
             char  isconst;
             char  isgeneric;
             char  isextern;
+            Vis vis;
             Node *name;
             Type *type;
             Node *init;
