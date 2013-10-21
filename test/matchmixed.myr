@@ -1,0 +1,14 @@
+use std
+
+type u = union
+	`A
+	`B
+;;
+
+const main = {
+	match "asdf"
+	`A:	std.put("Got a\n");;
+	`B:	std.put("Got b\n");;
+	;;
+	-> 42
+}
