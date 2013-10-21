@@ -1271,8 +1271,8 @@ static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
             break;
         case Nmatchstmt:
             infernode(st, n->matchstmt.val, NULL, sawret);
-	    if (tybase(type(st, n->matchstmt.val))->type == Tyvoid)
-		fatal(n->line, "Can't match against a void type near %s", ctxstr(st, n->matchstmt.val));
+            if (tybase(type(st, n->matchstmt.val))->type == Tyvoid)
+                fatal(n->line, "Can't match against a void type near %s", ctxstr(st, n->matchstmt.val));
             for (i = 0; i < n->matchstmt.nmatches; i++) {
                 infernode(st, n->matchstmt.matches[i], ret, sawret);
                 unify(st, n, type(st, n->matchstmt.val), type(st, n->matchstmt.matches[i]->match.pat));
@@ -1310,9 +1310,10 @@ static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
 
 /* returns the final type for t, after all unifications
  * and default constraint selections */
-static Type *tyfix(Inferstate *st, Node *ctx, Type *t)
+static Type *tyfix(Inferstate *st, Node *ctx, Type *orig)
 {
     static Type *tyint, *tyflt;
+    Type *t, *delayed;
     size_t i;
     char buf[1024];
 
@@ -1321,9 +1322,15 @@ static Type *tyfix(Inferstate *st, Node *ctx, Type *t)
     if (!tyflt)
         tyflt = mktype(-1, Tyfloat64);
 
-    t = tysearch(st, t);
-    if (hthas(st->delayed, t))
-        t = htget(st->delayed, t);
+    t = tysearch(st, orig);
+    printf("Orig: %s, t: %s\n", tystr(orig), tystr(t));
+    if (orig->type == Tyvar && hthas(st->delayed, orig)) {
+        delayed = htget(st->delayed, orig);
+        if (t->type == Tyvar)
+            t = delayed;
+        else if (tybase(t)->type != delayed->type)
+            fatal(ctx->line, "Type %s not compatible with %s near %s\n", tystr(t), tystr(delayed), ctxstr(st, ctx));
+    }
     if (t->type == Tyvar) {
         if (hascstr(t, cstrtab[Tcint]) && cstrcheck(t, tyint))
             return tyint;
