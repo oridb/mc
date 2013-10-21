@@ -1012,7 +1012,7 @@ static Node *simpucon(Simp *s, Node *n, Node *dst)
         }
     }
     if (!uc)
-        die("Couldn't find union constructor %s in %s", namestr(n->expr.args[0]), tystr(ty));
+        die("Couldn't find union constructor");
 
     if (dst)
         tmp = dst;

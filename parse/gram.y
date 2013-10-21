@@ -238,7 +238,6 @@ pkgbody : pkgitem
 
 pkgitem : decl
             {putdcl(file->file.exports, $1);
-             $1->decl.isglobl = 1;
              if ($1->decl.init)
                  lappend(&file->file.stmts, &file->file.nstmts, $1);}
         | tydef {puttype(file->file.exports, mkname($1.line, $1.name), $1.type);

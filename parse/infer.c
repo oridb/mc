@@ -623,10 +623,6 @@ static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
         if (occurs(a, b))
             fatal(ctx->line, "Infinite type %s in %s near %s",
                   tystr(a), tystr(b), ctxstr(st, ctx));
-    if (a->type == Tyname && b->type == Tyname)
-        if (!nameeq(a->name, b->name))
-            fatal(ctx->line, "%s incompatible with %s near %s",
-                  tystr(a), tystr(b), ctxstr(st, ctx));
 
     /* if the tyrank of a is 0 (ie, a raw tyvar), just unify.
      * Otherwise, match up subtypes. */
@@ -640,6 +636,9 @@ static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
     } else if (hasparam(a) && hasparam(b)) {
         /* Only Tygeneric and Tyname should be able to unify. And they
          * should have the same names for this to be true. */
+        if (!nameeq(a->name, b->name))
+            fatal(ctx->line, "%s incompatible with %s near %s",
+                  tystr(a), tystr(b), ctxstr(st, ctx));
         if (a->narg != b->narg)
             fatal(ctx->line, "%s has wrong parameter list for %s near %s",
                   tystr(a), tystr(b), ctxstr(st, ctx));
@@ -1272,6 +1271,8 @@ static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
             break;
         case Nmatchstmt:
             infernode(st, n->matchstmt.val, NULL, sawret);
+	    if (tybase(type(st, n->matchstmt.val))->type == Tyvoid)
+		fatal(n->line, "Can't match against a void type near %s", ctxstr(st, n->matchstmt.val));
             for (i = 0; i < n->matchstmt.nmatches; i++) {
                 infernode(st, n->matchstmt.matches[i], ret, sawret);
                 unify(st, n, type(st, n->matchstmt.val), type(st, n->matchstmt.matches[i]->match.pat));
@@ -1321,7 +1322,7 @@ static Type *tyfix(Inferstate *st, Node *ctx, Type *t)
         tyflt = mktype(-1, Tyfloat64);
 
     t = tysearch(st, t);
-    if (t->type == Tyvar && hthas(st->delayed, t))
+    if (hthas(st->delayed, t))
         t = htget(st->delayed, t);
     if (t->type == Tyvar) {
         if (hascstr(t, cstrtab[Tcint]) && cstrcheck(t, tyint))
@@ -1523,8 +1524,6 @@ static void typesub(Inferstate *st, Node *n)
             break;
         case Nmatchstmt:
             typesub(st, n->matchstmt.val);
-	    if (tybase(type(st, n->matchstmt.val))->type == Tyvoid)
-		fatal(n->line, "Can't match against a void type near %s", ctxstr(st, n->matchstmt.val));
             for (i = 0; i < n->matchstmt.nmatches; i++) {
                 typesub(st, n->matchstmt.matches[i]);
             }

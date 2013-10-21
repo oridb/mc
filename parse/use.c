@@ -800,8 +800,6 @@ static void nodetag(Node *n)
                 nodetag(n->lit.fnval);
             break;
         case Ndecl:
-            if (n->decl.vis == Visintern && n->decl.isglobl)
-                n->decl.vis = Vishidden;
             taghidden(n->decl.type);
             /* generics export their body. */
             if (n->decl.isgeneric)
@@ -847,7 +845,6 @@ static void tagexports(Stab *st)
     k = htkeys(st->dcl, &n);
     for (i = 0; i < n; i++) {
         s = getdcl(st, k[i]);
-        s->decl.vis = Visexport;
         nodetag(s);
     }
 }
@@ -862,19 +859,19 @@ static void tagexports(Stab *st)
  */
 void writeuse(FILE *f, Node *file)
 {
-    Stab *ex;//, *st;
-    //void **k;
+    Stab *st;
+    void **k;
     Node *s;
-    size_t i; //, n;
+    size_t i, n;
 
-    ex = file->file.exports;
+    st = file->file.exports;
     wrbyte(f, 'U');
-    if (ex->name)
-        wrstr(f, namestr(ex->name));
+    if (st->name)
+        wrstr(f, namestr(st->name));
     else
         wrstr(f, NULL);
 
-    tagexports(ex);
+    tagexports(st);
     for (i = 0; i < ntypes; i++) {
         if (types[i]->vis == Visexport || types[i]->vis == Vishidden) {
             wrbyte(f, 'T');
@@ -882,8 +879,6 @@ void writeuse(FILE *f, Node *file)
             typickle(f, types[i]);
         }
     }
-    /*
-    st = file->file.globls;
     k = htkeys(st->dcl, &n);
     for (i = 0; i < n; i++) {
         s = getdcl(st, k[i]);
@@ -894,15 +889,4 @@ void writeuse(FILE *f, Node *file)
         wrsym(f, s);
     }
     free(k);
-    */
-    for (i = 0; i < ndecls; i++) {
-        s = decls[i];
-        if (s->decl.vis == Visintern)
-            continue;
-        if (s->decl.isgeneric)
-            wrbyte(f, 'G');
-        else
-            wrbyte(f, 'D');
-        wrsym(f, s);
-    }
 }
