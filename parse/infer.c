@@ -914,10 +914,12 @@ static void inferpat(Inferstate *st, Node *n, Node *val, Node ***bind, size_t *n
         if (args[i]->type == Nexpr)
             inferpat(st, args[i], val, bind, nbind);
     switch (exprop(n)) {
-        case Otup:      infernode(st, n, NULL, NULL);   break;
-        case Ostruct:      infernode(st, n, NULL, NULL);   break;
-        case Olit:      infernode(st, n, NULL, NULL);   break;
-        case Omemb:     infernode(st, n, NULL, NULL);   break;
+        case Otup:
+        case Ostruct:
+        case Oarr:
+        case Olit:
+        case Omemb:
+            infernode(st, n, NULL, NULL);   break;
         case Oucon:     inferucon(st, n, &n->expr.isconst);     break;
         case Ovar:
             s = getdcl(curstab(), args[0]);
