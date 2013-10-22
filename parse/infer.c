@@ -99,6 +99,22 @@ static char *ctxstr(Inferstate *st, Node *n)
     return s;
 }
 
+void typeerror(Inferstate *st, Type *a, Type *b, Node *ctx, char *msg)
+{
+    char *t1, *t2, *c;
+
+    t1 = tystr(a);
+    t2 = tystr(b);
+    c = ctxstr(st, ctx);
+    if (msg)
+        fatal(ctx->line, "Type \"%s\" incompatible with \"%s\" near %s: %s", t1, t2, c, msg);
+    else
+        fatal(ctx->line, "Type \"%s\" incompatible with \"%s\" near %s", t1, t2, c);
+    free(t1);
+    free(t2);
+    free(c);
+}
+
 
 /* Set a scope's enclosing scope up correctly.
  * We don't do this in the parser for some reason. */
@@ -473,7 +489,7 @@ static void constrain(Inferstate *st, Node *ctx, Type *a, Cstr *c)
             a->cstrs = mkbs();
         setcstr(a, c);
     } else if (!a->cstrs || !bshas(a->cstrs, c->cid)) {
-            fatal(ctx->line, "%s needs %s near %s", tystr(a), c->name, ctxstr(st, ctx));
+        fatal(ctx->line, "%s needs %s near %s", tystr(a), c->name, ctxstr(st, ctx));
     }
 }
 
@@ -581,6 +597,7 @@ static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
     Type *t, *r;
     Type *a, *b;
     char *from, *to;
+    char buf[256];
     size_t i;
 
     /* a ==> b */
@@ -616,20 +633,25 @@ static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
             htput(st->delayed, b, htget(st->delayed, a));
         else if (hthas(st->delayed, b) && !hthas(st->delayed, a))
             htput(st->delayed, a, htget(st->delayed, b));
+    } else if (hthas(st->delayed, a)) {
+        t = htget(st->delayed, a);
+        if (tybase(t)->type != tybase(b)->type)
+            typeerror(st, t, b, ctx, NULL);
     }
 
     /* Disallow recursive types */
-    if (a->type == Tyvar && b->type != Tyvar) 
+   if (a->type == Tyvar && b->type != Tyvar)  {
         if (occurs(a, b))
-            fatal(ctx->line, "Infinite type %s in %s near %s",
-                  tystr(a), tystr(b), ctxstr(st, ctx));
+            typeerror(st, a, b, ctx, "Infinite type\n");
+   }
 
     /* if the tyrank of a is 0 (ie, a raw tyvar), just unify.
      * Otherwise, match up subtypes. */
     if ((a->type == b->type || idxhacked(a, b)) && tyrank(a) != 0) {
-        if (a->nsub != b->nsub)
-            fatal(ctx->line, "%s has wrong subtype count for %s (got %d, expected %d) near %s",
-                  tystr(a), tystr(b), a->nsub, b->nsub, ctxstr(st, ctx));
+        if (a->nsub != b->nsub) {
+            snprintf(buf, sizeof buf, "Wrong subtype count - Got %zu, expected %zu", a->nsub, b->nsub);
+            typeerror(st, a, b, ctx, buf);
+        }
         for (i = 0; i < b->nsub; i++)
             unify(st, ctx, a->sub[i], b->sub[i]);
         r = b;
@@ -637,16 +659,13 @@ static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
         /* Only Tygeneric and Tyname should be able to unify. And they
          * should have the same names for this to be true. */
         if (!nameeq(a->name, b->name))
-            fatal(ctx->line, "%s incompatible with %s near %s",
-                  tystr(a), tystr(b), ctxstr(st, ctx));
+            typeerror(st, a, b, ctx, NULL);
         if (a->narg != b->narg)
-            fatal(ctx->line, "%s has wrong parameter list for %s near %s",
-                  tystr(a), tystr(b), ctxstr(st, ctx));
+            typeerror(st, a, b, ctx, "Incompatible parameter lists");
         for (i = 0; i < a->narg; i++)
             unify(st, ctx, a->arg[i], b->arg[i]);
     } else if (a->type != Tyvar) {
-        fatal(ctx->line, "%s incompatible with %s near %s",
-              tystr(a), tystr(b), ctxstr(st, ctx));
+        typeerror(st, a, b, ctx, NULL);
     }
     mergecstrs(st, ctx, a, b);
     membunify(st, ctx, a, b);
