@@ -4,6 +4,11 @@ all:
 
 check:
 	./runtest.sh
+
+.PHONY: %
+%:
+	./runtest.sh $@
+
 .PHONY: clean
 clean:
 	@for i in `awk '/^[A-Z]/{print $$2}' tests`; do \

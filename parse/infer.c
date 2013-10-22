@@ -914,9 +914,10 @@ static void inferpat(Inferstate *st, Node *n, Node *val, Node ***bind, size_t *n
         if (args[i]->type == Nexpr)
             inferpat(st, args[i], val, bind, nbind);
     switch (exprop(n)) {
-        case Oucon:
-            inferucon(st, n, &n->expr.isconst);
-            break;
+        case Otup:      infernode(st, n, NULL, NULL);   break;
+        case Olit:      infernode(st, n, NULL, NULL);   break;
+        case Omemb:     infernode(st, n, NULL, NULL);   break;
+        case Oucon:     inferucon(st, n, &n->expr.isconst);     break;
         case Ovar:
             s = getdcl(curstab(), args[0]);
             if (s) {
@@ -935,12 +936,6 @@ static void inferpat(Inferstate *st, Node *n, Node *val, Node ***bind, size_t *n
             }
             settype(st, n, t);
             n->expr.did = s->decl.did;
-            break;
-        case Olit:
-            infernode(st, n, NULL, NULL);
-            break;
-        case Omemb:
-            infernode(st, n, NULL, NULL);
             break;
         default:
             die("Bad pattern to match against");
@@ -1323,7 +1318,6 @@ static Type *tyfix(Inferstate *st, Node *ctx, Type *orig)
         tyflt = mktype(-1, Tyfloat64);
 
     t = tysearch(st, orig);
-    printf("Orig: %s, t: %s\n", tystr(orig), tystr(t));
     if (orig->type == Tyvar && hthas(st->delayed, orig)) {
         delayed = htget(st->delayed, orig);
         if (t->type == Tyvar)
