@@ -40,11 +40,147 @@ const compile = {pat
 	re = std.zalloc()
 	re.pat = pat
 	match parse(re)
-	`Some t:	dump(t, 0);;
 	`None:		std.put("Empty parse\n");;
 	`Fail f:	-> `std.Failure f;;
+	`Some t:
+		dump(t, 0)
+		gen(re, t)
+		append(re, `Imatch)
+		idump(re)
+		-> `std.Success re
+		;;
 	;;
 	-> `std.Failure (`Noimpl)
+}
+
+const gen = {re, t
+	match t#
+	`Alt	(a, b): genalt(re, a, b);;
+	`Cat	(a, b): gen(re, a); gen(re, b);;
+	/* repetition */
+	`Star	a:	genstar(re, a);;
+	`Plus	a:	gen(re, a); genstar(re, a);;
+	`Quest	a:	genquest(re, a);;
+
+	/* end matches */
+	`Class	sl:
+		std.die("Can't gen class\n")
+		;;
+	`Byte	b: 	append(re, `Ibyte b);;
+	`Chr	c:	genchar(re, c);;
+	`Dot: 		append(re, `Idot);;
+
+	/* meta */
+	`Cap	a:
+		std.put("WARNING: Capture not implemented")
+		gen(re, a)
+		;;
+	;;
+	-> re.proglen
+}
+
+const genalt = {re, l, r
+	var alt
+	var jmp
+	var l0
+	var l1
+	var l2
+
+	alt 	= re.proglen
+	l0	= append(re, `Ifork (-1, -1)) /* needs to be replaced */
+		  gen(re, l)
+	jmp	= re.proglen
+	l1 	= append(re, `Ijmp -1) /* needs to be replaced */
+	l2	= gen(re, l)
+
+	re.prog[alt] = `Ifork(l0, l1)
+	re.prog[jmp] = `Ijmp l2
+	-> re.proglen
+}
+
+const genstar = {re, rep
+	var alt
+	var jmp
+	var l0
+	var l1
+	var l2
+
+	l0 	= re.proglen
+	alt	= re.proglen
+	l1 	= append(re, `Ifork (-1, -1)) /* needs to be replaced */
+	jmp	= gen(re, rep)
+	l2	= append(re, `Ijmp -1)
+
+
+	re.prog[alt] = `Ifork (l1, l2)
+	re.prog[jmp] = `Ijmp l0
+	-> re.proglen
+}
+
+const genquest = {re, q
+	var alt
+	var l0
+	var l1
+
+	alt	= re.proglen
+	l0	= append(re, `Ifork (-1, -1)) /* needs to be replaced */
+	l1	= gen(re, q)
+	re.prog[alt] = `Ifork (l0, l1)
+	-> re.proglen
+}
+
+const genchar = {re, c
+	var b : byte[4]
+	var n
+	var i
+
+	n = std.encode(b[:], c)
+	for i = 0; i < n; i++
+		append(re, `Ibyte b[i])
+	;;
+	-> re.proglen
+}
+
+const append = {re, insn
+	if re.proglen == re.prog.len
+		re.prog = std.slgrow(re.prog, std.max(1, 2*re.proglen))
+	;;
+	re.prog[re.proglen] = insn
+	re.proglen++
+	-> re.proglen
+}
+
+const idump = {re
+	var i
+
+	for i = 0; i < re.proglen; i++
+		std.put("%i:\t", i)
+		match re.prog[i]
+		/* Char matching. Consume exactly one byte from the string. */
+		`Ibyte b: 
+			std.put("`Ibyte %b (%c)\n", b, b castto(char))
+			;;
+		`Irange (start, end):
+			std.put("`Irange (%b,%b)\n", start, end)
+			;;
+		`Idot:
+			std.put("`Idot\n")
+			;;
+		/*
+		Control flow. All of these recursively call step() until
+		exactly one byte is consumed from the string.
+		*/
+		`Ifork	(lip, rip):
+			std.put("`Ifork (%z,%z)\n", lip, rip)
+			;;
+		`Ijmp ip:
+			std.put("`Ijmp %z\n", ip)
+			;;
+		`Imatch:
+			std.put("`Imatch\n")
+			;;
+		;;
+	;;
 }
 
 const dump = {t, indent

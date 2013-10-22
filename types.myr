@@ -12,6 +12,7 @@ pkg regex =
 	type regex = struct
 		pat	: byte[:]
 		/* VM state */
+		proglen	: std.size
 		prog	: reinst[:]
 		nthr	: std.size
 		thr	: rethread#[:]
@@ -27,13 +28,13 @@ pkg regex =
 
 	type reinst = union
 		/* direct consumers */
-		`Byte	byte
-		`Range	[byte, byte]
-		`Dot
+		`Ibyte	byte
+		`Irange	[byte, byte]
+		`Idot
 
-		`Match	/* found the end of the expr */
+		`Imatch	/* found the end of the expr */
 
-		`Split	[std.size, std.size]
-		`Jmp	std.size
+		`Ifork	[std.size, std.size]
+		`Ijmp	std.size
 	;;
 ;;
