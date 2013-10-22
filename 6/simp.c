@@ -502,14 +502,14 @@ static void umatch(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, Node *i
         case Tyvoid: case Tybad: case Tyvalist: case Tyvar:
         case Typaram: case Tyunres: case Tyname: case Ntypes:
         /* Should never show up */
-        case Tyint64: case Tyuint64: case Tylong:  case Tyulong:
-        case Tyfloat32: case Tyfloat64:
         case Tyslice: case Tyarray: 
             die("Unsupported type for compare");
             break;
         case Tybool: case Tychar: case Tybyte:
         case Tyint8: case Tyint16: case Tyint32: case Tyint:
         case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint:
+        case Tyint64: case Tyuint64: case Tylong:  case Tyulong:
+        case Tyfloat32: case Tyfloat64:
         case Typtr: case Tyfunc:
             v = mkexpr(pat->line, Oeq, pat, val, NULL);
             v->expr.type = mktype(pat->line, Tybool);
