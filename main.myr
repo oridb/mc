@@ -1,0 +1,13 @@
+use std
+
+use regex
+
+const main = {
+	var re
+	var found
+
+	re = regex.compile("a+")
+	found = regex.exec(re, "aaa")
+	std.put("Found: len = %z\n", re.strp, found)
+}
+
