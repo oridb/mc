@@ -1,0 +1,22 @@
+use std
+
+use "types.use"
+
+pkg regex =
+	const compile	: (re : byte[:] -> regex#)
+;;
+
+const compile = {re
+	var re
+	re = std.zalloc()
+	re.prog = std.slalloc(4)
+	/* compiled regex for a* */
+	re.prog[0] = `Byte ('a' castto(byte))
+	re.prog[1] = `Byte ('a' castto(byte))
+	re.prog[2] = `Split (0, 3)
+	re.prog[3] = `Match
+
+	-> re
+}
+
+

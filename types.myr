@@ -1,0 +1,29 @@
+use std
+
+pkg regex =
+	type regex = struct
+		prog	: reinst[:]
+		nthr	: std.size
+		thr	: rethread#[:]
+		str	: byte[:]
+		strp	: std.size
+		matched	: std.option(rethread#)
+	;;
+
+	type rethread = struct
+		uid	: std.size
+		ip	: std.size
+	;;
+
+	type reinst = union
+		/* direct consumers */
+		`Byte	byte
+		`Range	[byte, byte]
+		`Dot
+
+		`Match	/* found the end of the expr */
+
+		`Split	[std.size, std.size]
+		`Jmp	std.size
+	;;
+;;

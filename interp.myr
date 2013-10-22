@@ -1,0 +1,122 @@
+use std
+
+use "types.use"
+
+pkg regex =
+	const exec	: (re : regex#, str : byte[:] -> bool)
+;;
+
+const exec = {re, str
+	var i
+
+	re.str = str
+	re.strp = 0
+	re.matched = `std.None
+	spawn(re, 0)
+	while re.nthr > 0
+		for i = 0; i < re.nthr; i++
+			std.put("tid %z, ip %z, strp %z\n", re.thr[i].uid, re.thr[i].ip, re.strp)
+			step(re, i)
+		;;
+		if re.nthr > 0
+			re.strp++
+		;;
+	;;
+	match re.matched
+	`std.Some thr:	-> true;;
+	`std.None:	-> false;;
+	;;
+}
+
+const step = {re, tid
+	var thr
+	var str
+
+	thr = re.thr[tid]
+	str = re.str
+	match re.prog[thr.ip]
+	/* Char matching */
+	`Byte b:
+		if !in(re, str) || b != str[re.strp]
+			kill(re, tid, "not char")
+		else
+			std.put("matched %b with %b\n", b, str[re.strp])
+		;;
+		;;
+	`Range (start, end):
+		if !in(re, str) || start > str[re.strp] || end < str[re.strp]
+			kill(re, tid, "bad range")
+		;;
+		;;
+	`Dot:
+		if !in(re, str)
+			kill(re, tid, "past end")
+		;;
+		;;
+	/* Control flow */
+	`Split	(lip, rip):
+		spawn(re, lip)
+		jmp(re, tid, rip)
+		;;
+	`Jmp ip:
+		jmp(re, tid, ip)
+		;;
+	`Match:
+		finish(re, tid)
+		;;
+	;;
+	thr.ip++
+}
+
+const jmp = {re, tid, ip
+	std.put("jmp %z\n", ip)
+	re.thr[tid].ip = ip
+	step(re, tid)
+}
+
+var uid = 0
+const spawn = {re, ip
+	var thr : rethread#
+	var tid
+
+	std.put("spawn %z\n", re.nthr)
+	tid = re.nthr
+	if re.nthr >= re.thr.len
+		re.thr = std.slgrow(re.thr, std.max(1, re.nthr * 2))
+	;;
+
+	thr = std.alloc()
+	thr.ip = ip
+	thr.uid = uid++
+
+	re.thr[re.nthr] = thr
+	re.nthr++
+
+	step(re, tid)
+}
+
+const kill = {re, tid, msg
+	/* 
+	   free the dying thread, and shuffle the last
+	   thread into the it's place in the thread list
+	*/
+	std.put("kill %z: %s\n", tid, msg)
+	std.free(re.thr[tid])
+	re.thr[tid] = re.thr[re.nthr - 1]
+	re.nthr--
+}
+
+const finish = {re, tid
+	std.put("finish\n", tid)
+	match re.matched
+	`std.Some thr:	std.free(thr);;
+	`std.None:	;;
+	;;
+	re.matched = `std.Some re.thr[tid]
+	re.thr[tid] = re.thr[re.nthr - 1]
+	re.nthr--
+}
+
+const in = {re, str 
+	-> re.strp < str.len
+}
