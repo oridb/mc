@@ -357,10 +357,12 @@ static Type *littype(Node *n)
     return NULL;
 }
 
-static Type *delayed(Inferstate *st, Type *fallback)
+static Type *delayeducon(Inferstate *st, Type *fallback)
 {
     Type *t;
 
+    if (fallback->type != Tyunion)
+        return fallback;
     t = mktylike(fallback->line, fallback->type);
     htput(st->delayed, t, fallback);
     return t;
@@ -627,18 +629,6 @@ static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
         r = b;
     }
 
-    /* if we have delayed types for a tyvar, transfer it over. */
-    if (a->type == Tyvar && b->type == Tyvar) {
-        if (hthas(st->delayed, a) && !hthas(st->delayed, b))
-            htput(st->delayed, b, htget(st->delayed, a));
-        else if (hthas(st->delayed, b) && !hthas(st->delayed, a))
-            htput(st->delayed, a, htget(st->delayed, b));
-    } else if (hthas(st->delayed, a)) {
-        t = htget(st->delayed, a);
-        if (tybase(t)->type != tybase(b)->type)
-            typeerror(st, t, b, ctx, NULL);
-    }
-
     /* Disallow recursive types */
    if (a->type == Tyvar && b->type != Tyvar)  {
         if (occurs(a, b))
@@ -669,6 +659,16 @@ static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
     }
     mergecstrs(st, ctx, a, b);
     membunify(st, ctx, a, b);
+
+    /* if we have delayed types for a tyvar, transfer it over. */
+    if (a->type == Tyvar && b->type == Tyvar) {
+        if (hthas(st->delayed, a) && !hthas(st->delayed, b))
+            htput(st->delayed, b, htget(st->delayed, a));
+        else if (hthas(st->delayed, b) && !hthas(st->delayed, a))
+            htput(st->delayed, a, htget(st->delayed, b));
+    } else if (hthas(st->delayed, a)) {
+        unify(st, ctx, htget(st->delayed, a), tybase(b));
+    }
 
     return r;
 }
@@ -918,7 +918,7 @@ static void inferucon(Inferstate *st, Node *n, int *isconst)
     if (uc->etype)
         unify(st, n, uc->etype, type(st, n->expr.args[1]));
     *isconst = n->expr.args[0]->expr.isconst;
-    settype(st, n, delayed(st, t));
+    settype(st, n, delayeducon(st, t));
 }
 
 static void inferpat(Inferstate *st, Node *n, Node *val, Node ***bind, size_t *nbind)
