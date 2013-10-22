@@ -35,10 +35,10 @@ const step = {re, tid
 	thr = re.thr[tid]
 	str = re.str
 	match re.prog[thr.ip]
-	/* Char matching */
+	/* Char matching. Consume exactly one byte from the string. */
 	`Byte b:
 		if !in(re, str) || b != str[re.strp]
-			kill(re, tid, "not char")
+			kill(re, tid, "not right char")
 		else
 			std.put("matched %b with %b\n", b, str[re.strp])
 		;;
@@ -53,7 +53,10 @@ const step = {re, tid
 			kill(re, tid, "past end")
 		;;
 		;;
-	/* Control flow */
+	/*
+	  Control flow. All of these recursively call step() until
+	  exactly one byte is consumed from the string.
+	 */
 	`Split	(lip, rip):
 		spawn(re, lip)
 		jmp(re, tid, rip)
@@ -91,7 +94,6 @@ const spawn = {re, ip
 
 	re.thr[re.nthr] = thr
 	re.nthr++
-
 	step(re, tid)
 }
 

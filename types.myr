@@ -1,7 +1,17 @@
 use std
 
 pkg regex =
+	type status = union
+		`Earlystop
+		`Unbalanced
+		`Emptyparen
+		`Badrep
+		`Noimpl
+	;;
+
 	type regex = struct
+		pat	: byte[:]
+		/* VM state */
 		prog	: reinst[:]
 		nthr	: std.size
 		thr	: rethread#[:]

@@ -3,20 +3,280 @@ use std
 use "types.use"
 
 pkg regex =
-	const compile	: (re : byte[:] -> regex#)
+	const compile	: (re : byte[:] -> std.error(regex#, status))
 ;;
 
-const compile = {re
-	var re
-	re = std.zalloc()
-	re.prog = std.slalloc(4)
-	/* compiled regex for a* */
-	re.prog[0] = `Byte ('a' castto(byte))
-	re.prog[1] = `Byte ('a' castto(byte))
-	re.prog[2] = `Split (0, 3)
-	re.prog[3] = `Match
+type tree = union
+	/* basic string building */
+	`Alt	[tree#, tree#]
+	`Cat	[tree#, tree#]
 
-	-> re
+	/* repetition */
+	`Star	tree#
+	`Plus	tree#
+	`Quest	tree#	
+
+	/* end matches */
+	`Byte	byte
+	`Chr	char
+	`Class	[char, char][:]
+	`Dot
+
+	/* meta */
+	`Cap	tree#
+	`Astart
+	`Aend
+;;
+
+type parseresult = union
+	`Some tree#
+	`None
+	`Fail status
+;;
+
+const compile = {pat
+	var re : regex#
+
+	re = std.zalloc()
+	re.pat = pat
+	match parse(re)
+	`Some t:	dump(t, 0);;
+	`None:		std.put("Empty parse\n");;
+	`Fail f:	-> `std.Failure f;;
+	;;
+	-> `std.Failure (`Noimpl)
 }
 
+const dump = {t, indent
+	var i
 
+	for i = 0; i < indent; i++
+		std.put(" ")
+	;;
+	match t#
+	`Alt	(a, b):
+		std.put("Alt\n")
+		dump(a, indent + 1)
+		dump(b, indent + 1)
+		;;
+	`Cat	(a, b):
+		std.put("Cat\n")
+		dump(a, indent + 1)
+		dump(b, indent + 1)
+		;;
+	/* repetition */
+	`Star	a:
+		std.put("Star\n")
+		dump(a, indent + 1)
+		;;
+	`Plus	a:
+		std.put("Plus\n")
+		dump(a, indent + 1)
+		;;
+	`Quest	a:
+		std.put("Quest\n")
+		dump(a, indent + 1)
+		;;
+	/* end matches */
+	`Class	sl:
+		std.put("Class [a..b]\n")
+		;;
+	`Byte	b:
+		std.put("Byte %b\n", b)
+		;;
+	`Chr	c:
+		std.put("Char %c\n", c)
+		;;
+	`Dot:
+		std.put("Dot\n")
+		;;
+
+	/* meta */
+	`Cap	a:
+		std.put("Cap\n")
+		dump(a, indent + 1)
+		;;
+	;;
+}
+
+const parse = {re
+	match altexpr(re)
+	`Some t:
+		if re.pat.len == 0
+			-> `Some t
+		else
+			free(t)
+			-> `Fail (`Earlystop)
+		;;
+		;;
+	`None:
+		-> `None
+		;;
+	;;
+}
+
+const altexpr = {re
+	var ret : tree#
+
+	std.put("-> alt\n")
+	match catexpr(re)
+	`Some t:
+		ret = t
+		if matchc(re, '|')
+			match altexpr(re)
+			`Some rhs:
+				ret = mk(`Alt (ret, rhs))
+				;;
+			`None:
+				free(ret)
+				-> `Fail (`Earlystop)
+				;;
+			`Fail f:
+				-> `Fail f
+				;;
+			;;
+
+		;;
+		;;
+	other:	-> other;;
+	;;
+	-> `Some ret
+}
+
+const catexpr = {re
+	var ret
+
+	std.put("-> cat\n")
+	match repexpr(re)
+	`Some t: 
+		ret = t
+		match catexpr(re)
+		`Some rhs:
+			ret = mk(`Cat (t, rhs))
+			;;
+		`Fail f: -> `Fail f;;
+		`None:	/* nothing */;;
+		;;
+		;;
+	other:	-> other;;
+	;;
+	-> `Some ret
+}
+
+const repexpr = {re
+	var ret
+
+	std.put("-> rep\n")
+	match baseexpr(re)
+	`Some t:
+		if matchc(re, '*')
+			ret = mk(`Star t)
+		elif matchc(re, '+')
+			ret = mk(`Plus t)
+		elif matchc(re, '?')
+			ret = mk(`Quest t)
+		else
+			ret = t
+		;;
+		;;
+	other:	-> other;;
+	;;
+	-> `Some ret
+}
+
+const baseexpr = {re
+	var ret
+
+	std.put("-> base\n")
+	if re.pat.len == 0
+		-> `None
+	;;
+	match getc(re)
+	'[':	ret = chrclass(re);;
+	'.':	ret = mk(`Dot);;
+	'^':	ret = mk(`Astart);;
+	'$':	ret = mk(`Aend);;
+	'(':	
+		match altexpr(re)
+		`Some s:	ret = mk(`Cap s);;
+		`None:	-> `Fail (`Emptyparen);;
+		;;
+		if !matchc(re, ')')
+			free(ret)
+			-> `Fail (`Unbalanced)
+		;;
+		;;
+	'*':	-> `Fail (`Badrep);;
+	'+':	-> `Fail (`Badrep);;
+	'?':	-> `Fail (`Badrep);;
+	c:
+		if c == '\\'
+			if re.pat.len == 0
+				-> `Fail (`Earlystop)
+			;;
+			c = getc(re)
+		;;
+		ret = mk(`Chr c)
+		;;
+	;;
+	std.put("<- base\n")
+	dump(ret, 0)
+	-> `Some ret
+}
+
+const chrclass = {pat
+	var t
+
+	t = std.alloc()
+	t# = `Class [][:]
+	-> t
+}
+
+const matchc = {re, c
+	var str
+	var chr
+
+	(chr, str) = std.striter(re.pat)
+	if chr != c
+		-> false
+	;;
+	re.pat = str
+	-> true
+}
+
+const getc = {re
+	var c
+
+	(c, re.pat) = std.striter(re.pat)
+	-> c
+}
+		
+
+const mk = {v
+	var t
+
+	t = std.alloc()
+	t# = v
+	-> t
+}
+
+const free = {t
+	match t#
+	`Alt	(a, b): free(a); free(b);;
+	`Cat	(a, b): free(a); free(b);;
+	/* repetition */
+	`Star	a:	free(a);;
+	`Plus	a:	free(a);;
+	`Quest	a:	free(a);;
+
+	/* end matches */
+	`Class	sl:	std.slfree(sl);;
+	`Byte	b:	;;
+	`Chr	c:	;;
+	`Dot:		;;
+
+	/* meta */
+	`Cap	a:	free(a);;
+	;;
+	std.free(t)
+}
