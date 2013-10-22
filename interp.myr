@@ -43,6 +43,7 @@ const step = {re, tid
 		elif b != str[re.strp]
 			kill(re, tid, "not right char")
 		else
+			thr.ip++
 			std.put("\t\tmatched %b with %b\n", b, str[re.strp])
 		;;
 		;;
@@ -50,12 +51,16 @@ const step = {re, tid
 		std.put("\t%i:\tRange (%b, %b)\t", thr.ip, start, end)
 		if !in(re, str) || start > str[re.strp] || end < str[re.strp]
 			kill(re, tid, "bad range")
+		else
+			thr.ip++
 		;;
 		;;
 	`Idot:
 		std.put("\t%i:\tDot\n", thr.ip)
-		if !in(re, str)
+		if in(re, str)
 			kill(re, tid, "past end")
+		else
+			thr.ip++
 		;;
 		;;
 	/*
@@ -64,8 +69,8 @@ const step = {re, tid
 	 */
 	`Ifork	(lip, rip):
 		std.put("\t%i:\tFork (%z, %z)\n", thr.ip, rip, lip)
-		spawn(re, lip)
 		jmp(re, tid, rip)
+		spawn(re, lip)
 		;;
 	`Ijmp ip:
 		std.put("\t%i:\tJmp %z\n", thr.ip, ip)
@@ -76,12 +81,15 @@ const step = {re, tid
 		finish(re, tid)
 		;;
 	;;
-	thr.ip++
 }
 
 const jmp = {re, tid, ip
 	re.thr[tid].ip = ip
 	step(re, tid)
+}
+
+const steptrace = {
+	std.put("\t\tStepping\n")
 }
 
 var uid = 0
