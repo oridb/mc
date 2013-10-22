@@ -504,7 +504,7 @@ static void umatch(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, Node *i
         /* Should never show up */
         case Tyint64: case Tyuint64: case Tylong:  case Tyulong:
         case Tyfloat32: case Tyfloat64:
-        case Tyslice: case Tyarray: case Tystruct:
+        case Tyslice: case Tyarray: 
             die("Unsupported type for compare");
             break;
         case Tybool: case Tychar: case Tybyte:
@@ -515,15 +515,17 @@ static void umatch(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, Node *i
             v->expr.type = mktype(pat->line, Tybool);
             cjmp(s, v, iftrue, iffalse);
             break;
-        case Tytuple:
+        /* We got lucky. The structure of tuple and struct literals is the
+         * same, so long as we don't inspect the type */
+        case Tystruct: case Tytuple:
             patarg = pat->expr.args;
             off = 0;
             for (i = 0; i < pat->expr.nargs; i++) {
                 next = genlbl();
-                v = load(addk(addr(s, val, t->sub[i]), off));
-                umatch(s, patarg[i], v, t->sub[i], next, iffalse);
+                v = load(addk(addr(s, val, exprtype(patarg[i])), off));
+                umatch(s, patarg[i], v, exprtype(patarg[i]), next, iffalse);
                 append(s, next);
-                off += tysize(t->sub[i]);
+                off += size(patarg[i]);
             }
             jmp(s, iftrue);
             break;

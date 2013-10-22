@@ -82,6 +82,7 @@ B matchint	E	84
 B matchconst	E	88
 B matchunion	E	84
 B matchtup	E	42
+B matchstruct	E	42
 B matchargunion	E	69
 B matchunion_sl	P	foo
 B matchbind	E	8

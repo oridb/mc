@@ -915,6 +915,7 @@ static void inferpat(Inferstate *st, Node *n, Node *val, Node ***bind, size_t *n
             inferpat(st, args[i], val, bind, nbind);
     switch (exprop(n)) {
         case Otup:      infernode(st, n, NULL, NULL);   break;
+        case Ostruct:      infernode(st, n, NULL, NULL);   break;
         case Olit:      infernode(st, n, NULL, NULL);   break;
         case Omemb:     infernode(st, n, NULL, NULL);   break;
         case Oucon:     inferucon(st, n, &n->expr.isconst);     break;

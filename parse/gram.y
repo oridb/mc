@@ -133,7 +133,7 @@ static void constrainwith(Type *t, char *str);
 
 %type <node> exprln retexpr goto expr atomicexpr littok literal asnexpr lorexpr landexpr borexpr
 %type <node> bandexpr cmpexpr unionexpr addexpr mulexpr shiftexpr prefixexpr postfixexpr
-%type <node> funclit seqlit name block stmt label use
+%type <node> funclit seqlit tuplit name block stmt label use
 %type <node> decl declbody declcore structent arrayelt structelt tuphead
 %type <node> ifstmt forstmt whilestmt matchstmt elifs optexprln optexpr
 %type <node> pat unionpat match
@@ -570,8 +570,6 @@ atomicexpr
         | literal
         | Toparen expr Tcparen
             {$$ = $2;}
-        | Toparen tupbody Tcparen
-            {$$ = mkexprl($1->line, Otup, $2.nl, $2.nn);}
         | Tsizeof Toparen type Tcparen
             {$$ = mkexpr($1->line, Osize, mkpseudodecl($3), NULL);}
         ;
@@ -595,7 +593,11 @@ tuprest : /*empty */
 literal : funclit       {$$ = mkexpr($1->line, Olit, $1, NULL);}
         | littok        {$$ = mkexpr($1->line, Olit, $1, NULL);}
         | seqlit        {$$ = $1;}
+        | tuplit        {$$ = $1;}
         ;
+
+tuplit  : Toparen tupbody Tcparen
+            {$$ = mkexprl($1->line, Otup, $2.nl, $2.nn);}
 
 littok  : Tstrlit       {$$ = mkstr($1->line, $1->str);}
         | Tintlit       {$$ = mkint($1->line, $1->intval);}
@@ -704,6 +706,7 @@ match   : pat Tcolon block {$$ = mkmatch($1->line, $1, $3);}
         ;
 
 pat     : unionpat {$$ = $1;}
+        | seqlit {$$ = $1;}
         | tuppat {$$ = mkexprl($1.line, Otup, $1.nl, $1.nn);}
         | littok {$$ = mkexpr($1->line, Olit, $1, NULL);}
         | Tident {$$ = mkexpr($1->line, Ovar, mkname($1->line, $1->str), NULL);}
