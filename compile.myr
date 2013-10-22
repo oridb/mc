@@ -91,7 +91,7 @@ const genalt = {re, l, r
 		  gen(re, l)
 	jmp	= re.proglen
 	l1 	= append(re, `Ijmp -1) /* needs to be replaced */
-	l2	= gen(re, l)
+	l2	= gen(re, r)
 
 	re.prog[alt] = `Ifork(l0, l1)
 	re.prog[jmp] = `Ijmp l2

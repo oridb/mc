@@ -13,15 +13,12 @@ const exec = {re, str
 	re.strp = 0
 	re.matched = `std.None
 	mkthread(re, 0)
-	std.put("tid %z, ip %z, strp %z\n", re.thr[0].uid, re.thr[0].ip, re.strp)
 	while re.nthr > 0
 		for i = 0; i < re.nthr; i++
-			std.put("Switch to %i\n", i)
-			std.put("tid %z, ip %z, strp %z\n", re.thr[i].uid, re.thr[i].ip, re.strp)
+			std.put("tid=%z, ip=%z, c=b\n", re.thr[i].uid, re.thr[i].ip, str[re.strp])
 			step(re, i)
 		;;
 		if re.nthr > 0
-			std.put("Step forward\n")
 			re.strp++
 		;;
 	;;
@@ -40,22 +37,23 @@ const step = {re, tid
 	match re.prog[thr.ip]
 	/* Char matching. Consume exactly one byte from the string. */
 	`Ibyte b:
+		std.put("\t%i:\tByte %b\n", thr.ip, b)
 		if !in(re, str)
 			kill(re, tid, "end of string")
 		elif b != str[re.strp]
-			std.put("re.strp: %i\n", re.strp)
-			std.put("\tb: %b (%c), str[re.strp]: %b (%c)\n", b, b castto(char), str[re.strp], str[re.strp] castto(char))
 			kill(re, tid, "not right char")
 		else
-			std.put("matched %b with %b\n", b, str[re.strp])
+			std.put("\t\tmatched %b with %b\n", b, str[re.strp])
 		;;
 		;;
 	`Irange (start, end):
+		std.put("\t%i:\tRange (%b, %b)\t", thr.ip, start, end)
 		if !in(re, str) || start > str[re.strp] || end < str[re.strp]
 			kill(re, tid, "bad range")
 		;;
 		;;
 	`Idot:
+		std.put("\t%i:\tDot\n", thr.ip)
 		if !in(re, str)
 			kill(re, tid, "past end")
 		;;
@@ -65,13 +63,16 @@ const step = {re, tid
 	  exactly one byte is consumed from the string.
 	 */
 	`Ifork	(lip, rip):
+		std.put("\t%i:\tFork (%z, %z)\n", thr.ip, rip, lip)
 		spawn(re, lip)
 		jmp(re, tid, rip)
 		;;
 	`Ijmp ip:
+		std.put("\t%i:\tJmp %z\n", thr.ip, ip)
 		jmp(re, tid, ip)
 		;;
 	`Imatch:
+		std.put("\t%i:\tMatch\n", thr.ip)
 		finish(re, tid)
 		;;
 	;;
@@ -79,7 +80,6 @@ const step = {re, tid
 }
 
 const jmp = {re, tid, ip
-	std.put("jmp %z\n", ip)
 	re.thr[tid].ip = ip
 	step(re, tid)
 }
@@ -90,7 +90,6 @@ const mkthread = {re, ip
 	var thr : rethread#
 	var tid
 
-	std.put("spawn %z\n", re.nthr)
 	tid = re.nthr
 	if re.nthr >= re.thr.len
 		re.thr = std.slgrow(re.thr, std.max(1, re.nthr * 2))
@@ -114,7 +113,7 @@ const kill = {re, tid, msg
 	   free the dying thread, and shuffle the last
 	   thread into the it's place in the thread list
 	*/
-	std.put("kill %z: %s\n", tid, msg)
+	std.put("\t\tkill %z: %s\n", re.thr[tid].uid, msg)
 	std.free(re.thr[tid])
 	re.thr[tid] = re.thr[re.nthr - 1]
 	re.nthr--
