@@ -9,13 +9,14 @@ pkg regex =
 const exec = {re, str
 	var i
 
+	re.debug = true
 	re.str = str
 	re.strp = 0
 	re.matched = `std.None
 	mkthread(re, 0)
 	while re.nthr > 0
 		for i = 0; i < re.nthr; i++
-			std.put("tid=%z, ip=%z, c=b\n", re.thr[i].uid, re.thr[i].ip, str[re.strp])
+			trace(re, "tid=%z, ip=%z, c=b\n", re.thr[i].uid, re.thr[i].ip, str[re.strp])
 			step(re, i)
 		;;
 		if re.nthr > 0
@@ -37,18 +38,18 @@ const step = {re, tid
 	match re.prog[thr.ip]
 	/* Char matching. Consume exactly one byte from the string. */
 	`Ibyte b:
-		std.put("\t%i:\tByte %b\n", thr.ip, b)
+		trace(re, "\t%i:\tByte %b\n", thr.ip, b)
 		if !in(re, str)
 			kill(re, tid, "end of string")
 		elif b != str[re.strp]
 			kill(re, tid, "not right char")
 		else
 			thr.ip++
-			std.put("\t\tmatched %b with %b\n", b, str[re.strp])
+			trace(re, "\t\tmatched %b with %b\n", b, str[re.strp])
 		;;
 		;;
 	`Irange (start, end):
-		std.put("\t%i:\tRange (%b, %b)\t", thr.ip, start, end)
+		trace(re, "\t%i:\tRange (%b, %b)\t", thr.ip, start, end)
 		if !in(re, str) || start > str[re.strp] || end < str[re.strp]
 			kill(re, tid, "bad range")
 		else
@@ -56,7 +57,7 @@ const step = {re, tid
 		;;
 		;;
 	`Idot:
-		std.put("\t%i:\tDot\n", thr.ip)
+		trace(re, "\t%i:\tDot\n", thr.ip)
 		if in(re, str)
 			kill(re, tid, "past end")
 		else
@@ -68,16 +69,16 @@ const step = {re, tid
 	  exactly one byte is consumed from the string.
 	 */
 	`Ifork	(lip, rip):
-		std.put("\t%i:\tFork (%z, %z)\n", thr.ip, rip, lip)
+		trace(re, "\t%i:\tFork (%z, %z)\n", thr.ip, rip, lip)
 		jmp(re, tid, rip)
 		spawn(re, lip)
 		;;
 	`Ijmp ip:
-		std.put("\t%i:\tJmp %z\n", thr.ip, ip)
+		trace(re, "\t%i:\tJmp %z\n", thr.ip, ip)
 		jmp(re, tid, ip)
 		;;
 	`Imatch:
-		std.put("\t%i:\tMatch\n", thr.ip)
+		trace(re, "\t%i:\tMatch\n", thr.ip)
 		finish(re, tid)
 		;;
 	;;
@@ -86,10 +87,6 @@ const step = {re, tid
 const jmp = {re, tid, ip
 	re.thr[tid].ip = ip
 	step(re, tid)
-}
-
-const steptrace = {
-	std.put("\t\tStepping\n")
 }
 
 var uid = 0
@@ -121,14 +118,14 @@ const kill = {re, tid, msg
 	   free the dying thread, and shuffle the last
 	   thread into the it's place in the thread list
 	*/
-	std.put("\t\tkill %z: %s\n", re.thr[tid].uid, msg)
+	trace(re, "\t\tkill %z: %s\n", re.thr[tid].uid, msg)
 	std.free(re.thr[tid])
 	re.thr[tid] = re.thr[re.nthr - 1]
 	re.nthr--
 }
 
 const finish = {re, tid
-	std.put("finish\n", tid)
+	trace(re, "finish\n", tid)
 	match re.matched
 	`std.Some thr:	std.free(thr);;
 	`std.None:	;;
@@ -140,4 +137,10 @@ const finish = {re, tid
 
 const in = {re, str 
 	-> re.strp < str.len
+}
+
+const trace : (re : regex#, msg : byte[:], args : ...) = {re, msg, args
+	if re.debug
+		std.putv(msg, std.vastart(&args))
+	;;
 }

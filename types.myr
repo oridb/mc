@@ -10,6 +10,7 @@ pkg regex =
 	;;
 
 	type regex = struct
+		debug	: bool
 		pat	: byte[:]
 		/* VM state */
 		proglen	: std.size
@@ -22,8 +23,12 @@ pkg regex =
 	;;
 
 	type rethread = struct
-		uid	: std.size
-		ip	: std.size
+		uid	: std.size	/* just for debugging */
+		ip	: std.size	/* the instruction pointer */
+
+		mactive	: std.size[:]	/* stack of active matches */
+		mstart	: std.size[:]	/* match starts */
+		mend	: std.size[:]	/* match ends */
 	;;
 
 	type reinst = union
@@ -32,9 +37,12 @@ pkg regex =
 		`Irange	[byte, byte]
 		`Idot
 
-		`Imatch	/* found the end of the expr */
+		/* groups */
 
+
+		/* control flow */
 		`Ifork	[std.size, std.size]
 		`Ijmp	std.size
+		`Imatch
 	;;
 ;;
