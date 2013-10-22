@@ -2,12 +2,17 @@ use regex
 use std
 
 const main = {
-	regex.compile("a+")
-	/*
-	var re
 	var found
-	found = regex.exec(re, "aaa")
-	std.put("Found: len = %z\n", re.strp, found)
-	*/
+	match regex.compile("foolish")
+	`std.Success re:
+		found = regex.exec(re, "foolish")
+		std.put("Found = %t: len = %z\n", found, re.strp)
+		-> 0
+		;;
+	`std.Failure err:
+		std.put("failed to compile regex")
+		-> 1
+		;;
+	;;
 }
 

@@ -47,6 +47,7 @@ const compile = {pat
 		gen(re, t)
 		append(re, `Imatch)
 		idump(re)
+		-> `std.Success re
 		;;
 	;;
 	-> `std.Failure (`Noimpl)
