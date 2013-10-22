@@ -502,7 +502,7 @@ static void umatch(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, Node *i
         case Tyvoid: case Tybad: case Tyvalist: case Tyvar:
         case Typaram: case Tyunres: case Tyname: case Ntypes:
         /* Should never show up */
-        case Tyslice: case Tyarray: 
+        case Tyslice:
             die("Unsupported type for compare");
             break;
         case Tybool: case Tychar: case Tybyte:
@@ -515,9 +515,10 @@ static void umatch(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, Node *i
             v->expr.type = mktype(pat->line, Tybool);
             cjmp(s, v, iftrue, iffalse);
             break;
-        /* We got lucky. The structure of tuple and struct literals is the
-         * same, so long as we don't inspect the type */
-        case Tystruct: case Tytuple:
+        /* We got lucky. The structure of tuple, array, and struct literals
+         * is the same, so long as we don't inspect the type, so we can
+         * share the code*/
+        case Tystruct: case Tytuple: case Tyarray: 
             patarg = pat->expr.args;
             off = 0;
             for (i = 0; i < pat->expr.nargs; i++) {
