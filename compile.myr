@@ -72,7 +72,7 @@ const gen = {re, t
 
 	/* meta */
 	`Cap	a:
-		std.put("WARNING: Capture not implemented")
+		std.put("WARNING: Capture not implemented\n")
 		gen(re, a)
 		;;
 	;;
@@ -254,7 +254,6 @@ const parse = {re
 const altexpr = {re
 	var ret : tree#
 
-	std.put("-> alt\n")
 	match catexpr(re)
 	`Some t:
 		ret = t
@@ -271,11 +270,11 @@ const altexpr = {re
 				-> `Fail f
 				;;
 			;;
-
 		;;
 		;;
 	other:	-> other;;
 	;;
+	std.put("<- alt\n")
 	-> `Some ret
 }
 
@@ -296,6 +295,7 @@ const catexpr = {re
 		;;
 	other:	-> other;;
 	;;
+	std.put("<- cat\n")
 	-> `Some ret
 }
 
@@ -317,6 +317,7 @@ const repexpr = {re
 		;;
 	other:	-> other;;
 	;;
+	std.put("<- rep")
 	-> `Some ret
 }
 
@@ -327,25 +328,31 @@ const baseexpr = {re
 	if re.pat.len == 0
 		-> `None
 	;;
-	match getc(re)
+	match peekc(re)
+	/* lower prec operators */
+	'|':	-> `None;;
+	')':	-> `None;;
+	'*':	-> `Fail (`Badrep);;
+	'+':	-> `Fail (`Badrep);;
+	'?':	-> `Fail (`Badrep);;
 	'[':	ret = chrclass(re);;
-	'.':	ret = mk(`Dot);;
-	'^':	ret = mk(`Astart);;
-	'$':	ret = mk(`Aend);;
+	'.':	getc(re); ret = mk(`Dot);;
+	'^':	getc(re); ret = mk(`Astart);;
+	'$':	getc(re); ret = mk(`Aend);;
 	'(':	
+		getc(re)
 		match altexpr(re)
 		`Some s:	ret = mk(`Cap s);;
 		`None:	-> `Fail (`Emptyparen);;
 		;;
 		if !matchc(re, ')')
+			std.put("Can't find match: got %c\n", getc(re))
 			free(ret)
 			-> `Fail (`Unbalanced)
 		;;
 		;;
-	'*':	-> `Fail (`Badrep);;
-	'+':	-> `Fail (`Badrep);;
-	'?':	-> `Fail (`Badrep);;
 	c:
+		getc(re)
 		if c == '\\'
 			if re.pat.len == 0
 				-> `Fail (`Earlystop)
@@ -386,7 +393,14 @@ const getc = {re
 	(c, re.pat) = std.striter(re.pat)
 	-> c
 }
-		
+
+const peekc = {re
+	var c
+	var _
+
+	(c, _) = std.striter(re.pat)
+	-> c
+}
 
 const mk = {v
 	var t
