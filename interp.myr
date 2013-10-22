@@ -23,7 +23,7 @@ const exec = {re, str
 		;;
 	;;
 	match re.matched
-	`std.Some thr:	-> true;;
+	`std.Some thr:	-> re.strp == str.len;;
 	`std.None:	-> false;;
 	;;
 }
