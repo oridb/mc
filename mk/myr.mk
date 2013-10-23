@@ -11,13 +11,11 @@ $(MYRBIN): $(MYRSRC) $(ASMSRC)
 	myrbuild -b $(MYRBIN) $^
 
 OBJ=$(MYRSRC:.myr=.o) $(ASMSRC:.s=.o)
-JUNKASM=$(MYRSRC:.myr=.s)
 USE=$(MYRSRC:.myr=.use) $(MYRLIB)
 .PHONY: clean
 clean:
 	rm -f $(OBJ)
 	rm -f $(USE)
-	rm -f $(JUNKASM)
 	rm -f lib$(MYRLIB).a
 
 install: install-bin install-lib

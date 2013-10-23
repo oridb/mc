@@ -206,12 +206,31 @@ const getb = {f
 const getc = {f
 	var c
 
-	if ensureread(f, std.Maxcharlen)
-		c = std.decode(f.rbuf)
+	if ensurecodepoint(f)
+		c = std.decode(f.rbuf[f.rstart:f.rend])
 		f.rstart += std.charlen(c)
 		-> c
 	;;
 	-> -1
+}
+
+const ensurecodepoint = {f
+	var b
+	var len
+
+	b = peekb(f)
+	if b & 0x80 == 0	/* 0b0xxx_xxxx */
+		len = 1
+	elif b & 0xe0 == 0xc0	/* 0b110x_xxxx */
+		len = 2
+	elif b & 0xf0 == 0xe0 	/* 0b1110_xxxx */
+		len = 3
+	elif b & 0xf8 == 0xf0 	/* 0b1111_0xxx */
+		len = 4
+	else
+		-> false
+	;;
+	-> ensureread(f, len)
 }
 
 generic putle = {f, v : @a::(tcnum,tcint,tctest)
@@ -238,6 +257,7 @@ generic getbe = {f -> @a::(tcnum,tcint,tctest)
 	var i
 
 	ret = 0
+	ensureread(f, sizeof(@a))
 	for i = 0; i < sizeof(@a); i++
 		ret <<= 8
 		ret |= (getb(f) castto(@a::(tcnum,tcint,tctest)))
@@ -250,6 +270,7 @@ generic getle = {f -> @a::(tcnum,tcint,tctest)
 	var i
 
 	ret = 0
+	ensureread(f, sizeof(@a))
 	for i = 0; i < sizeof(@a); i++
 		ret = ret | ((getb(f) << 8*i) castto(@a::(tcnum,tcint,tctest)))
 	;;
@@ -263,29 +284,37 @@ const peekb = {f
 }
 
 const peekc = {f
-	ensureread(f, std.Maxcharlen)
-	-> std.decode(f.rbuf)
+	if !ensurecodepoint(f)
+		-> -1
+	;;
+	-> std.decode(f.rbuf[f.rstart:f.rend])
 }
 
 const readto = {f, c
 	var buf : byte[4]
 	var srch
 	var ret : byte[:]
+	var len
 	var i
 
-	srch = buf[:std.encode(buf[:], c)]
+	len = std.encode(buf[:], c)
+	srch = buf[:std.charlen(c)]
 	if srch.len == 0
-		-> [][:]
+		-> std.slalloc(0)
 	;;
 
-	ret = [][:]
+	ret = std.slalloc(0)
 	while true
+		std.put("srch.len = %i\n", srch.len)
 		if !ensureread(f, srch.len)
-			-> readappend(f, ret, f.rend - f.rstart)
+			-> readappend(f, ret, 0)
 		;;
 		for i = f.rstart; i < f.rend; i++
+			std.put("Taking %i from %i to %i\n", i castto(int), f.rstart castto(int), i - f.rstart castto(int))
 			if f.rbuf[i] == srch[0] && std.sleq(f.rbuf[i + 1:i + srch.len - 1], srch[1:])
-				-> readappend(f, ret, i - f.rstart)
+				ret = readappend(f, ret, i - f.rstart)
+				f.rstart += srch.len
+				-> ret
 			;;
 		;;
 		ret = readappend(f, ret, i - f.rstart)
