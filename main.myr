@@ -3,7 +3,7 @@ use std
 
 const main = {
 	var found
-	match regex.compile(".*^a*")
+	match regex.compile("b*\n^a*")
 	`std.Success re:
 		found = regex.exec(re, "b\naaa")
 		std.put("Found = %t: len = %z\n", found, re.strp)

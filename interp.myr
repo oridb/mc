@@ -62,7 +62,7 @@ const step = {re, tid
 	match re.prog[thr.ip]
 	/* Char matching. Consume exactly one byte from the string. */
 	`Ibyte b:
-		trace(re, "\t%i:\tByte %b\n", thr.ip, b)
+		trace(re, "\t%z:\tByte %b\n", thr.ip, b)
 		if !in(re, str)
 			kill(re, tid, "end of string")
 		elif b != str[re.strp]
@@ -73,7 +73,7 @@ const step = {re, tid
 		;;
 		;;
 	`Irange (start, end):
-		trace(re, "\t%i:\tRange (%b, %b)\t", thr.ip, start, end)
+		trace(re, "\t%z:\tRange (%b, %b)\t", thr.ip, start, end)
 		if !in(re, str) || start > str[re.strp] || end < str[re.strp]
 			kill(re, tid, "bad range")
 		else
@@ -81,7 +81,7 @@ const step = {re, tid
 		;;
 		;;
 	`Idot:
-		trace(re, "\t%i:\tDot\n", thr.ip)
+		trace(re, "\t%z:\tDot\n", thr.ip)
 		if in(re, str)
 			kill(re, tid, "past end")
 		else
@@ -93,7 +93,7 @@ const step = {re, tid
 	  exactly one byte is consumed from the string.
 	 */
 	`Ibol:
-		trace(re, "\t%i:\tBol\n", thr.ip)
+		trace(re, "\t%z:\tBol\n", thr.ip)
 		if re.strp == 0 || str[re.strp -1] == 0x10
 			thr.ip++
 			step(re, tid)
@@ -102,7 +102,7 @@ const step = {re, tid
 		;;
 		;;
 	`Ieol:
-		trace(re, "\t%i:\tEol\n", thr.ip)
+		trace(re, "\t%z:\tEol\n", thr.ip)
 		if re.strp == str.len || str[re.strp] == 0x10
 			step(re, tid)
 		else
@@ -110,31 +110,31 @@ const step = {re, tid
 		;;
 		;;
 	`Ilbra	m:
-		trace(re, "\t%i:\tLbra %z\n", thr.ip, m)
+		trace(re, "\t%z:\tLbra %z\n", thr.ip, m)
 		trace(re, "\t\tmatch start = %z\n", re.strp)
 		thr.mstart[m] = re.strp
 		thr.ip++
 		step(re, tid)
 		;;
 	`Irbra	m:
-		trace(re, "\t%i:\tRbra %z\n", thr.ip, m)
+		trace(re, "\t%z:\tRbra %z\n", thr.ip, m)
 		thr.mend[m] = re.strp
 		thr.ip++
 		step(re, tid)
 		;;
 	`Ifork	(lip, rip):
-		trace(re, "\t%i:\tFork (%z, %z)\n", thr.ip, rip, lip)
+		trace(re, "\t%z:\tFork (%z, %z)\n", thr.ip, rip, lip)
 		mstart = std.sldup(thr.mstart)
 		mend = std.sldup(thr.mend)
 		jmp(re, tid, rip)
 		fork(re, thr, lip, mstart, mend)
 		;;
 	`Ijmp ip:
-		trace(re, "\t%i:\tJmp %z\n", thr.ip, ip)
+		trace(re, "\t%z:\tJmp %z\n", thr.ip, ip)
 		jmp(re, tid, ip)
 		;;
 	`Imatch:
-		trace(re, "\t%i:\tMatch\n", thr.ip)
+		trace(re, "\t%z:\tMatch\n", thr.ip)
 		finish(re, tid)
 		;;
 	;;
