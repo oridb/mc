@@ -17,8 +17,8 @@ const exec = {re, str
 	re.thr[0].mstart = std.slalloc(re.nmatch)
 	re.thr[0].mend = std.slalloc(re.nmatch)
 	for i = 0; i < re.nmatch; i++
-		re.thr[0].mstart[i] = 0
-		re.thr[0].mend[i] = 0
+		re.thr[0].mstart[i] = -1
+		re.thr[0].mend[i] = -1
 	;;
 	while re.nthr > 0
 		for i = 0; i < re.nthr; i++
