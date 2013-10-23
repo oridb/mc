@@ -39,12 +39,15 @@ const compile = {pat
 
 	re = std.zalloc()
 	re.pat = pat
+	re.nmatch = 1 /* whole match */
 	match parse(re)
 	`None:		-> `std.Failure (`Earlystop);;
 	`Fail f:	-> `std.Failure f;;
 	`Some t:
 		dump(t, 0)
+		append(re, `Ilbra 0)
 		gen(re, t)
+		append(re, `Irbra 0)
 		append(re, `Imatch)
 		idump(re)
 		-> `std.Success re
@@ -54,6 +57,8 @@ const compile = {pat
 }
 
 const gen = {re, t
+	var m
+
 	match t#
 	`Alt	(a, b): genalt(re, a, b);;
 	`Cat	(a, b): gen(re, a); gen(re, b);;
@@ -72,8 +77,10 @@ const gen = {re, t
 
 	/* meta */
 	`Cap	a:
-		std.put("WARNING: Capture not implemented\n")
+		m = re.nmatch++
+		append(re, `Ilbra m)
 		gen(re, a)
+		append(re, `Irbra m)
 		;;
 	;;
 	-> re.proglen
@@ -166,10 +173,14 @@ const idump = {re
 		`Idot:
 			std.put("`Idot\n")
 			;;
-		/*
-		Control flow. All of these recursively call step() until
-		exactly one byte is consumed from the string.
-		*/
+		/* capture groups */
+		`Ilbra m:
+			std.put("`Ilbra %z\n", m)
+			;;
+		`Irbra m:
+			std.put("`Irbra %z\n", m)
+			;;
+		/* control flow */
 		`Ifork	(lip, rip):
 			std.put("`Ifork (%z,%z)\n", lip, rip)
 			;;

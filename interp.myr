@@ -14,6 +14,8 @@ const exec = {re, str
 	re.strp = 0
 	re.matched = `std.None
 	mkthread(re, 0)
+	re.thr[0].mstart = std.slzalloc(re.nmatch)
+	re.thr[0].mend = std.slzalloc(re.nmatch)
 	while re.nthr > 0
 		for i = 0; i < re.nthr; i++
 			trace(re, "tid=%z, ip=%z, c=b\n", re.thr[i].uid, re.thr[i].ip, str[re.strp])
@@ -24,7 +26,11 @@ const exec = {re, str
 		;;
 	;;
 	match re.matched
-	`std.Some thr:	-> re.strp == str.len;;
+	`std.Some thr:	
+		for i = 0; i < re.nmatch; i++
+			std.put("match %i:[%z..%z]\n", i, thr.mstart[i], thr.mend[i])
+		;;
+		-> re.strp == str.len;;
 	`std.None:	-> false;;
 	;;
 }
@@ -65,13 +71,25 @@ const step = {re, tid
 		;;
 		;;
 	/*
-	  Control flow. All of these recursively call step() until
+	  Non-consuming. All of these recursively call step() until
 	  exactly one byte is consumed from the string.
 	 */
+	`Ilbra	m:
+		trace(re, "\t%i:\tLbra %z\n", thr.ip, m)
+		thr.mstart[m] = re.strp
+		thr.ip++
+		step(re, tid)
+		;;
+	`Irbra	m:
+		trace(re, "\t%i:\tRbra %z\n", thr.ip, m)
+		thr.mend[m] = re.strp
+		thr.ip++
+		step(re, tid)
+		;;
 	`Ifork	(lip, rip):
 		trace(re, "\t%i:\tFork (%z, %z)\n", thr.ip, rip, lip)
 		jmp(re, tid, rip)
-		spawn(re, lip)
+		fork(re, thr, lip)
 		;;
 	`Ijmp ip:
 		trace(re, "\t%i:\tJmp %z\n", thr.ip, ip)
@@ -109,8 +127,13 @@ const mkthread = {re, ip
 	-> tid
 }
 
-const spawn = {re, ip
-	step(re, mkthread(re, ip))
+const fork = {re, thr, ip
+	var tid
+
+	tid = mkthread(re, ip)
+	re.thr[tid].mstart = std.sldup(thr.mstart)
+	re.thr[tid].mend = std.sldup(thr.mend)
+	step(re, tid)
 }
 
 const kill = {re, tid, msg

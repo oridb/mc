@@ -12,6 +12,8 @@ pkg regex =
 	type regex = struct
 		debug	: bool
 		pat	: byte[:]
+		nmatch	: std.size
+
 		/* VM state */
 		proglen	: std.size
 		prog	: reinst[:]
@@ -26,7 +28,6 @@ pkg regex =
 		uid	: std.size	/* just for debugging */
 		ip	: std.size	/* the instruction pointer */
 
-		mactive	: std.size[:]	/* stack of active matches */
 		mstart	: std.size[:]	/* match starts */
 		mend	: std.size[:]	/* match ends */
 	;;
@@ -38,7 +39,8 @@ pkg regex =
 		`Idot
 
 		/* groups */
-
+		`Ilbra	std.size
+		`Irbra	std.size
 
 		/* control flow */
 		`Ifork	[std.size, std.size]
