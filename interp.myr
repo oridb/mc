@@ -92,6 +92,23 @@ const step = {re, tid
 	  Non-consuming. All of these recursively call step() until
 	  exactly one byte is consumed from the string.
 	 */
+	`Ibol:
+		trace(re, "\t%i:\tBol\n", thr.ip)
+		if re.strp == 0 || str[re.strp -1] == 0x10
+			thr.ip++
+			step(re, tid)
+		else
+			kill(re, tid, "not beginning of line")
+		;;
+		;;
+	`Ieol:
+		trace(re, "\t%i:\tEol\n", thr.ip)
+		if re.strp == str.len || str[re.strp] == 0x10
+			step(re, tid)
+		else
+			kill(re, tid, "not end of line")
+		;;
+		;;
 	`Ilbra	m:
 		trace(re, "\t%i:\tLbra %z\n", thr.ip, m)
 		trace(re, "\t\tmatch start = %z\n", re.strp)

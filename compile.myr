@@ -24,8 +24,8 @@ type tree = union
 
 	/* meta */
 	`Cap	tree#
-	`Astart
-	`Aend
+	`Bol	/* beginning of line */
+	`Eol	/* end of line */
 ;;
 
 type parseresult = union
@@ -76,6 +76,12 @@ const gen = {re, t
 	`Dot: 		append(re, `Idot);;
 
 	/* meta */
+	`Bol:
+		append(re, `Ibol)
+		;;
+	`Eol:
+		append(re, `Ibol)
+		;;
 	`Cap	a:
 		m = re.nmatch++
 		append(re, `Ilbra m)
@@ -164,32 +170,19 @@ const idump = {re
 		std.put("%i:\t", i)
 		match re.prog[i]
 		/* Char matching. Consume exactly one byte from the string. */
-		`Ibyte b: 
-			std.put("`Ibyte %b (%c)\n", b, b castto(char))
-			;;
-		`Irange (start, end):
-			std.put("`Irange (%b,%b)\n", start, end)
-			;;
-		`Idot:
-			std.put("`Idot\n")
-			;;
+		`Ibyte b:		std.put("`Ibyte %b (%c)\n", b, b castto(char)) ;;
+		`Irange (start, end):	std.put("`Irange (%b,%b)\n", start, end) ;;
+		`Idot:	std.put("`Idot\n") ;;
 		/* capture groups */
-		`Ilbra m:
-			std.put("`Ilbra %z\n", m)
-			;;
-		`Irbra m:
-			std.put("`Irbra %z\n", m)
-			;;
+		`Ilbra m:		std.put("`Ilbra %z\n", m) ;;
+		`Irbra m:		std.put("`Irbra %z\n", m) ;;
+		/* anchors */
+		`Ibol:			std.put("`Ibol\n");;
+		`Ieol:			std.put("`Ieol\n");;
 		/* control flow */
-		`Ifork	(lip, rip):
-			std.put("`Ifork (%z,%z)\n", lip, rip)
-			;;
-		`Ijmp ip:
-			std.put("`Ijmp %z\n", ip)
-			;;
-		`Imatch:
-			std.put("`Imatch\n")
-			;;
+		`Ifork	(lip, rip):	std.put("`Ifork (%z,%z)\n", lip, rip) ;;
+		`Ijmp ip:		std.put("`Ijmp %z\n", ip) ;;
+		`Imatch:		std.put("`Imatch\n") ;;
 		;;
 	;;
 }
@@ -223,6 +216,12 @@ const dump = {t, indent
 	`Quest	a:
 		std.put("Quest\n")
 		dump(a, indent + 1)
+		;;
+	`Bol:
+		std.put("Bol\n")
+		;;
+	`Eol:
+		std.put("Eol\n")
 		;;
 	/* end matches */
 	`Class	sl:
@@ -342,8 +341,8 @@ const baseexpr = {re
 	'?':	-> `Fail (`Badrep);;
 	'[':	ret = chrclass(re);;
 	'.':	getc(re); ret = mk(`Dot);;
-	'^':	getc(re); ret = mk(`Astart);;
-	'$':	getc(re); ret = mk(`Aend);;
+	'^':	getc(re); ret = mk(`Bol);;
+	'$':	getc(re); ret = mk(`Eol);;
 	'(':	
 		getc(re)
 		match altexpr(re)

@@ -42,6 +42,10 @@ pkg regex =
 		`Ilbra	std.size
 		`Irbra	std.size
 
+		/* anchors */
+		`Ibol
+		`Ieol
+
 		/* control flow */
 		`Ifork	[std.size, std.size]
 		`Ijmp	std.size
