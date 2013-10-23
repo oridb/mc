@@ -5,7 +5,7 @@ const main = {
 	var found
 	match regex.compile("(a|b)*s*")
 	`std.Success re:
-		found = regex.exec(re, "ababaasssss")
+		found = regex.exec(re, "a")
 		std.put("Found = %t: len = %z\n", found, re.strp)
 		-> 0
 		;;
