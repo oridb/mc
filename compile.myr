@@ -40,7 +40,7 @@ const compile = {pat
 	re = std.zalloc()
 	re.pat = pat
 	match parse(re)
-	`None:		std.put("Empty parse\n");;
+	`None:		-> `std.Failure (`Earlystop);;
 	`Fail f:	-> `std.Failure f;;
 	`Some t:
 		dump(t, 0)
@@ -187,7 +187,7 @@ const dump = {t, indent
 	var i
 
 	for i = 0; i < indent; i++
-		std.put(" ")
+		std.put("  ")
 	;;
 	match t#
 	`Alt	(a, b):
@@ -274,14 +274,12 @@ const altexpr = {re
 		;;
 	other:	-> other;;
 	;;
-	std.put("<- alt\n")
 	-> `Some ret
 }
 
 const catexpr = {re
 	var ret
 
-	std.put("-> cat\n")
 	match repexpr(re)
 	`Some t: 
 		ret = t
@@ -295,14 +293,12 @@ const catexpr = {re
 		;;
 	other:	-> other;;
 	;;
-	std.put("<- cat\n")
 	-> `Some ret
 }
 
 const repexpr = {re
 	var ret
 
-	std.put("-> rep\n")
 	match baseexpr(re)
 	`Some t:
 		if matchc(re, '*')
@@ -317,14 +313,12 @@ const repexpr = {re
 		;;
 	other:	-> other;;
 	;;
-	std.put("<- rep")
 	-> `Some ret
 }
 
 const baseexpr = {re
 	var ret
 
-	std.put("-> base\n")
 	if re.pat.len == 0
 		-> `None
 	;;
@@ -346,7 +340,6 @@ const baseexpr = {re
 		`None:	-> `Fail (`Emptyparen);;
 		;;
 		if !matchc(re, ')')
-			std.put("Can't find match: got %c\n", getc(re))
 			free(ret)
 			-> `Fail (`Unbalanced)
 		;;
@@ -362,7 +355,6 @@ const baseexpr = {re
 		ret = mk(`Chr c)
 		;;
 	;;
-	std.put("<- base\n")
 	dump(ret, 0)
 	-> `Some ret
 }
