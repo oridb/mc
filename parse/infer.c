@@ -638,6 +638,8 @@ static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
     /* if the tyrank of a is 0 (ie, a raw tyvar), just unify.
      * Otherwise, match up subtypes. */
     if ((a->type == b->type || idxhacked(a, b)) && tyrank(a) != 0) {
+        if (a->type == Tyname && !nameeq(a->name, b->name))
+            typeerror(st, a, b, ctx, NULL);
         if (a->nsub != b->nsub) {
             snprintf(buf, sizeof buf, "Wrong subtype count - Got %zu, expected %zu", a->nsub, b->nsub);
             typeerror(st, a, b, ctx, buf);
