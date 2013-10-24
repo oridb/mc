@@ -219,7 +219,7 @@ const mkslab = {bkt
 		die("Unable to mmap")
 	;;
 
-	s = align(p castto(intptr), Slabsz) castto(slab#)
+	s = align(p castto(size), Slabsz) castto(slab#)
 	s.head = p
 	s.nfree = bkt.nper
 	/* skip past the slab header */
@@ -315,14 +315,6 @@ const bktnum = {sz
 }
 
 /*
-chunks are variable sizes, so we can't just
-index to get to the next one
-*/
-const nextchunk = {b, sz
-	-> ((b castto(intptr)) + sz) castto(chunk#)
-}
-
-/*
 aligns a size to a requested alignment.
 'align' must be a power of two
 */
@@ -331,9 +323,17 @@ const align = {v, align
 }
 
 /*
+chunks are variable sizes, so we can't just
+index to get to the next one
+*/
+const nextchunk = {b, sz : size
+	-> ((b castto(intptr)) + (sz castto(intptr))) castto(chunk#)
+}
+
+/*
 truncates a pointer to 'align'. 'align' must
 be a power of two.
 */
 const mtrunc = {m, align
-	-> ((m castto(intptr)) & ~(align - 1)) castto(byte#)
+	-> ((m castto(intptr)) & ~((align castto(intptr)) - 1)) castto(byte#)
 }
