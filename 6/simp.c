@@ -61,6 +61,11 @@ static Type *tyintptr;
 static Type *tyword;
 static Type *tyvoid;
 
+static size_t tyalign(size_t sz, size_t eltsz)
+{
+    return align(sz, min(eltsz, Ptrsz));
+}
+
 static Type *base(Type *t)
 {
     assert(t->nsub == 1);
@@ -300,13 +305,22 @@ size_t tysize(Type *t)
             assert(exprop(t->asize) == Olit);
             return t->asize->expr.args[0]->lit.intval * tysize(t->sub[0]);
         case Tytuple:
-            for (i = 0; i < t->nsub; i++)
+            for (i = 0; i < t->nsub; i++) {
+                sz = tyalign(sz, tysize(t->sub[i]));
                 sz += tysize(t->sub[i]);
+            }
+            for (i = 0; i < t->nsub; i++)
+                sz = tyalign(sz, tysize(t->sub[i]));
             return sz;
             break;
         case Tystruct:
+            for (i = 0; i < t->nmemb; i++) {
+                sz = tyalign(sz, size(t->sdecls[i]));
+                sz += size(t->sdecls[i]);
+            }
+            /* the whole struct size should match the biggest alignment */
             for (i = 0; i < t->nmemb; i++)
-                sz += align(size(t->sdecls[i]), Ptrsz);
+                sz = tyalign(sz, size(t->sdecls[i]));
             return sz;
             break;
         case Tyunion:
@@ -522,6 +536,7 @@ static void umatch(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, Node *i
             patarg = pat->expr.args;
             off = 0;
             for (i = 0; i < pat->expr.nargs; i++) {
+                off = tyalign(off, size(patarg[i]));
                 next = genlbl();
                 v = load(addk(addr(s, val, exprtype(patarg[i])), off));
                 umatch(s, patarg[i], v, exprtype(patarg[i]), next, iffalse);
@@ -631,6 +646,7 @@ static size_t offset(Node *aggr, Node *memb)
     nl = ty->sdecls;
     off = 0;
     for (i = 0; i < ty->nmemb; i++) {
+        off = tyalign(off, size(nl[i]));
         if (!strcmp(namestr(memb), declname(nl[i])))
             return off;
         off += size(nl[i]);
@@ -930,6 +946,7 @@ static Node *destructure(Simp *s, Node *lhs, Node *rhs)
     off = 0;
     for (i = 0; i < lhs->expr.nargs; i++) {
         lv = lval(s, args[i]);
+        off = tyalign(off, size(lv));
         prv = add(addr(s, rhs, exprtype(args[i])), disp(rhs->line, off));
         if (stacknode(args[i])) {
             sz = disp(lhs->line, size(lv));
@@ -1008,6 +1025,7 @@ static Node *simptup(Simp *s, Node *n, Node *dst)
 
     off = 0;
     for (i = 0; i < n->expr.nargs; i++) {
+        off = tyalign(off, size(args[i]));
         assignat(s, r, off, args[i]);
         off += size(args[i]);
     }
