@@ -18,12 +18,12 @@ pkg std =
 
 		/* state */
 		optdone	: bool	/* if we've seen '--', everything's an arg */
-		finished	: bool	/* if we've processed all theoptargs */
+		finished	: bool	/* if we've processed all the optargs */
 		argidx	: size
 		curarg	: byte[:]
 	;;
 
-	const optinit	: (optstr: byte[:],optargs : byte[:][:] -> optctx#)
+	const optinit	: (optstr: byte[:], optargs : byte[:][:] -> optctx#)
 	const optnext	: (ctx : optctx# -> [char, byte[:]])
 	const optdone	: (ctx : optctx# -> bool)
 ;;
