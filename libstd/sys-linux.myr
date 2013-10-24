@@ -1,11 +1,14 @@
 use "types.use"
 
 pkg std =
-	type scno	= int64
-	type fdopt	= int64
-	type mprot	= int64
-	type mopt	= int64
-	type fd	= int64
+	type scno	= int64	/* syscall */
+	type fdopt	= int64	/* fd options */
+	type fd		= int64	/* fd */
+	type mprot	= int64	/* memory protection */
+	type mopt	= int64	/* memory mapping options */
+	type socktype	= int64	/* socket type */
+	type sockproto	= int64	/* socket protocol */
+	type sockfam	= uint16	/* socket family */
 
 	type clock = union
 		`Clockrealtime
@@ -55,6 +58,18 @@ pkg std =
 		domain	: byte[65]
 	;;
 
+	type sockaddr = struct
+		fam	: sockfam
+		data	: byte[14]
+	;;
+
+	type sockaddr_in = struct
+		fam	: sockfam
+		port	: uint16
+		addr	: uint32
+		zero	: byte[8]
+	;;
+
 	/* open options */
 	const Ordonly  	: fdopt = 0x0
 	const Owronly  	: fdopt = 0x1
@@ -79,6 +94,21 @@ pkg std =
 	const Mfile	: mopt = 0x0
 	const Manon	: mopt = 0x20
 	const M32bit	: mopt = 0x40
+
+	/* socket families. INCOMPLETE. */
+	const Afunspec	: sockfam = 0
+	const Afunix	: sockfam = 1
+	const Afinet	: sockfam = 2
+
+	/* socket types. */
+	const Sockstream	: socktype = 1	/* sequenced, reliable byte stream */
+	const Sockdgram		: socktype = 2	/* datagrams */
+	const Sockraw		: socktype = 3	/* raw proto */
+	const Sockrdm		: socktype = 4	/* reliably delivered messages */
+	const Sockseqpacket	: socktype = 5	/* sequenced, reliable packets */
+	const Sockdccp		: socktype = 6	/* data congestion control protocol */
+	const Sockpack		: socktype = 10	/* linux specific packet */
+
 
 	/* return value for a failed mapping */
 	const Mapbad	: byte# = -1 castto(byte#)
@@ -415,6 +445,13 @@ pkg std =
 	const lseek	: (fd:fd, off:uint64, whence:int64 -> int64)
 	const fstat	: (fd:fd, sb:statbuf# -> int64)
 
+	/* networking */
+	const socket	: (dom : sockfam, stype : socktype, proto : sockproto	-> fd)
+	const connect	: (sock	: fd, addr : sockaddr#, len : size -> int)
+	const accept	: (sock : fd, addr : sockaddr#, len : size# -> fd)
+	const listen	: (sock : fd, backlog : int	-> int)
+	const bind	: (sock : fd, addr : sockaddr#, len : size -> int)
+
 	/* memory mapping */
 	const munmap	: (addr:byte#, len:size -> int64)
 	const mmap	: (addr:byte#, len:size, prot:mprot, flags:mopt, fd:fd, off:off -> byte#)
@@ -441,6 +478,9 @@ const read	= {fd, buf;		-> syscall(Sysread, fd, buf castto(byte#), buf.len castt
 const write	= {fd, buf;		-> syscall(Syswrite, fd, buf castto(byte#), buf.len castto(size)) castto(size)}
 const lseek	= {fd, off, whence;	-> syscall(Syslseek, fd, off, whence)}
 const fstat	= {fd, sb;		-> syscall(Sysfstat, fd, sb)}
+
+const socket	= {dom, stype, proto;	-> syscall(Syssocket, dom castto(int64), stype, proto) castto(fd)}
+const connect	= {sock, addr, len;	-> syscall(Sysconnect, sock, addr, len) castto(int)}
 
 /* memory mapping */
 const munmap	= {addr, len;		-> syscall(Sysmunmap, addr, len)}
