@@ -1,11 +1,17 @@
 use "types.use"
 
 pkg std =
-	type scno = int64
-	type fdopt = int64
-	type mprot = int64
-	type mopt = int64
-	type fd = int64
+	type scno 	= int64
+
+	type fdopt	= int64
+	type fd		= int64
+
+	type mprot	= int64
+	type mopt	= int64
+
+	type socktype	= int64
+	type sockproto	= int64
+	type sockfam	= uint8
 
 	type timespec = struct
 		sec	: uint64
@@ -57,6 +63,20 @@ pkg std =
 		machine	: byte[256]
 	;;
 
+	type sockaddr = struct
+		len	: byte
+		fam	: sockfam
+		data	: byte[128] /* what is the *actual* length? */
+	;;
+
+	type sockaddr_in = struct
+		len	: byte
+		fam	: sockfam
+		port	: uint16
+		addr	: uint32
+		zero	: byte[8]
+	;;
+
 	/* open options */
 	const Ordonly  	: fdopt = 0x0
 	const Owronly  	: fdopt = 0x1
@@ -83,6 +103,18 @@ pkg std =
 	/* Only on Linux
 	const M32bit	: mopt = 0x40
 	*/
+
+	/* socket families. INCOMPLETE. */
+	const Afunspec	: sockfam = 0
+	const Afunix	: sockfam = 1
+	const Afinet	: sockfam = 2
+
+	/* socket types. */
+	const Sockstream	: socktype = 1
+	const Sockdgram		: socktype = 2
+	const Sockraw		: socktype = 3
+	const Sockrdm		: socktype = 4
+	const Sockseqpacket	: socktype = 5
 
 
 	/* return value for a failed mapping */
@@ -455,6 +487,13 @@ pkg std =
 	const lseek	: (fd:fd, off:uint64, whence:int64 -> int64)
 	const fstat	: (fd:fd, sb:statbuf# -> int64)
 
+	/* networking */
+	const socket	: (dom : sockfam, stype : socktype, proto : sockproto	-> fd)
+	const connect	: (sock	: fd, addr : sockaddr#, len : size -> int)
+	const accept	: (sock : fd, addr : sockaddr#, len : size# -> fd)
+	const listen	: (sock : fd, backlog : int	-> int)
+	const bind	: (sock : fd, addr : sockaddr#, len : size -> int)
+
 	/* memory mapping */
 	const munmap	: (addr:byte#, len:size -> int64)
 	const mmap	: (addr:byte#, len:size, prot:mprot, flags:mopt, fd:fd, off:off -> byte#)
@@ -485,6 +524,10 @@ const read	= {fd, buf;		-> syscall(Sysread, fd, buf castto(char#), buf.len castt
 const write	= {fd, buf;		-> syscall(Syswrite, fd, buf castto(char#), buf.len castto(size)) castto(size)}
 const lseek	= {fd, off, whence;	-> syscall(Syslseek, fd, off, whence)}
 const fstat	= {fd, sb;		-> syscall(Sysfstat, fd, sb)}
+
+/* networking */
+const socket	= {dom, stype, proto;	-> syscall(Syssocket, dom castto(int64), stype, proto) castto(fd) }
+const connect	= {sock, addr, len;	-> syscall(Sysconnect, sock, addr, len) castto(fd)}
 
 /* memory management */
 const munmap	= {addr, len;		-> syscall(Sysmunmap, addr, len)}
