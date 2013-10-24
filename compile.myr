@@ -73,7 +73,9 @@ const gen = {re, t
 		;;
 	`Byte	b: 	append(re, `Ibyte b);;
 	`Chr	c:	genchar(re, c);;
-	`Dot: 		append(re, `Idot);;
+	`Dot:
+		genutfrange(re, 0, std.Maxcharval)
+		;;
 
 	/* meta */
 	`Bol:
@@ -90,6 +92,50 @@ const gen = {re, t
 		;;
 	;;
 	-> re.proglen
+}
+
+const genutfrange = {re, start, end
+	var ranges = [
+		(0,0x7f),
+		(0x80,0x7ff),
+		(0x800,0xffff),
+		(0x10000,0x1FFFFF)
+	]
+	var startbuf 	: byte[4]
+	var endbuf 	: byte[4]
+	var szstart
+	var szend
+	var i
+	var j
+	var lo
+	var hi
+
+	szstart = std.charlen(start)
+	szend = std.charlen(end)
+	/* 
+	  single byte characters can just be treated as a byte match, no
+	  need for branching.
+	*/
+	if szstart == szend
+		for i = 0; i < szstart; i++
+			append(re, `Irange (startbuf[i], endbuf[i]))
+		;;
+	else
+		for i = 0; i < (szend - szstart); i++
+			append(re, `Ifork (i + 1, -1)) /* replace */
+		;;
+		for i = szstart; i < szend; i++
+			(lo, hi) = ranges[i]
+			lo = std.max(lo, start)
+			hi = std.min(hi, end)
+			std.encode(startbuf[:], start)
+			std.encode(endbuf[:], end)
+			for j = 0; j < i; j++
+				append(re, `Irange (startbuf[i], endbuf[i]))
+			;;
+			append(re, `Ijmp -1)
+		;;
+	;;
 }
 
 const genalt = {re, l, r
