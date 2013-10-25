@@ -524,7 +524,10 @@ const fstat	= {fd, sb;		-> syscall(Sysfstat, fd, sb)}
 
 /* networking */
 const socket	= {dom, stype, proto;	-> syscall(Syssocket, dom castto(int64), stype, proto) castto(fd) }
-const connect	= {sock, addr, len;	-> syscall(Sysconnect, sock, addr, len) castto(fd)}
+const connect	= {sock, addr, len;	-> syscall(Sysconnect, sock, addr, len) castto(int)}
+const accept	= {sock, addr, len;	-> syscall(Sysaccept, sock, addr, len) castto(fd)}
+const listen	= {sock, backlog;	-> syscall(Syslisten, sock, backlog castto(int64)) castto(int)}
+const bind	= {sock, addr, len;	-> syscall(Sysbind, sock, addr, len) castto(int)}
 
 /* memory management */
 const munmap	= {addr, len;		-> syscall(Sysmunmap, addr, len)}
