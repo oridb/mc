@@ -484,7 +484,7 @@ const socket	= {dom, stype, proto;	-> syscall(Syssocket, dom castto(int64), styp
 const connect	= {sock, addr, len;	-> syscall(Sysconnect, sock, addr, len) castto(int)}
 const bind	= {sock, addr, len;	-> syscall(Sysbind, sock, addr, len) castto(int)}
 const listen	= {sock, backlog;	-> syscall(Syslisten, sock, backlog castto(int64)) castto(int)}
-const accept	= {sock, addr, lenp;	-> syscall(Sysbind, sock, addr, lenp) castto(fd)}
+const accept	= {sock, addr, lenp;	-> syscall(Sysaccept, sock, addr, lenp) castto(fd)}
 
 /* memory mapping */
 const munmap	= {addr, len;		-> syscall(Sysmunmap, addr, len)}
