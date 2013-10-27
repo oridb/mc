@@ -73,7 +73,7 @@ const gen = {re, t
 		;;
 	`Byte	b: 	append(re, `Ibyte b);;
 	`Chr	c:	genchar(re, c);;
-	`Dot: 		append(re, `Idot);;
+	`Dot: 		genrange(re, 0, std.Maxcharval);;
 
 	/* meta */
 	`Bol:
@@ -90,6 +90,64 @@ const gen = {re, t
 		;;
 	;;
 	-> re.proglen
+}
+
+const genrange = {re, lo, hi
+	var charrng = [
+		0,
+		0x80,
+		0x800,
+		0x10000,
+		0x200000,
+		-1
+	]
+	var lbuf : byte[4]
+	var hbuf : byte[4]
+	var lsz
+	var hsz
+	var end
+	var sz
+	var d
+	var i
+	var j
+
+	lsz = std.charlen(lo)
+	hsz = std.charlen(hi)
+	charrng[lsz - 1] = lo
+	charrng[hsz] = hi
+	if lsz == 1 && hsz == 1
+		append(re, `Irange (lo castto(byte), hi castto(byte)))
+	else
+		for i = hsz; i > lsz; i--
+			std.put("i = %z\n", i - 2)
+			d = re.proglen + i - 1
+			append(re, `Ifork (re.proglen + 1, jmpdist(i) + d))
+		;;
+		end = re.proglen + jmpdist(hsz + 1);
+		for i = 0; i < hsz; i++
+			std.put("lo[%z] = %i\n", i, charrng[i] castto(int))
+			std.put("hi[%z] = %i\n", i, (charrng[i + 1] - 1) castto(int))
+
+			sz = std.encode(lbuf[:], charrng[i])
+			std.encode(hbuf[:], charrng[i + 1] - 1)
+			for j = 0; j < sz; j++
+				append(re, `Irange (lbuf[j], hbuf[j]))
+			;;
+			append(re, `Ijmp (end))
+		;;
+	;;
+	-> re.proglen
+}
+
+const jmpdist = {n
+	var d
+	var i
+
+	d = n - 1
+	for i = n - 1; i > 0; i--
+		d += i
+	;;
+	-> d
 }
 
 const genalt = {re, l, r

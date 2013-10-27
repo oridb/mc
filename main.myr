@@ -3,9 +3,9 @@ use std
 
 const main = {
 	var found
-	match regex.compile("b*\n^a*")
+	match regex.compile("(.)bc")
 	`std.Success re:
-		found = regex.exec(re, "b\naaa")
+		found = regex.exec(re, "世bc")
 		std.put("Found = %t: len = %z\n", found, re.strp)
 		-> 0
 		;;
