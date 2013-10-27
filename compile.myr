@@ -421,16 +421,34 @@ const baseexpr = {re
 }
 
 const chrclass = {re
+	var r
 	var t
 
 	matchc(re, '[')
-	if !matchc(re, ']')
-	    -> `Fail (`Earlystop)
+	t = rangematch(re)
+	while peekc(re) != ']'
+		r = rangematch(re)
+		t = mk(`Alt (t, r))
 	;;
+	if !matchc(re, ']')
+		free(t)
+		-> `Fail (`Earlystop)
+	else
+		-> `Some t
+	;;
+}
 
-	t = std.alloc()
-	t# = `Class (0, 1)
-	-> `Some t
+const rangematch = {re
+	var lo
+	var hi
+
+	lo = getc(re)
+	if matchc(re, '-')
+		hi = getc(re)
+		-> mk(`Class (lo, hi))
+	else
+		-> mk(`Chr lo)
+	;;
 }
 
 const matchc = {re, c
