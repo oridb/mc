@@ -19,8 +19,7 @@ type tree = union
 	/* end matches */
 	`Byte	byte
 	`Chr	char
-	`Class	[char, char][:]
-	`Dot
+	`Class	[char, char]
 
 	/* meta */
 	`Cap	tree#
@@ -68,12 +67,9 @@ const gen = {re, t
 	`Quest	a:	genquest(re, a);;
 
 	/* end matches */
-	`Class	sl:
-		std.die("Can't gen class\n")
-		;;
 	`Byte	b: 	append(re, `Ibyte b);;
 	`Chr	c:	genchar(re, c);;
-	`Dot: 		genrange(re, 0, std.Maxcharval);;
+	`Class  (a, b):	genrange(re, a, b);;
 
 	/* meta */
 	`Bol:
@@ -282,17 +278,14 @@ const dump = {t, indent
 		std.put("Eol\n")
 		;;
 	/* end matches */
-	`Class	sl:
-		std.put("Class [a..b]\n")
-		;;
 	`Byte	b:
 		std.put("Byte %b\n", b)
 		;;
 	`Chr	c:
 		std.put("Char %c\n", c)
 		;;
-	`Dot:
-		std.put("Dot\n")
+	`Class (a, b):
+		std.put("Class (%c-%c)\n", a, b)
 		;;
 
 	/* meta */
@@ -397,8 +390,8 @@ const baseexpr = {re
 	'*':	-> `Fail (`Badrep);;
 	'+':	-> `Fail (`Badrep);;
 	'?':	-> `Fail (`Badrep);;
-	'[':	ret = chrclass(re);;
-	'.':	getc(re); ret = mk(`Dot);;
+	'[':	-> chrclass(re);;
+	'.':	getc(re); ret = mk(`Class (0, std.Maxcharval));;
 	'^':	getc(re); ret = mk(`Bol);;
 	'$':	getc(re); ret = mk(`Eol);;
 	'(':	
@@ -427,12 +420,17 @@ const baseexpr = {re
 	-> `Some ret
 }
 
-const chrclass = {pat
+const chrclass = {re
 	var t
 
+	matchc(re, '[')
+	if !matchc(re, ']')
+	    -> `Fail (`Earlystop)
+	;;
+
 	t = std.alloc()
-	t# = `Class [][:]
-	-> t
+	t# = `Class (0, 1)
+	-> `Some t
 }
 
 const matchc = {re, c
@@ -480,10 +478,9 @@ const free = {t
 	`Quest	a:	free(a);;
 
 	/* end matches */
-	`Class	sl:	std.slfree(sl);;
 	`Byte	b:	;;
 	`Chr	c:	;;
-	`Dot:		;;
+	`Class (a, b):	;;
 
 	/* meta */
 	`Cap	a:	free(a);;
