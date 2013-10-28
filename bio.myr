@@ -91,7 +91,7 @@ const open = {path, mode
    Creates a file for the provided path, with opened in
    the requested mode, with the requested permissions
 */
-const createfile = {path, mode, perm
+const create = {path, mode, perm
 	var openmode
 	var fd
 
@@ -384,11 +384,8 @@ we're stuck with a small static buffer.
 */
 const put = {f, fmt, args
 	var buf : byte[2048]
-	var len
 
-	std.fmt(buf, fmt, valist(args))
-	len = write(f, buf)
-	-> write(f, buf[:len])
+	-> write(f,  std.fmt(buf[:], fmt, std.vastart(&args)))
 }
 
 /* 
