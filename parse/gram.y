@@ -688,8 +688,8 @@ elifs   : Telif exprln blkbody elifs
             {$$ = NULL;}
         ;
 
-matchstmt: Tmatch exprln Tbor matches Tendblk
-            {$$ = mkmatchstmt($1->line, $2, $4.nl, $4.nn);}
+matchstmt: Tmatch exprln endlns Tbor matches Tendblk
+            {$$ = mkmatchstmt($1->line, $2, $5.nl, $5.nn);}
          ;
 
 matches : match
