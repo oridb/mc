@@ -14,8 +14,8 @@ const main = {
 
 	v = f(99)
 	match v
-	`Foo:	-> 1;;
-	`Bar x:	-> x;;
+	| `Foo:		-> 1
+	| `Bar x:	-> x
 	;;
 	-> 2
 }

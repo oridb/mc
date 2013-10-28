@@ -11,7 +11,7 @@ const f = {-> t(int)
 
 const main = {
 	match f()
-	`None:	-> 42;;
+	| `None:	-> 42
 	;;
 	-> 0
 }

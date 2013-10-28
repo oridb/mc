@@ -11,8 +11,8 @@ const main = {
 
 	v = `Some 123
 	match v
-	`None:		-> 1;;
-	`Some 123:	-> 0;;
+	| `None:	-> 1
+	| `Some 123:	-> 0
 	;;
 	-> 60
 }

@@ -7,7 +7,7 @@ type t(@a) = union
 
 const main = {
 	match `Foo 123
-	`Foo a:	-> 0xf;;
-	`Bar:	-> 0x0;;
+	| `Foo a:	-> 0xf
+	| `Bar:		-> 0x0
 	;;
 }

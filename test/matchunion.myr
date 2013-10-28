@@ -13,17 +13,9 @@ const main = {
 
 	v = `Foo
 	match v
-	`Bar:
-		-> 42
-		;;
-	`Baz:
-		-> 81
-		;;
-	`Foo:
-		-> 84
-		;;
-	`Quux:
-		-> 123
-		;;
+	| `Bar:	-> 42
+	| `Baz:	-> 81
+	| `Foo:	-> 84
+	| `Quux:	-> 123
 	;;
 }

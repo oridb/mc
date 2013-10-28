@@ -4,10 +4,9 @@ const main = {
 	var v = [2, 40, 10]
 
 	match v
-	[x, y, 10]:	
+	| [x, y, 10]:	
 		 -> x + y
-		 ;;
-	_:	std.die("Wat");;
+	| _:	std.die("Wat")
 	;;
 	-> 0
 }

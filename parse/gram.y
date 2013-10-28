@@ -688,21 +688,20 @@ elifs   : Telif exprln blkbody elifs
             {$$ = NULL;}
         ;
 
-matchstmt: Tmatch exprln matches Tendblk
-            {$$ = mkmatchstmt($1->line, $2, $3.nl, $3.nn);}
+matchstmt: Tmatch exprln Tbor matches Tendblk
+            {$$ = mkmatchstmt($1->line, $2, $4.nl, $4.nn);}
          ;
 
 matches : match
             {$$.nl = NULL; $$.nn = 0;
              if ($1)
                  lappend(&$$.nl, &$$.nn, $1);}
-        | matches match
+        | matches Tbor match
             {if ($2)
-                 lappend(&$$.nl, &$$.nn, $2);}
+                 lappend(&$$.nl, &$$.nn, $3);}
         ;
 
-match   : pat Tcolon block {$$ = mkmatch($1->line, $1, $3);}
-        | Tendln {$$ = NULL;}
+match   : pat Tcolon blkbody Tendln {$$ = mkmatch($1->line, $1, $3);}
         ;
 
 pat     : unionpat {$$ = $1;}

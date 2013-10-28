@@ -13,12 +13,10 @@ const main = {
 	v.v2 = 40
 	v.v3 = 10
 	match v
-	[.v1 = x,
-	 .v2 = y,
-	 .v3 = 10]:	
+	| [.v1 = x, .v2 = y, .v3 = 10]:	
 		 -> x + y
-		 ;;
-	_:	std.die("Wat");;
+	| _:
+		std.die("Wat")
 	;;
 	-> 0
 }

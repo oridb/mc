@@ -4,8 +4,8 @@ const main = {
 	var v = (1, 2)
 
 	match v
-	(1, x):	-> 40 + x;;
-	_:	std.die("Wat");;
+	| (1, x):	-> 40 + x
+	| _:	std.die("Wat")
 	;;
 	-> 0
 }

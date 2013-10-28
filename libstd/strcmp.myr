@@ -50,8 +50,8 @@ const strncmp = {a, b, n
 
 const hasprefix = {s, pre
 	match strncmp(s, pre, pre.len)
-		`Equal:	-> true;;
-		_:	-> false;;
+	| `Equal:	-> true
+	| _:		-> false
 	;;
 }
 

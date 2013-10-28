@@ -6,8 +6,8 @@ const f = {
 
 const main = {
 	match f()
-	`std.Some x:	-> x;;
-	`std.None:	-> 42;;
+	| `std.Some x:	-> x
+	| `std.None:	-> 42
 	;;
 }
 

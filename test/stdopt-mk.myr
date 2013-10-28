@@ -13,8 +13,8 @@ const main = {
 	
 	v = f(123)
 	match v
-	`std.Some x:	-> x;;
-	`std.None:	-> 123;;
+	| `std.Some x:	-> x
+	| `std.None:	-> 123
 	;;
 }
 

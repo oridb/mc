@@ -18,7 +18,7 @@ generic try = {v, msg, args
 
 generic tryv = {v, msg, ap
 	match v
-	`None:	fatalv(1, msg, ap);;
-	`Some a: -> a;;
+	| `None:	fatalv(1, msg, ap)
+	| `Some a:	-> a
 	;;
 }
