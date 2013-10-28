@@ -19,8 +19,7 @@ type tree = union
 	/* end matches */
 	`Byte	byte
 	`Chr	char
-	`Class	[char, char][:]
-	`Dot
+	`Class	[char, char]
 
 	/* meta */
 	`Cap	tree#
@@ -41,9 +40,9 @@ const compile = {pat
 	re.pat = pat
 	re.nmatch = 1 /* whole match */
 	match parse(re)
-	`None:		-> `std.Failure (`Earlystop);;
-	`Fail f:	-> `std.Failure f;;
-	`Some t:
+	| `None:	-> `std.Failure (`Earlystop)
+	| `Fail f:	-> `std.Failure f
+	| `Some t:
 		dump(t, 0)
 		append(re, `Ilbra 0)
 		gen(re, t)
@@ -51,7 +50,6 @@ const compile = {pat
 		append(re, `Imatch)
 		idump(re)
 		-> `std.Success re
-		;;
 	;;
 	-> `std.Failure (`Noimpl)
 }
@@ -60,82 +58,86 @@ const gen = {re, t
 	var m
 
 	match t#
-	`Alt	(a, b): genalt(re, a, b);;
-	`Cat	(a, b): gen(re, a); gen(re, b);;
+	|`Alt	(a, b): genalt(re, a, b)
+	|`Cat	(a, b): gen(re, a); gen(re, b)
 	/* repetition */
-	`Star	a:	genstar(re, a);;
-	`Plus	a:	gen(re, a); genstar(re, a);;
-	`Quest	a:	genquest(re, a);;
+	|`Star	a:	genstar(re, a)
+	|`Plus	a:	gen(re, a); genstar(re, a)
+	|`Quest	a:	genquest(re, a)
 
 	/* end matches */
-	`Class	sl:
-		std.die("Can't gen class\n")
-		;;
-	`Byte	b: 	append(re, `Ibyte b);;
-	`Chr	c:	genchar(re, c);;
-	`Dot:
-		genutfrange(re, 0, std.Maxcharval)
-		;;
+	|`Byte	b: 	append(re, `Ibyte b)
+	|`Chr	c:	genchar(re, c)
+	|`Class  (a, b):	genrange(re, a, b)
 
 	/* meta */
-	`Bol:
-		append(re, `Ibol)
-		;;
-	`Eol:
-		append(re, `Ibol)
-		;;
-	`Cap	a:
+	|`Bol:	append(re, `Ibol)
+	|`Eol:	append(re, `Ibol)
+	|`Cap	a:
 		m = re.nmatch++
 		append(re, `Ilbra m)
 		gen(re, a)
 		append(re, `Irbra m)
+	;;
+	-> re.proglen
+}
+
+const genrange = {re, lo, hi
+	var charrng = [
+		0,
+		0x80,
+		0x800,
+		0x10000,
+		0x200000,
+		-1
+	]
+	var lbuf : byte[4]
+	var hbuf : byte[4]
+	var lsz
+	var hsz
+	var end
+	var sz
+	var d
+	var i
+	var j
+
+	lsz = std.charlen(lo)
+	hsz = std.charlen(hi)
+	charrng[lsz - 1] = lo
+	charrng[hsz] = hi
+	if lsz == 1 && hsz == 1
+		append(re, `Irange (lo castto(byte), hi castto(byte)))
+	else
+		for i = hsz; i > lsz; i--
+			std.put("i = %z\n", i - 2)
+			d = re.proglen + i - 1
+			append(re, `Ifork (re.proglen + 1, jmpdist(i) + d))
+		;;
+		end = re.proglen + jmpdist(hsz + 1);
+		for i = 0; i < hsz; i++
+			std.put("lo[%z] = %i\n", i, charrng[i] castto(int))
+			std.put("hi[%z] = %i\n", i, (charrng[i + 1] - 1) castto(int))
+
+			sz = std.encode(lbuf[:], charrng[i])
+			std.encode(hbuf[:], charrng[i + 1] - 1)
+			for j = 0; j < sz; j++
+				append(re, `Irange (lbuf[j], hbuf[j]))
+			;;
+			append(re, `Ijmp (end))
 		;;
 	;;
 	-> re.proglen
 }
 
-const genutfrange = {re, start, end
-	var ranges = [
-		(0,0x7f),
-		(0x80,0x7ff),
-		(0x800,0xffff),
-		(0x10000,0x1FFFFF)
-	]
-	var startbuf 	: byte[4]
-	var endbuf 	: byte[4]
-	var szstart
-	var szend
+const jmpdist = {n
+	var d
 	var i
-	var j
-	var lo
-	var hi
 
-	szstart = std.charlen(start)
-	szend = std.charlen(end)
-	/* 
-	  single byte characters can just be treated as a byte match, no
-	  need for branching.
-	*/
-	if szstart == szend
-		for i = 0; i < szstart; i++
-			append(re, `Irange (startbuf[i], endbuf[i]))
-		;;
-	else
-		for i = 0; i < (szend - szstart); i++
-			append(re, `Ifork (i + 1, -1)) /* replace */
-		;;
-		for i = szstart; i < szend; i++
-			(lo, hi) = ranges[i]
-			lo = std.max(lo, start)
-			hi = std.min(hi, end)
-			std.encode(startbuf[:], start)
-			std.encode(endbuf[:], end)
-			for j = 0; j < i; j++
-				append(re, `Irange (startbuf[i], endbuf[i]))
-			;;
-			append(re, `Ijmp -1)
-		;;
+	d = n - 1
+	for i = n - 1; i > 0; i--
+		d += i
 	;;
+	-> d
 }
 
 const genalt = {re, l, r
@@ -216,19 +218,19 @@ const idump = {re
 		std.put("%i:\t", i)
 		match re.prog[i]
 		/* Char matching. Consume exactly one byte from the string. */
-		`Ibyte b:		std.put("`Ibyte %b (%c)\n", b, b castto(char)) ;;
-		`Irange (start, end):	std.put("`Irange (%b,%b)\n", start, end) ;;
-		`Idot:	std.put("`Idot\n") ;;
+		| `Ibyte b:		std.put("`Ibyte %b (%c)\n", b, b castto(char)) 
+		| `Irange (start, end):	std.put("`Irange (%b,%b)\n", start, end) 
+		| `Idot:	std.put("`Idot\n") 
 		/* capture groups */
-		`Ilbra m:		std.put("`Ilbra %z\n", m) ;;
-		`Irbra m:		std.put("`Irbra %z\n", m) ;;
+		| `Ilbra m:		std.put("`Ilbra %z\n", m) 
+		| `Irbra m:		std.put("`Irbra %z\n", m) 
 		/* anchors */
-		`Ibol:			std.put("`Ibol\n");;
-		`Ieol:			std.put("`Ieol\n");;
+		| `Ibol:			std.put("`Ibol\n")
+		| `Ieol:			std.put("`Ieol\n")
 		/* control flow */
-		`Ifork	(lip, rip):	std.put("`Ifork (%z,%z)\n", lip, rip) ;;
-		`Ijmp ip:		std.put("`Ijmp %z\n", ip) ;;
-		`Imatch:		std.put("`Imatch\n") ;;
+		| `Ifork	(lip, rip):	std.put("`Ifork (%z,%z)\n", lip, rip) 
+		| `Ijmp ip:		std.put("`Ijmp %z\n", ip) 
+		| `Imatch:		std.put("`Imatch\n") 
 		;;
 	;;
 }
@@ -240,70 +242,54 @@ const dump = {t, indent
 		std.put("  ")
 	;;
 	match t#
-	`Alt	(a, b):
+	| `Alt	(a, b):
 		std.put("Alt\n")
 		dump(a, indent + 1)
 		dump(b, indent + 1)
-		;;
-	`Cat	(a, b):
+	| `Cat	(a, b):
 		std.put("Cat\n")
 		dump(a, indent + 1)
 		dump(b, indent + 1)
-		;;
 	/* repetition */
-	`Star	a:
+	| `Star	a:
 		std.put("Star\n")
 		dump(a, indent + 1)
-		;;
-	`Plus	a:
+	| `Plus	a:
 		std.put("Plus\n")
 		dump(a, indent + 1)
-		;;
-	`Quest	a:
+	| `Quest	a:
 		std.put("Quest\n")
 		dump(a, indent + 1)
-		;;
-	`Bol:
+	| `Bol:
 		std.put("Bol\n")
-		;;
-	`Eol:
+	| `Eol:
 		std.put("Eol\n")
-		;;
 	/* end matches */
-	`Class	sl:
-		std.put("Class [a..b]\n")
-		;;
-	`Byte	b:
+	| `Byte	b:
 		std.put("Byte %b\n", b)
-		;;
-	`Chr	c:
+	| `Chr	c:
 		std.put("Char %c\n", c)
-		;;
-	`Dot:
-		std.put("Dot\n")
-		;;
+	| `Class (a, b):
+		std.put("Class (%c-%c)\n", a, b)
 
 	/* meta */
-	`Cap	a:
+	| `Cap	a:
 		std.put("Cap\n")
 		dump(a, indent + 1)
-		;;
 	;;
 }
 
 const parse = {re
 	match altexpr(re)
-	`Some t:
+	| `Some t:
 		if re.pat.len == 0
 			-> `Some t
 		else
 			free(t)
 			-> `Fail (`Earlystop)
 		;;
-		;;
-	`None:
+	| `None:
 		-> `None
-		;;
 	;;
 }
 
@@ -311,24 +297,21 @@ const altexpr = {re
 	var ret : tree#
 
 	match catexpr(re)
-	`Some t:
+	| `Some t:
 		ret = t
 		if matchc(re, '|')
 			match altexpr(re)
-			`Some rhs:
+			| `Some rhs:
 				ret = mk(`Alt (ret, rhs))
-				;;
-			`None:
+			| `None:
 				free(ret)
 				-> `Fail (`Earlystop)
-				;;
-			`Fail f:
+			| `Fail f:
 				-> `Fail f
-				;;
 			;;
 		;;
-		;;
-	other:	-> other;;
+	| other:
+		-> other
 	;;
 	-> `Some ret
 }
@@ -337,17 +320,16 @@ const catexpr = {re
 	var ret
 
 	match repexpr(re)
-	`Some t: 
+	| `Some t: 
 		ret = t
 		match catexpr(re)
-		`Some rhs:
+		| `Some rhs:
 			ret = mk(`Cat (t, rhs))
-			;;
-		`Fail f: -> `Fail f;;
-		`None:	/* nothing */;;
+		| `Fail f:	-> `Fail f
+		| `None:	/* nothing */
 		;;
-		;;
-	other:	-> other;;
+	| other:
+		-> other
 	;;
 	-> `Some ret
 }
@@ -356,7 +338,7 @@ const repexpr = {re
 	var ret
 
 	match baseexpr(re)
-	`Some t:
+	| `Some t:
 		if matchc(re, '*')
 			ret = mk(`Star t)
 		elif matchc(re, '+')
@@ -366,8 +348,8 @@ const repexpr = {re
 		else
 			ret = t
 		;;
-		;;
-	other:	-> other;;
+	| other:
+		-> other
 	;;
 	-> `Some ret
 }
@@ -380,27 +362,26 @@ const baseexpr = {re
 	;;
 	match peekc(re)
 	/* lower prec operators */
-	'|':	-> `None;;
-	')':	-> `None;;
-	'*':	-> `Fail (`Badrep);;
-	'+':	-> `Fail (`Badrep);;
-	'?':	-> `Fail (`Badrep);;
-	'[':	ret = chrclass(re);;
-	'.':	getc(re); ret = mk(`Dot);;
-	'^':	getc(re); ret = mk(`Bol);;
-	'$':	getc(re); ret = mk(`Eol);;
-	'(':	
+	| '|':	-> `None
+	| ')':	-> `None
+	| '*':	-> `Fail (`Badrep)
+	| '+':	-> `Fail (`Badrep)
+	| '?':	-> `Fail (`Badrep)
+	| '[':	-> chrclass(re)
+	| '.':	getc(re); ret = mk(`Class (0, std.Maxcharval))
+	| '^':	getc(re); ret = mk(`Bol)
+	| '$':	getc(re); ret = mk(`Eol)
+	| '(':	
 		getc(re)
 		match altexpr(re)
-		`Some s:	ret = mk(`Cap s);;
-		`None:	-> `Fail (`Emptyparen);;
+		| `Some s:	ret = mk(`Cap s)
+		| `None:	-> `Fail (`Emptyparen)
 		;;
 		if !matchc(re, ')')
 			free(ret)
 			-> `Fail (`Unbalanced)
 		;;
-		;;
-	c:
+	| c:
 		getc(re)
 		if c == '\\'
 			if re.pat.len == 0
@@ -409,18 +390,40 @@ const baseexpr = {re
 			c = getc(re)
 		;;
 		ret = mk(`Chr c)
-		;;
 	;;
 	dump(ret, 0)
 	-> `Some ret
 }
 
-const chrclass = {pat
+const chrclass = {re
+	var r
 	var t
 
-	t = std.alloc()
-	t# = `Class [][:]
-	-> t
+	matchc(re, '[')
+	t = rangematch(re)
+	while peekc(re) != ']'
+		r = rangematch(re)
+		t = mk(`Alt (t, r))
+	;;
+	if !matchc(re, ']')
+		free(t)
+		-> `Fail (`Earlystop)
+	else
+		-> `Some t
+	;;
+}
+
+const rangematch = {re
+	var lo
+	var hi
+
+	lo = getc(re)
+	if matchc(re, '-')
+		hi = getc(re)
+		-> mk(`Class (lo, hi))
+	else
+		-> mk(`Chr lo)
+	;;
 }
 
 const matchc = {re, c
@@ -460,21 +463,20 @@ const mk = {v
 
 const free = {t
 	match t#
-	`Alt	(a, b): free(a); free(b);;
-	`Cat	(a, b): free(a); free(b);;
+	| `Alt	(a, b): free(a); free(b)
+	| `Cat	(a, b): free(a); free(b)
 	/* repetition */
-	`Star	a:	free(a);;
-	`Plus	a:	free(a);;
-	`Quest	a:	free(a);;
+	| `Star	a:	free(a)
+	| `Plus	a:	free(a)
+	| `Quest	a:	free(a)
 
 	/* end matches */
-	`Class	sl:	std.slfree(sl);;
-	`Byte	b:	;;
-	`Chr	c:	;;
-	`Dot:		;;
+	| `Byte	b:	
+	| `Chr	c:	
+	| `Class (a, b):	
 
 	/* meta */
-	`Cap	a:	free(a);;
+	| `Cap	a:	free(a)
 	;;
 	std.free(t)
 }
