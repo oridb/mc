@@ -16,6 +16,7 @@ MYRSRC= \
     option.myr \
     optparse.myr \
     rand.myr \
+    resolve.myr \
     slappend.myr \
     slcp.myr \
     sldup.myr \

@@ -1,0 +1,102 @@
+use "alloc.use"
+use "endian.use"
+use "error.use"
+use "fmt.use"
+use "sys.use"
+use "types.use"
+
+pkg std =
+	type resolveerr = union
+		`Badhost
+		`Badsrv
+		`Badquery
+	;;
+
+	type hostinfo = struct
+		flags	: uint32
+		fam	: sockfam
+		stype	: socktype
+		proto	: uint32
+		addr	: sockaddr[:]
+		canon	: byte[:]
+		next	: hostinfo#
+	;;
+
+	const resolve	: (host : byte[:]	-> hostinfo#)
+;;
+
+const resolve = {host : byte[:]
+	var hinf
+
+	hinf = zalloc()
+	dnsresolve(host)
+	-> hinf
+}
+
+const dnsresolve = {host : byte[:]
+	/*var hosts*/
+	var nsrv
+
+	if !valid(host)
+		-> `Failure (`Badhost)
+	;;
+	if (nsrv = dnsconnect()) < 0
+		-> `Failure (`Badsrv)
+	;;
+	if !dnsquery(nsrv, host)
+		-> `Failure (`Badquery)
+	;;
+	-> `Success true
+}
+
+const dnsconnect = {
+	var sa : sockaddr_in
+	var s
+	var status
+	
+	s = socket(Afinet, Sockstream, 0)
+	if s < 0
+		put("Warning: Failed to open socket: %l\n", s)
+		-> -1
+	;;
+	/* hardcode Google DNS for now */
+	sa.port = hosttonet(53)
+	sa.addr = 0x08080808
+	status = connect(s, (&sa) castto(sockaddr#), sizeof(sockaddr_in))
+	if status < 0
+		put("Warning: Failed to connect to server: %l\n", s)
+		-> -1
+	;;
+	-> s
+}
+
+const dnsquery = {srv, host
+	put("Unimplemented query: srv=%z, host=%s\n", srv, host)
+	-> false
+}
+
+const valid = {host : byte[:]
+	var i
+	var seglen
+
+	/* maximum length: 255 chars */
+	if host.len > 255
+		-> false
+	;;
+
+	seglen = 0
+	for i = 0; i < host.len; i++
+		if host[i] == ('.' castto(byte))
+			seglen = 0
+		;;
+		if seglen > 63
+			-> false
+		;;
+		if host[i] & 0x80
+			-> false
+		;;
+	;;
+
+	-> true
+
+}
