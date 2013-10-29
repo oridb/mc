@@ -60,11 +60,12 @@ const dnsconnect = {
 		-> -1
 	;;
 	/* hardcode Google DNS for now */
+	sa.fam = Afinet
 	sa.port = hosttonet(53)
 	sa.addr = 0x08080808
 	status = connect(s, (&sa) castto(sockaddr#), sizeof(sockaddr_in))
 	if status < 0
-		put("Warning: Failed to connect to server: %l\n", s)
+		put("Warning: Failed to connect to server: %l\n", status)
 		-> -1
 	;;
 	-> s
