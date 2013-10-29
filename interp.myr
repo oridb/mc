@@ -16,16 +16,13 @@ const exec = {re, str
 	re.strp = 0
 	run(re)
 	match re.matched
-	`std.None:
-		-> false
-		;;
-	`std.Some thr:	
+	|`std.None: -> false
+	| `std.Some thr:
 		for i = 0; i < re.nmatch; i++
 			std.put("match %z:", i)
 			std.put("[%z..%z]\n", thr.mstart[i], thr.mend[i])
 		;;
 		-> thr.mend[0] == str.len
-		;;
 	;;
 }
 
@@ -61,7 +58,7 @@ const step = {re, tid
 	str = re.str
 	match re.prog[thr.ip]
 	/* Char matching. Consume exactly one byte from the string. */
-	`Ibyte b:
+	| `Ibyte b:
 		trace(re, "\t%z:\tByte %b\n", thr.ip, b)
 		if !in(re, str)
 			kill(re, tid, "end of string")
@@ -71,28 +68,25 @@ const step = {re, tid
 			thr.ip++
 			trace(re, "\t\tmatched %b with %b\n", b, str[re.strp])
 		;;
-		;;
-	`Irange (start, end):
+	| `Irange (start, end):
 		trace(re, "\t%z:\tRange (%b, %b)\t", thr.ip, start, end)
 		if !in(re, str) || start > str[re.strp] || end < str[re.strp]
 			kill(re, tid, "bad range")
 		else
 			thr.ip++
 		;;
-		;;
-	`Idot:
+	| `Idot:
 		trace(re, "\t%z:\tDot\n", thr.ip)
 		if in(re, str)
 			kill(re, tid, "past end")
 		else
 			thr.ip++
 		;;
-		;;
 	/*
 	  Non-consuming. All of these recursively call step() until
 	  exactly one byte is consumed from the string.
 	 */
-	`Ibol:
+	| `Ibol:
 		trace(re, "\t%z:\tBol\n", thr.ip)
 		if re.strp == 0 || str[re.strp - 1] == '\n' castto(byte)
 			thr.ip++
@@ -100,43 +94,36 @@ const step = {re, tid
 		else
 			kill(re, tid, "not beginning of line")
 		;;
-		;;
-	`Ieol:
+	| `Ieol:
 		trace(re, "\t%z:\tEol\n", thr.ip)
 		if re.strp == str.len || str[re.strp] == '\n' castto(byte)
 			step(re, tid)
 		else
 			kill(re, tid, "not end of line")
 		;;
-		;;
-	`Ilbra	m:
+	| `Ilbra m:
 		trace(re, "\t%z:\tLbra %z\n", thr.ip, m)
 		trace(re, "\t\tmatch start = %z\n", re.strp)
 		thr.mstart[m] = re.strp
 		thr.ip++
 		step(re, tid)
-		;;
-	`Irbra	m:
+	| `Irbra m:
 		trace(re, "\t%z:\tRbra %z\n", thr.ip, m)
 		thr.mend[m] = re.strp
 		thr.ip++
 		step(re, tid)
-		;;
-	`Ifork	(lip, rip):
+	| `Ifork (lip, rip):
 		trace(re, "\t%z:\tFork (%z, %z)\n", thr.ip, rip, lip)
 		mstart = std.sldup(thr.mstart)
 		mend = std.sldup(thr.mend)
 		jmp(re, tid, rip)
 		fork(re, thr, lip, mstart, mend)
-		;;
-	`Ijmp ip:
+	| `Ijmp ip:
 		trace(re, "\t%z:\tJmp %z\n", thr.ip, ip)
 		jmp(re, tid, ip)
-		;;
-	`Imatch:
+	| `Imatch:
 		trace(re, "\t%z:\tMatch\n", thr.ip)
 		finish(re, tid)
-		;;
 	;;
 }
 
@@ -190,8 +177,8 @@ const kill = {re, tid, msg
 const finish = {re, tid
 	trace(re, "finish\n", tid)
 	match re.matched
-	`std.Some thr:	std.free(thr);;
-	`std.None:	;;
+	| `std.None:
+	| `std.Some thr:	std.free(thr)
 	;;
 	re.matched = `std.Some re.thr[tid]
 	re.thr[tid] = re.thr[re.nthr - 1]

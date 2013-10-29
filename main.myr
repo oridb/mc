@@ -3,9 +3,9 @@ use std
 
 const main = {
 	var found
-	match regex.compile("[a-z0-9]*bc")
+	match regex.compile(".*bc")
 	`std.Success re:
-		found = regex.exec(re, "a123bc")
+		found = regex.exec(re, "Abc")
 		std.put("Found = %t: len = %z\n", found, re.strp)
 		-> 0
 		;;
