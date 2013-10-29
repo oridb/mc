@@ -1,0 +1,32 @@
+pkg std =
+	generic hosttonet	: (v : @a -> @a)
+	generic nettohost	: (v : @a -> @a)
+;;
+
+/* FIXME: we only support little endian platforms right now,
+   so we assume a little endian machine. FIX THIS. */
+generic hosttonet = {v : @a::(tcint,tcnum,tctest)
+	var i
+	var ret
+
+	ret = 0
+	for i = 0; i < sizeof(@a); i++
+		ret <<= 8
+		ret |= v & 0xff 
+		v >>= 8
+	;;
+	-> ret
+}
+
+generic nettohost = {v : @a::(tcint,tcnum,tctest)
+	var i
+	var ret
+
+	ret = 0
+	for i = 0; i < sizeof(@a); i++
+		ret <<= 8
+		ret |= v & 0xff 
+		v >>= 8
+	;;
+	-> ret
+}

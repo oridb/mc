@@ -4,6 +4,7 @@ MYRSRC= \
     blat.myr \
     chartype.myr \
     die.myr \
+    endian.myr \
     env.myr \
     error.myr \
     extremum.myr \
