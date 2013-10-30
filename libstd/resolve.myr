@@ -136,11 +136,13 @@ const rquery = {srv
 	;;
 	pkt = pktbuf[:n]
 
+	put("packet size = %z\n", n)
 	(v, off) = unpack16(pkt, 0)
 	put("hdr.id = %w\n", v)
 	(v, off) = unpack16(pkt, off)
+	put("hdr.rawflag = %i\n", (((v castto(uint32)) & 0xf000) >> 12))
 	put("hdr.flag = [Qr = %t, Aa = %t, Tc = %t, Rd = %t, Ra = %t]\n", (v&Qr) == 0, (v&Aa) == 0, (v&Tc) == 0, (v&Rd)==0, (v&Ra)==0)
-	put("hdr.rcode = %w\n", (v >> 12) & 0xf)
+	put("hdr.rcode = %w\n", (v >> 11) & 0xf)
 	(nquery, off) = unpack16(pkt, off)
 	put("hdr.qdcount = %w\n", nquery)
 	(nans, off) = unpack16(pkt, off)
@@ -184,7 +186,9 @@ const dumpans = {pkt, off
 	(v, off) = unpack16(pkt, off)
 	put("\tbody.class = %w\n", v)
 	(v, off) = unpack16(pkt, off)
-	put("\tbody.ttl = %w\n", v)
+	put("\tbody.ttl_lo = %w\n", v)
+	(v, off) = unpack16(pkt, off)
+	put("\tbody.ttl_hi = %w\n", v)
 	(v, off) = unpack16(pkt, off)
 	put("\tbody.rdlength = %w\n", v)
 	(v, off) = unpack16(pkt, off)
@@ -198,11 +202,16 @@ const printname = {pkt, off
 	var sz
 
 	for sz = pkt[off] castto(size); sz != 0; sz = pkt[off] castto(size)
-		put("\t%s.\n", pkt[off+1:off+sz+1])
-		off += sz + 1
+		if sz & 0xC0 == 0xC0
+			put("PTR: ")
+			printname(pkt, ((sz & ~0xC0) << 8) | (pkt[off + 1] castto(size)))
+			-> off + 2
+		else
+			put("%s.", pkt[off+1:off+sz+1])
+			off += sz + 1
+		;;
 	;;
-	put(".\n")
-	-> off
+	-> off + 1
 }
 
 const pack16 = {buf, off, v
