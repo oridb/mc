@@ -123,8 +123,11 @@ const rquery = {srv
 	var pktbuf : byte[1024]
 	var pkt
 	var off
+	var nans
+	var nquery
 	var n
 	var v
+	var i
 
 	put("Waiting for response...\n")
 	n = read(srv, pktbuf[:])
@@ -132,34 +135,70 @@ const rquery = {srv
 		put("Warning: Failed to read from %z: %i\n", srv, n)
 	;;
 	pkt = pktbuf[:n]
-	put("pkt: [len = %z]: %s\n", n, pkt)
 
 	(v, off) = unpack16(pkt, 0)
 	put("hdr.id = %w\n", v)
 	(v, off) = unpack16(pkt, off)
 	put("hdr.flag = [Qr = %t, Aa = %t, Tc = %t, Rd = %t, Ra = %t]\n", (v&Qr) == 0, (v&Aa) == 0, (v&Tc) == 0, (v&Rd)==0, (v&Ra)==0)
 	put("hdr.rcode = %w\n", (v >> 12) & 0xf)
-	(v, off) = unpack16(pkt, off)
-	put("hdr.qdcount = %w\n", v)
-	(v, off) = unpack16(pkt, off)
-	put("hdr.ancount = %w\n", v)
+	(nquery, off) = unpack16(pkt, off)
+	put("hdr.qdcount = %w\n", nquery)
+	(nans, off) = unpack16(pkt, off)
+	put("hdr.ancount = %w\n", nans)
 	(v, off) = unpack16(pkt, off)
 	put("hdr.nscount = %w\n", v)
 	(v, off) = unpack16(pkt, off)
 	put("hdr.arcount = %w\n", v)
-	put("off = %z\n", off)
-	put("name = "); 
+	put("Queries:\n")
+	for i = 0; i < nquery; i++
+		put("i: %w\n", i)
+		off = dumpquery(pkt, off)
+	;;
+
+	put("Answers:")
+	for i = 0; i < nans; i++
+		put("i: %w\n", i)
+		off = dumpans(pkt, off)
+	;;
+}
+
+const dumpquery = {pkt, off
+	var v
+
+	put("\tname = "); 
 	off = printname(pkt, off)
-	put("off = %z\n", off)
 	(v, off) = unpack16(pkt, off)
-	put("body.what = %w\n", v)
+	put("\tbody.type = %w\n", v)
+	(v, off) = unpack16(pkt, off)
+	put("\tbody.class = %w\n", v)
+	-> off
+}
+
+const dumpans = {pkt, off
+	var v
+
+	put("\tname = "); 
+	off = printname(pkt, off)
+	(v, off) = unpack16(pkt, off)
+	put("\tbody.type = %w\n", v)
+	(v, off) = unpack16(pkt, off)
+	put("\tbody.class = %w\n", v)
+	(v, off) = unpack16(pkt, off)
+	put("\tbody.ttl = %w\n", v)
+	(v, off) = unpack16(pkt, off)
+	put("\tbody.rdlength = %w\n", v)
+	(v, off) = unpack16(pkt, off)
+	put("\tbody.rdata_lo = %w\n", v)
+	(v, off) = unpack16(pkt, off)
+	put("\tbody.rdata_hi = %w\n", v)
+	-> off
 }
 
 const printname = {pkt, off
 	var sz
 
 	for sz = pkt[off] castto(size); sz != 0; sz = pkt[off] castto(size)
-		put("nameseg[len=%z, off = %z] = %s\n", sz, off, pkt[off+1:off+sz+1])
+		put("\t%s.\n", pkt[off+1:off+sz+1])
 		off += sz + 1
 	;;
 	put(".\n")
