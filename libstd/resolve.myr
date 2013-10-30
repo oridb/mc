@@ -91,20 +91,20 @@ const dnsquery = {srv, host
 }
 
 const Qr : uint16 = 1 << 0
-const Aa : uint16 = 1 << 4
-const Tc : uint16 = 1 << 5
-const Rd : uint16 = 1 << 6
-const Ra : uint16 = 1 << 7
+const Aa : uint16 = 1 << 5
+const Tc : uint16 = 1 << 6
+const Rd : uint16 = 1 << 7
+const Ra : uint16 = 1 << 8
 
-var nextid = 0
+var nextid = 42
 const tquery = {srv, host
 	var pkt : byte[512] /* big enough */
-	var off
+	var off : size
 
 	/* header */
 	off = 0
 	off += pack16(pkt[:], off, nextid++)	/* id */
-	off += pack16(pkt[:], off, Qr|Ra|Rd)	/* flags */
+	off += pack16(pkt[:], off, Ra)	/* flags */
 	off += pack16(pkt[:], off, 1)	/* qdcount */
 	off += pack16(pkt[:], off, 0)	/* ancount */
 	off += pack16(pkt[:], off, 0)	/* nscount */
@@ -115,18 +115,55 @@ const tquery = {srv, host
 	off += pack16(pkt[:], off, 0x1) /* qtype: a record */
 	off += pack16(pkt[:], off, 0x1) /* qclass: inet4 */
 
+	write(1, pkt[:off])
 	write(srv, pkt[:off])
 }
 
 const rquery = {srv
 	var pktbuf : byte[1024]
+	var pkt
+	var off
 	var n
+	var v
 
+	put("Waiting for response...\n")
 	n = read(srv, pktbuf[:])
 	if n < 0
 		put("Warning: Failed to read from %z: %i\n", srv, n)
 	;;
-	put("pkt: [len = %z]: %s\n", n, pktbuf[:n])
+	pkt = pktbuf[:n]
+	put("pkt: [len = %z]: %s\n", n, pkt)
+
+	(v, off) = unpack16(pkt, 0)
+	put("hdr.id = %w\n", v)
+	(v, off) = unpack16(pkt, off)
+	put("hdr.flag = [Qr = %t, Aa = %t, Tc = %t, Rd = %t, Ra = %t]\n", (v&Qr) == 0, (v&Aa) == 0, (v&Tc) == 0, (v&Rd)==0, (v&Ra)==0)
+	put("hdr.rcode = %w\n", (v >> 12) & 0xf)
+	(v, off) = unpack16(pkt, off)
+	put("hdr.qdcount = %w\n", v)
+	(v, off) = unpack16(pkt, off)
+	put("hdr.ancount = %w\n", v)
+	(v, off) = unpack16(pkt, off)
+	put("hdr.nscount = %w\n", v)
+	(v, off) = unpack16(pkt, off)
+	put("hdr.arcount = %w\n", v)
+	put("off = %z\n", off)
+	put("name = "); 
+	off = printname(pkt, off)
+	put("off = %z\n", off)
+	(v, off) = unpack16(pkt, off)
+	put("body.what = %w\n", v)
+}
+
+const printname = {pkt, off
+	var sz
+
+	for sz = pkt[off] castto(size); sz != 0; sz = pkt[off] castto(size)
+		put("nameseg[len=%z, off = %z] = %s\n", sz, off, pkt[off+1:off+sz+1])
+		off += sz + 1
+	;;
+	put(".\n")
+	-> off
 }
 
 const pack16 = {buf, off, v
@@ -135,45 +172,42 @@ const pack16 = {buf, off, v
 	-> sizeof(uint16) /* we always write one uint16 */
 }
 
-/*
 const unpack16 = {buf, off
 	var v
 
 	v = (buf[off] castto(uint16)) << 8
 	v |= (buf[off + 1] castto(uint16))
-	-> (v, sizeof(uint16))
+	-> (v, off+sizeof(uint16))
 }
-*/
 
-const packname = {buf, off, host
+const packname = {buf, off : size, host
 	var i
 	var start
 	var seglen
 	var lastseg
 
 	start = off
+	seglen = 0
 	lastseg = 0
 	for i = 0; i < host.len; i++
+		seglen++
 		if host[i] == ('.' castto(byte))
-			off += addseg(buf, off, host[lastseg:lastseg+seglen])
-			lastseg = seglen + 1
+			off += addseg(buf, off, host[lastseg:lastseg+seglen-1])
+			lastseg = seglen
 			seglen = 0
 		;;
-		seglen++
 	;;
 	if host[host.len - 1] != ('.' castto(byte))
 		off += addseg(buf, off, host[lastseg:lastseg + seglen])
 	;;
 	off += addseg(buf, off, "") /* null terminating segment */
-	put("size: %z\n", off - start)
 	-> off - start
 }
 
 const addseg = {buf, off, str
-	put("Adding seg %s\n", str)
-	buf[0] = str.len castto(byte)
+	buf[off] = str.len castto(byte)
 	slcp(buf[off + 1 : off + str.len + 1], str)
-	-> str.len
+	-> str.len + 1
 }
 
 const valid = {host : byte[:]
