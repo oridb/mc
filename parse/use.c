@@ -678,7 +678,9 @@ int loaduse(FILE *f, Stab *st)
                 htput(tidmap, (void*)tid, t);
                 /* fix up types */
                 if (t->type == Tyname) {
-                    if (!gettype(st, t->name) && !t->issynth && !t->ishidden)
+                    if (t->issynth)
+                        break;
+                    if (!gettype(st, t->name) && !t->ishidden)
                         puttype(s, t->name, t);
                     if (!hthas(dedup, t->name))
                         htput(dedup, t->name, t);
