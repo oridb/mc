@@ -4,15 +4,13 @@ use std
 const main = {
 	var found
 	match regex.compile(".*bc")
-	`std.Success re:
+	| `std.Success re:
 		found = regex.exec(re, "Abc")
 		std.put("Found = %t: len = %z\n", found, re.strp)
 		-> 0
-		;;
-	`std.Failure err:
+	| `std.Failure err:
 		std.put("failed to compile regex")
 		-> 1
-		;;
 	;;
 }
 
