@@ -317,8 +317,11 @@ static Type *tf(Inferstate *st, Type *orig)
      * match the instantiation */
     if (orig->type == Tyunres && t->isgeneric) {
         t = tyfreshen(st, t);
-        for (i = 0; i < t->narg; i++)
-             unify(st, NULL, t->arg[i], orig->arg[i]);
+        for (i = 0; i < t->narg; i++) {
+            unify(st, NULL, t->arg[i], orig->arg[i]);
+            if (orig->arg[i]->type == Typaram || isgeneric(st, t->arg[i]))
+                t->isgeneric = 1;
+        }
     }
     st->ingeneric -= t->isgeneric;
     return t;

@@ -73,8 +73,8 @@ const dnsconnect = {
 	;;
 	/* hardcode Google DNS for now */
 	sa.fam = Afinet
-	sa.port = hosttonet(53)
-	sa.addr = 0x08080808
+	sa.port = hosttonet(53) /* port 53 */
+	sa.addr = [8,8,8,8]	/* 8.8.8.8 */
 	status = connect(s, (&sa) castto(sockaddr#), sizeof(sockaddr_in))
 	if status < 0
 		put("Warning: Failed to connect to server: %l\n", status)
@@ -122,12 +122,7 @@ const tquery = {srv, host
 const rquery = {srv
 	var pktbuf : byte[1024]
 	var pkt
-	var off
-	var nans
-	var nquery
 	var n
-	var v
-	var i
 
 	put("Waiting for response...\n")
 	n = read(srv, pktbuf[:])
@@ -135,8 +130,18 @@ const rquery = {srv
 		put("Warning: Failed to read from %z: %i\n", srv, n)
 	;;
 	pkt = pktbuf[:n]
+	dumpresponse(pkt)
+}
 
-	put("packet size = %z\n", n)
+
+const dumpresponse = {pkt
+	var nquery
+	var nans
+	var off
+	var v
+	var i
+
+	put("packet size = %z\n", pkt.len)
 	(v, off) = unpack16(pkt, 0)
 	put("hdr.id = %w\n", v)
 	(v, off) = unpack16(pkt, off)

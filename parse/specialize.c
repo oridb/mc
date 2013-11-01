@@ -23,8 +23,6 @@ static int hasparams(Type *t)
 
     if (t->type == Typaram)
         return 1;
-    if (t->type == Tyname && t->isgeneric)
-        return 1;
     for (i = 0; i < t->nsub; i++)
         if (hasparams(t->sub[i]))
             return 1;
@@ -67,6 +65,7 @@ Type *tyspecialize(Type *t, Htab *tsmap)
                 htput(tsmap, t, ret);
                 for (i = 0; i < t->nparam; i++)
                     lappend(&ret->arg, &ret->narg, tyspecialize(t->param[i], tsmap));
+		ret->isgeneric = hasparams(ret);
             }
             break;
         case Tystruct:
