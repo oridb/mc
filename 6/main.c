@@ -51,13 +51,19 @@ static void assem(char *asmsrc, char *input)
         die("Couldn't run assembler");
 }
 
-static char *gentemp(char *buf, size_t bufsz, char *base, char *suffix)
+static char *gentemp(char *buf, size_t bufsz, char *path, char *suffix)
 {
     char *tmpdir;
+    char *base;
 
     tmpdir = getenv("TMPDIR");
     if (!tmpdir)
         tmpdir = "/tmp";
+    base = strrchr(path, '/');
+    if (base)
+        base++;
+    else
+        base = path;
     snprintf(buf, bufsz, "%s/tmp%lx-%s%s", tmpdir, random(), base, suffix);
     return buf;
 }
