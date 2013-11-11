@@ -89,6 +89,7 @@ B matchunion_sl	P	foo
 B matchbind	E	8
 F matchmixed
 
+B bigliteral	P	34359738368
 B arraylit-ni	E	2
 B livearraylit	E	21
 # B arraylit	E	3       ## BUGGERED
