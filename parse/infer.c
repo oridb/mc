@@ -24,6 +24,8 @@ struct Inferstate {
     /* nodes that need post-inference checking/unification */
     Node **postcheck;
     size_t npostcheck;
+    Stab **postcheckscope;
+    size_t npostcheckscope;
     /* the type params bound at the current point */
     Htab **tybindings;
     size_t ntybindings;
@@ -99,7 +101,13 @@ static char *ctxstr(Inferstate *st, Node *n)
     return s;
 }
 
-void typeerror(Inferstate *st, Type *a, Type *b, Node *ctx, char *msg)
+static void delayedcheck(Inferstate *st, Node *n, Stab *s)
+{
+    lappend(&st->postcheck, &st->npostcheck, n);
+    lappend(&st->postcheckscope, &st->npostcheckscope, s);
+}
+
+static void typeerror(Inferstate *st, Type *a, Type *b, Node *ctx, char *msg)
 {
     char *t1, *t2, *c;
 
@@ -878,7 +886,7 @@ static void inferstruct(Inferstate *st, Node *n, int *isconst)
             *isconst = 0;
     }
     settype(st, n, mktyvar(n->line));
-    lappend(&st->postcheck, &st->npostcheck, n);
+    delayedcheck(st, n, curstab());
 }
 
 static void inferarray(Inferstate *st, Node *n, int *isconst)
@@ -1107,7 +1115,7 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
         /* special cases */
         case Omemb:     /* @a.Ident -> @b, verify type(@a.Ident)==@b later */
             settype(st, n, mktyvar(n->line));
-            lappend(&st->postcheck, &st->npostcheck, n);
+            delayedcheck(st, n, curstab());
             break;
         case Osize:     /* sizeof @a -> size */
             settype(st, n, mktylike(n->line, Tyuint));
@@ -1116,7 +1124,7 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
             unifycall(st, n);
             break;
         case Ocast:     /* cast(@a, @b) -> @b */
-            lappend(&st->postcheck, &st->npostcheck, n);
+            delayedcheck(st, n, curstab());
             break;
         case Oret:      /* -> @a -> void */
             if (sawret)
@@ -1474,6 +1482,7 @@ static void postcheck(Inferstate *st, Node *file)
 
     for (i = 0; i < st->npostcheck; i++) {
         n = st->postcheck[i];
+        pushstab(st->postcheckscope[i]);
         if (n->type == Nexpr && exprop(n) == Omemb)
             infercompn(st, n);
         else if (n->type == Nexpr && exprop(n) == Ocast)
@@ -1482,6 +1491,7 @@ static void postcheck(Inferstate *st, Node *file)
             checkstruct(st, n);
         else
             die("Thing we shouldn't be checking in postcheck\n");
+        popstab();
     }
 }
 
@@ -1509,6 +1519,46 @@ static void stabsub(Inferstate *st, Stab *s)
         d->decl.type = tyfix(st, d, d->decl.type);
     }
     free(k);
+}
+
+static void checkrange(Inferstate *st, Node *n)
+{
+    Type *t;
+    int64_t sval;
+    uint64_t uval;
+    static const int64_t svranges[][2] = {
+        /* signed ints */
+        [Tyint8]  = {-128LL, 127LL},
+        [Tyint16] = {-32768LL, 32767LL},
+        [Tyint32] = {-2147483648LL, 2*2147483647LL}, /* FIXME: this has been doubled allow for uints... */
+        [Tyint]   = {-2147483648LL, 2*2147483647LL},
+        [Tyint64] = {-9223372036854775808ULL, 9223372036854775807LL},
+        [Tylong]  = {-9223372036854775808ULL, 9223372036854775807LL},
+    };
+
+    static const uint64_t uvranges[][2] = {
+        [Tybyte]   = {0, 255ULL},
+        [Tyuint8]  = {0, 255ULL},
+        [Tyuint16] = {0, 65535ULL},
+        [Tyuint32] = {0, 4294967295ULL},
+        [Tyuint64] = {0, 18446744073709551615ULL},
+        [Tyulong]  = {0, 18446744073709551615ULL},
+        [Tychar]   = {0, 4294967295ULL},
+    };
+
+    /* signed types */
+    t = type(st, n);
+    if (t->type >= Tyint8 && t->type <= Tylong) {
+        sval = n->lit.intval;
+        if (sval < svranges[t->type][0] || sval > svranges[t->type][1])
+            fatal(n->line, "Literal value %lld out of range for type \"%s\"", sval, tystr(t));
+    } else if ((t->type >= Tybyte && t->type <= Tyulong) || t->type == Tychar) {
+        uval = n->lit.intval;
+        if (uval < uvranges[t->type][0] || uval > uvranges[t->type][1])
+            fatal(n->line, "Literal value %llu out of range for type \"%s\"", tystr(t));
+    } else {
+        fatal(n->line, "Literal type %s has no range\n", tystr(t));
+    }
 }
 
 /* After type inference, replace all types
@@ -1579,6 +1629,8 @@ static void typesub(Inferstate *st, Node *n)
             switch (n->lit.littype) {
                 case Lfunc:
                     typesub(st, n->lit.fnval); break;
+                case Lint:
+                    checkrange(st, n);
                 default:        break;
             }
             break;
