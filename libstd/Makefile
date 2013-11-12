@@ -11,7 +11,7 @@ MYRSRC= \
     fmt.myr \
     hashfuncs.myr \
     htab.myr \
-    ipaddr.myr \
+    ipparse.myr \
     intparse.myr \
     now.myr \
     option.myr \
