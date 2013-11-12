@@ -70,7 +70,7 @@ pkg std =
 		len	: byte
 		fam	: sockfam
 		port	: uint16
-		addr	: uint32
+		addr	: byte[4]
 		zero	: byte[8]
 	;;
 
