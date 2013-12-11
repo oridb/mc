@@ -7,9 +7,7 @@ with integers.
 */
 const foo = {
 	match 123
-	"asdf":	123
-		;;
-	234:	888
-		;;
+	|"asdf":	123
+	|234567:	888
 	;;
 }
