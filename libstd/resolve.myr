@@ -12,37 +12,34 @@ pkg std =
 		`Badhost
 		`Badsrv
 		`Badquery
+		`Badresp
+	;;
+
+	type netaddr = union
+		`Ipv4	byte[4]
+		`Ipv6	byte[16]
 	;;
 
 	type hostinfo = struct
-		flags	: uint32
 		fam	: sockfam
 		stype	: socktype
+		ttl	: uint32
+		addr	: netaddr
+	/*
 		proto	: uint32
+		flags	: uint32
 		addr	: sockaddr[:]
 		canon	: byte[:]
 		next	: hostinfo#
+	*/
 	;;
 
-	const resolve	: (host : byte[:]	-> hostinfo#)
-;;
-
-type dnshdr = struct
-	id	: uint16
-	/* {qr:1|op:4|aa:1|tc:1|rd:1|ra:1|z:3|rcode:4} */
-	flags	: uint16  
-	qdcnt	: uint16
-	ancnt	: uint16
-	nscnt	: uint16
-	arcnt	: uint16
+	const resolve	: (host : byte[:]	-> error(hostinfo[:], resolveerr))
 ;;
 
 const resolve = {host : byte[:]
-	var hinf
-
-	hinf = zalloc()
-	dnsresolve(host)
-	-> hinf
+	/* FIXME: read /etc/hosts */
+	-> dnsresolve(host)
 }
 
 const dnsresolve = {host : byte[:]
@@ -55,10 +52,7 @@ const dnsresolve = {host : byte[:]
 	if (nsrv = dnsconnect()) < 0
 		-> `Failure (`Badsrv)
 	;;
-	if !dnsquery(nsrv, host)
-		-> `Failure (`Badquery)
-	;;
-	-> `Success true
+	-> dnsquery(nsrv, host)
 }
 
 const dnsconnect = {
@@ -71,7 +65,8 @@ const dnsconnect = {
 		put("Warning: Failed to open socket: %l\n", s)
 		-> -1
 	;;
-	/* hardcode Google DNS for now */
+	/* hardcode Google DNS for now.
+	FIXME: parse /etc/resolv.conf */
 	sa.fam = Afinet
 	sa.port = hosttonet(53) /* port 53 */
 	sa.addr = [8,8,8,8]	/* 8.8.8.8 */
@@ -84,10 +79,13 @@ const dnsconnect = {
 }
 
 const dnsquery = {srv, host
-	tquery(srv, host)
-	rquery(srv)
-	put("Unimplemented query: srv=%z, host=%s\n", srv, host)
-	-> false
+	var id
+	var r
+
+	id = tquery(srv, host)
+	r = rquery(srv, id)
+	put("Got hosts. Returning\n")
+	-> r
 }
 
 const Qr : uint16 = 1 << 0
@@ -96,14 +94,15 @@ const Tc : uint16 = 1 << 6
 const Rd : uint16 = 1 << 7
 const Ra : uint16 = 1 << 8
 
-var nextid = 42
+var nextid : uint16 = 42
 const tquery = {srv, host
 	var pkt : byte[512] /* big enough */
 	var off : size
 
+	put("Sending request for %s\n", host)
 	/* header */
 	off = 0
-	off += pack16(pkt[:], off, nextid++)	/* id */
+	off += pack16(pkt[:], off, nextid)	/* id */
 	off += pack16(pkt[:], off, Ra)	/* flags */
 	off += pack16(pkt[:], off, 1)	/* qdcount */
 	off += pack16(pkt[:], off, 0)	/* ancount */
@@ -115,11 +114,11 @@ const tquery = {srv, host
 	off += pack16(pkt[:], off, 0x1) /* qtype: a record */
 	off += pack16(pkt[:], off, 0x1) /* qclass: inet4 */
 
-	write(1, pkt[:off])
 	write(srv, pkt[:off])
+	-> nextid++
 }
 
-const rquery = {srv
+const rquery = {srv, id
 	var pktbuf : byte[1024]
 	var pkt
 	var n
@@ -130,7 +129,53 @@ const rquery = {srv
 		put("Warning: Failed to read from %z: %i\n", srv, n)
 	;;
 	pkt = pktbuf[:n]
+	put("Got response:\n");
 	dumpresponse(pkt)
+	-> hosts(pkt, id)
+}
+
+const hosts = {pkt, id : uint16
+	var off
+	var v
+	var q
+	var a
+	var i
+	var hinf : hostinfo[:]
+
+	off = 0
+	/* parse header */
+	(v, off) = unpack16(pkt, off)	/* id */
+	if v != id
+		-> `Failure (`Badresp)
+	;;
+	put("Unpacking flags")
+	(v, off) = unpack16(pkt, off)	/* flags */
+	(q, off) = unpack16(pkt, off)	/* qdcount */
+	(a, off) = unpack16(pkt, off)	/* ancount */
+	(v, off) = unpack16(pkt, off)	/* nscount */
+	(v, off) = unpack16(pkt, off)	/* arcount */
+
+	/* skip past query records */
+	for i = 0; i < q; i++
+		put("Skipping query record")
+		off = skipname(pkt, off)	/* name */
+		(v, off) = unpack16(pkt, off)	/* type */
+		(v, off) = unpack16(pkt, off)	/* class */
+	;;
+
+	/* parse answer records */
+	hinf = slalloc(a castto(size))
+	for i = 0; i < a; i++
+		off = skipname(pkt, off)	/* name */
+		(v, off) = unpack16(pkt, off)	/* type */
+		(v, off) = unpack16(pkt, off)	/* class */
+		(hinf[i].ttl, off) = unpack32(pkt, off)	/* ttl */
+		(v, off) = unpack16(pkt, off)	/* rdatalen */
+		/* the thing we're interested in: our IP address */
+		hinf[i].addr = `Ipv4 [pkt[off], pkt[off+1], pkt[off+2], pkt[off+3]]
+		off += 4;
+	;;
+	-> `Success hinf
 }
 
 
@@ -141,13 +186,8 @@ const dumpresponse = {pkt
 	var v
 	var i
 
-	put("packet size = %z\n", pkt.len)
 	(v, off) = unpack16(pkt, 0)
-	put("hdr.id = %w\n", v)
 	(v, off) = unpack16(pkt, off)
-	put("hdr.rawflag = %i\n", (((v castto(uint32)) & 0xf000) >> 12))
-	put("hdr.flag = [Qr = %t, Aa = %t, Tc = %t, Rd = %t, Ra = %t]\n", (v&Qr) == 0, (v&Aa) == 0, (v&Tc) == 0, (v&Rd)==0, (v&Ra)==0)
-	put("hdr.rcode = %w\n", (v >> 11) & 0xf)
 	(nquery, off) = unpack16(pkt, off)
 	put("hdr.qdcount = %w\n", nquery)
 	(nans, off) = unpack16(pkt, off)
@@ -203,6 +243,21 @@ const dumpans = {pkt, off
 	-> off
 }
 
+const skipname = {pkt, off
+	var sz
+
+	for sz = pkt[off] castto(size); sz != 0; sz = pkt[off] castto(size)
+		/* ptr is 2 bytes */
+		if sz & 0xC0 == 0xC0
+			-> off + 2
+		else
+			off += sz + 1
+		;;
+	;;
+	-> off + 1
+}
+
+
 const printname = {pkt, off
 	var sz
 
@@ -231,6 +286,16 @@ const unpack16 = {buf, off
 	v = (buf[off] castto(uint16)) << 8
 	v |= (buf[off + 1] castto(uint16))
 	-> (v, off+sizeof(uint16))
+}
+
+const unpack32 = {buf, off
+	var v
+
+	v = (buf[off] castto(uint32)) << 24
+	v |= (buf[off+1] castto(uint32)) << 32
+	v |= (buf[off+2] castto(uint32)) << 8
+	v |= (buf[off+3] castto(uint32))
+	-> (v, off+sizeof(uint32))
 }
 
 const packname = {buf, off : size, host
