@@ -8,10 +8,12 @@ pkg std =
 	const strrstrip	: (str : byte[:] -> byte[:])
 ;;
 
+/* strip blanks from both head and tail of str */
 const strstrip = {str
 	-> strrstrip(strfstrip(str))
 }
 
+/* strip forward on str */
 const strfstrip = {str
 	var c
 	
@@ -22,6 +24,7 @@ const strfstrip = {str
 
 }
 
+/* strip reverse on str */
 const strrstrip = {str
 	var i
 	var end
