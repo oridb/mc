@@ -104,6 +104,8 @@ B helloworld	P	Hello-世界
 B encodechar	P	1世界äa
 B strtab	C
 B catfile	C
+B strstrip	C
+B strsplit	C
 # B local-labels	E	10 ## BUGGERED
 F declmismatch
 F infermismatch
