@@ -1,0 +1,13 @@
+use "types.use"
+use "alloc.use"
+use "fmt.use"
+
+pkg std =
+	generic slpush	: (sl : @a[:], elt : @a	-> @a[:])
+;;
+
+generic slpush = {sl, elt
+	sl = slgrow(sl, sl.len + 1)
+	sl[sl.len - 1] = elt
+	-> sl
+}
