@@ -479,7 +479,7 @@ int rdbool(FILE *fd);
 
 size_t max(size_t a, size_t b);
 size_t min(size_t a, size_t b);
-size_t align(size_t sz, size_t align);
+size_t align(size_t sz, size_t a);
 
 /* suffix replacement */
 char *swapsuffix(char *buf, size_t sz, char *s, char *suf, char *swap);

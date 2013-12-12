@@ -375,8 +375,11 @@ size_t min(size_t a, size_t b)
         return b;
 }
 
-size_t align(size_t sz, size_t align)
+size_t align(size_t sz, size_t a)
 {
-    return (sz + align - 1) & ~(align - 1);
+    /* align to 0 just returns sz */
+    if (a == 0)
+        return sz;
+    return (sz + a - 1) & ~(a - 1);
 }
 
