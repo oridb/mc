@@ -66,7 +66,7 @@ pkg std =
 	type sockaddr_in = struct
 		fam	: sockfam
 		port	: uint16
-		addr	: uint32
+		addr	: byte[4]
 		zero	: byte[8]
 	;;
 
@@ -500,16 +500,16 @@ const uname	= {buf;	-> syscall(Sysuname, buf) castto(int)}
 
 const clockid = {clk
 	match clk
-	`Clockrealtime:		-> 0;;
-	`Clockmonotonic:	-> 1;;
-	`Clockproccpu:		-> 2;;
-	`Clockthreadcpu:	-> 3;;
-	`Clockmonotonicraw:	-> 4;;
-	`Clockrealtimecoarse:	-> 5;;
-	`Clockmonotoniccoarse:	-> 6;;
-	`Clockboottime:		-> 7;;
-	`Clockrealtimealarm:	-> 8;;
-	`Clockboottimealarm:	-> 9;;
+	| `Clockrealtime:	-> 0
+	| `Clockmonotonic:	-> 1
+	| `Clockproccpu:	-> 2
+	| `Clockthreadcpu:	-> 3
+	| `Clockmonotonicraw:	-> 4
+	| `Clockrealtimecoarse:	-> 5
+	| `Clockmonotoniccoarse:-> 6
+	| `Clockboottime:	-> 7
+	| `Clockrealtimealarm:	-> 8
+	| `Clockboottimealarm:	-> 9
 	;;
 	-> -1
 }
