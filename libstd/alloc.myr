@@ -118,7 +118,7 @@ generic slgrow = {sl : @a[:], len
 
 	/* if the slice wouldn't change buckets, we don't need to realloc. */
 	if samebucket(sl.len * sizeof(@a), len * sizeof(@a))
-		-> sl
+		-> (sl castto(@a#))[:len]
 	;;
 
 	new = slalloc(len)

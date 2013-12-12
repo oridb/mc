@@ -3,7 +3,10 @@ use "die.use"
 use "endian.use"
 use "error.use"
 use "fmt.use"
+use "option.use"
 use "slcp.use"
+use "slurp.use"
+use "strsplit.use"
 use "sys.use"
 use "types.use"
 
@@ -37,9 +40,33 @@ pkg std =
 	const resolve	: (host : byte[:]	-> error(hostinfo[:], resolveerr))
 ;;
 
+const Hostfile = "/etc/hosts"
+
 const resolve = {host : byte[:]
-	/* FIXME: read /etc/hosts */
-	-> dnsresolve(host)
+	match hostfind(host)
+	| `Some h:	-> h
+	| `None: 	-> dnsresolve(host)
+	;;
+}
+
+const hostfind = {host
+	var hdat
+	var lines
+	/*
+	var ip
+	var host
+	*/
+	var i
+
+	match slurp(Hostfile)
+	| `Success h:	hdat = h
+	| `Failure m:	-> `None
+	;;
+
+	lines = strsplit(hdat, "\n")
+	for i = 0; i < lines.len; i++
+		put("Hosts: Line %s\n", lines[i])
+	;;
 }
 
 const dnsresolve = {host : byte[:]

@@ -11,8 +11,8 @@ MYRSRC= \
     fmt.myr \
     hashfuncs.myr \
     htab.myr \
-    ipparse.myr \
     intparse.myr \
+    ipparse.myr \
     now.myr \
     option.myr \
     optparse.myr \
@@ -23,7 +23,10 @@ MYRSRC= \
     sldup.myr \
     sleq.myr \
     sljoin.myr \
+    slpush.myr \
     slurp.myr \
+    strsplit.myr \
+    strstrip.myr \
     strcmp.myr \
     sys.myr \
     types.myr \

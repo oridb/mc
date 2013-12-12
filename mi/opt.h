@@ -3,6 +3,8 @@ typedef struct Bb Bb;
 
 struct  Cfg {
     Bb **bb;
+    Bb *start;
+    Bb *end;
     size_t nbb;
 
     /* for building bb */
