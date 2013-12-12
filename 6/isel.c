@@ -353,21 +353,7 @@ static Loc *memloc(Isel *s, Node *e, Mode m)
 
 static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size_t sz)
 {
-    AsmOp op;
     Loc *sp, *dp, *len; /* pointers to src, dst */
-
-    if (sz % 8 == 0) {
-        sz /= 8;
-        op = Irepmovsq;
-    } else if (sz % 4 == 0) {
-        sz /= 4;
-        op = Irepmovsl;
-    } else if (sz % 2 == 0) {
-        sz /= 2;
-        op = Irepmovsw;
-    } else {
-        op = Irepmovsb;
-    }
 
     len = loclit(sz, ModeQ);
     sp = inr(s, from);
@@ -385,7 +371,7 @@ static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size
         g(s, Ilea, locmem(dstoff, dp, NULL, ModeQ), locphysreg(Rrdi), NULL);
     else
         g(s, Imov, dp, locphysreg(Rrdi), NULL);
-    g(s, op, NULL);
+    g(s, Irepmovsb, NULL);
 }
 
 static Loc *gencall(Isel *s, Node *n)

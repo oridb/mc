@@ -1,0 +1,44 @@
+use "types.use"
+use "utf.use"
+use "chartype.use"
+
+pkg std =
+	const strstrip	: (str : byte[:] -> byte[:])
+	const strfstrip	: (str : byte[:] -> byte[:])
+	const strrstrip	: (str : byte[:] -> byte[:])
+;;
+
+/* strip blanks from both head and tail of str */
+const strstrip = {str
+	-> strrstrip(strfstrip(str))
+}
+
+/* strip forward on str */
+const strfstrip = {str
+	var c
+	
+	for c = decode(str); isblank(c); c = decode(str)
+		str = str[charlen(c):]
+	;;
+	-> str
+
+}
+
+/* strip reverse on str */
+const strrstrip = {str
+	var i
+	var end
+
+	/* scan backwards for start of utf8 char */
+	end = 0
+	for i = str.len; i != 0; i--
+		if str[i] & 0x80 == 0
+			if !isspace(decode(str[i-1:]))
+				goto donestrip
+			;;
+			end = i - 1
+		;;
+	;;
+:donestrip
+	-> str[:end]
+}

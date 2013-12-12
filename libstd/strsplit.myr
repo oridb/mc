@@ -1,0 +1,29 @@
+use "alloc.use"
+use "die.use"
+use "extremum.use"
+use "fmt.use"
+use "slpush.use"
+use "sys.use"
+use "types.use"
+
+pkg std =
+	const strsplit	: (s : byte[:], delim : byte[:] -> byte[:][:])
+;;
+
+const strsplit = {s, delim
+	var i
+	var last
+	var sp
+
+	sp = [][:]
+	last = 0
+	assert(delim.len == 1, "FIXME: We should support strings as delimiters")
+	for i = 0; i < s.len; i++
+		if s[i] == delim[0]
+			sp = slpush(sp, s[last:i])
+			last = i + 1
+		;;
+	;;
+	-> sp
+}
+

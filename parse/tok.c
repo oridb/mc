@@ -526,7 +526,7 @@ static Tok *number(int base)
             continue;
         if (c == '.')
             isfloat = 1;
-        else if (hexval(c) > base)
+        else if (hexval(c) < 0 || hexval(c) > base)
             fatal(line, "Integer digit '%c' outside of base %d", c, base);
     }
 

@@ -7,8 +7,8 @@ type u = union
 
 const main = {
 	match "asdf"
-	`A:	std.put("Got a\n");;
-	`B:	std.put("Got b\n");;
+	| `A:	std.put("Got a\n")
+	| `B:	std.put("Got b\n")
 	;;
 	-> 42
 }
