@@ -24,6 +24,7 @@ const strsplit = {s, delim
 			last = i + 1
 		;;
 	;;
+	sp = slpush(sp, s[last:i])
 	-> sp
 }
 
