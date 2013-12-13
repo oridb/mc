@@ -244,6 +244,7 @@ void updatens(Stab *st, char *name)
 {
     void **k;
     size_t i, nk;
+    Tydefn *td;
 
     if (st->name)
         die("Stab %s already has namespace; Can't set to %s", namestr(st->name), name);
@@ -255,6 +256,11 @@ void updatens(Stab *st, char *name)
     k = htkeys(st->ty, &nk);
     for (i = 0; i < nk; i++)
         setns(k[i], name);
+    for (i = 0; i < nk; i++) {
+        td = htget(st->ty, k[i]);
+        if (td->type && td->type->type == Tyname)
+            setns(td->type->name, name);
+    }
     free(k);
     k = htkeys(st->ns, &nk);
     for (i = 0; i < nk; i++)
