@@ -6,6 +6,16 @@ const main = {
 
 	sp = std.strsplit("a,b,c,d", ",")
 	for i = 0; i < sp.len; i++
-		std.put("%s\n", sp[i])
+		std.put("\"%s\"\n", sp[i])
+	;;
+
+	sp = std.strsplit("a,,b,c,,d", ",")
+	for i = 0; i < sp.len; i++
+		std.put("\"%s\"\n", sp[i])
+	;;
+
+	sp = std.strsplit("a--b---b--c---c-d--d", "---")
+	for i = 0; i < sp.len; i++
+		std.put("\"%s\"\n", sp[i])
 	;;
 }

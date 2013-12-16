@@ -2,7 +2,9 @@ use "alloc.use"
 use "die.use"
 use "extremum.use"
 use "fmt.use"
+use "option.use"
 use "slpush.use"
+use "strfind.use"
 use "sys.use"
 use "types.use"
 
@@ -11,20 +13,22 @@ pkg std =
 ;;
 
 const strsplit = {s, delim
-	var i
 	var last
 	var sp
 
 	sp = [][:]
 	last = 0
-	assert(delim.len == 1, "FIXME: We should support strings as delimiters")
-	for i = 0; i < s.len; i++
-		if s[i] == delim[0]
-			sp = slpush(sp, s[last:i])
-			last = i + 1
+	while true
+		match strfind(s, delim)
+		| `Some i:
+			sp = slpush(sp, s[:i])
+			s = s[i + delim.len:]
+		| `None:
+			goto donesplit
 		;;
 	;;
-	sp = slpush(sp, s[last:i])
+:donesplit
+	sp = slpush(sp, s[:])
 	-> sp
 }
 
