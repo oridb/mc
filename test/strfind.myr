@@ -1,6 +1,8 @@
 use std
 
 const main = {
+	printloc(std.strfind("", ""))
+	printloc(std.strfind("", "a"))
 	printloc(std.strfind("ab", "abc"))
 	printloc(std.strfind("abc", "abc"))
 	printloc(std.strfind("abcde", "abc"))
