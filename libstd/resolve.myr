@@ -171,9 +171,7 @@ const rquery = {srv, id
 
 const hosts = {pkt, id : uint16
 	var off
-	var v
-	var q
-	var a
+	var v, q, a
 	var i
 	var hinf : hostinfo[:]
 
@@ -215,8 +213,7 @@ const hosts = {pkt, id : uint16
 
 
 const dumpresponse = {pkt
-	var nquery
-	var nans
+	var nquery, nans
 	var off
 	var v
 	var i
@@ -336,8 +333,7 @@ const unpack32 = {buf, off
 const packname = {buf, off : size, host
 	var i
 	var start
-	var seglen
-	var lastseg
+	var seglen, lastseg
 
 	start = off
 	seglen = 0

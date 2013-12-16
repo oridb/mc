@@ -112,8 +112,7 @@ generic slfree	 = {sl
 
 /* Grows a slice */
 generic slgrow = {sl : @a[:], len
-	var i
-	var n
+	var i, n
 	var new
 
 	/* if the slice wouldn't change buckets, we don't need to realloc. */
@@ -141,9 +140,7 @@ const samebucket = {oldsz, newsz
 }
 
 const zbytealloc = {sz
-	var p
-	var sl
-	var i
+	var p, sl, i
 
 	p = bytealloc(sz)
 	sl = p[0:sz]
@@ -155,8 +152,7 @@ const zbytealloc = {sz
 
 /* Allocates a blob that is 'sz' bytes long. Dies if the allocation fails */
 const bytealloc = {sz
-	var i
-	var bkt
+	var i, bkt
 
 	if !initdone
 		for i = 0; i < buckets.len && (Align << i) <= Bktmax; i++
@@ -196,11 +192,8 @@ const bktinit = {b, sz
 
 /* Creates a slab for bucket 'bkt', and fills the chunk list */
 const mkslab = {bkt
-	var i
-	var p
-	var s
-	var b
-	var bnext
+	var i, p, s
+	var b, bnext
 	var off /* offset of chunk head */
 
 	if bkt.ncache > 0
