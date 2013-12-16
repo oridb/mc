@@ -750,8 +750,8 @@ void iprintf(FILE *fd, Insn *insn)
             if (subreg(insn->args[0], insn->args[1]))
                 insn->args[0] = coreg(insn->args[0]->reg.colour, insn->args[1]->mode);
             /* moving a reg to itself is dumb. */
-     //       if (insn->args[0]->reg.colour == insn->args[1]->reg.colour)
-     //           return;
+            if (insn->args[0]->reg.colour == insn->args[1]->reg.colour)
+                return;
             break;
         default:
             break;
