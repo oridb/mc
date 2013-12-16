@@ -232,8 +232,8 @@ decllist: declbody
             {$$.nl = NULL; $$.nn = 0;
              lappend(&$$.nl, &$$.nn, $1);}
         | declbody Tcomma decllist
-             {$$=$3;
-             linsert(&$3.nl, &$3.nn, 0, $1);}
+             {linsert(&$3.nl, &$3.nn, 0, $1);
+             $$=$3;}
         ;
 
 use     : Tuse Tident
