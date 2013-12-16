@@ -5,5 +5,5 @@ const main = {
 	const ret42 = {
 		-> 42
 	}
-	-> ret42()
+	std.exit(ret42())
 }

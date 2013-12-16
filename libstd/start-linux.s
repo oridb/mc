@@ -97,8 +97,8 @@ _start:
 
 	/* enter the main program */
 	call	main
-	/* exit */
-	movq	%rax,%rdi
+	/* exit(0) */
+        xorq	%rdi,%rdi
 	movq	$60,%rax
 	syscall
 

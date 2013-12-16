@@ -8,5 +8,5 @@ const main = {
 	a = 42
 	b = 11
 	c = 0_0
-	-> a + b + c
+	std.exit(a + b + c)
 }

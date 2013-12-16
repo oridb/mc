@@ -6,5 +6,5 @@ const get42 = {
 
 /* basic sanity check on floating point operations. should return 84. */
 const main = {
-	-> (42.0 + get42()) castto(int)
+	std.exit((42.0 + get42()) castto(int))
 }

@@ -1,12 +1,12 @@
 use std
 /* checks that false conditions lead to the false branch of an if statement.
 * should exit with 9. */
-var x = 5
-var y = 7
 const main = {
+	var x = 5, y = 7
+
 	if x == 7 && y == 5
-		-> 7
+		std.exit(7)
 	else
-		-> 9
+		std.exit(9)
 	;;
 }

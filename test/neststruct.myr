@@ -17,5 +17,5 @@ const main = {
 	s1.x.b = 2
 	s2 = s1.x
 
-	-> s2.a + s2.b
+	std.exit(s2.a + s2.b)
 }

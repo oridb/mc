@@ -14,9 +14,9 @@ const main = {
 	v.v3 = 10
 	match v
 	| [.v1 = x, .v2 = y, .v3 = 10]:	
-		 -> x + y
+		 std.exit(x + y)
 	| _:
 		std.die("Wat")
 	;;
-	-> 0
+	std.exit(0)
 }

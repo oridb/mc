@@ -2,5 +2,5 @@ use std
 /* should exit with status 5 */
 const main = {
 	var a = 42
-	-> a >> 3
+	std.exit(a >> 3)
 }

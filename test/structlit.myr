@@ -12,6 +12,6 @@ const main = {
 	var v : t
 
 	v = [.a=42, .b='x', .c="foo"]
-	-> v.a
+	std.exit(v.a)
 }
 

@@ -6,6 +6,6 @@ const main = {
 
 	v[1] = 42
 	p = &v[1]
-	-> p#
+	std.exit(p#)
 }
 

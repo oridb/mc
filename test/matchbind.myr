@@ -12,10 +12,10 @@ const main = {
 
 	v = `Int 8
 	match v
-	| `Int 127:	-> 42
-	| `Int x:	-> x
-	| `Chr 'a':	-> 4
-	| `Nil:		-> 6
+	| `Int 127:	std.exit(42)
+	| `Int x:	std.exit(x)
+	| `Chr 'a':	std.exit(4)
+	| `Nil:		std.exit(6)
 	;;
 }
 

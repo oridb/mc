@@ -1,5 +1,5 @@
 use std
 /* checks that evaluating a logical and to a bool works. should return 0. */
 const main = {
-	-> 0 && 1
+	std.exit((0 && 1) castto(int))
 }

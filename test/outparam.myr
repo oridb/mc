@@ -9,5 +9,5 @@ const main = {
 
 	v = 16
 	f(&v)
-	-> v
+	std.exit(v)
 }

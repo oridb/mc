@@ -4,6 +4,4 @@ const main = {
 	var x : std.size
 	var y : std.off
 	var z : std.statbuf
-
-	-> 0
 }

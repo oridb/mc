@@ -4,5 +4,5 @@ before it is defined.
 */
 const main = {
 	var a : int
-	-> a
+	std.exit(a)
 }

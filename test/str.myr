@@ -5,5 +5,5 @@ const main = {
 	var str
 
 	str = "asdf"
-	-> str[3]
+	std.exit(str[3] castto(int))
 }

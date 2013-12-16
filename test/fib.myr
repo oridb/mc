@@ -11,6 +11,6 @@ const fib = {n
 }
 
 const main = {
-	-> fib(8)
+	std.exit(fib(8))
 }
 

@@ -9,5 +9,4 @@ pkg =
 ;;
 
 const main = {
-	-> 0
 }

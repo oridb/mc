@@ -14,5 +14,5 @@ const main = {
 	var s : pair
 	s.a = 12
 	s.b = 30
-	-> f(s)
+	std.exit(f(s))
 }

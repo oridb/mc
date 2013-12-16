@@ -18,10 +18,11 @@ generic max = {a:@a::tcnum, b:@a::tcnum
 generic intlike_is42 = {a : @a::(tcnum,tctest,tcint)
 	-> a == 42
 }
+
 const main = {
 	if intlike_is42(123)
-	    -> 16
+	    std.exit(16)
 	else
-	    -> max(12, 42)
+	    std.exit(max(12, 42))
 	;;
 }

@@ -5,5 +5,5 @@ const main = {
 	a[0] = 3
 	a[1] = 4
 	a[2] = a[0] + a[1]
-	-> a[2]
+	std.exit(a[2])
 }

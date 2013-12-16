@@ -10,4 +10,5 @@ const foo = {
 	|"asdf":	123
 	|234567:	888
 	;;
+	std.exit(42)
 }

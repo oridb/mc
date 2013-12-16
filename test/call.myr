@@ -5,5 +5,5 @@ const f = {
 }
 
 const main = {
-	-> f() + f()
+	std.exit(f() + f())
 }

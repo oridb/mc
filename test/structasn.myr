@@ -11,5 +11,5 @@ const main = {
 	x.a = 12
 	x.b = 30
 	y = x
-	-> y.a + y.b
+	std.exit(y.a + y.b)
 }

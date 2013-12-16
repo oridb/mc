@@ -10,5 +10,5 @@ const foo = {val
 }
 
 const main = {
-	-> foo(42)
+	std.exit(foo(42))
 }

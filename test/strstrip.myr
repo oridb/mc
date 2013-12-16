@@ -19,5 +19,4 @@ const main = {
 	std.put("\"%s\"\n", std.strstrip(""))
 	std.put("\"%s\"\n", std.strfstrip(""))
 	std.put("\"%s\"\n", std.strrstrip(""))
-	-> 0
 }

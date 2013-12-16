@@ -6,5 +6,5 @@ const main = {
 	var s
 
 	s = a[1:6]
-	-> s.len
+	std.exit(s.len)
 }

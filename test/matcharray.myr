@@ -5,8 +5,8 @@ const main = {
 
 	match v
 	| [x, y, 10]:	
-		 -> x + y
+		 std.exit(x + y)
 	| _:	std.die("Wat")
 	;;
-	-> 0
+	std.exit(0)
 }

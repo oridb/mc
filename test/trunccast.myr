@@ -6,5 +6,5 @@ const main = {
 
 	y = 9999
 	x = y castto(int8)
-	-> x % 73
+	std.exit((x % 73) castto(int))
 }

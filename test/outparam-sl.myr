@@ -9,5 +9,5 @@ const main = {
 	var v
 
 	f(&v)
-	-> v[0]
+	std.exit(v[0])
 }

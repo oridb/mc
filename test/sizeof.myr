@@ -1,5 +1,5 @@
 use std
 /* checks that sizeof() works. exits with 4. */
 const main = {
-	-> sizeof(int)
+	std.exit(sizeof(int))
 }

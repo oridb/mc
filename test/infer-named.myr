@@ -14,8 +14,8 @@ const main = {
 
 	v = f(99)
 	match v
-	| `Foo:		-> 1
-	| `Bar x:	-> x
+	| `Foo:		std.exit(1)
+	| `Bar x:	std.exit(x)
 	;;
-	-> 2
+	std.exit(2)
 }

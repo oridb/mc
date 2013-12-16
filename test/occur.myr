@@ -3,8 +3,8 @@ use std
 doesn't exist within itself). If 'f' typechecked,
 it's type would be:
 
-f : (-> (-> (-> ... ad infinitum ...)))
+f : (std.exit((-> (-> ... ad infinitum ...))))
 */
 const f = {
-	-> f
+	std.exit(f)
 }

@@ -10,5 +10,5 @@ const main = {
 	v.a[0] = 11
 	v.a[1] = 20
 
-	-> 2*v.a[0] + v.a[1]
+	std.exit(2*v.a[0] + v.a[1])
 }

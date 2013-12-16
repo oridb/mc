@@ -6,5 +6,5 @@ type foo = struct
 
 const main = {
 	var v : foo
-	-> 42
+	std.exit(42)
 }

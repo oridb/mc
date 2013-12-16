@@ -5,5 +5,5 @@ type t = struct
 ;;
 
 const main = {
-	-> 42
+	std.exit(42)
 }

@@ -9,5 +9,5 @@ type val = struct
 const main = {
 	var s : val
 	s.a = 12
-	-> s.a
+	std.exit(s.a)
 }

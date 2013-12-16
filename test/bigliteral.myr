@@ -2,5 +2,4 @@ use std
 
 const main = {
 	std.put("%l\n", 34359738368)
-	-> 0
 }

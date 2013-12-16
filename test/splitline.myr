@@ -1,6 +1,6 @@
 use std
 
 const main = {
-	-> 1 + \ /* ignored crap */
-	   2
+	std.exit(1 + \ /* ignored crap */
+	   	 2)
 }

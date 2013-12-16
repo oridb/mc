@@ -9,5 +9,5 @@ const main = {
 	var v
 
 	v = `Some 123
-	-> 0
+	std.exit(0)
 }

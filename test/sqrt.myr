@@ -27,6 +27,6 @@ const sqrt = {x : float64
 }
 
 const main = {
-	-> sqrt(20.0) castto(int)
+	std.exit(sqrt(20.0) castto(int))
 }
 

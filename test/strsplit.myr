@@ -8,5 +8,4 @@ const main = {
 	for i = 0; i < sp.len; i++
 		std.put("%s\n", sp[i])
 	;;
-	-> 0
 }

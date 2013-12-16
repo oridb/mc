@@ -5,5 +5,5 @@ generic sz = {a:@a
 }
 
 const main = {
-	-> sz(123) + sz("asdf"[0])
+	std.exit(sz(123) + sz("asdf"[0]))
 }

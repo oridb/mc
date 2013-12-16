@@ -9,5 +9,5 @@ const f = {
 
 const main = {
 	f()
-	-> 12
+	std.exit(12)
 }

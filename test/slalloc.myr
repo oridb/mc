@@ -7,5 +7,5 @@ const main = {
 	sl = std.slalloc(123)
 	sl[0] = 42
 	sl[122] = 1
-	-> sl.len
+	std.exit(sl.len)
 }

@@ -6,5 +6,5 @@ const main = {
 
 	p = &v
 	p# = 123
-	-> v
+	std.exit(v)
 }

@@ -2,9 +2,9 @@ use std
 
 const main = {
 	goto foo
-	-> 123
+	std.exit(123)
 :foo
-	-> bar()
+	std.exit(bar())
 }
 
 const bar = {

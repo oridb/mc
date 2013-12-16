@@ -9,5 +9,5 @@ const main = {
 	x = 15
 	v = (x, x + 12)
 	(a, b) = v
-	-> a + b
+	std.exit(a + b)
 }

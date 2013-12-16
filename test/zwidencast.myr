@@ -6,5 +6,5 @@ const main = {
 	
 	u = 99
 	v = u castto(uint32)
-	-> v
+	std.exit(v castto(int))
 }

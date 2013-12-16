@@ -4,7 +4,7 @@ const main = {
 	var v
 
 	v = [foo(), 42, 123]
-	-> v[0]
+	std.exit(v[0])
 }
 
 const foo = {

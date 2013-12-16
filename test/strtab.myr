@@ -12,5 +12,5 @@ const main = {
 	for i = 0; i < strtab.len; i++
 		std.put("%i: %s\n", i, strtab[i])
 	;;
-	-> 0
+	std.exit(0)
 }

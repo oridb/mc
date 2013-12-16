@@ -5,11 +5,11 @@ const main = {
 
 	v = 12
 	match 12
-	| 1:	-> 42
-	| 2:	-> 81
-	| 3:	-> 123
-	| 4:	-> 99
-	| 12:	-> 84
-	| 6:	-> 18
+	| 1:	std.exit(42)
+	| 2:	std.exit(81)
+	| 3:	std.exit(123)
+	| 4:	std.exit(99)
+	| 12:	std.exit(84)
+	| 6:	std.exit(18)
 	;;
 }

@@ -4,5 +4,5 @@ const main = {
 	var a = 7
 	var b = 2
 	var c = 3
-	-> a * b * c
+	std.exit(a * b * c)
 }

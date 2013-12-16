@@ -2,7 +2,7 @@ use std
 
 generic Foo : @a::(tctest,tcint,tcnum) = 42
 
-const main = {-> int
-	-> Foo
+const main = {
+	std.exit(Foo)
 }
 

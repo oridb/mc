@@ -13,5 +13,5 @@ const frob = {s
 const main = {
 	var s : pair
 	frob(&s)
-	-> s.a + s.b
+	std.exit(s.a + s.b)
 }

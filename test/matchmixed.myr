@@ -10,5 +10,5 @@ const main = {
 	| `A:	std.put("Got a\n")
 	| `B:	std.put("Got b\n")
 	;;
-	-> 42
+	std.exit(42)
 }

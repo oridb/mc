@@ -6,5 +6,5 @@ const main = {
 
 	a = 127
 	b = 3
-	-> a / b
+	std.exit(a / b)
 }

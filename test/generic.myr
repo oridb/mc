@@ -6,6 +6,6 @@ generic id = {a:@a
 
 const main = {
 	id("adsf")
-	-> id(42)
+	std.exit(id(42))
 }
 
