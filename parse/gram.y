@@ -134,7 +134,7 @@ static void constrainwith(Type *t, char *str);
 %type <node> exprln retexpr goto expr atomicexpr littok literal asnexpr lorexpr landexpr borexpr
 %type <node> bandexpr cmpexpr unionexpr addexpr mulexpr shiftexpr prefixexpr postfixexpr
 %type <node> funclit seqlit tuplit name block stmt label use
-%type <node> decl declbody declcore structent arrayelt structelt tuphead
+%type <node> declbody declcore structent arrayelt structelt tuphead
 %type <node> ifstmt forstmt whilestmt matchstmt elifs optexprln optexpr
 %type <node> pat unionpat match
 %type <node> castexpr
@@ -144,6 +144,7 @@ static void constrainwith(Type *t, char *str);
 %type <nodelist> arglist argdefs params matches
 %type <nodelist> structbody structelts arrayelts 
 %type <nodelist> tupbody tuprest tuppat patlist
+%type <nodelist> decl decllist
 
 %type <uconlist> unionbody
 
@@ -184,9 +185,12 @@ file    : toplev
 
 toplev
         : decl
-            {lappend(&file->file.stmts, &file->file.nstmts, $1);
-             $1->decl.isglobl = 1;
-             putdcl(file->file.globls, $1);}
+            {size_t i;
+             for (i = 0; i < $1.nn; i++) {
+                lappend(&file->file.stmts, &file->file.nstmts, $1.nl[i]);
+                $1.nl[i]->decl.isglobl = 1;
+                putdcl(file->file.globls, $1.nl[i]);
+             }}
         | use
             {lappend(&file->file.uses, &file->file.nuses, $1);}
         | package
@@ -196,22 +200,40 @@ toplev
         | /* empty */
         ;
 
-decl    : Tvar declbody
+decl    : Tvar decllist
             {$$ = $2;}
-        | Tconst declbody
-            {$2->decl.isconst = 1;
+        | Tconst decllist
+            {size_t i;
+             for (i = 0; i < $2.nn; i++)
+                $2.nl[i]->decl.isconst = 1;
              $$ = $2;}
-        | Tgeneric declbody
-            {$2->decl.isconst = 1;
-             $2->decl.isgeneric = 1;
+        | Tgeneric decllist
+            {size_t i;
+             for (i = 0; i < $2.nn; i++) {
+                $2.nl[i]->decl.isconst = 1;
+                $2.nl[i]->decl.isgeneric = 1;
+             }
              $$ = $2;}
-        | Textern Tvar declbody
-            {$3->decl.isextern = 1;
+        | Textern Tvar decllist
+            {size_t i;
+             for (i = 0; i < $3.nn; i++)
+                $3.nl[i]->decl.isextern = 1;
              $$ = $3;}
-        | Textern Tconst declbody
-            {$3->decl.isconst = 1;
-             $3->decl.isextern = 1;
+        | Textern Tconst decllist
+            {size_t i;
+             for (i = 0; i < $3.nn; i++) {
+                $3.nl[i]->decl.isconst = 1;
+                $3.nl[i]->decl.isextern = 1;
+             }
              $$ = $3;}
+        ;
+
+decllist: declbody
+            {$$.nl = NULL; $$.nn = 0;
+             lappend(&$$.nl, &$$.nn, $1);}
+        | declbody Tcomma decllist
+             {$$=$3;
+             linsert(&$3.nl, &$3.nn, 0, $1);}
         ;
 
 use     : Tuse Tident
@@ -239,9 +261,12 @@ pkgbody : pkgitem
         ;
 
 pkgitem : decl
-            {putdcl(file->file.exports, $1);
-             if ($1->decl.init)
-                 lappend(&file->file.stmts, &file->file.nstmts, $1);}
+            {size_t i;
+            for (i = 0; i < $1.nn; i++) {
+                putdcl(file->file.exports, $1.nl[i]);
+                if ($1.nl[i]->decl.init)
+                    lappend(&file->file.stmts, &file->file.nstmts, $1.nl[i]);
+            }}
         | tydef {puttype(file->file.exports, mkname($1.line, $1.name), $1.type);
              installucons(file->file.exports, $1.type);}
         | visdef {die("Unimplemented visdef");}
@@ -654,8 +679,7 @@ endlns  : /* none */
         | endlns Tendln
         ;
 
-stmt    : decl
-	| goto
+stmt    : goto
         | retexpr
         | label
         | ifstmt
@@ -667,8 +691,10 @@ stmt    : decl
 
 forstmt : Tfor optexprln optexprln optexprln block
             {$$ = mkloopstmt($1->line, $2, $3, $4, $5);}
+        /* FIXME: allow decls in for loops
         | Tfor decl Tendln optexprln optexprln block
             {$$ = mkloopstmt($1->line, $2, $4, $5, $6);}
+        */
         ;
 
 whilestmt
@@ -734,18 +760,27 @@ patlist : /* empty */
 block   : blkbody Tendblk
         ;
 
-blkbody : stmt
+blkbody : decl 
+            {size_t i;
+             $$ = mkblock(line, mkstab());
+             for (i = 0; i < $1.nn; i++) {
+                putdcl($$->block.scope, $1.nl[i]);
+                lappend(&$$->block.stmts, &$$->block.nstmts, $1.nl[i]);
+            }};
+        | stmt
             {$$ = mkblock(line, mkstab());
              if ($1)
-                lappend(&$$->block.stmts, &$$->block.nstmts, $1);
-             if ($1 && $1->type == Ndecl)
-                putdcl($$->block.scope, $1);}
+                lappend(&$$->block.stmts, &$$->block.nstmts, $1);}
         | blkbody Tendln stmt
             {if ($3)
                 lappend(&$1->block.stmts, &$1->block.nstmts, $3);
-             if ($3 && $3->type == Ndecl)
-                putdcl($1->block.scope, $3);
              $$ = $1;}
+        | blkbody Tendln decl
+            {size_t i;
+             for (i = 0; i < $3.nn; i++){
+                putdcl($$->block.scope, $3.nl[i]);
+                lappend(&$1->block.stmts, &$1->block.nstmts, $3.nl[i]);
+            }};
         ;
 
 label   : Tcolon Tident
