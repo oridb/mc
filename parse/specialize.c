@@ -124,11 +124,16 @@ static void fillsubst(Htab *tsmap, Type *to, Type *from)
 
     if (from->type == Typaram) {
         htput(tsmap, from, to);
-    }
-    if (to->nsub != from->nsub)
         return;
+    }
+    assert(to->nsub == from->nsub);
     for (i = 0; i < to->nsub; i++)
         fillsubst(tsmap, to->sub[i], from->sub[i]);
+    if (to->type == Tyname && to->nparam > 0) {
+        assert(to->nparam == to->narg);
+        for (i = 0; i < to->nparam; i++)
+            fillsubst(tsmap, to->arg[i], to->param[i]);
+    }
 }
 
 /*
