@@ -1,0 +1,22 @@
+use std
+
+const main = {
+	printloc(std.strfind("ab", "abc"))
+	printloc(std.strfind("abc", "abc"))
+	printloc(std.strfind("abcde", "abc"))
+	printloc(std.strfind("abcde", "xyz"))
+	printloc(std.strfind("abcde", "bcd"))
+	printloc(std.strfind("abcde", "cde"))
+	printloc(std.strfind("abcde", "def"))
+	printloc(std.strfind("abcde", "abx"))
+}
+
+const printloc = {l
+	match l
+	| `std.Some loc:	std.put("Found %z\n", loc)
+	| `std.None:	std.put("No match\n")
+	;;
+}
+
+
+	

@@ -1,0 +1,26 @@
+use "types.use"
+use "option.use"
+
+pkg std =
+	const strfind	: (haystack : byte[:], needle : byte[:] -> option(size))
+;;
+
+const strfind = {haystack, needle
+	var i, j
+
+	for i = 0; i < haystack.len; i++
+		if i + needle.len > haystack.len
+			-> `None
+		;;
+		if haystack[i] == needle[0]
+			for j = 0; j < needle.len; j++
+				if haystack[i + j] != needle[j]
+					goto nextiter
+				;;
+			;;
+			-> `Some i
+		;;
+:nextiter
+	;;
+	-> `None
+}

@@ -25,6 +25,7 @@ MYRSRC= \
     sljoin.myr \
     slpush.myr \
     slurp.myr \
+    strfind.myr \
     strsplit.myr \
     strstrip.myr \
     strcmp.myr \
