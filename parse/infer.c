@@ -424,12 +424,18 @@ static Ucon *uconresolve(Inferstate *st, Node *n)
 static void putbindings(Inferstate *st, Htab *bt, Type *t)
 {
     size_t i;
+    char *s;
 
     if (!t)
         return;
     if (t->type != Typaram)
         return;
 
+    if (debugopt['u']) {
+        s = tystr(t);
+        printf("\tBind %s", s);
+        free(s);
+    }
     if (hthas(bt, t->pname))
         unify(st, NULL, htget(bt, t->pname), t);
     else if (isbound(st, t))
@@ -443,9 +449,15 @@ static void putbindings(Inferstate *st, Htab *bt, Type *t)
 static void tybind(Inferstate *st, Type *t)
 {
     Htab *bt;
+    char *s;
 
     if (t->type != Tyname && !t->isgeneric)
         return;
+    if (debugopt['u']) {
+        s = tystr(t);
+        printf("Binding %s", s);
+        free(s);
+    }
     bt = mkht(strhash, streq);
     lappend(&st->tybindings, &st->ntybindings, bt);
     putbindings(st, bt, t);

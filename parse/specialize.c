@@ -60,7 +60,7 @@ Type *tyspecialize(Type *t, Htab *tsmap)
                     tmp = mktyvar(t->param[i]->line);
                     htput(tsmap, t->param[i], tmp);
                 }
-                ret = mktyname(t->line, t->name, NULL, 0, tyspecialize(t->sub[0], tsmap));
+                ret = mktyname(t->line, t->name, t->param, t->nparam, tyspecialize(t->sub[0], tsmap));
                 ret->issynth = 1;
                 htput(tsmap, t, ret);
                 for (i = 0; i < t->nparam; i++)

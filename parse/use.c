@@ -217,12 +217,15 @@ static void typickle(FILE *fd, Type *ty)
             pickle(ty->name, fd);
             wrbool(fd, ty->isgeneric);
             wrbool(fd, ty->issynth);
+
             wrint(fd, ty->nparam);
             for (i = 0; i < ty->nparam; i++)
                 wrtype(fd, ty->param[i]);
+
             wrint(fd, ty->narg);
             for (i = 0; i < ty->narg; i++)
                 wrtype(fd, ty->arg[i]);
+
             wrtype(fd, ty->sub[0]);
             break;
         default:
@@ -313,6 +316,7 @@ static Type *tyunpickle(FILE *fd)
             ty->arg = zalloc(ty->narg * sizeof(Type *));
             for (i = 0; i < ty->narg; i++)
                 rdtype(fd, &ty->arg[i]);
+
             rdtype(fd, &ty->sub[0]);
             break;
         default:
