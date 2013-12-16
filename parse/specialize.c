@@ -65,7 +65,7 @@ Type *tyspecialize(Type *t, Htab *tsmap)
                 htput(tsmap, t, ret);
                 for (i = 0; i < t->nparam; i++)
                     lappend(&ret->arg, &ret->narg, tyspecialize(t->param[i], tsmap));
-		ret->isgeneric = hasparams(ret);
+                ret->isgeneric = hasparams(ret);
             }
             break;
         case Tystruct:
@@ -401,9 +401,10 @@ Node *specializedcl(Node *n, Type *to, Node **name)
     d->decl.isconst = n->decl.isconst;
     d->decl.isextern = n->decl.isextern;
     d->decl.init = specializenode(n->decl.init, tsmap);
+    putdcl(file->file.globls, d);
+
     fixup(d);
 
-    putdcl(file->file.globls, d);
     lappend(&file->file.stmts, &file->file.nstmts, d);
     if (d->decl.name->name.ns)
         popstab();
