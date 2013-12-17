@@ -101,7 +101,6 @@ generic rand = {rng, lo, hi -> @a::(tcint,tcnum,tctest)
 	lim = (maxrand/span)*span
 	val = (randN(rng) & maxrand)
 	while val > lim 
-		put("Rejected!\n")
 		val = (randN(rng) & maxrand)
 	;;
 	-> val % span + lo
