@@ -34,6 +34,12 @@ type parseresult = union
 	`Fail status
 ;;
 
+/* Compiles a pattern into a regex */
+const compile = {pat
+	-> regexcompile(std.zalloc(), pat)
+}
+
+/* Compiles a pattern into a debug regex. This can be verbose. */
 const dbgcompile = {pat
 	var re
 
@@ -42,10 +48,7 @@ const dbgcompile = {pat
 	-> regexcompile(re, pat)
 }
 
-const compile = {pat
-	-> regexcompile(std.zalloc(), pat)
-}
-
+/* compiles a pattern into an allocated regex */
 const regexcompile = {re, pat
 	re.pat = pat
 	re.nmatch = 1 /* whole match */
@@ -64,6 +67,7 @@ const regexcompile = {re, pat
 	-> `std.Failure (`Noimpl)
 }
 
+/* generates bytecode from an AST */
 const gen = {re, t
 	var m
 
@@ -92,7 +96,15 @@ const gen = {re, t
 	-> re.proglen
 }
 
-const genrange = {re, lo, hi
+/*
+ converts a codepoint range spanning multiple utf8 byte lenghts into a
+ set of utf8 ranges. Eg:
+ 	[0x00-0x2000]  => [0x00-0x7F]|[0xC2-0xDF][0x80-0x8F]
+*/
+Const genrange = {re, lo, hi
+	/* the transitions between different char lenghts for unicode
+	   characters, needed so that we know how to generate the
+	   different size categories */
 	var charrng = [
 		0,
 		0x80,
@@ -138,6 +150,7 @@ const genrange = {re, lo, hi
 	-> re.proglen
 }
 
+/* calculates the forward jump distance for a utf8 character range */
 const jmpdist = {n
 	var d
 	var i
@@ -149,6 +162,7 @@ const jmpdist = {n
 	-> d
 }
 
+/* generates an alternation */
 const genalt = {re, l, r
 	var alt
 	var jmp
@@ -168,6 +182,7 @@ const genalt = {re, l, r
 	-> re.proglen
 }
 
+/* generates a repetition operator */
 const genstar = {re, rep
 	var alt
 	var jmp
@@ -187,6 +202,7 @@ const genstar = {re, rep
 	-> re.proglen
 }
 
+/* generates a question mark operator */
 const genquest = {re, q
 	var alt
 	var l0
@@ -199,6 +215,7 @@ const genquest = {re, q
 	-> re.proglen
 }
 
+/* generates a single char match */
 const genchar = {re, c
 	var b : byte[4]
 	var n
@@ -211,6 +228,7 @@ const genchar = {re, c
 	-> re.proglen
 }
 
+/* appends an instructon to an re program */
 const append = {re, insn
 	if re.proglen == re.prog.len
 		re.prog = std.slgrow(re.prog, std.max(1, 2*re.proglen))
@@ -220,6 +238,7 @@ const append = {re, insn
 	-> re.proglen
 }
 
+/* instruction dump */
 const idump = {re
 	var i
 
@@ -246,6 +265,7 @@ const idump = {re
 	;;
 }
 
+/* AST dump */
 const dump = {re, t, indent
 	var i
 
@@ -293,6 +313,7 @@ const dump = {re, t, indent
 	;;
 }
 
+/* parses an expression */
 const parse = {re
 	match altexpr(re)
 	| `Some t:
