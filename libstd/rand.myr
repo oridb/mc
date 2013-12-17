@@ -80,33 +80,37 @@ const init = {rng, seed
 }
 
 /*
-   Generates a random integer from `rng` in the range [lo, hi],
+   Generates a random integer from `rng` in the range [lo, hi),
    returning the value. The range [lo, hi) must be positive,
    nonempty, and the difference between hi and lo must be
    less then 2^(type_bits - 1)
 */
 generic rand = {rng, lo, hi -> @a::(tcint,tcnum,tctest)
-	var span, div 
+	var span, lim
 	var maxrand
 	var val
 
-	span = hi - lo
-	maxrand = (1 << (8*sizeof(@a)-1)) - 1
-
 	assert(hi - lo > 0, "rand.myr: range for random values must be >= 1")
-	assert(span < maxrand, "rand.myr: span of ranges is too large")
-	div = maxrand/(span+1)
 
-	val = (randN(rng) & maxrand) / div
-	while val >= span
-		val = randN(rng) / div
+	span = hi - lo
+	maxrand = (1 << (8*sizeof(@a))) - 1 /* max for signed value */
+	if maxrand < 0 /* signed */
+		maxrand = (1 << (8*sizeof(@a)-1)) - 1 /* max for signed value */
 	;;
-	-> val + lo
+
+	lim = (maxrand/span)*span
+	val = (randN(rng) & maxrand)
+	while val > lim 
+		put("Rejected!\n")
+		val = (randN(rng) & maxrand)
+	;;
+	-> val % span + lo
 }
 
 /*
    Generates a random integer of any size from the
-   random number generator `rng`.
+   random number generator `rng`. The returned value
+   may be negative, if the type is signed.
 */
 generic randN = {rng -> @a::(tcint,tcnum,tctest)
 	var i, val
