@@ -58,12 +58,6 @@ const run = {re
 			elif !thr.matched
 				thr.next = re.expired
 				re.expired = thr
-			else
-				trace(re, thr, "Matched\n")
-				match re.matched
-				| `std.Some t:	std.put("HAVE MATCH\n")
-				| `std.None: std.put("WTFWTFWTF\n")
-				;;
 			;;
 		;;
 		re.runq = re.expired
@@ -169,7 +163,7 @@ const die = {re, thr, msg
 }
 
 const finish = {re, thr
-	trace(re, thr, "******finish**** %z\n", tid)
+	trace(re, thr, "finish %z\n", tid)
 	match re.matched
 	| `std.Some t:	thrfree(re, t)
 	| `std.None:
