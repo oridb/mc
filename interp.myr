@@ -11,7 +11,6 @@ pkg regex =
 const exec = {re, str
 	var i
 
-	re.debug = true
 	re.str = str
 	re.strp = 0
 	run(re)

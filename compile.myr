@@ -4,6 +4,7 @@ use "types.use"
 
 pkg regex =
 	const compile	: (re : byte[:] -> std.error(regex#, status))
+	const dbgcompile	: (re : byte[:] -> std.error(regex#, status))
 ;;
 
 type tree = union
@@ -33,17 +34,26 @@ type parseresult = union
 	`Fail status
 ;;
 
-const compile = {pat
-	var re : regex#
+const dbgcompile = {pat
+	var re
 
 	re = std.zalloc()
+	re.debug = true
+	-> regexcompile(re, pat)
+}
+
+const compile = {pat
+	-> regexcompile(std.zalloc(), pat)
+}
+
+const regexcompile = {re, pat
 	re.pat = pat
 	re.nmatch = 1 /* whole match */
 	match parse(re)
 	| `None:	-> `std.Failure (`Earlystop)
 	| `Fail f:	-> `std.Failure f
 	| `Some t:
-		dump(t, 0)
+		dump(re, t, 0)
 		append(re, `Ilbra 0)
 		gen(re, t)
 		append(re, `Irbra 0)
@@ -91,15 +101,11 @@ const genrange = {re, lo, hi
 		0x200000,
 		-1
 	]
-	var lbuf : byte[4]
-	var hbuf : byte[4]
-	var lsz
-	var hsz
-	var end
-	var sz
+	var lbuf : byte[4], hbuf : byte[4]
+	var lsz, hsz
+	var sz, end
 	var d
-	var i
-	var j
+	var i, j
 
 	lsz = std.charlen(lo)
 	hsz = std.charlen(hi)
@@ -109,15 +115,18 @@ const genrange = {re, lo, hi
 		append(re, `Irange (lo castto(byte), hi castto(byte)))
 	else
 		for i = hsz; i > lsz; i--
-			std.put("i = %z\n", i - 2)
+			if re.debug
+				std.put("range size = %z\n", i - 2)
+			;;
 			d = re.proglen + i - 1
 			append(re, `Ifork (re.proglen + 1, jmpdist(i) + d))
 		;;
 		end = re.proglen + jmpdist(hsz + 1);
 		for i = 0; i < hsz; i++
-			std.put("lo[%z] = %i\n", i, charrng[i] castto(int))
-			std.put("hi[%z] = %i\n", i, (charrng[i + 1] - 1) castto(int))
-
+			if re.debug
+				std.put("lo[%z] = %i\n", i, charrng[i] castto(int))
+				std.put("hi[%z] = %i\n", i, (charrng[i + 1] - 1) castto(int))
+			;;
 			sz = std.encode(lbuf[:], charrng[i])
 			std.encode(hbuf[:], charrng[i + 1] - 1)
 			for j = 0; j < sz; j++
@@ -214,6 +223,9 @@ const append = {re, insn
 const idump = {re
 	var i
 
+	if !re.debug
+		->
+	;;
 	for i = 0; i < re.proglen; i++
 		std.put("%i:\t", i)
 		match re.prog[i]
@@ -234,31 +246,34 @@ const idump = {re
 	;;
 }
 
-const dump = {t, indent
+const dump = {re, t, indent
 	var i
 
+	if !re.debug
+		->
+	;;
 	for i = 0; i < indent; i++
 		std.put("  ")
 	;;
 	match t#
 	| `Alt	(a, b):
 		std.put("Alt\n")
-		dump(a, indent + 1)
-		dump(b, indent + 1)
+		dump(re, a, indent + 1)
+		dump(re, b, indent + 1)
 	| `Cat	(a, b):
 		std.put("Cat\n")
-		dump(a, indent + 1)
-		dump(b, indent + 1)
+		dump(re, a, indent + 1)
+		dump(re, b, indent + 1)
 	/* repetition */
 	| `Star	a:
 		std.put("Star\n")
-		dump(a, indent + 1)
+		dump(re, a, indent + 1)
 	| `Plus	a:
 		std.put("Plus\n")
-		dump(a, indent + 1)
+		dump(re, a, indent + 1)
 	| `Quest	a:
 		std.put("Quest\n")
-		dump(a, indent + 1)
+		dump(re, a, indent + 1)
 	| `Bol:
 		std.put("Bol\n")
 	| `Eol:
@@ -274,7 +289,7 @@ const dump = {t, indent
 	/* meta */
 	| `Cap	a:
 		std.put("Cap\n")
-		dump(a, indent + 1)
+		dump(re, a, indent + 1)
 	;;
 }
 
@@ -390,7 +405,7 @@ const baseexpr = {re
 		;;
 		ret = mk(`Chr c)
 	;;
-	dump(ret, 0)
+	dump(re, ret, 0)
 	-> `Some ret
 }
 
