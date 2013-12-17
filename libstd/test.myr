@@ -108,8 +108,8 @@ const testrng = {
 	var i
 
 	r = std.mksrng(10)
-	for i = 0; i < 10; i++
-		std.put("r[%i] = %l\n", i, std.rand32(r) castto(int64))
+	for i = 0; i < 300; i++
+		std.put("r[%i] = %l\n", i, std.rand(r, 5, 10) castto(int64))
 	;;
 	std.put("\n");
 }

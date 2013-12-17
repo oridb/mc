@@ -1567,7 +1567,7 @@ static void checkrange(Inferstate *st, Node *n)
     } else if ((t->type >= Tybyte && t->type <= Tyulong) || t->type == Tychar) {
         uval = n->lit.intval;
         if (uval < uvranges[t->type][0] || uval > uvranges[t->type][1])
-            fatal(n->line, "Literal value %llu out of range for type \"%s\"", tystr(t));
+            fatal(n->line, "Literal value %llu out of range for type \"%s\"", uval, tystr(t));
     }
 }
 
