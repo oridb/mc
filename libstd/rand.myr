@@ -96,8 +96,8 @@ generic rand = {rng, lo, hi -> @a::(tcint,tcnum,tctest)
 	assert(hi - lo > 0, "rand.myr: range for random values must be >= 1")
 	assert(span < maxrand, "rand.myr: span of ranges is too large")
 	div = maxrand/(span+1)
-	val = (randN(rng) & maxrand) / div
 
+	val = (randN(rng) & maxrand) / div
 	while val >= span
 		val = randN(rng) / div
 	;;
