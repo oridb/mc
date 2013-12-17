@@ -1568,8 +1568,6 @@ static void checkrange(Inferstate *st, Node *n)
         uval = n->lit.intval;
         if (uval < uvranges[t->type][0] || uval > uvranges[t->type][1])
             fatal(n->line, "Literal value %llu out of range for type \"%s\"", tystr(t));
-    } else {
-        fatal(n->line, "Literal type %s has no range\n", tystr(t));
     }
 }
 
@@ -1625,6 +1623,10 @@ static void typesub(Inferstate *st, Node *n)
         case Nexpr:
             settype(st, n, tyfix(st, n, type(st, n)));
             typesub(st, n->expr.idx);
+            if (exprop(n) == Ocast && exprop(n->expr.args[0]) == Olit && n->expr.args[0]->expr.args[0]->lit.littype == Lint) {
+                settype(st, n->expr.args[0], exprtype(n));
+                settype(st, n->expr.args[0]->expr.args[0], exprtype(n));
+            }
             for (i = 0; i < n->expr.nargs; i++)
                 typesub(st, n->expr.args[i]);
             break;

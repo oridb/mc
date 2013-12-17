@@ -1256,8 +1256,16 @@ static Node *rval(Simp *s, Node *n, Node *dst)
             break;
         case Olit:
             switch (args[0]->lit.littype) {
-                case Lchr: case Lbool: case Lint: case Llbl:
+                case Lchr: case Lbool: case Llbl:
                     r = n;
+                    break;
+                case Lint: 
+                    /* we can only have up to 4 byte immediates, but they
+                     * can be moved into 64 bit regs */
+                    if (args[0]->lit.intval < 0xffffffff)
+                        r = n;
+                    else
+                        r = simplit(s, n, &s->blobs, &s->nblobs);
                     break;
                 case Lstr: case Lflt:
                     r = simplit(s, n, &s->blobs, &s->nblobs);
