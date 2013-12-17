@@ -10,23 +10,29 @@ pkg regex =
 	;;
 
 	type regex = struct
+		/* compile state */
 		debug	: bool
 		pat	: byte[:]
 		nmatch	: std.size
 
 		/* VM state */
+		runq	: rethread#
+		expired	: rethread#
 		proglen	: std.size
 		prog	: reinst[:]
 		nthr	: std.size
-		thr	: rethread#[:]
 		str	: byte[:]
 		strp	: std.size
 		matched	: std.option(rethread#)
 	;;
 
 	type rethread = struct
-		uid	: std.size	/* just for debugging */
+		next	: rethread#	/* run queue link */
+
+		tid	: std.size	/* just for debugging */
 		ip	: std.size	/* the instruction pointer */
+		dead	: bool		/* thread died */
+		matched	: bool		/* thread matched */
 
 		mstart	: std.size[:]	/* match starts */
 		mend	: std.size[:]	/* match ends */

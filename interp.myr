@@ -16,54 +16,82 @@ const exec = {re, str
 	re.strp = 0
 	run(re)
 	match re.matched
-	|`std.None: -> false
 	| `std.Some thr:
 		for i = 0; i < re.nmatch; i++
 			std.put("match %z:", i)
 			std.put("[%z..%z]\n", thr.mstart[i], thr.mend[i])
 		;;
 		-> thr.mend[0] == str.len
+	| `std.None:
+		-> false
 	;;
 }
 
+const Zthr = 0 castto(rethread#)
+
 const run = {re
-	var i
+	var i, consumed
+	var thr
 
 	re.matched = `std.None
-	mkthread(re, 0)
-	re.thr[0].mstart = std.slalloc(re.nmatch)
-	re.thr[0].mend = std.slalloc(re.nmatch)
+	re.runq = mkthread(re, 0)
+	re.runq.mstart = std.slalloc(re.nmatch)
+	re.runq.mend = std.slalloc(re.nmatch)
 	for i = 0; i < re.nmatch; i++
-		re.thr[0].mstart[i] = -1
-		re.thr[0].mend[i] = -1
+		re.runq.mstart[i] = -1
+		re.runq.mend[i] = -1
 	;;
 	while re.nthr > 0
-		for i = 0; i < re.nthr; i++
-			trace(re, re.thr[i], "\ntid=%z, ip=%z, c=b\n", re.thr[i].uid, re.thr[i].ip, re.str[re.strp])
-			step(re, i)
+		while re.runq != Zthr
+			/* set up the next thread */
+			thr = re.runq
+			re.runq = thr.next
+
+			trace(re, thr, "\nrunning tid=%z, ip=%z, c=%c\n", thr.tid, thr.ip, re.str[re.strp] castto(char))
+			consumed = step(re, thr)
+			while !consumed
+				consumed = step(re, thr)
+			;;
+
+			if thr.dead
+				thrfree(re, thr)
+			elif !thr.matched
+				thr.next = re.expired
+				re.expired = thr
+			else
+				trace(re, thr, "Matched\n")
+				match re.matched
+				| `std.Some t:	std.put("HAVE MATCH\n")
+				| `std.None: std.put("WTFWTFWTF\n")
+				;;
+			;;
 		;;
+		re.runq = re.expired
+		re.expired = Zthr
 		if re.nthr > 0
 			re.strp++
 		;;
 	;;
 }
 
-const step = {re, tid
-	var thr
+/* 
+ Steps forward one instruction. Returns true if a byte of input was
+ consumed, false otherwise.
+*/
+const step = {re, thr
 	var str
 	var mstart
 	var mend
 
-	thr = re.thr[tid]
 	str = re.str
 	match re.prog[thr.ip]
 	/* Char matching. Consume exactly one byte from the string. */
 	| `Ibyte b:
-		trace(re, thr, "\t%z:\tByte %b\n", thr.ip, b)
+		trace(re, thr, "\t%z:\tByte %b (%c)\n", thr.ip, b, b castto(char))
 		if !in(re, str)
-			kill(re, tid, "end of string")
+			die(re, thr, "end of string")
 		elif b != str[re.strp]
-			kill(re, tid, "not right char")
+			die(re, thr, "not right char")
 		else
 			thr.ip++
 			trace(re, thr, "\t\tmatched %b with %b\n", b, str[re.strp])
@@ -71,7 +99,7 @@ const step = {re, tid
 	| `Irange (start, end):
 		trace(re, thr, "\t%z:\tRange (%b, %b)\n", thr.ip, start, end)
 		if !in(re, str) || start > str[re.strp] || end < str[re.strp]
-			kill(re, tid, "bad range")
+			die(re, thr, "bad range")
 		else
 			thr.ip++
 		;;
@@ -83,99 +111,105 @@ const step = {re, tid
 		trace(re, thr, "\t%z:\tBol\n", thr.ip)
 		if re.strp == 0 || str[re.strp - 1] == '\n' castto(byte)
 			thr.ip++
-			step(re, tid)
+			-> false
 		else
-			kill(re, tid, "not beginning of line")
+			die(re, thr, "not beginning of line")
 		;;
 	| `Ieol:
 		trace(re, thr, "\t%z:\tEol\n", thr.ip)
 		if re.strp == str.len || str[re.strp] == '\n' castto(byte)
-			step(re, tid)
+			-> false
 		else
-			kill(re, tid, "not end of line")
+			die(re, thr, "not end of line")
 		;;
 	| `Ilbra m:
 		trace(re, thr, "\t%z:\tLbra %z\n", thr.ip, m)
 		trace(re, thr, "\t\tmatch start = %z\n", re.strp)
 		thr.mstart[m] = re.strp
 		thr.ip++
-		step(re, tid)
+		-> false
 	| `Irbra m:
 		trace(re, thr, "\t%z:\tRbra %z\n", thr.ip, m)
 		thr.mend[m] = re.strp
 		thr.ip++
-		step(re, tid)
+		-> false
 	| `Ifork (lip, rip):
 		trace(re, thr, "\t%z:\tFork (%z, %z)\n", thr.ip, lip, rip)
 		mstart = std.sldup(thr.mstart)
 		mend = std.sldup(thr.mend)
-		jmp(re, tid, lip)
 		fork(re, thr, rip, mstart, mend)
+		thr.ip = lip
+		-> false
 	| `Ijmp ip:
 		trace(re, thr, "\t%z:\tJmp %z\n", thr.ip, ip)
-		jmp(re, tid, ip)
+		thr.ip = ip
+		-> false
 	| `Imatch:
 		trace(re, thr, "\t%z:\tMatch\n", thr.ip)
-		finish(re, tid)
+		finish(re, thr)
+		-> true
 	;;
-}
-
-const jmp = {re, tid, ip
-	re.thr[tid].ip = ip
-	step(re, tid)
-}
-
-var uid = 0
-
-const mkthread = {re, ip
-	var thr : rethread#
-	var tid
-
-	tid = re.nthr
-	if re.nthr >= re.thr.len
-		re.thr = std.slgrow(re.thr, std.max(1, re.nthr * 2))
-	;;
-
-	thr = std.alloc()
-	thr.ip = ip
-	thr.uid = uid++
-
-	re.thr[re.nthr] = thr
-	re.nthr++
-	-> tid
+	-> true
 }
 
 const fork = {re, thr, ip, mstart, mend
-	var tid
+	var thr
 
-	tid = mkthread(re, ip)
-	re.thr[tid].mstart = mstart
-	re.thr[tid].mend = mend
-	step(re, tid)
+	thr = mkthread(re, ip)
+	thr.next = re.runq
+	thr.mstart = mstart
+	thr.mend = mend
+	re.runq = thr
 }
 
-const kill = {re, tid, msg
+const die = {re, thr, msg
+	trace(re, thr, "\t\tdie %z: %s\n", thr.tid, msg)
+	thr.dead = true
+	re.nthr--
+}
+
+const finish = {re, thr
+	trace(re, thr, "******finish**** %z\n", tid)
+	match re.matched
+	| `std.Some t:	thrfree(re, t)
+	| `std.None:
+	;;
+	re.matched = `std.Some thr
+	thr.matched = true
+	re.nthr--
+}
+
+var tid = 0
+
+const mkthread = {re, ip
+	var thr : rethread#
+
+	thr = std.alloc()
+
+	thr.next = Zthr
+
+	thr.ip = ip
+	thr.tid = tid++
+	thr.dead = false
+	thr.matched = false
+
+	thr.mstart = [][:]
+	thr.mend = [][:]
+
+	re.nthr++
+
+	-> thr
+}
+
+const thrfree = {re, thr
 	/* 
 	   free the dying thread, and shuffle the last
 	   thread into the it's place in the thread list
 	*/
-	trace(re, re.thr[tid], "\t\tkill %z: %s\n", re.thr[tid].uid, msg)
-	std.slfree(re.thr[tid].mstart)
-	std.slfree(re.thr[tid].mend)
-	std.free(re.thr[tid])
-	re.thr[tid] = re.thr[re.nthr - 1]
-	re.nthr--
-}
-
-const finish = {re, tid
-	trace(re, re.thr[tid], "finish\n", tid)
-	match re.matched
-	| `std.None:
-	| `std.Some thr:	std.free(thr)
-	;;
-	re.matched = `std.Some re.thr[tid]
-	re.thr[tid] = re.thr[re.nthr - 1]
-	re.nthr--
+	trace(re, thr, "\t\tcleanup %z\n", thr.tid)
+	std.slfree(thr.mstart)
+	std.slfree(thr.mend)
+	std.free(thr)
 }
 
 const in = {re, str 
@@ -184,7 +218,6 @@ const in = {re, str
 
 const trace : (re : regex#, thr : rethread#, msg : byte[:], args : ...) = {re, thr, msg, args
 	if re.debug
-		std.put("\tthr %i: ", thr.uid)
 		std.putv(msg, std.vastart(&args))
 	;;
 }
