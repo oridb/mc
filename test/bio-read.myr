@@ -1,0 +1,28 @@
+use std
+use bio
+
+const main = {
+	var f
+	/* Must be bigger than a bio buffer (ie, > 64k) */
+	var buf : byte[64*1024]
+
+	match bio.open("data/datafile", bio.Rd)
+	| `std.Some bio:	f = bio
+	| `std.None:	std.fatal(1, "Unable to open data file")
+	;;
+	
+	/* read a 4 byte chunk */
+	bio.read(f, buf[:4])
+	std.write(1, buf[:4])
+	std.write(1, "\n")
+
+	/* read the next 32 bytes */
+	bio.read(f, buf[:32])
+	std.write(1, buf[:32])
+	std.write(1, "\n")
+
+	/* read a 64k chunk */
+	bio.read(f, buf[:])
+	std.write(1, buf[:])
+	std.write(1, "\n")
+}
