@@ -1,3 +1,4 @@
+SUB=doc
 MYRLIB=regex
 MYRSRC= \
 	compile.myr \

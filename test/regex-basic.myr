@@ -1,5 +1,4 @@
 use std
-use regex
 
 use "testmatch.use"
 

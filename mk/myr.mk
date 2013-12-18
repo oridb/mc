@@ -2,7 +2,28 @@ ifneq ($(MYRLIB),)
     _LIBNAME=lib$(MYRLIB).a
 endif
 
-all: $(_LIBNAME) $(MYRBIN)
+all: subdirs $(_LIBNAME) $(MYRBIN) 
+
+subdirs:
+	@for i in $(SUB); do (\
+	    cd $$i && \
+	    $(MAKE) || \
+	    exit 1 \
+	) || exit 1; done
+
+subdirs-clean:
+	@for i in $(SUB); do (\
+	    cd $$i && \
+	    $(MAKE) clean|| \
+	    exit 1 \
+	); done
+
+subdirs-install:
+	@for i in $(SUB); do (\
+	    cd $$i && \
+	    $(MAKE) install|| \
+	    exit 1 \
+	); done
 
 $(_LIBNAME): $(MYRSRC) $(ASMSRC)
 	myrbuild -l $(MYRLIB) $^
@@ -13,12 +34,12 @@ $(MYRBIN): $(MYRSRC) $(ASMSRC)
 OBJ=$(MYRSRC:.myr=.o) $(ASMSRC:.s=.o)
 USE=$(MYRSRC:.myr=.use) $(MYRLIB)
 .PHONY: clean
-clean:
+clean: subdirs-clean
 	rm -f $(OBJ)
 	rm -f $(USE)
 	rm -f lib$(MYRLIB).a
 
-install: install-bin install-lib
+install: subdirs-install install-bin install-lib
 
 install-bin: $(MYRBIN)
 	@if [ ! -z "$(MYRBIN)" ]; then \
