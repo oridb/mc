@@ -3,5 +3,5 @@ pkg std =
 	type ssize	= int64		/* signed size */
 	type off	= uint64	/* file offsets */
 	type intptr	= uint64	/* can hold any pointer losslessly */
-	type time	= uint64	/* milliseconds since epoch */
+	type time	= int64		/* milliseconds since epoch */
 ;;
