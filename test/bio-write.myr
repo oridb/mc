@@ -7,7 +7,7 @@ const main = {
 	/* Must be bigger than a bio buffer (ie, > 64k) */
 	var buf : byte[64*1024]
 
-	match bio.open("tmpout/test-write", bio.Wr)
+	match bio.create("tmpout/test-write", bio.Wr, 0o644)
 	| `std.Some bio:	f = bio
 	| `std.None:	std.fatal(1, "Unable to open data file")
 	;;

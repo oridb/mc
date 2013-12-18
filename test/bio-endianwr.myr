@@ -8,7 +8,7 @@ const main = {
 	var q : uint64
 	var f
 
-	match bio.open("tmpout/test-endianwr", bio.Wr)
+	match bio.create("tmpout/test-endianwr", bio.Wr, 0o644)
 	| `std.Some bio:	f = bio
 	| `std.None:	std.fatal(1, "Unable to open data file")
 	;;

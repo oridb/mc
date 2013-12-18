@@ -1,4 +1,5 @@
 FLAGS=-I../
+mkdir -p tmpout
 # Format:
 # [B|F] testname [E|P] result
 #    [B|F]: Compiler outcome.
@@ -25,6 +26,6 @@ B bio-write	F	tmpout/test-write
 B bio-delim	C
 B bio-endianwr	F	tmpout/test-endianwr
 B bio-endianrd	C
-#B bio-unit	C
+B bio-unitwr	F	tmpout/test-unitwr
 #B bio-peek	C
 #B bio-fmt	C
