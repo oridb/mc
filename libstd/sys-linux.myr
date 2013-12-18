@@ -444,6 +444,7 @@ pkg std =
 	const write	: (fd:fd, buf:byte[:] -> size)
 	const lseek	: (fd:fd, off:uint64, whence:int64 -> int64)
 	const fstat	: (fd:fd, sb:statbuf# -> int64)
+	const mkdir	: (path : byte[:], mode : int64	-> int64)
 
 	/* networking */
 	const socket	: (dom : sockfam, stype : socktype, proto : sockproto	-> fd)
@@ -478,6 +479,7 @@ const read	= {fd, buf;		-> syscall(Sysread, fd, buf castto(byte#), buf.len castt
 const write	= {fd, buf;		-> syscall(Syswrite, fd, buf castto(byte#), buf.len castto(size)) castto(size)}
 const lseek	= {fd, off, whence;	-> syscall(Syslseek, fd, off, whence)}
 const fstat	= {fd, sb;		-> syscall(Sysfstat, fd, sb)}
+const mkdir	= {path, mode;		-> syscall(Sysmkdir, cstring(path), mode) castto(int64))
 
 /* networking */
 const socket	= {dom, stype, proto;	-> syscall(Syssocket, dom castto(int64), stype, proto) castto(fd)}
