@@ -277,7 +277,7 @@ generic putbe = {f, v : @a::(tcnum,tcint,tctest)
 	var i
 
 	for i = sizeof(@a); i != 0; i--
-		putb(f, ((v >> (i - 1)*8) & 0xff) castto(byte))
+		putb(f, ((v >> ((i-1)*8)) & 0xff) castto(byte))
 	;;
 	-> sizeof(@a)
 }
