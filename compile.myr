@@ -101,7 +101,7 @@ const gen = {re, t
  set of utf8 ranges. Eg:
  	[0x00-0x2000]  => [0x00-0x7F]|[0xC2-0xDF][0x80-0x8F]
 */
-Const genrange = {re, lo, hi
+const genrange = {re, lo, hi
 	/* the transitions between different char lenghts for unicode
 	   characters, needed so that we know how to generate the
 	   different size categories */
