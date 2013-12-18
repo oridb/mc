@@ -1,0 +1,10 @@
+Matched. 2 matches
+match 0: Abc
+match 1: bc
+Matched. 2 matches
+match 0: Abcde
+match 1: bcd
+Matched. 3 matches
+match 0: Abcde
+match 1: bcd
+match 2: c
