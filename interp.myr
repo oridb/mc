@@ -4,7 +4,7 @@ use "types.use"
 
 pkg regex =
 	const exec	: (re : regex#, str : byte[:] -> bool)
-	const find	: (re : regex#, str : byte[:] -> bool)
+	const search	: (re : regex#, str : byte[:] -> bool)
 ;;
 
 

@@ -1,0 +1,83 @@
+.TH MYR REGEX 1
+.SH NAME
+regex myr-regex
+.SH LIBRARY
+regex
+.SH SYNOPSIS
+.B use regex
+.I const compile	: (re : byte[:] -> std.error(regex#, status))
+.I const dbgcompile	: (re : byte[:] -> std.error(regex#, status))
+.I const free           : (re : regex# -> void)
+.br
+.I const exec	: (re : regex#, str : byte[:] -> bool)
+.I const search	: (re : regex#, str : byte[:] -> bool)
+.SH DESCRIPTION
+.PP
+The regex library provides functions for compiling and evaluating regular
+expressions, as described later in this document, or in myr-regex(7).
+.PP
+.I regex.compile will take a string describing a regex, and will attempt
+to compile it, returing 
+.I `std.Success regex#
+if the regex is valid, and there were no error conditions encountered during
+compilation. If the compilation failed,
+.I `std.Failure regex.status
+will be returned, where regex.status is a failure code.
+
+.PP 
+.I regex.dbgcompile
+is identical to 
+.I regex.compile,
+however, it will print debugging information as it compiles, and each
+time the regex is evaluated.
+
+.PP
+.I regex.exec
+will take the regex passed to it, and evaluate it over the text provided,
+returning the 
+.I `std.Some matches,
+or 
+.I `std.None
+if there were no matches found. The matches must span the whole string.
+
+.PP
+.I regex.search
+is similar to regex.exec, but it will attempt to find a match somewhere
+within the string, instead of attempting to find a match spanning the whole
+string.
+
+.SH EXAMPLE
+.EX
+        use std
+        use regex
+
+        const main = {
+            match regex.compile(pat)
+            var i
+            | `std.Success re:
+                    match regex.exec(re, text)
+                    | `std.Some matches:
+                            for i = 0; i < matches.len; i++
+                                std.put("Match %i: %s\n", i, match[i])
+                            ;;
+                    | `std.None: std.put("Text did not match\n")
+                    ;;
+            | `std.Failure err:
+                    std.put("failed to compile regex")
+            ;;
+        }
+.EE
+
+.SH FILES
+The source code for this compiler is available from
+.B git://git.eigenstate.org/git/ori/libregex.git
+
+.SH SEE ALSO
+.IR mc(1)
+
+.SH BUGS
+.PP
+This code is insufficiently tested.
+
+.PP
+This code does not support all of the regex features that one would expect.
