@@ -4,5 +4,5 @@ use regex
 use "testmatch.use"
 
 const main = {
-	testmatch(".*bæd", "Abæc")
+	testmatch(".*bæc", "Abæc")
 }
