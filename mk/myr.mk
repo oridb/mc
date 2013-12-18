@@ -25,6 +25,13 @@ subdirs-install:
 	    exit 1 \
 	); done
 
+subdirs-uninstall:
+	@for i in $(SUB); do (\
+	    cd $$i && \
+	    $(MAKE) uninstall|| \
+	    exit 1 \
+	); done
+
 $(_LIBNAME): $(MYRSRC) $(ASMSRC)
 	myrbuild -l $(MYRLIB) $^
 
@@ -40,6 +47,7 @@ clean: subdirs-clean
 	rm -f lib$(MYRLIB).a
 
 install: subdirs-install install-bin install-lib install-man
+uninstall: subdirs-uninstall uninstall-bin uninstall-lib uninstall-man
 
 install-bin: $(MYRBIN)
 	@if [ ! -z "$(MYRBIN)" ]; then \
@@ -65,6 +73,25 @@ install-man:
 	    mkdir -p $(INST_ROOT)/share/man/man$$MANSECT; \
 	    install -m 644 $(MAN) $(INST_ROOT)/share/man/man$${MANSECT}; \
 	done \
+
+uninstall-bin: $(MYRBIN)
+	@for i in $(MYRBIN); do \
+	    echo rm -f $(INST_ROOT)/bin/$$i; \
+	    rm -f $(INST_ROOT)/bin/$$i; \
+	done
+
+uninstall-lib: $(_LIBNAME)
+	@for i in $(_LIBNAME) $(MYRLIB); do \
+	    echo rm -f $(INST_ROOT)/lib/myr/$$i; \
+	    rm -f $(INST_ROOT)/lib/myr/$$i; \
+	done
+
+uninstall-man:
+	@for i in $(MAN); do \
+	    MANSECT=$$(echo $$i | awk -F. '{print $$NF}'); \
+	    echo rm -f $(INST_ROOT)/share/man/man$${MANSECT}/$$i; \
+	    rm -f $(INST_ROOT)/share/man/man$${MANSECT}/$$i; \
+	done
 
 config.mk:
 	./configure
