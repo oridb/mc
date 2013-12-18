@@ -387,7 +387,7 @@ we're stuck with a small static buffer.
 const put = {f, fmt, args
 	var buf : byte[2048]
 
-	-> write(f,  std.fmt(buf[:], fmt, std.vastart(&args)))
+	-> write(f,  std.bfmt(buf[:], fmt, std.vastart(&args)))
 }
 
 /* 
@@ -452,6 +452,8 @@ const writebuf = {fd, src
 :writedone
 	-> count
 }
+
+
 
 /*
 Reads as many bytes as possible from the file into
