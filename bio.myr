@@ -85,7 +85,7 @@ const mkfile = {fd, mode
 
 /* Opens a file with mode provided. */
 const open = {path, mode 
-	-> create(path, mode, 0o777)
+	-> sysopen(path, mode, sysmode(mode), 0o777)
 }
 
 /*
@@ -93,20 +93,24 @@ const open = {path, mode
    the requested mode, with the requested permissions
 */
 const create = {path, mode, perm
-	var openmode
+	-> sysopen(path, mode, sysmode(mode) | std.Ocreat, perm)
+}
+
+/* map from the bio modes to the unix open modes */
+const sysmode = {mode
+	match mode
+	| Rd:	-> std.Ordonly
+	| Wr:	-> std.Owronly
+	| Rw:	-> std.Ordwr
+	| _:	std.fatal(1, "bio: bad file mode")
+	;;
+	-> 0
+}
+
+/* open the file, and return it */
+const sysopen = {path, mode, openmode, perm
 	var fd
 
-	/* map from the bio modes to the unix open modes */
-	if mode == Rd
-		openmode = std.Ordonly
-	elif mode == Wr
-		openmode = std.Owronly
-	elif mode == Rw
-		openmode = std.Ordwr
-	;;
-	openmode |= std.Ocreat
-
-	/* open the file, and return it */
 	fd = std.open(path, openmode, perm castto(int64))
 	if fd < 0
 		-> `std.None
