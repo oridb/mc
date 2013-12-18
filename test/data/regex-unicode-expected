@@ -1,2 +1,2 @@
-match 0:[0..5]
-Found = true: len = 5
+Matched. 1 matches
+match 0: Abæc

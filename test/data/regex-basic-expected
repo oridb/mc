@@ -1,2 +1,2 @@
-match 0:[0..3]
-Found = true: len = 3
+Matched. 1 matches
+match 0: Abc
