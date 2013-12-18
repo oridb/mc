@@ -39,7 +39,7 @@ clean: subdirs-clean
 	rm -f $(USE)
 	rm -f lib$(MYRLIB).a
 
-install: subdirs-install install-bin install-lib
+install: subdirs-install install-bin install-lib install-man
 
 install-bin: $(MYRBIN)
 	@if [ ! -z "$(MYRBIN)" ]; then \
@@ -56,6 +56,15 @@ install-lib: $(_LIBNAME)
 		install -m 644 $(_LIBNAME) $(INST_ROOT)/lib/myr; \
 		install -m 644 $(MYRLIB) $(INST_ROOT)/lib/myr; \
 	fi
+
+install-man:
+	@for i in $(MAN); do \
+	    MANSECT=$$(echo $$i | awk -F. '{print $$NF}'); \
+	    echo mkdir -p $(INST_ROOT)/share/man/man$$MANSECT; \
+	    echo install -m 644 $(MAN) $(INST_ROOT)/share/man/man$${MANSECT}; \
+	    mkdir -p $(INST_ROOT)/share/man/man$$MANSECT; \
+	    install -m 644 $(MAN) $(INST_ROOT)/share/man/man$${MANSECT}; \
+	done \
 
 config.mk:
 	./configure
