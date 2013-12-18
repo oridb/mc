@@ -24,7 +24,7 @@ B bio-read	C
 B bio-write	F	tmpout/test-write
 B bio-delim	C
 B bio-endianwr	F	tmpout/test-endianwr
-#B bio-endianrd	C
+B bio-endianrd	C
 #B bio-unit	C
 #B bio-peek	C
 #B bio-fmt	C

@@ -55,7 +55,9 @@ pkg bio =
 	/* formatted i/o */
 	const put	: (f : file#, fmt : byte[:], args : ... -> std.size)
 
-	const fill	: (f : file#, sz : std.size -> std.size)
+	/* FIXME: internal decls leaking out for generics. */
+	const fill
+	const ensureread
 ;;
 
 const Bufsz = 16*std.KiB
@@ -217,8 +219,11 @@ const putc = {f, c
 
 /* reads a single byte from the input stream */
 const getb = {f
+	var b
 	if ensureread(f, 1)
-		-> f.rbuf[f.rstart++]
+		b = f.rbuf[f.rstart]
+		f.rstart++
+		-> b
 	;;
 	-> -1
 }
@@ -305,12 +310,14 @@ generic getbe = {f -> @a::(tcnum,tcint,tctest)
 */
 generic getle = {f -> @a::(tcnum,tcint,tctest)
 	var ret
+	var b
 	var i
 
 	ret = 0
 	ensureread(f, sizeof(@a))
 	for i = 0; i < sizeof(@a); i++
-		ret = ret | ((getb(f) << 8*i) castto(@a::(tcnum,tcint,tctest)))
+		b = getb(f) castto(@a::(tcnum,tcint,tctest))
+		ret = ret | (b << (8*i))
 	;;
 	-> ret
 }
