@@ -23,4 +23,10 @@ const main = {
 		buf[i] = 0x31
 	;;
 	bio.write(f, buf[:])
+	
+	/* final message after a big burst */
+	bio.write(f, "goodbye\n")
+
+	/* and test for flush on close */
+	bio.close(f);
 }
