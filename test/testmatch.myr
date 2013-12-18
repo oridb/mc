@@ -1,0 +1,25 @@
+use std
+use regex
+
+pkg =
+	const testmatch	: (pat : byte[:], text : byte[:] -> void)
+;;
+
+const testmatch = {pat, text
+	var i
+	match regex.compile(pat)
+	| `std.Success re:
+		match regex.exec(re, text)
+		| `std.Some m:
+			std.put("Matched. %i matches\n", m.len)
+			for i = 0; i < m.len; i++
+				std.put("match %i: %s\n", i, m[i])
+			;;
+		| `std.None:
+			std.put("No match\n")
+		;;
+		regex.free(re)
+	| `std.Failure err:
+		std.put("failed to compile regex")
+	;;
+}

@@ -5,6 +5,7 @@ use "types.use"
 pkg regex =
 	const compile	: (re : byte[:] -> std.error(regex#, status))
 	const dbgcompile	: (re : byte[:] -> std.error(regex#, status))
+	const free	: (re : regex# -> void)
 ;;
 
 type tree = union
@@ -62,10 +63,19 @@ const regexcompile = {re, pat
 		append(re, `Irbra 0)
 		append(re, `Imatch)
 		idump(re)
+		astfree(t)
 		-> `std.Success re
 	;;
 	-> `std.Failure (`Noimpl)
 }
+
+const free = {re
+	/* all the threads should be dead,
+	 so we shouldn't have to free any*/
+	std.slfree(re.prog)
+	std.free(re)
+}
+
 
 /* generates bytecode from an AST */
 const gen = {re, t
@@ -320,7 +330,7 @@ const parse = {re
 		if re.pat.len == 0
 			-> `Some t
 		else
-			free(t)
+			astfree(t)
 			-> `Fail (`Earlystop)
 		;;
 	| `None:
@@ -339,7 +349,7 @@ const altexpr = {re
 			| `Some rhs:
 				ret = mk(`Alt (ret, rhs))
 			| `None:
-				free(ret)
+				astfree(ret)
 				-> `Fail (`Earlystop)
 			| `Fail f:
 				-> `Fail f
@@ -413,7 +423,7 @@ const baseexpr = {re
 		| `None:	-> `Fail (`Emptyparen)
 		;;
 		if !matchc(re, ')')
-			free(ret)
+			astfree(ret)
 			-> `Fail (`Unbalanced)
 		;;
 	| c:
@@ -441,7 +451,7 @@ const chrclass = {re
 		t = mk(`Alt (t, r))
 	;;
 	if !matchc(re, ']')
-		free(t)
+		astfree(t)
 		-> `Fail (`Earlystop)
 	else
 		-> `Some t
@@ -496,14 +506,14 @@ const mk = {v
 	-> t
 }
 
-const free = {t
+const astfree = {t
 	match t#
-	| `Alt	(a, b): free(a); free(b)
-	| `Cat	(a, b): free(a); free(b)
+	| `Alt	(a, b): astfree(a); astfree(b)
+	| `Cat	(a, b): astfree(a); astfree(b)
 	/* repetition */
-	| `Star	a:	free(a)
-	| `Plus	a:	free(a)
-	| `Quest	a:	free(a)
+	| `Star	a:	astfree(a)
+	| `Plus	a:	astfree(a)
+	| `Quest	a:	astfree(a)
 
 	/* end matches */
 	| `Byte	b:	
@@ -511,7 +521,7 @@ const free = {t
 	| `Class (a, b):	
 
 	/* meta */
-	| `Cap	a:	free(a)
+	| `Cap	a:	astfree(a)
 	;;
 	std.free(t)
 }
