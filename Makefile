@@ -1,7 +1,6 @@
 MYRLIB=bio
 MYRSRC= \
 	bio.myr
-SUB=test
 
 include config.mk
 include mk/myr.mk
