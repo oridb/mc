@@ -219,11 +219,8 @@ const putc = {f, c
 
 /* reads a single byte from the input stream */
 const getb = {f
-	var b
 	if ensureread(f, 1)
-		b = f.rbuf[f.rstart]
-		f.rstart++
-		-> b
+		-> f.rbuf[f.rstart++]
 	;;
 	-> -1
 }
