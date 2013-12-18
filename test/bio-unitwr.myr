@@ -3,23 +3,12 @@ use bio
 
 const main = {
 	var f
-	/* Must be bigger than a bio buffer (ie, > 64k) */
-	var buf : byte[64*1024]
-
 	match bio.create("tmpout/test-unitwr", bio.Wr, 0o644)
 	| `std.Some bio:	f = bio
 	| `std.None:	std.fatal(1, "Unable to open data file")
 	;;
-	
-	/* write a byte */
 	bio.putb(f, 42)
-
-	/* and a char */
 	bio.putc(f, 'ה')
-
-	/* write a byte */
 	bio.putb(f, 0xa)
-
-	/* and test for flush on close */
 	bio.close(f);
 }
