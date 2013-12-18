@@ -3,30 +3,42 @@ use std
 use "types.use"
 
 pkg regex =
-	const exec	: (re : regex#, str : byte[:] -> bool)
-	const search	: (re : regex#, str : byte[:] -> bool)
+	const exec	: (re : regex#, str : byte[:] -> std.option(byte[:][:]))
+	const search	: (re : regex#, str : byte[:] -> std.option(byte[:][:]))
 ;;
 
+const Zthr = 0 castto(rethread#)
 
 const exec = {re, str
-	var i
-
 	re.str = str
 	re.strp = 0
 	run(re)
 	match re.matched
 	| `std.Some thr:
-		for i = 0; i < re.nmatch; i++
-			std.put("match %z:", i)
-			std.put("[%z..%z]\n", thr.mstart[i], thr.mend[i])
+		if thr.mend[0] != str.len
+			-> `std.None
+		else
+			-> `std.Some getmatches(re, thr)
 		;;
-		-> thr.mend[0] == str.len
 	| `std.None:
-		-> false
+		-> `std.None
 	;;
 }
 
-const Zthr = 0 castto(rethread#)
+const getmatches = {re, thr
+	var ret
+	var i
+
+	ret = std.slalloc(re.nmatch)
+	for i = 0; i < re.nmatch; i++
+		if thr.mstart[i] != -1 && thr.mend[i] != -1
+			ret[i] = re.str[thr.mstart[i]:thr.mend[i]]
+		else
+			ret[i] = [][:]
+		;;
+	;;
+	-> ret
+}
 
 const run = {re
 	var i, consumed

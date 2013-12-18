@@ -11,6 +11,7 @@ check:
 
 .PHONY: clean
 clean:
+	rm -f testmatch.use testmatch.o
 	@for i in `awk '/^[A-Z]/{print $$2}' tests`; do \
 	    echo rm -f $$i; \
 	    rm -f $$i; \
