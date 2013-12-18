@@ -1,0 +1,11 @@
+use std
+
+var i = 0
+const f = {
+	-> i++
+}
+
+const main = {
+	f()
+	std.exit(i)
+}
