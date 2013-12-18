@@ -50,8 +50,7 @@ pkg bio =
 
 	/* delimited read; returns freshly allocated buffer. */
 	const readln	: (f : file#	-> byte[:])
-	const readto	: (f : file#, delim : char	-> byte[:])
-	const readtob	: (f : file#, delim : byte	-> byte[:])
+	const readto	: (f : file#, delim : byte[:]	-> byte[:])
 
 	/* formatted i/o */
 	const put	: (f : file#, fmt : byte[:], args : ... -> std.size)
@@ -339,68 +338,36 @@ const peekc = {f
   	bio.readto(f, ',')	-> "foo"
   	bio.readto(f, ',')	-> "bar\n"
 */
-const readto = {f, c
-	var buf : byte[4]
-	var srch
+const readto = {f, delim
 	var ret : byte[:]
-	var len
-	var i
+	var i, j
 
-	len = std.encode(buf[:], c)
-	srch = buf[:std.charlen(c)]
-	if srch.len == 0
-		-> std.slalloc(0)
-	;;
-
-	ret = std.slalloc(0)
+	ret = [][:]
 	while true
-		std.put("srch.len = %i\n", srch.len)
-		if !ensureread(f, srch.len)
+		if !ensureread(f, delim.len)
 			-> readinto(f, ret, f.rend - f.rstart)
 		;;
 		for i = f.rstart; i < f.rend; i++
-			if std.sleq(f.rbuf[i + 1:i + srch.len - 1], srch[1:])
-				-> readinto(f, ret, i - f.rstart)
+			if f.rbuf[i] == delim[0]
+				for j = 0; j < delim.len; j++
+					if f.rbuf[i + j] != delim[j]
+						goto nextiter
+					;;
+				;;
+				ret = readinto(f, ret, i - f.rstart)
+				f.rstart += delim.len
+				-> ret
 			;;
+:nextiter
 		;;
 		ret = readinto(f, ret, i - f.rstart)
 	;;
 	-> ret
 }
 
-/*
-  reads up to a single byte delimiter. drops the delimiter
-  from the input stream. Eg, with the input "foo\xFFbar"
-
-  	bio.readto(f, 0xff)	-> "foo"
-  	bio.readto(f, 0xff)	-> "bar"
-*/
-const readtob = {f, b
-	var ret
-	var i
-
-	i = 0
-	ret = std.slalloc(0)
-	while true
-		fill(f, 1)
-		if !ensureread(f, 1)
-			-> readinto(f, ret, 0)
-		;;
-		for i = f.rstart; i < f.rend; i++
-			if f.rbuf[i] == b
-				ret = readinto(f, ret, i - f.rstart)
-				/* skip past the recognized byte */
-				f.rstart += 1
-				-> ret
-			;;
-		;;
-		ret = readinto(f, ret, i - f.rstart)
-	;;
-}
-
 /* Same as readto, but the delimiter is always a '\n' */
 const readln = {f
-	-> readto(f, '\n')
+	-> readto(f, "\n")
 }
 
 /*
