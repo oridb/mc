@@ -1,0 +1,8 @@
+use std
+use regex
+
+use "testmatch.use"
+
+const main = {
+	testmatch(".*bæd", "Abæc")
+}
