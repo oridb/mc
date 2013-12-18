@@ -302,6 +302,7 @@ size_t tysize(Type *t)
         case Tyname:
             return tysize(t->sub[0]);
         case Tyarray:
+            t->asize = fold(t->asize, 0);
             assert(exprop(t->asize) == Olit);
             return t->asize->expr.args[0]->lit.intval * tysize(t->sub[0]);
         case Tytuple:
@@ -1290,6 +1291,10 @@ static Node *rval(Simp *s, Node *n, Node *dst)
                 t = set(t, rval(s, args[0], NULL));
                 append(s, t);
             }
+            /* drain the increment queue before we return */
+            for (i = 0; i < s->nqueue; i++)
+                append(s, s->incqueue[i]);
+            lfree(&s->incqueue, &s->nqueue);
             jmp(s, s->endlbl);
             break;
         case Oasn:
@@ -1438,7 +1443,7 @@ static Func *simpfn(Simp *s, char *name, Node *n, int export)
     Func *fn;
     Cfg *cfg;
 
-    if(debugopt['i'])
+    if(debugopt['i'] || debugopt['F'] || debugopt['f'])
         printf("\n\nfunction %s\n", name);
 
     /* set up the simp context */
@@ -1449,7 +1454,7 @@ static Func *simpfn(Simp *s, char *name, Node *n, int export)
     flatten(s, n);
     popstab();
 
-    if (debugopt['f'])
+    if (debugopt['f'] || debugopt['F'])
         for (i = 0; i < s->nstmts; i++)
             dump(s->stmts[i], stdout);
     for (i = 0; i < s->nstmts; i++) {
