@@ -626,7 +626,7 @@ tuplit  : Toparen tupbody Tcparen
 
 littok  : Tstrlit       {$$ = mkstr($1->line, $1->str);}
         | Tintlit       {$$ = mkint($1->line, $1->intval);}
-        | Tchrlit       {$$ = mkchar($1->line, *$1->str);} /* FIXME: expand escapes, unicode  */
+        | Tchrlit       {$$ = mkchar($1->line, $1->chrval);}
         | Tfloatlit     {$$ = mkfloat($1->line, $1->fltval);}
         | Tboollit      {$$ = mkbool($1->line, !strcmp($1->str, "true"));}
         ;

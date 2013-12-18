@@ -208,7 +208,7 @@ static int identstr(char *buf, size_t sz)
 {
     size_t i;
     char c;
-    
+
     i = 0;
     for (c = peek(); i < sz && identchar(c); c = peek()) {
         next();
@@ -332,36 +332,60 @@ static Tok *strlit()
     return t;
 }
 
+static uint32_t readutf(char c, char **buf, size_t *buflen, size_t *sz) {
+    size_t i, len;
+    uint32_t val;
+
+    if ((c & 0x80) == 0)
+        len = 1;
+    else if ((c & 0xe0) == 0xc0)
+        len = 2;
+    else if ((c & 0xf0) == 0xe0)
+        len = 3;
+    else if ((c & 0xf8) == 0xf0)
+        len = 4;
+
+    val = c & ((1 << (8 - len)) - 1);
+    append(buf, buflen, sz, c);
+    for (i = 1; i < len; i++) {
+        c = next();
+        if ((c & 0xc0) != 0x80)
+            fatal(line, "Invalid utf8 codepoint in character literal");
+        val = (val << 6) | (c & 0x3f);
+        append(buf, buflen, sz, c);
+    }
+    return val;
+}
+
 static Tok *charlit()
 {
     Tok *t;
     int c;
+    uint32_t val;
     size_t len, sz;
     char *buf;
+
 
     assert(next() == '\'');
 
     buf = NULL;
     len = 0;
     sz = 0;
-    while (1) {
-        c = next();
-        /* we don't unescape here, but on output */
-        if (c == '\'')
-            break;
-        else if (c == End)
-            fatal(line, "Unexpected EOF within char lit");
-        else if (c == '\n')
-            fatal(line, "Newlines not allowed in char lit");
-        else if (c == '\\')
-            decode(&buf, &len, &sz);
-        else
-            append(&buf, &len, &sz, c);
-
-    };
+    c = next();
+    if (c == End)
+        fatal(line, "Unexpected EOF within char lit");
+    else if (c == '\n')
+        fatal(line, "Newlines not allowed in char lit");
+    else if (c == '\\')
+        decode(&buf, &len, &sz);
+    else
+        val = readutf(c, &buf, &len, &sz);
     append(&buf, &len, &sz, '\0');
+    if (next() != '\'')
+        fatal(line, "Character constant with multiple characters");
 
     t = mktok(Tchrlit);
+    t->chrval = val;
     t->str = buf;
     return t;
 }
