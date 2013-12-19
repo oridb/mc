@@ -32,6 +32,7 @@ Insn(Ilea,      "\tlea%2t %m,%r\n",             Use(.l={1}),                    
 Insn(Iadd,      "\tadd%t %x,%r\n",              Use(.l={1,2}),                  Def(.l={2}))
 Insn(Isub,      "\tsub%t %x,%r\n",              Use(.l={1,2}),                  Def(.l={2}))
 Insn(Iimul,     "\timul%t %x,%r\n",             Use(.l={1,2}),                  Def(.l={2}))
+Insn(Iimul_r,   "\timul%t %r\n",                Use(.l={1},.r={Ral}),           Def(.r={Rax}))
 Insn(Imul,      "\tmul%t %r\n",                 Use(.l={1},.r={Reax}),          Def(.r={Reax,Redx}))
 Insn(Idiv,      "\tdiv%t %r\n",                 Use(.l={1},.r={Reax,Redx}),     Def(.r={Reax,Redx}))
 Insn(Ineg,      "\tneg%t %r\n",                 Use(.l={1}),                    Def(.l={1}))

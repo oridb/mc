@@ -461,8 +461,18 @@ Loc *selexpr(Isel *s, Node *n)
         case Omul:      
             if (floattype(exprtype(n)))
                 r = binop(s, Ifmul, args[0], args[1]);
-            else
+            else if (size(args[0]) == 1) {
+                a = selexpr(s, args[0]);
+                b = selexpr(s, args[1]);
+
+		c = locphysreg(Ral);
+                r = locreg(a->mode);
+                g(s, Imov, a, c, NULL);
+                g(s, Iimul_r, b, NULL);
+                g(s, Imov, c, r, NULL);
+	    } else {
                 r = binop(s, Iimul, args[0], args[1]);
+	    }
             break;
         case Odiv:
         case Omod:
