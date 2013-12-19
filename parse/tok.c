@@ -344,6 +344,8 @@ static uint32_t readutf(char c, char **buf, size_t *buflen, size_t *sz) {
         len = 3;
     else if ((c & 0xf8) == 0xf0)
         len = 4;
+    else
+        fatal(line, "Invalid utf8 encoded character constant");
 
     val = c & ((1 << (8 - len)) - 1);
     append(buf, buflen, sz, c);
