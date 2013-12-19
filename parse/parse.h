@@ -86,6 +86,7 @@ struct Tok {
     /* values parsed out */
     vlong intval;
     double fltval;
+    uint32_t chrval;
 };
 
 struct Stab {
