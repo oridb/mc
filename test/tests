@@ -22,6 +22,7 @@ B main		E	0
 B splitline     E       3
 B add		E	53
 B mul		E	42
+B mul8		E	18
 B div		E	42
 B mod		E	6
 B bsr		E	5
