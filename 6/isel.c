@@ -87,10 +87,7 @@ static Loc *loc(Isel *s, Node *n)
     switch (exprop(n)) {
         case Ovar:
             if (hthas(s->globls, n)) {
-                if (tybase(exprtype(n))->type == Tyfunc)
-                    rip = NULL;
-                else
-                    rip = locphysreg(Rrip);
+                rip = locphysreg(Rrip);
                 l = locmeml(htget(s->globls, n), rip, NULL, mode(n));
             } else if (hthas(s->stkoff, n)) {
                 stkoff = (ssize_t)htget(s->stkoff, n);
@@ -374,9 +371,28 @@ static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size
     g(s, Irepmovsb, NULL);
 }
 
+static void call(Isel *s, Node *n)
+{
+    AsmOp op;
+    Node *d;
+    Loc *f;
+
+    d = NULL;
+    if (exprop(n) == Ovar)
+        d = decls[n->expr.did];
+    if (hthas(s->globls, n) && d && d->decl.isconst && tybase(decltype(d))->type == Tyfunc) {
+        op = Icall;
+        f = locmeml(htget(s->globls, n), NULL, NULL, mode(n));
+    } else {
+        op = Icallind;
+        f = selexpr(s, n);
+    }
+    g(s, op, f, NULL);
+}
+
 static Loc *gencall(Isel *s, Node *n)
 {
-    Loc *src, *dst, *arg, *fn;  /* values we reduced */
+    Loc *src, *dst, *arg;  /* values we reduced */
     Loc *retloc, *rsp, *ret;       /* hard-coded registers */
     Loc *stkbump;        /* calculated stack offset */
     int argsz, argoff;
@@ -428,11 +444,7 @@ static Loc *gencall(Isel *s, Node *n)
         }
         argoff += size(n->expr.args[i]);
     }
-    fn = selexpr(s, n->expr.args[0]);
-    if (fn->type == Loclbl || fn->type == Locmeml)
-        g(s, Icall, fn, NULL);
-    else
-        g(s, Icallind, fn, NULL);
+    call(s, n->expr.args[0]);
     if (argsz)
         g(s, Iadd, stkbump, rsp, NULL);
     if (retloc)
