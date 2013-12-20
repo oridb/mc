@@ -21,10 +21,13 @@ static int hasparams(Type *t)
 {
     size_t i;
 
-    if (t->type == Typaram)
+    if (t->type == Typaram || t->isgeneric)
         return 1;
     for (i = 0; i < t->nsub; i++)
         if (hasparams(t->sub[i]))
+            return 1;
+    for (i = 0; i < t->narg; i++)
+        if (hasparams(t->arg[i]))
             return 1;
     return 0;
 }
@@ -51,7 +54,7 @@ Type *tyspecialize(Type *t, Htab *tsmap)
             htput(tsmap, t, ret);
             break;
         case Tyname:
-            if (!t->isgeneric) {
+            if (!hasparams(t)) {
                 ret = t;
             } else {
                 for (i = 0; i < t->nparam; i++) {
@@ -123,6 +126,8 @@ static void fillsubst(Htab *tsmap, Type *to, Type *from)
     size_t i;
 
     if (from->type == Typaram) {
+        if (debugopt['S'])
+            printf("mapping %s => %s\n", tystr(from), tystr(to));
         htput(tsmap, from, to);
         return;
     }
@@ -383,6 +388,8 @@ Node *specializedcl(Node *n, Type *to, Node **name)
 
     *name = genericname(n, to);
     d = getdcl(file->file.globls, *name);
+    if (debugopt['S'])
+        printf("specializing %s => %s\n", namestr(n->decl.name), namestr(*name));
     if (d)
         return d;
     /* namespaced names need to be looked up in their correct
