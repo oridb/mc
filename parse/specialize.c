@@ -45,6 +45,7 @@ Type *tyspecialize(Type *t, Htab *tsmap)
 {
     Type *ret, *tmp;
     size_t i;
+    Type **subst;
 
     if (hthas(tsmap, t))
         return htget(tsmap, t);
@@ -57,17 +58,21 @@ Type *tyspecialize(Type *t, Htab *tsmap)
             if (!hasparams(t)) {
                 ret = t;
             } else {
+                if (t->narg)
+                    subst = t->arg;
+                else
+                    subst = t->param;
                 for (i = 0; i < t->nparam; i++) {
-                    if (hthas(tsmap, t->param[i]))
+                    if (subst[i]->type != Typaram || hthas(tsmap, subst[i]))
                         continue;
-                    tmp = mktyvar(t->param[i]->line);
-                    htput(tsmap, t->param[i], tmp);
+                    tmp = mktyvar(subst[i]->line);
+                    htput(tsmap, subst[i], tmp);
                 }
                 ret = mktyname(t->line, t->name, t->param, t->nparam, tyspecialize(t->sub[0], tsmap));
                 ret->issynth = 1;
                 htput(tsmap, t, ret);
                 for (i = 0; i < t->nparam; i++)
-                    lappend(&ret->arg, &ret->narg, tyspecialize(t->param[i], tsmap));
+                    lappend(&ret->arg, &ret->narg, tyspecialize(subst[i], tsmap));
                 ret->isgeneric = hasparams(ret);
             }
             break;
