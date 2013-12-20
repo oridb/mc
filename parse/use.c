@@ -539,7 +539,7 @@ static Node *unpickle(FILE *fd)
             popstab();
             break;
         case Ndecl:
-            n->decl.did = maxdid++; /* unique within file */
+            n->decl.did = ndecls; /* unique within file */
             /* sym */
             n->decl.name = unpickle(fd);
             rdtype(fd, &n->decl.type);

@@ -13,7 +13,6 @@
 #include "parse.h"
 
 size_t maxnid;
-size_t maxdid;
 Node **decls;
 size_t ndecls;
 
@@ -264,7 +263,7 @@ Node *mkdecl(int line, Node *name, Type *ty)
     Node *n;
 
     n = mknode(line, Ndecl);
-    n->decl.did = maxdid++;
+    n->decl.did = ndecls;
     n->decl.name = name;
     n->decl.type = ty;
     lappend(&decls, &ndecls, n);

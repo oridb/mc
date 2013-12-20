@@ -278,7 +278,6 @@ extern size_t ncstrs;
 extern Node **decls;    /* decl id -> decl map */
 extern size_t ndecls;
 extern size_t maxnid;      /* the maximum node id generated so far */
-extern size_t maxdid;      /* the maximum decl id generated so far */
 
 extern int ispureop[];
 

@@ -303,7 +303,7 @@ static Node *specializenode(Node *n, Htab *tsmap)
             popstab();
             break;
         case Ndecl:
-            r->decl.did = maxdid++;
+            r->decl.did = ndecls;
             /* sym */
             r->decl.name = specializenode(n->decl.name, tsmap);
             r->decl.type = tysubst(n->decl.type, tsmap);
@@ -317,6 +317,7 @@ static Node *specializenode(Node *n, Htab *tsmap)
 
             /* init */
             r->decl.init = specializenode(n->decl.init, tsmap);
+            lappend(&decls, &ndecls, r);
             break;
         case Nfunc:
             r->func.scope = mkstab();
