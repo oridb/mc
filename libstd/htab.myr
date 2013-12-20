@@ -1,6 +1,8 @@
 use "alloc.use"
 use "option.use"
 use "types.use"
+use "extremum.use"
+use "fmt.use"
 
 pkg std =
 	type htab(@k, @v) = struct
@@ -23,7 +25,7 @@ pkg std =
 	/* FIXME: Automatically pull out internal declarations as hidden */
 	const Initsz = 32
 	generic hash
-	generic grow
+	generic resize
 	generic idx
 ;;
 
@@ -38,7 +40,7 @@ generic hash = {ht, k
 	;;
 }
 
-generic grow = {ht
+generic resize = {ht
 	var oldk
 	var oldv
 	var oldh
@@ -50,7 +52,11 @@ generic grow = {ht
 	oldv = ht.vals
 	oldh = ht.hashes
 	oldd = ht.dead
-	sz = 2*ht.keys.len
+	sz = 2*max(ht.keys.len, 1)
+	ht.keys = slalloc(sz)
+	ht.vals = slalloc(sz)
+	ht.hashes = slzalloc(sz)
+	ht.dead = slzalloc(sz)
 
 	ht.nelt = 0
 	for i = 0; i < ht.keys.len; i++
@@ -98,8 +104,8 @@ generic mkht = {h, eq
 	ht.nelt = 0
 	ht.keys = slalloc(Initsz)
 	ht.vals = slalloc(Initsz)
-	ht.hashes = slalloc(Initsz)
-	ht.dead = slalloc(Initsz)
+	ht.hashes = slzalloc(Initsz)
+	ht.dead = slzalloc(Initsz)
 	-> ht
 }
 
@@ -137,7 +143,7 @@ generic htput = {ht, k, v
 	ht.dead[i] = false
 	ht.nelt++
 	if ht.keys.len < ht.nelt * 2
-		grow(ht)
+		resize(ht)
 	;;
 }
 
@@ -146,6 +152,10 @@ generic htdel = {ht, k
 	| `Some i:
 		ht.dead[i] = true
 		ht.nelt--
+		/* remove tombstones if we shrink enough */
+		if ht.keys.len > ht.nelt * 4
+			resize(ht)
+		;;
 	| _:	
 		/* do nothing */
 	;;
@@ -171,6 +181,7 @@ generic htkeys = {ht
 	var j
 
 	keys = slalloc(ht.nelt)
+	j = 0
 	for i = 0; i < ht.keys.len; i++
 		if ht.hashes[i] != 0 && !ht.dead[i]
 			keys[j++] = ht.keys[i]
