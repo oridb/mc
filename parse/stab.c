@@ -34,6 +34,7 @@ static int stabstkoff;
 /* scope management */
 Stab *curstab()
 {
+    assert(stabstkoff > 0);
     return stabstk[stabstkoff - 1];
 }
 
@@ -45,6 +46,7 @@ void pushstab(Stab *st)
 
 void popstab(void)
 {
+    assert(stabstkoff > 0);
     stabstkoff--;
 }
 

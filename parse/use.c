@@ -647,6 +647,7 @@ int loaduse(FILE *f, Stab *st)
     Type *t;
     int c;
 
+    pushstab(file->file.globls);
     if (!dedup)
         dedup = mkht(namehash, nameeq);
     if (fgetc(f) != 'U')
@@ -700,6 +701,7 @@ int loaduse(FILE *f, Stab *st)
     }
     fixmappings(s);
     htfree(tidmap);
+    popstab();
     return 1;
 }
 

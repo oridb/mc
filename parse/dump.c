@@ -176,6 +176,8 @@ static void outnode(Node *n, FILE *fd, int depth)
             fprintf(fd, " (name = %s, islocal = %d)\n", n->use.name, n->use.islocal);
             break;
         case Nexpr:
+            if (exprop(n) == Ovar)
+                assert(decls[n->expr.did]->decl.did == n->expr.did);
             ty = tystr(n->expr.type);
             if (n->expr.type)
                 tid = n->expr.type->tid;

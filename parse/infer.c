@@ -1161,7 +1161,7 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
             s = getdcl(curstab(), args[0]);
             if (!s)
                 fatal(n->line, "Undeclared var %s", ctxstr(st, args[0]));
-            t = initvar(st, n, s);
+            initvar(st, n, s);
             break;
         case Oucon:
             inferucon(st, n, &n->expr.isconst);
