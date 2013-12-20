@@ -624,8 +624,6 @@ static Node *simplit(Simp *s, Node *lit, Node ***l, size_t *nl)
 
     r->expr.did = d->decl.did;
     r->expr.type = lit->expr.type;
-    if (tybase(r->expr.type)->type == Tyfunc)
-        r = addr(s, r, tybase(r->expr.type));
 
     lappend(l, nl, d);
     return r;

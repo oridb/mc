@@ -371,16 +371,26 @@ static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size
     g(s, Irepmovsb, NULL);
 }
 
+static int isfunc(Isel *s, Node *n)
+{
+    Node *d;
+
+    if (exprop(n) != Ovar)
+        return 0;
+    if (!hthas(s->globls, n))
+        return 0;
+    d = decls[n->expr.did];
+    if (d && d->decl.isconst)
+        return tybase(decltype(d))->type == Tyfunc;
+    return 0;
+}
+
 static void call(Isel *s, Node *n)
 {
     AsmOp op;
-    Node *d;
     Loc *f;
 
-    d = NULL;
-    if (exprop(n) == Ovar)
-        d = decls[n->expr.did];
-    if (hthas(s->globls, n) && d && d->decl.isconst && tybase(decltype(d))->type == Tyfunc) {
+    if (isfunc(s, n)) {
         op = Icall;
         f = locmeml(htget(s->globls, n), NULL, NULL, mode(n));
     } else {
@@ -628,7 +638,13 @@ Loc *selexpr(Isel *s, Node *n)
             r = loc(s, n);
             break;
         case Ovar:
-            r = loc(s, n);
+            if (isfunc(s, n)) {
+                r = locreg(ModeQ);
+                a = loc(s, n);
+                g(s, Ilea, a, r, NULL);
+            } else {
+                r = loc(s, n);
+            }
             break;
         case Olbl:
             r = loclbl(args[0]);
