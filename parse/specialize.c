@@ -206,7 +206,10 @@ static void fixup(Node *n)
                 fixup(n->matchstmt.matches[i]);
             break;
         case Nmatch:
+            /* patterns are evaluated in their block's scope */
+            pushstab(n->match.block->block.scope);
             fixup(n->match.pat);
+            popstab();
             fixup(n->match.block);
             break;
         case Nblock:
