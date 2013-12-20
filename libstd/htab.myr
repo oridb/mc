@@ -24,6 +24,7 @@ pkg std =
 	const Initsz = 32
 	generic hash
 	generic grow
+	generic idx
 ;;
 
 generic hash = {ht, k
