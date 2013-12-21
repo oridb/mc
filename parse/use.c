@@ -184,7 +184,16 @@ static void typickle(FILE *fd, Type *ty)
     wrbyte(fd, ty->type);
     wrbyte(fd, ty->vis);
     /* tid is generated; don't write */
-    /* cstrs are left out for now: FIXME */
+    /* FIXME: since we only support hardcoded cstrs, we just write
+     * out the set of them. we should write out the cstr list as
+     * well */
+    if (!ty->cstrs) {
+        wrint(fd, 0);
+    } else {
+        wrint(fd, bscount(ty->cstrs));
+        for (i = 0; bsiter(ty->cstrs, &i); i++)
+            wrint(fd, i);
+    }
     wrint(fd, ty->nsub);
     switch (ty->type) {
         case Tyunres:
@@ -263,16 +272,24 @@ static void rdtype(FILE *fd, Type **dest)
  * will not be meaningful in another file */
 static Type *tyunpickle(FILE *fd)
 {
+    size_t i, n;
+    size_t v;
     Type *ty;
     Ty t;
-    size_t i;
 
     t = rdbyte(fd);
     ty = mktype(-1, t);
     if (rdbyte(fd) == Vishidden)
         ty->ishidden = 1;
     /* tid is generated; don't write */
-    /* cstrs are left out for now: FIXME */
+    n = rdint(fd);
+    if (n > 0) {
+        ty->cstrs = mkbs();
+        for (i = 0; i < n; i++) {
+            v = rdint(fd);
+            setcstr(ty, cstrtab[v]);
+        }
+    }
     ty->nsub = rdint(fd);
     if (ty->nsub > 0)
         ty->sub = zalloc(ty->nsub * sizeof(Type*));

@@ -465,12 +465,12 @@ static int tybfmt(char *buf, size_t len, Type *t)
             if (t->name->name.ns)
                 p += snprintf(p, end - p, "%s.", t->name->name.ns);
             p += snprintf(p, end - p, "%s", namestr(t->name));
-            if (t->isgeneric) {
-                arg = t->param;
-                narg = t->nparam;
-            } else {
+            if (t->narg) {
                 arg = t->arg;
                 narg = t->narg;
+            } else {
+                arg = t->param;
+                narg = t->nparam;
             }
             if (!narg)
                 break;

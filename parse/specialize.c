@@ -32,6 +32,15 @@ static int hasparams(Type *t)
     return 0;
 }
 
+void addcstrs(Type *t, Bitset *cstrs)
+{
+    size_t b;
+
+    if (cstrs)
+        for (b = 0; bsiter(cstrs, &b); b++)
+            setcstr(t, cstrtab[b]);
+}
+
 /*
  * Duplicates the type 't', with all bound type
  * parameters substituted with the substitions
@@ -52,6 +61,7 @@ Type *tyspecialize(Type *t, Htab *tsmap)
     switch (t->type) {
         case Typaram:
             ret = mktyvar(t->line);
+            addcstrs(ret, t->cstrs);
             htput(tsmap, t, ret);
             break;
         case Tyname:
@@ -66,6 +76,7 @@ Type *tyspecialize(Type *t, Htab *tsmap)
                     if (subst[i]->type != Typaram || hthas(tsmap, subst[i]))
                         continue;
                     tmp = mktyvar(subst[i]->line);
+                    addcstrs(tmp, subst[i]->cstrs);
                     htput(tsmap, subst[i], tmp);
                 }
                 ret = mktyname(t->line, t->name, t->param, t->nparam, tyspecialize(t->sub[0], tsmap));
