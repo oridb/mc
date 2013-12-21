@@ -127,6 +127,7 @@ int main(int argc, char **argv)
         file->file.exports = mkstab();
         file->file.globls = mkstab();
         updatens(file->file.exports, outfile);
+        tyinit(file->file.globls);
         for (i = optind; i < argc; i++)
             mergeuse(argv[i]);
         f = fopen(outfile, "w");

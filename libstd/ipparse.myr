@@ -24,20 +24,29 @@ const ip4parse = {ip
 	for j = 0; j < ip.len; j++
 		if ip[j] == '.' castto(byte)
 			put("seg[%z..%z] = %s\n", last, j, ip[last:j])
-			val = intparsebase(ip[last:j], 10)
-			if val < 0 || val > 255
+			match intparsebase(ip[last:j], 10)
+			| `Some v:
+				val = v
+				if val < 0 || val > 255
+					-> `None
+				;;
+				addr[i++] = val castto(byte)
+				last = j + 1
+			| `None:
 				-> `None
 			;;
-			addr[i++] = val castto(byte)
-			last = j + 1
 		;;
 	;;
-			put("seg[%z..%z] = %s\n", last, j, ip[last:j])
-	val = intparsebase(ip[last:j], 10)
-	if val < 0 || val > 255
+	match intparsebase(ip[last:j], 10)
+	| `Some v:
+		val = v
+		if val < 0 || val > 255
+			-> `None
+		;;
+		addr[i] = val castto(byte)
+	| `None:
 		-> `None
 	;;
-	addr[i] = val castto(byte)
 	if j != ip.len
 		-> `None
 	;;
