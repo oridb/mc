@@ -319,7 +319,7 @@ static Type *tf(Inferstate *st, Type *orig)
     size_t i;
 
     t = tysearch(st, orig);
-    st->ingeneric += t->isgeneric;
+    st->ingeneric += orig->isgeneric;
     tyresolve(st, t);
     /* If this is an instantiation of a generic type, we want the params to
      * match the instantiation */
@@ -331,7 +331,7 @@ static Type *tf(Inferstate *st, Type *orig)
                 t->isgeneric = 1;
         }
     }
-    st->ingeneric -= t->isgeneric;
+    st->ingeneric -= orig->isgeneric;
     return t;
 }
 
@@ -500,7 +500,6 @@ static void tyunbind(Inferstate *st, Type *t)
         return;
     htfree(st->tybindings[st->ntybindings - 1]);
     lpop(&st->tybindings, &st->ntybindings);
-    st->ingeneric--;
 }
 
 /* Constrains a type to implement the required constraints. On
