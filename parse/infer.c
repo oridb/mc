@@ -253,6 +253,10 @@ static void tyresolve(Inferstate *st, Type *t)
 
     if (t->resolved)
         return;
+    /* type resolution should never throw errors about non-generics
+     * showing up within a generic type, so we push and pop a generic
+     * around resolution */
+    st->ingeneric++;
     t->resolved = 1;
     /* Walk through aggregate type members */
     if (t->type == Tystruct) {
@@ -281,6 +285,7 @@ static void tyresolve(Inferstate *st, Type *t)
         t->cstrs = bsdup(base->cstrs);
     if (tyinfinite(st, t, NULL))
         fatal(t->line, "Type %s includes itself", tystr(t));
+    st->ingeneric--;
 }
 
 /* Look up the best type to date in the unification table, returning it */
