@@ -345,9 +345,14 @@ static size_t tidappend(char *buf, size_t sz, Type *t)
 
     p = buf;
     end = buf + sz;
-    p += snprintf(p, end - p, "$%d", (int)t->type);
-    for (i = 0; i < t->nsub; i++)
-        p += tidappend(p, end - p, t->sub[i]);
+    p += snprintf(p, end - p, "$%d", t->tid);
+    if (t->type == Tyname) {
+        for (i = 0; i < t->narg; i++)
+            p += tidappend(p, end - p, t->arg[i]);
+    } else {
+        for (i = 0; i < t->nsub; i++)
+            p += tidappend(p, end - p, t->sub[i]);
+    }
     return p - buf;
 }
 
