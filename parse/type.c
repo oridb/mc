@@ -267,6 +267,40 @@ int istysigned(Type *t)
     }
 }
 
+int isgeneric(Type *t)
+{
+    size_t i;
+
+    if (t->type != Tyname && t->type != Tyunres)
+        return 0;
+    if (!t->narg)
+        return t->nparam > 0;
+    else
+        for (i = 0; i < t->narg; i++)
+            if (hasparams(t->arg[i]))
+                return 1;
+    return 0;
+}
+
+/*
+ * Checks if a type contains any type
+ * parameers at all (ie, if it generic).
+ */
+int hasparams(Type *t)
+{
+    size_t i;
+
+    if (t->type == Typaram || isgeneric(t))
+        return 1;
+    for (i = 0; i < t->nsub; i++)
+        if (hasparams(t->sub[i]))
+            return 1;
+    for (i = 0; i < t->narg; i++)
+        if (hasparams(t->arg[i]))
+            return 1;
+    return 0;
+}
+
 Type *tybase(Type *t)
 {
     assert(t != NULL);
@@ -274,6 +308,7 @@ Type *tybase(Type *t)
         t = t->sub[0];
     return t;
 }
+
 
 static int namefmt(char *buf, size_t len, Node *n)
 {

@@ -200,7 +200,7 @@ static int needfreshen(Inferstate *st, Type *t)
 
     switch (t->type) {
         case Typaram:   return 1;
-        case Tyname:    return t->isgeneric;
+        case Tyname:    return isgeneric(t);
         case Tystruct:
             for (i = 0; i < t->nmemb; i++)
                 if (needfreshen(st, decltype(t->sdecls[i])))
@@ -317,21 +317,22 @@ static Type *tf(Inferstate *st, Type *orig)
 {
     Type *t;
     size_t i;
+    int is;
 
     t = tysearch(st, orig);
-    st->ingeneric += orig->isgeneric;
+    is = isgeneric(orig);
+    st->ingeneric += isgeneric(orig);
     tyresolve(st, t);
     /* If this is an instantiation of a generic type, we want the params to
      * match the instantiation */
-    if (orig->type == Tyunres && t->isgeneric) {
+    if (orig->type == Tyunres && isgeneric(t)) {
         t = tyfreshen(st, t);
         for (i = 0; i < t->narg; i++) {
             unify(st, NULL, t->arg[i], orig->arg[i]);
-            if (orig->arg[i]->type == Typaram || needfreshen(st, t->arg[i]))
-                t->isgeneric = 1;
         }
     }
-    st->ingeneric -= orig->isgeneric;
+    assert(is == isgeneric(orig));
+    st->ingeneric -= isgeneric(orig);
     return t;
 }
 
@@ -451,7 +452,7 @@ static void tybind(Inferstate *st, Type *t)
     Htab *bt;
     char *s;
 
-    if (t->type != Tyname && !t->isgeneric)
+    if (t->type != Tyname && !isgeneric(t))
         return;
     if (debugopt['u']) {
         s = tystr(t);
@@ -496,7 +497,7 @@ static void unbind(Inferstate *st, Node *n)
 
 static void tyunbind(Inferstate *st, Type *t)
 {
-    if (t->type != Tyname && !t->isgeneric)
+    if (t->type != Tyname && !isgeneric(t))
         return;
     htfree(st->tybindings[st->ntybindings - 1]);
     lpop(&st->tybindings, &st->ntybindings);
@@ -1218,7 +1219,7 @@ static void inferdecl(Inferstate *st, Node *n)
     Type *t;
 
     t = tf(st, decltype(n));
-    if (t->type == Tyname && t->isgeneric && !n->decl.isgeneric) {
+    if (t->type == Tyname && isgeneric(t) && !n->decl.isgeneric) {
         t = tyfreshen(st, t);
         unifyparams(st, n, t, decltype(n));
     }

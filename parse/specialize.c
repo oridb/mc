@@ -13,25 +13,6 @@
 
 static Node *specializenode(Node *n, Htab *tsmap);
 
-/*
- * Checks if a type contains any type
- * parameers at all (ie, if it generic).
- */
-static int hasparams(Type *t)
-{
-    size_t i;
-
-    if (t->type == Typaram || t->isgeneric)
-        return 1;
-    for (i = 0; i < t->nsub; i++)
-        if (hasparams(t->sub[i]))
-            return 1;
-    for (i = 0; i < t->narg; i++)
-        if (hasparams(t->arg[i]))
-            return 1;
-    return 0;
-}
-
 void addcstrs(Type *t, Bitset *cstrs)
 {
     size_t b;
@@ -84,7 +65,6 @@ Type *tyspecialize(Type *t, Htab *tsmap)
                 htput(tsmap, t, ret);
                 for (i = 0; i < t->nparam; i++)
                     lappend(&ret->arg, &ret->narg, tyspecialize(subst[i], tsmap));
-                ret->isgeneric = hasparams(ret);
             }
             break;
         case Tystruct:

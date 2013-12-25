@@ -224,7 +224,6 @@ static void typickle(FILE *fd, Type *ty)
             break;
         case Tyname:
             pickle(ty->name, fd);
-            wrbool(fd, ty->isgeneric);
             wrbool(fd, ty->issynth);
 
             wrint(fd, ty->nparam);
@@ -321,7 +320,6 @@ static Type *tyunpickle(FILE *fd)
             break;
         case Tyname:
             ty->name = unpickle(fd);
-            ty->isgeneric = rdbool(fd);
             ty->issynth = rdbool(fd);
 
             ty->nparam = rdint(fd);

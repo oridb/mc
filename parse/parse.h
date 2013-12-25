@@ -115,7 +115,6 @@ struct Type {
     Node **cstrlist;    /* The names of the constraints on the type. Used to fill the bitset */
     size_t ncstrlist;   /* The length of the constraint list above */
 
-    int  isgeneric;     /* Tyname: whether this is generic or not */
     int  issynth;       /* Tyname: whether this is synthesized or not */
     int  ishidden;      /* Tyname: whether this is hidden or not */
     Type **param;       /* Tyname: type parameters that match the type args */
@@ -376,6 +375,8 @@ Type *mktyunion(int line, Ucon **decls, size_t ndecls);
 Cstr *mkcstr(int line, char *name, Node **memb, size_t nmemb, Node **funcs, size_t nfuncs);
 Type *mktylike(int line, Ty ty); /* constrains tyvar t like it was builtin ty */
 int   istysigned(Type *t);
+int   isgeneric(Type *t);
+int   hasparams(Type *t);
 
 /* type manipulation */
 Type *tybase(Type *t);
