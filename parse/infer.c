@@ -194,7 +194,7 @@ static int tyinfinite(Inferstate *st, Type *t, Type *sub)
 }
 
 
-static int isgeneric(Inferstate *st, Type *t)
+static int needfreshen(Inferstate *st, Type *t)
 {
     size_t i;
 
@@ -203,17 +203,17 @@ static int isgeneric(Inferstate *st, Type *t)
         case Tyname:    return t->isgeneric;
         case Tystruct:
             for (i = 0; i < t->nmemb; i++)
-                if (isgeneric(st, decltype(t->sdecls[i])))
+                if (needfreshen(st, decltype(t->sdecls[i])))
                     return 1;
             break;
         case Tyunion:
             for (i = 0; i < t->nmemb; i++)
-                if (t->udecls[i]->etype && isgeneric(st, t->udecls[i]->etype))
+                if (t->udecls[i]->etype && needfreshen(st, t->udecls[i]->etype))
                     return 1;
             break;
         default:
             for (i = 0; i < t->nsub; i++)
-                if (isgeneric(st, t->sub[i]))
+                if (needfreshen(st, t->sub[i]))
                     return 1;
             break;
     }
@@ -225,7 +225,7 @@ static Type *tyfreshen(Inferstate *st, Type *t)
 {
     Htab *ht;
 
-    if (!isgeneric(st, t)) {
+    if (!needfreshen(st, t)) {
         if (debugopt['u'])
             printf("%s isn't generic: skipping freshen\n", tystr(t));
         return t;
@@ -327,7 +327,7 @@ static Type *tf(Inferstate *st, Type *orig)
         t = tyfreshen(st, t);
         for (i = 0; i < t->narg; i++) {
             unify(st, NULL, t->arg[i], orig->arg[i]);
-            if (orig->arg[i]->type == Typaram || isgeneric(st, t->arg[i]))
+            if (orig->arg[i]->type == Typaram || needfreshen(st, t->arg[i]))
                 t->isgeneric = 1;
         }
     }
