@@ -174,7 +174,7 @@ void putdcl(Stab *st, Node *s)
 {
     Node *d;
 
-    d = getdcl(st, s->decl.name);
+    d = htget(st->dcl, s->decl.name);
     if (d)
         fatal(s->line, "%s already declared (on line %d)", namestr(s->decl.name), d->line);
     if (st->name)
