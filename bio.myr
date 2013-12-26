@@ -49,8 +49,8 @@ pkg bio =
 	const peekc	: (f : file# -> char)
 
 	/* delimited read; returns freshly allocated buffer. */
-	const readln	: (f : file#	-> byte[:])
-	const readto	: (f : file#, delim : byte[:]	-> byte[:])
+	const readln	: (f : file#	-> std.option(byte[:]))
+	const readto	: (f : file#, delim : byte[:]	-> std.option(byte[:]))
 
 	/* formatted i/o */
 	const put	: (f : file#, fmt : byte[:], args : ... -> std.size)
@@ -260,7 +260,7 @@ const ensurecodepoint = {f
 	elif b & 0xf8 == 0xf0 	/* 0b1111_0xxx */
 		len = 4
 	else
-		-> false
+		len = 1		/* invalid unicode char */
 	;;
 	-> ensureread(f, len)
 }
@@ -361,7 +361,12 @@ const readto = {f, delim
 	ret = [][:]
 	while true
 		if !ensureread(f, delim.len)
-			-> readinto(f, ret, f.rend - f.rstart)
+			ret = readinto(f, ret, f.rend - f.rstart)
+			if ret.len > 0
+				-> `std.Some ret
+			else
+				-> `std.None
+			;;
 		;;
 		for i = f.rstart; i < f.rend; i++
 			if f.rbuf[i] == delim[0]
@@ -372,13 +377,13 @@ const readto = {f, delim
 				;;
 				ret = readinto(f, ret, i - f.rstart)
 				f.rstart += delim.len
-				-> ret
+				-> `std.Some ret
 			;;
 :nextiter
 		;;
 		ret = readinto(f, ret, i - f.rstart)
 	;;
-	-> ret
+	std.die("unreachable")
 }
 
 /* Same as readto, but the delimiter is always a '\n' */
