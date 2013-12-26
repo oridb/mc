@@ -45,8 +45,8 @@ pkg bio =
 	generic getle	: (f : file# -> std.option(@a::(tctest,tcnum,tcint)))
 
 	/* peeking */
-	const peekb	: (f : file# -> byte)
-	const peekc	: (f : file# -> char)
+	const peekb	: (f : file# -> std.option(byte))
+	const peekc	: (f : file# -> std.option(char))
 
 	/* delimited read; returns freshly allocated buffer. */
 	const readln	: (f : file#	-> std.option(byte[:]))
@@ -250,7 +250,10 @@ const ensurecodepoint = {f
 	var b
 	var len
 
-	b = peekb(f)
+	if !ensureread(f, 1)
+		-> false
+	;;
+	b = f.rbuf[f.rstart]
 	if b & 0x80 == 0	/* 0b0xxx_xxxx */
 		len = 1
 	elif b & 0xe0 == 0xc0	/* 0b110x_xxxx */
@@ -333,16 +336,20 @@ generic getle = {f
 
 /* peeks a single byte from an input stream */
 const peekb = {f
-	ensureread(f, 1)
-	-> f.rbuf[f.rstart]
+	if !ensureread(f, 1)
+		-> `std.None
+	else
+		-> `std.Some f.rbuf[f.rstart]
+	;;
 }
 
 /* peeks a single character from a utf8 encoded input stream */
 const peekc = {f
 	if !ensurecodepoint(f)
-		-> -1
+		-> `std.None
+	else
+		-> `std.Some std.decode(f.rbuf[f.rstart:f.rend])
 	;;
-	-> std.decode(f.rbuf[f.rstart:f.rend])
 }
 
 /*

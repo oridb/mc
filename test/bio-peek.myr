@@ -11,17 +11,35 @@ const main = {
 	| `std.None:	std.fatal(1, "Unable to open data file")
 	;;
 	
-	std.assert(bio.peekb(f) == 0x30, "wrong byte value read from datafile")
-	std.assert(bio.peekc(f) == '0', "wrong char value read from datafile")
+	std.assert(peekb(f) == 0x30, "wrong byte value read from datafile")
+	std.assert(peekc(f) == '0', "wrong char value read from datafile")
 
 	bio.read(f, buf[:4])	/* skip ahead 4 bytes */
-	std.assert(bio.peekb(f) == 0x34, "wrong byte value read from datafile")
-	std.assert(bio.peekc(f) == '4', "wrong char value read from datafile")
+	std.assert(peekb(f) == 0x34, "wrong byte value read from datafile")
+	std.assert(peekc(f) == '4', "wrong char value read from datafile")
 
 	bio.read(f, buf[:])	/* skip ahead 64k */
-	std.assert(bio.peekb(f) == 0x30, "wrong byte value read from datafile")
-	std.assert(bio.peekc(f) == '0', "wrong char value read from datafile")
+	std.assert(peekb(f) == 0x30, "wrong byte value read from datafile")
+	std.assert(peekc(f) == '0', "wrong char value read from datafile")
 
 	bio.close(f);
 	std.put("Succeded peeeking values\n")
+}
+
+const peekc = {f
+	match bio.peekc(f)
+	| `std.Some c:	-> c
+	| `std.None:
+		std.put("eof")
+		-> -1
+	;;
+}
+
+const peekb = {f
+	match bio.peekb(f)
+	| `std.Some b:	-> b
+	| `std.None:
+		std.put("eof")
+		-> -1
+	;;
 }
