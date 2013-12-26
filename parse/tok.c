@@ -268,7 +268,7 @@ static int hexval(char c)
  * shared between strings and characters.
  * Unknown escape codes are ignored.
  */
-static void decode(char **buf, size_t *len, size_t *sz)
+static int decode(char **buf, size_t *len, size_t *sz)
 {
     char c, c1, c2;
     int v;
@@ -284,19 +284,20 @@ static void decode(char **buf, size_t *len, size_t *sz)
             if (!isxdigit(c2))
                 fatal(line, "expected hex digit, got %c", c1);
             v = 16*hexval(c1) + hexval(c2);
-            append(buf, len, sz, v);
             break;
-        case 'n': append(buf, len, sz, '\n'); break;
-        case 'r': append(buf, len, sz, '\r'); break;
-        case 't': append(buf, len, sz, '\t'); break;
-        case 'b': append(buf, len, sz, '\b'); break;
-        case '"': append(buf, len, sz, '\"'); break;
-        case '\'': append(buf, len, sz, '\''); break;
-        case 'v': append(buf, len, sz, '\v'); break;
-        case '\\': append(buf, len, sz, '\\'); break;
-        case '0': append(buf, len, sz, '\0'); break;
+        case 'n': v = '\n'; break;
+        case 'r': v = '\r'; break;
+        case 't': v = '\t'; break;
+        case 'b': v = '\b'; break;
+        case '"': v = '\"'; break;
+        case '\'': v = '\''; break;
+        case 'v': v = '\v'; break;
+        case '\\': v = '\\'; break;
+        case '0': v = '\0'; break;
         default: fatal(line, "unknown escape code \\%c", c);
     }
+    append(buf, len, sz, v);
+    return v;
 }
 
 static Tok *strlit()
@@ -373,13 +374,14 @@ static Tok *charlit()
     buf = NULL;
     len = 0;
     sz = 0;
+    val = 0;
     c = next();
     if (c == End)
         fatal(line, "Unexpected EOF within char lit");
     else if (c == '\n')
         fatal(line, "Newlines not allowed in char lit");
     else if (c == '\\')
-        decode(&buf, &len, &sz);
+        val = decode(&buf, &len, &sz);
     else
         val = readutf(c, &buf, &len, &sz);
     append(&buf, &len, &sz, '\0');
