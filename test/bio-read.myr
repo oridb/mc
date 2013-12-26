@@ -5,24 +5,42 @@ const main = {
 	var f
 	/* Must be bigger than a bio buffer (ie, > 64k) */
 	var buf : byte[64*1024]
+	var b
 
 	match bio.open("data/datafile", bio.Rd)
 	| `std.Some bio:	f = bio
 	| `std.None:	std.fatal(1, "Unable to open data file")
 	;;
 	
-	/* read a 4 byte chunk */
-	bio.read(f, buf[:4])
-	std.write(1, buf[:4])
+	/* read a 4 byte chunk j*/
+	b = r(f, buf[:4])
+	std.write(1, b)
 	std.write(1, "\n")
 
 	/* read the next 32 bytes */
-	bio.read(f, buf[:32])
-	std.write(1, buf[:32])
+	b = r(f, buf[:32])
+	std.write(1, b)
 	std.write(1, "\n")
 
 	/* read a 64k chunk */
-	bio.read(f, buf[:])
-	std.write(1, buf[:])
+	b = r(f, buf[:])
+	std.write(1, b)
 	std.write(1, "\n")
+
+	/* read to EOF */
+	b = r(f, buf[:])
+	std.write(1, b)
+	std.write(1, "\n")
+
+	/* and fail */
+	b = r(f, buf[:])
+
+	bio.close(f)
+}
+
+const r = {f, buf
+	match bio.read(f, buf)
+	| `std.Some b:	-> b
+	| `std.None:	std.put("eof\n")
+	;;
 }

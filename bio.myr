@@ -29,14 +29,14 @@ pkg bio =
 
 	/* basic i/o. Returns sub-buffer when applicable. */
 	const write	: (f : file#, src : byte[:]	-> std.size)
-	const read	: (f : file#, dst : byte[:]	-> byte[:])
+	const read	: (f : file#, dst : byte[:]	-> std.option(byte[:]))
 	const flush	: (f : file# -> bool)
 
 	/* single unit operations */
 	const putb	: (f : file#, b : byte	-> std.size)
 	const putc	: (f : file#, c : char	-> std.size)
-	const getb	: (f : file# -> byte)
-	const getc	: (f : file# -> char)
+	const getb	: (f : file# -> std.option(byte))
+	const getc	: (f : file# -> std.option(char))
 
 	/* typed binary reads */
 	generic putbe	: (f : file#, v : @a::(tctest,tcnum,tcint) -> std.size)
@@ -191,7 +191,11 @@ const read = {f, dst
 		d = d[n:]
 	;;
 :readdone
-	-> dst[:count]
+	if count > 0
+		-> `std.Some dst[:count]
+	else
+		-> `std.None
+	;;
 }
 
 /* flushes f out to the backing fd */
@@ -224,9 +228,9 @@ const putc = {f, c
 /* reads a single byte from the input stream */
 const getb = {f
 	if ensureread(f, 1)
-		-> f.rbuf[f.rstart++]
+		-> `std.Some f.rbuf[f.rstart++]
 	;;
-	-> -1
+	-> `std.None
 }
 
 /* reads a single character from the input stream, encoded in utf8 */
@@ -236,9 +240,9 @@ const getc = {f
 	if ensurecodepoint(f)
 		c = std.decode(f.rbuf[f.rstart:f.rend])
 		f.rstart += std.charlen(c)
-		-> c
+		-> `std.Some c
 	;;
-	-> -1
+	-> `std.None
 }
 
 /* ensures we have enough to read a single codepoint in the buffer */
@@ -302,7 +306,7 @@ generic getbe = {f
 	;;
 	for i = 0; i < sizeof(@a); i++
 		ret <<= 8
-		ret |= (getb(f) castto(@a::(tcnum,tcint,tctest)))
+		ret |= f.rbuf[f.rstart++] castto(@a::(tcnum,tcint,tctest))
 	;;
 	-> `std.Some ret
 }
@@ -321,7 +325,7 @@ generic getle = {f
 		-> `std.None
 	;;
 	for i = 0; i < sizeof(@a); i++
-		b = getb(f) castto(@a::(tcnum,tcint,tctest))
+		b = f.rbuf[f.rstart++] castto(@a::(tcnum,tcint,tctest))
 		ret = ret | (b << (8*i))
 	;;
 	-> `std.Some ret
