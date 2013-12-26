@@ -87,6 +87,8 @@ const bfmt = {buf, fmt, args
 const bfmtv = {buf, fmt, ap
 	var c
 	var n
+	var base
+	var signed
 	var s_val : byte[:]
 	var t_val : bool
 	var b_val : int8
@@ -98,10 +100,25 @@ const bfmtv = {buf, fmt, ap
         var c_val : char
 
 	n = 0
+	base = 10
+	signed = true
 	while fmt.len
 		(c, fmt) = striter(fmt)
 		if c == '%'
 			(c, fmt) = striter(fmt)
+			/* modifiers */
+			if fmt.len > 0
+			    match c
+			    | 'x':
+				    (c, fmt) = striter(fmt)
+				    base = 16
+				    signed = false
+			    | 'u':
+				    (c, fmt) = striter(fmt)
+				    signed = false
+			    ;;
+			;;
+			/* format specifiers */
 			match c
 			| 's':
 				(s_val, ap) = vanext(ap)
@@ -112,22 +129,22 @@ const bfmtv = {buf, fmt, ap
 			/* format integers */
 			| 'b':
 				(b_val, ap) = vanext(ap)
-				n += intfmt(buf[n:], b_val castto(int64), 10)
+				n += intfmt(buf[n:], b_val castto(int64), base, signed)
 			| 'w':
 				(w_val, ap) = vanext(ap)
-				n += intfmt(buf[n:], w_val castto(int64), 10)
+				n += intfmt(buf[n:], w_val castto(int64), base, signed)
 			| 'i':
 				(i_val, ap) = vanext(ap)
-				n += intfmt(buf[n:], i_val castto(int64), 10)
+				n += intfmt(buf[n:], i_val castto(int64), base, signed)
 			| 'l':
 				(l_val, ap) = vanext(ap)
-				n += intfmt(buf[n:], l_val castto(int64), 10)
+				n += intfmt(buf[n:], l_val castto(int64), base, signed)
 			| 'z':
 				(z_val, ap) = vanext(ap)
-				n += intfmt(buf[n:], z_val castto(int64), 10)
+				n += intfmt(buf[n:], z_val castto(int64), base, signed)
 			| 'p':
 				(p_val, ap) = vanext(ap)
-				n += intfmt(buf[n:], p_val castto(int64), 16)
+				n += intfmt(buf[n:], p_val castto(int64), 16, false)
                         | 'c':    (c_val, ap) = vanext(ap)
                                 n += encode(buf[n:], c_val)
                         | _:
@@ -165,8 +182,9 @@ const digitchars = [
 '0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'
 ]
 
-const intfmt = {buf, val, base
+const intfmt = {buf, sval, base, signed
 	var isneg
+	var val
 	var b : char[32]
 	var i
 	var j
@@ -174,10 +192,11 @@ const intfmt = {buf, val, base
 
 	n = 0
 	i = 0
-	if val < 0
-		val = -val
+	if signed && sval < 0
+		val = -sval castto(uint64)
 		isneg = true
 	else
+		val = sval castto(uint64)
 		isneg = false
 	;;
 
