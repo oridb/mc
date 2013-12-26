@@ -75,9 +75,9 @@ generic charval = {c, base
 	if c >= '0' && c <= '9'
 		v =  (c - '0') castto(@a::(tcint,tcnum,tctest))
 	elif c >= 'a' && c <= 'z'
-		v =  (c - 'a') castto(@a::(tcint,tcnum,tctest))
+		v =  (c - 'a' + 10) castto(@a::(tcint,tcnum,tctest))
 	elif c >= 'A' && c <= 'Z'
-		v =  (c - 'A') castto(@a::(tcint,tcnum,tctest))
+		v =  (c - 'A' + 10) castto(@a::(tcint,tcnum,tctest))
 	;;
 
 	if v < 0 || v > (base castto(@a::(tcint,tcnum,tctest)))
