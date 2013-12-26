@@ -302,7 +302,7 @@ size_t tysize(Type *t)
         case Tyname:
             return tysize(t->sub[0]);
         case Tyarray:
-            t->asize = fold(t->asize, 0);
+            t->asize = fold(t->asize, 1);
             assert(exprop(t->asize) == Olit);
             return t->asize->expr.args[0]->lit.intval * tysize(t->sub[0]);
         case Tytuple:

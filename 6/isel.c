@@ -988,10 +988,7 @@ static void writelit(FILE *fd, Htab *strtab, Node *v, size_t sz)
 
 static void writepad(FILE *fd, size_t sz)
 {
-    size_t i;
-
-    for (i = 0; i < sz; i++)
-        fprintf(fd, "\t.byte 0\n");
+    fprintf(fd, "\t.fill %zd,1,0\n", sz);
 }
 
 static void writetup(FILE *fd, Htab *strtab, Node *n)
