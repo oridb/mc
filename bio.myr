@@ -41,8 +41,8 @@ pkg bio =
 	/* typed binary reads */
 	generic putbe	: (f : file#, v : @a::(tctest,tcnum,tcint) -> std.size)
 	generic putle	: (f : file#, v : @a::(tctest,tcnum,tcint) -> std.size)
-	generic getbe	: (f : file# -> @a::(tctest,tcnum,tcint))
-	generic getle	: (f : file# -> @a::(tctest,tcnum,tcint))
+	generic getbe	: (f : file# -> std.option(@a::(tctest,tcnum,tcint)))
+	generic getle	: (f : file# -> std.option(@a::(tctest,tcnum,tcint)))
 
 	/* peeking */
 	const peekb	: (f : file# -> byte)
@@ -292,35 +292,39 @@ generic putbe = {f, v : @a::(tcnum,tcint,tctest)
   reads a single integer-like value to the output stream, in
   big endian format
 */
-generic getbe = {f -> @a::(tcnum,tcint,tctest)
+generic getbe = {f
 	var ret
 	var i
 
 	ret = 0
-	ensureread(f, sizeof(@a))
+	if !ensureread(f, sizeof(@a))
+		-> `std.None
+	;;
 	for i = 0; i < sizeof(@a); i++
 		ret <<= 8
 		ret |= (getb(f) castto(@a::(tcnum,tcint,tctest)))
 	;;
-	-> ret
+	-> `std.Some ret
 }
 
 /*
   reads a single integer-like value to the output stream, in
   little endian format
 */
-generic getle = {f -> @a::(tcnum,tcint,tctest)
+generic getle = {f
 	var ret
 	var b
 	var i
 
 	ret = 0
-	ensureread(f, sizeof(@a))
+	if !ensureread(f, sizeof(@a))
+		-> `std.None
+	;;
 	for i = 0; i < sizeof(@a); i++
 		b = getb(f) castto(@a::(tcnum,tcint,tctest))
 		ret = ret | (b << (8*i))
 	;;
-	-> ret
+	-> `std.Some ret
 }
 
 /* peeks a single byte from an input stream */

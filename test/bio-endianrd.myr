@@ -1,6 +1,20 @@
 use std
 use bio
 
+generic getle = {fd -> @a::(tcint,tcnum,tctest)
+	match bio.getle(fd)
+	| `std.Some val:	-> val
+	| `std.None:	std.fatal(1, "read failed")
+	;;
+}
+
+generic getbe = {fd -> @a::(tcint,tcnum,tctest)
+	match bio.getbe(fd)
+	| `std.Some val:	-> val
+	| `std.None:	std.fatal(1, "read faibed")
+	;;
+}
+
 const main = {
 	var b : byte
 	var w : uint16
@@ -19,27 +33,33 @@ const main = {
 	/* FIXME: compiler bug. multiplication on byte
 	   values is currently broken. */
 	b = 0xaa
-	std.assert(bio.getle(f) == b, "le byte broken\n")
-	std.assert(bio.getbe(f) == b, "be byte broken\n")
+	std.assert(getle(f) == b, "le byte broken\n")
+	std.assert(getbe(f) == b, "be byte broken\n")
 	*/
 
 	/* word */
 	w = 0xaabb
-	std.assert(bio.getle(f) == w, "le word broken\n")
-	std.assert(bio.getbe(f) == w, "be word broken\n")
+	std.assert(getle(f) == w, "le word broken\n")
+	std.assert(getbe(f) == w, "be word broken\n")
 
 	/* long */
 	l = 0xaabbccdd
-	std.assert(bio.getle(f) == l, "le long broken\n")
-	std.assert(bio.getbe(f) == l, "be long broken\n")
+	std.assert(getle(f) == l, "le long broken\n")
+	std.assert(getbe(f) == l, "be long broken\n")
 
 	/* quad */
 	q = 0x11223344aabbccdd castto(uint64)
-	std.assert(bio.getle(f) == q, "le quad broken\n")
-	std.assert(bio.getbe(f) == q, "be quad broken\n")
+	std.assert(getle(f) == q, "le quad broken\n")
+	std.assert(getbe(f) == q, "be quad broken\n")
 
-	/* and test for flush on close */
+	/* end of file */
+	match bio.getle(f)
+	| `std.None:
+	| `std.Some v:	std.die("read past end of file\n")
+	;;
+
 	bio.close(f);
 
 	std.put("success: all reads matched\n")
 }
+
