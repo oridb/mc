@@ -26,6 +26,7 @@ B mul8		E	18
 B div		E	42
 B mod		E	6
 B bsr		E	5
+B chartest	E	0
 B trunccast	E	15
 B zwidencast	E	99
 B swidencast	E	99

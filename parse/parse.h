@@ -1,7 +1,6 @@
 #define FATAL __attribute__((noreturn))
 
 typedef uint8_t         byte;
-typedef uint32_t        unichar;
 typedef unsigned int    uint;
 typedef unsigned long   ulong;
 typedef long long       vlong;
@@ -196,7 +195,7 @@ struct Node {
             union {
                 uvlong   intval;
                 double   fltval;
-                unichar  chrval;
+                uint32_t chrval;
                 char    *strval;
                 char    *lblval;
                 int      boolval;

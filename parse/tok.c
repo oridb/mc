@@ -230,10 +230,6 @@ static Tok *kwident(void)
     return t;
 }
 
-/*
- * Appends a character 'c' to a growable buffer 'buf',
- * resizing if needed.
- */
 static void append(char **buf, size_t *len, size_t *sz, int c)
 {
     if (!*sz) {
@@ -248,6 +244,60 @@ static void append(char **buf, size_t *len, size_t *sz, int c)
     buf[0][len[0]++] = c;
 }
 
+
+static void encode(char *buf, size_t len, uint32_t c)
+{
+    int mark;
+    size_t i;
+
+    assert(len > 0 && len < 5);
+    if (len == 1)
+        mark = 0;
+    else
+        mark = (((1 << (8 - len)) - 1) ^ 0xff);
+    for (i = len - 1; i > 0; i--) {
+        buf[i] = (c & 0x3f) | 0x80;
+        c >>= 6;
+    }
+    buf[0] = (c | mark);
+}
+
+/*
+ * Appends a unicode codepoint 'c' to a growable buffer 'buf',
+ * resizing if needed.
+ */
+static void appendc(char **buf, size_t *len, size_t *sz, uint32_t c)
+{
+    size_t i, charlen;
+    char charbuf[5] = {0};
+
+    if (c < 0x80)
+        charlen = 1;
+    else if (c < 0x800)
+        charlen = 2;
+    else if (c < 0x10000)
+        charlen = 3;
+    else if (c < 0x200000)
+        charlen = 4;
+    else
+        fatal(line, "invalid utf character '\\u{%x}'", c);
+
+    encode(charbuf, charlen, c);
+    for (i = 0; i < charlen; i++)
+         append(buf, len, sz, charbuf[i]);
+}
+
+static int ishexval(char c)
+{
+    if (c >= 'a' && c <= 'f')
+        return 1;
+    else if (c >= 'A' && c <= 'F')
+        return 1;
+    else if (c >= '0' && c <= '9')
+        return 1;
+    return 0;
+}
+
 /*
  * Converts a character to its hex value.
  */
@@ -259,8 +309,29 @@ static int hexval(char c)
         return c - 'A' + 10;
     else if (c >= '0' && c <= '9')
         return c - '0';
-    die("passed non-hex value '%c' to hexval()", c);
+    fatal(line, "passed non-hex value '%c' to where hex was expected", c);
     return -1;
+}
+
+/* \u{abc} */
+static int32_t unichar()
+{
+    uint32_t v;
+    int c;
+
+    /* we've already seen the \u */
+    if (next() != '{')
+        fatal(line, "\\u escape sequence without initial '{'");
+    v = 0;
+    while (ishexval(peek())) {
+        c = next();
+        v = 16*v + hexval(c);
+        if (v > 0x10FFFF)
+            fatal(line, "invalid codepoint for \\u escape sequence");
+    }
+    if (next() != '}')
+        fatal(line, "\\u escape sequence without ending '}'");
+    return v;
 }
 
 /*
@@ -271,7 +342,7 @@ static int hexval(char c)
 static int decode(char **buf, size_t *len, size_t *sz)
 {
     char c, c1, c2;
-    int v;
+    int32_t v;
 
     c = next();
     /* we've already seen the '\' */
@@ -285,6 +356,7 @@ static int decode(char **buf, size_t *len, size_t *sz)
                 fatal(line, "expected hex digit, got %c", c1);
             v = 16*hexval(c1) + hexval(c2);
             break;
+        case 'u': v = unichar(); break;
         case 'n': v = '\n'; break;
         case 'r': v = '\r'; break;
         case 't': v = '\t'; break;
@@ -296,7 +368,7 @@ static int decode(char **buf, size_t *len, size_t *sz)
         case '0': v = '\0'; break;
         default: fatal(line, "unknown escape code \\%c", c);
     }
-    append(buf, len, sz, v);
+    appendc(buf, len, sz, v);
     return v;
 }
 
