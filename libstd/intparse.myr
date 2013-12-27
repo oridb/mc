@@ -10,8 +10,8 @@ pkg std =
 	generic intparse	: (s : byte[:]	-> option(@a::(tcint,tcnum,tctest)))
 
 	/* FIXME: fix hidden exports */
-	generic charval : (c : char, base : int -> option(@a::(tcnum,tctest,tcint)))
-	generic doparse : (s : byte[:], isneg : bool, base : int -> option(@a::(tcnum,tctest,tcint)))
+	generic charval
+	generic doparse
 ;;
 
 generic intparse = {s
@@ -48,16 +48,16 @@ generic intparsebase = {s, base
 
 generic doparse = {s, isneg, base
 	var c
-	var v
+	var v, cv
 	
 	v = 0
 	while s.len != 0
 		(c, s) = striter(s)
-		match charval(c, base)
-		| `Some cv:
+		cv = charval(c, base)
+		if cv > 0
 			v *= (base castto(@a::(tcint,tcnum,tctest)))
 			v += cv
-		| `None:
+		else
 			-> `None
 		;;
 	;;
@@ -81,7 +81,7 @@ generic charval = {c, base
 	;;
 
 	if v < 0 || v > (base castto(@a::(tcint,tcnum,tctest)))
-		-> `None
+		-> -1
 	;;
-	-> `Some v
+	-> v
 }
