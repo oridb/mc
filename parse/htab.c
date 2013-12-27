@@ -103,16 +103,21 @@ int htput(Htab *ht, void *k, void *v)
     while (ht->hashes[i] && !ht->dead[i]) {
         /* second insertion overwrites first. nb, we shouldn't touch the
          * keys for dead values */
-        if (ht->hashes[i] == h && (ht->dead[i] || ht->cmp(ht->keys[i], k)))
+        if (ht->hashes[i] == h) {
+            if (ht->dead[i])
                 break;
+            else if (ht->cmp(ht->keys[i], k))
+                goto conflicted;
+        }
         di++;
         i = (h + di) & (ht->sz - 1);
     }
+    ht->nelt++;
+conflicted:
     ht->hashes[i] = h;
     ht->keys[i] = k;
     ht->vals[i] = v;
     ht->dead[i] = 0;
-    ht->nelt++;
     if (ht->sz < ht->nelt*2)
         grow(ht, ht->sz*2);
     return 1;

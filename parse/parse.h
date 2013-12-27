@@ -237,11 +237,12 @@ struct Node {
 
         struct {
             size_t did;
+            char  vis;
             char  isglobl;
-            char  isexport;
             char  isconst;
             char  isgeneric;
             char  isextern;
+            char  ishidden;
             Node *name;
             Type *type;
             Node *init;
@@ -341,6 +342,7 @@ void puttype(Stab *st, Node *n, Type *ty);
 void putcstr(Stab *st, Node *n, Cstr *cstr);
 void updatetype(Stab *st, Node *n, Type *t);
 void putdcl(Stab *st, Node *dcl);
+void forcedcl(Stab *st, Node *dcl);
 void putucon(Stab *st, Ucon *uc);
 
 Stab *getns(Stab *st, Node *n);

@@ -78,7 +78,7 @@ static Stab *rdstab(FILE *fd)
     st->name = unpickle(fd);
     n = rdint(fd);
     for (i = 0; i < n; i++)
-         putdcl(st, rdsym(fd));
+        putdcl(st, rdsym(fd));
 
     /* read types */
     n = rdint(fd);
@@ -141,6 +141,7 @@ static void wrsym(FILE *fd, Node *val)
     wrtype(fd, val->decl.type);
 
     /* symflags */
+    wrint(fd, val->decl.vis);
     wrbool(fd, val->decl.isconst);
     wrbool(fd, val->decl.isgeneric);
     wrbool(fd, val->decl.isextern);
@@ -160,6 +161,8 @@ static Node *rdsym(FILE *fd)
     n = mkdecl(line, name, NULL);
     rdtype(fd, &n->decl.type);
 
+    if (rdint(fd) == Vishidden)
+        n->decl.ishidden = 1;
     n->decl.isconst = rdbool(fd);
     n->decl.isgeneric = rdbool(fd);
     n->decl.isextern = rdbool(fd);
@@ -780,59 +783,68 @@ static void taghidden(Type *t)
     }
 }
 
-static void nodetag(Node *n)
+static void nodetag(Stab *st, Node *n, int ingeneric)
 {
     size_t i;
+    Node *d;
 
     if (!n)
         return;
     switch (n->type) {
         case Nblock:
             for (i = 0; i < n->block.nstmts; i++)
-                nodetag(n->block.stmts[i]);
+                nodetag(st, n->block.stmts[i], ingeneric);
             break;
         case Nifstmt:
-            nodetag(n->ifstmt.cond);
-            nodetag(n->ifstmt.iftrue);
-            nodetag(n->ifstmt.iffalse);
+            nodetag(st, n->ifstmt.cond, ingeneric);
+            nodetag(st, n->ifstmt.iftrue, ingeneric);
+            nodetag(st, n->ifstmt.iffalse, ingeneric);
             break;
         case Nloopstmt:
-            nodetag(n->loopstmt.init);
-            nodetag(n->loopstmt.cond);
-            nodetag(n->loopstmt.step);
-            nodetag(n->loopstmt.body);
+            nodetag(st, n->loopstmt.init, ingeneric);
+            nodetag(st, n->loopstmt.cond, ingeneric);
+            nodetag(st, n->loopstmt.step, ingeneric);
+            nodetag(st, n->loopstmt.body, ingeneric);
             break;
         case Nmatchstmt:
-            nodetag(n->matchstmt.val);
+            nodetag(st, n->matchstmt.val, ingeneric);
             for (i = 0; i < n->matchstmt.nmatches; i++)
-                nodetag(n->matchstmt.matches[i]);
+                nodetag(st, n->matchstmt.matches[i], ingeneric);
             break;
         case Nmatch:
-            nodetag(n->match.pat);
-            nodetag(n->match.block);
+            nodetag(st, n->match.pat, ingeneric);
+            nodetag(st, n->match.block, ingeneric);
             break;
         case Nexpr:
-            nodetag(n->expr.idx);
+            nodetag(st, n->expr.idx, ingeneric);
             taghidden(n->expr.type);
             for (i = 0; i < n->expr.nargs; i++)
-                nodetag(n->expr.args[i]);
+                nodetag(st, n->expr.args[i], ingeneric);
+            /* generics need to have the decls they refer to exported. */
+            if (ingeneric && exprop(n) == Ovar) {
+                d = decls[n->expr.did];
+                if (d->decl.isglobl && d->decl.vis == Visintern) {
+                    d->decl.vis = Vishidden;
+                    putdcl(st, d);
+                }
+            }
             break;
         case Nlit:
             taghidden(n->lit.type);
             if (n->lit.littype == Lfunc)
-                nodetag(n->lit.fnval);
+                nodetag(st, n->lit.fnval, ingeneric);
             break;
         case Ndecl:
             taghidden(n->decl.type);
             /* generics export their body. */
             if (n->decl.isgeneric)
-                nodetag(n->decl.init);
+                nodetag(st, n->decl.init, n->decl.isgeneric);
             break;
         case Nfunc:
             taghidden(n->func.type);
             for (i = 0; i < n->func.nargs; i++)
-                nodetag(n->func.args[i]);
-            nodetag(n->func.body);
+                nodetag(st, n->func.args[i], ingeneric);
+            nodetag(st, n->func.body, ingeneric);
             break;
 
         case Nuse: case Nname:
@@ -868,7 +880,7 @@ static void tagexports(Stab *st)
     k = htkeys(st->dcl, &n);
     for (i = 0; i < n; i++) {
         s = getdcl(st, k[i]);
-        nodetag(s);
+        nodetag(st, s, 0);
     }
 }
 
@@ -905,7 +917,7 @@ void writeuse(FILE *f, Node *file)
     k = htkeys(st->dcl, &n);
     for (i = 0; i < n; i++) {
         s = getdcl(st, k[i]);
-        if (s->decl.isgeneric)
+        if (s && s->decl.isgeneric)
             wrbyte(f, 'G');
         else
             wrbyte(f, 'D');

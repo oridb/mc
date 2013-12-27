@@ -92,7 +92,8 @@ Node *getdcl(Stab *st, Node *n)
 
     orig = st;
     do {
-        if ((s = htget(st->dcl, n))) {
+        s = htget(st->dcl, n);
+        if (s) {
             /* record that this is in the closure of this scope */
             if (!st->closure)
                 st->closure = mkht(nsnamehash, nsnameeq);
@@ -177,9 +178,14 @@ void putdcl(Stab *st, Node *s)
     d = htget(st->dcl, s->decl.name);
     if (d)
         fatal(s->line, "%s already declared (on line %d)", namestr(s->decl.name), d->line);
+    forcedcl(st, s);
+}
+
+void forcedcl (Stab *st, Node *s) {
     if (st->name)
         setns(s->decl.name, namestr(st->name));
     htput(st->dcl, s->decl.name, s);
+    assert(htget(st->dcl, s->decl.name) != NULL);
 }
 
 void updatetype(Stab *st, Node *n, Type *t)

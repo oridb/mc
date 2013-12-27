@@ -1435,7 +1435,7 @@ static void flatten(Simp *s, Node *f)
     append(s, s->endlbl);
 }
 
-static Func *simpfn(Simp *s, char *name, Node *n, int export)
+static Func *simpfn(Simp *s, char *name, Node *n, Vis vis)
 {
     size_t i;
     Func *fn;
@@ -1476,7 +1476,8 @@ static Func *simpfn(Simp *s, char *name, Node *n, int export)
 
     fn = zalloc(sizeof(Func));
     fn->name = strdup(name);
-    fn->isexport = export;
+    if (vis != Visintern)
+        fn->isexport = 1;
     fn->stksz = align(s->stksz, 8);
     fn->stkoff = s->stkoff;
     fn->ret = s->ret;
@@ -1544,7 +1545,7 @@ static void simpglobl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***
     if (dcl->decl.isextern || dcl->decl.isgeneric)
         return;
     if (isconstfn(dcl)) {
-        f = simpfn(&s, name, dcl->decl.init, dcl->decl.isexport);
+        f = simpfn(&s, name, dcl->decl.init, dcl->decl.vis);
         lappend(fn, nfn, f);
     } else {
         simpconstinit(&s, dcl);

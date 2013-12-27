@@ -842,6 +842,8 @@ static Type *initvar(Inferstate *st, Node *n, Node *s)
 {
     Type *t;
 
+    if (s->decl.ishidden)
+        fatal(n->line, "attempting to refer to hidden decl %s", ctxstr(st, n));
     if (s->decl.isgeneric)
         t = tyfreshen(st, tf(st, s->decl.type));
     else
@@ -1277,10 +1279,9 @@ static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
                 if (d->type == Ndecl)  {
                     s = getdcl(file->file.exports, d->decl.name);
                     if (s) {
-                        d->decl.isexport = 1;
-                        s->decl.isexport = 1;
-                        s->decl.init = d->decl.init;
+                        d->decl.vis = Visexport;
                         unify(st, d, type(st, d), s->decl.type);
+                        forcedcl(file->file.exports, d);
                     }
                 }
             }
@@ -1533,7 +1534,8 @@ static void stabsub(Inferstate *st, Stab *s)
     k = htkeys(s->dcl, &n);
     for (i = 0; i < n; i++) {
         d = getdcl(s, k[i]);
-        d->decl.type = tyfix(st, d, d->decl.type);
+        if (d)
+            d->decl.type = tyfix(st, d, d->decl.type);
     }
     free(k);
 }

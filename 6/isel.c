@@ -1039,7 +1039,7 @@ void genblob(FILE *fd, Node *blob, Htab *globls, Htab *strtab)
     assert(blob->type == Ndecl);
 
     lbl = htget(globls, blob);
-    if (blob->decl.isexport)
+    if (blob->decl.vis != Visintern)
         fprintf(fd, ".globl %s\n", lbl);
     fprintf(fd, "%s:\n", lbl);
     if (blob->decl.init)
