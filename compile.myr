@@ -446,11 +446,11 @@ const escaped = {re
 
 	match getc(re)
 	/* character classes */
-	| 'd': ret = ranges(re, _ranges.asciidigit[:])
-	| 'x': ret = ranges(re, _ranges.asciixdigit[:])
-	| 's': ret = ranges(re, _ranges.asciispace[:])
-	| 'w': ret = ranges(re, _ranges.asciiword[:])
-	| 'h': ret = ranges(re, _ranges.asciihspace[:])
+	| 'd': ret = ranges(re, _ranges.tabasciidigit[:])
+	| 'x': ret = ranges(re, _ranges.tabasciixdigit[:])
+	| 's': ret = ranges(re, _ranges.tabasciispace[:])
+	| 'w': ret = ranges(re, _ranges.tabasciiword[:])
+	| 'h': ret = ranges(re, _ranges.tabasciiblank[:])
 
 	/* escaped metachars */
 	| '^': ret = mk(`Chr '^')
