@@ -21,13 +21,9 @@ pkg std =
 	generic htput	: (ht : htab(@k, @v)#, k : @k, v : @v -> void)
 	generic htget	: (ht : htab(@k, @v)#, k : @k -> option(@v))
 	generic htkeys	: (ht : htab(@k, @v)# -> @k[:])
-
-	/* FIXME: Automatically pull out internal declarations as hidden */
-	const Initsz = 32
-	generic hash
-	generic resize
-	generic idx
 ;;
+
+const Initsz = 32
 
 generic hash = {ht, k
 	var h

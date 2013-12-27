@@ -21,7 +21,7 @@ static void pickle(Node *n, FILE *fd);
 static Node *unpickle(FILE *fd);
 
 /* type fixup list */
-static Htab *dedup;     /* map from name -> type, contains all Tynames loaded ever */
+static Htab *tydedup;   /* map from name -> type, contains all Tynames loaded ever */
 static Htab *tidmap;    /* map from tid -> type */
 static Type ***typefixdest;  /* list of types we need to replace */
 static size_t ntypefixdest; /* size of replacement list */
@@ -627,7 +627,7 @@ static void fixmappings(Stab *st)
     for (i = 0; i < ntypefixdest; i++) {
         t = htget(tidmap, (void*)typefixid[i]);
         if (t->type == Tyname && !t->issynth) {
-            old = htget(dedup, t->name);
+            old = htget(tydedup, t->name);
             if (old != t)
             if (t != old)
                 t = old;
@@ -641,7 +641,7 @@ static void fixmappings(Stab *st)
         t = htget(tidmap, (void*)typefixid[i]);
         if (t->type != Tyname || t->issynth)
             continue;
-        old = htget(dedup, t->name);
+        old = htget(tydedup, t->name);
         if (old && !tyeq(t, old))
             fatal(-1, "Duplicate definition of type %s", tystr(old));
     }
@@ -666,8 +666,8 @@ int loaduse(FILE *f, Stab *st)
     int c;
 
     pushstab(file->file.globls);
-    if (!dedup)
-        dedup = mkht(namehash, nameeq);
+    if (!tydedup)
+        tydedup = mkht(namehash, nameeq);
     if (fgetc(f) != 'U')
         return 0;
     pkg = rdstr(f);
@@ -705,8 +705,8 @@ int loaduse(FILE *f, Stab *st)
                         break;
                     if (!gettype(st, t->name) && !t->ishidden)
                         puttype(s, t->name, t);
-                    if (!hthas(dedup, t->name))
-                        htput(dedup, t->name, t);
+                    if (!hthas(tydedup, t->name))
+                        htput(tydedup, t->name, t);
                 } else if (t->type == Tyunion)  {
                     for (i = 0; i < t->nmemb; i++)
                         if (!getucon(s, t->udecls[i]->name) && !t->udecls[i]->synth)

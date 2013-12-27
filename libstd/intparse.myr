@@ -8,10 +8,6 @@ use "fmt.use"
 pkg std =
 	generic intparsebase	: (s : byte[:], base : int -> option(@a::(tcint,tcnum,tctest)))
 	generic intparse	: (s : byte[:]	-> option(@a::(tcint,tcnum,tctest)))
-
-	/* FIXME: fix hidden exports */
-	generic charval
-	generic doparse
 ;;
 
 generic intparse = {s

@@ -5,7 +5,6 @@ use "option.use"
  /* FIXME: needed for decls which should be pulled in as hidden */
 use "strcmp.use"
 use "utf.use"
-use "fmt.use"
 
 pkg std =
 	const ip4parse	: (ip : byte[:] -> option(byte[4]))
@@ -23,7 +22,6 @@ const ip4parse = {ip
 	i = 0
 	for j = 0; j < ip.len; j++
 		if ip[j] == '.' castto(byte)
-			put("seg[%z..%z] = %s\n", last, j, ip[last:j])
 			match intparsebase(ip[last:j], 10)
 			| `Some v:
 				val = v

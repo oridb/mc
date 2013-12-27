@@ -1737,6 +1737,7 @@ static void nodetag(Stab *st, Node *n, int ingeneric)
                 if (d->decl.isglobl && d->decl.vis == Visintern) {
                     d->decl.vis = Vishidden;
                     putdcl(st, d);
+                    nodetag(st, d, ingeneric);
                 }
             }
             break;
@@ -1773,6 +1774,13 @@ void tagexports(Stab *st)
     Type *t;
     size_t i, j, n;
 
+    k = htkeys(st->dcl, &n);
+    for (i = 0; i < n; i++) {
+        s = getdcl(st, k[i]);
+        nodetag(st, s, 0);
+    }
+    free(k);
+
     /* get the explicitly exported symbols */
     k = htkeys(st->ty, &n);
     for (i = 0; i < n; i++) {
@@ -1788,11 +1796,6 @@ void tagexports(Stab *st)
     }
     free(k);
 
-    k = htkeys(st->dcl, &n);
-    for (i = 0; i < n; i++) {
-        s = getdcl(st, k[i]);
-        nodetag(st, s, 0);
-    }
 }
 
 /* Take generics and build new versions of them
