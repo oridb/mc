@@ -1,0 +1,7 @@
+use std
+
+const main = {
+	std.assert('a' == '\u{61}', "unicode char values invalid")
+	std.assert('Σ' == '\u{03a3}', "unicode char values invalid")
+	-> 0
+}
