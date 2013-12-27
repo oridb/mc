@@ -121,13 +121,10 @@ const usage = {
 }
 
 const printenv = {name
-	var env
-	var ok
-
-	(env, ok) = std.getenv(name)
-	if !ok
-		std.put("No env var %s is set\n", name)
-	else
+	match std.getenv(name)
+	| `std.Some env:
 		std.put("Value of %s is %s\n", name, env)
+	| `std.None:
+		std.put("No env var %s is set\n", name)
 	;;
 }

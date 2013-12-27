@@ -50,7 +50,7 @@ generic doparse = {s, isneg, base
 	while s.len != 0
 		(c, s) = striter(s)
 		cv = charval(c, base)
-		if cv > 0
+		if cv >= 0
 			v *= (base castto(@a::(tcint,tcnum,tctest)))
 			v += cv
 		else
