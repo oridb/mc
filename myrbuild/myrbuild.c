@@ -33,17 +33,16 @@ char *binname;
 /* additional paths to search for packages */
 char **incpaths;
 size_t nincpaths;
-/* libraries to link against. */
-char **libs;
-size_t nlibs;
+/* libraries to link against, and their deps */
+Htab *libgraph;  /* string -> null terminated string list */
 /* the linker script to use */
 char *ldscript;
 
 char *sysname;
 
 regex_t usepat;
-Htab *compiled;
-Htab *loopdetect;
+Htab *compiled; /* used as string set */
+Htab *loopdetect; /* used as string set */
 
 static void usage(char *prog)
 {
@@ -185,6 +184,50 @@ void getdeps(char *file, char **deps, size_t depsz, size_t *ndeps)
     *ndeps = i;
 }
 
+FILE *openlib(char *lib)
+{
+    FILE *f;
+    char buf[1024];
+    size_t i;
+
+    snprintf(buf, sizeof buf, "%s/%s/%s", Instroot, "/lib/myr", lib);
+    f = fopen(buf, "r");
+    if (f)
+        return f;
+    for (i = 0; i < nincpaths; i++) {
+        snprintf(buf, sizeof buf, "%s/%s", incpaths[i], lib);
+        f = fopen(buf, "r");
+        if (f)
+            return f;
+    }
+    err(1, "could not open library file %s\n", lib);
+}
+
+void scrapelib(Htab *g, char *lib)
+{
+    char **deps;
+    size_t ndeps;
+    FILE *use;
+    char *l;
+
+    if (hthas(libgraph, lib))
+        return;
+    deps = NULL;
+    ndeps = 0;
+    use = openlib(lib);
+    if (fgetc(use) != 'U')
+        err(1, "library \"%s\" is not a usefile.", lib);
+    /* we don't care about the usefile's name */
+    free(rdstr(use));
+    while (fgetc(use) == 'L') {
+        l = rdstr(use);
+        lappend(&deps, &ndeps, l);
+        scrapelib(g, l);
+    }
+    lappend(&deps, &ndeps, NULL);
+    htput(g, lib, deps);
+}
+
 void compile(char *file)
 {
     size_t i, ndeps;
@@ -211,8 +254,8 @@ void compile(char *file)
                 localdep = usetomyr(deps[i]);
                 compile(localdep);
                 free(localdep);
-            } else if (!inlist(libs, nlibs, deps[i])) {
-                lappend(&libs, &nlibs, deps[i]);
+            } else {
+                scrapelib(libgraph, deps[i]);
             }
         }
         if (isfresh(file, use))
@@ -296,6 +339,44 @@ void archive(char **files, size_t nfiles)
     lfree(&args, &nargs);
 }
 
+void visit(char ***args, size_t *nargs, size_t head, Htab *g, char *n, Htab *looped, Htab *marked)
+{
+    char **deps;
+    char buf[1024];
+
+    if (hthas(looped, n))
+        err(1, "cycle in library dependency graph involving %s\n", n);
+    if (hthas(marked, n))
+        return;
+    htput(looped, n, n);
+    for (deps = htget(g, n); *deps; deps++)
+        visit(args, nargs, head, g, *deps, looped, marked);
+    htdel(looped, n);
+    htput(marked, n, n);
+    snprintf(buf, sizeof buf, "-l%s", n);
+    linsert(args, nargs, head, strdup(buf));
+}
+
+/* topologically sorts the dependency graph of the libraries. */
+void addlibs(char ***args, size_t *nargs, Htab *g)
+{
+    void **libs;
+    size_t nlibs;
+    size_t i;
+    size_t head;
+    Htab *looped;
+    Htab *marked;
+
+    libs = htkeys(g, &nlibs);
+    looped = mkht(strhash, streq);
+    marked = mkht(strhash, streq);
+    head = *nargs;
+    for (i = 0; i < nlibs; i++)
+        visit(args, nargs, head, g, libs[i], looped, marked);
+    compiled = mkht(strhash, streq);
+    
+}
+
 void linkobj(char **files, size_t nfiles)
 {
     char **args;
@@ -339,10 +420,7 @@ void linkobj(char **files, size_t nfiles)
     lappend(&args, &nargs, strdup(buf));
 
     /* ld -T ldscript -o outfile foo.o bar.o baz.o -L/path1 -L/path2 -llib1 -llib2*/
-    for (i = 0; i < nlibs; i++) {
-        snprintf(buf, sizeof buf, "-l%s", libs[i]);
-        lappend(&args, &nargs, strdup(buf));
-    }
+    addlibs(&args, &nargs, libgraph);
 
     /* OSX wants a minimum version specified to prevent warnings*/
     if (!strcmp(sysname, "Darwin")) {
@@ -395,6 +473,7 @@ int main(int argc, char **argv)
     if (libname && binname)
         die("Can't specify both library and binary names");
 
+    libgraph = mkht(strhash, streq);
     compiled = mkht(strhash, streq);
     loopdetect = mkht(strhash, streq);
     regcomp(&usepat, "^[[:space:]]*use[[:space:]]+([^[:space:]]+)", REG_EXTENDED);

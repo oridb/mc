@@ -663,6 +663,7 @@ int loaduse(FILE *f, Stab *st)
     Node *dcl;
     Stab *s;
     Type *t;
+    char *lib;
     int c;
 
     pushstab(file->file.globls);
@@ -690,6 +691,14 @@ int loaduse(FILE *f, Stab *st)
     tidmap = mkht(ptrhash, ptreq);
     while ((c = fgetc(f)) != EOF) {
         switch(c) {
+            case 'L':
+                lib = rdstr(f);
+                for (i = 0; i < file->file.nlibdeps; i++)
+                    if (!strcmp(file->file.libdeps[i], lib))
+                        goto foundlib;
+                lappend(&file->file.libdeps, &file->file.nlibdeps, lib);
+foundlib:
+                break;
             case 'G':
             case 'D':
                 dcl = rdsym(f);
@@ -764,15 +773,31 @@ void writeuse(FILE *f, Node *file)
 {
     Stab *st;
     void **k;
-    Node *s;
+    Node *s, *u;
     size_t i, n;
 
+    assert(file->type == Nfile);
     st = file->file.exports;
+
+    /* usefile name */
     wrbyte(f, 'U');
     if (st->name)
         wrstr(f, namestr(st->name));
     else
         wrstr(f, NULL);
+
+    /* library deps */
+    for (i = 0; i < file->file.nuses; i++) {
+        u = file->file.uses[i];
+        if (!u->use.islocal) {
+            wrbyte(f, 'L');
+            wrstr(f, u->use.name);
+        }
+    }
+    for (i = 0; i < file->file.nlibdeps; i++) {
+        wrbyte(f, 'L');
+        wrstr(f, file->file.libdeps[i]);
+    }
 
     for (i = 0; i < ntypes; i++) {
         if (types[i]->vis == Visexport || types[i]->vis == Vishidden) {

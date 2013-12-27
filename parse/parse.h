@@ -162,6 +162,8 @@ struct Node {
             char  *name;
             size_t nuses;
             Node **uses;
+            size_t nlibdeps;
+            char **libdeps;
             size_t nstmts;
             Node **stmts;
             Stab  *globls;
