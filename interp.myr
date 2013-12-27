@@ -15,6 +15,7 @@ const exec = {re, str
 	run(re)
 	match re.matched
 	| `std.Some thr:
+		trace(re, thr, "mstart: %z, mend: %z, str.len: %z\n", thr.mstart[0], thr.mend[0], str.len)
 		if thr.mend[0] != str.len
 			-> `std.None
 		else
@@ -41,7 +42,8 @@ const getmatches = {re, thr
 }
 
 const run = {re
-	var i, consumed
+	var i, ip
+	var consumed
 	var thr
 
 	re.matched = `std.None
@@ -58,10 +60,11 @@ const run = {re
 			thr = re.runq
 			re.runq = thr.next
 
-			trace(re, thr, "\nrunning tid=%z, ip=%z, c=%c\n", thr.tid, thr.ip, re.str[re.strp] castto(char))
-			consumed = step(re, thr)
+			trace(re, thr, "\nrunning tid=%z, ip=%z, s[%z]=%c\n", thr.tid, thr.ip, re.strp, std.decode(re.str[re.strp:]))
+			ip = thr.ip
+			consumed = step(re, thr, -1)
 			while !consumed
-				consumed = step(re, thr)
+				consumed = step(re, thr, ip)
 			;;
 
 			if thr.dead
@@ -71,11 +74,10 @@ const run = {re
 				re.expired = thr
 			;;
 		;;
+		trace(re, thr, "SWITCH\n")
 		re.runq = re.expired
 		re.expired = Zthr
-		if re.nthr > 0
-			re.strp++
-		;;
+		re.strp++
 	;;
 }
 
@@ -83,7 +85,7 @@ const run = {re
  Steps forward one instruction. Returns true if a byte of input was
  consumed, false otherwise.
 */
-const step = {re, thr
+const step = {re, thr, curip
 	var str
 	var mstart
 	var mend
@@ -142,7 +144,7 @@ const step = {re, thr
 		trace(re, thr, "\t%z:\tFork (%z, %z)\n", thr.ip, lip, rip)
 		mstart = std.sldup(thr.mstart)
 		mend = std.sldup(thr.mend)
-		fork(re, thr, rip, mstart, mend)
+		fork(re, thr, rip, curip, mstart, mend)
 		thr.ip = lip
 		-> false
 	| `Ijmp ip:
@@ -157,9 +159,12 @@ const step = {re, thr
 	-> true
 }
 
-const fork = {re, thr, ip, mstart, mend
+const fork = {re, thr, ip, curip, mstart, mend
 	var thr
 
+	if ip == curip /* loop detection */
+		->
+	;;
 	thr = mkthread(re, ip)
 	thr.next = re.runq
 	thr.mstart = mstart
@@ -174,7 +179,7 @@ const die = {re, thr, msg
 }
 
 const finish = {re, thr
-	trace(re, thr, "finish %z\n", tid)
+	trace(re, thr, "finish %z\n", thr.tid)
 	match re.matched
 	| `std.Some t:	thrfree(re, t)
 	| `std.None:
@@ -184,7 +189,7 @@ const finish = {re, thr
 	re.nthr--
 }
 
-var tid = 0
+var nexttid = 0
 
 const mkthread = {re, ip
 	var thr : rethread#
@@ -194,7 +199,7 @@ const mkthread = {re, ip
 	thr.next = Zthr
 
 	thr.ip = ip
-	thr.tid = tid++
+	thr.tid = nexttid++
 	thr.dead = false
 	thr.matched = false
 
