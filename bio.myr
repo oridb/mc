@@ -54,10 +54,6 @@ pkg bio =
 
 	/* formatted i/o */
 	const put	: (f : file#, fmt : byte[:], args : ... -> std.size)
-
-	/* FIXME: internal decls leaking out for generics. */
-	const fill
-	const ensureread
 ;;
 
 const Bufsz = 16*std.KiB
