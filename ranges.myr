@@ -1,0 +1,33 @@
+pkg _ranges =
+	const asciidigit 	: char[2][1]
+	const asciixdigit	: char[2][3]
+	const asciispace	: char[2][2]
+	const asciiword		: char[2][4]
+	const asciihspace	: char[2][2]
+;;
+const asciidigit = [
+	[0x30,0x39]
+]
+
+const asciixdigit = [
+	[0x30,0x39],
+	[0x41,0x46],
+	[0x61,0x66]
+]
+
+const asciispace = [
+	[0x9, 0xd],
+	[0x20, 0x20]
+]
+
+const asciiword = [
+	[0x30,0x39],	/* 0-9 */
+	[0x41, 0x5a],	/* A-Z */
+	[0x5f, 0x5f],	/* _ */
+	[0x61, 0x7a]	/* a-z */
+]
+
+const asciihspace = [
+	[0x9, 0x9],	/* \t */
+	[0x20, 0x20]	/* ' ' */
+]

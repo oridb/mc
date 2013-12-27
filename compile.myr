@@ -1,6 +1,7 @@
 use std
 
 use "types.use"
+use "ranges.use"
 
 pkg regex =
 	const compile	: (re : byte[:] -> std.error(regex#, status))
@@ -426,25 +427,75 @@ const baseexpr = {re
 			astfree(ret)
 			-> `Fail (`Unbalanced)
 		;;
+	| '\\':
+		getc(re) /* consume the slash */
+		if re.pat.len == 0
+			-> `Fail (`Earlystop)
+		;;
+		ret = escaped(re)
 	| c:
 		getc(re)
-		if c == '\\'
-			if re.pat.len == 0
-				-> `Fail (`Earlystop)
-			;;
-			c = getc(re)
-		;;
 		ret = mk(`Chr c)
 	;;
 	dump(re, ret, 0)
 	-> `Some ret
 }
 
+const escaped = {re
+	var ret
+
+	match getc(re)
+	/* character classes */
+	| 'd': ret = ranges(re, _ranges.asciidigit[:])
+	| 'x': ret = ranges(re, _ranges.asciixdigit[:])
+	| 's': ret = ranges(re, _ranges.asciispace[:])
+	| 'w': ret = ranges(re, _ranges.asciiword[:])
+	| 'h': ret = ranges(re, _ranges.asciihspace[:])
+
+	/* escaped metachars */
+	| '^': ret = mk(`Chr '^')
+	| '$': ret = mk(`Chr '$')
+	| '.': ret = mk(`Chr '.')
+	| '+': ret = mk(`Chr '+')
+	| '?': ret = mk(`Chr '?')
+
+	/* FIXME: implement this later.
+	| 'W': ret = negranges(re, _ranges.asciiword[:])
+	| 'S': ret = negranges(re, _ranges.asciispace[:])
+	| 'D': ret = negranges(re, _ranges.asciidigit[:])[:])
+	| 'X': ret = negranges(re, _ranges.xdigit[:])[:])
+	| 'H': ret = negranges(re, _ranges.asciihspace[:])
+	| 'p':	unicodeclass(re)
+	| 'P':  negate(unicodeclass(re))
+	*/
+	;;
+	-> ret
+}
+
+const ranges = {re, rng
+	var ret
+	var lhs
+	var rhs
+
+	if rng.len == 1
+		ret = mk(`Class (rng[0][0], rng[0][1]))
+	else
+		lhs = ranges(re, rng[0:rng.len/2])
+		rhs = ranges(re, rng[rng.len/2:rng.len])
+		ret = mk(`Alt (lhs, rhs))
+	;;
+	-> ret
+}
+
 const chrclass = {re
 	var r
 	var t
 
+	/* we know we saw '[' on entry */
 	matchc(re, '[')
+	if matchc(re, '^')
+		std.die("negation of character classes not yet supported")
+	;;
 	t = rangematch(re)
 	while peekc(re) != ']'
 		r = rangematch(re)
