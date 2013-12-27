@@ -650,13 +650,15 @@ seqlit  : Tosqbrac arrayelts Tcsqbrac
         ;
 
 arrayelts
-        : arrayelt
+        : endlns arrayelt
             {$$.nl = NULL; $$.nn = 0;
-             lappend(&$$.nl, &$$.nn, mkidxinit($1->line, mkint($1->line, 0), $1));}
-        | arrayelts Tcomma arrayelt
-             {lappend(&$$.nl, &$$.nn, mkidxinit($3->line, mkint($3->line, $$.nn), $3));}
+             lappend(&$$.nl, &$$.nn, mkidxinit($2->line, mkint($2->line, 0), $2));}
+        | arrayelts Tcomma endlns arrayelt
+             {lappend(&$$.nl, &$$.nn, mkidxinit($4->line, mkint($4->line, $$.nn), $4));}
+        | arrayelts Tcomma endlns
+        ;
 
-arrayelt: endlns expr endlns {$$ = $2;}
+arrayelt: expr endlns {$$ = $1;}
         ;
 
 structelts
