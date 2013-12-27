@@ -110,6 +110,7 @@ B catfile	C
 B strstrip	C
 B strsplit	C
 B strfind	C
+B strjoin	C
 # B local-labels	E	10 ## BUGGERED
 F declmismatch
 F infermismatch

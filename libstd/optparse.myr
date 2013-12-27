@@ -26,6 +26,7 @@ pkg std =
 	const optinit	: (optstr: byte[:], optargs : byte[:][:] -> optctx#)
 	const optnext	: (ctx : optctx# -> [char, byte[:]])
 	const optdone	: (ctx : optctx# -> bool)
+	const optfin	: (ctx : optctx# -> byte[:][:])
 ;;
 
 const optinit = {optstr, optargs
@@ -44,6 +45,14 @@ const optinit = {optstr, optargs
 
 	next(ctx)
 	-> ctx
+}
+
+const optfin = {ctx
+	var a
+
+	a = ctx.args
+	free(ctx)
+	-> a
 }
 
 const optnext = {ctx
