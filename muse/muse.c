@@ -130,6 +130,7 @@ int main(int argc, char **argv)
         tyinit(file->file.globls);
         for (i = optind; i < argc; i++)
             mergeuse(argv[i]);
+        infer(file);
         f = fopen(outfile, "w");
         writeuse(f, file);
         fclose(f);

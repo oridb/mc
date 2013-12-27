@@ -440,6 +440,7 @@ Type *tyspecialize(Type *t, Htab *tymap);
 int  loaduse(FILE *f, Stab *into);
 void readuse(Node *use, Stab *into);
 void writeuse(FILE *fd, Node *file);
+void tagexports(Stab *st);
 
 /* typechecking/inference */
 void infer(Node *file);

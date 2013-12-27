@@ -38,9 +38,6 @@ pkg std =
 	const bytealloc	: (sz:size	-> byte#)
 	const zbytealloc	: (sz:size	-> byte#)
 	const bytefree	: (m:byte#, sz:size	-> void)
-
-	/* FIXME: This should be automatically exported as a hidden decl. */
-	const samebucket
 ;;
 
 /* null pointers. only used internally. */
