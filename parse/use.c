@@ -414,6 +414,11 @@ static void pickle(Node *n, FILE *fd)
             pickle(n->loopstmt.step, fd);
             pickle(n->loopstmt.body, fd);
             break;
+        case Niterstmt:
+            pickle(n->iterstmt.elt, fd);
+            pickle(n->iterstmt.seq, fd);
+            pickle(n->iterstmt.body, fd);
+            break;
         case Nmatchstmt:
             pickle(n->matchstmt.val, fd);
             wrint(fd, n->matchstmt.nmatches);
@@ -529,6 +534,11 @@ static Node *unpickle(FILE *fd)
             n->loopstmt.cond = unpickle(fd);
             n->loopstmt.step = unpickle(fd);
             n->loopstmt.body = unpickle(fd);
+            break;
+        case Niterstmt:
+            n->iterstmt.elt = unpickle(fd);
+            n->iterstmt.seq = unpickle(fd);
+            n->iterstmt.body = unpickle(fd);
             break;
         case Nmatchstmt:
             n->matchstmt.val = unpickle(fd);

@@ -119,6 +119,18 @@ Node *mkloopstmt(int line, Node *init, Node *cond, Node *incr, Node *body)
     return n;
 }
 
+Node *mkiterstmt(int line, Node *elt, Node *seq, Node *body)
+{
+    Node *n;
+
+    n = mknode(line, Niterstmt);
+    n->iterstmt.elt = elt;
+    n->iterstmt.seq = seq;
+    n->iterstmt.body = body;
+
+    return n;
+}
+
 Node *mkmatchstmt(int line, Node *val, Node **matches, size_t nmatches)
 {
     Node *n;

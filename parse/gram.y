@@ -77,6 +77,7 @@ static void constrainwith(Type *t, char *str);
 
 %token<tok> Ttype    /* type */
 %token<tok> Tfor     /* for */
+%token<tok> Tin      /* in */
 %token<tok> Twhile   /* while */
 %token<tok> Tif      /* if */
 %token<tok> Telse    /* else */
@@ -689,6 +690,8 @@ stmt    : goto
 
 forstmt : Tfor optexprln optexprln optexprln block
             {$$ = mkloopstmt($1->line, $2, $3, $4, $5);}
+        | Tfor expr Tin exprln block 
+            {$$ = mkiterstmt($1->line, $2, $4, $5);}
         /* FIXME: allow decls in for loops
         | Tfor decl Tendln optexprln optexprln block
             {$$ = mkloopstmt($1->line, $2, $4, $5, $6);}

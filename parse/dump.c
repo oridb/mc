@@ -161,6 +161,12 @@ static void outnode(Node *n, FILE *fd, int depth)
             outnode(n->loopstmt.step, fd, depth+1);
             outnode(n->loopstmt.body, fd, depth+1);
             break;
+        case Niterstmt:
+            fprintf(fd, "\n");
+            outnode(n->iterstmt.elt, fd, depth+1);
+            outnode(n->iterstmt.seq, fd, depth+1);
+            outnode(n->iterstmt.body, fd, depth+1);
+            break;
         case Nmatchstmt:
             fprintf(fd, "\n");
             outnode(n->matchstmt.val, fd, depth+1);

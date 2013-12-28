@@ -191,6 +191,11 @@ static void fixup(Node *n)
             fixup(n->loopstmt.step);
             fixup(n->loopstmt.body);
             break;
+        case Niterstmt:
+            fixup(n->iterstmt.elt);
+            fixup(n->iterstmt.seq);
+            fixup(n->iterstmt.body);
+            break;
         case Nmatchstmt:
             fixup(n->matchstmt.val);
             for (i = 0; i < n->matchstmt.nmatches; i++)
@@ -280,6 +285,11 @@ static Node *specializenode(Node *n, Htab *tsmap)
             r->loopstmt.step = specializenode(n->loopstmt.step, tsmap);
             r->loopstmt.body = specializenode(n->loopstmt.body, tsmap);
             break;
+        case Niterstmt:
+            r->iterstmt.elt = specializenode(n->iterstmt.elt, tsmap);
+            r->iterstmt.seq = specializenode(n->iterstmt.seq, tsmap);
+            r->iterstmt.body = specializenode(n->iterstmt.body, tsmap);
+            break;
         case Nmatchstmt:
             r->matchstmt.val = specializenode(n->matchstmt.val, tsmap);
             r->matchstmt.nmatches = n->matchstmt.nmatches;
@@ -336,30 +346,10 @@ static Node *specializenode(Node *n, Htab *tsmap)
     }
     return r;
 }
-
-static size_t tidappend(char *buf, size_t sz, Type *t)
-{
-    char *p;
-    char *end;
-    size_t i;
-
-    p = buf;
-    end = buf + sz;
-    p += snprintf(p, end - p, "$%d", t->tid);
-    if (t->type == Tyname) {
-        for (i = 0; i < t->narg; i++)
-            p += tidappend(p, end - p, t->arg[i]);
-    } else {
-        for (i = 0; i < t->nsub; i++)
-            p += tidappend(p, end - p, t->sub[i]);
-    }
-    return p - buf;
-}
-
 static Node *genericname(Node *n, Type *t)
 {
     char buf[1024];
-    char *p;
+    char *p, *s;
     char *end;
     Node *name;
 
@@ -367,9 +357,10 @@ static Node *genericname(Node *n, Type *t)
         return n->decl.name;
     p = buf;
     end = buf + 1024;
+    s = tystr(t);
     p += snprintf(p, end - p, "%s", n->decl.name->name.name);
-    p += snprintf(p, end - p, "$%zd", n->decl.did);
-    tidappend(p, end - p, t);
+    p += snprintf(p, end - p, "$%zd$%lu", n->decl.did, strhash(s));
+    free(s);
     name = mkname(n->line, buf);
     if (n->decl.name->name.ns)
         setns(name, n->decl.name->name.ns);
@@ -387,6 +378,7 @@ Node *specializedcl(Node *n, Type *to, Node **name)
     Node *d;
     Node *ns;
     Stab *st;
+    extern int stabstkoff;
 
     assert(n->type == Ndecl);
     assert(n->decl.isgeneric);
@@ -394,7 +386,7 @@ Node *specializedcl(Node *n, Type *to, Node **name)
     *name = genericname(n, to);
     d = getdcl(file->file.globls, *name);
     if (debugopt['S'])
-        printf("specializing %s => %s\n", namestr(n->decl.name), namestr(*name));
+        printf("depth[%d] specializing [%d]%s => %s\n", stabstkoff, n->line, namestr(n->decl.name), namestr(*name));
     if (d)
         return d;
     /* namespaced names need to be looked up in their correct

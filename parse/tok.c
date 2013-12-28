@@ -171,6 +171,7 @@ static int kwd(char *s)
         {"generic",     Tgeneric},
         {"goto",        Tgoto},
         {"if",          Tif},
+        {"in",          Tin},
         {"match",       Tmatch},
         {"pkg",         Tpkg},
         {"protect",     Tprotect},

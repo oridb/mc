@@ -1317,6 +1317,12 @@ static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
             infernode(st, n->loopstmt.body, ret, sawret);
             constrain(st, n, type(st, n->loopstmt.cond), cstrtab[Tctest]);
             break;
+        case Niterstmt:
+            infernode(st, n->iterstmt.elt, NULL, sawret);
+            infernode(st, n->iterstmt.seq, NULL, sawret);
+            infernode(st, n->loopstmt.body, ret, sawret);
+            constrain(st, n, type(st, n->loopstmt.cond), cstrtab[Tctest]);
+            break;
         case Nmatchstmt:
             infernode(st, n->matchstmt.val, NULL, sawret);
             if (tybase(type(st, n->matchstmt.val))->type == Tyvoid)
@@ -1617,6 +1623,11 @@ static void typesub(Inferstate *st, Node *n)
             typesub(st, n->loopstmt.step);
             typesub(st, n->loopstmt.body);
             break;
+        case Niterstmt:
+            typesub(st, n->iterstmt.elt);
+            typesub(st, n->iterstmt.seq);
+            typesub(st, n->iterstmt.body);
+            break;
         case Nmatchstmt:
             typesub(st, n->matchstmt.val);
             for (i = 0; i < n->matchstmt.nmatches; i++) {
@@ -1716,6 +1727,11 @@ static void nodetag(Stab *st, Node *n, int ingeneric)
             nodetag(st, n->loopstmt.cond, ingeneric);
             nodetag(st, n->loopstmt.step, ingeneric);
             nodetag(st, n->loopstmt.body, ingeneric);
+            break;
+        case Niterstmt:
+            nodetag(st, n->iterstmt.elt, ingeneric);
+            nodetag(st, n->iterstmt.seq, ingeneric);
+            nodetag(st, n->iterstmt.body, ingeneric);
             break;
         case Nmatchstmt:
             nodetag(st, n->matchstmt.val, ingeneric);

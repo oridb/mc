@@ -29,7 +29,7 @@ struct Cstrdefn {
 
 #define Maxstabdepth 128
 static Stab *stabstk[Maxstabdepth];
-static int stabstkoff;
+int stabstkoff;
 
 /* scope management */
 Stab *curstab()

@@ -214,6 +214,12 @@ struct Node {
         } loopstmt;
 
         struct {
+            Node *elt;
+            Node *seq;
+            Node *body;
+        } iterstmt;
+
+        struct {
             Node *cond;
             Node *iftrue;
             Node *iffalse;
@@ -401,6 +407,7 @@ Node *mkexpr(int line, Op op, ...); /* NULL terminated */
 Node *mkcall(int line, Node *fn, Node **args, size_t nargs);
 Node *mkifstmt(int line, Node *cond, Node *iftrue, Node *iffalse);
 Node *mkloopstmt(int line, Node *init, Node *cond, Node *incr, Node *body);
+Node *mkiterstmt(int line, Node *elt, Node *seq, Node *body);
 Node *mkmatchstmt(int line, Node *val, Node **matches, size_t nmatches);
 Node *mkmatch(int line, Node *pat, Node *body);
 Node *mkblock(int line, Stab *scope);

@@ -68,6 +68,11 @@ static void dumptypes(Node *n, int indent)
             dumptypes(n->loopstmt.step, indent);
             dumptypes(n->loopstmt.body, indent);
             break;
+        case Niterstmt:
+            dumptypes(n->iterstmt.elt, indent);
+            dumptypes(n->iterstmt.seq, indent);
+            dumptypes(n->iterstmt.body, indent);
+            break;
         case Nmatchstmt:
             dumptypes(n->matchstmt.val, indent);
             for (i = 0; i < n->matchstmt.nmatches; i++)
