@@ -347,6 +347,10 @@ static int decode(char **buf, size_t *len, size_t *sz)
     c = next();
     /* we've already seen the '\' */
     switch (c) {
+        case 'u':
+            v = unichar();
+            appendc(buf, len, sz, v);
+            return v;
         case 'x': /* arbitrary hex */
             c1 = next();
             if (!isxdigit(c1))
@@ -356,7 +360,6 @@ static int decode(char **buf, size_t *len, size_t *sz)
                 fatal(line, "expected hex digit, got %c", c1);
             v = 16*hexval(c1) + hexval(c2);
             break;
-        case 'u': v = unichar(); break;
         case 'n': v = '\n'; break;
         case 'r': v = '\r'; break;
         case 't': v = '\t'; break;
@@ -368,7 +371,7 @@ static int decode(char **buf, size_t *len, size_t *sz)
         case '0': v = '\0'; break;
         default: fatal(line, "unknown escape code \\%c", c);
     }
-    appendc(buf, len, sz, v);
+    append(buf, len, sz, v);
     return v;
 }
 
