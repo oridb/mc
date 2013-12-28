@@ -4,4 +4,5 @@ use "testmatch.use"
 
 const main = {
 	testmatch(".*bc", "Abc")
+	testmatch("(a*)*", "a")
 }

@@ -3,11 +3,20 @@ use regex
 
 pkg =
 	const testmatch	: (pat : byte[:], text : byte[:] -> void)
+	const dbgmatch	: (pat : byte[:], text : byte[:] -> void)
 ;;
 
 const testmatch = {pat, text
+	run(regex.compile(pat), text)
+}
+
+const dbgmatch = {pat, text
+	run(regex.dbgcompile(pat), text)
+}
+
+const run = {regex, text
 	var i
-	match regex.compile(pat)
+	match regex
 	| `std.Success re:
 		match regex.exec(re, text)
 		| `std.Some m:

@@ -46,6 +46,90 @@ is similar to regex.exec, but it will attempt to find a match somewhere
 within the string, instead of attempting to find a match spanning the whole
 string.
 
+.SH REGEX SYNTAX
+.PP
+The grammar used by libregex is below:
+
+.EX
+    regex       : altexpr
+    altexpr     : catexpr ('|' altexpr)+
+    catexpr     : repexpr (catexpr)+
+    repexpr     : baseexpr[*+?]
+    baseexpr    : literal
+                | charclass
+                | charrange
+                | '.'
+                | '^'
+                | '$'
+                | '(' regex ')'
+    charclass   : see below
+    charrange   : '[' (literal('-' literal)?)+']'
+.EE
+
+The following metacharacters have the meanings listed below:
+.TP
+.
+Matches a single unicode character
+.TP
+^
+Matches the beginning of a line. Does not consume any characters.
+.TP
+$
+Matches the end of a line. Does not consume any characters.
+.TP
+*
+Matches any number of repetitions of the preceding regex fragment.
+.TP
++
+Matches one or more repetitions of the preceding regex fragment.
+.TP
+?
+Matches zero or one of the preceding regex fragment.
+
+.PP
+In order to match a literal metacharacter, it needs to be preceded by
+a '\\' character.
+
+The following character classes are supported:
+.TP
+\\d
+ASCII digits
+.TP
+\\D
+Negation of ASCII digits
+.TP
+\\x
+ASCII Hex digits
+.TP
+\\X
+Negation of ASCII Hex digits
+.TP
+\\s
+ASCII spaces
+.TP
+\\S
+Negation of ASCII spaces
+.TP
+\\w
+ASCII word characters
+.TP
+\\W
+Negation of ASCII word characters
+.TP
+\\h
+ASCII whitespace characters
+.TP
+\\H
+Negation of ASCII whitespace characters
+.TP
+\\pX
+Characters with unicode property 'X'
+.TP
+\\PX
+.PP
+Negation of characters with unicode property 'X'. The only properties that
+are currently supported are 'Z' (space), 'L' (letter).
+
 .SH EXAMPLE
 .EX
         use std
