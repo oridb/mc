@@ -93,7 +93,7 @@ const step = {re, thr
 	/* Char matching. Consume exactly one byte from the string. */
 	| `Ibyte b:
 		trace(re, thr, "\t%z:\tByte %b (%c)\n", thr.ip, b, b castto(char))
-		if !in(re, str)
+		if re.strp >- str.len
 			die(re, thr, "end of string")
 		elif b != str[re.strp]
 			die(re, thr, "not right char")
@@ -103,7 +103,7 @@ const step = {re, thr
 		;;
 	| `Irange (start, end):
 		trace(re, thr, "\t%z:\tRange (%b, %b)\n", thr.ip, start, end)
-		if !in(re, str) || start > str[re.strp] || end < str[re.strp]
+		if re.strp >= str.len || start > str[re.strp] || end < str[re.strp]
 			die(re, thr, "bad range")
 		else
 			thr.ip++
@@ -215,10 +215,6 @@ const thrfree = {re, thr
 	std.slfree(thr.mstart)
 	std.slfree(thr.mend)
 	std.free(thr)
-}
-
-const in = {re, str 
-	-> re.strp < str.len
 }
 
 const trace : (re : regex#, thr : rethread#, msg : byte[:], args : ...) = {re, thr, msg, args
