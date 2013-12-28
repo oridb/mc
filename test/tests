@@ -56,6 +56,7 @@ B callbig	E	42
 B nestfn	E	42
 # B closure	E	55      ## BUGGERED
 B loop		E	45
+B patiter	P	235
 B condiftrue	E	7
 B condiffalse	E	9
 B condifrel	E	7

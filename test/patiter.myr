@@ -1,0 +1,9 @@
+use std
+
+const main = {
+	/* should print 1,3,5 */
+	for (1,x) in [(1,2),(1,3),(2,4),(1,5)]
+		std.put("%i", x)
+	;;
+	std.put("\n")
+}
