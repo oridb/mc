@@ -1318,10 +1318,17 @@ static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
             constrain(st, n, type(st, n->loopstmt.cond), cstrtab[Tctest]);
             break;
         case Niterstmt:
-            infernode(st, n->iterstmt.elt, NULL, sawret);
+            bound = NULL;
+            nbound = 0;
+
+            inferpat(st, n->iterstmt.elt, NULL, &bound, &nbound);
+            addbindings(st, n->iterstmt.body, bound, nbound);
+
             infernode(st, n->iterstmt.seq, NULL, sawret);
-            infernode(st, n->loopstmt.body, ret, sawret);
-            constrain(st, n, type(st, n->loopstmt.cond), cstrtab[Tctest]);
+            infernode(st, n->iterstmt.body, ret, sawret);
+
+            constrain(st, n, type(st, n->iterstmt.seq), cstrtab[Tcidx]);
+            unify(st, n, type(st, n->iterstmt.elt), type(st, n->iterstmt.seq)->sub[0]);
             break;
         case Nmatchstmt:
             infernode(st, n->matchstmt.val, NULL, sawret);

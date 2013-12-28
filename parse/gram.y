@@ -690,7 +690,7 @@ stmt    : goto
 
 forstmt : Tfor optexprln optexprln optexprln block
             {$$ = mkloopstmt($1->line, $2, $3, $4, $5);}
-        | Tfor expr Tin exprln block 
+        | Tfor pat Tin exprln block 
             {$$ = mkiterstmt($1->line, $2, $4, $5);}
         /* FIXME: allow decls in for loops
         | Tfor decl Tendln optexprln optexprln block
