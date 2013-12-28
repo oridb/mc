@@ -1,0 +1,67 @@
+use std
+
+use "testmatch.use"
+
+const main = {
+	asciiclass()
+	set()
+	/*
+	unicodeclass()
+	negasciiclass()
+	negasciirange()
+	negset()
+	*/
+}
+
+const asciiclass = {
+	/* \d success */
+	testmatch("\\d", "1")
+	testmatch("\\d\\d", "13")
+	testmatch("\\d+", "13688")
+	/* \d fail */
+	testmatch("\\d", "x")
+	testmatch("\\d\\d", "x3")
+	testmatch("\\d+", "1368f")
+
+	/* \x success */
+	testmatch("\\x", "a")
+	testmatch("\\x\\x", "1F")
+	testmatch("\\x+", "13b8cDEf")
+	/* \x fail */
+	testmatch("\\x", "Z")
+	testmatch("\\x\\x", "fg")
+	testmatch("\\x+", "13b8cg")
+
+	/* \s success */
+	testmatch("\\s", " ")
+	testmatch("\\s\\s", "\t\n")
+	testmatch("\\s+", "\t\n\r \t")
+	/* \s fail */
+	testmatch("\\s", "a")
+	testmatch("\\s\\s", "i\n")
+	testmatch("\\s+", "\t\n\r.\t")
+
+	/* word success */
+	testmatch("\\w+", "abcABC0123_")
+	/* word fail */
+	testmatch("\\w+", "abcABC0123_.")
+
+	/* \h success */
+	testmatch("\\h", " ")
+	testmatch("\\h\\h", "\t ")
+	testmatch("\\h+", "\t \t ")
+	/* \h fail */
+	testmatch("\\h", "\n")
+	testmatch("\\h\\h", "\t\r")
+	testmatch("\\h+", "\t \t.")
+}
+
+const set = {
+	/* ranges */
+	testmatch("[a-z]*", "abcd")
+	testmatch("[a-zA-Z]*", "abCD")
+	testmatch("[a-zA-Z0-9_]*", "_abCD018")
+
+	testmatch("[abc]*", "abba")
+	testmatch("[a-zABC]*", "abBa")
+}
