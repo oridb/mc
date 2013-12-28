@@ -55,6 +55,10 @@ static Node *assign(Simp *s, Node *lhs, Node *rhs);
 static void declarelocal(Simp *s, Node *n);
 static void simpcond(Simp *s, Node *n, Node *ltrue, Node *lfalse);
 static void simpconstinit(Simp *s, Node *dcl);
+static Node *simpcast(Simp *s, Node *val, Type *to);
+static Node *simpslice(Simp *s, Node *n, Node *dst);
+static Node *idxaddr(Simp *s, Node *seq, Node *idx);
+static void umatch(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, Node *iffalse);
 
 /* useful constants */
 static Type *tyintptr;
@@ -390,6 +394,29 @@ static void cjmp(Simp *s, Node *cond, Node *iftrue, Node *iffalse)
     append(s, jmp);
 }
 
+static Node *slicelen(Simp *s, Node *sl)
+{
+    /* *(&sl + sizeof(size_t)) */
+    return load(addk(addr(s, sl, tyintptr), Ptrsz));
+}
+
+
+static Node *seqlen(Simp *s, Node *n, Type *ty)
+{
+    Node *t, *r;
+
+    if (exprtype(n)->type == Tyslice) {
+        t = slicelen(s, n);
+        r = simpcast(s, t, ty);
+    } else if (exprtype(n)->type == Tyarray) {
+        t = exprtype(n)->asize;
+        r = simpcast(s, t, ty);
+    } else {
+        r = NULL;
+    }
+    return r;
+}
+
 /* if foo; bar; else baz;;
  *      => cjmp (foo) :bar :baz */
 static void simpif(Simp *s, Node *n, Node *exit)
@@ -431,9 +458,10 @@ static void simpif(Simp *s, Node *n, Node *exit)
  *       jmp :cond
  *       :body
  *           ...body...
+ *           ...step...
  *       :cond
  *           ...cond...
- *       cjmp (cond) :body :end
+ *            cjmp (cond) :body :end
  *       :end
  */
 static void simploop(Simp *s, Node *n)
@@ -454,6 +482,62 @@ static void simploop(Simp *s, Node *n)
     simp(s, lcond);             /* test lbl */
     simpcond(s, n->loopstmt.cond, lbody, lend);    /* repeat? */
     simp(s, lend);              /* exit */
+}
+
+/* pat; seq; 
+ *      body;;
+ *
+ * =>
+ *      .pseudo = seqinit
+ *      jmp :cond
+ *      :body
+ *           ...body...
+ *      :step
+ *           ...step...
+ *      :cond
+ *           ...cond...
+ *           cjmp (cond) :match :end
+ *      :match
+ *           ...match...
+ *           cjmp (match) :body :step
+ *      :end
+ */
+static void simpiter(Simp *s, Node *n)
+{
+    Node *lbody, *lstep, *lcond, *lmatch, *lend;
+    Node *idx, *len, *dcl, *val, *done;
+    Node *zero;
+
+    lbody = genlbl();
+    lstep = genlbl();
+    lcond = genlbl();
+    lmatch = genlbl();
+    lend = genlbl();
+
+    zero = mkintlit(n->line, 0);
+    zero->expr.type = tyintptr;
+
+    idx = gentemp(s, n, tyintptr, &dcl);
+    declarelocal(s, dcl);
+
+    /* setup */
+    append(s, assign(s, idx, zero));
+    jmp(s, lcond);
+    simp(s, lbody);
+    /* body */
+    simp(s, n->iterstmt.body);
+    /* step */
+    simp(s, lstep);
+    simp(s, assign(s, idx, addk(idx, 1)));
+    /* condition */
+    simp(s, lcond);
+    len = seqlen(s, n->iterstmt.seq, tyintptr);
+    done = mkexpr(n->line, Olt, idx, len, NULL);
+    cjmp(s, done, lmatch, lend);
+    simp(s, lmatch);
+    val = load(idxaddr(s, n->iterstmt.seq, idx));
+    umatch(s, n->iterstmt.elt, val, val->expr.type, lbody, lstep);
+    simp(s, lend);
 }
 
 static Ucon *finducon(Node *n)
@@ -685,27 +769,26 @@ static Node *membaddr(Simp *s, Node *n)
     return r;
 }
 
-static Node *idxaddr(Simp *s, Node *n)
+static Node *idxaddr(Simp *s, Node *seq, Node *idx)
 {
     Node *a, *t, *u, *v; /* temps */
     Node *r; /* result */
-    Node **args;
+    Type *ty;
     size_t sz;
 
-    assert(exprop(n) == Oidx);
-    args = n->expr.args;
-    a = rval(s, args[0], NULL);
-    if (exprtype(args[0])->type == Tyarray)
-        t = addr(s, a, exprtype(n));
-    else if (args[0]->expr.type->type == Tyslice)
-        t = load(addr(s, a, mktyptr(n->line, exprtype(n))));
+    a = rval(s, seq, NULL);
+    ty = exprtype(seq)->sub[0];
+    if (exprtype(seq)->type == Tyarray)
+        t = addr(s, a, ty);
+    else if (seq->expr.type->type == Tyslice)
+        t = load(addr(s, a, mktyptr(seq->line, ty)));
     else
-        die("Can't index type %s\n", tystr(n->expr.type));
+        die("Can't index type %s\n", tystr(seq->expr.type));
     assert(t->expr.type->type == Typtr);
-    u = rval(s, args[1], NULL);
+    u = rval(s, idx, NULL);
     u = ptrsized(s, u);
-    sz = size(n);
-    v = mul(u, disp(n->line, sz));
+    sz = tysize(ty);
+    v = mul(u, disp(seq->line, sz));
     r = add(t, v);
     return r;
 }
@@ -736,19 +819,13 @@ static Node *slicebase(Simp *s, Node *n, Node *off)
     }
 }
 
-static Node *slicelen(Simp *s, Node *sl)
-{
-    /* *(&sl + sizeof(size_t)) */
-    return load(addk(addr(s, sl, tyintptr), Ptrsz));
-}
-
 static Node *lval(Simp *s, Node *n)
 {
     Node *r;
 
     switch (exprop(n)) {
         case Ovar:      r = n;  break;
-        case Oidx:      r = deref(idxaddr(s, n)); break;
+        case Oidx:      r = deref(idxaddr(s, n->expr.args[0], n->expr.args[1])); break;
         case Oderef:    r = deref(rval(s, n->expr.args[0], NULL)); break;
         case Omemb:     r = deref(membaddr(s, n)); break;
         default:
@@ -1163,20 +1240,14 @@ static Node *rval(Simp *s, Node *n, Node *dst)
             r = simpslice(s, n, dst);
             break;
         case Oidx:
-            t = idxaddr(s, n);
+            t = idxaddr(s, n->expr.args[0], n->expr.args[1]);
             r = load(t);
             break;
         /* array.len slice.len are magic 'virtual' members.
          * they need to be special cased. */
         case Omemb:
-            if (exprtype(args[0])->type == Tyslice) {
-                assert(!strcmp(namestr(args[1]), "len"));
-                t = slicelen(s, args[0]);
-                r = simpcast(s, t, exprtype(n));
-            } else if (exprtype(args[0])->type == Tyarray) {
-                assert(!strcmp(namestr(args[1]), "len"));
-                t = exprtype(args[0])->asize;
-                r = simpcast(s, t, exprtype(n));
+            if (exprtype(args[0])->type == Tyslice || exprtype(args[0])->type == Tyarray) {
+                r = seqlen(s, args[0], exprtype(n));
             } else {
                 t = membaddr(s, n);
                 r = load(t);
@@ -1367,6 +1438,7 @@ static Node *simp(Simp *s, Node *n)
         case Nblock:     simpblk(s, n);         break;
         case Nifstmt:    simpif(s, n, NULL);    break;
         case Nloopstmt:  simploop(s, n);        break;
+        case Niterstmt:  simpiter(s, n);        break;
         case Nmatchstmt: simpmatch(s, n);       break;
         case Nexpr:
             if (islbl(n))
