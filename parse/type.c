@@ -258,9 +258,19 @@ Type *mktyunion(int line, Ucon **decls, size_t ndecls)
 
 int istysigned(Type *t)
 {
-    switch (t->type) {
+    switch (tybase(t)->type) {
         case Tyint8: case Tyint16: case Tyint:
         case Tyint32: case Tyint64: case Tylong:
+            return 1;
+        default:
+            return 0;
+    }
+}
+
+int istyfloat(Type *t)
+{
+    switch (tybase(t)->type) {
+        case Tyfloat32: case Tyfloat64:
             return 1;
         default:
             return 0;

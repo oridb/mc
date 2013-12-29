@@ -1388,6 +1388,16 @@ static Node *rval(Simp *s, Node *n, Node *dst)
                 r = t->expr.args[0];
             break;
         default:
+            if (istyfloat(exprtype(n))) {
+                switch (exprop(n)) {
+                    case Oadd: n->expr.op = Ofadd; break;
+                    case Osub: n->expr.op = Ofsub; break;
+                    case Omul: n->expr.op = Ofmul; break;
+                    case Odiv: n->expr.op = Ofdiv; break;
+                    case Oneg: n->expr.op = Ofneg; break;
+                    default: break;
+                }
+            }
             r = visit(s, n);
     }
     return r;

@@ -384,6 +384,7 @@ Type *mktyunion(int line, Ucon **decls, size_t ndecls);
 Cstr *mkcstr(int line, char *name, Node **memb, size_t nmemb, Node **funcs, size_t nfuncs);
 Type *mktylike(int line, Ty ty); /* constrains tyvar t like it was builtin ty */
 int   istysigned(Type *t);
+int   istyfloat(Type *t);
 int   isgeneric(Type *t);
 int   hasparams(Type *t);
 
