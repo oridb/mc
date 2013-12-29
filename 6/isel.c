@@ -45,12 +45,12 @@ struct {
     AsmOp getflag;
 } reloptab[Numops] = {
     [Olnot] = {Itest, 0, Ijz, Isetz}, /* lnot invalid for floats */
-    [Oeq] = {Icmp, Icomi, Ijz, Isetz},
-    [One] = {Icmp, Icomi, Ijnz, Isetnz},
-    [Ogt] = {Icmp, Icomi, Ijg, Isetg},
-    [Oge] = {Icmp, Icomi, Ijge, Isetge},
-    [Olt] = {Icmp, Icomi, Ijl, Isetl},
-    [Ole] = {Icmp, Icomi, Ijle, Isetle}
+    [Oeq] = {Icmp, Icomis, Ijz,  Isetz},
+    [One] = {Icmp, Icomis, Ijnz, Isetnz},
+    [Ogt] = {Icmp, Icomis, Ijg,  Isetg},
+    [Oge] = {Icmp, Icomis, Ijge, Isetge},
+    [Olt] = {Icmp, Icomis, Ijl,  Isetl},
+    [Ole] = {Icmp, Icomis, Ijle, Isetle}
 };
 
 static Mode mode(Node *n)
@@ -198,7 +198,10 @@ static void stor(Isel *s, Loc *a, Loc *b)
         l = locmem(0, b, Rnone, b->mode);
     else
         l = b;
-    g(s, Imov, a, l, NULL);
+    if (isfloatmode(b->mode))
+        g(s, Imovs, a, l, NULL);
+    else
+        g(s, Imov, a, l, NULL);
 }
 
 /* ensures that a location is within a reg */
@@ -470,8 +473,12 @@ static Loc *gencall(Isel *s, Node *n)
     call(s, n->expr.args[0]);
     if (argsz)
         g(s, Iadd, stkbump, rsp, NULL);
-    if (retloc)
-        g(s, Imov, retloc, ret, NULL);
+    if (retloc) {
+        if (isfloatmode(retloc->mode))
+            g(s, Imovs, retloc, ret, NULL);
+        else
+            g(s, Imov, retloc, ret, NULL);
+    }
     return ret;
 }
 
@@ -540,6 +547,8 @@ Loc *selexpr(Isel *s, Node *n)
         case Ofmul:      r = binop(s, Imuls, args[0], args[1]); break;
         case Ofdiv:      r = binop(s, Idivs, args[0], args[1]); break;
         case Ofneg:
+            r = selexpr(s, args[0]);
+            r = inr(s, r);
             a = NULL;
             b = NULL;
             if (mode(args[0]) == ModeF) {
@@ -630,7 +639,10 @@ Loc *selexpr(Isel *s, Node *n)
             else
                 a = selexpr(s, args[0]);
             b = inri(s, b);
-            g(s, Imov, b, a, NULL);
+            if (isfloatmode(b->mode))
+                g(s, Imovs, b, a, NULL);
+            else
+                g(s, Imov, b, a, NULL);
             r = b;
             break;
         case Ocall:
@@ -796,6 +808,7 @@ void iprintf(FILE *fd, Insn *insn)
             }
             break;
         case Imov:
+            assert(!isfloatmode(insn->args[1]->mode));
             if (insn->args[0]->type != Locreg || insn->args[1]->type != Locreg)
                 break;
             if (insn->args[0]->reg.colour == Rnone || insn->args[1]->reg.colour == Rnone)
@@ -908,7 +921,7 @@ static void epilogue(Isel *s)
     if (s->ret) {
         ret = loc(s, s->ret);
         if (floattype(exprtype(s->ret)))
-            g(s, Imov, ret, coreg(Rxmm0d, ret->mode), NULL);
+            g(s, Imovs, ret, coreg(Rxmm0d, ret->mode), NULL);
         else
             g(s, Imov, ret, coreg(Rax, ret->mode), NULL);
     }
@@ -978,13 +991,27 @@ static void writelit(FILE *fd, Htab *strtab, Node *v, size_t sz)
         [4] = ".long",
         [8] = ".quad"
     };
+    union {
+        float fv;
+        double dv;
+        uint64_t qv;
+        uint32_t lv;
+    } u;
 
     assert(v->type == Nlit);
     switch (v->lit.littype) {
         case Lint:      fprintf(fd, "\t%s %lld\n", intsz[sz], v->lit.intval);    break;
         case Lbool:     fprintf(fd, "\t.byte %d\n", v->lit.boolval);     break;
         case Lchr:      fprintf(fd, "\t.long %d\n",  v->lit.chrval);     break;
-        case Lflt:      fprintf(fd, "\t.double %f\n", v->lit.fltval);    break;
+        case Lflt:
+                if (tybase(v->lit.type)->type == Tyfloat32) {
+                    u.fv = v->lit.fltval;
+                    fprintf(fd, "\t.long 0x%x\n", u.lv);
+                } else if (tybase(v->lit.type)->type == Tyfloat64) {
+                    u.dv = v->lit.fltval;
+                    fprintf(fd, "\t.quad 0x%lx\n", u.qv);
+                }
+                break;
         case Lstr:
            if (hthas(strtab, v->lit.strval)) {
                lbl = htget(strtab, v->lit.strval);

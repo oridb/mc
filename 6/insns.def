@@ -61,14 +61,14 @@ Insn(Isetg,     "\tsetg %v\n",                  Use(),  Def(.l={1}))
 Insn(Isetge,    "\tsetge %v\n",                 Use(),  Def(.l={1}))
 
 /* fp specific instructions */
-Insn(Imovs,      "\tmovs%1t %x,%f\n",                 Use(.l={1}),                    Def(.l={2}))
+Insn(Imovs,      "\tmovs%1t %x,%x\n",           Use(.l={1}),                    Def(.l={2}))
 Insn(Icvttsd2si, "\tcvttsd2si%2t %x,%r\n",      Use(.l={1}),                    Def(.l={2}))
 Insn(Icvttsi2sd, "\tcvttsi2sd%2t %x,%f\n",      Use(.l={1}),                    Def(.l={2}))
-Insn(Iadds,      "\tadds%t %x,%f\n",             Use(.l={1},.r={Reax,Redx}),     Def(.r={Reax,Redx}))
-Insn(Isubs,      "\tsubs%t %x,%f\n",             Use(.l={1},.r={Reax,Redx}),     Def(.r={Reax,Redx}))
+Insn(Iadds,      "\tadds%t %x,%f\n",            Use(.l={1},.r={Reax,Redx}),     Def(.r={Reax,Redx}))
+Insn(Isubs,      "\tsubs%t %x,%f\n",            Use(.l={1},.r={Reax,Redx}),     Def(.r={Reax,Redx}))
 Insn(Imuls,      "\tmuls%t %x,%f\n",            Use(.l={1,2}),                  Def(.l={2}))
-Insn(Idivs,      "\tdiv%t %x,%f\n",             Use(.l={1},.r={Reax,Redx}),     Def(.r={Reax,Redx}))
-Insn(Icomi,      "\tcomi%t %x,%f\n",            Use(.l={1,2}),                  Def())
+Insn(Idivs,      "\tdivs%t %x,%f\n",            Use(.l={1},.r={Reax,Redx}),     Def(.r={Reax,Redx}))
+Insn(Icomis,     "\tcomis%t %x,%f\n",           Use(.l={1,2}),                  Def())
 Insn(Ixorp,      "\tmuls%t %x,%f\n",            Use(.l={1,2}),                  Def(.l={2}))
 
 /* branch instructions */
