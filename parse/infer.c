@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <inttypes.h>
 #include <ctype.h>
 #include <string.h>
 #include <assert.h>
@@ -1201,6 +1202,7 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
         case Oblit: case Numops:
         case Otrunc: case Oswiden: case Ozwiden:
         case Oint2flt: case Oflt2int:
+        case Ofadd: case Ofsub: case Ofmul: case Ofdiv: case Ofneg:
         case Ouget:
             die("Should not see %s in fe", opstr(exprop(n)));
             break;
@@ -1258,12 +1260,10 @@ static void inferstab(Inferstate *st, Stab *s)
 
 static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
 {
-    size_t i;
-    Node *d;
-    Node *s;
-    Type *t;
-    size_t nbound;
+    size_t i, nbound;
     Node **bound;
+    Node *d, *s;
+    Type *t;
 
     if (!n)
         return;
@@ -1329,6 +1329,7 @@ static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
             infernode(st, n->iterstmt.body, ret, sawret);
 
             t = mktyidxhack(n->line, mktyvar(n->line));
+            constrain(st, n, type(st, n->iterstmt.seq), cstrtab[Tcidx]);
             unify(st, n, type(st, n->iterstmt.seq), t);
             unify(st, n, type(st, n->iterstmt.elt), t->sub[0]);
             break;

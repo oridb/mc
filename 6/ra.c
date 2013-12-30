@@ -40,23 +40,40 @@ Usemap deftab[] = {
 };
 
 /* A map of which registers interfere */
-Reg regmap[][Nmode] = {
-    [0]  = {Rnone, Ral, Rax, Reax, Rrax, Rxmm0f, Rxmm0d},
-    [1]  = {Rnone, Rcl, Rcx, Recx, Rrcx, Rxmm1f, Rxmm1d},
-    [2]  = {Rnone, Rdl, Rdx, Redx, Rrdx, Rxmm2f, Rxmm2d},
-    [3]  = {Rnone, Rbl, Rbx, Rebx, Rrbx, Rxmm3f, Rxmm3d},
-    [4]  = {Rnone, Rsil, Rsi, Resi, Rrsi, Rxmm4f, Rxmm4d},
-    [5]  = {Rnone, Rdil, Rdi, Redi, Rrdi, Rxmm5f, Rxmm5d},
-    [6]  = {Rnone, Rr8b, Rr8w, Rr8d, Rr8, Rxmm6f, Rxmm6d},
-    [7]  = {Rnone, Rr9b, Rr9w, Rr9d, Rr9, Rxmm7f, Rxmm7d},
-    [8]  = {Rnone, Rr10b, Rr10w, Rr10d, Rr10, Rxmm8f, Rxmm8d},
-    [9]  = {Rnone, Rr11b, Rr11w, Rr11d, Rr11, Rxmm9f, Rxmm9d},
-    [10]  = {Rnone, Rr12b, Rr12w, Rr12d, Rr12, Rxmm10f, Rxmm10d},
-    [11]  = {Rnone, Rr13b, Rr13w, Rr13d, Rr13, Rxmm11f, Rxmm11d},
-    [12]  = {Rnone, Rr14b, Rr14w, Rr14d, Rr14, Rxmm12f, Rxmm12d},
-    [13]  = {Rnone, Rr15b, Rr15w, Rr15d, Rr15, Rxmm13f, Rxmm13d},
-    [14]  = {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm14f, Rxmm14d},
-    [15]  = {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm15f, Rxmm15d},
+#define Northogonal 32
+Reg regmap[Northogonal][Nmode] = {
+    [0]  = {Rnone, Ral, Rax, Reax, Rrax},
+    [1]  = {Rnone, Rcl, Rcx, Recx, Rrcx},
+    [2]  = {Rnone, Rdl, Rdx, Redx, Rrdx},
+    [3]  = {Rnone, Rbl, Rbx, Rebx, Rrbx},
+    [4]  = {Rnone, Rsil, Rsi, Resi, Rrsi},
+    [5]  = {Rnone, Rdil, Rdi, Redi, Rrdi},
+    [6]  = {Rnone, Rr8b, Rr8w, Rr8d, Rr8},
+    [7]  = {Rnone, Rr9b, Rr9w, Rr9d, Rr9},
+    [8]  = {Rnone, Rr10b, Rr10w, Rr10d, Rr10},
+    [9]  = {Rnone, Rr11b, Rr11w, Rr11d, Rr11},
+    [10]  = {Rnone, Rr12b, Rr12w, Rr12d, Rr12},
+    [11]  = {Rnone, Rr13b, Rr13w, Rr13d, Rr13},
+    [12]  = {Rnone, Rr14b, Rr14w, Rr14d, Rr14},
+    [13]  = {Rnone, Rr15b, Rr15w, Rr15d, Rr15},
+    [14]  = {Rnone, Rnone, Rnone, Rnone, Rnone},
+    [15]  = {Rnone, Rnone, Rnone, Rnone, Rnone},
+    [16] = {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm0f, Rxmm0d},
+    [17] = {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm1f, Rxmm1d},
+    [18] = {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm2f, Rxmm2d},
+    [19] = {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm3f, Rxmm3d},
+    [20] = {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm4f, Rxmm4d},
+    [21] = {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm5f, Rxmm5d},
+    [22] = {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm6f, Rxmm6d},
+    [23] = {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm7f, Rxmm7d},
+    [24] = {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm8f, Rxmm8d},
+    [25] = {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm9f, Rxmm9d},
+    [26] = {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm10f, Rxmm10d},
+    [27] = {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm11f, Rxmm11d},
+    [28] = {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm12f, Rxmm12d},
+    [29] = {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm13f, Rxmm13d},
+    [30] = {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm14f, Rxmm14d},
+    [31] = {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm15f, Rxmm15d},
 };
 
 /* Which regmap entry a register maps to */
@@ -78,16 +95,16 @@ int colourmap[Nreg] = {
     [Rr15b]   = 13, [Rr15w] = 13, [Rr15d] = 13, [Rr15]  = 13,
 
     /* float */
-    [Rxmm0f] = 16,  [Rxmm0d] = 16,
-    [Rxmm1f] = 17,  [Rxmm1d] = 17,
-    [Rxmm2f] = 18,  [Rxmm2d] = 18,
-    [Rxmm3f] = 19,  [Rxmm3d] = 19,
-    [Rxmm4f] = 20,  [Rxmm4d] = 20,
-    [Rxmm5f] = 21,  [Rxmm5d] = 21,
-    [Rxmm6f] = 22,  [Rxmm6d] = 22,
-    [Rxmm7f] = 23,  [Rxmm7d] = 23,
-    [Rxmm8f] = 24,  [Rxmm8d] = 24,
-    [Rxmm9f] = 25,  [Rxmm9d] = 25,
+    [Rxmm0f]  = 16,  [Rxmm0d]  = 16,
+    [Rxmm1f]  = 17,  [Rxmm1d]  = 17,
+    [Rxmm2f]  = 18,  [Rxmm2d]  = 18,
+    [Rxmm3f]  = 19,  [Rxmm3d]  = 19,
+    [Rxmm4f]  = 20,  [Rxmm4d]  = 20,
+    [Rxmm5f]  = 21,  [Rxmm5d]  = 21,
+    [Rxmm6f]  = 22,  [Rxmm6d]  = 22,
+    [Rxmm7f]  = 23,  [Rxmm7d]  = 23,
+    [Rxmm8f]  = 24,  [Rxmm8d]  = 24,
+    [Rxmm9f]  = 25,  [Rxmm9d]  = 25,
     [Rxmm10f] = 26,  [Rxmm10d] = 26,
     [Rxmm11f] = 27,  [Rxmm11d] = 27,
     [Rxmm12f] = 28,  [Rxmm12d] = 28,
@@ -848,8 +865,8 @@ static int paint(Isel *s)
         }
 
         found = 0;
-        for (i = 0; i < _K[rclass(n)]; i++) {
-            if (!taken[i]) {
+        for (i = 0; i < Northogonal; i++) {
+            if (regmap[i][n->mode] && !taken[i]) {
                 if (debugopt['r']) {
                     fprintf(stdout, "\tselecting ");
                     locprint(stdout, n, 'x');

@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdarg.h>
+#include <inttypes.h>
 #include <ctype.h>
 #include <string.h>
 #include <assert.h>
@@ -28,8 +29,8 @@ char* modenames[] = {
   [ModeW] = "w",
   [ModeL] = "l",
   [ModeQ] = "q",
-  [ModeF] = "ss",
-  [ModeD] = "sd"
+  [ModeF] = "s",
+  [ModeD] = "d"
 };
 
 /* forward decls */
@@ -45,12 +46,12 @@ struct {
     AsmOp getflag;
 } reloptab[Numops] = {
     [Olnot] = {Itest, 0, Ijz, Isetz}, /* lnot invalid for floats */
-    [Oeq] = {Icmp, Icomi, Ijz, Isetz},
-    [One] = {Icmp, Icomi, Ijnz, Isetnz},
-    [Ogt] = {Icmp, Icomi, Ijg, Isetg},
-    [Oge] = {Icmp, Icomi, Ijge, Isetge},
-    [Olt] = {Icmp, Icomi, Ijl, Isetl},
-    [Ole] = {Icmp, Icomi, Ijle, Isetle}
+    [Oeq] = {Icmp, Icomis, Ijz,  Isetz},
+    [One] = {Icmp, Icomis, Ijnz, Isetnz},
+    [Ogt] = {Icmp, Icomis, Ijg,  Isetg},
+    [Oge] = {Icmp, Icomis, Ijge, Isetge},
+    [Olt] = {Icmp, Icomis, Ijl,  Isetl},
+    [Ole] = {Icmp, Icomis, Ijle, Isetle}
 };
 
 static Mode mode(Node *n)
@@ -76,6 +77,16 @@ static Mode mode(Node *n)
             break;
     }
     return ModeQ;
+}
+
+static int isintmode(Mode m)
+{
+    return m == ModeB || m == ModeW || m == ModeL || m == ModeQ;
+}
+
+static int isfloatmode(Mode m)
+{
+    return m == ModeF || m == ModeD;
 }
 
 static Loc *loc(Isel *s, Node *n)
@@ -161,7 +172,7 @@ static void movz(Isel *s, Loc *src, Loc *dst)
     if (src->mode == dst->mode)
         g(s, Imov, src, dst, NULL);
     else
-        g(s, Imovz, src, dst, NULL);
+        g(s, Imovzx, src, dst, NULL);
 }
 
 static void load(Isel *s, Loc *a, Loc *b)
@@ -173,7 +184,10 @@ static void load(Isel *s, Loc *a, Loc *b)
         l = locmem(0, b, Rnone, a->mode);
     else
         l = a;
-    g(s, Imov, l, b, NULL);
+    if (isfloatmode(b->mode))
+        g(s, Imovs, l, b, NULL);
+    else
+        g(s, Imov, l, b, NULL);
 }
 
 static void stor(Isel *s, Loc *a, Loc *b)
@@ -185,7 +199,10 @@ static void stor(Isel *s, Loc *a, Loc *b)
         l = locmem(0, b, Rnone, b->mode);
     else
         l = b;
-    g(s, Imov, a, l, NULL);
+    if (isfloatmode(b->mode))
+        g(s, Imovs, a, l, NULL);
+    else
+        g(s, Imov, a, l, NULL);
 }
 
 /* ensures that a location is within a reg */
@@ -457,8 +474,12 @@ static Loc *gencall(Isel *s, Node *n)
     call(s, n->expr.args[0]);
     if (argsz)
         g(s, Iadd, stkbump, rsp, NULL);
-    if (retloc)
-        g(s, Imov, retloc, ret, NULL);
+    if (retloc) {
+        if (isfloatmode(retloc->mode))
+            g(s, Imovs, retloc, ret, NULL);
+        else
+            g(s, Imov, retloc, ret, NULL);
+    }
     return ret;
 }
 
@@ -467,7 +488,6 @@ Loc *selexpr(Isel *s, Node *n)
     Loc *a, *b, *c, *d, *r;
     Loc *eax, *edx, *cl; /* x86 wants some hard-coded regs */
     Node **args;
-    int sz;
 
     args = n->expr.args;
     eax = locphysreg(Reax);
@@ -480,10 +500,8 @@ Loc *selexpr(Isel *s, Node *n)
         case Obor:      r = binop(s, Ior,  args[0], args[1]); break;
         case Oband:     r = binop(s, Iand, args[0], args[1]); break;
         case Obxor:     r = binop(s, Ixor, args[0], args[1]); break;
-        case Omul:      
-            if (floattype(exprtype(n)))
-                r = binop(s, Ifmul, args[0], args[1]);
-            else if (size(args[0]) == 1) {
+        case Omul:
+            if (size(args[0]) == 1) {
                 a = selexpr(s, args[0]);
                 b = selexpr(s, args[1]);
 
@@ -498,53 +516,54 @@ Loc *selexpr(Isel *s, Node *n)
             break;
         case Odiv:
         case Omod:
-            if (floattype(exprtype(n))) {
-                r = binop(s, Ifdiv, args[0], args[1]);
-            } else {
-                /* these get clobbered by the div insn */
-                a = selexpr(s, args[0]);
-                b = selexpr(s, args[1]);
-                b = inr(s, b);
-                c = coreg(Reax, mode(n));
-                r = locreg(a->mode);
-                if (r->mode == ModeB)
-                    g(s, Ixor, eax, eax, NULL);
-                else
-                    g(s, Ixor, edx, edx, NULL);
-                g(s, Imov, a, c, NULL);
-                g(s, Idiv, b, NULL);
-                if (exprop(n) == Odiv)
-                    d = coreg(Reax, mode(n));
-                else if (r->mode != ModeB)
-                    d = coreg(Redx, mode(n));
-                else
-                    d = locphysreg(Rah);
-                g(s, Imov, d, r, NULL);
-            }
+            /* these get clobbered by the div insn */
+            a = selexpr(s, args[0]);
+            b = selexpr(s, args[1]);
+            b = inr(s, b);
+            c = coreg(Reax, mode(n));
+            r = locreg(a->mode);
+            if (r->mode == ModeB)
+                g(s, Ixor, eax, eax, NULL);
+            else
+                g(s, Ixor, edx, edx, NULL);
+            g(s, Imov, a, c, NULL);
+            g(s, Idiv, b, NULL);
+            if (exprop(n) == Odiv)
+                d = coreg(Reax, mode(n));
+            else if (r->mode != ModeB)
+                d = coreg(Redx, mode(n));
+            else
+                d = locphysreg(Rah);
+            g(s, Imov, d, r, NULL);
             break;
         case Oneg:
             r = selexpr(s, args[0]);
             r = inr(s, r);
-            if (floatnode(args[0])) {
-                sz = size(args[0]);
-                a = NULL;
-                b = NULL;
-                if (sz == 4) {
-                    a = locreg(ModeD);
-                    b = loclit(1 << (8*sz-1), ModeD);
-                    g(s, Imov, r, a);
-                } else if (size(args[0]) == 8) {
-                    a = locreg(ModeQ);
-                    b = loclit(1 << (8*sz-1), ModeQ);
-                    g(s, Imov, r, a, NULL);
-                }
-                g(s, Ixor, b, a, NULL);
-                g(s, Imov, a, r, NULL);
-            } else {
-                g(s, Ineg, r, NULL);
-            }
+            g(s, Ineg, r, NULL);
             break;
 
+        /* fp expressions */
+        case Ofadd:      r = binop(s, Iadds, args[0], args[1]); break;
+        case Ofsub:      r = binop(s, Isubs, args[0], args[1]); break;
+        case Ofmul:      r = binop(s, Imuls, args[0], args[1]); break;
+        case Ofdiv:      r = binop(s, Idivs, args[0], args[1]); break;
+        case Ofneg:
+            r = selexpr(s, args[0]);
+            r = inr(s, r);
+            a = NULL;
+            b = NULL;
+            if (mode(args[0]) == ModeF) {
+                a = locreg(ModeF);
+                b = loclit(1LL << (31), ModeF);
+                g(s, Imovs, r, a);
+            } else if (mode(args[0]) == ModeD) {
+                a = locreg(ModeQ);
+                b = loclit(1LL << 63, ModeQ);
+                g(s, Imov, r, a, NULL);
+            }
+            g(s, Ixor, b, a, NULL);
+            g(s, Imov, a, r, NULL);
+            break;
         case Obsl:
         case Obsr:
             a = inr(s, selexpr(s, args[0]));
@@ -621,7 +640,10 @@ Loc *selexpr(Isel *s, Node *n)
             else
                 a = selexpr(s, args[0]);
             b = inri(s, b);
-            g(s, Imov, b, a, NULL);
+            if (isfloatmode(b->mode))
+                g(s, Imovs, b, a, NULL);
+            else
+                g(s, Imov, b, a, NULL);
             r = b;
             break;
         case Ocall:
@@ -670,17 +692,21 @@ Loc *selexpr(Isel *s, Node *n)
             a = selexpr(s, args[0]);
             a = inr(s, a);
             r = locreg(mode(n));
-            g(s, Imovs, a, r, NULL);
+            g(s, Imovsx, a, r, NULL);
             break;
         case Oint2flt:
             a = selexpr(s, args[0]);
+            b = locreg(ModeQ);
             r = locreg(mode(n));
-            g(s, Icvttsi2sd, a, r, NULL);
+            g(s, Imovs, a, b, NULL);
+            g(s, Icvttsi2sd, b, r, NULL);
             break;
         case Oflt2int:
             a = selexpr(s, args[0]);
+            b = locreg(ModeQ);
             r = locreg(mode(n));
-            g(s, Icvttsi2sd, a, r, NULL);
+            g(s, Icvttsd2si, a, b, NULL);
+            g(s, Imov, b, r, NULL);
             break;
 
         /* These operators should never show up in the reduced trees,
@@ -713,7 +739,11 @@ void locprint(FILE *fd, Loc *l, char spec)
             fprintf(fd, "%s", l->lbl);
             break;
         case Locreg:
-            assert(spec == 'r' || spec == 'v' || spec == 'x' || spec == 'u');
+            assert((spec == 'r' && isintmode(l->mode)) || 
+                   (spec == 'f' && isfloatmode(l->mode)) ||
+                   spec == 'v' ||
+                   spec == 'x' ||
+                   spec == 'u');
             if (l->reg.colour == Rnone)
                 fprintf(fd, "%%P.%zd", l->reg.id);
             else
@@ -770,7 +800,7 @@ void iprintf(FILE *fd, Insn *insn)
      * we don't know the name of the reg to use, we need to sub it in when
      * writing... */
     switch (insn->op) {
-        case Imovz:
+        case Imovzx:
             if (insn->args[0]->mode == ModeL && insn->args[1]->mode == ModeQ) {
                 if (insn->args[1]->reg.colour) {
                     insn->op = Imov;
@@ -778,7 +808,13 @@ void iprintf(FILE *fd, Insn *insn)
                 }
             }
             break;
+        case Imovs:
+            /* moving a reg to itself is dumb. */
+            if (insn->args[0]->reg.colour == insn->args[1]->reg.colour)
+                return;
+            break;
         case Imov:
+            assert(!isfloatmode(insn->args[1]->mode));
             if (insn->args[0]->type != Locreg || insn->args[1]->type != Locreg)
                 break;
             if (insn->args[0]->reg.colour == Rnone || insn->args[1]->reg.colour == Rnone)
@@ -808,7 +844,8 @@ void iprintf(FILE *fd, Insn *insn)
         switch (*p) {
             case '\0':
                 goto done; /* skip the final p++ */
-            case 'r': /* register */
+            case 'r': /* int register */
+            case 'f': /* float register */
             case 'm': /* memory */
             case 'i': /* imm */
             case 'v': /* reg/mem */
@@ -890,7 +927,7 @@ static void epilogue(Isel *s)
     if (s->ret) {
         ret = loc(s, s->ret);
         if (floattype(exprtype(s->ret)))
-            g(s, Imov, ret, coreg(Rxmm0d, ret->mode), NULL);
+            g(s, Imovs, ret, coreg(Rxmm0d, ret->mode), NULL);
         else
             g(s, Imov, ret, coreg(Rax, ret->mode), NULL);
     }
@@ -960,13 +997,27 @@ static void writelit(FILE *fd, Htab *strtab, Node *v, size_t sz)
         [4] = ".long",
         [8] = ".quad"
     };
+    union {
+        float fv;
+        double dv;
+        uint64_t qv;
+        uint32_t lv;
+    } u;
 
     assert(v->type == Nlit);
     switch (v->lit.littype) {
         case Lint:      fprintf(fd, "\t%s %lld\n", intsz[sz], v->lit.intval);    break;
         case Lbool:     fprintf(fd, "\t.byte %d\n", v->lit.boolval);     break;
         case Lchr:      fprintf(fd, "\t.long %d\n",  v->lit.chrval);     break;
-        case Lflt:      fprintf(fd, "\t.double %f\n", v->lit.fltval);    break;
+        case Lflt:
+                if (tybase(v->lit.type)->type == Tyfloat32) {
+                    u.fv = v->lit.fltval;
+                    fprintf(fd, "\t.long 0x%"PRIx32"\n", u.lv);
+                } else if (tybase(v->lit.type)->type == Tyfloat64) {
+                    u.dv = v->lit.fltval;
+                    fprintf(fd, "\t.quad 0x%"PRIx64"\n", u.qv);
+                }
+                break;
         case Lstr:
            if (hthas(strtab, v->lit.strval)) {
                lbl = htget(strtab, v->lit.strval);

@@ -18,12 +18,13 @@ const sqrt = {x : float64
 
 	val = 1.0;
 	for i = 0; i < Maxiter; i++
-		iter = 0.5*(val - x/val)
+		iter = 0.5*(val + x/val)
 		if abs(val - iter) < Eps
 			-> val;
-			val = iter;
 		;;
+		val = iter;
 	;;
+	-> val
 }
 
 const main = {

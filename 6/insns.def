@@ -2,12 +2,13 @@
    is defined by the following macro:
         Insn(enumval, fmt, attr)
     The format string 'fmt' has the following expansions:
-        %r            - reg
+        %r            - int reg
+        %f            - xmm reg
         %m            - mem
         %i            - imm
         %v            - reg/mem
         %u            - reg/imm
-        %x            - reg/mem/imm
+        %x            - reg/freg/mem/imm
         %[1-9]*t      - Mode of an operand. The optional number
                         preceeding it is the operand desired for
                         the mode.
@@ -20,9 +21,10 @@
 
 Insn(Inone,     "BAD_INSN",                     Use(), Def())
 /* Note, the mov instruction is specified in an overly general manner. */
-Insn(Imov,      "\tmov%t %x,%x\n",             Use(.l={1}),                    Def(.l={2}))
-Insn(Imovz,     "\tmovz%1t%2t %x,%x\n",         Use(.l={1}),                    Def(.l={2}))
-Insn(Imovs,     "\tmovs%1t%2t %x,%x\n",         Use(.l={1}),                    Def(.l={2}))
+Insn(Imov,      "\tmov%t %x,%x\n",              Use(.l={1}),                    Def(.l={2}))
+Insn(Imovt,      "PSEUDO: TRUNCATE\n",          Use(.l={1}),                    Def(.l={2}))
+Insn(Imovzx,    "\tmovz%1t%2t %x,%x\n",         Use(.l={1}),                    Def(.l={2}))
+Insn(Imovsx,    "\tmovs%1t%2t %x,%x\n",         Use(.l={1}),                    Def(.l={2}))
 Insn(Irepmovsb, "\trep movsb\n",                Use(.r={Rrcx,Rrsi,Rrdi}),       Def())
 Insn(Irepmovsw, "\trep movsw\n",                Use(.r={Rrcx,Rrsi,Rrdi}),       Def())
 Insn(Irepmovsl, "\trep movsl\n",                Use(.r={Rrcx,Rrsi,Rrdi}),       Def())
@@ -32,6 +34,7 @@ Insn(Ilea,      "\tlea%2t %m,%r\n",             Use(.l={1}),                    
 Insn(Iadd,      "\tadd%t %x,%r\n",              Use(.l={1,2}),                  Def(.l={2}))
 Insn(Isub,      "\tsub%t %x,%r\n",              Use(.l={1,2}),                  Def(.l={2}))
 Insn(Iimul,     "\timul%t %x,%r\n",             Use(.l={1,2}),                  Def(.l={2}))
+/* there is no imul for 8 bit values. */
 Insn(Iimul_r,   "\timul%t %r\n",                Use(.l={1},.r={Ral}),           Def(.r={Rax}))
 Insn(Imul,      "\tmul%t %r\n",                 Use(.l={1},.r={Reax}),          Def(.r={Reax,Redx}))
 Insn(Idiv,      "\tdiv%t %r\n",                 Use(.l={1},.r={Reax,Redx}),     Def(.r={Reax,Redx}))
@@ -59,12 +62,15 @@ Insn(Isetg,     "\tsetg %v\n",                  Use(),  Def(.l={1}))
 Insn(Isetge,    "\tsetge %v\n",                 Use(),  Def(.l={1}))
 
 /* fp specific instructions */
+Insn(Imovs,      "\tmovs%1t %x,%x\n",           Use(.l={1}),                    Def(.l={2}))
 Insn(Icvttsd2si, "\tcvttsd2si%2t %x,%r\n",      Use(.l={1}),                    Def(.l={2}))
-Insn(Icvttsi2sd, "\tcvttsd2si%2t %x,%r\n",      Use(.l={1}),                    Def(.l={2}))
-Insn(Ifdiv,      "\tdiv%t %x,%r\n",             Use(.l={1},.r={Reax,Redx}),     Def(.r={Reax,Redx}))
-Insn(Ifmul,      "\tmul%t %x,%r\n",             Use(.l={1,2}),                  Def(.l={2}))
-Insn(Ifmov,      "\tmov%t %x,%x\n",             Use(.l={1,2}),                  Def(.l={2}))
-Insn(Icomi,      "\tcomi%t %x,%r\n",            Use(.l={1,2}),                  Def())
+Insn(Icvttsi2sd, "\tcvttsi2sd%2t %x,%f\n",      Use(.l={1}),                    Def(.l={2}))
+Insn(Iadds,      "\tadds%t %x,%f\n",            Use(.l={1,2}),                  Def(.l={2}))
+Insn(Isubs,      "\tsubs%t %x,%f\n",            Use(.l={1,2}),                  Def(.l={2}))
+Insn(Imuls,      "\tmuls%t %x,%f\n",            Use(.l={1,2}),                  Def(.l={2}))
+Insn(Idivs,      "\tdivs%t %x,%f\n",            Use(.l={1,2}),                  Def(.l={2}))
+Insn(Icomis,     "\tcomis%t %x,%f\n",           Use(.l={1,2}),                  Def())
+Insn(Ixorp,      "\tmuls%t %x,%f\n",            Use(.l={1,2}),                  Def(.l={2}))
 
 /* branch instructions */
 Insn(Icall,     "\tcall %v\n",                  Use(.l={1}), Def(.r={Rrax}))
