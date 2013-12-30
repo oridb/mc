@@ -39,3 +39,13 @@ match 0:
 No match
 No match
 No match
+Matched. 1 matches
+match 0: abcd
+Matched. 1 matches
+match 0: abCD
+Matched. 1 matches
+match 0: _abCD018
+Matched. 1 matches
+match 0: abba
+Matched. 1 matches
+match 0: abBa
