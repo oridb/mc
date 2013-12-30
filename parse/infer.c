@@ -1264,6 +1264,7 @@ static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
     Node *s;
     size_t nbound;
     Node **bound;
+    Type *t;
 
     if (!n)
         return;
@@ -1328,8 +1329,10 @@ static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
             infernode(st, n->iterstmt.seq, NULL, sawret);
             infernode(st, n->iterstmt.body, ret, sawret);
 
+            t = mktyidxhack(n->line, mktyvar(n->line));
             constrain(st, n, type(st, n->iterstmt.seq), cstrtab[Tcidx]);
-            unify(st, n, type(st, n->iterstmt.elt), type(st, n->iterstmt.seq)->sub[0]);
+            unify(st, n, type(st, n->iterstmt.seq), t);
+            unify(st, n, type(st, n->iterstmt.elt), t->sub[0]);
             break;
         case Nmatchstmt:
             infernode(st, n->matchstmt.val, NULL, sawret);
