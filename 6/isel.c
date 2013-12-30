@@ -807,6 +807,11 @@ void iprintf(FILE *fd, Insn *insn)
                 }
             }
             break;
+        case Imovs:
+            /* moving a reg to itself is dumb. */
+            if (insn->args[0]->reg.colour == insn->args[1]->reg.colour)
+                return;
+            break;
         case Imov:
             assert(!isfloatmode(insn->args[1]->mode));
             if (insn->args[0]->type != Locreg || insn->args[1]->type != Locreg)
