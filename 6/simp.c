@@ -1389,10 +1389,12 @@ static Node *rval(Simp *s, Node *n, Node *dst)
             break;
         case Oneg:
             if (istyfloat(exprtype(n))) {
-                t = mkexpr(n->line, Olit, mkfloat(n->line, -1.0), NULL);
-                t->expr.type = n->expr.type;
-                u = simplit(s, t, &s->blobs, &s->nblobs);
-                r = mkexpr(n->line, Ofmul, u, args[0], NULL);
+                t =mkfloat(n->line, -1.0); 
+                u = mkexpr(n->line, Olit, t, NULL);
+                t->lit.type = n->expr.type;
+                u->expr.type = n->expr.type;
+                v = simplit(s, u, &s->blobs, &s->nblobs);
+                r = mkexpr(n->line, Ofmul, v, args[0], NULL);
                 r->expr.type = n->expr.type;
             } else {
                 r = visit(s, n);
