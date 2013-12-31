@@ -1,0 +1,24 @@
+use std
+
+const main = {
+	var a = [
+		3, 5, 4, 9, 7, 2, 6, 0, 1, 8,
+	]
+
+	std.sort(a[:], intcmp)
+	for i in a
+		std.put("%i\n", i)
+	;;
+}
+
+const intcmp = {a, b
+	if a < b
+		-> `std.Before
+	elif a == b
+		-> `std.Equal
+	else
+		-> `std.After
+	;;
+}
+
+	

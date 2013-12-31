@@ -1,0 +1,63 @@
+pkg std =
+	type order = union
+		`Before
+		`Equal
+		`After
+	;;
+	generic sort	: (sl:@a[:], cmp:(a:@a, b:@a -> order) -> @a[:])
+;;
+
+generic sort = {sl, cmp
+	var end
+
+	heapify(sl, cmp)
+	end = sl.len - 1
+	while end > 0
+		swap(sl, end, 0)
+		end--
+		siftdown(sl[:end], 0, cmp)
+	;;
+	-> sl
+}
+
+generic heapify = {sl, cmp
+	var start
+
+	start = sl.len/2 - 1
+	while start >= 0
+		siftdown(sl, start, cmp)
+		start--
+	;;
+}
+
+generic siftdown = {sl, start, cmp
+	var r, c, s
+
+	r = start
+	while 2*r + 1 <= sl.len
+		c = r*2 + 1
+		s = r
+		match cmp(sl[s], sl[c])
+		| `Before:	s = c
+		;;
+		if c + 1 < sl.len
+			match cmp(sl[s], sl[c + 1])
+			| `Before:	s = c + 1
+			;;
+		;;
+		if s != r
+			swap(sl, r, s)
+			r = s
+		else
+			->
+		;;
+	;;
+}
+
+generic swap = {sl, i, j
+	var tmp
+	tmp = sl[i]
+	sl[i] = sl[j]
+	sl[j] = tmp
+}
+
