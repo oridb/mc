@@ -58,6 +58,13 @@ const regexcompile = {re, pat
 	| `None:	-> `std.Failure (`Earlystop)
 	| `Fail f:	-> `std.Failure f
 	| `Some t:
+		/*
+		we can stop early if we get 
+		an incorrectly encoded char
+		*/
+		if re.pat.len > 0
+			-> `std.Failure (`Earlystop)
+		;;
 		dump(re, t, 0)
 		append(re, `Ilbra 0)
 		gen(re, t)
