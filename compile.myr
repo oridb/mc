@@ -472,6 +472,61 @@ const escaped = {re
 	-> ret
 }
 
+const chrclass = {re
+	var rl, m
+	var neg
+	var t
+
+	/* we know we saw '[' on entry */
+	matchc(re, '[')
+	neg = false
+	if matchc(re, '^')
+		neg = true
+	;;
+	rl = rangematch(re, [][:])
+	while peekc(re) != ']'
+		rl = rangematch(re, rl)
+	;;
+	if !matchc(re, ']')
+		std.slfree(rl)
+		-> `Fail (`Earlystop)
+	;;
+	if neg
+		std.sort(rl, {a, b;
+			if a[0] < b[0]
+				-> `std.Before
+			elif a[0] == b[0]
+				-> `std.Equal
+			else
+				-> `std.After
+			;;})
+		m = merge(rl)
+		t = negranges(re, m)
+		std.slfree(m)
+	else
+		t = ranges(re, rl)
+	;;
+	std.slfree(rl)
+	-> `Some t
+}
+
+const rangematch = {re, sl
+	var lo
+	var hi
+
+	lo = getc(re)
+	if matchc(re, '-')
+		hi = getc(re)
+		if lo <= hi
+			-> std.slpush(sl, [lo, hi])
+		else
+			-> std.slpush(sl, [hi, lo])
+		;;
+	else
+		-> std.slpush(sl, [lo, lo])
+	;;
+}
+
 const ranges = {re, rng
 	var ret
 	var lhs
@@ -512,40 +567,31 @@ const negate = {rng
 	-> neg
 }
 
-const chrclass = {re
-	var r
-	var t
+/* rl is a sorted list of ranges */
+const merge = {rl
+	var lo, hi
+	var ret
 
-	/* we know we saw '[' on entry */
-	matchc(re, '[')
-	if matchc(re, '^')
-		std.die("negation of character classes not yet supported")
+	if rl.len == 0
+		-> [][:]
 	;;
-	t = rangematch(re)
-	while peekc(re) != ']'
-		r = rangematch(re)
-		t = mk(`Alt (t, r))
+	ret = [][:]
+	lo = rl[0][0]
+	hi = rl[0][1]
+	rl = rl[1:] /* BUG: compiler wants an rval in loop range */
+	for r in rl
+		/* if it overlaps or abuts, merge */
+		if r[0] <= hi + 1
+			hi = r[1]
+		else
+			ret = std.slpush(ret, [lo, hi])
+			lo = r[0]
+			hi = r[1]
+		;;
 	;;
-	if !matchc(re, ']')
-		astfree(t)
-		-> `Fail (`Earlystop)
-	else
-		-> `Some t
-	;;
+	-> std.slpush(ret, [lo, hi])
 }
 
-const rangematch = {re
-	var lo
-	var hi
-
-	lo = getc(re)
-	if matchc(re, '-')
-		hi = getc(re)
-		-> mk(`Class (lo, hi))
-	else
-		-> mk(`Chr lo)
-	;;
-}
 
 const matchc = {re, c
 	var str
