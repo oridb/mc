@@ -459,12 +459,12 @@ const escaped = {re
 	| '+': ret = mk(`Chr '+')
 	| '?': ret = mk(`Chr '?')
 
-	/* FIXME: implement this later.
-	| 'W': ret = negranges(re, _ranges.asciiword[:])
-	| 'S': ret = negranges(re, _ranges.asciispace[:])
-	| 'D': ret = negranges(re, _ranges.asciidigit[:])[:])
-	| 'X': ret = negranges(re, _ranges.xdigit[:])[:])
-	| 'H': ret = negranges(re, _ranges.asciihspace[:])
+	| 'W': ret = negranges(re, _ranges.tabasciiword[:])
+	| 'S': ret = negranges(re, _ranges.tabasciispace[:])
+	| 'D': ret = negranges(re, _ranges.tabasciidigit[:])
+	| 'X': ret = negranges(re, _ranges.tabasciixdigit[:])
+	| 'H': ret = negranges(re, _ranges.tabasciiblank[:])
+	/*
 	| 'p':	unicodeclass(re)
 	| 'P':  negate(unicodeclass(re))
 	*/
@@ -485,6 +485,31 @@ const ranges = {re, rng
 		ret = mk(`Alt (lhs, rhs))
 	;;
 	-> ret
+}
+
+const negranges = {re, rng
+	var neg, ret
+
+	neg = negate(rng)
+	ret = ranges(re, neg)
+	std.slfree(neg)
+	-> ret
+}
+
+const negate = {rng
+	var start, end, next
+	var neg
+
+	neg = [][:]
+	start = 0
+	next = 0 /* if we have no ranges */
+	for r in rng
+		(end, next) = (r[0], r[1])
+		neg = std.slpush(neg, [start, end - 1])
+		start = next + 1
+	;;
+	neg = std.slpush(neg, [next + 1, std.Maxcharval])
+	-> neg
 }
 
 const chrclass = {re
