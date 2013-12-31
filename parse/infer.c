@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <inttypes.h>
 #include <ctype.h>
 #include <string.h>
 #include <assert.h>
@@ -1259,11 +1260,9 @@ static void inferstab(Inferstate *st, Stab *s)
 
 static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
 {
-    size_t i;
-    Node *d;
-    Node *s;
-    size_t nbound;
+    size_t i, nbound;
     Node **bound;
+    Node *d, *s;
     Type *t;
 
     if (!n)

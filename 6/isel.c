@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdarg.h>
+#include <inttypes.h>
 #include <ctype.h>
 #include <string.h>
 #include <assert.h>
@@ -1011,10 +1012,10 @@ static void writelit(FILE *fd, Htab *strtab, Node *v, size_t sz)
         case Lflt:
                 if (tybase(v->lit.type)->type == Tyfloat32) {
                     u.fv = v->lit.fltval;
-                    fprintf(fd, "\t.long 0x%x\n", u.lv);
+                    fprintf(fd, "\t.long 0x%"PRIx32"\n", u.lv);
                 } else if (tybase(v->lit.type)->type == Tyfloat64) {
                     u.dv = v->lit.fltval;
-                    fprintf(fd, "\t.quad 0x%lx\n", u.qv);
+                    fprintf(fd, "\t.quad 0x%"PRIx64"\n", u.qv);
                 }
                 break;
         case Lstr:

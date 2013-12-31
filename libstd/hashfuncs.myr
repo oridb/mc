@@ -15,11 +15,10 @@ pkg std =
 /* Supremely simple djb hash. */
 const strhash = {s
 	var h
-	var i
 	
 	h = 5381
-	for i = 0; i < s.len; i++
-		h = (h << 5) + h + (s[i] castto(uint32))
+	for b in s
+		h = (h << 5) + h + (b castto(uint32))
 	;;
 	-> h
 }
