@@ -4,10 +4,24 @@ const main = {
 	var a = [
 		3, 5, 4, 9, 7, 2, 6, 0, 1, 8,
 	]
+	var b = [
+		3, 5, 4, 9, 7, 2, 6, 0, 1, 8,
+	]
+	var c = [
+		"a", "aa", "b", "C", "Cc", "cC", "d", "f", "fuckit", "go",
+	]
 
 	std.sort(a[:], intcmp)
-	for i in a
-		std.put("%i\n", i)
+	for v in a
+		std.put("%i\n", v)
+	;;
+	std.sort(b[:], std.numcmp)
+	for v in b
+		std.put("%i\n", v)
+	;;
+	std.sort(c[:], std.strcmp)
+	for v in c
+		std.put("%s\n", v)
 	;;
 }
 

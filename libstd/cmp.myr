@@ -1,21 +1,17 @@
 use "extremum.use"
 use "types.use"
-use "fmt.use"
 
 pkg std =
-	type comparison
+	type order = union
+		`Before
+		`Equal
+		`After
+	;;
 
-	const strcmp	: (a : byte[:], b : byte[:] -> comparison)
-	const strncmp	: (a : byte[:], b : byte[:], n : size -> comparison)
-	const hasprefix	: (a : byte[:], b : byte[:] -> bool)
+	generic numcmp	: (a : @a, b : @a -> order)
+	const strcmp	: (a : byte[:], b : byte[:] -> order)
+	const strncmp	: (a : byte[:], b : byte[:], n : size -> order)
 ;;
-
-type comparison = union
-	`Equal
-	`Before
-	`After
-;;
-
 
 const strcmp = {a, b
 	var l
@@ -46,12 +42,5 @@ const strncmp = {a, b, n
 	a = a[:min(a.len, n)]
 	b = b[:min(b.len, n)]
 	-> strcmp(a, b)
-}
-
-const hasprefix = {s, pre
-	match strncmp(s, pre, pre.len)
-	| `Equal:	-> true
-	| _:		-> false
-	;;
 }
 

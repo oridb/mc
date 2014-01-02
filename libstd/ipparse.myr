@@ -3,7 +3,7 @@ use "intparse.use"
 use "option.use"
 
  /* FIXME: needed for decls which should be pulled in as hidden */
-use "strcmp.use"
+use "hasprefix.use"
 use "utf.use"
 
 pkg std =

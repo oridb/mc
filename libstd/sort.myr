@@ -1,9 +1,6 @@
+use "cmp.use"
+
 pkg std =
-	type order = union
-		`Before
-		`Equal
-		`After
-	;;
 	generic sort	: (sl:@a[:], cmp:(a:@a, b:@a -> order) -> @a[:])
 ;;
 

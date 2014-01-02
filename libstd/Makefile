@@ -3,6 +3,7 @@ MYRSRC= \
     alloc.myr \
     blat.myr \
     chartype.myr \
+    cmp.myr \
     die.myr \
     endian.myr \
     env.myr \
@@ -10,6 +11,7 @@ MYRSRC= \
     extremum.myr \
     fmt.myr \
     hashfuncs.myr \
+    hasprefix.myr \
     htab.myr \
     intparse.myr \
     ipparse.myr \
@@ -30,7 +32,6 @@ MYRSRC= \
     strjoin.myr \
     strsplit.myr \
     strstrip.myr \
-    strcmp.myr \
     sys.myr \
     types.myr \
     units.myr \

@@ -1,9 +1,9 @@
 use "die.use"
-use "strcmp.use"
+use "fmt.use"
+use "hasprefix.use"
 use "option.use"
 use "types.use"
 use "utf.use"
-use "fmt.use"
 
 pkg std =
 	generic intparsebase	: (s : byte[:], base : int -> option(@a::(tcint,tcnum,tctest)))
