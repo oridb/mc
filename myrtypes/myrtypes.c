@@ -199,6 +199,7 @@ int main(int argc, char **argv)
         file = mkfile(argv[i]);
         file->file.exports = mkstab();
         file->file.globls = mkstab();
+        tyinit(file->file.globls);
         printf("%s:\n", argv[i]);
         if (fromuse) {
             f = fopen(argv[i], "r");
@@ -207,7 +208,6 @@ int main(int argc, char **argv)
             loaduse(f, file->file.globls);
             dumpsyms(file->file.globls, 1);
         } else {
-            tyinit(file->file.globls);
             tokinit(argv[i]);
             yyparse();
             infer(file);
