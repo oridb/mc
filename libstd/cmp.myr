@@ -30,10 +30,10 @@ const strcmp = {a, b
 
 	l = min(a.len, b.len)
 	for i = 0; i < l; i++
-		v = b[i] - a[i]
+		v = a[i] - b[i]
 		if v < 0
 			-> `Before
-		elif v < 0
+		elif v > 0
 			-> `After
 		;;
 	;;
