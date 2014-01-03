@@ -26,14 +26,12 @@ generic numcmp = {a, b
 const strcmp = {a, b
 	var l
 	var i
-	var v
 
 	l = min(a.len, b.len)
 	for i = 0; i < l; i++
-		v = a[i] - b[i]
-		if v < 0
+		if a[i] < b[i]
 			-> `Before
-		elif v > 0
+		elif a[i] > b[i]
 			-> `After
 		;;
 	;;
