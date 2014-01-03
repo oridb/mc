@@ -1,0 +1,12 @@
+use "cmp.use"
+pkg std =
+	const hasprefix	: (s : byte[:], pre : byte[:] -> bool)
+;;
+
+const hasprefix = {s, pre
+       match strncmp(s, pre, pre.len)
+       | `Equal:       -> true
+       | _:            -> false
+       ;;
+}
+
