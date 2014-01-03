@@ -1239,7 +1239,7 @@ static void inferdecl(Inferstate *st, Node *n)
         if (n->decl.isconst && !n->decl.init->expr.isconst)
             fatal(n->line, "non-const initializer for \"%s\"", ctxstr(st, n));
     } else {
-        if (n->decl.isconst && !n->decl.isextern)
+        if ((n->decl.isconst || n->decl.isgeneric) && !n->decl.isextern)
             fatal(n->line, "non-extern \"%s\" has no initializer", ctxstr(st, n));
     }
 }

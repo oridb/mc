@@ -13,6 +13,16 @@ pkg std =
 	const strncmp	: (a : byte[:], b : byte[:], n : size -> order)
 ;;
 
+generic numcmp = {a, b
+	if a < b
+		-> `Before
+	elif a == b
+		-> `Equal
+	else
+		-> `After
+	;;
+}
+
 const strcmp = {a, b
 	var l
 	var i
@@ -20,10 +30,10 @@ const strcmp = {a, b
 
 	l = min(a.len, b.len)
 	for i = 0; i < l; i++
-		v = b[i] - a[i]
+		v = a[i] - b[i]
 		if v < 0
 			-> `Before
-		elif v < 0
+		elif v > 0
 			-> `After
 		;;
 	;;
