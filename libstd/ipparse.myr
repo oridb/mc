@@ -1,15 +1,31 @@
-use "types.use"
+use "die.use"
 use "intparse.use"
 use "option.use"
+use "strfind.use"
+use "types.use"
 
  /* FIXME: needed for decls which should be pulled in as hidden */
 use "hasprefix.use"
 use "utf.use"
 
 pkg std =
-	const ip4parse	: (ip : byte[:] -> option(byte[4]))
-	const ip6parse	: (ip : byte[:] -> option(byte[16]))
+
+	type netaddr = union
+		`Ipv4	byte[4]
+		`Ipv6	byte[16]
+	;;
+
+	const ipparse	: (ip : byte[:]	-> option(netaddr))
+	const ip4parse	: (ip : byte[:] -> option(netaddr))
+	const ip6parse	: (ip : byte[:] -> option(netaddr))
 ;;
+
+const ipparse = {ip
+	match strfind(ip, ":")
+	| `Some _:	-> ip6parse(ip)
+	| `None:	-> ip4parse(ip)
+	;;
+}
 
 const ip4parse = {ip
 	var addr
@@ -20,6 +36,7 @@ const ip4parse = {ip
 	var j : size
 
 	i = 0
+	last = 0
 	for j = 0; j < ip.len; j++
 		if ip[j] == '.' castto(byte)
 			match intparsebase(ip[last:j], 10)
@@ -48,5 +65,9 @@ const ip4parse = {ip
 	if j != ip.len
 		-> `None
 	;;
-	-> `Some addr
+	-> `Some (`Ipv4 addr)
+}
+
+const ip6parse = {ip
+	-> `None
 }

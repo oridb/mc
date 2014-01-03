@@ -20,6 +20,7 @@ pkg std =
 	generic htfree	: (ht : htab(@k, @v)# -> void)
 	generic htput	: (ht : htab(@k, @v)#, k : @k, v : @v -> void)
 	generic htget	: (ht : htab(@k, @v)#, k : @k -> option(@v))
+	generic hthas	: (ht : htab(@k, @v)#, k : @k -> bool)
 	generic htkeys	: (ht : htab(@k, @v)# -> @k[:])
 ;;
 

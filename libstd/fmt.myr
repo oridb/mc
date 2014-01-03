@@ -82,6 +82,45 @@ const bfmt = {buf, fmt, args
 	-> bfmtv(buf, fmt, vastart(&args))
 }
 
+
+generic intfmt = {buf : byte[:], sval : @a::(tcnum,tctest,tcint), base, signed
+	var isneg
+	var val
+	var b : char[32]
+	var i
+	var j
+	var n
+
+	n = 0
+	i = 0
+	if signed && sval < 0
+		val = -sval castto(uint64)
+		isneg = true
+	else
+		val = sval castto(uint64)
+		val &= ((1 << 8*sizeof(@a)) - 1)
+		isneg = false
+	;;
+
+	if val == 0
+		b[0] = '0'
+		i++
+	;;
+	while val != 0
+		b[i] = digitchars[val % base]
+		val /= base
+		i++
+	;;
+	n = 0
+	if isneg
+		n += encode(buf[n:], '-')
+	;;
+	for j = i-1; j >= 0; j--
+		n += encode(buf[n:], b[j])
+	;;
+	-> n 
+}
+
 /* formats a string of text as specified by 'fmt' into 'buf',
    using a valist for the arguments */
 const bfmtv = {buf, fmt, ap
@@ -129,22 +168,22 @@ const bfmtv = {buf, fmt, ap
 			/* format integers */
 			| 'b':
 				(b_val, ap) = vanext(ap)
-				n += intfmt(buf[n:], b_val castto(int64), base, signed)
+				n += intfmt(buf[n:], b_val, base, signed)
 			| 'w':
 				(w_val, ap) = vanext(ap)
-				n += intfmt(buf[n:], w_val castto(int64), base, signed)
+				n += intfmt(buf[n:], w_val, base, signed)
 			| 'i':
 				(i_val, ap) = vanext(ap)
-				n += intfmt(buf[n:], i_val castto(int64), base, signed)
+				n += intfmt(buf[n:], i_val, base, signed)
 			| 'l':
 				(l_val, ap) = vanext(ap)
-				n += intfmt(buf[n:], l_val castto(int64), base, signed)
+				n += intfmt(buf[n:], l_val, base, signed)
 			| 'z':
 				(z_val, ap) = vanext(ap)
-				n += intfmt(buf[n:], z_val castto(int64), base, signed)
+				n += intfmt(buf[n:], z_val, base, signed)
 			| 'p':
 				(p_val, ap) = vanext(ap)
-				n += intfmt(buf[n:], p_val castto(int64), 16, false)
+				n += intfmt(buf[n:], p_val castto(uint64), 16, false)
                         | 'c':    (c_val, ap) = vanext(ap)
                                 n += encode(buf[n:], c_val)
                         | _:
@@ -181,41 +220,4 @@ const boolfmt = {buf, val
 const digitchars = [
 '0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'
 ]
-
-const intfmt = {buf, sval, base, signed
-	var isneg
-	var val
-	var b : char[32]
-	var i
-	var j
-	var n
-
-	n = 0
-	i = 0
-	if signed && sval < 0
-		val = -sval castto(uint64)
-		isneg = true
-	else
-		val = sval castto(uint64)
-		isneg = false
-	;;
-
-	if val == 0
-		b[0] = '0'
-		i++
-	;;
-	while val != 0
-		b[i] = digitchars[val % base]
-		val /= base
-		i++
-	;;
-	n = 0
-	if isneg
-		n += encode(buf[n:], '-')
-	;;
-	for j = i-1; j >= 0; j--
-		n += encode(buf[n:], b[j])
-	;;
-	-> n 
-}
 

@@ -1,15 +1,23 @@
 use "alloc.use"
+use "chartype.use"
 use "die.use"
 use "endian.use"
 use "error.use"
+use "extremum.use"
+use "hashfuncs.use"
+use "htab.use"
+use "ipparse.use"
 use "fmt.use"
 use "option.use"
 use "slcp.use"
+use "slpush.use"
 use "slurp.use"
+use "strfind.use"
 use "strsplit.use"
 use "strstrip.use"
 use "sys.use"
 use "types.use"
+use "utf.use"
 
 pkg std =
 	type resolveerr = union
@@ -17,11 +25,6 @@ pkg std =
 		`Badsrv
 		`Badquery
 		`Badresp
-	;;
-
-	type netaddr = union
-		`Ipv4	byte[4]
-		`Ipv6	byte[16]
 	;;
 
 	type hostinfo = struct
@@ -42,40 +45,106 @@ pkg std =
 ;;
 
 const Hostfile = "/etc/hosts"
+const Resolvfile = "/etc/resolv.conf"
 
-const resolve = {host : byte[:]
+var hostmap	: htab(byte[:], hostinfo)#
+var search	: byte[:][:]
+var nameservers	: netaddr[:]
+var inited	: bool = false
+
+
+const resolve = {host : byte[:] -> error(hostinfo[:], resolveerr)
 	match hostfind(host)
-	| `Some h:	-> h
-	| `None: 	-> dnsresolve(host)
+	| `Some hinf:
+		-> `Success slpush([][:], hinf)
+	| `None:
+		put("********** Couldn't find host %s in hosts\n", host)
+		-> dnsresolve(host)
 	;;
 }
 
 const hostfind = {host
-	-> `None
-	/*
-	var hdat
+	if !inited
+		hostmap = mkht(strhash, streq)
+		loadhosts()
+		inited = true
+	;;
+	-> htget(hostmap, host)
+}
+
+const loadhosts = {
+	var h
 	var lines
-	var ip
-	var hn
-	var str
-	var i
 
 	match slurp(Hostfile)
-	| `Success h:	hdat = h
-	| `Failure m:	-> `None
+	| `Success d:	h = d
+	| `Failure m:	->
 	;;
 
-	lines = strsplit(hdat, "\n")
-	for i = 0; i < lines.len; i++
-		lines[i] = strstrip(lines[i])
-		(ip, str) = nextword(lines)
-		(hn, str) = nextword(str)
-		if streq(hn, host)
-			-> parseip(ip)
+	lines = strsplit(h, "\n")
+	for l in lines
+		/* trim comment */
+		match strfind(l, "#")
+		| `Some _idx:	l = l[:_idx]
+		;;
+
+		match word(l)
+		| `Some (ip, rest):
+			match ipparse(ip)
+			| `None:
+			| `Some addr:
+				addhosts(addr, ip, rest)
+			;;
+		| `None:
 		;;
 	;;
-	*/
 }
+
+const addhosts = {addr, as, str
+	var hinf
+	var fam
+
+	match addr
+	| `Ipv4 _:	fam = Afinet
+	| `Ipv6 _:	fam = Afinet6
+	;;
+	while true
+		match word(str)
+		| `Some (name, rest):
+			if !hthas(hostmap, name)
+				hinf = [
+					.fam=fam,
+					.stype = 0,
+					.ttl = 0,
+					.addr = addr
+				]
+				htput(hostmap, name, hinf)
+			;;
+			str = rest
+		| `None:
+			->
+		;;
+	;;
+}
+
+const loadresolv = {
+}
+
+const word = {s
+	var c, len
+
+	len = 0
+	s = strstrip(s)
+	for c = decode(s[len:]); c != Badchar && !isblank(c); c = decode(s[len:])
+		len += charlen(c)
+	;;
+	if len == 0
+		-> `None
+	else
+		-> `Some (s[:len], s[len:])
+	;;
+}
+
 
 const dnsresolve = {host : byte[:]
 	/*var hosts*/
