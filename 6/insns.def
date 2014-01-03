@@ -44,7 +44,7 @@ Insn(Ior,       "\tor%t  %x,%r\n",              Use(.l={1,2}),                  
 Insn(Ixor,      "\txor%t %x,%r\n",              Use(.l={1,2}),                  Def(.l={2}))
 Insn(Inot,      "\tnot%t %v\n",                 Use(.l={1}),                    Def(.l={1}))
 Insn(Ishl,      "\tsal%2t %u,%r\n",             Use(.l={1,2}),                  Def(.l={2}))
-Insn(Isar,      "\tshr%2t %u,%r\n",             Use(.l={1,2}),                  Def(.l={2}))
+Insn(Isar,      "\tsar%2t %u,%r\n",             Use(.l={1,2}),                  Def(.l={2}))
 Insn(Ishr,      "\tshr%2t %u,%r\n",             Use(.l={1,2}),                  Def(.l={2}))
 
 Insn(Itest,     "\ttest%t %x,%r\n",             Use(.l={1,2}),                  Def(.l={}))
