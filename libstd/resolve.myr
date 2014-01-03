@@ -59,7 +59,6 @@ const resolve = {host : byte[:] -> error(hostinfo[:], resolveerr)
 	| `Some hinf:
 		-> `Success slpush([][:], hinf)
 	| `None:
-		put("********** Couldn't find host %s in hosts\n", host)
 		-> dnsresolve(host)
 	;;
 }
@@ -160,7 +159,6 @@ const addns = {rest
 	| `Some (name, _):
 		match ipparse(name)
 		| `Some addr: 
-			put("Adding nameserver %s\n", name)
 			nameservers = slpush(nameservers, addr)
 		| `None:
 		;;
@@ -191,7 +189,6 @@ const dnsresolve = {host : byte[:]
 		-> `Failure (`Badhost)
 	;;
 	for ns in nameservers
-		put("trying ns\n")
 		nsrv = dnsconnect(ns)
 		if nsrv >= 0
 			-> dnsquery(nsrv, host)
@@ -214,7 +211,6 @@ const dnsconnectv4 = {addr
 	
 	s = socket(Afinet, Sockdgram, 0)
 	if s < 0
-		put("Warning: Failed to open socket: %l\n", s)
 		-> -1
 	;;
 	/* hardcode Google DNS for now.
@@ -224,7 +220,6 @@ const dnsconnectv4 = {addr
 	sa.addr = [8,8,8,8]	/* 8.8.8.8 */
 	status = connect(s, (&sa) castto(sockaddr#), sizeof(sockaddr_in))
 	if status < 0
-		put("Warning: Failed to connect to server: %l\n", status)
 		-> -1
 	;;
 	-> s
@@ -236,7 +231,6 @@ const dnsquery = {srv, host
 
 	id = tquery(srv, host)
 	r = rquery(srv, id)
-	put("Got hosts. Returning\n")
 	-> r
 }
 
@@ -251,7 +245,6 @@ const tquery = {srv, host
 	var pkt : byte[512] /* big enough */
 	var off : size
 
-	put("Sending request for %s\n", host)
 	/* header */
 	off = 0
 	off += pack16(pkt[:], off, nextid)	/* id */
@@ -275,13 +268,10 @@ const rquery = {srv, id
 	var pkt
 	var n
 
-	put("Waiting for response...\n")
 	n = read(srv, pktbuf[:])
 	if n < 0
-		put("Warning: Failed to read from %z: %i\n", srv, n)
 	;;
 	pkt = pktbuf[:n]
-	put("Got response:\n");
 	dumpresponse(pkt)
 	-> hosts(pkt, id)
 }
@@ -298,7 +288,6 @@ const hosts = {pkt, id : uint16
 	if v != id
 		-> `Failure (`Badresp)
 	;;
-	put("Unpacking flags")
 	(v, off) = unpack16(pkt, off)	/* flags */
 	(q, off) = unpack16(pkt, off)	/* qdcount */
 	(a, off) = unpack16(pkt, off)	/* ancount */
@@ -307,7 +296,6 @@ const hosts = {pkt, id : uint16
 
 	/* skip past query records */
 	for i = 0; i < q; i++
-		put("Skipping query record")
 		off = skipname(pkt, off)	/* name */
 		(v, off) = unpack16(pkt, off)	/* type */
 		(v, off) = unpack16(pkt, off)	/* class */
@@ -338,22 +326,14 @@ const dumpresponse = {pkt
 	(v, off) = unpack16(pkt, 0)
 	(v, off) = unpack16(pkt, off)
 	(nquery, off) = unpack16(pkt, off)
-	put("hdr.qdcount = %w\n", nquery)
 	(nans, off) = unpack16(pkt, off)
-	put("hdr.ancount = %w\n", nans)
 	(v, off) = unpack16(pkt, off)
-	put("hdr.nscount = %w\n", v)
 	(v, off) = unpack16(pkt, off)
-	put("hdr.arcount = %w\n", v)
-	put("Queries:\n")
 	for i = 0; i < nquery; i++
-		put("i: %w\n", i)
 		off = dumpquery(pkt, off)
 	;;
 
-	put("Answers:")
 	for i = 0; i < nans; i++
-		put("i: %w\n", i)
 		off = dumpans(pkt, off)
 	;;
 }
@@ -361,34 +341,23 @@ const dumpresponse = {pkt
 const dumpquery = {pkt, off
 	var v
 
-	put("\tname = "); 
 	off = printname(pkt, off)
 	(v, off) = unpack16(pkt, off)
-	put("\tbody.type = %w\n", v)
 	(v, off) = unpack16(pkt, off)
-	put("\tbody.class = %w\n", v)
 	-> off
 }
 
 const dumpans = {pkt, off
 	var v
 
-	put("\tname = "); 
 	off = printname(pkt, off)
 	(v, off) = unpack16(pkt, off)
-	put("\tbody.type = %w\n", v)
 	(v, off) = unpack16(pkt, off)
-	put("\tbody.class = %w\n", v)
 	(v, off) = unpack16(pkt, off)
-	put("\tbody.ttl_lo = %w\n", v)
 	(v, off) = unpack16(pkt, off)
-	put("\tbody.ttl_hi = %w\n", v)
 	(v, off) = unpack16(pkt, off)
-	put("\tbody.rdlength = %w\n", v)
 	(v, off) = unpack16(pkt, off)
-	put("\tbody.rdata_lo = %w\n", v)
 	(v, off) = unpack16(pkt, off)
-	put("\tbody.rdata_hi = %w\n", v)
 	-> off
 }
 
@@ -412,11 +381,9 @@ const printname = {pkt, off
 
 	for sz = pkt[off] castto(size); sz != 0; sz = pkt[off] castto(size)
 		if sz & 0xC0 == 0xC0
-			put("PTR: ")
 			printname(pkt, ((sz & ~0xC0) << 8) | (pkt[off + 1] castto(size)))
 			-> off + 2
 		else
-			put("%s.", pkt[off+1:off+sz+1])
 			off += sz + 1
 		;;
 	;;
