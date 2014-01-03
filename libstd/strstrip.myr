@@ -30,7 +30,7 @@ const strrstrip = {str
 	var end
 
 	/* scan backwards for start of utf8 char */
-	end = 0
+	end = str.len
 	for i = str.len; i != 0; i--
 		if str[i] & 0x80 == 0
 			if !isspace(decode(str[i-1:]))
