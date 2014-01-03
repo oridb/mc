@@ -975,7 +975,7 @@ static void inferpat(Inferstate *st, Node *n, Node *val, Node ***bind, size_t *n
         case Oucon:     inferucon(st, n, &n->expr.isconst);     break;
         case Ovar:
             s = getdcl(curstab(), args[0]);
-            if (s) {
+            if (s && !s->decl.ishidden) {
                 if (s->decl.isgeneric)
                     t = tyfreshen(st, s->decl.type);
                 else if (s->decl.isconst)

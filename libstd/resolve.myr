@@ -4,12 +4,13 @@ use "die.use"
 use "endian.use"
 use "error.use"
 use "extremum.use"
+use "fmt.use"
 use "hashfuncs.use"
 use "htab.use"
 use "ipparse.use"
-use "fmt.use"
 use "option.use"
 use "slcp.use"
+use "sleq.use"
 use "slpush.use"
 use "slurp.use"
 use "strfind.use"
@@ -67,6 +68,7 @@ const hostfind = {host
 	if !inited
 		hostmap = mkht(strhash, streq)
 		loadhosts()
+		loadresolv()
 		inited = true
 	;;
 	-> htget(hostmap, host)
@@ -85,19 +87,19 @@ const loadhosts = {
 	for l in lines
 		/* trim comment */
 		match strfind(l, "#")
-		| `Some _idx:	l = l[:_idx]
+		| `Some idx:	l = l[:idx]
 		;;
 
 		match word(l)
 		| `Some (ip, rest):
 			match ipparse(ip)
-			| `None:
 			| `Some addr:
 				addhosts(addr, ip, rest)
 			;;
 		| `None:
 		;;
 	;;
+	slfree(lines)
 }
 
 const addhosts = {addr, as, str
@@ -128,13 +130,48 @@ const addhosts = {addr, as, str
 }
 
 const loadresolv = {
+	var h
+	var lines
+
+	match slurp(Resolvfile)
+	| `Success d:	h = d
+	| `Failure m:	->
+	;;
+
+	lines = strsplit(h, "\n")
+	for l in lines
+		match strfind(l, "#")
+		| `Some idx: l = l[:idx]
+		| `None:
+		;;
+
+		match word(l)
+		| `Some (cmd, rest):
+			if sleq(cmd, "nameserver")
+				addns(rest)
+			;;
+		;;
+	;;
+	slfree(lines)
+}
+
+const addns = {rest
+	match word(rest)
+	| `Some (name, _):
+		match ipparse(name)
+		| `Some addr: 
+			put("Adding nameserver %s\n", name)
+			nameservers = slpush(nameservers, addr)
+		| `None:
+		;;
+	;;
 }
 
 const word = {s
 	var c, len
 
 	len = 0
-	s = strstrip(s)
+	s = strfstrip(s)
 	for c = decode(s[len:]); c != Badchar && !isblank(c); c = decode(s[len:])
 		len += charlen(c)
 	;;
@@ -153,13 +190,24 @@ const dnsresolve = {host : byte[:]
 	if !valid(host)
 		-> `Failure (`Badhost)
 	;;
-	if (nsrv = dnsconnect()) < 0
-		-> `Failure (`Badsrv)
+	for ns in nameservers
+		put("trying ns\n")
+		nsrv = dnsconnect(ns)
+		if nsrv >= 0
+			-> dnsquery(nsrv, host)
+		;;
 	;;
-	-> dnsquery(nsrv, host)
+	-> `Failure (`Badsrv)
 }
 
-const dnsconnect = {
+const dnsconnect = {ns
+	match ns
+	| `Ipv4 addr:	-> dnsconnectv4(ns)
+	| `Ipv6 addr:	die("don't support ipv6 yet\n")
+	;;
+}
+
+const dnsconnectv4 = {addr
 	var sa : sockaddr_in
 	var s
 	var status
@@ -451,5 +499,4 @@ const valid = {host : byte[:]
 	;;
 
 	-> true
-
 }

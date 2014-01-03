@@ -82,6 +82,9 @@ const bfmt = {buf, fmt, args
 	-> bfmtv(buf, fmt, vastart(&args))
 }
 
+const digitchars = [
+	'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'
+]
 generic intfmt = {buf : byte[:], bits : @a::(tcint,tctest,tcnum), base, signed
 	var isneg
 	var val
@@ -167,22 +170,22 @@ const bfmtv = {buf, fmt, ap
 			/* format integers */
 			| 'b':
 				(b_val, ap) = vanext(ap)
-				n += intfmt(buf[n:], b_val, base, signed)
+				n += intfmt(buf[n:], b_val castto(int64), base, signed)
 			| 'w':
 				(w_val, ap) = vanext(ap)
-				n += intfmt(buf[n:], w_val, base, signed)
+				n += intfmt(buf[n:], w_val castto(int64), base, signed)
 			| 'i':
 				(i_val, ap) = vanext(ap)
-				n += intfmt(buf[n:], i_val, base, signed)
+				n += intfmt(buf[n:], i_val castto(int64), base, signed)
 			| 'l':
 				(l_val, ap) = vanext(ap)
-				n += intfmt(buf[n:], l_val, base, signed)
+				n += intfmt(buf[n:], l_val castto(int64), base, signed)
 			| 'z':
 				(z_val, ap) = vanext(ap)
-				n += intfmt(buf[n:], z_val, base, signed)
+				n += intfmt(buf[n:], z_val castto(int64), base, signed)
 			| 'p':
 				(p_val, ap) = vanext(ap)
-				n += intfmt(buf[n:], p_val castto(uint64), 16, false)
+				n += intfmt(buf[n:], p_val castto(int64), 16, false)
                         | 'c':    (c_val, ap) = vanext(ap)
                                 n += encode(buf[n:], c_val)
                         | _:
@@ -214,9 +217,3 @@ const boolfmt = {buf, val
 	;;
 	-> strfmt(buf, s)
 }
-
-
-const digitchars = [
-'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'
-]
-
