@@ -132,10 +132,10 @@ const bfmtv = {buf, fmt, ap
 	var signed
 	var s_val : byte[:]
 	var t_val : bool
-	var b_val : int8
-	var w_val : int16
-	var i_val : int32
-	var l_val : int64
+	var b_val : int8, ub_val : uint8
+	var w_val : int16, uw_val : uint16
+	var i_val : int32, ui_val : uint32
+	var l_val : int64, ul_val : uint64
 	var z_val : size
 	var p_val : byte#
         var c_val : char
@@ -169,17 +169,38 @@ const bfmtv = {buf, fmt, ap
 				n += boolfmt(buf[n:], t_val)
 			/* format integers */
 			| 'b':
-				(b_val, ap) = vanext(ap)
-				n += intfmt(buf[n:], b_val castto(int64), base, signed)
+				if signed
+					(b_val, ap) = vanext(ap)
+					n += intfmt(buf[n:], b_val, base, signed)
+				else
+					(ub_val, ap) = vanext(ap)
+					n += intfmt(buf[n:], ub_val, base, signed)
+				;;
 			| 'w':
-				(w_val, ap) = vanext(ap)
-				n += intfmt(buf[n:], w_val castto(int64), base, signed)
+				if signed
+					(w_val, ap) = vanext(ap)
+					n += intfmt(buf[n:], w_val, base, signed)
+				else
+					(uw_val, ap) = vanext(ap)
+					n += intfmt(buf[n:], uw_val, base, signed)
+				;;
 			| 'i':
-				(i_val, ap) = vanext(ap)
-				n += intfmt(buf[n:], i_val castto(int64), base, signed)
+				if signed
+					(i_val, ap) = vanext(ap)
+					n += intfmt(buf[n:], i_val, base, signed)
+				else
+					(ui_val, ap) = vanext(ap)
+					n += intfmt(buf[n:], ui_val, base, signed)
+				;;
 			| 'l':
-				(l_val, ap) = vanext(ap)
-				n += intfmt(buf[n:], l_val castto(int64), base, signed)
+				if signed
+					(l_val, ap) = vanext(ap)
+					n += intfmt(buf[n:], l_val, base, signed)
+				else
+					(ul_val, ap) = vanext(ap)
+					n += intfmt(buf[n:], ul_val, base, signed)
+				;;
+
 			| 'z':
 				(z_val, ap) = vanext(ap)
 				n += intfmt(buf[n:], z_val castto(int64), base, signed)
