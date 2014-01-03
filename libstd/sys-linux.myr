@@ -70,6 +70,12 @@ pkg std =
 		zero	: byte[8]
 	;;
 
+	type sockaddr_storage = struct
+		fam	: sockfam
+		__align	: uint32
+		__pad	: byte[112]
+	;;
+
 	/* open options */
 	const Ordonly  	: fdopt = 0x0
 	const Owronly  	: fdopt = 0x1

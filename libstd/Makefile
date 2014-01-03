@@ -4,6 +4,7 @@ MYRSRC= \
     blat.myr \
     chartype.myr \
     cmp.myr \
+    dial.myr \
     die.myr \
     endian.myr \
     env.myr \
