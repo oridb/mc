@@ -298,7 +298,6 @@ const rquery = {srv, id
 	if n < 0
 	;;
 	pkt = pktbuf[:n]
-	dumpresponse(pkt)
 	-> hosts(pkt, id)
 }
 
@@ -343,50 +342,6 @@ const hosts = {pkt, id : uint16
 }
 
 
-const dumpresponse = {pkt
-	var nquery, nans
-	var off
-	var v
-	var i
-
-	(v, off) = unpack16(pkt, 0)
-	(v, off) = unpack16(pkt, off)
-	(nquery, off) = unpack16(pkt, off)
-	(nans, off) = unpack16(pkt, off)
-	(v, off) = unpack16(pkt, off)
-	(v, off) = unpack16(pkt, off)
-	for i = 0; i < nquery; i++
-		off = dumpquery(pkt, off)
-	;;
-
-	for i = 0; i < nans; i++
-		off = dumpans(pkt, off)
-	;;
-}
-
-const dumpquery = {pkt, off
-	var v
-
-	off = printname(pkt, off)
-	(v, off) = unpack16(pkt, off)
-	(v, off) = unpack16(pkt, off)
-	-> off
-}
-
-const dumpans = {pkt, off
-	var v
-
-	off = printname(pkt, off)
-	(v, off) = unpack16(pkt, off)
-	(v, off) = unpack16(pkt, off)
-	(v, off) = unpack16(pkt, off)
-	(v, off) = unpack16(pkt, off)
-	(v, off) = unpack16(pkt, off)
-	(v, off) = unpack16(pkt, off)
-	(v, off) = unpack16(pkt, off)
-	-> off
-}
-
 const skipname = {pkt, off
 	var sz
 
@@ -401,20 +356,6 @@ const skipname = {pkt, off
 	-> off + 1
 }
 
-
-const printname = {pkt, off
-	var sz
-
-	for sz = pkt[off] castto(size); sz != 0; sz = pkt[off] castto(size)
-		if sz & 0xC0 == 0xC0
-			printname(pkt, ((sz & ~0xC0) << 8) | (pkt[off + 1] castto(size)))
-			-> off + 2
-		else
-			off += sz + 1
-		;;
-	;;
-	-> off + 1
-}
 
 const pack16 = {buf, off, v
 	buf[off]	= (v & 0xff00) >> 8 castto(byte)
