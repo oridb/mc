@@ -113,6 +113,7 @@ pkg std =
 	const Afunspec	: sockfam = 0
 	const Afunix	: sockfam = 1
 	const Afinet	: sockfam = 2
+	const Afinet6	: sockfam = 30
 
 	/* socket types. */
 	const Sockstream	: socktype = 1
