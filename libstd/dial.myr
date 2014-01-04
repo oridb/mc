@@ -1,0 +1,129 @@
+use "alloc.use"
+use "die.use"
+use "error.use"
+use "sys.use"
+use "sleq.use"
+use "option.use"
+use "ipparse.use"
+use "resolve.use"
+use "fmt.use"
+use "endian.use"
+use "intparse.use"
+use "hasprefix.use"
+use "utf.use"
+
+pkg std =
+	const dial	: (dialstr : byte[:] -> error(fd, byte[:]))
+;;
+
+/*
+ a map from service name to a list of (port,proto)
+ pairs in order of preference
+*/
+/* FIXME: implement
+var services : htab(byte[:], [int, byte[:]][:])#
+var inited = false
+*/
+
+/* takes a plan 9 style dial string */
+const dial = {str
+	var proto, host, port
+	var socktype, portnum
+	var sa : sockaddr_in	/* we only support inet sockets right now.. ugh. */
+	var sock
+
+	(proto, str) = nameseg(str)
+	(host, str) = nameseg(str)
+	(port, str) = nameseg(str)
+
+	if proto.len == 0
+		-> `Failure "missing proto"
+	elif host.len == 0
+		-> `Failure "missing host"
+	elif port.len == 0
+		-> `Failure "missing port"
+	;;
+
+	if sleq(proto, "net")
+		-> `Failure "net wildcard proto not yet supported\n"
+	elif sleq(proto, "unix")
+		-> `Failure "net unix proto not yet supported\n"
+	elif sleq(proto, "tcp")
+		socktype = Sockstream
+	elif sleq(proto, "udp")
+		socktype = Sockdgram
+	;;
+
+	match parseport(port)
+	| `Some n:	portnum = n
+	| `None:	-> `Failure "bad port"
+	;;
+
+	match getaddr(host)
+	| `Ipv4 bits:
+		sa.fam = Afinet
+		sa.addr = bits
+		sa.port = hosttonet(portnum)
+	| `Ipv6 bits:
+		-> `Failure "ipv6 not yet supported"
+	;;
+
+	sock = socket(sa.fam, socktype, 0)
+	if sock < 0
+		-> `Failure "failed to connect to socket"
+	;;
+	var err
+	err = connect(sock, (&sa) castto(sockaddr#), sizeof(sockaddr_in))
+	if err < 0
+		close(sock)
+		-> `Failure "Failed to bind socket"
+	;;
+
+	-> `Success sock
+}
+
+const parseport = {port
+	match intparse(port)
+	| `Some n:	-> `Some n
+	| `None:
+		/* a small number of hardcoded ports */
+		if sleq(port, "http")
+			-> `Some 80
+		elif sleq(port, "https")
+			-> `Some 443
+		elif sleq(port, "ircd")
+			-> `Some 6667
+		elif sleq(port, "dns")
+			-> `Some 53
+		;;
+	;;
+	-> `None
+}
+
+const getaddr = {addr
+	var ip
+
+	match ipparse(addr)
+	| `Some a:	ip = a
+	| `None:
+		match resolve(addr)
+		| `Success hi:
+			ip = hi[0].addr
+			slfree(hi)
+		| `Failure m:
+		;;
+	;;
+	-> ip
+}
+
+const nameseg = {str
+	var len
+
+	for len = 0; len < str.len; len++
+		if str[len] == '!' castto(byte)
+			-> (str[:len], str[len+1:])
+		;;
+	;;
+	-> (str[:], str[len:])
+}
+
