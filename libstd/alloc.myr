@@ -38,6 +38,7 @@ pkg std =
 	const bytealloc	: (sz:size	-> byte#)
 	const zbytealloc	: (sz:size	-> byte#)
 	const bytefree	: (m:byte#, sz:size	-> void)
+
 ;;
 
 /* null pointers. only used internally. */
@@ -48,10 +49,15 @@ const Zchunk	= 0 castto(chunk#)
 const Slabsz 	= 1*MiB	/* 1 meg slabs */
 const Cachemax	= 16	/* maximum number of slabs in the cache */
 const Bktmax	= 32*KiB	/* Slabsz / 8; a balance. */
+const Pagesz	= 4*KiB
 const Align	= 16	/* minimum allocation alignment */
 
 var buckets	: bucket[32] /* excessive */
 var initdone	: int
+
+type slheader = struct
+	cap	: size	/* capacity in bytes */
+;;
 
 type bucket = struct
 	sz	: size	/* aligned size */
@@ -88,23 +94,49 @@ generic free = {v:@a# -> void
 
 /* allocates a slice of 'len' elements. */
 generic slalloc = {len
+	var p, sz
+
 	if len == 0
 		-> [][:]
 	;;
-	-> (bytealloc(len*sizeof(@a)) castto(@a#))[0:len]
+	sz = len*sizeof(@a) + sizeof(slheader)
+	p = bytealloc(align(sz, Align))
+	p = inithdr(p, sz)
+	-> (p castto(@a#))[0:len]
 }
 
 generic slzalloc = {len
-	-> (zbytealloc(len*sizeof(@a)) castto(@a#))[0:len]
+	var p, sz
+
+	if len == 0
+		-> [][:]
+	;;
+	sz = len*sizeof(@a) + sizeof(slheader)
+	p = zbytealloc(sz)
+	p = inithdr(p, sz)
+	-> (p castto(@a#))[0:len]
 }
 
+const inithdr = {p, sz
+	var phdr, prest
+
+	phdr = p castto(slheader#)
+	phdr.cap = allocsz(sz) - align(sizeof(slheader), Align)
+
+	prest = align((p castto(size)) + sizeof(slheader), Align)
+	-> prest castto(byte#)
+}
 
 /* Frees a slice */
 generic slfree	 = {sl
+	var head
 	if sl.len == 0
 		->
 	;;
-	bytefree(sl castto(byte#), sl.len * sizeof(@a))
+
+	head = (sl castto(byte#)) castto(size)
+	head -= align(sizeof(slheader), Align)
+	bytefree(head castto(byte#), slcap(sl castto(byte#)))
 }
 
 /* Grows a slice */
@@ -113,7 +145,7 @@ generic slgrow = {sl : @a[:], len
 	var new
 
 	/* if the slice wouldn't change buckets, we don't need to realloc. */
-	if samebucket(sl.len * sizeof(@a), len * sizeof(@a))
+	if sl.len > 0 && slcap(sl castto(byte#)) >= allocsz(len*sizeof(@a))
 		-> (sl castto(@a#))[:len]
 	;;
 
@@ -128,12 +160,11 @@ generic slgrow = {sl : @a[:], len
 	-> new
 }
 
-const samebucket = {oldsz, newsz
-	if oldsz > 0 && newsz < Bktmax
-		-> bktnum(oldsz) == bktnum(newsz)
-	else
-		-> false
-	;;
+const slcap = {p
+	var phdr
+
+	phdr = (p castto(size)) - align(sizeof(slheader), Align) castto(slheader#)
+	-> phdr.cap
 }
 
 const zbytealloc = {sz
@@ -263,8 +294,7 @@ that was created for bucket 'bkt'. Will crash
 if this is not the case.
 */
 const bktfree = {bkt, m
-	var s
-	var b
+	var s, b
 
 	s = mtrunc(m, Slabsz) castto(slab#)
 	b = m castto(chunk#)
@@ -291,8 +321,7 @@ Finds the correct bucket index to allocate from
 for allocations of size 'sz'
 */
 const bktnum = {sz
-	var i
-	var bktsz
+	var i, bktsz
 
 	bktsz = Align
 	for i = 0; bktsz <= Bktmax; i++
@@ -302,6 +331,26 @@ const bktnum = {sz
 		bktsz *= 2
 	;;
 	die("Size does not match any buckets")
+}
+
+/*
+returns the actual size we allocated for a given
+size request
+*/
+const allocsz = {sz
+	var i, bktsz
+
+	if sz <= Bktmax
+		bktsz = Align
+		for i = 0; bktsz <= Bktmax; i++
+			if bktsz >= sz
+				-> bktsz
+			;;
+			bktsz *= 2
+		;;
+	else
+		-> align(sz, Pagesz)
+	;;
 }
 
 /*
