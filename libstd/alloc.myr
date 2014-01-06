@@ -99,8 +99,8 @@ generic slalloc = {len
 	if len == 0
 		-> [][:]
 	;;
-	sz = len*sizeof(@a) + sizeof(slheader)
-	p = bytealloc(align(sz, Align))
+	sz = len*sizeof(@a) + align(sizeof(slheader), Align)
+	p = bytealloc(sz)
 	p = inithdr(p, sz)
 	-> (p castto(@a#))[0:len]
 }
@@ -111,7 +111,7 @@ generic slzalloc = {len
 	if len == 0
 		-> [][:]
 	;;
-	sz = len*sizeof(@a) + sizeof(slheader)
+	sz = len*sizeof(@a) + align(sizeof(slheader), Align)
 	p = zbytealloc(sz)
 	p = inithdr(p, sz)
 	-> (p castto(@a#))[0:len]
