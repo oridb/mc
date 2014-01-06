@@ -505,7 +505,7 @@ static void simploop(Simp *s, Node *n)
 static void simpiter(Simp *s, Node *n)
 {
     Node *lbody, *lstep, *lcond, *lmatch, *lend;
-    Node *idx, *len, *dcl, *val, *done;
+    Node *idx, *len, *dcl, *seq, *val, *done;
     Node *zero;
 
     lbody = genlbl();
@@ -517,6 +517,7 @@ static void simpiter(Simp *s, Node *n)
     zero = mkintlit(n->line, 0);
     zero->expr.type = tyintptr;
 
+    seq = rval(s, n->iterstmt.seq, NULL);
     idx = gentemp(s, n, tyintptr, &dcl);
     declarelocal(s, dcl);
 
@@ -531,11 +532,11 @@ static void simpiter(Simp *s, Node *n)
     simp(s, assign(s, idx, addk(idx, 1)));
     /* condition */
     simp(s, lcond);
-    len = seqlen(s, n->iterstmt.seq, tyintptr);
+    len = seqlen(s, seq, tyintptr);
     done = mkexpr(n->line, Olt, idx, len, NULL);
     cjmp(s, done, lmatch, lend);
     simp(s, lmatch);
-    val = load(idxaddr(s, n->iterstmt.seq, idx));
+    val = load(idxaddr(s, seq, idx));
     umatch(s, n->iterstmt.elt, val, val->expr.type, lbody, lstep);
     simp(s, lend);
 }
