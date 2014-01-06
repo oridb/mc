@@ -8,17 +8,9 @@ use "types.use"
 
 pkg std =
 	const slurp : (path : byte[:] -> error(byte[:], byte[:]))
-	const tryslurp	: (path : byte[:] -> byte[:])
 ;;
 
 const Bufinc = 4096
-
-const tryslurp = {path
-	match slurp(path)
-	| `Some data:	-> data
-	| `None:	-> [][:]
-	;;
-}
 
 const slurp = {path
 	var fd
