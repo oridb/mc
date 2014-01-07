@@ -53,6 +53,7 @@ static int issmallconst(Node *dcl)
 Node *fold(Node *n, int foldvar)
 {
     Node **args, *r;
+    Type *t;
     vlong a, b;
     size_t i;
 
@@ -140,6 +141,12 @@ Node *fold(Node *n, int foldvar)
         case Obxor:
             if (islit(args[0], &a) && islit(args[1], &b))
                 r = val(n->line, a ^ b, exprtype(n));
+            break;
+        case Omemb:
+            t = tybase(exprtype(args[0]));
+            /* we only fold lengths right now */
+            if (t->type == Tyarray && !strcmp(namestr(args[1]), "len"))
+                r = t->asize;
             break;
         case Ocast:
             /* FIXME: we currentl assume that the bits of the
