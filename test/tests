@@ -41,7 +41,8 @@ B structptr	E	42
 B structasn	E	42
 B structarray	E	42
 B structret	E	42
-B exportmain    E       42
+B constslice	P	23
+B exportmain	E	42
 B slalloc	E	123
 B neststruct	E	3
 B array		E	7

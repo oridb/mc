@@ -1,0 +1,12 @@
+use std
+
+const sl = array[1:3]
+const array = [1,2,3,4,5]
+
+const main = {
+	/* expected output 23 */
+	for x in sl
+		std.put("%i\n", x)
+	;;
+	std.put("\n")
+}
