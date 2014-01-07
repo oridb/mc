@@ -35,7 +35,7 @@ char* modenames[] = {
 
 /* forward decls */
 Loc *selexpr(Isel *s, Node *n);
-static void writeblob(FILE *fd, Htab *strtab, Node *blob);
+static void writeblob(FILE *fd, Htab *globls, Htab *strtab, Node *blob);
 
 /* used to decide which operator is appropriate
  * for implementing various conditional operators */
@@ -1042,40 +1042,60 @@ static void writepad(FILE *fd, size_t sz)
     fprintf(fd, "\t.fill %zd,1,0\n", sz);
 }
 
-static void writetup(FILE *fd, Htab *strtab, Node *n)
+static void writeexprs(FILE *fd, Htab *globls, Htab *strtab, Node **e, size_t n)
 {
     size_t i;
 
-    for (i = 0; i < n->expr.nargs; i++) {
-        writeblob(fd, strtab, n->expr.args[i]);
+    for (i = 0; i < n; i++) {
+        writeblob(fd, globls, strtab, e[i]);
     }
 }
 
-static void writearr(FILE *fd, Htab *strtab, Node *n)
+static size_t getintlit(Node *n, char *failmsg)
 {
-    size_t i;
-
-    for (i = 0; i < n->expr.nargs; i++) {
-        writeblob(fd, strtab, n->expr.args[i]);
-    }
+    if (exprop(n) != Olit)
+        fatal(n->line, "%s");
+    n = n->expr.args[0];
+    if (n->lit.littype != Lint)
+        fatal(n->line, "%s");
+    return n->lit.intval;
 }
 
-static void writestruct(FILE *fd, Htab *strtab, Node *n)
+static void writeslice(FILE *fd, Htab *globls, Htab *strtab, Node *n)
 {
-    size_t i;
+    Node *base, *lo, *hi;
+    ssize_t loval, hival, sz;
+    char *lbl;
 
-    for (i = 0; i < n->expr.nargs; i++) {
-        writeblob(fd, strtab, n->expr.args[i]);
-    }
+    base = n->expr.args[0];
+    lo = n->expr.args[1];
+    hi = n->expr.args[2];
+
+    if (exprop(base) != Ovar || !base->expr.isconst)
+        fatal(base->line, "slice base is not a constant value");
+    loval = getintlit(lo, "lower bound in slice is not constant literal");
+    hival = getintlit(hi, "upper bound in slice is not constant literal");
+    sz = tysize(tybase(exprtype(base))->sub[0]);
+
+    lbl = htget(globls, base);
+    fprintf(fd, "\t.quad %s + (%zd*%zd)\n", lbl, loval, sz);
+    fprintf(fd, "\t.quad %zd\n", (hival - loval));
 }
 
-static void writeblob(FILE *fd, Htab *strtab, Node *n)
+static void writeblob(FILE *fd, Htab *globls, Htab *strtab, Node *n)
 {
     switch(exprop(n)) {
-        case Otup:  writetup(fd, strtab, n);  break;
-        case Oarr:  writearr(fd, strtab, n);  break;
-        case Ostruct: writestruct(fd, strtab, n); break;
-        case Olit:  writelit(fd, strtab, n->expr.args[0], size(n)); break;
+        case Otup:
+        case Oarr:
+        case Ostruct:
+            writeexprs(fd, globls, strtab, n->expr.args, n->expr.nargs);
+            break;
+        case Olit:
+            writelit(fd, strtab, n->expr.args[0], size(n));
+            break;
+        case Oslice:
+            writeslice(fd, globls, strtab, n);
+            break;
         default:
                     die("Nonliteral initializer for global");
                     break;
@@ -1094,7 +1114,7 @@ void genblob(FILE *fd, Node *blob, Htab *globls, Htab *strtab)
         fprintf(fd, ".globl %s\n", lbl);
     fprintf(fd, "%s:\n", lbl);
     if (blob->decl.init)
-        writeblob(fd, strtab, blob->decl.init);
+        writeblob(fd, globls, strtab, blob->decl.init);
     else
         writepad(fd, size(blob));
 }

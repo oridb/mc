@@ -115,7 +115,7 @@ const loadhosts = {
 	for l in lines
 		/* trim comment */
 		match strfind(l, "#")
-		| `Some idx:	l = l[:idx]
+		| `Some _idx:	l = l[:_idx]
 		;;
 
 		match word(l)
@@ -169,7 +169,7 @@ const loadresolv = {
 	lines = strsplit(h, "\n")
 	for l in lines
 		match strfind(l, "#")
-		| `Some idx: l = l[:idx]
+		| `Some _idx: l = l[:_idx]
 		| `None:
 		;;
 

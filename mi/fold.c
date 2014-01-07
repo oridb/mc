@@ -45,6 +45,11 @@ static Node *val(int line, vlong val, Type *t)
     return n;
 }
 
+static int issmallconst(Node *dcl)
+{
+    return dcl->decl.isconst && exprop(dcl->decl.init) == Olit;
+}
+
 Node *fold(Node *n, int foldvar)
 {
     Node **args, *r;
@@ -62,7 +67,7 @@ Node *fold(Node *n, int foldvar)
         args[i] = fold(args[i], foldvar);
     switch (exprop(n)) {
         case Ovar:
-            if (foldvar && decls[n->expr.did]->decl.isconst)
+            if (foldvar && issmallconst(decls[n->expr.did]))
                 r = fold(decls[n->expr.did]->decl.init, foldvar);
             break;
         case Oadd:

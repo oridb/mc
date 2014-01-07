@@ -1613,11 +1613,16 @@ static void simpconstinit(Simp *s, Node *dcl)
             simplit(s, e->expr.args[0], &file->file.stmts, &file->file.nstmts);
         else
             lappend(&s->blobs, &s->nblobs, dcl);
-    } else if (dcl->decl.isconst && exprop(e) == Oarr) {
-        lappend(&s->blobs, &s->nblobs, dcl);
-    } else if (dcl->decl.isconst && exprop(e) == Ostruct) {
-        lappend(&s->blobs, &s->nblobs, dcl);
-    /* uninitialized global vars get zero-initialized decls */
+    } else if (dcl->decl.isconst) {
+        switch (exprop(e)) {
+            case Oarr:
+            case Ostruct:
+            case Oslice:
+                lappend(&s->blobs, &s->nblobs, dcl);
+                break;
+            default:
+                break;
+        }
     } else if (!dcl->decl.isconst && !e) {
         lappend(&s->blobs, &s->nblobs, dcl);
     } else {
