@@ -1,11 +1,21 @@
 use std
 
-const sl = array[1:3]
+const slpart = array[1:3]
+const slfull = array[:]
+const slinline = [6,7,8][:]
 const array = [1,2,3,4,5]
 
 const main = {
 	/* expected output 23 */
-	for x in sl
+	for x in slpart
+		std.put("%i", x)
+	;;
+	/* expected output 12345 */
+	for x in slfull
+		std.put("%i", x)
+	;;
+	/* expected output 678 */
+	for x in slinline
 		std.put("%i", x)
 	;;
 	std.put("\n")

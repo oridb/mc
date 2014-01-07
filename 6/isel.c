@@ -1054,10 +1054,10 @@ static void writeexprs(FILE *fd, Htab *globls, Htab *strtab, Node **e, size_t n)
 static size_t getintlit(Node *n, char *failmsg)
 {
     if (exprop(n) != Olit)
-        fatal(n->line, "%s");
+        fatal(n->line, "%s", failmsg);
     n = n->expr.args[0];
     if (n->lit.littype != Lint)
-        fatal(n->line, "%s");
+        fatal(n->line, "%s", failmsg);
     return n->lit.intval;
 }
 
