@@ -67,7 +67,7 @@ static char *ctxstr(Inferstate *st, Node *n)
     idx = NULL;
     switch (n->type) {
         default:
-            s = nodestr(n->type);
+            s = strdup(nodestr(n->type));
             break;
         case Ndecl:
             u = declname(n);
@@ -77,7 +77,7 @@ static char *ctxstr(Inferstate *st, Node *n)
             free(t);
             break;
         case Nname:
-            s = namestr(n);
+            s = strdup(namestr(n));
             break;
         case Nexpr:
             if (n->expr.idx)
