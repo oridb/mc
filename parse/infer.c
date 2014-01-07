@@ -1495,8 +1495,8 @@ static void checkstruct(Inferstate *st, Node *n)
 
         et = NULL;
         for (j = 0; j < t->nmemb; j++) {
-            if (!strcmp(namestr(t->sdecls[i]->decl.name), namestr(name))) {
-                et = type(st, t->sdecls[i]);
+            if (!strcmp(namestr(t->sdecls[j]->decl.name), namestr(name))) {
+                et = type(st, t->sdecls[j]);
                 break;
             }
         }
