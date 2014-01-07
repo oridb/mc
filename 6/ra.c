@@ -955,7 +955,7 @@ static int remap(Isel *s, Insn *insn, Remapping *use, size_t *nuse, Remapping *d
     regid u[Maxuse], d[Maxdef];
     size_t nu, nd;
     size_t useidx, defidx;
-    size_t i, j;
+    size_t i, j, k;
     int found;
 
     useidx = 0;
@@ -980,10 +980,12 @@ static int remap(Isel *s, Insn *insn, Remapping *use, size_t *nuse, Remapping *d
          * store the same register from the def. */
         found = 0;
         for (j = 0; j < defidx; j++) {
-            if (def[i].oldreg == d[i]) {
-                def[defidx].newreg = locreg(locmap[d[i]]->mode);
-                bsput(s->neverspill, def[defidx].newreg->reg.id);
-                found = 1;
+            for (k = 0; i < useidx; k++) {
+                if (use[j].oldreg == d[k]) {
+                    def[defidx].newreg = use[j].newreg;
+                    bsput(s->neverspill, def[defidx].newreg->reg.id);
+                    found = 1;
+                }
             }
         }
         if (!found) {

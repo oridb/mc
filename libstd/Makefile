@@ -25,6 +25,7 @@ MYRSRC= \
     slcp.myr \
     sldup.myr \
     sleq.myr \
+    slfill.myr \
     sljoin.myr \
     slpush.myr \
     slurp.myr \

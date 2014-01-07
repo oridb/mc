@@ -61,6 +61,7 @@ const dial = {str
 
 	match getaddr(host)
 	| `Ipv4 bits:
+		put("connecting to %ub.%ub.%ub.%ub:%i\n", bits[0], bits[1], bits[2], bits[3], portnum)
 		sa.fam = Afinet
 		sa.addr = bits
 		sa.port = hosttonet(portnum)
@@ -68,13 +69,18 @@ const dial = {str
 		-> `Failure "ipv6 not yet supported"
 	;;
 
+	put("socketing...\n")
 	sock = socket(sa.fam, socktype, 0)
+	put("socketed\n")
 	if sock < 0
 		-> `Failure "failed to connect to socket"
 	;;
 	var err
+	put("connecting...\n")
 	err = connect(sock, (&sa) castto(sockaddr#), sizeof(sockaddr_in))
+	put("connected\n")
 	if err < 0
+		put("Errno %i\n", -err)
 		close(sock)
 		-> `Failure "Failed to bind socket"
 	;;
