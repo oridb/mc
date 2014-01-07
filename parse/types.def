@@ -25,6 +25,7 @@ Ty(Tyulong, "ulong")
 /*end integer types*/
 Ty(Tyfloat32, "float32")
 Ty(Tyfloat64, "float64")
+/* end primitive types */
 Ty(Tyvalist, NULL)
 
 /* end atomic types */

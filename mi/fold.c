@@ -47,7 +47,16 @@ static Node *val(int line, vlong val, Type *t)
 
 static int issmallconst(Node *dcl)
 {
-    return dcl->decl.isconst && exprop(dcl->decl.init) == Olit;
+    Type *t;
+
+    if (!dcl->decl.isconst)
+        return 0;
+    if (!dcl->decl.init)
+        return 0;
+    t = tybase(exprtype(dcl->decl.init));
+    if (t->type <= Tyfloat64)
+        return 1;
+    return 0;
 }
 
 Node *fold(Node *n, int foldvar)
