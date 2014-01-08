@@ -918,6 +918,7 @@ static void inferarray(Inferstate *st, Node *n, int *isconst)
     Type *t;
     Node *len;
 
+    *isconst = 1;
     len = mkintlit(n->line, n->expr.nargs);
     t = mktyarray(n->line, mktyvar(n->line), len);
     for (i = 0; i < n->expr.nargs; i++) {
@@ -934,8 +935,10 @@ static void infertuple(Inferstate *st, Node *n, int *isconst)
     Type **types;
     size_t i;
 
+    *isconst = 1;
     types = xalloc(sizeof(Type *)*n->expr.nargs);
     for (i = 0; i < n->expr.nargs; i++) {
+        infernode(st, n->expr.args[i], NULL, NULL);
         n->expr.isconst = n->expr.isconst && n->expr.args[i]->expr.isconst;
         types[i] = type(st, n->expr.args[i]);
     }
@@ -951,8 +954,10 @@ static void inferucon(Inferstate *st, Node *n, int *isconst)
     uc = uconresolve(st, n);
     t = tyfreshen(st, tf(st, uc->utype));
     uc = tybase(t)->udecls[uc->id];
-    if (uc->etype)
+    if (uc->etype) {
+        inferexpr(st, n->expr.args[1], NULL, NULL);
         unify(st, n, uc->etype, type(st, n->expr.args[1]));
+    }
     *isconst = n->expr.args[0]->expr.isconst;
     settype(st, n, delayeducon(st, t));
 }
@@ -1013,15 +1018,12 @@ void addbindings(Inferstate *st, Node *n, Node **bind, size_t nbind)
     }
 }
 
-static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
+static void infersub(Inferstate *st, Node *n, Type *ret, int *sawret, int *exprconst)
 {
     Node **args;
     size_t i, nargs;
-    Node *s;
-    Type *t;
     int isconst;
 
-    assert(n->type == Nexpr);
     args = n->expr.args;
     nargs = n->expr.nargs;
     isconst = 1;
@@ -1038,6 +1040,20 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
     }
     if (ispureop[exprop(n)])
         n->expr.isconst = isconst;
+    *exprconst = isconst;
+}
+
+static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
+{
+    Node **args;
+    size_t i, nargs;
+    Node *s;
+    Type *t;
+    int isconst;
+
+    assert(n->type == Nexpr);
+    args = n->expr.args;
+    nargs = n->expr.nargs;
     infernode(st, n->expr.idx, NULL, NULL);
     switch (exprop(n)) {
         /* all operands are same type */
@@ -1046,6 +1062,7 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
         case Omul:      /* @a * @a -> @a */
         case Odiv:      /* @a / @a -> @a */
         case Oneg:      /* -@a -> @a */
+            infersub(st, n, ret, sawret, &isconst);
             t = type(st, args[0]);
             constrain(st, n, type(st, args[0]), cstrtab[Tcnum]);
             isconst = args[0]->expr.isconst;
@@ -1077,6 +1094,7 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
         case Obxoreq:   /* @a ^= @a -> @a */
         case Obsleq:    /* @a <<= @a -> @a */
         case Obsreq:    /* @a >>= @a -> @a */
+            infersub(st, n, ret, sawret, &isconst);
             t = type(st, args[0]);
             constrain(st, n, type(st, args[0]), cstrtab[Tcnum]);
             constrain(st, n, type(st, args[0]), cstrtab[Tcint]);
@@ -1089,6 +1107,7 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
             settype(st, n, tf(st, t));
             break;
         case Oasn:      /* @a = @a -> @a */
+            infersub(st, n, ret, sawret, &isconst);
             t = type(st, args[0]);
             for (i = 1; i < nargs; i++)
                 t = unify(st, n, t, type(st, args[i]));
@@ -1107,6 +1126,7 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
         case Oge:       /* @a >= @a -> bool */
         case Olt:       /* @a < @a -> bool */
         case Ole:       /* @a <= @b -> bool */
+            infersub(st, n, ret, sawret, &isconst);
             t = type(st, args[0]);
             for (i = 1; i < nargs; i++)
                 unify(st, n, t, type(st, args[i]));
@@ -1115,19 +1135,23 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
 
         /* reach into a type and pull out subtypes */
         case Oaddr:     /* &@a -> @a* */
+            infersub(st, n, ret, sawret, &isconst);
             settype(st, n, mktyptr(n->line, type(st, args[0])));
             break;
         case Oderef:    /* *@a* ->  @a */
+            infersub(st, n, ret, sawret, &isconst);
             t = unify(st, n, type(st, args[0]), mktyptr(n->line, mktyvar(n->line)));
             settype(st, n, t->sub[0]);
             break;
         case Oidx:      /* @a[@b::tcint] -> @a */
+            infersub(st, n, ret, sawret, &isconst);
             t = mktyidxhack(n->line, mktyvar(n->line));
             unify(st, n, type(st, args[0]), t);
             constrain(st, n, type(st, args[1]), cstrtab[Tcint]);
             settype(st, n, tf(st, t->sub[0]));
             break;
         case Oslice:    /* @a[@b::tcint,@b::tcint] -> @a[,] */
+            infersub(st, n, ret, sawret, &isconst);
             t = mktyidxhack(n->line, mktyvar(n->line));
             unify(st, n, type(st, args[0]), t);
             constrain(st, n, type(st, args[1]), cstrtab[Tcint]);
@@ -1137,19 +1161,24 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
 
         /* special cases */
         case Omemb:     /* @a.Ident -> @b, verify type(@a.Ident)==@b later */
+            infersub(st, n, ret, sawret, &isconst);
             settype(st, n, mktyvar(n->line));
             delayedcheck(st, n, curstab());
             break;
         case Osize:     /* sizeof @a -> size */
+            infersub(st, n, ret, sawret, &isconst);
             settype(st, n, mktylike(n->line, Tyuint));
             break;
         case Ocall:     /* (@a, @b, @c, ... -> @r)(@a,@b,@c, ... -> @r) -> @r */
+            infersub(st, n, ret, sawret, &isconst);
             unifycall(st, n);
             break;
         case Ocast:     /* cast(@a, @b) -> @b */
+            infersub(st, n, ret, sawret, &isconst);
             delayedcheck(st, n, curstab());
             break;
         case Oret:      /* -> @a -> void */
+            infersub(st, n, ret, sawret, &isconst);
             if (sawret)
                 *sawret = 1;
             if (!ret)
@@ -1161,9 +1190,11 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
             settype(st, n, t);
             break;
         case Ojmp:     /* goto void* -> void */
+            infersub(st, n, ret, sawret, &isconst);
             settype(st, n, mktype(-1, Tyvoid));
             break;
         case Ovar:      /* a:@a -> @a */
+            infersub(st, n, ret, sawret, &isconst);
             /* if we created this from a namespaced var, the type should be
              * set, and the normal lookup is expected to fail. Since we're
              * already done with this node, we can just return. */
@@ -1187,6 +1218,7 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
             inferarray(st, n, &n->expr.isconst);
             break;
         case Olit:      /* <lit>:@a::tyclass -> @a */
+            infersub(st, n, ret, sawret, &isconst);
             switch (args[0]->lit.littype) {
                 case Lfunc:
                     infernode(st, args[0]->lit.fnval, NULL, NULL); break;
@@ -1199,6 +1231,7 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
             settype(st, n, type(st, args[0]));
             break;
         case Olbl:      /* :lbl -> void* */
+            infersub(st, n, ret, sawret, &isconst);
             settype(st, n, mktyptr(n->line, mktype(-1, Tyvoid)));
         case Obad: case Ocjmp: case Oset:
         case Oslbase: case Osllen:
