@@ -1071,6 +1071,9 @@ static void writeslice(FILE *fd, Htab *globls, Htab *strtab, Node *n)
     lo = n->expr.args[1];
     hi = n->expr.args[2];
 
+    /* by this point, all slicing operations should have had their bases
+     * pulled out, and we should have vars with their pseudo-decls in their
+     * place */
     if (exprop(base) != Ovar || !base->expr.isconst)
         fatal(base->line, "slice base is not a constant value");
     loval = getintlit(lo, "lower bound in slice is not constant literal");
@@ -1097,8 +1100,9 @@ static void writeblob(FILE *fd, Htab *globls, Htab *strtab, Node *n)
             writeslice(fd, globls, strtab, n);
             break;
         default:
-                    die("Nonliteral initializer for global");
-                    break;
+            dump(n, stdout);
+            die("Nonliteral initializer for global");
+            break;
     }
 }
 

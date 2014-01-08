@@ -693,22 +693,23 @@ static void simpblk(Simp *s, Node *n)
     popstab();
 }
 
-static Node *simplit(Simp *s, Node *lit, Node ***l, size_t *nl)
+static Node *simpblob(Simp *s, Node *blob, Node ***l, size_t *nl)
 {
     Node *n, *d, *r;
     char lbl[128];
 
-    n = mkname(lit->line, genlblstr(lbl, 128));
-    d = mkdecl(lit->line, n, lit->expr.type);
-    r = mkexpr(lit->line, Ovar, n, NULL);
+    n = mkname(blob->line, genlblstr(lbl, 128));
+    d = mkdecl(blob->line, n, blob->expr.type);
+    r = mkexpr(blob->line, Ovar, n, NULL);
 
-    d->decl.init = lit;
-    d->decl.type = lit->expr.type;
+    d->decl.init = blob;
+    d->decl.type = blob->expr.type;
     d->decl.isconst = 1;
     htput(s->globls, d, strdup(lbl));
 
     r->expr.did = d->decl.did;
-    r->expr.type = lit->expr.type;
+    r->expr.type = blob->expr.type;
+    r->expr.isconst = 1;
 
     lappend(l, nl, d);
     return r;
@@ -1336,13 +1337,13 @@ static Node *rval(Simp *s, Node *n, Node *dst)
                     if (args[0]->lit.intval < 0xffffffff)
                         r = n;
                     else
-                        r = simplit(s, n, &s->blobs, &s->nblobs);
+                        r = simpblob(s, n, &s->blobs, &s->nblobs);
                     break;
                 case Lstr: case Lflt:
-                    r = simplit(s, n, &s->blobs, &s->nblobs);
+                    r = simpblob(s, n, &s->blobs, &s->nblobs);
                     break;
                 case Lfunc:
-                    r = simplit(s, n, &file->file.stmts, &file->file.nstmts);
+                    r = simpblob(s, n, &file->file.stmts, &file->file.nstmts);
                     break;
             }
             break;
@@ -1394,7 +1395,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
                 u = mkexpr(n->line, Olit, t, NULL);
                 t->lit.type = n->expr.type;
                 u->expr.type = n->expr.type;
-                v = simplit(s, u, &s->blobs, &s->nblobs);
+                v = simpblob(s, u, &s->blobs, &s->nblobs);
                 r = mkexpr(n->line, Ofmul, v, args[0], NULL);
                 r->expr.type = n->expr.type;
             } else {
@@ -1602,6 +1603,25 @@ static void fillglobls(Stab *st, Htab *globls)
     free(k);
 }
 
+static void extractsub(Simp *s, Node ***blobs, size_t *nblobs, Node *e)
+{
+    size_t i;
+
+    switch (exprop(e)) {
+        case Oslice:
+            if (exprop(e->expr.args[0]) == Oarr)
+                e->expr.args[0] = simpblob(s, e->expr.args[0], blobs, nblobs);
+            break;
+        case Oarr:
+        case Ostruct:
+            for (i = 0; i < e->expr.nargs; i++)
+                extractsub(s, blobs, nblobs, e->expr.args[i]);
+            break;
+        default:
+            break;
+    }
+}
+
 static void simpconstinit(Simp *s, Node *dcl)
 {
     Node *e;
@@ -1610,7 +1630,7 @@ static void simpconstinit(Simp *s, Node *dcl)
     e = dcl->decl.init;
     if (e && exprop(e) == Olit) {
         if (e->expr.args[0]->lit.littype == Lfunc)
-            simplit(s, e->expr.args[0], &file->file.stmts, &file->file.nstmts);
+            simpblob(s, e->expr.args[0], &file->file.stmts, &file->file.nstmts);
         else
             lappend(&s->blobs, &s->nblobs, dcl);
     } else if (dcl->decl.isconst) {
@@ -1618,6 +1638,7 @@ static void simpconstinit(Simp *s, Node *dcl)
             case Oarr:
             case Ostruct:
             case Oslice:
+                extractsub(s, &s->blobs, &s->nblobs, e);
                 lappend(&s->blobs, &s->nblobs, dcl);
                 break;
             default:
