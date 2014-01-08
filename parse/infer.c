@@ -312,6 +312,9 @@ static Type *tysearch(Inferstate *st, Type *t)
 
         if (!tytab[t->tid])
             break;
+        /* compress paths: shift the link up one level */
+        if (tytab[tytab[t->tid]->tid])
+            tytab[t->tid] = tytab[tytab[t->tid]->tid];
         t = tytab[t->tid];
     }
     return t;
