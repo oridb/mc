@@ -1071,7 +1071,7 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
                 t = unify(st, n, t, type(st, args[i]));
             }
             n->expr.isconst = isconst;
-            settype(st, n, tf(st, t));
+            settype(st, n, t);
             break;
         case Omod:      /* @a % @a -> @a */
         case Obor:      /* @a | @a -> @a */
@@ -1104,14 +1104,14 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
                 t = unify(st, n, t, type(st, args[i]));
             }
             n->expr.isconst = isconst;
-            settype(st, n, tf(st, t));
+            settype(st, n, t);
             break;
         case Oasn:      /* @a = @a -> @a */
             infersub(st, n, ret, sawret, &isconst);
             t = type(st, args[0]);
             for (i = 1; i < nargs; i++)
                 t = unify(st, n, t, type(st, args[i]));
-            settype(st, n, tf(st, t));
+            settype(st, n, t);
             if (args[0]->expr.isconst)
                 fatal(n->line, "Attempting to assign constant \"%s\"", ctxstr(st, args[0]));
             break;
@@ -1148,7 +1148,7 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
             t = mktyidxhack(n->line, mktyvar(n->line));
             unify(st, n, type(st, args[0]), t);
             constrain(st, n, type(st, args[1]), cstrtab[Tcint]);
-            settype(st, n, tf(st, t->sub[0]));
+            settype(st, n, t->sub[0]);
             break;
         case Oslice:    /* @a[@b::tcint,@b::tcint] -> @a[,] */
             infersub(st, n, ret, sawret, &isconst);
@@ -1156,7 +1156,7 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
             unify(st, n, type(st, args[0]), t);
             constrain(st, n, type(st, args[1]), cstrtab[Tcint]);
             constrain(st, n, type(st, args[2]), cstrtab[Tcint]);
-            settype(st, n, mktyslice(n->line, tf(st, t->sub[0])));
+            settype(st, n, mktyslice(n->line, t->sub[0]));
             break;
 
         /* special cases */
