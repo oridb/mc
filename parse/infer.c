@@ -1032,8 +1032,6 @@ static void infersub(Inferstate *st, Node *n, Type *ret, int *sawret, int *exprc
         if (args[i]->type == Nexpr) {
             /* Omemb can sometimes resolve to a namespace. We have to check
              * this. Icky. */
-            if (exprop(args[i]) == Omemb)
-                checkns(st, args[i], &args[i]);
             inferexpr(st, args[i], ret, sawret);
             isconst = isconst && args[i]->expr.isconst;
         }
@@ -1055,6 +1053,9 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
     args = n->expr.args;
     nargs = n->expr.nargs;
     infernode(st, n->expr.idx, NULL, NULL);
+    for (i = 0; i < nargs; i++)
+        if (args[i]->type == Nexpr && exprop(args[i]) == Omemb)
+            checkns(st, args[i], &args[i]);
     switch (exprop(n)) {
         /* all operands are same type */
         case Oadd:      /* @a + @a -> @a */
