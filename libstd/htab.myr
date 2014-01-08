@@ -19,6 +19,7 @@ pkg std =
 	generic mkht	: (h : (k : @k -> uint32), eq : (a : @k, b : @k -> bool) -> htab(@k, @v)#)
 	generic htfree	: (ht : htab(@k, @v)# -> void)
 	generic htput	: (ht : htab(@k, @v)#, k : @k, v : @v -> void)
+	generic htdel	: (ht : htab(@k, @v)#, k : @k -> void)
 	generic htget	: (ht : htab(@k, @v)#, k : @k -> option(@v))
 	generic hthas	: (ht : htab(@k, @v)#, k : @k -> bool)
 	generic htkeys	: (ht : htab(@k, @v)# -> @k[:])
