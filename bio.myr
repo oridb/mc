@@ -51,6 +51,7 @@ pkg bio =
 	/* delimited read; returns freshly allocated buffer. */
 	const readln	: (f : file#	-> std.option(byte[:]))
 	const readto	: (f : file#, delim : byte[:]	-> std.option(byte[:]))
+	const skipto	: (f : file#, delim : byte[:]	-> bool)
 
 	/* formatted i/o */
 	const put	: (f : file#, fmt : byte[:], args : ... -> std.size)
@@ -375,14 +376,14 @@ const readto = {f, delim
 			if f.rbuf[i] == delim[0]
 				for j = 0; j < delim.len; j++
 					if f.rbuf[i + j] != delim[j]
-						goto nextiter
+						goto nextiterread
 					;;
 				;;
 				ret = readinto(f, ret, i - f.rstart)
 				f.rstart += delim.len
 				-> `std.Some ret
 			;;
-:nextiter
+:nextiterread
 		;;
 		ret = readinto(f, ret, i - f.rstart)
 	;;
@@ -393,6 +394,32 @@ const readto = {f, delim
 const readln = {f
 	-> readto(f, "\n")
 }
+
+const skipto = {f, delim
+	var ret : byte[:]
+	var i, j
+
+	ret = [][:]
+	while true
+		if !ensureread(f, delim.len)
+			-> ret.len > 0
+		;;
+		for i = f.rstart; i < f.rend; i++
+			if f.rbuf[i] == delim[0]
+				for j = 0; j < delim.len; j++
+					if f.rbuf[i + j] != delim[j]
+						goto nextiterskip
+					;;
+				;;
+				f.rstart += delim.len
+				-> true
+			;;
+:nextiterskip
+		;;
+	;;
+	std.die("unreachable")
+}
+
 
 /*
 Same as std.put, but buffered. Returns the number of bytes written.
