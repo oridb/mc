@@ -1,0 +1,20 @@
+use "types.use"
+use "alloc.use"
+use "fmt.use"
+
+pkg std =
+	generic slinsert	: (sl : @a[:], idx : size, elt : @a	-> @a[:])
+;;
+
+generic slinsert = {sl, idx, elt
+	var i
+	var len
+
+	len = sl.len
+	sl = slgrow(sl, sl.len + 1)
+	for i = 0; i < (len - idx); i++
+		sl[sl.len - i] = sl[len - i]
+	;;
+	sl[idx] = elt
+	-> sl
+}
