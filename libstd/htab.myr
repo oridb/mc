@@ -58,7 +58,7 @@ generic resize = {ht
 	ht.dead = slzalloc(sz)
 
 	ht.nelt = 0
-	for i = 0; i < ht.keys.len; i++
+	for i = 0; i < oldk.len; i++
 		if oldh[i] != 0 && !oldd[i]
 			htput(ht, oldk[i], oldv[i])
 		;;
@@ -70,26 +70,25 @@ generic resize = {ht
 }
 
 generic idx = {ht, k
-	var i
+	var i, di
 	var h
-	var di
 
 	di = 0
 	h = hash(ht, k)
 	i = h & (ht.keys.len - 1)
-	while ht.hashes[i] != 0 && !ht.dead[i] && ht.hashes[i] != h
-:idxsearchmore
-		di++
-		i = (h + di) & (ht.keys.len - 1)
-	;;
+	while true
+		while ht.hashes[i] != 0 && !ht.dead[i] && ht.hashes[i] != h
+			di++
+			i = (h + di) & (ht.keys.len - 1)
+		;;
 
-	if ht.hashes[i] == 0 || ht.dead[i]
-		-> `None
+		if ht.hashes[i] == 0 || ht.dead[i]
+			-> `None
+		;;
+		if ht.eq(ht.keys[i], k)
+			-> `Some i
+		;;
 	;;
-	if !ht.eq(ht.keys[i], k)
-		goto idxsearchmore /* collision */
-	;;
-	-> `Some i
 }
 
 generic mkht = {h, eq
@@ -117,25 +116,26 @@ generic htfree = {ht
 }
 
 generic htput = {ht, k, v
-	var i
-	var di
+	var i, di
 	var h
+	var done
 
 	di = 0
 	h = hash(ht, k)
 	i = h & (ht.keys.len - 1)
-	while ht.hashes[i] != 0 && !ht.dead[i]
+	done = false
+	while ht.hashes[i] != 0 && !ht.dead[i] && !done
 		/*
 		second insertion just overwrites first.
 		nb: comparing keys for dead values is bad.
 		*/
 		if ht.hashes[i] == h && (ht.dead[i] || ht.eq(ht.keys[i], k))
-			goto foundfreeslot
+			done = true
+		else
+			di++
+			i = (h + di) & (ht.keys.len - 1)
 		;;
-		di++
-		i = (h + di) & (ht.keys.len - 1)
 	;;
-:foundfreeslot
 	ht.hashes[i] = h
 	ht.keys[i] = k
 	ht.vals[i] = v
