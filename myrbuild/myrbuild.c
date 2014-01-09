@@ -373,8 +373,6 @@ void addlibs(char ***args, size_t *nargs, Htab *g)
     head = *nargs;
     for (i = 0; i < nlibs; i++)
         visit(args, nargs, head, g, libs[i], looped, marked);
-    compiled = mkht(strhash, streq);
-    
 }
 
 void linkobj(char **files, size_t nfiles)

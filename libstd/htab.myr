@@ -21,6 +21,7 @@ pkg std =
 	generic htput	: (ht : htab(@k, @v)#, k : @k, v : @v -> void)
 	generic htdel	: (ht : htab(@k, @v)#, k : @k -> void)
 	generic htget	: (ht : htab(@k, @v)#, k : @k -> option(@v))
+	generic htgetv	: (ht : htab(@k, @v)#, k : @k, fallback : @v-> @v)
 	generic hthas	: (ht : htab(@k, @v)#, k : @k -> bool)
 	generic htkeys	: (ht : htab(@k, @v)# -> @k[:])
 ;;
@@ -163,6 +164,13 @@ generic htget = {ht, k
 	match idx(ht, k)
 	| `Some i:	-> `Some ht.vals[i]
 	| `None:	-> `None
+	;;
+}
+
+generic htgetv = {ht, k, v
+	match idx(ht, k)
+	| `Some i:	-> ht.vals[i]
+	| `None:	-> v
 	;;
 }
 
