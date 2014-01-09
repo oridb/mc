@@ -30,3 +30,17 @@ std$cstring:
 	pushq %r15              /* ret addr */
 	ret
 
+.globl std$alloca
+.globl _std$alloca
+_std$alloca:
+std$alloca:
+	movq (%rsp),%r15	/* ret addr */
+	movq 8(%rsp),%rbx	/* len */
+	movq %rsp,%rax          /* top of stack (return value) */
+	
+	/* get stack space */
+	subq $8,%rsp		/* "unpop" the args for return */
+	subq %rbx,%rsp          /* get stack space */
+
+	pushq %r15              /* ret addr */
+	ret

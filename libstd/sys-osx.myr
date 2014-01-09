@@ -52,6 +52,12 @@ pkg std =
 		qspare1	: int64
 	;;
 
+	type rusage = struct
+		utime	: timeval	/* user time */
+		stime	: timeval	/* system time */
+		_opaque	: uint64[14]	/* padding (darwin-specific data) */
+	;;
+
 	type utsname = struct
 		system	: byte[256]
 		node	: byte[256]
@@ -478,11 +484,20 @@ pkg std =
 
 	extern const syscall : (sc:scno, args:... -> int64)
 	extern const cstring : (str : byte[:] -> byte#)
+	extern const alloca : (sz : size -> byte#)
+	extern const __cenvp : byte##
 
 	/* process control */
 	const exit	: (status:int -> void)
 	const getpid	: ( -> int64)
 	const kill	: (pid:int64, sig:int64 -> int64)
+	const fork	: (-> int64)
+	const wait4	: (pid:int64, loc:int64#, opt : int64, usage:rusage#	-> int64)
+	const waitpid	: (pid:int64, loc:int64#, opt : int64	-> int64)
+	const execv	: (cmd : byte[:], args : byte[:][:] -> int64)
+	const execve	: (cmd : byte[:], args : byte[:][:], env : byte[:][:] -> int64)
+	const execvp	: (cmd : byte[:], args : byte[:][:] -> int64)
+	const execvpe	: (cmd : byte[:], args : byte[:][:], env : byte[:][:] -> int64)
 
 	/* fd manipulation */
 	const open	: (path:byte[:], opts:fdopt, mode:int64 -> fd)
@@ -522,6 +537,22 @@ pkg std =
 const exit	= {status;		syscall(Sysexit, status castto(int64))}
 const getpid	= {;			-> syscall(Sysgetpid, 1)}
 const kill	= {pid, sig;		-> syscall(Syskill, pid, sig)}
+const fork	= {;			-> syscall(Sysfork)}
+const wait4	= {pid, loc, opt, usage;	-> syscall(Syswait4, pid, loc, opt, usage)}
+const waitpid	= {pid, loc, opt;
+	var rusage
+	-> wait4(pid, loc, opt, &rusage)
+}
+const execv	= {cmd, args
+	var cargs, i
+
+	cargs = (alloca(sizeof(byte#)*(args.len + 1)) castto(byte##))[:args.len]
+	for i = 0; i < args.len; i++
+		cargs[i] = cstring(args[i])
+	;;
+	cargs[args.len] = 0 castto(byte#)
+	-> syscall(Sysexecve, cmd castto(byte#), cargs, __cenvp)
+}
 
 /* fd manipulation */
 const open	= {path, opts, mode;	-> syscall(Sysopen, cstring(path), opts, mode) castto(fd)}

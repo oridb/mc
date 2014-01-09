@@ -442,6 +442,11 @@ pkg std =
 	const exit	: (status:int -> void)
 	const getpid	: ( -> int64)
 	const kill	: (pid:int64, sig:int64 -> int64)
+	const fork	: (-> int64)
+	const wait4	: (pid:int64, loc:int64#, opt : int64, usage:rusage#	-> int64)
+	const waitpid	: (pid:int64, loc:int64#, opt : int64	-> int64)
+	const execv	: (cmd : byte[:], args : byte[:][:])
+
 
 	/* fd manipulation */
 	const open	: (path:byte[:], opts:fdopt, mode:int64 -> fd)
@@ -479,6 +484,19 @@ pkg std =
 const exit	= {status;		syscall(Sysexit, status castto(int64))}
 const getpid	= {;			-> syscall(Sysgetpid, 1)}
 const kill	= {pid, sig;		-> syscall(Syskill, pid, sig)}
+const fork	= {;			-> syscall(Sysfork)}
+const wait4	= {pid, loc, opt, use;	-> syscall(Syswait4, pid, loc, opt, use)}
+const waitpid	= {pid, loc, opt;	-> 
+	var rusage
+	-> wait4(pid, loc, opt, &rusage)
+}
+const execv	= {cmd, args
+	var buf : byte#[1024] /* FIXME: right now, we only support 1023 args. */
+	for a in args
+		buf[i++] = cstring(buf)
+	;;
+}
+
 
 /* fd manipulation */
 const open	= {path, opts, mode;	-> syscall(Sysopen, cstring(path), opts, mode) castto(fd)}

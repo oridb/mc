@@ -7,6 +7,10 @@ _std$_environment:
 .envlen:
 .quad 0 /* env ptr */
 
+.globl _std$__cenvp
+_std$__cenvp:
+.quad 0
+
 .text
 /*
  * counts the length of the string pointed to
@@ -68,6 +72,9 @@ cvt:
 start:
 	/* turn args into a slice */
 	movq	%rsp,%rbp
+        /* store envp for some syscalls to use without converting */
+	movq	16(%rbp,%rax,8), %rbx	/* envp = argv + 8*argc + 8 */
+        movq    %rbx,_std$__cenvp(%rip)
 	/* stack allocate sizeof(byte[:])*(argc + len(envp)) */
 	movq	(%rbp),%rax
 	leaq	16(%rbp,%rax,8), %rbx	/* envp = argv + 8*argc + 8 */
