@@ -1,0 +1,72 @@
+use std
+
+use "testmatch.use"
+
+const main = {
+	asciiclass()
+	set()
+	/*
+	unicodeclass()
+	negasciiclass()
+	negasciirange()
+	negset()
+	*/
+}
+
+const asciiclass = {
+	/* \D success */
+	testmatch("\\D", "x")
+	testmatch("\\D+", "xa!#^cs")
+
+	/* \D fail: end of ranges chars */
+	testmatch("\\D", "0")
+	testmatch("\\D", "9")
+	testmatch("\\D+", "a35x")
+	testmatch("\\D+", "13688")
+
+	/* \X success */
+	testmatch("\\X", "Z")
+	testmatch("\\X\\X", "gg")
+	/* \X fail */
+	testmatch("\\X", "a")
+	testmatch("\\X+", "zz13b8cDEf")
+
+	/* \S success */
+	testmatch("\\S", "a")
+	testmatch("\\S\\S", "i%")
+	testmatch("\\S+", "alskd690!#!!")
+
+	/* \S fail */
+	testmatch("\\S", " ")
+	testmatch("\\S\\S", "\t\n")
+	testmatch("\\S+", "\t \nkait")
+
+	/* word success */
+	testmatch("\\W+", "!%!^^@@!^")
+	/* word fail */
+	testmatch("\\W+", "a^#$bcABC0123_")
+
+	/* \H success */
+	testmatch("\\H", "\n")
+	testmatch("\\H\\H", "\n\r")
+	/* \H fail */
+	testmatch("\\H+", "\t \t.")
+	testmatch("\\H\\H", "\t ")
+	testmatch("\\H+", "\ta35 \t ")
+}
+
+const set = {
+	/* ranges: should succeed */
+	testmatch("[^a-z]*", "ABCD")
+	testmatch("[^a-zA-Z]*", "1234")
+	testmatch("[^a-zA-Z0-9_]*", "-^^-")
+	testmatch("[^abc]*", "d6d")
+	testmatch("[^a-zABC]*", "!^!!))#")
+
+	/* ranges: should fail */
+	testmatch("[^a-z]*", "abcd")
+	testmatch("[^a-zA-Z]*", "abCD")
+	testmatch("[^a-zA-Z0-9_]*", "_abCD018")
+	testmatch("[^abc]*", "abba")
+	testmatch("[^a-zABC]*", "abBa")
+}

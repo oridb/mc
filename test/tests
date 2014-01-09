@@ -22,6 +22,7 @@ EXTRA_SRC=testmatch.myr
 #	evident.
 B regex-basic		C
 B regex-class		C
+B regex-negclass	C
 B regex-capture         C
 B regex-failmatch	C
 B regex-unicode		C
