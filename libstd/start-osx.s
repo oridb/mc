@@ -72,18 +72,18 @@ cvt:
 start:
 	/* turn args into a slice */
 	movq	%rsp,%rbp
-        /* store envp for some syscalls to use without converting */
-	movq	16(%rbp,%rax,8), %rbx	/* envp = argv + 8*argc + 8 */
-        movq    %rbx,_std$__cenvp(%rip)
 	/* stack allocate sizeof(byte[:])*(argc + len(envp)) */
 	movq	(%rbp),%rax
-	leaq	16(%rbp,%rax,8), %rbx	/* envp = argv + 8*argc + 8 */
+	leaq	16(%rbp,%rax,8), %rbx	/* argp = argv + 8*argc + 8 */
         call    count
 	addq	%r9,%rax
 	imulq	$16,%rax
 	subq	%rax,%rsp
 	movq	%rsp, %rdx	/* saved args[:] */
 
+        /* store envp for some syscalls to use without converting */
+	movq	16(%rbp,%rax,8), %rbx	/* envp = argv + 8*argc + 8 */
+        movq    %rbx,_std$__cenvp(%rip)
 	/* convert envp to byte[:][:] for std._environment */
 	movq	(%rbp),%rax
 	leaq	16(%rbp,%rax,8), %rbx	/* envp = argv + 8*argc + 8 */

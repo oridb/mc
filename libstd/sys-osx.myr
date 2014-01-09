@@ -496,8 +496,6 @@ pkg std =
 	const waitpid	: (pid:int64, loc:int64#, opt : int64	-> int64)
 	const execv	: (cmd : byte[:], args : byte[:][:] -> int64)
 	const execve	: (cmd : byte[:], args : byte[:][:], env : byte[:][:] -> int64)
-	const execvp	: (cmd : byte[:], args : byte[:][:] -> int64)
-	const execvpe	: (cmd : byte[:], args : byte[:][:], env : byte[:][:] -> int64)
 
 	/* fd manipulation */
 	const open	: (path:byte[:], opts:fdopt, mode:int64 -> fd)

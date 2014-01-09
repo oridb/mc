@@ -1,0 +1,50 @@
+use "sys.use"
+use "fmt.use"
+use "option.use"
+use "strsplit.use"
+use "alloc.use"
+use "env.use"
+
+pkg std = 
+	const execvp	: (cmd : byte[:], args : byte[:][:] -> int64)
+	const execvpe	: (cmd : byte[:], args : byte[:][:], env : byte[:][:] -> int64)
+;;
+
+const execvp = {cmd, args
+	var path
+	var split
+	var buf : byte[512]
+
+	match getenv("PATH")
+	| `Some p:	path = p
+	| `None:	path = "/usr/local/bin:/bin:/usr/bin"
+	;;
+
+	split = strsplit(path, ":")
+	for s in split
+		bfmt(buf[:], "%s/%s", s, cmd)
+		execv(cmd, args)
+	;;
+	slfree(split)
+	-> -1
+}
+
+const execvpe = {cmd, args, env
+	var path
+	var split
+	var buf : byte[512]
+
+	match getenv("PATH")
+	| `Some p:	path = p
+	| `None:	path = "/usr/local/bin:/bin:/usr/bin"
+	;;
+
+	split = strsplit(path, ":")
+	for s in split
+		bfmt(buf[:], "%s/%s", s, cmd)
+		execve(cmd, args, env)
+	;;
+	slfree(split)
+	-> -1
+}
+

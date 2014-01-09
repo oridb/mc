@@ -9,6 +9,7 @@ MYRSRC= \
     endian.myr \
     env.myr \
     error.myr \
+    execvp.myr \
     extremum.myr \
     fmt.myr \
     hashfuncs.myr \
@@ -39,6 +40,7 @@ MYRSRC= \
     units.myr \
     utf.myr \
     varargs.myr \
+    waitstatus.myr \
 
 ASMSRC= \
     start.s \

@@ -1,4 +1,5 @@
 use "types.use"
+use "sleq.use"
 
 pkg std =
 	type scno	= int64	/* syscall */
@@ -26,6 +27,17 @@ pkg std =
 	type timespec = struct
 		sec	: uint64
 		nsec	: uint64
+	;;
+
+	type timeval = struct
+		sec	: uint64
+		usec	: uint64
+	;;
+
+	type rusage = struct
+		utime	: timeval	/* user time */
+		stime	: timeval	/* system time */
+		_opaque	: uint64[14]	/* padding (darwin-specific data) */
 	;;
 
 	type statbuf = struct
@@ -435,8 +447,10 @@ pkg std =
 	const Sysprocess_vm_writev	: scno = 311
 
 	/* getting to the os */
-	extern const syscall : (sc:scno, args:... -> int64)
-	extern const cstring : (str : byte[:] -> byte#)
+	extern const syscall	: (sc:scno, args:... -> int64)
+	extern const cstring	: (str : byte[:] -> byte#)
+	extern const alloca	: (sz : size	-> byte#)
+	extern const __cenvp : byte##
 
 	/* process management */
 	const exit	: (status:int -> void)
@@ -445,7 +459,8 @@ pkg std =
 	const fork	: (-> int64)
 	const wait4	: (pid:int64, loc:int64#, opt : int64, usage:rusage#	-> int64)
 	const waitpid	: (pid:int64, loc:int64#, opt : int64	-> int64)
-	const execv	: (cmd : byte[:], args : byte[:][:])
+	const execv	: (cmd : byte[:], args : byte[:][:] -> int64)
+	const execve	: (cmd : byte[:], args : byte[:][:], env : byte[:][:] -> int64)
 
 
 	/* fd manipulation */
@@ -485,18 +500,48 @@ const exit	= {status;		syscall(Sysexit, status castto(int64))}
 const getpid	= {;			-> syscall(Sysgetpid, 1)}
 const kill	= {pid, sig;		-> syscall(Syskill, pid, sig)}
 const fork	= {;			-> syscall(Sysfork)}
-const wait4	= {pid, loc, opt, use;	-> syscall(Syswait4, pid, loc, opt, use)}
-const waitpid	= {pid, loc, opt;	-> 
+const wait4	= {pid, loc, opt, usage;	-> syscall(Syswait4, pid, loc, opt, usage)}
+const waitpid	= {pid, loc, opt;
 	var rusage
 	-> wait4(pid, loc, opt, &rusage)
 }
+
 const execv	= {cmd, args
-	var buf : byte#[1024] /* FIXME: right now, we only support 1023 args. */
-	for a in args
-		buf[i++] = cstring(buf)
+	var cargs, i
+
+	/* of course we fucking have to duplicate this code everywhere,
+	* since we want to stack allocate... */
+	cargs = (alloca(sizeof(byte#)*(args.len + 1)) castto(byte##))[:args.len]
+	for i = 0; i < args.len; i++
+		cargs[i] = cstring(args[i])
 	;;
+	cargs[args.len] = 0 castto(byte#)
+	-> syscall(Sysexecve, cmd castto(byte#), cargs, __cenvp)
 }
 
+const execve	= {cmd, args, env
+	var cargs, cenv, i
+
+	/* copy the args */
+	cargs = (alloca(sizeof(byte#)*(args.len + 1)) castto(byte##))[:args.len]
+	for i = 0; i < args.len; i++
+		cargs[i] = cstring(args[i])
+	;;
+	cargs[args.len] = 0 castto(byte#)
+
+	/*
+	 copy the env.
+	 of course we fucking have to duplicate this code everywhere,
+	 since we want to stack allocate... 
+	*/
+	cenv = (alloca(sizeof(byte#)*(env.len + 1)) castto(byte##))[:env.len]
+	for i = 0; i < env.len; i++
+		cenv[i] = cstring(env[i])
+	;;
+	cenv[env.len] = 0 castto(byte#)
+
+	-> syscall(Sysexecve, cmd castto(byte#), cargs, cenv)
+}
 
 /* fd manipulation */
 const open	= {path, opts, mode;	-> syscall(Sysopen, cstring(path), opts, mode) castto(fd)}
