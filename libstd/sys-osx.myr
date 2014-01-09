@@ -492,8 +492,8 @@ pkg std =
 	const getpid	: ( -> int64)
 	const kill	: (pid:int64, sig:int64 -> int64)
 	const fork	: (-> int64)
-	const wait4	: (pid:int64, loc:int64#, opt : int64, usage:rusage#	-> int64)
-	const waitpid	: (pid:int64, loc:int64#, opt : int64	-> int64)
+	const wait4	: (pid:int64, loc:int32#, opt : int64, usage:rusage#	-> int64)
+	const waitpid	: (pid:int64, loc:int32#, opt : int64	-> int64)
 	const execv	: (cmd : byte[:], args : byte[:][:] -> int64)
 	const execve	: (cmd : byte[:], args : byte[:][:], env : byte[:][:] -> int64)
 
@@ -538,8 +538,7 @@ const kill	= {pid, sig;		-> syscall(Syskill, pid, sig)}
 const fork	= {;			-> syscall(Sysfork)}
 const wait4	= {pid, loc, opt, usage;	-> syscall(Syswait4, pid, loc, opt, usage)}
 const waitpid	= {pid, loc, opt;
-	var rusage
-	-> wait4(pid, loc, opt, &rusage)
+	-> wait4(pid, loc, opt, 0 castto(byte#)) 
 }
 
 const execv	= {cmd, args

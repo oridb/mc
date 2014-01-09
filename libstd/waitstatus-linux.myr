@@ -1,12 +1,12 @@
 use "die.use"
 pkg std =
 	type waitstatus = union
-		`Waitexit int64
-		`Waitsig  int64
-		`Waitstop int64
+		`Waitexit int32
+		`Waitsig  int32
+		`Waitstop int32
 	;;
 
-	const waitstatus	: (st : int64 -> waitstatus)
+	const waitstatus	: (st : int32 -> waitstatus)
 ;;
 
 const waitstatus = {st

@@ -457,8 +457,8 @@ pkg std =
 	const getpid	: ( -> int64)
 	const kill	: (pid:int64, sig:int64 -> int64)
 	const fork	: (-> int64)
-	const wait4	: (pid:int64, loc:int64#, opt : int64, usage:rusage#	-> int64)
-	const waitpid	: (pid:int64, loc:int64#, opt : int64	-> int64)
+	const wait4	: (pid:int64, loc:int32#, opt : int64, usage:rusage#	-> int64)
+	const waitpid	: (pid:int64, loc:int32#, opt : int64	-> int64)
 	const execv	: (cmd : byte[:], args : byte[:][:] -> int64)
 	const execve	: (cmd : byte[:], args : byte[:][:], env : byte[:][:] -> int64)
 
