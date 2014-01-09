@@ -11,7 +11,7 @@ pkg std =
 ;;
 
 const execvp = {cmd, args
-	var path
+	var path, cmdlen
 	var split
 	var buf : byte[512]
 
@@ -22,15 +22,15 @@ const execvp = {cmd, args
 
 	split = strsplit(path, ":")
 	for s in split
-		bfmt(buf[:], "%s/%s", s, cmd)
-		execv(cmd, args)
+		cmdlen = bfmt(buf[:], "%s/%s", s, cmd)
+		execv(buf[:cmdlen], args)
 	;;
 	slfree(split)
 	-> -1
 }
 
 const execvpe = {cmd, args, env
-	var path
+	var path, cmdlen
 	var split
 	var buf : byte[512]
 
@@ -41,8 +41,8 @@ const execvpe = {cmd, args, env
 
 	split = strsplit(path, ":")
 	for s in split
-		bfmt(buf[:], "%s/%s", s, cmd)
-		execve(cmd, args, env)
+		cmdlen = bfmt(buf[:], "%s/%s", s, cmd)
+		execve(buf[:cmdlen], args, env)
 	;;
 	slfree(split)
 	-> -1

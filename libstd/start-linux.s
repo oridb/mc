@@ -82,12 +82,11 @@ _start:
 	subq	%rax,%rsp
 	movq	%rsp, %rdx	/* saved args[:] */
 
-        /* store envp for some syscalls to use without converting */
-	movq	16(%rbp,%rax,8), %rbx	/* envp = argv + 8*argc + 8 */
-        movq    %rbx,std$__cenvp(%rip)
 	/* convert envp to byte[:][:] for std._environment */
 	movq	(%rbp),%rax
 	leaq	16(%rbp,%rax,8), %rbx	/* envp = argv + 8*argc + 8 */
+        /* store envp for some syscalls to use without converting */
+        movq    %rbx,std$__cenvp(%rip)
 	movq	%r9,%rax
 	movq	%rsp, %rcx
 	movq	%r9,.envlen

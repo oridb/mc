@@ -507,23 +507,26 @@ const waitpid	= {pid, loc, opt;
 }
 
 const execv	= {cmd, args
-	var cargs, i
+	var p, cargs, i
 
 	/* of course we fucking have to duplicate this code everywhere,
 	* since we want to stack allocate... */
-	cargs = (alloca(sizeof(byte#)*(args.len + 1)) castto(byte##))[:args.len]
+	p = alloca((args.len + 1)*sizeof(byte#))
+	cargs = (p castto(byte##))[:args.len]
 	for i = 0; i < args.len; i++
 		cargs[i] = cstring(args[i])
 	;;
 	cargs[args.len] = 0 castto(byte#)
-	-> syscall(Sysexecve, cmd castto(byte#), cargs, __cenvp)
+	-> syscall(Sysexecve, cstring(cmd), p, __cenvp)
 }
 
 const execve	= {cmd, args, env
 	var cargs, cenv, i
+	var p
 
 	/* copy the args */
-	cargs = (alloca(sizeof(byte#)*(args.len + 1)) castto(byte##))[:args.len]
+	p = alloca((args.len + 1)*sizeof(byte#))
+	cargs = (p castto(byte##))[:args.len]
 	for i = 0; i < args.len; i++
 		cargs[i] = cstring(args[i])
 	;;
@@ -534,13 +537,14 @@ const execve	= {cmd, args, env
 	 of course we fucking have to duplicate this code everywhere,
 	 since we want to stack allocate... 
 	*/
-	cenv = (alloca(sizeof(byte#)*(env.len + 1)) castto(byte##))[:env.len]
+	p = alloca((env.len + 1)*sizeof(byte#))
+	cenv = (p castto(byte##))[:env.len]
 	for i = 0; i < env.len; i++
 		cenv[i] = cstring(env[i])
 	;;
 	cenv[env.len] = 0 castto(byte#)
 
-	-> syscall(Sysexecve, cmd castto(byte#), cargs, cenv)
+	-> syscall(Sysexecve, cstring(cmd), p, cenv)
 }
 
 /* fd manipulation */
