@@ -54,6 +54,9 @@ all: $(MYRLIB) $(MYRBIN) test
 sys.myr: sys-$(SYS).myr
 	cp sys-$(SYS).myr sys.myr
 
+waitstatus.myr: waitstatus-$(SYS).myr
+	cp waitstatus-$(SYS).myr waitstatus.myr
+
 syscall.s: syscall-$(SYS).s
 	cp syscall-$(SYS).s syscall.s
 

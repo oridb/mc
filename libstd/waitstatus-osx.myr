@@ -1,0 +1,19 @@
+use "die.use"
+pkg std =
+	type waitstatus = union
+		`Waitexit int64
+		`Waitsig  int64
+		`Waitstop int64
+	;;
+
+	const waitstatus	: (st : int64 -> waitstatus)
+;;
+
+const waitstatus = {st
+	match st & 0o177
+	| 0:	-> `Waitexit (st >> 8)
+	| 0o177:-> `Waitstop (st >> 8)
+	| sig: 	-> `Waitsig signal
+	;;
+	die("unreachable")
+}
