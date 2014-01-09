@@ -13,7 +13,7 @@ const waitstatus = {st
 	match st & 0o177
 	| 0:	-> `Waitexit (st >> 8)
 	| 0o177:-> `Waitstop (st >> 8)
-	| sig: 	-> `Waitsig signal
+	| sig: 	-> `Waitsig sig
 	;;
 	die("unreachable")
 }
