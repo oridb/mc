@@ -2,7 +2,7 @@ use "alloc.use"
 use "die.use"
 use "extremum.use"
 use "fmt.use"
-use "slappend.use"
+use "slpush.use"
 use "sys.use"
 use "types.use"
 use "utf.use"
@@ -124,7 +124,7 @@ const next = {ctx
 		if !ctx.optdone && decode(ctx.optargs[i]) == '-'
 			goto foundopt
 		else
-			ctx.args = slappend(ctx.args, ctx.optargs[i])
+			ctx.args = slpush(ctx.args, ctx.optargs[i])
 		;;
 	;;
 	ctx.finished = true
