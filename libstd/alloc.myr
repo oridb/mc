@@ -39,7 +39,9 @@ pkg std =
 	const zbytealloc	: (sz:size	-> byte#)
 	const bytefree	: (m:byte#, sz:size	-> void)
 
+
 ;;
+extern const put : (b : byte[:], args : ... -> size)
 
 /* null pointers. only used internally. */
 const Zbyteptr	= 0 castto(byte#)
@@ -57,6 +59,7 @@ var initdone	: int
 
 type slheader = struct
 	cap	: size	/* capacity in bytes */
+	magic	: size	/* magic check value */
 ;;
 
 type bucket = struct
@@ -122,18 +125,30 @@ const inithdr = {p, sz
 
 	phdr = p castto(slheader#)
 	phdr.cap = allocsz(sz) - align(sizeof(slheader), Align)
+	phdr.magic = (0xdeadbeefbadf00d castto(size))
 
 	prest = align((p castto(size)) + sizeof(slheader), Align)
 	-> prest castto(byte#)
 }
 
+const checkhdr = {p
+	var phdr, addr
+
+	addr = p castto(size)
+	addr -= align(sizeof(slheader), Align)
+	phdr = addr castto(slheader#)
+	assert(phdr.magic == (0xdeadbeefbadf00d castto(size)), "corrupt memory\n")
+}
+
 /* Frees a slice */
 generic slfree	 = {sl
 	var head
+
 	if sl.len == 0
 		->
 	;;
 
+	checkhdr(sl castto(byte#))
 	head = (sl castto(byte#)) castto(size)
 	head -= align(sizeof(slheader), Align)
 	bytefree(head castto(byte#), slcap(sl castto(byte#)))
