@@ -1,5 +1,6 @@
 use "types.use"
 use "alloc.use"
+use "die.use"
 use "fmt.use"
 
 pkg std =
@@ -12,8 +13,8 @@ generic slinsert = {sl, idx, elt
 
 	len = sl.len
 	sl = slgrow(sl, sl.len + 1)
-	for i = 0; i < (len - idx); i++
-		sl[sl.len - i] = sl[len - i]
+	for i = len - 1; i >= idx; i--
+		sl[i + 1] = sl[i]
 	;;
 	sl[idx] = elt
 	-> sl
