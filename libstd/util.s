@@ -14,12 +14,12 @@ _std$cstring:
 std$cstring:
 	movq (%rsp),%r15	/* ret addr */
 	movq 8(%rsp),%rsi	/* src */
-	movq %rsp,%rdi          /* dest */
-	movq %rsp,%rax          /* ret val */
 	movq 16(%rsp),%rcx	/* len */
 	
-	subq $16,%rsp		/* "unpop" the args */
 	subq %rcx,%rsp          /* get stack */
+	movq %rsp,%rdi          /* dest */
+	movq %rsp,%rax          /* ret val */
+	subq $16,%rsp		/* "unpop" the args */
 	subq $1,%rsp            /* nul */
 	andq $(~15),%rsp        /* align */
 	
@@ -36,11 +36,12 @@ _std$alloca:
 std$alloca:
 	movq (%rsp),%r15	/* ret addr */
 	movq 8(%rsp),%rbx	/* len */
-	movq %rsp,%rax          /* top of stack (return value) */
 	
 	/* get stack space */
-	subq $8,%rsp		/* "unpop" the args for return */
 	subq %rbx,%rsp          /* get stack space */
+	movq %rsp,%rax          /* top of stack (return value) */
+	subq $16,%rsp		/* "unpop" the args for return */
+	andq $(~15),%rsp        /* align */
 
 	pushq %r15              /* ret addr */
 	ret
