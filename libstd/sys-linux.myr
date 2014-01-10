@@ -470,6 +470,7 @@ pkg std =
 	const read	: (fd:fd, buf:byte[:] -> size)
 	const write	: (fd:fd, buf:byte[:] -> size)
 	const lseek	: (fd:fd, off:uint64, whence:int64 -> int64)
+	const stat	: (path:byte[:], sb:statbuf# -> int64)
 	const fstat	: (fd:fd, sb:statbuf# -> int64)
 	const mkdir	: (path : byte[:], mode : int64	-> int64)
 
@@ -554,6 +555,7 @@ const creat	= {path, mode;		-> syscall(Syscreat, cstring(path), mode) castto(fd)
 const read	= {fd, buf;		-> syscall(Sysread, fd, buf castto(byte#), buf.len castto(size)) castto(size)}
 const write	= {fd, buf;		-> syscall(Syswrite, fd, buf castto(byte#), buf.len castto(size)) castto(size)}
 const lseek	= {fd, off, whence;	-> syscall(Syslseek, fd, off, whence)}
+const stat	= {path, sb;		-> syscall(Sysstat, cstring(path), sb)}
 const fstat	= {fd, sb;		-> syscall(Sysfstat, fd, sb)}
 const mkdir	= {path, mode;		-> syscall(Sysmkdir, cstring(path), mode) castto(int64)}
 
