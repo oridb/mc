@@ -2,6 +2,7 @@ use "alloc.use"
 use "die.use"
 use "extremum.use"
 use "fmt.use"
+use "option.use"
 use "slpush.use"
 use "sys.use"
 use "types.use"
@@ -58,33 +59,34 @@ const optfin = {ctx
 const optnext = {ctx
 	var c
 	var arg
-	var valid
-	var tryarg
-	var needarg
 
 	(c, ctx.curarg) = striter(ctx.curarg)
 
-	(valid, tryarg, needarg) = optinfo(ctx, c)
-	if !valid
-		put("Unexpected argument %c\n", c)
-		exit(1)
-	elif tryarg && ctx.curarg.len > 0
-		arg = ctx.curarg
-		ctx.curarg = ctx.curarg[ctx.curarg.len:]
-	elif tryarg && ctx.argidx < (ctx.optargs.len - 1)
-		arg = ctx.optargs[ctx.argidx + 1]
-		ctx.argidx++
-		next(ctx)
-	elif needarg
-		put("Expected argument for %c\n", c)
-		exit(1)
-	else
+	match optinfo(ctx, c)
+	| `None:
+		fatal(1, "Unexpected argument %c\n", c)
+	| `Some (true, needed):
+		/* -arg => '-a' 'rg' */
+		if ctx.curarg.len > 0
+			arg = ctx.curarg
+			ctx.curarg = ctx.curarg[ctx.curarg.len:]
+			next(ctx)
+		/* '-a rg' => '-a' 'rg' */
+		elif ctx.argidx < (ctx.optargs.len - 1)
+			arg = ctx.optargs[ctx.argidx + 1]
+			ctx.argidx++
+			next(ctx)
+		elif needed
+			put("Expected argument for %c\n", c)
+			exit(1)
+		;;
+	| `Some (false, _):
 		arg = ""
+		if !ctx.curarg.len
+			next(ctx)
+		;;
 	;;
 
-	if !ctx.curarg.len
-		next(ctx)
-	;;
 
 	-> (c, arg)
 }
@@ -104,17 +106,17 @@ const optinfo = {ctx, arg
 			(c, s) = striter(s)
 			/* mandatory arg */
 			if c == ':'
-				-> (true, true, true)
+				-> `Some (true, true)
 			/* optional arg */
 			elif c == '?'
-				-> (true, true, false)
+				-> `Some (true, false)
 			/* no arg */
 			else
-				-> (true, false, false)
+				-> `Some (false, false)
 			;;
 		;;
 	;;
-	-> (false, false, false)
+	-> `None
 }
 
 const next = {ctx
