@@ -127,7 +127,7 @@ const inithdr = {p, sz
 	phdr.cap = allocsz(sz) - align(sizeof(slheader), Align)
 	phdr.magic = (0xdeadbeefbadf00d castto(size))
 
-	prest = align((p castto(size)) + sizeof(slheader), Align)
+	prest = (p castto(size)) + align(sizeof(slheader), Align)
 	-> prest castto(byte#)
 }
 
