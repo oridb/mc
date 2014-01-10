@@ -531,14 +531,16 @@ pkg std =
 	const sysctl	: (mib : int[:], old : byte[:]#, new : byte[:] -> int)
 ;;
 
+extern const __osx_fork : (->int64)
+
 /* process control */
 const exit	= {status;		syscall(Sysexit, status castto(int64))}
 const getpid	= {;			-> syscall(Sysgetpid, 1)}
 const kill	= {pid, sig;		-> syscall(Syskill, pid, sig)}
-const fork	= {;			-> syscall(Sysfork)}
+const fork	= {;			-> __osx_fork()}
 const wait4	= {pid, loc, opt, usage;	-> syscall(Syswait4, pid, loc, opt, usage)}
 const waitpid	= {pid, loc, opt;
-	-> wait4(pid, loc, opt, 0 castto(byte#)) 
+	-> wait4(pid, loc, opt, 0 castto(rusage#)) 
 }
 
 const execv	= {cmd, args

@@ -23,3 +23,30 @@ _std$syscall:
 success:
 	popq %rbp
 	ret
+
+/*
+ * OSX is dumb about fork, and needs an assembly wrapper.
+ * The fork() syscall, when called directly, returns the pid in both
+ * processes, which means that both parent and child think they're
+ * the parent.
+ *
+ * checking this involves peeking in %edx, so we need to do this in asm.
+ */
+.globl _std$__osx_fork
+_std$__osx_fork:
+	pushq %rbp
+
+	movq $0x2000002,%rax
+	syscall
+
+	jae forksuccess
+	negq %rax
+
+forksuccess:
+	testl %edx,%edx
+	jz isparent
+	xorq %rax,%rax
+isparent:
+	popq %rbp
+	ret
+
