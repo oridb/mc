@@ -19,9 +19,9 @@ std$cstring:
 	subq %rcx,%rsp          /* get stack */
 	movq %rsp,%rdi          /* dest */
 	movq %rsp,%rax          /* ret val */
+	subq $16,%rsp		/* "unpop" the args */
 	subq $1,%rsp            /* nul */
 	andq $(~15),%rsp        /* align */
-	subq $16,%rsp		/* "unpop" the args */
 	
 	cld
 	rep movsb
