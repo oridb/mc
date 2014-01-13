@@ -244,15 +244,18 @@ struct Node {
 
         struct {
             size_t did;
+            Node *name;
+            Type *type;
+            Node *init;
+            Node **impls;
+            size_t nimpls;
             char  vis;
             char  isglobl;
             char  isconst;
             char  isgeneric;
+            char  istrait;
             char  isextern;
             char  ishidden;
-            Node *name;
-            Type *type;
-            Node *init;
         } decl;
 
         struct {
@@ -269,6 +272,18 @@ struct Node {
             Node **args;
             Node *body;
         } func;
+
+        struct {
+            Node *name;
+            size_t traitid;
+
+            Node **funcs;
+            size_t nfuncs;
+            Node **membs;
+            size_t nmembs;
+        } trait;
+
+            
     };
 };
 
@@ -412,6 +427,7 @@ Node *mkiterstmt(int line, Node *elt, Node *seq, Node *body);
 Node *mkmatchstmt(int line, Node *val, Node **matches, size_t nmatches);
 Node *mkmatch(int line, Node *pat, Node *body);
 Node *mkblock(int line, Stab *scope);
+Node *mktrait(int line, Node *name, Node **funcs, size_t nfuncs, Node **membs, size_t nmembs);
 Node *mkintlit(int line, uvlong val);
 Node *mkidxinit(int line, Node *idx, Node *init);
 

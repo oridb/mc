@@ -1399,6 +1399,9 @@ static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
             inferfunc(st, n);
             popstab();
             break;
+        case Ntrait:
+            die("Trait inference not yet implemented\n");
+            break;
         case Nname:
         case Nlit:
         case Nuse:
@@ -1713,6 +1716,9 @@ static void typesub(Inferstate *st, Node *n)
                 default:        break;
             }
             break;
+        case Ntrait:
+            die("Trait inference not yet implemented\n");
+            break;
         case Nname:
         case Nuse:
             break;
@@ -1820,6 +1826,9 @@ static void nodetag(Stab *st, Node *n, int ingeneric)
             for (i = 0; i < n->func.nargs; i++)
                 nodetag(st, n->func.args[i], ingeneric);
             nodetag(st, n->func.body, ingeneric);
+            break;
+        case Ntrait:
+            die("Trait inference not yet implemented\n");
             break;
 
         case Nuse: case Nname:

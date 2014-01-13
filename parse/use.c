@@ -461,6 +461,9 @@ static void pickle(Node *n, FILE *fd)
                 pickle(n->func.args[i], fd);
             pickle(n->func.body, fd);
             break;
+        case Ntrait:
+            die("Ntrait not yet supported!");
+            break;
         case Nnone:
             die("Nnone should not be seen as node type!");
             break;
@@ -592,6 +595,9 @@ static Node *unpickle(FILE *fd)
                 n->func.args[i] = unpickle(fd);
             n->func.body = unpickle(fd);
             popstab();
+            break;
+        case Ntrait:
+            die("Ntrait not yet implemented");
             break;
         case Nnone:
             die("Nnone should not be seen as node type!");

@@ -109,6 +109,9 @@ static void dumptypes(Node *n, int indent)
             printf("Body:\n");
             dumptypes(n->func.body, indent + 1);
             break;
+        case Ntrait:
+            die("Traits not fully implemented\n");
+            break;
         case Nname:
             break;
         case Nnone:

@@ -93,6 +93,7 @@ static void constrainwith(Type *t, char *str);
 %token<tok> Tboollit
 
 %token<tok> Ttrait   /* trait */
+%token<tok> Timpl   /* trait */
 %token<tok> Tstruct  /* struct */
 %token<tok> Tunion   /* union */
 %token<tok> Ttyparam /* @typename */
@@ -131,6 +132,7 @@ static void constrainwith(Type *t, char *str);
 %type <tok> asnop cmpop addop mulop shiftop optident
 
 %type <tydef> tydef typeid
+%type <node> traitdef
 
 %type <node> exprln retexpr goto expr atomicexpr littok literal asnexpr lorexpr landexpr borexpr
 %type <node> bandexpr cmpexpr unionexpr addexpr mulexpr shiftexpr prefixexpr postfixexpr
@@ -146,6 +148,7 @@ static void constrainwith(Type *t, char *str);
 %type <nodelist> structbody structelts arrayelts 
 %type <nodelist> tupbody tuprest 
 %type <nodelist> decl decllist
+%type <nodelist> traitbody
 
 %type <uconlist> unionbody
 
@@ -198,6 +201,7 @@ toplev
         | tydef
             {puttype(file->file.globls, mkname($1.line, $1.name), $1.type);
              installucons(file->file.globls, $1.type);}
+        | traitdef
         | /* empty */
         ;
 
@@ -270,6 +274,7 @@ pkgitem : decl
             }}
         | tydef {puttype(file->file.exports, mkname($1.line, $1.name), $1.type);
              installucons(file->file.exports, $1.type);}
+        | traitdef
         | visdef {die("Unimplemented visdef");}
         | /* empty */
         ;
@@ -294,6 +299,21 @@ name    : Tident
         | Tident Tdot name
             {$$ = $3; setns($3, $1->str);}
         ;
+
+traitdef: Ttrait Tident generictype Tasn traitbody endlns Tendblk
+            {$$ = mktrait($1->line, mkname($2->line, $2->str), $5.nl, $5.nn, NULL, 0);}
+        ;
+
+traitbody
+        : endlns {$$.nl = NULL; $$.nn = 0;}
+        | traitbody decl endlns
+            {size_t i;
+             $$ = $1;
+             for (i = 0; i < $2.nn; i++)
+                lappend(&$$.nl, &$$.nn, $2.nl[i]);
+            }
+        ;
+
 
 tydef   : Ttype typeid Tasn type
             {$$ = $2;

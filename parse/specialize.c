@@ -222,7 +222,7 @@ static void fixup(Node *n)
             fixup(n->func.body);
             popstab();
             break;
-        case Nnone: case Nname:
+        case Nnone: case Nname: case Ntrait:
             break;
     }
 }
@@ -339,6 +339,8 @@ static Node *specializenode(Node *n, Htab *tsmap)
                 r->func.args[i] = specializenode(n->func.args[i], tsmap);
             r->func.body = specializenode(n->func.body, tsmap);
             popstab();
+            break;
+        case Ntrait:
             break;
         case Nnone:
             die("Nnone should not be seen as node type!");
