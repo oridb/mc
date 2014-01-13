@@ -137,14 +137,14 @@ static void constrainwith(Type *t, char *str);
 %type <node> funclit seqlit tuplit name block stmt label use
 %type <node> declbody declcore structent arrayelt structelt tuphead
 %type <node> ifstmt forstmt whilestmt matchstmt elifs optexprln optexpr
-%type <node> pat unionpat match
+%type <node> match
 %type <node> castexpr
 %type <ucon> unionelt
 %type <node> blkbody
 
 %type <nodelist> arglist argdefs params matches
 %type <nodelist> structbody structelts arrayelts 
-%type <nodelist> tupbody tuprest tuppat patlist
+%type <nodelist> tupbody tuprest 
 %type <nodelist> decl decllist
 
 %type <uconlist> unionbody
@@ -728,34 +728,7 @@ matches : match
                  lappend(&$$.nl, &$$.nn, $3);}
         ;
 
-match   : pat Tcolon blkbody Tendln {$$ = mkmatch($1->line, $1, $3);}
-        ;
-
-pat     : unionpat {$$ = $1;}
-        | seqlit {$$ = $1;}
-        | tuppat {$$ = mkexprl($1.line, Otup, $1.nl, $1.nn);}
-        | littok {$$ = mkexpr($1->line, Olit, $1, NULL);}
-        | Tident {$$ = mkexpr($1->line, Ovar, mkname($1->line, $1->str), NULL);}
-        | Toparen pat Tcparen {$$ = $2;}
-        ;
-
-unionpat: Ttick name pat
-            {$$ = mkexpr($1->line, Oucon, $2, $3, NULL);}
-        | Ttick name
-            {$$ = mkexpr($1->line, Oucon, $2, NULL);}
-        ;
-
-tuppat  : Toparen pat Tcomma patlist Tcparen
-            {$$ = $4;
-             linsert(&$$.nl, &$$.nn, 0, $2);}
-        ;
-
-patlist : /* empty */
-            {$$.nl = NULL; $$.nn = 0;}
-        | pat
-            {$$.nl = NULL; $$.nn = 0; lappend(&$$.nl, &$$.nn, $1);}
-        | patlist Tcomma pat
-            {lappend(&$$.nl, &$$.nn, $3);}
+match   : expr Tcolon blkbody Tendln {$$ = mkmatch($1->line, $1, $3);}
         ;
 
 block   : blkbody Tendblk
