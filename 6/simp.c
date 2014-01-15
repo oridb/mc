@@ -1432,7 +1432,6 @@ static Node *rval(Simp *s, Node *n, Node *dst)
                 fatal(n->line, "trying to continue when not in loop");
             jmp(s, s->loopstep[s->nloopstep - 1]);
             break;
-            break;
         default:
             if (istyfloat(exprtype(n))) {
                 switch (exprop(n)) {

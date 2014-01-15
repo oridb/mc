@@ -17,6 +17,7 @@ MYRSRC= \
     htab.myr \
     intparse.myr \
     ipparse.myr \
+    mk.myr \
     now.myr \
     option.myr \
     optparse.myr \
