@@ -159,8 +159,10 @@ static void eatspace(void)
 static int kwd(char *s)
 {
     static const struct {char* kw; int tt;} kwmap[] = {
+        {"break",       Tbreak},
         {"castto",      Tcast},
         {"const",       Tconst},
+        {"continue",    Tcontinue},
         {"default",     Tdefault},
         {"elif",        Telif},
         {"else",        Telse},

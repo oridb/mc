@@ -2,6 +2,7 @@ use "types.use"
 use "sleq.use"
 
 pkg std =
+	type pid	= int64
 	type scno	= int64	/* syscall */
 	type fdopt	= int64	/* fd options */
 	type fd		= int64	/* fd */

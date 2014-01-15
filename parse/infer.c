@@ -1190,6 +1190,11 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
                 t =  unify(st, n, mktype(-1, Tyvoid), ret);
             settype(st, n, t);
             break;
+        case Obreak:
+        case Ocontinue:
+            /* nullary: nothing to infer. */
+            settype(st, n, mktype(-1, Tyvoid));
+            break;
         case Ojmp:     /* goto void* -> void */
             infersub(st, n, ret, sawret, &isconst);
             settype(st, n, mktype(-1, Tyvoid));

@@ -37,6 +37,12 @@ struct Simp {
     /* pre/postinc handling */
     Node **incqueue;
     size_t nqueue;
+    
+    /* break/continue handling */
+    Node **loopstep;
+    size_t nloopstep;
+    Node **loopexit;
+    size_t nloopexit;
 
     /* location handling */
     Node **blobs;
@@ -469,19 +475,28 @@ static void simploop(Simp *s, Node *n)
     Node *lbody;
     Node *lend;
     Node *lcond;
+    Node *lstep;
 
     lbody = genlbl();
     lcond = genlbl();
+    lstep = genlbl();
     lend = genlbl();
+
+    lappend(&s->loopstep, &s->nloopstep, lstep);
+    lappend(&s->loopexit, &s->nloopexit, lend);
 
     simp(s, n->loopstmt.init);  /* init */
     jmp(s, lcond);              /* goto test */
     simp(s, lbody);             /* body lbl */
     simp(s, n->loopstmt.body);  /* body */
+    simp(s, lstep);             /* test lbl */
     simp(s, n->loopstmt.step);  /* step */
     simp(s, lcond);             /* test lbl */
     simpcond(s, n->loopstmt.cond, lbody, lend);    /* repeat? */
     simp(s, lend);              /* exit */
+
+    s->nloopstep--;
+    s->nloopexit--;
 }
 
 /* pat; seq; 
@@ -514,6 +529,9 @@ static void simpiter(Simp *s, Node *n)
     lmatch = genlbl();
     lend = genlbl();
 
+    lappend(&s->loopstep, &s->nloopstep, lstep);
+    lappend(&s->loopexit, &s->nloopexit, lend);
+
     zero = mkintlit(n->line, 0);
     zero->expr.type = tyintptr;
 
@@ -539,6 +557,9 @@ static void simpiter(Simp *s, Node *n)
     val = load(idxaddr(s, seq, idx));
     umatch(s, n->iterstmt.elt, val, val->expr.type, lbody, lstep);
     simp(s, lend);
+
+    s->nloopstep--;
+    s->nloopexit--;
 }
 
 static Ucon *finducon(Node *n)
@@ -1230,7 +1251,6 @@ static Node *rval(Simp *s, Node *n, Node *dst)
     r = NULL;
     args = n->expr.args;
     switch (exprop(n)) {
-        case Obad:
         case Olor: case Oland:
             r = simplazy(s, n);
             break;
@@ -1402,6 +1422,17 @@ static Node *rval(Simp *s, Node *n, Node *dst)
                 r = visit(s, n);
             }
             break;
+        case Obreak:
+            if (s->nloopexit == 0)
+                fatal(n->line, "trying to break when not in loop");
+            jmp(s, s->loopexit[s->nloopexit - 1]);
+            break;
+        case Ocontinue:
+            if (s->nloopstep == 0)
+                fatal(n->line, "trying to continue when not in loop");
+            jmp(s, s->loopstep[s->nloopstep - 1]);
+            break;
+            break;
         default:
             if (istyfloat(exprtype(n))) {
                 switch (exprop(n)) {
@@ -1413,6 +1444,10 @@ static Node *rval(Simp *s, Node *n, Node *dst)
                 }
             }
             r = visit(s, n);
+            break;
+        case Obad:
+            die("Bad operator");
+            break;
     }
     return r;
 }

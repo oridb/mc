@@ -85,6 +85,8 @@ static void constrainwith(Type *t, char *str);
 %token<tok> Tmatch   /* match */
 %token<tok> Tdefault /* default */
 %token<tok> Tgoto    /* goto */
+%token<tok> Tbreak   /* break */
+%token<tok> Tcontinue   /* continue */
 
 %token<tok> Tintlit
 %token<tok> Tstrlit
@@ -134,7 +136,8 @@ static void constrainwith(Type *t, char *str);
 %type <tydef> tydef typeid
 %type <node> traitdef
 
-%type <node> exprln retexpr goto expr atomicexpr littok literal asnexpr lorexpr landexpr borexpr
+%type <node> exprln retexpr goto continue break expr atomicexpr 
+%type <node> littok literal asnexpr lorexpr landexpr borexpr
 %type <node> bandexpr cmpexpr unionexpr addexpr mulexpr shiftexpr prefixexpr postfixexpr
 %type <node> funclit seqlit tuplit name block stmt label use
 %type <node> declbody declcore structent arrayelt structelt tuphead
@@ -699,6 +702,8 @@ endlns  : /* none */
         ;
 
 stmt    : goto
+        | break
+        | continue
         | retexpr
         | label
         | ifstmt
@@ -706,6 +711,14 @@ stmt    : goto
         | whilestmt
         | matchstmt
         | /* empty */ {$$ = NULL;}
+        ;
+
+break   : Tbreak
+     	    {$$ = mkexpr($1->line, Obreak, NULL);}
+        ;
+
+continue   : Tcontinue
+     	    {$$ = mkexpr($1->line, Ocontinue, NULL);}
         ;
 
 forstmt : Tfor optexprln optexprln optexprln block
