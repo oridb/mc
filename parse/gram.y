@@ -831,12 +831,20 @@ static void installucons(Stab *st, Type *t)
     if (!t)
         return;
     b = tybase(t);
-    if (b->type != Tyunion)
-        return;
-    for (i = 0; i < b->nmemb; i++) {
-        b->udecls[i]->utype = t;
-        b->udecls[i]->id = i;
-        putucon(st, b->udecls[i]);
+    switch (b->type) {
+        case Tystruct:
+            for (i = 0; i < b->nmemb; i++)
+                installucons(st, b->sdecls[i]->decl.type);
+            break;
+        case Tyunion:
+            for (i = 0; i < b->nmemb; i++) {
+                b->udecls[i]->utype = t;
+                b->udecls[i]->id = i;
+                putucon(st, b->udecls[i]);
+            }
+            break;
+        default:
+            break;
     }
 }
 

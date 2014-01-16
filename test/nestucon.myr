@@ -1,0 +1,18 @@
+use std
+
+type t = struct
+	x : union
+		`Int int
+		`Str byte[:]
+	;;
+;;
+
+const main = {
+	var a : t
+
+	a = [.x = `Str "asdf"]
+	match a
+	| [.x=`Str s]:	std.put("%s\n", s)
+	;;
+}
+
