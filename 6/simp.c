@@ -71,7 +71,7 @@ static Type *tyintptr;
 static Type *tyword;
 static Type *tyvoid;
 
-static size_t tyalign(size_t sz, size_t eltsz)
+size_t tyalign(size_t sz, size_t eltsz)
 {
     return align(sz, min(eltsz, Ptrsz));
 }

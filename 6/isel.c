@@ -35,7 +35,7 @@ char* modenames[] = {
 
 /* forward decls */
 Loc *selexpr(Isel *s, Node *n);
-static void writeblob(FILE *fd, Htab *globls, Htab *strtab, Node *blob);
+static size_t writeblob(FILE *fd, Htab *globls, Htab *strtab, Node *blob);
 
 /* used to decide which operator is appropriate
  * for implementing various conditional operators */
@@ -988,10 +988,11 @@ static void writebytes(FILE *fd, char *p, size_t sz)
     }
 }
 
-static void writelit(FILE *fd, Htab *strtab, Node *v, size_t sz)
+static size_t writelit(FILE *fd, Htab *strtab, Node *v, Type *ty)
 {
     char buf[128];
     char *lbl;
+    size_t sz;
     char *intsz[] = {
         [1] = ".byte",
         [2] = ".short",
@@ -1006,6 +1007,7 @@ static void writelit(FILE *fd, Htab *strtab, Node *v, size_t sz)
     } u;
 
     assert(v->type == Nlit);
+    sz = tysize(ty);
     switch (v->lit.littype) {
         case Lint:      fprintf(fd, "\t%s %lld\n", intsz[sz], v->lit.intval);    break;
         case Lbool:     fprintf(fd, "\t.byte %d\n", v->lit.boolval);     break;
@@ -1036,20 +1038,15 @@ static void writelit(FILE *fd, Htab *strtab, Node *v, size_t sz)
             die("Can't generate literal labels, ffs. They're not data.");
             break;
     }
+    return sz;
 }
 
-static void writepad(FILE *fd, size_t sz)
+static size_t writepad(FILE *fd, size_t sz)
 {
-    fprintf(fd, "\t.fill %zd,1,0\n", sz);
-}
-
-static void writeexprs(FILE *fd, Htab *globls, Htab *strtab, Node **e, size_t n)
-{
-    size_t i;
-
-    for (i = 0; i < n; i++) {
-        writeblob(fd, globls, strtab, e[i]);
-    }
+    assert((ssize_t)sz >= 0);
+    if (sz > 0)
+        fprintf(fd, "\t.fill %zd,1,0\n", sz);
+    return sz;
 }
 
 static size_t getintlit(Node *n, char *failmsg)
@@ -1062,7 +1059,7 @@ static size_t getintlit(Node *n, char *failmsg)
     return n->lit.intval;
 }
 
-static void writeslice(FILE *fd, Htab *globls, Htab *strtab, Node *n)
+static size_t writeslice(FILE *fd, Htab *globls, Htab *strtab, Node *n)
 {
     Node *base, *lo, *hi;
     ssize_t loval, hival, sz;
@@ -1084,27 +1081,67 @@ static void writeslice(FILE *fd, Htab *globls, Htab *strtab, Node *n)
     lbl = htget(globls, base);
     fprintf(fd, "\t.quad %s + (%zd*%zd)\n", lbl, loval, sz);
     fprintf(fd, "\t.quad %zd\n", (hival - loval));
+    return size(n);
 }
 
-static void writeblob(FILE *fd, Htab *globls, Htab *strtab, Node *n)
+static size_t writestruct(FILE *fd, Htab *globls, Htab *strtab, Node *n)
 {
+    Type *t;
+    Node **dcl;
+    int found;
+    size_t i, j;
+    size_t sz, end;
+    size_t ndcl;
+
+    sz = 0;
+    t = tybase(exprtype(n));
+    assert(t->type == Tystruct);
+    dcl = t->sdecls;
+    ndcl = t->nmemb;
+    for (i = 0; i < ndcl; i++) {
+        sz += writepad(fd, tyalign(sz, size(dcl[i])) - sz);
+        found = 0;
+        for (j = 0; j < n->expr.nargs; j++)
+            if (!strcmp(namestr(n->expr.args[j]->expr.idx), declname(dcl[i]))) {
+                found = 1;
+                sz += writeblob(fd, globls, strtab, n->expr.args[j]);
+            }
+        if (!found)
+            sz += writepad(fd, size(dcl[i]));
+    }
+    end = sz;
+    for (i = 0; i < ndcl; i++)
+        end = tyalign(end, size(dcl[i]));
+    sz += writepad(fd, end - sz);
+    return sz;
+}
+
+static size_t writeblob(FILE *fd, Htab *globls, Htab *strtab, Node *n)
+{
+    size_t i, sz;
+
     switch(exprop(n)) {
         case Otup:
         case Oarr:
+            sz = 0;
+            for (i = 0; i < n->expr.nargs; i++)
+                sz += writeblob(fd, globls, strtab, n->expr.args[i]);
+            break;
         case Ostruct:
-            writeexprs(fd, globls, strtab, n->expr.args, n->expr.nargs);
+            sz = writestruct(fd, globls, strtab, n);
             break;
         case Olit:
-            writelit(fd, strtab, n->expr.args[0], size(n));
+            sz = writelit(fd, strtab, n->expr.args[0], exprtype(n));
             break;
         case Oslice:
-            writeslice(fd, globls, strtab, n);
+            sz = writeslice(fd, globls, strtab, n);
             break;
         default:
             dump(n, stdout);
             die("Nonliteral initializer for global");
             break;
     }
+    return sz;
 }
 
 void genblob(FILE *fd, Node *blob, Htab *globls, Htab *strtab)

@@ -227,3 +227,6 @@ int stacknode(Node *n);
 int floatnode(Node *n);
 void breakhere();
 void dumpasm(Isel *s, FILE *fd);
+
+size_t tyalign(size_t sz, size_t eltsz);
+

@@ -146,6 +146,7 @@ static void constrainwith(Type *t, char *str);
 %type <node> castexpr
 %type <ucon> unionelt
 %type <node> blkbody
+%type <node> implstmt
 
 %type <nodelist> arglist argdefs params matches
 %type <nodelist> structbody structelts arrayelts 
@@ -205,6 +206,7 @@ toplev
             {puttype(file->file.globls, mkname($1.line, $1.name), $1.type);
              installucons(file->file.globls, $1.type);}
         | traitdef
+        | implstmt
         | /* empty */
         ;
 
@@ -278,6 +280,7 @@ pkgitem : decl
         | tydef {puttype(file->file.exports, mkname($1.line, $1.name), $1.type);
              installucons(file->file.exports, $1.type);}
         | traitdef
+        | implstmt
         | visdef {die("Unimplemented visdef");}
         | /* empty */
         ;
@@ -302,6 +305,8 @@ name    : Tident
         | Tident Tdot name
             {$$ = $3; setns($3, $1->str);}
         ;
+
+implstmt: Timpl name type
 
 traitdef: Ttrait Tident generictype Tasn traitbody endlns Tendblk
             {$$ = mktrait($1->line, mkname($2->line, $2->str), $5.nl, $5.nn, NULL, 0);}
