@@ -7,6 +7,7 @@ pkg regex =
 	const search	: (re : regex#, str : byte[:] -> std.option(byte[:][:]))
 ;;
 
+/* Ugly: for performance. std.option() should be used instead when unions get faster. */
 const Zthr = 0 castto(rethread#)
 
 const exec = {re, str
@@ -111,8 +112,8 @@ const step = {re, thr, curip
 			thr.ip++
 		;;
 	/*
-	  Non-consuming. All of these recursively call step() until
-	  exactly one byte is consumed from the string.
+	  Non-consuming. All of these return false, and expect step to be
+	  called again until exactly one byte is consumed from the string.
 	 */
 	| `Ibol:
 		trace(re, thr, "\t%z:\tBol\n", thr.ip)
