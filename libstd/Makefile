@@ -14,6 +14,7 @@ MYRSRC= \
     fmt.myr \
     hashfuncs.myr \
     hasprefix.myr \
+    hassuffix.myr \
     htab.myr \
     intparse.myr \
     ipparse.myr \
