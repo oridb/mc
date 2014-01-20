@@ -1246,7 +1246,14 @@ static Node *rval(Simp *s, Node *n, Node *dst)
         [Obsleq]        = Obsl,
         [Obsreq]        = Obsr,
     };
-
+    const Op cmpmap[Numops][3] = {
+        [Oeq]   = {Oeq, Ofeq, Oueq},
+        [One]   = {One, Ofne, Oune},
+        [Ogt]   = {Ogt, Ofgt, Ougt},
+        [Oge]   = {Oge, Ofge, Ouge},
+        [Olt]   = {Olt, Oflt, Oult},
+        [Ole]   = {Ole, Ofle, Oule}
+    };
 
     r = NULL;
     args = n->expr.args;
@@ -1431,6 +1438,17 @@ static Node *rval(Simp *s, Node *n, Node *dst)
             if (s->nloopstep == 0)
                 fatal(n->line, "trying to continue when not in loop");
             jmp(s, s->loopstep[s->nloopstep - 1]);
+            break;
+        case Oeq: case One: case Ogt: case Oge: case Olt: case Ole:
+            if (istyfloat(tybase(exprtype(args[0]))))
+                i = 1;
+            else if (istysigned(tybase(exprtype(args[0]))))
+                i = 0;
+            else
+                i = 2;
+            assert(cmpmap[n->expr.op][i] != Obad);
+            n->expr.op = cmpmap[n->expr.op][i];
+            r = visit(s, n);
             break;
         default:
             if (istyfloat(exprtype(n))) {

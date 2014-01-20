@@ -56,7 +56,8 @@ O(Ouget, 1)
 O(Otup, 1)
 O(Ostruct, 1)
 O(Oarr, 1)
-/* backend-only */
+
+/* all below this point are backend-only */
 O(Ocjmp, 1)        /* conditional jump */
 O(Oset, 1)         /* store to var */
 O(Osllen, 1)       /* size of slice */
@@ -72,3 +73,18 @@ O(Ofsub, 1)
 O(Ofmul, 1)
 O(Ofdiv, 1)
 O(Ofneg, 1)
+
+/* floating point comparisons */
+O(Ofeq, 1)
+O(Ofne, 1)
+O(Ofgt, 1)
+O(Ofge, 1)
+O(Oflt, 1)
+O(Ofle, 1)
+/* unsigned comparisons */
+O(Oueq, 1)
+O(Oune, 1)
+O(Ougt, 1)
+O(Ouge, 1)
+O(Oult, 1)
+O(Oule, 1)

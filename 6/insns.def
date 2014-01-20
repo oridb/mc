@@ -60,6 +60,10 @@ Insn(Isetl,     "\tsetl  %v\n",                 Use(),  Def(.l={1}))
 Insn(Isetle,    "\tsetle %v\n",                 Use(),  Def(.l={1}))
 Insn(Isetg,     "\tsetg %v\n",                  Use(),  Def(.l={1}))
 Insn(Isetge,    "\tsetge %v\n",                 Use(),  Def(.l={1}))
+Insn(Isetb,     "\tsetb  %v\n",                 Use(),  Def(.l={1}))
+Insn(Isetbe,    "\tsetbe %v\n",                 Use(),  Def(.l={1}))
+Insn(Iseta,     "\tseta %v\n",                  Use(),  Def(.l={1}))
+Insn(Isetae,    "\tsetae %v\n",                 Use(),  Def(.l={1}))
 
 /* fp specific instructions */
 Insn(Imovs,      "\tmovs%1t %x,%x\n",           Use(.l={1}),                    Def(.l={2}))
@@ -82,6 +86,10 @@ Insn(Ijl,       "\tjl %v\n",                    Use(.l={1}), Def())
 Insn(Ijle,      "\tjle %v\n",                   Use(.l={1}), Def())
 Insn(Ijg,       "\tjg %v\n",                    Use(.l={1}), Def())
 Insn(Ijge,      "\tjge %v\n",                   Use(.l={1}), Def())
+Insn(Ijb,       "\tjb %v\n",                    Use(.l={1}), Def())
+Insn(Ijbe,      "\tjbe %v\n",                   Use(.l={1}), Def())
+Insn(Ija,       "\tja %v\n",                    Use(.l={1}), Def())
+Insn(Ijae,      "\tjae %v\n",                   Use(.l={1}), Def())
 Insn(Iret,      "\tret\n",                      Use(), Def())
 
 /* not really an insn... */

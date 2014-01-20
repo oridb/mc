@@ -40,18 +40,32 @@ static size_t writeblob(FILE *fd, Htab *globls, Htab *strtab, Node *blob);
 /* used to decide which operator is appropriate
  * for implementing various conditional operators */
 struct {
-    AsmOp itest;
-    AsmOp fptest;
+    AsmOp test;
     AsmOp jmp;
     AsmOp getflag;
 } reloptab[Numops] = {
-    [Olnot] = {Itest, 0, Ijz, Isetz}, /* lnot invalid for floats */
-    [Oeq] = {Icmp, Icomis, Ijz,  Isetz},
-    [One] = {Icmp, Icomis, Ijnz, Isetnz},
-    [Ogt] = {Icmp, Icomis, Ijg,  Isetg},
-    [Oge] = {Icmp, Icomis, Ijge, Isetge},
-    [Olt] = {Icmp, Icomis, Ijl,  Isetl},
-    [Ole] = {Icmp, Icomis, Ijle, Isetle}
+    [Olnot] = {Itest, Ijz, Isetz}, /* lnot invalid for floats */
+    /* signed int */
+    [Oeq] = {Icmp, Ijz,  Isetz},
+    [One] = {Icmp, Ijnz, Isetnz},
+    [Ogt] = {Icmp, Ijg,  Isetg},
+    [Oge] = {Icmp, Ijge, Isetge},
+    [Olt] = {Icmp, Ijl,  Isetl},
+    [Ole] = {Icmp, Ijle, Isetle},
+    /* unsigned int */
+    [Oueq] = {Icmp, Ijz,  Isetz},
+    [Oune] = {Icmp, Ijnz, Isetnz},
+    [Ougt] = {Icmp, Ija,  Iseta},
+    [Ouge] = {Icmp, Ijae, Isetae},
+    [Oult] = {Icmp, Ijb,  Isetb},
+    [Oule] = {Icmp, Ijbe, Isetbe},
+    /* float */
+    [Ofeq] = {Icomis, Ijz,  Isetz},
+    [Ofne] = {Icomis, Ijnz, Isetnz},
+    [Ofgt] = {Icomis, Ija,  Iseta},
+    [Ofge] = {Icomis, Ijae, Isetae},
+    [Oflt] = {Icomis, Ijb,  Isetb},
+    [Ofle] = {Icomis, Ijbe, Isetbe},
 };
 
 static Mode mode(Node *n)
@@ -235,14 +249,6 @@ static Loc *inrm(Isel *s, Loc *a)
         return inr(s, a);
 }
 
-static int floatcompare(Node *e)
-{
-    if (exprop(e) == Ovar || exprop(e) == Olit)
-        return floatnode(e);
-    assert(e->expr.nargs > 0);
-    return floatnode(e->expr.args[0]);
-}
-
 /* If we're testing equality, etc, it's a bit silly
  * to generate the test, store it to a bite, expand it
  * to the right width, and then test it again. Try to optimize
@@ -258,10 +264,7 @@ static void selcjmp(Isel *s, Node *n, Node **args)
     Loc *l1, *l2;
     AsmOp cond, jmp;
 
-    if (floatcompare(args[0]))
-        cond = reloptab[exprop(args[0])].fptest;
-    else
-        cond = reloptab[exprop(args[0])].itest;
+    cond = reloptab[exprop(args[0])].test;
     jmp = reloptab[exprop(args[0])].jmp;
     /* if we have a cond, we're knocking off the redundant test,
      * and want to eval the children */
@@ -610,21 +613,20 @@ Loc *selexpr(Isel *s, Node *n)
             b = locreg(ModeB);
             r = locreg(mode(n));
             /* lnot only valid for integer-like values */
-            g(s, reloptab[exprop(n)].itest, a, a, NULL);
+            g(s, reloptab[exprop(n)].test, a, a, NULL);
             g(s, reloptab[exprop(n)].getflag, b, NULL);
             movz(s, b, r);
             break;
 
         case Oeq: case One: case Ogt: case Oge: case Olt: case Ole:
+        case Ofeq: case Ofne: case Ofgt: case Ofge: case Oflt: case Ofle:
+        case Oueq: case Oune: case Ougt: case Ouge: case Oult: case Oule:
             a = selexpr(s, args[0]);
             b = selexpr(s, args[1]);
             a = inr(s, a);
             c = locreg(ModeB);
             r = locreg(mode(n));
-            if (floatnode(args[0]))
-                g(s, reloptab[exprop(n)].fptest, b, a, NULL);
-            else
-                g(s, reloptab[exprop(n)].itest, b, a, NULL);
+            g(s, reloptab[exprop(n)].test, b, a, NULL);
             g(s, reloptab[exprop(n)].getflag, c, NULL);
             movz(s, c, r);
             return r;
