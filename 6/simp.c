@@ -1423,7 +1423,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
                 t->lit.type = n->expr.type;
                 u->expr.type = n->expr.type;
                 v = simpblob(s, u, &s->blobs, &s->nblobs);
-                r = mkexpr(n->line, Ofmul, v, args[0], NULL);
+                r = mkexpr(n->line, Ofmul, v, rval(s, args[0], NULL), NULL);
                 r->expr.type = n->expr.type;
             } else {
                 r = visit(s, n);
@@ -1446,7 +1446,6 @@ static Node *rval(Simp *s, Node *n, Node *dst)
                 i = 0;
             else
                 i = 2;
-            assert(cmpmap[n->expr.op][i] != Obad);
             n->expr.op = cmpmap[n->expr.op][i];
             r = visit(s, n);
             break;
