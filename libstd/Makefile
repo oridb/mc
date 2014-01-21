@@ -12,6 +12,7 @@ MYRSRC= \
     execvp.myr \
     extremum.myr \
     fmt.myr \
+    floatbits.myr \
     hashfuncs.myr \
     hasprefix.myr \
     hassuffix.myr \
