@@ -59,6 +59,46 @@ static int issmallconst(Node *dcl)
     return 0;
 }
 
+static Node *foldcast(Node *n)
+{
+    Type *to, *from;
+    Node *sub;
+
+    sub = n->expr.args[0];
+    to = exprtype(n);
+    from = exprtype(sub);
+
+    switch (tybase(to)->type) {
+        case Tybool:
+        case Tyint8: case Tyint16: case Tyint32: case Tyint64:
+        case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint64:
+        case Tyint: case Tyuint: case Tylong: case Tyulong:
+        case Tychar: case Tybyte:
+        case Typtr:
+            switch (tybase(from)->type) {
+                case Tybool:
+                case Tyint8: case Tyint16: case Tyint32: case Tyint64:
+                case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint64:
+                case Tyint: case Tyuint: case Tylong: case Tyulong:
+                case Tychar: case Tybyte:
+                case Typtr:
+                    if (exprop(sub) == Olit || tybase(from)->type == tybase(to)->type) {
+                        sub->expr.type = to;
+                        return sub;
+                    } else {
+                        return n;
+                    }
+                default:
+                    return n;
+            }
+        default:
+            return n;
+    }
+    return n;
+}
+
+
+
 Node *fold(Node *n, int foldvar)
 {
     Node **args, *r;
@@ -158,10 +198,7 @@ Node *fold(Node *n, int foldvar)
                 r = t->asize;
             break;
         case Ocast:
-            /* FIXME: we currentl assume that the bits of the
-             * val are close enough. */
-            r = args[0];
-            r->expr.type = exprtype(n);
+            r = foldcast(n);
             break;
         default:
             break;
@@ -172,3 +209,4 @@ Node *fold(Node *n, int foldvar)
     else
         return n;
 }
+

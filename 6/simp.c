@@ -709,6 +709,7 @@ static void simpblk(Simp *s, Node *n)
 
     pushstab(n->block.scope);
     for (i = 0; i < n->block.nstmts; i++) {
+        n->block.stmts[i] = fold(n->block.stmts[i], 0);
         simp(s, n->block.stmts[i]);
     }
     popstab();
