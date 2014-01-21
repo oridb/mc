@@ -826,7 +826,7 @@ static Node *slicebase(Simp *s, Node *n, Node *off)
     u = NULL;
     ty = tybase(exprtype(n));
     switch (ty->type) {
-        case Typtr:     u = n; break;
+        case Typtr:     u = t; break;
         case Tyarray:   u = addr(s, t, base(exprtype(n))); break;
         case Tyslice:   u = load(addr(s, t, mktyptr(n->line, base(exprtype(n))))); break;
         default: die("Unslicable type %s", tystr(n->expr.type));
