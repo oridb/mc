@@ -1,3 +1,4 @@
+use "chartype.use"
 use "die.use"
 use "fmt.use"
 use "hasprefix.use"
@@ -63,21 +64,4 @@ generic doparse = {s, isneg, base
 	else
 		-> `Some v
 	;;
-}
-
-generic charval = {c, base
-	var v = -1
-
-	if c >= '0' && c <= '9'
-		v =  (c - '0') castto(@a::(tcint,tcnum,tctest))
-	elif c >= 'a' && c <= 'z'
-		v =  (c - 'a' + 10) castto(@a::(tcint,tcnum,tctest))
-	elif c >= 'A' && c <= 'Z'
-		v =  (c - 'A' + 10) castto(@a::(tcint,tcnum,tctest))
-	;;
-
-	if v < 0 || v > (base castto(@a::(tcint,tcnum,tctest)))
-		-> -1
-	;;
-	-> v
 }

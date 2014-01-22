@@ -1,4 +1,5 @@
 use "alloc.use"
+use "chartype.use"
 use "die.use"
 use "error.use"
 use "sys.use"

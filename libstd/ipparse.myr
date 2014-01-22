@@ -3,6 +3,7 @@ use "intparse.use"
 use "option.use"
 use "strfind.use"
 use "types.use"
+use "chartype.use"
 
  /* FIXME: needed for decls which should be pulled in as hidden */
 use "hasprefix.use"
