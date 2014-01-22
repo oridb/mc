@@ -1,6 +1,7 @@
 MYRLIB=std
 MYRSRC= \
     alloc.myr \
+    bigint.myr \
     blat.myr \
     chartype.myr \
     cmp.myr \
