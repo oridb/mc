@@ -33,15 +33,17 @@ pkg std =
 	const bigmul	: (a : bigint#, b : bigint# -> bigint#)
 	const bigdiv	: (a : bigint#, b : bigint# -> bigint#)
 	const bigshl	: (a : bigint#, b : bigint# -> bigint#)
+	const bigsrl	: (a : bigint#, b : bigint# -> bigint#)
+	const bigsra	: (a : bigint#, b : bigint# -> bigint#)
 
 	/* bigint*int -> bigint ops */
 	const bigaddi	: (a : bigint#, b : int64 -> bigint#)
 	const bigsubi	: (a : bigint#, b : int64 -> bigint#)
 	const bigmuli	: (a : bigint#, b : int64 -> bigint#)
 	const bigdivi	: (a : bigint#, b : int64 -> bigint#)
-	const bigshli	: (a : bigint#, b : uint64 -> bigint#)
-	const bigshri	: (a : bigint#, b : uint64 -> bigint#)
-	const bigsari	: (a : bigint#, b : uint64 -> bigint#)
+	const bigslli	: (a : bigint#, b : uint64 -> bigint#)
+	const bigsrli	: (a : bigint#, b : uint64 -> bigint#)
+	const bigsrai	: (a : bigint#, b : uint64 -> bigint#)
 ;;
 
 const mkbigint = {v
@@ -307,13 +309,23 @@ const bigshl = {a, b
 	;;
 }
 
-/*
-const bigsll = {a, b
+/* a >>= b, unsigned */
+const bigsrl = {a, b
+	match b.dig.len
+	| 0:	-> a
+	| 1:	-> bigsrli(a, b.dig[0] castto(uint64))
+	| n:	die("shift by way too much\n")
+	;;
 }
 
-const bigshr = {a, b
+/* a >>= b, sign extending */
+const bigsra = {a, b
+	match b.dig.len
+	| 0:	-> a
+	| 1:	-> bigsrai(a, b.dig[0] castto(uint64))
+	| n:	die("shift by way too much\n")
+	;;
 }
-*/
 
 const trim = {a
 	var i
@@ -351,6 +363,42 @@ const bigshli = {a, s
 		t = (a.dig[i] castto(uint64)) << shift
 		a.dig[i] = (t | carry) castto(uint32) 
 		carry = t >> 32
+	;;
+	-> trim(a)
+}
+
+const bigshri = {a, s
+	-> bigshrfill(a, s, 0)
+}
+
+const bigsari = {a, s
+	if a.sign == -1
+		bigshrfill(a, s, ~0)
+	else
+		bigshrfill(a, s, 0)
+	;;
+}
+
+const bigshrfill = {a, s, fill
+	var off, shift
+	var t, carry
+	var i
+
+	off = s/32
+	shift = s % 32
+
+	/* blit over the base values */
+	for i = 0; i < a.dig.len - off; i++
+		a.dig[i] = a.dig[i + off]
+	;;
+	for i = a.dig.len; i < a.dig.len + off; i++
+		a.dig[i] = fill
+	;;
+	/* and shift over by the remainder */
+	for i = a.dig.len; i > 0; i--
+		t = (a.dig[i] castto(uint64))
+		a.dig[i] = (carry | (t >> shift)) castto(uint32) 
+		carry = t << (32 - shift)
 	;;
 	-> trim(a)
 }
