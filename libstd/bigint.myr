@@ -33,17 +33,17 @@ pkg std =
 	const bigmul	: (a : bigint#, b : bigint# -> bigint#)
 	const bigdiv	: (a : bigint#, b : bigint# -> bigint#)
 	const bigshl	: (a : bigint#, b : bigint# -> bigint#)
-	const bigsrl	: (a : bigint#, b : bigint# -> bigint#)
-	const bigsra	: (a : bigint#, b : bigint# -> bigint#)
+	const bigshr	: (a : bigint#, b : bigint# -> bigint#)
+	const bigshra	: (a : bigint#, b : bigint# -> bigint#)
 
 	/* bigint*int -> bigint ops */
 	const bigaddi	: (a : bigint#, b : int64 -> bigint#)
 	const bigsubi	: (a : bigint#, b : int64 -> bigint#)
 	const bigmuli	: (a : bigint#, b : int64 -> bigint#)
 	const bigdivi	: (a : bigint#, b : int64 -> bigint#)
-	const bigslli	: (a : bigint#, b : uint64 -> bigint#)
-	const bigsrli	: (a : bigint#, b : uint64 -> bigint#)
-	const bigsrai	: (a : bigint#, b : uint64 -> bigint#)
+	const bigshli	: (a : bigint#, b : uint64 -> bigint#)
+	const bigshri	: (a : bigint#, b : uint64 -> bigint#)
+	const bigshrai	: (a : bigint#, b : uint64 -> bigint#)
 ;;
 
 const mkbigint = {v
@@ -310,19 +310,19 @@ const bigshl = {a, b
 }
 
 /* a >>= b, unsigned */
-const bigsrl = {a, b
+const bigshr = {a, b
 	match b.dig.len
 	| 0:	-> a
-	| 1:	-> bigsrli(a, b.dig[0] castto(uint64))
+	| 1:	-> bigshri(a, b.dig[0] castto(uint64))
 	| n:	die("shift by way too much\n")
 	;;
 }
 
 /* a >>= b, sign extending */
-const bigsra = {a, b
+const bigshra = {a, b
 	match b.dig.len
 	| 0:	-> a
-	| 1:	-> bigsrai(a, b.dig[0] castto(uint64))
+	| 1:	-> bigshrai(a, b.dig[0] castto(uint64))
 	| n:	die("shift by way too much\n")
 	;;
 }
@@ -359,6 +359,7 @@ const bigshli = {a, s
 		a.dig[i] = 0
 	;;
 	/* and shift over by the remainder */
+	carry = 0
 	for i = 0; i < a.dig.len; i++
 		t = (a.dig[i] castto(uint64)) << shift
 		a.dig[i] = (t | carry) castto(uint32) 
@@ -371,11 +372,11 @@ const bigshri = {a, s
 	-> bigshrfill(a, s, 0)
 }
 
-const bigsari = {a, s
+const bigshrai = {a, s
 	if a.sign == -1
-		bigshrfill(a, s, ~0)
+		-> bigshrfill(a, s, ~0)
 	else
-		bigshrfill(a, s, 0)
+		-> bigshrfill(a, s, 0)
 	;;
 }
 
@@ -395,9 +396,11 @@ const bigshrfill = {a, s, fill
 		a.dig[i] = fill
 	;;
 	/* and shift over by the remainder */
+	carry = 0
 	for i = a.dig.len; i > 0; i--
-		t = (a.dig[i] castto(uint64))
-		a.dig[i] = (carry | (t >> shift)) castto(uint32) 
+		put("carry = %l, shift = %l\n", carry, shift)
+		t = (a.dig[i - 1] castto(uint64))
+		a.dig[i - 1] = (carry | (t >> shift)) castto(uint32) 
 		carry = t << (32 - shift)
 	;;
 	-> trim(a)
