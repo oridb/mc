@@ -84,6 +84,7 @@ struct Tok {
 
     /* values parsed out */
     vlong intval;
+    Ty inttype; /* for explicitly specified suffixes */
     double fltval;
     uint32_t chrval;
 };

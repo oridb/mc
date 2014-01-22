@@ -654,10 +654,13 @@ tuplit  : Toparen tupbody Tcparen
             {$$ = mkexprl($1->line, Otup, $2.nl, $2.nn);}
 
 littok  : Tstrlit       {$$ = mkstr($1->line, $1->str);}
-        | Tintlit       {$$ = mkint($1->line, $1->intval);}
         | Tchrlit       {$$ = mkchar($1->line, $1->chrval);}
         | Tfloatlit     {$$ = mkfloat($1->line, $1->fltval);}
         | Tboollit      {$$ = mkbool($1->line, !strcmp($1->str, "true"));}
+        | Tintlit
+		{$$ = mkint($1->line, $1->intval);
+		 if ($1->inttype)
+		 	$$->lit.type = mktype($1->line, $1->inttype);}
         ;
 
 funclit : Tobrace params Tendln blkbody Tcbrace
