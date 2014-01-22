@@ -316,7 +316,6 @@ const bigmod = {a : bigint#, b : bigint# -> bigint#
 
 /* a /= b */
 const bigdivmod = {a : bigint#, b : bigint# -> [bigint#, bigint#]
-	const B = (1ul << 32)
 	/*var u, v /* normalized a and b */*/
 	var q/*, qhat /* quotient and estimated quotient */*/
 	/*
@@ -346,7 +345,7 @@ const bigdivmod = {a : bigint#, b : bigint# -> [bigint#, bigint#]
 		for j = a.dig.len; j > 0; j--
 			aj = (a.dig[j - 1] castto(uint64))
 			q.dig[j - 1] = (((carry << 32) + aj)/b0) castto(uint32)
-			carry = carry*B + aj - (q.dig[j-1] castto(uint64))*b0
+			carry = (carry << 32) + aj - (q.dig[j-1] castto(uint64))*b0
 		;;
 		for v in q.dig
 		;;
