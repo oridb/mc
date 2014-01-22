@@ -340,9 +340,7 @@ const bigshli = {a, s
 
 	a.dig = slzgrow(a.dig, 1 + a.dig.len + off castto(size))
 	/* blit over the base values */
-	put("off = %z\n", off)
 	for i = a.dig.len; i > off; i--
-		put("a.dig[%z] = a.dig[%z] (%i)\n", i - 1, i - 1 - off, a.dig[i - 1 - off])
 		a.dig[i - 1] = a.dig[i - 1 - off]
 	;;
 	for i = 0; i < off; i++
