@@ -53,7 +53,7 @@ ASMSRC= \
 
 include ../config.mk
 
-all: $(MYRLIB) $(MYRBIN) test
+all: lib$(MYRLIB).a $(MYRBIN) test
 
 sys.myr: sys-$(SYS).myr
 	cp sys-$(SYS).myr sys.myr
@@ -71,7 +71,7 @@ test: libstd.a test.myr ../6/6m
 	../myrbuild/myrbuild -C../6/6m -M../muse/muse -b test -I. test.myr
 
 
-$(MYRLIB): $(MYRSRC) $(ASMSRC) ../6/6m
+lib$(MYRLIB).a: $(MYRSRC) $(ASMSRC) ../6/6m
 	../myrbuild/myrbuild -C../6/6m -M../muse/muse -l $(MYRLIB) $(MYRSRC) $(ASMSRC)
 
 OBJ=$(MYRSRC:.myr=.o) $(ASMSRC:.s=.o)
