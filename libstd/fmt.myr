@@ -117,8 +117,8 @@ generic intfmt = {buf : byte[:], bits : @a::(tcint,tctest,tcnum), base, signed
 	if isneg
 		n += encode(buf[n:], '-')
 	;;
-	for j = i-1; j >= 0; j--
-		n += encode(buf[n:], b[j])
+	for j = i; j != 0; j--
+		n += encode(buf[n:], b[j - 1])
 	;;
 	-> n 
 }
@@ -139,6 +139,7 @@ const bfmtv = {buf, fmt, ap
 	var z_val : size
 	var p_val : byte#
         var c_val : char
+	var f_val : float64, F_val : float32
 
 	n = 0
 	base = 10
@@ -167,6 +168,14 @@ const bfmtv = {buf, fmt, ap
 			| 't':
 				(t_val, ap) = vanext(ap)
 				n += boolfmt(buf[n:], t_val)
+			| 'f':
+				(f_val, ap) = vanext(ap)
+				n += floatfmt(buf[n:], f_val, 0, 0)
+			/* FIXME: float casts are currently broken
+			| 'F':
+				(F_val, ap) = vanext(ap)
+				n += floatfmt(buf[n:], F_val castto(float64))
+			*/
 			/* format integers */
 			| 'b':
 				if signed
@@ -238,3 +247,35 @@ const boolfmt = {buf, val
 	;;
 	-> strfmt(buf, s)
 }
+
+/*
+ buf: the output buffer.
+ val: the value to format, in float64 format.
+ mode: the truncation mode.
+ 	0 => print until precision exhausted.
+	1 => print until precision exhausted or maxdigits produced.
+	2 => print until maxdigits produced, paddding with zeros.
+ */
+
+const floatfmt = {buf, val, mode, maxdigits
+	var i
+	var n
+	/*
+	var isneg
+	*/
+	/*var b, e, f*/
+
+	/* handle 0 specially to avoid special cases */
+	if val == 0.0
+		n = strfmt(buf, "0.0")
+		if mode == 0 && maxdigits > 2
+			for i = 1; i < maxdigits; i++
+				n += strfmt(buf[n:], "0")
+			;;
+		;;
+		-> n
+	;;
+
+	-> strfmt(buf, "floats not implemented")
+}
+
