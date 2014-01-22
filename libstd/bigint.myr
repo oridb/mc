@@ -398,7 +398,6 @@ const bigshrfill = {a, s, fill
 	/* and shift over by the remainder */
 	carry = 0
 	for i = a.dig.len; i > 0; i--
-		put("carry = %l, shift = %l\n", carry, shift)
 		t = (a.dig[i - 1] castto(uint64))
 		a.dig[i - 1] = (carry | (t >> shift)) castto(uint32) 
 		carry = t << (32 - shift)
