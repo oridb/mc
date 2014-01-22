@@ -33,6 +33,7 @@ pkg std =
 	generic slalloc	: (len : size	-> @a[:])
 	generic slzalloc	: (len : size	-> @a[:])
 	generic slgrow	: (sl : @a[:], len : size	-> @a[:])
+	generic slzgrow	: (sl : @a[:], len : size	-> @a[:])
 	generic slfree	: (sl : @a[:]	-> void)
 
 	const bytealloc	: (sz:size	-> byte#)
@@ -159,7 +160,7 @@ generic slgrow = {sl : @a[:], len
 	var i, n
 	var new
 
-	/* if the slice wouldn't change buckets, we don't need to realloc. */
+	/* if the slice doesn't need a bigger bucket, we don't need to realloc. */
 	if sl.len > 0 && slcap(sl castto(byte#)) >= allocsz(len*sizeof(@a))
 		-> (sl castto(@a#))[:len]
 	;;
@@ -175,6 +176,16 @@ generic slgrow = {sl : @a[:], len
 	-> new
 }
 
+/* Grows a slice, filling new entries with zero bytes */
+generic slzgrow = {sl : @a[:], len
+	var oldsz
+
+	oldsz = sl.len*sizeof(@a)
+	sl = slgrow(sl, len)
+	zfill((sl castto(byte#))[oldsz:len*sizeof(@a)])
+	-> sl
+}
+
 const slcap = {p
 	var phdr
 
@@ -183,14 +194,19 @@ const slcap = {p
 }
 
 const zbytealloc = {sz
-	var p, sl, i
+	var p
 
 	p = bytealloc(sz)
-	sl = p[0:sz]
+	zfill(p[0:sz])
+	-> p
+}
+
+const zfill = {sl
+	var i
+
 	for i = 0; i < sl.len; i++
 		sl[i] = 0
 	;;
-	-> p
 }
 
 /* Allocates a blob that is 'sz' bytes long. Dies if the allocation fails */
