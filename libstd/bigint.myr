@@ -120,7 +120,6 @@ const bigparse = {str
 	var c, val, base
 	var v, b
 	var a
-	var buf : byte[1024], n
 
 	if hasprefix(str, "0x") || hasprefix(str, "0X")
 		base = 16
@@ -150,8 +149,6 @@ const bigparse = {str
 		v.dig[0] = val
 		bigmul(a, b)
 		bigadd(a, v)
-                n = bigfmt(buf[:], a)
-
 	;;
 	-> `Some a
 }
