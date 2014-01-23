@@ -3,6 +3,8 @@ use "cmp.use"
 use "die.use"
 use "extremum.use"
 use "fmt.use"
+use "hasprefix.use"
+use "chartype.use"
 use "option.use"
 use "slcp.use"
 use "sldup.use"
@@ -21,7 +23,7 @@ pkg std =
 	const mkbigint	: (v : int32 -> bigint#)
 	const bigfree	: (a : bigint# -> void)
 	const bigdup	: (a : bigint# -> bigint#)
-	const bigparse	: (a : bigint# -> option(byte[:]))
+	const bigparse	: (s : byte[:] -> option(bigint#))
 	const bigfmt	: (b : byte[:], a : bigint# -> size)
 
 	/* some useful predicates */
@@ -87,7 +89,6 @@ const bigfmt = {buf, val
 	n = 0
 	if val.sign == 0
 		n += encode(buf, '0')
-		-> n
 	elif val.sign == -1
 		n += encode(buf, '-')
 	;;
@@ -115,39 +116,48 @@ const bigfmt = {buf, val
 	-> n
 }
 
-/*
 const bigparse = {str
-	var c, i
-	var val, base
+	var c, val, base
+	var v, b
 	var a
+	var buf : byte[1024], n
 
 	if hasprefix(str, "0x") || hasprefix(str, "0X")
 		base = 16
-	if hasprefix(str, "0o") || hasprefix(str, "0O")
+	elif hasprefix(str, "0o") || hasprefix(str, "0O")
 		base = 8
-	if hasprefix(str, "0b") || hasprefix(str, "0B")
+	elif hasprefix(str, "0b") || hasprefix(str, "0B")
 		base = 2
 	else
 		base = 10
 	;;
 
-	a = mkbigint()
+	a = mkbigint(0)
+	b = mkbigint(base castto(int32))
+	/*
+	 efficiency hack: to save allocations,
+	 just mutate v[0]. The value will always
+	 fit in one digit.
+	 */
+	v = mkbigint(1)
 	while str.len != 0
 		(c, str) = striter(str)
-		val = charval(c)
+		val = charval(c, base)
 		if val < 0
 			bigfree(a)
 			-> `None
 		;;
-		bigmuli(a, base)
-		bigaddi(a, val)
+		v.dig[0] = val
+		bigmul(a, b)
+		bigadd(a, v)
+                n = bigfmt(buf[:], a)
+
 	;;
 	-> `Some a
 }
-*/
 
 const bigiszero = {v
-	-> v.sign == 0
+	-> v.dig.len == 0
 }
 
 const bigcmp = {a, b
@@ -184,8 +194,11 @@ const signedmagorder = {sign
 
 /* a += b */
 const bigadd = {a, b
-	if a.sign == b.sign
+	if a.sign == b.sign || a.sign == 0 
+		a.sign = b.sign
 		-> uadd(a, b)
+	elif b.sign == 0
+		-> a
 	else
 		match bigcmp(a, b)
 		| `Before: /* a is negative */
@@ -206,9 +219,9 @@ const uadd = {a, b
 	var n
 
 	carry = 0
-	n = min(a.dig.len, b.dig.len)
+	n = max(a.dig.len, b.dig.len)
 	/* guaranteed to carry no more than one value */
-	a.dig = slpush(a.dig, 0)
+	a.dig = slzgrow(a.dig, n + 1)
 	for i = 0; i < n; i++
 		v = (a.dig[i] castto(uint64)) + (b.dig[i] castto(uint64)) + carry;
 		if v > (0xffffffff castto(uint64))
@@ -265,6 +278,7 @@ const bigmul = {a, b
 	var carry, t
 	var w
 
+	/* trim() will take care of the zero case */
 	if a.sign != b.sign
 		a.sign = -1
 	else
@@ -531,6 +545,8 @@ const trim = {a
 	a.dig = slgrow(a.dig, i)
 	if i == 0
 		a.sign = 0
+	elif a.sign == 0
+		a.sign = 1
 	;;
 	-> a
 }
