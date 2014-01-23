@@ -379,7 +379,7 @@ const bigdivmod = {a : bigint#, b : bigint# -> [bigint#, bigint#]
 		if qhat > 0xfffffffful || qhat * w > ((rhat << 32) + w)
 			qhat--
 			rhat += z
-			if rhat <= ~0
+			if rhat <= 0xfffffffful
 				goto divagain
 			;;
 		;;
@@ -493,7 +493,7 @@ const bigshli = {a, s
 	-> trim(a)
 }
 
-/* logical shift right, zero fills */
+/* logical shift right, zero fills. sign remains untouched. */
 const bigshri = {a, s
 	var off, shift
 	var t, carry
