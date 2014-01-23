@@ -150,15 +150,16 @@ const bfmtv = {buf, fmt, ap
 			(c, fmt) = striter(fmt)
 			/* modifiers */
 			if fmt.len > 0
-			    match c
-			    | 'x':
-				    (c, fmt) = striter(fmt)
-				    base = 16
-				    signed = false
-			    | 'u':
-				    (c, fmt) = striter(fmt)
-				    signed = false
-			    ;;
+				match c
+				| 'x':
+					(c, fmt) = striter(fmt)
+					base = 16
+					signed = false
+						
+				| 'u':
+					(c, fmt) = striter(fmt)
+					signed = false
+				;;
 			;;
 			/* format specifiers */
 			match c
