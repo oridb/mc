@@ -50,6 +50,8 @@ pkg std =
 	const bigshri	: (a : bigint#, b : uint64 -> bigint#)
 ;;
 
+const Base = 0x100000000ul
+
 const mkbigint = {v
 	var a
 	a = zalloc()
@@ -398,7 +400,7 @@ const bigdivmod = {a : bigint#, b : bigint# -> [bigint#, bigint#]
 	m = u.dig.len
 	n = v.dig.len
 
-	shift = nlz(v.dig[n - 1])
+	shift = 32-nlz(v.dig[n - 1])
 	bigshli(u, shift)
 	bigshli(v, shift)
 	for j = m - n; j >= 0; j--
@@ -412,10 +414,10 @@ const bigdivmod = {a : bigint#, b : bigint# -> [bigint#, bigint#]
 		qhat = (x + y)/z
 		rhat = (x + y) - (qhat * z)
 :divagain
-		if qhat > 0xfffffffful || qhat * w > ((rhat << 32) + w)
+		if qhat >= Base || (qhat * w) > ((rhat << 32) + w)
 			qhat--
 			rhat += z
-			if rhat <= 0xfffffffful
+			if rhat < Base
 				goto divagain
 			;;
 		;;
