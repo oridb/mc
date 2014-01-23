@@ -1,0 +1,26 @@
+use std
+
+const main = {
+	var a, b, c, d, e
+	var buf : byte[1024], n
+
+	a = std.mkbigint(1234)
+	b = std.mkbigint(0x7fffffff)
+	c = std.mkbigint(7919)
+	d = std.mkbigint(113051)
+	e = std.mkbigint(11)
+
+	std.bigmul(a, b)
+	std.bigmul(a, b)
+	std.bigadd(a, c)
+	std.bigsub(a, d)
+	std.bigdiv(a, e)
+
+	std.bigfree(b)
+	std.bigfree(c)
+	std.bigfree(d)
+	std.bigfree(e)
+
+	n = std.bigfmt(buf[:], a)
+	std.put("%s\n", buf[:n])
+}
