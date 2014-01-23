@@ -157,7 +157,7 @@ int inlist(char **list, size_t sz, char *str)
 
 void getdeps(char *file, char **deps, size_t depsz, size_t *ndeps)
 {
-    char buf[2048]; /* if you hit this limit, shoot yourself */
+    char buf[2048];
 
     regmatch_t m[2];
     size_t i;

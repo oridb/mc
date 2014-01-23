@@ -32,6 +32,8 @@ pkg std =
 	const bigsub	: (a : bigint#, b : bigint# -> bigint#)
 	const bigmul	: (a : bigint#, b : bigint# -> bigint#)
 	const bigdiv	: (a : bigint#, b : bigint# -> bigint#)
+	const bigmod	: (a : bigint#, b : bigint# -> bigint#)
+	const bigdivmod	: (a : bigint#, b : bigint# -> [bigint#, bigint#])
 	const bigshl	: (a : bigint#, b : bigint# -> bigint#)
 	const bigshr	: (a : bigint#, b : bigint# -> bigint#)
 	const bigshra	: (a : bigint#, b : bigint# -> bigint#)
@@ -78,31 +80,38 @@ const bigdup = {a
 /* for now, just dump out something for debugging... */
 const bigfmt = {buf, val
 	const digitchars = ['0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f']
-	var n, i, pow
+	var v
+	var n, i
+	var tmp
+	var rem
 
 	n = 0
-	if val.sign == -1
+	if val.sign == 0
+		n += encode(buf, '0')
+		-> n
+	elif val.sign == -1
 		n += encode(buf, '-')
 	;;
 
-	pow = 0
-	for v in val.dig
-		if pow > 0
-			n += bfmt(buf[n:], "(")
-			for i = 0; i < pow; i++
-				n += bfmt(buf[n:], "4294967296")
-				if i != pow - 1
-					n += bfmt(buf[n:], "*")
-				;;
-			;;
-			n += bfmt(buf[n:], ")*")
+	val = bigdup(val)
+	/* generate the digits in reverse order */
+	while !bigiszero(val)
+		(v, rem) = bigdivmod(val, mkbigint(10))
+		if rem.dig.len > 0
+			n += bfmt(buf[n:], "%c", digitchars[rem.dig[0]])
+		else
+			n += bfmt(buf[n:], "0")
 		;;
-		pow++
-		n += bfmt(buf[n:], "%ui + ", v)
+		bigfree(val)
+		bigfree(rem)
+		val = v
 	;;
-
-	if val.sign == 0
-		n += encode(buf, '0')
+	bigfree(val)
+	/* we only generated ascii digits, so this works. ugh. */
+	for i = 0; i < n/2; i++
+		tmp = buf[i]
+		buf[i] = buf[n - i - 1]
+		buf[n - i - 1] = tmp
 	;;
 	-> n
 }
@@ -284,20 +293,66 @@ const bigmul = {a, b
 	-> trim(a)
 }
 
+const bigdiv = {a : bigint#, b : bigint# -> bigint#
+	var q, r
+
+	(q, r) = bigdivmod(a, b)
+	bigfree(r)
+	slfree(a.dig)
+	a.dig = q.dig
+	free(q)
+	-> a
+}
+const bigmod = {a : bigint#, b : bigint# -> bigint#
+	var q, r
+
+	(q, r) = bigdivmod(a, b)
+	bigfree(q)
+	slfree(a.dig)
+	a.dig = r.dig
+	free(r)
+	-> a
+}
+
 /* a /= b */
-const bigdiv = {a, b
+const bigdivmod = {a : bigint#, b : bigint# -> [bigint#, bigint#]
+	/*var u, v /* normalized a and b */*/
+	var q/*, qhat /* quotient and estimated quotient */*/
+	/*
+	var rhat /* remainder */
+	var s, i, j, t
+	var p
+	*/
+	var j
+	var carry, b0, aj
+
 	if bigiszero(b)
 		die("divide by zero\n")
 	;;
 
+	q = zalloc()
+	q.dig = slzalloc(max(a.dig.len, b.dig.len))
 	if a.sign != b.sign
-		a.sign = -1
+		q.sign = -1
 	else
-		a.sign = 1
+		q.sign = 1
 	;;
 
-	die("big division not yet implemented\n")
-	-> trim(a)
+	/* handle single digit divisor separately for performance */
+	if b.dig.len == 1
+		carry = 0
+		b0 = (b.dig[0] castto(uint64))
+		for j = a.dig.len; j > 0; j--
+			aj = (a.dig[j - 1] castto(uint64))
+			q.dig[j - 1] = (((carry << 32) + aj)/b0) castto(uint32)
+			carry = (carry << 32) + aj - (q.dig[j-1] castto(uint64))*b0
+		;;
+		for v in q.dig
+		;;
+		-> (trim(q), trim(mkbigint(carry castto(int32))))
+	;;
+	die("big bigint division not implemented\n")
+	-> (trim(a), mkbigint(carry castto(int32)))
 }
 
 /* a <<= b */

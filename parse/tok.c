@@ -623,6 +623,7 @@ static Tok *number(int base)
     int start;
     int c;
     int isfloat;
+    int unsignedval;
 
     t = NULL;
     isfloat = 0;
@@ -646,6 +647,55 @@ static Tok *number(int base)
         t = mktok(Tintlit);
         t->str = strdupn(&fbuf[start], fidx - start);
         t->intval = strtol(t->str, NULL, base);
+        /* check suffixes:
+         *   u -> unsigned
+         *   l -> 64 bit
+         *   i -> 32 bit
+         *   w -> 16 bit
+         *   b -> 8 bit
+         */
+        unsignedval = 0;
+nextsuffix:
+        switch (peek()) {
+            case 'u':
+                if (unsignedval == 1)
+                    fatal(line, "Duplicate 'u' integer specifier");
+                next();
+                unsignedval = 1;
+                goto nextsuffix;
+            case 'l':
+                next();
+                if (unsignedval)
+                    t->inttype = Tyuint64;
+                else
+                    t->inttype = Tyint64;
+                break;
+            case 'i':
+                next();
+                if (unsignedval)
+                    t->inttype = Tyuint32;
+                else
+                    t->inttype = Tyint32;
+                break;
+            case 's':
+                next();
+                if (unsignedval)
+                    t->inttype = Tyuint16;
+                else
+                    t->inttype = Tyint16;
+                break;
+            case 'b':
+                next();
+                if (unsignedval)
+                    t->inttype = Tyuint8;
+                else
+                    t->inttype = Tyint8;
+                break;
+            default:
+                if (unsignedval)
+                    fatal(line, "Unrecognized character int type specifier after 'u'");
+                break;
+        }
     }
 
     return t;

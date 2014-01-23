@@ -116,6 +116,7 @@ B strstrip	C
 B strsplit	C
 B strfind	C
 B strjoin	C
+B bigint	P	517347321949036993306
 # B local-labels	E	10 ## BUGGERED
 F declmismatch
 F infermismatch
