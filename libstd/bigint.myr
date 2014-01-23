@@ -23,6 +23,7 @@ pkg std =
 	const mkbigint	: (v : int32 -> bigint#)
 	const bigfree	: (a : bigint# -> void)
 	const bigdup	: (a : bigint# -> bigint#)
+	const bigassign	: (d : bigint#, s : bigint# -> bigint#)
 	const bigparse	: (s : byte[:] -> option(bigint#))
 	const bigfmt	: (b : byte[:], a : bigint# -> size)
 
@@ -70,13 +71,16 @@ const bigfree = {a
 }
 
 const bigdup = {a
-	var v
-
-	v = zalloc()
-	v.dig = sldup(a.dig)
-	v.sign = a.sign
-	-> v
+	-> bigassign(zalloc(), a)
 }
+
+const bigassign = {d, s
+	slfree(d.dig)
+	d.dig = sldup(s.dig)
+	d.sign = s.sign
+	-> d
+}
+
 
 /* for now, just dump out something for debugging... */
 const bigfmt = {buf, val
@@ -173,23 +177,23 @@ const bigcmp = {a, b
 	else
 		/* the one with more digits has greater magnitude */
 		if a.dig.len > b.dig.len
-			-> signedmagorder(a.sign)
+			-> signedorder(a.sign)
 		;;
 		/* otherwise, the one with the first larger digit is bigger */
 		for i = a.dig.len; i > 0; i--
 			if a.dig[i - 1] > b.dig[i - 1]
-				-> signedmagorder(a.sign)
+				-> signedorder(a.sign)
 			elif b.dig[i - 1] > a.dig[i - 1]
-				-> signedmagorder(a.sign)
+				-> signedorder(a.sign)
 			;;
 		;;
 	;;
 	-> `Equal
 }
 
-const signedmagorder = {sign
+const signedorder = {sign
 	if sign < 0
-		-> `Before
+		-> `Before 
 	else
 		-> `After
 	;;
@@ -240,7 +244,15 @@ const uadd = {a, b
 
 /* a -= b */
 const bigsub = {a, b
-	if a.sign != b.sign
+	/* 0 - x = -x */
+	if a.sign == 0
+		bigassign(a, b)
+		a.sign = -b.sign
+		-> a
+	/* x - 0 = x */
+	elif b.sign == 0
+		-> a
+	elif a.sign != b.sign
 		-> uadd(a, b)
 	else
 		match bigcmp(a, b)
@@ -281,8 +293,12 @@ const bigmul = {a, b
 	var carry, t
 	var w
 
-	/* trim() will take care of the zero case */
-	if a.sign != b.sign
+	if a.sign == 0 || b.sign == 0
+		a.sign = 0
+		slfree(a.dig)
+		a.dig = [][:]
+		-> a
+	elif a.sign != b.sign
 		a.sign = -1
 	else
 		a.sign = 1
