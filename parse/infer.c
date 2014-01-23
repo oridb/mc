@@ -980,6 +980,22 @@ static void inferpat(Inferstate *st, Node *n, Node *val, Node ***bind, size_t *n
         case Olit:
         case Omemb:
             infernode(st, n, NULL, NULL);   break;
+	/* arithmetic expressions just need to be constant */
+	case Oneg:
+	case Oadd:
+	case Osub:
+	case Omul:
+	case Odiv:
+	case Obsl:
+	case Obsr:
+	case Oband:
+	case Obor:
+	case Obxor:
+	case Obnot:
+            infernode(st, n, NULL, NULL);
+	    if (!n->expr.isconst)
+		fatal(n->line, "matching against non-constant expression");
+	    break;
         case Oucon:     inferucon(st, n, &n->expr.isconst);     break;
         case Ovar:
             s = getdcl(curstab(), args[0]);
@@ -1001,7 +1017,7 @@ static void inferpat(Inferstate *st, Node *n, Node *val, Node ***bind, size_t *n
             n->expr.did = s->decl.did;
             break;
         default:
-            die("Bad pattern to match against");
+            fatal(n->line, "invalid pattern");
             break;
     }
 }
