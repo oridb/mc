@@ -24,6 +24,7 @@ const main = {
 	n = std.bigfmt(buf[:], a)
 	std.put("%s\n", buf[:n])
 
+	/* smoke test */
 	match std.bigparse("1234_5678_1234_6789_6666_7777_8888")
 	| `std.Some val: a = val
 	| `std.None: std.die("Failed to parse a\n")
@@ -34,9 +35,49 @@ const main = {
 	;;
 
 	n = std.bigfmt(buf[:], a)
-	std.put("%s\n", buf[:n])
+	std.put("%s / ", buf[:n])
 	n = std.bigfmt(buf[:], b)
+	std.put("%s == ", buf[:n])
+
+	std.bigdiv(a, b)
+
+	n = std.bigfmt(buf[:], a)
 	std.put("%s\n", buf[:n])
+
+	/* no shifting */
+	match std.bigparse("0xffff_1234_1234_1234_1234")
+	| `std.Some val: a = val
+	| `std.None: std.die("Failed to parse a\n")
+	;;
+	match std.bigparse("0xf010_1234_2314")
+	| `std.Some val: b = val
+	| `std.None: std.die("Failed to parse b\n")
+	;;
+
+	n = std.bigfmt(buf[:], a)
+	std.put("%s / ", buf[:n])
+	n = std.bigfmt(buf[:], b)
+	std.put("%s == ", buf[:n])
+
+	std.bigdiv(a, b)
+
+	n = std.bigfmt(buf[:], a)
+	std.put("%s\n", buf[:n])
+
+	/* no shifting */
+	match std.bigparse("0xffff_1234_1234_1234_1234")
+	| `std.Some val: a = val
+	| `std.None: std.die("Failed to parse a\n")
+	;;
+	match std.bigparse("0x0ff_1234_2314")
+	| `std.Some val: b = val
+	| `std.None: std.die("Failed to parse b\n")
+	;;
+
+	n = std.bigfmt(buf[:], a)
+	std.put("%s / ", buf[:n])
+	n = std.bigfmt(buf[:], b)
+	std.put("%s == ", buf[:n])
 
 	std.bigdiv(a, b)
 
