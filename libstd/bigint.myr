@@ -147,8 +147,14 @@ const bigparse = {str
 			-> `None
 		;;
 		v.dig[0] = val
+		if val == 0
+			v.sign = 0
+		else
+			v.sign = 1
+		;;
 		bigmul(a, b)
 		bigadd(a, v)
+
 	;;
 	-> `Some a
 }
