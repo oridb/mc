@@ -145,6 +145,9 @@ const bigparse = {str
 	v = mkbigint(1)
 	while str.len != 0
 		(c, str) = striter(str)
+		if c == '_'
+			continue
+		;;
 		val = charval(c, base)
 		if val < 0
 			bigfree(a)
