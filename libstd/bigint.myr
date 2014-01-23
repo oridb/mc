@@ -236,7 +236,7 @@ const uadd = {a, b
 	a.dig = slzgrow(a.dig, n + 1)
 	for i = 0; i < n; i++
 		v = (a.dig[i] castto(uint64)) + (b.dig[i] castto(uint64)) + carry;
-		if v > (0xffffffff castto(uint64))
+		if v >= Base
 			carry = 1
 		else
 			carry = 0
@@ -374,7 +374,7 @@ const bigdivmod = {a : bigint#, b : bigint# -> [bigint#, bigint#]
 	;;
 
 	q = zalloc()
-	q.dig = slzalloc(max(a.dig.len, b.dig.len))
+	q.dig = slzalloc(max(a.dig.len, b.dig.len) + 1)
 	if a.sign != b.sign
 		q.sign = -1
 	else
@@ -395,26 +395,25 @@ const bigdivmod = {a : bigint#, b : bigint# -> [bigint#, bigint#]
 
 	u = bigdup(a)
 	v = bigdup(b)
-	q = zalloc()
-	q.dig = slalloc(max(u.dig.len, v.dig.len))
 	m = u.dig.len
 	n = v.dig.len
 
-	shift = 32-nlz(v.dig[n - 1])
+	shift = nlz(v.dig[n - 1])
 	bigshli(u, shift)
 	bigshli(v, shift)
 	for j = m - n; j >= 0; j--
 		/* load a few temps */
-		x = (u.dig[j + n] castto(uint64)) << 32
+		x = u.dig[j + n] castto(uint64)
 		y = u.dig[j + n - 1] castto(uint64)
 		z = v.dig[n - 1] castto(uint64)
 		w = v.dig[n - 2] castto(uint64)
+		t = u.dig[j + n - 2] castto(uint64)
 
 		/* estimate qhat */
-		qhat = (x + y)/z
-		rhat = (x + y) - (qhat * z)
+		qhat = (x*Base + y)/z
+		rhat = (x*Base + y) - (qhat * z)
 :divagain
-		if qhat >= Base || (qhat * w) > ((rhat << 32) + w)
+		if qhat >= Base || (qhat * w) > (rhat*Base + t)
 			qhat--
 			rhat += z
 			if rhat < Base
@@ -426,10 +425,11 @@ const bigdivmod = {a : bigint#, b : bigint# -> [bigint#, bigint#]
 		carry = 0
 		for i = 0; i < n; i++
 			p = qhat * (v.dig[i] castto(uint64))
-			t = (u.dig[i+j] castto(uint64)) - carry - (p & (0xffffffff castto(uint64)))
+			t = (u.dig[i+j] castto(uint64)) - carry - (p % Base)
 			u.dig[i+j] = t castto(uint32)
-			carry = (p >> 32) - (t >> 32);
+			carry = (((p castto(int64)) >> 32) - ((t castto(int64)) >> 32)) castto(uint64);
 		;;
+		x = u.dig[j + n] castto(uint64)
 		t = x - carry
 		u.dig[j + n] = t castto(uint32)
 		q.dig[j] = qhat castto(uint32)
@@ -459,23 +459,23 @@ const nlz = {a : uint32
 		-> 32
 	;;
 	n = 0
-	if a < 0x0000ffff
+	if a <= 0x0000ffff
 		n += 16
 		a <<= 16
 	;;
-	if a < 0x00ffffff
+	if a <= 0x00ffffff
 		n += 8
 		a <<= 8
 	;;
-	if a < 0x0fffffff
+	if a <= 0x0fffffff
 		n += 4
 		a <<= 4
 	;;
-	if a < 0x3fffffff
+	if a <= 0x3fffffff
 		n += 2
 		a <<= 2
 	;;
-	if a < 0x7fffffff
+	if a <= 0x7fffffff
 		n += 1
 		a <<= 1
 	;;
