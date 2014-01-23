@@ -338,7 +338,7 @@ const bigdivmod = {a : bigint#, b : bigint# -> [bigint#, bigint#]
 		q.sign = 1
 	;;
 
-	/* handle single digit divisor separately for performance */
+	/* handle single digit divisor separately: the knuth algorithm needs at least 2 digits. */
 	if b.dig.len == 1
 		carry = 0
 		b0 = (b.dig[0] castto(uint64))
