@@ -12,7 +12,7 @@ use "utf.use"
 
 pkg std =
 	type bigint = struct
-		dig	: uint32[:] 	/* little endian, no leading zeros. */
+		dig	: uint32[:]	/* little endian, no leading zeros. */
 		sign	: int		/* -1 for -ve, 0 for zero, 1 for +ve. */
 	;;
 
