@@ -72,6 +72,7 @@ B str		E	102
 B generic	E	42
 B genericval	E	42
 B trait-builtin	E	42
+# E emptytrait	E	123	## BUGGERED
 B nestucon	P	asdf
 B mkunion	E	0
 B genericcall	E	42

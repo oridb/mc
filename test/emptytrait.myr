@@ -1,0 +1,14 @@
+use std
+
+trait fooable @a =
+;;
+impl fooable int
+
+generic foo = {x : @a::fooable
+	-> x
+}
+
+const main = {
+	std.exit(foo(123))
+}
+
