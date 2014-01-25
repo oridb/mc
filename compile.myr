@@ -439,12 +439,11 @@ const baseexpr = {re
 		if re.pat.len == 0
 			-> `Fail (`Earlystop)
 		;;
-		ret = escaped(re)
+		-> escaped(re)
 	| c:
 		getc(re)
 		ret = mk(`Chr c)
 	;;
-	dump(re, ret, 0)
 	-> `Some ret
 }
 
@@ -453,30 +452,81 @@ const escaped = {re
 
 	match getc(re)
 	/* character classes */
-	| 'd': ret = ranges(re, _ranges.tabasciidigit[:])
-	| 'x': ret = ranges(re, _ranges.tabasciixdigit[:])
-	| 's': ret = ranges(re, _ranges.tabasciispace[:])
-	| 'w': ret = ranges(re, _ranges.tabasciiword[:])
-	| 'h': ret = ranges(re, _ranges.tabasciiblank[:])
+	| 'd': ret = `Some ranges(re, _ranges.tabasciidigit[:])
+	| 'x': ret = `Some ranges(re, _ranges.tabasciixdigit[:])
+	| 's': ret = `Some ranges(re, _ranges.tabasciispace[:])
+	| 'w': ret = `Some ranges(re, _ranges.tabasciiword[:])
+	| 'h': ret = `Some ranges(re, _ranges.tabasciiblank[:])
+
+	/* negated character classes */
+	| 'W': ret = `Some negranges(re, _ranges.tabasciiword[:])
+	| 'S': ret = `Some negranges(re, _ranges.tabasciispace[:])
+	| 'D': ret = `Some negranges(re, _ranges.tabasciidigit[:])
+	| 'X': ret = `Some negranges(re, _ranges.tabasciixdigit[:])
+	| 'H': ret = `Some negranges(re, _ranges.tabasciiblank[:])
+
+	/* unicode character classes */
+	| 'p':	ret = unicodeclass(re, false)
+	| 'P':  ret = unicodeclass(re, true)
 
 	/* escaped metachars */
-	| '^': ret = mk(`Chr '^')
-	| '$': ret = mk(`Chr '$')
-	| '.': ret = mk(`Chr '.')
-	| '+': ret = mk(`Chr '+')
-	| '?': ret = mk(`Chr '?')
-
-	| 'W': ret = negranges(re, _ranges.tabasciiword[:])
-	| 'S': ret = negranges(re, _ranges.tabasciispace[:])
-	| 'D': ret = negranges(re, _ranges.tabasciidigit[:])
-	| 'X': ret = negranges(re, _ranges.tabasciixdigit[:])
-	| 'H': ret = negranges(re, _ranges.tabasciiblank[:])
-	/*
-	| 'p':	unicodeclass(re)
-	| 'P':  negate(unicodeclass(re))
-	*/
+	| '^': ret = `Some mk(`Chr '^')
+	| '$': ret = `Some mk(`Chr '$')
+	| '.': ret = `Some mk(`Chr '.')
+	| '+': ret = `Some mk(`Chr '+')
+	| '?': ret = `Some mk(`Chr '?')
 	;;
 	-> ret
+}
+
+const unicodeclass = {re, neg
+	var c, s
+	var tab
+	var n
+
+	if re.pat.len == 0
+		-> `Fail (`Earlystop)
+	;;
+	n = 0
+	s = re.pat
+	/* either a single char pattern, or {pat} */
+	match getc(re)
+	| '{':
+		while re.pat.len > 0
+			c = getc(re)
+			if c == '}'
+				break
+			;;
+			n += std.charlen(c)
+		;;
+	| r:
+		n += std.charlen(r)
+	;;
+	s = s[:n]
+	/* letters */
+	if std.sleq(s, "L") || std.sleq(s, "Letter")
+		tab = _ranges.tabalpha[:]
+	elif std.sleq(s, "Lu") || std.sleq(s, "Uppercase_Letter")
+		tab = _ranges.tabupper[:]
+	elif std.sleq(s, "Ll") || std.sleq(s, "Lowercase_Letter")
+		tab = _ranges.tablower[:]
+	elif std.sleq(s, "Lt") || std.sleq(s, "Titlecase_Letter")
+		tab = _ranges.tablower[:]
+	/* numbers (incomplete) */
+	elif std.sleq(s, "N") || std.sleq(s, "Number")
+		tab = _ranges.tabdigit[:]
+	elif std.sleq(s, "Z") || std.sleq(s, "Separator")
+		tab = _ranges.tabspace[:]
+	elif std.sleq(s, "Zs") || std.sleq(s, "Space_Separator")
+		tab = _ranges.tabblank[:]
+	else
+		-> `Fail (`Badrange)
+	;;
+	if !neg
+		-> `Some ranges(re, tab)
+	else
+		-> `Some negranges(re, tab)
+	;;
 }
 
 const chrclass = {re

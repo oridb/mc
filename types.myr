@@ -6,6 +6,7 @@ pkg regex =
 		`Unbalanced
 		`Emptyparen
 		`Badrep
+		`Badrange
 		`Noimpl
 	;;
 
