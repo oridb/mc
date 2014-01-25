@@ -142,11 +142,11 @@ const bfmtv = {buf, fmt, ap
 	var f_val : float64, F_val : float32
 
 	n = 0
-	base = 10
-	signed = true
 	while fmt.len
 		(c, fmt) = striter(fmt)
 		if c == '%'
+			base = 10
+			signed = true
 			(c, fmt) = striter(fmt)
 			/* modifiers */
 			if fmt.len > 0
