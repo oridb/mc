@@ -10,19 +10,32 @@ pkg regex =
 const Zthr = 0 castto(rethread#)
 
 const exec = {re, str
+	var thr
+	var m
+
 	re.str = str
 	re.strp = 0
-	run(re)
-	match re.matched
-	| `std.Some thr:
-		trace(re, thr, "mstart: %z, mend: %z, str.len: %z\n", thr.mstart[0], thr.mend[0], str.len)
-		if thr.mend[0] != str.len
-			-> `std.None
-		else
-			-> `std.Some getmatches(re, thr)
-		;;
-	| `std.None:
-		-> `std.None
+	thr = run(re)
+	if thr != Zthr
+		m = getmatches(re, thr)
+		cleanup(re)
+		-> `std.Some m
+	else
+		cleanup(re)
+		->  `std.None
+	;;
+}
+
+const cleanup = {re
+	var thr, next
+
+	for thr = re.runq; thr != Zthr; thr = next
+		next = thr.next
+		thrfree(re, thr)
+	;;
+	for thr = re.expired; thr != Zthr; thr = next
+		next = thr.next
+		thrfree(re, thr)
 	;;
 }
 
@@ -41,12 +54,13 @@ const getmatches = {re, thr
 	-> ret
 }
 
+
+/* returns a matching thread, or Zthr if no threads matched */
 const run = {re
 	var i, ip
 	var consumed
 	var thr
 
-	re.matched = `std.None
 	re.runq = mkthread(re, 0)
 	re.runq.mstart = std.slalloc(re.nmatch)
 	re.runq.mend = std.slalloc(re.nmatch)
@@ -69,16 +83,27 @@ const run = {re
 
 			if thr.dead
 				thrfree(re, thr)
+			elif thr.matched && re.strp == re.str.len
+				-> thr
 			elif !thr.matched
-				thr.next = re.expired
-				re.expired = thr
+				if re.expired == Zthr
+					re.expired = thr
+				;;
+				if re.expiredtail != Zthr
+					re.expiredtail.next = thr
+				;;
+				re.expiredtail = thr
+				thr.next = Zthr
+
 			;;
 		;;
 		trace(re, thr, "SWITCH\n")
 		re.runq = re.expired
 		re.expired = Zthr
+		re.expiredtail = Zthr
 		re.strp++
 	;;
+	-> Zthr
 }
 
 /* 
@@ -180,11 +205,6 @@ const die = {re, thr, msg
 
 const finish = {re, thr
 	trace(re, thr, "finish %z\n", thr.tid)
-	match re.matched
-	| `std.Some t:	thrfree(re, t)
-	| `std.None:
-	;;
-	re.matched = `std.Some thr
 	thr.matched = true
 	re.nthr--
 }

@@ -8,3 +8,8 @@ Matched. 3 matches
 match 0: Abcde
 match 1: bcd
 match 2: c
+Matched. 4 matches
+match 0: aaaa
+match 1: a
+match 2: aaa
+match 3: 

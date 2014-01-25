@@ -18,12 +18,12 @@ pkg regex =
 		/* VM state */
 		runq	: rethread#
 		expired	: rethread#
+		expiredtail	: rethread#
 		proglen	: std.size
 		prog	: reinst[:]
 		nthr	: std.size
 		str	: byte[:]
 		strp	: std.size
-		matched	: std.option(rethread#)
 	;;
 
 	type rethread = struct
