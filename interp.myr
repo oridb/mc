@@ -98,7 +98,7 @@ const run = {re
 
 			;;
 		;;
-		trace(re, thr, "SWITCH\n")
+		trace(re, thr, "switch\n")
 		re.runq = re.expired
 		re.expired = Zthr
 		re.expiredtail = Zthr
