@@ -211,7 +211,6 @@ const finish = {re, thr
 }
 
 var nexttid = 0
-
 const mkthread = {re, ip
 	var thr : rethread#
 
@@ -233,10 +232,6 @@ const mkthread = {re, ip
 }
 
 const thrfree = {re, thr
-	/* 
-	   free the dying thread, and shuffle the last
-	   thread into the it's place in the thread list
-	*/
 	trace(re, thr, "\t\tcleanup %z\n", thr.tid)
 	std.slfree(thr.mstart)
 	std.slfree(thr.mend)
