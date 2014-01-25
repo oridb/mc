@@ -267,8 +267,8 @@ const idump = {re
 		std.put("%i:\t", i)
 		match re.prog[i]
 		/* Char matching. Consume exactly one byte from the string. */
-		| `Ibyte b:		std.put("`Ibyte %b (%c)\n", b, b castto(char)) 
-		| `Irange (start, end):	std.put("`Irange (%b,%b)\n", start, end) 
+		| `Ibyte b:		std.put("`Ibyte %ub (%c)\n", b, b castto(char)) 
+		| `Irange (start, end):	std.put("`Irange (%ub,%ub)\n", start, end) 
 		/* capture groups */
 		| `Ilbra m:		std.put("`Ilbra %z\n", m) 
 		| `Irbra m:		std.put("`Irbra %z\n", m) 
