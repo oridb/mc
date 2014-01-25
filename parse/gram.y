@@ -538,7 +538,7 @@ castexpr: unionexpr Tcast Toparen type Tcparen
         ;
 
 unionexpr
-        : Ttick name borexpr
+        : Ttick name unionexpr
             {$$ = mkexpr($1->line, Oucon, $2, $3, NULL);}
         | Ttick name
             {$$ = mkexpr($1->line, Oucon, $2, NULL);}
