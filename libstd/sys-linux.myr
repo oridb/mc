@@ -11,6 +11,7 @@ pkg std =
 	type socktype	= int64	/* socket type */
 	type sockproto	= int64	/* socket protocol */
 	type sockfam	= uint16	/* socket family */
+	type whence	= uint64
 
 	type clock = union
 		`Clockrealtime
@@ -129,6 +130,9 @@ pkg std =
 	const Sockdccp		: socktype = 6	/* data congestion control protocol */
 	const Sockpack		: socktype = 10	/* linux specific packet */
 
+	const Seekset	: whence = 0
+	const Seekcur	: whence = 1
+	const Seekend	: whence = 2
 
 	/* return value for a failed mapping */
 	const Mapbad	: byte# = -1 castto(byte#)
@@ -559,6 +563,7 @@ const lseek	= {fd, off, whence;	-> syscall(Syslseek, fd, off, whence)}
 const stat	= {path, sb;		-> syscall(Sysstat, cstring(path), sb)}
 const fstat	= {fd, sb;		-> syscall(Sysfstat, fd, sb)}
 const mkdir	= {path, mode;		-> syscall(Sysmkdir, cstring(path), mode) castto(int64)}
+const seek	= {fd, of, whence	-> syscall(Syslseek, fd, off, whence) castto(off)}
 
 /* networking */
 const socket	= {dom, stype, proto;	-> syscall(Syssocket, dom castto(int64), stype, proto) castto(fd)}
