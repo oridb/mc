@@ -2,6 +2,7 @@ MYRLIB=std
 MYRSRC= \
     alloc.myr \
     bigint.myr \
+    bitset.myr \
     blat.myr \
     chartype.myr \
     cmp.myr \
@@ -12,8 +13,8 @@ MYRSRC= \
     error.myr \
     execvp.myr \
     extremum.myr \
-    fmt.myr \
     floatbits.myr \
+    fmt.myr \
     hashfuncs.myr \
     hasprefix.myr \
     hassuffix.myr \

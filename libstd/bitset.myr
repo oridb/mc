@@ -1,0 +1,138 @@
+use "alloc.use"
+use "mk.use"
+use "types.use"
+use "extremum.use"
+
+pkg std =
+	type bitset = struct
+		bits : size[:]
+	;;
+
+	const mkbitset	: (-> bitset#)
+	const bsdup	: (bs : bitset# -> bitset#)
+	const bsfree	: (bs : bitset# -> void)
+
+	generic bsput	: (bs : bitset#, v : @a::(tcint,tctest,tcnum) -> void)
+	generic bsdel	: (bs : bitset#, v : @a::(tcint,tctest,tcnum) -> void)
+	generic bshas	: (bs : bitset#, v : @a::(tcint,tctest,tcnum) -> bool)
+
+	const bsdiff	: (a : bitset#, b : bitset# -> void)
+	const bsintersect	: (a : bitset#, b : bitset# -> void)
+	const bsunion	: (a : bitset#, b : bitset# -> void)
+	const bseq	: (a : bitset#, b : bitset# -> bool)
+	const bsissub	: (a : bitset#, b : bitset# -> bool)
+
+	const bsclear	: (bs : bitset# -> bitset#)
+	const bscount	: (bs : bitset#	-> bitset#)
+	const bsiter	: (bs : bitset# -> bitset#)
+;;
+
+const Szbits = 8*sizeof(size)
+
+const mkbitset = {
+	-> zalloc()
+}
+
+const bsdup = {bs
+	-> mk([.bits=bs.bits])
+}
+
+const bsfree = {bs
+	slfree(bs.bits)
+	free(bs)
+}
+
+generic bsput = {bs, v
+	var idx
+	var off
+
+	idx = (v castto(size)) / Szbits
+	off = (v castto(size)) % Szbits
+	ensurespace(bs, idx)
+	bs.bits[idx] |= (1 << off)
+}
+
+generic bsdel = {bs, v
+	var idx
+	var off
+
+	idx = (v castto(size)) / Szbits
+	off = (v castto(size)) % Szbits
+	ensurespace(bs, idx)
+	bs.bits[idx] &= ~(1 << off)
+}
+
+generic bshas = {bs, v
+	var idx
+	var off
+
+	idx = (v castto(size)) / Szbits
+	off = (v castto(size)) % Szbits
+	ensurespace(bs, idx)
+	-> (bs.bits[idx] & (1 << off)) != 0
+}
+
+const bsunion = {a, b
+	var i
+
+	eqsz(a, b)
+	for i = 0; i < b.bits.len; i++
+		a.bits[i] |= b.bits[i]
+	;;
+}
+
+const bsintersect = {a, b
+	var i, n
+
+	n = min(a.bits.len, b.bits.len)
+	for i = 0; i < n; i++
+		a.bits[i] &= b.bits[i]
+	;;
+}
+
+const bsdiff = {a, b
+	var i
+
+	ensurespace(b, a.bits.len)
+	for i = 0; i < a.bits.len; i++
+		a.bits[i] &= ~b.bits[i]
+	;;
+}
+
+const bsissubset = {a, b
+	var i
+
+	eqsz(a, b);
+	for i = 0; i < a.bits.len; i++
+		if (b.bits[i] & a.bits[i]) != b.bits[i]
+			-> false
+		;;
+	;;
+	-> true
+}
+
+const bseq = {a, b
+	var i
+
+	eqsz(a, b)
+	for i = 0; i < a.bits.len; i++
+		if a.bits[i] != b.bits[i]
+			-> false
+		;;
+	;;
+	-> true
+}
+
+const ensurespace = {bs, v
+	if bs.bits.len*Szbits <= v
+		bs.bits = slzgrow(bs.bits, v + 1)
+	;;
+}
+
+const eqsz = {a, b
+	var sz
+
+	sz = max(a.bits.len, b.bits.len)
+	ensurespace(a, sz)
+	ensurespace(b, sz)
+}
