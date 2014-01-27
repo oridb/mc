@@ -61,7 +61,9 @@ const run = {re
 	var i, ip
 	var consumed
 	var thr
+	var states
 
+	states = std.mkbitset()
 	re.runq = mkthread(re, 0)
 	re.runq.mstart = std.slalloc(re.nmatch)
 	re.runq.mend = std.slalloc(re.nmatch)
@@ -82,11 +84,16 @@ const run = {re
 				consumed = step(re, thr, ip)
 			;;
 
+			if std.bshas(states, thr.ip)
+				die(re, thr, "there can be only one")
+			;;
+
 			if thr.dead
 				thrfree(re, thr)
 			elif thr.matched && re.strp == re.str.len
 				-> thr
 			elif !thr.matched
+				std.bsput(states, thr.ip)
 				if re.expired == Zthr
 					re.expired = thr
 				;;
@@ -98,6 +105,7 @@ const run = {re
 
 			;;
 		;;
+		std.bsclear(states)
 		trace(re, thr, "switch\n")
 		re.runq = re.expired
 		re.expired = Zthr

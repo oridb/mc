@@ -3,6 +3,35 @@ use std
 use "testmatch.use"
 
 const main = {
+	var s : byte[:]
+		
+	s = std.strjoin([
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+	][:], "")
 	testmatch(".*bc", "Abc")
 	testmatch("(a*)*", "a")
+	dbgmatch("(aa|aab?)*", s)
 }
