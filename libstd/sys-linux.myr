@@ -563,7 +563,6 @@ const lseek	= {fd, off, whence;	-> syscall(Syslseek, fd, off, whence)}
 const stat	= {path, sb;		-> syscall(Sysstat, cstring(path), sb)}
 const fstat	= {fd, sb;		-> syscall(Sysfstat, fd, sb)}
 const mkdir	= {path, mode;		-> syscall(Sysmkdir, cstring(path), mode) castto(int64)}
-const seek	= {fd, of, whence;	-> syscall(Syslseek, fd, off, whence) castto(off)}
 
 /* networking */
 const socket	= {dom, stype, proto;	-> syscall(Syssocket, dom castto(int64), stype, proto) castto(fd)}
