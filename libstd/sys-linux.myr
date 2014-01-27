@@ -453,9 +453,6 @@ pkg std =
 
 	/* getting to the os */
 	extern const syscall	: (sc:scno, args:... -> int64)
-	extern const cstring	: (str : byte[:] -> byte#)
-	extern const alloca	: (sz : size	-> byte#)
-	extern const __cenvp : byte##
 
 	/* process management */
 	const exit	: (status:int -> void)
@@ -500,6 +497,10 @@ pkg std =
 	/* system information */
 	const uname 	: (buf : utsname# -> int)
 ;;
+
+extern const cstring	: (str : byte[:] -> byte#)
+extern const alloca	: (sz : size	-> byte#)
+extern const __cenvp : byte##
 
 /* process management */
 const exit	= {status;		syscall(Sysexit, status castto(int64))}
@@ -608,3 +609,4 @@ const clockid = {clk
 	;;
 	-> -1
 }
+

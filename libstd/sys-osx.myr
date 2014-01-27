@@ -487,9 +487,6 @@ pkg std =
 	const Sysfileport_makefd	: scno = 0x20001b1
 
 	extern const syscall : (sc:scno, args:... -> int64)
-	extern const cstring : (str : byte[:] -> byte#)
-	extern const alloca : (sz : size -> byte#)
-	extern const __cenvp : byte##
 
 	/* process control */
 	const exit	: (status:int -> void)
@@ -537,6 +534,9 @@ pkg std =
 ;;
 
 extern const __osx_fork : (->int64)
+extern const cstring : (str : byte[:] -> byte#)
+extern const alloca : (sz : size -> byte#)
+extern const __cenvp : byte##
 
 /* process control */
 const exit	= {status;		syscall(Sysexit, status castto(int64))}
