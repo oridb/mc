@@ -25,7 +25,7 @@ type tree = union
 	`Class	[char, char]
 
 	/* meta */
-	`Cap	tree#
+	`Cap	[std.size, tree#] /* id, tree */
 	`Bol	/* beginning of line */
 	`Eol	/* end of line */
 ;;
@@ -87,8 +87,6 @@ const free = {re
 
 /* generates bytecode from an AST */
 const gen = {re, t
-	var m
-
 	match t#
 	|`Alt	(a, b): genalt(re, a, b)
 	|`Cat	(a, b): gen(re, a); gen(re, b)
@@ -105,8 +103,7 @@ const gen = {re, t
 	/* meta */
 	|`Bol:	append(re, `Ibol)
 	|`Eol:	append(re, `Ibol)
-	|`Cap	a:
-		m = re.nmatch++
+	|`Cap	(m, a):
 		append(re, `Ilbra m)
 		gen(re, a)
 		append(re, `Irbra m)
@@ -325,8 +322,8 @@ const dump = {re, t, indent
 		std.put("Class (%c-%c)\n", a, b)
 
 	/* meta */
-	| `Cap	a:
-		std.put("Cap\n")
+	| `Cap	(m, a):
+		std.put("Cap %i\n", m)
 		dump(re, a, indent + 1)
 	;;
 }
@@ -417,9 +414,9 @@ const baseexpr = {re
 	/* lower prec operators */
 	| '|':	-> `None
 	| ')':	-> `None
-	| '*':	-> `Fail (`Badrep)
-	| '+':	-> `Fail (`Badrep)
-	| '?':	-> `Fail (`Badrep)
+	| '*':	-> `Fail `Badrep
+	| '+':	-> `Fail `Badrep
+	| '?':	-> `Fail `Badrep
 	| '[':	-> chrclass(re)
 	| '.':	getc(re); ret = mk(`Class (0, std.Maxcharval))
 	| '^':	getc(re); ret = mk(`Bol)
@@ -427,17 +424,18 @@ const baseexpr = {re
 	| '(':	
 		getc(re)
 		match altexpr(re)
-		| `Some s:	ret = mk(`Cap s)
-		| `None:	-> `Fail (`Emptyparen)
-		;;
-		if !matchc(re, ')')
-			astfree(ret)
-			-> `Fail (`Unbalanced)
+		| `Some s:
+			if matchc(re, ')')
+				-> `Some mk(`Cap (re.nmatch++, s))
+			else
+				-> `Fail `Unbalanced
+			;;
+		| `None:	-> `Fail `Emptyparen
 		;;
 	| '\\':
 		getc(re) /* consume the slash */
 		if re.pat.len == 0
-			-> `Fail (`Earlystop)
+			-> `Fail `Earlystop
 		;;
 		-> escaped(re)
 	| c:
@@ -700,7 +698,7 @@ const astfree = {t
 	| `Class (a, b):	
 
 	/* meta */
-	| `Cap	a:	astfree(a)
+	| `Cap	(m, a):	astfree(a)
 	;;
 	std.free(t)
 }

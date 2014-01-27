@@ -4,10 +4,13 @@ match 1: bc
 Matched. 2 matches
 match 0: Abcde
 match 1: bcd
+Matched. 2 matches
+match 0: abab
+match 1: b
 Matched. 3 matches
 match 0: Abcde
-match 1: bcd
-match 2: c
+match 1: c
+match 2: bcd
 Matched. 4 matches
 match 0: aaaa
 match 1: a
