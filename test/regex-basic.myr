@@ -33,5 +33,5 @@ const main = {
 	][:], "")
 	testmatch(".*bc", "Abc")
 	testmatch("(a*)*", "a")
-	dbgmatch("(aa|aab?)*", s)
+	testmatch("(aa|aab?)*", s)
 }
