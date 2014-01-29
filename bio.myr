@@ -364,11 +364,17 @@ const readto = {f, delim
 	-> readdelim(f, delim, false)
 }
 
+/* same as readto, but drops the read data. */
 const skipto = {f, delim
 	match readdelim(f, delim, true)
 	| `std.Some ret:	-> true
 	| `std.None:	-> false
 	;;
+}
+
+/* Same as readto, but the delimiter is always a '\n' */
+const readln = {f
+	-> readto(f, "\n")
 }
 
 const readdelim = {f, delim, drop
@@ -408,37 +414,6 @@ const readdelim = {f, delim, drop
 	;;
 	std.die("unreachable")
 }
-
-/* Same as readto, but the delimiter is always a '\n' */
-const readln = {f
-	-> readto(f, "\n")
-}
-
-const skipto = {f, delim
-	var ret : byte[:]
-	var i, j
-
-	ret = [][:]
-	while true
-		if !ensureread(f, delim.len)
-			-> ret.len > 0
-		;;
-		for i = f.rstart; i < f.rend; i++
-			if f.rbuf[i] == delim[0]
-				for j = 0; j < delim.len; j++
-					if f.rbuf[i + j] != delim[j]
-						goto nextiterskip
-					;;
-				;;
-				f.rstart += delim.len
-				-> true
-			;;
-:nextiterskip
-		;;
-	;;
-	std.die("unreachable")
-}
-
 
 /*
 Same as std.put, but buffered. Returns the number of bytes written.
