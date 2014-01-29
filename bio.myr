@@ -391,7 +391,7 @@ const readdelim = {f, delim, drop
 			if f.rbuf[i] == delim[0]
 				for j = 0; j < delim.len; j++
 					if f.rbuf[i + j] != delim[j]
-						goto nextiter
+						goto nextiterread
 					;;
 				;;
 				if !drop
@@ -400,7 +400,7 @@ const readdelim = {f, delim, drop
 				f.rstart += delim.len
 				-> `std.Some ret
 			;;
-:nextiter
+:nextiterread
 		;;
 		if !drop
 			ret = readinto(f, ret, f.rend - f.rstart)
@@ -413,6 +413,32 @@ const readdelim = {f, delim, drop
 const readln = {f
 	-> readto(f, "\n")
 }
+
+const skipto = {f, delim
+	var ret : byte[:]
+	var i, j
+
+	ret = [][:]
+	while true
+		if !ensureread(f, delim.len)
+			-> ret.len > 0
+		;;
+		for i = f.rstart; i < f.rend; i++
+			if f.rbuf[i] == delim[0]
+				for j = 0; j < delim.len; j++
+					if f.rbuf[i + j] != delim[j]
+						goto nextiterskip
+					;;
+				;;
+				f.rstart += delim.len
+				-> true
+			;;
+:nextiterskip
+		;;
+	;;
+	std.die("unreachable")
+}
+
 
 /*
 Same as std.put, but buffered. Returns the number of bytes written.
