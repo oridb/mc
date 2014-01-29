@@ -32,6 +32,8 @@ pkg bio =
 	const read	: (f : file#, dst : byte[:]	-> std.option(byte[:]))
 	const flush	: (f : file# -> bool)
 
+	/* seeking */
+
 	/* single unit operations */
 	const putb	: (f : file#, b : byte	-> std.size)
 	const putc	: (f : file#, c : char	-> std.size)
@@ -359,13 +361,26 @@ const peekc = {f
   	bio.readto(f, ',')	-> "bar\n"
 */
 const readto = {f, delim
+	-> readdelim(f, delim, false)
+}
+
+const skipto = {f, delim
+	match readdelim(f, delim, true)
+	| `std.Some ret:	-> true
+	| `std.None:	-> false
+	;;
+}
+
+const readdelim = {f, delim, drop
 	var ret
 	var i, j
 
 	ret = [][:]
 	while true
 		if !ensureread(f, delim.len)
-			ret = readinto(f, ret, f.rend - f.rstart)
+			if !drop
+				ret = readinto(f, ret, f.rend - f.rstart)
+			;;
 			if ret.len > 0
 				-> `std.Some ret
 			else
@@ -376,45 +391,22 @@ const readto = {f, delim
 			if f.rbuf[i] == delim[0]
 				for j = 0; j < delim.len; j++
 					if f.rbuf[i + j] != delim[j]
-						goto nextiter1
+						goto nextiter
 					;;
 				;;
-				ret = readinto(f, ret, i - f.rstart)
+				if !drop
+					ret = readinto(f, ret, i - f.rstart)
+				;;
 				f.rstart += delim.len
 				-> `std.Some ret
 			;;
-/* compiler bug: labels are global */
-:nextiter1
+:nextiter
 		;;
-		ret = readinto(f, ret, i - f.rstart)
+		if !drop
+			ret = readinto(f, ret, f.rend - f.rstart)
+		;;
 	;;
 	std.die("unreachable")
-}
-
-const skipto = {f, delim
-	var i, j
-
-	while true
-		/* clear the buffer and signal EOF */
-		if !ensureread(f, delim.len)
-			f.rstart = 0
-			f.rend = 0
-			-> false
-		;;
-		for i = f.rstart; i < f.rend; i++
-			if f.rbuf[i] == delim[0]
-				for j = 0; j < delim.len; j++
-					if f.rbuf[i + j] != delim[j]
-						goto nextiter2
-					;;
-				;;
-			;;
-			f.rstart += delim.len
-			-> false
-		;;
-/* compiler bug: labels are global */
-:nextiter2
-	;;
 }
 
 /* Same as readto, but the delimiter is always a '\n' */
