@@ -580,7 +580,6 @@ const unicodeclass = {re, neg
 		n += std.charlen(r)
 	;;
 	s = s[:n]
-	std.put("s = %s\n", s)
 	/* letters */
 	if std.sleq(s, "L") || std.sleq(s, "Letter")
 		tab = _ranges.tabalpha[:]

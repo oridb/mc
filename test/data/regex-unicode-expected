@@ -1,7 +1,5 @@
 Matched Abæc via .*bæc : 1
 	match 0: Abæc
-s = L
-s = L
 Matched Aabæc%!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! via (\p{L}*)bæc\P{L}* : 2
 	match 0: Aabæc%!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	match 1: Aa
