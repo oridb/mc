@@ -7,25 +7,25 @@ pkg =
 ;;
 
 const testmatch = {pat, text
-	run(regex.compile(pat), text)
+	run(regex.compile(pat), pat, text)
 }
 
 const dbgmatch = {pat, text
-	run(regex.dbgcompile(pat), text)
+	run(regex.dbgcompile(pat), pat, text)
 }
 
-const run = {regex, text
+const run = {regex, pat, text
 	var i
 	match regex
 	| `std.Success re:
 		match regex.exec(re, text)
 		| `std.Some m:
-			std.put("Matched. %i matches\n", m.len)
+			std.put("Matched %s via %s : %i\n", text, pat, m.len)
 			for i = 0; i < m.len; i++
-				std.put("match %i: %s\n", i, m[i])
+				std.put("\tmatch %i: %s\n", i, m[i])
 			;;
 		| `std.None:
-			std.put("No match\n")
+			std.put("No match of %s via %s\n", text, pat)
 		;;
 		regex.free(re)
 	| `std.Failure err:
