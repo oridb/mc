@@ -22,7 +22,7 @@ type tree = union
 	/* end matches */
 	`Byte	byte
 	`Chr	char
-	`Class	[char, char]
+	`Ranges	char[2][:]
 
 	/* meta */
 	`Cap	[std.size, tree#] /* id, tree */
@@ -98,7 +98,7 @@ const gen = {re, t
 	/* end matches */
 	|`Byte	b: 	append(re, `Ibyte b)
 	|`Chr	c:	genchar(re, c)
-	|`Class  (a, b):	genrange(re, a, b)
+	|`Ranges  sl:	genranges(re, sl)
 
 	/* meta */
 	|`Bol:	append(re, `Ibol)
@@ -111,58 +111,124 @@ const gen = {re, t
 	-> re.proglen
 }
 
-/*
- converts a codepoint range spanning multiple utf8 byte lenghts into a
- set of utf8 ranges. Eg:
- 	[0x00-0x2000]  => [0x00-0x7F]|[0xC2-0xDF][0x80-0x8F]
-*/
-const genrange = {re, lo, hi
-	/* the transitions between different char lenghts for unicode
-	   characters, needed so that we know how to generate the
-	   different size categories */
-	var charrng = [
-		0,
-		0x80,
-		0x800,
-		0x10000,
-		0x200000,
+const genranges = {re, sl
+	const charbounds = [
+		0,		/* len = 0: bug if used for hi */
+		0x80,		/* len = 1 */
+		0x800,		/* len = 2 */
+		0x10000,	/* len = 3 */
+		0x200000,	/* len = 4 */
 		-1
 	]
-	var lbuf : byte[4], hbuf : byte[4]
-	var lsz, hsz
-	var sz, end
-	var d
-	var i, j
+	var lbuf : byte[4], hbuf : byte[4], boundbuf : byte[4]
+	var lsz, hsz, bsz
+	var rt : rangetrie#
+	var i
 
-	lsz = std.charlen(lo)
-	hsz = std.charlen(hi)
-	charrng[lsz - 1] = lo
-	charrng[hsz] = hi
-	if lsz == 1 && hsz == 1
-		append(re, `Irange (lo castto(byte), hi castto(byte)))
-	else
-		for i = hsz; i > lsz; i--
-			if re.debug
-				std.put("range size = %z\n", i - 2)
-			;;
-			d = re.proglen + i - 1
-			append(re, `Ifork (re.proglen + 1, jmpdist(i) + d))
+	/* generate a trie of ranges */
+	rt = std.zalloc()
+	for r in sl
+		lsz = std.encode(lbuf[:], r[0])
+		hsz = std.encode(hbuf[:], r[1])
+		for i = lsz; i < hsz; i++
+			bsz = std.encode(boundbuf[:], charbounds[i] - 1)
+			rtinsert(rt, lbuf[:lsz], boundbuf[:bsz])
+			lsz = std.encode(lbuf[:], charbounds[i])
 		;;
-		end = re.proglen + jmpdist(hsz + 1);
-		for i = 0; i < hsz; i++
-			if re.debug
-				std.put("lo[%z] = %i\n", i, charrng[i] castto(int))
-				std.put("hi[%z] = %i\n", i, (charrng[i + 1] - 1) castto(int))
-			;;
-			sz = std.encode(lbuf[:], charrng[i])
-			std.encode(hbuf[:], charrng[i + 1] - 1)
-			for j = 0; j < sz; j++
-				append(re, `Irange (lbuf[j], hbuf[j]))
-			;;
-			append(re, `Ijmp (end))
+		rtinsert(rt, lbuf[:lsz], hbuf[:hsz])
+	;;
+	rangegen(re, rt, rt.ranges, rt.link, rangeprogsize(rt) + re.proglen)
+	rtfree(rt)
+	-> re.proglen
+}
+
+type rangetrie = struct
+	ranges	: [byte, byte][:]
+	link	: rangetrie#[:]
+	end	: bool
+;;
+
+const rtinsert = {rt, lo, hi
+	var a, b
+	var n
+
+	std.assert(lo.len == hi.len, "range sizes differ")
+
+	n = rt.ranges.len
+	if n == 0
+		rt.ranges = std.slpush(rt.ranges, (lo[0], hi[0]))
+		rt.link = std.slpush(rt.link, std.zalloc())
+	else
+		/*
+		this is a safe way to compare because we know that ranges
+		should always be coming in ordered. This means that equal
+		values will be added one after the other.
+		*/
+		(a, b) = rt.ranges[n - 1]
+		if a != lo[0] || b != hi[0]
+			rt.ranges = std.slpush(rt.ranges, (lo[0], hi[0]))
+			rt.link = std.slpush(rt.link, std.zalloc())
 		;;
 	;;
+
+	if lo.len == 1
+		rt.end = true
+	else
+		rtinsert(rt.link[rt.link.len - 1], lo[1:], hi[1:])
+	;;
+}
+
+const rtfree = {rt
+	for l in rt.link
+		rtfree(l)
+	;;
+	std.slfree(rt.link)
+	std.slfree(rt.ranges)
+	std.free(rt)
+}
+
+const rangegen = {re, rt, ranges, links, end
+	var alt, l0, l1, l2
+	var a, b
+	var n
+
+	n = ranges.len
+	if n == 0
+		-> re.proglen
+	elif n == 1
+		(a, b) = ranges[0]
+		append(re, `Irange (a, b))
+		if links[0].ranges.len > 0 && rt.end
+			append(re, `Ifork (re.prog.len + 1, end))
+		elif rt.end
+			append(re, `Ijmp end)
+		;;
+		rangegen(re, links[0], links[0].ranges, links[0].link, end)
+	else
+		alt = re.proglen
+		l0 = append(re, `Ifork (-1, -1))
+		l1 = rangegen(re, rt, ranges[0:n/2], links[0:n/2], end)
+		l2 = rangegen(re, rt, ranges[n/2:n], links[n/2:n], end)
+		re.prog[alt] = `Ifork (l0, l1)
+	;;
 	-> re.proglen
+}
+
+const rangeprogsize = {rt
+	var sz
+
+	if rt.ranges.len == 0
+		-> 0
+	else
+		sz = 2*rt.ranges.len - 1
+		for l in rt.link
+			sz += rangeprogsize(l)
+		;;
+		if rt.end
+			sz += rt.ranges.len
+		;;
+		-> sz
+	;;
 }
 
 /* calculates the forward jump distance for a utf8 character range */
@@ -265,7 +331,12 @@ const idump = {re
 		match re.prog[i]
 		/* Char matching. Consume exactly one byte from the string. */
 		| `Ibyte b:		std.put("`Ibyte %ub (%c)\n", b, b castto(char)) 
-		| `Irange (start, end):	std.put("`Irange (%ub,%ub)\n", start, end) 
+		| `Irange (start, end):	
+			std.put("`Irange (%ub,%ub)", start, end) 
+			if std.isalnum(start castto(char)) && std.isalnum(end castto(char))
+				std.put("\t/* %c-%c */", start castto(char), end castto(char))
+			;;
+			std.put("\n")
 		/* capture groups */
 		| `Ilbra m:		std.put("`Ilbra %z\n", m) 
 		| `Irbra m:		std.put("`Irbra %z\n", m) 
@@ -318,8 +389,14 @@ const dump = {re, t, indent
 		std.put("Byte %b\n", b)
 	| `Chr	c:
 		std.put("Char %c\n", c)
-	| `Class (a, b):
-		std.put("Class (%c-%c)\n", a, b)
+	| `Ranges rl:
+                std.put("Ranges")
+		for r in rl
+			for i = 0; i < indent + 1; i++
+				std.put("  ")
+			;;
+			std.put("\t(%ui-%ui)\n", r[0], r[1])
+		;;
 
 	/* meta */
 	| `Cap	(m, a):
@@ -418,7 +495,7 @@ const baseexpr = {re
 	| '+':	-> `Fail `Badrep
 	| '?':	-> `Fail `Badrep
 	| '[':	-> chrclass(re)
-	| '.':	getc(re); ret = mk(`Class (0, std.Maxcharval))
+	| '.':	getc(re); ret = mk(`Ranges std.slpush([][:], [0, std.Maxcharval]))
 	| '^':	getc(re); ret = mk(`Bol)
 	| '$':	getc(re); ret = mk(`Eol)
 	| '(':	
@@ -450,18 +527,18 @@ const escaped = {re
 
 	match getc(re)
 	/* character classes */
-	| 'd': ret = `Some ranges(re, _ranges.tabasciidigit[:])
-	| 'x': ret = `Some ranges(re, _ranges.tabasciixdigit[:])
-	| 's': ret = `Some ranges(re, _ranges.tabasciispace[:])
-	| 'w': ret = `Some ranges(re, _ranges.tabasciiword[:])
-	| 'h': ret = `Some ranges(re, _ranges.tabasciiblank[:])
+	| 'd': ret = `Some mk(`Ranges std.sldup(_ranges.tabasciidigit[:]))
+	| 'x': ret = `Some mk(`Ranges std.sldup(_ranges.tabasciixdigit[:]))
+	| 's': ret = `Some mk(`Ranges std.sldup(_ranges.tabasciispace[:]))
+	| 'w': ret = `Some mk(`Ranges std.sldup(_ranges.tabasciiword[:]))
+	| 'h': ret = `Some mk(`Ranges std.sldup(_ranges.tabasciiblank[:]))
 
 	/* negated character classes */
-	| 'W': ret = `Some negranges(re, _ranges.tabasciiword[:])
-	| 'S': ret = `Some negranges(re, _ranges.tabasciispace[:])
-	| 'D': ret = `Some negranges(re, _ranges.tabasciidigit[:])
-	| 'X': ret = `Some negranges(re, _ranges.tabasciixdigit[:])
-	| 'H': ret = `Some negranges(re, _ranges.tabasciiblank[:])
+	| 'W': ret = `Some mk(`Ranges negate(_ranges.tabasciiword[:]))
+	| 'S': ret = `Some mk(`Ranges negate(_ranges.tabasciispace[:]))
+	| 'D': ret = `Some mk(`Ranges negate(_ranges.tabasciidigit[:]))
+	| 'X': ret = `Some mk(`Ranges negate(_ranges.tabasciixdigit[:]))
+	| 'H': ret = `Some mk(`Ranges negate(_ranges.tabasciiblank[:]))
 
 	/* unicode character classes */
 	| 'p':	ret = unicodeclass(re, false)
@@ -480,6 +557,7 @@ const escaped = {re
 const unicodeclass = {re, neg
 	var c, s
 	var tab
+	var t
 	var n
 
 	if re.pat.len == 0
@@ -490,6 +568,7 @@ const unicodeclass = {re, neg
 	/* either a single char pattern, or {pat} */
 	match getc(re)
 	| '{':
+		s = s[1:]
 		while re.pat.len > 0
 			c = getc(re)
 			if c == '}'
@@ -501,6 +580,7 @@ const unicodeclass = {re, neg
 		n += std.charlen(r)
 	;;
 	s = s[:n]
+	std.put("s = %s\n", s)
 	/* letters */
 	if std.sleq(s, "L") || std.sleq(s, "Letter")
 		tab = _ranges.tabalpha[:]
@@ -521,14 +601,15 @@ const unicodeclass = {re, neg
 		-> `Fail (`Badrange)
 	;;
 	if !neg
-		-> `Some ranges(re, tab)
+		t = mk(`Ranges std.sldup(tab))
 	else
-		-> `Some negranges(re, tab)
+		t = mk(`Ranges negate(tab))
 	;;
+	-> `Some t
 }
 
 const chrclass = {re
-	var rl, m
+	var rl, m, n
 	var neg
 	var t
 
@@ -546,22 +627,24 @@ const chrclass = {re
 		std.slfree(rl)
 		-> `Fail (`Earlystop)
 	;;
-	if neg
-		std.sort(rl, {a, b;
-			if a[0] < b[0]
-				-> `std.Before
-			elif a[0] == b[0]
-				-> `std.Equal
-			else
-				-> `std.After
-			;;})
-		m = merge(rl)
-		t = negranges(re, m)
-		std.slfree(m)
-	else
-		t = ranges(re, rl)
-	;;
+
+	std.sort(rl, {a, b;
+		if a[0] < b[0]
+			-> `std.Before
+		elif a[0] == b[0]
+			-> `std.Equal
+		else
+			-> `std.After
+		;;})
+	m = merge(rl)
 	std.slfree(rl)
+	if neg
+		n = negate(m)
+		std.slfree(m)
+		t = mk(`Ranges n)
+	else
+		t = mk(`Ranges m)
+	;;
 	-> `Some t
 }
 
@@ -580,30 +663,6 @@ const rangematch = {re, sl
 	else
 		-> std.slpush(sl, [lo, lo])
 	;;
-}
-
-const ranges = {re, rng
-	var ret
-	var lhs
-	var rhs
-
-	if rng.len == 1
-		ret = mk(`Class (rng[0][0], rng[0][1]))
-	else
-		lhs = ranges(re, rng[0:rng.len/2])
-		rhs = ranges(re, rng[rng.len/2:rng.len])
-		ret = mk(`Alt (lhs, rhs))
-	;;
-	-> ret
-}
-
-const negranges = {re, rng
-	var neg, ret
-
-	neg = negate(rng)
-	ret = ranges(re, neg)
-	std.slfree(neg)
-	-> ret
 }
 
 const negate = {rng
@@ -695,7 +754,7 @@ const astfree = {t
 	/* end matches */
 	| `Byte	b:	
 	| `Chr	c:	
-	| `Class (a, b):	
+	| `Ranges rl:	std.slfree(rl)
 
 	/* meta */
 	| `Cap	(m, a):	astfree(a)

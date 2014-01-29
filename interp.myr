@@ -128,7 +128,7 @@ const step = {re, thr, curip
 	match re.prog[thr.ip]
 	/* Char matching. Consume exactly one byte from the string. */
 	| `Ibyte b:
-		trace(re, thr, "\t%z:\tByte %b (%c)\n", thr.ip, b, b castto(char))
+		trace(re, thr, "\t%z:\tByte %ub (%c)\n", thr.ip, b, b castto(char))
 		if !within(re, str)
 			die(re, thr, "end of string")
 		elif b != str[re.strp]
@@ -138,7 +138,7 @@ const step = {re, thr, curip
 			trace(re, thr, "\t\tmatched %b with %b\n", b, str[re.strp])
 		;;
 	| `Irange (start, end):
-		trace(re, thr, "\t%z:\tRange (%b, %b)\n", thr.ip, start, end)
+		trace(re, thr, "\t%z:\tRange (%ub, %ub) /* %c - %c */\n", thr.ip, start, end, start castto(char), end castto(char))
 		if !within(re, str) || start > str[re.strp] || end < str[re.strp]
 			die(re, thr, "bad range")
 		else

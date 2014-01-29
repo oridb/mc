@@ -5,4 +5,5 @@ use "testmatch.use"
 
 const main = {
 	testmatch(".*bæc", "Abæc")
+	testmatch("(\\p{L}*)bæc\\P{L}*", "Aabæc%!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 }

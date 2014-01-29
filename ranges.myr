@@ -66,6 +66,7 @@ const tabasciiblank = [
 
 const tabalpha = [
 	['\u{41}','\u{5a}'],
+	['\u{61}','\u{7a}'],
 	['\u{c0}','\u{d6}'],
 	['\u{d8}','\u{de}'],
 	['\u{100}','\u{100}'],

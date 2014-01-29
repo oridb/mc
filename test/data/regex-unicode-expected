@@ -1,2 +1,7 @@
 Matched. 1 matches
 match 0: Abæc
+s = L
+s = L
+Matched. 2 matches
+match 0: Aabæc%!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+match 1: Aa
