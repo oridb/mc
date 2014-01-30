@@ -58,6 +58,7 @@ The grammar used by libregex is below:
     baseexpr    : literal
                 | charclass
                 | charrange
+                | escaped
                 | '.'
                 | '^'
                 | '$'
@@ -122,13 +123,37 @@ ASCII whitespace characters
 \\H
 Negation of ASCII whitespace characters
 .TP
-\\pX
+\\pX, \\p{X}
 Characters with unicode property 'X'
 .TP
-\\PX
+\\PX, \\P{X}
+Negation of characters with unicode property 'X'
+
 .PP
-Negation of characters with unicode property 'X'. The only properties that
-are currently supported are 'Z' (space), 'L' (letter).
+Unicode properties that are supported are listed below:
+
+.TP
+L, Letter
+Unicode letter property
+.TP
+Lu, Uppercase_Letter
+Uppercase letter unicode property
+.TP
+Ll, Lowercase_Letter
+Lowercase letter unicode property
+.TP
+Lt, Titlecase_Letter
+Titlecase letter unicode property
+.TP
+N, Number
+Number unicode property
+.TP
+Z, Separator
+Any separator character unicode property
+.TP
+Zs, Space_Separator
+Space separator unicode property
+
 
 .SH EXAMPLE
 .EX
