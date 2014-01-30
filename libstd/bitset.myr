@@ -128,7 +128,7 @@ const bseq = {a, b
 }
 
 const ensurespace = {bs, v
-	if bs.bits.len*(8*sizeof(size)) <= v
+	if bs.bits.len <= v
 		bs.bits = slzgrow(bs.bits, v + 1)
 	;;
 }
