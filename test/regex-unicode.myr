@@ -6,4 +6,7 @@ use "testmatch.use"
 const main = {
 	testmatch(".*bæc", "Abæc")
 	testmatch("(\\p{L}*)bæc\\P{L}*", "Aabæc%!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        /* test various syntaxen */
+	testmatch("(\\pL*)bæc\\PL*", "Aabæc%!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+	testmatch("(\\p{Letter}*)bæc\\P{Uppercase_Letter}*", "Aabæc%!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 }

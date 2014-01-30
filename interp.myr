@@ -207,9 +207,18 @@ const fork = {re, thr, ip, curip, mstart, mend
 }
 
 const die = {re, thr, msg
+        /*
+ 	  we can have die called on a thread
+	  multiple times, eg, if it has a bad
+	  range *and* end in a state that another
+	  thread is in. We should only decrement
+	  the number of threads for that once.
+	 */
 	trace(re, thr, "\t\tdie %z: %s\n", thr.tid, msg)
+        if !thr.dead
+		re.nthr--
+        ;;
 	thr.dead = true
-	re.nthr--
 }
 
 const finish = {re, thr

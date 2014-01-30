@@ -3,3 +3,9 @@ Matched Abæc via .*bæc : 1
 Matched Aabæc%!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! via (\p{L}*)bæc\P{L}* : 2
 	match 0: Aabæc%!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	match 1: Aa
+Matched Aabæc%!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! via (\pL*)bæc\PL* : 2
+	match 0: Aabæc%!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	match 1: Aa
+Matched Aabæc%!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! via (\p{Letter}*)bæc\P{Uppercase_Letter}* : 2
+	match 0: Aabæc%!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	match 1: Aa
