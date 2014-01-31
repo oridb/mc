@@ -15,7 +15,7 @@ typedef struct Ucon Ucon;
 typedef struct Stab Stab;
 
 typedef struct Type Type;
-typedef struct Cstr Cstr;
+typedef struct Trait Trait;
 
 typedef enum {
 #define O(op, pure) op,
@@ -45,7 +45,7 @@ typedef enum {
 
 typedef enum {
 #define Tc(c, n) c,
-#include "cstr.def"
+#include "trait.def"
 #undef Tc
 } Tc;
 
@@ -111,9 +111,9 @@ struct Type {
     int resolved;       /* Have we resolved the subtypes? Prevents infinite recursion. */
     int fixed;          /* Have we fixed the subtypes? Prevents infinite recursion. */
 
-    Bitset *cstrs;      /* the type constraints matched on this type */
-    Node **cstrlist;    /* The names of the constraints on the type. Used to fill the bitset */
-    size_t ncstrlist;   /* The length of the constraint list above */
+    Bitset *traits;      /* the type constraints matched on this type */
+    Node **traitlist;    /* The names of the constraints on the type. Used to fill the bitset */
+    size_t ntraitlist;   /* The length of the constraint list above */
 
     int  issynth;       /* Tyname: whether this is synthesized or not */
     int  ishidden;      /* Tyname: whether this is hidden or not */
@@ -145,7 +145,7 @@ struct Ucon {
     Type *etype;        /* type for the element */
 };
 
-struct Cstr {
+struct Trait {
     int cid;    /* unique id */
     char *name;
     Node **memb;        /* type must have these members */
@@ -296,8 +296,8 @@ extern Node *file;      /* the current file we're compiling */
 extern Type **tytab;    /* type -> type map used by inference. size maintained by type creation code */
 extern Type **types;
 extern size_t ntypes;
-extern Cstr **cstrtab;  /* int -> cstr map */
-extern size_t ncstrs;
+extern Trait **traittab;  /* int -> trait map */
+extern size_t ntraits;
 extern Node **decls;    /* decl id -> decl map */
 extern size_t ndecls;
 extern size_t maxnid;      /* the maximum node id generated so far */
@@ -362,7 +362,7 @@ Stab *mkstab(void);
 
 void putns(Stab *st, Stab *scope);
 void puttype(Stab *st, Node *n, Type *ty);
-void putcstr(Stab *st, Node *n, Cstr *cstr);
+void puttrait(Stab *st, Node *n, Trait *trait);
 void updatetype(Stab *st, Node *n, Type *t);
 void putdcl(Stab *st, Node *dcl);
 void forcedcl(Stab *st, Node *dcl);
@@ -373,7 +373,7 @@ Stab *getns_str(Stab *st, char *n);
 Node *getdcl(Stab *st, Node *n);
 Type *gettype_l(Stab *st, Node *n);
 Type *gettype(Stab *st, Node *n);
-Cstr *getcstr(Stab *st, Node *n);
+Trait *gettrait(Stab *st, Node *n);
 Ucon *getucon(Stab *st, Node *n);
 
 Stab *curstab(void);
@@ -397,7 +397,7 @@ Type *mktytuple(int line, Type **sub, size_t nsub);
 Type *mktyfunc(int line, Node **args, size_t nargs, Type *ret);
 Type *mktystruct(int line, Node **decls, size_t ndecls);
 Type *mktyunion(int line, Ucon **decls, size_t ndecls);
-Cstr *mkcstr(int line, char *name, Node **memb, size_t nmemb, Node **funcs, size_t nfuncs);
+Trait *mktrait(int line, char *name, Node **memb, size_t nmemb, Node **funcs, size_t nfuncs);
 Type *mktylike(int line, Ty ty); /* constrains tyvar t like it was builtin ty */
 int   istysigned(Type *t);
 int   istyfloat(Type *t);
@@ -406,13 +406,14 @@ int   hasparams(Type *t);
 
 /* type manipulation */
 Type *tybase(Type *t);
-int hascstr(Type *t, Cstr *c);
-int cstreq(Type *t, Cstr **cstrs, size_t len);
-int setcstr(Type *t, Cstr *c);
 char *tyfmt(char *buf, size_t len, Type *t);
-int cstrfmt(char *buf, size_t len, Type *t);
-char *cstrstr(Type *t);
 char *tystr(Type *t);
+
+int hastrait(Type *t, Trait *c);
+int settrait(Type *t, Trait *c);
+int traiteq(Type *t, Trait **traits, size_t len);
+int traitfmt(char *buf, size_t len, Type *t);
+char *traitstr(Type *t);
 
 /* node creation */
 Node *mknode(int line, Ntype nt);
@@ -428,7 +429,7 @@ Node *mkiterstmt(int line, Node *elt, Node *seq, Node *body);
 Node *mkmatchstmt(int line, Node *val, Node **matches, size_t nmatches);
 Node *mkmatch(int line, Node *pat, Node *body);
 Node *mkblock(int line, Stab *scope);
-Node *mktrait(int line, Node *name, Node **funcs, size_t nfuncs, Node **membs, size_t nmembs);
+Node *mktraitdef(int line, Node *name, Node **funcs, size_t nfuncs, Node **membs, size_t nmembs);
 Node *mkintlit(int line, uvlong val);
 Node *mkidxinit(int line, Node *idx, Node *init);
 

@@ -14,17 +14,17 @@
 
 /* Allows us to look up types/cstrs by name nodes */
 typedef struct Tydefn Tydefn;
-typedef struct Cstrdefn Cstrdefn;
+typedef struct Traitdefn Traitdefn;
 struct Tydefn {
     int line;
     Node *name;
     Type *type;
 };
 
-struct Cstrdefn {
+struct Traitdefn {
     int line;
     Node *name;
-    Cstr *cstr;
+    Trait *cstr;
 };
 
 #define Maxstabdepth 128
@@ -140,9 +140,9 @@ Ucon *getucon(Stab *st, Node *n)
     return NULL;
 }
 
-Cstr *getcstr(Stab *st, Node *n)
+Trait *getcstr(Stab *st, Node *n)
 {
-    Cstrdefn *c;
+    Traitdefn *c;
 
     do {
         if ((c = htget(st->ty, n)))
@@ -220,9 +220,9 @@ void putucon(Stab *st, Ucon *uc)
     htput(st->uc, uc->name, uc);
 }
 
-void putcstr(Stab *st, Node *n, Cstr *c)
+void putcstr(Stab *st, Node *n, Trait *c)
 {
-    Cstrdefn *cd;
+    Traitdefn *cd;
 
     if (gettype(st, n))
         fatal(n->line, "Type %s already defined", namestr(n));

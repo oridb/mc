@@ -187,14 +187,14 @@ static void typickle(FILE *fd, Type *ty)
     wrbyte(fd, ty->type);
     wrbyte(fd, ty->vis);
     /* tid is generated; don't write */
-    /* FIXME: since we only support hardcoded cstrs, we just write
-     * out the set of them. we should write out the cstr list as
+    /* FIXME: since we only support hardcoded traits, we just write
+     * out the set of them. we should write out the trait list as
      * well */
-    if (!ty->cstrs) {
+    if (!ty->traits) {
         wrint(fd, 0);
     } else {
-        wrint(fd, bscount(ty->cstrs));
-        for (i = 0; bsiter(ty->cstrs, &i); i++)
+        wrint(fd, bscount(ty->traits));
+        for (i = 0; bsiter(ty->traits, &i); i++)
             wrint(fd, i);
     }
     wrint(fd, ty->nsub);
@@ -286,10 +286,10 @@ static Type *tyunpickle(FILE *fd)
     /* tid is generated; don't write */
     n = rdint(fd);
     if (n > 0) {
-        ty->cstrs = mkbs();
+        ty->traits = mkbs();
         for (i = 0; i < n; i++) {
             v = rdint(fd);
-            setcstr(ty, cstrtab[v]);
+            settrait(ty, traittab[v]);
         }
     }
     ty->nsub = rdint(fd);

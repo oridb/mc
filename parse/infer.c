@@ -280,10 +280,10 @@ static void tyresolve(Inferstate *st, Type *t)
         t->sub[i] = tf(st, t->sub[i]);
     base = tybase(t);
     /* no-ops if base == t */
-    if (t->cstrs)
-        bsunion(t->cstrs, base->cstrs);
+    if (t->traits)
+        bsunion(t->traits, base->traits);
     else
-        t->cstrs = bsdup(base->cstrs);
+        t->traits = bsdup(base->traits);
     if (tyinfinite(st, t, NULL))
         fatal(t->line, "Type %s includes itself", tystr(t));
     st->ingeneric--;
@@ -516,44 +516,44 @@ static void tyunbind(Inferstate *st, Type *t)
  * type variables, the constraint is added to the required
  * constraint list. Otherwise, the type is checked to see
  * if it has the required constraint */
-static void constrain(Inferstate *st, Node *ctx, Type *a, Cstr *c)
+static void constrain(Inferstate *st, Node *ctx, Type *a, Trait *c)
 {
     if (a->type == Tyvar) {
-        if (!a->cstrs)
-            a->cstrs = mkbs();
-        setcstr(a, c);
-    } else if (!a->cstrs || !bshas(a->cstrs, c->cid)) {
+        if (!a->traits)
+            a->traits = mkbs();
+        settrait(a, c);
+    } else if (!a->traits || !bshas(a->traits, c->cid)) {
         fatal(ctx->line, "%s needs %s near %s", tystr(a), c->name, ctxstr(st, ctx));
     }
 }
 
 /* does b satisfy all the constraints of a? */
-static int cstrcheck(Type *a, Type *b)
+static int traitcheck(Type *a, Type *b)
 {
-    /* a has no cstrs to satisfy */
-    if (!a->cstrs)
+    /* a has no traits to satisfy */
+    if (!a->traits)
         return 1;
-    /* b satisfies no cstrs; only valid if a requires none */
-    if (!b->cstrs)
-        return bscount(a->cstrs) == 0;
-    /* if a->cstrs is a subset of b->cstrs, all of
+    /* b satisfies no traits; only valid if a requires none */
+    if (!b->traits)
+        return bscount(a->traits) == 0;
+    /* if a->traits is a subset of b->traits, all of
      * a's constraints are satisfied by b. */
-    return bsissubset(a->cstrs, b->cstrs);
+    return bsissubset(a->traits, b->traits);
 }
 
 /* Merges the constraints on types */
-static void mergecstrs(Inferstate *st, Node *ctx, Type *a, Type *b)
+static void mergetraits(Inferstate *st, Node *ctx, Type *a, Type *b)
 {
     if (b->type == Tyvar) {
-        /* make sure that if a = b, both have same cstrs */
-        if (a->cstrs && b->cstrs)
-            bsunion(b->cstrs, a->cstrs);
-        else if (a->cstrs)
-            b->cstrs = bsdup(a->cstrs);
-        else if (b->cstrs)
-            a->cstrs = bsdup(b->cstrs);
+        /* make sure that if a = b, both have same traits */
+        if (a->traits && b->traits)
+            bsunion(b->traits, a->traits);
+        else if (a->traits)
+            b->traits = bsdup(a->traits);
+        else if (b->traits)
+            a->traits = bsdup(b->traits);
     } else {
-        if (!cstrcheck(a, b)) {
+        if (!traitcheck(a, b)) {
             /* FIXME: say WHICH constraints we're missing */
             fatal(ctx->line, "%s missing constraints for %s near %s", tystr(b), tystr(a), ctxstr(st, ctx));
         }
@@ -691,7 +691,7 @@ static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
     } else if (a->type != Tyvar) {
         typeerror(st, a, b, ctx, NULL);
     }
-    mergecstrs(st, ctx, a, b);
+    mergetraits(st, ctx, a, b);
     membunify(st, ctx, a, b);
 
     /* if we have delayed types for a tyvar, transfer it over. */
@@ -1081,7 +1081,7 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
         case Oneg:      /* -@a -> @a */
             infersub(st, n, ret, sawret, &isconst);
             t = type(st, args[0]);
-            constrain(st, n, type(st, args[0]), cstrtab[Tcnum]);
+            constrain(st, n, type(st, args[0]), traittab[Tcnum]);
             isconst = args[0]->expr.isconst;
             for (i = 1; i < nargs; i++) {
                 isconst = isconst && args[i]->expr.isconst;
@@ -1113,8 +1113,8 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
         case Obsreq:    /* @a >>= @a -> @a */
             infersub(st, n, ret, sawret, &isconst);
             t = type(st, args[0]);
-            constrain(st, n, type(st, args[0]), cstrtab[Tcnum]);
-            constrain(st, n, type(st, args[0]), cstrtab[Tcint]);
+            constrain(st, n, type(st, args[0]), traittab[Tcnum]);
+            constrain(st, n, type(st, args[0]), traittab[Tcint]);
             isconst = args[0]->expr.isconst;
             for (i = 1; i < nargs; i++) {
                 isconst = isconst && args[i]->expr.isconst;
@@ -1164,15 +1164,15 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
             infersub(st, n, ret, sawret, &isconst);
             t = mktyidxhack(n->line, mktyvar(n->line));
             unify(st, n, type(st, args[0]), t);
-            constrain(st, n, type(st, args[1]), cstrtab[Tcint]);
+            constrain(st, n, type(st, args[1]), traittab[Tcint]);
             settype(st, n, t->sub[0]);
             break;
         case Oslice:    /* @a[@b::tcint,@b::tcint] -> @a[,] */
             infersub(st, n, ret, sawret, &isconst);
             t = mktyidxhack(n->line, mktyvar(n->line));
             unify(st, n, type(st, args[0]), t);
-            constrain(st, n, type(st, args[1]), cstrtab[Tcint]);
-            constrain(st, n, type(st, args[2]), cstrtab[Tcint]);
+            constrain(st, n, type(st, args[1]), traittab[Tcint]);
+            constrain(st, n, type(st, args[2]), traittab[Tcint]);
             settype(st, n, mktyslice(n->line, t->sub[0]));
             break;
 
@@ -1369,14 +1369,14 @@ static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
             infernode(st, n->ifstmt.cond, NULL, sawret);
             infernode(st, n->ifstmt.iftrue, ret, sawret);
             infernode(st, n->ifstmt.iffalse, ret, sawret);
-            constrain(st, n, type(st, n->ifstmt.cond), cstrtab[Tctest]);
+            constrain(st, n, type(st, n->ifstmt.cond), traittab[Tctest]);
             break;
         case Nloopstmt:
             infernode(st, n->loopstmt.init, ret, sawret);
             infernode(st, n->loopstmt.cond, NULL, sawret);
             infernode(st, n->loopstmt.step, ret, sawret);
             infernode(st, n->loopstmt.body, ret, sawret);
-            constrain(st, n, type(st, n->loopstmt.cond), cstrtab[Tctest]);
+            constrain(st, n, type(st, n->loopstmt.cond), traittab[Tctest]);
             break;
         case Niterstmt:
             bound = NULL;
@@ -1389,7 +1389,7 @@ static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
             infernode(st, n->iterstmt.body, ret, sawret);
 
             t = mktyidxhack(n->line, mktyvar(n->line));
-            constrain(st, n, type(st, n->iterstmt.seq), cstrtab[Tcidx]);
+            constrain(st, n, type(st, n->iterstmt.seq), traittab[Tcidx]);
             unify(st, n, type(st, n->iterstmt.seq), t);
             unify(st, n, type(st, n->iterstmt.elt), t->sub[0]);
             break;
@@ -1458,9 +1458,9 @@ static Type *tyfix(Inferstate *st, Node *ctx, Type *orig)
             fatal(ctx->line, "Type %s not compatible with %s near %s\n", tystr(t), tystr(delayed), ctxstr(st, ctx));
     }
     if (t->type == Tyvar) {
-        if (hascstr(t, cstrtab[Tcint]) && cstrcheck(t, tyint))
+        if (hastrait(t, traittab[Tcint]) && traitcheck(t, tyint))
             return tyint;
-        if (hascstr(t, cstrtab[Tcfloat]) && cstrcheck(t, tyflt))
+        if (hastrait(t, traittab[Tcfloat]) && traitcheck(t, tyflt))
             return tyflt;
     } else if (!t->fixed) {
         t->fixed = 1;
@@ -1513,9 +1513,9 @@ static void infercompn(Inferstate *st, Node *n)
     /* all array-like types have a fake "len" member that we emulate */
     if (t->type == Tyslice || t->type == Tyarray) {
         if (!strcmp(namestr(memb), "len")) {
-            constrain(st, n, type(st, n), cstrtab[Tcnum]);
-            constrain(st, n, type(st, n), cstrtab[Tcint]);
-            constrain(st, n, type(st, n), cstrtab[Tctest]);
+            constrain(st, n, type(st, n), traittab[Tcnum]);
+            constrain(st, n, type(st, n), traittab[Tcint]);
+            constrain(st, n, type(st, n), traittab[Tctest]);
             found = 1;
         }
         /* otherwise, we search aggregate types for the member, and unify

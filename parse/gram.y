@@ -23,7 +23,7 @@ int yylex(void);
 static Op binop(int toktype);
 static Node *mkpseudodecl(Type *t);
 static void installucons(Stab *st, Type *t);
-static void constrainwith(Type *t, char *str);
+static void addtrait(Type *t, char *str);
 
 %}
 
@@ -313,7 +313,7 @@ implstmt: Timpl name type {
         ;
 
 traitdef: Ttrait Tident generictype Tasn traitbody Tendblk
-            {$$ = mktrait($1->line, mkname($2->line, $2->str), $5.nl, $5.nn, NULL, 0);}
+            {$$ = mktraitdef($1->line, mkname($2->line, $2->str), $5.nl, $5.nn, NULL, 0);}
         ;
 
 traitbody
@@ -367,12 +367,12 @@ generictype
             {$$ = mktyparam($1->line, $1->str);}
         | Ttyparam Twith name
             {$$ = mktyparam($1->line, $1->str);
-             constrainwith($$, $3->name.name);}
+             addtrait($$, $3->name.name);}
         | Ttyparam Twith Toparen typaramlist Tcparen
             {size_t i;
              $$ = mktyparam($1->line, $1->str);
              for (i = 0; i < $4.nn; i++)
-                constrainwith($$, $4.nl[i]->name.name);}
+                addtrait($$, $4.nl[i]->name.name);}
         ;
 
 typaramlist
@@ -808,13 +808,13 @@ label   : Tcolon Tident
 
 %%
 
-static void constrainwith(Type *t, char *str)
+static void addtrait(Type *t, char *str)
 {
     size_t i;
 
-    for (i = 0; i < ncstrs; i++) {
-        if (!strcmp(cstrtab[i]->name, str)) {
-            setcstr(t, cstrtab[i]);
+    for (i = 0; i < ntraits; i++) {
+        if (!strcmp(traittab[i]->name, str)) {
+            settrait(t, traittab[i]);
             return;
         }
     }

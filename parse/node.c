@@ -183,7 +183,7 @@ Node *mkblock(int line, Stab *scope)
     return n;
 }
 
-Node *mktrait(int line, Node *name, Node **funcs, size_t nfuncs, Node **membs, size_t nmembs)
+Node *mktraitdef(int line, Node *name, Node **funcs, size_t nfuncs, Node **membs, size_t nmembs)
 {
     Node *n;
 
