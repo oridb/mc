@@ -16,7 +16,9 @@ type tree = union
 
 	/* repetition */
 	`Star	tree#
+        `Rstar  tree#
 	`Plus	tree#
+	`Rplus	tree#
 	`Quest	tree#	
 
 	/* end matches */
@@ -91,8 +93,10 @@ const gen = {re, t
 	|`Alt	(a, b): genalt(re, a, b)
 	|`Cat	(a, b): gen(re, a); gen(re, b)
 	/* repetition */
-	|`Star	a:	genstar(re, a)
-	|`Plus	a:	gen(re, a); genstar(re, a)
+	|`Star	a:	genstar(re, a, false)
+	|`Rstar a:	genstar(re, a, true)
+	|`Plus	a:	gen(re, a); genstar(re, a, false)
+	|`Rplus	a:	gen(re, a); genstar(re, a, true)
 	|`Quest	a:	genquest(re, a)
 
 	/* end matches */
@@ -264,7 +268,7 @@ const genalt = {re, l, r
 }
 
 /* generates a repetition operator */
-const genstar = {re, rep
+const genstar = {re, rep, reluct
 	var alt
 	var jmp
 	var l0
@@ -278,7 +282,12 @@ const genstar = {re, rep
 	l2	= append(re, `Ijmp -1)
 
 
-	re.prog[alt] = `Ifork (l1, l2)
+	/* reluctant matches should prefer jumping to the end. */
+	if reluct
+		re.prog[alt] = `Ifork (l2, l1)
+	else
+		re.prog[alt] = `Ifork (l1, l2)
+	;;
 	re.prog[jmp] = `Ijmp l0
 	-> re.proglen
 }
@@ -374,8 +383,14 @@ const dump = {re, t, indent
 	| `Star	a:
 		std.put("Star\n")
 		dump(re, a, indent + 1)
+	| `Rstar a:
+		std.put("Rstar\n")
+		dump(re, a, indent + 1)
 	| `Plus	a:
 		std.put("Plus\n")
+		dump(re, a, indent + 1)
+	| `Rplus a:
+		std.put("Rplus\n")
 		dump(re, a, indent + 1)
 	| `Quest	a:
 		std.put("Quest\n")
@@ -467,9 +482,17 @@ const repexpr = {re
 	match baseexpr(re)
 	| `Some t:
 		if matchc(re, '*')
-			ret = mk(`Star t)
+                        if matchc(re, '?')
+                                ret = mk(`Rstar t)
+                        else
+				ret = mk(`Star t)
+			;;
 		elif matchc(re, '+')
-			ret = mk(`Plus t)
+                        if matchc(re, '?')
+				ret = mk(`Rplus t)
+			else
+				ret = mk(`Plus t)
+			;;
 		elif matchc(re, '?')
 			ret = mk(`Quest t)
 		else
@@ -747,12 +770,14 @@ const astfree = {t
 	| `Cat	(a, b): astfree(a); astfree(b)
 	/* repetition */
 	| `Star	a:	astfree(a)
+	| `Rstar a:	astfree(a)
 	| `Plus	a:	astfree(a)
-	| `Quest	a:	astfree(a)
+	| `Rplus a:	astfree(a)
+	| `Quest a:	astfree(a)
 
 	/* end matches */
 	| `Byte	b:	
-	| `Chr	c:	
+	| `Chr c:	
 	| `Ranges rl:	std.slfree(rl)
 
 	/* meta */

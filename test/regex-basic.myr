@@ -22,4 +22,10 @@ const main = {
 	testmatch(".*bc", "Abc")
 	testmatch("(a*)*", "a")
 	testmatch("(aa|aab?)*", s)
+        /* greedy matches */
+        testmatch("(<.*>).*", "<a foo> blah <bar>")
+        testmatch("(<.+>).*", "<a foo> blah <bar>")
+        /* reluctant matches */
+        testmatch("(<.*?>).*", "<a foo> blah <bar>")
+        testmatch("(<.+?>).*", "<a foo> blah <bar>")
 }
