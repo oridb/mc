@@ -1425,6 +1425,9 @@ static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
         case Ntrait:
             die("Trait inference not yet implemented\n");
             break;
+        case Nimpl:
+            die("Impl not yet implemented\n");
+            break;
         case Nname:
         case Nlit:
         case Nuse:
@@ -1742,6 +1745,9 @@ static void typesub(Inferstate *st, Node *n)
         case Ntrait:
             die("Trait inference not yet implemented\n");
             break;
+        case Nimpl:
+            die("Trait inference not yet implemented\n");
+            break;
         case Nname:
         case Nuse:
             break;
@@ -1852,6 +1858,9 @@ static void nodetag(Stab *st, Node *n, int ingeneric)
             break;
         case Ntrait:
             die("Trait inference not yet implemented\n");
+            break;
+        case Nimpl:
+            die("Impl not yet implemented\n");
             break;
 
         case Nuse: case Nname:

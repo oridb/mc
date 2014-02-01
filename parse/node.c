@@ -196,6 +196,17 @@ Node *mktraitdef(int line, Node *name, Node **funcs, size_t nfuncs, Node **membs
     return n;
 }
 
+Node *mkimplstmt(int line, Node *name, Type *t)
+{
+    Node *n;
+
+    n = mknode(line, Nimpl);
+    n->impl.traitname = name;
+    n->impl.type = t;
+    return n;
+}
+
+
 Node *mkintlit(int line, uvlong val)
 {
     return mkexpr(line, Olit, mkint(line, val), NULL);

@@ -284,7 +284,10 @@ struct Node {
             size_t nmembs;
         } trait;
 
-            
+        struct {
+            Node *traitname;
+            Type *type;
+        } impl;
     };
 };
 
@@ -430,6 +433,7 @@ Node *mkmatchstmt(int line, Node *val, Node **matches, size_t nmatches);
 Node *mkmatch(int line, Node *pat, Node *body);
 Node *mkblock(int line, Stab *scope);
 Node *mktraitdef(int line, Node *name, Node **funcs, size_t nfuncs, Node **membs, size_t nmembs);
+Node *mkimplstmt(int line, Node *name, Type *type);
 Node *mkintlit(int line, uvlong val);
 Node *mkidxinit(int line, Node *idx, Node *init);
 

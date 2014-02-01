@@ -306,10 +306,8 @@ name    : Tident
             {$$ = $3; setns($3, $1->str);}
         ;
 
-implstmt: Timpl name type {
-            $$ = NULL;
-            die("impl foo not done");
-            }
+implstmt: Timpl name type 
+            {$$ = mkimplstmt($1->line, $2, $3);}
         ;
 
 traitdef: Ttrait Tident generictype Tasn traitbody Tendblk
