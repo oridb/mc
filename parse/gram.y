@@ -206,7 +206,9 @@ toplev
             {puttype(file->file.globls, mkname($1.line, $1.name), $1.type);
              installucons(file->file.globls, $1.type);}
         | traitdef
+            {lappend(&file->file.stmts, &file->file.nstmts, $1);}
         | implstmt
+            {lappend(&file->file.stmts, &file->file.nstmts, $1);}
         | /* empty */
         ;
 
