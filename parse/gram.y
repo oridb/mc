@@ -134,7 +134,7 @@ static void addtrait(Type *t, char *str);
 %type <tok> asnop cmpop addop mulop shiftop optident
 
 %type <tydef> tydef typeid
-%type <node> traitdef
+%type <trait> traitdef
 
 %type <node> exprln retexpr goto continue break expr atomicexpr 
 %type <node> littok literal asnexpr lorexpr landexpr borexpr
@@ -179,6 +179,7 @@ static void addtrait(Type *t, char *str);
         Type **params;
         size_t nparams;
     } tydef;
+    Trait *trait;
     Node *node;
     Tok  *tok;
     Type *ty;
@@ -206,7 +207,7 @@ toplev
             {puttype(file->file.globls, mkname($1.line, $1.name), $1.type);
              installucons(file->file.globls, $1.type);}
         | traitdef
-            {lappend(&file->file.stmts, &file->file.nstmts, $1);}
+            {puttrait(file->file.globls, $1->name, $1);}
         | implstmt
             {lappend(&file->file.stmts, &file->file.nstmts, $1);}
         | /* empty */
@@ -313,7 +314,7 @@ implstmt: Timpl name type
         ;
 
 traitdef: Ttrait Tident generictype Tasn traitbody Tendblk
-            {$$ = mktraitdef($1->line, mkname($2->line, $2->str), $5.nl, $5.nn, NULL, 0);}
+            {$$ = mktrait($1->line, mkname($2->line, $2->str), NULL, 0, $5.nl, $5.nn);}
         ;
 
 traitbody
@@ -813,7 +814,7 @@ static void addtrait(Type *t, char *str)
     size_t i;
 
     for (i = 0; i < ntraits; i++) {
-        if (!strcmp(traittab[i]->name, str)) {
+        if (!strcmp(namestr(traittab[i]->name), str)) {
             settrait(t, traittab[i]);
             return;
         }

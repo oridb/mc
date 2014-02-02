@@ -100,12 +100,12 @@ Type *mktylike(int line, Ty like)
 }
 
 /* steals memb, funcs */
-Trait *mktrait(int line, char *name, Node **memb, size_t nmemb, Node **funcs, size_t nfuncs)
+Trait *mktrait(int line, Node *name, Node **memb, size_t nmemb, Node **funcs, size_t nfuncs)
 {
     Trait *c;
 
     c = zalloc(sizeof(Trait));
-    c->name = strdup(name);
+    c->name = name;
     c->memb = memb;
     c->nmemb = nmemb;
     c->funcs = funcs;
@@ -363,7 +363,7 @@ int traitfmt(char *buf, size_t len, Type *t)
     sep = "";
     for (i = 0; i < ntraits; i++) {
         if (bshas(t->traits, i)) {
-            p += snprintf(p, end - p, "%s%s", sep, traittab[i]->name);
+            p += snprintf(p, end - p, "%s%s", sep, namestr(traittab[i]->name));
             sep = ",";
         }
     }
@@ -631,7 +631,7 @@ void tyinit(Stab *st)
     Type *ty;
 
 #define Tc(c, n) \
-    mktrait(-1, n, NULL, 0, NULL, 0);
+    mktrait(-1, mkname(-1, n), NULL, 0, NULL, 0);
 #include "trait.def"
 #undef Tc
 

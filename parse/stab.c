@@ -12,7 +12,7 @@
 
 #include "parse.h"
 
-/* Allows us to look up types/cstrs by name nodes */
+/* Allows us to look up types/traits by name nodes */
 typedef struct Tydefn Tydefn;
 typedef struct Traitdefn Traitdefn;
 struct Tydefn {
@@ -24,7 +24,7 @@ struct Tydefn {
 struct Traitdefn {
     int line;
     Node *name;
-    Trait *cstr;
+    Trait *trait;
 };
 
 #define Maxstabdepth 128
@@ -140,13 +140,13 @@ Ucon *getucon(Stab *st, Node *n)
     return NULL;
 }
 
-Trait *getcstr(Stab *st, Node *n)
+Trait *gettrait(Stab *st, Node *n)
 {
     Traitdefn *c;
 
     do {
         if ((c = htget(st->ty, n)))
-            return c->cstr;
+            return c->trait;
         st = st->super;
     } while (st);
     return NULL;
@@ -220,17 +220,17 @@ void putucon(Stab *st, Ucon *uc)
     htput(st->uc, uc->name, uc);
 }
 
-void putcstr(Stab *st, Node *n, Trait *c)
+void puttrait(Stab *st, Node *n, Trait *c)
 {
-    Traitdefn *cd;
+    Traitdefn *td;
 
     if (gettype(st, n))
         fatal(n->line, "Type %s already defined", namestr(n));
-    cd = xalloc(sizeof(Tydefn));
-    cd->line = n->line;
-    cd->name = n;
-    cd->cstr = c;
-    htput(st->ty, cd->name, cd);
+    td = xalloc(sizeof(Tydefn));
+    td->line = n->line;
+    td->name = n;
+    td->trait = c;
+    htput(st->ty, td->name, td);
 }
 
 void putns(Stab *st, Stab *scope)

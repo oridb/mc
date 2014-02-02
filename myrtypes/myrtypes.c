@@ -109,7 +109,7 @@ static void dumptypes(Node *n, int indent)
             printf("Body:\n");
             dumptypes(n->func.body, indent + 1);
             break;
-        case Ntrait: case Nimpl:
+        case Nimpl:
             die("Ntrait/Nimpl not yet supported!");
             break;
         case Nname:

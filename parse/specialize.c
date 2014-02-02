@@ -224,7 +224,7 @@ static void fixup(Node *n)
             break;
         case Nnone: case Nname:
             break;
-        case Ntrait: case Nimpl:
+        case Nimpl:
             die("trait/impl not implemented");
             break;
     }
@@ -343,7 +343,7 @@ static Node *specializenode(Node *n, Htab *tsmap)
             r->func.body = specializenode(n->func.body, tsmap);
             popstab();
             break;
-        case Ntrait: case Nimpl:
+        case Nimpl:
             die("trait/impl not implemented");
         case Nnone:
             die("Nnone should not be seen as node type!");

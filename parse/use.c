@@ -461,7 +461,7 @@ static void pickle(Node *n, FILE *fd)
                 pickle(n->func.args[i], fd);
             pickle(n->func.body, fd);
             break;
-        case Ntrait: case Nimpl:
+        case Nimpl:
             die("Ntrait/Nimpl not yet supported!");
             break;
         case Nnone:
@@ -596,7 +596,7 @@ static Node *unpickle(FILE *fd)
             n->func.body = unpickle(fd);
             popstab();
             break;
-        case Ntrait: case Nimpl:
+        case Nimpl:
             die("Ntrait/Nimpl not yet supported!");
             break;
         case Nnone:

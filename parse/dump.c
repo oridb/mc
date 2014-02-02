@@ -226,9 +226,6 @@ static void outnode(Node *n, FILE *fd, int depth)
             fprintf(fd, "%s", n->name.name);
             fprintf(fd, ")\n");
             break;
-        case Ntrait:
-            die("Trait definition");
-            break;
         case Nimpl:
             die("Impl definition");
             break;
