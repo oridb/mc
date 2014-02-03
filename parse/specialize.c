@@ -13,13 +13,13 @@
 
 static Node *specializenode(Node *n, Htab *tsmap);
 
-void addcstrs(Type *t, Bitset *cstrs)
+void addtraits(Type *t, Bitset *traits)
 {
     size_t b;
 
-    if (cstrs)
-        for (b = 0; bsiter(cstrs, &b); b++)
-            setcstr(t, cstrtab[b]);
+    if (traits)
+        for (b = 0; bsiter(traits, &b); b++)
+            settrait(t, traittab[b]);
 }
 
 /*
@@ -42,7 +42,7 @@ Type *tyspecialize(Type *t, Htab *tsmap)
     switch (t->type) {
         case Typaram:
             ret = mktyvar(t->line);
-            addcstrs(ret, t->cstrs);
+            addtraits(ret, t->traits);
             htput(tsmap, t, ret);
             break;
         case Tyname:
@@ -57,7 +57,7 @@ Type *tyspecialize(Type *t, Htab *tsmap)
                     if (subst[i]->type != Typaram || hthas(tsmap, subst[i]))
                         continue;
                     tmp = mktyvar(subst[i]->line);
-                    addcstrs(tmp, subst[i]->cstrs);
+                    addtraits(tmp, subst[i]->traits);
                     htput(tsmap, subst[i], tmp);
                 }
                 ret = mktyname(t->line, t->name, t->param, t->nparam, tyspecialize(t->sub[0], tsmap));
@@ -222,7 +222,10 @@ static void fixup(Node *n)
             fixup(n->func.body);
             popstab();
             break;
-        case Nnone: case Nname: case Ntrait:
+        case Nnone: case Nname:
+            break;
+        case Nimpl:
+            die("trait/impl not implemented");
             break;
     }
 }
@@ -340,8 +343,8 @@ static Node *specializenode(Node *n, Htab *tsmap)
             r->func.body = specializenode(n->func.body, tsmap);
             popstab();
             break;
-        case Ntrait:
-            break;
+        case Nimpl:
+            die("trait/impl not implemented");
         case Nnone:
             die("Nnone should not be seen as node type!");
             break;

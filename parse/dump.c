@@ -226,8 +226,8 @@ static void outnode(Node *n, FILE *fd, int depth)
             fprintf(fd, "%s", n->name.name);
             fprintf(fd, ")\n");
             break;
-        case Ntrait:
-            fprintf(fd, "Trait definition");
+        case Nimpl:
+            die("Impl definition");
             break;
         case Nnone:
             fprintf(stderr, "Nnone not a real node type!");

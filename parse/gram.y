@@ -23,7 +23,7 @@ int yylex(void);
 static Op binop(int toktype);
 static Node *mkpseudodecl(Type *t);
 static void installucons(Stab *st, Type *t);
-static void constrainwith(Type *t, char *str);
+static void addtrait(Type *t, char *str);
 
 %}
 
@@ -134,7 +134,7 @@ static void constrainwith(Type *t, char *str);
 %type <tok> asnop cmpop addop mulop shiftop optident
 
 %type <tydef> tydef typeid
-%type <node> traitdef
+%type <trait> traitdef
 
 %type <node> exprln retexpr goto continue break expr atomicexpr 
 %type <node> littok literal asnexpr lorexpr landexpr borexpr
@@ -179,6 +179,7 @@ static void constrainwith(Type *t, char *str);
         Type **params;
         size_t nparams;
     } tydef;
+    Trait *trait;
     Node *node;
     Tok  *tok;
     Type *ty;
@@ -206,7 +207,9 @@ toplev
             {puttype(file->file.globls, mkname($1.line, $1.name), $1.type);
              installucons(file->file.globls, $1.type);}
         | traitdef
+            {puttrait(file->file.globls, $1->name, $1);}
         | implstmt
+            {lappend(&file->file.stmts, &file->file.nstmts, $1);}
         | /* empty */
         ;
 
@@ -306,14 +309,12 @@ name    : Tident
             {$$ = $3; setns($3, $1->str);}
         ;
 
-implstmt: Timpl name type {
-            $$ = NULL;
-            die("impl foo not done");
-            }
+implstmt: Timpl name type 
+            {$$ = mkimplstmt($1->line, $2, $3);}
         ;
 
 traitdef: Ttrait Tident generictype Tasn traitbody Tendblk
-            {$$ = mktrait($1->line, mkname($2->line, $2->str), $5.nl, $5.nn, NULL, 0);}
+            {$$ = mktrait($1->line, mkname($2->line, $2->str), NULL, 0, $5.nl, $5.nn);}
         ;
 
 traitbody
@@ -367,12 +368,12 @@ generictype
             {$$ = mktyparam($1->line, $1->str);}
         | Ttyparam Twith name
             {$$ = mktyparam($1->line, $1->str);
-             constrainwith($$, $3->name.name);}
+             addtrait($$, $3->name.name);}
         | Ttyparam Twith Toparen typaramlist Tcparen
             {size_t i;
              $$ = mktyparam($1->line, $1->str);
              for (i = 0; i < $4.nn; i++)
-                constrainwith($$, $4.nl[i]->name.name);}
+                addtrait($$, $4.nl[i]->name.name);}
         ;
 
 typaramlist
@@ -808,13 +809,13 @@ label   : Tcolon Tident
 
 %%
 
-static void constrainwith(Type *t, char *str)
+static void addtrait(Type *t, char *str)
 {
     size_t i;
 
-    for (i = 0; i < ncstrs; i++) {
-        if (!strcmp(cstrtab[i]->name, str)) {
-            setcstr(t, cstrtab[i]);
+    for (i = 0; i < ntraits; i++) {
+        if (!strcmp(namestr(traittab[i]->name), str)) {
+            settrait(t, traittab[i]);
             return;
         }
     }

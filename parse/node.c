@@ -183,18 +183,16 @@ Node *mkblock(int line, Stab *scope)
     return n;
 }
 
-Node *mktrait(int line, Node *name, Node **funcs, size_t nfuncs, Node **membs, size_t nmembs)
+Node *mkimplstmt(int line, Node *name, Type *t)
 {
     Node *n;
 
-    n = mknode(line, Ntrait);
-    n->trait.name = name;
-    n->trait.funcs = funcs;
-    n->trait.nfuncs = nfuncs;
-    n->trait.membs = membs;
-    n->trait.nmembs = nmembs;
+    n = mknode(line, Nimpl);
+    n->impl.traitname = name;
+    n->impl.type = t;
     return n;
 }
+
 
 Node *mkintlit(int line, uvlong val)
 {
