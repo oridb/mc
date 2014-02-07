@@ -39,10 +39,8 @@ Type *mktype(int line, Ty ty)
      * each builtin type in order. As we do this, we put the type into
      * the table as ususal, which gives us an identity mapping.
      */
-    if (ty <= Tyvalist && ty < ntypes) {
-        assert(types[ty] != NULL);
+    if (ty <= Tyvalist && ty < ntypes)
         return types[ty];
-    }
 
     t = zalloc(sizeof(Type));
     t->type = ty;
