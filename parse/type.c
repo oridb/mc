@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -30,6 +31,18 @@ Type *mktype(int line, Ty ty)
 {
     Type *t;
     int i;
+
+    /* the first 'n' types will be identity mapped: tytab[Tyint], eg,
+     * will map to an instantitaion of Tyint.
+     *
+     * This is accomplished at program startup by calling mktype() on
+     * each builtin type in order. As we do this, we put the type into
+     * the table as ususal, which gives us an identity mapping.
+     */
+    if (ty <= Tyvalist && ty < ntypes) {
+        assert(types[ty] != NULL);
+        return types[ty];
+    }
 
     t = zalloc(sizeof(Type));
     t->type = ty;
