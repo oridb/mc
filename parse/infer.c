@@ -1423,7 +1423,6 @@ static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
             popstab();
             break;
         case Nimpl:
-            die("Impl not yet implemented\n");
             break;
         case Nname:
         case Nlit:
@@ -1740,8 +1739,6 @@ static void typesub(Inferstate *st, Node *n)
             }
             break;
         case Nimpl:
-            die("Trait inference not yet implemented\n");
-            break;
         case Nname:
         case Nuse:
             break;
@@ -1851,7 +1848,6 @@ static void nodetag(Stab *st, Node *n, int ingeneric)
             nodetag(st, n->func.body, ingeneric);
             break;
         case Nimpl:
-            die("Impl not yet implemented\n");
             break;
 
         case Nuse: case Nname:
@@ -1910,16 +1906,44 @@ static void specialize(Inferstate *st, Node *f)
     }
 }
 
+void applytraits(Inferstate *st, Node *f)
+{
+    size_t i;
+    Node *n;
+    Trait *trait;
+    Type *ty;
+
+    pushstab(f->file.globls);
+    /* for now, traits can only be declared globally */
+    for (i = 0; i < f->file.nstmts; i++) {
+        if (f->file.stmts[i]->type == Nimpl) {
+            n = f->file.stmts[i];
+            trait = gettrait(f->file.globls, n->impl.traitname);
+            if (!trait)
+                fatal(n->line, "trait %s does not exist near %s", namestr(n->impl.traitname), ctxstr(st, n));
+            ty = tf(st, n->impl.type);
+            settrait(ty, trait);
+        }
+    }
+    popstab();
+}
+
 void infer(Node *file)
 {
     Inferstate st = {0,};
 
     assert(file->type == Nfile);
     st.delayed = mkht(tyhash, tyeq);
+    /* set up the symtabs */
     loaduses(file);
     mergeexports(&st, file);
+
+    /* do the inference */
+    applytraits(&st, file);
     infernode(&st, file, NULL, NULL);
     postcheck(&st, file);
+
+    /* and replace type vars with actual types */
     typesub(&st, file);
     specialize(&st, file);
     tagexports(file->file.exports);

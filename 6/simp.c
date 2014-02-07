@@ -1756,6 +1756,7 @@ void gen(Node *file, char *out)
         n = file->file.stmts[i];
         switch (n->type) {
             case Nuse: /* nothing to do */ 
+            case Nimpl:
                 break;
             case Ndecl:
                 simpglobl(n, globls, &fn, &nfn, &blob, &nblob);
