@@ -546,7 +546,7 @@ static void mergetraits(Inferstate *st, Node *ctx, Type *a, Type *b)
 {
     size_t i, n;
     char *sep;
-    char buf[1024];
+    char traitbuf[1024], abuf[1024], bbuf[1024];
 
     if (b->type == Tyvar) {
         /* make sure that if a = b, both have same traits */
@@ -562,10 +562,12 @@ static void mergetraits(Inferstate *st, Node *ctx, Type *a, Type *b)
             n = 0;
             for (i = 0; bsiter(a->traits, &i); i++) {
                 if (!bshas(b->traits, i))
-                    n += snprintf(buf + n, sizeof(buf) - n, "%s%s", sep, namestr(traittab[i]->name));
+                    n += snprintf(traitbuf + n, sizeof(traitbuf) - n, "%s%s", sep, namestr(traittab[i]->name));
                 sep = ",";
             }
-            fatal(ctx->line, "%s missing constraints %s for %s near %s", tystr(b), buf, tystr(a), ctxstr(st, ctx));
+            tyfmt(abuf, sizeof abuf, a);
+            tyfmt(bbuf, sizeof bbuf, b);
+            fatal(ctx->line, "%s missing traits %s for %s near %s", bbuf, traitbuf, abuf, ctxstr(st, ctx));
         }
     }
 }
