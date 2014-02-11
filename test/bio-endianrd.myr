@@ -1,14 +1,14 @@
 use std
 use bio
 
-generic getle = {fd -> @a::(tcint,tcnum,tctest)
+generic getle = {fd -> @a::(integral,numeric)
 	match bio.getle(fd)
 	| `std.Some val:	-> val
 	| `std.None:	std.fatal(1, "read failed")
 	;;
 }
 
-generic getbe = {fd -> @a::(tcint,tcnum,tctest)
+generic getbe = {fd -> @a::(integral,numeric)
 	match bio.getbe(fd)
 	| `std.Some val:	-> val
 	| `std.None:	std.fatal(1, "read faibed")

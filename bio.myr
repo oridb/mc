@@ -41,10 +41,10 @@ pkg bio =
 	const getc	: (f : file# -> std.option(char))
 
 	/* typed binary reads */
-	generic putbe	: (f : file#, v : @a::(tctest,tcnum,tcint) -> std.size)
-	generic putle	: (f : file#, v : @a::(tctest,tcnum,tcint) -> std.size)
-	generic getbe	: (f : file# -> std.option(@a::(tctest,tcnum,tcint)))
-	generic getle	: (f : file# -> std.option(@a::(tctest,tcnum,tcint)))
+	generic putbe	: (f : file#, v : @a::(numeric,integral) -> std.size)
+	generic putle	: (f : file#, v : @a::(numeric,integral) -> std.size)
+	generic getbe	: (f : file# -> std.option(@a::(numeric,integral)))
+	generic getle	: (f : file# -> std.option(@a::(numeric,integral)))
 
 	/* peeking */
 	const peekb	: (f : file# -> std.option(byte))
@@ -70,12 +70,12 @@ const mkfile = {fd, mode
 
 	f.fd = fd
 	f.mode = mode
-	if mode & Rd
+	if mode & Rd != 0
 		f.rbuf = std.slalloc(Bufsz)
 		f.rstart = 0
 		f.rend = 0
 	;;
-	if mode & Wr
+	if mode & Wr != 0
 		f.wbuf = std.slalloc(Bufsz)
 		f.wend = 0
 	;;
@@ -121,11 +121,11 @@ const sysopen = {path, mode, openmode, perm
 /* closes a file, flushing it to the output fd */
 const close = {f
 	flush(f)
-	if f.mode & Rd
+	if f.mode & Rd != 0
 		std.slfree(f.rbuf)
 	;;
 
-	if f.mode & Wr
+	if f.mode & Wr != 0
 		std.slfree(f.wbuf)
 	;;
 	-> std.close(f.fd) == 0
@@ -271,7 +271,7 @@ const ensurecodepoint = {f
   writes a single integer-like value to the output stream, in
   little endian format
 */
-generic putle = {f, v : @a::(tcnum,tcint,tctest)
+generic putle = {f, v : @a::(numeric,integral)
 	var i
 
 	for i = 0; i < sizeof(@a); i++
@@ -285,7 +285,7 @@ generic putle = {f, v : @a::(tcnum,tcint,tctest)
   writes a single integer-like value to the output stream, in
   big endian format
 */
-generic putbe = {f, v : @a::(tcnum,tcint,tctest)
+generic putbe = {f, v : @a::(numeric,integral)
 	var i
 
 	for i = sizeof(@a); i != 0; i--
@@ -308,7 +308,7 @@ generic getbe = {f
 	;;
 	for i = 0; i < sizeof(@a); i++
 		ret <<= 8
-		ret |= f.rbuf[f.rstart++] castto(@a::(tcnum,tcint,tctest))
+		ret |= f.rbuf[f.rstart++] castto(@a::(numeric,integral))
 	;;
 	-> `std.Some ret
 }
@@ -327,7 +327,7 @@ generic getle = {f
 		-> `std.None
 	;;
 	for i = 0; i < sizeof(@a); i++
-		b = f.rbuf[f.rstart++] castto(@a::(tcnum,tcint,tctest))
+		b = f.rbuf[f.rstart++] castto(@a::(numeric,integral))
 		ret = ret | (b << (8*i))
 	;;
 	-> `std.Some ret
@@ -480,7 +480,7 @@ const writebuf = {fd, src
 	var count
 
 	count = 0
-	while src.len
+	while src.len != 0
 		n = std.write(fd, src)
 		if n <= 0
 			goto writedone
