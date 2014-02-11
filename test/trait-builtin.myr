@@ -1,13 +1,13 @@
 use std
 /* checks that generic types with traits are compiled correctly.
-without the 'tcnum' trait on '@a', the '>' operator would not work
+without the 'numeric' trait on '@a', the '>' operator would not work
 within max. without the 'tctest' trait on '@a' in intlike_is42,
 comparing to 42 wouldn't work.
 
 exits with 42.
 */
 
-generic max = {a:@a::tcnum, b:@a::tcnum
+generic max = {a:@a::numeric, b:@a::numeric
 	if a > b
 		-> a
 	else
@@ -15,7 +15,7 @@ generic max = {a:@a::tcnum, b:@a::tcnum
 	;;
 }
 
-generic intlike_is42 = {a : @a::(tcnum,tctest,tcint)
+generic intlike_is42 = {a : @a::(numeric,integral)
 	-> a == 42
 }
 

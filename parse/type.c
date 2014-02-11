@@ -648,51 +648,35 @@ void tyinit(Stab *st)
 #include "trait.def"
 #undef Tc
 
-    /* bool :: tctest */
-    traits[Tybool][0] = traittab[Tctest];
-
+    /* char::(numeric,integral) */
     traits[Tychar][0] = traittab[Tcnum];
     traits[Tychar][1] = traittab[Tcint];
-    traits[Tychar][2] = traittab[Tctest];
 
     traits[Tybyte][0] = traittab[Tcnum];
     traits[Tybyte][1] = traittab[Tcint];
-    traits[Tybyte][2] = traittab[Tctest];
 
-    /* <integer types> :: tcnum, tcint, tctest */
+    /* <integer types>::(numeric,integral) */
     for (i = Tyint8; i < Tyfloat32; i++) {
         traits[i][0] = traittab[Tcnum];
         traits[i][1] = traittab[Tcint];
-        traits[i][2] = traittab[Tctest];
     }
 
-    /* <floats> :: tcnum */
+    /* <floats>::(numeric,floating) */
     traits[Tyfloat32][0] = traittab[Tcnum];
     traits[Tyfloat32][1] = traittab[Tcfloat];
     traits[Tyfloat64][0] = traittab[Tcnum];
     traits[Tyfloat64][1] = traittab[Tcfloat];
 
-    /* @a* :: tctest[0] = tcslice */
-    traits[Typtr][0] = traittab[Tctest];
-    traits[Typtr][1] = traittab[Tcslice];
+    /* @a*::(sliceable) */
+    traits[Typtr][0] = traittab[Tcslice];
 
-    /* @a[,] :: tctest[0] = tcslice[0] = tcidx */
-    traits[Tyslice][0] = traittab[Tctest];
-    traits[Tyslice][1] = traittab[Tcslice];
-    traits[Tyslice][2] = traittab[Tcidx];
+    /* @a[:]::(indexable,sliceable) */
+    traits[Tyslice][0] = traittab[Tcslice];
+    traits[Tyslice][1] = traittab[Tcidx];
 
-    /* array :: tcidx, tcslice */
+    /* @a[SZ]::(indexable,sliceable) */
     traits[Tyarray][0] = traittab[Tcidx];
     traits[Tyarray][1] = traittab[Tcslice];
-
-    /* ptr :: tcslice, tctest */
-    traits[Typtr][0] = traittab[Tcidx];
-    traits[Typtr][1] = traittab[Tctest];
-
-    /* slice :: tcidx, tcslice, tctest */
-    traits[Tyslice][0] = traittab[Tcidx];
-    traits[Tyslice][1] = traittab[Tcslice];
-    traits[Tyslice][1] = traittab[Tctest];
 
 /* Definining and registering the types has to go after we define the
  * constraints, otherwise they will have no constraints set on them. */

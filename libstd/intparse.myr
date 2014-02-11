@@ -7,8 +7,8 @@ use "types.use"
 use "utf.use"
 
 pkg std =
-	generic intparsebase	: (s : byte[:], base : int -> option(@a::(tcint,tcnum,tctest)))
-	generic intparse	: (s : byte[:]	-> option(@a::(tcint,tcnum,tctest)))
+	generic intparsebase	: (s : byte[:], base : int -> option(@a::(integral,numeric)))
+	generic intparse	: (s : byte[:]	-> option(@a::(integral,numeric)))
 ;;
 
 generic intparse = {s
@@ -55,7 +55,7 @@ generic doparse = {s, isneg, base
 		;;
 		cv = charval(c, base)
 		if cv >= 0
-			v *= (base castto(@a::(tcint,tcnum,tctest)))
+			v *= (base castto(@a::(integral,numeric)))
 			v += cv
 		else
 			-> `None

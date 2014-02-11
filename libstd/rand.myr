@@ -49,8 +49,8 @@ pkg std =
 	type rng
 
 	const mksrng	: (seed : uint32 -> rng#)
-	generic rand	: (rng : rng#, lo : @a::(tcnum,tctest,tcint), hi : @a::(tcnum,tctest,tcint) -> @a::(tcnum,tctest,tcint))
-	generic randN	: (rng : rng# -> @a::(tcnum,tctest,tcint))
+	generic rand	: (rng : rng#, lo : @a::(numeric,integral), hi : @a::(numeric,integral) -> @a::(numeric,integral))
+	generic randN	: (rng : rng# -> @a::(numeric,integral))
 	const rand32	: (rng : rng# -> uint32)
 ;;
 
@@ -85,7 +85,7 @@ const init = {rng, seed
    nonempty, and the difference between hi and lo must be
    less then 2^(type_bits - 1)
 */
-generic rand = {rng, lo, hi -> @a::(tcint,tcnum,tctest)
+generic rand = {rng, lo, hi -> @a::(integral,numeric)
 	var span, lim
 	var maxrand
 	var val
@@ -111,13 +111,13 @@ generic rand = {rng, lo, hi -> @a::(tcint,tcnum,tctest)
    random number generator `rng`. The returned value
    may be negative, if the type is signed.
 */
-generic randN = {rng -> @a::(tcint,tcnum,tctest)
+generic randN = {rng -> @a::(integral,numeric)
 	var i, val
 
 	val = 0
 	for i = 0; i < sizeof(@a)/4; i++
 		val <<= 8*sizeof(@a)
-		val |= rand32(rng) castto(@a::(tcint,tcnum,tctest))
+		val |= rand32(rng) castto(@a::(integral,numeric))
 	;;
 	-> val
 }

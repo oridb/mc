@@ -1369,14 +1369,14 @@ static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
             infernode(st, n->ifstmt.cond, NULL, sawret);
             infernode(st, n->ifstmt.iftrue, ret, sawret);
             infernode(st, n->ifstmt.iffalse, ret, sawret);
-            constrain(st, n, type(st, n->ifstmt.cond), traittab[Tctest]);
+            unify(st, n, type(st, n->ifstmt.cond), mktype(n->line, Tybool));
             break;
         case Nloopstmt:
             infernode(st, n->loopstmt.init, ret, sawret);
             infernode(st, n->loopstmt.cond, NULL, sawret);
             infernode(st, n->loopstmt.step, ret, sawret);
             infernode(st, n->loopstmt.body, ret, sawret);
-            constrain(st, n, type(st, n->loopstmt.cond), traittab[Tctest]);
+            unify(st, n, type(st, n->loopstmt.cond), mktype(n->line, Tybool));
             break;
         case Niterstmt:
             bound = NULL;
@@ -1514,7 +1514,6 @@ static void infercompn(Inferstate *st, Node *n)
         if (!strcmp(namestr(memb), "len")) {
             constrain(st, n, type(st, n), traittab[Tcnum]);
             constrain(st, n, type(st, n), traittab[Tcint]);
-            constrain(st, n, type(st, n), traittab[Tctest]);
             found = 1;
         }
         /* otherwise, we search aggregate types for the member, and unify

@@ -13,9 +13,9 @@ pkg std =
 	const bsdup	: (bs : bitset# -> bitset#)
 	const bsfree	: (bs : bitset# -> void)
 
-	generic bsput	: (bs : bitset#, v : @a::(tcint,tctest,tcnum) -> void)
-	generic bsdel	: (bs : bitset#, v : @a::(tcint,tctest,tcnum) -> void)
-	generic bshas	: (bs : bitset#, v : @a::(tcint,tctest,tcnum) -> bool)
+	generic bsput	: (bs : bitset#, v : @a::(integral,numeric) -> void)
+	generic bsdel	: (bs : bitset#, v : @a::(integral,numeric) -> void)
+	generic bshas	: (bs : bitset#, v : @a::(integral,numeric) -> bool)
 
 	const bsdiff	: (a : bitset#, b : bitset# -> void)
 	const bsintersect	: (a : bitset#, b : bitset# -> void)
