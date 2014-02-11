@@ -97,9 +97,10 @@ struct Stab {
      * types and values are in separate namespaces. */
     Htab *dcl;
     Htab *closure; /* the syms we close over */
-    Htab *ns;
-    Htab *ty;
-    Htab *uc;
+    Htab *ns; /* namespaces */
+    Htab *ty; /* types */
+    Htab *tr; /* traits */
+    Htab *uc; /* union constructors */
 };
 
 struct Type {

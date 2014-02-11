@@ -85,7 +85,7 @@ const bfmt = {buf, fmt, args
 const digitchars = [
 	'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'
 ]
-generic intfmt = {buf : byte[:], bits : @a::(tcint,tctest,tcnum), base, signed
+generic intfmt = {buf : byte[:], bits : @a::(integral,numeric), base, signed
 	var isneg
 	var val
 	var b : char[32]
@@ -142,7 +142,7 @@ const bfmtv = {buf, fmt, ap
 	var f_val : float64, F_val : float32
 
 	n = 0
-	while fmt.len
+	while fmt.len != 0
 		(c, fmt) = striter(fmt)
 		if c == '%'
 			base = 10

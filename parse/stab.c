@@ -71,6 +71,7 @@ Stab *mkstab()
     st->ns = mkht(strhash, streq);
     st->dcl = mkht(nsnamehash, nsnameeq);
     st->ty = mkht(nsnamehash, nsnameeq);
+    st->tr = mkht(nsnamehash, nsnameeq);
     st->uc = mkht(nsnamehash, nsnameeq);
     return st;
 }
@@ -145,7 +146,7 @@ Trait *gettrait(Stab *st, Node *n)
     Traitdefn *c;
 
     do {
-        if ((c = htget(st->ty, n)))
+        if ((c = htget(st->tr, n)))
             return c->trait;
         st = st->super;
     } while (st);
@@ -224,13 +225,15 @@ void puttrait(Stab *st, Node *n, Trait *c)
 {
     Traitdefn *td;
 
+    if (gettrait(st, n))
+        fatal(n->line, "Trait %s already defined", namestr(n));
     if (gettype(st, n))
-        fatal(n->line, "Type %s already defined", namestr(n));
+        fatal(n->line, "Trait %s already defined as type", namestr(n));
     td = xalloc(sizeof(Tydefn));
     td->line = n->line;
     td->name = n;
     td->trait = c;
-    htput(st->ty, td->name, td);
+    htput(st->tr, td->name, td);
 }
 
 void putns(Stab *st, Stab *scope)

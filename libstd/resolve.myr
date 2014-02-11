@@ -424,7 +424,7 @@ const valid = {host : byte[:]
 		if seglen > 63
 			-> false
 		;;
-		if host[i] & 0x80
+		if host[i] & 0x80 != 0
 			-> false
 		;;
 	;;

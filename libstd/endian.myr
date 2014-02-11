@@ -5,7 +5,7 @@ pkg std =
 
 /* FIXME: we only support little endian platforms right now,
    so we assume a little endian machine. FIX THIS. */
-generic hosttonet = {v : @a::(tcint,tcnum,tctest)
+generic hosttonet = {v : @a::(integral,numeric)
 	var i
 	var ret
 
@@ -18,7 +18,7 @@ generic hosttonet = {v : @a::(tcint,tcnum,tctest)
 	-> ret
 }
 
-generic nettohost = {v : @a::(tcint,tcnum,tctest)
+generic nettohost = {v : @a::(integral,numeric)
 	var i
 	var ret
 

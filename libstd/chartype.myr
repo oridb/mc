@@ -22,7 +22,7 @@ pkg std =
 	const toupper	: (c : char -> char)
 	const totitle	: (c : char -> char)
 
-	generic charval : (c : char, base : int -> @a::(tcint,tcnum,tctest))
+	generic charval : (c : char, base : int -> @a::(integral,numeric))
 ;;
 
 /*
@@ -1209,18 +1209,18 @@ const totitle = {c
 	-> c
 }
 
-generic charval = {c, base -> @a::(tcnum,tcint,tctest)
+generic charval = {c, base -> @a::(numeric,integral)
 	var v = -1
 
 	if c >= '0' && c <= '9'
-		v =  (c - '0') castto(@a::(tcint,tcnum,tctest))
+		v =  (c - '0') castto(@a::(integral,numeric))
 	elif c >= 'a' && c <= 'z'
-		v =  (c - 'a' + 10) castto(@a::(tcint,tcnum,tctest))
+		v =  (c - 'a' + 10) castto(@a::(integral,numeric))
 	elif c >= 'A' && c <= 'Z'
-		v =  (c - 'A' + 10) castto(@a::(tcint,tcnum,tctest))
+		v =  (c - 'A' + 10) castto(@a::(integral,numeric))
 	;;
 
-	if v < 0 || v > (base castto(@a::(tcint,tcnum,tctest)))
+	if v < 0 || v > (base castto(@a::(integral,numeric)))
 		-> -1
 	;;
 	-> v

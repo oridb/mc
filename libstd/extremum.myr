@@ -1,6 +1,6 @@
 pkg std =
-	generic min	: (a : @a::tcnum, b : @a::tcnum  -> @a::tcnum)
-	generic max	: (a : @a::tcnum, b : @a::tcnum  -> @a::tcnum)
+	generic min	: (a : @a::numeric, b : @a::numeric  -> @a::numeric)
+	generic max	: (a : @a::numeric, b : @a::numeric  -> @a::numeric)
 ;;
 
 generic min = {a, b

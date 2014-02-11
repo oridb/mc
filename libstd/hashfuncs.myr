@@ -8,8 +8,8 @@ pkg std =
 	generic ptrhash	: (p : @a#	-> uint32)
 	generic ptreq	: (a : @a#, b : @a#	-> bool)
 
-	generic inthash	: (v : @a::(tcint,tcnum,tctest)	-> uint32)
-	generic inteq	: (a : @a::(tcint,tcnum,tctest), b : @a::(tcint,tcnum,tctest) -> bool)
+	generic inthash	: (v : @a::(integral,numeric)	-> uint32)
+	generic inteq	: (a : @a::(integral,numeric), b : @a::(integral,numeric) -> bool)
 ;;
 
 /* Supremely simple djb hash. */
