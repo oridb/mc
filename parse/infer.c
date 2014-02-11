@@ -544,6 +544,10 @@ static int traitcheck(Type *a, Type *b)
 /* Merges the constraints on types */
 static void mergetraits(Inferstate *st, Node *ctx, Type *a, Type *b)
 {
+    size_t i, n;
+    char *sep;
+    char buf[1024];
+
     if (b->type == Tyvar) {
         /* make sure that if a = b, both have same traits */
         if (a->traits && b->traits)
@@ -554,8 +558,14 @@ static void mergetraits(Inferstate *st, Node *ctx, Type *a, Type *b)
             a->traits = bsdup(b->traits);
     } else {
         if (!traitcheck(a, b)) {
-            /* FIXME: say WHICH constraints we're missing */
-            fatal(ctx->line, "%s missing constraints for %s near %s", tystr(b), tystr(a), ctxstr(st, ctx));
+            sep = "";
+            n = 0;
+            for (i = 0; bsiter(a->traits, &i); i++) {
+                if (!bshas(b->traits, i))
+                    n += snprintf(buf + n, sizeof(buf) - n, "%s%s", sep, namestr(traittab[i]->name));
+                sep = ",";
+            }
+            fatal(ctx->line, "%s missing constraints %s for %s near %s", tystr(b), buf, tystr(a), ctxstr(st, ctx));
         }
     }
 }
