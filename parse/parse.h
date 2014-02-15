@@ -147,8 +147,9 @@ struct Ucon {
 };
 
 struct Trait {
-    int cid;    /* unique id */
-    Node *name;
+    int cid;            /* unique id */
+    int isproto;        /* is it a prototype for exporting */
+    Node *name;         /* the name of the trait */
     Node **memb;        /* type must have these members */
     size_t nmemb;
     Node **funcs;       /* and declare these funcs */
@@ -287,6 +288,8 @@ struct Node {
         struct {
             Node *traitname;
             Type *type;
+            Node **decls;
+            size_t ndecls;
         } impl;
     };
 };
@@ -400,7 +403,7 @@ Type *mktytuple(int line, Type **sub, size_t nsub);
 Type *mktyfunc(int line, Node **args, size_t nargs, Type *ret);
 Type *mktystruct(int line, Node **decls, size_t ndecls);
 Type *mktyunion(int line, Ucon **decls, size_t ndecls);
-Trait *mktrait(int line, Node *name, Node **memb, size_t nmemb, Node **funcs, size_t nfuncs);
+Trait *mktrait(int line, Node *name, Node **memb, size_t nmemb, Node **funcs, size_t nfuncs, int isproto);
 Type *mktylike(int line, Ty ty); /* constrains tyvar t like it was builtin ty */
 int   istysigned(Type *t);
 int   istyfloat(Type *t);
@@ -432,7 +435,7 @@ Node *mkiterstmt(int line, Node *elt, Node *seq, Node *body);
 Node *mkmatchstmt(int line, Node *val, Node **matches, size_t nmatches);
 Node *mkmatch(int line, Node *pat, Node *body);
 Node *mkblock(int line, Stab *scope);
-Node *mkimplstmt(int line, Node *name, Type *type);
+Node *mkimplstmt(int line, Node *name, Type *type, Node **impls, size_t nimpls);
 Node *mkintlit(int line, uvlong val);
 Node *mkidxinit(int line, Node *idx, Node *init);
 

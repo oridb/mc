@@ -183,13 +183,15 @@ Node *mkblock(int line, Stab *scope)
     return n;
 }
 
-Node *mkimplstmt(int line, Node *name, Type *t)
+Node *mkimplstmt(int line, Node *name, Type *t, Node **decls, size_t ndecls)
 {
     Node *n;
 
     n = mknode(line, Nimpl);
     n->impl.traitname = name;
     n->impl.type = t;
+    n->impl.decls = decls;
+    n->impl.ndecls = ndecls;
     return n;
 }
 

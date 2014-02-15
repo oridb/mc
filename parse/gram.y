@@ -152,7 +152,7 @@ static void addtrait(Type *t, char *str);
 %type <nodelist> structbody structelts arrayelts 
 %type <nodelist> tupbody tuprest 
 %type <nodelist> decl decllist
-%type <nodelist> traitbody
+%type <nodelist> traitbody implbody
 
 %type <uconlist> unionbody
 
@@ -283,7 +283,7 @@ pkgitem : decl
         | tydef {puttype(file->file.exports, mkname($1.line, $1.name), $1.type);
              installucons(file->file.exports, $1.type);}
         | traitdef
-        | implstmt
+        /*| implstmt*/
         | visdef {die("Unimplemented visdef");}
         | /* empty */
         ;
@@ -310,21 +310,32 @@ name    : Tident
         ;
 
 implstmt: Timpl name type 
-            {$$ = mkimplstmt($1->line, $2, $3);}
+            {$$ = mkimplstmt($1->line, $2, $3, NULL, 0);}
+        | Timpl name type Tasn Tendln implbody Tendblk 
+            {$$ = mkimplstmt($1->line, $2, $3, $6.nl, $6.nn);}
         ;
 
-traitdef: Ttrait Tident generictype Tasn traitbody Tendblk
-            {$$ = mktrait($1->line, mkname($2->line, $2->str), NULL, 0, $5.nl, $5.nn);}
+implbody
+        : optendlns {$$.nl = NULL; $$.nn = 0;}
+        | implbody Tident Tasn exprln optendlns
+            {Node *d;
+             $$ = $1;
+             d = mkdecl($2->line, mkname($2->line, $2->str), mktyvar($2->line));
+             d->decl.init = $4;
+             lappend(&$$.nl, &$$.nn, d);}
+        ;
+
+traitdef: Ttrait Tident generictype Tendln /* trait prototype */
+            {$$ = mktrait($1->line, mkname($2->line, $2->str), NULL, 0, NULL, 0, 1);}
+        | Ttrait Tident generictype Tasn traitbody Tendblk /* trait definition */
+            {$$ = mktrait($1->line, mkname($2->line, $2->str), NULL, 0, $5.nl, $5.nn, 0);}
         ;
 
 traitbody
-        : endlns {$$.nl = NULL; $$.nn = 0;}
-        | traitbody decl endlns
-            {size_t i;
-             $$ = $1;
-             for (i = 0; i < $2.nn; i++)
-                lappend(&$$.nl, &$$.nn, $2.nl[i]);
-            }
+        : optendlns {$$.nl = NULL; $$.nn = 0;}
+        | traitbody Tident Tcolon type optendlns
+            {$$ = $1;
+             lappend(&$$.nl, &$$.nn, mkdecl($2->line, mkname($2->line, $2->str), $4));}
         ;
 
 
@@ -687,15 +698,15 @@ seqlit  : Tosqbrac arrayelts Tcsqbrac
         ;
 
 arrayelts
-        : endlns arrayelt
+        : optendlns arrayelt
             {$$.nl = NULL; $$.nn = 0;
              lappend(&$$.nl, &$$.nn, mkidxinit($2->line, mkint($2->line, 0), $2));}
-        | arrayelts Tcomma endlns arrayelt
+        | arrayelts Tcomma optendlns arrayelt
              {lappend(&$$.nl, &$$.nn, mkidxinit($4->line, mkint($4->line, $$.nn), $4));}
-        | arrayelts Tcomma endlns
+        | arrayelts Tcomma optendlns
         ;
 
-arrayelt: expr endlns {$$ = $1;}
+arrayelt: expr optendlns {$$ = $1;}
         ;
 
 structelts
@@ -706,12 +717,12 @@ structelts
              {lappend(&$$.nl, &$$.nn, $3);}
         ;
 
-structelt: endlns Tdot Tident Tasn expr endlns 
+structelt: optendlns Tdot Tident Tasn expr optendlns 
             {$$ = mkidxinit($2->line, mkname($3->line, $3->str), $5);}
          ;
 
-endlns  : /* none */
-        | endlns Tendln
+optendlns  : /* none */
+        | optendlns Tendln
         ;
 
 stmt    : goto
@@ -761,7 +772,7 @@ elifs   : Telif exprln blkbody elifs
             {$$ = NULL;}
         ;
 
-matchstmt: Tmatch exprln endlns Tbor matches Tendblk
+matchstmt: Tmatch exprln optendlns Tbor matches Tendblk
             {$$ = mkmatchstmt($1->line, $2, $5.nl, $5.nn);}
          ;
 
