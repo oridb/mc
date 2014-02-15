@@ -115,6 +115,7 @@ static void outnode(Node *n, FILE *fd, int depth)
     size_t i;
     char *ty;
     int tid;
+    char buf[1024];
 
     indent(fd, depth);
     if (!n) {
@@ -227,7 +228,11 @@ static void outnode(Node *n, FILE *fd, int depth)
             fprintf(fd, ")\n");
             break;
         case Nimpl:
-            die("Impl definition");
+            fprintf(fd, "(name = %s, type = %s)\n", namestr(n->impl.traitname), tyfmt(buf, sizeof buf, n->impl.type));
+            indent(fd, depth);
+            outnode(n->impl.traitname, fd, depth + 1);
+            for (i = 0; i < n->impl.ndecls; i++)
+                outnode(n->impl.decls[i], fd, depth+1);
             break;
         case Nnone:
             fprintf(stderr, "Nnone not a real node type!");
