@@ -1,0 +1,20 @@
+use std
+
+trait frobable @a =
+	frob	: (val : @a -> @a)
+;;
+
+impl frobable int =
+	frob = {val
+		-> val * 2
+	}
+;;
+
+generic foo = {x : @a::frobable
+	-> frob(x)
+}
+
+const main = {
+	std.exit(foo(12))
+}
+
