@@ -9,7 +9,7 @@ pkg std =
 		bits : size[:]
 	;;
 
-	const mkbitset	: (-> bitset#)
+	const mkbs	: (-> bitset#)
 	const bsdup	: (bs : bitset# -> bitset#)
 	const bsfree	: (bs : bitset# -> void)
 
@@ -28,7 +28,7 @@ pkg std =
 	const bsiter	: (bs : bitset# -> bitset#)
 ;;
 
-const mkbitset = {
+const mkbs = {
 	-> zalloc()
 }
 
