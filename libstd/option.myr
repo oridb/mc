@@ -7,18 +7,5 @@ pkg std =
 		`Some @a
 		`None
 	;;
-
-	generic try	: (v : option(@a), msg : byte[:], args : ... -> @a)
-	generic tryv	: (v : option(@a), msg : byte[:], args : valist -> @a)
 ;;
 
-generic try = {v, msg, args
-	-> tryv(v, msg, vastart(&args))
-}
-
-generic tryv = {v, msg, ap
-	match v
-	| `None:	fatalv(1, msg, ap)
-	| `Some a:	-> a
-	;;
-}

@@ -4,10 +4,10 @@ use "die.use"
 use "fmt.use"
 
 pkg std =
-	generic slinsert	: (sl : @a[:], idx : size, elt : @a	-> @a[:])
+	generic slput	: (sl : @a[:], idx : size, elt : @a	-> @a[:])
 ;;
 
-generic slinsert = {sl, idx, elt
+generic slput = {sl, idx, elt
 	var i
 	var len
 
