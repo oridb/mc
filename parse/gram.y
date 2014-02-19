@@ -286,9 +286,9 @@ pkgitem : decl {
                 installucons(file->file.exports, $1.type);
             }
         | traitdef {
-            size_t i;
-            for (i = 0; i < $1->trait.nfuncs; i++)
-                 putdecl($file->file.exports, $1->trait.funcs[i]);
+                size_t i;
+                for (i = 0; i < $1->nfuncs; i++)
+                    putdcl(file->file.exports, $1->funcs[i]);
             }
         | implstmt
         | visdef {die("Unimplemented visdef");}
@@ -483,7 +483,7 @@ unionbody
                 $$.ucl = NULL;
                 $$.nucl = 0;
                 if ($1)
-                    lappend(&$$.ucl, &$$.nucl, $1)
+                    lappend(&$$.ucl, &$$.nucl, $1);
              }
         | unionbody unionelt {
                 if ($2)
