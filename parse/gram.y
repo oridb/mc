@@ -283,7 +283,7 @@ pkgitem : decl
         | tydef {puttype(file->file.exports, mkname($1.line, $1.name), $1.type);
              installucons(file->file.exports, $1.type);}
         | traitdef
-        /*| implstmt*/
+        | implstmt
         | visdef {die("Unimplemented visdef");}
         | /* empty */
         ;
