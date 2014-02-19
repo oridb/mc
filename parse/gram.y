@@ -192,80 +192,80 @@ file    : toplev
         | file Tendln toplev
         ;
 
-toplev
-        : decl
-            {size_t i;
-             for (i = 0; i < $1.nn; i++) {
-                lappend(&file->file.stmts, &file->file.nstmts, $1.nl[i]);
-                $1.nl[i]->decl.isglobl = 1;
-                putdcl(file->file.globls, $1.nl[i]);
-             }}
-        | use
-            {lappend(&file->file.uses, &file->file.nuses, $1);}
-        | package
-        | tydef
-            {puttype(file->file.globls, mkname($1.line, $1.name), $1.type);
-             installucons(file->file.globls, $1.type);}
-        | traitdef
-            {puttrait(file->file.globls, $1->name, $1);}
-        | implstmt
-            {lappend(&file->file.stmts, &file->file.nstmts, $1);}
+toplev  : package
+        | use {lappend(&file->file.uses, &file->file.nuses, $1);}
+        | traitdef {puttrait(file->file.globls, $1->name, $1);}
+        | implstmt {lappend(&file->file.stmts, &file->file.nstmts, $1);}
+        | tydef {
+                puttype(file->file.globls, mkname($1.line, $1.name), $1.type);
+                installucons(file->file.globls, $1.type);
+            }
+        | decl {
+                size_t i;
+                for (i = 0; i < $1.nn; i++) {
+                    lappend(&file->file.stmts, &file->file.nstmts, $1.nl[i]);
+                    $1.nl[i]->decl.isglobl = 1;
+                    putdcl(file->file.globls, $1.nl[i]);
+                }
+            }
         | /* empty */
         ;
 
-decl    : Tvar decllist
-            {$$ = $2;}
-        | Tconst decllist
-            {size_t i;
-             for (i = 0; i < $2.nn; i++)
-                $2.nl[i]->decl.isconst = 1;
-             $$ = $2;}
-        | Tgeneric decllist
-            {size_t i;
+decl    : Tvar decllist {$$ = $2;}
+        | Tconst decllist {
+                size_t i;
+                for (i = 0; i < $2.nn; i++)
+                    $2.nl[i]->decl.isconst = 1;
+                $$ = $2;
+            }
+        | Tgeneric decllist {
+                size_t i;
              for (i = 0; i < $2.nn; i++) {
                 $2.nl[i]->decl.isconst = 1;
                 $2.nl[i]->decl.isgeneric = 1;
              }
              $$ = $2;}
-        | Textern Tvar decllist
-            {size_t i;
-             for (i = 0; i < $3.nn; i++)
-                $3.nl[i]->decl.isextern = 1;
-             $$ = $3;}
-        | Textern Tconst decllist
-            {size_t i;
-             for (i = 0; i < $3.nn; i++) {
-                $3.nl[i]->decl.isconst = 1;
-                $3.nl[i]->decl.isextern = 1;
-             }
-             $$ = $3;}
+        | Textern Tvar decllist {
+                size_t i;
+                for (i = 0; i < $3.nn; i++)
+                    $3.nl[i]->decl.isextern = 1;
+                $$ = $3;
+            }
+        | Textern Tconst decllist {
+                size_t i;
+                for (i = 0; i < $3.nn; i++) {
+                    $3.nl[i]->decl.isconst = 1;
+                    $3.nl[i]->decl.isextern = 1;
+                }
+                $$ = $3;
+            }
         ;
 
-decllist: declbody
-            {$$.nl = NULL; $$.nn = 0;
-             lappend(&$$.nl, &$$.nn, $1);}
-        | declbody Tcomma decllist
-             {linsert(&$3.nl, &$3.nn, 0, $1);
-             $$=$3;}
+decllist: declbody {
+                $$.nl = NULL; $$.nn = 0;
+                lappend(&$$.nl, &$$.nn, $1);
+            }
+        | declbody Tcomma decllist {
+                linsert(&$3.nl, &$3.nn, 0, $1);
+                $$=$3;
+            }
         ;
 
-use     : Tuse Tident
-            {$$ = mkuse($1->line, $2->str, 0);}
-        | Tuse Tstrlit
-            {$$ = mkuse($1->line, $2->str, 1);}
+use     : Tuse Tident {$$ = mkuse($1->line, $2->str, 0);}
+        | Tuse Tstrlit {$$ = mkuse($1->line, $2->str, 1);}
         ;
 
 optident: Tident      {$$ = $1;}
         | /* empty */ {$$ = NULL;}
         ;
 
-package : Tpkg optident Tasn pkgbody Tendblk
-            {if (file->file.exports->name)
-                 fatal($1->line, "Package already declared\n");
-             if ($2) {
-                 updatens(file->file.exports, $2->str);
-                 updatens(file->file.globls, $2->str);
-             }
+package : Tpkg optident Tasn pkgbody Tendblk {
+                if (file->file.exports->name)
+                    fatal($1->line, "Package already declared\n");
+                if ($2) {
+                    updatens(file->file.exports, $2->str);
+                    updatens(file->file.globls, $2->str);
+                }
             }
         ;
 
@@ -273,16 +273,23 @@ pkgbody : pkgitem
         | pkgbody Tendln pkgitem
         ;
 
-pkgitem : decl
-            {size_t i;
-            for (i = 0; i < $1.nn; i++) {
-                putdcl(file->file.exports, $1.nl[i]);
-                if ($1.nl[i]->decl.init)
-                    lappend(&file->file.stmts, &file->file.nstmts, $1.nl[i]);
-            }}
-        | tydef {puttype(file->file.exports, mkname($1.line, $1.name), $1.type);
-             installucons(file->file.exports, $1.type);}
-        | traitdef
+pkgitem : decl {
+                size_t i;
+                for (i = 0; i < $1.nn; i++) {
+                    putdcl(file->file.exports, $1.nl[i]);
+                    if ($1.nl[i]->decl.init)
+                        lappend(&file->file.stmts, &file->file.nstmts, $1.nl[i]);
+                }
+            }
+        | tydef {
+                puttype(file->file.exports, mkname($1.line, $1.name), $1.type);
+                installucons(file->file.exports, $1.type);
+            }
+        | traitdef {
+            size_t i;
+            for (i = 0; i < $1->trait.nfuncs; i++)
+                 putdecl($file->file.exports, $1->trait.funcs[i]);
+            }
         | implstmt
         | visdef {die("Unimplemented visdef");}
         | /* empty */
@@ -292,78 +299,79 @@ visdef  : Texport Tcolon
         | Tprotect Tcolon
         ;
 
-declbody: declcore Tasn expr
-            {$$ = $1; $1->decl.init = $3;}
+declbody: declcore Tasn expr {$$ = $1; $1->decl.init = $3;}
         | declcore
         ;
 
-declcore: name
-            {$$ = mkdecl($1->line, $1, mktyvar($1->line));}
-        | name Tcolon type
-            {$$ = mkdecl($1->line, $1, $3);}
+declcore: name {$$ = mkdecl($1->line, $1, mktyvar($1->line));}
+        | name Tcolon type {$$ = mkdecl($1->line, $1, $3);}
         ;
 
-name    : Tident
-            {$$ = mkname($1->line, $1->str);}
-        | Tident Tdot name
-            {$$ = $3; setns($3, $1->str);}
+name    : Tident {$$ = mkname($1->line, $1->str);}
+        | Tident Tdot name {$$ = $3; setns($3, $1->str);}
         ;
 
-implstmt: Timpl name type 
-            {$$ = mkimplstmt($1->line, $2, $3, NULL, 0);}
-        | Timpl name type Tasn Tendln implbody Tendblk 
-            {$$ = mkimplstmt($1->line, $2, $3, $6.nl, $6.nn);}
+implstmt: Timpl name type {$$ = mkimplstmt($1->line, $2, $3, NULL, 0);}
+        | Timpl name type Tasn Tendln implbody Tendblk {
+                $$ = mkimplstmt($1->line, $2, $3, $6.nl, $6.nn);
+            }
         ;
 
 implbody
         : optendlns {$$.nl = NULL; $$.nn = 0;}
-        | implbody Tident Tasn exprln optendlns
-            {Node *d;
-             $$ = $1;
-             d = mkdecl($2->line, mkname($2->line, $2->str), mktyvar($2->line));
-             d->decl.init = $4;
-             lappend(&$$.nl, &$$.nn, d);}
+        | implbody Tident Tasn exprln optendlns {
+                Node *d;
+                $$ = $1;
+                d = mkdecl($2->line, mkname($2->line, $2->str), mktyvar($2->line));
+                d->decl.init = $4;
+                lappend(&$$.nl, &$$.nn, d);
+            }
         ;
 
-traitdef: Ttrait Tident generictype Tendln /* trait prototype */
-            {$$ = mktrait($1->line, mkname($2->line, $2->str), NULL, 0, NULL, 0, 1);}
-        | Ttrait Tident generictype Tasn traitbody Tendblk /* trait definition */
-            {$$ = mktrait($1->line, mkname($2->line, $2->str), NULL, 0, $5.nl, $5.nn, 0);}
+traitdef: Ttrait Tident generictype Tendln /* trait prototype */ {
+                $$ = mktrait($1->line, mkname($2->line, $2->str), NULL, 0, NULL, 0, 1);
+            }
+        | Ttrait Tident generictype Tasn traitbody Tendblk /* trait definition */ {
+                $$ = mktrait($1->line, mkname($2->line, $2->str), NULL, 0, $5.nl, $5.nn, 0);
+            }
         ;
 
 traitbody
         : optendlns {$$.nl = NULL; $$.nn = 0;}
-        | traitbody Tident Tcolon type optendlns
-            {$$ = $1;
-             lappend(&$$.nl, &$$.nn, mkdecl($2->line, mkname($2->line, $2->str), $4));}
+        | traitbody Tident Tcolon type optendlns {
+                $$ = $1;
+                lappend(&$$.nl, &$$.nn, mkdecl($2->line, mkname($2->line, $2->str), $4));
+            }
         ;
 
 
-tydef   : Ttype typeid Tasn type
-            {$$ = $2;
-             $$.type = mktyname($2.line, mkname($2.line, $2.name), $2.params, $2.nparams, $4);}
-        | Ttype typeid
-            {$$ = $2;}
+tydef   : Ttype typeid {$$ = $2;}
+        | Ttype typeid Tasn type {
+                $$ = $2;
+                $$.type = mktyname($2.line, mkname($2.line, $2.name), $2.params, $2.nparams, $4);
+            }
         ;
 
-typeid  : Tident
-            {$$.line = $1->line;
-             $$.name = $1->str;
-             $$.params = NULL;
-             $$.type = NULL;}
-        | Tident Toparen typarams Tcparen
-            {$$.line = $1->line;
-             $$.name = $1->str;
-             $$.params = $3.types;
-             $$.nparams = $3.ntypes;
-             $$.type = NULL;}
+typeid  : Tident {
+                $$.line = $1->line;
+                $$.name = $1->str;
+                $$.params = NULL;
+                $$.type = NULL;
+            }
+        | Tident Toparen typarams Tcparen {
+                $$.line = $1->line;
+                $$.name = $1->str;
+                $$.params = $3.types;
+                $$.nparams = $3.ntypes;
+                $$.type = NULL;
+            }
         ;
 
-typarams: generictype
-            {$$.types = NULL; $$.ntypes = 0;
-             lappend(&$$.types, &$$.ntypes, $1);}
-        | typarams Tcomma generictype
-            {lappend(&$$.types, &$$.ntypes, $3);}
+typarams: generictype {
+                $$.types = NULL; $$.ntypes = 0;
+                lappend(&$$.types, &$$.ntypes, $1);
+            }
+        | typarams Tcomma generictype {lappend(&$$.types, &$$.ntypes, $3);}
         ;
 
 type    : structdef
@@ -375,24 +383,25 @@ type    : structdef
         ;
 
 generictype
-        : Ttyparam
-            {$$ = mktyparam($1->line, $1->str);}
-        | Ttyparam Twith name
-            {$$ = mktyparam($1->line, $1->str);
-             addtrait($$, $3->name.name);}
-        | Ttyparam Twith Toparen typaramlist Tcparen
-            {size_t i;
-             $$ = mktyparam($1->line, $1->str);
-             for (i = 0; i < $4.nn; i++)
-                addtrait($$, $4.nl[i]->name.name);}
+        : Ttyparam {$$ = mktyparam($1->line, $1->str);}
+        | Ttyparam Twith name {
+                $$ = mktyparam($1->line, $1->str);
+                addtrait($$, $3->name.name);
+            }
+        | Ttyparam Twith Toparen typaramlist Tcparen {
+                size_t i;
+                $$ = mktyparam($1->line, $1->str);
+                for (i = 0; i < $4.nn; i++)
+                    addtrait($$, $4.nl[i]->name.name);
+            }
         ;
 
 typaramlist
-        : name
-            {$$.nl = NULL; $$.nn = 0;
-             lappend(&$$.nl, &$$.nn, $1);}
-        | typaramlist Tcomma name
-            {lappend(&$$.nl, &$$.nn, $3);}
+        : name {
+                $$.nl = NULL; $$.nn = 0;
+                lappend(&$$.nl, &$$.nn, $1);
+            }
+        | typaramlist Tcomma name {lappend(&$$.nl, &$$.nn, $3);}
         ;
 
 compoundtype
@@ -414,25 +423,27 @@ funcsig : argdefs
             {$$ = mktyfunc($1.line, $1.nl, $1.nn, $3);}
         ;
 
-argdefs : declcore
-            {$$.line = $1->line;
-             $$.nl = NULL;
-             $$.nn = 0; lappend(&$$.nl, &$$.nn, $1);}
-        | argdefs Tcomma declcore
-            {lappend(&$$.nl, &$$.nn, $3);}
-        | /* empty */
-            {$$.line = line;
-             $$.nl = NULL;
-             $$.nn = 0;}
+argdefs : declcore {
+                $$.line = $1->line;
+                $$.nl = NULL;
+                $$.nn = 0; lappend(&$$.nl, &$$.nn, $1);
+            }
+        | argdefs Tcomma declcore {lappend(&$$.nl, &$$.nn, $3);}
+        | /* empty */ {
+                $$.line = line;
+                $$.nl = NULL;
+                $$.nn = 0;
+            }
         ;
 
 tupledef: Tosqbrac typelist Tcsqbrac
             {$$ = mktytuple($1->line, $2.types, $2.ntypes);}
         ;
 
-typelist: type
-            {$$.types = NULL; $$.ntypes = 0;
-             lappend(&$$.types, &$$.ntypes, $1);}
+typelist: type {
+                $$.types = NULL; $$.ntypes = 0;
+                lappend(&$$.types, &$$.ntypes, $1);
+            }
         | typelist Tcomma type
             {lappend(&$$.types, &$$.ntypes, $3);}
         ;
@@ -443,19 +454,23 @@ structdef
         ;
 
 structbody
-        : structent
-            {if ($1) {$$.nl = NULL; $$.nn = 0; lappend(&$$.nl, &$$.nn, $1);}}
-        | structbody structent
-            {if ($2) {lappend(&$$.nl, &$$.nn, $2);}}
+        : structent {
+                if ($1) {
+                    $$.nl = NULL;
+                    $$.nn = 0;
+                    lappend(&$$.nl, &$$.nn, $1);
+                }
+            }
+        | structbody structent {
+                if ($2)
+                    lappend(&$$.nl, &$$.nn, $2);
+            }
         ;
 
 structent
-        : declcore Tendln
-            {$$ = $1;}
-        | visdef Tendln
-            {$$ = NULL;}
-        | Tendln
-            {$$ = NULL;}
+        : declcore Tendln {$$ = $1;}
+        | visdef Tendln {$$ = NULL;}
+        | Tendln {$$ = NULL;}
         ;
 
 uniondef
@@ -464,33 +479,31 @@ uniondef
         ;
 
 unionbody
-        : unionelt
-            {$$.ucl = NULL; $$.nucl = 0;
-             if ($1) {lappend(&$$.ucl, &$$.nucl, $1);}}
-        | unionbody unionelt
-            {if ($2) {lappend(&$$.ucl, &$$.nucl, $2);}}
+        : unionelt {
+                $$.ucl = NULL;
+                $$.nucl = 0;
+                if ($1)
+                    lappend(&$$.ucl, &$$.nucl, $1)
+             }
+        | unionbody unionelt {
+                if ($2)
+                    lappend(&$$.ucl, &$$.nucl, $2);
+            }
         ;
 
 unionelt /* nb: the ucon union type gets filled in when we have context */
-        : Ttick name type Tendln
-            {$$ = mkucon($2->line, $2, NULL, $3);}
-        | Ttick name Tendln
-            {$$ = mkucon($2->line, $2, NULL, NULL);}
-        | visdef Tendln
-            {$$ = NULL;}
-        | Tendln
-            {$$ = NULL;}
+        : Ttick name type Tendln {$$ = mkucon($2->line, $2, NULL, $3);}
+        | Ttick name Tendln {$$ = mkucon($2->line, $2, NULL, NULL);}
+        | visdef Tendln {$$ = NULL;}
+        | Tendln {$$ = NULL;}
         ;
 
-goto	: Tgoto Tident
-     		{$$ = mkexpr($1->line, Ojmp, mklbl($2->line, $2->str), NULL);}
+goto	: Tgoto Tident {$$ = mkexpr($1->line, Ojmp, mklbl($2->line, $2->str), NULL);}
      	;
 
-retexpr : Tret expr
-            {$$ = mkexpr($1->line, Oret, $2, NULL);}
+retexpr : Tret expr {$$ = mkexpr($1->line, Oret, $2, NULL);}
+        | Tret {$$ = mkexpr($1->line, Oret, NULL);}
         | expr
-        | Tret
-            {$$ = mkexpr($1->line, Oret, NULL);}
         ;
 
 optexpr : expr {$$ = $1;}
@@ -543,17 +556,16 @@ cmpexpr : cmpexpr cmpop castexpr
 
 cmpop   : Teq | Tgt | Tlt | Tge | Tle | Tne ;
 
-castexpr: castexpr Tcast Toparen type Tcparen
-            {$$ = mkexpr($1->line, Ocast, $1, NULL);
-             $$->expr.type = $4;}
+castexpr: castexpr Tcast Toparen type Tcparen {
+                $$ = mkexpr($1->line, Ocast, $1, NULL);
+                $$->expr.type = $4;
+            }
         | unionexpr 
         ;
 
 unionexpr
-        : Ttick name unionexpr
-            {$$ = mkexpr($1->line, Oucon, $2, $3, NULL);}
-        | Ttick name
-            {$$ = mkexpr($1->line, Oucon, $2, NULL);}
+        : Ttick name unionexpr {$$ = mkexpr($1->line, Oucon, $2, $3, NULL);}
+        | Ttick name {$$ = mkexpr($1->line, Oucon, $2, NULL);}
         | borexpr
         ;
 
@@ -650,10 +662,11 @@ tuphead : expr Tcomma {$$ = $1;}
 
 tuprest : /*empty */
             {$$.nl = NULL; $$.nn = 0;}
-        | expr
-            {$$.nl = NULL; $$.nn = 0; lappend(&$$.nl, &$$.nn, $1);}
-        | tuprest Tcomma expr
-            {lappend(&$$.nl, &$$.nn, $3);}
+        | expr {
+                $$.nl = NULL; $$.nn = 0;
+                lappend(&$$.nl, &$$.nn, $1);
+            }
+        | tuprest Tcomma expr {lappend(&$$.nl, &$$.nn, $3);}
         ;
 
 literal : funclit       {$$ = mkexpr($1->line, Olit, $1, NULL);}
@@ -669,10 +682,11 @@ littok  : Tstrlit       {$$ = mkstr($1->line, $1->str);}
         | Tchrlit       {$$ = mkchar($1->line, $1->chrval);}
         | Tfloatlit     {$$ = mkfloat($1->line, $1->fltval);}
         | Tboollit      {$$ = mkbool($1->line, !strcmp($1->str, "true"));}
-        | Tintlit
-		{$$ = mkint($1->line, $1->intval);
-		 if ($1->inttype)
-		 	$$->lit.type = mktype($1->line, $1->inttype);}
+        | Tintlit {
+                $$ = mkint($1->line, $1->intval);
+		if ($1->inttype)
+                    $$->lit.type = mktype($1->line, $1->inttype);
+            }
         ;
 
 funclit : Tobrace params Tendln blkbody Tcbrace
@@ -681,12 +695,13 @@ funclit : Tobrace params Tendln blkbody Tcbrace
             {$$ = mkfunc($1->line, $2.nl, $2.nn, $4, $6);}
         ;
 
-params  : declcore
-            {$$.nl = NULL; $$.nn = 0; lappend(&$$.nl, &$$.nn, $1);}
-        | params Tcomma declcore
-            {lappend(&$$.nl, &$$.nn, $3);}
-        | /* empty */
-            {$$.nl = NULL; $$.nn = 0;}
+params  : declcore {
+                $$.nl = NULL;
+                $$.nn = 0;
+                lappend(&$$.nl, &$$.nn, $1);
+            }
+        | params Tcomma declcore {lappend(&$$.nl, &$$.nn, $3);}
+        | /* empty */ {$$.nl = NULL; $$.nn = 0;}
         ;
 
 seqlit  : Tosqbrac arrayelts Tcsqbrac
@@ -698,9 +713,11 @@ seqlit  : Tosqbrac arrayelts Tcsqbrac
         ;
 
 arrayelts
-        : optendlns arrayelt
-            {$$.nl = NULL; $$.nn = 0;
-             lappend(&$$.nl, &$$.nn, mkidxinit($2->line, mkint($2->line, 0), $2));}
+        : optendlns arrayelt {
+                $$.nl = NULL;
+                $$.nn = 0;
+                lappend(&$$.nl, &$$.nn, mkidxinit($2->line, mkint($2->line, 0), $2));
+            }
         | arrayelts Tcomma optendlns arrayelt
              {lappend(&$$.nl, &$$.nn, mkidxinit($4->line, mkint($4->line, $$.nn), $4));}
         | arrayelts Tcomma optendlns
@@ -710,9 +727,11 @@ arrayelt: expr optendlns {$$ = $1;}
         ;
 
 structelts
-        : structelt
-            {$$.nl = NULL; $$.nn = 0;
-             lappend(&$$.nl, &$$.nn, $1);}
+        : structelt {
+                $$.nl = NULL;
+                $$.nn = 0;
+                lappend(&$$.nl, &$$.nn, $1);
+            }
         | structelts Tcomma structelt
              {lappend(&$$.nl, &$$.nn, $3);}
         ;
@@ -776,13 +795,16 @@ matchstmt: Tmatch exprln optendlns Tbor matches Tendblk
             {$$ = mkmatchstmt($1->line, $2, $5.nl, $5.nn);}
          ;
 
-matches : match
-            {$$.nl = NULL; $$.nn = 0;
-             if ($1)
-                 lappend(&$$.nl, &$$.nn, $1);}
-        | matches Tbor match
-            {if ($2)
-                 lappend(&$$.nl, &$$.nn, $3);}
+matches : match {
+                $$.nl = NULL;
+                $$.nn = 0;
+                if ($1)
+                    lappend(&$$.nl, &$$.nn, $1);
+            }
+        | matches Tbor match {
+                if ($2)
+                    lappend(&$$.nl, &$$.nn, $3);
+            }
         ;
 
 match   : expr Tcolon blkbody Tendln {$$ = mkmatch($1->line, $1, $3);}
@@ -791,27 +813,31 @@ match   : expr Tcolon blkbody Tendln {$$ = mkmatch($1->line, $1, $3);}
 block   : blkbody Tendblk
         ;
 
-blkbody : decl 
-            {size_t i;
-             $$ = mkblock(line, mkstab());
-             for (i = 0; i < $1.nn; i++) {
-                putdcl($$->block.scope, $1.nl[i]);
-                lappend(&$$->block.stmts, &$$->block.nstmts, $1.nl[i]);
-            }};
-        | stmt
-            {$$ = mkblock(line, mkstab());
-             if ($1)
-                lappend(&$$->block.stmts, &$$->block.nstmts, $1);}
-        | blkbody Tendln stmt
-            {if ($3)
-                lappend(&$1->block.stmts, &$1->block.nstmts, $3);
-             $$ = $1;}
-        | blkbody Tendln decl
-            {size_t i;
-             for (i = 0; i < $3.nn; i++){
-                putdcl($$->block.scope, $3.nl[i]);
-                lappend(&$1->block.stmts, &$1->block.nstmts, $3.nl[i]);
-            }};
+blkbody : decl {
+                size_t i;
+                $$ = mkblock(line, mkstab());
+                for (i = 0; i < $1.nn; i++) {
+                    putdcl($$->block.scope, $1.nl[i]);
+                    lappend(&$$->block.stmts, &$$->block.nstmts, $1.nl[i]);
+                }
+            }
+        | stmt {
+                $$ = mkblock(line, mkstab());
+                if ($1)
+                    lappend(&$$->block.stmts, &$$->block.nstmts, $1);
+            }
+        | blkbody Tendln stmt {
+                if ($3)
+                    lappend(&$1->block.stmts, &$1->block.nstmts, $3);
+                $$ = $1;
+            }
+        | blkbody Tendln decl {
+                size_t i;
+                for (i = 0; i < $3.nn; i++){
+                    putdcl($$->block.scope, $3.nl[i]);
+                    lappend(&$1->block.stmts, &$1->block.nstmts, $3.nl[i]);
+                }
+            }
         ;
 
 label   : Tcolon Tident
