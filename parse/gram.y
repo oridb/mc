@@ -194,7 +194,12 @@ file    : toplev
 
 toplev  : package
         | use {lappend(&file->file.uses, &file->file.nuses, $1);}
-        | traitdef {puttrait(file->file.globls, $1->name, $1);}
+        | traitdef {
+                size_t i;
+                puttrait(file->file.globls, $1->name, $1);
+                for (i = 0; i < $1->nfuncs; i++)
+                    putdcl(file->file.exports, $1->funcs[i]);
+            }
         | implstmt {lappend(&file->file.stmts, &file->file.nstmts, $1);}
         | tydef {
                 puttype(file->file.globls, mkname($1.line, $1.name), $1.type);
@@ -287,6 +292,7 @@ pkgitem : decl {
             }
         | traitdef {
                 size_t i;
+                puttrait(file->file.exports, $1->name, $1);
                 for (i = 0; i < $1->nfuncs; i++)
                     putdcl(file->file.exports, $1->funcs[i]);
             }
@@ -339,8 +345,12 @@ traitdef: Ttrait Tident generictype Tendln /* trait prototype */ {
 traitbody
         : optendlns {$$.nl = NULL; $$.nn = 0;}
         | traitbody Tident Tcolon type optendlns {
+                Node *d;
                 $$ = $1;
-                lappend(&$$.nl, &$$.nn, mkdecl($2->line, mkname($2->line, $2->str), $4));
+                d = mkdecl($2->line, mkname($2->line, $2->str), $4);
+                d->decl.isgeneric = 1;
+                d->decl.istraitfn = 1;
+                lappend(&$$.nl, &$$.nn, d);
             }
         ;
 

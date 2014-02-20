@@ -256,6 +256,12 @@ struct Node {
             char  isglobl;
             char  isconst;
             char  isgeneric;
+            /* 
+               specializations should only look up these, not generate
+               specialized versions. In fact, these should never have
+               initializers.
+            */
+            char  istraitfn;
             char  isextern;
             char  ishidden;
         } decl;
