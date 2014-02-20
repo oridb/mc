@@ -46,6 +46,7 @@ struct Inferstate {
 
 static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret);
 static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret);
+static void inferdecl(Inferstate *st, Node *n);
 static void typesub(Inferstate *st, Node *n);
 static void tybind(Inferstate *st, Type *t);
 static void bind(Inferstate *st, Node *n);
@@ -561,7 +562,7 @@ static void mergetraits(Inferstate *st, Node *ctx, Type *a, Type *b)
             sep = "";
             n = 0;
             for (i = 0; bsiter(a->traits, &i); i++) {
-                if (!bshas(b->traits, i))
+                if (!b->traits || !bshas(b->traits, i))
                     n += snprintf(traitbuf + n, sizeof(traitbuf) - n, "%s%s", sep, namestr(traittab[i]->name));
                 sep = ",";
             }
@@ -1295,6 +1296,38 @@ static void inferfunc(Inferstate *st, Node *n)
         unify(st, n, type(st, n)->sub[0], mktype(-1, Tyvoid));
 }
 
+static void specializeimpl(Inferstate *st, Node *n)
+{
+    Trait *t;
+    Node *dcl, *proto;
+    size_t i, j;
+
+    t = gettrait(curstab(), n->impl.traitname);
+    if (!t)
+        fatal(n->line, "No trait %s\n", namestr(n->impl.traitname));
+
+    dcl = NULL;
+    proto = NULL;
+    for (i = 0; i < n->impl.ndecls; i++) {
+        /* look up the prototype */
+        proto = NULL;
+        dcl = n->impl.decls[i];
+        for (j = 0; j < t->nfuncs; i++) {
+            if (nameeq(dcl->decl.name, t->funcs[j]->decl.name)) {
+                proto = t->funcs[j];
+                break;
+            }
+        }
+        if (!dcl || !proto)
+            fatal(n->line, "Declaration %s missing in %s, near %s\n",
+                  namestr(dcl), namestr(t->name), ctxstr(st, n));
+
+        /* infer and unify types */
+        inferdecl(st, dcl);
+        unify(st, n, type(st, dcl), type(st, proto));
+    }
+}
+
 static void inferdecl(Inferstate *st, Node *n)
 {
     Type *t;
@@ -1435,6 +1468,7 @@ static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
             popstab();
             break;
         case Nimpl:
+            specializeimpl(st, n);
             break;
         case Nname:
         case Nlit:
