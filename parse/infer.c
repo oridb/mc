@@ -529,7 +529,7 @@ static void constrain(Inferstate *st, Node *ctx, Type *a, Trait *c)
 }
 
 /* does b satisfy all the constraints of a? */
-static int traitcheck(Type *a, Type *b)
+static int checktraits(Type *a, Type *b)
 {
     /* a has no traits to satisfy */
     if (!a->traits)
@@ -558,7 +558,7 @@ static void mergetraits(Inferstate *st, Node *ctx, Type *a, Type *b)
         else if (b->traits)
             a->traits = bsdup(b->traits);
     } else {
-        if (!traitcheck(a, b)) {
+        if (!checktraits(a, b)) {
             sep = "";
             n = 0;
             for (i = 0; bsiter(a->traits, &i); i++) {
@@ -1298,8 +1298,10 @@ static void inferfunc(Inferstate *st, Node *n)
 
 static void specializeimpl(Inferstate *st, Node *n)
 {
-    Trait *t;
     Node *dcl, *proto;
+    Htab *ht;
+    Trait *t;
+    Type *ty;
     size_t i, j;
 
     t = gettrait(curstab(), n->impl.traitname);
@@ -1323,8 +1325,14 @@ static void specializeimpl(Inferstate *st, Node *n)
                   namestr(dcl), namestr(t->name), ctxstr(st, n));
 
         /* infer and unify types */
+        checktraits(t->param, n->impl.type);
+        ht = mkht(tyhash, tyeq);
+        htput(ht, t->param, n->impl.type);
+        ty = tyspecialize(type(st, proto), ht);
+        htfree(ht);
+
         inferdecl(st, dcl);
-        unify(st, n, type(st, dcl), type(st, proto));
+        unify(st, n, type(st, dcl), ty);
     }
 }
 
@@ -1503,9 +1511,9 @@ static Type *tyfix(Inferstate *st, Node *ctx, Type *orig)
             fatal(ctx->line, "Type %s not compatible with %s near %s\n", tystr(t), tystr(delayed), ctxstr(st, ctx));
     }
     if (t->type == Tyvar) {
-        if (hastrait(t, traittab[Tcint]) && traitcheck(t, tyint))
+        if (hastrait(t, traittab[Tcint]) && checktraits(t, tyint))
             return tyint;
-        if (hastrait(t, traittab[Tcfloat]) && traitcheck(t, tyflt))
+        if (hastrait(t, traittab[Tcfloat]) && checktraits(t, tyflt))
             return tyflt;
     } else if (!t->fixed) {
         t->fixed = 1;

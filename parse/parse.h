@@ -148,8 +148,9 @@ struct Ucon {
 
 struct Trait {
     int cid;            /* unique id */
-    int isproto;        /* is it a prototype for exporting */
+    int isproto;        /* is it a prototype (for exporting purposes) */
     Node *name;         /* the name of the trait */
+    Type *param;        /* the type parameter */
     Node **memb;        /* type must have these members */
     size_t nmemb;
     Node **funcs;       /* and declare these funcs */
@@ -409,7 +410,7 @@ Type *mktytuple(int line, Type **sub, size_t nsub);
 Type *mktyfunc(int line, Node **args, size_t nargs, Type *ret);
 Type *mktystruct(int line, Node **decls, size_t ndecls);
 Type *mktyunion(int line, Ucon **decls, size_t ndecls);
-Trait *mktrait(int line, Node *name, Node **memb, size_t nmemb, Node **funcs, size_t nfuncs, int isproto);
+Trait *mktrait(int line, Node *name, Type *param, Node **memb, size_t nmemb, Node **funcs, size_t nfuncs, int isproto);
 Type *mktylike(int line, Ty ty); /* constrains tyvar t like it was builtin ty */
 int   istysigned(Type *t);
 int   istyfloat(Type *t);

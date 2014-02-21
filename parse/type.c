@@ -111,12 +111,13 @@ Type *mktylike(int line, Ty like)
 }
 
 /* steals memb, funcs */
-Trait *mktrait(int line, Node *name, Node **memb, size_t nmemb, Node **funcs, size_t nfuncs, int isproto)
+Trait *mktrait(int line, Node *name, Type *param, Node **memb, size_t nmemb, Node **funcs, size_t nfuncs, int isproto)
 {
     Trait *t;
 
     t = zalloc(sizeof(Trait));
     t->name = name;
+    t->param = param;
     t->memb = memb;
     t->nmemb = nmemb;
     t->funcs = funcs;
@@ -642,8 +643,10 @@ void tyinit(Stab *st)
     int i;
     Type *ty;
 
+/* this must be done after all the types are created, otherwise we will
+ * clobber the memoized bunch of types with the type params. */
 #define Tc(c, n) \
-    mktrait(-1, mkname(-1, n), NULL, 0, NULL, 0, 0);
+    mktrait(-1, mkname(-1, n), NULL, NULL, 0, NULL, 0, 0);
 #include "trait.def"
 #undef Tc
 

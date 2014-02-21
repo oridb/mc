@@ -335,10 +335,10 @@ implbody
         ;
 
 traitdef: Ttrait Tident generictype Tendln /* trait prototype */ {
-                $$ = mktrait($1->line, mkname($2->line, $2->str), NULL, 0, NULL, 0, 1);
+                $$ = mktrait($1->line, mkname($2->line, $2->str), $3, NULL, 0, NULL, 0, 1);
             }
         | Ttrait Tident generictype Tasn traitbody Tendblk /* trait definition */ {
-                $$ = mktrait($1->line, mkname($2->line, $2->str), NULL, 0, $5.nl, $5.nn, 0);
+                $$ = mktrait($1->line, mkname($2->line, $2->str), $3, NULL, 0, $5.nl, $5.nn, 0);
             }
         ;
 
