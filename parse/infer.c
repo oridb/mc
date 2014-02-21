@@ -793,6 +793,7 @@ static void mergeexports(Inferstate *st, Node *file)
     /* export, global version */
     Node *nx, *ng;
     Type *tx, *tg;
+    Trait *trx, *trg;
     Ucon *ux, *ug;
 
     exports = file->file.exports;
@@ -818,6 +819,28 @@ static void mergeexports(Inferstate *st, Node *file)
         }
     }
     free(k);
+
+    k = htkeys(exports->tr, &nk);
+    for (i = 0; i < nk; i++) {
+        trx = gettrait(exports, k[i]);
+        nx = k[i];
+        if (!trx->isproto) {
+            trg = gettrait(globls, nx);
+            if (!trg)
+                puttrait(globls, nx, trx);
+            else
+                fatal(nx->line, "Exported type %s already declared on line %d", namestr(nx), tg->line);
+        } else {
+            trg = gettrait(globls, nx);
+            if (trg && !trg->isproto) {
+                *trx = *trg;
+            } else {
+                fatal(nx->line, "Exported type %s not declared", namestr(nx));
+            }
+        }
+    }
+    free(k);
+
 
     k = htkeys(exports->dcl, &nk);
     for (i = 0; i < nk; i++) {
