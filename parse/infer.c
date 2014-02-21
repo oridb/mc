@@ -1337,7 +1337,8 @@ static void specializeimpl(Inferstate *st, Node *n)
         /* look up the prototype */
         proto = NULL;
         dcl = n->impl.decls[i];
-        for (j = 0; j < t->nfuncs; i++) {
+        setns(dcl->decl.name, namestr(file->file.globls->name));
+        for (j = 0; j < t->nfuncs; j++) {
             if (nameeq(dcl->decl.name, t->funcs[j]->decl.name)) {
                 proto = t->funcs[j];
                 break;
@@ -1345,7 +1346,7 @@ static void specializeimpl(Inferstate *st, Node *n)
         }
         if (!dcl || !proto)
             fatal(n->line, "Declaration %s missing in %s, near %s\n",
-                  namestr(dcl), namestr(t->name), ctxstr(st, n));
+                  namestr(dcl->decl.name), namestr(t->name), ctxstr(st, n));
 
         /* infer and unify types */
         checktraits(t->param, n->impl.type);
