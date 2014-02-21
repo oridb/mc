@@ -1339,7 +1339,8 @@ static void specializeimpl(Inferstate *st, Node *n)
         dcl->decl.name = name;
         putdcl(file->file.globls, dcl);
         if (debugopt['S'])
-            printf("specializing trait [%d]%s => %s\n", n->line, namestr(n->decl.name), namestr(name));
+            printf("specializing trait [%d]%s:%s => %s:%s\n",
+                   n->line, namestr(proto->decl.name), tystr(type(st, proto)), namestr(name), tystr(ty));
         lappend(&file->file.stmts, &file->file.nstmts, dcl);
     }
 }

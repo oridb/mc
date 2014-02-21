@@ -10,11 +10,20 @@ impl frobable int =
 	}
 ;;
 
+impl frobable int16 =
+	frob = {val
+		-> val * 4
+	}
+;;
+
 generic foo = {x : @a::frobable
 	-> frob(x)
 }
 
 const main = {
-	std.exit(foo(12))
+	var a, b
+	a = foo(123)
+	b = foo(11 castto(int16))
+	std.put("%i,%w\n", a, b)
 }
 
