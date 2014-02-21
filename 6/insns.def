@@ -77,8 +77,8 @@ Insn(Icomis,     "\tcomis%t %x,%f\n",           Use(.l={1,2}),                  
 Insn(Ixorp,      "\tmuls%t %x,%f\n",            Use(.l={1,2}),                  Def(.l={2}))
 
 /* branch instructions */
-Insn(Icall,     "\tcall %v\n",                  Use(.l={1}), Def(.r={Rrax}))
-Insn(Icallind,  "\tcall *%v\n",                 Use(.l={1}), Def(.r={Rrax}))
+Insn(Icall,     "\tcall %v\n",                  Use(.l={1}), Def(.r={Rrax,Reax,Rax,Ral,Rah}))
+Insn(Icallind,  "\tcall *%v\n",                 Use(.l={1}), Def(.r={Rrax,Reax,Rax,Ral,Rah}))
 Insn(Ijmp,      "\tjmp %v\n",                   Use(.l={1}), Def())
 Insn(Ijz,       "\tjz %v\n",                    Use(.l={1}), Def())
 Insn(Ijnz,      "\tjnz %v\n",                   Use(.l={1}), Def())

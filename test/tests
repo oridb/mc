@@ -52,6 +52,7 @@ B arraylen	E	12
 B slice		E	10
 B slicelen	E	5
 B call		E	42
+B doublecall	P	42,33
 B voidcall	E	12
 B callbig	E	42
 B nestfn	E	42

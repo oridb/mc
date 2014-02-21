@@ -1,0 +1,13 @@
+use std
+
+const main = {
+	std.put("%i,%w\n", a(), b())
+}
+
+const a = {
+	-> 42
+}
+
+const b = {
+	-> 33 castto(int16)
+}
