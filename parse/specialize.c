@@ -351,7 +351,7 @@ static Node *specializenode(Node *n, Htab *tsmap)
     }
     return r;
 }
-static Node *genericname(Node *n, Type *t)
+Node *genericname(Node *n, Type *t)
 {
     char buf[1024];
     char *p, *s;

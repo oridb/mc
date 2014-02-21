@@ -330,6 +330,7 @@ implbody
                 $$ = $1;
                 d = mkdecl($2->line, mkname($2->line, $2->str), mktyvar($2->line));
                 d->decl.init = $4;
+                d->decl.isconst = 1;
                 lappend(&$$.nl, &$$.nn, d);
             }
         ;
@@ -338,7 +339,10 @@ traitdef: Ttrait Tident generictype Tendln /* trait prototype */ {
                 $$ = mktrait($1->line, mkname($2->line, $2->str), $3, NULL, 0, NULL, 0, 1);
             }
         | Ttrait Tident generictype Tasn traitbody Tendblk /* trait definition */ {
+                size_t i;
                 $$ = mktrait($1->line, mkname($2->line, $2->str), $3, NULL, 0, $5.nl, $5.nn, 0);
+                for (i = 0; i < $5.nn; i++)
+                    $5.nl[i]->decl.isgeneric = 1;
             }
         ;
 

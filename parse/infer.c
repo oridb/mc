@@ -1298,7 +1298,7 @@ static void inferfunc(Inferstate *st, Node *n)
 
 static void specializeimpl(Inferstate *st, Node *n)
 {
-    Node *dcl, *proto;
+    Node *dcl, *proto, *name;
     Htab *ht;
     Trait *t;
     Type *ty;
@@ -1333,6 +1333,14 @@ static void specializeimpl(Inferstate *st, Node *n)
 
         inferdecl(st, dcl);
         unify(st, n, type(st, dcl), ty);
+
+        /* and put the specialization into the global stab */
+        name = genericname(proto, ty);
+        dcl->decl.name = name;
+        putdcl(file->file.globls, dcl);
+        if (debugopt['S'])
+            printf("specializing trait [%d]%s => %s\n", n->line, namestr(n->decl.name), namestr(name));
+        lappend(&file->file.stmts, &file->file.nstmts, dcl);
     }
 }
 

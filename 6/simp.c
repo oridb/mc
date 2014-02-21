@@ -1682,7 +1682,7 @@ static void simpconstinit(Simp *s, Node *dcl)
     e = dcl->decl.init;
     if (e && exprop(e) == Olit) {
         if (e->expr.args[0]->lit.littype == Lfunc)
-            simpblob(s, e->expr.args[0], &file->file.stmts, &file->file.nstmts);
+            simpblob(s, e, &file->file.stmts, &file->file.nstmts);
         else
             lappend(&s->blobs, &s->nblobs, dcl);
     } else if (dcl->decl.isconst) {
