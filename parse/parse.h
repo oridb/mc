@@ -148,6 +148,7 @@ struct Ucon {
 
 struct Trait {
     int cid;            /* unique id */
+    Vis vis;
     int isproto;        /* is it a prototype (for exporting purposes) */
     Node *name;         /* the name of the trait */
     Type *param;        /* the type parameter */

@@ -248,6 +248,11 @@ static void typickle(FILE *fd, Type *ty)
     }
 }
 
+ void traitpickle(FILE *fd, Trait *tr)
+{
+    die("Trait pickling not yet implemented");
+}
+
 static void wrtype(FILE *fd, Type *ty)
 {
     if (ty->tid >= Builtinmask)
@@ -830,6 +835,14 @@ void writeuse(FILE *f, Node *file)
             typickle(f, types[i]);
         }
     }
+    /*
+    for (i = 0; i < ntraittab; i++) {
+        if (traittab[i]->vis == Visexport || traittab[i]->vis == Vishidden) {
+            wrbyte(f, 'R');
+            traitpickle(f, traittab[i]);
+        }
+    }
+    */
     k = htkeys(st->dcl, &n);
     for (i = 0; i < n; i++) {
         s = getdcl(st, k[i]);

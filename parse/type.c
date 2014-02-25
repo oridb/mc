@@ -22,7 +22,7 @@ Type **tytab = NULL;
 Type **types = NULL;
 size_t ntypes;
 Trait **traittab;
-size_t ntraits;
+size_t ntraittab;
 
 /* Built in type constraints */
 static Trait *traits[Ntypes + 1][4];
@@ -123,9 +123,9 @@ Trait *mktrait(int line, Node *name, Type *param, Node **memb, size_t nmemb, Nod
     t->funcs = funcs;
     t->nfuncs = nfuncs;
     t->isproto = isproto;
-    t->cid = ntraits++;
+    t->cid = ntraittab++;
 
-    traittab = xrealloc(traittab, ntraits*sizeof(Trait*));
+    traittab = xrealloc(traittab, ntraittab*sizeof(Trait*));
     traittab[t->cid] = t;
     return t;
 }
@@ -374,7 +374,7 @@ int traitfmt(char *buf, size_t len, Type *t)
 
     p += snprintf(p, end - p, " :: ");
     sep = "";
-    for (i = 0; i < ntraits; i++) {
+    for (i = 0; i < ntraittab; i++) {
         if (bshas(t->traits, i)) {
             p += snprintf(p, end - p, "%s%s", sep, namestr(traittab[i]->name));
             sep = ",";
