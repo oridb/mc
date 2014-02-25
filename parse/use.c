@@ -17,7 +17,7 @@ static void wrstab(FILE *fd, Stab *val);
 static Stab *rdstab(FILE *fd);
 static void wrsym(FILE *fd, Node *val);
 static Node *rdsym(FILE *fd);
-static void pickle(Node *n, FILE *fd);
+static void pickle(FILE *fd, Node *n);
 static Node *unpickle(FILE *fd);
 
 /* type fixup list */
@@ -37,7 +37,7 @@ static void wrstab(FILE *fd, Stab *val)
     size_t n, i;
     void **keys;
 
-    pickle(val->name, fd);
+    pickle(fd, val->name);
 
     /* write decls */
     keys = htkeys(val->dcl, &n);
@@ -50,7 +50,7 @@ static void wrstab(FILE *fd, Stab *val)
     keys = htkeys(val->ty, &n);
     wrint(fd, n);
     for (i = 0; i < n; i++) {
-        pickle(keys[i], fd); /* name */
+        pickle(fd, keys[i]); /* name */
         wrtype(fd, gettype(val, keys[i])); /* type */
     }
     free(keys);
@@ -101,7 +101,7 @@ static void wrucon(FILE *fd, Ucon *uc)
     wrint(fd, uc->line);
     wrint(fd, uc->id);
     wrbool(fd, uc->synth);
-    pickle(uc->name, fd);
+    pickle(fd, uc->name);
     wrbool(fd, uc->etype != NULL);
     if (uc->etype)
       wrtype(fd, uc->etype);
@@ -137,7 +137,7 @@ static void wrsym(FILE *fd, Node *val)
 {
     /* sym */
     wrint(fd, val->line);
-    pickle(val->decl.name, fd);
+    pickle(fd, val->decl.name);
     wrtype(fd, val->decl.type);
 
     /* symflags */
@@ -148,7 +148,7 @@ static void wrsym(FILE *fd, Node *val)
     wrbool(fd, val->decl.istraitfn);
 
     if (val->decl.isgeneric && !val->decl.istraitfn)
-        pickle(val->decl.init, fd);
+        pickle(fd, val->decl.init);
 }
 
 static Node *rdsym(FILE *fd)
@@ -202,7 +202,7 @@ static void typickle(FILE *fd, Type *ty)
     wrint(fd, ty->nsub);
     switch (ty->type) {
         case Tyunres:
-            pickle(ty->name, fd);
+            pickle(fd, ty->name);
             break;
         case Typaram:
             wrstr(fd, ty->pname);
@@ -210,7 +210,7 @@ static void typickle(FILE *fd, Type *ty)
         case Tystruct:
             wrint(fd, ty->nmemb);
             for (i = 0; i < ty->nmemb; i++)
-                pickle(ty->sdecls[i], fd);
+                pickle(fd, ty->sdecls[i]);
             break;
         case Tyunion:
             wrint(fd, ty->nmemb);
@@ -219,7 +219,7 @@ static void typickle(FILE *fd, Type *ty)
             break;
         case Tyarray:
             wrtype(fd, ty->sub[0]);
-            pickle(ty->asize, fd);
+            pickle(fd, ty->asize);
             break;
         case Tyslice:
             wrtype(fd, ty->sub[0]);
@@ -228,7 +228,7 @@ static void typickle(FILE *fd, Type *ty)
             die("Attempting to pickle %s. This will not work.\n", tystr(ty));
             break;
         case Tyname:
-            pickle(ty->name, fd);
+            pickle(fd, ty->name);
             wrbool(fd, ty->issynth);
 
             wrint(fd, ty->nparam);
@@ -250,7 +250,20 @@ static void typickle(FILE *fd, Type *ty)
 
 static void traitpickle(FILE *fd, Trait *tr)
 {
-    die("Trait pickling not yet implemented");
+    size_t i;
+
+    wrint(fd, tr->uid);
+    wrint(fd, tr->vis);
+    wrbool(fd, tr->isproto);
+    wrbool(fd, tr->ishidden);
+    pickle(fd, tr->name);
+    typickle(fd, tr->param);
+    wrint(fd, tr->nmemb);
+    for (i = 0; i < tr->nmemb; i++)
+        pickle(fd, tr->memb[i]);
+    wrint(fd, tr->nfuncs);
+    for (i = 0; i < tr->nfuncs; i++)
+        pickle(fd, tr->funcs[i]);
 }
 
 static void wrtype(FILE *fd, Type *ty)
@@ -358,7 +371,7 @@ static Type *tyunpickle(FILE *fd)
  * in-memory representation. Minimal
  * checking is done, so a bad type can
  * crash the compiler */
-static void pickle(Node *n, FILE *fd)
+static void pickle(FILE *fd, Node *n)
 {
     size_t i;
 
@@ -373,10 +386,10 @@ static void pickle(Node *n, FILE *fd)
             wrstr(fd, n->file.name);
             wrint(fd, n->file.nuses);
             for (i = 0; i < n->file.nuses; i++)
-                pickle(n->file.uses[i], fd);
+                pickle(fd, n->file.uses[i]);
             wrint(fd, n->file.nstmts);
             for (i = 0; i < n->file.nstmts; i++)
-                pickle(n->file.stmts[i], fd);
+                pickle(fd, n->file.stmts[i]);
             wrstab(fd, n->file.globls);
             wrstab(fd, n->file.exports);
             break;
@@ -385,10 +398,10 @@ static void pickle(Node *n, FILE *fd)
             wrbyte(fd, n->expr.op);
             wrtype(fd, n->expr.type);
             wrbool(fd, n->expr.isconst);
-            pickle(n->expr.idx, fd);
+            pickle(fd, n->expr.idx);
             wrint(fd, n->expr.nargs);
             for (i = 0; i < n->expr.nargs; i++)
-                pickle(n->expr.args[i], fd);
+                pickle(fd, n->expr.args[i]);
             break;
         case Nname:
             wrbool(fd, n->name.ns != NULL);
@@ -412,44 +425,44 @@ static void pickle(Node *n, FILE *fd)
                 case Lstr:      wrstr(fd, n->lit.strval);       break;
                 case Llbl:      wrstr(fd, n->lit.lblval);       break;
                 case Lbool:     wrbool(fd, n->lit.boolval);     break;
-                case Lfunc:     pickle(n->lit.fnval, fd);       break;
+                case Lfunc:     pickle(fd, n->lit.fnval);       break;
             }
             break;
         case Nloopstmt:
-            pickle(n->loopstmt.init, fd);
-            pickle(n->loopstmt.cond, fd);
-            pickle(n->loopstmt.step, fd);
-            pickle(n->loopstmt.body, fd);
+            pickle(fd, n->loopstmt.init);
+            pickle(fd, n->loopstmt.cond);
+            pickle(fd, n->loopstmt.step);
+            pickle(fd, n->loopstmt.body);
             break;
         case Niterstmt:
-            pickle(n->iterstmt.elt, fd);
-            pickle(n->iterstmt.seq, fd);
-            pickle(n->iterstmt.body, fd);
+            pickle(fd, n->iterstmt.elt);
+            pickle(fd, n->iterstmt.seq);
+            pickle(fd, n->iterstmt.body);
             break;
         case Nmatchstmt:
-            pickle(n->matchstmt.val, fd);
+            pickle(fd, n->matchstmt.val);
             wrint(fd, n->matchstmt.nmatches);
             for (i = 0; i < n->matchstmt.nmatches; i++)
-                pickle(n->matchstmt.matches[i], fd);
+                pickle(fd, n->matchstmt.matches[i]);
             break;
         case Nmatch:
-            pickle(n->match.pat, fd);
-            pickle(n->match.block, fd);
+            pickle(fd, n->match.pat);
+            pickle(fd, n->match.block);
             break;
         case Nifstmt:
-            pickle(n->ifstmt.cond, fd);
-            pickle(n->ifstmt.iftrue, fd);
-            pickle(n->ifstmt.iffalse, fd);
+            pickle(fd, n->ifstmt.cond);
+            pickle(fd, n->ifstmt.iftrue);
+            pickle(fd, n->ifstmt.iffalse);
             break;
         case Nblock:
             wrstab(fd, n->block.scope);
             wrint(fd, n->block.nstmts);
             for (i = 0; i < n->block.nstmts; i++)
-                pickle(n->block.stmts[i], fd);
+                pickle(fd, n->block.stmts[i]);
             break;
         case Ndecl:
             /* sym */
-            pickle(n->decl.name, fd);
+            pickle(fd, n->decl.name);
             wrtype(fd, n->decl.type);
 
             /* symflags */
@@ -458,15 +471,15 @@ static void pickle(Node *n, FILE *fd)
             wrint(fd, n->decl.isextern);
 
             /* init */
-            pickle(n->decl.init, fd);
+            pickle(fd, n->decl.init);
             break;
         case Nfunc:
             wrtype(fd, n->func.type);
             wrstab(fd, n->func.scope);
             wrint(fd, n->func.nargs);
             for (i = 0; i < n->func.nargs; i++)
-                pickle(n->func.args[i], fd);
-            pickle(n->func.body, fd);
+                pickle(fd, n->func.args[i]);
+            pickle(fd, n->func.body);
             break;
         case Nimpl:
             die("Ntrait/Nimpl not yet supported!");

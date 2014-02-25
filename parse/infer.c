@@ -523,7 +523,7 @@ static void constrain(Inferstate *st, Node *ctx, Type *a, Trait *c)
         if (!a->traits)
             a->traits = mkbs();
         settrait(a, c);
-    } else if (!a->traits || !bshas(a->traits, c->cid)) {
+    } else if (!a->traits || !bshas(a->traits, c->uid)) {
         fatal(ctx->line, "%s needs %s near %s", tystr(a), c->name, ctxstr(st, ctx));
     }
 }

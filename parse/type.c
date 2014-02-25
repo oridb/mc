@@ -124,10 +124,10 @@ Trait *mktrait(int line, Node *name, Type *param, Node **memb, size_t nmemb, Nod
     t->funcs = funcs;
     t->nfuncs = nfuncs;
     t->isproto = isproto;
-    t->cid = ntraittab++;
+    t->uid = ntraittab++;
 
     traittab = xrealloc(traittab, ntraittab*sizeof(Trait*));
-    traittab[t->cid] = t;
+    traittab[t->uid] = t;
     return t;
 }
 
@@ -351,13 +351,13 @@ int settrait(Type *t, Trait *c)
 {
     if (!t->traits)
         t->traits = mkbs();
-    bsput(t->traits, c->cid);
+    bsput(t->traits, c->uid);
     return 1;
 }
 
 int hastrait(Type *t, Trait *c)
 {
-    return t->traits && bshas(t->traits, c->cid);
+    return t->traits && bshas(t->traits, c->uid);
 }
 
 int traitfmt(char *buf, size_t len, Type *t)

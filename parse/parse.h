@@ -147,9 +147,10 @@ struct Ucon {
 };
 
 struct Trait {
-    int cid;            /* unique id */
+    int uid;            /* unique id */
     Vis vis;
     int isproto;        /* is it a prototype (for exporting purposes) */
+    int ishidden;       /* should user code be able to use this? */
     Node *name;         /* the name of the trait */
     Type *param;        /* the type parameter */
     Node **memb;        /* type must have these members */
