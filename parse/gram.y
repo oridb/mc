@@ -194,13 +194,13 @@ file    : toplev
 
 toplev  : package
         | use {lappend(&file->file.uses, &file->file.nuses, $1);}
+        | implstmt {lappend(&file->file.stmts, &file->file.nstmts, $1);}
         | traitdef {
                 size_t i;
                 puttrait(file->file.globls, $1->name, $1);
                 for (i = 0; i < $1->nfuncs; i++)
                     putdcl(file->file.exports, $1->funcs[i]);
             }
-        | implstmt {lappend(&file->file.stmts, &file->file.nstmts, $1);}
         | tydef {
                 puttype(file->file.globls, mkname($1.line, $1.name), $1.type);
                 installucons(file->file.globls, $1.type);
@@ -335,7 +335,7 @@ implbody
             }
         ;
 
-traitdef: Ttrait Tident generictype Tendln /* trait prototype */ {
+traitdef: Ttrait Tident generictype /* trait prototype */ {
                 $$ = mktrait($1->line, mkname($2->line, $2->str), $3, NULL, 0, NULL, 0, 1);
             }
         | Ttrait Tident generictype Tasn traitbody Tendblk /* trait definition */ {
