@@ -47,6 +47,7 @@ typedef enum {
 #define Tc(c, n) c,
 #include "trait.def"
 #undef Tc
+    Ntraits
 } Tc;
 
 typedef enum {

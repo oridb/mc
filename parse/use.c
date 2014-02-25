@@ -23,6 +23,7 @@ static Node *unpickle(FILE *fd);
 /* type fixup list */
 static Htab *tydedup;   /* map from name -> type, contains all Tynames loaded ever */
 static Htab *tidmap;    /* map from tid -> type */
+static Htab *trmap;     /* map from trait id -> trait */
 static Type ***typefixdest;  /* list of types we need to replace */
 static size_t ntypefixdest; /* size of replacement list */
 static intptr_t *typefixid;  /* list of types we need to replace */
@@ -253,8 +254,6 @@ static void traitpickle(FILE *fd, Trait *tr)
     size_t i;
 
     wrint(fd, tr->uid);
-    wrint(fd, tr->vis);
-    wrbool(fd, tr->isproto);
     wrbool(fd, tr->ishidden);
     pickle(fd, tr->name);
     typickle(fd, tr->param);
@@ -297,6 +296,7 @@ static Type *tyunpickle(FILE *fd)
     size_t i, n;
     size_t v;
     Type *ty;
+    Trait *tr;
     Ty t;
 
     t = rdbyte(fd);
@@ -309,7 +309,8 @@ static Type *tyunpickle(FILE *fd)
         ty->traits = mkbs();
         for (i = 0; i < n; i++) {
             v = rdint(fd);
-            settrait(ty, traittab[v]);
+            tr = htget(trmap, (void*)v);
+            settrait(ty, tr);
         }
     }
     ty->nsub = rdint(fd);
@@ -363,6 +364,28 @@ static Type *tyunpickle(FILE *fd)
             break;
     }
     return ty;
+}
+
+Trait *traitunpickle(FILE *fd)
+{
+    Trait *tr;
+    size_t i, n;
+    intptr_t uid;
+
+    /* create an empty trait */
+    tr = mktrait(-1, NULL, NULL, NULL, 0, NULL, 0, 0);
+    uid = rdint(fd);
+    tr->ishidden = rdbool(fd);
+    tr->name = unpickle(fd);
+    tr->param = tyunpickle(fd);
+    n = rdint(fd);
+    for (i = 0; i < n; i++)
+        lappend(&tr->memb, &tr->nmemb, unpickle(fd));
+    n = rdint(fd);
+    for (i = 0; i < n; i++)
+        lappend(&tr->funcs, &tr->nfuncs, unpickle(fd));
+    htput(trmap, (void*)i, traittab[i]);
+    return tr;
 }
 
 /* Pickles a node to a file.  The format
@@ -700,7 +723,8 @@ int loaduse(FILE *f, Stab *st)
     char *pkg;
     Node *dcl;
     Stab *s;
-    Type *t;
+    Type *ty;
+    Trait *tr;
     char *lib;
     int c;
 
@@ -727,12 +751,17 @@ int loaduse(FILE *f, Stab *st)
         }
     }
     tidmap = mkht(ptrhash, ptreq);
+    trmap = mkht(ptrhash, ptreq);
+    /* builtin traits */
+    for (i = 0; i < Ntraits; i++)
+        htput(trmap, (void*)i, traittab[i]);
     while ((c = fgetc(f)) != EOF) {
         switch(c) {
             case 'L':
                 lib = rdstr(f);
                 for (i = 0; i < file->file.nlibdeps; i++)
                     if (!strcmp(file->file.libdeps[i], lib))
+                        /* break out of both loop and switch */
                         goto foundlib;
                 lappend(&file->file.libdeps, &file->file.nlibdeps, lib);
 foundlib:
@@ -742,28 +771,32 @@ foundlib:
                 dcl = rdsym(f);
                 putdcl(s, dcl);
                 break;
+            case 'R':
+                tr = traitunpickle(f);
+                puttrait(s, tr->name, tr);
+                printf("installing trait %s\n", namestr(tr->name));
+                break;
             case 'T':
                 tid = rdint(f);
-                t = tyunpickle(f);
-                htput(tidmap, (void*)tid, t);
+                ty = tyunpickle(f);
+                htput(tidmap, (void*)tid, ty);
                 /* fix up types */
-                if (t->type == Tyname) {
-                    if (t->issynth)
+                if (ty->type == Tyname) {
+                    if (ty->issynth)
                         break;
-                    if (!gettype(st, t->name) && !t->ishidden)
-                        puttype(s, t->name, t);
-                    if (!hthas(tydedup, t->name))
-                        htput(tydedup, t->name, t);
-                } else if (t->type == Tyunion)  {
-                    for (i = 0; i < t->nmemb; i++)
-                        if (!getucon(s, t->udecls[i]->name) && !t->udecls[i]->synth)
-                            putucon(s, t->udecls[i]);
+                    if (!gettype(st, ty->name) && !ty->ishidden)
+                        puttype(s, ty->name, ty);
+                    if (!hthas(tydedup, ty->name))
+                        htput(tydedup, ty->name, ty);
+                } else if (ty->type == Tyunion)  {
+                    for (i = 0; i < ty->nmemb; i++)
+                        if (!getucon(s, ty->udecls[i]->name) && !ty->udecls[i]->synth)
+                            putucon(s, ty->udecls[i]);
                 }
                 break;
-            case 'R':
-                die("Traits not yet implemented");
             case 'I':
                 die("Impls not yet implemented");
+                break;
             case EOF:
                 break;
         }
