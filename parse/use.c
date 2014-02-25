@@ -145,8 +145,9 @@ static void wrsym(FILE *fd, Node *val)
     wrbool(fd, val->decl.isconst);
     wrbool(fd, val->decl.isgeneric);
     wrbool(fd, val->decl.isextern);
+    wrbool(fd, val->decl.istraitfn);
 
-    if (val->decl.isgeneric)
+    if (val->decl.isgeneric && !val->decl.istraitfn)
         pickle(val->decl.init, fd);
 }
 
@@ -166,6 +167,7 @@ static Node *rdsym(FILE *fd)
     n->decl.isconst = rdbool(fd);
     n->decl.isgeneric = rdbool(fd);
     n->decl.isextern = rdbool(fd);
+    n->decl.istraitfn = rdbool(fd);
 
 
     if (n->decl.isgeneric)
@@ -668,6 +670,8 @@ static void fixmappings(Stab *st)
 /* Usefile format:
  *     U<pkgname>
  *     T<pickled-type>
+ *     R<picled-trait>
+ *     I<pickled-impl>
  *     D<picled-decl>
  *     G<pickled-decl><pickled-initializer>
  */
@@ -738,6 +742,10 @@ foundlib:
                             putucon(s, t->udecls[i]);
                 }
                 break;
+            case 'R':
+                die("Traits not yet implemented");
+            case 'I':
+                die("Impls not yet implemented");
             case EOF:
                 break;
         }
