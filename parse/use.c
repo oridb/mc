@@ -384,7 +384,7 @@ Trait *traitunpickle(FILE *fd)
     n = rdint(fd);
     for (i = 0; i < n; i++)
         lappend(&tr->funcs, &tr->nfuncs, unpickle(fd));
-    htput(trmap, (void*)i, traittab[i]);
+    htput(trmap, (void*)uid, tr);
     return tr;
 }
 
@@ -774,7 +774,8 @@ foundlib:
             case 'R':
                 tr = traitunpickle(f);
                 puttrait(s, tr->name, tr);
-                printf("installing trait %s\n", namestr(tr->name));
+                for (i = 0; i < tr->nfuncs; i++)
+                    putdcl(s, tr->funcs[i]);
                 break;
             case 'T':
                 tid = rdint(f);
@@ -892,6 +893,8 @@ void writeuse(FILE *f, Node *file)
     k = htkeys(st->dcl, &n);
     for (i = 0; i < n; i++) {
         s = getdcl(st, k[i]);
+        if (s->decl.istraitfn)
+            continue;
         if (s && s->decl.isgeneric)
             wrbyte(f, 'G');
         else
