@@ -310,7 +310,7 @@ extern Type **tytab;    /* type -> type map used by inference. size maintained b
 extern Type **types;
 extern size_t ntypes;
 extern Trait **traittab;  /* int -> trait map */
-extern size_t ntraits;
+extern size_t ntraittab;
 extern Node **decls;    /* decl id -> decl map */
 extern size_t ndecls;
 extern size_t maxnid;      /* the maximum node id generated so far */

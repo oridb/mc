@@ -864,7 +864,7 @@ static void addtrait(Type *t, char *str)
 {
     size_t i;
 
-    for (i = 0; i < ntraits; i++) {
+    for (i = 0; i < ntraittab; i++) {
         if (!strcmp(namestr(traittab[i]->name), str)) {
             settrait(t, traittab[i]);
             return;
