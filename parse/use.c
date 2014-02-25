@@ -893,6 +893,7 @@ void writeuse(FILE *f, Node *file)
     k = htkeys(st->dcl, &n);
     for (i = 0; i < n; i++) {
         s = getdcl(st, k[i]);
+        /* trait functions get written out with their traits */
         if (s->decl.istraitfn)
             continue;
         if (s && s->decl.isgeneric)
