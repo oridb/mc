@@ -170,7 +170,7 @@ static Node *rdsym(FILE *fd)
     n->decl.istraitfn = rdbool(fd);
 
 
-    if (n->decl.isgeneric)
+    if (n->decl.isgeneric && !n->decl.istraitfn)
         n->decl.init = unpickle(fd);
     return n;
 }
@@ -248,7 +248,7 @@ static void typickle(FILE *fd, Type *ty)
     }
 }
 
- void traitpickle(FILE *fd, Trait *tr)
+static void traitpickle(FILE *fd, Trait *tr)
 {
     die("Trait pickling not yet implemented");
 }
@@ -835,14 +835,14 @@ void writeuse(FILE *f, Node *file)
             typickle(f, types[i]);
         }
     }
-    /*
+
     for (i = 0; i < ntraittab; i++) {
         if (traittab[i]->vis == Visexport || traittab[i]->vis == Vishidden) {
             wrbyte(f, 'R');
             traitpickle(f, traittab[i]);
         }
     }
-    */
+
     k = htkeys(st->dcl, &n);
     for (i = 0; i < n; i++) {
         s = getdcl(st, k[i]);

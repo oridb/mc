@@ -292,6 +292,7 @@ pkgitem : decl {
             }
         | traitdef {
                 size_t i;
+                $1->vis = Visexport;
                 puttrait(file->file.exports, $1->name, $1);
                 for (i = 0; i < $1->nfuncs; i++)
                     putdcl(file->file.exports, $1->funcs[i]);

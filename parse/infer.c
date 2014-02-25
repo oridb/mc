@@ -838,6 +838,7 @@ static void mergeexports(Inferstate *st, Node *file)
                 fatal(nx->line, "Exported type %s not declared", namestr(nx));
             }
         }
+        trx->vis = Visexport;
     }
     free(k);
 
