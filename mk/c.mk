@@ -6,7 +6,7 @@ _LIBSRCHPATHS=$(addprefix -L, $(dir $(DEPS)))
 _LIBINCPATHS=$(addprefix -I, $(dir $(DEPS)))
 _LIBPATHS=$(addprefix -l, $(patsubst lib%.a,%,$(notdir $(DEPS))))
 
-CFLAGS += -Wall -Werror -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wunreachable-code
+CFLAGS += -Wall -Werror -Wextra -Wno-unused-parameter -Wno-missing-field-initializers
 CFLAGS += -g
 CFLAGS += -MMD -MP -MF ${_DEPSDIR}/$(subst /,-,$*).d
 
