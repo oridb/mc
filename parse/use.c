@@ -259,10 +259,10 @@ static void traitpickle(FILE *fd, Trait *tr)
     typickle(fd, tr->param);
     wrint(fd, tr->nmemb);
     for (i = 0; i < tr->nmemb; i++)
-        pickle(fd, tr->memb[i]);
+        wrsym(fd, tr->memb[i]);
     wrint(fd, tr->nfuncs);
     for (i = 0; i < tr->nfuncs; i++)
-        pickle(fd, tr->funcs[i]);
+        wrsym(fd, tr->funcs[i]);
 }
 
 static void wrtype(FILE *fd, Type *ty)
@@ -380,10 +380,10 @@ Trait *traitunpickle(FILE *fd)
     tr->param = tyunpickle(fd);
     n = rdint(fd);
     for (i = 0; i < n; i++)
-        lappend(&tr->memb, &tr->nmemb, unpickle(fd));
+        lappend(&tr->memb, &tr->nmemb, rdsym(fd));
     n = rdint(fd);
     for (i = 0; i < n; i++)
-        lappend(&tr->funcs, &tr->nfuncs, unpickle(fd));
+        lappend(&tr->funcs, &tr->nfuncs, rdsym(fd));
     htput(trmap, (void*)uid, tr);
     return tr;
 }
@@ -492,6 +492,7 @@ static void pickle(FILE *fd, Node *n)
             wrint(fd, n->decl.isconst);
             wrint(fd, n->decl.isgeneric);
             wrint(fd, n->decl.isextern);
+            wrint(fd, n->decl.istraitfn);
 
             /* init */
             pickle(fd, n->decl.init);
@@ -622,6 +623,7 @@ static Node *unpickle(FILE *fd)
             n->decl.isconst = rdint(fd);
             n->decl.isgeneric = rdint(fd);
             n->decl.isextern = rdint(fd);
+            n->decl.istraitfn = rdint(fd);
 
             /* init */
             n->decl.init = unpickle(fd);
