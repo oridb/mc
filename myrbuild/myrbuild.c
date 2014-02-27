@@ -21,6 +21,9 @@
 Node *file;
 char *filename;
 
+/* options to pass along to the compiler */
+int genasm = 0;
+
 /* binaries we call out to */
 char *mc = "6m";
 char *as = "as";
@@ -238,7 +241,8 @@ void compile(char *file)
     char *deps[512];
     char use[1024];
     char obj[1024];
-    char *extra[] = {"-g", "-o", "" /* filename */};
+    char *extra[32];
+    size_t nextra = 0;
 
     if (hthas(compiled, file))
         return;
@@ -265,14 +269,18 @@ void compile(char *file)
         gencmd(&cmd, &ncmd, muse, file, NULL, 0);
         run(cmd);
 
-        gencmd(&cmd, &ncmd, mc, file, NULL, 0);
+        if (genasm)
+            extra[nextra++] = "-S";
+        gencmd(&cmd, &ncmd, mc, file, extra, nextra);
         run(cmd);
     } else if (hassuffix(file, ".s")) {
         swapsuffix(obj, sizeof obj, file, ".s", ".o");
         if (isfresh(file, obj))
             goto done;
-        extra[2] = obj;
-        gencmd(&cmd, &ncmd, as, file, extra, 3);
+        extra[nextra++] = "-g";
+        extra[nextra++] = "-o";
+        extra[nextra++] = obj;
+        gencmd(&cmd, &ncmd, as, file, extra, nextra);
         run(cmd);
     }
 done:
@@ -449,6 +457,7 @@ int main(int argc, char **argv)
             case 'b': binname = optarg; break;
             case 'l': libname = optarg; break;
             case 's': ldscript = optarg; break;
+            case 'S': genasm = 1; break;
             case 'C': mc = optarg; break;
             case 'A': as = optarg; break;
             case 'M': muse = optarg; break;
