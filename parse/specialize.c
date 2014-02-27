@@ -394,7 +394,7 @@ Node *specializedcl(Node *n, Type *to, Node **name)
         printf("depth[%d] specializing [%d]%s => %s\n", stabstkoff, n->line, namestr(n->decl.name), namestr(*name));
     if (d)
         return d;
-    if (n->decl.istraitfn)
+    if (n->decl.trait)
         fatal(n->line, "No trait implemented for for %s\n", namestr(n->decl.name));
     /* namespaced names need to be looked up in their correct
      * context. */

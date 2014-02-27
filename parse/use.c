@@ -16,7 +16,7 @@ static void rdtype(FILE *fd, Type **dest);
 static void wrstab(FILE *fd, Stab *val);
 static Stab *rdstab(FILE *fd);
 static void wrsym(FILE *fd, Node *val);
-static Node *rdsym(FILE *fd);
+static Node *rdsym(FILE *fd, Trait *ctx);
 static void pickle(FILE *fd, Node *n);
 static Node *unpickle(FILE *fd);
 
@@ -79,7 +79,7 @@ static Stab *rdstab(FILE *fd)
     st->name = unpickle(fd);
     n = rdint(fd);
     for (i = 0; i < n; i++)
-        putdcl(st, rdsym(fd));
+        putdcl(st, rdsym(fd, NULL));
 
     /* read types */
     n = rdint(fd);
@@ -146,13 +146,12 @@ static void wrsym(FILE *fd, Node *val)
     wrbool(fd, val->decl.isconst);
     wrbool(fd, val->decl.isgeneric);
     wrbool(fd, val->decl.isextern);
-    wrbool(fd, val->decl.istraitfn);
 
-    if (val->decl.isgeneric && !val->decl.istraitfn)
+    if (val->decl.isgeneric && !val->decl.trait)
         pickle(fd, val->decl.init);
 }
 
-static Node *rdsym(FILE *fd)
+static Node *rdsym(FILE *fd, Trait *ctx)
 {
     int line;
     Node *name;
@@ -165,13 +164,12 @@ static Node *rdsym(FILE *fd)
 
     if (rdint(fd) == Vishidden)
         n->decl.ishidden = 1;
+    n->decl.trait = ctx;
     n->decl.isconst = rdbool(fd);
     n->decl.isgeneric = rdbool(fd);
     n->decl.isextern = rdbool(fd);
-    n->decl.istraitfn = rdbool(fd);
 
-
-    if (n->decl.isgeneric && !n->decl.istraitfn)
+    if (n->decl.isgeneric && !ctx)
         n->decl.init = unpickle(fd);
     return n;
 }
@@ -380,10 +378,10 @@ Trait *traitunpickle(FILE *fd)
     tr->param = tyunpickle(fd);
     n = rdint(fd);
     for (i = 0; i < n; i++)
-        lappend(&tr->memb, &tr->nmemb, rdsym(fd));
+        lappend(&tr->memb, &tr->nmemb, rdsym(fd, tr));
     n = rdint(fd);
     for (i = 0; i < n; i++)
-        lappend(&tr->funcs, &tr->nfuncs, rdsym(fd));
+        lappend(&tr->funcs, &tr->nfuncs, rdsym(fd, tr));
     htput(trmap, (void*)uid, tr);
     return tr;
 }
@@ -492,7 +490,6 @@ static void pickle(FILE *fd, Node *n)
             wrint(fd, n->decl.isconst);
             wrint(fd, n->decl.isgeneric);
             wrint(fd, n->decl.isextern);
-            wrint(fd, n->decl.istraitfn);
 
             /* init */
             pickle(fd, n->decl.init);
@@ -623,7 +620,6 @@ static Node *unpickle(FILE *fd)
             n->decl.isconst = rdint(fd);
             n->decl.isgeneric = rdint(fd);
             n->decl.isextern = rdint(fd);
-            n->decl.istraitfn = rdint(fd);
 
             /* init */
             n->decl.init = unpickle(fd);
@@ -770,7 +766,7 @@ foundlib:
                 break;
             case 'G':
             case 'D':
-                dcl = rdsym(f);
+                dcl = rdsym(f, NULL);
                 putdcl(s, dcl);
                 break;
             case 'R':
@@ -896,7 +892,7 @@ void writeuse(FILE *f, Node *file)
     for (i = 0; i < n; i++) {
         s = getdcl(st, k[i]);
         /* trait functions get written out with their traits */
-        if (s->decl.istraitfn)
+        if (s->decl.trait)
             continue;
         if (s && s->decl.isgeneric)
             wrbyte(f, 'G');

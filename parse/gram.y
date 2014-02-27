@@ -342,8 +342,10 @@ traitdef: Ttrait Tident generictype /* trait prototype */ {
         | Ttrait Tident generictype Tasn traitbody Tendblk /* trait definition */ {
                 size_t i;
                 $$ = mktrait($1->line, mkname($2->line, $2->str), $3, NULL, 0, $5.nl, $5.nn, 0);
-                for (i = 0; i < $5.nn; i++)
+                for (i = 0; i < $5.nn; i++) {
+                    $5.nl[i]->decl.trait = $$;
                     $5.nl[i]->decl.isgeneric = 1;
+                }
             }
         ;
 
@@ -354,7 +356,6 @@ traitbody
                 $$ = $1;
                 d = mkdecl($2->line, mkname($2->line, $2->str), $4);
                 d->decl.isgeneric = 1;
-                d->decl.istraitfn = 1;
                 lappend(&$$.nl, &$$.nn, d);
             }
         ;
