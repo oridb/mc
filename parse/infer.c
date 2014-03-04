@@ -1375,6 +1375,7 @@ static void specializeimpl(Inferstate *st, Node *n)
                    n->line, namestr(proto->decl.name), tystr(type(st, proto)), namestr(name), tystr(ty));
         lappend(&file->file.stmts, &file->file.nstmts, dcl);
     }
+    putimpl(curstab(), n);
 }
 
 static void inferdecl(Inferstate *st, Node *n)

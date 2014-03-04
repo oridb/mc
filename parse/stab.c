@@ -63,6 +63,28 @@ static int nsnameeq(void *a, void *b)
     return a == b || !strcmp(namestr(a), namestr(b));
 }
 
+static ulong implhash(void *p)
+{
+    Node *n;
+    ulong h;
+
+    n = p;
+    h = nsnamehash(n->impl.traitname);
+    h *= tyhash(n->impl.type);
+    return h;
+}
+
+static int impleq(void *pa, void *pb)
+{
+    Node *a, *b;
+
+    a = pa;
+    b = pb;
+    if (nsnameeq(a->impl.traitname, b->impl.traitname))
+        return tyeq(a->impl.type, b->impl.type);
+    return 0;
+}
+
 Stab *mkstab()
 {
     Stab *st;
@@ -73,6 +95,7 @@ Stab *mkstab()
     st->ty = mkht(nsnamehash, nsnameeq);
     st->tr = mkht(nsnamehash, nsnameeq);
     st->uc = mkht(nsnamehash, nsnameeq);
+    st->impl = mkht(implhash, impleq);
     return st;
 }
 
@@ -234,6 +257,20 @@ void puttrait(Stab *st, Node *n, Trait *c)
     td->name = n;
     td->trait = c;
     htput(st->tr, td->name, td);
+}
+
+void putimpl(Stab *st, Node *n)
+{
+    if (hasimpl(st, n))
+        fatal(n->line, "Trait %s already defined", namestr(n));
+    if (st->name)
+        setns(n->impl.traitname, namestr(st->name));
+    htput(st->impl, n, n);
+}
+
+int hasimpl(Stab *st, Node *n)
+{
+    return hthas(st->impl, n);
 }
 
 void putns(Stab *st, Stab *scope)

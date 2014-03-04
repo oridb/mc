@@ -97,11 +97,12 @@ struct Stab {
     /* Contents of stab.
      * types and values are in separate namespaces. */
     Htab *dcl;
-    Htab *closure; /* the syms we close over */
-    Htab *ns; /* namespaces */
-    Htab *ty; /* types */
-    Htab *tr; /* traits */
-    Htab *uc; /* union constructors */
+    Htab *closure;      /* the syms we close over */
+    Htab *ns;           /* namespaces */
+    Htab *ty;           /* types */
+    Htab *tr;           /* traits */
+    Htab *uc;           /* union constructors */
+    Htab *impl;         /* trait implementations: really a set of implemented traits. */
 };
 
 struct Type {
@@ -380,6 +381,7 @@ Stab *mkstab(void);
 void putns(Stab *st, Stab *scope);
 void puttype(Stab *st, Node *n, Type *ty);
 void puttrait(Stab *st, Node *n, Trait *trait);
+void putimpl(Stab *st, Node *impl);
 void updatetype(Stab *st, Node *n, Type *t);
 void putdcl(Stab *st, Node *dcl);
 void forcedcl(Stab *st, Node *dcl);
@@ -390,6 +392,7 @@ Stab *getns_str(Stab *st, char *n);
 Node *getdcl(Stab *st, Node *n);
 Type *gettype_l(Stab *st, Node *n);
 Type *gettype(Stab *st, Node *n);
+int hasimpl(Stab *st, Node *impl);
 Trait *gettrait(Stab *st, Node *n);
 Ucon *getucon(Stab *st, Node *n);
 
