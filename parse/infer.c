@@ -799,6 +799,7 @@ static void mergeexports(Inferstate *st, Node *file)
     exports = file->file.exports;
     globls = file->file.globls;
 
+    /* export the types */
     pushstab(globls);
     k = htkeys(exports->ty, &nk);
     for (i = 0; i < nk; i++) {
@@ -820,6 +821,7 @@ static void mergeexports(Inferstate *st, Node *file)
     }
     free(k);
 
+    /* export the traits */
     k = htkeys(exports->tr, &nk);
     for (i = 0; i < nk; i++) {
         trx = gettrait(exports, k[i]);
@@ -829,20 +831,20 @@ static void mergeexports(Inferstate *st, Node *file)
             if (!trg)
                 puttrait(globls, nx, trx);
             else
-                fatal(nx->line, "Exported type %s already declared on line %d", namestr(nx), tg->line);
+                fatal(nx->line, "Exported trait %s already declared on line %d", namestr(nx), tg->line);
         } else {
             trg = gettrait(globls, nx);
             if (trg && !trg->isproto) {
                 *trx = *trg;
             } else {
-                fatal(nx->line, "Exported type %s not declared", namestr(nx));
+                fatal(nx->line, "Exported trait %s not declared", namestr(nx));
             }
         }
         trx->vis = Visexport;
     }
     free(k);
 
-
+    /* export the declarations */
     k = htkeys(exports->dcl, &nk);
     for (i = 0; i < nk; i++) {
         nx = getdcl(exports, k[i]);
@@ -861,6 +863,8 @@ static void mergeexports(Inferstate *st, Node *file)
     free(k);
 
 
+
+    /* export the union constructors */
     k = htkeys(exports->uc, &nk);
     for (i = 0; i < nk; i++) {
         ux = getucon(exports, k[i]);
