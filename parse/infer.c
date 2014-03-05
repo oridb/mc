@@ -1331,6 +1331,8 @@ static void specializeimpl(Inferstate *st, Node *n)
     t = gettrait(curstab(), n->impl.traitname);
     if (!t)
         fatal(n->line, "No trait %s\n", namestr(n->impl.traitname));
+    n->impl.type = tf(st, n->impl.type);
+    putimpl(curstab(), n);
 
     dcl = NULL;
     proto = NULL;
@@ -1375,7 +1377,6 @@ static void specializeimpl(Inferstate *st, Node *n)
                    n->line, namestr(proto->decl.name), tystr(type(st, proto)), namestr(name), tystr(ty));
         lappend(&file->file.stmts, &file->file.nstmts, dcl);
     }
-    putimpl(curstab(), n);
 }
 
 static void inferdecl(Inferstate *st, Node *n)

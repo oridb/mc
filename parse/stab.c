@@ -251,7 +251,7 @@ void puttrait(Stab *st, Node *n, Trait *c)
     if (gettrait(st, n))
         fatal(n->line, "Trait %s already defined", namestr(n));
     if (gettype(st, n))
-        fatal(n->line, "Trait %s already defined as type", namestr(n));
+        fatal(n->line, "Trait %s already defined as a type", namestr(n));
     td = xalloc(sizeof(Tydefn));
     td->line = n->line;
     td->name = n;
@@ -262,7 +262,7 @@ void puttrait(Stab *st, Node *n, Trait *c)
 void putimpl(Stab *st, Node *n)
 {
     if (hasimpl(st, n))
-        fatal(n->line, "Trait %s already defined", namestr(n));
+        fatal(n->line, "Trait %s already implemented over %s", namestr(n->impl.traitname), tystr(n->impl.type));
     if (st->name)
         setns(n->impl.traitname, namestr(st->name));
     htput(st->impl, n, n);

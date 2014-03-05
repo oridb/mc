@@ -255,8 +255,6 @@ struct Node {
             Node *name;
             Type *type;
             Node *init;
-            Node **impls;
-            size_t nimpls;
             /* 
              If we have a link to a trait, we should only look it up
              when specializing, but we should not create a new decl
