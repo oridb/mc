@@ -844,6 +844,33 @@ static void mergeexports(Inferstate *st, Node *file)
     }
     free(k);
 
+    /* export the impls */
+    k = htkeys(exports->impl, &nk);
+    for (i = 0; i < nk; i++) {
+        nx = getimpl(exports, k[i]);
+        ng = getimpl(globls, k[i]);
+
+        nx->impl.type = tf(st, nx->impl.type);
+        if (ng)
+            ng->impl.type = tf(st, ng->impl.type);
+
+        if (nx->impl.isproto) {
+            if (!ng)
+                fatal(nx->line, "Missing trait impl body for %s %s\n", namestr(nx->impl.traitname), tystr(nx->impl.type));
+            nx->impl.isproto = 0;
+            nx->impl.decls = ng->impl.decls;
+            nx->impl.ndecls = ng->impl.ndecls;
+        } else {
+            if (ng)
+                fatal(nx->line, "Double trait impl body for %s %s on line %d\n",
+                      namestr(nx->impl.traitname), tystr(nx->impl.type), ng->line);
+            else
+                putimpl(globls, nx);
+        }
+
+    }
+    free(k);
+
     /* export the declarations */
     k = htkeys(exports->dcl, &nk);
     for (i = 0; i < nk; i++) {

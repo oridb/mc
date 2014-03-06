@@ -300,6 +300,8 @@ struct Node {
             Type *type;
             Node **decls;
             size_t ndecls;
+            Vis vis;
+            char isproto;
         } impl;
     };
 };
@@ -316,6 +318,8 @@ extern Trait **traittab;  /* int -> trait map */
 extern size_t ntraittab;
 extern Node **decls;    /* decl id -> decl map */
 extern size_t ndecls;
+extern Node **exportimpls;
+extern size_t nexportimpls;
 extern size_t maxnid;      /* the maximum node id generated so far */
 
 extern int ispureop[];
@@ -390,7 +394,7 @@ Stab *getns_str(Stab *st, char *n);
 Node *getdcl(Stab *st, Node *n);
 Type *gettype_l(Stab *st, Node *n);
 Type *gettype(Stab *st, Node *n);
-int hasimpl(Stab *st, Node *impl);
+Node *getimpl(Stab *st, Node *impl);
 Trait *gettrait(Stab *st, Node *n);
 Ucon *getucon(Stab *st, Node *n);
 

@@ -261,16 +261,23 @@ void puttrait(Stab *st, Node *n, Trait *c)
 
 void putimpl(Stab *st, Node *n)
 {
-    if (hasimpl(st, n))
+    if (getimpl(st, n))
         fatal(n->line, "Trait %s already implemented over %s", namestr(n->impl.traitname), tystr(n->impl.type));
     if (st->name)
         setns(n->impl.traitname, namestr(st->name));
     htput(st->impl, n, n);
 }
 
-int hasimpl(Stab *st, Node *n)
+Node *getimpl(Stab *st, Node *n)
 {
-    return hthas(st->impl, n);
+    Node *imp;
+    
+    do {
+        if ((imp = htget(st->impl, n)))
+            return imp;
+        st = st->super;
+    } while (st);
+    return NULL;
 }
 
 void putns(Stab *st, Stab *scope)

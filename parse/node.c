@@ -15,6 +15,8 @@
 size_t maxnid;
 Node **decls;
 size_t ndecls;
+Node **exportimpls;
+size_t nexportimpls;
 
 Node *mknode(int line, Ntype nt)
 {

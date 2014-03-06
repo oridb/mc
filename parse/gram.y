@@ -297,7 +297,10 @@ pkgitem : decl {
                 for (i = 0; i < $1->nfuncs; i++)
                     putdcl(file->file.exports, $1->funcs[i]);
             }
-        | implstmt
+        | implstmt {
+                $1->impl.vis = Visexport;
+                lappend(&exportimpls, &nexportimpls, $1);
+            }
         | visdef {die("Unimplemented visdef");}
         | /* empty */
         ;

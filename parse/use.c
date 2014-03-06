@@ -263,6 +263,11 @@ static void traitpickle(FILE *fd, Trait *tr)
         wrsym(fd, tr->funcs[i]);
 }
 
+static void implpickle(FILE *fd, Node *impl)
+{
+    die("Pickling impls not yet supported.");
+}
+
 static void wrtype(FILE *fd, Type *ty)
 {
     if (ty->tid >= Builtinmask)
@@ -885,6 +890,13 @@ void writeuse(FILE *f, Node *file)
         if (traittab[i]->vis == Visexport || traittab[i]->vis == Vishidden) {
             wrbyte(f, 'R');
             traitpickle(f, traittab[i]);
+        }
+    }
+
+    for (i = 0; i < nexportimpls; i++) {
+        if (exportimpls[i]->impl.vis == Visexport || exportimpls[i]->impl.vis == Vishidden) {
+            wrbyte(f, 'R');
+            implpickle(f, exportimpls[i]);
         }
     }
 
