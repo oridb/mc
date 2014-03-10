@@ -55,6 +55,7 @@ static void usage(char *prog)
     printf("\t-l lib\tBuild a library called 'name'\n");
     printf("\t-s script\tUse the linker script 'script' when linking\n");
     printf("\t-I path\tAdd 'path' to use search path\n");
+    printf("\t-S\tGenerate assembly files for all compiled code\n");
 }
 
 int hassuffix(char *path, char *suffix)
@@ -452,7 +453,7 @@ int main(int argc, char **argv)
 
     if (uname(&name) == 0)
         sysname = strdup(name.sysname);
-    while ((opt = getopt(argc, argv, "hb:l:s:I:C:A:M:L:R:")) != -1) {
+    while ((opt = getopt(argc, argv, "hb:l:s:SI:C:A:M:L:R:")) != -1) {
         switch (opt) {
             case 'b': binname = optarg; break;
             case 'l': libname = optarg; break;
