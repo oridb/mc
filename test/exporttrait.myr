@@ -1,0 +1,14 @@
+pkg =
+	trait t @a
+	impl t int
+;;
+
+trait t @a =
+	frob    : (v : @a -> @a)
+;;
+
+impl t int =
+	frob = {v
+		-> v*2
+	}
+;;

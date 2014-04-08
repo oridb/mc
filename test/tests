@@ -120,6 +120,7 @@ B strsplit	C
 B strfind	C
 B strjoin	C
 B bigint	C
+B exporttrait
 # B local-labels	E	10 ## BUGGERED
 F declmismatch
 F infermismatch
