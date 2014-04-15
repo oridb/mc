@@ -857,15 +857,17 @@ static void mergeexports(Inferstate *st, Node *file)
         if (nx->impl.isproto) {
             if (!ng)
                 fatal(nx->line, "Missing trait impl body for %s %s\n", namestr(nx->impl.traitname), tystr(nx->impl.type));
-            nx->impl.isproto = 0;
-            nx->impl.decls = ng->impl.decls;
-            nx->impl.ndecls = ng->impl.ndecls;
+            htdel(exports->impl, k[i]);
+            putimpl(exports, ng);
+            lappend(&exportimpls, &nexportimpls, ng);
         } else {
-            if (ng)
+            if (!ng) {
+                putimpl(globls, nx);
+                lappend(&exportimpls, &nexportimpls, nx);
+            } else {
                 fatal(nx->line, "Double trait impl body for %s %s on line %d\n",
                       namestr(nx->impl.traitname), tystr(nx->impl.type), ng->line);
-            else
-                putimpl(globls, nx);
+            }
         }
 
     }
@@ -1360,6 +1362,7 @@ static void specializeimpl(Inferstate *st, Node *n)
     size_t i, j;
 
     t = gettrait(curstab(), n->impl.traitname);
+    n->impl.trait = t;
     if (!t)
         fatal(n->line, "No trait %s\n", namestr(n->impl.traitname));
     n->impl.type = tf(st, n->impl.type);

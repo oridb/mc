@@ -299,7 +299,6 @@ pkgitem : decl {
             }
         | implstmt {
                 $1->impl.vis = Visexport;
-                lappend(&exportimpls, &nexportimpls, $1);
             }
         | visdef {die("Unimplemented visdef");}
         | /* empty */
