@@ -265,7 +265,15 @@ static void traitpickle(FILE *fd, Trait *tr)
 
 static void implpickle(FILE *fd, Node *impl)
 {
-    die("Pickling impls not yet supported.");
+    size_t i;
+
+    assert(!impl->impl.isproto);
+    assert(impl->impl.trait != NULL);
+
+    wrint(fd, impl->impl.trait->uid);
+    wrtype(fd, impl->impl.type);
+    for (i = 0; i < impl->impl.ndecls; i++)
+        pickle(fd, impl->impl.decls[i]);
 }
 
 static void wrtype(FILE *fd, Type *ty)
