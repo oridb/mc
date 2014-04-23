@@ -10,47 +10,80 @@ pkg std =
 
 	generic inthash	: (v : @a::(integral,numeric)	-> uint32)
 	generic inteq	: (a : @a::(integral,numeric), b : @a::(integral,numeric) -> bool)
+
+	const murmurhash2	: (data : byte[:], seed : uint32 -> uint32)
 ;;
+
+const Seed = 1234
 
 /* Supremely simple djb hash. */
 const strhash = {s
-	var h
-	
-	h = 5381
-	for b in s
-		h = (h << 5) + h + (b castto(uint32))
-	;;
-	-> h
+	-> murmurhash2(s, Seed)
 }
 
 const streq = {a, b
 	-> sleq(a, b)
 }
 
-/* FIXME: come up with a *good* hash function */
-generic ptrhash = {p
+generic ptrhash = {p : @a#
 	var x
 
-	x = p castto(intptr)
-	/* Mix the top bits in to the bottom, and multiply by a large prime. */
-	x = x ^ (x >> 32) * 357913941	
-	-> x castto(uint32)
+	x = &p castto(byte#)
+	-> murmurhash2(x[0:sizeof(@a)], Seed)
 }
 
 generic ptreq = {a, b
 	-> a == b
 }
 
-/* FIXME: come up with a *good* hash function */
-generic inthash = {v
-	var x
+generic inthash = {v : @a::(integral,numeric)
+	var p
 
-	x = v castto(uint64)
-	/* Mix the top bits in to the bottom, and multiply by a large prime. */
-	x = x ^ (x >> 32) * 357913941	
-	-> x castto(uint32)
+	p = &v castto(byte#)
+	-> murmurhash2(p[0:sizeof(@a)], Seed)
 }
 
 generic inteq = {a, b
 	-> a == b
+}
+
+const murmurhash2 = {data, seed
+	const m = 0x5bd1e995;
+	const r = 24
+	var h, k
+	
+	h = seed ^ data.len
+	while data.len >= 4
+		k = (data[0] castto(uint32))
+		k |= (data[1] castto(uint32)) << 8
+		k |= (data[2] castto(uint32)) << 16
+		k |= (data[3] castto(uint32)) << 24
+
+		k *= m
+		k ^= k >> r
+		k *= m
+
+		h *= m
+		h ^= k
+		data = data[4:]
+	;;
+
+	match data.len
+	| 3:
+		h ^= (data[2] castto(uint32)) << 16
+		h ^= (data[1] castto(uint32)) <<8
+		h ^= (data[0] castto(uint32))
+	| 2:
+		h ^= (data[1] castto(uint32)) <<8
+		h ^= (data[0] castto(uint32))
+	| 1:
+		h ^= (data[0] castto(uint32))
+	;;
+	h *= m
+
+	h ^= h >> 13
+	h *= m
+	h ^= h >> 15
+
+	-> h
 }
