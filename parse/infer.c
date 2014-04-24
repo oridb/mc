@@ -1362,9 +1362,9 @@ static void specializeimpl(Inferstate *st, Node *n)
     size_t i, j;
 
     t = gettrait(curstab(), n->impl.traitname);
-    n->impl.trait = t;
     if (!t)
         fatal(n->line, "No trait %s\n", namestr(n->impl.traitname));
+    n->impl.trait = t;
     n->impl.type = tf(st, n->impl.type);
     putimpl(curstab(), n);
 
@@ -1374,11 +1374,12 @@ static void specializeimpl(Inferstate *st, Node *n)
         /* look up the prototype */
         proto = NULL;
         dcl = n->impl.decls[i];
+
         /*
            since the decls in an impl are not installed in a namespace, their names
-           are not updated when we call updatens() on the symbol table. Since we need
+           are not updated when we call updatens() on the symbol table. Because we need
            to do namespace dependent comparisons for specializing, we need to set the
-           namespace.
+           namespace here.
          */
         if (file->file.globls->name)
             setns(dcl->decl.name, namestr(file->file.globls->name));

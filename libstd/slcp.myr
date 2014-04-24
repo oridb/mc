@@ -1,16 +1,34 @@
 use "die.use"
+use "types.use"
 
 pkg std =
 	generic slcp : (a : @a[:], b : @a[:] -> void)
 ;;
 
-generic slcp = {a, b
+generic slcp = {a : @a[:], b : @a[:]
 	var i
+	var addr_a, addr_b
 
 	assert(a.len == b.len, "arguments to slcp() must be of equal length")
 
-	for i = 0; i < a.len; i++
-		a[i] = b[i]
+	addr_a = a castto(@a#) castto(intptr)
+	addr_b = b castto(@a#) castto(intptr)
+	if forwardcopy(addr_a, addr_b)
+		for i = 0; i < a.len; i++
+			a[i] = b[i]
+		;;
+	else
+		for i = a.len; i > 0; i--
+			a[i - 1] = b[i - 1]
+		;;
 	;;
+		
 }
 
+const forwardcopy = {a, b
+	if a <= b
+		-> true
+	else
+		-> false
+	;;
+}

@@ -1,0 +1,19 @@
+use std
+
+const main = {
+	var a = [1,2,3,4,5]
+	var b = [6,7,8,9,10]
+	
+
+	std.slcp(a[:a.len-2], a[2:])
+	std.slcp(b[2:], b[:b.len-2])
+
+	for x in a
+		std.put("%i ", x)
+	;;
+	std.put("\n")
+	for x in b
+		std.put("%i ", x)
+	;;
+	std.put("\n")
+}
