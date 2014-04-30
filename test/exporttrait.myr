@@ -12,3 +12,7 @@ impl t int =
 		-> v*2
 	}
 ;;
+
+/* shut up the linker: we just want to compile this. */
+const main = {
+}
