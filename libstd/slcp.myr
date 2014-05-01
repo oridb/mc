@@ -13,7 +13,7 @@ generic slcp = {a : @a[:], b : @a[:]
 
 	addr_a = a castto(@a#) castto(intptr)
 	addr_b = b castto(@a#) castto(intptr)
-	if forwardcopy(addr_a, addr_b)
+	if addr_a <= addr_b
 		for i = 0; i < a.len; i++
 			a[i] = b[i]
 		;;
@@ -23,12 +23,4 @@ generic slcp = {a : @a[:], b : @a[:]
 		;;
 	;;
 		
-}
-
-const forwardcopy = {a, b
-	if a <= b
-		-> true
-	else
-		-> false
-	;;
 }
