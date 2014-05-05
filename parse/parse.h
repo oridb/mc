@@ -297,6 +297,7 @@ struct Node {
 
         struct {
             Node *traitname;
+            Trait *trait;
             Type *type;
             Node **decls;
             size_t ndecls;

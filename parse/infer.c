@@ -857,15 +857,17 @@ static void mergeexports(Inferstate *st, Node *file)
         if (nx->impl.isproto) {
             if (!ng)
                 fatal(nx->line, "Missing trait impl body for %s %s\n", namestr(nx->impl.traitname), tystr(nx->impl.type));
-            nx->impl.isproto = 0;
-            nx->impl.decls = ng->impl.decls;
-            nx->impl.ndecls = ng->impl.ndecls;
+            htdel(exports->impl, k[i]);
+            putimpl(exports, ng);
+            lappend(&exportimpls, &nexportimpls, ng);
         } else {
-            if (ng)
+            if (!ng) {
+                putimpl(globls, nx);
+                lappend(&exportimpls, &nexportimpls, nx);
+            } else {
                 fatal(nx->line, "Double trait impl body for %s %s on line %d\n",
                       namestr(nx->impl.traitname), tystr(nx->impl.type), ng->line);
-            else
-                putimpl(globls, nx);
+            }
         }
 
     }
@@ -1362,6 +1364,7 @@ static void specializeimpl(Inferstate *st, Node *n)
     t = gettrait(curstab(), n->impl.traitname);
     if (!t)
         fatal(n->line, "No trait %s\n", namestr(n->impl.traitname));
+    n->impl.trait = t;
     n->impl.type = tf(st, n->impl.type);
     putimpl(curstab(), n);
 
@@ -1371,11 +1374,12 @@ static void specializeimpl(Inferstate *st, Node *n)
         /* look up the prototype */
         proto = NULL;
         dcl = n->impl.decls[i];
+
         /*
            since the decls in an impl are not installed in a namespace, their names
-           are not updated when we call updatens() on the symbol table. Since we need
+           are not updated when we call updatens() on the symbol table. Because we need
            to do namespace dependent comparisons for specializing, we need to set the
-           namespace.
+           namespace here.
          */
         if (file->file.globls->name)
             setns(dcl->decl.name, namestr(file->file.globls->name));
