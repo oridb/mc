@@ -1,0 +1,13 @@
+use "option.use"
+use "fmt.use"
+
+pkg std =
+	generic try : (v : option(@a) -> @a)
+;;
+
+generic try = {v
+	match v
+	| `Some x:	-> x
+	| `None:	fatal(1, "expected `Some @a, got `None\n")
+	;;
+}

@@ -42,6 +42,7 @@ MYRSRC= \
     strsplit.myr \
     strstrip.myr \
     sys.myr \
+    try.myr \
     types.myr \
     units.myr \
     utf.myr \
