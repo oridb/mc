@@ -2033,6 +2033,10 @@ static void specialize(Inferstate *st, Node *f)
         d = specializedcl(st->genericdecls[i], st->specializations[i]->expr.type, &name);
         st->specializations[i]->expr.args[0] = name;
         st->specializations[i]->expr.did = d->decl.did;
+
+        /* we need to sub in default types in the specialization, so call
+         * typesub on the specialized function */
+        typesub(st, d);
         popstab();
     }
 }

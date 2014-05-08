@@ -114,6 +114,7 @@ static void outnode(Node *n, FILE *fd, int depth)
 {
     size_t i;
     char *ty;
+    char *tr;
     int tid;
     char buf[1024];
 
@@ -138,8 +139,11 @@ static void outnode(Node *n, FILE *fd, int depth)
                 outnode(n->file.stmts[i], fd, depth + 1);
             break;
         case Ndecl:
+            tr = "";
+            if (n->decl.trait)
+                tr = namestr(n->decl.trait->name);
             fprintf(fd, "(did = %zd, trait=%s, isconst = %d, isgeneric = %d, isextern = %d, vis = %d)\n",
-                    n->decl.did, namestr(n->decl.trait->name), n->decl.isconst, n->decl.isgeneric, n->decl.isextern, n->decl.vis);
+                    n->decl.did, tr, n->decl.isconst, n->decl.isgeneric, n->decl.isextern, n->decl.vis);
             outsym(n, fd, depth + 1);
             outnode(n->decl.init, fd, depth + 1);
             break;
