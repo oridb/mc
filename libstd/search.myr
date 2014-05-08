@@ -1,0 +1,42 @@
+use "cmp.use"
+use "option.use"
+use "fmt.use"
+
+pkg std =
+	generic lsearch	: (sl : @t[:], val : @t, cmp : (a : @t, b : @t -> order) -> option(@idx::(integral,numeric)))
+	generic bsearch	: (sl : @t[:], val : @t, cmp : (a : @t, b : @t -> order) -> option(@idx::(integral,numeric)))
+;;
+
+/* linear search over a list of values */
+generic lsearch = {sl, val, cmp
+	var i
+
+	for i = 0; i < sl.len; i++
+		match cmp(sl[i], val)
+		| `Equal:
+			-> `Some i
+		;;
+	;;
+	-> `None
+}
+
+/* binary search over a sorted list of values. */
+generic bsearch  = {sl, val, cmp
+	var hi, lo, mid
+
+	lo = 0
+	hi = sl.len - 1
+
+	while lo <= hi
+		mid = (hi + lo) / 2
+		match cmp(val, sl[mid])
+		| `Before:	hi = mid - 1
+		| `After:	lo = mid + 1
+		| `Equal:	
+			-> `Some mid
+		;;
+	;;
+	-> `None
+}
+		
+

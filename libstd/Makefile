@@ -27,6 +27,7 @@ MYRSRC= \
     optparse.myr \
     rand.myr \
     resolve.myr \
+    search.myr \
     slcp.myr \
     sldup.myr \
     sleq.myr \

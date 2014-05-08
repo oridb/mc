@@ -1,0 +1,33 @@
+use std
+
+const sl = [1, 3, 5, 8, 9, 33]
+
+const main = {
+
+	expect(std.lsearch(sl[:], 1, std.numcmp), `std.Some 0)
+	expect(std.lsearch(sl[:], 33, std.numcmp), `std.Some sl.len - 1)
+	expect(std.lsearch(sl[:], 5, std.numcmp), `std.Some 2)
+	expect(std.lsearch(sl[:], 6, std.numcmp), `std.None)
+
+	expect(std.bsearch(sl[:], 1, std.numcmp), `std.Some 0)
+	expect(std.bsearch(sl[:], 33, std.numcmp), `std.Some sl.len - 1)
+	expect(std.bsearch(sl[:], 5, std.numcmp), `std.Some 2)
+	expect(std.bsearch(sl[:], 6, std.numcmp), `std.None)
+}
+
+const expect = {a, b
+	match a
+	| `std.None:
+		match b
+		| `std.Some x: std.fatal(1, "Expected `std.None, `std.None, got `std.None, `std.Some %i\n", x)
+		;;
+	| `std.Some x:
+		match b
+		| `std.None: std.fatal(1, "Expected `std.Some %i, `std.Some %i, got `std.Some %i, `std.None\n", x, x, x)
+		| `std.Some y: 
+			if x != y
+				std.fatal(1, "Expected `std.Some %i, `std.Some %i, got `std.Some %i, `std.Some %i\n", x, x, x, y)
+			;;
+		;;
+	;;
+}

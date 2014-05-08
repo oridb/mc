@@ -115,6 +115,7 @@ B encodechar	P	1世界äa
 B strtab	C
 B catfile	C
 B stdsort	C
+B stdsearch	E	0
 B strstrip	C
 B strsplit	C
 B strfind	C
