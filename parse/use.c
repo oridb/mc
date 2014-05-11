@@ -901,7 +901,7 @@ void writeuse(FILE *f, Node *file)
 
     for (i = 0; i < nexportimpls; i++) {
         if (exportimpls[i]->impl.vis == Visexport || exportimpls[i]->impl.vis == Vishidden) {
-            wrbyte(f, 'R');
+            wrbyte(f, 'I');
             implpickle(f, exportimpls[i]);
         }
     }
