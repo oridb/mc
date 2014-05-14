@@ -32,9 +32,9 @@ MYRSRC= \
     sldup.myr \
     sleq.myr \
     slfill.myr \
-    slinsert.myr \
     sljoin.myr \
     slpush.myr \
+    slput.myr \
     slurp.myr \
     sort.myr \
     strfind.myr \
