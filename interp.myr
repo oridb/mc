@@ -63,7 +63,7 @@ const run = {re
 	var thr
 	var states
 
-	states = std.mkbitset()
+	states = std.mkbs()
 	re.runq = mkthread(re, 0)
 	re.runq.mstart = std.slalloc(re.nmatch)
 	re.runq.mend = std.slalloc(re.nmatch)
