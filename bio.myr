@@ -201,8 +201,11 @@ const read = {f, dst
 const flush = {f
 	var ret
 
-	ret = (writebuf(f.fd, f.wbuf[:f.wend]) == f.wend)
-	f.wend = 0
+	ret = true
+	if f.mode & Wr != 0
+		ret = (writebuf(f.fd, f.wbuf[:f.wend]) == f.wend)
+		f.wend = 0
+	;;
 	-> ret
 }
 
