@@ -859,11 +859,10 @@ static void mergeexports(Inferstate *st, Node *file)
                 fatal(nx->line, "Missing trait impl body for %s %s\n", namestr(nx->impl.traitname), tystr(nx->impl.type));
             htdel(exports->impl, k[i]);
             putimpl(exports, ng);
-            lappend(&exportimpls, &nexportimpls, ng);
+            ng->impl.vis = Visexport;
         } else {
             if (!ng) {
                 putimpl(globls, nx);
-                lappend(&exportimpls, &nexportimpls, nx);
             } else {
                 fatal(nx->line, "Double trait impl body for %s %s on line %d\n",
                       namestr(nx->impl.traitname), tystr(nx->impl.type), ng->line);

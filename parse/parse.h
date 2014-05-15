@@ -319,8 +319,8 @@ extern Trait **traittab;  /* int -> trait map */
 extern size_t ntraittab;
 extern Node **decls;    /* decl id -> decl map */
 extern size_t ndecls;
-extern Node **exportimpls;
-extern size_t nexportimpls;
+extern Node **impls;
+extern size_t nimpls;
 extern size_t maxnid;      /* the maximum node id generated so far */
 
 extern int ispureop[];

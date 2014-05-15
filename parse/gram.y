@@ -194,7 +194,9 @@ file    : toplev
 
 toplev  : package
         | use {lappend(&file->file.uses, &file->file.nuses, $1);}
-        | implstmt {lappend(&file->file.stmts, &file->file.nstmts, $1);}
+        | implstmt {
+                lappend(&file->file.stmts, &file->file.nstmts, $1);
+            }
         | traitdef {
                 size_t i;
                 puttrait(file->file.globls, $1->name, $1);
@@ -320,7 +322,10 @@ name    : Tident {$$ = mkname($1->line, $1->str);}
         | Tident Tdot name {$$ = $3; setns($3, $1->str);}
         ;
 
-implstmt: Timpl name type {$$ = mkimplstmt($1->line, $2, $3, NULL, 0);}
+implstmt: Timpl name type {
+                $$ = mkimplstmt($1->line, $2, $3, NULL, 0);
+                $$->impl.isproto = 1;
+            }
         | Timpl name type Tasn Tendln implbody Tendblk {
                 $$ = mkimplstmt($1->line, $2, $3, $6.nl, $6.nn);
             }
