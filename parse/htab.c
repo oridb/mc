@@ -170,6 +170,7 @@ void htdel(Htab *ht, void *k)
     if (i < 0)
         return;
     ht->dead[i] = 1;
+    ht->nelt--;
 }
 
 

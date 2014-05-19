@@ -899,12 +899,12 @@ void writeuse(FILE *f, Node *file)
         }
     }
 
-    for (i = 0; i < nimpls; i++) {
-        if (impls[i]->impl.isproto)
-            continue;
-        if (impls[i]->impl.vis == Visexport || impls[i]->impl.vis == Vishidden) {
+    for (i = 0; i < nexportimpls; i++) {
+        /* merging during inference should remove all protos */
+        assert(!exportimpls[i]->impl.isproto);
+        if (exportimpls[i]->impl.vis == Visexport || exportimpls[i]->impl.vis == Vishidden) {
             wrbyte(f, 'I');
-            implpickle(f, impls[i]);
+            implpickle(f, exportimpls[i]);
         }
     }
 

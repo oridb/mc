@@ -779,6 +779,22 @@ static void loaduses(Node *n)
         readuse(n->file.uses[i], n->file.globls);
 }
 
+static void fiximpls(Inferstate *st, Stab *s)
+{
+    Node *n;
+    void **k;
+    size_t nk, i;
+
+    k = htkeys(s->impl, &nk);
+    for (i = 0; i < nk; i++) {
+        n = getimpl(s, k[i]);
+        htdel(s->impl, k[i]);
+        n->impl.type = tf(st, n->impl.type);
+        putimpl(s, n);
+    }
+    free(k);
+}
+
 /* The exports in package declarations
  * need to be merged with the declarations
  * at the global scope. Declarations in
@@ -844,15 +860,19 @@ static void mergeexports(Inferstate *st, Node *file)
     }
     free(k);
 
+    /*
+     * if we neglect to fix the types for impls before 
+     * lookups, getimpl() on the global with the key from
+     * the export table will fail.
+     */
+    fiximpls(st, exports);
+    fiximpls(st, globls);
+
     /* export the impls */
     k = htkeys(exports->impl, &nk);
     for (i = 0; i < nk; i++) {
         nx = getimpl(exports, k[i]);
         ng = getimpl(globls, k[i]);
-
-        nx->impl.type = tf(st, nx->impl.type);
-        if (ng)
-            ng->impl.type = tf(st, ng->impl.type);
 
         if (nx->impl.isproto) {
             if (!ng)
@@ -868,7 +888,7 @@ static void mergeexports(Inferstate *st, Node *file)
                       namestr(nx->impl.traitname), tystr(nx->impl.type), ng->line);
             }
         }
-
+        lappend(&exportimpls, &nexportimpls, ng);
     }
     free(k);
 

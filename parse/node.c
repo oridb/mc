@@ -15,8 +15,8 @@
 size_t maxnid;
 Node **decls;
 size_t ndecls;
-Node **impls;
-size_t nimpls;
+Node **exportimpls;
+size_t nexportimpls;
 
 Node *mknode(int line, Ntype nt)
 {
@@ -194,7 +194,6 @@ Node *mkimplstmt(int line, Node *name, Type *t, Node **decls, size_t ndecls)
     n->impl.type = t;
     n->impl.decls = decls;
     n->impl.ndecls = ndecls;
-    lappend(&impls, &nimpls, n);
     return n;
 }
 
