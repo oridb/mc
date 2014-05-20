@@ -263,17 +263,6 @@ static void traitpickle(FILE *fd, Trait *tr)
         wrsym(fd, tr->funcs[i]);
 }
 
-static void implpickle(FILE *fd, Node *n)
-{
-    size_t i;
-
-    pickle(fd, n->impl.traitname);
-    wrint(fd, n->impl.trait->uid);
-    wrtype(fd, n->impl.type);
-    for (i = 0; i < n->impl.ndecls; i++)
-        pickle(fd, n->impl.decls[i]);
-}
-
 static void wrtype(FILE *fd, Type *ty)
 {
     if (ty->tid >= Builtinmask)
@@ -514,7 +503,12 @@ static void pickle(FILE *fd, Node *n)
             pickle(fd, n->func.body);
             break;
         case Nimpl:
-            die("Ntrait/Nimpl not yet supported!");
+            pickle(fd, n->impl.traitname);
+            wrint(fd, n->impl.trait->uid);
+            wrtype(fd, n->impl.type);
+            wrint(fd, n->impl.ndecls);
+            for (i = 0; i < n->impl.ndecls; i++)
+                pickle(fd, n->impl.decls[i]);
             break;
         case Nnone:
             die("Nnone should not be seen as node type!");
@@ -649,7 +643,13 @@ static Node *unpickle(FILE *fd)
             popstab();
             break;
         case Nimpl:
-            die("Ntrait/Nimpl not yet supported!");
+            n->impl.traitname = unpickle(fd);
+            n->impl.trait = htget(trmap, (void*)rdint(fd));
+            rdtype(fd, &n->impl.type);
+            n->impl.ndecls = rdint(fd);
+            n->impl.decls = zalloc(sizeof(Node *)*n->impl.ndecls);
+            for (i = 0; i < n->impl.ndecls; i++)
+                n->impl.decls[i] = unpickle(fd);
             break;
         case Nnone:
             die("Nnone should not be seen as node type!");
@@ -694,6 +694,8 @@ static void fixmappings(Stab *st)
      */
     for (i = 0; i < ntypefixdest; i++) {
         t = htget(tidmap, (void*)typefixid[i]);
+        if (!t)
+            die("Unable to find type for id %zd\n", i);
         if (t->type == Tyname && !t->issynth) {
             old = htget(tydedup, t->name);
             if (old != t)
@@ -730,7 +732,7 @@ int loaduse(FILE *f, Stab *st)
     intptr_t tid;
     size_t i;
     char *pkg;
-    Node *dcl;
+    Node *dcl, *impl;
     Stab *s;
     Type *ty;
     Trait *tr;
@@ -805,7 +807,8 @@ foundlib:
                 }
                 break;
             case 'I':
-                die("Impls not yet implemented");
+                impl = unpickle(f);
+                putimpl(s, impl);
                 break;
             case EOF:
                 break;
@@ -904,7 +907,7 @@ void writeuse(FILE *f, Node *file)
         assert(!exportimpls[i]->impl.isproto);
         if (exportimpls[i]->impl.vis == Visexport || exportimpls[i]->impl.vis == Vishidden) {
             wrbyte(f, 'I');
-            implpickle(f, exportimpls[i]);
+            pickle(f, exportimpls[i]);
         }
     }
 
