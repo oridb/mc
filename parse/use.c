@@ -508,7 +508,7 @@ static void pickle(FILE *fd, Node *n)
             wrtype(fd, n->impl.type);
             wrint(fd, n->impl.ndecls);
             for (i = 0; i < n->impl.ndecls; i++)
-                pickle(fd, n->impl.decls[i]);
+                wrsym(fd, n->impl.decls[i]);
             break;
         case Nnone:
             die("Nnone should not be seen as node type!");
@@ -644,12 +644,13 @@ static Node *unpickle(FILE *fd)
             break;
         case Nimpl:
             n->impl.traitname = unpickle(fd);
-            n->impl.trait = htget(trmap, (void*)rdint(fd));
+            i = rdint(fd);
+            n->impl.trait = htget(trmap, (void*)i);
             rdtype(fd, &n->impl.type);
             n->impl.ndecls = rdint(fd);
             n->impl.decls = zalloc(sizeof(Node *)*n->impl.ndecls);
             for (i = 0; i < n->impl.ndecls; i++)
-                n->impl.decls[i] = unpickle(fd);
+                n->impl.decls[i] = rdsym(fd, NULL);
             break;
         case Nnone:
             die("Nnone should not be seen as node type!");
@@ -809,6 +810,9 @@ foundlib:
             case 'I':
                 impl = unpickle(f);
                 putimpl(s, impl);
+                /* specialized declarations always go into the global stab */
+                for (i = 0; i < impl->impl.ndecls; i++)
+                    putimpl(file->file.globls, impl->impl.decls[i]);
                 break;
             case EOF:
                 break;
