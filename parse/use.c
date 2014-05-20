@@ -812,7 +812,7 @@ foundlib:
                 putimpl(s, impl);
                 /* specialized declarations always go into the global stab */
                 for (i = 0; i < impl->impl.ndecls; i++)
-                    putimpl(file->file.globls, impl->impl.decls[i]);
+                    putdcl(file->file.globls, impl->impl.decls[i]);
                 break;
             case EOF:
                 break;
