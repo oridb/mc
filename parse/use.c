@@ -650,7 +650,7 @@ static Node *unpickle(FILE *fd)
             n->impl.ndecls = rdint(fd);
             n->impl.decls = zalloc(sizeof(Node *)*n->impl.ndecls);
             for (i = 0; i < n->impl.ndecls; i++)
-                n->impl.decls[i] = rdsym(fd, NULL);
+                n->impl.decls[i] = rdsym(fd, n->impl.trait);
             break;
         case Nnone:
             die("Nnone should not be seen as node type!");

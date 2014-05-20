@@ -1996,8 +1996,9 @@ static void nodetag(Stab *st, Node *n, int ingeneric)
             nodetag(st, n->func.body, ingeneric);
             break;
         case Nimpl:
+            for (i = 0; i < n->impl.ndecls; i++)
+                nodetag(st, n->impl.decls[i], 0);
             break;
-
         case Nuse: case Nname:
             break;
         case Nfile: case Nnone:
@@ -2019,6 +2020,10 @@ void tagexports(Stab *st)
         nodetag(st, s, 0);
     }
     free(k);
+
+    for (i = 0; i < nexportimpls; i++) {
+        nodetag(st, exportimpls[i], 0);
+    }
 
     /* get the explicitly exported symbols */
     k = htkeys(st->ty, &n);
