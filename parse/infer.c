@@ -1384,8 +1384,6 @@ static void specializeimpl(Inferstate *st, Node *n)
     if (!t)
         fatal(n->line, "No trait %s\n", namestr(n->impl.traitname));
     n->impl.trait = t;
-    n->impl.type = tf(st, n->impl.type);
-    putimpl(curstab(), n);
 
     dcl = NULL;
     proto = NULL;
