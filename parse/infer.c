@@ -1996,8 +1996,10 @@ static void nodetag(Stab *st, Node *n, int ingeneric)
             nodetag(st, n->func.body, ingeneric);
             break;
         case Nimpl:
-            for (i = 0; i < n->impl.ndecls; i++)
+            for (i = 0; i < n->impl.ndecls; i++) {
+                n->impl.decls[i]->decl.vis = Vishidden;
                 nodetag(st, n->impl.decls[i], 0);
+            }
             break;
         case Nuse: case Nname:
             break;

@@ -364,7 +364,7 @@ Node *genericname(Node *n, Type *t)
     end = buf + 1024;
     s = tystr(t);
     p += snprintf(p, end - p, "%s", n->decl.name->name.name);
-    p += snprintf(p, end - p, "$%zd$%lu", n->decl.did, strhash(s));
+    p += snprintf(p, end - p, "$%lu", strhash(s));
     free(s);
     name = mkname(n->line, buf);
     if (n->decl.name->name.ns)
