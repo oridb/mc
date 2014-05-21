@@ -75,6 +75,7 @@ B genericval	E	42
 B trait-builtin	E	42
 B emptytrait	E	123
 B traitimpl	P	246,44
+# B compoundimpl	P	intptr,charptr BUGGERED
 B nestucon	P	asdf
 B mkunion	E	0
 B genericcall	E	42

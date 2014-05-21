@@ -1,0 +1,29 @@
+use std
+
+trait frobable @a =
+	frob	: (val : @a -> void)
+;;
+
+impl frobable int# =
+	frob = {val
+		std.put("intptr,")
+	}
+;;
+
+impl frobable char# =
+	frob = {val
+		std.put("charptr\n")
+	}
+;;
+
+generic foo = {x : @a::frobable
+	frob(x)
+}
+
+const main = {
+	var a = 123
+	var b = 'c'
+	foo(&a)
+	foo(&b)
+}
+
