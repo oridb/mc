@@ -1478,14 +1478,14 @@ static void declarelocal(Simp *s, Node *n)
         dump(n, stdout);
         printf("declared at %zd, size = %zd\n", s->stksz, size(n));
     }
-    htput(s->stkoff, n, (void*)s->stksz);
+    htput(s->stkoff, n, itop(s->stksz));
 }
 
 static void declarearg(Simp *s, Node *n)
 {
     assert(n->type == Ndecl || (n->type == Nexpr && exprop(n) == Ovar));
     s->argsz = align(s->argsz, min(size(n), Ptrsz));
-    htput(s->stkoff, n, (void*)-(s->argsz + 2*Ptrsz));
+    htput(s->stkoff, n, itop(-(s->argsz + 2*Ptrsz)));
     if (debugopt['i']) {
         dump(n, stdout);
         printf("declared at %zd\n", -(s->argsz + 2*Ptrsz));

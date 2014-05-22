@@ -931,7 +931,7 @@ static Loc *spillslot(Isel *s, regid reg)
 {
     size_t stkoff;
 
-    stkoff = (size_t)htget(s->spillslots, (void*)reg);
+    stkoff = ptoi(htget(s->spillslots, itop(reg)));
     return locmem(-stkoff, locphysreg(Rrbp), NULL, locmap[reg]->mode);
 }
 
@@ -1062,7 +1062,7 @@ static void addspill(Isel *s, Loc *l)
         locprint(stdout, l, 'x');
         printf(" to %zd(%%rbp)\n", s->stksz->lit);
     }
-    htput(s->spillslots, (void *)l->reg.id, (void *)s->stksz->lit);
+    htput(s->spillslots, itop(l->reg.id), itop(s->stksz->lit));
 }
 
 /* 

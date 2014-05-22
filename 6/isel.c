@@ -115,7 +115,7 @@ static Loc *loc(Isel *s, Node *n)
                 rip = locphysreg(Rrip);
                 l = locmeml(htget(s->globls, n), rip, NULL, mode(n));
             } else if (hthas(s->stkoff, n)) {
-                stkoff = (ssize_t)htget(s->stkoff, n);
+                stkoff = ptoi(htget(s->stkoff, n));
                 l = locmem(-stkoff, locphysreg(Rrbp), NULL, mode(n));
             }  else {
                 if (!hthas(s->reglocs, n))

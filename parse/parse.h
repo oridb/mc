@@ -517,6 +517,8 @@ void be64(vlong v, byte buf[8]);
 vlong host64(byte buf[8]);
 void be32(long v, byte buf[4]);
 long host32(byte buf[4]);
+static inline intptr_t ptoi(void *p) {return (intptr_t)p;}
+static inline void* itop(intptr_t i) {return (void*)i;}
 
 void wrbuf(FILE *fd, void *buf, size_t sz);
 void rdbuf(FILE *fd, void *buf, size_t sz);
