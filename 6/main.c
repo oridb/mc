@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <err.h>
 
 #include "parse.h"
 #include "opt.h"
@@ -66,6 +67,19 @@ static char *gentemp(char *buf, size_t bufsz, char *path, char *suffix)
         base = path;
     snprintf(buf, bufsz, "%s/tmp%lx-%s%s", tmpdir, random(), base, suffix);
     return buf;
+}
+
+static void genuse(char *path)
+{
+    FILE *f;
+    char buf[1024];
+
+    swapsuffix(buf, sizeof buf, path, ".myr", ".use");
+    f = fopen(buf, "w");
+    if (!f)
+        err(1, "Could not open path %s\n", buf);
+    writeuse(f, file);
+    fclose(f);
 }
 
 int main(int argc, char **argv)
@@ -129,6 +143,7 @@ int main(int argc, char **argv)
         }
         gen(file, buf);
         assem(buf, argv[i]);
+        genuse(argv[i]);
     }
 
     return 0;

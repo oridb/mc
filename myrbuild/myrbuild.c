@@ -267,9 +267,6 @@ void compile(char *file)
             goto done;
         if (isfresh(file, obj))
             goto done;
-        gencmd(&cmd, &ncmd, muse, file, NULL, 0);
-        run(cmd);
-
         if (genasm)
             extra[nextra++] = "-S";
         gencmd(&cmd, &ncmd, mc, file, extra, nextra);
