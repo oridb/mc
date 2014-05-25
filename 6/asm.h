@@ -137,7 +137,7 @@ struct Isel {
     Bitset *initial;    /* initial set of locations used by this fn */
 
     size_t *gbits;      /* igraph matrix repr */
-    regid **_gadj;      /* igraph adj set repr */
+    regid **gadj;      /* igraph adj set repr */
     size_t *ngadj;
     int *degree;        /* degree of nodes */
     Loc **aliasmap;     /* mapping of aliases */
