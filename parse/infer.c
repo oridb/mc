@@ -847,7 +847,7 @@ static void mergeexports(Inferstate *st, Node *file)
             if (!trg)
                 puttrait(globls, nx, trx);
             else
-                fatal(nx->line, "Exported trait %s already declared on line %d", namestr(nx), tg->line);
+                fatal(nx->line, "Exported trait %s already declared on line %d", namestr(nx), trg->name->line);
         } else {
             trg = gettrait(globls, nx);
             if (trg && !trg->isproto) {
