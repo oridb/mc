@@ -349,6 +349,13 @@ static int degreechange(Isel *s, regid u, regid v)
     return 1;
 }
 
+static void alputedge(Isel *s, regid u, regid v)
+{
+    s->ngadj[u]++;
+    s->gadj[u] = xrealloc(s->gadj[u], s->ngadj[u]*sizeof(regid));
+    s->gadj[u][s->ngadj[u] - 1] = v;
+}
+
 static void addedge(Isel *s, regid u, regid v)
 {
     if (u == v || gbhasedge(s, u, v))
@@ -361,11 +368,11 @@ static void addedge(Isel *s, regid u, regid v)
     gbputedge(s, u, v);
     gbputedge(s, v, u);
     if (!bshas(s->prepainted, u)) {
-        bsput(s->gadj[u], v);
+        alputedge(s, u, v);
         s->degree[u] += degreechange(s, v, u);
     }
     if (!bshas(s->prepainted, v)) {
-        bsput(s->gadj[v], u);
+        alputedge(s, v, u);
         s->degree[v] += degreechange(s, u, v);
     }
 }
@@ -380,9 +387,9 @@ static void setup(Isel *s)
     s->gbits = zalloc(gchunks*sizeof(size_t));
     /* fresh adj list repr. */
     free(s->gadj);
-    s->gadj = zalloc(maxregid * sizeof(Bitset*));
-    for (i = 0; i < maxregid; i++)
-        s->gadj[i] = mkbs();
+    free(s->ngadj);
+    s->gadj = zalloc(maxregid * sizeof(regid*));
+    s->ngadj = zalloc(maxregid * sizeof(size_t));
 
     s->spilled = bsclear(s->spilled);
     s->coalesced = bsclear(s->coalesced);
@@ -470,22 +477,16 @@ static void build(Isel *s)
     }
 }
 
-static int adjiter(Isel *s, regid n, regid *m)
+static int adjavail(Isel *s, regid r)
 {
-    size_t i, r;
+    size_t i;
 
-    for (r = *m; bsiter(s->gadj[n], &r); r++) {
-        for (i = 0; i < s->nselstk; i++)
-            if (r == s->selstk[i]->reg.id)
-                goto next;
-        if (bshas(s->coalesced, r))
-            goto next;
-        *m = r;
-        return 1;
-next:
-        continue;
-    }
-    return 0;
+    if (bshas(s->coalesced, r))
+        return 0;
+    for (i = 0; i < s->nselstk; i++)
+        if (r == s->selstk[i]->reg.id)
+            return 0;
+    return 1;
 }
 
 static size_t nodemoves(Isel *s, regid n, Insn ***pil)
@@ -561,7 +562,7 @@ static void decdegree(Isel *s, regid m)
 {
     int before, after;
     int found;
-    size_t idx;
+    size_t idx, i;
     regid n;
 
     assert(m < maxregid);
@@ -571,8 +572,11 @@ static void decdegree(Isel *s, regid m)
 
     if (before != after) {
         enablemove(s, m);
-        for (n = 0; adjiter(s, m, &n); n++)
-            enablemove(s, n);
+        for (i = 0; i < s->ngadj[m]; i++) {
+            n = s->gadj[m][i];
+            if (adjavail(s, n))
+                enablemove(s, n);
+        }
 
         /* Subtle:
          *
@@ -606,11 +610,14 @@ static void simp(Isel *s)
 {
     Loc *l;
     regid m;
+    size_t i;
 
     l = lpop(&s->wlsimp, &s->nwlsimp);
     lappend(&s->selstk, &s->nselstk, l);
-    for (m = 0; adjiter(s, l->reg.id, &m); m++) {
-        decdegree(s, m);
+    for (i = 0; i < s->ngadj[l->reg.id]; i++) {
+        m = s->gadj[l->reg.id][i];
+        if (adjavail(s, m))
+            decdegree(s, m);
     }
 }
 
@@ -643,15 +650,20 @@ static void wladd(Isel *s, regid u)
 static int conservative(Isel *s, regid u, regid v)
 {
     int k;
+    size_t i;
     regid n;
 
     k = 0;
-    for (n = 0; adjiter(s, u, &n); n++)
-        if (!istrivial(s, n))
+    for (i = 0; i < s->ngadj[u]; i++) {
+        n = s->gadj[u][i];
+        if (adjavail(s, n) && !istrivial(s, n))
             k++;
-    for (n = 0; adjiter(s, v, &n); n++)
-        if (!istrivial(s, n))
+    }
+    for (i = 0; i < s->ngadj[v]; i++) {
+        n = s->gadj[v][i];
+        if (adjavail(s, n) && !istrivial(s, n))
             k++;
+    }
     return k < _K[rclass(locmap[u])];
 }
 
@@ -664,6 +676,7 @@ static int ok(Isel *s, regid t, regid r)
 static int combinable(Isel *s, regid u, regid v)
 {
     regid t;
+    size_t i;
 
     /* Regs of different modes can't be combined as things stand.
      * In principle they should be combinable, but it confused the
@@ -675,9 +688,11 @@ static int combinable(Isel *s, regid u, regid v)
         return 1;
 
     /* if it is, are the adjacent nodes ok to combine with this? */
-    for (t = 0; adjiter(s, v, &t); t++)
-        if (!ok(s, t, u))
+    for (i = 0; i < s->ngadj[v]; i++) {
+        t = s->gadj[v][i];
+        if (adjavail(s, t) && !ok(s, t, u))
             return 0;
+    }
     return 1;
 }
 
@@ -711,7 +726,10 @@ static void combine(Isel *s, regid u, regid v)
             lappend(&s->rmoves[u], &s->nrmoves[u], s->rmoves[v][i]);
     }
 
-    for (t = 0; adjiter(s, v, &t); t++) {
+    for (i = 0; i < s->ngadj[v]; i++) {
+        t = s->gadj[v][i];
+        if (!adjavail(s, t))
+            continue;
         if (debugopt['r'] > 2)
             printedge(stdout, "combine-putedge:", t, u);
         addedge(s, t, u);
@@ -847,7 +865,7 @@ static int paint(Isel *s)
     int taken[Nreg];
     Loc *n, *w;
     regid l;
-    int i;
+    size_t i, j;
     int spilled;
     int found;
 
@@ -856,7 +874,8 @@ static int paint(Isel *s)
         bzero(taken, Nreg*sizeof(int));
         n = lpop(&s->selstk, &s->nselstk);
 
-        for (l = 0; bsiter(s->gadj[n->reg.id], &l); l++) {
+        for (j = 0; j < s->ngadj[n->reg.id];j++) {
+            l = s->gadj[n->reg.id][j];
             if (debugopt['r'] > 1)
                 printedge(stdout, "paint-edge:", n->reg.id, l);
             w = locmap[getalias(s, l)];
