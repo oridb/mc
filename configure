@@ -46,8 +46,12 @@ case $OS in
         echo 'export SYS=osx' >> config.mk
         ;;
     *)
+        echo ''
+        echo ''
+        echo '********************************'
         echo 'Unknown architecture.'
         echo 'Cannot build'
+        echo '********************************'
         rm -f config.h config.mk
         exit 1
         ;;
