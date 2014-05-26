@@ -46,9 +46,10 @@ case $OS in
         echo 'export SYS=osx' >> config.mk
         ;;
     *)
-        echo 'Unknown architecture. Assuming Linux ABI.'
-        echo '#define Asmcmd "as -g -o %s %s"' >> config.h
-        echo '#define Fprefix "' >> config.h
+        echo 'Unknown architecture.'
+        echo 'Cannot build'
+        rm -f config.h config.mk
+        exit 1
         ;;
 esac
 
