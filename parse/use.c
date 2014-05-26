@@ -282,7 +282,7 @@ static void rdtype(FILE *fd, Type **dest)
         *dest = mktype(-1, tid & ~Builtinmask);
     } else {
         lappend(&typefixdest, &ntypefixdest, dest);
-        lappend(&typefixid, &ntypefixid, (void*)tid);
+        lappend(&typefixid, &ntypefixid, itop(tid));
     }
 }
 
@@ -307,7 +307,7 @@ static Type *tyunpickle(FILE *fd)
         ty->traits = mkbs();
         for (i = 0; i < n; i++) {
             v = rdint(fd);
-            tr = htget(trmap, (void*)v);
+            tr = htget(trmap, itop(v));
             settrait(ty, tr);
         }
     }
@@ -382,7 +382,7 @@ Trait *traitunpickle(FILE *fd)
     n = rdint(fd);
     for (i = 0; i < n; i++)
         lappend(&tr->funcs, &tr->nfuncs, rdsym(fd, tr));
-    htput(trmap, (void*)uid, tr);
+    htput(trmap, itop(uid), tr);
     return tr;
 }
 
@@ -645,7 +645,7 @@ static Node *unpickle(FILE *fd)
         case Nimpl:
             n->impl.traitname = unpickle(fd);
             i = rdint(fd);
-            n->impl.trait = htget(trmap, (void*)i);
+            n->impl.trait = htget(trmap, itop(i));
             rdtype(fd, &n->impl.type);
             n->impl.ndecls = rdint(fd);
             n->impl.decls = zalloc(sizeof(Node *)*n->impl.ndecls);
@@ -694,7 +694,7 @@ static void fixmappings(Stab *st)
      * depended on when we do type inference.
      */
     for (i = 0; i < ntypefixdest; i++) {
-        t = htget(tidmap, (void*)typefixid[i]);
+        t = htget(tidmap, itop(typefixid[i]));
         if (!t)
             die("Unable to find type for id %zd\n", i);
         if (t->type == Tyname && !t->issynth) {
@@ -705,11 +705,11 @@ static void fixmappings(Stab *st)
         }
         *typefixdest[i] = t;
         if (!*typefixdest[i])
-            die("Couldn't find type %d\n", (int)typefixid[i]);
+            die("Couldn't find type %zd\n", typefixid[i]);
     }
     /* check for duplicate type definitions */
     for (i = 0; i < ntypefixdest; i++) {
-        t = htget(tidmap, (void*)typefixid[i]);
+        t = htget(tidmap, itop(typefixid[i]));
         if (t->type != Tyname || t->issynth)
             continue;
         old = htget(tydedup, t->name);
@@ -766,7 +766,7 @@ int loaduse(FILE *f, Stab *st)
     trmap = mkht(ptrhash, ptreq);
     /* builtin traits */
     for (i = 0; i < Ntraits; i++)
-        htput(trmap, (void*)i, traittab[i]);
+        htput(trmap, itop(i), traittab[i]);
     while ((c = fgetc(f)) != EOF) {
         switch(c) {
             case 'L':
@@ -792,7 +792,7 @@ foundlib:
             case 'T':
                 tid = rdint(f);
                 ty = tyunpickle(f);
-                htput(tidmap, (void*)tid, ty);
+                htput(tidmap, itop(tid), ty);
                 /* fix up types */
                 if (ty->type == Tyname) {
                     if (ty->issynth)
