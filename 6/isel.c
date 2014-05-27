@@ -240,15 +240,6 @@ static Loc *inri(Isel *s, Loc *a)
         return inr(s, a);
 }
 
-/* ensures that a location is within a reg or an imm */
-static Loc *inrm(Isel *s, Loc *a)
-{
-    if (a->type == Locreg || a->type == Locmem)
-        return a;
-    else
-        return inr(s, a);
-}
-
 /* If we're testing equality, etc, it's a bit silly
  * to generate the test, store it to a bite, expand it
  * to the right width, and then test it again. Try to optimize
@@ -508,14 +499,14 @@ Loc *selexpr(Isel *s, Node *n)
                 a = selexpr(s, args[0]);
                 b = selexpr(s, args[1]);
 
-		c = locphysreg(Ral);
+                c = locphysreg(Ral);
                 r = locreg(a->mode);
                 g(s, Imov, a, c, NULL);
                 g(s, Iimul_r, b, NULL);
                 g(s, Imov, c, r, NULL);
-	    } else {
+            } else {
                 r = binop(s, Iimul, args[0], args[1]);
-	    }
+            }
             break;
         case Odiv:
         case Omod:
@@ -590,7 +581,7 @@ Loc *selexpr(Isel *s, Node *n)
             break;
         case Obnot:
             r = selexpr(s, args[0]);
-            r = inrm(s, r);
+            r = inr(s, r);
             g(s, Inot, r, NULL);
             break;
 
