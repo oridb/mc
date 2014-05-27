@@ -39,6 +39,7 @@ const md5add = {st, data
 	var n, ntail
 
         ntail = st.msglen % 64
+	st.msglen += data.len
 	if ntail > 0
 		n = 64 - ntail
 		std.slcp(st.tail[n:], data[:n])
@@ -49,7 +50,6 @@ const md5add = {st, data
 		step(st, data[:64])
 		data = data[64:]
 	;;
-	st.msglen += data.len
         ntail = st.msglen % 64
 	std.slcp(st.tail[:ntail], data)
 }
@@ -60,10 +60,9 @@ const md5fin = {st
 
         /* append first padding block */
         ntail = st.msglen % 64
-        std.assert(ntail < 64, "somehow got a full buffer in 'fin'\n")
         st.tail[ntail++] = 0x80
 	std.slfill(st.tail[ntail:], 0)
-	if ntail > 64 - 8
+	if 64 - ntail < 8
 		step(st, st.tail[:])
         	std.slfill(st.tail[:], 0)
 	;;
@@ -103,9 +102,6 @@ const step = {st, blk
 	var s00, s01, s02, s03, s04, s05, s06, s07
 	var s08, s09, s10, s11, s12, s13, s14, s15
 
-	for x in blk
-		std.put("%xb\n", x)
-	;;
 	a = st.a
 	b = st.b
 	c = st.c
@@ -131,6 +127,8 @@ const step = {st, blk
 	/* round 1 */
 	a += (d ^ (b & (c ^ d))) + 0xd76aa478 + s00;  a = b + (a <<  7 | a >> 25);
 	d += (c ^ (a & (b ^ c))) + 0xe8c7b756 + s01;  d = a + (d << 12 | d >> 20);
+	/*
+	*/
 	c += (b ^ (d & (a ^ b))) + 0x242070db + s02;  c = d + (c << 17 | c >> 15);
 	b += (a ^ (c & (d ^ a))) + 0xc1bdceee + s03;  b = c + (b << 22 | b >> 10);
 	a += (d ^ (b & (c ^ d))) + 0xf57c0faf + s04;  a = b + (a <<  7 | a >> 25);
@@ -209,9 +207,9 @@ const step = {st, blk
 const unpack = {b
 	var v : uint32
 
-	v = (b[0] & 0xff) << 0 castto(uint32)
-	v |= (b[1] & 0xff) << 8 castto(uint32)
-	v |= (b[2] & 0xff) << 16 castto(uint32)
-	v |= (b[3] & 0xff) << 24 castto(uint32)
+	v = ((b[0] castto(uint32)) << 0)
+	v |= ((b[1] castto(uint32)) << 8)
+	v |= ((b[2] castto(uint32)) << 16)
+	v |= ((b[3] castto(uint32)) << 24)
 	-> v
 }

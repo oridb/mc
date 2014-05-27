@@ -2,18 +2,12 @@ use std
 use cryptohash
 
 const main = {
-	/* zero hash */
-	/*
 	print(cryptohash.md5(""))
-	*/
-	/* arbitrary text */
-	print(cryptohash.md5("hello"))
-	/*
+	print(cryptohash.md5("h"))
 	/* 64 byte block */
 	print(cryptohash.md5("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"))
 	/* tail spanning */
 	print(cryptohash.md5("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbb"))
-	*/
 }
 
 const print = {b
