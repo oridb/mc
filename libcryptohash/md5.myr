@@ -1,0 +1,217 @@
+use std
+
+pkg cryptohash =
+	type md5
+
+	const md5	: (data : byte[:] -> byte[16])
+	const md5init	: (st : md5# -> void)
+	const md5add	: (st : md5#, data : byte[:] -> void)
+	const md5fin	: (st : md5# -> byte[16])
+;;
+
+type md5 = struct
+	a : uint32
+	b : uint32
+	c : uint32
+	d : uint32
+	tail : byte[64]
+	msglen : uint64
+
+;;
+
+const md5 = {data
+	var st
+
+	md5init(&st)
+	md5add(&st, data)
+	-> md5fin(&st)
+}
+
+const md5init = {st
+	st.a = 0x67452301;
+	st.b = 0xefcdab89;
+	st.c = 0x98badcfe;
+	st.d = 0x10325476;
+	st.tail = [][:]
+}
+
+const md5add = {st, data
+	var n, ntail
+
+        ntail = st.msglen % 64
+	if ntail > 0
+		n = 64 - ntail
+		std.slcp(st.tail[n:], data[:n])
+		data = data[n:]
+		step(st, st.tail[:])
+	;;
+	while data.len >= 64
+		step(st, data[:64])
+		data = data[64:]
+	;;
+	st.msglen += data.len
+        ntail = st.msglen % 64
+	std.slcp(st.tail[:ntail], data)
+}
+
+const md5fin = {st
+	var r : byte[16]
+        var ntail
+
+        /* append first padding block */
+        ntail = st.msglen % 64
+        std.assert(ntail < 64, "somehow got a full buffer in 'fin'\n")
+        st.tail[ntail++] = 0x80
+	std.slfill(st.tail[ntail:], 0)
+	if ntail > 64 - 8
+		step(st, st.tail[:])
+        	std.slfill(st.tail[:], 0)
+	;;
+
+        /* append size block */
+	st.tail[56] = ((st.msglen * 8) >> 0)    castto(byte)
+	st.tail[57] = ((st.msglen * 8) >> 8)	castto(byte)
+	st.tail[58] = ((st.msglen * 8) >> 16)	castto(byte)
+	st.tail[59] = ((st.msglen * 8) >> 24)	castto(byte)
+	st.tail[60] = ((st.msglen * 8) >> 32)	castto(byte)
+	st.tail[61] = ((st.msglen * 8) >> 40)	castto(byte)
+	st.tail[62] = ((st.msglen * 8) >> 48)	castto(byte)
+	st.tail[63] = ((st.msglen * 8) >> 56)	castto(byte)
+        step(st, st.tail[:])
+
+	r[0] = (st.a >> 0)	castto(byte)
+	r[1] = (st.a >> 8)	castto(byte)
+	r[2] = (st.a >> 16)	castto(byte)
+	r[3] = (st.a >> 24)	castto(byte)
+	r[4] = (st.b >> 0)	castto(byte)
+	r[5] = (st.b >> 8)	castto(byte)
+	r[6] = (st.b >> 16)	castto(byte)
+	r[7] = (st.b >> 24)	castto(byte)
+	r[8] = (st.c >> 0)	castto(byte)
+	r[9] = (st.c >> 8)	castto(byte)
+	r[10] = (st.c >> 16)	castto(byte)
+	r[11] = (st.c >> 24)	castto(byte)
+	r[12] = (st.d >> 0)	castto(byte)
+	r[13] = (st.d >> 8)	castto(byte)
+	r[14] = (st.d >> 16)	castto(byte)
+	r[15] = (st.d >> 24)	castto(byte)
+	-> r
+}
+
+const step = {st, blk
+	var a, b, c, d
+	var s00, s01, s02, s03, s04, s05, s06, s07
+	var s08, s09, s10, s11, s12, s13, s14, s15
+
+	for x in blk
+		std.put("%xb\n", x)
+	;;
+	a = st.a
+	b = st.b
+	c = st.c
+	d = st.d
+
+	s00 = unpack(blk[0:4])
+	s01 = unpack(blk[4:8])
+	s02 = unpack(blk[8:12])
+	s03 = unpack(blk[12:16])
+	s04 = unpack(blk[16:20])
+	s05 = unpack(blk[20:24])
+	s06 = unpack(blk[24:28])
+	s07 = unpack(blk[28:32])
+	s08 = unpack(blk[32:36])
+	s09 = unpack(blk[36:40])
+	s10 = unpack(blk[40:44])
+	s11 = unpack(blk[44:48])
+	s12 = unpack(blk[48:52])
+	s13 = unpack(blk[52:56])
+	s14 = unpack(blk[56:60])
+	s15 = unpack(blk[60:64])
+
+	/* round 1 */
+	a += (d ^ (b & (c ^ d))) + 0xd76aa478 + s00;  a = b + (a <<  7 | a >> 25);
+	d += (c ^ (a & (b ^ c))) + 0xe8c7b756 + s01;  d = a + (d << 12 | d >> 20);
+	c += (b ^ (d & (a ^ b))) + 0x242070db + s02;  c = d + (c << 17 | c >> 15);
+	b += (a ^ (c & (d ^ a))) + 0xc1bdceee + s03;  b = c + (b << 22 | b >> 10);
+	a += (d ^ (b & (c ^ d))) + 0xf57c0faf + s04;  a = b + (a <<  7 | a >> 25);
+	d += (c ^ (a & (b ^ c))) + 0x4787c62a + s05;  d = a + (d << 12 | d >> 20);
+	c += (b ^ (d & (a ^ b))) + 0xa8304613 + s06;  c = d + (c << 17 | c >> 15);
+	b += (a ^ (c & (d ^ a))) + 0xfd469501 + s07;  b = c + (b << 22 | b >> 10);
+	a += (d ^ (b & (c ^ d))) + 0x698098d8 + s08;  a = b + (a <<  7 | a >> 25);
+	d += (c ^ (a & (b ^ c))) + 0x8b44f7af + s09;  d = a + (d << 12 | d >> 20);
+	c += (b ^ (d & (a ^ b))) + 0xffff5bb1 + s10;  c = d + (c << 17 | c >> 15);
+	b += (a ^ (c & (d ^ a))) + 0x895cd7be + s11;  b = c + (b << 22 | b >> 10);
+	a += (d ^ (b & (c ^ d))) + 0x6b901122 + s12;  a = b + (a <<  7 | a >> 25);
+	d += (c ^ (a & (b ^ c))) + 0xfd987193 + s13;  d = a + (d << 12 | d >> 20);
+	c += (b ^ (d & (a ^ b))) + 0xa679438e + s14;  c = d + (c << 17 | c >> 15);
+	b += (a ^ (c & (d ^ a))) + 0x49b40821 + s15;  b = c + (b << 22 | b >> 10);
+
+	/* round 2 */
+	a += (c ^ (d & (b ^ c))) + 0xf61e2562 + s01;  a = b + (a <<  5 | a >> 27);
+	d += (b ^ (c & (a ^ b))) + 0xc040b340 + s06;  d = a + (d <<  9 | d >> 23);
+	c += (a ^ (b & (d ^ a))) + 0x265e5a51 + s11;  c = d + (c << 14 | c >> 18);
+	b += (d ^ (a & (c ^ d))) + 0xe9b6c7aa + s00;  b = c + (b << 20 | b >> 12);
+	a += (c ^ (d & (b ^ c))) + 0xd62f105d + s05;  a = b + (a <<  5 | a >> 27);
+	d += (b ^ (c & (a ^ b))) + 0x02441453 + s10;  d = a + (d <<  9 | d >> 23);
+	c += (a ^ (b & (d ^ a))) + 0xd8a1e681 + s15;  c = d + (c << 14 | c >> 18);
+	b += (d ^ (a & (c ^ d))) + 0xe7d3fbc8 + s04;  b = c + (b << 20 | b >> 12);
+	a += (c ^ (d & (b ^ c))) + 0x21e1cde6 + s09;  a = b + (a <<  5 | a >> 27);
+	d += (b ^ (c & (a ^ b))) + 0xc33707d6 + s14;  d = a + (d <<  9 | d >> 23);
+	c += (a ^ (b & (d ^ a))) + 0xf4d50d87 + s03;  c = d + (c << 14 | c >> 18);
+	b += (d ^ (a & (c ^ d))) + 0x455a14ed + s08;  b = c + (b << 20 | b >> 12);
+	a += (c ^ (d & (b ^ c))) + 0xa9e3e905 + s13;  a = b + (a <<  5 | a >> 27);
+	d += (b ^ (c & (a ^ b))) + 0xfcefa3f8 + s02;  d = a + (d <<  9 | d >> 23);
+	c += (a ^ (b & (d ^ a))) + 0x676f02d9 + s07;  c = d + (c << 14 | c >> 18);
+	b += (d ^ (a & (c ^ d))) + 0x8d2a4c8a + s12;  b = c + (b << 20 | b >> 12);
+
+	/* round 3 */
+	a += (b ^ c ^ d) + 0xfffa3942 + s05;  a = b + (a <<  4 | a >> 28);
+	d += (a ^ b ^ c) + 0x8771f681 + s08;  d = a + (d << 11 | d >> 21);
+	c += (d ^ a ^ b) + 0x6d9d6122 + s11;  c = d + (c << 16 | c >> 16);
+	b += (c ^ d ^ a) + 0xfde5380c + s14;  b = c + (b << 23 | b >>  9);
+	a += (b ^ c ^ d) + 0xa4beea44 + s01;  a = b + (a <<  4 | a >> 28);
+	d += (a ^ b ^ c) + 0x4bdecfa9 + s04;  d = a + (d << 11 | d >> 21);
+	c += (d ^ a ^ b) + 0xf6bb4b60 + s07;  c = d + (c << 16 | c >> 16);
+	b += (c ^ d ^ a) + 0xbebfbc70 + s10;  b = c + (b << 23 | b >>  9);
+	a += (b ^ c ^ d) + 0x289b7ec6 + s13;  a = b + (a <<  4 | a >> 28);
+	d += (a ^ b ^ c) + 0xeaa127fa + s00;  d = a + (d << 11 | d >> 21);
+	c += (d ^ a ^ b) + 0xd4ef3085 + s03;  c = d + (c << 16 | c >> 16);
+	b += (c ^ d ^ a) + 0x04881d05 + s06;  b = c + (b << 23 | b >>  9);
+	a += (b ^ c ^ d) + 0xd9d4d039 + s09;  a = b + (a <<  4 | a >> 28);
+	d += (a ^ b ^ c) + 0xe6db99e5 + s12;  d = a + (d << 11 | d >> 21);
+	c += (d ^ a ^ b) + 0x1fa27cf8 + s15;  c = d + (c << 16 | c >> 16);
+	b += (c ^ d ^ a) + 0xc4ac5665 + s02;  b = c + (b << 23 | b >>  9);
+
+	/* round 4 */
+	a += (c ^ (b | ~d)) + 0xf4292244 + s00;  a = b + (a <<  6 | a >> 26);
+	d += (b ^ (a | ~c)) + 0x432aff97 + s07;  d = a + (d << 10 | d >> 22);
+	c += (a ^ (d | ~b)) + 0xab9423a7 + s14;  c = d + (c << 15 | c >> 17);
+	b += (d ^ (c | ~a)) + 0xfc93a039 + s05;  b = c + (b << 21 | b >> 11);
+	a += (c ^ (b | ~d)) + 0x655b59c3 + s12;  a = b + (a <<  6 | a >> 26);
+	d += (b ^ (a | ~c)) + 0x8f0ccc92 + s03;  d = a + (d << 10 | d >> 22);
+	c += (a ^ (d | ~b)) + 0xffeff47d + s10;  c = d + (c << 15 | c >> 17);
+	b += (d ^ (c | ~a)) + 0x85845dd1 + s01;  b = c + (b << 21 | b >> 11);
+	a += (c ^ (b | ~d)) + 0x6fa87e4f + s08;  a = b + (a <<  6 | a >> 26);
+	d += (b ^ (a | ~c)) + 0xfe2ce6e0 + s15;  d = a + (d << 10 | d >> 22);
+	c += (a ^ (d | ~b)) + 0xa3014314 + s06;  c = d + (c << 15 | c >> 17);
+	b += (d ^ (c | ~a)) + 0x4e0811a1 + s13;  b = c + (b << 21 | b >> 11);
+	a += (c ^ (b | ~d)) + 0xf7537e82 + s04;  a = b + (a <<  6 | a >> 26);
+	d += (b ^ (a | ~c)) + 0xbd3af235 + s11;  d = a + (d << 10 | d >> 22);
+	c += (a ^ (d | ~b)) + 0x2ad7d2bb + s02;  c = d + (c << 15 | c >> 17);
+	b += (d ^ (c | ~a)) + 0xeb86d391 + s09;  b = c + (b << 21 | b >> 11);
+
+	st.a += a
+	st.b += b
+	st.c += c
+	st.d += d
+}
+
+const unpack = {b
+	var v : uint32
+
+	v = (b[0] & 0xff) << 0 castto(uint32)
+	v |= (b[1] & 0xff) << 8 castto(uint32)
+	v |= (b[2] & 0xff) << 16 castto(uint32)
+	v |= (b[3] & 0xff) << 24 castto(uint32)
+	-> v
+}
