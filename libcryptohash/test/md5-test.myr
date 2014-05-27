@@ -1,0 +1,28 @@
+use std
+use cryptohash
+
+const main = {
+	/* zero hash */
+	/*
+	print(cryptohash.md5(""))
+	*/
+	/* arbitrary text */
+	print(cryptohash.md5("hello"))
+	/*
+	/* 64 byte block */
+	print(cryptohash.md5("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"))
+	/* tail spanning */
+	print(cryptohash.md5("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbb"))
+	*/
+}
+
+const print = {b
+	for x in b
+		if (x <= 0xf)
+			std.put("0%xb", x)
+		else
+			std.put("%xb", x)
+		;;
+	;;
+        std.put("\n")
+}
