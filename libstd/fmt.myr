@@ -220,7 +220,7 @@ const bfmtv = {buf, fmt, ap
                         | 'c':    (c_val, ap) = vanext(ap)
                                 n += encode(buf[n:], c_val)
                         | _:
-                                die("Unknown format specifier")
+                                die("Unknown format specifier\n")
 			;;
 		else
 			n += encode(buf[n:], c)
