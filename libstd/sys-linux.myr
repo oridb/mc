@@ -475,6 +475,7 @@ pkg std =
 	const stat	: (path:byte[:], sb:statbuf# -> int64)
 	const fstat	: (fd:fd, sb:statbuf# -> int64)
 	const mkdir	: (path : byte[:], mode : int64	-> int64)
+	const ioctl	: (fd:fd, req : int64, args:... -> int64)
 
 	/* networking */
 	const socket	: (dom : sockfam, stype : socktype, proto : sockproto	-> fd)
@@ -564,6 +565,7 @@ const lseek	= {fd, off, whence;	-> syscall(Syslseek, fd, off, whence)}
 const stat	= {path, sb;		-> syscall(Sysstat, cstring(path), sb)}
 const fstat	= {fd, sb;		-> syscall(Sysfstat, fd, sb)}
 const mkdir	= {path, mode;		-> syscall(Sysmkdir, cstring(path), mode) castto(int64)}
+const ioctl	= {fd, req, args	-> syscall(Sysioctl, fd, req, &args) castto(int64)}
 
 /* networking */
 const socket	= {dom, stype, proto;	-> syscall(Syssocket, dom castto(int64), stype, proto) castto(fd)}
