@@ -68,6 +68,16 @@ cvt:
 .cvtdone:
         ret
 
+/*
+ * The entry point for the whole program.
+ * This is called by the OS. In order, it:
+ *  - Sets up all argc entries as slices
+ *  - Sets up all envp entries as slices
+ *  - Converts argc/argv to a slice
+ *  - Stashes envp in std._environment
+ *  - Stashes a raw envp copy in __cenvp (for syscalls to use)
+ *  - Calls main()
+ */
 .globl start
 start:
 	/* turn args into a slice */
