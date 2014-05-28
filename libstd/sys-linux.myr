@@ -1,5 +1,5 @@
 use "types.use"
-use "sleq.use"
+use "varargs.use"
 
 pkg std =
 	type pid	= int64
@@ -565,7 +565,14 @@ const lseek	= {fd, off, whence;	-> syscall(Syslseek, fd, off, whence)}
 const stat	= {path, sb;		-> syscall(Sysstat, cstring(path), sb)}
 const fstat	= {fd, sb;		-> syscall(Sysfstat, fd, sb)}
 const mkdir	= {path, mode;		-> syscall(Sysmkdir, cstring(path), mode) castto(int64)}
-const ioctl	= {fd, req, args;	-> syscall(Sysioctl, fd, req, &args) castto(int64)}
+const ioctl	= {fd, req, args
+	var arg : byte#
+	var ap
+
+	ap = vastart(&args)
+	(arg, ap) = vanext(ap)
+	-> syscall(Sysioctl, fd, req, arg) castto(int64)
+}
 
 /* networking */
 const socket	= {dom, stype, proto;	-> syscall(Syssocket, dom castto(int64), stype, proto) castto(fd)}
