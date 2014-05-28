@@ -45,7 +45,8 @@ generic intparsebase = {s, base
 
 generic doparse = {s, isneg, base
 	var c
-	var v, cv
+	var v
+	var cv : int32
 	
 	v = 0
 	while s.len != 0
@@ -56,7 +57,7 @@ generic doparse = {s, isneg, base
 		cv = charval(c, base)
 		if cv >= 0
 			v *= (base castto(@a::(integral,numeric)))
-			v += cv
+			v += cv castto(@a::(integral,numeric))
 		else
 			-> `None
 		;;
