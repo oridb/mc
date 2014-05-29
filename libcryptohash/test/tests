@@ -21,3 +21,4 @@ mkdir -p tmpout
 #	What we compare with. This should be self-
 #	evident.
 B md5-test	C
+B sha1-test	C

@@ -32,7 +32,7 @@ const md5init = {st
 	st.b = 0xefcdab89
 	st.c = 0x98badcfe
 	st.d = 0x10325476
-	st.tail = [][:]
+        st.msglen = 0
 }
 
 const md5add = {st, data
@@ -127,8 +127,6 @@ const step = {st, blk
 	/* round 1 */
 	a += (d ^ (b & (c ^ d))) + 0xd76aa478 + s00;  a = b + (a <<  7 | a >> 25)
 	d += (c ^ (a & (b ^ c))) + 0xe8c7b756 + s01;  d = a + (d << 12 | d >> 20)
-	/*
-	*/
 	c += (b ^ (d & (a ^ b))) + 0x242070db + s02;  c = d + (c << 17 | c >> 15)
 	b += (a ^ (c & (d ^ a))) + 0xc1bdceee + s03;  b = c + (b << 22 | b >> 10)
 	a += (d ^ (b & (c ^ d))) + 0xf57c0faf + s04;  a = b + (a <<  7 | a >> 25)

@@ -33,7 +33,7 @@ const sha1init = {st
         st.c = 0x98badcfe
         st.d = 0x10325476
         st.e = 0xc3d2e1f0
-        st.tail = [][:]
+        st.msglen = 0
 }
 
 const sha1add = {st, data
@@ -58,7 +58,7 @@ const sha1add = {st, data
 }
 
 const sha1fin = {st
-	var r : byte[16]
+	var r : byte[20]
         var ntail
 
         /* append first padding block */
@@ -72,36 +72,36 @@ const sha1fin = {st
 
 
         /* append size block */
-	st.tail[56] = ((st.msglen * 8) >> 0)    castto(byte)
-	st.tail[57] = ((st.msglen * 8) >> 8)	castto(byte)
-	st.tail[58] = ((st.msglen * 8) >> 16)	castto(byte)
-	st.tail[59] = ((st.msglen * 8) >> 24)	castto(byte)
-	st.tail[60] = ((st.msglen * 8) >> 32)	castto(byte)
-	st.tail[61] = ((st.msglen * 8) >> 40)	castto(byte)
-	st.tail[62] = ((st.msglen * 8) >> 48)	castto(byte)
-	st.tail[63] = ((st.msglen * 8) >> 56)	castto(byte)
+	st.tail[56] = ((st.msglen * 8) >> 56)   castto(byte)
+	st.tail[57] = ((st.msglen * 8) >> 48)	castto(byte)
+	st.tail[58] = ((st.msglen * 8) >> 40)	castto(byte)
+	st.tail[59] = ((st.msglen * 8) >> 32)	castto(byte)
+	st.tail[60] = ((st.msglen * 8) >> 24)	castto(byte)
+	st.tail[61] = ((st.msglen * 8) >> 16)	castto(byte)
+	st.tail[62] = ((st.msglen * 8) >> 8)	castto(byte)
+	st.tail[63] = ((st.msglen * 8) >> 0)	castto(byte)
         step(st, st.tail[:])
 
-	r[0] = (st.a >> 0)	castto(byte)
-	r[1] = (st.a >> 8)	castto(byte)
-	r[2] = (st.a >> 16)	castto(byte)
-	r[3] = (st.a >> 24)	castto(byte)
-	r[4] = (st.b >> 0)	castto(byte)
-	r[5] = (st.b >> 8)	castto(byte)
-	r[6] = (st.b >> 16)	castto(byte)
-	r[7] = (st.b >> 24)	castto(byte)
-	r[8] = (st.c >> 0)	castto(byte)
-	r[9] = (st.c >> 8)	castto(byte)
-	r[10] = (st.c >> 16)	castto(byte)
-	r[11] = (st.c >> 24)	castto(byte)
-	r[12] = (st.d >> 0)	castto(byte)
-	r[13] = (st.d >> 8)	castto(byte)
-	r[14] = (st.d >> 16)	castto(byte)
-	r[15] = (st.d >> 24)	castto(byte)
-	r[16] = (st.e >> 0)	castto(byte)
-	r[17] = (st.e >> 8)	castto(byte)
-	r[18] = (st.e >> 16)	castto(byte)
-	r[19] = (st.e >> 24)	castto(byte)
+	r[0]  = (st.a >> 24)	castto(byte)
+	r[1]  = (st.a >> 16)	castto(byte)
+	r[2]  = (st.a >> 8)	castto(byte)
+	r[3]  = (st.a >> 0)	castto(byte)
+	r[4]  = (st.b >> 24)	castto(byte)
+	r[5]  = (st.b >> 16)	castto(byte)
+	r[6]  = (st.b >> 8)	castto(byte)
+	r[7]  = (st.b >> 0)	castto(byte)
+	r[8]  = (st.c >> 24)	castto(byte)
+	r[9]  = (st.c >> 16)	castto(byte)
+	r[10] = (st.c >> 8)	castto(byte)
+	r[11] = (st.c >> 0)	castto(byte)
+	r[12] = (st.d >> 16)	castto(byte)
+	r[13] = (st.d >> 24)	castto(byte)
+	r[14] = (st.d >> 8)	castto(byte)
+	r[15] = (st.d >> 0)	castto(byte)
+	r[16] = (st.e >> 16)	castto(byte)
+	r[17] = (st.e >> 24)	castto(byte)
+	r[18] = (st.e >> 8)	castto(byte)
+	r[19] = (st.e >> 0)	castto(byte)
 	-> r
 }
 
@@ -138,7 +138,6 @@ const step = {st, msg
         s14 = unpack(msg[56:60])
         s15 = unpack(msg[60:64])
 
-        /* The 80 rounds (the sedule is expanded on the fly) */
         e += (a << 5 | a >> 27) + (d ^ (b & (c ^ d))) + s00 + K0;  b = b << 30 | b >> 2
         d += (e << 5 | e >> 27) + (c ^ (a & (b ^ c))) + s01 + K0;  a = a << 30 | a >> 2
         c += (d << 5 | d >> 27) + (b ^ (e & (a ^ b))) + s02 + K0;  e = e << 30 | e >> 2
@@ -155,6 +154,8 @@ const step = {st, msg
         b += (c << 5 | c >> 27) + (a ^ (d & (e ^ a))) + s13 + K0;  d = d << 30 | d >> 2
         a += (b << 5 | b >> 27) + (e ^ (c & (d ^ e))) + s14 + K0;  c = c << 30 | c >> 2
         e += (a << 5 | a >> 27) + (d ^ (b & (c ^ d))) + s15 + K0;  b = b << 30 | b >> 2
+
+
         t = s13 ^ s08 ^ s02 ^ s00;  s00 = t << 1 | t >> 31;  d += (e << 5 | e >> 27) + (c ^ (a & (b ^ c))) + s00 + K0;  a = a << 30 | a >> 2
         t = s14 ^ s09 ^ s03 ^ s01;  s01 = t << 1 | t >> 31;  c += (d << 5 | d >> 27) + (b ^ (e & (a ^ b))) + s01 + K0;  e = e << 30 | e >> 2
         t = s15 ^ s10 ^ s04 ^ s02;  s02 = t << 1 | t >> 31;  b += (c << 5 | c >> 27) + (a ^ (d & (e ^ a))) + s02 + K0;  d = d << 30 | d >> 2
@@ -179,6 +180,7 @@ const step = {st, msg
         t = s02 ^ s13 ^ s07 ^ s05;  s05 = t << 1 | t >> 31;  c += (d << 5 | d >> 27) + (e ^ a ^ b) + s05 + K1;  e = e << 30 | e >> 2
         t = s03 ^ s14 ^ s08 ^ s06;  s06 = t << 1 | t >> 31;  b += (c << 5 | c >> 27) + (d ^ e ^ a) + s06 + K1;  d = d << 30 | d >> 2
         t = s04 ^ s15 ^ s09 ^ s07;  s07 = t << 1 | t >> 31;  a += (b << 5 | b >> 27) + (c ^ d ^ e) + s07 + K1;  c = c << 30 | c >> 2
+
         t = s05 ^ s00 ^ s10 ^ s08;  s08 = t << 1 | t >> 31;  e += (a << 5 | a >> 27) + ((b & (c | d)) | (c & d)) + s08 + K2;  b = b << 30 | b >> 2
         t = s06 ^ s01 ^ s11 ^ s09;  s09 = t << 1 | t >> 31;  d += (e << 5 | e >> 27) + ((a & (b | c)) | (b & c)) + s09 + K2;  a = a << 30 | a >> 2
         t = s07 ^ s02 ^ s12 ^ s10;  s10 = t << 1 | t >> 31;  c += (d << 5 | d >> 27) + ((e & (a | b)) | (a & b)) + s10 + K2;  e = e << 30 | e >> 2
@@ -199,6 +201,7 @@ const step = {st, msg
         t = s06 ^ s01 ^ s11 ^ s09;  s09 = t << 1 | t >> 31;  c += (d << 5 | d >> 27) + ((e & (a | b)) | (a & b)) + s09 + K2;  e = e << 30 | e >> 2
         t = s07 ^ s02 ^ s12 ^ s10;  s10 = t << 1 | t >> 31;  b += (c << 5 | c >> 27) + ((d & (e | a)) | (e & a)) + s10 + K2;  d = d << 30 | d >> 2
         t = s08 ^ s03 ^ s13 ^ s11;  s11 = t << 1 | t >> 31;  a += (b << 5 | b >> 27) + ((c & (d | e)) | (d & e)) + s11 + K2;  c = c << 30 | c >> 2
+
         t = s09 ^ s04 ^ s14 ^ s12;  s12 = t << 1 | t >> 31;  e += (a << 5 | a >> 27) + (b ^ c ^ d) + s12 + K3;  b = b << 30 | b >> 2
         t = s10 ^ s05 ^ s15 ^ s13;  s13 = t << 1 | t >> 31;  d += (e << 5 | e >> 27) + (a ^ b ^ c) + s13 + K3;  a = a << 30 | a >> 2
         t = s11 ^ s06 ^ s00 ^ s14;  s14 = t << 1 | t >> 31;  c += (d << 5 | d >> 27) + (e ^ a ^ b) + s14 + K3;  e = e << 30 | e >> 2
@@ -230,9 +233,9 @@ const step = {st, msg
 const unpack = {b
 	var v : uint32
 
-	v = ((b[0] castto(uint32)) << 0)
-	v |= ((b[1] castto(uint32)) << 8)
-	v |= ((b[2] castto(uint32)) << 16)
-	v |= ((b[3] castto(uint32)) << 24)
+	v = ((b[0] castto(uint32)) << 24)
+	v |= ((b[1] castto(uint32)) << 16)
+	v |= ((b[2] castto(uint32)) << 8)
+	v |= ((b[3] castto(uint32)) << 0)
 	-> v
 }
