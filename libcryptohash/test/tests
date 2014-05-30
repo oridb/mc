@@ -22,3 +22,4 @@ mkdir -p tmpout
 #	evident.
 B md5-test	C
 B sha1-test	C
+B sha256-test	C
