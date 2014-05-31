@@ -1,13 +1,13 @@
 use "alloc.use"
 use "die.use"
-use "error.use"
+use "result.use"
 use "extremum.use"
 use "fmt.use"
 use "sys.use"
 use "types.use"
 
 pkg std =
-	const slurp : (path : byte[:] -> error(byte[:], byte[:]))
+	const slurp : (path : byte[:] -> result(byte[:], byte[:]))
 ;;
 
 const Bufinc = 4096
@@ -20,7 +20,7 @@ const slurp = {path
 
 	fd = open(path, Ordonly, 0o777)
 	if fd < 0
-		-> `Failure "Could not open file"
+		-> `Fail "Could not open file"
 	;;
 
 	len = 0
@@ -34,5 +34,5 @@ const slurp = {path
 		buf = slgrow(buf, len + Bufinc)
 	;;
 :done
-	-> `Success buf[:len]
+	-> `Ok buf[:len]
 }
