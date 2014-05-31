@@ -17,7 +17,7 @@ const dbgmatch = {pat, text
 const run = {regex, pat, text
 	var i
 	match regex
-	| `std.Success re:
+	| `std.Ok re:
 		match regex.exec(re, text)
 		| `std.Some m:
 			std.put("Matched %s via %s : %i\n", text, pat, m.len)
@@ -28,7 +28,7 @@ const run = {regex, pat, text
 			std.put("No match of %s via %s\n", text, pat)
 		;;
 		regex.free(re)
-	| `std.Failure err:
+	| `std.Fail err:
 		std.put("failed to compile regex")
 	;;
 }

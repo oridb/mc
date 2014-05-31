@@ -4,8 +4,8 @@ use "types.use"
 use "ranges.use"
 
 pkg regex =
-	const compile	: (re : byte[:] -> std.error(regex#, status))
-	const dbgcompile	: (re : byte[:] -> std.error(regex#, status))
+	const compile	: (re : byte[:] -> std.result(regex#, status))
+	const dbgcompile	: (re : byte[:] -> std.result(regex#, status))
 	const free	: (re : regex# -> void)
 ;;
 
@@ -57,15 +57,15 @@ const regexcompile = {re, pat
 	re.pat = pat
 	re.nmatch = 1 /* whole match */
 	match parse(re)
-	| `None:	-> `std.Failure (`Earlystop)
-	| `Fail f:	-> `std.Failure f
+	| `None:	-> `std.Fail (`Earlystop)
+	| `Fail f:	-> `std.Fail f
 	| `Some t:
 		/*
 		we can stop early if we get 
 		an incorrectly encoded char
 		*/
 		if re.pat.len > 0
-			-> `std.Failure (`Earlystop)
+			-> `std.Fail (`Earlystop)
 		;;
 		dump(re, t, 0)
 		append(re, `Ilbra 0)
@@ -74,9 +74,9 @@ const regexcompile = {re, pat
 		append(re, `Imatch)
 		idump(re)
 		astfree(t)
-		-> `std.Success re
+		-> `std.Ok re
 	;;
-	-> `std.Failure (`Noimpl)
+	-> `std.Fail (`Noimpl)
 }
 
 const free = {re
