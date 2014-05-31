@@ -1,7 +1,7 @@
 use "die.use"
 
 pkg std =
-	type error(@a, @b) = union
+	type result(@a, @b) = union
 		`Ok	@a
 		`Fail	@b
 	;;
