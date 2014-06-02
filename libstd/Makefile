@@ -10,7 +10,6 @@ MYRSRC= \
     die.myr \
     endian.myr \
     env.myr \
-    error.myr \
     execvp.myr \
     extremum.myr \
     floatbits.myr \

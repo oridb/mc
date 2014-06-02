@@ -1,9 +1,0 @@
-use "die.use"
-
-pkg std =
-	type error(@a, @b) = union
-		`Success	@a
-		`Failure	@b
-	;;
-;;
-
