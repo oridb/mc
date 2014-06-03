@@ -14,7 +14,6 @@ CFLAGS += -MMD -MP -MF ${_DEPSDIR}/$(subst /,-,$*).d
 .PHONY: all
 
 all: subdirs $(BIN) $(LIB) $(EXTRA)
-install: subdirs-install install-bin install-lib install-hdr install-pc
 
 $(LIB): $(OBJ) $(DEPS)
 	$(AR) -rcs $@ $(OBJ)
@@ -51,33 +50,52 @@ clean: subdirs-clean
 	rm -f ${BIN} ${OBJ} ${CLEAN}
 
 
-install-bin: $(INSTBIN)
+install: subdirs-install $(INSTBIN) $(INSTLIB) $(INSTHDR) $(INSTPKG)
 	@if [ ! -z "$(INSTBIN)" ]; then \
 		echo install $(INSTBIN) $(INST_ROOT)/bin; \
 		mkdir -p $(INST_ROOT)/bin; \
 		install $(INSTBIN) $(INST_ROOT)/bin; \
 	fi
-
-install-lib: $(INSTLIB)
 	@if [ ! -z "$(INSTLIB)" ]; then \
 		echo install -m 644 $(INSTLIB) $(INST_ROOT)/lib; \
 		mkdir -p $(INST_ROOT)/lib; \
 		install -m 644 $(INSTLIB) $(INST_ROOT)/lib; \
 	fi
-
-install-hdr: $(INSTHDR)
 	@if [ ! -z "$(INSTHDR)" ]; then \
 		echo install $(INSTHDR) $(INST_ROOT)/include; \
 		mkdir -p $(INST_ROOT)/include; \
 		install $(INSTHDR) $(INST_ROOT)/include; \
 	fi
-
-install-pc: $(INSTPKG)
 	@if [ ! -z "$(INSTPKG)" ]; then \
 		echo install $(INSTPKG) $(INST_ROOT)/lib/pkgconfig; \
 		mkdir -p $(INST_ROOT)/lib/pkgconfig; \
 		install $(INSTPKG) $(INST_ROOT)/lib/pkgconfig; \
 	fi
+
+subdirs-uninstall:
+	@for i in $(SUB); do (\
+	    cd $$i && \
+	    $(MAKE) uninstall|| \
+	    exit 1 \
+	); done
+
+uninstall: subdirs-uninstall
+	@for i in $(INSTBIN); do \
+		echo rm -f $(INST_ROOT)/bin/$$i; \
+		rm -f $(INST_ROOT)/bin/$$i; \
+	done
+	@for i in $(INSTLIB); do \
+		echo rm -f $(INST_ROOT)/lib/$$i; \
+		rm -f $(INST_ROOT)/lib/$$i; \
+	done
+	@for i in $(INSTHDR); do \
+		echo rm -f $(INST_ROOT)/include/$$i; \
+		rm -f $(INST_ROOT)/include/$$i; \
+	done
+	@for i in $(INSTPKG); do \
+		echo rm -f $(INST_ROOT)/lib/pkgconfig/$$i; \
+		rm -f $(INST_ROOT)/lib/pkgconfig/$$i; \
+	done
 
 clean-backups:
 	find ./ -name .*.sw* -exec rm -f {} \;

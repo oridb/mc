@@ -90,5 +90,9 @@ install:
 	install libstd.a $(INST_ROOT)/lib/myr
 	install std $(INST_ROOT)/lib/myr
 
+uninstall:
+	rm -f $(INST_ROOT)/lib/myr/libstd.a
+	rm -f $(INST_ROOT)/lib/myr/std
+
 ../6/6m:
 	cd ..; make
