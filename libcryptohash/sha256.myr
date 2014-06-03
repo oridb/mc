@@ -10,14 +10,7 @@ pkg cryptohash =
 ;;
 
 type sha256 = struct
-	a : uint32
-	b : uint32
-	c : uint32
-	d : uint32
-	e : uint32
-	f : uint32
-	g : uint32
-	h : uint32
+	x : uint32[8]
 	tail : byte[64]
 	msglen : uint64
 ;;
@@ -31,14 +24,14 @@ const sha256 = {data
 }
 
 const sha256init = {st
-	st.a = 0x6A09E667
-	st.b = 0xBB67AE85
-	st.c = 0x3C6EF372
-	st.d = 0xA54FF53A
-	st.e = 0x510e527f
-	st.f = 0x9b05688c
-	st.g = 0x1f83d9ab
-	st.h = 0x5be0cd19
+	st.x[0] = 0x6A09E667
+	st.x[1] = 0xBB67AE85
+	st.x[2] = 0x3C6EF372
+	st.x[3] = 0xA54FF53A
+	st.x[4] = 0x510e527f
+	st.x[5] = 0x9b05688c
+	st.x[6] = 0x1f83d9ab
+	st.x[7] = 0x5be0cd19
 	st.msglen = 0
 }
 
@@ -68,14 +61,14 @@ const sha256fin = {st
 
 	tail(st)
 
-	pack(r[0:4], st.a)
-	pack(r[4:8], st.b)
-	pack(r[8:12], st.c)
-	pack(r[12:16], st.d)
-	pack(r[16:20], st.e)
-	pack(r[20:24], st.f)
-	pack(r[24:28], st.g)
-	pack(r[28:32], st.h)
+	pack(r[0:4], st.x[0])
+	pack(r[4:8], st.x[1])
+	pack(r[8:12], st.x[2])
+	pack(r[12:16], st.x[3])
+	pack(r[16:20], st.x[4])
+	pack(r[20:24], st.x[5])
+	pack(r[24:28], st.x[6])
+	pack(r[28:32], st.x[7])
 	-> r
 }
 
@@ -114,14 +107,14 @@ const step = {st, msg
 	var s48, s49, s50, s51, s52, s53, s54, s55
 	var s56, s57, s58, s59, s60, s61, s62, s63
 
-	a = st.a
-	b = st.b
-	c = st.c
-	d = st.d
-	e = st.e
-	f = st.f
-	g = st.g
-	h = st.h
+	a = st.x[0]
+	b = st.x[1]
+	c = st.x[2]
+	d = st.x[3]
+	e = st.x[4]
+	f = st.x[5]
+	g = st.x[6]
+	h = st.x[7]
 
 	s00 = unpack(msg[ 0: 4])
 	s01 = unpack(msg[ 4: 8])
@@ -319,14 +312,14 @@ const step = {st, msg
 	a += (((f << 26) | (f >> 6)) ^ ((f << 21) | (f >> 11)) ^ ((f << 7) | (f >> 25))) + (h ^ (f & (g ^ h))) + 0xc67178f2 + s63;
 	e += a;  a += (((b << 30) | (b >> 2)) ^ ((b << 19) | (b >> 13)) ^ ((b << 10) | (b >> 22))) + ((b & (c | d)) | (c & d));
 
-	st.a += a
-	st.b += b
-	st.c += c
-	st.d += d
-	st.e += e
-	st.f += f
-	st.g += g
-	st.h += h
+	st.x[0] += a
+	st.x[1] += b
+	st.x[2] += c
+	st.x[3] += d
+	st.x[4] += e
+	st.x[5] += f
+	st.x[6] += g
+	st.x[7] += h
 }
 
 const unpack = {b
