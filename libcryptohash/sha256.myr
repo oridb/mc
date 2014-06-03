@@ -65,6 +65,21 @@ const sha256add = {st, data
 
 const sha256fin = {st
 	var r : byte[32]
+
+	tail(st)
+
+	pack(r[0:4], st.a)
+	pack(r[4:8], st.b)
+	pack(r[8:12], st.c)
+	pack(r[12:16], st.d)
+	pack(r[16:20], st.e)
+	pack(r[20:24], st.f)
+	pack(r[24:28], st.g)
+	pack(r[28:32], st.h)
+	-> r
+}
+
+const tail = {st
 	var ntail
 
 	/* append first padding block */
@@ -86,16 +101,6 @@ const sha256fin = {st
 	st.tail[62] = ((st.msglen * 8) >> 8)	castto(byte)
 	st.tail[63] = ((st.msglen * 8) >> 0)	castto(byte)
 	step(st, st.tail[:])
-
-	pack(r[0:4], st.a)
-	pack(r[4:8], st.b)
-	pack(r[8:12], st.c)
-	pack(r[12:16], st.d)
-	pack(r[16:20], st.e)
-	pack(r[20:24], st.f)
-	pack(r[24:28], st.g)
-	pack(r[28:32], st.h)
-	-> r
 }
 
 const step = {st, msg
