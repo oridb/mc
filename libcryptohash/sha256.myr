@@ -59,7 +59,7 @@ const sha256add = {st, data
 const sha256fin = {st
 	var r : byte[32]
 
-	tail(st)
+	tail(st.x[:], st.msglen, st.tail[:])
 
 	pack(r[0:4], st.x[0])
 	pack(r[4:8], st.x[1])
@@ -72,28 +72,28 @@ const sha256fin = {st
 	-> r
 }
 
-const tail = {st
+const tail = {x, msglen, tail
 	var ntail
 
 	/* append first padding block */
-	ntail = st.msglen % 64
-	st.tail[ntail++] = 0x80
-	std.slfill(st.tail[ntail:], 0)
+	ntail = msglen % 64
+	tail[ntail++] = 0x80
+	std.slfill(tail[ntail:], 0)
 	if 64 - ntail < 8
-		step(st.x[:], st.tail[:])
-		std.slfill(st.tail[:], 0)
+		step(x, tail)
+		std.slfill(tail, 0)
 	;;
 
 	/* append size block */
-	st.tail[56] = ((st.msglen * 8) >> 56)   castto(byte)
-	st.tail[57] = ((st.msglen * 8) >> 48)	castto(byte)
-	st.tail[58] = ((st.msglen * 8) >> 40)	castto(byte)
-	st.tail[59] = ((st.msglen * 8) >> 32)	castto(byte)
-	st.tail[60] = ((st.msglen * 8) >> 24)	castto(byte)
-	st.tail[61] = ((st.msglen * 8) >> 16)	castto(byte)
-	st.tail[62] = ((st.msglen * 8) >> 8)	castto(byte)
-	st.tail[63] = ((st.msglen * 8) >> 0)	castto(byte)
-	step(st.x[:], st.tail[:])
+	tail[56] = ((msglen * 8) >> 56)   castto(byte)
+	tail[57] = ((msglen * 8) >> 48)	castto(byte)
+	tail[58] = ((msglen * 8) >> 40)	castto(byte)
+	tail[59] = ((msglen * 8) >> 32)	castto(byte)
+	tail[60] = ((msglen * 8) >> 24)	castto(byte)
+	tail[61] = ((msglen * 8) >> 16)	castto(byte)
+	tail[62] = ((msglen * 8) >> 8)	castto(byte)
+	tail[63] = ((msglen * 8) >> 0)	castto(byte)
+	step(x, tail)
 }
 
 const step = {x, msg
