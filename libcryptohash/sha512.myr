@@ -7,10 +7,21 @@ pkg cryptohash =
 	const sha512init	: (st : sha512# -> void)
 	const sha512add	: (st : sha512#, data : byte[:] -> void)
 	const sha512fin	: (st : sha512# -> byte[64])
+
+	const sha384	: (data : byte[:] -> byte[48])
+	const sha384init	: (st : sha384# -> void)
+	const sha384add	: (st : sha384#, data : byte[:] -> void)
+	const sha384fin	: (st : sha384# -> byte[48])
 ;;
 
 
 type sha512 = struct
+	x	: uint64[8]
+	tail	: byte[128]
+	msglen	: uint64
+;;
+
+type sha384 = struct
 	x	: uint64[8]
 	tail	: byte[128]
 	msglen	: uint64
@@ -72,6 +83,62 @@ const sha512fin = {st
 	pack(r[56:64],	st.x[7])
 	-> r
 }
+
+const sha384 = {data
+	var st
+
+	sha384init(&st)
+	sha384add(&st, data)
+	-> sha384fin(&st)
+}
+
+const sha384init = {st
+	st.x[0] = 0xCBBB9D5DC1059ED8ul
+	st.x[1] = 0x629A292A367CD507ul
+	st.x[2] = 0x9159015A3070DD17ul
+	st.x[3] = 0x152FECD8F70E5939ul
+	st.x[4] = 0x67332667FFC00B31ul
+	st.x[5] = 0x8EB44A8768581511ul
+	st.x[6] = 0xDB0C2E0D64F98FA7ul
+	st.x[7] = 0x47B5481DBEFA4FA4ul
+	st.msglen = 0
+}
+
+const sha384add = {st, data
+	var n, ntail
+
+	ntail = st.msglen % 128
+	st.msglen += data.len
+	if ntail > 0
+		n = 128 - ntail
+		std.slcp(st.tail[n:], data[:n])
+		data = data[n:]
+		step(st.x[:], st.tail[:])
+	;;
+
+	while data.len >= 128
+		step(st.x[:], data[:128])
+		data = data[128:]
+	;;
+
+	ntail = st.msglen % 128
+	std.slcp(st.tail[:ntail], data)
+}
+
+const sha384fin = {st
+	var r : byte[48]
+
+	tail(st.x[:], st.msglen, st.tail[:])
+
+	pack(r[ 0: 8],	st.x[0])
+	pack(r[ 8:16],	st.x[1])
+	pack(r[16:24],	st.x[2])
+	pack(r[24:32],	st.x[3])
+	pack(r[32:40],	st.x[4])
+	pack(r[40:48],	st.x[5])
+	-> r
+}
+
 
 const tail = {x, msglen, tail
 	var ntail

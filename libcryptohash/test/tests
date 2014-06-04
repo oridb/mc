@@ -25,3 +25,4 @@ B sha1-test	C
 B sha256-test	C
 B sha224-test	C
 B sha512-test	C
+B sha384-test	C
