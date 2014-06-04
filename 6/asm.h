@@ -59,6 +59,7 @@ typedef enum {
 struct Loc {
     Loctype type; /* the type of loc */
     Mode mode;    /* the mode of this location */
+    void *list;
     union {
         char *lbl;  /* for Loclbl, Loclitl */
         struct {    /* for Locreg */
@@ -113,7 +114,6 @@ struct Asmbb {
     Bitset *liveout;  /* variables live on exit from BB */
 };
 
-
 /* instruction selection state */
 struct Isel {
     Cfg  *cfg;          /* cfg built with nodes */
@@ -133,8 +133,6 @@ struct Isel {
     Loc *calleesave[Nsaved];
 
     /* register allocator state */
-    Bitset *prepainted; /* locations that need to be a specific colour */
-    Bitset *initial;    /* initial set of locations used by this fn */
 
     size_t *gbits;      /* igraph matrix repr */
     regid **gadj;      /* igraph adj set repr */
@@ -142,11 +140,6 @@ struct Isel {
     int *degree;        /* degree of nodes */
     Loc **aliasmap;     /* mapping of aliases */
 
-    Loc  **selstk;
-    size_t nselstk;
-
-    Bitset *coalesced;
-    Bitset *spilled;
     Bitset *shouldspill;        /* the first registers we should try to spill */
     Bitset *neverspill;        /* registers we should never spill */
 
@@ -179,6 +172,14 @@ struct Isel {
 
     Loc **wlsimp;
     size_t nwlsimp;
+
+    Loc  **selstk;
+    size_t nselstk;
+
+    Bitset *coalesced;
+    Bitset *spilled;
+    Bitset *prepainted; /* locations that need to be a specific colour */
+    Bitset *initial;    /* initial set of locations used by this fn */
 };
 
 /* entry points */

@@ -306,7 +306,7 @@ static void gbputedge(Isel *s, size_t u, size_t v)
     assert(gbhasedge(s, u, v) && gbhasedge(s, v, u));
 }
 
-static int wlhas(Loc **wl, size_t nwl, regid v, size_t *idx)
+static int wlfind(Loc **wl, size_t nwl, regid v, size_t *idx)
 {
     size_t i;
 
@@ -355,6 +355,19 @@ static void alputedge(Isel *s, regid u, regid v)
     s->gadj[u] = xrealloc(s->gadj[u], s->ngadj[u]*sizeof(regid));
     s->gadj[u][s->ngadj[u] - 1] = v;
 }
+
+static void wlput(Loc ***wl, size_t *nwl, Loc *l)
+{
+    lappend(wl, nwl, l);
+    l->list = wl;
+}
+
+static void wlputset(Bitset *bs, regid r)
+{
+    bsput(bs, r);
+    locmap[r]->list = bs;
+}
+
 
 static void addedge(Isel *s, regid u, regid v)
 {
@@ -435,10 +448,14 @@ static void build(Isel *s)
             nd = defs(insn, d);
 
             /* add these to the initial set */
-            for (k = 0; k < nu; k++)
-                bsput(s->initial, u[k]);
-            for (k = 0; k < nd; k++)
-                bsput(s->initial, d[k]);
+            for (k = 0; k < nu; k++) {
+                if (!bshas(s->prepainted, u[k]))
+                    wlputset(s->initial, u[k]);
+            }
+            for (k = 0; k < nd; k++) {
+                if (!bshas(s->prepainted, d[k]))
+                    wlputset(s->initial, d[k]);
+            }
 
             /* moves get special treatment, since we don't want spurious
              * edges between the src and dest */
@@ -479,13 +496,10 @@ static void build(Isel *s)
 
 static int adjavail(Isel *s, regid r)
 {
-    size_t i;
-
     if (bshas(s->coalesced, r))
         return 0;
-    for (i = 0; i < s->nselstk; i++)
-        if (r == s->selstk[i]->reg.id)
-            return 0;
+    if (locmap[r]->list == &s->selstk)
+        return 0;
     return 1;
 }
 
@@ -532,11 +546,11 @@ static void mkworklist(Isel *s)
         if (bshas(s->prepainted, i))
             continue;
         else if (!istrivial(s, i))
-            lappend(&s->wlspill, &s->nwlspill, locmap[i]);
+            wlput(&s->wlspill, &s->nwlspill, locmap[i]);
         else if (moverelated(s, i))
-            lappend(&s->wlfreeze, &s->nwlfreeze, locmap[i]);
+            wlput(&s->wlfreeze, &s->nwlfreeze, locmap[i]);
         else
-            lappend(&s->wlsimp, &s->nwlsimp, locmap[i]);
+            wlput(&s->wlsimp, &s->nwlsimp, locmap[i]);
         locmap[i]->reg.colour = 0;
     }
 }
@@ -589,19 +603,19 @@ static void decdegree(Isel *s, regid m)
          * that the node is already on the list that we'd be
          * moving it to.
          */
-        found = wlhas(s->wlspill, s->nwlspill, m, &idx);
+        found = wlfind(s->wlspill, s->nwlspill, m, &idx);
         if (found)
             ldel(&s->wlspill, &s->nwlspill, idx);
         if (moverelated(s, m)) {
             if (!found)
-                assert(wlhas(s->wlfreeze, s->nwlfreeze, m, &idx));
+                assert(wlfind(s->wlfreeze, s->nwlfreeze, m, &idx));
             else
-                lappend(&s->wlfreeze, &s->nwlfreeze, locmap[m]);
+                wlput(&s->wlfreeze, &s->nwlfreeze, locmap[m]);
         } else {
             if (!found)
-                assert(wlhas(s->wlsimp, s->nwlsimp, m, &idx));
+                assert(wlfind(s->wlsimp, s->nwlsimp, m, &idx));
             else
-                lappend(&s->wlsimp, &s->nwlsimp, locmap[m]);
+                wlput(&s->wlsimp, &s->nwlsimp, locmap[m]);
         }
     }
 }
@@ -613,7 +627,7 @@ static void simp(Isel *s)
     size_t i;
 
     l = lpop(&s->wlsimp, &s->nwlsimp);
-    lappend(&s->selstk, &s->nselstk, l);
+    wlput(&s->selstk, &s->nselstk, l);
     for (i = 0; i < s->ngadj[l->reg.id]; i++) {
         m = s->gadj[l->reg.id][i];
         if (adjavail(s, m))
@@ -642,9 +656,9 @@ static void wladd(Isel *s, regid u)
     if (!istrivial(s, u))
         return;
 
-    assert(wlhas(s->wlfreeze, s->nwlfreeze, u, &i));
+    assert(wlfind(s->wlfreeze, s->nwlfreeze, u, &i));
     ldel(&s->wlfreeze, &s->nwlfreeze, i);
-    lappend(&s->wlsimp, &s->nwlsimp, locmap[u]);
+    wlput(&s->wlsimp, &s->nwlsimp, locmap[u]);
 }
 
 static int conservative(Isel *s, regid u, regid v)
@@ -705,12 +719,12 @@ static void combine(Isel *s, regid u, regid v)
 
     if (debugopt['r'] > 2)
         printedge(stdout, "combining:", u, v);
-    if (wlhas(s->wlfreeze, s->nwlfreeze, v, &idx))
+    if (wlfind(s->wlfreeze, s->nwlfreeze, v, &idx))
         ldel(&s->wlfreeze, &s->nwlfreeze, idx);
-    else if (wlhas(s->wlspill, s->nwlspill, v, &idx)) {
+    else if (wlfind(s->wlspill, s->nwlspill, v, &idx)) {
         ldel(&s->wlspill, &s->nwlspill, idx);
     }
-    bsput(s->coalesced, v);
+    wlputset(s->coalesced, v);
     s->aliasmap[v] = locmap[u];
 
     /* nodemoves[u] = nodemoves[u] U nodemoves[v] */
@@ -735,9 +749,9 @@ static void combine(Isel *s, regid u, regid v)
         addedge(s, t, u);
         decdegree(s, t);
     }
-    if (!istrivial(s, u) && wlhas(s->wlfreeze, s->nwlfreeze, u, &idx)) {
+    if (!istrivial(s, u) && wlfind(s->wlfreeze, s->nwlfreeze, u, &idx)) {
         ldel(&s->wlfreeze, &s->nwlfreeze, idx);
-        lappend(&s->wlspill, &s->nwlspill, locmap[u]);
+        wlput(&s->wlspill, &s->nwlspill, locmap[u]);
     }
 }
 
@@ -806,10 +820,10 @@ static void freezemoves(Isel *s, Loc *u)
             mldel(&s->wlmove, &s->nwlmove, m);
         lappend(&s->mfrozen, &s->nmfrozen, m);
         if (!nodemoves(s, v->reg.id, NULL) && istrivial(s, v->reg.id)) {
-            if (!wlhas(s->wlfreeze, s->nwlfreeze, v->reg.id, &idx))
+            if (!wlfind(s->wlfreeze, s->nwlfreeze, v->reg.id, &idx))
                 die("Reg %zd not in freeze wl\n", v->reg.id);
             ldel(&s->wlfreeze, &s->nwlfreeze, idx);
-            lappend(&s->wlsimp, &s->nwlsimp, v);
+            wlput(&s->wlsimp, &s->nwlsimp, v);
         }
 
     }
@@ -821,7 +835,7 @@ static void freeze(Isel *s)
     Loc *l;
 
     l = lpop(&s->wlfreeze, &s->nwlfreeze);
-    lappend(&s->wlsimp, &s->nwlsimp, l);
+    wlput(&s->wlsimp, &s->nwlsimp, l);
     freezemoves(s, l);
 }
 
@@ -852,7 +866,7 @@ static void selspill(Isel *s)
         }
     }
     assert(m != NULL);
-    lappend(&s->wlsimp, &s->nwlsimp, m);
+    wlput(&s->wlsimp, &s->nwlsimp, m);
     freezemoves(s, m);
 }
 
@@ -898,7 +912,7 @@ static int paint(Isel *s)
         }
         if (!found) {
             spilled = 1;
-            bsput(s->spilled, n->reg.id);
+            wlputset(s->spilled, n->reg.id);
         }
     }
     for (l = 0; bsiter(s->coalesced, &l); l++) {
