@@ -16,9 +16,9 @@ pkg cryptohash =
 ;;
 
 type sha256 = struct
-	x : uint32[8]
-	tail : byte[64]
-	msglen : uint64
+	x	: uint32[8]
+	tail	: byte[64]
+	msglen	: uint64
 ;;
 
 const sha256 = {data
