@@ -2,11 +2,17 @@ use std
 
 pkg cryptohash =
 	type sha256
+	type sha224
 
 	const sha256	: (data : byte[:] -> byte[32])
 	const sha256init	: (st : sha256# -> void)
 	const sha256add	: (st : sha256#, data : byte[:] -> void)
 	const sha256fin	: (st : sha256# -> byte[32])
+
+	const sha224	: (data : byte[:] -> byte[28])
+	const sha224init	: (st : sha224# -> void)
+	const sha224add	: (st : sha224#, data : byte[:] -> void)
+	const sha224fin	: (st : sha224# -> byte[28])
 ;;
 
 type sha256 = struct
@@ -71,6 +77,69 @@ const sha256fin = {st
 	pack(r[28:32], st.x[7])
 	-> r
 }
+
+type sha224 = struct
+	x : uint32[8]
+	tail : byte[64]
+	msglen : uint64
+;;
+
+const sha224 = {data
+	var st
+
+	sha224init(&st)
+	sha224add(&st, data)
+	-> sha224fin(&st)
+}
+
+const sha224init = {st
+	st.x[0] = 0xc1059ed8
+	st.x[1] = 0x367cd507
+	st.x[2] = 0x3070dd17
+	st.x[3] = 0xf70e5939
+	st.x[4] = 0xffc00b31
+	st.x[5] = 0x68581511
+	st.x[6] = 0x64f98fa7
+	st.x[7] = 0xbefa4fa4
+	st.msglen = 0
+}
+
+const sha224add = {st, data
+	var n, ntail
+
+	ntail = st.msglen % 64
+	st.msglen += data.len
+	if ntail > 0
+		n = 64 - ntail
+		std.slcp(st.tail[n:], data[:n])
+		data = data[n:]
+		step(st.x[:], st.tail[:])
+	;;
+
+	while data.len >= 64
+		step(st.x[:], data[:64])
+		data = data[64:]
+	;;
+
+	ntail = st.msglen % 64
+	std.slcp(st.tail[:ntail], data)
+}
+
+const sha224fin = {st
+	var r : byte[28]
+
+	tail(st.x[:], st.msglen, st.tail[:])
+
+	pack(r[0:4], st.x[0])
+	pack(r[4:8], st.x[1])
+	pack(r[8:12], st.x[2])
+	pack(r[12:16], st.x[3])
+	pack(r[16:20], st.x[4])
+	pack(r[20:24], st.x[5])
+	pack(r[24:28], st.x[6])
+	-> r
+}
+
 
 const tail = {x, msglen, tail
 	var ntail
