@@ -3,8 +3,7 @@ MYRSRC= \
 	md5.myr \
 	sha1.myr \
 	sha256.myr \
-	# sha256.myr \
-	# sha512.myr \
+	sha512.myr \
 	# sha3.myr \
 
 include config.mk
