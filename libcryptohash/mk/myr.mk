@@ -44,8 +44,18 @@ USE=$(MYRSRC:.myr=.use) $(MYRLIB)
 clean: subdirs-clean
 	rm -f $(OBJ)
 	rm -f $(USE)
-	rm -f lib$(MYRLIB).a
-
+	@if [ ! -z "$(MYRLIB)" ]; then \
+	    echo rm -f $(MYRLIB); \
+	    rm -f $(MYRLIB); \
+	    echo rm -f lib$(MYRLIB).a; \
+	    rm -f lib$(MYRLIB).a; \
+	fi
+	@if [ ! -z "$(MYRBIN)" ]; then \
+	    echo rm -f $(MYRBIN); \
+	    rm -f $(MYRBIN); \
+	    echo rm -f lib$(MYRBIN).a; \
+	    rm -f lib$(MYRBIN).a; \
+	fi
 
 install: subdirs-install $(MYRBIN) $(_LIBNAME) $(MAN)
 	@if [ ! -z "$(MYRBIN)" ]; then \
