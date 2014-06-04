@@ -1,5 +1,6 @@
 FLAGS=-I../
 mkdir -p tmpout
+EXTRA_SRC=printhash.myr
 # Format:
 # [B|F] testname [E|P] result
 #    [B|F]: Compiler outcome.

@@ -1,22 +1,14 @@
 use std
 use cryptohash
 
+use "printhash.use"
+
 const main = {
-	print(cryptohash.md5(""))
-	print(cryptohash.md5("h"))
+	print(cryptohash.md5("")[:])
+	print(cryptohash.md5("h")[:])
 	/* 64 byte block */
-	print(cryptohash.md5("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"))
+	print(cryptohash.md5("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")[:])
 	/* tail spanning */
-	print(cryptohash.md5("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbb"))
+	print(cryptohash.md5("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbb")[:])
 }
 
-const print = {b
-	for x in b
-		if (x <= 0xf)
-			std.put("0%xb", x)
-		else
-			std.put("%xb", x)
-		;;
-	;;
-        std.put("\n")
-}
