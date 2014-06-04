@@ -646,7 +646,7 @@ static Tok *number(int base)
     } else {
         t = mktok(Tintlit);
         t->str = strdupn(&fbuf[start], fidx - start);
-        t->intval = strtol(t->str, NULL, base);
+        t->intval = strtoull(t->str, NULL, base);
         /* check suffixes:
          *   u -> unsigned
          *   l -> 64 bit
