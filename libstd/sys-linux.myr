@@ -466,7 +466,8 @@ pkg std =
 
 
 	/* fd manipulation */
-	const open	: (path:byte[:], opts:fdopt, mode:int64 -> fd)
+	const open	: (path:byte[:], opts:fdopt -> fd)
+	const openmode	: (path:byte[:], opts:fdopt, mode:int64 -> fd)
 	const close	: (fd:fd -> int64)
 	const creat	: (path:byte[:], mode:int64 -> fd)
 	const read	: (fd:fd, buf:byte[:] -> size)
@@ -556,7 +557,8 @@ const execve	= {cmd, args, env
 }
 
 /* fd manipulation */
-const open	= {path, opts, mode;	-> syscall(Sysopen, cstring(path), opts, mode) castto(fd)}
+const open	= {path, opts;		-> syscall(Sysopen, cstring(path), 0o644, mode) castto(fd)}
+const openmode	= {path, opts, mode;	-> syscall(Sysopen, cstring(path), opts, mode) castto(fd)}
 const close	= {fd;			-> syscall(Sysclose, fd)}
 const creat	= {path, mode;		-> syscall(Syscreat, cstring(path), mode) castto(fd)}
 const read	= {fd, buf;		-> syscall(Sysread, fd, buf castto(byte#), buf.len castto(size)) castto(size)}

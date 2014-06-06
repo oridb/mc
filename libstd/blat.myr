@@ -10,7 +10,7 @@ const blat = {path, buf
 	var written
 	var n
 
-	fd = open(path, Ocreat|Owronly, 0o777)
+	fd = openmode(path, Ocreat|Owronly, 0o777)
 	if fd < 0
 		fatal(1, "Could not open file \"%s\"", path)
 	;;

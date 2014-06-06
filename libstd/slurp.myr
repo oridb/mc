@@ -18,7 +18,7 @@ const slurp = {path
 	var len
 	var buf
 
-	fd = open(path, Ordonly, 0o777)
+	fd = open(path, Ordonly)
 	if fd < 0
 		-> `Fail "Could not open file"
 	;;
