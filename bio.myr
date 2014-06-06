@@ -110,7 +110,7 @@ const sysmode = {mode
 const sysopen = {path, mode, openmode, perm
 	var fd
 
-	fd = std.open(path, openmode, perm castto(int64))
+	fd = std.openmode(path, openmode, perm castto(int64))
 	if fd < 0
 		-> `std.None
 	else
