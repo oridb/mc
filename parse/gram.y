@@ -83,7 +83,6 @@ static void addtrait(Type *t, char *str);
 %token<tok> Telse    /* else */
 %token<tok> Telif    /* else */
 %token<tok> Tmatch   /* match */
-%token<tok> Tdefault /* default */
 %token<tok> Tgoto    /* goto */
 %token<tok> Tbreak   /* break */
 %token<tok> Tcontinue   /* continue */

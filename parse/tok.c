@@ -163,7 +163,6 @@ static int kwd(char *s)
         {"castto",      Tcast},
         {"const",       Tconst},
         {"continue",    Tcontinue},
-        {"default",     Tdefault},
         {"elif",        Telif},
         {"else",        Telse},
         {"export",      Texport},
