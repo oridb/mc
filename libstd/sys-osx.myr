@@ -593,7 +593,7 @@ const execve	= {cmd, args, env
 
 
 /* fd manipulation */
-const open	= {path, opts;		-> syscall(Sysopen, cstring(path), opts, 0o644) castto(fd)}
+const open	= {path, opts;		-> syscall(Sysopen, cstring(path), opts, 0o777) castto(fd)}
 const openmode	= {path, opts, mode;	-> syscall(Sysopen, cstring(path), opts, mode) castto(fd)}
 const close	= {fd;			-> syscall(Sysclose, fd)}
 const creat	= {path, mode;		-> openmode(path, Ocreat | Otrunc | Owronly, mode) castto(fd)}
