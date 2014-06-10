@@ -623,10 +623,16 @@ static Tok *number(int base)
     int c;
     int isfloat;
     int unsignedval;
+    /* because we allow '_' in numbers, and strtod/stroull don't, we
+     * need a buffer that holds the number without '_'.
+     */
+    char buf[128];
+    size_t nbuf;
 
     t = NULL;
     isfloat = 0;
     start = fidx;
+    nbuf = 0;
     for (c = peek(); isxdigit(c) || c == '.' || c == '_'; c = peek()) {
         next();
         if (c == '_')
@@ -635,17 +641,23 @@ static Tok *number(int base)
             isfloat = 1;
         else if (hexval(c) < 0 || hexval(c) > base)
             fatal(line, "Integer digit '%c' outside of base %d", c, base);
+        if (nbuf >= sizeof buf) {
+            buf[nbuf] = '\0';
+            fatal(line, "number %s... too long to represent", buf);
+        }
+        buf[nbuf++] = c;
     }
+    buf[nbuf] = '\0';
 
     /* we only support base 10 floats */
     if (isfloat && base == 10) {
         t = mktok(Tfloatlit);
         t->str = strdupn(&fbuf[start], fidx - start);
-        t->fltval = strtod(t->str, NULL);
+        t->fltval = strtod(buf, NULL);
     } else {
         t = mktok(Tintlit);
         t->str = strdupn(&fbuf[start], fidx - start);
-        t->intval = strtoull(t->str, NULL, base);
+        t->intval = strtoull(buf, NULL, base);
         /* check suffixes:
          *   u -> unsigned
          *   l -> 64 bit
