@@ -52,24 +52,24 @@ clean: subdirs-clean
 
 install: subdirs-install $(INSTBIN) $(INSTLIB) $(INSTHDR) $(INSTPKG)
 	@if [ ! -z "$(INSTBIN)" ]; then \
-		echo install $(INSTBIN) $(INST_ROOT)/bin; \
-		mkdir -p $(INST_ROOT)/bin; \
-		install $(INSTBIN) $(INST_ROOT)/bin; \
+		echo install $(abspath $(INSTBIN) $(DESTDIR)/$(INST_ROOT)/bin); \
+		mkdir -p $(abspath $(DESTDIR)/$(INST_ROOT)/bin); \
+		install $(INSTBIN) $(abspath $(DESTDIR)/$(INST_ROOT)/bin); \
 	fi
 	@if [ ! -z "$(INSTLIB)" ]; then \
-		echo install -m 644 $(INSTLIB) $(INST_ROOT)/lib; \
-		mkdir -p $(INST_ROOT)/lib; \
-		install -m 644 $(INSTLIB) $(INST_ROOT)/lib; \
+		echo install -m 644 $(INSTLIB) $(abspath $(DESTDIR)/$(INST_ROOT)/lib); \
+		mkdir -p $(abspath $(DESTDIR)/$(INST_ROOT)/lib); \
+		install -m 644 $(INSTLIB) $(abspath $(DESTDIR)/$(INST_ROOT)/lib); \
 	fi
 	@if [ ! -z "$(INSTHDR)" ]; then \
-		echo install $(INSTHDR) $(INST_ROOT)/include; \
-		mkdir -p $(INST_ROOT)/include; \
-		install $(INSTHDR) $(INST_ROOT)/include; \
+		echo install $(INSTHDR) $(abspath $(DESTDIR)/$(INST_ROOT)/include); \
+		mkdir -p $(abspath $(DESTDIR)/$(INST_ROOT)/include); \
+		install $(INSTHDR) $(abspath $(DESTDIR)/$(INST_ROOT)/include); \
 	fi
 	@if [ ! -z "$(INSTPKG)" ]; then \
-		echo install $(INSTPKG) $(INST_ROOT)/lib/pkgconfig; \
-		mkdir -p $(INST_ROOT)/lib/pkgconfig; \
-		install $(INSTPKG) $(INST_ROOT)/lib/pkgconfig; \
+		echo install $(abspath $(INSTPKG) $(DESTDIR)/$(INST_ROOT)/lib/pkgconfig); \
+		mkdir -p $(abspath $(DESTDIR)/$(INST_ROOT)/lib/pkgconfig); \
+		install $(abspath $(INSTPKG) $(DESTDIR)/$(INST_ROOT)/lib/pkgconfig); \
 	fi
 
 subdirs-uninstall:
@@ -81,20 +81,20 @@ subdirs-uninstall:
 
 uninstall: subdirs-uninstall
 	@for i in $(INSTBIN); do \
-		echo rm -f $(INST_ROOT)/bin/$$i; \
-		rm -f $(INST_ROOT)/bin/$$i; \
+		echo rm -f $(abspath $(DESTDIR)/$(INST_ROOT)/bin/$$i); \
+		rm -f $(abspath $(DESTDIR)/$(INST_ROOT)/bin/$$i); \
 	done
 	@for i in $(INSTLIB); do \
-		echo rm -f $(INST_ROOT)/lib/$$i; \
-		rm -f $(INST_ROOT)/lib/$$i; \
+		echo rm -f $(abspath $(DESTDIR)/$(INST_ROOT)/lib/$$i); \
+		rm -f $(abspath $(DESTDIR)/$(INST_ROOT)/lib/$$i); \
 	done
 	@for i in $(INSTHDR); do \
-		echo rm -f $(INST_ROOT)/include/$$i; \
-		rm -f $(INST_ROOT)/include/$$i; \
+		echo rm -f $(abspath $(DESTDIR)/$(INST_ROOT)/include/$$i); \
+		rm -f $(abspath $(DESTDIR)/$(INST_ROOT)/include/$$i); \
 	done
 	@for i in $(INSTPKG); do \
-		echo rm -f $(INST_ROOT)/lib/pkgconfig/$$i; \
-		rm -f $(INST_ROOT)/lib/pkgconfig/$$i; \
+		echo rm -f $(abspath $(DESTDIR)/$(INST_ROOT)/lib/pkgconfig/$$i); \
+		rm -f $(abspath $(DESTDIR)/$(INST_ROOT)/lib/pkgconfig/$$i); \
 	done
 
 clean-backups:
