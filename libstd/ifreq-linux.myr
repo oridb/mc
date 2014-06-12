@@ -1,7 +1,5 @@
-use "sys.use"
-
-pkg std =
-	const Ifnamesz = 16
+pkg std
+	const Ifnamesize = 16
 
 	type ifreq_addr = struct
 		name	: byte[Ifnamesz]
