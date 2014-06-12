@@ -362,6 +362,12 @@ static void wlput(Loc ***wl, size_t *nwl, Loc *l)
     l->list = wl;
 }
 
+static void wldel(Isel *s, Loc ***wl, size_t *nwl, size_t idx)
+{
+    (*wl)[idx]->list = NULL;
+    ldel(wl, nwl, idx);
+}
+
 static void wlputset(Bitset *bs, regid r)
 {
     bsput(bs, r);
@@ -547,8 +553,9 @@ static void mkworklist(Isel *s)
             continue;
         else if (!istrivial(s, i))
             wlput(&s->wlspill, &s->nwlspill, locmap[i]);
-        else if (moverelated(s, i))
+        else if (moverelated(s, i)) {
             wlput(&s->wlfreeze, &s->nwlfreeze, locmap[i]);
+        }
         else
             wlput(&s->wlsimp, &s->nwlsimp, locmap[i]);
         locmap[i]->reg.colour = 0;
@@ -605,7 +612,7 @@ static void decdegree(Isel *s, regid m)
          */
         found = wlfind(s->wlspill, s->nwlspill, m, &idx);
         if (found)
-            ldel(&s->wlspill, &s->nwlspill, idx);
+            wldel(s, &s->wlspill, &s->nwlspill, idx);
         if (moverelated(s, m)) {
             if (!found)
                 assert(wlfind(s->wlfreeze, s->nwlfreeze, m, &idx));
@@ -656,8 +663,9 @@ static void wladd(Isel *s, regid u)
     if (!istrivial(s, u))
         return;
 
-    assert(wlfind(s->wlfreeze, s->nwlfreeze, u, &i));
-    ldel(&s->wlfreeze, &s->nwlfreeze, i);
+    assert(locmap[u]->list == &s->wlfreeze || locmap[u]->list == &s->wlsimp);
+    if (wlfind(s->wlfreeze, s->nwlfreeze, u, &i))
+        wldel(s, &s->wlfreeze, &s->nwlfreeze, i);
     wlput(&s->wlsimp, &s->nwlsimp, locmap[u]);
 }
 
@@ -720,9 +728,9 @@ static void combine(Isel *s, regid u, regid v)
     if (debugopt['r'] > 2)
         printedge(stdout, "combining:", u, v);
     if (wlfind(s->wlfreeze, s->nwlfreeze, v, &idx))
-        ldel(&s->wlfreeze, &s->nwlfreeze, idx);
+        wldel(s, &s->wlfreeze, &s->nwlfreeze, idx);
     else if (wlfind(s->wlspill, s->nwlspill, v, &idx)) {
-        ldel(&s->wlspill, &s->nwlspill, idx);
+        wldel(s, &s->wlspill, &s->nwlspill, idx);
     }
     wlputset(s->coalesced, v);
     s->aliasmap[v] = locmap[u];
@@ -750,7 +758,7 @@ static void combine(Isel *s, regid u, regid v)
         decdegree(s, t);
     }
     if (!istrivial(s, u) && wlfind(s->wlfreeze, s->nwlfreeze, u, &idx)) {
-        ldel(&s->wlfreeze, &s->nwlfreeze, idx);
+        wldel(s, &s->wlfreeze, &s->nwlfreeze, idx);
         wlput(&s->wlspill, &s->nwlspill, locmap[u]);
     }
 }
@@ -822,7 +830,7 @@ static void freezemoves(Isel *s, Loc *u)
         if (!nodemoves(s, v->reg.id, NULL) && istrivial(s, v->reg.id)) {
             if (!wlfind(s->wlfreeze, s->nwlfreeze, v->reg.id, &idx))
                 die("Reg %zd not in freeze wl\n", v->reg.id);
-            ldel(&s->wlfreeze, &s->nwlfreeze, idx);
+            wldel(s, &s->wlfreeze, &s->nwlfreeze, idx);
             wlput(&s->wlsimp, &s->nwlsimp, v);
         }
 
@@ -851,7 +859,7 @@ static void selspill(Isel *s)
         if (!bshas(s->shouldspill, s->wlspill[i]->reg.id))
             continue;
         m = s->wlspill[i];
-        ldel(&s->wlspill, &s->nwlspill, i);
+        wldel(s, &s->wlspill, &s->nwlspill, i);
         break;
     }
     if (!m) {
@@ -861,7 +869,7 @@ static void selspill(Isel *s)
                 continue;
             }
             m = s->wlspill[i];
-            ldel(&s->wlspill, &s->nwlspill, i);
+            wldel(s, &s->wlspill, &s->nwlspill, i);
             break;
         }
     }
