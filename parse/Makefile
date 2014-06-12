@@ -13,6 +13,7 @@ OBJ=bitset.o \
     use.o \
     util.o
 
+GENHDR=gram.h
 CLEAN=gram.c gram.h
 
 include ../mk/lexyacc.mk

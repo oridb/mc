@@ -101,7 +101,7 @@ clean-backups:
 	find ./ -name .*.sw* -exec rm -f {} \;
 	find ./ -name *.bak -exec rm -f {} \;
 
-%.o: %.c .deps
+%.o: %.c $(GENHDR) .deps
 	$(CC) -c $(CFLAGS) $(_LIBINCPATHS) $<
 
 .deps: 
