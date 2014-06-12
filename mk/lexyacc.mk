@@ -1,6 +1,6 @@
 NECFLAGS = $(subst -Werror,,$(subst -Wall,,$(CFLAGS)))
 
-%.c: %.y
+%.h %.c: %.y
 	yacc -d -o$*.c $<
 
 %.c: %.l
