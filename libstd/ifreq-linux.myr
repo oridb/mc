@@ -1,0 +1,65 @@
+pkg std
+	const Ifnamesize = 16
+
+	type ifreq_addr = struct
+		name	: byte[Ifnamesz]
+		addr	: sockaddr
+	;;
+
+	type ifreq_dstaddr = struct
+		name	: byte[Ifnamesz]
+		dstaddr	: sockaddr
+	;;
+
+	type ifreq_broadaddr = struct
+		name	: byte[Ifnamesz]
+		broadaddr	: sockaddr
+	;;
+
+	type ifreq_netmask = struct
+		name	: byte[Ifnamesz]
+		netmask	: sockaddr
+	;;
+
+
+	type ifreq_hwaddr = struct
+		name	: byte[Ifnamesz]
+		hwaddr	: sockaddr
+	;;
+
+	type ifreq_flags = struct
+		name	: byte[Ifnamesz]
+		flags	: int16
+	;;
+
+	type ifreq_ifindex = struct
+		name	: byte[Ifnamesz]
+		index	: int32
+	;;
+
+	type ifreq_metric = struct
+		name	: byte[Ifnamesz]
+		metric	: int32
+	;;
+
+
+	type ifreq_mtu = struct
+		name	: byte[Ifnamesz]
+		mtu	: int32
+	;;
+
+	type ifreq_slave = struct
+		name	: byte[Ifnamesz]
+		slave	: byte[Ifnamesz]
+	;;
+
+	type ifreq_newname = struct
+		name	: byte[Ifnamesz]
+		newname	: byte[Ifnamesz]
+	;;
+
+	type ifreq_data = struct
+		name	: byte[Ifnamesz]
+		data	: void#
+	;;
+;;

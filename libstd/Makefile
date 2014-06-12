@@ -18,6 +18,7 @@ MYRSRC= \
     hasprefix.myr \
     hassuffix.myr \
     htab.myr \
+    ifreq.myr \
     intparse.myr \
     ipparse.myr \
     mk.myr \
@@ -60,6 +61,9 @@ all: lib$(MYRLIB).a $(MYRBIN) test
 
 sys.myr: sys-$(SYS).myr
 	cp sys-$(SYS).myr sys.myr
+
+ifreq.myr: ifreq-$(SYS).myr
+	cp ifreq-$(SYS).myr ifreq.myr
 
 waitstatus.myr: waitstatus-$(SYS).myr
 	cp waitstatus-$(SYS).myr waitstatus.myr
