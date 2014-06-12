@@ -605,7 +605,9 @@ static void umatch(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, Node *i
 {
     Node *v, *x, *y;
     Node *deeper, *next;
-    Node **patarg;
+    Node **patarg, *lit, *idx;
+    char *str;
+    size_t len;
     Ucon *uc;
     size_t i;
     size_t off;
@@ -622,9 +624,38 @@ static void umatch(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, Node *i
         /* Never supported */
         case Tyvoid: case Tybad: case Tyvalist: case Tyvar:
         case Typaram: case Tyunres: case Tyname: case Ntypes:
-        /* Should never show up */
+            die("Unsupported type for pattern");
+            break;
+        /* only valid for string literals */
         case Tyslice:
-            die("Unsupported type for compare");
+            lit = pat->expr.args[0];
+            if (exprop(pat) != Olit || lit->lit.littype != Lstr)
+                die("Unsupported pattern");
+            str = lit->lit.strval;
+
+            /* load slice length */
+            next = genlbl();
+            x = slicelen(s, val);
+            len = strlen(str);
+            y = mkintlit(lit->line, len);
+            y->expr.type = tyintptr;
+            v = mkexpr(pat->line, Oeq, x, y, NULL);
+            cjmp(s, v, next, iffalse);
+            append(s, next);
+
+            for (i = 0; i < len; i++) {
+                next = genlbl();
+                x = mkintlit(pat->line, str[i]);
+                x->expr.type = mktype(-1, Tybyte);
+                idx = mkintlit(pat->line, i);
+                idx->expr.type = tyintptr;
+                y = load(idxaddr(s, val, idx));
+                v = mkexpr(pat->line, Oeq, x, y, NULL);
+                v->expr.type = mktype(pat->line, Tybool);
+                cjmp(s, v, next, iffalse);
+                append(s, next);
+            }
+            jmp(s, iftrue);
             break;
         case Tybool: case Tychar: case Tybyte:
         case Tyint8: case Tyint16: case Tyint32: case Tyint:
