@@ -90,13 +90,13 @@ clean:
 	rm -f lib$(MYRLIB).a
 
 install:
-	mkdir -p  $(INST_ROOT)/lib/myr
-	install libstd.a $(INST_ROOT)/lib/myr
-	install std $(INST_ROOT)/lib/myr
+	mkdir -p  $(abspath $(DESTDIR)/$(INST_ROOT)/lib/myr)
+	install libstd.a $(abspath $(DESTDIR)/$(INST_ROOT)/lib/myr)
+	install std $(abspath $(DESTDIR)/$(INST_ROOT)/lib/myr)
 
 uninstall:
-	rm -f $(INST_ROOT)/lib/myr/libstd.a
-	rm -f $(INST_ROOT)/lib/myr/std
+	rm -f $(abspath $(DESTDIR)/$(INST_ROOT)/lib/myr/libstd.a)
+	rm -f $(abspath $(DESTDIR)/$(INST_ROOT)/lib/myr/std)
 
 ../6/6m:
 	cd ..; make
