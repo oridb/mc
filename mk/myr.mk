@@ -44,53 +44,53 @@ USE=$(MYRSRC:.myr=.use) $(MYRLIB)
 clean: subdirs-clean
 	rm -f $(OBJ)
 	rm -f $(USE)
-	rm -f lib$(MYRLIB).a
-
-install: subdirs-install install-bin install-lib install-man
-uninstall: subdirs-uninstall uninstall-bin uninstall-lib uninstall-man
-
-install-bin: $(MYRBIN)
+	@if [ ! -z "$(MYRLIB)" ]; then \
+	    echo rm -f $(MYRLIB); \
+	    rm -f $(MYRLIB); \
+	    echo rm -f lib$(MYRLIB).a; \
+	    rm -f lib$(MYRLIB).a; \
+	fi
 	@if [ ! -z "$(MYRBIN)" ]; then \
-	    echo install $(MYRBIN) $(INST_ROOT)/bin; \
-	    mkdir -p $(INST_ROOT)/bin; \
-	    install $(MYRBIN) $(INST_ROOT)/bin; \
+	    echo rm -f $(MYRBIN); \
+	    rm -f $(MYRBIN); \
+	    echo rm -f lib$(MYRBIN).a; \
+	    rm -f lib$(MYRBIN).a; \
 	fi
 
-install-lib: $(_LIBNAME)
+install: subdirs-install $(MYRBIN) $(_LIBNAME) $(MAN)
+	@if [ ! -z "$(MYRBIN)" ]; then \
+	    echo install $(MYRBIN) $(abspath $(DESTDIR)/$(INST_ROOT)/bin); \
+	    mkdir -p $(abspath $(DESTDIR)/$(INST_ROOT)/bin); \
+	    install $(MYRBIN) $(abspath $(DESTDIR)/$(INST_ROOT)/bin); \
+	fi
 	@if [ ! -z "$(_LIBNAME)" ]; then \
-		echo install -m 644 $(_LIBNAME) $(INST_ROOT)/lib/myr; \
-		echo install -m 644 $(MYRLIB) $(INST_ROOT)/lib/myr; \
-		mkdir -p $(INST_ROOT)/lib/myr; \
-		install -m 644 $(_LIBNAME) $(INST_ROOT)/lib/myr; \
-		install -m 644 $(MYRLIB) $(INST_ROOT)/lib/myr; \
+		echo install -m 644 $(_LIBNAME) $(abspath $(DESTDIR)/$(INST_ROOT)/lib/myr); \
+		echo install -m 644 $(MYRLIB) $(abspath $(DESTDIR)/$(INST_ROOT)/lib/myr); \
+		mkdir -p $(abspath $(DESTDIR)/$(INST_ROOT)/lib/myr; \
+		install -m 644 $(_LIBNAME) $(abspath $(DESTDIR)/$(INST_ROOT)/lib/myr); \
+		install -m 644 $(MYRLIB) $(abspath $(DESTDIR)/$(INST_ROOT)/lib/myr); \
 	fi
-
-install-man:
 	@for i in $(MAN); do \
 	    MANSECT=$$(echo $$i | awk -F. '{print $$NF}'); \
-	    echo mkdir -p $(INST_ROOT)/share/man/man$$MANSECT; \
-	    echo install -m 644 $(MAN) $(INST_ROOT)/share/man/man$${MANSECT}; \
-	    mkdir -p $(INST_ROOT)/share/man/man$$MANSECT; \
-	    install -m 644 $(MAN) $(INST_ROOT)/share/man/man$${MANSECT}; \
+	    echo mkdir -p $(abspath $(DESTDIR)/$(INST_ROOT)/share/man/man$$MANSECT); \
+	    echo install -m 644 $(MAN) $(abspath $(DESTDIR)/$(INST_ROOT)/share/man/man$${MANSECT}); \
+	    mkdir -p $(abspath $(DESTDIR)/$(INST_ROOT)/share/man/man$$MANSECT); \
+	    install -m 644 $(MAN) $(abspath $(DESTDIR)/$(INST_ROOT)/share/man/man$${MANSECT}); \
 	done \
 
-uninstall-bin: $(MYRBIN)
+uninstall: subdirs-uninstall
 	@for i in $(MYRBIN); do \
-	    echo rm -f $(INST_ROOT)/bin/$$i; \
-	    rm -f $(INST_ROOT)/bin/$$i; \
+	    echo rm -f $(abspath $(DESTDIR)/$(INST_ROOT)/bin/$$i); \
+	    rm -f $(abspath $(DESTDIR)/$(INST_ROOT)/bin/$$i); \
 	done
-
-uninstall-lib: $(_LIBNAME)
 	@for i in $(_LIBNAME) $(MYRLIB); do \
-	    echo rm -f $(INST_ROOT)/lib/myr/$$i; \
-	    rm -f $(INST_ROOT)/lib/myr/$$i; \
+	    echo rm -f $(abspath $(DESTDIR)/$(INST_ROOT)/lib/myr/$$i); \
+	    rm -f $(abspath $(DESTDIR)/$(INST_ROOT)/lib/myr/$$i); \
 	done
-
-uninstall-man:
 	@for i in $(MAN); do \
 	    MANSECT=$$(echo $$i | awk -F. '{print $$NF}'); \
-	    echo rm -f $(INST_ROOT)/share/man/man$${MANSECT}/$$i; \
-	    rm -f $(INST_ROOT)/share/man/man$${MANSECT}/$$i; \
+	    echo rm -f $(abspath $(DESTDIR)/$(INST_ROOT)/share/man/man$${MANSECT}/$$i); \
+	    rm -f $(abspath $(DESTDIR)/$(INST_ROOT)/share/man/man$${MANSECT}/$$i); \
 	done
 
 config.mk:
