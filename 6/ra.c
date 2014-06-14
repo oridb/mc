@@ -763,6 +763,18 @@ static void combine(Isel *s, regid u, regid v)
     }
 }
 
+static int constrained(Isel *s, regid u, regid v)
+{
+    size_t i;
+
+    if (bshas(s->prepainted, v))
+        return 1;
+    if (bshas(s->prepainted, u))
+        for (i = 0; i < Nmode; i++)
+            if (regmap[colourmap[u]][i] && gbhasedge(s, regmap[colourmap[u]][i], v))
+                return 1;
+    return gbhasedge(s, u, v);
+}
 static void coalesce(Isel *s)
 {
     Insn *m;
@@ -782,7 +794,7 @@ static void coalesce(Isel *s)
         lappend(&s->mcoalesced, &s->nmcoalesced, m);
         wladd(s, u);
         wladd(s, v);
-    } else if (bshas(s->prepainted, v) || gbhasedge(s, u, v)) {
+    } else if (constrained(s, u, v)) {
         lappend(&s->mconstrained, &s->nmconstrained, m);
         wladd(s, u);
         wladd(s, v);
@@ -879,7 +891,7 @@ static void selspill(Isel *s)
 }
 
 /*
- * Selects the colors for registers, spilling to the
+ * Selects the colours for registers, spilling to the
  * stack if no free registers can be found.
  */
 static int paint(Isel *s)
