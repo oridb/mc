@@ -220,15 +220,27 @@ static void stor(Isel *s, Loc *a, Loc *b)
 }
 
 /* ensures that a location is within a reg */
-static Loc *inr(Isel *s, Loc *a)
+static Loc *newr(Isel *s, Loc *a)
 {
     Loc *r;
 
+    r = locreg(a->mode);
+    if (a->type == Locreg) {
+        if (isfloatmode(a->mode))
+            g(s, Imovs, a, r, NULL);
+        else
+            g(s, Imov, a, r, NULL);
+    } else {
+        load(s, a, r);
+    }
+    return r;
+}
+
+static Loc *inr(Isel *s, Loc *a)
+{
     if (a->type == Locreg)
         return a;
-    r = locreg(a->mode);
-    load(s, a, r);
-    return r;
+    return newr(s, a);
 }
 
 /* ensures that a location is within a reg or an imm */
@@ -237,7 +249,7 @@ static Loc *inri(Isel *s, Loc *a)
     if (a->type == Locreg || a->type == Loclit)
         return a;
     else
-        return inr(s, a);
+        return newr(s, a);
 }
 
 /* If we're testing equality, etc, it's a bit silly
@@ -265,11 +277,11 @@ static void selcjmp(Isel *s, Node *n, Node **args)
             b = selexpr(s, args[0]->expr.args[1]);
         else
             b = a;
-        a = inr(s, a);
+        a = newr(s, a);
     } else {
         cond = Itest;
         jmp = Ijnz;
-        b = inr(s, selexpr(s, args[0])); /* cond */
+        b = newr(s, selexpr(s, args[0])); /* cond */
         a = b;
     }
 
@@ -288,7 +300,7 @@ static Loc *binop(Isel *s, AsmOp op, Node *x, Node *y)
 
     a = selexpr(s, x);
     b = selexpr(s, y);
-    a = inr(s, a);
+    a = newr(s, a);
     g(s, op, b, a, NULL);
     return a;
 }
@@ -364,8 +376,8 @@ static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size
     Loc *sp, *dp, *len; /* pointers to src, dst */
 
     len = loclit(sz, ModeQ);
-    sp = inr(s, from);
-    dp = inr(s, to);
+    sp = newr(s, from);
+    dp = newr(s, to);
 
     /* length to blit */
     g(s, Imov, len, locphysreg(Rrcx), NULL);
@@ -513,7 +525,7 @@ Loc *selexpr(Isel *s, Node *n)
             /* these get clobbered by the div insn */
             a = selexpr(s, args[0]);
             b = selexpr(s, args[1]);
-            b = inr(s, b);
+            b = newr(s, b);
             c = coreg(Reax, mode(n));
             r = locreg(a->mode);
             if (r->mode == ModeB)
@@ -532,7 +544,7 @@ Loc *selexpr(Isel *s, Node *n)
             break;
         case Oneg:
             r = selexpr(s, args[0]);
-            r = inr(s, r);
+            r = newr(s, r);
             g(s, Ineg, r, NULL);
             break;
 
@@ -543,7 +555,7 @@ Loc *selexpr(Isel *s, Node *n)
         case Ofdiv:      r = binop(s, Idivs, args[0], args[1]); break;
         case Ofneg:
             r = selexpr(s, args[0]);
-            r = inr(s, r);
+            r = newr(s, r);
             a = NULL;
             b = NULL;
             if (mode(args[0]) == ModeF) {
@@ -560,7 +572,7 @@ Loc *selexpr(Isel *s, Node *n)
             break;
         case Obsl:
         case Obsr:
-            a = inr(s, selexpr(s, args[0]));
+            a = newr(s, selexpr(s, args[0]));
             b = selexpr(s, args[1]);
             if (b->type == Loclit) {
                 d = b;
@@ -581,7 +593,7 @@ Loc *selexpr(Isel *s, Node *n)
             break;
         case Obnot:
             r = selexpr(s, args[0]);
-            r = inr(s, r);
+            r = newr(s, r);
             g(s, Inot, r, NULL);
             break;
 
@@ -600,7 +612,7 @@ Loc *selexpr(Isel *s, Node *n)
             break;
 
         case Olnot:
-            a = inr(s, selexpr(s, args[0]));
+            a = newr(s, selexpr(s, args[0]));
             b = locreg(ModeB);
             r = locreg(mode(n));
             /* lnot only valid for integer-like values */
@@ -614,7 +626,7 @@ Loc *selexpr(Isel *s, Node *n)
         case Oueq: case Oune: case Ougt: case Ouge: case Oult: case Oule:
             a = selexpr(s, args[0]);
             b = selexpr(s, args[1]);
-            a = inr(s, a);
+            a = newr(s, a);
             c = locreg(ModeB);
             r = locreg(mode(n));
             g(s, reloptab[exprop(n)].test, b, a, NULL);

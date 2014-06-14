@@ -178,7 +178,8 @@ static void forcelocal(Simp *s, Node *n)
 
 static void declarelocal(Simp *s, Node *n)
 {
-    forcelocal(s, n);
+    if (stacknode(n))
+        forcelocal(s, n);
 }
 
 /* takes the address of a node, possibly converting it to
