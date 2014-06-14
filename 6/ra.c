@@ -775,6 +775,7 @@ static int constrained(Isel *s, regid u, regid v)
                 return 1;
     return gbhasedge(s, u, v);
 }
+
 static void coalesce(Isel *s)
 {
     Insn *m;

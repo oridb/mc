@@ -58,7 +58,6 @@ static Node *simp(Simp *s, Node *n);
 static Node *rval(Simp *s, Node *n, Node *dst);
 static Node *lval(Simp *s, Node *n);
 static Node *assign(Simp *s, Node *lhs, Node *rhs);
-static void declarelocal(Simp *s, Node *n);
 static void simpcond(Simp *s, Node *n, Node *ltrue, Node *lfalse);
 static void simpconstinit(Simp *s, Node *dcl);
 static Node *simpcast(Simp *s, Node *val, Type *to);
@@ -136,6 +135,52 @@ static int addressable(Simp *s, Node *a)
         return stacknode(a);
 }
 
+int stacktype(Type *t)
+{
+    /* the types are arranged in types.def such that this is true */
+    t = tybase(t);
+    return t->type >= Tyslice;
+}
+
+int floattype(Type *t)
+{
+    t = tybase(t);
+    return t->type == Tyfloat32 || t->type == Tyfloat64;
+}
+
+int stacknode(Node *n)
+{
+    if (n->type == Nexpr)
+        return stacktype(n->expr.type);
+    else
+        return stacktype(n->decl.type);
+}
+
+int floatnode(Node *n)
+{
+    if (n->type == Nexpr)
+        return floattype(n->expr.type);
+    else
+        return floattype(n->decl.type);
+}
+
+static void forcelocal(Simp *s, Node *n)
+{
+    assert(n->type == Ndecl || (n->type == Nexpr && exprop(n) == Ovar));
+    s->stksz += size(n);
+    s->stksz = align(s->stksz, min(size(n), Ptrsz));
+    if (debugopt['i']) {
+        dump(n, stdout);
+        printf("declared at %zd, size = %zd\n", s->stksz, size(n));
+    }
+    htput(s->stkoff, n, itop(s->stksz));
+}
+
+static void declarelocal(Simp *s, Node *n)
+{
+    forcelocal(s, n);
+}
+
 /* takes the address of a node, possibly converting it to
  * a pointer to the base type 'bt' */
 static Node *addr(Simp *s, Node *a, Type *bt)
@@ -144,7 +189,7 @@ static Node *addr(Simp *s, Node *a, Type *bt)
 
     n = mkexpr(a->line, Oaddr, a, NULL);
     if (!addressable(s, a))
-            declarelocal(s, a);
+            forcelocal(s, a);
     if (!bt)
         n->expr.type = mktyptr(a->line, a->expr.type);
     else
@@ -240,35 +285,6 @@ static char *asmname(Node *n)
     else
         snprintf(s, len, "%s%s", Symprefix, n->name.name);
     return s;
-}
-
-int stacktype(Type *t)
-{
-    /* the types are arranged in types.def such that this is true */
-    t = tybase(t);
-    return t->type >= Tyslice;
-}
-
-int floattype(Type *t)
-{
-    t = tybase(t);
-    return t->type == Tyfloat32 || t->type == Tyfloat64;
-}
-
-int stacknode(Node *n)
-{
-    if (n->type == Nexpr)
-        return stacktype(n->expr.type);
-    else
-        return stacktype(n->decl.type);
-}
-
-int floatnode(Node *n)
-{
-    if (n->type == Nexpr)
-        return floattype(n->expr.type);
-    else
-        return floattype(n->decl.type);
 }
 
 size_t tysize(Type *t)
@@ -1498,18 +1514,6 @@ static Node *rval(Simp *s, Node *n, Node *dst)
             break;
     }
     return r;
-}
-
-static void declarelocal(Simp *s, Node *n)
-{
-    assert(n->type == Ndecl || (n->type == Nexpr && exprop(n) == Ovar));
-    s->stksz += size(n);
-    s->stksz = align(s->stksz, min(size(n), Ptrsz));
-    if (debugopt['i']) {
-        dump(n, stdout);
-        printf("declared at %zd, size = %zd\n", s->stksz, size(n));
-    }
-    htput(s->stkoff, n, itop(s->stksz));
 }
 
 static void declarearg(Simp *s, Node *n)
