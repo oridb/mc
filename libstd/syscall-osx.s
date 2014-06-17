@@ -25,13 +25,10 @@ _std$syscall:
 	movq 128(%rsp),%r9
 
 	syscall
-	syscall
 	jae success
 	negq %rax
 
 success:
-	popq %rbp
-
 	popq %r11
 	popq %rcx
 	popq %r9
@@ -74,6 +71,7 @@ forksuccess:
 	jz isparent
 	xorq %rax,%rax
 isparent:
+
 	popq %r11 
 	popq %rcx 
 	popq %r9

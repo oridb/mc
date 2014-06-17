@@ -93,6 +93,15 @@ pkg std =
 		__pad2	: byte[112]
 	;;
 
+	type dirent = struct
+		ino	: uint64	
+		seekoff	: uint64	/* seek offset (optional, used by servers) */
+		reclen	: uint16	/* length of this record */
+		namlen	: uint16	/* length of string in d_name */
+		typeid  : uint8		/* file type, see below */
+		name	: byte[1024]
+	;;
+
 	/* open options */
 	const Ordonly  	: fdopt = 0x0
 	const Owronly  	: fdopt = 0x1
@@ -102,6 +111,7 @@ pkg std =
 	const Ocreat   	: fdopt = 0x200
 	const Onofollow	: fdopt = 0x100
 	const Otrunc   	: fdopt = 0x400
+	const Odir	: fdopt = 0x100000
 
 	/* mmap protection */
 	const Mprotnone	: mprot = 0x0
@@ -511,6 +521,7 @@ pkg std =
 	const fstat	: (fd:fd, sb:statbuf# -> int64)
 	const mkdir	: (path : byte[:], mode : int64	-> int64)
 	const ioctl	: (fd:fd, req : int64, args:... -> int64)
+	const getdirentries64	: (fd : fd, buf : byte[:], basep : uint64# -> int64)
 
 	/* networking */
 	const socket	: (dom : sockfam, stype : socktype, proto : sockproto	-> fd)
@@ -597,8 +608,8 @@ const open	= {path, opts;		-> syscall(Sysopen, cstring(path), opts, 0o777) castt
 const openmode	= {path, opts, mode;	-> syscall(Sysopen, cstring(path), opts, mode) castto(fd)}
 const close	= {fd;			-> syscall(Sysclose, fd)}
 const creat	= {path, mode;		-> openmode(path, Ocreat | Otrunc | Owronly, mode) castto(fd)}
-const read	= {fd, buf;		-> syscall(Sysread, fd, buf castto(char#), buf.len castto(size)) castto(size)}
-const write	= {fd, buf;		-> syscall(Syswrite, fd, buf castto(char#), buf.len castto(size)) castto(size)}
+const read	= {fd, buf;		-> syscall(Sysread, fd, buf castto(byte#), buf.len castto(size)) castto(size)}
+const write	= {fd, buf;		-> syscall(Syswrite, fd, buf castto(byte#), buf.len castto(size)) castto(size)}
 const lseek	= {fd, off, whence;	-> syscall(Syslseek, fd, off, whence)}
 const stat	= {path, sb;		-> syscall(Sysstat, cstring(path), sb)}
 const fstat	= {fd, sb;		-> syscall(Sysfstat, fd, sb)}
@@ -611,6 +622,7 @@ const ioctl	= {fd, req, args
 	(arg, ap) = vanext(ap)
 	-> syscall(Sysioctl, fd, req, arg) castto(int64)
 }
+const getdirentries64	= {fd, buf, basep;	-> syscall(Sysgetdirentries64, fd, buf castto(byte#), buf.len castto(size), basep)}
 
 /* networking */
 const socket	= {dom, stype, proto;	-> syscall(Syssocket, dom castto(int64), stype, proto) castto(fd) }
