@@ -1095,7 +1095,7 @@ static size_t writestruct(FILE *fd, Htab *globls, Htab *strtab, Node *n)
     Node **dcl;
     int found;
     size_t i, j;
-    size_t sz, end;
+    size_t sz, pad, end;
     size_t ndcl;
 
     sz = 0;
@@ -1104,7 +1104,8 @@ static size_t writestruct(FILE *fd, Htab *globls, Htab *strtab, Node *n)
     dcl = t->sdecls;
     ndcl = t->nmemb;
     for (i = 0; i < ndcl; i++) {
-        sz += writepad(fd, tyalign(sz, size(dcl[i])) - sz);
+        pad = alignto(sz, decltype(dcl[i]));
+        sz += writepad(fd, pad - sz);
         found = 0;
         for (j = 0; j < n->expr.nargs; j++)
             if (!strcmp(namestr(n->expr.args[j]->expr.idx), declname(dcl[i]))) {
@@ -1114,9 +1115,7 @@ static size_t writestruct(FILE *fd, Htab *globls, Htab *strtab, Node *n)
         if (!found)
             sz += writepad(fd, size(dcl[i]));
     }
-    end = sz;
-    for (i = 0; i < ndcl; i++)
-        end = tyalign(end, size(dcl[i]));
+    end = alignto(sz, t);
     sz += writepad(fd, end - sz);
     return sz;
 }

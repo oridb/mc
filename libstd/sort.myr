@@ -6,11 +6,14 @@ pkg std =
 
 generic sort = {sl, cmp
 	var end
+	var tmp
 
 	heapify(sl, cmp)
 	end = sl.len - 1
 	while end > 0
-		swap(sl, end, 0)
+		tmp = sl[end]
+		sl[end] = sl[0]
+		sl[0] = tmp
 		end--
 		siftdown(sl[:end], 0, cmp)
 	;;
@@ -29,6 +32,7 @@ generic heapify = {sl, cmp
 
 generic siftdown = {sl, start, cmp
 	var r, c, s
+	var tmp
 
 	r = start
 	while 2*r + 1 <= sl.len
@@ -43,18 +47,13 @@ generic siftdown = {sl, start, cmp
 			;;
 		;;
 		if s != r
-			swap(sl, r, s)
+			tmp = sl[r]
+			sl[r] = sl[s]
+			sl[s] = tmp
 			r = s
 		else
 			->
 		;;
 	;;
-}
-
-generic swap = {sl, i, j
-	var tmp
-	tmp = sl[i]
-	sl[i] = sl[j]
-	sl[j] = tmp
 }
 
