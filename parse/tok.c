@@ -642,7 +642,7 @@ static Tok *number(int base)
         else if (hexval(c) < 0 || hexval(c) > base)
             fatal(line, "Integer digit '%c' outside of base %d", c, base);
         if (nbuf >= sizeof buf) {
-            buf[nbuf] = '\0';
+            buf[nbuf-1] = '\0';
             fatal(line, "number %s... too long to represent", buf);
         }
         buf[nbuf++] = c;

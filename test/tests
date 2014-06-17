@@ -37,6 +37,7 @@ B outparam	E	42
 B outparam-sl	E	2
 B struct1	E	12
 B struct	E	42
+B align		C
 B structptr	E	42
 B structasn	E	42
 B structarray	E	42
