@@ -1,5 +1,10 @@
 use std
 
+/* size should be 1 */
+type alignstruct0 = struct
+	a : byte
+;;
+
 /* size should be 16 */
 type alignstruct1 = struct
 	a : byte
@@ -48,6 +53,7 @@ type alignstruct7 = struct
 ;;
 
 const main = {
+	std.put("size = %i\n", sizeof(alignstruct0))
 	std.put("size = %i\n", sizeof(alignstruct1))
 	std.put("size = %i\n", sizeof(alignstruct2))
 	std.put("size = %i\n", sizeof(alignstruct3))
