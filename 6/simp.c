@@ -70,9 +70,30 @@ static Type *tyintptr;
 static Type *tyword;
 static Type *tyvoid;
 
-size_t tyalign(size_t sz, size_t eltsz)
+size_t alignto(size_t sz, Type *t)
 {
-    return align(sz, min(eltsz, Ptrsz));
+    size_t a;
+    size_t i;
+
+    t = tybase(t);
+    a = 0;
+    switch (t->type) {
+        case Tyarray:
+            a = alignto(1, t->sub[0]);
+        case Tytuple:
+            for (i = 0; i < t->nsub; i++)
+                a = max(alignto(1, t->sub[i]), a);
+            break;
+        case Tystruct:
+            for (i = 0; i < t->nmemb; i++)
+                a = max(alignto(1, decltype(t->sdecls[i])), a);
+            break;
+        default:
+            a = tysize(t);
+            break;
+    }
+
+    return align(sz, min(a, Ptrsz));
 }
 
 static Type *base(Type *t)
@@ -334,21 +355,18 @@ size_t tysize(Type *t)
             return t->asize->expr.args[0]->lit.intval * tysize(t->sub[0]);
         case Tytuple:
             for (i = 0; i < t->nsub; i++) {
-                sz = tyalign(sz, tysize(t->sub[i]));
+                sz = alignto(sz, t->sub[i]);
                 sz += tysize(t->sub[i]);
             }
-            for (i = 0; i < t->nsub; i++)
-                sz = tyalign(sz, tysize(t->sub[i]));
+            sz = alignto(sz, t);
             return sz;
             break;
         case Tystruct:
             for (i = 0; i < t->nmemb; i++) {
-                sz = tyalign(sz, size(t->sdecls[i]));
+                sz = alignto(sz, decltype(t->sdecls[i]));
                 sz += size(t->sdecls[i]);
             }
-            /* the whole struct size should match the biggest alignment */
-            for (i = 0; i < t->nmemb; i++)
-                sz = tyalign(sz, size(t->sdecls[i]));
+            sz = alignto(sz, t);
             return sz;
             break;
         case Tyunion:
@@ -691,7 +709,7 @@ static void umatch(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, Node *i
             patarg = pat->expr.args;
             off = 0;
             for (i = 0; i < pat->expr.nargs; i++) {
-                off = tyalign(off, size(patarg[i]));
+                off = alignto(off, exprtype(patarg[i]));
                 next = genlbl();
                 v = load(addk(addr(s, val, exprtype(patarg[i])), off));
                 umatch(s, patarg[i], v, exprtype(patarg[i]), next, iffalse);
@@ -789,7 +807,6 @@ static Node *simpblob(Simp *s, Node *blob, Node ***l, size_t *nl)
 static size_t offset(Node *aggr, Node *memb)
 {
     Type *ty;
-    Node **nl;
     size_t i;
     size_t off;
 
@@ -798,13 +815,12 @@ static size_t offset(Node *aggr, Node *memb)
         ty = tybase(ty->sub[0]);
 
     assert(ty->type == Tystruct);
-    nl = ty->sdecls;
     off = 0;
     for (i = 0; i < ty->nmemb; i++) {
-        off = tyalign(off, size(nl[i]));
-        if (!strcmp(namestr(memb), declname(nl[i])))
+        off = alignto(off, decltype(ty->sdecls[i]));
+        if (!strcmp(namestr(memb), declname(ty->sdecls[i])))
             return off;
-        off += size(nl[i]);
+        off += size(ty->sdecls[i]);
     }
     die("Could not find member %s in struct", namestr(memb));
     return -1;
@@ -1094,7 +1110,7 @@ static Node *destructure(Simp *s, Node *lhs, Node *rhs)
     off = 0;
     for (i = 0; i < lhs->expr.nargs; i++) {
         lv = lval(s, args[i]);
-        off = tyalign(off, size(lv));
+        off = alignto(off, exprtype(lv));
         prv = add(addr(s, rhs, exprtype(args[i])), disp(rhs->line, off));
         if (stacknode(args[i])) {
             sz = disp(lhs->line, size(lv));
@@ -1173,7 +1189,7 @@ static Node *simptup(Simp *s, Node *n, Node *dst)
 
     off = 0;
     for (i = 0; i < n->expr.nargs; i++) {
-        off = tyalign(off, size(args[i]));
+        off = alignto(off, exprtype(args[i]));
         assignat(s, r, off, args[i]);
         off += size(args[i]);
     }

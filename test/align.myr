@@ -1,0 +1,64 @@
+use std
+
+/* size should be 16 */
+type alignstruct1 = struct
+	a : byte
+	b : byte[15]
+;;
+
+/* size should be 20 */
+type alignstruct2 = struct
+	a : int
+	b : byte[15]
+	/* 1 byte padding */
+;;
+
+/* size should be 20 */
+type alignstruct3 = struct
+	b : byte[15]
+	a : int
+;;
+
+/* size should be 8 */
+type alignstruct4 = struct
+	a : byte
+	b : int[1]
+;;
+
+/* size should be 24 */
+type alignstruct5 = struct
+	a : byte
+	b : byte[:]
+;;
+
+/* size should be 8 */
+type alignstruct6 = struct
+	a : byte
+	b : byte
+	c : byte
+	d : byte
+	e : int32
+;;
+
+/* size should be 24 */
+type alignstruct7 = struct
+	a : byte
+	b : int32
+	c : byte[:]
+;;
+
+const main = {
+	std.put("size = %i\n", sizeof(alignstruct1))
+	std.put("size = %i\n", sizeof(alignstruct2))
+	std.put("size = %i\n", sizeof(alignstruct3))
+	std.put("size = %i\n", sizeof(alignstruct4))
+	std.put("size = %i\n", sizeof(alignstruct5))
+	std.put("size = %i\n", sizeof(alignstruct6))
+	std.put("size = %i\n", sizeof(alignstruct7))
+	/* size should be 8 */
+	std.put("size = %i\n", sizeof([int, byte, byte]))
+	/* size should be 16 */
+	std.put("size = %i\n", sizeof([int, byte, int, byte]))
+	/* size should be 12 */
+	std.put("size = %i\n", sizeof([int, int, byte, byte]))
+}
