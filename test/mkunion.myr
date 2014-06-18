@@ -1,0 +1,13 @@
+use std
+/* checks that union creation works. exits with 0. */
+type u = union
+	`Some int
+	`None
+;;
+
+const main = {
+	var v
+
+	v = `Some 123
+	std.exit(0)
+}

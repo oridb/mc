@@ -1,0 +1,95 @@
+.TH MUSE 1
+.SH NAME
+muse
+.SH SYNOPSIS
+.B muse
+.I -[hmidos]
+.I [file...]
+.br
+.SH DESCRIPTION
+.PP
+The 'muse' tool takes as input a Myrddin source file and generates
+a usefile from it. A usefile collects definitions exported from the
+package specifications in Myrddin source code, and makes them available
+for other programs to include with a 'use' statement.
+.PP
+It can also merge together a number of usefiles into one larger usefile
+including all of the exported symbols. If an output file name is not given,
+and we are not merging usefiles, then an input file named
+.I filename.myr
+will generate a usefile named
+.I filename.use
+\&.
+
+If the filename does not end with the suffix
+.I .myr
+then the suffix
+.I .o
+will simply be appended to it.
+
+.PP
+The output of muse is architecture-independent. However, the format of the
+generated file is not stable, and is not guaranteed to work across
+different compiler versions.
+
+.PP
+The muse options are:
+
+.TP
+.B -d [flTri]
+Print debugging dumps. Additional options may be given to give more
+debugging information for specific intermediate states of the compilation.
+
+.TP
+.B -h
+Print a summary of the available options.
+
+.TP
+.B -I path
+Add 'path' to the search path for unquoted use statments. This option
+does not affect the search path for local usefiles, which are always
+searched relative to the compiler's current working directory. Without
+any options, the search path defaults to /usr/include/myr.
+
+.TP
+.B -o output-file
+Specify that the generated usefile should be named 
+.I output-file
+
+.TP
+.B -s
+Print a summary of the symbols exported from the usefile that is specified.
+
+.SH EXAMPLE
+.EX
+    muse foo.myr
+    muse -o bar.use bar-system-version.myr
+    muse -mo library foo.use bar.use
+.EE
+
+.SH FILES
+The source for muse is available from
+.B git://git.eigenstate.org/git/ori/mc.git
+and lives in the
+.I muse/ 
+directory within the source tree.
+
+.SH SEE ALSO
+.IR mc(1)
+.IR ld(1)
+.IR as(1)
+
+.SH BUGS
+.PP
+There is insufficient checking and validation done on usefiles.
+.PP
+The file format is in flux, and in current iterations, it is not at all compact.
+.PP
+There is no versioning on the usefiles as it stands. If you use the wrong
+version with the wrong compiler, a mysterious error or even segfault is
+likely.
+.PP
+This utility should not exist. Instead, the compiler should put the
+exported symbol information into the object file or library directly.
+.PP
+The file format is not closed under concatentation.

@@ -1,0 +1,13 @@
+use std
+
+type t(@a) = union
+	`Foo @a
+	`Bar
+;;
+
+const main = {
+	match `Foo 123
+	| `Foo a:	std.exit(0xf)
+	| `Bar:		std.exit(0x0)
+	;;
+}

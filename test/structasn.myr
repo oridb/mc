@@ -1,0 +1,15 @@
+use std
+/* tests block assignment of structs. exits with 42.*/
+type pair = struct
+	a : int
+	b : int
+;;
+
+const main = {
+	var x : pair
+	var y : pair
+	x.a = 12
+	x.b = 30
+	y = x
+	std.exit(y.a + y.b)
+}

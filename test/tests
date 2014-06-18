@@ -1,0 +1,142 @@
+# Format:
+# [B|F] testname [E|P] result
+#    [B|F]: Compiler outcome.
+#	B: Expect that this test will build.
+#	F: Expect that this test will not build.
+#    testname: Test case
+#	The test that will run. We will try to
+#	compile 'testname.myr' to 'testname',
+#	and then execute it, verifying the result
+#    [E|P|C]: Result type
+#	E tells us that the result is an exit status
+#	P tells us that the result is on stdout,
+#         and should be compared to the value on the
+#         line
+#	C tells us that the result is on stdout,
+#         and should be compared to the contents of
+#         the file passed on the line.
+#    result: Result value
+#	What we compare with. This should be self-
+#	evident.
+B main		E	0
+B splitline     E       3
+B add		E	53
+B mul		E	42
+B mul8		E	18
+B div		E	42
+B mod		E	6
+B bsr		E	5
+B chartest	E	0
+B trunccast	E	15
+B zwidencast	E	99
+B swidencast	E	99
+B derefassign	E	123
+B ptrpreinc	E	9
+B incret        E       1
+B outparam	E	42
+B outparam-sl	E	2
+B struct1	E	12
+B struct	E	42
+B align		C
+B structptr	E	42
+B structasn	E	42
+B structarray	E	42
+B structret	E	42
+B constslice	P	2312345678
+B exportmain	E	42
+B slalloc	E	123
+B neststruct	E	3
+B array		E	7
+B arrayaddr	E	42
+B global-arrayvar	E	7
+B arraylen	E	12
+B slice		E	10
+B slicelen	E	5
+B call		E	42
+B doublecall	P	42,33
+B voidcall	E	12
+B callbig	E	42
+B nestfn	E	42
+# B closure	E	55      ## BUGGERED
+B loop		P	0123401236789
+B subrangefor	P       12
+B patiter	P	23512
+B condiftrue	E	7
+B condiffalse	E	9
+B condifrel	E	7
+B overlappingif	E	2
+B fib		E	21
+B basicfloat	E	84
+B sqrt		E	4
+B log-and	E	0
+B log-or	E	1
+B str		E	102
+B generic	E	42
+B genericval	E	42
+B trait-builtin	E	42
+B emptytrait	E	123
+B traitimpl	P	246,44
+# B compoundimpl	P	intptr,charptr BUGGERED
+B nestucon	P	asdf
+B mkunion	E	0
+B genericcall	E	42
+B generictype	E	0
+B genericret	E	42
+B genericmatch	E	15
+B genericrec	E	0
+B stdopt-some	E	42
+B stdopt-none	E	42
+B stdopt-mk	E	42
+B stdopt-struct	E	42
+B sizeof	E	4
+B gsizeof	E	5
+B matchint	E	84
+B matchconst	E	88
+B matchunion	E	84
+B matchtup	E	42
+B matchstruct	E	42
+B matcharray	E	42
+B matchargunion	E	69
+B matchargstr	C
+B matchunion_sl	P	foo
+B matchbind	E	8
+F matchmixed
+B bigliteral	P	34359738368
+B arraylit-ni	E	2
+B livearraylit	E	21
+# B arraylit	E	3       ## BUGGERED
+B structlit	E	42
+B livestructlit	E	21
+B tuple		E	42
+B slgrow        E       42
+B tyrec		E	42
+B infer-named   E       99
+B exportcycle   E       0
+B import-type	E	0
+B helloworld	P	Hello-世界
+B encodechar	P	1世界äa
+B stdsearch	E	0
+B stdtry	C
+B strtab	C
+B catfile	C
+B stdsort	C
+B strstrip	C
+B strsplit	C
+B strfind	C
+B strjoin	C
+B stdslcp	C
+B bigint	C
+B exporttrait
+# B local-labels	E	10 ## BUGGERED
+F declmismatch
+F infermismatch
+# F usedef      ## BUGGERED
+F occur
+F tyoccur
+F union-extraarg
+F union-missingarg
+F match-badtypes
+F generic-in-const
+F aritylow
+F arityhigh
+F badop

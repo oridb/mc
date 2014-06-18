@@ -1,0 +1,12 @@
+use std
+
+const main = {
+	var v
+
+	v = [foo(), 42, 123]
+	std.exit(v[0])
+}
+
+const foo = {
+	-> 21 
+}

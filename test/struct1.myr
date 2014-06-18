@@ -1,0 +1,13 @@
+use std
+/* 
+make sure assigning to a 1-element struct works; exit status should be 12
+*/
+type val = struct
+	a : int
+;;
+
+const main = {
+	var s : val
+	s.a = 12
+	std.exit(s.a)
+}

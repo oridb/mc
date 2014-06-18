@@ -1,0 +1,20 @@
+use std
+
+/* checks that we can create struct literals with named initializers.
+	exits with 42. */
+type t = struct
+	a	: int
+	b	: byte
+	c	: byte[:]
+;;
+
+const main = {
+	var v : t
+
+	v = [.a=foo(), .b=42, .c="foo"]
+	std.exit(v.a)
+}
+
+const foo = {
+	-> 21 
+}

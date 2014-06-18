@@ -1,0 +1,6 @@
+use std
+
+const main = {
+	std.exit(1 + \ /* ignored crap */
+	   	 2)
+}

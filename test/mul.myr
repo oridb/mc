@@ -1,0 +1,8 @@
+use std
+/* should exit with status 42 */
+const main = {
+	var a = 7
+	var b = 2
+	var c = 3
+	std.exit(a * b * c)
+}

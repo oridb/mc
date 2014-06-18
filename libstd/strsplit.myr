@@ -1,0 +1,34 @@
+use "alloc.use"
+use "die.use"
+use "extremum.use"
+use "fmt.use"
+use "option.use"
+use "slpush.use"
+use "strfind.use"
+use "sys.use"
+use "types.use"
+
+pkg std =
+	const strsplit	: (s : byte[:], delim : byte[:] -> byte[:][:])
+;;
+
+const strsplit = {s, delim
+	var last
+	var sp
+
+	sp = [][:]
+	last = 0
+	while true
+		match strfind(s, delim)
+		| `Some i:
+			sp = slpush(sp, s[:i])
+			s = s[i + delim.len:]
+		| `None:
+			goto donesplit
+		;;
+	;;
+:donesplit
+	sp = slpush(sp, s[:])
+	-> sp
+}
+

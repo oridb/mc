@@ -1,0 +1,12 @@
+use std
+/* should preincrement through a pointer, exiting with status 9 */
+const ppreinc = {p
+	-> ++p#
+}
+
+const main = {
+	var x = 8
+
+	std.exit(ppreinc(&x))
+}
+

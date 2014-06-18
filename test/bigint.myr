@@ -1,0 +1,86 @@
+use std
+
+const main = {
+	var a, b, c, d, e
+	var buf : byte[1024], n
+
+	a = std.mkbigint(1234)
+	b = std.mkbigint(0x7fffffff)
+	c = std.mkbigint(7919)
+	d = std.mkbigint(113051)
+	e = std.mkbigint(11)
+
+	std.bigmul(a, b)
+	std.bigmul(a, b)
+	std.bigadd(a, c)
+	std.bigsub(a, d)
+	std.bigdiv(a, e)
+
+	std.bigfree(b)
+	std.bigfree(c)
+	std.bigfree(d)
+	std.bigfree(e)
+
+	n = std.bigfmt(buf[:], a)
+	std.put("%s\n", buf[:n])
+
+	/* smoke test */
+	match std.bigparse("1234_5678_1234_6789_6666_7777_8888")
+	| `std.Some val: a = val
+	| `std.None: std.die("Failed to parse a\n")
+	;;
+	match std.bigparse("1234_5678_1234_6789_6666_7777")
+	| `std.Some val: b = val
+	| `std.None: std.die("Failed to parse b\n")
+	;;
+
+	n = std.bigfmt(buf[:], a)
+	std.put("%s / ", buf[:n])
+	n = std.bigfmt(buf[:], b)
+	std.put("%s == ", buf[:n])
+
+	std.bigdiv(a, b)
+
+	n = std.bigfmt(buf[:], a)
+	std.put("%s\n", buf[:n])
+
+	/* no shifting */
+	match std.bigparse("0xffff_1234_1234_1234_1234")
+	| `std.Some val: a = val
+	| `std.None: std.die("Failed to parse a\n")
+	;;
+	match std.bigparse("0xf010_1234_2314")
+	| `std.Some val: b = val
+	| `std.None: std.die("Failed to parse b\n")
+	;;
+
+	n = std.bigfmt(buf[:], a)
+	std.put("%s / ", buf[:n])
+	n = std.bigfmt(buf[:], b)
+	std.put("%s == ", buf[:n])
+
+	std.bigdiv(a, b)
+
+	n = std.bigfmt(buf[:], a)
+	std.put("%s\n", buf[:n])
+
+	/* no shifting */
+	match std.bigparse("0xffff_1234_1234_1234_1234")
+	| `std.Some val: a = val
+	| `std.None: std.die("Failed to parse a\n")
+	;;
+	match std.bigparse("0x0ff_1234_2314")
+	| `std.Some val: b = val
+	| `std.None: std.die("Failed to parse b\n")
+	;;
+
+	n = std.bigfmt(buf[:], a)
+	std.put("%s / ", buf[:n])
+	n = std.bigfmt(buf[:], b)
+	std.put("%s == ", buf[:n])
+
+	std.bigdiv(a, b)
+
+	n = std.bigfmt(buf[:], a)
+	std.put("%s\n", buf[:n])
+}

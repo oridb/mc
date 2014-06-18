@@ -1,0 +1,10 @@
+use std
+/* should exit with status 42 */
+const main = {
+	var a
+	var b
+
+	a = 127
+	b = 3
+	std.exit(a / b)
+}

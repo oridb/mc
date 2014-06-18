@@ -1,0 +1,38 @@
+use "alloc.use"
+use "die.use"
+use "result.use"
+use "extremum.use"
+use "fmt.use"
+use "sys.use"
+use "types.use"
+
+pkg std =
+	const slurp : (path : byte[:] -> result(byte[:], byte[:]))
+;;
+
+const Bufinc = 4096
+
+const slurp = {path
+	var fd
+	var n
+	var len
+	var buf
+
+	fd = open(path, Ordonly)
+	if fd < 0
+		-> `Fail "Could not open file"
+	;;
+
+	len = 0
+	buf = slalloc(Bufinc)
+	while true
+		n = read(fd, buf[len:])
+		if n == 0
+			goto done
+		;;
+		len += n
+		buf = slgrow(buf, len + Bufinc)
+	;;
+:done
+	-> `Ok buf[:len]
+}

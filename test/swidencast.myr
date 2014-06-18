@@ -1,0 +1,10 @@
+use std
+/* sign extending cast. should exit with status 99 */
+const main = {
+	var u : int8
+	var v : int32
+	
+	u = 99
+	v = u castto(int32)
+	std.exit(v castto(int))
+}

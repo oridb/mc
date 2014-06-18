@@ -1,0 +1,77 @@
+use "sys.use"
+
+pkg std =
+	const Ifnamesz = 16
+
+	type ifreq_addr = struct
+		name	: byte[Ifnamesz]
+		addr	: sockaddr
+	;;
+
+	type ifreq_dstaddr = struct
+		name	: byte[Ifnamesz]
+		dstaddr	: sockaddr
+	;;
+
+	type ifreq_broadaddr = struct
+		name	: byte[Ifnamesz]
+		broadaddr	: sockaddr
+	;;
+
+	type ifreq_flags = struct
+		name	: byte[Ifnamesz]
+		flags	: int16
+	;;
+
+	type ifreq_metric = struct
+		name	: byte[Ifnamesz]
+		metric	: int32
+	;;
+
+
+	type ifreq_phys = struct
+		name	: byte[Ifnamesz]
+		phys	: int32
+	;;
+
+	type ifreq_media = struct
+		name	: byte[Ifnamesz]
+		media	: int32
+	;;
+
+	type ifreq_data = struct
+		name	: byte[Ifnamesz]
+		data	: void#
+	;;
+
+	type ifreq_devmtu = struct
+		name	: byte[Ifnamesz]
+                cur	: uint32
+                min	: uint32
+                max	: uint32
+	;;
+
+	type ifreq_kpi = struct
+		name	: byte[Ifnamesz]
+                modid	: uint32
+                typeid	: uint32
+		ptr	: void#
+	;;
+
+	type ifreq_wakeflg = struct
+		name	: byte[Ifnamesz]
+		wakeflg	: uint32
+	;;
+		
+	type ifreq_routerefs = struct
+		name	: byte[Ifnamesz]
+		refs	: uint32
+	;;
+
+	type ifreq_icaps = struct
+		name	: byte[Ifnamesz]
+		req	: uint32
+		cur	: uint32
+	;;
+
+;;

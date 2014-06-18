@@ -1,0 +1,9 @@
+use std
+
+const main = {
+	match `std.Some 42
+	| `std.Some x:	std.exit(x)
+	| `std.None:	std.exit(1)
+	;;
+}
+

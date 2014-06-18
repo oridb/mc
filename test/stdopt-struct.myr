@@ -1,0 +1,9 @@
+use std
+
+type t = struct
+	next	: std.option(int)
+;;
+
+const main = {
+	std.exit(42)
+}

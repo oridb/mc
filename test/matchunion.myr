@@ -1,0 +1,21 @@
+use std
+/* checks that union matching works, at least on the key.
+exits with 84. */
+type u = union
+	`Foo
+	`Bar
+	`Baz
+	`Quux
+;;
+
+const main = {
+	var v
+
+	v = `Foo
+	match v
+	| `Bar:	std.exit(42)
+	| `Baz:	std.exit(81)
+	| `Foo:	std.exit(84)
+	| `Quux:	std.exit(123)
+	;;
+}

@@ -1,0 +1,13 @@
+use std
+/* should assign a slice through an out param, returning exiting with 2 */
+const arr = [1,2,3,4]
+const f = {out
+	out# = arr[1:3]
+}
+
+const main = {
+	var v
+
+	f(&v)
+	std.exit(v[0])
+}

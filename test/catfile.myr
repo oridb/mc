@@ -1,0 +1,14 @@
+/* checks that we can read a data file. */
+use std
+
+const main = {args : byte[:][:]
+	var r
+
+	r = std.slurp("data/catfile-in")
+	match r
+	| `std.Ok dat: 	std.write(1, dat)
+	| `std.Fail msg:	std.put("Failed to read file: %s\n", msg)
+	;;
+	-> 0
+}
+

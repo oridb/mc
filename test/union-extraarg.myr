@@ -1,0 +1,13 @@
+use std
+/*
+should fail to compile becuse
+we're constructing a union that
+with too many arguments.
+*/
+type u = union
+	`Foo
+;;
+
+const main = {
+	`Foo 123
+}

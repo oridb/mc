@@ -1,0 +1,9 @@
+use std
+/* checks that nested functions without environment capture work. should
+* exit with 42. */
+const main = {
+	const ret42 = {
+		-> 42
+	}
+	std.exit(ret42())
+}

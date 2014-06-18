@@ -1,0 +1,20 @@
+pkg std =
+	generic min	: (a : @a::numeric, b : @a::numeric  -> @a::numeric)
+	generic max	: (a : @a::numeric, b : @a::numeric  -> @a::numeric)
+;;
+
+generic min = {a, b
+	if a < b
+		-> a
+	else
+		-> b
+	;;
+}
+
+generic max = {a, b
+	if a > b
+		-> a
+	else
+		-> b
+	;;
+}

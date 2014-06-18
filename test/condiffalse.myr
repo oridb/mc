@@ -1,0 +1,12 @@
+use std
+/* checks that false conditions lead to the false branch of an if statement.
+* should exit with 9. */
+const main = {
+	var x = 5, y = 7
+
+	if x == 7 && y == 5
+		std.exit(7)
+	else
+		std.exit(9)
+	;;
+}

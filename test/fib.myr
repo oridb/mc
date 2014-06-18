@@ -1,0 +1,16 @@
+use std
+/* checks if recursive functions work. should return 21. */
+const fib = {n
+	if n <= 0
+		-> 0
+	elif n == 1
+		-> 1
+	else
+		-> fib(n - 1) + fib(n - 2)
+	;;
+}
+
+const main = {
+	std.exit(fib(8))
+}
+

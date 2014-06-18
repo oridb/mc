@@ -1,0 +1,409 @@
+use "die.use"
+use "extremum.use"
+use "sys.use"
+use "types.use"
+use "units.use"
+
+/*
+The allocator implementation here is based on Bonwick's slab allocator.
+
+For small allocations (up to Bktmax), it works by requesting large,
+power of two aligned chunks from the operating system, and breaking
+them into a linked list of equal sized chunks. Allocations are then
+satisfied by taking the head of the list of chunks. Empty slabs
+are removed from the freelist.
+
+The data structure looks something like this:
+   Bkts:
+	[16  byte] -> [slab hdr | chunk -> chunk -> chunk] -> [slab hdr | chunk -> chunk -> chunk]
+	[32  byte] -> Zslab
+	[64  byte] -> [slab hdr | chunk -> chunk]
+	...
+	[32k byte] -> ...
+
+Large allocations are simply satisfied by mmap().
+
+*/
+
+pkg std =
+	generic alloc	: (		-> @a#)
+	generic zalloc	: (		-> @a#)
+	generic free	: (v:@a#	-> void)
+
+	generic slalloc	: (len : size	-> @a[:])
+	generic slzalloc	: (len : size	-> @a[:])
+	generic slgrow	: (sl : @a[:], len : size	-> @a[:])
+	generic slzgrow	: (sl : @a[:], len : size	-> @a[:])
+	generic slfree	: (sl : @a[:]	-> void)
+
+	const bytealloc	: (sz:size	-> byte#)
+	const zbytealloc	: (sz:size	-> byte#)
+	const bytefree	: (m:byte#, sz:size	-> void)
+
+
+;;
+extern const put : (b : byte[:], args : ... -> size)
+
+/* null pointers. only used internally. */
+const Zbyteptr	= 0 castto(byte#)
+const Zslab	= 0 castto(slab#)
+const Zchunk	= 0 castto(chunk#)
+
+const Slabsz 	= 1*MiB	/* 1 meg slabs */
+const Cachemax	= 16	/* maximum number of slabs in the cache */
+const Bktmax	= 32*KiB	/* Slabsz / 8; a balance. */
+const Pagesz	= 4*KiB
+const Align	= 16	/* minimum allocation alignment */
+
+var buckets	: bucket[32] /* excessive */
+var initdone	: int
+
+type slheader = struct
+	cap	: size	/* capacity in bytes */
+	magic	: size	/* magic check value */
+;;
+
+type bucket = struct
+	sz	: size	/* aligned size */
+	nper	: size	/* max number of elements per slab */
+	slabs	: slab#	/* partially filled or free slabs */
+	cache	: slab# /* cache of empty slabs, to prevent thrashing */
+	ncache	: size  /* size of cache */
+;;
+
+type slab = struct
+	head	: byte#	/* head of virtual addresses, so we don't leak address space */
+	next	: slab#	/* the next slab on the chain */
+	freehd	: chunk#	/* the nodes we're allocating */
+	nfree	: size	/* the number of free nodes */
+;;
+
+type chunk = struct	/* NB: must be smaller than sizeof(slab) */
+	next	: chunk#	/* the next chunk in the free list */
+;;
+
+/* Allocates an object of type @a, returning a pointer to it. */
+generic alloc = {-> @a#
+	-> bytealloc(sizeof(@a)) castto(@a#)
+}
+
+generic zalloc = {-> @a#
+	-> zbytealloc(sizeof(@a)) castto(@a#)
+}
+
+/* Frees a value of type @a */
+generic free = {v:@a# -> void
+	bytefree(v castto(byte#), sizeof(@a))
+}
+
+/* allocates a slice of 'len' elements. */
+generic slalloc = {len
+	var p, sz
+
+	if len == 0
+		-> [][:]
+	;;
+	sz = len*sizeof(@a) + align(sizeof(slheader), Align)
+	p = bytealloc(sz)
+	p = inithdr(p, sz)
+	-> (p castto(@a#))[0:len]
+}
+
+generic slzalloc = {len
+	var p, sz
+
+	if len == 0
+		-> [][:]
+	;;
+	sz = len*sizeof(@a) + align(sizeof(slheader), Align)
+	p = zbytealloc(sz)
+	p = inithdr(p, sz)
+	-> (p castto(@a#))[0:len]
+}
+
+const inithdr = {p, sz
+	var phdr, prest
+
+	phdr = p castto(slheader#)
+	phdr.cap = allocsz(sz) - align(sizeof(slheader), Align)
+	phdr.magic = (0xdeadbeefbadf00d castto(size))
+
+	prest = (p castto(size)) + align(sizeof(slheader), Align)
+	-> prest castto(byte#)
+}
+
+const checkhdr = {p
+	var phdr, addr
+
+	addr = p castto(size)
+	addr -= align(sizeof(slheader), Align)
+	phdr = addr castto(slheader#)
+	assert(phdr.magic == (0xdeadbeefbadf00d castto(size)), "corrupt memory\n")
+}
+
+/* Frees a slice */
+generic slfree	 = {sl
+	var head
+
+	if sl.len == 0
+		->
+	;;
+
+	checkhdr(sl castto(byte#))
+	head = (sl castto(byte#)) castto(size)
+	head -= align(sizeof(slheader), Align)
+	bytefree(head castto(byte#), slcap(sl castto(byte#)))
+}
+
+/* Grows a slice */
+generic slgrow = {sl : @a[:], len
+	var i, n
+	var new
+
+	/* if the slice doesn't need a bigger bucket, we don't need to realloc. */
+	if sl.len > 0 && slcap(sl castto(byte#)) >= allocsz(len*sizeof(@a))
+		-> (sl castto(@a#))[:len]
+	;;
+
+	new = slalloc(len)
+	n = min(len, sl.len)
+	for i = 0; i < n; i++
+		new[i] = sl[i]
+	;;
+	if sl.len > 0
+		slfree(sl)
+	;;
+	-> new
+}
+
+/* Grows a slice, filling new entries with zero bytes */
+generic slzgrow = {sl : @a[:], len
+	var oldsz
+
+	oldsz = sl.len*sizeof(@a)
+	sl = slgrow(sl, len)
+	zfill((sl castto(byte#))[oldsz:len*sizeof(@a)])
+	-> sl
+}
+
+const slcap = {p
+	var phdr
+
+	phdr = (p castto(size)) - align(sizeof(slheader), Align) castto(slheader#)
+	-> phdr.cap
+}
+
+const zbytealloc = {sz
+	var p
+
+	p = bytealloc(sz)
+	zfill(p[0:sz])
+	-> p
+}
+
+const zfill = {sl
+	var i
+
+	for i = 0; i < sl.len; i++
+		sl[i] = 0
+	;;
+}
+
+/* Allocates a blob that is 'sz' bytes long. Dies if the allocation fails */
+const bytealloc = {sz
+	var i, bkt
+
+	if !initdone
+		for i = 0; i < buckets.len && (Align << i) <= Bktmax; i++
+			bktinit(&buckets[i], Align << i)
+		;;
+		initdone = 1
+	;;
+
+	if (sz <= Bktmax)
+		bkt = &buckets[bktnum(sz)]
+		-> bktalloc(bkt)
+	else
+		-> mmap(Zbyteptr, sz, Mprotrw, Mpriv | Manon, -1, 0)
+	;;
+}
+
+/* frees a blob that is 'sz' bytes long. */
+const bytefree = {m, sz
+	var bkt
+
+	if (sz < Bktmax)
+		bkt = &buckets[bktnum(sz)]
+		bktfree(bkt, m)
+	else
+		munmap(m, sz)
+	;;
+}
+
+/* Sets up a single empty bucket */
+const bktinit = {b, sz
+	b.sz = align(sz, Align)
+	b.nper = (Slabsz - sizeof(slab))/b.sz
+	b.slabs = Zslab
+	b.cache = Zslab
+	b.ncache = 0
+}
+
+/* Creates a slab for bucket 'bkt', and fills the chunk list */
+const mkslab = {bkt
+	var i, p, s
+	var b, bnext
+	var off /* offset of chunk head */
+
+	if bkt.ncache > 0
+		s = bkt.cache
+		bkt.cache = s.next
+		bkt.ncache--
+	;;
+	/* tricky: we need power of two alignment, so we allocate double the
+	   needed size, chop off the unaligned ends, and waste the address
+	   space. Since the OS is "smart enough", this shouldn't actually
+	   cost us memory, and 64 bits of address space means that we're not
+	   going to have issues with running out of address space for a
+	   while. On a 32 bit system this would be a bad idea. */
+	p = mmap(Zbyteptr, Slabsz*2, Mprotrw, Mpriv | Manon, -1, 0)
+	if p == Mapbad
+		die("Unable to mmap")
+	;;
+
+	s = align(p castto(size), Slabsz) castto(slab#)
+	s.head = p
+	s.nfree = bkt.nper
+	/* skip past the slab header */
+	off = align(sizeof(slab), Align)
+	bnext = nextchunk(s castto(chunk#), off)
+	s.freehd = bnext
+	for i = 0; i < bkt.nper; i++
+		b = bnext
+		bnext = nextchunk(b, bkt.sz)
+		b.next = bnext
+	;;
+	b.next = Zchunk
+	-> s
+}
+
+/* 
+Allocates a node from bucket 'bkt', crashing if the
+allocation cannot be satisfied. Will create a new slab
+if there are no slabs on the freelist.
+*/
+const bktalloc = {bkt
+	var s
+	var b
+
+	/* find a slab */
+	s = bkt.slabs
+	if s == Zslab
+		s = mkslab(bkt)
+		if s == Zslab
+			die("No memory left")
+		;;
+		bkt.slabs = s
+	;;
+
+	/* grab the first chunk on the slab */
+	b = s.freehd
+	s.freehd = b.next
+	s.nfree--
+	if !s.nfree
+		bkt.slabs = s.next
+		s.next = Zslab
+	;;
+
+	-> b castto(byte#)
+}
+
+/*
+Frees a chunk of memory 'm' into bucket 'bkt'.
+Assumes that the memory already came from a slab
+that was created for bucket 'bkt'. Will crash
+if this is not the case.
+*/
+const bktfree = {bkt, m
+	var s, b
+
+	s = mtrunc(m, Slabsz) castto(slab#)
+	b = m castto(chunk#)
+	if s.nfree == 0
+		s.next = bkt.slabs
+		bkt.slabs = s
+	elif s.nfree == bkt.nper
+		if bkt.ncache < Cachemax
+			s.next = bkt.cache
+			bkt.cache = s
+		else
+			/* we mapped 2*Slabsz so we could align it,
+			 so we need to unmap the same */
+			munmap(s.head, Slabsz*2)
+		;;
+	;;
+	s.nfree++
+	b.next = s.freehd
+	s.freehd = b
+}
+
+/*
+Finds the correct bucket index to allocate from
+for allocations of size 'sz'
+*/
+const bktnum = {sz
+	var i, bktsz
+
+	bktsz = Align
+	for i = 0; bktsz <= Bktmax; i++
+		if bktsz >= sz
+			-> i
+		;;
+		bktsz *= 2
+	;;
+	die("Size does not match any buckets")
+}
+
+/*
+returns the actual size we allocated for a given
+size request
+*/
+const allocsz = {sz
+	var i, bktsz
+
+	if sz <= Bktmax
+		bktsz = Align
+		for i = 0; bktsz <= Bktmax; i++
+			if bktsz >= sz
+				-> bktsz
+			;;
+			bktsz *= 2
+		;;
+	else
+		-> align(sz, Pagesz)
+	;;
+}
+
+/*
+aligns a size to a requested alignment.
+'align' must be a power of two
+*/
+const align = {v, align
+	-> (v + align - 1) & ~(align - 1)
+}
+
+/*
+chunks are variable sizes, so we can't just
+index to get to the next one
+*/
+const nextchunk = {b, sz : size
+	-> ((b castto(intptr)) + (sz castto(intptr))) castto(chunk#)
+}
+
+/*
+truncates a pointer to 'align'. 'align' must
+be a power of two.
+*/
+const mtrunc = {m, align
+	-> ((m castto(intptr)) & ~((align castto(intptr)) - 1)) castto(byte#)
+}

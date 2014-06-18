@@ -1,0 +1,199 @@
+use "alloc.use"
+use "die.use"
+use "extremum.use"
+use "fmt.use"
+use "option.use"
+use "types.use"
+
+pkg std =
+	type htab(@k, @v) = struct
+		hash	: (k : @k	-> uint32)
+		eq	: (a : @k, b : @k -> bool)
+
+		nelt	: size
+		keys	: @k[:]
+		vals	: @v[:]
+		hashes	: uint32[:]
+		dead	: bool[:]
+	;;
+
+	generic mkht	: (h : (k : @k -> uint32), eq : (a : @k, b : @k -> bool) -> htab(@k, @v)#)
+	generic htfree	: (ht : htab(@k, @v)# -> void)
+	generic htput	: (ht : htab(@k, @v)#, k : @k, v : @v -> void)
+	generic htdel	: (ht : htab(@k, @v)#, k : @k -> void)
+	generic htget	: (ht : htab(@k, @v)#, k : @k -> option(@v))
+	generic htgetv	: (ht : htab(@k, @v)#, k : @k, fallback : @v-> @v)
+	generic hthas	: (ht : htab(@k, @v)#, k : @k -> bool)
+	generic htkeys	: (ht : htab(@k, @v)# -> @k[:])
+;;
+
+const Initsz = 32
+
+generic hash = {ht, k
+	var h
+
+	h = ht.hash(k)
+	if h == 0
+		-> 1
+	else
+		-> h
+	;;
+}
+
+generic resize = {ht
+	var oldk
+	var oldv
+	var oldh
+	var oldd
+	var sz
+	var i
+
+	oldk = ht.keys
+	oldv = ht.vals
+	oldh = ht.hashes
+	oldd = ht.dead
+	sz = 2*max(ht.keys.len, 1)
+	ht.keys = slalloc(sz)
+	ht.vals = slalloc(sz)
+	ht.hashes = slzalloc(sz)
+	ht.dead = slzalloc(sz)
+
+	ht.nelt = 0
+	for i = 0; i < oldk.len; i++
+		if oldh[i] != 0 && !oldd[i]
+			htput(ht, oldk[i], oldv[i])
+		;;
+	;;
+	slfree(oldk)
+	slfree(oldv)
+	slfree(oldh)
+	slfree(oldd)
+}
+
+generic idx = {ht, k
+	var i, di
+	var h
+
+	di = 0
+	h = hash(ht, k)
+	i = h & (ht.keys.len - 1)
+	while true
+		while ht.hashes[i] != 0 && !ht.dead[i] && ht.hashes[i] != h
+			di++
+			i = (h + di) & (ht.keys.len - 1)
+		;;
+
+		if ht.hashes[i] == 0 || ht.dead[i]
+			-> `None
+		;;
+		if ht.eq(ht.keys[i], k)
+			-> `Some i
+		;;
+	;;
+}
+
+generic mkht = {h, eq
+	var ht
+
+	ht = alloc()
+
+	ht.hash = h
+	ht.eq = eq
+
+	ht.nelt = 0
+	ht.keys = slalloc(Initsz)
+	ht.vals = slalloc(Initsz)
+	ht.hashes = slzalloc(Initsz)
+	ht.dead = slzalloc(Initsz)
+	-> ht
+}
+
+generic htfree = {ht
+	slfree(ht.keys)
+	slfree(ht.vals)
+	slfree(ht.hashes)
+	slfree(ht.dead)
+	free(ht)
+}
+
+generic htput = {ht, k, v
+	var i, di
+	var h
+	var done
+
+	di = 0
+	h = hash(ht, k)
+	i = h & (ht.keys.len - 1)
+	done = false
+	while ht.hashes[i] != 0 && !ht.dead[i] && !done
+		/*
+		second insertion just overwrites first.
+		nb: comparing keys for dead values is bad.
+		*/
+		if ht.hashes[i] == h && (ht.dead[i] || ht.eq(ht.keys[i], k))
+			done = true
+		else
+			di++
+			i = (h + di) & (ht.keys.len - 1)
+		;;
+	;;
+	ht.hashes[i] = h
+	ht.keys[i] = k
+	ht.vals[i] = v
+	ht.dead[i] = false
+	ht.nelt++
+	if ht.keys.len < ht.nelt * 2
+		resize(ht)
+	;;
+}
+
+generic htdel = {ht, k
+	match idx(ht, k)
+	| `Some i:
+		ht.dead[i] = true
+		ht.nelt--
+		/* remove tombstones if we shrink enough */
+		if ht.keys.len > ht.nelt * 4
+			resize(ht)
+		;;
+	| _:	
+		/* do nothing */
+	;;
+}
+
+generic htget = {ht, k
+	match idx(ht, k)
+	| `Some i:	-> `Some ht.vals[i]
+	| `None:	-> `None
+	;;
+}
+
+generic htgetv = {ht, k, v
+	match idx(ht, k)
+	| `Some i:	-> ht.vals[i]
+	| `None:	-> v
+	;;
+}
+
+generic hthas = {ht, k
+	match idx(ht, k)
+	| `Some i:	-> true
+	| `None:	-> false
+	;;
+}
+
+generic htkeys = {ht
+	var keys
+	var i
+	var j
+
+	keys = slalloc(ht.nelt)
+	j = 0
+	for i = 0; i < ht.keys.len; i++
+		if ht.hashes[i] != 0 && !ht.dead[i]
+			keys[j++] = ht.keys[i]
+		;;
+	;;
+	-> keys
+}
+

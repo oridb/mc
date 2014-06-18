@@ -1,0 +1,21 @@
+use std
+/* tests returning large structs. should exit with 42. */
+type pair = struct
+	a : int
+	b : int
+;;
+
+const f = {
+	var s
+
+	s.a = 12
+	s.b = 30
+	-> s
+}
+
+const main = {
+	var s : pair
+
+	s = f()
+	std.exit(s.a + s.b)
+}

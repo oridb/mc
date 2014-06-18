@@ -1,0 +1,74 @@
+use "die.use"
+use "intparse.use"
+use "option.use"
+use "strfind.use"
+use "types.use"
+use "chartype.use"
+
+ /* FIXME: needed for decls which should be pulled in as hidden */
+use "hasprefix.use"
+use "utf.use"
+
+pkg std =
+
+	type netaddr = union
+		`Ipv4	byte[4]
+		`Ipv6	byte[16]
+	;;
+
+	const ipparse	: (ip : byte[:]	-> option(netaddr))
+	const ip4parse	: (ip : byte[:] -> option(netaddr))
+	const ip6parse	: (ip : byte[:] -> option(netaddr))
+;;
+
+const ipparse = {ip
+	match strfind(ip, ":")
+	| `Some _:	-> ip6parse(ip)
+	| `None:	-> ip4parse(ip)
+	;;
+}
+
+const ip4parse = {ip
+	var addr
+	var last : size
+	var x : option(int32)
+	var val : int32 /* need int32 to check for overflow */
+	var i
+	var j : size
+
+	i = 0
+	last = 0
+	for j = 0; j < ip.len; j++
+		if ip[j] == '.' castto(byte)
+			match intparsebase(ip[last:j], 10)
+			| `Some v:
+				val = v
+				if val < 0 || val > 255
+					-> `None
+				;;
+				addr[i++] = val castto(byte)
+				last = j + 1
+			| `None:
+				-> `None
+			;;
+		;;
+	;;
+	match intparsebase(ip[last:j], 10)
+	| `Some v:
+		val = v
+		if val < 0 || val > 255
+			-> `None
+		;;
+		addr[i] = val castto(byte)
+	| `None:
+		-> `None
+	;;
+	if j != ip.len
+		-> `None
+	;;
+	-> `Some (`Ipv4 addr)
+}
+
+const ip6parse = {ip
+	-> `None
+}

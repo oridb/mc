@@ -1,0 +1,22 @@
+use "alloc.use"
+
+pkg std =
+	generic mk	: (val : @a -> @a#)
+;;
+
+/* Takes a value, and heapifies it.
+
+FIXME: This depends on inlining and copy propagation
+in order to be efficient. Neither of those are
+currently implemented. That means that this function
+is not efficient.
+
+It's still damn convenient, though, so it's in.
+*/
+generic mk = {val
+	var p
+
+	p = alloc()
+	p# = val
+	-> p
+}

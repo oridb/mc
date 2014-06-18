@@ -1,0 +1,12 @@
+use std
+/* should exit with status 53 */
+const main = {
+	var a
+	var b
+	var c
+
+	a = 42
+	b = 11
+	c = 0_0
+	std.exit(a + b + c)
+}

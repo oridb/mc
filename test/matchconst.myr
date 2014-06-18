@@ -1,0 +1,18 @@
+use std
+/* checks that matching works when comparing against constants,
+instead of just literals. exits with 88. */
+/* some misc constants */
+const Ca = 123
+const Cb = 8
+const Cc = 42
+
+const main = {
+	var v
+
+	v = 8
+	match v
+	| Ca: 	std.exit(123)
+	| Cb:	std.exit(88)
+	| Cc:	std.exit(42)
+	;;
+}

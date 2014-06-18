@@ -1,0 +1,22 @@
+use std
+
+type t = struct
+	v1 : int
+	v2 : int
+	v3 : int
+;;
+
+const main = {
+	var v : t
+
+	v.v1 = 2
+	v.v2 = 40
+	v.v3 = 10
+	match v
+	| [.v1 = x, .v2 = y, .v3 = 10]:	
+		 std.exit(x + y)
+	| _:
+		std.die("Wat")
+	;;
+	std.exit(0)
+}

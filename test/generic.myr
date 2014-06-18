@@ -1,0 +1,11 @@
+use std
+/* checks that simple generics are specialized correctly. exits with 42. */
+generic id = {a:@a
+	-> a
+}
+
+const main = {
+	id("adsf")
+	std.exit(id(42))
+}
+

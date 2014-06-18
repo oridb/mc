@@ -1,0 +1,10 @@
+use std
+/* should zero-extend u when casting to v, returning 99 */
+const main = {
+	var u : uint8
+	var v : uint32
+	
+	u = 99
+	v = u castto(uint32)
+	std.exit(v castto(int))
+}

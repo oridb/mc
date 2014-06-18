@@ -1,0 +1,15 @@
+use "alloc.use"
+use "slcp.use"
+
+pkg std =
+	generic sljoin	: (dst : @a[:], src : @a[:]	-> @a[:])
+;;
+
+generic sljoin = {dst, src
+	var len
+
+	len = dst.len
+	dst = slgrow(dst, len + src.len)
+	slcp(dst[len:], src)
+	-> dst 
+}

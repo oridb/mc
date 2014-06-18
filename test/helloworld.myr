@@ -1,0 +1,7 @@
+/* checks that this program prints Hello-世界\n */
+use std
+
+const main = {args : byte[:][:]
+	std.write(1, "Hello-世界\n")
+}
+

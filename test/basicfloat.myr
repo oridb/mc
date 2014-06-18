@@ -1,0 +1,10 @@
+use std
+
+const get42 = {
+	-> 42.0
+}
+
+/* basic sanity check on floating point operations. should return 84. */
+const main = {
+	std.exit((42.0 + get42()) castto(int))
+}

@@ -1,0 +1,8 @@
+use std
+type u = union
+	`Foo int
+;;
+
+const main = {
+	`Foo
+}

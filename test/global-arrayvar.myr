@@ -1,0 +1,10 @@
+use std
+/* tests that global arrays work as expected, and are zero-initialized by
+* default. should exit with 7 */
+var a : int[10]
+
+const main = {
+	a[0] = 3
+	a[1] = 4
+	std.exit(a[0] + a[1] + a[2] + a[3])
+}

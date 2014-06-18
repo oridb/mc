@@ -1,0 +1,21 @@
+use "types.use"
+use "alloc.use"
+use "die.use"
+use "fmt.use"
+
+pkg std =
+	generic slput	: (sl : @a[:], idx : size, elt : @a	-> @a[:])
+;;
+
+generic slput = {sl, idx, elt
+	var i
+	var len
+
+	len = sl.len
+	sl = slgrow(sl, sl.len + 1)
+	for i = len - 1; i >= idx; i--
+		sl[i + 1] = sl[i]
+	;;
+	sl[idx] = elt
+	-> sl
+}

@@ -1,0 +1,11 @@
+use std
+/*
+should fail to compile with a type error.
+char is incompatible with int.
+*/
+const main = {
+	var a : int
+	var b : char
+
+	a = b
+}

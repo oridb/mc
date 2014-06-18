@@ -1,0 +1,29 @@
+use std
+
+trait frobable @a =
+	frob	: (val : @a -> @a)
+;;
+
+impl frobable int =
+	frob = {val
+		-> val * 2
+	}
+;;
+
+impl frobable int16 =
+	frob = {val
+		-> val * 4
+	}
+;;
+
+generic foo = {x : @a::frobable
+	-> frob(x)
+}
+
+const main = {
+	var a, b
+	a = foo(123)
+	b = foo(11 castto(int16))
+	std.put("%i,%w\n", a, b)
+}
+

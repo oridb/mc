@@ -1,0 +1,57 @@
+use "alloc.use"
+use "env.use"
+use "fmt.use"
+use "option.use"
+use "strfind.use"
+use "strsplit.use"
+use "sys.use"
+
+pkg std = 
+	const execvp	: (cmd : byte[:], args : byte[:][:] -> int64)
+	const execvpe	: (cmd : byte[:], args : byte[:][:], env : byte[:][:] -> int64)
+;;
+
+const execvp = {cmd, args
+	var paths, cmdlen
+	var buf : byte[512]
+
+	match strfind(cmd, "/")
+	| `Some _:
+		-> execv(cmd, args)
+	| `None:
+		paths = getpaths()
+		for p in paths
+			cmdlen = bfmt(buf[:], "%s/%s", p, cmd)
+			execv(buf[:cmdlen], args)
+		;;
+		slfree(paths)
+	;;
+	-> -1
+}
+
+const execvpe = {cmd, args, env
+	var paths, cmdlen
+	var buf : byte[512]
+
+	match strfind(cmd, "/")
+	| `Some _:
+		-> execve(cmd, args, env)
+	| `None:
+		paths = getpaths()
+		for p in paths
+			cmdlen = bfmt(buf[:], "%s/%s", p, cmd)
+			execve(buf[:cmdlen], args, env)
+		;;
+		slfree(paths)
+	;;
+	-> -1
+}
+
+const getpaths = {
+	var path
+	match getenv("PATH")
+	| `Some p:	path = p
+	| `None:	path = "/usr/local/bin:/bin:/usr/bin"
+	;;
+	-> strsplit(path, ":")
+}

@@ -1,0 +1,24 @@
+use std
+
+const main = {
+	var i
+	var sp
+
+	sp = std.strsplit("a,b,c,d", ",")
+	for i = 0; i < sp.len; i++
+		std.put("\"%s\"\n", sp[i])
+	;;
+	std.slfree(sp)
+
+	sp = std.strsplit("a,,b,c,,d", ",")
+	for i = 0; i < sp.len; i++
+		std.put("\"%s\"\n", sp[i])
+	;;
+	std.slfree(sp)
+
+	sp = std.strsplit("a--b---b--c---c-d--d", "---")
+	for i = 0; i < sp.len; i++
+		std.put("\"%s\"\n", sp[i])
+	;;
+	std.slfree(sp)
+}

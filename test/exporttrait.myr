@@ -1,0 +1,20 @@
+use std
+
+pkg =
+	trait t @a
+	impl t int
+;;
+
+trait t @a =
+	frob    : (v : @a -> @a)
+;;
+
+impl t int =
+	frob = {v
+		-> v*2
+	}
+;;
+
+/* shut up the linker: we just want to compile this. */
+const main = {
+}

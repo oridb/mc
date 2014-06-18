@@ -1,0 +1,11 @@
+/* test the allocation of slices. should return 123 */
+use std
+
+const main = {
+	var sl : int[:]
+
+	sl = std.slalloc(123)
+	sl[0] = 42
+	sl[122] = 1
+	std.exit(sl.len)
+}

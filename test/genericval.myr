@@ -1,0 +1,8 @@
+use std
+
+generic Foo : @a::(integral,numeric) = 42
+
+const main = {
+	std.exit(Foo)
+}
+

@@ -1,0 +1,11 @@
+use std
+/* checks if relatonal operators work. should exit with 9. */
+const main = {
+	var x = 3, y = 9
+
+	if x < 5 && y > 7
+		std.exit(7)
+	else
+		std.exit(9)
+	;;
+}

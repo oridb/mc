@@ -1,0 +1,282 @@
+use "alloc.use"
+use "die.use"
+use "sys.use"
+use "types.use"
+use "utf.use"
+use "varargs.use"
+use "extremum.use"
+
+/*
+  printf-like functions. These use a different syntax from the C printf,
+  as described below:
+
+	  %s	- A string, ie, a utf8 encoded byte slice.
+	  %t	- A boolean
+	  %b	- A byte.
+	  %w	- A 16 bit integer
+	  %i	- A 32 bit integer
+	  %l	- A 64 bit integer
+	  %z	- A size
+	  %p	- A pointer
+	  %c	- A char
+*/
+
+pkg std =
+	const put	: (fmt : byte[:], args : ... -> size)
+	const putv	: (fmt : byte[:], ap : valist -> size)
+	const fatal	: (status : int, fmt : byte[:], args : ... -> void)
+	const fatalv	: (status : int, fmt : byte[:], ap : valist -> void)
+	const fmt	: (fmt : byte[:], args : ... -> byte[:])
+	const fmtv	: (fmt : byte[:], ap : valist -> byte[:])
+	const bfmt	: (buf : byte[:], fmt : byte[:], args : ... -> size)
+	const bfmtv	: (buf : byte[:], fmt : byte[:], ap : valist -> size)
+;;
+
+/* Writes a string of text up to 2 kb in size to stdout */
+const put = {fmt, args
+	-> putv(fmt, vastart(&args))
+}
+
+/* Writes a string of text up to 2kb long to stdout, using a valist
+   as the source of the arguments */
+const putv = {fmt, ap
+	var buf : byte[2048]
+	var n
+	
+	n = bfmtv(buf[:], fmt, ap)
+	write(1, buf[:n])
+	-> n
+}
+
+/* same as 'put', but exits the program after printing */
+const fatal = {status, fmt, args
+	putv(fmt, vastart(&args))
+	exit(status)
+}
+
+/* same as 'putv', but exits the program after printing */
+const fatalv = {status, fmt, ap
+	putv(fmt, ap)
+	exit(status)
+}
+
+/* formats a string, allocating the slice. FIXME: calculate the
+   size needed. */
+const fmt = {fmt, args
+	-> fmtv(fmt, vastart(&args))
+}
+
+/* formats a string, allocating the slice. FIXME: calculate the
+   size needed. Takes a valist as it's last argument. */
+const fmtv = {fmt, ap
+	var buf
+	var sz
+
+	buf = slalloc(2048)
+	sz = bfmtv(buf, fmt, ap)
+	-> buf[:sz]
+}
+
+/* formats a string of text as specified by 'fmt' into 'buf' */
+const bfmt = {buf, fmt, args
+	-> bfmtv(buf, fmt, vastart(&args))
+}
+
+const digitchars = [
+	'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'
+]
+generic intfmt = {buf : byte[:], bits : @a::(integral,numeric), base, signed
+	var isneg
+	var val
+	var b : char[32]
+	var i
+	var j
+	var n
+
+	n = 0
+	i = 0
+	if signed && bits < 0
+		val = -bits castto(uint64)
+		isneg = true
+	else
+		val = bits castto(uint64)
+		val &= ~0 >> (8*(sizeof(uint64)-sizeof(@a)))
+		isneg = false
+	;;
+
+	if val == 0
+		b[0] = '0'
+		i++
+	;;
+	while val != 0
+		b[i] = digitchars[val % base]
+		val /= base
+		i++
+	;;
+	n = 0
+	if isneg
+		n += encode(buf[n:], '-')
+	;;
+	for j = i; j != 0; j--
+		n += encode(buf[n:], b[j - 1])
+	;;
+	-> n 
+}
+
+/* formats a string of text as specified by 'fmt' into 'buf',
+   using a valist for the arguments */
+const bfmtv = {buf, fmt, ap
+	var c
+	var n
+	var base
+	var signed
+	var s_val : byte[:]
+	var t_val : bool
+	var b_val : int8, ub_val : uint8
+	var w_val : int16, uw_val : uint16
+	var i_val : int32, ui_val : uint32
+	var l_val : int64, ul_val : uint64
+	var z_val : size
+	var p_val : byte#
+        var c_val : char
+	var f_val : float64, F_val : float32
+
+	n = 0
+	while fmt.len != 0
+		(c, fmt) = striter(fmt)
+		if c == '%'
+			base = 10
+			signed = true
+			(c, fmt) = striter(fmt)
+			/* modifiers */
+			if fmt.len > 0
+				match c
+				| 'x':
+					(c, fmt) = striter(fmt)
+					base = 16
+					signed = false
+						
+				| 'u':
+					(c, fmt) = striter(fmt)
+					signed = false
+				;;
+			;;
+			/* format specifiers */
+			match c
+			| 's':
+				(s_val, ap) = vanext(ap)
+				n += strfmt(buf[n:], s_val)
+			| 't':
+				(t_val, ap) = vanext(ap)
+				n += boolfmt(buf[n:], t_val)
+			| 'f':
+				(f_val, ap) = vanext(ap)
+				n += floatfmt(buf[n:], f_val, 0, 0)
+			/* FIXME: float casts are currently broken
+			| 'F':
+				(F_val, ap) = vanext(ap)
+				n += floatfmt(buf[n:], F_val castto(float64))
+			*/
+			/* format integers */
+			| 'b':
+				if signed
+					(b_val, ap) = vanext(ap)
+					n += intfmt(buf[n:], b_val, base, signed)
+				else
+					(ub_val, ap) = vanext(ap)
+					n += intfmt(buf[n:], ub_val, base, signed)
+				;;
+			| 'w':
+				if signed
+					(w_val, ap) = vanext(ap)
+					n += intfmt(buf[n:], w_val, base, signed)
+				else
+					(uw_val, ap) = vanext(ap)
+					n += intfmt(buf[n:], uw_val, base, signed)
+				;;
+			| 'i':
+				if signed
+					(i_val, ap) = vanext(ap)
+					n += intfmt(buf[n:], i_val, base, signed)
+				else
+					(ui_val, ap) = vanext(ap)
+					n += intfmt(buf[n:], ui_val, base, signed)
+				;;
+			| 'l':
+				if signed
+					(l_val, ap) = vanext(ap)
+					n += intfmt(buf[n:], l_val, base, signed)
+				else
+					(ul_val, ap) = vanext(ap)
+					n += intfmt(buf[n:], ul_val, base, signed)
+				;;
+
+			| 'z':
+				(z_val, ap) = vanext(ap)
+				n += intfmt(buf[n:], z_val castto(int64), base, signed)
+			| 'p':
+				(p_val, ap) = vanext(ap)
+				n += intfmt(buf[n:], p_val castto(int64), 16, false)
+                        | 'c':    (c_val, ap) = vanext(ap)
+                                n += encode(buf[n:], c_val)
+                        | _:
+                                die("Unknown format specifier\n")
+			;;
+		else
+			n += encode(buf[n:], c)
+		;;
+	;;
+	-> n
+}
+
+const strfmt = {buf, str
+	var i
+	
+	for i = 0; i < min(str.len, buf.len); i++
+		buf[i] = str[i]
+	;;
+	-> i
+}
+
+const boolfmt = {buf, val
+	var s
+
+	if val
+		s = "true"
+	else
+		s = "false"
+	;;
+	-> strfmt(buf, s)
+}
+
+/*
+ buf: the output buffer.
+ val: the value to format, in float64 format.
+ mode: the truncation mode.
+ 	0 => print until precision exhausted.
+	1 => print until precision exhausted or maxdigits produced.
+	2 => print until maxdigits produced, paddding with zeros.
+ */
+
+const floatfmt = {buf, val, mode, maxdigits
+	var i
+	var n
+	/*
+	var isneg
+	*/
+	/*var b, e, f*/
+
+	/* handle 0 specially to avoid special cases */
+	if val == 0.0
+		n = strfmt(buf, "0.0")
+		if mode == 0 && maxdigits > 2
+			for i = 1; i < maxdigits; i++
+				n += strfmt(buf[n:], "0")
+			;;
+		;;
+		-> n
+	;;
+
+	-> strfmt(buf, "floats not implemented")
+}
+

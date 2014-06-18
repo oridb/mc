@@ -1,0 +1,14 @@
+use std
+
+pkg =
+	const foo	: (val:int -> int)
+;;
+
+
+const foo = {val
+	-> val
+}
+
+const main = {
+	std.exit(foo(42))
+}

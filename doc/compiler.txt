@@ -1,0 +1,336 @@
+                Structure of the Myrddin Compiler
+                            Aug 2012
+                          Ori Bernstein
+
+TABLE OF CONTENTS:
+
+    1. OVERVIEW
+        1.1. Tree Structure
+    2. PARSING
+        2.1. Lexing
+        2.2. AST Creation
+        2.3. Type checking
+        2.4. Generic Specialization
+        2.5. Serialization
+        2.6. Usefiles
+    3. FLATTENING
+        3.1. Control Flow
+        3.2. Complex Expressions
+    4. OPTIMIZATION
+        4.1. Constant Folding
+    5. CODE GENERATION
+        5.1. Instruction Selection
+        5.2. Register Allocation
+    6. TUTORIAL: ADDING A STATEMENT
+        6.1. Stubbing in the node types
+        6.2. Parsing
+        6.3. Flattening
+        6.4. Optimization
+        6.5. Instruction Selection
+
+1. OVERVIEW:
+
+    The Myrddin compiler suite consists of a set of binaries, written in C,
+    which translate Myrddin source code to the assembly most appropriate for
+    the target platform, and subsequently invoke the native assembler on it.
+    The linker is not invoked by the compiler, and the final output is an
+    object file for the target platform.
+
+    The compilers are named with a single character for the target platform,
+    with a single character for the language being compiled. A table of the
+    compilers and their names is below:
+
+        Compiler        Platform
+        -------------------------
+        6m              x86-64
+
+
+    The compilation is divided into a small number of phases. The first phase
+    is parsing, where the source code is first tokenized, the abstract syntax
+    tree (AST) is generated, and semantically checked. The second phase is the
+    machine-dependent tree flattening. In this phase, the tree is decomposed
+    function by function into simple operations that are relatively close to
+    the machine. Sizes are fixed, and all loops, if statements, etc. are
+    replaced with gotos. The next phase is a machine-independent optimizer,
+    which currenty does nothing other than simply folding trees. In the final
+    phase, the instructions are selected and the registers are allocated.
+
+    So, to recap, the phases are as follows:
+
+        parse           Tokenize, parse, and analyze the source
+        flatten         Rewrite the complex nodes into simpe ones
+        opt             Optimize the flattened source trees
+        gen             Generate the assembly code
+
+    1.1. Tree Structure:
+
+        File nodes (n->type == Nfile) represent the files being compiled. The current
+        node is held in a global variable called, unsurprisingly, 'file'. The
+        global symbol table, export table, uses, and other compilation-specific
+        information is stored in this node. This implies that the compiler can
+        only process one file at a time.
+
+        Name nodes (n->type == Nname) are simply names, possibly with a namespace
+        attached. They are left as leaf nodes in the tree, specifying variable
+        names, union tags, and just about anything else with a name.
+
+        Use nodes (n->type == Nuse) simply tell the compiler that a usefile by the
+        name stored in this node will be loaded.
+
+        Expression nodes (n->type == Nexpr) represent expressions. They consist of
+        an operator, a type, a few flags, possibly a declaration ID, and a list of
+        arguments.
+        
+        Operators are defined in parse/ops.def, and start with an 'O' by
+        convention; eg: Oadd, Osub, etc.
+        
+        The declaration id (n->expr.did) is only valid on expressions representing
+        a single variable (n->expr.op == Ovar). The DID is a unique identifier
+        representing the declaration node that the variable refers to. This is used
+        for a variety of things, from fast comparisons to allowing us to put the
+        node into a bit set easily.
+
+        Literal nodes (n->type == Nlit) hold a literal value. The type held is
+        stored in littype, which are defined in parse/lits.def.
+
+        The various statement nodes (Nloopstmt, Nifstmt, Nmatchstmt, Nblock,
+        Nlbl) are all statements that may appear within a block node (Nblock).
+
+        Declaration nodes declare a name in a symbol table. TODO: MORE DETAIL.
+
+        Uelt nodes declare a union element. TODO: MORE DETAIL.
+
+        Func nodes declare a function. TODO: MORE DETAIL.
+        
+
+
+2. PARSING:
+
+    This phase takes in a source file, and outputs a tree that is guaranteed
+    to be valid. The tree nodes are defined in parse/parse.h in struct Node,
+    and have one of the types defined in parse/nodetypes.def. Node types
+    start with 'N' by convention; eg: Nfile, Nifstmt, etc.
+
+    2.1. Lexing:
+        
+        Lexing occurs in parse/tok.c. Because we want to use this lexer from
+        within yacc, the entry point to this code is in 'yylex()'. As required
+        by yacc, 'yylex()' returns an integer defining the token type, and
+        sets the 'tok' member of yylval to the token that was taken from the
+        input stream. In addition, to allow for better error messages, the
+        global variable 'curtok' is set to the value of 'yylval.tok'. This
+        allows yyerror to print the last token that was seen.
+
+        The tokens that are allowable are generated by Yacc from the '%token'
+        definitions in parse/gram.y, and are placed into the file
+        'parse/gram.h'. The lexer and parser code is the only code that
+        depends on these token constants.
+
+        The lexer is initalized through 'tokinit(char *file)'. This function
+        will open the file passed in, read all the data from it in one go
+        and set up the internal data for the tokenizer. The tokenizing is then
+        done while the whole file is in memory, which means that this code
+        will work poorly on files that are larger than the address space
+        available to the compiler. If this is a problem, you deserve all the
+        pain that is caused.
+
+        The file data is stored in the three global variables 'fidx', 'fbuf',
+        and 'fbufsz'. The actual tokenization happens through 'toknext()' and
+        its callees, which operate on these data structures character by
+        character, matching the values read, and shoving them into the 'Tok'
+        data structure.
+
+    2.2. AST Creation:
+
+        The parser used is a traditional Yacc-based parser. It is generated
+        from the source in parse/gram.y. The starting production is 'file',
+        which fills in a global 'file' tree node. This 'file' tree node must
+        be initialized before yyparse() is called.
+
+
+    2.3. Type Checking:
+
+        Type checking is done through unification of types. It's implemented
+        in parse/infer.c. It proceeds through a simple unification algorithm,
+        which is documented in lang.txt. As a result, only the internal
+        details of this algorithm will be discussed here.
+
+        The first step done is loading and resolving use files. This is
+        deferred to the type checking phase for two reasons. First, we
+        do not want to force tools to have all dependencies compiled if they
+        use this parser, even though type full type checking is impossible
+        until all usefiles are loaded. And second, this is when the
+        information is actually needed.
+
+        Next, the types declared in the package section are merged with the
+        exported types, allowing us to start off with our type information as
+        complete as possible, and making sure that the types of globals
+        actually match up with the exported types.
+        
+        The next step is the actual type inference. We do a bottom-up walk of
+        the tree, unifying types as we go. There are subtleties with the
+        member operator, however. Because the '.' operator is used for both
+        member lookups and namespace lookups, before we descend into a node
+        that has operator Omemb, we need to check if it's a namespaced name,
+        or an actual member reference. If it is a namespaced name, we replace
+        the expression with an Ovar expression. This check happens in the 
+        'checkns()' function. Second, because we need to know the LHS of a
+        member expression before we can check if the RHS is valid, and we
+        are not guaranteed to know this at the first time that we see it, the
+        expression is assumed to be valid, and this asumption is verified in
+        a post-processing pass. Casts are validated in a deferred manner
+        similarly.
+
+        Generic variables are added to a list of generic callsites to
+        specialize when they are seen in as a leaf of an Ovar node.
+
+        The type inference, to this point, has only built up a mapping
+        of types. So, for example, if we were to have the inferred types
+        for the following set of statements:
+
+            var a
+            var b
+            var c
+            a = b
+            c = b + 1
+
+        We would have the mappings:
+
+            $t0 -> $t1
+            $t1 -> $t2
+            $t2 -> int
+
+        So, in the 'typesub()' function, we iterate over the entire tree,
+        replacing every instance of a non-concrete type with the final
+        mapped type. If a type does not map to a fully concrete type,
+        this is where we flag an error.
+
+        FIXME: DESCRIBE HOW YOU FIXED GENERICS ONCE YOU FIX GENERICS.
+
+    2.4. Generic Specialization:
+
+        After type inference (well, technially, as the final step of it),
+        we walk through the list of callsites that need instantiations
+        of generics, and create a specialized generic instance for each of
+        them. This specialization is done, unsurprisingly, in specialize.c,
+        by the simple algorithm of cloning the entire tree that needs to
+        be specialized, and walking over all nodes substituting the types
+        that are replacing the type parameters.
+
+    2.5. Serialization:
+
+        Trees of all sorts can be serialized and deserialized from files,
+        as long as they are fully typed. Trees containing type variables (ie,
+        uninferred types) cannot be serialized, as type variables cannot be
+        deserialized meaningfully.
+
+        The format for this is only documented in the source, and is a
+        straighforward dump of the trees to memory. It is constantly shifting,
+        and will not reliably work between compiler versions.
+
+    2.6. Usefiles:
+
+        Usefiles are more or less files that consist of a single character tag
+        that tells us what type of tree to deserialize.  Because serialized
+        trees are compiler version dependent, so are usefiles.
+
+3. FLATTENING:
+
+    This phase is invoked repeatedly on each top-level declaration that we
+    want to generate code for. There is a good chance that this flattening
+    phase should be made machine-independent, and passed as a parameter
+    a machine description describing known integer and pointer sizes, among
+    other machine attributes. However, for now, it is machine-dependent,
+    and lives in 6/simp.c.
+
+    The goal of flattening a tree is to take semantically involved constructs
+    such as looping, and simplify things into something that is easy to
+    generate code for, as well as something that is easier to analyze for
+    optimization.
+
+    3.1. Control Flow:
+
+        All if statements, loops, and other complex constructs are simplified
+        to jumps and conditional jumps. Loops are generally simplified from
+        something that would look like this:
+
+            loop
+                init
+                cond
+                inc
+                body
+
+        To something that would look like this:
+
+                init
+                jmp cond
+            .loop:
+                body
+                inc
+            .cond:
+                cjmp cond .loop .end
+            .end:
+
+        Boolean expressions are simplified to a location to jump to, as
+        described in section 8.4 of the Dragon book[1].
+
+    3.2. Complex Expressions:
+
+        Complex expressions such as copying types larger than a single machine
+        word, pulling members out of structures, emulating multiplication and
+        division for larger integers sizes, and similar operations are reduced
+        to trees that are expressible in terms of simple machine operations.
+
+        By the end of the simplification pass, the following operators should
+        not be present in the trees:
+
+            Obad Oret Opreinc Opostinc Opredec Opostdec Olor Oland Oaddeq
+            Osubeq Omuleq Odiveq Omodeq Oboreq Obandeq Obxoreq Obsleq
+            Obsreq Omemb Oslice Oidx Osize Numops Oucon Ouget Otup Oarr
+            Oslbase Osllen Ocast
+
+
+4. OPTIMIZATION:
+
+    Currently, there is virtually no optimization done on the trees after
+    flattening. The only optimization that is done is constant folding.
+
+    4.1. Constant Folding:
+
+        Expressions with constant values are simplified algebraically. For
+        example, the expression 'x*1' is simplified to 'x', '0/n' is
+        simplified to '0', and so on.
+
+
+5. CODE GENERATION:
+
+    5.1. Instruction Selection:
+
+        Instruction selection is done via a simple handwritten bottom-up pass
+        over the tree. Common patterns such as scaled or offset indexing are
+        recognized by the patterns, but no attempts are made at finding an
+        optimal tiling.
+
+    5.2. Register Allocation:
+
+        Register allocation is done via the algorithm described in "Iterated
+        Regster Coalescing" by Appel and George. As of the time of this
+        writing, the register allocator does not yet implement overlapping
+        register classes. This will be done as described in "A generalized
+        algorithm for graph-coloring register allocation" by Smith, Ramsey,
+        and Holloway.
+
+6: TUTORIAL: ADDING A STATEMENT:
+
+    6.1. Stubbing in the node types:
+
+    6.2. Parsing:
+    
+    6.3. Flattening:
+
+    6.4. Optimization:
+
+    6.5. Instruction Selection:
+
+[1] Aho, Sethi, Ullman: Compilers: Principles, Techniques, and Tools, 1988.
+        ISBN 0-201-10088-6

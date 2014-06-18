@@ -1,0 +1,9 @@
+use std
+/* checks that string literals are compiled correctly.
+exits with ascii 'f', ie, 102. */
+const main = {
+	var str
+
+	str = "asdf"
+	std.exit(str[3] castto(int))
+}

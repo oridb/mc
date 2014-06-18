@@ -1,0 +1,17 @@
+use "cmp.use"
+pkg std =
+	const hassuffix	: (s : byte[:], suff : byte[:] -> bool)
+;;
+
+const hassuffix = {s, suff
+	var tail
+
+	if suff.len >= s.len
+		tail = s[s.len - suff.len:]
+		match strncmp(tail, suff, suff.len)
+		| `Equal:       -> true
+		| _:            -> false
+		;;
+	;;
+}
+

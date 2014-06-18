@@ -1,0 +1,10 @@
+use std
+/* checks that f is not an infinite type (ie, the type
+doesn't exist within itself). If 'f' typechecked,
+it's type would be:
+
+f : (std.exit((-> (-> ... ad infinitum ...))))
+*/
+const f = {
+	std.exit(f)
+}

@@ -1,0 +1,9 @@
+use std
+/* should fail because we call f with too few args */
+const f = {a:int, b:int, c:int
+	-> a + b + c
+}
+
+const main = {
+	std.exit(f(1, 2))
+}

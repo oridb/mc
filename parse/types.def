@@ -1,0 +1,46 @@
+Ty(Tybad, NULL)
+Ty(Tyvoid, "void")
+
+/* start integer types.
+ * Keep them ordered between start
+ * and end for faster
+ * comparisons.*/
+Ty(Tybool, "bool")
+Ty(Tychar, "char")
+
+Ty(Tyint8, "int8")
+Ty(Tyint16, "int16")
+Ty(Tyint, "int")
+Ty(Tyint32, "int32")
+Ty(Tyint64, "int64")
+Ty(Tylong, "long")
+
+Ty(Tybyte, "byte")
+Ty(Tyuint8, "uint8")
+Ty(Tyuint16, "uint16")
+Ty(Tyuint, "uint")
+Ty(Tyuint32, "uint32")
+Ty(Tyuint64, "uint64")
+Ty(Tyulong, "ulong")
+/*end integer types*/
+Ty(Tyfloat32, "float32")
+Ty(Tyfloat64, "float64")
+/* end primitive types */
+Ty(Tyvalist, NULL)
+
+/* end atomic types */
+Ty(Typtr, NULL)
+Ty(Tyfunc, NULL)
+
+/* these types live on the stack */
+Ty(Tyslice, NULL)
+Ty(Tyarray, NULL)
+Ty(Tytuple, NULL)
+Ty(Tystruct, NULL)
+Ty(Tyunion, NULL)
+
+/* these have no memory repr */
+Ty(Tyvar, NULL)
+Ty(Typaram, NULL)
+Ty(Tyunres, NULL) /* unresolved */
+Ty(Tyname, NULL)

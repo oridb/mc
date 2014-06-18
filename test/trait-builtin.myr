@@ -1,0 +1,28 @@
+use std
+/* checks that generic types with traits are compiled correctly.
+without the 'numeric' trait on '@a', the '>' operator would not work
+within max. without the 'tctest' trait on '@a' in intlike_is42,
+comparing to 42 wouldn't work.
+
+exits with 42.
+*/
+
+generic max = {a:@a::numeric, b:@a::numeric
+	if a > b
+		-> a
+	else
+		-> b
+	;;
+}
+
+generic intlike_is42 = {a : @a::(numeric,integral)
+	-> a == 42
+}
+
+const main = {
+	if intlike_is42(123)
+	    std.exit(16)
+	else
+	    std.exit(max(12, 42))
+	;;
+}

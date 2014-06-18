@@ -1,0 +1,9 @@
+use std
+/* checks that sizeof works on generics. exits with 5. */
+generic sz = {a:@a
+	-> sizeof(@a)
+}
+
+const main = {
+	std.exit(sz(123) + sz("asdf"[0]))
+}

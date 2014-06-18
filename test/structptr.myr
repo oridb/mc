@@ -1,0 +1,17 @@
+use std
+/* tests reading and writing through a struct pointer. exits with 42. */
+type pair = struct
+	a : int
+	b : int
+;;
+
+const frob = {s
+	s.a = 12
+	s.b = 30
+}
+
+const main = {
+	var s : pair
+	frob(&s)
+	std.exit(s.a + s.b)
+}

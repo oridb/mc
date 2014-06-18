@@ -1,0 +1,13 @@
+use std
+
+const main = {
+	const strings = [
+	    "x",
+	    "y",
+	    "z",
+	    "w"
+	]
+	std.put("%s\n", std.strcat("foo;", "bar"))
+	std.put("%s\n", std.strjoin(strings[:], ""))
+	std.put("%s\n", std.strjoin(strings[:], ":"))
+}

@@ -1,0 +1,14 @@
+use std
+/* tests a struct containing an array. exit status should be 42. */
+type t = struct
+	a : int[42]
+;;
+
+const main = {
+	var v : t
+
+	v.a[0] = 11
+	v.a[1] = 20
+
+	std.exit(2*v.a[0] + v.a[1])
+}

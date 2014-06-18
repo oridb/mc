@@ -1,0 +1,8 @@
+use std
+/*
+should fail to compile because generic types
+are only allowed in generic declarations.
+*/
+const foo = {v : @a
+	-> v
+}

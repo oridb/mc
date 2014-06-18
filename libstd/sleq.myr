@@ -1,0 +1,18 @@
+pkg std =
+	generic sleq	: (a : @a[:], b : @a[:] -> bool)
+;;
+
+generic sleq = {a, b
+	var i
+
+	if a.len != b.len
+		-> false
+	;;
+
+	for i = 0; i < a.len; i++
+		if a[i] != b[i]
+			-> false
+		;;
+	;;
+	-> true
+}

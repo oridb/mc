@@ -1,0 +1,11 @@
+use std
+/* checks that true complex boolean conditions work. exits with 7. */
+const main = {
+	var x = 5, y = 7
+
+	if x == 5 && y == 7
+		std.exit(7)
+	else
+		std.exit(9)
+	;;
+}

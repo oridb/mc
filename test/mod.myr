@@ -1,0 +1,7 @@
+use std
+/* should exit with status 6 */
+const main = {
+	var a = 42
+	var b = 9
+	std.exit(a % b)
+}

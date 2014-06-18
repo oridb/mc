@@ -1,0 +1,6 @@
+use std
+/* checks that we can create arrays without indexed initializers. exits with 2. */
+const main = {
+	var a = [1, 3, 2]
+	std.exit(a[2])
+}

@@ -1,0 +1,11 @@
+use std
+
+const main = {
+	var v = (1, 2)
+
+	match v
+	| (1, x):	std.exit(40 + x)
+	| _:	std.die("Wat")
+	;;
+	std.exit(0)
+}
