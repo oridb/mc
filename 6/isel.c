@@ -145,10 +145,12 @@ static Insn *mkinsnv(AsmOp op, va_list ap)
     Loc *l;
     Insn *i;
     int n;
+    static size_t insnid;
 
     n = 0;
     i = malloc(sizeof(Insn));
     i->op = op;
+    i->uid = insnid++;
     while ((l = va_arg(ap, Loc*)) != NULL)
         i->args[n++] = l;
     i->nargs = n;
