@@ -143,6 +143,12 @@ pkg std =
 	const Sockrdm		: socktype = 4
 	const Sockseqpacket	: socktype = 5
 
+	/* network protocols */
+	const Ipproto_ip	: sockproto = 0
+	const Ipproto_icmp	: sockproto = 1
+	const Ipproto_tcp	: sockproto = 6
+	const Ipproto_udp	: sockproto = 17
+	const Ipproto_raw	: sockproto = 255
 
 	/* return value for a failed mapping */
 	const Mapbad	: byte# = -1 castto(byte#)
