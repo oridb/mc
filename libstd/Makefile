@@ -89,7 +89,7 @@ clean:
 	rm -f $(USE) test.use
 	rm -f lib$(MYRLIB).a
 
-install:
+install: all
 	mkdir -p  $(abspath $(DESTDIR)/$(INST_ROOT)/lib/myr)
 	install libstd.a $(abspath $(DESTDIR)/$(INST_ROOT)/lib/myr)
 	install std $(abspath $(DESTDIR)/$(INST_ROOT)/lib/myr)

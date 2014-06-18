@@ -452,6 +452,12 @@ pkg std =
 	const Sysprocess_vm_readv	: scno = 310
 	const Sysprocess_vm_writev	: scno = 311
 
+	/* network protocols */
+	const Ipproto_ip		: sockproto = 0
+	const Ipproto_icmp		: sockproto = 1
+	const Ipproto_tcp		: sockproto = 6
+	const Ipproto_udp		: sockproto = 17
+
 	/* getting to the os */
 	extern const syscall	: (sc:scno, args:... -> int64)
 
