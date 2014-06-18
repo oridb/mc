@@ -100,6 +100,7 @@ pkg std =
 	const Onofollow	: fdopt = 0x20000
 	const Ondelay  	: fdopt = 0x800
 	const Otrunc   	: fdopt = 0x200
+	const Odir	: fdopt = 0x10000
 
 	/* mmap protection */
 	const Mprotnone	: mprot = 0x0
@@ -130,6 +131,13 @@ pkg std =
 	const Sockseqpacket	: socktype = 5	/* sequenced, reliable packets */
 	const Sockdccp		: socktype = 6	/* data congestion control protocol */
 	const Sockpack		: socktype = 10	/* linux specific packet */
+
+	/* network protocols */
+	const Ipproto_ip	: sockproto = 0
+	const Ipproto_icmp	: sockproto = 1
+	const Ipproto_tcp	: sockproto = 6
+	const Ipproto_udp	: sockproto = 17
+	const Ipproto_raw 	: sockproto = 255
 
 	const Seekset	: whence = 0
 	const Seekcur	: whence = 1
@@ -451,12 +459,6 @@ pkg std =
 	const Sysgetcpu			: scno = 309
 	const Sysprocess_vm_readv	: scno = 310
 	const Sysprocess_vm_writev	: scno = 311
-
-	/* network protocols */
-	const Ipproto_ip		: sockproto = 0
-	const Ipproto_icmp		: sockproto = 1
-	const Ipproto_tcp		: sockproto = 6
-	const Ipproto_udp		: sockproto = 17
 
 	/* getting to the os */
 	extern const syscall	: (sc:scno, args:... -> int64)
