@@ -410,6 +410,8 @@ static void setup(Isel *s)
     s->gadj = zalloc(maxregid * sizeof(regid*));
     s->ngadj = zalloc(maxregid * sizeof(size_t));
 
+    s->mactiveset = bsclear(s->mactiveset);
+    s->wlmoveset = bsclear(s->wlmoveset);
     s->spilled = bsclear(s->spilled);
     s->coalesced = bsclear(s->coalesced);
     lfree(&s->wlspill, &s->nwlspill);
@@ -483,6 +485,7 @@ static void build(Isel *s)
                 for (k = 0; k < nd; k++)
                     lappend(&s->rmoves[d[k]], &s->nrmoves[d[k]], insn);
                 lappend(&s->wlmove, &s->nwlmove, insn);
+                bsput(s->wlmoveset, insn->uid);
             }
             /* live = live U def(i) */
             for (k = 0; k < nd; k++)
@@ -511,7 +514,7 @@ static int adjavail(Isel *s, regid r)
 
 static size_t nodemoves(Isel *s, regid n, Insn ***pil)
 {
-    size_t i, j;
+    size_t i;
     size_t count;
 
     /* FIXME: inefficient. Do I care? */
@@ -519,29 +522,25 @@ static size_t nodemoves(Isel *s, regid n, Insn ***pil)
     if (pil)
         *pil = NULL;
     for (i = 0; i < s->nrmoves[n]; i++) {
-        for (j = 0; j < s->nmactive; j++) {
-            if (s->mactive[j] == s->rmoves[n][i]) {
-                if (pil)
-                    lappend(pil, &count, s->rmoves[n][i]);
-                else
-                    count++;
-            }
-        }
-        for (j = 0; j < s->nwlmove; j++) {
-            if (s->wlmove[j] == s->rmoves[n][i]) {
-                if (pil)
-                    lappend(pil, &count, s->rmoves[n][i]);
-                else
-                    count++;
-            }
-        }
+        if (bshas(s->mactiveset, s->rmoves[n][i]->uid))
+            lappend(pil, &count, s->rmoves[n][i]);
+        if (bshas(s->wlmoveset, s->rmoves[n][i]->uid))
+            lappend(pil, &count, s->rmoves[n][i]);
     }
     return count;
 }
 
 static int moverelated(Isel *s, regid n)
 {
-    return nodemoves(s, n, NULL) != 0;
+    size_t i;
+
+    for (i = 0; i < s->nrmoves[n]; i++) {
+        if (bshas(s->mactiveset, s->rmoves[n][i]->uid))
+            return 1;
+        if (bshas(s->wlmoveset, s->rmoves[n][i]->uid))
+            return 1;
+    }
+    return 0;
 }
 
 static void mkworklist(Isel *s)
@@ -574,6 +573,8 @@ static void enablemove(Isel *s, regid n)
             if (il[i] == s->mactive[j]) {
                 ldel(&s->mactive, &s->nmactive, j);
                 lappend(&s->wlmove, &s->nwlmove, il[i]);
+                bsdel(s->mactiveset, il[i]->uid);
+                bsput(s->wlmoveset, il[i]->uid);
             }
         }
     }
@@ -782,6 +783,7 @@ static void coalesce(Isel *s)
     regid u, v, tmp;
 
     m = lpop(&s->wlmove, &s->nwlmove);
+    bsdel(s->wlmoveset, m->uid);
     u = getalias(s, m->args[0]->reg.id);
     v = getalias(s, m->args[1]->reg.id);
 
@@ -805,16 +807,20 @@ static void coalesce(Isel *s)
         wladd(s, u);
     } else {
         lappend(&s->mactive, &s->nmactive, m);
+        bsput(s->mactiveset, m->uid);
     }
 }
 
-static int mldel(Insn ***ml, size_t *nml, Insn *m)
+static int mldel(Insn ***ml, size_t *nml, Bitset *bs, Insn *m)
 {
     size_t i;
-    for (i = 0; i < *nml; i++) {
-        if (m == (*ml)[i]) {
-            ldel(ml, nml, i);
-            return 1;
+    if (bshas(bs, m->uid)) {
+        bsdel(bs, m->uid);
+        for (i = 0; i < *nml; i++) {
+            if (m == (*ml)[i]) {
+                ldel(ml, nml, i);
+                return 1;
+            }
         }
     }
     return 0;
@@ -837,10 +843,11 @@ static void freezemoves(Isel *s, Loc *u)
         else
             v = locmap[getalias(s, m->args[0]->reg.id)];
 
-        if (!mldel(&s->mactive, &s->nmactive, m))
-            mldel(&s->wlmove, &s->nwlmove, m);
+        if (!mldel(&s->mactive, &s->nmactive, s->mactiveset, m))
+            mldel(&s->wlmove, &s->nwlmove, s->wlmoveset, m);
+
         lappend(&s->mfrozen, &s->nmfrozen, m);
-        if (!nodemoves(s, v->reg.id, NULL) && istrivial(s, v->reg.id)) {
+        if (!moverelated(s, v->reg.id) && istrivial(s, v->reg.id)) {
             if (!wlfind(s->wlfreeze, s->nwlfreeze, v->reg.id, &idx))
                 die("Reg %zd not in freeze wl\n", v->reg.id);
             wldel(s, &s->wlfreeze, &s->nwlfreeze, idx);
