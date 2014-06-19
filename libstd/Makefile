@@ -59,20 +59,11 @@ include ../config.mk
 
 all: lib$(MYRLIB).a $(MYRBIN) test
 
-sys.myr: sys-$(SYS).myr
-	cp sys-$(SYS).myr sys.myr
+%.myr: %-$(SYS).myr
+	cp $< $@
 
-ifreq.myr: ifreq-$(SYS).myr
-	cp ifreq-$(SYS).myr ifreq.myr
-
-waitstatus.myr: waitstatus-$(SYS).myr
-	cp waitstatus-$(SYS).myr waitstatus.myr
-
-syscall.s: syscall-$(SYS).s
-	cp syscall-$(SYS).s syscall.s
-
-start.s: start-$(SYS).s
-	cp start-$(SYS).s start.s
+%.s: %-$(SYS).s
+	cp $< $@
 
 test: libstd.a test.myr ../6/6m
 	../myrbuild/myrbuild -C../6/6m -M../muse/muse -b test -I. test.myr
