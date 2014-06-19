@@ -84,6 +84,7 @@ struct Loc {
 };
 
 struct Insn {
+    size_t uid;
     AsmOp op;
     Loc *args[Maxarg];
     size_t nargs;
@@ -156,11 +157,13 @@ struct Isel {
     Insn **mfrozen;
     size_t nmfrozen;
 
+    Bitset *mactiveset;
     Insn **mactive;
     size_t nmactive;
 
 
     /* worklists */
+    Bitset *wlmoveset;
     Insn **wlmove;
     size_t nwlmove;
 
