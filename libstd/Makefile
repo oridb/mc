@@ -8,6 +8,7 @@ MYRSRC= \
     cmp.myr \
     dial.myr \
     die.myr \
+    dir.myr \
     endian.myr \
     env.myr \
     execvp.myr \
