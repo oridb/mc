@@ -64,6 +64,13 @@ pkg std =
 		 ino		: uint64
 	;;
 
+	type dirent = struct
+		ino	: uint64
+		off	: uint64
+		reclen	: uint16
+		name	: byte[0]
+	;;
+
 	type utsname = struct
 		system	: byte[65]
 		node	: byte[65]
@@ -485,6 +492,7 @@ pkg std =
 	const fstat	: (fd:fd, sb:statbuf# -> int64)
 	const mkdir	: (path : byte[:], mode : int64	-> int64)
 	const ioctl	: (fd:fd, req : int64, args:... -> int64)
+	const getdents64	: (fd:fd, dent : dirent#, count : uint64 -> int64)
 
 	/* networking */
 	const socket	: (dom : sockfam, stype : socktype, proto : sockproto	-> fd)
@@ -583,6 +591,7 @@ const ioctl	= {fd, req, args
 	(arg, ap) = vanext(ap)
 	-> syscall(Sysioctl, fd, req, arg) castto(int64)
 }
+const getdents64	= {fd, dent, count;	-> syscall(Sysgetdents64, fd, dent, count)}
 
 /* networking */
 const socket	= {dom, stype, proto;	-> syscall(Syssocket, dom castto(int64), stype, proto) castto(fd)}
