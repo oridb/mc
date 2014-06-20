@@ -99,7 +99,7 @@ pkg std =
 		reclen	: uint16	/* length of this record */
 		namlen	: uint16	/* length of string in d_name */
 		typeid  : uint8		/* file type, see below */
-		name	: byte[1024]
+		name	: byte[0]
 	;;
 
 	/* open options */
