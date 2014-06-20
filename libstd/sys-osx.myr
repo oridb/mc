@@ -10,6 +10,7 @@ pkg std =
 	type socktype	= int64	/* socket type */
 	type sockproto	= int64	/* socket protocol */
 	type sockfam	= uint8	/* socket family */
+	type filemode	= uint16
 
 	type timespec = struct
 		sec	: uint64
@@ -33,28 +34,23 @@ pkg std =
 
 	type statbuf = struct
 		dev	: int32
-		mode	: uint16
-		nlink	: uint32
-		ino	: uint64 /* 32/64? which do I use? */
+		mode	: filemode
+		nlink	: uint16
+		ino	: uint64
 		uid	: uint32
 		gid	: uint32
-		rdev	: int32
-		atime	: timespec
-		atimens	: timespec
-		mtime	: timespec
-		mtimens	: timespec
-		ctime	: timespec
-		ctimens	: timespec
-		btime	: timespec
-		btimens	: timespec
+		rdev	: uint32
+		atimespec	: timespec
+		mtimespec	: timespec
+		ctimespec	: timespec
+		birthtimespec	: timespec
 		size	: off
-		blocks	: uint
-		blocksz	: uint
+		blocks	: int64
+		blksize	: int32
 		flags	: uint32
 		gen	: uint32
-		lspare	: int32
-		qspare0	: int64
-		qspare1	: int64
+		_spare	: uint32
+		_qspare	: uint64[2]
 	;;
 
 	type rusage = struct
@@ -112,6 +108,16 @@ pkg std =
 	const Onofollow	: fdopt = 0x100
 	const Otrunc   	: fdopt = 0x400
 	const Odir	: fdopt = 0x100000
+
+	/* stat modes */
+	const Sifmt	: filemode = 0xf000
+	const Sififo	: filemode = 0x1000
+	const Sifchr	: filemode = 0x2000
+	const Sifdir	: filemode = 0x4000
+	const Sifblk	: filemode = 0x6000
+	const Sifreg	: filemode = 0x8000
+	const Siflnk	: filemode = 0xa000
+	const Sifsock	: filemode = 0xc000
 
 	/* mmap protection */
 	const Mprotnone	: mprot = 0x0
@@ -617,7 +623,7 @@ const creat	= {path, mode;		-> openmode(path, Ocreat | Otrunc | Owronly, mode) c
 const read	= {fd, buf;		-> syscall(Sysread, fd, buf castto(byte#), buf.len castto(size)) castto(size)}
 const write	= {fd, buf;		-> syscall(Syswrite, fd, buf castto(byte#), buf.len castto(size)) castto(size)}
 const lseek	= {fd, off, whence;	-> syscall(Syslseek, fd, off, whence)}
-const stat	= {path, sb;		-> syscall(Sysstat, cstring(path), sb)}
+const stat	= {path, sb;		-> syscall(Sysstat64, cstring(path), sb)}
 const fstat	= {fd, sb;		-> syscall(Sysfstat, fd, sb)}
 const mkdir	= {path, mode;		-> syscall(Sysmkdir, cstring(path), mode) castto(int64)}
 const ioctl	= {fd, req, args
