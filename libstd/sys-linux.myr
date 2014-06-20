@@ -12,6 +12,7 @@ pkg std =
 	type sockproto	= int64	/* socket protocol */
 	type sockfam	= uint16	/* socket family */
 	type whence	= uint64
+	type filemode	= uint32
 
 	type clock = union
 		`Clockrealtime
@@ -44,24 +45,19 @@ pkg std =
 
 	type statbuf = struct
 		 dev		: uint64
-		 __inotrunc	: uint32
-		 __pad0		: uint32
-		 mode		: uint32
-		 nlink		: uint32
+		 ino		: uint64
+		 nlink		: uint64
+		 mode		: filemode
 		 uid		: uint32
 		 gid		: uint32
+		 __pad0		: uint32
 		 rdev		: uint64
-		 __pad1		: uint32
 		 size		: uint64
 		 blksize	: uint32
 		 blocks		: uint64
-		 atime		: uint64
-		 atimens	: uint64
-		 mtime		: uint64
-		 mtimens	: uint64
-		 ctime		: uint64
-		 ctimens	: uint64
-		 ino		: uint64
+		 atime		: timespec
+		 mtime		: timespec
+		 ctime		: timespec
 	;;
 
 	type dirent64 = struct
@@ -109,6 +105,16 @@ pkg std =
 	const Ondelay  	: fdopt = 0x800
 	const Otrunc   	: fdopt = 0x200
 	const Odir	: fdopt = 0x10000
+
+	/* stat modes */
+	const Sifmt	: filemode = 0xf000
+	const Sififo	: filemode = 0x1000
+	const Sifchr	: filemode = 0x2000
+	const Sifdir	: filemode = 0x4000
+	const Sifblk	: filemode = 0x6000
+	const Sifreg	: filemode = 0x8000
+	const Siflnk	: filemode = 0xa000
+	const Sifsock	: filemode = 0xc000
 
 	/* mmap protection */
 	const Mprotnone	: mprot = 0x0
