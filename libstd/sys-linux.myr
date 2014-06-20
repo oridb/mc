@@ -44,20 +44,21 @@ pkg std =
 	;;
 
 	type statbuf = struct
-		 dev		: uint64
-		 ino		: uint64
-		 nlink		: uint64
-		 mode		: filemode
-		 uid		: uint32
-		 gid		: uint32
-		 __pad0		: uint32
-		 rdev		: uint64
-		 size		: uint64
-		 blksize	: uint32
-		 blocks		: uint64
-		 atime		: timespec
-		 mtime		: timespec
-		 ctime		: timespec
+		 dev	: uint64
+		 ino	: uint64
+		 nlink	: uint64
+		 mode	: filemode
+		 uid	: uint32
+		 gid	: uint32
+		 __pad0	: uint32
+		 rdev	: uint64
+		 size	: uint64
+		 blksz	: uint32
+		 blocks	: uint64
+		 atime	: timespec
+		 mtime	: timespec
+		 ctime	: timespec
+		 __pad1	: uint64[3]
 	;;
 
 	type dirent64 = struct
@@ -493,8 +494,8 @@ pkg std =
 	const openmode	: (path:byte[:], opts:fdopt, mode:int64 -> fd)
 	const close	: (fd:fd -> int64)
 	const creat	: (path:byte[:], mode:int64 -> fd)
-	const read	: (fd:fd, buf:byte[:] -> size)
-	const write	: (fd:fd, buf:byte[:] -> size)
+	const read	: (fd:fd, buf:byte[:] -> int64)
+	const write	: (fd:fd, buf:byte[:] -> int64)
 	const lseek	: (fd:fd, off:uint64, whence:int64 -> int64)
 	const stat	: (path:byte[:], sb:statbuf# -> int64)
 	const fstat	: (fd:fd, sb:statbuf# -> int64)
