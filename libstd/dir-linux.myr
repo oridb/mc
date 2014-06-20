@@ -20,6 +20,8 @@ pkg std =
 	const dirclose	: (d : dir# -> void)
 ;;
 
+const Direntoverhead = 20
+
 const diropen = {p
 	var fd
 	var dir
@@ -32,7 +34,6 @@ const diropen = {p
 	dir.fd = fd
 	-> `Ok dir
 }
-
 
 const dirread = {d
 	var len
@@ -49,7 +50,7 @@ const dirread = {d
 	;;
 
 	dent = &d.buf[d.off] castto(dirent64#)
-	namelen = (dent.reclen - 20) castto(size)
+	namelen = (dent.reclen - Direntoverhead) castto(size)
 	d.off += dent.reclen castto(int64)
 	-> `Some sldup(dent.name[:namelen])
 }
