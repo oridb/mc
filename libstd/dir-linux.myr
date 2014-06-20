@@ -50,8 +50,11 @@ const dirread = {d
 	;;
 
 	dent = &d.buf[d.off] castto(dirent64#)
-	namelen = (dent.reclen - Direntoverhead) castto(size)
+	namelen = 0
 	d.off += dent.reclen castto(int64)
+	while dent.name[namelen] != 0
+		namelen++
+	;;
 	-> `Some sldup(dent.name[:namelen])
 }
 
