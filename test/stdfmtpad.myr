@@ -3,6 +3,9 @@ use std
 const main = {
 	std.put("%10s\n", "abcd")
 	std.put("%010s\n", "bdcae")
+	std.put("%010s\n", "abcdefghijkl")
+	std.put("%01s\n", "a")
 	std.put("%10i\n", 10)
 	std.put("%010i\n", 10)
+	std.put("%3i\n", 100000)
 }
