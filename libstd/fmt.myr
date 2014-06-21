@@ -115,13 +115,19 @@ generic intfmt = {buf : byte[:], bits : @a::(integral,numeric), base, signed, pa
 
 	npad = clamp(padto - i, 0, padto)
 	n = 0
+	if isneg
+		npad--
+	;;
+	if padfill == '0' && isneg && n < buf.len
+		n += encode(buf[n:], '-')
+	;;
 	for j = 0; j < min(npad, buf.len); j++
 		if n >= buf.len
 			break
 		;;
 		n += encode(buf[n:], padfill)
 	;;
-	if isneg && n < buf.len
+	if padfill != '0' && isneg && n < buf.len
 		n += encode(buf[n:], '-')
 	;;
 	for j = i; j != 0; j--
@@ -162,7 +168,7 @@ const bfmtv = {buf, fmt, ap
 			padfill = ' '
 			(c, fmt) = striter(fmt)
 			/* modifiers */
-			if fmt.len > 0
+			while fmt.len > 0
 				match c
 				| 'x':
 					(c, fmt) = striter(fmt)
@@ -176,7 +182,7 @@ const bfmtv = {buf, fmt, ap
 					(c, fmt) = striter(fmt)
 					padfill = '0'
 				;;
-				if isdigit(c)
+				if isdigit(c) && padto == 0
 					/*
 					We can't get a 0 on the first iteration, since
 					that was matched above. So, no special checks
@@ -187,6 +193,8 @@ const bfmtv = {buf, fmt, ap
 						padto = padto*10 + charval(c, 10)
 						(c, fmt) = striter(fmt)
 					;;
+				else
+					break
 				;;
 			;;
 			/* format specifiers */
