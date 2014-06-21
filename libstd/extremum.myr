@@ -1,6 +1,7 @@
 pkg std =
 	generic min	: (a : @a::numeric, b : @a::numeric  -> @a::numeric)
 	generic max	: (a : @a::numeric, b : @a::numeric  -> @a::numeric)
+	generic clamp	: (a : @a::numeric, min : @a::numeric, max : @a::numeric -> @a::numeric)
 ;;
 
 generic min = {a, b
@@ -18,3 +19,14 @@ generic max = {a, b
 		-> b
 	;;
 }
+
+generic clamp = {a, min, max
+	if a < min
+		-> min
+	elif a > max
+		-> max
+	else
+		-> a
+	;;
+}
+

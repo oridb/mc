@@ -9,6 +9,8 @@ use "sys.use"
 pkg std =
 	/* predicates */
 	const isalpha	: (c : char -> bool)
+	const isdigit	: (c : char -> bool)
+	const isxdigit	: (c : char -> bool)
 	const isnum	: (c : char -> bool)
 	const isalnum	: (c : char -> bool)
 	const isspace	: (c : char -> bool)
@@ -1097,6 +1099,14 @@ const isalpha = {c
 		;;
 	;;
 	-> false
+}
+
+const isdigit = {c
+	-> c >= '0' && c <= '9'
+}
+
+const isxdigit = {c
+	-> c >= '0' && c <= '9' || c >= 'a' && c <= 'f' || c >= 'A' && c <= 'F'
 }
 
 const isnum = {c
