@@ -5,6 +5,7 @@ use "types.use"
 use "utf.use"
 use "varargs.use"
 use "extremum.use"
+use "chartype.use"
 
 /*
   printf-like functions. These use a different syntax from the C printf,
@@ -85,13 +86,11 @@ const bfmt = {buf, fmt, args
 const digitchars = [
 	'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'
 ]
-generic intfmt = {buf : byte[:], bits : @a::(integral,numeric), base, signed
+generic intfmt = {buf : byte[:], bits : @a::(integral,numeric), base, signed, padto, padfill
 	var isneg
 	var val
 	var b : char[32]
-	var i
-	var j
-	var n
+	var i, j, n, npad
 
 	n = 0
 	i = 0
@@ -113,11 +112,22 @@ generic intfmt = {buf : byte[:], bits : @a::(integral,numeric), base, signed
 		val /= base
 		i++
 	;;
+
+	npad = clamp(padto - i, 0, padto)
 	n = 0
-	if isneg
+	for j = 0; j < min(npad, buf.len); j++
+		if n >= buf.len
+			break
+		;;
+		n += encode(buf[n:], padfill)
+	;;
+	if isneg && n < buf.len
 		n += encode(buf[n:], '-')
 	;;
 	for j = i; j != 0; j--
+		if n >= buf.len
+			break
+		;;
 		n += encode(buf[n:], b[j - 1])
 	;;
 	-> n 
@@ -128,8 +138,9 @@ generic intfmt = {buf : byte[:], bits : @a::(integral,numeric), base, signed
 const bfmtv = {buf, fmt, ap
 	var c
 	var n
+	var padto
 	var base
-	var signed
+	var signed, padfill
 	var s_val : byte[:]
 	var t_val : bool
 	var b_val : int8, ub_val : uint8
@@ -146,7 +157,9 @@ const bfmtv = {buf, fmt, ap
 		(c, fmt) = striter(fmt)
 		if c == '%'
 			base = 10
+			padto = 0
 			signed = true
+			padfill = ' '
 			(c, fmt) = striter(fmt)
 			/* modifiers */
 			if fmt.len > 0
@@ -159,19 +172,34 @@ const bfmtv = {buf, fmt, ap
 				| 'u':
 					(c, fmt) = striter(fmt)
 					signed = false
+				| '0':
+					(c, fmt) = striter(fmt)
+					padfill = '0'
+				;;
+				if isdigit(c)
+					/*
+					We can't get a 0 on the first iteration, since
+					that was matched above. So, no special checks
+					for nonzero on the first iteration.
+					*/
+					padto = 0
+					while isdigit(c)
+						padto = padto*10 + charval(c, 10)
+						(c, fmt) = striter(fmt)
+					;;
 				;;
 			;;
 			/* format specifiers */
 			match c
 			| 's':
 				(s_val, ap) = vanext(ap)
-				n += strfmt(buf[n:], s_val)
+				n += strfmt(buf[n:], s_val, padto, padfill)
 			| 't':
 				(t_val, ap) = vanext(ap)
-				n += boolfmt(buf[n:], t_val)
+				n += boolfmt(buf[n:], t_val, padto, padfill)
 			| 'f':
 				(f_val, ap) = vanext(ap)
-				n += floatfmt(buf[n:], f_val, 0, 0)
+				n += floatfmt(buf[n:], f_val, 0, 0, padto, padfill)
 			/* FIXME: float casts are currently broken
 			| 'F':
 				(F_val, ap) = vanext(ap)
@@ -181,42 +209,42 @@ const bfmtv = {buf, fmt, ap
 			| 'b':
 				if signed
 					(b_val, ap) = vanext(ap)
-					n += intfmt(buf[n:], b_val, base, signed)
+					n += intfmt(buf[n:], b_val, base, signed, padto, padfill)
 				else
 					(ub_val, ap) = vanext(ap)
-					n += intfmt(buf[n:], ub_val, base, signed)
+					n += intfmt(buf[n:], ub_val, base, signed, padto, padfill)
 				;;
 			| 'w':
 				if signed
 					(w_val, ap) = vanext(ap)
-					n += intfmt(buf[n:], w_val, base, signed)
+					n += intfmt(buf[n:], w_val, base, signed, padto, padfill)
 				else
 					(uw_val, ap) = vanext(ap)
-					n += intfmt(buf[n:], uw_val, base, signed)
+					n += intfmt(buf[n:], uw_val, base, signed, padto, padfill)
 				;;
 			| 'i':
 				if signed
 					(i_val, ap) = vanext(ap)
-					n += intfmt(buf[n:], i_val, base, signed)
+					n += intfmt(buf[n:], i_val, base, signed, padto, padfill)
 				else
 					(ui_val, ap) = vanext(ap)
-					n += intfmt(buf[n:], ui_val, base, signed)
+					n += intfmt(buf[n:], ui_val, base, signed, padto, padfill)
 				;;
 			| 'l':
 				if signed
 					(l_val, ap) = vanext(ap)
-					n += intfmt(buf[n:], l_val, base, signed)
+					n += intfmt(buf[n:], l_val, base, signed, padto, padfill)
 				else
 					(ul_val, ap) = vanext(ap)
-					n += intfmt(buf[n:], ul_val, base, signed)
+					n += intfmt(buf[n:], ul_val, base, signed, padto, padfill)
 				;;
 
 			| 'z':
 				(z_val, ap) = vanext(ap)
-				n += intfmt(buf[n:], z_val castto(int64), base, signed)
+				n += intfmt(buf[n:], z_val castto(int64), base, signed, padto, padfill)
 			| 'p':
 				(p_val, ap) = vanext(ap)
-				n += intfmt(buf[n:], p_val castto(int64), 16, false)
+				n += intfmt(buf[n:], p_val castto(int64), 16, false, padto, padfill)
                         | 'c':    (c_val, ap) = vanext(ap)
                                 n += encode(buf[n:], c_val)
                         | _:
@@ -229,16 +257,21 @@ const bfmtv = {buf, fmt, ap
 	-> n
 }
 
-const strfmt = {buf, str
-	var i
-	
-	for i = 0; i < min(str.len, buf.len); i++
-		buf[i] = str[i]
+const strfmt = {buf, str, padto, padfill
+	var i, n, npad
+
+	n = 0
+	npad = clamp(padto - str.len, 0, padto)
+	for i = 0; i < padto - str.len; i++
+		n += encode(buf[n:], padfill)
 	;;
-	-> i
+	for i = 0; i < min(str.len, buf.len); i++
+		buf[n++] = str[i]
+	;;
+	-> n
 }
 
-const boolfmt = {buf, val
+const boolfmt = {buf, val, padto, padfill
 	var s
 
 	if val
@@ -246,7 +279,7 @@ const boolfmt = {buf, val
 	else
 		s = "false"
 	;;
-	-> strfmt(buf, s)
+	-> strfmt(buf, s, padto, padfill)
 }
 
 /*
@@ -258,7 +291,7 @@ const boolfmt = {buf, val
 	2 => print until maxdigits produced, paddding with zeros.
  */
 
-const floatfmt = {buf, val, mode, maxdigits
+const floatfmt = {buf, val, mode, maxdigits, padto, padfill
 	var i
 	var n
 	/*
@@ -268,15 +301,15 @@ const floatfmt = {buf, val, mode, maxdigits
 
 	/* handle 0 specially to avoid special cases */
 	if val == 0.0
-		n = strfmt(buf, "0.0")
+		n = strfmt(buf, "0.0", padto, padfill)
 		if mode == 0 && maxdigits > 2
 			for i = 1; i < maxdigits; i++
-				n += strfmt(buf[n:], "0")
+				n += strfmt(buf[n:], "0", padto, padfill)
 			;;
 		;;
 		-> n
 	;;
 
-	-> strfmt(buf, "floats not implemented")
+	-> strfmt(buf, "floats not implemented", padto, padfill)
 }
 
