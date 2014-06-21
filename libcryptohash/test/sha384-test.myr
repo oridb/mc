@@ -1,0 +1,14 @@
+use std
+use cryptohash
+
+use "printhash.use"
+
+const main = {
+	print(cryptohash.sha384("")[:])
+	print(cryptohash.sha384("h")[:])
+	/* 64 byte block */
+	print(cryptohash.sha384("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")[:])
+	/* tail spanning */
+	print(cryptohash.sha384("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbb")[:])
+}
+
