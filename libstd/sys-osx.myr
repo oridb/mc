@@ -526,10 +526,11 @@ pkg std =
 	const openmode	: (path:byte[:], opts:fdopt, mode:int64 -> fd)
 	const close	: (fd:fd -> int64)
 	const creat	: (path:byte[:], mode:int64 -> fd)
-	const read	: (fd:fd, buf:byte[:] -> size)
-	const write	: (fd:fd, buf:byte[:] -> size)
+	const read	: (fd:fd, buf:byte[:] -> int64)
+	const write	: (fd:fd, buf:byte[:] -> int64)
 	const lseek	: (fd:fd, off:uint64, whence:int64 -> int64)
 	const stat	: (path:byte[:], sb:statbuf# -> int64)
+	const lstat	: (path:byte[:], sb:statbuf# -> int64)
 	const fstat	: (fd:fd, sb:statbuf# -> int64)
 	const mkdir	: (path : byte[:], mode : int64	-> int64)
 	const ioctl	: (fd:fd, req : int64, args:... -> int64)
@@ -620,11 +621,12 @@ const open	= {path, opts;		-> syscall(Sysopen, cstring(path), opts, 0o777) castt
 const openmode	= {path, opts, mode;	-> syscall(Sysopen, cstring(path), opts, mode) castto(fd)}
 const close	= {fd;			-> syscall(Sysclose, fd)}
 const creat	= {path, mode;		-> openmode(path, Ocreat | Otrunc | Owronly, mode) castto(fd)}
-const read	= {fd, buf;		-> syscall(Sysread, fd, buf castto(byte#), buf.len castto(size)) castto(size)}
-const write	= {fd, buf;		-> syscall(Syswrite, fd, buf castto(byte#), buf.len castto(size)) castto(size)}
+const read	= {fd, buf;		-> syscall(Sysread, fd, buf castto(byte#), buf.len castto(size))}
+const write	= {fd, buf;		-> syscall(Syswrite, fd, buf castto(byte#), buf.len castto(size))}
 const lseek	= {fd, off, whence;	-> syscall(Syslseek, fd, off, whence)}
 const stat	= {path, sb;		-> syscall(Sysstat64, cstring(path), sb)}
-const fstat	= {fd, sb;		-> syscall(Sysfstat, fd, sb)}
+const lstat	= {path, sb;		-> syscall(Syslstat64, cstring(path), sb)}
+const fstat	= {fd, sb;		-> syscall(Sysfstat64, fd, sb)}
 const mkdir	= {path, mode;		-> syscall(Sysmkdir, cstring(path), mode) castto(int64)}
 const ioctl	= {fd, req, args
 	var arg : byte#
