@@ -1,0 +1,16 @@
+use std
+
+generic fail = {val : @a
+	-> `std.Some val
+}
+
+generic try = {opt : std.option(@b)
+	match opt
+	| `std.Some v:	-> v
+	| `std.None:	std.die("Badness\n")
+	;;
+}
+
+const main = {
+	std.put("val = %i\n", try(fail(123)))
+}
