@@ -444,7 +444,7 @@ static void putbindings(Inferstate *st, Htab *bt, Type *t)
 
     if (debugopt['u']) {
         s = tystr(t);
-        printf("\tBind %s", s);
+        printf("Bind %s\n", s);
         free(s);
     }
     if (hthas(bt, t->pname))
@@ -466,7 +466,7 @@ static void tybind(Inferstate *st, Type *t)
         return;
     if (debugopt['u']) {
         s = tystr(t);
-        printf("Binding %s", s);
+        printf("Binding %s\n", s);
         free(s);
     }
     bt = mkht(strhash, streq);
