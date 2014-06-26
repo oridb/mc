@@ -30,7 +30,7 @@ const slurp = {path
 		if n == 0
 			goto done
 		;;
-		len += n
+		len += n castto(size)
 		buf = slgrow(buf, len + Bufinc)
 	;;
 :done
