@@ -1,18 +1,18 @@
 use std
 
 const main = {
-    var a
-    var i
-    var rng
-    var t0, t1
+	var a
+	var i
+	var rng
+	var t0, t1
 
-    rng = std.mksrng(123)
-    a = std.slalloc(1000000)
-    for i = 0; i < a.len; i++
-        a[i] = std.rand32(rng)
-    ;;
-    t0 = std.now()
-    std.sort(a, std.numcmp)
-    t1 = std.now()
-    std.put("time = %l\n", t1 - t0)
+	rng = std.mksrng(123)
+	a = std.slalloc(1000000)
+	for i = 0; i < a.len; i++
+		a[i] = std.rand32(rng)
+	;;
+	t0 = std.now()
+	std.sort(a, std.numcmp)
+	t1 = std.now()
+	std.put("time = %l\n", t1 - t0)
 }
