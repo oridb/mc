@@ -11,8 +11,8 @@ pkg regex =
 
 type tree = union
 	/* basic string building */
-	`Alt	[tree#, tree#]
-	`Cat	[tree#, tree#]
+	`Alt	(tree#, tree#)
+	`Cat	(tree#, tree#)
 
 	/* repetition */
 	`Star	tree#
@@ -27,7 +27,7 @@ type tree = union
 	`Ranges	char[2][:]
 
 	/* meta */
-	`Cap	[std.size, tree#] /* id, tree */
+	`Cap	(std.size, tree#) /* id, tree */
 	`Bol	/* beginning of line */
 	`Eol	/* end of line */
 ;;
@@ -147,7 +147,7 @@ const genranges = {re, sl
 }
 
 type rangetrie = struct
-	ranges	: [byte, byte][:]
+	ranges	: (byte, byte)[:]
 	link	: rangetrie#[:]
 	end	: bool
 ;;

@@ -259,7 +259,7 @@ const within = {re, str
 	-> re.strp < str.len
 }
 
-const trace : (re : regex#, thr : rethread#, msg : byte[:], args : ...) = {re, thr, msg, args
+const trace : (re : regex#, thr : rethread#, msg : byte[:], args : ... -> void) = {re, thr, msg, args
 	if re.debug
 		std.putv(msg, std.vastart(&args))
 	;;

@@ -42,7 +42,7 @@ pkg regex =
 	type reinst = union
 		/* direct consumers */
 		`Ibyte	byte
-		`Irange	[byte, byte]
+		`Irange	(byte, byte)
 
 		/* groups */
 		`Ilbra	std.size
@@ -53,7 +53,7 @@ pkg regex =
 		`Ieol
 
 		/* control flow */
-		`Ifork	[std.size, std.size]
+		`Ifork	(std.size, std.size)
 		`Ijmp	std.size
 		`Imatch
 	;;
