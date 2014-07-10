@@ -1,6 +1,6 @@
 pkg std =
-	type size	= uint64	/* spans entire address space */
-	type ssize	= int64		/* signed size */
+	type size	= int64		/* spans entire address space */
+	type usize	= int64		/* signed size */
 	type off	= uint64	/* file offsets */
 	type intptr	= uint64	/* can hold any pointer losslessly */
 	type time	= int64		/* milliseconds since epoch */
