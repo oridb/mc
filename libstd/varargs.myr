@@ -4,7 +4,7 @@ pkg std =
 	type valist
 
 	const vastart	: (args : ...# -> valist)
-	generic vanext	: (ap : valist -> [@a, valist])
+	generic vanext	: (ap : valist -> (@a, valist))
 ;;
 
 type valist = byte#
@@ -22,7 +22,7 @@ const vastart = {args
 	-> args castto(valist)
 }
 
-generic vanext = {ap -> [@a, valist]
+generic vanext = {ap -> (@a, valist)
 	var v : @a
 	var align
 	var p

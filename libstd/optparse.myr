@@ -25,7 +25,7 @@ pkg std =
 	;;
 
 	const optinit	: (optstr: byte[:], optargs : byte[:][:] -> optctx#)
-	const optnext	: (ctx : optctx# -> [char, byte[:]])
+	const optnext	: (ctx : optctx# -> (char, byte[:]))
 	const optdone	: (ctx : optctx# -> bool)
 	const optfin	: (ctx : optctx# -> byte[:][:])
 ;;

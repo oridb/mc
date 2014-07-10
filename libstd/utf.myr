@@ -10,7 +10,7 @@ pkg std =
 	const charlen	: (chr : char -> size)
 	const encode	: (buf : byte[:], chr : char -> size)
 	const decode	: (buf : byte[:] -> char)
-	const striter	: (str : byte[:] -> [char, byte[:]])
+	const striter	: (str : byte[:] -> (char, byte[:]))
 ;;
 
 const charlen = {c

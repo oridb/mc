@@ -62,9 +62,9 @@ const main = {
 	std.put("size = %i\n", sizeof(alignstruct6))
 	std.put("size = %i\n", sizeof(alignstruct7))
 	/* size should be 8 */
-	std.put("size = %i\n", sizeof([int, byte, byte]))
+	std.put("size = %i\n", sizeof((int, byte, byte)))
 	/* size should be 16 */
-	std.put("size = %i\n", sizeof([int, byte, int, byte]))
+	std.put("size = %i\n", sizeof((int, byte, int, byte)))
 	/* size should be 12 */
-	std.put("size = %i\n", sizeof([int, int, byte, byte]))
+	std.put("size = %i\n", sizeof((int, int, byte, byte)))
 }

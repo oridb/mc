@@ -3,8 +3,8 @@ pkg std =
 	const float32bits	: (flt : float32 -> uint32)
 	const float64frombits	: (bits : uint64 -> float64)
 	const float32frombits	: (bits : uint32 -> float32)
-	const float64explode	: (flt : float64 -> [bool, uint64, int32])
-	const float32explode	: (flt : float64 -> [bool, uint64, int32])
+	const float64explode	: (flt : float64 -> (bool, uint64, int32))
+	const float32explode	: (flt : float64 -> (bool, uint64, int32))
 ;;
 
 const float64bits	= {flt;	-> (&flt castto(uint64#))#}
