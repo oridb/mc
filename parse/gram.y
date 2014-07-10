@@ -139,7 +139,7 @@ static void addtrait(Type *t, char *str);
 %type <node> littok literal asnexpr lorexpr landexpr borexpr
 %type <node> bandexpr cmpexpr unionexpr addexpr mulexpr shiftexpr prefixexpr postfixexpr
 %type <node> funclit seqlit tuplit name block stmt label use
-%type <node> declbody declcore structent arrayelt structelt tuphead
+%type <node> declbody declcore typedeclcore structent arrayelt structelt tuphead
 %type <node> ifstmt forstmt whilestmt matchstmt elifs optexprln optexpr
 %type <node> match
 %type <node> castexpr
@@ -316,7 +316,11 @@ declbody: declcore Tasn expr {$$ = $1; $1->decl.init = $3;}
         ;
 
 declcore: name {$$ = mkdecl($1->line, $1, mktyvar($1->line));}
-        | name Tcolon type {$$ = mkdecl($1->line, $1, $3);}
+        | typedeclcore {$$ = $1;}
+        ;
+        
+typedeclcore
+        : name Tcolon type {$$ = mkdecl($1->line, $1, $3);}
         ;
 
 name    : Tident {$$ = mkname($1->line, $1->str);}
@@ -441,13 +445,11 @@ compoundtype
 functype: Toparen funcsig Tcparen {$$ = $2;}
         ;
 
-funcsig : argdefs
-            {$$ = mktyfunc($1.line, $1.nl, $1.nn, mktyvar($1.line));}
-        | argdefs Tret type
+funcsig : argdefs Tret type
             {$$ = mktyfunc($1.line, $1.nl, $1.nn, $3);}
         ;
 
-argdefs : declcore {
+argdefs : typedeclcore {
                 $$.line = $1->line;
                 $$.nl = NULL;
                 $$.nn = 0; lappend(&$$.nl, &$$.nn, $1);
@@ -460,7 +462,7 @@ argdefs : declcore {
             }
         ;
 
-tupledef: Tosqbrac typelist Tcsqbrac
+tupledef: Toparen typelist Tcparen
             {$$ = mktytuple($1->line, $2.types, $2.ntypes);}
         ;
 

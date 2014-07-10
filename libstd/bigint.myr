@@ -37,7 +37,7 @@ pkg std =
 	const bigmul	: (a : bigint#, b : bigint# -> bigint#)
 	const bigdiv	: (a : bigint#, b : bigint# -> bigint#)
 	const bigmod	: (a : bigint#, b : bigint# -> bigint#)
-	const bigdivmod	: (a : bigint#, b : bigint# -> [bigint#, bigint#])
+	const bigdivmod	: (a : bigint#, b : bigint# -> (bigint#, bigint#))
 	const bigshl	: (a : bigint#, b : bigint# -> bigint#)
 	const bigshr	: (a : bigint#, b : bigint# -> bigint#)
 
@@ -352,7 +352,7 @@ const bigmod = {a : bigint#, b : bigint# -> bigint#
 }
 
 /* a /= b */
-const bigdivmod = {a : bigint#, b : bigint# -> [bigint#, bigint#]
+const bigdivmod = {a : bigint#, b : bigint# -> (bigint#, bigint#)
 	/*
 	 Implements bigint division using Algorithm D from
 	 Knuth: Seminumerical algorithms, Section 4.3.1.
