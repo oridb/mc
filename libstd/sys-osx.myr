@@ -40,9 +40,9 @@ pkg std =
 		uid	: uint32
 		gid	: uint32
 		rdev	: uint32
-		atimespec	: timespec
-		mtimespec	: timespec
-		ctimespec	: timespec
+		atime	: timespec
+		mtime	: timespec
+		ctime	: timespec
 		birthtimespec	: timespec
 		size	: off
 		blocks	: int64
