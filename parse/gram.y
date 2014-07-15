@@ -909,7 +909,7 @@ static void installucons(Stab *st, Type *t)
             break;
         case Tyunion:
             for (i = 0; i < b->nmemb; i++) {
-                b->udecls[i]->utype = t;
+                b->udecls[i]->utype = b;
                 b->udecls[i]->id = i;
                 putucon(st, b->udecls[i]);
             }

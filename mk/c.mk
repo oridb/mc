@@ -19,7 +19,7 @@ $(LIB): $(OBJ) $(DEPS)
 	$(AR) -rcs $@ $(OBJ)
 
 $(BIN): $(OBJ) $(EXTRADEP) $(DEPS)
-	$(CC) -o $@ $(OBJ) $(_LIBSRCHPATHS) $(_LIBPATHS)
+	$(CC) -o $@ $(OBJ) $(_LIBSRCHPATHS) $(_LIBPATHS) $(LDFLAGS)
 
 $(DEPS):
 	@cd $(dir $@) && $(MAKE)
