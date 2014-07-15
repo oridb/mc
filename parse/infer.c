@@ -386,11 +386,19 @@ static Type *littype(Node *n)
 static Type *delayeducon(Inferstate *st, Type *fallback)
 {
     Type *t;
+    char *from, *to;
 
     if (fallback->type != Tyunion)
         return fallback;
     t = mktylike(fallback->line, fallback->type);
     htput(st->delayed, t, fallback);
+    if (debugopt['u']) {
+        from = tystr(t);
+        to = tystr(fallback);
+        indentf(st->indentdepth, "Delay %s -> %s\n", from, to);
+        free(from);
+        free(to);
+    }
     return t;
 }
 
@@ -1628,9 +1636,9 @@ static Type *tyfix(Inferstate *st, Node *ctx, Type *orig)
     }
     if (t->type == Tyvar) {
         if (hastrait(t, traittab[Tcint]) && checktraits(t, tyint))
-            return tyint;
+            t = tyint;
         if (hastrait(t, traittab[Tcfloat]) && checktraits(t, tyflt))
-            return tyflt;
+            t = tyflt;
     } else if (!t->fixed) {
         t->fixed = 1;
         if (t->type == Tyarray) {
