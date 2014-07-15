@@ -1609,6 +1609,7 @@ static Type *tyfix(Inferstate *st, Node *ctx, Type *orig)
 {
     static Type *tyint, *tyflt;
     Type *t, *delayed;
+    char *from, *to;
     size_t i;
     char buf[1024];
 
@@ -1653,6 +1654,13 @@ static Type *tyfix(Inferstate *st, Node *ctx, Type *orig)
         if (debugopt['T'])
             dump(file, stdout);
         fatal(t->line, "underconstrained type %s near %s", tyfmt(buf, 1024, t), ctxstr(st, ctx));
+    }
+    if (debugopt['u'] && !tyeq(orig, t)) {
+        from = tystr(orig);
+        to = tystr(t);
+        indentf(st->indentdepth, "subst %s => %s\n", from, to);
+        free(from);
+        free(to);
     }
 
     return t;
