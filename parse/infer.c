@@ -332,10 +332,8 @@ static Type *tf(Inferstate *st, Type *orig)
 {
     Type *t;
     size_t i;
-    int is;
 
     t = tysearch(st, orig);
-    is = isgeneric(orig);
     st->ingeneric += isgeneric(orig);
     tyresolve(st, t);
     /* If this is an instantiation of a generic type, we want the params to
