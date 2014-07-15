@@ -341,7 +341,6 @@ static Type *tf(Inferstate *st, Type *orig)
             unify(st, NULL, t->arg[i], orig->arg[i]);
         }
     }
-    assert(is == isgeneric(orig));
     st->ingeneric -= isgeneric(orig);
     return t;
 }
@@ -727,8 +726,10 @@ static void unifycall(Inferstate *st, Node *n)
 {
     size_t i;
     Type *ft;
+    char *ret, *ctx;
 
     ft = type(st, n->expr.args[0]);
+
     if (ft->type == Tyvar) {
         /* the first arg is the function itself, so it shouldn't be counted */
         ft = mktyfunc(n->line, &n->expr.args[1], n->expr.nargs - 1, mktyvar(n->line));
@@ -747,6 +748,14 @@ static void unifycall(Inferstate *st, Node *n)
     if (i < ft->nsub && ft->sub[i]->type != Tyvalist)
         fatal(n->line, "%s arity mismatch (expected %zd args, got %zd)",
               ctxstr(st, n->expr.args[0]), ft->nsub - 1, i - 1);
+    if (debugopt['u']) {
+        ret = tystr(ft->sub[0]);
+        ctx = ctxstr(st, n->expr.args[0]);
+        printf("Call of %s returns %s\n", ctx, ret);
+        free(ctx);
+        free(ret);
+    }
+
     settype(st, n, ft->sub[0]);
 }
 
