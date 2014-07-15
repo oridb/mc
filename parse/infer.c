@@ -17,6 +17,7 @@ typedef struct Inferstate Inferstate;
 struct Inferstate {
     int ingeneric;
     int sawret;
+    int indentdepth;
     Type *ret;
 
     /* bound by patterns turn into decls in the action block */
@@ -226,22 +227,26 @@ static int needfreshen(Inferstate *st, Type *t)
 static Type *tyfreshen(Inferstate *st, Type *t)
 {
     Htab *ht;
+    char *from, *to;
 
     if (!needfreshen(st, t)) {
         if (debugopt['u'])
-            printf("%s isn't generic: skipping freshen\n", tystr(t));
+            indentf(st->indentdepth, "%s isn't generic: skipping freshen\n", tystr(t));
         return t;
     }
 
-    if (debugopt['u'])
-        printf("Freshen %s => ", tystr(t));
+    from = tystr(t);
     tybind(st, t);
     ht = mkht(tyhash, tyeq);
     t = tyspecialize(t, ht);
     htfree(ht);
     tyunbind(st, t);
-    if (debugopt['u'])
-        printf("%s\n", tystr(t));
+    if (debugopt['u']) {
+        to = tystr(t);
+        indentf(st->indentdepth, "Freshen %s => %s\n", from, to);
+        free(from);
+        free(to);
+    }
 
     return t;
 }
@@ -443,7 +448,7 @@ static void putbindings(Inferstate *st, Htab *bt, Type *t)
 
     if (debugopt['u']) {
         s = tystr(t);
-        printf("Bind %s\n", s);
+        indentf(st->indentdepth, "Bind %s\n", s);
         free(s);
     }
     if (hthas(bt, t->pname))
@@ -465,7 +470,7 @@ static void tybind(Inferstate *st, Type *t)
         return;
     if (debugopt['u']) {
         s = tystr(t);
-        printf("Binding %s\n", s);
+        indentf(st->indentdepth, "Binding %s\n", s);
         free(s);
     }
     bt = mkht(strhash, streq);
@@ -662,7 +667,7 @@ static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
     if (debugopt['u']) {
         from = tystr(a);
         to = tystr(b);
-        printf("Unify %s => %s\n", from, to);
+        indentf(st->indentdepth, "Unify %s => %s\n", from, to);
         free(from);
         free(to);
     }
@@ -751,7 +756,7 @@ static void unifycall(Inferstate *st, Node *n)
     if (debugopt['u']) {
         ret = tystr(ft->sub[0]);
         ctx = ctxstr(st, n->expr.args[0]);
-        printf("Call of %s returns %s\n", ctx, ret);
+        indentf(st->indentdepth, "Call of %s returns %s\n", ctx, ret);
         free(ctx);
         free(ret);
     }
@@ -1506,11 +1511,17 @@ static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
             popstab();
             break;
         case Ndecl:
+            if (debugopt['u'])
+                indentf(st->indentdepth, "--- infer %s ---\n", declname(n));
+            st->indentdepth++;
             bind(st, n);
             inferdecl(st, n);
             if (type(st, n)->type == Typaram && !st->ingeneric)
                 fatal(n->line, "Generic type %s in non-generic near %s\n", tystr(type(st, n)), ctxstr(st, n));
             unbind(st, n);
+            st->indentdepth--;
+            if (debugopt['u'])
+                indentf(st->indentdepth, "--- done ---\n");
             break;
         case Nblock:
             setsuper(n->block.scope, curstab());

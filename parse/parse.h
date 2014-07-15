@@ -547,6 +547,11 @@ size_t align(size_t sz, size_t a);
 /* suffix replacement */
 char *swapsuffix(char *buf, size_t sz, char *s, char *suf, char *swap);
 
+/* indented printf */
+void indentf(int depth, char *fmt, ...);
+void findentf(FILE *fd, int depth, char *fmt, ...);
+void vfindentf(FILE *fd, int depth, char *fmt, va_list ap); 
+
 /* Options to control the compilation */
 extern int yydebug;
 extern char debugopt[128];

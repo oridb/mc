@@ -383,3 +383,28 @@ size_t align(size_t sz, size_t a)
     return (sz + a - 1) & ~(a - 1);
 }
 
+void indentf(int depth, char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    vfindentf(stdout, depth, fmt, ap);
+    va_end(ap);
+}
+
+void findentf(FILE *fd, int depth, char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    vfindentf(fd, depth, fmt, ap);
+    va_end(ap);
+}
+
+void vfindentf(FILE *fd, int depth, char *fmt, va_list ap) 
+{
+    ssize_t i;
+
+    for (i = 0; i < depth; i++)
+        fprintf(fd, "\t");
+    vfprintf(fd, fmt, ap);
+}
+

@@ -11,13 +11,6 @@
 
 #include "parse.h"
 
-static void indent(FILE *fd, int depth)
-{
-    int i;
-    for (i = 0; i < depth; i++)
-        fprintf(fd, "    ");
-}
-
 /* outputs a fully qualified name */
 static void outname(Node *n, FILE *fd)
 {
@@ -33,11 +26,10 @@ static void outsym(Node *s, FILE *fd, int depth)
 {
     char buf[1024];
 
-    indent(fd, depth);
     if (s->decl.isconst)
-        fprintf(fd, "const ");
+        findentf(fd, depth, "const ");
     else
-        fprintf(fd, "var ");
+        findentf(fd, depth, "var ");
     outname(s->decl.name, fd);
     fprintf(fd, " : %s\n", tyfmt(buf, 1024, s->decl.type));
 }
@@ -63,16 +55,14 @@ static void outstab(Stab *st, FILE *fd, int depth)
     char *ty;
     Type *t;
 
-    indent(fd, depth);
-    fprintf(fd, "Stab %p (super = %p, name=\"%s\")\n", st, st->super, namestr(st->name));
+    findentf(fd, depth, "Stab %p (super = %p, name=\"%s\")\n", st, st->super, namestr(st->name));
     if (!st)
         return;
 
     /* print types */
     k = htkeys(st->ty, &n);
     for (i = 0; i < n; i++) {
-        indent(fd, depth + 1);
-        fprintf(fd, "T ");
+        findentf(fd, depth, "T ");
         /* already indented */
         outname(k[i], fd); 
         t = gettype(st, k[i]);
@@ -85,8 +75,7 @@ static void outstab(Stab *st, FILE *fd, int depth)
     /* dump declarations */
     k = htkeys(st->dcl, &n);
     for (i = 0; i < n; i++) {
-        indent(fd, depth + 1);
-        fprintf(fd, "S ");
+        findentf(fd, depth, "S ");
         /* already indented */
         outsym(getdcl(st, k[i]), fd, 0);
     }
@@ -95,8 +84,7 @@ static void outstab(Stab *st, FILE *fd, int depth)
     /* dump sub-namespaces */
     k = htkeys(st->ns, &n);
     for (i = 0; i < n; i++) {
-        indent(fd, depth + 1);
-        fprintf(fd, "N  %s\n", (char*)k[i]);
+        findentf(fd, depth + 1, "N  %s\n", (char*)k[i]);
         outstab(getns_str(st, k[i]), fd, depth + 1);
     }
     free(k);
@@ -118,20 +106,17 @@ static void outnode(Node *n, FILE *fd, int depth)
     int tid;
     char buf[1024];
 
-    indent(fd, depth);
     if (!n) {
-        fprintf(fd, "Nil\n");
+        findentf(fd, depth, "Nil\n");
         return;
     }
-    fprintf(fd, "%s", nodestr(n->type));
+    findentf(fd, depth, "%s", nodestr(n->type));
     switch(n->type) {
         case Nfile:
             fprintf(fd, "(name = %s)\n", n->file.name);
-            indent(fd, depth + 1);
-            fprintf(fd, "Globls:\n");
+            findentf(fd, depth + 1, "Globls:\n");
             outstab(n->file.globls, fd, depth + 2);
-            indent(fd, depth + 1);
-            fprintf(fd, "Exports:\n");
+            findentf(fd, depth + 1, "Exports:\n");
             outstab(n->file.exports, fd, depth + 2);
             for (i = 0; i < n->file.nuses; i++)
                 outnode(n->file.uses[i], fd, depth + 1);
@@ -219,8 +204,7 @@ static void outnode(Node *n, FILE *fd, int depth)
             fprintf(fd, " (args =\n");
             for (i = 0; i < n->func.nargs; i++)
                 outnode(n->func.args[i], fd, depth+1);
-            indent(fd, depth);
-            fprintf(fd, ")\n");
+            findentf(fd, depth, ")\n");
             outstab(n->func.scope, fd, depth + 1);
             outnode(n->func.body, fd, depth+1);
             break;
@@ -233,7 +217,7 @@ static void outnode(Node *n, FILE *fd, int depth)
             break;
         case Nimpl:
             fprintf(fd, "(name = %s, type = %s)\n", namestr(n->impl.traitname), tyfmt(buf, sizeof buf, n->impl.type));
-            indent(fd, depth);
+            findentf(fd, depth, "");
             outnode(n->impl.traitname, fd, depth + 1);
             for (i = 0; i < n->impl.ndecls; i++)
                 outnode(n->impl.decls[i], fd, depth+1);
