@@ -66,7 +66,7 @@ install: subdirs-install $(MYRBIN) $(_LIBNAME) $(MAN)
 	@if [ ! -z "$(_LIBNAME)" ]; then \
 		echo install -m 644 $(_LIBNAME) $(abspath $(DESTDIR)/$(INST_ROOT)/lib/myr); \
 		echo install -m 644 $(MYRLIB) $(abspath $(DESTDIR)/$(INST_ROOT)/lib/myr); \
-		mkdir -p $(abspath $(DESTDIR)/$(INST_ROOT)/lib/myr; \
+		mkdir -p $(abspath $(DESTDIR)/$(INST_ROOT)/lib/myr); \
 		install -m 644 $(_LIBNAME) $(abspath $(DESTDIR)/$(INST_ROOT)/lib/myr); \
 		install -m 644 $(MYRLIB) $(abspath $(DESTDIR)/$(INST_ROOT)/lib/myr); \
 	fi
