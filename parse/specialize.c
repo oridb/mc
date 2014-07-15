@@ -46,26 +46,22 @@ Type *tyspecialize(Type *t, Htab *tsmap)
             htput(tsmap, t, ret);
             break;
         case Tyname:
-            if (!hasparams(t)) {
-                ret = t;
-            } else {
-                if (t->narg)
-                    subst = t->arg;
-                else
-                    subst = t->param;
-                for (i = 0; i < t->nparam; i++) {
-                    if (subst[i]->type != Typaram || hthas(tsmap, subst[i]))
-                        continue;
-                    tmp = mktyvar(subst[i]->line);
-                    addtraits(tmp, subst[i]->traits);
-                    htput(tsmap, subst[i], tmp);
-                }
-                ret = mktyname(t->line, t->name, t->param, t->nparam, tyspecialize(t->sub[0], tsmap));
-                ret->issynth = 1;
-                htput(tsmap, t, ret);
-                for (i = 0; i < t->nparam; i++)
-                    lappend(&ret->arg, &ret->narg, tyspecialize(subst[i], tsmap));
+            if (t->narg)
+                subst = t->arg;
+            else
+                subst = t->param;
+            for (i = 0; i < t->nparam; i++) {
+                if (subst[i]->type != Typaram || hthas(tsmap, subst[i]))
+                    continue;
+                tmp = mktyvar(subst[i]->line);
+                addtraits(tmp, subst[i]->traits);
+                htput(tsmap, subst[i], tmp);
             }
+            ret = mktyname(t->line, t->name, t->param, t->nparam, tyspecialize(t->sub[0], tsmap));
+            ret->issynth = 1;
+            htput(tsmap, t, ret);
+            for (i = 0; i < t->nparam; i++)
+                lappend(&ret->arg, &ret->narg, tyspecialize(subst[i], tsmap));
             break;
         case Tystruct:
             ret = tydup(t);
