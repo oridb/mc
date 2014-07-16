@@ -12,8 +12,7 @@
 #include "parse.h"
 #include "opt.h"
 #include "asm.h"
-
-#include "platform.h" /* HACK. We need some platform specific code gen behavior. *sigh.* */
+#include "../config.h"
 
 
 /* takes a list of nodes, and reduces it (and it's subnodes) to a list
