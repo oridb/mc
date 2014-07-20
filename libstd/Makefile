@@ -43,6 +43,7 @@ MYRSRC= \
     strjoin.myr \
     strsplit.myr \
     strstrip.myr \
+    swap.myr \
     sys.myr \
     try.myr \
     types.myr \
