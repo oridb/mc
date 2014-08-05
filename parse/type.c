@@ -444,10 +444,13 @@ static int fmtunion(char *buf, size_t len, Type *t)
     p += snprintf(p, end - p, "union ");
     for (i = 0; i < t->nmemb; i++) {
         name = namestr(t->udecls[i]->name);
-        if (t->udecls[i]->etype)
+        if (t->udecls[i]->etype) {
             ty = tystr(t->udecls[i]->etype);
-        p += snprintf(p, end - p, "`%s %s; ", name, ty);
-        free(ty);
+            p += snprintf(p, end - p, "`%s %s; ", name, ty);
+            free(ty);
+        } else {
+            p += snprintf(p, end - p, "`%s; ", name);
+        }
     }
     p += snprintf(p, end - p, ";;");
     return p - buf;
