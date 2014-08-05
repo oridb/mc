@@ -1,0 +1,10 @@
+use std
+
+generic work = {val : @a
+	-> `std.Some val
+}
+
+const main = {
+	work(123)
+	std.exit(42)
+}

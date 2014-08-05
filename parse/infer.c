@@ -238,7 +238,7 @@ static Type *tyfreshen(Inferstate *st, Type *t)
     from = tystr(t);
     tybind(st, t);
     ht = mkht(tyhash, tyeq);
-    t = tyspecialize(t, ht);
+    t = tyspecialize(t, ht, st->delayed);
     htfree(ht);
     tyunbind(st, t);
     if (debugopt['u']) {
@@ -296,7 +296,7 @@ static void tyresolve(Inferstate *st, Type *t)
 }
 
 /* Look up the best type to date in the unification table, returning it */
-static Type *tysearch(Inferstate *st, Type *t)
+Type *tysearch(Type *t)
 {
     Type *lu;
     Stab *ns;
@@ -333,7 +333,7 @@ static Type *tf(Inferstate *st, Type *orig)
     Type *t;
     size_t i;
 
-    t = tysearch(st, orig);
+    t = tysearch(orig);
     st->ingeneric += isgeneric(orig);
     tyresolve(st, t);
     /* If this is an instantiation of a generic type, we want the params to
@@ -1434,7 +1434,7 @@ static void specializeimpl(Inferstate *st, Node *n)
         checktraits(t->param, n->impl.type);
         ht = mkht(tyhash, tyeq);
         htput(ht, t->param, n->impl.type);
-        ty = tyspecialize(type(st, proto), ht);
+        ty = tyspecialize(type(st, proto), ht, st->delayed);
         htfree(ht);
 
         inferdecl(st, dcl);
@@ -1480,7 +1480,7 @@ static void inferstab(Inferstate *st, Stab *s)
 
     k = htkeys(s->ty, &n);
     for (i = 0; i < n; i++) {
-        t = tysearch(st, gettype(s, k[i]));
+        t = tysearch(gettype(s, k[i]));
         updatetype(s, k[i], t);
     }
     free(k);
@@ -1624,7 +1624,7 @@ static Type *tyfix(Inferstate *st, Node *ctx, Type *orig)
     if (!tyflt)
         tyflt = mktype(-1, Tyfloat64);
 
-    t = tysearch(st, orig);
+    t = tysearch(orig);
     if (orig->type == Tyvar && hthas(st->delayed, orig)) {
         delayed = htget(st->delayed, orig);
         if (t->type == Tyvar)
@@ -1785,7 +1785,7 @@ static void stabsub(Inferstate *st, Stab *s)
 
     k = htkeys(s->ty, &n);
     for (i = 0; i < n; i++) {
-        t = tysearch(st, gettype(s, k[i]));
+        t = tysearch(gettype(s, k[i]));
         updatetype(s, k[i], t);
         tyfix(st, k[i], t);
     }
