@@ -297,6 +297,11 @@ int isgeneric(Type *t)
 
     if (t->type != Tyname && t->type != Tyunres)
         return 0;
+    /*
+    if we have no arguments passed in, and we have parameters
+    we have a type of the form
+    type t(@a,...) = ...
+     */
     if (!t->narg)
         return t->nparam > 0;
     else
@@ -310,19 +315,44 @@ int isgeneric(Type *t)
  * Checks if a type contains any type
  * parameers at all (ie, if it generic).
  */
-int hasparams(Type *t)
+int hasparamsrec(Type *t, Bitset *visited)
 {
     size_t i;
 
-    if (t->type == Typaram || isgeneric(t))
-        return 1;
-    for (i = 0; i < t->nsub; i++)
-        if (hasparams(t->sub[i]))
+    switch (t->type) {
+        case Typaram:
             return 1;
-    for (i = 0; i < t->narg; i++)
-        if (hasparams(t->arg[i]))
-            return 1;
+        case Tyname:
+        case Tyunres:
+            return isgeneric(t);
+        case Tystruct:
+            for (i = 0; i < t->nmemb; i++)
+                if (hasparamsrec(t->sdecls[i]->decl.type, visited))
+                    return 1;
+            break;
+        case Tyunion:
+            for (i = 0; i < t->nmemb; i++)
+                if (t->udecls[i]->etype && hasparamsrec(t->udecls[i]->etype, visited))
+                    return 1;
+            break;
+        default:
+            for (i = 0; i < t->nsub; i++)
+                if (hasparams(t->sub[i]))
+                    return 1;
+            break;
+    }
     return 0;
+}
+
+int hasparams(Type *t)
+{
+    Bitset *visited;
+    int r;
+
+    visited = mkbs();
+    r = hasparamsrec(t, visited);
+    bsfree(visited);
+    return r;
 }
 
 Type *tybase(Type *t)
