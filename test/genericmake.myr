@@ -1,0 +1,20 @@
+use std
+
+type t(@ty) = union
+	`Some @ty
+	`None
+;;
+
+const make = {v
+	-> `Some v
+}
+
+const main = {
+	var x
+
+	x = make(123)
+	match x
+	| `std.Some v:	std.put("val = %i\n", v)
+	| `std.None:	std.die("Unreachable\n")
+	;;
+}

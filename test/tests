@@ -86,6 +86,7 @@ B genericmatch	E	15
 B genericrec	E	0
 # B genericchain	P	"val = 123" ## BUGGERED
 B genericmake	P	"val = 123"
+B genericuret	E	42
 B stdopt-some	E	42
 B stdopt-none	E	42
 B stdopt-mk	E	42

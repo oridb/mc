@@ -31,12 +31,13 @@ void addtraits(Type *t, Bitset *traits)
  * parameters (type schemes in most literature)
  * replaced with type variables that we can unify
  * against */
-Type *tyspecialize(Type *t, Htab *tsmap)
+Type *tyspecialize(Type *t, Htab *tsmap, Htab *delayed)
 {
     Type *ret, *tmp;
     size_t i;
     Type **subst;
 
+    t = tysearch(t);
     if (hthas(tsmap, t))
         return htget(tsmap, t);
     switch (t->type) {
@@ -57,11 +58,11 @@ Type *tyspecialize(Type *t, Htab *tsmap)
                 addtraits(tmp, subst[i]->traits);
                 htput(tsmap, subst[i], tmp);
             }
-            ret = mktyname(t->line, t->name, t->param, t->nparam, tyspecialize(t->sub[0], tsmap));
+            ret = mktyname(t->line, t->name, t->param, t->nparam, tyspecialize(t->sub[0], tsmap, delayed));
             ret->issynth = 1;
             htput(tsmap, t, ret);
             for (i = 0; i < t->nparam; i++)
-                lappend(&ret->arg, &ret->narg, tyspecialize(subst[i], tsmap));
+                lappend(&ret->arg, &ret->narg, tyspecialize(subst[i], tsmap, delayed));
             break;
         case Tystruct:
             ret = tydup(t);
@@ -77,11 +78,20 @@ Type *tyspecialize(Type *t, Htab *tsmap)
             for (i = 0; i < t->nmemb; i++) {
                 tmp = NULL;
                 if (ret->udecls[i]->etype)
-                    tmp = tyspecialize(t->udecls[i]->etype, tsmap);
+                    tmp = tyspecialize(t->udecls[i]->etype, tsmap, delayed);
                 ret->udecls[i] = mkucon(t->line, t->udecls[i]->name, ret, tmp);
                 ret->udecls[i]->utype = ret;
                 ret->udecls[i]->id = i;
                 ret->udecls[i]->synth = 1;
+            }
+            break;
+        case Tyvar:
+            if (delayed && hthas(delayed, t)) {
+                ret = tydup(t);
+                tmp = htget(delayed, t);
+                htput(delayed, ret, tyspecialize(tmp, tsmap, delayed));
+            } else {
+                ret = t;
             }
             break;
         default:
@@ -89,7 +99,7 @@ Type *tyspecialize(Type *t, Htab *tsmap)
                 ret = tydup(t);
                 htput(tsmap, t, ret);
                 for (i = 0; i < t->nsub; i++)
-                    ret->sub[i] = tyspecialize(t->sub[i], tsmap);
+                    ret->sub[i] = tyspecialize(t->sub[i], tsmap, delayed);
             } else {
                 ret = t;
             }
@@ -104,7 +114,7 @@ Type *tyspecialize(Type *t, Htab *tsmap)
 static Type *tysubst(Type *t, Htab *tsmap)
 {
     if (hasparams(t))
-        return tyspecialize(t, tsmap);
+        return tyspecialize(t, tsmap, NULL);
     else
         return t;
 }

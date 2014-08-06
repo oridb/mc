@@ -11,6 +11,7 @@ pkg std =
 	type sockproto	= int64	/* socket protocol */
 	type sockfam	= uint8	/* socket family */
 	type filemode	= uint16
+	type filetype	= uint8
 
 	type clock = union
 		`Clockrealtime
@@ -109,10 +110,21 @@ pkg std =
 	type dirent = struct
 		fileno	: uint32
 		reclen	: uint16
-		type	: filetype
+		ftype	: filetype
 		namelen	: uint8
 		name	: byte[256]	
 	;;	
+
+	/* open options */
+	const Ordonly  	: fdopt = 0x0
+	const Owronly  	: fdopt = 0x1
+	const Ordwr    	: fdopt = 0x2
+	const Oappend  	: fdopt = 0x8
+	const Ocreat   	: fdopt = 0x200
+	const Onofollow	: fdopt = 0x100
+	const Ondelay  	: fdopt = 0x4
+	const Otrunc   	: fdopt = 0x400
+	const Odir	: fdopt = 0x20000
 
         /* stat modes */	
 	const Sifmt	: filemode = 0xf000
@@ -124,6 +136,21 @@ pkg std =
 	const Siflnk	: filemode = 0xa000
 	const Sifsock 	: filemode = 0xc000
 
+	/* mmap protection */
+	const Mprotnone	: mprot = 0x0
+	const Mprotrd	: mprot = 0x1
+	const Mprotwr	: mprot = 0x2
+	const Mprotexec	: mprot = 0x4
+	const Mprotrw	: mprot = 0x3
+
+	/* mmap options */
+	const Mshared	: mopt = 0x1
+	const Mpriv	: mopt = 0x2
+	const Mfixed	: mopt = 0x10
+	const Mfile	: mopt = 0x0
+	const Manon	: mopt = 0x1000
+	const M32bit	: mopt = 0x80000
+
 	/* file types */
 	const Dtunknown	: filetype = 0
 	const Dtfifo	: filetype = 1
@@ -134,6 +161,31 @@ pkg std =
 	const Dtlnk	: filetype = 10
 	const Dtsock	: filetype = 12
 	const Dtwht	: filetype = 14
+
+	/* socket families. INCOMPLETE. */
+	const Afunspec	: sockfam = 0
+	const Afunix	: sockfam = 1
+	const Afinet	: sockfam = 2
+	const Afinet6	: sockfam = 28
+
+	/* socket types. */
+	const Sockstream	: socktype = 1
+	const Sockdgram		: socktype = 2
+	const Sockraw		: socktype = 3
+	const Sockrdm		: socktype = 4
+	const Sockseqpacket	: socktype = 5
+
+	/* network protocols */
+	const Ipproto_ip	: sockproto = 0
+	const Ipproto_icmp	: sockproto = 1
+	const Ipproto_tcp	: sockproto = 6
+	const Ipproto_udp	: sockproto = 17
+	const Ipproto_raw	: sockproto = 255
+
+	/* return value for a failed mapping */
+	const Mapbad	: byte# = -1 castto(byte#)
+
+	/* syscalls */
 	const Syssyscall                   : scno = 0
 	const Sysexit                      : scno = 1
 	const Sysfork                      : scno = 2
@@ -593,3 +645,123 @@ pkg std =
 	const uname 	: (buf : utsname# -> int)
 	const sysctl	: (mib : int[:], old : byte[:]#, new : byte[:] -> int)
 ;;
+
+extern const cstring	: (str : byte[:] -> byte#)
+extern const alloca	: (sz : size	-> byte#)
+extern const __cenvp : byte##
+
+/* process management */
+const exit	= {status;		syscall(Sysexit, status castto(int64))}
+const getpid	= {;			-> syscall(Sysgetpid, 1)}
+const kill	= {pid, sig;		-> syscall(Syskill, pid, sig)}
+const fork	= {;			-> syscall(Sysfork)}
+const wait4	= {pid, loc, opt, usage;	-> syscall(Syswait4, pid, loc, opt, usage)}
+const waitpid	= {pid, loc, opt;
+	-> wait4(pid, loc, opt, 0 castto(rusage#)) 
+}
+
+const execv	= {cmd, args
+	var p, cargs, i
+
+	/* of course we fucking have to duplicate this code everywhere,
+	* since we want to stack allocate... */
+	p = alloca((args.len + 1)*sizeof(byte#))
+	cargs = (p castto(byte##))[:args.len]
+	for i = 0; i < args.len; i++
+		cargs[i] = cstring(args[i])
+	;;
+	cargs[args.len] = 0 castto(byte#)
+	-> syscall(Sysexecve, cstring(cmd), p, __cenvp)
+}
+
+const execve	= {cmd, args, env
+	var cargs, cenv, i
+	var p
+
+	/* copy the args */
+	p = alloca((args.len + 1)*sizeof(byte#))
+	cargs = (p castto(byte##))[:args.len]
+	for i = 0; i < args.len; i++
+		cargs[i] = cstring(args[i])
+	;;
+	cargs[args.len] = 0 castto(byte#)
+
+	/*
+	 copy the env.
+	 of course we fucking have to duplicate this code everywhere,
+	 since we want to stack allocate... 
+	*/
+	p = alloca((env.len + 1)*sizeof(byte#))
+	cenv = (p castto(byte##))[:env.len]
+	for i = 0; i < env.len; i++
+		cenv[i] = cstring(env[i])
+	;;
+	cenv[env.len] = 0 castto(byte#)
+
+	-> syscall(Sysexecve, cstring(cmd), p, cenv)
+}
+
+/* fd manipulation */
+const open	= {path, opts;		-> syscall(Sysopen, cstring(path), opts, 0o777) castto(fd)}
+const openmode	= {path, opts, mode;	-> syscall(Sysopen, cstring(path), opts, mode) castto(fd)}
+const close	= {fd;			-> syscall(Sysclose, fd)}
+const creat	= {path, mode;		-> openmode(path, Ocreat | Otrunc | Owronly, mode) castto(fd)}
+const read	= {fd, buf;		-> syscall(Sysread, fd, buf castto(byte#), buf.len castto(size)) castto(size)}
+const write	= {fd, buf;		-> syscall(Syswrite, fd, buf castto(byte#), buf.len castto(size)) castto(size)}
+const lseek	= {fd, off, whence;	-> syscall(Syslseek, fd, off, whence)}
+const stat	= {path, sb;		-> syscall(Sysstat, cstring(path), sb)}
+const lstat	= {path, sb;		-> syscall(Syslstat, cstring(path), sb)}
+const fstat	= {fd, sb;		-> syscall(Sysfstat, fd, sb)}
+const mkdir	= {path, mode;		-> syscall(Sysmkdir, cstring(path), mode) castto(int64)}
+const ioctl	= {fd, req, args
+	var arg : byte#
+	var ap
+
+	ap = vastart(&args)
+	(arg, ap) = vanext(ap)
+	-> syscall(Sysioctl, fd, req, arg) castto(int64)
+}
+const getdirentries64	= {fd, buf, basep;	-> syscall(Sysgetdirentries, fd, buf castto(byte#), buf.len castto(size), basep)}
+
+/* networking */
+const socket	= {dom, stype, proto;	-> syscall(Syssocket, dom castto(int64), stype, proto) castto(fd) }
+const connect	= {sock, addr, len;	-> syscall(Sysconnect, sock, addr, len) castto(int)}
+const accept	= {sock, addr, len;	-> syscall(Sysaccept, sock, addr, len) castto(fd)}
+const listen	= {sock, backlog;	-> syscall(Syslisten, sock, backlog castto(int64)) castto(int)}
+const bind	= {sock, addr, len;	-> syscall(Sysbind, sock, addr, len) castto(int)}
+
+/* memory management */
+const munmap	= {addr, len;		-> syscall(Sysmunmap, addr, len)}
+const mmap	= {addr, len, prot, flags, fd, off;	-> syscall(Sysmmap, addr, len, prot, flags, fd, off) castto(byte#)}
+
+/* time */
+const clock_getres = {clk, ts;	-> syscall(Sysclock_getres, clockid(clk), ts) castto(int32)}
+const clock_gettime = {clk, ts;	-> syscall(Sysclock_gettime, clockid(clk), ts) castto(int32)}
+const clock_settime = {clk, ts;	-> syscall(Sysclock_settime, clockid(clk), ts) castto(int32)}
+
+/* system information */
+const uname	= {buf;	-> syscall(Sysuname, buf) castto(int)}
+
+const sysctl = {mib, old, new
+	var mibp
+	var mibsz
+	var o
+	var oldp
+	var oldsz
+	var newp
+	var newsz
+	var ret
+
+	mibp = mib castto(byte#)
+	mibsz = mib.len castto(uint64)
+	o = old#
+	oldp = o castto(byte#)
+	oldsz = o.len castto(uint64)
+	newp = new castto(byte#)
+	newsz = new castto(uint64)
+
+	ret = syscall(Sys__sysctl, mibp, mibsz, oldp, &oldsz, newp, newsz) castto(int)
+
+	old# = o[:oldsz]
+	-> ret
+}
