@@ -14,8 +14,7 @@
 #include "parse.h"
 #include "opt.h"
 #include "asm.h"
-
-#include "platform.h"
+#include "../config.h"
 
 /* string tables */
 char *insnfmts[] = {

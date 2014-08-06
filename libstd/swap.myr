@@ -1,0 +1,11 @@
+pkg std =
+	generic swap	: (a : @a#, b : @a# -> void)
+;;
+
+generic swap = {a : @a#, b : @a#
+	var t
+
+	t = a#
+	a# = b#
+	b# = t
+}
