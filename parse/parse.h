@@ -490,7 +490,7 @@ Op exprop(Node *n);
 
 /* specialize generics */
 Node *specializedcl(Node *n, Type *to, Node **name);
-Type *tyspecialize(Type *t, Htab *tymap);
+Type *tyspecialize(Type *t, Htab *tymap, Htab *delayed);
 Node *genericname(Node *n, Type *t);
 
 /* usefiles */
@@ -501,6 +501,7 @@ void tagexports(Stab *st);
 
 /* typechecking/inference */
 void infer(Node *file);
+Type *tysearch(Type *t);
 
 /* debug */
 void dump(Node *t, FILE *fd);
