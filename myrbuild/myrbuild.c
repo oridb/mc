@@ -30,8 +30,7 @@ char *as = "as";
 char *ar = "ar";
 char *ld = "ld";
 char *muse = "muse";
-char *runtime = "_myrrt.o";
-char *runtimepath;
+char *runtime = Instroot "/lib/myr/_myrrt.o";
 /* the name of the output file */
 char *libname;
 char *binname;
@@ -196,6 +195,7 @@ FILE *openlib(char *lib)
     char buf[1024];
     size_t i;
 
+    lappend(&incpaths, &nincpaths, strdup(Instroot "/lib/myr"));
     f = fopen(buf, "r");
     if (f)
         return f;
@@ -405,8 +405,8 @@ void linkobj(char **files, size_t nfiles)
         lappend(&args, &nargs, strdup(buf));
     }
 
-    if (runtimepath) {
-        lappend(&args, &nargs, strdup(runtimepath));
+    if (runtime) {
+        lappend(&args, &nargs, strdup(runtime));
     }
 
     /* ld -T ldscript -o outfile foo.o bar.o baz.o */
@@ -419,6 +419,8 @@ void linkobj(char **files, size_t nfiles)
             die("Unknown file type %s", files[i]);
         lappend(&args, &nargs, strdup(buf));
     }
+    snprintf(buf, sizeof buf, "-L%s%s", Instroot, "/lib/myr");
+    lappend(&args, &nargs, strdup(buf));
 
     /* ld -T ldscript -o outfile foo.o bar.o baz.o -L/path1 -L/path2 */
     for (i = 0; i < nincpaths; i++) {
@@ -445,24 +447,6 @@ void linkobj(char **files, size_t nfiles)
     lfree(&args, &nargs);
 }
 
-void findruntime()
-{
-    char buf[2048];
-    size_t i;
-
-    if (!strcmp(runtime, "none"))
-        runtimepath = NULL;
-    for (i = 0; i < nincpaths; i++) {
-        snprintf(buf, sizeof buf, "%s/%s", incpaths[i], runtime);
-        if (access(buf, R_OK) == 0) {
-            printf("Got %s\n", buf);
-            runtimepath = strdup(buf);
-            return;
-        }
-    }
-    err(1, "Could not find runtime %s", runtime);
-}
-
 int main(int argc, char **argv)
 {
     int opt;
@@ -471,7 +455,6 @@ int main(int argc, char **argv)
 
     if (uname(&name) == 0)
         sysname = strdup(name.sysname);
-    lappend(&incpaths, &nincpaths, strdup(Instroot "/lib/myr"));
     while ((opt = getopt(argc, argv, "hb:l:s:r:SI:C:A:M:L:R:")) != -1) {
         switch (opt) {
             case 'b': binname = optarg; break;
@@ -483,7 +466,12 @@ int main(int argc, char **argv)
             case 'M': muse = optarg; break;
             case 'L': ld = optarg; break;
             case 'R': ar = optarg; break;
-            case 'r': runtime = optarg; break;
+            case 'r':
+                      if (!strcmp(optarg, "none"))
+                          runtime = NULL;
+                      else
+                          runtime = strdup(optarg);
+                      break;
             case 'I':
                 lappend(&incpaths, &nincpaths, strdup(optarg));
                 break;
@@ -504,7 +492,6 @@ int main(int argc, char **argv)
     libgraph = mkht(strhash, streq);
     compiled = mkht(strhash, streq);
     loopdetect = mkht(strhash, streq);
-    findruntime();
     regcomp(&usepat, "^[[:space:]]*use[[:space:]]+([^[:space:]]+)", REG_EXTENDED);
     for (i = optind; i < argc; i++)
         compile(argv[i]);
