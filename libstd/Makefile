@@ -67,7 +67,7 @@ all: lib$(MYRLIB).a $(MYRBIN) test
 	cp $< $@
 
 test: libstd.a test.myr ../6/6m
-	../myrbuild/myrbuild -C../6/6m -M../muse/muse -b test -I. test.myr
+	../myrbuild/myrbuild -C../6/6m -M../muse/muse -b test -I. -r../rt/_myrrt.o test.myr
 
 
 lib$(MYRLIB).a: $(MYRSRC) $(ASMSRC) ../6/6m
