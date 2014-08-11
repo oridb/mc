@@ -53,7 +53,6 @@ MYRSRC= \
     waitstatus.myr \
 
 ASMSRC= \
-    start.s \
     syscall.s \
     util.s
 

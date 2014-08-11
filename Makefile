@@ -3,6 +3,7 @@ SUB = parse \
       6 \
       muse \
       myrbuild \
+      rt \
       libstd \
       doc
 
