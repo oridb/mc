@@ -35,6 +35,18 @@ Compile source given into a library called 'lib<name>.a', and a matching
 usefile called 'name'. Only static libraries are currently supported.
 
 .TP
+.B -s 'script'
+Pass the linker script 'script' to the linker. If this option is not
+provided, no script is passed to the linker.
+
+.TP
+.B -r 'rt'
+Compile a binary using the runtime 'rt'. If the runtime name given
+is 'none', then no runtime will be linked. If this option is not provided,
+then the default runtime in '$INSTALL_ROOT/myr/lib/_myrrt.o' will be
+used.
+
+.TP
 .B -I path
 Add 'path' to the search path for unquoted use statments. This option
 does not affect the search path for local usefiles, which are always
