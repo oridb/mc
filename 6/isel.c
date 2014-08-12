@@ -951,7 +951,7 @@ static void writeasm(FILE *fd, Isel *s, Func *fn)
 {
     size_t i, j;
 
-    if (fn->isexport || !strcmp(fn->name, Symprefix "main"))
+    if (fn->isexport || !strcmp(fn->name, symprefix "main"))
         fprintf(fd, ".globl %s\n", fn->name);
     fprintf(fd, "%s:\n", fn->name);
     for (j = 0; j < s->cfg->nbb; j++) {

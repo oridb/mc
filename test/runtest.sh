@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 export PATH=.:$PATH
 export MC=../6/6m
 export MU=../muse/muse
