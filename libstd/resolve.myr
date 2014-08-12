@@ -141,15 +141,16 @@ const addhosts = {addr, as, str
 	while true
 		match word(str)
 		| `Some (name, rest):
-			if !hthas(hostmap, name)
-				hinf = [
-					.fam=fam,
-					.stype = 0,
-					.ttl = 0,
-					.addr = addr
-				]
-				htput(hostmap, name, hinf)
+			if hthas(hostmap, name)
+				continue
 			;;
+			hinf = [
+				.fam=fam,
+				.stype = 0,
+				.ttl = 0,
+				.addr = addr
+			]
+			htput(hostmap, name, hinf)
 			str = rest
 		| `None:
 			->
