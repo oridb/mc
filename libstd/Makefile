@@ -92,4 +92,4 @@ uninstall:
 	rm -f $(abspath $(DESTDIR)/$(INST_ROOT)/lib/myr/std)
 
 ../6/6m:
-	cd ..; make
+	cd ..; $(MAKE)

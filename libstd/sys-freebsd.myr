@@ -78,11 +78,11 @@ pkg std =
 	;;
 
 	type utsname = struct
-    		sysname	: byte[256]
-   		nodename : byte[256] 
-    		release : byte[256]
-    		version : byte[256]
-    		machine : byte[256]
+		system	: byte[256]
+		node : byte[256] 
+		release : byte[256]
+		version : byte[256]
+		machine : byte[256]
 	;;
 
 	type sockaddr = struct
@@ -95,7 +95,7 @@ pkg std =
 		len	: byte
 		fam	: sockfam
 		port	: uint16
-		addr	: uint32 /* should this be byte[4]? */
+		addr	: byte[4]
 		zero	: byte[8]
 	;;
 
@@ -740,7 +740,7 @@ const clock_gettime = {clk, ts;	-> syscall(Sysclock_gettime, clockid(clk), ts) c
 const clock_settime = {clk, ts;	-> syscall(Sysclock_settime, clockid(clk), ts) castto(int32)}
 
 /* system information */
-const uname	= {buf;	-> syscall(Sysuname, buf) castto(int)}
+const uname	= {buf;	-> syscall(Sysfreebsd4_uname, buf) castto(int)}
 
 const sysctl = {mib, old, new
 	var mibp
@@ -764,4 +764,22 @@ const sysctl = {mib, old, new
 
 	old# = o[:oldsz]
 	-> ret
+}
+
+const clockid = {clk
+	match clk
+	| `Clockrealtime:		-> 0
+	| `Clockvirtual:		-> 1
+	| `Clockprof:			-> 2
+	| `Clockmonotonic:		-> 4
+	| `Clockuptime:			-> 5
+	| `Clockuptime_precise:		-> 7
+	| `Clockuptime_fast:		-> 8
+	| `Clockrealtime_precise:	-> 9
+	| `Clockrealtime_fast:		-> 10
+	| `Clockmonotonic_precise:	-> 11
+	| `Clockmonotonic_fast:		-> 12
+	| `Clocksecond:			-> 13
+	;;
+	-> -1
 }

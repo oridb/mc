@@ -115,7 +115,7 @@ _start:
 	pushq   %rdx
 
 	/* enter the main program */
-	call	xmain
+	call	main
 	/* exit(0) */
         xorq	%rdi,%rdi
 	movq	$1,%rax
