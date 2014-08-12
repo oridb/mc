@@ -115,7 +115,7 @@ const loadhosts = {
 	for l in lines
 		/* trim comment */
 		match strfind(l, "#")
-		| `Some _idx:	l = l[:_idx]
+		| `Some idx:	l = l[:idx]
 		;;
 
 		match word(l)
