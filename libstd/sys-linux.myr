@@ -100,12 +100,13 @@ pkg std =
 	const Ordonly  	: fdopt = 0x0
 	const Owronly  	: fdopt = 0x1
 	const Ordwr    	: fdopt = 0x2
-	const Oappend  	: fdopt = 0x80
 	const Ocreat   	: fdopt = 0x40
-	const Onofollow	: fdopt = 0x20000
-	const Ondelay  	: fdopt = 0x800
+	const Oexcl  	: fdopt = 0x80
 	const Otrunc   	: fdopt = 0x200
+	const Oappend  	: fdopt = 0x400
+	const Ondelay  	: fdopt = 0x800
 	const Odir	: fdopt = 0x10000
+	const Onofollow	: fdopt = 0x20000
 
 	/* stat modes */
 	const Sifmt	: filemode = 0xf000
@@ -489,7 +490,7 @@ pkg std =
 	const execve	: (cmd : byte[:], args : byte[:][:], env : byte[:][:] -> int64)
 
 
-	/* fd manipulation */
+	/* file manipulation */
 	const open	: (path:byte[:], opts:fdopt -> fd)
 	const openmode	: (path:byte[:], opts:fdopt, mode:int64 -> fd)
 	const close	: (fd:fd -> int64)
@@ -503,6 +504,11 @@ pkg std =
 	const mkdir	: (path : byte[:], mode : int64	-> int64)
 	const ioctl	: (fd:fd, req : int64, args:... -> int64)
 	const getdents64	: (fd:fd, buf : byte[:] -> int64)
+
+	/* fd stuff */
+	const pipe	: (fds : fd[:] -> int64)
+	const dup	: (fd : fd -> fd)
+	const dup2	: (src : fd, dst : fd -> fd)
 
 	/* networking */
 	const socket	: (dom : sockfam, stype : socktype, proto : sockproto	-> fd)
@@ -582,7 +588,7 @@ const execve	= {cmd, args, env
 	-> syscall(Sysexecve, cstring(cmd), p, cenv)
 }
 
-/* fd manipulation */
+/* file manipulation */
 const open	= {path, opts;		-> syscall(Sysopen, cstring(path), opts, 0o777) castto(fd)}
 const openmode	= {path, opts, mode;	-> syscall(Sysopen, cstring(path), opts, mode) castto(fd)}
 const close	= {fd;			-> syscall(Sysclose, fd)}
@@ -602,6 +608,11 @@ const ioctl	= {fd, req, args
 	-> syscall(Sysioctl, fd, req, arg) castto(int64)
 }
 const getdents64	= {fd, buf;	-> syscall(Sysgetdents64, fd, buf castto(byte#), buf.len)}
+
+/* file stuff */
+const pipe	= {fds;	-> syscall(Syspipe, fds castto(fd#))}
+const dup 	= {fd;	-> syscall(Sysdup, fd castto(uint64)) castto(fd)}
+const dup2 	= {src, dst;	-> syscall(Sysdup2, src castto(uint64), dst castto(uint64)) castto(fd)}
 
 /* networking */
 const socket	= {dom, stype, proto;	-> syscall(Syssocket, dom castto(int64), stype, proto) castto(fd)}
