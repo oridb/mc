@@ -105,6 +105,7 @@ pkg std =
 	const Otrunc   	: fdopt = 0x200
 	const Oappend  	: fdopt = 0x400
 	const Ondelay  	: fdopt = 0x800
+	const Odirect	: fdopt = 0x4000
 	const Odir	: fdopt = 0x10000
 	const Onofollow	: fdopt = 0x20000
 
