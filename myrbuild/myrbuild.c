@@ -419,14 +419,14 @@ void linkobj(char **files, size_t nfiles)
             die("Unknown file type %s", files[i]);
         lappend(&args, &nargs, strdup(buf));
     }
-    snprintf(buf, sizeof buf, "-L%s%s", Instroot, "/lib/myr");
-    lappend(&args, &nargs, strdup(buf));
 
     /* ld -T ldscript -o outfile foo.o bar.o baz.o -L/path1 -L/path2 */
     for (i = 0; i < nincpaths; i++) {
         snprintf(buf, sizeof buf, "-L%s", incpaths[i]);
         lappend(&args, &nargs, strdup(buf));
     }
+    snprintf(buf, sizeof buf, "-L%s%s", Instroot, "/lib/myr");
+    lappend(&args, &nargs, strdup(buf));
 
     /* ld -T ldscript -o outfile foo.o bar.o baz.o -L/path1 -L/path2 -llib1 -llib2*/
     addlibs(&args, &nargs, libgraph);
