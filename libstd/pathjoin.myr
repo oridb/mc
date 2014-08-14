@@ -32,14 +32,25 @@ const pathnorm = {p
 	var s, ret
 
 	comps = strsplit(p, "/")
-	/* "." is a no-op component, so we drop it */
+	/* 
+	"." is a no-op component, so we drop it. In order
+	to drop a component, we set it to the empty string,
+	and remove it later on in the code.
+	*/
 	for i = 0; i < comps.len; i++
 		if sleq(comps[i], ".")
 			comps[i] = ""
 		;;
 	;;
 
-	/* then, resolve '..' by cancelling out previous components */
+	/*
+	then, resolve '..' by cancelling out previous components. Scan
+	backwards in the component list for the first real component,
+	and delete both it and the '..' that lead to it.
+	
+	Leave in extra '..' components, so that, eg, ../foo doesn't
+	get mangled.
+	*/
 	for i = 0; i < comps.len; i++
 		if !sleq(comps[i], "..")
 			continue
@@ -62,9 +73,12 @@ const pathnorm = {p
 	;;
 	comps = comps[:dst]
 
-	/* and reassemble */
+	/*
+	and reassemble. If we have an absolute path,
+	make it absolute. If we have an empty path, return
+	".". Otherwise, just return the path.
+	*/
 	if p.len > 0 && sleq(p[:1], "/")
-		/* /.. is just / */
 		for i = 0; i < comps.len; i++
 			if !sleq(comps[i], "..")
 				break
@@ -74,7 +88,6 @@ const pathnorm = {p
 		ret = fmt("/%s", s)
 		slfree(s)
 	elif comps.len == 0
-		/* empty paths become '.' */
 		ret = sldup(".")
 	else
 		ret = strjoin(comps, "/")
