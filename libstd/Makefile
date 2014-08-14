@@ -26,6 +26,7 @@ MYRSRC= \
     now.myr \
     option.myr \
     optparse.myr \
+    pathjoin.myr \
     rand.myr \
     resolve.myr \
     result.myr \

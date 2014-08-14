@@ -1,0 +1,85 @@
+use "alloc.use"
+use "strjoin.use"
+use "strsplit.use"
+use "sleq.use"
+use "sldup.use"
+use "slcp.use"
+use "die.use"
+use "fmt.use"
+
+pkg std =
+	const pathcat	: (a : byte[:], b : byte[:] -> byte[:])
+	const pathjoin	: (p : byte[:][:] -> byte[:])
+	const pathnorm	: (p : byte[:] -> byte[:])
+;;
+
+const pathcat = {a, b
+	-> pathjoin([a, b][:])
+}
+
+const pathjoin = {l
+	var p, q
+
+	p = strjoin(l, "/")
+	q = pathnorm(p)
+	slfree(p)
+	-> q
+}
+
+const pathnorm = {p
+	var comps
+	var i, del, dst
+	var s, ret
+
+	comps = strsplit(p, "/")
+	/* "." is a no-op component, so we drop it */
+	for i = 0; i < comps.len; i++
+		if sleq(comps[i], ".")
+			comps[i] = ""
+		;;
+	;;
+
+	/* then, resolve '..' by cancelling out previous components */
+	for i = 0; i < comps.len; i++
+		if !sleq(comps[i], "..")
+			continue
+		;;
+		for del = 1; del <= i; del++
+			if comps[i - del].len > 0 && !sleq(comps[i-del], "..")
+				comps[i - del] = ""
+				comps[i] = ""
+				break
+			;;
+		;;
+	;;
+
+	/* clear out the path nodes we decided to drop */
+	dst = 0
+	for i = 0; i < comps.len; i++
+		if comps[i].len > 0
+			comps[dst++] = comps[i]
+		;;
+	;;
+	comps = comps[:dst]
+
+	/* and reassemble */
+	if p.len > 0 && sleq(p[:1], "/")
+		/* /.. is just / */
+		for i = 0; i < comps.len; i++
+			if !sleq(comps[i], "..")
+				break
+			;;
+		;;
+		s = strjoin(comps[i:], "/")
+		ret = fmt("/%s", s)
+		slfree(s)
+	elif comps.len == 0
+		/* empty paths become '.' */
+		ret = sldup(".")
+	else
+		ret = strjoin(comps, "/")
+	;;
+	slfree(comps)
+	-> ret
+}
+
