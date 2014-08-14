@@ -4,7 +4,7 @@ use "varargs.use"
 pkg std =
 	type scno 	= int64	/* syscall */
 	type fdopt	= int64	/* fd options */
-	type fd		= int64	/* fd */
+	type fd		= int32	/* fd */
 	type mprot	= int64	/* memory protection */
 	type mopt	= int64	/* memory mapping options */
 	type socktype	= int64	/* socket type */
@@ -521,7 +521,7 @@ pkg std =
 	const execv	: (cmd : byte[:], args : byte[:][:] -> int64)
 	const execve	: (cmd : byte[:], args : byte[:][:], env : byte[:][:] -> int64)
 
-	/* fd manipulation */
+	/* file manipulation */
 	const open	: (path:byte[:], opts:fdopt -> fd)
 	const openmode	: (path:byte[:], opts:fdopt, mode:int64 -> fd)
 	const close	: (fd:fd -> int64)
@@ -536,12 +536,16 @@ pkg std =
 	const ioctl	: (fd:fd, req : int64, args:... -> int64)
 	const getdirentries64	: (fd : fd, buf : byte[:], basep : uint64# -> int64)
 
+	/* fd stuff */
+	const pipe	: (fd : fd[:] -> int64)
+
 	/* networking */
 	const socket	: (dom : sockfam, stype : socktype, proto : sockproto	-> fd)
 	const connect	: (sock	: fd, addr : sockaddr#, len : size -> int)
 	const accept	: (sock : fd, addr : sockaddr#, len : size# -> fd)
 	const listen	: (sock : fd, backlog : int	-> int)
 	const bind	: (sock : fd, addr : sockaddr#, len : size -> int)
+
 
 	/* memory mapping */
 	const munmap	: (addr:byte#, len:size -> int64)
@@ -561,6 +565,7 @@ pkg std =
 ;;
 
 extern const __osx_fork : (->int64)
+extern const __osx_pipe : (fd : fd# ->int64)
 extern const cstring : (str : byte[:] -> byte#)
 extern const alloca : (sz : size -> byte#)
 extern const __cenvp : byte##
@@ -637,6 +642,8 @@ const ioctl	= {fd, req, args
 	-> syscall(Sysioctl, fd, req, arg) castto(int64)
 }
 const getdirentries64	= {fd, buf, basep;	-> syscall(Sysgetdirentries64, fd, buf castto(byte#), buf.len castto(size), basep)}
+
+const pipe	= {fd;	-> __osx_pipe(fd castto(fd#))}
 
 /* networking */
 const socket	= {dom, stype, proto;	-> syscall(Syssocket, dom castto(int64), stype, proto) castto(fd) }

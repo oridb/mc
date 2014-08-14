@@ -41,7 +41,7 @@ success:
 	ret
 
 /*
- * OSX is dumb about fork, and needs an assembly wrapper.
+ * OSX is strange about fork, and needs an assembly wrapper.
  * The fork() syscall, when called directly, returns the pid in both
  * processes, which means that both parent and child think they're
  * the parent.
@@ -71,6 +71,46 @@ forksuccess:
 	jz isparent
 	xorq %rax,%rax
 isparent:
+
+	popq %r11 
+	popq %rcx 
+	popq %r9
+	popq %r8
+	popq %r10 
+	popq %rdx 
+	popq %rsi 
+	popq %rdi 
+	popq %rbp
+	ret
+
+/*
+ * OSX is strange about pipe, and needs an assembly wrapper.
+ * The pipe() syscall returns the pipes created in eax:edx, and
+ * needs to copy them to the destination locations manually.
+ */
+.globl _std$__osx_pipe
+_std$__osx_pipe:
+	pushq %rbp
+	pushq %rdi 
+	pushq %rsi 
+	pushq %rdx 
+	pushq %r10 
+	pushq %r8
+	pushq %r9
+	pushq %rcx 
+	pushq %r11 
+
+	movq $0x200002a,%rax
+	syscall
+
+	jae pipesuccess
+	negq %rax
+
+pipesuccess:
+	movq 88 (%rsp),%rdi
+	movl %eax,(%rdi)
+	movl %edx,4(%rdi)
+	xorq %rax,%rax
 
 	popq %r11 
 	popq %rcx 
