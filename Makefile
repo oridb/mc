@@ -12,3 +12,6 @@ include config.mk
 
 check: all
 	$(MAKE) -C test check
+
+bench: all
+	$(MAKE) -C bench bench

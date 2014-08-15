@@ -1,0 +1,23 @@
+use std
+
+const Nsamp = 10
+
+const main = {args : byte[:][:]
+	for a in args
+		time(a)
+	;;
+}
+
+const time = {a
+	var rusage
+	var t
+
+	for i = 0; i < Nsamp; i++
+		if !run(a, &rusage)
+			break
+		;;
+	;;
+}
+
+
+
