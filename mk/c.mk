@@ -10,6 +10,8 @@ CFLAGS += -Wall -Werror -Wextra -Wno-unused-parameter -Wno-missing-field-initial
 CFLAGS += -g
 CFLAGS += -MMD -MP -MF ${_DEPSDIR}/$(subst /,-,$*).d
 
+# disable implicit rules.
+.SUFFIXES:
 .PHONY: clean clean-gen clean-bin clean-obj clean-misc clean-backups
 .PHONY: all
 
