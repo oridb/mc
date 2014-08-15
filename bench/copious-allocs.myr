@@ -24,5 +24,29 @@ const main = {
 		for i = a.len; i > 0; i--
 			std.free(a[i - 1])
 		;;
+
+		/* alloc forwards, dealloc randomly */
+		for i = 0; i < a.len; i++
+			a[i] = std.alloc()
+		;;
+		shuffle(a[:])
+		for i = a.len; i > 0; i--
+			std.free(a[i - 1])
+		;;
 	;;
 }
+
+const shuffle = {a
+	var t
+	var rng
+	var i, j
+
+	rng = std.mksrng(123)
+	for i = 0; i < a.len - 1; i++
+		j = std.rand(rng, i, a.len)
+		t = a[j]
+		a[j] = a[i]
+		a[i] = t
+	;;
+}
+

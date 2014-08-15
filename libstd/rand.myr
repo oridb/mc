@@ -49,6 +49,7 @@ pkg std =
 	type rng
 
 	const mksrng	: (seed : uint32 -> rng#)
+	const delrng	: (rng : rng# -> void)
 	generic rand	: (rng : rng#, lo : @a::(numeric,integral), hi : @a::(numeric,integral) -> @a::(numeric,integral))
 	generic randN	: (rng : rng# -> @a::(numeric,integral))
 	const rand32	: (rng : rng# -> uint32)
@@ -66,6 +67,10 @@ const mksrng = {seed
 	rng = alloc()
 	init(rng, seed)
 	-> rng
+}
+
+const delrng = {rng
+	free(rng)
 }
 
 /* initializes a random number generator from the seed `seed`. */
