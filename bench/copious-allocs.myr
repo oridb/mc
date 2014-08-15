@@ -1,0 +1,28 @@
+use std
+
+type blob = struct
+	x : int[10]
+;;
+
+const main = {
+	var i, j
+	var a : blob#[10000]
+
+	for j = 0; j < 100; j++
+		/* alloc forwards, dealloc forwards */
+		for i = 0; i < a.len; i++
+			a[i] = std.alloc()
+		;;
+		for i = 0; i < a.len; i++
+			std.free(a[i])
+		;;
+
+		/* alloc forwards, dealloc backwards */
+		for i = 0; i < a.len; i++
+			a[i] = std.alloc()
+		;;
+		for i = a.len; i > 0; i--
+			std.free(a[i - 1])
+		;;
+	;;
+}

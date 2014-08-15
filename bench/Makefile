@@ -1,7 +1,7 @@
 BIN=runner
 OBJ=runner.o
-BENCHSRC=intsort.myr
-BENCHUTIL=
+BENCHSRC=intsort.myr \
+	 copious-allocs.myr \
 
 include ../config.mk
 include ../mk/c.mk
@@ -9,5 +9,5 @@ include ../mk/c.mk
 bench: runner $(BENCHSRC:.myr=)
 	./runner $(BENCHSRC:.myr=)
 
-$(BENCHSRC:.myr=): $(BENCHSRC) $(BENCHUTIL)
-	../myrbuild/myrbuild -b $@ $@.myr $(BENCHUTIL)
+$(BENCHSRC:.myr=): $(BENCHSRC)
+	../myrbuild/myrbuild -b $@ $@.myr
