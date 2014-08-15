@@ -1,3 +1,5 @@
+.SUFFIXES:
+
 NECFLAGS = $(subst -Werror,,$(subst -Wall,,$(CFLAGS)))
 
 %.h %.c: %.y
