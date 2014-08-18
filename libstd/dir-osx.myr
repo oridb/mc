@@ -12,7 +12,7 @@ pkg std =
 		fd	: fd
 		buf	: byte[16384]
 		len	: int64
-		off	: int64
+		off	: uint64
 		base	: int64
 	;;
 
