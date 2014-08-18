@@ -89,7 +89,7 @@ pkg std =
 		__pad2	: byte[112]
 	;;
 
-	type dirent = struct
+	type dirent64 = struct
 		ino	: uint64	
 		seekoff	: uint64	/* seek offset (optional, used by servers) */
 		reclen	: uint16	/* length of this record */
@@ -534,7 +534,7 @@ pkg std =
 	const fstat	: (fd:fd, sb:statbuf# -> int64)
 	const mkdir	: (path : byte[:], mode : int64	-> int64)
 	const ioctl	: (fd:fd, req : int64, args:... -> int64)
-	const getdirentries64	: (fd : fd, buf : byte[:], basep : uint64# -> int64)
+	const getdirentries64	: (fd : fd, buf : byte[:], basep : int64# -> int64)
 
 	/* fd stuff */
 	const pipe	: (fd : fd[:] -> int64)
