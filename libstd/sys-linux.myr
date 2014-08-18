@@ -592,13 +592,13 @@ const execve	= {cmd, args, env
 /* file manipulation */
 const open	= {path, opts;		-> syscall(Sysopen, cstring(path), opts, 0o777) castto(fd)}
 const openmode	= {path, opts, mode;	-> syscall(Sysopen, cstring(path), opts, mode) castto(fd)}
-const close	= {fd;			-> syscall(Sysclose, fd)}
+const close	= {fd;			-> syscall(Sysclose, fd castto(uint64))}
 const creat	= {path, mode;		-> syscall(Syscreat, cstring(path), mode) castto(fd)}
-const read	= {fd, buf;		-> syscall(Sysread, fd, buf castto(byte#), buf.len castto(size)) castto(size)}
-const write	= {fd, buf;		-> syscall(Syswrite, fd, buf castto(byte#), buf.len castto(size)) castto(size)}
-const lseek	= {fd, off, whence;	-> syscall(Syslseek, fd, off, whence)}
+const read	= {fd, buf;		-> syscall(Sysread, fd castto(uint64), buf castto(byte#), buf.len castto(size)) castto(size)}
+const write	= {fd, buf;		-> syscall(Syswrite, fd castto(uint64), buf castto(byte#), buf.len castto(size)) castto(size)}
+const lseek	= {fd, off, whence;	-> syscall(Syslseek, fd castto(uint64), off, whence)}
 const stat	= {path, sb;		-> syscall(Sysstat, cstring(path), sb)}
-const fstat	= {fd, sb;		-> syscall(Sysfstat, fd, sb)}
+const fstat	= {fd, sb;		-> syscall(Sysfstat, fd castto(uint64), sb)}
 const mkdir	= {path, mode;		-> syscall(Sysmkdir, cstring(path), mode) castto(int64)}
 const ioctl	= {fd, req, args
 	var arg : byte#
@@ -606,9 +606,9 @@ const ioctl	= {fd, req, args
 
 	ap = vastart(&args)
 	(arg, ap) = vanext(ap)
-	-> syscall(Sysioctl, fd, req, arg) castto(int64)
+	-> syscall(Sysioctl, fd castto(uint64), req, arg) castto(int64)
 }
-const getdents64	= {fd, buf;	-> syscall(Sysgetdents64, fd, buf castto(byte#), buf.len)}
+const getdents64	= {fd, buf;	-> syscall(Sysgetdents64, fd castto(uint64), buf castto(byte#), buf.len)}
 
 /* file stuff */
 const pipe	= {fds;	-> syscall(Syspipe, fds castto(fd#))}
@@ -624,7 +624,7 @@ const accept	= {sock, addr, lenp;	-> syscall(Sysaccept, sock, addr, lenp) castto
 
 /* memory mapping */
 const munmap	= {addr, len;		-> syscall(Sysmunmap, addr, len)}
-const mmap	= {addr, len, prot, flags, fd, off;	-> syscall(Sysmmap, addr, len, prot, flags, fd, off) castto(byte#)}
+const mmap	= {addr, len, prot, flags, fd, off;	-> syscall(Sysmmap, addr, len, prot, flags, fd castto(uint64), off) castto(byte#)}
 
 /* time */
 const clock_getres = {clk, ts;	-> syscall(Sysclock_getres, clockid(clk), ts) castto(int32)}
