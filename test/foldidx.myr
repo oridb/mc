@@ -1,0 +1,16 @@
+use std
+
+type xy = struct
+	x : int
+	y : int
+;;
+const X = 123
+const Y = 456
+const z : xy[1] = [
+	[.x = X, .y = Y]
+]
+
+const main = {
+	std.put("%i,%i\n", z[0].x, z[0].y)
+}
+
