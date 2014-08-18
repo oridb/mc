@@ -204,6 +204,9 @@ Node *fold(Node *n, int foldvar)
             break;
     }
 
+    if (r && n->expr.idx)
+      r->expr.idx = n->expr.idx;
+
     if (r)
         return r;
     else
