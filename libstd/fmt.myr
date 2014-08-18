@@ -24,7 +24,9 @@ use "chartype.use"
 
 pkg std =
 	const put	: (fmt : byte[:], args : ... -> size)
+	const fput	: (fd : fd, fmt : byte[:], args : ... -> size)
 	const putv	: (fmt : byte[:], ap : valist -> size)
+	const fputv	: (fd : fd, fmt : byte[:], ap : valist -> size)
 	const fatal	: (status : int, fmt : byte[:], args : ... -> void)
 	const fatalv	: (status : int, fmt : byte[:], ap : valist -> void)
 	const fmt	: (fmt : byte[:], args : ... -> byte[:])
@@ -35,17 +37,25 @@ pkg std =
 
 /* Writes a string of text up to 2 kb in size to stdout */
 const put = {fmt, args
-	-> putv(fmt, vastart(&args))
+	-> fputv(1, fmt, vastart(&args))
+}
+
+const fput = {fd, fmt, args
+	-> fputv(fd, fmt, vastart(&args))
+}
+
+const putv = {fmt, ap
+	-> fputv(1, fmt, ap)
 }
 
 /* Writes a string of text up to 2kb long to stdout, using a valist
    as the source of the arguments */
-const putv = {fmt, ap
+const fputv = {fd, fmt, ap
 	var buf : byte[2048]
 	var n
 	
 	n = bfmtv(buf[:], fmt, ap)
-	write(1, buf[:n])
+	write(fd, buf[:n])
 	-> n
 }
 
