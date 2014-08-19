@@ -1,5 +1,4 @@
 INSTBIN=6m
-BIN=6m
 OBJ=isel.o \
     locs.o \
     main.o \
