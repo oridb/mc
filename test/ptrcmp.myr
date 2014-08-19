@@ -8,6 +8,8 @@ const main = {
 	a = &v1
 	b = &v1
 	std.assert(a == b, "pointers should be equal, but weren't\n")
+	a = &v1
+	b = &v2
 	std.assert(a != b, "pointers weren't equal, but should be\n")
 	std.exit(0)
 }
