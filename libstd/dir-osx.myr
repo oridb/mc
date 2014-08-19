@@ -12,7 +12,7 @@ pkg std =
 		fd	: fd
 		buf	: byte[16384]
 		len	: int64
-		off	: uint64
+		off	: int64
 		base	: int64
 	;;
 
@@ -37,7 +37,6 @@ const diropen = {p
 const dirread = {d
 	var len
 	var dent
-	var namelen
 
 	if d.off >= d.len
 		len = getdirentries64(d.fd, d.buf[:], &d.base)
