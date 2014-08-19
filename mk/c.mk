@@ -20,7 +20,7 @@ BIN ?= $(INSTBIN)
 
 all: subdirs $(BIN) $(LIB) $(EXTRA)
 
-$(LIB): $(OBJ) $(DEPS)
+$(LIB): $(OBJ) $(EXTRADEP) $(DEPS)
 	$(AR) -rcs $@ $(OBJ)
 
 $(BIN): $(OBJ) $(EXTRADEP) $(DEPS)

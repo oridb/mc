@@ -1,7 +1,5 @@
 .SUFFIXES:
 
-NECFLAGS = $(subst -Werror,,$(subst -Wall,,$(CFLAGS)))
-
 %.h %.c: %.y
 	yacc -d -o$*.c $<
 
