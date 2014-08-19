@@ -65,6 +65,7 @@ B patiter	P	23512
 B condiftrue	E	7
 B condiffalse	E	9
 B condifrel	E	7
+B ptrcmp	E	0
 B overlappingif	E	2
 #B bigcondarg	C       ## BUGGERED
 B fib		E	21

@@ -1,0 +1,13 @@
+use std
+
+const main = {
+	var a, b, v1, v2
+
+	v1 = 42
+	v2 = 42
+	a = &v1
+	b = &v1
+	std.assert(a == b, "pointers should be equal, but weren't\n")
+	std.assert(a != b, "pointers weren't equal, but should be\n")
+	std.exit(0)
+}
