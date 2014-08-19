@@ -1,0 +1,65 @@
+use std
+
+type u = union
+	`Foo int
+	`Bar char
+	`Baz byte
+;;
+
+type s = struct
+	x : int
+	y : char
+	z : byte
+;;
+
+generic expect = {a : @a, b : @a, expected : bool
+	var actual
+
+	if a == b
+		actual = true
+	else
+		actual = false
+	;;
+	if actual == expected
+		std.put("a == b: expected: %t, got, %t: pass\n", expected, actual)
+	else
+		std.put("a == b: expected: %t, got, %t: fail\n", expected, actual)
+	;;
+}
+
+const main = {
+	var u1 : u, u2 : u
+	var s1 : s, s2 : s
+
+	/* equal */
+	u1 = `Foo 123
+	u2 = `Foo 123
+	expect(u1, u2, true)
+	s1 = [.x=123, .y='a', .z=55]
+	s2 = [.x=123, .y='a', .z=55]
+	expect(s1, s2, true)
+
+	/* varying first values */
+	u1 = `Foo 123
+	u2 = `Bar 'x'
+	expect(u1, u2, false)
+	s1 = [.x=124, .y='a', .z=55]
+	s2 = [.x=123, .y='a', .z=55]
+	expect(s1, s2, false)
+
+	/* varying later values  */
+	u1 = `Foo 123
+	u2 = `Foo 124
+	expect(u1, u2, false)
+	s1 = [.x=123, .y='b', .z=55]
+	s2 = [.x=123, .y='c', .z=55]
+	expect(s1, s2, false)
+	u1 = `Bar 'x'
+	u2 = `Bar 'y'
+	expect(u1, u2, false)
+	s1 = [.x=123, .y='b', .z=57]
+	s2 = [.x=123, .y='b', .z=56]
+	expect(s1, s2, false)
+}
+
+
