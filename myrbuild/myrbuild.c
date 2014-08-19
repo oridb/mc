@@ -195,16 +195,16 @@ FILE *openlib(char *lib)
     char buf[1024];
     size_t i;
 
-    lappend(&incpaths, &nincpaths, strdup(Instroot "/lib/myr"));
-    f = fopen(buf, "r");
-    if (f)
-        return f;
     for (i = 0; i < nincpaths; i++) {
         snprintf(buf, sizeof buf, "%s/%s", incpaths[i], lib);
         f = fopen(buf, "r");
         if (f)
             return f;
     }
+    snprintf(buf, sizeof buf, "%s/%s", Instroot "/lib/myr", lib);
+    f = fopen(buf, "r");
+    if (f)
+        return f;
     err(1, "could not open library file %s\n", lib);
 }
 
