@@ -270,6 +270,17 @@ Type *mktyunion(int line, Ucon **decls, size_t ndecls)
     return t;
 }
 
+int istyunsigned(Type *t)
+{
+    switch (tybase(t)->type) {
+        case Tybyte: case Tyuint8: case Tyuint16: case Tyuint:
+        case Tychar: case Tyuint32: case Tyuint64: case Tyulong:
+            return 1;
+        default:
+            return 0;
+    }
+}
+
 int istysigned(Type *t)
 {
     switch (tybase(t)->type) {
