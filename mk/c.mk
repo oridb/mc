@@ -10,6 +10,9 @@ CFLAGS += -Wall -Werror -Wextra -Wno-unused-parameter -Wno-missing-field-initial
 CFLAGS += -g
 CFLAGS += -MMD -MP -MF ${_DEPSDIR}/$(subst /,-,$*).d
 
+LIB ?= $(INSTLIB)
+BIN ?= $(INSTBIN)
+
 # disable implicit rules.
 .SUFFIXES:
 .PHONY: clean clean-gen clean-bin clean-obj clean-misc clean-backups
@@ -47,32 +50,36 @@ subdirs-install:
 	    exit 1 \
 	); done
 
-
 clean: subdirs-clean 
 	rm -f ${BIN} ${OBJ} ${CLEAN}
 
-
 install: subdirs-install $(INSTBIN) $(INSTLIB) $(INSTHDR) $(INSTPKG)
-	@if [ ! -z "$(INSTBIN)" ]; then \
-		echo install $(abspath $(INSTBIN) $(DESTDIR)/$(INST_ROOT)/bin); \
+	@for i in $(INSTBIN); do \
+		echo install $(abspath $$i $(DESTDIR)/$(INST_ROOT)/bin); \
 		mkdir -p $(abspath $(DESTDIR)/$(INST_ROOT)/bin); \
-		install $(INSTBIN) $(abspath $(DESTDIR)/$(INST_ROOT)/bin); \
-	fi
-	@if [ ! -z "$(INSTLIB)" ]; then \
-		echo install -m 644 $(INSTLIB) $(abspath $(DESTDIR)/$(INST_ROOT)/lib); \
+		install $$i $(abspath $(DESTDIR)/$(INST_ROOT)/bin); \
+	done
+	@for i in $(INSTLIB); do \
+		echo install -m 644 $$i $(abspath $(DESTDIR)/$(INST_ROOT)/lib); \
 		mkdir -p $(abspath $(DESTDIR)/$(INST_ROOT)/lib); \
-		install -m 644 $(INSTLIB) $(abspath $(DESTDIR)/$(INST_ROOT)/lib); \
-	fi
-	@if [ ! -z "$(INSTHDR)" ]; then \
-		echo install $(INSTHDR) $(abspath $(DESTDIR)/$(INST_ROOT)/include); \
+		install -m 644 $$i $(abspath $(DESTDIR)/$(INST_ROOT)/lib); \
+	done
+	@for i in $(INSTHDR); do \
+		echo install $$i $(abspath $(DESTDIR)/$(INST_ROOT)/include); \
 		mkdir -p $(abspath $(DESTDIR)/$(INST_ROOT)/include); \
-		install $(INSTHDR) $(abspath $(DESTDIR)/$(INST_ROOT)/include); \
-	fi
-	@if [ ! -z "$(INSTPKG)" ]; then \
-		echo install $(abspath $(INSTPKG) $(DESTDIR)/$(INST_ROOT)/lib/pkgconfig); \
+		install $$i $(abspath $(DESTDIR)/$(INST_ROOT)/include); \
+	done
+	@for i in $(INSTPKG); do \
+		echo install $(abspath $$i $(DESTDIR)/$(INST_ROOT)/lib/pkgconfig); \
 		mkdir -p $(abspath $(DESTDIR)/$(INST_ROOT)/lib/pkgconfig); \
-		install $(abspath $(INSTPKG) $(DESTDIR)/$(INST_ROOT)/lib/pkgconfig); \
-	fi
+		install $(abspath $$i $(DESTDIR)/$(INST_ROOT)/lib/pkgconfig); \
+	    done
+	@for i in $(INSTMAN); do \
+		sect="$${i##*.}"; \
+		echo install -m 644 $$i $(abspath $(DESTDIR)/$(INST_ROOT)/share/man/man$${sect}); \
+		mkdir -p $(abspath $(DESTDIR)/$(INST_ROOT)/share/man/man$${sect}); \
+		install -m 644 $$i $(abspath $(DESTDIR)/$(INST_ROOT)/share/man/man$${sect}); \
+	done
 
 subdirs-uninstall:
 	@for i in $(SUB); do (\
@@ -98,6 +105,12 @@ uninstall: subdirs-uninstall
 		echo rm -f $(abspath $(DESTDIR)/$(INST_ROOT)/lib/pkgconfig/$$i); \
 		rm -f $(abspath $(DESTDIR)/$(INST_ROOT)/lib/pkgconfig/$$i); \
 	done
+	@for i in $(INSTMAN); do \
+		sect="$${i##*.}" \
+		echo rm -f $$i $(abspath $(DESTDIR)/$(INST_ROOT)/share/man/man$${sect}/$$i); \
+		rm -f $(abspath $(DESTDIR)/$(INST_ROOT)/share/man/man$${sect}/$$i); \
+	done
+
 
 clean-backups:
 	find ./ -name .*.sw* -exec rm -f {} \;
