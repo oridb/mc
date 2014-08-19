@@ -6,8 +6,7 @@ _LIBSRCHPATHS=$(addprefix -L, $(dir $(DEPS)))
 _LIBINCPATHS=$(addprefix -I, $(dir $(DEPS)))
 _LIBPATHS=$(addprefix -l, $(patsubst lib%.a,%,$(notdir $(DEPS))))
 
-CFLAGS += -Wall -Werror -Wextra -Wno-unused-parameter -Wno-missing-field-initializers
-CFLAGS += -g
+CFLAGS ?= -Wall -Werror -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -g
 CFLAGS += -MMD -MP -MF ${_DEPSDIR}/$(subst /,-,$*).d
 
 LIB ?= $(INSTLIB)
@@ -110,11 +109,6 @@ uninstall: subdirs-uninstall
 		echo rm -f $$i $(abspath $(DESTDIR)/$(INST_ROOT)/share/man/man$${sect}/$$i); \
 		rm -f $(abspath $(DESTDIR)/$(INST_ROOT)/share/man/man$${sect}/$$i); \
 	done
-
-
-clean-backups:
-	find ./ -name .*.sw* -exec rm -f {} \;
-	find ./ -name *.bak -exec rm -f {} \;
 
 %.o: %.c $(GENHDR) .deps
 	$(CC) -c $(CFLAGS) $(_LIBINCPATHS) $<

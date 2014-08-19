@@ -1,0 +1,229 @@
+                The Myrddin Compiler Build System
+                            Aug 2012
+                          Ori Bernstein
+
+TABLE OF CONTENTS:
+
+    0. DEPENDENCIES
+    1. USAGE
+    2. CREATING MAKEFILES
+        2.1. Example
+        2.2. Targets
+        2.3. Variables
+    3. CONFIGURE SCRIPTS
+    4. INTERNALS
+        4.1: Automatic dependency generation
+        4.2: Automatic dependency generation
+    4. BUGS
+
+0. DEPENDENCIES:
+
+    c.mk depends on GNU Make, using it's builtins for a
+    number of variable expansions. On systems where the default make
+    program is not GNU Make, please run 'gmake' or similar. Otherwise,
+    you will end up with obscure failures. A method of making this
+    script portable would be very welcome.
+
+    Beyond that, all that is needed to run this is a portable POSIX
+    system.
+
+1. USAGE:
+
+    run 'make' and the default targets will be built.  The usual targets
+    are supported. That means:
+
+        all:
+            Builds all targets. This will build every target
+            specified in the makefile, recurse into subdirectories,
+            and do everything needed. If dependencies are in other
+            directories, it will 'cd' into those directories and
+            call make as needed.
+
+        target-name:
+            This builds the specified target and it's dependencies.
+
+        install:
+            This installs the software to the prefix specified in the
+            configuration, or /usr/local if there is nothing more
+            specific specified.
+
+            If DESTDIR is set, it will install the files to the prefix
+            $(DESTDIR)/$(INST_ROOT), although all paths will still be
+            relative to $(INST_ROOT). This is for packaging, and matches
+            the behavior of automake.
+
+        uninstall:
+            This uninstalls the software, removing all files installed
+            by 'make install'.
+
+        clean:
+            This removes all temporary files created by the build
+            process, allowing a fresh build to occur.
+
+    When a target is not specified, 'all' is assumed.
+
+2. CREATING MAKEFILES:
+
+    c.mk is only a set of rules to make common actions simple. There is
+    nothing preventing custom make from being added for 
+
+    2.1: Example
+
+        c.mk is designed around the convention of having
+        one primary target per directory. This primary target can be
+        either a binary or a library, for the most part, although
+        there is nothing that prevents you from defining your own
+        primary targets.
+
+        So, let's dissect an example makefile:
+
+            BIN = mybinary
+            INSTBIN = $(BIN)
+            OBJ = foo.o bar.o baz.o
+
+            include config.mk
+            include c.mk
+
+            custom-rule: custom-dep
+                    insult-your-momma
+
+    2.2: Targets
+
+        Currently, there are several targets supported by c.mk
+
+            SUB
+                This target will recurse into the subdirectories
+                listed, building everything in them.
+
+            BIN
+                This target will build a single binary, and will
+                not install it. It uses $(OBJ) as its input.
+
+            LIB
+                This target will build a single static library, and will
+                not install it. It uses $(OBJ) as its input. It
+                conflicts with $(BIN)
+
+            INSTBIN
+                Same as BIN, but installed to $(INST_ROOT)/bin
+
+            INSTLIB
+                Same as LIB, but installed to $(INST_ROOT)/lib
+
+            INSTHDR
+                Used for defining headers to install to system include
+                directories. Does not generate headers. Takes multiple
+                arguments and installs them to $(INST_ROOT)/include
+
+            INSTPKG
+                Used for defining pkgconfig files to install to
+                system pkgconfig directories. Does not generate
+                them from inputs. Takes multiple arguments and
+                installs them to $(INST_ROOT)/lib/pkgconfig.
+
+            INSTMAN
+                Used for defining manpage files to install to
+                system man directories. Does not generate
+                them from inputs. Takes multiple arguments and
+                installs them to $(INST_ROOT)/lib/pkgconfig.
+
+    2.3: Variables:
+
+        c.mk respects the usual environment variables. If you set
+        CFLAGS, it will compile with those flags. If you set LDFLAGS,
+        it will link with those flags. It also supports a number of
+        extra configuration variables:
+        
+            EXTRA
+                Dependencies that should be built when 'make all' is
+                run. These can be, for example, additional binaries,
+                rules, etc.
+
+            EXTRADEP
+                Dependencies that should be added when compiling a
+                BIN or LIB target
+            
+            GENHDR
+                Headers that are generated for consumption by C code.
+
+            CLEAN
+                Files that should be removed when runngng
+
+            INCS
+                Include paths. These are passed to the C compiler when
+                building C code.
+
+            DEPS
+                Paths to local dependencies, such as convenience
+                libraries. This is a relative path to a libfoo.a
+                file. All libraries that are depended on in this
+                manner will be automatically built before they
+                are used.
+
+                The path to them will also be added to the include
+                path if needed, and they will be linked in to binaries
+                that are built.
+
+3. CONFIGURE SCRIPTS:
+
+    This is not mandatory, although convention requests it. This is
+    simply a shell script that will probe the system, and generate
+    the 'config.mk' file, This can be generated a number of ways.
+
+    Although Myrddin doesn't currently use it, autoconf is a perfectly
+    viable method of generating a config.mk setup. Myrddin currently
+    uses a simple script that mocks autotools, instead.
+
+4. INTERNALS:
+
+    c.mk is a relatively simple set of commands. It defines make targets
+    for the various default rules, and uses the variables described
+    above to substitute into them, with fairly traditional structure.
+
+    It begins by setting the default goal (ie, the target that is built
+    when 'make' is run with no arguments) to 'all', and proceeds to
+    define a few internal variables.
+
+    4.1: Automatic dependency generation
+
+        _DEPSDIR and _DEPS are defined early on. _DEPSDIR is simply
+        a directory named '.deps', which is created before any
+        compilation occurs, and contains the dependency makefile
+        fragments that GCC generates.
+
+        _DEPS is the list of dependency filename fragments, generated
+        by substituting '.deps/$FILEBASE.d' for every .o file define
+        in $(OBJS)
+
+        CFLAGS also unconditionally has the required flags for
+        dependency generation added to the compiler command, and
+        later on, the dependencies are included into the makefile
+        if they exist.
+
+    4.2:
+
+        The general target rules are defined. There are many for
+        loops and bits of shell scripting to support them, but the
+        pattern is fairly basic.
+
+            well-known-target: prerequisites
+                    do-commands
+    
+        Some of the commands are fairly long. For example, the install
+        and uninstall targets will loop through a list of files for each
+        of the main target types.
+
+    is simply '.deps', and is the location where GCC's generated
+    dependency information goes. _DEPS
+    
+4. BUGS:
+
+    - Currently, 'make uninstall' does not remove empty directories that
+      it created.
+
+    - You can define BIN/INSTBIN, LIB/INSTLIB in a way that does not
+      match. We do not error on this.
+
+    - Well known targets are defined relatively inflexibly. It should
+      be easier to include modules and have them add on to the base
+      rule set.
