@@ -429,6 +429,7 @@ Type *mktyunion(int line, Ucon **decls, size_t ndecls);
 Trait *mktrait(int line, Node *name, Type *param, Node **memb, size_t nmemb, Node **funcs, size_t nfuncs, int isproto);
 Type *mktylike(int line, Ty ty); /* constrains tyvar t like it was builtin ty */
 int   istysigned(Type *t);
+int   istyunsigned(Type *t);
 int   istyfloat(Type *t);
 int   isgeneric(Type *t);
 int   hasparams(Type *t);

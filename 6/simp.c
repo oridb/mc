@@ -62,7 +62,7 @@ static void simpconstinit(Simp *s, Node *dcl);
 static Node *simpcast(Simp *s, Node *val, Type *to);
 static Node *simpslice(Simp *s, Node *n, Node *dst);
 static Node *idxaddr(Simp *s, Node *seq, Node *idx);
-static void umatch(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, Node *iffalse);
+static void matchpattern(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, Node *iffalse);
 
 /* useful constants */
 static Type *tyintptr;
@@ -589,7 +589,7 @@ static void simpiter(Simp *s, Node *n)
     cjmp(s, done, lmatch, lend);
     simp(s, lmatch);
     val = load(idxaddr(s, seq, idx));
-    umatch(s, n->iterstmt.elt, val, val->expr.type, lbody, lstep);
+    matchpattern(s, n->iterstmt.elt, val, val->expr.type, lbody, lstep);
     simp(s, lend);
 
     s->nloopstep--;
@@ -635,7 +635,7 @@ static Node *patval(Simp *s, Node *n, Type *t)
         return load(addk(addr(s, n, t), Wordsz));
 }
 
-static void umatch(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, Node *iffalse)
+static void matchpattern(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, Node *iffalse)
 {
     Node *v, *x, *y;
     Node *deeper, *next;
@@ -711,7 +711,7 @@ static void umatch(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, Node *i
                 off = alignto(off, exprtype(patarg[i]));
                 next = genlbl();
                 v = load(addk(addr(s, val, exprtype(patarg[i])), off));
-                umatch(s, patarg[i], v, exprtype(patarg[i]), next, iffalse);
+                matchpattern(s, patarg[i], v, exprtype(patarg[i]), next, iffalse);
                 append(s, next);
                 off += size(patarg[i]);
             }
@@ -733,7 +733,7 @@ static void umatch(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, Node *i
             if (uc->etype) {
                 pat = patval(s, pat, uc->etype);
                 val = patval(s, val, uc->etype);
-                umatch(s, pat, val, uc->etype, iftrue, iffalse);
+                matchpattern(s, pat, val, uc->etype, iftrue, iffalse);
             }
             break;
     }
@@ -757,7 +757,7 @@ static void simpmatch(Simp *s, Node *n)
         /* check pattern */
         cur = genlbl();
         next = genlbl();
-        umatch(s, m->match.pat, val, val->expr.type, cur, next);
+        matchpattern(s, m->match.pat, val, val->expr.type, cur, next);
 
         /* do the action if it matches */
         append(s, cur);
@@ -1292,6 +1292,44 @@ static Node *simplazy(Simp *s, Node *n)
     return r;
 }
 
+static Node *comparecomplex(Simp *s, Node *n, Op op)
+{
+    fatal(n->line, "Complex comparisons not yet supported\n");
+}
+
+static Node *compare(Simp *s, Node *n, int fields)
+{
+    const Op cmpmap[Numops][3] = {
+        [Oeq]   = {Oeq, Oueq, Ofeq},
+        [One]   = {One, Oune, Ofne},
+        [Ogt]   = {Ogt, Ougt, Ofgt},
+        [Oge]   = {Oge, Ouge, Ofge},
+        [Olt]   = {Olt, Oult, Oflt},
+        [Ole]   = {Ole, Oule, Ofle}
+    };
+    Node *r;
+    Op newop;
+
+    newop = Obad;
+    if (istysigned(tybase(exprtype(n->expr.args[0]))))
+        newop = cmpmap[n->expr.op][0];
+    else if (istyunsigned(tybase(exprtype(n->expr.args[0]))))
+        newop = cmpmap[n->expr.op][1];
+    else if (istyfloat(tybase(exprtype(n->expr.args[0]))))
+        newop = cmpmap[n->expr.op][2];
+
+    if (newop != Obad) {
+        n->expr.op = newop;
+        r = visit(s, n);
+    } else if (fields) {
+        r = comparecomplex(s, n, exprop(n));
+    } else {
+        fatal(n->line, "unsupported comparison on values");
+    }
+    return r;
+}
+
+
 static Node *rval(Simp *s, Node *n, Node *dst)
 {
     Node *r; /* expression result */
@@ -1309,14 +1347,6 @@ static Node *rval(Simp *s, Node *n, Node *dst)
         [Obxoreq]       = Obxor,
         [Obsleq]        = Obsl,
         [Obsreq]        = Obsr,
-    };
-    const Op cmpmap[Numops][3] = {
-        [Oeq]   = {Oeq, Ofeq, Oueq},
-        [One]   = {One, Ofne, Oune},
-        [Ogt]   = {Ogt, Ofgt, Ougt},
-        [Oge]   = {Oge, Ofge, Ouge},
-        [Olt]   = {Olt, Oflt, Oult},
-        [Ole]   = {Ole, Ofle, Oule}
     };
 
     r = NULL;
@@ -1503,15 +1533,11 @@ static Node *rval(Simp *s, Node *n, Node *dst)
                 fatal(n->line, "trying to continue when not in loop");
             jmp(s, s->loopstep[s->nloopstep - 1]);
             break;
-        case Oeq: case One: case Ogt: case Oge: case Olt: case Ole:
-            if (istyfloat(tybase(exprtype(args[0]))))
-                i = 1;
-            else if (istysigned(tybase(exprtype(args[0]))))
-                i = 0;
-            else
-                i = 2;
-            n->expr.op = cmpmap[n->expr.op][i];
-            r = visit(s, n);
+        case Oeq: case One:
+            r = compare(s, n, 1);
+            break;
+        case Ogt: case Oge: case Olt: case Ole:
+            r = compare(s, n, 0);
             break;
         default:
             if (istyfloat(exprtype(n))) {
