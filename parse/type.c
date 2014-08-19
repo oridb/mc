@@ -275,6 +275,7 @@ int istyunsigned(Type *t)
     switch (tybase(t)->type) {
         case Tybyte: case Tyuint8: case Tyuint16: case Tyuint:
         case Tychar: case Tyuint32: case Tyuint64: case Tyulong:
+        case Typtr:
             return 1;
         default:
             return 0;
