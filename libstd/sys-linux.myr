@@ -2,20 +2,25 @@ use "types.use"
 use "varargs.use"
 
 pkg std =
-	type pid	= int64
+	type pid	= int64	/* process id */
 	type scno	= int64	/* syscall */
 	type fdopt	= int64	/* fd options */
 	type fd		= int32	/* fd */
 	type mprot	= int64	/* memory protection */
 	type mopt	= int64	/* memory mapping options */
+
 	type socktype	= int64	/* socket type */
 	type sockproto	= int64	/* socket protocol */
 	type sockfam	= uint16	/* socket family */
+
 	type whence	= uint64
 	type filemode	= uint32
+
 	type epollflags	= uint32
 	type epollop	= uint32
 	type epollevttype	= uint32
+
+	type pollevt	= uint16
 
 	type clock = union
 		`Clockrealtime
@@ -104,6 +109,12 @@ pkg std =
 		data	: byte[8]
 	;;
 
+	type pollfd = struct
+		fd	: fd
+		events	: pollevt
+		revents	: pollevt
+	;;
+
 
 	/* open options */
 	const Ordonly  	: fdopt = 0x0
@@ -167,6 +178,7 @@ pkg std =
 
 	/* epoll flags */
 	const Epollcloexec	: epollflags	= 0o2000000
+
 	/* epoll ops */
 	const Epollctladd	: epollop	= 0
 	const Epollctlmod	: epollop	= 1
@@ -187,6 +199,22 @@ pkg std =
 	const Epollwakeup	: epollevttype = 1 << 29
 	const Epolloneshot	: epollevttype = 1 << 30
 	const Epolledge	: epollevttype = 1 << 31
+
+	/* poll events : posix */
+	const Pollin	: pollevt = 0x001	/* There is data to read.  */
+	const Pollpri	: pollevt = 0x002	/* There is urgent data to read.  */
+	const Pollout	: pollevt = 0x004	/* Writing now will not block.  */
+
+	/* poll events: xopen */
+	const Pollrdnorm	: pollevt = 0x040	/* Normal data may be read.  */
+	const Pollrdband	: pollevt = 0x080	/* Priority data may be read.  */
+	const Pollwrnorm	: pollevt = 0x100	/* Writing now will not block.  */
+	const Pollwrband	: pollevt = 0x200	/* Priority data may be written.  */
+
+	/* poll events: linux */
+	const Pollmsg		: pollevt = 0x400
+	const Pollremove	: pollevt = 0x1000
+	const Pollrdhup		: pollevt = 0x2000
 
 	const Seekset	: whence = 0
 	const Seekcur	: whence = 1
@@ -543,10 +571,11 @@ pkg std =
 	const dup	: (fd : fd -> fd)
 	const dup2	: (src : fd, dst : fd -> fd)
 
-	/* epoll */
+	/* polling */
 	const epollcreate	: (flg : epollflags	-> fd)	/* actually epoll_create1 */
 	const epollctl	: (epfd : fd, op : int, fd : fd, evt : epollevt# -> int)
 	const epollwait	: (epfd : fd, evts : epollevt[:], timeout : int -> int)
+	const poll	: (pfd	: pollfd[:], timeout : int	-> int)
 
 	/* networking */
 	const socket	: (dom : sockfam, stype : socktype, proto : sockproto	-> fd)
@@ -656,6 +685,7 @@ const dup2 	= {src, dst;	-> syscall(Sysdup2, src castto(uint64), dst castto(uint
 const epollcreate	= {flg;	-> syscall(Sysepoll_create1, flg castto(uint64)) castto(fd)}
 const epollctl	= {epfd, op, fd, evt;	-> syscall(Sysepoll_ctl, epfd castto(uint64), op castto(uint64), fd castto(uint64), evt castto(uint64)) castto(int)}
 const epollwait	= {epfd, evts, timeout;	-> syscall(Sysepoll_wait, epfd castto(uint64), evts castto(epollevt#), evts.len castto(uint64), timeout castto(uint64)) castto(int)}
+const poll	= {pfd, timeout;	-> syscall(Syspoll, pfd castto(pollfd#), pfd.len castto(uint64), timeout castto(uint64)) castto(int)}
 
 /* networking */
 const socket	= {dom, stype, proto;	-> syscall(Syssocket, dom castto(int64), stype, proto) castto(fd)}
