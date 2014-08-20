@@ -40,6 +40,7 @@ MYRSRC= \
     slput.myr \
     slurp.myr \
     sort.myr \
+    spork.myr \
     strfind.myr \
     strjoin.myr \
     strsplit.myr \
@@ -52,7 +53,6 @@ MYRSRC= \
     utf.myr \
     varargs.myr \
     waitstatus.myr \
-    zip.myr \
 
 ASMSRC= \
     syscall.s \
