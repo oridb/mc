@@ -13,6 +13,9 @@ pkg std =
 	type sockfam	= uint16	/* socket family */
 	type whence	= uint64
 	type filemode	= uint32
+	type epollflags	= uint32
+	type epollop	= uint32
+	type epollevttype	= uint32
 
 	type clock = union
 		`Clockrealtime
@@ -96,6 +99,12 @@ pkg std =
 		__pad	: byte[112]
 	;;
 
+	type epollevt = struct
+		events	: epollevttype
+		data	: byte[8]
+	;;
+
+
 	/* open options */
 	const Ordonly  	: fdopt = 0x0
 	const Owronly  	: fdopt = 0x1
@@ -155,6 +164,29 @@ pkg std =
 	const Ipproto_tcp	: sockproto = 6
 	const Ipproto_udp	: sockproto = 17
 	const Ipproto_raw	: sockproto = 255
+
+	/* epoll flags */
+	const Epollcloexec	: epollflags	= 0o2000000
+	/* epoll ops */
+	const Epollctladd	: epollop	= 0
+	const Epollctlmod	: epollop	= 1
+	const Epollctldel	: epollop	= 1
+
+	/* epoll events */
+	const Epollin	: epollevttype = 0x001
+	const Epollpri	: epollevttype = 0x002
+	const Epollout	: epollevttype = 0x004
+	const Epollerr	: epollevttype = 0x008
+	const Epollhup	: epollevttype = 0x010
+	const Epollrdnorm	: epollevttype = 0x040
+	const Epollrdband	: epollevttype = 0x080
+	const Epollwrnorm	: epollevttype = 0x100
+	const Epollwrband	: epollevttype = 0x200
+	const Epollmsg		: epollevttype = 0x400
+	const Epollrdhup	: epollevttype = 0x2000
+	const Epollwakeup	: epollevttype = 1 << 29
+	const Epolloneshot	: epollevttype = 1 << 30
+	const Epolledge	: epollevttype = 1 << 31
 
 	const Seekset	: whence = 0
 	const Seekcur	: whence = 1
@@ -511,6 +543,11 @@ pkg std =
 	const dup	: (fd : fd -> fd)
 	const dup2	: (src : fd, dst : fd -> fd)
 
+	/* epoll */
+	const epollcreate	: (flg : epollflags	-> fd)	/* actually epoll_create1 */
+	const epollctl	: (epfd : fd, op : int, fd : fd, evt : epollevt# -> int)
+	const epollwait	: (epfd : fd, evts : epollevt[:], timeout : int -> int)
+
 	/* networking */
 	const socket	: (dom : sockfam, stype : socktype, proto : sockproto	-> fd)
 	const connect	: (sock	: fd, addr : sockaddr#, len : size -> int)
@@ -614,6 +651,11 @@ const getdents64	= {fd, buf;	-> syscall(Sysgetdents64, fd castto(uint64), buf ca
 const pipe	= {fds;	-> syscall(Syspipe, fds castto(fd#))}
 const dup 	= {fd;	-> syscall(Sysdup, fd castto(uint64)) castto(fd)}
 const dup2 	= {src, dst;	-> syscall(Sysdup2, src castto(uint64), dst castto(uint64)) castto(fd)}
+
+/* epoll */
+const epollcreate	= {flg;	-> syscall(Sysepoll_create1, flg castto(uint64)) castto(fd)}
+const epollctl	= {epfd, op, fd, evt;	-> syscall(Sysepoll_ctl, epfd castto(uint64), op castto(uint64), fd castto(uint64), evt castto(uint64)) castto(int)}
+const epollwait	= {epfd, evts, timeout;	-> syscall(Sysepoll_wait, epfd castto(uint64), evts castto(epollevt#), evts.len castto(uint64), timeout castto(uint64)) castto(int)}
 
 /* networking */
 const socket	= {dom, stype, proto;	-> syscall(Syssocket, dom castto(int64), stype, proto) castto(fd)}
