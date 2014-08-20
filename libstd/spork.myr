@@ -13,7 +13,7 @@ const spork = {cmd
 	var err
 	var pid
 
-
+	/* open up pipes */
 	err = pipe(infds[:])
 	if err != 0
 		fatal(1, "Could not create pipes: err %l\n", -err)
@@ -22,8 +22,9 @@ const spork = {cmd
 	if err != 0
 		fatal(1, "Could not create pipes: err %l\n", -err)
 	;;
-	/* close unused fd ends */
+
 	pid = sporkfd(cmd, infds[0], outfds[1])
+	/* close unused fd ends */
 	close(infds[0]);
 	close(outfds[1]);
 	-> (pid, infds[1], outfds[0])
@@ -31,9 +32,12 @@ const spork = {cmd
 
 const sporkfd = {cmd, infd, outfd
 	var pid
+
 	pid = fork()
+	/* error  */
 	if pid == -1
 		fatal(1, "Could not fork to start slave\n")
+	/* child */
 	elif pid == 0
 		/* stdin/stdout for our communication. */
 		if dup2(infd, 0) != 0
@@ -47,6 +51,7 @@ const sporkfd = {cmd, infd, outfd
 		if execvp(cmd[0], cmd) < 0
 			fatal(1, "failed to exec %s\n")
 		;;
+	/* parent */
 	else
 		-> pid
 	;;
