@@ -10,7 +10,8 @@ pkg std =
 	type socktype	= int64	/* socket type */
 	type sockproto	= int64	/* socket protocol */
 	type sockfam	= uint8	/* socket family */
-	type filemode	= uint16
+	type filemode	= uint16	/* file permission bits */
+	type kflags	= uint16	/* kqueue flags */
 
 	type timespec = struct
 		sec	: uint64
@@ -97,6 +98,45 @@ pkg std =
 		typeid  : uint8		/* file type, see below */
 		name	: byte[0]
 	;;
+
+	type kevent = struct
+		ident	: intptr	/* identifier for this event */
+		filter	: int16		/* filter for event */
+		flags	: uint16	/* general flags */
+		fflags	: uint32	/* filter-specific flags */
+		data	: intptr	/* filter-specific data */
+		udata	: byte#		/* opaque user data identifier */
+	;;
+
+	type kevent64 = struct
+		ident	: uint64	/* identifier for this event */
+		filter	: int16		/* filter for event */
+		flags	: kflags	/* general flags */
+		fflags	: uint32	/* filter-specific flags */
+		data	: int64		/* filter-specific data */
+		udata	: uint64	/* opaque user data identifier */
+		ext	: uint64[2]	/* filter-specific extensions */
+	;;
+
+	/* kqueue events */
+	const Kevadd		: kflags = 0x0001	/* add event to kq (implies enable) */
+	const Kevdelete		: kflags = 0x0002	/* delete event from kq */
+	const Kevenable		: kflags = 0x0004	/* enable event */
+	const Kevdisable	: kflags = 0x0008	/* disable event (not reported) */
+	const Kevreceipt	: kflags = 0x0040	/* force EV_ERROR on success, data == 0 */
+
+	/* kqueue flags */
+	const Kevoneshot	: kflags = 0x0010	/* only report one occurrence */
+	const Kevclear		: kflags = 0x0020	/* clear event state after reporting */
+	const Kevdispatch	: kflags = 0x0080	/* disable event after reporting */
+
+	const Kevsysflags	: kflags = 0xf000	/* reserved by system */
+	const Kevflag0		: kflags = 0x1000	/* filter-specific flag */
+	const Kevflag1		: kflags = 0x2000	/* filter-specific flag */
+
+	/* kqueue returned values */
+	const Keveof		: kflags = 0x8000	/* eof detected */
+	const Keverror		: kflags = 0x4000	/* error, data contains errno */
 
 	/* open options */
 	const Ordonly  	: fdopt = 0x0
@@ -538,6 +578,15 @@ pkg std =
 
 	/* fd stuff */
 	const pipe	: (fd : fd[:] -> int64)
+	const dup	: (fd : fd -> fd)
+	const dup2	: (src : fd, dst : fd -> fd)
+
+	/* kqueue */
+	const kqueue	: (-> fd)
+	const kevent	: (q : fd, cl : kevent[:], el : kevent[:], flg : kflags, timeout : timespec# -> int64)
+	const kevent64	: (q : fd, cl : kevent64[:], el : kevent64[:], flg : kflags, timeout : timespec# -> int64)
+
+	
 
 	/* networking */
 	const socket	: (dom : sockfam, stype : socktype, proto : sockproto	-> fd)
@@ -643,7 +692,28 @@ const ioctl	= {fd, req, args
 }
 const getdirentries64	= {fd, buf, basep;	-> syscall(Sysgetdirentries64, fd, buf castto(byte#), buf.len castto(size), basep)}
 
+/* fd stuff */
 const pipe	= {fd;	-> __osx_pipe(fd castto(fd#))}
+const dup 	= {fd;	-> syscall(Sysdup, fd castto(uint64)) castto(fd)}
+const dup2 	= {src, dst;	-> syscall(Sysdup2, src castto(uint64), dst castto(uint64)) castto(fd)}
+
+/* kqueueueueueueue */
+const kqueue	= {;	-> syscall(Syskqueue) castto(fd)}
+const kevent	= {q, cl, el, flg, timeout
+	-> syscall(Syskevent, q castto(uint64), \
+		cl castto(kevent#), cl.len castto(uint64), \
+		el castto(kevent#), el.len castto(uint64), \
+		flg castto(uint64), \
+		timeout)
+}
+
+const kevent64	= {q, cl, el, flg, timeout
+	-> syscall(Syskevent, q castto(uint64), \
+		cl castto(kevent#), cl.len castto(uint64), \
+		el castto(kevent#), el.len castto(uint64), \
+		flg castto(uint64), \
+		timeout)
+}
 
 /* networking */
 const socket	= {dom, stype, proto;	-> syscall(Syssocket, dom castto(int64), stype, proto) castto(fd) }

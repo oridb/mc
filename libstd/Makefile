@@ -52,6 +52,7 @@ MYRSRC= \
     utf.myr \
     varargs.myr \
     waitstatus.myr \
+    zip.myr \
 
 ASMSRC= \
     syscall.s \
