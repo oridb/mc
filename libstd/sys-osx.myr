@@ -5,6 +5,7 @@ pkg std =
 	type scno 	= int64	/* syscall */
 	type fdopt	= int64	/* fd options */
 	type fd		= int32	/* fd */
+	type pid	= int64	/* pid */
 	type mprot	= int64	/* memory protection */
 	type mopt	= int64	/* memory mapping options */
 	type socktype	= int64	/* socket type */
@@ -553,11 +554,11 @@ pkg std =
 
 	/* process control */
 	const exit	: (status:int -> void)
-	const getpid	: ( -> int64)
-	const kill	: (pid:int64, sig:int64 -> int64)
-	const fork	: (-> int64)
-	const wait4	: (pid:int64, loc:int32#, opt : int64, usage:rusage#	-> int64)
-	const waitpid	: (pid:int64, loc:int32#, opt : int64	-> int64)
+	const getpid	: ( -> pid)
+	const kill	: (pid : pid, sig:int64 -> int64)
+	const fork	: (-> pid)
+	const wait4	: (pid : pid, loc:int32#, opt : int64, usage:rusage#	-> int64)
+	const waitpid	: (pid : pid, loc:int32#, opt : int64	-> int64)
 	const execv	: (cmd : byte[:], args : byte[:][:] -> int64)
 	const execve	: (cmd : byte[:], args : byte[:][:], env : byte[:][:] -> int64)
 
