@@ -646,12 +646,20 @@ pkg std =
 	const sysctl	: (mib : int[:], old : byte[:]#, new : byte[:] -> int)
 ;;
 
+/* 
+wraps a syscall argument, converting it to 64 bits for the syscall function. This is
+effectively the same as casting all the args, but shorter than a(writing)
+*/
+generic a = {x : @t
+	-> a(x)
+}
+
 extern const cstring	: (str : byte[:] -> byte#)
 extern const alloca	: (sz : size	-> byte#)
 extern const __cenvp : byte##
 
 /* process management */
-const exit	= {status;		syscall(Sysexit, status castto(int64))}
+const exit	= {status;		syscall(Sysexit, a(status))}
 const getpid	= {;			-> syscall(Sysgetpid, 1)}
 const kill	= {pid, sig;		-> syscall(Syskill, pid, sig)}
 const fork	= {;			-> syscall(Sysfork)}
@@ -671,7 +679,7 @@ const execv	= {cmd, args
 		cargs[i] = cstring(args[i])
 	;;
 	cargs[args.len] = 0 castto(byte#)
-	-> syscall(Sysexecve, cstring(cmd), p, __cenvp)
+	-> syscall(Sysexecve, cstring(cmd), a(p), a(__cenvp))
 }
 
 const execve	= {cmd, args, env
@@ -698,49 +706,50 @@ const execve	= {cmd, args, env
 	;;
 	cenv[env.len] = 0 castto(byte#)
 
-	-> syscall(Sysexecve, cstring(cmd), p, cenv)
+	-> syscall(Sysexecve, cstring(cmd), a(p), a(cenv))
 }
 
 /* fd manipulation */
-const open	= {path, opts;		-> syscall(Sysopen, cstring(path), opts, 0o777) castto(fd)}
-const openmode	= {path, opts, mode;	-> syscall(Sysopen, cstring(path), opts, mode) castto(fd)}
-const close	= {fd;			-> syscall(Sysclose, fd)}
+const open	= {path, opts;		-> syscall(Sysopen, cstring(path), a(opts), a(0o777)) castto(fd)}
+const openmode	= {path, opts, mode;	-> syscall(Sysopen, cstring(path), a(opts), a(mode)) castto(fd)}
+const close	= {fd;			-> syscall(Sysclose, a(fd))}
 const creat	= {path, mode;		-> openmode(path, Ocreat | Otrunc | Owronly, mode) castto(fd)}
-const read	= {fd, buf;		-> syscall(Sysread, fd, buf castto(byte#), buf.len castto(size)) castto(size)}
-const write	= {fd, buf;		-> syscall(Syswrite, fd, buf castto(byte#), buf.len castto(size)) castto(size)}
-const lseek	= {fd, off, whence;	-> syscall(Syslseek, fd, off, whence)}
-const stat	= {path, sb;		-> syscall(Sysstat, cstring(path), sb)}
-const lstat	= {path, sb;		-> syscall(Syslstat, cstring(path), sb)}
-const fstat	= {fd, sb;		-> syscall(Sysfstat, fd, sb)}
-const mkdir	= {path, mode;		-> syscall(Sysmkdir, cstring(path), mode) castto(int64)}
+const read	= {fd, buf;		-> syscall(Sysread, a(fd), buf castto(byte#), a(buf.len)) castto(size)}
+const write	= {fd, buf;		-> syscall(Syswrite, a(fd), buf castto(byte#), a(buf.len)) castto(size)}
+const lseek	= {fd, off, whence;	-> syscall(Syslseek, a(fd), a(off), a(whence))}
+const stat	= {path, sb;		-> syscall(Sysstat, cstring(path), a(sb))}
+const lstat	= {path, sb;		-> syscall(Syslstat, cstring(path), a(sb))}
+const fstat	= {fd, sb;		-> syscall(Sysfstat, a(fd), a(sb))}
+const mkdir	= {path, mode;		-> syscall(Sysmkdir, cstring(path), a(mode)) castto(int64)}
 const ioctl	= {fd, req, args
 	var arg : byte#
 	var ap
 
 	ap = vastart(&args)
 	(arg, ap) = vanext(ap)
-	-> syscall(Sysioctl, fd, req, arg) castto(int64)
+	-> syscall(Sysioctl, a(fd), a(req), a(arg)) castto(int64)
 }
-const getdirentries64	= {fd, buf, basep;	-> syscall(Sysgetdirentries, fd, buf castto(byte#), buf.len castto(size), basep)}
+const getdirentries64	= {fd, buf, basep;	-> syscall(Sysgetdirentries, a(fd), buf castto(byte#), a(buf.len), a(basep))}
 
 /* networking */
-const socket	= {dom, stype, proto;	-> syscall(Syssocket, dom castto(int64), stype, proto) castto(fd) }
-const connect	= {sock, addr, len;	-> syscall(Sysconnect, sock, addr, len) castto(int)}
-const accept	= {sock, addr, len;	-> syscall(Sysaccept, sock, addr, len) castto(fd)}
-const listen	= {sock, backlog;	-> syscall(Syslisten, sock, backlog castto(int64)) castto(int)}
-const bind	= {sock, addr, len;	-> syscall(Sysbind, sock, addr, len) castto(int)}
+const socket	= {dom, stype, proto;	-> syscall(Syssocket, a(dom), a(stype), a(proto)) castto(fd) }
+const connect	= {sock, addr, len;	-> syscall(Sysconnect, a(sock), a(addr), a(len)) castto(int)}
+const accept	= {sock, addr, len;	-> syscall(Sysaccept, a(sock), a(addr), a(len)) castto(fd)}
+const listen	= {sock, backlog;	-> syscall(Syslisten, a(sock), a(backlog)) castto(int)}
+const bind	= {sock, addr, len;	-> syscall(Sysbind, a(sock), a(addr), a(len)) castto(int)}
 
 /* memory management */
-const munmap	= {addr, len;		-> syscall(Sysmunmap, addr, len)}
-const mmap	= {addr, len, prot, flags, fd, off;	-> syscall(Sysmmap, addr, len, prot, flags, fd, off) castto(byte#)}
+const munmap	= {addr, len;		-> syscall(Sysmunmap, a(addr), a(len))}
+const mmap	= {addr, len, prot, flags, fd, off;
+	-> syscall(Sysmmap, a(addr), a(len), a(prot), a(flags), a(fd), a(off)) castto(byte#)}
 
 /* time */
-const clock_getres = {clk, ts;	-> syscall(Sysclock_getres, clockid(clk), ts) castto(int32)}
-const clock_gettime = {clk, ts;	-> syscall(Sysclock_gettime, clockid(clk), ts) castto(int32)}
-const clock_settime = {clk, ts;	-> syscall(Sysclock_settime, clockid(clk), ts) castto(int32)}
+const clock_getres = {clk, ts;	-> syscall(Sysclock_getres, clockid(clk), a(ts)) castto(int32)}
+const clock_gettime = {clk, ts;	-> syscall(Sysclock_gettime, clockid(clk), a(ts)) castto(int32)}
+const clock_settime = {clk, ts;	-> syscall(Sysclock_settime, clockid(clk), a(ts)) castto(int32)}
 
 /* system information */
-const uname	= {buf;	-> syscall(Sysfreebsd4_uname, buf) castto(int)}
+const uname	= {buf;	-> syscall(Sysfreebsd4_uname, a(buf)) castto(int)}
 
 const sysctl = {mib, old, new
 	var mibp
@@ -753,14 +762,15 @@ const sysctl = {mib, old, new
 	var ret
 
 	mibp = mib castto(byte#)
-	mibsz = mib.len castto(uint64)
+	mibsz = a(mib.len)
 	o = old#
 	oldp = o castto(byte#)
-	oldsz = o.len castto(uint64)
+	oldsz = a(o.len)
 	newp = new castto(byte#)
-	newsz = new castto(uint64)
+	newsz = a(new)
 
-	ret = syscall(Sys__sysctl, mibp, mibsz, oldp, &oldsz, newp, newsz) castto(int)
+	/* all args already passed through a() or ar  ptrs */
+	ret = syscall(Sys__sysctl, mibp, mibsz, oldp, oldsz, newp, newsz) castto(int)
 
 	old# = o[:oldsz]
 	-> ret
@@ -781,5 +791,5 @@ const clockid = {clk
 	| `Clockmonotonic_fast:		-> 12
 	| `Clocksecond:			-> 13
 	;;
-	-> -1
+	-> a(-1)
 }
