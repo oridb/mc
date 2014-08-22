@@ -601,7 +601,7 @@ pkg std =
 
 /* 
 wraps a syscall argument, converting it to 64 bits for the syscall function. This is
-effectively the same as casting all the args, but shorter than writing castto(int64)
+the same as casting, but more concise than writing castto(int64)
 */
 generic a = {x : @t
 	-> x castto(uint64)
