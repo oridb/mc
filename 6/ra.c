@@ -1042,7 +1042,7 @@ static int remap(Isel *s, Insn *insn, Remapping *use, size_t *nuse, Remapping *d
         found = 0;
         for (j = 0; j < defidx; j++) {
             for (k = 0; i < useidx; k++) {
-                if (use[j].oldreg == d[k]) {
+                if (use[k].oldreg == d[j]) {
                     def[defidx].newreg = use[j].newreg;
                     bsput(s->neverspill, def[defidx].newreg->reg.id);
                     found = 1;
