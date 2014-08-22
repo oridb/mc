@@ -1426,7 +1426,7 @@ static void specializeimpl(Inferstate *st, Node *n)
                 break;
             }
         }
-        if (!dcl || !proto)
+        if (!proto)
             fatal(n->line, "Declaration %s missing in %s, near %s\n",
                   namestr(dcl->decl.name), namestr(t->name), ctxstr(st, n));
 
