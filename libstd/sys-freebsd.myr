@@ -767,7 +767,7 @@ const sysctl = {mib, old, new
 	oldp = o castto(byte#)
 	oldsz = a(o.len)
 	newp = new castto(byte#)
-	newsz = a(new)
+	newsz = a(new.len)
 
 	/* all args already passed through a() or ar  ptrs */
 	ret = syscall(Sys__sysctl, mibp, mibsz, oldp, oldsz, newp, newsz) castto(int)
