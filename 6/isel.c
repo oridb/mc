@@ -1194,8 +1194,8 @@ void genasm(FILE *fd, Func *fn, Htab *globls, Htab *strtab)
         is.curbb = is.bb[j];
         for (i = 0; i < fn->cfg->bb[j]->nnl; i++) {
             /* put in a comment that says where this line comes from */
-            snprintf(buf, sizeof buf, "\n\t# bb = %zd, bbidx = %zd, line=%d",
-                     j, i, fn->cfg->bb[j]->nl[i]->line);
+            snprintf(buf, sizeof buf, "\n\t# bb = %zd, bbidx = %zd, %s:%d",
+                     j, i, file->file.name, fn->cfg->bb[j]->nl[i]->line);
             g(&is, Ilbl, locstrlbl(buf), NULL);
             isel(&is, fn->cfg->bb[j]->nl[i]);
         }
