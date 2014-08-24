@@ -11,10 +11,10 @@ const now = {
 	var tm
 	var sec
 	var nsec
-	
-	sec = tm.sec
-	nsec = tm.nsec castto(uint64)
-	if clock_gettime(`Clockrealtime, &tm) == 0
+
+	if clock_gettime(`Clockrealtime, &tm) == 0	
+		sec = tm.sec
+		nsec = tm.nsec castto(uint64)
 		-> (sec*1000 + nsec/(1000*1000)) castto(time)
 	else
 		-> -1
