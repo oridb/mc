@@ -7,4 +7,5 @@ OBJ=isel.o \
 
 DEPS=../parse/libparse.a ../mi/libmi.a
 
+include ../config.mk
 include ../mk/c.mk
