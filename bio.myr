@@ -24,6 +24,7 @@ pkg bio =
 	/* creation */
 	const mkfile	: (fd : std.fd, mode : mode	-> file#)
 	const open	: (path : byte[:], mode : mode	-> std.option(file#))
+	const dial	: (srv	: byte[:], mode : mode	-> std.option(file#))
 	const create	: (path : byte[:], mode : mode, perm : int	-> std.option(file#))
 	const close	: (f : file# -> bool)
 
@@ -93,6 +94,14 @@ const open = {path, mode
 */
 const create = {path, mode, perm
 	-> sysopen(path, mode, sysmode(mode) | std.Ocreat, perm)
+}
+
+/* dial the server, and open a file using the returned fd */
+const dial = {srv, mode
+	match std.dial(srv)
+	| `std.Ok sock:	-> `std.Some mkfile(sock, mode)
+	| `std.Fail _:	-> `std.None
+	;;
 }
 
 /* map from the bio modes to the unix open modes */
