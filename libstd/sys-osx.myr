@@ -622,8 +622,20 @@ generic a = {x : @t
 	-> x castto(uint64)
 }
 
-extern const __osx_fork : (-> pid)
+/* OSX has a number of funky syscalls */
+extern const __osx_fork	: (-> pid)
 extern const __osx_pipe : (fd : fd# -> int64)
+extern const __osx_getpid	: (-> pid)
+extern const __osx_lseek	: (fd:fd, off:uint64, whence:int64 -> int64)
+extern const __osx_gettimeofday	: (tv : timeval#, tz : timezone# -> int)
+/*
+extern const __osx_ptrace
+extern const __osx_signalstack
+extern const __osx_sigreturn
+extern const __osx_thread_selfid
+extern const __osx_vfork
+*/
+
 extern const cstring : (str : byte[:] -> byte#)
 extern const alloca : (sz : size -> byte#)
 extern const __cenvp : byte##
@@ -737,7 +749,7 @@ const mmap	= {addr, len, prot, flags, fd, off;
 	-> syscall(Sysmmap, a(addr), a(len), a(prot), a(flags), a(fd), a(off)) castto(byte#)}
 
 /* time */
-const gettimeofday = {tv, tz;	-> syscall(Sysgettimeofday, a(tv), a(tz)) castto(int)}
+const gettimeofday = {tv, tz;	-> __osx_gettimeofday(tv, tz) castto(int)}
 const settimeofday = {tv, tz;	-> syscall(Syssettimeofday, a(tv), a(tz)) castto(int)}
 
 /* faked  with gettimeofday */
