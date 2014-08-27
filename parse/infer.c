@@ -624,28 +624,64 @@ static int hasparam(Type *t)
     return t->type == Tyname && t->narg > 0;
 }
 
-static void membunify(Inferstate *st, Node *ctx, Type *u, Type *v) {
-    size_t i;
+static void unionunify(Inferstate *st, Node *ctx, Type *u, Type *v)
+{
+    size_t i, j;
+    int found;
 
+    if (u->nmemb != v->nmemb)
+        fatal(ctx->line, "can't unify %s and %s near %s\n", tystr(u), tystr(v), ctxstr(st, ctx));
+
+    for (i = 0; i < u->nmemb; i++) {
+        found = 0;
+        for (j = 0; j < v->nmemb; j++) {
+            if (strcmp(namestr(u->udecls[i]->name), namestr(v->udecls[i]->name)) != 0)
+                continue;
+            found = 1;
+            if (u->udecls[i]->etype == NULL && v->udecls[i]->etype == NULL)
+                continue;
+            else if (u->udecls[i]->etype && v->udecls[i]->etype)
+                unify(st, ctx, u->udecls[i]->etype, v->udecls[i]->etype);
+            else
+                fatal(ctx->line, "can't unify %s and %s near %s\n", tystr(u), tystr(v), ctxstr(st, ctx));
+        }
+        if (!found)
+            fatal(ctx->line, "can't unify %s and %s near %s\n", tystr(u), tystr(v), ctxstr(st, ctx));
+    }
+}
+
+static void structunify(Inferstate *st, Node *ctx, Type *u, Type *v)
+{
+    size_t i, j;
+    int found;
+
+    if (u->nmemb != v->nmemb)
+        fatal(ctx->line, "can't unify %s and %s near %s\n", tystr(u), tystr(v), ctxstr(st, ctx));
+
+    for (i = 0; i < u->nmemb; i++) {
+        found = 0;
+        for (j = 0; j < v->nmemb; j++) {
+            if (strcmp(namestr(u->sdecls[i]->decl.name), namestr(v->sdecls[i]->decl.name)) != 0)
+                continue;
+            found = 1;
+            unify(st, u->sdecls[i], type(st, u->sdecls[i]), type(st, v->sdecls[i]));
+        }
+        if (!found)
+            fatal(ctx->line, "can't unify %s and %s near %s\n", tystr(u), tystr(v), ctxstr(st, ctx));
+    }
+}
+
+static void membunify(Inferstate *st, Node *ctx, Type *u, Type *v) {
     if (hthas(st->delayed, u))
         u = htget(st->delayed, u);
     u = tybase(u);
     if (hthas(st->delayed, v))
         v = htget(st->delayed, v);
     v = tybase(v);
-    if (u->type == Tyunion && v->type == Tyunion && u != v) {
-        assert(u->nmemb = v->nmemb);
-        for (i = 0; i < v->nmemb; i++) {
-            if (u->udecls[i]->etype)
-                unify(st, ctx, u->udecls[i]->etype, v->udecls[i]->etype);
-        }
-    } else if (u->type == Tystruct && v->type == Tystruct && u != v) {
-        assert(u->nmemb = v->nmemb);
-        for (i = 0; i < v->nmemb; i++) {
-            assert(!strcmp(namestr(u->sdecls[i]->decl.name), namestr(v->sdecls[i]->decl.name)));
-            unify(st, u->sdecls[i], type(st, u->sdecls[i]), type(st, v->sdecls[i]));
-        }
-    }
+    if (u->type == Tyunion && v->type == Tyunion && u != v)
+        unionunify(st, ctx, u, v);
+    else if (u->type == Tystruct && v->type == Tystruct && u != v)
+        structunify(st, ctx, u, v);
 }
 
 /* Unifies two types, or errors if the types are not unifiable. */
