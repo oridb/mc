@@ -6,7 +6,7 @@ pkg std =
 	const now	: (-> time)
 ;;
 
-/* milliseconds since epoch */
+/* microseconds since epoch */
 const now = {
 	var tm
 	var sec
@@ -15,7 +15,7 @@ const now = {
 	if clock_gettime(`Clockrealtime, &tm) == 0	
 		sec = tm.sec
 		nsec = tm.nsec castto(uint64)
-		-> (sec*1000 + nsec/(1000*1000)) castto(time)
+		-> (sec*1_000_000 + nsec/1000) castto(time)
 	else
 		-> -1
 	;;
