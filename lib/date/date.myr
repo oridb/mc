@@ -1,21 +1,8 @@
 use std
+use "types.use"
+use "zoneinfo.use"
 
 pkg date =
-	type date = struct
-		actual	: std.time	/* epoch time in microseconds */
-		tzoff	: diff	/* timezone offset in microseconds */
-		year	: int	/* year, starting at 0 (ie, 1 BCE) */
-		mon	: int	/* month, [1..12] */
-		day	: int	/* day, [1..31] */
-		wday	: int	/* weekday, [0..6] */
-		h	: int	/* hour: [0..23] */
-		m	: int	/* minute: [0..59] */
-		s	: int	/* second: [0..59] */
-		us	: int	/* microsecond: [0..999,999] */
-	;;
-
-	type diff = std.time
-
 	/* date i/o */
 	const parse	: (d : byte[:]	-> date)
 	const parsefmt	: (fmt : byte[:], d : byte[:]	-> date)
@@ -25,7 +12,7 @@ pkg date =
 
 	/* useful constructors */
 	const mkdate	: (tm : std.time, tz : diff -> date)
-	const now	: (-> date)
+	const now	: (tz : byte[:] -> date)
 	const utcnow	: (-> date)
 	const localoff	: (-> diff)
 	const tzoff	: (tzname : byte[:]	-> diff)
@@ -39,16 +26,16 @@ const Unix2Julian	= 719468
 const Days400y	= 365*400 + 4*25 - 3
 const Days4y	= 365*4 + 1
 
-const now = {
-	-> utcnow()
-}
-
-const utcnow = {
+const now = {tz : byte[:]
 	var tm
 
 	tm = std.now()
-	std.put("tm = %l\n", tm)
-	-> mkdate(tm, 0)
+	std.put("%l\n", _zoneinfo.findtzoff(tz, tm))
+	-> mkdate(tm, _zoneinfo.findtzoff(tz, tm))
+}
+
+const utcnow = {
+	-> mkdate(std.now(), 0)
 }
 
 const mkdate = {tm, off

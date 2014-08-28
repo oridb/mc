@@ -1,8 +1,11 @@
 use std
+use "types.use"
 
-pkg _timezone =
+pkg _zoneinfo =
 	type zifile
+	const findtzoff : (tz : byte[:], tm : std.time -> date.diff)
 	const load	: (file : byte[:] -> zifile#)
+	const free	: (f : zifile# -> void)
 ;;
 
 type zifile = struct
@@ -21,26 +24,45 @@ type ttinfo = struct
 	abbrind	: byte
 ;;
 
-const load = {file
-	var nisgmt
-	var nisstd
-	var nleap
-	var ntime
-	var ntype
-	var nchar
+const findtzoff = {tz, tm
+	var path
+	var zone
+	var cur
+	var ds
 	var i
-	var f
-	var p
+
+	/* load zone */
+	match std.getenv("ZI")
+	| `std.Some zi:	path = zi
+	| `std.None:	path = "/etc/localtime"
+	;;
+	zone = load(path)
+
+	/* find applicable gmt offset */
+	cur = (tm / 1_000_000) castto(int32)
+	if zone.time.len == 0
+		-> 0
+	;;
+	for i = 0; i < zone.time.len && cur < zone.time[i]; i++
+		/* nothing */
+	;;
+	ds = zone.ttinfo[zone.timetype[i]].gmtoff
+	free(zone)
+	->  (ds castto(date.diff)) * 1_000_000
+}
+
+const load = {file
+	var nisgmt, nisstd, nleap, ntime, ntype, nchar
+	var i, f, p
 
 	/* check magic */
 	match std.slurp(file)
 	| `std.Ok d:	p = d
 	| `std.Fail m:	
-		std.put("unable to load zone: %s\n", m)
 		-> std.zalloc()
 	;;
 
-	if !std.sleq(p[:4], "TZif")
+	if !std.sleq(p[:4], "TZif\0")
 		std.put("%s is not a zone info file\n", file)
 		-> std.zalloc()
 	;;
@@ -92,8 +114,18 @@ const load = {file
 		(f.isgmt[i], p) = fetchbe8(p)
 	;;
 
-
 	-> f
+}
+
+const free = {zi
+	std.slfree(zi.time)
+	std.slfree(zi.timetype)
+	std.slfree(zi.ttinfo)
+	std.slfree(zi.abbrev)
+	std.slfree(zi.leap)
+	std.slfree(zi.isstd)
+	std.slfree(zi.isgmt)
+	std.free(zi)
 }
 
 const fetchbe32 = {sl

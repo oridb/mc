@@ -1,0 +1,18 @@
+use std
+
+pkg date = 
+	type date = struct
+		actual	: std.time	/* epoch time in microseconds */
+		tzoff	: diff	/* timezone offset in microseconds */
+		year	: int	/* year, starting at 0 (ie, 1 BCE) */
+		mon	: int	/* month, [1..12] */
+		day	: int	/* day, [1..31] */
+		wday	: int	/* weekday, [0..6] */
+		h	: int	/* hour: [0..23] */
+		m	: int	/* minute: [0..59] */
+		s	: int	/* second: [0..59] */
+		us	: int	/* microsecond: [0..999,999] */
+	;;
+
+	type diff = std.time
+;;
