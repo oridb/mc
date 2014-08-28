@@ -19,7 +19,7 @@ const main = {args : byte[:][:]
 	var a
 	var buf
 
-	std.put("The time is %l seconds past the epoch\n", std.now()/1000);
+	std.put("The time is %l seconds past the epoch\n", std.now()/1_000_000);
 	std.uname(&buf)
 	std.put("And you are running on:\n")
 	std.put("\tsystem:\t\"%s\"\n", ntstr(buf.system[:]))
