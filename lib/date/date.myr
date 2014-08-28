@@ -35,11 +35,9 @@ pkg date =
 	const diff	: (a : date, b : date -> diff)
 ;;
 
-const monthbound	= [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 ]
-const leapmonthbound	= [0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 ]
-const Day400y	= (365*400 + 24*4 + 1)
-const Day100y	= (365*100 + 24)
-const Day4y	= (365*4 + 1)
+const Unix2Julian	= 719468
+const Days400y	= 365*400 + 4*25 - 3
+const Days4y	= 365*4 + 1
 
 const now = {
 	-> utcnow()
@@ -79,19 +77,18 @@ const mkdate = {tm, off
 	/*
 	year, month, day: 
 
-	Implemented according to algorithm 199, conversions between calendar 
-	date and Julian day number:
-	Robert G. Tantzen
-	Air Force Missile: Development Center, Holloman AFB, New Mex.
+	Implemented according to "Algorithm 199, conversions between calendar 
+	date and Julian day number", Robert G. Tantzen, Air Force Missile Development
+	Center, Holloman AFB, New Mex.
 
-	Lots of magic.
+	Lots of magic. Yer a wizard, 'arry.
 	*/
-	j = e + 719468
-	y = (4 * j - 1) / 146097
-	j = 4 * j - 1 - 146097 * y
+	j = e + Unix2Julian
+	y = (4 * j - 1) / Days400y
+	j = 4 * j - 1 - Days400y * y
 	d = j / 4
-	j = (4 * d + 3) / 1461
-	d = 4 * d + 3 - 1461 * j
+	j = (4 * d + 3) / Days4y
+	d = 4 * d + 3 - Days4y * j
 	d = (d + 4) / 4 ;
 	m = (5 * d - 3) / 153
 	d = 5 * d - 3 - 153 * m
