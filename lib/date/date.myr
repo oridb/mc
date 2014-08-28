@@ -1,0 +1,118 @@
+use std
+
+pkg date =
+	type date = struct
+		actual	: std.time	/* epoch time in microseconds */
+		tzoff	: diff	/* timezone offset in microseconds */
+		year	: int	/* year, starting at 0 (ie, 1 BCE) */
+		mon	: int	/* month, [1..12] */
+		day	: int	/* day, [1..31] */
+		wday	: int	/* weekday, [0..6] */
+		h	: int	/* hour: [0..23] */
+		m	: int	/* minute: [0..59] */
+		s	: int	/* second: [0..59] */
+		us	: int	/* microsecond: [0..999,999] */
+	;;
+
+	type diff = std.time
+
+	/* date i/o */
+	const parse	: (d : byte[:]	-> date)
+	const parsefmt	: (fmt : byte[:], d : byte[:]	-> date)
+	const parsez	: (d : byte[:], tz : byte[:]	-> date)
+	const fmt	: (d : date	-> byte[:])
+	const bfmt	: (d : date, buf : byte[:]	-> byte[:])
+
+	/* useful constructors */
+	const mkdate	: (tm : std.time, tz : diff -> date)
+	const now	: (-> date)
+	const utcnow	: (-> date)
+	const localoff	: (-> diff)
+	const tzoff	: (tzname : byte[:]	-> diff)
+
+	/* date differences */
+	const add	: (d : date, dt : diff	-> date)
+	const diff	: (a : date, b : date -> diff)
+;;
+
+const monthbound	= [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 ]
+const leapmonthbound	= [0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 ]
+const Day400y	= (365*400 + 24*4 + 1)
+const Day100y	= (365*100 + 24)
+const Day4y	= (365*4 + 1)
+
+const now = {
+	-> utcnow()
+}
+
+const utcnow = {
+	var tm
+
+	tm = std.now()
+	std.put("tm = %l\n", tm)
+	-> mkdate(tm, 0)
+}
+
+const mkdate = {tm, off
+	var j, y, m, d
+	var t, e
+	var date
+
+	/* apply time zone offset */
+	tm += off castto(std.time)
+	t = tm % (24*60*60*1_000_000)	/* time */
+	e = tm / (24*60*60*1_000_000)	/* epoch days */
+
+	date.actual = tm
+
+	/* microseconds, seconds, minutes, hours */
+	date.us 	= (t % 1_000_000) castto(int)
+	t /= 1_000_000
+	date.s 	= (t % 60) castto(int)
+	t /= 60
+	date.m	= (t % 60) castto(int)
+	t /= 60
+	date.h  = t castto(int)
+
+	/* weekday */
+	date.wday = ((e + 4) % 7) castto(int)	/* the world started on Thursday */
+	/*
+	year, month, day: 
+
+	Implemented according to algorithm 199, conversions between calendar 
+	date and Julian day number:
+	Robert G. Tantzen
+	Air Force Missile: Development Center, Holloman AFB, New Mex.
+
+	Lots of magic.
+	*/
+	j = e + 719468
+	y = (4 * j - 1) / 146097
+	j = 4 * j - 1 - 146097 * y
+	d = j / 4
+	j = (4 * d + 3) / 1461
+	d = 4 * d + 3 - 1461 * j
+	d = (d + 4) / 4 ;
+	m = (5 * d - 3) / 153
+	d = 5 * d - 3 - 153 * m
+	d = (d + 5) / 5
+	y = 100 * y + j
+	if m < 10
+		m += 3
+	else
+		m -= 9 
+		y++
+	;;
+	date.year = y castto(int)
+	date.mon = m castto(int)
+	date.day = (d + 1) castto(int)
+	-> date
+}
+
+const ndays = {y
+	if y % 4 == 0 && (y % 100 != 0 || y % 400 == 0)
+		-> 366
+	else
+		-> 365
+	;;
+}
