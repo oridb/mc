@@ -58,12 +58,12 @@ const mkdate = {tm, off
 	var t, e
 	var date
 
-	/* apply time zone offset */
+	date.actual = tm
+	date.tzoff = off
 	tm += off castto(std.time)
 	t = tm % (24*60*60*1_000_000)	/* time */
 	e = tm / (24*60*60*1_000_000)	/* epoch days */
 
-	date.actual = tm
 
 	/* microseconds, seconds, minutes, hours */
 	date.us 	= (t % 1_000_000) castto(int)
