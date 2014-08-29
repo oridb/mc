@@ -8,7 +8,7 @@ pkg date =
 	const parsefmt	: (fmt : byte[:], d : byte[:]	-> date)
 	const parsez	: (d : byte[:], tz : byte[:]	-> date)
 	const fmt	: (d : date	-> byte[:])
-	const bfmt	: (d : date, buf : byte[:]	-> byte[:])
+	const bfmt	: (buf : byte[:], d : date	-> std.size)
 
 	/* useful constructors */
 	const mkdate	: (tm : std.time, tz : diff -> date)
@@ -26,11 +26,18 @@ const Unix2Julian	= 719468
 const Days400y	= 365*400 + 4*25 - 3
 const Days4y	= 365*4 + 1
 
+const fmt = {d
+	-> std.fmt("%04i-%02i-%02i %i:%i:%i", d.year, d.mon, d.day, d.h, d.m, d.s)
+}
+
+const bfmt = {buf, d
+	-> std.bfmt(buf, "%04i-%02i-%02i %i:%i:%i", d.year, d.mon, d.day, d.h, d.m, d.s)
+}
+
 const now = {tz : byte[:]
 	var tm
 
 	tm = std.now()
-	std.put("%l\n", _zoneinfo.findtzoff(tz, tm))
 	-> mkdate(tm, _zoneinfo.findtzoff(tz, tm))
 }
 
