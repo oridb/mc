@@ -263,8 +263,11 @@ const bfmtv = {buf, fmt, ap
 			| 'p':
 				(p_val, ap) = vanext(ap)
 				n += intfmt(buf[n:], p_val castto(int64), 16, false, padto, padfill)
-                        | 'c':    (c_val, ap) = vanext(ap)
-                                n += encode(buf[n:], c_val)
+			| 'c':
+				(c_val, ap) = vanext(ap)
+				n += encode(buf[n:], c_val)
+			| '%':
+				n += encode(buf[n:], '%')
                         | _:
                                 die("Unknown format specifier\n")
 			;;
