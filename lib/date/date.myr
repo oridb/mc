@@ -18,13 +18,14 @@ pkg date =
 	const utcnow	: (-> date)
 	const localoff	: (-> diff)
 	const tzoff	: (tzname : byte[:]	-> diff)
+	const time	: (d : date	-> std.time)
 
 	/* date differences */
 	const add	: (d : date, dt : diff	-> date)
 	const diff	: (a : date, b : date -> diff)
 ;;
 
-const Unix2Julian	= 719468
+const UnixJulianDiff	= 719468
 const Days400y	= 365*400 + 4*25 - 3
 const Days4y	= 365*4 + 1
 
@@ -87,7 +88,7 @@ const mkdate = {tm, off
 
 	Lots of magic. Yer a wizard, 'arry.
 	*/
-	j = e + Unix2Julian
+	j = e + UnixJulianDiff
 	y = (4 * j - 1) / Days400y
 	j = 4 * j - 1 - Days400y * y
 	d = j / 4
@@ -108,6 +109,35 @@ const mkdate = {tm, off
 	date.mon = m castto(int)
 	date.day = (d + 1) castto(int)
 	-> date
+}
+
+const time = {date
+	var t
+	var c, y, ya, m, u
+
+	t = 0
+
+	if date.mon > 2
+		m = (date.mon - 3) castto(std.time)
+	else
+		m = (date.mon + 9) castto(std.time)
+		y = (date.year - 1) castto(std.time)
+	;;
+	
+	c = y / 100
+	ya = y - 100 * c
+	u = (146097 * c) / 4 + \
+		(1461 * ya) / 4 + \
+		(153 * m + 2) / 5 + \
+		(date.day castto(std.time)) + \
+		UnixJulianDiff
+
+	t += (u * 24*60*60*1_000_000)
+	t += (date.h castto(std.time)) * 60*60*1_000_000
+	t += (date.m castto(std.time)) * 60*1_000_000
+	t += (date.s castto(std.time)) * 1_000_000
+	t += date.us castto(std.time)
+	-> t
 }
 
 const ndays = {y
