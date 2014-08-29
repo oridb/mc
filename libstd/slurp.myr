@@ -8,26 +8,30 @@ use "types.use"
 
 pkg std =
 	const slurp : (path : byte[:] -> result(byte[:], byte[:]))
+	const fslurp : (path : fd -> result(byte[:], byte[:]))
 ;;
 
 const Bufinc = 4096
 
 const slurp = {path
 	var fd
-	var n
-	var len
-	var buf
-
 	fd = open(path, Ordonly)
 	if fd < 0
 		-> `Fail "Could not open file"
 	;;
+	-> fslurp(fd)
+}
+
+const fslurp = {fd
+	var n
+	var len
+	var buf
 
 	len = 0
 	buf = slalloc(Bufinc)
 	while true
 		n = read(fd, buf[len:])
-		if n == 0
+		if n <= 0
 			goto done
 		;;
 		len += n castto(size)
