@@ -8,7 +8,7 @@ pkg date =
 	const bftime	: (buf : byte[:], f : byte[:], d : instant	-> std.size)
 ;;
 
-const Datetimefmt	= "%Y-%m-%d %h:%m:%s %z"
+const Datetimefmt	= "%Y-%m-%d %H:%M:%S %z"
 const Timefmt	= "%h:%m:%s %z"
 const Datefmt	= "%Y-%m-%d %z"
 
@@ -87,8 +87,8 @@ const bftime = {buf, f, d
 			| 'U':	o += std.bfmt(buf[o:], "week number... unimplemented.")
 			| 'x':	o += bftime(buf[o:], Datefmt, d)
 			| 'X':	o += bftime(buf[o:], Timefmt, d)
-			| 'y':	o += std.bfmt(buf[o:], "%i", d.year)
-			| 'Y':	o += std.bfmt(buf[o:], "%i", d.year % 100)
+			| 'y':	o += std.bfmt(buf[o:], "%i", d.year % 100)
+			| 'Y':	o += std.bfmt(buf[o:], "%i", d.year)
 			| 'z':	o += timezone(buf[o:], d.tzoff)
 			| 'Z':	o += std.bfmt(buf[o:], "%s", d.tzname)
 			| '%':	o += std.bfmt(buf[o:], "%%")
@@ -102,11 +102,14 @@ const bftime = {buf, f, d
 
 const timezone = {buf, off
 	var h, m
+	var sep
 
-	h = off % 3600
-	m = off / 3600
+	sep = "+"
 	if off < 0
 		off = -off
+		sep = "-"
 	;;
-	-> std.bfmt(buf, "%i:%i", h, m)
+	h = off % 3600
+	m = off / 3600
+	-> std.bfmt(buf, "%s%02i%02i", sep, h, m)
 }
