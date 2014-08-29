@@ -24,19 +24,39 @@ type ttinfo = struct
 	abbrind	: byte
 ;;
 
+const zonepath = [
+	"/usr/share/zoneinfo",
+	"/share/zoneinfo",
+	"/etc/zoneinfo"
+]
+
 const findtzoff = {tz, tm
 	var path
 	var zone
 	var cur
+	var sb
 	var ds
 	var i
 
 	/* load zone */
-	match std.getenv("ZI")
-	| `std.Some zi:	path = zi
-	| `std.None:	path = "/etc/localtime"
+	if std.sleq(tz, "") || std.sleq(tz, "UTC")
+		-> 0
+	elif std.sleq(tz, "local")
+		path = std.sldup("/etc/localtime")
+	else
+		for z in zonepath
+			path = std.pathcat(z, tz)
+			if std.stat(path, &sb) == 0
+				goto found
+			;;
+			std.slfree(path)
+		;;
+		std.slfree(path)
+		-> 0
 	;;
+:found
 	zone = load(path)
+	std.slfree(path)
 
 	/* find applicable gmt offset */
 	cur = (tm / 1_000_000) castto(int32)
@@ -154,4 +174,3 @@ const fetchttinfo = {sl, dst : ttinfo#
 	(dst.abbrind, sl) = fetchbe8(sl)
 	-> sl
 }
-

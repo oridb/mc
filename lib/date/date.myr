@@ -3,66 +3,54 @@ use "types.use"
 use "zoneinfo.use"
 
 pkg date =
-	/* date i/o */
-	const parse	: (d : byte[:]	-> date)
-	const parsefmt	: (fmt : byte[:], d : byte[:]	-> date)
-	const parsez	: (d : byte[:], tz : byte[:]	-> date)
-	const fmt	: (d : date	-> byte[:])
-	const fmtymd	: (d : date	-> byte[:])
-	const bfmt	: (buf : byte[:], d : date	-> std.size)
-	const bfmtymd	: (buf : byte[:], d : date	-> std.size)
-
 	/* useful constructors */
-	const mkdate	: (tm : std.time, tz : diff -> date)
-	const now	: (tz : byte[:] -> date)
-	const utcnow	: (-> date)
-	const localoff	: (-> diff)
-	const tzoff	: (tzname : byte[:]	-> diff)
+	const utcnow	: (-> instant)
+	const now	: (tz : byte[:] -> instant)
+	const mkdate	: (tm : std.time, zone : byte[:] -> instant)
+
+	const localoff	: (tm : std.time -> diff)
+	const tzoff	: (tzname : byte[:], tm : std.time	-> diff)
+	const isleap	: (d : instant	-> bool)
 
 	/* date differences */
-	const add	: (d : date, dt : diff	-> date)
-	const diff	: (a : date, b : date -> diff)
+	const add	: (d : instant, dt : diff	-> instant)
+	const sub	: (d : instant, dt : diff	-> instant)
+	const diff	: (a : instant, b : instant	-> diff)
+	const duradd	: (d : instant, dt : duration	-> instant)
+	const dursub	: (d : instant, dt : duration	-> instant)
 ;;
 
 const Unix2Julian	= 719468
 const Days400y	= 365*400 + 4*25 - 3
 const Days4y	= 365*4 + 1
 
-const fmt = {d
-	-> std.fmt("%04i-%02i-%02i %i:%i:%i", d.year, d.mon, d.day, d.h, d.m, d.s)
-}
-
-const fmtymd = {d
-	-> std.fmt("%04i-%02i-%02i", d.year, d.mon, d.day)
-}
-
-const bfmt = {buf, d
-	-> std.bfmt(buf, "%04i-%02i-%02i %i:%i:%i", d.year, d.mon, d.day, d.h, d.m, d.s)
-}
-
-const bfmtymd = {buf, d
-	-> std.bfmt(buf, "%04i-%02i-%02i", d.year, d.mon, d.day)
+const utcnow = {
+	-> mkdate(std.now(), "")
 }
 
 const now = {tz : byte[:]
 	var tm
 
 	tm = std.now()
-	-> mkdate(tm, _zoneinfo.findtzoff(tz, tm))
+	-> mkdate(tm, tz)
 }
 
-const utcnow = {
-	-> mkdate(std.now(), 0)
-}
-
-const mkdate = {tm, off
+const mkdate = {tm, tz 
 	var j, y, m, d
 	var t, e
 	var date
+	var off
 
 	date.actual = tm
+	/* time zones */
+	std.assert(tz.len <= date._tzbuf.len, "time zone name too long\n")
+	off =_zoneinfo.findtzoff(tz, tm) 
 	date.tzoff = off
+	std.slcp(date._tzbuf[:tz.len], tz)
+	date.tzname = date._tzbuf[:tz.len]
 	tm += off castto(std.time)
+
+	/* break up time */
 	t = tm % (24*60*60*1_000_000)	/* time */
 	e = tm / (24*60*60*1_000_000)	/* epoch days */
 
@@ -78,8 +66,9 @@ const mkdate = {tm, off
 
 	/* weekday */
 	date.wday = ((e + 4) % 7) castto(int)	/* the world started on Thursday */
+
 	/*
-	year, month, day: 
+	split up year, month, day.
 
 	Implemented according to "Algorithm 199, conversions between calendar 
 	date and Julian day number", Robert G. Tantzen, Air Force Missile Development
@@ -110,10 +99,28 @@ const mkdate = {tm, off
 	-> date
 }
 
-const ndays = {y
-	if y % 4 == 0 && (y % 100 != 0 || y % 400 == 0)
-		-> 366
-	else
-		-> 365
-	;;
+const localoff = {tm
+	-> _zoneinfo.findtzoff("local", tm)
 }
+
+const tzoff = {tz, tm
+	-> _zoneinfo.findtzoff(tz, tm)
+}
+
+
+const isleap = {d
+	-> d.year % 4 == 0 && (d.year % 100 != 0 || d.year % 400 == 0)
+}
+
+const add  = {d, dt
+	-> mkdate(d.actual + (dt castto(std.time)), d.tzname)
+}
+
+const sub  = {d, dt
+	-> mkdate(d.actual - (dt castto(std.time)), d.tzname)
+}
+
+const diff = {a, b
+	-> (b.actual - a.actual) castto(diff)
+}
+
