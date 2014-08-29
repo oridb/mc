@@ -8,7 +8,9 @@ pkg date =
 	const parsefmt	: (fmt : byte[:], d : byte[:]	-> date)
 	const parsez	: (d : byte[:], tz : byte[:]	-> date)
 	const fmt	: (d : date	-> byte[:])
+	const fmtymd	: (d : date	-> byte[:])
 	const bfmt	: (buf : byte[:], d : date	-> std.size)
+	const bfmtymd	: (buf : byte[:], d : date	-> std.size)
 
 	/* useful constructors */
 	const mkdate	: (tm : std.time, tz : diff -> date)
@@ -30,8 +32,16 @@ const fmt = {d
 	-> std.fmt("%04i-%02i-%02i %i:%i:%i", d.year, d.mon, d.day, d.h, d.m, d.s)
 }
 
+const fmtymd = {d
+	-> std.fmt("%04i-%02i-%02i", d.year, d.mon, d.day)
+}
+
 const bfmt = {buf, d
 	-> std.bfmt(buf, "%04i-%02i-%02i %i:%i:%i", d.year, d.mon, d.day, d.h, d.m, d.s)
+}
+
+const bfmtymd = {buf, d
+	-> std.bfmt(buf, "%04i-%02i-%02i", d.year, d.mon, d.day)
 }
 
 const now = {tz : byte[:]
