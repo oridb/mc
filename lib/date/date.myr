@@ -6,7 +6,8 @@ pkg date =
 	/* useful constructors */
 	const utcnow	: (-> instant)
 	const now	: (tz : byte[:] -> instant)
-	const mkdate	: (tm : std.time, zone : byte[:] -> instant)
+	const tozone	: (d : instant, zone : byte[:]	-> instant)
+	const mkdate	: (tm : std.time, zone : byte[:]	-> instant)
 
 	const localoff	: (tm : std.time -> diff)
 	const tzoff	: (tzname : byte[:], tm : std.time	-> diff)
@@ -33,6 +34,10 @@ const now = {tz : byte[:]
 
 	tm = std.now()
 	-> mkdate(tm, tz)
+}
+
+const tozone = {d, tz
+	-> mkdate(d.actual, tz)
 }
 
 const mkdate = {tm, tz 
