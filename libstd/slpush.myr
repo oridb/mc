@@ -7,6 +7,14 @@ pkg std =
 ;;
 
 generic slpush = {sl, elt
+	/*
+	slpush relies on implementation details
+	of slgrow for efficiency. Because bucket
+	sizes come in powers of two for all buckets
+	<= 32k, and we only reallocate when we hit
+	a bucket boundary, this is effectively
+	growing the slice by powers of two.
+	*/
 	sl = slgrow(sl, sl.len + 1)
 	sl[sl.len - 1] = elt
 	-> sl
