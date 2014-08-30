@@ -21,7 +21,7 @@ pkg date =
 	const dursub	: (d : instant, dt : duration	-> instant)
 ;;
 
-const Unix2Julian	= 719468
+const UnixJulianDiff	= 719468
 const Days400y	= 365*400 + 4*25 - 3
 const Days4y	= 365*4 + 1
 
@@ -81,7 +81,7 @@ const mkdate = {tm, tz
 
 	Lots of magic. Yer a wizard, 'arry.
 	*/
-	j = e + Unix2Julian
+	j = e + UnixJulianDiff
 	y = (4 * j - 1) / Days400y
 	j = 4 * j - 1 - Days400y * y
 	d = j / 4

@@ -12,6 +12,7 @@ pkg date =
 ;;
 
 const Default = "%Y-%m-%d"
+const UnixJulianDiff	= 719468
 
 const parse	= {s;		-> parsefmtz(Default, s, "")}
 const parsez	= {s, tz;	-> parsefmtz(Default, s, tz)}
@@ -28,7 +29,7 @@ const parsefmtz = {f, s, tz
 	-> `std.Some d
 }
 
-generic intval = {s : byte[:], min : @a::(numeric,integral), max : @a::(numeric,integral), err : bool#-> (@a::(numeric,integral), byte[:])
+generic intval = {dst : @a::(numeric,integral)#, s : byte[:], min : @a::(numeric,integral), max : @a::(numeric,integral), err : bool# -> byte[:]
 	var i
 	var c
 	var num
@@ -38,28 +39,31 @@ generic intval = {s : byte[:], min : @a::(numeric,integral), max : @a::(numeric,
 		(c, s) = std.striter(s)
 		if !std.isdigit(c)
 			err# = true
-			-> (0, s)
+			-> s
 		;;
 	;;
+
 	for i = min ; i < max; i++
 		(c, s) = std.striter(s)
 		if !std.isdigit(c)
 			break
 		;;
 	;;
+
 	num = num[:i]
 	match std.intparse(num)
-	| `std.Some v:	-> (v, s)
+	| `std.Some v:
+		dst# = v
+		-> s
 	| `std.None:
 		err# = true
-		-> (0, s)
+		-> s
 	;;
 }
 
 
 const filldate = {d, f, s, tz, err -> byte[:]
 	var fc, sc
-	var d
 
 	while f.len != 0
 		(fc, f) = std.striter(f)
@@ -67,48 +71,49 @@ const filldate = {d, f, s, tz, err -> byte[:]
 			(fc, f) = std.striter(f)
 			match fc
 			/* named things */
-			| 'a':	(d.day, s) = indexof(s, _names.abbrevday, err)
-			| 'A':	(d.day, s) = indexof(s, _names.fullday, err)
-			| 'b':	(d.day, s) = indexof(s, _names.abbrevmon, err)
-			| 'B':	(d.day, s) = indexof(s, _names.fullmon, err)
+			| 'a':	s = indexof(&d.day, s, _names.abbrevday, err)
+			| 'A':	s = indexof(&d.day, s, _names.fullday, err)
+			| 'b':	s = indexof(&d.mon, s, _names.abbrevmon, err)
+			| 'B':	s = indexof(&d.mon, s, _names.fullmon, err)
 			| 'c':	s = filldate(d, "%Y-%m-%d", s, tz, err)
 			| 'C':	
-				(d.year, s) = intval(s, 2, 2, err)
+				s = intval(&d.year, s, 2, 2, err)
 				d.year += 1900
-			| 'd':	(d.day, s) = intval(s, 2, 2, err)
+			| 'd':	s = intval(&d.day, s, 2, 2, err)
 			| 'D':	s = filldate(d, "%m/%d/%y", s, tz, err)
-			| 'e':	(d.day, s) = intval(s, 1, 2, err)
+			| 'e':	s = intval(&d.day, s, 1, 2, err)
 			| 'F':	s = filldate(d, "%y-%m-%d", s, tz, err)
 			/*
 			| 'G':	o += std.bfmt(buf[o:], ...?
 			| 'g':
 			*/
-			| 'h':	(d.day, s) = indexof(s, _names.abbrevmon, err)
-			| 'H':	(d.h, s) = intval(s, 2, 2, err)
-			| 'I':	(d.h, s) = intval(s, 2, 2, err)
+			| 'h':	s = indexof(&d.day, s, _names.abbrevmon, err)
+			| 'H':	s = intval(&d.h, s, 2, 2, err)
+			| 'I':	s = intval(&d.h, s, 2, 2, err)
 			| 'j':	std.fatal(1, "year day... unimplemented.")
-			| 'k':	(d.h, s) = intval(s, 1, 2, err)
-			| 'l':	(d.h, s) = intval(s, 1, 2, err)
-			| 'm':	(d.mon, s) = intval(s, 1, 2, err)
-			| 'M':	(d.m, s) = intval(s, 1, 2, err)
+			| 'k':	s = intval(&d.h, s, 1, 2, err)
+			| 'l':	s = intval(&d.h, s, 1, 2, err)
+			| 'm':	s = intval(&d.mon, s, 1, 2, err)
+			| 'M':	s = intval(&d.m, s, 1, 2, err)
 			| 'n':	s = matchstr(s, "\n", err)
 			| 'O':	std.fatal(1, "unsupported %O")
 			| 'p':	s = matchampm(d, s, err)
 			| 'P':	s = matchampm(d, s, err)
 			| 'r':	s = filldate(d, "%H:%M:%S %P", s, tz, err) 
 			| 'R':	s = filldate(d, "%H:%M %P", s, tz, err)
-			| 's':	(d.actual, s) = intval(s, 1, 64, err)
-			| 'S':	(d.s, s) = intval(s, 1, 2, err)
+			| 's':	s = intval(&d.actual, s, 1, 64, err)
+			| 'S':	s = intval(&d.s, s, 1, 2, err)
 			| 't':	s = eatspace(s)
-			| 'u':	(d.wday, s) = intval(s, 1, 1, err)
+			| 'u':	s = intval(&d.wday, s, 1, 1, err)
 			| 'U':	std.fatal(1, "week number... unimplemented.")
 				/*
 			| 'x':	o += bftime(buf[o:], Datefmt, d)
 			| 'X':	o += bftime(buf[o:], Timefmt, d)
 				*/
-			| 'y':	(d.year, s) = intval(s, 1, 2, err)
+			| 'y':	s = intval(&d.year, s, 1, 2, err)
 				d.year += 1900
-			| 'Y':	(d.year, s) = intval(s, 1, 4, err)
+			| 'Y':	
+				s = intval(&d.year, s, 1, 4, err)
 				/*
 			| 'z':	o += timezone(buf[o:], d.tzoff)
 			| 'Z':	o += std.bfmt(buf[o:], "%s", d.tzname)
@@ -128,6 +133,7 @@ const filldate = {d, f, s, tz, err -> byte[:]
 			-> s
 		;;
 	;;
+	d.actual = time(d)
 	-> s
 }
 
@@ -140,15 +146,17 @@ const eatspace = {s
 	-> s
 }
 
-const indexof = {s, set, err
+const indexof = {dst, s, set, err
 	var i
 	for i = 0; i < set.len; i++
 		if s.len >= set[i].len && std.streq(s, set[i])
-			-> (i, s[set[i].len:])
+			dst# = i
+			-> s
 		;;
 	;;
 	err# = true
-	-> (0, s)
+	dst# = 0
+	-> s
 }
 
 const matchstr = {s, str, err
@@ -175,7 +183,6 @@ const matchampm = {d, s, err
 	;;
 }
 
-/*
 const time = {date
 	var t
 	var c, y, ya, m, u
@@ -204,4 +211,3 @@ const time = {date
 	t += date.us castto(std.time)
 	-> t
 }
-*/
