@@ -1,0 +1,11 @@
+use std
+use "date.use"
+
+pkg date =
+	/* date i/o */
+	const parse	: (d : byte[:]	-> instant)
+	const parsefmt	: (fmt : byte[:], d : byte[:]	-> instant)
+	const parsez	: (d : byte[:], tz : byte[:]	-> instant)
+;;
+
+

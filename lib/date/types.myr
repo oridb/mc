@@ -1,7 +1,7 @@
 use std
 
 pkg date = 
-	type date = struct
+	type instant = struct
 		actual	: std.time	/* epoch time in microseconds */
 		tzoff	: diff	/* timezone offset in microseconds */
 		year	: int	/* year, starting at 0 (ie, 1 BCE) */
@@ -12,7 +12,18 @@ pkg date =
 		m	: int	/* minute: [0..59] */
 		s	: int	/* second: [0..59] */
 		us	: int	/* microsecond: [0..999,999] */
+		tzname	: byte[:]	/* current time zone name */
+		_tzbuf	: byte[32]	/* current time zone name storage */
 	;;
 
 	type diff = std.time
+
+	type duration = union
+		`Day	int
+		`Month	int
+		`Year	int
+		`Hour	int
+		`Minute	int
+		`Second	int
+	;;
 ;;

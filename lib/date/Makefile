@@ -1,6 +1,7 @@
 MYRLIB=date
 MYRSRC= \
 	date.myr \
+	fmt.myr \
 	types.myr \
 	zoneinfo.myr \
 
