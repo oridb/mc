@@ -5,17 +5,12 @@ use "names.use"
 
 pkg date =
 	/* date i/o */
-	const parse	: (s : byte[:]	-> std.option(instant))
-	const parsez	: (s : byte[:], tz : byte[:]	-> std.option(instant))
 	const parsefmt	: (f : byte[:], s: byte[:]	-> std.option(instant))
 	const parsefmtz	: (f : byte[:], s: byte[:], tz : byte[:]	-> std.option(instant))
 ;;
 
-const Default = "%Y-%m-%d"
 const UnixJulianDiff	= 719468
 
-const parse	= {s;		-> parsefmtz(Default, s, "")}
-const parsez	= {s, tz;	-> parsefmtz(Default, s, tz)}
 const parsefmt	= {f, s;	-> parsefmtz(f, s, "")}
 const parsefmtz = {f, s, tz
 	var d
@@ -114,8 +109,8 @@ const filldate = {d, f, s, tz, err -> byte[:]
 				d.year += 1900
 			| 'Y':	
 				s = intval(&d.year, s, 1, 4, err)
+			| 'z':	s = timezone(&d.tzoff, s, err)
 				/*
-			| 'z':	o += timezone(buf[o:], d.tzoff)
 			| 'Z':	o += std.bfmt(buf[o:], "%s", d.tzname)
 				*/
 			| '%':	s = matchstr(s, "%", err)
@@ -158,6 +153,27 @@ const indexof = {dst, s, set, err
 	dst# = 0
 	-> s
 }
+
+const timezone = {dst, s, err
+	var isneg
+	var tzoff
+
+	if s.len < 1
+		err# = true
+		-> ""
+	;;
+	if std.sleq(s[:1], "-")
+		isneg = true
+	elif std.sleq(s[:1], "+") 
+		isneg = false
+	else
+		err# = true
+		-> ""
+	;;
+	s = intval(&tzoff, s[1:], 2, 4, err) 
+	dst# = (tzoff / 100) * 3600 * 1_000_000 + (tzoff % 100) * 60 * 1_000_000
+}
+
 
 const matchstr = {s, str, err
 	if s.len <= str.len || !std.sleq(s[:str.len], str)

@@ -106,7 +106,8 @@ const timezone = {buf, off
 		off = -off
 		sep = "-"
 	;;
-	h = off % 3600
-	m = off / 3600
-	-> std.bfmt(buf, "%s%02i%02i", sep, h, m)
+	off /= 1_000_000
+	h = off / 3600
+	m = off % 3600
+	-> std.bfmt(buf, "%s%02l%02l", sep, h, m)
 }

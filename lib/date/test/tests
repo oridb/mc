@@ -20,4 +20,5 @@ mkdir -p tmpout
 #    result: Result value
 #	What we compare with. This should be self-
 #	evident.
-B ftime-test   C
+B ftime-test	C
+B parse-test	C

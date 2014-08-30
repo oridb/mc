@@ -1,0 +1,14 @@
+use std
+use date
+
+const main = {
+	var buf : byte[1024]
+	var n
+
+	/*Fri 29 Aug 2014 07:47:43 PM UTC*/
+	match date.parsefmt("%Y-%m-%d %z", "1932-10-23 +0500")
+	| `std.Some d:
+		n = date.bfmt(buf[:], d, true)
+		std.put("%s\n", buf[:n])
+	;;
+}
