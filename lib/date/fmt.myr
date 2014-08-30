@@ -1,5 +1,7 @@
 use std
+
 use "types.use"
+use "names.use"
 
 pkg date = 
 	const fmt	: (d : instant, time : bool	-> byte[:])
@@ -37,11 +39,6 @@ const ftime = {f, d
 	-> buf[:sz]
 }
 
-const abbrevday = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
-const fullday = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
-const abbrevmon = ["NONE", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-const fullmon = ["NONE", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
-
 const bftime = {buf, f, d
 	var c
 	var o
@@ -52,10 +49,10 @@ const bftime = {buf, f, d
 		if c == '%'
 			(c, f) = std.striter(f)
 			match c
-			| 'a':	o += std.bfmt(buf[o:], "%s", abbrevday[d.day])
-			| 'A':	o += std.bfmt(buf[o:], "%s", fullday[d.day])
-			| 'b':	o += std.bfmt(buf[o:], "%s", abbrevmon[d.mon])
-			| 'B':	o += std.bfmt(buf[o:], "%s", fullmon[d.mon])
+			| 'a':	o += std.bfmt(buf[o:], "%s", _names.abbrevday[d.day])
+			| 'A':	o += std.bfmt(buf[o:], "%s", _names.fullday[d.day])
+			| 'b':	o += std.bfmt(buf[o:], "%s", _names.abbrevmon[d.mon])
+			| 'B':	o += std.bfmt(buf[o:], "%s", _names.fullmon[d.mon])
 			| 'c':	o += bftime(buf[o:], "%Y-%m-%d", d)
 			| 'C':	o += std.bfmt(buf[o:], "%02i", d.year % 100)
 			| 'd':	o += std.bfmt(buf[o:], "%02i", d.day)
@@ -66,7 +63,7 @@ const bftime = {buf, f, d
 			| 'G':	o += std.bfmt(buf[o:], ...?
 			| 'g':
 			*/
-			| 'h':	o += std.bfmt(buf[o:], "%s", abbrevmon[d.mon])
+			| 'h':	o += std.bfmt(buf[o:], "%s", _names.abbrevmon[d.mon])
 			| 'H':	o += std.bfmt(buf[o:], "%02i", d.h)
 			| 'I':	o += std.bfmt(buf[o:], "%02i", d.h % 12)
 			| 'j':	o += std.bfmt(buf[o:], "year day... unimplemented.")

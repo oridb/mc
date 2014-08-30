@@ -1,11 +1,207 @@
 use std
-use "date.use"
+
+use "types.use"
+use "names.use"
 
 pkg date =
 	/* date i/o */
-	const parse	: (d : byte[:]	-> instant)
-	const parsefmt	: (fmt : byte[:], d : byte[:]	-> instant)
-	const parsez	: (d : byte[:], tz : byte[:]	-> instant)
+	const parse	: (s : byte[:]	-> std.option(instant))
+	const parsez	: (s : byte[:], tz : byte[:]	-> std.option(instant))
+	const parsefmt	: (f : byte[:], s: byte[:]	-> std.option(instant))
+	const parsefmtz	: (f : byte[:], s: byte[:], tz : byte[:]	-> std.option(instant))
 ;;
 
+const Default = "%Y-%m-%d"
 
+const parse	= {s;		-> parsefmtz(Default, s, "")}
+const parsez	= {s, tz;	-> parsefmtz(Default, s, tz)}
+const parsefmt	= {f, s;	-> parsefmtz(f, s, "")}
+const parsefmtz = {f, s, tz
+	var d
+	var err
+
+	err = false
+	s = filldate(&d, f, s, tz, &err)
+	if err || s.len > 0
+		-> `std.None
+	;;
+	-> `std.Some d
+}
+
+generic intval = {s : byte[:], min : @a::(numeric,integral), max : @a::(numeric,integral), err : bool#-> (@a::(numeric,integral), byte[:])
+	var i
+	var c
+	var num
+
+	num = s
+	for i = 0; i < min; i++
+		(c, s) = std.striter(s)
+		if !std.isdigit(c)
+			err# = true
+			-> (0, s)
+		;;
+	;;
+	for i = min ; i < max; i++
+		(c, s) = std.striter(s)
+		if !std.isdigit(c)
+			break
+		;;
+	;;
+	num = num[:i]
+	match std.intparse(num)
+	| `std.Some v:	-> (v, s)
+	| `std.None:
+		err# = true
+		-> (0, s)
+	;;
+}
+
+
+const filldate = {d, f, s, tz, err -> byte[:]
+	var fc, sc
+	var d
+
+	while f.len != 0
+		(fc, f) = std.striter(f)
+		if fc == '%'
+			(fc, f) = std.striter(f)
+			match fc
+			/* named things */
+			| 'a':	(d.day, s) = indexof(s, _names.abbrevday, err)
+			| 'A':	(d.day, s) = indexof(s, _names.fullday, err)
+			| 'b':	(d.day, s) = indexof(s, _names.abbrevmon, err)
+			| 'B':	(d.day, s) = indexof(s, _names.fullmon, err)
+			| 'c':	s = filldate(d, "%Y-%m-%d", s, tz, err)
+			| 'C':	
+				(d.year, s) = intval(s, 2, 2, err)
+				d.year += 1900
+			| 'd':	(d.day, s) = intval(s, 2, 2, err)
+			| 'D':	s = filldate(d, "%m/%d/%y", s, tz, err)
+			| 'e':	(d.day, s) = intval(s, 1, 2, err)
+			| 'F':	s = filldate(d, "%y-%m-%d", s, tz, err)
+			/*
+			| 'G':	o += std.bfmt(buf[o:], ...?
+			| 'g':
+			*/
+			| 'h':	(d.day, s) = indexof(s, _names.abbrevmon, err)
+			| 'H':	(d.h, s) = intval(s, 2, 2, err)
+			| 'I':	(d.h, s) = intval(s, 2, 2, err)
+			| 'j':	std.fatal(1, "year day... unimplemented.")
+			| 'k':	(d.h, s) = intval(s, 1, 2, err)
+			| 'l':	(d.h, s) = intval(s, 1, 2, err)
+			| 'm':	(d.mon, s) = intval(s, 1, 2, err)
+			| 'M':	(d.m, s) = intval(s, 1, 2, err)
+			| 'n':	s = matchstr(s, "\n", err)
+			| 'O':	std.fatal(1, "unsupported %O")
+			| 'p':	s = matchampm(d, s, err)
+			| 'P':	s = matchampm(d, s, err)
+			| 'r':	s = filldate(d, "%H:%M:%S %P", s, tz, err) 
+			| 'R':	s = filldate(d, "%H:%M %P", s, tz, err)
+			| 's':	(d.actual, s) = intval(s, 1, 64, err)
+			| 'S':	(d.s, s) = intval(s, 1, 2, err)
+			| 't':	s = eatspace(s)
+			| 'u':	(d.wday, s) = intval(s, 1, 1, err)
+			| 'U':	std.fatal(1, "week number... unimplemented.")
+				/*
+			| 'x':	o += bftime(buf[o:], Datefmt, d)
+			| 'X':	o += bftime(buf[o:], Timefmt, d)
+				*/
+			| 'y':	(d.year, s) = intval(s, 1, 2, err)
+				d.year += 1900
+			| 'Y':	(d.year, s) = intval(s, 1, 4, err)
+				/*
+			| 'z':	o += timezone(buf[o:], d.tzoff)
+			| 'Z':	o += std.bfmt(buf[o:], "%s", d.tzname)
+				*/
+			| '%':	s = matchstr(s, "%", err)
+			;;
+		else
+			(sc, s) = std.striter(s)
+			if std.isspace(sc)
+				s = eatspace(s)
+			elif (sc != fc)
+				err# = true
+				-> s
+			;;
+		;;
+		if err#
+			-> s
+		;;
+	;;
+	-> s
+}
+
+const eatspace = {s
+	var c
+
+	while std.isspace(std.decode(s))
+		(c, s) = std.striter(s)
+	;;
+	-> s
+}
+
+const indexof = {s, set, err
+	var i
+	for i = 0; i < set.len; i++
+		if s.len >= set[i].len && std.streq(s, set[i])
+			-> (i, s[set[i].len:])
+		;;
+	;;
+	err# = true
+	-> (0, s)
+}
+
+const matchstr = {s, str, err
+	if s.len <= str.len || !std.sleq(s[:str.len], str)
+		err# = true
+		-> ""
+	;;
+	-> s[str.len:]
+}
+
+const matchampm = {d, s, err
+	if s.len < 2
+		err# = true
+		-> s
+	;;
+	if std.sleq(s[:2], "am") || std.sleq(s[:2], "AM")
+		-> s[2:]
+	elif std.sleq(s[:2], "pm") || std.sleq(s[:2], "PM")
+		d.h += 12
+		-> s[2:]
+	else
+		err# = true
+		-> s
+	;;
+}
+
+/*
+const time = {date
+	var t
+	var c, y, ya, m, u
+
+	t = 0
+
+	if date.mon > 2
+		m = (date.mon - 3) castto(std.time)
+	else
+		m = (date.mon + 9) castto(std.time)
+		y = (date.year - 1) castto(std.time)
+	;;
+	
+	c = y / 100
+	ya = y - 100 * c
+	u = (146097 * c) / 4 + \
+		(1461 * ya) / 4 + \
+		(153 * m + 2) / 5 + \
+		(date.day castto(std.time)) + \
+		UnixJulianDiff
+
+	t += (u * 24*60*60*1_000_000)
+	t += (date.h castto(std.time)) * 60*60*1_000_000
+	t += (date.m castto(std.time)) * 60*1_000_000
+	t += (date.s castto(std.time)) * 1_000_000
+	t += date.us castto(std.time)
+	-> t
+}
+*/
