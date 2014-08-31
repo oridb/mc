@@ -7,7 +7,7 @@ pkg date =
 	const utcnow	: (-> instant)
 	const now	: (tz : byte[:] -> instant)
 	const tozone	: (d : instant, zone : byte[:]	-> instant)
-	const mkdate	: (tm : std.time, zone : byte[:]	-> instant)
+	const mkinstant	: (tm : std.time, zone : byte[:]	-> instant)
 
 	const localoff	: (tm : std.time -> delta)
 	const tzoff	: (tzname : byte[:], tm : std.time	-> delta)
@@ -26,21 +26,21 @@ const Days400y	= 365*400 + 4*25 - 3
 const Days4y	= 365*4 + 1
 
 const utcnow = {
-	-> mkdate(std.now(), "")
+	-> mkinstant(std.now(), "")
 }
 
 const now = {tz : byte[:]
 	var tm
 
 	tm = std.now()
-	-> mkdate(tm, tz)
+	-> mkinstant(tm, tz)
 }
 
 const tozone = {d, tz
-	-> mkdate(d.actual, tz)
+	-> mkinstant(d.actual, tz)
 }
 
-const mkdate = {tm, tz 
+const mkinstant = {tm, tz 
 	var j, y, m, d
 	var t, e
 	var date
@@ -117,11 +117,11 @@ const isleap = {d
 }
 
 const add  = {d, dt
-	-> mkdate(d.actual + (dt castto(std.time)), d.tzname)
+	-> mkinstant(d.actual + (dt castto(std.time)), d.tzname)
 }
 
 const sub  = {d, dt
-	-> mkdate(d.actual - (dt castto(std.time)), d.tzname)
+	-> mkinstant(d.actual - (dt castto(std.time)), d.tzname)
 }
 
 
