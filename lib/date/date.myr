@@ -9,16 +9,16 @@ pkg date =
 	const tozone	: (d : instant, zone : byte[:]	-> instant)
 	const mkdate	: (tm : std.time, zone : byte[:]	-> instant)
 
-	const localoff	: (tm : std.time -> diff)
-	const tzoff	: (tzname : byte[:], tm : std.time	-> diff)
+	const localoff	: (tm : std.time -> delta)
+	const tzoff	: (tzname : byte[:], tm : std.time	-> delta)
 	const isleap	: (d : instant	-> bool)
 
-	/* date differences */
-	const add	: (d : instant, dt : diff	-> instant)
-	const sub	: (d : instant, dt : diff	-> instant)
-	const diff	: (a : instant, b : instant	-> diff)
-	const duradd	: (d : instant, dt : duration	-> instant)
-	const dursub	: (d : instant, dt : duration	-> instant)
+	/* date deltaerences */
+	const add	: (d : instant, dt : delta	-> instant)
+	const sub	: (d : instant, dt : delta	-> instant)
+	const delta	: (a : instant, b : instant	-> delta)
+	const duradd	: (d : instant, dt : period	-> instant)
+	const dursub	: (d : instant, dt : period	-> instant)
 ;;
 
 const UnixJulianDiff	= 719468
@@ -126,7 +126,7 @@ const sub  = {d, dt
 
 
 
-const diff = {a, b
-	-> (b.actual - a.actual) castto(diff)
+const delta = {a, b
+	-> (b.actual - a.actual) castto(delta)
 }
 

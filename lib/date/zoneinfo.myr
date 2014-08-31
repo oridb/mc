@@ -3,7 +3,7 @@ use "types.use"
 
 pkg _zoneinfo =
 	type zifile
-	const findtzoff : (tz : byte[:], tm : std.time -> date.diff)
+	const findtzoff : (tz : byte[:], tm : std.time -> date.delta)
 	const load	: (file : byte[:] -> zifile#)
 	const free	: (f : zifile# -> void)
 ;;
@@ -68,7 +68,7 @@ const findtzoff = {tz, tm
 	;;
 	ds = zone.ttinfo[zone.timetype[i]].gmtoff
 	free(zone)
-	->  (ds castto(date.diff)) * 1_000_000
+	->  (ds castto(date.delta)) * 1_000_000
 }
 
 const load = {file
