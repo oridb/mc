@@ -8,6 +8,6 @@ const main = {
 
 	/*Fri 29 Aug 2014 07:47:43 PM UTC*/
 	d = date.mkdate(1_409_341_663*1_000_000, "")
-	n = date.bfmt(buf[:], d, true)
+	n = date.bfmt(buf[:], date.Datetimefmt, d)
 	std.put("%s\n", buf[:n])
 }
