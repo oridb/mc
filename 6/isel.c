@@ -374,25 +374,31 @@ static Loc *memloc(Isel *s, Node *e, Mode m)
 
 static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size_t sz)
 {
-    Loc *sp, *dp, *len; /* pointers to src, dst */
+    size_t i, sz;
+    Loc *sp, *dp; /* pointers to src, dst */
+    Loc *tmp, *src, *dst; /* source memory, dst memory */
 
-    len = loclit(sz, ModeQ);
-    sp = newr(s, from);
-    dp = newr(s, to);
+    sp = inr(s, from);
+    dp = inr(s, to);
 
-    /* length to blit */
-    g(s, Imov, len, locphysreg(Rrcx), NULL);
-    /* source address with offset */
-    if (srcoff)
-        g(s, Ilea, locmem(srcoff, sp, NULL, ModeQ), locphysreg(Rrsi), NULL);
-    else
-        g(s, Imov, sp, locphysreg(Rrsi), NULL);
-    /* dest address with offset */
-    if (dstoff)
-        g(s, Ilea, locmem(dstoff, dp, NULL, ModeQ), locphysreg(Rrdi), NULL);
-    else
-        g(s, Imov, dp, locphysreg(Rrdi), NULL);
-    g(s, Irepmovsb, NULL);
+    /* Slightly funny loop condition: We might have trailing bytes
+     * that we can't blit word-wise. */
+    tmp = locreg(ModeQ);
+    for (i = 0; i < sz/Ptrsz; i++) {
+        src = locmem(i*Ptrsz + srcoff, sp, NULL, ModeQ);
+        dst = locmem(i*Ptrsz + dstoff, dp, NULL, ModeQ);
+        g(s, Imov, src, tmp, NULL);
+        g(s, Imov, tmp, dst, NULL);
+    }
+    /* now, the trailing bytes */
+    tmp = locreg(ModeB);
+    i *= Ptrsz; /* we counted in Ptrsz chunks; now we need a byte offset */
+    for (; i < sz; i++) {
+        src = locmem(i, sp, NULL, ModeB);
+        dst = locmem(i, dp, NULL, ModeB);
+        g(s, Imov, src, tmp, NULL);
+        g(s, Imov, tmp, dst, NULL);
+    }
 }
 
 static int isfunc(Isel *s, Node *n)
