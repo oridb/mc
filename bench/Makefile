@@ -6,8 +6,13 @@ BENCHSRC=intsort.myr \
 include ../config.mk
 include ../mk/c.mk
 
-bench: runner $(BENCHSRC:.myr=)
+bench: runner cleanbuild
 	./runner $(BENCHSRC:.myr=)
 
-$(BENCHSRC:.myr=): $(BENCHSRC)
-	../myrbuild/myrbuild -b $@ $@.myr
+.PHONY: cleanbuild
+cleanbuild:
+	rm -f $(BENCHSRC:.myr=) $(BENCHSRC:.myr=.o) $(BENCHSRC:.myr=.use)
+	@for i in $(BENCHSRC:.myr=); do \
+	    ../myrbuild/myrbuild -b $$i $$i.myr; \
+	done
+
