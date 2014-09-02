@@ -374,7 +374,7 @@ static Loc *memloc(Isel *s, Node *e, Mode m)
 
 static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size_t sz)
 {
-    size_t i, sz;
+    size_t i;
     Loc *sp, *dp; /* pointers to src, dst */
     Loc *tmp, *src, *dst; /* source memory, dst memory */
 
