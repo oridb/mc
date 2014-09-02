@@ -13,6 +13,6 @@ bench: runner cleanbuild
 cleanbuild:
 	rm -f $(BENCHSRC:.myr=) $(BENCHSRC:.myr=.o) $(BENCHSRC:.myr=.use)
 	@for i in $(BENCHSRC:.myr=); do \
-	    ../myrbuild/myrbuild -b $$i $$i.myr; \
+	    ../myrbuild/myrbuild -b $$i  -C../6/6m -M../muse/muse -I../libstd -r../rt/_myrrt.o $$i.myr; \
 	done
 
