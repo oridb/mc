@@ -3,17 +3,22 @@ use "fmt.use"
 
 pkg std =
 	const blat : (path : byte[:], buf : byte[:] -> bool)
+	const fblat : (f : fd, buf : byte[:] -> bool)
 ;;
 
 const blat = {path, buf
 	var fd
-	var written
-	var n
 
 	fd = openmode(path, Ocreat|Owronly, 0o777)
 	if fd < 0
-		fatal(1, "Could not open file \"%s\"", path)
+		-> false
 	;;
+	-> fblat(fd, buf)
+}
+
+
+const fblat = {fd, buf
+	var written, n
 
 	n = 0
 	while true
