@@ -1,5 +1,5 @@
 SUB = parse \
-      mi \
+      opt \
       6 \
       muse \
       myrbuild \
