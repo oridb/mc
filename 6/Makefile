@@ -5,7 +5,7 @@ OBJ=isel.o \
     ra.o \
     simp.o \
 
-DEPS=../parse/libparse.a ../mi/libmi.a
+DEPS=../parse/libparse.a ../opt/libmi.a
 
 include ../config.mk
 include ../mk/c.mk
