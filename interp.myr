@@ -4,7 +4,11 @@ use "types.use"
 
 pkg regex =
 	const exec	: (re : regex#, str : byte[:] -> std.option(byte[:][:]))
+	/*
+	FIXME: implement. This should scan for a possible start char in the
+		regex and use that to optimize.
 	const search	: (re : regex#, str : byte[:] -> std.option(byte[:][:]))
+	*/
 ;;
 
 /* Ugly: for performance. std.option() should be used instead when unions get faster. */
