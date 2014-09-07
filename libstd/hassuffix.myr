@@ -1,4 +1,4 @@
-use "cmp.use"
+use "sleq.use"
 pkg std =
 	const hassuffix	: (s : byte[:], suff : byte[:] -> bool)
 ;;
@@ -6,12 +6,10 @@ pkg std =
 const hassuffix = {s, suff
 	var tail
 
-	if suff.len >= s.len
+	if suff.len <= s.len
 		tail = s[s.len - suff.len:]
-		match strncmp(tail, suff, suff.len)
-		| `Equal:       -> true
-		| _:            -> false
-		;;
+		-> sleq(tail, suff)
 	;;
+	-> false
 }
 
