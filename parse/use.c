@@ -168,6 +168,7 @@ static Node *rdsym(FILE *fd, Trait *ctx)
     n->decl.isconst = rdbool(fd);
     n->decl.isgeneric = rdbool(fd);
     n->decl.isextern = rdbool(fd);
+    n->decl.isimport = 1;
 
     if (n->decl.isgeneric && !ctx)
         n->decl.init = unpickle(fd);
