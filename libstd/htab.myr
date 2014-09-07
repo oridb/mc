@@ -119,29 +119,35 @@ generic htfree = {ht
 generic htput = {ht, k, v
 	var i, di
 	var h
-	var done
+	var neltincr
 
 	di = 0
 	h = hash(ht, k)
 	i = h & (ht.keys.len - 1)
-	done = false
-	while ht.hashes[i] != 0 && !ht.dead[i] && !done
+	neltincr = 1
+	while ht.hashes[i] != 0 && !ht.dead[i]
 		/*
 		second insertion just overwrites first.
 		nb: comparing keys for dead values is bad.
 		*/
-		if ht.hashes[i] == h && (ht.dead[i] || ht.eq(ht.keys[i], k))
-			done = true
+		if ht.hashes[i] == h
+			if ht.dead[i]
+				break
+			/* replacing a key shouldn't grow the element count */
+			elif ht.eq(ht.keys[i], k)
+				neltincr = 0
+				break
+			;;
 		else
 			di++
 			i = (h + di) & (ht.keys.len - 1)
 		;;
 	;;
+	ht.nelt += neltincr
 	ht.hashes[i] = h
 	ht.keys[i] = k
 	ht.vals[i] = v
 	ht.dead[i] = false
-	ht.nelt++
 	if ht.keys.len < ht.nelt * 2
 		resize(ht)
 	;;
