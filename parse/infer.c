@@ -962,8 +962,9 @@ static void mergeexports(Inferstate *st, Node *file)
                 fatal(nx->line, "Export %s defined with different genericness on line %d", ctxstr(st, nx), ng->line);
             unify(st, nx, type(st, ng), type(st, nx));
         } else {
-            if (!nx->decl.isextern && !nx->decl.isimport && !nx->decl.init && (nx->decl.isconst || nx->decl.isgeneric))
-                fatal(nx->line, "Export %s defined but not implemented", ctxstr(st, nx));
+            if (!nx->decl.isextern && !nx->decl.isimport && !nx->decl.trait)
+                if (!nx->decl.init && (nx->decl.isconst || nx->decl.isgeneric))
+                    fatal(nx->line, "Export %s defined but not implemented", ctxstr(st, nx));
             putdcl(globls, nx);
         }
     }
