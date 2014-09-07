@@ -21,7 +21,7 @@ pkg std =
 	const bsintersect	: (a : bitset#, b : bitset# -> void)
 	const bsunion	: (a : bitset#, b : bitset# -> void)
 	const bseq	: (a : bitset#, b : bitset# -> bool)
-	const bsissub	: (a : bitset#, b : bitset# -> bool)
+	const bsissubset	: (a : bitset#, b : bitset# -> bool)
 
 	const bsclear	: (bs : bitset# -> bitset#)
 ;;
