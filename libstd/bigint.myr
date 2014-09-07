@@ -20,7 +20,7 @@ pkg std =
 	;;
 
 	/* administrivia */
-	const mkbigint	: (v : int32 -> bigint#)
+	generic mkbigint	: (v : @a::(numeric,integral) -> bigint#)
 	const bigfree	: (a : bigint# -> void)
 	const bigdup	: (a : bigint# -> bigint#)
 	const bigassign	: (d : bigint#, s : bigint# -> bigint#)
@@ -52,8 +52,10 @@ pkg std =
 
 const Base = 0x100000000ul
 
-const mkbigint = {v
+generic mkbigint = {v : @a::(integral,numeric)
 	var a
+	var i
+
 	a = zalloc()
 
 	a.dig = slalloc(1)
@@ -63,7 +65,11 @@ const mkbigint = {v
 	elif v > 0
 		a.sign = 1
 	;;
-	a.dig[0] = (v castto(uint32))
+	i = 0
+	while v != 0
+		a.dig[i++] = (v castto(uint32))
+		v /= (Base castto(@a::(numeric,integral)))
+	;;
 	-> trim(a)
 }
 
@@ -500,6 +506,46 @@ const bigshr = {a, b
 	| n:	die("shift by way too much\n")
 	;;
 }
+
+/* a + b, b is integer.
+FIXME: acually make this a performace improvement
+*/
+const bigaddi = {a, b
+	var bigb
+
+	bigb = mkbigint(b)
+	bigadd(a, bigb)
+	bigfree(bigb)
+	-> a
+}
+
+const bigsubi = {a, b
+	var bigb
+
+	bigb = mkbigint(b)
+	bigsub(a, bigb)
+	bigfree(bigb)
+	-> a
+}
+
+const bigmuli = {a, b
+	var bigb
+
+	bigb = mkbigint(b)
+	bigmul(a, bigb)
+	bigfree(bigb)
+	-> a
+}
+
+const bigdivi = {a, b
+	var bigb
+
+	bigb = mkbigint(b)
+	bigdiv(a, bigb)
+	bigfree(bigb)
+	-> a
+}
+
 
 /* 
   a << s, with integer arg.
