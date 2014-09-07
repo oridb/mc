@@ -268,6 +268,7 @@ struct Node {
             char  isgeneric;
             char  isextern;
             char  ishidden;
+            char  isimport;
         } decl;
 
         struct {

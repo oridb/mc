@@ -955,14 +955,17 @@ static void mergeexports(Inferstate *st, Node *file)
         ng = getdcl(globls, k[i]);
         /* if an export has an initializer, it shouldn't be declared in the
          * body */
-        if (nx->decl.init && ng)
-            fatal(nx->line, "Export %s double-defined on line %d", ctxstr(st, nx), ng->line);
-        if (ng && nx->decl.isgeneric != ng->decl.isgeneric)
-            fatal(nx->line, "Export %s defined with different genericness on line %d", ctxstr(st, nx), ng->line);
-        if (!ng)
-            putdcl(globls, nx);
-        else
+        if (ng) {
+            if (nx->decl.init)
+                fatal(nx->line, "Export %s double-defined on line %d", ctxstr(st, nx), ng->line);
+            if (nx->decl.isgeneric != ng->decl.isgeneric)
+                fatal(nx->line, "Export %s defined with different genericness on line %d", ctxstr(st, nx), ng->line);
             unify(st, nx, type(st, ng), type(st, nx));
+        } else {
+            if (!nx->decl.isextern && !nx->decl.isimport && !nx->decl.init && (nx->decl.isconst || nx->decl.isgeneric))
+                fatal(nx->line, "Export %s defined but not implemented", ctxstr(st, nx));
+            putdcl(globls, nx);
+        }
     }
     free(k);
 
