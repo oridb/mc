@@ -58,17 +58,16 @@ generic mkbigint = {v : @a::(integral,numeric)
 
 	a = zalloc()
 
-	a.dig = slalloc(1)
 	if v < 0
 		a.sign = -1
 		v = -v
 	elif v > 0
 		a.sign = 1
 	;;
-	i = 0
-	while v != 0
-		a.dig[i++] = (v castto(uint32))
-		v /= (Base castto(@a::(numeric,integral)))
+	i = v castto(uint64)
+	while i > 0
+		a.dig = slpush(a.dig, (i castto(uint32)))
+		i /= Base
 	;;
 	-> trim(a)
 }
