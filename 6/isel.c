@@ -394,8 +394,8 @@ static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size
     tmp = locreg(ModeB);
     i *= Ptrsz; /* we counted in Ptrsz chunks; now we need a byte offset */
     for (; i < sz; i++) {
-        src = locmem(i, sp, NULL, ModeB);
-        dst = locmem(i, dp, NULL, ModeB);
+        src = locmem(i + srcoff, sp, NULL, ModeB);
+        dst = locmem(i + dstoff, dp, NULL, ModeB);
         g(s, Imov, src, tmp, NULL);
         g(s, Imov, tmp, dst, NULL);
     }
