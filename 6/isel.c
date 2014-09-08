@@ -646,6 +646,7 @@ Loc *selexpr(Isel *s, Node *n)
             break;
         case Oset:
             assert(exprop(args[0]) == Ovar || exprop(args[0]) == Oderef);
+            assert(!stacknode(args[0]));
             b = selexpr(s, args[1]);
             if (exprop(args[0]) == Oderef)
                 a = memloc(s, args[0]->expr.args[0], mode(n));
