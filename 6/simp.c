@@ -228,13 +228,16 @@ static Node *load(Node *a)
     return n;
 }
 
-static Node *deref(Node *a)
+static Node *deref(Node *a, Type *t)
 {
     Node *n;
 
     assert(a->expr.type->type == Typtr);
     n = mkexpr(a->line, Oderef, a, NULL);
-    n->expr.type = base(a->expr.type);
+    if (t)
+        n->expr.type = t;
+    else
+        n->expr.type = base(a->expr.type);
     return n;
 }
 
@@ -909,12 +912,14 @@ static Node *slicebase(Simp *s, Node *n, Node *off)
 static Node *lval(Simp *s, Node *n)
 {
     Node *r;
+    Node **args;
 
+    args = n->expr.args;
     switch (exprop(n)) {
         case Ovar:      r = n;  break;
-        case Oidx:      r = deref(idxaddr(s, n->expr.args[0], n->expr.args[1])); break;
-        case Oderef:    r = deref(rval(s, n->expr.args[0], NULL)); break;
-        case Omemb:     r = deref(membaddr(s, n)); break;
+        case Oidx:      r = deref(idxaddr(s, args[0], args[1]), NULL); break;
+        case Oderef:    r = deref(rval(s, args[0], NULL), NULL); break;
+        case Omemb:     r = deref(membaddr(s, n), NULL); break;
         default:
             die("%s cannot be an lval", opstr(exprop(n)));
             break;
@@ -1066,11 +1071,11 @@ static Node *simpslice(Simp *s, Node *n, Node *dst)
         stbase = set(simpcast(s, t, mktyptr(t->line, tyintptr)), base);
         sz = addk(simpcast(s, t, mktyptr(t->line, tyintptr)), Ptrsz);
     } else {
-        stbase = set(deref(addr(s, t, tyintptr)), base);
+        stbase = set(deref(addr(s, t, tyintptr), NULL), base);
         sz = addk(addr(s, t, tyintptr), Ptrsz);
     }
     /* *(&slice + ptrsz) = len */
-    stlen = set(deref(sz), len);
+    stlen = set(deref(sz, NULL), len);
     append(s, stbase);
     append(s, stlen);
     return t;
@@ -1165,7 +1170,7 @@ static Node *assignat(Simp *s, Node *r, size_t off, Node *val)
         pval = addr(s, val, exprtype(val));
         st = mkexpr(val->line, Oblit, pdst, pval, sz, NULL);
     } else {
-        st = set(deref(pdst), val);
+        st = set(deref(pdst, val->expr.type), val);
     }
     append(s, st);
     return r;
@@ -1224,7 +1229,7 @@ static Node *simpucon(Simp *s, Node *n, Node *dst)
     u = addr(s, tmp, mktype(n->line, Tyuint));
     tag = mkintlit(n->line, uc->id);
     tag->expr.type = mktype(n->line, Tyuint);
-    append(s, set(deref(u), tag));
+    append(s, set(deref(u, tyword), tag));
 
 
     /* fill the value, if needed */
@@ -1237,7 +1242,7 @@ static Node *simpucon(Simp *s, Node *n, Node *dst)
         sz = disp(n->line, tysize(uc->etype));
         r = mkexpr(n->line, Oblit, u, elt, sz, NULL);
     } else {
-        r = set(deref(u), elt);
+        r = set(deref(u, uc->etype), elt);
     }
     append(s, r);
     return tmp;
