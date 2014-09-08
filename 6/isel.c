@@ -372,28 +372,32 @@ static Loc *memloc(Isel *s, Node *e, Mode m)
     return l;
 }
 
-static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size_t sz)
+static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size_t sz, size_t align)
 {
-    size_t i, m, modesz;
-    Mode modes[] = {ModeQ, ModeL, ModeW, ModeB, ModeNone};
+    static const Mode modes[] = {
+        [8] = ModeQ,
+        [4] = ModeL,
+        [2] = ModeW,
+        [1] = ModeB
+    };
+    size_t i, modesz;
     Loc *sp, *dp; /* pointers to src, dst */
     Loc *tmp, *src, *dst; /* source memory, dst memory */
 
+    assert(modes[align] != ModeNone);   /* make sure we have a valid alignment */
     sp = inr(s, from);
     dp = inr(s, to);
 
-    modesz = 8;
     i = 0;
-    for (m = 0; modes[m] != ModeNone; m++) {
-        tmp = locreg(modes[m]);
+    for (modesz = align; modes[modesz] != ModeNone; modesz /= 2) {
+        tmp = locreg(modes[modesz]);
         while (i + modesz <= sz) {
-            src = locmem(i + srcoff, sp, NULL, modes[m]);
-            dst = locmem(i + dstoff, dp, NULL, modes[m]);
+            src = locmem(i + srcoff, sp, NULL, modes[modesz]);
+            dst = locmem(i + dstoff, dp, NULL, modes[modesz]);
             g(s, Imov, src, tmp, NULL);
             g(s, Imov, tmp, dst, NULL);
             i += modesz;
         }
-        modesz /= 2;
     }
 }
 
@@ -432,7 +436,7 @@ static Loc *gencall(Isel *s, Node *n)
     Loc *retloc, *rsp, *ret;       /* hard-coded registers */
     Loc *stkbump;        /* calculated stack offset */
     int argsz, argoff;
-    size_t i;
+    size_t i, a;
 
     rsp = locphysreg(Rrsp);
     if (tybase(exprtype(n))->type == Tyvoid) {
@@ -472,7 +476,8 @@ static Loc *gencall(Isel *s, Node *n)
         if (stacknode(n->expr.args[i])) {
             src = locreg(ModeQ);
             g(s, Ilea, arg, src, NULL);
-            blit(s, rsp, src, argoff, 0, size(n->expr.args[i]));
+            a = alignto(1, n->expr.args[i]->expr.type);
+            blit(s, rsp, src, argoff, 0, size(n->expr.args[i]), a);
         } else {
             dst = locmem(argoff, rsp, NULL, arg->mode);
             arg = inri(s, arg);
@@ -497,6 +502,7 @@ Loc *selexpr(Isel *s, Node *n)
     Loc *a, *b, *c, *d, *r;
     Loc *eax, *edx, *cl; /* x86 wants some hard-coded regs */
     Node **args;
+    size_t al;
 
     args = n->expr.args;
     eax = locphysreg(Reax);
@@ -683,7 +689,8 @@ Loc *selexpr(Isel *s, Node *n)
         case Oblit:
             a = selexpr(s, args[0]);
             r = selexpr(s, args[1]);
-            blit(s, a, r, 0, 0, args[2]->expr.args[0]->lit.intval);
+            al = alignto(1, args[0]->expr.type->sub[0]);
+            blit(s, a, r, 0, 0, args[2]->expr.args[0]->lit.intval, al);
             break;
         case Otrunc:
             a = selexpr(s, args[0]);
