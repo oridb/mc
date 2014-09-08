@@ -374,30 +374,26 @@ static Loc *memloc(Isel *s, Node *e, Mode m)
 
 static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size_t sz)
 {
-    size_t i;
+    size_t i, m, modesz;
+    Mode modes[] = {ModeQ, ModeL, ModeW, ModeB, ModeNone};
     Loc *sp, *dp; /* pointers to src, dst */
     Loc *tmp, *src, *dst; /* source memory, dst memory */
 
     sp = inr(s, from);
     dp = inr(s, to);
 
-    /* Slightly funny loop condition: We might have trailing bytes
-     * that we can't blit word-wise. */
-    tmp = locreg(ModeQ);
-    for (i = 0; i < sz/Ptrsz; i++) {
-        src = locmem(i*Ptrsz + srcoff, sp, NULL, ModeQ);
-        dst = locmem(i*Ptrsz + dstoff, dp, NULL, ModeQ);
-        g(s, Imov, src, tmp, NULL);
-        g(s, Imov, tmp, dst, NULL);
-    }
-    /* now, the trailing bytes */
-    tmp = locreg(ModeB);
-    i *= Ptrsz; /* we counted in Ptrsz chunks; now we need a byte offset */
-    for (; i < sz; i++) {
-        src = locmem(i + srcoff, sp, NULL, ModeB);
-        dst = locmem(i + dstoff, dp, NULL, ModeB);
-        g(s, Imov, src, tmp, NULL);
-        g(s, Imov, tmp, dst, NULL);
+    modesz = 8;
+    i = 0;
+    for (m = 0; modes[m] != ModeNone; m++) {
+        tmp = locreg(modes[m]);
+        while (i + modesz <= sz) {
+            src = locmem(i + srcoff, sp, NULL, modes[m]);
+            dst = locmem(i + dstoff, dp, NULL, modes[m]);
+            g(s, Imov, src, tmp, NULL);
+            g(s, Imov, tmp, dst, NULL);
+            i += modesz;
+        }
+        modesz /= 2;
     }
 }
 
