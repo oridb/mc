@@ -6,7 +6,7 @@ const main = {
 	var rng
 
 	rng = std.mksrng(123)
-	a = std.slalloc(100_000)
+	a = std.slalloc(500_000)
 	for i = 0; i < a.len; i++
 		a[i] = std.rand32(rng)
 	;;
