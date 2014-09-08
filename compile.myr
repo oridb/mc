@@ -30,6 +30,8 @@ type tree = union
 	`Cap	(std.size, tree#) /* id, tree */
 	`Bol	/* beginning of line */
 	`Eol	/* end of line */
+	`Bow	/* beginning of word */
+	`Eow	/* end of word */
 ;;
 
 type parseresult = union
@@ -107,6 +109,8 @@ const gen = {re, t
 	/* meta */
 	|`Bol:	append(re, `Ibol)
 	|`Eol:	append(re, `Ibol)
+	|`Bow:	append(re, `Ibow)
+	|`Eow:	append(re, `Ieow)
 	|`Cap	(m, a):
 		append(re, `Ilbra m)
 		gen(re, a)
@@ -312,6 +316,7 @@ const genchar = {re, c
 	var i
 
 	n = std.encode(b[:], c)
+	std.assert(n > 0 && n < 4, "non-utf character in regex\n")
 	for i = 0; i < n; i++
 		append(re, `Ibyte b[i])
 	;;
@@ -352,6 +357,8 @@ const idump = {re
 		/* anchors */
 		| `Ibol:			std.put("`Ibol\n")
 		| `Ieol:			std.put("`Ieol\n")
+		| `Ibow:			std.put("`Ibow\n")
+		| `Ieow:			std.put("`Ieow\n")
 		/* control flow */
 		| `Ifork	(lip, rip):	std.put("`Ifork (%z,%z)\n", lip, rip) 
 		| `Ijmp ip:		std.put("`Ijmp %z\n", ip) 
@@ -399,6 +406,10 @@ const dump = {re, t, indent
 		std.put("Bol\n")
 	| `Eol:
 		std.put("Eol\n")
+	| `Bow:
+		std.put("Bow\n")
+	| `Eow:
+		std.put("Eow\n")
 	/* end matches */
 	| `Byte	b:
 		std.put("Byte %b\n", b)
@@ -566,6 +577,10 @@ const escaped = {re
 	/* unicode character classes */
 	| 'p':	ret = unicodeclass(re, false)
 	| 'P':  ret = unicodeclass(re, true)
+
+	/* operators that need an escape */
+	| '<': ret = `Some mk(`Bow)
+	| '>': ret = `Some mk(`Eow)
 
 	/* escaped metachars */
 	| '^': ret = `Some mk(`Chr '^')

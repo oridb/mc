@@ -51,6 +51,8 @@ pkg regex =
 		/* anchors */
 		`Ibol
 		`Ieol
+		`Ibow
+		`Ieow
 
 		/* control flow */
 		`Ifork	(std.size, std.size)

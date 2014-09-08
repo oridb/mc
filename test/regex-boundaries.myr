@@ -1,0 +1,17 @@
+use "testmatch.use"
+
+const main = {
+	/* expected matches */
+	testmatch("\\<([a-z]*)\\>", "abcdef")	/* whole word */
+	testmatch(".*(\\<.*\\>).*", "!m!")	/* single char word in midstring */
+	testmatch(".*(\\<.*\\>).*", "!m")	/* single char word at end of string */
+	testmatch(".*(\\<.*\\>).*", "m!")	/* single char word at start of string */
+	testmatch(".*(\\<.*\\>).*", "!@#!!matches!!%!")	/* word in midstring */
+	testmatch(".*(\\<.*\\>).*", "matches!!%!")	/* word at start of string */
+	testmatch(".*(\\<.*\\>).*", "!@#!!matches")	/* word at end of string */
+	testmatch(".*(\\<.*\\>).*", "!@#!!matches!!%!foo")	/* matches last word in string */
+	testmatch(".*(\\<.*\\>).*", "123")	/* numbers are also word bounds */
+	
+	/* nonmatches */
+	testmatch("\\<([a-z]*)\\>foo", "abcdefoo")	/* word boundary needed in midstring */
+}

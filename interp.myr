@@ -163,9 +163,30 @@ const step = {re, thr, curip
 	| `Ieol:
 		trace(re, thr, "\t%z:\tEol\n", thr.ip)
 		if re.strp == str.len || str[re.strp] == '\n' castto(byte)
+			thr.ip++
 			-> false
 		else
 			die(re, thr, "not end of line")
+		;;
+	/* check for word characters */
+	| `Ibow:
+		trace(re, thr, "\t%z:\tBow\n", thr.ip)
+		if iswordchar(str[re.strp:]) && (re.strp == 0 || !iswordchar(prevchar(str, re.strp)))
+			thr.ip++
+			-> false
+		else
+			die(re, thr, "not beginning of word")
+		;;
+	| `Ieow:
+		trace(re, thr, "\t%z:\tEow\n", thr.ip)
+		if re.strp == str.len && iswordchar(prevchar(str, re.strp))
+			thr.ip++
+			-> false
+		elif re.strp > 0 && !iswordchar(str[re.strp:]) && iswordchar(prevchar(str, re.strp))
+			thr.ip++
+			-> false
+		else
+			die(re, thr, "not end of word")
 		;;
 	| `Ilbra m:
 		trace(re, thr, "\t%z:\tLbra %z\n", thr.ip, m)
@@ -267,4 +288,21 @@ const trace : (re : regex#, thr : rethread#, msg : byte[:], args : ... -> void) 
 	if re.debug
 		std.putv(msg, std.vastart(&args))
 	;;
+}
+
+/* must be called with i >= 1 */
+const prevchar = {s, i
+	std.assert(i != 0, "prevchar must be called with i >= 1\n")
+	i--
+	while i != 0 && s[i] >= 0x80
+		i--
+	;;
+	-> s[i:]
+}
+
+const iswordchar = {s
+	var c
+
+	c = std.decode(s)
+	-> std.isalpha(c) || std.isdigit(c) || c == '_'
 }

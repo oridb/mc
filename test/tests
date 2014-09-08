@@ -21,8 +21,9 @@ EXTRA_SRC=testmatch.myr
 #	What we compare with. This should be self-
 #	evident.
 B regex-basic		C
-B regex-class		C
-B regex-negclass	C
+B regex-boundaries	C
 B regex-capture         C
+B regex-class		C
 B regex-failmatch	C
+B regex-negclass	C
 B regex-unicode		C
