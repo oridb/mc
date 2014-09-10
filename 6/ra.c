@@ -1040,8 +1040,8 @@ static int remap(Isel *s, Insn *insn, Remapping *use, size_t *nuse, Remapping *d
         /* if we already have remapped a use for this register, we want to
          * store the same register from the def. */
         found = 0;
-        for (j = 0; j < defidx; j++) {
-            for (k = 0; i < useidx; k++) {
+        for (j = 0; j <= defidx; j++) {
+            for (k = 0; k < useidx; k++) {
                 if (use[k].oldreg == d[j]) {
                     def[defidx].newreg = use[j].newreg;
                     bsput(s->neverspill, def[defidx].newreg->reg.id);
