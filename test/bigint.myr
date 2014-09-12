@@ -2,7 +2,7 @@ use std
 
 const main = {
 	var a, b, c, d, e
-	var buf : byte[1024], n
+	var buf : byte[4096], n
 
 	a = std.mkbigint(1234)
 	b = std.mkbigint(0x7fffffff)
@@ -21,7 +21,7 @@ const main = {
 	std.bigfree(d)
 	std.bigfree(e)
 
-	n = std.bigbfmt(buf[:], a)
+	n = std.bigbfmt(buf[:], a, 0)
 	std.put("%s\n", buf[:n])
 
 	/* smoke test */
@@ -34,15 +34,25 @@ const main = {
 	| `std.None: std.die("Failed to parse b\n")
 	;;
 
-	n = std.bigbfmt(buf[:], a)
+	n = std.bigbfmt(buf[:], a, 0)
 	std.put("%s / ", buf[:n])
-	n = std.bigbfmt(buf[:], b)
+	n = std.bigbfmt(buf[:], b, 0)
 	std.put("%s == ", buf[:n])
 
 	std.bigdiv(a, b)
 
-	n = std.bigbfmt(buf[:], a)
+	n = std.bigbfmt(buf[:], a, 0)
 	std.put("%s\n", buf[:n])
+
+	/* test big shifts */
+	a = std.mkbigint(1)
+	var shift = 4095
+	n = std.bigbfmt(buf[:], a, 0)
+	std.put("%s << %i == 0x", buf[:n], shift)
+	std.bigshli(a, shift)
+	n = std.bigbfmt(buf[:], a, 10)
+	std.put("%s\n", buf[:n])
+	std.put("top bits: %xi\n", a.dig[a.dig.len - 1])
 
 	/* no shifting */
 	match std.bigparse("0xffff_1234_1234_1234_1234")
@@ -54,14 +64,14 @@ const main = {
 	| `std.None: std.die("Failed to parse b\n")
 	;;
 
-	n = std.bigbfmt(buf[:], a)
+	n = std.bigbfmt(buf[:], a, 0)
 	std.put("%s / ", buf[:n])
-	n = std.bigbfmt(buf[:], b)
+	n = std.bigbfmt(buf[:], b, 0)
 	std.put("%s == ", buf[:n])
 
 	std.bigdiv(a, b)
 
-	n = std.bigbfmt(buf[:], a)
+	n = std.bigbfmt(buf[:], a, 0)
 	std.put("%s\n", buf[:n])
 
 	/* no shifting */
@@ -74,13 +84,13 @@ const main = {
 	| `std.None: std.die("Failed to parse b\n")
 	;;
 
-	n = std.bigbfmt(buf[:], a)
+	n = std.bigbfmt(buf[:], a, 0)
 	std.put("%s / ", buf[:n])
-	n = std.bigbfmt(buf[:], b)
+	n = std.bigbfmt(buf[:], b, 0)
 	std.put("%s == ", buf[:n])
 
 	std.bigdiv(a, b)
 
-	n = std.bigbfmt(buf[:], a)
+	n = std.bigbfmt(buf[:], a, 0)
 	std.put("%s\n", buf[:n])
 }

@@ -25,8 +25,8 @@ pkg std =
 	const bigdup	: (a : bigint# -> bigint#)
 	const bigassign	: (d : bigint#, s : bigint# -> bigint#)
 	const bigparse	: (s : byte[:] -> option(bigint#))
-	const bigbfmt	: (b : byte[:], a : bigint# -> size)
-	const bigfmt	: (a : bigint# -> byte[:])
+	const bigbfmt	: (b : byte[:], a : bigint#, base : int -> size)
+	const bigfmt	: (a : bigint#, base : int -> byte[:])
 	/*
 	const bigtoint	: (a : bigint#	-> @a::(numeric,integral))
 	*/
@@ -64,7 +64,7 @@ const Base = 0x100000000ul
 
 generic mkbigint = {v : @a::(integral,numeric)
 	var a
-	var i
+	var val
 
 	a = zalloc()
 
@@ -74,10 +74,10 @@ generic mkbigint = {v : @a::(integral,numeric)
 	elif v > 0
 		a.sign = 1
 	;;
-	i = v castto(uint64)
-	while i > 0
-		a.dig = slpush(a.dig, (i castto(uint32)))
-		i /= Base
+	val = v castto(uint64)
+	a.dig = slpush([][:], val castto(uint32))
+	if val > Base
+		a.dig = slpush(a.dig, (val/Base) castto(uint32))
 	;;
 	-> trim(a)
 }
@@ -98,7 +98,7 @@ const bigassign = {d, s
 	-> d
 }
 
-const bigfmt = {a
+const bigfmt = {a, base
 	var buf
 	var n
 
@@ -111,19 +111,29 @@ const bigfmt = {a
 	or
 		2 + a.dig.len * 11
 	*/
-	buf = slalloc(2 + a.dig.len * 11)
-	n = bigbfmt(buf, a)
+	buf = slalloc(2 + a.dig.len * 13)
+	n = bigbfmt(buf, a, base)
 	-> buf[:n]
 }
 
 /* for now, just dump out something for debugging... */
-const bigbfmt = {buf, val
-	const digitchars = ['0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f']
+const bigbfmt = {buf, val, base
+	const digitchars = [
+	'0','1','2','3','4','5','6','7','8','9',
+	'a','b','c','d','e','f', 'g', 'h', 'i', 'j',
+	'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's',
+	't', 'u', 'v', 'w', 'x', 'y', 'z']
 	var v
 	var n, i
-	var tmp
-	var rem
+	var tmp, rem, b
 
+	if base < 0 || base > 36
+		die("invalid base in bigbfmt\n")
+	elif base == 0
+		b = mkbigint(10)
+	else
+		b = mkbigint(base)
+	;;
 	n = 0
 	if val.sign == 0
 		n += encode(buf, '0')
@@ -134,7 +144,7 @@ const bigbfmt = {buf, val
 	val = bigdup(val)
 	/* generate the digits in reverse order */
 	while !bigiszero(val)
-		(v, rem) = bigdivmod(val, mkbigint(10))
+		(v, rem) = bigdivmod(val, b)
 		if rem.dig.len > 0
 			n += bfmt(buf[n:], "%c", digitchars[rem.dig[0]])
 		else
@@ -145,7 +155,8 @@ const bigbfmt = {buf, val
 		val = v
 	;;
 	bigfree(val)
-	/* we only generated ascii digits, so this works. ugh. */
+	bigfree(b)
+	/* we only generated ascii digits, so this works for reversing. */
 	for i = 0; i < n/2; i++
 		tmp = buf[i]
 		buf[i] = buf[n - i - 1]
@@ -604,6 +615,10 @@ const bigshli = {a, s
 	off = s/32
 	shift = s % 32
 
+	/* zero shifted by anything is zero */
+	if a.sign == 0
+		-> a
+	;;
 	a.dig = slzgrow(a.dig, 1 + a.dig.len + off castto(size))
 	/* blit over the base values */
 	for i = a.dig.len; i > off; i--
