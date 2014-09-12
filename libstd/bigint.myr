@@ -533,41 +533,64 @@ const bigshr = {a, b
 FIXME: acually make this a performace improvement
 */
 const bigaddi = {a, b
-	var bigb
+	var bigb : bigint
+	var dig : uint32[2]
 
-	bigb = mkbigint(b)
-	bigadd(a, bigb)
-	bigfree(bigb)
+	bigdigit(&bigb, b, dig[:])
+	bigadd(a, &bigb)
 	-> a
 }
 
 const bigsubi = {a, b
-	var bigb
+	var bigb : bigint
+	var dig : uint32[2]
 
-	bigb = mkbigint(b)
-	bigsub(a, bigb)
-	bigfree(bigb)
+	bigdigit(&bigb, b, dig[:])
+	bigsub(a, &bigb)
 	-> a
 }
 
 const bigmuli = {a, b
-	var bigb
+	var bigb : bigint
+	var dig : uint32[2]
 
-	bigb = mkbigint(b)
-	bigmul(a, bigb)
-	bigfree(bigb)
+	bigdigit(&bigb, b, dig[:])
+	bigmul(a, &bigb)
 	-> a
 }
 
 const bigdivi = {a, b
-	var bigb
+	var bigb : bigint
+	var dig : uint32[2]
 
-	bigb = mkbigint(b)
-	bigdiv(a, bigb)
-	bigfree(bigb)
+	bigdigit(&bigb, b, dig[:])
+	bigdiv(a, &bigb)
 	-> a
 }
 
+const bigdigit = {v : bigint#, sval, dig
+	var val
+
+	if sval == 0
+		v.sign = 0
+	elif sval < 0
+		v.sign = -1
+		val = (-sval) castto(uint64)
+	else
+		v.sign = 1
+		val = sval castto(uint64)
+	;;
+	if val == 0
+		v.dig = [][:]
+	elif val > Base
+		v.dig = dig[:1]
+		v.dig[0] = val castto(uint32)
+	else
+		v.dig = dig
+		v.dig[0] = val castto(uint32)
+		v.dig[1] = (val >> 32) castto(uint32)
+	;;
+}
 
 /* 
   a << s, with integer arg.
