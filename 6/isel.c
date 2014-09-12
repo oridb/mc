@@ -381,7 +381,7 @@ static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size
         [1] = ModeB
     };
     size_t i, modesz;
-    Loc *sp, *dp; /* pointers to src, dst */
+    Loc *sp, *dp, *len; /* pointers to src, dst */
     Loc *tmp, *src, *dst; /* source memory, dst memory */
 
     assert(modes[align] != ModeNone);   /* make sure we have a valid alignment */
@@ -389,16 +389,37 @@ static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size
     dp = inr(s, to);
 
     i = 0;
-    for (modesz = align; modes[modesz] != ModeNone; modesz /= 2) {
-        tmp = locreg(modes[modesz]);
-        while (i + modesz <= sz) {
-            src = locmem(i + srcoff, sp, NULL, modes[modesz]);
-            dst = locmem(i + dstoff, dp, NULL, modes[modesz]);
-            g(s, Imov, src, tmp, NULL);
-            g(s, Imov, tmp, dst, NULL);
-            i += modesz;
+    if (sz <= 64*align) { /* arbitrary threshold; should be tuned */
+        for (modesz = align; modes[modesz] != ModeNone; modesz /= 2) {
+            tmp = locreg(modes[modesz]);
+            while (i + modesz <= sz) {
+                src = locmem(i + srcoff, sp, NULL, modes[modesz]);
+                dst = locmem(i + dstoff, dp, NULL, modes[modesz]);
+                g(s, Imov, src, tmp, NULL);
+                g(s, Imov, tmp, dst, NULL);
+                i += modesz;
+            }
         }
+    } else {
+        len = loclit(sz, ModeQ);
+        sp = newr(s, from);
+        dp = newr(s, to);
+ 
+        /* length to blit */
+        g(s, Imov, len, locphysreg(Rrcx), NULL);
+        /* source address with offset */
+        if (srcoff)
+            g(s, Ilea, locmem(srcoff, sp, NULL, ModeQ), locphysreg(Rrsi), NULL);
+        else
+            g(s, Imov, sp, locphysreg(Rrsi), NULL);
+        /* dest address with offset */
+        if (dstoff)
+            g(s, Ilea, locmem(dstoff, dp, NULL, ModeQ), locphysreg(Rrdi), NULL);
+        else
+            g(s, Imov, dp, locphysreg(Rrdi), NULL);
+        g(s, Irepmovsb, NULL);
     }
+        
 }
 
 static int isfunc(Isel *s, Node *n)
