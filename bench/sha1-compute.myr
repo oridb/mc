@@ -1,0 +1,20 @@
+use cryptohash
+use std
+
+const N = 20
+const main = {
+	var i, b
+	var buf : byte[1024*1024]
+	var st
+
+	b = 0
+	for i = 0; i < buf.len; i++
+		buf[i] = b++
+	;;
+	for i = 0; i < N; i++
+		cryptohash.sha1init(&st)
+		cryptohash.sha1add(&st, buf[:])
+		cryptohash.sha1fin(&st)
+	;;
+}
+

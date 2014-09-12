@@ -2,6 +2,7 @@ BIN=runner
 OBJ=runner.o
 BENCHSRC=intsort.myr \
 	 copious-allocs.myr \
+	 sha1-compute.myr \
 
 include ../config.mk
 include ../mk/c.mk
