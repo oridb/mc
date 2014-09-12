@@ -1,0 +1,26 @@
+use std
+
+const N = 600
+const main = {
+	var i
+	for i = 0; i < N; i++
+		std.bigfree(bigfact(i))
+	;;
+}
+
+const bigfact = {n
+	var i
+	var x, y
+
+	if n == 0
+		x = std.mkbigint(1)
+	else
+		x = std.mkbigint(n)
+		for i = n; i > 0; i--
+			y = std.mkbigint(i)
+			std.bigmul(x, y)
+			std.bigfree(y)
+		;;
+	;;
+	-> x
+}

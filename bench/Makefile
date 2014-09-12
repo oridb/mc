@@ -3,6 +3,7 @@ OBJ=runner.o
 BENCHSRC=intsort.myr \
 	 copious-allocs.myr \
 	 sha1-compute.myr \
+	 bigfactorial.myr \
 
 include ../config.mk
 include ../mk/c.mk
