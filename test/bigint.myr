@@ -21,7 +21,7 @@ const main = {
 	std.bigfree(d)
 	std.bigfree(e)
 
-	n = std.bigfmt(buf[:], a)
+	n = std.bigbfmt(buf[:], a)
 	std.put("%s\n", buf[:n])
 
 	/* smoke test */
@@ -34,14 +34,14 @@ const main = {
 	| `std.None: std.die("Failed to parse b\n")
 	;;
 
-	n = std.bigfmt(buf[:], a)
+	n = std.bigbfmt(buf[:], a)
 	std.put("%s / ", buf[:n])
-	n = std.bigfmt(buf[:], b)
+	n = std.bigbfmt(buf[:], b)
 	std.put("%s == ", buf[:n])
 
 	std.bigdiv(a, b)
 
-	n = std.bigfmt(buf[:], a)
+	n = std.bigbfmt(buf[:], a)
 	std.put("%s\n", buf[:n])
 
 	/* no shifting */
@@ -54,14 +54,14 @@ const main = {
 	| `std.None: std.die("Failed to parse b\n")
 	;;
 
-	n = std.bigfmt(buf[:], a)
+	n = std.bigbfmt(buf[:], a)
 	std.put("%s / ", buf[:n])
-	n = std.bigfmt(buf[:], b)
+	n = std.bigbfmt(buf[:], b)
 	std.put("%s == ", buf[:n])
 
 	std.bigdiv(a, b)
 
-	n = std.bigfmt(buf[:], a)
+	n = std.bigbfmt(buf[:], a)
 	std.put("%s\n", buf[:n])
 
 	/* no shifting */
@@ -74,13 +74,13 @@ const main = {
 	| `std.None: std.die("Failed to parse b\n")
 	;;
 
-	n = std.bigfmt(buf[:], a)
+	n = std.bigbfmt(buf[:], a)
 	std.put("%s / ", buf[:n])
-	n = std.bigfmt(buf[:], b)
+	n = std.bigbfmt(buf[:], b)
 	std.put("%s == ", buf[:n])
 
 	std.bigdiv(a, b)
 
-	n = std.bigfmt(buf[:], a)
+	n = std.bigbfmt(buf[:], a)
 	std.put("%s\n", buf[:n])
 }
