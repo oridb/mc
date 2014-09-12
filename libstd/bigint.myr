@@ -99,11 +99,21 @@ const bigassign = {d, s
 }
 
 const bigfmt = {a
-	var buf : byte[1024]
+	var buf
 	var n
 
-	n = bigbfmt(buf[:], a)
-	-> sldup(buf[:n])
+ 	/*
+	allocate a buffer guaranteed to be big enough.
+	that's 
+		2 + floor(nbits/(log_2(10)))
+	or
+		2 + a.dig.len * 32/3.32...
+	or
+		2 + a.dig.len * 11
+	*/
+	buf = slalloc(2 + a.dig.len * 11)
+	n = bigbfmt(buf, a)
+	-> buf[:n]
 }
 
 /* for now, just dump out something for debugging... */
