@@ -166,7 +166,7 @@ const bigbfmt = {buf, val, base
 }
 
 const bigparse = {str
-	var c, val : uint32, base
+	var c, val : int, base
 	var v, b
 	var a
 
@@ -179,9 +179,12 @@ const bigparse = {str
 	else
 		base = 10
 	;;
+	if base != 10
+		str = str[2:]
+	;;
 
 	a = mkbigint(0)
-	b = mkbigint(base castto(int32))
+	b = mkbigint(base)
 	/*
 	 efficiency hack: to save allocations,
 	 just mutate v[0]. The value will always
@@ -194,11 +197,13 @@ const bigparse = {str
 			continue
 		;;
 		val = charval(c, base)
-		if val < 0
+		if val < 0 || val > base
 			bigfree(a)
+			bigfree(b)
+			bigfree(v)
 			-> `None
 		;;
-		v.dig[0] = val
+		v.dig[0] = val castto(uint32)
 		if val == 0
 			v.sign = 0
 		else

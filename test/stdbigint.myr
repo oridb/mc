@@ -44,19 +44,10 @@ const main = {
 	n = std.bigbfmt(buf[:], a, 0)
 	std.put("%s\n", buf[:n])
 
-	/* test big shifts */
-	a = std.mkbigint(1)
-	var shift = 4095
-	n = std.bigbfmt(buf[:], a, 0)
-	std.put("%s << %i == 0x", buf[:n], shift)
-	std.bigshli(a, shift)
-	n = std.bigbfmt(buf[:], a, 10)
-	std.put("%s\n", buf[:n])
-	std.put("top bits: %xi\n", a.dig[a.dig.len - 1])
-
-	/* no shifting */
 	match std.bigparse("0xffff_1234_1234_1234_1234")
 	| `std.Some val: a = val
+	n = std.bigbfmt(buf[:], a, 0)
+	std.put("a = %s \n", buf[:n])
 	| `std.None: std.die("Failed to parse a\n")
 	;;
 	match std.bigparse("0xf010_1234_2314")
@@ -74,12 +65,13 @@ const main = {
 	n = std.bigbfmt(buf[:], a, 0)
 	std.put("%s\n", buf[:n])
 
-	/* no shifting */
-	match std.bigparse("0xffff_1234_1234_1234_1234")
+	match std.bigparse("5192296858534810493479828944327220")
 	| `std.Some val: a = val
+	n = std.bigbfmt(buf[:], a, 0)
+	std.put("a = %s \n", buf[:n])
 	| `std.None: std.die("Failed to parse a\n")
 	;;
-	match std.bigparse("0x0ff_1234_2314")
+	match std.bigparse("75557863709417659441940")
 	| `std.Some val: b = val
 	| `std.None: std.die("Failed to parse b\n")
 	;;
