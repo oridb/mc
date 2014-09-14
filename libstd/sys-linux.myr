@@ -672,6 +672,7 @@ const read	= {fd, buf;		-> syscall(Sysread, a(fd), buf castto(byte#), a(buf.len)
 const write	= {fd, buf;		-> syscall(Syswrite, a(fd), buf castto(byte#), a(buf.len)) castto(size)}
 const lseek	= {fd, off, whence;	-> syscall(Syslseek, a(fd), a(off), a(whence))}
 const stat	= {path, sb;		-> syscall(Sysstat, cstring(path), a(sb))}
+const lstat	= {path, sb;		-> syscall(Syslstat, cstring(path), a(sb))}
 const fstat	= {fd, sb;		-> syscall(Sysfstat, a(fd), a(sb))}
 const mkdir	= {path, mode;		-> syscall(Sysmkdir, cstring(path), a(mode)) castto(int64)}
 const ioctl	= {fd, req, args
