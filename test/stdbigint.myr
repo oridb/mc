@@ -47,7 +47,6 @@ const main = {
 	match std.bigparse("0xffff_1234_1234_1234_1234")
 	| `std.Some val: a = val
 	n = std.bigbfmt(buf[:], a, 0)
-	std.put("a = %s \n", buf[:n])
 	| `std.None: std.die("Failed to parse a\n")
 	;;
 	match std.bigparse("0xf010_1234_2314")
@@ -68,7 +67,6 @@ const main = {
 	match std.bigparse("5192296858534810493479828944327220")
 	| `std.Some val: a = val
 	n = std.bigbfmt(buf[:], a, 0)
-	std.put("a = %s \n", buf[:n])
 	| `std.None: std.die("Failed to parse a\n")
 	;;
 	match std.bigparse("75557863709417659441940")
