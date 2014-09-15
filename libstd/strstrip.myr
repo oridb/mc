@@ -1,6 +1,7 @@
 use "types.use"
 use "utf.use"
 use "chartype.use"
+use "fmt.use"
 
 pkg std =
 	const strstrip	: (str : byte[:] -> byte[:])
@@ -32,13 +33,12 @@ const strrstrip = {str
 	/* scan backwards for start of utf8 char */
 	end = str.len
 	for i = str.len; i != 0; i--
-		if str[i] & 0x80 == 0
+		if str[i - 1] & 0x80 == 0 || str[i-1] & 0xc0 != 0x80
 			if !isspace(decode(str[i-1:]))
-				goto donestrip
+				break
 			;;
 			end = i - 1
 		;;
 	;;
-:donestrip
 	-> str[:end]
 }
