@@ -628,7 +628,7 @@ const execv	= {cmd, args
 	/* of course we fucking have to duplicate this code everywhere,
 	* since we want to stack allocate... */
 	p = alloca((args.len + 1)*sizeof(byte#))
-	cargs = (p castto(byte##))[:args.len]
+	cargs = (p castto(byte##))[:args.len + 1]
 	for i = 0; i < args.len; i++
 		cargs[i] = cstring(args[i])
 	;;
@@ -642,7 +642,7 @@ const execve	= {cmd, args, env
 
 	/* copy the args */
 	p = alloca((args.len + 1)*sizeof(byte#))
-	cargs = (p castto(byte##))[:args.len]
+	cargs = (p castto(byte##))[:args.len + 1]
 	for i = 0; i < args.len; i++
 		cargs[i] = cstring(args[i])
 	;;
