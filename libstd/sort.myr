@@ -15,7 +15,7 @@ generic sort = {sl, cmp
 		sl[end] = sl[0]
 		sl[0] = tmp
 		end--
-		siftdown(sl[:end], 0, cmp)
+		siftdown(sl[:end + 1], 0, cmp)
 	;;
 	-> sl
 }

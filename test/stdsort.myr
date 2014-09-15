@@ -15,10 +15,12 @@ const main = {
 	for v in a
 		std.put("%i\n", v)
 	;;
+	std.put("---\n")
 	std.sort(b[:], std.numcmp)
 	for v in b
 		std.put("%i\n", v)
 	;;
+	std.put("---\n")
 	std.sort(c[:], std.strcmp)
 	for v in c
 		std.put("%s\n", v)
