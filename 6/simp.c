@@ -68,6 +68,7 @@ static void matchpattern(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, N
 static Type *tyintptr;
 static Type *tyword;
 static Type *tyvoid;
+static Node *abortfunc;
 
 size_t alignto(size_t sz, Type *t)
 {
@@ -859,24 +860,48 @@ static Node *membaddr(Simp *s, Node *n)
     return r;
 }
 
+static void checkidx(Simp *s, Node *len, Node *idx)
+{
+    Node *cmp, *die;
+    Node *ok, *fail;
+
+    /* create expressions */
+    cmp = mkexpr(idx->line, Olt, ptrsized(s, idx), ptrsized(s, len), NULL);
+    cmp->expr.type = mktype(-1, Tybool);
+    ok = genlbl();
+    fail = genlbl();
+    die = mkexpr(idx->line, Ocall, abortfunc, NULL);
+    die->expr.type = mktype(-1, Tyvoid);
+
+    /* insert them */
+    cjmp(s, cmp, ok, fail);
+    append(s, fail);
+    append(s, die);
+    append(s, ok);
+}
+
 static Node *idxaddr(Simp *s, Node *seq, Node *idx)
 {
-    Node *a, *t, *u, *v; /* temps */
+    Node *a, *t, *u, *v, *w; /* temps */
     Node *r; /* result */
     Type *ty;
     size_t sz;
 
     a = rval(s, seq, NULL);
     ty = exprtype(seq)->sub[0];
-    if (exprtype(seq)->type == Tyarray)
+    if (exprtype(seq)->type == Tyarray) {
         t = addr(s, a, ty);
-    else if (seq->expr.type->type == Tyslice)
+        w = exprtype(a)->asize;
+    } else if (seq->expr.type->type == Tyslice) {
         t = load(addr(s, a, mktyptr(seq->line, ty)));
-    else
+        w = slicelen(s, a);
+    } else {
         die("Can't index type %s\n", tystr(seq->expr.type));
+    }
     assert(t->expr.type->type == Typtr);
     u = rval(s, idx, NULL);
     u = ptrsized(s, u);
+    checkidx(s, w, u);
     sz = tysize(ty);
     v = mul(u, disp(seq->line, sz));
     r = add(t, v);
@@ -1813,6 +1838,29 @@ static void simpglobl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***
     free(name);
 }
 
+static void initconsts(Htab *globls)
+{
+    Type *ty;
+    Node *name;
+    Node *dcl;
+
+    tyintptr = mktype(-1, Tyuint64);
+    tyword = mktype(-1, Tyuint);
+    tyvoid = mktype(-1, Tyvoid);
+
+    ty = mktyfunc(-1, NULL, 0, mktype(-1, Tyvoid));
+    name = mknsname(-1, "_rt", "abort_oob");
+    dcl = mkdecl(-1, name, ty);
+    dcl->decl.isconst = 1;
+    dcl->decl.isextern = 1;
+    htput(globls, dcl, asmname(dcl->decl.name));
+
+    abortfunc = mkexpr(-1, Ovar, name, NULL);
+    abortfunc->expr.type = ty;
+    abortfunc->expr.did = dcl->decl.did;
+    abortfunc->expr.isconst = 1;
+}
+
 void gen(Node *file, char *out)
 {
     Htab *globls, *strtab;
@@ -1822,16 +1870,12 @@ void gen(Node *file, char *out)
     size_t i;
     FILE *fd;
 
-    /* declare useful constants */
-    tyintptr = mktype(-1, Tyuint64);
-    tyword = mktype(-1, Tyuint);
-    tyvoid = mktype(-1, Tyvoid);
-
     fn = NULL;
     nfn = 0;
     blob = NULL;
     nblob = 0;
     globls = mkht(varhash, vareq);
+    initconsts(globls);
 
     /* We need to define all global variables before use */
     fillglobls(file->file.globls, globls);

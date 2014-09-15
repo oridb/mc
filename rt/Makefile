@@ -1,5 +1,5 @@
 OBJ = _myrrt.o
-ASMSRC = start.s common.s
+ASMSRC = start.s common.s abort.s
 
 all: _myrrt.o
 

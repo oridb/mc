@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <err.h>
@@ -56,6 +57,7 @@ static char *gentemp(char *buf, size_t bufsz, char *path, char *suffix)
 {
     char *tmpdir;
     char *base;
+    struct timeval tv;
 
     tmpdir = getenv("TMPDIR");
     if (!tmpdir)
@@ -65,7 +67,9 @@ static char *gentemp(char *buf, size_t bufsz, char *path, char *suffix)
         base++;
     else
         base = path;
-    snprintf(buf, bufsz, "%s/tmp%lx-%s%s", tmpdir, random(), base, suffix);
+    gettimeofday(&tv, NULL);
+    srandom(tv.tv_usec);
+    snprintf(buf, bufsz, "%s/tmp%lx%lx-%s%s", tmpdir, random(), (long)tv.tv_usec, base, suffix);
     return buf;
 }
 
@@ -88,7 +92,6 @@ int main(int argc, char **argv)
     int i;
     Stab *globls;
     char buf[1024];
-
     while ((opt = getopt(argc, argv, "d:hSo:I:")) != -1) {
         switch (opt) {
             case 'o':

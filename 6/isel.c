@@ -422,7 +422,7 @@ static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size
         
 }
 
-static int isfunc(Isel *s, Node *n)
+static int isconstfunc(Isel *s, Node *n)
 {
     Node *d;
 
@@ -441,7 +441,7 @@ static void call(Isel *s, Node *n)
     AsmOp op;
     Loc *f;
 
-    if (isfunc(s, n)) {
+    if (isconstfunc(s, n)) {
         op = Icall;
         f = locmeml(htget(s->globls, n), NULL, NULL, mode(n));
     } else {
@@ -696,7 +696,7 @@ Loc *selexpr(Isel *s, Node *n)
             r = loc(s, n);
             break;
         case Ovar:
-            if (isfunc(s, n)) {
+            if (isconstfunc(s, n)) {
                 r = locreg(ModeQ);
                 a = loc(s, n);
                 g(s, Ilea, a, r, NULL);
