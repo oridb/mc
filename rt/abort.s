@@ -7,18 +7,20 @@ __rt$abort_oob:
 	/* format pc */
 	movq	(%rsp),%rax
 	movq	$15,%rdx
+	leaq	.digitchars(%rip),%r8
+        leaq    .pcstr(%rip),%r9
 .loop:
 	movq	%rax, %rcx
 	andq	$0xf, %rcx
-	movb	.digitchars(%rcx),%r8b
-	movb	%r8b,.pcstr(%rdx)
+        movb    (%r8,%rcx),%r10b
+	movb	%r10b,(%r9,%rdx)
 	subq	$1, %rdx
 	shrq	$4, %rax
 	jnz .loop
 	/* write abort message */
 	movq	$1, %rax 	/* write(fd=%rdi, msg=%rsi, len=%rdx) */
 	movq	$2, %rdi		/* fd */
-	movq	$.msg, %rsi	/* msg */
+	leaq	.msg(%rip), %rsi	/* msg */
 	movq	$(.msgend-.msg), %rdx	/* length */
 	syscall
 	/* kill self */
@@ -30,10 +32,9 @@ __rt$abort_oob:
 	syscall
 .data
 .msg: 	/* pc name:  */
-	.byte '0','x'
+	.ascii "0x"
 .pcstr:
-	.byte '0','0','0','0','0','0','0','0'
-	.byte '0','0','0','0','0','0','0','0'
+	.ascii "0000000000000000"
 	.ascii ": out of bounds access\n"
 .msgend:
 
