@@ -729,8 +729,7 @@ const merge = {rl
 	ret = [][:]
 	lo = rl[0][0]
 	hi = rl[0][1]
-	rl = rl[1:] /* BUG: compiler wants an rval in loop range */
-	for r in rl
+	for r in rl[1:]
 		/* if it overlaps or abuts, merge */
 		if r[0] <= hi + 1
 			hi = r[1]
