@@ -233,7 +233,7 @@ void scrapelib(Htab *g, char *lib)
     htput(g, lib, deps);
 }
 
-void compile(char *file)
+void compile(char *file, char ***stack, size_t *nstack)
 {
     size_t i, ndeps;
     char **cmd;
@@ -248,8 +248,12 @@ void compile(char *file)
 
     if (hthas(compiled, file))
         return;
-    if (hthas(loopdetect, file))
-        die("Cycle in dependency graph, involving %s\n", file);
+    if (hthas(loopdetect, file)) {
+        fprintf(stderr, "Cycle in dependency graph, involving %s. dependency stack:\n", file);
+        for (i = 0; i < *nstack; i++)
+            fprintf(stderr, "\t%s\n", (*stack)[i]);
+        exit(1);
+    }
     htput(loopdetect, file, file);
     if (hassuffix(file, ".myr")) {
         swapsuffix(use, sizeof use, file, ".myr", ".use");
@@ -258,7 +262,9 @@ void compile(char *file)
         for (i = 0; i < ndeps; i++) {
             if (isquoted(deps[i])) {
                 localdep = usetomyr(deps[i]);
-                compile(localdep);
+                lappend(stack, nstack, localdep);
+                compile(localdep, stack, nstack);
+                lpop(stack, nstack);
                 free(localdep);
             } else {
                 scrapelib(libgraph, deps[i]);
@@ -452,6 +458,8 @@ int main(int argc, char **argv)
     int opt;
     int i;
     struct utsname name;
+    char **stack;
+    size_t nstack;
 
     if (uname(&name) == 0)
         sysname = strdup(name.sysname);
@@ -489,12 +497,17 @@ int main(int argc, char **argv)
     if (libname && binname)
         die("Can't specify both library and binary names");
 
+    stack = NULL;
+    nstack = 0;
     libgraph = mkht(strhash, streq);
     compiled = mkht(strhash, streq);
     loopdetect = mkht(strhash, streq);
     regcomp(&usepat, "^[[:space:]]*use[[:space:]]+([^[:space:]]+)", REG_EXTENDED);
-    for (i = optind; i < argc; i++)
-        compile(argv[i]);
+    for (i = optind; i < argc; i++) {
+        lappend(&stack, &nstack, argv[i]);
+        compile(argv[i], &stack, &nstack);
+        lpop(&stack, &nstack);
+    }
     if (libname) {
         mergeuse(&argv[optind], argc - optind);
         archive(&argv[optind], argc - optind);

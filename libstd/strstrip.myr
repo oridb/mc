@@ -1,7 +1,6 @@
 use "types.use"
 use "utf.use"
 use "chartype.use"
-use "fmt.use"
 
 pkg std =
 	const strstrip	: (str : byte[:] -> byte[:])
