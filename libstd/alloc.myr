@@ -211,7 +211,7 @@ const zfill = {sl
 
 /* Allocates a blob that is 'sz' bytes long. Dies if the allocation fails */
 const bytealloc = {sz
-	var i, bkt
+	var i, bkt, p
 
 	if !initdone
 		for i = 0; i < buckets.len && (Align << i) <= Bktmax; i++
@@ -222,21 +222,25 @@ const bytealloc = {sz
 
 	if (sz <= Bktmax)
 		bkt = &buckets[bktnum(sz)]
-		-> bktalloc(bkt)
+		p = bktalloc(bkt)
 	else
-		-> mmap(Zbyteptr, sz, Mprotrw, Mpriv | Manon, -1, 0)
+		p = mmap(Zbyteptr, sz, Mprotrw, Mpriv | Manon, -1, 0)
+		if p == Mapbad
+			die("could not map memory\n")
+		;;
 	;;
+	-> p
 }
 
 /* frees a blob that is 'sz' bytes long. */
-const bytefree = {m, sz
+const bytefree = {p, sz
 	var bkt
 
 	if (sz < Bktmax)
 		bkt = &buckets[bktnum(sz)]
-		bktfree(bkt, m)
+		bktfree(bkt, p)
 	else
-		munmap(m, sz)
+		munmap(p, sz)
 	;;
 }
 
