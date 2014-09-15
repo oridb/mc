@@ -1,10 +1,10 @@
 use "alloc.use"
+use "chartype.use"
 use "cmp.use"
 use "die.use"
 use "extremum.use"
 use "fmt.use"
 use "hasprefix.use"
-use "chartype.use"
 use "option.use"
 use "slcp.use"
 use "sldup.use"
@@ -49,12 +49,12 @@ pkg std =
 	*/
 
 	/* bigint*int -> bigint ops */
-	const bigaddi	: (a : bigint#, b : int64 -> bigint#)
-	const bigsubi	: (a : bigint#, b : int64 -> bigint#)
-	const bigmuli	: (a : bigint#, b : int64 -> bigint#)
-	const bigdivi	: (a : bigint#, b : int64 -> bigint#)
-	const bigshli	: (a : bigint#, b : uint64 -> bigint#)
-	const bigshri	: (a : bigint#, b : uint64 -> bigint#)
+	generic bigaddi	: (a : bigint#, b : @a::(integral,numeric) -> bigint#)
+	generic bigsubi	: (a : bigint#, b : @a::(integral,numeric) -> bigint#)
+	generic bigmuli	: (a : bigint#, b : @a::(integral,numeric) -> bigint#)
+	generic bigdivi	: (a : bigint#, b : @a::(integral,numeric) -> bigint#)
+	generic bigshli	: (a : bigint#, b : @a::(integral,numeric) -> bigint#)
+	generic bigshri	: (a : bigint#, b : @a::(integral,numeric) -> bigint#)
 	/*
 	const bigpowi	: (a : bigint#, b : uint64 -> bigint#)
 	*/
@@ -556,38 +556,38 @@ const bigshr = {a, b
 /* a + b, b is integer.
 FIXME: acually make this a performace improvement
 */
-const bigaddi = {a, b
+generic bigaddi = {a, b
 	var bigb : bigint
 	var dig : uint32[2]
 
-	bigdigit(&bigb, b, dig[:])
+	bigdigit(&bigb, b castto(int64), dig[:])
 	bigadd(a, &bigb)
 	-> a
 }
 
-const bigsubi = {a, b
+generic bigsubi = {a, b
 	var bigb : bigint
 	var dig : uint32[2]
 
-	bigdigit(&bigb, b, dig[:])
+	bigdigit(&bigb, b castto(int64), dig[:])
 	bigsub(a, &bigb)
 	-> a
 }
 
-const bigmuli = {a, b
+generic bigmuli = {a, b
 	var bigb : bigint
 	var dig : uint32[2]
 
-	bigdigit(&bigb, b, dig[:])
+	bigdigit(&bigb, b castto(int64), dig[:])
 	bigmul(a, &bigb)
 	-> a
 }
 
-const bigdivi = {a, b
+generic bigdivi = {a, b
 	var bigb : bigint
 	var dig : uint32[2]
 
-	bigdigit(&bigb, b, dig[:])
+	bigdigit(&bigb, b castto(int64), dig[:])
 	bigdiv(a, &bigb)
 	-> a
 }
@@ -620,13 +620,13 @@ const bigdigit = {v : bigint#, sval, dig
   a << s, with integer arg.
   logical left shift. any other type would be illogical.
  */
-const bigshli = {a, s
+generic bigshli = {a, s : @a::(numeric,integral)
 	var off, shift
 	var t, carry
 	var i
 
-	off = s/32
-	shift = s % 32
+	off = (s castto(uint64)) / 32
+	shift = (s castto(uint64)) % 32
 
 	/* zero shifted by anything is zero */
 	if a.sign == 0
@@ -651,13 +651,13 @@ const bigshli = {a, s
 }
 
 /* logical shift right, zero fills. sign remains untouched. */
-const bigshri = {a, s
+generic bigshri = {a, s
 	var off, shift
 	var t, carry
 	var i
 
-	off = s/32
-	shift = s % 32
+	off = (s castto(uint64)) / 32
+	shift = (s castto(uint64)) % 32
 
 	/* blit over the base values */
 	for i = 0; i < a.dig.len - off; i++
