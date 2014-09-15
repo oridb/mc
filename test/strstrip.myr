@@ -1,6 +1,11 @@
 use std
 
 const main = {
+	std.put("\"%s\"\n", std.strstrip("cccc"))
+	std.put("\"%s\"\n", std.strfstrip("cccc"))
+	std.put("\"%s\"\n", std.strrstrip("cccc"))
+
+	std.put("--\n")
 	std.put("\"%s\"\n", std.strstrip("  abc  "))
 	std.put("\"%s\"\n", std.strfstrip("  abc  "))
 	std.put("\"%s\"\n", std.strrstrip("  abc  "))
