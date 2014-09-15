@@ -1,5 +1,6 @@
 use "die.use"
 use "sys.use"
+use "types.use"
 
 /* 
    Tables adapted from plan 9's runetype.c,
@@ -26,6 +27,8 @@ pkg std =
 
 	generic charval : (c : char, base : int -> @a::(integral,numeric))
 ;;
+
+extern const put	: (fmt : byte[:], args : ... -> size)
 
 /*
  * alpha ranges -
@@ -1058,20 +1061,21 @@ const rtotitle1 = [
 	0x01f3, 499	/* ǳ ǲ */
 ]
 
-const findc = {c, t, sz, nelt, ret
-	var l
-	var m
+const findc = {c, t, n, nelt, ret
+	var p, m
 
-	/* we're processing in chunks of size 
-	   nelt, so 1 chunk is of length 'nelt' */
-	while t.len > nelt
-		sz /= 2
-		m = sz*nelt
-		l = t[m:]
-		if c >= l[0]
-			t = l[0:m]
+	/*
+	we're processing in chunks of size 
+	nelt, so 1 chunk is of length 'nelt'
+	*/
+	while n > 1
+		m = n/2
+		p = t[m*nelt:]
+		if c >= p[0]
+			t = p
+			n = n - m
 		else
-			t = t[0:m]
+			n = m
 		;;
 	;;
 
@@ -1147,11 +1151,12 @@ const isspace = {c
 const islower = {c
 	var l
 
-	if findc(c, rtoupper2[:], rtoupper2.len, 2, &l)
+	/* the first character in the toupper table is the lowercase char */
+	if findc(c, rtoupper2[:], rtoupper2.len/3, 3, &l)
 		if (c >= l[0] && c <= l[1])
 			-> true
 		;;
-	elif findc(c, rtoupper1[:], rtoupper1.len, 1, &l)
+	elif findc(c, rtoupper1[:], rtoupper1.len/2, 2, &l)
 		if (c == l[0])
 			-> true
 		;;
@@ -1162,11 +1167,12 @@ const islower = {c
 const isupper = {c
 	var l
 
-	if findc(c, rtolower2[:], rtolower2.len, 2, &l)
+	/* the first character in the tolower table is the uppercase char */
+	if findc(c, rtolower2[:], rtolower2.len/3, 3, &l)
 		if (c >= l[0] && c <= l[1])
 			-> true
 		;;
-	elif findc(c, rtolower1[:], rtolower1.len, 1, &l)
+	elif findc(c, rtolower1[:], rtolower1.len/2, 2, &l)
 		if (c == l[0])
 			-> true
 		;;

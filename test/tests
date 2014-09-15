@@ -122,6 +122,7 @@ B import-type	E	0
 B helloworld	P	Hello-世界
 B encodechar	P	1世界äa
 B stdsearch	E	0
+B stdchartype	E	0
 B stdtry	C
 B strtab	C
 B catfile	C
