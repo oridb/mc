@@ -35,8 +35,8 @@ generic siftdown = {sl, start, cmp
 	var tmp
 
 	r = start
-	while 2*r + 1 <= sl.len
-		c = r*2 + 1
+	while 2*r + 1 < sl.len
+		c = 2*r + 1
 		s = r
 		match cmp(sl[s], sl[c])
 		| `Before:	s = c
