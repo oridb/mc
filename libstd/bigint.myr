@@ -250,30 +250,34 @@ generic bigeqi = {a, b
 
 const bigcmp = {a, b
 	var i
+	var da, db, sa, sb
 
-	if a.sign < b.sign
+	sa = a.sign castto(int64)
+	sb = b.sign castto(int64)
+	if sa < sb
 		-> `Before
-	elif a.sign > b.sign
+	elif sa > sb
 		-> `After
-	elif a.dig.len > b.dig.len
-		-> signedorder(a.sign)
 	elif a.dig.len < b.dig.len
-		-> signedorder(-a.sign)
-	/* otherwise, the one with the first larger digit is bigger */
-	for i = a.dig.len; i > 0; i--
-		if a.dig[i - 1] > b.dig[i - 1]
-			-> signedorder(a.sign)
-		elif b.dig[i - 1] > a.dig[i - 1]
-			-> signedorder(a.sign)
+		-> signedorder(-sa)
+	elif a.dig.len > b.dig.len
+		-> signedorder(sa)
+	else
+		/* otherwise, the one with the first larger digit is bigger */
+		for i = a.dig.len; i > 0; i--
+			da = a.dig[i - 1] castto(int64)
+			db = b.dig[i - 1] castto(int64)
+			-> signedorder(sa * (da - db))
 		;;
-	;;
 	;;
 	-> `Equal
 }
 
 const signedorder = {sign
-	if sign == -1
+	if sign < 0
 		-> `Before 
+	elif sign == 0
+		-> `Equal
 	else
 		-> `After
 	;;
