@@ -18,17 +18,17 @@ __rt$abort_oob:
 	shrq	$4, %rax
 	jnz .loop
 	/* write abort message */
-	movq	$1, %rax 	/* write(fd=%rdi, msg=%rsi, len=%rdx) */
+	movq	$0x2000004, %rax 	/* write(fd=%rdi, msg=%rsi, len=%rdx) */
 	movq	$2, %rdi		/* fd */
 	leaq	.msg(%rip), %rsi	/* msg */
 	movq	$(.msgend-.msg), %rdx	/* length */
 	syscall
 	/* kill self */
-	movq	$39,%rax 	/* getpid */
+	movq	$0x2000014,%rax 	/* getpid */
 	syscall	
 	movq	%rax, %rdi	/* save pid */
-	movq	$62, %rax	/* kill(pid=%rdi, sig=%rsi) */
-	movq	$6, %rsi	/* kill(pid=%rdi, sig=%rsi) */
+	movq	$0x2000025, %rax	/* kill(pid=%rdi, sig=%rsi) */
+	movq	$6, %rsi
 	syscall
 .data
 .msg: 	/* pc name:  */
