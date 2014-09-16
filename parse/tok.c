@@ -140,7 +140,11 @@ static void eatspace(void)
         } else if (c == '\\') {
             ignorenl = 1;
             next();
-        } else if (isspace(c) || (ignorenl && c == '\n')) {
+        } else if (ignorenl && c == '\n') {
+            next();
+            line++;
+            ignorenl = 0;
+        } else if (isspace(c)) {
             next();
         } else if (c == '/' && peekn(1) == '*') {
             eatcomment();
