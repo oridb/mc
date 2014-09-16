@@ -372,13 +372,13 @@ TABLE OF CONTENTS:
                 x.name          Member lookup
                 x++             Postincrement
                 x--             Postdecrement
+                x#              Dereference
                 x[e]            Index
                 x[from,to]      Slice
 
             Precedence 12:
                 ++x             Preincrement
                 --x             Predecrement
-                *x              Dereference
                 &x              Address
                 !x              Logical negation
                 ~x              Bitwise negation
@@ -498,9 +498,9 @@ TABLE OF CONTENTS:
                     slice           array
 
                 Pointers are, as expected, values that hold the address of
-                the pointed to value. They are declared by appending a '*'
+                the pointed to value. They are declared by appending a '#'
                 to the type. Pointer arithmetic is not allowed. They are
-                declared by appending a '*' to the base type
+                declared by appending a '#' to the base type
 
                 Arrays are a group of N values, where N is part of the type.
                 Arrays of different sizes are incompatible. Arrays in
@@ -512,7 +512,7 @@ TABLE OF CONTENTS:
                 contents. They are declared by appending a '[,]' to the base
                 type.
 
-                    foo*        type: pointer to foo
+                    foo#        type: pointer to foo
                     foo[123]    type: array of 123 foo
                     foo[,]      type: slice of foo
 
