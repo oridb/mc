@@ -1,14 +1,14 @@
 pkg std =
-	const float64bits	: (flt : float64 -> uint64)
-	const float32bits	: (flt : float32 -> uint32)
+	const float64bits	: (flt : float64 -> int64)
+	const float32bits	: (flt : float32 -> int32)
 	const float64frombits	: (bits : uint64 -> float64)
 	const float32frombits	: (bits : uint32 -> float32)
-	const float64explode	: (flt : float64 -> (bool, uint64, int32))
-	const float32explode	: (flt : float64 -> (bool, uint64, int32))
+	const float64explode	: (flt : float64 -> (bool, int64, int64))
+	const float32explode	: (flt : float32 -> (bool, int32, int32))
 ;;
 
-const float64bits	= {flt;	-> (&flt castto(uint64#))#}
-const float32bits	= {flt;	-> (&flt castto(uint32#))#}
+const float64bits	= {flt;	-> (&flt castto(int64#))#}
+const float32bits	= {flt;	-> (&flt castto(int32#))#}
 const float64frombits	= {bits;	-> (&bits castto(float64#))#}
 const float32frombits	= {bits;	-> (&bits castto(float32#))#}
 
@@ -18,11 +18,11 @@ const float64explode = {flt
 	bits = float64bits(flt)
 	isneg = (bits >> 63) == 0  	/* msb is sign bit */
 	exp = (bits >> 52) & 0x7ff 	/* exp is in bits [52..63] */
-	mant = bits & ((1ul << 52) - 1) /* msb is in bits [..51] */
+	mant = bits & ((1l << 52) - 1) /* msb is in bits [..51] */
 
 	/* add back the implicit bit if this is not a denormal */
 	if exp != 0
-		mant |= 1ul << 52
+		mant |= 1l << 52
 	else
 		exp = 1
 	;;
@@ -32,20 +32,20 @@ const float64explode = {flt
 	   our exponent bias needs to be offset by the
 	   size of m
 	*/
-	-> (isneg, mant, (exp castto(int32)) - 1075)
+	-> (isneg, mant, exp)
 }
 
 const float32explode = {flt
 	var bits, isneg, mant, exp
 
-	bits = float64bits(flt) castto(uint64)
+	bits = float32bits(flt)
 	isneg = (bits >> 31) == 0  	/* msb is sign bit */
 	exp = (bits >> 22) & 0xff 	/* exp is in bits [23..30] */
-	mant = bits & ((1ul << 52) - 1) /* msb is in bits [0..22] */
+	mant = bits & ((1 << 22) - 1) /* msb is in bits [0..22] */
 
 	/* add back the implicit bit if this is not a denormal */
 	if exp != 0
-		mant |= 1ul << 22
+		mant |= 1 << 22
 	else
 		exp = 1
 	;;
@@ -55,6 +55,6 @@ const float32explode = {flt
 	   our exponent bias needs to be offset by the
 	   size of m
 	*/
-	-> (isneg, mant, (exp castto(int32)) - 149)
+	-> (isneg, mant, exp)
 }
 
