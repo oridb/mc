@@ -33,6 +33,8 @@ pkg std =
 
 	/* some useful predicates */
 	const bigiszero	: (a : bigint# -> bool)
+	const bigeq	: (a : bigint#, b : bigint# -> bool)
+	generic bigeqi	: (a : bigint#, b : @a::(numeric,integral) -> bool)
 	const bigcmp	: (a : bigint#, b : bigint# -> order)
 
 	/* bigint*bigint -> bigint ops */
@@ -59,6 +61,7 @@ pkg std =
 	const bigpowi	: (a : bigint#, b : uint64 -> bigint#)
 	*/
 ;;
+
 
 const Base = 0x100000000ul
 
@@ -117,13 +120,13 @@ const bigfmt = {a, base
 }
 
 /* for now, just dump out something for debugging... */
-const bigbfmt = {buf, val, base
+const bigbfmt = {buf, x, base
 	const digitchars = [
 	'0','1','2','3','4','5','6','7','8','9',
 	'a','b','c','d','e','f', 'g', 'h', 'i', 'j',
 	'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's',
 	't', 'u', 'v', 'w', 'x', 'y', 'z']
-	var v
+	var v, val
 	var n, i
 	var tmp, rem, b
 
@@ -135,13 +138,7 @@ const bigbfmt = {buf, val, base
 		b = mkbigint(base)
 	;;
 	n = 0
-	if val.sign == 0
-		n += encode(buf, '0')
-	elif val.sign == -1
-		n += encode(buf, '-')
-	;;
-
-	val = bigdup(val)
+	val = bigdup(x)
 	/* generate the digits in reverse order */
 	while !bigiszero(val)
 		(v, rem) = bigdivmod(val, b)
@@ -156,6 +153,14 @@ const bigbfmt = {buf, val, base
 	;;
 	bigfree(val)
 	bigfree(b)
+
+	/* this is done last, so we get things right when we reverse the string */
+	if x.sign == 0
+		n += encode(buf[n:], '0')
+	elif x.sign == -1
+		n += encode(buf[n:], '-')
+	;;
+
 	/* we only generated ascii digits, so this works for reversing. */
 	for i = 0; i < n/2; i++
 		tmp = buf[i]
@@ -218,6 +223,28 @@ const bigparse = {str
 
 const bigiszero = {v
 	-> v.dig.len == 0
+}
+
+const bigeq = {a, b
+	var i
+
+	if a.sign != b.sign || a.dig.len != b.dig.len
+		-> false
+	;;
+	for i = 0; i < a.dig.len; i++
+		if a.dig[i] != b.dig[i]
+			-> false
+		;;
+	;;
+	-> true
+}
+
+generic bigeqi = {a, b
+	var v
+	var dig : uint32[2]
+
+	bigdigit(&v, b < 0, b castto(uint64), dig[:])
+	-> bigeq(a, &v)
 }
 
 const bigcmp = {a, b
@@ -560,16 +587,16 @@ generic bigaddi = {a, b
 	var bigb : bigint
 	var dig : uint32[2]
 
-	bigdigit(&bigb, b castto(int64), dig[:])
+	bigdigit(&bigb, b < 0, b castto(uint64), dig[:])
 	bigadd(a, &bigb)
 	-> a
 }
 
-generic bigsubi = {a, b
+generic bigsubi = {a, b : @a::(numeric,integral)
 	var bigb : bigint
 	var dig : uint32[2]
 
-	bigdigit(&bigb, b castto(int64), dig[:])
+	bigdigit(&bigb, b < 0, b castto(uint64), dig[:])
 	bigsub(a, &bigb)
 	-> a
 }
@@ -578,7 +605,7 @@ generic bigmuli = {a, b
 	var bigb : bigint
 	var dig : uint32[2]
 
-	bigdigit(&bigb, b castto(int64), dig[:])
+	bigdigit(&bigb, b < 0, b castto(uint64), dig[:])
 	bigmul(a, &bigb)
 	-> a
 }
@@ -587,33 +614,9 @@ generic bigdivi = {a, b
 	var bigb : bigint
 	var dig : uint32[2]
 
-	bigdigit(&bigb, b castto(int64), dig[:])
+	bigdigit(&bigb, b < 0, b castto(uint64), dig[:])
 	bigdiv(a, &bigb)
 	-> a
-}
-
-const bigdigit = {v : bigint#, sval, dig
-	var val
-
-	if sval == 0
-		v.sign = 0
-	elif sval < 0
-		v.sign = -1
-		val = (-sval) castto(uint64)
-	else
-		v.sign = 1
-		val = sval castto(uint64)
-	;;
-	if val == 0
-		v.dig = [][:]
-	elif val > Base
-		v.dig = dig[:1]
-		v.dig[0] = val castto(uint32)
-	else
-		v.dig = dig
-		v.dig[0] = val castto(uint32)
-		v.dig[1] = (val >> 32) castto(uint32)
-	;;
 }
 
 /* 
@@ -625,6 +628,7 @@ generic bigshli = {a, s : @a::(numeric,integral)
 	var t, carry
 	var i
 
+	assert(s >= 0, "shift amount must be positive")
 	off = (s castto(uint64)) / 32
 	shift = (s castto(uint64)) % 32
 
@@ -656,6 +660,7 @@ generic bigshri = {a, s
 	var t, carry
 	var i
 
+	assert(s >= 0, "shift amount must be positive")
 	off = (s castto(uint64)) / 32
 	shift = (s castto(uint64)) % 32
 
@@ -663,7 +668,7 @@ generic bigshri = {a, s
 	for i = 0; i < a.dig.len - off; i++
 		a.dig[i] = a.dig[i + off]
 	;;
-	for i = a.dig.len; i < a.dig.len + off; i++
+	for i = a.dig.len - off; i < a.dig.len; i++
 		a.dig[i] = 0
 	;;
 	/* and shift over by the remainder */
@@ -674,6 +679,23 @@ generic bigshri = {a, s
 		carry = t << (32 - shift)
 	;;
 	-> trim(a)
+}
+
+/* creates a bigint on the stack; should not be modified. */
+const bigdigit = {v, isneg : bool, val : uint64, dig
+	if isneg
+		val = -val
+	;;
+	if val == 0
+		v.dig = [][:]
+	elif val > Base
+		v.dig = dig[:1]
+		v.dig[0] = val castto(uint32)
+	else
+		v.dig = dig
+		v.dig[0] = val castto(uint32)
+		v.dig[1] = (val >> 32) castto(uint32)
+	;;
 }
 
 /* trims leading zeros */
