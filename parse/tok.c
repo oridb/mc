@@ -180,6 +180,7 @@ static int kwd(char *s)
         {"in",          Tin},
         {"match",       Tmatch},
         {"pkg",         Tpkg},
+        {"pkglocal",    Tpkglocal},
         {"protect",     Tprotect},
         {"sizeof",      Tsizeof},
         {"struct",      Tstruct},

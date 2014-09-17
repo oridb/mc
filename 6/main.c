@@ -135,6 +135,7 @@ int main(int argc, char **argv)
         if (debugopt['T'])
             dump(file, stdout);
         infer(file);
+        tagexports(file->file.exports, 0);
         /* after all type inference */
         if (debugopt['t'])
             dump(file, stdout);

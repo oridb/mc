@@ -8,9 +8,8 @@ use "slpush.use"
 use "die.use"
 
 pkg std =
-
-	const flt64bfmt	: (buf : byte[:], val : flt64, mode : int, precision : int -> size)
-	const flt32bfmt	: (buf : byte[:], val : flt32, mode : int, precision : int -> size)
+	pkglocal const flt64bfmt	: (buf : byte[:], val : flt64, mode : int, precision : int -> size)
+	pkglocal const flt32bfmt	: (buf : byte[:], val : flt32, mode : int, precision : int -> size)
 ;;
 
 const Dblbias = 1023

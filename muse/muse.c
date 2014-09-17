@@ -59,6 +59,7 @@ static void genuse(char *path)
     yyparse();
 
     infer(file);
+    tagexports(file->file.exports, 0);
     if (outfile) {
         p = outfile;
     } else {
@@ -131,6 +132,7 @@ int main(int argc, char **argv)
         for (i = optind; i < argc; i++)
             mergeuse(argv[i]);
         infer(file);
+        tagexports(file->file.exports, 1);
         f = fopen(outfile, "w");
         writeuse(f, file);
         fclose(f);
