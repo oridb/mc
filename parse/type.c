@@ -296,7 +296,7 @@ int istysigned(Type *t)
 int istyfloat(Type *t)
 {
     switch (tybase(t)->type) {
-        case Tyfloat32: case Tyfloat64:
+        case Tyflt32: case Tyflt64:
             return 1;
         default:
             return 0;
@@ -502,8 +502,8 @@ static int tybfmt(char *buf, size_t len, Type *t)
         case Tyuint32:  p += snprintf(p, end - p, "uint32");    break;
         case Tyuint64:  p += snprintf(p, end - p, "uint64");    break;
         case Tyulong:   p += snprintf(p, end - p, "ulong");     break;
-        case Tyfloat32: p += snprintf(p, end - p, "float32");   break;
-        case Tyfloat64: p += snprintf(p, end - p, "float64");   break;
+        case Tyflt32: p += snprintf(p, end - p, "flt32");   break;
+        case Tyflt64: p += snprintf(p, end - p, "flt64");   break;
         case Tyvalist:  p += snprintf(p, end - p, "...");       break;
 
         case Typtr:     
@@ -705,16 +705,16 @@ void tyinit(Stab *st)
     traits[Tybyte][1] = traittab[Tcint];
 
     /* <integer types>::(numeric,integral) */
-    for (i = Tyint8; i < Tyfloat32; i++) {
+    for (i = Tyint8; i < Tyflt32; i++) {
         traits[i][0] = traittab[Tcnum];
         traits[i][1] = traittab[Tcint];
     }
 
     /* <floats>::(numeric,floating) */
-    traits[Tyfloat32][0] = traittab[Tcnum];
-    traits[Tyfloat32][1] = traittab[Tcfloat];
-    traits[Tyfloat64][0] = traittab[Tcnum];
-    traits[Tyfloat64][1] = traittab[Tcfloat];
+    traits[Tyflt32][0] = traittab[Tcnum];
+    traits[Tyflt32][1] = traittab[Tcfloat];
+    traits[Tyflt64][0] = traittab[Tcnum];
+    traits[Tyflt64][1] = traittab[Tcfloat];
 
     /* @a*::(sliceable) */
     traits[Typtr][0] = traittab[Tcslice];

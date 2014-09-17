@@ -1,21 +1,21 @@
 pkg std =
-	const float64bits	: (flt : float64 -> int64)
-	const float32bits	: (flt : float32 -> int32)
-	const float64frombits	: (bits : uint64 -> float64)
-	const float32frombits	: (bits : uint32 -> float32)
-	const float64explode	: (flt : float64 -> (bool, int64, int64))
-	const float32explode	: (flt : float32 -> (bool, int32, int32))
+	const flt64bits	: (flt : flt64 -> int64)
+	const flt32bits	: (flt : flt32 -> int32)
+	const flt64frombits	: (bits : uint64 -> flt64)
+	const flt32frombits	: (bits : uint32 -> flt32)
+	const flt64explode	: (flt : flt64 -> (bool, int64, int64))
+	const flt32explode	: (flt : flt32 -> (bool, int32, int32))
 ;;
 
-const float64bits	= {flt;	-> (&flt castto(int64#))#}
-const float32bits	= {flt;	-> (&flt castto(int32#))#}
-const float64frombits	= {bits;	-> (&bits castto(float64#))#}
-const float32frombits	= {bits;	-> (&bits castto(float32#))#}
+const flt64bits	= {flt;	-> (&flt castto(int64#))#}
+const flt32bits	= {flt;	-> (&flt castto(int32#))#}
+const flt64frombits	= {bits;	-> (&bits castto(flt64#))#}
+const flt32frombits	= {bits;	-> (&bits castto(flt32#))#}
 
-const float64explode = {flt
+const flt64explode = {flt
 	var bits, isneg, mant, exp
 
-	bits = float64bits(flt)
+	bits = flt64bits(flt)
 	isneg = (bits >> 63) != 0  	/* msb is sign bit */
 	exp = (bits >> 52) & 0x7ff 	/* exp is in bits [52..63] */
 	mant = bits & ((1l << 52) - 1) /* msb is in bits [..51] */
@@ -35,10 +35,10 @@ const float64explode = {flt
 	-> (isneg, mant, exp)
 }
 
-const float32explode = {flt
+const flt32explode = {flt
 	var bits, isneg, mant, exp
 
-	bits = float32bits(flt)
+	bits = flt32bits(flt)
 	isneg = (bits >> 31) != 0  	/* msb is sign bit */
 	exp = (bits >> 22) & 0xff 	/* exp is in bits [23..30] */
 	mant = bits & ((1 << 22) - 1) /* msb is in bits [0..22] */

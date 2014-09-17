@@ -54,7 +54,7 @@ static int issmallconst(Node *dcl)
     if (!dcl->decl.init)
         return 0;
     t = tybase(exprtype(dcl->decl.init));
-    if (t->type <= Tyfloat64)
+    if (t->type <= Tyflt64)
         return 1;
     return 0;
 }

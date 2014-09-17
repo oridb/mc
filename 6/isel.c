@@ -76,8 +76,8 @@ static Mode mode(Node *n)
      * intention of loading /through/ the pointer? For now, we'll just say it's
      * the pointer mode, since we expect to address through the pointer */
     switch (t->type) {
-        case Tyfloat32: return ModeF; break;
-        case Tyfloat64: return ModeD; break;
+        case Tyflt32: return ModeF; break;
+        case Tyflt64: return ModeD; break;
         default:
             if (stacktype(t))
                 return ModeQ;
@@ -1050,10 +1050,10 @@ static size_t writelit(FILE *fd, Htab *strtab, Node *v, Type *ty)
         case Lbool:     fprintf(fd, "\t.byte %d\n", v->lit.boolval);     break;
         case Lchr:      fprintf(fd, "\t.long %d\n",  v->lit.chrval);     break;
         case Lflt:
-                if (tybase(v->lit.type)->type == Tyfloat32) {
+                if (tybase(v->lit.type)->type == Tyflt32) {
                     u.fv = v->lit.fltval;
                     fprintf(fd, "\t.long 0x%"PRIx32"\n", u.lv);
-                } else if (tybase(v->lit.type)->type == Tyfloat64) {
+                } else if (tybase(v->lit.type)->type == Tyflt64) {
                     u.dv = v->lit.fltval;
                     fprintf(fd, "\t.quad 0x%"PRIx64"\n", u.qv);
                 }
