@@ -419,6 +419,7 @@ const bigdiv = {a : bigint#, b : bigint# -> bigint#
 	bigfree(r)
 	slfree(a.dig)
 	a.dig = q.dig
+	a.sign = q.sign
 	free(q)
 	-> a
 }
@@ -429,6 +430,7 @@ const bigmod = {a : bigint#, b : bigint# -> bigint#
 	bigfree(q)
 	slfree(a.dig)
 	a.dig = r.dig
+	a.sign = r.sign
 	free(r)
 	-> a
 }
