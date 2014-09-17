@@ -118,8 +118,6 @@ struct Type {
     Node **traitlist;    /* The names of the constraints on the type. Used to fill the bitset */
     size_t ntraitlist;   /* The length of the constraint list above */
 
-    int  issynth;       /* Tyname: whether this is synthesized or not */
-    int  ishidden;      /* Tyname: whether this is hidden or not */
     Type **param;       /* Tyname: type parameters that match the type args */
     size_t nparam;      /* Tyname: count of type parameters */
     Type **arg;         /* Tyname: type arguments instantiated */
@@ -137,6 +135,9 @@ struct Type {
         Node **sdecls;  /* Tystruct: decls in struct */
         Ucon **udecls;  /* Tyunion: decls in union */
     };
+    char  issynth;       /* Tyname: whether this is synthesized or not */
+    char  ishidden;      /* Tyname: whether this is hidden or not */
+    char  ispkglocal;    /* Tyname: whether this is package local or not */
 };
 
 struct Ucon {
@@ -267,6 +268,7 @@ struct Node {
             char  isconst;
             char  isgeneric;
             char  isextern;
+            char  ispkglocal;
             char  ishidden;
             char  isimport;
         } decl;
@@ -499,7 +501,7 @@ Node *genericname(Node *n, Type *t);
 int  loaduse(FILE *f, Stab *into);
 void readuse(Node *use, Stab *into);
 void writeuse(FILE *fd, Node *file);
-void tagexports(Stab *st);
+void tagexports(Stab *st, int hidelocal);
 
 /* typechecking/inference */
 void infer(Node *file);

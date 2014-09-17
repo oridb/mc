@@ -146,6 +146,7 @@ static void wrsym(FILE *fd, Node *val)
     wrbool(fd, val->decl.isconst);
     wrbool(fd, val->decl.isgeneric);
     wrbool(fd, val->decl.isextern);
+    wrbool(fd, val->decl.ispkglocal);
 
     if (val->decl.isgeneric && !val->decl.trait)
         pickle(fd, val->decl.init);
@@ -168,6 +169,7 @@ static Node *rdsym(FILE *fd, Trait *ctx)
     n->decl.isconst = rdbool(fd);
     n->decl.isgeneric = rdbool(fd);
     n->decl.isextern = rdbool(fd);
+    n->decl.ispkglocal = rdbool(fd);
     n->decl.isimport = 1;
 
     if (n->decl.isgeneric && !ctx)

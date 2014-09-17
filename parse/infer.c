@@ -960,6 +960,7 @@ static void mergeexports(Inferstate *st, Node *file)
                 fatal(nx->line, "Export %s double-defined on line %d", ctxstr(st, nx), ng->line);
             if (nx->decl.isgeneric != ng->decl.isgeneric)
                 fatal(nx->line, "Export %s defined with different genericness on line %d", ctxstr(st, nx), ng->line);
+            ng->decl.ispkglocal = nx->decl.ispkglocal;
             unify(st, nx, type(st, ng), type(st, nx));
         } else {
             if (!nx->decl.isextern && !nx->decl.isimport && !nx->decl.trait)
@@ -1129,22 +1130,22 @@ static void inferpat(Inferstate *st, Node *n, Node *val, Node ***bind, size_t *n
         case Olit:
         case Omemb:
             infernode(st, n, NULL, NULL);   break;
-	/* arithmetic expressions just need to be constant */
-	case Oneg:
-	case Oadd:
-	case Osub:
-	case Omul:
-	case Odiv:
-	case Obsl:
-	case Obsr:
-	case Oband:
-	case Obor:
-	case Obxor:
-	case Obnot:
+        /* arithmetic expressions just need to be constant */
+        case Oneg:
+        case Oadd:
+        case Osub:
+        case Omul:
+        case Odiv:
+        case Obsl:
+        case Obsr:
+        case Oband:
+        case Obor:
+        case Obxor:
+        case Obnot:
             infernode(st, n, NULL, NULL);
-	    if (!n->expr.isconst)
-		fatal(n->line, "matching against non-constant expression");
-	    break;
+            if (!n->expr.isconst)
+                fatal(n->line, "matching against non-constant expression");
+            break;
         case Oucon:     inferucon(st, n, &n->expr.isconst);     break;
         case Ovar:
             s = getdcl(curstab(), args[0]);
@@ -2000,7 +2001,7 @@ static void taghidden(Type *t)
     }
 }
 
-static void nodetag(Stab *st, Node *n, int ingeneric)
+static void nodetag(Stab *st, Node *n, int ingeneric, int hidelocal)
 {
     size_t i;
     Node *d;
@@ -2010,69 +2011,71 @@ static void nodetag(Stab *st, Node *n, int ingeneric)
     switch (n->type) {
         case Nblock:
             for (i = 0; i < n->block.nstmts; i++)
-                nodetag(st, n->block.stmts[i], ingeneric);
+                nodetag(st, n->block.stmts[i], ingeneric, hidelocal);
             break;
         case Nifstmt:
-            nodetag(st, n->ifstmt.cond, ingeneric);
-            nodetag(st, n->ifstmt.iftrue, ingeneric);
-            nodetag(st, n->ifstmt.iffalse, ingeneric);
+            nodetag(st, n->ifstmt.cond, ingeneric, hidelocal);
+            nodetag(st, n->ifstmt.iftrue, ingeneric, hidelocal);
+            nodetag(st, n->ifstmt.iffalse, ingeneric, hidelocal);
             break;
         case Nloopstmt:
-            nodetag(st, n->loopstmt.init, ingeneric);
-            nodetag(st, n->loopstmt.cond, ingeneric);
-            nodetag(st, n->loopstmt.step, ingeneric);
-            nodetag(st, n->loopstmt.body, ingeneric);
+            nodetag(st, n->loopstmt.init, ingeneric, hidelocal);
+            nodetag(st, n->loopstmt.cond, ingeneric, hidelocal);
+            nodetag(st, n->loopstmt.step, ingeneric, hidelocal);
+            nodetag(st, n->loopstmt.body, ingeneric, hidelocal);
             break;
         case Niterstmt:
-            nodetag(st, n->iterstmt.elt, ingeneric);
-            nodetag(st, n->iterstmt.seq, ingeneric);
-            nodetag(st, n->iterstmt.body, ingeneric);
+            nodetag(st, n->iterstmt.elt, ingeneric, hidelocal);
+            nodetag(st, n->iterstmt.seq, ingeneric, hidelocal);
+            nodetag(st, n->iterstmt.body, ingeneric, hidelocal);
             break;
         case Nmatchstmt:
-            nodetag(st, n->matchstmt.val, ingeneric);
+            nodetag(st, n->matchstmt.val, ingeneric, hidelocal);
             for (i = 0; i < n->matchstmt.nmatches; i++)
-                nodetag(st, n->matchstmt.matches[i], ingeneric);
+                nodetag(st, n->matchstmt.matches[i], ingeneric, hidelocal);
             break;
         case Nmatch:
-            nodetag(st, n->match.pat, ingeneric);
-            nodetag(st, n->match.block, ingeneric);
+            nodetag(st, n->match.pat, ingeneric, hidelocal);
+            nodetag(st, n->match.block, ingeneric, hidelocal);
             break;
         case Nexpr:
-            nodetag(st, n->expr.idx, ingeneric);
+            nodetag(st, n->expr.idx, ingeneric, hidelocal);
             taghidden(n->expr.type);
             for (i = 0; i < n->expr.nargs; i++)
-                nodetag(st, n->expr.args[i], ingeneric);
+                nodetag(st, n->expr.args[i], ingeneric, hidelocal);
             /* generics need to have the decls they refer to exported. */
             if (ingeneric && exprop(n) == Ovar) {
                 d = decls[n->expr.did];
                 if (d->decl.isglobl && d->decl.vis == Visintern) {
                     d->decl.vis = Vishidden;
                     putdcl(st, d);
-                    nodetag(st, d, ingeneric);
+                    nodetag(st, d, ingeneric, hidelocal);
                 }
             }
             break;
         case Nlit:
             taghidden(n->lit.type);
             if (n->lit.littype == Lfunc)
-                nodetag(st, n->lit.fnval, ingeneric);
+                nodetag(st, n->lit.fnval, ingeneric, hidelocal);
             break;
         case Ndecl:
             taghidden(n->decl.type);
+            if (hidelocal && n->decl.ispkglocal)
+                n->decl.vis = Vishidden;
             /* generics export their body. */
             if (n->decl.isgeneric)
-                nodetag(st, n->decl.init, n->decl.isgeneric);
+                nodetag(st, n->decl.init, n->decl.isgeneric, hidelocal);
             break;
         case Nfunc:
             taghidden(n->func.type);
             for (i = 0; i < n->func.nargs; i++)
-                nodetag(st, n->func.args[i], ingeneric);
-            nodetag(st, n->func.body, ingeneric);
+                nodetag(st, n->func.args[i], ingeneric, hidelocal);
+            nodetag(st, n->func.body, ingeneric, hidelocal);
             break;
         case Nimpl:
             for (i = 0; i < n->impl.ndecls; i++) {
                 n->impl.decls[i]->decl.vis = Vishidden;
-                nodetag(st, n->impl.decls[i], 0);
+                nodetag(st, n->impl.decls[i], 0, hidelocal);
             }
             break;
         case Nuse: case Nname:
@@ -2083,7 +2086,7 @@ static void nodetag(Stab *st, Node *n, int ingeneric)
     }
 }
 
-void tagexports(Stab *st)
+void tagexports(Stab *st, int hidelocal)
 {
     void **k;
     Node *s;
@@ -2093,19 +2096,22 @@ void tagexports(Stab *st)
     k = htkeys(st->dcl, &n);
     for (i = 0; i < n; i++) {
         s = getdcl(st, k[i]);
-        nodetag(st, s, 0);
+        nodetag(st, s, 0, hidelocal);
     }
     free(k);
 
     for (i = 0; i < nexportimpls; i++) {
-        nodetag(st, exportimpls[i], 0);
+        nodetag(st, exportimpls[i], 0, hidelocal);
     }
 
     /* get the explicitly exported symbols */
     k = htkeys(st->ty, &n);
     for (i = 0; i < n; i++) {
         t = gettype(st, k[i]);
-        t->vis = Visexport;
+        if (hidelocal && t->ispkglocal)
+            t->vis = Vishidden;
+        else
+            t->vis = Visexport;
         taghidden(t);
         for (j = 0; j < t->nsub; j++)
             taghidden(t->sub[j]);
@@ -2179,5 +2185,4 @@ void infer(Node *file)
     /* and replace type vars with actual types */
     typesub(&st, file);
     specialize(&st, file);
-    tagexports(file->file.exports);
 }

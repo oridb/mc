@@ -36,7 +36,7 @@ struct Simp {
     /* pre/postinc handling */
     Node **incqueue;
     size_t nqueue;
-    
+
     /* break/continue handling */
     Node **loopstep;
     size_t nloopstep;

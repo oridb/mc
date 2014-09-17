@@ -118,6 +118,7 @@ static void addtrait(Type *t, char *str);
 %token<tok> Tret     /* -> */
 %token<tok> Tuse     /* use */
 %token<tok> Tpkg     /* pkg */
+%token<tok> Tpkglocal/* pkglocal */
 %token<tok> Tsizeof  /* sizeof */
 
 %token<tok> Tident
@@ -132,7 +133,7 @@ static void addtrait(Type *t, char *str);
 
 %type <tok> asnop cmpop addop mulop shiftop optident
 
-%type <tydef> tydef typeid
+%type <tydef> tydef pkgtydef typeid
 %type <trait> traitdef
 
 %type <node> exprln retexpr goto continue break expr atomicexpr 
@@ -150,7 +151,7 @@ static void addtrait(Type *t, char *str);
 %type <nodelist> arglist argdefs params matches
 %type <nodelist> structbody structelts arrayelts 
 %type <nodelist> tupbody tuprest 
-%type <nodelist> decl decllist
+%type <nodelist> decl pkgdecl decllist
 %type <nodelist> traitbody implbody
 
 %type <uconlist> unionbody
@@ -280,7 +281,7 @@ pkgbody : pkgitem
         | pkgbody Tendln pkgitem
         ;
 
-pkgitem : decl {
+pkgitem : pkgdecl {
                 size_t i;
                 for (i = 0; i < $1.nn; i++) {
                     putdcl(file->file.exports, $1.nl[i]);
@@ -288,7 +289,7 @@ pkgitem : decl {
                         lappend(&file->file.stmts, &file->file.nstmts, $1.nl[i]);
                 }
             }
-        | tydef {
+        | pkgtydef {
                 puttype(file->file.exports, mkname($1.line, $1.name), $1.type);
                 installucons(file->file.exports, $1.type);
             }
@@ -305,6 +306,22 @@ pkgitem : decl {
             }
         | visdef {die("Unimplemented visdef");}
         | /* empty */
+        ;
+
+pkgdecl : Tpkglocal decl {
+                size_t i;
+                $$ = $2;
+                for (i = 0; i < $$.nn; i++)
+                    $$.nl[i]->decl.ispkglocal = 1;
+            }
+        | decl {$$ = $1;}
+        ;
+
+pkgtydef: Tpkglocal tydef {
+                $$ = $2;
+                $$.type->ispkglocal = 1;
+          }
+        | tydef {$$ = $1;}
         ;
 
 visdef  : Texport Tcolon
