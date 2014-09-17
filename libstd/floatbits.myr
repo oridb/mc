@@ -39,7 +39,7 @@ const float32explode = {flt
 	var bits, isneg, mant, exp
 
 	bits = float32bits(flt)
-	isneg = (bits >> 31) == 0  	/* msb is sign bit */
+	isneg = (bits >> 31) != 0  	/* msb is sign bit */
 	exp = (bits >> 22) & 0xff 	/* exp is in bits [23..30] */
 	mant = bits & ((1 << 22) - 1) /* msb is in bits [0..22] */
 
