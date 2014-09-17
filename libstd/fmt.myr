@@ -6,7 +6,7 @@ use "utf.use"
 use "varargs.use"
 use "extremum.use"
 use "chartype.use"
-use "floatfmt.use"
+use "fltfmt.use"
 
 /*
   printf-like functions. These use a different syntax from the C printf,
@@ -168,7 +168,7 @@ const bfmtv = {buf, fmt, ap
 	var z_val : size
 	var p_val : byte#
         var c_val : char
-	var f_val : float64, F_val : float32
+	var f_val : flt64, F_val : flt32
 
 	n = 0
 	while fmt.len != 0
@@ -221,11 +221,11 @@ const bfmtv = {buf, fmt, ap
 				(f_val, ap) = vanext(ap)
 				b = buf[n:]
 				/* FIXME(ori): bug, b[n:].len fails since b[n:] isn't an lval */
-				n += float64bfmt(buf[n:], f_val, 0, b.len)
-			/* FIXME: float casts are currently broken
+				n += flt64bfmt(buf[n:], f_val, 0, b.len)
+			/* FIXME: flt casts are currently broken
 			| 'F':
 				(F_val, ap) = vanext(ap)
-				n += floatfmt(buf[n:], F_val castto(float64))
+				n += fltfmt(buf[n:], F_val castto(flt64))
 			*/
 			/* format integers */
 			| 'b':

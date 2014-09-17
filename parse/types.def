@@ -23,8 +23,8 @@ Ty(Tyuint32, "uint32")
 Ty(Tyuint64, "uint64")
 Ty(Tyulong, "ulong")
 /*end integer types*/
-Ty(Tyfloat32, "float32")
-Ty(Tyfloat64, "float64")
+Ty(Tyflt32, "flt32")
+Ty(Tyflt64, "flt64")
 /* end primitive types */
 Ty(Tyvalist, NULL)
 

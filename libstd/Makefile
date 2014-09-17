@@ -13,9 +13,9 @@ MYRSRC= \
     env.myr \
     execvp.myr \
     extremum.myr \
-    floatbits.myr \
+    fltbits.myr \
     fmt.myr \
-    floatfmt.myr \
+    fltfmt.myr \
     hashfuncs.myr \
     hasprefix.myr \
     hassuffix.myr \

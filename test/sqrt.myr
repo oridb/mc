@@ -11,7 +11,7 @@ const abs = {d
 const Eps = 0.00001
 const Maxiter = 20
 
-const sqrt = {x : float64
+const sqrt = {x : flt64
 	var val
 	var iter
 	var i;

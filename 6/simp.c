@@ -166,7 +166,7 @@ int stacktype(Type *t)
 int floattype(Type *t)
 {
     t = tybase(t);
-    return t->type == Tyfloat32 || t->type == Tyfloat64;
+    return t->type == Tyflt32 || t->type == Tyflt64;
 }
 
 int stacknode(Node *n)
@@ -343,9 +343,9 @@ size_t tysize(Type *t)
             return 8;
 
             /*end integer types*/
-        case Tyfloat32:
+        case Tyflt32:
             return 4;
-        case Tyfloat64:
+        case Tyflt64:
             return 8;
 
         case Tyslice:
@@ -699,7 +699,7 @@ static void matchpattern(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, N
         case Tyint8: case Tyint16: case Tyint32: case Tyint:
         case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint:
         case Tyint64: case Tyuint64: case Tylong:  case Tyulong:
-        case Tyfloat32: case Tyfloat64:
+        case Tyflt32: case Tyflt64:
         case Typtr: case Tyfunc:
             v = mkexpr(pat->line, Oeq, pat, val, NULL);
             v->expr.type = mktype(pat->line, Tybool);
@@ -1036,7 +1036,7 @@ static Node *simpcast(Simp *s, Node *val, Type *to)
                 case Typtr:
                     r = intconvert(s, val, to, 0);
                     break;
-                case Tyfloat32: case Tyfloat64:
+                case Tyflt32: case Tyflt64:
                     if (tybase(to)->type == Typtr)
                         fatal(val->line, "Bad cast from %s to %s",
                               tystr(exprtype(val)), tystr(to));
@@ -1048,7 +1048,7 @@ static Node *simpcast(Simp *s, Node *val, Type *to)
                           tystr(exprtype(val)), tystr(to));
             }
             break;
-        case Tyfloat32: case Tyfloat64:
+        case Tyflt32: case Tyflt64:
             t = tybase(exprtype(val));
             switch (t->type) {
                 case Tyint8: case Tyint16: case Tyint32: case Tyint64:

@@ -1,6 +1,6 @@
 use "bigint.use"
 use "types.use"
-use "floatbits.use"
+use "fltbits.use"
 use "extremum.use"
 use "utf.use"
 use "alloc.use"
@@ -9,24 +9,24 @@ use "die.use"
 
 pkg std =
 
-	const float64bfmt	: (buf : byte[:], val : float64, mode : int, precision : int -> size)
-	const float32bfmt	: (buf : byte[:], val : float32, mode : int, precision : int -> size)
+	const flt64bfmt	: (buf : byte[:], val : flt64, mode : int, precision : int -> size)
+	const flt32bfmt	: (buf : byte[:], val : flt32, mode : int, precision : int -> size)
 ;;
 
 const Dblbias = 1023
 const Fltbias = 127
 
-const float64bfmt = {buf, val, mode, precision
+const flt64bfmt = {buf, val, mode, precision
 	var isneg, exp, mant
 
-	(isneg, mant, exp) = float64explode(val)
+	(isneg, mant, exp) = flt64explode(val)
 	-> dragon4(buf, isneg, mant, (exp - 52) castto(int64), Dblbias, mode, precision)
 }
 
-const float32bfmt = {buf, val, mode, precision
+const flt32bfmt = {buf, val, mode, precision
 	var isneg, exp, mant
 
-	(isneg, mant, exp) = float32explode(val)
+	(isneg, mant, exp) = flt32explode(val)
 	-> dragon4(buf, isneg, mant castto(int64), (exp - 52) castto(int64), Fltbias, mode, precision)
 }
 
@@ -36,7 +36,7 @@ e: exponent
 p: precision
 f: mantissa
 
-floating value: x = f^(e - p)
+flting value: x = f^(e - p)
 */
 const dragon4 = {buf, isneg, f, e, p, mode, cutoff
 	var r, s, t, u, v, y
