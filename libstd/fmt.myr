@@ -6,6 +6,7 @@ use "utf.use"
 use "varargs.use"
 use "extremum.use"
 use "chartype.use"
+use "floatfmt.use"
 
 /*
   printf-like functions. These use a different syntax from the C printf,
@@ -152,6 +153,7 @@ generic intfmt = {buf : byte[:], bits : @a::(integral,numeric), base, signed, pa
 /* formats a string of text as specified by 'fmt' into 'buf',
    using a valist for the arguments */
 const bfmtv = {buf, fmt, ap
+	var b
 	var c
 	var n
 	var padto
@@ -217,7 +219,9 @@ const bfmtv = {buf, fmt, ap
 				n += boolfmt(buf[n:], t_val, padto, padfill)
 			| 'f':
 				(f_val, ap) = vanext(ap)
-				n += floatfmt(buf[n:], f_val, 0, 0, padto, padfill)
+				b = buf[n:]
+				/* FIXME(ori): bug, b[n:].len fails since b[n:] isn't an lval */
+				n += float64bfmt(buf[n:], f_val, 0, b.len)
 			/* FIXME: float casts are currently broken
 			| 'F':
 				(F_val, ap) = vanext(ap)
@@ -301,36 +305,5 @@ const boolfmt = {buf, val, padto, padfill
 		s = "false"
 	;;
 	-> strfmt(buf, s, padto, padfill)
-}
-
-/*
- buf: the output buffer.
- val: the value to format, in float64 format.
- mode: the truncation mode.
- 	0 => print until precision exhausted.
-	1 => print until precision exhausted or maxdigits produced.
-	2 => print until maxdigits produced, paddding with zeros.
- */
-
-const floatfmt = {buf, val, mode, maxdigits, padto, padfill
-	var i
-	var n
-	/*
-	var isneg
-	*/
-	/*var b, e, f*/
-
-	/* handle 0 specially to avoid special cases */
-	if val == 0.0
-		n = strfmt(buf, "0.0", padto, padfill)
-		if mode == 0 && maxdigits > 2
-			for i = 1; i < maxdigits; i++
-				n += strfmt(buf[n:], "0", padto, padfill)
-			;;
-		;;
-		-> n
-	;;
-
-	-> strfmt(buf, "floats not implemented", padto, padfill)
 }
 

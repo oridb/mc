@@ -1,7 +1,3 @@
-use "types.use"
-use "fmt.use"
-use "varargs.use"
-
 pkg std =
 	type option(@a) = union
 		`Some @a
