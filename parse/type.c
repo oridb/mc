@@ -530,13 +530,13 @@ static int tybfmt(char *buf, size_t len, Type *t)
             p += snprintf(p, end - p, ")");
             break;
         case Tytuple:
-            p += snprintf(p, end - p, "[");
+            p += snprintf(p, end - p, "(");
             for (i = 0; i < t->nsub; i++) {
                 p += snprintf(p, end - p, "%s", sep);
                 p += tybfmt(p, end - p, t->sub[i]);
-                sep = ", ";
+                sep = ",";
             }
-            p += snprintf(p, end - p, "]");
+            p += snprintf(p, end - p, ")");
             break;
         case Tyvar:
             p += snprintf(p, end - p, "$%d", t->tid);

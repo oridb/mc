@@ -2,6 +2,7 @@ pkg std =
 	generic min	: (a : @a::numeric, b : @a::numeric  -> @a::numeric)
 	generic max	: (a : @a::numeric, b : @a::numeric  -> @a::numeric)
 	generic clamp	: (a : @a::numeric, min : @a::numeric, max : @a::numeric -> @a::numeric)
+	generic abs	: (a : @a::numeric -> @a::numeric)
 ;;
 
 generic min = {a, b
@@ -30,3 +31,10 @@ generic clamp = {a, min, max
 	;;
 }
 
+generic abs = {a : @a::numeric
+	if a < (0 castto(@a::numeric))
+		-> -a
+	else
+		-> a
+	;;
+}
