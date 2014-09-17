@@ -113,10 +113,12 @@ const dragon4 = {buf, isneg, f, e, p, mode, cutoff
 				bigfree(u)
 			;;
 		;;
-		match mode
-		| 0:
+		if mode == 0
 			cutoff = k - buf.len - 1
-		| 1:
+		else
+			if mode == 2
+				cutoff += k
+			;;
 			a = cutoff - k
 			y = bigdup(s)
 			if a < 0
@@ -139,9 +141,9 @@ const dragon4 = {buf, isneg, f, e, p, mode, cutoff
 			| `Before:	/* nothing */
 			| _:
 				bigfree(mp)
-				mm = y
+				mp = y
+				roundup = true
 			;;
-		| 2:
 		;;
 		u = bigdup(s)
 		bigshli(u, 1)
