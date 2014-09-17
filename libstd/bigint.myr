@@ -3,7 +3,6 @@ use "chartype.use"
 use "cmp.use"
 use "die.use"
 use "extremum.use"
-use "fmt.use"
 use "hasprefix.use"
 use "option.use"
 use "slcp.use"
@@ -144,9 +143,9 @@ const bigbfmt = {buf, x, base
 	while !bigiszero(val)
 		(v, rem) = bigdivmod(val, b)
 		if rem.dig.len > 0
-			n += bfmt(buf[n:], "%c", digitchars[rem.dig[0]])
+			n += encode(buf[n:], digitchars[rem.dig[0]])
 		else
-			n += bfmt(buf[n:], "0")
+			n += encode(buf[n:], '0')
 		;;
 		bigfree(val)
 		bigfree(rem)

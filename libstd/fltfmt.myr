@@ -1,0 +1,200 @@
+use "bigint.use"
+
+pkg std =
+	const float64bfmt	: 
+	const float32bfmt	: 
+
+const Dblbias = 1023
+const Fltbias
+
+const fltbfmt = {buf, dbl
+	var sign, exp, mant
+
+	(sign, mant, exp) = float64explode(dbl)
+	-> dragon4(buf, sign, mant, (exp - 52) castto(int64), DblBias, `Normal, -32)
+}
+
+type cutmode = union
+	`Normal
+	`Absolute
+	`Relative
+;;
+
+/*
+buf: output buffer
+e: exponent
+p: precision
+f: mantissa
+
+floating value: x = f^(e - p)
+*/
+const dragon4 = {buf, isneg, f, e, p, mode, cutoff
+	var r, s, t, u, v
+	var udig
+	var mm, mp	/* margins above and below */
+	var roundup
+	var low, high
+	var k : int, n
+
+	put("encoding... isneg = %t, f = %xl, exp = %l, p = %l\n", isneg, f, e, p)
+	/* if we have zero for the mantissa, we can return early */
+	n = 0
+	if isneg
+		n += bfmt(buf, "-")
+	;;
+	if f == 0
+		n += bfmt(buf, "0.0")
+		-> buf[:n]
+	;;
+
+	/* initialize */
+	roundup = false
+	r = mkbigint(f)
+	r = bigshli(r, max(e - p, 0))
+	s = bigshli(mkbigint(1), max(0, -(e - p)))
+	mm = bigshli(mkbigint(1), max((e - p), 0))
+	mp = bigdup(mm)
+	put("r = %s, s = %s, mm = %s, mp = %s\n", \
+		bigfmt(r, 0), bigfmt(s, 0), bigfmt(mm, 0), bigfmt(mp, 0))
+
+	/* fixup: unequal gaps */
+	t = mkbigint(1)
+	bigshli(t, p - 1)
+	if bigeqi(t, f)
+		bigshli(mp, 1)
+		bigshli(r, 1)
+		bigshli(s, 1)
+	;;
+	bigfree(t)
+
+	put("r = %s, s = %s, mm = %s, mp = %s\n", \
+		bigfmt(r, 0), bigfmt(s, 0), bigfmt(mm, 0), bigfmt(mp, 0))
+
+	k = 0
+	while true
+		/* r < ceil(s/b) */
+		t = bigdup(s)
+		bigaddi(t, 9)
+		bigdivi(t, 10)
+		match bigcmp(r, t)
+		| `Before:
+			k--
+			bigmuli(r, 10)
+			bigmuli(mm, 10)
+			bigmuli(mp, 10)
+		| _:
+			bigfree(t)
+			break
+		;;
+		bigfree(t)
+	;;
+	put("r = %s, s = %s, mm = %s, mp = %s\n", \
+		bigfmt(r, 0), bigfmt(s, 0), bigfmt(mm, 0), bigfmt(mp, 0))
+
+	t = bigdup(r)
+	bigshli(t, 1)
+	bigadd(t, mp)
+	while true
+		u = bigdup(s)
+		bigshli(u, 1)
+		put("t = 2*r + mp = %s, u = 2*s = %s\n", bigfmt(t, 0), bigfmt(u, 0))
+		put("s = %s\n", bigfmt(s, 0))
+		match bigcmp(t, u)
+		| `Before:
+			bigfree(u)
+			break
+		| _:
+			k++
+			bigmuli(s, 10)
+			bigfree(u)
+		;;
+	;;
+	cutoff = k - buf.len - 1
+	bigfree(t)
+	put("r = %s, s = %s, mm = %s, mp = %s, cutoff = %i\n", \
+		bigfmt(r, 0), bigfmt(s, 0), bigfmt(mm, 0), bigfmt(mp, 0), \ 
+		cutoff)
+
+	if k <= 0
+		n += bfmt(buf[n:], "0.")
+	;;
+	while true
+		k--
+		bigmuli(r, 10)
+		u = bigdup(r);
+		bigdiv(u, s)
+
+		bigmod(r, s)
+		bigmuli(mm, 10)
+		bigmuli(mp, 10)
+
+		low = false
+		t = bigdup(r)
+		bigshli(t, 1)
+		put("t = %s, mm = %s\n", bigfmt(t, 0), bigfmt(mm, 0))
+		match bigcmp(t, mm)
+		| `Before:	low = true
+		;;
+		bigfree(t)
+		
+		v = bigdup(r)
+		bigshli(v, 1)
+		t = bigdup(s)
+		bigshli(t, 1)
+		bigsub(t, mp)
+		match bigcmp(v, t)
+		| `After: high = true
+		| `Equal: high = roundup
+		| `Before: high = false
+		;;
+		bigfree(v)
+		bigfree(t)
+		if low || high || k == cutoff
+			put("low = %t, high = %t, k == cutoff = %t\n", \
+				low, high, k == cutoff)
+			break
+		;;
+		n += format(buf[n:], lowdig(u), k)
+		bigfree(u)
+	;;
+
+	/* format the last digit */
+	udig = lowdig(u)
+	if low && !high
+		n += format(buf[n:], udig, k)
+	elif high && !low
+		n += format(buf[n:], udig + 1, k)
+	else
+		bigmuli(r, 2)
+		match bigcmp(r, s)
+		| `Before:	n += format(buf[n:], udig, k)
+		| `Equal:	n += format(buf[n:], udig, k)
+		| `After:	n += format(buf[n:], udig + 1, k)
+		;;
+	;;
+	put("n = %i\n", n)
+	-> buf[:n]
+}
+
+const lowdig = {u
+	if u.dig.len > 0
+		-> u.dig[0]
+	;;
+	-> 0
+}
+
+const format = {buf, d, k
+	const dig = "0123456789"
+	var n, i
+
+	n = 0
+	if k == 0
+		n += encode(buf[n:], '.')
+	elif k < 0
+		for i = 0; i < -k; i++
+			n += encode(buf[n:], '0')
+		;;
+	;;
+	buf[n++] = dig[d]
+	-> n
+}

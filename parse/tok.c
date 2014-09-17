@@ -630,7 +630,7 @@ static Tok *number(int base)
     /* because we allow '_' in numbers, and strtod/stroull don't, we
      * need a buffer that holds the number without '_'.
      */
-    char buf[128];
+    char buf[2048];
     size_t nbuf;
 
     t = NULL;

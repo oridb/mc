@@ -16,7 +16,7 @@ const float64explode = {flt
 	var bits, isneg, mant, exp
 
 	bits = float64bits(flt)
-	isneg = (bits >> 63) == 0  	/* msb is sign bit */
+	isneg = (bits >> 63) != 0  	/* msb is sign bit */
 	exp = (bits >> 52) & 0x7ff 	/* exp is in bits [52..63] */
 	mant = bits & ((1l << 52) - 1) /* msb is in bits [..51] */
 
