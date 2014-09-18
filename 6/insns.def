@@ -90,7 +90,7 @@ Insn(Ijb,       "\tjb %v\n",                    Use(.l={1}), Def())
 Insn(Ijbe,      "\tjbe %v\n",                   Use(.l={1}), Def())
 Insn(Ija,       "\tja %v\n",                    Use(.l={1}), Def())
 Insn(Ijae,      "\tjae %v\n",                   Use(.l={1}), Def())
-Insn(Iret,      "\tret\n",                      Use(), Def())
+Insn(Iret,      "\tret\n",                      Use(.r={Rrax,Rxmm0d}), Def())
 
 /* not really an insn... */
 Insn(Ilbl,      "%v:\n",                        Use(), Def())

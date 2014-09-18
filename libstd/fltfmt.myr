@@ -224,13 +224,14 @@ const format = {buf, d, k
 	var n, i
 
 	n = 0
-	if k == 0
-		n += encode(buf[n:], '.')
-	elif k < 0
+	if k < 0
 		for i = 0; i < -k; i++
 			n += encode(buf[n:], '0')
 		;;
 	;;
 	buf[n++] = dig[d]
+	if k == 0
+		n += encode(buf[n:], '.')
+	;;
 	-> n
 }

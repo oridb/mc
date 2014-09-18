@@ -185,6 +185,8 @@ struct Isel {
     Bitset *initial;    /* initial set of locations used by this fn */
 };
 
+extern char *modenames[];
+
 /* entry points */
 void genblob(FILE *fd, Node *blob, Htab *globls, Htab *strtab);
 void genasm(FILE *fd, Func *fn, Htab *globls, Htab *strtab);
@@ -208,6 +210,8 @@ Loc *locmemls(char *disp, Loc *base, Loc *idx, int scale, Mode mode);
 Loc *loclit(long val, Mode m);
 Loc *loclitl(char *lbl);
 Loc *coreg(Reg r, Mode m);
+int isfloatmode(Mode m);
+int isintmode(Mode m);
 
 void locprint(FILE *fd, Loc *l, char spec);
 void iprintf(FILE *fd, Insn *insn);

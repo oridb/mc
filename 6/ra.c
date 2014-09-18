@@ -284,7 +284,7 @@ static void liveness(Isel *s)
 /* we're only interested in register->register moves */
 static int ismove(Insn *i)
 {
-    if (i->op != Imov)
+    if (i->op != Imov && i->op != Imovs)
         return 0;
     return i->args[0]->type == Locreg && i->args[1]->type == Locreg;
 }
@@ -1084,7 +1084,10 @@ static void rewritebb(Isel *s, Asmbb *bb)
         /* if there is a remapping, insert the loads and stores as needed */
         if (remap(s, bb->il[j], use, &nuse, def, &ndef)) {
             for (i = 0; i < nuse; i++) {
-                insn = mkinsn(Imov, spillslot(s, use[i].oldreg), use[i].newreg, NULL);
+                if (isfloatmode(use[i].newreg->mode))
+                    insn = mkinsn(Imovs, spillslot(s, use[i].oldreg), use[i].newreg, NULL);
+                else
+                    insn = mkinsn(Imov, spillslot(s, use[i].oldreg), use[i].newreg, NULL);
                 lappend(&new, &nnew, insn);
                 if (debugopt['r']) {
                     printf("loading ");
@@ -1098,7 +1101,10 @@ static void rewritebb(Isel *s, Asmbb *bb)
             updatelocs(s, insn, use, nuse, def, ndef);
             lappend(&new, &nnew, insn);
             for (i = 0; i < ndef; i++) {
-                insn = mkinsn(Imov, def[i].newreg, spillslot(s, def[i].oldreg), NULL);
+                if (isfloatmode(def[i].newreg->mode))
+                    insn = mkinsn(Imovs, def[i].newreg, spillslot(s, def[i].oldreg), NULL);
+                else
+                    insn = mkinsn(Imov, def[i].newreg, spillslot(s, def[i].oldreg), NULL);
                 lappend(&new, &nnew, insn);
                 if (debugopt['r']) {
                     printf("storing ");
