@@ -42,22 +42,23 @@ Usemap deftab[] = {
 /* A map of which registers interfere */
 #define Northogonal 32
 Reg regmap[Northogonal][Nmode] = {
-    [0]  = {Rnone, Ral, Rax, Reax, Rrax},
-    [1]  = {Rnone, Rcl, Rcx, Recx, Rrcx},
-    [2]  = {Rnone, Rdl, Rdx, Redx, Rrdx},
-    [3]  = {Rnone, Rbl, Rbx, Rebx, Rrbx},
-    [4]  = {Rnone, Rsil, Rsi, Resi, Rrsi},
-    [5]  = {Rnone, Rdil, Rdi, Redi, Rrdi},
-    [6]  = {Rnone, Rr8b, Rr8w, Rr8d, Rr8},
-    [7]  = {Rnone, Rr9b, Rr9w, Rr9d, Rr9},
-    [8]  = {Rnone, Rr10b, Rr10w, Rr10d, Rr10},
-    [9]  = {Rnone, Rr11b, Rr11w, Rr11d, Rr11},
-    [10]  = {Rnone, Rr12b, Rr12w, Rr12d, Rr12},
-    [11]  = {Rnone, Rr13b, Rr13w, Rr13d, Rr13},
-    [12]  = {Rnone, Rr14b, Rr14w, Rr14d, Rr14},
-    [13]  = {Rnone, Rr15b, Rr15w, Rr15d, Rr15},
-    [14]  = {Rnone, Rnone, Rnone, Rnone, Rnone},
-    [15]  = {Rnone, Rnone, Rnone, Rnone, Rnone},
+        /* None,   ModeB, ModeW, ModeL, ModeQ, ModeF, ModeD */
+    [0]  = {Rnone, Ral,   Rax,   Reax,  Rrax,  Rnone,  Rnone},
+    [1]  = {Rnone, Rcl,   Rcx,   Recx,  Rrcx,  Rnone,  Rnone},
+    [2]  = {Rnone, Rdl,   Rdx,   Redx,  Rrdx,  Rnone,  Rnone},
+    [3]  = {Rnone, Rbl,   Rbx,   Rebx,  Rrbx,  Rnone,  Rnone},
+    [4]  = {Rnone, Rsil,  Rsi,   Resi,  Rrsi,  Rnone,  Rnone},
+    [5]  = {Rnone, Rdil,  Rdi,   Redi,  Rrdi,  Rnone,  Rnone},
+    [6]  = {Rnone, Rr8b,  Rr8w,  Rr8d,  Rr8,   Rnone,  Rnone},
+    [7]  = {Rnone, Rr9b,  Rr9w,  Rr9d,  Rr9,   Rnone,  Rnone},
+    [8]  = {Rnone, Rr10b, Rr10w, Rr10d, Rr10,  Rnone,  Rnone},
+    [9]  = {Rnone, Rr11b, Rr11w, Rr11d, Rr11,  Rnone,  Rnone},
+    [10] = {Rnone, Rr12b, Rr12w, Rr12d, Rr12,  Rnone,  Rnone},
+    [11] = {Rnone, Rr13b, Rr13w, Rr13d, Rr13,  Rnone,  Rnone},
+    [12] = {Rnone, Rr14b, Rr14w, Rr14d, Rr14,  Rnone,  Rnone},
+    [13] = {Rnone, Rr15b, Rr15w, Rr15d, Rr15,  Rnone,  Rnone},
+    [14] = {Rnone, Rnone, Rnone, Rnone, Rnone, Rnone,  Rnone},
+    [15] = {Rnone, Rnone, Rnone, Rnone, Rnone, Rnone,  Rnone},
     [16] = {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm0f, Rxmm0d},
     [17] = {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm1f, Rxmm1d},
     [18] = {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm2f, Rxmm2d},
@@ -382,6 +383,8 @@ static void addedge(Isel *s, regid u, regid v)
     if (u == Rrbp || u == Rrsp || u == Rrip)
         return;
     if (v == Rrbp || v == Rrsp || v == Rrip)
+        return;
+    if (rclass(locmap[u]) != rclass(locmap[v]))
         return;
 
     gbputedge(s, u, v);
@@ -1202,7 +1205,7 @@ void regalloc(Isel *s)
     s->shouldspill = mkbs();
     s->neverspill = mkbs();
     s->initial = mkbs();
-    for (i = 0; i < Nsaved; i++)
+    for (i = 0; i < s->nsaved; i++)
         bsput(s->shouldspill, s->calleesave[i]->reg.id);
     do {
         setup(s);
