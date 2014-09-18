@@ -12,36 +12,62 @@
 .globl _std$cstring
 _std$cstring:
 std$cstring:
-	movq (%rsp),%r15	/* ret addr */
-	movq 8(%rsp),%rsi	/* src */
-	movq 16(%rsp),%rcx	/* len */
+	/* save registers */
+	pushq %rbp
+	movq %rsp,%rbp
+	pushq %r15
+	pushq %rsi
+	pushq %rdi
+	pushq %rcx
+
+	movq 8(%rbp),%r15	/* ret addr */
+	movq 16(%rbp),%rsi	/* src */
+	movq 24(%rbp),%rcx	/* len */
 	
-	subq %rcx,%rsp          /* get stack */
-	movq %rsp,%rdi          /* dest */
-	movq %rsp,%rax          /* ret val */
+	subq %rcx,%rsp		/* get stack */
+	subq $1,%rsp		/* +1 for nul */
+	movq %rsp,%rdi		/* dest */
+	movq %rsp,%rax		/* ret val */
 	subq $16,%rsp		/* "unpop" the args */
-	subq $1,%rsp            /* nul */
-	andq $(~15),%rsp        /* align */
+	andq $(~15),%rsp	/* align */
 	
 	cld
 	rep movsb
-	movb $0,(%rdi)          /* terminate */
+	movb $0,(%rdi)		/* terminate */
 	
-	pushq %r15              /* ret addr */
+	pushq %r15		/* ret addr */
+
+	/* restore registers */
+	movq -32(%rbp),%rcx
+	movq -24(%rbp),%rdi
+	movq -16(%rbp),%rsi
+	movq -8(%rbp),%r15
+	movq (%rbp),%rbp
 	ret
 
 .globl std$alloca
 .globl _std$alloca
 _std$alloca:
 std$alloca:
-	movq (%rsp),%r15	/* ret addr */
-	movq 8(%rsp),%rbx	/* len */
+	/* save registers */
+	pushq %rbp
+	movq %rsp,%rbp
+	pushq %r15
+	pushq %rbx
+
+	movq 8(%rbp),%r15	/* ret addr */
+	movq 16(%rbp),%rbx	/* len */
 	
 	/* get stack space */
-	subq %rbx,%rsp          /* get stack space */
-	movq %rsp,%rax          /* top of stack (return value) */
+	subq %rbx,%rsp		/* get stack space */
+	movq %rsp,%rax		/* top of stack (return value) */
 	subq $16,%rsp		/* "unpop" the args for return */
-	andq $(~15),%rsp        /* align */
+	andq $(~15),%rsp	/* align */
 
-	pushq %r15              /* ret addr */
+	pushq %r15		/* ret addr */
+
+	/* restore registers */
+	movq -16(%rbp),%rbx
+	movq -8(%rbp),%r15
+	movq (%rbp),%rbp
 	ret
