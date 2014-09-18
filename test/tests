@@ -71,6 +71,7 @@ B overlappingif	E	2
 B fib		E	21
 B basicfloat	E	84
 B sqrt		E	4
+B mandelbrot	C
 B log-and	E	0
 B log-or	E	1
 B str		E	102
