@@ -1,0 +1,53 @@
+use std
+use bio
+
+const Bailout : flt64 = 16.0
+const Maxiter = 1000
+
+const mandelbrot = {x, y
+	var cr, ci, zr, zi
+	var tmp, zr2, zi2
+	var i : int
+
+	cr = y - 0.5
+	ci = x
+	zr = 0.0
+	zi = 0.0
+
+	i = 0
+
+	while true
+		i++
+		tmp  = zr * zi
+		zr2 = zr * zr
+		zi2 = zi * zi
+		zr = zr2 - zi2 + cr
+		zi = tmp + tmp + ci
+		if zi2 + zr2 > Bailout
+			-> i
+		;;
+		if i > Maxiter
+			-> 0
+		;;
+	;;
+}
+
+const main = {args : byte[:][:]
+	var x : flt64, y : flt64, i
+	var f
+
+	f = bio.mkfile(1, bio.Wr)
+	for y = -39.0; y < 39.0; y = y + 1.0
+		for x = -39.0; x < 39.0; x = x + 1.0
+			i = mandelbrot(x/40.0, y/40.0)
+			if i == 0
+				bio.write(f, "*")
+			else
+				bio.write(f, " ")
+			;;
+		;;
+		bio.write(f, "\n")
+	;;
+	bio.write(f, "\n")
+	bio.close(f)
+}
