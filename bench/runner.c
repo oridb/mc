@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <fcntl.h>
 #include <unistd.h>
 #include <err.h>
 #include <sys/types.h>
@@ -15,6 +16,7 @@ double run(char *prog)
 {
     struct rusage ru;
     double sec, usec;
+    int in, out;
     char *cmd[2];
     int pid;
     int status;
@@ -25,6 +27,15 @@ double run(char *prog)
     if (pid < 0) {
         err(1, "Could not fork\n");
     } else if (pid == 0) {
+        if ((in = open("/dev/zero", O_RDONLY)) < 0)
+            err(1, "could not open /dev/zero");
+        if ((out = open("/dev/null", O_WRONLY)) < 0)
+            err(1, "could not open /dev/null");
+        if (dup2(in, 0) < 0)
+            err(1, "could not reopen stdin");
+        if (dup2(out, 1) < 0)
+            err(1, "could not reopen stdout");
+
         cmd[0] = prog;
         cmd[1] = NULL;
         execv(prog, cmd);
