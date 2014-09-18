@@ -63,6 +63,15 @@ const Reg reginterferes[Nreg][Nmode + 1] = {
     [Rebp] = {Rebp},
 };
 
+int isintmode(Mode m)
+{
+    return m == ModeB || m == ModeW || m == ModeL || m == ModeQ;
+}
+
+int isfloatmode(Mode m)
+{
+    return m == ModeF || m == ModeD;
+}
 char *genlblstr(char *buf, size_t sz)
 {
     static int nextlbl;

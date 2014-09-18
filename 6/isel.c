@@ -92,16 +92,6 @@ static Mode mode(Node *n)
     return ModeQ;
 }
 
-static int isintmode(Mode m)
-{
-    return m == ModeB || m == ModeW || m == ModeL || m == ModeQ;
-}
-
-static int isfloatmode(Mode m)
-{
-    return m == ModeF || m == ModeD;
-}
-
 static Loc *loc(Isel *s, Node *n)
 {
     ssize_t stkoff;
@@ -176,7 +166,7 @@ void g(Isel *s, AsmOp op, ...)
     i = mkinsnv(op, ap);
     va_end(ap);
     if (debugopt['i']) {
-        printf("GEN ");
+        printf("GEN[uid=%zd] ", i->uid);
         iprintf(stdout, i);
     }
     lappend(&s->curbb->il, &s->curbb->ni, i);
@@ -783,7 +773,7 @@ void locprint(FILE *fd, Loc *l, char spec)
                    spec == 'x' ||
                    spec == 'u');
             if (l->reg.colour == Rnone)
-                fprintf(fd, "%%P.%zd", l->reg.id);
+                fprintf(fd, "%%P.%zd%s", l->reg.id, modenames[l->mode]);
             else
                 fprintf(fd, "%s", regnames[l->reg.colour]);
             break;
@@ -847,11 +837,14 @@ void iprintf(FILE *fd, Insn *insn)
             }
             break;
         case Imovs:
+            if (insn->args[0]->reg.colour == Rnone || insn->args[1]->reg.colour == Rnone)
+                break;
             /* moving a reg to itself is dumb. */
             if (insn->args[0]->reg.colour == insn->args[1]->reg.colour)
                 return;
             break;
         case Imov:
+            assert(!isfloatmode(insn->args[0]->mode));
             if (insn->args[0]->type != Locreg || insn->args[1]->type != Locreg)
                 break;
             if (insn->args[0]->reg.colour == Rnone || insn->args[1]->reg.colour == Rnone)
@@ -950,7 +943,11 @@ static void prologue(Isel *s, size_t sz)
     for (i = 0; savedregs[i] != Rnone; i++) {
         phys = locphysreg(savedregs[i]);
         s->calleesave[i] = locreg(phys->mode);
-        g(s, Imov, phys, s->calleesave[i], NULL);
+        if (isfloatmode(phys->mode)) {
+            g(s, Imovs, phys, s->calleesave[i], NULL);
+        } else {
+            g(s, Imov, phys, s->calleesave[i], NULL);
+        }
     }
     s->nsaved = i;
     s->stksz = stksz; /* need to update if we spill */
@@ -972,8 +969,13 @@ static void epilogue(Isel *s)
             g(s, Imov, ret, coreg(Rax, ret->mode), NULL);
     }
     /* restore registers */
-    for (i = 0; savedregs[i] != Rnone; i++)
-        g(s, Imov, s->calleesave[i], locphysreg(savedregs[i]), NULL);
+    for (i = 0; savedregs[i] != Rnone; i++) {
+        if (isfloatmode(s->calleesave[i]->mode)) {
+            g(s, Imovs, s->calleesave[i], locphysreg(savedregs[i]), NULL);
+        } else {
+            g(s, Imov, s->calleesave[i], locphysreg(savedregs[i]), NULL);
+        }
+    }
     /* leave function */
     g(s, Imov, rbp, rsp, NULL);
     g(s, Ipop, rbp, NULL);
