@@ -1,5 +1,4 @@
 use std
-use bio
 
 const Bailout : flt64 = 16.0
 const Maxiter = 1000
@@ -34,20 +33,17 @@ const mandelbrot = {x, y
 
 const main = {args : byte[:][:]
 	var x : flt64, y : flt64, i
-	var f
 
-	f = bio.mkfile(1, bio.Wr)
 	for y = -39.0; y < 39.0; y = y + 1.0
 		for x = -39.0; x < 39.0; x = x + 1.0
 			i = mandelbrot(x/40.0, y/40.0)
 			if i == 0
-				bio.write(f, "*")
+				std.put("*")
 			else
-				bio.write(f, " ")
+				std.put(" ")
 			;;
 		;;
-		bio.write(f, "\n")
+		std.put("\n")
 	;;
-	bio.write(f, "\n")
-	bio.close(f)
+	std.put("\n")
 }
