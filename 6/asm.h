@@ -3,7 +3,6 @@
 #define Maxdef (2*Maxarg)       /* maximum number of registers an insn can use or def */
 #define Wordsz 4                /* the size of a "natural int" */
 #define Ptrsz 8                 /* the size of a machine word (ie, pointer size) */
-#define Nsaved 13               /* number of registers saved in the ABI */
 
 typedef size_t regid;
 
@@ -131,7 +130,8 @@ struct Isel {
 
     /* increased when we spill */
     Loc *stksz;
-    Loc *calleesave[Nsaved];
+    Loc *calleesave[Nreg];
+    size_t nsaved;
 
     /* register allocator state */
 

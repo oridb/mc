@@ -852,7 +852,6 @@ void iprintf(FILE *fd, Insn *insn)
                 return;
             break;
         case Imov:
-            assert(!isfloatmode(insn->args[1]->mode));
             if (insn->args[0]->type != Locreg || insn->args[1]->type != Locreg)
                 break;
             if (insn->args[0]->reg.colour == Rnone || insn->args[1]->reg.colour == Rnone)
@@ -924,12 +923,12 @@ static void isel(Isel *s, Node *n)
     }
 }
 
+/* %rax is for int returns, %xmm0d is for floating returns */
 Reg savedregs[] = {
     Rrcx, Rrdx, Rrbx, Rrsi, Rrdi, Rr8, Rr9, Rr10, Rr11, Rr12, Rr13, Rr14, Rr15,
-    /*
-    Rxmm0d, Rxmm1d, Rxmm2d, Rxmm3d, Rxmm4d, Rxmm5d, Rxmm6d, Rxmm7d,
+    Rxmm1d, Rxmm2d, Rxmm3d, Rxmm4d, Rxmm5d, Rxmm6d, Rxmm7d,
     Rxmm8d, Rxmm9d, Rxmm10d, Rxmm11d, Rxmm12d, Rxmm13d, Rxmm14d, Rxmm15d,
-    */
+    Rnone
 };
 
 static void prologue(Isel *s, size_t sz)
@@ -937,6 +936,7 @@ static void prologue(Isel *s, size_t sz)
     Loc *rsp;
     Loc *rbp;
     Loc *stksz;
+    Loc *phys;
     size_t i;
 
     rsp = locphysreg(Rrsp);
@@ -947,10 +947,12 @@ static void prologue(Isel *s, size_t sz)
     g(s, Imov, rsp, rbp, NULL);
     g(s, Isub, stksz, rsp, NULL);
     /* save registers */
-    for (i = 0; i < sizeof(savedregs)/sizeof(savedregs[0]); i++) {
-        s->calleesave[i] = locreg(ModeQ);
-        g(s, Imov, locphysreg(savedregs[i]), s->calleesave[i], NULL);
+    for (i = 0; savedregs[i] != Rnone; i++) {
+        phys = locphysreg(savedregs[i]);
+        s->calleesave[i] = locreg(phys->mode);
+        g(s, Imov, phys, s->calleesave[i], NULL);
     }
+    s->nsaved = i;
     s->stksz = stksz; /* need to update if we spill */
 }
 
@@ -970,7 +972,7 @@ static void epilogue(Isel *s)
             g(s, Imov, ret, coreg(Rax, ret->mode), NULL);
     }
     /* restore registers */
-    for (i = 0; i < Nsaved; i++)
+    for (i = 0; savedregs[i] != Rnone; i++)
         g(s, Imov, s->calleesave[i], locphysreg(savedregs[i]), NULL);
     /* leave function */
     g(s, Imov, rbp, rsp, NULL);
