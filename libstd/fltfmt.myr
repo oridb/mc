@@ -220,7 +220,7 @@ const lowdig = {u
 }
 
 const format = {buf, d, k
-	const dig = "0123456789abcdefghijklmnopqrstuvwxyz"
+	const dig = "0123456789"
 	var n, i
 
 	n = 0
