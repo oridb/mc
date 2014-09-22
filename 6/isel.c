@@ -186,7 +186,7 @@ static void load(Isel *s, Loc *a, Loc *b)
 
     assert(b->type == Locreg);
     if (a->type == Locreg)
-        l = locmem(0, b, Rnone, a->mode);
+        l = locmem(0, b, NULL, a->mode);
     else
         l = a;
     if (isfloatmode(b->mode))
@@ -201,7 +201,7 @@ static void stor(Isel *s, Loc *a, Loc *b)
 
     assert(a->type == Locreg || a->type == Loclit);
     if (b->type == Locreg)
-        l = locmem(0, b, Rnone, b->mode);
+        l = locmem(0, b, NULL, b->mode);
     else
         l = b;
     if (isfloatmode(b->mode))
@@ -347,7 +347,7 @@ static Loc *memloc(Isel *s, Node *e, Mode m)
         if (b->type != Locreg)
             b = inr(s, b);
         if (o->type == Loclit) {
-            l = locmem(scale*o->lit, b, Rnone, m);
+            l = locmem(scale*o->lit, b, NULL, m);
         } else {
             b = inr(s, b);
             o = inr(s, o);
@@ -356,7 +356,7 @@ static Loc *memloc(Isel *s, Node *e, Mode m)
     } else {
         l = selexpr(s, e);
         l = inr(s, l);
-        l = locmem(0, l, Rnone, m);
+        l = locmem(0, l, NULL, m);
     }
     assert(l != NULL);
     return l;
@@ -703,6 +703,8 @@ Loc *selexpr(Isel *s, Node *n)
             al = alignto(1, args[0]->expr.type->sub[0]);
             blit(s, a, r, 0, 0, args[2]->expr.args[0]->lit.intval, al);
             break;
+
+        /* cast operators that actually modify the values */
         case Otrunc:
             a = selexpr(s, args[0]);
             a = inr(s, a);
@@ -734,6 +736,15 @@ Loc *selexpr(Isel *s, Node *n)
             r = locreg(mode(n));
             g(s, Icvttsd2si, a, b, NULL);
             g(s, Imov, b, r, NULL);
+            break;
+
+        case Oflt2flt:
+            a = selexpr(s, args[0]);
+            r = locreg(mode(n));
+            if (a->mode == ModeD)
+                g(s, Icvttsd2ss, a, r, NULL);
+            else
+                g(s, Icvttss2sd, a, r, NULL);
             break;
 
         /* These operators should never show up in the reduced trees,

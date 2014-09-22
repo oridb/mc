@@ -1058,6 +1058,10 @@ static Node *simpcast(Simp *s, Node *val, Type *to)
                     r = mkexpr(val->line, Oflt2int, rval(s, val, NULL), NULL);
                     r->expr.type = to;
                     break;
+                case Tyflt32: case Tyflt64:
+                    r = mkexpr(val->line, Oflt2flt, rval(s, val, NULL), NULL);
+                    r->expr.type = to;
+                    break;
                 default:
                     fatal(val->line, "Bad cast from %s to %s",
                           tystr(exprtype(val)), tystr(to));
