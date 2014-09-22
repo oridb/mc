@@ -68,6 +68,7 @@ O(Ozwiden, 1)      /* zero-extending widening cast */
 O(Oswiden, 1)      /* sign-extending widening cast */
 O(Oflt2int, 1)     /* float to int conversion */
 O(Oint2flt, 1)     /* int to float conversion */
+O(Oflt2flt, 1)     /* flt32<->flt64 conversion */
 O(Ofadd, 1)
 O(Ofsub, 1)
 O(Ofmul, 1)
