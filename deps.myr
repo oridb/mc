@@ -1,0 +1,249 @@
+use std
+use regex
+use bio
+
+use "config.use"
+use "opts.use"
+
+pkg bld =
+	type depgraph = struct
+		roots	: byte[:][:]
+		deps	: std.htab(byte[:], byte[:][:])#
+		libs	: std.htab(byte[:], byte[:][:])#
+	;;
+
+	const myrdeps	: (dg : depgraph#, targ : byte[:], leaves : byte[:][:], islib : bool	-> bool)
+;;
+
+type dep = union
+	`Local	byte[:]
+	`Lib byte[:]
+;;
+
+var usepat	: regex.regex#
+
+const myrdeps = {dg, targ, leaves, islib
+	var seentab, donetab
+	var obj, usefile, out, useout
+
+	match regex.compile("^\\s*use\\s+(([^\"]\\S+[^\"])|(\"(\\S+)\"))")
+	| `std.Ok re:	usepat = re
+	| `std.Fail f:	std.fatal(1, "Failed to compile use pattern regex\n")
+	;;
+
+	dg.deps = std.mkht(std.strhash, std.streq)
+	dg.libs = std.mkht(std.strhash, std.streq)
+	seentab = std.mkht(std.strhash, std.streq)
+	donetab = std.mkht(std.strhash, std.streq)
+	/* direct dependencies of binary */
+	if islib
+		out = std.fmt("lib%s.a", targ)
+		useout = std.sldup(targ)
+	else
+		out = std.sldup(targ)
+		useout = ""
+	;;
+	for l in leaves
+		obj = srcswapsuffix(l, ".o")
+		pushdep(dg, obj, out)
+		pushdep(dg, l, obj)
+		if islib
+			usefile = srcswapsuffix(l, ".use")
+			pushdep(dg, usefile, useout)
+			pushdep(dg, l, usefile)
+		;;
+		srcdeps(dg, seentab, donetab, l)
+	;;
+	dumpgraph(dg)
+	std.htfree(seentab)
+	std.htfree(donetab)
+	-> true
+}
+
+const dumpgraph = {dg
+	var keys
+
+	keys = std.htkeys(dg.deps)
+	std.put("digraph dg {\n")
+	for k in keys
+		for v in std.htgetv(dg.deps, k, ["WTFUNKNOWN!"][:])
+			std.put("\t%s -> %s;\n", k, v)
+		;;
+	;;
+	std.put("}\n")
+}
+
+const srcdeps = {g, seen, done, path
+	var deps
+
+	if std.hthas(done, path)
+		std.put("already know about %s\n", path)
+		->
+	elif std.htgetv(seen, path, false)
+		std.fatal(1, "dependency loop involving %s\n", path)
+	;;
+	deps = getdeps(path)
+	std.htput(seen, path, true)
+	for d in deps
+		match d
+		| `Lib lib:
+			scrapelibs(g, lib)
+		| `Local l:
+			if !std.hassuffix(l, ".use")
+				std.fatal(1, "usefile dependency \"%s\" of \"%s\" is not a usefile\n", l, path)
+			;;
+			pushdep(g, l, path)
+			addusedep(g, seen, done, l)
+		;;
+	;;
+	std.htput(seen, path, false)
+	std.htput(done, path, true)
+}
+
+const addusedep = {g, seen, done, usefile
+	var src
+
+	if std.hthas(done, usefile)
+		std.put("already know about %s\n", usefile)
+		->
+	;;
+	std.put("adding use dep for %s\n", usefile)
+	src = swapsuffix(usefile, ".use", ".myr")
+	pushdep(g, src, usefile)
+	srcdeps(g, seen, done, src)
+	std.htput(done, usefile, true)
+}
+
+const getdeps = {path
+	var f
+	var deps : dep[:]
+
+	deps = [][:]
+	match bio.open(path, bio.Rd)
+	| `std.Some fd:	f = fd
+	| `std.None:	std.fatal(1, "could not open %s\n", path)
+	;;
+
+	while true
+		match bio.readln(f)
+		| `std.Some ln:
+			deps = depname(deps, ln)
+			std.slfree(ln)
+		| `std.None:
+			bio.close(f)
+			-> deps
+		;;
+	;;
+}
+
+const scrapelibs = {dg, lib
+	var deps, d
+	var f
+	var done
+
+	if std.hthas(dg.libs, lib)
+		->
+	;;
+
+	deps = [][:]
+	f = openlib(lib)
+	match bio.getc(f)
+	| `std.Some 'U': /* nothing */
+	| `std.Some _:	std.fatal(1, "library %s is not usefile\n", lib)
+	| `std.None:	std.fatal(1, "library %s is not usefile\n", lib)
+	;;
+	std.slfree(rdstr(f))
+	done = false
+	while !done
+		match bio.getc(f)
+		| `std.Some 'L':
+			d = rdstr(f)
+			deps = std.slpush(deps, d)
+		| `std.Some _:	done = true
+		| `std.None:	done = true
+		;;
+	;;
+	bio.close(f)
+	std.htput(dg.libs, lib, deps)
+	for dep in deps
+		scrapelibs(dg, dep)
+	;;
+}
+
+const openlib = {lib
+	var path
+
+	for p in opt_incpaths
+		path = std.fmt("%s/%s/%s", p, "/lib/myr", lib)
+		match  bio.open(path, bio.Rd)
+		| `std.Some file:
+			-> file
+		;;
+	;;
+	path = std.fmt("%s/%s/%s", config.Instroot, "/lib/myr", lib)
+	match  bio.open(path, bio.Rd)
+	| `std.Some file:
+		-> file
+	;;
+	std.fatal(1, "could not find library %s in %s\n", lib, path)
+}
+
+const depname = {deps, ln
+	/*
+	the regex pattern does some contortions to either grab
+	an unquoted path and put it into uses[4], or a quoted
+	path, and put it (minus the quotes) into uses[2]
+	*/
+	match regex.exec(usepat, ln)
+	| `std.Some uses:
+		if uses[2].len > 0
+			deps = std.slpush(deps, `Local std.sldup(uses[2]))
+		else
+			deps = std.slpush(deps, `Lib std.sldup(uses[4]))
+		;;
+	;;
+	-> deps
+}
+
+
+/* pushes a dep into the dependency list */
+const pushdep = {dg, to, from
+	var sl
+
+	std.put("%s ==> %s\n", from, to)
+	sl = std.htgetv(dg.deps, from, [][:])
+	sl = std.slpush(sl, to)
+	std.htput(dg.deps, from, sl)
+}
+
+const srcswapsuffix = {s, new
+	if std.hassuffix(s, ".myr")
+		-> swapsuffix(s, ".myr", new)
+	elif std.hassuffix(s, ".s")
+		-> swapsuffix(s, ".s", new)
+	else
+		std.fatal(1, "unrecognized source %s\n", s)
+	;;
+}
+
+const swapsuffix = {s, suffix, new
+	if !std.hassuffix(s, suffix)
+		std.die("swapping suffix on string without appropriate suffix\n")
+	;;
+	s = s[:s.len - suffix.len]
+	-> std.strcat(s, new)
+}
+
+const rdstr = {f
+	var len : uint32
+	var sl
+
+	match bio.getbe(f)
+	| `std.Some l:
+		len = l
+		sl = std.slalloc(len castto(std.size))
+	| `std.None:	std.die("string length not readable")
+	;;
+	bio.read(f, sl)
+	-> sl
+}

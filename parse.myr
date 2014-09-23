@@ -1,0 +1,216 @@
+use std
+
+pkg bld =
+	type parser = struct
+		/* parse input */
+		data	: byte[:]
+		rest	: byte[:]
+		fname	: byte[:]
+		line	: int
+
+		/* build params */
+		targs	: target[:]
+		prefix	: byte[:]
+		system	: byte[:]
+		arch	: byte[:]
+	;;
+
+	type target = union
+		`Bin	(byte[:], byte[:][:])
+		`Lib	(byte[:], byte[:][:])
+		`Sub	byte[:][:]
+		`Man	byte[:][:]
+	;;
+
+	const parse	: (p : parser#	-> bool)
+;;
+
+const failparse = {p : parser#, msg, args : ...
+	var buf : byte[1024]
+	var ap
+	var n
+
+	ap = std.vastart(&args)
+	n = std.bfmtv(buf[:], msg, ap)
+	std.fput(1, "%s:%i: %s", p.fname, p.line, buf[:n])
+	std.exit(1)
+}
+
+const parse = {p
+	while true
+		skipspace(p)
+		if !target(p)
+			break
+		;;
+	;;
+	skipspace(p)
+	if p.rest.len > 0
+		failparse(p, "junk in file near %s", p.rest[:std.min(p.rest.len, 10)])
+		-> false
+	else
+		-> true
+	;;
+}
+
+const target = {p : parser#
+	match word(p)
+	| `std.Some "bin":	bintarget(p)
+	| `std.Some "lib":	libtarget(p)
+	| `std.Some "sub":	subtarget(p)
+	| `std.Some "man":	mantarget(p)
+	| `std.Some targtype:	failparse(p, "unknown targtype type %s\n", targtype)
+	| `std.None:	-> false
+	;;
+	-> true
+}
+
+const bintarget = {p
+	p.targs = std.slpush(p.targs, `Bin nametarget(p, "bin"))
+}
+
+const libtarget = {p
+	p.targs = std.slpush(p.targs, `Lib nametarget(p, "lib"))
+}
+
+const subtarget = {p
+	p.targs = std.slpush(p.targs, `Sub anontarget(p, "sub"))
+}
+
+const mantarget = {p
+	p.targs = std.slpush(p.targs, `Man anontarget(p, "man"))
+
+}
+const nametarget = {p, targ
+	var name, inputs
+
+	match word(p)
+	| `std.Some n:	name = n
+	| `std.None:	failparse(p, "expected target name after '%s'\n", targ)
+	;;
+
+	skipspace(p)
+	if !matchc(p, '=')
+		failparse(p, "expected '=' after '%s %s'", targ, name)
+	;;
+	match wordlist(p)
+	| `std.Some wl: inputs = wl
+	| `std.None: failparse(p, "expected list of file names after %s target\n", targ)
+	;;
+	skipspace(p)
+	if !matchc(p, ';')
+		failparse(p, "expected ';' terminating input list, got %c\n", peekc(p))
+	;;
+	-> (name, inputs)
+}
+
+const anontarget = {p, targ
+	var inputs
+
+	match wordlist(p)
+	| `std.None:	failparse(p, "expected list of file names after %s target\n", targ)
+	| `std.Some wl:	inputs = wl
+	;;
+	skipspace(p)
+	if !matchc(p, ';')
+		failparse(p, "expected ';' terminating input list\n")
+	;;
+	-> inputs
+}
+
+const wordlist = {p
+	var wl
+
+	wl = [][:]
+	while true
+		match word(p)
+		| `std.Some w:	wl = std.slpush(wl, w)
+		| `std.None:	break
+		;;
+	;;
+	if wl.len == 0
+		-> `std.None
+	else
+		-> `std.Some wl
+	;;
+}
+
+const word = {p : parser#
+	var c, r, n
+	var start
+
+	skipspace(p)
+
+	r = p.rest
+	start = r
+	n = 0
+	while r.len > 0
+		c = peekc(p)
+		if wordchar(c)
+			nextc(p)
+			n += std.charlen(c)
+		else
+			break
+		;;
+	;;
+	if n > 0
+		-> `std.Some std.sldup(start[:n])
+	else
+		-> `std.None
+	;;
+}
+
+const wordchar = {c
+	-> std.isalnum(c) || \
+		c == '.' || c == '_' || c == '$' || c == '-' || \
+		c == '/' || c == ':' || c == '!' || c == '~'
+}
+
+const skipspace = {p : parser#
+	var c, r
+
+	r = p.rest
+	while r.len > 0
+		c = peekc(p)
+		match c
+		| ' ':	nextc(p)
+		| '\t':	nextc(p)
+		| '\n':
+			nextc(p)
+			p.line++
+		| '#':
+			while p.rest.len > 0 && peekc(p) != '\n'
+				nextc(p)
+			;;
+		| _:
+			break
+		;;
+	;;
+}
+
+const matchc = {p, c
+	var chr, s
+
+	if p.rest.len == 0
+		-> false
+	;;
+	(chr, s) = std.striter(p.rest)
+	if c == chr
+		p.rest = s
+		-> true
+	else
+		-> false
+	;;
+}
+
+const peekc = {p
+	-> std.decode(p.rest)
+}
+
+const nextc = {p
+	var c, s
+
+	(c, s) = std.striter(p.rest)
+	p.rest = s
+	-> c
+}
+

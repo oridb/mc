@@ -1,0 +1,19 @@
+use std
+use "parse.use"
+use "build.use"
+
+const main = {args : byte[:][:]
+	var p : bld.parser#
+
+	p = std.alloc()
+	p.line = 1
+	p.fname = "bldfile"
+	match std.slurp("bldfile")
+	| `std.Ok d:	p.data = d
+	| `std.Fail _:	std.fatal(1, "could not open file 'bldfile'\n")
+	;;
+	p.rest = p.data
+
+	bld.parse(p)
+	bld.build(p)
+}

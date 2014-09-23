@@ -1,0 +1,11 @@
+pkg bld =
+	var opt_arch 	: byte[:]
+	var opt_sys	: byte[:]
+	var opt_targ	: byte[:]
+	var opt_incpaths	: byte[:][:]
+;;
+
+var opt_arch 	: byte[:]
+var opt_sys	: byte[:]
+var opt_targ	: byte[:]
+var opt_incpaths	: byte[:][:]

@@ -1,0 +1,2 @@
+# comment
+bin mbld2 = main.myr build.myr parse.myr deps.myr config.myr opts.myr; # comment

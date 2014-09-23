@@ -1,0 +1,225 @@
+use std
+
+use "config.use"
+use "deps.use"
+use "opts.use"
+use "parse.use"
+
+pkg bld =
+	const build	: (p : parser# -> bool)
+;;
+
+const build = {p
+	var dg
+
+	for t in p.targs
+		match t
+		| `Bin (b, leaves):
+			if !myrdeps(&dg, b, leaves, false)
+				std.fatal(1, "Could not load dependencies for %s\n", b)
+			;;
+			buildbin(&dg, b, leaves)
+		| `Lib (l, leaves):
+			if !myrdeps(&dg, l, leaves, true)
+				std.fatal(1, "Could not load dependencies for %s\n", l)
+			;;
+			buildlib(&dg, l, leaves)
+		| `Sub sub:
+			dosub(sub)
+		| `Man m:
+			/* nothing needed */
+		;;
+	;;
+	-> true
+}
+
+const buildbin = {dg, b, inputs
+	match std.htget(dg.deps, b)
+	| `std.Some deps:
+		for d in deps
+			builddep(dg, d, b)
+		;;
+		linkbin(dg, b, inputs, "")
+	| `std.None:
+	;;
+}
+
+const buildlib = {dt, b, dep
+	std.put("building %s:\n", b)
+	for d in dep
+		std.put("\t%s\n", d)
+	;;
+}
+
+const dosub = {subs
+	for s in subs
+		std.put("subdir %s\n", s)
+	;;
+}
+
+const builddep = {dg, dep, out
+	match std.htget(dg.deps, dep)
+	| `std.Some deps:
+		for d in deps
+			builddep(dg, d, dep)
+		;;
+	| `std.None:
+	;;
+
+	if isfresh(dep, out)
+		->
+	;;
+	if std.hassuffix(dep, ".myr")
+		run(["6m", dep][:])
+	;;
+}
+
+const linkbin = {dg, binname, srcfiles, ldscript
+	var cmd
+	var obj
+
+	cmd = [][:]
+
+	/* ld -o bin */
+	cmd = std.slpush(cmd, std.sldup("ld"))
+	cmd = std.slpush(cmd, std.sldup("-o"))
+	cmd = std.slpush(cmd, std.sldup(binname))
+
+	/* [-T script] */
+	if ldscript.len > 0
+		cmd = std.slpush(cmd, std.sldup("-T"))
+		cmd = std.slpush(cmd, std.sldup(ldscript))
+	;;
+
+	cmd = std.slpush(cmd, std.fmt("%s/%s", config.Instroot, "/lib/myr/_myrrt.o"))
+
+	/* input.o list.o... */
+	for f in srcfiles
+		if std.hassuffix(f, ".myr")
+			obj = swapsuffix(f, ".myr", ".o")
+		elif std.hassuffix(f, ".s")
+			obj = swapsuffix(f, ".s", ".o")
+		else
+			std.fatal(1, "unknown file type for %s\n", f)
+			;;
+		cmd = std.slpush(cmd, obj)
+	;;
+
+	/* -l lib... */
+	cmd = addlibs(cmd, dg.libs)
+
+	/* -L incpath... */
+	for inc in opt_incpaths
+		cmd = std.slpush(cmd, std.fmt("-L%s", inc))
+	;;
+	cmd = std.slpush(cmd, std.fmt("-L%s%s", config.Instroot, "/lib/myr"))
+
+	/*
+	/* special for OSX: it warns if we don't add this */
+	if std.sleq(opt_sysname, "Darwin")
+	cmd = std.slpush(cmd, std.sldup("-macosx_version_min"))
+	cmd = std.slpush(cmd, std.sldup("10.6"))
+	;;
+	*/
+
+	run(cmd)
+	strlistfree(cmd)
+}
+
+
+const addlibs = {cmd, libgraph
+	var looped : std.htab(byte[:], bool)#
+	var marked : std.htab(byte[:], bool)#
+	var libs
+	var head
+
+	libs = std.htkeys(libgraph)
+	looped = std.mkht(std.strhash, std.streq)
+	marked = std.mkht(std.strhash, std.streq)
+	head = cmd.len
+	for lib in libs
+		cmd = visit(cmd, head, libgraph, lib, looped, marked)
+	;;
+	-> cmd
+}
+
+const visit = {cmd, head, g, lib, looped, marked -> byte[:][:]
+	if std.hthas(looped, lib)
+		std.fatal(1, "cycle in library graph involving \"%s\"\n", lib)
+	elif std.hthas(marked, lib)
+		-> cmd
+	;;
+
+	std.htput(looped, lib, true)
+	for dep in std.htgetv(g, lib, [][:])
+		cmd = visit(cmd, head, g, dep, looped, marked)
+	;;
+	std.htdel(looped, lib)
+	std.htput(marked, lib, true)
+	-> std.slput(cmd, head, std.fmt("-l%s", lib))
+}
+const isfresh = {src, dst
+	var srcsb, dstsb
+
+	if std.stat(src, &srcsb) != 0
+		std.fatal(1, "could not stat %s\n", src)
+	;;
+	if std.stat(dst, &dstsb) != 0
+		-> false
+	;;
+	if srcsb.mtime.sec != dstsb.mtime.sec
+		-> srcsb.mtime.sec <= dstsb.mtime.sec
+	else
+		-> srcsb.mtime.nsec <= dstsb.mtime.nsec
+	;;
+}
+
+const run = {cmd
+	var pid
+	var status
+
+	printcmd(cmd)
+	pid = std.fork()
+	if pid == -1
+		std.fatal(1, "could not fork command\n")
+	elif pid == 0
+		if std.execvp(cmd[0], cmd) < 0
+			std.fatal(1, "failed to exec %s\n", cmd[0])
+		;;
+	else
+		std.waitpid(pid, &status, 0)
+	;;
+	match std.waitstatus(status)
+	| `std.Waitexit estatus:
+		if estatus != 0
+			std.exit(estatus castto(int))
+		;;
+	| `std.Waitsig sig:
+		std.fatal(1, "%s exited with signal %i\n", cmd[0], sig)
+	;;
+}
+
+const printcmd = {lst
+	if lst.len > 0
+		std.put("\t")
+		std.put("%s\t", lst[0])
+		for l in lst[1:]
+			std.put("%s ", l)
+		;;
+	;;
+	std.put("\n")
+}
+
+const swapsuffix = {f, suff, newsuff
+	if std.hassuffix(f, suff)
+		f = f[:f.len - suff.len]
+	;;
+	-> std.fmt("%s%s", f, newsuff)
+}
+
+const strlistfree = {sl
+	for s in sl
+		std.slfree(s)
+	;;
+	std.slfree(sl)
+}

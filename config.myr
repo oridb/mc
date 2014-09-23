@@ -1,0 +1,4 @@
+pkg config = 
+const Instroot = "/home/ori/bin"
+const Sys = "Linux"
+;;
