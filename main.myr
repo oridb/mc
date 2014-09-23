@@ -1,19 +1,64 @@
 use std
+
 use "parse.use"
 use "build.use"
+use "opts.use"
 
 const main = {args : byte[:][:]
 	var p : bld.parser#
+	var optctx
 
-	p = std.alloc()
-	p.line = 1
-	p.fname = "bldfile"
-	match std.slurp("bldfile")
-	| `std.Ok d:	p.data = d
-	| `std.Fail _:	std.fatal(1, "could not open file 'bldfile'\n")
+	optctx = std.optinit("hb:l:s:r:I:C:A:M:L:R:", args)
+	while !std.optdone(optctx)
+		match std.optnext(optctx)
+		| ('h', arg): usage(args[0])
+		| ('b', arg): bld.opt_binname = arg
+		| ('l', arg): bld.opt_libname = arg
+		| ('s', arg): bld.opt_ldscript = arg
+		| ('I', arg): bld.opt_incpaths = std.slpush(bld.opt_incpaths, arg)
+		| ('r', arg):
+			if std.sleq(arg, "none")
+				bld.opt_runtime = ""
+			else
+				bld.opt_runtime = arg
+			;;
+		/*
+		internal undocumented args; used by compiler suite for
+		building with an uninstalled compiler.
+		*/
+		| ('C', arg): bld.opt_mc = arg
+		| ('A', arg): bld.opt_as = arg
+		| ('M', arg): bld.opt_muse = arg
+		| ('L', arg): bld.opt_ld = arg
+		| ('R', arg): bld.opt_ar = arg
+		;;
 	;;
-	p.rest = p.data
 
-	bld.parse(p)
-	bld.build(p)
+	if bld.opt_binname.len != 0
+		bld.buildbin(bld.opt_binname, optctx.args)
+	elif bld.opt_libname.len != 0
+		bld.buildlib(bld.opt_libname, optctx.args)
+	else
+		p = std.alloc()
+		p.line = 1
+		p.fname = "bldfile"
+		match std.slurp("bldfile")
+		| `std.Ok d:	p.data = d
+		| `std.Fail _:	std.fatal(1, "could not open file 'bldfile'\n")
+		;;
+		p.rest = p.data
+
+		bld.parse(p)
+		bld.build(p)
+	;;
+}
+
+const usage = {prog
+	std.put("%s [-h] [-I path] [-l lib] [-b bin] inputs...\n", prog)
+	std.put("\t-h\tprint this help\n")
+	std.put("\t-b bin\tBuild a binary called 'bin'\n")
+	std.put("\t-l lib\tBuild a library called 'name'\n")
+	std.put("\t-s script\tUse the linker script 'script' when linking\n")
+	std.put("\t-I path\tAdd 'path' to use search path\n")
+	std.exit(0)
 }

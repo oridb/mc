@@ -1,4 +1,4 @@
 pkg config = 
-const Instroot = "/usr/local"
+const Instroot = "/Users/orib/bin"
 const Sys = "OSX"
 ;;

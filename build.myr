@@ -8,23 +8,18 @@ use "util.use"
 
 pkg bld =
 	const build	: (p : parser# -> bool)
+	const buildbin	: (bin : byte[:], inputs : byte[:][:] -> void)
+	const buildlib	: (lib : byte[:], inputs : byte[:][:] -> void)
 ;;
 
 const build = {p
-	var dg
 
 	for t in p.targs
 		match t
 		| `Bin (b, leaves):
-			if !myrdeps(&dg, b, leaves, false)
-				std.fatal(1, "Could not load dependencies for %s\n", b)
-			;;
-			buildbin(&dg, b, leaves)
+			buildbin(b, leaves)
 		| `Lib (l, leaves):
-			if !myrdeps(&dg, l, leaves, true)
-				std.fatal(1, "Could not load dependencies for %s\n", l)
-			;;
-			buildlib(&dg, l, leaves)
+			buildlib(l, leaves)
 		| `Sub sub:
 			dosub(sub)
 		| `Man m:
@@ -34,25 +29,37 @@ const build = {p
 	-> true
 }
 
-const buildbin = {dg, bin, inputs
+const buildbin = {bin, inputs
+	var dg
+
+	if !myrdeps(&dg, bin, inputs, false)
+		std.fatal(1, "Could not load dependencies for %s\n", bin)
+	;;
 	match std.htget(dg.deps, bin)
 	| `std.Some deps:
 		for d in deps
-			builddep(dg, d, bin)
+			builddep(&dg, d, bin)
 		;;
-		linkbin(dg, bin, inputs, "")
+		linkbin(&dg, bin, inputs, "")
 	| `std.None:
+		std.fatal(1, "No such binary %s\n", bin)
 	;;
 }
 
-const buildlib = {dg, lib, inputs
+const buildlib = {lib, inputs
+	var dg
+
+	if !myrdeps(&dg, lib, inputs, true)
+		std.fatal(1, "Could not load dependencies for %s\n", lib)
+	;;
 	match std.htget(dg.deps, lib)
 	| `std.Some deps:
 		for d in deps
-			builddep(dg, d, lib)
+			builddep(&dg, d, lib)
 		;;
-		archivelib(dg, lib, inputs)
+		archivelib(&dg, lib, inputs)
 	| `std.None:
+		std.fatal(1, "No such library %s\n", lib)
 	;;
 }
 

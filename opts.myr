@@ -2,10 +2,30 @@ pkg bld =
 	var opt_arch 	: byte[:]
 	var opt_sys	: byte[:]
 	var opt_targ	: byte[:]
+	var opt_binname	: byte[:]
+	var opt_libname	: byte[:]
+	var opt_runtime	: byte[:]
+	var opt_ldscript	: byte[:]
 	var opt_incpaths	: byte[:][:]
+
+	/* undocumented/unsupported opts */
+	var opt_mc	: byte[:]
+	var opt_as	: byte[:]
+	var opt_muse	: byte[:]
+	var opt_ld	: byte[:]
+	var opt_ar	: byte[:]
 ;;
 
-var opt_arch 	: byte[:]
-var opt_sys	: byte[:]
-var opt_targ	: byte[:]
-var opt_incpaths	: byte[:][:]
+var opt_arch 
+var opt_sys
+var opt_targ
+var opt_binname
+var opt_libname
+var opt_runtime
+var opt_ldscript
+var opt_incpaths
+var opt_mc	= "6m"
+var opt_as	= "as"
+var opt_muse	= "muse"
+var opt_ld	= "ld"
+var opt_ar	= "ar"
