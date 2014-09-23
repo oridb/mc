@@ -1,12 +1,17 @@
+use std
+
+use "config.use"
+
 pkg bld =
 	var opt_arch 	: byte[:]
 	var opt_sys	: byte[:]
-	var opt_targ	: byte[:]
 	var opt_binname	: byte[:]
 	var opt_libname	: byte[:]
 	var opt_runtime	: byte[:]
 	var opt_ldscript	: byte[:]
 	var opt_incpaths	: byte[:][:]
+	var opt_instroot	: byte[:]
+	var opt_destdir	: byte[:]
 	var opt_bldfile	: byte[:]
 
 	/* undocumented/unsupported opts */
@@ -15,19 +20,60 @@ pkg bld =
 	var opt_muse	: byte[:]
 	var opt_ld	: byte[:]
 	var opt_ar	: byte[:]
+
+	const initopts	: (-> void)
 ;;
 
-var opt_arch 
-var opt_sys
-var opt_targ
-var opt_binname
-var opt_libname
-var opt_runtime
-var opt_ldscript
-var opt_incpaths
+var opt_arch 	= ""
+var opt_sys	= ""
+var opt_binname	= ""
+var opt_libname	= ""
+var opt_runtime	= ""
+var opt_ldscript	= ""
+var opt_incpaths	/* FIXME: taking a constant slice is a nonconstant initializer */
+var opt_instroot	= ""
+var opt_destdir	= ""
 var opt_bldfile = "bldfile"
 var opt_mc	= "6m"
 var opt_as	= "as"
 var opt_muse	= "muse"
 var opt_ld	= "ld"
 var opt_ar	= "ar"
+
+const initopts = {
+	var un
+
+	std.uname(&un)
+	match cstr2myr(un.system[:])
+	| "Linux":	opt_sys = "linux"
+	| "Darwin":	opt_sys = "osx"
+	| "FreeBSD":	opt_sys = "freebsd"
+	| unknown:	std.fatal(1, "unknown system \"%s\"\n", unknown)
+	;;
+
+	match cstr2myr(un.machine[:])
+	| "x86_64":	opt_arch = "x64"
+	| unknown:	std.fatal(1, "unknown architecture \"%s\"\n", unknown)
+	;;
+
+	opt_incpaths = [][:]
+	opt_instroot = config.Instroot
+	opt_destdir = std.getenvv("DESTDIR", "")
+	opt_mc = std.getenvv("MYR_MC", "6m")
+	opt_as = std.getenvv("MYR_AS", "as")
+	opt_ld = std.getenvv("MYR_LD", "ld")
+	opt_ar = std.getenvv("MYR_AR", "ar")
+	opt_muse = std.getenvv("MYR_MUSE", "muse")
+	opt_runtime = std.fmt(config.Instroot, "/lib/myr/_myrrt.o")
+}
+
+const cstr2myr = {cstr
+	var i
+
+	for i = 0; i < cstr.len; i++
+		if cstr[i] == 0
+			break
+		;;
+	;;
+	-> cstr[:i]
+}

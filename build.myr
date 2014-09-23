@@ -23,8 +23,10 @@ const buildall = {p
 			buildbin(b, leaves)
 		| `Lib (l, leaves):
 			buildlib(l, leaves)
-		| `Sub sub:
-			dosub(sub)
+		| `Sub subs:
+			for s in subs
+				dosub(s)
+			;;
 		| `Man m:
 			/* nothing needed */
 		;;
@@ -48,23 +50,36 @@ const test = {p
 }
 
 const build = {p, targ
+	var built
+
+	built = false
 	for t in p.targs
 		match t
 		| `Bin (b, leaves):
 			if std.sleq(b, targ)
 				buildbin(b, leaves)
+				built = true
 			;;
 		| `Lib (l, leaves):
 			if std.sleq(l, targ)
 				buildlib(l, leaves)
+				built = true
 			;;
-		| `Sub sub:
-			dosub(sub)
+		| `Sub subs:
+			for s in subs
+				if std.sleq(s, targ)
+					dosub(s)
+					built = true
+				;;
+			;;
 		| `Man m:
 			/* nothing needed */
 		;;
 	;;
-	-> true
+	if !built
+		std.fatal(1, "%s: no such target\n", targ)
+	;;
+	-> built
 }
 
 const buildbin = {bin, inputs
@@ -101,10 +116,8 @@ const buildlib = {lib, inputs
 	;;
 }
 
-const dosub = {subs
-	for s in subs
-		std.put("subdir %s\n", s)
-	;;
+const dosub = {sub
+	std.put("subdir %s\n", sub)
 }
 
 const builddep = {dg, dep, out
@@ -141,7 +154,7 @@ const linkbin = {dg, bin, srcfiles, ldscript
 		cmd = std.slpush(cmd, std.sldup(ldscript))
 	;;
 
-	cmd = std.slpush(cmd, std.fmt("%s/%s", config.Instroot, "/lib/myr/_myrrt.o"))
+	cmd = std.slpush(cmd, std.fmt("%s/%s", opt_instroot, "/lib/myr/_myrrt.o"))
 
 	/* input.o list.o... */
 	for f in srcfiles
@@ -162,7 +175,7 @@ const linkbin = {dg, bin, srcfiles, ldscript
 	for inc in opt_incpaths
 		cmd = std.slpush(cmd, std.fmt("-L%s", inc))
 	;;
-	cmd = std.slpush(cmd, std.fmt("-L%s%s", config.Instroot, "/lib/myr"))
+	cmd = std.slpush(cmd, std.fmt("-L%s%s", opt_instroot, "/lib/myr"))
 
 	/*
 	/* special for OSX: it warns if we don't add this */

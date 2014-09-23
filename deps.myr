@@ -180,7 +180,7 @@ const openlib = {lib
 			-> file
 		;;
 	;;
-	path = std.fmt("%s/%s/%s", config.Instroot, "/lib/myr", lib)
+	path = std.fmt("%s/%s/%s", opt_instroot, "/lib/myr", lib)
 	match  bio.open(path, bio.Rd)
 	| `std.Some file:
 		-> file
