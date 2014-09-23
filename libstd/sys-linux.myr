@@ -557,6 +557,7 @@ pkg std =
 	const openmode	: (path:byte[:], opts:fdopt, mode:int64 -> fd)
 	const close	: (fd:fd -> int64)
 	const creat	: (path:byte[:], mode:int64 -> fd)
+	const unlink	: (path:byte[:] -> int)
 	const read	: (fd:fd, buf:byte[:] -> size)
 	const write	: (fd:fd, buf:byte[:] -> size)
 	const lseek	: (fd:fd, off:uint64, whence:int64 -> int64)
@@ -670,6 +671,7 @@ const open	= {path, opts;		-> syscall(Sysopen, cstring(path), a(opts), a(0o777))
 const openmode	= {path, opts, mode;	-> syscall(Sysopen, cstring(path), a(opts), a(mode)) castto(fd)}
 const close	= {fd;			-> syscall(Sysclose, a(fd))}
 const creat	= {path, mode;		-> syscall(Syscreat, cstring(path), a(mode)) castto(fd)}
+const unlink	= {path;		-> syscall(Sysunlink, cstring(path)) castto(int)}
 const read	= {fd, buf;		-> syscall(Sysread, a(fd), buf castto(byte#), a(buf.len)) castto(size)}
 const write	= {fd, buf;		-> syscall(Syswrite, a(fd), buf castto(byte#), a(buf.len)) castto(size)}
 const lseek	= {fd, off, whence;	-> syscall(Syslseek, a(fd), a(off), a(whence))}
