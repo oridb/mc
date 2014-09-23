@@ -1773,6 +1773,7 @@ static void extractsub(Simp *s, Node ***blobs, size_t *nblobs, Node *e)
 {
     size_t i;
 
+    assert(e != NULL);
     switch (exprop(e)) {
         case Oslice:
             if (exprop(e->expr.args[0]) == Oarr)
