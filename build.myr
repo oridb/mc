@@ -8,8 +8,6 @@ use "util.use"
 
 pkg bld =
 	const buildall	: (p : parser# -> bool)
-	const install	: (p : parser# -> bool)
-	const uninstall	: (p : parser# -> bool)
 	const test	: (p : parser# -> bool)
 	const build	: (p : parser#, target : byte[:] -> bool)
 	const buildbin	: (bin : byte[:], inputs : byte[:][:] -> void)
@@ -32,16 +30,6 @@ const buildall = {p
 		;;
 	;;
 	-> true
-}
-
-const install = {p
-	std.fatal(1, "installing not yet supported\n")
-	-> false
-}
-
-const uninstall = {p
-	std.fatal(1, "uninstalling not yet supported\n")
-	-> false
 }
 
 const test = {p

@@ -1,0 +1,71 @@
+use std
+
+use "config.use"
+use "deps.use"
+use "opts.use"
+use "parse.use"
+use "util.use"
+
+pkg bld =
+	const install	: (p : parser#	-> bool)
+	const uninstall	: (p : parser#	-> bool)
+;;
+
+const install = {p
+	-> movetargs(p, false)
+}
+
+const uninstall = {p
+	-> movetargs(p, true)
+}
+
+const movetargs = {p, delete
+	var libarchive
+
+	for t in p.targs
+		match t
+		| `Bin (bin, leaves):
+			movefile(delete, bin, opt_instroot, opt_destdir, "bin")
+		| `Lib (lib, leaves):
+			movefile(delete, lib, opt_instroot, opt_destdir, "lib/myr")
+			libarchive = std.fmt("lib%s.a", lib)
+			movefile(delete, libarchive, opt_instroot, opt_destdir, "lib/myr")
+			std.slfree(libarchive)
+		| `Sub subs:
+			/*
+			for s in subs
+				dosub(s)
+			;;
+			*/
+		| `Man mans:
+			/* FIXME: figure out man section by number */
+			for m in mans
+				movefile(delete, m, opt_instroot, opt_destdir, "share/man1")
+			;;
+		;;
+	;;
+	-> true
+}
+
+
+const movefile = {delete, file, instdir, destdir, prefix
+	var path
+
+	path = std.pathjoin([destdir, instdir, prefix, file][:])
+	if delete
+		std.put("\t%s deleted\n", path)
+		if (std.unlink(path) < 0)
+			std.put("\t\tno such file %s\n", file)
+		;;
+	else
+		std.put("\t%s => %s\n", file, path)
+		std.unlink(path)
+		match std.slurp(file)
+		| `std.Fail m:	std.fatal(1, "Could not open %s for reading", file)
+		| `std.Ok buf:
+			std.blat(path, buf)
+			std.slfree(buf)
+		;;
+	;;
+	std.slfree(path)
+}

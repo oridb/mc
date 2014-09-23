@@ -1,10 +1,11 @@
 use std
 
-use "parse.use"
 use "build.use"
 use "clean.use"
-use "opts.use"
 use "config.use"
+use "install.use"
+use "opts.use"
+use "parse.use"
 
 const main = {args : byte[:][:]
 	var p : bld.parser#
