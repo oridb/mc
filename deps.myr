@@ -67,7 +67,7 @@ const dumpgraph = {dg
 	std.put("digraph dg {\n")
 	for k in keys
 		for v in std.htgetv(dg.deps, k, ["WTFUNKNOWN!"][:])
-			std.put("\t%s -> %s;\n", k, v)
+			std.put("\t\"%s\" -> \"%s\";\n", k, v)
 		;;
 	;;
 	std.put("}\n")
@@ -207,13 +207,13 @@ const depname = {deps, ln
 
 
 /* pushes a dep into the dependency list */
-const pushdep = {dg, to, from
+const pushdep = {dg, dst, src
 	var sl
 
-	std.put("%s ==> %s\n", from, to)
-	sl = std.htgetv(dg.deps, from, [][:])
-	sl = std.slpush(sl, to)
-	std.htput(dg.deps, from, sl)
+	std.put("%s ==> %s\n", src, dst)
+	sl = std.htgetv(dg.deps, src, [][:])
+	sl = std.slpush(sl, dst)
+	std.htput(dg.deps, src, sl)
 }
 
 const srcswapsuffix = {s, new

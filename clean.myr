@@ -1,0 +1,48 @@
+use std
+
+use "config.use"
+use "deps.use"
+use "opts.use"
+use "parse.use"
+
+pkg bld =
+	const cleanall	: (p : parser# -> bool)
+	/*const clean	: (p : parser#, targ : byte[:] -> bool)*/
+;;
+
+const cleanall = {p
+	for t in p.targs
+		match t
+		| `Bin (bin, leaves):
+			cleanup(bin, leaves, true)
+		| `Lib (lib, leaves):
+			cleanup(lib, leaves, true)
+		| `Sub subs:
+		| `Man m:
+		;;
+	;;
+	-> true
+}
+
+const cleanup = {out, leaves, islib
+	var mchammer_files /* cant touch this */
+	var keys
+	var dg
+
+	if !myrdeps(&dg, out, leaves, islib)
+		std.fatal(1, "Could not load dependencies for %s\n", out)
+	;;
+	mchammer_files = std.mkht(std.strhash, std.streq)
+	for l in leaves
+		std.htput(mchammer_files, l, true)
+	;;
+
+	keys = std.htkeys(dg.deps)
+	for k in keys
+		if !std.htgetv(mchammer_files, k, false)
+			std.put("\tclean %s\n", k)
+			std.unlink(k)
+		;;
+	;;
+}
+

@@ -1,11 +1,12 @@
 MYRBIN=mbld
 MYRSRC= \
-	main.myr \
 	build.myr \
-	parse.myr \
-	deps.myr \
+	clean.myr \
 	config.myr \
+	deps.myr \
+	main.myr \
 	opts.myr \
+	parse.myr \
 	util.myr \
 
 include config.mk

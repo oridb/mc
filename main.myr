@@ -2,6 +2,7 @@ use std
 
 use "parse.use"
 use "build.use"
+use "clean.use"
 use "opts.use"
 
 const main = {args : byte[:][:]
@@ -41,6 +42,8 @@ const main = {args : byte[:][:]
 		bld.buildlib(bld.opt_libname, optctx.args)
 	else
 		p = loadbuild(bld.opt_bldfile)
+		/*bld.configure()*/
+		/* default: buildall */
 		if optctx.args.len == 0
 			bld.buildall(p)
 		else
