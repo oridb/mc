@@ -15,6 +15,7 @@ const main = {args : byte[:][:]
 		| ('b', arg): bld.opt_binname = arg
 		| ('l', arg): bld.opt_libname = arg
 		| ('s', arg): bld.opt_ldscript = arg
+		| ('f', arg): bld.opt_bldfile = arg
 		| ('I', arg): bld.opt_incpaths = std.slpush(bld.opt_incpaths, arg)
 		| ('r', arg):
 			if std.sleq(arg, "none")
@@ -39,20 +40,39 @@ const main = {args : byte[:][:]
 	elif bld.opt_libname.len != 0
 		bld.buildlib(bld.opt_libname, optctx.args)
 	else
-		p = std.alloc()
-		p.line = 1
-		p.fname = "bldfile"
-		match std.slurp("bldfile")
-		| `std.Ok d:	p.data = d
-		| `std.Fail _:	std.fatal(1, "could not open file 'bldfile'\n")
+		p = loadbuild(bld.opt_bldfile)
+		if optctx.args.len == 0
+			bld.buildall(p)
+		else
+			for cmd in optctx.args
+				match cmd
+				| "all":	bld.buildall(p)
+				| "clean":	bld.cleanall(p)
+				| "install":	bld.install(p)
+				| "uninstall":	bld.uninstall(p)
+				| "test":	bld.test(p)
+				| target:	bld.build(p, target)
+				;;
+			;;
 		;;
-		p.rest = p.data
-
-		bld.parse(p)
-		bld.build(p)
 	;;
 }
 
+const loadbuild =  {path
+	var p
+
+	p = std.alloc()
+	p.line = 1
+	p.fname = path
+	match std.slurp(path)
+	| `std.Ok d:	p.data = d
+	| `std.Fail _:	std.fatal(1, "could not open file 'bldfile'\n")
+	;;
+	p.rest = p.data
+	bld.parse(p)
+
+	-> p
+}
 const usage = {prog
 	std.put("%s [-h] [-I path] [-l lib] [-b bin] inputs...\n", prog)
 	std.put("\t-h\tprint this help\n")

@@ -7,6 +7,7 @@ pkg bld =
 	var opt_runtime	: byte[:]
 	var opt_ldscript	: byte[:]
 	var opt_incpaths	: byte[:][:]
+	var opt_bldfile	: byte[:]
 
 	/* undocumented/unsupported opts */
 	var opt_mc	: byte[:]
@@ -24,6 +25,7 @@ var opt_libname
 var opt_runtime
 var opt_ldscript
 var opt_incpaths
+var opt_bldfile = "bldfile"
 var opt_mc	= "6m"
 var opt_as	= "as"
 var opt_muse	= "muse"

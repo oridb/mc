@@ -7,19 +7,63 @@ use "parse.use"
 use "util.use"
 
 pkg bld =
-	const build	: (p : parser# -> bool)
+	const buildall	: (p : parser# -> bool)
+	const cleanall	: (p : parser# -> bool)
+	const install	: (p : parser# -> bool)
+	const uninstall	: (p : parser# -> bool)
+	const test	: (p : parser# -> bool)
+	const build	: (p : parser#, target : byte[:] -> bool)
 	const buildbin	: (bin : byte[:], inputs : byte[:][:] -> void)
 	const buildlib	: (lib : byte[:], inputs : byte[:][:] -> void)
 ;;
 
-const build = {p
-
+const buildall = {p
 	for t in p.targs
 		match t
 		| `Bin (b, leaves):
 			buildbin(b, leaves)
 		| `Lib (l, leaves):
 			buildlib(l, leaves)
+		| `Sub sub:
+			dosub(sub)
+		| `Man m:
+			/* nothing needed */
+		;;
+	;;
+	-> true
+}
+
+const cleanall= {p
+	std.fatal(1, "cleaning not yet supported\n")
+	-> false
+}
+
+const install = {p
+	std.fatal(1, "installing not yet supported\n")
+	-> false
+}
+
+const uninstall = {p
+	std.fatal(1, "uninstalling not yet supported\n")
+	-> false
+}
+
+const test = {p
+	std.fatal(1, "testing not yet supported\n")
+	-> false
+}
+
+const build = {p, targ
+	for t in p.targs
+		match t
+		| `Bin (b, leaves):
+			if std.sleq(b, targ)
+				buildbin(b, leaves)
+			;;
+		| `Lib (l, leaves):
+			if std.sleq(l, targ)
+				buildlib(l, leaves)
+			;;
 		| `Sub sub:
 			dosub(sub)
 		| `Man m:
