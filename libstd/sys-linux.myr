@@ -617,6 +617,7 @@ const exit	= {status;		syscall(Sysexit, a(status))}
 const getpid	= {;			-> syscall(Sysgetpid) castto(pid)}
 const kill	= {pid, sig;		-> syscall(Syskill, a(pid), a(sig))}
 const fork	= {;			-> syscall(Sysfork) castto(pid)}
+const clone	= {flags, stk, ptid, ctid, ptreg;	-> syscall(Sysclone, a(flags), a(stk), a(ptid), a(ctid), a(ptreg)) castto(pid)}
 const wait4	= {pid, loc, opt, usage;	-> syscall(Syswait4, a(pid), a(loc), a(opt), a(usage))}
 const waitpid	= {pid, loc, opt;
 	var rusage
