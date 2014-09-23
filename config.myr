@@ -1,4 +1,4 @@
 pkg config = 
-const Instroot = "/home/ori/bin"
-const Sys = "Linux"
+const Instroot = "/usr/local"
+const Sys = "OSX"
 ;;
