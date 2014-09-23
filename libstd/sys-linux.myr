@@ -545,6 +545,7 @@ pkg std =
 	const getpid	: ( -> pid)
 	const kill	: (pid:pid, sig:int64 -> int64)
 	const fork	: (-> pid)
+	const clone	: (flags : uint64, stk : void#, ptid : void#, ctid : void#, ptreg : void# -> pid)
 	const wait4	: (pid:pid, loc:int32#, opt : int64, usage:rusage#	-> int64)
 	const waitpid	: (pid:pid, loc:int32#, opt : int64	-> int64)
 	const execv	: (cmd : byte[:], args : byte[:][:] -> int64)
