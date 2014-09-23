@@ -1202,9 +1202,11 @@ static void infersub(Inferstate *st, Node *n, Type *ret, int *sawret, int *exprc
             isconst = isconst && args[i]->expr.isconst;
         }
     }
-    if (ispureop[exprop(n)])
+    if (exprop(n) == Ovar)
+        n->expr.isconst = decls[n->expr.did]->decl.isconst;
+    else if (ispureop[exprop(n)])
         n->expr.isconst = isconst;
-    *exprconst = isconst;
+    *exprconst = n->expr.isconst;
 }
 
 static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
