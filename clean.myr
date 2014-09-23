@@ -7,7 +7,7 @@ use "parse.use"
 
 pkg bld =
 	const cleanall	: (p : parser# -> bool)
-	/*const clean	: (p : parser#, targ : byte[:] -> bool)*/
+	const clean	: (p : parser#, targ : byte[:] -> bool)
 ;;
 
 const cleanall = {p
@@ -17,6 +17,24 @@ const cleanall = {p
 			cleanup(bin, leaves, true)
 		| `Lib (lib, leaves):
 			cleanup(lib, leaves, true)
+		| `Sub subs:
+		| `Man m:
+		;;
+	;;
+	-> true
+}
+
+const clean = {p, targ
+	for t in p.targs
+		match t
+		| `Bin (bin, leaves):
+			if std.sleq(bin, targ)
+				cleanup(bin, leaves, true)
+			;;
+		| `Lib (lib, leaves):
+			if std.sleq(lib, targ)
+				cleanup(lib, leaves, true)
+			;;
 		| `Sub subs:
 		| `Man m:
 		;;
