@@ -33,21 +33,25 @@ const build = {p
 	-> true
 }
 
-const buildbin = {dg, b, inputs
-	match std.htget(dg.deps, b)
+const buildbin = {dg, bin, inputs
+	match std.htget(dg.deps, bin)
 	| `std.Some deps:
 		for d in deps
-			builddep(dg, d, b)
+			builddep(dg, d, bin)
 		;;
-		linkbin(dg, b, inputs, "")
+		linkbin(dg, bin, inputs, "")
 	| `std.None:
 	;;
 }
 
-const buildlib = {dt, b, dep
-	std.put("building %s:\n", b)
-	for d in dep
-		std.put("\t%s\n", d)
+const buildlib = {dg, lib, inputs
+	match std.htget(dg.deps, lib)
+	| `std.Some deps:
+		for d in deps
+			builddep(dg, d, lib)
+		;;
+		archivelib(dg, lib, inputs)
+	| `std.None:
 	;;
 }
 
@@ -74,7 +78,7 @@ const builddep = {dg, dep, out
 	;;
 }
 
-const linkbin = {dg, binname, srcfiles, ldscript
+const linkbin = {dg, bin, srcfiles, ldscript
 	var cmd
 	var obj
 
@@ -83,7 +87,7 @@ const linkbin = {dg, binname, srcfiles, ldscript
 	/* ld -o bin */
 	cmd = std.slpush(cmd, std.sldup("ld"))
 	cmd = std.slpush(cmd, std.sldup("-o"))
-	cmd = std.slpush(cmd, std.sldup(binname))
+	cmd = std.slpush(cmd, std.sldup(bin))
 
 	/* [-T script] */
 	if ldscript.len > 0
@@ -125,6 +129,29 @@ const linkbin = {dg, binname, srcfiles, ldscript
 	run(cmd)
 	strlistfree(cmd)
 }
+
+const archivelib = {dg, lib, files
+	var cmd
+	var obj
+
+	cmd = [][:]
+	cmd = std.slpush(cmd, std.sldup("ar"))
+	cmd = std.slpush(cmd, std.sldup("-rcs"))
+	cmd = std.slpush(cmd, std.fmt("lib%s.a", lib))
+	for f in files
+		if std.hassuffix(f, ".myr")
+			obj = swapsuffix(f, ".myr", ".o")
+		elif std.hassuffix(f, ".s")
+			obj = swapsuffix(f, ".s", ".o")
+		else
+			std.fatal(1, "unknown file type for %s\n", f)
+		;;
+		cmd = std.slpush(cmd, obj)
+	;;
+	run(cmd)
+	strlistfree(cmd)
+}
+
 
 
 const addlibs = {cmd, libgraph
