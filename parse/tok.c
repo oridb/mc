@@ -135,7 +135,6 @@ static void eatspace(void)
     while (1) {
         c = peek();
         if (!ignorenl && c == '\n') {
-            ignorenl = 0;
             break;
         } else if (c == '\\') {
             ignorenl = 1;
