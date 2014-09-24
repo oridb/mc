@@ -17,10 +17,10 @@ pkg bld =
 const buildall = {p
 	for t in p.targs
 		match t
-		| `Bin (b, leaves):
-			buildbin(b, leaves)
-		| `Lib (l, leaves):
-			buildlib(l, leaves)
+		| `Bin [.name=bin, .inputs=leaves]:
+			buildbin(bin, leaves)
+		| `Lib [.name=lib, .inputs=leaves]:
+			buildlib(lib, leaves)
 		| `Sub subs:
 			for s in subs
 				dosub(s)
@@ -43,14 +43,14 @@ const build = {p, targ
 	built = false
 	for t in p.targs
 		match t
-		| `Bin (b, leaves):
-			if std.sleq(b, targ)
-				buildbin(b, leaves)
+		| `Bin [.name=bin, .inputs=leaves]:
+			if std.sleq(bin, targ)
+				buildbin(bin, leaves)
 				built = true
 			;;
-		| `Lib (l, leaves):
-			if std.sleq(l, targ)
-				buildlib(l, leaves)
+		| `Lib [.name=lib, .inputs=leaves]:
+			if std.sleq(lib, targ)
+				buildlib(lib, leaves)
 				built = true
 			;;
 		| `Sub subs:

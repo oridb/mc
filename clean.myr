@@ -13,9 +13,9 @@ pkg bld =
 const cleanall = {p
 	for t in p.targs
 		match t
-		| `Bin (bin, leaves):
+		| `Bin [.name=bin, .inputs=leaves]:
 			cleanup(bin, leaves, true)
-		| `Lib (lib, leaves):
+		| `Lib [.name=lib, .inputs=leaves]:
 			cleanup(lib, leaves, true)
 		| `Sub subs:
 		| `Man m:
@@ -27,11 +27,11 @@ const cleanall = {p
 const clean = {p, targ
 	for t in p.targs
 		match t
-		| `Bin (bin, leaves):
+		| `Bin [.name=bin, .inputs=leaves]:
 			if std.sleq(bin, targ)
 				cleanup(bin, leaves, true)
 			;;
-		| `Lib (lib, leaves):
+		| `Lib [.name=lib, .inputs=leaves]:
 			if std.sleq(lib, targ)
 				cleanup(lib, leaves, true)
 			;;

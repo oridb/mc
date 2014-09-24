@@ -15,9 +15,17 @@ pkg bld =
 		arch	: byte[:]
 	;;
 
+	type myrtarg = struct
+		name	: byte[:]
+		inputs	: byte[:][:]
+		install	: bool
+		ldscript	: byte[:]
+		runtime	: byte[:]
+	;;
+
 	type target = union
-		`Bin	(byte[:], byte[:][:])
-		`Lib	(byte[:], byte[:][:])
+		`Bin	myrtarg
+		`Lib	myrtarg
 		`Sub	byte[:][:]
 		`Man	byte[:][:]
 	;;
@@ -65,11 +73,11 @@ const target = {p : parser#
 }
 
 const bintarget = {p
-	p.targs = std.slpush(p.targs, `Bin nametarget(p, "bin"))
+	p.targs = std.slpush(p.targs, `Bin myrtarget(p, "bin"))
 }
 
 const libtarget = {p
-	p.targs = std.slpush(p.targs, `Lib nametarget(p, "lib"))
+	p.targs = std.slpush(p.targs, `Lib myrtarget(p, "lib"))
 }
 
 const subtarget = {p
@@ -80,7 +88,7 @@ const mantarget = {p
 	p.targs = std.slpush(p.targs, `Man anontarget(p, "man"))
 
 }
-const nametarget = {p, targ
+const myrtarget = {p, targ
 	var name, inputs
 
 	match word(p)
@@ -100,7 +108,7 @@ const nametarget = {p, targ
 	if !matchc(p, ';')
 		failparse(p, "expected ';' terminating input list, got %c\n", peekc(p))
 	;;
-	-> (name, inputs)
+	-> [.name=name, .inputs=inputs, .install=true, .ldscript=[][:], .runtime=[][:]]
 }
 
 const anontarget = {p, targ
