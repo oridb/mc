@@ -4,6 +4,7 @@ use "config.use"
 use "deps.use"
 use "opts.use"
 use "parse.use"
+use "types.use"
 
 pkg bld =
 	const cleanall	: (p : parser# -> bool)

@@ -1,35 +1,8 @@
 use std
 
+use "types.use"
+
 pkg bld =
-	type parser = struct
-		/* parse input */
-		data	: byte[:]
-		rest	: byte[:]
-		fname	: byte[:]
-		line	: int
-
-		/* build params */
-		targs	: target[:]
-		prefix	: byte[:]
-		system	: byte[:]
-		arch	: byte[:]
-	;;
-
-	type myrtarg = struct
-		name	: byte[:]
-		inputs	: byte[:][:]
-		install	: bool
-		ldscript	: byte[:]
-		runtime	: byte[:]
-	;;
-
-	type target = union
-		`Bin	myrtarg
-		`Lib	myrtarg
-		`Sub	byte[:][:]
-		`Man	byte[:][:]
-	;;
-
 	const parse	: (p : parser#	-> bool)
 ;;
 
@@ -74,10 +47,6 @@ const target = {p : parser#
 
 const bintarget = {p
 	p.targs = std.slpush(p.targs, `Bin myrtarget(p, "bin"))
-	match p.targs[p.targs.len - 1]
-	| `Bin b:
-		std.put("ldscript in targ = %s\n", b.ldscript)
-	;;
 }
 
 const libtarget = {p
@@ -130,9 +99,7 @@ const myrtarget = {p, targ
 	runtime = ""
 	for elt in attrs
 		match elt
-		| ("ldscript", lds):
-			std.put("ldscript attr = %s\n", lds)
-			ldscript = std.sldup(lds)
+		| ("ldscript", lds):	ldscript = std.sldup(lds)
 		| ("runtime", rt):	runtime = std.sldup(rt)
 		| ("noinst", val):
 			if val.len != 0
@@ -141,7 +108,6 @@ const myrtarget = {p, targ
 			inst = false
 		;;
 	;;
-	std.put("ldscript = %s\n", ldscript)
 	-> [
 		.name=name,
 		.inputs=inputs,

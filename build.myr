@@ -4,6 +4,7 @@ use "config.use"
 use "deps.use"
 use "opts.use"
 use "parse.use"
+use "types.use"
 use "util.use"
 
 pkg bld =
@@ -17,7 +18,7 @@ pkg bld =
 const buildall = {p
 	for t in p.targs
 		match t
-		| `Bin [.name=bin, .inputs=leaves, .install=_, .ldscript=lds, .runtime=rt]:
+		| `Bin [.name=bin, .inputs=leaves, .ldscript=lds, .runtime=rt]:
 			buildbin(bin, leaves, lds, rt)
 		| `Lib [.name=lib, .inputs=leaves]:
 			buildlib(lib, leaves)
@@ -43,7 +44,7 @@ const build = {p, targ
 	built = false
 	for t in p.targs
 		match t
-		| `Bin [.name=bin, .inputs=leaves, .install=_, .ldscript=lds, .runtime=rt]:
+		| `Bin [.name=bin, .inputs=leaves, .ldscript=lds, .runtime=rt]:
 			if std.sleq(bin, targ)
 				buildbin(bin, leaves, lds, rt)
 				built = true
@@ -72,17 +73,22 @@ const build = {p, targ
 
 const buildbin = {bin, inputs, ldscript, rt
 	var dg
+	var built
 
-	std.put("LD SCRIPT: %s\n", ldscript)
 	if !myrdeps(&dg, bin, inputs, false)
 		std.fatal(1, "Could not load dependencies for %s\n", bin)
 	;;
 	match std.htget(dg.deps, bin)
 	| `std.Some deps:
+		built = false
 		for d in deps
-			builddep(&dg, d, bin)
+			if builddep(&dg, d, bin)
+				built = true
+			;;
 		;;
-		linkbin(&dg, bin, inputs, ldscript, rt)
+		if built
+			linkbin(&dg, bin, inputs, ldscript, rt)
+		;;
 	| `std.None:
 		std.fatal(1, "No such binary %s\n", bin)
 	;;
@@ -90,16 +96,22 @@ const buildbin = {bin, inputs, ldscript, rt
 
 const buildlib = {lib, inputs
 	var dg
+	var built
 
 	if !myrdeps(&dg, lib, inputs, true)
 		std.fatal(1, "Could not load dependencies for %s\n", lib)
 	;;
 	match std.htget(dg.deps, lib)
 	| `std.Some deps:
+		built = false
 		for d in deps
-			builddep(&dg, d, lib)
+			if builddep(&dg, d, lib)
+				built = true
+			;;
 		;;
-		archivelib(&dg, lib, inputs)
+		if built
+			archivelib(&dg, lib, inputs)
+		;;
 	| `std.None:
 		std.fatal(1, "No such library %s\n", lib)
 	;;
@@ -119,11 +131,12 @@ const builddep = {dg, dep, out
 	;;
 
 	if isfresh(dep, out)
-		->
+		-> false
 	;;
 	if std.hassuffix(dep, ".myr")
 		run(["6m", dep][:])
 	;;
+	-> true
 }
 
 const linkbin = {dg, bin, srcfiles, ldscript, rt
@@ -138,7 +151,6 @@ const linkbin = {dg, bin, srcfiles, ldscript, rt
 	cmd = std.slpush(cmd, std.sldup(bin))
 
 	/* [-T script] */
-	std.put("ldscript = %s\n", ldscript)
 	if ldscript.len > 0
 		cmd = std.slpush(cmd, std.sldup("-T"))
 		cmd = std.slpush(cmd, std.sldup(ldscript))

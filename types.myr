@@ -1,0 +1,38 @@
+use std
+
+pkg bld =
+	type parser = struct
+		/* parse input */
+		data	: byte[:]
+		rest	: byte[:]
+		fname	: byte[:]
+		line	: int
+
+		/* build params */
+		targs	: target[:]
+		prefix	: byte[:]
+		system	: byte[:]
+		arch	: byte[:]
+	;;
+
+	type depgraph = struct
+		roots	: byte[:][:]
+		deps	: std.htab(byte[:], byte[:][:])#
+		libs	: std.htab(byte[:], byte[:][:])#
+	;;
+
+	type myrtarg = struct
+		name	: byte[:]
+		inputs	: byte[:][:]
+		install	: bool
+		ldscript	: byte[:]
+		runtime	: byte[:]
+	;;
+
+	type target = union
+		`Bin	myrtarg
+		`Lib	myrtarg
+		`Sub	byte[:][:]
+		`Man	byte[:][:]
+	;;
+;;

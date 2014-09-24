@@ -4,14 +4,9 @@ use bio
 
 use "config.use"
 use "opts.use"
+use "types.use"
 
 pkg bld =
-	type depgraph = struct
-		roots	: byte[:][:]
-		deps	: std.htab(byte[:], byte[:][:])#
-		libs	: std.htab(byte[:], byte[:][:])#
-	;;
-
 	const myrdeps	: (dg : depgraph#, targ : byte[:], leaves : byte[:][:], islib : bool	-> bool)
 ;;
 
@@ -33,6 +28,7 @@ const myrdeps = {dg, targ, leaves, islib
 
 	dg.deps = std.mkht(std.strhash, std.streq)
 	dg.libs = std.mkht(std.strhash, std.streq)
+	dg.updated = std.mkht(std.strhash, std.streq)
 	seentab = std.mkht(std.strhash, std.streq)
 	donetab = std.mkht(std.strhash, std.streq)
 	/* direct dependencies of binary */

@@ -6,12 +6,13 @@ use "config.use"
 use "install.use"
 use "opts.use"
 use "parse.use"
+use "types.use"
 
 const main = {args : byte[:][:]
 	var p : bld.parser#
 	var optctx
 
-	optctx = std.optinit("hb:l:s:r:I:C:A:M:L:R:", args)
+	optctx = std.optinit("hb:l:s:r:I:C:A:M:L:R:d", args)
 	bld.initopts()
 	while !std.optdone(optctx)
 		match std.optnext(optctx)
@@ -42,7 +43,7 @@ const main = {args : byte[:][:]
 	;;
 
 	if bld.opt_binname.len != 0
-		bld.buildbin(bld.opt_binname, optctx.args, bld.opt_ldscript)
+		bld.buildbin(bld.opt_binname, optctx.args, bld.opt_ldscript, bld.opt_runtime)
 	elif bld.opt_libname.len != 0
 		bld.buildlib(bld.opt_libname, optctx.args)
 	else

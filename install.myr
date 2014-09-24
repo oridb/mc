@@ -5,6 +5,7 @@ use "deps.use"
 use "opts.use"
 use "parse.use"
 use "util.use"
+use "types.use"
 
 pkg bld =
 	const install	: (p : parser#	-> bool)
