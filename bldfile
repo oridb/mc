@@ -8,5 +8,6 @@ bin mbld2 =
 	main.myr
 	opts.myr
 	parse.myr
+        types.myr
 	util.myr
-; # comment
+;
