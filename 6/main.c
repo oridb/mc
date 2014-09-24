@@ -4,12 +4,14 @@
 #include <ctype.h>
 #include <string.h>
 #include <assert.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/time.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <err.h>
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/time.h>
+#include <sys/wait.h>
 
 #include "parse.h"
 #include "opt.h"
@@ -44,13 +46,31 @@ static void usage(char *prog)
 
 static void assem(char *asmsrc, char *input)
 {
+    char *asmcmd[] = Asmcmd;
     char objfile[1024];
-    char cmd[2048];
+    char **p, **cmd;
+    size_t ncmd;
+    int pid, status;
 
     swapsuffix(objfile, 1024, input, ".myr", ".o");
-    snprintf(cmd, 1024, Asmcmd, objfile, asmsrc);
-    if (system(cmd) == -1)
-        die("Couldn't run assembler");
+    cmd = NULL;
+    ncmd = 0;
+    for (p = asmcmd; *p != NULL; p++)
+        lappend(&cmd, &ncmd, *p);
+    lappend(&cmd, &ncmd, objfile);
+    lappend(&cmd, &ncmd, asmsrc);
+    lappend(&cmd, &ncmd, NULL);
+
+    pid = fork();
+    if (pid == -1) {
+        die("couldn't fork");
+    } else if (pid == 0) {
+        execvp(cmd[0], cmd);
+    } else {
+        waitpid(pid, &status, 0);
+        if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
+            die("Couldn't run assembler");
+    }
 }
 
 static char *gentemp(char *buf, size_t bufsz, char *path, char *suffix)
