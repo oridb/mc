@@ -397,6 +397,28 @@ size_t size(Node *n)
     return tysize(t);
 }
 
+/* gets the byte offset of 'memb' within the aggregate type 'aggr' */
+static size_t offset(Node *aggr, Node *memb)
+{
+    Type *ty;
+    size_t i;
+    size_t off;
+
+    ty = tybase(exprtype(aggr));
+    if (ty->type == Typtr)
+        ty = tybase(ty->sub[0]);
+
+    assert(ty->type == Tystruct);
+    off = 0;
+    for (i = 0; i < ty->nmemb; i++) {
+        off = alignto(off, decltype(ty->sdecls[i]));
+        if (!strcmp(namestr(memb), declname(ty->sdecls[i])))
+            return off;
+        off += size(ty->sdecls[i]);
+    }
+    die("Could not find member %s in struct", namestr(memb));
+    return -1;
+}
 static Node *gentemp(Simp *simp, Node *e, Type *ty, Node **dcl)
 {
     char buf[128];
@@ -708,7 +730,7 @@ static void matchpattern(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, N
         /* We got lucky. The structure of tuple, array, and struct literals
          * is the same, so long as we don't inspect the type, so we can
          * share the code*/
-        case Tystruct: case Tytuple: case Tyarray: 
+        case Tytuple: case Tyarray: 
             patarg = pat->expr.args;
             off = 0;
             for (i = 0; i < pat->expr.nargs; i++) {
@@ -720,6 +742,16 @@ static void matchpattern(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, N
                 off += size(patarg[i]);
             }
             jmp(s, iftrue);
+            break;
+        case Tystruct:
+            patarg = pat->expr.args;
+            for (i = 0; i < pat->expr.nargs; i++) {
+                off = offset(pat, patarg[i]->expr.idx);
+                next = genlbl();
+                v = load(addk(addr(s, val, exprtype(patarg[i])), off));
+                matchpattern(s, patarg[i], v, exprtype(patarg[i]), next, iffalse);
+                append(s, next);
+            }
             break;
         case Tyunion:
             uc = finducon(pat);
@@ -804,29 +836,6 @@ static Node *simpblob(Simp *s, Node *blob, Node ***l, size_t *nl)
 
     lappend(l, nl, d);
     return r;
-}
-
-/* gets the byte offset of 'memb' within the aggregate type 'aggr' */
-static size_t offset(Node *aggr, Node *memb)
-{
-    Type *ty;
-    size_t i;
-    size_t off;
-
-    ty = tybase(exprtype(aggr));
-    if (ty->type == Typtr)
-        ty = tybase(ty->sub[0]);
-
-    assert(ty->type == Tystruct);
-    off = 0;
-    for (i = 0; i < ty->nmemb; i++) {
-        off = alignto(off, decltype(ty->sdecls[i]));
-        if (!strcmp(namestr(memb), declname(ty->sdecls[i])))
-            return off;
-        off += size(ty->sdecls[i]);
-    }
-    die("Could not find member %s in struct", namestr(memb));
-    return -1;
 }
 
 static Node *ptrsized(Simp *s, Node *v)
