@@ -13,7 +13,7 @@ const main = {
 	v.v2 = 40
 	v.v3 = 10
 	match v
-	| [.v1 = x, .v2 = y, .v3 = 10]:	
+	| [.v2 = x, .v1 = y, .v3 = 10]:	
 		 std.exit(x + y)
 	| _:
 		std.die("Wat")
