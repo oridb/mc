@@ -36,17 +36,17 @@ echo export INST_ROOT=$prefix > config.mk
 echo '#define Instroot "'$prefix'"' > config.h
 case $OS in
     *Linux*)
-        echo '#define Asmcmd "as -g -o %s %s"' >> config.h
+        echo '#define Asmcmd {"as", "-g", "-o", NULL}' >> config.h
         echo '#define symprefix ""' >> config.h
         echo 'export SYS=linux' >> config.mk
         ;;
     *Darwin*)
-        echo '#define Asmcmd "as -g -o %s %s"' >> config.h
+        echo '#define Asmcmd {"as", "-g", "-o", NULL}' >> config.h
         echo '#define symprefix "_"' >> config.h
         echo 'export SYS=osx' >> config.mk
         ;;
     *FreeBSD*)
-        echo '#define Asmcmd "as -g -o %s %s"' >> config.h
+        echo '#define Asmcmd {"as", "-g", "-o", NULL}' >> config.h
         echo '#define symprefix ""' >> config.h
         echo 'export SYS=freebsd' >> config.mk
         ;;
