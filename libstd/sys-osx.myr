@@ -793,39 +793,44 @@ const uname	= {buf;
 	mib[0] = 1 /* CTL_KERN */
 	mib[1] = 1 /* KERN_OSTYPE */
 	sys = buf.system[:]
-	if sysctl(mib[:], &sys, [][:]) < 0
-		ret = -1
+	ret = sysctl(mib[:], &sys, [][:])
+	if ret < 0
+		-> ret
 	;;
 
 	mib[0] = 1 /* CTL_KERN */
 	mib[1] = 10 /* KERN_HOSTNAME */
 	nod = buf.node[:]
-	if sysctl(mib[:], &nod, [][:]) < 0
-		ret = -1
+	ret = sysctl(mib[:], &nod, [][:])
+	if ret < 0
+		-> ret
 	;;
 
 	mib[0] = 1 /* CTL_KERN */
 	mib[1] = 2 /* KERN_OSRELEASE */
 	rel = buf.release[:]
-	if sysctl(mib[:], &rel, [][:]) < 0
-		ret = -1
+	ret = sysctl(mib[:], &rel, [][:])
+	if ret < 0
+		-> ret
 	;;
 
 	mib[0] = 1 /* CTL_KERN */
 	mib[1] = 4 /* KERN_VERSION */
 	ver = buf.version[:]
-	if sysctl(mib[:], &ver, [][:]) < 0
-		ret = -1
+	ret = sysctl(mib[:], &ver, [][:])
+	if ret < 0
+		-> ret
 	;;
 
 	mib[0] = 6 /* CTL_HW */
 	mib[1] = 1 /* HW_MACHINE */
 	mach = buf.machine[:]
-	if sysctl(mib[:], &mach, [][:]) < 0
-		ret = -1
+	ret = sysctl(mib[:], &mach, [][:])
+	if ret < 0
+		-> ret
 	;;
 
-	-> ret
+	-> 0
 }
 
 const sysctl = {mib, old, new
@@ -843,8 +848,13 @@ const sysctl = {mib, old, new
 	o = old#
 	oldp = o castto(byte#)
 	oldsz = (o.len castto(uint64))
-	newp = new castto(byte#)
-	newsz = new.len castto(uint64)
+	if new.len > 0
+		newp = new castto(byte#)
+		newsz = new.len castto(uint64)
+	else
+		newp = 0 castto(byte#)
+		newsz = 0
+	;;
 
 	ret = syscall(Sys__sysctl, a(mibp), a(mibsz), a(oldp), a(&oldsz), a(newp), a(newsz)) castto(int)
 
