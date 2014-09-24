@@ -1,5 +1,5 @@
 # comment
-bin mbld2 =
+bin mbld2 {ldscript = link.ld} =
 	build.myr
 	clean.myr
 	config.myr

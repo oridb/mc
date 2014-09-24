@@ -10,15 +10,15 @@ pkg bld =
 	const buildall	: (p : parser# -> bool)
 	const test	: (p : parser# -> bool)
 	const build	: (p : parser#, target : byte[:] -> bool)
-	const buildbin	: (bin : byte[:], inputs : byte[:][:] -> void)
+	const buildbin	: (bin : byte[:], inputs : byte[:][:], ldscript : byte[:] -> void)
 	const buildlib	: (lib : byte[:], inputs : byte[:][:] -> void)
 ;;
 
 const buildall = {p
 	for t in p.targs
 		match t
-		| `Bin [.name=bin, .inputs=leaves]:
-			buildbin(bin, leaves)
+		| `Bin [.name=bin, .inputs=leaves, .ldscript=ldscript]:
+			buildbin(bin, leaves, ldscript)
 		| `Lib [.name=lib, .inputs=leaves]:
 			buildlib(lib, leaves)
 		| `Sub subs:
@@ -43,9 +43,9 @@ const build = {p, targ
 	built = false
 	for t in p.targs
 		match t
-		| `Bin [.name=bin, .inputs=leaves]:
+		| `Bin [.name=bin, .inputs=leaves, .ldscript=ldscript]:
 			if std.sleq(bin, targ)
-				buildbin(bin, leaves)
+				buildbin(bin, leaves, ldscript)
 				built = true
 			;;
 		| `Lib [.name=lib, .inputs=leaves]:
@@ -70,9 +70,10 @@ const build = {p, targ
 	-> built
 }
 
-const buildbin = {bin, inputs
+const buildbin = {bin, inputs, ldscript
 	var dg
 
+	std.put("LD SCRIPT: %s\n", ldscript)
 	if !myrdeps(&dg, bin, inputs, false)
 		std.fatal(1, "Could not load dependencies for %s\n", bin)
 	;;
@@ -81,7 +82,7 @@ const buildbin = {bin, inputs
 		for d in deps
 			builddep(&dg, d, bin)
 		;;
-		linkbin(&dg, bin, inputs, "")
+		linkbin(&dg, bin, inputs, ldscript)
 	| `std.None:
 		std.fatal(1, "No such binary %s\n", bin)
 	;;
@@ -137,6 +138,7 @@ const linkbin = {dg, bin, srcfiles, ldscript
 	cmd = std.slpush(cmd, std.sldup(bin))
 
 	/* [-T script] */
+	std.put("ldscript = %s\n")
 	if ldscript.len > 0
 		cmd = std.slpush(cmd, std.sldup("-T"))
 		cmd = std.slpush(cmd, std.sldup(ldscript))

@@ -42,7 +42,7 @@ const main = {args : byte[:][:]
 	;;
 
 	if bld.opt_binname.len != 0
-		bld.buildbin(bld.opt_binname, optctx.args)
+		bld.buildbin(bld.opt_binname, optctx.args, bld.opt_ldscript)
 	elif bld.opt_libname.len != 0
 		bld.buildlib(bld.opt_libname, optctx.args)
 	else

@@ -89,7 +89,8 @@ const mantarget = {p
 
 }
 const myrtarget = {p, targ
-	var name, inputs
+	var name, inputs, attrs
+	var ldscript, runtime, inst
 
 	match word(p)
 	| `std.Some n:	name = n
@@ -97,9 +98,18 @@ const myrtarget = {p, targ
 	;;
 
 	skipspace(p)
+	if matchc(p, '{')
+		match attrlist(p)
+		| `std.Some al:	attrs = al
+		| `std.None:	failparse(p, "invalid attr list for %s %s", targ, name)
+		;;
+	;;
+
+	skipspace(p)
 	if !matchc(p, '=')
 		failparse(p, "expected '=' after '%s %s'", targ, name)
 	;;
+
 	match wordlist(p)
 	| `std.Some wl: inputs = wl
 	| `std.None: failparse(p, "expected list of file names after %s target\n", targ)
@@ -108,7 +118,26 @@ const myrtarget = {p, targ
 	if !matchc(p, ';')
 		failparse(p, "expected ';' terminating input list, got %c\n", peekc(p))
 	;;
-	-> [.name=name, .inputs=inputs, .install=true, .ldscript=[][:], .runtime=[][:]]
+	inst = true
+	for elt in attrs
+		match elt
+		| ("ldscript", lds):	ldscript = std.sldup(lds)
+		| ("runtime", rt):	runtime = std.sldup(rt)
+		| ("noinst", val):
+			if val.len != 0
+				failparse(p, "noinst attr does not take argument\n")
+			;;
+			inst = false
+		;;
+	;;
+	std.slfree(attrs)
+	-> [
+		.name=name,
+		.inputs=inputs, 
+		.install=inst,
+		.ldscript=ldscript,
+		.runtime=runtime
+	]
 }
 
 const anontarget = {p, targ
@@ -124,6 +153,38 @@ const anontarget = {p, targ
 	;;
 	-> inputs
 }
+
+const attrlist = {p
+	var al
+
+	al = [][:]
+	while true
+		match word(p)
+		| `std.Some k:
+			skipspace(p)
+			if matchc(p, '=')
+				match word(p)
+				| `std.Some v:
+					al = std.slpush(al, (k, v))
+				| `std.None:
+					failparse(p, "invalid attr in attribute list\n")
+				;;
+			else
+				al = std.slpush(al, (k, [][:]))
+			;;
+		| `std.None:	break
+		;;
+	;;
+	if !matchc(p, '}')
+		failparse(p, "expected '}' at end of attr list\n")
+	;;
+	if al.len == 0
+		-> `std.None
+	else
+		-> `std.Some al
+	;;
+}
+
 
 const wordlist = {p
 	var wl
