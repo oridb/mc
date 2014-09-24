@@ -122,15 +122,21 @@ const dosub = {sub
 }
 
 const builddep = {dg, dep, out
+	var freshdep
+
+	freshdep = true
 	match std.htget(dg.deps, dep)
 	| `std.Some deps:
 		for d in deps
 			builddep(dg, d, dep)
+			if !isfresh(d, out)
+				freshdep = false
+			;;
 		;;
 	| `std.None:
 	;;
 
-	if isfresh(dep, out)
+	if freshdep && isfresh(dep, out)
 		-> false
 	;;
 	if std.hassuffix(dep, ".myr")
@@ -183,13 +189,11 @@ const linkbin = {dg, bin, srcfiles, ldscript, rt
 	;;
 	cmd = std.slpush(cmd, std.fmt("-L%s%s", opt_instroot, "/lib/myr"))
 
-	/*
 	/* special for OSX: it warns if we don't add this */
-	if std.sleq(opt_sysname, "Darwin")
-	cmd = std.slpush(cmd, std.sldup("-macosx_version_min"))
-	cmd = std.slpush(cmd, std.sldup("10.6"))
+	if std.sleq(opt_sys, "osx")
+		cmd = std.slpush(cmd, std.sldup("-macosx_version_min"))
+		cmd = std.slpush(cmd, std.sldup("10.6"))
 	;;
-	*/
 
 	run(cmd)
 	strlistfree(cmd)
@@ -260,9 +264,9 @@ const isfresh = {src, dst
 		-> false
 	;;
 	if srcsb.mtime.sec != dstsb.mtime.sec
-		-> srcsb.mtime.sec <= dstsb.mtime.sec
+		-> srcsb.mtime.sec < dstsb.mtime.sec
 	else
-		-> srcsb.mtime.nsec <= dstsb.mtime.nsec
+		-> srcsb.mtime.nsec < dstsb.mtime.nsec
 	;;
 }
 
