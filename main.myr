@@ -28,6 +28,7 @@ const main = {args : byte[:][:]
 				bld.opt_runtime = arg
 			;;
 		| ('R', arg): bld.opt_instroot = arg
+		| ('d', arg): bld.opt_debug = true
 		/*
 		internal undocumented args; used by compiler suite for
 		building with an uninstalled compiler.

@@ -13,6 +13,7 @@ pkg bld =
 	var opt_instroot	: byte[:]
 	var opt_destdir	: byte[:]
 	var opt_bldfile	: byte[:]
+	var opt_debug	: bool
 
 	/* undocumented/unsupported opts */
 	var opt_mc	: byte[:]
@@ -33,6 +34,7 @@ var opt_ldscript	= ""
 var opt_incpaths	/* FIXME: taking a constant slice is a nonconstant initializer */
 var opt_instroot	= ""
 var opt_destdir	= ""
+var opt_debug	= false
 var opt_bldfile = "bldfile"
 var opt_mc	= "6m"
 var opt_as	= "as"
@@ -43,7 +45,9 @@ var opt_ar	= "ar"
 const initopts = {
 	var un
 
-	std.uname(&un)
+	if std.uname(&un) < 0
+		std.fatal(1, "unable to determine host information (uname)\n")
+	;;
 	match cstr2myr(un.system[:])
 	| "Linux":	opt_sys = "linux"
 	| "Darwin":	opt_sys = "osx"

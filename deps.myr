@@ -63,6 +63,9 @@ const myrdeps = {dg, targ, leaves, islib
 const dumpgraph = {dg
 	var keys
 
+	if !opt_debug
+		->
+	;;
 	keys = std.htkeys(dg.deps)
 	std.put("digraph dg {\n")
 	for k in keys
@@ -77,10 +80,10 @@ const srcdeps = {g, seen, done, path
 	var deps
 
 	if std.hthas(done, path)
-		std.put("already know about %s\n", path)
 		->
 	elif std.htgetv(seen, path, false)
-		std.fatal(1, "dependency loop involving %s\n", path)
+		std.fput(1, "dependency loop involving %s\n", path)
+		std.exit(1)
 	;;
 	deps = getdeps(path)
 	std.htput(seen, path, true)
@@ -104,10 +107,11 @@ const addusedep = {g, seen, done, usefile
 	var src
 
 	if std.hthas(done, usefile)
-		std.put("already know about %s\n", usefile)
+		if opt_debug
+			std.put("already loaded deps for %s\n", usefile)
+		;;
 		->
 	;;
-	std.put("adding use dep for %s\n", usefile)
 	src = swapsuffix(usefile, ".use", ".myr")
 	pushdep(g, src, usefile)
 	srcdeps(g, seen, done, src)
@@ -210,7 +214,9 @@ const depname = {deps, ln
 const pushdep = {dg, dst, src
 	var sl
 
-	std.put("%s ==> %s\n", src, dst)
+	if opt_debug
+		std.put("%s ==> %s\n", src, dst)
+	;;
 	sl = std.htgetv(dg.deps, src, [][:])
 	sl = std.slpush(sl, dst)
 	std.htput(dg.deps, src, sl)
