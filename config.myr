@@ -1,4 +1,4 @@
 pkg config = 
-const Instroot = "/Users/orib/bin"
-const Sys = "OSX"
+const Instroot = "/usr/local/google/home/orib/bin"
+const Sys = "Linux"
 ;;

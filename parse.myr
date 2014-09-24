@@ -74,6 +74,10 @@ const target = {p : parser#
 
 const bintarget = {p
 	p.targs = std.slpush(p.targs, `Bin myrtarget(p, "bin"))
+	match p.targs[p.targs.len - 1]
+	| `Bin b:
+		std.put("ldscript in targ = %s\n", b.ldscript)
+	;;
 }
 
 const libtarget = {p
@@ -103,6 +107,8 @@ const myrtarget = {p, targ
 		| `std.Some al:	attrs = al
 		| `std.None:	failparse(p, "invalid attr list for %s %s", targ, name)
 		;;
+	else
+		attrs = [][:]
 	;;
 
 	skipspace(p)
@@ -118,10 +124,15 @@ const myrtarget = {p, targ
 	if !matchc(p, ';')
 		failparse(p, "expected ';' terminating input list, got %c\n", peekc(p))
 	;;
+
 	inst = true
+	ldscript = ""
+	runtime = ""
 	for elt in attrs
 		match elt
-		| ("ldscript", lds):	ldscript = std.sldup(lds)
+		| ("ldscript", lds):
+			std.put("ldscript attr = %s\n", lds)
+			ldscript = std.sldup(lds)
 		| ("runtime", rt):	runtime = std.sldup(rt)
 		| ("noinst", val):
 			if val.len != 0
@@ -130,10 +141,10 @@ const myrtarget = {p, targ
 			inst = false
 		;;
 	;;
-	std.slfree(attrs)
+	std.put("ldscript = %s\n", ldscript)
 	-> [
 		.name=name,
-		.inputs=inputs, 
+		.inputs=inputs,
 		.install=inst,
 		.ldscript=ldscript,
 		.runtime=runtime

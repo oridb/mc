@@ -10,15 +10,15 @@ pkg bld =
 	const buildall	: (p : parser# -> bool)
 	const test	: (p : parser# -> bool)
 	const build	: (p : parser#, target : byte[:] -> bool)
-	const buildbin	: (bin : byte[:], inputs : byte[:][:], ldscript : byte[:] -> void)
+	const buildbin	: (bin : byte[:], inputs : byte[:][:], ldscript : byte[:], rt : byte[:] -> void)
 	const buildlib	: (lib : byte[:], inputs : byte[:][:] -> void)
 ;;
 
 const buildall = {p
 	for t in p.targs
 		match t
-		| `Bin [.name=bin, .inputs=leaves, .ldscript=ldscript]:
-			buildbin(bin, leaves, ldscript)
+		| `Bin [.name=bin, .inputs=leaves, .install=_, .ldscript=lds, .runtime=rt]:
+			buildbin(bin, leaves, lds, rt)
 		| `Lib [.name=lib, .inputs=leaves]:
 			buildlib(lib, leaves)
 		| `Sub subs:
@@ -43,9 +43,9 @@ const build = {p, targ
 	built = false
 	for t in p.targs
 		match t
-		| `Bin [.name=bin, .inputs=leaves, .ldscript=ldscript]:
+		| `Bin [.name=bin, .inputs=leaves, .install=_, .ldscript=lds, .runtime=rt]:
 			if std.sleq(bin, targ)
-				buildbin(bin, leaves, ldscript)
+				buildbin(bin, leaves, lds, rt)
 				built = true
 			;;
 		| `Lib [.name=lib, .inputs=leaves]:
@@ -70,7 +70,7 @@ const build = {p, targ
 	-> built
 }
 
-const buildbin = {bin, inputs, ldscript
+const buildbin = {bin, inputs, ldscript, rt
 	var dg
 
 	std.put("LD SCRIPT: %s\n", ldscript)
@@ -82,7 +82,7 @@ const buildbin = {bin, inputs, ldscript
 		for d in deps
 			builddep(&dg, d, bin)
 		;;
-		linkbin(&dg, bin, inputs, ldscript)
+		linkbin(&dg, bin, inputs, ldscript, rt)
 	| `std.None:
 		std.fatal(1, "No such binary %s\n", bin)
 	;;
@@ -126,7 +126,7 @@ const builddep = {dg, dep, out
 	;;
 }
 
-const linkbin = {dg, bin, srcfiles, ldscript
+const linkbin = {dg, bin, srcfiles, ldscript, rt
 	var cmd
 	var obj
 
@@ -138,13 +138,17 @@ const linkbin = {dg, bin, srcfiles, ldscript
 	cmd = std.slpush(cmd, std.sldup(bin))
 
 	/* [-T script] */
-	std.put("ldscript = %s\n")
+	std.put("ldscript = %s\n", ldscript)
 	if ldscript.len > 0
 		cmd = std.slpush(cmd, std.sldup("-T"))
 		cmd = std.slpush(cmd, std.sldup(ldscript))
 	;;
 
-	cmd = std.slpush(cmd, std.fmt("%s/%s", opt_instroot, "/lib/myr/_myrrt.o"))
+	if rt.len != 0
+		cmd = std.slpush(cmd, std.sldup(rt))
+	else
+		cmd = std.slpush(cmd, std.fmt("%s/%s", opt_instroot, "/lib/myr/_myrrt.o"))
+	;;
 
 	/* input.o list.o... */
 	for f in srcfiles
