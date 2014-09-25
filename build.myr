@@ -6,6 +6,7 @@ use "opts.use"
 use "parse.use"
 use "types.use"
 use "util.use"
+use "subdir.use"
 
 pkg bld =
 	const buildall	: (p : parser# -> bool)
@@ -23,9 +24,7 @@ const buildall = {p
 		| `Lib [.name=lib, .inputs=leaves]:
 			buildlib(lib, leaves)
 		| `Sub subs:
-			for s in subs
-				dosub(s)
-			;;
+			subdirs(p, subs, `std.None)
 		| `Man m:
 			/* nothing needed */
 		;;
@@ -55,12 +54,7 @@ const build = {p, targ
 				built = true
 			;;
 		| `Sub subs:
-			for s in subs
-				if std.sleq(s, targ)
-					dosub(s)
-					built = true
-				;;
-			;;
+			subdirs(p, subs, `std.Some targ)
 		| `Man m:
 			/* nothing needed */
 		;;
@@ -117,10 +111,6 @@ const buildlib = {lib, inputs
 	;;
 }
 
-const dosub = {sub
-	std.put("subdir %s\n", sub)
-}
-
 const builddep = {dg, dep, out
 	var freshdep
 
@@ -140,7 +130,7 @@ const builddep = {dg, dep, out
 		-> false
 	;;
 	if std.hassuffix(dep, ".myr")
-		run(["6m", dep][:])
+		run(["6m", dep][:], "")
 	;;
 	-> true
 }
@@ -195,7 +185,7 @@ const linkbin = {dg, bin, srcfiles, ldscript, rt
 		cmd = std.slpush(cmd, std.sldup("10.6"))
 	;;
 
-	run(cmd)
+	run(cmd, "")
 	strlistfree(cmd)
 }
 
@@ -217,7 +207,7 @@ const archivelib = {dg, lib, files
 		;;
 		cmd = std.slpush(cmd, obj)
 	;;
-	run(cmd)
+	run(cmd, "")
 	strlistfree(cmd)
 }
 
@@ -254,6 +244,7 @@ const visit = {cmd, head, g, lib, looped, marked -> byte[:][:]
 	std.htput(marked, lib, true)
 	-> std.slput(cmd, head, std.fmt("-l%s", lib))
 }
+
 const isfresh = {src, dst
 	var srcsb, dstsb
 

@@ -4,6 +4,7 @@ use "config.use"
 use "deps.use"
 use "opts.use"
 use "parse.use"
+use "subdir.use"
 use "types.use"
 
 pkg bld =
@@ -19,6 +20,7 @@ const cleanall = {p
 		| `Lib [.name=lib, .inputs=leaves]:
 			cleanup(lib, leaves, true)
 		| `Sub subs:
+			subdirs(p, subs, `std.None)
 		| `Man m:
 		;;
 	;;
@@ -37,6 +39,7 @@ const clean = {p, targ
 				cleanup(lib, leaves, true)
 			;;
 		| `Sub subs:
+			subdirs(p, subs, `std.Some targ)
 		| `Man m:
 		;;
 	;;

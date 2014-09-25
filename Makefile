@@ -8,7 +8,9 @@ MYRSRC= \
 	main.myr \
 	opts.myr \
 	parse.myr \
+	subdir.myr \
 	util.myr \
+	types.myr
 
 include config.mk
 include mk/myr.mk

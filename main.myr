@@ -48,6 +48,7 @@ const main = {args : byte[:][:]
 		bld.buildlib(bld.opt_libname, optctx.args)
 	else
 		p = loadbuild(bld.opt_bldfile)
+		p.cmd = args
 		/*bld.configure()*/
 		/* default: buildall */
 		if optctx.args.len == 0

@@ -1,13 +1,13 @@
 use std
 
 pkg bld =
-	const run	: (cmd : byte[:][:] -> void)
+	const run	: (cmd : byte[:][:], dir : byte[:] -> void)
 	const swapsuffix	: (f : byte[:], suff : byte[:], newsuff : byte[:] -> byte[:])
 	const strlistfree	: (sl : byte[:][:] -> void)
 ;;
 
 
-const run = {cmd
+const run = {cmd, dir
 	var pid
 	var status
 
@@ -16,6 +16,9 @@ const run = {cmd
 	if pid == -1
 		std.fatal(1, "could not fork command\n")
 	elif pid == 0
+		if dir.len > 0
+			std.chdir(dir)
+		;;
 		if std.execvp(cmd[0], cmd) < 0
 			std.fatal(1, "failed to exec %s\n", cmd[0])
 		;;

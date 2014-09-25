@@ -2,6 +2,7 @@ use std
 
 pkg bld =
 	type parser = struct
+		cmd	: byte[:][:]
 		/* parse input */
 		data	: byte[:]
 		rest	: byte[:]

@@ -87,7 +87,7 @@ const myrtarget = {p, targ
 
 	match wordlist(p)
 	| `std.Some wl: inputs = wl
-	| `std.None: failparse(p, "expected list of file names after %s target\n", targ)
+	| `std.None: failparse(p, "expected list of file names after '%s %s'\n", targ, name)
 	;;
 	skipspace(p)
 	if !matchc(p, ';')
@@ -120,8 +120,13 @@ const myrtarget = {p, targ
 const anontarget = {p, targ
 	var inputs
 
+	skipspace(p)
+	if !matchc(p, '=')
+		failparse(p, "expected '=' after '%s' target", targ)
+	;;
+
 	match wordlist(p)
-	| `std.None:	failparse(p, "expected list of file names after %s target\n", targ)
+	| `std.None:	failparse(p, "expected list of file names after '%s' target\n", targ)
 	| `std.Some wl:	inputs = wl
 	;;
 	skipspace(p)

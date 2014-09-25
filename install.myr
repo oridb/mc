@@ -4,8 +4,9 @@ use "config.use"
 use "deps.use"
 use "opts.use"
 use "parse.use"
-use "util.use"
+use "subdir.use"
 use "types.use"
+use "util.use"
 
 pkg bld =
 	const install	: (p : parser#	-> bool)
@@ -33,11 +34,7 @@ const movetargs = {p, delete
 			movefile(delete, libarchive, opt_instroot, opt_destdir, "lib/myr")
 			std.slfree(libarchive)
 		| `Sub subs:
-			/*
-			for s in subs
-				dosub(s)
-			;;
-			*/
+			subdirs(p, subs, `std.None)
 		| `Man mans:
 			/* FIXME: figure out man section by number */
 			for m in mans

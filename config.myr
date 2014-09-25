@@ -1,4 +1,0 @@
-pkg config = 
-const Instroot = "/usr/local/google/home/orib/bin"
-const Sys = "Linux"
-;;
