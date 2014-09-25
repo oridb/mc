@@ -567,6 +567,7 @@ pkg std =
 	const mkdir	: (path : byte[:], mode : int64	-> int64)
 	const ioctl	: (fd:fd, req : int64, args:... -> int64)
 	const getdents64	: (fd:fd, buf : byte[:] -> int64)
+	const chdir	: (p : byte[:] -> int64)
 
 	/* fd stuff */
 	const pipe	: (fds : fd[:] -> int64)
@@ -688,6 +689,7 @@ const ioctl	= {fd, req, args
 	-> syscall(Sysioctl, a(fd), a(req), a(arg)) castto(int64)
 }
 const getdents64	= {fd, buf;	-> syscall(Sysgetdents64, a(fd), buf castto(byte#), a(buf.len))}
+const chdir	= {dir;	-> syscall(Syschdir, dir)}
 
 /* file stuff */
 const pipe	= {fds;	-> syscall(Syspipe, fds castto(fd#))}
