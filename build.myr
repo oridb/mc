@@ -155,7 +155,7 @@ const linkbin = {dg, bin, srcfiles, ldscript, rt
 	if rt.len != 0
 		cmd = std.slpush(cmd, std.sldup(rt))
 	else
-		cmd = std.slpush(cmd, std.fmt("%s/%s", opt_instroot, "/lib/myr/_myrrt.o"))
+		cmd = std.slpush(cmd, std.sldup(opt_runtime))
 	;;
 
 	/* input.o list.o... */

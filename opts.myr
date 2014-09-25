@@ -68,7 +68,7 @@ const initopts = {
 	opt_ld = std.getenvv("MYR_LD", "ld")
 	opt_ar = std.getenvv("MYR_AR", "ar")
 	opt_muse = std.getenvv("MYR_MUSE", "muse")
-	opt_runtime = std.fmt(config.Instroot, "/lib/myr/_myrrt.o")
+	opt_runtime = std.pathcat(config.Instroot, "/lib/myr/_myrrt.o")
 }
 
 const cstr2myr = {cstr
