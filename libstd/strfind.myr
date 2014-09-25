@@ -3,14 +3,31 @@ use "option.use"
 
 pkg std =
 	const strfind	: (haystack : byte[:], needle : byte[:] -> option(size))
+	const strrfind	: (haystack : byte[:], needle : byte[:] -> option(size))
 ;;
 
 const strfind = {haystack, needle
-	var i, j
+	-> strfindin(haystack, needle, 0, haystack.len)
+}
 
-	for i = 0; i < haystack.len; i++
+const strrfind = {haystack, needle
+	-> strfindin(haystack, needle, haystack.len - 1, -1)
+}
+
+const strfindin = {haystack, needle, start, end
+	var i, j, inc : size
+
+	inc = 1
+	if start > end
+		inc = -1
+	;;
+	for i = start; i != end; i += inc
+		/* 
+		if we knew the direction we could terminate early,
+		but we allow the start and end to be passed in.
+		*/
 		if i + needle.len > haystack.len
-			-> `None
+			continue
 		;;
 		if haystack[i] == needle[0]
 			for j = 0; j < needle.len; j++
@@ -24,3 +41,4 @@ const strfind = {haystack, needle
 	;;
 	-> `None
 }
+
