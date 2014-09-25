@@ -1,5 +1,4 @@
 # comment
-sub = foo;
 bin mbld =
 	build.myr
 	clean.myr
@@ -13,4 +12,6 @@ bin mbld =
         types.myr
 	util.myr
 ;
+
+man = mbld.1;
 

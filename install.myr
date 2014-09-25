@@ -38,7 +38,7 @@ const movetargs = {p, delete
 		| `Man mans:
 			/* FIXME: figure out man section by number */
 			for m in mans
-				movefile(delete, m, opt_instroot, opt_destdir, "share/man1")
+				moveman(delete, m)
 			;;
 		;;
 	;;
@@ -66,4 +66,23 @@ const movefile = {delete, file, instdir, destdir, prefix
 		;;
 	;;
 	std.slfree(path)
+}
+
+const moveman = {delete, man
+	var sect, manrel
+
+	std.put("man = %s\n", man)
+	match std.strrfind(man, ".")
+	| `std.None:
+		std.fatal(1, "manpage %s has no section\n", man)
+	| `std.Some s:
+		sect = s + 1
+		if s + 1 == man.len
+			std.fatal(1, "manpage %s missing suffix\n", man)
+		;;
+	;;
+
+	manrel = std.fmt("share/man%s", man[sect:])
+	movefile(delete, man, opt_instroot, opt_destdir, manrel)
+	std.slfree(manrel)
 }
