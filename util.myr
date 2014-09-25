@@ -17,7 +17,9 @@ const run = {cmd, dir
 		std.fatal(1, "could not fork command\n")
 	elif pid == 0
 		if dir.len > 0
-			std.chdir(dir)
+			if std.chdir(dir) < 0
+				std.fatal(1, "unable to enter directory %s\n", dir)
+			;;
 		;;
 		if std.execvp(cmd[0], cmd) < 0
 			std.fatal(1, "failed to exec %s\n", cmd[0])
