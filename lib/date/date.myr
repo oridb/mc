@@ -13,12 +13,14 @@ pkg date =
 	const tzoff	: (tzname : byte[:], tm : std.time	-> delta)
 	const isleap	: (d : instant	-> bool)
 
-	/* date deltaerences */
+	/* date differences */
 	const add	: (d : instant, dt : delta	-> instant)
 	const sub	: (d : instant, dt : delta	-> instant)
 	const delta	: (a : instant, b : instant	-> delta)
+        /*
 	const duradd	: (d : instant, dt : period	-> instant)
 	const dursub	: (d : instant, dt : period	-> instant)
+        */
 ;;
 
 const UnixJulianDiff	= 719468
