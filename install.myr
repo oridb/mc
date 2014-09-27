@@ -71,7 +71,6 @@ const movefile = {delete, file, instdir, destdir, prefix
 const moveman = {delete, man
 	var sect, manrel
 
-	std.put("man = %s\n", man)
 	match std.strrfind(man, ".")
 	| `std.None:
 		std.fatal(1, "manpage %s has no section\n", man)
