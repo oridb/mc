@@ -72,6 +72,7 @@ const buildbin = {bin, inputs, ldscript, rt
 	if !myrdeps(&dg, bin, inputs, false)
 		std.fatal(1, "Could not load dependencies for %s\n", bin)
 	;;
+	built = false
 	match std.htget(dg.deps, bin)
 	| `std.Some deps:
 		built = false
@@ -95,6 +96,7 @@ const buildlib = {lib, inputs
 	if !myrdeps(&dg, lib, inputs, true)
 		std.fatal(1, "Could not load dependencies for %s\n", lib)
 	;;
+	built = false
 	match std.htget(dg.deps, lib)
 	| `std.Some deps:
 		built = false
@@ -113,27 +115,38 @@ const buildlib = {lib, inputs
 }
 
 const builddep = {dg, dep, out
-	var freshdep
+	-> builddep_(dg, dep, out, 0)
+}
 
-	freshdep = true
-	match std.htget(dg.deps, dep)
+const builddep_ = {dg, src, out, indent
+	var staledep
+	var stalesrc
+
+	staledep = false
+	stalesrc = !isfresh(src, out)
+	if stalesrc
+		std.put("%s -> %s was stale\n", src, out)
+	;;
+	match std.htget(dg.deps, src)
 	| `std.Some deps:
 		for d in deps
-			builddep(dg, d, dep)
-			if !isfresh(d, out)
-				freshdep = false
+			if builddep_(dg, d, out, indent + 1)
+				staledep = true
 			;;
 		;;
 	| `std.None:
 	;;
 
-	if freshdep && isfresh(dep, out)
-		-> false
+	if (staledep || stalesrc) && std.hassuffix(src, ".myr")
+		if std.htgetv(dg.built, src, false)
+			std.put("fresh (%s, %s): staledeps:%t, stalesrc:%t\n", \
+				src, out, staledep, stalesrc)
+			std.die("Double built!\n")
+		;;
+		run(["6m", src][:], "")
+		std.htput(dg.built, src, true)
 	;;
-	if std.hassuffix(dep, ".myr")
-		run(["6m", dep][:], "")
-	;;
-	-> true
+	-> staledep || stalesrc
 }
 
 const linkbin = {dg, bin, srcfiles, ldscript, rt
