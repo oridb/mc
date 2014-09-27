@@ -1105,6 +1105,7 @@ static void inferucon(Inferstate *st, Node *n, int *isconst)
     t = tyfreshen(st, tf(st, uc->utype));
     uc = tybase(t)->udecls[uc->id];
     if (uc->etype) {
+        checkns(st, n->expr.args[1], &n->expr.args[1]);
         inferexpr(st, n->expr.args[1], NULL, NULL);
         unify(st, n, uc->etype, type(st, n->expr.args[1]));
     }
@@ -1198,6 +1199,7 @@ static void infersub(Inferstate *st, Node *n, Type *ret, int *sawret, int *exprc
         if (args[i]->type == Nexpr) {
             /* Omemb can sometimes resolve to a namespace. We have to check
              * this. Icky. */
+            checkns(st, args[i], &args[i]);
             inferexpr(st, args[i], ret, sawret);
             isconst = isconst && args[i]->expr.isconst;
         }
@@ -1505,6 +1507,7 @@ static void inferdecl(Inferstate *st, Node *n)
     }
     settype(st, n, t);
     if (n->decl.init) {
+        checkns(st, n->decl.init, &n->decl.init);
         inferexpr(st, n->decl.init, NULL, NULL);
         unify(st, n, type(st, n), type(st, n->decl.init));
         if (n->decl.isconst && !n->decl.init->expr.isconst)
@@ -1602,6 +1605,7 @@ static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
             inferpat(st, n->iterstmt.elt, NULL, &bound, &nbound);
             addbindings(st, n->iterstmt.body, bound, nbound);
 
+            checkns(st, n->iterstmt.seq, &n->iterstmt.seq);
             infernode(st, n->iterstmt.seq, NULL, sawret);
             infernode(st, n->iterstmt.body, ret, sawret);
 
