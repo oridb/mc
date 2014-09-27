@@ -104,6 +104,7 @@ const buildlib = {lib, inputs
 			;;
 		;;
 		if built
+			mergeuse(&dg, lib, inputs)
 			archivelib(&dg, lib, inputs)
 		;;
 	| `std.None:
@@ -194,7 +195,7 @@ const archivelib = {dg, lib, files
 	var obj
 
 	cmd = [][:]
-	cmd = std.slpush(cmd, std.sldup("ar"))
+	cmd = std.slpush(cmd, std.sldup(opt_ar))
 	cmd = std.slpush(cmd, std.sldup("-rcs"))
 	cmd = std.slpush(cmd, std.fmt("lib%s.a", lib))
 	for f in files
@@ -210,6 +211,25 @@ const archivelib = {dg, lib, files
 	run(cmd, "")
 	strlistfree(cmd)
 }
+
+const mergeuse = {dg, lib, files
+	var cmd
+
+	cmd = [][:]
+	cmd = std.slpush(cmd, std.sldup(opt_muse))
+	cmd = std.slpush(cmd, std.sldup("-mo"))
+	cmd = std.slpush(cmd, std.sldup(lib))
+	for f in files
+		if std.hassuffix(f, ".myr")
+			cmd = std.slpush(cmd, swapsuffix(f, ".myr", ".use"))
+		elif !std.hassuffix(f, ".s")
+			std.fatal(1, "unknown file type for %s\n", f)
+		;;
+	;;
+	run(cmd, "")
+	strlistfree(cmd)
+}
+
 
 
 

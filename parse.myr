@@ -89,6 +89,7 @@ const myrtarget = {p, targ
 	| `std.Some wl: inputs = wl
 	| `std.None: failparse(p, "expected list of file names after '%s %s'\n", targ, name)
 	;;
+
 	skipspace(p)
 	if !matchc(p, ';')
 		failparse(p, "expected ';' terminating input list, got %c\n", peekc(p))
@@ -120,6 +121,7 @@ const myrtarget = {p, targ
 const anontarget = {p, targ
 	var inputs
 
+	inputs = [][:]
 	skipspace(p)
 	if !matchc(p, '=')
 		failparse(p, "expected '=' after '%s' target", targ)
