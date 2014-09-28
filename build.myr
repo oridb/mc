@@ -108,15 +108,15 @@ const builddep = {dg, out
 			if builddep(dg, d)
 				stale = true
 			;;
+			if !isfresh(d, out)
+				stale = true
+			;;
 		;;
 	| `std.None:
 	;;
 
 	match std.htget(dg.sources, out)
 	| `std.Some src:
-		if !isfresh(src, out)
-			stale = true
-		;;
 		if stale
 			if std.hassuffix(src, ".myr")
 				run(["6m", src][:], "")
