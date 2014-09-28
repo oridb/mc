@@ -77,7 +77,7 @@ const buildbin = {bin, inputs, ldscript, rt
 	| `std.Some deps:
 		built = false
 		for d in deps
-			if builddep(&dg, d, bin)
+			if builddep(&dg, d)
 				built = true
 			;;
 		;;
@@ -101,7 +101,7 @@ const buildlib = {lib, inputs
 	| `std.Some deps:
 		built = false
 		for d in deps
-			if builddep(&dg, d, lib)
+			if builddep(&dg, d)
 				built = true
 			;;
 		;;
@@ -114,39 +114,45 @@ const buildlib = {lib, inputs
 	;;
 }
 
-const builddep = {dg, dep, out
-	-> builddep_(dg, dep, out, 0)
-}
+const builddep = {dg, out
+	var stale
 
-const builddep_ = {dg, src, out, indent
-	var staledep
-	var stalesrc
-
-	staledep = false
-	stalesrc = !isfresh(src, out)
-	if stalesrc
-		std.put("%s -> %s was stale\n", src, out)
-	;;
-	match std.htget(dg.deps, src)
+	std.put("Target: %s:", out)
+	stale = false
+	match std.htget(dg.deps, out)
 	| `std.Some deps:
 		for d in deps
-			if builddep_(dg, d, out, indent + 1)
-				staledep = true
+			std.put("%s ", d)
+		;;
+		std.put("\n")
+		for d in deps
+			if builddep(dg, d) || !isfresh(d, out)
+				if !isfresh(d, out)
+					std.put("\t\tstale: %s->%s\n", d, out)
+				;;
+				stale = true
 			;;
 		;;
 	| `std.None:
+		std.put("\n")
 	;;
 
-	if (staledep || stalesrc) && std.hassuffix(src, ".myr")
-		if std.htgetv(dg.built, src, false)
-			std.put("fresh (%s, %s): staledeps:%t, stalesrc:%t\n", \
-				src, out, staledep, stalesrc)
-			std.die("Double built!\n")
+	if stale
+		match std.htget(dg.sources, out)
+		| `std.Some src:
+			if std.hassuffix(src, ".myr")
+				run(["6m", src][:], "")
+			elif std.hassuffix(src, ".myr")
+				run(["as", src][:], "")
+			else
+				std.fatal(1, "Unknown file type for %s\n", src)
+			;;
+			std.htput(dg.updated, src, true)
+		| `std.None:
+			std.fatal(1, "No source for %s\n", out)
 		;;
-		run(["6m", src][:], "")
-		std.htput(dg.built, src, true)
 	;;
-	-> staledep || stalesrc
+	-> stale
 }
 
 const linkbin = {dg, bin, srcfiles, ldscript, rt
