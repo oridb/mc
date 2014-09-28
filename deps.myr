@@ -28,6 +28,7 @@ const myrdeps = {dg, targ, leaves, islib
 
 	dg.deps = std.mkht(std.strhash, std.streq)
 	dg.libs = std.mkht(std.strhash, std.streq)
+	dg.sources = std.mkht(std.strhash, std.streq)
 	dg.updated = std.mkht(std.strhash, std.streq)
 	seentab = std.mkht(std.strhash, std.streq)
 	donetab = std.mkht(std.strhash, std.streq)
@@ -41,14 +42,15 @@ const myrdeps = {dg, targ, leaves, islib
 	;;
 	for l in leaves
 		obj = srcswapsuffix(l, ".o")
+		std.htput(dg.sources, obj, l)
 		pushdep(dg, obj, out)
 		pushdep(dg, l, obj)
+		usefile = srcswapsuffix(l, ".use")
 		if islib
-			usefile = srcswapsuffix(l, ".use")
 			pushdep(dg, usefile, useout)
-			pushdep(dg, l, usefile)
+			std.htput(dg.sources, usefile, l)
 		;;
-		srcdeps(dg, seentab, donetab, l)
+		srcdeps(dg, seentab, donetab, l, obj, usefile)
 	;;
 	dumpgraph(dg)
 	std.htfree(seentab)
@@ -72,7 +74,7 @@ const dumpgraph = {dg
 	std.put("}\n")
 }
 
-const srcdeps = {g, seen, done, path
+const srcdeps = {g, seen, done, path, obj, usefile
 	var deps
 
 	if std.hthas(done, path)
@@ -91,7 +93,12 @@ const srcdeps = {g, seen, done, path
 			if !std.hassuffix(l, ".use")
 				std.fatal(1, "usefile dependency \"%s\" of \"%s\" is not a usefile\n", l, path)
 			;;
-			pushdep(g, l, path)
+			if obj.len != 0
+				pushdep(g, l, obj)
+			;;
+			if usefile.len != 0
+				pushdep(g, l, usefile)
+			;;
 			addusedep(g, seen, done, l)
 		;;
 	;;
@@ -110,7 +117,8 @@ const addusedep = {g, seen, done, usefile
 	;;
 	src = swapsuffix(usefile, ".use", ".myr")
 	pushdep(g, src, usefile)
-	srcdeps(g, seen, done, src)
+	std.htput(g.sources, usefile, src)
+	srcdeps(g, seen, done, src, "", usefile)
 	std.htput(done, usefile, true)
 }
 
@@ -207,15 +215,16 @@ const depname = {deps, ln
 
 
 /* pushes a dep into the dependency list */
-const pushdep = {dg, dst, src
+const pushdep = {dg, src, dst
 	var sl
 
+	std.assert(dst.len < 20, "BUG!")
 	if opt_debug
-		std.put("%s ==> %s\n", src, dst)
+		std.put("%s <= %s\n", dst, src)
 	;;
-	sl = std.htgetv(dg.deps, src, [][:])
-	sl = std.slpush(sl, dst)
-	std.htput(dg.deps, src, sl)
+	sl = std.htgetv(dg.deps, dst, [][:])
+	sl = std.slpush(sl, src)
+	std.htput(dg.deps, dst, sl)
 }
 
 const srcswapsuffix = {s, new
