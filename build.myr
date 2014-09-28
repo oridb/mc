@@ -67,79 +67,57 @@ const build = {p, targ
 
 const buildbin = {bin, inputs, ldscript, rt
 	var dg
-	var built
 
 	if !myrdeps(&dg, bin, inputs, false)
 		std.fatal(1, "Could not load dependencies for %s\n", bin)
 	;;
-	built = false
-	match std.htget(dg.deps, bin)
-	| `std.Some deps:
-		built = false
-		for d in deps
-			if builddep(&dg, d)
-				built = true
-			;;
-		;;
-		if built
-			linkbin(&dg, bin, inputs, ldscript, rt)
-		;;
-	| `std.None:
-		std.fatal(1, "No such binary %s\n", bin)
+	if !std.hthas(dg.deps, bin)
+		std.fatal(1, "no target declared for %s\n", bin)
+	;;
+	if builddep(&dg, bin)
+		linkbin(&dg, bin, inputs, ldscript, rt)
 	;;
 }
 
 const buildlib = {lib, inputs
 	var dg
-	var built
 
 	if !myrdeps(&dg, lib, inputs, true)
 		std.fatal(1, "Could not load dependencies for %s\n", lib)
 	;;
-	built = false
-	match std.htget(dg.deps, lib)
-	| `std.Some deps:
-		built = false
-		for d in deps
-			if builddep(&dg, d)
-				built = true
-			;;
-		;;
-		if built
-			mergeuse(&dg, lib, inputs)
-			archivelib(&dg, lib, inputs)
-		;;
-	| `std.None:
-		std.fatal(1, "No such library %s\n", lib)
+	if !std.hthas(dg.deps, lib)
+		std.fatal(1, "no target declared for %s\n", lib)
+	;;
+	if builddep(&dg, lib)
+		mergeuse(&dg, lib, inputs)
+		archivelib(&dg, lib, inputs)
 	;;
 }
 
 const builddep = {dg, out
 	var stale
 
-	std.put("Target: %s:", out)
 	stale = false
+	/* short circuit walking the dep tree if we've already built this. */
+	if std.htgetv(dg.updated, out, false)
+		-> false
+	;;
 	match std.htget(dg.deps, out)
 	| `std.Some deps:
 		for d in deps
-			std.put("%s ", d)
-		;;
-		std.put("\n")
-		for d in deps
-			if builddep(dg, d) || !isfresh(d, out)
-				if !isfresh(d, out)
-					std.put("\t\tstale: %s->%s\n", d, out)
-				;;
+			if builddep(dg, d)
 				stale = true
 			;;
 		;;
 	| `std.None:
-		std.put("\n")
 	;;
 
-	if stale
-		match std.htget(dg.sources, out)
-		| `std.Some src:
+	match std.htget(dg.sources, out)
+	| `std.Some src:
+		if !isfresh(src, out)
+			stale = true
+		;;
+		if stale
 			if std.hassuffix(src, ".myr")
 				run(["6m", src][:], "")
 			elif std.hassuffix(src, ".myr")
@@ -147,10 +125,9 @@ const builddep = {dg, out
 			else
 				std.fatal(1, "Unknown file type for %s\n", src)
 			;;
-			std.htput(dg.updated, src, true)
-		| `std.None:
-			std.fatal(1, "No source for %s\n", out)
 		;;
+		std.htput(dg.updated, src, true)
+	| `std.None:
 	;;
 	-> stale
 }
