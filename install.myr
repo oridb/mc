@@ -81,7 +81,7 @@ const moveman = {delete, man
 		;;
 	;;
 
-	manrel = std.fmt("share/man%s", man[sect:])
+	manrel = std.fmt("share/man/man%s", man[sect:])
 	movefile(delete, man, opt_instroot, opt_destdir, manrel)
 	std.slfree(manrel)
 }
