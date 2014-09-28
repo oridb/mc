@@ -233,3 +233,8 @@ void dump(Node *n, FILE *fd)
 {
     outnode(n, fd, 0);
 }
+
+void dumpn(Node *n)
+{
+    dump(n, stdout);
+}

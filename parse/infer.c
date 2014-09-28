@@ -104,6 +104,16 @@ static char *ctxstr(Inferstate *st, Node *n)
     return s;
 }
 
+static void addspecialization(Inferstate *st, Node *n, Stab *stab)
+{
+    Node *dcl;
+
+    dcl = decls[n->expr.did];
+    lappend(&st->specializationscope, &st->nspecializationscope, stab);
+    lappend(&st->specializations, &st->nspecializations, n);
+    lappend(&st->genericdecls, &st->ngenericdecls, dcl);
+}
+
 static void delayedcheck(Inferstate *st, Node *n, Stab *s)
 {
     lappend(&st->postcheck, &st->npostcheck, n);
@@ -1002,13 +1012,18 @@ static Type *initvar(Inferstate *st, Node *n, Node *s)
         t = tyfreshen(st, tf(st, s->decl.type));
     else
         t = s->decl.type;
-    settype(st, n, t);
     n->expr.did = s->decl.did;
     n->expr.isconst = s->decl.isconst;
     if (s->decl.isgeneric && !st->ingeneric) {
-        lappend(&st->specializationscope, &st->nspecializationscope, curstab());
-        lappend(&st->specializations, &st->nspecializations, n);
-        lappend(&st->genericdecls, &st->ngenericdecls, s);
+        addspecialization(st, n, curstab());
+        if (t->type == Tyvar) {
+            settype(st, n, mktyvar(n->line));
+            delayedcheck(st, n, curstab());
+        } else {
+            settype(st, n, t);
+        }
+    } else { 
+        settype(st, n, t);
     }
     return t;
 }
@@ -1800,6 +1815,14 @@ static void checkstruct(Inferstate *st, Node *n)
     }
 }
 
+static void checkvar(Inferstate *st, Node *n)
+{
+    Node *dcl;
+
+    dcl = decls[n->expr.did];
+    unify(st, n, type(st, n), tyfreshen(st, type(st, dcl)));
+}
+
 static void postcheck(Inferstate *st, Node *file)
 {
     size_t i;
@@ -1814,6 +1837,8 @@ static void postcheck(Inferstate *st, Node *file)
             checkcast(st, n);
         else if (n->type == Nexpr && exprop(n) == Ostruct)
             checkstruct(st, n);
+        else if (n->type == Nexpr && exprop(n) == Ovar)
+            checkvar(st, n);
         else
             die("Thing we shouldn't be checking in postcheck\n");
         popstab();
