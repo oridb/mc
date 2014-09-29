@@ -13,7 +13,7 @@ $(MYRBIN): $(MYRSRC) $(ASMSRC)
 OBJ=$(MYRSRC:.myr=.o) $(ASMSRC:.s=.o)
 JUNKASM=$(MYRSRC:.myr=.s)
 USE=$(MYRSRC:.myr=.use) $(MYRLIB)
-.PHONY: clean
+.PHONY: clean install install-bin install-lib
 clean:
 	rm -f $(OBJ)
 	rm -f $(USE)
