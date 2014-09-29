@@ -23,10 +23,8 @@ const fblat = {fd, buf
 	n = 0
 	while true
 		written = write(fd, buf[n:])
-		if written == 0
+		if written <= 0
 			goto done
-		elif written < 0
-			goto fail
 		;;
 		n += written
 	;;
