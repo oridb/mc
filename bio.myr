@@ -27,6 +27,7 @@ pkg bio =
 	const dial	: (srv	: byte[:], mode : mode	-> std.option(file#))
 	const create	: (path : byte[:], mode : mode, perm : int	-> std.option(file#))
 	const close	: (f : file# -> bool)
+	const free	: (f : file# -> bool)
 
 	/* basic i/o. Returns sub-buffer when applicable. */
 	const write	: (f : file#, src : byte[:]	-> std.size)
@@ -129,6 +130,14 @@ const sysopen = {path, mode, openmode, perm
 
 /* closes a file, flushing it to the output fd */
 const close = {f
+	var closed
+
+	closed = (std.close(f.fd) == 0)
+	free(f)
+	-> closed
+}
+
+const free = {f
 	flush(f)
 	if f.mode & Rd != 0
 		std.slfree(f.rbuf)
@@ -137,7 +146,7 @@ const close = {f
 	if f.mode & Wr != 0
 		std.slfree(f.wbuf)
 	;;
-	-> std.close(f.fd) == 0
+	std.free(f)
 }
 
 /* 
