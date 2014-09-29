@@ -115,6 +115,10 @@ const builddep = {dg, out
 				stale = true
 			;;
 			if !isfresh(d, out)
+				if opt_debug
+					std.put("Stale %s => %s\n", d, out);
+					pmtime(d, out)
+				;;
 				stale = true
 			;;
 		;;
@@ -277,6 +281,22 @@ const isfresh = {src, dst
 		-> srcsb.mtime.sec < dstsb.mtime.sec
 	else
 		-> srcsb.mtime.nsec < dstsb.mtime.nsec
+	;;
+}
+
+const pmtime = {src, dst
+	var srcsb, dstsb
+
+	if std.stat(src, &srcsb) != 0
+		std.put("\tno %s\n", src)
+	;;
+	if std.stat(dst, &dstsb) != 0
+		std.put("\tno %s\n", dst)
+	;;
+	if srcsb.mtime.sec != dstsb.mtime.sec
+		std.put("\tsrc mtime=%ul, dst mtime=%ul\n", srcsb.mtime.sec, dstsb.mtime.sec)
+	else
+		std.put("\tsrc mtime.nsec=%ul, dst mtime.nsec=%ul\n", srcsb.mtime.nsec, dstsb.mtime.nsec)
 	;;
 }
 
