@@ -59,9 +59,11 @@ const movefile = {delete, file, instdir, destdir, prefix
 		std.put("\t%s => %s\n", file, path)
 		std.unlink(path)
 		match std.slurp(file)
-		| `std.Fail m:	std.fatal(1, "Could not open %s for reading", file)
+		| `std.Fail m:	std.fatal(1, "Could not open %s for reading\n", file)
 		| `std.Ok buf:
-			std.blat(path, buf)
+			if !std.blat(path, buf)
+				std.put("Could not write %s\n", file)
+			;;
 			std.slfree(buf)
 		;;
 	;;
