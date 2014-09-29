@@ -40,17 +40,18 @@ const myrdeps = {dg, targ, leaves, islib
 		out = std.sldup(targ)
 		useout = ""
 	;;
-	for l in leaves
-		obj = srcswapsuffix(l, ".o")
-		std.htput(dg.sources, obj, l)
+	for src in leaves
+		obj = srcswapsuffix(src, ".o")
+		usefile = srcswapsuffix(src, ".use")
+		std.htput(dg.sources, obj, src)
+		std.htput(dg.sources, usefile, src)
 		pushdep(dg, obj, out)
-		pushdep(dg, l, obj)
-		usefile = srcswapsuffix(l, ".use")
+		pushdep(dg, src, obj)
+		pushdep(dg, src, usefile)
 		if islib
 			pushdep(dg, usefile, useout)
-			std.htput(dg.sources, usefile, l)
 		;;
-		srcdeps(dg, seentab, donetab, l, obj, usefile)
+		srcdeps(dg, seentab, donetab, src, obj, usefile)
 	;;
 	dumpgraph(dg)
 	std.htfree(seentab)

@@ -80,18 +80,24 @@ const buildbin = {bin, inputs, ldscript, rt
 }
 
 const buildlib = {lib, inputs
+	var archive
+	var u, l
 	var dg
 
+	archive = std.fmt("lib%s.a", lib)
 	if !myrdeps(&dg, lib, inputs, true)
 		std.fatal(1, "Could not load dependencies for %s\n", lib)
 	;;
 	if !std.hthas(dg.deps, lib)
 		std.fatal(1, "no target declared for %s\n", lib)
 	;;
-	if builddep(&dg, lib)
-		mergeuse(&dg, lib, inputs)
+	u = builddep(&dg, lib)
+	l = builddep(&dg, archive)
+	if  u || l
 		archivelib(&dg, lib, inputs)
+		mergeuse(&dg, lib, inputs)
 	;;
+	std.slfree(archive)
 }
 
 const builddep = {dg, out
@@ -126,7 +132,7 @@ const builddep = {dg, out
 				std.fatal(1, "Unknown file type for %s\n", src)
 			;;
 		;;
-		std.htput(dg.updated, src, true)
+		std.htput(dg.updated, out, true)
 	| `std.None:
 	;;
 	-> stale
@@ -163,7 +169,7 @@ const linkbin = {dg, bin, srcfiles, ldscript, rt
 			obj = swapsuffix(f, ".s", ".o")
 		else
 			std.fatal(1, "unknown file type for %s\n", f)
-			;;
+		;;
 		cmd = std.slpush(cmd, obj)
 	;;
 
@@ -225,9 +231,6 @@ const mergeuse = {dg, lib, files
 	run(cmd, "")
 	strlistfree(cmd)
 }
-
-
-
 
 const addlibs = {cmd, libgraph
 	var looped : std.htab(byte[:], bool)#
