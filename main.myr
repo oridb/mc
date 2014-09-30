@@ -71,7 +71,7 @@ const main = {args : byte[:][:]
 const loadbuild =  {path
 	var p
 
-	p = std.alloc()
+	p = std.zalloc()
 	p.line = 1
 	p.fname = path
 	match std.slurp(path)
