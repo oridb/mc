@@ -183,13 +183,13 @@ const openlib = {lib
 	var path
 
 	for p in opt_incpaths
-		path = std.fmt("%s/%s/%s", p, "/lib/myr", lib)
+		path = std.pathjoin([p, "/lib/myr", lib][:])
 		match  bio.open(path, bio.Rd)
 		| `std.Some file:
 			-> file
 		;;
 	;;
-	path = std.fmt("%s/%s/%s", opt_instroot, "/lib/myr", lib)
+	path = std.pathjoin([opt_instroot, "/lib/myr", lib][:])
 	match  bio.open(path, bio.Rd)
 	| `std.Some file:
 		-> file
