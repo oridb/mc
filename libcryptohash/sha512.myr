@@ -53,9 +53,12 @@ const sha512add = {st, data
 	ntail = st.msglen % 128
 	st.msglen += data.len
 	if ntail > 0
-		n = 128 - ntail
-		std.slcp(st.tail[n:], data[:n])
+		n = std.min(128 - ntail, data.len)
+		std.slcp(st.tail[ntail:ntail+n], data[:n])
 		data = data[n:]
+		if n + ntail < 128
+			->
+		;;
 		step(st.x[:], st.tail[:])
 	;;
 
@@ -110,9 +113,12 @@ const sha384add = {st, data
 	ntail = st.msglen % 128
 	st.msglen += data.len
 	if ntail > 0
-		n = 128 - ntail
-		std.slcp(st.tail[n:], data[:n])
+		n = std.min(128 - ntail, data.len)
+		std.slcp(st.tail[ntail:ntail+n], data[:n])
 		data = data[n:]
+		if n + ntail < 128
+			->
+		;;
 		step(st.x[:], st.tail[:])
 	;;
 

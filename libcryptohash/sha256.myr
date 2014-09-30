@@ -47,9 +47,12 @@ const sha256add = {st, data
 	ntail = st.msglen % 64
 	st.msglen += data.len
 	if ntail > 0
-		n = 64 - ntail
-		std.slcp(st.tail[n:], data[:n])
+		n = std.min(64 - ntail, data.len)
+		std.slcp(st.tail[ntail:ntail + n], data[:n])
 		data = data[n:]
+		if n + ntail < 64
+			->
+		;;
 		step(st.x[:], st.tail[:])
 	;;
 
@@ -110,9 +113,12 @@ const sha224add = {st, data
 	ntail = st.msglen % 64
 	st.msglen += data.len
 	if ntail > 0
-		n = 64 - ntail
-		std.slcp(st.tail[n:], data[:n])
+		n = std.min(64 - ntail, data.len)
+		std.slcp(st.tail[ntail:ntail + n], data[:n])
 		data = data[n:]
+		if n + ntail < 64
+			->
+		;;
 		step(st.x[:], st.tail[:])
 	;;
 

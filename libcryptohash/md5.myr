@@ -41,17 +41,19 @@ const md5add = {st, data
         ntail = st.msglen % 64
 	st.msglen += data.len
 	if ntail > 0
-		n = 64 - ntail
-		std.slcp(st.tail[n:], data[:n])
+		n = std.min(64 - ntail, data.len)
+		std.slcp(st.tail[ntail:ntail + n], data[:n])
 		data = data[n:]
+		if n + ntail < 64
+			->
+		;;
 		step(st, st.tail[:])
 	;;
 	while data.len >= 64
 		step(st, data[:64])
 		data = data[64:]
 	;;
-        ntail = st.msglen % 64
-	std.slcp(st.tail[:ntail], data)
+	std.slcp(st.tail[:data.len], data)
 }
 
 const md5fin = {st
