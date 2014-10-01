@@ -277,10 +277,19 @@ const isfresh = {src, dst
 	if std.stat(dst, &dstsb) != 0
 		-> false
 	;;
+	/*
+	OSX only has single second resolution on modification
+	times. Since most builds happen within one second of each
+	other, if we treat equal times as outdated, we do a lot of
+	spurious rebuilding.
+
+	So, we treat times where both secs and nsecs are equal as
+	up to date.
+	*/
 	if srcsb.mtime.sec != dstsb.mtime.sec
 		-> srcsb.mtime.sec < dstsb.mtime.sec
 	else
-		-> srcsb.mtime.nsec < dstsb.mtime.nsec
+		-> srcsb.mtime.nsec <= dstsb.mtime.nsec
 	;;
 }
 
@@ -289,9 +298,11 @@ const pmtime = {src, dst
 
 	if std.stat(src, &srcsb) != 0
 		std.put("\tno %s\n", src)
+		->
 	;;
 	if std.stat(dst, &dstsb) != 0
 		std.put("\tno %s\n", dst)
+		->
 	;;
 	if srcsb.mtime.sec != dstsb.mtime.sec
 		std.put("\tsrc mtime=%ul, dst mtime=%ul\n", srcsb.mtime.sec, dstsb.mtime.sec)
