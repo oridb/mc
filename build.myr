@@ -128,18 +128,26 @@ const builddep = {dg, out
 	match std.htget(dg.sources, out)
 	| `std.Some src:
 		if stale
-			if std.hassuffix(src, ".myr")
-				run(["6m", src][:], "")
-			elif std.hassuffix(src, ".myr")
-				run(["as", src][:], "")
-			else
-				std.fatal(1, "Unknown file type for %s\n", src)
-			;;
+			compile(src)
 		;;
 		std.htput(dg.updated, out, true)
 	| `std.None:
 	;;
 	-> stale
+}
+
+const compile = {src
+	var o
+
+	if std.hassuffix(src, ".myr")
+		run(["6m", src][:], "")
+	elif std.hassuffix(src, ".s")
+		o = swapsuffix(src, ".s", ".o")
+		run(["as", src, "-o", o][:], "")
+		std.slfree(o)
+	else
+		std.fatal(1, "Unknown file type for %s\n", src)
+	;;
 }
 
 const linkbin = {dg, bin, srcfiles, ldscript, rt

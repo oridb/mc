@@ -42,14 +42,18 @@ const myrdeps = {dg, targ, leaves, islib
 	;;
 	for src in leaves
 		obj = srcswapsuffix(src, ".o")
-		usefile = srcswapsuffix(src, ".use")
 		std.htput(dg.sources, obj, src)
-		std.htput(dg.sources, usefile, src)
 		pushdep(dg, obj, out)
 		pushdep(dg, src, obj)
-		pushdep(dg, src, usefile)
-		if islib
-			pushdep(dg, usefile, useout)
+		if std.hassuffix(src, ".myr")
+			usefile = srcswapsuffix(src, ".use")
+			std.htput(dg.sources, usefile, src)
+			pushdep(dg, src, usefile)
+			if islib
+				pushdep(dg, usefile, useout)
+			;;
+		else
+			usefile = ""
 		;;
 		srcdeps(dg, seentab, donetab, src, obj, usefile)
 	;;
