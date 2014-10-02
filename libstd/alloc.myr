@@ -235,7 +235,12 @@ const bytealloc = {sz
 /* frees a blob that is 'sz' bytes long. */
 const bytefree = {p, sz
 	var bkt
+	var b, i
 
+	b = p[:sz]
+	for i = 0; i < sz; i++
+		b[i] = 0xa8
+	;;
 	if (sz < Bktmax)
 		bkt = &buckets[bktnum(sz)]
 		bktfree(bkt, p)
