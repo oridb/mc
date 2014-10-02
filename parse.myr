@@ -91,8 +91,8 @@ const myrtarget = {p, targ
 	;;
 
 	skipspace(p)
-	if !matchc(p, ';')
-		failparse(p, "expected ';' terminating input list, got %c\n", peekc(p))
+	if !matchc(p, ';') || !matchc(p, ';')
+		failparse(p, "expected ';;' terminating input list, got %c\n", peekc(p))
 	;;
 
 	inst = true
@@ -132,8 +132,8 @@ const anontarget = {p, targ
 	| `std.Some wl:	inputs = wl
 	;;
 	skipspace(p)
-	if !matchc(p, ';')
-		failparse(p, "expected ';' terminating input list\n")
+	if !matchc(p, ';') || !matchc(p, ';')
+		failparse(p, "expected ';;' terminating input list\n")
 	;;
 	-> inputs
 }

@@ -11,7 +11,7 @@ bin mbld =
 	subdir.myr
         types.myr
 	util.myr
-;
+;;
 
-man = mbld.1;
+man = mbld.1;;
 
