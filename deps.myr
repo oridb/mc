@@ -21,7 +21,7 @@ const myrdeps = {dg, targ, leaves, islib
 	var seentab, donetab
 	var obj, usefile, out, useout
 
-	match regex.compile("^\\s*use\\s+(([^\"]\\S+[^\"])|(\"(\\S+)\"))")
+	match regex.compile("^\\s*use\\s+((\\<\\S+\\>)|(\"(\\S+)\")).*")
 	| `std.Ok re:	usepat = re
 	| `std.Fail f:	std.fatal(1, "Failed to compile use pattern regex\n")
 	;;
