@@ -63,10 +63,10 @@ include ../config.mk
 
 all: lib$(MYRLIB).a $(MYRBIN) test
 
-%.myr: %-$(SYS).myr
+%.myr: %+$(SYS).myr
 	cp $< $@
 
-%.s: %-$(SYS).s
+%.s: %+$(SYS).s
 	cp $< $@
 
 test: libstd.a test.myr ../6/6m
