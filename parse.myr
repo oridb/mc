@@ -94,6 +94,7 @@ const myrtarget = {p, targ
 				inputs = std.slpush(inputs, w)
 			;;
 		;;
+		std.slfree(wl)
 	| `std.None: failparse(p, "expected list of file names after '%s %s'\n", targ, name)
 	;;
 
