@@ -94,8 +94,8 @@ const buildlib = {lib, inputs
 	u = builddep(&dg, lib)
 	l = builddep(&dg, archive)
 	if  u || l
-		archivelib(&dg, lib, inputs)
 		mergeuse(&dg, lib, inputs)
+		archivelib(&dg, lib, inputs)
 	;;
 	std.slfree(archive)
 }
@@ -142,7 +142,7 @@ const compile = {src
 	if std.hassuffix(src, ".myr")
 		run(["6m", src][:], "")
 	elif std.hassuffix(src, ".s")
-		o = swapsuffix(src, ".s", ".o")
+		o = srcswapsuffix(src, ".o")
 		run(["as", src, "-o", o][:], "")
 		std.slfree(o)
 	else
@@ -152,7 +152,6 @@ const compile = {src
 
 const linkbin = {dg, bin, srcfiles, ldscript, rt
 	var cmd
-	var obj
 
 	cmd = [][:]
 
@@ -175,14 +174,7 @@ const linkbin = {dg, bin, srcfiles, ldscript, rt
 
 	/* input.o list.o... */
 	for f in srcfiles
-		if std.hassuffix(f, ".myr")
-			obj = swapsuffix(f, ".myr", ".o")
-		elif std.hassuffix(f, ".s")
-			obj = swapsuffix(f, ".s", ".o")
-		else
-			std.fatal(1, "unknown file type for %s\n", f)
-		;;
-		cmd = std.slpush(cmd, obj)
+		cmd = std.slpush(cmd, srcswapsuffix(f, ".o"))
 	;;
 
 	/* -l lib... */
@@ -213,13 +205,7 @@ const archivelib = {dg, lib, files
 	cmd = std.slpush(cmd, std.sldup("-rcs"))
 	cmd = std.slpush(cmd, std.fmt("lib%s.a", lib))
 	for f in files
-		if std.hassuffix(f, ".myr")
-			obj = swapsuffix(f, ".myr", ".o")
-		elif std.hassuffix(f, ".s")
-			obj = swapsuffix(f, ".s", ".o")
-		else
-			std.fatal(1, "unknown file type for %s\n", f)
-		;;
+		obj = srcswapsuffix(f, ".o")
 		cmd = std.slpush(cmd, obj)
 	;;
 	run(cmd, "")
@@ -235,7 +221,7 @@ const mergeuse = {dg, lib, files
 	cmd = std.slpush(cmd, std.sldup(lib))
 	for f in files
 		if std.hassuffix(f, ".myr")
-			cmd = std.slpush(cmd, swapsuffix(f, ".myr", ".use"))
+			cmd = std.slpush(cmd, srcswapsuffix(f, ".use"))
 		elif !std.hassuffix(f, ".s")
 			std.fatal(1, "unknown file type for %s\n", f)
 		;;

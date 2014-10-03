@@ -1,6 +1,7 @@
 use std
 
 use "types.use"
+use "util.use"
 
 pkg bld =
 	const parse	: (p : parser#	-> bool)
@@ -86,7 +87,13 @@ const myrtarget = {p, targ
 	;;
 
 	match wordlist(p)
-	| `std.Some wl: inputs = wl
+	| `std.Some wl: 
+		inputs = [][:]
+		for w in wl
+			if isplatform(w)
+				inputs = std.slpush(inputs, w)
+			;;
+		;;
 	| `std.None: failparse(p, "expected list of file names after '%s %s'\n", targ, name)
 	;;
 
@@ -215,7 +222,8 @@ const word = {p : parser#
 const wordchar = {c
 	-> std.isalnum(c) || \
 		c == '.' || c == '_' || c == '$' || c == '-' || \
-		c == '/' || c == ':' || c == '!' || c == '~'
+		c == '/' || c == ':' || c == '!' || c == '~' || \
+		c == '+'
 }
 
 const skipspace = {p : parser#

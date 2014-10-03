@@ -22,6 +22,10 @@ pkg bld =
 	var opt_ld	: byte[:]
 	var opt_ar	: byte[:]
 
+	var sysarchstr	: byte[:]
+	var archstr	: byte[:]
+	var sysstr	: byte[:]
+
 	const initopts	: (-> void)
 ;;
 
@@ -41,6 +45,11 @@ var opt_as	= "as"
 var opt_muse	= "muse"
 var opt_ld	= "ld"
 var opt_ar	= "ar"
+
+/* derived */
+var sysarchstr	= ""
+var archstr	= ""
+var sysstr	= ""
 
 const initopts = {
 	var un
@@ -68,6 +77,11 @@ const initopts = {
 	opt_ld = std.getenvv("MYR_LD", "ld")
 	opt_ar = std.getenvv("MYR_AR", "ar")
 	opt_muse = std.getenvv("MYR_MUSE", "muse")
+
+	sysarchstr = std.fmt("+%s-%s", opt_sys, opt_arch)
+	sysstr = std.fmt("+%s", opt_sys)
+	archstr = std.fmt("+%s", opt_arch)
+
 	opt_runtime = std.pathcat(config.Instroot, "/lib/myr/_myrrt.o")
 }
 

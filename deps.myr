@@ -5,9 +5,10 @@ use bio
 use "config.use"
 use "opts.use"
 use "types.use"
+use "util.use"
 
 pkg bld =
-	const myrdeps	: (dg : depgraph#, targ : byte[:], leaves : byte[:][:], islib : bool	-> bool)
+	const myrdeps	: (dg : depgraph#, targ : byte[:], srcs : byte[:][:], islib : bool	-> bool)
 ;;
 
 type dep = union
@@ -17,9 +18,11 @@ type dep = union
 
 var usepat	: regex.regex#
 
-const myrdeps = {dg, targ, leaves, islib
+const myrdeps = {dg, targ, srcs, islib
 	var seentab, donetab
-	var obj, usefile, out, useout
+	var out, useout
+	var objs, uses
+	var i
 
 	match regex.compile("^\\s*use\\s+((\\<\\S+\\>)|(\"(\\S+)\")).*")
 	| `std.Ok re:	usepat = re
@@ -40,27 +43,39 @@ const myrdeps = {dg, targ, leaves, islib
 		out = std.sldup(targ)
 		useout = ""
 	;;
-	for src in leaves
-		obj = srcswapsuffix(src, ".o")
-		std.htput(dg.sources, obj, src)
-		pushdep(dg, obj, out)
-		pushdep(dg, src, obj)
-		if std.hassuffix(src, ".myr")
-			usefile = srcswapsuffix(src, ".use")
-			std.htput(dg.sources, usefile, src)
-			pushdep(dg, src, usefile)
-			if islib
-				pushdep(dg, usefile, useout)
-			;;
-		else
-			usefile = ""
+	objs = swapall(srcs, ".o")
+	uses = swapall(srcs, ".use")
+	for i = 0; i < srcs.len; i++
+		std.htput(dg.sources, objs[i], srcs[i])
+		pushdep(dg, srcs[i], objs[i])
+		if std.hassuffix(srcs[i], ".myr")
+			std.htput(dg.sources, uses[i], srcs[i])
+			pushdep(dg, srcs[i], uses[i])
 		;;
-		srcdeps(dg, seentab, donetab, src, obj, usefile)
+	;;
+	for i = 0; i < srcs.len; i++
+		pushdep(dg, objs[i], out)
+		if islib && std.hassuffix(srcs[i], ".myr")
+			pushdep(dg, uses[i], useout)
+		;;
+	;;
+	for i = 0; i < srcs.len; i++
+		srcdeps(dg, seentab, donetab, srcs[i], objs[i], uses[i])
 	;;
 	dumpgraph(dg)
 	std.htfree(seentab)
 	std.htfree(donetab)
 	-> true
+}
+
+const swapall = {srcs, suff
+	var sl
+
+	sl = [][:]
+	for s in srcs
+		sl = std.slpush(sl, srcswapsuffix(s, suff))
+	;;
+	-> sl
 }
 
 const dumpgraph = {dg
@@ -120,7 +135,12 @@ const addusedep = {g, seen, done, usefile
 		;;
 		->
 	;;
-	src = swapsuffix(usefile, ".use", ".myr")
+	match std.htget(g.sources, usefile)
+	| `std.Some path:
+		src = std.sldup(path)
+	| `std.None:
+		src = swapsuffix(usefile, ".use", ".myr")
+	;;
 	pushdep(g, src, usefile)
 	std.htput(g.sources, usefile, src)
 	srcdeps(g, seen, done, src, "", usefile)
@@ -230,24 +250,6 @@ const pushdep = {dg, src, dst
 	sl = std.htgetv(dg.deps, dst, [][:])
 	sl = std.slpush(sl, src)
 	std.htput(dg.deps, dst, sl)
-}
-
-const srcswapsuffix = {s, new
-	if std.hassuffix(s, ".myr")
-		-> swapsuffix(s, ".myr", new)
-	elif std.hassuffix(s, ".s")
-		-> swapsuffix(s, ".s", new)
-	else
-		std.fatal(1, "unrecognized source %s\n", s)
-	;;
-}
-
-const swapsuffix = {s, suffix, new
-	if !std.hassuffix(s, suffix)
-		std.die("swapping suffix on string without appropriate suffix\n")
-	;;
-	s = s[:s.len - suffix.len]
-	-> std.strcat(s, new)
 }
 
 const rdstr = {f

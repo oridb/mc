@@ -1,10 +1,14 @@
 use std
 
+use "opts.use"
+
 pkg bld =
 	const run	: (cmd : byte[:][:], dir : byte[:] -> void)
 	const srcsplit	: (src : byte[:] -> (byte[:], byte[:], byte[:]))
 	const swapsuffix	: (f : byte[:], suff : byte[:], newsuff : byte[:] -> byte[:])
+	const srcswapsuffix	: (f : byte[:], newsuff : byte[:] -> byte[:])
 	const strlistfree	: (sl : byte[:][:] -> void)
+	const isplatform	: (src : byte[:] -> bool)
 ;;
 
 const run = {cmd, dir
@@ -74,9 +78,33 @@ const swapsuffix = {f, suff, newsuff
 	-> std.fmt("%s%s", f, newsuff)
 }
 
+const srcswapsuffix = {src, new
+	var base, platf, suff
+
+	(base, platf, suff) = srcsplit(src)
+	if std.sleq(suff, ".myr")
+		-> std.strcat(base, new)
+	elif std.sleq(suff, ".s")
+		-> std.strcat(base, new)
+	else
+		std.fatal(1, "unrecognized source %s\n", src)
+	;;
+}
+
+const isplatform = {src
+	var base, platf, suff
+
+	(base, platf, suff) = srcsplit(src)
+	-> platf.len == 0 || \
+		std.sleq(platf, sysarchstr) ||  \
+		std.sleq(platf, sysstr) ||  \
+		std.sleq(platf, archstr)
+}
+
 const strlistfree = {sl
 	for s in sl
 		std.slfree(s)
 	;;
 	std.slfree(sl)
 }
+
