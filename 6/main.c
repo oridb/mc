@@ -44,15 +44,20 @@ static void usage(char *prog)
     printf("\t-S\tGenerate assembly instead of object code\n");
 }
 
-static void assem(char *asmsrc, char *input)
+static void assem(char *asmsrc, char *path)
 {
     char *asmcmd[] = Asmcmd;
     char objfile[1024];
+    char *psuffix;
     char **p, **cmd;
     size_t ncmd;
     int pid, status;
 
-    swapsuffix(objfile, 1024, input, ".myr", ".o");
+    psuffix = strrchr(path, '+');
+    if (psuffix != NULL)
+        swapsuffix(objfile, 1024, path, psuffix, ".o");
+    else
+        swapsuffix(objfile, 1024, path, ".myr", ".o");
     cmd = NULL;
     ncmd = 0;
     for (p = asmcmd; *p != NULL; p++)
@@ -97,8 +102,13 @@ static void genuse(char *path)
 {
     FILE *f;
     char buf[1024];
+    char *psuffix;
 
-    swapsuffix(buf, sizeof buf, path, ".myr", ".use");
+    psuffix = strrchr(path, '+');
+    if (psuffix != NULL)
+        swapsuffix(buf, 1024, path, psuffix, ".use");
+    else
+        swapsuffix(buf, 1024, path, ".myr", ".use");
     f = fopen(buf, "w");
     if (!f)
         err(1, "Could not open path %s\n", buf);
