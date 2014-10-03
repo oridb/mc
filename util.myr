@@ -2,10 +2,10 @@ use std
 
 pkg bld =
 	const run	: (cmd : byte[:][:], dir : byte[:] -> void)
+	const srcsplit	: (src : byte[:] -> (byte[:], byte[:], byte[:]))
 	const swapsuffix	: (f : byte[:], suff : byte[:], newsuff : byte[:] -> byte[:])
 	const strlistfree	: (sl : byte[:][:] -> void)
 ;;
-
 
 const run = {cmd, dir
 	var pid
@@ -46,6 +46,25 @@ const printcmd = {lst
 		;;
 	;;
 	std.put("\n")
+}
+
+const srcsplit = {src
+	var platf, suff
+
+	platf = ""
+	suff = ""
+	match std.strrfind(src, ".")
+	| `std.Some i:
+		suff = src[i:]
+		src = src[:i]
+	;;
+
+	match std.strrfind(src, "+")
+	| `std.Some i:
+		platf = src[i:]
+		src = src[:i]
+	;;
+	-> (src, platf, suff)
 }
 
 const swapsuffix = {f, suff, newsuff
