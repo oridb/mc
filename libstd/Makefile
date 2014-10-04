@@ -66,7 +66,7 @@ all: lib$(MYRLIB).a $(MYRBIN) test
 %.myr: %+$(SYS).myr
 	cp $< $@
 
-%.s: %+$(SYS).s
+%.s: %+$(SYS)-x64.s
 	cp $< $@
 
 test: libstd.a test.myr ../6/6m
