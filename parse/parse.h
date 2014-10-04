@@ -1,4 +1,8 @@
-#define FATAL __attribute__((noreturn))
+#ifdef __GNUC__
+#	define FATAL __attribute__((noreturn))
+#else
+#	define FATAL
+#endif
 
 typedef uint8_t         byte;
 typedef unsigned int    uint;
