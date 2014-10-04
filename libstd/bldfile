@@ -60,9 +60,9 @@ lib std =
 	ifreq+freebsd.myr
 	ifreq+linux.myr
 	ifreq+osx.myr
-	syscall+freebsd.s
-	syscall+linux.s
-	syscall+osx.s
+	syscall+freebsd-x64.s
+	syscall+linux-x64.s
+	syscall+osx-x64.s
 	sys+freebsd.myr
 	sys+linux.myr
 	sys+osx.myr
