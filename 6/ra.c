@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <stdint.h>
+#include <inttypes.h>
 #include <stdarg.h>
 #include <assert.h>
 #include <limits.h>
@@ -24,19 +24,23 @@ static void printedge(FILE *fd, char *msg, size_t a, size_t b);
 
 /* tables of uses/defs by instruction */
 Usemap usetab[] = {
+#define Def(...)
 #define Use(...) {__VA_ARGS__}
 #define Insn(i, fmt, use, def) use,
 #include "insns.def"
 #undef Insn
 #undef Use
+#undef Def
 };
 
 Usemap deftab[] = {
+#define Use(...)
 #define Def(...) {__VA_ARGS__}
 #define Insn(i, fmt, use, def) def,
 #include "insns.def"
 #undef Insn
 #undef Def
+#undef Use
 };
 
 /* A map of which registers interfere */
@@ -618,15 +622,17 @@ static void decdegree(Isel *s, regid m)
         if (found)
             wldel(s, &s->wlspill, &s->nwlspill, idx);
         if (moverelated(s, m)) {
-            if (!found)
-                assert(wlfind(s->wlfreeze, s->nwlfreeze, m, &idx));
-            else
+            if (!found) {
+                assert(wlfind(s->wlfreeze, s->nwlfreeze, m, &idx) != 0);
+            } else {
                 wlput(&s->wlfreeze, &s->nwlfreeze, locmap[m]);
+            }
         } else {
-            if (!found)
+            if (!found) {
                 assert(wlfind(s->wlsimp, s->nwlsimp, m, &idx));
-            else
+            } else {
                 wlput(&s->wlsimp, &s->nwlsimp, locmap[m]);
+            }
         }
     }
 }
@@ -916,7 +922,7 @@ static int paint(Isel *s)
 
     spilled = 0;
     while (s->nselstk) {
-        bzero(taken, Nreg*sizeof(int));
+        memset(taken, 0, Nreg*sizeof(int));
         n = lpop(&s->selstk, &s->nselstk);
 
         for (j = 0; j < s->ngadj[n->reg.id];j++) {

@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <stdint.h>
+#include <stdarg.h>
+#include <inttypes.h>
 #include <string.h>
 #include <assert.h>
 #include <sys/types.h>
@@ -10,8 +11,6 @@
 #include <ctype.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <regex.h>
-#include <err.h>
 
 #include "parse.h"
 
@@ -44,9 +43,17 @@ char *ldscript;
 
 char *sysname;
 
-regex_t usepat;
 Htab *compiled; /* used as string set */
 Htab *loopdetect; /* used as string set */
+
+static void fail(int status, char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    vfprintf(stderr, fmt, ap);
+    va_end(ap);
+    exit(status);
+}
 
 static void usage(char *prog)
 {
@@ -125,10 +132,10 @@ void run(char **cmd)
     pid = fork();
     status = 0;
     if (pid == -1) {
-        err(1, "Could not fork");
+        fail(1, "Could not fork");
     } else if (pid == 0) {
         if (execvp(cmd[0], cmd) == -1)
-            err(1, "Failed to exec %s", cmd[0]);
+            fail(1, "Failed to exec %s", cmd[0]);
     } else {
         waitpid(pid, &status, 0);
     }
@@ -143,7 +150,7 @@ int isfresh(char *from, char *to)
     struct stat from_sb, to_sb;
 
     if (stat(from, &from_sb))
-        err(1, "Could not find %s", from);
+        fail(1, "Could not find %s", from);
     if (stat(to, &to_sb) == -1)
         return 0;
 
@@ -160,26 +167,48 @@ int inlist(char **list, size_t sz, char *str)
     return 0;
 }
 
+int finddep(char *buf, char **dep)
+{
+    char *end, *w, *p;
+    p = buf;
+
+
+    end = buf + strlen(buf);
+    while (isspace(*p) && p != end)
+        p++;
+    if (strncmp(p, "use", 3) != 0)
+        return 0;
+    p += 3;
+    if (!isspace(*p))
+        return 0;
+    while (isspace(*p) && p != end)
+        p++;
+
+    w = p;
+    while (!isspace(*p) && p != end)
+        p++;
+    if (p == w)
+        return 0;
+    *dep = strdupn(w, p - w);
+    return 1;
+}
+
 void getdeps(char *file, char **deps, size_t depsz, size_t *ndeps)
 {
     char buf[2048];
 
-    regmatch_t m[2];
     size_t i;
     FILE *f;
     char *dep;
 
     f = fopen(file, "r");
     if (!f)
-        err(1, "Could not open file \"%s\"", file);
+        fail(1, "Could not open file \"%s\"", file);
 
     i = 0;
     while (fgets(buf, sizeof buf, f)) {
-        if (regexec(&usepat, buf, 2, m, 0) == REG_NOMATCH)
+        if (!finddep(buf, &dep))
             continue;
-        if (i == depsz)
-            die("Too many deps for file %s", file);
-        dep = strdupn(&buf[m[1].rm_so], m[1].rm_eo - m[1].rm_so);
         if (!inlist(deps, i, dep))
             deps[i++] = dep;
         else
@@ -205,7 +234,8 @@ FILE *openlib(char *lib)
     f = fopen(buf, "r");
     if (f)
         return f;
-    err(1, "could not open library file %s\n", lib);
+    fail(1, "could not open library file %s\n", lib);
+    return NULL;
 }
 
 void scrapelib(Htab *g, char *lib)
@@ -221,7 +251,7 @@ void scrapelib(Htab *g, char *lib)
     ndeps = 0;
     use = openlib(lib);
     if (fgetc(use) != 'U')
-        err(1, "library \"%s\" is not a usefile.", lib);
+        fail(1, "library \"%s\" is not a usefile.", lib);
     /* we don't care about the usefile's name */
     free(rdstr(use));
     while (fgetc(use) == 'L') {
@@ -358,7 +388,7 @@ void visit(char ***args, size_t *nargs, size_t head, Htab *g, char *n, Htab *loo
     char buf[1024];
 
     if (hthas(looped, n))
-        err(1, "cycle in library dependency graph involving %s\n", n);
+        fail(1, "cycle in library dependency graph involving %s\n", n);
     if (hthas(marked, n))
         return;
     htput(looped, n, n);
@@ -502,7 +532,6 @@ int main(int argc, char **argv)
     libgraph = mkht(strhash, streq);
     compiled = mkht(strhash, streq);
     loopdetect = mkht(strhash, streq);
-    regcomp(&usepat, "^[[:space:]]*use[[:space:]]+([^[:space:]]+)", REG_EXTENDED);
     for (i = optind; i < argc; i++) {
         lappend(&stack, &nstack, argv[i]);
         compile(argv[i], &stack, &nstack);

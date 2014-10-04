@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <stdint.h>
+#include <inttypes.h>
 #include <ctype.h>
 #include <string.h>
 #include <assert.h>
@@ -1289,6 +1289,7 @@ static Node *simpucon(Simp *s, Node *n, Node *dst)
 static Node *simpuget(Simp *s, Node *n, Node *dst)
 {
     die("No uget simplification yet");
+	return NULL;
 }
 
 /* simplifies 
@@ -1338,6 +1339,7 @@ static Node *simplazy(Simp *s, Node *n)
 static Node *comparecomplex(Simp *s, Node *n, Op op)
 {
     fatal(n->line, "Complex comparisons not yet supported\n");
+    return NULL;
 }
 
 static Node *compare(Simp *s, Node *n, int fields)

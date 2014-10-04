@@ -1,12 +1,11 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <stdint.h>
+#include <inttypes.h>
 #include <ctype.h>
 #include <string.h>
 #include <assert.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <err.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -70,7 +69,8 @@ static void assem(char *asmsrc, char *path)
     if (pid == -1) {
         die("couldn't fork");
     } else if (pid == 0) {
-        execvp(cmd[0], cmd);
+        if (execvp(cmd[0], cmd) == -1)
+            die("Couldn't exec assembler\n");
     } else {
         waitpid(pid, &status, 0);
         if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
@@ -93,8 +93,8 @@ static char *gentemp(char *buf, size_t bufsz, char *path, char *suffix)
     else
         base = path;
     gettimeofday(&tv, NULL);
-    srandom(tv.tv_usec);
-    snprintf(buf, bufsz, "%s/tmp%lx%lx-%s%s", tmpdir, random(), (long)tv.tv_usec, base, suffix);
+    srand(tv.tv_usec);
+    snprintf(buf, bufsz, "%s/tmp%lx%lx-%s%s", tmpdir, (long)rand(), (long)tv.tv_usec, base, suffix);
     return buf;
 }
 
@@ -110,8 +110,10 @@ static void genuse(char *path)
     else
         swapsuffix(buf, 1024, path, ".myr", ".use");
     f = fopen(buf, "w");
-    if (!f)
-        err(1, "Could not open path %s\n", buf);
+    if (!f) {
+        fprintf(stderr, "Could not open path %s\n", buf);
+        exit(1);
+    }
     writeuse(f, file);
     fclose(f);
 }

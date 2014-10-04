@@ -50,7 +50,7 @@ subdirs-install:
 	); done
 
 clean: subdirs-clean 
-	rm -f ${BIN} ${OBJ} ${CLEAN}
+	rm -f ${BIN} ${OBJ} ${CLEAN} ${LIB}
 
 install: subdirs-install $(INSTBIN) $(INSTLIB) $(INSTHDR) $(INSTPKG)
 	@for i in $(INSTBIN); do \

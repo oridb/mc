@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <stdint.h>
+#include <inttypes.h>
 #include <ctype.h>
 #include <string.h>
 #include <assert.h>
@@ -8,7 +8,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <err.h>
 #include <unistd.h>
 
 #include "parse.h"
@@ -321,7 +320,7 @@ static int hexval(char c)
 }
 
 /* \u{abc} */
-static int32_t unichar()
+static int32_t unichar(void)
 {
     uint32_t v;
     int c;
@@ -382,7 +381,7 @@ static int decode(char **buf, size_t *len, size_t *sz)
     return v;
 }
 
-static Tok *strlit()
+static Tok *strlit(void)
 {
     Tok *t;
     int c;
@@ -442,7 +441,7 @@ static uint32_t readutf(char c, char **buf, size_t *buflen, size_t *sz) {
     return val;
 }
 
-static Tok *charlit()
+static Tok *charlit(void)
 {
     Tok *t;
     int c;
@@ -737,7 +736,7 @@ static Tok *numlit(void)
     return t;
 }
 
-static Tok *typaram()
+static Tok *typaram(void)
 {
     Tok *t;
     char buf[1024];
@@ -792,8 +791,10 @@ void tokinit(char *file)
 
 
     fd = open(file, O_RDONLY);
-    if (fd == -1)
-        err(errno, "Unable to open file %s", file);
+    if (fd == -1) {
+        fprintf(stderr, "Unable to open file %s\n", file);
+        exit(1);
+    }
 
     nread = 0;
     fbuf = malloc(4096);

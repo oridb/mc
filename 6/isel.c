@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <stdint.h>
+#include <inttypes.h>
 #include <stdarg.h>
 #include <inttypes.h>
 #include <ctype.h>
@@ -1067,10 +1067,10 @@ static size_t writelit(FILE *fd, Htab *strtab, Node *v, Type *ty)
         case Lflt:
                 if (tybase(v->lit.type)->type == Tyflt32) {
                     u.fv = v->lit.fltval;
-                    fprintf(fd, "\t.long 0x%"PRIx32"\n", u.lv);
+                    fprintf(fd, "\t.long 0x%" PRIx32 "\n", u.lv);
                 } else if (tybase(v->lit.type)->type == Tyflt64) {
                     u.dv = v->lit.fltval;
-                    fprintf(fd, "\t.quad 0x%"PRIx64"\n", u.qv);
+                    fprintf(fd, "\t.quad 0x%" PRIx64 "\n", u.qv);
                 }
                 break;
         case Lstr:
@@ -1240,7 +1240,7 @@ void genasm(FILE *fd, Func *fn, Htab *globls, Htab *strtab)
         is.curbb = is.bb[j];
         for (i = 0; i < fn->cfg->bb[j]->nnl; i++) {
             /* put in a comment that says where this line comes from */
-            snprintf(buf, sizeof buf, "\n\t# bb = %zd, bbidx = %zd, %s:%d",
+            snprintf(buf, sizeof buf, "\n\t# bb = %ld, bbidx = %ld, %s:%d",
                      j, i, file->file.name, fn->cfg->bb[j]->nl[i]->line);
             g(&is, Ilbl, locstrlbl(buf), NULL);
             isel(&is, fn->cfg->bb[j]->nl[i]);
