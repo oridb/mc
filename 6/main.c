@@ -120,14 +120,16 @@ static void genuse(char *path)
 
 int main(int argc, char **argv)
 {
-    int opt;
-    int i;
-    Stab *globls;
     char buf[1024];
-    while ((opt = getopt(argc, argv, "d:hSo:I:")) != -1) {
-        switch (opt) {
+    Stab *globls;
+    Optctx ctx;
+    size_t i;
+
+    optinit(&ctx, "d:hSo:I:", argv, argc);
+    while (!optdone(&ctx)) {
+        switch (optnext(&ctx)) {
             case 'o':
-                outfile = optarg;
+                outfile = ctx.optarg;
                 break;
             case 'S':
                 writeasm = 1;
@@ -137,14 +139,11 @@ int main(int argc, char **argv)
                 exit(0);
                 break;
             case 'd':
-                while (optarg && *optarg) {
-                    if (*optarg == 'y')
-                        yydebug = 1;
-                    debugopt[*optarg++ & 0x7f]++;
-                }
+                while (ctx.optarg && *ctx.optarg)
+                    debugopt[*ctx.optarg++ & 0x7f]++;
                 break;
             case 'I':
-                lappend(&incpaths, &nincpaths, optarg);
+                lappend(&incpaths, &nincpaths, ctx.optarg);
                 break;
             default:
                 usage(argv[0]);
@@ -154,11 +153,11 @@ int main(int argc, char **argv)
     }
 
     lappend(&incpaths, &nincpaths, Instroot "/lib/myr");
-    for (i = optind; i < argc; i++) {
+    for (i = 0; i < ctx.nargs; i++) {
         globls = mkstab();
         tyinit(globls);
-        tokinit(argv[i]);
-        file = mkfile(argv[i]);
+        tokinit(ctx.args[i]);
+        file = mkfile(ctx.args[i]);
         file->file.exports = mkstab();
         file->file.globls = globls;
         yyparse();
@@ -173,13 +172,13 @@ int main(int argc, char **argv)
             dump(file, stdout);
 
         if (writeasm) {
-            swapsuffix(buf, sizeof buf, argv[i], ".myr", ".s");
+            swapsuffix(buf, sizeof buf, ctx.args[i], ".myr", ".s");
         } else {
-            gentemp(buf, sizeof buf, argv[i], ".s");
+            gentemp(buf, sizeof buf, ctx.args[i], ".s");
         }
         gen(file, buf);
-        assem(buf, argv[i]);
-        genuse(argv[i]);
+        assem(buf, ctx.args[i]);
+        genuse(ctx.args[i]);
     }
 
     return 0;

@@ -485,33 +485,35 @@ void linkobj(char **files, size_t nfiles)
 
 int main(int argc, char **argv)
 {
-    int opt;
-    int i;
     struct utsname name;
     char **stack;
     size_t nstack;
+    Optctx ctx;
+    size_t i;
 
     if (uname(&name) == 0)
         sysname = strdup(name.sysname);
-    while ((opt = getopt(argc, argv, "hb:l:s:r:SI:C:A:M:L:R:")) != -1) {
-        switch (opt) {
-            case 'b': binname = optarg; break;
-            case 'l': libname = optarg; break;
-            case 's': ldscript = optarg; break;
+    
+    optinit(&ctx, "hb:l:s:r:SI:C:A:M:L:R:", argv, argc);
+    while (!optdone(&ctx)) {
+        switch (optnext(&ctx)) {
+            case 'b': binname = ctx.optarg; break;
+            case 'l': libname = ctx.optarg; break;
+            case 's': ldscript = ctx.optarg; break;
             case 'S': genasm = 1; break;
-            case 'C': mc = optarg; break;
-            case 'A': as = optarg; break;
-            case 'M': muse = optarg; break;
-            case 'L': ld = optarg; break;
-            case 'R': ar = optarg; break;
+            case 'C': mc = ctx.optarg; break;
+            case 'A': as = ctx.optarg; break;
+            case 'M': muse = ctx.optarg; break;
+            case 'L': ld = ctx.optarg; break;
+            case 'R': ar = ctx.optarg; break;
             case 'r':
-                      if (!strcmp(optarg, "none"))
+                      if (!strcmp(ctx.optarg, "none"))
                           runtime = NULL;
                       else
-                          runtime = strdup(optarg);
+                          runtime = strdup(ctx.optarg);
                       break;
             case 'I':
-                lappend(&incpaths, &nincpaths, strdup(optarg));
+                lappend(&incpaths, &nincpaths, strdup(ctx.optarg));
                 break;
             case 'h':
                 usage(argv[0]);
@@ -532,16 +534,16 @@ int main(int argc, char **argv)
     libgraph = mkht(strhash, streq);
     compiled = mkht(strhash, streq);
     loopdetect = mkht(strhash, streq);
-    for (i = optind; i < argc; i++) {
-        lappend(&stack, &nstack, argv[i]);
-        compile(argv[i], &stack, &nstack);
+    for (i = 0; i < ctx.nargs; i++) {
+        lappend(&stack, &nstack, ctx.args[i]);
+        compile(ctx.args[i], &stack, &nstack);
         lpop(&stack, &nstack);
     }
     if (libname) {
-        mergeuse(&argv[optind], argc - optind);
-        archive(&argv[optind], argc - optind);
+        mergeuse(ctx.args, ctx.nargs);
+        archive(ctx.args, ctx.nargs);
     } else {
-        linkobj(&argv[optind], argc - optind);
+        linkobj(ctx.args, ctx.nargs);
     }
 
     return 0;
