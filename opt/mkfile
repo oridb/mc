@@ -11,3 +11,4 @@ OFILES=cfg.$O \
 HFILES=opt.h
 
 </sys/src/cmd/mklib
+
