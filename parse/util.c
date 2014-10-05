@@ -490,7 +490,7 @@ int optnext(Optctx *ctx)
         }
         findnextopt(ctx);
     } else {
-        if (*ctx->optarg == '\0')
+        if (*ctx->curarg == '\0')
             findnextopt(ctx);
     }
     return c;
