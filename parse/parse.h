@@ -12,6 +12,7 @@ typedef unsigned long long uvlong;
 
 typedef struct Bitset Bitset;
 typedef struct Htab Htab;
+typedef struct Optctx Optctx;
 
 typedef struct Tok Tok;
 typedef struct Node Node;
@@ -314,6 +315,22 @@ struct Node {
     };
 };
 
+struct Optctx {
+    /* public exports */
+    char *optarg;
+    char **args;
+    size_t nargs;
+
+    /* internal state */
+    char *optstr;
+    char **optargs;
+    size_t noptargs;
+    size_t argidx;
+    int optdone;    /* seen -- */
+    int finished;
+    char *curarg;
+};
+
 /* globals */
 extern char *filename;
 extern Tok *curtok;     /* the last token we tokenized */
@@ -520,6 +537,11 @@ char *nodestr(Ntype nt);
 char *litstr(Littype lt);
 char *tidstr(Ty tid);
 
+/* option parsing */
+void optinit(Optctx *ctx, char *optstr, char **optargs, size_t noptargs);
+int optnext(Optctx *c);
+int optdone(Optctx *c);
+
 /* convenience funcs */
 void lappend(void *l, size_t *len, void *n); /* hack; nl is void* b/c void*** is incompatible with T*** */
 void linsert(void *l, size_t *len, size_t idx, void *n);
@@ -562,9 +584,10 @@ void findentf(FILE *fd, int depth, char *fmt, ...);
 void vfindentf(FILE *fd, int depth, char *fmt, va_list ap); 
 
 /* Options to control the compilation */
-extern int yydebug;
 extern char debugopt[128];
 extern int asmonly;
 extern char *outfile;
 extern char **incpaths;
 extern size_t nincpaths;
+
+

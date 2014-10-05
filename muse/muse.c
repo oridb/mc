@@ -86,12 +86,13 @@ static void mergeuse(char *path)
 
 int main(int argc, char **argv)
 {
+    Optctx ctx;
+    size_t i;
     FILE *f;
-    int opt;
-    int i;
 
-    while ((opt = getopt(argc, argv, "d::hmo:I:")) != -1) {
-        switch (opt) {
+    optinit(&ctx, "d:hmo:I:", argv, argc);
+    while (!optdone(&ctx)) {
+        switch (optnext(&ctx)) {
             case 'h':
                 usage(argv[0]);
                 exit(0);
@@ -100,15 +101,15 @@ int main(int argc, char **argv)
                 merge = 1;
                 break;
             case 'o':
-                outfile = optarg;
+                outfile = ctx.optarg;
                 break;
             case 'd':
                 debug = 1;
-                while (optarg && *optarg)
-                    debugopt[*optarg++ & 0x7f] = 1;
+                while (ctx.optarg && *ctx.optarg)
+                    debugopt[*ctx.optarg++ & 0x7f] = 1;
                 break;
             case 'I':
-                lappend(&incpaths, &nincpaths, optarg);
+                lappend(&incpaths, &nincpaths, ctx.optarg);
                 break;
             default:
                 usage(argv[0]);
@@ -129,22 +130,22 @@ int main(int argc, char **argv)
         file->file.globls = mkstab();
         updatens(file->file.exports, outfile);
         tyinit(file->file.globls);
-        for (i = optind; i < argc; i++)
-            mergeuse(argv[i]);
+        for (i = 0; i < ctx.nargs; i++)
+            mergeuse(ctx.args[i]);
         infer(file);
         tagexports(file->file.exports, 1);
         f = fopen(outfile, "w");
         writeuse(f, file);
         fclose(f);
     } else {
-        for (i = optind; i < argc; i++) {
-            file = mkfile(argv[i]);
+        for (i = 0; i < ctx.nargs; i++) {
+            file = mkfile(ctx.args[i]);
             file->file.exports = mkstab();
             file->file.globls = mkstab();
             if (debugopt['s'])
-                dumpuse(argv[i]);
+                dumpuse(ctx.args[i]);
             else
-                genuse(argv[i]);
+                genuse(ctx.args[i]);
         }
     }
 

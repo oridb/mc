@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <inttypes.h>
+#include <stdint.h>
 #include <stdarg.h>
 #include <ctype.h>
 #include <string.h>
@@ -40,7 +40,7 @@ void *zrealloc(void *mem, size_t oldsz, size_t sz)
 
     p = xrealloc(mem, sz);
     if (sz > oldsz)
-        memset(&p[oldsz], 0, sz - oldsz);
+        bzero(&p[oldsz], sz - oldsz);
     return p;
 }
 
@@ -210,13 +210,11 @@ long host32(byte buf[4])
     return v;
 }
 
-void wrbuf(FILE *fd, void *ptr, size_t sz)
+void wrbuf(FILE *fd, void *buf, size_t sz)
 {
     size_t n;
-    char *buf;
 
     n = 0;
-    buf = ptr;
     while (n < sz) {
 	n += fwrite(buf + n, 1, sz - n, fd);
 	if (feof(fd))
@@ -410,3 +408,95 @@ void vfindentf(FILE *fd, int depth, char *fmt, va_list ap)
     vfprintf(fd, fmt, ap);
 }
 
+static int optinfo(Optctx *ctx, char arg, int *take, int *mand)
+{
+    char *s;
+
+    for (s = ctx->optstr; *s != '\0'; s++) {
+        if (*s == arg) {
+            s++;
+            if (*s == ':') {
+                *take = 1;
+                *mand = 1;
+                return 1;
+            } else if (*s == '?') {
+                *take = 1;
+                *mand = 0;
+                return 1;
+            } else {
+                *take = 0;
+                *mand = 0;
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+static int findnextopt(Optctx *ctx)
+{
+    size_t i;
+
+    for (i = ctx->argidx + 1; i < ctx->noptargs; i++) {
+        if (ctx->optargs[i][0] == '-')
+            goto foundopt;
+        else
+            lappend(&ctx->args, &ctx->nargs, ctx->optargs[i]);
+    }
+    ctx->finished = 1;
+    return 0;
+foundopt:
+    ctx->argidx = i;
+    ctx->curarg = ctx->optargs[i] + 1; /* skip initial '-' */
+    return 1;
+}
+
+void optinit(Optctx *ctx, char *optstr, char **optargs, size_t noptargs)
+{
+    ctx->args = NULL;
+    ctx->nargs = 0;
+
+    ctx->optstr = optstr;
+    ctx->optargs = optargs;
+    ctx->noptargs = noptargs;
+    ctx->optdone = 0;
+    ctx->finished = 0;
+    ctx->argidx = 0;
+    ctx->curarg = "";
+    findnextopt(ctx);
+}
+
+int optnext(Optctx *ctx)
+{
+    int take, mand;
+    int c;
+
+    c = *ctx->curarg;
+    ctx->curarg++;
+    if (!optinfo(ctx, c, &take, &mand)) {
+        printf("Unexpected argument %c\n", *ctx->curarg);
+    }
+
+    ctx->optarg = NULL;
+    if (take) {
+        if (*ctx->curarg) {
+            ctx->optarg = ctx->curarg;
+            ctx->curarg += strlen(ctx->optarg);
+        } else if (ctx->argidx < ctx->noptargs - 1) {
+            ctx->optarg = ctx->optargs[ctx->argidx + 1];
+            ctx->argidx++;
+        } else if (mand) {
+            fprintf(stderr, "expected argument for %c\n", *ctx->curarg);
+        }
+        findnextopt(ctx);
+    } else {
+        if (*ctx->optarg == '\0')
+            findnextopt(ctx);
+    }
+    return c;
+}
+
+int optdone(Optctx *ctx)
+{
+    return *ctx->curarg == '\0' && ctx->finished;
+}
