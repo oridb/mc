@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <stdint.h>
+#include <inttypes.h>
 #include <stdarg.h>
 #include <ctype.h>
 #include <string.h>
@@ -40,7 +40,7 @@ void *zrealloc(void *mem, size_t oldsz, size_t sz)
 
     p = xrealloc(mem, sz);
     if (sz > oldsz)
-        bzero(&p[oldsz], sz - oldsz);
+        memset(&p[oldsz], 0, sz - oldsz);
     return p;
 }
 
@@ -210,11 +210,13 @@ long host32(byte buf[4])
     return v;
 }
 
-void wrbuf(FILE *fd, void *buf, size_t sz)
+void wrbuf(FILE *fd, void *p, size_t sz)
 {
     size_t n;
+    char *buf;
 
     n = 0;
+    buf = p;
     while (n < sz) {
 	n += fwrite(buf + n, 1, sz - n, fd);
 	if (feof(fd))

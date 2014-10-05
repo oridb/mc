@@ -1,0 +1,6 @@
+</$objtype/mkfile
+
+_myrrt.$O: _myrrt-plan9.s
+	$AS -o _myrrt.$O _myrrt-plan9.s
+
+</sys/src/cmd/mkone

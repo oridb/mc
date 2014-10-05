@@ -1,0 +1,66 @@
+MYRLIB=std
+MYRSRC= \
+    alloc.myr \
+    bigint.myr \
+    bitset.myr \
+    blat.myr \
+    chartype.myr \
+    cmp.myr \
+    dial.myr \
+    die.myr \
+    dir.myr \
+    endian.myr \
+    env.myr \
+    execvp.myr \
+    extremum.myr \
+    fltbits.myr \
+    fmt.myr \
+    fltfmt.myr \
+    hashfuncs.myr \
+    hasprefix.myr \
+    hassuffix.myr \
+    htab.myr \
+    ifreq.myr \
+    intparse.myr \
+    ipparse.myr \
+    mk.myr \
+    now.myr \
+    option.myr \
+    optparse.myr \
+    pathjoin.myr \
+    rand.myr \
+    resolve.myr \
+    result.myr \
+    search.myr \
+    slcp.myr \
+    sldup.myr \
+    sleq.myr \
+    slfill.myr \
+    sljoin.myr \
+    slpush.myr \
+    slput.myr \
+    slurp.myr \
+    sort.myr \
+    spork.myr \
+    strfind.myr \
+    strjoin.myr \
+    strsplit.myr \
+    strstrip.myr \
+    swap.myr \
+    sys.myr \
+    try.myr \
+    types.myr \
+    units.myr \
+    utf.myr \
+    varargs.myr \
+    waitstatus.myr \
+
+all: lib$MYRLIB.a  test
+
+test: libstd.a test.myr ../6/$O.out
+	../myrbuild/myrbuild -C../6/$O.out -M../muse/muse -b test -I. -r../rt/_myrrt.o test.myr
+
+
+lib$MYRLIB.a: $MYRSRC $ASMSRC
+	../myrbuild/$O.out -C../6/$O.out -M../muse/$O.out -l $MYRLIB $MYRSRC $ASMSRC
+
