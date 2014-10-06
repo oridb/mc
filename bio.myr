@@ -27,7 +27,7 @@ pkg bio =
 	const dial	: (srv	: byte[:], mode : mode	-> std.option(file#))
 	const create	: (path : byte[:], mode : mode, perm : int	-> std.option(file#))
 	const close	: (f : file# -> bool)
-	const free	: (f : file# -> bool)
+	const free	: (f : file# -> void)
 
 	/* basic i/o. Returns sub-buffer when applicable. */
 	const write	: (f : file#, src : byte[:]	-> std.size)
