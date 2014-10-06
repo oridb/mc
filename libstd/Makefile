@@ -84,7 +84,7 @@ all: lib$(STDLIB).a $(MYRBIN)
 %.s: %+$(ARCH).s
 	cp $< $@
 
-lib$(STDLIB).a: $(STDSRC) $(ASMSRC) $(SYSLIB) lib$(SYSLIB).a ../6/6m
+lib$(STDLIB).a: $(STDSRC) $(ASMSRC) lib$(SYSLIB).a ../6/6m
 	../myrbuild/myrbuild -I. -C../6/6m -M../muse/muse -l $(STDLIB) $(STDSRC) $(STDASMSRC)
 
 lib$(SYSLIB).a: $(SYSSRC) $(SYSASMSRC) ../6/6m
