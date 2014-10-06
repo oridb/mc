@@ -61,17 +61,13 @@ ASMSRC= \
 
 include ../config.mk
 
-all: lib$(MYRLIB).a $(MYRBIN) test
+all: lib$(MYRLIB).a $(MYRBIN)
 
 %.myr: %+$(SYS).myr
 	cp $< $@
 
 %.s: %+$(SYS)-x64.s
 	cp $< $@
-
-test: libstd.a test.myr ../6/6m
-	../myrbuild/myrbuild -C../6/6m -M../muse/muse -b test -I. -r../rt/_myrrt.o test.myr
-
 
 lib$(MYRLIB).a: $(MYRSRC) $(ASMSRC) ../6/6m
 	../myrbuild/myrbuild -C../6/6m -M../muse/muse -l $(MYRLIB) $(MYRSRC) $(ASMSRC)
@@ -80,8 +76,8 @@ OBJ=$(MYRSRC:.myr=.o) $(ASMSRC:.s=.o)
 USE=$(MYRSRC:.myr=.use) $(MYRLIB)
 .PHONY: clean
 clean:
-	rm -f $(OBJ) test.o
-	rm -f $(USE) test.use
+	rm -f $(OBJ)
+	rm -f $(USE)
 	rm -f lib$(MYRLIB).a
 
 install: all
