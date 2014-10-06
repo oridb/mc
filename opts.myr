@@ -1,4 +1,5 @@
 use std
+use sys
 
 use "config.use"
 
@@ -54,7 +55,7 @@ var sysstr	= ""
 const initopts = {
 	var un
 
-	if std.uname(&un) < 0
+	if sys.uname(&un) < 0
 		std.fatal(1, "unable to determine host information (uname)\n")
 	;;
 	match cstr2myr(un.system[:])

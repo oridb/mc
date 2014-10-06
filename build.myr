@@ -1,4 +1,5 @@
 use std
+use sys
 
 use "config.use"
 use "deps.use"
@@ -265,10 +266,10 @@ const visit = {cmd, head, g, lib, looped, marked -> byte[:][:]
 const isfresh = {src, dst
 	var srcsb, dstsb
 
-	if std.stat(src, &srcsb) != 0
+	if sys.stat(src, &srcsb) != 0
 		std.fatal(1, "could not stat %s\n", src)
 	;;
-	if std.stat(dst, &dstsb) != 0
+	if sys.stat(dst, &dstsb) != 0
 		-> false
 	;;
 	/*
@@ -290,11 +291,11 @@ const isfresh = {src, dst
 const pmtime = {src, dst
 	var srcsb, dstsb
 
-	if std.stat(src, &srcsb) != 0
+	if sys.stat(src, &srcsb) != 0
 		std.put("\tno %s\n", src)
 		->
 	;;
-	if std.stat(dst, &dstsb) != 0
+	if sys.stat(dst, &dstsb) != 0
 		std.put("\tno %s\n", dst)
 		->
 	;;

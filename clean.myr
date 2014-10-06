@@ -1,4 +1,5 @@
 use std
+use sys
 
 use "config.use"
 use "deps.use"
@@ -62,7 +63,7 @@ const cleanup = {out, leaves, islib
 
 	keys = std.htkeys(dg.deps)
 	for k in keys
-		if !std.htgetv(mchammer_files, k, false) && std.stat(k, &sb) == 0
+		if !std.htgetv(mchammer_files, k, false) && sys.stat(k, &sb) == 0
 			std.put("\tclean %s\n", k)
 			std.unlink(k)
 		;;
