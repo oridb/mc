@@ -30,6 +30,7 @@ for arg in $*; do
 done
 
 OS=`uname`
+MACH=`uname -m`
 
 echo export INST_ROOT=$prefix > config.mk
 
@@ -52,14 +53,25 @@ case $OS in
         ;;
     *)
         echo ''
-        echo ''
         echo '********************************'
-        echo 'Unknown architecture.'
+        echo 'Unknown system'
         echo 'Cannot build'
         echo '********************************'
         rm -f config.h config.mk
         exit 1
         ;;
+esac
+echo '#define Instroot "'$prefix'"' > config.h
+case $MACH in
+    *x86_64*)
+        echo 'export ARCH=x64' >> config.mk
+        ;;
+    *)
+        echo ''
+        echo '********************************'
+        echo 'Unknown system'
+        echo 'Cannot build'
+        echo '********************************'
 esac
 
 cat << EOF
