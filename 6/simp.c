@@ -1820,6 +1820,7 @@ static void simpconstinit(Simp *s, Node *dcl)
                 lappend(&s->blobs, &s->nblobs, dcl);
                 break;
             default:
+                die("Unsupported initializer for %s\n", declname(dcl));
                 break;
         }
     } else if (!dcl->decl.isconst && !e) {

@@ -1,4 +1,5 @@
-use "sys.use"
+use sys
+
 use "types.use"
 use "fmt.use"
 
@@ -12,7 +13,7 @@ const now = {
 	var sec
 	var nsec
 
-	if clock_gettime(`Clockrealtime, &tm) == 0	
+	if sys.clock_gettime(`sys.Clockrealtime, &tm) == 0
 		sec = tm.sec
 		nsec = tm.nsec castto(uint64)
 		-> (sec*1_000_000 + nsec/1000) castto(time)

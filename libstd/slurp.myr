@@ -3,7 +3,7 @@ use "die.use"
 use "result.use"
 use "extremum.use"
 use "fmt.use"
-use "sys.use"
+use "syswrap.use"
 use "types.use"
 
 pkg std =

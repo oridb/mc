@@ -1,7 +1,8 @@
 use std
+use sys
 
 const main = {
 	var x : std.size
 	var y : std.off
-	var z : std.statbuf
+	var z : sys.statbuf
 }

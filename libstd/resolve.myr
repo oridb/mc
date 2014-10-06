@@ -1,3 +1,4 @@
+use sys
 use "alloc.use"
 use "chartype.use"
 use "die.use"
@@ -16,7 +17,6 @@ use "slurp.use"
 use "strfind.use"
 use "strsplit.use"
 use "strstrip.use"
-use "sys.use"
 use "types.use"
 use "utf.use"
 
@@ -50,8 +50,8 @@ pkg std =
 	;;
 
 	type hostinfo = struct
-		fam	: sockfam
-		stype	: socktype
+		fam	: sys.sockfam
+		stype	: sys.socktype
 		ttl	: uint32
 		addr	: netaddr
 	/*
@@ -135,8 +135,8 @@ const addhosts = {addr, as, str
 	var fam
 
 	match addr
-	| `Ipv4 _:	fam = Afinet
-	| `Ipv6 _:	fam = Afinet6
+	| `Ipv4 _:	fam = sys.Afinet
+	| `Ipv6 _:	fam = sys.Afinet6
 	;;
 	while true
 		match word(str)
@@ -234,18 +234,18 @@ const dnsconnect = {ns
 }
 
 const dnsconnectv4 = {addr
-	var sa : sockaddr_in
+	var sa : sys.sockaddr_in
 	var s
 	var status
-	
-	s = socket(Afinet, Sockdgram, 0)
+
+	s = sys.socket(sys.Afinet, sys.Sockdgram, 0)
 	if s < 0
 		-> -1
 	;;
-	sa.fam = Afinet
+	sa.fam = sys.Afinet
 	sa.port = hosttonet(53)
 	sa.addr = addr
-	status = connect(s, (&sa) castto(sockaddr#), sizeof(sockaddr_in))
+	status = sys.connect(s, (&sa) castto(sys.sockaddr#), sizeof(sys.sockaddr_in))
 	if status < 0
 		-> -1
 	;;
@@ -286,7 +286,7 @@ const tquery = {srv, host, t
 	off += pack16(pkt[:], off, t castto(uint16)) /* qtype: a record */
 	off += pack16(pkt[:], off, 0x1) /* qclass: inet4 */
 
-	write(srv, pkt[:off])
+	sys.write(srv, pkt[:off])
 	-> nextid++
 }
 
@@ -295,7 +295,7 @@ const rquery = {srv, id
 	var pkt
 	var n
 
-	n = read(srv, pktbuf[:])
+	n = sys.read(srv, pktbuf[:])
 	if n < 0
 	;;
 	pkt = pktbuf[:n]

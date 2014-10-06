@@ -8,10 +8,10 @@
  * allocate the C strings on the stack, and don't adjust
  * %rsp when returning.
  */
-.globl std$cstring
-.globl _std$cstring
-_std$cstring:
-std$cstring:
+.globl sys$cstring
+.globl _sys$cstring
+_sys$cstring:
+sys$cstring:
 	/* save registers */
 	pushq %rbp
 	movq %rsp,%rbp
@@ -23,18 +23,18 @@ std$cstring:
 	movq 8(%rbp),%r15	/* ret addr */
 	movq 16(%rbp),%rsi	/* src */
 	movq 24(%rbp),%rcx	/* len */
-	
+
 	subq %rcx,%rsp		/* get stack */
 	subq $1,%rsp		/* +1 for nul */
 	movq %rsp,%rdi		/* dest */
 	movq %rsp,%rax		/* ret val */
 	subq $16,%rsp		/* "unpop" the args */
 	andq $(~15),%rsp	/* align */
-	
+
 	cld
 	rep movsb
 	movb $0,(%rdi)		/* terminate */
-	
+
 	pushq %r15		/* ret addr */
 
 	/* restore registers */
@@ -45,10 +45,10 @@ std$cstring:
 	movq (%rbp),%rbp
 	ret
 
-.globl std$alloca
-.globl _std$alloca
-_std$alloca:
-std$alloca:
+.globl sys$alloca
+.globl _sys$alloca
+_sys$alloca:
+sys$alloca:
 	/* save registers */
 	pushq %rbp
 	movq %rsp,%rbp
@@ -57,7 +57,7 @@ std$alloca:
 
 	movq 8(%rbp),%r15	/* ret addr */
 	movq 16(%rbp),%rbx	/* len */
-	
+
 	/* get stack space */
 	subq %rbx,%rsp		/* get stack space */
 	movq %rsp,%rax		/* top of stack (return value) */

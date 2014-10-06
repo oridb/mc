@@ -276,6 +276,7 @@ struct Node {
             char  ispkglocal;
             char  ishidden;
             char  isimport;
+            char  isexportinit;
         } decl;
 
         struct {
@@ -455,6 +456,7 @@ Type *mktylike(int line, Ty ty); /* constrains tyvar t like it was builtin ty */
 int   istysigned(Type *t);
 int   istyunsigned(Type *t);
 int   istyfloat(Type *t);
+int   istyprimitive(Type *t);
 int   isgeneric(Type *t);
 int   hasparams(Type *t);
 
