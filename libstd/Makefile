@@ -1,5 +1,5 @@
-MYRLIB=std
-MYRSRC= \
+STDLIB=std
+STDSRC= \
     alloc.myr \
     bigint.myr \
     bitset.myr \
@@ -61,24 +61,33 @@ ASMSRC= \
 
 include ../config.mk
 
-all: lib$(MYRLIB).a $(MYRBIN)
+all: lib$(STDLIB).a $(MYRBIN) test
+
+%.myr: %+$(SYS)-$(ARCH).myr
+	cp $< $@
 
 %.myr: %+$(SYS).myr
 	cp $< $@
 
-%.s: %+$(SYS)-x64.s
+%.myr: %+$(ARCH).myr
 	cp $< $@
 
-lib$(MYRLIB).a: $(MYRSRC) $(ASMSRC) ../6/6m
-	../myrbuild/myrbuild -C../6/6m -M../muse/muse -l $(MYRLIB) $(MYRSRC) $(ASMSRC)
+%.s: %+$(SYS)-$(ARCH).s
+	cp $< $@
 
-OBJ=$(MYRSRC:.myr=.o) $(ASMSRC:.s=.o)
-USE=$(MYRSRC:.myr=.use) $(MYRLIB)
+%.s: %+$(ARCH).s
+	cp $< $@
+
+lib$(STDLIB).a: $(STDSRC) $(ASMSRC) ../6/6m
+	../myrbuild/myrbuild -C../6/6m -M../muse/muse -l $(STDLIB) $(STDSRC) $(ASMSRC)
+
+OBJ=$(STDSRC:.myr=.o) $(ASMSRC:.s=.o)
+USE=$(STDSRC:.myr=.use) $(STDLIB)
 .PHONY: clean
 clean:
 	rm -f $(OBJ)
 	rm -f $(USE)
-	rm -f lib$(MYRLIB).a
+	rm -f lib$(STDLIB).a
 
 install: all
 	mkdir -p  $(abspath $(DESTDIR)/$(INST_ROOT)/lib/myr)
