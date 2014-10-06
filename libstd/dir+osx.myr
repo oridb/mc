@@ -1,15 +1,16 @@
+use sys
+
 use "alloc.use"
 use "die.use"
 use "option.use"
 use "result.use"
 use "slcp.use"
 use "sldup.use"
-use "sys.use"
 use "types.use"
 
 pkg std =
 	type dir = struct
-		fd	: fd
+		fd	: sys.fd
 		buf	: byte[16384]
 		len	: int64
 		off	: int64
@@ -25,7 +26,7 @@ const diropen = {p
 	var fd
 	var dir
 
-	fd = open(p, Ordonly | Odir)
+	fd = sys.open(p, sys.Ordonly | sys.Odir)
 	if fd < 0
 		-> `Fail "couldn't open directory"
 	;;
@@ -39,7 +40,7 @@ const dirread = {d
 	var dent
 
 	if d.off >= d.len
-		len = getdirentries64(d.fd, d.buf[:], &d.base)
+		len = sys.getdirentries64(d.fd, d.buf[:], &d.base)
 		if len <= 0
 			-> `None
 		;;
@@ -47,13 +48,13 @@ const dirread = {d
 		d.off = 0
 	;;
 
-	dent = &d.buf[d.off] castto(dirent64#)
+	dent = &d.buf[d.off] castto(sys.dirent64#)
 	d.off += dent.reclen castto(int64)
 	-> `Some sldup(dent.name[:dent.namlen])
 }
 
 const dirclose = {d
-	close(d.fd)
+	sys.close(d.fd)
 	free(d)
 }
 

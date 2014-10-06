@@ -10,7 +10,6 @@ pkg std =
 	const Owronly  	: fdopt = sys.Owronly	castto(fdopt)
 	const Ordwr    	: fdopt = sys.Ordwr	castto(fdopt)
 	const Ocreat   	: fdopt = sys.Ocreat	castto(fdopt)
-	const Oexcl  	: fdopt = sys.Oexcl	castto(fdopt)
 	const Otrunc   	: fdopt = sys.Otrunc	castto(fdopt)
 	const Oappend  	: fdopt = sys.Oappend	castto(fdopt)
 	const Odir	: fdopt = sys.Odir	castto(fdopt)
