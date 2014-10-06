@@ -303,6 +303,11 @@ int istyfloat(Type *t)
     }
 }
 
+int istyprimitive(Type *t)
+{
+    return istysigned(t) || istyunsigned(t) || istyfloat(t);
+}
+
 int isgeneric(Type *t)
 {
     size_t i;
@@ -738,5 +743,4 @@ void tyinit(Stab *st)
     }
 #include "types.def"
 #undef Ty
-
 }

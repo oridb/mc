@@ -1,6 +1,6 @@
+use sys
 use "die.use"
 use "extremum.use"
-use "sys.use"
 use "types.use"
 use "units.use"
 
@@ -224,8 +224,8 @@ const bytealloc = {sz
 		bkt = &buckets[bktnum(sz)]
 		p = bktalloc(bkt)
 	else
-		p = mmap(Zbyteptr, sz, Mprotrw, Mpriv | Manon, -1, 0)
-		if p == Mapbad
+		p = sys.mmap(Zbyteptr, sz castto(sys.size), sys.Mprotrw, sys.Mpriv | sys.Manon, -1, 0)
+		if p == sys.Mapbad
 			die("could not map memory\n")
 		;;
 	;;
@@ -245,7 +245,7 @@ const bytefree = {p, sz
 		bkt = &buckets[bktnum(sz)]
 		bktfree(bkt, p)
 	else
-		munmap(p, sz)
+		sys.munmap(p, sz castto(sys.size))
 	;;
 }
 
@@ -275,8 +275,8 @@ const mkslab = {bkt
 	   cost us memory, and 64 bits of address space means that we're not
 	   going to have issues with running out of address space for a
 	   while. On a 32 bit system this would be a bad idea. */
-	p = mmap(Zbyteptr, Slabsz*2, Mprotrw, Mpriv | Manon, -1, 0)
-	if p == Mapbad
+	p = sys.mmap(Zbyteptr, Slabsz*2 castto(sys.size), sys.Mprotrw, sys.Mpriv | sys.Manon, -1, 0)
+	if p == sys.Mapbad
 		die("Unable to mmap")
 	;;
 
@@ -348,7 +348,7 @@ const bktfree = {bkt, m
 		else
 			/* we mapped 2*Slabsz so we could align it,
 			 so we need to unmap the same */
-			munmap(s.head, Slabsz*2)
+			sys.munmap(s.head, Slabsz*2 castto(sys.size))
 		;;
 	;;
 	s.nfree++

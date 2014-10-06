@@ -2032,6 +2032,16 @@ static void taghidden(Type *t)
     }
 }
 
+int isexportinit(Node *n)
+{
+    if (n->decl.isgeneric && !n->decl.trait)
+        return 1;
+    /* we want to inline small values, which means we need to export them */
+    if (istyprimitive(n->decl.type))
+        return 1;
+    return 0;
+}
+
 static void nodetag(Stab *st, Node *n, int ingeneric, int hidelocal)
 {
     size_t i;
@@ -2093,8 +2103,8 @@ static void nodetag(Stab *st, Node *n, int ingeneric, int hidelocal)
             taghidden(n->decl.type);
             if (hidelocal && n->decl.ispkglocal)
                 n->decl.vis = Vishidden;
-            /* generics export their body. */
-            if (n->decl.isgeneric)
+            n->decl.isexportinit = isexportinit(n);
+            if (n->decl.isexportinit)
                 nodetag(st, n->decl.init, n->decl.isgeneric, hidelocal);
             break;
         case Nfunc:

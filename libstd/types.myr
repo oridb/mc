@@ -1,7 +1,9 @@
+use sys
+
 pkg std =
-	type size	= int64		/* spans entire address space */
-	type usize	= int64		/* signed size */
-	type off	= uint64	/* file offsets */
-	type intptr	= uint64	/* can hold any pointer losslessly */
-	type time	= int64		/* milliseconds since epoch */
+	type size	= sys.size	/* spans entire address space */
+	type usize	= sys.usize	/* signed size */
+	type off	= sys.off	/* file offsets */
+	type intptr	= sys.intptr	/* can hold any pointer losslessly */
+	type time	= sys.time	/* milliseconds since epoch */
 ;;

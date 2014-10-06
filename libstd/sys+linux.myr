@@ -1,7 +1,6 @@
-use "types.use"
-use "varargs.use"
+use "systypes.use"
 
-pkg std =
+pkg sys =
 	type pid	= int64	/* process id */
 	type scno	= int64	/* syscall */
 	type fdopt	= int64	/* fd options */
@@ -565,12 +564,12 @@ pkg std =
 	const lstat	: (path:byte[:], sb:statbuf# -> int64)
 	const fstat	: (fd:fd, sb:statbuf# -> int64)
 	const mkdir	: (path : byte[:], mode : int64	-> int64)
-	const ioctl	: (fd:fd, req : int64, args:... -> int64)
+	generic ioctl	: (fd:fd, req : int64, arg:@a# -> int64)
 	const getdents64	: (fd:fd, buf : byte[:] -> int64)
 	const chdir	: (p : byte[:] -> int64)
 
 	/* fd stuff */
-	const pipe	: (fds : fd[:] -> int64)
+	const pipe	: (fds : fd[2]# -> int64)
 	const dup	: (fd : fd -> fd)
 	const dup2	: (src : fd, dst : fd -> fd)
 
@@ -600,6 +599,10 @@ pkg std =
 
 	/* system information */
 	const uname 	: (buf : utsname# -> int)
+
+	/* exported values: initialized by start code */
+	extern const __environment : byte[:][:]
+	extern const __cenvp : byte##
 ;;
 
 /* 
@@ -610,9 +613,9 @@ generic a = {x : @t
 	-> x castto(uint64)
 }
 
+/* asm stubs from util.s */
 extern const cstring	: (str : byte[:] -> byte#)
 extern const alloca	: (sz : size	-> byte#)
-extern const __cenvp : byte##
 
 /* process management */
 const exit	= {status;		syscall(Sysexit, a(status))}
@@ -680,19 +683,12 @@ const stat	= {path, sb;		-> syscall(Sysstat, cstring(path), a(sb))}
 const lstat	= {path, sb;		-> syscall(Syslstat, cstring(path), a(sb))}
 const fstat	= {fd, sb;		-> syscall(Sysfstat, a(fd), a(sb))}
 const mkdir	= {path, mode;		-> syscall(Sysmkdir, cstring(path), a(mode)) castto(int64)}
-const ioctl	= {fd, req, args
-	var arg : byte#
-	var ap
-
-	ap = vastart(&args)
-	(arg, ap) = vanext(ap)
-	-> syscall(Sysioctl, a(fd), a(req), a(arg)) castto(int64)
-}
+generic ioctl	= {fd, req, arg;	-> syscall(Sysioctl, a(fd), a(req), a(arg)) castto(int64)}
 const getdents64	= {fd, buf;	-> syscall(Sysgetdents64, a(fd), buf castto(byte#), a(buf.len))}
 const chdir	= {dir;	-> syscall(Syschdir, dir)}
 
 /* file stuff */
-const pipe	= {fds;	-> syscall(Syspipe, fds castto(fd#))}
+const pipe	= {fds;	-> syscall(Syspipe, a(fds))}
 const dup 	= {fd;	-> syscall(Sysdup, a(fd)) castto(fd)}
 const dup2 	= {src, dst;	-> syscall(Sysdup2, a(src), a(dst)) castto(fd)}
 

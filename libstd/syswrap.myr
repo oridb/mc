@@ -1,0 +1,61 @@
+use sys
+use "types.use"
+
+pkg std =
+	type fd		= sys.fd
+	type pid	= sys.pid
+	type fdopt	= sys.fdopt
+
+	const Ordonly  	: fdopt = sys.Ordonly	castto(fdopt)
+	const Owronly  	: fdopt = sys.Owronly	castto(fdopt)
+	const Ordwr    	: fdopt = sys.Ordwr	castto(fdopt)
+	const Ocreat   	: fdopt = sys.Ocreat	castto(fdopt)
+	const Oexcl  	: fdopt = sys.Oexcl	castto(fdopt)
+	const Otrunc   	: fdopt = sys.Otrunc	castto(fdopt)
+	const Oappend  	: fdopt = sys.Oappend	castto(fdopt)
+	const Odir	: fdopt = sys.Odir	castto(fdopt)
+
+	/* fd stuff */
+	const open	: (path : byte[:], opts : fdopt -> fd)
+	const openmode	: (path : byte[:], opts : fdopt, mode : int64 -> fd)
+	const close	: (fd : fd -> int64)
+	const creat	: (path : byte[:], mode : int64 -> fd)
+	const read	: (fd : fd, buf : byte[:] -> size)
+	const write	: (fd : fd, buf : byte[:] -> size)
+	const pipe	: (fds : fd[2]# -> int64)
+
+	/* path manipulation */
+	const mkdir	: (path : byte[:], mode : int64 -> int64)
+	const unlink	: (path : byte[:] -> int)
+
+	/* process stuff */
+	const getpid	: ( -> pid)
+	const kill	: (pid:pid, sig:int64 -> int64)
+	const fork	: (-> pid)
+	const execv	: (cmd : byte[:], args : byte[:][:] -> int64)
+	const execve	: (cmd : byte[:], args : byte[:][:], env : byte[:][:] -> int64)
+	const exit	: (status:int -> void)
+	const waitpid	: (pid:pid, loc:int32#, opt : int64	-> int64)
+;;
+
+/* fd stuff */
+const open	= {path, opts;	-> sys.open(path, opts castto(sys.fdopt)) castto(fd)}
+const openmode	= {path, opts, mode;	-> sys.openmode(path, opts castto(sys.fdopt), mode) castto(fd)}
+const close	= {fd;		-> sys.close(fd castto(sys.fd))}
+const creat	= {path, mode;	-> sys.creat(path, mode) castto(fd)}
+const read	= {fd, buf;	-> sys.read(fd castto(sys.fd), buf) castto(size)}
+const write	= {fd, buf;	-> sys.write(fd castto(sys.fd), buf) castto(size)}
+const pipe	= {fds;		-> sys.pipe(fds castto(sys.fd[2]#))}
+
+/* path manipulation */
+const mkdir	= {path, mode;	-> sys.mkdir(path, mode)}
+const unlink	= {path;	-> sys.unlink(path)}
+
+/* process stuff */
+const getpid	= {;		-> sys.getpid() castto(pid)}
+const kill	= {pid, sig;	-> sys.kill(pid castto(sys.pid), sig)}
+const fork	= {;		-> sys.fork() castto(pid)}
+const execv	= {cmd, args;	-> sys.execv(cmd, args)}
+const execve	= {cmd, args, env;	-> sys.execve(cmd, args, env)}
+const exit	= {status;	sys.exit(status)}
+const waitpid	= {pid, loc, opt;	-> sys.waitpid(pid castto(sys.pid), loc, opt)}

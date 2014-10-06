@@ -4,7 +4,7 @@ use "fmt.use"
 use "option.use"
 use "strfind.use"
 use "strsplit.use"
-use "sys.use"
+use "syswrap.use"
 
 pkg std = 
 	const execvp	: (cmd : byte[:], args : byte[:][:] -> int64)

@@ -1,16 +1,17 @@
 use "alloc.use"
 use "chartype.use"
 use "die.use"
-use "result.use"
-use "sys.use"
-use "sleq.use"
-use "option.use"
-use "ipparse.use"
-use "resolve.use"
-use "fmt.use"
 use "endian.use"
-use "intparse.use"
+use "fmt.use"
 use "hasprefix.use"
+use "intparse.use"
+use "ipparse.use"
+use "option.use"
+use "resolve.use"
+use "result.use"
+use "sleq.use"
+use "sys.use"
+use "syswrap.use"
 use "utf.use"
 
 pkg std =
@@ -30,7 +31,7 @@ var inited = false
 const dial = {str
 	var proto, host, port
 	var socktype, portnum
-	var sa : sockaddr_in	/* we only support inet sockets right now.. ugh. */
+	var sa : sys.sockaddr_in	/* we only support inet sockets right now.. ugh. */
 	var sock
 
 	(proto, str) = nameseg(str)
@@ -50,9 +51,9 @@ const dial = {str
 	elif sleq(proto, "unix")
 		-> `Fail "net unix proto not yet supported\n"
 	elif sleq(proto, "tcp")
-		socktype = Sockstream
+		socktype = sys.Sockstream
 	elif sleq(proto, "udp")
-		socktype = Sockdgram
+		socktype = sys.Sockdgram
 	;;
 
 	match parseport(port)
@@ -62,26 +63,26 @@ const dial = {str
 
 	match getaddr(host)
 	| `Ipv4 bits:
-		sa.fam = Afinet
+		sa.fam = sys.Afinet
 		sa.addr = bits
 		sa.port = hosttonet(portnum)
 	| `Ipv6 bits:
 		-> `Fail "ipv6 not yet supported"
 	;;
 
-	sock = socket(sa.fam, socktype, 0)
+	sock = sys.socket(sa.fam, socktype, 0)
 	if sock < 0
 		-> `Fail "failed to connect to socket"
 	;;
 	var err
-	err = connect(sock, (&sa) castto(sockaddr#), sizeof(sockaddr_in))
+	err = sys.connect(sock, (&sa) castto(sys.sockaddr#), sizeof(sys.sockaddr_in))
 	if err < 0
 		put("Errno %i\n", -err)
-		close(sock)
+		sys.close(sock)
 		-> `Fail "Failed to bind socket"
 	;;
 
-	-> `Ok sock
+	-> `Ok (sock castto(fd))
 }
 
 const parseport = {port

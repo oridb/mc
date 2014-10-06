@@ -1,5 +1,5 @@
-.globl std$syscall
-std$syscall:
+.globl sys$syscall
+sys$syscall:
 	pushq %rbp 
 	pushq %rdi 
 	pushq %rsi 

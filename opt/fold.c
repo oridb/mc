@@ -37,10 +37,11 @@ static int isval(Node *n, vlong val)
 
 static Node *val(int line, vlong val, Type *t)
 {
-    Node *n;
+    Node *l, *n;
 
-    n = mkint(line, val);
-    n = mkexpr(line, Olit, n, NULL);
+    l = mkint(line, val);
+    n = mkexpr(line, Olit, l, NULL);
+    l->lit.type = t;
     n->expr.type = t;
     return n;
 }

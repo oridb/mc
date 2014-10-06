@@ -61,7 +61,7 @@ case $OS in
         exit 1
         ;;
 esac
-echo '#define Instroot "'$prefix'"' > config.h
+
 case $MACH in
     *x86_64*)
         echo 'export ARCH=x64' >> config.mk

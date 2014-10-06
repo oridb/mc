@@ -1,7 +1,9 @@
+use sys
+
 use "die.use"
 use "execvp.use"
 use "fmt.use"
-use "sys.use"
+use "syswrap.use"
 
 pkg std =
 	const spork	: (cmd : byte[:][:]	-> (pid, fd, fd))
@@ -9,21 +11,21 @@ pkg std =
 ;;
 
 const spork = {cmd
-	var infds : fd[2], outfds : fd[2]
+	var infds  :fd[2], outfds : fd[2]
 	var err
 	var pid
 
 	/* open up pipes */
-	err = pipe(infds[:])
+	err = pipe(&infds)
 	if err != 0
 		fatal(1, "Could not create pipes: err %l\n", -err)
 	;;
-	err = pipe(outfds[:])
+	err = pipe(&outfds)
 	if err != 0
 		fatal(1, "Could not create pipes: err %l\n", -err)
 	;;
 
-	pid = sporkfd(cmd, infds[0], outfds[1])
+	pid = sporkfd(cmd, infds[0] castto(fd), outfds[1] castto(fd))
 	/* close unused fd ends */
 	close(infds[0]);
 	close(outfds[1]);
@@ -40,10 +42,10 @@ const sporkfd = {cmd, infd, outfd
 	/* child */
 	elif pid == 0
 		/* stdin/stdout for our communication. */
-		if dup2(infd, 0) != 0
+		if sys.dup2(infd castto(sys.fd), 0) != 0
 			fatal(1, "unable to set stdin\n")
 		;;
-		if dup2(outfd, 1) != 1
+		if sys.dup2(outfd castto(sys.fd), 1) != 1
 			fatal(1, "unable to set stdout\n")
 		;;
 		close(infd)
@@ -53,7 +55,7 @@ const sporkfd = {cmd, infd, outfd
 		;;
 	/* parent */
 	else
-		-> pid
+		-> pid castto(pid)
 	;;
 }
 
