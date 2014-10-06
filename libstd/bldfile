@@ -1,3 +1,17 @@
+lib sys =
+	sys+freebsd.myr
+	sys+linux.myr
+	sys+osx.myr
+	syscall+freebsd-x64.s
+	syscall+linux-x64.s
+	syscall+osx-x64.s
+	systypes.myr
+	ifreq+freebsd.myr
+	ifreq+linux.myr
+	ifreq+osx.myr
+	util.s
+;;
+
 lib std =
 	# portable files
 	alloc.myr
@@ -50,22 +64,12 @@ lib std =
 	types.myr
 	units.myr
 	utf.myr
-	util.s
 	varargs.myr
 
 	# platform specific files
 	dir+freebsd.myr
 	dir+linux.myr
 	dir+osx.myr
-	ifreq+freebsd.myr
-	ifreq+linux.myr
-	ifreq+osx.myr
-	syscall+freebsd-x64.s
-	syscall+linux-x64.s
-	syscall+osx-x64.s
-	sys+freebsd.myr
-	sys+linux.myr
-	sys+osx.myr
 	waitstatus+freebsd.myr
 	waitstatus+linux.myr
 	waitstatus+osx.myr

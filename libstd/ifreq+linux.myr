@@ -1,6 +1,6 @@
 use "sys.use"
 
-pkg std =
+pkg sys =
 	const Ifnamesz = 16
 
 	type ifreq_addr = struct

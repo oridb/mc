@@ -1,14 +1,14 @@
-.globl std$syscall
-std$syscall:
-	pushq %rbp 
-	pushq %rdi 
-	pushq %rsi 
-	pushq %rdx 
-	pushq %r10 
+.globl sys$syscall
+sys$syscall:
+	pushq %rbp
+	pushq %rdi
+	pushq %rsi
+	pushq %rdx
+	pushq %r10
 	pushq %r8
 	pushq %r9
-	pushq %rcx 
-	pushq %r11 
+	pushq %rcx
+	pushq %r11
 	/*
 	hack: We load 6 args regardless of
 	how many we actually have. This may
