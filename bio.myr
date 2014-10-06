@@ -130,11 +130,11 @@ const sysopen = {path, mode, openmode, perm
 
 /* closes a file, flushing it to the output fd */
 const close = {f
-	var closed
+	var fd
 
-	closed = (std.close(f.fd) == 0)
+	fd = f.fd
 	free(f)
-	-> closed
+	-> std.close(fd) == 0
 }
 
 const free = {f

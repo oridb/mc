@@ -11,7 +11,7 @@ const main = {
 	| `std.Some bio:	f = bio
 	| `std.None:	std.fatal(1, "Unable to open data file")
 	;;
-	
+
 	/* write a 5 byte chunk */
 	bio.write(f, "test\n")
 
@@ -23,9 +23,10 @@ const main = {
 		buf[i] = 0x31
 	;;
 	bio.write(f, buf[:])
-	
+
 	/* final message after a big burst */
 	bio.write(f, "goodbye\n")
+	bio.flush(f)
 
 	/* and test for flush on close */
 	bio.close(f);
