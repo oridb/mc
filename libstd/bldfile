@@ -1,7 +1,7 @@
 lib sys =
-	sys+freebsd.myr
-	sys+linux.myr
-	sys+osx.myr
+	sys+freebsd-x64.myr
+	sys+linux-x64.myr
+	sys+osx-x64.myr
 	syscall+freebsd-x64.s
 	syscall+linux-x64.s
 	syscall+osx-x64.s
@@ -58,6 +58,7 @@ lib std =
 	strjoin.myr
 	strsplit.myr
 	strstrip.myr
+        syswrap.myr
 	swap.myr
 	try.myr
 	types.myr
