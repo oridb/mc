@@ -2,7 +2,7 @@ use "syswrap.use"
 use "types.use"
 
 pkg std = 
-	const die	: (msg : byte[:] -> void)
+	$noret const die	: (msg : byte[:] -> void)
 	const assert	: (cond : bool, msg : byte[:] -> void)
 ;;
 
