@@ -59,7 +59,6 @@ lib std =
 	strsplit.myr
 	strstrip.myr
 	swap.myr
-	test.myr
 	try.myr
 	types.myr
 	units.myr
