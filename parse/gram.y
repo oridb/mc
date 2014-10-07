@@ -119,6 +119,7 @@ static void addtrait(Type *t, char *str);
 %token<tok> Tuse     /* use */
 %token<tok> Tpkg     /* pkg */
 %token<tok> Tpkglocal/* pkglocal */
+%token<tok> Tattr    /* $attr */
 %token<tok> Tsizeof  /* sizeof */
 
 %token<tok> Tident
@@ -136,7 +137,7 @@ static void addtrait(Type *t, char *str);
 %type <tydef> tydef pkgtydef typeid
 %type <trait> traitdef
 
-%type <node> exprln retexpr goto continue break expr atomicexpr 
+%type <node> exprln retexpr goto continue break expr atomicexpr
 %type <node> littok literal asnexpr lorexpr landexpr borexpr
 %type <node> bandexpr cmpexpr unionexpr addexpr mulexpr shiftexpr prefixexpr postfixexpr
 %type <node> funclit seqlit tuplit name block stmt label use
@@ -149,8 +150,8 @@ static void addtrait(Type *t, char *str);
 %type <node> implstmt
 
 %type <nodelist> arglist argdefs params matches
-%type <nodelist> structbody structelts arrayelts 
-%type <nodelist> tupbody tuprest 
+%type <nodelist> structbody structelts arrayelts
+%type <nodelist> tupbody tuprest
 %type <nodelist> decl pkgdecl decllist
 %type <nodelist> traitbody implbody
 
@@ -335,7 +336,7 @@ declbody: declcore Tasn expr {$$ = $1; $1->decl.init = $3;}
 declcore: name {$$ = mkdecl($1->line, $1, mktyvar($1->line));}
         | typedeclcore {$$ = $1;}
         ;
-        
+
 typedeclcore
         : name Tcolon type {$$ = mkdecl($1->line, $1, $3);}
         ;
@@ -541,8 +542,8 @@ unionelt /* nb: the ucon union type gets filled in when we have context */
         | Tendln {$$ = NULL;}
         ;
 
-goto	: Tgoto Tident {$$ = mkexpr($1->line, Ojmp, mklbl($2->line, $2->str), NULL);}
-     	;
+goto    : Tgoto Tident {$$ = mkexpr($1->line, Ojmp, mklbl($2->line, $2->str), NULL);}
+        ;
 
 retexpr : Tret expr {$$ = mkexpr($1->line, Oret, $2, NULL);}
         | Tret {$$ = mkexpr($1->line, Oret, NULL);}
@@ -603,7 +604,7 @@ castexpr: castexpr Tcast Toparen type Tcparen {
                 $$ = mkexpr($1->line, Ocast, $1, NULL);
                 $$->expr.type = $4;
             }
-        | unionexpr 
+        | unionexpr
         ;
 
 unionexpr
@@ -727,7 +728,7 @@ littok  : Tstrlit       {$$ = mkstr($1->line, $1->str);}
         | Tboollit      {$$ = mkbool($1->line, !strcmp($1->str, "true"));}
         | Tintlit {
                 $$ = mkint($1->line, $1->intval);
-		if ($1->inttype)
+                if ($1->inttype)
                     $$->lit.type = mktype($1->line, $1->inttype);
             }
         ;
@@ -779,7 +780,7 @@ structelts
              {lappend(&$$.nl, &$$.nn, $3);}
         ;
 
-structelt: optendlns Tdot Tident Tasn expr optendlns 
+structelt: optendlns Tdot Tident Tasn expr optendlns
             {$$ = mkidxinit($2->line, mkname($3->line, $3->str), $5);}
          ;
 
@@ -800,16 +801,16 @@ stmt    : goto
         ;
 
 break   : Tbreak
-     	    {$$ = mkexpr($1->line, Obreak, NULL);}
+            {$$ = mkexpr($1->line, Obreak, NULL);}
         ;
 
 continue   : Tcontinue
-     	    {$$ = mkexpr($1->line, Ocontinue, NULL);}
+            {$$ = mkexpr($1->line, Ocontinue, NULL);}
         ;
 
 forstmt : Tfor optexprln optexprln optexprln block
             {$$ = mkloopstmt($1->line, $2, $3, $4, $5);}
-        | Tfor expr Tin exprln block 
+        | Tfor expr Tin exprln block
             {$$ = mkiterstmt($1->line, $2, $4, $5);}
         /* FIXME: allow decls in for loops
         | Tfor decl Tendln optexprln optexprln block
