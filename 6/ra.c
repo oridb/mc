@@ -261,6 +261,8 @@ static void liveness(Isel *s)
     bb = s->bb;
     nbb = s->nbb;
     for (i = 0; i < nbb; i++) {
+        if (!bb[i])
+            continue;
         udcalc(s->bb[i]);
         bb[i]->livein = bsclear(bb[i]->livein);
         bb[i]->liveout = bsclear(bb[i]->liveout);
@@ -270,6 +272,8 @@ static void liveness(Isel *s)
     while (changed) {
         changed = 0;
         for (i = nbb - 1; i >= 0; i--) {
+            if (!bb[i])
+                continue;
             old = bsdup(bb[i]->liveout);
             /* liveout[b] = U(s in succ) livein[s] */
             for (j = 0; bsiter(bb[i]->succ, &j); j++)
@@ -456,6 +460,8 @@ static void build(Isel *s)
     nbb = s->nbb;
 
     for (i = 0; i < nbb; i++) {
+        if (!bb[i])
+            continue;
         live = bsdup(bb[i]->liveout);
         for (j = bb[i]->ni - 1; j >= 0; j--) {
             insn = bb[i]->il[j];
@@ -1086,6 +1092,8 @@ static void rewritebb(Isel *s, Asmbb *bb)
 
     new = NULL;
     nnew = 0;
+    if (!bb)
+        return;
     for (j = 0; j < bb->ni; j++) {
         /* if there is a remapping, insert the loads and stores as needed */
         if (remap(s, bb->il[j], use, &nuse, def, &ndef)) {
@@ -1186,6 +1194,8 @@ static void delnops(Isel *s)
     size_t i, j;
 
     for (i = 0; i < s->nbb; i++) {
+        if (!s->bb[i])
+            continue;
         new = NULL;
         nnew = 0;
         bb = s->bb[i];
@@ -1325,6 +1335,8 @@ void dumpasm(Isel *s, FILE *fd)
     fprintf(fd, "ASM -------- \n");
     for (j = 0; j < s->nbb; j++) {
         bb = s->bb[j];
+        if (!bb)
+            continue;
         fprintf(fd, "\n");
         fprintf(fd, "Bb: %d labels=(", bb->id);
         sep = "";

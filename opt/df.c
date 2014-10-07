@@ -31,10 +31,40 @@ static void bbdef(Bb *bb, Bitset *bs)
 }
 */
 
-void flow(Cfg *cfg)
+static void checkreach(Cfg *cfg)
 {
 }
 
-void checkret(Cfg *cfg)
+static void checkpredret(Cfg *cfg, Bb *bb)
 {
+    Bb *pred;
+    size_t i;
+
+    for (i = 0; bsiter(bb->pred, &i); i++) {
+        pred = cfg->bb[i];
+        if (pred->nnl == 0) {
+            checkpredret(cfg, pred);
+        } else if (exprop(pred->nl[pred->nnl - 1]) != Oret) {
+            dumpcfg(cfg, stdout);
+            fatal(pred->nl[pred->nnl-1]->line, "Reaches end of function without return\n");
+        }
+    }
+}
+
+static void checkret(Cfg *cfg)
+{
+    Type *ft;
+
+    ft = tybase(decltype(cfg->fn));
+    assert(ft->type == Tyfunc);
+    if (ft->sub[0]->type == Tyvoid)
+        return;
+
+    checkpredret(cfg, cfg->end);
+}
+
+void check(Cfg *cfg)
+{
+    checkret(cfg);
+    checkreach(cfg);
 }

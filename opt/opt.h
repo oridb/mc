@@ -2,6 +2,7 @@ typedef struct Cfg Cfg;
 typedef struct Bb Bb;
 
 struct  Cfg {
+    Node *fn;
     Bb **bb;
     Bb *start;
     Bb *end;
@@ -29,6 +30,6 @@ struct Bb {
 /* expression folding */
 Node *fold(Node *n, int foldvar);
 /* Takes a reduced block, and returns a flow graph. */
-Cfg *mkcfg(Node **nl, size_t nn);
+Cfg *mkcfg(Node *fn, Node **nl, size_t nn);
 void dumpcfg(Cfg *c, FILE *fd);
-void flow(Cfg *cfg);
+void check(Cfg *cfg);

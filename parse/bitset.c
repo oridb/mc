@@ -208,3 +208,13 @@ int bsissubset(Bitset *set, Bitset *sub)
             return 0;
     return 1;
 }
+
+int bsisempty(Bitset *set)
+{
+    size_t i;
+
+    for (i = 0; i < set->nchunks; i++)
+        if (set->chunks[i])
+            return 0;
+    return 1;
+}

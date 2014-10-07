@@ -490,12 +490,12 @@ static void simpif(Simp *s, Node *n, Node *exit)
     Node *l1, *l2, *l3;
     Node *iftrue, *iffalse;
 
-    l1 = genlbl();
-    l2 = genlbl();
+    l1 = genlbl(n->line);
+    l2 = genlbl(n->line);
     if (exit)
         l3 = exit;
     else
-        l3 = genlbl();
+        l3 = genlbl(n->line);
 
     iftrue = n->ifstmt.iftrue;
     iffalse = n->ifstmt.iffalse;
@@ -537,10 +537,10 @@ static void simploop(Simp *s, Node *n)
     Node *lcond;
     Node *lstep;
 
-    lbody = genlbl();
-    lcond = genlbl();
-    lstep = genlbl();
-    lend = genlbl();
+    lbody = genlbl(n->line);
+    lcond = genlbl(n->line);
+    lstep = genlbl(n->line);
+    lend = genlbl(n->line);
 
     lappend(&s->loopstep, &s->nloopstep, lstep);
     lappend(&s->loopexit, &s->nloopexit, lend);
@@ -583,11 +583,11 @@ static void simpiter(Simp *s, Node *n)
     Node *idx, *len, *dcl, *seq, *val, *done;
     Node *zero;
 
-    lbody = genlbl();
-    lstep = genlbl();
-    lcond = genlbl();
-    lmatch = genlbl();
-    lend = genlbl();
+    lbody = genlbl(n->line);
+    lstep = genlbl(n->line);
+    lcond = genlbl(n->line);
+    lmatch = genlbl(n->line);
+    lend = genlbl(n->line);
 
     lappend(&s->loopstep, &s->nloopstep, lstep);
     lappend(&s->loopexit, &s->nloopexit, lend);
@@ -694,7 +694,7 @@ static void matchpattern(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, N
             str = lit->lit.strval;
 
             /* load slice length */
-            next = genlbl();
+            next = genlbl(pat->line);
             x = slicelen(s, val);
             len = strlen(str);
             y = mkintlit(lit->line, len);
@@ -704,9 +704,9 @@ static void matchpattern(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, N
             append(s, next);
 
             for (i = 0; i < len; i++) {
-                next = genlbl();
+                next = genlbl(pat->line);
                 x = mkintlit(pat->line, str[i]);
-                x->expr.type = mktype(-1, Tybyte);
+                x->expr.type = mktype(pat->line, Tybyte);
                 idx = mkintlit(pat->line, i);
                 idx->expr.type = tyintptr;
                 y = load(idxaddr(s, val, idx));
@@ -735,7 +735,7 @@ static void matchpattern(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, N
             off = 0;
             for (i = 0; i < pat->expr.nargs; i++) {
                 off = alignto(off, exprtype(patarg[i]));
-                next = genlbl();
+                next = genlbl(pat->line);
                 v = load(addk(addr(s, val, exprtype(patarg[i])), off));
                 matchpattern(s, patarg[i], v, exprtype(patarg[i]), next, iffalse);
                 append(s, next);
@@ -747,7 +747,7 @@ static void matchpattern(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, N
             patarg = pat->expr.args;
             for (i = 0; i < pat->expr.nargs; i++) {
                 off = offset(pat, patarg[i]->expr.idx);
-                next = genlbl();
+                next = genlbl(pat->line);
                 v = load(addk(addr(s, val, exprtype(patarg[i])), off));
                 matchpattern(s, patarg[i], v, exprtype(patarg[i]), next, iffalse);
                 append(s, next);
@@ -758,7 +758,7 @@ static void matchpattern(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, N
             if (!uc)
                 uc = finducon(val);
 
-            deeper = genlbl();
+            deeper = genlbl(pat->line);
 
             x = uconid(s, pat);
             y = uconid(s, val);
@@ -782,7 +782,7 @@ static void simpmatch(Simp *s, Node *n)
     Node *m;
     size_t i;
 
-    end = genlbl();
+    end = genlbl(n->line);
     val = temp(s, n->matchstmt.val);
     tmp = rval(s, n->matchstmt.val, val);
     if (val != tmp)
@@ -791,8 +791,8 @@ static void simpmatch(Simp *s, Node *n)
         m = n->matchstmt.matches[i];
 
         /* check pattern */
-        cur = genlbl();
-        next = genlbl();
+        cur = genlbl(n->line);
+        next = genlbl(n->line);
         matchpattern(s, m->match.pat, val, val->expr.type, cur, next);
 
         /* do the action if it matches */
@@ -876,11 +876,11 @@ static void checkidx(Simp *s, Node *len, Node *idx)
 
     /* create expressions */
     cmp = mkexpr(idx->line, Olt, ptrsized(s, idx), ptrsized(s, len), NULL);
-    cmp->expr.type = mktype(-1, Tybool);
-    ok = genlbl();
-    fail = genlbl();
+    cmp->expr.type = mktype(len->line, Tybool);
+    ok = genlbl(len->line);
+    fail = genlbl(len->line);
     die = mkexpr(idx->line, Ocall, abortfunc, NULL);
-    die->expr.type = mktype(-1, Tyvoid);
+    die->expr.type = mktype(len->line, Tyvoid);
 
     /* insert them */
     cjmp(s, cmp, ok, fail);
@@ -969,13 +969,13 @@ static void simpcond(Simp *s, Node *n, Node *ltrue, Node *lfalse)
     args = n->expr.args;
     switch (exprop(n)) {
         case Oland:
-            lnext = genlbl();
+            lnext = genlbl(n->line);
             simpcond(s, args[0], lnext, lfalse);
             append(s, lnext);
             simpcond(s, args[1], ltrue, lfalse);
             break;
         case Olor:
-            lnext = genlbl();
+            lnext = genlbl(n->line);
             simpcond(s, args[0], ltrue, lnext);
             append(s, lnext);
             simpcond(s, args[1], ltrue, lfalse);
@@ -1308,9 +1308,9 @@ static Node *simplazy(Simp *s, Node *n)
 
     /* set up temps and labels */
     r = temp(s, n);
-    ltrue = genlbl();
-    lfalse = genlbl();
-    ldone = genlbl();
+    ltrue = genlbl(n->line);
+    lfalse = genlbl(n->line);
+    ldone = genlbl(n->line);
 
     /* simp the conditional */
     simpcond(s, n, ltrue, lfalse);
@@ -1532,7 +1532,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
             for (i = 0; i < s->nqueue; i++)
                 append(s, s->incqueue[i]);
             lfree(&s->incqueue, &s->nqueue);
-            jmp(s, s->endlbl);
+            append(s, mkexpr(n->line, Oret, NULL));
             break;
         case Oasn:
             r = assign(s, args[0], args[1]);
@@ -1686,7 +1686,7 @@ static void flatten(Simp *s, Node *f)
     assert(f->type == Nfunc);
     s->nstmts = 0;
     s->stmts = NULL;
-    s->endlbl = genlbl();
+    s->endlbl = genlbl(f->line);
     s->ret = NULL;
 
     /* make a temp for the return type */
@@ -1708,12 +1708,16 @@ static void flatten(Simp *s, Node *f)
     append(s, s->endlbl);
 }
 
-static Func *simpfn(Simp *s, char *name, Node *n, Vis vis)
+static Func *simpfn(Simp *s, char *name, Node *dcl)
 {
+    Node *n;
+    Vis vis;
     size_t i;
     Func *fn;
     Cfg *cfg;
 
+    n = dcl->decl.init;
+    vis = dcl->decl.vis;
     if(debugopt['i'] || debugopt['F'] || debugopt['f'])
         printf("\n\nfunction %s\n", name);
 
@@ -1743,7 +1747,9 @@ static Func *simpfn(Simp *s, char *name, Node *n, Vis vis)
         }
     }
 
-    cfg = mkcfg(s->stmts, s->nstmts);
+    cfg = mkcfg(dcl, s->stmts, s->nstmts);
+    if (debugopt['C'])
+	check(cfg);
     if (debugopt['t'] || debugopt['s'])
         dumpcfg(cfg, stdout);
 
@@ -1845,7 +1851,7 @@ static void simpglobl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***
     if (dcl->decl.isextern || dcl->decl.isgeneric)
         return;
     if (isconstfn(dcl)) {
-        f = simpfn(&s, name, dcl->decl.init, dcl->decl.vis);
+        f = simpfn(&s, name, dcl);
         lappend(fn, nfn, f);
     } else {
         simpconstinit(&s, dcl);
