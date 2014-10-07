@@ -276,6 +276,7 @@ struct Node {
             char  ispkglocal;
             char  ishidden;
             char  isimport;
+            char  isnoret;
             char  isexportinit;
         } decl;
 

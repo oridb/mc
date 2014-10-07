@@ -161,7 +161,7 @@ static void eatspace(void)
 static int kwd(char *s)
 {
     static const struct {char* kw; int tt;} kwmap[] = {
-        {"$nonret",     Tattr},
+        {"$noret",      Tattr},
         {"break",       Tbreak},
         {"castto",      Tcast},
         {"const",       Tconst},
@@ -169,7 +169,7 @@ static int kwd(char *s)
         {"elif",        Telif},
         {"else",        Telse},
         {"export",      Texport},
-        {"extern",      Textern},
+        {"extern",      Tattr},
         {"false",       Tboollit},
         {"for",         Tfor},
         {"generic",     Tgeneric},
@@ -179,7 +179,7 @@ static int kwd(char *s)
         {"in",          Tin},
         {"match",       Tmatch},
         {"pkg",         Tpkg},
-        {"pkglocal",    Tpkglocal},
+        {"pkglocal",    Tattr},
         {"protect",     Tprotect},
         {"sizeof",      Tsizeof},
         {"struct",      Tstruct},
@@ -765,7 +765,7 @@ static Tok *toknext()
         line++;
         next();
         t =  mktok(Tendln);
-    } else if (isalpha(c) || c == '_') {
+    } else if (isalpha(c) || c == '_' || c == '$') {
         t =  kwident();
     } else if (c == '"') {
         t =  strlit();

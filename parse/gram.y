@@ -24,6 +24,7 @@ static Op binop(int toktype);
 static Node *mkpseudodecl(Type *t);
 static void installucons(Stab *st, Type *t);
 static void addtrait(Type *t, char *str);
+static void setattrs(Node *dcl, char **attrs, size_t nattrs);
 
 %}
 
@@ -102,7 +103,6 @@ static void addtrait(Type *t, char *str);
 %token<tok> Tconst   /* const */
 %token<tok> Tvar     /* var */
 %token<tok> Tgeneric /* var */
-%token<tok> Textern  /* extern */
 %token<tok> Tcast    /* castto */
 
 %token<tok> Texport  /* export */
@@ -118,7 +118,6 @@ static void addtrait(Type *t, char *str);
 %token<tok> Tret     /* -> */
 %token<tok> Tuse     /* use */
 %token<tok> Tpkg     /* pkg */
-%token<tok> Tpkglocal/* pkglocal */
 %token<tok> Tattr    /* $attr */
 %token<tok> Tsizeof  /* sizeof */
 
@@ -154,6 +153,7 @@ static void addtrait(Type *t, char *str);
 %type <nodelist> tupbody tuprest
 %type <nodelist> decl pkgdecl decllist
 %type <nodelist> traitbody implbody
+%type <strlist> attrs
 
 %type <uconlist> unionbody
 
@@ -163,6 +163,10 @@ static void addtrait(Type *t, char *str);
         Node **nl;
         size_t nn;
     } nodelist;
+    struct {
+        char **str;
+        size_t nstr;
+    } strlist;
     struct {
         int line;
         Ucon **ucl;
@@ -220,33 +224,36 @@ toplev  : package
         | /* empty */
         ;
 
-decl    : Tvar decllist {$$ = $2;}
-        | Tconst decllist {
+decl    : attrs Tvar decllist {
                 size_t i;
-                for (i = 0; i < $2.nn; i++)
-                    $2.nl[i]->decl.isconst = 1;
-                $$ = $2;
-            }
-        | Tgeneric decllist {
-                size_t i;
-             for (i = 0; i < $2.nn; i++) {
-                $2.nl[i]->decl.isconst = 1;
-                $2.nl[i]->decl.isgeneric = 1;
-             }
-             $$ = $2;}
-        | Textern Tvar decllist {
-                size_t i;
+
                 for (i = 0; i < $3.nn; i++)
-                    $3.nl[i]->decl.isextern = 1;
+                    setattrs($3.nl[i], $1.str, $1.nstr);
                 $$ = $3;
             }
-        | Textern Tconst decllist {
+        | attrs Tconst decllist {
                 size_t i;
                 for (i = 0; i < $3.nn; i++) {
+                    setattrs($3.nl[i], $1.str, $1.nstr);
                     $3.nl[i]->decl.isconst = 1;
-                    $3.nl[i]->decl.isextern = 1;
                 }
                 $$ = $3;
+            }
+        | attrs Tgeneric decllist {
+                size_t i;
+
+                for (i = 0; i < $3.nn; i++) {
+                    setattrs($3.nl[i], $1.str, $1.nstr);
+                    $3.nl[i]->decl.isconst = 1;
+                    $3.nl[i]->decl.isgeneric = 1;
+                }
+                $$ = $3;
+             }
+
+attrs   : /* empty */ {$$.nstr = 0; $$.str = NULL;}
+        | Tattr attrs {
+                $$ = $2;
+                lappend(&$$.str, &$$.nstr, strdup($1->str));
             }
         ;
 
@@ -282,7 +289,7 @@ pkgbody : pkgitem
         | pkgbody Tendln pkgitem
         ;
 
-pkgitem : pkgdecl {
+pkgitem : decl {
                 size_t i;
                 for (i = 0; i < $1.nn; i++) {
                     putdcl(file->file.exports, $1.nl[i]);
@@ -305,28 +312,24 @@ pkgitem : pkgdecl {
                 $1->impl.vis = Visexport;
                 putimpl(file->file.exports, $1);
             }
-        | visdef {die("Unimplemented visdef");}
         | /* empty */
         ;
 
-pkgdecl : Tpkglocal decl {
+pkgdecl : decl {$$ = $1;}
+        ;
+
+pkgtydef: attrs tydef {
                 size_t i;
                 $$ = $2;
-                for (i = 0; i < $$.nn; i++)
-                    $$.nl[i]->decl.ispkglocal = 1;
-            }
-        | decl {$$ = $1;}
-        ;
+                for (i = 0; i < $1.nstr; i++) {
+                    if (!strcmp($1.str[i], "pkglocal"))
+                        $$.type->ispkglocal = 1;
+                    else
+                        fatal($$.line, "invalid type attribute '%s'", $1.str[i]);
+                }
 
-pkgtydef: Tpkglocal tydef {
-                $$ = $2;
-                $$.type->ispkglocal = 1;
           }
         | tydef {$$ = $1;}
-        ;
-
-visdef  : Texport Tcolon
-        | Tprotect Tcolon
         ;
 
 declbody: declcore Tasn expr {$$ = $1; $1->decl.init = $3;}
@@ -513,7 +516,6 @@ structbody
 
 structent
         : declcore Tendln {$$ = $1;}
-        | visdef Tendln {$$ = NULL;}
         | Tendln {$$ = NULL;}
         ;
 
@@ -538,7 +540,6 @@ unionbody
 unionelt /* nb: the ucon union type gets filled in when we have context */
         : Ttick name type Tendln {$$ = mkucon($2->line, $2, NULL, $3);}
         | Ttick name Tendln {$$ = mkucon($2->line, $2, NULL, NULL);}
-        | visdef Tendln {$$ = NULL;}
         | Tendln {$$ = NULL;}
         ;
 
@@ -910,6 +911,20 @@ static Node *mkpseudodecl(Type *t)
 
     snprintf(buf, 128, ".pdecl%d", nextpseudoid++);
     return mkdecl(-1, mkname(-1, buf), t);
+}
+
+static void setattrs(Node *dcl, char **attrs, size_t nattrs)
+{
+    size_t i;
+
+    for (i = 0; i < nattrs; i++) {
+        if (!strcmp(attrs[i], "extern"))
+            dcl->decl.isextern = 1;
+        else if (!strcmp(attrs[i], "$noret"))
+            dcl->decl.isnoret = 1;
+        else if (!strcmp(attrs[i], "pkglocal"))
+            dcl->decl.ispkglocal = 1;
+    }
 }
 
 static void installucons(Stab *st, Type *t)
