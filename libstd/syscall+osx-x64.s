@@ -1,5 +1,5 @@
-.globl _std$syscall
-_std$syscall:
+.globl _sys$syscall
+_sys$syscall:
 	pushq %rbp 
 	pushq %rdi 
 	pushq %rsi 
@@ -48,8 +48,8 @@ _std$syscall:
  *
  * checking this involves peeking in %edx, so we need to do this in asm.
  */
-.globl _std$__osx_fork
-_std$__osx_fork:
+.globl _sys$__osx_fork
+_sys$__osx_fork:
 	pushq %rbp
 	pushq %rdi 
 	pushq %rsi 
@@ -88,8 +88,8 @@ _std$__osx_fork:
  * The pipe() syscall returns the pipes created in eax:edx, and
  * needs to copy them to the destination locations manually.
  */
-.globl _std$__osx_pipe
-_std$__osx_pipe:
+.globl _sys$__osx_pipe
+_sys$__osx_pipe:
 	pushq %rbp
 	pushq %rdi 
 	pushq %rsi 
@@ -123,8 +123,8 @@ _std$__osx_pipe:
 	popq %rbp
 	ret
 
-.globl _std$__osx_gettimeofday
-_std$__osx_gettimeofday:
+.globl _sys$__osx_gettimeofday
+_sys$__osx_gettimeofday:
 	pushq %rbp
 	pushq %rdi 
 	pushq %rsi 

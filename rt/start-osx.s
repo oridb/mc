@@ -1,14 +1,14 @@
 .data
-/* std._environment : byte[:][:] */
-.globl _std$_environment
-_std$_environment:
+/* sys._environment : byte[:][:] */
+.globl _sys$__environment
+_sys$__environment:
 .envbase:
 .quad 0 /* env size */
 .envlen:
 .quad 0 /* env ptr */
 
-.globl _std$__cenvp
-_std$__cenvp:
+.globl _sys$__cenvp
+_sys$__cenvp:
 .quad 0
 
 .text
@@ -18,7 +18,7 @@ _std$__cenvp:
  *  - Sets up all argc entries as slices
  *  - Sets up all envp entries as slices
  *  - Converts argc/argv to a slice
- *  - Stashes envp in std._environment
+ *  - Stashes envp in sys._environment
  *  - Stashes a raw envp copy in __cenvp (for syscalls to use)
  *  - Calls main()
  */
@@ -35,10 +35,10 @@ start:
 	subq	%rax,%rsp
 	movq	%rsp, %rdx	/* saved args[:] */
 
-	/* convert envp to byte[:][:] for std._environment */
+	/* convert envp to byte[:][:] for sys._environment */
 	movq	(%rbp),%rax
 	leaq	16(%rbp,%rax,8), %rbx	/* envp = argv + 8*argc + 8 */
-        movq    %rbx,_std$__cenvp(%rip)
+        movq    %rbx,_sys$__cenvp(%rip)
 	movq	%r9,%rax
 	movq	%rsp, %rcx
 	movq	%r9,.envlen(%rip)
