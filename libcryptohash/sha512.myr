@@ -2,6 +2,7 @@ use std
 
 pkg cryptohash =
 	type sha512
+	type sha384
 
 	const sha512	: (data : byte[:] -> byte[64])
 	const sha512init	: (st : sha512# -> void)
