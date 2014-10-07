@@ -81,7 +81,7 @@ static Tok *mktok(int tt)
 
 static int identchar(int c)
 {
-    return isalnum(c) || c == '_';
+    return isalnum(c) || c == '_' || c == '$';
 }
 
 static void eatcomment(void)
@@ -161,6 +161,7 @@ static void eatspace(void)
 static int kwd(char *s)
 {
     static const struct {char* kw; int tt;} kwmap[] = {
+        {"$nonret",     Tattr},
         {"break",       Tbreak},
         {"castto",      Tcast},
         {"const",       Tconst},
