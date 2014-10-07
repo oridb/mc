@@ -12,7 +12,7 @@ lib sys =
 	util.s
 ;;
 
-lib std =
+lib std {inc=.} =
 	# portable files
 	alloc.myr
 	bigint.myr
