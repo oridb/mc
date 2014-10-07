@@ -1,66 +1,101 @@
-MYRLIB=std
-MYRSRC= \
-    alloc.myr \
-    bigint.myr \
-    bitset.myr \
-    blat.myr \
-    chartype.myr \
-    cmp.myr \
-    dial.myr \
-    die.myr \
-    dir.myr \
-    endian.myr \
-    env.myr \
-    execvp.myr \
-    extremum.myr \
-    fltbits.myr \
-    fmt.myr \
-    fltfmt.myr \
-    hashfuncs.myr \
-    hasprefix.myr \
-    hassuffix.myr \
-    htab.myr \
-    ifreq.myr \
-    intparse.myr \
-    ipparse.myr \
-    mk.myr \
-    now.myr \
-    option.myr \
-    optparse.myr \
-    pathjoin.myr \
-    rand.myr \
-    resolve.myr \
-    result.myr \
-    search.myr \
-    slcp.myr \
-    sldup.myr \
-    sleq.myr \
-    slfill.myr \
-    sljoin.myr \
-    slpush.myr \
-    slput.myr \
-    slurp.myr \
-    sort.myr \
-    spork.myr \
-    strfind.myr \
-    strjoin.myr \
-    strsplit.myr \
-    strstrip.myr \
-    swap.myr \
-    sys.myr \
-    try.myr \
-    types.myr \
-    units.myr \
-    utf.myr \
-    varargs.myr \
-    waitstatus.myr \
+</$objtype/mkfile
 
-all: lib$MYRLIB.a  test
+SYSLIB=sys
+SYSSRC= \
+	sys.myr \
+	systypes.myr \
+	ifreq.myr \
 
-test: libstd.a test.myr ../6/$O.out
-	../myrbuild/myrbuild -C../6/$O.out -M../muse/muse -b test -I. -r../rt/_myrrt.o test.myr
+SYSASMSRC= \
+	syscall.s \
+	util.s
 
 
-lib$MYRLIB.a: $MYRSRC $ASMSRC
-	../myrbuild/$O.out -C../6/$O.out -M../muse/$O.out -l $MYRLIB $MYRSRC $ASMSRC
+STDLIB=std
+STDSRC= \
+	alloc.myr \
+	bigint.myr \
+	bitset.myr \
+	blat.myr \
+	chartype.myr \
+	cmp.myr \
+	dial.myr \
+	die.myr \
+	dir.myr \
+	endian.myr \
+	env.myr \
+	execvp.myr \
+	extremum.myr \
+	fltbits.myr \
+	fmt.myr \
+	fltfmt.myr \
+	hashfuncs.myr \
+	hasprefix.myr \
+	hassuffix.myr \
+	htab.myr \
+	intparse.myr \
+	ipparse.myr \
+	mk.myr \
+	now.myr \
+	option.myr \
+	optparse.myr \
+	pathjoin.myr \
+	rand.myr \
+	resolve.myr \
+	result.myr \
+	search.myr \
+	slcp.myr \
+	sldup.myr \
+	sleq.myr \
+	slfill.myr \
+	sljoin.myr \
+	slpush.myr \
+	slput.myr \
+	slurp.myr \
+	sort.myr \
+	spork.myr \
+	strfind.myr \
+	strjoin.myr \
+	strsplit.myr \
+	strstrip.myr \
+	syswrap.myr \
+	swap.myr \
+	try.myr \
+	types.myr \
+	units.myr \
+	utf.myr \
+	varargs.myr \
+	waitstatus.myr \
 
+all: lib$STDLIB.a lib$SYSLIB.a
+
+lib$STDLIB.a: $STDSRC $ASMSRC lib$SYSLIB.a
+	../myrbuild/myrbuild -I. -C../6/$O.out -M../muse/$O.out -l $STDLIB $STDSRC $STDASMSRC
+
+lib$SYSLIB.a: $SYSSRC $SYSASMSRC
+	../myrbuild/$O.out -C../6/$O.out -M../muse/$O.out -l $SYSLIB $SYSSRC $SYSASMSRC
+
+%.myr: %+plan9-x64.myr
+	cp $stem+plan9-x64.myr $stem.myr
+
+%.myr: %+plan9.myr
+	cp $stem+plan9.myr $stem.myr
+
+%.myr: %+x64.myr
+	cp $stem+x64.myr $stem.myr
+
+%.s: %+plan9-x64.s
+	cp $stem+plan9-x64.s $stem.s
+
+%.s: %+x64.s
+	cp $stem+x64.s $stem.s
+
+OBJ=${STDSRC:.myr=.o} ${SYSSRC:.myr=.o} ${STDASMSRC:.s=.o} ${SYSASMSRC:.s=.o}
+USE=${STDSRC:.myr=.use} ${SYSSRC:.myr=.use} ${STDLIB}
+.PHONY: clean
+clean:V:
+	rm -f $OBJ
+	rm -f $USE
+	rm -f lib$STDLIB.a lib$SYSLIB.a
+
+nuke:V: clean
