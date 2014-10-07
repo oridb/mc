@@ -151,7 +151,7 @@ static void setattrs(Node *dcl, char **attrs, size_t nattrs);
 %type <nodelist> arglist argdefs params matches
 %type <nodelist> structbody structelts arrayelts
 %type <nodelist> tupbody tuprest
-%type <nodelist> decl pkgdecl decllist
+%type <nodelist> decl decllist
 %type <nodelist> traitbody implbody
 %type <strlist> attrs
 
@@ -315,9 +315,6 @@ pkgitem : decl {
         | /* empty */
         ;
 
-pkgdecl : decl {$$ = $1;}
-        ;
-
 pkgtydef: attrs tydef {
                 size_t i;
                 $$ = $2;
@@ -328,7 +325,6 @@ pkgtydef: attrs tydef {
                         fatal($$.line, "invalid type attribute '%s'", $1.str[i]);
                 }
             }
-        | tydef {$$ = $1;}
         ;
 
 declbody: declcore Tasn expr {$$ = $1; $1->decl.init = $3;}
