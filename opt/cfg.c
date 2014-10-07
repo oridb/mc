@@ -34,10 +34,15 @@ static char *lblstr(Node *n)
     return n->expr.args[0]->lit.lblval;
 }
 
+static void strlabel(Cfg *cfg, char *lbl, Bb *bb)
+{
+    htput(cfg->lblmap, lbl, bb);
+    lappend(&bb->lbls, &bb->nlbls, lbl);
+}
+
 static void label(Cfg *cfg, Node *lbl, Bb *bb)
 {
-    htput(cfg->lblmap, lblstr(lbl), bb);
-    lappend(&bb->lbls, &bb->nlbls, lblstr(lbl));
+    strlabel(cfg, lblstr(lbl), bb);
 }
 
 static int addnode(Cfg *cfg, Bb *bb, Node *n)
@@ -45,6 +50,7 @@ static int addnode(Cfg *cfg, Bb *bb, Node *n)
     switch (exprop(n)) {
         case Ojmp:
         case Ocjmp:
+        case Oret:
             lappend(&bb->nl, &bb->nnl, n);
             lappend(&cfg->fixjmp, &cfg->nfixjmp, n);
             lappend(&cfg->fixblk, &cfg->nfixblk, bb);
@@ -85,7 +91,83 @@ static Bb *addlabel(Cfg *cfg, Bb *bb, Node **nl, size_t i)
     return bb;
 }
 
-Cfg *mkcfg(Node **nl, size_t nn)
+void delete(Cfg *cfg, Bb *bb)
+{
+    size_t i, j;
+
+    if (bb == cfg->start || bb == cfg->end)
+        return;
+    for (i = 0; bsiter(bb->pred, &i); i++) {
+        bsunion(cfg->bb[i]->succ, bb->succ);
+        bsdel(cfg->bb[i]->succ, bb->id);
+    }
+    for (i = 0; bsiter(bb->succ, &i); i++) {
+        bsunion(cfg->bb[i]->pred, bb->pred);
+        bsdel(cfg->bb[i]->pred, bb->id);
+        for (j = 0; j < bb->nlbls; j++)
+            strlabel(cfg, bb->lbls[j], cfg->bb[i]);
+    }
+    cfg->bb[bb->id] = NULL;
+}
+
+void trimdead(Bb *bb)
+{
+    size_t i;
+
+    for (i = 0; i < bb->nnl; i++) {
+        switch (exprop(bb->nl[i])) {
+            /* if we're jumping, we can't keep going
+             * within this BB */
+            case Ojmp:
+            case Ocjmp:
+            case Oret:
+                bb->nnl = i + 1;
+                return;
+            default:
+                /* nothing */
+                break;
+        }
+    }
+}
+
+void trim(Cfg *cfg)
+{
+    Bb *bb;
+    size_t i;
+
+    /* delete empty blocks and trivially unreachable code */
+    for (i = 0; i < cfg->nbb; i++) {
+
+        bb = cfg->bb[i];
+        if (bb->nnl == 0)
+            delete(cfg, bb);
+        else
+            trimdead(bb);
+    }
+}
+
+void delunreachable(Cfg *cfg)
+{
+    Bb *bb;
+    size_t i;
+    int deleted;
+
+    deleted = 1;
+    while (deleted) {
+        deleted = 0;
+        for (i = 0; i < cfg->nbb; i++) {
+            bb = cfg->bb[i];
+            if (bb == cfg->start || bb == cfg->end)
+                continue;
+            if (bb && bsisempty(bb->pred)) {
+                delete(cfg, bb);
+                deleted = 1;
+            }
+        }
+    }
+}
+
+Cfg *mkcfg(Node *fn, Node **nl, size_t nn)
 {
     Cfg *cfg;
     Bb *pre, *post;
@@ -94,6 +176,7 @@ Cfg *mkcfg(Node **nl, size_t nn)
     size_t i;
 
     cfg = zalloc(sizeof(Cfg));
+    cfg->fn = fn;
     cfg->lblmap = mkht(strhash, streq);
     pre = mkbb(cfg);
     bb = mkbb(cfg);
@@ -113,10 +196,14 @@ Cfg *mkcfg(Node **nl, size_t nn)
         }
     }
     post = mkbb(cfg);
+    cfg->start = pre;
+    cfg->end = post;
     bsput(pre->succ, cfg->bb[1]->id);
     bsput(cfg->bb[1]->pred, pre->id);
     bsput(cfg->bb[cfg->nbb - 2]->succ, post->id);
     bsput(post->pred, cfg->bb[cfg->nbb - 2]->id);
+    trim(cfg);
+
     for (i = 0; i < cfg->nfixjmp; i++) {
         bb = cfg->fixblk[i];
         switch (exprop(cfg->fixjmp[i])) {
@@ -127,6 +214,10 @@ Cfg *mkcfg(Node **nl, size_t nn)
             case Ocjmp:
                 a = cfg->fixjmp[i]->expr.args[1];
                 b = cfg->fixjmp[i]->expr.args[2];
+                break;
+            case Oret:
+                a = mklbl(cfg->fixjmp[i]->line, cfg->end->lbls[0]);
+                b = NULL;
                 break;
             default:
                 die("Bad jump fix thingy");
@@ -147,6 +238,7 @@ Cfg *mkcfg(Node **nl, size_t nn)
             bsput(targ->pred, bb->id);
         }
     }
+    delunreachable(cfg);
     return cfg;
 }
 
@@ -158,6 +250,8 @@ void dumpcfg(Cfg *cfg, FILE *fd)
 
     for (j = 0; j < cfg->nbb; j++) {
         bb = cfg->bb[j];
+        if (!bb)
+            continue;
         fprintf(fd, "\n");
         fprintf(fd, "Bb: %d labels=(", bb->id);
         sep = "";

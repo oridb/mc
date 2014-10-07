@@ -675,13 +675,16 @@ Loc *selexpr(Isel *s, Node *n)
         case Ocall:
             r = gencall(s, n);
             break;
+        case Oret: 
+            a = locstrlbl(s->cfg->end->lbls[0]);
+            g(s, Ijmp, a, NULL);
+            break;
         case Ojmp:
-            g(s, Ijmp, a = loclbl(args[0]), NULL);
+            g(s, Ijmp, loclbl(args[0]), NULL);
             break;
         case Ocjmp:
             selcjmp(s, n, args);
             break;
-
         case Olit: /* fall through */
             r = loc(s, n);
             break;
@@ -750,7 +753,7 @@ Loc *selexpr(Isel *s, Node *n)
         /* These operators should never show up in the reduced trees,
          * since they should have been replaced with more primitive
          * expressions by now */
-        case Obad: case Oret: case Opreinc: case Opostinc: case Opredec:
+        case Obad: case Opreinc: case Opostinc: case Opredec:
         case Opostdec: case Olor: case Oland: case Oaddeq:
         case Osubeq: case Omuleq: case Odiveq: case Omodeq: case Oboreq:
         case Obandeq: case Obxoreq: case Obsleq: case Obsreq: case Omemb:
@@ -1001,6 +1004,8 @@ static void writeasm(FILE *fd, Isel *s, Func *fn)
         fprintf(fd, ".globl %s\n", fn->name);
     fprintf(fd, "%s:\n", fn->name);
     for (j = 0; j < s->cfg->nbb; j++) {
+        if (!s->bb[j])
+            continue;
         for (i = 0; i < s->bb[j]->nlbls; i++)
             fprintf(fd, "%s:\n", s->bb[j]->lbls[i]);
         for (i = 0; i < s->bb[j]->ni; i++)
@@ -1012,6 +1017,8 @@ static Asmbb *mkasmbb(Bb *bb)
 {
     Asmbb *as;
 
+    if (!bb)
+        return NULL;
     as = zalloc(sizeof(Asmbb));
     as->id = bb->id;
     as->pred = bsdup(bb->pred);
@@ -1238,6 +1245,8 @@ void genasm(FILE *fd, Func *fn, Htab *globls, Htab *strtab)
     prologue(&is, fn->stksz);
     for (j = 0; j < fn->cfg->nbb - 1; j++) {
         is.curbb = is.bb[j];
+        if (!is.bb[j])
+            continue;
         for (i = 0; i < fn->cfg->bb[j]->nnl; i++) {
             /* put in a comment that says where this line comes from */
             snprintf(buf, sizeof buf, "\n\t# bb = %ld, bbidx = %ld, %s:%d",

@@ -363,6 +363,7 @@ void bsintersect(Bitset *a, Bitset *b);
 void bsdiff(Bitset *a, Bitset *b);
 int  bseq(Bitset *a, Bitset *b);
 int  bsissubset(Bitset *set, Bitset *sub);
+int  bsisempty(Bitset *set);
 int  bsiter(Bitset *bs, size_t *elt);
 size_t bsmax(Bitset *bs);
 size_t bscount(Bitset *bs);
