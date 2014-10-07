@@ -5,6 +5,7 @@ use "opts.use"
 
 pkg bld =
 	const run	: (cmd : byte[:][:], dir : byte[:] -> void)
+	const printcmd
 	const srcsplit	: (src : byte[:] -> (byte[:], byte[:], byte[:]))
 	const swapsuffix	: (f : byte[:], suff : byte[:], newsuff : byte[:] -> byte[:])
 	const srcswapsuffix	: (f : byte[:], newsuff : byte[:] -> byte[:])

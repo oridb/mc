@@ -9,6 +9,7 @@ pkg bld =
 	var opt_binname	: byte[:]
 	var opt_libname	: byte[:]
 	var opt_runtime	: byte[:]
+	var opt_genasm	: bool
 	var opt_ldscript	: byte[:]
 	var opt_incpaths	: byte[:][:]
 	var opt_instroot	: byte[:]
@@ -46,6 +47,7 @@ var opt_as	= "as"
 var opt_muse	= "muse"
 var opt_ld	= "ld"
 var opt_ar	= "ar"
+var opt_genasm  = false
 
 /* derived */
 var sysarchstr	= ""

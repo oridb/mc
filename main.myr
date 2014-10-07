@@ -12,7 +12,7 @@ const main = {args : byte[:][:]
 	var p : bld.parser#
 	var optctx
 
-	optctx = std.optinit("hb:l:s:r:I:C:A:M:L:R:d", args)
+	optctx = std.optinit("hb:l:s:Sr:I:C:A:M:L:R:d", args)
 	bld.initopts()
 	while !std.optdone(optctx)
 		match std.optnext(optctx)
@@ -22,6 +22,7 @@ const main = {args : byte[:][:]
 		| ('s', arg): bld.opt_ldscript = arg
 		| ('f', arg): bld.opt_bldfile = arg
 		| ('I', arg): bld.opt_incpaths = std.slpush(bld.opt_incpaths, arg)
+		| ('S', _): bld.opt_genasm = true
 		| ('r', arg):
 			if std.sleq(arg, "none")
 				bld.opt_runtime = ""
@@ -43,9 +44,9 @@ const main = {args : byte[:][:]
 	;;
 
 	if bld.opt_binname.len != 0
-		bld.buildbin(bld.opt_binname, optctx.args, bld.opt_ldscript, bld.opt_runtime)
+		bld.buildbin(bld.opt_binname, optctx.args, bld.opt_ldscript, bld.opt_runtime, bld.opt_incpaths)
 	elif bld.opt_libname.len != 0
-		bld.buildlib(bld.opt_libname, optctx.args)
+		bld.buildlib(bld.opt_libname, optctx.args, bld.opt_incpaths)
 	else
 		p = loadbuild(bld.opt_bldfile)
 		p.cmd = args

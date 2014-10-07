@@ -30,6 +30,7 @@ pkg bld =
 		install	: bool
 		ldscript	: byte[:]
 		runtime	: byte[:]
+		incpath	: byte[:][:]
 	;;
 
 	type target = union

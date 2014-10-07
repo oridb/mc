@@ -2,6 +2,7 @@ use std
 
 use "types.use"
 use "util.use"
+use "opts.use"
 
 pkg bld =
 	const parse	: (p : parser#	-> bool)
@@ -64,7 +65,7 @@ const mantarget = {p
 }
 const myrtarget = {p, targ
 	var name, inputs, attrs
-	var ldscript, runtime, inst
+	var ldscript, runtime, inst, incpath
 
 	match word(p)
 	| `std.Some n:	name = n
@@ -106,15 +107,19 @@ const myrtarget = {p, targ
 	inst = true
 	ldscript = ""
 	runtime = ""
+	incpath = [][:]
 	for elt in attrs
 		match elt
 		| ("ldscript", lds):	ldscript = std.sldup(lds)
 		| ("runtime", rt):	runtime = std.sldup(rt)
+		| ("inc", path):	incpath = std.slpush(incpath, std.sldup(path))
 		| ("noinst", val):
 			if val.len != 0
 				failparse(p, "noinst attr does not take argument\n")
 			;;
 			inst = false
+		| (invalid, _):
+			std.fatal(1, "got invalid attr '%s'\n", invalid)
 		;;
 	;;
 	-> [
@@ -122,7 +127,8 @@ const myrtarget = {p, targ
 		.inputs=inputs,
 		.install=inst,
 		.ldscript=ldscript,
-		.runtime=runtime
+		.runtime=runtime,
+		.incpath=incpath
 	]
 }
 
