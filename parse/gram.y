@@ -277,7 +277,7 @@ optident: Tident      {$$ = $1;}
 
 package : Tpkg optident Tasn pkgbody Tendblk {
                 if (file->file.exports->name)
-                    fatal($1->line, "Package already declared\n");
+                    lfatal($1->line, 0, "Package already declared\n");
                 if ($2) {
                     updatens(file->file.exports, $2->str);
                     updatens(file->file.globls, $2->str);
@@ -322,7 +322,7 @@ pkgtydef: attrs tydef {
                     if (!strcmp($1.str[i], "pkglocal"))
                         $$.type->ispkglocal = 1;
                     else
-                        fatal($$.line, "invalid type attribute '%s'", $1.str[i]);
+                        lfatal($$.line, 0, "invalid type attribute '%s'", $1.str[i]);
                 }
             }
         ;
@@ -896,7 +896,7 @@ static void addtrait(Type *t, char *str)
             return;
         }
     }
-    fatal(t->line, "Constraint %s does not exist", str);
+    lfatal(t->line, t->file, "Constraint %s does not exist", str);
 }
 
 static Node *mkpseudodecl(Type *t)

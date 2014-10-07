@@ -201,7 +201,7 @@ void putdcl(Stab *st, Node *s)
 
     d = htget(st->dcl, s->decl.name);
     if (d)
-        fatal(s->line, "%s already declared (on line %d)", namestr(s->decl.name), d->line);
+        fatal(s, "%s already declared (on line %d)", namestr(s->decl.name), d->line);
     forcedcl(st, s);
 }
 
@@ -227,7 +227,7 @@ void puttype(Stab *st, Node *n, Type *t)
     Tydefn *td;
 
     if (gettype(st, n))
-        fatal(n->line, "Type %s already defined", tystr(gettype(st, n)));
+        fatal(n, "Type %s already defined", tystr(gettype(st, n)));
     td = xalloc(sizeof(Tydefn));
     td->line = n->line;
     td->name = n;
@@ -240,7 +240,7 @@ void puttype(Stab *st, Node *n, Type *t)
 void putucon(Stab *st, Ucon *uc)
 {
     if (getucon(st, uc->name))
-        fatal(uc->line, "union constructor %s already defined", namestr(uc->name));
+        lfatal(uc->line, uc->file, "union constructor %s already defined", namestr(uc->name));
     htput(st->uc, uc->name, uc);
 }
 
@@ -249,9 +249,9 @@ void puttrait(Stab *st, Node *n, Trait *c)
     Traitdefn *td;
 
     if (gettrait(st, n))
-        fatal(n->line, "Trait %s already defined", namestr(n));
+        fatal(n, "Trait %s already defined", namestr(n));
     if (gettype(st, n))
-        fatal(n->line, "Trait %s already defined as a type", namestr(n));
+        fatal(n, "Trait %s already defined as a type", namestr(n));
     td = xalloc(sizeof(Tydefn));
     td->line = n->line;
     td->name = n;
@@ -262,7 +262,7 @@ void puttrait(Stab *st, Node *n, Trait *c)
 void putimpl(Stab *st, Node *n)
 {
     if (getimpl(st, n))
-        fatal(n->line, "Trait %s already implemented over %s", namestr(n->impl.traitname), tystr(n->impl.type));
+        fatal(n, "Trait %s already implemented over %s", namestr(n->impl.traitname), tystr(n->impl.type));
     if (st->name)
         setns(n->impl.traitname, namestr(st->name));
     htput(st->impl, n, n);
@@ -286,7 +286,7 @@ void putns(Stab *st, Stab *scope)
 
     s = getns(st, scope->name);
     if (s)
-        fatal(scope->name->line, "Ns %s already defined", namestr(s->name));
+        fatal(scope->name, "Ns %s already defined", namestr(s->name));
     htput(st->ns, namestr(scope->name), scope);
 }
 

@@ -410,7 +410,7 @@ static void pickle(FILE *fd, Node *n)
     wrint(fd, n->line);
     switch (n->type) {
         case Nfile:
-            wrstr(fd, n->file.name);
+            wrstr(fd, n->file.files[0]);
             wrint(fd, n->file.nuses);
             for (i = 0; i < n->file.nuses; i++)
                 pickle(fd, n->file.uses[i]);
@@ -540,7 +540,7 @@ static Node *unpickle(FILE *fd)
     n->line = rdint(fd);
     switch (n->type) {
         case Nfile:
-            n->file.name = rdstr(fd);
+            lappend(&n->file.files, &n->file.nfiles, rdstr(fd));
             n->file.nuses = rdint(fd);
             n->file.uses = zalloc(sizeof(Node*)*n->file.nuses);
             for (i = 0; i < n->file.nuses; i++)
@@ -724,7 +724,7 @@ static void fixmappings(Stab *st)
             continue;
         old = htget(tydedup, t->name);
         if (old && !tyeq(t, old))
-            fatal(-1, "Duplicate definition of type %s", tystr(old));
+            lfatal(t->line, t->file, "Duplicate definition of type %s on %s:%d", tystr(old), file->file.files[old->file], old->line);
     }
     lfree(&typefixdest, &ntypefixdest);
     lfree(&typefixid, &ntypefixid);
@@ -858,7 +858,7 @@ void readuse(Node *use, Stab *st)
         }
     }
     if (!fd)
-        fatal(use->line, "Could not open %s", use->use.name);
+        fatal(use, "Could not open %s", use->use.name);
 
     if (!loaduse(fd, st))
         die("Could not load usefile %s", use->use.name);

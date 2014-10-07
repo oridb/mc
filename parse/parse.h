@@ -114,6 +114,7 @@ struct Type {
     Ty type;
     int tid;
     int line;
+    int file;
     Vis vis;
 
     int resolved;       /* Have we resolved the subtypes? Prevents infinite recursion. */
@@ -147,6 +148,7 @@ struct Type {
 
 struct Ucon {
     int line;   /* line declared on */
+    int file;   /* file index */
     size_t id;  /* unique id */
     int synth;  /* is it generated? */
     Node *name; /* ucon name */
@@ -169,11 +171,13 @@ struct Trait {
 
 struct Node {
     int line;
+    int fid;
     Ntype type;
     int nid;
     union {
         struct {
-            char  *name;
+            char  **files;
+            size_t nfiles;
             size_t nuses;
             Node **uses;
             size_t nlibdeps;
@@ -400,8 +404,10 @@ void *zalloc(size_t size);
 void *xalloc(size_t size);
 void *zrealloc(void *p, size_t oldsz, size_t size);
 void *xrealloc(void *p, size_t size);
-void  die(char *msg, ...) FATAL;
-void  fatal(int line, char *fmt, ...) FATAL;
+void die(char *msg, ...) FATAL;
+void fatal(Node *n, char *fmt, ...) FATAL;
+void lfatal(int line, int file, char *fmt, ...) FATAL;
+void lfatalv(int line, int file, char *fmt, va_list ap) FATAL;
 char *strdupn(char *s, size_t len);
 char *strjoin(char *u, char *v);
 void *memdup(void *mem, size_t len);

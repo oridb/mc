@@ -113,7 +113,7 @@ static void outnode(Node *n, FILE *fd, int depth)
     findentf(fd, depth, "%s.%zd@%i", nodestr(n->type), n->nid, n->line);
     switch(n->type) {
         case Nfile:
-            fprintf(fd, "(name = %s)\n", n->file.name);
+            fprintf(fd, "(name = %s)\n", n->file.files[0]);
             findentf(fd, depth + 1, "Globls:\n");
             outstab(n->file.globls, fd, depth + 2);
             findentf(fd, depth + 1, "Exports:\n");
