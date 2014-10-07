@@ -493,9 +493,11 @@ static void pickle(FILE *fd, Node *n)
             wrtype(fd, n->decl.type);
 
             /* symflags */
-            wrint(fd, n->decl.isconst);
-            wrint(fd, n->decl.isgeneric);
-            wrint(fd, n->decl.isextern);
+            wrbool(fd, n->decl.isconst);
+            wrbool(fd, n->decl.isgeneric);
+            wrbool(fd, n->decl.isextern);
+            wrbool(fd, n->decl.isnoret);
+            wrbool(fd, n->decl.ispkglocal);
 
             /* init */
             pickle(fd, n->decl.init);
@@ -628,9 +630,11 @@ static Node *unpickle(FILE *fd)
             rdtype(fd, &n->decl.type);
 
             /* symflags */
-            n->decl.isconst = rdint(fd);
-            n->decl.isgeneric = rdint(fd);
-            n->decl.isextern = rdint(fd);
+            n->decl.isconst = rdbool(fd);
+            n->decl.isgeneric = rdbool(fd);
+            n->decl.isextern = rdbool(fd);
+            n->decl.isnoret = rdbool(fd);
+            n->decl.ispkglocal = rdbool(fd);
 
             /* init */
             n->decl.init = unpickle(fd);

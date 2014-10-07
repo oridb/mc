@@ -861,6 +861,21 @@ static void fiximpls(Inferstate *st, Stab *s)
     free(k);
 }
 
+static void mergeattrs(Node *a, Node *b)
+{
+    if (!a || !b)
+        return;
+
+    a->decl.isglobl = a->decl.isglobl || b->decl.isglobl;
+    a->decl.isconst = a->decl.isconst || b->decl.isconst;
+    a->decl.isextern = a->decl.isextern || b->decl.isextern;
+    a->decl.ispkglocal = a->decl.ispkglocal || b->decl.ispkglocal;
+    a->decl.ishidden = a->decl.ishidden || b->decl.ishidden;
+    a->decl.isimport = a->decl.isimport || b->decl.isimport;
+    a->decl.isnoret = a->decl.isnoret || b->decl.isnoret;
+    a->decl.isexportinit = a->decl.isexportinit || b->decl.isexportinit;
+}
+
 /* The exports in package declarations
  * need to be merged with the declarations
  * at the global scope. Declarations in
@@ -970,7 +985,8 @@ static void mergeexports(Inferstate *st, Node *file)
                 fatal(nx->line, "Export %s double-defined on line %d", ctxstr(st, nx), ng->line);
             if (nx->decl.isgeneric != ng->decl.isgeneric)
                 fatal(nx->line, "Export %s defined with different genericness on line %d", ctxstr(st, nx), ng->line);
-            ng->decl.ispkglocal = nx->decl.ispkglocal;
+            mergeattrs(ng, nx);
+            mergeattrs(nx, ng);
             unify(st, nx, type(st, ng), type(st, nx));
         } else {
             if (!nx->decl.isextern && !nx->decl.isimport && !nx->decl.trait)

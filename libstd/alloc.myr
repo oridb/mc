@@ -391,6 +391,7 @@ const allocsz = {sz
 	else
 		-> align(sz, Pagesz)
 	;;
+	die("Size does not match any buckets")
 }
 
 /*
