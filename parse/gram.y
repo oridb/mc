@@ -327,8 +327,7 @@ pkgtydef: attrs tydef {
                     else
                         fatal($$.line, "invalid type attribute '%s'", $1.str[i]);
                 }
-
-          }
+            }
         | tydef {$$ = $1;}
         ;
 

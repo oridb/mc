@@ -1749,7 +1749,7 @@ static Func *simpfn(Simp *s, char *name, Node *dcl)
 
     cfg = mkcfg(dcl, s->stmts, s->nstmts);
     if (debugopt['C'])
-	check(cfg);
+       check(cfg);
     if (debugopt['t'] || debugopt['s'])
         dumpcfg(cfg, stdout);
 

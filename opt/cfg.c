@@ -45,6 +45,16 @@ static void label(Cfg *cfg, Node *lbl, Bb *bb)
     strlabel(cfg, lblstr(lbl), bb);
 }
 
+static int isnonretcall(Node *fn)
+{
+    Node *dcl;
+
+    if (exprop(fn) != Ovar)
+        return 0;
+    dcl = decls[fn->expr.did];
+    return dcl->decl.isnoret;
+}
+
 static int addnode(Cfg *cfg, Bb *bb, Node *n)
 {
     switch (exprop(n)) {
@@ -55,6 +65,10 @@ static int addnode(Cfg *cfg, Bb *bb, Node *n)
             lappend(&cfg->fixjmp, &cfg->nfixjmp, n);
             lappend(&cfg->fixblk, &cfg->nfixblk, bb);
             return 1;
+            break;
+        case Ocall:
+            lappend(&bb->nl, &bb->nnl, n);
+            return isnonretcall(n->expr.args[0]);
             break;
         default:
             lappend(&bb->nl, &bb->nnl, n);
