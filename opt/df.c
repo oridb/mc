@@ -46,7 +46,7 @@ static void checkpredret(Cfg *cfg, Bb *bb)
             checkpredret(cfg, pred);
         } else if (exprop(pred->nl[pred->nnl - 1]) != Oret) {
             dumpcfg(cfg, stdout);
-            fatal(pred->nl[pred->nnl-1]->line, "Reaches end of function without return\n");
+            fatal(pred->nl[pred->nnl-1], "Reaches end of function without return\n");
         }
     }
 }

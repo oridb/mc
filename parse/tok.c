@@ -110,7 +110,7 @@ static void eatcomment(void)
                 line++;
                 break;
             case End:
-                fatal(line, "File ended within comment starting at line %d", startln);
+                lfatal(line, 0, "File ended within comment starting at line %d", startln);
                 break;
         }
         if (depth == 0)
@@ -287,7 +287,7 @@ static void appendc(char **buf, size_t *len, size_t *sz, uint32_t c)
     else if (c < 0x200000)
         charlen = 4;
     else
-        fatal(line, "invalid utf character '\\u{%x}'", c);
+        lfatal(line, 0, "invalid utf character '\\u{%x}'", c);
 
     encode(charbuf, charlen, c);
     for (i = 0; i < charlen; i++)
@@ -316,7 +316,7 @@ static int hexval(char c)
         return c - 'A' + 10;
     else if (c >= '0' && c <= '9')
         return c - '0';
-    fatal(line, "passed non-hex value '%c' to where hex was expected", c);
+    lfatal(line, 0, "passed non-hex value '%c' to where hex was expected", c);
     return -1;
 }
 
@@ -328,16 +328,16 @@ static int32_t unichar(void)
 
     /* we've already seen the \u */
     if (next() != '{')
-        fatal(line, "\\u escape sequence without initial '{'");
+        lfatal(line, 0, "\\u escape sequence without initial '{'");
     v = 0;
     while (ishexval(peek())) {
         c = next();
         v = 16*v + hexval(c);
         if (v > 0x10FFFF)
-            fatal(line, "invalid codepoint for \\u escape sequence");
+            lfatal(line, 0, "invalid codepoint for \\u escape sequence");
     }
     if (next() != '}')
-        fatal(line, "\\u escape sequence without ending '}'");
+        lfatal(line, 0, "\\u escape sequence without ending '}'");
     return v;
 }
 
@@ -361,10 +361,10 @@ static int decode(char **buf, size_t *len, size_t *sz)
         case 'x': /* arbitrary hex */
             c1 = next();
             if (!isxdigit(c1))
-                fatal(line, "expected hex digit, got %c", c1);
+                lfatal(line, 0, "expected hex digit, got %c", c1);
             c2 = next();
             if (!isxdigit(c2))
-                fatal(line, "expected hex digit, got %c", c1);
+                lfatal(line, 0, "expected hex digit, got %c", c1);
             v = 16*hexval(c1) + hexval(c2);
             break;
         case 'n': v = '\n'; break;
@@ -376,7 +376,7 @@ static int decode(char **buf, size_t *len, size_t *sz)
         case 'v': v = '\v'; break;
         case '\\': v = '\\'; break;
         case '0': v = '\0'; break;
-        default: fatal(line, "unknown escape code \\%c", c);
+        default: lfatal(line, 0, "unknown escape code \\%c", c);
     }
     append(buf, len, sz, v);
     return v;
@@ -400,9 +400,9 @@ static Tok *strlit(void)
         if (c == '"')
             break;
         else if (c == End)
-            fatal(line, "Unexpected EOF within string");
+            lfatal(line, 0, "Unexpected EOF within string");
         else if (c == '\n')
-            fatal(line, "Newlines not allowed in strings");
+            lfatal(line, 0, "Newlines not allowed in strings");
         else if (c == '\\')
             decode(&buf, &len, &sz);
         else
@@ -428,14 +428,14 @@ static uint32_t readutf(char c, char **buf, size_t *buflen, size_t *sz) {
     else if ((c & 0xf8) == 0xf0)
         len = 4;
     else
-        fatal(line, "Invalid utf8 encoded character constant");
+        lfatal(line, 0, "Invalid utf8 encoded character constant");
 
     val = c & ((1 << (8 - len)) - 1);
     append(buf, buflen, sz, c);
     for (i = 1; i < len; i++) {
         c = next();
         if ((c & 0xc0) != 0x80)
-            fatal(line, "Invalid utf8 codepoint in character literal");
+            lfatal(line, 0, "Invalid utf8 codepoint in character literal");
         val = (val << 6) | (c & 0x3f);
         append(buf, buflen, sz, c);
     }
@@ -459,16 +459,16 @@ static Tok *charlit(void)
     val = 0;
     c = next();
     if (c == End)
-        fatal(line, "Unexpected EOF within char lit");
+        lfatal(line, 0, "Unexpected EOF within char lit");
     else if (c == '\n')
-        fatal(line, "Newlines not allowed in char lit");
+        lfatal(line, 0, "Newlines not allowed in char lit");
     else if (c == '\\')
         val = decode(&buf, &len, &sz);
     else
         val = readutf(c, &buf, &len, &sz);
     append(&buf, &len, &sz, '\0');
     if (next() != '\'')
-        fatal(line, "Character constant with multiple characters");
+        lfatal(line, 0, "Character constant with multiple characters");
 
     t = mktok(Tchrlit);
     t->chrval = val;
@@ -614,7 +614,7 @@ static Tok *oper(void)
                   break;
         default:
                   tt = Terror;
-                  fatal(line, "Junk character %c", c);
+                  lfatal(line, 0, "Junk character %c", c);
                   break;
     }
     return mktok(tt);
@@ -644,10 +644,10 @@ static Tok *number(int base)
         if (c == '.')
             isfloat = 1;
         else if (hexval(c) < 0 || hexval(c) > base)
-            fatal(line, "Integer digit '%c' outside of base %d", c, base);
+            lfatal(line, 0, "Integer digit '%c' outside of base %d", c, base);
         if (nbuf >= sizeof buf) {
             buf[nbuf-1] = '\0';
-            fatal(line, "number %s... too long to represent", buf);
+            lfatal(line, 0, "number %s... too long to represent", buf);
         }
         buf[nbuf++] = c;
     }
@@ -674,7 +674,7 @@ nextsuffix:
         switch (peek()) {
             case 'u':
                 if (unsignedval == 1)
-                    fatal(line, "Duplicate 'u' integer specifier");
+                    lfatal(line, 0, "Duplicate 'u' integer specifier");
                 next();
                 unsignedval = 1;
                 goto nextsuffix;
@@ -708,7 +708,7 @@ nextsuffix:
                 break;
             default:
                 if (unsignedval)
-                    fatal(line, "Unrecognized character int type specifier after 'u'");
+                    lfatal(line, 0, "Unrecognized character int type specifier after 'u'");
                 break;
         }
     }
@@ -780,7 +780,7 @@ static Tok *toknext()
     }
 
     if (!t || t->type == Terror)
-        fatal(line, "Unable to parse token starting with %c", c);
+        lfatal(line, 0, "Unable to parse token starting with %c", c);
     return t;
 }
 
@@ -802,7 +802,7 @@ void tokinit(char *file)
     while (1) {
         n = read(fd, fbuf + nread, 4096);
         if (n < 0)
-            fatal(errno, "Error reading file %s", file);
+            fatal(0, 0, "Error reading file %s", file);
         if (n == 0)
             break;
         if (!fbuf)

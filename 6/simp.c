@@ -1029,7 +1029,7 @@ static Node *simpcast(Simp *s, Node *val, Type *to)
                 /* ptr -> slice conversion is disallowed */
                 case Tyslice:
                     if (t->type == Typtr)
-                        fatal(val->line, "Bad cast from %s to %s",
+                        fatal(val, "Bad cast from %s to %s",
                               tystr(exprtype(val)), tystr(to));
                     r = slicebase(s, val, NULL);
                     break;
@@ -1047,13 +1047,13 @@ static Node *simpcast(Simp *s, Node *val, Type *to)
                     break;
                 case Tyflt32: case Tyflt64:
                     if (tybase(to)->type == Typtr)
-                        fatal(val->line, "Bad cast from %s to %s",
+                        fatal(val, "Bad cast from %s to %s",
                               tystr(exprtype(val)), tystr(to));
                     r = mkexpr(val->line, Oflt2int, rval(s, val, NULL), NULL);
                     r->expr.type = to;
                     break;
                 default:
-                    fatal(val->line, "Bad cast from %s to %s",
+                    fatal(val, "Bad cast from %s to %s",
                           tystr(exprtype(val)), tystr(to));
             }
             break;
@@ -1072,14 +1072,14 @@ static Node *simpcast(Simp *s, Node *val, Type *to)
                     r->expr.type = to;
                     break;
                 default:
-                    fatal(val->line, "Bad cast from %s to %s",
+                    fatal(val, "Bad cast from %s to %s",
                           tystr(exprtype(val)), tystr(to));
                     break;
             }
             break;
         /* no other destination types are handled as things stand */
         default:
-            fatal(val->line, "Bad cast from %s to %s",
+            fatal(val, "Bad cast from %s to %s",
                   tystr(exprtype(val)), tystr(to));
     }
     return r;
@@ -1338,7 +1338,7 @@ static Node *simplazy(Simp *s, Node *n)
 
 static Node *comparecomplex(Simp *s, Node *n, Op op)
 {
-    fatal(n->line, "Complex comparisons not yet supported\n");
+    fatal(n, "Complex comparisons not yet supported\n");
     return NULL;
 }
 
@@ -1369,7 +1369,7 @@ static Node *compare(Simp *s, Node *n, int fields)
     } else if (fields) {
         r = comparecomplex(s, n, exprop(n));
     } else {
-        fatal(n->line, "unsupported comparison on values");
+        fatal(n, "unsupported comparison on values");
     }
     return r;
 }
@@ -1573,12 +1573,12 @@ static Node *rval(Simp *s, Node *n, Node *dst)
             break;
         case Obreak:
             if (s->nloopexit == 0)
-                fatal(n->line, "trying to break when not in loop");
+                fatal(n, "trying to break when not in loop");
             jmp(s, s->loopexit[s->nloopexit - 1]);
             break;
         case Ocontinue:
             if (s->nloopstep == 0)
-                fatal(n->line, "trying to continue when not in loop");
+                fatal(n, "trying to continue when not in loop");
             jmp(s, s->loopstep[s->nloopstep - 1]);
             break;
         case Oeq: case One:

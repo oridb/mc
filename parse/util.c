@@ -63,15 +63,29 @@ void die(char *msg, ...)
     abort();
 }
 
-void fatal(int line, char *msg, ...)
+void fatal(Node *n, char *msg, ...)
 {
     va_list ap;
 
     va_start(ap, msg);
-    fprintf(stdout, "%s:%d: ", file->file.name, line);
+    lfatalv(n->line, n->fid, msg, ap);
+    va_end(ap);
+}
+
+void lfatal(int line, int file, char *msg, ...)
+{
+    va_list ap;
+
+    va_start(ap, msg);
+    lfatalv(line, file, msg, ap);
+    va_end(ap);
+}
+
+void lfatalv(int line, int fid, char *msg, va_list ap)
+{
+    fprintf(stdout, "%s:%d: ", file->file.files[fid], line);
     vfprintf(stdout, msg, ap);
     fprintf(stdout, "\n");
-    va_end(ap);
     exit(1);
 }
 

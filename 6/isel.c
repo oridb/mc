@@ -1111,10 +1111,10 @@ static size_t writepad(FILE *fd, size_t sz)
 static size_t getintlit(Node *n, char *failmsg)
 {
     if (exprop(n) != Olit)
-        fatal(n->line, "%s", failmsg);
+        fatal(n, "%s", failmsg);
     n = n->expr.args[0];
     if (n->lit.littype != Lint)
-        fatal(n->line, "%s", failmsg);
+        fatal(n, "%s", failmsg);
     return n->lit.intval;
 }
 
@@ -1132,7 +1132,7 @@ static size_t writeslice(FILE *fd, Htab *globls, Htab *strtab, Node *n)
      * pulled out, and we should have vars with their pseudo-decls in their
      * place */
     if (exprop(base) != Ovar || !base->expr.isconst)
-        fatal(base->line, "slice base is not a constant value");
+        fatal(base, "slice base is not a constant value");
     loval = getintlit(lo, "lower bound in slice is not constant literal");
     hival = getintlit(hi, "upper bound in slice is not constant literal");
     sz = tysize(tybase(exprtype(base))->sub[0]);
@@ -1225,6 +1225,8 @@ void genblob(FILE *fd, Node *blob, Htab *globls, Htab *strtab)
 void genasm(FILE *fd, Func *fn, Htab *globls, Htab *strtab)
 {
     Isel is = {0,};
+    Node *n;
+    Bb *bb;
     size_t i, j;
     char buf[128];
 
@@ -1247,10 +1249,12 @@ void genasm(FILE *fd, Func *fn, Htab *globls, Htab *strtab)
         is.curbb = is.bb[j];
         if (!is.bb[j])
             continue;
-        for (i = 0; i < fn->cfg->bb[j]->nnl; i++) {
+        bb = fn->cfg->bb[j];
+        for (i = 0; i < bb->nnl; i++) {
             /* put in a comment that says where this line comes from */
+            n = bb->nl[i];
             snprintf(buf, sizeof buf, "\n\t# bb = %ld, bbidx = %ld, %s:%d",
-                     j, i, file->file.name, fn->cfg->bb[j]->nl[i]->line);
+                     j, i, file->file.files[n->fid], n->line);
             g(&is, Ilbl, locstrlbl(buf), NULL);
             isel(&is, fn->cfg->bb[j]->nl[i]);
         }

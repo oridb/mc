@@ -169,7 +169,7 @@ static void fixup(Node *n)
                 if (n->expr.args[0]->name.ns)
                     ns = getns_str(ns, n->expr.args[0]->name.ns);
                 if (!ns)
-                    fatal(n->line, "No namespace %s\n", n->expr.args[0]->name.ns);
+                    fatal(n, "No namespace %s\n", n->expr.args[0]->name.ns);
                 d = getdcl(ns, n->expr.args[0]);
                 if (!d)
                     die("Missing decl %s", namestr(n->expr.args[0]));
@@ -401,7 +401,7 @@ Node *specializedcl(Node *n, Type *to, Node **name)
     if (d)
         return d;
     if (n->decl.trait)
-        fatal(n->line, "No trait implemented for for %s\n", namestr(n->decl.name));
+        fatal(n, "No trait implemented for for %s\n", namestr(n->decl.name));
     /* namespaced names need to be looked up in their correct
      * context. */
     if (n->decl.name->name.ns) {

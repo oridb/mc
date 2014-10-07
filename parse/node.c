@@ -34,7 +34,7 @@ Node *mkfile(char *name)
     Node *n;
 
     n = mknode(-1, Nfile);
-    n->file.name = strdup(name);
+    lappend(&n->file.files, &n->file.nfiles, strdup(name));
     return n;
 }
 
