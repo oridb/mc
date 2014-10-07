@@ -127,8 +127,18 @@ static void outnode(Node *n, FILE *fd, int depth)
             tr = "";
             if (n->decl.trait)
                 tr = namestr(n->decl.trait->name);
-            fprintf(fd, "(did = %zd, trait=%s, isconst = %d, isgeneric = %d, isextern = %d, vis = %d)\n",
-                    n->decl.did, tr, n->decl.isconst, n->decl.isgeneric, n->decl.isextern, n->decl.vis);
+            fprintf(fd, "(did = %zd, trait=%s, vis = %d)\n",
+                    n->decl.did, tr, n->decl.vis);
+            findentf(fd, depth + 1, "isglobl=%d\n", n->decl.isglobl);
+            findentf(fd, depth + 1, "isconst=%d\n", n->decl.isconst);
+            findentf(fd, depth + 1, "isgeneric=%d\n", n->decl.isgeneric);
+            findentf(fd, depth + 1, "isextern=%d\n", n->decl.isextern);
+            findentf(fd, depth + 1, "ispkglocal=%d\n", n->decl.ispkglocal);
+            findentf(fd, depth + 1, "ishidden=%d\n", n->decl.ishidden);
+            findentf(fd, depth + 1, "isimport=%d\n", n->decl.isimport);
+            findentf(fd, depth + 1, "isnoret=%d\n", n->decl.isnoret);
+            findentf(fd, depth + 1, "isexportinit=%d\n", n->decl.isexportinit);
+            findentf(fd, depth, ")\n");
             outsym(n, fd, depth + 1);
             outnode(n->decl.init, fd, depth + 1);
             break;
