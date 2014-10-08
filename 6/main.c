@@ -22,6 +22,7 @@
 Node *file;
 char debugopt[128];
 int writeasm;
+int extracheck;
 char *outfile;
 char **incpaths;
 size_t nincpaths;
@@ -30,6 +31,7 @@ static void usage(char *prog)
 {
     printf("%s [-h] [-o outfile] [-d[dbgopts]] inputs\n", prog);
     printf("\t-h\tPrint this help\n");
+    printf("\t-c\tEnable additional (possibly flaky) checking\n");
     printf("\t-S\tWrite out `input.s` when compiling\n");
     printf("\t-I path\tAdd 'path' to use search path\n");
     printf("\t-d\tPrint debug dumps. Recognized options: f r p i\n");
@@ -138,6 +140,8 @@ int main(int argc, char **argv)
                 usage(argv[0]);
                 exit(0);
                 break;
+            case 'c':
+                extracheck = 1;
             case 'd':
                 while (ctx.optarg && *ctx.optarg)
                     debugopt[*ctx.optarg++ & 0x7f]++;
