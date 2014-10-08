@@ -34,7 +34,6 @@ char* modenames[] = {
 
 /* forward decls */
 Loc *selexpr(Isel *s, Node *n);
-static size_t writeblob(FILE *fd, Htab *globls, Htab *strtab, Node *blob);
 
 /* used to decide which operator is appropriate
  * for implementing various conditional operators */
@@ -996,23 +995,6 @@ static void epilogue(Isel *s)
     g(s, Iret, NULL);
 }
 
-static void writeasm(FILE *fd, Isel *s, Func *fn)
-{
-    size_t i, j;
-
-    if (fn->isexport || !strcmp(fn->name, Symprefix "main"))
-        fprintf(fd, ".globl %s\n", fn->name);
-    fprintf(fd, "%s:\n", fn->name);
-    for (j = 0; j < s->cfg->nbb; j++) {
-        if (!s->bb[j])
-            continue;
-        for (i = 0; i < s->bb[j]->nlbls; i++)
-            fprintf(fd, "%s:\n", s->bb[j]->lbls[i]);
-        for (i = 0; i < s->bb[j]->ni; i++)
-            iprintf(fd, s->bb[j]->il[i]);
-    }
-}
-
 static Asmbb *mkasmbb(Bb *bb)
 {
     Asmbb *as;
@@ -1028,226 +1010,22 @@ static Asmbb *mkasmbb(Bb *bb)
     return as;
 }
 
-static void writebytes(FILE *fd, char *p, size_t sz)
+void selfunc(Isel *is, Func *fn, Htab *globls, Htab *strtab)
 {
-    size_t i;
-
-    for (i = 0; i < sz; i++) {
-        if (i % 60 == 0)
-            fprintf(fd, "\t.ascii \"");
-        if (p[i] == '"' || p[i] == '\\')
-            fprintf(fd, "\\");
-        if (isprint(p[i]))
-            fprintf(fd, "%c", p[i]);
-        else
-            fprintf(fd, "\\%03o", (uint8_t)p[i] & 0xff);
-        /* line wrapping for readability */
-        if (i % 60 == 59 || i == sz - 1)
-            fprintf(fd, "\"\n");
-    }
-}
-
-static size_t writelit(FILE *fd, Htab *strtab, Node *v, Type *ty)
-{
-    char buf[128];
-    char *lbl;
-    size_t sz;
-    char *intsz[] = {
-        [1] = ".byte",
-        [2] = ".short",
-        [4] = ".long",
-        [8] = ".quad"
-    };
-    union {
-        float fv;
-        double dv;
-        uint64_t qv;
-        uint32_t lv;
-    } u;
-
-    assert(v->type == Nlit);
-    sz = tysize(ty);
-    switch (v->lit.littype) {
-        case Lint:      fprintf(fd, "\t%s %lld\n", intsz[sz], v->lit.intval);    break;
-        case Lbool:     fprintf(fd, "\t.byte %d\n", v->lit.boolval);     break;
-        case Lchr:      fprintf(fd, "\t.long %d\n",  v->lit.chrval);     break;
-        case Lflt:
-                if (tybase(v->lit.type)->type == Tyflt32) {
-                    u.fv = v->lit.fltval;
-                    fprintf(fd, "\t.long 0x%" PRIx32 "\n", u.lv);
-                } else if (tybase(v->lit.type)->type == Tyflt64) {
-                    u.dv = v->lit.fltval;
-                    fprintf(fd, "\t.quad 0x%" PRIx64 "\n", u.qv);
-                }
-                break;
-        case Lstr:
-           if (hthas(strtab, v->lit.strval)) {
-               lbl = htget(strtab, v->lit.strval);
-           } else {
-               lbl = genlblstr(buf, sizeof buf);
-               htput(strtab, v->lit.strval, strdup(lbl));
-           }
-           fprintf(fd, "\t.quad %s\n", lbl);
-           fprintf(fd, "\t.quad %zd\n", strlen(v->lit.strval));
-           break;
-        case Lfunc:
-            die("Generating this shit ain't ready yet ");
-            break;
-        case Llbl:
-            die("Can't generate literal labels, ffs. They're not data.");
-            break;
-    }
-    return sz;
-}
-
-static size_t writepad(FILE *fd, size_t sz)
-{
-    assert((ssize_t)sz >= 0);
-    if (sz > 0)
-        fprintf(fd, "\t.fill %zd,1,0\n", sz);
-    return sz;
-}
-
-static size_t getintlit(Node *n, char *failmsg)
-{
-    if (exprop(n) != Olit)
-        fatal(n, "%s", failmsg);
-    n = n->expr.args[0];
-    if (n->lit.littype != Lint)
-        fatal(n, "%s", failmsg);
-    return n->lit.intval;
-}
-
-static size_t writeslice(FILE *fd, Htab *globls, Htab *strtab, Node *n)
-{
-    Node *base, *lo, *hi;
-    ssize_t loval, hival, sz;
-    char *lbl;
-
-    base = n->expr.args[0];
-    lo = n->expr.args[1];
-    hi = n->expr.args[2];
-
-    /* by this point, all slicing operations should have had their bases
-     * pulled out, and we should have vars with their pseudo-decls in their
-     * place */
-    if (exprop(base) != Ovar || !base->expr.isconst)
-        fatal(base, "slice base is not a constant value");
-    loval = getintlit(lo, "lower bound in slice is not constant literal");
-    hival = getintlit(hi, "upper bound in slice is not constant literal");
-    sz = tysize(tybase(exprtype(base))->sub[0]);
-
-    lbl = htget(globls, base);
-    fprintf(fd, "\t.quad %s + (%zd*%zd)\n", lbl, loval, sz);
-    fprintf(fd, "\t.quad %zd\n", (hival - loval));
-    return size(n);
-}
-
-static size_t writestruct(FILE *fd, Htab *globls, Htab *strtab, Node *n)
-{
-    Type *t;
-    Node **dcl;
-    int found;
-    size_t i, j;
-    size_t sz, pad, end;
-    size_t ndcl;
-
-    sz = 0;
-    t = tybase(exprtype(n));
-    assert(t->type == Tystruct);
-    dcl = t->sdecls;
-    ndcl = t->nmemb;
-    for (i = 0; i < ndcl; i++) {
-        pad = alignto(sz, decltype(dcl[i]));
-        sz += writepad(fd, pad - sz);
-        found = 0;
-        for (j = 0; j < n->expr.nargs; j++)
-            if (!strcmp(namestr(n->expr.args[j]->expr.idx), declname(dcl[i]))) {
-                found = 1;
-                sz += writeblob(fd, globls, strtab, n->expr.args[j]);
-            }
-        if (!found)
-            sz += writepad(fd, size(dcl[i]));
-    }
-    end = alignto(sz, t);
-    sz += writepad(fd, end - sz);
-    return sz;
-}
-
-static size_t writeblob(FILE *fd, Htab *globls, Htab *strtab, Node *n)
-{
-    size_t i, sz;
-
-    switch(exprop(n)) {
-        case Otup:
-        case Oarr:
-            sz = 0;
-            for (i = 0; i < n->expr.nargs; i++)
-                sz += writeblob(fd, globls, strtab, n->expr.args[i]);
-            break;
-        case Ostruct:
-            sz = writestruct(fd, globls, strtab, n);
-            break;
-        case Olit:
-            sz = writelit(fd, strtab, n->expr.args[0], exprtype(n));
-            break;
-        case Oslice:
-            sz = writeslice(fd, globls, strtab, n);
-            break;
-        default:
-            dump(n, stdout);
-            die("Nonliteral initializer for global");
-            break;
-    }
-    return sz;
-}
-
-void genblob(FILE *fd, Node *blob, Htab *globls, Htab *strtab)
-{
-    char *lbl;
-
-    /* lits and such also get wrapped in decls */
-    assert(blob->type == Ndecl);
-
-    lbl = htget(globls, blob);
-    if (blob->decl.vis != Visintern)
-        fprintf(fd, ".globl %s\n", lbl);
-    fprintf(fd, "%s:\n", lbl);
-    if (blob->decl.init)
-        writeblob(fd, globls, strtab, blob->decl.init);
-    else
-        writepad(fd, size(blob));
-}
-
-/* genasm requires all nodes in 'nl' to map cleanly to operations that are
- * natively supported, as promised in the output of reduce().  No 64-bit
- * operations on x32, no structures, and so on. */
-void genasm(FILE *fd, Func *fn, Htab *globls, Htab *strtab)
-{
-    Isel is = {0,};
     Node *n;
     Bb *bb;
     size_t i, j;
     char buf[128];
 
-    is.reglocs = mkht(varhash, vareq);
-    is.stkoff = fn->stkoff;
-    is.globls = globls;
-    is.ret = fn->ret;
-    is.cfg = fn->cfg;
-    /* ensure that all physical registers have a loc created, so we
-     * don't get any surprises referring to them in the allocator */
-    for (i = 0; i < Nreg; i++)
-        locphysreg(i);
 
     for (i = 0; i < fn->cfg->nbb; i++)
-        lappend(&is.bb, &is.nbb, mkasmbb(fn->cfg->bb[i]));
+        lappend(&is->bb, &is->nbb, mkasmbb(fn->cfg->bb[i]));
 
-    is.curbb = is.bb[0];
-    prologue(&is, fn->stksz);
+    is->curbb = is->bb[0];
+    prologue(is, fn->stksz);
     for (j = 0; j < fn->cfg->nbb - 1; j++) {
-        is.curbb = is.bb[j];
-        if (!is.bb[j])
+        is->curbb = is->bb[j];
+        if (!is->bb[j])
             continue;
         bb = fn->cfg->bb[j];
         for (i = 0; i < bb->nnl; i++) {
@@ -1255,27 +1033,11 @@ void genasm(FILE *fd, Func *fn, Htab *globls, Htab *strtab)
             n = bb->nl[i];
             snprintf(buf, sizeof buf, "\n\t# bb = %ld, bbidx = %ld, %s:%d",
                      j, i, file->file.files[n->loc.file], n->loc.line);
-            g(&is, Ilbl, locstrlbl(buf), NULL);
-            isel(&is, fn->cfg->bb[j]->nl[i]);
+            g(is, Ilbl, locstrlbl(buf), NULL);
+            isel(is, fn->cfg->bb[j]->nl[i]);
         }
     }
-    is.curbb = is.bb[is.nbb - 1];
-    epilogue(&is);
-    regalloc(&is);
-
-    if (debugopt['i'])
-        writeasm(stdout, &is, fn);
-    writeasm(fd, &is, fn);
-}
-
-void genstrings(FILE *fd, Htab *strtab)
-{
-    void **k;
-    size_t i, nk;
-
-    k = htkeys(strtab, &nk);
-    for (i = 0; i < nk; i++) {
-        fprintf(fd, "%s:\n", (char*)htget(strtab, k[i]));
-        writebytes(fd, k[i], strlen(k[i]));
-    }
+    is->curbb = is->bb[is->nbb - 1];
+    epilogue(is);
+    regalloc(is);
 }
