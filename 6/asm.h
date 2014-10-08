@@ -220,11 +220,10 @@ Loc *coreg(Reg r, Mode m);
 int isfloatmode(Mode m);
 int isintmode(Mode m);
 
-void locprint(FILE *fd, Loc *l, char spec);
-void iprintf(FILE *fd, Insn *insn);
-
 /* emitting instructions */
 Insn *mkinsn(AsmOp op, ...);
+void iprintf(FILE *fd, Insn *insn);
+void locprint(FILE *fd, Loc *l, char spec);
 
 /* register allocation */
 extern char *regnames[]; /* name table */
