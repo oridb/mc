@@ -107,7 +107,7 @@ static Node *add(Node *a, Node *b)
     Node *n;
 
     assert(size(a) == size(b));
-    n = mkexpr(a->line, Oadd, a, b, NULL);
+    n = mkexpr(a->loc, Oadd, a, b, NULL);
     n->expr.type = a->expr.type;
     return n;
 }
@@ -116,7 +116,7 @@ static Node *addk(Node *n, uvlong v)
 {
     Node *k;
 
-    k = mkintlit(n->line, v);
+    k = mkintlit(n->loc, v);
     k->expr.type = exprtype(n);
     return add(n, k);
 }
@@ -125,7 +125,7 @@ static Node *sub(Node *a, Node *b)
 {
     Node *n;
 
-    n = mkexpr(a->line, Osub, a, b, NULL);
+    n = mkexpr(a->loc, Osub, a, b, NULL);
     n->expr.type = a->expr.type;
     return n;
 }
@@ -134,7 +134,7 @@ static Node *subk(Node *n, uvlong v)
 {
     Node *k;
 
-    k = mkintlit(n->line, v);
+    k = mkintlit(n->loc, v);
     k->expr.type = exprtype(n);
     return sub(n, k);
 }
@@ -143,7 +143,7 @@ static Node *mul(Node *a, Node *b)
 {
     Node *n;
 
-    n = mkexpr(a->line, Omul, a, b, NULL);
+    n = mkexpr(a->loc, Omul, a, b, NULL);
     n->expr.type = a->expr.type;
     return n;
 }
@@ -209,13 +209,13 @@ static Node *addr(Simp *s, Node *a, Type *bt)
 {
     Node *n;
 
-    n = mkexpr(a->line, Oaddr, a, NULL);
+    n = mkexpr(a->loc, Oaddr, a, NULL);
     if (!addressable(s, a))
             forcelocal(s, a);
     if (!bt)
-        n->expr.type = mktyptr(a->line, a->expr.type);
+        n->expr.type = mktyptr(a->loc, a->expr.type);
     else
-        n->expr.type = mktyptr(a->line, bt);
+        n->expr.type = mktyptr(a->loc, bt);
     return n;
 }
 
@@ -224,7 +224,7 @@ static Node *load(Node *a)
     Node *n;
 
     assert(a->expr.type->type == Typtr);
-    n = mkexpr(a->line, Oderef, a, NULL);
+    n = mkexpr(a->loc, Oderef, a, NULL);
     n->expr.type = base(a->expr.type);
     return n;
 }
@@ -234,7 +234,7 @@ static Node *deref(Node *a, Type *t)
     Node *n;
 
     assert(a->expr.type->type == Typtr);
-    n = mkexpr(a->line, Oderef, a, NULL);
+    n = mkexpr(a->loc, Oderef, a, NULL);
     if (t)
         n->expr.type = t;
     else
@@ -248,25 +248,25 @@ static Node *set(Node *a, Node *b)
 
     assert(a != NULL && b != NULL);
     assert(exprop(a) == Ovar || exprop(a) == Oderef);
-    n = mkexpr(a->line, Oset, a, b, NULL);
+    n = mkexpr(a->loc, Oset, a, b, NULL);
     n->expr.type = exprtype(a);
     return n;
 }
 
-static Node *disp(int line, uint v)
+static Node *disp(Srcloc loc, uint v)
 {
     Node *n;
 
-    n = mkintlit(line, v);
+    n = mkintlit(loc, v);
     n->expr.type = tyintptr;
     return n;
 }
 
-static Node *word(int line, uint v)
+static Node *word(Srcloc loc, uint v)
 {
     Node *n;
 
-    n = mkintlit(line, v);
+    n = mkintlit(loc, v);
     n->expr.type = tyword;
     return n;
 }
@@ -426,9 +426,9 @@ static Node *gentemp(Simp *simp, Node *e, Type *ty, Node **dcl)
     Node *t, *r, *n;
 
     snprintf(buf, 128, ".t%d", nexttmp++);
-    n = mkname(e->line, buf);
-    t = mkdecl(e->line, n, ty);
-    r = mkexpr(e->line, Ovar, n, NULL);
+    n = mkname(e->loc, buf);
+    t = mkdecl(e->loc, n, ty);
+    r = mkexpr(e->loc, Ovar, n, NULL);
     r->expr.type = t->decl.type;
     r->expr.did = t->decl.did;
     if (dcl)
@@ -449,14 +449,14 @@ static Node *temp(Simp *simp, Node *e)
 
 static void jmp(Simp *s, Node *lbl)
 {
-    append(s, mkexpr(lbl->line, Ojmp, lbl, NULL));
+    append(s, mkexpr(lbl->loc, Ojmp, lbl, NULL));
 }
 
 static void cjmp(Simp *s, Node *cond, Node *iftrue, Node *iffalse)
 {
     Node *jmp;
 
-    jmp = mkexpr(cond->line, Ocjmp, cond, iftrue, iffalse, NULL);
+    jmp = mkexpr(cond->loc, Ocjmp, cond, iftrue, iffalse, NULL);
     append(s, jmp);
 }
 
@@ -490,12 +490,12 @@ static void simpif(Simp *s, Node *n, Node *exit)
     Node *l1, *l2, *l3;
     Node *iftrue, *iffalse;
 
-    l1 = genlbl(n->line);
-    l2 = genlbl(n->line);
+    l1 = genlbl(n->loc);
+    l2 = genlbl(n->loc);
     if (exit)
         l3 = exit;
     else
-        l3 = genlbl(n->line);
+        l3 = genlbl(n->loc);
 
     iftrue = n->ifstmt.iftrue;
     iffalse = n->ifstmt.iffalse;
@@ -537,10 +537,10 @@ static void simploop(Simp *s, Node *n)
     Node *lcond;
     Node *lstep;
 
-    lbody = genlbl(n->line);
-    lcond = genlbl(n->line);
-    lstep = genlbl(n->line);
-    lend = genlbl(n->line);
+    lbody = genlbl(n->loc);
+    lcond = genlbl(n->loc);
+    lstep = genlbl(n->loc);
+    lend = genlbl(n->loc);
 
     lappend(&s->loopstep, &s->nloopstep, lstep);
     lappend(&s->loopexit, &s->nloopexit, lend);
@@ -583,16 +583,16 @@ static void simpiter(Simp *s, Node *n)
     Node *idx, *len, *dcl, *seq, *val, *done;
     Node *zero;
 
-    lbody = genlbl(n->line);
-    lstep = genlbl(n->line);
-    lcond = genlbl(n->line);
-    lmatch = genlbl(n->line);
-    lend = genlbl(n->line);
+    lbody = genlbl(n->loc);
+    lstep = genlbl(n->loc);
+    lcond = genlbl(n->loc);
+    lmatch = genlbl(n->loc);
+    lend = genlbl(n->loc);
 
     lappend(&s->loopstep, &s->nloopstep, lstep);
     lappend(&s->loopexit, &s->nloopexit, lend);
 
-    zero = mkintlit(n->line, 0);
+    zero = mkintlit(n->loc, 0);
     zero->expr.type = tyintptr;
 
     seq = rval(s, n->iterstmt.seq, NULL);
@@ -611,7 +611,7 @@ static void simpiter(Simp *s, Node *n)
     /* condition */
     simp(s, lcond);
     len = seqlen(s, seq, tyintptr);
-    done = mkexpr(n->line, Olt, idx, len, NULL);
+    done = mkexpr(n->loc, Olt, idx, len, NULL);
     cjmp(s, done, lmatch, lend);
     simp(s, lmatch);
     val = load(idxaddr(s, seq, idx));
@@ -645,10 +645,10 @@ static Node *uconid(Simp *s, Node *n)
     Ucon *uc;
 
     if (exprop(n) != Oucon)
-        return load(addr(s, n, mktype(n->line, Tyuint)));
+        return load(addr(s, n, mktype(n->loc, Tyuint)));
 
     uc = finducon(n);
-    return word(uc->line, uc->id);
+    return word(uc->loc, uc->id);
 }
 
 static Node *patval(Simp *s, Node *n, Type *t)
@@ -694,24 +694,24 @@ static void matchpattern(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, N
             str = lit->lit.strval;
 
             /* load slice length */
-            next = genlbl(pat->line);
+            next = genlbl(pat->loc);
             x = slicelen(s, val);
             len = strlen(str);
-            y = mkintlit(lit->line, len);
+            y = mkintlit(lit->loc, len);
             y->expr.type = tyintptr;
-            v = mkexpr(pat->line, Oeq, x, y, NULL);
+            v = mkexpr(pat->loc, Oeq, x, y, NULL);
             cjmp(s, v, next, iffalse);
             append(s, next);
 
             for (i = 0; i < len; i++) {
-                next = genlbl(pat->line);
-                x = mkintlit(pat->line, str[i]);
-                x->expr.type = mktype(pat->line, Tybyte);
-                idx = mkintlit(pat->line, i);
+                next = genlbl(pat->loc);
+                x = mkintlit(pat->loc, str[i]);
+                x->expr.type = mktype(pat->loc, Tybyte);
+                idx = mkintlit(pat->loc, i);
                 idx->expr.type = tyintptr;
                 y = load(idxaddr(s, val, idx));
-                v = mkexpr(pat->line, Oeq, x, y, NULL);
-                v->expr.type = mktype(pat->line, Tybool);
+                v = mkexpr(pat->loc, Oeq, x, y, NULL);
+                v->expr.type = mktype(pat->loc, Tybool);
                 cjmp(s, v, next, iffalse);
                 append(s, next);
             }
@@ -723,8 +723,8 @@ static void matchpattern(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, N
         case Tyint64: case Tyuint64: case Tylong:  case Tyulong:
         case Tyflt32: case Tyflt64:
         case Typtr: case Tyfunc:
-            v = mkexpr(pat->line, Oeq, pat, val, NULL);
-            v->expr.type = mktype(pat->line, Tybool);
+            v = mkexpr(pat->loc, Oeq, pat, val, NULL);
+            v->expr.type = mktype(pat->loc, Tybool);
             cjmp(s, v, iftrue, iffalse);
             break;
         /* We got lucky. The structure of tuple, array, and struct literals
@@ -735,7 +735,7 @@ static void matchpattern(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, N
             off = 0;
             for (i = 0; i < pat->expr.nargs; i++) {
                 off = alignto(off, exprtype(patarg[i]));
-                next = genlbl(pat->line);
+                next = genlbl(pat->loc);
                 v = load(addk(addr(s, val, exprtype(patarg[i])), off));
                 matchpattern(s, patarg[i], v, exprtype(patarg[i]), next, iffalse);
                 append(s, next);
@@ -747,7 +747,7 @@ static void matchpattern(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, N
             patarg = pat->expr.args;
             for (i = 0; i < pat->expr.nargs; i++) {
                 off = offset(pat, patarg[i]->expr.idx);
-                next = genlbl(pat->line);
+                next = genlbl(pat->loc);
                 v = load(addk(addr(s, val, exprtype(patarg[i])), off));
                 matchpattern(s, patarg[i], v, exprtype(patarg[i]), next, iffalse);
                 append(s, next);
@@ -758,11 +758,11 @@ static void matchpattern(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, N
             if (!uc)
                 uc = finducon(val);
 
-            deeper = genlbl(pat->line);
+            deeper = genlbl(pat->loc);
 
             x = uconid(s, pat);
             y = uconid(s, val);
-            v = mkexpr(pat->line, Oeq, x, y, NULL);
+            v = mkexpr(pat->loc, Oeq, x, y, NULL);
             v->expr.type = tyintptr;
             cjmp(s, v, deeper, iffalse);
             append(s, deeper);
@@ -782,7 +782,7 @@ static void simpmatch(Simp *s, Node *n)
     Node *m;
     size_t i;
 
-    end = genlbl(n->line);
+    end = genlbl(n->loc);
     val = temp(s, n->matchstmt.val);
     tmp = rval(s, n->matchstmt.val, val);
     if (val != tmp)
@@ -791,8 +791,8 @@ static void simpmatch(Simp *s, Node *n)
         m = n->matchstmt.matches[i];
 
         /* check pattern */
-        cur = genlbl(n->line);
-        next = genlbl(n->line);
+        cur = genlbl(n->loc);
+        next = genlbl(n->loc);
         matchpattern(s, m->match.pat, val, val->expr.type, cur, next);
 
         /* do the action if it matches */
@@ -821,9 +821,9 @@ static Node *simpblob(Simp *s, Node *blob, Node ***l, size_t *nl)
     Node *n, *d, *r;
     char lbl[128];
 
-    n = mkname(blob->line, genlblstr(lbl, 128));
-    d = mkdecl(blob->line, n, blob->expr.type);
-    r = mkexpr(blob->line, Ovar, n, NULL);
+    n = mkname(blob->loc, genlblstr(lbl, 128));
+    d = mkdecl(blob->loc, n, blob->expr.type);
+    r = mkexpr(blob->loc, Ovar, n, NULL);
 
     d->decl.init = blob;
     d->decl.type = blob->expr.type;
@@ -843,9 +843,9 @@ static Node *ptrsized(Simp *s, Node *v)
     if (size(v) == Ptrsz)
         return v;
     else if (size(v) < Ptrsz)
-        v = mkexpr(v->line, Ozwiden, v, NULL);
+        v = mkexpr(v->loc, Ozwiden, v, NULL);
     else if (size(v) > Ptrsz)
-        v = mkexpr(v->line, Otrunc, v, NULL);
+        v = mkexpr(v->loc, Otrunc, v, NULL);
     v->expr.type = tyintptr;
     return v;
 }
@@ -863,9 +863,9 @@ static Node *membaddr(Simp *s, Node *n)
     } else {
         t = addr(s, lval(s, args[0]), exprtype(n));
     }
-    u = disp(n->line, offset(args[0], args[1]));
+    u = disp(n->loc, offset(args[0], args[1]));
     r = add(t, u);
-    r->expr.type = mktyptr(n->line, n->expr.type);
+    r->expr.type = mktyptr(n->loc, n->expr.type);
     return r;
 }
 
@@ -875,12 +875,12 @@ static void checkidx(Simp *s, Node *len, Node *idx)
     Node *ok, *fail;
 
     /* create expressions */
-    cmp = mkexpr(idx->line, Olt, ptrsized(s, idx), ptrsized(s, len), NULL);
-    cmp->expr.type = mktype(len->line, Tybool);
-    ok = genlbl(len->line);
-    fail = genlbl(len->line);
-    die = mkexpr(idx->line, Ocall, abortfunc, NULL);
-    die->expr.type = mktype(len->line, Tyvoid);
+    cmp = mkexpr(idx->loc, Olt, ptrsized(s, idx), ptrsized(s, len), NULL);
+    cmp->expr.type = mktype(len->loc, Tybool);
+    ok = genlbl(len->loc);
+    fail = genlbl(len->loc);
+    die = mkexpr(idx->loc, Ocall, abortfunc, NULL);
+    die->expr.type = mktype(len->loc, Tyvoid);
 
     /* insert them */
     cjmp(s, cmp, ok, fail);
@@ -902,7 +902,7 @@ static Node *idxaddr(Simp *s, Node *seq, Node *idx)
         t = addr(s, a, ty);
         w = exprtype(a)->asize;
     } else if (seq->expr.type->type == Tyslice) {
-        t = load(addr(s, a, mktyptr(seq->line, ty)));
+        t = load(addr(s, a, mktyptr(seq->loc, ty)));
         w = slicelen(s, a);
     } else {
         die("Can't index type %s\n", tystr(seq->expr.type));
@@ -912,7 +912,7 @@ static Node *idxaddr(Simp *s, Node *seq, Node *idx)
     u = ptrsized(s, u);
     checkidx(s, w, u);
     sz = tysize(ty);
-    v = mul(u, disp(seq->line, sz));
+    v = mul(u, disp(seq->loc, sz));
     r = add(t, v);
     return r;
 }
@@ -929,14 +929,14 @@ static Node *slicebase(Simp *s, Node *n, Node *off)
     switch (ty->type) {
         case Typtr:     u = t; break;
         case Tyarray:   u = addr(s, t, base(exprtype(n))); break;
-        case Tyslice:   u = load(addr(s, t, mktyptr(n->line, base(exprtype(n))))); break;
+        case Tyslice:   u = load(addr(s, t, mktyptr(n->loc, base(exprtype(n))))); break;
         default: die("Unslicable type %s", tystr(n->expr.type));
     }
     /* safe: all types we allow here have a sub[0] that we want to grab */
     if (off) {
       off = ptrsized(s, rval(s, off, NULL));
       sz = tysize(n->expr.type->sub[0]);
-      v = mul(off, disp(n->line, sz));
+      v = mul(off, disp(n->loc, sz));
       return add(u, v);
     } else {
       return u;
@@ -969,13 +969,13 @@ static void simpcond(Simp *s, Node *n, Node *ltrue, Node *lfalse)
     args = n->expr.args;
     switch (exprop(n)) {
         case Oland:
-            lnext = genlbl(n->line);
+            lnext = genlbl(n->loc);
             simpcond(s, args[0], lnext, lfalse);
             append(s, lnext);
             simpcond(s, args[1], ltrue, lfalse);
             break;
         case Olor:
-            lnext = genlbl(n->line);
+            lnext = genlbl(n->loc);
             simpcond(s, args[0], ltrue, lnext);
             append(s, lnext);
             simpcond(s, args[1], ltrue, lfalse);
@@ -999,12 +999,12 @@ static Node *intconvert(Simp *s, Node *from, Type *to, int issigned)
     tosz = tysize(to);
     r = rval(s, from, NULL);
     if (fromsz > tosz) {
-        r = mkexpr(from->line, Otrunc, r, NULL);
+        r = mkexpr(from->loc, Otrunc, r, NULL);
     } else if (tosz > fromsz) {
         if (issigned)
-            r = mkexpr(from->line, Oswiden, r, NULL);
+            r = mkexpr(from->loc, Oswiden, r, NULL);
         else
-            r = mkexpr(from->line, Ozwiden, r, NULL);
+            r = mkexpr(from->loc, Ozwiden, r, NULL);
     }
     r->expr.type = to;
     return r;
@@ -1049,7 +1049,7 @@ static Node *simpcast(Simp *s, Node *val, Type *to)
                     if (tybase(to)->type == Typtr)
                         fatal(val, "Bad cast from %s to %s",
                               tystr(exprtype(val)), tystr(to));
-                    r = mkexpr(val->line, Oflt2int, rval(s, val, NULL), NULL);
+                    r = mkexpr(val->loc, Oflt2int, rval(s, val, NULL), NULL);
                     r->expr.type = to;
                     break;
                 default:
@@ -1064,11 +1064,11 @@ static Node *simpcast(Simp *s, Node *val, Type *to)
                 case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint64:
                 case Tyint: case Tyuint: case Tylong: case Tyulong:
                 case Tychar: case Tybyte:
-                    r = mkexpr(val->line, Oflt2int, rval(s, val, NULL), NULL);
+                    r = mkexpr(val->loc, Oflt2int, rval(s, val, NULL), NULL);
                     r->expr.type = to;
                     break;
                 case Tyflt32: case Tyflt64:
-                    r = mkexpr(val->line, Oflt2flt, rval(s, val, NULL), NULL);
+                    r = mkexpr(val->loc, Oflt2flt, rval(s, val, NULL), NULL);
                     r->expr.type = to;
                     break;
                 default:
@@ -1106,8 +1106,8 @@ static Node *simpslice(Simp *s, Node *n, Node *dst)
     /* we can be storing through a pointer, in the case
      * of '*foo = bar'. */
     if (tybase(exprtype(t))->type == Typtr) {
-        stbase = set(simpcast(s, t, mktyptr(t->line, tyintptr)), base);
-        sz = addk(simpcast(s, t, mktyptr(t->line, tyintptr)), Ptrsz);
+        stbase = set(simpcast(s, t, mktyptr(t->loc, tyintptr)), base);
+        sz = addk(simpcast(s, t, mktyptr(t->loc, tyintptr)), Ptrsz);
     } else {
         stbase = set(deref(addr(s, t, tyintptr), NULL), base);
         sz = addk(addr(s, t, tyintptr), Ptrsz);
@@ -1153,11 +1153,11 @@ static Node *destructure(Simp *s, Node *lhs, Node *rhs)
     for (i = 0; i < lhs->expr.nargs; i++) {
         lv = lval(s, args[i]);
         off = alignto(off, exprtype(lv));
-        prv = add(addr(s, rhs, exprtype(args[i])), disp(rhs->line, off));
+        prv = add(addr(s, rhs, exprtype(args[i])), disp(rhs->loc, off));
         if (stacknode(args[i])) {
-            sz = disp(lhs->line, size(lv));
+            sz = disp(lhs->loc, size(lv));
             plv = addr(s, lv, exprtype(lv));
-            stor = mkexpr(lhs->line, Oblit, plv, prv, sz, NULL);
+            stor = mkexpr(lhs->loc, Oblit, plv, prv, sz, NULL);
         } else {
             stor = set(lv, load(prv));
         }
@@ -1185,8 +1185,8 @@ static Node *assign(Simp *s, Node *lhs, Node *rhs)
         } else if (stacknode(lhs)) {
             t = addr(s, t, exprtype(lhs));
             u = addr(s, u, exprtype(lhs));
-            v = disp(lhs->line, size(lhs));
-            r = mkexpr(lhs->line, Oblit, t, u, v, NULL);
+            v = disp(lhs->loc, size(lhs));
+            r = mkexpr(lhs->loc, Oblit, t, u, v, NULL);
         } else {
             r = set(t, u);
         }
@@ -1201,12 +1201,12 @@ static Node *assignat(Simp *s, Node *r, size_t off, Node *val)
     Node *st;
 
     val = rval(s, val, NULL);
-    pdst = add(r, disp(val->line, off));
+    pdst = add(r, disp(val->loc, off));
 
     if (stacknode(val)) {
-        sz = disp(val->line, size(val));
+        sz = disp(val->loc, size(val));
         pval = addr(s, val, exprtype(val));
-        st = mkexpr(val->line, Oblit, pdst, pval, sz, NULL);
+        st = mkexpr(val->loc, Oblit, pdst, pval, sz, NULL);
     } else {
         st = set(deref(pdst, val->expr.type), val);
     }
@@ -1264,9 +1264,9 @@ static Node *simpucon(Simp *s, Node *n, Node *dst)
         tmp = temp(s, n);
 
     /* Set the tag on the ucon */
-    u = addr(s, tmp, mktype(n->line, Tyuint));
-    tag = mkintlit(n->line, uc->id);
-    tag->expr.type = mktype(n->line, Tyuint);
+    u = addr(s, tmp, mktype(n->loc, Tyuint));
+    tag = mkintlit(n->loc, uc->id);
+    tag->expr.type = mktype(n->loc, Tyuint);
     append(s, set(deref(u, tyword), tag));
 
 
@@ -1277,8 +1277,8 @@ static Node *simpucon(Simp *s, Node *n, Node *dst)
     u = addk(u, Wordsz);
     if (stacktype(uc->etype)) {
         elt = addr(s, elt, uc->etype);
-        sz = disp(n->line, tysize(uc->etype));
-        r = mkexpr(n->line, Oblit, u, elt, sz, NULL);
+        sz = disp(n->loc, tysize(uc->etype));
+        r = mkexpr(n->loc, Oblit, u, elt, sz, NULL);
     } else {
         r = set(deref(u, uc->etype), elt);
     }
@@ -1308,25 +1308,25 @@ static Node *simplazy(Simp *s, Node *n)
 
     /* set up temps and labels */
     r = temp(s, n);
-    ltrue = genlbl(n->line);
-    lfalse = genlbl(n->line);
-    ldone = genlbl(n->line);
+    ltrue = genlbl(n->loc);
+    lfalse = genlbl(n->loc);
+    ldone = genlbl(n->loc);
 
     /* simp the conditional */
     simpcond(s, n, ltrue, lfalse);
 
     /* if true */
     append(s, ltrue);
-    u = mkexpr(n->line, Olit, mkbool(n->line, 1), NULL);
-    u->expr.type = mktype(n->line, Tybool);
+    u = mkexpr(n->loc, Olit, mkbool(n->loc, 1), NULL);
+    u->expr.type = mktype(n->loc, Tybool);
     t = set(r, u);
     append(s, t);
     jmp(s, ldone);
 
     /* if false */
     append(s, lfalse);
-    u = mkexpr(n->line, Olit, mkbool(n->line, 0), NULL);
-    u->expr.type = mktype(n->line, Tybool);
+    u = mkexpr(n->loc, Olit, mkbool(n->loc, 0), NULL);
+    u->expr.type = mktype(n->loc, Tybool);
     t = set(r, u);
     append(s, t);
     jmp(s, ldone);
@@ -1401,7 +1401,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
             r = simplazy(s, n);
             break;
         case Osize:
-            r = mkintlit(n->line, size(args[0]));
+            r = mkintlit(n->loc, size(args[0]));
             r->expr.type = exprtype(n);
             break;
         case Oslice:
@@ -1459,7 +1459,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
             assert(fusedmap[exprop(n)] != Obad);
             u = rval(s, args[0], NULL);
             v = rval(s, args[1], NULL);
-            v = mkexpr(n->line, fusedmap[exprop(n)], u, v, NULL);
+            v = mkexpr(n->loc, fusedmap[exprop(n)], u, v, NULL);
             v->expr.type = u->expr.type;
             r = set(u, v);
             break;
@@ -1520,8 +1520,8 @@ static Node *rval(Simp *s, Node *n, Node *dst)
             if (s->isbigret) {
                 t = rval(s, args[0], NULL);
                 t = addr(s, t, exprtype(args[0]));
-                u = disp(n->line, size(args[0]));
-                v = mkexpr(n->line, Oblit, s->ret, t, u, NULL);
+                u = disp(n->loc, size(args[0]));
+                v = mkexpr(n->loc, Oblit, s->ret, t, u, NULL);
                 append(s, v);
             } else if (n->expr.nargs && n->expr.args[0]) {
                 t = s->ret;
@@ -1532,7 +1532,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
             for (i = 0; i < s->nqueue; i++)
                 append(s, s->incqueue[i]);
             lfree(&s->incqueue, &s->nqueue);
-            append(s, mkexpr(n->line, Oret, NULL));
+            append(s, mkexpr(n->loc, Oret, NULL));
             break;
         case Oasn:
             r = assign(s, args[0], args[1]);
@@ -1560,12 +1560,12 @@ static Node *rval(Simp *s, Node *n, Node *dst)
             break;
         case Oneg:
             if (istyfloat(exprtype(n))) {
-                t =mkfloat(n->line, -1.0); 
-                u = mkexpr(n->line, Olit, t, NULL);
+                t =mkfloat(n->loc, -1.0); 
+                u = mkexpr(n->loc, Olit, t, NULL);
                 t->lit.type = n->expr.type;
                 u->expr.type = n->expr.type;
                 v = simpblob(s, u, &s->blobs, &s->nblobs);
-                r = mkexpr(n->line, Ofmul, v, rval(s, args[0], NULL), NULL);
+                r = mkexpr(n->loc, Ofmul, v, rval(s, args[0], NULL), NULL);
                 r->expr.type = n->expr.type;
             } else {
                 r = visit(s, n);
@@ -1658,8 +1658,8 @@ static Node *simp(Simp *s, Node *n)
             declarelocal(s, n);
             if (!n->decl.init)
                 break;
-            t = mkexpr(n->line, Ovar, n->decl.name, NULL);
-            u = mkexpr(n->line, Oasn, t, n->decl.init, NULL);
+            t = mkexpr(n->loc, Ovar, n->decl.name, NULL);
+            u = mkexpr(n->loc, Oasn, t, n->decl.init, NULL);
             u->expr.type = n->decl.type;
             t->expr.type = n->decl.type;
             t->expr.did = n->decl.did;
@@ -1686,14 +1686,14 @@ static void flatten(Simp *s, Node *f)
     assert(f->type == Nfunc);
     s->nstmts = 0;
     s->stmts = NULL;
-    s->endlbl = genlbl(f->line);
+    s->endlbl = genlbl(f->loc);
     s->ret = NULL;
 
     /* make a temp for the return type */
     ty = f->func.type->sub[0];
     if (stacktype(ty)) {
         s->isbigret = 1;
-        s->ret = gentemp(s, f, mktyptr(f->line, ty), &dcl);
+        s->ret = gentemp(s, f, mktyptr(f->loc, ty), &dcl);
         declarearg(s, dcl);
     } else if (ty->type != Tyvoid) {
         s->isbigret = 0;
@@ -1867,18 +1867,18 @@ static void initconsts(Htab *globls)
     Node *name;
     Node *dcl;
 
-    tyintptr = mktype(-1, Tyuint64);
-    tyword = mktype(-1, Tyuint);
-    tyvoid = mktype(-1, Tyvoid);
+    tyintptr = mktype(Zloc, Tyuint64);
+    tyword = mktype(Zloc, Tyuint);
+    tyvoid = mktype(Zloc, Tyvoid);
 
-    ty = mktyfunc(-1, NULL, 0, mktype(-1, Tyvoid));
-    name = mknsname(-1, "_rt", "abort_oob");
-    dcl = mkdecl(-1, name, ty);
+    ty = mktyfunc(Zloc, NULL, 0, mktype(Zloc, Tyvoid));
+    name = mknsname(Zloc, "_rt", "abort_oob");
+    dcl = mkdecl(Zloc, name, ty);
     dcl->decl.isconst = 1;
     dcl->decl.isextern = 1;
     htput(globls, dcl, asmname(dcl->decl.name));
 
-    abortfunc = mkexpr(-1, Ovar, name, NULL);
+    abortfunc = mkexpr(Zloc, Ovar, name, NULL);
     abortfunc->expr.type = ty;
     abortfunc->expr.did = dcl->decl.did;
     abortfunc->expr.isconst = 1;

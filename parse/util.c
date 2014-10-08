@@ -68,22 +68,22 @@ void fatal(Node *n, char *msg, ...)
     va_list ap;
 
     va_start(ap, msg);
-    lfatalv(n->line, n->fid, msg, ap);
+    lfatalv(n->loc, msg, ap);
     va_end(ap);
 }
 
-void lfatal(int line, int file, char *msg, ...)
+void lfatal(Srcloc l, char *msg, ...)
 {
     va_list ap;
 
     va_start(ap, msg);
-    lfatalv(line, file, msg, ap);
+    lfatalv(l, msg, ap);
     va_end(ap);
 }
 
-void lfatalv(int line, int fid, char *msg, va_list ap)
+void lfatalv(Srcloc l, char *msg, va_list ap)
 {
-    fprintf(stdout, "%s:%d: ", file->file.files[fid], line);
+    fprintf(stdout, "%s:%d: ", file->file.files[l.file], l.line);
     vfprintf(stdout, msg, ap);
     fprintf(stdout, "\n");
     exit(1);

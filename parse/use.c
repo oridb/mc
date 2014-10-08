@@ -99,7 +99,7 @@ static Stab *rdstab(FILE *fd)
 
 static void wrucon(FILE *fd, Ucon *uc)
 {
-    wrint(fd, uc->line);
+    wrint(fd, uc->loc.line);
     wrint(fd, uc->id);
     wrbool(fd, uc->synth);
     pickle(fd, uc->name);
@@ -122,7 +122,9 @@ static Ucon *rducon(FILE *fd, Type *ut)
     id = rdint(fd);
     synth = rdbool(fd);
     name = unpickle(fd);
-    uc = mkucon(line, name, ut, et);
+    uc = mkucon(Zloc, name, ut, et);
+    uc->loc.line = line;
+    uc->loc.file = file->file.nfiles - 1;
     if (rdbool(fd))
       rdtype(fd, &uc->etype);
     uc->id = id;
@@ -137,7 +139,7 @@ static Ucon *rducon(FILE *fd, Type *ut)
 static void wrsym(FILE *fd, Node *val)
 {
     /* sym */
-    wrint(fd, val->line);
+    wrint(fd, val->loc.line);
     pickle(fd, val->decl.name);
     wrtype(fd, val->decl.type);
 
@@ -162,7 +164,9 @@ static Node *rdsym(FILE *fd, Trait *ctx)
 
     line = rdint(fd);
     name = unpickle(fd);
-    n = mkdecl(line, name, NULL);
+    n = mkdecl(Zloc, name, NULL);
+    n->loc.line = line;
+    n->loc.file = file->file.nfiles - 1;
     rdtype(fd, &n->decl.type);
 
     if (rdint(fd) == Vishidden)
@@ -285,7 +289,7 @@ static void rdtype(FILE *fd, Type **dest)
 
     tid = rdint(fd);
     if (tid & Builtinmask) {
-        *dest = mktype(-1, tid & ~Builtinmask);
+        *dest = mktype(Zloc, tid & ~Builtinmask);
     } else {
         lappend(&typefixdest, &ntypefixdest, dest);
         lappend(&typefixid, &ntypefixid, itop(tid));
@@ -304,7 +308,7 @@ static Type *tyunpickle(FILE *fd)
     Ty t;
 
     t = rdbyte(fd);
-    ty = mktype(-1, t);
+    ty = mktype(Zloc, t);
     if (rdbyte(fd) == Vishidden)
         ty->ishidden = 1;
     /* tid is generated; don't write */
@@ -377,7 +381,7 @@ Trait *traitunpickle(FILE *fd)
     intptr_t uid;
 
     /* create an empty trait */
-    tr = mktrait(-1, NULL, NULL, NULL, 0, NULL, 0, 0);
+    tr = mktrait(Zloc, NULL, NULL, NULL, 0, NULL, 0, 0);
     uid = rdint(fd);
     tr->ishidden = rdbool(fd);
     tr->name = unpickle(fd);
@@ -407,7 +411,7 @@ static void pickle(FILE *fd, Node *n)
         return;
     }
     wrbyte(fd, n->type);
-    wrint(fd, n->line);
+    wrint(fd, n->loc.line);
     switch (n->type) {
         case Nfile:
             wrstr(fd, n->file.files[0]);
@@ -536,8 +540,9 @@ static Node *unpickle(FILE *fd)
     type = rdbyte(fd);
     if (type == Nnone)
         return NULL;
-    n = mknode(-1, type);
-    n->line = rdint(fd);
+    n = mknode(Zloc, type);
+    n->loc.line = rdint(fd);
+    n->loc.file = file->file.nfiles - 1;
     switch (n->type) {
         case Nfile:
             lappend(&n->file.files, &n->file.nfiles, rdstr(fd));
@@ -681,7 +686,7 @@ static Stab *findstab(Stab *st, char *pkg)
             return NULL;
     }
 
-    n = mkname(-1, pkg);
+    n = mkname(Zloc, pkg);
     if (getns(st, n)) {
         s = getns(st, n);
     } else {
@@ -724,7 +729,7 @@ static void fixmappings(Stab *st)
             continue;
         old = htget(tydedup, t->name);
         if (old && !tyeq(t, old))
-            lfatal(t->line, t->file, "Duplicate definition of type %s on %s:%d", tystr(old), file->file.files[old->file], old->line);
+            lfatal(t->loc, "Duplicate definition of type %s on %s:%d", tystr(old), file->file.files[old->loc.file], old->loc.line);
     }
     lfree(&typefixdest, &ntypefixdest);
     lfree(&typefixid, &ntypefixid);
@@ -787,6 +792,9 @@ int loaduse(FILE *f, Stab *st)
                         goto foundlib;
                 lappend(&file->file.libdeps, &file->file.nlibdeps, lib);
 foundlib:
+                break;
+            case 'F':
+                lappend(&file->file.files, &file->file.nfiles, rdstr(f));
                 break;
             case 'G':
             case 'D':
@@ -900,6 +908,10 @@ void writeuse(FILE *f, Node *file)
         wrbyte(f, 'L');
         wrstr(f, file->file.libdeps[i]);
     }
+
+    /* source file name */
+    wrbyte(f, 'F');
+    wrstr(f, file->file.files[0]);
 
     for (i = 0; i < ntypes; i++) {
         if (types[i]->vis == Visexport || types[i]->vis == Vishidden) {

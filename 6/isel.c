@@ -1254,7 +1254,7 @@ void genasm(FILE *fd, Func *fn, Htab *globls, Htab *strtab)
             /* put in a comment that says where this line comes from */
             n = bb->nl[i];
             snprintf(buf, sizeof buf, "\n\t# bb = %ld, bbidx = %ld, %s:%d",
-                     j, i, file->file.files[n->fid], n->line);
+                     j, i, file->file.files[n->loc.file], n->loc.line);
             g(&is, Ilbl, locstrlbl(buf), NULL);
             isel(&is, fn->cfg->bb[j]->nl[i]);
         }

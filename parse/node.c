@@ -18,14 +18,14 @@ size_t ndecls;
 Node **exportimpls;
 size_t nexportimpls;
 
-Node *mknode(int line, Ntype nt)
+Node *mknode(Srcloc loc, Ntype nt)
 {
     Node *n;
 
     n = zalloc(sizeof(Node));
     n->nid = maxnid++;
     n->type = nt;
-    n->line = line;
+    n->loc = loc;
     return n;
 }
 
@@ -33,49 +33,49 @@ Node *mkfile(char *name)
 {
     Node *n;
 
-    n = mknode(-1, Nfile);
+    n = mknode(Zloc, Nfile);
     lappend(&n->file.files, &n->file.nfiles, strdup(name));
     return n;
 }
 
-Node *mkuse(int line, char *use, int islocal)
+Node *mkuse(Srcloc loc, char *use, int islocal)
 {
     Node *n;
 
-    n = mknode(line, Nuse);
+    n = mknode(loc, Nuse);
     n->use.name = strdup(use);
     n->use.islocal = islocal;
 
     return n;
 }
 
-Node *mksliceexpr(int line, Node *sl, Node *base, Node *off)
+Node *mksliceexpr(Srcloc loc, Node *sl, Node *base, Node *off)
 {
     if (!base)
-        base = mkintlit(line, 0);
+        base = mkintlit(loc, 0);
     if (!off)
-        off = mkexpr(line, Omemb, sl, mkname(line, "len"), NULL);
-    return mkexpr(line, Oslice, sl, base, off, NULL);
+        off = mkexpr(loc, Omemb, sl, mkname(loc, "len"), NULL);
+    return mkexpr(loc, Oslice, sl, base, off, NULL);
 }
 
-Node *mkexprl(int line, Op op, Node **args, size_t nargs)
+Node *mkexprl(Srcloc loc, Op op, Node **args, size_t nargs)
 {
     Node *n;
 
-    n = mknode(line, Nexpr);
+    n = mknode(loc, Nexpr);
     n->expr.op = op;
     n->expr.args = args;
     n->expr.nargs = nargs;
     return n;
 }
 
-Node *mkexpr(int line, Op op, ...)
+Node *mkexpr(Srcloc loc, Op op, ...)
 {
     Node *n;
     va_list ap;
     Node *arg;
 
-    n = mknode(line, Nexpr);
+    n = mknode(loc, Nexpr);
     n->expr.op = op;
     va_start(ap, op);
     while ((arg = va_arg(ap, Node*)) != NULL)
@@ -85,22 +85,22 @@ Node *mkexpr(int line, Op op, ...)
     return n;
 }
 
-Node *mkcall(int line, Node *fn, Node **args, size_t nargs) 
+Node *mkcall(Srcloc loc, Node *fn, Node **args, size_t nargs) 
 {
     Node *n;
     size_t i;
 
-    n = mkexpr(line, Ocall, fn, NULL);
+    n = mkexpr(loc, Ocall, fn, NULL);
     for (i = 0; i < nargs; i++)
         lappend(&n->expr.args, &n->expr.nargs, args[i]);
     return n;
 }
 
-Node *mkifstmt(int line, Node *cond, Node *iftrue, Node *iffalse)
+Node *mkifstmt(Srcloc loc, Node *cond, Node *iftrue, Node *iffalse)
 {
     Node *n;
 
-    n = mknode(line, Nifstmt);
+    n = mknode(loc, Nifstmt);
     n->ifstmt.cond = cond;
     n->ifstmt.iftrue = iftrue;
     n->ifstmt.iffalse = iffalse;
@@ -108,11 +108,11 @@ Node *mkifstmt(int line, Node *cond, Node *iftrue, Node *iffalse)
     return n;
 }
 
-Node *mkloopstmt(int line, Node *init, Node *cond, Node *incr, Node *body)
+Node *mkloopstmt(Srcloc loc, Node *init, Node *cond, Node *incr, Node *body)
 {
     Node *n;
 
-    n = mknode(line, Nloopstmt);
+    n = mknode(loc, Nloopstmt);
     n->loopstmt.init = init;
     n->loopstmt.cond = cond;
     n->loopstmt.step = incr;
@@ -121,11 +121,11 @@ Node *mkloopstmt(int line, Node *init, Node *cond, Node *incr, Node *body)
     return n;
 }
 
-Node *mkiterstmt(int line, Node *elt, Node *seq, Node *body)
+Node *mkiterstmt(Srcloc loc, Node *elt, Node *seq, Node *body)
 {
     Node *n;
 
-    n = mknode(line, Niterstmt);
+    n = mknode(loc, Niterstmt);
     n->iterstmt.elt = elt;
     n->iterstmt.seq = seq;
     n->iterstmt.body = body;
@@ -133,63 +133,63 @@ Node *mkiterstmt(int line, Node *elt, Node *seq, Node *body)
     return n;
 }
 
-Node *mkmatchstmt(int line, Node *val, Node **matches, size_t nmatches)
+Node *mkmatchstmt(Srcloc loc, Node *val, Node **matches, size_t nmatches)
 {
     Node *n;
 
-    n = mknode(line, Nmatchstmt);
+    n = mknode(loc, Nmatchstmt);
     n->matchstmt.val = val;
     n->matchstmt.matches = matches;
     n->matchstmt.nmatches = nmatches;
     return n;
 }
 
-Node *mkmatch(int line, Node *pat, Node *body)
+Node *mkmatch(Srcloc loc, Node *pat, Node *body)
 {
     Node *n;
 
-    n = mknode(line, Nmatch);
+    n = mknode(loc, Nmatch);
     n->match.pat = pat;
     n->match.block = body;
     return n;
 }
 
-Node *mkfunc(int line, Node **args, size_t nargs, Type *ret, Node *body)
+Node *mkfunc(Srcloc loc, Node **args, size_t nargs, Type *ret, Node *body)
 {
     Node *n;
     Node *f;
     size_t i;
 
-    f = mknode(line, Nfunc);
+    f = mknode(loc, Nfunc);
     f->func.args = args;
     f->func.nargs = nargs;
     f->func.body = body;
     f->func.scope = mkstab();
-    f->func.type = mktyfunc(line, args, nargs, ret);
+    f->func.type = mktyfunc(loc, args, nargs, ret);
 
     for (i = 0; i < nargs; i++)
         putdcl(f->func.scope, args[i]);
 
-    n = mknode(line, Nlit);
+    n = mknode(loc, Nlit);
     n->lit.littype = Lfunc;
     n->lit.fnval = f;
     return n;
 }
 
-Node *mkblock(int line, Stab *scope)
+Node *mkblock(Srcloc loc, Stab *scope)
 {
     Node *n;
 
-    n = mknode(line, Nblock);
+    n = mknode(loc, Nblock);
     n->block.scope = scope;
     return n;
 }
 
-Node *mkimplstmt(int line, Node *name, Type *t, Node **decls, size_t ndecls)
+Node *mkimplstmt(Srcloc loc, Node *name, Type *t, Node **decls, size_t ndecls)
 {
     Node *n;
 
-    n = mknode(line, Nimpl);
+    n = mknode(loc, Nimpl);
     n->impl.traitname = name;
     n->impl.type = t;
     n->impl.decls = decls;
@@ -198,98 +198,98 @@ Node *mkimplstmt(int line, Node *name, Type *t, Node **decls, size_t ndecls)
 }
 
 
-Node *mkintlit(int line, uvlong val)
+Node *mkintlit(Srcloc loc, uvlong val)
 {
-    return mkexpr(line, Olit, mkint(line, val), NULL);
+    return mkexpr(loc, Olit, mkint(loc, val), NULL);
 }
 
-Node *mklbl(int line, char *lbl)
+Node *mklbl(Srcloc loc, char *lbl)
 {
     Node *n;
 
     assert(lbl != NULL);
-    n = mknode(line, Nlit);
+    n = mknode(loc, Nlit);
     n->lit.littype = Llbl;
     n->lit.lblval = strdup(lbl);
-    return mkexpr(line, Olit, n, NULL);
+    return mkexpr(loc, Olit, n, NULL);
 }
 
-Node *mkstr(int line, char *val)
+Node *mkstr(Srcloc loc, char *val)
 {
     Node *n;
 
-    n = mknode(line, Nlit);
+    n = mknode(loc, Nlit);
     n->lit.littype = Lstr;
     n->lit.strval = strdup(val);
 
     return n;
 }
 
-Node *mkint(int line, uint64_t val)
+Node *mkint(Srcloc loc, uint64_t val)
 {
     Node *n;
 
-    n = mknode(line, Nlit);
+    n = mknode(loc, Nlit);
     n->lit.littype = Lint;
     n->lit.intval = val;
 
     return n;
 }
 
-Node *mkchar(int line, uint32_t val)
+Node *mkchar(Srcloc loc, uint32_t val)
 {
     Node *n;
 
-    n = mknode(line, Nlit);
+    n = mknode(loc, Nlit);
     n->lit.littype = Lchr;
     n->lit.chrval = val;
 
     return n;
 }
 
-Node *mkfloat(int line, double val)
+Node *mkfloat(Srcloc loc, double val)
 {
     Node *n;
 
-    n = mknode(line, Nlit);
+    n = mknode(loc, Nlit);
     n->lit.littype = Lflt;
     n->lit.fltval = val;
 
     return n;
 }
 
-Node *mkidxinit(int line, Node *idx, Node *init)
+Node *mkidxinit(Srcloc loc, Node *idx, Node *init)
 {
     init->expr.idx = idx;
     return init;
 }
 
-Node *mkname(int line, char *name)
+Node *mkname(Srcloc loc, char *name)
 {
     Node *n;
 
-    n = mknode(line, Nname);
+    n = mknode(loc, Nname);
     n->name.name = strdup(name);
 
     return n;
 }
 
-Node *mknsname(int line, char *ns, char *name)
+Node *mknsname(Srcloc loc, char *ns, char *name)
 {
     Node *n;
 
-    n = mknode(line, Nname);
+    n = mknode(loc, Nname);
     n->name.ns = strdup(ns);
     n->name.name = strdup(name);
 
     return n;
 }
 
-Node *mkdecl(int line, Node *name, Type *ty)
+Node *mkdecl(Srcloc loc, Node *name, Type *ty)
 {
     Node *n;
 
-    n = mknode(line, Ndecl);
+    n = mknode(loc, Ndecl);
     n->decl.did = ndecls;
     n->decl.name = name;
     n->decl.type = ty;
@@ -297,23 +297,23 @@ Node *mkdecl(int line, Node *name, Type *ty)
     return n;
 }
 
-Ucon *mkucon(int line, Node *name, Type *ut, Type *et)
+Ucon *mkucon(Srcloc loc, Node *name, Type *ut, Type *et)
 {
     Ucon *uc;
 
     uc = zalloc(sizeof(Ucon));
-    uc->line = line;
+    uc->loc = loc;
     uc->name = name;
     uc->utype = ut;
     uc->etype = et;
     return uc;
 }
 
-Node *mkbool(int line, int val)
+Node *mkbool(Srcloc loc, int val)
 {
     Node *n;
 
-    n = mknode(line, Nlit);
+    n = mknode(loc, Nlit);
     n->lit.littype = Lbool;
     n->lit.boolval = val;
 

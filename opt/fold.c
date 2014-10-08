@@ -35,12 +35,12 @@ static int isval(Node *n, vlong val)
     return v == val;
 }
 
-static Node *val(int line, vlong val, Type *t)
+static Node *val(Srcloc loc, vlong val, Type *t)
 {
     Node *l, *n;
 
-    l = mkint(line, val);
-    n = mkexpr(line, Olit, l, NULL);
+    l = mkint(loc, val);
+    n = mkexpr(loc, Olit, l, NULL);
     l->lit.type = t;
     n->expr.type = t;
     return n;
@@ -128,14 +128,14 @@ Node *fold(Node *n, int foldvar)
             if (isval(args[1], 0))
                 r = args[0];
             if (islit(args[0], &a) && islit(args[1], &b))
-                r = val(n->line, a + b, exprtype(n));
+                r = val(n->loc, a + b, exprtype(n));
             break;
         case Osub:
             /* x - 0 = 0 */
             if (isval(args[1], 0))
                 r = args[0];
             if (islit(args[0], &a) && islit(args[1], &b))
-                r = val(n->line, a - b, exprtype(n));
+                r = val(n->loc, a - b, exprtype(n));
             break;
         case Omul:
             /* 1 * x = x */
@@ -149,7 +149,7 @@ Node *fold(Node *n, int foldvar)
             if (isval(args[1], 0))
                 r = args[1];
             if (islit(args[0], &a) && islit(args[1], &b))
-                r = val(n->line, a * b, exprtype(n));
+                r = val(n->loc, a * b, exprtype(n));
             break;
         case Odiv:
             /* x/1 = x */
@@ -159,38 +159,38 @@ Node *fold(Node *n, int foldvar)
             if (isval(args[1], 0))
                 r = args[1];
             if (islit(args[0], &a) && islit(args[1], &b))
-                r = val(n->line, a / b, exprtype(n));
+                r = val(n->loc, a / b, exprtype(n));
             break;
         case Omod:
             /* x%1 = x */
             if (isval(args[1], 0))
                 r = args[0];
             if (islit(args[0], &a) && islit(args[1], &b))
-                r = val(n->line, a % b, exprtype(n));
+                r = val(n->loc, a % b, exprtype(n));
             break;
         case Oneg:
             if (islit(args[0], &a))
-                r = val(n->line, -a, exprtype(n));
+                r = val(n->loc, -a, exprtype(n));
             break;
         case Obsl:
             if (islit(args[0], &a) && islit(args[1], &b))
-                r = val(n->line, a << b, exprtype(n));
+                r = val(n->loc, a << b, exprtype(n));
             break;
         case Obsr:
             if (islit(args[0], &a) && islit(args[1], &b))
-                r = val(n->line, a >> b, exprtype(n));
+                r = val(n->loc, a >> b, exprtype(n));
             break;
         case Obor:
             if (islit(args[0], &a) && islit(args[1], &b))
-                r = val(n->line, a | b, exprtype(n));
+                r = val(n->loc, a | b, exprtype(n));
             break;
         case Oband:
             if (islit(args[0], &a) && islit(args[1], &b))
-                r = val(n->line, a & b, exprtype(n));
+                r = val(n->loc, a & b, exprtype(n));
             break;
         case Obxor:
             if (islit(args[0], &a) && islit(args[1], &b))
-                r = val(n->line, a ^ b, exprtype(n));
+                r = val(n->loc, a ^ b, exprtype(n));
             break;
         case Omemb:
             t = tybase(exprtype(args[0]));
