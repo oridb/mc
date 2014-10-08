@@ -6,6 +6,7 @@ OBJ= \
 	main.o \
 	ra.o \
 	simp.o \
+	typeinfo.o \
 
 DEPS=../parse/libparse.a ../opt/libmi.a
 
