@@ -52,7 +52,6 @@ struct Simp {
     Htab *stkoff;
 };
 
-static char *asmname(Node *n);
 static Node *simp(Simp *s, Node *n);
 static Node *rval(Simp *s, Node *n, Node *dst);
 static Node *lval(Simp *s, Node *n);
@@ -65,10 +64,10 @@ static Node *idxaddr(Simp *s, Node *seq, Node *idx);
 static void matchpattern(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, Node *iffalse);
 
 /* useful constants */
-static Type *tyintptr;
-static Type *tyword;
-static Type *tyvoid;
-static Node *abortfunc;
+Type *tyintptr;
+Type *tyword;
+Type *tyvoid;
+Node *abortoob;
 
 size_t alignto(size_t sz, Type *t)
 {
@@ -284,32 +283,6 @@ static int ispure(Node *n)
 static int isconstfn(Node *s)
 {
     return s->decl.isconst && decltype(s)->type == Tyfunc;
-}
-
-/* For x86, the assembly names are generated as follows:
- *      local symbols: .name
- *      un-namespaced symbols: <symprefix>name
- *      namespaced symbols: <symprefix>namespace$name
- */
-static char *asmname(Node *n)
-{
-    char *s;
-    int len;
-
-    len = strlen(Symprefix);
-    if (n->name.ns)
-        len += strlen(n->name.ns) + 1; /* +1 for separator */
-    len += strlen(n->name.name) + 1;
-
-    s = xalloc(len + 1);
-    s[0] = '\0';
-    if (n->name.ns)
-        snprintf(s, len, "%s%s$%s", Symprefix, n->name.ns, n->name.name);
-    else if (n->name.name[0] == '.')
-        snprintf(s, len, "%s", n->name.name);
-    else
-        snprintf(s, len, "%s%s", Symprefix, n->name.name);
-    return s;
 }
 
 size_t tysize(Type *t)
@@ -879,7 +852,7 @@ static void checkidx(Simp *s, Node *len, Node *idx)
     cmp->expr.type = mktype(len->loc, Tybool);
     ok = genlbl(len->loc);
     fail = genlbl(len->loc);
-    die = mkexpr(idx->loc, Ocall, abortfunc, NULL);
+    die = mkexpr(idx->loc, Ocall, abortoob, NULL);
     die->expr.type = mktype(len->loc, Tyvoid);
 
     /* insert them */
@@ -1764,28 +1737,6 @@ static Func *simpfn(Simp *s, char *name, Node *dcl)
     return fn;
 }
 
-static void fillglobls(Stab *st, Htab *globls)
-{
-    void **k;
-    size_t i, nk;
-    Stab *stab;
-    Node *s;
-
-    k = htkeys(st->dcl, &nk);
-    for (i = 0; i < nk; i++) {
-        s = htget(st->dcl, k[i]);
-        htput(globls, s, asmname(s->decl.name));
-    }
-    free(k);
-
-    k = htkeys(st->ns, &nk);
-    for (i = 0; i < nk; i++) {
-        stab = htget(st->ns, k[i]);
-        fillglobls(stab, globls);
-    }
-    free(k);
-}
-
 static void extractsub(Simp *s, Node ***blobs, size_t *nblobs, Node *e)
 {
     size_t i;
@@ -1836,7 +1787,7 @@ static void simpconstinit(Simp *s, Node *dcl)
     }
 }
 
-static void simpglobl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***blob, size_t *nblob)
+void simpglobl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***blob, size_t *nblob)
 {
     Simp s = {0,};
     char *name;
@@ -1859,78 +1810,4 @@ static void simpglobl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***
     *blob = s.blobs;
     *nblob = s.nblobs;
     free(name);
-}
-
-static void initconsts(Htab *globls)
-{
-    Type *ty;
-    Node *name;
-    Node *dcl;
-
-    tyintptr = mktype(Zloc, Tyuint64);
-    tyword = mktype(Zloc, Tyuint);
-    tyvoid = mktype(Zloc, Tyvoid);
-
-    ty = mktyfunc(Zloc, NULL, 0, mktype(Zloc, Tyvoid));
-    name = mknsname(Zloc, "_rt", "abort_oob");
-    dcl = mkdecl(Zloc, name, ty);
-    dcl->decl.isconst = 1;
-    dcl->decl.isextern = 1;
-    htput(globls, dcl, asmname(dcl->decl.name));
-
-    abortfunc = mkexpr(Zloc, Ovar, name, NULL);
-    abortfunc->expr.type = ty;
-    abortfunc->expr.did = dcl->decl.did;
-    abortfunc->expr.isconst = 1;
-}
-
-void gen(Node *file, char *out)
-{
-    Htab *globls, *strtab;
-    Node *n, **blob;
-    Func **fn;
-    size_t nfn, nblob;
-    size_t i;
-    FILE *fd;
-
-    fn = NULL;
-    nfn = 0;
-    blob = NULL;
-    nblob = 0;
-    globls = mkht(varhash, vareq);
-    initconsts(globls);
-
-    /* We need to define all global variables before use */
-    fillglobls(file->file.globls, globls);
-
-    pushstab(file->file.globls);
-    for (i = 0; i < file->file.nstmts; i++) {
-        n = file->file.stmts[i];
-        switch (n->type) {
-            case Nuse: /* nothing to do */ 
-            case Nimpl:
-                break;
-            case Ndecl:
-                simpglobl(n, globls, &fn, &nfn, &blob, &nblob);
-                break;
-            default:
-                die("Bad node %s in toplevel", nodestr(n->type));
-                break;
-        }
-    }
-    popstab();
-
-    fd = fopen(out, "w");
-    if (!fd)
-        die("Couldn't open fd %s", out);
-
-    strtab = mkht(strhash, streq);
-    fprintf(fd, ".data\n");
-    for (i = 0; i < nblob; i++)
-        genblob(fd, blob[i], globls, strtab);
-    fprintf(fd, ".text\n");
-    for (i = 0; i < nfn; i++)
-        genasm(fd, fn[i], globls, strtab);
-    genstrings(fd, strtab);
-    fclose(fd);
 }

@@ -185,15 +185,18 @@ struct Isel {
     Bitset *initial;    /* initial set of locations used by this fn */
 };
 
+/* globals */
 extern char *modenames[];
+extern Type *tyintptr;
+extern Type *tyword;
+extern Type *tyvoid;
+extern Node *abortoob;
 
 /* options */
 extern int extracheck;
 
-/* entry points */
-void genblob(FILE *fd, Node *blob, Htab *globls, Htab *strtab);
-void genasm(FILE *fd, Func *fn, Htab *globls, Htab *strtab);
-void genstrings(FILE *fd, Htab *strtab);
+void simpglobl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***blob, size_t *nblob);
+void selfunc(Isel *is, Func *fn, Htab *globls, Htab *strtab);
 void gen(Node *file, char *out);
 
 /* location generation */
@@ -212,6 +215,7 @@ Loc *locmems(long disp, Loc *base, Loc *idx, int scale, Mode mode);
 Loc *locmemls(char *disp, Loc *base, Loc *idx, int scale, Mode mode);
 Loc *loclit(long val, Mode m);
 Loc *loclitl(char *lbl);
+char *asmname(Node *n);
 Loc *coreg(Reg r, Mode m);
 int isfloatmode(Mode m);
 int isintmode(Mode m);
