@@ -187,6 +187,9 @@ struct Isel {
 
 extern char *modenames[];
 
+/* options */
+extern int extracheck;
+
 /* entry points */
 void genblob(FILE *fd, Node *blob, Htab *globls, Htab *strtab);
 void genasm(FILE *fd, Func *fn, Htab *globls, Htab *strtab);
