@@ -16,22 +16,6 @@
 #include "asm.h"
 #include "../config.h"
 
-/* string tables */
-char *insnfmts[] = {
-#define Insn(val, fmt, use, def) fmt,
-#include "insns.def"
-#undef Insn
-};
-
-char* modenames[] = {
-  [ModeB] = "b",
-  [ModeW] = "w",
-  [ModeL] = "l",
-  [ModeQ] = "q",
-  [ModeF] = "s",
-  [ModeD] = "d"
-};
-
 /* forward decls */
 Loc *selexpr(Isel *s, Node *n);
 
@@ -156,7 +140,7 @@ Insn *mkinsn(AsmOp op, ...)
     return i;
 }
 
-void g(Isel *s, AsmOp op, ...)
+static void g(Isel *s, AsmOp op, ...)
 {
     va_list ap;
     Insn *i;
@@ -765,154 +749,6 @@ Loc *selexpr(Isel *s, Node *n)
             break;
     }
     return r;
-}
-
-void locprint(FILE *fd, Loc *l, char spec)
-{
-    assert(l->mode);
-    switch (l->type) {
-        case Loclitl:
-            assert(spec == 'i' || spec == 'x' || spec == 'u');
-            fprintf(fd, "$%s", l->lbl);
-            break;
-        case Loclbl:
-            assert(spec == 'm' || spec == 'v' || spec == 'x');
-            fprintf(fd, "%s", l->lbl);
-            break;
-        case Locreg:
-            assert((spec == 'r' && isintmode(l->mode)) || 
-                   (spec == 'f' && isfloatmode(l->mode)) ||
-                   spec == 'v' ||
-                   spec == 'x' ||
-                   spec == 'u');
-            if (l->reg.colour == Rnone)
-                fprintf(fd, "%%P.%zd%s", l->reg.id, modenames[l->mode]);
-            else
-                fprintf(fd, "%s", regnames[l->reg.colour]);
-            break;
-        case Locmem:
-        case Locmeml:
-            assert(spec == 'm' || spec == 'v' || spec == 'x');
-            if (l->type == Locmem) {
-                if (l->mem.constdisp)
-                    fprintf(fd, "%ld", l->mem.constdisp);
-            } else {
-                if (l->mem.lbldisp)
-                    fprintf(fd, "%s", l->mem.lbldisp);
-            }
-            if (l->mem.base) {
-                fprintf(fd, "(");
-                locprint(fd, l->mem.base, 'r');
-                if (l->mem.idx) {
-                    fprintf(fd, ",");
-                    locprint(fd, l->mem.idx, 'r');
-                }
-                if (l->mem.scale > 1)
-                    fprintf(fd, ",%d", l->mem.scale);
-                if (l->mem.base)
-                    fprintf(fd, ")");
-            } else if (l->type != Locmeml) {
-                die("Only locmeml can have unspecified base reg");
-            }
-            break;
-        case Loclit:
-            assert(spec == 'i' || spec == 'x' || spec == 'u');
-            fprintf(fd, "$%ld", l->lit);
-            break;
-        case Locnone:
-            die("Bad location in locprint()");
-            break;
-    }
-}
-
-int subreg(Loc *a, Loc *b)
-{
-    return rclass(a) == rclass(b) && a->mode != b->mode;
-}
-
-void iprintf(FILE *fd, Insn *insn)
-{
-    char *p;
-    int i;
-    int modeidx;
-
-    /* x64 has a quirk; it has no movzlq because mov zero extends. This
-     * means that we need to do a movl when we really want a movzlq. Since
-     * we don't know the name of the reg to use, we need to sub it in when
-     * writing... */
-    switch (insn->op) {
-        case Imovzx:
-            if (insn->args[0]->mode == ModeL && insn->args[1]->mode == ModeQ) {
-                if (insn->args[1]->reg.colour) {
-                    insn->op = Imov;
-                    insn->args[1] = coreg(insn->args[1]->reg.colour, ModeL);
-                }
-            }
-            break;
-        case Imovs:
-            if (insn->args[0]->reg.colour == Rnone || insn->args[1]->reg.colour == Rnone)
-                break;
-            /* moving a reg to itself is dumb. */
-            if (insn->args[0]->reg.colour == insn->args[1]->reg.colour)
-                return;
-            break;
-        case Imov:
-            assert(!isfloatmode(insn->args[0]->mode));
-            if (insn->args[0]->type != Locreg || insn->args[1]->type != Locreg)
-                break;
-            if (insn->args[0]->reg.colour == Rnone || insn->args[1]->reg.colour == Rnone)
-                break;
-            /* if one reg is a subreg of another, we can just use the right
-             * mode to move between them. */
-            if (subreg(insn->args[0], insn->args[1]))
-                insn->args[0] = coreg(insn->args[0]->reg.colour, insn->args[1]->mode);
-            /* moving a reg to itself is dumb. */
-            if (insn->args[0]->reg.colour == insn->args[1]->reg.colour)
-                return;
-            break;
-        default:
-            break;
-    }
-    p = insnfmts[insn->op];
-    i = 0;
-    modeidx = 0;
-    for (; *p; p++) {
-        if (*p !=  '%') {
-            fputc(*p, fd);
-            continue;
-        }
-
-        /* %-formating */
-        p++;
-        switch (*p) {
-            case '\0':
-                goto done; /* skip the final p++ */
-            case 'r': /* int register */
-            case 'f': /* float register */
-            case 'm': /* memory */
-            case 'i': /* imm */
-            case 'v': /* reg/mem */
-            case 'u': /* reg/imm */
-            case 'x': /* reg/mem/imm */
-                locprint(fd, insn->args[i], *p);
-                i++;
-                break;
-            case 't':
-            default:
-                /* the  asm description uses 1-based indexing, so that 0
-                 * can be used as a sentinel. */
-                if (isdigit(*p))
-                    modeidx = strtol(p, &p, 10) - 1;
-
-                if (*p == 't')
-                    fputs(modenames[insn->args[modeidx]->mode], fd);
-                else
-                    die("Invalid %%-specifier '%c'", *p);
-                break;
-        }
-    }
-done:
-    return;
 }
 
 static void isel(Isel *s, Node *n)
