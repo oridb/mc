@@ -10,6 +10,8 @@ typedef unsigned long   ulong;
 typedef long long       vlong;
 typedef unsigned long long uvlong;
 
+typedef struct Srcloc Srcloc;
+
 typedef struct Bitset Bitset;
 typedef struct Htab Htab;
 typedef struct Optctx Optctx;
@@ -55,6 +57,12 @@ typedef enum {
     Ntraits
 } Tc;
 
+#define Zloc ((Srcloc){.line=-1, .file=0})
+struct Srcloc {
+    int line;
+    int file;
+};
+
 typedef enum {
     Visintern,
     Visexport,
@@ -85,7 +93,7 @@ struct Htab {
 
 struct Tok {
     int type;
-    int line;
+    Srcloc loc;
     char *str;
 
     /* values parsed out */
@@ -113,8 +121,7 @@ struct Stab {
 struct Type {
     Ty type;
     int tid;
-    int line;
-    int file;
+    Srcloc loc;
     Vis vis;
 
     int resolved;       /* Have we resolved the subtypes? Prevents infinite recursion. */
@@ -147,8 +154,7 @@ struct Type {
 };
 
 struct Ucon {
-    int line;   /* line declared on */
-    int file;   /* file index */
+    Srcloc loc;
     size_t id;  /* unique id */
     int synth;  /* is it generated? */
     Node *name; /* ucon name */
@@ -170,8 +176,7 @@ struct Trait {
 };
 
 struct Node {
-    int line;
-    int fid;
+    Srcloc loc;
     Ntype type;
     int nid;
     union {
@@ -338,9 +343,9 @@ struct Optctx {
 };
 
 /* globals */
+extern Srcloc curloc;
 extern char *filename;
 extern Tok *curtok;     /* the last token we tokenized */
-extern int line;        /* the last line number we tokenized */
 extern Node *file;      /* the current file we're compiling */
 extern Type **tytab;    /* type -> type map used by inference. size maintained by type creation code */
 extern Type **types;
@@ -406,8 +411,8 @@ void *zrealloc(void *p, size_t oldsz, size_t size);
 void *xrealloc(void *p, size_t size);
 void die(char *msg, ...) FATAL;
 void fatal(Node *n, char *fmt, ...) FATAL;
-void lfatal(int line, int file, char *fmt, ...) FATAL;
-void lfatalv(int line, int file, char *fmt, va_list ap) FATAL;
+void lfatal(Srcloc l, char *fmt, ...) FATAL;
+void lfatalv(Srcloc l, char *fmt, va_list ap) FATAL;
 char *strdupn(char *s, size_t len);
 char *strjoin(char *u, char *v);
 void *memdup(void *mem, size_t len);
@@ -445,22 +450,22 @@ void popstab(void);
 /* type creation */
 void tyinit(Stab *st); /* sets up built in types */
 
-Type *mktype(int line, Ty ty);
+Type *mktype(Srcloc l, Ty ty);
 Type *tydup(Type *t); /* shallow duplicate; all subtypes/members/... kept */
-Type *mktyvar(int line);
-Type *mktyparam(int line, char *name);
-Type *mktyname(int line, Node *name, Type **params, size_t nparams, Type *base);
-Type *mktyunres(int line, Node *name, Type **params, size_t nparams);
-Type *mktyarray(int line, Type *base, Node *sz);
-Type *mktyslice(int line, Type *base);
-Type *mktyidxhack(int line, Type *base);
-Type *mktyptr(int line, Type *base);
-Type *mktytuple(int line, Type **sub, size_t nsub);
-Type *mktyfunc(int line, Node **args, size_t nargs, Type *ret);
-Type *mktystruct(int line, Node **decls, size_t ndecls);
-Type *mktyunion(int line, Ucon **decls, size_t ndecls);
-Trait *mktrait(int line, Node *name, Type *param, Node **memb, size_t nmemb, Node **funcs, size_t nfuncs, int isproto);
-Type *mktylike(int line, Ty ty); /* constrains tyvar t like it was builtin ty */
+Type *mktyvar(Srcloc l);
+Type *mktyparam(Srcloc l, char *name);
+Type *mktyname(Srcloc l, Node *name, Type **params, size_t nparams, Type *base);
+Type *mktyunres(Srcloc l, Node *name, Type **params, size_t nparams);
+Type *mktyarray(Srcloc l, Type *base, Node *sz);
+Type *mktyslice(Srcloc l, Type *base);
+Type *mktyidxhack(Srcloc l, Type *base);
+Type *mktyptr(Srcloc l, Type *base);
+Type *mktytuple(Srcloc l, Type **sub, size_t nsub);
+Type *mktyfunc(Srcloc l, Node **args, size_t nargs, Type *ret);
+Type *mktystruct(Srcloc l, Node **decls, size_t ndecls);
+Type *mktyunion(Srcloc l, Ucon **decls, size_t ndecls);
+Trait *mktrait(Srcloc l, Node *name, Type *param, Node **memb, size_t nmemb, Node **funcs, size_t nfuncs, int isproto);
+Type *mktylike(Srcloc l, Ty ty); /* constrains tyvar t like it was builtin ty */
 int   istysigned(Type *t);
 int   istyunsigned(Type *t);
 int   istyfloat(Type *t);
@@ -480,35 +485,35 @@ int traitfmt(char *buf, size_t len, Type *t);
 char *traitstr(Type *t);
 
 /* node creation */
-Node *mknode(int line, Ntype nt);
+Node *mknode(Srcloc l, Ntype nt);
 Node *mkfile(char *name);
-Node *mkuse(int line, char *use, int islocal);
-Node *mksliceexpr(int line, Node *sl, Node *base, Node *off);
-Node *mkexprl(int line, Op op, Node **args, size_t nargs);
-Node *mkexpr(int line, Op op, ...); /* NULL terminated */
-Node *mkcall(int line, Node *fn, Node **args, size_t nargs);
-Node *mkifstmt(int line, Node *cond, Node *iftrue, Node *iffalse);
-Node *mkloopstmt(int line, Node *init, Node *cond, Node *incr, Node *body);
-Node *mkiterstmt(int line, Node *elt, Node *seq, Node *body);
-Node *mkmatchstmt(int line, Node *val, Node **matches, size_t nmatches);
-Node *mkmatch(int line, Node *pat, Node *body);
-Node *mkblock(int line, Stab *scope);
-Node *mkimplstmt(int line, Node *name, Type *type, Node **impls, size_t nimpls);
-Node *mkintlit(int line, uvlong val);
-Node *mkidxinit(int line, Node *idx, Node *init);
+Node *mkuse(Srcloc l, char *use, int islocal);
+Node *mksliceexpr(Srcloc l, Node *sl, Node *base, Node *off);
+Node *mkexprl(Srcloc l, Op op, Node **args, size_t nargs);
+Node *mkexpr(Srcloc l, Op op, ...); /* NULL terminated */
+Node *mkcall(Srcloc l, Node *fn, Node **args, size_t nargs);
+Node *mkifstmt(Srcloc l, Node *cond, Node *iftrue, Node *iffalse);
+Node *mkloopstmt(Srcloc l, Node *init, Node *cond, Node *incr, Node *body);
+Node *mkiterstmt(Srcloc l, Node *elt, Node *seq, Node *body);
+Node *mkmatchstmt(Srcloc l, Node *val, Node **matches, size_t nmatches);
+Node *mkmatch(Srcloc l, Node *pat, Node *body);
+Node *mkblock(Srcloc l, Stab *scope);
+Node *mkimplstmt(Srcloc l, Node *name, Type *type, Node **impls, size_t nimpls);
+Node *mkintlit(Srcloc l, uvlong val);
+Node *mkidxinit(Srcloc l, Node *idx, Node *init);
 
-Node *mkbool(int line, int val);
-Node *mkint(int line, uint64_t val);
-Node *mkchar(int line, uint32_t val);
-Node *mkstr(int line, char *s);
-Node *mkfloat(int line, double flt);
-Node *mkfunc(int line, Node **args, size_t nargs, Type *ret, Node *body);
-Node *mkname(int line, char *name);
-Node *mknsname(int line, char *ns, char *name);
-Node *mkdecl(int line, Node *name, Type *ty);
-Node *mklbl(int line, char *lbl);
-Node *mkslice(int line, Node *base, Node *off);
-Ucon *mkucon(int line, Node *name, Type *ut, Type *uet);
+Node *mkbool(Srcloc l, int val);
+Node *mkint(Srcloc l, uint64_t val);
+Node *mkchar(Srcloc l, uint32_t val);
+Node *mkstr(Srcloc l, char *s);
+Node *mkfloat(Srcloc l, double flt);
+Node *mkfunc(Srcloc l, Node **args, size_t nargs, Type *ret, Node *body);
+Node *mkname(Srcloc l, char *name);
+Node *mknsname(Srcloc l, char *ns, char *name);
+Node *mkdecl(Srcloc l, Node *name, Type *ty);
+Node *mklbl(Srcloc l, char *lbl);
+Node *mkslice(Srcloc l, Node *base, Node *off);
+Ucon *mkucon(Srcloc l, Node *name, Type *ut, Type *uet);
 
 /* node util functions */
 char *namestr(Node *name);
@@ -600,4 +605,4 @@ extern char *outfile;
 extern char **incpaths;
 extern size_t nincpaths;
 
-
+void yyerror(const char *s);

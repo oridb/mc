@@ -79,12 +79,12 @@ char *genlblstr(char *buf, size_t sz)
     return buf;
 }
 
-Node *genlbl(int line)
+Node *genlbl(Srcloc loc)
 {
     char buf[128];
 
     genlblstr(buf, 128);
-    return mklbl(line, buf);
+    return mklbl(loc, buf);
 }
 
 Loc *locstrlbl(char *lbl)

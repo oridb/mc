@@ -16,13 +16,13 @@
 typedef struct Tydefn Tydefn;
 typedef struct Traitdefn Traitdefn;
 struct Tydefn {
-    int line;
+    Srcloc loc;
     Node *name;
     Type *type;
 };
 
 struct Traitdefn {
-    int line;
+    Srcloc loc;
     Node *name;
     Trait *trait;
 };
@@ -201,7 +201,7 @@ void putdcl(Stab *st, Node *s)
 
     d = htget(st->dcl, s->decl.name);
     if (d)
-        fatal(s, "%s already declared (on line %d)", namestr(s->decl.name), d->line);
+        fatal(s, "%s already declared (on line %d)", namestr(s->decl.name), d->loc.line);
     forcedcl(st, s);
 }
 
@@ -229,7 +229,7 @@ void puttype(Stab *st, Node *n, Type *t)
     if (gettype(st, n))
         fatal(n, "Type %s already defined", tystr(gettype(st, n)));
     td = xalloc(sizeof(Tydefn));
-    td->line = n->line;
+    td->loc = n->loc;
     td->name = n;
     td->type = t;
     if (st->name)
@@ -240,7 +240,7 @@ void puttype(Stab *st, Node *n, Type *t)
 void putucon(Stab *st, Ucon *uc)
 {
     if (getucon(st, uc->name))
-        lfatal(uc->line, uc->file, "union constructor %s already defined", namestr(uc->name));
+        lfatal(uc->loc, "union constructor %s already defined", namestr(uc->name));
     htput(st->uc, uc->name, uc);
 }
 
@@ -253,7 +253,7 @@ void puttrait(Stab *st, Node *n, Trait *c)
     if (gettype(st, n))
         fatal(n, "Trait %s already defined as a type", namestr(n));
     td = xalloc(sizeof(Tydefn));
-    td->line = n->line;
+    td->loc = n->loc;
     td->name = n;
     td->trait = c;
     htput(st->tr, td->name, td);
@@ -303,7 +303,7 @@ void updatens(Stab *st, char *name)
 
     if (st->name)
         die("Stab %s already has namespace; Can't set to %s", namestr(st->name), name);
-    st->name = mkname(-1, name);
+    st->name = mkname(Zloc, name);
     k = htkeys(st->dcl, &nk);
     for (i = 0; i < nk; i++)
         setns(k[i], name);

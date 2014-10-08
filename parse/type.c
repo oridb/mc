@@ -27,7 +27,7 @@ size_t ntraittab;
 /* Built in type constraints */
 static Trait *traits[Ntypes + 1][4];
 
-Type *mktype(int line, Ty ty)
+Type *mktype(Srcloc loc, Ty ty)
 {
     Type *t;
     int i;
@@ -45,7 +45,7 @@ Type *mktype(int line, Ty ty)
     t = zalloc(sizeof(Type));
     t->type = ty;
     t->tid = ntypes++;
-    t->line = line;
+    t->loc = loc;
     tytab = xrealloc(tytab, ntypes*sizeof(Type*));
     tytab[t->tid] = NULL;
     types = xrealloc(types, ntypes*sizeof(Type*));
@@ -67,7 +67,7 @@ Type *tydup(Type *t)
 {
     Type *r;
 
-    r = mktype(t->line, t->type);
+    r = mktype(t->loc, t->type);
     r->resolved = 0; /* re-resolving doesn't hurt */
     r->fixed = 0; /* re-resolving doesn't hurt */
 
@@ -99,19 +99,19 @@ Type *tydup(Type *t)
  * Creates a Tyvar with the same
  * constrants as the 'like' type
  */
-Type *mktylike(int line, Ty like)
+Type *mktylike(Srcloc loc, Ty like)
 {
     Type *t;
     int i;
 
-    t = mktyvar(line);
+    t = mktyvar(loc);
     for (i = 0; traits[like][i]; i++)
         settrait(t, traits[like][i]);
     return t;
 }
 
 /* steals memb, funcs */
-Trait *mktrait(int line, Node *name, Type *param, Node **memb, size_t nmemb, Node **funcs, size_t nfuncs, int isproto)
+Trait *mktrait(Srcloc loc, Node *name, Type *param, Node **memb, size_t nmemb, Node **funcs, size_t nfuncs, int isproto)
 {
     Trait *t;
 
@@ -131,40 +131,40 @@ Trait *mktrait(int line, Node *name, Type *param, Node **memb, size_t nmemb, Nod
     return t;
 }
 
-Type *mktyvar(int line)
+Type *mktyvar(Srcloc loc)
 {
     Type *t;
 
-    t = mktype(line, Tyvar);
+    t = mktype(loc, Tyvar);
     return t;
 }
 
-Type *mktyparam(int line, char *name)
+Type *mktyparam(Srcloc loc, char *name)
 {
     Type *t;
 
-    t = mktype(line, Typaram);
+    t = mktype(loc, Typaram);
     t->pname = strdup(name);
     return t;
 }
 
-Type *mktyunres(int line, Node *name, Type **arg, size_t narg)
+Type *mktyunres(Srcloc loc, Node *name, Type **arg, size_t narg)
 {
     Type *t;
 
     /* resolve it in the type inference stage */
-    t = mktype(line, Tyunres);
+    t = mktype(loc, Tyunres);
     t->name = name;
     t->arg = arg;
     t->narg = narg;
     return t;
 }
 
-Type *mktyname(int line, Node *name, Type **param, size_t nparam, Type *base)
+Type *mktyname(Srcloc loc, Node *name, Type **param, size_t nparam, Type *base)
 {
     Type *t;
 
-    t = mktype(line, Tyname);
+    t = mktype(loc, Tyname);
     t->name = name;
     t->nsub = 1;
     t->traits = bsdup(base->traits);
@@ -175,11 +175,11 @@ Type *mktyname(int line, Node *name, Type **param, size_t nparam, Type *base)
     return t;
 }
 
-Type *mktyarray(int line, Type *base, Node *sz)
+Type *mktyarray(Srcloc loc, Type *base, Node *sz)
 {
     Type *t;
 
-    t = mktype(line, Tyarray);
+    t = mktype(loc, Tyarray);
     t->nsub = 1;
     t->nmemb = 1; /* the size is a "member" */
     t->sub = xalloc(sizeof(Type*));
@@ -189,45 +189,45 @@ Type *mktyarray(int line, Type *base, Node *sz)
     return t;
 }
 
-Type *mktyslice(int line, Type *base)
+Type *mktyslice(Srcloc loc, Type *base)
 {
     Type *t;
 
-    t = mktype(line, Tyslice);
+    t = mktype(loc, Tyslice);
     t->nsub = 1;
     t->sub = xalloc(sizeof(Type*));
     t->sub[0] = base;
     return t;
 }
 
-Type *mktyidxhack(int line, Type *base)
+Type *mktyidxhack(Srcloc loc, Type *base)
 {
     Type *t;
 
-    t = mktype(line, Tyvar);
+    t = mktype(loc, Tyvar);
     t->nsub = 1;
     t->sub = xalloc(sizeof(Type*));
     t->sub[0] = base;
     return t;
 }
 
-Type *mktyptr(int line, Type *base)
+Type *mktyptr(Srcloc loc, Type *base)
 {
     Type *t;
 
-    t = mktype(line, Typtr);
+    t = mktype(loc, Typtr);
     t->nsub = 1;
     t->sub = xalloc(sizeof(Type*));
     t->sub[0] = base;
     return t;
 }
 
-Type *mktytuple(int line, Type **sub, size_t nsub)
+Type *mktytuple(Srcloc loc, Type **sub, size_t nsub)
 {
     Type *t;
     size_t i;
 
-    t = mktype(line, Tytuple);
+    t = mktype(loc, Tytuple);
     t->nsub = nsub;
     t->sub = xalloc(nsub*sizeof(Type));
     for (i = 0; i < nsub; i++)
@@ -235,12 +235,12 @@ Type *mktytuple(int line, Type **sub, size_t nsub)
     return t;
 }
 
-Type *mktyfunc(int line, Node **args, size_t nargs, Type *ret)
+Type *mktyfunc(Srcloc loc, Node **args, size_t nargs, Type *ret)
 {
     Type *t;
     size_t i;
 
-    t = mktype(line, Tyfunc);
+    t = mktype(loc, Tyfunc);
     t->nsub = nargs + 1;
     t->sub = xalloc((1 + nargs)*sizeof(Type));
     t->sub[0] = ret;
@@ -249,22 +249,22 @@ Type *mktyfunc(int line, Node **args, size_t nargs, Type *ret)
     return t;
 }
 
-Type *mktystruct(int line, Node **decls, size_t ndecls)
+Type *mktystruct(Srcloc loc, Node **decls, size_t ndecls)
 {
     Type *t;
 
-    t = mktype(line, Tystruct);
+    t = mktype(loc, Tystruct);
     t->nsub = 0;
     t->nmemb = ndecls;
     t->sdecls = memdup(decls, ndecls*sizeof(Node *));
     return t;
 }
 
-Type *mktyunion(int line, Ucon **decls, size_t ndecls)
+Type *mktyunion(Srcloc loc, Ucon **decls, size_t ndecls)
 {
     Type *t;
 
-    t = mktype(line, Tyunion);
+    t = mktype(loc, Tyunion);
     t->nmemb = ndecls;
     t->udecls = decls;
     return t;
@@ -698,7 +698,7 @@ void tyinit(Stab *st)
 /* this must be done after all the types are created, otherwise we will
  * clobber the memoized bunch of types with the type params. */
 #define Tc(c, n) \
-    mktrait(-1, mkname(-1, n), NULL, NULL, 0, NULL, 0, 0);
+    mktrait(Zloc, mkname(Zloc, n), NULL, NULL, 0, NULL, 0, 0);
 #include "trait.def"
 #undef Tc
 
@@ -736,9 +736,9 @@ void tyinit(Stab *st)
  * constraints, otherwise they will have no constraints set on them. */
 #define Ty(t, n) \
     if (t != Ntypes) {\
-      ty = mktype(-1, t); \
+      ty = mktype(Zloc, t); \
       if (n) { \
-          puttype(st, mkname(-1, n), ty); \
+          puttype(st, mkname(Zloc, n), ty); \
       } \
     }
 #include "types.def"

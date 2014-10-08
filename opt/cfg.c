@@ -92,12 +92,12 @@ static int islabel(Node *n)
     return 1;
 }
 
-static Bb *addlabel(Cfg *cfg, Bb *bb, Node **nl, size_t i, int line)
+static Bb *addlabel(Cfg *cfg, Bb *bb, Node **nl, size_t i, Srcloc loc)
 {
     /* if the current block assumes fall-through, insert an explicit jump */
     if (i > 0 && nl[i - 1]->type == Nexpr) {
         if (exprop(nl[i - 1]) != Ocjmp && exprop(nl[i - 1]) != Ojmp)
-            addnode(cfg, bb, mkexpr(line, Ojmp, mklbl(line, lblstr(nl[i])), NULL));
+            addnode(cfg, bb, mkexpr(loc, Ojmp, mklbl(loc, lblstr(nl[i])), NULL));
     }
     if (bb->nnl)
         bb = mkbb(cfg);
@@ -203,7 +203,7 @@ Cfg *mkcfg(Node *fn, Node **nl, size_t nn)
         switch (nl[i]->type) {
             case Nexpr:
                 if (islabel(nl[i]))
-                    bb = addlabel(cfg, bb, nl, i, nl[i]->line);
+                    bb = addlabel(cfg, bb, nl, i, nl[i]->loc);
                 else if (addnode(cfg, bb, nl[i]))
                     bb = mkbb(cfg);
                 break;
@@ -235,7 +235,7 @@ Cfg *mkcfg(Node *fn, Node **nl, size_t nn)
                 b = cfg->fixjmp[i]->expr.args[2];
                 break;
             case Oret:
-                a = mklbl(cfg->fixjmp[i]->line, cfg->end->lbls[0]);
+                a = mklbl(cfg->fixjmp[i]->loc, cfg->end->lbls[0]);
                 b = NULL;
                 break;
             default:

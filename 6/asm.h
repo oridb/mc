@@ -198,7 +198,7 @@ extern size_t maxregid;
 extern Loc **locmap; /* mapping from reg id => Loc * */
 
 char *genlblstr(char *buf, size_t sz);
-Node *genlbl(int line);
+Node *genlbl(Srcloc loc);
 Loc *loclbl(Node *lbl);
 Loc *locstrlbl(char *lbl);
 Loc *locreg(Mode m);

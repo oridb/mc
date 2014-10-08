@@ -42,7 +42,7 @@ Type *tyspecialize(Type *t, Htab *tsmap, Htab *delayed)
         return htget(tsmap, t);
     switch (t->type) {
         case Typaram:
-            ret = mktyvar(t->line);
+            ret = mktyvar(t->loc);
             addtraits(ret, t->traits);
             htput(tsmap, t, ret);
             break;
@@ -54,11 +54,11 @@ Type *tyspecialize(Type *t, Htab *tsmap, Htab *delayed)
             for (i = 0; i < t->nparam; i++) {
                 if (subst[i]->type != Typaram || hthas(tsmap, subst[i]))
                     continue;
-                tmp = mktyvar(subst[i]->line);
+                tmp = mktyvar(subst[i]->loc);
                 addtraits(tmp, subst[i]->traits);
                 htput(tsmap, subst[i], tmp);
             }
-            ret = mktyname(t->line, t->name, t->param, t->nparam, tyspecialize(t->sub[0], tsmap, delayed));
+            ret = mktyname(t->loc, t->name, t->param, t->nparam, tyspecialize(t->sub[0], tsmap, delayed));
             ret->issynth = 1;
             htput(tsmap, t, ret);
             for (i = 0; i < t->nparam; i++)
@@ -79,7 +79,7 @@ Type *tyspecialize(Type *t, Htab *tsmap, Htab *delayed)
                 tmp = NULL;
                 if (ret->udecls[i]->etype)
                     tmp = tyspecialize(t->udecls[i]->etype, tsmap, delayed);
-                ret->udecls[i] = mkucon(t->line, t->udecls[i]->name, ret, tmp);
+                ret->udecls[i] = mkucon(t->loc, t->udecls[i]->name, ret, tmp);
                 ret->udecls[i]->utype = ret;
                 ret->udecls[i]->id = i;
                 ret->udecls[i]->synth = 1;
@@ -249,7 +249,7 @@ static Node *specializenode(Node *n, Htab *tsmap)
 
     if (!n)
         return NULL;
-    r = mknode(n->line, n->type);
+    r = mknode(n->loc, n->type);
     switch (n->type) {
         case Nfile:
         case Nuse:
@@ -372,7 +372,7 @@ Node *genericname(Node *n, Type *t)
     p += snprintf(p, end - p, "%s", n->decl.name->name.name);
     p += snprintf(p, end - p, "$%lu", strhash(s));
     free(s);
-    name = mkname(n->line, buf);
+    name = mkname(n->loc, buf);
     if (n->decl.name->name.ns)
         setns(name, n->decl.name->name.ns);
     return name;
@@ -397,7 +397,7 @@ Node *specializedcl(Node *n, Type *to, Node **name)
     *name = genericname(n, to);
     d = getdcl(file->file.globls, *name);
     if (debugopt['S'])
-        printf("depth[%d] specializing [%d]%s => %s\n", stabstkoff, n->line, namestr(n->decl.name), namestr(*name));
+        printf("depth[%d] specializing [%d]%s => %s\n", stabstkoff, n->loc.line, namestr(n->decl.name), namestr(*name));
     if (d)
         return d;
     if (n->decl.trait)
@@ -405,7 +405,7 @@ Node *specializedcl(Node *n, Type *to, Node **name)
     /* namespaced names need to be looked up in their correct
      * context. */
     if (n->decl.name->name.ns) {
-        ns = mkname(n->line, n->decl.name->name.ns);
+        ns = mkname(n->loc, n->decl.name->name.ns);
         st = getns(file->file.globls, ns);
         pushstab(st);
     }
@@ -414,7 +414,7 @@ Node *specializedcl(Node *n, Type *to, Node **name)
     tsmap = mkht(tyhash, tyeq);
     fillsubst(tsmap, to, n->decl.type);
 
-    d = mkdecl(n->line, *name, tysubst(n->decl.type, tsmap));
+    d = mkdecl(n->loc, *name, tysubst(n->decl.type, tsmap));
     d->decl.isconst = n->decl.isconst;
     d->decl.isextern = n->decl.isextern;
     d->decl.init = specializenode(n->decl.init, tsmap);

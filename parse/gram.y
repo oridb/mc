@@ -159,7 +159,7 @@ static void setattrs(Node *dcl, char **attrs, size_t nattrs);
 
 %union {
     struct {
-        int line;
+        Srcloc loc;
         Node **nl;
         size_t nn;
     } nodelist;
@@ -168,17 +168,17 @@ static void setattrs(Node *dcl, char **attrs, size_t nattrs);
         size_t nstr;
     } strlist;
     struct {
-        int line;
+        Srcloc loc;
         Ucon **ucl;
         size_t nucl;
     } uconlist;
     struct {
-        int line;
+        Srcloc loc;
         Type **types;
         size_t ntypes;
     } tylist;
     struct { /* FIXME: unused */
-        int line;
+        Srcloc loc;
         char *name;
         Type *type;
         Type **params;
@@ -210,7 +210,7 @@ toplev  : package
                     putdcl(file->file.exports, $1->funcs[i]);
             }
         | tydef {
-                puttype(file->file.globls, mkname($1.line, $1.name), $1.type);
+                puttype(file->file.globls, mkname($1.loc, $1.name), $1.type);
                 installucons(file->file.globls, $1.type);
             }
         | decl {
@@ -267,8 +267,8 @@ decllist: declbody {
             }
         ;
 
-use     : Tuse Tident {$$ = mkuse($1->line, $2->str, 0);}
-        | Tuse Tstrlit {$$ = mkuse($1->line, $2->str, 1);}
+use     : Tuse Tident {$$ = mkuse($1->loc, $2->str, 0);}
+        | Tuse Tstrlit {$$ = mkuse($1->loc, $2->str, 1);}
         ;
 
 optident: Tident      {$$ = $1;}
@@ -277,7 +277,7 @@ optident: Tident      {$$ = $1;}
 
 package : Tpkg optident Tasn pkgbody Tendblk {
                 if (file->file.exports->name)
-                    lfatal($1->line, 0, "Package already declared\n");
+                    lfatal($1->loc, "Package already declared\n");
                 if ($2) {
                     updatens(file->file.exports, $2->str);
                     updatens(file->file.globls, $2->str);
@@ -298,7 +298,7 @@ pkgitem : decl {
                 }
             }
         | pkgtydef {
-                puttype(file->file.exports, mkname($1.line, $1.name), $1.type);
+                puttype(file->file.exports, mkname($1.loc, $1.name), $1.type);
                 installucons(file->file.exports, $1.type);
             }
         | traitdef {
@@ -322,7 +322,7 @@ pkgtydef: attrs tydef {
                     if (!strcmp($1.str[i], "pkglocal"))
                         $$.type->ispkglocal = 1;
                     else
-                        lfatal($$.line, 0, "invalid type attribute '%s'", $1.str[i]);
+                        lfatal($$.loc, "invalid type attribute '%s'", $1.str[i]);
                 }
             }
         ;
@@ -331,24 +331,24 @@ declbody: declcore Tasn expr {$$ = $1; $1->decl.init = $3;}
         | declcore
         ;
 
-declcore: name {$$ = mkdecl($1->line, $1, mktyvar($1->line));}
+declcore: name {$$ = mkdecl($1->loc, $1, mktyvar($1->loc));}
         | typedeclcore {$$ = $1;}
         ;
 
 typedeclcore
-        : name Tcolon type {$$ = mkdecl($1->line, $1, $3);}
+        : name Tcolon type {$$ = mkdecl($1->loc, $1, $3);}
         ;
 
-name    : Tident {$$ = mkname($1->line, $1->str);}
+name    : Tident {$$ = mkname($1->loc, $1->str);}
         | Tident Tdot name {$$ = $3; setns($3, $1->str);}
         ;
 
 implstmt: Timpl name type {
-                $$ = mkimplstmt($1->line, $2, $3, NULL, 0);
+                $$ = mkimplstmt($1->loc, $2, $3, NULL, 0);
                 $$->impl.isproto = 1;
             }
         | Timpl name type Tasn Tendln implbody Tendblk {
-                $$ = mkimplstmt($1->line, $2, $3, $6.nl, $6.nn);
+                $$ = mkimplstmt($1->loc, $2, $3, $6.nl, $6.nn);
             }
         ;
 
@@ -357,7 +357,7 @@ implbody
         | implbody Tident Tasn exprln optendlns {
                 Node *d;
                 $$ = $1;
-                d = mkdecl($2->line, mkname($2->line, $2->str), mktyvar($2->line));
+                d = mkdecl($2->loc, mkname($2->loc, $2->str), mktyvar($2->loc));
                 d->decl.init = $4;
                 d->decl.isconst = 1;
                 lappend(&$$.nl, &$$.nn, d);
@@ -365,11 +365,11 @@ implbody
         ;
 
 traitdef: Ttrait Tident generictype /* trait prototype */ {
-                $$ = mktrait($1->line, mkname($2->line, $2->str), $3, NULL, 0, NULL, 0, 1);
+                $$ = mktrait($1->loc, mkname($2->loc, $2->str), $3, NULL, 0, NULL, 0, 1);
             }
         | Ttrait Tident generictype Tasn traitbody Tendblk /* trait definition */ {
                 size_t i;
-                $$ = mktrait($1->line, mkname($2->line, $2->str), $3, NULL, 0, $5.nl, $5.nn, 0);
+                $$ = mktrait($1->loc, mkname($2->loc, $2->str), $3, NULL, 0, $5.nl, $5.nn, 0);
                 for (i = 0; i < $5.nn; i++) {
                     $5.nl[i]->decl.trait = $$;
                     $5.nl[i]->decl.isgeneric = 1;
@@ -382,7 +382,7 @@ traitbody
         | traitbody Tident Tcolon type optendlns {
                 Node *d;
                 $$ = $1;
-                d = mkdecl($2->line, mkname($2->line, $2->str), $4);
+                d = mkdecl($2->loc, mkname($2->loc, $2->str), $4);
                 d->decl.isgeneric = 1;
                 lappend(&$$.nl, &$$.nn, d);
             }
@@ -392,18 +392,18 @@ traitbody
 tydef   : Ttype typeid {$$ = $2;}
         | Ttype typeid Tasn type {
                 $$ = $2;
-                $$.type = mktyname($2.line, mkname($2.line, $2.name), $2.params, $2.nparams, $4);
+                $$.type = mktyname($2.loc, mkname($2.loc, $2.name), $2.params, $2.nparams, $4);
             }
         ;
 
 typeid  : Tident {
-                $$.line = $1->line;
+                $$.loc = $1->loc;
                 $$.name = $1->str;
                 $$.params = NULL;
                 $$.type = NULL;
             }
         | Tident Toparen typarams Tcparen {
-                $$.line = $1->line;
+                $$.loc = $1->loc;
                 $$.name = $1->str;
                 $$.params = $3.types;
                 $$.nparams = $3.ntypes;
@@ -423,18 +423,18 @@ type    : structdef
         | uniondef
         | compoundtype
         | generictype
-        | Tellipsis {$$ = mktype($1->line, Tyvalist);}
+        | Tellipsis {$$ = mktype($1->loc, Tyvalist);}
         ;
 
 generictype
-        : Ttyparam {$$ = mktyparam($1->line, $1->str);}
+        : Ttyparam {$$ = mktyparam($1->loc, $1->str);}
         | Ttyparam Twith name {
-                $$ = mktyparam($1->line, $1->str);
+                $$ = mktyparam($1->loc, $1->str);
                 addtrait($$, $3->name.name);
             }
         | Ttyparam Twith Toparen typaramlist Tcparen {
                 size_t i;
-                $$ = mktyparam($1->line, $1->str);
+                $$ = mktyparam($1->loc, $1->str);
                 for (i = 0; i < $4.nn; i++)
                     addtrait($$, $4.nl[i]->name.name);
             }
@@ -450,36 +450,37 @@ typaramlist
 
 compoundtype
         : functype   {$$ = $1;}
-        | type Tosqbrac Tcolon Tcsqbrac {$$ = mktyslice($2->line, $1);}
-        | type Tosqbrac expr Tcsqbrac {$$ = mktyarray($2->line, $1, $3);}
-        | type Tderef {$$ = mktyptr($2->line, $1);}
-        | Tat Tident {$$ = mktyparam($1->line, $2->str);}
-        | name       {$$ = mktyunres($1->line, $1, NULL, 0);}
-        | name Toparen typelist Tcparen {$$ = mktyunres($1->line, $1, $3.types, $3.ntypes);}
+        | type Tosqbrac Tcolon Tcsqbrac {$$ = mktyslice($2->loc, $1);}
+        | type Tosqbrac expr Tcsqbrac {$$ = mktyarray($2->loc, $1, $3);}
+        | type Tderef {$$ = mktyptr($2->loc, $1);}
+        | Tat Tident {$$ = mktyparam($1->loc, $2->str);}
+        | name       {$$ = mktyunres($1->loc, $1, NULL, 0);}
+        | name Toparen typelist Tcparen {$$ = mktyunres($1->loc, $1, $3.types, $3.ntypes);}
         ;
 
 functype: Toparen funcsig Tcparen {$$ = $2;}
         ;
 
 funcsig : argdefs Tret type
-            {$$ = mktyfunc($1.line, $1.nl, $1.nn, $3);}
+            {$$ = mktyfunc($2->loc, $1.nl, $1.nn, $3);}
         ;
 
 argdefs : typedeclcore {
-                $$.line = $1->line;
+                $$.loc = $1->loc;
                 $$.nl = NULL;
                 $$.nn = 0; lappend(&$$.nl, &$$.nn, $1);
             }
         | argdefs Tcomma declcore {lappend(&$$.nl, &$$.nn, $3);}
         | /* empty */ {
-                $$.line = line;
+                $$.loc.line = 0;
+                $$.loc.file = 0;
                 $$.nl = NULL;
                 $$.nn = 0;
             }
         ;
 
 tupledef: Toparen typelist Tcparen
-            {$$ = mktytuple($1->line, $2.types, $2.ntypes);}
+            {$$ = mktytuple($1->loc, $2.types, $2.ntypes);}
         ;
 
 typelist: type {
@@ -492,7 +493,7 @@ typelist: type {
 
 structdef
         : Tstruct structbody Tendblk
-            {$$ = mktystruct($1->line, $2.nl, $2.nn);}
+            {$$ = mktystruct($1->loc, $2.nl, $2.nn);}
         ;
 
 structbody
@@ -516,7 +517,7 @@ structent
 
 uniondef
         : Tunion unionbody Tendblk
-            {$$ = mktyunion($1->line, $2.ucl, $2.nucl);}
+            {$$ = mktyunion($1->loc, $2.ucl, $2.nucl);}
         ;
 
 unionbody
@@ -533,16 +534,16 @@ unionbody
         ;
 
 unionelt /* nb: the ucon union type gets filled in when we have context */
-        : Ttick name type Tendln {$$ = mkucon($2->line, $2, NULL, $3);}
-        | Ttick name Tendln {$$ = mkucon($2->line, $2, NULL, NULL);}
+        : Ttick name type Tendln {$$ = mkucon($2->loc, $2, NULL, $3);}
+        | Ttick name Tendln {$$ = mkucon($2->loc, $2, NULL, NULL);}
         | Tendln {$$ = NULL;}
         ;
 
-goto    : Tgoto Tident {$$ = mkexpr($1->line, Ojmp, mklbl($2->line, $2->str), NULL);}
+goto    : Tgoto Tident {$$ = mkexpr($1->loc, Ojmp, mklbl($2->loc, $2->str), NULL);}
         ;
 
-retexpr : Tret expr {$$ = mkexpr($1->line, Oret, $2, NULL);}
-        | Tret {$$ = mkexpr($1->line, Oret, NULL);}
+retexpr : Tret expr {$$ = mkexpr($1->loc, Oret, $2, NULL);}
+        | Tret {$$ = mkexpr($1->loc, Oret, NULL);}
         | expr
         ;
 
@@ -561,7 +562,7 @@ expr    : asnexpr
         ;
 
 asnexpr : lorexpr asnop asnexpr
-            {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
+            {$$ = mkexpr($1->loc, binop($2->type), $1, $3, NULL);}
         | lorexpr
         ;
 
@@ -579,17 +580,17 @@ asnop   : Tasn
         ;
 
 lorexpr : lorexpr Tlor landexpr
-            {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
+            {$$ = mkexpr($1->loc, binop($2->type), $1, $3, NULL);}
         | landexpr
         ;
 
 landexpr: landexpr Tland cmpexpr
-            {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
+            {$$ = mkexpr($1->loc, binop($2->type), $1, $3, NULL);}
         | cmpexpr
         ;
 
 cmpexpr : cmpexpr cmpop castexpr
-            {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
+            {$$ = mkexpr($1->loc, binop($2->type), $1, $3, NULL);}
         | castexpr
         ;
 
@@ -597,40 +598,40 @@ cmpexpr : cmpexpr cmpop castexpr
 cmpop   : Teq | Tgt | Tlt | Tge | Tle | Tne ;
 
 castexpr: castexpr Tcast Toparen type Tcparen {
-                $$ = mkexpr($1->line, Ocast, $1, NULL);
+                $$ = mkexpr($1->loc, Ocast, $1, NULL);
                 $$->expr.type = $4;
             }
         | unionexpr
         ;
 
 unionexpr
-        : Ttick name unionexpr {$$ = mkexpr($1->line, Oucon, $2, $3, NULL);}
-        | Ttick name {$$ = mkexpr($1->line, Oucon, $2, NULL);}
+        : Ttick name unionexpr {$$ = mkexpr($1->loc, Oucon, $2, $3, NULL);}
+        | Ttick name {$$ = mkexpr($1->loc, Oucon, $2, NULL);}
         | borexpr
         ;
 
 
 borexpr : borexpr Tbor bandexpr
-            {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
+            {$$ = mkexpr($1->loc, binop($2->type), $1, $3, NULL);}
         | borexpr Tbxor bandexpr
-            {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
+            {$$ = mkexpr($1->loc, binop($2->type), $1, $3, NULL);}
         | bandexpr
         ;
 
 bandexpr: bandexpr Tband addexpr
-            {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
+            {$$ = mkexpr($1->loc, binop($2->type), $1, $3, NULL);}
         | addexpr
         ;
 
 addexpr : addexpr addop mulexpr
-            {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
+            {$$ = mkexpr($1->loc, binop($2->type), $1, $3, NULL);}
         | mulexpr
         ;
 
 addop   : Tplus | Tminus ;
 
 mulexpr : mulexpr mulop shiftexpr
-            {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
+            {$$ = mkexpr($1->loc, binop($2->type), $1, $3, NULL);}
         | shiftexpr
         ;
 
@@ -639,38 +640,38 @@ mulop   : Tmul | Tdiv | Tmod
 
 shiftexpr
         : shiftexpr shiftop prefixexpr
-            {$$ = mkexpr($1->line, binop($2->type), $1, $3, NULL);}
+            {$$ = mkexpr($1->loc, binop($2->type), $1, $3, NULL);}
         | prefixexpr
         ;
 
 shiftop : Tbsl | Tbsr;
 
 prefixexpr
-        : Tinc prefixexpr      {$$ = mkexpr($1->line, Opreinc, $2, NULL);}
-        | Tdec prefixexpr      {$$ = mkexpr($1->line, Opredec, $2, NULL);}
-        | Tband prefixexpr     {$$ = mkexpr($1->line, Oaddr, $2, NULL);}
-        | Tlnot prefixexpr     {$$ = mkexpr($1->line, Olnot, $2, NULL);}
-        | Tbnot prefixexpr     {$$ = mkexpr($1->line, Obnot, $2, NULL);}
-        | Tminus prefixexpr    {$$ = mkexpr($1->line, Oneg, $2, NULL);}
+        : Tinc prefixexpr      {$$ = mkexpr($1->loc, Opreinc, $2, NULL);}
+        | Tdec prefixexpr      {$$ = mkexpr($1->loc, Opredec, $2, NULL);}
+        | Tband prefixexpr     {$$ = mkexpr($1->loc, Oaddr, $2, NULL);}
+        | Tlnot prefixexpr     {$$ = mkexpr($1->loc, Olnot, $2, NULL);}
+        | Tbnot prefixexpr     {$$ = mkexpr($1->loc, Obnot, $2, NULL);}
+        | Tminus prefixexpr    {$$ = mkexpr($1->loc, Oneg, $2, NULL);}
         | Tplus prefixexpr     {$$ = $2;} /* positive is a nop */
         | postfixexpr
         ;
 
 postfixexpr
         : postfixexpr Tdot Tident
-            {$$ = mkexpr($1->line, Omemb, $1, mkname($3->line, $3->str), NULL);}
+            {$$ = mkexpr($1->loc, Omemb, $1, mkname($3->loc, $3->str), NULL);}
         | postfixexpr Tinc
-            {$$ = mkexpr($1->line, Opostinc, $1, NULL);}
+            {$$ = mkexpr($1->loc, Opostinc, $1, NULL);}
         | postfixexpr Tdec
-            {$$ = mkexpr($1->line, Opostdec, $1, NULL);}
+            {$$ = mkexpr($1->loc, Opostdec, $1, NULL);}
         | postfixexpr Tosqbrac expr Tcsqbrac
-            {$$ = mkexpr($1->line, Oidx, $1, $3, NULL);}
+            {$$ = mkexpr($1->loc, Oidx, $1, $3, NULL);}
         | postfixexpr Tosqbrac optexpr Tcolon optexpr Tcsqbrac
-            {$$ = mksliceexpr($1->line, $1, $3, $5);}
+            {$$ = mksliceexpr($1->loc, $1, $3, $5);}
         | postfixexpr Tderef
-            {$$ = mkexpr($1->line, Oderef, $1, NULL);}
+            {$$ = mkexpr($1->loc, Oderef, $1, NULL);}
         | postfixexpr Toparen arglist Tcparen
-            {$$ = mkcall($1->line, $1, $3.nl, $3.nn);}
+            {$$ = mkcall($1->loc, $1, $3.nl, $3.nn);}
         | atomicexpr
         ;
 
@@ -684,12 +685,12 @@ arglist : asnexpr
 
 atomicexpr
         : Tident
-            {$$ = mkexpr($1->line, Ovar, mkname($1->line, $1->str), NULL);}
+            {$$ = mkexpr($1->loc, Ovar, mkname($1->loc, $1->str), NULL);}
         | literal
         | Toparen expr Tcparen
             {$$ = $2;}
         | Tsizeof Toparen type Tcparen
-            {$$ = mkexpr($1->line, Osize, mkpseudodecl($3), NULL);}
+            {$$ = mkexpr($1->loc, Osize, mkpseudodecl($3), NULL);}
         ;
 
 tupbody : tuphead tuprest
@@ -709,30 +710,30 @@ tuprest : /*empty */
         | tuprest Tcomma expr {lappend(&$$.nl, &$$.nn, $3);}
         ;
 
-literal : funclit       {$$ = mkexpr($1->line, Olit, $1, NULL);}
-        | littok        {$$ = mkexpr($1->line, Olit, $1, NULL);}
+literal : funclit       {$$ = mkexpr($1->loc, Olit, $1, NULL);}
+        | littok        {$$ = mkexpr($1->loc, Olit, $1, NULL);}
         | seqlit        {$$ = $1;}
         | tuplit        {$$ = $1;}
         ;
 
 tuplit  : Toparen tupbody Tcparen
-            {$$ = mkexprl($1->line, Otup, $2.nl, $2.nn);}
+            {$$ = mkexprl($1->loc, Otup, $2.nl, $2.nn);}
 
-littok  : Tstrlit       {$$ = mkstr($1->line, $1->str);}
-        | Tchrlit       {$$ = mkchar($1->line, $1->chrval);}
-        | Tfloatlit     {$$ = mkfloat($1->line, $1->fltval);}
-        | Tboollit      {$$ = mkbool($1->line, !strcmp($1->str, "true"));}
+littok  : Tstrlit       {$$ = mkstr($1->loc, $1->str);}
+        | Tchrlit       {$$ = mkchar($1->loc, $1->chrval);}
+        | Tfloatlit     {$$ = mkfloat($1->loc, $1->fltval);}
+        | Tboollit      {$$ = mkbool($1->loc, !strcmp($1->str, "true"));}
         | Tintlit {
-                $$ = mkint($1->line, $1->intval);
+                $$ = mkint($1->loc, $1->intval);
                 if ($1->inttype)
-                    $$->lit.type = mktype($1->line, $1->inttype);
+                    $$->lit.type = mktype($1->loc, $1->inttype);
             }
         ;
 
 funclit : Tobrace params Tendln blkbody Tcbrace
-            {$$ = mkfunc($1->line, $2.nl, $2.nn, mktyvar($3->line), $4);}
+            {$$ = mkfunc($1->loc, $2.nl, $2.nn, mktyvar($3->loc), $4);}
         | Tobrace params Tret type Tendln blkbody Tcbrace
-            {$$ = mkfunc($1->line, $2.nl, $2.nn, $4, $6);}
+            {$$ = mkfunc($1->loc, $2.nl, $2.nn, $4, $6);}
         ;
 
 params  : declcore {
@@ -745,21 +746,21 @@ params  : declcore {
         ;
 
 seqlit  : Tosqbrac arrayelts Tcsqbrac
-            {$$ = mkexprl($1->line, Oarr, $2.nl, $2.nn);}
+            {$$ = mkexprl($1->loc, Oarr, $2.nl, $2.nn);}
         | Tosqbrac structelts Tcsqbrac
-            {$$ = mkexprl($1->line, Ostruct, $2.nl, $2.nn);}
+            {$$ = mkexprl($1->loc, Ostruct, $2.nl, $2.nn);}
         | Tosqbrac Tcsqbrac /* [] is the empty array. */
-            {$$ = mkexprl($1->line, Oarr, NULL, 0);}
+            {$$ = mkexprl($1->loc, Oarr, NULL, 0);}
         ;
 
 arrayelts
         : optendlns arrayelt {
                 $$.nl = NULL;
                 $$.nn = 0;
-                lappend(&$$.nl, &$$.nn, mkidxinit($2->line, mkint($2->line, 0), $2));
+                lappend(&$$.nl, &$$.nn, mkidxinit($2->loc, mkint($2->loc, 0), $2));
             }
         | arrayelts Tcomma optendlns arrayelt
-             {lappend(&$$.nl, &$$.nn, mkidxinit($4->line, mkint($4->line, $$.nn), $4));}
+             {lappend(&$$.nl, &$$.nn, mkidxinit($4->loc, mkint($4->loc, $$.nn), $4));}
         | arrayelts Tcomma optendlns
         ;
 
@@ -777,7 +778,7 @@ structelts
         ;
 
 structelt: optendlns Tdot Tident Tasn expr optendlns
-            {$$ = mkidxinit($2->line, mkname($3->line, $3->str), $5);}
+            {$$ = mkidxinit($2->loc, mkname($3->loc, $3->str), $5);}
          ;
 
 optendlns  : /* none */
@@ -797,34 +798,34 @@ stmt    : goto
         ;
 
 break   : Tbreak
-            {$$ = mkexpr($1->line, Obreak, NULL);}
+            {$$ = mkexpr($1->loc, Obreak, NULL);}
         ;
 
 continue   : Tcontinue
-            {$$ = mkexpr($1->line, Ocontinue, NULL);}
+            {$$ = mkexpr($1->loc, Ocontinue, NULL);}
         ;
 
 forstmt : Tfor optexprln optexprln optexprln block
-            {$$ = mkloopstmt($1->line, $2, $3, $4, $5);}
+            {$$ = mkloopstmt($1->loc, $2, $3, $4, $5);}
         | Tfor expr Tin exprln block
-            {$$ = mkiterstmt($1->line, $2, $4, $5);}
+            {$$ = mkiterstmt($1->loc, $2, $4, $5);}
         /* FIXME: allow decls in for loops
         | Tfor decl Tendln optexprln optexprln block
-            {$$ = mkloopstmt($1->line, $2, $4, $5, $6);}
+            {$$ = mkloopstmt($1->loc, $2, $4, $5, $6);}
         */
         ;
 
 whilestmt
         : Twhile exprln block
-            {$$ = mkloopstmt($1->line, NULL, $2, NULL, $3);}
+            {$$ = mkloopstmt($1->loc, NULL, $2, NULL, $3);}
         ;
 
 ifstmt  : Tif exprln blkbody elifs
-            {$$ = mkifstmt($1->line, $2, $3, $4);}
+            {$$ = mkifstmt($1->loc, $2, $3, $4);}
         ;
 
 elifs   : Telif exprln blkbody elifs
-            {$$ = mkifstmt($1->line, $2, $3, $4);}
+            {$$ = mkifstmt($1->loc, $2, $3, $4);}
         | Telse block
             {$$ = $2;}
         | Tendblk
@@ -832,7 +833,7 @@ elifs   : Telif exprln blkbody elifs
         ;
 
 matchstmt: Tmatch exprln optendlns Tbor matches Tendblk
-            {$$ = mkmatchstmt($1->line, $2, $5.nl, $5.nn);}
+            {$$ = mkmatchstmt($1->loc, $2, $5.nl, $5.nn);}
          ;
 
 matches : match {
@@ -847,7 +848,7 @@ matches : match {
             }
         ;
 
-match   : expr Tcolon blkbody Tendln {$$ = mkmatch($1->line, $1, $3);}
+match   : expr Tcolon blkbody Tendln {$$ = mkmatch($1->loc, $1, $3);}
         ;
 
 block   : blkbody Tendblk
@@ -855,14 +856,14 @@ block   : blkbody Tendblk
 
 blkbody : decl {
                 size_t i;
-                $$ = mkblock(line, mkstab());
+                $$ = mkblock($1.loc, mkstab());
                 for (i = 0; i < $1.nn; i++) {
                     putdcl($$->block.scope, $1.nl[i]);
                     lappend(&$$->block.stmts, &$$->block.nstmts, $1.nl[i]);
                 }
             }
         | stmt {
-                $$ = mkblock(line, mkstab());
+                $$ = mkblock(curloc, mkstab());
                 if ($1)
                     lappend(&$$->block.stmts, &$$->block.nstmts, $1);
             }
@@ -881,7 +882,7 @@ blkbody : decl {
         ;
 
 label   : Tcolon Tident
-            {$$ = mklbl($2->line, $2->str);}
+            {$$ = mklbl($2->loc, $2->str);}
         ;
 
 %%
@@ -896,16 +897,19 @@ static void addtrait(Type *t, char *str)
             return;
         }
     }
-    lfatal(t->line, t->file, "Constraint %s does not exist", str);
+    lfatal(t->loc, "Constraint %s does not exist", str);
 }
 
 static Node *mkpseudodecl(Type *t)
 {
     static int nextpseudoid;
     char buf[128];
+    Srcloc l;
 
+    l.line = -1;
+    l.file = 0;
     snprintf(buf, 128, ".pdecl%d", nextpseudoid++);
-    return mkdecl(-1, mkname(-1, buf), t);
+    return mkdecl(l, mkname(l, buf), t);
 }
 
 static void setattrs(Node *dcl, char **attrs, size_t nattrs)
@@ -947,14 +951,6 @@ static void installucons(Stab *st, Type *t)
     }
 }
 
-void yyerror(const char *s)
-{
-    fprintf(stderr, "%s:%d: %s", filename, line, s);
-    if (curtok->str)
-        fprintf(stderr, " near \"%s\"", curtok->str);
-    fprintf(stderr, "\n");
-    exit(1);
-}
 
 static Op binop(int tt)
 {
