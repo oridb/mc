@@ -57,7 +57,8 @@ typedef enum {
     Ntraits
 } Tc;
 
-#define Zloc ((Srcloc){.line=-1, .file=0})
+#define Zloc ((Srcloc){-1, 0})
+
 struct Srcloc {
     int line;
     int file;
