@@ -95,6 +95,7 @@ size_t tyoffset(Type *ty, Node *memb)
     size_t i;
     size_t off;
 
+    ty = tybase(ty);
     if (ty->type == Typtr)
         ty = tybase(ty->sub[0]);
 
