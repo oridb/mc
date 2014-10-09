@@ -10,6 +10,7 @@ use "option.use"
 use "resolve.use"
 use "result.use"
 use "sleq.use"
+use "strfind.use"
 use "sys.use"
 use "syswrap.use"
 use "utf.use"
@@ -30,9 +31,41 @@ var inited = false
 /* takes a plan 9 style dial string */
 const dial = {str
 	var proto, host, port
-	var socktype, portnum
 	var sa : sys.sockaddr_in	/* we only support inet sockets right now.. ugh. */
 	var sock
+
+	match parsedial(str)
+	| `Ok val:	(proto, host, port) = val
+	| `Fail m:	-> `Fail m
+	;;
+
+	match getaddr(host)
+	| `Ipv4 bits:
+		sa.fam = sys.Afinet
+		sa.addr = bits
+		sa.port = hosttonet(port)
+	| `Ipv6 bits:
+		-> `Fail "ipv6 not yet supported"
+	;;
+
+	sock = sys.socket(sa.fam, proto, 0)
+	if sock < 0
+		-> `Fail "failed to connect to socket"
+	;;
+	var err
+	err = sys.connect(sock, (&sa) castto(sys.sockaddr#), sizeof(sys.sockaddr_in))
+	if err < 0
+		put("Errno %i\n", -err)
+		sys.close(sock)
+		-> `Fail "Failed to bind socket"
+	;;
+
+	-> `Ok (sock castto(fd))
+}
+
+const parsedial = {str
+	var proto, host, port
+	var socktype, portnum
 
 	(proto, str) = nameseg(str)
 	(host, str) = nameseg(str)
@@ -61,28 +94,7 @@ const dial = {str
 	| `None:	-> `Fail "bad port"
 	;;
 
-	match getaddr(host)
-	| `Ipv4 bits:
-		sa.fam = sys.Afinet
-		sa.addr = bits
-		sa.port = hosttonet(portnum)
-	| `Ipv6 bits:
-		-> `Fail "ipv6 not yet supported"
-	;;
-
-	sock = sys.socket(sa.fam, socktype, 0)
-	if sock < 0
-		-> `Fail "failed to connect to socket"
-	;;
-	var err
-	err = sys.connect(sock, (&sa) castto(sys.sockaddr#), sizeof(sys.sockaddr_in))
-	if err < 0
-		put("Errno %i\n", -err)
-		sys.close(sock)
-		-> `Fail "Failed to bind socket"
-	;;
-
-	-> `Ok (sock castto(fd))
+	-> `Ok (socktype, host, portnum)
 }
 
 const parseport = {port
@@ -120,13 +132,11 @@ const getaddr = {addr
 }
 
 const nameseg = {str
-	var len
-
-	for len = 0; len < str.len; len++
-		if str[len] == '!' castto(byte)
-			-> (str[:len], str[len+1:])
-		;;
+	match strfind(str, "!")
+	| `Some idx:
+		-> (str[:idx], str[idx:])
+	| `None:
+		-> (str, "")
 	;;
-	-> (str[:], str[len:])
 }
 
