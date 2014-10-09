@@ -13,6 +13,7 @@
 
 #include "parse.h"
 
+/* malloc wrappers */
 void *zalloc(size_t sz)
 {
     void *mem;
@@ -52,6 +53,7 @@ void *xrealloc(void *mem, size_t sz)
     return mem;
 }
 
+/* errors */
 void die(char *msg, ...)
 {
     va_list ap;
@@ -119,6 +121,7 @@ void *memdup(void *mem, size_t len)
     return memcpy(ret, mem, len);
 }
 
+/* lists */
 void lappend(void *l, size_t *len, void *n)
 {
     void ***pl;
@@ -179,6 +182,7 @@ void lfree(void *l, size_t *len)
     *len = 0;
 }
 
+/* endian packing */
 void be64(vlong v, byte buf[8])
 {
     buf[0] = (v >> 56) & 0xff;
@@ -491,6 +495,7 @@ int optnext(Optctx *ctx)
     ctx->curarg++;
     if (!optinfo(ctx, c, &take, &mand)) {
         printf("Unexpected argument %c\n", *ctx->curarg);
+        exit(1);
     }
 
     ctx->optarg = NULL;
