@@ -1,4 +1,6 @@
 use std
+use sys
+
 use "types.use"
 
 pkg _zoneinfo =
@@ -46,7 +48,7 @@ const findtzoff = {tz, tm
 	else
 		for z in zonepath
 			path = std.pathcat(z, tz)
-			if std.stat(path, &sb) == 0
+			if sys.stat(path, &sb) == 0
 				goto found
 			;;
 			std.slfree(path)
