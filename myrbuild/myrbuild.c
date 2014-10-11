@@ -181,7 +181,7 @@ int finddep(char *buf, char **dep)
     p += 3;
     if (!isspace(*p))
         return 0;
-    while (isspace(*p) && p != end)
+    while (isspace(*p) && *p != ';' && *p != '"' && p != end)
         p++;
 
     w = p;
