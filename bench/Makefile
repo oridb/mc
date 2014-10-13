@@ -4,7 +4,8 @@ BENCHSRC=intsort.myr \
 	 copious-allocs.myr \
 	 sha1-compute.myr \
 	 bigfactorial.myr \
-	 mandelbrot.myr 
+	 mandelbrot.myr \
+	 regex-match.myr
 
 include ../config.mk
 include ../mk/c.mk
