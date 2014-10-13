@@ -120,28 +120,26 @@ const gen = {re, t
 }
 
 const genranges = {re, sl
-	const charbounds = [
-		0,		/* len = 0: bug if used for hi */
-		0x80,		/* len = 1 */
-		0x800,		/* len = 2 */
-		0x10000,	/* len = 3 */
-		0x200000,	/* len = 4 */
-		-1
-	]
 	var lbuf : byte[4], hbuf : byte[4], boundbuf : byte[4]
-	var lsz, hsz, bsz
+	var lsz, hsz, bsz, i
 	var rt : rangetrie#
-	var i
 
 	/* generate a trie of ranges */
 	rt = std.zalloc()
 	for r in sl
+		/* 
+		encode:
+			lo => bounds[loidx] - 1
+			bounds[loidx] => bounds[loidx + 1] - 1
+			...
+			bounds[hiidx - 1] => hi
+		*/
 		lsz = std.encode(lbuf[:], r[0])
 		hsz = std.encode(hbuf[:], r[1])
 		for i = lsz; i < hsz; i++
-			bsz = std.encode(boundbuf[:], charbounds[i] - 1)
+			bsz = bound(boundbuf[:], i, 0xff)
 			rtinsert(rt, lbuf[:lsz], boundbuf[:bsz])
-			lsz = std.encode(lbuf[:], charbounds[i])
+			lsz = bound(lbuf[:], i + 1, 0x00)
 		;;
 		rtinsert(rt, lbuf[:lsz], hbuf[:hsz])
 	;;
@@ -151,6 +149,21 @@ const genranges = {re, sl
 	rangegen(re, rt, rt.ranges, rt.link, rangeprogsize(rt) + re.proglen)
 	rtfree(rt)
 	-> re.proglen
+}
+
+const bound = {buf, len, fill
+	var i, s
+
+	if len == 1
+		buf[0] = 0x7f
+	else
+		s = len castto(byte)
+		buf[0] = (0xff << (8 - s)) | (fill >> (s + 1))
+		for i = 1; i < len; i++
+			buf[i] = 0x80 | (fill >> 2)
+		;;
+	;;
+	-> len
 }
 
 type rangetrie = struct
