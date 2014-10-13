@@ -9,3 +9,5 @@ Matched Aabæc%!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! via (\pL*)bæc\PL* : 2
 Matched Aabæc%!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! via (\p{Letter}*)bæc\P{Uppercase_Letter}* : 2
 	match 0: Aabæc%!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	match 1: Aa
+Matched æ via . : 1
+	match 0: æ

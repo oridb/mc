@@ -9,7 +9,5 @@ const main = {
         /* test various syntaxen */
 	testmatch("(\\pL*)bæc\\PL*", "Aabæc%!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 	testmatch("(\\p{Letter}*)bæc\\P{Uppercase_Letter}*", "Aabæc%!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-	/* BUGGERED
 	testmatch(".", "æ")
-	*/
 }

@@ -145,6 +145,9 @@ const genranges = {re, sl
 		;;
 		rtinsert(rt, lbuf[:lsz], hbuf[:hsz])
 	;;
+	if re.debug
+		rtdump(rt, 0)
+	;;
 	rangegen(re, rt, rt.ranges, rt.link, rangeprogsize(rt) + re.proglen)
 	rtfree(rt)
 	-> re.proglen
@@ -156,11 +159,38 @@ type rangetrie = struct
 	end	: bool
 ;;
 
+const rtdump = {rt, ind
+	var i
+	var l, h
+
+	indent(ind)
+	std.put("Range (end = %t) {\n", rt.end)
+	for i = 0; i < rt.ranges.len; i++
+		indent(ind + 1)
+		(l, h) = rt.ranges[i]
+		std.put("0x%xb-0x%xb: \n", l, h)
+		rtdump(rt.link[i], ind + 1)
+	;;
+	indent(ind)
+	std.put("}\n")
+}
+
+const indent = {ind
+	var i
+	for i = 0; i < ind; i++
+		std.put("\t")
+	;;
+}
+
 const rtinsert = {rt, lo, hi
 	var a, b
 	var n
 
 	std.assert(lo.len == hi.len, "range sizes differ")
+	if lo.len == 0
+		rt.end = true
+		->
+	;;
 
 	n = rt.ranges.len
 	if n == 0
@@ -179,11 +209,7 @@ const rtinsert = {rt, lo, hi
 		;;
 	;;
 
-	if lo.len == 1
-		rt.end = true
-	else
-		rtinsert(rt.link[rt.link.len - 1], lo[1:], hi[1:])
-	;;
+	rtinsert(rt.link[rt.link.len - 1], lo[1:], hi[1:])
 }
 
 const rtfree = {rt
@@ -206,10 +232,12 @@ const rangegen = {re, rt, ranges, links, end
 	elif n == 1
 		(a, b) = ranges[0]
 		append(re, `Irange (a, b))
-		if links[0].ranges.len > 0 && rt.end
-			append(re, `Ifork (re.prog.len + 1, end))
-		elif rt.end
-			append(re, `Ijmp end)
+		if links[0].end
+			if links[0].ranges.len > 0
+				append(re, `Ifork (re.prog.len + 1, end))
+			else
+				append(re, `Ijmp end)
+			;;
 		;;
 		rangegen(re, links[0], links[0].ranges, links[0].link, end)
 	else
@@ -226,17 +254,17 @@ const rangeprogsize = {rt
 	var sz
 
 	if rt.ranges.len == 0
-		-> 0
+		sz = 0
 	else
 		sz = 2*rt.ranges.len - 1
 		for l in rt.link
 			sz += rangeprogsize(l)
 		;;
-		if rt.end
-			sz += rt.ranges.len
-		;;
-		-> sz
 	;;
+	if rt.end
+		sz += 1
+	;;
+	-> sz
 }
 
 /* calculates the forward jump distance for a utf8 character range */
