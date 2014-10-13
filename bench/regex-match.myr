@@ -1,0 +1,26 @@
+use std
+use regex
+
+const main = {
+	var str, re, i
+
+	str = "€i²æ&±-ŝ€i²æ&±-ŝ€i²æ&±-ŝ€i²æ&±-ŝ€i²æ&±-ŝüüü€i²æ&±-ŝüüü€i²æ&±-ŝü"
+	str = std.strcat(str, str)
+	str = std.strcat(str, str)
+	str = std.strcat(str, str)
+	str = std.strcat(str, str)
+
+	for i = 0; i < 100; i++
+		match regex.compile(".*")
+		| `std.Ok r:	re = r
+		| `std.Fail m:	std.fatal(1, "couldn't compile regex: %s\n", m)
+		;;
+
+		match regex.exec(re, str)
+		| `std.Some m:
+		| `std.None:	std.fatal(1, "Didn't match regex\n")
+		;;
+
+		regex.free(re)
+	;;
+}
