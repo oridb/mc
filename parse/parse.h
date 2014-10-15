@@ -393,6 +393,7 @@ void *htget(Htab *ht, void *k);
 int hthas(Htab *ht, void *k);
 void **htkeys(Htab *ht, size_t *nkeys);
 /* useful key types */
+int liteq(Node *a, Node *b);
 ulong strhash(void *key);
 int streq(void *a, void *b);
 ulong ptrhash(void *key);
