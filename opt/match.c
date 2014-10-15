@@ -66,6 +66,11 @@ static Dtree *addunion(Dtree *t, Node *pat, Node ***cap, size_t *ncap)
 
 static Dtree *addwild(Dtree *t, Node *var, Node ***cap, size_t *ncap)
 {
+    Node *dcl;
+
+    dcl = decls[var->expr.did];
+    if (dcl->decl.isconst)
+        return NULL;
     if (t->any)
         return t->any;
     t->any = mkdtree();
@@ -75,51 +80,36 @@ static Dtree *addwild(Dtree *t, Node *var, Node ***cap, size_t *ncap)
 
 static Dtree *addpat(Dtree *t, Node *pat, Node ***cap, size_t *ncap)
 {
-    Type *ty;
+    Dtree *ret;
 
     if (pat == NULL)
         return t;
-    ty = tybase(exprtype(pat));
-    if (exprop(pat) == Ovar)
-        return addwild(t, pat, cap, ncap);
-
-    switch (ty->type) {
-        case Tyunion:
-            t = addunion(t, pat, cap, ncap);
+    switch (exprop(pat)) {
+        case Ovar:
+            ret = addwild(t, pat, cap, ncap);
+            break;
+        case Oucon:
+            ret = addunion(t, pat, cap, ncap);
             break;
             /*
-        case Tyslice:
-            t = addslice(t, pat);
+        case Olit:
+            ret = addlit(t, pat, cap, ncap);
             break;
-        case Tytuple:
-            t = addtuple(t, pat);
+        case Otup:
+            ret = addtup(t, pat, cap, ncap);
             break;
-        case Tyarray:
-            t = addtuple(t, pat);
+        case Oarr:
+            ret = addarr(t, pat, cap, ncap);
             break;
-        case Tystruct:
-            t = addstruct(t, pat);
-
-        case Tybool: case Tychar: case Tybyte:
-        case Tyint8: case Tyint16: case Tyint32: case Tyint:
-        case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint:
-        case Tyint64: case Tyuint64: case Tylong:  case Tyulong:
-        case Tyflt32: case Tyflt64:
-        case Typtr: case Tyfunc:
-            t = addlit(t, pat);
-            break;
-
             */
         default:
-            /* Right now, we just use this code for warning. */
-            /*
-            fatal(pat, "unsupported match type %s", tystr(ty));
-            */
+            /* Right now, we just use this code for warning.
+             *
+             * We shoudl fatal(unsupported match) here*/
             return NULL;
-            break;
     }
 
-    return t;
+    return ret;
 }
 
 static void checkcomprehensive(Dtree *dt)
