@@ -87,6 +87,24 @@ static Dtree *addlit(Dtree *t, Node *pat, Node ***cap, size_t *ncap)
     return sub;
 }
 
+static Dtree *addtup(Dtree *t, Node *pat, Node ***cap, size_t *ncap)
+{
+    size_t i;
+
+    for (i = 0; i < pat->expr.nargs; i++)
+        t = addpat(t, pat->expr.args[i], cap, ncap);
+    return t;
+}
+
+static Dtree *addarr(Dtree *t, Node *pat, Node ***cap, size_t *ncap)
+{
+    size_t i;
+
+    for (i = 0; i < pat->expr.nargs; i++)
+        t = addpat(t, pat->expr.args[i], cap, ncap);
+    return t;
+}
+
 static Dtree *addpat(Dtree *t, Node *pat, Node ***cap, size_t *ncap)
 {
     Dtree *ret;
@@ -103,14 +121,12 @@ static Dtree *addpat(Dtree *t, Node *pat, Node ***cap, size_t *ncap)
         case Olit:
             ret = addlit(t, pat, cap, ncap);
             break;
-            /*
         case Otup:
             ret = addtup(t, pat, cap, ncap);
             break;
         case Oarr:
             ret = addarr(t, pat, cap, ncap);
             break;
-            */
         default:
             /* Right now, we just use this code for warning.
              *
