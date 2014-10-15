@@ -553,6 +553,16 @@ static void matchpattern(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, N
             die("Unsupported type for pattern");
             break;
         /* only valid for string literals */
+        case Tybool: case Tychar: case Tybyte:
+        case Tyint8: case Tyint16: case Tyint32: case Tyint:
+        case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint:
+        case Tyint64: case Tyuint64: case Tylong:  case Tyulong:
+        case Tyflt32: case Tyflt64:
+        case Typtr: case Tyfunc:
+            v = mkexpr(pat->loc, Oeq, pat, val, NULL);
+            v->expr.type = mktype(pat->loc, Tybool);
+            cjmp(s, v, iftrue, iffalse);
+            break;
         case Tyslice:
             lit = pat->expr.args[0];
             if (exprop(pat) != Olit || lit->lit.littype != Lstr)
@@ -582,16 +592,6 @@ static void matchpattern(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, N
                 append(s, next);
             }
             jmp(s, iftrue);
-            break;
-        case Tybool: case Tychar: case Tybyte:
-        case Tyint8: case Tyint16: case Tyint32: case Tyint:
-        case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint:
-        case Tyint64: case Tyuint64: case Tylong:  case Tyulong:
-        case Tyflt32: case Tyflt64:
-        case Typtr: case Tyfunc:
-            v = mkexpr(pat->loc, Oeq, pat, val, NULL);
-            v->expr.type = mktype(pat->loc, Tybool);
-            cjmp(s, v, iftrue, iffalse);
             break;
         /* We got lucky. The structure of tuple, array, and struct literals
          * is the same, so long as we don't inspect the type, so we can
@@ -648,6 +648,7 @@ static void simpmatch(Simp *s, Node *n)
     Node *m;
     size_t i;
 
+    gensimpmatch(n);
     end = genlbl(n->loc);
     val = temp(s, n->matchstmt.val);
     tmp = rval(s, n->matchstmt.val, val);
