@@ -105,6 +105,11 @@ static Dtree *addarr(Dtree *t, Node *pat, Node ***cap, size_t *ncap)
     return t;
 }
 
+static Dtree *addstruct(Dtree *t, Node *pat, Node ***cap, size_t *ncap)
+{
+    return NULL;
+}
+
 static Dtree *addpat(Dtree *t, Node *pat, Node ***cap, size_t *ncap)
 {
     Dtree *ret;
@@ -127,11 +132,13 @@ static Dtree *addpat(Dtree *t, Node *pat, Node ***cap, size_t *ncap)
         case Oarr:
             ret = addarr(t, pat, cap, ncap);
             break;
+        case Ostruct:
+            ret = addstruct(t, pat, cap, ncap);
+            break;
         default:
-            /* Right now, we just use this code for warning.
-             *
-             * We shoudl fatal(unsupported match) here*/
-            return NULL;
+            ret = NULL;
+            fatal(pat, "unsupported pattern %s of type %s", opstr(exprop(pat)), tystr(exprtype(pat)));
+            break;
     }
 
     return ret;
