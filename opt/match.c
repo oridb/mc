@@ -107,7 +107,18 @@ static Dtree *addarr(Dtree *t, Node *pat, Node ***cap, size_t *ncap)
 
 static Dtree *addstruct(Dtree *t, Node *pat, Node ***cap, size_t *ncap)
 {
-    return NULL;
+    Node *elt;
+    size_t i, j;
+
+    for (i = 0; i < pat->expr.nargs; i++) {
+        elt = pat->expr.args[i];
+        for (j = 0; j < t->nval; j++) {
+            if (!strcmp(namestr(elt->expr.idx), namestr(t->val[j]->expr.idx)))
+                t = addpat(t, pat->expr.args[i], cap, ncap);
+            break;
+        }
+    }
+    return t;
 }
 
 static Dtree *addpat(Dtree *t, Node *pat, Node ***cap, size_t *ncap)
