@@ -226,7 +226,6 @@ struct Node {
                 char    *lblval;
                 int      boolval;
                 Node    *fnval;
-                Node    **seqval;
             };
         } lit;
 
