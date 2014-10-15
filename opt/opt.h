@@ -33,3 +33,6 @@ Node *fold(Node *n, int foldvar);
 Cfg *mkcfg(Node *fn, Node **nl, size_t nn);
 void dumpcfg(Cfg *c, FILE *fd);
 void check(Cfg *cfg);
+
+/* pattern matching */
+Node *gensimpmatch(Node *m);
