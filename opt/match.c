@@ -36,9 +36,19 @@ static Dtree *mkdtree()
     return zalloc(sizeof(Dtree));
 }
 
-static int uconeq(Node *a, Node *b)
+static Dtree *addwild(Dtree *t, Node *var, Node ***cap, size_t *ncap)
 {
-    return !strcmp(namestr(a), namestr(b));
+    Node *dcl;
+
+    dcl = decls[var->expr.did];
+    /* FIXME: Avoid duplicate constants */
+    if (dcl->decl.isconst)
+        return NULL;
+    if (t->any)
+        return t->any;
+    t->any = mkdtree();
+    lappend(cap, ncap, var);
+    return t->any;
 }
 
 static Dtree *addunion(Dtree *t, Node *pat, Node ***cap, size_t *ncap)
@@ -49,11 +59,8 @@ static Dtree *addunion(Dtree *t, Node *pat, Node ***cap, size_t *ncap)
     /* if we have the value already... */
     sub = NULL;
     for (i = 0; i < t->nval; i++) {
-        if (!t->val[i])
-            fatal(pat, "constructor already matched by earlier variable");
-        if (uconeq(t->val[i], pat->expr.args[0])) {
+        if (nameeq(t->val[i], pat->expr.args[0]))
             return addpat(t->sub[i], pat->expr.args[1], cap, ncap);
-        }
     }
 
     sub = mkdtree();
@@ -64,18 +71,20 @@ static Dtree *addunion(Dtree *t, Node *pat, Node ***cap, size_t *ncap)
     return sub;
 }
 
-static Dtree *addwild(Dtree *t, Node *var, Node ***cap, size_t *ncap)
+static Dtree *addlit(Dtree *t, Node *pat, Node ***cap, size_t *ncap)
 {
-    Node *dcl;
+    Dtree *sub;
+    size_t i;
 
-    dcl = decls[var->expr.did];
-    if (dcl->decl.isconst)
-        return NULL;
-    if (t->any)
-        return t->any;
-    t->any = mkdtree();
-    lappend(cap, ncap, var);
-    return t->any;
+    for (i = 0; i < t->nval; i++) {
+        if (liteq(t->val[i]->expr.args[0], pat->expr.args[0]))
+            return addpat(t->sub[i], pat->expr.args[1], cap, ncap);
+    }
+
+    sub = mkdtree();
+    lappend(&t->val, &t->nval, pat);
+    lappend(&t->sub, &t->nsub, sub);
+    return sub;
 }
 
 static Dtree *addpat(Dtree *t, Node *pat, Node ***cap, size_t *ncap)
@@ -91,10 +100,10 @@ static Dtree *addpat(Dtree *t, Node *pat, Node ***cap, size_t *ncap)
         case Oucon:
             ret = addunion(t, pat, cap, ncap);
             break;
-            /*
         case Olit:
             ret = addlit(t, pat, cap, ncap);
             break;
+            /*
         case Otup:
             ret = addtup(t, pat, cap, ncap);
             break;

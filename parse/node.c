@@ -351,6 +351,33 @@ Type *nodetype(Node *n)
     return NULL;
 }
 
+int liteq(Node *a, Node *b)
+{
+    assert(a->type == Nlit && b->type == Nlit);
+    if (a->lit.littype != b->lit.littype)
+        return 0;
+    if (!tyeq(a->lit.type, b->lit.type))
+        return 0;
+    switch (a->lit.littype) {
+        case Lchr:
+            return a->lit.chrval == b->lit.chrval;
+        case Lbool:
+            return a->lit.boolval == b->lit.boolval;
+        case Lint:
+            return a->lit.intval == b->lit.intval;
+        case Lflt:
+            return a->lit.fltval == b->lit.fltval;
+        case Lstr:
+            return !strcmp(a->lit.strval, b->lit.strval);
+        case Lfunc:
+            return a->lit.fnval == b->lit.fnval;
+        case Llbl:
+            return !strcmp(a->lit.lblval, b->lit.lblval);
+            break;
+    }
+    return 0;
+}
+
 /* name hashing */
 ulong namehash(void *p)
 {
