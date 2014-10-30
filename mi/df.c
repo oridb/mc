@@ -11,7 +11,7 @@
 #include <unistd.h>
 
 #include "parse.h"
-#include "opt.h"
+#include "mi.h"
 
 /*
 static void nodeuse(Node *n, Bitset *bs)

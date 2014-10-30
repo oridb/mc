@@ -11,7 +11,7 @@
 #include <unistd.h>
 
 #include "parse.h"
-#include "opt.h"
+#include "mi.h"
 
 static int islit(Node *n, vlong *v)
 {
