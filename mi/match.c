@@ -98,6 +98,7 @@ static Dtree *addwild(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *ncap)
     if (t->any)
         return t->any;
     t->any = mkdtree();
+    t->patexpr = pat;
     lappend(cap, ncap, pat);
     return t->any;
 }
@@ -134,6 +135,7 @@ static Dtree *addlit(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *ncap)
     }
 
     sub = mkdtree();
+    sub->patexpr = pat;
     lappend(&t->val, &t->nval, pat);
     lappend(&t->sub, &t->nsub, sub);
     return sub;
@@ -208,7 +210,6 @@ static Dtree *addpat(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *ncap)
             fatal(pat, "unsupported pattern %s of type %s", opstr(exprop(pat)), tystr(exprtype(pat)));
             break;
     }
-    ret->patexpr = pat;
     return ret;
 }
 
