@@ -104,6 +104,7 @@ B matchtup	E	42
 B matchstruct	E	42
 B matcharray	E	42
 B matchargunion	E	69
+B matchexhaust	P	worked
 B matchargstr	C
 B matchunion_sl	P	foo
 B matchbind	E	8
