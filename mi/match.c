@@ -98,7 +98,7 @@ static Dtree *addwild(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *ncap)
     if (t->any)
         return t->any;
     t->any = mkdtree();
-    t->patexpr = pat;
+    t->any->patexpr = pat;
     lappend(cap, ncap, pat);
     return t->any;
 }
@@ -290,17 +290,16 @@ Node *gensimpmatch(Node *m)
 
     pat = m->matchstmt.matches;
     npat = m->matchstmt.nmatches;
-    cap = NULL;
-    ncap = 0;
-
     t = mkdtree();
     for (i = 0; i < npat; i++) {
+        cap = NULL;
+        ncap = 0;
         leaf = addpat(t, pat[i]->match.pat, NULL, &cap, &ncap);
         /* TODO: NULL is returned by unsupported patterns. */
         if (!leaf)
             return NULL;
         if (leaf->act)
-            fatal(pat[i], "pattern matched by earlier case");
+            fatal(pat[i], "pattern matched by earlier case on line %d", leaf->act->loc.line);
         leaf->act = pat[i]->match.block;
         leaf->cap = cap;
         leaf->ncap = ncap;
@@ -314,7 +313,7 @@ char *dtnodestr(Node *n)
 {
     switch (exprop(n)) {
         case Ovar:
-            return namestr(n);
+            return namestr(n->expr.args[0]);
         case Olit:
             return litstr(n->expr.args[0]->lit.littype);
         case Oucon:
@@ -332,22 +331,26 @@ char *dtnodestr(Node *n)
     return "???";
 }
 
-void dtdumpnode(Dtree *dt, FILE *f, int depth)
+void dtdumpnode(Dtree *dt, FILE *f, int depth, int iswild)
 {
     Node *e;
     size_t i;
-
     if (dt->patexpr) {
         e = dt->patexpr;
-        indentf(depth, "%s %s : %s\n", opstr(exprop(e)), dtnodestr(e), tystr(exprtype(e)));
-    } else {
-        printf("ROOT:\n");
-    }
+        indentf(depth, "%s%s %s : %s\n", iswild ? "WILDCARD " : "", opstr(exprop(e)), dtnodestr(e), tystr(exprtype(e)));
+    } 
+    if (dt->cap)
+        for (i = 0; i < dt->ncap; i++)
+            indentf(depth + 1, "capture %s\n", dtnodestr(dt->cap[i]));
+    if (dt->act)
+        indentf(depth + 1, "action\n");
     for (i = 0; i < dt->nsub; i++)
-        dtdumpnode(dt->sub[i], f, depth + 1);
+        dtdumpnode(dt->sub[i], f, depth + 1, 0);
+    if (dt->any)
+        dtdumpnode(dt->any, f, depth + 1, 1);
 }
 
 void dtdump(Dtree *dt, FILE *f)
 {
-    dtdumpnode(dt, f, 0);
+    dtdumpnode(dt, f, 0, 0);
 }
