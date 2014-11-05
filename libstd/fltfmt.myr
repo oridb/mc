@@ -151,6 +151,7 @@ const dragon4 = {buf, isneg, f, e, p, mode, cutoff
 			bigfree(t)
 			bigfree(u)
 			break
+		| _:
 		;;
 	;;
 
@@ -173,6 +174,7 @@ const dragon4 = {buf, isneg, f, e, p, mode, cutoff
 		bigshli(t, 1)
 		match bigcmp(t, mm)
 		| `Before:	low = true
+		| _:
 		;;
 		bigfree(t)
 		

@@ -116,6 +116,7 @@ const loadhosts = {
 		/* trim comment */
 		match strfind(l, "#")
 		| `Some idx:	l = l[:idx]
+		| `None:	/* whole line */
 		;;
 
 		match word(l)
@@ -123,6 +124,12 @@ const loadhosts = {
 			match ipparse(ip)
 			| `Some addr:
 				addhosts(addr, ip, rest)
+			| `None:
+				/*
+				invalid addresses are ignored: we don't want to break stuff
+				with invalid or unsupported addresses
+				*/
+				
 			;;
 		| `None:
 		;;
@@ -175,10 +182,12 @@ const loadresolv = {
 		;;
 
 		match word(l)
-		| `Some (cmd, rest):
-			if sleq(cmd, "nameserver")
-				addns(rest)
-			;;
+		| `Some ("nameserver", srv):
+			addns(srv)
+		| `Some (_, rest):
+			/* invalid or unrecognized commands */
+		| `None:
+			/* unrecognized lines */
 		;;
 	;;
 	slfree(lines)
@@ -191,7 +200,10 @@ const addns = {rest
 		| `Some addr: 
 			nameservers = slpush(nameservers, addr)
 		| `None:
+			/* nothing */
 		;;
+	| `None:
+		/* nothing */
 	;;
 }
 
