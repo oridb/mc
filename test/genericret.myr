@@ -12,6 +12,7 @@ const f = {-> t(int)
 const main = {
 	match f()
 	| `None:	std.exit(42)
+	| _:		std.die("Impossible match failure\n");
 	;;
 	std.exit(0)
 }

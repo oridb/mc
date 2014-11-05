@@ -15,6 +15,7 @@ const main = {
 	| `Int 127: std.exit(42)
 	| `Str s: std.put("%s\n", s)
 	| `Nil:
+	| _:	std.die("Impossible match failure\n")
 	;;
 }
 
