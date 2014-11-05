@@ -95,12 +95,6 @@ static Dtree *mkdtree()
 
 static Dtree *addwild(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *ncap)
 {
-    Node *dcl;
-
-    dcl = decls[pat->expr.did];
-    /* FIXME: Avoid duplicate constants */
-    if (dcl->decl.isconst)
-        return NULL;
     if (t->any)
         return t->any;
     t->any = mkdtree();
@@ -182,12 +176,17 @@ static Dtree *addstruct(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *nca
 static Dtree *addpat(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *ncap)
 {
     Dtree *ret;
+    Node *dcl;
 
     if (pat == NULL)
         return t;
     switch (exprop(pat)) {
         case Ovar:
-            ret = addwild(t, pat, val, cap, ncap);
+            dcl = decls[pat->expr.did];
+            if (dcl->decl.isconst)
+                ret = addpat(t, dcl->decl.init, val, cap, ncap);
+            else
+                ret = addwild(t, pat, val, cap, ncap);
             break;
         case Oucon:
             ret = addunion(t, pat, val, cap, ncap);
