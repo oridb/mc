@@ -59,7 +59,7 @@ const regexcompile = {re, pat
 	re.pat = pat
 	re.nmatch = 1 /* whole match */
 	match parse(re)
-	| `None:	-> `std.Fail (`Earlystop)
+	| `None:	-> `std.Fail (`Incomplete)
 	| `Fail f:	-> `std.Fail f
 	| `Some t:
 		/*
@@ -67,7 +67,7 @@ const regexcompile = {re, pat
 		an incorrectly encoded char
 		*/
 		if re.pat.len > 0
-			-> `std.Fail (`Earlystop)
+			-> `std.Fail (`Incomplete)
 		;;
 		dump(re, t, 0)
 		append(re, `Ilbra 0)
@@ -480,10 +480,12 @@ const parse = {re
 			-> `Some t
 		else
 			astfree(t)
-			-> `Fail (`Earlystop)
+			-> `Fail `Incomplete
 		;;
 	| `None:
 		-> `None
+	| `Fail st:
+		-> `Fail st
 	;;
 }
 
@@ -499,7 +501,7 @@ const altexpr = {re
 				ret = mk(`Alt (ret, rhs))
 			| `None:
 				astfree(ret)
-				-> `Fail (`Earlystop)
+				-> `Fail (`Incomplete)
 			| `Fail f:
 				-> `Fail f
 			;;
@@ -583,11 +585,12 @@ const baseexpr = {re
 				-> `Fail `Unbalanced
 			;;
 		| `None:	-> `Fail `Emptyparen
+		| `Fail st:	-> `Fail st
 		;;
 	| '\\':
 		getc(re) /* consume the slash */
 		if re.pat.len == 0
-			-> `Fail `Earlystop
+			-> `Fail `Incomplete
 		;;
 		-> escaped(re)
 	| c:
@@ -629,6 +632,7 @@ const escaped = {re
 	| '.': ret = `Some mk(`Chr '.')
 	| '+': ret = `Some mk(`Chr '+')
 	| '?': ret = `Some mk(`Chr '?')
+	| chr: ret = `Fail `Badescape
 	;;
 	-> ret
 }
@@ -640,7 +644,7 @@ const unicodeclass = {re, neg
 	var n
 
 	if re.pat.len == 0
-		-> `Fail (`Earlystop)
+		-> `Fail (`Incomplete)
 	;;
 	n = 0
 	s = re.pat
@@ -703,7 +707,7 @@ const chrclass = {re
 	;;
 	if !matchc(re, ']')
 		std.slfree(rl)
-		-> `Fail (`Earlystop)
+		-> `Fail (`Incomplete)
 	;;
 
 	std.sort(rl, {a, b;
@@ -837,6 +841,7 @@ const astfree = {t
 
 	/* meta */
 	| `Cap	(m, a):	astfree(a)
+	| _:	/* other types have no suballocations */
 	;;
 	std.free(t)
 }

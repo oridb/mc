@@ -2,12 +2,13 @@ use std
 
 pkg regex =
 	type status = union
-		`Earlystop
+		`Noimpl
+		`Incomplete
 		`Unbalanced
 		`Emptyparen
 		`Badrep
 		`Badrange
-		`Noimpl
+		`Badescape
 	;;
 
 	type regex = struct
