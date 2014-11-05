@@ -35,13 +35,15 @@ struct Dtree {
 
 static Dtree *addpat(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *ncap);
 
-static size_t nconstructors(Type *t)
-{
-    if (!t)
-        return 0;
-    t = tybase(t);
-    switch (t->type) {
-        case Tyvoid:    return 0;               break;
+/* We treat all integer types, boolean types, etc, as having 2^n constructors.
+ *
+ * since, of course, we can't represent all of the constructors for 64 bit
+ * integers using 64 bit values, we just approximate it. We'd have failed (run
+ * out of memory, etc) long before getting to this code if we actually had that
+ * many branches of the switch statements anyways.
+ */
+static size_t nconstructors(Type *t) { if (!t) return 0; t = tybase(t); switch
+(t->type) { case Tyvoid:    return 0;               break;
 
         case Tybool:    return 2;               break;
         case Tychar:    return 0x10ffff;        break;
