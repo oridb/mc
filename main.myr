@@ -39,7 +39,8 @@ const main = {args : byte[:][:]
 		| ('A', arg): bld.opt_as = arg
 		| ('M', arg): bld.opt_muse = arg
 		| ('L', arg): bld.opt_ld = arg
-		| ('R', arg): bld.opt_ar = arg
+		| ('D', arg): bld.opt_ar = arg
+		| _:	std.die("got invalid arg\n")
 		;;
 	;;
 

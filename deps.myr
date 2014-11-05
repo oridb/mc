@@ -211,12 +211,16 @@ const openlib = {lib
 		match  bio.open(path, bio.Rd)
 		| `std.Some file:
 			-> file
+		| `std.None:
+			/* nothing */
 		;;
 	;;
 	path = std.pathjoin([opt_instroot, "/lib/myr", lib][:])
 	match  bio.open(path, bio.Rd)
 	| `std.Some file:
 		-> file
+	| `std.None:
+		/* nothing */
 	;;
 	std.fatal(1, "could not find library %s in %s\n", lib, path)
 }
@@ -234,6 +238,8 @@ const depname = {deps, ln
 		else
 			deps = std.slpush(deps, `Lib std.sldup(uses[4]))
 		;;
+	| `std.None:
+		/* nothing to do */
 	;;
 	-> deps
 }
@@ -243,10 +249,10 @@ const depname = {deps, ln
 const pushdep = {dg, src, dst
 	var sl
 
-	std.assert(dst.len < 20, "BUG!")
 	if opt_debug
 		std.put("%s <= %s\n", dst, src)
 	;;
+	std.assert(dst.len < 200, "BUG!")
 	sl = std.htgetv(dg.deps, dst, [][:])
 	sl = std.slpush(sl, src)
 	std.htput(dg.deps, dst, sl)

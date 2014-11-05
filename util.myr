@@ -33,6 +33,8 @@ const run = {cmd, dir
 	else
 		std.waitpid(pid, &status, 0)
 	;;
+
+:retry
 	match std.waitstatus(status)
 	| `std.Waitexit estatus:
 		if estatus != 0
@@ -40,6 +42,9 @@ const run = {cmd, dir
 		;;
 	| `std.Waitsig sig:
 		std.fatal(1, "%s exited with signal %i\n", cmd[0], sig)
+	| `std.Waitstop sig:
+		std.fatal(1, "%s paused with signal %i\n", cmd[0], sig)
+		goto retry
 	;;
 }
 
@@ -63,12 +68,16 @@ const srcsplit = {src
 	| `std.Some i:
 		suff = src[i:]
 		src = src[:i]
+	| `std.None:
+		/* no suffix to trim */
 	;;
 
 	match std.strrfind(src, "+")
 	| `std.Some i:
 		platf = src[i:]
 		src = src[:i]
+	| `std.None:
+		/* no platform to trim */
 	;;
 	-> (src, platf, suff)
 }

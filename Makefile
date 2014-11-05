@@ -1,4 +1,5 @@
 MYRBIN=mbld
+
 MYRSRC= \
 	build.myr \
 	clean.myr \
