@@ -20,6 +20,7 @@ const expect = {a, b
 	| `std.None:
 		match b
 		| `std.Some x: std.fatal(1, "Expected `std.None, `std.None, got `std.None, `std.Some %i\n", x)
+		| `std.None:	/* nothing */
 		;;
 	| `std.Some x:
 		match b

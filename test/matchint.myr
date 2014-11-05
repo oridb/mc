@@ -11,5 +11,6 @@ const main = {
 	| 4:	std.exit(99)
 	| 12:	std.exit(84)
 	| 6:	std.exit(18)
+	| x:	std.die("Got an unexpected int!\n")
 	;;
 }
