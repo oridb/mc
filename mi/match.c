@@ -34,6 +34,7 @@ struct Dtree {
 };
 
 static Dtree *addpat(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *ncap);
+void dtdump(Dtree *dt, FILE *f);
 
 /* We treat all integer types, boolean types, etc, as having 2^n constructors.
  *
@@ -110,6 +111,8 @@ static Dtree *addunion(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *ncap
     Dtree *sub;
     size_t i;
 
+    if (t->any)
+        return t->any;
     /* if we have the value already... */
     sub = NULL;
     for (i = 0; i < t->nval; i++) {
@@ -131,6 +134,8 @@ static Dtree *addlit(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *ncap)
     Dtree *sub;
     size_t i;
 
+    if (t->any)
+        return t->any;
     for (i = 0; i < t->nval; i++) {
         if (liteq(t->val[i]->expr.args[0], pat->expr.args[0]))
             return addpat(t->sub[i], pat->expr.args[1], NULL, cap, ncap);
@@ -147,6 +152,8 @@ static Dtree *addtup(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *ncap)
 {
     size_t i;
 
+    if (t->any)
+        return t->any;
     for (i = 0; i < pat->expr.nargs; i++)
         t = addpat(t, pat->expr.args[i], NULL, cap, ncap);
     return t;
@@ -156,6 +163,8 @@ static Dtree *addarr(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *ncap)
 {
     size_t i;
 
+    if (t->any)
+        return t->any;
     for (i = 0; i < pat->expr.nargs; i++)
         t = addpat(t, pat->expr.args[i], NULL, cap, ncap);
     return t;
@@ -166,6 +175,8 @@ static Dtree *addstruct(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *nca
     Node *elt;
     size_t i, j;
 
+    if (t->any)
+        return t->any;
     for (i = 0; i < pat->expr.nargs; i++) {
         elt = pat->expr.args[i];
         for (j = 0; j < t->nval; j++) {
