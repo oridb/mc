@@ -1670,7 +1670,7 @@ static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
                 for (i = 0; i < n->func.nargs; i++)
                     putbindings(st, st->tybindings[st->ntybindings - 1], n->func.args[i]->decl.type);
             pushstab(n->func.scope);
-            inferstab(st, n->block.scope);
+            inferstab(st, n->func.scope);
             inferfunc(st, n);
             popstab();
             break;
