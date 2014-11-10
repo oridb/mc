@@ -50,25 +50,32 @@ O(Obreak, 0)
 O(Ocontinue, 0)
 O(Ovar, 1)
 O(Olit, 1)
-O(Olbl, 1)
 O(Oucon, 1)
-O(Ouget, 1)
 O(Otup, 1)
 O(Ostruct, 1)
 O(Oarr, 1)
 
 /* all below this point are backend-only */
 O(Ocjmp, 1)        /* conditional jump */
+O(Ojtab, 1)		   /* jump table */
 O(Oset, 1)         /* store to var */
 O(Osllen, 1)       /* size of slice */
 O(Oslbase, 1)      /* base of sice */
-O(Oblit, 1)        /* block copy of memory */
+O(Outag, 1)		   /* tag of union */
+O(Oudata, 1)       /* pointer to contents of union */
+O(Oblit, 1)        /* blit memory */
+
+/* integer conversions */
 O(Otrunc, 1)       /* truncating cast */
 O(Ozwiden, 1)      /* zero-extending widening cast */
 O(Oswiden, 1)      /* sign-extending widening cast */
+
+/* float conversions */
 O(Oflt2int, 1)     /* float to int conversion */
 O(Oint2flt, 1)     /* int to float conversion */
 O(Oflt2flt, 1)     /* flt32<->flt64 conversion */
+
+/* floating arithmetic */
 O(Ofadd, 1)
 O(Ofsub, 1)
 O(Ofmul, 1)
@@ -82,6 +89,7 @@ O(Ofgt, 1)
 O(Ofge, 1)
 O(Oflt, 1)
 O(Ofle, 1)
+
 /* unsigned comparisons */
 O(Oueq, 1)
 O(Oune, 1)

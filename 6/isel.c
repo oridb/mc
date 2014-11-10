@@ -668,6 +668,9 @@ Loc *selexpr(Isel *s, Node *n)
         case Ocjmp:
             selcjmp(s, n, args);
             break;
+		case Ojtab:
+			die("jump tables not yet implemented\n");
+			break;
         case Olit: /* fall through */
             r = loc(s, n);
             break;
@@ -679,9 +682,6 @@ Loc *selexpr(Isel *s, Node *n)
             } else {
                 r = loc(s, n);
             }
-            break;
-        case Olbl:
-            r = loclbl(args[0]);
             break;
         case Oblit:
             a = selexpr(s, args[0]);
@@ -740,10 +740,11 @@ Loc *selexpr(Isel *s, Node *n)
         case Opostdec: case Olor: case Oland: case Oaddeq:
         case Osubeq: case Omuleq: case Odiveq: case Omodeq: case Oboreq:
         case Obandeq: case Obxoreq: case Obsleq: case Obsreq: case Omemb:
-        case Oslice: case Oidx: case Osize: case Numops:
-        case Oucon: case Ouget: case Otup: case Oarr: case Ostruct:
-        case Oslbase: case Osllen: case Ocast:
-        case Obreak: case Ocontinue:
+        case Oslbase: case Osllen: case Ocast: case Outag: case Oudata: 
+        case Oucon: case Otup: case Oarr: case Ostruct:
+        case Oslice: case Oidx: case Osize:
+		case Obreak: case Ocontinue:
+		case Numops:
             dump(n, stdout);
             die("Should not see %s in isel", opstr(exprop(n)));
             break;
