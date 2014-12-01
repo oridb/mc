@@ -1795,8 +1795,10 @@ static void infercompn(Inferstate *st, Node *n)
          *               x.y : membtype
          */
     } else {
-        if (t->type == Typtr)
+        if (tybase(t)->type == Typtr)
             t = tybase(tf(st, t->sub[0]));
+        if (tybase(t)->type != Tystruct)
+            fatal(n, "type %s does not support member operators near %s", tystr(t), ctxstr(st, n));
         nl = t->sdecls;
         for (i = 0; i < t->nmemb; i++) {
             if (!strcmp(namestr(memb), declname(nl[i]))) {
