@@ -152,6 +152,9 @@ Node *fold(Node *n, int foldvar)
                 r = val(n->loc, a * b, exprtype(n));
             break;
         case Odiv:
+            /* x/0 = error */
+            if (isval(args[1], 0))
+                fatal(args[1], "division by zero");
             /* x/1 = x */
             if (isval(args[1], 1))
                 r = args[0];
