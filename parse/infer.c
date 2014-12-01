@@ -1317,13 +1317,12 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
                 t = unify(st, n, t, type(st, args[i]));
             settype(st, n, t);
             if (args[0]->expr.isconst)
-                fatal(n, "Attempting to assign constant \"%s\"", ctxstr(st, args[0]));
+                fatal(n, "attempting to assign constant \"%s\"", ctxstr(st, args[0]));
             break;
 
         /* operands same type, returning bool */
         case Olor:      /* @a || @b -> bool */
         case Oland:     /* @a && @b -> bool */
-        case Olnot:     /* !@a -> bool */
         case Oeq:       /* @a == @a -> bool */
         case One:       /* @a != @a -> bool */
         case Ogt:       /* @a > @a -> bool */
@@ -1335,6 +1334,12 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
             for (i = 1; i < nargs; i++)
                 unify(st, n, t, type(st, args[i]));
             settype(st, n, mktype(Zloc, Tybool));
+            break;
+
+        case Olnot:     /* !bool -> bool */
+            infersub(st, n, ret, sawret, &isconst);
+            t = unify(st, n, type(st, args[0]), mktype(Zloc, Tybool));
+            settype(st, n, t);
             break;
 
         /* reach into a type and pull out subtypes */
@@ -2242,3 +2247,4 @@ void infer(Node *file)
     typesub(&st, file);
     specialize(&st, file);
 }
+

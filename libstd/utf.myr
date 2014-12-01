@@ -68,7 +68,7 @@ const striter = {str
 	var c
 	var tmp
 
-	if !str.len
+	if str.len == 0
 		/* empty string: no resync needed */
 		-> (Badchar, str)
 	;;

@@ -56,7 +56,7 @@ const Pagesz	= 4*KiB
 const Align	= 16	/* minimum allocation alignment */
 
 var buckets	: bucket[32] /* excessive */
-var initdone	: int
+var initdone	: bool
 
 type slheader = struct
 	cap	: size	/* capacity in bytes */
@@ -217,7 +217,7 @@ const bytealloc = {sz
 		for i = 0; i < buckets.len && (Align << i) <= Bktmax; i++
 			bktinit(&buckets[i], Align << i)
 		;;
-		initdone = 1
+		initdone = true
 	;;
 
 	if (sz <= Bktmax)
@@ -319,7 +319,7 @@ const bktalloc = {bkt
 	b = s.freehd
 	s.freehd = b.next
 	s.nfree--
-	if !s.nfree
+	if s.nfree == 0
 		bkt.slabs = s.next
 		s.next = Zslab
 	;;

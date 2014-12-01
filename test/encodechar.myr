@@ -15,7 +15,7 @@ const chartypes = {
 	while s.len != 0
 		(c, s) = std.striter(s)
 		foo = c
-		if !std.encode(buf[:std.charlen(c)], c)
+		if std.encode(buf[:std.charlen(c)], c) == 0
 			std.write(1, "couldn't encode\n")
 		;;
 		std.write(1, buf[:std.charlen(c)])

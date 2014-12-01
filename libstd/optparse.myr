@@ -82,7 +82,7 @@ const optnext = {ctx
 		;;
 	| `Some (false, _):
 		arg = ""
-		if !ctx.curarg.len
+		if ctx.curarg.len != 0
 			next(ctx)
 		;;
 	;;
@@ -92,7 +92,7 @@ const optnext = {ctx
 }
 
 const optdone = {ctx
-	-> !ctx.curarg.len && ctx.finished
+	-> ctx.curarg.len == 0 && ctx.finished
 }
 
 const optinfo = {ctx, arg
