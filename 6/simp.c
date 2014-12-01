@@ -822,7 +822,7 @@ static Node *lval(Simp *s, Node *n)
         case Oderef:    r = deref(rval(s, args[0], NULL), NULL); break;
         case Omemb:     r = deref(membaddr(s, n), NULL); break;
         default:
-            die("%s cannot be an lval", opstr(exprop(n)));
+            fatal(n, "%s cannot be an lvalue", opstr(exprop(n)));
             break;
     }
     return r;
@@ -1674,7 +1674,7 @@ static void simpconstinit(Simp *s, Node *dcl)
                 lappend(&s->blobs, &s->nblobs, dcl);
                 break;
             default:
-                die("Unsupported initializer for %s\n", declname(dcl));
+                fatal(dcl, "unsupported initializer for %s", declname(dcl));
                 break;
         }
     } else if (!dcl->decl.isconst && !e) {

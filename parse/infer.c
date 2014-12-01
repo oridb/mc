@@ -1059,6 +1059,8 @@ static void checkns(Inferstate *st, Node *n, Node **ret)
     /* check that this is a namespaced declaration */
     if (n->type != Nexpr)
         return;
+    if (exprop(n) != Omemb)
+        return;
     if (!n->expr.nargs)
         return;
     args = n->expr.args;
