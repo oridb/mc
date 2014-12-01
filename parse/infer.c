@@ -1356,6 +1356,7 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
             infersub(st, n, ret, sawret, &isconst);
             t = mktyidxhack(n->loc, mktyvar(n->loc));
             unify(st, n, type(st, args[0]), t);
+            constrain(st, n, type(st, args[0]), traittab[Tcidx]);
             constrain(st, n, type(st, args[1]), traittab[Tcint]);
             settype(st, n, t->sub[0]);
             break;
@@ -1561,7 +1562,10 @@ static void inferstab(Inferstate *st, Stab *s)
 
     k = htkeys(s->ty, &n);
     for (i = 0; i < n; i++) {
-        t = tysearch(gettype(s, k[i]));
+        t = gettype(s, k[i]);
+        if (!t)
+            fatal(k[i], "undefined type %s", namestr(k[i]));
+        t = tysearch(t);
         updatetype(s, k[i], t);
     }
     free(k);
