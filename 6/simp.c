@@ -1327,7 +1327,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
         case Oaddeq: case Osubeq: case Omuleq: case Odiveq: case Omodeq:
         case Oboreq: case Obandeq: case Obxoreq: case Obsleq: case Obsreq:
             assert(fusedmap[exprop(n)] != Obad);
-            u = rval(s, args[0], NULL);
+            u = lval(s, args[0]);
             v = rval(s, args[1], NULL);
             v = mkexpr(n->loc, fusedmap[exprop(n)], u, v, NULL);
             v->expr.type = u->expr.type;
