@@ -791,6 +791,8 @@ static void unifycall(Inferstate *st, Node *n)
         /* the first arg is the function itself, so it shouldn't be counted */
         ft = mktyfunc(n->loc, &n->expr.args[1], n->expr.nargs - 1, mktyvar(n->loc));
         unify(st, n, ft, type(st, n->expr.args[0]));
+    } else if (tybase(ft)->type != Tyfunc) {
+        fatal(n, "calling uncallable type %s", tystr(ft));
     }
     for (i = 1; i < n->expr.nargs; i++) {
         if (i == ft->nsub)
