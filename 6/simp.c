@@ -1291,7 +1291,10 @@ static Node *rval(Simp *s, Node *n, Node *dst)
         case Oucon:
             r = simpucon(s, n, dst);
             break;
-        case Ouget:
+        case Outag:
+            die("union tags not yet supported\n");
+            break;
+        case Oudata:
             r = simpuget(s, n, dst);
             break;
         case Otup:

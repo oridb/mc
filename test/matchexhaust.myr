@@ -1,0 +1,37 @@
+use std
+
+type u = union
+	`Foo (bool, v, bool)
+	`Bar (bool, bool)
+	`Baz bool
+	`Quux
+;;
+
+type v = union
+	`A
+	`B
+;;
+
+const main = {
+	match `Quux
+	| `Foo (true, `A, true):
+	| `Foo (true, `A, false):
+	| `Foo (true, `B, true):
+	| `Foo (true, `B, false):
+	| `Foo (false, `A, true):
+	| `Foo (false, `A, false):
+	| `Foo (false, `B, true):
+	| `Foo (false, `B, false):
+
+	| `Bar (false, false):
+	| `Bar (false, true):
+	| `Bar (true, false):
+	| `Bar (true, true):
+
+	| `Baz false:
+	| `Baz true:
+
+	| `Quux:
+	;;
+	std.put("worked\n")
+}

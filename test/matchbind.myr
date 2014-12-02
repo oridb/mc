@@ -16,6 +16,7 @@ const main = {
 	| `Int x:	std.exit(x)
 	| `Chr 'a':	std.exit(4)
 	| `Nil:		std.exit(6)
+	| x:		std.die("Impossible match failure\n")
 	;;
 }
 

@@ -196,6 +196,7 @@ const bfmtv = {buf, fmt, ap
 				| '0':
 					(c, fmt) = striter(fmt)
 					padfill = '0'
+				| _:	/* nothing */
 				;;
 				if isdigit(c) && padto == 0
 					/*
