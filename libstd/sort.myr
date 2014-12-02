@@ -40,10 +40,12 @@ generic siftdown = {sl, start, cmp
 		s = r
 		match cmp(sl[s], sl[c])
 		| `Before:	s = c
+		| _:		/* nothing */
 		;;
 		if c + 1 < sl.len
 			match cmp(sl[s], sl[c + 1])
 			| `Before:	s = c + 1
+			| _:	/* nothing */
 			;;
 		;;
 		if s != r

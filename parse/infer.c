@@ -1437,18 +1437,15 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
             }
             settype(st, n, type(st, args[0]));
             break;
-        case Olbl:      /* :lbl -> void* */
-            infersub(st, n, ret, sawret, &isconst);
-            settype(st, n, mktyptr(n->loc, mktype(Zloc, Tyvoid)));
-        case Obad: case Ocjmp: case Oset:
-        case Oslbase: case Osllen:
+        case Obad: case Ocjmp: case Ojtab: case Oset:
+        case Oslbase: case Osllen: case Outag:
         case Oblit: case Numops:
         case Otrunc: case Oswiden: case Ozwiden:
         case Oint2flt: case Oflt2int: case Oflt2flt:
         case Ofadd: case Ofsub: case Ofmul: case Ofdiv: case Ofneg:
         case Ofeq: case Ofne: case Ofgt: case Ofge: case Oflt: case Ofle:
         case Oueq: case Oune: case Ougt: case Ouge: case Oult: case Oule:
-        case Ouget:
+        case Oudata:
             die("Should not see %s in fe", opstr(exprop(n)));
             break;
     }
@@ -1670,7 +1667,7 @@ static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
                 for (i = 0; i < n->func.nargs; i++)
                     putbindings(st, st->tybindings[st->ntybindings - 1], n->func.args[i]->decl.type);
             pushstab(n->func.scope);
-            inferstab(st, n->block.scope);
+            inferstab(st, n->func.scope);
             inferfunc(st, n);
             popstab();
             break;

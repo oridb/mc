@@ -50,7 +50,7 @@ double run(char *prog)
     return sec + usec;
 }
 
-void timed_run(char *prog)
+double timed_run(char *prog)
 {
     double avg, m, d, x;
     int i, n;
@@ -66,15 +66,19 @@ void timed_run(char *prog)
         m = m + d*(x - avg);
     }
     printf("%s:\t%fs (σ^2: %f)\n", prog, avg, m/(n-1));
+    return avg;
 }
 
 int main(int argc, char **argv)
 {
+    double tot;
     int i;
 
     printf("Running benchmarks: %d samples per binary\n", Nsamp);
+    tot = 0;
     for (i = 1; i < argc; i++)
-        timed_run(argv[i]);
+        tot += timed_run(argv[i]);
+    printf("total:\t%fs\n", tot);
     return 0;
 }
 

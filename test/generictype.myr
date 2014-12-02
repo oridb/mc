@@ -13,6 +13,7 @@ const main = {
 	match v
 	| `None:	std.exit(1)
 	| `Some 123:	std.exit(0)
+	| `Some _:	std.die("Impossible match failure\n")
 	;;
 	std.exit(60)
 }

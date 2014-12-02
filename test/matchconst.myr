@@ -14,5 +14,6 @@ const main = {
 	| Ca: 	std.exit(123)
 	| Cb:	std.exit(88)
 	| Cc:	std.exit(42)
+	| _:	std.die("Impossible match failure in pattern\n")
 	;;
 }
