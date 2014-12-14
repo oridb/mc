@@ -253,7 +253,7 @@ decl    : attrs Tvar decllist {
 attrs   : /* empty */ {$$.nstr = 0; $$.str = NULL;}
         | Tattr attrs {
                 $$ = $2;
-                lappend(&$$.str, &$$.nstr, strdup($1->str));
+                lappend(&$$.str, &$$.nstr, strdup($1->id));
             }
         ;
 
@@ -267,8 +267,8 @@ decllist: declbody {
             }
         ;
 
-use     : Tuse Tident {$$ = mkuse($1->loc, $2->str, 0);}
-        | Tuse Tstrlit {$$ = mkuse($1->loc, $2->str, 1);}
+use     : Tuse Tident {$$ = mkuse($1->loc, $2->id, 0);}
+        | Tuse Tstrlit {$$ = mkuse($1->loc, $2->strval.buf, 1);}
         ;
 
 optident: Tident      {$$ = $1;}
@@ -279,8 +279,8 @@ package : Tpkg optident Tasn pkgbody Tendblk {
                 if (file->file.exports->name)
                     lfatal($1->loc, "Package already declared\n");
                 if ($2) {
-                    updatens(file->file.exports, $2->str);
-                    updatens(file->file.globls, $2->str);
+                    updatens(file->file.exports, $2->id);
+                    updatens(file->file.globls, $2->id);
                 }
             }
         ;
@@ -339,8 +339,8 @@ typedeclcore
         : name Tcolon type {$$ = mkdecl($1->loc, $1, $3);}
         ;
 
-name    : Tident {$$ = mkname($1->loc, $1->str);}
-        | Tident Tdot name {$$ = $3; setns($3, $1->str);}
+name    : Tident {$$ = mkname($1->loc, $1->id);}
+        | Tident Tdot name {$$ = $3; setns($3, $1->id);}
         ;
 
 implstmt: Timpl name type {
@@ -357,7 +357,7 @@ implbody
         | implbody Tident Tasn exprln optendlns {
                 Node *d;
                 $$ = $1;
-                d = mkdecl($2->loc, mkname($2->loc, $2->str), mktyvar($2->loc));
+                d = mkdecl($2->loc, mkname($2->loc, $2->id), mktyvar($2->loc));
                 d->decl.init = $4;
                 d->decl.isconst = 1;
                 lappend(&$$.nl, &$$.nn, d);
@@ -365,11 +365,11 @@ implbody
         ;
 
 traitdef: Ttrait Tident generictype /* trait prototype */ {
-                $$ = mktrait($1->loc, mkname($2->loc, $2->str), $3, NULL, 0, NULL, 0, 1);
+                $$ = mktrait($1->loc, mkname($2->loc, $2->id), $3, NULL, 0, NULL, 0, 1);
             }
         | Ttrait Tident generictype Tasn traitbody Tendblk /* trait definition */ {
                 size_t i;
-                $$ = mktrait($1->loc, mkname($2->loc, $2->str), $3, NULL, 0, $5.nl, $5.nn, 0);
+                $$ = mktrait($1->loc, mkname($2->loc, $2->id), $3, NULL, 0, $5.nl, $5.nn, 0);
                 for (i = 0; i < $5.nn; i++) {
                     $5.nl[i]->decl.trait = $$;
                     $5.nl[i]->decl.isgeneric = 1;
@@ -382,7 +382,7 @@ traitbody
         | traitbody Tident Tcolon type optendlns {
                 Node *d;
                 $$ = $1;
-                d = mkdecl($2->loc, mkname($2->loc, $2->str), $4);
+                d = mkdecl($2->loc, mkname($2->loc, $2->id), $4);
                 d->decl.isgeneric = 1;
                 lappend(&$$.nl, &$$.nn, d);
             }
@@ -398,13 +398,13 @@ tydef   : Ttype typeid {$$ = $2;}
 
 typeid  : Tident {
                 $$.loc = $1->loc;
-                $$.name = $1->str;
+                $$.name = $1->id;
                 $$.params = NULL;
                 $$.type = NULL;
             }
         | Tident Toparen typarams Tcparen {
                 $$.loc = $1->loc;
-                $$.name = $1->str;
+                $$.name = $1->id;
                 $$.params = $3.types;
                 $$.nparams = $3.ntypes;
                 $$.type = NULL;
@@ -427,14 +427,14 @@ type    : structdef
         ;
 
 generictype
-        : Ttyparam {$$ = mktyparam($1->loc, $1->str);}
+        : Ttyparam {$$ = mktyparam($1->loc, $1->id);}
         | Ttyparam Twith name {
-                $$ = mktyparam($1->loc, $1->str);
+                $$ = mktyparam($1->loc, $1->id);
                 addtrait($$, $3->name.name);
             }
         | Ttyparam Twith Toparen typaramlist Tcparen {
                 size_t i;
-                $$ = mktyparam($1->loc, $1->str);
+                $$ = mktyparam($1->loc, $1->id);
                 for (i = 0; i < $4.nn; i++)
                     addtrait($$, $4.nl[i]->name.name);
             }
@@ -453,7 +453,7 @@ compoundtype
         | type Tosqbrac Tcolon Tcsqbrac {$$ = mktyslice($2->loc, $1);}
         | type Tosqbrac expr Tcsqbrac {$$ = mktyarray($2->loc, $1, $3);}
         | type Tderef {$$ = mktyptr($2->loc, $1);}
-        | Tat Tident {$$ = mktyparam($1->loc, $2->str);}
+        | Tat Tident {$$ = mktyparam($1->loc, $2->id);}
         | name       {$$ = mktyunres($1->loc, $1, NULL, 0);}
         | name Toparen typelist Tcparen {$$ = mktyunres($1->loc, $1, $3.types, $3.ntypes);}
         ;
@@ -539,7 +539,7 @@ unionelt /* nb: the ucon union type gets filled in when we have context */
         | Tendln {$$ = NULL;}
         ;
 
-goto    : Tgoto Tident {$$ = mkexpr($1->loc, Ojmp, mklbl($2->loc, $2->str), NULL);}
+goto    : Tgoto Tident {$$ = mkexpr($1->loc, Ojmp, mklbl($2->loc, $2->id), NULL);}
         ;
 
 retexpr : Tret expr {$$ = mkexpr($1->loc, Oret, $2, NULL);}
@@ -659,7 +659,7 @@ prefixexpr
 
 postfixexpr
         : postfixexpr Tdot Tident
-            {$$ = mkexpr($1->loc, Omemb, $1, mkname($3->loc, $3->str), NULL);}
+            {$$ = mkexpr($1->loc, Omemb, $1, mkname($3->loc, $3->id), NULL);}
         | postfixexpr Tinc
             {$$ = mkexpr($1->loc, Opostinc, $1, NULL);}
         | postfixexpr Tdec
@@ -685,7 +685,7 @@ arglist : asnexpr
 
 atomicexpr
         : Tident
-            {$$ = mkexpr($1->loc, Ovar, mkname($1->loc, $1->str), NULL);}
+            {$$ = mkexpr($1->loc, Ovar, mkname($1->loc, $1->id), NULL);}
         | literal
         | Toparen expr Tcparen
             {$$ = $2;}
@@ -719,10 +719,10 @@ literal : funclit       {$$ = mkexpr($1->loc, Olit, $1, NULL);}
 tuplit  : Toparen tupbody Tcparen
             {$$ = mkexprl($1->loc, Otup, $2.nl, $2.nn);}
 
-littok  : Tstrlit       {$$ = mkstr($1->loc, $1->str);}
+littok  : Tstrlit       {$$ = mkstr($1->loc, $1->strval);}
         | Tchrlit       {$$ = mkchar($1->loc, $1->chrval);}
         | Tfloatlit     {$$ = mkfloat($1->loc, $1->fltval);}
-        | Tboollit      {$$ = mkbool($1->loc, !strcmp($1->str, "true"));}
+        | Tboollit      {$$ = mkbool($1->loc, !strcmp($1->id, "true"));}
         | Tintlit {
                 $$ = mkint($1->loc, $1->intval);
                 if ($1->inttype)
@@ -778,7 +778,7 @@ structelts
         ;
 
 structelt: optendlns Tdot Tident Tasn expr optendlns
-            {$$ = mkidxinit($2->loc, mkname($3->loc, $3->str), $5);}
+            {$$ = mkidxinit($2->loc, mkname($3->loc, $3->id), $5);}
          ;
 
 optendlns  : /* none */
@@ -882,7 +882,7 @@ blkbody : decl {
         ;
 
 label   : Tcolon Tident
-            {$$ = mklbl($2->loc, $2->str);}
+            {$$ = mklbl($2->loc, $2->id);}
         ;
 
 %%

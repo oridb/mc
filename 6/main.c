@@ -23,6 +23,7 @@ Node *file;
 char debugopt[128];
 int writeasm;
 int extracheck;
+int p9asm;
 char *outfile;
 char **incpaths;
 size_t nincpaths;

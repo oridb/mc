@@ -15,13 +15,19 @@
 #include "../config.h"
 
 /* string tables */
-char *insnfmts[] = {
-#define Insn(val, fmt, use, def) fmt,
+char *gasinsnfmt[] = {
+#define Insn(val, gasfmt, p9fmt, use, def) gasfmt,
 #include "insns.def"
 #undef Insn
 };
 
-char* modenames[] = {
+char *p9insnfmt[] = {
+#define Insn(val, gasfmt, p9fmt, use, def) p9fmt,
+#include "insns.def"
+#undef Insn
+};
+
+char* gasmodenames[] = {
   [ModeB] = "b",
   [ModeW] = "w",
   [ModeL] = "l",
@@ -30,6 +36,14 @@ char* modenames[] = {
   [ModeD] = "d"
 };
 
+char* p9modenames[] = {
+  [ModeB] = "B",
+  [ModeW] = "W",
+  [ModeL] = "L",
+  [ModeQ] = "Q",
+  [ModeF] = "S",
+  [ModeD] = "D"
+};
 
 static size_t writeblob(FILE *fd, Htab *globls, Htab *strtab, Node *blob);
 
@@ -78,8 +92,42 @@ static void initconsts(Htab *globls)
     abortoob->expr.isconst = 1;
 }
 
+void gasprintmem(FILE *fd, Loc *l, char spec)
+{
+    if (l->type == Locmem) {
+        if (l->mem.constdisp)
+            fprintf(fd, "%ld", l->mem.constdisp);
+    } else {
+        if (l->mem.lbldisp)
+            fprintf(fd, "%s", l->mem.lbldisp);
+    }
+    if (l->mem.base) {
+        fprintf(fd, "(");
+        locprint(fd, l->mem.base, 'r');
+        if (l->mem.idx) {
+            fprintf(fd, ",");
+            locprint(fd, l->mem.idx, 'r');
+        }
+        if (l->mem.scale > 1)
+            fprintf(fd, ",%d", l->mem.scale);
+        if (l->mem.base)
+            fprintf(fd, ")");
+    } else if (l->type != Locmeml) {
+        die("Only locmeml can have unspecified base reg");
+    }
+}
+
+void p9printmem(FILE *fd, Loc *l, char spec)
+{
+    gasprintmem(fd, l, spec);
+}
+
 void locprint(FILE *fd, Loc *l, char spec)
 {
+    int isp9;
+
+    isp9 = isupper(spec);
+    spec = tolower(spec);
     assert(l->mode);
     switch (l->type) {
         case Loclitl:
@@ -97,34 +145,17 @@ void locprint(FILE *fd, Loc *l, char spec)
                    spec == 'x' ||
                    spec == 'u');
             if (l->reg.colour == Rnone)
-                fprintf(fd, "%%P.%zd%s", l->reg.id, modenames[l->mode]);
+                fprintf(fd, "%%P.%zd%s", l->reg.id, gasmodenames[l->mode]);
             else
                 fprintf(fd, "%s", regnames[l->reg.colour]);
             break;
         case Locmem:
         case Locmeml:
             assert(spec == 'm' || spec == 'v' || spec == 'x');
-            if (l->type == Locmem) {
-                if (l->mem.constdisp)
-                    fprintf(fd, "%ld", l->mem.constdisp);
-            } else {
-                if (l->mem.lbldisp)
-                    fprintf(fd, "%s", l->mem.lbldisp);
-            }
-            if (l->mem.base) {
-                fprintf(fd, "(");
-                locprint(fd, l->mem.base, 'r');
-                if (l->mem.idx) {
-                    fprintf(fd, ",");
-                    locprint(fd, l->mem.idx, 'r');
-                }
-                if (l->mem.scale > 1)
-                    fprintf(fd, ",%d", l->mem.scale);
-                if (l->mem.base)
-                    fprintf(fd, ")");
-            } else if (l->type != Locmeml) {
-                die("Only locmeml can have unspecified base reg");
-            }
+            if (isp9)
+                p9printmem(fd, l, spec);
+            else
+                gasprintmem(fd, l, spec);
             break;
         case Loclit:
             assert(spec == 'i' || spec == 'x' || spec == 'u');
@@ -184,7 +215,7 @@ void iprintf(FILE *fd, Insn *insn)
         default:
             break;
     }
-    p = insnfmts[insn->op];
+    p = insnfmt[insn->op];
     i = 0;
     modeidx = 0;
     for (; *p; p++) {
@@ -208,7 +239,18 @@ void iprintf(FILE *fd, Insn *insn)
                 locprint(fd, insn->args[i], *p);
                 i++;
                 break;
+            case 'R': /* int register */
+            case 'F': /* float register */
+            case 'M': /* memory */
+            case 'I': /* imm */
+            case 'V': /* reg/mem */
+            case 'U': /* reg/imm */
+            case 'X': /* reg/mem/imm */
+                locprint(fd, insn->args[i], *p);
+                i++;
+                break;
             case 't':
+            case 'T':
             default:
                 /* the  asm description uses 1-based indexing, so that 0
                  * can be used as a sentinel. */
@@ -216,7 +258,9 @@ void iprintf(FILE *fd, Insn *insn)
                     modeidx = strtol(p, &p, 10) - 1;
 
                 if (*p == 't')
-                    fputs(modenames[insn->args[modeidx]->mode], fd);
+                    fputs(gasmodenames[insn->args[modeidx]->mode], fd);
+                else if (*p == 'T')
+                    fputs(p9modenames[insn->args[modeidx]->mode], fd);
                 else
                     die("Invalid %%-specifier '%c'", *p);
                 break;
@@ -280,14 +324,14 @@ static size_t writelit(FILE *fd, Htab *strtab, Node *v, Type *ty)
                 }
                 break;
         case Lstr:
-           if (hthas(strtab, v->lit.strval)) {
-               lbl = htget(strtab, v->lit.strval);
+           if (hthas(strtab, &v->lit.strval)) {
+               lbl = htget(strtab, &v->lit.strval);
            } else {
                lbl = genlblstr(buf, sizeof buf);
-               htput(strtab, v->lit.strval, strdup(lbl));
+               htput(strtab, &v->lit.strval, strdup(lbl));
            }
            fprintf(fd, "\t.quad %s\n", lbl);
-           fprintf(fd, "\t.quad %zd\n", strlen(v->lit.strval));
+           fprintf(fd, "\t.quad %zd\n", v->lit.strval.len);
            break;
         case Lfunc:
             die("Generating this shit ain't ready yet ");
@@ -403,12 +447,14 @@ static size_t writeblob(FILE *fd, Htab *globls, Htab *strtab, Node *n)
 void genstrings(FILE *fd, Htab *strtab)
 {
     void **k;
+    Str *s;
     size_t i, nk;
 
     k = htkeys(strtab, &nk);
     for (i = 0; i < nk; i++) {
+        s = k[i];
         fprintf(fd, "%s:\n", (char*)htget(strtab, k[i]));
-        writebytes(fd, k[i], strlen(k[i]));
+        writebytes(fd, s->buf, s->len);
     }
 }
 
@@ -512,7 +558,7 @@ void gen(Node *file, char *out)
     if (!fd)
         die("Couldn't open fd %s", out);
 
-    strtab = mkht(strhash, streq);
+    strtab = mkht(strlithash, strliteq);
     fprintf(fd, ".data\n");
     for (i = 0; i < nblob; i++)
         genblob(fd, blob[i], globls, strtab);

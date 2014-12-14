@@ -227,6 +227,39 @@ int streq(void *a, void *b)
     return !strcmp(a, b);
 }
 
+ulong strlithash(void *_s)
+{
+    Str *s;
+    ulong h, g, i;
+
+    s = _s;
+    h = 0;
+    for (i = 0; i < s->len; i++) {
+        h = ((h << 4) + s->buf[i]);
+
+        if ((g = (h & 0xF0000000)))
+            h ^= (g >> 24);
+
+        h &= ~g;
+    }
+    return h;
+}
+
+int strliteq(void *_a, void *_b)
+{
+    Str *a, *b;
+
+    a = _a;
+    b = _b;
+    if (a == b)
+        return 1;
+    if (a == NULL || b == NULL)
+        return 0;
+    if (a->len != b->len)
+        return 0;
+    return !memcmp(a, b, a->len);
+}
+
 ulong ptrhash(void *key)
 {
     return inthash((intptr_t)key);

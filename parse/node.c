@@ -214,13 +214,15 @@ Node *mklbl(Srcloc loc, char *lbl)
     return mkexpr(loc, Olit, n, NULL);
 }
 
-Node *mkstr(Srcloc loc, char *val)
+Node *mkstr(Srcloc loc, Str val)
 {
     Node *n;
 
     n = mknode(loc, Nlit);
     n->lit.littype = Lstr;
-    n->lit.strval = strdup(val);
+    n->lit.strval.len = val.len;
+    n->lit.strval.buf = malloc(val.len);
+    memcpy(n->lit.strval.buf, val.buf, val.len);
 
     return n;
 }
@@ -368,7 +370,8 @@ int liteq(Node *a, Node *b)
         case Lflt:
             return a->lit.fltval == b->lit.fltval;
         case Lstr:
-            return !strcmp(a->lit.strval, b->lit.strval);
+            return a->lit.strval.len == b->lit.strval.len &&
+                !memcmp(a->lit.strval.buf, b->lit.strval.buf, a->lit.strval.len);
         case Lfunc:
             return a->lit.fnval == b->lit.fnval;
         case Llbl:

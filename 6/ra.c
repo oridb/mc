@@ -26,7 +26,7 @@ static void printedge(FILE *fd, char *msg, size_t a, size_t b);
 Usemap usetab[] = {
 #define Def(...)
 #define Use(...) {__VA_ARGS__}
-#define Insn(i, fmt, use, def) use,
+#define Insn(i, gasfmt, p9fmt, use, def) use,
 #include "insns.def"
 #undef Insn
 #undef Use
@@ -36,7 +36,7 @@ Usemap usetab[] = {
 Usemap deftab[] = {
 #define Use(...)
 #define Def(...) {__VA_ARGS__}
-#define Insn(i, fmt, use, def) def,
+#define Insn(i, gasfmt, p9fmt, use, def) def,
 #include "insns.def"
 #undef Insn
 #undef Def
