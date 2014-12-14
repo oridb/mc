@@ -134,7 +134,7 @@ const getaddr = {addr
 const nameseg = {str
 	match strfind(str, "!")
 	| `Some idx:
-		-> (str[:idx], str[idx:])
+		-> (str[:idx], str[idx+1:])
 	| `None:
 		-> (str, "")
 	;;
