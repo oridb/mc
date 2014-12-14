@@ -14,7 +14,7 @@ typedef struct Isel Isel;
 typedef struct Asmbb Asmbb;
 
 typedef enum {
-#define Insn(val, fmt, use, def) val,
+#define Insn(val, gasfmt, p9fmt, use, def) val,
 #include "insns.def"
 #undef Insn
 } AsmOp;

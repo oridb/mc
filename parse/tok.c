@@ -233,7 +233,7 @@ static Tok *kwident(void)
     if (!identstr(buf, sizeof buf))
         return NULL;
     t = mktok(kwd(buf));
-    t->str = strdup(buf);
+    t->id = strdup(buf);
     return t;
 }
 
@@ -248,7 +248,8 @@ static void append(char **buf, size_t *len, size_t *sz, int c)
         *buf = realloc(*buf, *sz);
     }
 
-    buf[0][len[0]++] = c;
+    buf[0][*len] = c;
+    (*len)++;
 }
 
 
@@ -408,10 +409,13 @@ static Tok *strlit(void)
         else
             append(&buf, &len, &sz, c);
     };
-    append(&buf, &len, &sz, '\0');
-
     t = mktok(Tstrlit);
-    t->str = buf;
+    t->strval.len = len;
+
+    /* null terminator should not count towards length */
+    append(&buf, &len, &sz, '\0');
+    t->strval.buf = buf;
+    t->id = buf;
     return t;
 }
 
@@ -472,7 +476,7 @@ static Tok *charlit(void)
 
     t = mktok(Tchrlit);
     t->chrval = val;
-    t->str = buf;
+    t->id = buf;
     return t;
 }
 
@@ -656,11 +660,11 @@ static Tok *number(int base)
     /* we only support base 10 floats */
     if (isfloat && base == 10) {
         t = mktok(Tfloatlit);
-        t->str = strdupn(&fbuf[start], fidx - start);
+        t->id = strdupn(&fbuf[start], fidx - start);
         t->fltval = strtod(buf, NULL);
     } else {
         t = mktok(Tintlit);
-        t->str = strdupn(&fbuf[start], fidx - start);
+        t->id = strdupn(&fbuf[start], fidx - start);
         t->intval = strtoull(buf, NULL, base);
         /* check suffixes:
          *   u -> unsigned
@@ -748,7 +752,7 @@ static Tok *typaram(void)
     if (!identstr(buf, 1024))
         return NULL;
     t = mktok(Ttyparam);
-    t->str = strdup(buf);
+    t->id = strdup(buf);
     return t;
 }
 
@@ -829,8 +833,8 @@ int yylex(void)
 void yyerror(const char *s)
 {
     fprintf(stderr, "%s:%d: %s", filename, curloc.line, s);
-    if (curtok->str)
-        fprintf(stderr, " near \"%s\"", curtok->str);
+    if (curtok->id)
+        fprintf(stderr, " near \"%s\"", curtok->id);
     fprintf(stderr, "\n");
     exit(1);
 }

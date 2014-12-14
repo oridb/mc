@@ -453,7 +453,7 @@ static void pickle(FILE *fd, Node *n)
                 case Lchr:      wrint(fd, n->lit.chrval);       break;
                 case Lint:      wrint(fd, n->lit.intval);       break;
                 case Lflt:      wrflt(fd, n->lit.fltval);       break;
-                case Lstr:      wrstr(fd, n->lit.strval);       break;
+                case Lstr:      wrstrbuf(fd, n->lit.strval);    break;
                 case Llbl:      wrstr(fd, n->lit.lblval);       break;
                 case Lbool:     wrbool(fd, n->lit.boolval);     break;
                 case Lfunc:     pickle(fd, n->lit.fnval);       break;
@@ -585,10 +585,10 @@ static Node *unpickle(FILE *fd)
                 case Lchr:      n->lit.chrval = rdint(fd);       break;
                 case Lint:      n->lit.intval = rdint(fd);       break;
                 case Lflt:      n->lit.fltval = rdflt(fd);       break;
-                case Lstr:      n->lit.strval = rdstr(fd);       break;
+                case Lstr:      rdstrbuf(fd, &n->lit.strval);    break;
                 case Llbl:      n->lit.lblval = rdstr(fd);       break;
                 case Lbool:     n->lit.boolval = rdbool(fd);     break;
-                case Lfunc:     n->lit.fnval = unpickle(fd);       break;
+                case Lfunc:     n->lit.fnval = unpickle(fd);     break;
             }
             break;
         case Nloopstmt:

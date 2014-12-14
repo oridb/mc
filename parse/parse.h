@@ -15,6 +15,7 @@ typedef struct Srcloc Srcloc;
 typedef struct Bitset Bitset;
 typedef struct Htab Htab;
 typedef struct Optctx Optctx;
+typedef struct Str Str;
 
 typedef struct Tok Tok;
 typedef struct Node Node;
@@ -64,6 +65,11 @@ struct Srcloc {
     int file;
 };
 
+struct Str {
+    size_t len;
+    char *buf;
+};
+
 typedef enum {
     Visintern,
     Visexport,
@@ -95,13 +101,14 @@ struct Htab {
 struct Tok {
     int type;
     Srcloc loc;
-    char *str;
+    char *id;
 
     /* values parsed out */
     vlong intval;
     Ty inttype; /* for explicitly specified suffixes */
     double fltval;
     uint32_t chrval;
+    Str strval;
 };
 
 struct Stab {
@@ -222,7 +229,7 @@ struct Node {
                 uvlong   intval;
                 double   fltval;
                 uint32_t chrval;
-                char    *strval;
+                Str      strval;
                 char    *lblval;
                 int      boolval;
                 Node    *fnval;
@@ -396,6 +403,8 @@ void **htkeys(Htab *ht, size_t *nkeys);
 int liteq(Node *a, Node *b);
 ulong strhash(void *key);
 int streq(void *a, void *b);
+ulong strlithash(void *key);
+int strliteq(void *a, void *b);
 ulong ptrhash(void *key);
 int ptreq(void *a, void *b);
 ulong inthash(uint64_t key);
@@ -506,7 +515,7 @@ Node *mkidxinit(Srcloc l, Node *idx, Node *init);
 Node *mkbool(Srcloc l, int val);
 Node *mkint(Srcloc l, uint64_t val);
 Node *mkchar(Srcloc l, uint32_t val);
-Node *mkstr(Srcloc l, char *s);
+Node *mkstr(Srcloc l, Str str);
 Node *mkfloat(Srcloc l, double flt);
 Node *mkfunc(Srcloc l, Node **args, size_t nargs, Type *ret, Node *body);
 Node *mkname(Srcloc l, char *name);
@@ -582,6 +591,8 @@ void wrint(FILE *fd, long val);
 long rdint(FILE *fd);
 void wrstr(FILE *fd, char *val);
 char *rdstr(FILE *fd);
+void wrstrbuf(FILE *fd, Str str);
+void rdstrbuf(FILE *fd, Str *str);
 void wrflt(FILE *fd, double val);
 double rdflt(FILE *fd);
 void wrbool(FILE *fd, int val);

@@ -567,12 +567,12 @@ static void matchpattern(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, N
             lit = pat->expr.args[0];
             if (exprop(pat) != Olit || lit->lit.littype != Lstr)
                 die("Unsupported pattern");
-            str = lit->lit.strval;
+            str = lit->lit.strval.buf;
+            len = lit->lit.strval.len;
 
             /* load slice length */
             next = genlbl(pat->loc);
             x = slicelen(s, val);
-            len = strlen(str);
             y = mkintlit(lit->loc, len);
             y->expr.type = tyintptr;
             v = mkexpr(pat->loc, Oeq, x, y, NULL);

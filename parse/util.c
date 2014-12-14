@@ -316,6 +316,20 @@ char *rdstr(FILE *fd)
     }
 }
 
+void wrstrbuf(FILE *fd, Str str)
+{
+    wrint(fd, str.len);
+    wrbuf(fd, str.buf, str.len);
+}
+
+void rdstrbuf(FILE *fd, Str *str)
+{
+    str->len = rdint(fd);
+    str->buf = xalloc(str->len + 1);
+    rdbuf(fd, str->buf, str->len);
+    str->buf[str->len] = '\0';
+}
+
 void wrflt(FILE *fd, double val)
 {
     byte buf[8];
