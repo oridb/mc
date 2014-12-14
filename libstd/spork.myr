@@ -3,33 +3,37 @@ use sys
 use "die.use"
 use "execvp.use"
 use "fmt.use"
+use "result.use"
 use "syswrap.use"
 
 pkg std =
-	const spork	: (cmd : byte[:][:]	-> (pid, fd, fd))
-	const sporkfd	: (cmd : byte[:][:], infd : fd, outfd : fd	-> pid)
+	const spork	: (cmd : byte[:][:]	-> result((pid, fd, fd), int))
+	const sporkfd	: (cmd : byte[:][:], infd : fd, outfd : fd	-> result(pid, int))
 ;;
 
 const spork = {cmd
 	var infds  :fd[2], outfds : fd[2]
 	var err
-	var pid
 
 	/* open up pipes */
 	err = pipe(&infds)
 	if err != 0
-		fatal(1, "Could not create pipes: err %l\n", -err)
+		-> `Fail (-err castto(int))
 	;;
 	err = pipe(&outfds)
 	if err != 0
-		fatal(1, "Could not create pipes: err %l\n", -err)
+		-> `Fail (-err castto(int))
 	;;
 
-	pid = sporkfd(cmd, infds[0] castto(fd), outfds[1] castto(fd))
-	/* close unused fd ends */
-	close(infds[0]);
-	close(outfds[1]);
-	-> (pid, infds[1], outfds[0])
+	match sporkfd(cmd, infds[0] castto(fd), outfds[1] castto(fd))
+	| `Ok pid:
+		/* close unused fd ends */
+		close(infds[0]);
+		close(outfds[1]);
+		-> `Ok (pid, infds[1], outfds[0])
+	| `Fail m:
+		-> `Fail m
+	;;
 }
 
 const sporkfd = {cmd, infd, outfd
@@ -38,7 +42,7 @@ const sporkfd = {cmd, infd, outfd
 	pid = fork()
 	/* error  */
 	if pid == -1
-		fatal(1, "Could not fork to start slave\n")
+		-> `Fail -1
 	/* child */
 	elif pid == 0
 		/* stdin/stdout for our communication. */
@@ -55,7 +59,7 @@ const sporkfd = {cmd, infd, outfd
 		;;
 	/* parent */
 	else
-		-> pid castto(pid)
+		-> `Ok pid
 	;;
 }
 
