@@ -64,7 +64,7 @@ const optnext = {ctx
 
 	match optinfo(ctx, c)
 	| `None:
-		fatal(1, "Unexpected argument %c\n", c)
+		fatal(1, "Unexpected argument '%c'\n", c)
 	| `Some (true, needed):
 		/* -arg => '-a' 'rg' */
 		if ctx.curarg.len > 0
@@ -82,7 +82,7 @@ const optnext = {ctx
 		;;
 	| `Some (false, _):
 		arg = ""
-		if ctx.curarg.len != 0
+		if ctx.curarg.len == 0
 			next(ctx)
 		;;
 	;;
