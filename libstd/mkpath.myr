@@ -12,8 +12,9 @@ const mkpath = {p
 	for i = 0; i < p.len; i++
 		if p[i] == '/' castto(byte) && i != 0
 			st = mkdir(p[:i], 0o777)
-		elif st != 0 && (st castto(errno)) != Eexist
-			-> false
+			if st != 0 && (st castto(errno)) != Eexist
+				-> false
+			;;
 		;;
 	;;
 
