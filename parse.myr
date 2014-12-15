@@ -28,7 +28,7 @@ const parse = {p
 	;;
 	skipspace(p)
 	if p.rest.len > 0
-		failparse(p, "junk in file near %s", p.rest[:std.min(p.rest.len, 10)])
+		failparse(p, "junk in file near %s\n", p.rest[:std.min(p.rest.len, 10)])
 		-> false
 	else
 		-> true
@@ -64,7 +64,7 @@ const mantarget = {p
 
 }
 const myrtarget = {p, targ
-	var name, inputs, attrs
+	var name, inputs, libdeps, attrs
 	var ldscript, runtime, inst, incpath
 
 	match word(p)
@@ -76,7 +76,7 @@ const myrtarget = {p, targ
 	if matchc(p, '{')
 		match attrlist(p)
 		| `std.Some al:	attrs = al
-		| `std.None:	failparse(p, "invalid attr list for %s %s", targ, name)
+		| `std.None:	failparse(p, "invalid attr list for %s %s\n", targ, name)
 		;;
 	else
 		attrs = [][:]
@@ -84,12 +84,13 @@ const myrtarget = {p, targ
 
 	skipspace(p)
 	if !matchc(p, '=')
-		failparse(p, "expected '=' after '%s %s'", targ, name)
+		failparse(p, "expected '=' after '%s %s'\n", targ, name)
 	;;
 
-	match wordlist(p)
-	| `std.Some wl: 
+	match inputlist(p)
+	| `std.Some (wl, libs): 
 		inputs = [][:]
+		libdeps = libs
 		for w in wl
 			if isplatform(w)
 				inputs = std.slpush(inputs, w)
@@ -125,6 +126,7 @@ const myrtarget = {p, targ
 	-> [
 		.name=name,
 		.inputs=inputs,
+		.libdeps=libdeps,
 		.install=inst,
 		.ldscript=ldscript,
 		.runtime=runtime,
@@ -138,7 +140,7 @@ const anontarget = {p, targ
 	inputs = [][:]
 	skipspace(p)
 	if !matchc(p, '=')
-		failparse(p, "expected '=' after '%s' target", targ)
+		failparse(p, "expected '=' after '%s' target\n", targ)
 	;;
 
 	match wordlist(p)
@@ -183,6 +185,28 @@ const attrlist = {p
 	;;
 }
 
+const inputlist = {p
+	var wl, libs
+
+	wl = [][:]
+	libs = [][:]
+	while true
+		match word(p)
+		| `std.Some "lib":
+			match word(p)
+			| `std.Some l:	libs = std.slpush(libs, l)
+			| `std.None:	failparse(p, "expected lib name after 'lib'\n")
+			;;
+		| `std.Some w:	wl = std.slpush(wl, w)
+		| `std.None:	break
+		;;
+	;;
+	if wl.len == 0
+		-> `std.None
+	else
+		-> `std.Some (wl, libs)
+	;;
+}
 
 const wordlist = {p
 	var wl

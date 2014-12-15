@@ -27,6 +27,7 @@ pkg bld =
 	type myrtarg = struct
 		name	: byte[:]
 		inputs	: byte[:][:]
+		libdeps	: byte[:][:]
 		install	: bool
 		ldscript	: byte[:]
 		runtime	: byte[:]
