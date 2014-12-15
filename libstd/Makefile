@@ -1,6 +1,7 @@
 SYSLIB=sys
 SYSSRC= \
 	sys.myr \
+	syserrno.myr \
 	systypes.myr \
 	ifreq.myr \
 
@@ -23,6 +24,7 @@ STDSRC= \
 	dir.myr \
 	endian.myr \
 	env.myr \
+	errno.myr \
 	execvp.myr \
 	extremum.myr \
 	fltbits.myr \
@@ -35,6 +37,7 @@ STDSRC= \
 	intparse.myr \
 	ipparse.myr \
 	mk.myr \
+	mkpath.myr \
 	now.myr \
 	option.myr \
 	optparse.myr \

@@ -5,6 +5,7 @@ lib sys =
 	syscall+freebsd-x64.s
 	syscall+linux-x64.s
 	syscall+osx-x64.s
+        syserrno+linux.myr
 	systypes.myr
 	ifreq+freebsd.myr
 	ifreq+linux.myr
@@ -25,6 +26,7 @@ lib std {inc=.} =
 	die.myr
 	endian.myr
 	env.myr
+        errno.myr
 	execvp.myr
 	extremum.myr
 	fltbits.myr
@@ -37,6 +39,7 @@ lib std {inc=.} =
 	intparse.myr
 	ipparse.myr
 	mk.myr
+        mkpath.myr
 	now.myr
 	option.myr
 	optparse.myr
