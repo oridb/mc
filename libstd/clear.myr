@@ -1,0 +1,12 @@
+use "slfill.use"
+pkg std =
+	generic clear	: (p : @a#	-> void)
+;;
+
+generic clear = {p : @a#
+	var bp
+
+	bp = p castto(byte#)
+	slfill(bp[:sizeof(@a)], 0)
+}
+

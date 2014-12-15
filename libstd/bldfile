@@ -19,6 +19,7 @@ lib std {inc=.} =
 	bitset.myr
 	blat.myr
 	chartype.myr
+        clear.myr
 	cmp.myr
 	dial.myr
 	die.myr

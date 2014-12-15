@@ -17,6 +17,7 @@ STDSRC= \
 	blat.myr \
 	chartype.myr \
 	cmp.myr \
+	clear.myr \
 	dial.myr \
 	die.myr \
 	dir.myr \
