@@ -1079,6 +1079,7 @@ static void checkns(Inferstate *st, Node *n, Node **ret)
     if (!s)
         fatal(n, "Undeclared var %s.%s", nsname->name.ns, nsname->name.name);
     var = mkexpr(n->loc, Ovar, nsname, NULL);
+    var->expr.idx = n->expr.idx;
     initvar(st, var, s);
     *ret = var;
 }
