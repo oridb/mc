@@ -9,25 +9,24 @@ use "util.use"
 
 pkg bld =
 	const myrdeps	: (dg : depgraph#, targ : byte[:], srcs : byte[:][:], islib : bool	-> bool)
+
+
+	/* a bit ugly: initialized from main() */
+	var usepat	: regex.regex#
+
 ;;
+var usepat	: regex.regex#
 
 type dep = union
 	`Local	byte[:]
 	`Lib byte[:]
 ;;
 
-var usepat	: regex.regex#
-
 const myrdeps = {dg, targ, srcs, islib
 	var seentab, donetab
 	var out, useout
 	var objs, uses
 	var i
-
-	match regex.compile("^\\s*use\\s+((\\<\\S+\\>)|(\"(\\S+)\")).*")
-	| `std.Ok re:	usepat = re
-	| `std.Fail f:	std.fatal(1, "Failed to compile use pattern regex\n")
-	;;
 
 	dg.deps = std.mkht(std.strhash, std.streq)
 	dg.libs = std.mkht(std.strhash, std.streq)

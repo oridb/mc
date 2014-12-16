@@ -10,7 +10,7 @@ pkg bld =
 		line	: int
 
 		/* build params */
-		targs	: target[:]
+		targs	: targ[:]
 		prefix	: byte[:]
 		system	: byte[:]
 		arch	: byte[:]
@@ -28,15 +28,16 @@ pkg bld =
 		name	: byte[:]
 		inputs	: byte[:][:]
 		libdeps	: byte[:][:]
+		built	: bool
 		install	: bool
-		ldscript	: byte[:]
 		runtime	: byte[:]
 		incpath	: byte[:][:]
+		ldscript	: byte[:]
 	;;
 
-	type target = union
-		`Bin	myrtarg
-		`Lib	myrtarg
+	type targ = union
+		`Bin	myrtarg#
+		`Lib	myrtarg#
 		`Sub	byte[:][:]
 		`Man	byte[:][:]
 	;;

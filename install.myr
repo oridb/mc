@@ -26,11 +26,11 @@ const movetargs = {p, delete
 
 	for t in p.targs
 		match t
-		| `Bin [.name=bin, .inputs=leaves, .install=true]:
-			movefile(delete, bin, opt_instroot, opt_destdir, "bin")
-		| `Lib [.name=lib, .inputs=leaves, .install=true]:
-			movefile(delete, lib, opt_instroot, opt_destdir, "lib/myr")
-			libarchive = std.fmt("lib%s.a", lib)
+		| `Bin bt:
+			movefile(delete, bt.name, opt_instroot, opt_destdir, "bin")
+		| `Lib lt:
+			movefile(delete, lt.name, opt_instroot, opt_destdir, "lib/myr")
+			libarchive = std.fmt("lib%s.a", lt.name)
 			movefile(delete, libarchive, opt_instroot, opt_destdir, "lib/myr")
 			std.slfree(libarchive)
 		| `Sub subs:

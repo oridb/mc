@@ -16,10 +16,10 @@ pkg bld =
 const cleanall = {p
 	for t in p.targs
 		match t
-		| `Bin [.name=bin, .inputs=leaves]:
-			cleanup(bin, leaves, true)
-		| `Lib [.name=lib, .inputs=leaves]:
-			cleanup(lib, leaves, true)
+		| `Bin bt:
+			cleanup(bt.name, bt.inputs, true)
+		| `Lib lt:
+			cleanup(lt.name, lt.inputs, true)
 		| `Sub subs:
 			subdirs(p, subs, `std.None)
 		| `Man m:
@@ -31,13 +31,13 @@ const cleanall = {p
 const clean = {p, targ
 	for t in p.targs
 		match t
-		| `Bin [.name=bin, .inputs=leaves]:
-			if std.sleq(bin, targ)
-				cleanup(bin, leaves, true)
+		| `Bin bt:
+			if std.sleq(bt.name, targ)
+				cleanup(bt.name, bt.inputs, true)
 			;;
-		| `Lib [.name=lib, .inputs=leaves]:
-			if std.sleq(lib, targ)
-				cleanup(lib, leaves, true)
+		| `Lib lt:
+			if std.sleq(lt.name, targ)
+				cleanup(lt.name, lt.inputs, true)
 			;;
 		| `Sub subs:
 			subdirs(p, subs, `std.Some targ)

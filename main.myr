@@ -1,8 +1,10 @@
 use std
+use regex
 
 use "build.use"
 use "clean.use"
 use "config.use"
+use "deps.use"
 use "install.use"
 use "opts.use"
 use "parse.use"
@@ -10,6 +12,7 @@ use "types.use"
 
 const main = {args : byte[:][:]
 	var p : bld.parser#
+	var mt : bld.myrtarg
 	var optctx
 
 	optctx = std.optinit("hb:l:s:Sr:I:C:A:M:L:R:d", args)
@@ -44,10 +47,33 @@ const main = {args : byte[:][:]
 		;;
 	;;
 
+	match regex.compile("^\\s*use\\s+((\\<\\S+\\>)|(\"(\\S+)\")).*")
+	| `std.Ok re:	bld.usepat = re
+	| `std.Fail f:	std.fatal(1, "Failed to compile use pattern regex\n")
+	;;
+
 	if bld.opt_binname.len != 0
-		bld.buildbin(bld.opt_binname, optctx.args, bld.opt_ldscript, bld.opt_runtime, bld.opt_incpaths)
+		mt = [
+			.name=bld.opt_binname,
+			.inputs=optctx.args,
+			.runtime=bld.opt_runtime,
+			.incpath=bld.opt_incpaths,
+			.ldscript=bld.opt_ldscript,
+			.libdeps=[][:]
+		]
+		p = std.zalloc()
+		bld.buildbin(p, &mt)
+		std.free(p)
 	elif bld.opt_libname.len != 0
-		bld.buildlib(bld.opt_libname, optctx.args, bld.opt_incpaths)
+		mt = [
+			.name=bld.opt_libname,
+			.inputs=optctx.args,
+			.incpath=bld.opt_incpaths,
+			.libdeps=[][:]
+		]
+		p = std.zalloc()
+		bld.buildbin(p, &mt)
+		std.free(p)
 	else
 		p = loadbuild(bld.opt_bldfile)
 		p.cmd = args

@@ -13,17 +13,17 @@ pkg bld =
 	const buildall	: (p : parser# -> bool)
 	const test	: (p : parser# -> bool)
 	const build	: (p : parser#, target : byte[:] -> bool)
-	const buildbin	: (bin : byte[:], inputs : byte[:][:], ldscript : byte[:], rt : byte[:], incs : byte[:][:] -> void)
-	const buildlib	: (lib : byte[:], inputs : byte[:][:], incs : byte[:][:] -> void)
+	const buildbin	: (p : parser#, bt : myrtarg# -> void)
+	const buildlib	: (p : parser#, lt : myrtarg# -> void)
 ;;
 
 const buildall = {p
 	for t in p.targs
 		match t
-		| `Bin [.name=bin, .inputs=leaves, .ldscript=lds, .runtime=rt, .incpath=incpath]:
-			buildbin(bin, leaves, lds, rt, incpath)
-		| `Lib [.name=lib, .inputs=leaves, .incpath=incpath]:
-			buildlib(lib, leaves, incpath)
+		| `Bin bt:
+			buildbin(p, bt)
+		| `Lib lt:
+			buildlib(p, lt)
 		| `Sub subs:
 			subdirs(p, subs, `std.None)
 		| `Man m:
@@ -39,66 +39,85 @@ const test = {p
 }
 
 const build = {p, targ
-	var built
+	var found
 
-	built = false
+	found = false
 	for t in p.targs
 		match t
-		| `Bin [.name=bin, .inputs=leaves, .ldscript=lds, .runtime=rt, .incpath=incpath]:
-			if std.sleq(bin, targ)
-				buildbin(bin, leaves, lds, rt, incpath)
-				built = true
+		| `Bin bt:
+			if std.sleq(bt.name, targ)
+				buildbin(p, bt)
 			;;
-		| `Lib [.name=lib, .inputs=leaves, .incpath=incpath]:
-			if std.sleq(lib, targ)
-				buildlib(lib, leaves, incpath)
-				built = true
+		| `Lib lt:
+			if std.sleq(lt.name, targ)
+				buildlib(p, lt)
+				found = true
 			;;
 		| `Sub subs:
+			found = true
 			subdirs(p, subs, `std.Some targ)
 		| `Man m:
+			found = true
 			/* nothing needed */
 		;;
 	;;
-	if !built
+	if !found
 		std.fatal(1, "%s: no such target\n", targ)
 	;;
-	-> built
+	-> found
 }
 
-const buildbin = {bin, inputs, ldscript, rt, incs
+const buildbin = {p, targ
 	var dg
 
-	if !myrdeps(&dg, bin, inputs, false)
-		std.fatal(1, "Could not load dependencies for %s\n", bin)
+	if targ.built
+		->
 	;;
-	if !std.hthas(dg.deps, bin)
-		std.fatal(1, "no target declared for %s\n", bin)
+	if targ.libdeps.len > 0
+		targ.incpath = std.slpush(targ.incpath, ".")
+		for l in targ.libdeps
+			build(p, l)
+		;;
 	;;
-	if builddep(&dg, bin, incs)
-		linkbin(&dg, bin, inputs, ldscript, rt, incs)
+	std.put("%s...\n", targ.name)
+	if !myrdeps(&dg, targ.name, targ.inputs, false)
+		std.fatal(1, "Could not load dependencies for %s\n", targ.name)
 	;;
+	if !std.hthas(dg.deps, targ.name)
+		std.fatal(1, "no target declared for %s\n", targ.name)
+	;;
+	if builddep(&dg, targ.name, targ.incpath)
+		linkbin(&dg, targ.name, targ.inputs, targ.ldscript, targ.runtime, targ.incpath, targ.libdeps)
+	;;
+	targ.built = true
 }
 
-const buildlib = {lib, inputs, incs
+const buildlib = {lib, targ
 	var archive
 	var u, l
 	var dg
+	var lib
 
+	if targ.built
+		->
+	;;
+	lib = targ.name
+	std.put("lib%s.a...\n", lib)
 	archive = std.fmt("lib%s.a", lib)
-	if !myrdeps(&dg, lib, inputs, true)
+	if !myrdeps(&dg, lib, targ.inputs, true)
 		std.fatal(1, "Could not load dependencies for %s\n", lib)
 	;;
 	if !std.hthas(dg.deps, lib)
 		std.fatal(1, "no target declared for %s\n", lib)
 	;;
-	u = builddep(&dg, lib, incs)
-	l = builddep(&dg, archive, incs)
+	u = builddep(&dg, targ.name, targ.incpath)
+	l = builddep(&dg, archive, targ.incpath)
 	if  u || l
-		mergeuse(&dg, lib, inputs, incs)
-		archivelib(&dg, lib, inputs, incs)
+		mergeuse(&dg, lib, targ.inputs, targ.incpath)
+		archivelib(&dg, lib, targ.inputs, targ.incpath)
 	;;
 	std.slfree(archive)
+	targ.built = true
 }
 
 const builddep = {dg, out, incs
@@ -159,7 +178,7 @@ const compile = {src, incs
 	;;
 }
 
-const linkbin = {dg, bin, srcfiles, ldscript, rt, incs
+const linkbin = {dg, bin, srcfiles, ldscript, rt, incs, extralibs
 	var cmd
 
 	cmd = [][:]
@@ -188,6 +207,9 @@ const linkbin = {dg, bin, srcfiles, ldscript, rt, incs
 
 	/* -l lib... */
 	cmd = addlibs(cmd, dg.libs)
+	for l in extralibs
+		cmd = std.slpush(cmd, std.fmt("-l%s", l))
+	;;
 
 	/* -L incpath... */
 	for inc in incs

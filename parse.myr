@@ -123,15 +123,16 @@ const myrtarget = {p, targ
 			std.fatal(1, "got invalid attr '%s'\n", invalid)
 		;;
 	;;
-	-> [
+	-> std.mk([
 		.name=name,
 		.inputs=inputs,
 		.libdeps=libdeps,
 		.install=inst,
 		.ldscript=ldscript,
 		.runtime=runtime,
-		.incpath=incpath
-	]
+		.incpath=incpath,
+		.built=false
+	])
 }
 
 const anontarget = {p, targ
