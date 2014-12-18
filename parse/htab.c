@@ -262,14 +262,14 @@ int strliteq(void *_a, void *_b)
 
 ulong ptrhash(void *key)
 {
-    return inthash((intptr_t)key);
+    return inthash((uintptr_t)key);
 }
 
 ulong inthash(uint64_t key)
 {
-    intptr_t h;
+    uintptr_t h;
 
-    h = (intptr_t) key;
+    h = (uintptr_t) key;
     h *= 357913941;
     h ^= h << 24;
     h += ~357913941;
