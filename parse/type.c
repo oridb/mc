@@ -692,14 +692,20 @@ int tyeq(void *t1, void *t2)
                 return 0;
             break;
         case Tyunion:
-            for (i = 0; i < a->nmemb; i++)
+            for (i = 0; i < a->nmemb; i++) {
+                if (!nameeq(a->udecls[i]->name, b->udecls[i]->name))
+                    return 0;
                 if (!tyeq(a->udecls[i]->etype, b->udecls[i]->etype))
                     return 0;
+            }
             break;
         case Tystruct:
-            for (i = 0; i < a->nmemb; i++)
+            for (i = 0; i < a->nmemb; i++) {
                 if (strcmp(declname(a->sdecls[i]), declname(b->sdecls[i])) != 0)
                     return 0;
+                if (!tyeq(decltype(a->sdecls[i]), decltype(b->sdecls[i])))
+                    return 0;
+            }
             break;
         case Tyname:
             if (!nameeq(a->name, b->name))
