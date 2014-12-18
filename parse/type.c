@@ -633,14 +633,33 @@ ulong tyhash(void *ty)
     ulong hash;
 
     t = (Type *)ty;
-    if (t->type == Typaram)
-        hash = strhash(t->pname);
-    else
-        hash = inthash(t->tid);
+    switch (t->type) {
+        case Typaram:   hash = strhash(t->pname);       break;
+        case Tyvar:     hash = inthash(t->tid);         break;
+        case Tyunion:   hash = inthash(t->tid);         break;
+        case Tystruct:  hash = inthash(t->tid);         break;
+        default:        hash = inthash(t->type);        break;
+    }
 
     for (i = 0; i < t->narg; i++)
         hash ^= tyhash(t->arg[i]);
     return hash;
+}
+
+static int valeq(Node *a, Node *b)
+{
+    if (a == b)
+        return 1;
+
+    /* unwrap to Nlit */
+    if (exprop(a) == Olit)
+        a = a->expr.args[0];
+    if (exprop(b) == Olit)
+        b = b->expr.args[0];
+
+    if (a->type != Nlit || b->type != Nlit)
+        return 0;
+    return liteq(a, b);
 }
 
 int tyeq(void *t1, void *t2)
@@ -652,6 +671,8 @@ int tyeq(void *t1, void *t2)
     b = (Type *)t2;
     if (a == b)
         return 1;
+    if (!a || !b)
+        return 0;
     if (a->type != b->type)
         return 0;
     if (a->tid == b->tid)
@@ -666,9 +687,18 @@ int tyeq(void *t1, void *t2)
         case Typaram:
             return streq(a->pname, b->pname);
             break;
+        case Tyvar:
+            if (a->tid != b->tid)
+                return 0;
+            break;
         case Tyunion:
             for (i = 0; i < a->nmemb; i++)
                 if (!tyeq(a->udecls[i]->etype, b->udecls[i]->etype))
+                    return 0;
+            break;
+        case Tystruct:
+            for (i = 0; i < a->nmemb; i++)
+                if (strcmp(declname(a->sdecls[i]), declname(b->sdecls[i])) != 0)
                     return 0;
             break;
         case Tyname:
@@ -681,12 +711,16 @@ int tyeq(void *t1, void *t2)
                 if (!tyeq(a->sub[i], b->sub[i]))
                     return 0;
             break;
+        case Tyarray:
+            if (!valeq(a->asize, b->asize))
+                return 0;
+            break;
         default:
-            for (i = 0; i < a->nsub; i++)
-                if (!tyeq(a->sub[i], b->sub[i]))
-                    return 0;
             break;
     }
+    for (i = 0; i < a->nsub; i++)
+        if (!tyeq(a->sub[i], b->sub[i]))
+            return 0;
     return 1;
 }
 
