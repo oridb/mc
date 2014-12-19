@@ -163,7 +163,6 @@ int main(int argc, char **argv)
         tyinit(globls);
         tokinit(ctx.args[i]);
         file = mkfile(ctx.args[i]);
-        file->file.exports = mkstab();
         file->file.globls = globls;
         yyparse();
 
@@ -171,7 +170,7 @@ int main(int argc, char **argv)
         if (debugopt['T'])
             dump(file, stdout);
         infer(file);
-        tagexports(file->file.exports, 0);
+        tagexports(file->file.globls, 0);
         /* after all type inference */
         if (debugopt['t'])
             dump(file, stdout);

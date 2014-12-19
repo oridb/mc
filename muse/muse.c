@@ -41,7 +41,7 @@ static void dumpuse(char *path)
 
     globls = file->file.globls;
     f = fopen(path, "r");
-    loaduse(f, globls);
+    loaduse(f, globls, Visexport);
     fclose(f);
     dumpstab(globls, stdout);
 }
@@ -59,7 +59,7 @@ static void genuse(char *path)
     yyparse();
 
     infer(file);
-    tagexports(file->file.exports, 0);
+    tagexports(file->file.globls, 0);
     if (outfile) {
         p = outfile;
     } else {
@@ -76,11 +76,11 @@ static void mergeuse(char *path)
     FILE *f;
     Stab *st;
 
-    st = file->file.exports;
+    st = file->file.globls;
     f = fopen(path, "r");
     if (!f)
         die("Couldn't open %s\n", path);
-    loaduse(f, st);
+    loaduse(f, st, Visexport);
     fclose(f);
 }
 
@@ -126,21 +126,21 @@ int main(int argc, char **argv)
         }
 
         file = mkfile("internal");
-        file->file.exports = mkstab();
         file->file.globls = mkstab();
-        updatens(file->file.exports, outfile);
+        updatens(file->file.globls, outfile);
         tyinit(file->file.globls);
         for (i = 0; i < ctx.nargs; i++)
             mergeuse(ctx.args[i]);
         infer(file);
-        tagexports(file->file.exports, 1);
+        tagexports(file->file.globls, 1);
         f = fopen(outfile, "w");
+        if (debugopt['s'])
+            dumpstab(file->file.globls, stdout);
         writeuse(f, file);
         fclose(f);
     } else {
         for (i = 0; i < ctx.nargs; i++) {
             file = mkfile(ctx.args[i]);
-            file->file.exports = mkstab();
             file->file.globls = mkstab();
             if (debugopt['s'])
                 dumpuse(ctx.args[i]);

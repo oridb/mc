@@ -422,7 +422,6 @@ static void pickle(FILE *fd, Node *n)
             for (i = 0; i < n->file.nstmts; i++)
                 pickle(fd, n->file.stmts[i]);
             wrstab(fd, n->file.globls);
-            wrstab(fd, n->file.exports);
             break;
 
         case Nexpr:
@@ -555,7 +554,6 @@ static Node *unpickle(FILE *fd)
             for (i = 0; i < n->file.nstmts; i++)
                 n->file.stmts[i] = unpickle(fd);
             n->file.globls = rdstab(fd);
-            n->file.exports = rdstab(fd);
             break;
 
         case Nexpr:
@@ -711,7 +709,7 @@ static void fixmappings(Stab *st)
     for (i = 0; i < ntypefixdest; i++) {
         t = htget(tidmap, itop(typefixid[i]));
         if (!t)
-            die("Unable to find type for id %zd\n", i);
+            die("Unable to find type for id %zd\n", typefixid[i]);
         if (t->type == Tyname && !t->issynth) {
             old = htget(tydedup, t->name);
             if (old != t)
@@ -743,7 +741,7 @@ static void fixmappings(Stab *st)
  *     D<picled-decl>
  *     G<pickled-decl><pickled-initializer>
  */
-int loaduse(FILE *f, Stab *st)
+int loaduse(FILE *f, Stab *st, Vis vis)
 {
     intptr_t tid;
     size_t i;
@@ -799,10 +797,12 @@ foundlib:
             case 'G':
             case 'D':
                 dcl = rdsym(f, NULL);
+                dcl->decl.vis = vis;
                 putdcl(s, dcl);
                 break;
             case 'R':
                 tr = traitunpickle(f);
+                tr->vis = vis;
                 puttrait(s, tr->name, tr);
                 for (i = 0; i < tr->nfuncs; i++)
                     putdcl(s, tr->funcs[i]);
@@ -810,12 +810,14 @@ foundlib:
             case 'T':
                 tid = rdint(f);
                 ty = tyunpickle(f);
+                if(!ty->ishidden)
+                    ty->vis = vis;
                 htput(tidmap, itop(tid), ty);
                 /* fix up types */
                 if (ty->type == Tyname) {
                     if (ty->issynth)
                         break;
-                    if (!gettype(st, ty->name) && !ty->ishidden)
+                    if (!gettype(s, ty->name) && !ty->ishidden)
                         puttype(s, ty->name, ty);
                     if (!hthas(tydedup, ty->name))
                         htput(tydedup, ty->name, ty);
@@ -842,7 +844,7 @@ foundlib:
     return 1;
 }
 
-void readuse(Node *use, Stab *st)
+void readuse(Node *use, Stab *st, Vis vis)
 {
     size_t i;
     FILE *fd;
@@ -868,7 +870,7 @@ void readuse(Node *use, Stab *st)
     if (!fd)
         fatal(use, "Could not open %s", use->use.name);
 
-    if (!loaduse(fd, st))
+    if (!loaduse(fd, st, vis))
         die("Could not load usefile %s", use->use.name);
 }
 
@@ -887,7 +889,7 @@ void writeuse(FILE *f, Node *file)
     size_t i, n;
 
     assert(file->type == Nfile);
-    st = file->file.exports;
+    st = file->file.globls;
 
     /* usefile name */
     wrbyte(f, 'U');
@@ -940,6 +942,8 @@ void writeuse(FILE *f, Node *file)
     k = htkeys(st->dcl, &n);
     for (i = 0; i < n; i++) {
         s = getdcl(st, k[i]);
+        if (s->decl.vis == Visintern || s->decl.vis == Visbuiltin)
+            continue;
         /* trait functions get written out with their traits */
         if (s->decl.trait)
             continue;

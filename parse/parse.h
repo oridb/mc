@@ -198,7 +198,6 @@ struct Node {
             size_t nstmts;
             Node **stmts;
             Stab  *globls;
-            Stab  *exports;
         } file;
 
         struct {
@@ -544,8 +543,8 @@ Type *tyspecialize(Type *t, Htab *tymap, Htab *delayed);
 Node *genericname(Node *n, Type *t);
 
 /* usefiles */
-int  loaduse(FILE *f, Stab *into);
-void readuse(Node *use, Stab *into);
+int  loaduse(FILE *f, Stab *into, Vis vis);
+void readuse(Node *use, Stab *into, Vis vis);
 void writeuse(FILE *fd, Node *file);
 void tagexports(Stab *st, int hidelocal);
 

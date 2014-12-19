@@ -55,7 +55,7 @@ static void outstab(Stab *st, FILE *fd, int depth)
     char *ty;
     Type *t;
 
-    findentf(fd, depth, "Stab %p (super = %p, name=\"%s\")\n", st, st->super, namestr(st->name));
+    findentf(fd, depth, "Stab %p (super = %p, name=\"%s\")\n", st, st->super, st->ns);
     if (!st)
         return;
 
@@ -66,7 +66,10 @@ static void outstab(Stab *st, FILE *fd, int depth)
         /* already indented */
         outname(k[i], fd); 
         t = gettype(st, k[i]);
-        ty = tystr(t);
+        if (t->nsub)
+            ty = tystr(t->sub[0]);
+        else
+            ty = strdup("none");
         fprintf(fd, " = %s [tid=%d]\n", ty, t->tid);
         free(ty);
     }
@@ -116,8 +119,6 @@ static void outnode(Node *n, FILE *fd, int depth)
             fprintf(fd, "(name = %s)\n", n->file.files[0]);
             findentf(fd, depth + 1, "Globls:\n");
             outstab(n->file.globls, fd, depth + 2);
-            findentf(fd, depth + 1, "Exports:\n");
-            outstab(n->file.exports, fd, depth + 2);
             for (i = 0; i < n->file.nuses; i++)
                 outnode(n->file.uses[i], fd, depth + 1);
             for (i = 0; i < n->file.nstmts; i++)
