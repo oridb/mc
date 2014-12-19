@@ -638,6 +638,7 @@ ulong tyhash(void *ty)
         case Tyvar:     hash = inthash(t->tid);         break;
         case Tyunion:   hash = inthash(t->tid);         break;
         case Tystruct:  hash = inthash(t->tid);         break;
+        case Tyname:    hash = namehash(t->name);       break;
         default:        hash = inthash(t->type);        break;
     }
 
@@ -691,6 +692,9 @@ int tyeq(void *t1, void *t2)
             if (a->tid != b->tid)
                 return 0;
             break;
+        case Tyunres:
+            if (!nameeq(a->name, b->name))
+                return 0;
         case Tyunion:
             for (i = 0; i < a->nmemb; i++) {
                 if (!nameeq(a->udecls[i]->name, b->udecls[i]->name))
