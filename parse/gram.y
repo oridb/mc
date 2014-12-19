@@ -207,7 +207,7 @@ toplev  : package
                 size_t i;
                 puttrait(file->file.globls, $1->name, $1);
                 for (i = 0; i < $1->nfuncs; i++)
-                    putdcl(file->file.exports, $1->funcs[i]);
+                    putdcl(file->file.globls, $1->funcs[i]);
             }
         | tydef {
                 puttype(file->file.globls, mkname($1.loc, $1.name), $1.type);
@@ -215,10 +215,14 @@ toplev  : package
             }
         | decl {
                 size_t i;
+                Node *n;
+
                 for (i = 0; i < $1.nn; i++) {
-                    lappend(&file->file.stmts, &file->file.nstmts, $1.nl[i]);
-                    $1.nl[i]->decl.isglobl = 1;
+                    /* putdcl can merge, so we need to getdcl after */
                     putdcl(file->file.globls, $1.nl[i]);
+                    n = getdcl(file->file.globls, $1.nl[i]->decl.name);
+                    lappend(&file->file.stmts, &file->file.nstmts, n);
+                    $1.nl[i]->decl.isglobl = 1;
                 }
             }
         | /* empty */
@@ -276,10 +280,9 @@ optident: Tident      {$$ = $1;}
         ;
 
 package : Tpkg optident Tasn pkgbody Tendblk {
-                if (file->file.exports->name)
+                if (file->file.globls->name)
                     lfatal($1->loc, "Package already declared\n");
                 if ($2) {
-                    updatens(file->file.exports, $2->id);
                     updatens(file->file.globls, $2->id);
                 }
             }
@@ -292,25 +295,32 @@ pkgbody : pkgitem
 pkgitem : decl {
                 size_t i;
                 for (i = 0; i < $1.nn; i++) {
-                    putdcl(file->file.exports, $1.nl[i]);
+                    $1.nl[i]->decl.vis = Visexport;
+                    putdcl(file->file.globls, $1.nl[i]);
                     if ($1.nl[i]->decl.init)
                         lappend(&file->file.stmts, &file->file.nstmts, $1.nl[i]);
                 }
             }
         | pkgtydef {
-                puttype(file->file.exports, mkname($1.loc, $1.name), $1.type);
-                installucons(file->file.exports, $1.type);
+                /* the type may only be null in a package context, so we
+                can set the type when merging in this case.
+                
+                FIXME: clean up the fucking special cases. */
+                if ($1.type)
+                    $1.type->vis = Visexport;
+                puttype(file->file.globls, mkname($1.loc, $1.name), $1.type);
+                installucons(file->file.globls, $1.type);
             }
         | traitdef {
                 size_t i;
                 $1->vis = Visexport;
-                puttrait(file->file.exports, $1->name, $1);
+                puttrait(file->file.globls, $1->name, $1);
                 for (i = 0; i < $1->nfuncs; i++)
-                    putdcl(file->file.exports, $1->funcs[i]);
+                    putdcl(file->file.globls, $1->funcs[i]);
             }
         | implstmt {
                 $1->impl.vis = Visexport;
-                putimpl(file->file.exports, $1);
+                putimpl(file->file.globls, $1);
             }
         | /* empty */
         ;

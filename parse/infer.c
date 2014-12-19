@@ -322,7 +322,7 @@ Type *tysearch(Type *t)
             if (!ns)
                 fatal(t->name, "Could not resolve namespace \"%s\"", t->name->name.ns);
             if (!(lu = gettype(ns, t->name)))
-                fatal(t->name, "Could not resolve type %s", namestr(t->name));
+                fatal(t->name, "Could not resolve type %s", tystr(t));
             tytab[t->tid] = lu;
         }
 
@@ -844,9 +844,10 @@ static void loaduses(Node *n)
 
     /* uses only allowed at top level. Do we want to keep it this way? */
     for (i = 0; i < n->file.nuses; i++)
-        readuse(n->file.uses[i], n->file.globls);
+        readuse(n->file.uses[i], n->file.globls, Visintern);
 }
 
+#if 0
 static void fiximpls(Inferstate *st, Stab *s)
 {
     Node *n;
@@ -877,6 +878,7 @@ static void mergeattrs(Node *a, Node *b)
     a->decl.isnoret = a->decl.isnoret || b->decl.isnoret;
     a->decl.isexportinit = a->decl.isexportinit || b->decl.isexportinit;
 }
+#endif
 
 /* The exports in package declarations
  * need to be merged with the declarations
@@ -884,6 +886,7 @@ static void mergeattrs(Node *a, Node *b)
  * one may set the type of the other,
  * so this should be done early in the
  * process */
+#if 0
 static void mergeexports(Inferstate *st, Node *file)
 {
     Stab *exports, *globls;
@@ -895,7 +898,6 @@ static void mergeexports(Inferstate *st, Node *file)
     Trait *trx, *trg;
     Ucon *ux, *ug;
 
-    exports = file->file.exports;
     globls = file->file.globls;
 
     /* export the types */
@@ -903,20 +905,25 @@ static void mergeexports(Inferstate *st, Node *file)
     k = htkeys(exports->ty, &nk);
     for (i = 0; i < nk; i++) {
         tx = gettype(exports, k[i]);
+        tg = gettype(globls, k[i]);
         nx = k[i];
         if (tx) {
-            tg = gettype(globls, nx);
             if (!tg)
                 puttype(globls, nx, tx);
             else
                 fatal(nx, "Exported type %s already declared on line %d", namestr(nx), tg->loc);
         } else {
-            tg = gettype(globls, nx);
             if (tg)
                 updatetype(exports, nx, tf(st, tg));
             else
                 fatal(nx, "Exported type %s not declared", namestr(nx));
         }
+        pushstab(exports);
+        tyresolve(st, tx);
+        popstab();
+
+        if (tg)
+            tyresolve(st, tg);
     }
     free(k);
 
@@ -1019,6 +1026,7 @@ static void mergeexports(Inferstate *st, Node *file)
 
     popstab();
 }
+#endif
 
 static Type *initvar(Inferstate *st, Node *n, Node *s)
 {
@@ -1578,7 +1586,6 @@ static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
 {
     size_t i, nbound;
     Node **bound;
-    Node *d, *s;
     Type *t;
 
     if (!n)
@@ -1587,21 +1594,8 @@ static void infernode(Inferstate *st, Node *n, Type *ret, int *sawret)
         case Nfile:
             pushstab(n->file.globls);
             inferstab(st, n->file.globls);
-            inferstab(st, n->file.exports);
-            for (i = 0; i < n->file.nstmts; i++) {
-                d  = n->file.stmts[i];
-                infernode(st, d, NULL, sawret);
-                /* exports allow us to specify types later in the body, so we
-                 * need to patch the types in if they don't have a definition */
-                if (d->type == Ndecl)  {
-                    s = getdcl(file->file.exports, d->decl.name);
-                    if (s) {
-                        d->decl.vis = Visexport;
-                        unify(st, d, type(st, d), s->decl.type);
-                        forcedcl(file->file.exports, d);
-                    }
-                }
-            }
+            for (i = 0; i < n->file.nstmts; i++)
+                infernode(st, n->file.stmts[i], NULL, sawret);
             popstab();
             break;
         case Ndecl:
@@ -1951,7 +1945,6 @@ static void typesub(Inferstate *st, Node *n)
         case Nfile:
             pushstab(n->file.globls);
             stabsub(st, n->file.globls);
-            stabsub(st, n->file.exports);
             for (i = 0; i < n->file.nstmts; i++)
                 typesub(st, n->file.stmts[i]);
             popstab();
@@ -2118,7 +2111,6 @@ static void nodetag(Stab *st, Node *n, int ingeneric, int hidelocal)
                 d = decls[n->expr.did];
                 if (d->decl.isglobl && d->decl.vis == Visintern) {
                     d->decl.vis = Vishidden;
-                    putdcl(st, d);
                     nodetag(st, d, ingeneric, hidelocal);
                 }
             }
@@ -2166,6 +2158,8 @@ void tagexports(Stab *st, int hidelocal)
     k = htkeys(st->dcl, &n);
     for (i = 0; i < n; i++) {
         s = getdcl(st, k[i]);
+        if (s->decl.vis != Visexport)
+            continue;
         nodetag(st, s, 0, hidelocal);
     }
     free(k);
@@ -2178,10 +2172,10 @@ void tagexports(Stab *st, int hidelocal)
     k = htkeys(st->ty, &n);
     for (i = 0; i < n; i++) {
         t = gettype(st, k[i]);
+        if (t->vis != Visexport)
+            continue;
         if (hidelocal && t->ispkglocal)
             t->vis = Vishidden;
-        else
-            t->vis = Visexport;
         taghidden(t);
         for (j = 0; j < t->nsub; j++)
             taghidden(t->sub[j]);
@@ -2245,7 +2239,7 @@ void infer(Node *file)
     st.delayed = mkht(tyhash, tyeq);
     /* set up the symtabs */
     loaduses(file);
-    mergeexports(&st, file);
+    //mergeexports(&st, file);
 
     /* do the inference */
     applytraits(&st, file);

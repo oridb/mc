@@ -190,6 +190,8 @@ int bseq(Bitset *a, Bitset *b)
 {
     size_t i;
 
+    if (!a || !b)
+        return bsisempty(a) && bsisempty(b);
     eqsz(a, b);
     for (i = 0; i < a->nchunks; i++) {
         if (a->chunks[i] != b->chunks[i])
@@ -213,6 +215,8 @@ int bsisempty(Bitset *set)
 {
     size_t i;
 
+    if (!set)
+        return 1;
     for (i = 0; i < set->nchunks; i++)
         if (set->chunks[i])
             return 0;

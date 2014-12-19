@@ -152,6 +152,16 @@ Type *gettype(Stab *st, Node *n)
     return NULL;
 }
 
+int hastype(Stab *st, Node *n)
+{
+    do {
+        if (hthas(st->ty, n))
+            return 1;
+        st = st->super;
+    } while(st);
+    return 0;
+}
+
 Ucon *getucon(Stab *st, Node *n)
 {
     Ucon *uc;
@@ -195,14 +205,61 @@ Stab *getns(Stab *st, Node *n)
     return getns_str(st, namestr(n));
 }
 
+static int mergedecl(Node *old, Node *new)
+{
+    Node *e, *g;
+
+    if (old->decl.vis == Visexport && new->decl.vis != Visexport) {
+        e = old;
+        g = new;
+    } else if (new->decl.vis == Visexport && old->decl.vis != Visexport) {
+        e = new;
+        g = old;
+    } else {
+        return 0;
+    }
+    old->decl.vis = Visexport;
+
+    if (e->decl.init && g->decl.init)
+        fatal(e, "export %s double initialized on line %d", declname(e), g->loc.line);
+    if (e->decl.isgeneric != g->decl.isgeneric)
+        fatal(e, "export %s declared with different genericness on line %d", declname(e), g->loc.line);
+    if (e->decl.isconst != g->decl.isconst)
+        fatal(e, "export %s declared with different constness on line %d", declname(e), g->loc.line);
+    if (e->decl.isconst != g->decl.isconst)
+        fatal(e, "export %s declared with different externness on line %d", declname(e), g->loc.line);
+
+    if (new->decl.name->name.ns)
+        setns(old->decl.name, new->decl.name->name.ns);
+    if (e->decl.type->type == Tyvar)
+        e->decl.type = g->decl.type;
+    else if (g->decl.type->type == Tyvar)
+        g->decl.type = e->decl.type;
+
+    if (!e->decl.init)
+        e->decl.init = g->decl.init;
+    else if (!g->decl.init)
+        g->decl.init = e->decl.init;
+
+    /* FIXME: check compatible typing */
+    old->decl.ishidden = e->decl.ishidden || g->decl.ishidden;
+    old->decl.isimport = e->decl.isimport || g->decl.isimport;
+    old->decl.isnoret = e->decl.isnoret || g->decl.isnoret;
+    old->decl.isexportinit = e->decl.isexportinit || g->decl.isexportinit;
+    old->decl.isglobl = e->decl.isglobl || g->decl.isglobl;
+    old->decl.ispkglocal = e->decl.ispkglocal || g->decl.ispkglocal;
+    return 1;
+}
+
 void putdcl(Stab *st, Node *s)
 {
-    Node *d;
+    Node *old;
 
-    d = htget(st->dcl, s->decl.name);
-    if (d)
-        fatal(s, "%s already declared (on line %d)", namestr(s->decl.name), d->loc.line);
-    forcedcl(st, s);
+    old = htget(st->dcl, s->decl.name);
+    if (!old)
+        forcedcl(st, s);
+    else if (!mergedecl(old, s))
+        fatal(s, "%s already declared on line %d", namestr(s->decl.name), old->loc.line);
 }
 
 void forcedcl (Stab *st, Node *s) {
@@ -222,19 +279,49 @@ void updatetype(Stab *st, Node *n, Type *t)
     td->type = t;
 }
 
+int mergetype(Type *old, Type *new)
+{
+    if (old->vis == Visexport && new->vis != Visexport) {
+        if (!old->sub && new->sub) {
+            old->sub = new->sub;
+            old->nsub = new->nsub;
+            return 1;
+        }
+    } else if (new->vis == Visexport && old->vis != Visexport) {
+        if (!new->sub && old->sub) {
+            new->sub = old->sub;
+            new->nsub = old->nsub;
+            return 1;
+        }
+    }
+    return 0;
+}
+
 void puttype(Stab *st, Node *n, Type *t)
 {
     Tydefn *td;
+    Type *ty;
 
-    if (gettype(st, n))
-        fatal(n, "Type %s already defined", tystr(gettype(st, n)));
-    td = xalloc(sizeof(Tydefn));
-    td->loc = n->loc;
-    td->name = n;
-    td->type = t;
     if (st->name)
         setns(n, namestr(st->name));
-    htput(st->ty, td->name, td);
+    if (st->name && t && t->type == Tyname)
+        setns(t->name, namestr(st->name));
+
+    ty = gettype(st, n);
+    if (!ty) {
+        if (hastype(st, n)) {
+            t->vis = Visexport;
+            updatetype(st, n, t);
+        } else {
+            td = xalloc(sizeof(Tydefn));
+            td->loc = n->loc;
+            td->name = n;
+            td->type = t;
+            htput(st->ty, td->name, td);
+        }
+    } else if (!mergetype(ty, t)) {
+        fatal(n, "Type %s already defined", tystr(gettype(st, n)));
+    }
 }
 
 void putucon(Stab *st, Ucon *uc)
