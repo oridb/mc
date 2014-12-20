@@ -331,24 +331,51 @@ void putucon(Stab *st, Ucon *uc)
     htput(st->uc, uc->name, uc);
 }
 
+static int mergetrait(Trait *old, Trait *new)
+{
+    if (old->isproto && !new->isproto)
+        *old = *new;
+    else if (new->isproto && !old->isproto)
+        *new = *old;
+    else
+        return 0;
+    return 1;
+}
+
 void puttrait(Stab *st, Node *n, Trait *c)
 {
     Traitdefn *td;
+    Trait *t;
 
-    if (gettrait(st, n))
+    t = gettrait(st, n);
+    if (t && !mergetrait(t, c))
         fatal(n, "Trait %s already defined", namestr(n));
     if (gettype(st, n))
         fatal(n, "Trait %s already defined as a type", namestr(n));
-    td = xalloc(sizeof(Tydefn));
+    td = xalloc(sizeof(Traitdefn));
     td->loc = n->loc;
     td->name = n;
     td->trait = c;
     htput(st->tr, td->name, td);
 }
 
+static int mergeimpl(Node *old, Node *new)
+{
+    if (old->impl.isproto && !new->impl.isproto)
+        *old = *new;
+    else if (new->impl.isproto && !old->impl.isproto)
+        *new = *old;
+    else
+        return 0;
+    return 1;
+}
+
 void putimpl(Stab *st, Node *n)
 {
-    if (getimpl(st, n))
+    Node *impl;
+
+    impl = getimpl(st, n);
+    if (impl && !mergeimpl(impl, n))
         fatal(n, "Trait %s already implemented over %s", namestr(n->impl.traitname), tystr(n->impl.type));
     if (st->name)
         setns(n->impl.traitname, namestr(st->name));
