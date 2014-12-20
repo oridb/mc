@@ -13,6 +13,8 @@ use "types.use"
 const main = {args : byte[:][:]
 	var p : bld.parser#
 	var mt : bld.myrtarg
+	var targname
+	var bintarg
 	var optctx
 
 	optctx = std.optinit("hb:l:s:Sr:I:C:A:M:L:R:d", args)
@@ -20,24 +22,28 @@ const main = {args : byte[:][:]
 	while !std.optdone(optctx)
 		match std.optnext(optctx)
 		| ('h', arg): usage(args[0])
-		| ('b', arg): bld.opt_binname = arg
-		| ('l', arg): bld.opt_libname = arg
 		| ('s', arg): bld.opt_ldscript = arg
 		| ('f', arg): bld.opt_bldfile = arg
 		| ('I', arg): bld.opt_incpaths = std.slpush(bld.opt_incpaths, arg)
 		| ('S', _): bld.opt_genasm = true
+		| ('R', arg): bld.opt_instroot = arg
+		| ('b', arg):
+			targname = arg
+			bintarg = true
+		| ('l', arg):
+			targname = arg
+			bintarg = false
 		| ('r', arg):
 			if std.sleq(arg, "none")
 				bld.opt_runtime = ""
 			else
 				bld.opt_runtime = arg
 			;;
-		| ('R', arg): bld.opt_instroot = arg
-		| ('d', arg): bld.opt_debug = true
 		/*
 		internal undocumented args; used by compiler suite for
 		building with an uninstalled compiler.
 		*/
+		| ('d', arg): bld.opt_debug = true
 		| ('C', arg): bld.opt_mc = arg
 		| ('A', arg): bld.opt_as = arg
 		| ('M', arg): bld.opt_muse = arg
@@ -52,9 +58,9 @@ const main = {args : byte[:][:]
 	| `std.Fail f:	std.fatal(1, "Failed to compile use pattern regex\n")
 	;;
 
-	if bld.opt_binname.len != 0
+	if targname.len != 0
 		mt = [
-			.name=bld.opt_binname,
+			.name=targname,
 			.inputs=optctx.args,
 			.runtime=bld.opt_runtime,
 			.incpath=bld.opt_incpaths,
@@ -62,17 +68,11 @@ const main = {args : byte[:][:]
 			.libdeps=[][:]
 		]
 		p = std.zalloc()
-		bld.buildbin(p, &mt)
-		std.free(p)
-	elif bld.opt_libname.len != 0
-		mt = [
-			.name=bld.opt_libname,
-			.inputs=optctx.args,
-			.incpath=bld.opt_incpaths,
-			.libdeps=[][:]
-		]
-		p = std.zalloc()
-		bld.buildbin(p, &mt)
+		if bintarg
+			bld.buildbin(p, &mt)
+		else
+			bld.buildlib(p, &mt)
+		;;
 		std.free(p)
 	else
 		p = loadbuild(bld.opt_bldfile)

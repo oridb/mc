@@ -6,8 +6,6 @@ use "config.use"
 pkg bld =
 	var opt_arch 	: byte[:]
 	var opt_sys	: byte[:]
-	var opt_binname	: byte[:]
-	var opt_libname	: byte[:]
 	var opt_runtime	: byte[:]
 	var opt_genasm	: bool
 	var opt_ldscript	: byte[:]
