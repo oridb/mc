@@ -47,22 +47,31 @@ const target = {p : parser#
 	-> true
 }
 
+/* bintarget: myrtarget */
 const bintarget = {p
 	p.targs = std.slpush(p.targs, `Bin myrtarget(p, "bin"))
 }
 
+/* libtarget: myrtarget */
 const libtarget = {p
 	p.targs = std.slpush(p.targs, `Lib myrtarget(p, "lib"))
 }
 
+/* subtarget : anontarget */
 const subtarget = {p
 	p.targs = std.slpush(p.targs, `Sub anontarget(p, "sub"))
 }
 
+/* mantarget: anontarget */
 const mantarget = {p
 	p.targs = std.slpush(p.targs, `Man anontarget(p, "man"))
 
 }
+
+/*
+myrtarget: name '=' inputlist ';;'
+	| name attrlist = inputlist ';;'
+*/
 const myrtarget = {p, targ
 	var name, inputs, libdeps, attrs
 	var ldscript, runtime, inst, incpath
@@ -135,6 +144,7 @@ const myrtarget = {p, targ
 	])
 }
 
+/* anontarget: '=' namelist ';;' */
 const anontarget = {p, targ
 	var inputs
 
@@ -155,6 +165,15 @@ const anontarget = {p, targ
 	-> inputs
 }
 
+/*
+attrlist: attrs '}'
+
+attrs	: EMPTY
+	| attrs attr
+
+attr	: name
+	| name '=' name
+*/
 const attrlist = {p
 	var al
 
@@ -186,6 +205,13 @@ const attrlist = {p
 	;;
 }
 
+/*
+inputlist: EMPTY
+	| inputlist input
+
+input	: word
+	| "lib" word
+*/
 const inputlist = {p
 	var wl, libs
 
@@ -209,6 +235,7 @@ const inputlist = {p
 	;;
 }
 
+/* wordlist: EMPTY | wordlist word */
 const wordlist = {p
 	var wl
 
@@ -226,6 +253,7 @@ const wordlist = {p
 	;;
 }
 
+/* word: /wordchar*/
 const word = {p : parser#
 	var c, r, n
 	var start
