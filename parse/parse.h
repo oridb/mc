@@ -174,14 +174,16 @@ struct Trait {
     int uid;            /* unique id */
     Srcloc loc;
     Vis vis;
-    int isproto;        /* is it a prototype (for exporting purposes) */
-    int ishidden;       /* should user code be able to use this? */
+
     Node *name;         /* the name of the trait */
     Type *param;        /* the type parameter */
     Node **memb;        /* type must have these members */
     size_t nmemb;
     Node **funcs;       /* and declare these funcs */
     size_t nfuncs;
+
+    char isproto;        /* is it a prototype (for exporting purposes) */
+    char ishidden;       /* should user code be able to use this? */
 };
 
 struct Node {

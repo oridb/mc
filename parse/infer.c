@@ -1972,20 +1972,41 @@ void tagexports(Stab *st, int hidelocal)
     void **k;
     Node *s;
     Type *t;
+    Trait *tr;
     size_t i, j, n;
 
     k = htkeys(st->dcl, &n);
     for (i = 0; i < n; i++) {
         s = getdcl(st, k[i]);
-        if (s->decl.vis != Visexport)
-            continue;
-        nodetag(st, s, 0, hidelocal);
+        if (s->decl.vis == Visexport)
+            nodetag(st, s, 0, hidelocal);
     }
     free(k);
 
-    for (i = 0; i < nexportimpls; i++) {
-        nodetag(st, exportimpls[i], 0, hidelocal);
+    k = htkeys(st->impl, &n);
+    for (i = 0; i < n; i++) {
+        s = getimpl(st, k[i]);
+        if (s->impl.vis == Visexport)
+            nodetag(st, s, 0, hidelocal);
     }
+    free(k);
+
+    k = htkeys(st->tr, &n);
+    for (i = 0; i < n; i++) {
+        tr = gettrait(st, k[i]);
+        if (tr->vis == Visexport) {
+            tr->param->vis = Visexport;
+            for (i = 0; i < tr->nmemb; i++) {
+                tr->memb[i]->decl.vis = Visexport;
+                nodetag(st, tr->memb[i], 0, hidelocal);
+            }
+            for (i = 0; i < tr->nfuncs; i++) {
+                tr->funcs[i]->decl.vis = Visexport;
+                nodetag(st, tr->funcs[i], 0, hidelocal);
+            }
+        }
+    }
+    free(k);
 
     /* get the explicitly exported symbols */
     k = htkeys(st->ty, &n);
