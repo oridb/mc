@@ -930,14 +930,17 @@ void writeuse(FILE *f, Node *file)
         }
     }
 
-    for (i = 0; i < nexportimpls; i++) {
+    k = htkeys(st->impl, &n);
+    for (i = 0; i < n; i++) {
         /* merging during inference should remove all protos */
-        assert(!exportimpls[i]->impl.isproto);
-        if (exportimpls[i]->impl.vis == Visexport || exportimpls[i]->impl.vis == Vishidden) {
+        s = getimpl(st, k[i]);
+        assert(!s->impl.isproto);
+        if (s->impl.vis == Visexport || s->impl.vis == Vishidden) {
             wrbyte(f, 'I');
-            pickle(f, exportimpls[i]);
+            pickle(f, s);
         }
     }
+    free(k);
 
     k = htkeys(st->dcl, &n);
     for (i = 0; i < n; i++) {
