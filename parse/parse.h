@@ -113,7 +113,7 @@ struct Tok {
 
 struct Stab {
     Stab *super;
-    Node *name;
+    char *_name;
 
     /* Contents of stab.
      * types and values are in separate namespaces. */

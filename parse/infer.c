@@ -1329,8 +1329,8 @@ static void specializeimpl(Inferstate *st, Node *n)
            to do namespace dependent comparisons for specializing, we need to set the
            namespace here.
          */
-        if (file->file.globls->name)
-            setns(dcl->decl.name, namestr(file->file.globls->name));
+        if (file->file.globls->_name)
+            setns(dcl->decl.name, file->file.globls->_name);
         for (j = 0; j < t->nfuncs; j++) {
             if (nameeq(dcl->decl.name, t->funcs[j]->decl.name)) {
                 proto = t->funcs[j];
