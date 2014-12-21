@@ -190,9 +190,9 @@ Stab *getns_str(Stab *st, char *name)
 {
     Stab *s;
 
-    if (!strcmp(namestr(st->name), name))
-        return st;
     do {
+        if (streq(st->_name, name))
+            return st;
         if ((s = htget(st->ns, name)))
             return s;
         st = st->super;
@@ -263,8 +263,8 @@ void putdcl(Stab *st, Node *s)
 }
 
 void forcedcl (Stab *st, Node *s) {
-    if (st->name)
-        setns(s->decl.name, namestr(st->name));
+    if (st->_name)
+        setns(s->decl.name, st->_name);
     htput(st->dcl, s->decl.name, s);
     assert(htget(st->dcl, s->decl.name) != NULL);
 }
@@ -302,10 +302,10 @@ void puttype(Stab *st, Node *n, Type *t)
     Tydefn *td;
     Type *ty;
 
-    if (st->name)
-        setns(n, namestr(st->name));
-    if (st->name && t && t->type == Tyname)
-        setns(t->name, namestr(st->name));
+    if (st->_name)
+        setns(n, st->_name);
+    if (st->_name && t && t->type == Tyname)
+        setns(t->name, st->_name);
 
     ty = gettype(st, n);
     if (!ty) {
@@ -385,8 +385,8 @@ void putimpl(Stab *st, Node *n)
         fatal(n, "Trait %s already implemented over %s at %s:%d",
               namestr(n->impl.traitname), tystr(n->impl.type),
               fname(n->loc), lnum(n->loc));
-    if (st->name)
-        setns(n->impl.traitname, namestr(st->name));
+    if (st->_name)
+        setns(n->impl.traitname, st->_name);
     htput(st->impl, n, n);
 }
 
@@ -406,10 +406,10 @@ void putns(Stab *st, Stab *scope)
 {
     Stab *s;
 
-    s = getns(st, scope->name);
+    s = getns_str(st, scope->_name);
     if (s)
-        fatal(scope->name, "Namespace %s already defined at %s:%d", namestr(s->name), fname(s->name->loc), lnum(s->name->loc));
-    htput(st->ns, namestr(scope->name), scope);
+        lfatal(Zloc, "Namespace %s already defined", st->_name);
+    htput(st->ns, scope->_name, scope);
 }
 
 /*
@@ -423,9 +423,9 @@ void updatens(Stab *st, char *name)
     size_t i, nk;
     Tydefn *td;
 
-    if (st->name)
-        die("Stab %s already has namespace; Can't set to %s", namestr(st->name), name);
-    st->name = mkname(Zloc, name);
+    if (st->_name)
+        die("Stab %s already has namespace; Can't set to %s", st->_name, name);
+    st->_name = strdup(name);
     k = htkeys(st->dcl, &nk);
     for (i = 0; i < nk; i++)
         setns(k[i], name);

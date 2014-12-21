@@ -385,7 +385,7 @@ Node *genericname(Node *n, Type *t)
 Node *specializedcl(Node *g, Type *to, Node **name)
 {
     extern int stabstkoff;
-    Node *d, *ns, *n;
+    Node *d, *n;
     Htab *tsmap;
     Stab *st;
 
@@ -396,8 +396,10 @@ Node *specializedcl(Node *g, Type *to, Node **name)
     *name = n;
     if (n->name.ns)
         st = getns_str(curstab(), n->name.ns);
+    else
+        st = file->file.globls;
     if (!st)
-        printf("Can't find symbol table for %s.%s", n->name.ns, n->name.name);
+        fatal(n, "Can't find symbol table for %s.%s", n->name.ns, n->name.name);
     d = getdcl(st, n);
     if (debugopt['S'])
         printf("depth[%d] specializing [%d]%s => %s\n", stabstkoff, g->loc.line, namestr(g->decl.name), namestr(n));
@@ -409,11 +411,8 @@ Node *specializedcl(Node *g, Type *to, Node **name)
     }
     /* namespaced names need to be looked up in their correct
      * context. */
-    if (g->decl.name->name.ns) {
-        ns = mkname(g->loc, g->decl.name->name.ns);
-        st = getns(file->file.globls, ns);
+    if (n->name.ns)
         pushstab(st);
-    }
 
     /* specialize */
     tsmap = mkht(tyhash, tyeq);
@@ -423,7 +422,7 @@ Node *specializedcl(Node *g, Type *to, Node **name)
     d->decl.isconst = g->decl.isconst;
     d->decl.isextern = g->decl.isextern;
     d->decl.init = specializenode(g->decl.init, tsmap);
-    putdcl(file->file.globls, d);
+    putdcl(st, d);
 
     fixup(d);
 

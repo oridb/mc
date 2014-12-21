@@ -280,7 +280,7 @@ optident: Tident      {$$ = $1;}
         ;
 
 package : Tpkg optident Tasn pkgbody Tendblk {
-                if (file->file.globls->name)
+                if (file->file.globls->_name)
                     lfatal($1->loc, "Package already declared\n");
                 if ($2) {
                     updatens(file->file.globls, $2->id);

@@ -47,7 +47,7 @@ static void wrstab(FILE *fd, Stab *val)
     size_t n, i;
     void **keys;
 
-    pickle(fd, val->name);
+    wrstr(fd, val->_name);
 
     /* write decls */
     keys = htkeys(val->dcl, &n);
@@ -85,7 +85,7 @@ static Stab *rdstab(FILE *fd)
 
     /* read dcls */
     st = mkstab();
-    st->name = unpickle(fd);
+    st->_name = rdstr(fd);
     n = rdint(fd);
     for (i = 0; i < n; i++)
         putdcl(st, rdsym(fd, NULL));
@@ -696,22 +696,19 @@ static Node *unpickle(FILE *fd)
 
 static Stab *findstab(Stab *st, char *pkg)
 {
-    Node *n;
     Stab *s;
 
     if (!pkg) {
-        if (!st->name)
+        if (!st->_name)
             return st;
         else
             return NULL;
     }
 
-    n = mkname(Zloc, pkg);
-    if (getns(st, n)) {
-        s = getns(st, n);
-    } else {
+    s = getns_str(st, pkg);
+    if (!s) {
         s = mkstab();
-        s->name = n;
+        s->_name = strdup(pkg);
         putns(st, s);
     }
     return s;
@@ -809,8 +806,8 @@ int loaduse(FILE *f, Stab *st, Vis vis)
     /* if the package names match up, or the usefile has no declared
      * package, then we simply add to the current stab. Otherwise,
      * we add a new stab under the current one */
-    if (st->name) {
-        if (pkg && !strcmp(pkg, namestr(st->name))) {
+    if (st->_name) {
+        if (pkg && !strcmp(pkg, st->_name)) {
             s = st;
         } else {
             s = findstab(st, pkg);
@@ -941,8 +938,8 @@ void writeuse(FILE *f, Node *file)
 
     /* usefile name */
     wrbyte(f, 'U');
-    if (st->name)
-        wrstr(f, namestr(st->name));
+    if (st->_name)
+        wrstr(f, st->_name);
     else
         wrstr(f, NULL);
 
