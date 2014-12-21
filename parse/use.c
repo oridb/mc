@@ -405,7 +405,6 @@ Trait *traitunpickle(FILE *fd)
     /* create an empty trait */
     tr = mktrait(Zloc, NULL, NULL, NULL, 0, NULL, 0, 0);
     uid = rdint(fd);
-    printf("loading trait for uid %d\n", (int)uid);
     tr->ishidden = rdbool(fd);
     tr->name = unpickle(fd);
     tr->param = tyunpickle(fd);

@@ -746,7 +746,7 @@ size_t tyidfmt(char *buf, size_t sz, Type *ty)
         case Tyint64:   p += snprintf(p, end - p, "q");  break;
         case Tylong:    p += snprintf(p, end - p, "l");  break;
 
-        case Tybyte:    p += snprintf(p, end - p, "T");  break;
+        case Tybyte:    p += snprintf(p, end - p, "H");  break;
         case Tyuint8:   p += snprintf(p, end - p, "B");  break;
         case Tyuint16:  p += snprintf(p, end - p, "S");  break;
         case Tyuint:    p += snprintf(p, end - p, "I");  break;

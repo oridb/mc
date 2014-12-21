@@ -394,6 +394,7 @@ traitbody
                 $$ = $1;
                 d = mkdecl($2->loc, mkname($2->loc, $2->id), $4);
                 d->decl.isgeneric = 1;
+                d->decl.isconst = 1;
                 lappend(&$$.nl, &$$.nn, d);
             }
         ;

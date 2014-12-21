@@ -11,7 +11,7 @@
 
 #include "parse.h"
 
-static Node *specializenode(Node *n, Htab *tsmap);
+static Node *specializenode(Node *g, Htab *tsmap);
 
 void addtraits(Type *t, Bitset *traits)
 {
@@ -382,41 +382,47 @@ Node *genericname(Node *n, Type *t)
  * duplicate of it with type 'to'. It also generates
  * a name for this specialized node, and returns it in '*name'.
  */
-Node *specializedcl(Node *n, Type *to, Node **name)
+Node *specializedcl(Node *g, Type *to, Node **name)
 {
-    Htab *tsmap;
-    Node *d;
-    Node *ns;
-    Stab *st;
     extern int stabstkoff;
+    Node *d, *ns, *n;
+    Htab *tsmap;
+    Stab *st;
 
-    assert(n->type == Ndecl);
-    assert(n->decl.isgeneric);
-
-    *name = genericname(n, to);
-    d = getdcl(file->file.globls, *name);
+    assert(g->type == Ndecl);
+    assert(g->decl.isgeneric);
+    
+    n = genericname(g, to);
+    *name = n;
+    if (n->name.ns)
+        st = getns_str(curstab(), n->name.ns);
+    if (!st)
+        printf("Can't find symbol table for %s.%s", n->name.ns, n->name.name);
+    d = getdcl(st, n);
     if (debugopt['S'])
-        printf("depth[%d] specializing [%d]%s => %s\n", stabstkoff, n->loc.line, namestr(n->decl.name), namestr(*name));
+        printf("depth[%d] specializing [%d]%s => %s\n", stabstkoff, g->loc.line, namestr(g->decl.name), namestr(n));
     if (d)
         return d;
-    if (n->decl.trait)
-        fatal(n, "No trait implemented for for %s\n", namestr(n->decl.name));
+    if (g->decl.trait) {
+        printf("%s\n", namestr(n));
+        fatal(g, "No trait implemented for for %s:%s", namestr(g->decl.name), tystr(to));
+    }
     /* namespaced names need to be looked up in their correct
      * context. */
-    if (n->decl.name->name.ns) {
-        ns = mkname(n->loc, n->decl.name->name.ns);
+    if (g->decl.name->name.ns) {
+        ns = mkname(g->loc, g->decl.name->name.ns);
         st = getns(file->file.globls, ns);
         pushstab(st);
     }
 
     /* specialize */
     tsmap = mkht(tyhash, tyeq);
-    fillsubst(tsmap, to, n->decl.type);
+    fillsubst(tsmap, to, g->decl.type);
 
-    d = mkdecl(n->loc, *name, tysubst(n->decl.type, tsmap));
-    d->decl.isconst = n->decl.isconst;
-    d->decl.isextern = n->decl.isextern;
-    d->decl.init = specializenode(n->decl.init, tsmap);
+    d = mkdecl(g->loc, n, tysubst(g->decl.type, tsmap));
+    d->decl.isconst = g->decl.isconst;
+    d->decl.isextern = g->decl.isextern;
+    d->decl.init = specializenode(g->decl.init, tsmap);
     putdcl(file->file.globls, d);
 
     fixup(d);
