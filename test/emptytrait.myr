@@ -2,7 +2,9 @@ use std
 
 trait fooable @a =
 ;;
-impl fooable int
+
+impl fooable int =
+;;
 
 generic foo = {x : @a::fooable
 	-> x
