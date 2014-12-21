@@ -24,11 +24,20 @@ static Node *unpickle(FILE *fd);
 static Htab *tydedup;   /* map from name -> type, contains all Tynames loaded ever */
 static Htab *tidmap;    /* map from tid -> type */
 static Htab *trmap;     /* map from trait id -> trait */
-static Type ***typefixdest;  /* list of types we need to replace */
-static size_t ntypefixdest; /* size of replacement list */
-static intptr_t *typefixid;  /* list of types we need to replace */
-static size_t ntypefixid; /* size of replacement list */
+
 #define Builtinmask (1 << 30)
+static Type ***typefixdest;     /* list of types we need to replace */
+static size_t ntypefixdest;     /* size of replacement list */
+static intptr_t *typefixid;     /* list of types we need to replace */
+static size_t ntypefixid; /* size of replacement list */
+
+static Trait ***traitfixdest;   /* list of traits we need to replace */
+static size_t ntraitfixdest;    /* size of replacement list */
+static Type **traitfixtype;     /* list of types we need to set the trait on */
+static size_t ntraitfixtype;    /* size of replacement list */
+static intptr_t *traitfixid;    /* list of traits we need to replace */
+static size_t ntraitfixid; /* size of replacement list */
+
 
 /* Outputs a symbol table to file in a way that can be
  * read back usefully. Only writes declarations, types
@@ -205,8 +214,12 @@ static void typickle(FILE *fd, Type *ty)
         wrint(fd, 0);
     } else {
         wrint(fd, bscount(ty->traits));
-        for (i = 0; bsiter(ty->traits, &i); i++)
-            wrint(fd, i);
+        for (i = 0; bsiter(ty->traits, &i); i++) {
+            if (i < Ntraits)
+                wrint(fd, i | Builtinmask);
+            else
+                wrint(fd, i);
+        }
     }
     wrint(fd, ty->nsub);
     switch (ty->type) {
@@ -285,7 +298,7 @@ static void wrtype(FILE *fd, Type *ty)
 
 static void rdtype(FILE *fd, Type **dest)
 {
-    intptr_t tid;
+    uintptr_t tid;
 
     tid = rdint(fd);
     if (tid & Builtinmask) {
@@ -296,15 +309,30 @@ static void rdtype(FILE *fd, Type **dest)
     }
 }
 
+static void rdtrait(FILE *fd, Trait **dest, Type *ty)
+{
+    uintptr_t tid;
+
+    tid = rdint(fd);
+    if (tid & Builtinmask) {
+        if (dest)
+            *dest = traittab[tid & ~Builtinmask];
+        if (ty)
+            settrait(ty, traittab[tid & ~Builtinmask]);
+    } else {
+        lappend(&traitfixdest, &ntraitfixdest, dest);
+        lappend(&traitfixtype, &ntraitfixtype, ty);
+        lappend(&traitfixid, &ntraitfixid, itop(tid));
+    }
+}
+
 /* Writes types to a file. Errors on
  * internal only types like Tyvar that
  * will not be meaningful in another file */
 static Type *tyunpickle(FILE *fd)
 {
     size_t i, n;
-    size_t v;
     Type *ty;
-    Trait *tr;
     Ty t;
 
     t = rdbyte(fd);
@@ -313,14 +341,8 @@ static Type *tyunpickle(FILE *fd)
         ty->ishidden = 1;
     /* tid is generated; don't write */
     n = rdint(fd);
-    if (n > 0) {
-        ty->traits = mkbs();
-        for (i = 0; i < n; i++) {
-            v = rdint(fd);
-            tr = htget(trmap, itop(v));
-            settrait(ty, tr);
-        }
-    }
+    for (i = 0; i < n; i++)
+        rdtrait(fd, NULL, ty);
     ty->nsub = rdint(fd);
     if (ty->nsub > 0)
         ty->sub = zalloc(ty->nsub * sizeof(Type*));
@@ -383,6 +405,7 @@ Trait *traitunpickle(FILE *fd)
     /* create an empty trait */
     tr = mktrait(Zloc, NULL, NULL, NULL, 0, NULL, 0, 0);
     uid = rdint(fd);
+    printf("loading trait for uid %d\n", (int)uid);
     tr->ishidden = rdbool(fd);
     tr->name = unpickle(fd);
     tr->param = tyunpickle(fd);
@@ -658,7 +681,7 @@ static Node *unpickle(FILE *fd)
         case Nimpl:
             n->impl.traitname = unpickle(fd);
             i = rdint(fd);
-            n->impl.trait = htget(trmap, itop(i));
+            rdtrait(fd, &n->impl.trait, NULL);
             rdtype(fd, &n->impl.type);
             n->impl.ndecls = rdint(fd);
             n->impl.decls = zalloc(sizeof(Node *)*n->impl.ndecls);
@@ -695,7 +718,7 @@ static Stab *findstab(Stab *st, char *pkg)
     return s;
 }
 
-static void fixmappings(Stab *st)
+static void fixtypemappings(Stab *st)
 {
     size_t i;
     Type *t, *old;
@@ -731,6 +754,31 @@ static void fixmappings(Stab *st)
     }
     lfree(&typefixdest, &ntypefixdest);
     lfree(&typefixid, &ntypefixid);
+}
+
+static void fixtraitmappings(Stab *st)
+{
+    size_t i;
+    Trait *t;
+
+    /*
+     * merge duplicate definitions.
+     * This allows us to compare named types by id, instead
+     * of doing a deep walk through the type. This ability is
+     * depended on when we do type inference.
+     */
+    for (i = 0; i < ntraitfixdest; i++) {
+        t = htget(trmap, itop(traitfixid[i]));
+        if (!t)
+            die("Unable to find trait for id %zd\n", traitfixid[i]);
+        if (traitfixdest[i])
+            *traitfixdest[i] = t;
+        if (traitfixtype[i])
+            settrait(traitfixtype[i], t);
+    }
+
+    lfree(&traitfixdest, &ntraitfixdest);
+    lfree(&traitfixid, &ntraitfixid);
 }
 
 /* Usefile format:
@@ -838,7 +886,8 @@ foundlib:
                 break;
         }
     }
-    fixmappings(s);
+    fixtypemappings(s);
+    fixtraitmappings(s);
     htfree(tidmap);
     popstab();
     return 1;

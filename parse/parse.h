@@ -192,14 +192,14 @@ struct Node {
     int nid;
     union {
         struct {
-            char  **files;
             size_t nfiles;
-            size_t nuses;
+            char  **files;
             Node **uses;
-            size_t nlibdeps;
+            size_t nuses;
             char **libdeps;
-            size_t nstmts;
+            size_t nlibdeps;
             Node **stmts;
+            size_t nstmts;
             Stab  *globls;
         } file;
 
@@ -491,6 +491,7 @@ int   hasparams(Type *t);
 Type *tybase(Type *t);
 char *tyfmt(char *buf, size_t len, Type *t);
 char *tystr(Type *t);
+size_t tyidfmt(char *buf, size_t len, Type *t);
 
 int hastrait(Type *t, Trait *c);
 int settrait(Type *t, Trait *c);
@@ -530,6 +531,7 @@ Node *mkslice(Srcloc l, Node *base, Node *off);
 Ucon *mkucon(Srcloc l, Node *name, Type *ut, Type *uet);
 
 /* node util functions */
+uint64_t arraysz(Node *sz);
 char *namestr(Node *name);
 char *declname(Node *n);
 Type *decltype(Node *n);

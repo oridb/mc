@@ -360,18 +360,17 @@ static Node *specializenode(Node *n, Htab *tsmap)
 Node *genericname(Node *n, Type *t)
 {
     char buf[1024];
-    char *p, *s;
+    char *p;
     char *end;
     Node *name;
 
     if (!n->decl.isgeneric)
         return n->decl.name;
     p = buf;
-    end = buf + 1024;
-    s = tystr(t);
+    end = buf + sizeof buf;
     p += snprintf(p, end - p, "%s", n->decl.name->name.name);
-    p += snprintf(p, end - p, "$%lu", strhash(s));
-    free(s);
+    p += snprintf(p, end - p, "$");
+    p += tyidfmt(p, end - p, t);
     name = mkname(n->loc, buf);
     if (n->decl.name->name.ns)
         setns(name, n->decl.name->name.ns);

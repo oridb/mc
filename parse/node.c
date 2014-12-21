@@ -26,6 +26,24 @@ int lnum(Srcloc l)
     return l.line;
 }
 
+/*
+ * Bah, this is going to need to know how to fold things.
+ * FIXME: teach it.
+ */
+uint64_t arraysz(Node *sz)
+{
+    Node *n;
+
+    n = sz;
+    if (exprop(n) != Olit)
+        fatal(sz, "too many layers of indirection when finding intializer. (initialization loop?)");
+
+    n = n->expr.args[0];
+    if (n->lit.littype != Lint)
+        fatal(sz, "initializer is not an integer");
+    return n->lit.intval;
+}
+
 Node *mknode(Srcloc loc, Ntype nt)
 {
     Node *n;

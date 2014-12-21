@@ -116,7 +116,10 @@ Trait *mktrait(Srcloc loc, Node *name, Type *param, Node **memb, size_t nmemb, N
     Trait *t;
 
     t = zalloc(sizeof(Trait));
+    t->uid = ntraittab++;
     t->loc = loc;
+    if (t->uid < Ntraits)
+        t->vis = Visbuiltin;
     t->vis = Visintern;
     t->name = name;
     t->param = param;
@@ -125,7 +128,6 @@ Trait *mktrait(Srcloc loc, Node *name, Type *param, Node **memb, size_t nmemb, N
     t->funcs = funcs;
     t->nfuncs = nfuncs;
     t->isproto = isproto;
-    t->uid = ntraittab++;
 
     traittab = xrealloc(traittab, ntraittab*sizeof(Trait*));
     traittab[t->uid] = t;
@@ -560,7 +562,6 @@ static int tybfmt(char *buf, size_t len, Type *t)
             p += snprintf(p, end - p, "@%s", t->pname);
             break;
         case Tyunres:
-            p += snprintf(p, end - p, "?"); /* indicate unresolved name. should not be seen by user. */
             p += namefmt(p, end - p, t->name);
             if (t->narg) {
                 p += snprintf(p, end - p, "(");
@@ -635,10 +636,15 @@ ulong tyhash(void *ty)
 
     t = (Type *)ty;
     switch (t->type) {
-        case Typaram:   hash = strhash(t->pname);       break;
+        /* Important: we want tyhash to be consistent cross-file, since it
+         * is used in naming trait impls and such.
+         *
+         * We should find a better name.
+         */
         case Tyvar:     hash = inthash(t->tid);         break;
-        case Tyunion:   hash = inthash(t->tid);         break;
-        case Tystruct:  hash = inthash(t->tid);         break;
+        case Typaram:   hash = strhash(t->pname);       break;
+        case Tyunion:   hash = inthash(t->type);        break;
+        case Tystruct:  hash = inthash(t->type);        break;
         case Tyname:    hash = namehash(t->name);       break;
         default:        hash = inthash(t->type);        break;
     }
@@ -646,22 +652,6 @@ ulong tyhash(void *ty)
     for (i = 0; i < t->narg; i++)
         hash ^= tyhash(t->arg[i]);
     return hash;
-}
-
-static int valeq(Node *a, Node *b)
-{
-    if (a == b)
-        return 1;
-
-    /* unwrap to Nlit */
-    if (exprop(a) == Olit)
-        a = a->expr.args[0];
-    if (exprop(b) == Olit)
-        b = b->expr.args[0];
-
-    if (a->type != Nlit || b->type != Nlit)
-        return 0;
-    return liteq(a, b);
 }
 
 int tyeq(void *t1, void *t2)
@@ -723,7 +713,7 @@ int tyeq(void *t1, void *t2)
                     return 0;
             break;
         case Tyarray:
-            if (!valeq(a->asize, b->asize))
+            if (arraysz(a->asize) != arraysz(b->asize))
                 return 0;
             break;
         default:
@@ -733,6 +723,101 @@ int tyeq(void *t1, void *t2)
         if (!tyeq(a->sub[i], b->sub[i]))
             return 0;
     return 1;
+}
+
+size_t tyidfmt(char *buf, size_t sz, Type *ty)
+{
+    size_t i;
+    char *p, *end;
+
+    p = buf;
+    end = buf + sz;
+    switch (ty->type) {
+        case Ntypes:
+        case Tybad:     die("invalid type");    break;
+        case Tyvar:     die("tyvar has no idstr");      break;
+        case Tyvoid:    p += snprintf(p, end - p, "v");  break;
+        case Tychar:    p += snprintf(p, end - p, "c");  break;
+        case Tybool:    p += snprintf(p, end - p, "t");  break;
+        case Tyint8:    p += snprintf(p, end - p, "b");  break;
+        case Tyint16:   p += snprintf(p, end - p, "s");  break;
+        case Tyint:     p += snprintf(p, end - p, "i");  break;
+        case Tyint32:   p += snprintf(p, end - p, "w");  break;
+        case Tyint64:   p += snprintf(p, end - p, "q");  break;
+        case Tylong:    p += snprintf(p, end - p, "l");  break;
+
+        case Tybyte:    p += snprintf(p, end - p, "T");  break;
+        case Tyuint8:   p += snprintf(p, end - p, "B");  break;
+        case Tyuint16:  p += snprintf(p, end - p, "S");  break;
+        case Tyuint:    p += snprintf(p, end - p, "I");  break;
+        case Tyuint32:  p += snprintf(p, end - p, "W");  break;
+        case Tyuint64:  p += snprintf(p, end - p, "Q");  break;
+        case Tyulong:   p += snprintf(p, end - p, "L");  break;
+        case Tyflt32:   p += snprintf(p, end - p, "f");  break;
+        case Tyflt64:   p += snprintf(p, end - p, "d");  break;
+        case Tyvalist:  p += snprintf(p, end - p, "V");  break;
+        case Typtr:
+            p += snprintf(p, end - p, ".p");
+            p += tyidfmt(p, end - p, ty->sub[0]);
+            break;
+        case Tyarray:
+            p += snprintf(p, end - p, ".a%lld", (vlong)arraysz(ty->asize));
+            p += tyidfmt(p, end - p, ty->sub[0]);
+            break;
+        case Tyslice:
+            p += snprintf(p, end - p, ".s");
+            p += tyidfmt(p, end - p, ty->sub[0]);
+            break;
+        case Tyfunc:
+            p += snprintf(p, end - p, ".f");
+            for (i = 0; i < ty->nsub; i++) {
+                p += tyidfmt(p, end - p, ty->sub[i]);
+                p += snprintf(p, end - p, "$");
+            }
+            break;
+        case Tytuple:
+            p += snprintf(p, end - p, ".p");
+            for (i = 0; i < ty->nsub; i++) {
+                p += tyidfmt(p, end - p, ty->sub[i]);
+            }
+            p += snprintf(p, end - p, "$");
+            break;
+        case Tystruct:
+            p += snprintf(p, end - p, ".t");
+            for (i = 0; i < ty->nmemb; i++) {
+                p += snprintf(p, end - p, "%s.", declname(ty->sdecls[i]));
+                p += tyidfmt(p, end - p, decltype(ty->sdecls[i]));
+                p += snprintf(p, end - p, "$");
+            }
+            break;
+        case Tyunion:
+            p += snprintf(p, end - p, ".u");
+            for (i = 0; i < ty->nmemb; i++) {
+                p += snprintf(p, end - p, "%s.", namestr(ty->udecls[i]->name));
+                if (ty->udecls[i]->etype)
+                    p += tyidfmt(p, end - p, ty->udecls[i]->etype);
+                p += snprintf(p, end - p, "$");
+            }
+            break;
+        case Typaram:
+            p += snprintf(p, end - p, ".p");
+            p += tyidfmt(p, end - p, ty->sub[0]);
+            break;
+        case Tyunres:
+        case Tyname:
+            p += snprintf(p, end - p, ".n");
+            if (ty->name->name.ns)
+                p += snprintf(p, end - p, "%s", ty->name->name.ns);
+            p += snprintf(p, end - p, ".%s", ty->name->name.name);
+            if (ty->arg)
+                for (i = 0; i < ty->narg; i++)
+                    p += tyidfmt(p, end - p, ty->arg[i]);
+            else if (ty->param)
+                for (i = 0; i < ty->nparam; i++)
+                    p += tyidfmt(p, end - p, ty->param[i]);
+            break;
+    }
+    return p - buf;
 }
 
 void tyinit(Stab *st)
