@@ -18,6 +18,16 @@ size_t ndecls;
 Node **exportimpls;
 size_t nexportimpls;
 
+char *fname(Srcloc l)
+{
+    return file->file.files[l.file];
+}
+
+int lnum(Srcloc l)
+{
+    return l.line;
+}
+
 Node *mknode(Srcloc loc, Ntype nt)
 {
     Node *n;

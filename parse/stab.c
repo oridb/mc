@@ -221,13 +221,13 @@ static int mergedecl(Node *old, Node *new)
     old->decl.vis = Visexport;
 
     if (e->decl.init && g->decl.init)
-        fatal(e, "export %s double initialized on line %d", declname(e), g->loc.line);
+        fatal(e, "export %s double initialized on %s:%d", declname(e), fname(g->loc), lnum(g->loc));
     if (e->decl.isgeneric != g->decl.isgeneric)
-        fatal(e, "export %s declared with different genericness on line %d", declname(e), g->loc.line);
+        fatal(e, "export %s declared with different genericness on %s:%d", declname(e), fname(g->loc), lnum(g->loc));
     if (e->decl.isconst != g->decl.isconst)
-        fatal(e, "export %s declared with different constness on line %d", declname(e), g->loc.line);
+        fatal(e, "export %s declared with different constness on %s:%d", declname(e), fname(g->loc), lnum(g->loc));
     if (e->decl.isconst != g->decl.isconst)
-        fatal(e, "export %s declared with different externness on line %d", declname(e), g->loc.line);
+        fatal(e, "export %s declared with different externness on %s:%d", declname(e), fname(g->loc), lnum(g->loc));
 
     if (new->decl.name->name.ns)
         setns(old->decl.name, new->decl.name->name.ns);
@@ -259,7 +259,7 @@ void putdcl(Stab *st, Node *s)
     if (!old)
         forcedcl(st, s);
     else if (!mergedecl(old, s))
-        fatal(s, "%s already declared on line %d", namestr(s->decl.name), old->loc.line);
+        fatal(old, "%s already declared on %s:%d", namestr(s->decl.name), fname(s->loc), lnum(s->loc));
 }
 
 void forcedcl (Stab *st, Node *s) {
@@ -320,14 +320,18 @@ void puttype(Stab *st, Node *n, Type *t)
             htput(st->ty, td->name, td);
         }
     } else if (!mergetype(ty, t)) {
-        fatal(n, "Type %s already defined", tystr(gettype(st, n)));
+        fatal(n, "Type %s already declared on %s:%d", tystr(ty), fname(ty->loc), lnum(ty->loc));
     }
 }
 
 void putucon(Stab *st, Ucon *uc)
 {
-    if (getucon(st, uc->name))
-        lfatal(uc->loc, "union constructor %s already defined", namestr(uc->name));
+    Ucon *old;
+
+
+    old = getucon(st, uc->name);
+    if (old)
+        lfatal(old->loc, "`%s already defined on %s:%d", namestr(uc->name), fname(uc->loc), lnum(uc->loc));
     htput(st->uc, uc->name, uc);
 }
 
@@ -346,12 +350,14 @@ void puttrait(Stab *st, Node *n, Trait *c)
 {
     Traitdefn *td;
     Trait *t;
+    Type *ty;
 
     t = gettrait(st, n);
     if (t && !mergetrait(t, c))
-        fatal(n, "Trait %s already defined", namestr(n));
-    if (gettype(st, n))
-        fatal(n, "Trait %s already defined as a type", namestr(n));
+        fatal(n, "Trait %s already defined on %s:%d", namestr(n), fname(t->loc), lnum(t->loc));
+    ty = gettype(st, n);
+    if (ty)
+        fatal(n, "Trait %s defined as a type on %s:%d", namestr(n), fname(ty->loc), lnum(ty->loc));
     td = xalloc(sizeof(Traitdefn));
     td->loc = n->loc;
     td->name = n;
@@ -376,7 +382,9 @@ void putimpl(Stab *st, Node *n)
 
     impl = getimpl(st, n);
     if (impl && !mergeimpl(impl, n))
-        fatal(n, "Trait %s already implemented over %s", namestr(n->impl.traitname), tystr(n->impl.type));
+        fatal(n, "Trait %s already implemented over %s at %s:%d",
+              namestr(n->impl.traitname), tystr(n->impl.type),
+              fname(n->loc), lnum(n->loc));
     if (st->name)
         setns(n->impl.traitname, namestr(st->name));
     htput(st->impl, n, n);
@@ -400,7 +408,7 @@ void putns(Stab *st, Stab *scope)
 
     s = getns(st, scope->name);
     if (s)
-        fatal(scope->name, "Ns %s already defined", namestr(s->name));
+        fatal(scope->name, "Namespace %s already defined at %s:%d", namestr(s->name), fname(s->name->loc), lnum(s->name->loc));
     htput(st->ns, namestr(scope->name), scope);
 }
 
