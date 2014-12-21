@@ -116,6 +116,7 @@ Trait *mktrait(Srcloc loc, Node *name, Type *param, Node **memb, size_t nmemb, N
     Trait *t;
 
     t = zalloc(sizeof(Trait));
+    t->loc = loc;
     t->vis = Visintern;
     t->name = name;
     t->param = param;

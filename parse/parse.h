@@ -172,6 +172,7 @@ struct Ucon {
 
 struct Trait {
     int uid;            /* unique id */
+    Srcloc loc;
     Vis vis;
     int isproto;        /* is it a prototype (for exporting purposes) */
     int ishidden;       /* should user code be able to use this? */
@@ -414,6 +415,8 @@ ulong namehash(void *t);
 int nameeq(void *a, void *b);
 
 /* util functions */
+char *fname(Srcloc l);
+int lnum(Srcloc l);
 void *zalloc(size_t size);
 void *xalloc(size_t size);
 void *zrealloc(void *p, size_t oldsz, size_t size);
