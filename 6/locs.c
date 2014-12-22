@@ -16,52 +16,9 @@
 #include "../config.h"
 
 Mode regmodes[] = {
-#define Reg(r, name, mode) mode,
+#define Reg(r, gasname, p9name, mode) mode,
 #include "regs.def"
 #undef Reg
-};
-
-char *regnames[] = {
-#define Reg(r, name, mode) name,
-#include "regs.def"
-#undef Reg
-};
-
-size_t modesize[Nmode] = {
-    [ModeNone]  = 0,
-    [ModeB]     = 1,
-    [ModeW]     = 2,
-    [ModeL]     = 4,
-    [ModeQ]     = 8,
-    [ModeF]     = 4,
-    [ModeD]     = 8,
-};
-    
-
-const Reg reginterferes[Nreg][Nmode + 1] = {
-    /* byte */
-    [Ral] = {Ral, Rax, Reax},
-    [Rcl] = {Rcl, Rcx, Recx},
-    [Rdl] = {Rdl, Rdx, Redx},
-    [Rbl] = {Rbl, Rbx, Rebx},
-
-    /* word */
-    [Rax] = {Ral, Rax, Reax},
-    [Rcx] = {Rcl, Rcx, Recx},
-    [Rdx] = {Rdl, Rdx, Redx},
-    [Rbx] = {Rbl, Rbx, Rebx},
-    [Rsi] = {Rsi, Resi},
-    [Rdi] = {Rdi, Redi},
-
-    /* dword */
-    [Reax] = {Ral, Rax, Reax},
-    [Recx] = {Rcl, Rcx, Recx},
-    [Redx] = {Rdl, Rdx, Redx},
-    [Rebx] = {Rbl, Rbx, Rebx},
-    [Resi] = {Rsi, Resi},
-    [Redi] = {Rdi, Redi},
-    [Resp] = {Resp},
-    [Rebp] = {Rebp},
 };
 
 int isintmode(Mode m)

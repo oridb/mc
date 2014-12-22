@@ -28,7 +28,7 @@ Insn(Inone,
 /* Note, the mov instruction is specified in an overly general manner. */
 Insn(Imov,      
     "\tmov%t %x,%x\n",              
-    "\tMOV%t %X,%X\n",
+    "\tMOV%T %X,%X\n",
     Use(.l={1}),
     Def(.l={2}))
 Insn(Imovt,      
@@ -38,7 +38,7 @@ Insn(Imovt,
     Def(.l={2}))
 Insn(Imovzx,    
     "\tmovz%1t%2t %x,%x\n",         
-    "\tMOVZ%1t%2t %X,%X\n",
+    "\tMOVZ%1T%2T %X,%X\n",
     Use(.l={1}),
     Def(.l={2}))
 Insn(Imovsx,    
@@ -347,9 +347,15 @@ Insn(Iret,
     Use(.r={Rrax,Rxmm0d}),
     Def(None))
 
-/* not really an insn... */
+/* not actually insns */
 Insn(Ilbl,      
     "%v:\n",                        
     "%V:\n",
+    Use(None),
+    Def(None))
+
+Insn(Icomment,      
+    "\t#%v\n",                        
+    "\t//%v:\n",
     Use(None),
     Def(None))

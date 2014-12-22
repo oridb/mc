@@ -118,6 +118,17 @@ int colourmap[Nreg] = {
     [Rxmm15f] = 31,  [Rxmm15d] = 31,
 };
 
+size_t modesize[Nmode] = {
+    [ModeNone]  = 0,
+    [ModeB]     = 1,
+    [ModeW]     = 2,
+    [ModeL]     = 4,
+    [ModeQ]     = 8,
+    [ModeF]     = 4,
+    [ModeD]     = 8,
+};
+    
+
 static int _K[Nclass] = {
     [Classbad] = 0,
     [Classint] = 14,
@@ -943,11 +954,6 @@ static int paint(Isel *s)
         found = 0;
         for (i = 0; i < Northogonal; i++) {
             if (regmap[i][n->mode] && !taken[i]) {
-                if (debugopt['r']) {
-                    fprintf(stdout, "\tselecting ");
-                    locprint(stdout, n, 'x');
-                    fprintf(stdout, " = %s\n", regnames[regmap[i][n->mode]]);
-                }
                 n->reg.colour = regmap[i][n->mode];
                 found = 1;
                 break;
@@ -1105,9 +1111,9 @@ static void rewritebb(Isel *s, Asmbb *bb)
                 lappend(&new, &nnew, insn);
                 if (debugopt['r']) {
                     printf("loading ");
-                    locprint(stdout, locmap[use[i].oldreg], 'x');
+                    dbglocprint(stdout, locmap[use[i].oldreg], 'x');
                     printf(" -> ");
-                    locprint(stdout, use[i].newreg, 'x');
+                    dbglocprint(stdout, use[i].newreg, 'x');
                     printf("\n");
                 }
             }
@@ -1122,9 +1128,9 @@ static void rewritebb(Isel *s, Asmbb *bb)
                 lappend(&new, &nnew, insn);
                 if (debugopt['r']) {
                     printf("storing ");
-                    locprint(stdout, locmap[def[i].oldreg], 'x');
+                    dbglocprint(stdout, locmap[def[i].oldreg], 'x');
                     printf(" -> ");
-                    locprint(stdout, def[i].newreg, 'x');
+                    dbglocprint(stdout, def[i].newreg, 'x');
                     printf("\n");
                 }
             }
@@ -1143,7 +1149,7 @@ static void addspill(Isel *s, Loc *l)
     s->stksz->lit = align(s->stksz->lit, modesize[l->mode]);
     if (debugopt['r']) {
         printf("spill ");
-        locprint(stdout, l, 'x');
+        dbglocprint(stdout, l, 'x');
         printf(" to %zd(%%rbp)\n", s->stksz->lit);
     }
     htput(s->spillslots, itop(l->reg.id), itop(s->stksz->lit));
@@ -1265,7 +1271,7 @@ void wlprint(FILE *fd, char *name, Loc **wl, size_t nwl)
     fprintf(fd, "%s = [", name);
     for (i = 0; i < nwl; i++) {
         fprintf(fd, "%s", sep);
-        locprint(fd, wl[i], 'x');
+        dbglocprint(fd, wl[i], 'x');
         fprintf(fd, "(%zd)", wl[i]->reg.id);
         sep = ",";
     }
@@ -1296,7 +1302,7 @@ static void locsetprint(FILE *fd, Bitset *s)
     for (i = 0; i < bsmax(s); i++) {
         if (bshas(s, i)) {
             fprintf(fd, "%s", sep);
-            locprint(fd, locmap[i], 'x');
+            dbglocprint(fd, locmap[i], 'x');
             sep = ",";
         }
     }
@@ -1306,9 +1312,9 @@ static void locsetprint(FILE *fd, Bitset *s)
 static void printedge(FILE *fd, char *msg, size_t a, size_t b)
 {
     fprintf(fd, "\t%s ", msg);
-    locprint(fd, locmap[a], 'x');
+    dbglocprint(fd, locmap[a], 'x');
     fprintf(fd, " -- ");
-    locprint(fd, locmap[b], 'x');
+    dbglocprint(fd, locmap[b], 'x');
     fprintf(fd, "\n");
 }
 
@@ -1360,7 +1366,7 @@ void dumpasm(Isel *s, FILE *fd)
         fprintf(fd, "Liveout: ");
         locsetprint(fd, bb->liveout);
         for (i = 0; i < bb->ni; i++)
-            iprintf(fd, bb->il[i]);
+            dbgiprintf(fd, bb->il[i]);
     }
     fprintf(fd, "ENDASM -------- \n");
 }
