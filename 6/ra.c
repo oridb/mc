@@ -445,9 +445,9 @@ static void setup(Isel *s)
     free(s->rmoves);
     free(s->nrmoves);
 
-    s->aliasmap = zalloc(maxregid * sizeof(size_t));
+    s->aliasmap = zalloc(maxregid * sizeof(Loc*));
     s->degree = zalloc(maxregid * sizeof(int));
-    s->rmoves = zalloc(maxregid * sizeof(Loc **));
+    s->rmoves = zalloc(maxregid * sizeof(Insn**));
     s->nrmoves = zalloc(maxregid * sizeof(size_t));
 
     for (i = 0; bsiter(s->prepainted, &i); i++)
