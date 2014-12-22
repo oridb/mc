@@ -1,10 +1,10 @@
 </$objtype/mkfile
 CC=pcc
-CFLAGS=-c -D_POSIX_SOURCE -D_SUSV2_SOURCE -D_C99_SNPRINTF_EXTENSION -I../parse -I../opt
-LDFLAGS=-L../parse -lparse -L../opt -lopt 
+CFLAGS=-c -D_POSIX_SOURCE -D_SUSV2_SOURCE -D_C99_SNPRINTF_EXTENSION -I../parse
+LDFLAGS=-L../parse -lparse
 
 TARG=myrbuild
 OFILES=myrbuild.$O
-LIB=../parse/libparse.a ../opt/libopt.a
+LIB=../parse/libparse.a
 
 </sys/src/cmd/mkone
