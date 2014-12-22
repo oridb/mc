@@ -293,17 +293,17 @@ Insn(Ijmp,
     Def(None))
 Insn(Ijz,       
     "\tjz %v\n",                    
-    "\tJZ %V\n",
+    "\tJEQ %V\n",
     Use(.l={1}),
     Def(None))
 Insn(Ijnz,      
     "\tjnz %v\n",                   
-    "\tJNZ %V\n",
+    "\tJNE %V\n",
     Use(.l={1}),
     Def(None))
 Insn(Ijl,       
     "\tjl %v\n",                    
-    "\tJL %V\n",
+    "\tJLT %V\n",
     Use(.l={1}),
     Def(None))
 Insn(Ijle,      
@@ -323,12 +323,12 @@ Insn(Ijge,
     Def(None))
 Insn(Ijb,       
     "\tjb %v\n",                    
-    "\tJB %V\n",
+    "\tJCS %V\n",
     Use(.l={1}),
     Def(None))
 Insn(Ijbe,      
     "\tjbe %v\n",                   
-    "\tJBE %V\n",
+    "\tJLS %V\n",
     Use(.l={1}),
     Def(None))
 Insn(Ija,       
