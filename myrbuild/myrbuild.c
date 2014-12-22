@@ -25,7 +25,7 @@ int genasm = 0;
 
 /* binaries we call out to */
 char *mc = "6m";
-char *as = "as";
+char *as[] = Asmcmd;
 char *ar = "ar";
 char *ld = "ld";
 char *muse = "muse";
@@ -312,10 +312,10 @@ void compile(char *file, char ***stack, size_t *nstack)
         swapsuffix(obj, sizeof obj, file, ".s", ".o");
         if (isfresh(file, obj))
             goto done;
-        extra[nextra++] = "-g";
-        extra[nextra++] = "-o";
+        for (i = 1; as[i]; i++)
+            extra[nextra++] = as[i];
         extra[nextra++] = obj;
-        gencmd(&cmd, &ncmd, as, file, extra, nextra);
+        gencmd(&cmd, &ncmd, as[0], file, extra, nextra);
         run(cmd);
     }
 done:
@@ -502,7 +502,7 @@ int main(int argc, char **argv)
             case 's': ldscript = ctx.optarg; break;
             case 'S': genasm = 1; break;
             case 'C': mc = ctx.optarg; break;
-            case 'A': as = ctx.optarg; break;
+            case 'A': as[0] = ctx.optarg; break;
             case 'M': muse = ctx.optarg; break;
             case 'L': ld = ctx.optarg; break;
             case 'R': ar = ctx.optarg; break;
