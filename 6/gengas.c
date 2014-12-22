@@ -294,10 +294,10 @@ static size_t writelit(FILE *fd, Htab *strtab, Node *v, Type *ty)
         case Lflt:
                 if (tybase(v->lit.type)->type == Tyflt32) {
                     u.fv = v->lit.fltval;
-                    fprintf(fd, "\t.long 0x%" PRIx32 "\n", u.lv);
+                    fprintf(fd, "\t.long 0x%llx\n", (vlong)u.lv);
                 } else if (tybase(v->lit.type)->type == Tyflt64) {
                     u.dv = v->lit.fltval;
-                    fprintf(fd, "\t.quad 0x%" PRIx64 "\n", u.qv);
+                    fprintf(fd, "\t.quad 0x%llx\n", (vlong)u.qv);
                 }
                 break;
         case Lstr:
