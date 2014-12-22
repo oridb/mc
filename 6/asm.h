@@ -20,7 +20,7 @@ typedef enum {
 } AsmOp;
 
 typedef enum {
-#define Reg(r, name, mode) r,
+#define Reg(r, gasname, p9name, mode) r,
 #include "regs.def"
 #undef Reg
     Nreg
@@ -53,6 +53,11 @@ typedef enum {
     Classflt,
     Nclass,
 } Rclass;
+
+typedef enum {
+    Gnugas,
+    Plan9,
+} Asmsyntax;
 
 /* a register, label, or memory location */
 struct Loc {
@@ -186,7 +191,6 @@ struct Isel {
 };
 
 /* globals */
-extern char *modenames[];
 extern Type *tyintptr;
 extern Type *tyword;
 extern Type *tyvoid;
@@ -197,7 +201,9 @@ extern int extracheck;
 
 void simpglobl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***blob, size_t *nblob);
 void selfunc(Isel *is, Func *fn, Htab *globls, Htab *strtab);
-void gen(Node *file, char *out);
+void gen(Asmsyntax syn, Node *file, char *out);
+void gengas(Node *file, char *out);
+void genp9(Node *file, char *out);
 
 /* location generation */
 extern size_t maxregid;
@@ -222,13 +228,10 @@ int isintmode(Mode m);
 
 /* emitting instructions */
 Insn *mkinsn(AsmOp op, ...);
-void iprintf(FILE *fd, Insn *insn);
-void locprint(FILE *fd, Loc *l, char spec);
+void dbgiprintf(FILE *fd, Insn *insn);
+void dbglocprint(FILE *fd, Loc *l, char spec);
 
 /* register allocation */
-extern char *regnames[]; /* name table */
-extern Mode regmodes[];  /* mode table */
-extern size_t modesize[]; /* mode size table */
 void regalloc(Isel *s);
 Rclass rclass(Loc *l);
 

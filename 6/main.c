@@ -46,7 +46,7 @@ static void usage(char *prog)
     printf("\t-S\tGenerate assembly instead of object code\n");
 }
 
-static void assem(char *asmsrc, char *path)
+static void assemble(char *asmsrc, char *path)
 {
     char *asmcmd[] = Asmcmd;
     char objfile[1024];
@@ -126,9 +126,11 @@ int main(int argc, char **argv)
     char buf[1024];
     Stab *globls;
     Optctx ctx;
+    Asmsyntax asmsyntax;
     size_t i;
 
-    optinit(&ctx, "d:hSo:I:", argv, argc);
+    optinit(&ctx, "d:hSo:I:9G", argv, argc);
+    asmsyntax = Defaultasm;
     while (!optdone(&ctx)) {
         switch (optnext(&ctx)) {
             case 'o':
@@ -146,6 +148,12 @@ int main(int argc, char **argv)
             case 'd':
                 while (ctx.optarg && *ctx.optarg)
                     debugopt[*ctx.optarg++ & 0x7f]++;
+                break;
+            case '9':
+                asmsyntax = Plan9;
+                break;
+            case 'G':
+                asmsyntax = Gnugas;
                 break;
             case 'I':
                 lappend(&incpaths, &nincpaths, ctx.optarg);
@@ -180,8 +188,8 @@ int main(int argc, char **argv)
         } else {
             gentemp(buf, sizeof buf, ctx.args[i], ".s");
         }
-        gen(file, buf);
-        assem(buf, ctx.args[i]);
+        gen(asmsyntax, file, buf);
+        assemble(buf, ctx.args[i]);
         genuse(ctx.args[i]);
     }
 

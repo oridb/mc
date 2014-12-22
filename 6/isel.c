@@ -150,7 +150,7 @@ static void g(Isel *s, AsmOp op, ...)
     va_end(ap);
     if (debugopt['i']) {
         printf("GEN[uid=%zd] ", i->uid);
-        iprintf(stdout, i);
+        dbgiprintf(stdout, i);
     }
     lappend(&s->curbb->il, &s->curbb->ni, i);
 }
@@ -868,9 +868,9 @@ void selfunc(Isel *is, Func *fn, Htab *globls, Htab *strtab)
         for (i = 0; i < bb->nnl; i++) {
             /* put in a comment that says where this line comes from */
             n = bb->nl[i];
-            snprintf(buf, sizeof buf, "\n\t# bb = %ld, bbidx = %ld, %s:%d",
+            snprintf(buf, sizeof buf, "bb = %ld, bbidx = %ld, %s:%d",
                      j, i, file->file.files[n->loc.file], n->loc.line);
-            g(is, Ilbl, locstrlbl(buf), NULL);
+            g(is, Icomment, locstrlbl(buf), NULL);
             isel(is, fn->cfg->bb[j]->nl[i]);
         }
     }

@@ -1,6 +1,8 @@
 INSTBIN=6m
 OBJ= \
 	gen.o \
+	gengas.o \
+	genp9.o \
 	isel.o \
 	locs.o \
 	main.o \
