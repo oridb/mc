@@ -1,10 +1,12 @@
 </$objtype/mkfile
 CC=pcc
-CFLAGS=-c -D_POSIX_SOURCE -D_SUSV2_SOURCE -D_C99_SNPRINTF_EXTENSION -I../parse -I../opt
-LDFLAGS=-L../parse -lparse -L../opt -lopt 
+CFLAGS=-c -D_POSIX_SOURCE -D_SUSV2_SOURCE -D_C99_SNPRINTF_EXTENSION -I../parse -I../
+LDFLAGS=-L../parse -lparse
 
 TARG=muse
-OFILES=muse.$O
-LIB=../parse/libparse.a ../opt/libopt.a
+OFILES=\
+	muse.$O\
+
+LIB=../parse/libparse.a
 
 </sys/src/cmd/mkone
