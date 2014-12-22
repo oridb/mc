@@ -90,12 +90,12 @@ lib$SYSLIB.a: $SYSSRC $SYSASMSRC
 %.s: %+x64.s
 	cp $stem+x64.s $stem.s
 
-OBJ=${STDSRC:.myr=.o} ${SYSSRC:.myr=.o} ${STDASMSRC:.s=.o} ${SYSASMSRC:.s=.o}
-USE=${STDSRC:.myr=.use} ${SYSSRC:.myr=.use} ${STDLIB}
+OBJ=${STDSRC:%.myr=%.o} ${SYSSRC:%.myr=%.o} ${STDASMSRC:%.s=%.o} ${SYSASMSRC:%.s=%.o}
+USE=${STDSRC:%.myr=%.use} ${SYSSRC:%.myr=%.use} ${STDLIB}
 .PHONY: clean
 clean:V:
 	rm -f $OBJ
 	rm -f $USE
-	rm -f lib$STDLIB.a lib$SYSLIB.a
+	rm -f lib${STDLIB}.a lib${SYSLIB}.a
 
 nuke:V: clean
