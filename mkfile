@@ -1,7 +1,7 @@
 </$objtype/mkfile
 
 SUB = parse \
-      opt \
+      mi \
       6 \
       muse \
       myrbuild \

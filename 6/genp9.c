@@ -90,23 +90,34 @@ static void printmem(FILE *fd, Loc *l, char spec)
         if (l->mem.constdisp)
             fprintf(fd, "%ld", l->mem.constdisp);
     } else {
-        if (l->mem.lbldisp)
-            fprintf(fd, "%s", l->mem.lbldisp);
-    }
-    if (l->mem.base && l->mem.base->reg.colour != Rrip) {
-        fprintf(fd, "(");
-        locprint(fd, l->mem.base, 'r');
-        if (l->mem.idx) {
-            fprintf(fd, ",");
-            locprint(fd, l->mem.idx, 'r');
+        if (l->mem.lbldisp) {
+            if (l->mem.base)
+                fprintf(fd, "$%s", l->mem.lbldisp);
+            else
+                fprintf(fd, "%s", l->mem.lbldisp);
         }
-        if (l->mem.scale > 1)
-            fprintf(fd, ",%d", l->mem.scale);
-        if (l->mem.base)
-            fprintf(fd, ")");
+    }
+    if (l->mem.base) {
+        if (l->mem.base->reg.colour == Rrip) {
+            fprintf(fd, "+0(SB)");
+        } else {
+            fprintf(fd, "(");
+            locprint(fd, l->mem.base, 'r');
+            if (l->mem.idx) {
+                fprintf(fd, ",");
+                locprint(fd, l->mem.idx, 'r');
+            }
+            if (l->mem.scale > 1)
+                fprintf(fd, ",%d", l->mem.scale);
+            if (l->mem.base)
+                fprintf(fd, ")");
+        }
     } else if (l->type != Locmeml) {
         die("Only locmeml can have unspecified base reg");
+    } else {
+        fprintf(fd, "+0(SB)");
     }
+
 }
 
 static void locprint(FILE *fd, Loc *l, char spec)
@@ -312,7 +323,7 @@ static size_t writelit(FILE *fd, char *name, size_t off, Htab *strtab, Node *v, 
                lbl = genlblstr(buf, sizeof buf);
                htput(strtab, &v->lit.strval, strdup(lbl));
            }
-           fprintf(fd, "DATA %s+%zd(SB)/8,%s<>+0(SB)\n", name, off, lbl);
+           fprintf(fd, "DATA %s+%zd(SB)/8,$%s<>+0(SB)\n", name, off, lbl);
            fprintf(fd, "DATA %s+%zd(SB)/8,$%zd\n", name, off+8, v->lit.strval.len);
            break;
         case Lfunc:
@@ -343,7 +354,7 @@ static size_t getintlit(Node *n, char *failmsg)
     return n->lit.intval;
 }
 
-static size_t writeslice(FILE *fd, Htab *globls, Htab *strtab, Node *n)
+static size_t writeslice(FILE *fd, char *name, size_t off, Htab *globls, Htab *strtab, Node *n)
 {
     Node *base, *lo, *hi;
     ssize_t loval, hival, sz;
@@ -363,8 +374,8 @@ static size_t writeslice(FILE *fd, Htab *globls, Htab *strtab, Node *n)
     sz = tysize(tybase(exprtype(base))->sub[0]);
 
     lbl = htget(globls, base);
-    fprintf(fd, "\t.quad %s + (%zd*%zd)\n", lbl, loval, sz);
-    fprintf(fd, "\t.quad %zd\n", (hival - loval));
+    fprintf(fd, "DATA %s+%zd(SB)/8,$%s+%zd(SB)\n", name, off, lbl, loval*sz);
+    fprintf(fd, "DATA %s+%zd(SB)/8,$%zd\n", name, off, (hival - loval));
     return size(n);
 }
 
@@ -416,7 +427,7 @@ static size_t writeblob(FILE *fd, char *name, size_t off, Htab *globls, Htab *st
             sz = writelit(fd, name, off, strtab, n->expr.args[0], exprtype(n));
             break;
         case Oslice:
-            sz = writeslice(fd, globls, strtab, n);
+            sz = writeslice(fd, name, off, globls, strtab, n);
             break;
         default:
             dump(n, stdout);
@@ -467,8 +478,7 @@ static void genblob(FILE *fd, Node *blob, Htab *globls, Htab *strtab)
     assert(blob->type == Ndecl);
 
     lbl = htget(globls, blob);
-    if (blob->decl.vis != Visintern)
-        fprintf(fd, "GLOBL %s,%zd\n", lbl, size(blob));
+    fprintf(fd, "GLOBL %s+0(SB),$%zd\n", lbl, size(blob));
     if (blob->decl.init)
         writeblob(fd, lbl, 0, globls, strtab, blob->decl.init);
     else

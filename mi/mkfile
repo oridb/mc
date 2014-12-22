@@ -3,12 +3,12 @@ CC=pcc
 LD=pcc
 CFLAGS=-c -D_POSIX_SOURCE -D_SUSV2_SOURCE -D_C99_SNPRINTF_EXTENSION -I../parse
 
-LIB=libopt.a
+LIB=libmi.a
 OFILES=cfg.$O \
     fold.$O \
     df.$O
 
-HFILES=opt.h
+HFILES=mi.h
 
 </sys/src/cmd/mklib
 
