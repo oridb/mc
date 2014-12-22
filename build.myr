@@ -248,7 +248,7 @@ const mergeuse = {dg, lib, files, incs
 
 	cmd = [][:]
 	cmd = std.slpush(cmd, std.sldup(opt_muse))
-	cmd = std.slpush(cmd, std.sldup("-mo"))
+	cmd = std.slpush(cmd, std.sldup("-o"))
 	cmd = std.slpush(cmd, std.sldup(lib))
 	for f in files
 		if std.hassuffix(f, ".myr")
