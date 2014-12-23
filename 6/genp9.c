@@ -105,8 +105,7 @@ static void printmem(FILE *fd, Loc *l, char spec)
     if (l->mem.idx) {
         fprintf(fd, "(");
         locprint(fd, l->mem.idx, 'r');
-        if (l->mem.scale > 1)
-            fprintf(fd, "*%d", l->mem.scale);
+        fprintf(fd, "*%d", l->mem.scale);
         fprintf(fd, ")");
     }
 }
