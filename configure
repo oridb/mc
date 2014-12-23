@@ -38,6 +38,7 @@ echo '#define Instroot "'$prefix'"' > config.h
 echo '#define Asmcmd {"as", "-g", "-o", NULL}' >> config.h
 echo '#define Linkcmd {"ar", "-rcs", NULL}' >> config.h
 echo '#define Defaultasm Gnugas' >> config.h
+echo 'export SYSCLASS=posixy' >> config.mk
 case $OS in
     *Linux*)
         echo '#define Symprefix ""' >> config.h

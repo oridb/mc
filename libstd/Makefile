@@ -73,6 +73,9 @@ include ../config.mk
 
 all: lib$(STDLIB).a $(MYRBIN)
 
+%.myr: %+$(SYSCLASS).myr
+	cp $< $@
+
 %.myr: %+$(SYS)-$(ARCH).myr
 	cp $< $@
 
