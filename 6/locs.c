@@ -146,7 +146,7 @@ Loc *locmem(long disp, Loc *base, Loc *idx, Mode mode)
     l->mem.constdisp = disp;
     l->mem.base = base;
     l->mem.idx = idx;
-    l->mem.scale = 0;
+    l->mem.scale = 1;
     return l;
 }
 
@@ -169,7 +169,7 @@ Loc *locmeml(char *disp, Loc *base, Loc *idx, Mode mode)
     l->mem.lbldisp = strdup(disp);
     l->mem.base = base;
     l->mem.idx = idx;
-    l->mem.scale = 0;
+    l->mem.scale = 1;
     return l;
 }
 
