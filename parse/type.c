@@ -757,33 +757,33 @@ size_t tyidfmt(char *buf, size_t sz, Type *ty)
         case Tyflt64:   p += snprintf(p, end - p, "d");  break;
         case Tyvalist:  p += snprintf(p, end - p, "V");  break;
         case Typtr:
-            p += snprintf(p, end - p, ".p");
+            p += snprintf(p, end - p, "$p");
             p += tyidfmt(p, end - p, ty->sub[0]);
             break;
         case Tyarray:
-            p += snprintf(p, end - p, ".a%lld", (vlong)arraysz(ty->asize));
+            p += snprintf(p, end - p, "$a%lld", (vlong)arraysz(ty->asize));
             p += tyidfmt(p, end - p, ty->sub[0]);
             break;
         case Tyslice:
-            p += snprintf(p, end - p, ".s");
+            p += snprintf(p, end - p, "$s");
             p += tyidfmt(p, end - p, ty->sub[0]);
             break;
         case Tyfunc:
-            p += snprintf(p, end - p, ".f");
+            p += snprintf(p, end - p, "$f");
             for (i = 0; i < ty->nsub; i++) {
                 p += tyidfmt(p, end - p, ty->sub[i]);
                 p += snprintf(p, end - p, "$");
             }
             break;
         case Tytuple:
-            p += snprintf(p, end - p, ".p");
+            p += snprintf(p, end - p, "$p");
             for (i = 0; i < ty->nsub; i++) {
                 p += tyidfmt(p, end - p, ty->sub[i]);
             }
             p += snprintf(p, end - p, "$");
             break;
         case Tystruct:
-            p += snprintf(p, end - p, ".t");
+            p += snprintf(p, end - p, "$t");
             for (i = 0; i < ty->nmemb; i++) {
                 p += snprintf(p, end - p, "%s.", declname(ty->sdecls[i]));
                 p += tyidfmt(p, end - p, decltype(ty->sdecls[i]));
@@ -791,7 +791,7 @@ size_t tyidfmt(char *buf, size_t sz, Type *ty)
             }
             break;
         case Tyunion:
-            p += snprintf(p, end - p, ".u");
+            p += snprintf(p, end - p, "$u");
             for (i = 0; i < ty->nmemb; i++) {
                 p += snprintf(p, end - p, "%s.", namestr(ty->udecls[i]->name));
                 if (ty->udecls[i]->etype)
@@ -800,15 +800,15 @@ size_t tyidfmt(char *buf, size_t sz, Type *ty)
             }
             break;
         case Typaram:
-            p += snprintf(p, end - p, ".p");
+            p += snprintf(p, end - p, "$p");
             p += tyidfmt(p, end - p, ty->sub[0]);
             break;
         case Tyunres:
         case Tyname:
-            p += snprintf(p, end - p, ".n");
+            p += snprintf(p, end - p, "$n");
             if (ty->name->name.ns)
                 p += snprintf(p, end - p, "%s", ty->name->name.ns);
-            p += snprintf(p, end - p, ".%s", ty->name->name.name);
+            p += snprintf(p, end - p, "$%s", ty->name->name.name);
             if (ty->arg)
                 for (i = 0; i < ty->narg; i++)
                     p += tyidfmt(p, end - p, ty->arg[i]);
