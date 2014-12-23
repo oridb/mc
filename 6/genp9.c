@@ -89,35 +89,27 @@ static void printmem(FILE *fd, Loc *l, char spec)
     if (l->type == Locmem) {
         if (l->mem.constdisp)
             fprintf(fd, "%ld", l->mem.constdisp);
-    } else {
-        if (l->mem.lbldisp) {
-            if (l->mem.base)
-                fprintf(fd, "$%s", l->mem.lbldisp);
-            else
-                fprintf(fd, "%s", l->mem.lbldisp);
-        }
+    } else if (l->mem.lbldisp) {
+        if (l->mem.base)
+            fprintf(fd, "$%s", l->mem.lbldisp);
+        else
+            fprintf(fd, "%s", l->mem.lbldisp);
     }
-    if (l->mem.base) {
-        if (l->mem.base->reg.colour == Rrip) {
+    if (!l->mem.base || l->mem.base->reg.colour == Rrip) {
             fprintf(fd, "+0(SB)");
-        } else {
-            fprintf(fd, "(");
-            locprint(fd, l->mem.base, 'r');
-            if (l->mem.idx) {
-                fprintf(fd, ",");
-                locprint(fd, l->mem.idx, 'r');
-            }
-            if (l->mem.scale > 1)
-                fprintf(fd, ",%d", l->mem.scale);
-            if (l->mem.base)
-                fprintf(fd, ")");
-        }
-    } else if (l->type != Locmeml) {
-        die("Only locmeml can have unspecified base reg");
     } else {
-        fprintf(fd, "+0(SB)");
+        fprintf(fd, "(");
+        locprint(fd, l->mem.base, 'r');
+        fprintf(fd, ")");
     }
-
+        if (l->mem.idx) {
+            fprintf(fd, "(");
+            locprint(fd, l->mem.idx, 'r');
+            if (l->mem.scale > 1)
+                fprintf(fd, "*%d", l->mem.scale);
+            fprintf(fd, ")");
+        }
+    }
 }
 
 static void locprint(FILE *fd, Loc *l, char spec)
