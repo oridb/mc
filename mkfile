@@ -43,6 +43,7 @@ uninstall:V: $SUB config.h
 config.h:
 	echo '#define Instroot "'/'"' > config.h
 	echo '#define Asmcmd {"6a", "-o", NULL}' >> config.h
+	echo '#define Linkcmd {"ar", "ru", NULL}' >> config.h
 	echo '#define Symprefix "_"' >> config.h
 	echo '#define Defaultasm Plan9' >> config.h
 

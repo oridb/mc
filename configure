@@ -35,21 +35,20 @@ MACH=`uname -m`
 echo export INST_ROOT=$prefix > config.mk
 
 echo '#define Instroot "'$prefix'"' > config.h
+echo '#define Asmcmd {"as", "-g", "-o", NULL}' >> config.h
+echo '#define Linkcmd {"ar", "-rcs", NULL}' >> config.h
+echo '#define Defaultasm Gnugas' >> config.h
 case $OS in
     *Linux*)
-        echo '#define Asmcmd {"as", "-g", "-o", NULL}' >> config.h
         echo '#define Symprefix ""' >> config.h
         echo '#define Defaultasm Gnugas' >> config.h
         echo 'export SYS=linux' >> config.mk
         ;;
     *Darwin*)
-        echo '#define Asmcmd {"as", "-g", "-o", NULL}' >> config.h
         echo '#define Symprefix "_"' >> config.h
-        echo '#define Defaultasm Gnugas' >> config.h
         echo 'export SYS=osx' >> config.mk
         ;;
     *FreeBSD*)
-        echo '#define Asmcmd {"as", "-g", "-o", NULL}' >> config.h
         echo '#define Symprefix ""' >> config.h
         echo '#define Defaultasm Gnugas' >> config.h
         echo 'export SYS=freebsd' >> config.mk
