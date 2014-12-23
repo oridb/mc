@@ -96,19 +96,18 @@ static void printmem(FILE *fd, Loc *l, char spec)
             fprintf(fd, "%s", l->mem.lbldisp);
     }
     if (!l->mem.base || l->mem.base->reg.colour == Rrip) {
-            fprintf(fd, "+0(SB)");
+        fprintf(fd, "+0(SB)");
     } else {
         fprintf(fd, "(");
         locprint(fd, l->mem.base, 'r');
         fprintf(fd, ")");
     }
-        if (l->mem.idx) {
-            fprintf(fd, "(");
-            locprint(fd, l->mem.idx, 'r');
-            if (l->mem.scale > 1)
-                fprintf(fd, "*%d", l->mem.scale);
-            fprintf(fd, ")");
-        }
+    if (l->mem.idx) {
+        fprintf(fd, "(");
+        locprint(fd, l->mem.idx, 'r');
+        if (l->mem.scale > 1)
+            fprintf(fd, "*%d", l->mem.scale);
+        fprintf(fd, ")");
     }
 }
 
