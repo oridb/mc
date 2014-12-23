@@ -8,7 +8,7 @@ pkg std =
 
 const die = {msg
 	write(2, msg)
-	kill(getpid(), 6)
+	suicide()
 }
 
 const assert = {cond, msg
