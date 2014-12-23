@@ -1,16 +1,15 @@
-.globl sys$syscall
-sys$syscall:
-	/*
-        Ugly: Kernel is caller-save, Myrddin
-        is callee-save. We need to preserve
-        registers before entering the kernel.
+/*
+Ugly: Kernel is caller-save, Myrddin
+is callee-save. We need to preserve
+registers before entering the kernel.
 
-        However, we also need SP to point to the
-        start of the arguments.
+However, we also need SP to point to the
+start of the arguments.
 
-	Luckily, the kernel doesn't touch our stack,
-	and we have 256 bytes of gap if we get a note.
-        */
+Luckily, the kernel doesn't touch our stack,
+and we have 256 bytes of gap if we get a note.
+*/
+TEXT sys$syscall+0(SB),1,$0
         MOVQ BX,-16(SP)
         MOVQ CX,-24(SP)
         MOVQ DX,-32(SP)
