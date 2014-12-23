@@ -26,7 +26,7 @@ int genasm = 0;
 /* binaries we call out to */
 char *mc = "6m";
 char *as[] = Asmcmd;
-char *ar = "ar";
+char *ar[] = Linkcmd;
 char *ld = "ld";
 char *muse = "muse";
 char *runtime = Instroot "/lib/myr/_myrrt.o";
@@ -361,8 +361,8 @@ void archive(char **files, size_t nfiles)
     args = NULL;
     nargs = 0;
     snprintf(buf, sizeof buf, "lib%s.a", libname);
-    lappend(&args, &nargs, strdup(ar));
-    lappend(&args, &nargs, strdup("-rcs"));
+    for (i = 0; ar[i]; i++)
+         lappend(&args, &nargs, strdup(ar[i]));
     lappend(&args, &nargs, strdup(buf));
     for (i = 0; i < nfiles; i++) {
         if (hassuffix(files[i], ".myr"))
@@ -505,7 +505,7 @@ int main(int argc, char **argv)
             case 'A': as[0] = ctx.optarg; break;
             case 'M': muse = ctx.optarg; break;
             case 'L': ld = ctx.optarg; break;
-            case 'R': ar = ctx.optarg; break;
+            case 'R': ar[0] = ctx.optarg; break;
             case 'r':
                       if (!strcmp(ctx.optarg, "none"))
                           runtime = NULL;
