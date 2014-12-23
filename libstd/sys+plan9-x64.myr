@@ -17,6 +17,24 @@ pkg sys =
 	const Orclose	: fdopt = 64
 	const Oexcl	: fdopt = 0x1000
 
+	const Qtdir	: int64  = 0x80
+	const Qtappend	: int64  = 0x40
+	const Qtexcl	: int64  = 0x20
+	const Qtmount	: int64  = 0x10
+	const Qtauth	: int64  = 0x08
+	const Qttmp	: int64  = 0x04
+	const Qtfile	: int64  = 0x00
+
+	const Dmdir	: int64 = 0x8000000
+	const Dmappend	: int64 = 0x4000000
+	const Dmexcl	: int64 = 0x2000000
+	const Dmmount	: int64 = 0x1000000
+	const Dmauth	: int64 = 0x0800000
+	const Dmtmp	: int64 = 0x0400000
+	const Dmread	: int64 = 0x4
+	const Dmwrite	: int64 = 0x2
+	const Dmexec	: int64 = 0x1
+
 	const Syssysr1		: scno = 0
 	const Sys_errstr	: scno = 1
 	const Sysbind		: scno = 2

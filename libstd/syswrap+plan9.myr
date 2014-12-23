@@ -42,7 +42,7 @@ pkg std =
 const open	= {path, opts;	-> openmode(path, opts, 0o777)}
 const openmode	= {path, opts, mode;
 	if opts & Ocreat
-		sys.create(path, opts, mode)
+		sys.create(path, opts castto(sys.fdopt), mode) castto(fd)
 	else
 		sys.open(path, opts castto(sys.fdopt)) castto(fd)
 	;;
@@ -57,7 +57,7 @@ const pipe	= {fds;		-> sys.pipe(fds castto(sys.fd[2]#))}
 const mkdir	= {path, mode;	-> 
 	var fd
 
-	fd = sys.create(path, OREAD, DMDIR | mode)
+	fd = sys.create(path, sys.Oread, sys.Dmdir | mode)
 	if fd >= 0
 		close(fd)
 		-> 0
