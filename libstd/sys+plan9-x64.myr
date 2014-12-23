@@ -1,0 +1,177 @@
+use "systypes.use"
+
+pkg sys =
+	type pid	= int64	/* process id */
+	type scno	= int64	/* syscall */
+	type fdopt	= int64	/* fd options */
+	type fd		= int32	/* fd */
+	type rflags	= int32	/* rfork flags */
+
+	const Ordonly	: fdopt = 0
+	const Owronly	: fdopt = 1
+	const Ordwr	: fdopt = 2
+	const Oexec	: fdopt = 3
+
+	const Otrunc	: fdopt = 16
+	const Ocexec	: fdopt = 32
+	const Orclose	: fdopt = 64
+	const Oexcl	: fdopt = 0x1000
+
+	const Syssysr1		: scno = 0
+	const Sys_errstr	: scno = 1
+	const Sysbind		: scno = 2
+	const Syschdir		: scno = 3
+	const Sysclose		: scno = 4
+	const Sysdup		: scno = 5
+	const Sysalarm		: scno = 6
+	const Sysexec		: scno = 7
+	const Sysexits		: scno = 8
+	const Sys_fsession	: scno = 9
+	const Sysfauth		: scno = 10
+	const Sys_fstat		: scno = 11
+	const Syssegbrk		: scno = 12
+	const Sys_mount		: scno = 13
+	const Sysopen		: scno = 14
+	const Sys_read		: scno = 15
+	const Sysoseek		: scno = 16
+	const Syssleep		: scno = 17
+	const Sys_stat		: scno = 18
+	const Sysrfork		: scno = 19
+	const Sys_write		: scno = 20
+	const Syspipe		: scno = 21
+	const Syscreate		: scno = 22
+	const Sysfd2path	: scno = 23
+	const Sysbrk_		: scno = 24
+	const Sysremove		: scno = 25
+	const Sys_wstat		: scno = 26
+	const Sys_fwstat	: scno = 27
+	const Sysnotify		: scno = 28
+	const Sysnoted		: scno = 29
+	const Syssegattach	: scno = 30
+	const Syssegdetach	: scno = 31
+	const Syssegfree	: scno = 32
+	const Syssegflush	: scno = 33
+	const Sysrendezvous	: scno = 34
+	const Sysunmount	: scno = 35
+	const Sys_wait		: scno = 36
+	const Syssemacquire	: scno = 37
+	const Syssemrelease	: scno = 38
+	const Sysseek		: scno = 39
+	const Sysfversion	: scno = 40
+	const Syserrstr		: scno = 41
+	const Sysstat		: scno = 42
+	const Sysfstat		: scno = 43
+	const Syswstat		: scno = 44
+	const Sysfwstat		: scno = 45
+	const Sysmount		: scno = 46
+	const Sysawait		: scno = 47
+	const Syspread		: scno = 50
+	const Syspwrite		: scno = 51
+	const Systsemacquire	: scno = 52
+	const Sys_nsec		: scno = 53
+
+
+	const sysr1	: (->int)
+	const bind	: (nm : byte[:], old : byte[:] -> int)
+	const chdir	: (dir : byte[:] -> int)
+	const close	: (fd : fd -> int)
+	const dup	: (old : fd, new : fd -> fd)
+	const alarm	: (msec : uint32 -> int)
+	const exits	: (msg : byte[:] -> int)
+	const fauth	: (fd : fd, name : byte[:] -> int)
+	const segbrk	: (saddr : void#, addr : void# -> int)
+	const open	: (path : byte[:], opt : fdopt -> fd)
+	const sleep	: (msec : uint32 -> int)
+	const rfork	: (rflags : rflags -> pid)
+	const pipe	: (fds : fd[:] -> int)
+	const create	: (path : byte[:], opt : fdopt, perm : int -> fd)
+	const fd2path	: (fd : fd, path : byte[:] -> int)
+	const remove	: (path : byte[:] -> int)
+	const notify	: (fn : (a : void#, c : char# -> int) -> int)
+	const noted	: (v : int32 -> int)
+	const segattach	: (attr : int32, class : byte[:], va : void#, len : uint32 -> int)
+	const segdetach	: (va : void# -> int)
+	const segfree	: (va : void#, len : uint32 -> int)
+	const segflush	: (va : void#, len : uint32 -> int)
+	const unmount	: (name : byte[:], old : byte[:] -> int)
+	const errstr	: (buf : byte[:] -> int)
+	const stat	: (name : byte[:], edir : byte[:] -> int)
+	const fstat	: (fd : fd, edir : byte[:] -> int)
+	const wstat	: (name : byte[:], edir : byte[:] -> int)
+	const fwstat	: (fd : byte[:],  edir : byte[:] -> int)
+	const seek	: (fd : fd, len : off, ty : int -> off)
+	const mount	: (fd : fd, afd : fd, old : byte[:], flag : int32, aname : byte[:] -> int)
+	const await	: (buf : byte[:] -> int)
+	const pread	: (fd : fd, buf : byte[:], off : off -> size)
+	const pwrite	: (fd : fd, buf : byte[:], off : off -> size)
+	const exec	: (bin : byte[:], args : byte[:][:] -> int)
+;;
+
+/* asm stub from syscall.s */
+extern const syscall : (scno : scno, args : ... -> int)
+/* asm stubs from util+plan9.s */
+extern const cstring	: (str : byte[:] -> byte#)
+extern const alloca	: (sz : size	-> byte#)
+
+
+generic ptr = {x : @t; -> x castto(byte#)}
+generic len32 = {a : @t[:]; -> a.len castto(uint32)}
+
+const sysr1	= {;		-> syscall(Syssysr1)}
+const bind	= {name, old;	-> syscall(Sysbind, cstring(name), cstring(old))}
+const chdir 	= {dir;		-> syscall(Syschdir, cstring(dir)) }
+const close 	= {fd;		-> syscall(Sysclose, fd)}
+const dup	= {ofd, nfd;	-> syscall(Sysdup, ofd, nfd) castto(fd)}
+const alarm 	= {msec;	-> syscall(Sysalarm, msec)}
+const exits 	= {msg;		-> syscall(Sysexits, cstring(msg))}
+const fauth 	= {fd, aname;	-> syscall(Sysfauth, fd, cstring(aname))}
+const segbrk 	= {saddr, addr;	-> syscall(Syssegbrk, saddr, addr)}
+const open 	= {path, opt;	-> syscall(Sysopen, cstring(path), opt) castto(fd)}
+const sleep 	= {msec;	-> syscall(Syssleep, msec)}
+const rfork 	= {rflags;	-> syscall(Sysrfork, rflags) castto(pid)}
+const pipe 	= {fds;		-> syscall(Syspipe, ptr(fds))}
+const create 	= {path, mode, perm;	-> syscall(Syscreate, cstring(path), mode, perm) castto(fd)}
+const fd2path	= {fd, buf;	-> syscall(Sysfd2path, fd, ptr(buf), len32(buf))}
+const remove	= {path;	-> syscall(Sysremove, cstring(path))}
+const notify	= {fn;		-> syscall(Sysnotify, fn)}	/* FIXME: this is likely to break... */
+const noted	= {v;		-> syscall(Sysnoted, v)}
+const segattach	= {attr, class, va, len;	-> syscall(Syssegattach, attr, cstring(class), va, len)}
+const segdetach	= {va;		-> syscall(Syssegdetach, va)}
+const segfree	= {va, len;	-> syscall(Syssegfree, va, len)}
+const segflush	= {va, len;	-> syscall(Syssegfree, va, len)}
+const unmount	= {name, old;	-> syscall(Sysunmount, cstring(name), cstring(old))}
+const errstr	= {buf;		-> syscall(Syserrstr, ptr(buf), len32(buf))}
+const stat	= {name, edir;	-> syscall(Sysstat, cstring(name), ptr(edir), len32(edir))}
+const fstat	= {fd, edir;	-> syscall(Sysstat, fd, ptr(edir), len32(edir))}
+const wstat	= {name, edir;	-> syscall(Syswstat, cstring(name), ptr(edir), len32(edir))}
+const fwstat	= {fd, edir;	-> syscall(Sysfwstat, fd, ptr(edir), len32(edir))}
+const mount	= {fd, afd, old, flag, aname;	-> syscall(Sysmount, fd, afd, cstring(old), flag, cstring(aname))}
+const await	= {buf;		-> syscall(Sysawait, ptr(buf), len32(buf))}
+const pread	= {fd, buf, off;	-> syscall(Syspread, fd, ptr(buf), len32(buf), off) castto(size)}
+const pwrite	= {fd, buf, off;	-> syscall(Syspwrite, fd, ptr(buf), len32(buf), off) castto(size)}
+const seek	= {fd, n, ty
+	var ret : off
+	syscall(Sysseek, &ret, fd, n, ty)
+	-> ret
+}
+const exec	= {bin, args
+	var p, cargs, i
+
+	/* we need an array of C strings. */
+	p = alloca((args.len + 1)*sizeof(byte#))
+	cargs = (ptr(p) castto(byte##))[:args.len + 1]
+	for i = 0; i < args.len; i++
+		cargs[i] = cstring(args[i])
+	;;
+	cargs[args.len] = ptr(0)
+	-> syscall(Sysexec, cstring(bin), cargs)
+}
+/* ??? do I care for now?
+const brk_	= { }
+const fversion	= {fd, bufsz, vers, nvers;	-> syscall(Sysfversion, fd, bufsz, }
+const await	= {;}
+const rendezvous	= {;}
+const semacquire	= {;}
+const semrelease	= {;}
+const tsemacquire	= {;}
+*/
