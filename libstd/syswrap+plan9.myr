@@ -1,0 +1,91 @@
+use sys
+use "types.use"
+use "slcp.use"
+
+pkg std =
+	type fd		= sys.fd
+	type pid	= sys.pid
+	type fdopt	= sys.fdopt
+
+	const Ordonly  	: fdopt = sys.Ordonly	castto(fdopt)
+	const Owronly  	: fdopt = sys.Owronly	castto(fdopt)
+	const Ordwr    	: fdopt = sys.Ordwr	castto(fdopt)
+	const Ocreat   	: fdopt = sys.Ocreat	castto(fdopt)
+	const Otrunc   	: fdopt = sys.Otrunc	castto(fdopt)
+
+	const Ocreat	: fdopt = 0x100000	/* Emulated by redirecting to create().*/
+	const Oappend	: fdopt = 0	/* FIXME: Plan 9 doesn't seem to have an append bit? */
+	const Odir	: fdopt = 0	/* Plan 9 doesn't need this */
+
+	/* fd stuff */
+	const open	: (path : byte[:], opts : fdopt -> fd)
+	const openmode	: (path : byte[:], opts : fdopt, mode : int64 -> fd)
+	const close	: (fd : fd -> int64)
+	const creat	: (path : byte[:], mode : int64 -> fd)
+	const read	: (fd : fd, buf : byte[:] -> size)
+	const write	: (fd : fd, buf : byte[:] -> size)
+	const pipe	: (fds : fd[2]# -> int64)
+
+	/* path manipulation */
+	const mkdir	: (path : byte[:], mode : int64 -> int64)
+	const unlink	: (path : byte[:] -> int)
+
+	/* process stuff */
+	const getpid	: ( -> pid)
+	const kill	: (pid:pid, sig:int64 -> int64)
+	const fork	: (-> pid)
+	const execv	: (cmd : byte[:], args : byte[:][:] -> int64)
+	const execve	: (cmd : byte[:], args : byte[:][:], env : byte[:][:] -> int64)
+	const exit	: (status:int -> void)
+	const waitpid	: (pid:pid, loc:int32#, opt : int64	-> int64)
+;;
+
+/* fd stuff */
+const open	= {path, opts;	-> openmode(path, opts, 0o777)}
+}
+const openmode	= {path, opts, mode;
+	if opts & Ocreat
+		sys.create(path, opts, mode)
+	else
+		sys.open(path, opts castto(sys.fdopt)) castto(fd)
+	;;
+const close	= {fd;		-> sys.close(fd castto(sys.fd))}
+const creat	= {path, mode;	-> sys.create(path, opts, mode) castto(fd)}
+const read	= {fd, buf;	-> sys.read(fd castto(sys.fd), buf) castto(size)}
+const write	= {fd, buf;	-> sys.write(fd castto(sys.fd), buf) castto(size)}
+const pipe	= {fds;		-> sys.pipe(fds castto(sys.fd[2]#))}
+
+/* path manipulation */
+const mkdir	= {path, mode;	-> 
+	var fd
+
+	fd = sys.create(path, OREAD, DMDIR | mode)
+	if fd >= 0
+		close(fd)
+		-> 0
+	else
+		-> -1
+	;;
+}
+const unlink	= {path;	-> sys.remove(path)}
+
+/* process stuff */
+const getpid	= {;		-> _tos.pid}
+const suicide	= {pid;		-> (0 castto(int#))#}
+const fork	= {;		-> sys.fork() castto(pid)}
+const execv	= {cmd, args;	-> sys.execv(cmd, args)}
+const execve	= {cmd, args, env;	-> sys.execve(cmd, args)}	/* FIXME: don't ignore env */
+const exit	= {status;	
+	if status == 0
+		sys.exit("")
+	else
+		sys.exit("failure")
+	;;
+}
+const waitpid	= {pid, loc, opt;	->
+	/* FIXME: this is very wrong. */
+	var buf : byte[512]
+	sys.await(buf[:])
+	pid# = 0
+	-> 0
+}
