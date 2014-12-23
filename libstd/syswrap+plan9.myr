@@ -1,6 +1,5 @@
 use sys
 use "types.use"
-use "slcp.use"
 
 pkg std =
 	type fd		= sys.fd
@@ -10,7 +9,6 @@ pkg std =
 	const Ordonly  	: fdopt = sys.Ordonly	castto(fdopt)
 	const Owronly  	: fdopt = sys.Owronly	castto(fdopt)
 	const Ordwr    	: fdopt = sys.Ordwr	castto(fdopt)
-	const Ocreat   	: fdopt = sys.Ocreat	castto(fdopt)
 	const Otrunc   	: fdopt = sys.Otrunc	castto(fdopt)
 
 	const Ocreat	: fdopt = 0x100000	/* Emulated by redirecting to create().*/
@@ -42,13 +40,13 @@ pkg std =
 
 /* fd stuff */
 const open	= {path, opts;	-> openmode(path, opts, 0o777)}
-}
 const openmode	= {path, opts, mode;
 	if opts & Ocreat
 		sys.create(path, opts, mode)
 	else
 		sys.open(path, opts castto(sys.fdopt)) castto(fd)
 	;;
+}
 const close	= {fd;		-> sys.close(fd castto(sys.fd))}
 const creat	= {path, mode;	-> sys.create(path, opts, mode) castto(fd)}
 const read	= {fd, buf;	-> sys.read(fd castto(sys.fd), buf) castto(size)}
