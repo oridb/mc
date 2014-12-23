@@ -41,14 +41,14 @@ pkg std =
 /* fd stuff */
 const open	= {path, opts;	-> openmode(path, opts, 0o777)}
 const openmode	= {path, opts, mode;
-	if opts & Ocreat
-		sys.create(path, opts castto(sys.fdopt), mode) castto(fd)
+	if opts & Ocreat != 0
+		-> sys.create(path, opts castto(sys.fdopt), mode) castto(fd)
 	else
-		sys.open(path, opts castto(sys.fdopt)) castto(fd)
+		-> sys.open(path, opts castto(sys.fdopt)) castto(fd)
 	;;
 }
-const close	= {fd;		-> sys.close(fd castto(sys.fd))}
-const creat	= {path, mode;	-> sys.create(path, opts, mode) castto(fd)}
+const close	= {fd;		-> sys.close(fd castto(sys.fd)) castto(int64)}
+const creat	= {path, mode;	-> sys.create(path, sys.Owronly | sys.Otrunc, mode) castto(fd)}
 const read	= {fd, buf;	-> sys.read(fd castto(sys.fd), buf) castto(size)}
 const write	= {fd, buf;	-> sys.write(fd castto(sys.fd), buf) castto(size)}
 const pipe	= {fds;		-> sys.pipe(fds castto(sys.fd[2]#))}
