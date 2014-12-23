@@ -70,7 +70,7 @@ STDSRC= \
 all: lib$STDLIB.a lib$SYSLIB.a
 
 lib$STDLIB.a: $STDSRC $ASMSRC lib$SYSLIB.a
-	../myrbuild/myrbuild -I. -C../6/$O.out -M../muse/$O.out -l $STDLIB $STDSRC $STDASMSRC
+	../myrbuild/$0.out -I. -C../6/$O.out -M../muse/$O.out -l $STDLIB $STDSRC $STDASMSRC
 
 lib$SYSLIB.a: $SYSSRC $SYSASMSRC
 	../myrbuild/$O.out -C../6/$O.out -M../muse/$O.out -l $SYSLIB $SYSSRC $SYSASMSRC
