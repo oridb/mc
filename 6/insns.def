@@ -38,12 +38,12 @@ Insn(Imovt,
     Def(.l={2}))
 Insn(Imovzx,    
     "\tmovz%1t%2t %x,%x\n",         
-    "\tMOVZ%1T%2T %X,%X\n",
+    "\tMOV%1T%2TZX %X,%X\n",
     Use(.l={1}),
     Def(.l={2}))
 Insn(Imovsx,    
     "\tmovs%1t%2t %x,%x\n",         
-    "\tMOVS%1T%2T %X,%X\n",
+    "\tMOV%1T%2TSX %X,%X\n",
     Use(.l={1}),
     Def(.l={2}))
 Insn(Irepmovsb, 
