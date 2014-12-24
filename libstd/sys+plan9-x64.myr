@@ -1,7 +1,7 @@
 use "systypes.use"
 
 pkg sys =
-	type pid	= int32 process id */
+	type pid	= int32 /* process id */
 	type scno	= int32	/* syscall */
 	type fdopt	= int32	/* fd options */
 	type fd		= int32	/* fd */
