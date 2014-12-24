@@ -40,7 +40,7 @@ pkg std =
 
 /* fd stuff */
 const open	= {path, opts;	-> openmode(path, opts, 0o777)}
-const openmode	= {path, opts, mod
+const openmode	= {path, opts, mode
 	if opts & Ocreat != 0
 		-> sys.create(path, opts castto(sys.fdopt), mode castto(int)) castto(fd)
 	else
