@@ -155,7 +155,7 @@ void iprintf(FILE *fd, Insn *insn)
 {
     char *p;
     int i;
-    int modeidx;
+    int idx;
 
     /* x64 has a quirk; it has no movzlq because mov zero extends. This
      * means that we need to do a movl when we really want a movzlq. Since
@@ -196,7 +196,6 @@ void iprintf(FILE *fd, Insn *insn)
     }
     p = insnfmt[insn->op];
     i = 0;
-    modeidx = 0;
     for (; *p; p++) {
         if (*p !=  '%') {
             fputc(*p, fd);
@@ -205,6 +204,8 @@ void iprintf(FILE *fd, Insn *insn)
 
         /* %-formating */
         p++;
+        idx = i;
+again:
         switch (*p) {
             case '\0':
                 goto done; /* skip the final p++ */
@@ -215,31 +216,19 @@ void iprintf(FILE *fd, Insn *insn)
             case 'v': /* reg/mem */
             case 'u': /* reg/imm */
             case 'x': /* reg/mem/imm */
-                locprint(fd, insn->args[i], *p);
-                i++;
-                break;
-            case 'R': /* int register */
-            case 'F': /* float register */
-            case 'M': /* memory */
-            case 'I': /* imm */
-            case 'V': /* reg/mem */
-            case 'U': /* reg/imm */
-            case 'X': /* reg/mem/imm */
-                locprint(fd, insn->args[i], *p);
+                locprint(fd, insn->args[idx], *p);
                 i++;
                 break;
             case 't':
-            case 'T':
+                fputs(modenames[insn->args[idx]->mode], fd);
+                break;
             default:
                 /* the  asm description uses 1-based indexing, so that 0
                  * can be used as a sentinel. */
-                if (isdigit(*p))
-                    modeidx = strtol(p, &p, 10) - 1;
-
-                if (*p == 't')
-                    fputs(modenames[insn->args[modeidx]->mode], fd);
-                else
+                if (!isdigit(*p))
                     die("Invalid %%-specifier '%c'", *p);
+                idx = strtol(p, &p, 10) - 1;
+                goto again;
                 break;
         }
     }
