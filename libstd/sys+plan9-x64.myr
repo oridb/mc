@@ -7,6 +7,25 @@ pkg sys =
 	type fd		= int32	/* fd */
 	type rflags	= int32	/* rfork flags */
 
+	type tos = struct
+		prof	: prof
+		cyclefreq	: uint64
+		kcycles	: int64
+		pcycles	: int64
+		pid	: uint32
+		clock	: uint32
+	;;
+
+	type prof = 
+		pp	: byte#	/* plink */
+		next	: byte# /* plink */
+		last	: byte# /* plink */
+		first	: byte# /* plink */
+		pid	: uint32 /* plink */
+		what	: uint32 /* plink */
+	;;
+
+
 	const Ordonly	: fdopt = 0
 	const Owronly	: fdopt = 1
 	const Ordwr	: fdopt = 2
@@ -34,6 +53,19 @@ pkg sys =
 	const Dmread	: int = 0x4
 	const Dmwrite	: int = 0x2
 	const Dmexec	: int = 0x1
+
+	const Rfnameg	: rflags = 1 << 0,
+	const Rfenvg	: rflags = 1 << 1,
+	const Rffdg	: rflags = 1 << 2,
+	const Rfnoteg	: rflags = 1 << 3,
+	const Rfproc	: rflags = 1 << 4,
+	const Rfmem	: rflags = 1 << 5,
+	const Rfnowait	: rflags = 1 << 6,
+	const Rfcnameg	: rflags = 1 << 10,
+	const Rfcenvg	: rflags = 1 << 11,
+	const Rfcfdg	: rflags = 1 << 12,
+	const Rfrend	: rflags = 1 << 13,
+	const Rfnomnt	: rflags = 1 << 14
 
 	const Syssysr1		: scno = 0
 	const Sys_errstr	: scno = 1
@@ -101,7 +133,7 @@ pkg sys =
 	const open	: (path : byte[:], opt : fdopt -> fd)
 	const sleep	: (msec : uint32 -> int)
 	const rfork	: (rflags : rflags -> pid)
-	const pipe	: (fds : fd[:] -> int)
+	const pipe	: (fds : fd[2]# -> int)
 	const create	: (path : byte[:], opt : fdopt, perm : int -> fd)
 	const fd2path	: (fd : fd, path : byte[:] -> int)
 	const remove	: (path : byte[:] -> int)
@@ -123,6 +155,8 @@ pkg sys =
 	const pread	: (fd : fd, buf : byte[:], off : off -> size)
 	const pwrite	: (fd : fd, buf : byte[:], off : off -> size)
 	const exec	: (bin : byte[:], args : byte[:][:] -> int)
+
+	extern const gettos	: (-> tos#)
 ;;
 
 /* asm stub from syscall.s */

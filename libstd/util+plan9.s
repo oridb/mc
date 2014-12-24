@@ -65,3 +65,7 @@ TEXT sys$alloca+0(SB),$0
 	MOVQ    -8(BP),R15
 	MOVQ    (BP),BP
 	RET
+
+TEXT sys$gettos+0(SB),$0
+	LEAQ	_tos+0(SB),AX
+	RET

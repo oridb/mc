@@ -38,28 +38,30 @@ pkg std =
 	const waitpid	: (pid:pid, loc:int32#, opt : int64	-> int64)
 ;;
 
+extern const _tos : 
+
 /* fd stuff */
 const open	= {path, opts;	-> openmode(path, opts, 0o777)}
-const openmode	= {path, opts, mode;
+const openmode	= {path, opts, mod
 	if opts & Ocreat != 0
-		-> sys.create(path, opts castto(sys.fdopt), mode) castto(fd)
+		-> sys.create(path, opts castto(sys.fdopt), mode castto(int)) castto(fd)
 	else
 		-> sys.open(path, opts castto(sys.fdopt)) castto(fd)
 	;;
 }
 const close	= {fd;		-> sys.close(fd castto(sys.fd)) castto(int64)}
-const creat	= {path, mode;	-> sys.create(path, sys.Owronly | sys.Otrunc, mode) castto(fd)}
-const read	= {fd, buf;	-> sys.read(fd castto(sys.fd), buf) castto(size)}
-const write	= {fd, buf;	-> sys.write(fd castto(sys.fd), buf) castto(size)}
+const creat	= {path, mode;	-> sys.create(path, sys.Owronly | sys.Otrunc, mode castto(int)) castto(fd)}
+const read	= {fd, buf;	-> sys.pread(fd castto(sys.fd), buf, -1 castto(sys.off)) castto(size)}
+const write	= {fd, buf;	-> sys.pwrite(fd castto(sys.fd), buf, -1 castto(sys.off)) castto(size)}
 const pipe	= {fds;		-> sys.pipe(fds castto(sys.fd[2]#))}
 
 /* path manipulation */
-const mkdir	= {path, mode;	-> 
+const mkdir	= {path, mod
 	var fd
 
-	fd = sys.create(path, sys.Oread, sys.Dmdir | mode)
+	fd = sys.create(path, sys.Ordonly, sys.Dmdir | (mode castto(int)))
 	if fd >= 0
-		close(fd)
+		sys.close(fd)
 		-> 0
 	else
 		-> -1
@@ -68,22 +70,22 @@ const mkdir	= {path, mode;	->
 const unlink	= {path;	-> sys.remove(path)}
 
 /* process stuff */
-const getpid	= {;		-> _tos.pid}
+const getpid	= {;		-> sys.gettos().pid}
 const suicide	= {pid;		-> (0 castto(int#))#}
-const fork	= {;		-> sys.fork() castto(pid)}
-const execv	= {cmd, args;	-> sys.execv(cmd, args)}
-const execve	= {cmd, args, env;	-> sys.execve(cmd, args)}	/* FIXME: don't ignore env */
-const exit	= {status;	
+const fork	= {;		-> sys.rfork(sys.Rfproc | sys.Rffdg | sys.Rfrend) castto(pid)}
+const execv	= {cmd, args;	-> sys.exec(cmd, args) castto(int64)}
+const execve	= {cmd, args, env;	-> sys.exec(cmd, args) castto(int64)}	/* FIXME: don't ignore env */
+const exit	= {status
 	if status == 0
-		sys.exit("")
+		sys.exits("")
 	else
-		sys.exit("failure")
+		sys.exits("failure")
 	;;
 }
-const waitpid	= {pid, loc, opt;	->
+const waitpid	= {pid, loc, opt
 	/* FIXME: this is very wrong. */
 	var buf : byte[512]
 	sys.await(buf[:])
-	pid# = 0
+	loc# = 0
 	-> 0
 }

@@ -85,6 +85,9 @@ all: lib$(STDLIB).a $(MYRBIN)
 %.myr: %+$(ARCH).myr
 	cp $< $@
 
+%.s: %+$(SYSCLASS).s
+	cp $< $@
+
 %.s: %+$(SYS)-$(ARCH).s
 	cp $< $@
 
