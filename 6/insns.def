@@ -151,7 +151,7 @@ Insn(Itest,
     Def(None))
 Insn(Icmp,      
     "\tcmp%t  %x,%r\n",             
-    "\tCMP%T  %X,%R\n",
+    "\tCMP%T  %2R,%1X\n",
     Use(.l={1,2}),
     Def(None))
 
