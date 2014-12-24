@@ -246,7 +246,7 @@ static size_t writebytes(FILE *fd, char *name, size_t off, char *p, size_t sz)
     size_t i, len;
 
     for (i = 0; i < sz; i++) {
-        len = min(i, 8);
+        len = min(sz - i, 8);
         if (i % 8 == 0)
             fprintf(fd, "DATA %s+%zd(SB)/%zd,$\"", name, off + i, len);
         if (p[i] == '"' || p[i] == '\\')
@@ -426,6 +426,7 @@ static void genstrings(FILE *fd, Htab *strtab)
     k = htkeys(strtab, &nk);
     for (i = 0; i < nk; i++) {
         s = k[i];
+		fprintf(fd, "GLOBL %s+0(SB),$%lld\n", htget(strtab, k[i]), (vlong)s->len);
         writebytes(fd, htget(strtab, k[i]), 0, s->buf, s->len);
     }
 }
@@ -436,7 +437,7 @@ static void writeasm(FILE *fd, Isel *s, Func *fn)
     size_t i, j;
     char *hidden;
 
-    hidden = "<>";
+    hidden = "";
     if (fn->isexport || streq(fn->name, Symprefix "main"))
         hidden = "";
     fprintf(fd, "TEXT %s%s+0(SB),$%zd\n", fn->name, hidden, fn->stksz);

@@ -9,11 +9,19 @@ TEXT	_main(SB), 1, $(2*8+NPRIVATES*8)
 	LEAQ	inargv+0(FP), AX
 	MOVQ	AX, 8(SP)
 	CALL	main(SB)
+exitloop:
+	MOVQ	$0,estatus+0(FP)
+	MOVQ	$8,RARG
+	SYSCALL
+	JMP		exitloop
 
-loop:
-	MOVQ	$_exits<>(SB), RARG
-	CALL	exits(SB)
-	JMP	loop
+TEXT	_rt$abort_oob(SB),1,$0
+broke:
+	XORQ	AX,AX
+	MOVQ	$1234,(AX)
+	JMP		broke
 
-DATA	_exits<>+0(SB)/4, $"main"
-GLOBL	_exits<>+0(SB), $5
+GLOBL	argv0(SB), $8
+GLOBL	_tos(SB), $8
+GLOBL	_privates(SB), $8
+GLOBL	_nprivates(SB), $4

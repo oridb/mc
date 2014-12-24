@@ -92,10 +92,11 @@ lib$SYSLIB.a: $SYSSRC $SYSASMSRC
 
 OBJ=${STDSRC:%.myr=%.o} ${SYSSRC:%.myr=%.o} ${STDASMSRC:%.s=%.o} ${SYSASMSRC:%.s=%.o}
 USE=${STDSRC:%.myr=%.use} ${SYSSRC:%.myr=%.use} ${STDLIB}
+LIBS=lib$STDLIB.a lib$SYSLIB.a
 .PHONY: clean
 clean:V:
 	rm -f $OBJ
 	rm -f $USE
-	rm -f lib${STDLIB}.a lib${SYSLIB}.a
+	rm -f $LIBS
 
 nuke:V: clean
