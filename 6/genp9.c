@@ -90,10 +90,7 @@ static void printmem(FILE *fd, Loc *l, char spec)
         if (l->mem.constdisp)
             fprintf(fd, "%ld", l->mem.constdisp);
     } else if (l->mem.lbldisp) {
-        if (l->mem.base)
-            fprintf(fd, "$%s", l->mem.lbldisp);
-        else
-            fprintf(fd, "%s", l->mem.lbldisp);
+        fprintf(fd, "%s", l->mem.lbldisp);
     }
     if (!l->mem.base || l->mem.base->reg.colour == Rrip) {
         fprintf(fd, "+0(SB)");
@@ -245,10 +242,12 @@ static size_t writebytes(FILE *fd, char *name, size_t off, char *p, size_t sz)
 {
     size_t i, len;
 
+	if (sz == 0)
+		fprintf(fd, "DATA %s<>+%zd(SB)/0,$\"\"\n", name, off, sz);
     for (i = 0; i < sz; i++) {
         len = min(sz - i, 8);
         if (i % 8 == 0)
-            fprintf(fd, "DATA %s+%zd(SB)/%zd,$\"", name, off + i, len);
+            fprintf(fd, "DATA %s<>+%zd(SB)/%zd,$\"", name, off + i, len);
         if (p[i] == '"' || p[i] == '\\')
             fprintf(fd, "\\");
         if (isprint(p[i]))
@@ -426,7 +425,7 @@ static void genstrings(FILE *fd, Htab *strtab)
     k = htkeys(strtab, &nk);
     for (i = 0; i < nk; i++) {
         s = k[i];
-		fprintf(fd, "GLOBL %s+0(SB),$%lld\n", htget(strtab, k[i]), (vlong)s->len);
+		fprintf(fd, "GLOBL %s<>+0(SB),$%lld\n", htget(strtab, k[i]), (vlong)s->len);
         writebytes(fd, htget(strtab, k[i]), 0, s->buf, s->len);
     }
 }
