@@ -30,15 +30,13 @@ pkg std =
 
 	/* process stuff */
 	const getpid	: ( -> pid)
-	const kill	: (pid:pid, sig:int64 -> int64)
+	const suicide	: (-> void)
 	const fork	: (-> pid)
 	const execv	: (cmd : byte[:], args : byte[:][:] -> int64)
 	const execve	: (cmd : byte[:], args : byte[:][:], env : byte[:][:] -> int64)
 	const exit	: (status:int -> void)
 	const waitpid	: (pid:pid, loc:int32#, opt : int64	-> int64)
 ;;
-
-extern const _tos : 
 
 /* fd stuff */
 const open	= {path, opts;	-> openmode(path, opts, 0o777)}
@@ -53,10 +51,10 @@ const close	= {fd;		-> sys.close(fd castto(sys.fd)) castto(int64)}
 const creat	= {path, mode;	-> sys.create(path, sys.Owronly | sys.Otrunc, mode castto(int)) castto(fd)}
 const read	= {fd, buf;	-> sys.pread(fd castto(sys.fd), buf, -1 castto(sys.off)) castto(size)}
 const write	= {fd, buf;	-> sys.pwrite(fd castto(sys.fd), buf, -1 castto(sys.off)) castto(size)}
-const pipe	= {fds;		-> sys.pipe(fds castto(sys.fd[2]#))}
+const pipe	= {fds;		-> sys.pipe(fds castto(sys.fd[2]#)) castto(int64)}
 
 /* path manipulation */
-const mkdir	= {path, mod
+const mkdir	= {path, mode
 	var fd
 
 	fd = sys.create(path, sys.Ordonly, sys.Dmdir | (mode castto(int)))
@@ -70,8 +68,13 @@ const mkdir	= {path, mod
 const unlink	= {path;	-> sys.remove(path)}
 
 /* process stuff */
-const getpid	= {;		-> sys.gettos().pid}
-const suicide	= {pid;		-> (0 castto(int#))#}
+const getpid	= {;		
+	var tos
+	
+	tos = sys.gettos()
+	-> tos.pid castto(pid)
+}
+const suicide	= {;		(0 castto(int#))#}
 const fork	= {;		-> sys.rfork(sys.Rfproc | sys.Rffdg | sys.Rfrend) castto(pid)}
 const execv	= {cmd, args;	-> sys.exec(cmd, args) castto(int64)}
 const execve	= {cmd, args, env;	-> sys.exec(cmd, args) castto(int64)}	/* FIXME: don't ignore env */
