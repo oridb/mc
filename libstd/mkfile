@@ -8,7 +8,7 @@ SYSSRC= \
 
 SYSASMSRC= \
 	syscall.s \
-	util+plan9.s
+	util.s
 
 
 STDLIB=std
