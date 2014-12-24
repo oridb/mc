@@ -1,9 +1,9 @@
 use "systypes.use"
 
 pkg sys =
-	type pid	= int64	/* process id */
-	type scno	= int64	/* syscall */
-	type fdopt	= int64	/* fd options */
+	type pid	= int32 process id */
+	type scno	= int32	/* syscall */
+	type fdopt	= int32	/* fd options */
 	type fd		= int32	/* fd */
 	type rflags	= int32	/* rfork flags */
 
@@ -12,17 +12,17 @@ pkg sys =
 		cyclefreq	: uint64
 		kcycles	: int64
 		pcycles	: int64
-		pid	: uint32
+		pid	: pid
 		clock	: uint32
 	;;
 
-	type prof = 
+	type prof = struct
 		pp	: byte#	/* plink */
-		next	: byte# /* plink */
-		last	: byte# /* plink */
-		first	: byte# /* plink */
-		pid	: uint32 /* plink */
-		what	: uint32 /* plink */
+		next	: byte#	/* plink */
+		last	: byte#	/* plink */
+		first	: byte#	/* plink */
+		pid	: pid	/* plink */
+		what	: uint32	/* plink */
 	;;
 
 
@@ -54,17 +54,17 @@ pkg sys =
 	const Dmwrite	: int = 0x2
 	const Dmexec	: int = 0x1
 
-	const Rfnameg	: rflags = 1 << 0,
-	const Rfenvg	: rflags = 1 << 1,
-	const Rffdg	: rflags = 1 << 2,
-	const Rfnoteg	: rflags = 1 << 3,
-	const Rfproc	: rflags = 1 << 4,
-	const Rfmem	: rflags = 1 << 5,
-	const Rfnowait	: rflags = 1 << 6,
-	const Rfcnameg	: rflags = 1 << 10,
-	const Rfcenvg	: rflags = 1 << 11,
-	const Rfcfdg	: rflags = 1 << 12,
-	const Rfrend	: rflags = 1 << 13,
+	const Rfnameg	: rflags = 1 << 0
+	const Rfenvg	: rflags = 1 << 1
+	const Rffdg	: rflags = 1 << 2
+	const Rfnoteg	: rflags = 1 << 3
+	const Rfproc	: rflags = 1 << 4
+	const Rfmem	: rflags = 1 << 5
+	const Rfnowait	: rflags = 1 << 6
+	const Rfcnameg	: rflags = 1 << 10
+	const Rfcenvg	: rflags = 1 << 11
+	const Rfcfdg	: rflags = 1 << 12
+	const Rfrend	: rflags = 1 << 13
 	const Rfnomnt	: rflags = 1 << 14
 
 	const Syssysr1		: scno = 0

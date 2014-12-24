@@ -29,7 +29,7 @@ pkg std =
 
 	/* process stuff */
 	const getpid	: ( -> pid)
-	const suicide	: ( -> int64)
+	const suicide	: ( -> void)
 	const fork	: (-> pid)
 	const execv	: (cmd : byte[:], args : byte[:][:] -> int64)
 	const execve	: (cmd : byte[:], args : byte[:][:], env : byte[:][:] -> int64)
@@ -52,7 +52,7 @@ const unlink	= {path;	-> sys.unlink(path)}
 
 /* process stuff */
 const getpid	= {;		-> sys.getpid() castto(pid)}
-const suicide	= {;		-> sys.kill(sys.getpid(), 6)}	/* kill self with sigabort */
+const suicide	= {;		sys.kill(sys.getpid(), 6)}	/* kill self with sigabort */
 const fork	= {;		-> sys.fork() castto(pid)}
 const execv	= {cmd, args;	-> sys.execv(cmd, args)}
 const execve	= {cmd, args, env;	-> sys.execve(cmd, args, env)}
