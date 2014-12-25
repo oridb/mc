@@ -155,15 +155,17 @@ pkg sys =
 	const pread	: (fd : fd, buf : byte[:], off : off -> size)
 	const pwrite	: (fd : fd, buf : byte[:], off : off -> size)
 	const exec	: (bin : byte[:], args : byte[:][:] -> int)
+	const brk_	: (endp : byte# -> int)
 
-	extern const gettos	: (-> tos#)
+	extern var tosptr	: tos#
+	extern var curbrk	: byte#
 ;;
 
 /* asm stub from syscall.s */
 extern const syscall : (scno : scno, args : ... -> int)
 /* asm stubs from util+plan9.s */
 extern const cstring	: (str : byte[:] -> byte#)
-extern const alloca	: (sz : size	-> byte#)
+extern const alloca	: (sz : size	-> int)
 
 
 /*
@@ -173,6 +175,7 @@ Cast to a 64 bit type to paper over this.
 */
 generic a	= {a : @t;	-> a castto(uint64)}
 generic s	= {a : @t;	-> a castto(int64)}
+generic p	= {a : @t;	-> a castto(byte#)}
 
 const sysr1	= {;		-> syscall(Syssysr1)}
 const bind	= {name, old;	-> syscall(Sysbind, cstring(name), cstring(old))}
@@ -188,7 +191,7 @@ const sleep 	= {msec;	-> syscall(Syssleep, a(msec))}
 const rfork 	= {rflags;	-> syscall(Sysrfork, a(rflags)) castto(pid)}
 const pipe 	= {fds;		-> syscall(Syspipe, a(fds))}
 const create 	= {path, mode, perm;	-> syscall(Syscreate, cstring(path), a(mode), a(perm)) castto(fd)}
-const fd2path	= {fd, buf;	-> syscall(Sysfd2path, a(fd), a(buf), a(buf.len))}
+const fd2path	= {fd, buf;	-> syscall(Sysfd2path, a(fd), p(buf), a(buf.len))}
 const remove	= {path;	-> syscall(Sysremove, cstring(path))}
 const notify	= {fn;		-> syscall(Sysnotify, fn)}	/* FIXME: this is likely to break when we do closures... */
 const noted	= {v;		-> syscall(Sysnoted, a(v))}
@@ -197,20 +200,22 @@ const segdetach	= {va;		-> syscall(Syssegdetach, a(va))}
 const segfree	= {va, len;	-> syscall(Syssegfree, a(va), a(len))}
 const segflush	= {va, len;	-> syscall(Syssegfree, a(va), a(len))}
 const unmount	= {name, old;	-> syscall(Sysunmount, cstring(name), cstring(old))}
-const errstr	= {buf;		-> syscall(Syserrstr, a(buf), a(buf.len))}
+const errstr	= {buf;		-> syscall(Syserrstr, p(buf), a(buf.len))}
 const stat	= {name, edir;	-> syscall(Sysstat, cstring(name), a(edir), a(edir))}
 const fstat	= {fd, edir;	-> syscall(Sysstat, a(fd), a(edir), a(edir))}
 const wstat	= {name, edir;	-> syscall(Syswstat, cstring(name), a(edir), a(edir))}
 const fwstat	= {fd, edir;	-> syscall(Sysfwstat, a(fd), a(edir), a(edir))}
 const mount	= {fd, afd, old, flag, aname;	-> syscall(Sysmount, a(fd), a(afd), cstring(old), a(flag), cstring(aname))}
-const await	= {buf;		-> syscall(Sysawait, a(buf), a(buf.len))}
-const pread	= {fd, buf, off;	-> syscall(Syspread, a(fd), a(buf), a(buf.len), off) castto(size)}
-const pwrite	= {fd, buf, off;	-> syscall(Syspwrite, a(fd), a(buf), a(buf.len), s(off)) castto(size)}
+const pread	= {fd, buf, off;	-> syscall(Syspread, a(fd), p(buf), a(buf.len), off) castto(size)}
+const pwrite	= {fd, buf, off;	-> syscall(Syspwrite, a(fd), p(buf), a(buf.len), s(off)) castto(size)}
+const await	= {buf;	-> syscall(Sysawait, p(buf), a(buf.len))}
+const brk_	= {endp;	-> syscall(Sysbrk_, p(endp))}
 const seek	= {fd, n, ty
 	var ret : off
 	syscall(Sysseek, a(&ret), a(fd), a(n), a(ty))
 	-> ret
 }
+
 const exec	= {bin, args
 	var p, cargs, i
 
@@ -223,10 +228,9 @@ const exec	= {bin, args
 	cargs[args.len] = 0 castto(byte#)
 	-> syscall(Sysexec, cstring(bin), a(cargs))
 }
+
 /* ??? do I care for now?
-const brk_	= { }
 const fversion	= {fd, bufsz, vers, nvers;	-> syscall(Sysfversion, fd, bufsz, }
-const await	= {;}
 const rendezvous	= {;}
 const semacquire	= {;}
 const semrelease	= {;}

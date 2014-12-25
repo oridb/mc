@@ -68,6 +68,8 @@ TEXT sys$alloca+0(SB),$0
 	MOVQ	(BP),BP
 	RET
 
-TEXT sys$gettos+0(SB),$0
-	LEAQ	_tos+0(SB),AX
-	RET
+GLOBL	sys$tosptr+0(SB),$8
+DATA	sys$tosptr+0(SB)/8,$_tos+0(SB)
+GLOBL	sys$curbrk+0(SB),$8
+DATA	sys$curbrk+0(SB)/8,$end+0(SB)
+
