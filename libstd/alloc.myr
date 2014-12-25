@@ -138,7 +138,7 @@ const checkhdr = {p
 	addr = p castto(size)
 	addr -= align(sizeof(slheader), Align)
 	phdr = addr castto(slheader#)
-	assert(phdr.magic == (0xdeadbeefbadf00d castto(size)), "corrupt memory\n")
+	assert(phdr.magic == (0xdeadbeef2badf00d castto(size)), "corrupt memory\n")
 }
 
 /* Frees a slice */
