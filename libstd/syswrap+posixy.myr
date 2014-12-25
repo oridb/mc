@@ -6,6 +6,8 @@ pkg std =
 	type pid	= sys.pid
 	type fdopt	= sys.fdopt
 
+	const Failmem	: byte#	= -1 castto(byte#)
+
 	const Ordonly  	: fdopt = sys.Ordonly	castto(fdopt)
 	const Owronly  	: fdopt = sys.Owronly	castto(fdopt)
 	const Ordwr    	: fdopt = sys.Ordwr	castto(fdopt)
@@ -35,6 +37,8 @@ pkg std =
 	const execve	: (cmd : byte[:], args : byte[:][:], env : byte[:][:] -> int64)
 	const exit	: (status:int -> void)
 	const waitpid	: (pid:pid, loc:int32#, opt : int64	-> int64)
+	const getmem	: (sz : size -> byte#)
+	const freemem	: (p : byte#, sz : size -> void)
 ;;
 
 /* fd stuff */
@@ -58,3 +62,7 @@ const execv	= {cmd, args;	-> sys.execv(cmd, args)}
 const execve	= {cmd, args, env;	-> sys.execve(cmd, args, env)}
 const exit	= {status;	sys.exit(status)}
 const waitpid	= {pid, loc, opt;	-> sys.waitpid(pid castto(sys.pid), loc, opt)}
+
+/* memory stuff */
+const getmem	= {sz;		-> sys.mmap(0 castto(byte#), sz castto(sys.size), sys.Mprotrw, sys.Mpriv | sys.Manon, -1, 0)}
+const freemem	= {p, sz;	sys.munmap(p, sz castto(sys.size))}
