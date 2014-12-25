@@ -1,8 +1,8 @@
-use sys
 use "die.use"
 use "extremum.use"
 use "types.use"
 use "units.use"
+use "syswrap.use"
 
 /*
 The allocator implementation here is based on Bonwick's slab allocator.
@@ -45,7 +45,6 @@ pkg std =
 extern const put : (b : byte[:], args : ... -> size)
 
 /* null pointers. only used internally. */
-const Zbyteptr	= 0 castto(byte#)
 const Zslab	= 0 castto(slab#)
 const Zchunk	= 0 castto(chunk#)
 
@@ -224,9 +223,9 @@ const bytealloc = {sz
 		bkt = &buckets[bktnum(sz)]
 		p = bktalloc(bkt)
 	else
-		p = sys.mmap(Zbyteptr, sz castto(sys.size), sys.Mprotrw, sys.Mpriv | sys.Manon, -1, 0)
-		if p == sys.Mapbad
-			die("could not map memory\n")
+		p = getmem(sz)
+		if p == Failmem
+			die("could not get memory\n")
 		;;
 	;;
 	-> p
@@ -245,7 +244,7 @@ const bytefree = {p, sz
 		bkt = &buckets[bktnum(sz)]
 		bktfree(bkt, p)
 	else
-		sys.munmap(p, sz castto(sys.size))
+		freemem(p, sz)
 	;;
 }
 
@@ -275,8 +274,8 @@ const mkslab = {bkt
 	   cost us memory, and 64 bits of address space means that we're not
 	   going to have issues with running out of address space for a
 	   while. On a 32 bit system this would be a bad idea. */
-	p = sys.mmap(Zbyteptr, Slabsz*2 castto(sys.size), sys.Mprotrw, sys.Mpriv | sys.Manon, -1, 0)
-	if p == sys.Mapbad
+	p = getmem(Slabsz*2)
+	if p == Failmem
 		die("Unable to mmap")
 	;;
 
@@ -348,7 +347,7 @@ const bktfree = {bkt, m
 		else
 			/* we mapped 2*Slabsz so we could align it,
 			 so we need to unmap the same */
-			sys.munmap(s.head, Slabsz*2 castto(sys.size))
+			freemem(s.head, Slabsz*2)
 		;;
 	;;
 	s.nfree++
