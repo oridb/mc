@@ -27,6 +27,7 @@ int p9asm;
 char *outfile;
 char **incpaths;
 size_t nincpaths;
+Asmsyntax asmsyntax;
 
 static void usage(char *prog)
 {
@@ -126,7 +127,6 @@ int main(int argc, char **argv)
     char buf[1024];
     Stab *globls;
     Optctx ctx;
-    Asmsyntax asmsyntax;
     size_t i;
 
     optinit(&ctx, "d:hSo:I:9G", argv, argc);
@@ -188,7 +188,7 @@ int main(int argc, char **argv)
         } else {
             gentemp(buf, sizeof buf, ctx.args[i], ".s");
         }
-        gen(asmsyntax, file, buf);
+        gen(file, buf);
         assemble(buf, ctx.args[i]);
         genuse(ctx.args[i]);
     }

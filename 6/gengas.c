@@ -48,7 +48,7 @@ static void fillglobls(Stab *st, Htab *globls)
     k = htkeys(st->dcl, &nk);
     for (i = 0; i < nk; i++) {
         s = htget(st->dcl, k[i]);
-        htput(globls, s, asmname(s->decl.name));
+        htput(globls, s, asmname(s));
     }
     free(k);
 
@@ -75,7 +75,7 @@ static void initconsts(Htab *globls)
     dcl = mkdecl(Zloc, name, ty);
     dcl->decl.isconst = 1;
     dcl->decl.isextern = 1;
-    htput(globls, dcl, asmname(dcl->decl.name));
+    htput(globls, dcl, asmname(dcl));
 
     abortoob = mkexpr(Zloc, Ovar, name, NULL);
     abortoob->expr.type = ty;
@@ -293,7 +293,7 @@ static size_t writelit(FILE *fd, Htab *strtab, Node *v, Type *ty)
            if (hthas(strtab, &v->lit.strval)) {
                lbl = htget(strtab, &v->lit.strval);
            } else {
-               lbl = genlblstr(buf, sizeof buf);
+               lbl = gendatalbl(buf, sizeof buf);
                htput(strtab, &v->lit.strval, strdup(lbl));
            }
            fprintf(fd, "\t.quad %s\n", lbl);

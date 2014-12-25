@@ -688,7 +688,7 @@ static Node *simpblob(Simp *s, Node *blob, Node ***l, size_t *nl)
     Node *n, *d, *r;
     char lbl[128];
 
-    n = mkname(blob->loc, genlblstr(lbl, 128));
+    n = mkname(blob->loc, gendatalbl(lbl, 128));
     d = mkdecl(blob->loc, n, blob->expr.type);
     r = mkexpr(blob->loc, Ovar, n, NULL);
 
@@ -1684,17 +1684,29 @@ static void simpconstinit(Simp *s, Node *dcl)
     }
 }
 
+int ismain(Node *dcl)
+{
+    Node *n;
+
+    n = dcl->decl.name;
+    if (n->name.ns)
+        return 0;
+    return strcmp(n->name.name, "main") == 0;
+}
+
 void simpglobl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***blob, size_t *nblob)
 {
     Simp s = {0,};
     char *name;
     Func *f;
 
-    name = asmname(dcl->decl.name);
+    if (ismain(dcl))
+        dcl->decl.vis = Vishidden;
     s.stkoff = mkht(varhash, vareq);
     s.globls = globls;
     s.blobs = *blob;
     s.nblobs = *nblob;
+    name = asmname(dcl);
 
     if (dcl->decl.isextern || dcl->decl.isgeneric)
         return;
