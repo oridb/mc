@@ -304,7 +304,7 @@ static size_t writelit(FILE *fd, char *name, size_t off, Htab *strtab, Node *v, 
            if (v->lit.strval.len > 0)
                fprintf(fd, "DATA %s+%zd(SB)/8,$%s+0(SB)\n", name, off, lbl);
            else
-               fprintf(fd, "DATA %s+%zd(SB)/8,$0\n", name, off, lbl);
+               fprintf(fd, "DATA %s+%zd(SB)/8,$0\n", name, off);
            fprintf(fd, "DATA %s+%zd(SB)/8,$%zd\n", name, off+8, v->lit.strval.len);
            break;
         case Lfunc:
