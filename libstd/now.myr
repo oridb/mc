@@ -1,7 +1,5 @@
-use sys
-
 use "types.use"
-use "fmt.use"
+use "syswrap.use"
 
 pkg std =
 	const now	: (-> time)
@@ -9,15 +7,5 @@ pkg std =
 
 /* microseconds since epoch */
 const now = {
-	var tm
-	var sec
-	var nsec
-
-	if sys.clock_gettime(`sys.Clockrealtime, &tm) == 0
-		sec = tm.sec
-		nsec = tm.nsec castto(uint64)
-		-> (sec*1_000_000 + nsec/1000) castto(time)
-	else
-		-> -1
-	;;
+	-> curtime()
 }

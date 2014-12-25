@@ -10,9 +10,19 @@ pkg std =
 ;;
 
 const getenv = {name
+	var n
+	for env in sys.__environment
+		n = min(name.len, env.len)
+		if sleq(name, env[:n]) && sleq(env[n:n+1], "=")
+			-> `Some env[n+1:]
+		;;
+	;;
 	-> `None
 }
 
 const getenvv = {name, default
-	-> default
+	match getenv(name)
+	| `Some v:	-> v
+	| `None:	-> default
+	;;
 }

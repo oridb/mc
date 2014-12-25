@@ -121,51 +121,52 @@ pkg sys =
 	const Sys_nsec		: scno = 53
 
 
-	const sysr1	: (->int)
-	const bind	: (nm : byte[:], old : byte[:] -> int)
-	const chdir	: (dir : byte[:] -> int)
-	const close	: (fd : fd -> int)
+	const sysr1	: (-> int64)
+	const bind	: (nm : byte[:], old : byte[:] -> int64)
+	const chdir	: (dir : byte[:] -> int64)
+	const close	: (fd : fd -> int64)
 	const dup	: (old : fd, new : fd -> fd)
-	const alarm	: (msec : uint32 -> int)
-	const exits	: (msg : byte[:] -> int)
-	const fauth	: (fd : fd, name : byte[:] -> int)
-	const segbrk	: (saddr : void#, addr : void# -> int)
+	const alarm	: (msec : uint32 -> int64)
+	const exits	: (msg : byte[:] -> int64)
+	const fauth	: (fd : fd, name : byte[:] -> int64)
+	const segbrk	: (saddr : void#, addr : void# -> int64)
 	const open	: (path : byte[:], opt : fdopt -> fd)
-	const sleep	: (msec : uint32 -> int)
+	const sleep	: (msec : uint32 -> int64)
 	const rfork	: (rflags : rflags -> pid)
-	const pipe	: (fds : fd[2]# -> int)
+	const pipe	: (fds : fd[2]# -> int64)
 	const create	: (path : byte[:], opt : fdopt, perm : int -> fd)
-	const fd2path	: (fd : fd, path : byte[:] -> int)
-	const remove	: (path : byte[:] -> int)
-	const notify	: (fn : (a : void#, c : char# -> int) -> int)
-	const noted	: (v : int32 -> int)
-	const segattach	: (attr : int32, class : byte[:], va : void#, len : uint32 -> int)
-	const segdetach	: (va : void# -> int)
-	const segfree	: (va : void#, len : uint32 -> int)
-	const segflush	: (va : void#, len : uint32 -> int)
-	const unmount	: (name : byte[:], old : byte[:] -> int)
-	const errstr	: (buf : byte[:] -> int)
-	const stat	: (name : byte[:], edir : byte[:] -> int)
-	const fstat	: (fd : fd, edir : byte[:] -> int)
-	const wstat	: (name : byte[:], edir : byte[:] -> int)
-	const fwstat	: (fd : byte[:],  edir : byte[:] -> int)
+	const fd2path	: (fd : fd, path : byte[:] -> int64)
+	const remove	: (path : byte[:] -> int64)
+	const notify	: (fn : (a : void#, c : char# -> int64) -> int64)
+	const noted	: (v : int32 -> int64)
+	const segattach	: (attr : int32, class : byte[:], va : void#, len : uint32 -> int64)
+	const segdetach	: (va : void# -> int64)
+	const segfree	: (va : void#, len : uint32 -> int64)
+	const segflush	: (va : void#, len : uint32 -> int64)
+	const unmount	: (name : byte[:], old : byte[:] -> int64)
+	const errstr	: (buf : byte[:] -> int64)
+	const stat	: (name : byte[:], edir : byte[:] -> int64)
+	const fstat	: (fd : fd, edir : byte[:] -> int64)
+	const wstat	: (name : byte[:], edir : byte[:] -> int64)
+	const fwstat	: (fd : byte[:],  edir : byte[:] -> int64)
 	const seek	: (fd : fd, len : off, ty : int -> off)
-	const mount	: (fd : fd, afd : fd, old : byte[:], flag : int32, aname : byte[:] -> int)
-	const await	: (buf : byte[:] -> int)
+	const mount	: (fd : fd, afd : fd, old : byte[:], flag : int32, aname : byte[:] -> int64)
+	const await	: (buf : byte[:] -> int64)
 	const pread	: (fd : fd, buf : byte[:], off : off -> size)
 	const pwrite	: (fd : fd, buf : byte[:], off : off -> size)
-	const exec	: (bin : byte[:], args : byte[:][:] -> int)
-	const brk_	: (endp : byte# -> int)
+	const exec	: (bin : byte[:], args : byte[:][:] -> int64)
+	const brk_	: (endp : byte# -> int64)
+	const nsec	: (-> uint64)
 
 	extern var tosptr	: tos#
 	extern var curbrk	: byte#
 ;;
 
 /* asm stub from syscall.s */
-extern const syscall : (scno : scno, args : ... -> int)
+extern const syscall : (scno : scno, args : ... -> int64)
 /* asm stubs from util+plan9.s */
 extern const cstring	: (str : byte[:] -> byte#)
-extern const alloca	: (sz : size	-> int)
+extern const alloca	: (sz : size	-> byte#)
 
 
 /*
@@ -210,6 +211,7 @@ const pread	= {fd, buf, off;	-> syscall(Syspread, a(fd), p(buf), a(buf.len), off
 const pwrite	= {fd, buf, off;	-> syscall(Syspwrite, a(fd), p(buf), a(buf.len), s(off)) castto(size)}
 const await	= {buf;	-> syscall(Sysawait, p(buf), a(buf.len))}
 const brk_	= {endp;	-> syscall(Sysbrk_, p(endp))}
+const nsec	= {;	-> syscall(Sys_nsec) castto(uint64)}
 const seek	= {fd, n, ty
 	var ret : off
 	syscall(Sysseek, a(&ret), a(fd), a(n), a(ty))

@@ -39,6 +39,7 @@ pkg std =
 	const waitpid	: (pid:pid, loc:int32#, opt : int64	-> int64)
 	const getmem	: (sz : size -> byte#)
 	const freemem	: (p : byte#, sz : size -> void)
+	const curtime	: (-> uint64)
 ;;
 
 /* fd stuff */
@@ -66,3 +67,14 @@ const waitpid	= {pid, loc, opt;	-> sys.waitpid(pid castto(sys.pid), loc, opt)}
 /* memory stuff */
 const getmem	= {sz;		-> sys.mmap(0 castto(byte#), sz castto(sys.size), sys.Mprotrw, sys.Mpriv | sys.Manon, -1, 0)}
 const freemem	= {p, sz;	sys.munmap(p, sz castto(sys.size))}
+const curtime = {
+	var tm, sec, nsec
+
+	if sys.clock_gettime(`sys.Clockrealtime, &tm) == 0
+		sec = tm.sec
+		nsec = tm.nsec castto(uint64)
+		-> (sec*1_000_000 + nsec/1000) castto(time)
+	else
+		-> -1
+	;;
+}

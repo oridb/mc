@@ -1,5 +1,3 @@
-use sys
-
 use "die.use"
 use "execvp.use"
 use "fmt.use"
@@ -46,10 +44,10 @@ const sporkfd = {cmd, infd, outfd
 	/* child */
 	elif pid == 0
 		/* stdin/stdout for our communication. */
-		if sys.dup2(infd castto(sys.fd), 0) != 0
+		if dup2(infd castto(fd), 0) != 0
 			fatal(1, "unable to set stdin\n")
 		;;
-		if sys.dup2(outfd castto(sys.fd), 1) != 1
+		if dup2(outfd castto(fd), 1) != 1
 			fatal(1, "unable to set stdout\n")
 		;;
 		close(infd)

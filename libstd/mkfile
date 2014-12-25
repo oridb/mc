@@ -67,7 +67,7 @@ STDSRC= \
 	varargs.myr \
 	waitstatus.myr \
 
-all: lib$STDLIB.a lib$SYSLIB.a
+all:V: lib$STDLIB.a lib$SYSLIB.a
 
 lib$STDLIB.a: $STDSRC $ASMSRC lib$SYSLIB.a
 	../myrbuild/$O.out -I. -C../6/$O.out -M../muse/$O.out -l $STDLIB $STDSRC $STDASMSRC
