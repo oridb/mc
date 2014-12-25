@@ -169,17 +169,17 @@ Insn(Ipop,
 /* branch instructions */
 Insn(Isetz,
     "\tsetz  %v\n",
-    "\tSETZ  %V\n",
+    "\tSETEQ  %V\n",
     Use(None),
     Def(.l={1}))
 Insn(Isetnz,
     "\tsetnz %v\n",
-    "\tSETNZ %V\n",
+    "\tSETNE %V\n",
     Use(None),
     Def(.l={1}))
 Insn(Isetl,
     "\tsetl  %v\n",
-    "\tSETL  %V\n",
+    "\tSETLT  %V\n",
     Use(None),
     Def(.l={1}))
 Insn(Isetle,
@@ -189,7 +189,7 @@ Insn(Isetle,
     Def(.l={1}))
 Insn(Isetg,
     "\tsetg %v\n",
-    "\tSETG %V\n",
+    "\tSETGT %V\n",
     Use(None),
     Def(.l={1}))
 Insn(Isetge,
@@ -199,22 +199,22 @@ Insn(Isetge,
     Def(.l={1}))
 Insn(Isetb,
     "\tsetb  %v\n",
-    "\tSETB  %V\n",
+    "\tSETCS  %V\n",
     Use(None),
     Def(.l={1}))
 Insn(Isetbe,
     "\tsetbe %v\n",
-    "\tSETBE %V\n",
+    "\tSETLS %V\n",
     Use(None),
     Def(.l={1}))
 Insn(Iseta,
     "\tseta %v\n",
-    "\tSETA %V\n",
+    "\tSETCC %V\n",
     Use(None),
     Def(.l={1}))
 Insn(Isetae,
     "\tsetae %v\n",
-    "\tSETAE %V\n",
+    "\tSETHI %V\n",
     Use(None),
     Def(.l={1}))
 
@@ -313,7 +313,7 @@ Insn(Ijle,
     Def(None))
 Insn(Ijg,
     "\tjg %v\n",
-    "\tJG %V\n",
+    "\tJGT %V\n",
     Use(.l={1}),
     Def(None))
 Insn(Ijge,
