@@ -25,10 +25,10 @@ int genasm = 0;
 
 /* binaries we call out to */
 char *mc = "6m";
-char *as[] = Asmcmd;
-char *ar[] = Linkcmd;
-char *ld = "ld";
 char *muse = "muse";
+char *as[] = Asmcmd;
+char *ar[] = Arcmd;
+char *ld[] = Ldcmd;
 char *runtime = Instroot "/lib/myr/_myrrt.o";
 /* the name of the output file */
 char *libname;
@@ -431,8 +431,8 @@ void linkobj(char **files, size_t nfiles)
     nargs = 0;
 
     /* ld -T ldscript -o outfile */
-    lappend(&args, &nargs, strdup(ld));
-    lappend(&args, &nargs, strdup("-o"));
+    for (i = 0; ld[i]; i++)
+        lappend(&args, &nargs, strdup(ld[i]));
     lappend(&args, &nargs, strdup(binname));
 
     /* ld -T ldscript */
@@ -502,9 +502,9 @@ int main(int argc, char **argv)
             case 's': ldscript = ctx.optarg; break;
             case 'S': genasm = 1; break;
             case 'C': mc = ctx.optarg; break;
-            case 'A': as[0] = ctx.optarg; break;
             case 'M': muse = ctx.optarg; break;
-            case 'L': ld = ctx.optarg; break;
+            case 'A': as[0] = ctx.optarg; break;
+            case 'L': ld[0] = ctx.optarg; break;
             case 'R': ar[0] = ctx.optarg; break;
             case 'r':
                       if (!strcmp(ctx.optarg, "none"))

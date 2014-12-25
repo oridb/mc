@@ -242,8 +242,8 @@ static size_t writebytes(FILE *fd, char *name, size_t off, char *p, size_t sz)
 {
     size_t i, len;
 
-	if (sz == 0)
-		fprintf(fd, "DATA %s<>+%zd(SB)/0,$\"\"\n", name, off, sz);
+    if (sz == 0)
+        fprintf(fd, "DATA %s<>+%zd(SB)/%zd,$\"\"\n", name, off, sz);
     for (i = 0; i < sz; i++) {
         len = min(sz - i, 8);
         if (i % 8 == 0)
@@ -419,14 +419,16 @@ static size_t writeblob(FILE *fd, char *name, size_t off, Htab *globls, Htab *st
 static void genstrings(FILE *fd, Htab *strtab)
 {
     void **k;
+    char *lbl;
     Str *s;
     size_t i, nk;
 
     k = htkeys(strtab, &nk);
     for (i = 0; i < nk; i++) {
         s = k[i];
-		fprintf(fd, "GLOBL %s<>+0(SB),$%lld\n", htget(strtab, k[i]), (vlong)s->len);
-        writebytes(fd, htget(strtab, k[i]), 0, s->buf, s->len);
+        lbl = htget(strtab, k[i]);
+        fprintf(fd, "GLOBL %s<>+0(SB),$%lld\n", lbl, (vlong)s->len);
+        writebytes(fd, lbl, 0, s->buf, s->len);
     }
 }
 
