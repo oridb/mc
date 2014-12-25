@@ -1690,7 +1690,7 @@ void simpglobl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***blob, s
     char *name;
     Func *f;
 
-    name = asmname(dcl->decl.name);
+    name = asmname(dcl);
     s.stkoff = mkht(varhash, vareq);
     s.globls = globls;
     s.blobs = *blob;
