@@ -198,10 +198,11 @@ extern Node *abortoob;
 
 /* options */
 extern int extracheck;
+extern Asmsyntax asmsyntax;
 
 void simpglobl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***blob, size_t *nblob);
 void selfunc(Isel *is, Func *fn, Htab *globls, Htab *strtab);
-void gen(Asmsyntax syn, Node *file, char *out);
+void gen(Node *file, char *out);
 void gengas(Node *file, char *out);
 void genp9(Node *file, char *out);
 
@@ -221,7 +222,7 @@ Loc *locmems(long disp, Loc *base, Loc *idx, int scale, Mode mode);
 Loc *locmemls(char *disp, Loc *base, Loc *idx, int scale, Mode mode);
 Loc *loclit(long val, Mode m);
 Loc *loclitl(char *lbl);
-char *asmname(Node *n);
+char *asmname(Node *dcl);
 Loc *coreg(Reg r, Mode m);
 int isfloatmode(Mode m);
 int isintmode(Mode m);

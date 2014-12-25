@@ -31,32 +31,6 @@ int isfloatmode(Mode m)
     return m == ModeF || m == ModeD;
 }
 
-/* For x86, the assembly names are generated as follows:
- *      local symbols: .name
- *      un-namespaced symbols: <symprefix>name
- *      namespaced symbols: <symprefix>namespace$name
- */
-char *asmname(Node *n)
-{
-    char *s;
-    int len;
-
-    len = strlen(Symprefix);
-    if (n->name.ns)
-        len += strlen(n->name.ns) + 1; /* +1 for separator */
-    len += strlen(n->name.name) + 1;
-
-    s = xalloc(len + 1);
-    s[0] = '\0';
-    if (n->name.ns)
-        snprintf(s, len, "%s%s$%s", Symprefix, n->name.ns, n->name.name);
-    else if (n->name.name[0] == '.')
-        snprintf(s, len, "%s", n->name.name);
-    else
-        snprintf(s, len, "%s%s", Symprefix, n->name.name);
-    return s;
-}
-
 char *genlblstr(char *buf, size_t sz)
 {
     static int nextlbl;

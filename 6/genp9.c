@@ -49,7 +49,7 @@ static void fillglobls(Stab *st, Htab *globls)
     k = htkeys(st->dcl, &nk);
     for (i = 0; i < nk; i++) {
         s = htget(st->dcl, k[i]);
-        htput(globls, s, asmname(s->decl.name));
+        htput(globls, s, asmname(s));
     }
     free(k);
 
@@ -76,7 +76,7 @@ static void initconsts(Htab *globls)
     dcl = mkdecl(Zloc, name, ty);
     dcl->decl.isconst = 1;
     dcl->decl.isextern = 1;
-    htput(globls, dcl, asmname(dcl->decl.name));
+    htput(globls, dcl, asmname(dcl));
 
     abortoob = mkexpr(Zloc, Ovar, name, NULL);
     abortoob->expr.type = ty;
@@ -315,11 +315,16 @@ static size_t writelit(FILE *fd, char *name, size_t off, Htab *strtab, Node *v, 
     return sz;
 }
 
-static size_t writepad(FILE *fd, size_t sz)
+static size_t writepad(FILE *fd, char *name, size_t off, size_t sz)
 {
+    size_t n;
+
     assert((ssize_t)sz >= 0);
-    if (sz > 0)
-        fprintf(fd, "\t.fill %zd,1,0\n", sz);
+    while (sz > 0) {
+        n = min(sz, 8);
+        fprintf(fd, "DATA %s+%zd(SB)/%zd,$0\n", name, off, n);
+        sz -= n;
+    }
     return sz;
 }
 
@@ -374,7 +379,7 @@ static size_t writestruct(FILE *fd, char *name, size_t off, Htab *globls, Htab *
     ndcl = t->nmemb;
     for (i = 0; i < ndcl; i++) {
         pad = alignto(off, decltype(dcl[i]));
-        off += writepad(fd, pad - off);
+        off += writepad(fd, name, off, pad - off);
         found = 0;
         for (j = 0; j < n->expr.nargs; j++)
             if (!strcmp(namestr(n->expr.args[j]->expr.idx), declname(dcl[i]))) {
@@ -382,10 +387,10 @@ static size_t writestruct(FILE *fd, char *name, size_t off, Htab *globls, Htab *
                 off += writeblob(fd, name, off, globls, strtab, n->expr.args[j]);
             }
         if (!found)
-            off += writepad(fd, size(dcl[i]));
+            off += writepad(fd, name, off, size(dcl[i]));
     }
     end = alignto(off, t);
-    off += writepad(fd, end - off);
+    off += writepad(fd, name, off, end - off);
     return off - start;
 }
 static size_t writeblob(FILE *fd, char *name, size_t off, Htab *globls, Htab *strtab, Node *n)
@@ -464,7 +469,7 @@ static void genblob(FILE *fd, Node *blob, Htab *globls, Htab *strtab)
     if (blob->decl.init)
         writeblob(fd, lbl, 0, globls, strtab, blob->decl.init);
     else
-        writepad(fd, size(blob));
+        writepad(fd, lbl, 0, size(blob));
 }
 
 /* genfunc requires all nodes in 'nl' to map cleanly to operations that are
