@@ -36,7 +36,8 @@ echo export INST_ROOT=$prefix > config.mk
 
 echo '#define Instroot "'$prefix'"' > config.h
 echo '#define Asmcmd {"as", "-g", "-o", NULL}' >> config.h
-echo '#define Linkcmd {"ar", "-rcs", NULL}' >> config.h
+echo '#define Arcmd {"ar", "-rcs", NULL}' >> config.h
+echo '#define Ldcmd {"ld", "-o", NULL}' >> config.h
 echo '#define Defaultasm Gnugas' >> config.h
 echo 'export SYSCLASS=posixy' >> config.mk
 case $OS in
