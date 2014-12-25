@@ -24,11 +24,10 @@ pkg std =
 	const read	: (fd : fd, buf : byte[:] -> size)
 	const write	: (fd : fd, buf : byte[:] -> size)
 	const pipe	: (fds : fd[2]# -> int64)
-	const dup2	: (ofd : fd, nfd : fd -> fd)
 
 	/* path manipulation */
 	const mkdir	: (path : byte[:], mode : int64 -> int64)
-	const unlink	: (path : byte[:] -> int64)
+	const unlink	: (path : byte[:] -> int)
 
 	/* process stuff */
 	const getpid	: ( -> pid)
@@ -37,11 +36,9 @@ pkg std =
 	const execv	: (cmd : byte[:], args : byte[:][:] -> int64)
 	const execve	: (cmd : byte[:], args : byte[:][:], env : byte[:][:] -> int64)
 	const exit	: (status:int -> void)
-	const waitpid	: (pid:pid, loc:int32#, opt : int64	-> pid)
-
-	pkglocal const getmem	: (sz : size -> byte#)
-	pkglocal const freemem	: (p : byte#, sz : size -> void)
-	pkglocal const curtime	: (-> time)
+	const waitpid	: (pid:pid, loc:int32#, opt : int64	-> int64)
+	const getmem	: (sz : size -> byte#)
+	const freemem	: (p : byte#, sz : size -> void)
 ;;
 
 /* fd stuff */
@@ -65,7 +62,6 @@ const close	= {fd;		-> sys.close(fd castto(sys.fd)) castto(int64)}
 const read	= {fd, buf;	-> sys.pread(fd castto(sys.fd), buf, -1) castto(size)}
 const write	= {fd, buf;	-> sys.pwrite(fd castto(sys.fd), buf, -1) castto(size)}
 const pipe	= {fds;		-> sys.pipe(fds castto(sys.fd[2]#)) castto(int64)}
-const dup2	= {ofd, nfd;	-> sys.dup(ofd castto(sys.fd), nfd castto(sys.fd)) castto(fd)}
 
 /* path manipulation */
 const unlink	= {path;	-> sys.remove(path)}
@@ -81,7 +77,7 @@ const mkdir	= {path, mode;
 }
 
 /* process stuff */
-const getpid	= {;	-> sys.tosptr.pid castto(pid)}
+const getpid	= {;	-> sys.gettos().pid castto(pid)}
 const suicide	= {;	(0 castto(byte#))#}	/* let's happy segfault!! t */
 const fork	= {;		-> sys.rfork(sys.Rffdg | sys.Rfrend | sys.Rfproc) castto(pid)}
 const execv	= {cmd, args;	-> sys.exec(cmd, args) castto(int64)}
@@ -99,27 +95,10 @@ const waitpid	= {pid, loc, opt;
 	var buf : byte[512]
 	var n
 
-	loc# = 0
 	n = sys.await(buf[:])
 	-> pid
 }
 
 /* memory stuff */
-const getmem	= {sz
-	var endp
-
-	endp = (sys.curbrk castto(intptr)) + (sz castto(intptr))
-	if sys.brk_(endp castto(byte#)) < 0
-		-> Failmem
-	;;
-	sys.curbrk = endp castto(byte#)
-	-> sys.curbrk
-}
-	
-const freemem = {p, sz
-	/* FIXME: don't leak */
-}
-
-const curtime = {
-	-> sys.nsec()/1000 castto(time)
-}
+const getmem	= {sz;		-> sys.mmap(0 castto(byte#), sz castto(sys.size), sys.Mprotrw, sys.Mpriv | sys.Manon, -1, 0)}
+const freemem	= {p, sz;	sys.munmap(p, sz castto(sys.size))}
