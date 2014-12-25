@@ -14,7 +14,6 @@
 #include "asm.h"
 #include "../config.h"
 
-
 static int islocal(Node *dcl)
 {
     if (dcl->decl.vis != Visintern)
