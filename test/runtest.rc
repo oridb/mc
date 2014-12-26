@@ -1,0 +1,94 @@
+#!/bin/rc
+passed=""
+failed=""
+npassed=0
+nfailed=0
+
+fn build {
+	rm -f $1 $1^.o $1^.s $1^.use
+	../myrbuild/6.out -b $1 -C../6/6.out -M../muse/6.out -I../libstd -r../rt/_myrrt.6 $1^.myr
+}
+
+fn pass {
+	passed=$passed ^ " " ^ $1
+}
+
+fn fail {
+	echo FAIL: $1
+	failed=$failed ^ " " ^ $1
+}
+
+fn expectstatus {
+	./$1 $3
+	if(~ $status $2){
+		pass $1
+		return
+	}
+	if not {
+		fail $1
+	}
+}
+
+fn expectprint {
+	if(~ "`{./$1 $3}" "$2")
+		pass $1
+	if not
+		fail $1
+}
+
+fn expectcmp {
+	t="/tmp/myrtest-$1"
+	rm -f $t
+	./$1 $3 > $t
+	if (cmp $t data/$1-expected)
+		pass $1
+	if not
+		fail $1
+}
+
+fn expectfcmp {
+	t="/tmp/myrtest-$1"
+	rm -f $t
+	./$1 $3
+	if (cmp $2 data/$1-expected)
+		pass $1
+	if not
+		fail $1
+}
+
+fn B {
+	test=$1; shift
+	type=$1; shift
+	args=$1; shift
+
+	build $test
+	switch($type) {
+	case "E"
+		expectstatus $test $res
+	case "P"
+		expectprint $test $res
+	case "C"
+		expectcmp $test $res
+	case "F"
+		expectfcmp $test $res
+	}
+}
+
+fn F {
+	@{ build $1 } > /dev/null
+	if (~ $status "")
+		fail $1
+	if not
+		pass $1
+}
+
+
+. tests
+
+echo "PASSED $passed"
+if(~ $failed "")
+	echo SUCCESS
+if not
+	echo "FAILURES $failed"
+
+
