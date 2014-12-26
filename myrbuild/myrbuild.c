@@ -324,6 +324,7 @@ done:
     htdel(loopdetect, file);
 }
 
+
 void mergeuse(char **files, size_t nfiles)
 {
     char **args;
@@ -382,6 +383,18 @@ void archive(char **files, size_t nfiles)
     lfree(&args, &nargs);
 }
 
+void findlib(char *buf, size_t bufsz, char *lib)
+{
+    size_t i;
+
+    for (i = 0; i < nincpaths; i++) {
+        snprintf(buf, bufsz, "%s/lib%s.a", incpaths[i], lib);
+        if (access(buf, F_OK) == 0)
+            return;
+    }
+    fail(1, "unable to find library lib%s.a\n", lib);
+}
+
 void visit(char ***args, size_t *nargs, size_t head, Htab *g, char *n, Htab *looped, Htab *marked)
 {
     char **deps;
@@ -396,7 +409,10 @@ void visit(char ***args, size_t *nargs, size_t head, Htab *g, char *n, Htab *loo
         visit(args, nargs, head, g, *deps, looped, marked);
     htdel(looped, n);
     htput(marked, n, n);
-    snprintf(buf, sizeof buf, "-l%s", n);
+    if (!strcmp(sysname, "Plan9"))
+        findlib(buf, sizeof buf, n);
+    else
+        snprintf(buf, sizeof buf, "-l%s", n);
     linsert(args, nargs, head, strdup(buf));
 }
 
@@ -457,12 +473,14 @@ void linkobj(char **files, size_t nfiles)
     }
 
     /* ld -T ldscript -o outfile foo.o bar.o baz.o -L/path1 -L/path2 */
-    for (i = 0; i < nincpaths; i++) {
-        snprintf(buf, sizeof buf, "-L%s", incpaths[i]);
+    if (strcmp(sysname, "Plan9") != 0) {
+        for (i = 0; i < nincpaths; i++) {
+            snprintf(buf, sizeof buf, "-L%s", incpaths[i]);
+            lappend(&args, &nargs, strdup(buf));
+        }
+        snprintf(buf, sizeof buf, "-L%s%s", Instroot, "/lib/myr");
         lappend(&args, &nargs, strdup(buf));
     }
-    snprintf(buf, sizeof buf, "-L%s%s", Instroot, "/lib/myr");
-    lappend(&args, &nargs, strdup(buf));
 
     /* ld -T ldscript -o outfile foo.o bar.o baz.o -L/path1 -L/path2 -llib1 -llib2*/
     addlibs(&args, &nargs, libgraph);
