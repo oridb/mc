@@ -543,7 +543,7 @@ Loc *selexpr(Isel *s, Node *n)
                 g(s, Iidiv, b, NULL);
             } else {
                 if (r->mode == ModeB)
-                    g(s, Ixor, eax, eax, NULL);
+                    g(s, Ixor, locphysreg(Rah), locphysreg(Rah), NULL);
                 else
                     g(s, Ixor, edx, edx, NULL);
                 g(s, Idiv, b, NULL);
