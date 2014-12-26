@@ -10,7 +10,7 @@ OFILES=\
         match.$O\
 	df.$O\
 
-HFILES=mi.h
+HFILES=mi.h ../config.h ../parse/parse.h
 
 </sys/src/cmd/mklib
 

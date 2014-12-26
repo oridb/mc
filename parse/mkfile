@@ -18,10 +18,14 @@ OFILES=bitset.$O \
     use.$O \
     util.$O
 
-HFILES=parse.h
+HFILES=parse.h ../config.h
 CLEANFILES=gram.c gram.h
 
 </sys/src/cmd/mklib
+
+install:V: $LIB
+	touch $LIB
+	
 
 gram.c gram.h: gram.y
 	yacc -d -S gram.y
