@@ -58,9 +58,9 @@ static void assemble(char *asmsrc, char *path)
 
     psuffix = strrchr(path, '+');
     if (psuffix != NULL)
-        swapsuffix(objfile, 1024, path, psuffix, ".o");
+        swapsuffix(objfile, 1024, path, psuffix, Objsuffix);
     else
-        swapsuffix(objfile, 1024, path, ".myr", ".o");
+        swapsuffix(objfile, 1024, path, ".myr", Objsuffix);
     cmd = NULL;
     ncmd = 0;
     for (p = asmcmd; *p != NULL; p++)
