@@ -77,9 +77,9 @@ function B {
     fi
     build $test
     case $type in
-    "E")  expectstatus "$test" "$res" "$input";;
-    "P")  expectprint "$test" "$res" "$input";;
-    "C")  expectcompare "$test" "$res" "$input";;
+    "E")  expectstatus "$test" "$res";;
+    "P")  expectprint "$test" "$res";;
+    "C")  expectcompare "$test" "$res";;
     "F")  expectfcompare "$test" "$res" "$args";;
     esac
 }
