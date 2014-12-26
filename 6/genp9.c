@@ -450,7 +450,9 @@ static void writeasm(FILE *fd, Isel *s, Func *fn)
     hidden = "";
     if (fn->isexport || streq(fn->name, Symprefix "main"))
         hidden = "";
-    fprintf(fd, "TEXT %s%s+0(SB),$%zd\n", fn->name, hidden, fn->stksz);
+    /* we don't use the stack size directive: myrddin handles
+     * the stack frobbing on its own */
+    fprintf(fd, "TEXT %s%s+0(SB),$0\n", fn->name, hidden);
     for (j = 0; j < s->cfg->nbb; j++) {
         if (!s->bb[j])
             continue;

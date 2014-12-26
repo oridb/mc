@@ -531,12 +531,23 @@ Loc *selexpr(Isel *s, Node *n)
             b = newr(s, b);
             c = coreg(Reax, mode(n));
             r = locreg(a->mode);
-            if (r->mode == ModeB)
-                g(s, Ixor, eax, eax, NULL);
-            else
-                g(s, Ixor, edx, edx, NULL);
             g(s, Imov, a, c, NULL);
-            g(s, Idiv, b, NULL);
+            if (istysigned(exprtype(args[0]))) {
+                switch (r->mode) {
+                    case ModeB: break;
+                    case ModeW: g(s, Icwd, NULL);       break;
+                    case ModeL: g(s, Icdq, NULL);       break;
+                    case ModeQ: g(s, Icqo, NULL);       break;
+                    default:    die("invalid mode in division"); break;
+                }
+                g(s, Iidiv, b, NULL);
+            } else {
+                if (r->mode == ModeB)
+                    g(s, Ixor, eax, eax, NULL);
+                else
+                    g(s, Ixor, edx, edx, NULL);
+                g(s, Idiv, b, NULL);
+            }
             if (exprop(n) == Odiv)
                 d = coreg(Reax, mode(n));
             else if (r->mode != ModeB)

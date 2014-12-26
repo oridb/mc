@@ -86,11 +86,31 @@ const suicide	= {;	(0 castto(byte#))#}	/* let's happy segfault!! t */
 const fork	= {;		-> sys.rfork(sys.Rffdg | sys.Rfrend | sys.Rfproc) castto(pid)}
 const execv	= {cmd, args;	-> sys.exec(cmd, args) castto(int64)}
 const execve	= {cmd, args, env;	-> sys.exec(cmd, args) castto(int64)}
-const exit	= {status;
+const digitchars = "0123456789"
+const exit	= {status
+	var buf : byte[32]	/* big enough for exit status numbers */
+	var n, i, idx
+	
 	if status == 0
+		sys.pwrite(1, "exit(0)ing\n", -1)
 		sys.exits("")
 	else
-		sys.exits("failure")
+		status &= 255
+		i = 100
+		n = 0
+		sys.pwrite(1, "...formatting\n", -1)
+		while i > 0
+			if i > status
+				continue
+			;;
+			idx = (status/i)
+			idx %= 10
+			buf[n++] = digitchars[idx];
+			i /= 10
+		;;
+		sys.pwrite(1, "done...", -1)
+		sys.pwrite(1, buf[:n], -1)
+		sys.exits(buf[:n])
 	;;
 }
 

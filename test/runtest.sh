@@ -24,6 +24,16 @@ function fail {
     NFAILED=$[$NFAILED + 1]
 }
 
+function expectstatus {
+    ./$1 $3
+    if [ $? -eq $2 ]; then
+        pass $1
+        return
+    else
+        fail $1
+    fi
+}
+
 function expectprint {
     if [ "`./$1 $3`" != "$2" ]; then
         fail $1
