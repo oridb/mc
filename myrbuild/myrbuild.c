@@ -132,10 +132,10 @@ void run(char **cmd)
     pid = fork();
     status = 0;
     if (pid == -1) {
-        fail(1, "Could not fork");
+        fail(1, "Could not fork\n");
     } else if (pid == 0) {
         if (execvp(cmd[0], cmd) == -1)
-            fail(1, "Failed to exec %s", cmd[0]);
+            fail(1, "Failed to exec %s\n", cmd[0]);
     } else {
         waitpid(pid, &status, 0);
     }
@@ -150,7 +150,7 @@ int isfresh(char *from, char *to)
     struct stat from_sb, to_sb;
 
     if (stat(from, &from_sb))
-        fail(1, "Could not find %s", from);
+        fail(1, "Could not find %s\n", from);
     if (stat(to, &to_sb) == -1)
         return 0;
 
@@ -203,7 +203,7 @@ void getdeps(char *file, char **deps, size_t depsz, size_t *ndeps)
 
     f = fopen(file, "r");
     if (!f)
-        fail(1, "Could not open file \"%s\"", file);
+        fail(1, "Could not open file \"%s\"\n", file);
 
     i = 0;
     while (fgets(buf, sizeof buf, f)) {
@@ -251,7 +251,7 @@ void scrapelib(Htab *g, char *lib)
     ndeps = 0;
     use = openlib(lib);
     if (fgetc(use) != 'U')
-        fail(1, "library \"%s\" is not a usefile.", lib);
+        fail(1, "library \"%s\" is not a usefile.\n", lib);
     /* we don't care about the usefile's name */
     free(rdstr(use));
     while (fgetc(use) == 'L') {
