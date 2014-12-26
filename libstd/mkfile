@@ -1,4 +1,4 @@
-.</$objtype/mkfile
+</$objtype/mkfile
 
 SYSLIB=sys
 SYSSRC= \
