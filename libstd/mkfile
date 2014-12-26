@@ -1,4 +1,4 @@
-</$objtype/mkfile
+.</$objtype/mkfile
 
 SYSLIB=sys
 SYSSRC= \
@@ -95,13 +95,13 @@ lib$SYSLIB.a: $SYSSRC $SYSASMSRC
 %.s: %+x64.s
 	cp $stem+x64.s $stem.s
 
-OBJ=${STDSRC:%.myr=%.o} ${SYSSRC:%.myr=%.o} ${STDASMSRC:%.s=%.o} ${SYSASMSRC:%.s=%.o}
+OBJ=${STDSRC:%.myr=%.$O} ${SYSSRC:%.myr=%.$O} ${STDASMSRC:%.s=%.$O} ${SYSASMSRC:%.s=%.$O}
 USE=${STDSRC:%.myr=%.use} ${SYSSRC:%.myr=%.use} ${STDLIB}
 LIBS=lib$STDLIB.a lib$SYSLIB.a
 .PHONY: clean
 clean:V:
 	rm -f $OBJ
 	rm -f $USE
-	rm -f $LIBS
+	rm -f $LIBS $STDLIB $SYSLIB
 
 nuke:V: clean
