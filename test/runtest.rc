@@ -10,12 +10,12 @@ fn build {
 }
 
 fn pass {
-	passed=$passed ^ " " ^ $1
+	passed=$passed ^ ' ' ^ $1
 }
 
 fn fail {
 	echo FAIL: $1
-	failed=$failed ^ " " ^ $1
+	failed=$failed ^ ' ' ^ $1
 }
 
 fn expectstatus {
@@ -30,14 +30,14 @@ fn expectstatus {
 }
 
 fn expectprint {
-	if(~ "`{./$1 $3}" "$2")
+	if(~ `{./$1 $3} $2)
 		pass $1
 	if not
 		fail $1
 }
 
 fn expectcmp {
-	t="/tmp/myrtest-$1"
+	t=/tmp/myrtest-^$1
 	rm -f $t
 	./$1 $3 > $t
 	if (cmp $t data/$1-expected)
@@ -47,7 +47,7 @@ fn expectcmp {
 }
 
 fn expectfcmp {
-	t="/tmp/myrtest-$1"
+	t=/tmp/myrtest-^$1
 	rm -f $t
 	./$1 $3
 	if (cmp $2 data/$1-expected)
@@ -63,13 +63,13 @@ fn B {
 
 	build $test
 	switch($type) {
-	case "E"
-		expectstatus $test $res
-	case "P"
-		expectprint $test $res
-	case "C"
-		expectcmp $test $res
-	case "F"
+	case E
+	      expectstatus $test $res
+	case P
+	      expectprint $test $res
+	case C
+	      expectcmp $test $res
+	case F
 		expectfcmp $test $res
 	}
 }
@@ -85,10 +85,10 @@ fn F {
 
 . tests
 
-echo "PASSED $passed"
+echo PASSED ^ " " ^ $passed
 if(~ $failed "")
 	echo SUCCESS
 if not
-	echo "FAILURES $failed"
+	echo FAILURES ^ " " ^ $failed
 
 
