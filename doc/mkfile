@@ -4,3 +4,7 @@ MANS=\
 	myrbuild.1 \
 
 all:V: $MANS
+
+install:V:
+	echo -n ''
+

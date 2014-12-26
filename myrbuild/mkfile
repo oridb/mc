@@ -7,4 +7,5 @@ TARG=myrbuild
 OFILES=myrbuild.$O
 LIB=../parse/libparse.a
 
+BIN=/$objtype/bin
 </sys/src/cmd/mkone

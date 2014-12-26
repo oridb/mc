@@ -69,6 +69,11 @@ STDSRC= \
 
 all:V: lib$STDLIB.a lib$SYSLIB.a
 
+install:V: all
+	mkdir -p /$objtype/lib/myr/
+	cp lib$STDLIB.a lib$SYSLIB.a /$objtype/lib/myr/
+	cp $STDLIB $SYSLIB /$objtype/lib/myr/
+
 lib$STDLIB.a: $STDSRC $ASMSRC lib$SYSLIB.a
 	../myrbuild/$O.out -I. -C../6/$O.out -M../muse/$O.out -l $STDLIB $STDSRC $STDASMSRC
 

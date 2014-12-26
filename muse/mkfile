@@ -9,4 +9,5 @@ OFILES=\
 
 LIB=../parse/libparse.a
 
+BIN=/$objtype/bin
 </sys/src/cmd/mkone
