@@ -494,12 +494,11 @@ static Loc *gencall(Isel *s, Node *n)
 Loc *selexpr(Isel *s, Node *n)
 {
     Loc *a, *b, *c, *d, *r;
-    Loc *eax, *edx, *cl; /* x86 wants some hard-coded regs */
+    Loc *edx, *cl; /* x86 wants some hard-coded regs */
     Node **args;
     size_t al;
 
     args = n->expr.args;
-    eax = locphysreg(Reax);
     edx = locphysreg(Redx);
     cl = locphysreg(Rcl);
     r = NULL;
