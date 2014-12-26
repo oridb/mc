@@ -89,7 +89,7 @@ const execve	= {cmd, args, env;	-> sys.exec(cmd, args) castto(int64)}
 const digitchars = "0123456789"
 const exit	= {status
 	var buf : byte[32]	/* big enough for exit status numbers */
-	var n, i, idx
+	var n, i
 	
 	if status == 0
 		sys.exits("")
@@ -98,10 +98,8 @@ const exit	= {status
 		i = 100
 		n = 0
 		while i > 0
-			if i <= status
-				idx = (status/i)
-				idx %= 10
-				buf[n++] = digitchars[idx]
+			if status >= i
+				buf[n++] = digitchars[(status/i)%10]
 			;;
 			i /= 10
 		;;
