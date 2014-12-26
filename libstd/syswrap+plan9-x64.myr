@@ -98,12 +98,11 @@ const exit	= {status
 		i = 100
 		n = 0
 		while i > 0
-			if i > status
-				continue
+			if i <= status
+				idx = (status/i)
+				idx %= 10
+				buf[n++] = digitchars[idx]
 			;;
-			idx = (status/i)
-			idx %= 10
-			buf[n++] = digitchars[idx];
 			i /= 10
 		;;
 		sys.exits(buf[:n])
