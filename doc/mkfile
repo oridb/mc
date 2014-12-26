@@ -1,0 +1,6 @@
+MANS=\
+	mc.1 \
+	muse.1 \
+	myrbuild.1 \
+
+all:V: $MANS
