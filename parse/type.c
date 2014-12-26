@@ -776,7 +776,7 @@ size_t tyidfmt(char *buf, size_t sz, Type *ty)
             }
             break;
         case Tytuple:
-            p += snprintf(p, end - p, "$p");
+            p += snprintf(p, end - p, "$e");
             for (i = 0; i < ty->nsub; i++) {
                 p += tyidfmt(p, end - p, ty->sub[i]);
             }
@@ -793,14 +793,14 @@ size_t tyidfmt(char *buf, size_t sz, Type *ty)
         case Tyunion:
             p += snprintf(p, end - p, "$u");
             for (i = 0; i < ty->nmemb; i++) {
-                p += snprintf(p, end - p, "%s.", namestr(ty->udecls[i]->name));
+                p += snprintf(p, end - p, "%s$", namestr(ty->udecls[i]->name));
                 if (ty->udecls[i]->etype)
                     p += tyidfmt(p, end - p, ty->udecls[i]->etype);
                 p += snprintf(p, end - p, "$");
             }
             break;
         case Typaram:
-            p += snprintf(p, end - p, "$p");
+            p += snprintf(p, end - p, "$r");
             p += tyidfmt(p, end - p, ty->sub[0]);
             break;
         case Tyunres:
