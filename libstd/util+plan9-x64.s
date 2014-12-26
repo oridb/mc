@@ -26,12 +26,12 @@ TEXT sys$cstring+0(SB),$0
 	SUBQ	$1,SP		/* +1 for nul */
 	MOVQ	SP,DI		/* dest */
 	MOVQ	SP,AX		/* ret val */
-	SUBQ	$16,SP		/* "unpop" the args */
+	SUBQ	$31,SP		/* "unpop" the args */
 	ANDQ	$(~15),SP	/* align */
 
 	CLD
 	REP
-        MOVSB
+	MOVSB
 	MOVB	$0,(DI)		/* terminate */
 
 	/* Restore registers */
@@ -57,7 +57,7 @@ TEXT sys$alloca+0(SB),$0
 	/* get stack space */
 	SUBQ	BX,SP		/* get stack space */
 	MOVQ	SP,AX		/* top of stack (return value) */
-	SUBQ	$16,SP		/* "unpop" the args for return */
+	SUBQ	$3,SP		/* "unpop" the args for return */
 	ANDQ	$(~15),SP	/* align */
 
 	MOVQ	R15,0(SP)	/* place ret addr */

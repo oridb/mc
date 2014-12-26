@@ -28,7 +28,7 @@ sys$cstring:
 	subq $1,%rsp		/* +1 for nul */
 	movq %rsp,%rdi		/* dest */
 	movq %rsp,%rax		/* ret val */
-	subq $16,%rsp		/* "unpop" the args */
+	subq $31,%rsp		/* "unpop" the args */
 	andq $(~15),%rsp	/* align */
 
 	cld
@@ -61,7 +61,7 @@ sys$alloca:
 	/* get stack space */
 	subq %rbx,%rsp		/* get stack space */
 	movq %rsp,%rax		/* top of stack (return value) */
-	subq $16,%rsp		/* "unpop" the args for return */
+	subq $31,%rsp		/* "unpop" the args for return */
 	andq $(~15),%rsp	/* align */
 
 	pushq %r15		/* ret addr */
