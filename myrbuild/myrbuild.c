@@ -29,7 +29,7 @@ char *muse = "muse";
 char *as[] = Asmcmd;
 char *ar[] = Arcmd;
 char *ld[] = Ldcmd;
-char *runtime = Instroot "/lib/myr/_myrrt";
+char *runtime = Instroot "/lib/myr/_myrrt" Objsuffix;
 /* the name of the output file */
 char *libname;
 char *binname;
@@ -461,8 +461,7 @@ void linkobj(char **files, size_t nfiles)
     }
 
     if (runtime) {
-        snprintf(buf, sizeof buf, "%s%s", runtime, Objsuffix);
-        lappend(&args, &nargs, strdup(buf));
+        lappend(&args, &nargs, strdup(runtime));
     }
 
     /* ld -T ldscript -o outfile foo.o bar.o baz.o */
@@ -508,6 +507,7 @@ void linkobj(char **files, size_t nfiles)
 int main(int argc, char **argv)
 {
     struct utsname name;
+    char buf[512];
     char **stack;
     size_t nstack;
     Optctx ctx;

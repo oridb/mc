@@ -5,7 +5,8 @@ npassed=0
 nfailed=0
 
 fn build {
-	rm -f $1 $1^.o $1^.s $1^.use
+	rm -f $1 $1^.6 $1^.s $1^.use
+	echo ../myrbuild/6.out -b $1 -C../6/6.out -M../muse/6.out -I../libstd -r../rt/_myrrt.6 $1^.myr
 	../myrbuild/6.out -b $1 -C../6/6.out -M../muse/6.out -I../libstd -r../rt/_myrrt.6 $1^.myr
 }
 
@@ -20,7 +21,7 @@ fn fail {
 
 fn expectstatus {
 	./$1 $3
-	if(~ $status $2){
+	if(~ *$status $2){
 		pass $1
 		return
 	}
