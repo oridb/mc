@@ -29,7 +29,7 @@ char *muse = "muse";
 char *as[] = Asmcmd;
 char *ar[] = Arcmd;
 char *ld[] = Ldcmd;
-char *runtime = Instroot "/lib/myr/_myrrt.o";
+char *runtime = Instroot "/lib/myr/_myrrt";
 /* the name of the output file */
 char *libname;
 char *binname;
@@ -287,7 +287,7 @@ void compile(char *file, char ***stack, size_t *nstack)
     htput(loopdetect, file, file);
     if (hassuffix(file, ".myr")) {
         swapsuffix(use, sizeof use, file, ".myr", ".use");
-        swapsuffix(obj, sizeof obj, file, ".myr", ".o");
+        swapsuffix(obj, sizeof obj, file, ".myr", Objsuffix);
         getdeps(file, deps, 512, &ndeps);
         for (i = 0; i < ndeps; i++) {
             if (isquoted(deps[i])) {
@@ -309,7 +309,7 @@ void compile(char *file, char ***stack, size_t *nstack)
         gencmd(&cmd, &ncmd, mc, file, extra, nextra);
         run(cmd);
     } else if (hassuffix(file, ".s")) {
-        swapsuffix(obj, sizeof obj, file, ".s", ".o");
+        swapsuffix(obj, sizeof obj, file, ".s", Objsuffix);
         if (isfresh(file, obj))
             goto done;
         for (i = 1; as[i]; i++)
@@ -367,9 +367,9 @@ void archive(char **files, size_t nfiles)
     lappend(&args, &nargs, strdup(buf));
     for (i = 0; i < nfiles; i++) {
         if (hassuffix(files[i], ".myr"))
-            swapsuffix(buf, sizeof buf, files[i], ".myr", ".o");
+            swapsuffix(buf, sizeof buf, files[i], ".myr", Objsuffix);
         else if (hassuffix(files[i], ".s"))
-            swapsuffix(buf, sizeof buf, files[i], ".s", ".o");
+            swapsuffix(buf, sizeof buf, files[i], ".s", Objsuffix);
         else
             die("Unknown file type %s", files[i]);
         lappend(&args, &nargs, strdup(buf));
@@ -392,6 +392,9 @@ void findlib(char *buf, size_t bufsz, char *lib)
         if (access(buf, F_OK) == 0)
             return;
     }
+    snprintf(buf, bufsz, "%s/lib/myr/lib%s.a", Instroot, lib);
+    if (access(buf, F_OK) == 0)
+        return;
     fail(1, "unable to find library lib%s.a\n", lib);
 }
 
@@ -458,15 +461,16 @@ void linkobj(char **files, size_t nfiles)
     }
 
     if (runtime) {
-        lappend(&args, &nargs, strdup(runtime));
+        snprintf(buf, sizeof buf, "%s%s", runtime, Objsuffix);
+        lappend(&args, &nargs, strdup(buf));
     }
 
     /* ld -T ldscript -o outfile foo.o bar.o baz.o */
     for (i = 0; i < nfiles; i++) {
         if (hassuffix(files[i], ".myr"))
-            swapsuffix(buf, sizeof buf, files[i], ".myr", ".o");
+            swapsuffix(buf, sizeof buf, files[i], ".myr", Objsuffix);
         else if (hassuffix(files[i], ".s"))
-            swapsuffix(buf, sizeof buf, files[i], ".s", ".o");
+            swapsuffix(buf, sizeof buf, files[i], ".s", Objsuffix);
         else
             die("Unknown file type %s", files[i]);
         lappend(&args, &nargs, strdup(buf));
