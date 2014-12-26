@@ -24,6 +24,7 @@ pkg std =
 	const read	: (fd : fd, buf : byte[:] -> size)
 	const write	: (fd : fd, buf : byte[:] -> size)
 	const pipe	: (fds : fd[2]# -> int64)
+	const dup2	: (ofd : fd, nfd : fd -> fd)
 
 	/* path manipulation */
 	const mkdir	: (path : byte[:], mode : int64 -> int64)
@@ -37,9 +38,10 @@ pkg std =
 	const execve	: (cmd : byte[:], args : byte[:][:], env : byte[:][:] -> int64)
 	const exit	: (status:int -> void)
 	const waitpid	: (pid:pid, loc:int32#, opt : int64	-> int64)
-	const getmem	: (sz : size -> byte#)
-	const freemem	: (p : byte#, sz : size -> void)
-	const curtime	: (-> uint64)
+
+	pkglocal const getmem	: (sz : size -> byte#)
+	pkglocal const freemem	: (p : byte#, sz : size -> void)
+	pkglocal const curtime	: (-> time)
 ;;
 
 /* fd stuff */
@@ -50,6 +52,7 @@ const creat	= {path, mode;	-> sys.creat(path, mode) castto(fd)}
 const read	= {fd, buf;	-> sys.read(fd castto(sys.fd), buf) castto(size)}
 const write	= {fd, buf;	-> sys.write(fd castto(sys.fd), buf) castto(size)}
 const pipe	= {fds;		-> sys.pipe(fds castto(sys.fd[2]#))}
+const dup2	= {ofd, nfd;	-> sys.dup2(ofd castto(sys.fd), nfd castto(sys.fd)) castto(fd)}
 
 /* path manipulation */
 const mkdir	= {path, mode;	-> sys.mkdir(path, mode)}
