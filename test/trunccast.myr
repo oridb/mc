@@ -1,10 +1,10 @@
 use std
 /* should truncate y when casting to x, exiting with status 15 */
 const main = {
-	var x : int8
+	var x : uint8
 	var y : int32
 
 	y = 9999
-	x = y castto(int8)
+	x = y castto(uint8)
 	std.exit((x % 73) castto(int))
 }
