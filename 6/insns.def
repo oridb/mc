@@ -103,6 +103,26 @@ Insn(Idiv,
     "\tDIV%T %R\n",
     Use(.l={1},.r={Reax,Redx}),
     Def(.r={Reax,Redx}))
+Insn(Iidiv,
+    "\tidiv%t %r\n",
+    "\tIDIV%T %R\n",
+    Use(.l={1},.r={Reax,Redx}),
+    Def(.r={Reax,Redx}))
+Insn(Icwd,
+    "\tcwd\n",
+    "\tCWD\n",
+    Use(.r={Reax}),
+    Def(.r={Reax,Redx}))
+Insn(Icdq,
+    "\tcdq\n",
+    "\tCDQ\n",
+    Use(.r={Reax}),
+    Def(.r={Reax,Redx}))
+Insn(Icqo,
+    "\tcqo\n",
+    "\tCQO\n",
+    Use(.r={Reax}),
+    Def(.r={Reax,Redx}))
 Insn(Ineg,
     "\tneg%t %r\n",
     "\tNEG%T %R\n",
