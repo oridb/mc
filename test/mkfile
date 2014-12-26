@@ -1,0 +1,5 @@
+all:V: runtest.rc
+
+check:V:
+	./runtest.rc
+
