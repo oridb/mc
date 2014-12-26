@@ -39,7 +39,7 @@ echo '#define Asmcmd {"as", "-g", "-o", NULL}' >> config.h
 echo '#define Arcmd {"ar", "-rcs", NULL}' >> config.h
 echo '#define Ldcmd {"ld", "-o", NULL}' >> config.h
 echo '#define Defaultasm Gnugas' >> config.h
-echo '#define Objsuffix "o"' >> config.h
+echo '#define Objsuffix ".o"' >> config.h
 echo 'export SYSCLASS=posixy' >> config.mk
 case $OS in
     *Linux*)

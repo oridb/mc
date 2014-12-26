@@ -507,7 +507,6 @@ void linkobj(char **files, size_t nfiles)
 int main(int argc, char **argv)
 {
     struct utsname name;
-    char buf[512];
     char **stack;
     size_t nstack;
     Optctx ctx;

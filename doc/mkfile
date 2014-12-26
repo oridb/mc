@@ -5,6 +5,9 @@ MANS=\
 
 all:V: $MANS
 
-install:V:
-	echo -n ''
+install:V: $MANS
+
+nuke:V: $MANS
+
+clean:V: $MANS
 

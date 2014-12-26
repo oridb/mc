@@ -11,3 +11,5 @@ install:V:
 
 clean:V:
 	rm -f _myrrt.$O
+
+nuke:V: clean
