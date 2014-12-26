@@ -40,6 +40,10 @@ uninstall:V: $SUB config.h
 		mk $MKFLAGS
 	}
 
+check:V:
+	cd test
+	mk check
+
 config.h:
 	echo '#define Instroot "/amd64"' > config.h
 	echo '#define Asmcmd {"6a", "-o", NULL}' >> config.h

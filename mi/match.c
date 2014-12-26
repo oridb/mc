@@ -21,7 +21,7 @@ struct Dtree {
     size_t nval;
     Node **load;        /* expression value being compared */
     size_t nload;
-    Dtree **sub;        /* submatche to use if if equal */
+    Dtree **sub;        /* submatch to use if if equal */
     size_t nsub;
     Dtree *any;         /* tree for a wildcard match. */
 
@@ -116,8 +116,12 @@ static Dtree *addunion(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *ncap
     /* if we have the value already... */
     sub = NULL;
     for (i = 0; i < t->nval; i++) {
-        if (nameeq(t->val[i], pat->expr.args[0]))
-            return addpat(t->sub[i], pat->expr.args[1], NULL, cap, ncap);
+        if (nameeq(t->val[i], pat->expr.args[0])) {
+            if (pat->expr.nargs > 1)
+                return addpat(t->sub[i], pat->expr.args[1], NULL, cap, ncap);
+            else
+                return t->sub[i];
+        }
     }
 
     sub = mkdtree();
@@ -138,7 +142,7 @@ static Dtree *addlit(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *ncap)
         return t->any;
     for (i = 0; i < t->nval; i++) {
         if (liteq(t->val[i]->expr.args[0], pat->expr.args[0]))
-            return addpat(t->sub[i], pat->expr.args[1], NULL, cap, ncap);
+            return t->sub[i];
     }
 
     sub = mkdtree();
