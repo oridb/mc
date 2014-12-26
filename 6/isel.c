@@ -534,7 +534,7 @@ Loc *selexpr(Isel *s, Node *n)
             g(s, Imov, a, c, NULL);
             if (istysigned(exprtype(args[0]))) {
                 switch (r->mode) {
-                    case ModeB: break;
+                    case ModeB: g(s, Imovsx, c, coreg(Rrax, ModeW), NULL); break;
                     case ModeW: g(s, Icwd, NULL);       break;
                     case ModeL: g(s, Icdq, NULL);       break;
                     case ModeQ: g(s, Icqo, NULL);       break;
