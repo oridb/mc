@@ -4,5 +4,5 @@ use sys
 const main = {
 	var x : std.size
 	var y : std.off
-	var z : sys.statbuf
+	var z : sys.fd
 }
