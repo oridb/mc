@@ -10,13 +10,14 @@
  */
 TEXT sys$cstring+0(SB),$0
 	/* save registers */
-	MOVQ	SP,BP
+	MOVQ	SP,AX
 	SUBQ	$40,SP
-	MOVQ	BP,-8(BP)
-	MOVQ	R15,-16(BP)
-	MOVQ	SI,-24(BP)
-	MOVQ	DI,-32(BP)
-	MOVQ	CX,-40(BP)
+	MOVQ	BP,-8(AX)
+	MOVQ	R15,-16(AX)
+	MOVQ	SI,-24(AX)
+	MOVQ	DI,-32(AX)
+	MOVQ	CX,-40(AX)
+	MOVQ	AX,BP
 
 	MOVQ 	(BP),R15	/* ret addr */
 	MOVQ	8(BP),SI	/* src */
@@ -26,8 +27,8 @@ TEXT sys$cstring+0(SB),$0
 	SUBQ	$1,SP		/* +1 for nul */
 	MOVQ	SP,DI		/* dest */
 	MOVQ	SP,AX		/* ret val */
-	SUBQ	$24,SP		/* "unpop" the args and make room for return addr */
 	ANDQ	$(~15),SP	/* align */
+	SUBQ	$24,SP		/* "unpop" the args and make room for return addr */
 
 	CLD
 	REP
@@ -45,11 +46,12 @@ TEXT sys$cstring+0(SB),$0
 
 TEXT sys$alloca+0(SB),$0
 	/* save registers */
-        MOVQ    SP,BP
+	MOVQ    SP,AX
 	SUBQ	$32,SP
-	MOVQ	BP,-8(BP)
-	MOVQ	R15,-16(BP)
-	MOVQ	BX,-24(SP)
+	MOVQ	BP,-8(AX)
+	MOVQ	R15,-16(AX)
+	MOVQ	BX,-24(AX)
+	MOVQ	AX,BP
 
 	MOVQ	(BP),R15	/* ret addr */
 	MOVQ	8(BP),BX	/* len */
@@ -57,7 +59,7 @@ TEXT sys$alloca+0(SB),$0
 	/* get stack space */
 	SUBQ	BX,SP		/* get stack space */
 	MOVQ	SP,AX		/* top of stack (return value) */
-	SUBQ	$24,SP		/* "unpop" the args for return, and reserve ret addr */
+	SUBQ	$24,SP		/* "unpop" the args, and make room for ret addr */
 	ANDQ	$(~15),SP	/* align */
 
 	MOVQ	R15,0(SP)	/* place ret addr */
