@@ -246,12 +246,12 @@ Insn(Imovs,
     Def(.l={2}))
 Insn(Icvttsd2si,
     "\tcvttsd2si%2t %x,%r\n",
-    "\tCVTTSD2SI%2T %X,%R\n",
+    "\tCVTTSD2S%2T %X,%R\n",
     Use(.l={1}),
     Def(.l={2}))
 Insn(Icvttsi2sd,
     "\tcvttsi2sd%2t %x,%f\n",
-    "\tCVTTSI2SD%2T %X,%F\n",
+    "\tCVTTS%2T2SD %X,%F\n",
     Use(.l={1}),
     Def(.l={2}))
 Insn(Icvttsd2ss,
