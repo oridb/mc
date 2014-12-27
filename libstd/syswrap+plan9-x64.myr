@@ -119,14 +119,15 @@ const waitpid	= {pid, loc, opt;
 
 /* memory stuff */
 const getmem	= {sz
-	var endp
+	var endp, oldp
 
+	oldp = sys.curbrk
 	endp = (sys.curbrk castto(intptr)) + (sz castto(intptr))
 	if sys.brk_(endp castto(byte#)) < 0
 		-> Failmem
 	;;
 	sys.curbrk = endp castto(byte#)
-	-> sys.curbrk
+	-> oldp
 }
 	
 const freemem = {p, sz
