@@ -298,7 +298,7 @@ static size_t writelit(FILE *fd, char *name, size_t off, Htab *strtab, Node *v, 
            if (hthas(strtab, &v->lit.strval)) {
                lbl = htget(strtab, &v->lit.strval);
            } else {
-               lbl = gendatalbl(buf, sizeof buf);
+               lbl = genlocallblstr(buf, sizeof buf);
                htput(strtab, &v->lit.strval, strdup(lbl));
            }
            if (v->lit.strval.len > 0)
@@ -361,7 +361,7 @@ static size_t writeslice(FILE *fd, char *name, size_t off, Htab *globls, Htab *s
 
     lbl = htget(globls, base);
     fprintf(fd, "DATA %s+%zd(SB)/8,$%s+%zd(SB)\n", name, off, lbl, loval*sz);
-    fprintf(fd, "DATA %s+%zd(SB)/8,$%zd\n", name, off, (hival - loval));
+    fprintf(fd, "DATA %s+%zd(SB)/8,$%zd\n", name, off + Ptrsz, (hival - loval));
     return size(n);
 }
 

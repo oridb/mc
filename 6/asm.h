@@ -210,8 +210,8 @@ void genp9(Node *file, char *out);
 extern size_t maxregid;
 extern Loc **locmap; /* mapping from reg id => Loc * */
 
-char *gendatalbl(char *buf, size_t sz);
-char *genjmplbl(char *buf, size_t sz);
+char *genlocallblstr(char *buf, size_t sz);
+char *genlblstr(char *buf, size_t sz);
 Node *genlbl(Srcloc loc);
 Loc *loclbl(Node *lbl);
 Loc *locstrlbl(char *lbl);

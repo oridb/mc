@@ -40,7 +40,7 @@ uninstall:V: $SUB config.h
 		mk $MKFLAGS
 	}
 
-check:V:
+check:V: all
 	cd test
 	mk check
 

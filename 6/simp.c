@@ -688,14 +688,14 @@ static Node *simpblob(Simp *s, Node *blob, Node ***l, size_t *nl)
     Node *n, *d, *r;
     char lbl[128];
 
-    n = mkname(blob->loc, gendatalbl(lbl, 128));
+    n = mkname(blob->loc, genlblstr(lbl, 128));
     d = mkdecl(blob->loc, n, blob->expr.type);
     r = mkexpr(blob->loc, Ovar, n, NULL);
 
     d->decl.init = blob;
     d->decl.type = blob->expr.type;
     d->decl.isconst = 1;
-    htput(s->globls, d, strdup(lbl));
+    htput(s->globls, d, asmname(d));
 
     r->expr.did = d->decl.did;
     r->expr.type = blob->expr.type;

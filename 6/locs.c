@@ -35,7 +35,7 @@ Node *genlbl(Srcloc loc)
 {
     char buf[128];
 
-    genjmplbl(buf, 128);
+    genlblstr(buf, 128);
     return mklbl(loc, buf);
 }
 
