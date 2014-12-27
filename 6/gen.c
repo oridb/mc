@@ -24,7 +24,7 @@ static int islocal(Node *dcl)
 }
 
 static int nextlbl;
-char *gendatalbl(char *buf, size_t sz)
+char *genlocallblstr(char *buf, size_t sz)
 {
     if (asmsyntax == Plan9)
         snprintf(buf, 128, ".L%d<>", nextlbl++);
@@ -33,7 +33,7 @@ char *gendatalbl(char *buf, size_t sz)
     return buf;
 }
 
-char *genjmplbl(char *buf, size_t sz)
+char *genlblstr(char *buf, size_t sz)
 {
     snprintf(buf, 128, ".L%d", nextlbl++);
     return buf;

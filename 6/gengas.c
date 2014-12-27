@@ -293,7 +293,7 @@ static size_t writelit(FILE *fd, Htab *strtab, Node *v, Type *ty)
            if (hthas(strtab, &v->lit.strval)) {
                lbl = htget(strtab, &v->lit.strval);
            } else {
-               lbl = gendatalbl(buf, sizeof buf);
+               lbl = genlocallblstr(buf, sizeof buf);
                htput(strtab, &v->lit.strval, strdup(lbl));
            }
            fprintf(fd, "\t.quad %s\n", lbl);
