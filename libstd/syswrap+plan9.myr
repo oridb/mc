@@ -26,9 +26,13 @@ pkg std =
 	const pipe	: (fds : fd[2]# -> int64)
 	const dup2	: (ofd : fd, nfd : fd -> fd)
 
+	/* useful/portable bits of stat */
+	const fmtime	: (f : byte[:]	-> option(time))
+	const fsize	: (f : byte[:]	-> option(off))
+
 	/* path manipulation */
 	const mkdir	: (path : byte[:], mode : int64 -> int64)
-	const unlink	: (path : byte[:] -> int64)
+	const remove	: (path : byte[:] -> bool)
 
 	/* process stuff */
 	const getpid	: ( -> pid)
@@ -68,7 +72,7 @@ const pipe	= {fds;		-> sys.pipe(fds castto(sys.fd[2]#)) castto(int64)}
 const dup2	= {ofd, nfd;	-> sys.dup(ofd castto(sys.fd), nfd castto(sys.fd)) castto(fd)}
 
 /* path manipulation */
-const unlink	= {path;	-> sys.remove(path)}
+const remove	= {path;	-> sys.remove(path) == 0}
 const mkdir	= {path, mode;
 	var fd
 
