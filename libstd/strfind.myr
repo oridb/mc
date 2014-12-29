@@ -4,6 +4,7 @@ use "option.use"
 pkg std =
 	const strfind	: (haystack : byte[:], needle : byte[:] -> option(size))
 	const strrfind	: (haystack : byte[:], needle : byte[:] -> option(size))
+	const strhas	: (haystack : byte[:], needle : byte[:]	-> bool)
 ;;
 
 const strfind = {haystack, needle
@@ -42,3 +43,9 @@ const strfindin = {haystack, needle, start, end
 	-> `None
 }
 
+const strhas = {haystack, needle
+	match strfind(haystack, needle)
+	| `Some _:	-> true
+	| `None:	-> false
+	;;
+}
