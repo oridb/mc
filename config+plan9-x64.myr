@@ -1,0 +1,9 @@
+pkg config =
+	const Instroot	= "/amd64"
+	const Sys	= "Plan9"
+	const Objsuffix	= ".6"
+	const Linkcmd	= ["6l", "-l", "-o"]
+	const Arcmd	= ["ar", "vu"]
+	const Ascmd	= ["6a"]
+	const Directlib	= true
+;;

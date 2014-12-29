@@ -1,5 +1,4 @@
 use std
-use sys
 
 use "config.use"
 use "deps.use"
@@ -294,14 +293,8 @@ const visit = {cmd, head, g, lib, looped, marked -> byte[:][:]
 }
 
 const isfresh = {src, dst
-	var srcsb, dstsb
+	var srcmt, dstmt
 
-	if sys.stat(src, &srcsb) != 0
-		std.fatal(1, "could not stat %s\n", src)
-	;;
-	if sys.stat(dst, &dstsb) != 0
-		-> false
-	;;
 	/*
 	OSX only has single second resolution on modification
 	times. Since most builds happen within one second of each
@@ -311,10 +304,14 @@ const isfresh = {src, dst
 	So, we treat times where both secs and nsecs are equal as
 	up to date.
 	*/
-	if srcsb.mtime.sec != dstsb.mtime.sec
-		-> srcsb.mtime.sec < dstsb.mtime.sec
-	else
-		-> srcsb.mtime.nsec <= dstsb.mtime.nsec
+	match std.mtime(src)
+	| `std.Some mt:	srcmt = mt
+	| `std.None:	std.fatal(1, "could not stat %s\n", src)
 	;;
+	match std.mtime(dst)
+	| `std.Some mt:	dstmt = mt
+	| `std.None:	-> false
+	;;
+	-> srcmt <= dstmt
 }
 
