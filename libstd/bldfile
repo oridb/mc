@@ -62,7 +62,8 @@ lib std {inc=.} =
 	strjoin.myr
 	strsplit.myr
 	strstrip.myr
-        syswrap.myr
+        syswrap+plan9.myr
+	syswrap+posixy.myr
 	swap.myr
 	try.myr
 	types.myr
