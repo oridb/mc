@@ -17,6 +17,9 @@ const strsplit = {s, delim
 	var sp
 
 	sp = [][:]
+	if s.len == 0
+		-> sp
+	;;
 	last = 0
 	while true
 		match strfind(s, delim)
