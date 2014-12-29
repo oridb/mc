@@ -8,6 +8,10 @@ pkg std =
 
 	const Failmem	: byte#	= -1 castto(byte#)
 
+	const Seekset	: seektype = 0
+	const Seekcur	: seektype = 1
+	const Seekend	: seektype = 2
+
 	const Ordonly  	: fdopt = sys.Ordonly	castto(fdopt)
 	const Owronly  	: fdopt = sys.Owronly	castto(fdopt)
 	const Ordwr    	: fdopt = sys.Ordwr	castto(fdopt)
@@ -52,6 +56,7 @@ const creat	= {path, mode;	-> sys.creat(path, mode) castto(fd)}
 const read	= {fd, buf;	-> sys.read(fd castto(sys.fd), buf) castto(size)}
 const write	= {fd, buf;	-> sys.write(fd castto(sys.fd), buf) castto(size)}
 const pipe	= {fds;		-> sys.pipe(fds castto(sys.fd[2]#))}
+const seek	= {fd, delta, whence;	-> sys.lseek(fd castto(sys.fd), delta castto(sys.off), whence castto(sys.whence)) castto(off)}
 const dup2	= {ofd, nfd;	-> sys.dup2(ofd castto(sys.fd), nfd castto(sys.fd)) castto(fd)}
 
 /* path manipulation */
