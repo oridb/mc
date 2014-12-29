@@ -3,6 +3,7 @@ use std
 use "types.use"
 use "util.use"
 use "opts.use"
+use "fsel.use"
 
 pkg bld =
 	const parse	: (p : parser#	-> bool)
@@ -73,8 +74,9 @@ myrtarget: name '=' inputlist ';;'
 	| name attrlist = inputlist ';;'
 */
 const myrtarget = {p, targ
-	var name, inputs, libdeps, attrs
 	var ldscript, runtime, inst, incpath
+	var name, inputs, libdeps, attrs
+	var fsel
 
 	match word(p)
 	| `std.Some n:	name = n
@@ -98,13 +100,12 @@ const myrtarget = {p, targ
 
 	match inputlist(p)
 	| `std.Some (wl, libs): 
-		inputs = [][:]
+		fsel = mkfsel()
 		libdeps = libs
 		for w in wl
-			if isplatform(w)
-				inputs = std.slpush(inputs, w)
-			;;
+			fseladd(fsel, w)
 		;;
+		inputs = fselfin(fsel)
 		std.slfree(wl)
 	| `std.None: failparse(p, "expected list of file names after '%s %s'\n", targ, name)
 	;;

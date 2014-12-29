@@ -5,6 +5,7 @@ MYRSRC= \
 	clean.myr \
 	config.myr \
 	deps.myr \
+	fsel.myr \
 	install.myr \
 	main.myr \
 	opts.myr \

@@ -1,0 +1,104 @@
+use std
+
+use "opts.use"
+
+pkg bld =
+	type fsel = struct
+		filematch	: std.htab(byte[:], int)#
+		filebest	: std.htab(byte[:], byte[:])#
+		sysattrs	: std.htab(byte[:], bool)#
+	;;
+
+	const mkfsel	: (-> fsel#)
+	const fseladd	: (fsel : fsel#, file : byte[:] -> void)
+	const fselfin	: (fsel : fsel# -> byte[:][:])
+;;
+
+const mkfsel = {
+	var fsel
+
+	fsel = std.alloc()
+	fsel.filematch = std.mkht(std.strhash, std.streq)
+	fsel.filebest = std.mkht(std.strhash, std.streq)
+	fsel.sysattrs = std.mkht(std.strhash, std.streq)
+	addsysattrs(fsel.sysattrs)
+	-> fsel
+}
+
+const fseladd = {fsel, f
+	var basename, attrs
+	var nmatch, curbest
+	var attrlist
+
+	match std.strfind(f, "+")
+	| `std.Some i:
+		basename = f[:i]
+		match std.strrfind(f[i+1:], ".")
+		| `std.Some j:	attrs = f[i+1:][:j]
+		| `std.None:	std.fatal(1, "unrecognized type for file %s\n", f)
+		;;
+	| `std.None:
+		match std.strrfind(f, ".")
+		| `std.None:	std.fatal(1, "unrecognized type for file %s\n", f)
+		| `std.Some i:
+			basename = f[:i]
+			attrs = ""
+		;;
+	;;
+
+	nmatch = 0
+	attrlist = std.strsplit(attrs, "-")
+	for a in attrlist
+		if std.hthas(fsel.sysattrs, a)
+			nmatch++
+		else
+			nmatch = -1
+			break
+		;;
+	;;
+	std.slfree(attrlist)
+	curbest = std.htgetv(fsel.filematch, basename, -1)
+	if curbest < nmatch
+		std.htput(fsel.filematch, basename, nmatch)
+		std.htput(fsel.filebest, basename, f)
+	;;
+}
+
+const fselfin = {fsel
+	var keys, nmatch, ret
+
+	keys = std.htkeys(fsel.filematch)
+	ret = [][:]
+	for k in keys
+		nmatch = std.htgetv(fsel.filematch, k, -1)
+		if nmatch == -1
+			std.fatal(1, "no applicable file for '%s'\n", k)
+		;;
+		ret = std.slpush(ret, std.htgetv(fsel.filebest, k, ""))
+	;;
+	std.htfree(fsel.filematch)
+	std.htfree(fsel.filebest)
+	std.htfree(fsel.sysattrs)
+	-> ret
+}
+
+const addsysattrs = {sa
+	var attrs
+	match opt_sys
+	| "freebsd":	attrs = ["freebsd", "posixy"][:]
+	| "linux":	attrs = ["linux", "posixy"][:]
+	| "plan9":	attrs = ["plan9"][:]
+	| unknown:	std.fatal(1, "unknown system %s\n", unknown)
+	;;
+	for a in attrs
+		std.htput(sa, a, true)
+	;;
+
+	match opt_arch
+	| "x64":	attrs = ["x64"][:]
+	| unknown:	std.fatal(1, "unknown arch %s\n", unknown)
+	;;
+	for a in attrs
+		std.htput(sa, a, true)
+	;;
+}

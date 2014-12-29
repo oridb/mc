@@ -3,7 +3,11 @@ bin mbld =
 	build.myr
 	clean.myr
 	config.myr
+	config+posixy.myr
+	config+plan9.myr
+	config+posixy-x64.myr
 	deps.myr
+	fsel.myr
 	install.myr
 	main.myr
 	opts.myr
