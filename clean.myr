@@ -51,7 +51,6 @@ const cleanup = {out, leaves, islib
 	var mchammer_files /* cant touch this */
 	var keys
 	var dg
-	var sb
 
 	if !myrdeps(&dg, out, leaves, islib)
 		std.fatal(1, "Could not load dependencies for %s\n", out)
@@ -63,9 +62,8 @@ const cleanup = {out, leaves, islib
 
 	keys = std.htkeys(dg.deps)
 	for k in keys
-		if !std.htgetv(mchammer_files, k, false) && sys.stat(k, &sb) == 0
+		if !std.htgetv(mchammer_files, k, false) && std.remove(k)
 			std.put("\tclean %s\n", k)
-			std.unlink(k)
 		;;
 	;;
 }

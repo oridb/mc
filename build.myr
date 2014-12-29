@@ -304,11 +304,11 @@ const isfresh = {src, dst
 	So, we treat times where both secs and nsecs are equal as
 	up to date.
 	*/
-	match std.mtime(src)
+	match std.fmtime(src)
 	| `std.Some mt:	srcmt = mt
 	| `std.None:	std.fatal(1, "could not stat %s\n", src)
 	;;
-	match std.mtime(dst)
+	match std.fmtime(dst)
 	| `std.Some mt:	dstmt = mt
 	| `std.None:	-> false
 	;;

@@ -52,12 +52,12 @@ const movefile = {delete, file, instdir, destdir, prefix
 	path = std.pathjoin([destdir, instdir, prefix, file][:])
 	if delete
 		std.put("\t%s deleted\n", path)
-		if (std.unlink(path) < 0)
+		if !std.remove(path)
 			std.put("\t\tno such file %s\n", file)
 		;;
 	else
 		std.put("\t%s => %s\n", file, path)
-		std.unlink(path)
+		std.remove(path)
 		match std.slurp(file)
 		| `std.Fail m:	std.fatal(1, "Could not open %s for reading\n", file)
 		| `std.Ok buf:
