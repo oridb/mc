@@ -96,7 +96,7 @@ const curtime = {
 	;;
 }
 
-const mtime = {path
+const fmtime = {path
 	var sb
 
 	if sys.stat(path, &sb) == 0
