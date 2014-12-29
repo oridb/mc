@@ -5,12 +5,13 @@ pkg std =
 	type fd		= sys.fd
 	type pid	= sys.pid
 	type fdopt	= sys.fdopt
+	type whence	= sys.whence
 
 	const Failmem	: byte#	= -1 castto(byte#)
 
-	const Seekset	: seektype = 0
-	const Seekcur	: seektype = 1
-	const Seekend	: seektype = 2
+	const Seekset	: whence = 0
+	const Seekcur	: whence = 1
+	const Seekend	: whence = 2
 
 	const Ordonly  	: fdopt = sys.Ordonly	castto(fdopt)
 	const Owronly  	: fdopt = sys.Owronly	castto(fdopt)
@@ -28,6 +29,7 @@ pkg std =
 	const read	: (fd : fd, buf : byte[:] -> size)
 	const write	: (fd : fd, buf : byte[:] -> size)
 	const pipe	: (fds : fd[2]# -> int64)
+	const seek	: (fd : fd, delta : off, whence : whence -> off)
 	const dup2	: (ofd : fd, nfd : fd -> fd)
 
 	/* path manipulation */
