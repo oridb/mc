@@ -98,9 +98,12 @@ const curtime = {
 
 const fmtime = {path
 	var sb
+	var sec, nsec
 
 	if sys.stat(path, &sb) == 0
-		-> `Some ((sb.mtime.sec*1_000 + sb.mtime.nsec/1_000_000) castto(time))
+		sec = sb.mtime.sec castto(time)
+		nsec = sb.mtime.nsec castto(time)
+		-> `Some sec*1000 + nsec/1_000_000
 	else
 		-> `None
 	;;

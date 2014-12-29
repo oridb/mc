@@ -12,6 +12,7 @@ pkg sys =
 	type sockfam	= uint8	/* socket family */
 	type filemode	= uint16	/* file permission bits */
 	type kflags	= uint16	/* kqueue flags */
+	type whence	= int64
 
 	type timespec = struct
 		sec	: uint64
@@ -117,6 +118,10 @@ pkg sys =
 		udata	: uint64	/* opaque user data identifier */
 		ext	: uint64[2]	/* filter-specific extensions */
 	;;
+
+	const Seekset	: whence = 0
+	const Seekcur	: whence = 1
+	const Seekend	: whence = 2
 
 	/* kqueue events */
 	const Kevadd		: kflags = 0x0001	/* add event to kq (implies enable) */
@@ -569,7 +574,7 @@ pkg sys =
 	const unlink	: (path:byte[:] -> int)
 	const read	: (fd:fd, buf:byte[:] -> size)
 	const write	: (fd:fd, buf:byte[:] -> size)
-	const lseek	: (fd:fd, off:uint64, whence:int64 -> int64)
+	const lseek	: (fd:fd, off:off, whence:whence -> off)
 	const stat	: (path:byte[:], sb:statbuf# -> int64)
 	const lstat	: (path:byte[:], sb:statbuf# -> int64)
 	const fstat	: (fd:fd, sb:statbuf# -> int64)
@@ -631,7 +636,7 @@ generic a = {x : @t
 extern const __osx_fork	: (-> pid)
 extern const __osx_pipe : (fd : fd[2]# -> int64)
 extern const __osx_getpid	: (-> pid)
-extern const __osx_lseek	: (fd:fd, off:uint64, whence:int64 -> int64)
+extern const __osx_lseek	: (fd:fd, off:off, whence:whence -> off)
 extern const __osx_gettimeofday	: (tv : timeval#, tz : timezone# -> int)
 /*
 extern const __osx_ptrace
@@ -703,7 +708,7 @@ const creat	= {path, mode;		-> openmode(path, Ocreat | Otrunc | Owronly, mode) c
 const unlink	= {path;		-> syscall(Sysunlink, cstring(path)) castto(int)}
 const read	= {fd, buf;		-> syscall(Sysread, a(fd), buf castto(byte#), a(buf.len)) castto(size)}
 const write	= {fd, buf;		-> syscall(Syswrite, a(fd), buf castto(byte#), a(buf.len)) castto(size)}
-const lseek	= {fd, off, whence;	-> syscall(Syslseek, a(fd), a(off), a(whence))}
+const lseek	= {fd, off, whence;	-> __osx_lseek(fd, off, whence)}
 const stat	= {path, sb;		-> syscall(Sysstat64, cstring(path), a(sb))}
 const lstat	= {path, sb;		-> syscall(Syslstat64, cstring(path), a(sb))}
 const fstat	= {fd, sb;		-> syscall(Sysfstat64, a(fd), a(sb))}
