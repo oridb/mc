@@ -1,5 +1,4 @@
 use std
-use sys
 
 use "config.use"
 use "deps.use"
