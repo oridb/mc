@@ -1,5 +1,6 @@
 use sys
 use "types.use"
+use "option.use"
 
 pkg std =
 	type fd		= sys.fd
@@ -9,9 +10,9 @@ pkg std =
 
 	const Failmem	: byte#	= -1 castto(byte#)
 
-	const Seekset	: whence = 0
-	const Seekcur	: whence = 1
-	const Seekend	: whence = 2
+	const Seekset	: whence = sys.Seekset	castto(whence)
+	const Seekcur	: whence = sys.Seekcur	castto(whence)
+	const Seekend	: whence = sys.Seekend	castto(whence)
 
 	const Ordonly  	: fdopt = sys.Ordonly	castto(fdopt)
 	const Owronly  	: fdopt = sys.Owronly	castto(fdopt)
@@ -33,12 +34,14 @@ pkg std =
 	const dup2	: (ofd : fd, nfd : fd -> fd)
 
 	/* useful/portable bits of stat */
-	const mtime	: (f : byte[:]	-> time)
-	const fsize	: (f : byte[:]	-> off)
+	const fmtime	: (f : byte[:]	-> option(time))
+	const fsize	: (f : byte[:]	-> option(off))
+
+	/* useful/portable bits of uname */
 
 	/* path manipulation */
 	const mkdir	: (path : byte[:], mode : int64 -> int64)
-	const unlink	: (path : byte[:] -> int)
+	const remove	: (path : byte[:] -> bool)
 
 	/* process stuff */
 	const getpid	: ( -> pid)
@@ -67,7 +70,7 @@ const dup2	= {ofd, nfd;	-> sys.dup2(ofd castto(sys.fd), nfd castto(sys.fd)) cast
 
 /* path manipulation */
 const mkdir	= {path, mode;	-> sys.mkdir(path, mode)}
-const unlink	= {path;	-> sys.unlink(path)}
+const remove	= {path;	-> sys.unlink(path) == 0}
 
 /* process stuff */
 const getpid	= {;		-> sys.getpid() castto(pid)}
@@ -96,13 +99,19 @@ const curtime = {
 const mtime = {path
 	var sb
 
-	sys.stat(path, &sb)
-	-> (sb.mtime.sec*1_000 + sb.mtime.nsec/1_000_000) castto(time)
+	if sys.stat(path, &sb) == 0
+		-> `Some ((sb.mtime.sec*1_000 + sb.mtime.nsec/1_000_000) castto(time))
+	else
+		-> `None
+	;;
 }
 
 const fsize = {path
 	var sb
 
-	sys.stat(path, &sb)
-	-> sb.size castto(off)
+	if sys.stat(path, &sb) == 0
+		-> `Some (sb.size castto(off))
+	else
+		-> `None
+	;;
 }

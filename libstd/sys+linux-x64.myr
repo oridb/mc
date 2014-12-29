@@ -561,6 +561,7 @@ pkg sys =
 	const write	: (fd:fd, buf:byte[:] -> size)
 	const lseek	: (fd:fd, off:off, whence:whence -> int64)
 	const stat	: (path:byte[:], sb:statbuf# -> int64)
+	const access	: (path : byte[:], mode : accessmode -> int64)
 	const lstat	: (path:byte[:], sb:statbuf# -> int64)
 	const fstat	: (fd:fd, sb:statbuf# -> int64)
 	const mkdir	: (path : byte[:], mode : int64	-> int64)
