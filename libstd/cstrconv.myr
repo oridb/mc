@@ -3,6 +3,8 @@ pkg std =
 ;;
 
 const cstrconv = {buf
+	var i
+
 	for i = 0; i < buf.len; i++
 		if buf[i] == 0
 			break

@@ -1,7 +1,7 @@
 use sys
-use "types.use"
-use "strconv.use"
+use "cstrconv.use"
 use "option.use"
+use "types.use"
 
 pkg std =
 	type fd		= sys.fd
@@ -90,7 +90,7 @@ const getsysinfo = {si
 	si.system = cstrconv(si.uname.sysname[:])
 	si.version = cstrconv(si.uname.version[:])
 	si.relsease = cstrconv(si.uname.release[:])
-	si.arch = cstconv(si.uname.machine[:])
+	si.arch = cstrconv(si.uname.machine[:])
 }
 
 /* process stuff */
