@@ -110,7 +110,7 @@ static void eatcomment(void)
                 curloc.line++;
                 break;
             case End:
-                lfatal(curloc, 0, "File ended within comment starting at line %d", startln);
+                lfatal(curloc, "File ended within comment starting at line %d", startln);
                 break;
         }
         if (depth == 0)
@@ -618,7 +618,7 @@ static Tok *oper(void)
                   break;
         default:
                   tt = Terror;
-                  lfatal(curloc, 0, "Junk character %c", c);
+                  lfatal(curloc, "Junk character %c", c);
                   break;
     }
     return mktok(tt);
@@ -648,10 +648,10 @@ static Tok *number(int base)
         if (c == '.')
             isfloat = 1;
         else if (hexval(c) < 0 || hexval(c) > base)
-            lfatal(curloc, 0, "Integer digit '%c' outside of base %d", c, base);
+            lfatal(curloc, "Integer digit '%c' outside of base %d", c, base);
         if (nbuf >= sizeof buf) {
             buf[nbuf-1] = '\0';
-            lfatal(curloc, 0, "number %s... too long to represent", buf);
+            lfatal(curloc, "number %s... too long to represent", buf);
         }
         buf[nbuf++] = c;
     }
