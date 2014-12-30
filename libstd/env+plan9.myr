@@ -1,18 +1,54 @@
 use sys
 
+use "alloc.use"
+use "die.use"
 use "extremum.use"
+use "fmt.use"
 use "option.use"
+use "result.use"
+use "slcp.use"
+use "sldup.use"
 use "sleq.use"
+use "slpush.use"
+use "slurp.use"
 
 pkg std =
 	const getenv :	(name : byte[:] -> option(byte[:]))
 	const getenvv :	(name : byte[:], default : byte[:] -> byte[:])
 ;;
 
-const getenv = {name
+var envkey 	: byte[:][:]
+var envval	: byte[:][:]
+
+const envfind = {key
+	var i
+	for i = 0; i < envkey.len; i++
+		if std.sleq(envkey[i], key)
+			-> `Some envval[i]
+		;;
+	;;
 	-> `None
 }
 
+const getenv = {name
+	var buf : byte[128]
+	match envfind(name)
+	| `Some val:	-> `Some val
+	| `None:
+		bfmt(buf[:], "/env/%s", name)
+		match std.slurp(buf[:])
+		| `Fail m: -> `None
+		| `Ok data:
+			slpush(envkey, sldup(name))
+			slpush(envval, data)
+			-> `Some data
+		;;
+	;;
+}
+
 const getenvv = {name, default
-	-> default
+	match getenv(name)
+	| `Some val:	-> val
+	| `None:	-> default
+	;;
 }
