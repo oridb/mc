@@ -51,6 +51,7 @@ pkg std =
 
 	/* path manipulation */
 	const mkdir	: (path : byte[:], mode : int64 -> int64)
+	const chdir	: (path : byte[:] -> bool)
 	const remove	: (path : byte[:] -> bool)
 
 	/* process stuff */
@@ -80,16 +81,17 @@ const dup2	= {ofd, nfd;	-> sys.dup2(ofd castto(sys.fd), nfd castto(sys.fd)) cast
 
 /* path manipulation */
 const mkdir	= {path, mode;	-> sys.mkdir(path, mode)}
+const chdir	= {path;	-> sys.chdir(path) == 0}
 const remove	= {path;	-> sys.unlink(path) == 0}
 
 /* useful/portable bits of uname */
 const getsysinfo = {si
-	var si
+	var si : sysinfo
 
-	sys.uname(&si)
-	si.system = cstrconv(si.uname.sysname[:])
+	sys.uname(&si.uname)
+	si.system = cstrconv(si.uname.system[:])
 	si.version = cstrconv(si.uname.version[:])
-	si.relsease = cstrconv(si.uname.release[:])
+	si.release = cstrconv(si.uname.release[:])
 	si.arch = cstrconv(si.uname.machine[:])
 }
 
