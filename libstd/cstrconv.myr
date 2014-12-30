@@ -1,0 +1,12 @@
+pkg std =
+	const cstrconv	: (buf : byte[:] -> byte[:])
+;;
+
+const cstrconv = {buf
+	for i = 0; i < buf.len; i++
+		if buf[i] == 0
+			break
+		;;
+	;;
+	-> buf[:i]
+}
