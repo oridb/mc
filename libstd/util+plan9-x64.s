@@ -28,7 +28,7 @@ TEXT sys$cstring+0(SB),$0
 	MOVQ	SP,DI		/* dest */
 	MOVQ	SP,AX		/* ret val */
 	ANDQ	$(~15),SP	/* align */
-	SUBQ	$24,SP		/* "unpop" the args and make room for return addr */
+	SUBQ	$32,SP		/* "unpop" the args and make room for return addr */
 
 	CLD
 	REP
@@ -59,7 +59,7 @@ TEXT sys$alloca+0(SB),$0
 	/* get stack space */
 	SUBQ	BX,SP		/* get stack space */
 	MOVQ	SP,AX		/* top of stack (return value) */
-	SUBQ	$24,SP		/* "unpop" the args, and make room for ret addr */
+	SUBQ	$32,SP		/* "unpop" the args, and make room for ret addr */
 	ANDQ	$(~15),SP	/* align */
 
 	MOVQ	R15,0(SP)	/* place ret addr */

@@ -5,6 +5,11 @@ pkg std =
 	type fd		= sys.fd
 	type pid	= sys.pid
 	type fdopt	= sys.fdopt
+	type whence = int64
+
+	const Seekset	: whence = 0
+	const Seekcur	: whence = 1
+	const Seekend	: whence = 2
 
 	const Failmem	: byte#	= -1 castto(byte#)
 
@@ -23,6 +28,7 @@ pkg std =
 	const creat	: (path : byte[:], mode : int64 -> fd)
 	const read	: (fd : fd, buf : byte[:] -> size)
 	const write	: (fd : fd, buf : byte[:] -> size)
+	const seek	: (fd : fd, delta : off, whence : whence -> off)
 	const pipe	: (fds : fd[2]# -> int64)
 	const dup2	: (ofd : fd, nfd : fd -> fd)
 
@@ -46,6 +52,7 @@ pkg std =
 	pkglocal const getmem	: (sz : size -> byte#)
 	pkglocal const freemem	: (p : byte#, sz : size -> void)
 	pkglocal const curtime	: (-> time)
+	pkglocal const p9errstr	: (buf : byte[:] -> byte[:])
 ;;
 
 /* fd stuff */
@@ -68,6 +75,7 @@ const openmode	= {path, opts, mode;
 const close	= {fd;		-> sys.close(fd castto(sys.fd)) castto(int64)}
 const read	= {fd, buf;	-> sys.pread(fd castto(sys.fd), buf, -1) castto(size)}
 const write	= {fd, buf;	-> sys.pwrite(fd castto(sys.fd), buf, -1) castto(size)}
+const seek	= {fd, off, whence; 	-> sys.seek(fd castto(sys.fd), off castto(sys.off), whence castto(int64)) castto(off)}
 const pipe	= {fds;		-> sys.pipe(fds castto(sys.fd[2]#)) castto(int64)}
 const dup2	= {ofd, nfd;	-> sys.dup(ofd castto(sys.fd), nfd castto(sys.fd)) castto(fd)}
 
@@ -141,3 +149,14 @@ const freemem = {p, sz
 const curtime = {
 	-> sys.nsec()/1000 castto(time)
 }
+
+const p9errstr = {errbuf
+	var i
+
+	sys.errstr(errbuf)
+	for i = 0; errbuf[i] != 0 && i < errbuf.len; i++
+		continue
+	;;
+	-> errbuf[:i]
+}
+

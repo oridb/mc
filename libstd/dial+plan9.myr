@@ -1,0 +1,172 @@
+use sys
+
+use "alloc.use"
+use "die.use"
+use "fmt.use"
+use "option.use"
+use "pathjoin.use"
+use "result.use"
+use "sleq.use"
+use "strfind.use"
+use "strstrip.use"
+use "syswrap.use"
+use "utf.use"
+
+
+pkg std =
+	const dial	: (dialstr : byte[:] -> result(fd, byte[:]))
+;;
+
+const Maxpath = 512
+
+const dial = {str
+	var netdir, proto, rem
+
+	(netdir, proto, rem) = parsedial(str)
+	put("net=%s, proto=%s, rem=%s\n", netdir, proto, rem)
+	if netdir.len != 0
+		-> csdial(netdir, proto, rem)
+	;;
+
+	match csdial("/net", proto, rem)
+	| `Ok fd:	-> `Ok fd
+	| `Fail m:
+		put("m = %s\n", m)
+		-> csdial("/net.alt", proto, rem)
+	;;
+}
+
+const csdial = {netdir, proto, rem
+	var dir, clone, addr, csaddr
+	var ret, csfd, n
+	var buf	: byte[Maxpath]
+
+	/* Try using the connection server */
+	dir = fmt("%s/cs", netdir)
+	csfd = open(dir, Ordwr)
+	if csfd < 0
+		clone = fmt("%s/%s/clone", netdir, proto)
+		ret = call(clone, rem, netdir)
+		slfree(clone)
+		if ret == -1
+			-> `Fail "unable to dial without cs"
+		else
+			-> `Ok ret
+		;;
+	;;
+	slfree(dir)
+
+	csaddr = fmt("%s!%s", proto, rem)
+	put("csaddr=%s\n", csaddr)
+	if write(csfd, csaddr) < 0
+		close(csfd)
+		-> `Fail "couldn't blah cs"
+	;;
+	slfree(csaddr)
+
+	seek(csfd, 0, 0)
+	while true
+		n = read(csfd, buf[:])
+		if n <= 0
+			break
+		;;
+
+		match strfind(buf[:n], " ")
+		| `None:	continue
+		| `Some i:
+			clone = buf[:i]
+			addr = buf[i+1:n]
+		;;
+
+		ret = call(clone, addr, netdir)
+		if ret >= 0
+			break
+		;;
+	;;
+
+	close(csfd)
+	if ret < 0
+		-> `Fail "unable to dial"
+	;;
+	-> `Ok ret
+}
+
+const call = {clone, addr, netdir
+	var namebuf : byte[Maxpath]
+	var databuf : byte[Maxpath]
+	var name, base
+	var cfd, datafd
+	var c, n
+
+	datafd = -1
+	c = nsclonestr(clone, netdir)
+	put("c = %s\n", c)
+	cfd = open(c, Ordwr)
+	if cfd < 0
+		goto cleanup
+	;;
+
+	n = read(cfd, namebuf[:])
+	if n < 0
+		goto cleanup
+	;;
+	fput(cfd, "connect %s", addr)
+	name = strstrip(namebuf[:n])
+	put("namebuf=%s\n", namebuf[:n])
+	match strrfind(c, "/")
+	| `None:	die("there should be a '/' here\n")
+	| `Some i:	base = c[:i]
+	;;
+	n = bfmt(databuf[:], "%s/%s/data", base, name)
+	datafd = open(databuf[:n], Ordwr)
+:cleanup
+	close(cfd)
+	slfree(c)
+	-> datafd
+}
+
+const nsclonestr = {clone, netdir
+	if decode(clone) == '#' || decode(clone) == '/'
+		match std.strfind(clone[1:], "/")
+		| `Some i:	clone = clone[i+1:]
+		| `None:	/* nothing */
+		;;
+	;;
+	-> pathcat(netdir, clone)
+}
+
+const parsedial = {str
+	var netdir, proto, rem, hd, tl
+
+	netdir=""
+	proto = ""
+	rem = ""
+	match strfind(str, "!")
+	| `None:
+		proto = "net"
+		rem = str
+	| `Some sep:
+		hd = str[:sep]
+		tl = str[sep+1:]
+		put("hd = %s\n", hd)
+		if decode(hd) == '#' || decode(hd) == '/'
+			match strrfind(hd, "/")
+			| `Some idx:
+				netdir = hd[:idx]
+				proto = hd[idx+1:]
+			| `None:
+				netdir = ""
+				proto = hd
+			;;
+		else
+			netdir = ""
+			proto = hd
+			put("proto = %s\n", proto)
+
+		;;
+		rem = tl
+	;;
+
+	-> (netdir, proto, rem)
+}
+
