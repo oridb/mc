@@ -1,5 +1,4 @@
 use std
-use sys
 
 use "config.use"
 
@@ -53,20 +52,19 @@ var archstr	= ""
 var sysstr	= ""
 
 const initopts = {
-	var un
+	var si
 
-	if sys.uname(&un) < 0
-		std.fatal(1, "unable to determine host information (uname)\n")
-	;;
-	match cstr2myr(un.system[:])
+	std.getsysinfo(&si)
+	match si.system
 	| "Linux":	opt_sys = "linux"
 	| "Darwin":	opt_sys = "osx"
 	| "FreeBSD":	opt_sys = "freebsd"
 	| unknown:	std.fatal(1, "unknown system \"%s\"\n", unknown)
 	;;
 
-	match cstr2myr(un.machine[:])
+	match si.arch
 	| "x86_64":	opt_arch = "x64"
+	| "amd64":	opt_arch = "x64"
 	| unknown:	std.fatal(1, "unknown architecture \"%s\"\n", unknown)
 	;;
 
@@ -86,13 +84,3 @@ const initopts = {
 	opt_runtime = std.pathcat(config.Instroot, "/lib/myr/_myrrt.o")
 }
 
-const cstr2myr = {cstr
-	var i
-
-	for i = 0; i < cstr.len; i++
-		if cstr[i] == 0
-			break
-		;;
-	;;
-	-> cstr[:i]
-}
