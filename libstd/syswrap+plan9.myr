@@ -57,6 +57,32 @@ pkg std =
 	pkglocal const p9errstr	: (buf : byte[:] -> byte[:])
 ;;
 
+const Sizeoff	= 0
+const Typeoff	= Sizeoff + 2
+const Devoff	= Typeoff + 2
+const Qidtypeoff	= Devoff + 4
+const Qidversoff	= Qidtypeoff + 1
+const Qidpathoff	= Qidversoff + 4
+const Modeoff	= Qidpathoff + 8
+const Mtimeoff	= Modeoff + 4
+const Lengthoff	= Mtimeoff + 4
+const Stringsoff	= Lengthoff + 8
+
+
+const Statprefixsz = Stringsoff
+	
+
+type stathdr = struct
+	type	: uint16
+	devtype	: uint32
+	qid	: qid
+	mode	: uint32
+	atime	: uint32
+	mtime	: uint32
+	length	: off
+	/* we chop off the variable length data here */
+;;
+
 /* fd stuff */
 const open	= {path, opts;	-> sys.open(path, opts castto(sys.fdopt)) castto(fd)}
 const openmode	= {path, opts, mode;
@@ -73,6 +99,44 @@ const openmode	= {path, opts, mode;
 	;;
 	-> fd castto(fd)
 }
+
+const getle32 = {buf
+	-> (buf[0] castto(int32)) \
+		| ((buf[1] castto(int32)) << 8) \
+		| ((buf[2] castto(int32)) << 16) \
+		| ((buf[3] castto(int32)) << 24)
+}
+
+const getle64 = {buf
+	-> (buf[0] castto(int32)) \
+		| ((buf[1] castto(int32)) << 8) \
+		| ((buf[2] castto(int32)) << 16) \
+		| ((buf[3] castto(int32)) << 24) \
+		| ((buf[4] castto(int32)) << 32) \
+		| ((buf[5] castto(int32)) << 40) \
+		| ((buf[6] castto(int32)) << 48) \
+		| ((buf[7] castto(int32)) << 56)
+}
+
+/* useful/portable bits of stat */
+const fmtime = {path
+	var buf	: byte[Statprefix]
+
+	if sys.stat(path, buf[:]) < Statprefix
+		-> `None
+	;;
+	`Some getle32(buf[Mtimeoff:Lengthoff])
+}
+
+const fsize = {path
+	var buf	: byte[Statprefix]
+
+	if sys.stat(path, buf[:]) < Statprefix
+		-> `None
+	;;
+	`Some getle64(buf[Lengthoff:Stringsoff])
+}
+
 
 const close	= {fd;		-> sys.close(fd castto(sys.fd)) castto(int64)}
 const read	= {fd, buf;	-> sys.pread(fd castto(sys.fd), buf, -1) castto(size)}
