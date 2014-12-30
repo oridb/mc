@@ -1,18 +1,16 @@
 use sys
 use "types.use"
-use "option.use"
 
 pkg std =
 	type fd		= sys.fd
 	type pid	= sys.pid
 	type fdopt	= sys.fdopt
-	type whence	= sys.whence
 
 	const Failmem	: byte#	= -1 castto(byte#)
 
-	const Seekset	: whence = sys.Seekset	castto(whence)
-	const Seekcur	: whence = sys.Seekcur	castto(whence)
-	const Seekend	: whence = sys.Seekend	castto(whence)
+	const Seekset	: seektype = 0
+	const Seekcur	: seektype = 1
+	const Seekend	: seektype = 2
 
 	const Ordonly  	: fdopt = sys.Ordonly	castto(fdopt)
 	const Owronly  	: fdopt = sys.Owronly	castto(fdopt)
@@ -30,18 +28,11 @@ pkg std =
 	const read	: (fd : fd, buf : byte[:] -> size)
 	const write	: (fd : fd, buf : byte[:] -> size)
 	const pipe	: (fds : fd[2]# -> int64)
-	const seek	: (fd : fd, delta : off, whence : whence -> off)
 	const dup2	: (ofd : fd, nfd : fd -> fd)
-
-	/* useful/portable bits of stat */
-	const fmtime	: (f : byte[:]	-> option(time))
-	const fsize	: (f : byte[:]	-> option(off))
-
-	/* useful/portable bits of uname */
 
 	/* path manipulation */
 	const mkdir	: (path : byte[:], mode : int64 -> int64)
-	const remove	: (path : byte[:] -> bool)
+	const unlink	: (path : byte[:] -> int)
 
 	/* process stuff */
 	const getpid	: ( -> pid)
@@ -65,12 +56,11 @@ const creat	= {path, mode;	-> sys.creat(path, mode) castto(fd)}
 const read	= {fd, buf;	-> sys.read(fd castto(sys.fd), buf) castto(size)}
 const write	= {fd, buf;	-> sys.write(fd castto(sys.fd), buf) castto(size)}
 const pipe	= {fds;		-> sys.pipe(fds castto(sys.fd[2]#))}
-const seek	= {fd, delta, whence;	-> sys.lseek(fd castto(sys.fd), delta castto(sys.off), whence castto(sys.whence)) castto(off)}
 const dup2	= {ofd, nfd;	-> sys.dup2(ofd castto(sys.fd), nfd castto(sys.fd)) castto(fd)}
 
 /* path manipulation */
 const mkdir	= {path, mode;	-> sys.mkdir(path, mode)}
-const remove	= {path;	-> sys.unlink(path) == 0}
+const unlink	= {path;	-> sys.unlink(path)}
 
 /* process stuff */
 const getpid	= {;		-> sys.getpid() castto(pid)}
@@ -93,28 +83,5 @@ const curtime = {
 		-> (sec*1_000_000 + nsec/1000) castto(time)
 	else
 		-> -1
-	;;
-}
-
-const fmtime = {path
-	var sb
-	var sec, nsec
-
-	if sys.stat(path, &sb) == 0
-		sec = sb.mtime.sec castto(time)
-		nsec = sb.mtime.nsec castto(time)
-		-> `Some sec*1000 + nsec/1_000_000
-	else
-		-> `None
-	;;
-}
-
-const fsize = {path
-	var sb
-
-	if sys.stat(path, &sb) == 0
-		-> `Some (sb.size castto(off))
-	else
-		-> `None
 	;;
 }

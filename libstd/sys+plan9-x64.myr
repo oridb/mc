@@ -149,7 +149,7 @@ pkg sys =
 	const fstat	: (fd : fd, edir : byte[:] -> int64)
 	const wstat	: (name : byte[:], edir : byte[:] -> int64)
 	const fwstat	: (fd : byte[:],  edir : byte[:] -> int64)
-	const seek	: (fd : fd, len : off, ty : int -> off)
+	const seek	: (fd : fd, len : off, ty : int64 -> off)
 	const mount	: (fd : fd, afd : fd, old : byte[:], flag : int32, aname : byte[:] -> int64)
 	const await	: (buf : byte[:] -> int64)
 	const pread	: (fd : fd, buf : byte[:], off : off -> size)
