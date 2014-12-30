@@ -56,6 +56,7 @@ STDSRC= \
 	slurp.myr \
 	sort.myr \
 	spork.myr \
+	cstrconv.myr \
 	strfind.myr \
 	strjoin.myr \
 	strsplit.myr \

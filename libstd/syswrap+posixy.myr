@@ -1,5 +1,6 @@
 use sys
 use "types.use"
+use "strconv.use"
 use "option.use"
 
 pkg std =
@@ -7,6 +8,14 @@ pkg std =
 	type pid	= sys.pid
 	type fdopt	= sys.fdopt
 	type whence	= sys.whence
+
+	type sysinfo = struct
+		system	: byte[:]
+		version	: byte[:]
+		release	: byte[:]
+		arch	: byte[:]
+		uname	: sys.utsname	/* storage */
+	;;
 
 	const Failmem	: byte#	= -1 castto(byte#)
 
@@ -38,6 +47,7 @@ pkg std =
 	const fsize	: (f : byte[:]	-> option(off))
 
 	/* useful/portable bits of uname */
+	const getsysinfo	: (si : sysinfo# -> void)
 
 	/* path manipulation */
 	const mkdir	: (path : byte[:], mode : int64 -> int64)
@@ -71,6 +81,17 @@ const dup2	= {ofd, nfd;	-> sys.dup2(ofd castto(sys.fd), nfd castto(sys.fd)) cast
 /* path manipulation */
 const mkdir	= {path, mode;	-> sys.mkdir(path, mode)}
 const remove	= {path;	-> sys.unlink(path) == 0}
+
+/* useful/portable bits of uname */
+const getsysinfo = {si
+	var si
+
+	sys.uname(&si)
+	si.system = cstrconv(si.uname.sysname[:])
+	si.version = cstrconv(si.uname.version[:])
+	si.relsease = cstrconv(si.uname.release[:])
+	si.arch = cstconv(si.uname.machine[:])
+}
 
 /* process stuff */
 const getpid	= {;		-> sys.getpid() castto(pid)}
