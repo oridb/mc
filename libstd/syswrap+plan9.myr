@@ -70,18 +70,6 @@ const Stringsoff	= Lengthoff + 8
 
 
 const Statprefixsz = Stringsoff
-	
-
-type stathdr = struct
-	type	: uint16
-	devtype	: uint32
-	qid	: qid
-	mode	: uint32
-	atime	: uint32
-	mtime	: uint32
-	length	: off
-	/* we chop off the variable length data here */
-;;
 
 /* fd stuff */
 const open	= {path, opts;	-> sys.open(path, opts castto(sys.fdopt)) castto(fd)}
@@ -120,18 +108,18 @@ const getle64 = {buf
 
 /* useful/portable bits of stat */
 const fmtime = {path
-	var buf	: byte[Statprefix]
+	var buf	: byte[Statprefixsz]
 
-	if sys.stat(path, buf[:]) < Statprefix
+	if sys.stat(path, buf[:]) < Statprefixsz
 		-> `None
 	;;
 	`Some getle32(buf[Mtimeoff:Lengthoff])
 }
 
 const fsize = {path
-	var buf	: byte[Statprefix]
+	var buf	: byte[Statprefixsz]
 
-	if sys.stat(path, buf[:]) < Statprefix
+	if sys.stat(path, buf[:]) < Statprefixsz
 		-> `None
 	;;
 	`Some getle64(buf[Lengthoff:Stringsoff])
