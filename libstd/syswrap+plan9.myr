@@ -64,7 +64,7 @@ const Qidtypeoff	= Devoff + 4
 const Qidversoff	= Qidtypeoff + 1
 const Qidpathoff	= Qidversoff + 4
 const Modeoff	= Qidpathoff + 8
-const Mtimeoff	= Modeoff + 4
+const Mtimeoff	= Modeoff + 4
 const Lengthoff	= Mtimeoff + 4
 const Stringsoff	= Lengthoff + 8
 
