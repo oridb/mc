@@ -100,7 +100,6 @@ const fork	= {;		-> sys.fork() castto(pid)}
 const execv	= {cmd, args;	-> sys.execv(cmd, args)}
 const execve	= {cmd, args, env;	-> sys.execve(cmd, args, env)}
 const exit	= {status;	sys.exit(status)}
-const waitpid	= {pid, loc, opt;	-> sys.waitpid(pid castto(sys.pid), loc, opt)}
 
 /* memory stuff */
 const getmem	= {sz;		-> sys.mmap(0 castto(byte#), sz castto(sys.size), sys.Mprotrw, sys.Mpriv | sys.Manon, -1, 0)}

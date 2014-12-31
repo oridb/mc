@@ -68,7 +68,7 @@ STDSRC= \
 	units.myr \
 	utf.myr \
 	varargs.myr \
-	waitstatus.myr \
+	wait.myr \
 
 include ../config.mk
 
