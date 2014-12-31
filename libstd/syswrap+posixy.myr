@@ -86,8 +86,6 @@ const remove	= {path;	-> sys.unlink(path) == 0}
 
 /* useful/portable bits of uname */
 const getsysinfo = {si
-	var si : sysinfo
-
 	sys.uname(&si.uname)
 	si.system = cstrconv(si.uname.system[:])
 	si.version = cstrconv(si.uname.version[:])
