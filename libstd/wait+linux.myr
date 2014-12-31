@@ -1,0 +1,41 @@
+use sys
+
+use "die.use"
+use "syswrap.use"
+
+pkg std =
+	type waitstatus = union
+		`Wsuccess
+		`Wfailure
+		`Wsignal
+		`Waiterror
+	;;
+
+	const wait	: (pid : pid -> waitstatus)
+;;
+
+const wait = {pid
+	var st
+
+:again
+	if sys.waitpid(pid castto(sys.pid), &st, 0) > 0
+		if st & 0x7f == 0 /* if exited */
+			if ((st & 0xff00) >> 8) == 0
+				-> `Wsuccess
+			else
+				-> `Wfailure
+			;;
+		elif ((st & 0xffff)-1) < 0xff /* if signaled */
+			-> `Wsignal
+		elif (((st & 0xffff)*0x10001)>>8) > 0x7f00
+			/* 
+			when a process stops, eg, if paused by a debugger,
+			wait() will return. This API is for waiting until
+			a process exits. Loop instead.
+			*/
+			goto again
+		;;
+	;;
+	-> `Waiterror
+}
+

@@ -1,0 +1,15 @@
+use sys
+
+use "die.use"
+use "syswrap.use"
+
+pkg std =
+	type waitstatus = union
+		`Waitexit int32
+		`Waitsig  int32
+		`Waitstop int32
+	;;
+
+	const wait	: (pid : pid -> waitstatus)
+;;
+
