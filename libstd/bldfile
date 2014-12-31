@@ -75,7 +75,6 @@ lib std {inc=.} =
 	dir+freebsd.myr
 	dir+linux.myr
 	dir+osx.myr
-	waitstatus+freebsd.myr
-	waitstatus+linux.myr
-	waitstatus+osx.myr
+	wait+posixy.myr
+	wait+plan9.myr
 ;;
