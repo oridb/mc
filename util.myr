@@ -13,7 +13,6 @@ pkg bld =
 
 const run = {cmd, dir
 	var pid
-	var status
 
 	printcmd(cmd)
 	pid = std.fork()
@@ -29,20 +28,12 @@ const run = {cmd, dir
 			std.fatal(1, "failed to exec %s\n", cmd[0])
 		;;
 	else
-		std.waitpid(pid, &status, 0)
-	;;
-
-:retry
-	match std.waitstatus(status)
-	| `std.Waitexit estatus:
-		if estatus != 0
-			std.exit(estatus castto(int))
+		match std.wait(pid)
+		| `std.Wsuccess:	/* nothing */
+		| `std.Wfailure:	std.fatal(1, "%s did not execute successfully\n", cmd[0])
+		| `std.Wsignalled:	std.fatal(1, "%s exited with signal\n", cmd[0])
+		| `std.Waiterror:	std.fatal(1, "failed to wait for %s\n", cmd[0])
 		;;
-	| `std.Waitsig sig:
-		std.fatal(1, "%s exited with signal %i\n", cmd[0], sig)
-	| `std.Waitstop sig:
-		std.fatal(1, "%s paused with signal %i\n", cmd[0], sig)
-		goto retry
 	;;
 }
 
