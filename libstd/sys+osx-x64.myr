@@ -34,6 +34,12 @@ pkg sys =
 		`Clockmonotonic
 	;;
 
+	type waitstatus = union
+		`Waitexit int32
+		`Waitsig  int32
+		`Waitstop int32
+	;;
+
 	type statbuf = struct
 		dev	: int32
 		mode	: filemode
@@ -565,6 +571,8 @@ pkg sys =
 	const waitpid	: (pid : pid, loc:int32#, opt : int64	-> int64)
 	const execv	: (cmd : byte[:], args : byte[:][:] -> int64)
 	const execve	: (cmd : byte[:], args : byte[:][:], env : byte[:][:] -> int64)
+	/* wrappers to extract wait status */
+	const waitstatus	: (st : int32 -> waitstatus)
 
 	/* file manipulation */
 	const open	: (path:byte[:], opts:fdopt -> fd)
@@ -863,3 +871,13 @@ const sysctl = {mib, old, new
 	old# = o[:oldsz]
 	-> ret
 }
+
+const waitstatus = {st
+	match st & 0o177
+	| 0:    -> `Waitexit (st >> 8)
+	| 0o177:-> `Waitstop (st >> 8)
+	| sig:  -> `Waitsig sig
+	;;
+	die("unreachable")
+}
+

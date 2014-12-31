@@ -27,6 +27,12 @@ pkg sys =
 		`Clocksecond
 	;;
 
+	type waitstatus = union
+		`Waitexit int32
+		`Waitsig  int32
+		`Waitstop int32
+	;;
+
 	type timespec = struct
 		sec	: uint64
 		nsec	: uint64 
@@ -606,6 +612,8 @@ pkg sys =
 	const waitpid	: (pid:int64, loc:int32#, opt : int64	-> int64)
 	const execv	: (cmd : byte[:], args : byte[:][:] -> int64)
 	const execve	: (cmd : byte[:], args : byte[:][:], env : byte[:][:] -> int64)
+	/* wrappers to extract wait status */
+	const waitstatus	: (st : int32 -> waitstatus)
 
 	/* fd manipulation */
 	const open	: (path:byte[:], opts:fdopt -> fd)
@@ -786,3 +794,12 @@ const clockid = {clk
 	;;
 	-> a(-1)
 }
+
+const waitstatus = {st
+	match st & 0o177
+	| 0:    -> `Waitexit (st >> 8)
+	| 0x7f:-> `Waitstop (st >> 8)
+	| sig:  -> `Waitsig sig
+	;;
+}
+
