@@ -44,6 +44,7 @@ pkg std =
 	/* useful/portable bits of stat */
 	const fmtime	: (f : byte[:]	-> option(time))
 	const fsize	: (f : byte[:]	-> option(off))
+	const fexists	: (f : byte[:]	-> bool)
 
 	/* the important bits that uname provides */
 	const getsysinfo	: (si : sysinfo# -> void)
@@ -104,8 +105,13 @@ const openmode	= {path, opts, mode;
 
 
 /* useful/portable bits of stat */
+const fexists = {path
+	var buf : byte[4]	/* big enough for size, nothing else. */
+	-> sys.stat(path, buf[:]) >= 0
+}
+
 const fmtime = {path
-	var buf	: byte[Statprefixsz]
+	var buf	: byte[Statprefixsz + 512]	/* enough space for some strings */
 
 	if sys.stat(path, buf[:]) < Statprefixsz
 		-> `None
@@ -114,7 +120,7 @@ const fmtime = {path
 }
 
 const fsize = {path
-	var buf	: byte[Statprefixsz]
+	var buf	: byte[Statprefixsz + 512]	/* enough space for some strings */
 
 	if sys.stat(path, buf[:]) < Statprefixsz
 		-> `None
