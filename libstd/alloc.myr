@@ -42,7 +42,6 @@ pkg std =
 
 
 ;;
-extern const put : (b : byte[:], args : ... -> size)
 
 /* null pointers. only used internally. */
 const Zslab	= 0 castto(slab#)
