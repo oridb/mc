@@ -8,9 +8,9 @@ cstrlen:
 	xorq	%r9,%r9
 	jmp .lentest
 
-	.lenloop:
+.lenloop:
 	incq	%r9
-	.lentest:
+.lentest:
 	cmpb	$0,(%r8,%r9)
 	jne	.lenloop
 	ret
