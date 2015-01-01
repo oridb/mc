@@ -71,10 +71,10 @@ const parsestatus = {status	-> (waitstatus, pid)
 	match intparse(sp[0])
 	| `Some pid:
 		xpid = pid
-		if sp.len == 5	/* we have a status */
-			st = `Wfailure
-		elif sp.len == 4	/* we exited with nil */
+		if sp.len == 4 || (sp.len == 5 && sp[4].len > 0)	/* we exited with nil */
 			st = `Wsuccess
+		elif sp.len == 5	/* we have a status */
+			st = `Wfailure
 		else	/* we have a malformed await message */
 			st = `Waiterror
 		;;
