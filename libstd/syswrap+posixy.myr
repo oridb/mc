@@ -45,6 +45,7 @@ pkg std =
 	/* useful/portable bits of stat */
 	const fmtime	: (f : byte[:]	-> option(time))
 	const fsize	: (f : byte[:]	-> option(off))
+	const fexists	: (f : byte[:]	-> bool)
 
 	/* useful/portable bits of uname */
 	const getsysinfo	: (si : sysinfo# -> void)
@@ -114,6 +115,12 @@ const curtime = {
 	else
 		-> -1
 	;;
+}
+
+const fexists = {path
+	var sb
+
+	-> sys.stat(path, &sb) == 0
 }
 
 const fmtime = {path
