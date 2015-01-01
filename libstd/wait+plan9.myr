@@ -36,7 +36,7 @@ const wait = {pid
 		statusmap = mkht(pidhash, pideq)
 		statusinit = true
 	;;
-
+		
 	match htget(statusmap, pid)
 	| `Some st:
 		htdel(statusmap, pid)
