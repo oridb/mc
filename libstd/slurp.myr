@@ -34,7 +34,7 @@ const fslurp = {fd
 		if n <= 0
 			goto done
 		;;
-		len += n castto(size)
+		len += n
 		buf = slgrow(buf, len + Bufinc)
 	;;
 :done
