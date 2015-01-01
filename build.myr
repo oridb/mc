@@ -155,8 +155,8 @@ const compile = {src, incs
 	var o
 	var cmd
 
+	cmd = [][:]
 	if std.hassuffix(src, ".myr")
-		cmd = [][:]
 		cmd = std.slpush(cmd, "6m")
 		for inc in incs 
 			cmd = std.slpush(cmd, "-I")
@@ -169,8 +169,14 @@ const compile = {src, incs
 		run(cmd, "")
 		std.slfree(cmd)
 	elif std.hassuffix(src, ".s")
-		o = srcswapsuffix(src, ".o")
-		run(["as", src, "-o", o][:], "")
+		o = srcswapsuffix(src, config.Objsuffix)
+		for c in config.Ascmd
+			cmd = std.slpush(cmd, c)
+		;;
+		cmd = std.slpush(cmd,"-o")
+		cmd = std.slpush(cmd, o)
+		cmd = std.slpush(cmd, src)
+		run(cmd, "")
 		std.slfree(o)
 	else
 		std.fatal(1, "Unknown file type for %s\n", src)
@@ -183,8 +189,9 @@ const linkbin = {dg, bin, srcfiles, ldscript, rt, incs, extralibs
 	cmd = [][:]
 
 	/* ld -o bin */
-	cmd = std.slpush(cmd, std.sldup("ld"))
-	cmd = std.slpush(cmd, std.sldup("-o"))
+	for c in config.Linkcmd
+		cmd = std.slpush(cmd, std.sldup(c))
+	;;
 	cmd = std.slpush(cmd, std.sldup(bin))
 
 	/* [-T script] */
@@ -201,20 +208,15 @@ const linkbin = {dg, bin, srcfiles, ldscript, rt, incs, extralibs
 
 	/* input.o list.o... */
 	for f in srcfiles
-		cmd = std.slpush(cmd, srcswapsuffix(f, ".o"))
+		cmd = std.slpush(cmd, srcswapsuffix(f, config.Objsuffix))
 	;;
 
-	/* -l lib... */
-	cmd = addlibs(cmd, dg.libs)
+	/* -L path -l lib... */
+	cmd = addlibs(cmd, dg.libs, incs)
 	for l in extralibs
 		cmd = std.slpush(cmd, std.fmt("-l%s", l))
 	;;
 
-	/* -L incpath... */
-	for inc in incs
-		cmd = std.slpush(cmd, std.fmt("-L%s", inc))
-	;;
-	cmd = std.slpush(cmd, std.fmt("-L%s%s", opt_instroot, "/lib/myr"))
 
 	/* special for OSX: it warns if we don't add this */
 	if std.sleq(opt_sys, "osx")
@@ -231,11 +233,12 @@ const archivelib = {dg, lib, files, incs
 	var obj
 
 	cmd = [][:]
-	cmd = std.slpush(cmd, std.sldup(opt_ar))
-	cmd = std.slpush(cmd, std.sldup("-rcs"))
+	for c in config.Arcmd
+		cmd = std.slpush(cmd, std.sldup(c))
+	;;
 	cmd = std.slpush(cmd, std.fmt("lib%s.a", lib))
 	for f in files
-		obj = srcswapsuffix(f, ".o")
+		obj = srcswapsuffix(f, config.Objsuffix)
 		cmd = std.slpush(cmd, obj)
 	;;
 	run(cmd, "")
@@ -260,23 +263,33 @@ const mergeuse = {dg, lib, files, incs
 	strlistfree(cmd)
 }
 
-const addlibs = {cmd, libgraph
+const addlibs = {cmd, libgraph, incs
 	var looped : std.htab(byte[:], bool)#
 	var marked : std.htab(byte[:], bool)#
 	var libs
 	var head
 
+	/* -L incpath... */
+	if !config.Directlib
+		for inc in incs
+			cmd = std.slpush(cmd, std.fmt("-L%s", inc))
+		;;
+		cmd = std.slpush(cmd, std.fmt("-L%s%s", opt_instroot, "/lib/myr"))
+	;;
+
 	libs = std.htkeys(libgraph)
 	looped = std.mkht(std.strhash, std.streq)
 	marked = std.mkht(std.strhash, std.streq)
 	head = cmd.len
+
 	for lib in libs
-		cmd = visit(cmd, head, libgraph, lib, looped, marked)
+		cmd = visit(cmd, head, libgraph, lib, looped, marked, incs)
 	;;
+
 	-> cmd
 }
 
-const visit = {cmd, head, g, lib, looped, marked -> byte[:][:]
+const visit = {cmd, head, g, lib, looped, marked, incs
 	if std.hthas(looped, lib)
 		std.fatal(1, "cycle in library graph involving \"%s\"\n", lib)
 	elif std.hthas(marked, lib)
@@ -285,12 +298,38 @@ const visit = {cmd, head, g, lib, looped, marked -> byte[:][:]
 
 	std.htput(looped, lib, true)
 	for dep in std.htgetv(g, lib, [][:])
-		cmd = visit(cmd, head, g, dep, looped, marked)
+		cmd = visit(cmd, head, g, dep, looped, marked, incs)
 	;;
 	std.htdel(looped, lib)
 	std.htput(marked, lib, true)
-	-> std.slput(cmd, head, std.fmt("-l%s", lib))
+	-> putlib(cmd, head, lib, incs)
 }
+
+const putlib = {cmd, head, lib, incs
+	var buf : byte[512]
+	var n, p
+
+	if !config.Directlib
+		-> std.slput(cmd, head, std.fmt("-l%s", lib))
+	;;
+
+	n = std.bfmt(buf[:], "lib%s.a", lib)
+	for i in incs
+		p = std.pathjoin([i, "lib/myr", buf[:n]][:])
+		if std.fexists(p)
+			-> std.slput(cmd, head, p)
+		;;
+		std.slfree(p)
+	;;
+	p = std.pathjoin([config.Instroot, "lib/myr", buf[:n]][:])
+	if std.fexists(p)
+		-> std.slput(cmd, head, p)
+	;;
+	std.fatal(1, "could not find library lib%s.a", lib)
+}
+
+
+
 
 const isfresh = {src, dst
 	var srcmt, dstmt

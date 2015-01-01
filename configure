@@ -32,9 +32,15 @@ done
 
 OS=`uname`
 
+echo export INST_ROOT=$prefix > config.mk
+
 echo "pkg config = " > config.myr
 echo "const Instroot = \"$prefix\"" >> config.myr
-echo export INST_ROOT=$prefix > config.mk
+echo "const Objsuffix = \".o\"" >> config.myr
+echo "const Linkcmd = [\"ld\", \"-o\"]" >> config.myr
+echo "const Arcmd = [\"ar\", \"-rcs\"]" >> config.myr
+echo "const Ascmd = [\"as\", \"-g\"]" >> config.myr
+echo "const Directlib = false" >> config.myr
 case $OS in
     *Linux*)
         echo 'export SYS=linux' >> config.mk

@@ -45,10 +45,7 @@ const main = {args : byte[:][:]
 		*/
 		| ('d', arg): bld.opt_debug = true
 		| ('C', arg): bld.opt_mc = arg
-		| ('A', arg): bld.opt_as = arg
 		| ('M', arg): bld.opt_muse = arg
-		| ('L', arg): bld.opt_ld = arg
-		| ('D', arg): bld.opt_ar = arg
 		| _:	std.die("got invalid arg\n")
 		;;
 	;;

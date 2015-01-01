@@ -42,7 +42,7 @@ const myrdeps = {dg, targ, srcs, islib
 		out = std.sldup(targ)
 		useout = ""
 	;;
-	objs = swapall(srcs, ".o")
+	objs = swapall(srcs, config.Objsuffix)
 	uses = swapall(srcs, ".use")
 	for i = 0; i < srcs.len; i++
 		std.htput(dg.sources, objs[i], srcs[i])
