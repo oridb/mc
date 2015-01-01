@@ -126,7 +126,7 @@ const getsysinfo = {si
 	si.system = getenvv("osname", "Plan9")
 	si.release = "4"
 	si.version = "0"
-	si.arch = getenvv("cputype", "unknown")
+	si.arch = getenvv("objtype", "unknown")
 }
 
 const close	= {fd;		-> sys.close(fd castto(sys.fd)) castto(int64)}
