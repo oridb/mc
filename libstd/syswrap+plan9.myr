@@ -190,6 +190,7 @@ const getmem	= {sz
 
 	oldp = sys.curbrk
 	endp = (sys.curbrk castto(intptr)) + (sz castto(intptr))
+	endp = (endp + 4095) & ~4095
 	if sys.brk_(endp castto(byte#)) < 0
 		-> Failmem
 	;;
