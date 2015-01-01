@@ -65,7 +65,7 @@ STDSRC= \
 	units.myr \
 	utf.myr \
 	varargs.myr \
-	waitstatus.myr \
+	wait.myr \
 
 all:V: lib$STDLIB.a lib$SYSLIB.a
 
