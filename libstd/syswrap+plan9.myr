@@ -9,6 +9,13 @@ pkg std =
 	type fdopt	= sys.fdopt
 	type whence = int64
 
+	type sysinfo = struct
+		system	: byte[:]
+		version	: byte[:]
+		release	: byte[:]
+		arch	: byte[:]
+	;;
+
 	const Seekset	: whence = 0
 	const Seekcur	: whence = 1
 	const Seekend	: whence = 2
@@ -38,8 +45,12 @@ pkg std =
 	const fmtime	: (f : byte[:]	-> option(time))
 	const fsize	: (f : byte[:]	-> option(off))
 
+	/* the important bits that uname provides */
+	const getsysinfo	: (si : sysinfo# -> void)
+
 	/* path manipulation */
 	const mkdir	: (path : byte[:], mode : int64 -> int64)
+	const chdir	: (path : byte[:] -> bool)
 	const remove	: (path : byte[:] -> bool)
 
 	/* process stuff */
@@ -56,6 +67,9 @@ pkg std =
 	pkglocal const curtime	: (-> time)
 	pkglocal const p9errstr	: (buf : byte[:] -> byte[:])
 ;;
+
+/* UGLY: circular dependency breaking... */
+extern const getenvv : (name : byte[:], default : byte[:] -> byte[:])
 
 const Sizeoff	= 0
 const Typeoff	= Sizeoff + 2
@@ -88,23 +102,6 @@ const openmode	= {path, opts, mode;
 	-> fd castto(fd)
 }
 
-const getle32 = {buf
-	-> (buf[0] castto(int32)) \
-		| ((buf[1] castto(int32)) << 8) \
-		| ((buf[2] castto(int32)) << 16) \
-		| ((buf[3] castto(int32)) << 24)
-}
-
-const getle64 = {buf
-	-> (buf[0] castto(int32)) \
-		| ((buf[1] castto(int32)) << 8) \
-		| ((buf[2] castto(int32)) << 16) \
-		| ((buf[3] castto(int32)) << 24) \
-		| ((buf[4] castto(int32)) << 32) \
-		| ((buf[5] castto(int32)) << 40) \
-		| ((buf[6] castto(int32)) << 48) \
-		| ((buf[7] castto(int32)) << 56)
-}
 
 /* useful/portable bits of stat */
 const fmtime = {path
@@ -125,6 +122,12 @@ const fsize = {path
 	`Some getle64(buf[Lengthoff:Stringsoff])
 }
 
+const getsysinfo = {si
+	si.system = getenvv("osname", "Plan9")
+	si.release = "4"
+	si.version = "0"
+	si.arch = getenvv("cputype", "unknown")
+}
 
 const close	= {fd;		-> sys.close(fd castto(sys.fd)) castto(int64)}
 const read	= {fd, buf;	-> sys.pread(fd castto(sys.fd), buf, -1) castto(size)}
@@ -135,6 +138,7 @@ const dup2	= {ofd, nfd;	-> sys.dup(ofd castto(sys.fd), nfd castto(sys.fd)) castt
 
 /* path manipulation */
 const remove	= {path;	-> sys.remove(path) == 0}
+const chdir	= {path;	-> sys.chdir(path) == 0}
 const mkdir	= {path, mode;
 	var fd
 
@@ -173,15 +177,6 @@ const exit	= {status
 	;;
 }
 
-/* FIXME: horribly broken. We wait for a pid to exit, and lie about which one. */
-const waitpid	= {pid, loc, opt;
-	var buf : byte[512]
-	var n
-
-	loc# = 0
-	n = sys.await(buf[:])
-	-> pid
-}
 
 /* memory stuff */
 const getmem	= {sz
@@ -214,3 +209,20 @@ const p9errstr = {errbuf
 	-> errbuf[:i]
 }
 
+const getle32 = {buf
+	-> (buf[0] castto(int32)) \
+		| ((buf[1] castto(int32)) << 8) \
+		| ((buf[2] castto(int32)) << 16) \
+		| ((buf[3] castto(int32)) << 24)
+}
+
+const getle64 = {buf
+	-> (buf[0] castto(int32)) \
+		| ((buf[1] castto(int32)) << 8) \
+		| ((buf[2] castto(int32)) << 16) \
+		| ((buf[3] castto(int32)) << 24) \
+		| ((buf[4] castto(int32)) << 32) \
+		| ((buf[5] castto(int32)) << 40) \
+		| ((buf[6] castto(int32)) << 48) \
+		| ((buf[7] castto(int32)) << 56)
+}

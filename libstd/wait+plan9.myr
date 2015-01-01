@@ -1,15 +1,93 @@
 use sys
 
+use "alloc.use"
+use "chartype.use"
 use "die.use"
+use "extremum.use"
+use "hashfuncs.use"
+use "hasprefix.use"
+use "htab.use"
+use "intparse.use"
+use "option.use"
+use "strsplit.use"
 use "syswrap.use"
+use "utf.use"
 
 pkg std =
 	type waitstatus = union
-		`Waitexit int32
-		`Waitsig  int32
-		`Waitstop int32
+		`Wsuccess
+		`Wfailure
+		`Wsignalled
+		`Waiterror
 	;;
 
 	const wait	: (pid : pid -> waitstatus)
 ;;
+
+var statusinit	: bool = false
+var statusmap	: htab(pid, waitstatus)#
+
+const wait = {pid
+	var buf : byte[512]
+	var xpid, status
+	var n
+
+	if !statusinit
+		statusmap = mkht(pidhash, pideq)
+		statusinit = true
+	;;
+
+	match htget(statusmap, pid)
+	| `Some st:
+		htdel(statusmap, pid)
+		-> st
+	| `None:	/* nothing */
+	;;
+
+	while true
+		n = sys.await(buf[:])
+		if n < 0
+			-> `Waiterror
+		;;
+
+		(status, xpid) = parsestatus(buf[:n])
+		if xpid == pid
+			-> status
+		else
+			htput(statusmap, pid, status)
+		;;
+	;;
+}
+
+const parsestatus = {status	-> (waitstatus, pid)
+	var st : waitstatus, xpid, sp
+
+	sp = strsplit(status, " ")
+	if sp.len == 0
+		slfree(sp)
+		-> (`Wfailure, -1)
+	;;
+
+	match intparse(sp[0])
+	| `Some pid:
+		xpid = pid
+		if sp.len == 5	/* we have a status */
+			st = `Wfailure
+		elif sp.len == 4	/* we exited with nil */
+			st = `Wsuccess
+		else	/* we have a malformed await message */
+			st = `Waiterror
+		;;
+	| `None:
+		xpid = -1
+		st = `Waiterror
+	;;
+
+	slfree(sp)
+	-> (st, xpid)
+
+}
+
+const pidhash	= {x;	-> inthash(x castto(int32))}
+const pideq	= {a, b;	-> a == b}
 
