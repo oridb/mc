@@ -31,7 +31,7 @@ _start:
 	/* stack allocate sizeof(byte[:])*(argc + len(envp)) */
 	movq	(%rbp),%rax
 	leaq	16(%rbp,%rax,8), %rbx	/* argp = argv + 8*argc + 8 */
-        call    count
+	call    count
 	addq	%r9,%rax
 	imulq	$16,%rax
 	subq	%rax,%rsp
@@ -40,7 +40,7 @@ _start:
 	/* stack allocate sizeof(byte[:])*(argc + len(envp)) */
 	movq	(%rbp),%rax
 	leaq	16(%rbp,%rax,8), %rbx	/* argp = argv + 8*argc + 8 */
-        call    count
+	call    count
 	addq	%r9,%rax
 	imulq	$16,%rax
 	subq	%rax,%rsp

@@ -90,4 +90,3 @@ const parsestatus = {status	-> (waitstatus, pid)
 
 const pidhash	= {x;	-> inthash(x castto(int32))}
 const pideq	= {a, b;	-> a == b}
-
