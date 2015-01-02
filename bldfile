@@ -1,0 +1,6 @@
+lib regex =
+	compile.myr
+	interp.myr
+	ranges.myr
+	types.myr
+;;
