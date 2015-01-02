@@ -23,6 +23,8 @@ const buildall = {p
 			buildbin(p, bt)
 		| `Lib lt:
 			buildlib(p, lt)
+		| `Gen gt:
+			genfiles(p, gt)
 		| `Sub subs:
 			subdirs(p, subs, `std.None)
 		| `Man m:
@@ -51,6 +53,12 @@ const build = {p, targ
 			if std.sleq(lt.name, targ)
 				buildlib(p, lt)
 				found = true
+			;;
+		| `Gen gt:
+			for n in gt.out
+				if std.sleq(n, targ)
+					run(gt.cmd, "")
+				;;
 			;;
 		| `Sub subs:
 			found = true
@@ -91,7 +99,7 @@ const buildbin = {p, targ
 	targ.built = true
 }
 
-const buildlib = {lib, targ
+const buildlib = {p, targ
 	var archive
 	var u, l
 	var dg
@@ -117,6 +125,15 @@ const buildlib = {lib, targ
 	;;
 	std.slfree(archive)
 	targ.built = true
+}
+
+const genfiles = {p, gt
+	for f in gt.out
+		if !std.fexists(f)
+			run(gt.cmd, "")
+			->
+		;;
+	;;
 }
 
 const builddep = {dg, out, incs

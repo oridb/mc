@@ -16,9 +16,15 @@ const cleanall = {p
 	for t in p.targs
 		match t
 		| `Bin bt:
-			cleanup(bt.name, bt.inputs, true)
+			cleanup(p, bt.name, bt.inputs, true)
 		| `Lib lt:
-			cleanup(lt.name, lt.inputs, true)
+			cleanup(p, lt.name, lt.inputs, true)
+		| `Gen gt:
+			for f in gt.out
+				if std.remove(f)
+					std.put("\tclean %s\n", f)
+				;;
+			;;
 		| `Sub subs:
 			subdirs(p, subs, `std.None)
 		| `Man m:
@@ -32,12 +38,13 @@ const clean = {p, targ
 		match t
 		| `Bin bt:
 			if std.sleq(bt.name, targ)
-				cleanup(bt.name, bt.inputs, true)
+				cleanup(p, bt.name, bt.inputs, true)
 			;;
 		| `Lib lt:
 			if std.sleq(lt.name, targ)
-				cleanup(lt.name, lt.inputs, true)
+				cleanup(p, lt.name, lt.inputs, true)
 			;;
+		| `Gen gt:
 		| `Sub subs:
 			subdirs(p, subs, `std.Some targ)
 		| `Man m:
@@ -46,7 +53,7 @@ const clean = {p, targ
 	-> true
 }
 
-const cleanup = {out, leaves, islib
+const cleanup = {p, out, leaves, islib
 	var mchammer_files /* cant touch this */
 	var keys
 	var dg
@@ -56,7 +63,9 @@ const cleanup = {out, leaves, islib
 	;;
 	mchammer_files = std.mkht(std.strhash, std.streq)
 	for l in leaves
-		std.htput(mchammer_files, l, true)
+		if !std.hthas(p.gensrc, l)
+			std.htput(mchammer_files, l, true)
+		;;
 	;;
 
 	keys = std.htkeys(dg.deps)

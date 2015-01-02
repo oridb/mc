@@ -33,6 +33,8 @@ const movetargs = {p, delete
 			libarchive = std.fmt("lib%s.a", lt.name)
 			movefile(delete, libarchive, opt_instroot, opt_destdir, "lib/myr")
 			std.slfree(libarchive)
+		| `Gen gt:
+			/* nothing to do (?) */
 		| `Sub subs:
 			subdirs(p, subs, `std.None)
 		| `Man mans:
@@ -83,7 +85,7 @@ const moveman = {delete, man
 		;;
 	;;
 
-	manrel = std.fmt("%s%s", config.Manprefix, man[sect:])
+	manrel = std.fmt("%s%s", opt_manpath, man[sect:])
 	movefile(delete, man, opt_instroot, opt_destdir, manrel)
 	std.slfree(manrel)
 }

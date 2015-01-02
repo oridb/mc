@@ -10,6 +10,7 @@ pkg bld =
 	var opt_ldscript	: byte[:]
 	var opt_incpaths	: byte[:][:]
 	var opt_instroot	: byte[:]
+	var opt_manpath	: byte[:]
 	var opt_destdir	: byte[:]
 	var opt_bldfile	: byte[:]
 	var opt_debug	: bool
@@ -33,6 +34,7 @@ var opt_runtime	= ""
 var opt_ldscript	= ""
 var opt_incpaths	/* FIXME: taking a constant slice is a nonconstant initializer */
 var opt_instroot	= ""
+var opt_manpath	= ""
 var opt_destdir	= ""
 var opt_debug	= false
 var opt_bldfile = "bldfile"
@@ -68,6 +70,7 @@ const initopts = {
 
 	opt_incpaths = [][:]
 	opt_instroot = config.Instroot
+	opt_manpath = config.Manpath
 	opt_destdir = std.getenvv("DESTDIR", "")
 	opt_mc = std.getenvv("MYR_MC", "6m")
 	opt_muse = std.getenvv("MYR_MUSE", "muse")

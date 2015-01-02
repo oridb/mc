@@ -11,6 +11,7 @@ pkg bld =
 
 		/* build params */
 		targs	: targ[:]
+		gensrc	: std.htab(byte[:], gentarg#)#
 		prefix	: byte[:]
 		system	: byte[:]
 		arch	: byte[:]
@@ -35,9 +36,15 @@ pkg bld =
 		ldscript	: byte[:]
 	;;
 
+	type gentarg = struct
+		out	: byte[:][:]
+		cmd	: byte[:][:] 
+	;;
+
 	type targ = union
 		`Bin	myrtarg#
 		`Lib	myrtarg#
+		`Gen	gentarg#
 		`Sub	byte[:][:]
 		`Man	byte[:][:]
 	;;

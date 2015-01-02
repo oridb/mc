@@ -40,6 +40,7 @@ const target = {p : parser#
 	match word(p)
 	| `std.Some "bin":	bintarget(p)
 	| `std.Some "lib":	libtarget(p)
+	| `std.Some "gen":	gentarget(p)
 	| `std.Some "sub":	subtarget(p)
 	| `std.Some "man":	mantarget(p)
 	| `std.Some targtype:	failparse(p, "unknown targtype type %s\n", targtype)
@@ -66,7 +67,39 @@ const subtarget = {p
 /* mantarget: anontarget */
 const mantarget = {p
 	p.targs = std.slpush(p.targs, `Man anontarget(p, "man"))
+}
 
+/* gentarget: wordlist = wordlist ;; */
+const gentarget = {p
+	var outlist, cmdlist
+	var gt
+
+	match wordlist(p)
+	| `std.None:	failparse(p, "gen target missing output files\n")
+	| `std.Some out:
+		outlist = out
+	;;
+
+	skipspace(p)
+	if !matchc(p, '=')
+		failparse(p, "expected '=' after '%s %s'\n", cmdlist, outlist[outlist.len-1])
+	;;
+
+	match wordlist(p)
+	| `std.None:	failparse(p, "gen target missing command\n")
+	| `std.Some cmd:
+		cmdlist = cmd
+	;;
+
+	if !matchc(p, ';') || !matchc(p, ';')
+		failparse(p, "expected ';;' terminating genfile command, got %c\n", peekc(p))
+	;;
+
+	gt = std.mk([.out = outlist, .cmd=cmdlist])
+	for o in outlist
+		std.htput(p.gensrc, o, gt)
+	;;
+	p.targs = std.slpush(p.targs, `Gen gt)
 }
 
 /*
@@ -145,7 +178,7 @@ const myrtarget = {p, targ
 	])
 }
 
-/* anontarget: '=' namelist ';;' */
+/* anontarget: '=' wordlist ';;' */
 const anontarget = {p, targ
 	var inputs
 

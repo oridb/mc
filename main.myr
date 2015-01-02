@@ -104,6 +104,7 @@ const loadbuild =  {path
 	| `std.Fail _:	std.fatal(1, "could not open file 'bldfile'\n")
 	;;
 	p.rest = p.data
+	p.gensrc = std.mkht(std.strhash, std.streq)
 	bld.parse(p)
 
 	-> p
