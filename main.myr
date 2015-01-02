@@ -82,6 +82,7 @@ const main = {args : byte[:][:]
 			for cmd in optctx.args
 				match cmd
 				| "all":	bld.buildall(p)
+				| "gen":	bld.genall(p)
 				| "clean":	bld.cleanall(p)
 				| "install":	bld.install(p)
 				| "uninstall":	bld.uninstall(p)

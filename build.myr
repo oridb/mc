@@ -10,6 +10,7 @@ use "subdir.use"
 
 pkg bld =
 	const buildall	: (p : parser# -> bool)
+	const genall	: (p : parser# -> bool)
 	const test	: (p : parser# -> bool)
 	const build	: (p : parser#, target : byte[:] -> bool)
 	const buildbin	: (p : parser#, bt : myrtarg# -> void)
@@ -31,6 +32,17 @@ const buildall = {p
 			/* nothing needed */
 		;;
 	;;
+	-> true
+}
+
+const genall = {p
+	for t in p.targs
+		match t
+		| `Gen gt: run(gt.cmd, "")
+		| _:	/* skip */
+		;;
+	;;
+	/* genfiles will exit if the build fails; always return true */
 	-> true
 }
 
