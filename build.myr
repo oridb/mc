@@ -105,7 +105,7 @@ const buildbin = {p, targ
 	if !std.hthas(dg.deps, targ.name)
 		std.fatal(1, "no target declared for %s\n", targ.name)
 	;;
-	if builddep(&dg, targ.name, targ.incpath)
+	if builddep(p, &dg, targ.name, targ.incpath)
 		linkbin(&dg, targ.name, targ.inputs, targ.ldscript, targ.runtime, targ.incpath, targ.libdeps)
 	;;
 	targ.built = true
@@ -129,8 +129,8 @@ const buildlib = {p, targ
 	if !std.hthas(dg.deps, lib)
 		std.fatal(1, "no target declared for %s\n", lib)
 	;;
-	u = builddep(&dg, targ.name, targ.incpath)
-	l = builddep(&dg, archive, targ.incpath)
+	u = builddep(p, &dg, targ.name, targ.incpath)
+	l = builddep(p, &dg, archive, targ.incpath)
 	if  u || l
 		mergeuse(&dg, lib, targ.inputs, targ.incpath)
 		archivelib(&dg, lib, targ.inputs, targ.incpath)
@@ -148,7 +148,7 @@ const genfiles = {p, gt
 	;;
 }
 
-const builddep = {dg, out, incs
+const builddep = {p, dg, out, incs
 	var stale
 
 	stale = false
@@ -156,11 +156,18 @@ const builddep = {dg, out, incs
 	if std.htgetv(dg.updated, out, false)
 		-> false
 	;;
+
 	match std.htget(dg.deps, out)
 	| `std.Some deps:
 		for d in deps
-			if builddep(dg, d, incs)
+			if builddep(p, dg, d, incs)
 				stale = true
+			;;
+			if !std.fexists(d)
+				match std.htget(p.gensrc, d)
+				| `std.Some gt:	run(gt.cmd, "")
+				| `std.None:	std.fatal(1, "no input file %s\n", d)
+				;;
 			;;
 			if !isfresh(d, out)
 				stale = true
