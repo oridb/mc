@@ -289,23 +289,42 @@ const wordlist = {p
 
 /* word: /wordchar*/
 const word = {p : parser#
-	var c, r, n
+	var c, n
 	var start
 
 	skipspace(p)
 
-	r = p.rest
-	start = r
-	n = 0
-	while r.len > 0
-		c = peekc(p)
-		if wordchar(c)
+	c = peekc(p)
+	if c == '"'
+		n = 0
+		nextc(p)
+		start = p.rest
+		while p.rest.len > 0
+			c = peekc(p)
+			if c == '"'
+				nextc(p)
+				goto done
+			elif c == '\\'
+				c = nextc(p)
+			;;
 			nextc(p)
 			n += std.charlen(c)
-		else
-			break
+		;;
+		failparse(p, "input ended within quoted word\n")
+	else
+		n = 0
+		start = p.rest
+		while p.rest.len > 0
+			c = peekc(p)
+			if wordchar(c)
+				nextc(p)
+				n += std.charlen(c)
+			else
+				break
+			;;
 		;;
 	;;
+:done
 	if n > 0
 		-> `std.Some std.sldup(start[:n])
 	else
