@@ -878,6 +878,5 @@ const waitstatus = {st
 	| 0o177:-> `Waitstop (st >> 8)
 	| sig:  -> `Waitsig sig
 	;;
-	die("unreachable")
 }
 
