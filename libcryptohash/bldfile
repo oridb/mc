@@ -1,0 +1,6 @@
+lib cryptohash =
+	md5.myr
+	sha1.myr
+	sha256.myr
+	sha512.myr
+;;
