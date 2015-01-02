@@ -76,6 +76,6 @@ const initopts = {
 	sysstr = std.fmt("+%s", opt_sys)
 	archstr = std.fmt("+%s", opt_arch)
 
-	opt_runtime = std.pathjoin([config.Instroot, "lib/myr", config.Runtime][:]) 
+	opt_runtime = std.pathjoin([opt_instroot, "lib/myr", config.Runtime][:]) 
 }
 

@@ -321,7 +321,7 @@ const putlib = {cmd, head, lib, incs
 		;;
 		std.slfree(p)
 	;;
-	p = std.pathjoin([config.Instroot, "lib/myr", buf[:n]][:])
+	p = std.pathjoin([opt_instroot, "lib/myr", buf[:n]][:])
 	if std.fexists(p)
 		-> std.slput(cmd, head, p)
 	;;
