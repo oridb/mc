@@ -41,6 +41,7 @@ echo "const Linkcmd = [\"ld\", \"-o\"]" >> config.myr
 echo "const Arcmd = [\"ar\", \"-rcs\"]" >> config.myr
 echo "const Ascmd = [\"as\", \"-g\"]" >> config.myr
 echo "const Directlib = false" >> config.myr
+echo "const Manprefix = \"/usr/share/man/man"
 case $OS in
     *Linux*)
         echo 'export SYS=linux' >> config.mk

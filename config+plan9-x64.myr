@@ -7,4 +7,5 @@ pkg config =
 	const Ascmd	= ["6a"]
 	const Directlib	= true
 	const Runtime	= "_myrrt.6"
+	const Manprefix	= "/sys/man/
 ;;
