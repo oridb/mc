@@ -8,7 +8,7 @@ use "types.use"
 use "util.use"
 
 pkg bld =
-	const myrdeps	: (dg : depgraph#, targ : byte[:], srcs : byte[:][:], islib : bool	-> bool)
+	const myrdeps	: (p : parser#, dg : depgraph#, targ : byte[:], srcs : byte[:][:], islib : bool	-> bool)
 
 
 	/* a bit ugly: initialized from main() */
@@ -22,7 +22,7 @@ type dep = union
 	`Lib byte[:]
 ;;
 
-const myrdeps = {dg, targ, srcs, islib
+const myrdeps = {p, dg, targ, srcs, islib
 	var seentab, donetab
 	var out, useout
 	var objs, uses
@@ -59,7 +59,7 @@ const myrdeps = {dg, targ, srcs, islib
 		;;
 	;;
 	for i = 0; i < srcs.len; i++
-		srcdeps(dg, seentab, donetab, srcs[i], objs[i], uses[i])
+		srcdeps(p, dg, seentab, donetab, srcs[i], objs[i], uses[i])
 	;;
 	dumpgraph(dg)
 	std.htfree(seentab)
@@ -93,7 +93,7 @@ const dumpgraph = {dg
 	std.put("}\n")
 }
 
-const srcdeps = {g, seen, done, path, obj, usefile
+const srcdeps = {p, g, seen, done, path, obj, usefile
 	var deps
 
 	if std.hthas(done, path)
@@ -102,7 +102,7 @@ const srcdeps = {g, seen, done, path, obj, usefile
 		std.fput(1, "dependency loop involving %s\n", path)
 		std.exit(1)
 	;;
-	deps = getdeps(path)
+	deps = getdeps(p, path)
 	std.htput(seen, path, true)
 	for d in deps
 		match d
@@ -118,14 +118,14 @@ const srcdeps = {g, seen, done, path, obj, usefile
 			if usefile.len != 0
 				pushdep(g, l, usefile)
 			;;
-			addusedep(g, seen, done, l)
+			addusedep(p, g, seen, done, l)
 		;;
 	;;
 	std.htput(seen, path, false)
 	std.htput(done, path, true)
 }
 
-const addusedep = {g, seen, done, usefile
+const addusedep = {p, g, seen, done, usefile
 	var src
 
 	if std.hthas(done, usefile)
@@ -142,15 +142,21 @@ const addusedep = {g, seen, done, usefile
 	;;
 	pushdep(g, src, usefile)
 	std.htput(g.sources, usefile, src)
-	srcdeps(g, seen, done, src, "", usefile)
+	srcdeps(p, g, seen, done, src, "", usefile)
 	std.htput(done, usefile, true)
 }
 
-const getdeps = {path
+const getdeps = {p, path
 	var f
 	var deps : dep[:]
 
 	deps = [][:]
+	if !std.fexists(path)
+		match std.htget(p.gensrc, path)
+		| `std.Some gt:	run(gt.cmd, "")
+		| `std.None:	std.fatal(1, "no input file %s\n", path)
+		;;
+	;;
 	match bio.open(path, bio.Rd)
 	| `std.Some fd:	f = fd
 	| `std.None:	std.fatal(1, "could not open %s\n", path)
