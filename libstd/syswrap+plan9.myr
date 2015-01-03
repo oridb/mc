@@ -67,21 +67,23 @@ pkg std =
 	pkglocal const freemem	: (p : byte#, sz : size -> void)
 	pkglocal const curtime	: (-> time)
 	pkglocal const p9errstr	: (buf : byte[:] -> byte[:])
+
+	/* statbuf offsets */
+	pkglocal const Sizeoff	: int64 = 0
+	pkglocal const Typeoff	: int64 = Sizeoff + 2
+	pkglocal const Devoff	: int64 = Typeoff + 2
+	pkglocal const Qidtypeoff	: int64 = Devoff + 4
+	pkglocal const Qidversoff	: int64 = Qidtypeoff + 1
+	pkglocal const Qidpathoff	: int64 = Qidversoff + 4
+	pkglocal const Modeoff	: int64 = Qidpathoff + 8
+	pkglocal const Mtimeoff	: int64 = Modeoff + 4
+	pkglocal const Lengthoff	: int64 = Mtimeoff + 4
+	pkglocal const Stringsoff	: int64 = Lengthoff + 8
 ;;
 
 /* UGLY: circular dependency breaking... */
 extern const getenvv : (name : byte[:], default : byte[:] -> byte[:])
 
-const Sizeoff	= 0
-const Typeoff	= Sizeoff + 2
-const Devoff	= Typeoff + 2
-const Qidtypeoff	= Devoff + 4
-const Qidversoff	= Qidtypeoff + 1
-const Qidpathoff	= Qidversoff + 4
-const Modeoff	= Qidpathoff + 8
-const Mtimeoff	= Modeoff + 4
-const Lengthoff	= Mtimeoff + 4
-const Stringsoff	= Lengthoff + 8
 
 
 const Statprefixsz = Stringsoff
@@ -93,7 +95,7 @@ const openmode	= {path, opts, mode;
 
 
 	if opts & Ocreat != 0
-		fd = sys.create(path, opts castto(sys.fdopt), mode castto(int))
+		fd = sys.create(path, (opts & ~Ocreat) castto(sys.fdopt), mode castto(int))
 	else
 		fd = sys.open(path, opts castto(sys.fdopt))
 	;;
