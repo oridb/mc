@@ -141,7 +141,7 @@ pkg sys =
 	const noted	: (v : int32 -> int64)
 	const segattach	: (attr : int32, class : byte[:], va : void#, len : uint32 -> int64)
 	const segdetach	: (va : void# -> int64)
-	const segfree	: (va : void#, len : uint32 -> int64)
+	const segfree	: (va : byte#, len : size -> int64)
 	const segflush	: (va : void#, len : uint32 -> int64)
 	const unmount	: (name : byte[:], old : byte[:] -> int64)
 	const errstr	: (buf : byte[:] -> int64)
