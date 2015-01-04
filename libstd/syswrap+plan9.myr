@@ -204,7 +204,7 @@ const getmem	= {sz
 	
 const freemem = {p, sz
 	/* FIXME: we leak address space */
-	sys.segfree(p, sz)
+	sys.segfree(p, sz castto(sys.size))
 }
 
 const curtime = {
