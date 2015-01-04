@@ -251,7 +251,7 @@ void scrapelib(Htab *g, char *lib)
     ndeps = 0;
     use = openlib(lib);
     if (fgetc(use) != 'U')
-        fail(1, "library \"%s\" is not a usefile.\n", lib);
+        fail(1, "library \"%s\" has corrupt or invalid usefile.\n", lib);
     /* we don't care about the usefile's name */
     free(rdstr(use));
     while (fgetc(use) == 'L') {
