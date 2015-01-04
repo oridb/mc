@@ -114,6 +114,7 @@ const filldate = {d, f, s, tz, err -> byte[:]
 			| 'Z':	o += std.bfmt(buf[o:], "%s", d.tzname)
 				*/
 			| '%':	s = matchstr(s, "%", err)
+			| _:	std.fatal(1, "unknown format character %c\n", fc)
 			;;
 		else
 			(sc, s) = std.striter(s)
@@ -199,17 +200,17 @@ const matchampm = {d, s, err
 	;;
 }
 
-const time = {date
+const time = {inst
 	var t
 	var c, y, ya, m, u
 
 	t = 0
 
-	if date.mon > 2
-		m = (date.mon - 3) castto(std.time)
+	if inst.mon > 2
+		m = (inst.mon - 3) castto(std.time)
 	else
-		m = (date.mon + 9) castto(std.time)
-		y = (date.year - 1) castto(std.time)
+		m = (inst.mon + 9) castto(std.time)
+		y = (inst.year - 1) castto(std.time)
 	;;
 	
 	c = y / 100
@@ -217,13 +218,13 @@ const time = {date
 	u = (146097 * c) / 4 + \
 		(1461 * ya) / 4 + \
 		(153 * m + 2) / 5 + \
-		(date.day castto(std.time)) + \
+		(inst.day castto(std.time)) + \
 		UnixJulianDiff
 
 	t += (u * 24*60*60*1_000_000)
-	t += (date.h castto(std.time)) * 60*60*1_000_000
-	t += (date.m castto(std.time)) * 60*1_000_000
-	t += (date.s castto(std.time)) * 1_000_000
-	t += date.us castto(std.time)
+	t += (inst.h castto(std.time)) * 60*60*1_000_000
+	t += (inst.m castto(std.time)) * 60*1_000_000
+	t += (inst.s castto(std.time)) * 1_000_000
+	t += inst.us castto(std.time)
 	-> t
 }

@@ -72,6 +72,7 @@ const bfmt = {buf, f, d
 			| 'z':	o += timezone(buf[o:], d.tzoff)
 			| 'Z':	o += std.bfmt(buf[o:], "%s", d.tzname)
 			| '%':	o += std.bfmt(buf[o:], "%%")
+			| _:	std.fatal(1, "unknown format character %c\n", c)
 			;;
 		else
 			o += std.bfmt(buf[o:], "%c", c)
