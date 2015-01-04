@@ -4,3 +4,5 @@ lib regex =
 	ranges.myr
 	types.myr
 ;;
+
+gen ranges.myr = mkchartab -a -p_ranges UnicodeData.txt -o ranges.myr;;

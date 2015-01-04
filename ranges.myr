@@ -1,7 +1,7 @@
 /*
  This set of unicode tables was automatically generated
  by the following command:
- ./mkchartab -a -p_ranges UnicodeData.txt
+ mkchartab -a -p_ranges UnicodeData.txt -o ranges.myr
  editing it manually is probably a waste of time.
 */
 
