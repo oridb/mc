@@ -5,4 +5,3 @@ TODO:
     - Use-def analysis          [Tests: usedef]
     - Deferred code             [Tests: ]
     - Module-mains              [Tests: ]
-    - User defined traits       [Tests: ]
