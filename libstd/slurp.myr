@@ -11,7 +11,7 @@ pkg std =
 	const fslurp : (path : fd -> result(byte[:], byte[:]))
 ;;
 
-const Bufinc = 4096
+const Bufstart = 4096
 
 const slurp = {path
 	var fd
@@ -23,19 +23,21 @@ const slurp = {path
 }
 
 const fslurp = {fd
-	var n
-	var len
+	var len, bufsz
 	var buf
+	var n
 
 	len = 0
-	buf = slalloc(Bufinc)
+	bufsz = Bufstart
+	buf = slalloc(bufsz)
 	while true
 		n = read(fd, buf[len:])
 		if n <= 0
 			goto done
 		;;
 		len += n
-		buf = slgrow(buf, len + Bufinc)
+		bufsz *= 2
+		buf = slgrow(buf, bufsz)
 	;;
 :done
 	-> `Ok buf[:len]
