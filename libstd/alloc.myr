@@ -340,7 +340,11 @@ const bktfree = {bkt, m
 		s.next = bkt.slabs
 		bkt.slabs = s
 	elif s.nfree == bkt.nper
-		if bkt.ncache < Cachemax
+		/*
+		HACK HACK HACK: if we can't unmap, keep an infinite cache per slab size.
+		We should solve this better somehow.
+		*/
+		if bkt.ncache < Cachemax || !Canunmap
 			s.next = bkt.cache
 			bkt.cache = s
 		else
