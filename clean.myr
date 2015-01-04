@@ -1,0 +1,78 @@
+use std
+
+use "config.use"
+use "deps.use"
+use "opts.use"
+use "parse.use"
+use "subdir.use"
+use "types.use"
+
+pkg bld =
+	const cleanall	: (p : parser# -> bool)
+	const clean	: (p : parser#, targ : byte[:] -> bool)
+;;
+
+const cleanall = {p
+	for t in p.targs
+		match t
+		| `Bin bt:
+			cleanup(p, bt, bt.inputs, true)
+		| `Lib lt:
+			cleanup(p, lt, lt.inputs, true)
+		| `Gen gt:
+			for f in gt.out
+				if std.remove(f)
+					std.put("\tclean %s\n", f)
+				;;
+			;;
+		| `Sub subs:
+			subdirs(p, subs, `std.None)
+		| `Man m:
+		;;
+	;;
+	-> true
+}
+
+const clean = {p, targ
+	for t in p.targs
+		match t
+		| `Bin bt:
+			if std.sleq(bt.name, targ)
+				cleanup(p, bt, bt.inputs, true)
+			;;
+		| `Lib lt:
+			if std.sleq(lt.name, targ)
+				cleanup(p, lt, lt.inputs, true)
+			;;
+		| `Gen gt:
+		| `Sub subs:
+			subdirs(p, subs, `std.Some targ)
+		| `Man m:
+		;;
+	;;
+	-> true
+}
+
+const cleanup = {p, targ, leaves, islib
+	var mchammer_files /* cant touch this */
+	var keys
+	var dg
+
+	if !myrdeps(p, &dg, targ.name, leaves, targ.incpath, islib)
+		std.fatal(1, "Could not load dependencies for %s\n", targ.name)
+	;;
+	mchammer_files = std.mkht(std.strhash, std.streq)
+	for l in leaves
+		if !std.hthas(p.gensrc, l)
+			std.htput(mchammer_files, l, true)
+		;;
+	;;
+
+	keys = std.htkeys(dg.deps)
+	for k in keys
+		if !std.htgetv(mchammer_files, k, false) && std.remove(k)
+			std.put("\tclean %s\n", k)
+		;;
+	;;
+}
+

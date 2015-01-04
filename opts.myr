@@ -1,0 +1,84 @@
+use std
+
+use "config.use"
+
+pkg bld =
+	var opt_arch 	: byte[:]
+	var opt_sys	: byte[:]
+	var opt_runtime	: byte[:]
+	var opt_genasm	: bool
+	var opt_ldscript	: byte[:]
+	var opt_incpaths	: byte[:][:]
+	var opt_instroot	: byte[:]
+	var opt_manpath	: byte[:]
+	var opt_destdir	: byte[:]
+	var opt_bldfile	: byte[:]
+	var opt_debug	: bool
+
+	/* undocumented/unsupported opts */
+	var opt_mc	: byte[:]
+	var opt_muse	: byte[:]
+
+	var sysarchstr	: byte[:]
+	var archstr	: byte[:]
+	var sysstr	: byte[:]
+
+	const initopts	: (-> void)
+;;
+
+var opt_arch 	= ""
+var opt_sys	= ""
+var opt_binname	= ""
+var opt_libname	= ""
+var opt_runtime	= ""
+var opt_ldscript	= ""
+var opt_incpaths	/* FIXME: taking a constant slice is a nonconstant initializer */
+var opt_instroot	= ""
+var opt_manpath	= ""
+var opt_destdir	= ""
+var opt_debug	= false
+var opt_bldfile = "bldfile"
+var opt_mc	= "6m"
+var opt_as	= "as"
+var opt_muse	= "muse"
+var opt_ld	= "ld"
+var opt_ar	= "ar"
+var opt_genasm  = false
+
+/* derived */
+var sysarchstr	= ""
+var archstr	= ""
+var sysstr	= ""
+
+const initopts = {
+	var si
+
+	std.getsysinfo(&si)
+	match si.system
+	| "Linux":	opt_sys = "linux"
+	| "Darwin":	opt_sys = "osx"
+	| "FreeBSD":	opt_sys = "freebsd"
+	| "Plan9":	opt_sys = "plan9"
+	| unknown:	std.fatal(1, "unknown system \"%s\"\n", unknown)
+	;;
+
+	match si.arch
+	| "x86_64":	opt_arch = "x64"
+	| "amd64":	opt_arch = "x64"
+	| unknown:	std.fatal(1, "unknown architecture \"%s\"\n", unknown)
+	;;
+
+	opt_incpaths = [][:]
+	opt_instroot = config.Instroot
+	opt_manpath = config.Manpath
+	opt_destdir = std.getenvv("DESTDIR", "")
+	opt_mc = std.getenvv("MYR_MC", "6m")
+	opt_muse = std.getenvv("MYR_MUSE", "muse")
+
+	sysarchstr = std.fmt("+%s-%s", opt_sys, opt_arch)
+	sysstr = std.fmt("+%s", opt_sys)
+	archstr = std.fmt("+%s", opt_arch)
+
+	opt_runtime = std.pathjoin([opt_instroot, "lib/myr", config.Runtime][:]) 
+}
+

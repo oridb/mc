@@ -1,0 +1,390 @@
+use std
+
+use "types.use"
+use "util.use"
+use "opts.use"
+use "fsel.use"
+
+pkg bld =
+	const parse	: (p : parser#	-> bool)
+;;
+
+const failparse = {p : parser#, msg, args : ...
+	var buf : byte[1024]
+	var ap
+	var n
+
+	ap = std.vastart(&args)
+	n = std.bfmtv(buf[:], msg, ap)
+	std.fput(1, "%s:%i: %s", p.fname, p.line, buf[:n])
+	std.exit(1)
+}
+
+const parse = {p
+	while true
+		skipspace(p)
+		if !target(p)
+			break
+		;;
+	;;
+	skipspace(p)
+	if p.rest.len > 0
+		failparse(p, "junk in file near %s\n", p.rest[:std.min(p.rest.len, 10)])
+		-> false
+	else
+		-> true
+	;;
+}
+
+const target = {p : parser#
+	match word(p)
+	| `std.Some "bin":	bintarget(p)
+	| `std.Some "lib":	libtarget(p)
+	| `std.Some "gen":	gentarget(p)
+	| `std.Some "sub":	subtarget(p)
+	| `std.Some "man":	mantarget(p)
+	| `std.Some targtype:	failparse(p, "unknown targtype type %s\n", targtype)
+	| `std.None:	-> false
+	;;
+	-> true
+}
+
+/* bintarget: myrtarget */
+const bintarget = {p
+	p.targs = std.slpush(p.targs, `Bin myrtarget(p, "bin"))
+}
+
+/* libtarget: myrtarget */
+const libtarget = {p
+	p.targs = std.slpush(p.targs, `Lib myrtarget(p, "lib"))
+}
+
+/* subtarget : anontarget */
+const subtarget = {p
+	p.targs = std.slpush(p.targs, `Sub anontarget(p, "sub"))
+}
+
+/* mantarget: anontarget */
+const mantarget = {p
+	p.targs = std.slpush(p.targs, `Man anontarget(p, "man"))
+}
+
+/* gentarget: wordlist = wordlist ;; */
+const gentarget = {p
+	var outlist, cmdlist
+	var gt
+
+	match wordlist(p)
+	| `std.None:	failparse(p, "gen target missing output files\n")
+	| `std.Some out:
+		outlist = out
+	;;
+
+	skipspace(p)
+	if !matchc(p, '=')
+		failparse(p, "expected '=' after '%s %s'\n", cmdlist, outlist[outlist.len-1])
+	;;
+
+	match wordlist(p)
+	| `std.None:	failparse(p, "gen target missing command\n")
+	| `std.Some cmd:
+		cmdlist = cmd
+	;;
+
+	if !matchc(p, ';') || !matchc(p, ';')
+		failparse(p, "expected ';;' terminating genfile command, got %c\n", peekc(p))
+	;;
+
+	gt = std.mk([.out = outlist, .cmd=cmdlist])
+	for o in outlist
+		std.htput(p.gensrc, o, gt)
+	;;
+	p.targs = std.slpush(p.targs, `Gen gt)
+}
+
+/*
+myrtarget: name '=' inputlist ';;'
+	| name attrlist = inputlist ';;'
+*/
+const myrtarget = {p, targ
+	var ldscript, runtime, inst, incpath
+	var name, inputs, libdeps, attrs
+	var fsel
+
+	match word(p)
+	| `std.Some n:	name = n
+	| `std.None:	failparse(p, "expected target name after '%s'\n", targ)
+	;;
+
+	skipspace(p)
+	if matchc(p, '{')
+		match attrlist(p)
+		| `std.Some al:	attrs = al
+		| `std.None:	failparse(p, "invalid attr list for %s %s\n", targ, name)
+		;;
+	else
+		attrs = [][:]
+	;;
+
+	skipspace(p)
+	if !matchc(p, '=')
+		failparse(p, "expected '=' after '%s %s'\n", targ, name)
+	;;
+
+	match inputlist(p)
+	| `std.Some (wl, libs): 
+		fsel = mkfsel()
+		libdeps = libs
+		for w in wl
+			fseladd(fsel, w)
+		;;
+		inputs = fselfin(fsel)
+		std.slfree(wl)
+	| `std.None: failparse(p, "expected list of file names after '%s %s'\n", targ, name)
+	;;
+
+	skipspace(p)
+	if !matchc(p, ';') || !matchc(p, ';')
+		failparse(p, "expected ';;' terminating input list, got %c\n", peekc(p))
+	;;
+
+	inst = true
+	ldscript = ""
+	runtime = ""
+	incpath = [][:]
+	for elt in attrs
+		match elt
+		| ("ldscript", lds):	ldscript = std.sldup(lds)
+		| ("runtime", rt):	runtime = std.sldup(rt)
+		| ("inc", path):	incpath = std.slpush(incpath, std.sldup(path))
+		| ("noinst", val):
+			if val.len != 0
+				failparse(p, "noinst attr does not take argument\n")
+			;;
+			inst = false
+		| (invalid, _):
+			std.fatal(1, "got invalid attr '%s'\n", invalid)
+		;;
+	;;
+	-> std.mk([
+		.name=name,
+		.inputs=inputs,
+		.libdeps=libdeps,
+		.install=inst,
+		.ldscript=ldscript,
+		.runtime=runtime,
+		.incpath=incpath,
+		.built=false
+	])
+}
+
+/* anontarget: '=' wordlist ';;' */
+const anontarget = {p, targ
+	var inputs
+
+	inputs = [][:]
+	skipspace(p)
+	if !matchc(p, '=')
+		failparse(p, "expected '=' after '%s' target\n", targ)
+	;;
+
+	match wordlist(p)
+	| `std.None:	failparse(p, "expected list of file names after '%s' target\n", targ)
+	| `std.Some wl:	inputs = wl
+	;;
+	skipspace(p)
+	if !matchc(p, ';') || !matchc(p, ';')
+		failparse(p, "expected ';;' terminating input list\n")
+	;;
+	-> inputs
+}
+
+/*
+attrlist: attrs '}'
+
+attrs	: EMPTY
+	| attrs attr
+
+attr	: name
+	| name '=' name
+*/
+const attrlist = {p
+	var al
+
+	al = [][:]
+	while true
+		match word(p)
+		| `std.Some k:
+			skipspace(p)
+			if matchc(p, '=')
+				match word(p)
+				| `std.Some v:
+					al = std.slpush(al, (k, v))
+				| `std.None:
+					failparse(p, "invalid attr in attribute list\n")
+				;;
+			else
+				al = std.slpush(al, (k, [][:]))
+			;;
+		| `std.None:	break
+		;;
+	;;
+	if !matchc(p, '}')
+		failparse(p, "expected '}' at end of attr list\n")
+	;;
+	if al.len == 0
+		-> `std.None
+	else
+		-> `std.Some al
+	;;
+}
+
+/*
+inputlist: EMPTY
+	| inputlist input
+
+input	: word
+	| "lib" word
+*/
+const inputlist = {p
+	var wl, libs
+
+	wl = [][:]
+	libs = [][:]
+	while true
+		match word(p)
+		| `std.Some "lib":
+			match word(p)
+			| `std.Some l:	libs = std.slpush(libs, l)
+			| `std.None:	failparse(p, "expected lib name after 'lib'\n")
+			;;
+		| `std.Some w:	wl = std.slpush(wl, w)
+		| `std.None:	break
+		;;
+	;;
+	if wl.len == 0
+		-> `std.None
+	else
+		-> `std.Some (wl, libs)
+	;;
+}
+
+/* wordlist: EMPTY | wordlist word */
+const wordlist = {p
+	var wl
+
+	wl = [][:]
+	while true
+		match word(p)
+		| `std.Some w:	wl = std.slpush(wl, w)
+		| `std.None:	break
+		;;
+	;;
+	if wl.len == 0
+		-> `std.None
+	else
+		-> `std.Some wl
+	;;
+}
+
+/* word: /wordchar*/
+const word = {p : parser#
+	var c, n
+	var start
+
+	skipspace(p)
+
+	c = peekc(p)
+	if c == '"'
+		n = 0
+		nextc(p)
+		start = p.rest
+		while p.rest.len > 0
+			c = peekc(p)
+			if c == '"'
+				nextc(p)
+				goto done
+			elif c == '\\'
+				c = nextc(p)
+			;;
+			nextc(p)
+			n += std.charlen(c)
+		;;
+		failparse(p, "input ended within quoted word\n")
+	else
+		n = 0
+		start = p.rest
+		while p.rest.len > 0
+			c = peekc(p)
+			if wordchar(c)
+				nextc(p)
+				n += std.charlen(c)
+			else
+				break
+			;;
+		;;
+	;;
+:done
+	if n > 0
+		-> `std.Some std.sldup(start[:n])
+	else
+		-> `std.None
+	;;
+}
+
+const wordchar = {c
+	-> std.isalnum(c) || \
+		c == '.' || c == '_' || c == '$' || c == '-' || \
+		c == '/' || c == ':' || c == '!' || c == '~' || \
+		c == '+'
+}
+
+const skipspace = {p : parser#
+	var c, r
+
+	r = p.rest
+	while r.len > 0
+		c = peekc(p)
+		match c
+		| ' ':	nextc(p)
+		| '\t':	nextc(p)
+		| '\n':
+			nextc(p)
+			p.line++
+		| '#':
+			while p.rest.len > 0 && peekc(p) != '\n'
+				nextc(p)
+			;;
+		| _:
+			break
+		;;
+	;;
+}
+
+const matchc = {p, c
+	var chr, s
+
+	if p.rest.len == 0
+		-> false
+	;;
+	(chr, s) = std.striter(p.rest)
+	if c == chr
+		p.rest = s
+		-> true
+	else
+		-> false
+	;;
+}
+
+const peekc = {p
+	-> std.decode(p.rest)
+}
+
+const nextc = {p
+	var c, s
+
+	(c, s) = std.striter(p.rest)
+	p.rest = s
+	-> c
+}
+

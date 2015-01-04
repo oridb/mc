@@ -1,0 +1,100 @@
+use std
+
+use "opts.use"
+
+pkg bld =
+	const run	: (cmd : byte[:][:], dir : byte[:] -> void)
+	const printcmd
+	const srcsplit	: (src : byte[:] -> (byte[:], byte[:], byte[:]))
+	const swapsuffix	: (f : byte[:], suff : byte[:], newsuff : byte[:] -> byte[:])
+	const srcswapsuffix	: (f : byte[:], newsuff : byte[:] -> byte[:])
+	const strlistfree	: (sl : byte[:][:] -> void)
+;;
+
+const run = {cmd, dir
+	var pid
+
+	printcmd(cmd)
+	pid = std.fork()
+	if pid == -1
+		std.fatal(1, "could not fork command\n")
+	elif pid == 0
+		if dir.len > 0
+			if !std.chdir(dir)
+				std.fatal(1, "unable to enter directory %s\n", dir)
+			;;
+		;;
+		if std.execvp(cmd[0], cmd) < 0
+			std.fatal(1, "failed to exec %s\n", cmd[0])
+		;;
+	else
+		match std.wait(pid)
+		| `std.Wsuccess:	/* nothing */
+		| `std.Wfailure:	std.fatal(1, "%s did not execute successfully\n", cmd[0])
+		| `std.Wsignalled:	std.fatal(1, "%s exited with signal\n", cmd[0])
+		| `std.Waiterror:	std.fatal(1, "failed to wait for %s\n", cmd[0])
+		;;
+	;;
+}
+
+const printcmd = {lst
+	if lst.len > 0
+		std.put("\t")
+		std.put("%s\t", lst[0])
+		for l in lst[1:]
+			std.put("%s ", l)
+		;;
+	;;
+	std.put("\n")
+}
+
+const srcsplit = {src
+	var platf, suff
+
+	platf = ""
+	suff = ""
+	match std.strrfind(src, ".")
+	| `std.Some i:
+		suff = src[i:]
+		src = src[:i]
+	| `std.None:
+		/* no suffix to trim */
+	;;
+
+	match std.strrfind(src, "+")
+	| `std.Some i:
+		platf = src[i:]
+		src = src[:i]
+	| `std.None:
+		/* no platform to trim */
+	;;
+	-> (src, platf, suff)
+}
+
+const swapsuffix = {f, suff, newsuff
+	if std.hassuffix(f, suff)
+		f = f[:f.len - suff.len]
+	;;
+	-> std.fmt("%s%s", f, newsuff)
+}
+
+const srcswapsuffix = {src, new
+	var base, platf, suff
+
+	(base, platf, suff) = srcsplit(src)
+	if std.sleq(suff, ".myr")
+		-> std.strcat(base, new)
+	elif std.sleq(suff, ".s")
+		-> std.strcat(base, new)
+	else
+		std.fatal(1, "unrecognized source %s\n", src)
+	;;
+}
+
+const strlistfree = {sl
+	for s in sl
+		std.slfree(s)
+	;;
+	std.slfree(sl)
+}
+
