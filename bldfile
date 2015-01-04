@@ -15,8 +15,5 @@ bin mbld =
 	util.myr
 ;;
 
-# we want to generate the config.myr file if we haven't configured yet.
-gen config.myr = ./configure;;
-
 man = mbld.1;;
 
