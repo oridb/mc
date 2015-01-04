@@ -116,7 +116,7 @@ const fmtime = {path
 	if sys.stat(path, buf[:]) < Stringsoff
 		-> `None
 	;;
-	-> `Some getle64(buf[Lengthoff:Lengthoff + 8])
+	-> `Some (getle32(buf[Mtimeoff:Mtimeoff + 8]) castto(time))
 }
 
 const fsize = {path
@@ -125,7 +125,7 @@ const fsize = {path
 	if sys.stat(path, buf[:]) < Stringsoff
 		-> `None
 	;;
-	-> `Some getle64(buf[Lengthoff:Lengthoff + 8])
+	-> `Some (getle64(buf[Lengthoff:Lengthoff + 8]) castto(off))
 }
 
 const getsysinfo = {si
@@ -217,9 +217,11 @@ const p9errstr = {errbuf
 	-> errbuf[:i]
 }
 
+/* FIXME: will be needed when we resize stat bufs when statting.
 const statsz = {buf
 	-> (buf[0] castto(int64)) | ((buf[1] << 8) castto(int64))
 }
+*/
 
 const getle32 = {buf
 	-> (buf[0] castto(int32)) \
