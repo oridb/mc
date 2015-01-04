@@ -92,8 +92,10 @@ const buildbin = {p, targ
 	if targ.built
 		->
 	;;
-	if targ.libdeps.len > 0 && !hasinc(targ.incpath, ".")
-		targ.incpath = std.slpush(targ.incpath, ".")
+	if targ.libdeps.len > 0
+		if !hasinc(targ.incpath, ".")
+			targ.incpath = std.slpush(targ.incpath, ".")
+		;;
 		for l in targ.libdeps
 			build(p, l)
 		;;
