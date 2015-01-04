@@ -31,20 +31,21 @@ Asmsyntax asmsyntax;
 
 static void usage(char *prog)
 {
-    printf("%s [-h] [-o outfile] [-d[dbgopts]] inputs\n", prog);
-    printf("\t-h\tPrint this help\n");
+    printf("%s [-?] [-o outfile] [-d[dbgopts]] inputs\n", prog);
+    printf("\t-?\tPrint this help\n");
+    printf("\t-o\tOutput to outfile\n");
+    printf("\t-S\tGenerate assembly source alongside object code\n");
     printf("\t-c\tEnable additional (possibly flaky) checking\n");
-    printf("\t-S\tWrite out `input.s` when compiling\n");
     printf("\t-I path\tAdd 'path' to use search path\n");
     printf("\t-d\tPrint debug dumps. Recognized options: f r p i\n");
+    printf("\t-G\tGenerate asm in gas syntax\n");
+    printf("\t-8\tGenerate asm in plan 9 syntax\n");
     printf("\t\t\tf: log folded trees\n");
     printf("\t\t\tl: log lowered pre-cfg trees\n");
     printf("\t\t\tT: log tree immediately\n");
     printf("\t\t\tr: log register allocation activity\n");
     printf("\t\t\ti: log instruction selection activity\n");
     printf("\t\t\tu: log type unifications\n");
-    printf("\t-o\tOutput to outfile\n");
-    printf("\t-S\tGenerate assembly instead of object code\n");
 }
 
 static void assemble(char *asmsrc, char *path)
@@ -139,6 +140,7 @@ int main(int argc, char **argv)
             case 'S':
                 writeasm = 1;
                 break;
+            case '?':
             case 'h':
                 usage(argv[0]);
                 exit(0);
