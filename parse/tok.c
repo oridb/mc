@@ -288,7 +288,7 @@ static void appendc(char **buf, size_t *len, size_t *sz, uint32_t c)
     else if (c < 0x200000)
         charlen = 4;
     else
-        lfatal(curloc, 0, "invalid utf character '\\u{%x}'", c);
+        lfatal(curloc, "invalid utf character '\\u{%x}'", c);
 
     encode(charbuf, charlen, c);
     for (i = 0; i < charlen; i++)
@@ -317,7 +317,7 @@ static int hexval(char c)
         return c - 'A' + 10;
     else if (c >= '0' && c <= '9')
         return c - '0';
-    lfatal(curloc, 0, "passed non-hex value '%c' to where hex was expected", c);
+    lfatal(curloc, "passed non-hex value '%c' to where hex was expected", c);
     return -1;
 }
 
@@ -329,16 +329,16 @@ static int32_t unichar(void)
 
     /* we've already seen the \u */
     if (next() != '{')
-        lfatal(curloc, 0, "\\u escape sequence without initial '{'");
+        lfatal(curloc, "\\u escape sequence without initial '{'");
     v = 0;
     while (ishexval(peek())) {
         c = next();
         v = 16*v + hexval(c);
         if (v > 0x10FFFF)
-            lfatal(curloc, 0, "invalid codepoint for \\u escape sequence");
+            lfatal(curloc, "invalid codepoint for \\u escape sequence");
     }
     if (next() != '}')
-        lfatal(curloc, 0, "\\u escape sequence without ending '}'");
+        lfatal(curloc, "\\u escape sequence without ending '}'");
     return v;
 }
 
@@ -362,10 +362,10 @@ static int decode(char **buf, size_t *len, size_t *sz)
         case 'x': /* arbitrary hex */
             c1 = next();
             if (!isxdigit(c1))
-                lfatal(curloc, 0, "expected hex digit, got %c", c1);
+                lfatal(curloc, "expected hex digit, got %c", c1);
             c2 = next();
             if (!isxdigit(c2))
-                lfatal(curloc, 0, "expected hex digit, got %c", c1);
+                lfatal(curloc, "expected hex digit, got %c", c1);
             v = 16*hexval(c1) + hexval(c2);
             break;
         case 'n': v = '\n'; break;
@@ -377,7 +377,7 @@ static int decode(char **buf, size_t *len, size_t *sz)
         case 'v': v = '\v'; break;
         case '\\': v = '\\'; break;
         case '0': v = '\0'; break;
-        default: lfatal(curloc, 0, "unknown escape code \\%c", c);
+        default: lfatal(curloc, "unknown escape code \\%c", c);
     }
     append(buf, len, sz, v);
     return v;
@@ -401,9 +401,9 @@ static Tok *strlit(void)
         if (c == '"')
             break;
         else if (c == End)
-            lfatal(curloc, 0, "Unexpected EOF within string");
+            lfatal(curloc, "Unexpected EOF within string");
         else if (c == '\n')
-            lfatal(curloc, 0, "Newlines not allowed in strings");
+            lfatal(curloc, "Newlines not allowed in strings");
         else if (c == '\\')
             decode(&buf, &len, &sz);
         else
@@ -432,14 +432,14 @@ static uint32_t readutf(char c, char **buf, size_t *buflen, size_t *sz) {
     else if ((c & 0xf8) == 0xf0)
         len = 4;
     else
-        lfatal(curloc, 0, "Invalid utf8 encoded character constant");
+        lfatal(curloc, "Invalid utf8 encoded character constant");
 
     val = c & ((1 << (8 - len)) - 1);
     append(buf, buflen, sz, c);
     for (i = 1; i < len; i++) {
         c = next();
         if ((c & 0xc0) != 0x80)
-            lfatal(curloc, 0, "Invalid utf8 codepoint in character literal");
+            lfatal(curloc, "Invalid utf8 codepoint in character literal");
         val = (val << 6) | (c & 0x3f);
         append(buf, buflen, sz, c);
     }
@@ -463,16 +463,16 @@ static Tok *charlit(void)
     val = 0;
     c = next();
     if (c == End)
-        lfatal(curloc, 0, "Unexpected EOF within char lit");
+        lfatal(curloc, "Unexpected EOF within char lit");
     else if (c == '\n')
-        lfatal(curloc, 0, "Newlines not allowed in char lit");
+        lfatal(curloc, "Newlines not allowed in char lit");
     else if (c == '\\')
         val = decode(&buf, &len, &sz);
     else
         val = readutf(c, &buf, &len, &sz);
     append(&buf, &len, &sz, '\0');
     if (next() != '\'')
-        lfatal(curloc, 0, "Character constant with multiple characters");
+        lfatal(curloc, "Character constant with multiple characters");
 
     t = mktok(Tchrlit);
     t->chrval = val;
@@ -678,7 +678,7 @@ nextsuffix:
         switch (peek()) {
             case 'u':
                 if (unsignedval == 1)
-                    lfatal(curloc, 0, "Duplicate 'u' integer specifier");
+                    lfatal(curloc, "Duplicate 'u' integer specifier");
                 next();
                 unsignedval = 1;
                 goto nextsuffix;
@@ -712,7 +712,7 @@ nextsuffix:
                 break;
             default:
                 if (unsignedval)
-                    lfatal(curloc, 0, "Unrecognized character int type specifier after 'u'");
+                    lfatal(curloc, "Unrecognized character int type specifier after 'u'");
                 break;
         }
     }
@@ -784,7 +784,7 @@ static Tok *toknext()
     }
 
     if (!t || t->type == Terror)
-        lfatal(curloc, 0, "Unable to parse token starting with %c", c);
+        lfatal(curloc, "Unable to parse token starting with %c", c);
     return t;
 }
 
