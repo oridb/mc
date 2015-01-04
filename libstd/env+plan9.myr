@@ -41,8 +41,8 @@ const getenv = {name
 		match std.slurp(buf[:n])
 		| `Fail m: -> `None
 		| `Ok data:
-			slpush(envkey, sldup(name))
-			slpush(envval, data)
+			envkey = slpush(envkey, sldup(name))
+			envval = slpush(envval, data)
 			-> `Some data
 		;;
 	;;
