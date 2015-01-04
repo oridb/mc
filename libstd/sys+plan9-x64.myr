@@ -158,6 +158,8 @@ pkg sys =
 	const brk_	: (endp : byte# -> int64)
 	const nsec	: (-> uint64)
 
+	extern const alloca	: (sz : size	-> byte#)
+
 	extern var tosptr	: tos#
 	extern var curbrk	: byte#
 ;;
@@ -202,7 +204,7 @@ const segfree	= {va, len;	-> syscall(Syssegfree, a(va), a(len))}
 const segflush	= {va, len;	-> syscall(Syssegfree, a(va), a(len))}
 const unmount	= {name, old;	-> syscall(Sysunmount, cstring(name), cstring(old))}
 const errstr	= {buf;		-> syscall(Syserrstr, p(buf), a(buf.len))}
-const stat	= {name, edir;	-> syscall(Sysstat, cstring(name), p(edir), a(edir.len))}
+const stat	= {name, edir;	-> syscall(Sysstat, cstring(name), p(edir), a(edir.len)) & 0xfffffff}
 const fstat	= {fd, edir;	-> syscall(Sysstat, a(fd), p(edir), a(edir.len))}
 const wstat	= {name, edir;	-> syscall(Syswstat, cstring(name), p(edir), a(edir.len))}
 const fwstat	= {fd, edir;	-> syscall(Sysfwstat, a(fd), p(edir), a(edir.len))}
