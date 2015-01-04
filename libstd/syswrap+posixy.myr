@@ -64,6 +64,7 @@ pkg std =
 	const exit	: (status:int -> void)
 	const waitpid	: (pid:pid, loc:int32#, opt : int64	-> int64)
 
+	pkglocal const Canunmap	: bool = true
 	pkglocal const getmem	: (sz : size -> byte#)
 	pkglocal const freemem	: (p : byte#, sz : size -> void)
 	pkglocal const curtime	: (-> time)

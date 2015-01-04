@@ -63,6 +63,7 @@ pkg std =
 	const exit	: (status:int -> void)
 	const waitpid	: (pid:pid, loc:int32#, opt : int64	-> pid)
 
+	pkglocal const Canunmap	: bool = true
 	pkglocal const getmem	: (sz : size -> byte#)
 	pkglocal const freemem	: (p : byte#, sz : size -> void)
 	pkglocal const curtime	: (-> time)
@@ -202,7 +203,8 @@ const getmem	= {sz
 }
 	
 const freemem = {p, sz
-	/* FIXME: don't leak */
+	/* FIXME: we leak address space */
+	sys.segfree(p, sz)
 }
 
 const curtime = {
