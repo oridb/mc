@@ -92,14 +92,14 @@ const buildbin = {p, targ
 	if targ.built
 		->
 	;;
-	if targ.libdeps.len > 0
+	if targ.libdeps.len > 0 && !hasinc(targ.incpath, ".")
 		targ.incpath = std.slpush(targ.incpath, ".")
 		for l in targ.libdeps
 			build(p, l)
 		;;
 	;;
 	std.put("%s...\n", targ.name)
-	if !myrdeps(p, &dg, targ.name, targ.inputs, false)
+	if !myrdeps(p, &dg, targ.name, targ.inputs, targ.incpath, false)
 		std.fatal(1, "Could not load dependencies for %s\n", targ.name)
 	;;
 	if !std.hthas(dg.deps, targ.name)
@@ -109,6 +109,15 @@ const buildbin = {p, targ
 		linkbin(&dg, targ.name, targ.inputs, targ.ldscript, targ.runtime, targ.incpath, targ.libdeps)
 	;;
 	targ.built = true
+}
+
+const hasinc = {path, t
+	for e in path
+		if std.sleq(e, t)
+			-> true
+		;;
+	;;
+	-> false
 }
 
 const buildlib = {p, targ
@@ -123,7 +132,7 @@ const buildlib = {p, targ
 	lib = targ.name
 	std.put("lib%s.a...\n", lib)
 	archive = std.fmt("lib%s.a", lib)
-	if !myrdeps(p, &dg, lib, targ.inputs, true)
+	if !myrdeps(p, &dg, lib, targ.inputs, targ.incpath, true)
 		std.fatal(1, "Could not load dependencies for %s\n", lib)
 	;;
 	if !std.hthas(dg.deps, lib)

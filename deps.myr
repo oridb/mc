@@ -8,7 +8,7 @@ use "types.use"
 use "util.use"
 
 pkg bld =
-	const myrdeps	: (p : parser#, dg : depgraph#, targ : byte[:], srcs : byte[:][:], islib : bool	-> bool)
+	const myrdeps	: (p : parser#, dg : depgraph#, targ : byte[:], srcs : byte[:][:], incs : byte[:][:], islib : bool	-> bool)
 
 
 	/* a bit ugly: initialized from main() */
@@ -22,7 +22,7 @@ type dep = union
 	`Lib byte[:]
 ;;
 
-const myrdeps = {p, dg, targ, srcs, islib
+const myrdeps = {p, dg, targ, srcs, incs, islib
 	var seentab, donetab
 	var out, useout
 	var objs, uses
@@ -59,7 +59,7 @@ const myrdeps = {p, dg, targ, srcs, islib
 		;;
 	;;
 	for i = 0; i < srcs.len; i++
-		srcdeps(p, dg, seentab, donetab, srcs[i], objs[i], uses[i])
+		srcdeps(p, dg, seentab, donetab, srcs[i], objs[i], uses[i], incs)
 	;;
 	dumpgraph(dg)
 	std.htfree(seentab)
@@ -93,7 +93,7 @@ const dumpgraph = {dg
 	std.put("}\n")
 }
 
-const srcdeps = {p, g, seen, done, path, obj, usefile
+const srcdeps = {p, g, seen, done, path, obj, usefile, incs
 	var deps
 
 	if std.hthas(done, path)
@@ -107,7 +107,7 @@ const srcdeps = {p, g, seen, done, path, obj, usefile
 	for d in deps
 		match d
 		| `Lib lib:
-			scrapelibs(g, lib)
+			scrapelibs(g, lib, incs)
 		| `Local l:
 			if !std.hassuffix(l, ".use")
 				std.fatal(1, "usefile dependency \"%s\" of \"%s\" is not a usefile\n", l, path)
@@ -118,14 +118,14 @@ const srcdeps = {p, g, seen, done, path, obj, usefile
 			if usefile.len != 0
 				pushdep(g, l, usefile)
 			;;
-			addusedep(p, g, seen, done, l)
+			addusedep(p, g, seen, done, l, incs)
 		;;
 	;;
 	std.htput(seen, path, false)
 	std.htput(done, path, true)
 }
 
-const addusedep = {p, g, seen, done, usefile
+const addusedep = {p, g, seen, done, usefile, incs
 	var src
 
 	if std.hthas(done, usefile)
@@ -142,7 +142,7 @@ const addusedep = {p, g, seen, done, usefile
 	;;
 	pushdep(g, src, usefile)
 	std.htput(g.sources, usefile, src)
-	srcdeps(p, g, seen, done, src, "", usefile)
+	srcdeps(p, g, seen, done, src, "", usefile, incs)
 	std.htput(done, usefile, true)
 }
 
@@ -174,7 +174,7 @@ const getdeps = {p, path
 	;;
 }
 
-const scrapelibs = {dg, lib
+const scrapelibs = {dg, lib, incs
 	var deps, d
 	var f
 	var done
@@ -184,7 +184,7 @@ const scrapelibs = {dg, lib
 	;;
 
 	deps = [][:]
-	f = openlib(lib)
+	f = openlib(lib, incs)
 	match bio.getc(f)
 	| `std.Some 'U': /* nothing */
 	| `std.Some _:	std.fatal(1, "library %s is not usefile\n", lib)
@@ -204,15 +204,15 @@ const scrapelibs = {dg, lib
 	bio.close(f)
 	std.htput(dg.libs, lib, deps)
 	for dep in deps
-		scrapelibs(dg, dep)
+		scrapelibs(dg, dep, incs)
 	;;
 }
 
-const openlib = {lib
+const openlib = {lib, incs
 	var path
 
-	for p in opt_incpaths
-		path = std.pathjoin([p, "/lib/myr", lib][:])
+	for p in incs
+		path = std.pathjoin([p, lib][:])
 		match  bio.open(path, bio.Rd)
 		| `std.Some file:
 			-> file
