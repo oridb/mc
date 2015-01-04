@@ -10,10 +10,13 @@ lib sys =
 	ifreq+freebsd.myr
 	ifreq+linux.myr
 	ifreq+osx.myr
+	ifreq+plan9.myr	# dummy file: plan9 doesn't have ifreq
 	util.s
 ;;
 
 lib std {inc=.} =
+	lib sys
+
 	# portable files
 	alloc.myr
 	bigint.myr
