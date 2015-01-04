@@ -110,7 +110,7 @@ const srcdeps = {p, g, seen, done, path, obj, usefile, incs
 			scrapelibs(g, lib, incs)
 		| `Local l:
 			if !std.hassuffix(l, ".use")
-				std.fatal(1, "usefile dependency \"%s\" of \"%s\" is not a usefile\n", l, path)
+				std.fatal(1, "local dependency \"%s\" of \"%s\" should end with .use\n", l, path)
 			;;
 			if obj.len != 0
 				pushdep(g, l, obj)
@@ -187,8 +187,8 @@ const scrapelibs = {dg, lib, incs
 	f = openlib(lib, incs)
 	match bio.getc(f)
 	| `std.Some 'U': /* nothing */
-	| `std.Some _:	std.fatal(1, "library %s is not usefile\n", lib)
-	| `std.None:	std.fatal(1, "library %s is not usefile\n", lib)
+	| `std.Some _:	std.fatal(1, "library %s: corrupt or invalid usefile\n", lib)
+	| `std.None:	std.fatal(1, "library %s: could not read usefile\n", lib)
 	;;
 	std.slfree(rdstr(f))
 	done = false
