@@ -76,7 +76,8 @@ pkg std =
 	pkglocal const Qidversoff	: int64 = Qidtypeoff + 1
 	pkglocal const Qidpathoff	: int64 = Qidversoff + 4
 	pkglocal const Modeoff	: int64 = Qidpathoff + 8
-	pkglocal const Mtimeoff	: int64 = Modeoff + 4
+	pkglocal const Atimeoff	: int64 = Modeoff + 4
+	pkglocal const Mtimeoff	: int64 = Atimeoff + 4
 	pkglocal const Lengthoff	: int64 = Mtimeoff + 4
 	pkglocal const Stringsoff	: int64 = Lengthoff + 8
 ;;

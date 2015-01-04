@@ -1,0 +1,66 @@
+use sys
+
+use "alloc.use"
+use "die.use"
+use "option.use"
+use "result.use"
+use "slcp.use"
+use "sldup.use"
+use "syswrap.use"
+use "types.use"
+
+pkg std =
+	type dir = struct
+		fd	: fd
+		buf	: byte[65536]	/* a big big, but at least it will always hold a directory entry... */
+		len	: int64
+		off	: int64
+	;;
+
+	const diropen	: (p : byte[:] -> std.result(dir#, byte[:]))
+	const dirread	: (d : dir# -> std.option(byte[:]))
+	const dirclose	: (d : dir# -> void)
+;;
+
+const diropen = {p
+	var fd
+	var dir
+
+	fd = open(p, Ordonly)
+	if fd < 0
+		-> `Fail "couldn't open directory"
+	;;
+
+	dir = zalloc()
+	dir.fd = fd
+	-> `Ok dir
+}
+	
+
+const dirread = {d
+	var len : int64, name, base, namelen, dirlen
+
+	/* NB: On Plan 9, read(2) will always return whole directory entries */
+	if d.off >= d.len
+		len = read(d.fd, d.buf[:]) castto(int64)
+		if len <= 0
+			-> `None
+		;;
+		d.len = len
+		d.off = 0
+	;;
+
+	namelen = (d.buf[d.off + Stringsoff] castto(int64)) | \
+		((d.buf[d.off + Stringsoff + 1] castto(int64)) << 8)
+	base = d.off + Stringsoff + 2
+	dirlen = (d.buf[d.off] castto(int64)) | \
+		((d.buf[d.off + 1] castto(int64)) << 8)
+	name = d.buf[base:base + namelen]
+	d.off += dirlen + 2
+	-> `Some std.sldup(name)
+}
+
+const dirclose = {d
+	close(d.fd)
+	free(d)
+}
