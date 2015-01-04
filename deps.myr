@@ -227,7 +227,7 @@ const openlib = {lib, incs
 	| `std.None:
 		/* nothing */
 	;;
-	std.fatal(1, "could not find library %s in %s\n", lib, path)
+	std.fatal(1, "could not find library %s.\n", lib)
 }
 
 const depname = {deps, ln
