@@ -145,18 +145,6 @@ void run(char **cmd)
         die("%s: exited with signal %d\n", cmd[0], WTERMSIG(status));
 }
 
-int isfresh(char *from, char *to)
-{
-    struct stat from_sb, to_sb;
-
-    if (stat(from, &from_sb))
-        fail(1, "Could not find %s\n", from);
-    if (stat(to, &to_sb) == -1)
-        return 0;
-
-    return from_sb.st_mtime <= to_sb.st_mtime;
-}
-
 int inlist(char **list, size_t sz, char *str)
 {
     size_t i;
@@ -300,25 +288,18 @@ void compile(char *file, char ***stack, size_t *nstack)
                 scrapelib(libgraph, deps[i]);
             }
         }
-        if (isfresh(file, use))
-            goto done;
-        if (isfresh(file, obj))
-            goto done;
         if (genasm)
             extra[nextra++] = "-S";
         gencmd(&cmd, &ncmd, mc, file, extra, nextra);
         run(cmd);
     } else if (hassuffix(file, ".s")) {
         swapsuffix(obj, sizeof obj, file, ".s", Objsuffix);
-        if (isfresh(file, obj))
-            goto done;
         for (i = 1; as[i]; i++)
             extra[nextra++] = as[i];
         extra[nextra++] = obj;
         gencmd(&cmd, &ncmd, as[0], file, extra, nextra);
         run(cmd);
     }
-done:
     s = strdup(file);
     htput(compiled, s, s);
     htdel(loopdetect, file);
