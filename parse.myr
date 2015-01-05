@@ -226,11 +226,14 @@ const attrlist = {p
 			else
 				al = std.slpush(al, (k, [][:]))
 			;;
+			if !matchc(p, ',')
+				break
+			;;
 		| `std.None:	break
 		;;
 	;;
 	if !matchc(p, '}')
-		failparse(p, "expected '}' at end of attr list\n")
+		failparse(p, "expected '}' at end of attr list, got '%c'\n", peekc(p))
 	;;
 	if al.len == 0
 		-> `std.None

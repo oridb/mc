@@ -7,6 +7,7 @@ use "parse.use"
 use "subdir.use"
 use "types.use"
 use "util.use"
+use "build.use"
 
 pkg bld =
 	const install	: (p : parser#	-> bool)
@@ -14,6 +15,7 @@ pkg bld =
 ;;
 
 const install = {p
+	buildall(p)
 	-> movetargs(p, false)
 }
 
