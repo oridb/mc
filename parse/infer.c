@@ -794,6 +794,10 @@ static void unifycall(Inferstate *st, Node *n)
     } else if (tybase(ft)->type != Tyfunc) {
         fatal(n, "calling uncallable type %s", tystr(ft));
     }
+    /* first arg: function itself */
+    for (i = 1; i < n->expr.nargs; i++)
+        if (exprtype(n->expr.args[i])->type == Tyvoid)
+            fatal(n, "void passed where value expected, near %s", ctxstr(st, n));
     for (i = 1; i < n->expr.nargs; i++) {
         if (i == ft->nsub)
             fatal(n, "%s arity mismatch (expected %zd args, got %zd)",
