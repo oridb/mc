@@ -8,7 +8,7 @@ use "types.use"
 use "util.use"
 
 pkg bld =
-	const myrdeps	: (p : parser#, dg : depgraph#, targ : byte[:], srcs : byte[:][:], incs : byte[:][:], islib : bool	-> bool)
+	const myrdeps	: (p : parser#, mt : myrtarg#, islib : bool, isclean : bool, dg : depgraph#	-> bool)
 
 
 	/* a bit ugly: initialized from main() */
@@ -22,10 +22,10 @@ type dep = union
 	`Lib byte[:]
 ;;
 
-const myrdeps = {p, dg, targ, srcs, incs, islib
+const myrdeps = {p, mt, islib, isclean, dg
+	var objs, uses, srcs, incs
 	var seentab, donetab
 	var out, useout
-	var objs, uses
 	var i
 
 	dg.deps = std.mkht(std.strhash, std.streq)
@@ -36,12 +36,14 @@ const myrdeps = {p, dg, targ, srcs, incs, islib
 	donetab = std.mkht(std.strhash, std.streq)
 	/* direct dependencies of binary */
 	if islib
-		out = std.fmt("lib%s.a", targ)
-		useout = std.sldup(targ)
+		out = std.fmt("lib%s.a", mt.name)
+		useout = std.sldup(mt.name)
 	else
-		out = std.sldup(targ)
+		out = std.sldup(mt.name)
 		useout = ""
 	;;
+	srcs = mt.inputs
+	incs = mt.incpath
 	objs = swapall(srcs, config.Objsuffix)
 	uses = swapall(srcs, ".use")
 	for i = 0; i < srcs.len; i++
@@ -59,7 +61,7 @@ const myrdeps = {p, dg, targ, srcs, incs, islib
 		;;
 	;;
 	for i = 0; i < srcs.len; i++
-		srcdeps(p, dg, seentab, donetab, srcs[i], objs[i], uses[i], incs)
+		srcdeps(p, dg, seentab, donetab, srcs[i], objs[i], uses[i], incs, isclean)
 	;;
 	dumpgraph(dg)
 	std.htfree(seentab)
@@ -93,7 +95,7 @@ const dumpgraph = {dg
 	std.put("}\n")
 }
 
-const srcdeps = {p, g, seen, done, path, obj, usefile, incs
+const srcdeps = {p, g, seen, done, path, obj, usefile, incs, isclean
 	var deps
 
 	if std.hthas(done, path)
@@ -107,7 +109,13 @@ const srcdeps = {p, g, seen, done, path, obj, usefile, incs
 	for d in deps
 		match d
 		| `Lib lib:
-			scrapelibs(g, lib, incs)
+			/*
+			If we're cleaning, we don't care about libraries; at best, this does nothing. At
+			worst, this will cause failure if the library is a local library that gets cleand.
+			*/
+			if !isclean
+				scrapelibs(g, lib, incs)
+			;;
 		| `Local l:
 			if !std.hassuffix(l, ".use")
 				std.fatal(1, "local dependency \"%s\" of \"%s\" should end with .use\n", l, path)
@@ -118,14 +126,14 @@ const srcdeps = {p, g, seen, done, path, obj, usefile, incs
 			if usefile.len != 0
 				pushdep(g, l, usefile)
 			;;
-			addusedep(p, g, seen, done, l, incs)
+			addusedep(p, g, seen, done, l, incs, isclean)
 		;;
 	;;
 	std.htput(seen, path, false)
 	std.htput(done, path, true)
 }
 
-const addusedep = {p, g, seen, done, usefile, incs
+const addusedep = {p, g, seen, done, usefile, incs, isclean
 	var src
 
 	if std.hthas(done, usefile)
@@ -142,7 +150,7 @@ const addusedep = {p, g, seen, done, usefile, incs
 	;;
 	pushdep(g, src, usefile)
 	std.htput(g.sources, usefile, src)
-	srcdeps(p, g, seen, done, src, "", usefile, incs)
+	srcdeps(p, g, seen, done, src, "", usefile, incs, isclean)
 	std.htput(done, usefile, true)
 }
 

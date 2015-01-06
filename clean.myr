@@ -58,7 +58,7 @@ const cleanup = {p, targ, leaves, islib
 	var keys
 	var dg
 
-	if !myrdeps(p, &dg, targ.name, leaves, targ.incpath, islib)
+	if !myrdeps(p, targ, islib, true, &dg)
 		std.fatal(1, "Could not load dependencies for %s\n", targ.name)
 	;;
 	mchammer_files = std.mkht(std.strhash, std.streq)

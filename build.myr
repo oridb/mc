@@ -101,7 +101,7 @@ const buildbin = {p, targ
 		;;
 	;;
 	std.put("%s...\n", targ.name)
-	if !myrdeps(p, &dg, targ.name, targ.inputs, targ.incpath, false)
+	if !myrdeps(p, targ, false, false, &dg)
 		std.fatal(1, "Could not load dependencies for %s\n", targ.name)
 	;;
 	if !std.hthas(dg.deps, targ.name)
@@ -134,7 +134,7 @@ const buildlib = {p, targ
 	lib = targ.name
 	std.put("lib%s.a...\n", lib)
 	archive = std.fmt("lib%s.a", lib)
-	if !myrdeps(p, &dg, lib, targ.inputs, targ.incpath, true)
+	if !myrdeps(p, targ, true, false, &dg)
 		std.fatal(1, "Could not load dependencies for %s\n", lib)
 	;;
 	if !std.hthas(dg.deps, lib)
