@@ -63,9 +63,7 @@ const cleanup = {p, targ, leaves, islib
 	;;
 	mchammer_files = std.mkht(std.strhash, std.streq)
 	for l in leaves
-		if !std.hthas(p.gensrc, l)
-			std.htput(mchammer_files, l, true)
-		;;
+		std.htput(mchammer_files, l, true)
 	;;
 
 	keys = std.htkeys(dg.deps)
