@@ -787,7 +787,6 @@ static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
     Type *t, *r;
     Type *a, *b;
     char *from, *to;
-    char buf[256];
     size_t i;
 
     /* a ==> b */
@@ -829,8 +828,7 @@ static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
         if (a->type == Tyname && !nameeq(a->name, b->name))
             typeerror(st, a, b, ctx, NULL);
         if (a->nsub != b->nsub) {
-            snprintf(buf, sizeof buf, "Wrong subtype count - Got %zu, expected %zu", a->nsub, b->nsub);
-            typeerror(st, a, b, ctx, buf);
+            typeerror(st, a, b, ctx, "subtypes are incompatible");
         }
         for (i = 0; i < b->nsub; i++)
             unify(st, ctx, a->sub[i], b->sub[i]);
