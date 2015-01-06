@@ -92,17 +92,21 @@ static void ctxstrcall(char *buf, size_t sz, Inferstate *st, Node *n)
     free(t);
 }
 
+static char *tystror(Inferstate *st, Type *t, char *s)
+{
+    if (!t)
+        return strdup(s);
+    return tystr(tf(st, t));
+}
+
 /* Tries to give a good string describing the context
  * for the sake of error messages. */
 static char *ctxstr(Inferstate *st, Node *n)
 {
-    char *s;
-    char *t;
-    char *u;
-    char *idx;
+    char *t, *t1, *t2;
+    char *s, *u;
     char buf[512];
 
-    idx = NULL;
     switch (n->type) {
         default:
             s = strdup(nodestr[n->type]);
@@ -118,23 +122,32 @@ static char *ctxstr(Inferstate *st, Node *n)
             s = strdup(namestr(n));
             break;
         case Nexpr:
+            t1 = NULL;
+            t2 = NULL;
             if (exprop(n) == Ovar)
                 u = namestr(n->expr.args[0]);
             else
                 u = opstr[exprop(n)];
-            if (exprtype(n))
-                t = tystr(tf(st, exprtype(n)));
-            else
-                t = strdup("unknown type");
+            t = tystror(st, exprtype(n), "unknown");
+            if (n->expr.nargs >= 1)
+                t1 = tystror(st, exprtype(n->expr.args[0]), "unknown");
+            if (n->expr.nargs >= 2)
+                t2 = tystror(st, exprtype(n->expr.args[1]), "unknown");
             switch (opclass[exprop(n)]) {
                 case OTbin:
-                    snprintf(buf, sizeof buf, "<e1> %s <e2>", oppretty[exprop(n)]);
+                    snprintf(buf, sizeof buf, "<e1:%s> %s <e2:%s>", t1, oppretty[exprop(n)], t2);
                     break;
                 case OTpre:
-                    snprintf(buf, sizeof buf, "%s<e>", oppretty[exprop(n)]);
+                    t1 = tystr(tf(st, exprtype(n)));
+                    if (!t1)
+                        t1 = strdup("unknown type");
+                    snprintf(buf, sizeof buf, "%s<e%s>", t1, oppretty[exprop(n)]);
                     break;
                 case OTpost:
-                    snprintf(buf, sizeof buf, "<e>%s", oppretty[exprop(n)]);
+                    t1 = tystr(tf(st, exprtype(n)));
+                    if (!t1)
+                        t1 = strdup("unknown type");
+                    snprintf(buf, sizeof buf, "<e:%s>%s", t1, oppretty[exprop(n)]);
                     break;
                 case OTzarg:
                     snprintf(buf, sizeof buf, "%s", oppretty[exprop(n)]);
@@ -147,6 +160,8 @@ static char *ctxstr(Inferstate *st, Node *n)
                         snprintf(buf, sizeof buf, "%s:%s", u, t);
             }
             free(t);
+            free(t1);
+            free(t2);
             s = strdup(buf);
             break;
     }
