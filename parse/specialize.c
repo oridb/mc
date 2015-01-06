@@ -158,7 +158,7 @@ static void fixup(Node *n)
     switch (n->type) {
         case Nfile:
         case Nuse:
-            die("Node %s not allowed here\n", nodestr(n->type));
+            die("Node %s not allowed here\n", nodestr[n->type]);
             break;
         case Nexpr:
             fixup(n->expr.idx);
@@ -253,7 +253,7 @@ static Node *specializenode(Node *n, Htab *tsmap)
     switch (n->type) {
         case Nfile:
         case Nuse:
-            die("Node %s not allowed here\n", nodestr(n->type));
+            die("Node %s not allowed here\n", nodestr[n->type]);
             break;
         case Nexpr:
             r->expr.op = n->expr.op;

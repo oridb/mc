@@ -11,52 +11,45 @@
 
 #include "parse.h"
 
-static char *optab[] =  {
-#define O(op, pure) #op,
+char *opstr[] =  {
+#define O(op, pure, class, pretty) #op,
 #include "ops.def"
 #undef O
 };
 
-int ispureop[] = {
-#define O(op, pure) pure,
+char * oppretty[] = {
+#define O(op, pure, class, pretty) pretty,
 #include "ops.def"
 #undef O
 };
 
-static char *nodetab[] =  {
+
+int opispure[] = {
+#define O(op, pure, class, pretty) pure,
+#include "ops.def"
+#undef O
+};
+
+int opclass[] = {
+#define O(op, pure, class, pretty) class,
+#include "ops.def"
+#undef O
+};
+
+char *nodestr[] =  {
 #define N(nt) #nt,
 #include "nodes.def"
 #undef N
 };
 
-static char *littab[] =  {
+char *litstr[] =  {
 #define L(lt) #lt,
 #include "lits.def"
 #undef L
 };
 
-static char *tidtab[] =  {
+char *tidstr[] =  {
 #define Ty(t, n) n,
 #include "types.def"
 #undef Ty
 };
-
-char *opstr(Op o)
-{
-    return optab[o];
-}
-
-char *nodestr(Ntype nt)
-{
-    return nodetab[nt];
-}
-
-char *litstr(Littype lt)
-{
-    return littab[lt];
-}
-
-char *tidstr(Ty tid)
-{
-    return tidtab[tid];
-}

@@ -211,7 +211,7 @@ Cfg *mkcfg(Node *fn, Node **nl, size_t nn)
             case Ndecl:
                 break;
             default:
-                die("Invalid node type %s in mkcfg", nodestr(nl[i]->type));
+                die("Invalid node type %s in mkcfg", nodestr[nl[i]->type]);
         }
     }
     post = mkbb(cfg);

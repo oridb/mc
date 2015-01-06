@@ -56,6 +56,42 @@ static void unbind(Inferstate *st, Node *n);
 static Type *unify(Inferstate *st, Node *ctx, Type *a, Type *b);
 static Type *tf(Inferstate *st, Type *t);
 
+static void ctxstrcall(char *buf, size_t sz, Inferstate *st, Node *n)
+{
+    char *p, *end, *sep, *t;
+    size_t nargs, i;
+    Node **args;
+    Type *et;
+
+    args = n->expr.args;
+    nargs = n->expr.nargs;
+    p = buf;
+    end = buf + sz;
+    sep = "";
+
+    if (exprop(args[0]) == Ovar)
+        p += snprintf(p, end - p, "%s(", namestr(args[0]->expr.args[0]));
+    else
+        p += snprintf(p, end - p, "<e>(");
+    for (i = 1; i < nargs; i++) {
+        et = exprtype(args[i]);
+        if (et != NULL)
+            t = tystr(et);
+        else
+            t = "?";
+
+        if (exprop(args[i]) == Ovar)
+            p += snprintf(p, end - p, "%s%s:%s", sep, namestr(args[0]->expr.args[0]), t);
+        else
+            p += snprintf(p, end - p, "%s<e%zd>:%s", sep, i, t);
+        sep = ", ";
+        free(t);
+    }
+    t = tystr(exprtype(args[0])->sub[0]);
+    p += snprintf(p, end - p, "): %s", t);
+    free(t);
+}
+
 /* Tries to give a good string describing the context
  * for the sake of error messages. */
 static char *ctxstr(Inferstate *st, Node *n)
@@ -69,7 +105,7 @@ static char *ctxstr(Inferstate *st, Node *n)
     idx = NULL;
     switch (n->type) {
         default:
-            s = strdup(nodestr(n->type));
+            s = strdup(nodestr[n->type]);
             break;
         case Ndecl:
             u = declname(n);
@@ -82,21 +118,34 @@ static char *ctxstr(Inferstate *st, Node *n)
             s = strdup(namestr(n));
             break;
         case Nexpr:
-            if (n->expr.idx)
-                idx = ctxstr(st, n->expr.idx);
             if (exprop(n) == Ovar)
                 u = namestr(n->expr.args[0]);
             else
-                u = opstr(exprop(n));
+                u = opstr[exprop(n)];
             if (exprtype(n))
                 t = tystr(tf(st, exprtype(n)));
             else
-                t = strdup("unknown");
-            if (idx)
-                snprintf(buf, sizeof buf, ".%s=%s:%s", idx, u, t);
-            else
-                snprintf(buf, sizeof buf, "%s:%s", u, t);
-            free(idx);
+                t = strdup("unknown type");
+            switch (opclass[exprop(n)]) {
+                case OTbin:
+                    snprintf(buf, sizeof buf, "<e1> %s <e2>", oppretty[exprop(n)]);
+                    break;
+                case OTpre:
+                    snprintf(buf, sizeof buf, "%s<e>", oppretty[exprop(n)]);
+                    break;
+                case OTpost:
+                    snprintf(buf, sizeof buf, "<e>%s", oppretty[exprop(n)]);
+                    break;
+                case OTzarg:
+                    snprintf(buf, sizeof buf, "%s", oppretty[exprop(n)]);
+                case OTmisc:
+                    if (exprop(n) == Ovar)
+                        snprintf(buf, sizeof buf, "%s:%s", namestr(n->expr.args[0]), t);
+                    else if (exprop(n) == Ocall)
+                        ctxstrcall(buf, sizeof buf, st, n);
+                    else
+                        snprintf(buf, sizeof buf, "%s:%s", u, t);
+            }
             free(t);
             s = strdup(buf);
             break;
@@ -368,7 +417,7 @@ static void settype(Inferstate *st, Node *n, Type *t)
         case Nlit:      n->lit.type = t;        break;
         case Nfunc:     n->func.type = t;       break;
         default:
-            die("untypable node %s", nodestr(n->type));
+            die("untypable node %s", nodestr[n->type]);
             break;
     }
 }
@@ -422,7 +471,7 @@ static Type *type(Inferstate *st, Node *n)
       case Nfunc:       t = n->func.type;       break;
       default:
         t = NULL;
-        die("untypeable node %s", nodestr(n->type));
+        die("untypeable node %s", nodestr[n->type]);
         break;
     };
     return tf(st, t);
@@ -1073,7 +1122,7 @@ static void infersub(Inferstate *st, Node *n, Type *ret, int *sawret, int *exprc
     }
     if (exprop(n) == Ovar)
         n->expr.isconst = decls[n->expr.did]->decl.isconst;
-    else if (ispureop[exprop(n)])
+    else if (opispure[exprop(n)])
         n->expr.isconst = isconst;
     *exprconst = n->expr.isconst;
 }
@@ -1288,7 +1337,7 @@ static void inferexpr(Inferstate *st, Node *n, Type *ret, int *sawret)
         case Ofeq: case Ofne: case Ofgt: case Ofge: case Oflt: case Ofle:
         case Oueq: case Oune: case Ougt: case Ouge: case Oult: case Oule:
         case Oudata:
-            die("Should not see %s in fe", opstr(exprop(n)));
+            die("Should not see %s in fe", opstr[exprop(n)]);
             break;
     }
 }

@@ -514,7 +514,7 @@ void gengas(Node *file, char *out)
                 simpglobl(n, globls, &fn, &nfn, &blob, &nblob);
                 break;
             default:
-                die("Bad node %s in toplevel", nodestr(n->type));
+                die("Bad node %s in toplevel", nodestr[n->type]);
                 break;
         }
     }

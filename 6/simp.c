@@ -277,7 +277,7 @@ static void append(Simp *s, Node *n)
 
 static int ispure(Node *n)
 {
-    return ispureop[exprop(n)];
+    return opispure[exprop(n)];
 }
 
 static int isconstfn(Node *s)
@@ -822,7 +822,7 @@ static Node *lval(Simp *s, Node *n)
         case Oderef:    r = deref(rval(s, args[0], NULL), NULL); break;
         case Omemb:     r = deref(membaddr(s, n), NULL); break;
         default:
-            fatal(n, "%s cannot be an lvalue", opstr(exprop(n)));
+            fatal(n, "%s cannot be an lvalue", opstr[exprop(n)]);
             break;
     }
     return r;

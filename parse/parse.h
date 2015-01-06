@@ -26,7 +26,15 @@ typedef struct Type Type;
 typedef struct Trait Trait;
 
 typedef enum {
-#define O(op, pure) op,
+    OTmisc,
+    OTpre,
+    OTpost,
+    OTbin,
+    OTzarg,
+} Optype;
+
+typedef enum {
+#define O(op, pure, type, pretty) op,
 #include "ops.def"
     Numops,
 #undef O
@@ -367,7 +375,14 @@ extern Node **exportimpls;
 extern size_t nexportimpls;
 extern size_t maxnid;      /* the maximum node id generated so far */
 
-extern int ispureop[];
+/* property tables */
+extern int opispure[];
+extern char *opstr[];
+extern char *oppretty[];
+extern int opclass[];
+extern char *nodestr[];
+extern char *litstr[];
+extern char *tidstr[];
 
 /* data structures */
 Bitset *mkbs(void);
@@ -563,10 +578,6 @@ Type *tysearch(Type *t);
 void dump(Node *t, FILE *fd);
 void dumpsym(Node *s, FILE *fd);
 void dumpstab(Stab *st, FILE *fd);
-char *opstr(Op o);
-char *nodestr(Ntype nt);
-char *litstr(Littype lt);
-char *tidstr(Ty tid);
 
 /* option parsing */
 void optinit(Optctx *ctx, char *optstr, char **optargs, size_t noptargs);

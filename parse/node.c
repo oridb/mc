@@ -374,7 +374,7 @@ Type *nodetype(Node *n)
         case Ndecl:     return n->decl.type;            break;
         case Nexpr:     return n->expr.type;            break;
         case Nlit:      return n->lit.type;             break;
-        default:        die("Node %s has no type", nodestr(n->type)); break;
+        default:        die("Node %s has no type", nodestr[n->type]); break;
     }
     return NULL;
 }

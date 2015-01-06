@@ -102,11 +102,11 @@ static Loc *loc(Isel *s, Node *n)
                 case Lbool:     l = loclit(v->lit.boolval, mode(n)); break;
                 case Lint:      l = loclit(v->lit.intval, mode(n)); break;
                 default:
-                                die("Literal type %s should be blob", litstr(v->lit.littype));
+                                die("Literal type %s should be blob", litstr[v->lit.littype]);
             }
             break;
         default:
-            die("Node %s not leaf in loc()", opstr(exprop(n)));
+            die("Node %s not leaf in loc()", opstr[exprop(n)]);
             break;
     }
     return l;
@@ -648,7 +648,7 @@ Loc *selexpr(Isel *s, Node *n)
             return r;
 
         case Oasn:  /* relabel */
-            die("Unimplemented op %s", opstr(exprop(n)));
+            die("Unimplemented op %s", opstr[exprop(n)]);
             break;
         case Oset:
             assert(exprop(args[0]) == Ovar || exprop(args[0]) == Oderef);
@@ -756,7 +756,7 @@ Loc *selexpr(Isel *s, Node *n)
 		case Obreak: case Ocontinue:
 		case Numops:
             dump(n, stdout);
-            die("Should not see %s in isel", opstr(exprop(n)));
+            die("Should not see %s in isel", opstr[exprop(n)]);
             break;
     }
     return r;

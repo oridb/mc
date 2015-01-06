@@ -224,7 +224,7 @@ static Dtree *addpat(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *ncap)
             break;
         default:
             ret = NULL;
-            fatal(pat, "unsupported pattern %s of type %s", opstr(exprop(pat)), tystr(exprtype(pat)));
+            fatal(pat, "unsupported pattern %s of type %s", opstr[exprop(pat)], tystr(exprtype(pat)));
             break;
     }
     return ret;
@@ -332,7 +332,7 @@ char *dtnodestr(Node *n)
         case Ovar:
             return namestr(n->expr.args[0]);
         case Olit:
-            return litstr(n->expr.args[0]->lit.littype);
+            return litstr[n->expr.args[0]->lit.littype];
         case Oucon:
             return namestr(n->expr.args[0]);
         case Otup:
@@ -354,7 +354,7 @@ void dtdumpnode(Dtree *dt, FILE *f, int depth, int iswild)
     size_t i;
     if (dt->patexpr) {
         e = dt->patexpr;
-        indentf(depth, "%s%s %s : %s\n", iswild ? "WILDCARD " : "", opstr(exprop(e)), dtnodestr(e), tystr(exprtype(e)));
+        indentf(depth, "%s%s %s : %s\n", iswild ? "WILDCARD " : "", opstr[exprop(e)], dtnodestr(e), tystr(exprtype(e)));
     } 
     if (dt->cap)
         for (i = 0; i < dt->ncap; i++)
