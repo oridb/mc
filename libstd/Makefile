@@ -99,10 +99,14 @@ all: lib$(STDLIB).a $(MYRBIN)
 	cp $< $@
 
 lib$(STDLIB).a: $(STDSRC) $(ASMSRC) lib$(SYSLIB).a ../6/6m
-	../myrbuild/myrbuild -I. -C../6/6m -M../muse/muse -l $(STDLIB) $(STDSRC) $(STDASMSRC)
+	export MYR_MC=../6/6m && \
+	export MYR_MUSE=../muse/muse && \
+	./build.sh -l $(STDLIB) $(STDSRC) $(STDASMSRC)
 
 lib$(SYSLIB).a: $(SYSSRC) $(SYSASMSRC) ../6/6m
-	../myrbuild/myrbuild -C../6/6m -M../muse/muse -l $(SYSLIB) $(SYSSRC) $(SYSASMSRC)
+	export MYR_MC=../6/6m && \
+	export MYR_MUSE=../muse/muse && \
+	./build.sh -l $(SYSLIB) $(SYSSRC) $(SYSASMSRC)
 
 OBJ=$(STDSRC:.myr=.o) $(SYSSRC:.myr=.o) $(STDASMSRC:.s=.o) $(SYSASMSRC:.s=.o)
 USE=$(STDSRC:.myr=.use) $(SYSSRC:.myr=.use) $(STDLIB)
