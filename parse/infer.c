@@ -103,8 +103,10 @@ static char *tystror(Inferstate *st, Type *t, char *s)
  * for the sake of error messages. */
 static char *ctxstr(Inferstate *st, Node *n)
 {
-    char *t, *t1, *t2;
-    char *s, *u;
+    char *t, *t1, *t2, *t3;
+    char *s, *d;
+    size_t nargs;
+    Node **args;
     char buf[512];
 
     switch (n->type) {
@@ -112,9 +114,9 @@ static char *ctxstr(Inferstate *st, Node *n)
             s = strdup(nodestr[n->type]);
             break;
         case Ndecl:
-            u = declname(n);
+            d = declname(n);
             t = tystr(tf(st, decltype(n)));
-            snprintf(buf, sizeof buf, "%s:%s", u, t);
+            snprintf(buf, sizeof buf, "%s:%s", d, t);
             s = strdup(buf);
             free(t);
             break;
@@ -122,17 +124,21 @@ static char *ctxstr(Inferstate *st, Node *n)
             s = strdup(namestr(n));
             break;
         case Nexpr:
+            args = n->expr.args;
+            nargs = n->expr.nargs;
             t1 = NULL;
             t2 = NULL;
             if (exprop(n) == Ovar)
-                u = namestr(n->expr.args[0]);
+                d = namestr(args[0]);
             else
-                u = opstr[exprop(n)];
+                d = opstr[exprop(n)];
             t = tystror(st, exprtype(n), "unknown");
-            if (n->expr.nargs >= 1)
-                t1 = tystror(st, exprtype(n->expr.args[0]), "unknown");
-            if (n->expr.nargs >= 2)
-                t2 = tystror(st, exprtype(n->expr.args[1]), "unknown");
+            if (nargs >= 1)
+                t1 = tystror(st, exprtype(args[0]), "unknown");
+            if (nargs >= 2)
+                t2 = tystror(st, exprtype(args[1]), "unknown");
+            if (nargs >= 3)
+                t3 = tystror(st, exprtype(args[2]), "unknown");
             switch (opclass[exprop(n)]) {
                 case OTbin:
                     snprintf(buf, sizeof buf, "<e1:%s> %s <e2:%s>", t1, oppretty[exprop(n)], t2);
@@ -152,12 +158,29 @@ static char *ctxstr(Inferstate *st, Node *n)
                 case OTzarg:
                     snprintf(buf, sizeof buf, "%s", oppretty[exprop(n)]);
                 case OTmisc:
-                    if (exprop(n) == Ovar)
-                        snprintf(buf, sizeof buf, "%s:%s", namestr(n->expr.args[0]), t);
-                    else if (exprop(n) == Ocall)
-                        ctxstrcall(buf, sizeof buf, st, n);
-                    else
-                        snprintf(buf, sizeof buf, "%s:%s", u, t);
+                    switch (exprop(n)) {
+                        case Ovar:
+                            snprintf(buf, sizeof buf, "%s:%s", namestr(args[0]), t);
+                            break;
+                        case Ocall:
+                            ctxstrcall(buf, sizeof buf, st, n);
+                            break;
+                        case Oidx:
+                            if (exprop(args[0]) == Ovar)
+                                snprintf(buf, sizeof buf, "%s[<e1:%s>]", namestr(args[0]->expr.args[0]), t2);
+                            else
+                                snprintf(buf, sizeof buf, "<sl:%s>[<e1%s>]", t1, t2);
+                            break;
+                        case Oslice:
+                            if (exprop(args[0]) == Ovar)
+                                snprintf(buf, sizeof buf, "%s[<e1:%s>:<e2:%s>]", namestr(args[0]->expr.args[0]), t2, t3);
+                            else
+                                snprintf(buf, sizeof buf, "<sl:%s>[<e1%s>:<e2:%s>]", t1, t2, t3);
+                            break;
+                        default:
+                            snprintf(buf, sizeof buf, "%s:%s", d, t);
+                            break;
+                    }
             }
             free(t);
             free(t1);
