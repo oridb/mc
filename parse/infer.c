@@ -92,11 +92,11 @@ static void ctxstrcall(char *buf, size_t sz, Inferstate *st, Node *n)
     free(t);
 }
 
-static char *tystror(Inferstate *st, Type *t, char *s)
+static char *nodetystr(Inferstate *st, Node *n, char *s)
 {
-    if (!t)
+    if (n->type != Nexpr || !exprtype(n))
         return strdup(s);
-    return tystr(tf(st, t));
+    return tystr(tf(st, exprtype(n)));
 }
 
 /* Tries to give a good string describing the context
@@ -132,13 +132,13 @@ static char *ctxstr(Inferstate *st, Node *n)
                 d = namestr(args[0]);
             else
                 d = opstr[exprop(n)];
-            t = tystror(st, exprtype(n), "unknown");
+            t = nodetystr(st, n, "unknown");
             if (nargs >= 1)
-                t1 = tystror(st, exprtype(args[0]), "unknown");
+                t1 = nodetystr(st, args[0], "unknown");
             if (nargs >= 2)
-                t2 = tystror(st, exprtype(args[1]), "unknown");
+                t2 = nodetystr(st, args[1], "unknown");
             if (nargs >= 3)
-                t3 = tystror(st, exprtype(args[2]), "unknown");
+                t3 = nodetystr(st, args[2], "unknown");
             switch (opclass[exprop(n)]) {
                 case OTbin:
                     snprintf(buf, sizeof buf, "<e1:%s> %s <e2:%s>", t1, oppretty[exprop(n)], t2);
