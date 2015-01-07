@@ -107,7 +107,7 @@ const buildbin = {p, targ
 	if !std.hthas(dg.deps, targ.name)
 		std.fatal(1, "no target declared for %s\n", targ.name)
 	;;
-	if builddep(p, &dg, targ.name, targ.incpath)
+	if builddep(p, &dg, targ.name, targ.incpath) || !freshlibs(targ, dg.libs)
 		linkbin(&dg, targ.name, targ.inputs, targ.ldscript, targ.runtime, targ.incpath, targ.libdeps)
 	;;
 	targ.built = true
@@ -142,7 +142,7 @@ const buildlib = {p, targ
 	;;
 	u = builddep(p, &dg, targ.name, targ.incpath)
 	l = builddep(p, &dg, archive, targ.incpath)
-	if  u || l
+	if  u || l || !freshlibs(targ, dg.libs)
 		mergeuse(&dg, lib, targ.inputs, targ.incpath)
 		archivelib(&dg, lib, targ.inputs, targ.incpath)
 	;;
@@ -353,30 +353,57 @@ const visit = {cmd, head, g, lib, looped, marked, incs
 }
 
 const putlib = {cmd, head, lib, incs
+	if !config.Directlib
+		-> std.slput(cmd, head, std.fmt("-l%s", lib))
+	else
+		match findlib(lib, incs)
+		| `std.None:
+			std.fatal(1, "could not find library lib%s.a", lib)
+		| `std.Some p:
+			-> std.slput(cmd, head, p)
+		;;
+	;;
+}
+
+const findlib = {lib, incs
 	var buf : byte[512]
 	var n, p
 
-	if !config.Directlib
-		-> std.slput(cmd, head, std.fmt("-l%s", lib))
-	;;
-
 	n = std.bfmt(buf[:], "lib%s.a", lib)
 	for i in incs
-		p = std.pathjoin([i, "lib/myr", buf[:n]][:])
+		p = std.pathjoin([i, buf[:n]][:])
 		if std.fexists(p)
-			-> std.slput(cmd, head, p)
+			-> `std.Some p
 		;;
 		std.slfree(p)
 	;;
 	p = std.pathjoin([opt_instroot, "lib/myr", buf[:n]][:])
 	if std.fexists(p)
-		-> std.slput(cmd, head, p)
+		-> `std.Some p
 	;;
-	std.fatal(1, "could not find library lib%s.a", lib)
+	std.slfree(p)
+	-> `std.None
 }
 
+const freshlibs = {targ, libgraph
+	var libs
 
-
+	libs = std.htkeys(libgraph)
+	for l in libs
+		match findlib(l, targ.incpath)
+		| `std.Some lib:
+			if !isfresh(lib, targ.name)
+				std.slfree(lib)
+				-> false
+			;;
+			std.slfree(lib)
+		| `std.None:
+			std.fatal(1, "could not find library lib%s.a", l)
+		;;
+	;;
+	std.slfree(libs)
+	-> true
+}
 
 const isfresh = {src, dst
 	var srcmt, dstmt
