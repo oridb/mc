@@ -1070,6 +1070,7 @@ static void inferpat(Inferstate *st, Node **np, Node *val, Node ***bind, size_t 
     size_t i;
     Node **args;
     Node *s, *n;
+    Stab *ns;
     Type *t;
 
     n = *np;
@@ -1104,7 +1105,10 @@ static void inferpat(Inferstate *st, Node **np, Node *val, Node ***bind, size_t 
             break;
         case Oucon:     inferucon(st, n, &n->expr.isconst);     break;
         case Ovar:
-            s = getdcl(curstab(), args[0]);
+            ns = curstab();
+            if (args[0]->name.ns)
+                ns = getns_str(ns, args[0]->name.ns);
+            s = getdcl(ns, args[0]);
             if (s && !s->decl.ishidden) {
                 if (s->decl.isgeneric)
                     t = tyfreshen(st, s->decl.type);
