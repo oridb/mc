@@ -94,9 +94,12 @@ static void ctxstrcall(char *buf, size_t sz, Inferstate *st, Node *n)
 
 static char *nodetystr(Inferstate *st, Node *n, char *s)
 {
-    if (n->type != Nexpr || !exprtype(n))
+    if (n->type == Nexpr && exprtype(n) != NULL)
+        return tystr(tf(st, exprtype(n)));
+    else if (n->type == Ndecl && decltype(n) != NULL)
+        return tystr(tf(st, decltype(n)));
+    else
         return strdup(s);
-    return tystr(tf(st, exprtype(n)));
 }
 
 /* Tries to give a good string describing the context
@@ -115,7 +118,7 @@ static char *ctxstr(Inferstate *st, Node *n)
             break;
         case Ndecl:
             d = declname(n);
-            t = tystr(tf(st, decltype(n)));
+            t = nodetystr(st, n, "unknown");
             snprintf(buf, sizeof buf, "%s:%s", d, t);
             s = strdup(buf);
             free(t);
@@ -144,15 +147,9 @@ static char *ctxstr(Inferstate *st, Node *n)
                     snprintf(buf, sizeof buf, "<e1:%s> %s <e2:%s>", t1, oppretty[exprop(n)], t2);
                     break;
                 case OTpre:
-                    t1 = tystr(tf(st, exprtype(n)));
-                    if (!t1)
-                        t1 = strdup("unknown type");
                     snprintf(buf, sizeof buf, "%s<e%s>", t1, oppretty[exprop(n)]);
                     break;
                 case OTpost:
-                    t1 = tystr(tf(st, exprtype(n)));
-                    if (!t1)
-                        t1 = strdup("unknown type");
                     snprintf(buf, sizeof buf, "<e:%s>%s", t1, oppretty[exprop(n)]);
                     break;
                 case OTzarg:
