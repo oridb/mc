@@ -34,6 +34,7 @@ STDSRC= \
 	hasprefix.myr \
 	hassuffix.myr \
 	htab.myr \
+	getint.myr \
 	intparse.myr \
 	ipparse.myr \
 	mk.myr \
