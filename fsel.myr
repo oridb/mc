@@ -86,9 +86,10 @@ const addsysattrs = {sa
 	var attrs
 	match opt_sys
 	| "freebsd":	attrs = ["freebsd", "posixy"][:]
+	| "osx":	attrs = ["osx", "posixy"][:]
 	| "linux":	attrs = ["linux", "posixy"][:]
 	| "plan9":	attrs = ["plan9"][:]
-	| unknown:	std.fatal(1, "unknown system %s\n", unknown)
+	| unknown:	std.fatal(1, "unknown system \"%s\"\n", unknown)
 	;;
 	for a in attrs
 		std.htput(sa, a, true)

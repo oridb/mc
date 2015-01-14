@@ -204,7 +204,7 @@ const compile = {src, incs
 
 	cmd = [][:]
 	if std.hassuffix(src, ".myr")
-		cmd = std.slpush(cmd, "6m")
+		cmd = std.slpush(cmd, opt_mc)
 		for inc in incs 
 			cmd = std.slpush(cmd, "-I")
 			cmd = std.slpush(cmd, inc)
