@@ -53,10 +53,8 @@ static void swapout(char* buf, size_t sz, char* suf) {
     psuffix = strrchr(outfile, '.');
     if (psuffix != NULL)
         swapsuffix(buf, sz, outfile, psuffix, suf);
-    else {
-        strncpy(buf, outfile, sz);
-        strncat(buf, suf, sz);
-    }
+    else
+        snprintf(buf, sz, "%s%s", outfile, suf);
 }
 
 static void assemble(char *asmsrc, char *path)
