@@ -48,6 +48,17 @@ static void usage(char *prog)
     printf("\t\t\tu: log type unifications\n");
 }
 
+static void swapout(char* buf, size_t sz, char* suf) {
+    char* psuffix;
+    psuffix = strrchr(outfile, '.');
+    if (psuffix != NULL)
+        swapsuffix(buf, sz, outfile, psuffix, suf);
+    else {
+        strncpy(buf, outfile, sz);
+        strncat(buf, suf, sz);
+    }
+}
+
 static void assemble(char *asmsrc, char *path)
 {
     char *asmcmd[] = Asmcmd;
@@ -57,11 +68,15 @@ static void assemble(char *asmsrc, char *path)
     size_t ncmd;
     int pid, status;
 
-    psuffix = strrchr(path, '+');
-    if (psuffix != NULL)
-        swapsuffix(objfile, 1024, path, psuffix, Objsuffix);
-    else
-        swapsuffix(objfile, 1024, path, ".myr", Objsuffix);
+    if (outfile != NULL)
+        strncpy(objfile, outfile, 1024);
+    else {
+        psuffix = strrchr(path, '+');
+        if (psuffix != NULL)
+            swapsuffix(objfile, 1024, path, psuffix, Objsuffix);
+        else
+            swapsuffix(objfile, 1024, path, ".myr", Objsuffix);
+    }
     cmd = NULL;
     ncmd = 0;
     for (p = asmcmd; *p != NULL; p++)
@@ -109,11 +124,15 @@ static void genuse(char *path)
     char buf[1024];
     char *psuffix;
 
-    psuffix = strrchr(path, '+');
-    if (psuffix != NULL)
-        swapsuffix(buf, 1024, path, psuffix, ".use");
-    else
-        swapsuffix(buf, 1024, path, ".myr", ".use");
+    if (outfile != NULL)
+        swapout(buf, 1024, ".use");
+    else {
+        psuffix = strrchr(path, '+');
+        if (psuffix != NULL)
+            swapsuffix(buf, 1024, path, psuffix, ".use");
+        else
+            swapsuffix(buf, 1024, path, ".myr", ".use");
+    }
     f = fopen(buf, "w");
     if (!f) {
         fprintf(stderr, "Could not open path %s\n", buf);
@@ -129,6 +148,8 @@ int main(int argc, char **argv)
     Stab *globls;
     Optctx ctx;
     size_t i;
+
+    outfile = NULL;
 
     optinit(&ctx, "d:hSo:I:9G", argv, argc);
     asmsyntax = Defaultasm;
@@ -168,6 +189,14 @@ int main(int argc, char **argv)
     }
 
     lappend(&incpaths, &nincpaths, Instroot "/lib/myr");
+
+    if (ctx.nargs == 0) {
+        fprintf(stderr, "No input files given\n");
+        exit(1);
+    }
+    else if (ctx.nargs > 1)
+        outfile = NULL;
+
     for (i = 0; i < ctx.nargs; i++) {
         globls = mkstab();
         tyinit(globls);
@@ -186,7 +215,10 @@ int main(int argc, char **argv)
             dump(file, stdout);
 
         if (writeasm) {
-            swapsuffix(buf, sizeof buf, ctx.args[i], ".myr", ".s");
+            if (outfile != NULL)
+                swapout(buf, sizeof buf, ".s");
+            else
+                swapsuffix(buf, sizeof buf, ctx.args[i], ".myr", ".s");
         } else {
             gentemp(buf, sizeof buf, ctx.args[i], ".s");
         }

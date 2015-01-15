@@ -385,7 +385,7 @@ char *swapsuffix(char *buf, size_t sz, char *s, char *suf, char *swap)
     /* if we have matching suffixes */
     if (suflen < slen && !strcmp(suf, &s[slen - suflen])) {
         strncat(buf, s, slen - suflen);
-        strncat(buf, swap, suflen);
+        strncat(buf, swap, swaplen);
     } else {
         snprintf(buf, sz, "%s%s", s, swap);
     }
@@ -433,7 +433,7 @@ void findentf(FILE *fd, int depth, char *fmt, ...)
     va_end(ap);
 }
 
-void vfindentf(FILE *fd, int depth, char *fmt, va_list ap) 
+void vfindentf(FILE *fd, int depth, char *fmt, va_list ap)
 {
     ssize_t i;
 
