@@ -896,7 +896,7 @@ static Node *simpcast(Simp *s, Node *val, Type *to)
                 /* ptr -> slice conversion is disallowed */
                 case Tyslice:
                     if (t->type == Typtr)
-                        fatal(val, "Bad cast from %s to %s",
+                        fatal(val, "bad cast from %s to %s",
                               tystr(exprtype(val)), tystr(to));
                     r = slicebase(s, val, NULL);
                     break;
@@ -910,17 +910,18 @@ static Node *simpcast(Simp *s, Node *val, Type *to)
                 case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint64:
                 case Tyuint: case Tyulong: case Tychar: case Tybyte:
                 case Typtr:
+                case Tyfunc:
                     r = intconvert(s, val, to, 0);
                     break;
                 case Tyflt32: case Tyflt64:
                     if (tybase(to)->type == Typtr)
-                        fatal(val, "Bad cast from %s to %s",
+                        fatal(val, "bad cast from %s to %s",
                               tystr(exprtype(val)), tystr(to));
                     r = mkexpr(val->loc, Oflt2int, rval(s, val, NULL), NULL);
                     r->expr.type = to;
                     break;
                 default:
-                    fatal(val, "Bad cast from %s to %s",
+                    fatal(val, "bad cast from %s to %s",
                           tystr(exprtype(val)), tystr(to));
             }
             break;
@@ -939,14 +940,14 @@ static Node *simpcast(Simp *s, Node *val, Type *to)
                     r->expr.type = to;
                     break;
                 default:
-                    fatal(val, "Bad cast from %s to %s",
+                    fatal(val, "bad cast from %s to %s",
                           tystr(exprtype(val)), tystr(to));
                     break;
             }
             break;
         /* no other destination types are handled as things stand */
         default:
-            fatal(val, "Bad cast from %s to %s",
+            fatal(val, "bad cast from %s to %s",
                   tystr(exprtype(val)), tystr(to));
     }
     return r;
@@ -1470,7 +1471,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
             r = visit(s, n);
             break;
         case Obad:
-            die("Bad operator");
+            die("bad operator");
             break;
     }
     return r;
@@ -1536,7 +1537,7 @@ static Node *simp(Simp *s, Node *n)
             simp(s, u);
             break;
         default:
-            die("Bad node passsed to simp()");
+            die("bad node passsed to simp()");
             break;
     }
     return r;
