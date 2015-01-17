@@ -1,0 +1,13 @@
+use std
+
+const main = {
+	var v
+
+	v = std.Badchar
+	match v
+	| std.Maxcharval:	std.put("matched maxcharval\n")
+	| std.Badchar: 	std.put("matched badchar\n")
+	| 'c':	std.put("matched 'c'\n")
+	| _:	std.die("Impossible match failure in pattern\n")
+	;;
+}
