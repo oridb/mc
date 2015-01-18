@@ -602,22 +602,21 @@ landexpr: landexpr Tland cmpexpr
 
 cmpexpr : cmpexpr cmpop castexpr
             {$$ = mkexpr($1->loc, binop($2->type), $1, $3, NULL);}
-        | castexpr
+        | unionexpr
         ;
 
-
 cmpop   : Teq | Tgt | Tlt | Tge | Tle | Tne ;
+
+unionexpr
+        : Ttick name unionexpr {$$ = mkexpr($1->loc, Oucon, $2, $3, NULL);}
+        | Ttick name {$$ = mkexpr($1->loc, Oucon, $2, NULL);}
+        | castexpr
+        ;
 
 castexpr: castexpr Tcast Toparen type Tcparen {
                 $$ = mkexpr($1->loc, Ocast, $1, NULL);
                 $$->expr.type = $4;
             }
-        | unionexpr
-        ;
-
-unionexpr
-        : Ttick name unionexpr {$$ = mkexpr($1->loc, Oucon, $2, $3, NULL);}
-        | Ttick name {$$ = mkexpr($1->loc, Oucon, $2, NULL);}
         | borexpr
         ;
 
