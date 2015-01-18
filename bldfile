@@ -1,1 +1,5 @@
-lib bio = bio.myr;;
+lib bio = 
+	bio.myr
+	geti.myr
+	puti.myr
+;;

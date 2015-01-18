@@ -42,12 +42,6 @@ pkg bio =
 	const getb	: (f : file# -> std.option(byte))
 	const getc	: (f : file# -> std.option(char))
 
-	/* typed binary reads */
-	generic putbe	: (f : file#, v : @a::(numeric,integral) -> std.size)
-	generic putle	: (f : file#, v : @a::(numeric,integral) -> std.size)
-	generic getbe	: (f : file# -> std.option(@a::(numeric,integral)))
-	generic getle	: (f : file# -> std.option(@a::(numeric,integral)))
-
 	/* peeking */
 	const peekb	: (f : file# -> std.option(byte))
 	const peekc	: (f : file# -> std.option(char))
@@ -59,6 +53,10 @@ pkg bio =
 
 	/* formatted i/o */
 	const put	: (f : file#, fmt : byte[:], args : ... -> std.size)
+
+	/* pkg funcs */
+	pkglocal const ensureread	: (f : file#, n : std.size -> bool)
+	pkglocal const ensurewrite	: (f : file#, n : std.size -> bool)
 ;;
 
 const Bufsz = 16*std.KiB
@@ -315,44 +313,6 @@ generic putbe = {f, v : @a::(numeric,integral)
 	-> sizeof(@a)
 }
 
-/*
-  reads a single integer-like value to the output stream, in
-  big endian format
-*/
-generic getbe = {f
-	var ret
-	var i
-
-	ret = 0
-	if !ensureread(f, sizeof(@a))
-		-> `std.None
-	;;
-	for i = 0; i < sizeof(@a); i++
-		ret <<= 8
-		ret |= f.rbuf[f.rstart++] castto(@a::(numeric,integral))
-	;;
-	-> `std.Some ret
-}
-
-/*
-  reads a single integer-like value to the output stream, in
-  little endian format
-*/
-generic getle = {f
-	var ret
-	var b
-	var i
-
-	ret = 0
-	if !ensureread(f, sizeof(@a))
-		-> `std.None
-	;;
-	for i = 0; i < sizeof(@a); i++
-		b = f.rbuf[f.rstart++] castto(@a::(numeric,integral))
-		ret = ret | (b << (8*i))
-	;;
-	-> `std.Some ret
-}
 
 /* peeks a single byte from an input stream */
 const peekb = {f
@@ -467,8 +427,9 @@ const readinto = {f, buf, n
 const ensurewrite = {f, n
 	std.assert(n < f.wbuf.len, "ensured write capacity > buffer size")
 	if n > f.wbuf.len - f.wend
-		flush(f)
+		-> flush(f)
 	;;
+	-> true
 }
 
 /*

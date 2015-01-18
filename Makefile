@@ -1,6 +1,8 @@
 MYRLIB=bio
 MYRSRC= \
-	bio.myr
+	bio.myr \
+	puti.myr \
+	geti.myr
 
 include config.mk
 include mk/myr.mk

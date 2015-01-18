@@ -24,18 +24,18 @@ const main = {
 
 	/* word */
 	w = 0xaabb
-	bio.putle(f, w)
-	bio.putbe(f, w)
+	bio.putle16(f, w)
+	bio.putbe16(f, w)
 
 	/* long */
 	l = 0xaabbccdd
-	bio.putle(f, l)
-	bio.putbe(f, l)
+	bio.putle32(f, l)
+	bio.putbe32(f, l)
 
 	/* quad */
 	q = 0x11223344aabbccdd castto(uint64)
-	bio.putle(f, q)
-	bio.putbe(f, q)
+	bio.putle64(f, q)
+	bio.putbe64(f, q)
 
 	/* and test for flush on close */
 	bio.close(f);
