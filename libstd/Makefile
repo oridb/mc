@@ -43,6 +43,7 @@ STDSRC= \
 	option.myr \
 	optparse.myr \
 	pathjoin.myr \
+	putint.myr \
 	rand.myr \
 	resolve.myr \
 	result.myr \

@@ -52,6 +52,7 @@ pkg std =
 	const delrng	: (rng : rng# -> void)
 	generic rand	: (rng : rng#, lo : @a::(numeric,integral), hi : @a::(numeric,integral) -> @a::(numeric,integral))
 	generic randN	: (rng : rng# -> @a::(numeric,integral))
+	const randbytes	: (rng : rng#, buf : byte[:]	-> size)
 	const rand32	: (rng : rng# -> uint32)
 ;;
 
@@ -146,6 +147,25 @@ const rand32 = {rng
 	-> x ^ (x >> 18)
 }
 
+const randbytes = {rng, buf
+	var i, n, r
+
+	n = 0
+	for i = 0; i < buf.len/4; i++
+		r = rand32(rng)
+		buf[n++] = (r >>  0 & 0xff) castto(byte)
+		buf[n++] = (r >>  8 & 0xff) castto(byte)
+		buf[n++] = (r >> 16 & 0xff) castto(byte)
+		buf[n++] = (r >> 32 & 0xff) castto(byte)
+	;;
+	r = rand32(rng)
+	for ; n != buf.len; n++
+		buf[n++] = (r & 0xff) castto(byte)
+		r >>= 8
+	;;
+	-> n
+
+}
 
 /* updates random number generator state when we tick over. */
 const next = {rng
