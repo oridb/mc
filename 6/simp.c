@@ -1371,7 +1371,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
                 case Lint: 
                     /* we can only have up to 4 byte immediates, but they
                      * can be moved into 64 bit regs */
-                    if (args[0]->lit.intval < 0xffffffffULL)
+                    if ((uint64_t)args[0]->lit.intval < 0x7fffffffULL)
                         r = n;
                     else
                         r = simpblob(s, n, &s->blobs, &s->nblobs);
