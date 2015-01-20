@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdarg.h>
 #include <inttypes.h>
 #include <ctype.h>
 #include <string.h>
@@ -111,8 +112,7 @@ static char *gentemp(char *buf, size_t bufsz, char *path, char *suffix)
     else
         base = path;
     gettimeofday(&tv, NULL);
-    srand(tv.tv_usec);
-    snprintf(buf, bufsz, "%s/tmp%lx%lx-%s%s", tmpdir, (long)rand(), (long)tv.tv_usec, base, suffix);
+    snprintf(buf, bufsz, "%s/tmp%lx%lx-%s%s", tmpdir, (long)tv.tv_sec, (long)tv.tv_usec, base, suffix);
     return buf;
 }
 
