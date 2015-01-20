@@ -1,0 +1,44 @@
+use "types.use"
+use "die.use"
+
+pkg std =
+	generic putle64	: (buf : byte[:], v :  @a::(numeric,integral) -> size)
+	generic putbe64	: (buf : byte[:], v :  @a::(numeric,integral) -> size)
+	generic putle32	: (buf : byte[:], v :  @a::(numeric,integral) -> size)
+	generic putbe32	: (buf : byte[:], v :  @a::(numeric,integral) -> size)
+	generic putle16	: (buf : byte[:], v :  @a::(numeric,integral) -> size)
+	generic putbe16	: (buf : byte[:], v :  @a::(numeric,integral) -> size)
+	generic putle8	: (buf : byte[:], v :  @a::(numeric,integral) -> size)
+	generic putbe8	: (buf : byte[:], v :  @a::(numeric,integral) -> size)
+;;
+
+generic putle64	= {buf, v;	-> putle(buf, v castto(uint64), 8)}
+generic putbe64	= {buf, v;	-> putbe(buf, v castto(uint64), 8)}
+generic putle32	= {buf, v;	-> putle(buf, v castto(uint64), 4)}
+generic putbe32	= {buf, v;	-> putbe(buf, v castto(uint64), 4)}
+generic putle16	= {buf, v;	-> putle(buf, v castto(uint64), 2)}
+generic putbe16	= {buf, v;	-> putbe(buf, v castto(uint64), 2)}
+generic putle8	= {buf, v;	-> putle(buf, v castto(uint64), 1)}
+generic putbe8	= {buf, v;	-> putbe(buf, v castto(uint64), 1)}
+
+const putbe = {buf, val, n
+	var i, k
+	
+	assert(buf.len >= n, "buffer too small")
+	for i = 0; i < n; i++
+		k = val >> (8*(n-i-1))
+		buf[i] = (k & 0xff) castto(byte)
+	;;
+	-> n castto(size)
+}
+
+const putle = {buf, val, n
+	var i
+
+	assert(buf.len >= n, "buffer too small")
+	for i = 0; i < n; i++
+		buf[i] = (val & 0xff) castto(byte)
+		val >>= 8
+	;;
+	-> n castto(size)
+}
