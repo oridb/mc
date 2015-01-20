@@ -495,6 +495,7 @@ Type *mktystruct(Srcloc l, Node **decls, size_t ndecls);
 Type *mktyunion(Srcloc l, Ucon **decls, size_t ndecls);
 Trait *mktrait(Srcloc l, Node *name, Type *param, Node **memb, size_t nmemb, Node **funcs, size_t nfuncs, int isproto);
 Type *mktylike(Srcloc l, Ty ty); /* constrains tyvar t like it was builtin ty */
+Ucon *finducon(Type *t, Node *name);
 int   istysigned(Type *t);
 int   istyunsigned(Type *t);
 int   istyfloat(Type *t);

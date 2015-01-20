@@ -83,6 +83,7 @@ B traitimpl	P	246,44,meee
 # B compoundimpl	P	intptr,charptr BUGGERED
 B nestucon	P	asdf
 B mkunion	E	0
+B uconinit	P	'A B C 123'
 B genericcall	E	42
 B generictype	E	0
 B genericret	E	42

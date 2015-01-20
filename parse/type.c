@@ -273,6 +273,17 @@ Type *mktyunion(Srcloc loc, Ucon **decls, size_t ndecls)
     return t;
 }
 
+Ucon *finducon(Type *ty, Node *name)
+{
+    size_t i;
+
+    ty = tybase(ty);
+    for (i = 0; i < ty->nmemb; i++)
+        if (!strcmp(namestr(ty->udecls[i]->name), namestr(name)))
+            return ty->udecls[i];
+    return NULL;
+}
+
 int istyunsigned(Type *t)
 {
     switch (tybase(t)->type) {

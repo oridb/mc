@@ -1,0 +1,21 @@
+use std
+
+type u = union
+	`A
+	`B
+	`C int
+;;
+
+const a = [`A, `B, `C 123]
+
+const main = {
+	for v in a
+		match v
+		| `A:	std.put("A ")
+		| `B:	std.put("B ")
+		| `C x:	std.put("C %i\n", x)
+		;;
+	;;
+	std.put("\n")
+}
+

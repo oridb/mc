@@ -1051,14 +1051,15 @@ static void inferucon(Inferstate *st, Node *n, int *isconst)
     Ucon *uc;
     Type *t;
 
+    *isconst = 1;
     uc = uconresolve(st, n);
     t = tyfreshen(st, tf(st, uc->utype));
     uc = tybase(t)->udecls[uc->id];
     if (uc->etype) {
         inferexpr(st, &n->expr.args[1], NULL, NULL);
         unify(st, n, uc->etype, type(st, n->expr.args[1]));
+        *isconst = n->expr.args[1]->expr.isconst;
     }
-    *isconst = n->expr.args[0]->expr.isconst;
     settype(st, n, delayeducon(st, t));
 }
 

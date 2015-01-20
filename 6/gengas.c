@@ -327,6 +327,19 @@ static size_t getintlit(Node *n, char *failmsg)
     return n->lit.intval;
 }
 
+static size_t writeucon(FILE *fd, Htab *globls, Htab *strtab, Node *n)
+{
+    size_t sz;
+    Ucon *uc;
+
+    sz = 4;
+    uc = finducon(exprtype(n), n->expr.args[0]);
+    fprintf(fd, ".long %zd\n", uc->id);
+    if (n->expr.nargs > 1)
+        sz += writeblob(fd, globls, strtab, n->expr.args[1]);
+    return writepad(fd, size(n) - sz);
+}
+
 static size_t writeslice(FILE *fd, Htab *globls, Htab *strtab, Node *n)
 {
     Node *base, *lo, *hi;
@@ -387,20 +400,15 @@ static size_t writeblob(FILE *fd, Htab *globls, Htab *strtab, Node *n)
     size_t i, sz;
 
     switch(exprop(n)) {
+        case Oucon:     sz = writeucon(fd, globls, strtab, n);  break;
+        case Oslice:    sz = writeslice(fd, globls, strtab, n); break;
+        case Ostruct:   sz = writestruct(fd, globls, strtab, n);        break;
+        case Olit:      sz = writelit(fd, strtab, n->expr.args[0], exprtype(n));        break;
         case Otup:
         case Oarr:
             sz = 0;
             for (i = 0; i < n->expr.nargs; i++)
                 sz += writeblob(fd, globls, strtab, n->expr.args[i]);
-            break;
-        case Ostruct:
-            sz = writestruct(fd, globls, strtab, n);
-            break;
-        case Olit:
-            sz = writelit(fd, strtab, n->expr.args[0], exprtype(n));
-            break;
-        case Oslice:
-            sz = writeslice(fd, globls, strtab, n);
             break;
         default:
             dump(n, stdout);

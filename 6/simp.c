@@ -488,24 +488,6 @@ static void simpiter(Simp *s, Node *n)
     s->nloopexit--;
 }
 
-static Ucon *finducon(Node *n)
-{
-    size_t i;
-    Type *t;
-    Ucon *uc;
-
-    t = tybase(n->expr.type);
-    if (exprop(n) != Oucon)
-        return NULL;
-    for (i = 0; i  < t->nmemb; i++) {
-        uc = t->udecls[i];
-        if (!strcmp(namestr(uc->name), namestr(n->expr.args[0])))
-            return uc;
-    }
-    die("No ucon?!?");
-    return NULL;
-}
-
 static Node *uconid(Simp *s, Node *n)
 {
     Ucon *uc;
@@ -513,7 +495,7 @@ static Node *uconid(Simp *s, Node *n)
     if (exprop(n) != Oucon)
         return load(addr(s, n, mktype(n->loc, Tyuint)));
 
-    uc = finducon(n);
+    uc = finducon(exprtype(n), n->expr.args[0]);
     return word(uc->loc, uc->id);
 }
 
@@ -620,9 +602,10 @@ static void matchpattern(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, N
             }
             break;
         case Tyunion:
-            uc = finducon(pat);
-            if (!uc)
-                uc = finducon(val);
+            if (exprop(pat) == Oucon)
+                uc = finducon(exprtype(pat), pat->expr.args[0]);
+            else
+                uc = finducon(exprtype(val), val->expr.args[0]);
 
             deeper = genlbl(pat->loc);
 
