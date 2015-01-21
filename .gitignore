@@ -28,3 +28,5 @@ myrbuild/myrbuild
 bench/*
 !bench/Makefile
 !bench/*.myr
+*~
+tags
