@@ -1380,8 +1380,11 @@ static Node *rval(Simp *s, Node *n, Node *dst)
                 append(s, v);
             } else if (n->expr.nargs && n->expr.args[0]) {
                 t = s->ret;
-                t = set(t, rval(s, args[0], NULL));
-                append(s, t);
+                /* void calls return nothing */
+                if (t) {
+                    t = set(t, rval(s, args[0], NULL));
+                    append(s, t);
+                }
             }
             /* drain the increment queue before we return */
             for (i = 0; i < s->nqueue; i++)
