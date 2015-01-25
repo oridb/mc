@@ -56,24 +56,25 @@ O(Ostruct,	1,	OTmisc, NULL)
 O(Oarr,	        1,	OTmisc, NULL)
 
 /* all below this point are backend-only */
-O(Ocjmp,	1,	OTmisc, NULL)        /* conditional jump */
-O(Ojtab,	1,	OTmisc, NULL)		   /* jump table */
-O(Oset,	        1,	OTbin,  "=")         /* store to var */
-O(Osllen,	1,	OTpre,  "SLLEN")       /* size of slice */
-O(Oslbase,	1,	OTpre,  "SLBASE")      /* base of sice */
-O(Outag,	1,	OTpre,  "UTAG")		   /* tag of union */
-O(Oudata,	1,	OTpre,  "UDATA")       /* pointer to contents of union */
-O(Oblit,	1,	OTbin,  "BLIT")        /* blit memory */
+O(Ocjmp,	1,	OTmisc, NULL)           /* conditional jump */
+O(Ojtab,	1,	OTmisc, NULL)		/* jump table */
+O(Oset,	        1,	OTbin,  "=")            /* store to var */
+O(Osllen,	1,	OTpre,  "SLLEN")        /* size of slice */
+O(Oslbase,	1,	OTpre,  "SLBASE")       /* base of sice */
+O(Outag,	1,	OTpre,  "UTAG")	        /* tag of union */
+O(Oudata,	1,	OTpre,  "UDATA")        /* pointer to contents of union */
+O(Oblit,	1,	OTbin,  "BLIT")         /* blit memory */
+O(Oclear,       1,      OTpre,  "CLEAR")        /* zero */
 
 /* integer conversions */
-O(Otrunc,	1,	OTmisc, NULL)       /* truncating cast */
-O(Ozwiden,	1,	OTmisc, NULL)      /* zero-extending widening cast */
-O(Oswiden,	1,	OTmisc, NULL)      /* sign-extending widening cast */
+O(Otrunc,	1,	OTmisc, NULL)   /* truncating cast */
+O(Ozwiden,	1,	OTmisc, NULL)   /* zero-extending widening cast */
+O(Oswiden,	1,	OTmisc, NULL)   /* sign-extending widening cast */
 
 /* float conversions */
-O(Oflt2int,	1,	OTmisc, NULL)     /* float to int conversion */
-O(Oint2flt,	1,	OTmisc, NULL)     /* int to float conversion */
-O(Oflt2flt,	1,	OTmisc, NULL)     /* flt32<->flt64 conversion */
+O(Oflt2int,	1,	OTmisc, NULL)   /* float to int conversion */
+O(Oint2flt,	1,	OTmisc, NULL)   /* int to float conversion */
+O(Oflt2flt,	1,	OTmisc, NULL)   /* flt32<->flt64 conversion */
 
 /* floating arithmetic */
 O(Ofadd,	1,	OTmisc, NULL)

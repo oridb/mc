@@ -46,24 +46,29 @@ Insn(Imovsx,
     "\tMOV%1T%2TSX %X,%X\n",
     Use(.l={1}),
     Def(.l={2}))
+Insn(Irepstosb,
+    "\trep stosb\n",
+    "\tREP; STOSB\n",
+    Use(.r={Rrax,Rrcx,Rrsi,Rrdi}),
+    Def(None))
 Insn(Irepmovsb,
     "\trep movsb\n",
-    "\tREP MOVSB\n",
+    "\tREP; MOVSB\n",
     Use(.r={Rrcx,Rrsi,Rrdi}),
     Def(None))
 Insn(Irepmovsw,
     "\trep movsw\n",
-    "\tREP MOVSW\n",
+    "\tREP; MOVSW\n",
     Use(.r={Rrcx,Rrsi,Rrdi}),
     Def(None))
 Insn(Irepmovsl,
     "\trep movsl\n",
-    "\tREP MOVSL\n",
+    "\tREP; MOVSL\n",
     Use(.r={Rrcx,Rrsi,Rrdi}),
     Def(None))
 Insn(Irepmovsq,
     "\trep movsq\n",
-    "\tREP MOVSQ\n",
+    "\tREP; MOVSQ\n",
     Use(.r={Rrcx,Rrsi,Rrdi}),
     Def(None))
 Insn(Ilea,

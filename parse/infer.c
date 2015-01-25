@@ -1375,13 +1375,13 @@ static void inferexpr(Inferstate *st, Node **np, Type *ret, int *sawret)
             break;
         case Obad: case Ocjmp: case Ojtab: case Oset:
         case Oslbase: case Osllen: case Outag:
-        case Oblit: case Numops:
+        case Oblit: case  Oclear: case Oudata:
         case Otrunc: case Oswiden: case Ozwiden:
         case Oint2flt: case Oflt2int: case Oflt2flt:
         case Ofadd: case Ofsub: case Ofmul: case Ofdiv: case Ofneg:
         case Ofeq: case Ofne: case Ofgt: case Ofge: case Oflt: case Ofle:
         case Oueq: case Oune: case Ougt: case Ouge: case Oult: case Oule:
-        case Oudata:
+        case Numops:
             die("Should not see %s in fe", opstr[exprop(n)]);
             break;
     }

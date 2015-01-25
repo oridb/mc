@@ -91,7 +91,7 @@ size_t tysize(Type *t)
 }
 
 /* gets the byte offset of 'memb' within the aggregate type 'aggr' */
-size_t tyoffset(Type *ty, Node *memb)
+ssize_t tyoffset(Type *ty, Node *memb)
 {
     size_t i;
     size_t off;
@@ -108,7 +108,6 @@ size_t tyoffset(Type *ty, Node *memb)
             return off;
         off += size(ty->sdecls[i]);
     }
-    die("Could not find member %s in struct", namestr(memb));
     return -1;
 }
 
@@ -123,7 +122,7 @@ size_t size(Node *n)
     return tysize(t);
 }
 
-size_t offset(Node *aggr, Node *memb)
+ssize_t offset(Node *aggr, Node *memb)
 {
     return tyoffset(exprtype(aggr), memb);
 }

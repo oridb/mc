@@ -345,29 +345,31 @@ static Loc *memloc(Isel *s, Node *e, Mode m)
     return l;
 }
 
+static const Mode szmodes[] = {
+    [8] = ModeQ,
+    [4] = ModeL,
+    [2] = ModeW,
+    [1] = ModeB
+};
 static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size_t sz, size_t align)
 {
-    static const Mode modes[] = {
-        [8] = ModeQ,
-        [4] = ModeL,
-        [2] = ModeW,
-        [1] = ModeB
-    };
     size_t i, modesz;
     Loc *sp, *dp, *len; /* pointers to src, dst */
     Loc *tmp, *src, *dst; /* source memory, dst memory */
 
-    assert(modes[align] != ModeNone);   /* make sure we have a valid alignment */
+    assert(szmodes[align] != ModeNone);   /* make sure we have a valid alignment */
     sp = inr(s, from);
     dp = inr(s, to);
 
     i = 0;
-    if (sz <= 64*align) { /* arbitrary threshold; should be tuned */
-        for (modesz = align; modes[modesz] != ModeNone; modesz /= 2) {
-            tmp = locreg(modes[modesz]);
+    if (align == 0)
+        align = 8;
+    if (sz <= 128) { /* arbitrary threshold; should be tuned */
+        for (modesz = align; szmodes[modesz] != ModeNone; modesz /= 2) {
+            tmp = locreg(szmodes[modesz]);
             while (i + modesz <= sz) {
-                src = locmem(i + srcoff, sp, NULL, modes[modesz]);
-                dst = locmem(i + dstoff, dp, NULL, modes[modesz]);
+                src = locmem(i + srcoff, sp, NULL, szmodes[modesz]);
+                dst = locmem(i + dstoff, dp, NULL, szmodes[modesz]);
                 g(s, Imov, src, tmp, NULL);
                 g(s, Imov, tmp, dst, NULL);
                 i += modesz;
@@ -393,6 +395,37 @@ static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size
         g(s, Irepmovsb, NULL);
     }
         
+}
+
+static void clear(Isel *s, Loc *val, size_t sz, size_t align)
+{
+    Loc *dp, *len, *rax; /* pointers to src, dst */
+    Loc *zero, *dst; /* source memory, dst memory */
+    size_t modesz, i;
+
+    i = 0;
+    dp = inr(s, val);
+    rax = locphysreg(Rrax);
+    g(s, Ixor,  rax, rax, NULL);
+    if (align == 0)
+        align = 8;
+    if (sz <= 128) { /* arbitrary threshold; should be tuned */
+        for (modesz = align; szmodes[modesz] != ModeNone; modesz /= 2) {
+            zero = loclit(0, szmodes[modesz]);
+            while (i + modesz <= sz) {
+                zero = coreg(Rrax, szmodes[modesz]);
+                dst = locmem(i, dp, NULL, szmodes[modesz]);
+                g(s, Imov, zero, dst, NULL);
+                i += modesz;
+            }
+        }
+    } else {
+        len = loclit(sz, ModeQ);
+        /* length to blit */
+        g(s, Imov, len, locphysreg(Rrcx), NULL);
+        g(s, Imov, dp, locphysreg(Rrdi), NULL);
+        g(s, Irepstosb, NULL);
+    }
 }
 
 static int isconstfunc(Isel *s, Node *n)
@@ -698,6 +731,11 @@ Loc *selexpr(Isel *s, Node *n)
             r = selexpr(s, args[1]);
             al = alignto(1, args[0]->expr.type->sub[0]);
             blit(s, a, r, 0, 0, args[2]->expr.args[0]->lit.intval, al);
+            break;
+
+        case Oclear:
+            a = selexpr(s, args[0]);
+            clear(s, a, args[1]->expr.args[0]->lit.intval, 0);
             break;
 
         /* cast operators that actually modify the values */

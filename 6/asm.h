@@ -241,8 +241,8 @@ Rclass rclass(Loc *l);
 /* useful functions */
 size_t tysize(Type *t);
 size_t size(Node *n);
-size_t tyoffset(Type *ty, Node *memb);
-size_t offset(Node *aggr, Node *memb);
+ssize_t tyoffset(Type *ty, Node *memb);
+ssize_t offset(Node *aggr, Node *memb);
 int stacktype(Type *t);
 int floattype(Type *t);
 int stacknode(Node *n);

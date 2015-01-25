@@ -1226,13 +1226,13 @@ static Node *compare(Simp *s, Node *n, int fields)
     return r;
 }
 
-
 static Node *rval(Simp *s, Node *n, Node *dst)
 {
-    Node *r; /* expression result */
     Node *t, *u, *v; /* temporary nodes */
+    Node *r; /* expression result */
     Node **args;
     size_t i;
+    Type *ty;
     const Op fusedmap[Numops] = {
         [Oaddeq]        = Oadd,
         [Osubeq]        = Osub,
@@ -1297,6 +1297,10 @@ static Node *rval(Simp *s, Node *n, Node *dst)
             if (!dst)
                 dst = temp(s, n);
             t = addr(s, dst, exprtype(dst));
+            ty = exprtype(n);
+            /* we only need to clear if we don't have things fully initialized */
+            if (tybase(ty)->nmemb != n->expr.nargs)
+                append(s, mkexpr(n->loc, Oclear, t, mkintlit(n->loc, size(n)), NULL));
             for (i = 0; i < n->expr.nargs; i++)
                 assignat(s, t, offset(n, n->expr.args[i]->expr.idx), n->expr.args[i]);
             r = dst;
