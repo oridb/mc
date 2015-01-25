@@ -756,12 +756,16 @@ params  : declcore {
         | /* empty */ {$$.nl = NULL; $$.nn = 0;}
         ;
 
-seqlit  : Tosqbrac arrayelts Tcsqbrac
+seqlit  : Tosqbrac arrayelts optcomma Tcsqbrac
             {$$ = mkexprl($1->loc, Oarr, $2.nl, $2.nn);}
-        | Tosqbrac structelts Tcsqbrac
+        | Tosqbrac structelts optcomma Tcsqbrac
             {$$ = mkexprl($1->loc, Ostruct, $2.nl, $2.nn);}
-        | Tosqbrac Tcsqbrac /* [] is the empty array. */
+        | Tosqbrac optendlns optcomma Tcsqbrac /* [] is the empty array. */
             {$$ = mkexprl($1->loc, Oarr, NULL, 0);}
+        ;
+
+optcomma: Tcomma optendlns
+        | /* empty */
         ;
 
 arrayelts
@@ -772,24 +776,23 @@ arrayelts
             }
         | arrayelts Tcomma optendlns arrayelt
              {lappend(&$$.nl, &$$.nn, mkidxinit($4->loc, mkint($4->loc, $$.nn), $4));}
-        | arrayelts Tcomma optendlns
         ;
 
 arrayelt: expr optendlns {$$ = $1;}
         ;
 
 structelts
-        : structelt {
+        : optendlns structelt {
                 $$.nl = NULL;
                 $$.nn = 0;
-                lappend(&$$.nl, &$$.nn, $1);
+                lappend(&$$.nl, &$$.nn, $2);
             }
-        | structelts Tcomma structelt
-             {lappend(&$$.nl, &$$.nn, $3);}
+        | structelts Tcomma optendlns structelt
+             {lappend(&$$.nl, &$$.nn, $4);}
         ;
 
-structelt: optendlns Tdot Tident Tasn expr optendlns
-            {$$ = mkidxinit($2->loc, mkname($3->loc, $3->id), $5);}
+structelt: Tdot Tident Tasn expr optendlns
+            {$$ = mkidxinit($2->loc, mkname($2->loc, $2->id), $4);}
          ;
 
 optendlns  : /* none */
