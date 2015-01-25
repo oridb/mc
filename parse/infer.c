@@ -434,6 +434,10 @@ static Type *tf(Inferstate *st, Type *orig)
     /* If this is an instantiation of a generic type, we want the params to
      * match the instantiation */
     if (orig->type == Tyunres && isgeneric(t)) {
+        if (t->nparam != orig->narg) {
+            lfatal(orig->loc, "%s incompatibly specialized with %s, declared on %s:%d",
+                   tystr(orig), tystr(t), file->file.files[t->loc.file], t->loc.line);
+        }
         t = tyfreshen(st, t);
         for (i = 0; i < t->narg; i++) {
             unify(st, NULL, t->arg[i], orig->arg[i]);
