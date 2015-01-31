@@ -272,13 +272,13 @@ const pushdep = {dg, src, dst
 }
 
 const rdstr = {f
-	var len : uint32
+	var len
 	var sl
 
-	match bio.getbe(f)
+	match bio.getbe32(f)
 	| `std.Some l:
 		len = l
-		sl = std.slalloc(len castto(std.size))
+		sl = std.slalloc(len)
 	| `std.None:	std.die("string length not readable")
 	;;
 	bio.read(f, sl)
