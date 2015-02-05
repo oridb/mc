@@ -23,6 +23,7 @@ pkg std =
 	const bigfree	: (a : bigint# -> void)
 	const bigdup	: (a : bigint# -> bigint#)
 	const bigassign	: (d : bigint#, s : bigint# -> bigint#)
+	const bigmove	: (d : bigint#, s : bigint# -> bigint#)
 	const bigparse	: (s : byte[:] -> option(bigint#))
 	const bigbfmt	: (b : byte[:], a : bigint#, base : int -> size)
 	const bigfmt	: (a : bigint#, base : int -> byte[:])
@@ -45,6 +46,7 @@ pkg std =
 	const bigdivmod	: (a : bigint#, b : bigint# -> (bigint#, bigint#))
 	const bigshl	: (a : bigint#, b : bigint# -> bigint#)
 	const bigshr	: (a : bigint#, b : bigint# -> bigint#)
+	const bigmodpow	: (b : bigint#, e : bigint#, m : bigint# -> bigint#)
 	/*
 	const bigpow	: (a : bigint#, b : bigint# -> bigint#)
 	*/
@@ -61,6 +63,8 @@ pkg std =
 	*/
 ;;
 
+/* DEBUG */
+extern const put : (fmt : byte[:], ap : ... -> void)
 
 const Base = 0x100000000ul
 
@@ -99,6 +103,15 @@ const bigassign = {d, s
 	d.sign = s.sign
 	-> d
 }
+
+const bigmove = {d, s
+	slfree(d.dig)
+	d.dig = s.dig
+	s.dig = [][:]
+	s.sign = 0
+	-> d
+}
+
 
 const bigfmt = {a, base
 	var buf
@@ -416,22 +429,14 @@ const bigdiv = {a : bigint#, b : bigint# -> bigint#
 
 	(q, r) = bigdivmod(a, b)
 	bigfree(r)
-	slfree(a.dig)
-	a.dig = q.dig
-	a.sign = q.sign
-	free(q)
-	-> a
+	-> bigmove(a, q)
 }
 const bigmod = {a : bigint#, b : bigint# -> bigint#
 	var q, r
 
 	(q, r) = bigdivmod(a, b)
 	bigfree(q)
-	slfree(a.dig)
-	a.dig = r.dig
-	a.sign = r.sign
-	free(r)
-	-> a
+	-> bigmove(a, r)
 }
 
 /* a /= b */
@@ -534,6 +539,23 @@ const bigdivmod = {a : bigint#, b : bigint# -> (bigint#, bigint#)
 	/* undo the biasing for remainder */
 	bigshri(u, shift)
 	-> (trim(q), trim(u))
+}
+
+/* computes b^e % m */
+const bigmodpow = {base, exp, mod
+	var r
+
+	r = mkbigint(1)
+    	while !bigiszero(exp)
+		if exp.dig[0] & 1 == 0
+			bigmul(r, base)
+			bigmod(r, mod)
+		;;
+		bigshri(exp, 1)
+		bigmul(base, base)
+		bigmod(base, mod)
+	;;
+	-> bigmove(base, r)
 }
 
 /* returns the number of leading zeros */

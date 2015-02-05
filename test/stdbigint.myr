@@ -1,5 +1,18 @@
 use std
 
+type cmd = union
+	`Add (cmd#, cmd#)
+	`Sub (cmd#, cmd#)
+	`Mul (cmd#, cmd#)
+	`Div (cmd#, cmd#)
+	`Mod (cmd#, cmd#)
+	`Shl (cmd#, cmd#)
+	`Shr (cmd#, cmd#)
+	`Modpow (cmd#, cmd#, cmd#)
+	`Val byte[:]
+	`Res cmd#
+;;
+
 const main = {
 	var a, b, c, d, e
 	var buf : byte[4096], n
@@ -24,63 +37,62 @@ const main = {
 	n = std.bigbfmt(buf[:], a, 0)
 	std.put("%s\n", buf[:n])
 
-	/* smoke test */
-	match std.bigparse("1234_5678_1234_6789_6666_7777_8888")
-	| `std.Some val: a = val
-	| `std.None: std.die("Failed to parse a\n")
+	/* smoke test for division */
+	run(std.mk(`Res \
+			std.mk(`Div (\
+				std.mk(`Val "1234_5678_1234_6789_6666_7777_8888"), \
+				std.mk(`Val "1234_5678_1234_6789_6666_7777")))))
+	run(std.mk(`Res \
+		std.mk(`Div (\
+			std.mk(`Val "0xffff_1234_1234_1234_1234"), \
+			std.mk(`Val "0xf010_1234_2314")))))
+	run(std.mk(`Res \
+		std.mk(`Div (\
+			std.mk(`Val "5192296858534810493479828944327220"), \
+			std.mk(`Val "75557863709417659441940")))))
+}
+
+const run = {e : cmd#
+	var buf : byte[4096]
+	var v, n
+
+	match e#
+	| `Add (x, y):	-> binop("+", std.bigadd, x, y)
+	| `Sub (x, y):	-> binop("-", std.bigsub, x, y)
+	| `Mul (x, y):	-> binop("*", std.bigmul, x, y)
+	| `Div (x, y):	-> binop("/", std.bigdiv, x, y)
+	| `Mod (x, y):	-> binop("%", std.bigmod, x, y)
+	| `Shl (x, y):	-> binop("<<", std.bigshl, x, y)
+	| `Shr (x, y):	-> binop(">>", std.bigshr, x, y)
+	| `Val x:
+		v = try(std.bigparse(x))
+		n = std.bigbfmt(buf[:], v, 0)
+		std.put("%s", buf[:n])
+		-> v
+	| `Res r:
+		v = run(r)
+		n = std.bigbfmt(buf[:], v, 0)
+		std.put(" == %s\n", buf[:n])
+	| `Modpow (x, y, m):
+		n = std.bigbfmt(buf[:], std.bigmodpow(run(x), run(y), run(m)), 0)
+		std.put("(%s ^ %s) % %s = %s\n", x, y, m, buf[:n])
 	;;
-	match std.bigparse("1234_5678_1234_6789_6666_7777")
-	| `std.Some val: b = val
-	| `std.None: std.die("Failed to parse b\n")
+}
+
+const binop = {name, op, x, y
+	var a, b
+
+	a = run(x)
+	std.put(" %s ", name)
+	b = run(y)
+	op(a, b)
+	std.bigfree(b)
+	-> a
+}
+
+generic try = {x : std.option(@a)
+	match x
+	| `std.Some v:	-> v
+	| `std.None:	std.die("failed to get val")
 	;;
-
-	n = std.bigbfmt(buf[:], a, 0)
-	std.put("%s / ", buf[:n])
-	n = std.bigbfmt(buf[:], b, 0)
-	std.put("%s == ", buf[:n])
-
-	std.bigdiv(a, b)
-
-	n = std.bigbfmt(buf[:], a, 0)
-	std.put("%s\n", buf[:n])
-
-	match std.bigparse("0xffff_1234_1234_1234_1234")
-	| `std.Some val: a = val
-	n = std.bigbfmt(buf[:], a, 0)
-	| `std.None: std.die("Failed to parse a\n")
-	;;
-	match std.bigparse("0xf010_1234_2314")
-	| `std.Some val: b = val
-	| `std.None: std.die("Failed to parse b\n")
-	;;
-
-	n = std.bigbfmt(buf[:], a, 0)
-	std.put("%s / ", buf[:n])
-	n = std.bigbfmt(buf[:], b, 0)
-	std.put("%s == ", buf[:n])
-
-	std.bigdiv(a, b)
-
-	n = std.bigbfmt(buf[:], a, 0)
-	std.put("%s\n", buf[:n])
-
-	match std.bigparse("5192296858534810493479828944327220")
-	| `std.Some val: a = val
-	n = std.bigbfmt(buf[:], a, 0)
-	| `std.None: std.die("Failed to parse a\n")
-	;;
-	match std.bigparse("75557863709417659441940")
-	| `std.Some val: b = val
-	| `std.None: std.die("Failed to parse b\n")
-	;;
-
-	n = std.bigbfmt(buf[:], a, 0)
-	std.put("%s / ", buf[:n])
-	n = std.bigbfmt(buf[:], b, 0)
-	std.put("%s == ", buf[:n])
-
-	std.bigdiv(a, b)
-
-	n = std.bigbfmt(buf[:], a, 0)
-	std.put("%s\n", buf[:n])
 }
