@@ -15,8 +15,9 @@ type cmd = union
 
 const main = {
 	var a, b, c, d, e
-	var buf : byte[4096], n
+	var buf : byte[64], n
 
+	/* a few combined ops */
 	a = std.mkbigint(1234)
 	b = std.mkbigint(0x7fffffff)
 	c = std.mkbigint(7919)
@@ -37,6 +38,8 @@ const main = {
 	n = std.bigbfmt(buf[:], a, 0)
 	std.put("%s\n", buf[:n])
 
+	/* make sure we format '0' correctly */
+	run(std.mk(`Res (std.mk(`Val "0"))))
 	/* smoke test for division */
 	run(std.mk(`Res \
 			std.mk(`Div (\
@@ -50,11 +53,42 @@ const main = {
 		std.mk(`Div (\
 			std.mk(`Val "5192296858534810493479828944327220"), \
 			std.mk(`Val "75557863709417659441940")))))
+	run(std.mk(`Res \
+		std.mk(`Div (\
+			std.mk(`Val "75557863709417659441940"), \
+			std.mk(`Val "5192296858534810493479828944327220")))))
+
+	/* smoke test for mod */
+	run(std.mk(`Res \
+		std.mk(`Mod (\
+			std.mk(`Val "5192296858534810493479828944327220"), \
+			std.mk(`Val "75557863709417659441940")))))
+
+	run(std.mk(`Res \
+		std.mk(`Modpow (\
+			std.mk(`Val "1"), \
+			std.mk(`Val "3"), \
+			std.mk(`Val "2")))))
+
+	run(std.mk(`Res \
+		std.mk(`Modpow (\
+			std.mk(`Val "5192296858534810493479828944327220"), \
+			std.mk(`Val "75557863709417659441940"), \
+			std.mk(`Val "755578")))))
+	/* BOTCHED
+	run(std.mk(`Res \
+		std.mk(`Modpow (\
+			std.mk(`Val "5192296858534810493479828944327220"), \
+			std.mk(`Val "755578"), \
+			std.mk(`Val "75557863709417659441940")))))
+	*/
+
 }
 
 const run = {e : cmd#
-	var buf : byte[4096]
-	var v, n
+	var buf : byte[2048]
+	var a, b, c	/* scratch vars */
+	var n		/* buf len */
 
 	match e#
 	| `Add (x, y):	-> binop("+", std.bigadd, x, y)
@@ -65,17 +99,23 @@ const run = {e : cmd#
 	| `Shl (x, y):	-> binop("<<", std.bigshl, x, y)
 	| `Shr (x, y):	-> binop(">>", std.bigshr, x, y)
 	| `Val x:
-		v = try(std.bigparse(x))
-		n = std.bigbfmt(buf[:], v, 0)
+		a = try(std.bigparse(x))
+		n = std.bigbfmt(buf[:], a, 0)
 		std.put("%s", buf[:n])
-		-> v
+		-> a
 	| `Res r:
-		v = run(r)
-		n = std.bigbfmt(buf[:], v, 0)
+		a = run(r)
+		n = std.bigbfmt(buf[:], a, 0)
 		std.put(" == %s\n", buf[:n])
-	| `Modpow (x, y, m):
-		n = std.bigbfmt(buf[:], std.bigmodpow(run(x), run(y), run(m)), 0)
-		std.put("(%s ^ %s) % %s = %s\n", x, y, m, buf[:n])
+		-> a
+	| `Modpow (x, y, z):
+		std.put("("); 
+		a = run(x)
+		std.put(" ^ ")
+		b = run(y)
+		std.put(") %% ")
+		c = run(z)
+		-> std.bigmodpow(a, b, c)
 	;;
 }
 

@@ -63,9 +63,6 @@ pkg std =
 	*/
 ;;
 
-/* DEBUG */
-extern const put : (fmt : byte[:], ap : ... -> void)
-
 const Base = 0x100000000ul
 
 generic mkbigint = {v : @a::(integral,numeric)
@@ -99,14 +96,14 @@ const bigdup = {a
 
 const bigassign = {d, s
 	slfree(d.dig)
+	d# = s#
 	d.dig = sldup(s.dig)
-	d.sign = s.sign
 	-> d
 }
 
 const bigmove = {d, s
 	slfree(d.dig)
-	d.dig = s.dig
+	d# = s#
 	s.dig = [][:]
 	s.sign = 0
 	-> d
@@ -145,7 +142,13 @@ const bigbfmt = {buf, x, base
 
 	if base < 0 || base > 36
 		die("invalid base in bigbfmt\n")
-	elif base == 0
+	;;
+
+	if bigiszero(x)
+		n
+	;;
+
+	if base == 0
 		b = mkbigint(10)
 	else
 		b = mkbigint(base)
@@ -445,11 +448,11 @@ const bigdivmod = {a : bigint#, b : bigint# -> (bigint#, bigint#)
 	 Implements bigint division using Algorithm D from
 	 Knuth: Seminumerical algorithms, Section 4.3.1.
 	 */
+	var m : int64, n : int64
 	var qhat, rhat, carry, shift
 	var x, y, z, w, p, t /* temporaries */
 	var b0, aj
 	var u, v
-	var m : int64, n : int64
 	var i, j : int64
 	var q
 
@@ -537,17 +540,18 @@ const bigdivmod = {a : bigint#, b : bigint# -> (bigint#, bigint#)
 
 	;;
 	/* undo the biasing for remainder */
-	bigshri(u, shift)
+	u = bigshri(u, shift)
 	-> (trim(q), trim(u))
 }
 
 /* computes b^e % m */
 const bigmodpow = {base, exp, mod
-	var r
+	var r, n
 
 	r = mkbigint(1)
+	n = 0
     	while !bigiszero(exp)
-		if exp.dig[0] & 1 == 0
+		if exp.dig[0] & 1 != 0
 			bigmul(r, base)
 			bigmod(r, mod)
 		;;
