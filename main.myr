@@ -64,7 +64,7 @@ const main = {args : byte[:][:]
 			.ldscript=bld.opt_ldscript,
 			.libdeps=[][:]
 		]
-		p = std.zalloc()
+		p = mkparser("cli")
 		if bintarg
 			bld.buildbin(p, &mt)
 		else
@@ -97,19 +97,27 @@ const main = {args : byte[:][:]
 const loadbuild =  {path
 	var p
 
-	p = std.zalloc()
-	p.line = 1
-	p.fname = path
+	p = mkparser(path)
 	match std.slurp(path)
 	| `std.Ok d:	p.data = d
 	| `std.Fail _:	std.fatal(1, "could not open file 'bldfile'\n")
 	;;
 	p.rest = p.data
-	p.gensrc = std.mkht(std.strhash, std.streq)
 	bld.parse(p)
 
 	-> p
 }
+
+const mkparser = {path
+	var p
+
+	p = std.zalloc()
+	p.line = 1
+	p.fname = "cli"
+	p.gensrc = std.mkht(std.strhash, std.streq)
+	-> p
+}
+
 const usage = {prog
 	std.put("%s [-h] [-I path] [-l lib] [-b bin] inputs...\n", prog)
 	std.put("\t-h\tprint this help\n")

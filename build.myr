@@ -105,7 +105,7 @@ const buildbin = {p, targ
 		std.fatal(1, "Could not load dependencies for %s\n", targ.name)
 	;;
 	if !std.hthas(dg.deps, targ.name)
-		std.fatal(1, "no target declared for %s\n", targ.name)
+		std.fatal(1, "no input files for %s\n", targ.name)
 	;;
 	if builddep(p, &dg, targ.name, targ.incpath) || !freshlibs(targ, dg.libs)
 		linkbin(&dg, targ.name, targ.inputs, targ.ldscript, targ.runtime, targ.incpath, targ.libdeps)

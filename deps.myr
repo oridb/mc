@@ -10,7 +10,6 @@ use "util.use"
 pkg bld =
 	const myrdeps	: (p : parser#, mt : myrtarg#, islib : bool, isclean : bool, dg : depgraph#	-> bool)
 
-
 	/* a bit ugly: initialized from main() */
 	var usepat	: regex.regex#
 
