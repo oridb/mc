@@ -544,7 +544,7 @@ Loc *selexpr(Isel *s, Node *n)
         case Omul:
             if (size(args[0]) == 1) {
                 a = selexpr(s, args[0]);
-                b = selexpr(s, args[1]);
+                b = inr(s, selexpr(s, args[1]));
 
                 c = locphysreg(Ral);
                 r = locreg(a->mode);
