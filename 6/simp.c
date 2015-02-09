@@ -916,7 +916,7 @@ static Node *simpcast(Simp *s, Node *val, Type *to)
                 case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint64:
                 case Tyint: case Tyuint: case Tylong: case Tyulong:
                 case Tychar: case Tybyte:
-                    r = mkexpr(val->loc, Oflt2int, rval(s, val, NULL), NULL);
+                    r = mkexpr(val->loc, Oint2flt, rval(s, val, NULL), NULL);
                     r->expr.type = to;
                     break;
                 case Tyflt32: case Tyflt64:

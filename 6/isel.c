@@ -759,17 +759,13 @@ Loc *selexpr(Isel *s, Node *n)
             break;
         case Oint2flt:
             a = selexpr(s, args[0]);
-            b = locreg(ModeQ);
             r = locreg(mode(n));
-            g(s, Imovs, a, b, NULL);
-            g(s, Icvttsi2sd, b, r, NULL);
+            g(s, Icvttsi2sd, a, r, NULL);
             break;
         case Oflt2int:
             a = selexpr(s, args[0]);
-            b = locreg(ModeQ);
             r = locreg(mode(n));
-            g(s, Icvttsd2si, a, b, NULL);
-            g(s, Imov, b, r, NULL);
+            g(s, Icvttsd2si, a, r, NULL);
             break;
 
         case Oflt2flt:
