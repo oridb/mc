@@ -820,6 +820,10 @@ int loaduse(FILE *f, Stab *st, Vis vis)
             s = st;
         }
     }
+    if (!s) {
+        printf("could not find matching package for merge: %s\n", st->_name);
+        exit(1);
+    }
     tidmap = mkht(ptrhash, ptreq);
     trmap = mkht(ptrhash, ptreq);
     /* builtin traits */
