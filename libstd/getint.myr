@@ -10,49 +10,49 @@ pkg std =
 ;;
 
 generic getbe64 = {buf -> @a::(numeric,integral)
-	-> ((buf[0] castto(@a::(numeric,integral))) << 0) | \
-		((buf[1] castto(@a::(numeric,integral))) << 8) | \
-		((buf[2] castto(@a::(numeric,integral))) << 16) | \
-		((buf[3] castto(@a::(numeric,integral))) << 24) | \
-		((buf[4] castto(@a::(numeric,integral))) << 32) | \
-		((buf[5] castto(@a::(numeric,integral))) << 40) | \
-		((buf[6] castto(@a::(numeric,integral))) << 48) | \
-		((buf[7] castto(@a::(numeric,integral))) << 56)
+	-> ((buf[0] castto(@a::(numeric,integral))) << 56) | \
+		((buf[1] castto(@a::(numeric,integral))) << 48) | \
+		((buf[2] castto(@a::(numeric,integral))) << 40) | \
+		((buf[3] castto(@a::(numeric,integral))) << 32) | \
+		((buf[4] castto(@a::(numeric,integral))) << 24) | \
+		((buf[5] castto(@a::(numeric,integral))) << 16) | \
+		((buf[6] castto(@a::(numeric,integral))) << 8) | \
+		((buf[7] castto(@a::(numeric,integral))) << 0)
 }
 
 generic getle64 = {buf
-	-> ((buf[7] castto(@a::(numeric,integral))) << 0) | \
-		((buf[6] castto(@a::(numeric,integral))) << 8) | \
-		((buf[5] castto(@a::(numeric,integral))) << 16) | \
-		((buf[4] castto(@a::(numeric,integral))) << 24) | \
-		((buf[3] castto(@a::(numeric,integral))) << 32) | \
-		((buf[2] castto(@a::(numeric,integral))) << 40) | \
-		((buf[1] castto(@a::(numeric,integral))) << 48) | \
-		((buf[0] castto(@a::(numeric,integral))) << 56)
+	-> ((buf[0] castto(@a::(numeric,integral)))  << 0) | \
+		((buf[1] castto(@a::(numeric,integral)))  << 8) | \
+		((buf[2] castto(@a::(numeric,integral)))  << 16) | \
+		((buf[3] castto(@a::(numeric,integral)))  << 24) | \
+		((buf[4] castto(@a::(numeric,integral)))  << 32) | \
+		((buf[5] castto(@a::(numeric,integral)))  << 40) | \
+		((buf[6] castto(@a::(numeric,integral)))  << 48) | \
+		((buf[7] castto(@a::(numeric,integral)))  << 56)
 }
 
 generic getbe32 = {buf
+	-> ((buf[0] castto(@a::(numeric,integral))) << 24) | \
+		((buf[1] castto(@a::(numeric,integral))) << 16) | \
+		((buf[2] castto(@a::(numeric,integral))) << 8) | \
+		((buf[3] castto(@a::(numeric,integral))) << 0)
+}
+
+generic getle32 = {buf
 	-> ((buf[0] castto(@a::(numeric,integral))) << 0) | \
 		((buf[1] castto(@a::(numeric,integral))) << 8) | \
 		((buf[2] castto(@a::(numeric,integral))) << 16) | \
 		((buf[3] castto(@a::(numeric,integral))) << 24)
 }
 
-generic getle32 = {buf
-	-> ((buf[3] castto(@a::(numeric,integral))) << 24) | \
-		((buf[2] castto(@a::(numeric,integral))) << 16) | \
-		((buf[1] castto(@a::(numeric,integral))) << 8) | \
-		((buf[0] castto(@a::(numeric,integral))) << 0)
-}
-
 generic getbe16 = {buf
-	-> ((buf[0] castto(@a::(numeric,integral))) << 0) | \
-		((buf[1] castto(@a::(numeric,integral))) << 8)
+	-> ((buf[0] castto(@a::(numeric,integral))) << 8) | \
+		((buf[1] castto(@a::(numeric,integral))) << 0)
 }
 
 generic getle16 = {buf
-	-> ((buf[1] castto(@a::(numeric,integral))) << 8) | \
-		((buf[0] castto(@a::(numeric,integral))) << 0)
+	-> ((buf[0] castto(@a::(numeric,integral))) << 0) | \
+		((buf[1] castto(@a::(numeric,integral))) << 8)
 }
 
 generic getbe8 = {buf
@@ -60,5 +60,5 @@ generic getbe8 = {buf
 }
 
 generic getle8 = {buf
-	-> (buf[0] castto(@a::(numeric,integral))) << 8
+	-> (buf[0] castto(@a::(numeric,integral))) << 0
 }
