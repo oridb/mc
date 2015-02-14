@@ -25,6 +25,7 @@ lib std {inc=.} =
 	chartype.myr
         clear.myr
 	cmp.myr
+	cstrconv.myr
 	dial.myr
 	die.myr
 	endian.myr

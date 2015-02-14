@@ -5,7 +5,6 @@ use "fmt.use"
 use "option.use"
 use "slpush.use"
 use "strfind.use"
-use "sys.use"
 use "types.use"
 
 pkg std =

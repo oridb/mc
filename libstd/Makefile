@@ -129,5 +129,10 @@ uninstall:
 	rm -f $(abspath $(DESTDIR)/$(INST_ROOT)/lib/myr/libstd.a)
 	rm -f $(abspath $(DESTDIR)/$(INST_ROOT)/lib/myr/std)
 
+check: test
+
+test:
+	mbld test
+
 ../6/6m:
 	cd ..; $(MAKE)

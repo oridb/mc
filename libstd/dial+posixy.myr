@@ -1,3 +1,5 @@
+use sys
+
 use "alloc.use"
 use "chartype.use"
 use "die.use"
@@ -11,7 +13,6 @@ use "resolve.use"
 use "result.use"
 use "sleq.use"
 use "strfind.use"
-use "sys.use"
 use "syswrap.use"
 use "utf.use"
 

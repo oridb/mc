@@ -9,7 +9,7 @@ pkg std =
 const blat = {path, buf
 	var fd
 
-	fd = openmode(path, Ocreat|Owronly, 0o777)
+	fd = openmode(path, Ocreat|Owronly, 0o666)
 	if fd < 0
 		-> false
 	;;
