@@ -58,7 +58,11 @@ const cleanup = {p, targ, leaves, islib
 	var keys
 	var dg
 
-	if !myrdeps(p, targ, islib, true, &dg)
+	/*
+	we want to automatically add 'clean' sources since otherwise,
+	mbld won't be able to clean code after changing a build file.
+	*/
+	if !myrdeps(p, targ, islib, true, true, &dg)
 		std.fatal(1, "Could not load dependencies for %s\n", targ.name)
 	;;
 	mchammer_files = std.mkht(std.strhash, std.streq)

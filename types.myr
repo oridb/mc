@@ -21,7 +21,8 @@ pkg bld =
 		roots	: byte[:][:]
 		deps	: std.htab(byte[:], byte[:][:])#
 		libs	: std.htab(byte[:], byte[:][:])#
-		sources	: std.htab(byte[:], byte[:])#
+		input	: std.htab(byte[:], byte[:])#
+		sources	: std.htab(byte[:], bool)#
 		updated	: std.htab(byte[:], bool)#
 	;;
 

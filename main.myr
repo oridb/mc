@@ -8,6 +8,7 @@ use "deps.use"
 use "install.use"
 use "opts.use"
 use "parse.use"
+use "test.use"
 use "types.use"
 
 const main = {args : byte[:][:]
@@ -66,7 +67,7 @@ const main = {args : byte[:][:]
 		]
 		p = mkparser("cli")
 		if bintarg
-			bld.buildbin(p, &mt)
+			bld.buildbin(p, &mt, true)
 		else
 			bld.buildlib(p, &mt)
 		;;

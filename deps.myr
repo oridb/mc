@@ -8,7 +8,7 @@ use "types.use"
 use "util.use"
 
 pkg bld =
-	const myrdeps	: (p : parser#, mt : myrtarg#, islib : bool, isclean : bool, dg : depgraph#	-> bool)
+	const myrdeps	: (p : parser#, mt : myrtarg#, islib : bool, isclean : bool, addsrc : bool, dg : depgraph#	-> bool)
 
 	/* a bit ugly: initialized from main() */
 	var usepat	: regex.regex#
@@ -21,7 +21,7 @@ type dep = union
 	`Lib byte[:]
 ;;
 
-const myrdeps = {p, mt, islib, isclean, dg
+const myrdeps = {p, mt, islib, isclean, addsrc, dg
 	var objs, uses, srcs, incs
 	var seentab, donetab
 	var out, useout
@@ -29,10 +29,12 @@ const myrdeps = {p, mt, islib, isclean, dg
 
 	dg.deps = std.mkht(std.strhash, std.streq)
 	dg.libs = std.mkht(std.strhash, std.streq)
+	dg.input = std.mkht(std.strhash, std.streq)
 	dg.sources = std.mkht(std.strhash, std.streq)
 	dg.updated = std.mkht(std.strhash, std.streq)
 	seentab = std.mkht(std.strhash, std.streq)
 	donetab = std.mkht(std.strhash, std.streq)
+
 	/* direct dependencies of binary */
 	if islib
 		out = std.fmt("lib%s.a", mt.name)
@@ -41,26 +43,30 @@ const myrdeps = {p, mt, islib, isclean, dg
 		out = std.sldup(mt.name)
 		useout = ""
 	;;
+
 	srcs = mt.inputs
 	incs = mt.incpath
 	objs = swapall(srcs, config.Objsuffix)
 	uses = swapall(srcs, ".use")
 	for i = 0; i < srcs.len; i++
-		std.htput(dg.sources, objs[i], srcs[i])
+		std.htput(dg.input, objs[i], srcs[i])
+		std.htput(dg.sources, srcs[i], true)
 		pushdep(dg, srcs[i], objs[i])
 		if std.hassuffix(srcs[i], ".myr")
-			std.htput(dg.sources, uses[i], srcs[i])
+			std.htput(dg.input, uses[i], srcs[i])
 			pushdep(dg, srcs[i], uses[i])
 		;;
 	;;
+
 	for i = 0; i < srcs.len; i++
 		pushdep(dg, objs[i], out)
 		if islib && std.hassuffix(srcs[i], ".myr")
 			pushdep(dg, uses[i], useout)
 		;;
 	;;
+
 	for i = 0; i < srcs.len; i++
-		srcdeps(p, dg, seentab, donetab, srcs[i], objs[i], uses[i], incs, isclean)
+		srcdeps(p, dg, seentab, donetab, srcs[i], objs[i], uses[i], incs, isclean, addsrc)
 	;;
 	dumpgraph(dg)
 	std.htfree(seentab)
@@ -94,7 +100,7 @@ const dumpgraph = {dg
 	std.put("}\n")
 }
 
-const srcdeps = {p, g, seen, done, path, obj, usefile, incs, isclean
+const srcdeps = {p, g, seen, done, path, obj, usefile, incs, isclean, addsrc
 	var deps
 
 	if std.hthas(done, path)
@@ -125,14 +131,14 @@ const srcdeps = {p, g, seen, done, path, obj, usefile, incs, isclean
 			if usefile.len != 0
 				pushdep(g, l, usefile)
 			;;
-			addusedep(p, g, seen, done, l, incs, isclean)
+			addusedep(p, g, seen, done, l, incs, isclean, addsrc)
 		;;
 	;;
 	std.htput(seen, path, false)
 	std.htput(done, path, true)
 }
 
-const addusedep = {p, g, seen, done, usefile, incs, isclean
+const addusedep = {p, g, seen, done, usefile, incs, isclean, addsrc
 	var src
 
 	if std.hthas(done, usefile)
@@ -141,15 +147,20 @@ const addusedep = {p, g, seen, done, usefile, incs, isclean
 		;;
 		->
 	;;
-	match std.htget(g.sources, usefile)
+	match std.htget(g.input, usefile)
 	| `std.Some path:
 		src = std.sldup(path)
 	| `std.None:
 		src = swapsuffix(usefile, ".use", ".myr")
+		if addsrc
+			std.htput(g.sources, src, true)
+		elif !std.hthas(g.input, src)
+			std.fatal(1, "source file %s not listed in bldfile\n", src)
+		;;
 	;;
 	pushdep(g, src, usefile)
-	std.htput(g.sources, usefile, src)
-	srcdeps(p, g, seen, done, src, "", usefile, incs, isclean)
+	std.htput(g.input, usefile, src)
+	srcdeps(p, g, seen, done, src, "", usefile, incs, isclean, addsrc)
 	std.htput(done, usefile, true)
 }
 

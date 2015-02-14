@@ -12,6 +12,7 @@ MYRSRC= \
 	parse.myr \
 	subdir.myr \
 	util.myr \
+	test.myr \
 	types.myr
 
 include config.mk

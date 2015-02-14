@@ -11,9 +11,8 @@ use "subdir.use"
 pkg bld =
 	const buildall	: (p : parser# -> bool)
 	const genall	: (p : parser# -> bool)
-	const test	: (p : parser# -> bool)
 	const build	: (p : parser#, target : byte[:] -> bool)
-	const buildbin	: (p : parser#, bt : myrtarg# -> void)
+	const buildbin	: (p : parser#, bt : myrtarg#, addsrc : bool -> void)
 	const buildlib	: (p : parser#, lt : myrtarg# -> void)
 ;;
 
@@ -21,7 +20,7 @@ const buildall = {p
 	for t in p.targs
 		match t
 		| `Bin bt:
-			buildbin(p, bt)
+			buildbin(p, bt, false)
 		| `Lib lt:
 			buildlib(p, lt)
 		| `Gen gt:
@@ -46,11 +45,6 @@ const genall = {p
 	-> true
 }
 
-const test = {p
-	std.fatal(1, "testing not yet supported\n")
-	-> false
-}
-
 const build = {p, targ
 	var found
 
@@ -59,7 +53,7 @@ const build = {p, targ
 		match t
 		| `Bin bt:
 			if std.sleq(bt.name, targ)
-				buildbin(p, bt)
+				buildbin(p, bt, false)
 			;;
 		| `Lib lt:
 			if std.sleq(lt.name, targ)
@@ -86,8 +80,8 @@ const build = {p, targ
 	-> found
 }
 
-const buildbin = {p, targ
-	var dg
+const buildbin = {p, targ, addsrc
+	var dg, src
 
 	if targ.built
 		->
@@ -101,14 +95,16 @@ const buildbin = {p, targ
 		;;
 	;;
 	std.put("%s...\n", targ.name)
-	if !myrdeps(p, targ, false, false, &dg)
+	if !myrdeps(p, targ, false, false, addsrc, &dg)
 		std.fatal(1, "Could not load dependencies for %s\n", targ.name)
 	;;
 	if !std.hthas(dg.deps, targ.name)
 		std.fatal(1, "no input files for %s\n", targ.name)
 	;;
 	if builddep(p, &dg, targ.name, targ.incpath) || !freshlibs(targ, dg.libs)
-		linkbin(&dg, targ.name, targ.inputs, targ.ldscript, targ.runtime, targ.incpath, targ.libdeps)
+		src = std.htkeys(dg.sources)
+		linkbin(&dg, targ.name, src, targ.ldscript, targ.runtime, targ.incpath, targ.libdeps)
+		std.slfree(src)
 	;;
 	targ.built = true
 }
@@ -126,7 +122,7 @@ const buildlib = {p, targ
 	var archive
 	var u, l
 	var dg
-	var lib
+	var lib, src
 
 	if targ.built
 		->
@@ -134,7 +130,7 @@ const buildlib = {p, targ
 	lib = targ.name
 	std.put("lib%s.a...\n", lib)
 	archive = std.fmt("lib%s.a", lib)
-	if !myrdeps(p, targ, true, false, &dg)
+	if !myrdeps(p, targ, true, false, false, &dg)
 		std.fatal(1, "Could not load dependencies for %s\n", lib)
 	;;
 	if !std.hthas(dg.deps, lib)
@@ -143,8 +139,10 @@ const buildlib = {p, targ
 	u = builddep(p, &dg, targ.name, targ.incpath)
 	l = builddep(p, &dg, archive, targ.incpath)
 	if  u || l || !freshlibs(targ, dg.libs)
-		mergeuse(&dg, lib, targ.inputs, targ.incpath)
-		archivelib(&dg, lib, targ.inputs, targ.incpath)
+		src = std.htkeys(dg.sources)
+		mergeuse(&dg, lib, src, targ.incpath)
+		archivelib(&dg, lib, src, targ.incpath)
+		std.slfree(src)
 	;;
 	std.slfree(archive)
 	targ.built = true
@@ -187,7 +185,7 @@ const builddep = {p, dg, out, incs
 	| `std.None:
 	;;
 
-	match std.htget(dg.sources, out)
+	match std.htget(dg.input, out)
 	| `std.Some src:
 		if stale
 			compile(src, incs)

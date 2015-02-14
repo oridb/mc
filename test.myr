@@ -1,0 +1,118 @@
+use std
+
+use "build.use"
+use "clean.use"
+use "deps.use"
+use "opts.use"
+use "parse.use"
+use "types.use"
+use "util.use"
+use "subdir.use"
+
+use "config.use"
+
+pkg bld =
+	const test	: (p : parser# -> bool)
+;;
+
+const test = {p
+	var hasdir, ok
+
+	/* no implicit tests to run */
+	ok = true
+	hasdir = std.fexists("test")
+	if hasdir
+		for it in p.targs
+			match it
+			| `Bin bt: ok = dotest(p, bt, ok)
+			| `Lib lt: ok = dotest(p, lt, ok)
+			| _:	/* ignore */
+			;;
+		;;
+	;;
+	-> true
+}
+
+const dotest = {p, targ, ok
+	var tt, bin ,path, tests
+
+	tests = [][:]
+	for s in targ.inputs
+		path = std.pathcat("test", s)
+		if std.fexists(path)
+			bin = srcswapsuffix(path, "")
+			tt = [
+				.name = bin,
+				.inputs = [path, s][:],
+				.install = false,
+				.libdeps = targ.libdeps,
+				.incpath = targ.incpath,
+				.built = false,
+			]
+
+			cleantest(p, path)
+			buildbin(p, &tt, true)
+			tests = std.slpush(tests, bin)
+		;;
+		std.slfree(path)
+	;;
+
+	ok = true
+	for t in tests
+		if !runtest(t)
+			ok = false
+		;;
+		std.slfree(t)
+	;;
+	std.slfree(tests)
+	-> ok
+}
+
+const cleantest = {p, src
+	var obj, bin, log, usef
+
+	obj = srcswapsuffix(src, config.Objsuffix)
+	log = srcswapsuffix(src, ".log")
+	usef = srcswapsuffix(src, ".use")
+	bin = srcswapsuffix(src, "")
+
+	std.remove(obj)
+	std.remove(usef)
+	std.remove(log)
+	std.remove(bin)
+
+	std.slfree(obj)
+	std.slfree(usef)
+	std.slfree(log)
+	std.slfree(bin)
+}
+
+const runtest = {bin
+	var r, log
+
+	std.put("run %s:\t", bin)
+	log = std.strcat(bin, ".log")
+	match std.spork([bin][:])
+	| `std.Fail m:
+		std.fatal(1, "unable to run test: %s\n", m)
+	| `std.Ok (pid, infd, outfd):
+		match std.fslurp(outfd)
+		| `std.Ok buf:
+			std.blat(log, buf)
+		| `std.Fail m:
+		;;
+		std.slfree(log)
+
+		r = false
+		match std.wait(pid)
+		| `std.Wfailure:	std.put("FAIL\n")
+		| `std.Wsignalled:	std.put("CRASH\n")
+		| `std.Wsuccess:
+			std.put("PASS\n")
+			r = true
+		| _:	std.put("???\n")
+		;;
+	;;
+	-> r
+}
+
