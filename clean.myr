@@ -19,6 +19,8 @@ const cleanall = {p
 			cleanup(p, bt, bt.inputs, true)
 		| `Lib lt:
 			cleanup(p, lt, lt.inputs, true)
+		| `Test tt:
+			cleanup(p, tt, tt.inputs, true)
 		| `Gen gt:
 			for f in gt.out
 				if std.remove(f)
@@ -43,6 +45,10 @@ const clean = {p, targ
 		| `Lib lt:
 			if std.sleq(lt.name, targ)
 				cleanup(p, lt, lt.inputs, true)
+			;;
+		| `Test tt:
+			if std.sleq(tt.name, targ)
+				cleanup(p, tt, tt.inputs, true)
 			;;
 		| `Gen gt:
 		| `Sub subs:

@@ -19,16 +19,12 @@ pkg bld =
 const buildall = {p
 	for t in p.targs
 		match t
-		| `Bin bt:
-			buildbin(p, bt, false)
-		| `Lib lt:
-			buildlib(p, lt)
-		| `Gen gt:
-			genfiles(p, gt)
-		| `Sub subs:
-			subdirs(p, subs, `std.None)
-		| `Man m:
-			/* nothing needed */
+		| `Bin bt:	buildbin(p, bt, false)
+		| `Lib lt:	buildlib(p, lt)
+		| `Test tt:	/* build on 'mbld test' by default */
+		| `Gen gt:	genfiles(p, gt)
+		| `Sub subs:	subdirs(p, subs, `std.None)
+		| `Man m:	/* nothing needed */
 		;;
 	;;
 	-> true
@@ -58,6 +54,11 @@ const build = {p, targ
 		| `Lib lt:
 			if std.sleq(lt.name, targ)
 				buildlib(p, lt)
+				found = true
+			;;
+		| `Test tt:
+			if std.sleq(tt.name, targ)
+				buildbin(p, tt, false)
 				found = true
 			;;
 		| `Gen gt:

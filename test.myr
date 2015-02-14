@@ -16,7 +16,7 @@ pkg bld =
 ;;
 
 const test = {p
-	var hasdir, ok
+	var hasdir, ok, bin
 
 	/* no implicit tests to run */
 	ok = true
@@ -24,13 +24,27 @@ const test = {p
 	if hasdir
 		for it in p.targs
 			match it
-			| `Bin bt: ok = dotest(p, bt, ok)
-			| `Lib lt: ok = dotest(p, lt, ok)
+			| `Bin bt:
+				if !dotest(p, bt, ok)
+					ok = false
+				;;
+			| `Lib lt:
+				if !dotest(p, lt, ok)
+					ok = false
+				;;
 			| _:	/* ignore */
 			;;
 		;;
 	;;
-	-> true
+	for `Test t in p.targs
+		buildbin(p, t, false)
+		bin = std.strcat("./", t.name)
+		if !runtest(bin)
+			ok = false
+		;;
+		std.slfree(bin)
+	;;
+	-> ok
 }
 
 const dotest = {p, targ, ok
@@ -38,7 +52,7 @@ const dotest = {p, targ, ok
 
 	tests = [][:]
 	for s in targ.inputs
-		path = std.pathcat("test", s)
+		path = std.pathcat("./test", s)
 		if std.fexists(path)
 			bin = srcswapsuffix(path, "")
 			tt = [

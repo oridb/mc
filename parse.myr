@@ -39,6 +39,7 @@ const parse = {p
 const target = {p : parser#
 	match word(p)
 	| `std.Some "bin":	bintarget(p)
+	| `std.Some "test":	testtarget(p)
 	| `std.Some "lib":	libtarget(p)
 	| `std.Some "gen":	gentarget(p)
 	| `std.Some "sub":	subtarget(p)
@@ -52,6 +53,11 @@ const target = {p : parser#
 /* bintarget: myrtarget */
 const bintarget = {p
 	p.targs = std.slpush(p.targs, `Bin myrtarget(p, "bin"))
+}
+
+/* testtarget: myrtarget */
+const testtarget = {p
+	p.targs = std.slpush(p.targs, `Test myrtarget(p, "test"))
 }
 
 /* libtarget: myrtarget */

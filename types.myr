@@ -45,6 +45,7 @@ pkg bld =
 	type targ = union
 		`Bin	myrtarg#
 		`Lib	myrtarg#
+		`Test	myrtarg#
 		`Gen	gentarg#
 		`Sub	byte[:][:]
 		`Man	byte[:][:]

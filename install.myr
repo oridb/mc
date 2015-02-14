@@ -44,6 +44,7 @@ const movetargs = {p, delete
 			for m in mans
 				moveman(delete, m)
 			;;
+		| `Test tt:	/* nothing */
 		;;
 	;;
 	-> true
