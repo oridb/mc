@@ -22,6 +22,7 @@ STDSRC= \
 	dial.myr \
 	die.myr \
 	dir.myr \
+	dirname.myr \
 	endian.myr \
 	env.myr \
 	errno.myr \
@@ -112,7 +113,7 @@ lib$(SYSLIB).a: $(SYSSRC) $(SYSASMSRC) ../6/6m
 
 OBJ=$(STDSRC:.myr=.o) $(SYSSRC:.myr=.o) $(STDASMSRC:.s=.o) $(SYSASMSRC:.s=.o)
 USE=$(STDSRC:.myr=.use) $(SYSSRC:.myr=.use) $(STDLIB)
-.PHONY: clean
+.PHONY: clean check test
 clean:
 	rm -f $(OBJ)
 	rm -f $(USE)

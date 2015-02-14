@@ -1,0 +1,37 @@
+use "alloc.use"
+use "slcp.use"
+use "die.use"
+use "sldup.use"
+use "strfind.use"
+use "option.use"
+
+pkg std =
+	const dirname	: (p : byte[:] -> byte[:])
+	const basename	: (p : byte[:] -> byte[:])
+;;
+
+const dirname = {p
+	match std.strrfind(p, "/")
+	| `std.Some idx:
+		-> std.sldup(p[:idx])
+	| `std.None:
+		-> std.sldup(".")
+	;;
+}
+
+const basename = {p
+:again
+	if p.len == 0
+		-> std.sldup(".")
+	;;
+
+	match std.strrfind(p, "/")
+	| `std.Some idx:
+		if idx == p.len - 1
+			goto again
+		;;
+		-> std.sldup(p[idx+1:])
+	| `std.None:
+		-> std.sldup(p)
+	;;
+}

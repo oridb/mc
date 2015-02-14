@@ -28,6 +28,7 @@ lib std {inc=.} =
 	cstrconv.myr
 	dial.myr
 	die.myr
+	dirname.myr
 	endian.myr
 	env.myr
         errno.myr
