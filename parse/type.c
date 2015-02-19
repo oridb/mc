@@ -812,8 +812,7 @@ size_t tyidfmt(char *buf, size_t sz, Type *ty)
             }
             break;
         case Typaram:
-            p += snprintf(p, end - p, "$r");
-            p += tyidfmt(p, end - p, ty->sub[0]);
+            p += snprintf(p, end - p, "$r%s", ty->pname);
             break;
         case Tyunres:
         case Tyname:
