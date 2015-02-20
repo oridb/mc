@@ -1523,7 +1523,7 @@ static void infernode(Inferstate *st, Node **np, Type *ret, int *sawret)
             bind(st, n);
             inferdecl(st, n);
             if (type(st, n)->type == Typaram && !st->ingeneric)
-                fatal(n, "Generic type %s in non-generic near %s\n", tystr(type(st, n)), ctxstr(st, n));
+                fatal(n, "Generic type %s in non-generic near %s", tystr(type(st, n)), ctxstr(st, n));
             unbind(st, n);
             st->indentdepth--;
             if (debugopt['u'])
