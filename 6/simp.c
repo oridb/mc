@@ -725,6 +725,8 @@ static void checkidx(Simp *s, Node *len, Node *idx)
     Node *cmp, *die;
     Node *ok, *fail;
 
+    if (!len)
+        return;
     /* create expressions */
     cmp = mkexpr(idx->loc, Olt, ptrsized(s, idx), ptrsized(s, len), NULL);
     cmp->expr.type = mktype(len->loc, Tybool);

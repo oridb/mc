@@ -19,6 +19,7 @@ struct Inferstate {
     int ingeneric;
     int sawret;
     int indentdepth;
+    int intype;
     Type *ret;
 
     /* bound by patterns turn into decls in the action block */
@@ -362,8 +363,10 @@ static void tyresolve(Inferstate *st, Type *t)
     t->resolved = 1;
     /* Walk through aggregate type members */
     if (t->type == Tystruct) {
+        st->intype++;
         for (i = 0; i < t->nmemb; i++)
             infernode(st, &t->sdecls[i], NULL, NULL);
+        st->intype--;
     } else if (t->type == Tyunion) {
         for (i = 0; i < t->nmemb; i++) {
             t->udecls[i]->utype = t;
@@ -374,6 +377,8 @@ static void tyresolve(Inferstate *st, Type *t)
             }
         }
     } else if (t->type == Tyarray) {
+        if (!st->intype && !t->asize)
+            lfatal(t->loc, "unsized array type outside of struct");
         infernode(st, &t->asize, NULL, NULL);
     }
 
@@ -1641,8 +1646,10 @@ static Type *tyfix(Inferstate *st, Node *ctx, Type *orig)
         if (t->type == Tyarray) {
             typesub(st, t->asize);
         } else if (t->type == Tystruct) {
+            st->intype++;
             for (i = 0; i < t->nmemb; i++)
                 typesub(st, t->sdecls[i]);
+            st->intype--;
         } else if (t->type == Tyunion) {
             for (i = 0; i < t->nmemb; i++) {
                 if (t->udecls[i]->etype)

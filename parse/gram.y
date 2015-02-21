@@ -464,6 +464,7 @@ compoundtype
         : functype   {$$ = $1;}
         | type Tosqbrac Tcolon Tcsqbrac {$$ = mktyslice($2->loc, $1);}
         | type Tosqbrac expr Tcsqbrac {$$ = mktyarray($2->loc, $1, $3);}
+        | type Tosqbrac Tellipsis Tcsqbrac {$$ = mktyarray($2->loc, $1, NULL);}
         | type Tderef {$$ = mktyptr($2->loc, $1);}
         | Tat Tident {$$ = mktyparam($1->loc, $2->id);}
         | name       {$$ = mktyunres($1->loc, $1, NULL, 0);}

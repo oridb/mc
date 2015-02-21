@@ -79,7 +79,7 @@ pkg sys =
 		off	: uint64
 		reclen	: uint16
 		etype	: byte
-		name	: byte[0]
+		name	: byte[...]	/* special case; zero length => unchecked indexing */
 	;;
 
 	type utsname = struct
