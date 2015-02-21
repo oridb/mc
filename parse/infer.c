@@ -690,7 +690,11 @@ static void mergetraits(Inferstate *st, Node *ctx, Type *a, Type *b)
 /* Tells us if we have an index hack on the type */
 static int idxhacked(Type *a, Type *b)
 {
-    return (a->type == Tyvar && a->nsub > 0) || a->type == Tyarray || a->type == Tyslice;
+    if (a->type == Tyvar && a->nsub > 0)
+        return 1;
+    if (a->type == Tyarray || a->type == Tyslice)
+        return a->type == b->type;
+    return 0;
 }
 
 /* prevents types that contain themselves in the unification;
@@ -1441,10 +1445,12 @@ static void specializeimpl(Inferstate *st, Node *n)
             }
         }
         if (!proto)
-            fatal(n, "Declaration %s missing in %s, near %s\n",
+            fatal(n, "Declaration %s missing in %s, near %s",
                   namestr(dcl->decl.name), namestr(t->name), ctxstr(st, n));
 
         /* infer and unify types */
+        if (isgeneric(n->impl.type))
+            fatal(n, "trait specialization requires concrete type, got %s", tystr(n->impl.type));
         checktraits(t->param, n->impl.type);
         ht = mkht(tyhash, tyeq);
         htput(ht, t->param, n->impl.type);
