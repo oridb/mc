@@ -1,0 +1,120 @@
+use "alloc.use"
+use "die.use"
+use "extremum.use"
+use "slcp.use"
+use "types.use"
+use "utf.use"
+
+pkg std =
+	type bytebuf = struct
+		buf : byte[:]
+		len : size
+	;;
+
+	const mkbytebuf	: (-> bytebuf#)
+	const bytebuffin	: (bb : bytebuf# -> byte[:])
+	const bytebufpeek	: (bb : bytebuf# -> byte[:])
+
+	const bytebufputc	: (bb : bytebuf#, v : char -> bytebuf#)
+	const bytebufputs	: (bb : bytebuf#, v : byte[:] -> bytebuf#)
+	const bytebufputb	: (bb : bytebuf#, v : byte -> bytebuf#)
+
+	generic bytebufputle8	: (bb : bytebuf#, v : @a::(integral,numeric) -> bytebuf#)
+	generic bytebufputle16	: (bb : bytebuf#, v : @a::(integral,numeric) -> bytebuf#)
+	generic bytebufputle32	: (bb : bytebuf#, v : @a::(integral,numeric) -> bytebuf#)
+	generic bytebufputle64	: (bb : bytebuf#, v : @a::(integral,numeric) -> bytebuf#)
+
+	generic bytebufputbe8	: (bb : bytebuf#, v : @a::(integral,numeric) -> bytebuf#)
+	generic bytebufputbe16	: (bb : bytebuf#, v : @a::(integral,numeric) -> bytebuf#)
+	generic bytebufputbe32	: (bb : bytebuf#, v : @a::(integral,numeric) -> bytebuf#)
+	generic bytebufputbe64	: (bb : bytebuf#, v : @a::(integral,numeric) -> bytebuf#)
+;;
+
+const mkbytebuf	= {
+	var bb
+	bb = std.zalloc()
+	bb.buf = std.slalloc(1)
+	-> bb
+}
+
+const bytebuffin = {bb : bytebuf#
+	var sl
+
+	sl = bb.buf[:bb.len]
+	std.free(bb)
+	-> sl
+}
+
+const bytebufpeek = {bb : bytebuf#
+	-> bb.buf[:bb.len]
+}
+
+const bytebufputc = {bb, v
+	ensure(bb, charlen(v))
+	bb.len += encode(bb.buf[bb.len:], v)
+	-> bb
+}
+const bytebufputs = {bb, v
+	ensure(bb, v.len)
+	std.slcp(bb.buf[bb.len:bb.len + v.len], v)
+	bb.len += v.len
+	-> bb
+}
+const bytebufputb = {bb, v
+	ensure(bb, 1)
+	bb.buf[bb.len++] = v
+	-> bb
+}
+
+generic bytebufputle8	= {bb, v; -> putintle(bb, v castto(uint64), 1)}
+generic bytebufputle16	= {bb, v; -> putintle(bb, v castto(uint64), 2)}
+generic bytebufputle32	= {bb, v; -> putintle(bb, v castto(uint64), 4)}
+generic bytebufputle64	= {bb, v; -> putintle(bb, v castto(uint64), 8)}
+
+generic bytebufputbe8	= {bb, v; -> putintbe(bb, v castto(uint64), 1)}
+generic bytebufputbe16	= {bb, v; -> putintbe(bb, v castto(uint64), 2)}
+generic bytebufputbe32	= {bb, v; -> putintbe(bb, v castto(uint64), 4)}
+generic bytebufputbe64	= {bb, v; -> putintbe(bb, v castto(uint64), 8)}
+
+const putintle = {bb, v, len
+	var buf : byte[8]
+
+	ensure(bb, len)
+	buf[0] = (v >> 0) & 0xff castto(byte)
+	buf[1] = (v >> 8) & 0xff castto(byte)
+	buf[2] = (v >> 16) & 0xff castto(byte)
+	buf[3] = (v >> 24) & 0xff castto(byte)
+	buf[4] = (v >> 32) & 0xff castto(byte)
+	buf[5] = (v >> 40) & 0xff castto(byte)
+	buf[6] = (v >> 48) & 0xff castto(byte)
+	buf[7] = (v >> 56) & 0xff castto(byte)
+
+	std.slcp(bb.buf[bb.len:bb.len + len], buf[:len])
+	bb.len += len
+	-> bb
+}
+
+const putintbe = {bb, v, len
+	var buf : byte[8]
+
+	ensure(bb, len)
+	buf[0] = (v >> 56) & 0xff castto(byte)
+	buf[1] = (v >> 48) & 0xff castto(byte)
+	buf[2] = (v >> 40) & 0xff castto(byte)
+	buf[3] = (v >> 32) & 0xff castto(byte)
+	buf[4] = (v >> 24) & 0xff castto(byte)
+	buf[5] = (v >> 16) & 0xff castto(byte)
+	buf[6] = (v >> 8) & 0xff castto(byte)
+	buf[7] = (v >> 0) & 0xff castto(byte)
+
+	std.slcp(bb.buf[bb.len:bb.len + len], buf[8-len:])
+	bb.len += len
+	-> bb
+}
+const ensure = {bb, len
+
+	while bb.buf.len < bb.len + len
+		bb.buf = slgrow(bb.buf, 2*bb.buf.len)
+	;;
+}
+

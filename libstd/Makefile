@@ -16,6 +16,7 @@ STDSRC= \
 	bigint.myr \
 	bitset.myr \
 	blat.myr \
+	bytebuf.myr \
 	chartype.myr \
 	cmp.myr \
 	clear.myr \
