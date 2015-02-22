@@ -2,14 +2,14 @@ use "syswrap.use"
 use "fmt.use"
 
 pkg std =
-	const blat : (path : byte[:], buf : byte[:] -> bool)
+	const blat : (path : byte[:], buf : byte[:], perm : int64 -> bool)
 	const fblat : (f : fd, buf : byte[:] -> bool)
 ;;
 
-const blat = {path, buf
+const blat = {path, buf, perm
 	var fd
 
-	fd = openmode(path, Ocreat|Owronly, 0o666)
+	fd = openmode(path, Ocreat|Owronly, perm)
 	if fd < 0
 		-> false
 	;;
