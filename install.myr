@@ -29,11 +29,11 @@ const movetargs = {p, delete
 	for t in p.targs
 		match t
 		| `Bin bt:
-			movefile(delete, bt.name, opt_instroot, opt_destdir, "bin")
+			movefile(delete, bt.name, opt_instroot, opt_destdir, "bin", 0o755)
 		| `Lib lt:
-			movefile(delete, lt.name, opt_instroot, opt_destdir, "lib/myr")
+			movefile(delete, lt.name, opt_instroot, opt_destdir, "lib/myr", 0o644)
 			libarchive = std.fmt("lib%s.a", lt.name)
-			movefile(delete, libarchive, opt_instroot, opt_destdir, "lib/myr")
+			movefile(delete, libarchive, opt_instroot, opt_destdir, "lib/myr", 0o644)
 			std.slfree(libarchive)
 		| `Gen gt:
 			/* nothing to do (?) */
@@ -51,7 +51,7 @@ const movetargs = {p, delete
 }
 
 
-const movefile = {delete, file, instdir, destdir, prefix
+const movefile = {delete, file, instdir, destdir, prefix, perm
 	var path
 
 	path = std.pathjoin([destdir, instdir, prefix, file][:])
@@ -66,7 +66,7 @@ const movefile = {delete, file, instdir, destdir, prefix
 		match std.slurp(file)
 		| `std.Fail m:	std.fatal(1, "Could not open %s for reading\n", file)
 		| `std.Ok buf:
-			if !std.blat(path, buf)
+			if !std.blat(path, buf, perm)
 				std.put("Could not write %s\n", file)
 			;;
 			std.slfree(buf)
@@ -89,6 +89,6 @@ const moveman = {delete, man
 	;;
 
 	manrel = std.fmt("%s%s", opt_manpath, man[sect:])
-	movefile(delete, man, opt_instroot, opt_destdir, manrel)
+	movefile(delete, man, opt_instroot, opt_destdir, manrel, 0o644)
 	std.slfree(manrel)
 }

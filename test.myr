@@ -12,7 +12,7 @@ use "subdir.use"
 use "config.use"
 
 pkg bld =
-	const test	: (p : parser# -> bool)
+	const test	: (p : parser# -> void)
 ;;
 
 const test = {p
@@ -44,7 +44,12 @@ const test = {p
 		;;
 		std.slfree(bin)
 	;;
-	-> ok
+	if ok
+		std.put("TESTS PASSED\n")
+	else
+		std.put("TESTS FAILED\n")
+		std.exit(1)
+	;;
 }
 
 const dotest = {p, targ, ok
@@ -111,8 +116,9 @@ const runtest = {bin
 		std.fatal(1, "unable to run test: %s\n", m)
 	| `std.Ok (pid, infd, outfd):
 		match std.fslurp(outfd)
+		| `std.Ok "":	/* empty output; nothing to log */
 		| `std.Ok buf:
-			std.blat(log, buf)
+			std.blat(log, buf, 0o644)
 		| `std.Fail m:
 		;;
 		std.slfree(log)

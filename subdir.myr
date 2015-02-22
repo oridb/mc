@@ -17,9 +17,9 @@ const subdirs = {p, subs, targ
 			;;
 		;;
 
-		std.put("Entering directory %s\n", s)
+		std.put("Entering directory '%s'\n", s)
 		run(p.cmd, s)
-		std.put("Leaving directory %s\n", s)
+		std.put("Leaving directory '%s'\n", s)
 	;;
 }
 
