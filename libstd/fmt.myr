@@ -30,10 +30,11 @@ pkg std =
 	const fput	: (fd : fd, fmt : byte[:], args : ... -> size)
 	const putv	: (fmt : byte[:], ap : valist -> size)
 	const fputv	: (fd : fd, fmt : byte[:], ap : valist -> size)
+
 	const fmt	: (fmt : byte[:], args : ... -> byte[:])
 	const fmtv	: (fmt : byte[:], ap : valist -> byte[:])
-	const bfmt	: (buf : byte[:], fmt : byte[:], args : ... -> size)
-	const bfmtv	: (buf : byte[:], fmt : byte[:], ap : valist -> size)
+	const bfmt	: (buf : byte[:], fmt : byte[:], args : ... -> byte[:])
+	const bfmtv	: (buf : byte[:], fmt : byte[:], ap : valist -> byte[:])
 
 	$noret const fatal	: (status : int, fmt : byte[:], args : ... -> void)
 	$noret const fatalv	: (status : int, fmt : byte[:], ap : valist -> void)
@@ -56,11 +57,8 @@ const putv = {fmt, ap
    as the source of the arguments */
 const fputv = {fd, fmt, ap
 	var buf : byte[2048]
-	var n
 	
-	n = bfmtv(buf[:], fmt, ap)
-	write(fd, buf[:n])
-	-> n
+	-> write(fd, bfmtv(buf[:], fmt, ap))
 }
 
 /* same as 'put', but exits the program after printing */
@@ -85,11 +83,9 @@ const fmt = {fmt, args
    size needed. Takes a valist as it's last argument. */
 const fmtv = {fmt, ap
 	var buf
-	var sz
 
 	buf = slalloc(2048)
-	sz = bfmtv(buf, fmt, ap)
-	-> buf[:sz]
+	-> bfmtv(buf, fmt, ap)
 }
 
 /* formats a string of text as specified by 'fmt' into 'buf' */
@@ -281,7 +277,7 @@ const bfmtv = {buf, fmt, ap
 			n += encode(buf[n:], c)
 		;;
 	;;
-	-> n
+	-> buf[:n]
 }
 
 const strfmt = {buf, str, padto, padfill

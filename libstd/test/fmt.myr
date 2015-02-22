@@ -1,0 +1,28 @@
+use std
+
+const check = {expected, fmt, args : ...
+	var buf : byte[2048]
+	var sl, ap
+
+	ap = std.vastart(&args)
+	sl = std.bfmtv(buf[:], fmt, ap)
+	if !std.sleq(expected, sl)
+		std.fatal(1, "mismatched expected fmt \"%s\", expected \"%s\"\n", sl, expected)
+	;;
+}
+
+const main = {
+	check("      abcd", "%10s", "abcd")
+	check("00000bdcae", "%010s", "bdcae")
+	check("abcdefghijkl", "%010s", "abcdefghijkl")
+	check("a", "%01s", "a")
+	check("        10", "%10i", 10)
+	check("0000000010", "%010i", 10)
+	check("4294967295", "%010ui", -1)
+	check("-000000001", "%010i", -1)
+	check("        -1", "%10i", -1)
+	check("100000"    , "%3i", 100000)
+	check("foobarbaz", "%sbar%s", "foo", "baz")
+	check("%sbarbaz", "%%sbar%s", "baz")
+}
+

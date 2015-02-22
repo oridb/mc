@@ -12,7 +12,7 @@ pkg std =
 ;;
 
 const execvp = {cmd, args
-	var paths, cmdlen
+	var paths, cmd
 	var buf : byte[512]
 
 	match strfind(cmd, "/")
@@ -21,8 +21,8 @@ const execvp = {cmd, args
 	| `None:
 		paths = getpaths()
 		for p in paths
-			cmdlen = bfmt(buf[:], "%s/%s", p, cmd)
-			execv(buf[:cmdlen], args)
+			cmd = bfmt(buf[:], "%s/%s", p, cmd)
+			execv(cmd, args)
 		;;
 		slfree(paths)
 	;;
@@ -30,7 +30,7 @@ const execvp = {cmd, args
 }
 
 const execvpe = {cmd, args, env
-	var paths, cmdlen
+	var paths, cmd
 	var buf : byte[512]
 
 	match strfind(cmd, "/")
@@ -39,8 +39,8 @@ const execvpe = {cmd, args, env
 	| `None:
 		paths = getpaths()
 		for p in paths
-			cmdlen = bfmt(buf[:], "%s/%s", p, cmd)
-			execve(buf[:cmdlen], args, env)
+			cmd = bfmt(buf[:], "%s/%s", p, cmd)
+			execve(cmd, args, env)
 		;;
 		slfree(paths)
 	;;
