@@ -1,0 +1,10 @@
+use "try.use"
+
+use "die.use"
+use "option.use"
+use "fmt.use"
+
+const main = {
+	var x = `std.Some 123
+	std.assert(std.try(x) == 123, "expected 123 from try")
+}

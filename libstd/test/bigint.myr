@@ -1,0 +1,146 @@
+use "bigint.use"
+
+/* suport libs */
+use "alloc.use"
+use "die.use"
+use "extremum.use"
+use "fmt.use"
+use "mk.use"
+use "option.use"
+use "slpush.use"
+use "sleq.use"
+
+type cmd = union
+	`Add (cmd#, cmd#)
+	`Sub (cmd#, cmd#)
+	`Mul (cmd#, cmd#)
+	`Div (cmd#, cmd#)
+	`Mod (cmd#, cmd#)
+	`Shl (cmd#, cmd#)
+	`Shr (cmd#, cmd#)
+	`Modpow (cmd#, cmd#, cmd#)
+	`Val byte[:]
+;;
+
+const main = {
+	var a, b, c, d, e
+	var buf : byte[64], n
+
+	/* a few combined ops */
+	a = std.mkbigint(1234)
+	b = std.mkbigint(0x7fffffff)
+	c = std.mkbigint(7919)
+	d = std.mkbigint(113051)
+	e = std.mkbigint(11)
+
+	std.bigmul(a, b)
+	std.bigmul(a, b)
+	std.bigadd(a, c)
+	std.bigsub(a, d)
+	std.bigdiv(a, e)
+
+	std.bigfree(b)
+	std.bigfree(c)
+	std.bigfree(d)
+	std.bigfree(e)
+
+	n = std.bigbfmt(buf[:], a, 0)
+	std.assert(std.sleq(buf[:n], "517347321949036993306"), "simple smoke test failed")
+
+	/* make sure we format '0' correctly */
+	run(std.mk(`Val "0"), "0")
+	/* smoke test for division */
+	run(std.mk(`Div (\
+		std.mk(`Val "1234_5678_1234_6789_6666_7777_8888"), \
+		std.mk(`Val "1234_5678_1234_6789_6666_7777"))), \
+		"10000")
+	run(std.mk(`Div (\
+		std.mk(`Val "0xffff_1234_1234_1234_1234"), \
+		std.mk(`Val "0xf010_1234_2314"))), \
+		"4580035496")
+	run(std.mk(`Div (\
+		std.mk(`Val "5192296858534810493479828944327220"), \
+		std.mk(`Val "75557863709417659441940"))), \
+		"68719476751")
+	run(std.mk(`Div (\
+		std.mk(`Val "75557863709417659441940"), \
+		std.mk(`Val "5192296858534810493479828944327220"))), \
+		"0")
+
+	/* smoke test for mod */
+	run(std.mk(`Mod (\
+		std.mk(`Val "5192296858534810493479828944327220"), \
+		std.mk(`Val "75557863709417659441940"))),\
+		"257025710597479990280")
+
+	run(std.mk(`Modpow (\
+		std.mk(`Val "1"), \
+		std.mk(`Val "3"), \
+		std.mk(`Val "2"))), \
+		"1")
+
+	run(std.mk(`Modpow (\
+		std.mk(`Val "5192296858534810493479828944327220"), \
+		std.mk(`Val "75557863709417659441940"), \
+		std.mk(`Val "755578"))), \
+		"49054")
+	run(std.mk(`Modpow (\
+		std.mk(`Val "7220"), \
+		std.mk(`Val "755578"), \
+		std.mk(`Val "75557863709417659441940"))), \
+		"27076504425474791131220")
+
+}
+
+const run = {e : cmd#, res : byte[:]
+	var buf : byte[4096]
+	var v, n
+
+	v = eval(e)
+	n = std.bigbfmt(buf[:], v, 0)
+	if !std.sleq(buf[:n], res)
+		std.fatal(1, "%s != %s\n", buf[:n], res)
+	;;
+}
+
+const eval = {e : cmd#
+	var buf : byte[2048]
+	var a, b, c	/* scratch vars */
+	var n		/* buf len */
+
+	match e#
+	| `Add (x, y):	-> binop("+", std.bigadd, x, y)
+	| `Sub (x, y):	-> binop("-", std.bigsub, x, y)
+	| `Mul (x, y):	-> binop("*", std.bigmul, x, y)
+	| `Div (x, y):	-> binop("/", std.bigdiv, x, y)
+	| `Mod (x, y):	-> binop("%", std.bigmod, x, y)
+	| `Shl (x, y):	-> binop("<<", std.bigshl, x, y)
+	| `Shr (x, y):	-> binop(">>", std.bigshr, x, y)
+	| `Val x:
+		a = try(std.bigparse(x))
+		n = std.bigbfmt(buf[:], a, 0)
+		-> a
+	| `Modpow (x, y, z):
+		a = eval(x)
+		b = eval(y)
+		c = eval(z)
+		-> std.bigmodpow(a, b, c)
+	;;
+}
+
+const binop = {name, op, x, y
+	var a, b
+
+	a = eval(x)
+	b = eval(y)
+	op(a, b)
+	std.bigfree(b)
+	-> a
+}
+
+generic try = {x : std.option(@a)
+	match x
+	| `std.Some v:	-> v
+	| `std.None:	std.die("failed to get val")
+	;;
+}

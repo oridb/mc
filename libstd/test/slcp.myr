@@ -1,0 +1,17 @@
+use "slcp.use"
+
+use "die.use"
+use "sleq.use"
+
+const main = {
+	var a = [1,2,3,4,5]
+	var b = [6,7,8,9,10]
+	var a_cped = [3, 4, 5, 4, 5]
+	var b_cped = [6, 7, 6, 7, 8]
+	
+
+	std.slcp(a[:a.len-2], a[2:])
+	std.slcp(b[2:], b[:b.len-2])
+	std.assert(std.sleq(a[:], a_cped[:]), "slcp of a failed")
+	std.assert(std.sleq(b[:], b_cped[:]), "slcp of a failed")
+}

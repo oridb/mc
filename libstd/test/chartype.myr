@@ -1,0 +1,25 @@
+use "chartype.use"
+
+use "die.use"
+
+const main = {
+	std.assert(std.isalpha('a'), "a should be alpha\n")
+	std.assert(std.isupper('A'), "A should be upper\n")
+	std.assert(std.islower('a'), "a should be lower\n")
+	std.assert(std.isdigit('0'), "0 should be isdigit\n")
+	std.assert(std.isnum('\u{0c66}'), "\u{0c66} should be isnum\n")
+	std.assert(std.isalnum('a'), "a should be isalnum\n")
+	std.assert(std.isalnum('0'), "0 should be isalnum\n")
+	std.assert(std.isspace(' '), "' ' should be isspace\n")
+	std.assert(std.isblank(' '), "' ' should be isblank\n")
+
+	std.assert(!std.isalpha('0'), "0 should not be alpha\n")
+	std.assert(!std.isupper('a'), "a should not be upper\n")
+	std.assert(!std.islower('A'), "A should not be lower\n")
+	std.assert(!std.isdigit('a'), "a should not be isdigit\n")
+	std.assert(!std.isnum('a'), " should not be isnum\n")
+	std.assert(!std.isalnum('}'), "a should not be isalnum\n")
+	std.assert(!std.isalnum('!'), "! should not be isalnum\n")
+	std.assert(!std.isspace('@'), "@ should not be isspace\n")
+	std.assert(!std.isblank('@'), "@ should not be isblank\n")
+}
