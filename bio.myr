@@ -404,10 +404,10 @@ we're stuck with a small static buffer.
 */
 const put = {f, fmt, args
 	var buf : byte[2048]
-	var n
+	var sl
 
-	n = std.bfmt(buf[:], fmt, std.vastart(&args))
-	-> write(f, buf[:n])
+	sl = std.bfmt(buf[:], fmt, std.vastart(&args))
+	-> write(f, sl)
 }
 
 /* 
