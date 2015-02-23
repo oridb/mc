@@ -12,11 +12,11 @@ pkg bld =
 const failparse = {p : parser#, msg, args : ...
 	var buf : byte[1024]
 	var ap
-	var n
+	var sl
 
 	ap = std.vastart(&args)
-	n = std.bfmtv(buf[:], msg, ap)
-	std.fput(1, "%s:%i: %s", p.fname, p.line, buf[:n])
+	sl = std.bfmtv(buf[:], msg, ap)
+	std.fput(1, "%s:%i: %s", p.fname, p.line, sl)
 	std.exit(1)
 }
 

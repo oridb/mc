@@ -366,17 +366,17 @@ const putlib = {cmd, head, lib, incs
 
 const findlib = {lib, incs
 	var buf : byte[512]
-	var n, p
+	var sl, p
 
-	n = std.bfmt(buf[:], "lib%s.a", lib)
+	sl = std.bfmt(buf[:], "lib%s.a", lib)
 	for i in incs
-		p = std.pathjoin([i, buf[:n]][:])
+		p = std.pathjoin([i, sl][:])
 		if std.fexists(p)
 			-> `std.Some p
 		;;
 		std.slfree(p)
 	;;
-	p = std.pathjoin([opt_instroot, "lib/myr", buf[:n]][:])
+	p = std.pathjoin([opt_instroot, "lib/myr", sl][:])
 	if std.fexists(p)
 		-> `std.Some p
 	;;
