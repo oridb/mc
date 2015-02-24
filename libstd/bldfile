@@ -5,8 +5,8 @@ lib sys =
 	syscall+freebsd-x64.s
 	syscall+linux-x64.s
 	syscall+osx-x64.s
-        syserrno+linux.myr
-        syserrno+osx.myr
+	syserrno+linux.myr
+	syserrno+osx.myr
 	systypes.myr
 	ifreq+freebsd.myr
 	ifreq+linux.myr
