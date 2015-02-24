@@ -11,7 +11,7 @@ include mk/c.mk
 include config.mk
 
 check: all
-	$(MAKE) -C test check
+	$(MAKE) -C test check && \
 	$(MAKE) -C libstd check
 
 bench: all
