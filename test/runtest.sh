@@ -101,4 +101,5 @@ if [ -z "$NFAILED" ]; then
     echo "SUCCESS"
 else
     echo "FAILURES ($NFAILED): $FAILED"
+    exit 1
 fi
