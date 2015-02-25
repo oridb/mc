@@ -191,7 +191,7 @@ Stab *getns_str(Stab *st, char *name)
     Stab *s;
 
     do {
-        if (streq(st->_name, name))
+        if (streq(st->name, name))
             return st;
         if ((s = htget(st->ns, name)))
             return s;
@@ -263,8 +263,8 @@ void putdcl(Stab *st, Node *s)
 }
 
 void forcedcl (Stab *st, Node *s) {
-    if (st->_name)
-        setns(s->decl.name, st->_name);
+    if (st->name)
+        setns(s->decl.name, st->name);
     htput(st->dcl, s->decl.name, s);
     assert(htget(st->dcl, s->decl.name) != NULL);
 }
@@ -304,10 +304,10 @@ void puttype(Stab *st, Node *n, Type *t)
     Tydefn *td;
     Type *ty;
 
-    if (st->_name)
-        setns(n, st->_name);
-    if (st->_name && t && t->name)
-        setns(t->name, st->_name);
+    if (st->name)
+        setns(n, st->name);
+    if (st->name && t && t->name)
+        setns(t->name, st->name);
 
     ty = gettype(st, n);
     if (!ty) {
@@ -387,8 +387,8 @@ void putimpl(Stab *st, Node *n)
         fatal(n, "Trait %s already implemented over %s at %s:%d",
               namestr(n->impl.traitname), tystr(n->impl.type),
               fname(n->loc), lnum(n->loc));
-    if (st->_name)
-        setns(n->impl.traitname, st->_name);
+    if (st->name)
+        setns(n->impl.traitname, st->name);
     htput(st->impl, n, n);
 }
 
@@ -408,10 +408,10 @@ void putns(Stab *st, Stab *scope)
 {
     Stab *s;
 
-    s = getns_str(st, scope->_name);
+    s = getns_str(st, scope->name);
     if (s)
-        lfatal(Zloc, "Namespace %s already defined", st->_name);
-    htput(st->ns, scope->_name, scope);
+        lfatal(Zloc, "Namespace %s already defined", st->name);
+    htput(st->ns, scope->name, scope);
 }
 
 /*
@@ -425,9 +425,9 @@ void updatens(Stab *st, char *name)
     size_t i, nk;
     Tydefn *td;
 
-    if (st->_name)
-        die("Stab %s already has namespace; Can't set to %s", st->_name, name);
-    st->_name = strdup(name);
+    if (st->name)
+        die("Stab %s already has namespace; Can't set to %s", st->name, name);
+    st->name = strdup(name);
     k = htkeys(st->dcl, &nk);
     for (i = 0; i < nk; i++)
         setns(k[i], name);

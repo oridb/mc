@@ -48,7 +48,7 @@ static void wrstab(FILE *fd, Stab *val)
     size_t n, i;
     void **keys;
 
-    wrstr(fd, val->_name);
+    wrstr(fd, val->name);
 
     /* write decls */
     keys = htkeys(val->dcl, &n);
@@ -86,7 +86,7 @@ static Stab *rdstab(FILE *fd)
 
     /* read dcls */
     st = mkstab();
-    st->_name = rdstr(fd);
+    st->name = rdstr(fd);
     n = rdint(fd);
     for (i = 0; i < n; i++)
         putdcl(st, rdsym(fd, NULL));
@@ -340,6 +340,7 @@ static Type *tyunpickle(FILE *fd)
 
     t = rdbyte(fd);
     ty = mktype(Zloc, t);
+    ty->isimport = 1;
     if (rdbyte(fd) == Vishidden)
         ty->ishidden = 1;
     /* tid is generated; don't write */
@@ -704,7 +705,7 @@ static Stab *findstab(Stab *st, char *pkg)
     Stab *s;
 
     if (!pkg) {
-        if (!st->_name)
+        if (!st->name)
             return st;
         else
             return NULL;
@@ -713,7 +714,7 @@ static Stab *findstab(Stab *st, char *pkg)
     s = getns_str(st, pkg);
     if (!s) {
         s = mkstab();
-        s->_name = strdup(pkg);
+        s->name = strdup(pkg);
         putns(st, s);
     }
     return s;
@@ -827,8 +828,8 @@ int loaduse(FILE *f, Stab *st, Vis vis)
     /* if the package names match up, or the usefile has no declared
      * package, then we simply add to the current stab. Otherwise,
      * we add a new stab under the current one */
-    if (st->_name) {
-        if (pkg && !strcmp(pkg, st->_name)) {
+    if (st->name) {
+        if (pkg && !strcmp(pkg, st->name)) {
             s = st;
         } else {
             s = findstab(st, pkg);
@@ -841,7 +842,7 @@ int loaduse(FILE *f, Stab *st, Vis vis)
         }
     }
     if (!s) {
-        printf("could not find matching package for merge: %s\n", st->_name);
+        printf("could not find matching package for merge: %s\n", st->name);
         exit(1);
     }
     tidmap = mkht(ptrhash, ptreq);
@@ -964,8 +965,8 @@ void writeuse(FILE *f, Node *file)
     /* usefile name */
     wrbyte(f, 'U');
     wrint(f, Useversion);        /* use version */
-    if (st->_name)
-        wrstr(f, st->_name);
+    if (st->name)
+        wrstr(f, st->name);
     else
         wrstr(f, NULL);
 

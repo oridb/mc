@@ -123,7 +123,7 @@ struct Tok {
 
 struct Stab {
     Stab *super;
-    char *_name;
+    char *name;
 
     /* Contents of stab.
      * types and values are in separate namespaces. */
@@ -166,9 +166,11 @@ struct Type {
         Node **sdecls;  /* Tystruct: decls in struct */
         Ucon **udecls;  /* Tyunion: decls in union */
     };
-    char  issynth;       /* Tyname: whether this is synthesized or not */
-    char  ishidden;      /* Tyname: whether this is hidden or not */
-    char  ispkglocal;    /* Tyname: whether this is package local or not */
+
+    char issynth;       /* Tyname: whether this is synthesized or not */
+    char ishidden;      /* Tyname: whether this is hidden or not */
+    char ispkglocal;    /* Tyname: whether this is package local or not */
+    char isimport;      /* Tyname: whether tyis type was imported. */
 };
 
 struct Ucon {
@@ -211,6 +213,8 @@ struct Node {
             Node **stmts;
             size_t nstmts;
             Stab  *globls;
+            size_t ntydefs;
+            Type **tydefs;
         } file;
 
         struct {

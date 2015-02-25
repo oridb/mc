@@ -1471,8 +1471,8 @@ static void specializeimpl(Inferstate *st, Node *n)
            to do namespace dependent comparisons for specializing, we need to set the
            namespace here.
          */
-        if (file->file.globls->_name)
-            setns(dcl->decl.name, file->file.globls->_name);
+        if (file->file.globls->name)
+            setns(dcl->decl.name, file->file.globls->name);
         for (j = 0; j < t->nfuncs; j++) {
             if (nameeq(dcl->decl.name, t->funcs[j]->decl.name)) {
                 proto = t->funcs[j];
@@ -1703,11 +1703,13 @@ static Type *tyfix(Inferstate *st, Node *ctx, Type *orig)
         for (i = 0; i < t->nsub; i++)
             t->sub[i] = tyfix(st, ctx, t->sub[i]);
     }
+
     if (t->type == Tyvar) {
         if (debugopt['T'])
             dump(file, stdout);
         lfatal(t->loc, "underconstrained type %s near %s", tyfmt(buf, 1024, t), ctxstr(st, ctx));
     }
+
     if (debugopt['u'] && !tyeq(orig, t)) {
         from = tystr(orig);
         to = tystr(t);

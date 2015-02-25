@@ -281,7 +281,7 @@ optident: Tident      {$$ = $1;}
         ;
 
 package : Tpkg optident Tasn pkgbody Tendblk {
-                if (file->file.globls->_name)
+                if (file->file.globls->name)
                     lfatal($1->loc, "Package already declared\n");
                 if ($2) {
                     updatens(file->file.globls, $2->id);
@@ -406,6 +406,7 @@ tydef   : Ttype typeid {$$ = $2;}
                 $$ = $2;
                 if ($$.nparams == 0) {
                     $$.type = mktyname($2.loc, mkname($2.loc, $2.name), $4);
+                    lappend(&file->file.tydefs, &file->file.ntydefs, $$.type);
                 } else {
                     $$.type = mktygeneric($2.loc, mkname($2.loc, $2.name), $2.params, $2.nparams, $4);
                 }

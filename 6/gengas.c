@@ -38,6 +38,7 @@ static char* modenames[] = {
 
 static size_t writeblob(FILE *fd, Htab *globls, Htab *strtab, Node *blob);
 static void locprint(FILE *fd, Loc *l, char spec);
+static void gentydesc(FILE *fd, Type *ty);
 
 static void fillglobls(Stab *st, Htab *globls)
 {
@@ -433,7 +434,6 @@ void genstrings(FILE *fd, Htab *strtab)
     }
 }
 
-
 static void writeasm(FILE *fd, Isel *s, Func *fn)
 {
     size_t i, j;
@@ -485,6 +485,120 @@ void genfunc(FILE *fd, Func *fn, Htab *globls, Htab *strtab)
     if (debugopt['i'])
         writeasm(stdout, &is, fn);
     writeasm(fd, &is, fn);
+}
+
+static char *tydescid(char *buf, size_t bufsz, Type *ty)
+{
+    char *sep, *ns;
+
+    sep = "";
+    ns = "";
+    if (ty->name->name.ns) {
+        ns = ty->name->name.ns;
+        sep = "$";
+    }
+    if (ty->vis == Visexport || ty->isimport)
+        snprintf(buf, bufsz, "_tydesc$%s%s%s", ns, sep, ty->name->name.name);
+    else
+        snprintf(buf, bufsz, "_tydesc$%zd$%s%s%s", ty->tid, ns, sep, ty->name->name.name);
+    return buf;
+}
+
+static void genstructmemb(FILE *fd, Node *sdecl)
+{
+    fprintf(fd, ".ascii \"%s\" /* struct member */\n", namestr(sdecl->decl.name));
+    gentydesc(fd, sdecl->decl.type);
+}
+
+static void genunionmemb(FILE *fd, Ucon *ucon)
+{
+    fprintf(fd, ".ascii \"%s\" /* union constructor */\n", namestr(ucon->name));
+    if (ucon->etype)
+        gentydesc(fd, ucon->etype);
+    else
+        fprintf(fd, ".byte %d /* no union type */\n", Tybad);
+}
+
+/* on x86, unaligned pointers are cheap. we shouldn't be introspecting too
+ * much, so tentatively, we'll just generate packed data.
+ */
+static void gentydesc(FILE *fd, Type *ty)
+{
+    char buf[512];
+    Node *sz;
+    size_t i;
+
+    fprintf(fd, ".byte %d /* type: %s */\n", ty->type, tidstr[ty->type]);
+    switch (ty->type) {
+        case Ntypes: case Tyvar: case Tybad: case Typaram:
+        case Tygeneric: case Tyunres:
+            die("invalid type in tydesc");    break;
+
+        case Tyvoid: case Tychar: case Tybool: case Tyint8:
+        case Tyint16: case Tyint: case Tyint32: case Tyint64:
+        case Tylong: case Tybyte: case Tyuint8: case Tyuint16:
+        case Tyuint: case Tyuint32: case Tyuint64: case Tyulong:
+        case Tyflt32: case Tyflt64: case Tyvalist:
+            break;
+
+        case Typtr:
+            gentydesc(fd, ty->sub[0]);
+            break;
+        case Tyslice:
+            gentydesc(fd, ty->sub[0]);
+            break;
+        case Tyarray:
+            ty->asize = fold(ty->asize, 1);
+            sz = ty->asize;
+            if (sz) {
+                assert(sz->type == Nexpr);
+                sz = sz->expr.args[0];
+                assert(sz->type == Nlit && sz->lit.littype == Lint);
+                fprintf(fd, ".quad %lld /* array size */\n", (vlong)sz->lit.intval);
+            } else {
+                fprintf(fd, ".quad -1 /* array size */\n");
+            }
+
+            gentydesc(fd, ty->sub[0]);
+            break;
+        case Tyfunc:
+            fprintf(fd, ".byte %zd /* nargs + ret */\n", ty->nsub);
+            for (i = 0; i < ty->nsub; i++)
+                gentydesc(fd, ty->sub[i]);
+            break;
+        case Tytuple:
+            for (i = 0; i < ty->nsub; i++)
+                gentydesc(fd, ty->sub[i]);
+            break;
+        case Tystruct:
+            for (i = 0; i < ty->nmemb; i++)
+                genstructmemb(fd, ty->sdecls[i]);
+            break;
+        case Tyunion:
+            for (i = 0; i < ty->nmemb; i++)
+                genunionmemb(fd, ty->udecls[i]);
+            break;
+        case Tyname:
+            fprintf(fd, ".quad %s\n", tydescid(buf, sizeof buf, ty));
+            break;
+    }
+}
+
+void gentype(FILE *fd, Type *ty)
+{
+    char buf[512];
+
+    if (ty->type == Tyname) {
+        if (hasparams(ty))
+            return;
+        tydescid(buf, sizeof buf, ty);
+        if (ty->vis == Visexport)
+            fprintf(fd, ".globl %s\n", buf);
+        fprintf(fd, "%s:\n", buf);
+        gentydesc(fd, ty->sub[0]);
+    } else {
+        gentydesc(fd, ty);
+    }
 }
 
 void gengas(Node *file, char *out)
@@ -540,6 +654,8 @@ void gengas(Node *file, char *out)
     fprintf(fd, ".text\n");
     for (i = 0; i < nfn; i++)
         genfunc(fd, fn[i], globls, strtab);
+    for (i = 0; i < file->file.ntydefs; i++)
+        gentype(fd, file->file.tydefs[i]);
     genstrings(fd, strtab);
     fclose(fd);
 }
