@@ -23,7 +23,7 @@ type dep = union
 
 const myrdeps = {p, mt, islib, isclean, addsrc, dg
 	var objs, uses, srcs, incs
-	var out, useout
+	var out, useout, depstk
 	var i
 
 	dg.deps = std.mkht(std.strhash, std.streq)
@@ -65,7 +65,9 @@ const myrdeps = {p, mt, islib, isclean, addsrc, dg
 	;;
 
 	for i = 0; i < srcs.len; i++
-		srcdeps(p, dg, srcs[i], objs[i], uses[i], incs, isclean, addsrc)
+		depstk = [][:]
+		srcdeps(p, dg, srcs[i], objs[i], uses[i], incs, &depstk, isclean, addsrc)
+		std.slfree(depstk)
 	;;
 	dumpgraph(dg)
 	-> true
@@ -97,15 +99,19 @@ const dumpgraph = {dg
 	std.put("}\n")
 }
 
-const srcdeps = {p, g, path, obj, usefile, incs, isclean, addsrc
+const srcdeps = {p, g, path, obj, usefile, incs, depstk, isclean, addsrc
 	var deps
 
 	if std.hthas(g.done, path)
 		->
 	elif std.htgetv(g.seen, path, false)
-		std.fput(1, "dependency loop involving %s\n", path)
+		std.fput(1, "dependency loop involving %s:\n", path)
+		for d in depstk#
+			std.fput(1, "\t%s\n", d)
+		;;
 		std.exit(1)
 	;;
+	depstk# = std.slpush(depstk#, path)
 	deps = getdeps(p, path)
 	std.htput(g.seen, path, true)
 	for d in deps
@@ -128,14 +134,15 @@ const srcdeps = {p, g, path, obj, usefile, incs, isclean, addsrc
 			if usefile.len != 0
 				pushdep(g, l, usefile)
 			;;
-			addusedep(p, g, path, l, incs, isclean, addsrc)
+			addusedep(p, g, path, l, incs, depstk, isclean, addsrc)
 		;;
 	;;
+	depstk# = std.slgrow(depstk#, depstk#.len - 1)
 	std.htput(g.seen, path, false)
 	std.htput(g.done, path, true)
 }
 
-const addusedep = {p, g, f, usefile, incs, isclean, addsrc
+const addusedep = {p, g, f, usefile, incs, depstk, isclean, addsrc
 	var src
 
 	if std.hthas(g.done, usefile)
@@ -157,7 +164,7 @@ const addusedep = {p, g, f, usefile, incs, isclean, addsrc
 	;;
 	pushdep(g, src, usefile)
 	std.htput(g.input, usefile, src)
-	srcdeps(p, g, src, "", usefile, incs, isclean, addsrc)
+	srcdeps(p, g, src, "", usefile, incs, depstk, isclean, addsrc)
 	std.htput(g.done, usefile, true)
 }
 
