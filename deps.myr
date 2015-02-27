@@ -23,7 +23,6 @@ type dep = union
 
 const myrdeps = {p, mt, islib, isclean, addsrc, dg
 	var objs, uses, srcs, incs
-	var seentab, donetab
 	var out, useout
 	var i
 
@@ -32,8 +31,8 @@ const myrdeps = {p, mt, islib, isclean, addsrc, dg
 	dg.input = std.mkht(std.strhash, std.streq)
 	dg.sources = std.mkht(std.strhash, std.streq)
 	dg.updated = std.mkht(std.strhash, std.streq)
-	seentab = std.mkht(std.strhash, std.streq)
-	donetab = std.mkht(std.strhash, std.streq)
+	dg.seen = std.mkht(std.strhash, std.streq)
+	dg.done = std.mkht(std.strhash, std.streq)
 
 	/* direct dependencies of binary */
 	if islib
@@ -66,11 +65,9 @@ const myrdeps = {p, mt, islib, isclean, addsrc, dg
 	;;
 
 	for i = 0; i < srcs.len; i++
-		srcdeps(p, dg, seentab, donetab, srcs[i], objs[i], uses[i], incs, isclean, addsrc)
+		srcdeps(p, dg, srcs[i], objs[i], uses[i], incs, isclean, addsrc)
 	;;
 	dumpgraph(dg)
-	std.htfree(seentab)
-	std.htfree(donetab)
 	-> true
 }
 
@@ -100,17 +97,17 @@ const dumpgraph = {dg
 	std.put("}\n")
 }
 
-const srcdeps = {p, g, seen, done, path, obj, usefile, incs, isclean, addsrc
+const srcdeps = {p, g, path, obj, usefile, incs, isclean, addsrc
 	var deps
 
-	if std.hthas(done, path)
+	if std.hthas(g.done, path)
 		->
-	elif std.htgetv(seen, path, false)
+	elif std.htgetv(g.seen, path, false)
 		std.fput(1, "dependency loop involving %s\n", path)
 		std.exit(1)
 	;;
 	deps = getdeps(p, path)
-	std.htput(seen, path, true)
+	std.htput(g.seen, path, true)
 	for d in deps
 		match d
 		| `Lib lib:
@@ -131,17 +128,17 @@ const srcdeps = {p, g, seen, done, path, obj, usefile, incs, isclean, addsrc
 			if usefile.len != 0
 				pushdep(g, l, usefile)
 			;;
-			addusedep(p, g, seen, done, l, incs, isclean, addsrc)
+			addusedep(p, g, path, l, incs, isclean, addsrc)
 		;;
 	;;
-	std.htput(seen, path, false)
-	std.htput(done, path, true)
+	std.htput(g.seen, path, false)
+	std.htput(g.done, path, true)
 }
 
-const addusedep = {p, g, seen, done, usefile, incs, isclean, addsrc
+const addusedep = {p, g, f, usefile, incs, isclean, addsrc
 	var src
 
-	if std.hthas(done, usefile)
+	if std.hthas(g.done, usefile)
 		if opt_debug
 			std.put("already loaded deps for %s\n", usefile)
 		;;
@@ -155,13 +152,13 @@ const addusedep = {p, g, seen, done, usefile, incs, isclean, addsrc
 		if addsrc
 			std.htput(g.sources, src, true)
 		elif !std.hthas(g.input, src)
-			std.fatal(1, "source file %s not listed in bldfile\n", src)
+			std.fatal(1, "%s: source file %s not listed in bldfile\n", f, src)
 		;;
 	;;
 	pushdep(g, src, usefile)
 	std.htput(g.input, usefile, src)
-	srcdeps(p, g, seen, done, src, "", usefile, incs, isclean, addsrc)
-	std.htput(done, usefile, true)
+	srcdeps(p, g, src, "", usefile, incs, isclean, addsrc)
+	std.htput(g.done, usefile, true)
 }
 
 const getdeps = {p, path

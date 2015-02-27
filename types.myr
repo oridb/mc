@@ -24,6 +24,8 @@ pkg bld =
 		input	: std.htab(byte[:], byte[:])#
 		sources	: std.htab(byte[:], bool)#
 		updated	: std.htab(byte[:], bool)#
+		seen	: std.htab(byte[:], bool)#
+		done	: std.htab(byte[:], bool)#
 	;;
 
 	type myrtarg = struct
