@@ -1,19 +1,24 @@
 use "systypes.use"
 
 pkg sys =
-	type pid	= int64	/* process id */
 	type scno	= int64	/* syscall */
+
+	/* processes/threads */
+	type pid	= int	/* process id */
+	type tid	= int	/* thread id */
+	type cloneopt	= int64	/* options for clone(2) */
+
+	/* file descriptor manipulation */
 	type fdopt	= int64	/* fd options */
 	type fd		= int32	/* fd */
+	type whence	= uint64	/* seek from whence */
+	type filemode	= uint32	/* 
+
 	type mprot	= int64	/* memory protection */
 	type mopt	= int64	/* memory mapping options */
-
 	type socktype	= int64	/* socket type */
 	type sockproto	= int64	/* socket protocol */
 	type sockfam	= uint16	/* socket family */
-
-	type whence	= uint64
-	type filemode	= uint32
 
 	type epollflags	= uint32
 	type epollop	= uint32
@@ -120,6 +125,33 @@ pkg sys =
 		revents	: pollevt
 	;;
 
+	/* clone options */
+	const Clonesignal	: cloneopt = 0xff
+	const Clonevm		: cloneopt = 0x100
+	const Clonefs		: cloneopt = 0x200
+	const Clonefiles	: cloneopt = 0x400
+	const Clonesighand	: cloneopt = 0x800
+	const Cloneptrace	: cloneopt = 0x2000
+	const Clonevfork	: cloneopt = 0x4000
+	const Cloneparent	: cloneopt = 0x8000
+	const Clonethread	: cloneopt = 0x10000
+	const Clonenewns	: cloneopt = 0x20000
+	const Clonesysvsem	: cloneopt = 0x40000
+	const Clonesettls	: cloneopt = 0x80000
+	const Cloneparentsettid	: cloneopt = 0x100000
+	const Clonechildcleartid: cloneopt = 0x200000
+	const Clonedetached	: cloneopt = 0x400000
+	const Cloneuntraced	: cloneopt = 0x800000
+	const Clonechildsettid	: cloneopt = 0x1000000
+	const Clonenewuts	: cloneopt = 0x4000000
+	const Clonenewipc	: cloneopt = 0x8000000
+	const Clonenewuser	: cloneopt = 0x10000000
+	const Clonenewpid	: cloneopt = 0x20000000
+	const Clonenewnet	: cloneopt = 0x40000000
+	const Cloneio		: cloneopt = 0x80000000
+
+	type ptregs = struct
+	;;
 
 	/* open options */
 	const Ordonly  	: fdopt = 0x0
@@ -547,10 +579,12 @@ pkg sys =
 
 	/* process management */
 	const exit	: (status:int -> void)
+	const exit_group	: (status:int -> void)
 	const getpid	: ( -> pid)
 	const kill	: (pid:pid, sig:int64 -> int64)
 	const fork	: (-> pid)
-	const clone	: (flags : uint64, stk : void#, ptid : void#, ctid : void#, ptreg : void# -> pid)
+	/* FIXME: where the fuck is 'struct pt_reg' defined?? */
+	const clone	: (flags : cloneopt, stk : byte#, ptid : pid#, ctid : pid#, ptreg : byte# -> pid)
 	const wait4	: (pid:pid, loc:int32#, opt : int64, usage:rusage#	-> int64)
 	const waitpid	: (pid:pid, loc:int32#, opt : int64	-> int64)
 	const execv	: (cmd : byte[:], args : byte[:][:] -> int64)
@@ -558,6 +592,8 @@ pkg sys =
 	/* wrappers to extract wait status */
 	const waitstatus	: (st : int32 -> waitstatus)
 
+	/* threading */
+	const futex	: (uaddr : int#, op : futexop, val : int, timeout : timespec#, uaddr2 : int#, val3 : int#)
 
 	/* file manipulation */
 	const open	: (path:byte[:], opts:fdopt -> fd)
@@ -625,6 +661,7 @@ extern const alloca	: (sz : size	-> byte#)
 
 /* process management */
 const exit	= {status;		syscall(Sysexit, a(status))}
+const exit_group	= {status;	syscall(Sysexit_group, a(status))}
 const getpid	= {;			-> syscall(Sysgetpid) castto(pid)}
 const kill	= {pid, sig;		-> syscall(Syskill, a(pid), a(sig))}
 const fork	= {;			-> syscall(Sysfork) castto(pid)}

@@ -101,7 +101,8 @@ const suicide	= {;		sys.kill(sys.getpid(), 6)}	/* kill self with sigabort */
 const fork	= {;		-> sys.fork() castto(pid)}
 const execv	= {cmd, args;	-> sys.execv(cmd, args)}
 const execve	= {cmd, args, env;	-> sys.execve(cmd, args, env)}
-const exit	= {status;	sys.exit(status)}
+const exit	= {status;	sys.exit_group(status)}
+const sleep	= {time;	sys.sleep(time)}
 
 /* memory stuff */
 const getmem	= {sz;		-> sys.mmap(0 castto(byte#), sz castto(sys.size), sys.Mprotrw, sys.Mpriv | sys.Manon, -1, 0)}
