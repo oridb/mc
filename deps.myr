@@ -104,14 +104,16 @@ const srcdeps = {p, g, path, obj, usefile, incs, depstk, isclean, addsrc
 
 	if std.hthas(g.done, path)
 		->
-	elif std.htgetv(g.seen, path, false)
+	;;
+
+	depstk# = std.slpush(depstk#, path)
+	if std.htgetv(g.seen, path, false)
 		std.fput(1, "dependency loop involving %s:\n", path)
 		for d in depstk#
 			std.fput(1, "\t%s\n", d)
 		;;
 		std.exit(1)
 	;;
-	depstk# = std.slpush(depstk#, path)
 	deps = getdeps(p, path)
 	std.htput(g.seen, path, true)
 	for d in deps
@@ -158,7 +160,7 @@ const addusedep = {p, g, f, usefile, incs, depstk, isclean, addsrc
 		src = swapsuffix(usefile, ".use", ".myr")
 		if addsrc
 			std.htput(g.sources, src, true)
-		elif !std.hthas(g.input, src)
+		elif !std.hthas(g.input, usefile)
 			std.fatal(1, "%s: source file %s not listed in bldfile\n", f, src)
 		;;
 	;;
