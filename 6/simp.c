@@ -512,7 +512,7 @@ static Node *patval(Simp *s, Node *n, Type *t)
 
 static void matchpattern(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, Node *iffalse)
 {
-    Node *v, *x, *y;
+    Node *n, *v, *x, *y;
     Node *deeper, *next;
     Node **patarg, *lit, *idx;
     char *str;
@@ -523,11 +523,18 @@ static void matchpattern(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, N
 
     assert(pat->type == Nexpr);
     t = tybase(t);
-    if (exprop(pat) == Ovar && !decls[pat->expr.did]->decl.isconst) {
-        v = assign(s, pat, val);
-        append(s, v);
-        jmp(s, iftrue);
-        return;
+    if (exprop(pat) == Ovar) {
+        n = decls[pat->expr.did];
+        if (n->decl.isconst) {
+            pat = n->decl.init;
+            if (!pat)
+                die("decl has no init in this file: this is currently unsupported.");
+        } else {
+            v = assign(s, pat, val);
+            append(s, v);
+            jmp(s, iftrue);
+            return;
+        }
     }
     switch (t->type) {
         /* Never supported */

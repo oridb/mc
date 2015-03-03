@@ -12,7 +12,7 @@ pkg sys =
 	type fdopt	= int64	/* fd options */
 	type fd		= int32	/* fd */
 	type whence	= uint64	/* seek from whence */
-	type filemode	= uint32	/* 
+	type filemode	= uint32	/* file open mode */
 
 	type mprot	= int64	/* memory protection */
 	type mopt	= int64	/* memory mapping options */
@@ -591,9 +591,6 @@ pkg sys =
 	const execve	: (cmd : byte[:], args : byte[:][:], env : byte[:][:] -> int64)
 	/* wrappers to extract wait status */
 	const waitstatus	: (st : int32 -> waitstatus)
-
-	/* threading */
-	const futex	: (uaddr : int#, op : futexop, val : int, timeout : timespec#, uaddr2 : int#, val3 : int#)
 
 	/* file manipulation */
 	const open	: (path:byte[:], opts:fdopt -> fd)
