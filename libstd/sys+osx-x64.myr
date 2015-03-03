@@ -622,6 +622,8 @@ pkg sys =
 	const clock_getres	: (clk : clock, ts : timespec# -> int)
 	const clock_gettime	: (clk : clock, ts : timespec# -> int)
 	const clock_settime	: (clk : clock, ts : timespec# -> int)
+	/* FIXME: HACK HACK HACK -- does nothing */
+	const sleep	: (time : uint64 -> int32)
 
 	/* system information */
 	const uname 	: (buf : utsname# -> int)
@@ -666,6 +668,8 @@ const wait4	= {pid, loc, opt, rusage;	-> syscall(Syswait4, a(pid), a(loc), a(opt
 const waitpid	= {pid, loc, opt;
 	-> wait4(pid, loc, opt, 0 castto(rusage#))
 }
+
+const sleep = {time;	-> 0}
 
 const execv	= {cmd, args
 	var p, cargs, i

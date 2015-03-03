@@ -1,0 +1,7 @@
+use sys
+
+pkg std =
+	const exit	: (status:int -> void)
+;;
+
+const exit	= {status;	sys.exit(status)}

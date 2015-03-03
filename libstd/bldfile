@@ -72,6 +72,8 @@ lib std {inc=.} =
 	strsplit.myr
 	strstrip.myr
         syswrap+plan9.myr
+        syswrap-ss+posixy-linux.myr
+        syswrap-ss+posixy-osx.myr
 	syswrap+posixy.myr
 	swap.myr
 	try.myr

@@ -61,7 +61,6 @@ pkg std =
 	const fork	: (-> pid)
 	const execv	: (cmd : byte[:], args : byte[:][:] -> int64)
 	const execve	: (cmd : byte[:], args : byte[:][:], env : byte[:][:] -> int64)
-	const exit	: (status:int -> void)
 	const waitpid	: (pid:pid, loc:int32#, opt : int64	-> int64)
 
 	pkglocal const Canunmap	: bool = true
@@ -101,7 +100,6 @@ const suicide	= {;		sys.kill(sys.getpid(), 6)}	/* kill self with sigabort */
 const fork	= {;		-> sys.fork() castto(pid)}
 const execv	= {cmd, args;	-> sys.execv(cmd, args)}
 const execve	= {cmd, args, env;	-> sys.execve(cmd, args, env)}
-const exit	= {status;	sys.exit_group(status)}
 const sleep	= {time;	sys.sleep(time)}
 
 /* memory stuff */
