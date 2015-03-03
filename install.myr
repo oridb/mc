@@ -56,7 +56,7 @@ const movefile = {delete, file, instdir, destdir, prefix, perm
 
 	path = std.pathjoin([destdir, instdir, prefix, file][:])
 	if delete
-		std.put("\t%s deleted\n", path)
+		std.put("\tdelete %s\n", path)
 		if !std.remove(path)
 			std.put("\t\tno such file %s\n", file)
 		;;
