@@ -267,12 +267,14 @@ const mkslab = {bkt
 		bkt.cache = s.next
 		bkt.ncache--
 	;;
-	/* tricky: we need power of two alignment, so we allocate double the
-	   needed size, chop off the unaligned ends, and waste the address
-	   space. Since the OS is "smart enough", this shouldn't actually
-	   cost us memory, and 64 bits of address space means that we're not
-	   going to have issues with running out of address space for a
-	   while. On a 32 bit system this would be a bad idea. */
+	/*
+	tricky: we need power of two alignment, so we allocate double the
+	needed size, chop off the unaligned ends, and waste the address
+	space. Since the OS is "smart enough", this shouldn't actually
+	cost us memory, and 64 bits of address space means that we're not
+	going to have issues with running out of address space for a
+	while. On a 32 bit system this would be a bad idea.
+	*/
 	p = getmem(Slabsz*2)
 	if p == Failmem
 		die("Unable to mmap")
