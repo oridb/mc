@@ -66,6 +66,7 @@ STDSRC= \
 	strsplit.myr \
 	strstrip.myr \
 	syswrap.myr \
+	syswrap-ss.myr \
 	swap.myr \
 	try.myr \
 	types.myr \
@@ -79,6 +80,9 @@ include ../config.mk
 all: lib$(STDLIB).a $(MYRBIN)
 
 %.myr: %+$(SYSCLASS)-$(ARCH).myr
+	cp $< $@
+
+%.myr: %+$(SYSCLASS)-$(SYS).myr
 	cp $< $@
 
 %.myr: %+$(SYSCLASS).myr
