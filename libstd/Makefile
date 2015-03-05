@@ -79,32 +79,35 @@ include ../config.mk
 
 all: lib$(STDLIB).a $(MYRBIN)
 
-%.myr: %+$(SYSCLASS)-$(ARCH).myr
-	cp $< $@
+# HACK HACK HACK.
+# Ideally we would have patterns for the
+# foo+arch-suffix.myr instead of a loop,
+# but that leads to a combinatorial explosion
+# of patterns that Make will try, leading to
+# millions of files getting statted. This
+# works around that.
+COPYTARG = for suff in $(SYSCLASS)-$(SYS)-$(ARCH) \
+		$(SYSCLASS)-$(SYS) \
+		$(SYSCLASS)-$(ARCH) \
+		$(SYSCLASS) \
+		$(SYS)-$(ARCH) \
+		$(SYS) \
+		$(ARCH); do \
+	    if [ -f $*+$$targ.$$ext ] ; then  \
+		echo $$targ; \
+		echo cp $*+$$targ.$$ext $@; \
+		cp $*+$$targ.$$ext $@; \
+		exit 0; \
+	    fi; \
+	done; \
 
-%.myr: %+$(SYSCLASS)-$(SYS).myr
-	cp $< $@
+%.myr: %+*.myr
+	@export ext=myr; \
+	$(COPYTARG)
 
-%.myr: %+$(SYSCLASS).myr
-	cp $< $@
-
-%.myr: %+$(SYS)-$(ARCH).myr
-	cp $< $@
-
-%.myr: %+$(SYS).myr
-	cp $< $@
-
-%.myr: %+$(ARCH).myr
-	cp $< $@
-
-%.s: %+$(SYSCLASS)-$(ARCH).s
-	cp $< $@
-
-%.s: %+$(SYS)-$(ARCH).s
-	cp $< $@
-
-%.s: %+$(ARCH).s
-	cp $< $@
+%.s: %+*.s
+	@export ext=s; \
+	$(COPYTARG)
 
 lib$(STDLIB).a: $(STDSRC) $(ASMSRC) lib$(SYSLIB).a ../6/6m
 	export MYR_MC=../6/6m && \
