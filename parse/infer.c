@@ -80,7 +80,7 @@ static void ctxstrcall(char *buf, size_t sz, Inferstate *st, Node *n)
         if (et != NULL)
             t = tystr(et);
         else
-            t = "?";
+            t = strdup("?");
 
         if (exprop(args[i]) == Ovar)
             p += snprintf(p, end - p, "%s%s:%s", sep, namestr(args[0]->expr.args[0]), t);
@@ -293,36 +293,54 @@ static int tyinfinite(Inferstate *st, Type *t, Type *sub)
 }
 
 
-static int needfreshen(Inferstate *st, Type *t)
+static int needfreshenrec(Inferstate *st, Type *t, Bitset *visited)
 {
     size_t i;
 
+    if (bshas(visited, t->tid))
+        return 0;
+    bsput(visited, t->tid);
     switch (t->type) {
         case Typaram:   return 1;
-        case Tyname:    return isgeneric(t);
+        case Tygeneric: return 1;
+        case Tyname:
+            for (i = 0; i < t->narg; i++)
+                if (needfreshenrec(st, t->arg[i], visited))
+                    return 1;
+            return needfreshenrec(st, t->sub[0], visited);
         case Tystruct:
             for (i = 0; i < t->nmemb; i++)
-                if (needfreshen(st, decltype(t->sdecls[i])))
+                if (needfreshenrec(st, decltype(t->sdecls[i]), visited))
                     return 1;
             break;
         case Tyunion:
             for (i = 0; i < t->nmemb; i++)
-                if (t->udecls[i]->etype && needfreshen(st, t->udecls[i]->etype))
+                if (t->udecls[i]->etype && needfreshenrec(st, t->udecls[i]->etype, visited))
                     return 1;
             break;
         default:
             for (i = 0; i < t->nsub; i++)
-                if (needfreshen(st, t->sub[i]))
+                if (needfreshenrec(st, t->sub[i], visited))
                     return 1;
             break;
     }
     return 0;
 }
 
-/* Freshens the type of a declaration. */
-static Type *tyfreshen(Inferstate *st, Type *t)
+static int needfreshen(Inferstate *st, Type *t)
 {
-    Htab *ht;
+    Bitset *visited;
+    int ret;
+
+    visited = mkbs();
+    ret = needfreshenrec(st, t, visited);
+    bsfree(visited);
+    return ret;
+}
+
+/* Freshens the type of a declaration. */
+static Type *_tyfreshen(Inferstate *st, Htab *subst, Type *t)
+{
     char *from, *to;
 
     if (!needfreshen(st, t)) {
@@ -333,9 +351,13 @@ static Type *tyfreshen(Inferstate *st, Type *t)
 
     from = tystr(t);
     tybind(st, t);
-    ht = mkht(tyhash, tyeq);
-    t = tyspecialize(t, ht, st->delayed);
-    htfree(ht);
+    if (!subst) {
+        subst = mkht(tyhash, tyeq);
+        t = tyspecialize(t, subst, st->delayed);
+        htfree(subst);
+    } else {
+        t = tyspecialize(t, subst, st->delayed);
+    }
     tyunbind(st, t);
     if (debugopt['u']) {
         to = tystr(t);
@@ -426,29 +448,41 @@ Type *tysearch(Type *t)
     return t;
 }
 
+static Type *tysubst(Inferstate *st, Type *t, Type *orig)
+{
+    Htab *subst;
+    size_t i;
+
+    subst = mkht(tyhash, tyeq);
+    for (i = 0; i < t->ngparam; i++) {
+        htput(subst, t->gparam[i], orig->arg[i]);
+    }
+    t = _tyfreshen(st, subst, t);
+    htfree(subst);
+    return t;
+}
+
 /* fixd the most accurate type mapping we have (ie,
  * the end of the unification chain */
 static Type *tf(Inferstate *st, Type *orig)
 {
+    int isgeneric;
     Type *t;
-    size_t i;
 
     t = tysearch(orig);
-    st->ingeneric += isgeneric(orig);
+    isgeneric = t->type == Tygeneric;
+    st->ingeneric += isgeneric;
     tyresolve(st, t);
     /* If this is an instantiation of a generic type, we want the params to
      * match the instantiation */
-    if (orig->type == Tyunres && isgeneric(t)) {
-        if (t->nparam != orig->narg) {
+    if (orig->type == Tyunres && t->type == Tygeneric) {
+        if (t->ngparam != orig->narg) {
             lfatal(orig->loc, "%s incompatibly specialized with %s, declared on %s:%d",
                    tystr(orig), tystr(t), file->file.files[t->loc.file], t->loc.line);
         }
-        t = tyfreshen(st, t);
-        for (i = 0; i < t->narg; i++) {
-            unify(st, NULL, t->arg[i], orig->arg[i]);
-        }
+        t = tysubst(st, t, orig);
     }
-    st->ingeneric -= isgeneric(orig);
+    st->ingeneric -= isgeneric;
     return t;
 }
 
@@ -576,7 +610,7 @@ static void tybind(Inferstate *st, Type *t)
     Htab *bt;
     char *s;
 
-    if (t->type != Tyname && !isgeneric(t))
+    if (t->type != Tygeneric)
         return;
     if (debugopt['u']) {
         s = tystr(t);
@@ -621,7 +655,7 @@ static void unbind(Inferstate *st, Node *n)
 
 static void tyunbind(Inferstate *st, Type *t)
 {
-    if (t->type != Tyname && !isgeneric(t))
+    if (t->type != Tygeneric)
         return;
     htfree(st->tybindings[st->ntybindings - 1]);
     lpop(&st->tybindings, &st->ntybindings);
@@ -954,12 +988,13 @@ static Type *initvar(Inferstate *st, Node *n, Node *s)
     if (s->decl.ishidden)
         fatal(n, "attempting to refer to hidden decl %s", ctxstr(st, n));
     if (s->decl.isgeneric)
-        t = tyfreshen(st, tf(st, s->decl.type));
+        t = tysubst(st, tf(st, s->decl.type), s->decl.type);
     else
         t = s->decl.type;
     n->expr.did = s->decl.did;
     n->expr.isconst = s->decl.isconst;
     if (s->decl.isgeneric && !st->ingeneric) {
+        t = _tyfreshen(st, NULL, t);
         addspecialization(st, n, curstab());
         if (t->type == Tyvar) {
             settype(st, n, mktyvar(n->loc));
@@ -1067,7 +1102,7 @@ static void inferucon(Inferstate *st, Node *n, int *isconst)
 
     *isconst = 1;
     uc = uconresolve(st, n);
-    t = tyfreshen(st, tf(st, uc->utype));
+    t = tysubst(st, tf(st, uc->utype), uc->utype);
     uc = tybase(t)->udecls[uc->id];
     if (uc->etype) {
         inferexpr(st, &n->expr.args[1], NULL, NULL);
@@ -1123,7 +1158,7 @@ static void inferpat(Inferstate *st, Node **np, Node *val, Node ***bind, size_t 
             s = getdcl(ns, args[0]);
             if (s && !s->decl.ishidden) {
                 if (s->decl.isgeneric)
-                    t = tyfreshen(st, s->decl.type);
+                    t = tysubst(st, s->decl.type, s->decl.type);
                 else if (s->decl.isconst)
                     t = s->decl.type;
                 else
@@ -1449,7 +1484,7 @@ static void specializeimpl(Inferstate *st, Node *n)
                   namestr(dcl->decl.name), namestr(t->name), ctxstr(st, n));
 
         /* infer and unify types */
-        if (isgeneric(n->impl.type))
+        if (n->impl.type->type == Tygeneric || n->impl.type->type == Typaram)
             fatal(n, "trait specialization requires concrete type, got %s", tystr(n->impl.type));
         checktraits(t->param, n->impl.type);
         ht = mkht(tyhash, tyeq);
@@ -1477,8 +1512,8 @@ static void inferdecl(Inferstate *st, Node *n)
     Type *t;
 
     t = tf(st, decltype(n));
-    if (t->type == Tyname && isgeneric(t) && !n->decl.isgeneric) {
-        t = tyfreshen(st, t);
+    if (t->type == Tygeneric && !n->decl.isgeneric) {
+        t = _tyfreshen(st, NULL, t);
         unifyparams(st, n, t, decltype(n));
     }
     settype(st, n, t);
@@ -1772,7 +1807,7 @@ static void checkvar(Inferstate *st, Node *n)
     Node *dcl;
 
     dcl = decls[n->expr.did];
-    unify(st, n, type(st, n), tyfreshen(st, type(st, dcl)));
+    unify(st, n, type(st, n), _tyfreshen(st, NULL, type(st, dcl)));
 }
 
 static void postcheck(Inferstate *st, Node *file)
@@ -1975,8 +2010,9 @@ static void taghidden(Type *t)
         case Tyname:
             for (i = 0; i < t->narg; i++)
                 taghidden(t->arg[i]);
-            for (i = 0; i < t->nparam; i++)
-                taghidden(t->param[i]);
+        case Tygeneric:
+            for (i = 0; i < t->ngparam; i++)
+                taghidden(t->gparam[i]);
             break;
         default:
             break;
@@ -2129,10 +2165,12 @@ void tagexports(Stab *st, int hidelocal)
         taghidden(t);
         for (j = 0; j < t->nsub; j++)
             taghidden(t->sub[j]);
-        for (j = 0; j < t->narg; j++)
-            taghidden(t->arg[j]);
-        for (j = 0; j < t->nparam; j++)
-            taghidden(t->param[j]);
+        if (t->type == Tyname)
+            for (j = 0; j < t->narg; j++)
+                taghidden(t->arg[j]);
+        if (t->type == Tygeneric)
+            for (j = 0; j < t->ngparam; j++)
+                taghidden(t->gparam[j]);
     }
     free(k);
 

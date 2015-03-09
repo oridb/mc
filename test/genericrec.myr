@@ -8,9 +8,11 @@ type list(@t) = struct
 
 const main = {
 	var v : list(int)
-	var n
 
 	v.val = 123
 	v.next = std.alloc()
 	v.next.val = 234
+	var n = std.alloc()
+	v.next.next = n
+	n.val = 345
 }

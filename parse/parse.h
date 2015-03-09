@@ -147,8 +147,8 @@ struct Type {
     Node **traitlist;    /* The names of the constraints on the type. Used to fill the bitset */
     size_t ntraitlist;   /* The length of the constraint list above */
 
-    Type **param;       /* Tyname: type parameters that match the type args */
-    size_t nparam;      /* Tyname: count of type parameters */
+    Type **gparam;       /* Tygeneric: type parameters that match the type args */
+    size_t ngparam;      /* Tygeneric: count of type parameters */
     Type **arg;         /* Tyname: type arguments instantiated */
     size_t narg;        /* Tyname: count of type arguments */
     Type **inst;        /* Tyname: instances created */
@@ -483,7 +483,8 @@ Type *mktype(Srcloc l, Ty ty);
 Type *tydup(Type *t); /* shallow duplicate; all subtypes/members/... kept */
 Type *mktyvar(Srcloc l);
 Type *mktyparam(Srcloc l, char *name);
-Type *mktyname(Srcloc l, Node *name, Type **params, size_t nparams, Type *base);
+Type *mktygeneric(Srcloc l, Node *name, Type **params, size_t nparams, Type *base);
+Type *mktyname(Srcloc l, Node *name, Type *base);
 Type *mktyunres(Srcloc l, Node *name, Type **params, size_t nparams);
 Type *mktyarray(Srcloc l, Type *base, Node *sz);
 Type *mktyslice(Srcloc l, Type *base);
@@ -500,7 +501,6 @@ int   istysigned(Type *t);
 int   istyunsigned(Type *t);
 int   istyfloat(Type *t);
 int   istyprimitive(Type *t);
-int   isgeneric(Type *t);
 int   hasparams(Type *t);
 
 /* type manipulation */

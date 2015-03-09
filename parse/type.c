@@ -27,6 +27,7 @@ size_t ntraittab;
 
 /* Built in type constraints */
 static Trait *traits[Ntypes + 1][4];
+static int tybfmt(char *buf, size_t len, Type *t);
 
 Type *mktype(Srcloc loc, Ty ty)
 {
@@ -164,7 +165,22 @@ Type *mktyunres(Srcloc loc, Node *name, Type **arg, size_t narg)
     return t;
 }
 
-Type *mktyname(Srcloc loc, Node *name, Type **param, size_t nparam, Type *base)
+Type *mktygeneric(Srcloc loc, Node *name, Type **param, size_t nparam, Type *base)
+{
+    Type *t;
+
+    t = mktype(loc, Tygeneric);
+    t->name = name;
+    t->nsub = 1;
+    t->traits = bsdup(base->traits);
+    t->sub = xalloc(sizeof(Type*));
+    t->sub[0] = base;
+    t->gparam = param;
+    t->ngparam = nparam;
+    return t;
+}
+
+Type *mktyname(Srcloc loc, Node *name, Type *base)
 {
     Type *t;
 
@@ -174,8 +190,6 @@ Type *mktyname(Srcloc loc, Node *name, Type **param, size_t nparam, Type *base)
     t->traits = bsdup(base->traits);
     t->sub = xalloc(sizeof(Type*));
     t->sub[0] = base;
-    t->param = param;
-    t->nparam = nparam;
     return t;
 }
 
@@ -323,26 +337,6 @@ int istyprimitive(Type *t)
     return istysigned(t) || istyunsigned(t) || istyfloat(t);
 }
 
-int isgeneric(Type *t)
-{
-    size_t i;
-
-    if (t->type != Tyname && t->type != Tyunres)
-        return 0;
-    /*
-    if we have no arguments passed in, and we have parameters
-    we have a type of the form
-    type t(@a,...) = ...
-     */
-    if (!t->narg)
-        return t->nparam > 0;
-    else
-        for (i = 0; i < t->narg; i++)
-            if (hasparams(t->arg[i]))
-                return 1;
-    return 0;
-}
-
 /*
  * Checks if a type contains any type
  * parameers at all (ie, if it generic).
@@ -351,12 +345,19 @@ int hasparamsrec(Type *t, Bitset *visited)
 {
     size_t i;
 
+    if (bshas(visited, t->tid))
+        return 0;
+    bsput(visited, t->tid);
     switch (t->type) {
         case Typaram:
+        case Tygeneric:
             return 1;
         case Tyname:
         case Tyunres:
-            return isgeneric(t);
+            for (i = 0; i < t->narg; i++)
+                if (hasparamsrec(t->arg[i], visited))
+                    return 1;
+            return hasparamsrec(t->sub[0], visited);
         case Tystruct:
             for (i = 0; i < t->nmemb; i++)
                 if (hasparamsrec(t->sdecls[i]->decl.type, visited))
@@ -390,7 +391,7 @@ int hasparams(Type *t)
 Type *tybase(Type *t)
 {
     assert(t != NULL);
-    while (t->type == Tyname)
+    while (t->type == Tyname || t->type == Tygeneric)
         t = t->sub[0];
     return t;
 }
@@ -488,18 +489,34 @@ static int fmtunion(char *buf, size_t len, Type *t)
     return p - buf;
 }
 
+static int fmtlist(char *buf, size_t len, Type **arg, size_t narg)
+{
+    char *end, *p, *sep;
+    size_t i;
+
+    sep = "";
+    p = buf;
+    end = p + len;
+    p += snprintf(p, end - p, "(");
+    for (i = 0; i < narg; i++)  {
+        p += snprintf(p, end - p, "%s", sep);
+        p += tybfmt(p, end - p, arg[i]);
+        sep = ", ";
+    }
+    p += snprintf(p, end - p, ")");
+    return p - buf;
+}
+
 static int tybfmt(char *buf, size_t len, Type *t)
 {
     size_t i;
     char *p;
     char *end;
     char *sep;
-    size_t narg;
-    Type **arg;
 
+    sep = "";
     p = buf;
     end = p + len;
-    sep = "";
     if (!t) {
         p += snprintf(p, end - p, "tynil");
         return len - (end - p);
@@ -575,38 +592,22 @@ static int tybfmt(char *buf, size_t len, Type *t)
             break;
         case Tyunres:
             p += namefmt(p, end - p, t->name);
-            if (t->narg) {
-                p += snprintf(p, end - p, "(");
-                for (i = 0; i < t->narg; i++)  {
-                    p += snprintf(p, end - p, "%s", sep);
-                    p += tybfmt(p, end - p, t->arg[i]);
-                    sep = ", ";
-                }
-                p += snprintf(p, end - p, ")");
-            }
+            if (t->narg)
+                p += fmtlist(p, end - p, t->arg, t->narg);
             break;
         case Tyname:
             if (t->name->name.ns)
                 p += snprintf(p, end - p, "%s.", t->name->name.ns);
             p += snprintf(p, end - p, "%s", namestr(t->name));
-            if (t->narg) {
-                arg = t->arg;
-                narg = t->narg;
-            } else {
-                arg = t->param;
-                narg = t->nparam;
-            }
-            if (!narg)
-                break;
-            p += snprintf(p, end - p, "(");
-            for (i = 0; i < narg; i++)  {
-                p += snprintf(p, end - p, "%s", sep);
-                p += tybfmt(p, end - p, arg[i]);
-                sep = ", ";
-            }
-            p += snprintf(p, end - p, ")");
+            if (t->narg)
+                p += fmtlist(p, end - p, t->arg, t->narg);
             break;
         case Tygeneric:
+            if (t->name->name.ns)
+                p += snprintf(p, end - p, "%s.", t->name->name.ns);
+            p += snprintf(p, end - p, "%s", namestr(t->name));
+            if (t->ngparam)
+                p += fmtlist(p, end - p, t->gparam, t->ngparam);
             break;
         case Tystruct:  p += fmtstruct(p, end - p, t);  break;
         case Tyunion:   p += fmtunion(p, end - p, t);   break;
@@ -825,9 +826,9 @@ size_t tyidfmt(char *buf, size_t sz, Type *ty)
             if (ty->arg)
                 for (i = 0; i < ty->narg; i++)
                     p += tyidfmt(p, end - p, ty->arg[i]);
-            else if (ty->param)
-                for (i = 0; i < ty->nparam; i++)
-                    p += tyidfmt(p, end - p, ty->param[i]);
+            else if (ty->gparam)
+                for (i = 0; i < ty->ngparam; i++)
+                    p += tyidfmt(p, end - p, ty->gparam[i]);
             break;
         case Tygeneric:
             break;

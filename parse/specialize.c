@@ -34,9 +34,8 @@ void addtraits(Type *t, Bitset *traits)
  * against */
 Type *tyspecialize(Type *t, Htab *tsmap, Htab *delayed)
 {
-    Type *ret, *tmp;
-    size_t i;
-    Type **subst;
+    Type *ret, *tmp, **arg;
+    size_t i, narg;
 
     t = tysearch(t);
     if (hthas(tsmap, t))
@@ -47,23 +46,21 @@ Type *tyspecialize(Type *t, Htab *tsmap, Htab *delayed)
             addtraits(ret, t->traits);
             htput(tsmap, t, ret);
             break;
-        case Tyname:
-            if (t->narg)
-                subst = t->arg;
-            else
-                subst = t->param;
-            for (i = 0; i < t->nparam; i++) {
-                if (subst[i]->type != Typaram || hthas(tsmap, subst[i]))
-                    continue;
-                tmp = mktyvar(subst[i]->loc);
-                addtraits(tmp, subst[i]->traits);
-                htput(tsmap, subst[i], tmp);
-            }
-            ret = mktyname(t->loc, t->name, t->param, t->nparam, tyspecialize(t->sub[0], tsmap, delayed));
+        case Tygeneric:
+            ret = mktyname(t->loc, t->name, tyspecialize(t->sub[0], tsmap, delayed));
             ret->issynth = 1;
             htput(tsmap, t, ret);
-            for (i = 0; i < t->nparam; i++)
-                lappend(&ret->arg, &ret->narg, tyspecialize(subst[i], tsmap, delayed));
+            for (i = 0; i < t->ngparam; i++)
+                lappend(&ret->arg, &ret->narg, tyspecialize(t->gparam[i], tsmap, delayed));
+            break;
+        case Tyname:
+            arg = NULL;
+            narg = 0;
+            for (i = 0; i < t->narg; i++)
+                lappend(&arg, &narg, tyspecialize(t->arg[i], tsmap, delayed));
+            ret = mktyname(t->loc, t->name, tyspecialize(t->sub[0], tsmap, delayed));
+            ret->arg = arg;
+            ret->narg = narg;
             break;
         case Tystruct:
             ret = tydup(t);
@@ -137,10 +134,9 @@ static void fillsubst(Htab *tsmap, Type *to, Type *from)
     assert(to->nsub == from->nsub);
     for (i = 0; i < to->nsub; i++)
         fillsubst(tsmap, to->sub[i], from->sub[i]);
-    if (to->type == Tyname && to->nparam > 0) {
-        assert(to->nparam == to->narg);
-        for (i = 0; i < to->nparam; i++)
-            fillsubst(tsmap, to->arg[i], to->param[i]);
+    if (to->type == Tyname && to->narg > 0) {
+        for (i = 0; i < to->narg; i++)
+            fillsubst(tsmap, to->arg[i], from->arg[i]);
     }
 }
 

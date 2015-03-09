@@ -253,15 +253,17 @@ static void typickle(FILE *fd, Type *ty)
         case Tyname:
             pickle(fd, ty->name);
             wrbool(fd, ty->issynth);
-
-            wrint(fd, ty->nparam);
-            for (i = 0; i < ty->nparam; i++)
-                wrtype(fd, ty->param[i]);
-
             wrint(fd, ty->narg);
             for (i = 0; i < ty->narg; i++)
                 wrtype(fd, ty->arg[i]);
-
+            wrtype(fd, ty->sub[0]);
+            break;
+        case Tygeneric:
+            pickle(fd, ty->name);
+            wrbool(fd, ty->issynth);
+            wrint(fd, ty->ngparam);
+            for (i = 0; i < ty->ngparam; i++)
+                wrtype(fd, ty->gparam[i]);
             wrtype(fd, ty->sub[0]);
             break;
         default:
@@ -376,17 +378,19 @@ static Type *tyunpickle(FILE *fd)
         case Tyname:
             ty->name = unpickle(fd);
             ty->issynth = rdbool(fd);
-
-            ty->nparam = rdint(fd);
-            ty->param = zalloc(ty->nparam * sizeof(Type *));
-            for (i = 0; i < ty->nparam; i++)
-                rdtype(fd, &ty->param[i]);
-
             ty->narg = rdint(fd);
             ty->arg = zalloc(ty->narg * sizeof(Type *));
             for (i = 0; i < ty->narg; i++)
                 rdtype(fd, &ty->arg[i]);
-
+            rdtype(fd, &ty->sub[0]);
+            break;
+        case Tygeneric:
+            ty->name = unpickle(fd);
+            ty->issynth = rdbool(fd);
+            ty->ngparam = rdint(fd);
+            ty->gparam = zalloc(ty->ngparam * sizeof(Type *));
+            for (i = 0; i < ty->ngparam; i++)
+                rdtype(fd, &ty->gparam[i]);
             rdtype(fd, &ty->sub[0]);
             break;
         default:
@@ -730,22 +734,17 @@ static void fixtypemappings(Stab *st)
         t = htget(tidmap, itop(typefixid[i]));
         if (!t)
             die("Unable to find type for id %zd\n", typefixid[i]);
-        if (t->type == Tyname && !t->issynth) {
-            old = htget(tydedup, t->name);
-            if (old != t)
-            if (t != old)
-                t = old;
+        if ((t->type == Tyname || t->type == Tygeneric) && !t->issynth) {
+            t = htget(tydedup, t);
         }
         *typefixdest[i] = t;
-        if (!*typefixdest[i])
-            die("Couldn't find type %zd\n", typefixid[i]);
     }
     /* check for duplicate type definitions */
     for (i = 0; i < ntypefixdest; i++) {
         t = htget(tidmap, itop(typefixid[i]));
-        if (t->type != Tyname || t->issynth)
+        if ((t->type != Tyname && t->type != Tygeneric) || t->issynth)
             continue;
-        old = htget(tydedup, t->name);
+        old = htget(tydedup, t);
         if (old && !tyeq(t, old))
             lfatal(t->loc, "Duplicate definition of type %s on %s:%d", tystr(old), file->file.files[old->loc.file], old->loc.line);
     }
@@ -778,6 +777,23 @@ static void fixtraitmappings(Stab *st)
     lfree(&traitfixid, &ntraitfixid);
 }
 
+ulong tdhash(void *pt)
+{
+    Type *t;
+
+    t = pt;
+    return t->type * namehash(t->name);
+}
+
+int tdeq(void *pa, void *pb)
+{
+    Type *a, *b;
+
+    a = pa;
+    b = pb;
+    return a->type == b->type && nameeq(a->name, b->name);
+}
+
 /* Usefile format:
  *     U<pkgname>
  *     T<pickled-type>
@@ -800,7 +816,7 @@ int loaduse(FILE *f, Stab *st, Vis vis)
 
     pushstab(file->file.globls);
     if (!tydedup)
-        tydedup = mkht(namehash, nameeq);
+        tydedup = mkht(tdhash, tdeq);
     if (fgetc(f) != 'U')
         return 0;
     pkg = rdstr(f);
@@ -863,13 +879,13 @@ foundlib:
                     ty->vis = vis;
                 htput(tidmap, itop(tid), ty);
                 /* fix up types */
-                if (ty->type == Tyname) {
+                if (ty->type == Tyname || ty->type == Tygeneric) {
                     if (ty->issynth)
                         break;
                     if (!gettype(s, ty->name) && !ty->ishidden)
                         puttype(s, ty->name, ty);
-                    if (!hthas(tydedup, ty->name))
-                        htput(tydedup, ty->name, ty);
+                    if (!hthas(tydedup, ty))
+                        htput(tydedup, ty, ty);
                 } else if (ty->type == Tyunion)  {
                     for (i = 0; i < ty->nmemb; i++)
                         if (!getucon(s, ty->udecls[i]->name) && !ty->udecls[i]->synth)

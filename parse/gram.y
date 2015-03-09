@@ -404,7 +404,11 @@ traitbody
 tydef   : Ttype typeid {$$ = $2;}
         | Ttype typeid Tasn type {
                 $$ = $2;
-                $$.type = mktyname($2.loc, mkname($2.loc, $2.name), $2.params, $2.nparams, $4);
+                if ($$.nparams == 0) {
+                    $$.type = mktyname($2.loc, mkname($2.loc, $2.name), $4);
+                } else {
+                    $$.type = mktygeneric($2.loc, mkname($2.loc, $2.name), $2.params, $2.nparams, $4);
+                }
             }
         ;
 

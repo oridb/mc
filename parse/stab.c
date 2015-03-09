@@ -281,7 +281,9 @@ void updatetype(Stab *st, Node *n, Type *t)
 
 int mergetype(Type *old, Type *new)
 {
-    if (old->vis == Visexport && new->vis != Visexport) {
+    if (!new) {
+        lfatal(new->loc, "double prototyping of %s", tystr(new));
+    } else if (old->vis == Visexport && new->vis != Visexport) {
         if (!old->sub && new->sub) {
             old->sub = new->sub;
             old->nsub = new->nsub;
@@ -304,7 +306,7 @@ void puttype(Stab *st, Node *n, Type *t)
 
     if (st->_name)
         setns(n, st->_name);
-    if (st->_name && t && t->type == Tyname)
+    if (st->_name && t && t->name)
         setns(t->name, st->_name);
 
     ty = gettype(st, n);
@@ -435,7 +437,7 @@ void updatens(Stab *st, char *name)
         setns(k[i], name);
     for (i = 0; i < nk; i++) {
         td = htget(st->ty, k[i]);
-        if (td->type && td->type->type == Tyname)
+        if (td->type && (td->type->type == Tyname || td->type->type == Tygeneric))
             setns(td->type->name, name);
     }
     free(k);
