@@ -41,12 +41,13 @@ static void usage(char *prog)
     printf("\t-d\tPrint debug dumps. Recognized options: f r p i\n");
     printf("\t-G\tGenerate asm in gas syntax\n");
     printf("\t-8\tGenerate asm in plan 9 syntax\n");
-    printf("\t\t\tf: log folded trees\n");
-    printf("\t\t\tl: log lowered pre-cfg trees\n");
-    printf("\t\t\tT: log tree immediately\n");
-    printf("\t\t\tr: log register allocation activity\n");
-    printf("\t\t\ti: log instruction selection activity\n");
-    printf("\t\t\tu: log type unifications\n");
+    printf("\t-d opts: additional debug logging. Options are listed below:\n");
+    printf("\t\tf: log folded trees\n");
+    printf("\t\tl: log lowered pre-cfg trees\n");
+    printf("\t\tT: log tree immediately\n");
+    printf("\t\tr: log register allocation activity\n");
+    printf("\t\ti: log instruction selection activity\n");
+    printf("\t\tu: log type unifications\n");
 }
 
 static void swapout(char* buf, size_t sz, char* suf) {
