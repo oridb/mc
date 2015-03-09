@@ -240,6 +240,8 @@ void scrapelib(Htab *g, char *lib)
     use = openlib(lib);
     if (fgetc(use) != 'U')
         fail(1, "library \"%s\" has corrupt or invalid usefile.\n", lib);
+    if (rdint(use) != 0)
+        fail(1, "library '%s' has usefile out of date", lib);
     /* we don't care about the usefile's name */
     free(rdstr(use));
     while (fgetc(use) == 'L') {

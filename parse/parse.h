@@ -4,6 +4,8 @@
 #	define FATAL
 #endif
 
+#define Useversion 0
+
 typedef uint8_t         byte;
 typedef unsigned int    uint;
 typedef unsigned long   ulong;

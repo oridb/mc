@@ -819,6 +819,10 @@ int loaduse(FILE *f, Stab *st, Vis vis)
         tydedup = mkht(tdhash, tdeq);
     if (fgetc(f) != 'U')
         return 0;
+    if (rdint(f) != Useversion) {
+        fprintf(stderr, "usefile version mismatch. try rebuilding your deps.\n");
+        return 0;
+    }
     pkg = rdstr(f);
     /* if the package names match up, or the usefile has no declared
      * package, then we simply add to the current stab. Otherwise,
@@ -959,6 +963,7 @@ void writeuse(FILE *f, Node *file)
 
     /* usefile name */
     wrbyte(f, 'U');
+    wrint(f, Useversion);        /* use version */
     if (st->_name)
         wrstr(f, st->_name);
     else
