@@ -37,6 +37,14 @@ const test = {p
 		;;
 	;;
 	for `Test t in p.targs
+		for s in t.incpath
+			if std.sleq(".", s)
+				goto founddot
+			;;
+		;;
+		t.incpath = std.slpush(t.incpath, std.sldup("."))
+
+:founddot
 		buildbin(p, t, false)
 		bin = std.strcat("./", t.name)
 		if !runtest(bin)
