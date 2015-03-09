@@ -1,9 +1,15 @@
 SYSLIB=sys
 SYSSRC= \
-	sys.myr \
-	syserrno.myr \
-	systypes.myr \
+	dial.myr \
+	dir.myr \
+	env.myr \
 	ifreq.myr \
+	resolve.myr \
+	syserrno.myr \
+	sys.myr \
+	syswrap.myr \
+	syswrap-ss.myr \
+	wait.myr \
 
 SYSASMSRC= \
 	syscall.s \
@@ -20,12 +26,9 @@ STDSRC= \
 	chartype.myr \
 	cmp.myr \
 	clear.myr \
-	dial.myr \
 	die.myr \
-	dir.myr \
 	dirname.myr \
 	endian.myr \
-	env.myr \
 	errno.myr \
 	execvp.myr \
 	extremum.myr \
@@ -47,7 +50,6 @@ STDSRC= \
 	pathjoin.myr \
 	putint.myr \
 	rand.myr \
-	resolve.myr \
 	result.myr \
 	search.myr \
 	slcp.myr \
@@ -65,15 +67,12 @@ STDSRC= \
 	strjoin.myr \
 	strsplit.myr \
 	strstrip.myr \
-	syswrap.myr \
-	syswrap-ss.myr \
 	swap.myr \
 	try.myr \
 	types.myr \
 	units.myr \
 	utf.myr \
 	varargs.myr \
-	wait.myr \
 
 include ../config.mk
 
@@ -125,6 +124,7 @@ USE=$(STDSRC:.myr=.use) $(SYSSRC:.myr=.use) $(STDLIB)
 clean:
 	rm -f $(OBJ)
 	rm -f $(USE)
+	rm -f $(SYSSRC)
 	rm -f lib$(STDLIB).a lib$(SYSLIB).a
 
 install: all

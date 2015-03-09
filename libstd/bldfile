@@ -28,11 +28,13 @@ lib std {inc=.} =
 	clear.myr
 	cmp.myr
 	cstrconv.myr
-	dial.myr
+	dial+posixy.myr
+	dial+plan9.myr
 	die.myr
 	dirname.myr
 	endian.myr
-	env.myr
+	env+posixy.myr
+	env+plan9.myr
         errno.myr
 	execvp.myr
 	extremum.myr
@@ -54,7 +56,8 @@ lib std {inc=.} =
 	pathjoin.myr
 	putint.myr
 	rand.myr
-	resolve.myr
+	resolve+posixy.myr
+	resolve+plan9.myr
 	result.myr
 	search.myr
 	slcp.myr
