@@ -1618,7 +1618,7 @@ static void infernode(Inferstate *st, Node **np, Type *ret, int *sawret)
                 fatal(n, "Can't match against a void type near %s", ctxstr(st, n->matchstmt.val));
             for (i = 0; i < n->matchstmt.nmatches; i++) {
                 infernode(st, &n->matchstmt.matches[i], ret, sawret);
-                unify(st, n, type(st, n->matchstmt.val), type(st, n->matchstmt.matches[i]->match.pat));
+                unify(st, n->matchstmt.matches[i]->match.pat, type(st, n->matchstmt.val), type(st, n->matchstmt.matches[i]->match.pat));
             }
             break;
         case Nmatch:
