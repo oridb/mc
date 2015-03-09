@@ -43,9 +43,14 @@ void dtdump(Dtree *dt, FILE *f);
  * out of memory, etc) long before getting to this code if we actually had that
  * many branches of the switch statements anyways.
  */
-static size_t nconstructors(Type *t) { if (!t) return 0; t = tybase(t); switch
-(t->type) { case Tyvoid:    return 0;               break;
+static size_t nconstructors(Type *t)
+{
+    if (!t)
+        return 0;
 
+    t = tybase(t);
+    switch (t->type) {
+        case Tyvoid:    return 0;               break;
         case Tybool:    return 2;               break;
         case Tychar:    return 0x10ffff;        break;
 
@@ -79,7 +84,7 @@ static size_t nconstructors(Type *t) { if (!t) return 0; t = tybase(t); switch
         case Tyunion:   return t->nmemb;        break;
         case Tyslice:   return ~0ULL;   break;
         case Tyvar: case Typaram: case Tyunres: case Tyname:
-        case Tybad: case Tyvalist: case Ntypes:
+        case Tybad: case Tyvalist: case Tygeneric: case Ntypes:
             die("Invalid constructor type %s in match", tystr(t));
             break;
     }

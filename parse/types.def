@@ -44,3 +44,4 @@ Ty(Tyvar, NULL)
 Ty(Typaram, NULL)
 Ty(Tyunres, NULL) /* unresolved */
 Ty(Tyname, NULL)
+Ty(Tygeneric, NULL)

@@ -606,6 +606,8 @@ static int tybfmt(char *buf, size_t len, Type *t)
             }
             p += snprintf(p, end - p, ")");
             break;
+        case Tygeneric:
+            break;
         case Tystruct:  p += fmtstruct(p, end - p, t);  break;
         case Tyunion:   p += fmtunion(p, end - p, t);   break;
         case Ntypes:
@@ -826,6 +828,8 @@ size_t tyidfmt(char *buf, size_t sz, Type *ty)
             else if (ty->param)
                 for (i = 0; i < ty->nparam; i++)
                     p += tyidfmt(p, end - p, ty->param[i]);
+            break;
+        case Tygeneric:
             break;
     }
     return p - buf;

@@ -83,7 +83,8 @@ size_t tysize(Type *t)
                     sz = max(sz, tysize(t->udecls[i]->etype) + Wordsz);
             return align(sz, Ptrsz);
             break;
-        case Tybad: case Tyvar: case Typaram: case Tyunres: case Ntypes:
+        case Tygeneric: case Tybad: case Tyvar:
+        case Typaram: case Tyunres: case Ntypes:
             die("Type %s does not have size; why did it get down to here?", tystr(t));
             break;
     }

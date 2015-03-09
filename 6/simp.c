@@ -629,6 +629,8 @@ static void matchpattern(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, N
                 matchpattern(s, pat, val, uc->etype, iftrue, iffalse);
             }
             break;
+        case Tygeneric:
+            break;
     }
 }
 
