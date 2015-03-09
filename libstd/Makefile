@@ -1,20 +1,30 @@
-SYSLIB=sys
-SYSSRC= \
+.SUFFIXES:
+GENSRC= \
 	dial.myr \
 	dir.myr \
 	env.myr \
 	ifreq.myr \
 	resolve.myr \
-	syserrno.myr \
 	sys.myr \
+	syscall.s \
+	syserrno.myr \
 	syswrap.myr \
 	syswrap-ss.myr \
+	util.s \
 	wait.myr \
+
+SYSLIB=sys
+SYSSRC= \
+	sys.myr \
+        syscall.s \
+        syserrno.myr \
+        systypes.myr \
+        ifreq.myr \
+        util.s \
 
 SYSASMSRC= \
 	syscall.s \
 	util.s
-
 
 STDLIB=std
 STDSRC= \
@@ -26,9 +36,12 @@ STDSRC= \
 	chartype.myr \
 	cmp.myr \
 	clear.myr \
+	dial.myr \
 	die.myr \
+	dir.myr \
 	dirname.myr \
 	endian.myr \
+	env.myr \
 	errno.myr \
 	execvp.myr \
 	extremum.myr \
@@ -50,6 +63,7 @@ STDSRC= \
 	pathjoin.myr \
 	putint.myr \
 	rand.myr \
+	resolve.myr \
 	result.myr \
 	search.myr \
 	slcp.myr \
@@ -67,16 +81,20 @@ STDSRC= \
 	strjoin.myr \
 	strsplit.myr \
 	strstrip.myr \
+	syswrap.myr \
+	syswrap-ss.myr \
 	swap.myr \
 	try.myr \
 	types.myr \
 	units.myr \
 	utf.myr \
 	varargs.myr \
+	wait.myr \
 
 include ../config.mk
 
 all: lib$(STDLIB).a $(MYRBIN)
+
 
 # HACK HACK HACK.
 # Ideally we would have patterns for the
@@ -85,26 +103,28 @@ all: lib$(STDLIB).a $(MYRBIN)
 # of patterns that Make will try, leading to
 # millions of files getting statted. This
 # works around that.
-COPYTARG = for suff in $(SYSCLASS)-$(SYS)-$(ARCH) \
+COPYTARG = for targ in \
+	   	$(SYSCLASS)-$(SYS)-$(ARCH) \
 		$(SYSCLASS)-$(SYS) \
 		$(SYSCLASS)-$(ARCH) \
 		$(SYSCLASS) \
 		$(SYS)-$(ARCH) \
 		$(SYS) \
 		$(ARCH); do \
-	    if [ -f $*+$$targ.$$ext ] ; then  \
+		echo "trying $*+$$targ.$$ext"; \
+		if [ -f $*+$$targ.$$ext ] ; then  \
 		echo $$targ; \
 		echo cp $*+$$targ.$$ext $@; \
 		cp $*+$$targ.$$ext $@; \
 		exit 0; \
-	    fi; \
+	fi; \
 	done; \
 
-%.myr: %+*.myr
+%.myr:
 	@export ext=myr; \
 	$(COPYTARG)
 
-%.s: %+*.s
+%.s:
 	@export ext=s; \
 	$(COPYTARG)
 
@@ -124,7 +144,7 @@ USE=$(STDSRC:.myr=.use) $(SYSSRC:.myr=.use) $(STDLIB)
 clean:
 	rm -f $(OBJ)
 	rm -f $(USE)
-	rm -f $(SYSSRC)
+	rm -f $(GENSRC)
 	rm -f lib$(STDLIB).a lib$(SYSLIB).a
 
 install: all
