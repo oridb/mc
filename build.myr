@@ -397,7 +397,7 @@ const freshlibs = {targ, libgraph
 			;;
 			std.slfree(lib)
 		| `std.None:
-			std.fatal(1, "could not find library lib%s.a", l)
+			std.fatal(1, "%s: could not find library lib%s.a", l)
 		;;
 	;;
 	std.slfree(libs)
