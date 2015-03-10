@@ -78,12 +78,24 @@ const mantarget = {p
 /* gentarget: wordlist = wordlist ;; */
 const gentarget = {p
 	var outlist, cmdlist
+	var durable
+	var attrs
 	var gt
 
 	match wordlist(p)
 	| `std.None:	failparse(p, "gen target missing output files\n")
 	| `std.Some out:
 		outlist = out
+	;;
+
+	skipspace(p)
+	if matchc(p, '{')
+		match attrlist(p)
+		| `std.Some al:	attrs = al
+		| `std.None:	failparse(p, "invalid attr list for %s\n", outlist[0])
+		;;
+	else
+		attrs = [][:]
 	;;
 
 	skipspace(p)
@@ -101,7 +113,19 @@ const gentarget = {p
 		failparse(p, "expected ';;' terminating genfile command, got %c\n", peekc(p))
 	;;
 
-	gt = std.mk([.out = outlist, .cmd=cmdlist])
+	durable = false
+	for elt in attrs
+		match elt
+		| ("durable", ""):	durable = true
+		| ("durable", val):	failparse(p, "durable attr does not take argument\n")
+		;;
+	;;
+
+	gt = std.mk([
+		.out=outlist,
+		.durable=durable,
+		.cmd=cmdlist
+	])
 	for o in outlist
 		std.htput(p.gensrc, o, gt)
 	;;
@@ -163,19 +187,18 @@ const myrtarget = {p, targ
 		| ("ldscript", lds):	ldscript = std.sldup(lds)
 		| ("runtime", rt):	runtime = std.sldup(rt)
 		| ("inc", path):	incpath = std.slpush(incpath, std.sldup(path))
-		| ("noinst", val):
-			if val.len != 0
-				failparse(p, "noinst attr does not take argument\n")
-			;;
-			inst = false
+		| ("noinst", ""):	inst = false
+		| ("noinst", val):	failparse(p, "noinst attr does not take argument\n")
 		| (invalid, _):
-			std.fatal(1, "got invalid attr '%s'\n", invalid)
+			std.fatal(1, "%s: got invalid attr '%s'\n", targ, invalid)
 		;;
 	;;
 	-> std.mk([
+		/* target */
 		.name=name,
 		.inputs=inputs,
 		.libdeps=libdeps,
+		/* attrs */
 		.install=inst,
 		.ldscript=ldscript,
 		.runtime=runtime,

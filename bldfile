@@ -16,5 +16,7 @@ bin mbld =
 	util.myr
 ;;
 
+gen config.myr {durable} = ./configure ;;
+
 man = mbld.1;;
 

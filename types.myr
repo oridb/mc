@@ -42,6 +42,7 @@ pkg bld =
 	type gentarg = struct
 		out	: byte[:][:]
 		cmd	: byte[:][:] 
+		durable	: bool
 	;;
 
 	type targ = union

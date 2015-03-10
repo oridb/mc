@@ -12,6 +12,7 @@ pkg bld =
 	var opt_instroot	: byte[:]
 	var opt_manpath	: byte[:]
 	var opt_destdir	: byte[:]
+	var opt_outdir	: byte[:]
 	var opt_bldfile	: byte[:]
 	var opt_debug	: bool
 

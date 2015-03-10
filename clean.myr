@@ -23,7 +23,7 @@ const cleanall = {p
 			cleanup(p, tt, tt.inputs, true)
 		| `Gen gt:
 			for f in gt.out
-				if std.remove(f)
+				if !gt.durable && std.remove(f)
 					std.put("\tclean %s\n", f)
 				;;
 			;;
