@@ -111,7 +111,6 @@ COPYTARG = for targ in \
 		$(SYS)-$(ARCH) \
 		$(SYS) \
 		$(ARCH); do \
-		echo "trying $*+$$targ.$$ext"; \
 		if [ -f $*+$$targ.$$ext ] ; then  \
 		echo $$targ; \
 		echo cp $*+$$targ.$$ext $@; \
