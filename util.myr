@@ -30,9 +30,9 @@ const run = {cmd, dir
 	else
 		match std.wait(pid)
 		| `std.Wsuccess:	/* nothing */
-		| `std.Wfailure:	std.fatal(1, "%s did not execute successfully\n", cmd[0])
-		| `std.Wsignalled:	std.fatal(1, "%s exited with signal\n", cmd[0])
-		| `std.Waiterror:	std.fatal(1, "failed to wait for %s\n", cmd[0])
+		| `std.Wfailure:	std.fatal(1, "FAIL: %s\n", cmd[0])
+		| `std.Wsignalled:	std.fatal(1, "CRASH: %s\n", cmd[0])
+		| `std.Waiterror:	std.fatal(1, "WAT: %s\n", cmd[0])
 		;;
 	;;
 }
