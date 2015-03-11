@@ -500,7 +500,7 @@ static char *tydescid(char *buf, size_t bufsz, Type *ty)
     if (ty->vis == Visexport || ty->isimport)
         snprintf(buf, bufsz, "_tydesc$%s%s%s", ns, sep, ty->name->name.name);
     else
-        snprintf(buf, bufsz, "_tydesc$%zd$%s%s%s", ty->tid, ns, sep, ty->name->name.name);
+        snprintf(buf, bufsz, "_tydesc$%d$%s%s%s", ty->tid, ns, sep, ty->name->name.name);
     return buf;
 }
 
