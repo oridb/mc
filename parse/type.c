@@ -370,7 +370,7 @@ int hasparamsrec(Type *t, Bitset *visited)
             break;
         default:
             for (i = 0; i < t->nsub; i++)
-                if (hasparams(t->sub[i]))
+                if (hasparamsrec(t->sub[i], visited))
                     return 1;
             break;
     }
