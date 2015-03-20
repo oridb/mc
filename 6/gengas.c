@@ -506,17 +506,17 @@ static char *tydescid(char *buf, size_t bufsz, Type *ty)
 
 static void genstructmemb(FILE *fd, Node *sdecl)
 {
-    fprintf(fd, ".ascii \"%s\" /* struct member */\n", namestr(sdecl->decl.name));
+    fprintf(fd, "\t.ascii \"%s\" /* struct member */\n", namestr(sdecl->decl.name));
     gentydesc(fd, sdecl->decl.type);
 }
 
 static void genunionmemb(FILE *fd, Ucon *ucon)
 {
-    fprintf(fd, ".ascii \"%s\" /* union constructor */\n", namestr(ucon->name));
+    fprintf(fd, "\t.ascii \"%s\" /* union constructor */\n", namestr(ucon->name));
     if (ucon->etype)
         gentydesc(fd, ucon->etype);
     else
-        fprintf(fd, ".byte %d /* no union type */\n", Tybad);
+        fprintf(fd, "\t.byte %d /* no union type */\n", Tybad);
 }
 
 /* on x86, unaligned pointers are cheap. we shouldn't be introspecting too
@@ -528,7 +528,7 @@ static void gentydesc(FILE *fd, Type *ty)
     Node *sz;
     size_t i;
 
-    fprintf(fd, ".byte %d /* type: %s */\n", ty->type, tidstr[ty->type]);
+    fprintf(fd, "\t.byte %d\n", ty->type);
     switch (ty->type) {
         case Ntypes: case Tyvar: case Tybad: case Typaram:
         case Tygeneric: case Tyunres:
@@ -554,15 +554,15 @@ static void gentydesc(FILE *fd, Type *ty)
                 assert(sz->type == Nexpr);
                 sz = sz->expr.args[0];
                 assert(sz->type == Nlit && sz->lit.littype == Lint);
-                fprintf(fd, ".quad %lld /* array size */\n", (vlong)sz->lit.intval);
+                fprintf(fd, "\t.quad %lld /* array size */\n", (vlong)sz->lit.intval);
             } else {
-                fprintf(fd, ".quad -1 /* array size */\n");
+                fprintf(fd, "\t.quad -1 /* array size */\n");
             }
 
             gentydesc(fd, ty->sub[0]);
             break;
         case Tyfunc:
-            fprintf(fd, ".byte %zd /* nargs + ret */\n", ty->nsub);
+            fprintf(fd, "\t.byte %zd /* nargs + ret */\n", ty->nsub);
             for (i = 0; i < ty->nsub; i++)
                 gentydesc(fd, ty->sub[i]);
             break;
@@ -579,7 +579,7 @@ static void gentydesc(FILE *fd, Type *ty)
                 genunionmemb(fd, ty->udecls[i]);
             break;
         case Tyname:
-            fprintf(fd, ".quad %s\n", tydescid(buf, sizeof buf, ty));
+            fprintf(fd, "\t.quad %s\n", tydescid(buf, sizeof buf, ty));
             break;
     }
 }
@@ -593,7 +593,7 @@ void gentype(FILE *fd, Type *ty)
             return;
         tydescid(buf, sizeof buf, ty);
         if (ty->vis == Visexport)
-            fprintf(fd, ".globl %s\n", buf);
+            fprintf(fd, ".globl %s /* tid: %d */\n", buf, ty->tid);
         fprintf(fd, "%s:\n", buf);
         gentydesc(fd, ty->sub[0]);
     } else {
@@ -651,11 +651,18 @@ void gengas(Node *file, char *out)
     fprintf(fd, ".data\n");
     for (i = 0; i < nblob; i++)
         genblob(fd, blob[i], globls, strtab);
+    fprintf(fd, "\n");
+
     fprintf(fd, ".text\n");
     for (i = 0; i < nfn; i++)
         genfunc(fd, fn[i], globls, strtab);
-    for (i = 0; i < file->file.ntydefs; i++)
-        gentype(fd, file->file.tydefs[i]);
+    fprintf(fd, "\n");
+
+    for (i = 0; i < ntypes; i++)
+        if (types[i]->isreflect && !types[i]->isimport)
+            gentype(fd, types[i]);
+    fprintf(fd, "\n");
+
     genstrings(fd, strtab);
     fclose(fd);
 }

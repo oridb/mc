@@ -2010,6 +2010,7 @@ static void taghidden(Type *t)
                     taghidden(t->udecls[i]->etype);
             break;
         case Tyname:
+            t->isreflect = 1;
             for (i = 0; i < t->narg; i++)
                 taghidden(t->arg[i]);
         case Tygeneric:
@@ -2167,12 +2168,14 @@ void tagexports(Stab *st, int hidelocal)
         taghidden(t);
         for (j = 0; j < t->nsub; j++)
             taghidden(t->sub[j]);
-        if (t->type == Tyname)
+        if (t->type == Tyname) {
+            t->isreflect = 1;
             for (j = 0; j < t->narg; j++)
                 taghidden(t->arg[j]);
-        if (t->type == Tygeneric)
+        } else if (t->type == Tygeneric) {
             for (j = 0; j < t->ngparam; j++)
                 taghidden(t->gparam[j]);
+        }
     }
     free(k);
 

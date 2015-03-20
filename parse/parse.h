@@ -171,6 +171,7 @@ struct Type {
     char ishidden;      /* Tyname: whether this is hidden or not */
     char ispkglocal;    /* Tyname: whether this is package local or not */
     char isimport;      /* Tyname: whether tyis type was imported. */
+    char isreflect;     /* Tyname: whether this type has reflection info */
 };
 
 struct Ucon {
@@ -213,8 +214,6 @@ struct Node {
             Node **stmts;
             size_t nstmts;
             Stab  *globls;
-            size_t ntydefs;
-            Type **tydefs;
         } file;
 
         struct {

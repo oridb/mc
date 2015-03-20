@@ -52,7 +52,6 @@ Type *tyspecialize(Type *t, Htab *tsmap, Htab *delayed)
             htput(tsmap, t, ret);
             for (i = 0; i < t->ngparam; i++)
                 lappend(&ret->arg, &ret->narg, tyspecialize(t->gparam[i], tsmap, delayed));
-            lappend(&file->file.tydefs, &file->file.ntydefs, ret);
             break;
         case Tyname:
             arg = NULL;
