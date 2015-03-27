@@ -820,7 +820,7 @@ int loaduse(FILE *f, Stab *st, Vis vis)
         tydedup = mkht(tdhash, tdeq);
     if (fgetc(f) != 'U')
         return 0;
-    if (rdint(f) != Useversion) {
+    if (rdint(f) != Abiversion) {
         fprintf(stderr, "usefile version mismatch. try rebuilding your deps.\n");
         return 0;
     }
@@ -964,7 +964,7 @@ void writeuse(FILE *f, Node *file)
 
     /* usefile name */
     wrbyte(f, 'U');
-    wrint(f, Useversion);        /* use version */
+    wrint(f, Abiversion);        /* use version */
     if (st->name)
         wrstr(f, st->name);
     else
