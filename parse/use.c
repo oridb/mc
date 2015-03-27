@@ -821,7 +821,7 @@ int loaduse(FILE *f, Stab *st, Vis vis)
     if (fgetc(f) != 'U')
         return 0;
     if (rdint(f) != Abiversion) {
-        fprintf(stderr, "usefile version mismatch. try rebuilding your deps.\n");
+        fprintf(stderr, "abi version mismatch\n");
         return 0;
     }
     pkg = rdstr(f);
