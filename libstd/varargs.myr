@@ -19,7 +19,10 @@ type valist = byte#
  * force varargs onto the stack regardless.
  */
 const vastart = {args
-	-> args castto(valist)
+	var ap, dump : byte#
+
+	(dump, ap) = vanext(args castto(valist))
+	-> ap
 }
 
 generic vanext = {ap -> (@a, valist)

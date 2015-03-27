@@ -224,6 +224,7 @@ Loc *locmemls(char *disp, Loc *base, Loc *idx, int scale, Mode mode);
 Loc *loclit(long val, Mode m);
 Loc *loclitl(char *lbl);
 char *asmname(Node *dcl);
+char *tydescid(char *buf, size_t bufsz, Type *ty);
 Loc *coreg(Reg r, Mode m);
 int isfloatmode(Mode m);
 int isintmode(Mode m);

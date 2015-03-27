@@ -1237,6 +1237,55 @@ static Node *compare(Simp *s, Node *n, int fields)
     return r;
 }
 
+static int isvariadic(Node *fn)
+{
+    Type *ty;
+
+    ty = exprtype(fn);
+    return tybase(ty->sub[ty->nsub - 1])->type == Tyvalist;
+}
+
+static void addvatype(Simp *s, Node *n)
+{
+    Node *ti, *tp, *td, *tn;
+    Type *ft, *vt, **st;
+    size_t nst, i;
+    char buf[1024];
+
+    st = NULL;
+    nst = 0;
+    ft = exprtype(n->expr.args[0]);
+    /* The structure of ft->sub:
+     *   [return, normal, args, ...]
+     *
+     * The structure of n->expr.sub:
+     *    [fn, normal, args, , variadic, args]
+     *
+     * We want to start at variadic, so we want
+     * to count from ft->nsub - 1, up to n->expr.nsub.
+     */
+    for (i = ft->nsub - 1; i < n->expr.nargs; i++)
+        lappend(&st, &nst, exprtype(n->expr.args[i]));
+    vt = mktytuple(n->loc, st, nst);
+    vt->isreflect = 1;
+
+    /* make the decl */
+    tn = mkname(Zloc, tydescid(buf, sizeof buf, vt));
+    td = mkdecl(Zloc, tn, mktype(n->loc, Tybyte));
+
+    /* and the var */
+    ti = mkexpr(Zloc, Ovar, tn, NULL);
+    ti->expr.type = td->decl.type;
+    ti->expr.did = td->decl.did;
+
+    /* and the pointer */
+    tp = mkexpr(Zloc, Oaddr, ti);
+    tp->expr.type = mktyptr(n->loc, td->decl.type);
+
+    linsert(&n->expr.args, &n->expr.nargs, ft->nsub - 1, tp);
+    htput(s->globls, td, asmname(td));
+}
+
 static Node *rval(Simp *s, Node *n, Node *dst)
 {
     Node *t, *u, *v; /* temporary nodes */
@@ -1411,6 +1460,8 @@ static Node *rval(Simp *s, Node *n, Node *dst)
             r = assign(s, args[0], args[1]);
             break;
         case Ocall:
+            if (isvariadic(n->expr.args[0]))
+                addvatype(s, n);
             if (exprtype(n)->type != Tyvoid && stacktype(exprtype(n))) {
                 if (dst)
                     r = dst;

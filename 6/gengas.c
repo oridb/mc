@@ -487,23 +487,6 @@ void genfunc(FILE *fd, Func *fn, Htab *globls, Htab *strtab)
     writeasm(fd, &is, fn);
 }
 
-static char *tydescid(char *buf, size_t bufsz, Type *ty)
-{
-    char *sep, *ns;
-
-    sep = "";
-    ns = "";
-    if (ty->name->name.ns) {
-        ns = ty->name->name.ns;
-        sep = "$";
-    }
-    if (ty->vis == Visexport || ty->isimport)
-        snprintf(buf, bufsz, "_tydesc$%s%s%s", ns, sep, ty->name->name.name);
-    else
-        snprintf(buf, bufsz, "_tydesc$%d$%s%s%s", ty->tid, ns, sep, ty->name->name.name);
-    return buf;
-}
-
 static void genstructmemb(FILE *fd, Node *sdecl)
 {
     fprintf(fd, "\t.ascii \"%s\" /* struct member */\n", namestr(sdecl->decl.name));
@@ -567,6 +550,7 @@ static void gentydesc(FILE *fd, Type *ty)
                 gentydesc(fd, ty->sub[i]);
             break;
         case Tytuple:
+            fprintf(fd, "\t.byte %zd\n", ty->nsub);
             for (i = 0; i < ty->nsub; i++)
                 gentydesc(fd, ty->sub[i]);
             break;
@@ -588,15 +572,16 @@ void gentype(FILE *fd, Type *ty)
 {
     char buf[512];
 
+    tydescid(buf, sizeof buf, ty);
     if (ty->type == Tyname) {
         if (hasparams(ty))
             return;
-        tydescid(buf, sizeof buf, ty);
         if (ty->vis == Visexport)
             fprintf(fd, ".globl %s /* tid: %d */\n", buf, ty->tid);
         fprintf(fd, "%s:\n", buf);
         gentydesc(fd, ty->sub[0]);
     } else {
+        fprintf(fd, "%s:\n", buf);
         gentydesc(fd, ty);
     }
 }

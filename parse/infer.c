@@ -133,6 +133,7 @@ static char *ctxstr(Inferstate *st, Node *n)
             nargs = n->expr.nargs;
             t1 = NULL;
             t2 = NULL;
+            t3 = NULL;
             if (exprop(n) == Ovar)
                 d = namestr(args[0]);
             else
@@ -184,6 +185,7 @@ static char *ctxstr(Inferstate *st, Node *n)
             free(t);
             free(t1);
             free(t2);
+            free(t3);
             s = strdup(buf);
             break;
     }
@@ -469,6 +471,7 @@ static Type *tf(Inferstate *st, Type *orig)
     int isgeneric;
     Type *t;
 
+    assert(orig != NULL);
     t = tysearch(orig);
     isgeneric = t->type == Tygeneric;
     st->ingeneric += isgeneric;
@@ -906,6 +909,14 @@ static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
     return r;
 }
 
+static void markvatypes(Type **types, size_t ntypes)
+{
+    size_t i;
+
+    for (i = 0; i < ntypes; i++)
+        types[i]->isreflect = 1;
+}
+
 /* Applies unifications to function calls.
  * Funciton application requires a slightly
  * different approach to unification. */
@@ -933,8 +944,10 @@ static void unifycall(Inferstate *st, Node *n)
             fatal(n, "%s arity mismatch (expected %zd args, got %zd)",
                   ctxstr(st, n->expr.args[0]), ft->nsub - 1, n->expr.nargs - 1);
 
-        if (ft->sub[i]->type == Tyvalist)
+        if (ft->sub[i]->type == Tyvalist) {
+            markvatypes(&ft->sub[i], ft->nsub - i);
             break;
+        }
         inferexpr(st, &n->expr.args[i], NULL, NULL);
         unify(st, n->expr.args[0], ft->sub[i], type(st, n->expr.args[i]));
     }

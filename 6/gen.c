@@ -74,6 +74,30 @@ char *asmname(Node *dcl)
     return strdup(buf);
 }
 
+char *tydescid(char *buf, size_t bufsz, Type *ty)
+{
+    char *sep, *ns;
+
+    sep = "";
+    ns = "";
+    if (ty->type == Tyname) {
+        if (ty->name->name.ns) {
+            ns = ty->name->name.ns;
+            sep = "$";
+        }
+        if (ty->vis == Visexport || ty->isimport)
+            snprintf(buf, bufsz, "_tydesc$%s%s%s", ns, sep, ty->name->name.name);
+        else
+            snprintf(buf, bufsz, "_tydesc$%s%s%s$%d", ns, sep, ty->name->name.name, ty->tid);
+    } else {
+        if (file->file.globls->name) {
+            ns = file->file.globls->name;
+            sep = "$";
+        }
+        snprintf(buf, bufsz, "_tydesc%s%s$%d",sep, ns, ty->tid);
+    }
+    return buf;
+}
 
 void gen(Node *file, char *out)
 {
