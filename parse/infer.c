@@ -894,6 +894,8 @@ static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
         typeerror(st, a, b, ctx, NULL);
     }
     mergetraits(st, ctx, a, b);
+    if (a->isreflect || b->isreflect)
+        r->isreflect = a->isreflect = b->isreflect = 1;
     membunify(st, ctx, a, b);
 
     /* if we have delayed types for a tyvar, transfer it over. */
@@ -2174,7 +2176,7 @@ void tagexports(Stab *st, int hidelocal)
     k = htkeys(st->ty, &n);
     for (i = 0; i < n; i++) {
         t = gettype(st, k[i]);
-        if (t->vis != Visexport)
+        if (!t->isreflect && t->vis != Visexport)
             continue;
         if (hidelocal && t->ispkglocal)
             t->vis = Vishidden;

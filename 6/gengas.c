@@ -15,6 +15,8 @@
 #include "asm.h"
 #include "../config.h"
 
+#define Tdindirect 0x80
+
 static char *insnfmt[] = {
 #define Insn(val, gasfmt, p9fmt, use, def) gasfmt,
 #include "insns.def"
@@ -487,15 +489,26 @@ void genfunc(FILE *fd, Func *fn, Htab *globls, Htab *strtab)
     writeasm(fd, &is, fn);
 }
 
+void gennamevec(FILE *fd, Node *n)
+{
+    if (n->name.ns) {
+        fprintf(fd, "\t.quad %zd\n", strlen(n->name.name) + strlen(n->name.ns) + 1);
+        fprintf(fd, "\t.ascii \"%s.%s\"\n", n->name.ns, n->name.name);
+    } else {
+        fprintf(fd, "\t.quad %zd\n", strlen(n->name.name));
+        fprintf(fd, "\t.ascii \"%s\"\n", n->name.name);
+    }
+}
+
 static void genstructmemb(FILE *fd, Node *sdecl)
 {
-    fprintf(fd, "\t.ascii \"%s\" /* struct member */\n", namestr(sdecl->decl.name));
+    gennamevec(fd, sdecl->decl.name);
     gentydesc(fd, sdecl->decl.type);
 }
 
 static void genunionmemb(FILE *fd, Ucon *ucon)
 {
-    fprintf(fd, "\t.ascii \"%s\" /* union constructor */\n", namestr(ucon->name));
+    gennamevec(fd, ucon->name);
     if (ucon->etype)
         gentydesc(fd, ucon->etype);
     else
@@ -508,10 +521,15 @@ static void genunionmemb(FILE *fd, Ucon *ucon)
 static void gentydesc(FILE *fd, Type *ty)
 {
     char buf[512];
+    uint8_t tt;
     Node *sz;
     size_t i;
 
-    fprintf(fd, "\t.byte %d\n", ty->type);
+    /* names are pulled out of line */
+    tt = ty->type;
+    if (ty->type == Tyname)
+        tt |= Tdindirect;
+    fprintf(fd, "\t.byte %d\n", tt);
     switch (ty->type) {
         case Ntypes: case Tyvar: case Tybad: case Typaram:
         case Tygeneric: case Tyunres:
@@ -555,10 +573,12 @@ static void gentydesc(FILE *fd, Type *ty)
                 gentydesc(fd, ty->sub[i]);
             break;
         case Tystruct:
+            fprintf(fd, "\t.quad %zd\n", ty->nmemb);
             for (i = 0; i < ty->nmemb; i++)
                 genstructmemb(fd, ty->sdecls[i]);
             break;
         case Tyunion:
+            fprintf(fd, "\t.quad %zd\n", ty->nmemb);
             for (i = 0; i < ty->nmemb; i++)
                 genunionmemb(fd, ty->udecls[i]);
             break;
@@ -578,12 +598,19 @@ void gentype(FILE *fd, Type *ty)
             return;
         if (ty->vis == Visexport)
             fprintf(fd, ".globl %s /* tid: %d */\n", buf, ty->tid);
-        fprintf(fd, "%s:\n", buf);
+    }
+    fprintf(fd, "%s:\n", buf);
+    fprintf(fd, "\t.quad %s$data\n", buf);
+    fprintf(fd, "\t.quad %s$end - %s$data\n", buf, buf);
+    fprintf(fd, "%s$data:\n", buf);
+    if (ty->type == Tyname) {
+        fprintf(fd, "\t.byte %d\n", ty->type);
+        gennamevec(fd, ty->name);
         gentydesc(fd, ty->sub[0]);
     } else {
-        fprintf(fd, "%s:\n", buf);
         gentydesc(fd, ty);
     }
+    fprintf(fd, "%s$end:\n\n", buf);
 }
 
 void gengas(Node *file, char *out)
@@ -638,11 +665,12 @@ void gengas(Node *file, char *out)
         genblob(fd, blob[i], globls, strtab);
     fprintf(fd, "\n");
 
-    fprintf(fd, ".text\n");
+    fprintf(fd, ".section .text\n");
     for (i = 0; i < nfn; i++)
         genfunc(fd, fn[i], globls, strtab);
     fprintf(fd, "\n");
 
+    fprintf(fd, ".section .rodata\n");
     for (i = 0; i < ntypes; i++)
         if (types[i]->isreflect && !types[i]->isimport)
             gentype(fd, types[i]);
