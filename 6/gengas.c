@@ -527,6 +527,9 @@ static void gentydesc(FILE *fd, Type *ty)
 
     /* names are pulled out of line */
     tt = ty->type;
+    /* tyvars can get tagged, but aren't desired */
+    if (ty->type == Tyvar)
+        return;
     if (ty->type == Tyname)
         tt |= Tdindirect;
     fprintf(fd, "\t.byte %d\n", tt);
