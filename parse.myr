@@ -329,17 +329,17 @@ const word = {p : parser#
 	c = peekc(p)
 	if c == '"'
 		n = 0
-		nextc(p)
+		getc(p)
 		start = p.rest
 		while p.rest.len > 0
 			c = peekc(p)
 			if c == '"'
-				nextc(p)
+				getc(p)
 				goto done
 			elif c == '\\'
-				c = nextc(p)
+				c = getc(p)
 			;;
-			nextc(p)
+			getc(p)
 			n += std.charlen(c)
 		;;
 		failparse(p, "input ended within quoted word\n")
@@ -349,7 +349,7 @@ const word = {p : parser#
 		while p.rest.len > 0
 			c = peekc(p)
 			if wordchar(c)
-				nextc(p)
+				getc(p)
 				n += std.charlen(c)
 			else
 				break
@@ -378,14 +378,14 @@ const skipspace = {p : parser#
 	while r.len > 0
 		c = peekc(p)
 		match c
-		| ' ':	nextc(p)
-		| '\t':	nextc(p)
+		| ' ':	getc(p)
+		| '\t':	getc(p)
 		| '\n':
-			nextc(p)
+			getc(p)
 			p.line++
 		| '#':
 			while p.rest.len > 0 && peekc(p) != '\n'
-				nextc(p)
+				getc(p)
 			;;
 		| _:
 			break
@@ -412,7 +412,7 @@ const peekc = {p
 	-> std.decode(p.rest)
 }
 
-const nextc = {p
+const getc = {p
 	var c, s
 
 	(c, s) = std.striter(p.rest)

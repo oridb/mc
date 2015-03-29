@@ -215,9 +215,10 @@ const scrapelibs = {dg, lib, incs
 	| `std.None:	std.fatal(1, "library %s: could not read usefile\n", lib)
 	;;
 	match bio.getbe32(f)
-	| `std.None:	std.fatal(1, "library %s: corrutpt or invalid usefile\n", lib)
-	| `std.Some 0:	/* nothing: version matches. */
+	| `std.Some 1:	/* nothing: version matches. */
+	| `std.Some 0:	std.put(1, "library %s: warning: old usefile version\n", lib)
 	| `std.Some _:	std.fatal(1, "library %s: usefile version unknown\n", lib)
+	| `std.None:	std.fatal(1, "library %s: corrutpt or invalid usefile\n", lib)
 	;;
 	std.slfree(rdstr(f))
 	done = false
