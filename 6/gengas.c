@@ -668,18 +668,24 @@ void gengas(Node *file, char *out)
         genblob(fd, blob[i], globls, strtab);
     fprintf(fd, "\n");
 
-    fprintf(fd, ".section .text\n");
+    fprintf(fd, ".text\n");
     for (i = 0; i < nfn; i++)
         genfunc(fd, fn[i], globls, strtab);
     fprintf(fd, "\n");
 
-    fprintf(fd, ".section .rodata\n");
     for (i = 0; i < ntypes; i++)
         if (types[i]->isreflect && !types[i]->isimport)
             gentype(fd, types[i]);
     fprintf(fd, "\n");
 
     genstrings(fd, strtab);
+    /*
+     * workaround for label issue on OSX: we get errors
+     * complaining about how differences involving labels
+     * at the end of functions will generate a non-relocatable
+     * difference. Adding a dummy byte after will fix this.
+     */
+    fprintf(fd, "\t.byte 0 /* dummy to shut up Apple's as */\n");
     fclose(fd);
 }
 
