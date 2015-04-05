@@ -114,7 +114,7 @@ const mkparser = {path
 
 	p = std.zalloc()
 	p.line = 1
-	p.fname = "cli"
+	p.fname = std.sldup(path)
 	p.gensrc = std.mkht(std.strhash, std.streq)
 	-> p
 }
