@@ -65,7 +65,7 @@ const main = {args : byte[:][:]
 			.ldscript=bld.opt_ldscript,
 			.libdeps=[][:]
 		]
-		b = mkbuild("cli")
+		b = mkbuild()
 		if bintarg
 			bld.buildbin(b, &mt, true)
 		else
@@ -73,7 +73,7 @@ const main = {args : byte[:][:]
 		;;
 		std.free(b)
 	else
-		b = mkbuild(bld.opt_bldfile)
+		b = mkbuild()
 		bld.load(b, bld.opt_bldfile)
 		/*bld.configure()*/
 		/* default: buildall */
@@ -95,14 +95,12 @@ const main = {args : byte[:][:]
 	;;
 }
 
-const mkbuild = {path
-	var p
+const mkbuild = {
+	var b
 
-	p = std.zalloc()
-	p.line = 1
-	p.fname = std.sldup(path)
-	p.gensrc = std.mkht(std.strhash, std.streq)
-	-> p
+	b = std.zalloc()
+	b.gensrc = std.mkht(std.strhash, std.streq)
+	-> b
 }
 
 const usage = {prog

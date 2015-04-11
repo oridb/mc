@@ -3,12 +3,6 @@ use std
 pkg bld =
 	type build = struct
 		cmd	: byte[:][:]
-		/* parse input */
-		data	: byte[:]
-		rest	: byte[:]
-		fname	: byte[:]
-		line	: int
-
 		/* build params */
 		targs	: targ[:]
 		gensrc	: std.htab(byte[:], gentarg#)#
@@ -16,6 +10,15 @@ pkg bld =
 		system	: byte[:]
 		arch	: byte[:]
 	;;
+
+	type parser = struct
+		/* parse input */
+		data	: byte[:]
+		rest	: byte[:]
+		fname	: byte[:]
+		line	: int
+	;;
+
 
 	type depgraph = struct
 		roots	: byte[:][:]

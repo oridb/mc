@@ -10,12 +10,17 @@ pkg bld =
 ;;
 
 const load = {b, path
+	var p : parser#
+
+	p = std.zalloc()
+	p.line = 1
+	p.fname = std.sldup(path)
 	match std.slurp(path)
-	| `std.Ok d:	b.data = d
+	| `std.Ok d:	p.data = d
 	| `std.Fail _:	std.fatal(1, "could not open file 'bldfile'\n")
 	;;
-	b.rest = b.data
-	-> bld.parse(b)
+	p.rest = p.data
+	-> bld.parse(b, p)
 }
 
 
@@ -30,10 +35,10 @@ const failparse = {p, msg, args : ...
 	std.exit(1)
 }
 
-const parse = {p
+const parse = {b, p
 	while true
 		skipspace(p)
-		if !target(p)
+		if !target(b, p)
 			break
 		;;
 	;;
@@ -46,14 +51,14 @@ const parse = {p
 	;;
 }
 
-const target = {p
+const target = {b, p
 	match word(p)
-	| `std.Some "bin":	bintarget(p)
-	| `std.Some "test":	testtarget(p)
-	| `std.Some "lib":	libtarget(p)
-	| `std.Some "gen":	gentarget(p)
-	| `std.Some "sub":	subtarget(p)
-	| `std.Some "man":	mantarget(p)
+	| `std.Some "bin":	bintarget(b, p)
+	| `std.Some "test":	testtarget(b, p)
+	| `std.Some "lib":	libtarget(b, p)
+	| `std.Some "gen":	gentarget(b, p)
+	| `std.Some "sub":	subtarget(b, p)
+	| `std.Some "man":	mantarget(b, p)
 	| `std.Some targtype:	failparse(p, "unknown targtype type %s\n", targtype)
 	| `std.None:	-> false
 	;;
@@ -61,32 +66,32 @@ const target = {p
 }
 
 /* bintarget: myrtarget */
-const bintarget = {p
-	p.targs = std.slpush(p.targs, `Bin myrtarget(p, "bin"))
+const bintarget = {b, p
+	b.targs = std.slpush(b.targs, `Bin myrtarget(p, "bin"))
 }
 
 /* testtarget: myrtarget */
-const testtarget = {p
-	p.targs = std.slpush(p.targs, `Test myrtarget(p, "test"))
+const testtarget = {b, p
+	b.targs = std.slpush(b.targs, `Test myrtarget(p, "test"))
 }
 
 /* libtarget: myrtarget */
-const libtarget = {p
-	p.targs = std.slpush(p.targs, `Lib myrtarget(p, "lib"))
+const libtarget = {b, p
+	b.targs = std.slpush(b.targs, `Lib myrtarget(p, "lib"))
 }
 
 /* subtarget : anontarget */
-const subtarget = {p
-	p.targs = std.slpush(p.targs, `Sub anontarget(p, "sub"))
+const subtarget = {b, p
+	b.targs = std.slpush(b.targs, `Sub anontarget(p, "sub"))
 }
 
 /* mantarget: anontarget */
-const mantarget = {p
-	p.targs = std.slpush(p.targs, `Man anontarget(p, "man"))
+const mantarget = {b, p
+	b.targs = std.slpush(b.targs, `Man anontarget(p, "man"))
 }
 
-/* gentarget: wordlist = wordlist ;; */
-const gentarget = {p
+/* gentarget: wordlist {attrs} = wordlist ;; */
+const gentarget = {b, p
 	var outlist, cmdlist
 	var durable
 	var attrs
@@ -137,9 +142,9 @@ const gentarget = {p
 		.cmd=cmdlist
 	])
 	for o in outlist
-		std.htput(p.gensrc, o, gt)
+		std.htput(b.gensrc, o, gt)
 	;;
-	p.targs = std.slpush(p.targs, `Gen gt)
+	b.targs = std.slpush(b.targs, `Gen gt)
 }
 
 /*
