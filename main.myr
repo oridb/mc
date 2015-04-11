@@ -12,7 +12,7 @@ use "test.use"
 use "types.use"
 
 const main = {args : byte[:][:]
-	var p : bld.parser#
+	var b : bld.build#
 	var mt : bld.myrtarg
 	var targname
 	var bintarg
@@ -65,51 +65,37 @@ const main = {args : byte[:][:]
 			.ldscript=bld.opt_ldscript,
 			.libdeps=[][:]
 		]
-		p = mkparser("cli")
+		b = mkbuild("cli")
 		if bintarg
-			bld.buildbin(p, &mt, true)
+			bld.buildbin(b, &mt, true)
 		else
-			bld.buildlib(p, &mt)
+			bld.buildlib(b, &mt)
 		;;
-		std.free(p)
+		std.free(b)
 	else
-		p = loadbuild(bld.opt_bldfile)
-		p.cmd = args
+		b = mkbuild(bld.opt_bldfile)
+		bld.load(b, bld.opt_bldfile)
 		/*bld.configure()*/
 		/* default: buildall */
 		if optctx.args.len == 0
-			bld.buildall(p)
+			bld.buildall(b)
 		else
 			for cmd in optctx.args
 				match cmd
-				| "all":	bld.buildall(p)
-				| "gen":	bld.genall(p)
-				| "clean":	bld.cleanall(p)
-				| "install":	bld.install(p)
-				| "uninstall":	bld.uninstall(p)
-				| "test":	bld.test(p)
-				| target:	bld.build(p, target)
+				| "all":	bld.buildall(b)
+				| "gen":	bld.genall(b)
+				| "clean":	bld.cleanall(b)
+				| "install":	bld.install(b)
+				| "uninstall":	bld.uninstall(b)
+				| "test":	bld.test(b)
+				| target:	bld.build(b, target)
 				;;
 			;;
 		;;
 	;;
 }
 
-const loadbuild =  {path
-	var p
-
-	p = mkparser(path)
-	match std.slurp(path)
-	| `std.Ok d:	p.data = d
-	| `std.Fail _:	std.fatal(1, "could not open file 'bldfile'\n")
-	;;
-	p.rest = p.data
-	bld.parse(p)
-
-	-> p
-}
-
-const mkparser = {path
+const mkbuild = {path
 	var p
 
 	p = std.zalloc()

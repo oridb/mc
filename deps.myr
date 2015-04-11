@@ -8,7 +8,7 @@ use "types.use"
 use "util.use"
 
 pkg bld =
-	const myrdeps	: (p : parser#, mt : myrtarg#, islib : bool, isclean : bool, addsrc : bool, dg : depgraph#	-> bool)
+	const myrdeps	: (b : build#, mt : myrtarg#, islib : bool, isclean : bool, addsrc : bool, dg : depgraph#	-> bool)
 
 	/* a bit ugly: initialized from main() */
 	var usepat	: regex.regex#
@@ -21,7 +21,7 @@ type dep = union
 	`Lib byte[:]
 ;;
 
-const myrdeps = {p, mt, islib, isclean, addsrc, dg
+const myrdeps = {b, mt, islib, isclean, addsrc, dg
 	var objs, uses, srcs, incs
 	var out, useout, depstk
 	var i
@@ -66,7 +66,7 @@ const myrdeps = {p, mt, islib, isclean, addsrc, dg
 
 	for i = 0; i < srcs.len; i++
 		depstk = [][:]
-		srcdeps(p, dg, srcs[i], objs[i], uses[i], incs, &depstk, isclean, addsrc)
+		srcdeps(b, dg, srcs[i], objs[i], uses[i], incs, &depstk, isclean, addsrc)
 		std.slfree(depstk)
 	;;
 	dumpgraph(dg)
@@ -99,7 +99,7 @@ const dumpgraph = {dg
 	std.put("}\n")
 }
 
-const srcdeps = {p, g, path, obj, usefile, incs, depstk, isclean, addsrc
+const srcdeps = {b, g, path, obj, usefile, incs, depstk, isclean, addsrc
 	var deps
 
 	if std.hthas(g.done, path)
@@ -114,7 +114,7 @@ const srcdeps = {p, g, path, obj, usefile, incs, depstk, isclean, addsrc
 		;;
 		std.exit(1)
 	;;
-	deps = getdeps(p, path)
+	deps = getdeps(b, path)
 	std.htput(g.seen, path, true)
 	for d in deps
 		match d
@@ -136,7 +136,7 @@ const srcdeps = {p, g, path, obj, usefile, incs, depstk, isclean, addsrc
 			if usefile.len != 0
 				pushdep(g, l, usefile)
 			;;
-			addusedep(p, g, path, l, incs, depstk, isclean, addsrc)
+			addusedep(b, g, path, l, incs, depstk, isclean, addsrc)
 		;;
 	;;
 	depstk# = std.slgrow(depstk#, depstk#.len - 1)
@@ -144,7 +144,7 @@ const srcdeps = {p, g, path, obj, usefile, incs, depstk, isclean, addsrc
 	std.htput(g.done, path, true)
 }
 
-const addusedep = {p, g, f, usefile, incs, depstk, isclean, addsrc
+const addusedep = {b, g, f, usefile, incs, depstk, isclean, addsrc
 	var src
 
 	if std.hthas(g.done, usefile)
@@ -166,17 +166,17 @@ const addusedep = {p, g, f, usefile, incs, depstk, isclean, addsrc
 	;;
 	pushdep(g, src, usefile)
 	std.htput(g.input, usefile, src)
-	srcdeps(p, g, src, "", usefile, incs, depstk, isclean, addsrc)
+	srcdeps(b, g, src, "", usefile, incs, depstk, isclean, addsrc)
 	std.htput(g.done, usefile, true)
 }
 
-const getdeps = {p, path
+const getdeps = {b, path
 	var f
 	var deps : dep[:]
 
 	deps = [][:]
 	if !std.fexists(path)
-		match std.htget(p.gensrc, path)
+		match std.htget(b.gensrc, path)
 		| `std.Some gt:	run(gt.cmd, "")
 		| `std.None:	std.fatal(1, "no input file %s\n", path)
 		;;

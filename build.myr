@@ -9,11 +9,11 @@ use "util.use"
 use "subdir.use"
 
 pkg bld =
-	const buildall	: (p : parser# -> bool)
-	const genall	: (p : parser# -> bool)
-	const build	: (p : parser#, target : byte[:] -> bool)
-	const buildbin	: (p : parser#, bt : myrtarg#, addsrc : bool -> void)
-	const buildlib	: (p : parser#, lt : myrtarg# -> void)
+	const buildall	: (p : build# -> bool)
+	const genall	: (p : build# -> bool)
+	const build	: (p : build#, target : byte[:] -> bool)
+	const buildbin	: (p : build#, bt : myrtarg#, addsrc : bool -> void)
+	const buildlib	: (p : build#, lt : myrtarg# -> void)
 ;;
 
 const buildall = {p

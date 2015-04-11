@@ -10,8 +10,8 @@ use "util.use"
 use "build.use"
 
 pkg bld =
-	const install	: (p : parser#	-> bool)
-	const uninstall	: (p : parser#	-> bool)
+	const install	: (p : build#	-> bool)
+	const uninstall	: (p : build#	-> bool)
 ;;
 
 const install = {p

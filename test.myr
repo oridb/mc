@@ -12,7 +12,7 @@ use "subdir.use"
 use "config.use"
 
 pkg bld =
-	const test	: (p : parser# -> void)
+	const test	: (p : build# -> void)
 ;;
 
 const test = {p

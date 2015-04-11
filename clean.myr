@@ -8,8 +8,8 @@ use "subdir.use"
 use "types.use"
 
 pkg bld =
-	const cleanall	: (p : parser# -> bool)
-	const clean	: (p : parser#, targ : byte[:] -> bool)
+	const cleanall	: (p : build# -> bool)
+	const clean	: (p : build#, targ : byte[:] -> bool)
 ;;
 
 const cleanall = {p

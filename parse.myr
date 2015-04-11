@@ -6,10 +6,20 @@ use "opts.use"
 use "fsel.use"
 
 pkg bld =
-	const parse	: (p : parser#	-> bool)
+	const load	: (b : build#, path : byte[:]	-> bool)
 ;;
 
-const failparse = {p : parser#, msg, args : ...
+const load = {b, path
+	match std.slurp(path)
+	| `std.Ok d:	b.data = d
+	| `std.Fail _:	std.fatal(1, "could not open file 'bldfile'\n")
+	;;
+	b.rest = b.data
+	-> bld.parse(b)
+}
+
+
+const failparse = {p, msg, args : ...
 	var buf : byte[1024]
 	var ap
 	var sl
@@ -36,7 +46,7 @@ const parse = {p
 	;;
 }
 
-const target = {p : parser#
+const target = {p
 	match word(p)
 	| `std.Some "bin":	bintarget(p)
 	| `std.Some "test":	testtarget(p)
@@ -320,7 +330,7 @@ const wordlist = {p
 }
 
 /* word: /wordchar*/
-const word = {p : parser#
+const word = {p
 	var c, n
 	var start
 
@@ -371,7 +381,7 @@ const wordchar = {c
 		c == '+'
 }
 
-const skipspace = {p : parser#
+const skipspace = {p
 	var c, r
 
 	r = p.rest

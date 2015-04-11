@@ -4,7 +4,7 @@ use "types.use"
 use "util.use"
 
 pkg bld =
-	const subdirs	: (p : parser#, subs : byte[:][:], targ : std.option(byte[:]) -> void)
+	const subdirs	: (p : build#, subs : byte[:][:], targ : std.option(byte[:]) -> void)
 ;;
 
 const subdirs = {p, subs, targ
