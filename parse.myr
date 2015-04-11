@@ -9,6 +9,14 @@ pkg bld =
 	const load	: (b : build#, path : byte[:]	-> bool)
 ;;
 
+type parser = struct
+	/* parse input */
+	data	: byte[:]
+	rest	: byte[:]
+	fname	: byte[:]
+	line	: int
+;;
+
 const load = {b, path
 	var p : parser#
 
