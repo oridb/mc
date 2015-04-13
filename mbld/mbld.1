@@ -1,0 +1,81 @@
+.TH MBLD 1
+.SH NAME
+mbld
+.SH SYNOPSIS
+.B mbld
+.I [all | clean | install | uninstall | test]
+.I -[hblIsfrR]
+.I [file...]
+.br
+.SH DESCRIPTION
+.PP
+The 'mbld' tool takes as input a list of Myrddin or assembly sources,
+and compiles them in the correct dependency order into either a library or
+an executable. 
+
+.PP
+By default, it reads from an input file called 'bldfile', but if given the
+option '-b' or '-l', it will build a binary or library, respectively, from
+the arguments specified on the command lines.
+
+.PP
+Myrbuild will default to building for the current architecture.
+
+.PP
+The myrbuild options are:
+
+.TP
+.B -h
+Print a summary of the available options.
+
+.TP
+.B -b name
+Compile source into a binary named 'name'. If neither this option nor
+the '-l' option are given, myrbuild will create a binary called 'a.out'.
+
+.TP
+.B -l 'name'
+Compile source given into a library called 'lib<name>.a', and a matching
+usefile called 'name'. Only static libraries are currently supported.
+
+.TP
+.B -s 'script'
+Pass the linker script 'script' to the linker. If this option is not
+provided, no script is passed to the linker.
+
+.TP
+.B -r 'rt'
+Compile a binary using the runtime 'rt'. If the runtime name given
+is 'none', then no runtime will be linked. If this option is not provided,
+then the default runtime in '$INSTALL_ROOT/myr/lib/_myrrt.o' will be
+used.
+
+.TP
+.B -I path
+Add 'path' to the search path for unquoted use statments. This option
+does not affect the search path for local usefiles, which are always
+searched relative to the compiler's current working directory. Without
+any options, the search path defaults to /usr/include/myr.
+
+.SH EXAMPLE
+.EX
+    mbld
+    mbld -l foo bar.myr baz.myr
+.EE
+
+.SH FILES
+The source for muse is available from
+.B git://git.eigenstate.org/git/ori/mc.git
+and lives in the
+.I myrbuild/
+directory within the source tree.
+
+.SH SEE ALSO
+.IR mc(1)
+.IR muse(1)
+.IR ld(1)
+.IR as(1)
+
+.SH BUGS
+.PP
+None known.

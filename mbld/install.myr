@@ -1,0 +1,92 @@
+use std
+
+use "config.use"
+use "deps.use"
+use "opts.use"
+use "parse.use"
+use "subdir.use"
+use "types.use"
+use "util.use"
+use "build.use"
+
+pkg bld =
+	const install	: (p : build#	-> bool)
+	const uninstall	: (p : build#	-> bool)
+;;
+
+const install = {b
+	buildall(b)
+	-> movetargs(b, false)
+}
+
+const uninstall = {b
+	-> movetargs(b, true)
+}
+
+const movetargs = {b, delete
+	var libarchive
+
+	for tn in b.all
+		match gettarg(b.targs, tn)
+		| `Bin bt:
+			movefile(delete, bt.name, opt_instroot, opt_destdir, "bin", 0o755)
+		| `Lib lt:
+			movefile(delete, lt.name, opt_instroot, opt_destdir, "lib/myr", 0o644)
+			libarchive = std.fmt("lib%s.a", lt.name)
+			movefile(delete, libarchive, opt_instroot, opt_destdir, "lib/myr", 0o644)
+			std.slfree(libarchive)
+		| `Gen gt:
+			/* nothing to do (?) */
+		| `Man mans:
+			/* FIXME: figure out man section by number */
+			for m in mans
+				moveman(delete, m)
+			;;
+		| `Test tt:	/* nothing */
+		;;
+	;;
+	-> true
+}
+
+
+const movefile = {delete, file, instdir, destdir, prefix, perm
+	var path
+
+	path = std.pathjoin([destdir, instdir, prefix, file][:])
+	if delete
+		std.put("\tdelete %s\n", path)
+		if !std.remove(path)
+			std.put("\t\tno such file %s\n", file)
+		;;
+	else
+		std.put("\t%s => %s\n", file, path)
+		std.remove(path)
+		match std.slurp(file)
+		| `std.Fail m:	std.fatal(1, "Could not open %s for reading\n", file)
+		| `std.Ok buf:
+			if !std.blat(path, buf, perm)
+				std.put("Could not write %s\n", file)
+			;;
+			std.slfree(buf)
+		;;
+	;;
+	std.slfree(path)
+}
+
+const moveman = {delete, man
+	var sect, manrel
+
+	match std.strrfind(man, ".")
+	| `std.None:
+		std.fatal(1, "manpage %s has no section\n", man)
+	| `std.Some s:
+		sect = s + 1
+		if s + 1 == man.len
+			std.fatal(1, "manpage %s missing suffix\n", man)
+		;;
+	;;
+
+	manrel = std.fmt("%s%s", opt_manpath, man[sect:])
+	movefile(delete, man, opt_instroot, opt_destdir, manrel, 0o644)
+	std.slfree(manrel)
+}

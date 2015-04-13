@@ -1,0 +1,150 @@
+use std
+
+use "build.use"
+use "clean.use"
+use "deps.use"
+use "opts.use"
+use "parse.use"
+use "types.use"
+use "util.use"
+use "subdir.use"
+
+use "config.use"
+
+pkg bld =
+	const test	: (b : build# -> void)
+;;
+
+const test = {b
+	var ok/*, bin */
+
+	/* no implicit tests to run */
+	ok = true
+	if std.fexists("test")
+		for tn in b.all
+			match gettarg(b.targs, tn)
+			| `Bin bt:
+				if !dotest(b, bt, ok)
+					ok = false
+				;;
+			| `Lib lt:
+				if !dotest(b, lt, ok)
+					ok = false
+				;;
+			| _:	/* ignore */
+			;;
+		;;
+	;;
+	/*
+	FIXME: reenable test binaries
+	for `Test t in targs
+		for s in t.incpath
+			if std.sleq(".", s)
+				goto founddot
+			;;
+		;;
+		t.incpath = std.slpush(t.incpath, std.sldup("."))
+
+:founddot
+		buildbin(b, t, false)
+		bin = std.strcat("./", t.name)
+		if !runtest(bin)
+			ok = false
+		;;
+		std.slfree(bin)
+	;;
+	*/
+	if ok
+		std.put("TESTS PASSED\n")
+	else
+		std.put("TESTS FAILED\n")
+		std.exit(1)
+	;;
+}
+
+const dotest = {b, targ, ok
+	var tt, bin ,path, tests
+
+	tests = [][:]
+	setdir(b, targ.dir)
+	for s in targ.inputs
+		path = std.pathcat("./test", s)
+		if std.fexists(path)
+			bin = srcswapsuffix(path, "")
+			tt = [
+				.name = bin,
+				.dir = targ.dir,
+				.inputs = [path, s][:],
+				.install = false,
+				.libdeps = targ.libdeps,
+				.incpath = targ.incpath,
+				.built = false,
+			]
+
+			cleantest(b, path)
+			buildbin(b, &tt, true)
+			tests = std.slpush(tests, bin)
+		;;
+		std.slfree(path)
+	;;
+
+	ok = true
+	for t in tests
+		if !runtest(t)
+			ok = false
+		;;
+		std.slfree(t)
+	;;
+	std.slfree(tests)
+	-> ok
+}
+
+const cleantest = {b, src
+	var obj, bin, log, usef
+
+	obj = srcswapsuffix(src, config.Objsuffix)
+	log = srcswapsuffix(src, ".log")
+	usef = srcswapsuffix(src, ".use")
+	bin = srcswapsuffix(src, "")
+
+	std.remove(obj)
+	std.remove(usef)
+	std.remove(log)
+	std.remove(bin)
+
+	std.slfree(obj)
+	std.slfree(usef)
+	std.slfree(log)
+	std.slfree(bin)
+}
+
+const runtest = {bin
+	var r, log
+
+	std.put("run %s:\t", bin)
+	log = std.strcat(bin, ".log")
+	match std.spork([bin][:])
+	| `std.Fail m:
+		std.fatal(1, "unable to run test: %s\n", m)
+	| `std.Ok (pid, infd, outfd):
+		match std.fslurp(outfd)
+		| `std.Ok "":	/* empty output; nothing to log */
+		| `std.Ok buf:
+			std.blat(log, buf, 0o644)
+		| `std.Fail m:
+		;;
+		std.slfree(log)
+
+		r = false
+		match std.wait(pid)
+		| `std.Wfailure:	std.put("FAIL\n")
+		| `std.Wsignalled:	std.put("CRASH\n")
+		| `std.Wsuccess:
+			std.put("PASS\n")
+			r = true
+		| _:	std.put("???\n")
+		;;
+	;;
+	-> r
+}
+

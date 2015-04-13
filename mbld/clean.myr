@@ -1,0 +1,89 @@
+use std
+
+use "config.use"
+use "deps.use"
+use "opts.use"
+use "parse.use"
+use "subdir.use"
+use "types.use"
+use "util.use"
+
+pkg bld =
+	const cleanall	: (b : build# -> bool)
+	const clean	: (b : build#, targ : byte[:] -> bool)
+;;
+
+const cleanall = {b
+	for tn in b.all
+		match gettarg(b.targs, tn)
+		| `Bin bt:
+			cleanup(b, bt, bt.inputs, true)
+		| `Lib lt:
+			cleanup(b, lt, lt.inputs, true)
+		| `Test tt:
+			cleanup(b, tt, tt.inputs, true)
+		| `Gen gt:
+			for f in gt.out
+				if !gt.durable && std.remove(f)
+					std.put("\tclean %s\n", f)
+				;;
+			;;
+		| `Man m:
+		;;
+	;;
+	-> true
+}
+
+const clean = {b, targ
+	for tn in b.all
+		match gettarg(b.targs, tn)
+		| `Bin bt:
+			if std.sleq(bt.name, targ)
+				cleanup(b, bt, bt.inputs, true)
+			;;
+		| `Lib lt:
+			if std.sleq(lt.name, targ)
+				cleanup(b, lt, lt.inputs, true)
+			;;
+		| `Test tt:
+			if std.sleq(tt.name, targ)
+				cleanup(b, tt, tt.inputs, true)
+			;;
+		| `Gen gt:
+			for f in gt.out
+				if !gt.durable && std.remove(f)
+					std.put("\tclean %s\n", f)
+				;;
+			;;
+		| `Man m:
+		;;
+	;;
+	-> true
+}
+
+const cleanup = {b, targ, leaves, islib
+	var mchammer_files /* cant touch this */
+	var keys
+	var dg
+
+	/*
+	we want to automatically add 'clean' sources since otherwise,
+	mbld won't be able to clean code after changing a build file.
+	*/
+	setdir(b, targ.dir)
+	if !myrdeps(b, targ, islib, true, true, &dg)
+		std.fatal(1, "Could not load dependencies for %s\n", targ.name)
+	;;
+	mchammer_files = std.mkht(std.strhash, std.streq)
+	for l in leaves
+		std.htput(mchammer_files, l, true)
+	;;
+
+	keys = std.htkeys(dg.deps)
+	for k in keys
+		if !std.htgetv(mchammer_files, k, false) && std.remove(k)
+			std.put("\tclean %s\n", k)
+		;;
+	;;
+}
+

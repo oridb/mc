@@ -1,0 +1,59 @@
+use std
+
+pkg bld =
+	type build = struct
+		cmd	: byte[:][:]	/* command that we ran */
+		/* build state */
+		basedir	: byte[:]
+		curdir	: byte[:]
+		/* build params */
+		all	: byte[:][:]
+		targs	: std.htab(byte[:], targ)#	/* dir => target mapping */
+		tdeps	: std.htab(byte[:], byte[:][:])	/* targname => depname[:] mapping */
+		gensrc	: std.htab(byte[:], gentarg#)#	/* generated src => generating target mapping */
+		prefix	: byte[:]
+		system	: byte[:]
+		arch	: byte[:]
+	;;
+
+
+	type depgraph = struct
+		roots	: byte[:][:]
+		deps	: std.htab(byte[:], byte[:][:])#
+		libs	: std.htab(byte[:], byte[:][:])#
+		input	: std.htab(byte[:], byte[:])#
+		sources	: std.htab(byte[:], bool)#
+		updated	: std.htab(byte[:], bool)#
+		seen	: std.htab(byte[:], bool)#
+		done	: std.htab(byte[:], bool)#
+	;;
+
+	type myrtarg = struct
+		dir	: byte[:]
+		name	: byte[:]
+		inputs	: byte[:][:]
+		libdeps	: (byte[:], byte[:], byte[:])[:]	/* dir, lib pairs */
+		built	: bool
+		install	: bool
+		runtime	: byte[:]
+		incpath	: byte[:][:]
+		ldscript	: byte[:]
+	;;
+
+	type gentarg = struct
+		dir	: byte[:]
+		out	: byte[:][:]
+		cmd	: byte[:][:] 
+		durable	: bool
+		/* we can have multiple outputs, but we only want to run once for each */
+		done	: bool
+	;;
+
+	type targ = union
+		`Bin	myrtarg#
+		`Lib	myrtarg#
+		`Test	myrtarg#
+		`Gen	gentarg#
+		`Man	byte[:][:]
+	;;
+;;
