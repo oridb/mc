@@ -2,10 +2,11 @@ SUB = parse \
       mi \
       6 \
       muse \
-      myrbuild \
       rt \
-      libstd \
       doc
+
+EXTRA=buildmyr
+EXTRACLEAN=cleanmyr
 
 include mk/c.mk
 include config.mk
@@ -16,3 +17,12 @@ check: all
 
 bench: all
 	$(MAKE) -C bench bench
+
+bootstrap.sh: buildmyr
+	./genbootstrap.sh
+
+buildmyr:
+	./mbldwrap.sh
+
+cleanmyr:
+	./mbldwrap.sh clean

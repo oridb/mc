@@ -49,7 +49,7 @@ subdirs-install:
 	    exit 1 \
 	); done
 
-clean: subdirs-clean 
+clean: subdirs-clean $(EXTRACLEAN)
 	rm -f ${BIN} ${OBJ} ${CLEAN} ${LIB}
 
 install: subdirs-install $(INSTBIN) $(INSTLIB) $(INSTHDR) $(INSTPKG)
