@@ -363,7 +363,6 @@ const inputlist = {p
 			match word(p)
 			| `std.Some l:
 				(dir, lib, targ) = libpath(p, l)
-				std.put("dir: %s, lib: %s, targ: %s\n", dir, lib, targ)
 				libs = std.slpush(libs, (dir, lib, targ))
 			| `std.None:
 				failparse(p, "expected lib name after 'lib'\n")
@@ -502,21 +501,21 @@ const addtarg = {p, b, name, targ
 	var tn
 
 	tn = std.fmt("%s:%s", p.fdir, name)
-	if std.hthas(b._targs, tn)
+	if std.hthas(b.targs, tn)
 		failparse(p, "duplicate target %s\n", tn)
 	;;
 	b.all = std.slpush(b.all, tn)
-	std.htput(b._targs, tn, targ)
+	std.htput(b.targs, tn, targ)
 }
 
 const libpath = {p, libpath
-	var dir, lib_, targ
+	var dir, lib, targ
 
 	match(std.strrfind(libpath, ":"))
 	| `std.None:
 		dir = std.sldup(".")
-		lib_ = std.sldup(libpath)
-		targ = std.fmt("%s:%s", p.fdir, lib_)
+		lib = std.sldup(libpath)
+		targ = std.fmt("%s:%s", p.fdir, lib)
 	| `std.Some idx:
 		if idx == libpath.len
 			std.fatal(1, "libdep %s missing library after ':'\n")
@@ -524,17 +523,17 @@ const libpath = {p, libpath
 		/* absolute path */
 		if std.hasprefix(libpath, "@/") || std.hasprefix(libpath, "@:")
 			dir = std.pathcat(p.basedir, libpath[2:idx])
-			lib_ = std.sldup(libpath[idx+1:])
+			lib = std.sldup(libpath[idx+1:])
 			targ = std.sldup(libpath[2:])
 		/* relative path */
 		else
 			dir = std.sldup(libpath[:idx])
-			lib_ = std.sldup(libpath[idx+1:])
+			lib = std.sldup(libpath[idx+1:])
 			targ = std.pathcat(p.fdir, libpath)
 			if std.hasprefix(targ, "../")
 				std.fatal(1, "library %s outside of project\n", libpath)
 			;;
 		;;
 	;;
-	-> (dir, lib_, targ)
+	-> (dir, lib, targ)
 }

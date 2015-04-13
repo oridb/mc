@@ -22,7 +22,7 @@ const test = {b
 	ok = true
 	if std.fexists("test")
 		for tn in b.all
-			match gettarg(b._targs, tn)
+			match gettarg(b.targs, tn)
 			| `Bin bt:
 				if !dotest(b, bt, ok)
 					ok = false

@@ -5,9 +5,10 @@ pkg bld =
 		cmd	: byte[:][:]	/* command that we ran */
 		/* build state */
 		basedir	: byte[:]
+		curdir	: byte[:]
 		/* build params */
 		all	: byte[:][:]
-		_targs	: std.htab(byte[:], targ)#	/* dir => target mapping */
+		targs	: std.htab(byte[:], targ)#	/* dir => target mapping */
 		tdeps	: std.htab(byte[:], byte[:][:])	/* targname => depname[:] mapping */
 		gensrc	: std.htab(byte[:], gentarg#)#	/* generated src => generating target mapping */
 		prefix	: byte[:]

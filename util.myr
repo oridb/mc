@@ -106,11 +106,18 @@ const gettarg = {tab, n
 const setdir = {b, dir
 	var p
 
-	p = std.pathcat(b.basedir, dir)
-	std.put("changing into '%s'\n", p)
-	if !std.chdir(p)
-		std.fatal(1, "could not cd into %s\n")
+	if !std.sleq(b.curdir, dir)
+		p = std.pathcat(b.basedir, dir)
+		if b.curdir.len != 0
+			std.put("Leaving directory %s\n", b.curdir)
+		;;
+
+		std.put("Entering directory '%s'\n", dir)
+		if !std.chdir(p)
+			std.fatal(1, "could not cd into %s\n")
+		;;
+		b.curdir = dir
+		std.slfree(p)
 	;;
-	std.slfree(p)
 }
 

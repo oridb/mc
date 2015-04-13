@@ -15,7 +15,7 @@ pkg bld =
 
 const cleanall = {b
 	for tn in b.all
-		match gettarg(b._targs, tn)
+		match gettarg(b.targs, tn)
 		| `Bin bt:
 			cleanup(b, bt, bt.inputs, true)
 		| `Lib lt:
@@ -36,7 +36,7 @@ const cleanall = {b
 
 const clean = {b, targ
 	for tn in b.all
-		match gettarg(b._targs, tn)
+		match gettarg(b.targs, tn)
 		| `Bin bt:
 			if std.sleq(bt.name, targ)
 				cleanup(b, bt, bt.inputs, true)

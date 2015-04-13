@@ -17,7 +17,7 @@ pkg bld =
 
 const buildall = {b
 	for tn in b.all
-		match gettarg(b._targs, tn)
+		match gettarg(b.targs, tn)
 		| `Bin bt:	buildbin(b, bt, false)
 		| `Lib lt:	buildlib(b, lt)
 		| `Test tt:	/* build on 'mbld test' by default */
@@ -30,7 +30,7 @@ const buildall = {b
 
 const genall = {b
 	for tn in b.all
-		match gettarg(b._targs, tn)
+		match gettarg(b.targs, tn)
 		| `Gen gt: run(gt.cmd)
 		| _:	/* skip */
 		;;
@@ -40,7 +40,7 @@ const genall = {b
 }
 
 const build = {b, targ
-	match std.htget(b._targs, targ)
+	match std.htget(b.targs, targ)
 	| `std.Some (`Bin bt):	buildbin(b, bt, false)
 	| `std.Some (`Lib lt):	buildlib(b, lt)
 	| `std.Some (`Test tt):	buildbin(b, tt, false)
@@ -58,14 +58,8 @@ const buildbin = {b, targ, addsrc
 		->
 	;;
 	setdir(b, targ.dir)
-	if targ.libdeps.len > 0
-		for (inc, lib, subtarg) in targ.libdeps
-			if !hasinc(targ.incpath, inc)
-				targ.incpath = std.slpush(targ.incpath, inc)
-			;;
-			build(b, subtarg)
-		;;
-	;;
+	addincludes(b, targ)
+	buildlibdeps(b, targ)
 	std.put("%s...\n", targ.name)
 	if !myrdeps(b, targ, false, false, addsrc, &dg)
 		std.fatal(1, "Could not load dependencies for %s\n", targ.name)
@@ -81,15 +75,6 @@ const buildbin = {b, targ, addsrc
 	targ.built = true
 }
 
-const hasinc = {path, t
-	for e in path
-		if std.sleq(e, t)
-			-> true
-		;;
-	;;
-	-> false
-}
-
 const buildlib = {b, targ
 	var archive
 	var u, l
@@ -100,6 +85,8 @@ const buildlib = {b, targ
 		->
 	;;
 	setdir(b, targ.dir)
+	addincludes(b, targ)
+	buildlibdeps(b, targ)
 	lib = targ.name
 	std.put("lib%s.a...\n", lib)
 	archive = std.fmt("lib%s.a", lib)
@@ -125,10 +112,34 @@ const genfiles = {b, gt
 	for f in gt.out
 		if !std.fexists(f)
 			run(gt.cmd)
-			->
+			break
 		;;
 	;;
 }
+
+const addincludes = {b, targ
+	for (inc, lib, subtarg) in targ.libdeps
+		if !hasinc(targ.incpath, inc)
+			targ.incpath = std.slpush(targ.incpath, inc)
+		;;
+	;;
+}
+
+const buildlibdeps = {b, targ
+	for (inc, lib, subtarg) in targ.libdeps
+		build(b, subtarg)
+	;;
+}
+
+const hasinc = {path, t
+	for e in path
+		if std.sleq(e, t)
+			-> true
+		;;
+	;;
+	-> false
+}
+
 
 const builddep = {b, dg, out, incs
 	var stale

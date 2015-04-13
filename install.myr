@@ -27,7 +27,7 @@ const movetargs = {b, delete
 	var libarchive
 
 	for tn in b.all
-		match gettarg(b._targs, tn)
+		match gettarg(b.targs, tn)
 		| `Bin bt:
 			movefile(delete, bt.name, opt_instroot, opt_destdir, "bin", 0o755)
 		| `Lib lt:

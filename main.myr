@@ -97,10 +97,10 @@ const mkbuild = {
 	var b
 
 	b = std.zalloc()
-	b._targs = std.mkht(std.strhash, std.streq)
+	b.targs = std.mkht(std.strhash, std.streq)
 	b.gensrc = std.mkht(std.strhash, std.streq)
 	b.basedir = std.getcwd()
-	std.put("base dir = %s\n", b.basedir)
+	b.curdir = ""
 	-> b
 }
 
