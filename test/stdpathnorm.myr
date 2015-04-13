@@ -2,6 +2,7 @@ use std
 
 const main = {
 	/* untouched */
+	std.put("%s\n", std.pathnorm(""))
 	std.put("%s\n", std.pathnorm("foo"))
 	std.put("%s\n", std.pathnorm("foo/bar"))
 	std.put("%s\n", std.pathnorm("/foo/bar"))

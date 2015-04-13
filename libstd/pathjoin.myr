@@ -20,7 +20,9 @@ const pathcat = {a, b
 const pathjoin = {l
 	var p, q
 
-	p = strjoin(l, "/")
+	if l.len > 0
+		p = strjoin(l, "/")
+	;;
 	q = pathnorm(p)
 	slfree(p)
 	-> q
