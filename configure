@@ -8,12 +8,16 @@ for i in `seq 30`; do
 done
 echo "Automake emulated successfully"
 
-INST_ROOT='/usr/local'
 prefix="/usr/local"
 
 for arg in $*; do
     shift 1
     case $arg in
+        "--redo" | "-r")
+            if [ -f ./configvar_cache ]; then
+                . ./configvar_cache
+            fi
+            ;;
         "--prefix" | "-p") 
             prefix=shift $*
             ;;
@@ -41,20 +45,34 @@ echo '#define Ldcmd {"ld", "-o", NULL}' >> config.h
 echo '#define Defaultasm Gnugas' >> config.h
 echo '#define Objsuffix ".o"' >> config.h
 echo 'export SYSCLASS=posixy' >> config.mk
+
+# mbld mbld/config.myr
+echo "pkg config = " > mbld/config.myr
+echo "const Instroot = \"$prefix\"" >> mbld/config.myr
+echo "const Objsuffix = \".o\"" >> mbld/config.myr
+echo "const Linkcmd = [\"ld\", \"-o\"]" >> mbld/config.myr
+echo "const Arcmd = [\"ar\", \"-rcs\"]" >> mbld/config.myr
+echo "const Ascmd = [\"as\", \"-g\"]" >> mbld/config.myr
+echo "const Directlib = false" >> mbld/config.myr
+echo "const Runtime = \"_myrrt.o\"" >> mbld/config.myr
+echo "const Manpath = \"share/man/man\"" >> mbld/config.myr
 case $OS in
     *Linux*)
         echo '#define Symprefix ""' >> config.h
         echo '#define Defaultasm Gnugas' >> config.h
         echo 'export SYS=linux' >> config.mk
+        echo 'const Sys = "Linux"' >> mbld/config.myr
         ;;
     *Darwin*)
         echo '#define Symprefix "_"' >> config.h
         echo 'export SYS=osx' >> config.mk
+        echo 'const Sys = "OSX"' >> mbld/config.myr
         ;;
     *FreeBSD*)
         echo '#define Symprefix ""' >> config.h
         echo '#define Defaultasm Gnugas' >> config.h
         echo 'export SYS=freebsd' >> config.mk
+        echo 'const Sys = "FreeBSD"' >> mbld/config.myr
         ;;
     *)
         echo ''
@@ -70,6 +88,7 @@ esac
 case $MACH in
     *x86_64*)
         echo 'export ARCH=x64' >> config.mk
+        echo 'const Arch = "x64"' >> mbld/config.myr
         ;;
     *)
         echo ''
@@ -78,7 +97,9 @@ case $MACH in
         echo 'Cannot build'
         echo '********************************'
 esac
+echo ';;' >> mbld/config.myr
 
+echo "prefix=$prefix" > configvar_cache
 cat << EOF
     Building with:
         prefix=$prefix

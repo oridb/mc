@@ -117,6 +117,6 @@ uninstall: subdirs-uninstall
 	mkdir -p $(_DEPSDIR)
 
 config.mk: configure
-	./configure
+	./configure --redo
 
 -include $(_DEPS)
