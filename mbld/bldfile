@@ -14,6 +14,14 @@ bin mbld =
 	test.myr
         types.myr
 	util.myr
+
+	# Currently, mbld doesn't add all deps transitively.
+	# Until this gets fixed, we need to list all dependent
+	# libraries here explicitly.
+	lib ../libstd:sys
+	lib ../libstd:std
+	lib ../libbio:bio
+	lib ../libregex:regex
 ;;
 
 gen config.myr {durable} = ./configure ;;

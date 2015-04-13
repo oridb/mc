@@ -2,4 +2,6 @@ lib bio =
 	bio.myr
 	geti.myr
 	puti.myr
+
+        lib ../libstd:std
 ;;
