@@ -1,0 +1,8 @@
+lib regex =
+	compile.myr
+	interp.myr
+	ranges.myr
+	types.myr
+;;
+
+gen ranges.myr = mkchartab -a -p_ranges UnicodeData.txt -o ranges.myr;;

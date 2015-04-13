@@ -1,0 +1,34 @@
+use std
+use regex
+
+pkg =
+	const testmatch	: (pat : byte[:], text : byte[:] -> void)
+	const dbgmatch	: (pat : byte[:], text : byte[:] -> void)
+;;
+
+const testmatch = {pat, text
+	run(regex.compile(pat), pat, text)
+}
+
+const dbgmatch = {pat, text
+	run(regex.dbgcompile(pat), pat, text)
+}
+
+const run = {regex, pat, text
+	var i
+	match regex
+	| `std.Ok re:
+		match regex.exec(re, text)
+		| `std.Some m:
+			std.put("Matched %s via %s : %i\n", text, pat, m.len)
+			for i = 0; i < m.len; i++
+				std.put("\tmatch %i: %s\n", i, m[i])
+			;;
+		| `std.None:
+			std.put("No match of %s via %s\n", text, pat)
+		;;
+		regex.free(re)
+	| `std.Fail err:
+		std.put("failed to compile regex")
+	;;
+}

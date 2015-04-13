@@ -1,0 +1,28 @@
+Matched abcdef via \<([a-z]*)\> : 2
+	match 0: abcdef
+	match 1: abcdef
+Matched !m! via .*(\<.*\>).* : 2
+	match 0: !m!
+	match 1: m
+Matched !m via .*(\<.*\>).* : 2
+	match 0: !m
+	match 1: m
+Matched m! via .*(\<.*\>).* : 2
+	match 0: m!
+	match 1: m
+Matched !@#!!matches!!%! via .*(\<.*\>).* : 2
+	match 0: !@#!!matches!!%!
+	match 1: matches
+Matched matches!!%! via .*(\<.*\>).* : 2
+	match 0: matches!!%!
+	match 1: matches
+Matched !@#!!matches via .*(\<.*\>).* : 2
+	match 0: !@#!!matches
+	match 1: matches
+Matched !@#!!matches!!%!foo via .*(\<.*\>).* : 2
+	match 0: !@#!!matches!!%!foo
+	match 1: foo
+Matched 123 via .*(\<.*\>).* : 2
+	match 0: 123
+	match 1: 123
+No match of abcdefoo via \<([a-z]*)\>foo

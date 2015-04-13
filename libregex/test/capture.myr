@@ -1,0 +1,9 @@
+use "testmatch.use"
+
+const main = {
+	testmatch("A(.*)", "Abc")
+	testmatch("A(.*)e", "Abcde")
+	testmatch("(a|b)+", "abab")
+	testmatch("A(b(.*)d)e", "Abcde")
+	testmatch("(a?)(a*)(a?)", "aaaa")
+}

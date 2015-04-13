@@ -1,0 +1,847 @@
+use std
+
+use "types.use"
+use "ranges.use"
+
+pkg regex =
+	const compile	: (re : byte[:] -> std.result(regex#, status))
+	const dbgcompile	: (re : byte[:] -> std.result(regex#, status))
+	const free	: (re : regex# -> void)
+;;
+
+type tree = union
+	/* basic string building */
+	`Alt	(tree#, tree#)
+	`Cat	(tree#, tree#)
+
+	/* repetition */
+	`Star	tree#
+        `Rstar  tree#
+	`Plus	tree#
+	`Rplus	tree#
+	`Quest	tree#	
+
+	/* end matches */
+	`Byte	byte
+	`Chr	char
+	`Ranges	char[2][:]
+
+	/* meta */
+	`Cap	(std.size, tree#) /* id, tree */
+	`Bol	/* beginning of line */
+	`Eol	/* end of line */
+	`Bow	/* beginning of word */
+	`Eow	/* end of word */
+;;
+
+type parseresult = union
+	`Some tree#
+	`None
+	`Fail status
+;;
+
+/* Compiles a pattern into a regex */
+const compile = {pat
+	-> regexcompile(std.zalloc(), pat)
+}
+
+/* Compiles a pattern into a debug regex. This can be verbose. */
+const dbgcompile = {pat
+	var re
+
+	re = std.zalloc()
+	re.debug = true
+	-> regexcompile(re, pat)
+}
+
+/* compiles a pattern into an allocated regex */
+const regexcompile = {re, pat
+	re.pat = pat
+	re.nmatch = 1 /* whole match */
+	match parse(re)
+	| `None:	-> `std.Fail (`Incomplete)
+	| `Fail f:	-> `std.Fail f
+	| `Some t:
+		/*
+		we can stop early if we get 
+		an incorrectly encoded char
+		*/
+		if re.pat.len > 0
+			-> `std.Fail (`Incomplete)
+		;;
+		dump(re, t, 0)
+		append(re, `Ilbra 0)
+		gen(re, t)
+		append(re, `Irbra 0)
+		append(re, `Imatch)
+		idump(re)
+		astfree(t)
+		-> `std.Ok re
+	;;
+	-> `std.Fail (`Noimpl)
+}
+
+const free = {re
+	/* all the threads should be dead,
+	 so we shouldn't have to free any*/
+	std.slfree(re.prog)
+	std.free(re)
+}
+
+
+/* generates bytecode from an AST */
+const gen = {re, t
+	match t#
+	|`Alt	(a, b): genalt(re, a, b)
+	|`Cat	(a, b): gen(re, a); gen(re, b)
+	/* repetition */
+	|`Star	a:	genstar(re, a, false)
+	|`Rstar a:	genstar(re, a, true)
+	|`Plus	a:	gen(re, a); genstar(re, a, false)
+	|`Rplus	a:	gen(re, a); genstar(re, a, true)
+	|`Quest	a:	genquest(re, a)
+
+	/* end matches */
+	|`Byte	b: 	append(re, `Ibyte b)
+	|`Chr	c:	genchar(re, c)
+	|`Ranges  sl:	genranges(re, sl)
+
+	/* meta */
+	|`Bol:	append(re, `Ibol)
+	|`Eol:	append(re, `Ibol)
+	|`Bow:	append(re, `Ibow)
+	|`Eow:	append(re, `Ieow)
+	|`Cap	(m, a):
+		append(re, `Ilbra m)
+		gen(re, a)
+		append(re, `Irbra m)
+	;;
+	-> re.proglen
+}
+
+const genranges = {re, sl
+	var lbuf : byte[4], hbuf : byte[4], boundbuf : byte[4]
+	var lsz, hsz, bsz, i
+	var rt : rangetrie#
+
+	/* generate a trie of ranges */
+	rt = std.zalloc()
+	for r in sl
+		/* 
+		encode:
+			lo => bounds[loidx] - 1
+			bounds[loidx] => bounds[loidx + 1] - 1
+			...
+			bounds[hiidx - 1] => hi
+		*/
+		lsz = std.encode(lbuf[:], r[0])
+		hsz = std.encode(hbuf[:], r[1])
+		for i = lsz; i < hsz; i++
+			bsz = bound(boundbuf[:], i, 0xff)
+			rtinsert(rt, lbuf[:lsz], boundbuf[:bsz])
+			lsz = bound(lbuf[:], i + 1, 0x00)
+		;;
+		rtinsert(rt, lbuf[:lsz], hbuf[:hsz])
+	;;
+	if re.debug
+		rtdump(rt, 0)
+	;;
+	rangegen(re, rt, rt.ranges, rt.link, rangeprogsize(rt) + re.proglen)
+	rtfree(rt)
+	-> re.proglen
+}
+
+const bound = {buf, len, fill
+	var i, s
+
+	if len == 1
+		buf[0] = 0x7f
+	else
+		s = len castto(byte)
+		buf[0] = (0xff << (8 - s)) | (fill >> (s + 1))
+		for i = 1; i < len; i++
+			buf[i] = 0x80 | (fill >> 2)
+		;;
+	;;
+	-> len
+}
+
+type rangetrie = struct
+	ranges	: (byte, byte)[:]
+	link	: rangetrie#[:]
+	end	: bool
+;;
+
+const rtdump = {rt, ind
+	var i
+	var l, h
+
+	indent(ind)
+	std.put("Range (end = %t) {\n", rt.end)
+	for i = 0; i < rt.ranges.len; i++
+		indent(ind + 1)
+		(l, h) = rt.ranges[i]
+		std.put("0x%xb-0x%xb: \n", l, h)
+		rtdump(rt.link[i], ind + 1)
+	;;
+	indent(ind)
+	std.put("}\n")
+}
+
+const indent = {ind
+	var i
+	for i = 0; i < ind; i++
+		std.put("\t")
+	;;
+}
+
+const rtinsert = {rt, lo, hi
+	var a, b
+	var n
+
+	std.assert(lo.len == hi.len, "range sizes differ")
+	if lo.len == 0
+		rt.end = true
+		->
+	;;
+
+	n = rt.ranges.len
+	if n == 0
+		rt.ranges = std.slpush(rt.ranges, (lo[0], hi[0]))
+		rt.link = std.slpush(rt.link, std.zalloc())
+	else
+		/*
+		this is a safe way to compare because we know that ranges
+		should always be coming in ordered. This means that equal
+		values will be added one after the other.
+		*/
+		(a, b) = rt.ranges[n - 1]
+		if a != lo[0] || b != hi[0]
+			rt.ranges = std.slpush(rt.ranges, (lo[0], hi[0]))
+			rt.link = std.slpush(rt.link, std.zalloc())
+		;;
+	;;
+
+	rtinsert(rt.link[rt.link.len - 1], lo[1:], hi[1:])
+}
+
+const rtfree = {rt
+	for l in rt.link
+		rtfree(l)
+	;;
+	std.slfree(rt.link)
+	std.slfree(rt.ranges)
+	std.free(rt)
+}
+
+const rangegen = {re, rt, ranges, links, end
+	var alt, l0, l1, l2
+	var a, b
+	var n
+
+	n = ranges.len
+	if n == 0
+		-> re.proglen
+	elif n == 1
+		(a, b) = ranges[0]
+		append(re, `Irange (a, b))
+		if links[0].end
+			if links[0].ranges.len > 0
+				append(re, `Ifork (re.prog.len + 1, end))
+			else
+				append(re, `Ijmp end)
+			;;
+		;;
+		rangegen(re, links[0], links[0].ranges, links[0].link, end)
+	else
+		alt = re.proglen
+		l0 = append(re, `Ifork (-1, -1))
+		l1 = rangegen(re, rt, ranges[0:n/2], links[0:n/2], end)
+		l2 = rangegen(re, rt, ranges[n/2:n], links[n/2:n], end)
+		re.prog[alt] = `Ifork (l0, l1)
+	;;
+	-> re.proglen
+}
+
+const rangeprogsize = {rt
+	var sz
+
+	if rt.ranges.len == 0
+		sz = 0
+	else
+		sz = 2*rt.ranges.len - 1
+		for l in rt.link
+			sz += rangeprogsize(l)
+		;;
+	;;
+	if rt.end
+		sz += 1
+	;;
+	-> sz
+}
+
+/* calculates the forward jump distance for a utf8 character range */
+const jmpdist = {n
+	var d
+	var i
+
+	d = n - 1
+	for i = n - 1; i > 0; i--
+		d += i
+	;;
+	-> d
+}
+
+/* generates an alternation */
+const genalt = {re, l, r
+	var alt
+	var jmp
+	var l0
+	var l1
+	var l2
+
+	alt 	= re.proglen
+	l0	= append(re, `Ifork (-1, -1)) /* needs to be replaced */
+		  gen(re, l)
+	jmp	= re.proglen
+	l1 	= append(re, `Ijmp -1) /* needs to be replaced */
+	l2	= gen(re, r)
+
+	re.prog[alt] = `Ifork(l0, l1)
+	re.prog[jmp] = `Ijmp l2
+	-> re.proglen
+}
+
+/* generates a repetition operator */
+const genstar = {re, rep, reluct
+	var alt
+	var jmp
+	var l0
+	var l1
+	var l2
+
+	l0 	= re.proglen
+	alt	= re.proglen
+	l1 	= append(re, `Ifork (-1, -1)) /* needs to be replaced */
+	jmp	= gen(re, rep)
+	l2	= append(re, `Ijmp -1)
+
+
+	/* reluctant matches should prefer jumping to the end. */
+	if reluct
+		re.prog[alt] = `Ifork (l2, l1)
+	else
+		re.prog[alt] = `Ifork (l1, l2)
+	;;
+	re.prog[jmp] = `Ijmp l0
+	-> re.proglen
+}
+
+/* generates a question mark operator */
+const genquest = {re, q
+	var alt
+	var l0
+	var l1
+
+	alt	= re.proglen
+	l0	= append(re, `Ifork (-1, -1)) /* needs to be replaced */
+	l1	= gen(re, q)
+	re.prog[alt] = `Ifork (l0, l1)
+	-> re.proglen
+}
+
+/* generates a single char match */
+const genchar = {re, c
+	var b : byte[4]
+	var n
+	var i
+
+	n = std.encode(b[:], c)
+	std.assert(n > 0 && n < 4, "non-utf character in regex\n")
+	for i = 0; i < n; i++
+		append(re, `Ibyte b[i])
+	;;
+	-> re.proglen
+}
+
+/* appends an instructon to an re program */
+const append = {re, insn
+	if re.proglen == re.prog.len
+		re.prog = std.slgrow(re.prog, std.max(1, 2*re.proglen))
+	;;
+	re.prog[re.proglen] = insn
+	re.proglen++
+	-> re.proglen
+}
+
+/* instruction dump */
+const idump = {re
+	var i
+
+	if !re.debug
+		->
+	;;
+	for i = 0; i < re.proglen; i++
+		std.put("%i:\t", i)
+		match re.prog[i]
+		/* Char matching. Consume exactly one byte from the string. */
+		| `Ibyte b:		std.put("`Ibyte %ub (%c)\n", b, b castto(char)) 
+		| `Irange (start, end):	
+			std.put("`Irange (%ub,%ub)", start, end) 
+			if std.isalnum(start castto(char)) && std.isalnum(end castto(char))
+				std.put("\t/* %c-%c */", start castto(char), end castto(char))
+			;;
+			std.put("\n")
+		/* capture groups */
+		| `Ilbra m:		std.put("`Ilbra %z\n", m) 
+		| `Irbra m:		std.put("`Irbra %z\n", m) 
+		/* anchors */
+		| `Ibol:			std.put("`Ibol\n")
+		| `Ieol:			std.put("`Ieol\n")
+		| `Ibow:			std.put("`Ibow\n")
+		| `Ieow:			std.put("`Ieow\n")
+		/* control flow */
+		| `Ifork	(lip, rip):	std.put("`Ifork (%z,%z)\n", lip, rip) 
+		| `Ijmp ip:		std.put("`Ijmp %z\n", ip) 
+		| `Imatch:		std.put("`Imatch\n") 
+		;;
+	;;
+}
+
+/* AST dump */
+const dump = {re, t, indent
+	var i
+
+	if !re.debug
+		->
+	;;
+	for i = 0; i < indent; i++
+		std.put("  ")
+	;;
+	match t#
+	| `Alt	(a, b):
+		std.put("Alt\n")
+		dump(re, a, indent + 1)
+		dump(re, b, indent + 1)
+	| `Cat	(a, b):
+		std.put("Cat\n")
+		dump(re, a, indent + 1)
+		dump(re, b, indent + 1)
+	/* repetition */
+	| `Star	a:
+		std.put("Star\n")
+		dump(re, a, indent + 1)
+	| `Rstar a:
+		std.put("Rstar\n")
+		dump(re, a, indent + 1)
+	| `Plus	a:
+		std.put("Plus\n")
+		dump(re, a, indent + 1)
+	| `Rplus a:
+		std.put("Rplus\n")
+		dump(re, a, indent + 1)
+	| `Quest	a:
+		std.put("Quest\n")
+		dump(re, a, indent + 1)
+	| `Bol:
+		std.put("Bol\n")
+	| `Eol:
+		std.put("Eol\n")
+	| `Bow:
+		std.put("Bow\n")
+	| `Eow:
+		std.put("Eow\n")
+	/* end matches */
+	| `Byte	b:
+		std.put("Byte %b\n", b)
+	| `Chr	c:
+		std.put("Char %c\n", c)
+	| `Ranges rl:
+                std.put("Ranges")
+		for r in rl
+			for i = 0; i < indent + 1; i++
+				std.put("  ")
+			;;
+			std.put("\t(%ui-%ui)\n", r[0], r[1])
+		;;
+
+	/* meta */
+	| `Cap	(m, a):
+		std.put("Cap %i\n", m)
+		dump(re, a, indent + 1)
+	;;
+}
+
+/* parses an expression */
+const parse = {re
+	match altexpr(re)
+	| `Some t:
+		if re.pat.len == 0
+			-> `Some t
+		else
+			astfree(t)
+			-> `Fail `Incomplete
+		;;
+	| `None:
+		-> `None
+	| `Fail st:
+		-> `Fail st
+	;;
+}
+
+const altexpr = {re
+	var ret : tree#
+
+	match catexpr(re)
+	| `Some t:
+		ret = t
+		if matchc(re, '|')
+			match altexpr(re)
+			| `Some rhs:
+				ret = mk(`Alt (ret, rhs))
+			| `None:
+				astfree(ret)
+				-> `Fail (`Incomplete)
+			| `Fail f:
+				-> `Fail f
+			;;
+		;;
+	| other:
+		-> other
+	;;
+	-> `Some ret
+}
+
+const catexpr = {re
+	var ret
+
+	match repexpr(re)
+	| `Some t: 
+		ret = t
+		match catexpr(re)
+		| `Some rhs:
+			ret = mk(`Cat (t, rhs))
+		| `Fail f:	-> `Fail f
+		| `None:	/* nothing */
+		;;
+	| other:
+		-> other
+	;;
+	-> `Some ret
+}
+
+const repexpr = {re
+	var ret
+
+	match baseexpr(re)
+	| `Some t:
+		if matchc(re, '*')
+                        if matchc(re, '?')
+                                ret = mk(`Rstar t)
+                        else
+				ret = mk(`Star t)
+			;;
+		elif matchc(re, '+')
+                        if matchc(re, '?')
+				ret = mk(`Rplus t)
+			else
+				ret = mk(`Plus t)
+			;;
+		elif matchc(re, '?')
+			ret = mk(`Quest t)
+		else
+			ret = t
+		;;
+	| other:
+		-> other
+	;;
+	-> `Some ret
+}
+
+const baseexpr = {re
+	var ret
+
+	if re.pat.len == 0
+		-> `None
+	;;
+	match peekc(re)
+	/* lower prec operators */
+	| '|':	-> `None
+	| ')':	-> `None
+	| '*':	-> `Fail `Badrep
+	| '+':	-> `Fail `Badrep
+	| '?':	-> `Fail `Badrep
+	| '[':	-> chrclass(re)
+	| '.':	getc(re); ret = mk(`Ranges std.slpush([][:], [0, std.Maxcharval]))
+	| '^':	getc(re); ret = mk(`Bol)
+	| '$':	getc(re); ret = mk(`Eol)
+	| '(':	
+		getc(re)
+		match altexpr(re)
+		| `Some s:
+			if matchc(re, ')')
+				-> `Some mk(`Cap (re.nmatch++, s))
+			else
+				-> `Fail `Unbalanced
+			;;
+		| `None:	-> `Fail `Emptyparen
+		| `Fail st:	-> `Fail st
+		;;
+	| '\\':
+		getc(re) /* consume the slash */
+		if re.pat.len == 0
+			-> `Fail `Incomplete
+		;;
+		-> escaped(re)
+	| c:
+		getc(re)
+		ret = mk(`Chr c)
+	;;
+	-> `Some ret
+}
+
+const escaped = {re
+	var ret
+
+	match getc(re)
+	/* character classes */
+	| 'd': ret = `Some mk(`Ranges std.sldup(_ranges.tabasciidigit[:]))
+	| 'x': ret = `Some mk(`Ranges std.sldup(_ranges.tabasciixdigit[:]))
+	| 's': ret = `Some mk(`Ranges std.sldup(_ranges.tabasciispace[:]))
+	| 'w': ret = `Some mk(`Ranges std.sldup(_ranges.tabasciiword[:]))
+	| 'h': ret = `Some mk(`Ranges std.sldup(_ranges.tabasciiblank[:]))
+
+	/* negated character classes */
+	| 'W': ret = `Some mk(`Ranges negate(_ranges.tabasciiword[:]))
+	| 'S': ret = `Some mk(`Ranges negate(_ranges.tabasciispace[:]))
+	| 'D': ret = `Some mk(`Ranges negate(_ranges.tabasciidigit[:]))
+	| 'X': ret = `Some mk(`Ranges negate(_ranges.tabasciixdigit[:]))
+	| 'H': ret = `Some mk(`Ranges negate(_ranges.tabasciiblank[:]))
+
+	/* unicode character classes */
+	| 'p':	ret = unicodeclass(re, false)
+	| 'P':  ret = unicodeclass(re, true)
+
+	/* operators that need an escape */
+	| '<': ret = `Some mk(`Bow)
+	| '>': ret = `Some mk(`Eow)
+
+	/* escaped metachars */
+	| '^': ret = `Some mk(`Chr '^')
+	| '$': ret = `Some mk(`Chr '$')
+	| '.': ret = `Some mk(`Chr '.')
+	| '+': ret = `Some mk(`Chr '+')
+	| '?': ret = `Some mk(`Chr '?')
+	| chr: ret = `Fail `Badescape
+	;;
+	-> ret
+}
+
+const unicodeclass = {re, neg
+	var c, s
+	var tab
+	var t
+	var n
+
+	if re.pat.len == 0
+		-> `Fail (`Incomplete)
+	;;
+	n = 0
+	s = re.pat
+	/* either a single char pattern, or {pat} */
+	match getc(re)
+	| '{':
+		s = s[1:]
+		while re.pat.len > 0
+			c = getc(re)
+			if c == '}'
+				break
+			;;
+			n += std.charlen(c)
+		;;
+	| r:
+		n += std.charlen(r)
+	;;
+	s = s[:n]
+	/* letters */
+	if std.sleq(s, "L") || std.sleq(s, "Letter")
+		tab = _ranges.tabalpha[:]
+	elif std.sleq(s, "Lu") || std.sleq(s, "Uppercase_Letter")
+		tab = _ranges.tabupper[:]
+	elif std.sleq(s, "Ll") || std.sleq(s, "Lowercase_Letter")
+		tab = _ranges.tablower[:]
+	elif std.sleq(s, "Lt") || std.sleq(s, "Titlecase_Letter")
+		tab = _ranges.tablower[:]
+	/* numbers (incomplete) */
+	elif std.sleq(s, "N") || std.sleq(s, "Number")
+		tab = _ranges.tabdigit[:]
+	elif std.sleq(s, "Z") || std.sleq(s, "Separator")
+		tab = _ranges.tabspace[:]
+	elif std.sleq(s, "Zs") || std.sleq(s, "Space_Separator")
+		tab = _ranges.tabblank[:]
+	else
+		-> `Fail (`Badrange)
+	;;
+	if !neg
+		t = mk(`Ranges std.sldup(tab))
+	else
+		t = mk(`Ranges negate(tab))
+	;;
+	-> `Some t
+}
+
+const chrclass = {re
+	var rl, m, n
+	var neg
+	var t
+
+	/* we know we saw '[' on entry */
+	matchc(re, '[')
+	neg = false
+	if matchc(re, '^')
+		neg = true
+	;;
+	rl = rangematch(re, [][:])
+	while peekc(re) != ']'
+		rl = rangematch(re, rl)
+	;;
+	if !matchc(re, ']')
+		std.slfree(rl)
+		-> `Fail (`Incomplete)
+	;;
+
+	std.sort(rl, {a, b;
+		if a[0] < b[0]
+			-> `std.Before
+		elif a[0] == b[0]
+			-> `std.Equal
+		else
+			-> `std.After
+		;;})
+	m = merge(rl)
+	std.slfree(rl)
+	if neg
+		n = negate(m)
+		std.slfree(m)
+		t = mk(`Ranges n)
+	else
+		t = mk(`Ranges m)
+	;;
+	-> `Some t
+}
+
+const rangematch = {re, sl
+	var lo
+	var hi
+
+	lo = getc(re)
+	if matchc(re, '-')
+		hi = getc(re)
+		if lo <= hi
+			-> std.slpush(sl, [lo, hi])
+		else
+			-> std.slpush(sl, [hi, lo])
+		;;
+	else
+		-> std.slpush(sl, [lo, lo])
+	;;
+}
+
+const negate = {rng
+	var start, end, next
+	var neg
+
+	neg = [][:]
+	start = 0
+	next = 0 /* if we have no ranges */
+	for r in rng
+		(end, next) = (r[0], r[1])
+		neg = std.slpush(neg, [start, end - 1])
+		start = next + 1
+	;;
+	neg = std.slpush(neg, [next + 1, std.Maxcharval])
+	-> neg
+}
+
+/* rl is a sorted list of ranges */
+const merge = {rl
+	var lo, hi
+	var ret
+
+	if rl.len == 0
+		-> [][:]
+	;;
+	ret = [][:]
+	lo = rl[0][0]
+	hi = rl[0][1]
+	for r in rl[1:]
+		/* if it overlaps or abuts, merge */
+		if r[0] <= hi + 1
+			hi = r[1]
+		else
+			ret = std.slpush(ret, [lo, hi])
+			lo = r[0]
+			hi = r[1]
+		;;
+	;;
+	-> std.slpush(ret, [lo, hi])
+}
+
+
+const matchc = {re, c
+	var str
+	var chr
+
+	(chr, str) = std.striter(re.pat)
+	if chr != c
+		-> false
+	;;
+	re.pat = str
+	-> true
+}
+
+const getc = {re
+	var c
+
+	(c, re.pat) = std.striter(re.pat)
+	-> c
+}
+
+const peekc = {re
+	var c
+	var _
+
+	(c, _) = std.striter(re.pat)
+	-> c
+}
+
+const mk = {v
+	var t
+
+	t = std.alloc()
+	t# = v
+	-> t
+}
+
+const astfree = {t
+	match t#
+	| `Alt	(a, b): astfree(a); astfree(b)
+	| `Cat	(a, b): astfree(a); astfree(b)
+	/* repetition */
+	| `Star	a:	astfree(a)
+	| `Rstar a:	astfree(a)
+	| `Plus	a:	astfree(a)
+	| `Rplus a:	astfree(a)
+	| `Quest a:	astfree(a)
+
+	/* end matches */
+	| `Byte	b:	
+	| `Chr c:	
+	| `Ranges rl:	std.slfree(rl)
+
+	/* meta */
+	| `Cap	(m, a):	astfree(a)
+	| _:	/* other types have no suballocations */
+	;;
+	std.free(t)
+}

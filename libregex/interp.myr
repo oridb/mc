@@ -1,0 +1,308 @@
+use std
+
+use "types.use"
+
+pkg regex =
+	const exec	: (re : regex#, str : byte[:] -> std.option(byte[:][:]))
+	/*
+	FIXME: implement. This should scan for a possible start char in the
+		regex and use that to optimize.
+	const search	: (re : regex#, str : byte[:] -> std.option(byte[:][:]))
+	*/
+;;
+
+/* Ugly: for performance. std.option() should be used instead when unions get faster. */
+const Zthr = 0 castto(rethread#)
+
+const exec = {re, str
+	var thr
+	var m
+
+	re.str = str
+	re.strp = 0
+	thr = run(re)
+	if thr != Zthr
+		m = getmatches(re, thr)
+		cleanup(re)
+		-> `std.Some m
+	else
+		cleanup(re)
+		->  `std.None
+	;;
+}
+
+const cleanup = {re
+	var thr, next
+
+	for thr = re.runq; thr != Zthr; thr = next
+		next = thr.next
+		thrfree(re, thr)
+	;;
+	for thr = re.expired; thr != Zthr; thr = next
+		next = thr.next
+		thrfree(re, thr)
+	;;
+}
+
+const getmatches = {re, thr
+	var ret
+	var i
+
+	ret = std.slalloc(re.nmatch)
+	for i = 0; i < re.nmatch; i++
+		if thr.mstart[i] != -1 && thr.mend[i] != -1
+			ret[i] = re.str[thr.mstart[i]:thr.mend[i]]
+		else
+			ret[i] = [][:]
+		;;
+	;;
+	-> ret
+}
+
+
+/* returns a matching thread, or Zthr if no threads matched */
+const run = {re
+	var i, ip
+	var consumed
+	var thr
+	var states
+
+	states = std.mkbs()
+	re.runq = mkthread(re, 0)
+	re.runq.mstart = std.slalloc(re.nmatch)
+	re.runq.mend = std.slalloc(re.nmatch)
+	for i = 0; i < re.nmatch; i++
+		re.runq.mstart[i] = -1
+		re.runq.mend[i] = -1
+	;;
+	while re.nthr > 0
+		while re.runq != Zthr
+			/* set up the next thread */
+			thr = re.runq
+			re.runq = thr.next
+
+			trace(re, thr, "\nrunning tid=%z, ip=%z, s[%z]=%c\n", thr.tid, thr.ip, re.strp, std.decode(re.str[re.strp:]))
+			ip = thr.ip
+			consumed = step(re, thr, -1)
+			while !consumed
+				consumed = step(re, thr, ip)
+			;;
+
+			if std.bshas(states, thr.ip)
+				die(re, thr, "there can be only one")
+			;;
+
+			if thr.dead
+				thrfree(re, thr)
+			elif thr.matched && re.strp == re.str.len
+				-> thr
+			elif !thr.matched
+				std.bsput(states, thr.ip)
+				if re.expired == Zthr
+					re.expired = thr
+				;;
+				if re.expiredtail != Zthr
+					re.expiredtail.next = thr
+				;;
+				re.expiredtail = thr
+				thr.next = Zthr
+
+			;;
+		;;
+		std.bsclear(states)
+		trace(re, thr, "switch\n")
+		re.runq = re.expired
+		re.expired = Zthr
+		re.expiredtail = Zthr
+		re.strp++
+	;;
+	-> Zthr
+}
+
+/* 
+ Steps forward one instruction. Returns true if a byte of input was
+ consumed, false otherwise.
+*/
+const step = {re, thr, curip
+	var str
+	var mstart
+	var mend
+
+	str = re.str
+	match re.prog[thr.ip]
+	/* Char matching. Consume exactly one byte from the string. */
+	| `Ibyte b:
+		trace(re, thr, "\t%z:\tByte %ub (%c)\n", thr.ip, b, b castto(char))
+		if !within(re, str)
+			die(re, thr, "end of string")
+		elif b != str[re.strp]
+			die(re, thr, "not right char")
+		else
+			thr.ip++
+			trace(re, thr, "\t\tmatched %b with %b\n", b, str[re.strp])
+		;;
+	| `Irange (start, end):
+		trace(re, thr, "\t%z:\tRange (%ub, %ub) /* %c - %c */\n", thr.ip, start, end, start castto(char), end castto(char))
+		if !within(re, str) || start > str[re.strp] || end < str[re.strp]
+			die(re, thr, "bad range")
+		else
+			thr.ip++
+		;;
+	/*
+	  Non-consuming. All of these return false, and expect step to be
+	  called again until exactly one byte is consumed from the string.
+	 */
+	| `Ibol:
+		trace(re, thr, "\t%z:\tBol\n", thr.ip)
+		if re.strp == 0 || str[re.strp - 1] == '\n' castto(byte)
+			thr.ip++
+			-> false
+		else
+			die(re, thr, "not beginning of line")
+		;;
+	| `Ieol:
+		trace(re, thr, "\t%z:\tEol\n", thr.ip)
+		if re.strp == str.len || str[re.strp] == '\n' castto(byte)
+			thr.ip++
+			-> false
+		else
+			die(re, thr, "not end of line")
+		;;
+	/* check for word characters */
+	| `Ibow:
+		trace(re, thr, "\t%z:\tBow\n", thr.ip)
+		if iswordchar(str[re.strp:]) && (re.strp == 0 || !iswordchar(prevchar(str, re.strp)))
+			thr.ip++
+			-> false
+		else
+			die(re, thr, "not beginning of word")
+		;;
+	| `Ieow:
+		trace(re, thr, "\t%z:\tEow\n", thr.ip)
+		if re.strp == str.len && iswordchar(prevchar(str, re.strp))
+			thr.ip++
+			-> false
+		elif re.strp > 0 && !iswordchar(str[re.strp:]) && iswordchar(prevchar(str, re.strp))
+			thr.ip++
+			-> false
+		else
+			die(re, thr, "not end of word")
+		;;
+	| `Ilbra m:
+		trace(re, thr, "\t%z:\tLbra %z\n", thr.ip, m)
+		trace(re, thr, "\t\tmatch start = %z\n", re.strp)
+		thr.mstart[m] = re.strp
+		thr.ip++
+		-> false
+	| `Irbra m:
+		trace(re, thr, "\t%z:\tRbra %z\n", thr.ip, m)
+		thr.mend[m] = re.strp
+		thr.ip++
+		-> false
+	| `Ifork (lip, rip):
+		trace(re, thr, "\t%z:\tFork (%z, %z)\n", thr.ip, lip, rip)
+		mstart = std.sldup(thr.mstart)
+		mend = std.sldup(thr.mend)
+		fork(re, thr, rip, curip, mstart, mend)
+		thr.ip = lip
+		-> false
+	| `Ijmp ip:
+		trace(re, thr, "\t%z:\tJmp %z\n", thr.ip, ip)
+		thr.ip = ip
+		-> false
+	| `Imatch:
+		trace(re, thr, "\t%z:\tMatch\n", thr.ip)
+		finish(re, thr)
+		-> true
+	;;
+	-> true
+}
+
+const fork = {re, thr, ip, curip, mstart, mend
+	var thr
+
+	if ip == curip /* loop detection */
+		->
+	;;
+	thr = mkthread(re, ip)
+	thr.next = re.runq
+	thr.mstart = mstart
+	thr.mend = mend
+	re.runq = thr
+}
+
+const die = {re, thr, msg
+        /*
+ 	  we can have die called on a thread
+	  multiple times, eg, if it has a bad
+	  range *and* end in a state that another
+	  thread is in. We should only decrement
+	  the number of threads for that once.
+	 */
+	trace(re, thr, "\t\tdie %z: %s\n", thr.tid, msg)
+        if !thr.dead
+		re.nthr--
+        ;;
+	thr.dead = true
+}
+
+const finish = {re, thr
+	trace(re, thr, "finish %z\n", thr.tid)
+	thr.matched = true
+	re.nthr--
+}
+
+var nexttid = 0
+const mkthread = {re, ip
+	var thr : rethread#
+
+	thr = std.alloc()
+
+	thr.next = Zthr
+
+	thr.ip = ip
+	thr.tid = nexttid++
+	thr.dead = false
+	thr.matched = false
+
+	thr.mstart = [][:]
+	thr.mend = [][:]
+
+	re.nthr++
+
+	-> thr
+}
+
+const thrfree = {re, thr
+	trace(re, thr, "\t\tcleanup %z\n", thr.tid)
+	std.slfree(thr.mstart)
+	std.slfree(thr.mend)
+	std.free(thr)
+}
+
+const within = {re, str 
+	-> re.strp < str.len
+}
+
+const trace : (re : regex#, thr : rethread#, msg : byte[:], args : ... -> void) = {re, thr, msg, args
+	if re.debug
+		std.putv(msg, std.vastart(&args))
+	;;
+}
+
+/* must be called with i >= 1 */
+const prevchar = {s, i
+	std.assert(i != 0, "prevchar must be called with i >= 1\n")
+	i--
+	while i != 0 && s[i] >= 0x80
+		i--
+	;;
+	-> s[i:]
+}
+
+const iswordchar = {s
+	var c
+
+	c = std.decode(s)
+	-> std.isalpha(c) || std.isdigit(c) || c == '_'
+}

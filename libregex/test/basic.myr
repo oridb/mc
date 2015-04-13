@@ -1,0 +1,31 @@
+use std
+
+use "testmatch.use"
+
+const main = {
+	var s : byte[:]
+		
+	s = std.strjoin([
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+	][:], "")
+	testmatch(".*bc", "Abc")
+	testmatch("(a*)*", "a")
+	testmatch("(aa|aab?)*", s)
+        /* greedy matches */
+        testmatch("(<.*>).*", "<a foo> blah <bar>")
+        testmatch("(<.+>).*", "<a foo> blah <bar>")
+        /* reluctant matches */
+        testmatch("(<.*?>).*", "<a foo> blah <bar>")
+        testmatch("(<.+?>).*", "<a foo> blah <bar>")
+}

@@ -1,0 +1,56 @@
+Matched 1 via \d : 1
+	match 0: 1
+Matched 13 via \d\d : 1
+	match 0: 13
+Matched 13688 via \d+ : 1
+	match 0: 13688
+No match of x via \d
+No match of x3 via \d\d
+No match of 1368f via \d+
+Matched a via \x : 1
+	match 0: a
+Matched 1F via \x\x : 1
+	match 0: 1F
+Matched 13b8cDEf via \x+ : 1
+	match 0: 13b8cDEf
+No match of Z via \x
+No match of fg via \x\x
+No match of 13b8cg via \x+
+Matched   via \s : 1
+	match 0:  
+Matched 	
+ via \s\s : 1
+	match 0: 	
+
+Matched 	
+ 	 via \s+ : 1
+	match 0: 	
+ 	
+No match of a via \s
+No match of i
+ via \s\s
+No match of 	
+.	 via \s+
+Matched abcABC0123_ via \w+ : 1
+	match 0: abcABC0123_
+No match of abcABC0123_. via \w+
+Matched   via \h : 1
+	match 0:  
+Matched 	  via \h\h : 1
+	match 0: 	 
+Matched 	 	  via \h+ : 1
+	match 0: 	 	 
+No match of 
+ via \h
+No match of 	 via \h\h
+No match of 	 	. via \h+
+Matched abcd via [a-z]* : 1
+	match 0: abcd
+Matched abCD via [a-zA-Z]* : 1
+	match 0: abCD
+Matched _abCD018 via [a-zA-Z0-9_]* : 1
+	match 0: _abCD018
+Matched abba via [abc]* : 1
+	match 0: abba
+Matched abBa via [a-zABC]* : 1
+	match 0: abBa
