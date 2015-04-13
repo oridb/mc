@@ -36,4 +36,11 @@ const main = {
 	std.put("%s\n", std.pathnorm("foo/bar/.././.."))
 	std.put("%s\n", std.pathnorm("//foo/../bar/../.."))
 	std.put("%s\n", std.pathnorm("foo/../bar/../.."))
+
+	/* vanilla pathjoin */
+	std.put("%s\n", std.pathcat("a", "b"))
+	std.put("%s\n", std.pathjoin(["a", "b", "c"][:]))
+	/* pathjoin with empty dirs */
+	std.put("%s\n", std.pathcat("", "foo"))
+	std.put("%s\n", std.pathjoin(["", "foo", "bar"][:]))
 }

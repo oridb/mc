@@ -1,7 +1,9 @@
 use "alloc.use"
+use "extremum.use"
 use "strjoin.use"
 use "strsplit.use"
 use "sleq.use"
+use "sljoin.use"
 use "sldup.use"
 use "slcp.use"
 use "die.use"
@@ -18,11 +20,14 @@ const pathcat = {a, b
 }
 
 const pathjoin = {l
-	var p, q
+	var p, i, q
 
-	if l.len > 0
-		p = strjoin(l, "/")
+	for i = 0; i < l.len; i++
+		if l[i].len != 0
+			break
+		;;
 	;;
+	p = strjoin(l[i:], "/")
 	q = pathnorm(p)
 	slfree(p)
 	-> q
