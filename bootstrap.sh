@@ -2,18 +2,18 @@
 pwd=`pwd`
 echo 	cd $pwd/libstd
 	cd $pwd/libstd
-echo 	../6/6m	syserrno+linux.myr 
-	../6/6m	syserrno+linux.myr 
+echo 	../6/6m	`$pwd/sysselect.sh syserrno`
+	../6/6m	`$pwd/sysselect.sh syserrno`
 echo 	../6/6m	systypes.myr 
 	../6/6m	systypes.myr 
-echo 	../6/6m	sys+linux-x64.myr 
-	../6/6m	sys+linux-x64.myr 
-echo 	../6/6m	ifreq+linux.myr 
-	../6/6m	ifreq+linux.myr 
-echo 	as	-g -o util.o util+posixy-x64.s 
-	as	-g -o util.o util+posixy-x64.s 
-echo 	as	-g -o syscall.o syscall+linux-x64.s 
-	as	-g -o syscall.o syscall+linux-x64.s 
+echo 	../6/6m	`$pwd/sysselect.sh sys`
+	../6/6m	`$pwd/sysselect.sh sys`
+echo 	../6/6m	`$pwd/sysselect.sh ifreq`
+	../6/6m	`$pwd/sysselect.sh ifreq`
+echo 	as	-g -o util.o `$pwd/sysselect.sh util`
+	as	-g -o util.o `$pwd/sysselect.sh util`
+echo 	as	-g -o syscall.o `$pwd/sysselect.sh syscall`
+	as	-g -o syscall.o `$pwd/sysselect.sh syscall`
 echo 	../muse/muse	-o sys ifreq.use syserrno.use systypes.use sys.use 
 	../muse/muse	-o sys ifreq.use syserrno.use systypes.use sys.use 
 echo 	ar	-rcs libsys.a ifreq.o util.o syserrno.o syscall.o systypes.o sys.o 
@@ -26,8 +26,8 @@ echo 	../6/6m	-I . option.myr
 	../6/6m	-I . option.myr 
 echo 	../6/6m	-I . errno.myr 
 	../6/6m	-I . errno.myr 
-echo 	../6/6m	-I . syswrap+posixy.myr 
-	../6/6m	-I . syswrap+posixy.myr 
+echo 	../6/6m	-I . `$pwd/sysselect.sh syswrap`
+	../6/6m	-I . `$pwd/sysselect.sh syswrap`
 echo 	../6/6m	-I . die.myr 
 	../6/6m	-I . die.myr 
 echo 	../6/6m	-I . sleq.myr 
@@ -48,8 +48,8 @@ echo 	../6/6m	-I . alloc.myr
 	../6/6m	-I . alloc.myr 
 echo 	../6/6m	-I . utf.myr 
 	../6/6m	-I . utf.myr 
-echo 	../6/6m	-I . syswrap-ss+posixy-linux.myr 
-	../6/6m	-I . syswrap-ss+posixy-linux.myr 
+echo 	../6/6m	-I . `$pwd/sysselect.sh syswrap-ss`
+	../6/6m	-I . `$pwd/sysselect.sh syswrap-ss`
 echo 	../6/6m	-I . varargs.myr 
 	../6/6m	-I . varargs.myr 
 echo 	../6/6m	-I . chartype.myr 
@@ -74,8 +74,8 @@ echo 	../6/6m	-I . fmt.myr
 	../6/6m	-I . fmt.myr 
 echo 	../6/6m	-I . rand.myr 
 	../6/6m	-I . rand.myr 
-echo 	../6/6m	-I . wait+posixy.myr 
-	../6/6m	-I . wait+posixy.myr 
+echo 	../6/6m	-I . `$pwd/sysselect.sh wait`
+	../6/6m	-I . `$pwd/sysselect.sh wait`
 echo 	../6/6m	-I . now.myr 
 	../6/6m	-I . now.myr 
 echo 	../6/6m	-I . strjoin.myr 
@@ -98,8 +98,8 @@ echo 	../6/6m	-I . mkpath.myr
 	../6/6m	-I . mkpath.myr 
 echo 	../6/6m	-I . strsplit.myr 
 	../6/6m	-I . strsplit.myr 
-echo 	../6/6m	-I . env+posixy.myr 
-	../6/6m	-I . env+posixy.myr 
+echo 	../6/6m	-I . `$pwd/sysselect.sh env`
+	../6/6m	-I . `$pwd/sysselect.sh env`
 echo 	../6/6m	-I . endian.myr 
 	../6/6m	-I . endian.myr 
 echo 	../6/6m	-I . htab.myr 
@@ -110,14 +110,14 @@ echo 	../6/6m	-I . ipparse.myr
 	../6/6m	-I . ipparse.myr 
 echo 	../6/6m	-I . strstrip.myr 
 	../6/6m	-I . strstrip.myr 
-echo 	../6/6m	-I . resolve+posixy.myr 
-	../6/6m	-I . resolve+posixy.myr 
+echo 	../6/6m	-I . `$pwd/sysselect.sh resolve`
+	../6/6m	-I . `$pwd/sysselect.sh resolve`
 echo 	../6/6m	-I . pathjoin.myr 
 	../6/6m	-I . pathjoin.myr 
 echo 	../6/6m	-I . optparse.myr 
 	../6/6m	-I . optparse.myr 
-echo 	../6/6m	-I . dir+linux.myr 
-	../6/6m	-I . dir+linux.myr 
+echo 	../6/6m	-I . `$pwd/sysselect.sh dir`
+	../6/6m	-I . `$pwd/sysselect.sh dir`
 echo 	../6/6m	-I . execvp.myr 
 	../6/6m	-I . execvp.myr 
 echo 	../6/6m	-I . slput.myr 
@@ -138,8 +138,8 @@ echo 	../6/6m	-I . search.myr
 	../6/6m	-I . search.myr 
 echo 	../6/6m	-I . getcwd.myr 
 	../6/6m	-I . getcwd.myr 
-echo 	../6/6m	-I . dial+posixy.myr 
-	../6/6m	-I . dial+posixy.myr 
+echo 	../6/6m	-I . `$pwd/sysselect.sh dial`
+	../6/6m	-I . `$pwd/sysselect.sh dial`
 echo 	../6/6m	-I . bitset.myr 
 	../6/6m	-I . bitset.myr 
 echo 	../6/6m	-I . swap.myr 
