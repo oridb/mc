@@ -14,23 +14,57 @@ type parser = struct
 	data	: byte[:]
 	rest	: byte[:]
 	fname	: byte[:]
+	fdir	: byte[:]	/* directory relative to base */
 	line	: int
+
+	/* extracted data for further parsing */
+	subdirs	: byte[:][:]
 ;;
 
 const load = {b, path
+	-> loadall(b, path, "")
+}
+
+
+const loadall = {b, path, dir
 	var p : parser#
+	var subpath, subbld, ok
+
+	p = mkparser(path, dir)
+	ok = bld.parse(b, p, "")
+	for s in p.subdirs
+		subpath = std.pathcat(p.fdir, s)
+		subbld = std.pathcat(subpath, "bldfile")
+		loadall(b, subbld, subpath)
+		std.slfree(subpath)
+		std.slfree(subbld)
+	;;
+	freeparser(p)
+	-> ok
+}
+
+const mkparser = {path, dir
+	var p
 
 	p = std.zalloc()
 	p.line = 1
 	p.fname = std.sldup(path)
+	p.fdir = std.sldup(dir)
 	match std.slurp(path)
 	| `std.Ok d:	p.data = d
-	| `std.Fail _:	std.fatal(1, "could not open file 'bldfile'\n")
+	| `std.Fail _:	std.fatal(1, "could not open '%s'\n", path)
 	;;
 	p.rest = p.data
-	-> bld.parse(b, p)
+	-> p
 }
 
+const freeparser = {p
+	std.slfree(p.fname)
+	std.slfree(p.fdir)
+	std.slfree(p.subdirs)
+	std.slfree(p.data)
+	std.free(p)
+}
 
 const failparse = {p, msg, args : ...
 	var buf : byte[1024]
@@ -43,7 +77,7 @@ const failparse = {p, msg, args : ...
 	std.exit(1)
 }
 
-const parse = {b, p
+const parse = {b, p, path
 	while true
 		skipspace(p)
 		if !target(b, p)
@@ -54,9 +88,8 @@ const parse = {b, p
 	if p.rest.len > 0
 		failparse(p, "junk in file near %s\n", p.rest[:std.min(p.rest.len, 10)])
 		-> false
-	else
-		-> true
 	;;
+	-> true
 }
 
 const target = {b, p
@@ -65,8 +98,8 @@ const target = {b, p
 	| `std.Some "test":	testtarget(b, p)
 	| `std.Some "lib":	libtarget(b, p)
 	| `std.Some "gen":	gentarget(b, p)
-	| `std.Some "sub":	subtarget(b, p)
 	| `std.Some "man":	mantarget(b, p)
+	| `std.Some "sub":	subtarget(b, p)
 	| `std.Some targtype:	failparse(p, "unknown targtype type %s\n", targtype)
 	| `std.None:	-> false
 	;;
@@ -75,27 +108,27 @@ const target = {b, p
 
 /* bintarget: myrtarget */
 const bintarget = {b, p
-	b.targs = std.slpush(b.targs, `Bin myrtarget(p, "bin"))
+	addtarg(b, p.fdir, `Bin myrtarget(p, "bin"))
 }
 
 /* testtarget: myrtarget */
 const testtarget = {b, p
-	b.targs = std.slpush(b.targs, `Test myrtarget(p, "test"))
+	addtarg(b, p.fdir, `Test myrtarget(p, "test"))
 }
 
 /* libtarget: myrtarget */
 const libtarget = {b, p
-	b.targs = std.slpush(b.targs, `Lib myrtarget(p, "lib"))
+	addtarg(b, p.fdir, `Lib myrtarget(p, "lib"))
 }
 
 /* subtarget : anontarget */
 const subtarget = {b, p
-	b.targs = std.slpush(b.targs, `Sub anontarget(p, "sub"))
+	p.subdirs = std.sljoin(p.subdirs, anontarget(p, "sub"))
 }
 
 /* mantarget: anontarget */
 const mantarget = {b, p
-	b.targs = std.slpush(b.targs, `Man anontarget(p, "man"))
+	addtarg(b, p.fdir, `Man anontarget(p, "man"))
 }
 
 /* gentarget: wordlist {attrs} = wordlist ;; */
@@ -152,7 +185,7 @@ const gentarget = {b, p
 	for o in outlist
 		std.htput(b.gensrc, o, gt)
 	;;
-	b.targs = std.slpush(b.targs, `Gen gt)
+	addtarg(b, p.fdir, `Gen gt)
 }
 
 /*
@@ -443,3 +476,10 @@ const getc = {p
 	-> c
 }
 
+const addtarg = {b, d, t
+	var tl
+
+	tl = std.htgetv(b.targs, d, [][:])
+	tl = std.slpush(tl, t)
+	std.htput(b.targs, d, tl)
+}

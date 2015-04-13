@@ -4,19 +4,11 @@ pkg bld =
 	type build = struct
 		cmd	: byte[:][:]
 		/* build params */
-		targs	: targ[:]
+		targs	: std.htab(byte[:], targ[:])#	/* dir => target mapping */
 		gensrc	: std.htab(byte[:], gentarg#)#
 		prefix	: byte[:]
 		system	: byte[:]
 		arch	: byte[:]
-	;;
-
-	type parser = struct
-		/* parse input */
-		data	: byte[:]
-		rest	: byte[:]
-		fname	: byte[:]
-		line	: int
 	;;
 
 

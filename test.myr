@@ -12,31 +12,32 @@ use "subdir.use"
 use "config.use"
 
 pkg bld =
-	const test	: (p : build# -> void)
+	const test	: (b : build# -> void)
 ;;
 
-const test = {p
-	var hasdir, ok, bin
+const test = {b
+	var hasdir, ok, bin, targs
 
 	/* no implicit tests to run */
 	ok = true
 	hasdir = std.fexists("test")
+	targs = std.htgetv(b.targs, "", [][:])
 	if hasdir
-		for it in p.targs
-			match it
+		for tt in targs
+			match tt
 			| `Bin bt:
-				if !dotest(p, bt, ok)
+				if !dotest(b, bt, ok)
 					ok = false
 				;;
 			| `Lib lt:
-				if !dotest(p, lt, ok)
+				if !dotest(b, lt, ok)
 					ok = false
 				;;
 			| _:	/* ignore */
 			;;
 		;;
 	;;
-	for `Test t in p.targs
+	for `Test t in targs
 		for s in t.incpath
 			if std.sleq(".", s)
 				goto founddot
@@ -45,7 +46,7 @@ const test = {p
 		t.incpath = std.slpush(t.incpath, std.sldup("."))
 
 :founddot
-		buildbin(p, t, false)
+		buildbin(b, t, false)
 		bin = std.strcat("./", t.name)
 		if !runtest(bin)
 			ok = false

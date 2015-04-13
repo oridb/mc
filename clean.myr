@@ -8,19 +8,22 @@ use "subdir.use"
 use "types.use"
 
 pkg bld =
-	const cleanall	: (p : build# -> bool)
-	const clean	: (p : build#, targ : byte[:] -> bool)
+	const cleanall	: (b : build# -> bool)
+	const clean	: (b : build#, targ : byte[:] -> bool)
 ;;
 
-const cleanall = {p
-	for t in p.targs
+const cleanall = {b
+	var targs
+
+	targs = std.htgetv(b.targs, "", [][:])
+	for t in targs
 		match t
 		| `Bin bt:
-			cleanup(p, bt, bt.inputs, true)
+			cleanup(b, bt, bt.inputs, true)
 		| `Lib lt:
-			cleanup(p, lt, lt.inputs, true)
+			cleanup(b, lt, lt.inputs, true)
 		| `Test tt:
-			cleanup(p, tt, tt.inputs, true)
+			cleanup(b, tt, tt.inputs, true)
 		| `Gen gt:
 			for f in gt.out
 				if !gt.durable && std.remove(f)
@@ -28,31 +31,34 @@ const cleanall = {p
 				;;
 			;;
 		| `Sub subs:
-			subdirs(p, subs, `std.None)
+			subdirs(b, subs, `std.None)
 		| `Man m:
 		;;
 	;;
 	-> true
 }
 
-const clean = {p, targ
-	for t in p.targs
+const clean = {b, targ
+	var targs
+
+	targs = std.htgetv(b.targs, "", [][:])
+	for t in targs
 		match t
 		| `Bin bt:
 			if std.sleq(bt.name, targ)
-				cleanup(p, bt, bt.inputs, true)
+				cleanup(b, bt, bt.inputs, true)
 			;;
 		| `Lib lt:
 			if std.sleq(lt.name, targ)
-				cleanup(p, lt, lt.inputs, true)
+				cleanup(b, lt, lt.inputs, true)
 			;;
 		| `Test tt:
 			if std.sleq(tt.name, targ)
-				cleanup(p, tt, tt.inputs, true)
+				cleanup(b, tt, tt.inputs, true)
 			;;
 		| `Gen gt:
 		| `Sub subs:
-			subdirs(p, subs, `std.Some targ)
+			subdirs(b, subs, `std.Some targ)
 		| `Man m:
 		;;
 	;;

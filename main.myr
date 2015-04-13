@@ -56,6 +56,7 @@ const main = {args : byte[:][:]
 	| `std.Fail f:	std.fatal(1, "Failed to compile use pattern regex\n")
 	;;
 
+	b = mkbuild()
 	if targname.len != 0
 		mt = [
 			.name=targname,
@@ -65,15 +66,12 @@ const main = {args : byte[:][:]
 			.ldscript=bld.opt_ldscript,
 			.libdeps=[][:]
 		]
-		b = mkbuild()
 		if bintarg
 			bld.buildbin(b, &mt, true)
 		else
 			bld.buildlib(b, &mt)
 		;;
-		std.free(b)
 	else
-		b = mkbuild()
 		bld.load(b, bld.opt_bldfile)
 		/*bld.configure()*/
 		/* default: buildall */
@@ -99,6 +97,7 @@ const mkbuild = {
 	var b
 
 	b = std.zalloc()
+	b.targs = std.mkht(std.strhash, std.streq)
 	b.gensrc = std.mkht(std.strhash, std.streq)
 	-> b
 }

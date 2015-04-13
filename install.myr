@@ -14,19 +14,20 @@ pkg bld =
 	const uninstall	: (p : build#	-> bool)
 ;;
 
-const install = {p
-	buildall(p)
-	-> movetargs(p, false)
+const install = {b
+	buildall(b)
+	-> movetargs(b, false)
 }
 
-const uninstall = {p
-	-> movetargs(p, true)
+const uninstall = {b
+	-> movetargs(b, true)
 }
 
-const movetargs = {p, delete
-	var libarchive
+const movetargs = {b, delete
+	var libarchive, targs
 
-	for t in p.targs
+	targs = std.htgetv(b.targs, "", [][:])
+	for t in targs
 		match t
 		| `Bin bt:
 			movefile(delete, bt.name, opt_instroot, opt_destdir, "bin", 0o755)
@@ -38,7 +39,7 @@ const movetargs = {p, delete
 		| `Gen gt:
 			/* nothing to do (?) */
 		| `Sub subs:
-			subdirs(p, subs, `std.None)
+			subdirs(b, subs, `std.None)
 		| `Man mans:
 			/* FIXME: figure out man section by number */
 			for m in mans

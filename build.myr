@@ -9,29 +9,35 @@ use "util.use"
 use "subdir.use"
 
 pkg bld =
-	const buildall	: (p : build# -> bool)
-	const genall	: (p : build# -> bool)
-	const build	: (p : build#, target : byte[:] -> bool)
-	const buildbin	: (p : build#, bt : myrtarg#, addsrc : bool -> void)
-	const buildlib	: (p : build#, lt : myrtarg# -> void)
+	const buildall	: (b : build# -> bool)
+	const genall	: (b : build# -> bool)
+	const build	: (b : build#, target : byte[:] -> bool)
+	const buildbin	: (b : build#, bt : myrtarg#, addsrc : bool -> void)
+	const buildlib	: (b : build#, lt : myrtarg# -> void)
 ;;
 
-const buildall = {p
-	for t in p.targs
+const buildall = {b
+	var targs
+
+	targs = std.htgetv(b.targs, "", [][:])
+	for t in targs
 		match t
-		| `Bin bt:	buildbin(p, bt, false)
-		| `Lib lt:	buildlib(p, lt)
+		| `Bin bt:	buildbin(b, bt, false)
+		| `Lib lt:	buildlib(b, lt)
 		| `Test tt:	/* build on 'mbld test' by default */
-		| `Gen gt:	genfiles(p, gt)
-		| `Sub subs:	subdirs(p, subs, `std.None)
+		| `Gen gt:	genfiles(b, gt)
+		| `Sub subs:	subdirs(b, subs, `std.None)
 		| `Man m:	/* nothing needed */
 		;;
 	;;
 	-> true
 }
 
-const genall = {p
-	for t in p.targs
+const genall = {b
+	var targs
+
+	targs = std.htgetv(b.targs, "", [][:])
+	for t in targs
 		match t
 		| `Gen gt: run(gt.cmd, "")
 		| _:	/* skip */
@@ -41,24 +47,25 @@ const genall = {p
 	-> true
 }
 
-const build = {p, targ
-	var found
+const build = {b, targ
+	var found, targs
 
 	found = false
-	for t in p.targs
+	targs = std.htgetv(b.targs, "", [][:])
+	for t in targs
 		match t
 		| `Bin bt:
 			if std.sleq(bt.name, targ)
-				buildbin(p, bt, false)
+				buildbin(b, bt, false)
 			;;
 		| `Lib lt:
 			if std.sleq(lt.name, targ)
-				buildlib(p, lt)
+				buildlib(b, lt)
 				found = true
 			;;
 		| `Test tt:
 			if std.sleq(tt.name, targ)
-				buildbin(p, tt, false)
+				buildbin(b, tt, false)
 				found = true
 			;;
 		| `Gen gt:
@@ -69,7 +76,7 @@ const build = {p, targ
 			;;
 		| `Sub subs:
 			found = true
-			subdirs(p, subs, `std.Some targ)
+			subdirs(b, subs, `std.Some targ)
 		| `Man m:
 			found = true
 			/* nothing needed */
@@ -81,7 +88,7 @@ const build = {p, targ
 	-> found
 }
 
-const buildbin = {p, targ, addsrc
+const buildbin = {b, targ, addsrc
 	var dg, src
 
 	if targ.built
@@ -92,17 +99,17 @@ const buildbin = {p, targ, addsrc
 			targ.incpath = std.slpush(targ.incpath, ".")
 		;;
 		for l in targ.libdeps
-			build(p, l)
+			build(b, l)
 		;;
 	;;
 	std.put("%s...\n", targ.name)
-	if !myrdeps(p, targ, false, false, addsrc, &dg)
+	if !myrdeps(b, targ, false, false, addsrc, &dg)
 		std.fatal(1, "Could not load dependencies for %s\n", targ.name)
 	;;
 	if !std.hthas(dg.deps, targ.name)
 		std.fatal(1, "no input files for %s\n", targ.name)
 	;;
-	if builddep(p, &dg, targ.name, targ.incpath) || !freshlibs(targ, dg.libs)
+	if builddep(b, &dg, targ.name, targ.incpath) || !freshlibs(targ, dg.libs)
 		src = std.htkeys(dg.sources)
 		linkbin(&dg, targ.name, src, targ.ldscript, targ.runtime, targ.incpath, targ.libdeps)
 		std.slfree(src)
@@ -119,7 +126,7 @@ const hasinc = {path, t
 	-> false
 }
 
-const buildlib = {p, targ
+const buildlib = {b, targ
 	var archive
 	var u, l
 	var dg
@@ -131,14 +138,14 @@ const buildlib = {p, targ
 	lib = targ.name
 	std.put("lib%s.a...\n", lib)
 	archive = std.fmt("lib%s.a", lib)
-	if !myrdeps(p, targ, true, false, false, &dg)
+	if !myrdeps(b, targ, true, false, false, &dg)
 		std.fatal(1, "Could not load dependencies for %s\n", lib)
 	;;
 	if !std.hthas(dg.deps, lib)
 		std.fatal(1, "no target declared for %s\n", lib)
 	;;
-	u = builddep(p, &dg, targ.name, targ.incpath)
-	l = builddep(p, &dg, archive, targ.incpath)
+	u = builddep(b, &dg, targ.name, targ.incpath)
+	l = builddep(b, &dg, archive, targ.incpath)
 	if  u || l || !freshlibs(targ, dg.libs)
 		src = std.htkeys(dg.sources)
 		mergeuse(&dg, lib, src, targ.incpath)
@@ -149,7 +156,7 @@ const buildlib = {p, targ
 	targ.built = true
 }
 
-const genfiles = {p, gt
+const genfiles = {b, gt
 	for f in gt.out
 		if !std.fexists(f)
 			run(gt.cmd, "")
@@ -158,7 +165,7 @@ const genfiles = {p, gt
 	;;
 }
 
-const builddep = {p, dg, out, incs
+const builddep = {b, dg, out, incs
 	var stale
 
 	stale = false
@@ -170,11 +177,11 @@ const builddep = {p, dg, out, incs
 	match std.htget(dg.deps, out)
 	| `std.Some deps:
 		for d in deps
-			if builddep(p, dg, d, incs)
+			if builddep(b, dg, d, incs)
 				stale = true
 			;;
 			if !std.fexists(d)
-				match std.htget(p.gensrc, d)
+				match std.htget(b.gensrc, d)
 				| `std.Some gt:	run(gt.cmd, "")
 				| `std.None:	std.fatal(1, "no input file %s\n", d)
 				;;
