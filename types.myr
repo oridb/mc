@@ -2,10 +2,14 @@ use std
 
 pkg bld =
 	type build = struct
-		cmd	: byte[:][:]
+		cmd	: byte[:][:]	/* command that we ran */
+		/* build state */
+		basedir	: byte[:]
 		/* build params */
-		targs	: std.htab(byte[:], targ[:])#	/* dir => target mapping */
-		gensrc	: std.htab(byte[:], gentarg#)#
+		all	: byte[:][:]
+		_targs	: std.htab(byte[:], targ)#	/* dir => target mapping */
+		tdeps	: std.htab(byte[:], byte[:][:])	/* targname => depname[:] mapping */
+		gensrc	: std.htab(byte[:], gentarg#)#	/* generated src => generating target mapping */
 		prefix	: byte[:]
 		system	: byte[:]
 		arch	: byte[:]
@@ -24,9 +28,10 @@ pkg bld =
 	;;
 
 	type myrtarg = struct
+		dir	: byte[:]
 		name	: byte[:]
 		inputs	: byte[:][:]
-		libdeps	: byte[:][:]
+		libdeps	: (byte[:], byte[:], byte[:])[:]	/* dir, lib pairs */
 		built	: bool
 		install	: bool
 		runtime	: byte[:]
@@ -35,9 +40,12 @@ pkg bld =
 	;;
 
 	type gentarg = struct
+		dir	: byte[:]
 		out	: byte[:][:]
 		cmd	: byte[:][:] 
 		durable	: bool
+		/* we can have multiple outputs, but we only want to run once for each */
+		done	: bool
 	;;
 
 	type targ = union
@@ -45,7 +53,6 @@ pkg bld =
 		`Lib	myrtarg#
 		`Test	myrtarg#
 		`Gen	gentarg#
-		`Sub	byte[:][:]
 		`Man	byte[:][:]
 	;;
 ;;

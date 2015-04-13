@@ -1,6 +1,7 @@
 use std
 
 use "opts.use"
+use "types.use"
 
 pkg bld =
 	const run	: (cmd : byte[:][:] -> void)
@@ -9,6 +10,8 @@ pkg bld =
 	const swapsuffix	: (f : byte[:], suff : byte[:], newsuff : byte[:] -> byte[:])
 	const srcswapsuffix	: (f : byte[:], newsuff : byte[:] -> byte[:])
 	const strlistfree	: (sl : byte[:][:] -> void)
+	const gettarg	: (tab : std.htab(byte[:], targ)#, n : byte[:] -> targ)
+	const setdir	: (b : build#, dir : byte[:] -> void)
 ;;
 
 const run = {cmd
@@ -91,5 +94,23 @@ const strlistfree = {sl
 		std.slfree(s)
 	;;
 	std.slfree(sl)
+}
+
+const gettarg = {tab, n
+	match std.htget(tab, n)
+	| `std.None:	std.fatal(1, "internal: nonexistent %s\n", n)
+	| `std.Some t:	-> t
+	;;
+}
+
+const setdir = {b, dir
+	var p
+
+	p = std.pathcat(b.basedir, dir)
+	std.put("changing into '%s'\n", p)
+	if !std.chdir(p)
+		std.fatal(1, "could not cd into %s\n")
+	;;
+	std.slfree(p)
 }
 

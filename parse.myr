@@ -15,6 +15,7 @@ type parser = struct
 	rest	: byte[:]
 	fname	: byte[:]
 	fdir	: byte[:]	/* directory relative to base */
+	basedir	: byte[:]
 	line	: int
 
 	/* extracted data for further parsing */
@@ -30,7 +31,7 @@ const loadall = {b, path, dir
 	var p : parser#
 	var subpath, subbld, ok
 
-	p = mkparser(path, dir)
+	p = mkparser(path, dir, b.basedir)
 	ok = bld.parse(b, p, "")
 	for s in p.subdirs
 		subpath = std.pathcat(p.fdir, s)
@@ -43,13 +44,14 @@ const loadall = {b, path, dir
 	-> ok
 }
 
-const mkparser = {path, dir
+const mkparser = {path, dir, basedir
 	var p
 
 	p = std.zalloc()
 	p.line = 1
 	p.fname = std.sldup(path)
 	p.fdir = std.sldup(dir)
+	p.basedir = std.sldup(basedir)
 	match std.slurp(path)
 	| `std.Ok d:	p.data = d
 	| `std.Fail _:	std.fatal(1, "could not open '%s'\n", path)
@@ -61,6 +63,7 @@ const mkparser = {path, dir
 const freeparser = {p
 	std.slfree(p.fname)
 	std.slfree(p.fdir)
+	std.slfree(p.basedir)
 	std.slfree(p.subdirs)
 	std.slfree(p.data)
 	std.free(p)
@@ -108,28 +111,40 @@ const target = {b, p
 
 /* bintarget: myrtarget */
 const bintarget = {b, p
-	addtarg(b, p.fdir, `Bin myrtarget(p, "bin"))
-}
-
-/* testtarget: myrtarget */
-const testtarget = {b, p
-	addtarg(b, p.fdir, `Test myrtarget(p, "test"))
+	var t
+	t = myrtarget(p, "bin")
+	addtarg(p, b, t.name, `Bin t)
 }
 
 /* libtarget: myrtarget */
 const libtarget = {b, p
-	addtarg(b, p.fdir, `Lib myrtarget(p, "lib"))
+	var t
+	t = myrtarget(p, "lib")
+	addtarg(p, b, t.name, `Lib t)
 }
 
-/* subtarget : anontarget */
-const subtarget = {b, p
-	p.subdirs = std.sljoin(p.subdirs, anontarget(p, "sub"))
+/* testtarget: myrtarget */
+const testtarget = {b, p
+	var t
+	t = myrtarget(p, "test")
+	addtarg(p, b, t.name, `Test myrtarget(p, "test"))
 }
 
 /* mantarget: anontarget */
 const mantarget = {b, p
-	addtarg(b, p.fdir, `Man anontarget(p, "man"))
+	addtarg(p, b, "__man__", `Man anontarget(p, "man"))
 }
+
+/* subtarget : anontarget */
+const subtarget = {b, p
+	var subs
+
+	subs = anontarget(p, "sub")
+	for s in subs
+		p.subdirs = std.slpush(p.subdirs, std.pathcat(p.fdir, s))
+	;;
+}
+
 
 /* gentarget: wordlist {attrs} = wordlist ;; */
 const gentarget = {b, p
@@ -178,14 +193,15 @@ const gentarget = {b, p
 	;;
 
 	gt = std.mk([
+		.dir=std.sldup(p.fdir),
 		.out=outlist,
 		.durable=durable,
 		.cmd=cmdlist
 	])
 	for o in outlist
 		std.htput(b.gensrc, o, gt)
+		addtarg(p, b, o, `Gen gt)
 	;;
-	addtarg(b, p.fdir, `Gen gt)
 }
 
 /*
@@ -251,6 +267,7 @@ const myrtarget = {p, targ
 	;;
 	-> std.mk([
 		/* target */
+		.dir=std.sldup(p.fdir),
 		.name=name,
 		.inputs=inputs,
 		.libdeps=libdeps,
@@ -335,6 +352,7 @@ input	: word
 	| "lib" word
 */
 const inputlist = {p
+	var dir, lib, targ
 	var wl, libs
 
 	wl = [][:]
@@ -343,8 +361,12 @@ const inputlist = {p
 		match word(p)
 		| `std.Some "lib":
 			match word(p)
-			| `std.Some l:	libs = std.slpush(libs, l)
-			| `std.None:	failparse(p, "expected lib name after 'lib'\n")
+			| `std.Some l:
+				(dir, lib, targ) = libpath(p, l)
+				std.put("dir: %s, lib: %s, targ: %s\n", dir, lib, targ)
+				libs = std.slpush(libs, (dir, lib, targ))
+			| `std.None:
+				failparse(p, "expected lib name after 'lib'\n")
 			;;
 		| `std.Some w:	wl = std.slpush(wl, w)
 		| `std.None:	break
@@ -476,10 +498,43 @@ const getc = {p
 	-> c
 }
 
-const addtarg = {b, d, t
-	var tl
+const addtarg = {p, b, name, targ
+	var tn
 
-	tl = std.htgetv(b.targs, d, [][:])
-	tl = std.slpush(tl, t)
-	std.htput(b.targs, d, tl)
+	tn = std.fmt("%s:%s", p.fdir, name)
+	if std.hthas(b._targs, tn)
+		failparse(p, "duplicate target %s\n", tn)
+	;;
+	b.all = std.slpush(b.all, tn)
+	std.htput(b._targs, tn, targ)
+}
+
+const libpath = {p, libpath
+	var dir, lib_, targ
+
+	match(std.strrfind(libpath, ":"))
+	| `std.None:
+		dir = std.sldup(".")
+		lib_ = std.sldup(libpath)
+		targ = std.fmt("%s:%s", p.fdir, lib_)
+	| `std.Some idx:
+		if idx == libpath.len
+			std.fatal(1, "libdep %s missing library after ':'\n")
+		;;
+		/* absolute path */
+		if std.hasprefix(libpath, "@/") || std.hasprefix(libpath, "@:")
+			dir = std.pathcat(p.basedir, libpath[2:idx])
+			lib_ = std.sldup(libpath[idx+1:])
+			targ = std.sldup(libpath[2:])
+		/* relative path */
+		else
+			dir = std.sldup(libpath[:idx])
+			lib_ = std.sldup(libpath[idx+1:])
+			targ = std.pathcat(p.fdir, libpath)
+			if std.hasprefix(targ, "../")
+				std.fatal(1, "library %s outside of project\n", libpath)
+			;;
+		;;
+	;;
+	-> (dir, lib_, targ)
 }

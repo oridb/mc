@@ -6,7 +6,6 @@ use "opts.use"
 use "parse.use"
 use "types.use"
 use "util.use"
-use "subdir.use"
 
 pkg bld =
 	const buildall	: (b : build# -> bool)
@@ -17,16 +16,12 @@ pkg bld =
 ;;
 
 const buildall = {b
-	var targs
-
-	targs = std.htgetv(b.targs, "", [][:])
-	for t in targs
-		match t
+	for tn in b.all
+		match gettarg(b._targs, tn)
 		| `Bin bt:	buildbin(b, bt, false)
 		| `Lib lt:	buildlib(b, lt)
 		| `Test tt:	/* build on 'mbld test' by default */
 		| `Gen gt:	genfiles(b, gt)
-		| `Sub subs:	subdirs(b, subs, `std.None)
 		| `Man m:	/* nothing needed */
 		;;
 	;;
@@ -34,11 +29,8 @@ const buildall = {b
 }
 
 const genall = {b
-	var targs
-
-	targs = std.htgetv(b.targs, "", [][:])
-	for t in targs
-		match t
+	for tn in b.all
+		match gettarg(b._targs, tn)
 		| `Gen gt: run(gt.cmd)
 		| _:	/* skip */
 		;;
@@ -48,44 +40,15 @@ const genall = {b
 }
 
 const build = {b, targ
-	var found, targs
-
-	found = false
-	targs = std.htgetv(b.targs, "", [][:])
-	for t in targs
-		match t
-		| `Bin bt:
-			if std.sleq(bt.name, targ)
-				buildbin(b, bt, false)
-			;;
-		| `Lib lt:
-			if std.sleq(lt.name, targ)
-				buildlib(b, lt)
-				found = true
-			;;
-		| `Test tt:
-			if std.sleq(tt.name, targ)
-				buildbin(b, tt, false)
-				found = true
-			;;
-		| `Gen gt:
-			for n in gt.out
-				if std.sleq(n, targ)
-					run(gt.cmd)
-				;;
-			;;
-		| `Sub subs:
-			found = true
-			subdirs(b, subs, `std.Some targ)
-		| `Man m:
-			found = true
-			/* nothing needed */
-		;;
+	match std.htget(b._targs, targ)
+	| `std.Some (`Bin bt):	buildbin(b, bt, false)
+	| `std.Some (`Lib lt):	buildlib(b, lt)
+	| `std.Some (`Test tt):	buildbin(b, tt, false)
+	| `std.Some (`Gen gt):	run(gt.cmd)
+	| `std.Some (`Man m):	/* nothing needed */
+	| `std.None:	std.fatal(1, "invalid target %s\n", targ)
 	;;
-	if !found
-		std.fatal(1, "%s: no such target\n", targ)
-	;;
-	-> found
+	-> true
 }
 
 const buildbin = {b, targ, addsrc
@@ -94,12 +57,13 @@ const buildbin = {b, targ, addsrc
 	if targ.built
 		->
 	;;
+	setdir(b, targ.dir)
 	if targ.libdeps.len > 0
-		if !hasinc(targ.incpath, ".")
-			targ.incpath = std.slpush(targ.incpath, ".")
-		;;
-		for l in targ.libdeps
-			build(b, l)
+		for (inc, lib, subtarg) in targ.libdeps
+			if !hasinc(targ.incpath, inc)
+				targ.incpath = std.slpush(targ.incpath, inc)
+			;;
+			build(b, subtarg)
 		;;
 	;;
 	std.put("%s...\n", targ.name)
@@ -135,6 +99,7 @@ const buildlib = {b, targ
 	if targ.built
 		->
 	;;
+	setdir(b, targ.dir)
 	lib = targ.name
 	std.put("lib%s.a...\n", lib)
 	archive = std.fmt("lib%s.a", lib)
@@ -266,7 +231,7 @@ const linkbin = {dg, bin, srcfiles, ldscript, rt, incs, extralibs
 
 	/* -L path -l lib... */
 	cmd = addlibs(cmd, dg.libs, incs)
-	for l in extralibs
+	for (d, l, t) in extralibs
 		cmd = std.slpush(cmd, std.fmt("-l%s", l))
 	;;
 

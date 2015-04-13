@@ -16,15 +16,13 @@ pkg bld =
 ;;
 
 const test = {b
-	var hasdir, ok, bin, targs
+	var ok/*, bin */
 
 	/* no implicit tests to run */
 	ok = true
-	hasdir = std.fexists("test")
-	targs = std.htgetv(b.targs, "", [][:])
-	if hasdir
-		for tt in targs
-			match tt
+	if std.fexists("test")
+		for tn in b.all
+			match gettarg(b._targs, tn)
 			| `Bin bt:
 				if !dotest(b, bt, ok)
 					ok = false
@@ -37,6 +35,8 @@ const test = {b
 			;;
 		;;
 	;;
+	/*
+	FIXME: reenable test binaries
 	for `Test t in targs
 		for s in t.incpath
 			if std.sleq(".", s)
@@ -53,6 +53,7 @@ const test = {b
 		;;
 		std.slfree(bin)
 	;;
+	*/
 	if ok
 		std.put("TESTS PASSED\n")
 	else
@@ -61,16 +62,18 @@ const test = {b
 	;;
 }
 
-const dotest = {p, targ, ok
+const dotest = {b, targ, ok
 	var tt, bin ,path, tests
 
 	tests = [][:]
+	setdir(b, targ.dir)
 	for s in targ.inputs
 		path = std.pathcat("./test", s)
 		if std.fexists(path)
 			bin = srcswapsuffix(path, "")
 			tt = [
 				.name = bin,
+				.dir = targ.dir,
 				.inputs = [path, s][:],
 				.install = false,
 				.libdeps = targ.libdeps,
@@ -78,8 +81,8 @@ const dotest = {p, targ, ok
 				.built = false,
 			]
 
-			cleantest(p, path)
-			buildbin(p, &tt, true)
+			cleantest(b, path)
+			buildbin(b, &tt, true)
 			tests = std.slpush(tests, bin)
 		;;
 		std.slfree(path)
@@ -96,7 +99,7 @@ const dotest = {p, targ, ok
 	-> ok
 }
 
-const cleantest = {p, src
+const cleantest = {b, src
 	var obj, bin, log, usef
 
 	obj = srcswapsuffix(src, config.Objsuffix)
