@@ -3,7 +3,7 @@ use std
 use "opts.use"
 
 pkg bld =
-	const run	: (cmd : byte[:][:], dir : byte[:] -> void)
+	const run	: (cmd : byte[:][:] -> void)
 	const printcmd
 	const srcsplit	: (src : byte[:] -> (byte[:], byte[:], byte[:]))
 	const swapsuffix	: (f : byte[:], suff : byte[:], newsuff : byte[:] -> byte[:])
@@ -11,7 +11,7 @@ pkg bld =
 	const strlistfree	: (sl : byte[:][:] -> void)
 ;;
 
-const run = {cmd, dir
+const run = {cmd
 	var pid
 
 	printcmd(cmd)
@@ -19,11 +19,6 @@ const run = {cmd, dir
 	if pid == -1
 		std.fatal(1, "could not fork command\n")
 	elif pid == 0
-		if dir.len > 0
-			if !std.chdir(dir)
-				std.fatal(1, "unable to enter directory %s\n", dir)
-			;;
-		;;
 		if std.execvp(cmd[0], cmd) < 0
 			std.fatal(1, "failed to exec %s\n", cmd[0])
 		;;

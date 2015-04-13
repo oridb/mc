@@ -9,17 +9,15 @@ pkg bld =
 
 const subdirs = {p, subs, targ
 	for s in subs
-		match targ
-		| `std.None:	/* nothing */
-		| `std.Some t:
-			if !std.sleq(t, s)
-				continue
-			;;
-		;;
-
 		std.put("Entering directory '%s'\n", s)
-		run(p.cmd, s)
+		if !std.chdir(s)
+			std.fatal(1, "unable to enter directory %s\n", s)
+		;;
+		run(p.cmd)
 		std.put("Leaving directory '%s'\n", s)
+		if !std.chdir("..")
+			std.fatal(1, "unable to leave directory %s\n", s)
+		;;
 	;;
 }
 

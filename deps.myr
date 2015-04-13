@@ -12,8 +12,8 @@ pkg bld =
 
 	/* a bit ugly: initialized from main() */
 	var usepat	: regex.regex#
-
 ;;
+
 var usepat	: regex.regex#
 
 type dep = union
@@ -177,7 +177,7 @@ const getdeps = {b, path
 	deps = [][:]
 	if !std.fexists(path)
 		match std.htget(b.gensrc, path)
-		| `std.Some gt:	run(gt.cmd, "")
+		| `std.Some gt:	run(gt.cmd)
 		| `std.None:	std.fatal(1, "no input file %s\n", path)
 		;;
 	;;

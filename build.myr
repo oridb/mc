@@ -39,7 +39,7 @@ const genall = {b
 	targs = std.htgetv(b.targs, "", [][:])
 	for t in targs
 		match t
-		| `Gen gt: run(gt.cmd, "")
+		| `Gen gt: run(gt.cmd)
 		| _:	/* skip */
 		;;
 	;;
@@ -71,7 +71,7 @@ const build = {b, targ
 		| `Gen gt:
 			for n in gt.out
 				if std.sleq(n, targ)
-					run(gt.cmd, "")
+					run(gt.cmd)
 				;;
 			;;
 		| `Sub subs:
@@ -159,7 +159,7 @@ const buildlib = {b, targ
 const genfiles = {b, gt
 	for f in gt.out
 		if !std.fexists(f)
-			run(gt.cmd, "")
+			run(gt.cmd)
 			->
 		;;
 	;;
@@ -182,7 +182,7 @@ const builddep = {b, dg, out, incs
 			;;
 			if !std.fexists(d)
 				match std.htget(b.gensrc, d)
-				| `std.Some gt:	run(gt.cmd, "")
+				| `std.Some gt:	run(gt.cmd)
 				| `std.None:	std.fatal(1, "no input file %s\n", d)
 				;;
 			;;
@@ -219,7 +219,7 @@ const compile = {src, incs
 			cmd = std.slpush(cmd, "-S")
 		;;
 		cmd = std.slpush(cmd, src)
-		run(cmd, "")
+		run(cmd)
 		std.slfree(cmd)
 	elif std.hassuffix(src, ".s")
 		o = srcswapsuffix(src, config.Objsuffix)
@@ -229,7 +229,7 @@ const compile = {src, incs
 		cmd = std.slpush(cmd,"-o")
 		cmd = std.slpush(cmd, o)
 		cmd = std.slpush(cmd, src)
-		run(cmd, "")
+		run(cmd)
 		std.slfree(o)
 	else
 		std.fatal(1, "Unknown file type for %s\n", src)
@@ -277,7 +277,7 @@ const linkbin = {dg, bin, srcfiles, ldscript, rt, incs, extralibs
 		cmd = std.slpush(cmd, std.sldup("10.6"))
 	;;
 
-	run(cmd, "")
+	run(cmd)
 	strlistfree(cmd)
 }
 
@@ -294,7 +294,7 @@ const archivelib = {dg, lib, files, incs
 		obj = srcswapsuffix(f, config.Objsuffix)
 		cmd = std.slpush(cmd, obj)
 	;;
-	run(cmd, "")
+	run(cmd)
 	strlistfree(cmd)
 }
 
@@ -312,7 +312,7 @@ const mergeuse = {dg, lib, files, incs
 			std.fatal(1, "unknown file type for %s\n", f)
 		;;
 	;;
-	run(cmd, "")
+	run(cmd)
 	strlistfree(cmd)
 }
 
