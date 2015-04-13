@@ -1,0 +1,57 @@
+use std
+use bio
+
+generic try = {opt : std.option(@a::(integral,numeric))-> @a::(integral,numeric)
+	match opt
+	| `std.Some val:	-> val
+	| `std.None:	std.fatal(1, "read failed")
+	;;
+}
+const main = {
+	var b : byte
+	var w : uint16
+	var l : uint32
+	var q : uint64
+	var f
+
+	/* use the expected write data as read data */
+	match bio.open("data/bio-endianwr-expected", bio.Rd)
+	| `std.Some bio:	f = bio
+	| `std.None:	std.fatal(1, "Unable to open data file")
+	;;
+	
+	/* byte */
+	/*
+	/* FIXME: compiler bug. multiplication on byte
+	   values is currently broken. */
+	b = 0xaa
+	std.assert(try(bio.getle8(f)) == b, "le byte broken\n")
+	std.assert(try(bio.getbe8(f)) == b, "be byte broken\n")
+	*/
+
+	/* word */
+	w = 0xaabb
+	std.assert(try(bio.getle16(f)) == w, "le word broken\n")
+	std.assert(try(bio.getbe16(f)) == w, "be word broken\n")
+
+	/* long */
+	l = 0xaabbccdd
+	std.assert(try(bio.getle32(f)) == l, "le long broken\n")
+	std.assert(try(bio.getbe32(f)) == l, "be long broken\n")
+
+	/* quad */
+	q = 0x11223344aabbccdd castto(uint64)
+	std.assert(try(bio.getle64(f)) == q, "le quad broken\n")
+	std.assert(try(bio.getbe64(f)) == q, "be quad broken\n")
+
+	/* end of file */
+	match bio.getle64(f)
+	| `std.None:
+	| `std.Some v:	std.die("read past end of file\n")
+	;;
+
+	bio.close(f);
+
+	std.put("success: all reads matched\n")
+}
+

@@ -1,0 +1,500 @@
+use std
+
+pkg bio =
+	type mode = int
+	const Rd	: mode = 1
+	const Wr	: mode = 2
+	const Rw	: mode = 1 | 2
+
+	type file = struct
+		/* backing fd */
+		fd	: std.fd
+		mode	: mode
+
+		/* read buffer */
+		rbuf	: byte[:]
+		rstart	: std.size
+		rend	: std.size
+
+		/* write buffer */
+		wbuf	: byte[:]
+		wend	: std.size
+	;;
+
+	/* creation */
+	const mkfile	: (fd : std.fd, mode : mode	-> file#)
+	const open	: (path : byte[:], mode : mode	-> std.option(file#))
+	const dial	: (srv	: byte[:], mode : mode	-> std.option(file#))
+	const create	: (path : byte[:], mode : mode, perm : int	-> std.option(file#))
+	const close	: (f : file# -> bool)
+	const free	: (f : file# -> void)
+
+	/* basic i/o. Returns sub-buffer when applicable. */
+	const write	: (f : file#, src : byte[:]	-> std.size)
+	const read	: (f : file#, dst : byte[:]	-> std.option(byte[:]))
+	const flush	: (f : file# -> bool)
+
+	/* seeking */
+
+	/* single unit operations */
+	const putb	: (f : file#, b : byte	-> std.size)
+	const putc	: (f : file#, c : char	-> std.size)
+	const getb	: (f : file# -> std.option(byte))
+	const getc	: (f : file# -> std.option(char))
+
+	/* peeking */
+	const peekb	: (f : file# -> std.option(byte))
+	const peekc	: (f : file# -> std.option(char))
+
+	/* delimited read; returns freshly allocated buffer. */
+	const readln	: (f : file#	-> std.option(byte[:]))
+	const readto	: (f : file#, delim : byte[:]	-> std.option(byte[:]))
+	const skipto	: (f : file#, delim : byte[:]	-> bool)
+
+	/* formatted i/o */
+	const put	: (f : file#, fmt : byte[:], args : ... -> std.size)
+
+	/* pkg funcs */
+	pkglocal const ensureread	: (f : file#, n : std.size -> bool)
+	pkglocal const ensurewrite	: (f : file#, n : std.size -> bool)
+;;
+
+const Bufsz = 16*std.KiB
+const Small = 512
+
+/* Creates a file from an fd, opened in the given mode. */
+const mkfile = {fd, mode
+	var f
+
+	f = std.alloc()
+
+	f.fd = fd
+	f.mode = mode
+	if mode & Rd != 0
+		f.rbuf = std.slalloc(Bufsz)
+		f.rstart = 0
+		f.rend = 0
+	;;
+	if mode & Wr != 0
+		f.wbuf = std.slalloc(Bufsz)
+		f.wend = 0
+	;;
+	-> f
+}
+
+/* Opens a file with mode provided. */
+const open = {path, mode 
+	-> sysopen(path, mode, sysmode(mode), 0o777)
+}
+
+/*
+   Creates a file for the provided path, with opened in
+   the requested mode, with the requested permissions
+*/
+const create = {path, mode, perm
+	-> sysopen(path, mode, sysmode(mode) | std.Ocreat, perm)
+}
+
+/* dial the server, and open a file using the returned fd */
+const dial = {srv, mode
+	match std.dial(srv)
+	| `std.Ok sock:	-> `std.Some mkfile(sock, mode)
+	| `std.Fail _:	-> `std.None
+	;;
+}
+
+/* map from the bio modes to the unix open modes */
+const sysmode = {mode
+	match mode
+	| Rd:	-> std.Ordonly
+	| Wr:	-> std.Owronly
+	| Rw:	-> std.Ordwr
+	| _:	std.fatal(1, "bio: bad file mode")
+	;;
+	-> 0
+}
+
+/* open the file, and return it */
+const sysopen = {path, mode, openmode, perm
+	var fd
+
+	fd = std.openmode(path, openmode, perm castto(int64))
+	if fd < 0
+		-> `std.None
+	else
+		-> `std.Some mkfile(fd, mode)
+	;;
+}
+
+/* closes a file, flushing it to the output fd */
+const close = {f
+	var fd
+
+	fd = f.fd
+	free(f)
+	-> std.close(fd) == 0
+}
+
+const free = {f
+	flush(f)
+	if f.mode & Rd != 0
+		std.slfree(f.rbuf)
+	;;
+
+	if f.mode & Wr != 0
+		std.slfree(f.wbuf)
+	;;
+	std.free(f)
+}
+
+/* 
+writes to as much from `src` as possible to a file,
+returning the number of bytes written.
+*/
+const write = {f, src
+	std.assert(f.mode & Wr != 0, "File is not in write mode")
+	/*
+	Tack small writes onto the buffer end. Big ones
+	flush the buffer and then go right to kernel.
+	*/
+	if src.len < (f.wbuf.len - f.wend)
+		std.slcp(f.wbuf[f.wend:f.wend+src.len], src)
+		f.wend += src.len
+		-> src.len
+	else
+		flush(f)
+		-> writebuf(f.fd, src)
+	;;
+}
+
+/*
+reads as much into 'dst' as possible, up to the size of 'dst',
+returning the number of bytes read.
+*/
+const read = {f, dst
+	var n
+	var d
+	var count
+
+	std.assert(f.mode & Rd != 0, "File is not in read mode")
+	/* 
+	 * small reads should try to fill, so we don't have to make a
+	 * syscall for every read
+	 */
+	if dst.len < Small
+		fill(f, f.rbuf.len - f.rend)
+	;;
+	/* Read as much as we can from the buffer */
+	count = std.min(dst.len, f.rend - f.rstart)
+	std.slcp(dst[:count], f.rbuf[f.rstart:f.rstart+count])
+	f.rstart += count
+
+	/* if we drained the buffer, reset it */
+	if f.rstart == f.rend
+		f.rstart = 0
+		f.rend = 0
+	;;
+
+	/* Read the rest directly from the fd */
+	d = dst[count:]
+	while dst.len > 0
+		n = std.read(f.fd, d)
+		if n <= 0
+			goto readdone
+		;;
+		count += n
+		d = d[n:]
+	;;
+:readdone
+	if count > 0
+		-> `std.Some dst[:count]
+	else
+		-> `std.None
+	;;
+}
+
+/* flushes f out to the backing fd */
+const flush = {f
+	var ret
+
+	ret = true
+	if f.mode & Wr != 0
+		ret = (writebuf(f.fd, f.wbuf[:f.wend]) == f.wend)
+		f.wend = 0
+	;;
+	-> ret
+}
+
+/* writes a single byte to the output stream */
+const putb = {f, b
+	ensurewrite(f, 1)
+	f.wbuf[f.wend++] = b
+	-> 1
+}
+
+/* writes a single character to the output stream, encoded in utf8 */
+const putc = {f, c
+	var sz
+	
+	sz = std.charlen(c)
+	ensurewrite(f, sz)
+	std.encode(f.wbuf[f.wend:], c)
+	f.wend += sz
+	-> sz
+}
+
+/* reads a single byte from the input stream */
+const getb = {f
+	if ensureread(f, 1)
+		-> `std.Some f.rbuf[f.rstart++]
+	;;
+	-> `std.None
+}
+
+/* reads a single character from the input stream, encoded in utf8 */
+const getc = {f
+	var c
+
+	if ensurecodepoint(f)
+		c = std.decode(f.rbuf[f.rstart:f.rend])
+		f.rstart += std.charlen(c)
+		-> `std.Some c
+	;;
+	-> `std.None
+}
+
+/* ensures we have enough to read a single codepoint in the buffer */
+const ensurecodepoint = {f
+	var b
+	var len
+
+	if !ensureread(f, 1)
+		-> false
+	;;
+	b = f.rbuf[f.rstart]
+	if b & 0x80 == 0	/* 0b0xxx_xxxx */
+		len = 1
+	elif b & 0xe0 == 0xc0	/* 0b110x_xxxx */
+		len = 2
+	elif b & 0xf0 == 0xe0 	/* 0b1110_xxxx */
+		len = 3
+	elif b & 0xf8 == 0xf0 	/* 0b1111_0xxx */
+		len = 4
+	else
+		len = 1		/* invalid unicode char */
+	;;
+	-> ensureread(f, len)
+}
+
+/*
+  writes a single integer-like value to the output stream, in
+  little endian format
+*/
+generic putle = {f, v : @a::(numeric,integral)
+	var i
+
+	for i = 0; i < sizeof(@a); i++
+		putb(f, (v & 0xff) castto(byte))
+		v >>= 8
+	;;
+	-> sizeof(@a)
+}
+
+/*
+  writes a single integer-like value to the output stream, in
+  big endian format
+*/
+generic putbe = {f, v : @a::(numeric,integral)
+	var i
+
+	for i = sizeof(@a); i != 0; i--
+		putb(f, ((v >> ((i-1)*8)) & 0xff) castto(byte))
+	;;
+	-> sizeof(@a)
+}
+
+
+/* peeks a single byte from an input stream */
+const peekb = {f
+	if !ensureread(f, 1)
+		-> `std.None
+	else
+		-> `std.Some f.rbuf[f.rstart]
+	;;
+}
+
+/* peeks a single character from a utf8 encoded input stream */
+const peekc = {f
+	if !ensurecodepoint(f)
+		-> `std.None
+	else
+		-> `std.Some std.decode(f.rbuf[f.rstart:f.rend])
+	;;
+}
+
+/*
+  reads up to a single character delimiter. drops the delimiter
+  from the input stream. EOF always counts as a delimiter.
+  
+  Eg, with the input "foo,bar\n"
+
+  	bio.readto(f, ',')	-> "foo"
+  	bio.readto(f, ',')	-> "bar\n"
+*/
+const readto = {f, delim
+	-> readdelim(f, delim, false)
+}
+
+/* same as readto, but drops the read data. */
+const skipto = {f, delim
+	match readdelim(f, delim, true)
+	| `std.Some ret:	-> true
+	| `std.None:	-> false
+	;;
+}
+
+/* Same as readto, but the delimiter is always a '\n' */
+const readln = {f
+	-> readto(f, "\n")
+}
+
+const readdelim = {f, delim, drop
+	var ret
+	var i, j
+
+	ret = [][:]
+	while true
+		if !ensureread(f, delim.len)
+			if !drop
+				ret = readinto(f, ret, f.rend - f.rstart)
+			;;
+			if ret.len > 0
+				-> `std.Some ret
+			else
+				-> `std.None
+			;;
+		;;
+		for i = f.rstart; i < f.rend; i++
+			if f.rbuf[i] == delim[0]
+				for j = 0; j < delim.len; j++
+					if f.rbuf[i + j] != delim[j]
+						goto nextiterread
+					;;
+				;;
+				if !drop
+					ret = readinto(f, ret, i - f.rstart)
+				;;
+				f.rstart += delim.len
+				-> `std.Some ret
+			;;
+:nextiterread
+		;;
+		if !drop
+			ret = readinto(f, ret, f.rend - f.rstart)
+		;;
+	;;
+	std.die("unreachable")
+}
+
+/*
+Same as std.put, but buffered. Returns the number of bytes written.
+
+FIXME: depends on std.fmt() having a flush buffer API. Until then,
+we're stuck with a small static buffer.
+*/
+const put = {f, fmt, args
+	var buf : byte[2048]
+	var sl
+
+	sl = std.bfmt(buf[:], fmt, std.vastart(&args))
+	-> write(f, sl)
+}
+
+/* 
+reads n bytes from the read buffer onto the heap-allocated slice
+provided.
+*/
+const readinto = {f, buf, n
+	var ret
+
+	std.assert(f.rstart + n <= f.rend, "Reading too much from buffer")
+	ret = std.sljoin(buf, f.rbuf[f.rstart:f.rstart + n])
+	f.rstart += n
+	-> ret
+}
+
+/* makes sure we can bufferedly write at least n bytes */
+const ensurewrite = {f, n
+	std.assert(n < f.wbuf.len, "ensured write capacity > buffer size")
+	if n > f.wbuf.len - f.wend
+		-> flush(f)
+	;;
+	-> true
+}
+
+/*
+makes sure we have at least n bytes buffered. returns true if we succeed
+in buffering n bytes, false if we fail.
+*/
+const ensureread = {f, n
+	var held
+	var cap
+
+	std.assert(n < f.rbuf.len, "ensured read capacity > buffer size")
+	held = f.rend - f.rstart
+	if n > held
+		/* if we need to shift the slice down to the start, do it */
+		cap = f.rend - f.rstart
+		if n > (cap + held)
+			std.slcp(f.rbuf[:cap], f.rbuf[f.rstart:f.rend])
+			f.rstart = 0
+			f.rend = cap
+		;;
+		-> fill(f, n) > n
+	else
+		-> true
+	;;
+}
+
+/* blats a buffer to an fd */
+const writebuf = {fd, src
+	var n
+	var count
+
+	count = 0
+	while src.len != 0
+		n = std.write(fd, src)
+		if n <= 0
+			goto writedone
+		;;
+		count += n
+		src = src[n:]
+	;;
+:writedone
+	-> count
+}
+
+
+
+/*
+Reads as many bytes as possible from the file into
+the read buffer.
+*/
+const fill = {f, min
+	var n
+	var count
+
+	count = 0
+	while count < min
+		n = std.read(f.fd, f.rbuf[f.rend:])
+		if n <= 0
+			goto filldone
+		;;
+		count += n
+		f.rend += n
+	;;
+:filldone
+	-> count
+}
+
+

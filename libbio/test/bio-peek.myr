@@ -1,0 +1,45 @@
+use std
+use bio
+
+const main = {
+	var f
+	/* Must be bigger than a bio buffer (ie, > 64k) */
+	var buf : byte[64*1024]
+
+	match bio.open("data/datafile", bio.Rd)
+	| `std.Some bio:	f = bio
+	| `std.None:	std.fatal(1, "Unable to open data file")
+	;;
+	
+	std.assert(peekb(f) == 0x30, "wrong byte value read from datafile")
+	std.assert(peekc(f) == '0', "wrong char value read from datafile")
+
+	bio.read(f, buf[:4])	/* skip ahead 4 bytes */
+	std.assert(peekb(f) == 0x34, "wrong byte value read from datafile")
+	std.assert(peekc(f) == '4', "wrong char value read from datafile")
+
+	bio.read(f, buf[:])	/* skip ahead 64k */
+	std.assert(peekb(f) == 0x30, "wrong byte value read from datafile")
+	std.assert(peekc(f) == '0', "wrong char value read from datafile")
+
+	bio.close(f);
+	std.put("Succeded peeeking values\n")
+}
+
+const peekc = {f
+	match bio.peekc(f)
+	| `std.Some c:	-> c
+	| `std.None:
+		std.put("eof")
+		-> -1
+	;;
+}
+
+const peekb = {f
+	match bio.peekb(f)
+	| `std.Some b:	-> b
+	| `std.None:
+		std.put("eof")
+		-> -1
+	;;
+}

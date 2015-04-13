@@ -1,0 +1,14 @@
+use std
+use bio
+
+const main = {
+	var f
+	match bio.create("tmpout/test-unitwr", bio.Wr, 0o644)
+	| `std.Some bio:	f = bio
+	| `std.None:	std.fatal(1, "Unable to open data file")
+	;;
+	bio.putb(f, 42)
+	bio.putc(f, 'ה')
+	bio.putb(f, 0xa)
+	bio.close(f);
+}

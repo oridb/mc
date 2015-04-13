@@ -1,0 +1,63 @@
+use std
+
+use "bio.use"
+
+pkg bio =
+	/* unsigned big endian */
+	generic getbe8	: (f : file# -> std.option(@a::(numeric,integral)))
+	generic getbe16	: (f : file# -> std.option(@a::(numeric,integral)))
+	generic getbe32	: (f : file# -> std.option(@a::(numeric,integral)))
+	generic getbe64	: (f : file# -> std.option(@a::(numeric,integral)))
+
+	/* signed big endian */
+	generic getle8	: (f : file# -> std.option(@a::(numeric,integral)))
+	generic getle16	: (f : file# -> std.option(@a::(numeric,integral)))
+	generic getle32	: (f : file# -> std.option(@a::(numeric,integral)))
+	generic getle64	: (f : file# -> std.option(@a::(numeric,integral)))
+;;
+
+/*
+  reads a single integer-like value to the output stream, in
+  little endian format
+*/
+generic getle = {f, n -> std.option(@a::(numeric,integral))
+	var v, i
+
+	v = 0
+	if !ensureread(f, n)
+		-> `std.None
+	;;
+	for i = 0; i < n; i++
+		v |= (f.rbuf[f.rstart++] castto(uint64)) << (8*(i castto(uint64)))
+	;;
+	-> `std.Some v castto(@a::(numeric,integral))
+}
+
+/*
+  reads a single integer-like value to the output stream, in
+  big endian format
+*/
+generic getbe = {f, n -> std.option(@a::(numeric,integral))
+	var v, i
+
+	v = 0
+	if !ensureread(f,n)
+		-> `std.None
+	;;
+	for i = 0; i < n; i++
+		v <<= 8
+		v |= (f.rbuf[f.rstart++] castto(uint64))
+	;;
+	-> `std.Some v castto(@a::(numeric,integral))
+}
+
+generic getbe8  = {f; -> getbe(f, 1)}
+generic getbe16 = {f; -> getbe(f, 2)}
+generic getbe32 = {f; -> getbe(f, 4)}
+generic getbe64 = {f; -> getbe(f, 8)}
+
+generic getle8  = {f; -> getle(f, 1)}
+generic getle16 = {f; -> getle(f, 2)}
+generic getle32 = {f; -> getle(f, 4)}
+generic getle64 = {f; -> getle(f, 8)}
+

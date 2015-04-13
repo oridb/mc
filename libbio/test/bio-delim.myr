@@ -1,0 +1,70 @@
+use std
+use bio
+
+const main = {
+	var f
+	var d
+
+	match bio.open("data/lines", bio.Rd)
+	| `std.Some bio:	f = bio
+	| `std.None:	std.fatal(1, "Unable to open data file\n")
+	;;
+
+	/* read first line */
+	d = readln(f)
+	std.write(1, d)
+	std.write(1, "\n")
+	std.slfree(d)
+
+	/* read second line, should not include \n */
+	d = readln(f)
+	std.write(1, d)
+	std.write(1, "\n")
+	std.slfree(d)
+
+	/* read to ';' */
+	d = readto(f, ";")
+	std.write(1, d)
+	std.write(1, "\n")
+	std.slfree(d)
+
+	/* read to ';'  again */
+	d = readto(f, ";")
+	std.write(1, d)
+	std.write(1, "\n")
+	std.slfree(d)
+
+	/* '--'  this time */
+	d = readto(f, "--")
+	std.write(1, d)
+	std.write(1, "\n")
+	std.slfree(d)
+
+	/* and without the terminator, we should get the remaining text */
+	d = readto(f, "not-there")
+	std.write(1, d)
+	std.write(1, "\n")
+	std.slfree(d)
+
+	/* and now, eof */
+	d = readln(f)
+	d = readto(f, "actually, eof")
+	
+	bio.close(f)
+}
+
+const readln = {f
+	match bio.readln(f)
+	| `std.Some d:	-> d
+	| `std.None:	std.put("eof\n")
+			-> [][:]
+	;;
+}
+
+const readto = {f, delim
+	match bio.readto(f, delim)
+	| `std.Some d:	-> d
+	| `std.None:	std.put("eof\n")
+			-> [][:]
+	;;
+}

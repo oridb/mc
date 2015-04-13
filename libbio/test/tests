@@ -1,0 +1,31 @@
+FLAGS=-I../
+mkdir -p tmpout
+# Format:
+# [B|F] testname [E|P] result
+#    [B|F]: Compiler outcome.
+#	B: Expect that this test will build.
+#	F: Expect that this test will not build.
+#    testname: Test case
+#	The test that will run. We will try to
+#	compile 'testname.myr' to 'testname',
+#	and then execute it, verifying the result
+#    [E|P|C]: Result type
+#	E tells us that the result is an exit status
+#	P tells us that the result is on stdout,
+#         and should be compared to the value on the
+#         line
+#	C tells us that the result is on stdout,
+#         and should be compared to the contents of
+#         the file passed on the line.
+#    result: Result value
+#	What we compare with. This should be self-
+#	evident.
+B bio-create    F	tmpout/test-create
+B bio-read	C
+B bio-write	F	tmpout/test-write
+B bio-delim	C
+B bio-endianwr	F	tmpout/test-endianwr
+B bio-endianrd	C
+B bio-unitwr	F	tmpout/test-unitwr
+B bio-peek	C
+#B bio-fmt	C

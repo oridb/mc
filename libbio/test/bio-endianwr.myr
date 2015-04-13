@@ -1,0 +1,42 @@
+use std
+use bio
+
+const main = {
+	var b : byte
+	var w : uint16
+	var l : uint32
+	var q : uint64
+	var f
+
+	match bio.create("tmpout/test-endianwr", bio.Wr, 0o644)
+	| `std.Some bio:	f = bio
+	| `std.None:	std.fatal(1, "Unable to open data file")
+	;;
+	
+	/* byte */
+	/*
+	/* FIXME: compiler bug. multiplication on byte
+	   values is currently broken. */
+	b = 0xaa
+	bio.putle(f, b)
+	bio.putbe(f, b)
+	*/
+
+	/* word */
+	w = 0xaabb
+	bio.putle16(f, w)
+	bio.putbe16(f, w)
+
+	/* long */
+	l = 0xaabbccdd
+	bio.putle32(f, l)
+	bio.putbe32(f, l)
+
+	/* quad */
+	q = 0x11223344aabbccdd castto(uint64)
+	bio.putle64(f, q)
+	bio.putbe64(f, q)
+
+	/* and test for flush on close */
+	bio.close(f);
+}

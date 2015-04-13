@@ -1,0 +1,62 @@
+use std
+
+use "bio.use"
+
+pkg bio =
+	/* unsigned big endian */
+	generic putbe8	: (f : file#, v : @a::(numeric,integral) -> std.size)
+	generic putbe16	: (f : file#, v : @a::(numeric,integral) -> std.size)
+	generic putbe32	: (f : file#, v : @a::(numeric,integral) -> std.size)
+	generic putbe64	: (f : file#, v : @a::(numeric,integral) -> std.size)
+
+	/* unsigned little endian */
+	generic putle8	: (f : file#, v : @a::(numeric,integral) -> std.size)
+	generic putle16	: (f : file#, v : @a::(numeric,integral) -> std.size)
+	generic putle32	: (f : file#, v : @a::(numeric,integral) -> std.size)
+	generic putle64	: (f : file#, v : @a::(numeric,integral) -> std.size)
+;;
+
+generic putbe8  = {f, v; -> putbe(f, v castto(uint64), 1)}
+generic putbe16 = {f, v; -> putbe(f, v castto(uint64), 2)}
+generic putbe32 = {f, v; -> putbe(f, v castto(uint64), 4)}
+generic putbe64 = {f, v; -> putbe(f, v castto(uint64), 8)}
+
+generic putle8  = {f, v; -> putle(f, v castto(uint64), 1)}
+generic putle16 = {f, v; -> putle(f, v castto(uint64), 2)}
+generic putle32 = {f, v; -> putle(f, v castto(uint64), 4)}
+generic putle64 = {f, v; -> putle(f, v castto(uint64), 8)}
+
+const putle = {f, v, n
+	var buf : byte[8]
+
+	if !ensurewrite(f, n)
+		-> 0
+	;;
+	buf[0] = (v >> 0) & 0xff castto(byte)
+	buf[1] = (v >> 8) & 0xff castto(byte)
+	buf[2] = (v >> 16) & 0xff castto(byte)
+	buf[3] = (v >> 24) & 0xff castto(byte)
+	buf[4] = (v >> 32) & 0xff castto(byte)
+	buf[5] = (v >> 40) & 0xff castto(byte)
+	buf[6] = (v >> 48) & 0xff castto(byte)
+	buf[7] = (v >> 56) & 0xff castto(byte)
+	write(f, buf[:n])
+}
+
+const putbe = {f, v, n
+	var buf : byte[8]
+
+	if !ensurewrite(f, n)
+		-> 0
+	;;
+	buf[0] = (v >> 56) & 0xff castto(byte)
+	buf[1] = (v >> 48) & 0xff castto(byte)
+	buf[2] = (v >> 40) & 0xff castto(byte)
+	buf[3] = (v >> 32) & 0xff castto(byte)
+	buf[4] = (v >> 24) & 0xff castto(byte)
+	buf[5] = (v >> 16) & 0xff castto(byte)
+	buf[6] = (v >> 8) & 0xff castto(byte)
+	buf[7] = (v >> 0) & 0xff castto(byte)
+	write(f, buf[8-n:])
+}
+
