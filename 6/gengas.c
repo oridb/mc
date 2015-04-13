@@ -586,7 +586,7 @@ static void gentydesc(FILE *fd, Type *ty)
                 genunionmemb(fd, ty->udecls[i]);
             break;
         case Tyname:
-            fprintf(fd, "\t.quad %s\n", tydescid(buf, sizeof buf, ty));
+            fprintf(fd, "\t.quad %s%s\n", Symprefix, tydescid(buf, sizeof buf, ty));
             break;
     }
 }
@@ -600,9 +600,9 @@ void gentype(FILE *fd, Type *ty)
         if (hasparams(ty))
             return;
         if (ty->vis == Visexport)
-            fprintf(fd, ".globl %s /* tid: %d */\n", buf, ty->tid);
+            fprintf(fd, ".globl %s%s /* tid: %d */\n", Symprefix, buf, ty->tid);
     }
-    fprintf(fd, "%s:\n", buf);
+    fprintf(fd, "%s%s:\n", Symprefix, buf);
     fprintf(fd, "\t.quad %s$data\n", buf);
     fprintf(fd, "\t.quad %s$end - %s$data\n", buf, buf);
     fprintf(fd, "%s$data:\n", buf);
