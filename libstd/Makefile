@@ -48,6 +48,7 @@ STDSRC= \
 	fltbits.myr \
 	fmt.myr \
 	fltfmt.myr \
+	getcwd.myr \
 	hashfuncs.myr \
 	hasprefix.myr \
 	hassuffix.myr \

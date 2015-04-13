@@ -2,6 +2,7 @@ use sys
 use "cstrconv.use"
 use "option.use"
 use "types.use"
+use "errno.use"
 
 pkg std =
 	type fd		= sys.fd
@@ -52,8 +53,8 @@ pkg std =
 
 	/* path manipulation */
 	const mkdir	: (path : byte[:], mode : int64 -> int64)
-	const chdir	: (path : byte[:] -> bool)
 	const remove	: (path : byte[:] -> bool)
+	const chdir	: (path : byte[:] -> bool)
 
 	/* process stuff */
 	const getpid	: ( -> pid)
@@ -67,6 +68,7 @@ pkg std =
 	pkglocal const getmem	: (sz : size -> byte#)
 	pkglocal const freemem	: (p : byte#, sz : size -> void)
 	pkglocal const curtime	: (-> time)
+	pkglocal const bgetcwd	: (buf : byte[:] -> errno)
 ;;
 
 /* fd stuff */
@@ -84,6 +86,7 @@ const dup2	= {ofd, nfd;	-> sys.dup2(ofd castto(sys.fd), nfd castto(sys.fd)) cast
 const mkdir	= {path, mode;	-> sys.mkdir(path, mode)}
 const chdir	= {path;	-> sys.chdir(path) == 0}
 const remove	= {path;	-> sys.unlink(path) == 0}
+const bgetcwd	= {buf;		-> sys.getcwd(buf) castto(errno)}
 
 /* useful/portable bits of uname */
 const getsysinfo = {si

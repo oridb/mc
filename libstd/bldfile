@@ -36,21 +36,22 @@ lib std {inc=.} =
 	endian.myr
 	env+posixy.myr
 	env+plan9.myr
-        errno.myr
+	errno.myr
 	execvp.myr
 	extremum.myr
 	fltbits.myr
 	fltfmt.myr
 	fmt.myr
+	getcwd.myr
 	hashfuncs.myr
 	hasprefix.myr
 	hassuffix.myr
 	htab.myr
-        getint.myr
+	getint.myr
 	intparse.myr
 	ipparse.myr
 	mk.myr
-        mkpath.myr
+	mkpath.myr
 	now.myr
 	option.myr
 	optparse.myr
@@ -75,9 +76,9 @@ lib std {inc=.} =
 	strjoin.myr
 	strsplit.myr
 	strstrip.myr
-        syswrap+plan9.myr
-        syswrap-ss+posixy-linux.myr
-        syswrap-ss+posixy-osx.myr
+	syswrap+plan9.myr
+	syswrap-ss+posixy-linux.myr
+	syswrap-ss+posixy-osx.myr
 	syswrap+posixy.myr
 	swap.myr
 	try.myr

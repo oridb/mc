@@ -1,0 +1,30 @@
+use "syswrap.use"
+use "errno.use"
+use "alloc.use"
+use "extremum.use"
+use "fmt.use"
+
+pkg std =
+	const getcwd : (-> byte[:])
+;;
+
+const getcwd = {
+	var len, n, buf
+
+	len = 128
+	while true
+		buf = std.slalloc(len)
+		n = bgetcwd(buf)
+		std.put("got %i, buf = %s\n", n, buf[:n])
+		if n >= 0
+			/* n is the length of the nul terminated c string */
+			-> buf[:n-1]
+		elif n != Erange
+			std.slfree(buf)
+			-> ""
+		else
+			len *= 2
+		;;
+	;;
+}
+	
