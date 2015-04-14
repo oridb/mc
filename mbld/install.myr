@@ -29,18 +29,18 @@ const movetargs = {b, delete
 	for tn in b.all
 		match gettarg(b.targs, tn)
 		| `Bin bt:
-			movefile(delete, bt.name, opt_instroot, opt_destdir, "bin", 0o755)
+			movefile(b, delete, bt.dir, bt.name, opt_instroot, opt_destdir, "bin", 0o755)
 		| `Lib lt:
-			movefile(delete, lt.name, opt_instroot, opt_destdir, "lib/myr", 0o644)
+			movefile(b, delete, lt.dir, lt.name, opt_instroot, opt_destdir, "lib/myr", 0o644)
 			libarchive = std.fmt("lib%s.a", lt.name)
-			movefile(delete, libarchive, opt_instroot, opt_destdir, "lib/myr", 0o644)
+			movefile(b, delete, lt.dir, libarchive, opt_instroot, opt_destdir, "lib/myr", 0o644)
 			std.slfree(libarchive)
 		| `Gen gt:
 			/* nothing to do (?) */
-		| `Man mans:
+		| `Man mt:
 			/* FIXME: figure out man section by number */
-			for m in mans
-				moveman(delete, m)
+			for m in mt.pages
+				moveman(b, delete, mt.dir, m)
 			;;
 		| `Test tt:	/* nothing */
 		;;
@@ -49,9 +49,10 @@ const movetargs = {b, delete
 }
 
 
-const movefile = {delete, file, instdir, destdir, prefix, perm
+const movefile = {b, delete, dir, file, instdir, destdir, prefix, perm
 	var path
 
+	setdir(b, dir)
 	path = std.pathjoin([destdir, instdir, prefix, file][:])
 	if delete
 		std.put("\tdelete %s\n", path)
@@ -73,7 +74,7 @@ const movefile = {delete, file, instdir, destdir, prefix, perm
 	std.slfree(path)
 }
 
-const moveman = {delete, man
+const moveman = {b, delete, dir, man
 	var sect, manrel
 
 	match std.strrfind(man, ".")
@@ -87,6 +88,6 @@ const moveman = {delete, man
 	;;
 
 	manrel = std.fmt("%s%s", opt_manpath, man[sect:])
-	movefile(delete, man, opt_instroot, opt_destdir, manrel, 0o644)
+	movefile(b, delete, dir, man, opt_instroot, opt_destdir, manrel, 0o644)
 	std.slfree(manrel)
 }

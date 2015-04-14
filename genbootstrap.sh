@@ -2,6 +2,7 @@
 
 export MYR_MUSE=../muse/muse
 export MYR_MC=../6/6m
+export MYR_RT=../rt/_myrrt.o
 mbld clean
 # The generated shell script should be a compatible bourne
 # shell script.

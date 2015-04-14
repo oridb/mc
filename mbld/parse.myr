@@ -132,7 +132,13 @@ const testtarget = {b, p
 
 /* mantarget: anontarget */
 const mantarget = {b, p
-	addtarg(p, b, "__man__", `Man anontarget(p, "man"))
+	var targ
+
+	targ = std.mk([
+		.dir=std.sldup(p.fdir),
+		.pages=anontarget(p, "man")
+	])
+	addtarg(p, b, "__man__", `Man targ)
 }
 
 /* subtarget : anontarget */

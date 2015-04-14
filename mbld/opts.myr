@@ -75,11 +75,13 @@ const initopts = {
 	opt_destdir = std.getenvv("DESTDIR", "")
 	opt_mc = std.getenvv("MYR_MC", "6m")
 	opt_muse = std.getenvv("MYR_MUSE", "muse")
+	opt_runtime = std.getenvv("MYR_RT", "")
+	if opt_runtime.len == 0
+		opt_runtime = std.pathjoin([opt_instroot, "lib/myr", config.Runtime][:]) 
+	;;
 
 	sysarchstr = std.fmt("+%s-%s", opt_sys, opt_arch)
 	sysstr = std.fmt("+%s", opt_sys)
 	archstr = std.fmt("+%s", opt_arch)
-
-	opt_runtime = std.pathjoin([opt_instroot, "lib/myr", config.Runtime][:]) 
 }
 
