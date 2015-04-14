@@ -18,7 +18,10 @@ const main = {args : byte[:][:]
 	var bintarg
 	var optctx
 
+	/*
 	optctx = std.optinit("hb:l:s:Sr:I:C:A:M:L:R:d", args)
+	*/
+	optctx = std.optinit("", args)
 	bld.initopts()
 	while !std.optdone(optctx)
 		match std.optnext(optctx)

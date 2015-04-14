@@ -1,7 +1,23 @@
 use sys
+use "errno.use"
 
 pkg std =
 	const exit	: (status:int -> void)
+	pkglocal const bgetcwd	: (buf : byte[:] -> errno)
 ;;
 
 const exit	= {status;	sys.exit(status)}
+const bgetcwd	= {buf
+	var path : byte[sys.Maxpathlen]
+	var fd
+
+	fd = sys.open(".", sys.Ordonly)
+	if fd < 0
+		-> fd castto(errno)
+	;;
+	/* 
+	FIXME: if the path is longer than sys.Pathmax, we should fall back to
+	the ugly method of finding the path.
+	*/
+	-> sys.fcntl(fd, sys.Fgetpath, path[:] castto(byte#)) castto(errno)
+}

@@ -17,12 +17,13 @@ _sys$syscall:
 	harmless.
 	 */
 	movq 80 (%rsp),%rax
-	movq 88 (%rsp),%rdi
-	movq 96 (%rsp),%rsi
-	movq 104(%rsp),%rdx
-	movq 112(%rsp),%r10
-	movq 120(%rsp),%r8
-	movq 128(%rsp),%r9
+	/* 88: hidden type arg */
+	movq 96 (%rsp),%rdi
+	movq 104(%rsp),%rsi
+	movq 112(%rsp),%rdx
+	movq 120(%rsp),%r10
+	movq 128(%rsp),%r8
+	movq 136(%rsp),%r9
 
 	syscall
 	jae .success

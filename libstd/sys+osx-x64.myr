@@ -13,6 +13,7 @@ pkg sys =
 	type filemode	= uint16	/* file permission bits */
 	type kflags	= uint16	/* kqueue flags */
 	type whence	= int64
+	type fcntlcmd	= int64
 
 	type timespec = struct
 		sec	: uint64
@@ -128,6 +129,49 @@ pkg sys =
 	const Seekset	: whence = 0
 	const Seekcur	: whence = 1
 	const Seekend	: whence = 2
+
+	/* system specific constants */
+	const Maxpathlen	: size = 1024
+
+	/* fcntl constants */
+	const Fdupfd		: fcntlcmd = 0		       /* duplicate file descriptor */
+	const Fgetfd		: fcntlcmd = 1		       /* get file descriptor flags */
+	const Fsetfd		: fcntlcmd = 2		       /* set file descriptor flags */
+	const Fgetfl		: fcntlcmd = 3		       /* get file status flags */
+	const Fsetfl		: fcntlcmd = 4		       /* set file status flags */
+	const Fgetown		: fcntlcmd = 5		       /* get SIGIO/SIGURG proc/pgrp */
+	const Fsetown		: fcntlcmd = 6		       /* set SIGIO/SIGURG proc/pgrp */
+	const Fgetlk		: fcntlcmd = 7		       /* get record locking information */
+	const Fsetlk		: fcntlcmd = 8		       /* set record locking information */
+	const Fsetlkw		: fcntlcmd = 9		       /* F_SETLK; wait if blocked */
+	const Fsetlkwtimeout	: fcntlcmd = 10			/* F_SETLK; wait if blocked, return on timeout */
+	const Fflush_data	: fcntlcmd = 40
+	const Fchkclean		: fcntlcmd = 41			/* Used for regression test */
+	const Fpreallocate	: fcntlcmd = 42			/* Preallocate storage */
+	const Fsetsize		: fcntlcmd = 43			/* Truncate a file without zeroing space */
+	const Frdadvise		: fcntlcmd = 44			/* Issue an advisory read async with no copy to user */
+	const Frdahead		: fcntlcmd = 45			/* turn read ahead off/on for this fd */
+	/* 46,47 used to be F_READBOOTSTRAP and F_WRITEBOOTSTRAP */
+	const Fnocache		: fcntlcmd = 48			/* turn data caching off/on for this fd */
+	const Flog2phys		: fcntlcmd = 49			/* file offset to device offset */
+	const Fgetpath		: fcntlcmd = 50			/* return the full path of the fd */
+	const Ffullfsync	: fcntlcmd = 51			/* fsync + ask the drive to flush to the media */
+	const Fpathpkg_check 	: fcntlcmd = 52			/* find which component (if any) is a package */
+	const Ffreeze_fs	: fcntlcmd = 53			/* "freeze" all fs operations */
+	const Fthaw_fs		: fcntlcmd = 54			/* "thaw" all fs operations */
+	const Fglobal_nocache	: fcntlcmd = 55			/* turn data caching off/on (globally) for this file */
+	const Faddsigs		: fcntlcmd = 59			/* add detached signatures */
+	const Faddfilesigs	: fcntlcmd = 61			/* add signature from same file (used by dyld for shared libs) */
+	const Fgetprotclass	: fcntlcmd = 63			/* Get the protection class of a file from the EA, returns int */
+	const Fsetprotclass	: fcntlcmd = 64			/* Set the protection class of a file for the EA, requires int */
+	const Flog2phys_ext	: fcntlcmd = 65			/* file offset to device offset, extended */
+	const Fgetlkpid		: fcntlcmd = 66			/* get record locking information, per-process */
+	/* See F_DUPFD_CLOEXEC below for 67 */
+	const Fsetbacktore	: fcntlcmd = 70			/* Mark the file as being the backing store for another filesystem */
+	const Fgetpath_mtminfo	: fcntlcmd = 71			/* return the full path of the FD, but error in specific mtmd circumstances */
+	/* 72 is free.	It used to be F_GETENCRYPTEDDATA, which is now removed. */
+	const Fsetnosigpipe	: fcntlcmd = 73			/* No SIGPIPE generated on EPIPE */
+	const Fgetnosigpipe	: fcntlcmd = 74			/* Status of SIGPIPE for this fd */
 
 	/* kqueue events */
 	const Kevadd		: kflags = 0x0001	/* add event to kq (implies enable) */
@@ -595,6 +639,8 @@ pkg sys =
 	const pipe	: (fd : fd[2]# -> int64)
 	const dup	: (fd : fd -> fd)
 	const dup2	: (src : fd, dst : fd -> fd)
+	/* NB: the C ABI uses '...' for the args. */
+	const fcntl	: (fd : fd, cmd : fcntlcmd, args : byte# -> int64)
 
 	/* kqueue */
 	const kqueue	: (-> fd)
@@ -733,6 +779,7 @@ const chdir	= {dir;	-> syscall(Syschdir, cstring(dir))}
 const pipe	= {fd;	-> __osx_pipe(fd)}
 const dup 	= {fd;	-> syscall(Sysdup, a(fd)) castto(fd)}
 const dup2 	= {src, dst;	-> syscall(Sysdup2, a(src), a(dst)) castto(fd)}
+const fcntl	= {fd, cmd, args; 	-> syscall(Sysfcntl, a(fd), a(cmd), a(args))}
 
 /* kqueueueueueueue */
 const kqueue	= {;	-> syscall(Syskqueue) castto(fd)}

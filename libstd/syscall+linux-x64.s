@@ -18,6 +18,7 @@ sys$syscall:
 	harmless.
 	 */
 	movq 80 (%rsp),%rax
+	/* 88: hidden type arg */
 	movq 96 (%rsp),%rdi
 	movq 104(%rsp),%rsi
 	movq 112(%rsp),%rdx

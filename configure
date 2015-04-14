@@ -40,8 +40,6 @@ echo export INST_ROOT=$prefix > config.mk
 
 echo '#define Instroot "'$prefix'"' > config.h
 echo '#define Asmcmd {"as", "-g", "-o", NULL}' >> config.h
-echo '#define Arcmd {"ar", "-rcs", NULL}' >> config.h
-echo '#define Ldcmd {"ld", "-o", NULL}' >> config.h
 echo '#define Defaultasm Gnugas' >> config.h
 echo '#define Objsuffix ".o"' >> config.h
 echo 'export SYSCLASS=posixy' >> config.mk
@@ -50,7 +48,6 @@ echo 'export SYSCLASS=posixy' >> config.mk
 echo "pkg config = " > mbld/config.myr
 echo "const Instroot = \"$prefix\"" >> mbld/config.myr
 echo "const Objsuffix = \".o\"" >> mbld/config.myr
-echo "const Linkcmd = [\"ld\", \"-o\"]" >> mbld/config.myr
 echo "const Arcmd = [\"ar\", \"-rcs\"]" >> mbld/config.myr
 echo "const Ascmd = [\"as\", \"-g\"]" >> mbld/config.myr
 echo "const Directlib = false" >> mbld/config.myr
@@ -62,16 +59,22 @@ case $OS in
         echo '#define Defaultasm Gnugas' >> config.h
         echo 'export SYS=linux' >> config.mk
         echo 'const Sys = "Linux"' >> mbld/config.myr
+        echo 'const Linkcmd = ["ld", "-o"]' >> mbld/config.myr
         ;;
     *Darwin*)
         echo '#define Symprefix "_"' >> config.h
         echo 'export SYS=osx' >> config.mk
+        echo 'const Linkcmd = ["ld", ' \
+            '"-pagezero_size", "0x100000000",' \
+            '"-macosx_version_min", "10.6",'\
+            '"-o"]' >> mbld/config.myr
         echo 'const Sys = "OSX"' >> mbld/config.myr
         ;;
     *FreeBSD*)
         echo '#define Symprefix ""' >> config.h
         echo '#define Defaultasm Gnugas' >> config.h
         echo 'export SYS=freebsd' >> config.mk
+        echo 'const Linkcmd = ["ld", "-o"]' >> mbld/config.myr
         echo 'const Sys = "FreeBSD"' >> mbld/config.myr
         ;;
     *)

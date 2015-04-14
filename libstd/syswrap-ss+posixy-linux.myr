@@ -2,6 +2,8 @@ use sys
 
 pkg std =
 	const exit	: (status:int -> void)
+	pkglocal const bgetcwd	: (buf : byte[:] -> errno)
 ;;
 
 const exit	= {status;	sys.exit_group(status)}
+const bgetcwd	= {buf;		-> sys.getcwd(buf) castto(errno)}

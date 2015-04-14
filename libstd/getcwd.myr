@@ -3,6 +3,7 @@ use "alloc.use"
 use "errno.use"
 use "extremum.use"
 use "syswrap.use"
+use "syswrap-ss.use"
 pkg std =
 	const getcwd : (-> byte[:])
 ;;

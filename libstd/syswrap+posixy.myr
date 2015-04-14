@@ -68,7 +68,6 @@ pkg std =
 	pkglocal const getmem	: (sz : size -> byte#)
 	pkglocal const freemem	: (p : byte#, sz : size -> void)
 	pkglocal const curtime	: (-> time)
-	pkglocal const bgetcwd	: (buf : byte[:] -> errno)
 ;;
 
 /* fd stuff */
@@ -86,7 +85,6 @@ const dup2	= {ofd, nfd;	-> sys.dup2(ofd castto(sys.fd), nfd castto(sys.fd)) cast
 const mkdir	= {path, mode;	-> sys.mkdir(path, mode)}
 const chdir	= {path;	-> sys.chdir(path) == 0}
 const remove	= {path;	-> sys.unlink(path) == 0}
-const bgetcwd	= {buf;		-> sys.getcwd(buf) castto(errno)}
 
 /* useful/portable bits of uname */
 const getsysinfo = {si
