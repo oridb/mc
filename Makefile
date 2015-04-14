@@ -7,6 +7,8 @@ SUB = parse \
 
 EXTRA=buildmyr
 EXTRACLEAN=cleanmyr
+EXTRAINSTALL=installmyr
+EXTRAUNINSTALL=uninstallmyr
 
 include mk/c.mk
 include config.mk
@@ -26,3 +28,9 @@ buildmyr:
 
 cleanmyr:
 	./mbldwrap.sh clean
+
+installmyr:
+	./mbldwrap.sh install
+
+uninstallmyr:
+	./mbldwrap.sh uninstall

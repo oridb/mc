@@ -52,7 +52,7 @@ subdirs-install:
 clean: subdirs-clean $(EXTRACLEAN)
 	rm -f ${BIN} ${OBJ} ${CLEAN} ${LIB}
 
-install: subdirs-install $(INSTBIN) $(INSTLIB) $(INSTHDR) $(INSTPKG)
+install: subdirs-install $(INSTBIN) $(INSTLIB) $(INSTHDR) $(INSTPKG) $(EXTRAINSTALL)
 	@for i in $(INSTBIN); do \
 		echo install $(abspath $$i $(DESTDIR)/$(INST_ROOT)/bin); \
 		mkdir -p $(abspath $(DESTDIR)/$(INST_ROOT)/bin); \
@@ -87,7 +87,7 @@ subdirs-uninstall:
 	    exit 1 \
 	); done
 
-uninstall: subdirs-uninstall
+uninstall: subdirs-uninstall $(EXTRAUNINSTALL)
 	@for i in $(INSTBIN); do \
 		echo rm -f $(abspath $(DESTDIR)/$(INST_ROOT)/bin/$$i); \
 		rm -f $(abspath $(DESTDIR)/$(INST_ROOT)/bin/$$i); \
