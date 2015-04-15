@@ -208,5 +208,5 @@ echo 	../6/6m	-I ../libstd -I ../libbio -I ../libregex test.myr
 	../6/6m	-I ../libstd -I ../libbio -I ../libregex test.myr 
 echo 	../6/6m	-I ../libstd -I ../libbio -I ../libregex main.myr 
 	../6/6m	-I ../libstd -I ../libbio -I ../libregex main.myr 
-echo 	ld	-macosx_version_min 10.6 -pagezero_size 100000000 -o mbld ../rt/_myrrt.o clean.o config.o deps.o types.o fsel.o util.o subdir.o main.o parse.o build.o opts.o install.o test.o -L../libstd -L../libbio -L../libregex -lregex -lbio -lstd -lsys -lsys -lstd -lbio -lregex 
- 	ld	-macosx_version_min 10.6 -pagezero_size 100000000 -o mbld ../rt/_myrrt.o clean.o config.o deps.o types.o fsel.o util.o subdir.o main.o parse.o build.o opts.o install.o test.o -L../libstd -L../libbio -L../libregex -lregex -lbio -lstd -lsys -lsys -lstd -lbio -lregex 
+echo 	ld	-o mbld ../rt/_myrrt.o clean.o config.o deps.o types.o fsel.o util.o subdir.o main.o parse.o build.o opts.o install.o test.o -L../libstd -L../libbio -L../libregex -L./lib/myr -lregex -lbio -lstd -lsys -lsys -lstd -lbio -lregex 
+	ld	-o mbld ../rt/_myrrt.o clean.o config.o deps.o types.o fsel.o util.o subdir.o main.o parse.o build.o opts.o install.o test.o -L../libstd -L../libbio -L../libregex -L./lib/myr -lregex -lbio -lstd -lsys -lsys -lstd -lbio -lregex 

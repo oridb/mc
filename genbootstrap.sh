@@ -9,7 +9,7 @@ mbld clean
 bootscript=bootstrap+`uname -s`-`uname -m`
 echo '#!/bin/sh' > bootstrap.sh
 echo 'pwd=`pwd`' >> bootstrap.sh
-mbld | \
+mbld -R. | \
     sed "s:Entering directory '\\(.*\\)':\tcd \$pwd/\\1:g" | \
     sed "s:Leaving directory.*:\tcd \$pwd:g" | \
     sed "s:\\([a-zA-Z0-9_-]*\\)+.*:\`\$pwd/sysselect.sh \1\`:" | \
