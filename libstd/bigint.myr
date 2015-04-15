@@ -11,6 +11,7 @@ use "slfill.use"
 use "slpush.use"
 use "types.use"
 use "utf.use"
+use "errno.use"
 
 pkg std =
 	type bigint = struct
