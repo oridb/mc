@@ -1,4 +1,5 @@
 use sys
+use "errno.use"
 
 pkg std =
 	const exit	: (status:int -> void)
