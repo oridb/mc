@@ -303,7 +303,6 @@ const addlibs = {cmd, libgraph, incs
 		for inc in incs
 			cmd = std.slpush(cmd, std.fmt("-L%s", inc))
 		;;
-		cmd = std.slpush(cmd, std.fmt("-L%s%s", opt_instroot, "/lib/myr"))
 	;;
 
 	libs = std.htkeys(libgraph)
@@ -359,11 +358,12 @@ const findlib = {lib, incs
 		;;
 		std.slfree(p)
 	;;
-	p = std.pathjoin([opt_instroot, "lib/myr", sl][:])
-	if std.fexists(p)
-		-> `std.Some p
+	if opt_instroot.len > 0
+		if std.fexists(p)
+			-> `std.Some p
+		;;
+		std.slfree(p)
 	;;
-	std.slfree(p)
 	-> `std.None
 }
 

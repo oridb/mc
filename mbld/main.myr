@@ -17,6 +17,7 @@ const main = {args : byte[:][:]
 	var targname
 	var bintarg
 	var optctx
+	var libpath
 
 	optctx = std.optinit("hb:l:s:Sr:I:C:A:M:L:R:d", args)
 	bld.initopts()
@@ -49,6 +50,11 @@ const main = {args : byte[:][:]
 		| ('M', arg): bld.opt_muse = arg
 		| _:	std.die("got invalid arg\n")
 		;;
+	;;
+	if bld.opt_instroot.len > 0 && !std.sleq(bld.opt_instroot, "none")
+		std.put("instroot: %s\n", bld.opt_instroot)
+		libpath = std.pathcat(bld.opt_instroot, "lib/myr")
+		bld.opt_incpaths = std.slpush(bld.opt_incpaths, libpath)
 	;;
 
 	match regex.compile("^\\s*use\\s+((\\<\\S+\\>)|(\"(\\S+)\")).*")
