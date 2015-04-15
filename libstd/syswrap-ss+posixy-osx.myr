@@ -1,5 +1,8 @@
 use sys
 use "errno.use"
+use "cstrconv.use"
+use "slcp.use"
+use "die.use"
 
 pkg std =
 	const exit	: (status:int -> void)
@@ -9,7 +12,7 @@ pkg std =
 const exit	= {status;	sys.exit(status)}
 const bgetcwd	= {buf
 	var path : byte[sys.Maxpathlen]
-	var fd
+	var fd, len, err
 
 	fd = sys.open(".", sys.Ordonly)
 	if fd < 0
@@ -19,5 +22,14 @@ const bgetcwd	= {buf
 	FIXME: if the path is longer than sys.Pathmax, we should fall back to
 	the ugly method of finding the path.
 	*/
-	-> sys.fcntl(fd, sys.Fgetpath, path[:] castto(byte#)) castto(errno)
+	err = sys.fcntl(fd, sys.Fgetpath, path[:] castto(byte#)) castto(errno)
+	if err < 0
+		-> err
+	;;
+	len = cstrlen(path[:])
+	if len >= buf.len
+		-> Erange
+	;;
+	slcp(buf[:len], path[:len])
+	-> len castto(errno)
 }

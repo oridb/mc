@@ -17,7 +17,7 @@ const getcwd = {
 		n = bgetcwd(buf)
 		if n >= 0
 			/* n is the length of the nul terminated c string */
-			-> buf[:n-1]
+			-> buf[:n]
 		elif n != Erange
 			std.slfree(buf)
 			-> ""

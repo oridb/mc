@@ -31,7 +31,6 @@ const loadall = {b, path, dir
 	var p : parser#
 	var subpath, subbld, ok
 
-	std.put("loading %s in dir '%s'\n", path, dir)
 	p = mkparser(path, dir, b.basedir)
 	ok = bld.parse(b, p, "")
 	for s in p.subdirs
@@ -63,13 +62,11 @@ const mkparser = {path, dir, basedir
 
 const freeparser = {p
 	std.slfree(p.fname)
-	/*
 	std.slfree(p.fdir)
 	std.slfree(p.basedir)
 	std.slfree(p.subdirs)
 	std.slfree(p.data)
 	std.free(p)
-	*/
 }
 
 const failparse = {p, msg, args : ...

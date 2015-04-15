@@ -1,6 +1,7 @@
 use "types.use"
 
 pkg std =
+	const cstrlen	: (buf : byte[:] -> size)
 	const cstrconv	: (buf : byte[:] -> byte[:])
 	const cstrconvp	: (p : byte# -> byte[:])
 ;;
@@ -25,4 +26,15 @@ const cstrconvp = {p
 		i++
 	;;
 	-> p[:i]
+}
+
+const cstrlen = {buf
+	var i
+
+	for i = 0; i < buf.len; i++
+		if buf[i] == 0
+			break
+		;;
+	;;
+	-> i
 }

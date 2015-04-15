@@ -18,10 +18,7 @@ const main = {args : byte[:][:]
 	var bintarg
 	var optctx
 
-	/*
 	optctx = std.optinit("hb:l:s:Sr:I:C:A:M:L:R:d", args)
-	*/
-	optctx = std.optinit("", args)
 	bld.initopts()
 	while !std.optdone(optctx)
 		match std.optnext(optctx)
@@ -102,6 +99,9 @@ const mkbuild = {
 	b = std.zalloc()
 	b.targs = std.mkht(std.strhash, std.streq)
 	b.gensrc = std.mkht(std.strhash, std.streq)
+	/*
+	b.basedir = std.sldup("/Users/orib/src/myr/mc")
+	*/
 	b.basedir = std.getcwd()
 	b.curdir = ""
 	-> b
