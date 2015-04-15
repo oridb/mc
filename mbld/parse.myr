@@ -6,7 +6,7 @@ use "opts.use"
 use "fsel.use"
 
 pkg bld =
-	const load	: (b : build#, path : byte[:]	-> bool)
+	const load	: (b : build# -> bool)
 ;;
 
 type parser = struct
@@ -22,23 +22,44 @@ type parser = struct
 	subdirs	: byte[:][:]
 ;;
 
-const load = {b, path
-	-> loadall(b, path, "")
+const load = {b
+	-> loadall(b, b.bldfile, "")
 }
 
 
 const loadall = {b, path, dir
 	var p : parser#
-	var subpath, subbld, ok
+	var subpath, subbld, subproj, ok
+	var curbase
 
 	p = mkparser(path, dir, b.basedir)
 	ok = bld.parse(b, p, "")
 	for s in p.subdirs
 		subpath = std.pathcat(p.fdir, s)
-		subbld = std.pathcat(subpath, "bldfile")
-		loadall(b, subbld, subpath)
-		std.slfree(subpath)
+		subbld = std.pathcat(subpath, "bld.sub")
+		subproj = std.pathcat(subpath, "bld.proj")
+		/*
+		bld.sub is a subbuild. It doesn't change the
+		build root.
+		*/
+		if std.fexists(subbld)
+			loadall(b, subbld, subpath)
+		/*
+		bld.proj reroots the project -- @/
+		is relative to the most recent bld.proj
+		in the heirarchy.
+		*/
+		elif std.fexists(subproj)
+			curbase = b.basedir
+			b.basedir = subpath
+			loadall(b, subproj, subpath)
+			b.basedir = curbase
+		else
+			std.fatal(1, "could not open %s or %s \n", subbld, subproj)
+		;;
 		std.slfree(subbld)
+		std.slfree(subproj)
+		std.slfree(subpath)
 	;;
 	freeparser(p)
 	-> ok
@@ -450,8 +471,9 @@ const word = {p
 const wordchar = {c
 	-> std.isalnum(c) || \
 		c == '.' || c == '_' || c == '$' || c == '-' || \
-		c == '/' || c == ':' || c == '!' || c == '~' || \
-		c == '+'
+		c == '/' || c == '@' || c == '!' || c == '~' || \
+		c == '+' || c == '%' || c == '&' || c == '(' || \
+		c == ')' || c == '[' || c == ']' || c == ':'
 }
 
 const skipspace = {p

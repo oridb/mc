@@ -114,7 +114,7 @@ const setdir = {b, dir
 
 		std.put("Entering directory '%s'\n", dir)
 		if !std.chdir(p)
-			std.fatal(1, "could not cd into %s\n")
+			std.fatal(1, "could not cd into %s\n", p)
 		;;
 		b.curdir = dir
 		std.slfree(p)

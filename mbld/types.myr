@@ -5,6 +5,7 @@ pkg bld =
 		cmd	: byte[:][:]	/* command that we ran */
 		/* build state */
 		basedir	: byte[:]
+		bldfile	: byte[:]
 		curdir	: byte[:]
 		/* build params */
 		all	: byte[:][:]
