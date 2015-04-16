@@ -29,8 +29,6 @@ lib std {inc=.} =
 	clear.myr
 	cmp.myr
 	cstrconv.myr
-	dial+posixy.myr
-	dial+plan9.myr
 	die.myr
 	dirname.myr
 	endian.myr
@@ -58,8 +56,6 @@ lib std {inc=.} =
 	pathjoin.myr
 	putint.myr
 	rand.myr
-	resolve+posixy.myr
-	resolve+plan9.myr
 	result.myr
 	search.myr
 	slcp.myr
@@ -76,10 +72,6 @@ lib std {inc=.} =
 	strjoin.myr
 	strsplit.myr
 	strstrip.myr
-	syswrap+plan9.myr
-	syswrap-ss+posixy-linux.myr
-	syswrap-ss+posixy-osx.myr
-	syswrap+posixy.myr
 	swap.myr
 	try.myr
 	types.myr
@@ -93,4 +85,12 @@ lib std {inc=.} =
 	dir+osx.myr
 	wait+posixy.myr
 	wait+plan9.myr
+	dial+posixy.myr
+	dial+plan9.myr
+	resolve+posixy.myr
+	resolve+plan9.myr
+	syswrap+plan9.myr
+	syswrap-ss+linux.myr
+	syswrap-ss+osx.myr
+	syswrap+posixy.myr
 ;;
