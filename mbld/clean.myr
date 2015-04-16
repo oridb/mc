@@ -70,7 +70,7 @@ const cleanup = {b, targ, leaves, islib
 	we want to automatically add 'clean' sources since otherwise,
 	mbld won't be able to clean code after changing a build file.
 	*/
-	setdir(b, targ.dir)
+	pushdir(b, targ.dir)
 	if !myrdeps(b, targ, islib, true, true, &dg)
 		std.fatal(1, "Could not load dependencies for %s\n", targ.name)
 	;;
@@ -85,5 +85,6 @@ const cleanup = {b, targ, leaves, islib
 			std.put("\tclean %s\n", k)
 		;;
 	;;
+	popdir(b)
 }
 

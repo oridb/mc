@@ -57,7 +57,7 @@ const buildbin = {b, targ, addsrc
 	if targ.built
 		->
 	;;
-	setdir(b, targ.dir)
+	pushdir(b, targ.dir)
 	addincludes(b, targ)
 	buildlibdeps(b, targ)
 	std.put("%s...\n", targ.name)
@@ -73,6 +73,7 @@ const buildbin = {b, targ, addsrc
 		std.slfree(src)
 	;;
 	targ.built = true
+	popdir(b)
 }
 
 const buildlib = {b, targ
@@ -84,7 +85,7 @@ const buildlib = {b, targ
 	if targ.built
 		->
 	;;
-	setdir(b, targ.dir)
+	pushdir(b, targ.dir)
 	addincludes(b, targ)
 	buildlibdeps(b, targ)
 	lib = targ.name
@@ -106,15 +107,18 @@ const buildlib = {b, targ
 	;;
 	std.slfree(archive)
 	targ.built = true
+	popdir(b)
 }
 
 const genfiles = {b, gt
+	pushdir(b, gt.dir)
 	for f in gt.out
 		if !std.fexists(f)
 			run(gt.cmd)
 			break
 		;;
 	;;
+	popdir(b)
 }
 
 const addincludes = {b, targ

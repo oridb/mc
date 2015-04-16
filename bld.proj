@@ -1,7 +1,7 @@
 sub =
+	mbld
 	libstd
 	libbio
 	libregex
-	mbld
 ;;
 

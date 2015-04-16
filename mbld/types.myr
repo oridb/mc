@@ -6,6 +6,7 @@ pkg bld =
 		/* build state */
 		basedir	: byte[:]
 		bldfile	: byte[:]
+		dirstk	: byte[:][:]
 		curdir	: byte[:]
 		/* build params */
 		all	: byte[:][:]
