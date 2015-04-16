@@ -280,7 +280,7 @@ const myrtarget = {p, targ
 	inst = true
 	ldscript = ""
 	runtime = ""
-	incpath = [][:]
+	incpath = std.sldup(bld.opt_incpaths)
 	for elt in attrs
 		match elt
 		| ("ldscript", lds):	ldscript = std.sldup(lds)

@@ -303,9 +303,6 @@ const addlibs = {cmd, libgraph, incs
 		for inc in incs
 			cmd = std.slpush(cmd, std.fmt("-L%s", inc))
 		;;
-		if opt_instroot.len > 0
-			cmd = std.slpush(cmd, std.fmt("-L%s%s", opt_instroot, "/lib/myr"))
-		;;
 	;;
 
 	libs = std.htkeys(libgraph)
