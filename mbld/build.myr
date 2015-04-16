@@ -303,6 +303,9 @@ const addlibs = {cmd, libgraph, incs
 		for inc in incs
 			cmd = std.slpush(cmd, std.fmt("-L%s", inc))
 		;;
+		if opt_instroot.len > 0
+			cmd = std.slpush(cmd, std.fmt("-L%s%s", opt_instroot, "/lib/myr"))
+		;;
 	;;
 
 	libs = std.htkeys(libgraph)
@@ -339,7 +342,7 @@ const putlib = {cmd, head, lib, incs
 	else
 		match findlib(lib, incs)
 		| `std.None:
-			std.fatal(1, "could not find library lib%s.a", lib)
+			std.fatal(1, "could not find library lib%s.a\n", lib)
 		| `std.Some p:
 			-> std.slput(cmd, head, p)
 		;;
@@ -352,13 +355,7 @@ const findlib = {lib, incs
 
 	sl = std.bfmt(buf[:], "lib%s.a", lib)
 	for i in incs
-		p = std.pathjoin([i, sl][:])
-		if std.fexists(p)
-			-> `std.Some p
-		;;
-		std.slfree(p)
-	;;
-	if opt_instroot.len > 0
+		p = std.pathcat(i, sl)
 		if std.fexists(p)
 			-> `std.Some p
 		;;
@@ -380,7 +377,12 @@ const freshlibs = {targ, libgraph
 			;;
 			std.slfree(lib)
 		| `std.None:
-			std.fatal(1, "%s: could not find library lib%s.a", l)
+			std.fput(1, "%s: could not find library lib%s.a\n", targ.name, l)
+			std.fput(1, "searched:\n")
+			for inc in targ.incpath
+				std.fput(1, "\t%s\n", inc)
+			;;
+			std.exit(1)
 		;;
 	;;
 	std.slfree(libs)
