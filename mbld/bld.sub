@@ -10,7 +10,6 @@ bin mbld =
 	main.myr
 	opts.myr
 	parse.myr
-	subdir.myr
 	test.myr
         types.myr
 	util.myr

@@ -17,6 +17,10 @@ pkg bld =
 
 const buildall = {b
 	for tn in b.all
+		if std.hthas(b.built, tn)
+			continue
+		;;
+		std.htput(b.built, tn, true)
 		match gettarg(b.targs, tn)
 		| `Bin bt:	buildbin(b, bt, false)
 		| `Lib lt:	buildlib(b, lt)
@@ -54,12 +58,8 @@ const build = {b, targ
 const buildbin = {b, targ, addsrc
 	var dg, src
 
-	if targ.built
-		->
-	;;
-	pushdir(b, targ.dir)
+	setdir(b, targ.dir)
 	addincludes(b, targ)
-	buildlibdeps(b, targ)
 	std.put("%s...\n", targ.name)
 	if !myrdeps(b, targ, false, false, addsrc, &dg)
 		std.fatal(1, "Could not load dependencies for %s\n", targ.name)
@@ -72,8 +72,6 @@ const buildbin = {b, targ, addsrc
 		linkbin(&dg, targ.name, src, targ.ldscript, targ.runtime, targ.incpath, targ.libdeps)
 		std.slfree(src)
 	;;
-	targ.built = true
-	popdir(b)
 }
 
 const buildlib = {b, targ
@@ -82,12 +80,8 @@ const buildlib = {b, targ
 	var dg
 	var lib, src
 
-	if targ.built
-		->
-	;;
-	pushdir(b, targ.dir)
+	setdir(b, targ.dir)
 	addincludes(b, targ)
-	buildlibdeps(b, targ)
 	lib = targ.name
 	std.put("lib%s.a...\n", lib)
 	archive = std.fmt("lib%s.a", lib)
@@ -106,19 +100,16 @@ const buildlib = {b, targ
 		std.slfree(src)
 	;;
 	std.slfree(archive)
-	targ.built = true
-	popdir(b)
 }
 
 const genfiles = {b, gt
-	pushdir(b, gt.dir)
+	setdir(b, gt.dir)
 	for f in gt.out
 		if !std.fexists(f)
 			run(gt.cmd)
 			break
 		;;
 	;;
-	popdir(b)
 }
 
 const addincludes = {b, targ
@@ -126,12 +117,6 @@ const addincludes = {b, targ
 		if !hasinc(targ.incpath, inc)
 			targ.incpath = std.slpush(targ.incpath, inc)
 		;;
-	;;
-}
-
-const buildlibdeps = {b, targ
-	for (inc, lib, subtarg) in targ.libdeps
-		build(b, subtarg)
 	;;
 }
 

@@ -105,10 +105,11 @@ const mkbuild = {bldfile
 	b = std.zalloc()
 	b.targs = std.mkht(std.strhash, std.streq)
 	b.gensrc = std.mkht(std.strhash, std.streq)
+	b.built = std.mkht(std.strhash, std.streq)
 	if !findbase(b, bldfile) || !std.chdir(b.basedir)
 		std.fatal(1, "could not find %s\n", bldfile)
 	;;
-	bld.pushdir(b, "")
+	bld.setdir(b, "")
 	-> b
 }
 

@@ -7,7 +7,6 @@ use "opts.use"
 use "parse.use"
 use "types.use"
 use "util.use"
-use "subdir.use"
 
 use "config.use"
 
@@ -68,7 +67,7 @@ const dotest = {b, targ, ok
 	var tt, bin ,path, tests
 
 	tests = [][:]
-	pushdir(b, targ.dir)
+	setdir(b, targ.dir)
 	for s in targ.inputs
 		path = std.pathcat("./test", s)
 		if std.fexists(path)
@@ -80,7 +79,6 @@ const dotest = {b, targ, ok
 				.install = false,
 				.libdeps = targ.libdeps,
 				.incpath = targ.incpath,
-				.built = false,
 			]
 
 			cleantest(b, path)
@@ -98,7 +96,6 @@ const dotest = {b, targ, ok
 		std.slfree(t)
 	;;
 	std.slfree(tests)
-	popdir(b)
 	-> ok
 }
 

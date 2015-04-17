@@ -4,7 +4,6 @@ use "config.use"
 use "deps.use"
 use "opts.use"
 use "parse.use"
-use "subdir.use"
 use "types.use"
 use "util.use"
 use "build.use"
@@ -52,7 +51,7 @@ const movetargs = {b, delete
 const movefile = {b, delete, dir, file, instdir, destdir, prefix, perm
 	var path
 
-	pushdir(b, dir)
+	setdir(b, dir)
 	path = std.pathjoin([destdir, instdir, prefix, file][:])
 	if delete
 		std.put("\tdelete %s\n", path)
@@ -72,7 +71,6 @@ const movefile = {b, delete, dir, file, instdir, destdir, prefix, perm
 		;;
 	;;
 	std.slfree(path)
-	popdir(b)
 }
 
 const moveman = {b, delete, dir, man

@@ -11,8 +11,7 @@ pkg bld =
 	const srcswapsuffix	: (f : byte[:], newsuff : byte[:] -> byte[:])
 	const strlistfree	: (sl : byte[:][:] -> void)
 	const gettarg	: (tab : std.htab(byte[:], targ)#, n : byte[:] -> targ)
-	const pushdir	: (b : build#, dir : byte[:] -> void)
-	const popdir	: (b : build# -> void)
+	const setdir	: (b : build#, dir : byte[:] -> void)
 ;;
 
 const run = {cmd
@@ -102,16 +101,6 @@ const gettarg = {tab, n
 	| `std.None:	std.fatal(1, "internal: nonexistent %s\n", n)
 	| `std.Some t:	-> t
 	;;
-}
-
-const pushdir = {b, dir
-	b.dirstk = std.slpush(b.dirstk, dir)
-	setdir(b, dir)
-}
-
-const popdir = {b
-	b.dirstk = b.dirstk[:b.dirstk.len-1]
-	setdir(b, b.dirstk[b.dirstk.len-1])
 }
 
 const setdir = {b, dir

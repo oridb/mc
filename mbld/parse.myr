@@ -23,9 +23,13 @@ type parser = struct
 ;;
 
 const load = {b
-	-> loadall(b, b.bldfile, "")
+	var ok
+	ok = loadall(b, b.bldfile, "")
+	if ok
+		ok = sortdeps(b)
+	;;
+	-> ok
 }
-
 
 const loadall = {b, path, dir
 	var p : parser#
@@ -63,6 +67,50 @@ const loadall = {b, path, dir
 	;;
 	freeparser(p)
 	-> ok
+}
+
+const sortdeps = {b
+	var looped
+	var marked
+	var all
+
+	all = [][:]
+	looped = std.mkht(std.strhash, std.streq)
+	marked = std.mkht(std.strhash, std.streq)
+	for dep in b.all
+		match gettarg(b.targs, dep)
+		| `Bin _:	all = visit(all, b, dep, looped, marked)
+		| `Lib _:	all = visit(all, b, dep, looped, marked)
+		| targ:		all = std.slpush(all, dep)
+		;;
+	;;
+	std.slfree(b.all)
+	b.all = all
+	-> true
+}
+
+const visit = {all, b, targ, looped, marked
+	if std.hthas(looped, targ)
+		std.fatal(1, "cycle in build depgraph involving %s\n", targ)
+	elif std.hthas(marked, targ)
+		-> all
+	;;
+
+	std.htput(looped, targ, true)
+	for (dir, lib, dep) in getdeps(gettarg(b.targs, targ))
+		all = visit(all, b, dep, looped, marked)
+	;;
+	std.htdel(looped, targ)
+	std.htput(marked, targ, true)
+	-> std.slpush(all, targ)
+}
+
+const getdeps = {targ
+	match targ
+	| `Bin t:	-> t.libdeps
+	| `Lib t:	-> t.libdeps
+	| _:	std.fatal(1, "depending on non-library target")
+	;;
 }
 
 const mkparser = {path, dir, basedir
@@ -306,7 +354,6 @@ const myrtarget = {p, targ
 		.ldscript=ldscript,
 		.runtime=runtime,
 		.incpath=incpath,
-		.built=false
 	])
 }
 

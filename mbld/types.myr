@@ -2,14 +2,14 @@ use std
 
 pkg bld =
 	type build = struct
-		cmd	: byte[:][:]	/* command that we ran */
 		/* build state */
 		basedir	: byte[:]
 		bldfile	: byte[:]
-		dirstk	: byte[:][:]
 		curdir	: byte[:]
+		built	: std.htab(byte[:], bool)#	/* set of targets built in this run */
+
 		/* build params */
-		all	: byte[:][:]
+		all	: byte[:][:]			/* all targets, in reverse topological order */
 		targs	: std.htab(byte[:], targ)#	/* dir => target mapping */
 		tdeps	: std.htab(byte[:], byte[:][:])	/* targname => depname[:] mapping */
 		gensrc	: std.htab(byte[:], gentarg#)#	/* generated src => generating target mapping */
@@ -30,8 +30,7 @@ pkg bld =
 		dir	: byte[:]
 		name	: byte[:]
 		inputs	: byte[:][:]
-		libdeps	: (byte[:], byte[:], byte[:])[:]	/* dir, lib pairs */
-		built	: bool
+		libdeps	: (byte[:], byte[:], byte[:])[:]	/* dir, lib, targname */
 		install	: bool
 		runtime	: byte[:]
 		incpath	: byte[:][:]
