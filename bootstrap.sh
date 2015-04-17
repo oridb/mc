@@ -138,16 +138,16 @@ echo 	../6/6m	-I . search.myr
 	../6/6m	-I . search.myr 
 echo 	../6/6m	-I . getcwd.myr 
 	../6/6m	-I . getcwd.myr 
-echo 	../6/6m	-I . `$pwd/sysselect.sh dial`
-	../6/6m	-I . `$pwd/sysselect.sh dial`
-echo 	../6/6m	-I . bitset.myr 
-	../6/6m	-I . bitset.myr 
 echo 	../6/6m	-I . swap.myr 
 	../6/6m	-I . swap.myr 
-echo 	../muse/muse	-o std syswrap-ss.use slfill.use dial.use putint.use fmt.use syswrap.use try.use sort.use blat.use pathjoin.use strjoin.use dir.use mk.use swap.use hassuffix.use execvp.use types.use ipparse.use strfind.use utf.use cstrconv.use search.use die.use units.use sljoin.use slpush.use result.use bytebuf.use now.use htab.use env.use strstrip.use getcwd.use bitset.use rand.use resolve.use slurp.use intparse.use varargs.use clear.use hasprefix.use slput.use mkpath.use getint.use strsplit.use dirname.use sleq.use endian.use alloc.use optparse.use spork.use fltbits.use cmp.use sldup.use chartype.use fltfmt.use bigint.use option.use extremum.use hashfuncs.use wait.use errno.use slcp.use 
-	../muse/muse	-o std syswrap-ss.use slfill.use dial.use putint.use fmt.use syswrap.use try.use sort.use blat.use pathjoin.use strjoin.use dir.use mk.use swap.use hassuffix.use execvp.use types.use ipparse.use strfind.use utf.use cstrconv.use search.use die.use units.use sljoin.use slpush.use result.use bytebuf.use now.use htab.use env.use strstrip.use getcwd.use bitset.use rand.use resolve.use slurp.use intparse.use varargs.use clear.use hasprefix.use slput.use mkpath.use getint.use strsplit.use dirname.use sleq.use endian.use alloc.use optparse.use spork.use fltbits.use cmp.use sldup.use chartype.use fltfmt.use bigint.use option.use extremum.use hashfuncs.use wait.use errno.use slcp.use 
-echo 	ar	-rcs libstd.a syswrap-ss.o slfill.o dial.o putint.o fmt.o syswrap.o try.o sort.o blat.o pathjoin.o strjoin.o dir.o mk.o swap.o hassuffix.o execvp.o types.o ipparse.o strfind.o utf.o cstrconv.o search.o die.o units.o sljoin.o slpush.o result.o bytebuf.o now.o htab.o env.o strstrip.o getcwd.o bitset.o rand.o resolve.o slurp.o intparse.o varargs.o clear.o hasprefix.o slput.o mkpath.o getint.o strsplit.o dirname.o sleq.o endian.o alloc.o optparse.o spork.o fltbits.o cmp.o sldup.o chartype.o fltfmt.o bigint.o option.o extremum.o hashfuncs.o wait.o errno.o slcp.o 
-	ar	-rcs libstd.a syswrap-ss.o slfill.o dial.o putint.o fmt.o syswrap.o try.o sort.o blat.o pathjoin.o strjoin.o dir.o mk.o swap.o hassuffix.o execvp.o types.o ipparse.o strfind.o utf.o cstrconv.o search.o die.o units.o sljoin.o slpush.o result.o bytebuf.o now.o htab.o env.o strstrip.o getcwd.o bitset.o rand.o resolve.o slurp.o intparse.o varargs.o clear.o hasprefix.o slput.o mkpath.o getint.o strsplit.o dirname.o sleq.o endian.o alloc.o optparse.o spork.o fltbits.o cmp.o sldup.o chartype.o fltfmt.o bigint.o option.o extremum.o hashfuncs.o wait.o errno.o slcp.o 
+echo 	../6/6m	-I . bitset.myr 
+	../6/6m	-I . bitset.myr 
+echo 	../6/6m	-I . `$pwd/sysselect.sh dial`
+	../6/6m	-I . `$pwd/sysselect.sh dial`
+echo 	../muse/muse	-o std slfill.use dial.use putint.use fmt.use syswrap.use try.use sort.use blat.use pathjoin.use strjoin.use dir.use mk.use swap.use hassuffix.use execvp.use types.use ipparse.use strfind.use utf.use cstrconv.use search.use die.use units.use sljoin.use slpush.use result.use bytebuf.use now.use htab.use env.use strstrip.use getcwd.use bitset.use rand.use resolve.use slurp.use intparse.use varargs.use clear.use hasprefix.use slput.use mkpath.use getint.use strsplit.use dirname.use sleq.use endian.use alloc.use optparse.use spork.use fltbits.use cmp.use syswrap-ss.use sldup.use chartype.use fltfmt.use bigint.use option.use extremum.use hashfuncs.use wait.use errno.use slcp.use 
+	../muse/muse	-o std slfill.use dial.use putint.use fmt.use syswrap.use try.use sort.use blat.use pathjoin.use strjoin.use dir.use mk.use swap.use hassuffix.use execvp.use types.use ipparse.use strfind.use utf.use cstrconv.use search.use die.use units.use sljoin.use slpush.use result.use bytebuf.use now.use htab.use env.use strstrip.use getcwd.use bitset.use rand.use resolve.use slurp.use intparse.use varargs.use clear.use hasprefix.use slput.use mkpath.use getint.use strsplit.use dirname.use sleq.use endian.use alloc.use optparse.use spork.use fltbits.use cmp.use syswrap-ss.use sldup.use chartype.use fltfmt.use bigint.use option.use extremum.use hashfuncs.use wait.use errno.use slcp.use 
+echo 	ar	-rcs libstd.a slfill.o dial.o putint.o fmt.o syswrap.o try.o sort.o blat.o pathjoin.o strjoin.o dir.o mk.o swap.o hassuffix.o execvp.o types.o ipparse.o strfind.o utf.o cstrconv.o search.o die.o units.o sljoin.o slpush.o result.o bytebuf.o now.o htab.o env.o strstrip.o getcwd.o bitset.o rand.o resolve.o slurp.o intparse.o varargs.o clear.o hasprefix.o slput.o mkpath.o getint.o strsplit.o dirname.o sleq.o endian.o alloc.o optparse.o spork.o fltbits.o cmp.o syswrap-ss.o sldup.o chartype.o fltfmt.o bigint.o option.o extremum.o hashfuncs.o wait.o errno.o slcp.o 
+	ar	-rcs libstd.a slfill.o dial.o putint.o fmt.o syswrap.o try.o sort.o blat.o pathjoin.o strjoin.o dir.o mk.o swap.o hassuffix.o execvp.o types.o ipparse.o strfind.o utf.o cstrconv.o search.o die.o units.o sljoin.o slpush.o result.o bytebuf.o now.o htab.o env.o strstrip.o getcwd.o bitset.o rand.o resolve.o slurp.o intparse.o varargs.o clear.o hasprefix.o slput.o mkpath.o getint.o strsplit.o dirname.o sleq.o endian.o alloc.o optparse.o spork.o fltbits.o cmp.o syswrap-ss.o sldup.o chartype.o fltfmt.o bigint.o option.o extremum.o hashfuncs.o wait.o errno.o slcp.o 
 echo 	cd $pwd
 	cd $pwd
 echo 	cd $pwd/libbio
@@ -184,14 +184,12 @@ echo 	cd $pwd/mbld
 	cd $pwd/mbld
 echo 	../6/6m	-I ../libstd -I ../libbio -I ../libregex config.myr 
 	../6/6m	-I ../libstd -I ../libbio -I ../libregex config.myr 
-echo 	../6/6m	-I ../libstd -I ../libbio -I ../libregex types.myr 
-	../6/6m	-I ../libstd -I ../libbio -I ../libregex types.myr 
 echo 	../6/6m	-I ../libstd -I ../libbio -I ../libregex opts.myr 
 	../6/6m	-I ../libstd -I ../libbio -I ../libregex opts.myr 
+echo 	../6/6m	-I ../libstd -I ../libbio -I ../libregex types.myr 
+	../6/6m	-I ../libstd -I ../libbio -I ../libregex types.myr 
 echo 	../6/6m	-I ../libstd -I ../libbio -I ../libregex util.myr 
 	../6/6m	-I ../libstd -I ../libbio -I ../libregex util.myr 
-echo 	../6/6m	-I ../libstd -I ../libbio -I ../libregex subdir.myr 
-	../6/6m	-I ../libstd -I ../libbio -I ../libregex subdir.myr 
 echo 	../6/6m	-I ../libstd -I ../libbio -I ../libregex deps.myr 
 	../6/6m	-I ../libstd -I ../libbio -I ../libregex deps.myr 
 echo 	../6/6m	-I ../libstd -I ../libbio -I ../libregex fsel.myr 
@@ -208,5 +206,9 @@ echo 	../6/6m	-I ../libstd -I ../libbio -I ../libregex test.myr
 	../6/6m	-I ../libstd -I ../libbio -I ../libregex test.myr 
 echo 	../6/6m	-I ../libstd -I ../libbio -I ../libregex main.myr 
 	../6/6m	-I ../libstd -I ../libbio -I ../libregex main.myr 
-echo 	ld	-o mbld ../rt/_myrrt.o clean.o config.o deps.o types.o fsel.o util.o subdir.o main.o parse.o build.o opts.o install.o test.o -L../libstd -L../libbio -L../libregex -lregex -lbio -lstd -lsys -lsys -lstd -lbio -lregex 
-	ld	-o mbld ../rt/_myrrt.o clean.o config.o deps.o types.o fsel.o util.o subdir.o main.o parse.o build.o opts.o install.o test.o -L../libstd -L../libbio -L../libregex -lregex -lbio -lstd -lsys -lsys -lstd -lbio -lregex 
+echo 	ld	-o mbld ../rt/_myrrt.o clean.o config.o deps.o types.o fsel.o util.o parse.o main.o build.o opts.o install.o test.o -L../libstd -L../libbio -L../libregex -lregex -lbio -lstd -lsys -lsys -lstd -lbio -lregex 
+	ld	-o mbld ../rt/_myrrt.o clean.o config.o deps.o types.o fsel.o util.o parse.o main.o build.o opts.o install.o test.o -L../libstd -L../libbio -L../libregex -lregex -lbio -lstd -lsys -lsys -lstd -lbio -lregex 
+echo 	cd $pwd
+	cd $pwd
+echo 	cd $pwd/libregex
+	cd $pwd/libregex
