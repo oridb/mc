@@ -16,7 +16,7 @@ pkg bld =
 ;;
 
 const test = {b
-	var ok/*, bin */
+	var ok, bin
 
 	/* no implicit tests to run */
 	ok = true
@@ -35,25 +35,27 @@ const test = {b
 			;;
 		;;
 	;;
-	/*
-	FIXME: reenable test binaries
-	for `Test t in targs
-		for s in t.incpath
-			if std.sleq(".", s)
-				goto founddot
+	for tn in b.all
+		match gettarg(b.targs, tn)
+		| `Test t:
+			for s in t.incpath
+				if std.sleq(".", s)
+					goto founddot
+				;;
 			;;
-		;;
-		t.incpath = std.slpush(t.incpath, std.sldup("."))
+			t.incpath = std.slpush(t.incpath, std.sldup("."))
 
 :founddot
-		buildbin(b, t, false)
-		bin = std.strcat("./", t.name)
-		if !runtest(bin)
-			ok = false
+			buildbin(b, t, false)
+			bin = std.strcat("./", t.name)
+			if !runtest(bin)
+				ok = false
+			;;
+			std.slfree(bin)
+		| _:
+			/* skip */
 		;;
-		std.slfree(bin)
 	;;
-	*/
 	if ok
 		std.put("TESTS PASSED\n")
 	else

@@ -148,7 +148,7 @@ const libtarget = {b, p
 const testtarget = {b, p
 	var t
 	t = myrtarget(p, "test")
-	addtarg(p, b, t.name, `Test myrtarget(p, "test"))
+	addtarg(p, b, t.name, `Test t)
 }
 
 /* mantarget: anontarget */
@@ -280,7 +280,10 @@ const myrtarget = {p, targ
 	inst = true
 	ldscript = ""
 	runtime = ""
-	incpath = std.sldup(bld.opt_incpaths)
+	incpath = [][:]
+	for inc in bld.opt_incpaths
+		incpath = std.slpush(incpath, std.sldup(inc))
+	;;
 	for elt in attrs
 		match elt
 		| ("ldscript", lds):	ldscript = std.sldup(lds)
