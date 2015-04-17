@@ -17,7 +17,7 @@ echo 'pwd=`pwd`' >> bootstrap.sh
     sed "s:Leaving directory.*:\tcd \$pwd:g" | \
     sed "s:\\([a-zA-Z0-9_-]*\\)+.*:\`\$pwd/sysselect.sh \1\`:" | \
     grep $'^\t' | \
-    sed 's/.*/echo &\n&/' | \
+    sed $'s/.*/echo &\\\n&/' | \
     tee -a bootstrap.sh 
 chmod +x bootstrap.sh
 rm ./xmbld
