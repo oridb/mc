@@ -6,14 +6,32 @@ if exists("b:did_indent")
     finish
 endif
 
-function! s:CountMatches(line, pats)
+function! InComment(lnum, col)
+    let stk = synstack(a:lnum, a:col)
+    if len(stk)
+        for id in stk
+            if synIDattr(id, "name") == "myrComment"
+                return 1
+            endif
+        endfor
+    endif
+    return 0
+endfunction
+
+function! s:CountMatches(line, lnum, pats)
     let matches = 0
     for p in a:pats
         let idx = 0
         while idx >= 0
             let idx = match(a:line, p, idx)
             if idx >= 0
-                let matches = matches + 1
+                let ic = InComment(a:lnum, idx)
+                if !ic
+                    let matches = matches + 1
+                    echo "NOT IN COMMENT " ic " lnum " a:lnum " idx " idx
+                else
+                    echo "IN COMMENT"
+                endif
                 let idx = idx + strlen(p)
             endif
         endwhile
@@ -42,9 +60,9 @@ function! GetMyrIndent(ln)
         while prevln =~ '^\s*$'
             let prevln = getline(ln - i)
             let ind = indent(ln - i)
-
             let i = i + 1
         endwhile
+        let i = i - 1
 
         let curln = getline(ln)
 
@@ -56,8 +74,8 @@ function! GetMyrIndent(ln)
         let outalone = ['\<else\>', '\<elif\>', '}', ';;', '|.*']
         let width = &tabstop
 
-        let n_in = s:CountMatches(prevln, inpat)
-        let n_out = s:CountMatches(prevln, outpat)
+        let n_in = s:CountMatches(prevln, ln - i, inpat)
+        let n_out = s:CountMatches(prevln, ln - i, outpat)
         if s:LineMatch(curln, outalone) != 0
             let ind = n_in * &tabstop + ind - &tabstop
         " avoid double-counting outdents from outalones.
