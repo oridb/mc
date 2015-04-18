@@ -8,13 +8,11 @@ endif
 
 function! InComment(lnum, col)
     let stk = synstack(a:lnum, a:col)
-    if len(stk)
-        for id in stk
-            if synIDattr(id, "name") == "myrComment"
-                return 1
-            endif
-        endfor
-    endif
+    for id in stk
+        if synIDattr(id, "name") == "myrComment"
+            return 1
+        endif
+    endfor
     return 0
 endfunction
 
