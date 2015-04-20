@@ -62,7 +62,7 @@ const main = {args : byte[:][:]
 	| `std.Fail f:	std.fatal(1, "Failed to compile use pattern regex\n")
 	;;
 
-	b = mkbuild(bld.opt_bldfile)
+	b = mkbuild()
 	if targname.len != 0
 		mt = [
 			.name=targname,
@@ -78,6 +78,7 @@ const main = {args : byte[:][:]
 			bld.buildlib(b, &mt)
 		;;
 	else
+		findproj(b, bld.opt_bldfile)
 		bld.load(b)
 		/*bld.configure()*/
 		/* default: buildall */
@@ -99,18 +100,21 @@ const main = {args : byte[:][:]
 	;;
 }
 
-const mkbuild = {bldfile
+const mkbuild = {
 	var b
 
 	b = std.zalloc()
 	b.targs = std.mkht(std.strhash, std.streq)
 	b.gensrc = std.mkht(std.strhash, std.streq)
 	b.built = std.mkht(std.strhash, std.streq)
+	-> b
+}
+
+const findproj = {b, bldfile
 	if !findbase(b, bldfile) || !std.chdir(b.basedir)
 		std.fatal(1, "could not find %s\n", bldfile)
 	;;
 	bld.setdir(b, "")
-	-> b
 }
 
 const findbase = {b, file
