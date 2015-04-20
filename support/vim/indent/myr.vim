@@ -6,10 +6,11 @@ if exists("b:did_indent")
     finish
 endif
 
-function! InComment(lnum, col)
+function! Quoted(lnum, col)
     let stk = synstack(a:lnum, a:col)
     for id in stk
-        if synIDattr(id, "name") == "myrComment"
+        let a = synIDattr(id, "name") 
+        if a == "myrComment" || a == "myrString" || a == "myrChar"
             return 1
         endif
     endfor
@@ -23,7 +24,7 @@ function! s:CountMatches(line, lnum, pats)
         while idx >= 0
             let idx = match(a:line, p, idx)
             if idx >= 0
-                let ic = InComment(a:lnum, idx)
+                let ic = Quoted(a:lnum, idx)
                 if !ic
                     let matches = matches + 1
                     echo "NOT IN COMMENT " ic " lnum " a:lnum " idx " idx
@@ -69,7 +70,7 @@ function! GetMyrIndent(ln)
                 \    '\<struct\>', '\<union\>',
                 \    '{', '^\s*|', '=\s*$']
         let outpat = ['}', ';;']
-        let outalone = ['\<else\>', '\<elif\>', '}', ';;', '|.*']
+        let outalone = ['\<else\>', '\<elif\>.*', '}', ';;', '|.*']
         let width = &tabstop
 
         let n_in = s:CountMatches(prevln, ln - i, inpat)
