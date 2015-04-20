@@ -104,8 +104,8 @@ const buildlib = {b, targ
 
 const genfiles = {b, gt
 	setdir(b, gt.dir)
-	for f in gt.out
-		if !std.fexists(f)
+	for out in gt.out
+		if !std.fexists(out) || !allfresh(gt.deps, out)
 			run(gt.cmd)
 			break
 		;;
@@ -145,10 +145,14 @@ const builddep = {b, dg, out, incs
 			if builddep(b, dg, d, incs)
 				stale = true
 			;;
-			if !std.fexists(d)
-				match std.htget(b.gensrc, d)
-				| `std.Some gt:	run(gt.cmd)
-				| `std.None:	std.fatal(1, "no input file %s\n", d)
+			match std.htget(b.gensrc, d)
+			| `std.Some gt:	
+				if !std.fexists(d) || !allfresh(gt.deps, d)
+					run(gt.cmd)
+				;;
+			| `std.None:
+				if !std.fexists(d)
+					std.fatal(1, "no input file %s\n", d)
 				;;
 			;;
 			if !isfresh(d, out)
@@ -372,6 +376,15 @@ const freshlibs = {targ, libgraph
 		;;
 	;;
 	std.slfree(libs)
+	-> true
+}
+
+const allfresh = {deps, out
+	for d in deps
+		if !isfresh(d, out)
+			-> false
+		;;
+	;;
 	-> true
 }
 

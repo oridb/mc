@@ -41,6 +41,7 @@ pkg bld =
 		dir	: byte[:]
 		out	: byte[:][:]
 		cmd	: byte[:][:] 
+		deps	: byte[:][:] 
 		durable	: bool
 		/* we can have multiple outputs, but we only want to run once for each */
 		done	: bool

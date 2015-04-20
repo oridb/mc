@@ -223,7 +223,7 @@ const subtarget = {b, p
 
 /* gentarget: wordlist {attrs} = wordlist ;; */
 const gentarget = {b, p
-	var outlist, cmdlist
+	var outlist, deplist, cmdlist
 	var durable
 	var attrs
 	var gt
@@ -260,10 +260,13 @@ const gentarget = {b, p
 	;;
 
 	durable = false
+	deplist = [][:]
 	for elt in attrs
 		match elt
 		| ("durable", ""):	durable = true
 		| ("durable", val):	failparse(p, "durable attr does not take argument\n")
+		| ("dep", depname):	deplist = std.slpush(deplist, depname)
+		| (attrname, val):	failparse(p, "attribute %s not valid on gen targets\n")
 		;;
 	;;
 
@@ -271,6 +274,7 @@ const gentarget = {b, p
 		.dir=std.sldup(p.fdir),
 		.out=outlist,
 		.durable=durable,
+		.deps=deplist,
 		.cmd=cmdlist
 	])
 	for o in outlist

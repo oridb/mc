@@ -623,7 +623,7 @@ static Tok *oper(void)
                   break;
     }
     return mktok(tt);
-};
+}
 
 static Tok *number(int base)
 {
