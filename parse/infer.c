@@ -212,16 +212,14 @@ static void delayedcheck(Inferstate *st, Node *n, Stab *s)
 static void typeerror(Inferstate *st, Type *a, Type *b, Node *ctx, char *msg)
 {
     char *t1, *t2, *c;
-    int line;
 
     t1 = tystr(tyfix(st, NULL, a, 1));
     t2 = tystr(tyfix(st, NULL, b, 1));
-    line = ctx->loc.line;
     c = ctxstr(st, ctx);
     if (msg)
-        fatal(ctx, "Type \"%s\" incompatible with \"%s\" near line %d, line %d, %s: %s", t1, t2, line, c, msg);
+        fatal(ctx, "Type \"%s\" incompatible with \"%s\" near %s: %s", t1, t2, c, msg);
     else
-        fatal(ctx, "Type \"%s\" incompatible with \"%s\" near line %d, line %d, %s", t1, t2, line, c);
+        fatal(ctx, "Type \"%s\" incompatible with \"%s\" near %s", t1, t2, c);
     free(t1);
     free(t2);
     free(c);
@@ -678,7 +676,7 @@ static void constrain(Inferstate *st, Node *ctx, Type *a, Trait *c)
             a->traits = mkbs();
         settrait(a, c);
     } else if (!a->traits || !bshas(a->traits, c->uid)) {
-        fatal(ctx, "%s needs %s near line %d, line %d, %s", tystr(a), namestr(c->name), ctx->loc.line, ctxstr(st, ctx));
+        fatal(ctx, "%s needs %s near %s", tystr(a), namestr(c->name), ctxstr(st, ctx));
     }
 }
 
@@ -722,7 +720,7 @@ static void mergetraits(Inferstate *st, Node *ctx, Type *a, Type *b)
             }
             tyfmt(abuf, sizeof abuf, a);
             tyfmt(bbuf, sizeof bbuf, b);
-            fatal(ctx, "%s missing traits %s for %s near line %d, %s", bbuf, traitbuf, abuf, ctx->loc.line, ctxstr(st, ctx));
+            fatal(ctx, "%s missing traits %s for %s near %s", bbuf, traitbuf, abuf, ctxstr(st, ctx));
         }
     }
 }
@@ -778,7 +776,7 @@ static void unionunify(Inferstate *st, Node *ctx, Type *u, Type *v)
     int found;
 
     if (u->nmemb != v->nmemb)
-        fatal(ctx, "can't unify %s and %s near line %d, %s\n", tystr(u), tystr(v), ctx->loc.line, ctxstr(st, ctx));
+        fatal(ctx, "can't unify %s and %s near %s\n", tystr(u), tystr(v), ctxstr(st, ctx));
 
     for (i = 0; i < u->nmemb; i++) {
         found = 0;
@@ -791,10 +789,10 @@ static void unionunify(Inferstate *st, Node *ctx, Type *u, Type *v)
             else if (u->udecls[i]->etype && v->udecls[i]->etype)
                 unify(st, ctx, u->udecls[i]->etype, v->udecls[i]->etype);
             else
-                fatal(ctx, "can't unify %s and %s near line %d, %s\n", tystr(u), tystr(v), ctx->loc.line, ctxstr(st, ctx));
+                fatal(ctx, "can't unify %s and %s near %s\n", tystr(u), tystr(v), ctxstr(st, ctx));
         }
         if (!found)
-            fatal(ctx, "can't unify %s and %s near line %d, %s\n", tystr(u), tystr(v), ctx->loc.line, ctxstr(st, ctx));
+            fatal(ctx, "can't unify %s and %s near %s\n", tystr(u), tystr(v), ctxstr(st, ctx));
     }
 }
 
@@ -804,7 +802,7 @@ static void structunify(Inferstate *st, Node *ctx, Type *u, Type *v)
     int found;
 
     if (u->nmemb != v->nmemb)
-        fatal(ctx, "can't unify %s and %s near line %d, %s\n", tystr(u), tystr(v), ctx->loc.line, ctxstr(st, ctx));
+        fatal(ctx, "can't unify %s and %s near %s\n", tystr(u), tystr(v), ctxstr(st, ctx));
 
     for (i = 0; i < u->nmemb; i++) {
         found = 0;
@@ -815,7 +813,7 @@ static void structunify(Inferstate *st, Node *ctx, Type *u, Type *v)
             unify(st, u->sdecls[i], type(st, u->sdecls[i]), type(st, v->sdecls[i]));
         }
         if (!found)
-            fatal(ctx, "can't unify %s and %s near line %d, %s\n", tystr(u), tystr(v), ctx->loc.line, ctxstr(st, ctx));
+            fatal(ctx, "can't unify %s and %s near %s\n", tystr(u), tystr(v), ctxstr(st, ctx));
     }
 }
 
@@ -879,7 +877,10 @@ static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
         if (a->type == Tyname && !nameeq(a->name, b->name))
             typeerror(st, a, b, ctx, NULL);
         if (a->nsub != b->nsub) {
-            typeerror(st, a, b, ctx, "subtypes are incompatible");
+            if (tybase(a)->type == Tyfunc)
+                typeerror(st, a, b, ctx, "function arity mismatch");
+            else
+                typeerror(st, a, b, ctx, "subtype counts incompatible");
         }
         for (i = 0; i < b->nsub; i++)
             unify(st, ctx, a->sub[i], b->sub[i]);
@@ -943,7 +944,7 @@ static void unifycall(Inferstate *st, Node *n)
     /* first arg: function itself */
     for (i = 1; i < n->expr.nargs; i++)
         if (exprtype(n->expr.args[i])->type == Tyvoid)
-            fatal(n, "void passed where value expected, near line %d, %s", n->loc.line, ctxstr(st, n));
+            fatal(n, "void passed where value expected, near %s", ctxstr(st, n));
     for (i = 1; i < n->expr.nargs; i++) {
         if (i == ft->nsub)
             fatal(n, "%s arity mismatch (expected %zd args, got %zd)",
@@ -985,7 +986,7 @@ static void unifyparams(Inferstate *st, Node *ctx, Type *a, Type *b)
         return;
 
     if (a->narg != b->narg)
-        fatal(ctx, "Mismatched parameter list sizes: %s with %s near line %d, %s", tystr(a), tystr(b), ctx->loc.line, ctxstr(st, ctx));
+        fatal(ctx, "Mismatched parameter list sizes: %s with %s near %s", tystr(a), tystr(b), ctxstr(st, ctx));
     for (i = 0; i < a->narg; i++)
         unify(st, ctx, a->arg[i], b->arg[i]);
 }
@@ -1180,7 +1181,7 @@ static void inferpat(Inferstate *st, Node **np, Node *val, Node ***bind, size_t 
                 else if (s->decl.isconst)
                     t = s->decl.type;
                 else
-                    fatal(n, "Can't match against non-constant variables near line %d, %s", n->loc.line, ctxstr(st, n));
+                    fatal(n, "Can't match against non-constant variables near %s", ctxstr(st, n));
             } else {
                 t = mktyvar(n->loc);
                 s = mkdecl(n->loc, n->expr.args[0], t);
@@ -1498,8 +1499,8 @@ static void specializeimpl(Inferstate *st, Node *n)
             }
         }
         if (!proto)
-            fatal(n, "Declaration %s missing in %s, near line %d, %s",
-                  namestr(dcl->decl.name), namestr(t->name), n->loc.line, ctxstr(st, n));
+            fatal(n, "Declaration %s missing in %s, near %s",
+                  namestr(dcl->decl.name), namestr(t->name), ctxstr(st, n));
 
         /* infer and unify types */
         if (n->impl.type->type == Tygeneric || n->impl.type->type == Typaram)
@@ -1587,7 +1588,7 @@ static void infernode(Inferstate *st, Node **np, Type *ret, int *sawret)
             bind(st, n);
             inferdecl(st, n);
             if (type(st, n)->type == Typaram && !st->ingeneric)
-                fatal(n, "Generic type %s in non-generic near line %d, %s", tystr(type(st, n)), n->loc.line, ctxstr(st, n));
+                fatal(n, "Generic type %s in non-generic near %s", tystr(type(st, n)), ctxstr(st, n));
             unbind(st, n);
             st->indentdepth--;
             if (debugopt['u'])
@@ -1633,7 +1634,7 @@ static void infernode(Inferstate *st, Node **np, Type *ret, int *sawret)
         case Nmatchstmt:
             infernode(st, &n->matchstmt.val, NULL, sawret);
             if (tybase(type(st, n->matchstmt.val))->type == Tyvoid)
-                fatal(n, "Can't match against a void type near line %d, %s", n->loc.line, ctxstr(st, n->matchstmt.val));
+                fatal(n, "Can't match against a void type near %s", ctxstr(st, n->matchstmt.val));
             for (i = 0; i < n->matchstmt.nmatches; i++) {
                 infernode(st, &n->matchstmt.matches[i], ret, sawret);
                 unify(st, n->matchstmt.matches[i]->match.pat, type(st, n->matchstmt.val), type(st, n->matchstmt.matches[i]->match.pat));
@@ -1693,7 +1694,7 @@ static Type *tyfix(Inferstate *st, Node *ctx, Type *orig, int noerr)
         if (t->type == Tyvar)
             t = delayed;
         else if (tybase(t)->type != delayed->type && !noerr)
-            fatal(ctx, "Type %s not compatible with %s near line %d, %s\n", tystr(t), tystr(delayed), ctx->loc.line, ctxstr(st, ctx));
+            fatal(ctx, "Type %s not compatible with %s near %s\n", tystr(t), tystr(delayed), ctxstr(st, ctx));
     }
     if (t->type == Tyvar) {
         if (hastrait(t, traittab[Tcint]) && checktraits(t, tyint))
@@ -1725,7 +1726,7 @@ static Type *tyfix(Inferstate *st, Node *ctx, Type *orig, int noerr)
     if (t->type == Tyvar && !noerr) {
         if (debugopt['T'])
             dump(file, stdout);
-        lfatal(t->loc, "underconstrained type %s near line %d, %s", tyfmt(buf, 1024, t), ctx->loc.line, ctxstr(st, ctx));
+        lfatal(t->loc, "underconstrained type %s near %s", tyfmt(buf, 1024, t), ctxstr(st, ctx));
     }
 
     if (debugopt['u'] && !tyeq(orig, t)) {
@@ -1777,7 +1778,7 @@ static void infercompn(Inferstate *st, Node *n)
         if (tybase(t)->type == Typtr)
             t = tybase(tf(st, t->sub[0]));
         if (tybase(t)->type != Tystruct)
-            fatal(n, "type %s does not support member operators near line %d, %s", tystr(t), n->loc.line, ctxstr(st, n));
+            fatal(n, "type %s does not support member operators near %s", tystr(t), ctxstr(st, n));
         nl = t->sdecls;
         for (i = 0; i < t->nmemb; i++) {
             if (!strcmp(namestr(memb), declname(nl[i]))) {
@@ -1788,8 +1789,8 @@ static void infercompn(Inferstate *st, Node *n)
         }
     }
     if (!found)
-        fatal(aggr, "Type %s has no member \"%s\" near line %d, %s",
-              tystr(type(st, aggr)), ctxstr(st, memb), n->loc.line, ctxstr(st, aggr));
+        fatal(aggr, "Type %s has no member \"%s\" near %s",
+              tystr(type(st, aggr)), ctxstr(st, memb), ctxstr(st, aggr));
 }
 
 static void checkstruct(Inferstate *st, Node *n)
@@ -1800,7 +1801,7 @@ static void checkstruct(Inferstate *st, Node *n)
 
     t = tybase(tf(st, n->lit.type));
     if (t->type != Tystruct)
-        fatal(n, "Type %s for struct literal is not struct near line %d, %s", tystr(t), n->loc.line, ctxstr(st, n));
+        fatal(n, "Type %s for struct literal is not struct near %s", tystr(t), ctxstr(st, n));
 
     for (i = 0; i < n->expr.nargs; i++) {
         val = n->expr.args[i];
@@ -1815,8 +1816,8 @@ static void checkstruct(Inferstate *st, Node *n)
         }
 
         if (!et)
-            fatal(n, "Could not find member %s in struct %s, near line %d, %s",
-                  namestr(name), tystr(t), n->loc.line, ctxstr(st, n));
+            fatal(n, "Could not find member %s in struct %s, near %s",
+                  namestr(name), tystr(t), ctxstr(st, n));
 
         unify(st, val, et, type(st, val));
     }
@@ -2222,11 +2223,10 @@ static void specialize(Inferstate *st, Node *f)
 
 void applytraits(Inferstate *st, Node *f)
 {
-    char *ctx, *name;
-    Trait *trait;
-    Type *ty;
     size_t i;
     Node *n;
+    Trait *trait;
+    Type *ty;
 
     pushstab(f->file.globls);
     /* for now, traits can only be declared globally */
@@ -2234,12 +2234,8 @@ void applytraits(Inferstate *st, Node *f)
         if (f->file.stmts[i]->type == Nimpl) {
             n = f->file.stmts[i];
             trait = gettrait(f->file.globls, n->impl.traitname);
-            if (!trait) {
-                name = namestr(n->impl.traitname);
-                ctx = ctxstr(st, n);
-                fatal(n, "trait %s does not exist near line %d, %s", name, n->loc.line, ctx);
-                free(ctx);
-            }
+            if (!trait)
+                fatal(n, "trait %s does not exist near %s", namestr(n->impl.traitname), ctxstr(st, n));
             ty = tf(st, n->impl.type);
             settrait(ty, trait);
         }
