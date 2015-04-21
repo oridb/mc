@@ -24,7 +24,6 @@ lib std {inc=.} =
 	bigint.myr
 	bitset.myr
 	blat.myr
-	bytebuf.myr
 	chartype.myr
 	clear.myr
 	cmp.myr
@@ -32,8 +31,6 @@ lib std {inc=.} =
 	die.myr
 	dirname.myr
 	endian.myr
-	env+posixy.myr
-	env+plan9.myr
 	errno.myr
 	execvp.myr
 	extremum.myr
@@ -41,11 +38,11 @@ lib std {inc=.} =
 	fltfmt.myr
 	fmt.myr
 	getcwd.myr
+	getint.myr
 	hashfuncs.myr
 	hasprefix.myr
 	hassuffix.myr
 	htab.myr
-	getint.myr
 	intparse.myr
 	ipparse.myr
 	mk.myr
@@ -68,6 +65,7 @@ lib std {inc=.} =
 	slurp.myr
 	sort.myr
 	spork.myr
+	strbuf.myr
 	strfind.myr
 	strjoin.myr
 	strsplit.myr
@@ -80,6 +78,8 @@ lib std {inc=.} =
 	varargs.myr
 
 	# platform specific files
+	env+plan9.myr
+	env+posixy.myr
 	dir+freebsd.myr
 	dir+linux.myr
 	dir+osx.myr

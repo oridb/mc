@@ -1,0 +1,24 @@
+use std
+
+const main = {
+	var sb
+
+	sb = std.mksb()
+	std.assert(std.sleq(std.sbpeek(sb), ""), "mismatched empty str\n")
+	std.sbputs(sb, "hello")
+	std.assert(std.sleq(std.sbpeek(sb), "hello"), "mismatched hello\n")
+	std.sbputs(sb, ", hello")
+	std.assert(std.sleq(std.sbpeek(sb), "hello, hello"), "mismatched double hello\n")
+	std.sbtrim(sb, 7)
+	std.assert(std.sleq(std.sbpeek(sb), "hello, "), "mismatched trim\n")
+	std.sbputs(sb, "world")
+	std.assert(std.sleq(std.sbpeek(sb), "hello, world"), "mismatched hello world\n")
+	std.sbtrim(sb, -5)
+	std.assert(std.sleq(std.sbpeek(sb), "hello, "), "mismatched rtrim\n")
+	std.sbputc(sb, '世')
+	std.sbputc(sb, '界')
+	std.assert(std.sleq(std.sbpeek(sb), "hello, 世界"), "mismatched unicode\n")
+	std.sbputb(sb, 10)
+	std.assert(std.sleq(std.sbpeek(sb), "hello, 世界\n"), "mismatched byte\n")
+}
+

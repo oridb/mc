@@ -1,0 +1,87 @@
+use "alloc.use"
+use "die.use"
+use "extremum.use"
+use "slcp.use"
+use "types.use"
+use "utf.use"
+use "fmt.use"
+
+pkg std =
+	type strbuf = struct
+		buf	: byte[:]
+		len	: size
+		fixed	: bool
+	;;
+
+	const mksb	: (-> strbuf#)
+	const sbfin	: (sb : strbuf# -> byte[:])
+	const sbfree	: (sb : strbuf# -> void)
+	const sbpeek	: (sb : strbuf# -> byte[:])
+
+	const sbputc	: (sb : strbuf#, v : char -> bool)
+	const sbputs	: (sb : strbuf#, v : byte[:] -> bool)
+	const sbputb	: (sb : strbuf#, v : byte -> bool)
+	const sbtrim	: (sb : strbuf#, len : std.size -> void)
+;;
+
+const mksb	= {
+	var sb
+	sb = std.zalloc()
+	sb.buf = std.slalloc(1)
+	-> sb
+}
+
+const sbfin = {sb : strbuf#
+	var sl
+
+	sl = sb.buf[:sb.len]
+	std.free(sb)
+	-> sl
+}
+
+const sbpeek = {sb : strbuf#
+	-> sb.buf[:sb.len]
+}
+
+const sbputc = {sb, v
+	if !ensure(sb, charlen(v))
+		-> false
+	;;
+	sb.len += encode(sb.buf[sb.len:], v)
+	-> true
+}
+const sbputs = {sb, v
+	if !ensure(sb, v.len)
+		-> false
+	;;
+	std.slcp(sb.buf[sb.len:sb.len + v.len], v)
+	sb.len += v.len
+	-> true
+}
+const sbputb = {sb, v
+	if !ensure(sb, 1)
+		-> false
+	;;
+	sb.buf[sb.len++] = v
+	-> true
+}
+
+const sbtrim = {sb, len
+	std.assert(std.abs(len) <= sb.len, "trim out of range\n")
+	if len < 0
+		sb.len -= std.abs(len)
+	else
+		sb.len = len
+	;;
+}
+
+const ensure = {sb, len
+	if sb.fixed && sb.len + len >= sb.buf.len
+		-> false
+	;;
+	while sb.buf.len < sb.len + len
+		sb.buf = slgrow(sb.buf, 2*sb.buf.len)
+	;;
+	-> true
+}
+
