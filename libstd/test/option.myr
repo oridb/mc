@@ -1,0 +1,43 @@
+use std
+
+const f = {x
+	if x == 123
+		-> `std.Some 42
+	else
+		-> `std.None
+	;;
+}
+
+type t = struct
+	next	: std.option(int)
+;;
+
+const main = {
+	var v, s : t
+	
+	match `std.Some 42
+	| `std.Some x:	std.assert(x == 42, "created wrong value\n")
+	| `std.None:	std.assert(false, "should not be reached\n")
+	;;
+
+	match `std.None
+	| `std.Some x:	std.assert(x, "should not be reached\n")
+	| `std.None:	/* everything ok */
+	;;
+
+	v = f(123)
+	match v
+	| `std.Some x:	std.assert(x == 42, "created wrong value\n")
+	| `std.None:	std.assert(false, "should not be reached\n")
+	;;
+
+	v = f(666)
+	match v
+	| `std.Some x:	std.assert(false, "should not be reached\n")
+	| `std.None:	/* everything ok */
+	;;
+
+	s = [.next = `std.None]
+	s = [.next = `std.Some 123]
+}
+

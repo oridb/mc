@@ -92,10 +92,6 @@ B genericrec	E	0
 # B genericchain	P	'val = 123' ## BUGGERED
 B genericmake	P	'val = 123'
 B genericuret	E	42
-B stdopt-some	E	42
-B stdopt-none	E	42
-B stdopt-mk	E	42
-B stdopt-struct	E	42
 B sizeof	E	4
 B gsizeof	E	5
 B matchint	E	84
@@ -125,20 +121,12 @@ B exportcycle   E       0
 B import-type	E	0
 B helloworld	P	Hello-世界
 B encodechar	P	1世界äa
-B stdsearch	E	0
-B stdchartype	E	0
-B stdtry	C
 B strtab	C
 B catfile	C
-B stdsort	C
 B strstrip	C
 B strsplit	C
 B strfind	C
 B strjoin	C
-B stdslcp	C
-B stdfmtpad	C
-B stdpathnorm	C
-B stdbigint	C
 B exporttrait
 # B local-labels	E	10 ## BUGGERED
 F declmismatch

@@ -1726,7 +1726,7 @@ static Type *tyfix(Inferstate *st, Node *ctx, Type *orig, int noerr)
     if (t->type == Tyvar && !noerr) {
         if (debugopt['T'])
             dump(file, stdout);
-        lfatal(t->loc, "underconstrained type %s near %s", tyfmt(buf, 1024, t), ctxstr(st, ctx));
+        fatal(ctx, "underconstrained type %s near %s", tyfmt(buf, 1024, t), ctxstr(st, ctx));
     }
 
     if (debugopt['u'] && !tyeq(orig, t)) {

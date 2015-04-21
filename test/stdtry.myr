@@ -1,8 +1,0 @@
-use std
-
-const main = {
-	var x = `std.Some 123
-	std.try(x)
-	x = `std.None
-	std.try(x)
-}

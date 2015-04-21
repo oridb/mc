@@ -1,0 +1,61 @@
+use std
+
+const main = {
+	/* untouched */
+	norm("foo", "foo")
+	norm("foo/bar", "foo/bar")
+	norm("/foo/bar", "/foo/bar")
+	norm(".", ".")
+
+	/* empty path becomes "." */
+	norm("", ".")
+
+	/* delete //, trailing / */
+	norm("foo/", "foo")
+	norm("foo//bar/baz", "foo/bar/baz")
+	norm("//foo//bar/", "/foo/bar")
+
+	/* delete '.' */
+	norm("foo/./bar", "foo/bar")
+	norm("/foo/bar/.", "/foo/bar")
+	norm("./foo/bar/.", "foo/bar")
+
+	/* elide '..' */
+	norm("/../foo/bar", "/foo/bar")
+	norm("../../foo/bar", "../../foo/bar")
+	norm("foo/bar/..", "foo")
+	norm("foo/bar/../..", ".")
+	norm("foo/../bar/../..", "..")
+	norm("/foo/../bar/../..", "/")
+
+	/* mix all of the above */
+	norm("/../foo//bar", "/foo/bar")
+	norm("..//../foo/bar", "../../foo/bar")
+	norm("foo//./bar/..", "foo")
+	norm("foo/bar/.././..", ".")
+	norm("//foo/../bar/../..", "/")
+	norm("foo/../bar/../..", "..")
+
+	/* vanilla pathjoin */
+	eq(std.pathcat("a", "b"), "a/b")
+	eq(std.pathjoin(["a", "b", "c"][:]), "a/b/c")
+	/* pathjoin with empty dirs */
+	eq(std.pathcat("", "foo"), "foo")
+	eq(std.pathjoin(["", "foo", "bar"][:]), "foo/bar")
+}
+
+const norm = {a, b
+	var p
+
+	p = std.pathnorm(a)
+	if !std.sleq(p, b)
+		std.fatal(1, "mismatched paths: '%s' => '%s' != '%s'\n", a, p, b)
+	;;
+	std.slfree(p)
+}
+
+const eq = {a, b
+	if !std.sleq(a, b)
+		std.fatal(1, "mismatched paths: '%s' != '%s'\n", a, b)
+	;;
+}
