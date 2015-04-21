@@ -37,14 +37,9 @@ const test = {b
 	for tn in b.all
 		match gettarg(b.targs, tn)
 		| `Test t:
-			for s in t.incpath
-				if std.sleq(".", s)
-					goto founddot
-				;;
+			if t.incpath.len == 0 || !std.sleq(t.incpath[0], ".")
+				t.incpath = std.slput(t.incpath, 0, std.sldup("."))
 			;;
-			t.incpath = std.slpush(t.incpath, std.sldup("."))
-
-:founddot
 			buildbin(b, t, false)
 			bin = std.strcat("./", t.name)
 			if !runtest(bin)
