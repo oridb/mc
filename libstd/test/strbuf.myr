@@ -2,6 +2,7 @@ use std
 
 const main = {
 	var sb
+	var buf : byte[16]
 
 	sb = std.mksb()
 	std.assert(std.sleq(std.sbpeek(sb), ""), "mismatched empty str\n")
@@ -20,5 +21,20 @@ const main = {
 	std.assert(std.sleq(std.sbpeek(sb), "hello, 世界"), "mismatched unicode\n")
 	std.sbputb(sb, 10)
 	std.assert(std.sleq(std.sbpeek(sb), "hello, 世界\n"), "mismatched byte\n")
+
+	sb = std.mkbufsb(buf[:])
+	std.assert(std.sbputs(sb, "hello"), "failed to add hello\n") /* 5 characters */
+	std.assert(std.sbputs(sb, "hello"), "failed to add hello\n") /* 10 characters */
+	std.assert(std.sbputs(sb, "hello"), "failed to add hello\n") /* 15 characters */
+	std.assert(!std.sbputs(sb, "hello"), "erronous success\n") /* 16 characters */
+	std.assert(std.sleq(std.sbpeek(sb), "hellohellohelloh"), "failed to copy as much as possible\n")
+	std.sbtrim(sb, -1)
+	std.assert(std.sleq(std.sbpeek(sb), "hellohellohello"), "failed rtrim\n")
+	std.sbputc(sb, '世')
+	std.assert(std.sleq(std.sbpeek(sb), "hellohellohello"), "modified overflowed putc\n")
+	std.sbtrim(sb, -2)
+	std.assert(std.sleq(std.sbpeek(sb), "hellohellohel"), "failed rtrim\n")
+	std.sbputc(sb, '世')
+	std.assert(std.sleq(std.sbpeek(sb), "hellohellohel世"), "failed to append with putc\n")
 }
 

@@ -14,6 +14,7 @@ pkg std =
 	;;
 
 	const mksb	: (-> strbuf#)
+	const mkbufsb	: (buf : byte[:] -> strbuf#)
 	const sbfin	: (sb : strbuf# -> byte[:])
 	const sbfree	: (sb : strbuf# -> void)
 	const sbpeek	: (sb : strbuf# -> byte[:])
@@ -21,23 +22,39 @@ pkg std =
 	const sbputc	: (sb : strbuf#, v : char -> bool)
 	const sbputs	: (sb : strbuf#, v : byte[:] -> bool)
 	const sbputb	: (sb : strbuf#, v : byte -> bool)
-	const sbtrim	: (sb : strbuf#, len : std.size -> void)
+	const sbtrim	: (sb : strbuf#, len : size -> void)
 ;;
 
-const mksb	= {
+const mksb = {
 	var sb
-	sb = std.zalloc()
-	sb.buf = std.slalloc(1)
+	sb = zalloc()
+	sb.buf = slalloc(1)
 	-> sb
 }
 
-const sbfin = {sb : strbuf#
+const mkbufsb = {buf
+	var sb
+	sb = zalloc()
+	sb.buf = buf
+	sb.fixed = true
+	-> sb
+}
+
+const sbfin = {sb
 	var sl
 
 	sl = sb.buf[:sb.len]
-	std.free(sb)
+	free(sb)
 	-> sl
 }
+
+const sbfree = {sb
+	if !sb.fixed
+		slfree(sb.buf)
+	;;
+	free(sb)
+}
+
 
 const sbpeek = {sb : strbuf#
 	-> sb.buf[:sb.len]
@@ -51,12 +68,15 @@ const sbputc = {sb, v
 	-> true
 }
 const sbputs = {sb, v
-	if !ensure(sb, v.len)
-		-> false
-	;;
-	std.slcp(sb.buf[sb.len:sb.len + v.len], v)
-	sb.len += v.len
-	-> true
+	var ok
+	var len
+
+	ok = ensure(sb, v.len)
+	/* copy what we can */
+	len = min(sb.buf.len - sb.len, v.len)
+	slcp(sb.buf[sb.len:sb.len + len], v[:len])
+	sb.len += len
+	-> ok
 }
 const sbputb = {sb, v
 	if !ensure(sb, 1)
@@ -67,16 +87,16 @@ const sbputb = {sb, v
 }
 
 const sbtrim = {sb, len
-	std.assert(std.abs(len) <= sb.len, "trim out of range\n")
+	assert(abs(len) <= sb.len, "trim out of range\n")
 	if len < 0
-		sb.len -= std.abs(len)
+		sb.len -= abs(len)
 	else
 		sb.len = len
 	;;
 }
 
 const ensure = {sb, len
-	if sb.fixed && sb.len + len >= sb.buf.len
+	if sb.fixed && sb.len + len > sb.buf.len
 		-> false
 	;;
 	while sb.buf.len < sb.len + len
