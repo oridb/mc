@@ -15,11 +15,13 @@ pkg bld =
 ;;
 
 const test = {b
-	var ok, bin
+	var ok, bin, hastest
 
 	/* no implicit tests to run */
 	ok = true
+	hastest = false
 	if std.fexists("test")
+		hastest = true
 		for tn in b.all
 			match gettarg(b.targs, tn)
 			| `Bin bt:
@@ -37,6 +39,7 @@ const test = {b
 	for tn in b.all
 		match gettarg(b.targs, tn)
 		| `Test t:
+			hastest = true
 			if t.incpath.len == 0 || !std.sleq(t.incpath[0], ".")
 				t.incpath = std.slput(t.incpath, 0, std.sldup("."))
 			;;
@@ -50,11 +53,13 @@ const test = {b
 			/* skip */
 		;;
 	;;
-	if ok
-		std.put("TESTS PASSED\n")
-	else
-		std.put("TESTS FAILED\n")
-		std.exit(1)
+	if hastest
+		if ok
+			std.put("TESTS PASSED\n")
+		else
+			std.put("TESTS FAILED\n")
+			std.exit(1)
+		;;
 	;;
 }
 
