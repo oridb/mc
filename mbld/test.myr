@@ -23,11 +23,11 @@ const test = {b
 		for tn in b.all
 			match gettarg(b.targs, tn)
 			| `Bin bt:
-				if !dotest(b, bt, ok)
+				if !dotest(b, bt)
 					ok = false
 				;;
 			| `Lib lt:
-				if !dotest(b, lt, ok)
+				if !dotest(b, lt)
 					ok = false
 				;;
 			| _:	/* ignore */
@@ -58,8 +58,8 @@ const test = {b
 	;;
 }
 
-const dotest = {b, targ, ok
-	var tt, bin ,path, tests
+const dotest = {b, targ
+	var tt, bin ,path, tests, ok
 
 	tests = [][:]
 	setdir(b, targ.dir)
