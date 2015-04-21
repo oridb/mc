@@ -333,9 +333,6 @@ const myrtarget = {p, targ
 	ldscript = ""
 	runtime = ""
 	incpath = [][:]
-	for inc in bld.opt_incpaths
-		incpath = std.slpush(incpath, std.sldup(inc))
-	;;
 	for elt in attrs
 		match elt
 		| ("ldscript", lds):	ldscript = std.sldup(lds)
@@ -346,6 +343,9 @@ const myrtarget = {p, targ
 		| (invalid, _):
 			std.fatal(1, "%s: got invalid attr '%s'\n", targ, invalid)
 		;;
+	;;
+	for inc in bld.opt_incpaths
+		incpath = std.slpush(incpath, std.sldup(inc))
 	;;
 	-> std.mk([
 		/* target */

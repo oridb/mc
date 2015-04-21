@@ -115,7 +115,7 @@ const genfiles = {b, gt
 const addincludes = {b, targ
 	for (inc, lib, subtarg) in targ.libdeps
 		if !hasinc(targ.incpath, inc)
-			targ.incpath = std.slpush(targ.incpath, inc)
+			targ.incpath = std.slput(targ.incpath, 0, inc)
 		;;
 	;;
 }
