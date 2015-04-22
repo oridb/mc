@@ -25,8 +25,6 @@ const main = {args : byte[:][:]
 	while !std.optdone(optctx)
 		match std.optnext(optctx)
 		| ('h', arg): usage(args[0])
-		| ('s', arg): bld.opt_ldscript = arg
-		| ('f', arg): bld.opt_bldfile = arg
 		| ('I', arg): bld.opt_incpaths = std.slpush(bld.opt_incpaths, arg)
 		| ('S', _): bld.opt_genasm = true
 		| ('R', arg): bld.opt_instroot = arg
@@ -69,7 +67,6 @@ const main = {args : byte[:][:]
 			.inputs=optctx.args,
 			.runtime=bld.opt_runtime,
 			.incpath=bld.opt_incpaths,
-			.ldscript=bld.opt_ldscript,
 			.libdeps=[][:]
 		]
 		if bintarg
@@ -78,7 +75,7 @@ const main = {args : byte[:][:]
 			bld.buildlib(b, &mt)
 		;;
 	else
-		findproj(b, bld.opt_bldfile)
+		findproj(b, "bld.proj")
 		bld.load(b)
 		/*bld.configure()*/
 		/* default: buildall */

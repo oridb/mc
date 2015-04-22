@@ -7,13 +7,11 @@ pkg bld =
 	var opt_sys	: byte[:]
 	var opt_runtime	: byte[:]
 	var opt_genasm	: bool
-	var opt_ldscript	: byte[:]
 	var opt_incpaths	: byte[:][:]
 	var opt_instroot	: byte[:]
 	var opt_manpath	: byte[:]
 	var opt_destdir	: byte[:]
 	var opt_outdir	: byte[:]
-	var opt_bldfile	: byte[:]
 	var opt_debug	: bool
 
 	/* undocumented/unsupported opts */
@@ -32,13 +30,11 @@ var opt_sys	= ""
 var opt_binname	= ""
 var opt_libname	= ""
 var opt_runtime	= ""
-var opt_ldscript	= ""
 var opt_incpaths	/* FIXME: taking a constant slice is a nonconstant initializer */
 var opt_instroot	= ""
 var opt_manpath	= ""
 var opt_destdir	= ""
 var opt_debug	= false
-var opt_bldfile = "bld.proj"
 var opt_mc	= "6m"
 var opt_as	= "as"
 var opt_muse	= "muse"
