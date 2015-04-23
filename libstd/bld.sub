@@ -2,16 +2,18 @@ lib sys =
 	sys+freebsd-x64.myr
 	sys+linux-x64.myr
 	sys+osx-x64.myr
+	sys+plan9-x64.myr
 	syscall+freebsd-x64.s
 	syscall+linux-x64.s
 	syscall+osx-x64.s
+	syscall+plan9-x64.s
 	syserrno+linux.myr
 	syserrno+osx.myr
 	systypes.myr
 	ifreq+freebsd.myr
 	ifreq+linux.myr
 	ifreq+osx.myr
-	ifreq+plan9.myr	# dummy file: plan9 doesn't have ifreq
+	ifreq.myr	# dummy file: plan9 doesn't have ifreq
 	util+plan9-x64.s
 	util+posixy-x64.s
 ;;
@@ -80,6 +82,7 @@ lib std {inc=.} =
 	# platform specific files
 	env+plan9.myr
 	env+posixy.myr
+	errno+plan9.myr
 	dir+freebsd.myr
 	dir+linux.myr
 	dir+osx.myr
@@ -89,8 +92,9 @@ lib std {inc=.} =
 	dial+plan9.myr
 	resolve+posixy.myr
 	resolve+plan9.myr
-	syswrap+plan9.myr
 	syswrap-ss+linux.myr
 	syswrap-ss+osx.myr
+	syswrap-ss+plan9.myr
+	syswrap+plan9.myr
 	syswrap+posixy.myr
 ;;
