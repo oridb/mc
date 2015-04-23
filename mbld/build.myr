@@ -61,15 +61,13 @@ const buildbin = {b, targ, addsrc
 	setdir(b, targ.dir)
 	addincludes(b, targ)
 	std.put("%s...\n", targ.name)
-	if !myrdeps(b, targ, false, false, addsrc, &dg)
-		std.fatal(1, "Could not load dependencies for %s\n", targ.name)
-	;;
+	dg = myrdeps(b, targ, false, addsrc)
 	if !std.hthas(dg.deps, targ.name)
 		std.fatal(1, "no input files for %s\n", targ.name)
 	;;
-	if builddep(b, &dg, targ.name, targ.incpath) || !freshlibs(targ, dg.libs)
+	if builddep(b, dg, targ.name, targ.incpath) || !freshlibs(targ, dg.libs)
 		src = std.htkeys(dg.sources)
-		linkbin(&dg, targ.name, src, targ.ldscript, targ.runtime, targ.incpath, targ.libdeps)
+		linkbin(dg, targ.name, src, targ.ldscript, targ.runtime, targ.incpath, targ.libdeps)
 		std.slfree(src)
 	;;
 }
@@ -85,18 +83,16 @@ const buildlib = {b, targ
 	lib = targ.name
 	std.put("lib%s.a...\n", lib)
 	archive = std.fmt("lib%s.a", lib)
-	if !myrdeps(b, targ, true, false, false, &dg)
-		std.fatal(1, "Could not load dependencies for %s\n", lib)
-	;;
+	dg = myrdeps(b, targ, false, false)
 	if !std.hthas(dg.deps, lib)
 		std.fatal(1, "no target declared for %s\n", lib)
 	;;
-	u = builddep(b, &dg, targ.name, targ.incpath)
-	l = builddep(b, &dg, archive, targ.incpath)
+	u = builddep(b, dg, targ.name, targ.incpath)
+	l = builddep(b, dg, archive, targ.incpath)
 	if  u || l || !freshlibs(targ, dg.libs)
 		src = std.htkeys(dg.sources)
-		mergeuse(&dg, lib, src, targ.incpath)
-		archivelib(&dg, lib, src, targ.incpath)
+		mergeuse(dg, lib, src, targ.incpath)
+		archivelib(dg, lib, src, targ.incpath)
 		std.slfree(src)
 	;;
 	std.slfree(archive)

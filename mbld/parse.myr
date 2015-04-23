@@ -189,6 +189,7 @@ const bintarget = {b, p
 const libtarget = {b, p
 	var t
 	t = myrtarget(p, "lib")
+	t.islib = true
 	addtarg(p, b, t.name, `Lib t)
 }
 
@@ -353,6 +354,7 @@ const myrtarget = {p, targ
 		.name=name,
 		.inputs=inputs,
 		.libdeps=libdeps,
+		.islib=false,
 		/* attrs */
 		.install=inst,
 		.ldscript=ldscript,

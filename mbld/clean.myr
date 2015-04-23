@@ -16,11 +16,11 @@ const cleanall = {b
 	for tn in b.all
 		match gettarg(b.targs, tn)
 		| `Bin bt:
-			cleanup(b, bt, bt.inputs, true)
+			cleanup(b, bt, bt.inputs)
 		| `Lib lt:
-			cleanup(b, lt, lt.inputs, true)
+			cleanup(b, lt, lt.inputs)
 		| `Test tt:
-			cleanup(b, tt, tt.inputs, true)
+			cleanup(b, tt, tt.inputs)
 		| `Gen gt:
 			for f in gt.out
 				if !gt.durable && std.remove(f)
@@ -38,15 +38,15 @@ const clean = {b, targ
 		match gettarg(b.targs, tn)
 		| `Bin bt:
 			if std.sleq(bt.name, targ)
-				cleanup(b, bt, bt.inputs, true)
+				cleanup(b, bt, bt.inputs)
 			;;
 		| `Lib lt:
 			if std.sleq(lt.name, targ)
-				cleanup(b, lt, lt.inputs, true)
+				cleanup(b, lt, lt.inputs)
 			;;
 		| `Test tt:
 			if std.sleq(tt.name, targ)
-				cleanup(b, tt, tt.inputs, true)
+				cleanup(b, tt, tt.inputs)
 			;;
 		| `Gen gt:
 			for f in gt.out
@@ -60,19 +60,16 @@ const clean = {b, targ
 	-> true
 }
 
-const cleanup = {b, targ, leaves, islib
+const cleanup = {b, targ, leaves
 	var mchammer_files /* cant touch this */
-	var keys
-	var dg
+	var keys, dg
 
 	/*
 	we want to automatically add 'clean' sources since otherwise,
 	mbld won't be able to clean code after changing a build file.
 	*/
 	setdir(b, targ.dir)
-	if !myrdeps(b, targ, islib, true, true, &dg)
-		std.fatal(1, "Could not load dependencies for %s\n", targ.name)
-	;;
+	dg = myrdeps(b, targ, true, true)
 	mchammer_files = std.mkht(std.strhash, std.streq)
 	for l in leaves
 		std.htput(mchammer_files, l, true)

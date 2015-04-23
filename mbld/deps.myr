@@ -8,7 +8,7 @@ use "types.use"
 use "util.use"
 
 pkg bld =
-	const myrdeps	: (b : build#, mt : myrtarg#, islib : bool, isclean : bool, addsrc : bool, dg : depgraph#	-> bool)
+	const myrdeps	: (b : build#, mt : myrtarg#, doclean : bool, addsrc : bool -> depgraph#)
 
 	/* a bit ugly: initialized from main() */
 	var usepat	: regex.regex#
@@ -21,21 +21,33 @@ type dep = union
 	`Lib byte[:]
 ;;
 
-const myrdeps = {b, mt, islib, isclean, addsrc, dg
-	var objs, uses, srcs, incs
-	var out, useout, depstk
+type depscan = struct
+	doclean	: bool
+	addsrc	: bool
+	tagsel	: std.htab(byte[:], byte[:])#
+	targ	: myrtarg#
+	depstk	: byte[:][:]
+	incs	: byte[:][:]
+;;
+
+const myrdeps = {b, mt, doclean, addsrc
+	var objs, uses, srcs
+	var out, useout
+	var dg : depgraph#
+	var ds : depscan
 	var i
 
-	dg.deps = std.mkht(std.strhash, std.streq)
-	dg.libs = std.mkht(std.strhash, std.streq)
-	dg.input = std.mkht(std.strhash, std.streq)
-	dg.sources = std.mkht(std.strhash, std.streq)
-	dg.updated = std.mkht(std.strhash, std.streq)
-	dg.seen = std.mkht(std.strhash, std.streq)
-	dg.done = std.mkht(std.strhash, std.streq)
-
+	dg = std.mk([
+		.deps = std.mkht(std.strhash, std.streq),
+		.libs = std.mkht(std.strhash, std.streq),
+		.input = std.mkht(std.strhash, std.streq),
+		.sources = std.mkht(std.strhash, std.streq),
+		.updated = std.mkht(std.strhash, std.streq),
+		.seen = std.mkht(std.strhash, std.streq),
+		.done = std.mkht(std.strhash, std.streq),
+	])
 	/* direct dependencies of binary */
-	if islib
+	if mt.islib
 		out = std.fmt("lib%s.a", mt.name)
 		useout = std.sldup(mt.name)
 	else
@@ -43,8 +55,14 @@ const myrdeps = {b, mt, islib, isclean, addsrc, dg
 		useout = ""
 	;;
 
+	ds = [
+		.doclean = doclean,
+		.addsrc = addsrc,
+		.incs = mt.incpath,
+		.targ = mt,
+		.depstk = [][:],
+	]
 	srcs = mt.inputs
-	incs = mt.incpath
 	objs = swapall(srcs, config.Objsuffix)
 	uses = swapall(srcs, ".use")
 	for i = 0; i < srcs.len; i++
@@ -59,18 +77,16 @@ const myrdeps = {b, mt, islib, isclean, addsrc, dg
 
 	for i = 0; i < srcs.len; i++
 		pushdep(dg, objs[i], out)
-		if islib && std.hassuffix(srcs[i], ".myr")
+		if mt.islib && std.hassuffix(srcs[i], ".myr")
 			pushdep(dg, uses[i], useout)
 		;;
 	;;
 
 	for i = 0; i < srcs.len; i++
-		depstk = [][:]
-		srcdeps(b, dg, srcs[i], objs[i], uses[i], incs, &depstk, isclean, addsrc)
-		std.slfree(depstk)
+		srcdeps(b, dg, srcs[i], objs[i], uses[i], &ds)
 	;;
 	dumpgraph(dg)
-	-> true
+	-> dg
 }
 
 const swapall = {srcs, suff
@@ -99,17 +115,17 @@ const dumpgraph = {dg
 	std.put("}\n")
 }
 
-const srcdeps = {b, g, path, obj, usefile, incs, depstk, isclean, addsrc
+const srcdeps = {b, g, path, obj, usefile, ds
 	var deps
 
 	if std.hthas(g.done, path)
 		->
 	;;
 
-	depstk# = std.slpush(depstk#, path)
+	ds.depstk = std.slpush(ds.depstk, path)
 	if std.htgetv(g.seen, path, false)
 		std.fput(1, "dependency loop involving %s:\n", path)
-		for d in depstk#
+		for d in ds.depstk
 			std.fput(1, "\t%s\n", d)
 		;;
 		std.exit(1)
@@ -123,8 +139,8 @@ const srcdeps = {b, g, path, obj, usefile, incs, depstk, isclean, addsrc
 			If we're cleaning, we don't care about libraries; at best, this does nothing. At
 			worst, this will cause failure if the library is a local library that gets cleand.
 			*/
-			if !isclean
-				scrapelibs(g, lib, incs)
+			if !ds.doclean
+				scrapelibs(g, lib, ds.incs)
 			;;
 		| `Local l:
 			if !std.hassuffix(l, ".use")
@@ -136,15 +152,15 @@ const srcdeps = {b, g, path, obj, usefile, incs, depstk, isclean, addsrc
 			if usefile.len != 0
 				pushdep(g, l, usefile)
 			;;
-			addusedep(b, g, path, l, incs, depstk, isclean, addsrc)
+			addusedep(b, g, path, l, ds)
 		;;
 	;;
-	depstk# = std.slgrow(depstk#, depstk#.len - 1)
+	ds.depstk = std.slgrow(ds.depstk, ds.depstk.len - 1)
 	std.htput(g.seen, path, false)
 	std.htput(g.done, path, true)
 }
 
-const addusedep = {b, g, f, usefile, incs, depstk, isclean, addsrc
+const addusedep = {b, g, f, usefile, ds
 	var src
 
 	if std.hthas(g.done, usefile)
@@ -158,7 +174,7 @@ const addusedep = {b, g, f, usefile, incs, depstk, isclean, addsrc
 		src = std.sldup(path)
 	| `std.None:
 		src = swapsuffix(usefile, ".use", ".myr")
-		if addsrc
+		if ds.addsrc
 			std.htput(g.sources, src, true)
 		elif !std.hthas(g.input, usefile)
 			std.fatal(1, "%s: source file %s not listed in bldfile\n", f, src)
@@ -166,7 +182,7 @@ const addusedep = {b, g, f, usefile, incs, depstk, isclean, addsrc
 	;;
 	pushdep(g, src, usefile)
 	std.htput(g.input, usefile, src)
-	srcdeps(b, g, src, "", usefile, incs, depstk, isclean, addsrc)
+	srcdeps(b, g, src, "", usefile, ds)
 	std.htput(g.done, usefile, true)
 }
 
