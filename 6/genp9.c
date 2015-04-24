@@ -39,7 +39,6 @@ static char* modenames[] = {
 
 static size_t writeblob(FILE *fd, char *name, size_t off, Htab *globls, Htab *strtab, Node *blob);
 static void locprint(FILE *fd, Loc *l, char spec);
-static void gentydesc(FILE *fd, Type *ty);
 
 static void fillglobls(Stab *st, Htab *globls)
 {
