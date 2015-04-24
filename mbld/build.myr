@@ -231,10 +231,6 @@ const linkbin = {dg, bin, srcfiles, ldscript, rt, incs, extralibs
 
 	/* -L path -l lib... */
 	cmd = addlibs(cmd, dg.libs, incs)
-	for (d, l, t) in extralibs
-		cmd = std.slpush(cmd, std.fmt("-l%s", l))
-	;;
-
 
 	/* special for OSX: it warns if we don't add this */
 	if std.sleq(opt_sys, "osx")
