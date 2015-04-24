@@ -39,6 +39,7 @@ static char* modenames[] = {
 
 static size_t writeblob(FILE *fd, char *name, size_t off, Htab *globls, Htab *strtab, Node *blob);
 static void locprint(FILE *fd, Loc *l, char spec);
+static void gentydesc(FILE *fd, Type *ty);
 
 static void fillglobls(Stab *st, Htab *globls)
 {
@@ -442,7 +443,6 @@ static void genstrings(FILE *fd, Htab *strtab)
     }
 }
 
-
 static void writeasm(FILE *fd, Isel *s, Func *fn)
 {
     size_t i, j;
@@ -498,6 +498,15 @@ static void genfunc(FILE *fd, Func *fn, Htab *globls, Htab *strtab)
     writeasm(fd, &is, fn);
 }
 
+static void gentype(FILE *fd, Type *ty)
+{
+    char buf[512];
+	/* FIXME: this generates dummy data. */
+    tydescid(buf, sizeof buf, ty);
+	fprintf(fd, "GLOBL %s%s<>+0(SB),$1\n", Symprefix, buf);
+    fprintf(fd, "DATA %s%s<>+0(SB)/1,$0\n", Symprefix, buf);
+}
+
 void genp9(Node *file, char *out)
 {
     Htab *globls, *strtab;
@@ -549,6 +558,11 @@ void genp9(Node *file, char *out)
         genblob(fd, blob[i], globls, strtab);
     for (i = 0; i < nfn; i++)
         genfunc(fd, fn[i], globls, strtab);
+    for (i = 0; i < ntypes; i++)
+        if (types[i]->isreflect && !types[i]->isimport)
+            gentype(fd, types[i]);
+    fprintf(fd, "\n");
     genstrings(fd, strtab);
+
     fclose(fd);
 }

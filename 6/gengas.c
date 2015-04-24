@@ -591,7 +591,7 @@ static void gentydesc(FILE *fd, Type *ty)
     }
 }
 
-void gentype(FILE *fd, Type *ty)
+static void gentype(FILE *fd, Type *ty)
 {
     char buf[512];
 
