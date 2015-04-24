@@ -94,7 +94,7 @@ const csdial = {netdir, proto, rem
 const call = {clone, addr, netdir
 	var namebuf : byte[Maxpath]
 	var databuf : byte[Maxpath]
-	var name, base
+	var name, base, dpath
 	var cfd, datafd
 	var c, n
 
@@ -117,8 +117,8 @@ const call = {clone, addr, netdir
 	| `None:	die("there should be a '/' here\n")
 	| `Some i:	base = c[:i]
 	;;
-	n = bfmt(databuf[:], "%s/%s/data", base, name)
-	datafd = open(databuf[:n], Ordwr)
+	dpath = bfmt(databuf[:], "%s/%s/data", base, name)
+	datafd = open(dpath, Ordwr)
 :cleanup
 	close(cfd)
 	slfree(c)

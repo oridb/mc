@@ -4,9 +4,7 @@ SUB = parse \
       mi \
       6 \
       muse \
-      myrbuild \
       rt \
-      libstd \
       doc
 
 all:V: $SUB config.h

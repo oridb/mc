@@ -32,13 +32,13 @@ const envfind = {key
 
 const getenv = {name
 	var buf : byte[128]
-	var n
+	var s
 
 	match envfind(name)
 	| `Some val:	-> `Some val
 	| `None:
-		n = bfmt(buf[:], "/env/%s", name)
-		match std.slurp(buf[:n])
+		s = bfmt(buf[:], "/env/%s", name)
+		match std.slurp(s)
 		| `Fail m: -> `None
 		| `Ok data:
 			envkey = slpush(envkey, sldup(name))

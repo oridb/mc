@@ -1,0 +1,56 @@
+use sys
+
+use "errno.use"
+use "cstrconv.use"
+
+pkg std =
+	const exit	: (status : int -> void)
+	pkglocal const bgetcwd	: (buf : byte[:] -> errno)
+;;
+
+const bgetcwd = {buf
+	var fd
+
+	fd = sys.open(".", sys.Ordonly)
+	if fd < 0
+		-> fd castto(errno)
+	;;
+
+	if sys.fd2path(fd, buf) == 0
+		/*
+		Because we don't return the size, the best we can do is
+		assume that if the buffer is completely full, we have
+		truncated it. Since we truncate at utf8 characters, we
+		can have at most 3 bytes truncated (4 bytes will fit
+		any utf8 char), and one byte for the nul terminator.
+		*/
+		if cstrlen(buf) + 5 == buf.len
+			-> Erange
+		else
+			-> cstrlen(buf) castto(errno)
+		;;
+	;;
+	-> Emisc
+}
+
+const digitchars = "0123456789"
+const exit	= {status
+	var buf : byte[32]	/* big enough for exit status numbers */
+	var n, i
+	
+	if status == 0
+		sys.exits("")
+	else
+		status &= 255
+		i = 100
+		n = 0
+		while i > 0
+			if status >= i
+				buf[n++] = digitchars[(status/i)%10]
+			;;
+			i /= 10
+		;;
+		sys.exits(buf[:n])
+	;;
+}
+

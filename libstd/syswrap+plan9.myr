@@ -60,7 +60,6 @@ pkg std =
 	const fork	: (-> pid)
 	const execv	: (cmd : byte[:], args : byte[:][:] -> int64)
 	const execve	: (cmd : byte[:], args : byte[:][:], env : byte[:][:] -> int64)
-	const exit	: (status:int -> void)
 	const waitpid	: (pid:pid, loc:int32#, opt : int64	-> pid)
 
 	pkglocal const Canunmap	: bool = true
@@ -162,27 +161,6 @@ const suicide	= {;	(0 castto(byte#))#}	/* let's happy segfault!! t */
 const fork	= {;		-> sys.rfork(sys.Rffdg | sys.Rfrend | sys.Rfproc) castto(pid)}
 const execv	= {cmd, args;	-> sys.exec(cmd, args) castto(int64)}
 const execve	= {cmd, args, env;	-> sys.exec(cmd, args) castto(int64)}
-const digitchars = "0123456789"
-const exit	= {status
-	var buf : byte[32]	/* big enough for exit status numbers */
-	var n, i
-	
-	if status == 0
-		sys.exits("")
-	else
-		status &= 255
-		i = 100
-		n = 0
-		while i > 0
-			if status >= i
-				buf[n++] = digitchars[(status/i)%10]
-			;;
-			i /= 10
-		;;
-		sys.exits(buf[:n])
-	;;
-}
-
 
 /* memory stuff */
 const getmem	= {sz

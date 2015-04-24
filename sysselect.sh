@@ -16,6 +16,8 @@ fi
 uname_arch=`uname -m`
 if test $uname_arch = "x86_64"; then
 	arch="x64"
+elif test $uname_arch = "amd64"; then
+	arch="x64"
 fi
 
 # check for system prefixes on .myr src
@@ -26,11 +28,18 @@ for suffix in myr s; do
 		$posixy \
 		$sys-$arch \
 		$sys \
-		$arch
+		$arch 
 	do
 		if test -f $1+$platform.$suffix; then
-			echo $1+$platform.$suffix 
+			found=true
+			echo $1+$platform.$suffix
 		fi
 	done
+	if test "x$found" = "x"; then
+		if test -f $1.$suffix; then
+			found=true
+			echo $1.$suffix
+		fi
+	fi
 done
 
