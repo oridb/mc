@@ -571,7 +571,7 @@ Type *tyspecialize(Type *t, Htab *tymap, Htab *delayed);
 Node *genericname(Node *n, Type *t);
 
 /* usefiles */
-int  loaduse(FILE *f, Stab *into, Vis vis);
+int  loaduse(char *path, FILE *f, Stab *into, Vis vis);
 void readuse(Node *use, Stab *into, Vis vis);
 void writeuse(FILE *fd, Node *file);
 void tagexports(Stab *st, int hidelocal);

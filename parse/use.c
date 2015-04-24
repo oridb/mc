@@ -803,7 +803,7 @@ int tdeq(void *pa, void *pb)
  *     D<picled-decl>
  *     G<pickled-decl><pickled-initializer>
  */
-int loaduse(FILE *f, Stab *st, Vis vis)
+int loaduse(char *path, FILE *f, Stab *st, Vis vis)
 {
     intptr_t tid;
     size_t i;
@@ -842,7 +842,7 @@ int loaduse(FILE *f, Stab *st, Vis vis)
         }
     }
     if (!s) {
-        printf("could not find matching package for merge: %s\n", st->name);
+        printf("could not find matching package for merge: %s in %s\n", st->name, path);
         exit(1);
     }
     tidmap = mkht(ptrhash, ptreq);
@@ -919,21 +919,21 @@ void readuse(Node *use, Stab *st, Vis vis)
 {
     size_t i;
     FILE *fd;
-    char *p, *q;
+    char *t, *p;
 
     /* local (quoted) uses are always relative to the cwd */
     fd = NULL;
     if (use->use.islocal) {
-        fd = fopen(use->use.name, "r");
+        p = strdup(use->use.name);
+        fd = fopen(p, "r");
     /* nonlocal (barename) uses are always searched on the include path */
     } else {
         for (i = 0; i < nincpaths; i++) {
-            p = strjoin(incpaths[i], "/");
-            q = strjoin(p, use->use.name);
-            fd = fopen(q, "r");
+            t = strjoin(incpaths[i], "/");
+            p = strjoin(t, use->use.name);
+            fd = fopen(p, "r");
             if (fd) {
-                free(p);
-                free(q);
+                free(t);
                 break;
             }
         }
@@ -941,8 +941,9 @@ void readuse(Node *use, Stab *st, Vis vis)
     if (!fd)
         fatal(use, "Could not open %s", use->use.name);
 
-    if (!loaduse(fd, st, vis))
-        die("Could not load usefile %s", use->use.name);
+    if (!loaduse(p, fd, st, vis))
+        die("Could not load usefile %s from %s", use->use.name);
+    free(p);
 }
 
 /* Usefile format:

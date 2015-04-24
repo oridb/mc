@@ -42,7 +42,7 @@ static void mergeuse(char *path)
     f = fopen(path, "r");
     if (!f)
         die("Couldn't open %s\n", path);
-    loaduse(f, st, Visexport);
+    loaduse(path, f, st, Visexport);
     fclose(f);
 }
 
