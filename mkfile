@@ -12,6 +12,8 @@ all:V: $SUB config.h
 		cd $dir
 		mk $MKFLAGS
 	}
+	ape/psh mbldwrap.sh
+
 nuke:V: $SUB
 	rm -f config.h
 	rm -f config.mk
@@ -19,24 +21,28 @@ nuke:V: $SUB
 		cd $dir
 		mk $MKFLAGS nuke
 	}
+	ape/psh mbldwrap.sh clean
 
 clean:V: $SUB config.h
 	for(dir in $SUB)@{
 		cd $dir
 		mk $MKFLAGS clean
 	}
+	ape/psh mbldwrap.sh clean
 
 install:V: $SUB config.h
 	for(dir in $SUB)@{
 		cd $dir
 		mk $MKFLAGS install
 	}
+	ape/psh mbldwrap.sh install
 
 uninstall:V: $SUB config.h
 	for(dir in $SUB)@{
 		cd $dir
 		mk $MKFLAGS
 	}
+	ape/psh mbldwrap.sh uninstall
 
 check:V: all
 	cd test
