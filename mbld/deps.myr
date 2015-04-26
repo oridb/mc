@@ -17,8 +17,8 @@ pkg bld =
 var usepat	: regex.regex#
 
 type dep = union
-	`Local	byte[:]
-	`Lib byte[:]
+	`Local	(byte[:], int)
+	`Lib	(byte[:], int)
 ;;
 
 type depscan = struct
@@ -26,8 +26,8 @@ type depscan = struct
 	addsrc	: bool
 	tagsel	: std.htab(byte[:], byte[:])#
 	targ	: myrtarg#
-	depstk	: byte[:][:]
 	incs	: byte[:][:]
+	depstk	: byte[:][:]
 ;;
 
 const myrdeps = {b, mt, doclean, addsrc
@@ -83,7 +83,7 @@ const myrdeps = {b, mt, doclean, addsrc
 	;;
 
 	for i = 0; i < srcs.len; i++
-		srcdeps(b, dg, srcs[i], objs[i], uses[i], &ds)
+		srcdeps(b, &ds, dg, srcs[i], objs[i], uses[i])
 	;;
 	dumpgraph(dg)
 	-> dg
@@ -115,7 +115,7 @@ const dumpgraph = {dg
 	std.put("}\n")
 }
 
-const srcdeps = {b, g, path, obj, usefile, ds
+const srcdeps = {b, ds, g, path, obj, usefile
 	var deps
 
 	if std.hthas(g.done, path)
@@ -130,11 +130,11 @@ const srcdeps = {b, g, path, obj, usefile, ds
 		;;
 		std.exit(1)
 	;;
-	deps = getdeps(b, path)
+	deps = getdeps(b, ds, path)
 	std.htput(g.seen, path, true)
 	for d in deps
 		match d
-		| `Lib lib:
+		| `Lib (lib, lnum):
 			/*
 			If we're cleaning, we don't care about libraries; at best, this does nothing. At
 			worst, this will cause failure if the library is a local library that gets cleand.
@@ -142,9 +142,9 @@ const srcdeps = {b, g, path, obj, usefile, ds
 			if !ds.doclean
 				scrapelibs(g, lib, ds.incs)
 			;;
-		| `Local l:
+		| `Local (l, lnum):
 			if !std.hassuffix(l, ".use")
-				std.fatal(1, "local dependency \"%s\" of \"%s\" should end with .use\n", l, path)
+				std.fatal(1, "%s:%s: local dependency \"%s\" should end with .use\n", path, lnum, l)
 			;;
 			if obj.len != 0
 				pushdep(g, l, obj)
@@ -152,7 +152,7 @@ const srcdeps = {b, g, path, obj, usefile, ds
 			if usefile.len != 0
 				pushdep(g, l, usefile)
 			;;
-			addusedep(b, g, path, l, ds)
+			addusedep(b, ds, g, path, l, lnum)
 		;;
 	;;
 	ds.depstk = std.slgrow(ds.depstk, ds.depstk.len - 1)
@@ -160,7 +160,7 @@ const srcdeps = {b, g, path, obj, usefile, ds
 	std.htput(g.done, path, true)
 }
 
-const addusedep = {b, g, f, usefile, ds
+const addusedep = {b, ds, g, f, usefile, line
 	var src
 
 	if std.hthas(g.done, usefile)
@@ -177,18 +177,18 @@ const addusedep = {b, g, f, usefile, ds
 		if ds.addsrc
 			std.htput(g.sources, src, true)
 		elif !std.hthas(g.input, usefile)
-			std.fatal(1, "%s: source file %s not listed in bldfile\n", f, src)
+			std.fatal(1, "%s:%i: source file %s not listed in bldfile\n", f, line, src)
 		;;
 	;;
 	pushdep(g, src, usefile)
 	std.htput(g.input, usefile, src)
-	srcdeps(b, g, src, "", usefile, ds)
+	srcdeps(b, ds, g, src, "", usefile)
 	std.htput(g.done, usefile, true)
 }
 
-const getdeps = {b, path
+const getdeps = {b, ds, path
+	var deps, lnum
 	var f
-	var deps : dep[:]
 
 	deps = [][:]
 	if !std.fexists(path)
@@ -202,10 +202,12 @@ const getdeps = {b, path
 	| `std.None:	std.fatal(1, "could not open %s\n", path)
 	;;
 
+	lnum = 0
 	while true
+		lnum++
 		match bio.readln(f)
 		| `std.Some ln:
-			deps = depname(deps, ln)
+			deps = depname(deps, ln, lnum)
 			std.slfree(ln)
 		| `std.None:
 			bio.close(f)
@@ -276,7 +278,7 @@ const openlib = {lib, incs
 	std.fatal(1, "could not find library %s.\n", lib)
 }
 
-const depname = {deps, ln
+const depname = {deps, ln, lnum
 	/*
 	the regex pattern does some contortions to either grab
 	an unquoted path and put it into uses[4], or a quoted
@@ -285,9 +287,9 @@ const depname = {deps, ln
 	match regex.exec(usepat, ln)
 	| `std.Some uses:
 		if uses[2].len > 0
-			deps = std.slpush(deps, `Local std.sldup(uses[2]))
+			deps = std.slpush(deps, `Local (std.sldup(uses[2]), lnum))
 		else
-			deps = std.slpush(deps, `Lib std.sldup(uses[4]))
+			deps = std.slpush(deps, `Lib (std.sldup(uses[4]), lnum))
 		;;
 	| `std.None:
 		/* nothing to do */
