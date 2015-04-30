@@ -4,61 +4,50 @@ use "types.use"
 use "ranges.use"
 
 pkg regex =
+	const parse	: (re : byte[:]	-> std.result(ast#, status))
 	const compile	: (re : byte[:] -> std.result(regex#, status))
 	const dbgcompile	: (re : byte[:] -> std.result(regex#, status))
 	const free	: (re : regex# -> void)
 ;;
 
-type tree = union
-	/* basic string building */
-	`Alt	(tree#, tree#)
-	`Cat	(tree#, tree#)
-
-	/* repetition */
-	`Star	tree#
-        `Rstar  tree#
-	`Plus	tree#
-	`Rplus	tree#
-	`Quest	tree#	
-
-	/* end matches */
-	`Byte	byte
-	`Chr	char
-	`Ranges	char[2][:]
-
-	/* meta */
-	`Cap	(std.size, tree#) /* id, tree */
-	`Bol	/* beginning of line */
-	`Eol	/* end of line */
-	`Bow	/* beginning of word */
-	`Eow	/* end of word */
-;;
-
 type parseresult = union
-	`Some tree#
+	`Some ast#
 	`None
 	`Fail status
 ;;
 
 /* Compiles a pattern into a regex */
 const compile = {pat
-	-> regexcompile(std.zalloc(), pat)
+	-> regexcompile(std.mk([.pat = pat, .nmatch = 1]))
+}
+
+const parse = {pat
+	var re
+
+	re = std.mk([.pat = pat, .nmatch = 1])
+	match regexparse(re)
+	| `None:	-> `std.Fail `Incomplete
+	| `Fail f:	-> `std.Fail f
+	| `Some t:
+		if re.pat.len > 0
+			-> `std.Fail `Incomplete
+		else
+			-> `std.Ok t
+		;;
+	;;
 }
 
 /* Compiles a pattern into a debug regex. This can be verbose. */
 const dbgcompile = {pat
 	var re
 
-	re = std.zalloc()
-	re.debug = true
-	-> regexcompile(re, pat)
+	re = std.mk([.pat = pat, .nmatch = 1, .debug = true])
+	-> regexcompile(re)
 }
 
 /* compiles a pattern into an allocated regex */
-const regexcompile = {re, pat
-	re.pat = pat
-	re.nmatch = 1 /* whole match */
-	match parse(re)
+const regexcompile = {re
+	match regexparse(re)
 	| `None:	-> `std.Fail (`Incomplete)
 	| `Fail f:	-> `std.Fail f
 	| `Some t:
@@ -67,6 +56,7 @@ const regexcompile = {re, pat
 		an incorrectly encoded char
 		*/
 		if re.pat.len > 0
+			astfree(t)
 			-> `std.Fail (`Incomplete)
 		;;
 		dump(re, t, 0)
@@ -473,7 +463,7 @@ const dump = {re, t, indent
 }
 
 /* parses an expression */
-const parse = {re
+const regexparse = {re
 	match altexpr(re)
 	| `Some t:
 		if re.pat.len == 0
@@ -490,7 +480,7 @@ const parse = {re
 }
 
 const altexpr = {re
-	var ret : tree#
+	var ret
 
 	match catexpr(re)
 	| `Some t:

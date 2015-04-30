@@ -11,6 +11,32 @@ pkg regex =
 		`Badescape
 	;;
 
+	type ast = union
+		/* basic string building */
+		`Alt	(ast#, ast#)
+		`Cat	(ast#, ast#)
+
+		/* repetition */
+		`Star	ast#
+		`Rstar  ast#
+		`Plus	ast#
+		`Rplus	ast#
+		`Quest	ast#	
+
+		/* end matches */
+		`Byte	byte
+		`Chr	char
+		`Ranges	char[2][:]
+
+		/* meta */
+		`Cap	(std.size, ast#) /* id, ast */
+		`Bol	/* beginning of line */
+		`Eol	/* end of line */
+		`Bow	/* beginning of word */
+		`Eow	/* end of word */
+	;;
+
+
 	type regex = struct
 		/* compile state */
 		debug	: bool

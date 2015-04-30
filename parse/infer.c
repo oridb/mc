@@ -1712,8 +1712,10 @@ static Type *tyfix(Inferstate *st, Node *ctx, Type *orig, int noerr)
             st->intype--;
         } else if (t->type == Tyunion) {
             for (i = 0; i < t->nmemb; i++) {
-                if (t->udecls[i]->etype)
+                if (t->udecls[i]->etype) {
+                    tyresolve(st, t->udecls[i]->etype);
                     t->udecls[i]->etype = tyfix(st, ctx, t->udecls[i]->etype, noerr);
+                }
             }
         } else if (t->type == Tyname) {
             for (i = 0; i < t->narg; i++)
