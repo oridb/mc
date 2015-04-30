@@ -95,14 +95,20 @@ static void ctxstrcall(char *buf, size_t sz, Inferstate *st, Node *n)
     free(t);
 }
 
-static char *nodetystr(Inferstate *st, Node *n, char *s)
+static char *nodetystr(Inferstate *st, Node *n)
 {
+    Type *t;
+
+    t = NULL;
     if (n->type == Nexpr && exprtype(n) != NULL)
-        return tystr(tyfix(st, NULL, exprtype(n), 1));
+        t = tyfix(st, NULL, exprtype(n), 1);
     else if (n->type == Ndecl && decltype(n) != NULL)
-        return tystr(tyfix(st, NULL, decltype(n), 1));
+        t = tyfix(st, NULL, decltype(n), 1);
+
+    if (t && tybase(t)->type != Tyvar)
+        return tystr(t);
     else
-        return strdup(s);
+        return strdup("unknown");
 }
 
 /* Tries to give a good string describing the context
@@ -121,7 +127,7 @@ static char *ctxstr(Inferstate *st, Node *n)
             break;
         case Ndecl:
             d = declname(n);
-            t = nodetystr(st, n, "unknown");
+            t = nodetystr(st, n);
             snprintf(buf, sizeof buf, "%s:%s", d, t);
             s = strdup(buf);
             free(t);
@@ -139,13 +145,13 @@ static char *ctxstr(Inferstate *st, Node *n)
                 d = namestr(args[0]);
             else
                 d = opstr[exprop(n)];
-            t = nodetystr(st, n, "unknown");
+            t = nodetystr(st, n);
             if (nargs >= 1)
-                t1 = nodetystr(st, args[0], "unknown");
+                t1 = nodetystr(st, args[0]);
             if (nargs >= 2)
-                t2 = nodetystr(st, args[1], "unknown");
+                t2 = nodetystr(st, args[1]);
             if (nargs >= 3)
-                t3 = nodetystr(st, args[2], "unknown");
+                t3 = nodetystr(st, args[2]);
             switch (opclass[exprop(n)]) {
                 case OTbin:
                     snprintf(buf, sizeof buf, "<e1:%s> %s <e2:%s>", t1, oppretty[exprop(n)], t2);
@@ -220,9 +226,9 @@ static void typeerror(Inferstate *st, Type *a, Type *b, Node *ctx, char *msg)
     t2 = tystr(tyfix(st, NULL, b, 1));
     c = ctxstr(st, ctx);
     if (msg)
-        fatal(ctx, "Type \"%s\" incompatible with \"%s\" near %s: %s", t1, t2, c, msg);
+        fatal(ctx, "type \"%s\" incompatible with \"%s\" near %s: %s", t1, t2, c, msg);
     else
-        fatal(ctx, "Type \"%s\" incompatible with \"%s\" near %s", t1, t2, c);
+        fatal(ctx, "type \"%s\" incompatible with \"%s\" near %s", t1, t2, c);
     free(t1);
     free(t2);
     free(c);
@@ -419,7 +425,7 @@ static void tyresolve(Inferstate *st, Type *t)
     else
         t->traits = bsdup(base->traits);
     if (tyinfinite(st, t, NULL))
-        lfatal(t->loc, "Type %s includes itself", tystr(t));
+        lfatal(t->loc, "type %s includes itself", tystr(t));
     st->ingeneric--;
 }
 
@@ -438,9 +444,9 @@ Type *tysearch(Type *t)
                 ns = getns_str(ns, t->name->name.ns);
             }
             if (!ns)
-                fatal(t->name, "Could not resolve namespace \"%s\"", t->name->name.ns);
+                fatal(t->name, "could not resolve namespace \"%s\"", t->name->name.ns);
             if (!(lu = gettype(ns, t->name)))
-                fatal(t->name, "Could not resolve type %s", tystr(t));
+                fatal(t->name, "could not resolve type %s", tystr(t));
             tytab[t->tid] = lu;
         }
 
@@ -574,7 +580,7 @@ static Ucon *uconresolve(Inferstate *st, Node *n)
     if (args[0]->name.ns)
         ns = getns_str(ns, args[0]->name.ns);
     if (!ns)
-        fatal(n, "No namespace %s\n", args[0]->name.ns);
+        fatal(n, "no namespace %s\n", args[0]->name.ns);
     uc = getucon(ns, args[0]);
     if (!uc)
         fatal(n, "no union constructor `%s", ctxstr(st, args[0]));
@@ -989,7 +995,7 @@ static void unifyparams(Inferstate *st, Node *ctx, Type *a, Type *b)
         return;
 
     if (a->narg != b->narg)
-        fatal(ctx, "Mismatched parameter list sizes: %s with %s near %s", tystr(a), tystr(b), ctxstr(st, ctx));
+        fatal(ctx, "mismatched arg list sizes: %s with %s near %s", tystr(a), tystr(b), ctxstr(st, ctx));
     for (i = 0; i < a->narg; i++)
         unify(st, ctx, a->arg[i], b->arg[i]);
 }
@@ -1061,7 +1067,7 @@ static Node *checkns(Inferstate *st, Node *n, Node **ret)
     nsname = mknsname(n->loc, namestr(name), namestr(args[1]));
     s = getdcl(stab, args[1]);
     if (!s)
-        fatal(n, "Undeclared var %s.%s", nsname->name.ns, nsname->name.name);
+        fatal(n, "undeclared var %s.%s", nsname->name.ns, nsname->name.name);
     var = mkexpr(n->loc, Ovar, nsname, NULL);
     var->expr.idx = n->expr.idx;
     initvar(st, var, s);
@@ -1170,7 +1176,7 @@ static void inferpat(Inferstate *st, Node **np, Node *val, Node ***bind, size_t 
         case Obnot:
             infernode(st, np, NULL, NULL);
             if (!n->expr.isconst)
-                fatal(n, "matching against non-constant expression");
+                fatal(n, "matching against non-constant expression near %s", ctxstr(st, n));
             break;
         case Oucon:     inferucon(st, n, &n->expr.isconst);     break;
         case Ovar:
@@ -1184,7 +1190,7 @@ static void inferpat(Inferstate *st, Node **np, Node *val, Node ***bind, size_t 
                 else if (s->decl.isconst)
                     t = s->decl.type;
                 else
-                    fatal(n, "Can't match against non-constant variables near %s", ctxstr(st, n));
+                    fatal(n, "pattern shadows variable declared on %s:%d near %s", fname(s->loc), lnum(s->loc), ctxstr(st, s));
             } else {
                 t = mktyvar(n->loc);
                 s = mkdecl(n->loc, n->expr.args[0], t);
@@ -1386,7 +1392,7 @@ static void inferexpr(Inferstate *st, Node **np, Type *ret, int *sawret)
             if (sawret)
                 *sawret = 1;
             if (!ret)
-                fatal(n, "Not allowed to return value here");
+                fatal(n, "returns are not valid near %s", ctxstr(st, n));
             if (nargs)
                 t = unify(st, n, ret, type(st, args[0]));
             else
@@ -1411,7 +1417,7 @@ static void inferexpr(Inferstate *st, Node **np, Type *ret, int *sawret)
                 return;
             s = getdcl(curstab(), args[0]);
             if (!s)
-                fatal(n, "Undeclared var %s", ctxstr(st, args[0]));
+                fatal(n, "undeclared var %s", ctxstr(st, args[0]));
             initvar(st, n, s);
             break;
         case Oucon:
@@ -1477,7 +1483,7 @@ static void specializeimpl(Inferstate *st, Node *n)
 
     t = gettrait(curstab(), n->impl.traitname);
     if (!t)
-        fatal(n, "No trait %s\n", namestr(n->impl.traitname));
+        fatal(n, "no trait %s\n", namestr(n->impl.traitname));
     n->impl.trait = t;
 
     dcl = NULL;
@@ -1502,7 +1508,7 @@ static void specializeimpl(Inferstate *st, Node *n)
             }
         }
         if (!proto)
-            fatal(n, "Declaration %s missing in %s, near %s",
+            fatal(n, "declaration %s missing in %s, near %s",
                   namestr(dcl->decl.name), namestr(t->name), ctxstr(st, n));
 
         /* infer and unify types */
@@ -1591,7 +1597,7 @@ static void infernode(Inferstate *st, Node **np, Type *ret, int *sawret)
             bind(st, n);
             inferdecl(st, n);
             if (type(st, n)->type == Typaram && !st->ingeneric)
-                fatal(n, "Generic type %s in non-generic near %s", tystr(type(st, n)), ctxstr(st, n));
+                fatal(n, "generic type %s in non-generic near %s", tystr(type(st, n)), ctxstr(st, n));
             unbind(st, n);
             st->indentdepth--;
             if (debugopt['u'])
@@ -1637,7 +1643,7 @@ static void infernode(Inferstate *st, Node **np, Type *ret, int *sawret)
         case Nmatchstmt:
             infernode(st, &n->matchstmt.val, NULL, sawret);
             if (tybase(type(st, n->matchstmt.val))->type == Tyvoid)
-                fatal(n, "Can't match against a void type near %s", ctxstr(st, n->matchstmt.val));
+                fatal(n, "can't match against a void type near %s", ctxstr(st, n->matchstmt.val));
             for (i = 0; i < n->matchstmt.nmatches; i++) {
                 infernode(st, &n->matchstmt.matches[i], ret, sawret);
                 unify(st, n->matchstmt.matches[i]->match.pat, type(st, n->matchstmt.val), type(st, n->matchstmt.matches[i]->match.pat));
@@ -1697,7 +1703,7 @@ static Type *tyfix(Inferstate *st, Node *ctx, Type *orig, int noerr)
         if (t->type == Tyvar)
             t = delayed;
         else if (tybase(t)->type != delayed->type && !noerr)
-            fatal(ctx, "Type %s not compatible with %s near %s\n", tystr(t), tystr(delayed), ctxstr(st, ctx));
+            fatal(ctx, "type %s not compatible with %s near %s\n", tystr(t), tystr(delayed), ctxstr(st, ctx));
     }
     if (t->type == Tyvar) {
         if (hastrait(t, traittab[Tcint]) && checktraits(t, tyint))
@@ -1798,7 +1804,7 @@ static void infercompn(Inferstate *st, Node *n)
         }
     }
     if (!found)
-        fatal(aggr, "Type %s has no member \"%s\" near %s",
+        fatal(aggr, "type %s has no member \"%s\" near %s",
               tystr(type(st, aggr)), ctxstr(st, memb), ctxstr(st, aggr));
 }
 
@@ -1810,7 +1816,7 @@ static void checkstruct(Inferstate *st, Node *n)
 
     t = tybase(tf(st, n->lit.type));
     if (t->type != Tystruct)
-        fatal(n, "Type %s for struct literal is not struct near %s", tystr(t), ctxstr(st, n));
+        fatal(n, "type %s for struct literal is not struct near %s", tystr(t), ctxstr(st, n));
 
     for (i = 0; i < n->expr.nargs; i++) {
         val = n->expr.args[i];
@@ -1825,7 +1831,7 @@ static void checkstruct(Inferstate *st, Node *n)
         }
 
         if (!et)
-            fatal(n, "Could not find member %s in struct %s, near %s",
+            fatal(n, "could not find member %s in struct %s, near %s",
                   namestr(name), tystr(t), ctxstr(st, n));
 
         unify(st, val, et, type(st, val));
@@ -1919,11 +1925,11 @@ static void checkrange(Inferstate *st, Node *n)
     if (t->type >= Tyint8 && t->type <= Tylong) {
         sval = n->lit.intval;
         if (sval < svranges[t->type][0] || sval > svranges[t->type][1])
-            fatal(n, "Literal value %lld out of range for type \"%s\"", sval, tystr(t));
+            fatal(n, "literal value %lld out of range for type \"%s\"", sval, tystr(t));
     } else if ((t->type >= Tybyte && t->type <= Tyulong) || t->type == Tychar) {
         uval = n->lit.intval;
         if (uval < uvranges[t->type][0] || uval > uvranges[t->type][1])
-            fatal(n, "Literal value %llu out of range for type \"%s\"", uval, tystr(t));
+            fatal(n, "literal value %llu out of range for type \"%s\"", uval, tystr(t));
     }
 }
 
