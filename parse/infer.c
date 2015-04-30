@@ -178,6 +178,9 @@ static char *ctxstr(Inferstate *st, Node *n)
                             else
                                 snprintf(buf, sizeof buf, "<sl:%s>[<e1%s>:<e2:%s>]", t1, t2, t3);
                             break;
+                        case Omemb:
+                            snprintf(buf, sizeof buf, "<%s>.%s", t1, namestr(args[1]));
+                            break;
                         default:
                             snprintf(buf, sizeof buf, "%s:%s", d, t);
                             break;
@@ -1779,8 +1782,12 @@ static void infercompn(Inferstate *st, Node *n)
     } else {
         if (tybase(t)->type == Typtr)
             t = tybase(tf(st, t->sub[0]));
-        if (tybase(t)->type != Tystruct)
-            fatal(n, "type %s does not support member operators near %s", tystr(t), ctxstr(st, n));
+        if (tybase(t)->type != Tystruct) {
+            if (tybase(t)->type == Tyvar)
+                fatal(n, "underspecified type defined on %s:%d used near %s", fname(t->loc), lnum(t->loc), ctxstr(st, n));
+            else
+                fatal(n, "type %s does not support member operators near %s", tystr(t), ctxstr(st, n));
+        }
         nl = t->sdecls;
         for (i = 0; i < t->nmemb; i++) {
             if (!strcmp(namestr(memb), declname(nl[i]))) {

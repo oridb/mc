@@ -85,7 +85,7 @@ void lfatal(Srcloc l, char *msg, ...)
 
 void lfatalv(Srcloc l, char *msg, va_list ap)
 {
-    fprintf(stdout, "%s:%d: ", file->file.files[l.file], l.line);
+    fprintf(stdout, "%s:%d: ", fname(l), lnum(l));
     vfprintf(stdout, msg, ap);
     fprintf(stdout, "\n");
     exit(1);
