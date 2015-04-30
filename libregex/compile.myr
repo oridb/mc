@@ -8,6 +8,7 @@ pkg regex =
 	const compile	: (re : byte[:] -> std.result(regex#, status))
 	const dbgcompile	: (re : byte[:] -> std.result(regex#, status))
 	const free	: (re : regex# -> void)
+	const failmsg	: (st : status -> byte[:])
 ;;
 
 type parseresult = union
@@ -692,12 +693,12 @@ const chrclass = {re
 		neg = true
 	;;
 	rl = rangematch(re, [][:])
-	while peekc(re) != ']'
+	while peekc(re) != ']' && re.pat.len > 0
 		rl = rangematch(re, rl)
 	;;
 	if !matchc(re, ']')
 		std.slfree(rl)
-		-> `Fail (`Incomplete)
+		-> `Fail `Unbalanced
 	;;
 
 	std.sort(rl, {a, b;
@@ -835,3 +836,17 @@ const astfree = {t
 	;;
 	std.free(t)
 }
+
+const failmsg = {st
+	match st
+	| `Noimpl:	-> "no implementation"
+	| `Incomplete:	-> "regex ended before input fully parsed"
+	| `Unbalanced:	-> "unbalanced bracket"
+	| `Emptyparen:	-> "empty parentheses"
+	| `Badrep:	-> "invalid repetition"
+	| `Badrange:	-> "invalid range"
+	| `Badescape:	-> "invalid escape code"
+
+	;;
+}
+
