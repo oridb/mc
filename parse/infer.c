@@ -1815,8 +1815,16 @@ static void checkstruct(Inferstate *st, Node *n)
     size_t i, j;
 
     t = tybase(tf(st, n->lit.type));
-    if (t->type != Tystruct)
-        fatal(n, "type %s for struct literal is not struct near %s", tystr(t), ctxstr(st, n));
+    if (t->type != Tystruct) {
+        /*
+         * If we haven't inferred the type, and it's inside another struct,
+         * we'll eventually get to it.
+         *
+         * If, on the other hand, it is genuinely underspecified, we'll give
+         * a better error on it later.
+         */
+        return;
+    }
 
     for (i = 0; i < n->expr.nargs; i++) {
         val = n->expr.args[i];
