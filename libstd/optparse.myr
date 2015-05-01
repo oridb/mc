@@ -3,9 +3,10 @@ use "die.use"
 use "extremum.use"
 use "fmt.use"
 use "option.use"
+use "sleq.use"
 use "slpush.use"
-use "syswrap.use"
 use "syswrap-ss.use"
+use "syswrap.use"
 use "types.use"
 use "utf.use"
 
@@ -128,11 +129,16 @@ const next = {ctx
 
 	for i = ctx.argidx + 1; i < ctx.optargs.len; i++
 		if !ctx.optdone && decode(ctx.optargs[i]) == '-'
-			goto foundopt
+			if sleq(ctx.optargs[i], "--")
+				ctx.optdone = true
+			else
+				goto foundopt
+			;;
 		else
 			ctx.args = slpush(ctx.args, ctx.optargs[i])
 		;;
 	;;
+:finishedopt
 	ctx.finished = true
 	-> false
 :foundopt
@@ -150,7 +156,7 @@ const optusage = {ctx
 	std.put("\t-h\tprint this help message\n")
 	std.put("\t-?\tprint this help message\n")
 	for o in ctx.optdef.opts
-		std.put("\t%c%s%s\t%s\n", o.opt, sep(o.arg), o.arg, o.desc)
+		std.put("\t-%c%s%s\t%s\n", o.opt, sep(o.arg), o.arg, o.desc)
 	;;
 }
 
