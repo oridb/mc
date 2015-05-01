@@ -33,12 +33,14 @@ for suffix in myr s; do
 		if test -f $1+$platform.$suffix; then
 			found=true
 			echo $1+$platform.$suffix
+			exit
 		fi
 	done
 	if test "x$found" = "x"; then
 		if test -f $1.$suffix; then
 			found=true
 			echo $1.$suffix
+			exit
 		fi
 	fi
 done
