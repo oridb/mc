@@ -6,7 +6,7 @@ export MYR_RT=../rt/_myrrt.o
 
 # this should be a bourne compatible shell script.
 if test -f mbld/mbld; then
-	./mbld/mbld $@
+	mbld $@
 else
 	./bootstrap.sh
 fi

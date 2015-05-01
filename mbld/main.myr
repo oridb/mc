@@ -19,8 +19,20 @@ const main = {args : byte[:][:]
 	var bintarg
 	var optctx
 	var libpath
+	var opts
 
-	optctx = std.optinit("hb:l:s:Sr:I:C:A:M:L:R:d", args)
+	opts = [
+		.argdesc = "[inputs...]",
+		.opts = [
+			[.opt= 'I', .arg="inc", .desc="add 'inc' to your include path"],
+			[.opt= 'R', .arg="root", .desc="install into 'root'"],
+			[.opt= 'b', .arg="bin", .desc="compile binary named 'bin' from inputs"],
+			[.opt= 'l', .arg="lib", .desc="compile lib named 'lib' from inputs"],
+			[.opt= 'r', .arg="rt", .desc="link against runtime 'rt' instead of default"],
+			[.opt= 'S', .desc = "generate assembly when building"],
+		][:]
+	]
+	optctx = std.optinit(args, &opts)
 	bld.initopts()
 	while !std.optdone(optctx)
 		match std.optnext(optctx)
@@ -47,7 +59,8 @@ const main = {args : byte[:][:]
 		| ('d', arg): bld.opt_debug = true
 		| ('C', arg): bld.opt_mc = arg
 		| ('M', arg): bld.opt_muse = arg
-		| _:	std.die("got invalid arg\n")
+		| _:	std.optusage(optctx)
+
 		;;
 	;;
 	if bld.opt_instroot.len > 0 && !std.sleq(bld.opt_instroot, "none")
