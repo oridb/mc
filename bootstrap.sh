@@ -182,32 +182,32 @@ echo 	cd $pwd
 	cd $pwd
 echo 	cd $pwd/mbld
 	cd $pwd/mbld
-echo 	../6/6m	-I ../libstd -I ../libbio -I ../libregex config.myr 
-	../6/6m	-I ../libstd -I ../libbio -I ../libregex config.myr 
-echo 	../6/6m	-I ../libstd -I ../libbio -I ../libregex opts.myr 
-	../6/6m	-I ../libstd -I ../libbio -I ../libregex opts.myr 
-echo 	../6/6m	-I ../libstd -I ../libbio -I ../libregex types.myr 
-	../6/6m	-I ../libstd -I ../libbio -I ../libregex types.myr 
-echo 	../6/6m	-I ../libstd -I ../libbio -I ../libregex util.myr 
-	../6/6m	-I ../libstd -I ../libbio -I ../libregex util.myr 
-echo 	../6/6m	-I ../libstd -I ../libbio -I ../libregex deps.myr 
-	../6/6m	-I ../libstd -I ../libbio -I ../libregex deps.myr 
-echo 	../6/6m	-I ../libstd -I ../libbio -I ../libregex fsel.myr 
-	../6/6m	-I ../libstd -I ../libbio -I ../libregex fsel.myr 
-echo 	../6/6m	-I ../libstd -I ../libbio -I ../libregex parse.myr 
-	../6/6m	-I ../libstd -I ../libbio -I ../libregex parse.myr 
-echo 	../6/6m	-I ../libstd -I ../libbio -I ../libregex build.myr 
-	../6/6m	-I ../libstd -I ../libbio -I ../libregex build.myr 
-echo 	../6/6m	-I ../libstd -I ../libbio -I ../libregex install.myr 
-	../6/6m	-I ../libstd -I ../libbio -I ../libregex install.myr 
-echo 	../6/6m	-I ../libstd -I ../libbio -I ../libregex clean.myr 
-	../6/6m	-I ../libstd -I ../libbio -I ../libregex clean.myr 
-echo 	../6/6m	-I ../libstd -I ../libbio -I ../libregex test.myr 
-	../6/6m	-I ../libstd -I ../libbio -I ../libregex test.myr 
-echo 	../6/6m	-I ../libstd -I ../libbio -I ../libregex main.myr 
-	../6/6m	-I ../libstd -I ../libbio -I ../libregex main.myr 
-echo 	ld	-o mbld ../rt/_myrrt.o clean.o config.o deps.o types.o fsel.o util.o parse.o main.o build.o opts.o install.o test.o -L../libstd -L../libbio -L../libregex -lregex -lbio -lstd -lsys -lsys -lstd -lbio -lregex 
-	ld	-o mbld ../rt/_myrrt.o clean.o config.o deps.o types.o fsel.o util.o parse.o main.o build.o opts.o install.o test.o -L../libstd -L../libbio -L../libregex -lregex -lbio -lstd -lsys -lsys -lstd -lbio -lregex 
+echo 	../6/6m	-I ../libregex -I ../libbio -I ../libstd config.myr 
+	../6/6m	-I ../libregex -I ../libbio -I ../libstd config.myr 
+echo 	../6/6m	-I ../libregex -I ../libbio -I ../libstd opts.myr 
+	../6/6m	-I ../libregex -I ../libbio -I ../libstd opts.myr 
+echo 	../6/6m	-I ../libregex -I ../libbio -I ../libstd types.myr 
+	../6/6m	-I ../libregex -I ../libbio -I ../libstd types.myr 
+echo 	../6/6m	-I ../libregex -I ../libbio -I ../libstd util.myr 
+	../6/6m	-I ../libregex -I ../libbio -I ../libstd util.myr 
+echo 	../6/6m	-I ../libregex -I ../libbio -I ../libstd deps.myr 
+	../6/6m	-I ../libregex -I ../libbio -I ../libstd deps.myr 
+echo 	../6/6m	-I ../libregex -I ../libbio -I ../libstd fsel.myr 
+	../6/6m	-I ../libregex -I ../libbio -I ../libstd fsel.myr 
+echo 	../6/6m	-I ../libregex -I ../libbio -I ../libstd parse.myr 
+	../6/6m	-I ../libregex -I ../libbio -I ../libstd parse.myr 
+echo 	../6/6m	-I ../libregex -I ../libbio -I ../libstd build.myr 
+	../6/6m	-I ../libregex -I ../libbio -I ../libstd build.myr 
+echo 	../6/6m	-I ../libregex -I ../libbio -I ../libstd install.myr 
+	../6/6m	-I ../libregex -I ../libbio -I ../libstd install.myr 
+echo 	../6/6m	-I ../libregex -I ../libbio -I ../libstd clean.myr 
+	../6/6m	-I ../libregex -I ../libbio -I ../libstd clean.myr 
+echo 	../6/6m	-I ../libregex -I ../libbio -I ../libstd test.myr 
+	../6/6m	-I ../libregex -I ../libbio -I ../libstd test.myr 
+echo 	../6/6m	-I ../libregex -I ../libbio -I ../libstd main.myr 
+	../6/6m	-I ../libregex -I ../libbio -I ../libstd main.myr 
+echo 	ld	-o mbld ../rt/_myrrt.o clean.o config.o deps.o types.o fsel.o util.o parse.o main.o build.o opts.o install.o test.o -L../libregex -L../libbio -L../libstd -lregex -lbio -lstd -lsys 
+	ld	-o mbld ../rt/_myrrt.o clean.o config.o deps.o types.o fsel.o util.o parse.o main.o build.o opts.o install.o test.o -L../libregex -L../libbio -L../libstd -lregex -lbio -lstd -lsys 
 echo 	cd $pwd
 	cd $pwd
 echo 	cd $pwd/libregex
