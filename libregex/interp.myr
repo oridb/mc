@@ -210,7 +210,7 @@ const step = {re, thr, curip
 		trace(re, thr, "\t%z:\tJmp %z\n", thr.ip, ip)
 		thr.ip = ip
 		-> false
-	| `Imatch:
+	| `Imatch id:
 		trace(re, thr, "\t%z:\tMatch\n", thr.ip)
 		finish(re, thr)
 		-> true

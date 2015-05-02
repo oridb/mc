@@ -66,7 +66,7 @@ pkg regex =
 		mend	: std.size[:]	/* match ends */
 	;;
 
-	type reinst = union
+	pkglocal type reinst = union
 		/* direct consumers */
 		`Ibyte	byte
 		`Irange	(byte, byte)
@@ -84,6 +84,6 @@ pkg regex =
 		/* control flow */
 		`Ifork	(std.size, std.size)
 		`Ijmp	std.size
-		`Imatch
+		`Imatch	std.size
 	;;
 ;;

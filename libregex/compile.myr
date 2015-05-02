@@ -19,7 +19,7 @@ type parseresult = union
 
 /* Compiles a pattern into a regex */
 const compile = {pat
-	-> regexcompile(std.mk([.pat = pat, .nmatch = 1]))
+	-> regexcompile(std.mk([.pat = pat, .nmatch = 1]), 0)
 }
 
 const parse = {pat
@@ -43,11 +43,11 @@ const dbgcompile = {pat
 	var re
 
 	re = std.mk([.pat = pat, .nmatch = 1, .debug = true])
-	-> regexcompile(re)
+	-> regexcompile(re, 0)
 }
 
 /* compiles a pattern into an allocated regex */
-const regexcompile = {re
+const regexcompile = {re, id
 	match regexparse(re)
 	| `None:	-> `std.Fail (`Incomplete)
 	| `Fail f:	-> `std.Fail f
@@ -64,7 +64,7 @@ const regexcompile = {re
 		append(re, `Ilbra 0)
 		gen(re, t)
 		append(re, `Irbra 0)
-		append(re, `Imatch)
+		append(re, `Imatch id)
 		idump(re)
 		astfree(t)
 		-> `std.Ok re
@@ -394,7 +394,7 @@ const idump = {re
 		/* control flow */
 		| `Ifork	(lip, rip):	std.put("`Ifork (%z,%z)\n", lip, rip) 
 		| `Ijmp ip:		std.put("`Ijmp %z\n", ip) 
-		| `Imatch:		std.put("`Imatch\n") 
+		| `Imatch id:		std.put("`Imatch %z\n", id) 
 		;;
 	;;
 }

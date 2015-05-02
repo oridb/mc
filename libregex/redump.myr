@@ -1,0 +1,52 @@
+use std
+use bio
+use regex
+
+const main = {args
+	var cmd, opts
+	var fd
+
+	opts = [
+		.argdesc = "regex [inputs...]",
+		.minargs = 1
+	]
+	cmd = std.optparse(args, &opts)
+	match regex.dbgcompile(cmd.args[0])
+	| `std.Fail m:	
+		std.fatal(1, "unable to compile regex: %s\n", regex.failmsg(m))
+	| `std.Ok re:
+		if cmd.args.len > 1
+			runall(re, cmd.args)
+		else
+			fd = bio.mkfile(0, bio.Rd)
+			dump(re, fd)
+			bio.close(fd)
+		;;
+	;;
+}
+
+const runall = {re, files
+
+	for f in files
+		match bio.open(f, bio.Rd)
+		| `std.Some fd:
+			dump(re, fd)
+			bio.close(fd)
+		| `std.None:
+			std.fatal(1, "failed to open %s\n", f)
+		;;
+	;;
+}
+
+const dump = {re, fd 
+	while true
+		match bio.readln(fd)
+		| `std.Some ln:
+			regex.exec(re, ln)
+			std.slfree(ln)
+		| `std.None:
+			break
+		;;
+	;;
+}
+

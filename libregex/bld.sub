@@ -7,6 +7,11 @@ lib regex =
         lib ../libstd:std
 ;;
 
+bin redump {noinst} =
+	redump.myr
+        lib ../libstd:std
+;;
+
 gen ranges.myr {durable} =
 	mkchartab -a -p_ranges UnicodeData.txt -o ranges.myr
 ;;
