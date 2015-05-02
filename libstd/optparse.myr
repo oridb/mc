@@ -66,17 +66,15 @@ const optparse = {args, def
 }
 
 const optinit = {ctx, args, def
-	var ctx
-
-	ctx.optargs = args
-	ctx.optdef = def
-
-	ctx.optdone = false
-	ctx.finished = false
-	ctx.argidx = 0
-	ctx.curarg = [][:]
-
-	ctx.args = [][:]
+	ctx# = [
+		.optargs = args,
+		.optdef = def,
+		.optdone = false,
+		.finished = false,
+		.argidx = 0,
+		.curarg = [][:],
+		.args = [][:],
+	]
 
 	next(ctx)
 	-> ctx
