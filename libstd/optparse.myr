@@ -12,8 +12,9 @@ use "utf.use"
 
 pkg std =
 	type optdef = struct
-		argdesc	: byte[:]
-		opts	: optdesc[:]
+		argdesc	: byte[:]	/* the description for the usage */
+		minargs	: std.size	/* the minimum number of positional args */
+		opts	: optdesc[:]	/* the description of the options */
 	;;
 
 	type optdesc = struct
@@ -23,32 +24,50 @@ pkg std =
 		needed	: bool
 	;;
 
-	type optctx = struct
-		/* public variables */
+	type optparsed = struct
+		opts	: (char, byte[:])[:]
 		args	: byte[:][:]
-
-		/* data passed in */
-		optdef	: optdef#
-		optargs	: byte[:][:]
-
-		/* state */
-		optdone	: bool	/* if we've seen '--', everything's an arg */
-		finished	: bool	/* if we've processed all the optargs */
-		argidx	: size
-		curarg	: byte[:]
 	;;
 
-	const optinit	: (optargs : byte[:][:], def : optdef# -> optctx#)
-	const optnext	: (ctx : optctx# -> (char, byte[:]))
-	const optdone	: (ctx : optctx# -> bool)
-	const optfin	: (ctx : optctx# -> byte[:][:])
-	const optusage	: (ctx : optctx# -> void)
+	const optparse	: (optargs : byte[:][:], def : optdef# -> optparsed)
 ;;
 
-const optinit = {args, def
+type optctx = struct
+	/* public variables */
+	args	: byte[:][:]
+
+	/* data passed in */
+	optdef	: optdef#
+	optargs	: byte[:][:]
+
+	/* state */
+	optdone	: bool	/* if we've seen '--', everything's an arg */
+	finished	: bool	/* if we've processed all the optargs */
+	argidx	: size
+	curarg	: byte[:]
+;;
+
+
+const optparse = {args, def
+	var ctx : optctx
+	var parsed
+
+	optinit(&ctx, args, def)
+	while !optdone(&ctx)
+		parsed.opts = slpush(parsed.opts, optnext(&ctx))
+	;;
+	if ctx.args.len < def.minargs
+		put("error: expected at least %z args, got %z\n", def.minargs, ctx.args.len)
+		optusage(&ctx)
+		exit(1)
+	;;
+	parsed.args = ctx.args
+	-> parsed
+}
+
+const optinit = {ctx, args, def
 	var ctx
 
-	ctx = alloc()
 	ctx.optargs = args
 	ctx.optdef = def
 
@@ -61,14 +80,6 @@ const optinit = {args, def
 
 	next(ctx)
 	-> ctx
-}
-
-const optfin = {ctx
-	var a
-
-	a = ctx.args
-	free(ctx)
-	-> a
 }
 
 const optnext = {ctx

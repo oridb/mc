@@ -17,7 +17,7 @@ const main = {args : byte[:][:]
 	var mt : bld.myrtarg
 	var targname
 	var bintarg
-	var optctx
+	var cmd 
 	var libpath
 	var opts
 
@@ -35,11 +35,10 @@ const main = {args : byte[:][:]
 			[.opt='d', .desc="dump debugging information for mbld"],
 		][:]
 	]
-	optctx = std.optinit(args, &opts)
+	cmd = std.optparse(args, &opts)
 	bld.initopts()
-	while !std.optdone(optctx)
-		match std.optnext(optctx)
-		| ('h', arg): usage(args[0])
+	for opt in cmd.opts
+		match opt
 		| ('I', arg): bld.opt_incpaths = std.slpush(bld.opt_incpaths, arg)
 		| ('S', _): bld.opt_genasm = true
 		| ('R', arg): bld.opt_instroot = arg
@@ -62,7 +61,7 @@ const main = {args : byte[:][:]
 		| ('d', arg): bld.opt_debug = true
 		| ('C', arg): bld.opt_mc = arg
 		| ('M', arg): bld.opt_muse = arg
-		| _:	std.optusage(optctx)
+		| _:	std.die("unreachable\n")
 
 		;;
 	;;
@@ -80,7 +79,7 @@ const main = {args : byte[:][:]
 	if targname.len != 0
 		mt = [
 			.name=targname,
-			.inputs=optctx.args,
+			.inputs=cmd.args,
 			.runtime=bld.opt_runtime,
 			.incpath=bld.opt_incpaths,
 			.libdeps=[][:]
@@ -95,11 +94,11 @@ const main = {args : byte[:][:]
 		bld.load(b)
 		/*bld.configure()*/
 		/* default: buildall */
-		if optctx.args.len == 0
+		if cmd.args.len == 0
 			bld.buildall(b)
 		else
-			for cmd in optctx.args
-				match cmd
+			for c in cmd.args
+				match c
 				| "all":	bld.buildall(b)
 				| "gen":	bld.genall(b)
 				| "clean":	bld.cleanall(b)
@@ -148,12 +147,3 @@ const findbase = {b, file
 	-> false
 }
 
-const usage = {prog
-	std.put("%s [-h] [-I path] [-l lib] [-b bin] inputs...\n", prog)
-	std.put("\t-h\tprint this help\n")
-	std.put("\t-b bin\tBuild a binary called 'bin'\n")
-	std.put("\t-l lib\tBuild a library called 'name'\n")
-	std.put("\t-s script\tUse the linker script 'script' when linking\n")
-	std.put("\t-I path\tAdd 'path' to use search path\n")
-	std.exit(0)
-}
