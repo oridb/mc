@@ -21,7 +21,7 @@ pkg std =
 		opt	: char
 		arg	: byte[:]
 		desc	: byte[:]
-		needed	: bool
+		optional	: bool
 	;;
 
 	type optparsed = struct
@@ -127,7 +127,7 @@ const optdone = {ctx
 const optinfo = {ctx, opt
 	for o in ctx.optdef.opts
 		if o.opt == opt
-			-> `Some (o.arg.len != 0, o.needed)
+			-> `Some (o.arg.len != 0, !o.optional)
 		;;
 	;;
 	-> `None
