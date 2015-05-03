@@ -15,6 +15,7 @@ use "util.use"
 const main = {args : byte[:][:]
 	var b : bld.build#
 	var mt : bld.myrtarg
+	var dumponly
 	var targname
 	var bintarg
 	var cmd 
@@ -24,6 +25,7 @@ const main = {args : byte[:][:]
 	opts = [
 		.argdesc = "[inputs...]",
 		.opts = [
+			[.opt='t', .desc="list all available targets"],
 			[.opt='I', .arg="inc", .desc="add 'inc' to your include path"],
 			[.opt='R', .arg="root", .desc="install into 'root'"],
 			[.opt='b', .arg="bin", .desc="compile binary named 'bin' from inputs"],
@@ -39,8 +41,9 @@ const main = {args : byte[:][:]
 	bld.initopts()
 	for opt in cmd.opts
 		match opt
+		| ('t', ""): dumponly = true
+		| ('S', ""): bld.opt_genasm = true
 		| ('I', arg): bld.opt_incpaths = std.slpush(bld.opt_incpaths, arg)
-		| ('S', _): bld.opt_genasm = true
 		| ('R', arg): bld.opt_instroot = arg
 		| ('b', arg):
 			targname = arg
@@ -88,6 +91,12 @@ const main = {args : byte[:][:]
 			bld.buildbin(b, &mt, true)
 		else
 			bld.buildlib(b, &mt)
+		;;
+	elif dumponly
+		findproj(b, "bld.proj")
+		bld.load(b)
+		for t in b.all
+			std.put("%s\n", t)
 		;;
 	else
 		findproj(b, "bld.proj")
