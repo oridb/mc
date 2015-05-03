@@ -815,7 +815,10 @@ static Node *lval(Simp *s, Node *n)
         case Ovar:      r = n;  break;
         case Oidx:      r = deref(idxaddr(s, args[0], args[1]), NULL); break;
         case Oderef:    r = deref(rval(s, args[0], NULL), NULL); break;
-        case Omemb:     r = deref(membaddr(s, n), NULL); break;
+        case Omemb:     r = rval(s, n, NULL); break;
+        case Ostruct:   r = rval(s, n, NULL); break;
+        case Oucon:     r = rval(s, n, NULL); break;
+        case Oarr:      r = rval(s, n, NULL); break;
         default:
             fatal(n, "%s cannot be an lvalue", opstr[exprop(n)]);
             break;
