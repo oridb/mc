@@ -30,6 +30,7 @@ pkg std =
 	;;
 
 	const optparse	: (optargs : byte[:][:], def : optdef# -> optparsed)
+	const optusage	: (prog : byte[:], def : optdef# -> void)
 ;;
 
 type optctx = struct
@@ -58,7 +59,7 @@ const optparse = {args, def
 	;;
 	if ctx.args.len < def.minargs
 		put("error: expected at least %z args, got %z\n", def.minargs, ctx.args.len)
-		optusage(&ctx)
+		optusage(ctx.optargs[0], ctx.optdef)
 		exit(1)
 	;;
 	parsed.args = ctx.args
@@ -89,7 +90,7 @@ const optnext = {ctx
 	match optinfo(ctx, c)
 	| `None:
 		if c == 'h' || c == '?'
-			optusage(ctx)
+			optusage(ctx.optargs[0], ctx.optdef)
 			exit(0)
 		else
 			fatal(1, "unexpected argument '%c'\n", c)
@@ -156,15 +157,15 @@ const next = {ctx
 	-> true
 }
 
-const optusage = {ctx
-	std.put("usage: %s [-h?]", ctx.optargs[0])
-	for o in ctx.optdef.opts
+const optusage = {prog, def
+	std.put("usage: %s [-h?]", prog)
+	for o in def.opts
 		std.put("[-%c%s%s] ", o.opt, sep(o.arg), o.arg)
 	;;
-	std.put("%s\n", ctx.optdef.argdesc)
+	std.put("%s\n", def.argdesc)
 	std.put("\t-h\tprint this help message\n")
 	std.put("\t-?\tprint this help message\n")
-	for o in ctx.optdef.opts
+	for o in def.opts
 		std.put("\t-%c%s%s\t%s\n", o.opt, sep(o.arg), o.arg, o.desc)
 	;;
 }
