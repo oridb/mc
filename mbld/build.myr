@@ -36,7 +36,7 @@ const buildall = {b
 const genall = {b
 	for tn in b.all
 		match gettarg(b.targs, tn)
-		| `Gen gt: run(gt.cmd)
+		| `Gen gt:	runin(b, gt.cmd, gt.dir)
 		| _:	/* skip */
 		;;
 	;;
@@ -49,12 +49,17 @@ const build = {b, targ
 	| `std.Some (`Bin bt):	buildbin(b, bt, false)
 	| `std.Some (`Lib lt):	buildlib(b, lt)
 	| `std.Some (`Test tt):	buildbin(b, tt, false)
-	| `std.Some (`Gen gt):	run(gt.cmd)
-	| `std.Some (`Cmd ct):	run(ct.cmd)
+	| `std.Some (`Gen gt):	runin(b, gt.cmd, gt.dir)
+	| `std.Some (`Cmd ct):	runin(b, ct.cmd, ct.dir)
 	| `std.Some (`Man mt):	/* nothing needed */
 	| `std.None:	std.fatal(1, "invalid target %s\n", targ)
 	;;
 	-> true
+}
+
+const runin = {b, cmd, dir
+	setdir(b, dir)
+	run(cmd)
 }
 
 const buildbin = {b, targ, addsrc

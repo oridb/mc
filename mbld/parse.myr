@@ -169,8 +169,8 @@ const target = {b, p
 	| `std.Some "bin":	bintarget(b, p)
 	| `std.Some "test":	testtarget(b, p)
 	| `std.Some "lib":	libtarget(b, p)
-	| `std.Some "gen":	cmdtarget(b, p, false)
-	| `std.Some "cmd":	cmdtarget(b, p, true)
+	| `std.Some "gen":	cmdtarget(b, p, "gen", false)
+	| `std.Some "cmd":	cmdtarget(b, p, "cmd", true)
 	| `std.Some "man":	mantarget(b, p)
 	| `std.Some "sub":	subtarget(b, p)
 	| `std.Some targtype:	failparse(p, "unknown targtype type %s\n", targtype)
@@ -223,23 +223,23 @@ const subtarget = {b, p
 }
 
 /* gentarget: wordlist {attrs} = wordlist ;; */
-const cmdtarget = {b, p, isgen
+const cmdtarget = {b, p, cmd, iscmd
 	var outlist, deplist, cmdlist
 	var durable
 	var attrs
 	var gt
 
 	match wordlist(p)
-	| `std.None:	failparse(p, "gen target missing output files\n")
+	| `std.None:	failparse(p, "%s target missing output files\n", cmd)
 	| `std.Some out:
-		if isgen && out.len != 1
-			failparse(p, "gen target takes one name\n")
+		if iscmd && out.len != 1
+			failparse(p, "%s target takes one name\n", cmd)
 		;;
 		outlist = out
 	;;
 
 	skipspace(p)
-	if !isgen && matchc(p, '{')
+	if !iscmd && matchc(p, '{')
 		match attrlist(p)
 		| `std.Some al:	attrs = al
 		| `std.None:	failparse(p, "invalid attr list for %s\n", outlist[0])
@@ -254,9 +254,9 @@ const cmdtarget = {b, p, isgen
 	;;
 
 	match wordlist(p)
-	| `std.None:	failparse(p, "target missing command\n")
-	| `std.Some cmd:
-		cmdlist = cmd
+	| `std.None:	failparse(p, "%s target missing command\n", cmd)
+	| `std.Some cl:
+		cmdlist = cl
 	;;
 
 	if !matchc(p, ';') || !matchc(p, ';')
@@ -270,7 +270,7 @@ const cmdtarget = {b, p, isgen
 		| ("durable", ""):	durable = true
 		| ("durable", val):	failparse(p, "durable attr does not take argument\n")
 		| ("dep", depname):	deplist = std.slpush(deplist, depname)
-		| (attrname, val):	failparse(p, "attribute %s not valid on gen targets\n")
+		| (attrname, val):	failparse(p, "attribute %s not valid on %s targets\n", attrname, cmd)
 		;;
 	;;
 
@@ -281,8 +281,10 @@ const cmdtarget = {b, p, isgen
 		.deps=deplist,
 		.cmd=cmdlist
 	])
-	if !isgen
-		for o in outlist
+	for o in outlist
+		if iscmd
+			addtarg(p, b, o, `Cmd gt)
+		else
 			std.htput(b.gensrc, o, gt)
 			addtarg(p, b, o, `Gen gt)
 		;;
