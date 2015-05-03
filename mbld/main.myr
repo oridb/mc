@@ -20,9 +20,9 @@ const main = {args : byte[:][:]
 	var bintarg
 	var cmd 
 	var libpath
-	var opts
 
-	opts = [
+	dumponly = false
+	cmd = std.optparse(args, &[
 		.argdesc = "[inputs...]",
 		.opts = [
 			[.opt='t', .desc="list all available targets"],
@@ -36,8 +36,7 @@ const main = {args : byte[:][:]
 			[.opt='S', .desc="generate assembly when building"],
 			[.opt='d', .desc="dump debugging information for mbld"],
 		][:]
-	]
-	cmd = std.optparse(args, &opts)
+	])
 	bld.initopts()
 	for opt in cmd.opts
 		match opt
