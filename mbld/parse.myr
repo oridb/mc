@@ -169,7 +169,8 @@ const target = {b, p
 	| `std.Some "bin":	bintarget(b, p)
 	| `std.Some "test":	testtarget(b, p)
 	| `std.Some "lib":	libtarget(b, p)
-	| `std.Some "gen":	gentarget(b, p)
+	| `std.Some "gen":	cmdtarget(b, p, false)
+	| `std.Some "cmd":	cmdtarget(b, p, true)
 	| `std.Some "man":	mantarget(b, p)
 	| `std.Some "sub":	subtarget(b, p)
 	| `std.Some targtype:	failparse(p, "unknown targtype type %s\n", targtype)
@@ -221,9 +222,8 @@ const subtarget = {b, p
 	;;
 }
 
-
 /* gentarget: wordlist {attrs} = wordlist ;; */
-const gentarget = {b, p
+const cmdtarget = {b, p, isgen
 	var outlist, deplist, cmdlist
 	var durable
 	var attrs
@@ -232,11 +232,14 @@ const gentarget = {b, p
 	match wordlist(p)
 	| `std.None:	failparse(p, "gen target missing output files\n")
 	| `std.Some out:
+		if isgen && out.len != 1
+			failparse(p, "gen target takes one name\n")
+		;;
 		outlist = out
 	;;
 
 	skipspace(p)
-	if matchc(p, '{')
+	if !isgen && matchc(p, '{')
 		match attrlist(p)
 		| `std.Some al:	attrs = al
 		| `std.None:	failparse(p, "invalid attr list for %s\n", outlist[0])
@@ -251,7 +254,7 @@ const gentarget = {b, p
 	;;
 
 	match wordlist(p)
-	| `std.None:	failparse(p, "gen target missing command\n")
+	| `std.None:	failparse(p, "target missing command\n")
 	| `std.Some cmd:
 		cmdlist = cmd
 	;;
@@ -278,9 +281,11 @@ const gentarget = {b, p
 		.deps=deplist,
 		.cmd=cmdlist
 	])
-	for o in outlist
-		std.htput(b.gensrc, o, gt)
-		addtarg(p, b, o, `Gen gt)
+	if !isgen
+		for o in outlist
+			std.htput(b.gensrc, o, gt)
+			addtarg(p, b, o, `Gen gt)
+		;;
 	;;
 }
 

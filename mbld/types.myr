@@ -12,7 +12,7 @@ pkg bld =
 		all	: byte[:][:]			/* all targets, in reverse topological order */
 		targs	: std.htab(byte[:], targ)#	/* dir => target mapping */
 		tdeps	: std.htab(byte[:], byte[:][:])	/* targname => depname[:] mapping */
-		gensrc	: std.htab(byte[:], gentarg#)#	/* generated src => generating target mapping */
+		gensrc	: std.htab(byte[:], cmdtarg#)#	/* generated src => generating target mapping */
 		prefix	: byte[:]
 		system	: byte[:]
 		arch	: byte[:]
@@ -22,7 +22,8 @@ pkg bld =
 		`Bin	myrtarg#
 		`Lib	myrtarg#
 		`Test	myrtarg#
-		`Gen	gentarg#
+		`Gen	cmdtarg#
+		`Cmd	cmdtarg#
 		`Man	mantarg#
 	;;
 
@@ -38,7 +39,7 @@ pkg bld =
 		ldscript	: byte[:]
 	;;
 
-	type gentarg = struct
+	type cmdtarg = struct
 		dir	: byte[:]
 		out	: byte[:][:]
 		cmd	: byte[:][:] 

@@ -35,7 +35,9 @@ const movetargs = {b, delete
 			movefile(b, delete, lt.dir, libarchive, opt_instroot, opt_destdir, "lib/myr", 0o644)
 			std.slfree(libarchive)
 		| `Gen gt:
-			/* nothing to do (?) */
+			/* nothing to do */
+		| `Cmd ct:
+			/* nothing to do */
 		| `Man mt:
 			/* FIXME: figure out man section by number */
 			for m in mt.pages

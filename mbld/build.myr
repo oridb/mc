@@ -26,7 +26,8 @@ const buildall = {b
 		| `Lib lt:	buildlib(b, lt)
 		| `Test tt:	/* build on 'mbld test' by default */
 		| `Gen gt:	genfiles(b, gt)
-		| `Man m:	/* nothing needed */
+		| `Man mt:	/* nothing needed */
+		| `Cmd ct:	/* these are for manual commands */
 		;;
 	;;
 	-> true
@@ -49,7 +50,8 @@ const build = {b, targ
 	| `std.Some (`Lib lt):	buildlib(b, lt)
 	| `std.Some (`Test tt):	buildbin(b, tt, false)
 	| `std.Some (`Gen gt):	run(gt.cmd)
-	| `std.Some (`Man m):	/* nothing needed */
+	| `std.Some (`Cmd ct):	run(ct.cmd)
+	| `std.Some (`Man mt):	/* nothing needed */
 	| `std.None:	std.fatal(1, "invalid target %s\n", targ)
 	;;
 	-> true

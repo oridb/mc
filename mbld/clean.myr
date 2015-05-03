@@ -27,7 +27,8 @@ const cleanall = {b
 					std.put("\tclean %s\n", f)
 				;;
 			;;
-		| `Man m:
+		| `Cmd ct:	/* nothing to do */
+		| `Man mt:	/* nothing to do */
 		;;
 	;;
 	-> true
@@ -54,7 +55,8 @@ const clean = {b, targ
 					std.put("\tclean %s\n", f)
 				;;
 			;;
-		| `Man m:
+		| `Cmd ct:
+		| `Man mt:
 		;;
 	;;
 	-> true
