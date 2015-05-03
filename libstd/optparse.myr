@@ -42,10 +42,10 @@ type optctx = struct
 	optargs	: byte[:][:]
 
 	/* state */
-	optdone	: bool	/* if we've seen '--', everything's an arg */
-	finished	: bool	/* if we've processed all the optargs */
 	argidx	: size
 	curarg	: byte[:]
+	optdone	: bool	/* if we've seen '--', everything's an arg */
+	finished	: bool	/* if we've processed all the optargs */
 ;;
 
 

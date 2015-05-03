@@ -14,7 +14,7 @@ include mk/c.mk
 include config.mk
 
 check: all
-	$(MAKE) -C test check #&& \
+	./mbldwrap.sh test:runtest
 	# BORKED. ./mbldwrap.sh test
 
 bench: all

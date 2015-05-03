@@ -3,5 +3,6 @@ sub =
 	libstd
 	libbio
 	libregex
+	test
 ;;
 
