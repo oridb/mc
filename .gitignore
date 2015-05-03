@@ -1,4 +1,6 @@
-test/*
+test/*.o
+test/*.use
+test/*.use
 !test/*.myr
 libstd/sys*.myr
 !libstd/sys*+*.myr
