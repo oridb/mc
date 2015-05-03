@@ -69,8 +69,8 @@ function! GetMyrIndent(ln)
                 \    '\<while\>','\<for\>', '\<match\>',
                 \    '\<struct\>', '\<union\>',
                 \    '{', '\[', '^\s*|', '=\s*$']
-        let outpat = ['}', '\]', ';;']
-        let outalone = ['\<else\>', '\<elif\>.*', '}', '].*', ';;', '|.*']
+        let outpat = ['}', '\].*', ';;']
+        let outalone = ['\<else\>', '\<elif\>.*', '}.*', '].*', ';;', '|.*']
         let width = &tabstop
 
         let n_in = s:CountMatches(prevln, ln - i, inpat)
