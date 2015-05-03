@@ -68,9 +68,9 @@ function! GetMyrIndent(ln)
         let inpat = ['\<if\>', '\<elif\>', '\<else\>',
                 \    '\<while\>','\<for\>', '\<match\>',
                 \    '\<struct\>', '\<union\>',
-                \    '{', '^\s*|', '=\s*$']
-        let outpat = ['}', ';;']
-        let outalone = ['\<else\>', '\<elif\>.*', '}', ';;', '|.*']
+                \    '{', '\[', '^\s*|', '=\s*$']
+        let outpat = ['}', '\]', ';;']
+        let outalone = ['\<else\>', '\<elif\>.*', '}', '].*', ';;', '|.*']
         let width = &tabstop
 
         let n_in = s:CountMatches(prevln, ln - i, inpat)
@@ -85,7 +85,7 @@ function! GetMyrIndent(ln)
     return ind
 endfunction
 
-setlocal indentkeys+=,;\|,=elif
+setlocal indentkeys+=,;\|],=elif
 setlocal indentexpr=GetMyrIndent(v:lnum)
 
 let b:did_indent = 1
