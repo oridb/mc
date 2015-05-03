@@ -58,7 +58,7 @@ const optparse = {args, def
 		parsed.opts = slpush(parsed.opts, optnext(&ctx))
 	;;
 	if ctx.args.len < def.minargs
-		put("error: expected at least %z args, got %z\n", def.minargs, ctx.args.len)
+		put("error: expected at least %z args, got %i\n", def.minargs, ctx.args.len)
 		optusage(ctx.optargs[0], ctx.optdef)
 		exit(1)
 	;;
@@ -158,7 +158,7 @@ const next = {ctx
 }
 
 const optusage = {prog, def
-	std.put("usage: %s [-h?]", prog)
+	std.put("usage: %s [-h?] ", prog)
 	for o in def.opts
 		std.put("[-%c%s%s] ", o.opt, sep(o.arg), o.arg)
 	;;
