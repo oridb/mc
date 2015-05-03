@@ -353,11 +353,15 @@ int hasparamsrec(Type *t, Bitset *visited)
         case Tygeneric:
             return 1;
         case Tyname:
-        case Tyunres:
             for (i = 0; i < t->narg; i++)
                 if (hasparamsrec(t->arg[i], visited))
                     return 1;
             return hasparamsrec(t->sub[0], visited);
+        case Tyunres:
+            for (i = 0; i < t->narg; i++)
+                if (hasparamsrec(t->arg[i], visited))
+                    return 1;
+            break;
         case Tystruct:
             for (i = 0; i < t->nmemb; i++)
                 if (hasparamsrec(t->sdecls[i]->decl.type, visited))

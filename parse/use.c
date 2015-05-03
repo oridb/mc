@@ -720,6 +720,16 @@ static Stab *findstab(Stab *st, char *pkg)
     return s;
 }
 
+static int isspecialization(Type *t1, Type *t2)
+{
+    if ((t1->type != Tygeneric || t2->type != Tyname) &&
+        (t1->type != Tyname || t2->type != Tygeneric) &&
+        (t1->type != Tyname || t2->type != Tyname))
+        return 0;
+    /* FIXME: this should be done better */
+    return nameeq(t1->name, t2->name);
+}
+
 static void fixtypemappings(Stab *st)
 {
     size_t i;
@@ -746,7 +756,7 @@ static void fixtypemappings(Stab *st)
         if ((t->type != Tyname && t->type != Tygeneric) || t->issynth)
             continue;
         old = htget(tydedup, t);
-        if (old && !tyeq(t, old))
+        if (old && !tyeq(t, old) && !isspecialization(t, old))
             lfatal(t->loc, "Duplicate definition of type %s on %s:%d", tystr(old), file->file.files[old->loc.file], old->loc.line);
     }
     lfree(&typefixdest, &ntypefixdest);

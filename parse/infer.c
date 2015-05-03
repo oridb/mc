@@ -351,7 +351,7 @@ static int needfreshen(Inferstate *st, Type *t)
 }
 
 /* Freshens the type of a declaration. */
-static Type *_tyfreshen(Inferstate *st, Htab *subst, Type *t)
+static Type *tyfreshen(Inferstate *st, Htab *subst, Type *t)
 {
     char *from, *to;
 
@@ -467,9 +467,9 @@ static Type *tysubst(Inferstate *st, Type *t, Type *orig)
 
     subst = mkht(tyhash, tyeq);
     for (i = 0; i < t->ngparam; i++) {
-        htput(subst, t->gparam[i], orig->arg[i]);
+        htput(subst, t->gparam[i], tf(st, orig->arg[i]));
     }
-    t = _tyfreshen(st, subst, t);
+    t = tyfreshen(st, subst, t);
     htfree(subst);
     return t;
 }
@@ -1022,7 +1022,7 @@ static Type *initvar(Inferstate *st, Node *n, Node *s)
     n->expr.did = s->decl.did;
     n->expr.isconst = s->decl.isconst;
     if (s->decl.isgeneric && !st->ingeneric) {
-        t = _tyfreshen(st, NULL, t);
+        t = tyfreshen(st, NULL, t);
         addspecialization(st, n, curstab());
         if (t->type == Tyvar) {
             settype(st, n, mktyvar(n->loc));
@@ -1541,7 +1541,7 @@ static void inferdecl(Inferstate *st, Node *n)
 
     t = tf(st, decltype(n));
     if (t->type == Tygeneric && !n->decl.isgeneric) {
-        t = _tyfreshen(st, NULL, t);
+        t = tyfreshen(st, NULL, t);
         unifyparams(st, n, t, decltype(n));
     }
     settype(st, n, t);
@@ -1851,7 +1851,7 @@ static void checkvar(Inferstate *st, Node *n)
     Node *dcl;
 
     dcl = decls[n->expr.did];
-    unify(st, n, type(st, n), _tyfreshen(st, NULL, type(st, dcl)));
+    unify(st, n, type(st, n), tyfreshen(st, NULL, type(st, dcl)));
 }
 
 static void postcheck(Inferstate *st, Node *file)
