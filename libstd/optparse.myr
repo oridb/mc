@@ -53,6 +53,10 @@ const optparse = {args, def
 	var ctx : optctx
 	var parsed
 
+	parsed = [
+		.opts=[][:],
+		.args=[][:]
+	]
 	optinit(&ctx, args, def)
 	while !optdone(&ctx)
 		parsed.opts = slpush(parsed.opts, optnext(&ctx))

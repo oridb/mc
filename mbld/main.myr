@@ -28,7 +28,6 @@ const main = {args : byte[:][:]
 			[.opt='t', .desc="list all available targets"],
 			[.opt='S', .desc="generate assembly when building"],
 			[.opt='d', .desc="dump debugging information for mbld"],
-				
 			[.opt='I', .arg="inc", .desc="add 'inc' to your include path"],
 			[.opt='R', .arg="root", .desc="install into 'root'"],
 			[.opt='b', .arg="bin", .desc="compile binary named 'bin' from inputs"],
@@ -38,6 +37,7 @@ const main = {args : byte[:][:]
 			[.opt='M', .arg="mu", .desc="merge uses with 'mu' instead of the default muse"],
 		][:]
 	])
+
 	bld.initopts()
 	for opt in cmd.opts
 		match opt
