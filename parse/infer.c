@@ -903,6 +903,7 @@ static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
             typeerror(st, a, b, ctx, "Incompatible parameter lists");
         for (i = 0; i < a->narg; i++)
             unify(st, ctx, a->arg[i], b->arg[i]);
+        r = b;
     } else if (a->type != Tyvar) {
         typeerror(st, a, b, ctx, NULL);
     }

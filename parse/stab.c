@@ -304,6 +304,7 @@ void puttype(Stab *st, Node *n, Type *t)
     Tydefn *td;
     Type *ty;
 
+    assert(t != NULL);
     if (st->name)
         setns(n, st->name);
     if (st->name && t && t->name)
