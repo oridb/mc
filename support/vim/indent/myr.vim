@@ -27,9 +27,6 @@ function! s:CountMatches(line, lnum, pats)
                 let ic = Quoted(a:lnum, idx)
                 if !ic
                     let matches = matches + 1
-                    echo "NOT IN COMMENT " ic " lnum " a:lnum " idx " idx
-                else
-                    echo "IN COMMENT"
                 endif
                 let idx = idx + strlen(p)
             endif
@@ -69,14 +66,14 @@ function! GetMyrIndent(ln)
                 \    '\<while\>','\<for\>', '\<match\>',
                 \    '\<struct\>', '\<union\>',
                 \    '{', '\[', '^\s*|', '=\s*$']
-        let outpat = ['}', '\].*', ';;']
-        let outalone = ['\<else\>', '\<elif\>.*', '}.*', '].*', ';;', '|.*']
+        let outpat = ['}', ']', ';;']
+        let outalone = ['\<else\>', '\<elif\>.*', '}.*', '^\s*].*', ';;', '|.*']
         let width = &tabstop
 
         let n_in = s:CountMatches(prevln, ln - i, inpat)
         let n_out = s:CountMatches(prevln, ln - i, outpat)
         if s:LineMatch(curln, outalone) != 0
-            let ind = n_in * &tabstop + ind - &tabstop
+            let ind = ind + (n_in - n_out - 1) * &tabstop
         " avoid double-counting outdents from outalones.
         elseif s:LineMatch(prevln, outpat) == 0
             let ind = ind + (n_in - n_out) * &tabstop
