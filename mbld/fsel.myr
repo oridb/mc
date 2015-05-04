@@ -3,23 +3,23 @@ use std
 use "opts.use"
 
 pkg bld =
-	type fsel = struct
-		filematch	: std.htab(byte[:], int)#
-		filebest	: std.htab(byte[:], byte[:])#
+	type syssel(@a) = struct
 		sysattrs	: std.htab(byte[:], bool)#
+		_match	: std.htab(byte[:], int)#
+		_best	: std.htab(byte[:], @a)#
 	;;
 
-	const mkfsel	: (-> fsel#)
-	const fseladd	: (fsel : fsel#, file : byte[:] -> void)
-	const fselfin	: (fsel : fsel# -> byte[:][:])
+	const mkfsel	: (-> syssel(byte[:])#)
+	const fseladd	: (fsel : syssel(byte[:])#, file : byte[:] -> void)
+	const fselfin	: (fsel : syssel(byte[:])# -> byte[:][:])
 ;;
 
 const mkfsel = {
 	var fsel
 
 	fsel = std.alloc()
-	fsel.filematch = std.mkht(std.strhash, std.streq)
-	fsel.filebest = std.mkht(std.strhash, std.streq)
+	fsel._match = std.mkht(std.strhash, std.streq)
+	fsel._best = std.mkht(std.strhash, std.streq)
 	fsel.sysattrs = std.mkht(std.strhash, std.streq)
 	addsysattrs(fsel.sysattrs)
 	-> fsel
@@ -57,27 +57,27 @@ const fseladd = {fsel, f
 		;;
 	;;
 	std.slfree(attrlist)
-	curbest = std.htgetv(fsel.filematch, basename, -1)
+	curbest = std.htgetv(fsel._match, basename, -1)
 	if curbest < nmatch
-		std.htput(fsel.filematch, basename, nmatch)
-		std.htput(fsel.filebest, basename, f)
+		std.htput(fsel._match, basename, nmatch)
+		std.htput(fsel._best, basename, f)
 	;;
 }
 
 const fselfin = {fsel
 	var keys, nmatch, ret
 
-	keys = std.htkeys(fsel.filematch)
+	keys = std.htkeys(fsel._match)
 	ret = [][:]
 	for k in keys
-		nmatch = std.htgetv(fsel.filematch, k, -1)
+		nmatch = std.htgetv(fsel._match, k, -1)
 		if nmatch == -1
 			std.fatal(1, "no applicable file for '%s'\n", k)
 		;;
-		ret = std.slpush(ret, std.htgetv(fsel.filebest, k, ""))
+		ret = std.slpush(ret, std.htgetv(fsel._best, k, ""))
 	;;
-	std.htfree(fsel.filematch)
-	std.htfree(fsel.filebest)
+	std.htfree(fsel._match)
+	std.htfree(fsel._best)
 	std.htfree(fsel.sysattrs)
 	-> ret
 }

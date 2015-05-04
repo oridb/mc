@@ -304,7 +304,6 @@ void puttype(Stab *st, Node *n, Type *t)
     Tydefn *td;
     Type *ty;
 
-    assert(t != NULL);
     if (st->name)
         setns(n, st->name);
     if (st->name && t && t->name)
@@ -312,7 +311,7 @@ void puttype(Stab *st, Node *n, Type *t)
 
     ty = gettype(st, n);
     if (!ty) {
-        if (hastype(st, n)) {
+        if (t && hastype(st, n)) {
             t->vis = Visexport;
             updatetype(st, n, t);
         } else {

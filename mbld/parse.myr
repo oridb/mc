@@ -224,7 +224,7 @@ const subtarget = {b, p
 
 /* gentarget: wordlist {attrs} = wordlist ;; */
 const cmdtarget = {b, p, cmd, iscmd
-	var outlist, deplist, cmdlist
+	var outlist, deplist, cmdlist, systags
 	var durable
 	var attrs
 	var gt
@@ -268,9 +268,12 @@ const cmdtarget = {b, p, cmd, iscmd
 	for elt in attrs
 		match elt
 		| ("durable", ""):	durable = true
-		| ("durable", val):	failparse(p, "durable attr does not take argument\n")
 		| ("dep", depname):	deplist = std.slpush(deplist, depname)
-		| (attrname, val):	failparse(p, "attribute %s not valid on %s targets\n", attrname, cmd)
+		| ("sys", tags):	systags = std.slpush(systags, tags)
+		| (attr, ""):
+			failparse(p, "attribute %s not valid on %s targets\n", attr, cmd)
+		| (attr, val):
+			failparse(p, "attribute %s=%s not valid on %s targets\n", attr, val, cmd)
 		;;
 	;;
 
@@ -279,7 +282,8 @@ const cmdtarget = {b, p, cmd, iscmd
 		.out=outlist,
 		.durable=durable,
 		.deps=deplist,
-		.cmd=cmdlist
+		.cmd=cmdlist,
+		.systags=systags,
 	])
 	for o in outlist
 		if iscmd
@@ -296,7 +300,7 @@ myrtarget: name '=' inputlist ';;'
 	| name attrlist = inputlist ';;'
 */
 const myrtarget = {p, targ
-	var ldscript, runtime, inst, incpath
+	var ldscript, runtime, inst, incpath, systags
 	var name, inputs, libdeps, attrs
 	var fsel
 
@@ -347,7 +351,7 @@ const myrtarget = {p, targ
 		| ("runtime", rt):	runtime = std.sldup(rt)
 		| ("inc", path):	incpath = std.slpush(incpath, std.sldup(path))
 		| ("noinst", ""):	inst = false
-		| ("noinst", val):	failparse(p, "noinst attr does not take argument\n")
+		| ("sys", tags):	systags = std.slpush(systags, tags)
 		| (invalid, _):
 			std.fatal(1, "%s: got invalid attr '%s'\n", targ, invalid)
 		;;
@@ -363,6 +367,7 @@ const myrtarget = {p, targ
 		.libdeps=libdeps,
 		.islib=false,
 		/* attrs */
+		.systags=systags,
 		.install=inst,
 		.ldscript=ldscript,
 		.runtime=runtime,

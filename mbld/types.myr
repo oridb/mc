@@ -36,6 +36,7 @@ pkg bld =
 		install	: bool
 		runtime	: byte[:]
 		incpath	: byte[:][:]
+		systags	: byte[:][:]
 		ldscript	: byte[:]
 	;;
 
@@ -44,6 +45,7 @@ pkg bld =
 		out	: byte[:][:]
 		cmd	: byte[:][:] 
 		deps	: byte[:][:] 
+		systags	: byte[:][:]
 		durable	: bool
 		/* we can have multiple outputs, but we only want to run once for each */
 		done	: bool
