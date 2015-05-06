@@ -13,6 +13,8 @@ pkg std =
 	const bsdup	: (bs : bitset# -> bitset#)
 	const bsfree	: (bs : bitset# -> void)
 
+	const bsmax	: (a : bitset# -> size)
+
 	generic bsput	: (bs : bitset#, v : @a::(integral,numeric) -> void)
 	generic bsdel	: (bs : bitset#, v : @a::(integral,numeric) -> void)
 	generic bshas	: (bs : bitset#, v : @a::(integral,numeric) -> bool)
@@ -22,6 +24,7 @@ pkg std =
 	const bsunion	: (a : bitset#, b : bitset# -> void)
 	const bseq	: (a : bitset#, b : bitset# -> bool)
 	const bsissubset	: (a : bitset#, b : bitset# -> bool)
+
 
 	const bsclear	: (bs : bitset# -> bitset#)
 ;;
@@ -42,6 +45,10 @@ const bsfree = {bs
 const bsclear = {bs
 	slfill(bs.bits, 0)
 	-> bs
+}
+
+const bsmax = {bs
+	-> bs.bits.len * sizeof(size) * 8
 }
 
 generic bsput = {bs, v
@@ -126,7 +133,7 @@ const bseq = {a, b
 }
 
 const ensurespace = {bs, v
-	if bs.bits.len <= v
+	if bs.bits.len*8 <= v
 		bs.bits = slzgrow(bs.bits, v + 1)
 	;;
 }
@@ -134,7 +141,7 @@ const ensurespace = {bs, v
 const eqsz = {a, b
 	var sz
 
-	sz = max(a.bits.len, b.bits.len)
+	sz = max(a.bits.len, b.bits.len)*8
 	ensurespace(a, sz)
 	ensurespace(b, sz)
 }

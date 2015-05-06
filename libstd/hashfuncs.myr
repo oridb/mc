@@ -13,9 +13,23 @@ pkg std =
 	generic inteq	: (a : @a::(integral,numeric), b : @a::(integral,numeric) -> bool)
 
 	const murmurhash2	: (data : byte[:], seed : uint32 -> uint32)
+
+	generic slhash	: (sl : @a[:] -> uint32)
+	generic tobytes	: (sl : @a[:] -> byte[:])
 ;;
 
 const Seed = 1234
+
+generic slhash = {data : @a[:]
+	-> strhash(slbytes(data))
+}
+
+generic slbytes = {data : @a[:]
+	var n
+
+	n = data.len * sizeof(@a)
+	-> (data castto(byte#))[:n]
+}
 
 /* Supremely simple djb hash. */
 const strhash = {s
