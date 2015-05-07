@@ -43,6 +43,7 @@ pkg sys =
 		`Waitexit int32
 		`Waitsig  int32
 		`Waitstop int32
+		`Waitfail int32
 	;;
 
 	type timespec = struct
@@ -796,4 +797,5 @@ const waitstatus = {st
 	elif (((st & 0xffff)*0x10001)>>8) > 0x7f00
 		-> `Waitstop ((st & 0xff00) >> 8)
 	;;
+	-> `Waitfail st	/* wait failed to give a result */
 }

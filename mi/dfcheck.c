@@ -38,15 +38,18 @@ static void checkreach(Cfg *cfg)
 static void checkpredret(Cfg *cfg, Bb *bb)
 {
     Bb *pred;
+    Op op;
     size_t i;
 
     for (i = 0; bsiter(bb->pred, &i); i++) {
         pred = cfg->bb[i];
         if (pred->nnl == 0) {
             checkpredret(cfg, pred);
-        } else if (exprop(pred->nl[pred->nnl - 1]) != Oret) {
-            dumpcfg(cfg, stdout);
-            fatal(pred->nl[pred->nnl-1], "Reaches end of function without return\n");
+        } else {
+            op = exprop(pred->nl[pred->nnl - 1]);
+            if (op != Oret && op != Odead) {
+                fatal(pred->nl[pred->nnl-1], "Reaches end of function without return\n");
+            }
         }
     }
 }

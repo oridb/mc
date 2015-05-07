@@ -40,7 +40,6 @@ char *genlblstr(char *buf, size_t sz)
     return buf;
 }
 
-
 /* 
  * For x86, the assembly names are generated as follows:
  *      local symbols: .name

@@ -124,10 +124,20 @@ void delete(Cfg *cfg, Bb *bb)
     cfg->bb[bb->id] = NULL;
 }
 
-void trimdead(Bb *bb)
+void noexit(Cfg *cfg, Bb *bb)
+{
+    size_t i;
+    for (i = 0; bsiter(bb->succ, &i); i++)
+        bsdel(cfg->bb[i]->pred, bb->id);
+    bsclear(bb->succ);
+}
+
+void trimdead(Cfg *cfg, Bb *bb)
 {
     size_t i;
 
+    if (!bb)
+        return;
     for (i = 0; i < bb->nnl; i++) {
         switch (exprop(bb->nl[i])) {
             /* if we're jumping, we can't keep going
@@ -137,11 +147,17 @@ void trimdead(Bb *bb)
             case Oret:
                 bb->nnl = i + 1;
                 return;
-            case Ocall:
-                if (!isnonretcall(bb->nl[i]->expr.args[0]))
-                    break;
+            case Odead:
+                noexit(cfg, bb);
                 bb->nnl = i + 1;
                 return;
+            case Ocall:
+                if (isnonretcall(bb->nl[i]->expr.args[0])) {
+                    noexit(cfg, bb);
+                    bb->nnl = i + 1;
+                    return;
+                }
+                break;
             default:
                 /* nothing */
                 break;
@@ -150,22 +166,6 @@ void trimdead(Bb *bb)
 }
 
 void trim(Cfg *cfg)
-{
-    Bb *bb;
-    size_t i;
-
-    /* delete empty blocks and trivially unreachable code */
-    for (i = 0; i < cfg->nbb; i++) {
-
-        bb = cfg->bb[i];
-        if (bb->nnl == 0)
-            delete(cfg, bb);
-        else
-            trimdead(bb);
-    }
-}
-
-void delunreachable(Cfg *cfg)
 {
     Bb *bb;
     size_t i;
@@ -178,6 +178,7 @@ void delunreachable(Cfg *cfg)
             bb = cfg->bb[i];
             if (bb == cfg->start || bb == cfg->end)
                 continue;
+            trimdead(cfg, bb);
             if (bb && bsisempty(bb->pred)) {
                 delete(cfg, bb);
                 deleted = 1;
@@ -192,6 +193,8 @@ Cfg *mkcfg(Node *fn, Node **nl, size_t nn)
     Bb *pre, *post;
     Bb *bb, *targ;
     Node *a, *b;
+    static int nextret;
+    char buf[32];
     size_t i;
 
     cfg = zalloc(sizeof(Cfg));
@@ -215,13 +218,15 @@ Cfg *mkcfg(Node *fn, Node **nl, size_t nn)
         }
     }
     post = mkbb(cfg);
+    snprintf(buf, sizeof buf, ".R%d", nextret++);
+    label(cfg, mklbl(fn->loc, buf), post);
+
     cfg->start = pre;
     cfg->end = post;
     bsput(pre->succ, cfg->bb[1]->id);
     bsput(cfg->bb[1]->pred, pre->id);
     bsput(cfg->bb[cfg->nbb - 2]->succ, post->id);
     bsput(post->pred, cfg->bb[cfg->nbb - 2]->id);
-    trim(cfg);
 
     for (i = 0; i < cfg->nfixjmp; i++) {
         bb = cfg->fixblk[i];
@@ -257,7 +262,7 @@ Cfg *mkcfg(Node *fn, Node **nl, size_t nn)
             bsput(targ->pred, bb->id);
         }
     }
-    delunreachable(cfg);
+    trim(cfg);
     return cfg;
 }
 

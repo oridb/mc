@@ -1446,7 +1446,7 @@ static void inferexpr(Inferstate *st, Node **np, Type *ret, int *sawret)
             }
             settype(st, n, type(st, args[0]));
             break;
-        case Obad: case Ocjmp: case Ojtab: case Oset:
+        case Obad: case Ocjmp: case Ojtab: case Oset: case Odead:
         case Oslbase: case Osllen: case Outag:
         case Oblit: case  Oclear: case Oudata:
         case Otrunc: case Oswiden: case Ozwiden:

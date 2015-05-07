@@ -25,5 +25,7 @@ const getcwd = {
 			len *= 2
 		;;
 	;;
+	/* unreachable; shut up return without value analysis */
+	-> ""
 }
 	

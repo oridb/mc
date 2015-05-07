@@ -52,9 +52,8 @@ const sporkfd = {cmd, infd, outfd
 		;;
 		close(infd)
 		close(outfd)
-		if execvp(cmd[0], cmd) < 0
-			fatal(1, "failed to exec %s\n")
-		;;
+		execvp(cmd[0], cmd) < 0
+		fatal(1, "failed to exec %s\n")
 	/* parent */
 	else
 		-> `Ok pid

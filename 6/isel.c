@@ -776,6 +776,9 @@ Loc *selexpr(Isel *s, Node *n)
             else
                 g(s, Icvttss2sd, a, r, NULL);
             break;
+        case Odead:
+            /* nothing */
+            break;
 
         /* These operators should never show up in the reduced trees,
          * since they should have been replaced with more primitive

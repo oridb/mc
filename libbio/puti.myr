@@ -40,7 +40,7 @@ const putle = {f, v, n
 	buf[5] = (v >> 40) & 0xff castto(byte)
 	buf[6] = (v >> 48) & 0xff castto(byte)
 	buf[7] = (v >> 56) & 0xff castto(byte)
-	write(f, buf[:n])
+	-> write(f, buf[:n])
 }
 
 const putbe = {f, v, n
@@ -57,6 +57,6 @@ const putbe = {f, v, n
 	buf[5] = (v >> 16) & 0xff castto(byte)
 	buf[6] = (v >> 8) & 0xff castto(byte)
 	buf[7] = (v >> 0) & 0xff castto(byte)
-	write(f, buf[8-n:])
+	-> write(f, buf[8-n:])
 }
 

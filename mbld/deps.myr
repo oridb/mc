@@ -214,6 +214,7 @@ const getdeps = {b, ds, path
 			-> deps
 		;;
 	;;
+	std.die("unreachable")
 }
 
 const scrapelibs = {dg, lib, incs

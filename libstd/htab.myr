@@ -90,6 +90,7 @@ generic idx = {ht, k
 			-> `Some i
 		;;
 	;;
+	-> `None /* fixme; while true should flag this as unreachable */
 }
 
 generic mkht = {h, eq

@@ -661,6 +661,7 @@ static void simpmatch(Simp *s, Node *n)
         jmp(s, end);
         append(s, next);
     }
+    append(s, mkexpr(n->loc, Odead, NULL));
     append(s, end);
 }
 
@@ -1675,8 +1676,7 @@ static Func *simpfn(Simp *s, char *name, Node *dcl)
     }
 
     cfg = mkcfg(dcl, s->stmts, s->nstmts);
-    if (extracheck)
-       check(cfg);
+    check(cfg);
     if (debugopt['t'] || debugopt['s'])
         dumpcfg(cfg, stdout);
 

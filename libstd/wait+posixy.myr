@@ -26,6 +26,7 @@ const wait = {pid
 		a process exits. Loop instead.
 		*/
 		| `sys.Waitstop sig:	goto again
+		| `sys.Waitfail fail:	-> `Waiterror
 		| `sys.Waitsig sig:	-> `Wsignalled
 		| `sys.Waitexit status:
 			if status == 0

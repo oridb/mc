@@ -56,8 +56,9 @@ O(Ostruct,	1,	OTmisc, NULL)
 O(Oarr,	        1,	OTmisc, NULL)
 
 /* all below this point are backend-only */
-O(Ocjmp,	1,	OTmisc, NULL)           /* conditional jump */
-O(Ojtab,	1,	OTmisc, NULL)		/* jump table */
+O(Odead,        0,      OTmisc, "DEAD")         /* unreachable code */
+O(Ocjmp,	1,	OTmisc, "CJMP")         /* conditional jump */
+O(Ojtab,	1,	OTmisc, "JTAB")		/* jump table */
 O(Oset,	        1,	OTbin,  "=")            /* store to var */
 O(Osllen,	1,	OTpre,  "SLLEN")        /* size of slice */
 O(Oslbase,	1,	OTpre,  "SLBASE")       /* base of sice */
