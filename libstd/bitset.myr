@@ -57,7 +57,7 @@ generic bsput = {bs, v
 
 	idx = (v castto(size)) / (8*sizeof(size))
 	off = (v castto(size)) % (8*sizeof(size))
-	ensurespace(bs, idx)
+	ensurelen(bs, idx)
 	bs.bits[idx] |= (1 << off)
 }
 
@@ -67,7 +67,9 @@ generic bsdel = {bs, v
 
 	idx = (v castto(size)) / (8*sizeof(size))
 	off = (v castto(size)) % (8*sizeof(size))
-	ensurespace(bs, idx)
+	if idx >= bs.bits.len
+		->
+	;;
 	bs.bits[idx] &= ~(1 << off)
 }
 
@@ -77,7 +79,9 @@ generic bshas = {bs, v
 
 	idx = (v castto(size)) / (8*sizeof(size))
 	off = (v castto(size)) % (8*sizeof(size))
-	ensurespace(bs, idx)
+	if idx >= bs.bits.len
+		-> false
+	;;
 	-> (bs.bits[idx] & (1 << off)) != 0
 }
 
@@ -100,10 +104,10 @@ const bsintersect = {a, b
 }
 
 const bsdiff = {a, b
-	var i
+	var i, n
 
-	ensurespace(b, a.bits.len)
-	for i = 0; i < a.bits.len; i++
+	n = min(b.bits.len, a.bits.len)
+	for i = 0; i < n; i++
 		a.bits[i] &= ~b.bits[i]
 	;;
 }
@@ -132,17 +136,17 @@ const bseq = {a, b
 	-> true
 }
 
-const ensurespace = {bs, v
-	if bs.bits.len*8 <= v
-		bs.bits = slzgrow(bs.bits, v + 1)
+const ensurelen = {bs, len
+	if bs.bits.len <= len
+		bs.bits = slzgrow(bs.bits, len + 1)
 	;;
 }
 
 const eqsz = {a, b
 	var sz
 
-	sz = max(a.bits.len, b.bits.len)*8
-	ensurespace(a, sz)
-	ensurespace(b, sz)
+	sz = max(a.bits.len, b.bits.len)
+	ensurelen(a, sz)
+	ensurelen(b, sz)
 }
 
