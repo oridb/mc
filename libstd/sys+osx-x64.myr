@@ -39,6 +39,7 @@ pkg sys =
 		`Waitexit int32
 		`Waitsig  int32
 		`Waitstop int32
+		`Waitfail int32
 	;;
 
 	type statbuf = struct
@@ -924,6 +925,9 @@ const sysctl = {mib, old, new
 }
 
 const waitstatus = {st
+	if st < 0
+		-> `Waitfail st
+	;;
 	match st & 0o177
 	| 0:    -> `Waitexit (st >> 8)
 	| 0o177:-> `Waitstop (st >> 8)

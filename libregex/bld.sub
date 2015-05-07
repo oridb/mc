@@ -10,6 +10,8 @@ lib regex =
 bin redump {noinst} =
 	redump.myr
         lib ../libstd:std
+        lib ../libbio:bio
+        lib regex
 ;;
 
 gen ranges.myr {durable} =
