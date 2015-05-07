@@ -327,6 +327,7 @@ static Node *specializenode(Node *n, Htab *tsmap)
             r->decl.isconst = n->decl.isconst;
             r->decl.isgeneric = n->decl.isgeneric;
             r->decl.isextern = n->decl.isextern;
+            r->decl.isglobl = n->decl.isglobl;
             if (curstab())
                 putdcl(curstab(), r);
 
@@ -418,6 +419,7 @@ Node *specializedcl(Node *g, Type *to, Node **name)
     d = mkdecl(g->loc, n, tysubst(g->decl.type, tsmap));
     d->decl.isconst = g->decl.isconst;
     d->decl.isextern = g->decl.isextern;
+    d->decl.isglobl = g->decl.isglobl;
     d->decl.init = specializenode(g->decl.init, tsmap);
     putdcl(st, d);
 

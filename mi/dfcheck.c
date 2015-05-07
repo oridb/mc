@@ -44,6 +44,7 @@ void nodedef(Node *n, Bitset *bs)
         case Obxoreq: case Obsleq:
         case Obsreq:
             nodevars(n->expr.args[0], bs);
+            nodedef(n->expr.args[1], bs);
             break;
             /* for the sake of less noise: assume that f(&var) inits the var. */
         case Ocall:
@@ -88,6 +89,19 @@ static void checkuse(Bb *bb, Bitset *def)
         return;
     for (i = 0; i < bb->nnl; i++) {
         n = bb->nl[i];
+        /* Tradeoff.
+         *
+         * We could check after, and get slightly more accurate checking,
+         * but then we error on things like:
+         *      init(&foo);
+         *
+         * We can check before, but then we don't error on things like:
+         *      x = f(x)
+         *
+         * Eventually we should check both ways. Right now, I want to get
+         * something working.
+         */
+        nodedef(n, def);
         switch(exprop(n)) {
             case Oset:
             case Oasn:
@@ -96,7 +110,6 @@ static void checkuse(Bb *bb, Bitset *def)
             default:
                 checkdefined(n, def);
         }
-        nodedef(n, def);
     }
 }
 
@@ -116,12 +129,29 @@ static Bitset *indef(Cfg *cfg, Bb *bb, Bitset **outdef)
     Bitset *def;
 
     j = 0;
-    if (!bsiter(bb->pred, &j))
+    if (!bb || !bsiter(bb->pred, &j))
         return mkbs();
     def = bsdup(outdef[j]);
     for (; bsiter(bb->pred, &j); j++)
         bsintersect(def, outdef[j]);
     return def;
+}
+
+static void addargs(Cfg *cfg, Bitset *def)
+{
+    Node *n;
+    size_t i;
+
+    n = cfg->fn;
+    assert(n->type == Ndecl);
+    n = n->decl.init;
+    assert(n->type == Nexpr);
+    n = n->expr.args[0];
+    assert(n->type == Nlit);
+    n = n->lit.fnval;
+
+    for (i = 0; i < n->func.nargs; i++)
+        bsput(def,n->func.args[i]->decl.did); 
 }
 
 static void checkreach(Cfg *cfg)
@@ -140,8 +170,8 @@ static void checkreach(Cfg *cfg)
         outdef[i] = mkbs();
         bbdef(cfg->bb[i], outdef[i]);
     }
+    addargs(cfg, outdef[cfg->start->id]);
 
-    dumpcfg(cfg, stdout);
     for (i = 0; i < cfg->nbb; i++)
         for (j= 0; bsiter(outdef[i], &j); j++)
             printf("bb %zd defines %s\n", i, declname(decls[j]));
@@ -209,6 +239,6 @@ static void checkret(Cfg *cfg)
 void check(Cfg *cfg)
 {
     checkret(cfg);
-    if (0) /* Not quite ready yet. */
+    if (0)
         checkreach(cfg);
 }

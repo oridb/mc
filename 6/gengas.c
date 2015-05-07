@@ -79,6 +79,7 @@ static void initconsts(Htab *globls)
     dcl = mkdecl(Zloc, name, ty);
     dcl->decl.isconst = 1;
     dcl->decl.isextern = 1;
+    dcl->decl.isglobl = 1;
     htput(globls, dcl, asmname(dcl));
 
     abortoob = mkexpr(Zloc, Ovar, name, NULL);

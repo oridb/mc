@@ -297,6 +297,7 @@ pkgitem : decl {
                 size_t i;
                 for (i = 0; i < $1.nn; i++) {
                     $1.nl[i]->decl.vis = Visexport;
+                    $1.nl[i]->decl.isglobl = 1;
                     putdcl(file->file.globls, $1.nl[i]);
                     if ($1.nl[i]->decl.init)
                         lappend(&file->file.stmts, &file->file.nstmts, $1.nl[i]);

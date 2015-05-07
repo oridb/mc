@@ -1276,6 +1276,9 @@ static void addvatype(Simp *s, Node *n)
     /* make the decl */
     tn = mkname(Zloc, tydescid(buf, sizeof buf, vt));
     td = mkdecl(Zloc, tn, mktype(n->loc, Tybyte));
+    td->decl.isglobl = 1;
+    td->decl.isconst = 1;
+    td->decl.ishidden = 1;
 
     /* and the var */
     ti = mkexpr(Zloc, Ovar, tn, NULL);
@@ -1283,7 +1286,7 @@ static void addvatype(Simp *s, Node *n)
     ti->expr.did = td->decl.did;
 
     /* and the pointer */
-    tp = mkexpr(Zloc, Oaddr, ti);
+    tp = mkexpr(Zloc, Oaddr, ti, NULL);
     tp->expr.type = mktyptr(n->loc, td->decl.type);
 
     linsert(&n->expr.args, &n->expr.nargs, ft->nsub - 1, tp);

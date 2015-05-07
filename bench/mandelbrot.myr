@@ -30,6 +30,7 @@ const mandelbrot = {x, y
 			-> 0
 		;;
 	;;
+	-> 0
 }
 
 const main = {args : byte[:][:]
