@@ -12,7 +12,8 @@
 
 #include "parse.h"
 
-size_t maxnid;
+Node **nodes;
+size_t nnodes;
 Node **decls;
 size_t ndecls;
 
@@ -49,9 +50,10 @@ Node *mknode(Srcloc loc, Ntype nt)
     Node *n;
 
     n = zalloc(sizeof(Node));
-    n->nid = maxnid++;
+    n->nid = nnodes;
     n->type = nt;
     n->loc = loc;
+    lappend(&nodes, &nnodes, n);
     return n;
 }
 

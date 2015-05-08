@@ -13,195 +13,64 @@
 #include "parse.h"
 #include "mi.h"
 
-static void nodevars(Node *n, Bitset *bs)
+static void checkundef(Node *n, Reaching *r, Bitset *reach, Bitset *kill)
 {
-    size_t i;
+    size_t i, j, did;
+    Node *def;
 
-    if (!n || n->type != Nexpr)
+    if (n->type != Nexpr)
         return;
-    switch (exprop(n)) {
-        case Ovar:
-            bsput(bs, n->expr.did);
-            break;
-        default:
-            nodevars(n->expr.idx, bs);
-            for (i = 0; i < n->expr.nargs; i++)
-                nodevars(n->expr.args[i], bs);
-            break;
-    }
-}
-void nodedef(Node *n, Bitset *bs)
-{
-    Node *p;
-    size_t i;
-
-    switch(exprop(n)) {
-        case Oset:
-        case Oasn: case Oaddeq:
-        case Osubeq: case Omuleq:
-        case Odiveq: case Omodeq:
-        case Oboreq: case Obandeq:
-        case Obxoreq: case Obsleq:
-        case Obsreq:
-            nodevars(n->expr.args[0], bs);
-            nodedef(n->expr.args[1], bs);
-            break;
-            /* for the sake of less noise: assume that f(&var) inits the var. */
-        case Ocall:
-            for (i = 1; i < n->expr.nargs; i++) {
-                p = n->expr.args[i];
-                if (exprop(p) == Oaddr && exprop(p->expr.args[0]) == Ovar)
-                    nodevars(p, bs);
-            }
-            break;
-        default:
-            break;
-    }
-}
-
-static void checkdefined(Node *n, Bitset *def)
-{
-    size_t i;
-    Node *d;
-
-    if (!n || n->type != Nexpr)
-        return;
-    switch (exprop(n)) {
-        case Ovar:
-            d = decls[n->expr.did];
-            if (!bshas(def, n->expr.did) && !d->decl.isglobl)
+    if (exprop(n) == Ovar) {
+        did = n->expr.did;
+        for (j = 0; j < r->ndefs[did]; j++) {
+            if (bshas(kill, r->defs[did][j]))
+                continue;
+            if (bshas(reach, r->defs[did][j]))
+                def = nodes[r->defs[did][j]];
+            if (exprop(def) == Oundef)
                 fatal(n, "%s used before definition", namestr(n->expr.args[0]));
-            break;
-        default:
-            nodevars(n->expr.idx, def);
-            for (i = 0; i < n->expr.nargs; i++)
-                checkdefined(n->expr.args[i], def);
-            break;
-    }
-}
-
-static void checkuse(Bb *bb, Bitset *def)
-{
-    size_t i;
-    Node *n;
-
-    if (!bb)
-        return;
-    for (i = 0; i < bb->nnl; i++) {
-        n = bb->nl[i];
-        /* Tradeoff.
-         *
-         * We could check after, and get slightly more accurate checking,
-         * but then we error on things like:
-         *      init(&foo);
-         *
-         * We can check before, but then we don't error on things like:
-         *      x = f(x)
-         *
-         * Eventually we should check both ways. Right now, I want to get
-         * something working.
-         */
-        nodedef(n, def);
-        switch(exprop(n)) {
-            case Oset:
-            case Oasn:
-                checkdefined(n->expr.args[1], def);
-                break;
-            default:
-                checkdefined(n, def);
         }
+    } else {
+        for (i = 0; i < n->expr.nargs; i++)
+            checkundef(n->expr.args[i], r, reach, kill);
     }
 }
 
-static void bbdef(Bb *bb, Bitset *bs)
+void bsdump(Bitset *bs)
 {
     size_t i;
-
-    if (!bb)
-        return;
-    for (i = 0; i < bb->nnl; i++)
-        nodedef(bb->nl[i], bs);
-}
-
-static Bitset *indef(Cfg *cfg, Bb *bb, Bitset **outdef)
-{
-    size_t j;
-    Bitset *def;
-
-    j = 0;
-    if (!bb || !bsiter(bb->pred, &j))
-        return mkbs();
-    def = bsdup(outdef[j]);
-    for (; bsiter(bb->pred, &j); j++)
-        bsintersect(def, outdef[j]);
-    return def;
-}
-
-static void addargs(Cfg *cfg, Bitset *def)
-{
-    Node *n;
-    size_t i;
-
-    n = cfg->fn;
-    assert(n->type == Ndecl);
-    n = n->decl.init;
-    assert(n->type == Nexpr);
-    n = n->expr.args[0];
-    assert(n->type == Nlit);
-    n = n->lit.fnval;
-
-    for (i = 0; i < n->func.nargs; i++)
-        bsput(def,n->func.args[i]->decl.did); 
+    for (i = 0; bsiter(bs, &i); i++)
+        printf("%zd ", i);
+    printf("\n");
 }
 
 static void checkreach(Cfg *cfg)
 {
-    Bitset **outdef;
-    Bitset *def;
-    size_t i, j;
-    int changed;
+    Bitset *reach, *kill;
+    size_t i, j, k;
+    Reaching *r;
+    Node *n, *m;
     Bb *bb;
 
-    outdef = xalloc(sizeof(Bitset*) * cfg->nbb);
-
-    def = mkbs();
-
+    r = reaching(cfg);
     for (i = 0; i < cfg->nbb; i++) {
-        outdef[i] = mkbs();
-        bbdef(cfg->bb[i], outdef[i]);
-    }
-    addargs(cfg, outdef[cfg->start->id]);
-
-    for (i = 0; i < cfg->nbb; i++)
-        for (j= 0; bsiter(outdef[i], &j); j++)
-            printf("bb %zd defines %s\n", i, declname(decls[j]));
-
-    do {
-        changed = 0;
-        for (i = 0; i < cfg->nbb; i++) {
-            bb = cfg->bb[i];
-
-            def = indef(cfg, bb, outdef);
-            bsunion(def, outdef[i]);
-
-            if (!bseq(outdef[i], def)) {
-                changed = 1;
-                bsfree(outdef[i]);
-                outdef[i] = def;
+        bb = cfg->bb[i];
+        reach = bsdup(r->in[i]);
+        kill = mkbs();
+        for (j = 0; j < bb->nnl; j++) {
+            n = bb->nl[j];
+            if (exprop(n) == Oundef) {
+                bsput(reach, n->nid);
+            } else {
+                m = assignee(n);
+                if (m)
+                    for (k = 0; k < r->ndefs[m->expr.did]; k++)
+                        bsput(kill, r->defs[m->expr.did][k]);
+                checkundef(n, r, reach, kill);
             }
-
         }
-    } while (changed);
-
-
-
-    printf("---\n");
-    for (i = 0; i < cfg->nbb; i++) {
-        for (j= 0; bsiter(outdef[i], &j); j++)
-            printf("bb %zd defines %s\n", i, declname(decls[j]));
-        def = indef(cfg, bb, outdef);
-        checkuse(cfg->bb[i], def);
-        bsfree(def);
+        bsfree(reach);
+        bsfree(kill);
     }
 }
 
@@ -239,6 +108,6 @@ static void checkret(Cfg *cfg)
 void check(Cfg *cfg)
 {
     checkret(cfg);
-    if (0)
+    if(0)
         checkreach(cfg);
 }

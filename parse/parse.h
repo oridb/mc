@@ -375,10 +375,11 @@ extern size_t ntypes;
 extern Trait **traittab;  /* int -> trait map */
 extern size_t ntraittab;
 extern Node **decls;    /* decl id -> decl map */
+extern size_t nnodes;
+extern Node **nodes;    /* node id -> node map */
 extern size_t ndecls;
 extern Node **exportimpls;
 extern size_t nexportimpls;
-extern size_t maxnid;      /* the maximum node id generated so far */
 
 /* property tables */
 extern int opispure[];

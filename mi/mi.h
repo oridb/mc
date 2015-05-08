@@ -1,5 +1,6 @@
 typedef struct Cfg Cfg;
 typedef struct Bb Bb;
+typedef struct Reaching Reaching;
 
 struct  Cfg {
     Node *fn;
@@ -27,8 +28,20 @@ struct Bb {
     Bitset *succ;
 };
 
+struct Reaching {
+    Bitset **in;
+    Bitset **out;
+    size_t **defs;
+    size_t *ndefs;
+};
+
 /* expression folding */
 Node *fold(Node *n, int foldvar);
+
+/* dataflow analysis */
+Reaching *reaching(Cfg *cfg);
+Node *assignee(Node *n);
+
 /* Takes a reduced block, and returns a flow graph. */
 Cfg *mkcfg(Node *fn, Node **nl, size_t nn);
 void dumpcfg(Cfg *c, FILE *fd);
