@@ -204,7 +204,7 @@ static void outnode(Node *n, FILE *fd, int depth)
                 case Lbool:     fprintf(fd, " Lbool %s\n", n->lit.boolval ? "true" : "false"); break;
                 case Lint:      fprintf(fd, " Lint %llu\n", n->lit.intval); break;
                 case Lflt:      fprintf(fd, " Lflt %lf\n", n->lit.fltval); break;
-                case Lstr:      fprintf(fd, " Lstr %s\n", n->lit.strval.buf); break;
+                case Lstr:      fprintf(fd, " Lstr %.*s\n", (int)n->lit.strval.len, n->lit.strval.buf); break;
                 case Llbl:      fprintf(fd, " Llbl %s\n", n->lit.lblval); break;
                 case Lfunc:
                     fprintf(fd, " Lfunc\n");

@@ -25,23 +25,25 @@ static void checkundef(Node *n, Reaching *r, Bitset *reach, Bitset *kill)
         for (j = 0; j < r->ndefs[did]; j++) {
             if (bshas(kill, r->defs[did][j]))
                 continue;
-            if (bshas(reach, r->defs[did][j]))
-                def = nodes[r->defs[did][j]];
+            if (!bshas(reach, r->defs[did][j]))
+                continue;
+            def = nodes[r->defs[did][j]];
             if (exprop(def) == Oundef)
                 fatal(n, "%s used before definition", namestr(n->expr.args[0]));
         }
     } else {
-        for (i = 0; i < n->expr.nargs; i++)
-            checkundef(n->expr.args[i], r, reach, kill);
+        switch (exprop(n)) {
+            case Oset:
+            case Oasn:
+            case Oblit:
+                checkundef(n->expr.args[1], r, reach, kill);
+                break;
+            default:
+                for (i = 0; i < n->expr.nargs; i++)
+                    checkundef(n->expr.args[i], r, reach, kill);
+                break;
+        }
     }
-}
-
-void bsdump(Bitset *bs)
-{
-    size_t i;
-    for (i = 0; bsiter(bs, &i); i++)
-        printf("%zd ", i);
-    printf("\n");
 }
 
 static void checkreach(Cfg *cfg)
@@ -108,6 +110,6 @@ static void checkret(Cfg *cfg)
 void check(Cfg *cfg)
 {
     checkret(cfg);
-    if(0)
+    if (0)
         checkreach(cfg);
 }

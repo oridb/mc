@@ -15,6 +15,8 @@
 
 Node *assignee(Node *n)
 {
+    Node *a;
+
     switch (exprop(n)) {
         case Oundef:
         case Oset:
@@ -26,6 +28,14 @@ Node *assignee(Node *n)
         case Obsreq:
             return n->expr.args[0];
             break;
+        case Oblit:
+            a = n->expr.args[0];
+            if (exprop(a) != Oaddr)
+                break;
+            a = n->expr.args[0];
+            if (exprop(a) != Ovar)
+                break;
+            return a;
         default:
             break;
     }
@@ -64,12 +74,22 @@ static void genkill(Bb *bb, size_t **defs, size_t *ndefs, Bitset *gen, Bitset *k
         if (!n)
             continue;
         did = n->expr.did;
-        bsput(gen, bb->nl[i]->nid);
-        for (j = 0; j < ndefs[did]; j++)
+        for (j = 0; j < ndefs[did]; j++) {
             bsput(kill, defs[did][j]);
+            bsdel(gen, defs[did][j]);
+        }
+        bsput(gen, bb->nl[i]->nid);
+        bsdel(kill, bb->nl[i]->nid);
     }
 }
 
+void bsdump(Bitset *bs)
+{
+    size_t i;
+    for (i = 0; bsiter(bs, &i); i++)
+        printf("%zd ", i);
+    printf("\n");
+}
 
 Reaching *reaching(Cfg *cfg)
 {
@@ -104,12 +124,12 @@ Reaching *reaching(Cfg *cfg)
         for (i = 0; i < cfg->nbb; i++) {
             if (!cfg->bb[i])
                 continue;
-            bbout = mkbs();
+            bbin = mkbs();
             for (j = 0; bsiter(cfg->bb[i]->pred, &j); j++)
-                bsunion(bbout, in[j]);
-            bbin = bsdup(bbout);
-            bsdiff(bbin, kill[i]);
-            bsunion(bbin, gen[i]);
+                bsunion(bbin, out[j]);
+            bbout = bsdup(bbin);
+            bsdiff(bbout, kill[i]);
+            bsunion(bbout, gen[i]);
 
             if (!bseq(out[i], bbout) || !bseq(in[i], bbin)) {
                 changed = 1;
@@ -121,6 +141,22 @@ Reaching *reaching(Cfg *cfg)
         }
     } while (changed);
 
+//    for (i = 0; i < ndecls; i++) {
+//        if (defs[i])
+//            printf("\t%zd: ", i);
+//        for (j = 0; j < ndefs[i]; j++)
+//            printf("%zd ", defs[i][j]);
+//        if (defs[i])
+//            printf("\n");
+//    }
+//    for (i = 0; i < cfg->nbb; i++) {
+//        printf("bb %zd\n", i);
+//        printf("\tin: ");
+//        bsdump(in[i]);
+//        printf("\tout: ");
+//        bsdump(out[i]);
+//    }
+//
     reaching = xalloc(sizeof(Reaching));
     reaching->in = in;
     reaching->out = out;
