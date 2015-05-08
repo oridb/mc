@@ -1518,6 +1518,9 @@ static Node *rval(Simp *s, Node *n, Node *dst)
         case Ogt: case Oge: case Olt: case Ole:
             r = compare(s, n, 0);
             break;
+        case Obad:
+            die("bad operator");
+            break;
         default:
             if (istyfloat(exprtype(n))) {
                 switch (exprop(n)) {
@@ -1529,9 +1532,6 @@ static Node *rval(Simp *s, Node *n, Node *dst)
                 }
             }
             r = visit(s, n);
-            break;
-        case Obad:
-            die("bad operator");
             break;
     }
     return r;
@@ -1587,11 +1587,14 @@ static Node *simp(Simp *s, Node *n)
 
         case Ndecl:
             declarelocal(s, n);
-            if (!n->decl.init)
-                break;
             t = mkexpr(n->loc, Ovar, n->decl.name, NULL);
-            u = mkexpr(n->loc, Oasn, t, n->decl.init, NULL);
-            u->expr.type = n->decl.type;
+            if (!n->decl.init) {
+                u = mkexpr(n->loc, Oundef, t, NULL);
+                u->expr.type = mktype(n->loc, Tyvoid);
+            } else {
+                u = mkexpr(n->loc, Oasn, t, n->decl.init, NULL);
+                u->expr.type = n->decl.type;
+            }
             t->expr.type = n->decl.type;
             t->expr.did = n->decl.did;
             simp(s, u);

@@ -56,7 +56,8 @@ O(Ostruct,	1,	OTmisc, NULL)
 O(Oarr,	        1,	OTmisc, NULL)
 
 /* all below this point are backend-only */
-O(Odead,        0,      OTmisc, "DEAD")         /*  code */
+O(Odead,        0,      OTmisc, "DEAD")         /* dead code */
+O(Oundef,       0,      OTmisc, "UNDEF")        /* undefined var */
 O(Ocjmp,	1,	OTmisc, "CJMP")         /* conditional jump */
 O(Ojtab,	1,	OTmisc, "JTAB")		/* jump table */
 O(Oset,	        1,	OTbin,  "=")            /* store to var */

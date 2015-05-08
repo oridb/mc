@@ -517,19 +517,21 @@ static void settype(Inferstate *st, Node *n, Type *t)
 /* Gets the type of a literal value */
 static Type *littype(Node *n)
 {
-    if (n->lit.type)
-        return n->lit.type;
-    switch (n->lit.littype) {
-        case Lchr:      return mktype(n->loc, Tychar);                         break;
-        case Lbool:     return mktype(n->loc, Tybool);                         break;
-        case Lint:      return mktylike(n->loc, Tyint);                        break;
-        case Lflt:      return mktylike(n->loc, Tyflt64);                    break;
-        case Lstr:      return mktyslice(n->loc, mktype(n->loc, Tybyte));     break;
-        case Llbl:      return mktyptr(n->loc, mktype(n->loc, Tyvoid));       break;
-        case Lfunc:     return n->lit.fnval->func.type;                         break;
-    };
-    die("Bad lit type %d", n->lit.littype);
-    return NULL;
+    Type *t;
+
+    if (!n->lit.type) {
+        switch (n->lit.littype) {
+            case Lchr:      t = mktype(n->loc, Tychar);                         break;
+            case Lbool:     t = mktype(n->loc, Tybool);                         break;
+            case Lint:      t = mktylike(n->loc, Tyint);                        break;
+            case Lflt:      t = mktylike(n->loc, Tyflt64);                      break;
+            case Lstr:      t = mktyslice(n->loc, mktype(n->loc, Tybyte));      break;
+            case Llbl:      t = mktyptr(n->loc, mktype(n->loc, Tyvoid));        break;
+            case Lfunc:     t = n->lit.fnval->func.type;                        break;
+        }
+        n->lit.type = t;
+    }
+    return n->lit.type;
 }
 
 static Type *delayeducon(Inferstate *st, Type *fallback)
@@ -1446,7 +1448,8 @@ static void inferexpr(Inferstate *st, Node **np, Type *ret, int *sawret)
             }
             settype(st, n, type(st, args[0]));
             break;
-        case Obad: case Ocjmp: case Ojtab: case Oset: case Odead:
+        case Obad: case Ocjmp: case Ojtab: case Oset:
+        case Odead: case Oundef:
         case Oslbase: case Osllen: case Outag:
         case Oblit: case  Oclear: case Oudata:
         case Otrunc: case Oswiden: case Ozwiden:
