@@ -557,7 +557,12 @@ static int tybfmt(char *buf, size_t len, Type *t)
             break;
         case Tyarray:
             p += tybfmt(p, end - p, t->sub[0]);
-            p += snprintf(p, end - p, "[%llu]", t->asize->expr.args[0]->lit.intval);
+            if (t->asize) {
+                i = t->asize->expr.args[0]->lit.intval;
+                p += snprintf(p, end - p, "[%zd]", i);
+            } else {
+                p += snprintf(p, end - p, "[]");
+            }
             break;
         case Tyfunc:
             p += snprintf(p, end - p, "(");
