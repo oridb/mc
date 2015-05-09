@@ -778,6 +778,7 @@ Loc *selexpr(Isel *s, Node *n)
             break;
         case Odead:
         case Oundef:
+        case Odef:
             /* nothing */
             break;
 

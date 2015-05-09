@@ -70,6 +70,21 @@ Type *tyword;
 Type *tyvoid;
 Node *abortoob;
 
+static void append(Simp *s, Node *n)
+{
+    lappend(&s->stmts, &s->nstmts, n);
+}
+
+static int ispure(Node *n)
+{
+    return opispure[exprop(n)];
+}
+
+static int isconstfn(Node *s)
+{
+    return s->decl.isconst && decltype(s)->type == Tyfunc;
+}
+
 size_t alignto(size_t sz, Type *t)
 {
     size_t a;
@@ -253,6 +268,15 @@ static Node *set(Node *a, Node *b)
     return n;
 }
 
+static void def(Simp *s, Node *var)
+{
+    Node *d;
+
+    d = mkexpr(var->loc, Odef, var, NULL);
+    d->expr.type = mktype(var->loc, Tyvoid);
+    append(s, d);
+}
+
 static Node *disp(Srcloc loc, uint v)
 {
     Node *n;
@@ -269,21 +293,6 @@ static Node *word(Srcloc loc, uint v)
     n = mkintlit(loc, v);
     n->expr.type = tyword;
     return n;
-}
-
-static void append(Simp *s, Node *n)
-{
-    lappend(&s->stmts, &s->nstmts, n);
-}
-
-static int ispure(Node *n)
-{
-    return opispure[exprop(n)];
-}
-
-static int isconstfn(Node *s)
-{
-    return s->decl.isconst && decltype(s)->type == Tyfunc;
 }
 
 static Node *gentemp(Simp *simp, Node *e, Type *ty, Node **dcl)
@@ -470,6 +479,7 @@ static void simpiter(Simp *s, Node *n)
     append(s, assign(s, idx, zero));
     jmp(s, lcond);
     simp(s, lbody);
+
     /* body */
     simp(s, n->iterstmt.body);
     /* step */
@@ -1363,6 +1373,9 @@ static Node *rval(Simp *s, Node *n, Node *dst)
         case Ostruct:
             if (!dst)
                 dst = temp(s, n);
+            u = mkexpr(dst->loc, Odef, dst, NULL);
+            u->expr.type = mktype(u->loc, Tyvoid);
+            append(s, u);
             t = addr(s, dst, exprtype(dst));
             ty = exprtype(n);
             /* we only need to clear if we don't have things fully initialized */
@@ -1475,8 +1488,13 @@ static Node *rval(Simp *s, Node *n, Node *dst)
                 else
                     r = temp(s, n);
                 linsert(&n->expr.args, &n->expr.nargs, 1, addr(s, r, exprtype(n)));
-                for (i = 0; i < n->expr.nargs; i++)
+                for (i = 0; i < n->expr.nargs; i++) {
                     n->expr.args[i] = rval(s, n->expr.args[i], NULL);
+                    if (exprop(n->expr.args[i]) == Oaddr)
+                        if (exprop(n->expr.args[i]->expr.args[0]) == Ovar)
+                            def(s, n->expr.args[i]->expr.args[0]);
+                }
+                def(s, r);
                 append(s, n);
             } else {
                 r = visit(s, n);
@@ -1588,18 +1606,16 @@ static Node *simp(Simp *s, Node *n)
         case Ndecl:
             declarelocal(s, n);
             t = mkexpr(n->loc, Ovar, n->decl.name, NULL);
-            if (!n->decl.init) {
-                u = mkexpr(n->loc, Oundef, t, NULL);
-                u->expr.type = mktype(n->loc, Tyvoid);
-            } else {
+            if (n->decl.init) {
                 u = mkexpr(n->loc, Oasn, t, n->decl.init, NULL);
                 u->expr.type = n->decl.type;
+                t->expr.type = n->decl.type;
+                t->expr.did = n->decl.did;
+                simp(s, u);
             }
-            t->expr.type = n->decl.type;
-            t->expr.did = n->decl.did;
-            simp(s, u);
             break;
         default:
+            dump(n, stderr);
             die("bad node passsed to simp()");
             break;
     }

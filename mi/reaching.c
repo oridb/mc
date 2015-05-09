@@ -18,7 +18,7 @@ Node *assignee(Node *n)
     Node *a;
 
     switch (exprop(n)) {
-        case Oundef:
+        case Oundef: case Odef:
         case Oset:
         case Oasn: case Oaddeq:
         case Osubeq: case Omuleq:
@@ -29,10 +29,11 @@ Node *assignee(Node *n)
             return n->expr.args[0];
             break;
         case Oblit:
+        case Oclear:
             a = n->expr.args[0];
             if (exprop(a) != Oaddr)
                 break;
-            a = n->expr.args[0];
+            a = a->expr.args[0];
             if (exprop(a) != Ovar)
                 break;
             return a;
@@ -156,7 +157,7 @@ Reaching *reaching(Cfg *cfg)
 //        printf("\tout: ");
 //        bsdump(out[i]);
 //    }
-//
+
     reaching = xalloc(sizeof(Reaching));
     reaching->in = in;
     reaching->out = out;

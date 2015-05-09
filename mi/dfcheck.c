@@ -17,12 +17,16 @@ static void checkundef(Node *n, Reaching *r, Bitset *reach, Bitset *kill)
 {
     size_t i, j, did;
     Node *def;
+    Type *t;
 
     if (n->type != Nexpr)
         return;
     if (exprop(n) == Ovar) {
         did = n->expr.did;
         for (j = 0; j < r->ndefs[did]; j++) {
+            t = tybase(exprtype(n));
+            if (t->type == Tystruct || t->type == Tyunion || t->type == Tyarray || t->type == Tytuple)
+                continue;
             if (bshas(kill, r->defs[did][j]))
                 continue;
             if (!bshas(reach, r->defs[did][j]))
@@ -37,6 +41,17 @@ static void checkundef(Node *n, Reaching *r, Bitset *reach, Bitset *kill)
             case Oasn:
             case Oblit:
                 checkundef(n->expr.args[1], r, reach, kill);
+                break;
+            case Oaddr:
+            case Oslice:
+                /* these don't actually look at the of args[0], so they're ok. */
+                for (i = 1; i < n->expr.nargs; i++)
+                    checkundef(n->expr.args[i], r, reach, kill);
+                break;
+            case Ocall:
+                for (i = 1; i < n->expr.nargs; i++)
+                    if (exprop(n->expr.args[i]) != Oaddr)
+                        checkundef(n->expr.args[i], r, reach, kill);
                 break;
             default:
                 for (i = 0; i < n->expr.nargs; i++)
@@ -55,8 +70,11 @@ static void checkreach(Cfg *cfg)
     Bb *bb;
 
     r = reaching(cfg);
+//    dumpcfg(cfg, stdout);
     for (i = 0; i < cfg->nbb; i++) {
         bb = cfg->bb[i];
+        if (!bb)
+            continue;
         reach = bsdup(r->in[i]);
         kill = mkbs();
         for (j = 0; j < bb->nnl; j++) {
@@ -110,6 +128,5 @@ static void checkret(Cfg *cfg)
 void check(Cfg *cfg)
 {
     checkret(cfg);
-    if (0)
-        checkreach(cfg);
+    if(0) checkreach(cfg);
 }

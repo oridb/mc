@@ -876,10 +876,19 @@ block   : blkbody Tendblk
 
 blkbody : decl {
                 size_t i;
+                Node *n, *d, *u;
+
                 $$ = mkblock($1.loc, mkstab());
                 for (i = 0; i < $1.nn; i++) {
-                    putdcl($$->block.scope, $1.nl[i]);
-                    lappend(&$$->block.stmts, &$$->block.nstmts, $1.nl[i]);
+                    d = $1.nl[i];
+                    putdcl($$->block.scope, d);
+                    if (!d->decl.init) {
+                        n = mkexpr(d->loc, Ovar, d->decl.name, NULL);
+                        u = mkexpr(n->loc, Oundef, n, NULL);
+                        n->expr.did = d->decl.did;
+                        lappend(&$$->block.stmts, &$$->block.nstmts, u);
+                    }
+                    lappend(&$$->block.stmts, &$$->block.nstmts, d);
                 }
             }
         | stmt {

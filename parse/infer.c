@@ -1448,8 +1448,15 @@ static void inferexpr(Inferstate *st, Node **np, Type *ret, int *sawret)
             }
             settype(st, n, type(st, args[0]));
             break;
+        case Oundef:
+            infersub(st, n, ret, sawret, &isconst);
+            settype(st, n, mktype(n->loc, Tyvoid));
+            break;
+        case Odef:
+        case Odead:
+            n->expr.type = mktype(n->loc, Tyvoid);
+            break;
         case Obad: case Ocjmp: case Ojtab: case Oset:
-        case Odead: case Oundef:
         case Oslbase: case Osllen: case Outag:
         case Oblit: case  Oclear: case Oudata:
         case Otrunc: case Oswiden: case Ozwiden:

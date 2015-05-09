@@ -4,6 +4,7 @@ const main = {
 	var p
 	var v
 
+	v = 0
 	p = &v
 	p# = 123
 	std.exit(v)
