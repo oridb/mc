@@ -74,8 +74,6 @@ echo 	../6/6.out	-I . fmt.myr
 	../6/6.out	-I . fmt.myr 
 echo 	../6/6.out	-I . rand.myr 
 	../6/6.out	-I . rand.myr 
-echo 	../6/6.out	-I . `{ape/psh $pwd/sysselect.sh wait}
-	../6/6.out	-I . `{ape/psh $pwd/sysselect.sh wait}
 echo 	../6/6.out	-I . now.myr 
 	../6/6.out	-I . now.myr 
 echo 	../6/6.out	-I . strjoin.myr 
@@ -90,6 +88,8 @@ echo 	../6/6.out	-I . slurp.myr
 	../6/6.out	-I . slurp.myr 
 echo 	../6/6.out	-I . strfind.myr 
 	../6/6.out	-I . strfind.myr 
+echo 	../6/6.out	-I . htab.myr 
+	../6/6.out	-I . htab.myr
 echo 	../6/6.out	-I . dirname.myr 
 	../6/6.out	-I . dirname.myr 
 echo 	../6/6.out	-I . putint.myr 
@@ -102,10 +102,10 @@ echo 	../6/6.out	-I . `{ape/psh $pwd/sysselect.sh env}
 	../6/6.out	-I . `{ape/psh $pwd/sysselect.sh env}
 echo 	../6/6.out	-I . endian.myr 
 	../6/6.out	-I . endian.myr 
-echo 	../6/6.out	-I . htab.myr 
-	../6/6.out	-I . htab.myr 
 echo 	../6/6.out	-I . intparse.myr 
 	../6/6.out	-I . intparse.myr 
+echo 	../6/6.out	-I . `{ape/psh $pwd/sysselect.sh wait}
+	../6/6.out	-I . `{ape/psh $pwd/sysselect.sh wait}
 echo 	../6/6.out	-I . ipparse.myr 
 	../6/6.out	-I . ipparse.myr 
 echo 	../6/6.out	-I . strstrip.myr 
