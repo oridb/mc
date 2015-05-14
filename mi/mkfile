@@ -8,7 +8,8 @@ OFILES=\
 	cfg.$O\
 	fold.$O\
         match.$O\
-	df.$O\
+	dfcheck.$O\
+	reaching.$O\
 
 HFILES=mi.h ../config.h ../parse/parse.h
 
