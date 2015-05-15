@@ -8,7 +8,7 @@ pkg config =
 	const Directlib	= true
 	const Runtime	= "_myrrt.6"
 
-	const Manpath	= "man"
+	const Manpath	= "sys/man/"
 	const Binpath	= "amd64/bin"
 	const Libpath	= "amd64/lib/myr"
 ;;
