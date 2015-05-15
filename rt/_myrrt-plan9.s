@@ -62,9 +62,8 @@ TEXT	_main(SB), 1, $(2*8+NPRIVATES*8)
 	POPQ	R13
 
 exitloop:
-	MOVQ	$0,(SP)
+	MOVQ	$0,8(SP)
 	MOVQ	$8,RARG
-	POPQ	AX
 	SYSCALL
 	JMP		exitloop
 
