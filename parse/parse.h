@@ -13,10 +13,10 @@ typedef long long       vlong;
 typedef unsigned long long uvlong;
 
 typedef struct Srcloc Srcloc;
-
 typedef struct Bitset Bitset;
-typedef struct Htab Htab;
 typedef struct Optctx Optctx;
+typedef struct Strbuf Strbuf;
+typedef struct Htab Htab;
 typedef struct Str Str;
 
 typedef struct Tok Tok;
@@ -69,6 +69,12 @@ typedef enum {
 } Tc;
 
 #define Zloc ((Srcloc){-1, 0})
+
+struct Strbuf {
+    char *buf;
+    size_t sz;
+    size_t len;
+};
 
 struct Srcloc {
     int line;
@@ -625,6 +631,12 @@ int rdbool(FILE *fd);
 size_t max(size_t a, size_t b);
 size_t min(size_t a, size_t b);
 size_t align(size_t sz, size_t a);
+
+/* string buffer */
+Strbuf *mksb();
+char *sbfin(Strbuf *sb);
+void sbputs(Strbuf *sb, char *s);
+void sbputb(Strbuf *sb, char b);
 
 /* suffix replacement */
 char *swapsuffix(char *buf, size_t sz, char *s, char *suf, char *swap);

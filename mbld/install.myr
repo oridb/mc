@@ -28,11 +28,11 @@ const movetargs = {b, delete
 	for tn in b.all
 		match gettarg(b.targs, tn)
 		| `Bin bt:
-			movefile(b, delete, bt.dir, bt.name, opt_instroot, opt_destdir, "bin", 0o755)
+			movefile(b, delete, bt.dir, bt.name, opt_instroot, opt_destdir, config.Binpath, 0o755)
 		| `Lib lt:
-			movefile(b, delete, lt.dir, lt.name, opt_instroot, opt_destdir, "lib/myr", 0o644)
+			movefile(b, delete, lt.dir, lt.name, opt_instroot, opt_destdir, config.Libpath, 0o644)
 			libarchive = std.fmt("lib%s.a", lt.name)
-			movefile(b, delete, lt.dir, libarchive, opt_instroot, opt_destdir, "lib/myr", 0o644)
+			movefile(b, delete, lt.dir, libarchive, opt_instroot, opt_destdir, config.Libpath, 0o644)
 			std.slfree(libarchive)
 		| `Gen gt:
 			/* nothing to do */

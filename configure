@@ -52,7 +52,10 @@ echo "const Arcmd = [\"ar\", \"-rcs\"]" >> mbld/config.myr
 echo "const Ascmd = [\"as\", \"-g\"]" >> mbld/config.myr
 echo "const Directlib = false" >> mbld/config.myr
 echo "const Runtime = \"_myrrt.o\"" >> mbld/config.myr
+# paths to install to
 echo "const Manpath = \"share/man/man\"" >> mbld/config.myr
+echo "const Binpath = \"bin\"" >> mbld/config.myr
+echo "const Libpath = \"lib/myr\"" >> mbld/config.myr
 case $OS in
     *Linux*)
         echo '#define Symprefix ""' >> config.h

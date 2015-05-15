@@ -1,5 +1,5 @@
 pkg config =
-	const Instroot	= "/amd64"
+	const Instroot	= "/"
 	const Sys	= "Plan9"
 	const Objsuffix	= ".6"
 	const Linkcmd	= ["6l", "-lo"]
@@ -7,5 +7,8 @@ pkg config =
 	const Ascmd	= ["6a"]
 	const Directlib	= true
 	const Runtime	= "_myrrt.6"
-	const Manpath	= "man/"
+
+	const Manpath	= "man"
+	const Binpath	= "amd64/bin"
+	const Libpath	= "amd64/lib/myr"
 ;;
