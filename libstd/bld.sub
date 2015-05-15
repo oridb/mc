@@ -13,6 +13,7 @@ lib sys =
 	ifreq+freebsd.myr
 	ifreq+linux.myr
 	ifreq+osx.myr
+	ifreq+plan9.myr
 	ifreq.myr	# dummy file: plan9 doesn't have ifreq
 	util+plan9-x64.s
 	util+posixy-x64.s

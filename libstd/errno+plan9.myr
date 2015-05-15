@@ -1,0 +1,6 @@
+pkg std =
+	type errno = int
+	const Erange	: errno = 1
+	const Emisc	: errno = 2
+	const Eexist	: errno = 3
+;;
