@@ -15,3 +15,8 @@ HFILES=mi.h ../config.h ../parse/parse.h
 
 </sys/src/cmd/mklib
 
+install:V: $LIB
+	touch $LIB
+
+uninstall:V:
+	echo $LIB: nothing to uninstall

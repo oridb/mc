@@ -11,3 +11,6 @@ LIB=../parse/libparse.a
 
 BIN=/$objtype/bin
 </sys/src/cmd/mkone
+
+uninstall:
+	rm -f /$objtype/bin/$TARG

@@ -40,7 +40,7 @@ install:V: $SUB config.h
 uninstall:V: $SUB config.h
 	for(dir in $SUB)@{
 		cd $dir
-		mk $MKFLAGS
+		mk $MKFLAGS uninstall
 	}
 	ape/psh mbldwrap.sh uninstall
 

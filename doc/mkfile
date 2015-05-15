@@ -7,6 +7,8 @@ all:V: $MANS
 
 install:V: $MANS
 
+uninstall:V: $MANS
+
 nuke:V: $MANS
 
 clean:V: $MANS

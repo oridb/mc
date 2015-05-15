@@ -9,6 +9,9 @@ install:V:
 	mkdir -p /$objtype/lib/myr
 	cp _myrrt.$O /$objtype/lib/myr
 
+uninstall:V:
+	rm -f /$objtype/lib/myr/_myrrt.$O
+
 clean:V:
 	rm -f _myrrt.$O
 

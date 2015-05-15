@@ -22,3 +22,6 @@ HFILES=asm.h ../parse/parse.h ../mi/mi.h ../config.h
 
 BIN=/$objtype/bin
 </sys/src/cmd/mkone
+
+uninstall:V:
+	rm -f /$objtype/bin/$TARG

@@ -25,7 +25,9 @@ CLEANFILES=gram.c gram.h
 
 install:V: $LIB
 	touch $LIB
-	
+
+uninstall:V:
+	echo nothing to uninstall
 
 gram.c gram.h: gram.y
 	yacc -d -S gram.y

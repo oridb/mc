@@ -16,3 +16,4 @@ else
 	export MYR_RT=../rt/_myrrt.o
 	./bootstrap.sh
 fi
+exit 0
