@@ -144,7 +144,7 @@ const srcdeps = {b, ds, g, path, obj, usefile
 			;;
 		| `Local (l, lnum):
 			if !std.hassuffix(l, ".use")
-				std.fatal(1, "%s:%s: local dependency \"%s\" should end with .use\n", path, lnum, l)
+				std.fatal("%s:%s: local dependency \"%s\" should end with .use\n", path, lnum, l)
 			;;
 			if obj.len != 0
 				pushdep(g, l, obj)
@@ -177,7 +177,7 @@ const addusedep = {b, ds, g, f, usefile, line
 		if ds.addsrc
 			std.htput(g.sources, src, true)
 		elif !std.hthas(g.input, usefile)
-			std.fatal(1, "%s:%i: source file %s not listed in bldfile\n", f, line, src)
+			std.fatal("%s:%i: source file %s not listed in bldfile\n", f, line, src)
 		;;
 	;;
 	pushdep(g, src, usefile)
@@ -194,12 +194,12 @@ const getdeps = {b, ds, path
 	if !std.fexists(path)
 		match std.htget(b.gensrc, path)
 		| `std.Some gt:	run(gt.cmd)
-		| `std.None:	std.fatal(1, "no input file %s\n", path)
+		| `std.None:	std.fatal("no input file %s\n", path)
 		;;
 	;;
 	match bio.open(path, bio.Rd)
 	| `std.Some fd:	f = fd
-	| `std.None:	std.fatal(1, "could not open %s\n", path)
+	| `std.None:	std.fatal("could not open %s\n", path)
 	;;
 
 	lnum = 0
@@ -230,14 +230,14 @@ const scrapelibs = {dg, lib, incs
 	f = openlib(lib, incs)
 	match bio.getc(f)
 	| `std.Some 'U': /* nothing */
-	| `std.Some _:	std.fatal(1, "library %s: corrupt or invalid usefile\n", lib)
-	| `std.None:	std.fatal(1, "library %s: could not read usefile\n", lib)
+	| `std.Some _:	std.fatal("library %s: corrupt or invalid usefile\n", lib)
+	| `std.None:	std.fatal("library %s: could not read usefile\n", lib)
 	;;
 	match bio.getbe32(f)
 	| `std.Some 1:	/* nothing: version matches. */
 	| `std.Some 0:	std.fput(1, "library %s: warning: old usefile version\n", lib)
-	| `std.Some _:	std.fatal(1, "library %s: usefile version unknown\n", lib)
-	| `std.None:	std.fatal(1, "library %s: corrutpt or invalid usefile\n", lib)
+	| `std.Some _:	std.fatal("library %s: usefile version unknown\n", lib)
+	| `std.None:	std.fatal("library %s: corrutpt or invalid usefile\n", lib)
 	;;
 	std.slfree(rdstr(f))
 	done = false
@@ -276,7 +276,7 @@ const openlib = {lib, incs
 	| `std.None:
 		/* nothing */
 	;;
-	std.fatal(1, "could not find library %s.\n", lib)
+	std.fatal("could not find library %s.\n", lib)
 }
 
 const depname = {deps, ln, lnum

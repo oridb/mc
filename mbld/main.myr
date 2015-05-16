@@ -75,7 +75,7 @@ const main = {args : byte[:][:]
 
 	match regex.compile("^\\s*use\\s+((\\<\\S+\\>)|(\"(\\S+)\")).*")
 	| `std.Ok re:	bld.usepat = re
-	| `std.Fail f:	std.fatal(1, "Failed to compile use pattern regex\n")
+	| `std.Fail f:	std.fatal("Failed to compile use pattern regex\n")
 	;;
 
 	b = mkbuild()
@@ -133,7 +133,7 @@ const mkbuild = {
 
 const findproj = {b, bldfile
 	if !findbase(b, bldfile) || !std.chdir(b.basedir)
-		std.fatal(1, "could not find %s\n", bldfile)
+		std.fatal("could not find %s\n", bldfile)
 	;;
 	bld.setdir(b, "")
 }

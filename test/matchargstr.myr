@@ -12,12 +12,12 @@ const main = {
 
 	v = `Str "asdf"
 	match v
-	| `Int 127:	std.fatal(1, "wrong match `Int 127\n")
-	| `Str "foo":	std.fatal(1, "Wrong match `Str \"foo\"\n")
-	| `Str "fsda":	std.fatal(1, "Wrong match `Str \"fsda\"\n")
+	| `Int 127:	std.fatal("wrong match `Int 127\n")
+	| `Str "foo":	std.fatal("Wrong match `Str \"foo\"\n")
+	| `Str "fsda":	std.fatal("Wrong match `Str \"fsda\"\n")
 	| `Str "asdf":	std.put("Correct `Str \"asdf\"!\n")
-	| `Nil:		std.fatal(1, "Wrong match `Str \"fsda\"\n")
-	| _:		std.fatal(1, "Impossible failed match\n")
+	| `Nil:		std.fatal("Wrong match `Str \"fsda\"\n")
+	| _:		std.fatal("Impossible failed match\n")
 	;;
 }
 

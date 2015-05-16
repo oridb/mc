@@ -52,7 +52,7 @@ const build = {b, targ
 	| `std.Some (`Gen gt):	runin(b, gt.cmd, gt.dir)
 	| `std.Some (`Cmd ct):	runin(b, ct.cmd, ct.dir)
 	| `std.Some (`Man mt):	/* nothing needed */
-	| `std.None:	std.fatal(1, "invalid target %s\n", targ)
+	| `std.None:	std.fatal("invalid target %s\n", targ)
 	;;
 	-> true
 }
@@ -70,7 +70,7 @@ const buildbin = {b, targ, addsrc
 	std.put("%s...\n", targ.name)
 	dg = myrdeps(b, targ, false, addsrc)
 	if !std.hthas(dg.deps, targ.name)
-		std.fatal(1, "no input files for %s\n", targ.name)
+		std.fatal("no input files for %s\n", targ.name)
 	;;
 	if builddep(b, dg, targ.name, targ.incpath) || !freshlibs(targ, dg.libs)
 		src = std.htkeys(dg.sources)
@@ -92,7 +92,7 @@ const buildlib = {b, targ
 	archive = std.fmt("lib%s.a", lib)
 	dg = myrdeps(b, targ, false, false)
 	if !std.hthas(dg.deps, lib)
-		std.fatal(1, "no target declared for %s\n", lib)
+		std.fatal("no target declared for %s\n", lib)
 	;;
 	u = builddep(b, dg, targ.name, targ.incpath)
 	l = builddep(b, dg, archive, targ.incpath)
@@ -155,7 +155,7 @@ const builddep = {b, dg, out, incs
 				;;
 			| `std.None:
 				if !std.fexists(d)
-					std.fatal(1, "no input file %s\n", d)
+					std.fatal("no input file %s\n", d)
 				;;
 			;;
 			if !isfresh(d, out)
@@ -204,7 +204,7 @@ const compile = {src, incs
 		run(cmd)
 		std.slfree(o)
 	else
-		std.fatal(1, "Unknown file type for %s\n", src)
+		std.fatal("Unknown file type for %s\n", src)
 	;;
 }
 
@@ -277,7 +277,7 @@ const mergeuse = {dg, lib, files, incs
 		if std.hassuffix(f, ".myr")
 			cmd = std.slpush(cmd, srcswapsuffix(f, ".use"))
 		elif !std.hassuffix(f, ".s")
-			std.fatal(1, "unknown file type for %s\n", f)
+			std.fatal("unknown file type for %s\n", f)
 		;;
 	;;
 	run(cmd)
@@ -311,7 +311,7 @@ const addlibs = {cmd, libgraph, incs
 
 const visit = {cmd, head, g, lib, looped, marked, incs
 	if std.hthas(looped, lib)
-		std.fatal(1, "cycle in library graph involving \"%s\"\n", lib)
+		std.fatal("cycle in library graph involving \"%s\"\n", lib)
 	elif std.hthas(marked, lib)
 		-> cmd
 	;;
@@ -331,7 +331,7 @@ const putlib = {cmd, head, lib, incs
 	else
 		match findlib(lib, incs)
 		| `std.None:
-			std.fatal(1, "could not find library lib%s.a\n", lib)
+			std.fatal("could not find library lib%s.a\n", lib)
 		| `std.Some p:
 			-> std.slput(cmd, head, p)
 		;;
@@ -401,7 +401,7 @@ const isfresh = {src, dst
 	*/
 	match std.fmtime(src)
 	| `std.Some mt:	srcmt = mt
-	| `std.None:	std.fatal(1, "could not stat %s\n", src)
+	| `std.None:	std.fatal("could not stat %s\n", src)
 	;;
 	match std.fmtime(dst)
 	| `std.Some mt:	dstmt = mt

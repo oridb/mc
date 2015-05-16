@@ -56,13 +56,13 @@ const initopts = {
 	| "Darwin":	opt_sys = "osx"
 	| "FreeBSD":	opt_sys = "freebsd"
 	| "Plan9":	opt_sys = "plan9"
-	| unknown:	std.fatal(1, "unknown system \"%s\"\n", unknown)
+	| unknown:	std.fatal("unknown system \"%s\"\n", unknown)
 	;;
 
 	match si.arch
 	| "x86_64":	opt_arch = "x64"
 	| "amd64":	opt_arch = "x64"
-	| unknown:	std.fatal(1, "unknown architecture \"%s\"\n", unknown)
+	| unknown:	std.fatal("unknown architecture \"%s\"\n", unknown)
 	;;
 
 	opt_incpaths = [][:]

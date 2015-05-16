@@ -97,7 +97,7 @@ const optnext = {ctx
 			optusage(ctx.optargs[0], ctx.optdef)
 			exit(0)
 		else
-			fatal(1, "unexpected argument '%c'\n", c)
+			fatal("unexpected argument '%c'\n", c)
 		;;
 	| `Some (true, needed):
 		/* -arg => '-a' 'rg' */

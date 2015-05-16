@@ -37,8 +37,8 @@ pkg std =
 	const bfmt	: (buf : byte[:], fmt : byte[:], args : ... -> byte[:])
 	const bfmtv	: (buf : byte[:], fmt : byte[:], ap : valist -> byte[:])
 
-	$noret const fatal	: (status : int, fmt : byte[:], args : ... -> void)
-	$noret const fatalv	: (status : int, fmt : byte[:], ap : valist -> void)
+	$noret const fatal	: (fmt : byte[:], args : ... -> void)
+	$noret const fatalv	: (fmt : byte[:], ap : valist -> void)
 ;;
 
 /* Writes a string of text up to 2 kb in size to stdout */
@@ -63,15 +63,15 @@ const fputv = {fd, fmt, ap
 }
 
 /* same as 'put', but exits the program after printing */
-const fatal = {status, fmt, args
+const fatal = {fmt, args
 	putv(fmt, vastart(&args))
-	exit(status)
+	exit(1)
 }
 
 /* same as 'putv', but exits the program after printing */
-const fatalv = {status, fmt, ap
+const fatalv = {fmt, ap
 	putv(fmt, ap)
-	exit(status)
+	exit(1)
 }
 
 /* formats a string, allocating the slice. FIXME: calculate the

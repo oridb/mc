@@ -59,7 +59,7 @@ const loadall = {b, path, dir
 			loadall(b, subproj, subpath)
 			b.basedir = curbase
 		else
-			std.fatal(1, "could not open %s or %s \n", subbld, subproj)
+			std.fatal("could not open %s or %s \n", subbld, subproj)
 		;;
 		std.slfree(subbld)
 		std.slfree(subproj)
@@ -91,7 +91,7 @@ const sortdeps = {b
 
 const visit = {all, b, targ, looped, marked
 	if std.hthas(looped, targ)
-		std.fatal(1, "cycle in build depgraph involving %s\n", targ)
+		std.fatal("cycle in build depgraph involving %s\n", targ)
 	elif std.hthas(marked, targ)
 		-> all
 	;;
@@ -109,7 +109,7 @@ const getdeps = {targ
 	match targ
 	| `Bin t:	-> t.libdeps
 	| `Lib t:	-> t.libdeps
-	| _:	std.fatal(1, "depending on non-library target")
+	| _:	std.fatal("depending on non-library target")
 	;;
 }
 
@@ -123,7 +123,7 @@ const mkparser = {path, dir, basedir
 	p.basedir = std.sldup(basedir)
 	match std.slurp(path)
 	| `std.Ok d:	p.data = d
-	| `std.Fail _:	std.fatal(1, "could not open '%s'\n", path)
+	| `std.Fail _:	std.fatal("could not open '%s'\n", path)
 	;;
 	p.rest = p.data
 	-> p
@@ -353,7 +353,7 @@ const myrtarget = {p, targ
 		| ("noinst", ""):	inst = false
 		| ("sys", tags):	systags = std.slpush(systags, tags)
 		| (invalid, _):
-			std.fatal(1, "%s: got invalid attr '%s'\n", targ, invalid)
+			std.fatal("%s: got invalid attr '%s'\n", targ, invalid)
 		;;
 	;;
 	for inc in bld.opt_incpaths
@@ -614,7 +614,7 @@ const libpath = {p, libpath
 		targ = std.fmt("%s:%s", p.fdir, lib)
 	| `std.Some idx:
 		if idx == libpath.len
-			std.fatal(1, "libdep %s missing library after ':'\n")
+			std.fatal("libdep %s missing library after ':'\n")
 		;;
 		/* absolute path */
 		if std.hasprefix(libpath, "@/") || std.hasprefix(libpath, "@:")
@@ -627,7 +627,7 @@ const libpath = {p, libpath
 			lib = std.sldup(libpath[idx+1:])
 			targ = std.pathcat(p.fdir, libpath)
 			if std.hasprefix(targ, "../")
-				std.fatal(1, "library %s outside of project\n", libpath)
+				std.fatal("library %s outside of project\n", libpath)
 			;;
 		;;
 	;;

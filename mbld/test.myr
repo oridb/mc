@@ -125,7 +125,7 @@ const runtest = {bin
 	log = std.strcat(bin, ".log")
 	match std.spork([bin][:])
 	| `std.Fail m:
-		std.fatal(1, "unable to run test: %s\n", m)
+		std.fatal("unable to run test: %s\n", m)
 	| `std.Ok (pid, infd, outfd):
 		match std.fslurp(outfd)
 		| `std.Ok "":	/* empty output; nothing to log */

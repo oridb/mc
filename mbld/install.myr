@@ -68,7 +68,7 @@ const movefile = {b, rm, dir, file, prefix, perm
 		std.put("\t%s => %s\n", file, path)
 		std.remove(path)
 		match std.slurp(file)
-		| `std.Fail m:	std.fatal(1, "Could not open %s for reading\n", file)
+		| `std.Fail m:	std.fatal("Could not open %s for reading\n", file)
 		| `std.Ok buf:
 			if !std.blat(path, buf, perm)
 				std.put("Could not write %s\n", file)
@@ -84,11 +84,11 @@ const moveman = {b, rm, dir, man
 
 	match std.strrfind(man, ".")
 	| `std.None:
-		std.fatal(1, "manpage %s has no section\n", man)
+		std.fatal("manpage %s has no section\n", man)
 	| `std.Some s:
 		sect = s + 1
 		if s + 1 == man.len
-			std.fatal(1, "manpage %s missing suffix\n", man)
+			std.fatal("manpage %s missing suffix\n", man)
 		;;
 	;;
 

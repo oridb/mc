@@ -8,6 +8,6 @@ pkg std =
 generic try = {v
 	match v
 	| `Some x:	-> x
-	| `None:	fatal(1, "expected `Some @a, got `None\n")
+	| `None:	fatal("expected `Some @a, got `None\n")
 	;;
 }
