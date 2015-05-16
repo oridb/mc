@@ -14,4 +14,4 @@ else
 	export MYR_RT=../rt/_myrrt.o
 	BOOT="./mk/bootstrap/bootstrap+`uname -s`-`uname -m`.sh"
 fi
-mbld || ./mbld/mbld || $BOOT
+mbld $@ || ./mbld/mbld $@ || $BOOT
