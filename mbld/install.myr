@@ -22,18 +22,22 @@ const uninstall = {b
 	-> movetargs(b, true)
 }
 
-const movetargs = {b, delete
+const movetargs = {b, rm
 	var libarchive
 
 	for tn in b.all
 		match gettarg(b.targs, tn)
 		| `Bin bt:
-			movefile(b, delete, bt.dir, bt.name, opt_instroot, opt_destdir, config.Binpath, 0o755)
+			if bt.install
+				movefile(b, rm, bt.dir, bt.name, config.Binpath, 0o755)
+			;;
 		| `Lib lt:
-			movefile(b, delete, lt.dir, lt.name, opt_instroot, opt_destdir, config.Libpath, 0o644)
-			libarchive = std.fmt("lib%s.a", lt.name)
-			movefile(b, delete, lt.dir, libarchive, opt_instroot, opt_destdir, config.Libpath, 0o644)
-			std.slfree(libarchive)
+			if lt.install
+				movefile(b, rm, lt.dir, lt.name, config.Libpath, 0o644)
+				libarchive = std.fmt("lib%s.a", lt.name)
+				movefile(b, rm, lt.dir, libarchive, config.Libpath, 0o644)
+				std.slfree(libarchive)
+			;;
 		| `Gen gt:
 			/* nothing to do */
 		| `Cmd ct:
@@ -41,7 +45,7 @@ const movetargs = {b, delete
 		| `Man mt:
 			/* FIXME: figure out man section by number */
 			for m in mt.pages
-				moveman(b, delete, mt.dir, m)
+				moveman(b, rm, mt.dir, m)
 			;;
 		| `Test tt:	/* nothing */
 		;;
@@ -50,13 +54,13 @@ const movetargs = {b, delete
 }
 
 
-const movefile = {b, delete, dir, file, instdir, destdir, prefix, perm
+const movefile = {b, rm, dir, file, prefix, perm
 	var path
 
 	setdir(b, dir)
-	path = std.pathjoin([destdir, instdir, prefix, file][:])
-	if delete
-		std.put("\tdelete %s\n", path)
+	path = std.pathjoin([opt_destdir, opt_instroot, prefix, file][:])
+	if rm
+		std.put("\trm %s\n", path)
 		if !std.remove(path)
 			std.put("\t\tno such file %s\n", file)
 		;;
@@ -75,7 +79,7 @@ const movefile = {b, delete, dir, file, instdir, destdir, prefix, perm
 	std.slfree(path)
 }
 
-const moveman = {b, delete, dir, man
+const moveman = {b, rm, dir, man
 	var sect, manrel
 
 	match std.strrfind(man, ".")
@@ -89,6 +93,6 @@ const moveman = {b, delete, dir, man
 	;;
 
 	manrel = std.fmt("%s%s", opt_manpath, man[sect:])
-	movefile(b, delete, dir, man, opt_instroot, opt_destdir, manrel, 0o644)
+	movefile(b, rm, dir, man, manrel, 0o644)
 	std.slfree(manrel)
 }
