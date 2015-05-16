@@ -37,6 +37,9 @@ install:V: $SUB config.h
 	}
 	ape/psh mbldwrap.sh install
 
+bootstrap:V:
+	ape/psh genbootstrap.sh
+
 uninstall:V: $SUB config.h
 	for(dir in $SUB)@{
 		cd $dir
