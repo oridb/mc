@@ -20,7 +20,8 @@ check: all
 bench: all
 	$(MAKE) -C bench bench
 
-bootstrap.sh: buildmyr
+.PHONY: bootstrap
+bootstrap: buildmyr
 	./genbootstrap.sh
 
 buildmyr:

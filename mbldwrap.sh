@@ -8,12 +8,12 @@ elif test `uname` = Plan9; then
 	export MYR_MUSE=../muse/$O.out
 	export MYR_MC=../$O/$O.out
 	export MYR_RT=../rt/_myrrt.$O
-	./bootstrap9.rc
+	./mk/bootstrap/bootstrap+`uname -s`-`uname -m`.sh
 else
 	echo "POSIX BOOTSTRAP"
 	export MYR_MUSE=../muse/muse
 	export MYR_MC=../6/6m
 	export MYR_RT=../rt/_myrrt.o
-	./bootstrap.sh
+	./mk/bootstrap/bootstrap+`uname -s`-`uname -m`.sh
 fi
 exit 0
