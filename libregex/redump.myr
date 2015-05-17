@@ -13,7 +13,7 @@ const main = {args
 	cmd = std.optparse(args, &opts)
 	match regex.dbgcompile(cmd.args[0])
 	| `std.Fail m:	
-		std.fatal(1, "unable to compile regex: %s\n", regex.failmsg(m))
+		std.fatal("unable to compile regex: %s\n", regex.failmsg(m))
 	| `std.Ok re:
 		if cmd.args.len > 1
 			runall(re, cmd.args)
@@ -33,7 +33,7 @@ const runall = {re, files
 			dump(re, fd)
 			bio.close(fd)
 		| `std.None:
-			std.fatal(1, "failed to open %s\n", f)
+			std.fatal("failed to open %s\n", f)
 		;;
 	;;
 }

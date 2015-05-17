@@ -109,7 +109,7 @@ const sysmode = {mode
 	| Rd:	-> std.Ordonly
 	| Wr:	-> std.Owronly
 	| Rw:	-> std.Ordwr
-	| _:	std.fatal(1, "bio: bad file mode")
+	| _:	std.fatal("bio: bad file mode")
 	;;
 	-> 0
 }
