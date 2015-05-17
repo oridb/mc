@@ -85,13 +85,13 @@ const filldate = {d, f, s, tz, err -> byte[:]
 			| 'h':	s = indexof(&d.day, s, _names.abbrevmon, err)
 			| 'H':	s = intval(&d.h, s, 2, 2, err)
 			| 'I':	s = intval(&d.h, s, 2, 2, err)
-			| 'j':	std.fatal(1, "year day... unimplemented.")
+			| 'j':	std.fatal("unsupported '%j'\n")
 			| 'k':	s = intval(&d.h, s, 1, 2, err)
 			| 'l':	s = intval(&d.h, s, 1, 2, err)
 			| 'm':	s = intval(&d.mon, s, 1, 2, err)
 			| 'M':	s = intval(&d.m, s, 1, 2, err)
 			| 'n':	s = matchstr(s, "\n", err)
-			| 'O':	std.fatal(1, "unsupported %O")
+			| 'O':	std.fatal("unsupported %O\n")
 			| 'p':	s = matchampm(d, s, err)
 			| 'P':	s = matchampm(d, s, err)
 			| 'r':	s = filldate(d, "%H:%M:%S %P", s, tz, err) 
@@ -100,7 +100,7 @@ const filldate = {d, f, s, tz, err -> byte[:]
 			| 'S':	s = intval(&d.s, s, 1, 2, err)
 			| 't':	s = eatspace(s)
 			| 'u':	s = intval(&d.wday, s, 1, 1, err)
-			| 'U':	std.fatal(1, "week number... unimplemented.")
+			| 'U':	std.fatal("unsupported '%U'\n")
 				/*
 			| 'x':	o += bftime(buf[o:], Datefmt, d)
 			| 'X':	o += bftime(buf[o:], Timefmt, d)
@@ -114,7 +114,7 @@ const filldate = {d, f, s, tz, err -> byte[:]
 			| 'Z':	o += std.bfmt(buf[o:], "%s", d.tzname)
 				*/
 			| '%':	s = matchstr(s, "%", err)
-			| _:	std.fatal(1, "unknown format character %c\n", fc)
+			| _:	std.fatal("unknown format character %c\n", fc)
 			;;
 		else
 			(sc, s) = std.striter(s)
