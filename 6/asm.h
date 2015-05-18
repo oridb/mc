@@ -12,6 +12,7 @@ typedef struct Func Func;
 typedef struct Blob Blob;
 typedef struct Isel Isel;
 typedef struct Asmbb Asmbb;
+typedef struct Blob Blob;
 
 typedef enum {
 #define Insn(val, gasfmt, p9fmt, use, def) val,
@@ -58,6 +59,35 @@ typedef enum {
     Gnugas,
     Plan9,
 } Asmsyntax;
+
+typedef enum {
+    Bti8,
+    Bti16,
+    Bti32,
+    Bti64,
+    Btimin,     /* byte-packed uint */
+    Btref,
+    Btbytes,
+    Btseq,
+} Blobtype;
+
+struct Blob {
+    Blobtype type;
+    char *lbl;  /* may be null */
+    char isglobl;
+    union {
+        uint64_t ival;
+        char *ref;
+        struct {
+            size_t len;
+            char *buf;
+        } bytes;
+        struct {
+            size_t nsub;
+            Blob **sub;
+        } seq;
+    };
+};
 
 /* a register, label, or memory location */
 struct Loc {
@@ -205,6 +235,7 @@ void selfunc(Isel *is, Func *fn, Htab *globls, Htab *strtab);
 void gen(Node *file, char *out);
 void gengas(Node *file, char *out);
 void genp9(Node *file, char *out);
+Blob *tydescblob(Type *t);
 
 /* location generation */
 extern size_t maxregid;
@@ -237,7 +268,6 @@ void dbglocprint(FILE *fd, Loc *l, char spec);
 /* register allocation */
 void regalloc(Isel *s);
 Rclass rclass(Loc *l);
-
 
 /* useful functions */
 size_t tysize(Type *t);
