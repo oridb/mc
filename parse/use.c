@@ -480,7 +480,7 @@ static void pickle(FILE *fd, Node *n)
                 case Lchr:      wrint(fd, n->lit.chrval);       break;
                 case Lint:      wrint(fd, n->lit.intval);       break;
                 case Lflt:      wrflt(fd, n->lit.fltval);       break;
-                case Lstr:      wrstrbuf(fd, n->lit.strval);    break;
+                case Lstr:      wrlenstr(fd, n->lit.strval);    break;
                 case Llbl:      wrstr(fd, n->lit.lblval);       break;
                 case Lbool:     wrbool(fd, n->lit.boolval);     break;
                 case Lfunc:     pickle(fd, n->lit.fnval);       break;
@@ -611,7 +611,7 @@ static Node *unpickle(FILE *fd)
                 case Lchr:      n->lit.chrval = rdint(fd);       break;
                 case Lint:      n->lit.intval = rdint(fd);       break;
                 case Lflt:      n->lit.fltval = rdflt(fd);       break;
-                case Lstr:      rdstrbuf(fd, &n->lit.strval);    break;
+                case Lstr:      rdlenstr(fd, &n->lit.strval);    break;
                 case Llbl:      n->lit.lblval = rdstr(fd);       break;
                 case Lbool:     n->lit.boolval = rdbool(fd);     break;
                 case Lfunc:     n->lit.fnval = unpickle(fd);     break;
@@ -851,6 +851,8 @@ int loaduse(char *path, FILE *f, Stab *st, Vis vis)
             s = st;
         }
     }
+    if (!streq(st->name, pkg))
+        vis = Visintern;
     if (!s) {
         printf("could not find matching package for merge: %s in %s\n", st->name, path);
         exit(1);
@@ -897,6 +899,8 @@ foundlib:
                 if (ty->type == Tyname || ty->type == Tygeneric) {
                     if (ty->issynth)
                         break;
+                    if (!streq(s->name, ty->name->name.ns))
+                        ty->ishidden = 1;
                     if (!gettype(s, ty->name) && !ty->ishidden)
                         puttype(s, ty->name, ty);
                     if (!hthas(tydedup, ty))
@@ -952,7 +956,7 @@ void readuse(Node *use, Stab *st, Vis vis)
         fatal(use, "Could not open %s", use->use.name);
 
     if (!loaduse(p, fd, st, vis))
-        die("Could not load usefile %s from %s", use->use.name);
+        die("Could not load usefile %s from %s", use->use.name, p);
     free(p);
 }
 

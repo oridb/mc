@@ -316,13 +316,13 @@ char *rdstr(FILE *fd)
     }
 }
 
-void wrstrbuf(FILE *fd, Str str)
+void wrlenstr(FILE *fd, Str str)
 {
     wrint(fd, str.len);
     wrbuf(fd, str.buf, str.len);
 }
 
-void rdstrbuf(FILE *fd, Str *str)
+void rdlenstr(FILE *fd, Str *str)
 {
     str->len = rdint(fd);
     str->buf = xalloc(str->len + 1);
