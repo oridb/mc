@@ -12,7 +12,6 @@ typedef struct Func Func;
 typedef struct Blob Blob;
 typedef struct Isel Isel;
 typedef struct Asmbb Asmbb;
-typedef struct Blob Blob;
 
 typedef enum {
 #define Insn(val, gasfmt, p9fmt, use, def) val,
