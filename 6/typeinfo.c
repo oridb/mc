@@ -101,11 +101,11 @@ void namevec(Blob ***sub, size_t *nsub, Node *n)
     if (n->name.ns) {
         len = strlen(n->name.name) + strlen(n->name.ns) + 1;
         buf = xalloc(len + 1);
-        snprintf(buf, len, "%s.%s", n->name.ns, n->name.name);
+        snprintf(buf, len + 1, "%s.%s", n->name.ns, n->name.name);
     } else {
         len = strlen(n->name.name);
         buf = xalloc(len + 1);
-        snprintf(buf, len, "%s", n->name.name);
+        snprintf(buf, len + 1, "%s", n->name.name);
     }
     lappend(sub, nsub, mkblobi(Btimin, len));
     lappend(sub, nsub, mkblobbytes(buf, len));
@@ -215,6 +215,19 @@ Blob *tydescsub(Type *ty)
     return b;
 }
 
+Blob *namedesc(Type *ty)
+{
+    Blob **sub;
+    size_t nsub;
+
+    sub = NULL;
+    nsub = 0;
+    lappend(&sub, &nsub, mkblobi(Bti8, Tyname));
+    namevec(&sub, &nsub, ty->name);
+    lappend(&sub, &nsub, tydescsub(ty->sub[0]));
+    return mkblobseq(sub, nsub);
+}
+
 Blob *tydescblob(Type *ty)
 {
     char buf[512];
@@ -226,9 +239,8 @@ Blob *tydescblob(Type *ty)
     if (ty->type == Tyname) {
         b = mkblobseq(NULL, 0);
         sz = mkblobi(Btimin, 0);
-        sub = tydescsub(ty->sub[0]);
+        sub = namedesc(ty);
         sz->ival = blobsz(sub);
-        lappend(&b->seq.sub, &b->seq.nsub, mkblobi(Bti8, Tyname));
         lappend(&b->seq.sub, &b->seq.nsub, sz);
         lappend(&b->seq.sub, &b->seq.nsub, sub);
         if (ty->vis == Visexport)
@@ -240,6 +252,7 @@ Blob *tydescblob(Type *ty)
     b->lbl = strdup(buf);
     return b;
 }
+
 size_t tysize(Type *t)
 {
     size_t sz;
