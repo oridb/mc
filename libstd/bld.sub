@@ -47,6 +47,7 @@ lib std {inc=.} =
 	hassuffix.myr
 	htab.myr
 	intparse.myr
+        introspect.myr
 	ipparse.myr
 	mk.myr
 	mkpath.myr

@@ -123,10 +123,12 @@ static void structmemb(Blob ***sub, size_t *nsub, Node *sdecl)
 static void unionmemb(Blob ***sub, size_t *nsub, Ucon *ucon)
 {
     namevec(sub, nsub, ucon->name);
-    if (ucon->etype)
+    if (ucon->etype) {
         lappend(sub, nsub, tydescsub(ucon->etype));
-    else
+    } else  {
+        lappend(sub, nsub, mkblobi(Btimin, 1));
         lappend(sub, nsub, mkblobi(Bti8, Tybad));
+    }
 }
 
 Blob *tydescsub(Type *ty)

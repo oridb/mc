@@ -539,7 +539,7 @@ static void gentyblob(FILE *fd, Blob *b)
             fprintf(fd, "\t.quad %s\n", b->ref);
             break;
         case Btbytes:
-            writebytes(fd, b->bytes.buf, b->bytes.len + 1);
+            writebytes(fd, b->bytes.buf, b->bytes.len);
             break;
         case Btseq:
             for (i = 0; i < b->seq.nsub; i++)

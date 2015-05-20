@@ -1,0 +1,258 @@
+use "types.use"
+use "die.use"
+use "fmt.use"
+
+pkg std =
+	type typeinfo = union
+		`Tynone
+
+		/* atomic types */
+		`Tyvoid
+		`Tybool
+		`Tychar
+
+		`Tyint8
+		`Tyint16
+		`Tyint
+		`Tyint32
+		`Tyint64
+		`Tylong
+
+		`Tybyte
+		`Tyuint8
+		`Tyuint16
+		`Tyuint
+		`Tyuint32
+		`Tyuint64
+		`Tyulong
+		`Tyflt32
+		`Tyflt64
+		`Tyvalist
+
+		/* compound types */
+		`Typtr byte[:]
+		`Tyfunc	typecursor
+		`Tyslice byte[:]
+		`Tyarray (size, byte[:])
+
+		/* aggregate types */
+		`Tytuple	typecursor
+		`Tystruct	namecursor
+		`Tyunion	namecursor
+		/* name info */
+		`Tyname (byte[:], byte[:])
+	;;
+
+	type typecursor = struct
+		nelt	: size
+		rem	: byte[:]
+	;;
+
+	type namecursor = struct
+		nelt	: size
+		rem	: byte[:]
+	;;
+
+	generic typeof	: (v : @a -> byte[:])
+	const typesof	: (vl : ... -> typecursor)
+	const typeinfo	: (e : byte[:] -> typeinfo)
+
+	const tcnext	: (t : typecursor# -> byte[:])
+	const ncnext	: (t : namecursor# -> (byte[:], byte[:]))
+;;
+
+const Encnone	: byte = 0
+const Encvoid	: byte = 1
+const Encbool	: byte = 2
+const Encchar	: byte = 3
+
+const Encint8	: byte = 4
+const Encint16	: byte = 5
+const Encint	: byte = 6
+const Encint32	: byte = 7
+const Encint64	: byte = 8
+const Enclong	: byte = 9
+
+const Encbyte	: byte = 10
+const Encuint8	: byte = 11
+const Encuint16	: byte = 12
+const Encuint	: byte = 13
+const Encuint32	: byte = 14
+const Encuint64	: byte = 15
+const Enculong	: byte = 16
+const Encflt32	: byte = 17
+const Encflt64	: byte = 18
+const Encvalist	: byte = 19
+
+/* compound types */
+const Encptr	: byte = 20
+const Encfunc	: byte = 21
+const Encslice	: byte = 22
+const Encarray	: byte = 23
+
+/* aggregate types */
+const Enctuple	: byte = 24
+const Encstruct	: byte = 25
+const Encunion	: byte = 26
+const Encname	: byte = 30
+const Encindname	:byte = 30 | 0x80
+
+generic typeof = {v : @a
+	var tc
+
+	tc = typesof(v)
+	-> tcnext(&tc)
+}
+
+const typesof = {a : ...
+	var e
+
+	e = getenc(&a castto(byte##))
+	/* we encode the arg pack type as a tuple of the types passed */
+	std.assert(e[0] == Enctuple, "typesof wrong base type")
+	-> lentypecursor(e[1:])
+}
+
+const tcnext = {tc
+	var n, sz, cur
+
+	if tc.rem.len == 0
+		-> ""
+	;;
+	(n, sz) = getipacked(tc.rem)
+	cur = tc.rem[sz:sz+n]
+	tc.rem = tc.rem[sz+n:]
+	-> cur
+}
+
+const ncnext = {nc
+	var n, sz, name, enc
+
+	if nc.rem.len == 0
+		-> ("", "")
+	;;
+
+	/* get the name */
+	(n, sz) = getipacked(nc.rem)
+	name = nc.rem[sz:sz+n]
+	nc.rem = nc.rem[sz+n:]
+
+	/* and the type */
+	(n, sz) = getipacked(nc.rem)
+	enc = nc.rem[sz:sz+n]
+	nc.rem = nc.rem[sz+n:]
+	-> (name, enc)
+}
+
+
+const getenc = {p : byte##
+	var val, sz
+
+	(val, sz) = getipacked(p#[:8])
+	-> p#[sz:sz+val]
+}
+
+const typeinfo = {ti
+	var len, sz, p
+
+	match ti[0]
+	| Encnone:	-> `Tynone
+	| Encvoid:	-> `Tyvoid
+	| Encbool:	-> `Tybool
+	| Encchar:	-> `Tychar
+
+	| Encint8:	-> `Tyint8
+	| Encint16:	-> `Tyint16
+	| Encint:	-> `Tyint
+	| Encint32:	-> `Tyint32
+	| Encint64:	-> `Tyint64
+	| Enclong:	-> `Tylong
+
+	| Encbyte:	-> `Tybyte
+	| Encuint8:	-> `Tyuint8
+	| Encuint16:	-> `Tyuint16
+	| Encuint:	-> `Tyuint
+	| Encuint32:	-> `Tyuint32
+	| Encuint64:	-> `Tyuint64
+	| Enculong:	-> `Tyulong
+	| Encflt32:	-> `Tyflt32
+	| Encflt64:	-> `Tyflt64
+	| Encvalist:	-> `Tyvalist
+	/* for now */
+
+	/* compound types */
+	| Encptr:	-> `Typtr getsub(ti[1:])
+	| Encfunc:	-> `Tyfunc lentypecursor(ti[1:])
+	| Encslice:	-> `Tyslice getsub(ti[1:])
+	| Encarray:
+		(len, sz) = getipacked(ti[1:])
+		-> `Tyarray (len, getsub(ti[sz+1:]))
+
+
+	/* aggregate types */
+	| Enctuple:	-> `Tytuple lentypecursor(ti[1:])
+	| Encstruct:	-> `Tystruct lennamecursor(ti[1:])
+	| Encunion:	-> `Tyunion lennamecursor(ti[1:])
+	| Encname:	-> `Tyname nameinfo(ti[1:])
+	| Encindname:
+		/* 
+		ugly hack: the slice contains a pointer to the
+		value, so if we cast it to a byte##, we can
+		pull the indirect value out of the pointer.
+		*/
+		p = ti[1:] castto(byte##)
+		-> typeinfo(getenc(p))
+	| other:	std.fatal("unsupported type %b\n", other)
+	;;
+}
+
+const nameinfo = {e
+	var n, sz, name, enc
+
+	(n, sz) = getipacked(e)
+	name = e[sz:n+sz]
+	e = e[n+sz:]
+	(n, sz) = getipacked(e)
+	enc = e[sz:n+sz]
+
+	-> (name, enc)
+}
+
+const lentypecursor = {e
+	var n, sz
+
+	(n, sz) = getipacked(e)
+	-> [.nelt=n, .rem=e[sz:]]
+}
+
+const lennamecursor = {e 
+	var n, sz
+
+	(n, sz) = getipacked(e)
+	-> [.nelt=n, .rem=e[sz:]]
+}
+
+const getsub = {e
+	var n, sz
+
+	(n, sz) = getipacked(e)
+	-> e[sz:sz+n]
+}
+
+const getipacked = {p : byte[:]
+	var mask, val, len, i
+
+	mask = 0x80
+	val = 0
+	len = 1
+	while p[0] & mask != mask << 1
+		len++
+		mask >>= 1
+		mask |= 0x80
+	;;
+
+	for i = 0; i < len; i++
+		val |= (p[i] castto(size)) << (i*7)
+	;;
+	-> (val, len)
+}
