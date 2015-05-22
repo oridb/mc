@@ -494,14 +494,19 @@ static void encodemin(FILE *fd, uint64_t val)
     size_t i, shift;
     uint8_t b;
 
+    if (val < 128) {
+        fprintf(fd, "\t.byte %zd\n", val);
+        return;
+    }
+
     for (i = 1; i < 8; i++)
         if (val < 1ULL << (7*i))
             break;
-    shift = 8 - i + 1;
-    b = ~0 << shift;
-    b |= val & ((1 << shift) - 1);
+    shift = 8 - i;
+    b = ~0 << (shift + 1);
+    b |= val & ((1 << (8 - shift)) - 1);
     fprintf(fd, "\t.byte %u\n", b);
-    val >>= shift;
+    val >>=  shift;
     while (val != 0) {
         fprintf(fd, "\t.byte %u\n", (uint)val & 0xff);
         val >>= 8;
@@ -621,13 +626,6 @@ void gengas(Node *file, char *out)
     fprintf(fd, "\n");
 
     genstrings(fd, strtab);
-    /*
-     * workaround for label issue on OSX: we get errors
-     * complaining about how differences involving labels
-     * at the end of functions will generate a non-relocatable
-     * difference. Adding a dummy byte after will fix this.
-     */
-    fprintf(fd, "\t.byte 0 /* dummy to shut up Apple's as */\n");
     fclose(fd);
 }
 

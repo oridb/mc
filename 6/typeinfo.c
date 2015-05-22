@@ -131,6 +131,12 @@ static void unionmemb(Blob ***sub, size_t *nsub, Ucon *ucon)
     }
 }
 
+static void encodetypeinfo(Blob ***sub, size_t *nsub, Type *t)
+{
+    lappend(sub, nsub, mkblobi(Btimin, tysize(t)));
+    lappend(sub, nsub, mkblobi(Btimin, tyalign(t)));
+}
+
 Blob *tydescsub(Type *ty)
 {
     Blob **sub, *sz, *bt, *b;
@@ -172,6 +178,7 @@ Blob *tydescsub(Type *ty)
             lappend(&sub, &nsub, tydescsub(ty->sub[0]));
             break;
         case Tyarray:
+            encodetypeinfo(&sub, &nsub, ty);
             ty->asize = fold(ty->asize, 1);
             len = ty->asize;
             if (len) {
@@ -191,16 +198,19 @@ Blob *tydescsub(Type *ty)
                 lappend(&sub, &nsub, tydescsub(ty->sub[i]));
             break;
         case Tytuple:
+            encodetypeinfo(&sub, &nsub, ty);
             lappend(&sub, &nsub, mkblobi(Btimin, ty->nsub));
             for (i = 0; i < ty->nsub; i++)
                 lappend(&sub, &nsub, tydescsub(ty->sub[i]));
             break;
         case Tystruct:
+            encodetypeinfo(&sub, &nsub, ty);
             lappend(&sub, &nsub, mkblobi(Btimin, ty->nmemb));
             for (i = 0; i < ty->nmemb; i++)
                 structmemb(&sub, &nsub, ty->sdecls[i]);
             break;
         case Tyunion:
+            encodetypeinfo(&sub, &nsub, ty);
             lappend(&sub, &nsub, mkblobi(Btimin, ty->nmemb));
             for (i = 0; i < ty->nmemb; i++)
                 unionmemb(&sub, &nsub, ty->udecls[i]);
@@ -296,6 +306,8 @@ size_t tysize(Type *t)
         case Tyname:
             return tysize(t->sub[0]);
         case Tyarray:
+            if (!t->asize)
+                return 0;
             t->asize = fold(t->asize, 1);
             assert(exprop(t->asize) == Olit);
             return t->asize->expr.args[0]->lit.intval * tysize(t->sub[0]);
@@ -328,6 +340,35 @@ size_t tysize(Type *t)
             break;
     }
     return -1;
+}
+
+size_t tyalign(Type *ty)
+{
+    size_t align, i;
+
+    align = 1;
+    switch (ty->type) {
+        case Tyarray:
+            align = tyalign(ty->sub[0]);
+            break;
+        case Tytuple:
+            for (i = 0; i < ty->nsub; i++)
+                align = max(align, tyalign(ty->sub[0]));
+            break;
+        case Tyunion:
+            align = 4;
+            for (i = 0; i < ty->nmemb; i++)
+                if (ty->udecls[i]->etype)
+                    align = max(align, tyalign(ty->udecls[i]->etype));
+            break;
+        case Tystruct:
+            for (i = 0; i < ty->nmemb; i++)
+                align = max(align, tyalign(decltype(ty->sdecls[i])));
+            break;
+        default:
+            align = tysize(ty);
+    }
+    return align;
 }
 
 /* gets the byte offset of 'memb' within the aggregate type 'aggr' */

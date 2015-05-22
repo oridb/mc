@@ -3,7 +3,7 @@ use "die.use"
 use "fmt.use"
 
 pkg std =
-	type typeinfo = union
+	type typedesc = union
 		`Tynone
 
 		/* atomic types */
@@ -53,8 +53,15 @@ pkg std =
 		rem	: byte[:]
 	;;
 
+	type typeinfo = struct
+		size	: size
+		align	: size
+	;;
+
 	generic typeof	: (v : @a -> byte[:])
 	const typesof	: (vl : ... -> typecursor)
+	const typedecode	: (e : byte[:] -> typedesc)
+	const typedesc	: (e : byte[:] -> typedesc)
 	const typeinfo	: (e : byte[:] -> typeinfo)
 
 	const tcnext	: (t : typecursor# -> byte[:])
@@ -110,7 +117,8 @@ const typesof = {a : ...
 	e = getenc(&a castto(byte##))
 	/* we encode the arg pack type as a tuple of the types passed */
 	std.assert(e[0] == Enctuple, "typesof wrong base type")
-	-> lentypecursor(e[1:])
+	e = skiptypeinfo(e[1:])
+	-> lentypecursor(e)
 }
 
 const tcnext = {tc
@@ -152,8 +160,8 @@ const getenc = {p : byte##
 	-> p#[sz:sz+val]
 }
 
-const typeinfo = {ti
-	var len, sz, p
+const typedesc = {ti
+	var len,sz, p
 
 	match ti[0]
 	| Encnone:	-> `Tynone
@@ -178,22 +186,29 @@ const typeinfo = {ti
 	| Encflt32:	-> `Tyflt32
 	| Encflt64:	-> `Tyflt64
 	| Encvalist:	-> `Tyvalist
-	/* for now */
 
 	/* compound types */
 	| Encptr:	-> `Typtr getsub(ti[1:])
 	| Encfunc:	-> `Tyfunc lentypecursor(ti[1:])
 	| Encslice:	-> `Tyslice getsub(ti[1:])
 	| Encarray:
-		(len, sz) = getipacked(ti[1:])
-		-> `Tyarray (len, getsub(ti[sz+1:]))
+		ti = skiptypeinfo(ti[1:])
+		(len, sz) = getipacked(ti)
+		-> `Tyarray (len, getsub(ti[sz:]))
 
 
 	/* aggregate types */
-	| Enctuple:	-> `Tytuple lentypecursor(ti[1:])
-	| Encstruct:	-> `Tystruct lennamecursor(ti[1:])
-	| Encunion:	-> `Tyunion lennamecursor(ti[1:])
-	| Encname:	-> `Tyname nameinfo(ti[1:])
+	| Enctuple:
+		ti = skiptypeinfo(ti[1:])
+		-> `Tytuple lentypecursor(ti)
+	| Encstruct:
+		ti = skiptypeinfo(ti[1:])
+		-> `Tystruct lennamecursor(ti)
+	| Encunion:
+		ti = skiptypeinfo(ti[1:])
+		-> `Tyunion lennamecursor(ti)
+	| Encname:
+		-> `Tyname namedesc(ti[1:])
 	| Encindname:
 		/* 
 		ugly hack: the slice contains a pointer to the
@@ -201,12 +216,88 @@ const typeinfo = {ti
 		pull the indirect value out of the pointer.
 		*/
 		p = ti[1:] castto(byte##)
-		-> typeinfo(getenc(p))
-	| other:	std.fatal("unsupported type %b\n", other)
+		-> typedesc(getenc(p))
+	| _:
+		std.fatal("unknown type encoding")
 	;;
 }
 
-const nameinfo = {e
+const typeinfo = {ti
+	var p
+
+	match ti[0]
+	| Encnone:	-> [.size=0, .align=1]
+	| Encvoid:	-> [.size=0, .align=1]
+	| Encbool:	-> [.size=0, .align=1]
+	| Encchar:	-> [.size=4, .align=4]
+
+	| Encint8:	-> [.size=1, .align=1]
+	| Encint16:	-> [.size=2, .align=2]
+	| Encint:	-> [.size=4, .align=4]
+	| Encint32:	-> [.size=4, .align=4]
+	| Encint64:	-> [.size=8, .align=8]
+	| Enclong:	-> [.size=8, .align=8]
+
+	| Encbyte:	-> [.size=1, .align=1]
+	| Encuint8:	-> [.size=1, .align=1]
+	| Encuint16:	-> [.size=2, .align=2]
+	| Encuint:	-> [.size=4, .align=4]
+	| Encuint32:	-> [.size=4, .align=4]
+	| Encuint64:	-> [.size=8, .align=8]
+	| Enculong:	-> [.size=8, .align=8]
+	| Encflt32:	-> [.size=4, .align=4]
+	| Encflt64:	-> [.size=8, .align=8]
+	| Encvalist:	-> [.size=8, .align=8]
+
+	/* compound types */
+	| Encptr:	-> [.size=8, .align=8]
+	| Encfunc:	-> [.size=8, .align=8]
+	| Encslice:	-> [.size=16, .align=8]
+
+	| Encarray: 	-> gettypeinfo(ti[1:])
+	| Enctuple:	-> gettypeinfo(ti[1:])
+	| Encstruct:	-> gettypeinfo(ti[1:])
+	| Encunion:	-> gettypeinfo(ti[1:])
+	| Encname:	-> getnameinfo(ti[1:])
+	| Encindname:
+		p = ti[1:] castto(byte##)
+		-> typeinfo(getenc(p))
+	| _:
+		std.fatal("unknown type encoding")
+	;;
+}
+
+const gettypeinfo = {e
+	var size, align, sz
+
+	(size, sz) = getipacked(e)	/* size */
+	e = e[sz:]
+	(align, sz) = getipacked(e)	/* align */
+	-> [.size = size, .align = align]
+}
+
+const skiptypeinfo = {e
+	var ignore, sz
+
+	(ignore, sz) = getipacked(e)	/* size */
+	e = e[sz:]
+	(ignore, sz) = getipacked(e)	/* align */
+	-> e[sz:]
+}
+
+const getnameinfo = {e
+	var n, name, sz, enc
+
+	(n, sz) = getipacked(e)
+	name = e[sz:n+sz]
+	e = e[n+sz:]
+	(n, sz) = getipacked(e)
+	enc = e[sz:n+sz]
+
+	-> typeinfo(enc)
+}
+
+const namedesc = {e
 	var n, sz, name, enc
 
 	(n, sz) = getipacked(e)
@@ -239,7 +330,7 @@ const getsub = {e
 	-> e[sz:sz+n]
 }
 
-const getipacked = {p : byte[:]
+const getipacked : (p : byte[:] -> (size, size)) = {p : byte[:]
 	var mask, val, len, i
 
 	mask = 0x80
@@ -251,8 +342,9 @@ const getipacked = {p : byte[:]
 		mask |= 0x80
 	;;
 
-	for i = 0; i < len; i++
-		val |= (p[i] castto(size)) << (i*7)
+	val = (p[0] castto(size))  & ~(1 << (8 - len))
+	for i = 1; i < len; i++
+		val |= (p[i] castto(size)) << (i*8 - len)
 	;;
 	-> (val, len)
 }

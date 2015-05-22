@@ -270,6 +270,7 @@ Rclass rclass(Loc *l);
 
 /* useful functions */
 size_t tysize(Type *t);
+size_t tyalign(Type *t);
 size_t size(Node *n);
 ssize_t tyoffset(Type *ty, Node *memb);
 ssize_t offset(Node *aggr, Node *memb);
