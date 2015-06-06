@@ -1,6 +1,6 @@
 use "types.use"
 use "die.use"
-use "fmt.use"
+use sys
 
 pkg std =
 	type typedesc = union
@@ -59,14 +59,17 @@ pkg std =
 	;;
 
 	generic typeof	: (v : @a -> byte[:])
-	const typesof	: (vl : ... -> typecursor)
+	const typeenc	: (p : ...# -> typecursor)
 	const typedecode	: (e : byte[:] -> typedesc)
 	const typedesc	: (e : byte[:] -> typedesc)
 	const typeinfo	: (e : byte[:] -> typeinfo)
 
 	const tcnext	: (t : typecursor# -> byte[:])
+	const tcpeek	: (t : typecursor# -> byte[:])
 	const ncnext	: (t : namecursor# -> (byte[:], byte[:]))
 ;;
+
+extern const put	: (fmt : byte[:], args : ... -> size)
 
 const Encnone	: byte = 0
 const Encvoid	: byte = 1
@@ -104,21 +107,23 @@ const Encunion	: byte = 26
 const Encname	: byte = 30
 const Encindname	:byte = 30 | 0x80
 
-generic typeof = {v : @a
+generic typeof = {v : @a -> byte[:]
 	var tc
 
 	tc = typesof(v)
 	-> tcnext(&tc)
 }
 
-const typesof = {a : ...
+const typeenc = {ap : ...#
 	var e
 
-	e = getenc(&a castto(byte##))
-	/* we encode the arg pack type as a tuple of the types passed */
-	std.assert(e[0] == Enctuple, "typesof wrong base type")
+	e = getenc(ap castto(byte##))
 	e = skiptypeinfo(e[1:])
 	-> lentypecursor(e)
+}
+	
+const typesof : (a : ... -> typecursor) = {a : ...
+	-> typeenc(&a)
 }
 
 const tcnext = {tc
@@ -131,6 +136,16 @@ const tcnext = {tc
 	cur = tc.rem[sz:sz+n]
 	tc.rem = tc.rem[sz+n:]
 	-> cur
+}
+
+const tcpeek = {tc
+	var n, sz
+
+	if tc.rem.len == 0
+		-> ""
+	;;
+	(n, sz) = getipacked(tc.rem)
+	-> tc.rem[sz:sz+n]
 }
 
 const ncnext = {nc
@@ -154,9 +169,10 @@ const ncnext = {nc
 
 
 const getenc = {p : byte##
-	var val, sz
+	var val, sz, x
 
 	(val, sz) = getipacked(p#[:8])
+	x = &sz castto(byte#)
 	-> p#[sz:sz+val]
 }
 
@@ -218,7 +234,7 @@ const typedesc = {ti
 		p = ti[1:] castto(byte##)
 		-> typedesc(getenc(p))
 	| _:
-		std.fatal("unknown type encoding")
+		std.die("unknown type encoding")
 	;;
 }
 
@@ -263,7 +279,7 @@ const typeinfo = {ti
 		p = ti[1:] castto(byte##)
 		-> typeinfo(getenc(p))
 	| _:
-		std.fatal("unknown type encoding")
+		std.die("unknown type encoding")
 	;;
 }
 

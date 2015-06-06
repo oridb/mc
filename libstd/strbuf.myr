@@ -34,6 +34,7 @@ const mksb = {
 
 const mkbufsb = {buf
 	var sb
+
 	sb = zalloc()
 	sb.buf = buf
 	sb.fixed = true

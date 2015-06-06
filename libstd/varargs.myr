@@ -1,4 +1,7 @@
 use "types.use"
+use "introspect.use"
+use "sleq.use"
+use "die.use"
 
 pkg std =
 	type valist
@@ -7,7 +10,10 @@ pkg std =
 	generic vanext	: (ap : valist -> (@a, valist))
 ;;
 
-type valist = byte#
+type valist = struct
+	args	: byte#
+	tc	: typecursor
+;;
 
 /* 
  * a valist is really just a pointer to the varargs.
@@ -19,10 +25,28 @@ type valist = byte#
  * force varargs onto the stack regardless.
  */
 const vastart = {args
-	var ap, dump : byte#
+	var tc, a, ip
 
-	(dump, ap) = vanext(args castto(valist))
-	-> ap
+	/*
+	pull out the args. These are on the stacks like so:
+
+		[ required ]
+		[   args   ]
+	       ---variadic--- 
+		[ typeinfo ] --> type description
+	        ------------
+		[ variadic ]
+		[   args   ]
+		[   here   ]
+
+	&args points to the typeinfo, &args + sizeof(void#)
+	points to the rest argument.
+	*/
+		
+	tc = typeenc(args)
+	ip = (args castto(intptr)) + sizeof(byte#)
+	a = ip castto(byte#)
+	-> [.args = a, .tc = tc]
 }
 
 generic vanext = {ap -> (@a, valist)
@@ -43,13 +67,20 @@ generic vanext = {ap -> (@a, valist)
 	;;
 
 	/* apply the alignment to the arg pointer */
-	p = ap castto(intptr)
+	p = ap.args castto(intptr)
 	p = (p + align - 1) & ~(align - 1)
-	ap = p castto(valist)
+	ap.args = p castto(byte#)
 
-	v = (ap castto(@a#))#
+	v = (ap.args castto(@a#))#
+	/* TODO: checked.
+
+	Right now, too much is broken with named types.
+	if !sleq(typeof(v), tcnext(&ap.tc))
+		std.die("wrong type from valist\n")
+	;;
+	*/
 
 	/* only move on after we read through the value */
-	ap = ((p castto(intptr)) + sizeof(@a)) castto(valist)
+	ap.args = ((p castto(intptr)) + sizeof(@a)) castto(byte#)
 	-> (v, ap)
 }
