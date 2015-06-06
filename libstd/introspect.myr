@@ -1,6 +1,5 @@
 use "types.use"
 use "die.use"
-use sys
 
 pkg std =
 	type typedesc = union

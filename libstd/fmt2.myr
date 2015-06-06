@@ -1,0 +1,295 @@
+use "alloc.use"
+use "chartype.use"
+use "die.use"
+use "extremum.use"
+use "fltfmt.use"
+use "introspect.use"
+use "strbuf.use"
+use "syswrap-ss.use"
+use "syswrap.use"
+use "types.use"
+use "utf.use"
+use "varargs.use"
+
+use "fmt.use" 	/* FOR DEBUGGING */
+
+pkg std =
+	/* write to fd */
+	const f2put	: (fmt : byte[:], args : ... -> size)
+	const f2fput	: (fd : fd, fmt : byte[:], args : ... -> size)
+	const f2putv	: (fmt : byte[:], ap : valist -> size)
+	const f2fputv	: (fd : fd, fmt : byte[:], ap : valist -> size)
+
+	/* write to buffer */
+	const f2fmt	: (fmt : byte[:], args : ... -> byte[:])
+	const f2fmtv	: (fmt : byte[:], ap : valist -> byte[:])
+	const f2bfmt	: (buf : byte[:], fmt : byte[:], args : ... -> byte[:])
+	const f2bfmtv	: (buf : byte[:], fmt : byte[:], ap : valist -> byte[:])
+
+	/* write to strbuf */
+	const f2sbfmt	: (buf : strbuf#, fmt : byte[:], args : ... -> size)
+	const f2sbfmtv	: (buf : strbuf#, fmt : byte[:], ap : valist -> size)
+
+	$noret const f2fatal	: (fmt : byte[:], args : ... -> void)
+	$noret const f2fatalv	: (fmt : byte[:], ap : valist -> void)
+;;
+
+const f2put = {fmt, args
+	-> f2fputv(1, fmt, vastart(&args))
+}
+
+const f2putv = {fmt, ap
+	-> f2fputv(1, fmt, ap)
+}
+
+const f2fput = {fd, fmt, args
+	-> f2fputv(fd, fmt, vastart(&args))
+}
+
+const f2fputv = {fd, fmt, ap
+	var sb, s
+
+	sb = mksb()
+	f2sbfmtv(sb, fmt, ap)
+	s = sbfin(sb)
+	-> writeall(fd, s)
+}
+
+const f2fmt = {fmt, args
+	-> f2fmtv(fmt, vastart(&args))
+}
+
+const f2fmtv = {fmt, ap
+	var sb
+
+	sb = mksb()
+	f2sbfmtv(sb, fmt, ap)
+	-> sbfin(sb)
+}
+
+const f2bfmt = {buf, fmt, args
+	-> f2bfmtv(buf, fmt, vastart(&args))
+}
+
+const f2bfmtv = {buf, fmt, ap
+	var sb
+
+	sb = mkbufsb(buf)
+	f2sbfmtv(sb, fmt, ap)
+	-> sbfin(sb)
+}
+
+const f2sbfmt = {sb, fmt, args
+	-> f2sbfmtv(sb, fmt, vastart(&args))
+}
+
+const f2sbfmtv = {sb, fmt, ap -> size
+	var c, params
+
+	while fmt.len != 0
+		(c, fmt) = striter(fmt)
+		match c
+		| '%':
+			if fmt.len > 1 && fmt[0] == '{' castto(byte)
+				(params, fmt) = f2getparams(fmt[1:])
+			;;
+			ap = fallbackfmt(sb, params, vatype(ap), ap)
+		| chr:
+			sbputc(sb, chr)
+		;;
+	;;
+	-> sb.len
+}
+
+const fallbackfmt = {sb, params, tyenc, ap
+	/* value types */
+	var t_val : bool
+	var b_val : int8, ub_val : uint8
+	var w_val : int16, uw_val : uint16
+	var i_val : int32, ui_val : uint32
+	var l_val : int64, ul_val : uint64
+	var z_val : size
+	var p_val : byte#
+        var c_val : char
+	var s_val : byte[:]
+	var f32_val : flt32, f64_val : flt64
+	var i8 : int8, i16: int16, i32 : int32
+	var by : byte
+	var i : int, i64 : int64, l : long
+	var ui8 : int8, ui16: int16, ui32 : int32
+	var ui : int, ui64 : int64, ul : long
+
+	match typedesc(tyenc)
+	| `Tynone:	/* nothing */
+	/* atomic types */
+	| `Tyvoid:
+		sbputs(sb, "void")
+	| `Tybool:
+		(t_val, ap) = vanext(ap)
+		if t_val
+			sbputs(sb ,"true")
+		else
+			sbputs(sb, "false")
+		;;
+	| `Tychar:
+		(c_val, ap) = vanext(ap)
+		sbputc(sb, c_val)
+	| `Tyint8:
+		(b_val, ap) = vanext(ap)
+		intfmt(sb, params, true, b_val)
+	| `Tyint16:
+		(w_val, ap) = vanext(ap)
+		intfmt(sb, params, true, w_val)
+	| `Tyint:
+		(i_val, ap) = vanext(ap)
+		intfmt(sb, params, true, i_val)
+	| `Tyint32:
+		(i_val, ap) = vanext(ap)
+		intfmt(sb, params, true, i_val)
+	| `Tyint64:
+		(l_val, ap) = vanext(ap)
+		intfmt(sb, params, true, l_val)
+	| `Tylong:
+		(l_val, ap) = vanext(ap)
+		intfmt(sb, params, true, l_val)
+
+	| `Tybyte:
+		(ub_val, ap) = vanext(ap)
+		intfmt(sb, params, false, ub_val)
+	| `Tyuint8:
+		(ub_val, ap) = vanext(ap)
+		intfmt(sb, params, false, ub_val)
+	| `Tyuint16:
+		(w_val, ap) = vanext(ap)
+		intfmt(sb, params, false, uw_val)
+	| `Tyuint:
+		(i_val, ap) = vanext(ap)
+		intfmt(sb, params, false, ui_val)
+	| `Tyuint32:
+		(i_val, ap) = vanext(ap)
+		intfmt(sb, params, false, ui_val)
+	| `Tyuint64:
+		(l_val, ap) = vanext(ap)
+		intfmt(sb, params, false, ul_val)
+	| `Tyulong:
+		(l_val, ap) = vanext(ap)
+		intfmt(sb, params, false, ul_val)
+	| `Tyflt32:
+		(l_val, ap) = vanext(ap)
+		sbputs(sb, "flt32")
+	| `Tyflt64:
+		sbputs(sb, "flt64")
+	| `Tyvalist:
+		sbputs(sb, "...")
+
+	/* compound types */
+	| `Typtr desc:
+		(p_val, ap) = vanext(ap)
+		intfmt(sb, params, false, p_val castto(intptr))
+	| `Tyslice desc:
+		match typedesc(desc)
+		| `Tybyte:
+			(s_val, ap) = vanext(ap)
+			sbputs(sb, s_val)
+		| _:
+			sbputs(sb, "slice[:]")
+		;;
+	| `Tyfunc tc:
+		sbputs(sb, "func")
+	| `Tyarray (sz, data):
+		sbputs(sb, "array")
+
+	/* aggregate types */
+	| `Tytuple typecursor:
+		sbputs(sb, "tuple")
+	| `Tystruct namecursor:
+		sbputs(sb, "struct")
+	| `Tyunion namecursor:
+		sbputs(sb, "struct")
+	| `Tyname (name, desc):
+		ap = fallbackfmt(sb, params, desc, ap)
+	;;
+	-> ap
+}
+
+
+const f2getparams = {fmt
+	var i
+
+	for i = 0; i < fmt.len; i++
+		if fmt[i] == '}' castto(byte)
+			goto foundparams
+		;;
+	;;
+	die("invalid format string")
+:foundparams
+	-> (fmt[:i], fmt[i+1:])
+}
+
+const digitchars = [
+	'0','1','2','3','4',
+	'5','6','7','8','9',
+	'a','b','c','d','e','f'
+]
+generic intfmt = {sb, opts, signed, bits : @a::(integral,numeric)
+	var isneg
+	var val
+	var b : char[32]
+	var i, j, npad
+	var base, padto, padfill
+
+	i = 0
+	base = 10
+	padto = 0
+	padfill = '0'
+	if signed && bits < 0
+		val = -bits castto(uint64)
+		isneg = true
+	else
+		val = bits castto(uint64)
+		val &= ~0 >> (8*(sizeof(uint64)-sizeof(@a)))
+		isneg = false
+	;;
+
+	if val == 0
+		b[0] = '0'
+		i++
+	;;
+	while val != 0
+		b[i] = digitchars[val % base]
+		val /= base
+		i++
+	;;
+
+	npad = clamp(padto - i, 0, padto)
+	if isneg
+		npad--
+	;;
+	if padfill == '0' && isneg
+		sbputc(sb, '-')
+	;;
+	for j = 0; j < npad; j++
+		sbputc(sb, padfill)
+	;;
+	if padfill != '0' && isneg
+		sbputc(sb, '-')
+	;;
+	for j = i; j != 0; j--
+		sbputc(sb, b[j - 1])
+	;;
+}
+
+const writeall = {fd, buf
+	var n, len
+
+	len = 0
+	while true
+		n = write(fd, buf)
+		if n <= 0 || n >= len
+			break
+		;;
+		len += n
+	;;
+	-> len
+}
+

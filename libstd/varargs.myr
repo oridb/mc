@@ -7,6 +7,7 @@ pkg std =
 	type valist
 
 	const vastart	: (args : ...# -> valist)
+	const vatype	: (ap : valist -> byte[:])
 	generic vanext	: (ap : valist -> (@a, valist))
 ;;
 
@@ -49,6 +50,10 @@ const vastart = {args
 	-> [.args = a, .tc = tc]
 }
 
+const vatype = {ap
+	-> tcpeek(&ap.tc)
+}
+
 generic vanext = {ap -> (@a, valist)
 	var v : @a
 	var align
@@ -72,13 +77,8 @@ generic vanext = {ap -> (@a, valist)
 	ap.args = p castto(byte#)
 
 	v = (ap.args castto(@a#))#
-	/* TODO: checked.
-
-	Right now, too much is broken with named types.
-	if !sleq(typeof(v), tcnext(&ap.tc))
-		std.die("wrong type from valist\n")
-	;;
-	*/
+	/* TODO: check for type mismatch */
+	tcnext(&ap.tc)
 
 	/* only move on after we read through the value */
 	ap.args = ((p castto(intptr)) + sizeof(@a)) castto(byte#)
