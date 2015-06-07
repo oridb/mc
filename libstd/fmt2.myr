@@ -272,11 +272,14 @@ const fallbackfmt = {sb, params, tyenc, ap : valist# -> void
 		sbputs(sb, "array")
 	/* aggregate types */
 	| `Tytuple typecursor:
+		vabytes(ap)
 		sbputs(sb, "tuple")
 	| `Tystruct namecursor:
+		vabytes(ap)
 		sbputs(sb, "struct")
 	| `Tyunion namecursor:
-		sbputs(sb, "struct")
+		vabytes(ap)
+		sbputs(sb, "union")
 	| `Tyname (name, desc):
 		fallbackfmt(sb, params, desc, ap)
 	;;
