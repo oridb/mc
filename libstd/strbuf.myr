@@ -4,7 +4,6 @@ use "extremum.use"
 use "slcp.use"
 use "types.use"
 use "utf.use"
-use "fmt.use"
 
 pkg std =
 	type strbuf = struct

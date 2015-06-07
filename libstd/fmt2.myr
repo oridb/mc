@@ -187,10 +187,11 @@ const fallbackfmt = {sb, params, tyenc, ap
 		(l_val, ap) = vanext(ap)
 		intfmt(sb, intparams(params), false, ul_val)
 	| `Tyflt32:
-		(l_val, ap) = vanext(ap)
-		sbputs(sb, "flt32")
+		(f32_val, ap) = vanext(ap)
+		flt32bfmt(sb, f32_val, MNormal, 0)
 	| `Tyflt64:
-		sbputs(sb, "flt64")
+		(f64_val, ap) = vanext(ap)
+		flt64bfmt(sb, f64_val, MNormal, 0)
 	| `Tyvalist:
 		sbputs(sb, "...")
 

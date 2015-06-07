@@ -5,6 +5,7 @@ use "die.use"
 use "extremum.use"
 use "fltfmt.use"
 use "introspect.use"
+use "strbuf.use"
 use "syswrap-ss.use"
 use "syswrap.use"
 use "types.use"
@@ -169,6 +170,7 @@ const bfmtv = {buf, fmt, ap
 	var p_val : byte#
         var c_val : char
 	var f_val : flt64, F_val : flt32
+	var sb
 
 	n = 0
 	while fmt.len != 0
@@ -221,11 +223,17 @@ const bfmtv = {buf, fmt, ap
 			| 'f':
 				(f_val, ap) = vanext(ap)
 				b = buf[n:]
-				/* FIXME(ori): bug, b[n:].len fails since b[n:] isn't an lval */
-				n += flt64bfmt(buf[n:], f_val, 0, b.len)
+				sb = mkbufsb(b)
+				flt64bfmt(sb, f_val, 0, b.len)
+				n += sb.len
+				strfmt(buf[n:], sbfin(sb), 0, ' ')
 			| 'F':
 				(F_val, ap) = vanext(ap)
-				n += flt64bfmt(buf[n:], F_val castto(flt64), 0, b.len)
+				b = buf[n:]
+				sb = mkbufsb(b)
+				flt64bfmt(sb, F_val castto(flt64), 0, b.len)
+				n += sb.len
+				strfmt(buf[n:], sbfin(sb), 0, ' ')
 			/* format integers */
 			| 'b':
 				if signed
