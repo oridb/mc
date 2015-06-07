@@ -8,6 +8,7 @@ pkg std =
 
 	const vastart	: (args : ...# -> valist)
 	const vatype	: (ap : valist -> byte[:])
+	const vaskip	: (ap : valist -> byte[:])
 	generic vanext	: (ap : valist -> (@a, valist))
 ;;
 
