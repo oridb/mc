@@ -7,9 +7,9 @@ pkg std =
 	type valist
 
 	const vastart	: (args : ...# -> valist)
-	const vatype	: (ap : valist -> byte[:])
-	const vaskip	: (ap : valist -> byte[:])
-	generic vanext	: (ap : valist -> (@a, valist))
+	const vatype	: (ap : valist# -> byte[:])
+	const vaskip	: (ap : valist# -> byte[:])
+	generic vanext	: (ap : valist# -> @a)
 ;;
 
 type valist = struct
@@ -55,7 +55,7 @@ const vatype = {ap
 	-> tcpeek(&ap.tc)
 }
 
-generic vanext = {ap -> (@a, valist)
+generic vanext = {ap -> @a
 	var v : @a
 	var align
 	var p
@@ -83,5 +83,5 @@ generic vanext = {ap -> (@a, valist)
 
 	/* only move on after we read through the value */
 	ap.args = ((p castto(intptr)) + sizeof(@a)) castto(byte#)
-	-> (v, ap)
+	-> v
 }
