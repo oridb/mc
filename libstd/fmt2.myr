@@ -131,6 +131,7 @@ const f2sbfmtv = {sb, fmt, ap -> size
 		(c, fmt) = striter(fmt)
 		match c
 		| '%':
+			params = ""
 			if fmt.len > 1
 				if fmt[0] == '%' castto(byte)
 					sbputc(sb, '%')
