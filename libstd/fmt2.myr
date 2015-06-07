@@ -93,19 +93,27 @@ const f2sbfmtv = {sb, fmt, ap -> size
 		(c, fmt) = striter(fmt)
 		match c
 		| '%':
+			if fmt.len > 1
+				if fmt[0] == '%' castto(byte)
+					sbputc(sb, '%')
+					fmt = fmt[1:]
+					goto fmtdone
+				elif fmt[0] == '{' castto(byte)
+					(params, fmt) = f2getparams(fmt[1:])
+				;;
+			;;
+
 			nfmt++
 			if nfmt > nparams
 				die("too few params for fmt\n")
 			;;
 
-			if fmt.len > 1 && fmt[0] == '{' castto(byte)
-				(params, fmt) = f2getparams(fmt[1:])
-			;;
 			ap = fallbackfmt(sb, params, vatype(ap), ap)
 
 		| chr:
 			sbputc(sb, chr)
 		;;
+:fmtdone
 	;;
 	if nfmt != nparams
 		die("too many params for fmt\n")
@@ -290,7 +298,6 @@ generic intfmt = {sb, opts, signed, bits : @a::(integral,numeric)
 	var base
 
 	base = opts.base castto(uint64)
-	std.put("base = %l\n", base)
 	if signed && bits < 0
 		val = -bits castto(uint64)
 		isneg = true
