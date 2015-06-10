@@ -130,29 +130,28 @@ const f2sbfmtv = {sb, fmt, ap -> size
 	while fmt.len != 0
 		(c, fmt) = striter(fmt)
 		match c
-		| '%':
-			params = ""
-			if fmt.len > 1
-				if fmt[0] == '%' castto(byte)
-					sbputc(sb, '%')
-					fmt = fmt[1:]
-					goto fmtdone
-				elif fmt[0] == '{' castto(byte)
-					(params, fmt) = f2getparams(fmt[1:])
+		| '{':
+			if decode(fmt) == '{'
+				(c, fmt) = striter(fmt)
+				sbputc(sb, '{')
+			else
+				(params, fmt) = f2getparams(fmt)
+				nfmt++
+				if nfmt > nparams
+					die("too few params for fmt\n")
+				;;
+
+				ty = vatype(ap)
+				match htget(fmtmap, ty)
+				| `Some func:
+					func(sb, ap, params)
+				| `None:
+					fallbackfmt(sb, params, ty, ap)
 				;;
 			;;
-
-			nfmt++
-			if nfmt > nparams
-				die("too few params for fmt\n")
-			;;
-
-			ty = vatype(ap)
-			match htget(fmtmap, ty)
-			| `Some func:
-				func(sb, ap, params)
-			| `None:
-				fallbackfmt(sb, params, ty, ap)
+		| '}':
+			if decode(fmt) == '}'
+				sbputc(sb, '}')
 			;;
 		| chr:
 			sbputc(sb, chr)
