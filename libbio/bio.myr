@@ -109,7 +109,7 @@ const sysmode = {mode
 	| Rd:	-> std.Ordonly
 	| Wr:	-> std.Owronly
 	| Rw:	-> std.Ordwr
-	| _:	std.fatal("bio: bad file mode")
+	| _:	std.f2fatal("bio: bad file mode")
 	;;
 	-> 0
 }
@@ -403,11 +403,14 @@ FIXME: depends on std.fmt() having a flush buffer API. Until then,
 we're stuck with a small static buffer.
 */
 const put = {f, fmt, args
-	var buf : byte[2048]
-	var sl
+	var sb, sl, ap, n
 
-	sl = std.bfmt(buf[:], fmt, std.vastart(&args))
-	-> write(f, sl)
+	ap = std.vastart(&args)
+	sb = std.mksb()
+	sl = std.f2fmt(fmt, &ap)
+	n = write(f, sl)
+	std.slfree(sl)
+	-> n
 }
 
 /* 
