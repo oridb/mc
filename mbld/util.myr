@@ -20,30 +20,30 @@ const run = {cmd
 	printcmd(cmd)
 	pid = std.fork()
 	if pid == -1
-		std.fatal("could not fork command\n")
+		std.f2fatal("could not fork command\n")
 	elif pid == 0
 		if std.execvp(cmd[0], cmd) < 0
-			std.fatal("failed to exec %s\n", cmd[0])
+			std.f2fatal("failed to exec {}\n", cmd[0])
 		;;
 	else
 		match std.wait(pid)
 		| `std.Wsuccess:	/* nothing */
-		| `std.Wfailure:	std.fatal("FAIL: \"%s\"\n", std.strjoin(cmd, " "))
-		| `std.Wsignalled:	std.fatal("CRASH: \"%s\"\n", std.strjoin(cmd, " "))
-		| `std.Waiterror:	std.fatal("WAT: \"%s\"\n", std.strjoin(cmd, " "))
+		| `std.Wfailure:	std.f2fatal("FAIL: \"{}\"\n", std.strjoin(cmd, " "))
+		| `std.Wsignalled:	std.f2fatal("CRASH: \"{}\"\n", std.strjoin(cmd, " "))
+		| `std.Waiterror:	std.f2fatal("WAT: \"{}\"\n", std.strjoin(cmd, " "))
 		;;
 	;;
 }
 
 const printcmd = {lst
 	if lst.len > 0
-		std.put("\t")
-		std.put("%s\t", lst[0])
+		std.f2put("\t")
+		std.f2put("{}\t", lst[0])
 		for l in lst[1:]
-			std.put("%s ", l)
+			std.f2put("{} ", l)
 		;;
 	;;
-	std.put("\n")
+	std.f2put("\n")
 }
 
 const srcsplit = {src
@@ -73,7 +73,7 @@ const swapsuffix = {f, suff, newsuff
 	if std.hassuffix(f, suff)
 		f = f[:f.len - suff.len]
 	;;
-	-> std.fmt("%s%s", f, newsuff)
+	-> std.f2fmt("{}{}", f, newsuff)
 }
 
 const srcswapsuffix = {src, new
@@ -85,7 +85,7 @@ const srcswapsuffix = {src, new
 	elif std.sleq(suff, ".s")
 		-> std.strcat(base, new)
 	else
-		std.fatal("unrecognized source %s\n", src)
+		std.f2fatal("unrecognized source {}\n", src)
 	;;
 }
 
@@ -98,7 +98,7 @@ const strlistfree = {sl
 
 const gettarg = {tab, n
 	match std.htget(tab, n)
-	| `std.None:	std.fatal("internal: nonexistent %s\n", n)
+	| `std.None:	std.f2fatal("internal: nonexistent {}\n", n)
 	| `std.Some t:	-> t
 	;;
 }
@@ -109,12 +109,12 @@ const setdir = {b, dir
 	if !std.sleq(b.curdir, dir)
 		p = std.pathcat(b.basedir, dir)
 		if b.curdir.len != 0
-			std.put("Leaving directory '%s'\n", b.curdir)
+			std.f2put("Leaving directory '{}'\n", b.curdir)
 		;;
 
-		std.put("Entering directory '%s'\n", dir)
+		std.f2put("Entering directory '{}'\n", dir)
 		if !std.chdir(p)
-			std.fatal("could not cd into %s\n", p)
+			std.f2fatal("could not cd into {}\n", p)
 		;;
 		b.curdir = dir
 		std.slfree(p)

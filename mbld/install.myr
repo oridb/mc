@@ -34,7 +34,7 @@ const movetargs = {b, rm
 		| `Lib lt:
 			if lt.install
 				movefile(b, rm, lt.dir, lt.name, config.Libpath, 0o644)
-				libarchive = std.fmt("lib%s.a", lt.name)
+				libarchive = std.f2fmt("lib{}.a", lt.name)
 				movefile(b, rm, lt.dir, libarchive, config.Libpath, 0o644)
 				std.slfree(libarchive)
 			;;
@@ -60,18 +60,18 @@ const movefile = {b, rm, dir, file, prefix, perm
 	setdir(b, dir)
 	path = std.pathjoin([opt_destdir, opt_instroot, prefix, file][:])
 	if rm
-		std.put("\trm %s\n", path)
+		std.f2put("\trm {}\n", path)
 		if !std.remove(path)
-			std.put("\t\tno such file %s\n", file)
+			std.f2put("\t\tno such file {}\n", file)
 		;;
 	else
-		std.put("\t%s => %s\n", file, path)
+		std.f2put("\t{} => {}\n", file, path)
 		std.remove(path)
 		match std.slurp(file)
-		| `std.Fail m:	std.fatal("Could not open %s for reading\n", file)
+		| `std.Fail m:	std.f2fatal("Could not open {} for reading\n", file)
 		| `std.Ok buf:
 			if !std.blat(path, buf, perm)
-				std.put("Could not write %s\n", file)
+				std.f2put("Could not write {}\n", file)
 			;;
 			std.slfree(buf)
 		;;
@@ -84,15 +84,15 @@ const moveman = {b, rm, dir, man
 
 	match std.strrfind(man, ".")
 	| `std.None:
-		std.fatal("manpage %s has no section\n", man)
+		std.f2fatal("manpage {} has no section\n", man)
 	| `std.Some s:
 		sect = s + 1
 		if s + 1 == man.len
-			std.fatal("manpage %s missing suffix\n", man)
+			std.f2fatal("manpage {} missing suffix\n", man)
 		;;
 	;;
 
-	manrel = std.fmt("%s%s", opt_manpath, man[sect:])
+	manrel = std.f2fmt("{}{}", opt_manpath, man[sect:])
 	movefile(b, rm, dir, man, manrel, 0o644)
 	std.slfree(manrel)
 }

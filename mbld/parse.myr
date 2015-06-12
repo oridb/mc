@@ -59,7 +59,7 @@ const loadall = {b, path, dir
 			loadall(b, subproj, subpath)
 			b.basedir = curbase
 		else
-			std.fatal("could not open %s or %s \n", subbld, subproj)
+			std.f2fatal("could not open {} or {} \n", subbld, subproj)
 		;;
 		std.slfree(subbld)
 		std.slfree(subproj)
@@ -91,7 +91,7 @@ const sortdeps = {b
 
 const visit = {all, b, targ, looped, marked
 	if std.hthas(looped, targ)
-		std.fatal("cycle in build depgraph involving %s\n", targ)
+		std.f2fatal("cycle in build depgraph involving {}\n", targ)
 	elif std.hthas(marked, targ)
 		-> all
 	;;
@@ -109,7 +109,7 @@ const getdeps = {targ
 	match targ
 	| `Bin t:	-> t.libdeps
 	| `Lib t:	-> t.libdeps
-	| _:	std.fatal("depending on non-library target")
+	| _:	std.f2fatal("depending on non-library target")
 	;;
 }
 
@@ -123,7 +123,7 @@ const mkparser = {path, dir, basedir
 	p.basedir = std.sldup(basedir)
 	match std.slurp(path)
 	| `std.Ok d:	p.data = d
-	| `std.Fail _:	std.fatal("could not open '%s'\n", path)
+	| `std.Fail _:	std.f2fatal("could not open '{}'\n", path)
 	;;
 	p.rest = p.data
 	-> p
@@ -145,7 +145,7 @@ const failparse = {p, msg, args : ...
 
 	ap = std.vastart(&args)
 	sl = std.bfmtv(buf[:], msg, ap)
-	std.fput(1, "%s:%i: %s", p.fname, p.line, sl)
+	std.f2fput(1, "{}:{}: {}", p.fname, p.line, sl)
 	std.exit(1)
 }
 
@@ -158,7 +158,7 @@ const parse = {b, p, path
 	;;
 	skipspace(p)
 	if p.rest.len > 0
-		failparse(p, "junk in file near %s\n", p.rest[:std.min(p.rest.len, 10)])
+		failparse(p, "junk in file near {}\n", p.rest[:std.min(p.rest.len, 10)])
 		-> false
 	;;
 	-> true
@@ -173,7 +173,7 @@ const target = {b, p
 	| `std.Some "cmd":	cmdtarget(b, p, "cmd", true)
 	| `std.Some "man":	mantarget(b, p)
 	| `std.Some "sub":	subtarget(b, p)
-	| `std.Some targtype:	failparse(p, "unknown targtype type %s\n", targtype)
+	| `std.Some targtype:	failparse(p, "unknown targtype type {}\n", targtype)
 	| `std.None:	-> false
 	;;
 	-> true
@@ -230,10 +230,10 @@ const cmdtarget = {b, p, cmd, iscmd
 	var gt
 
 	match wordlist(p)
-	| `std.None:	failparse(p, "%s target missing output files\n", cmd)
+	| `std.None:	failparse(p, "{} target missing output files\n", cmd)
 	| `std.Some out:
 		if iscmd && out.len != 1
-			failparse(p, "%s target takes one name\n", cmd)
+			failparse(p, "{} target takes one name\n", cmd)
 		;;
 		outlist = out
 	;;
@@ -242,7 +242,7 @@ const cmdtarget = {b, p, cmd, iscmd
 	if !iscmd && matchc(p, '{')
 		match attrlist(p)
 		| `std.Some al:	attrs = al
-		| `std.None:	failparse(p, "invalid attr list for %s\n", outlist[0])
+		| `std.None:	failparse(p, "invalid attr list for {}\n", outlist[0])
 		;;
 	else
 		attrs = [][:]
@@ -250,17 +250,17 @@ const cmdtarget = {b, p, cmd, iscmd
 
 	skipspace(p)
 	if !matchc(p, '=')
-		failparse(p, "expected '=' after '%s %s'\n", cmdlist, outlist[outlist.len-1])
+		failparse(p, "expected '=' after '{} {}'\n", cmdlist, outlist[outlist.len-1])
 	;;
 
 	match wordlist(p)
-	| `std.None:	failparse(p, "%s target missing command\n", cmd)
+	| `std.None:	failparse(p, "{} target missing command\n", cmd)
 	| `std.Some cl:
 		cmdlist = cl
 	;;
 
 	if !matchc(p, ';') || !matchc(p, ';')
-		failparse(p, "expected ';;' terminating genfile command, got %c\n", peekc(p))
+		failparse(p, "expected ';;' terminating genfile command, got {}\n", peekc(p))
 	;;
 
 	durable = false
@@ -271,9 +271,9 @@ const cmdtarget = {b, p, cmd, iscmd
 		| ("dep", depname):	deplist = std.slpush(deplist, depname)
 		| ("sys", tags):	systags = std.slpush(systags, tags)
 		| (attr, ""):
-			failparse(p, "attribute %s not valid on %s targets\n", attr, cmd)
+			failparse(p, "attribute {} not valid on {} targets\n", attr, cmd)
 		| (attr, val):
-			failparse(p, "attribute %s=%s not valid on %s targets\n", attr, val, cmd)
+			failparse(p, "attribute {}={} not valid on {} targets\n", attr, val, cmd)
 		;;
 	;;
 
@@ -306,14 +306,14 @@ const myrtarget = {p, targ
 
 	match word(p)
 	| `std.Some n:	name = n
-	| `std.None:	failparse(p, "expected target name after '%s'\n", targ)
+	| `std.None:	failparse(p, "expected target name after '{}'\n", targ)
 	;;
 
 	skipspace(p)
 	if matchc(p, '{')
 		match attrlist(p)
 		| `std.Some al:	attrs = al
-		| `std.None:	failparse(p, "invalid attr list for %s %s\n", targ, name)
+		| `std.None:	failparse(p, "invalid attr list for {} {}\n", targ, name)
 		;;
 	else
 		attrs = [][:]
@@ -321,7 +321,7 @@ const myrtarget = {p, targ
 
 	skipspace(p)
 	if !matchc(p, '=')
-		failparse(p, "expected '=' after '%s %s'\n", targ, name)
+		failparse(p, "expected '=' after '{} {}'\n", targ, name)
 	;;
 
 	match inputlist(p)
@@ -333,12 +333,12 @@ const myrtarget = {p, targ
 		;;
 		inputs = fselfin(fsel)
 		std.slfree(wl)
-	| `std.None: failparse(p, "expected list of file names after '%s %s'\n", targ, name)
+	| `std.None: failparse(p, "expected list of file names after '{} {}'\n", targ, name)
 	;;
 
 	skipspace(p)
 	if !matchc(p, ';') || !matchc(p, ';')
-		failparse(p, "expected ';;' terminating input list, got %c\n", peekc(p))
+		failparse(p, "expected ';;' terminating input list, got {}\n", peekc(p))
 	;;
 
 	inst = true
@@ -353,7 +353,7 @@ const myrtarget = {p, targ
 		| ("noinst", ""):	inst = false
 		| ("sys", tags):	systags = std.slpush(systags, tags)
 		| (invalid, _):
-			std.fatal("%s: got invalid attr '%s'\n", targ, invalid)
+			std.f2fatal("{}: got invalid attr '{}'\n", targ, invalid)
 		;;
 	;;
 	for inc in bld.opt_incpaths
@@ -382,11 +382,11 @@ const anontarget = {p, targ
 	inputs = [][:]
 	skipspace(p)
 	if !matchc(p, '=')
-		failparse(p, "expected '=' after '%s' target\n", targ)
+		failparse(p, "expected '=' after '{}' target\n", targ)
 	;;
 
 	match wordlist(p)
-	| `std.None:	failparse(p, "expected list of file names after '%s' target\n", targ)
+	| `std.None:	failparse(p, "expected list of file names after '{}' target\n", targ)
 	| `std.Some wl:	inputs = wl
 	;;
 	skipspace(p)
@@ -430,7 +430,7 @@ const attrlist = {p
 		;;
 	;;
 	if !matchc(p, '}')
-		failparse(p, "expected '}' at end of attr list, got '%c'\n", peekc(p))
+		failparse(p, "expected '}' at end of attr list, got '{}'\n", peekc(p))
 	;;
 	if al.len == 0
 		-> `std.None
@@ -596,9 +596,9 @@ const getc = {p
 const addtarg = {p, b, name, targ
 	var tn
 
-	tn = std.fmt("%s:%s", p.fdir, name)
+	tn = std.f2fmt("{}:{}", p.fdir, name)
 	if std.hthas(b.targs, tn)
-		failparse(p, "duplicate target %s\n", tn)
+		failparse(p, "duplicate target {}\n", tn)
 	;;
 	b.all = std.slpush(b.all, tn)
 	std.htput(b.targs, tn, targ)
@@ -611,10 +611,10 @@ const libpath = {p, libpath
 	| `std.None:
 		dir = std.sldup(".")
 		lib = std.sldup(libpath)
-		targ = std.fmt("%s:%s", p.fdir, lib)
+		targ = std.f2fmt("{}:{}", p.fdir, lib)
 	| `std.Some idx:
 		if idx == libpath.len
-			std.fatal("libdep %s missing library after ':'\n")
+			std.f2fatal("libdep {} missing library after ':'\n")
 		;;
 		/* absolute path */
 		if std.hasprefix(libpath, "@/") || std.hasprefix(libpath, "@:")
@@ -627,7 +627,7 @@ const libpath = {p, libpath
 			lib = std.sldup(libpath[idx+1:])
 			targ = std.pathcat(p.fdir, libpath)
 			if std.hasprefix(targ, "../")
-				std.fatal("library %s outside of project\n", libpath)
+				std.f2fatal("library {} outside of project\n", libpath)
 			;;
 		;;
 	;;

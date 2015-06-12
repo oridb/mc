@@ -52,7 +52,7 @@ const build = {b, targ
 	| `std.Some (`Gen gt):	runin(b, gt.cmd, gt.dir)
 	| `std.Some (`Cmd ct):	runin(b, ct.cmd, ct.dir)
 	| `std.Some (`Man mt):	/* nothing needed */
-	| `std.None:	std.fatal("invalid target %s\n", targ)
+	| `std.None:	std.f2fatal("invalid target {}\n", targ)
 	;;
 	-> true
 }
@@ -67,10 +67,10 @@ const buildbin = {b, targ, addsrc
 
 	setdir(b, targ.dir)
 	addincludes(b, targ)
-	std.put("%s...\n", targ.name)
+	std.f2put("{}...\n", targ.name)
 	dg = myrdeps(b, targ, false, addsrc)
 	if !std.hthas(dg.deps, targ.name)
-		std.fatal("no input files for %s\n", targ.name)
+		std.f2fatal("no input files for {}\n", targ.name)
 	;;
 	if builddep(b, dg, targ.name, targ.incpath) || !freshlibs(targ, dg.libs)
 		src = std.htkeys(dg.sources)
@@ -88,11 +88,11 @@ const buildlib = {b, targ
 	setdir(b, targ.dir)
 	addincludes(b, targ)
 	lib = targ.name
-	std.put("lib%s.a...\n", lib)
-	archive = std.fmt("lib%s.a", lib)
+	std.f2put("lib{}.a...\n", lib)
+	archive = std.f2fmt("lib{}.a", lib)
 	dg = myrdeps(b, targ, false, false)
 	if !std.hthas(dg.deps, lib)
-		std.fatal("no target declared for %s\n", lib)
+		std.f2fatal("no target declared for {}\n", lib)
 	;;
 	u = builddep(b, dg, targ.name, targ.incpath)
 	l = builddep(b, dg, archive, targ.incpath)
@@ -155,7 +155,7 @@ const builddep = {b, dg, out, incs
 				;;
 			| `std.None:
 				if !std.fexists(d)
-					std.fatal("no input file %s\n", d)
+					std.f2fatal("no input file {}\n", d)
 				;;
 			;;
 			if !isfresh(d, out)
@@ -204,7 +204,7 @@ const compile = {src, incs
 		run(cmd)
 		std.slfree(o)
 	else
-		std.fatal("Unknown file type for %s\n", src)
+		std.f2fatal("Unknown file type for {}\n", src)
 	;;
 }
 
@@ -257,7 +257,7 @@ const archivelib = {dg, lib, files, incs
 	for c in config.Arcmd
 		cmd = std.slpush(cmd, std.sldup(c))
 	;;
-	cmd = std.slpush(cmd, std.fmt("lib%s.a", lib))
+	cmd = std.slpush(cmd, std.f2fmt("lib{}.a", lib))
 	for f in files
 		obj = srcswapsuffix(f, config.Objsuffix)
 		cmd = std.slpush(cmd, obj)
@@ -277,7 +277,7 @@ const mergeuse = {dg, lib, files, incs
 		if std.hassuffix(f, ".myr")
 			cmd = std.slpush(cmd, srcswapsuffix(f, ".use"))
 		elif !std.hassuffix(f, ".s")
-			std.fatal("unknown file type for %s\n", f)
+			std.f2fatal("unknown file type for {}\n", f)
 		;;
 	;;
 	run(cmd)
@@ -293,7 +293,7 @@ const addlibs = {cmd, libgraph, incs
 	/* -L incpath... */
 	if !config.Directlib
 		for inc in incs
-			cmd = std.slpush(cmd, std.fmt("-L%s", inc))
+			cmd = std.slpush(cmd, std.f2fmt("-L{}", inc))
 		;;
 	;;
 
@@ -311,7 +311,7 @@ const addlibs = {cmd, libgraph, incs
 
 const visit = {cmd, head, g, lib, looped, marked, incs
 	if std.hthas(looped, lib)
-		std.fatal("cycle in library graph involving \"%s\"\n", lib)
+		std.f2fatal("cycle in library graph involving \"{}\"\n", lib)
 	elif std.hthas(marked, lib)
 		-> cmd
 	;;
@@ -327,11 +327,11 @@ const visit = {cmd, head, g, lib, looped, marked, incs
 
 const putlib = {cmd, head, lib, incs
 	if !config.Directlib
-		-> std.slput(cmd, head, std.fmt("-l%s", lib))
+		-> std.slput(cmd, head, std.f2fmt("-l", lib))
 	else
 		match findlib(lib, incs)
 		| `std.None:
-			std.fatal("could not find library lib%s.a\n", lib)
+			std.f2fatal("could not find library lib{}.a\n", lib)
 		| `std.Some p:
 			-> std.slput(cmd, head, p)
 		;;
@@ -366,10 +366,10 @@ const freshlibs = {targ, libgraph
 			;;
 			std.slfree(lib)
 		| `std.None:
-			std.fput(1, "%s: could not find library lib%s.a\n", targ.name, l)
-			std.fput(1, "searched:\n")
+			std.f2fput(1, "{}: could not find library lib{}.a\n", targ.name, l)
+			std.f2fput(1, "searched:\n")
 			for inc in targ.incpath
-				std.fput(1, "\t%s\n", inc)
+				std.f2fput(1, "\t{}\n", inc)
 			;;
 			std.exit(1)
 		;;
@@ -401,7 +401,7 @@ const isfresh = {src, dst
 	*/
 	match std.fmtime(src)
 	| `std.Some mt:	srcmt = mt
-	| `std.None:	std.fatal("could not stat %s\n", src)
+	| `std.None:	std.f2fatal("could not stat {}\n", src)
 	;;
 	match std.fmtime(dst)
 	| `std.Some mt:	dstmt = mt

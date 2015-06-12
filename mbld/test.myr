@@ -55,9 +55,9 @@ const test = {b
 	;;
 	if hastest
 		if ok
-			std.put("TESTS PASSED\n")
+			std.f2put("TESTS PASSED\n")
 		else
-			std.put("TESTS FAILED\n")
+			std.f2put("TESTS FAILED\n")
 			std.exit(1)
 		;;
 	;;
@@ -121,11 +121,11 @@ const cleantest = {b, src
 const runtest = {bin
 	var r, log
 
-	std.put("run %s:\t", bin)
+	std.f2put("run {}:\t", bin)
 	log = std.strcat(bin, ".log")
 	match std.spork([bin][:])
 	| `std.Fail m:
-		std.fatal("unable to run test: %s\n", m)
+		std.f2fatal("unable to run test: {}\n", m)
 	| `std.Ok (pid, infd, outfd):
 		match std.fslurp(outfd)
 		| `std.Ok "":	/* empty output; nothing to log */
@@ -137,8 +137,8 @@ const runtest = {bin
 
 		r = false
 		match std.wait(pid)
-		| `std.Wfailure:	std.put("FAIL\n")
-		| `std.Wsignalled:	std.put("CRASH\n")
+		| `std.Wfailure:	std.f2put("FAIL\n")
+		| `std.Wsignalled:	std.f2put("CRASH\n")
 		| `std.Wsuccess:
 			std.put("PASS\n")
 			r = true

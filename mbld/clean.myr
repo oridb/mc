@@ -24,7 +24,7 @@ const cleanall = {b
 		| `Gen gt:
 			for f in gt.out
 				if !gt.durable && std.remove(f)
-					std.put("\tclean %s\n", f)
+					std.f2put("\tclean {}\n", f)
 				;;
 			;;
 		| `Cmd ct:	/* nothing to do */
@@ -52,7 +52,7 @@ const clean = {b, targ
 		| `Gen gt:
 			for f in gt.out
 				if !gt.durable && std.remove(f)
-					std.put("\tclean %s\n", f)
+					std.f2put("\tclean {}\n", f)
 				;;
 			;;
 		| `Cmd ct:
@@ -80,7 +80,7 @@ const cleanup = {b, targ, leaves
 	keys = std.htkeys(dg.deps)
 	for k in keys
 		if !std.htgetv(mchammer_files, k, false) && std.remove(k)
-			std.put("\tclean %s\n", k)
+			std.f2put("\tclean {}\n", k)
 		;;
 	;;
 }
