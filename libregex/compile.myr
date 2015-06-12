@@ -168,7 +168,7 @@ const rtdump = {rt, ind
 	var l, h
 
 	indent(ind)
-	std.f2put("Range (end = {}) {\n", rt.end)
+	std.f2put("Range (end = {}) {{\n", rt.end)
 	for i = 0; i < rt.ranges.len; i++
 		indent(ind + 1)
 		(l, h) = rt.ranges[i]
