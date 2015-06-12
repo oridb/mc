@@ -13,7 +13,7 @@ const main = {args
 	cmd = std.optparse(args, &opts)
 	match regex.dbgcompile(cmd.args[0])
 	| `std.Fail m:	
-		std.f2fatal("unable to compile regex: {}\n", regex.failmsg(m))
+		std.fatal("unable to compile regex: {}\n", regex.failmsg(m))
 	| `std.Ok re:
 		if cmd.args.len > 1
 			runall(re, cmd.args)
@@ -33,7 +33,7 @@ const runall = {re, files
 			dump(re, fd)
 			bio.close(fd)
 		| `std.None:
-			std.f2fatal("failed to open {}\n", f)
+			std.fatal("failed to open {}\n", f)
 		;;
 	;;
 }
@@ -55,11 +55,11 @@ const show = {mg
 
 	match mg
 	| `std.Some rl:
-		std.f2put("Matched: {}\n", rl[0])
+		std.put("Matched: {}\n", rl[0])
 		for i = 1; i < rl.len; i++
-			std.f2put("group {}: {}\n", i, rl[i])
+			std.put("group {}: {}\n", i, rl[i])
 		;;
 	| `std.None:
-		std.f2put("Match failed\n")
+		std.put("Match failed\n")
 	;;
 }

@@ -35,11 +35,11 @@ const fseladd = {fsel, f
 		basename = f[:i]
 		match std.strrfind(f[i+1:], ".")
 		| `std.Some j:	attrs = f[i+1:][:j]
-		| `std.None:	std.fatal("unrecognized type for file %s\n", f)
+		| `std.None:	std.fatal("unrecognized type for file {}\n", f)
 		;;
 	| `std.None:
 		match std.strrfind(f, ".")
-		| `std.None:	std.fatal("unrecognized type for file %s\n", f)
+		| `std.None:	std.fatal("unrecognized type for file {}\n", f)
 		| `std.Some i:
 			basename = f[:i]
 			attrs = ""
@@ -72,7 +72,7 @@ const fselfin = {fsel
 	for k in keys
 		nmatch = std.htgetv(fsel._match, k, -1)
 		if nmatch == -1
-			std.fatal("no applicable file for '%s'\n", k)
+			std.fatal("no applicable file for '{}'\n", k)
 		;;
 		ret = std.slpush(ret, std.htgetv(fsel._best, k, ""))
 	;;
@@ -89,7 +89,7 @@ const addsysattrs = {sa
 	| "osx":	attrs = ["osx", "posixy"][:]
 	| "linux":	attrs = ["linux", "posixy"][:]
 	| "plan9":	attrs = ["plan9"][:]
-	| unknown:	std.fatal("unknown system \"%s\"\n", unknown)
+	| unknown:	std.fatal("unknown system \"{}\"\n", unknown)
 	;;
 	for a in attrs
 		std.htput(sa, a, true)
@@ -97,7 +97,7 @@ const addsysattrs = {sa
 
 	match opt_arch
 	| "x64":	attrs = ["x64"][:]
-	| unknown:	std.fatal("unknown arch %s\n", unknown)
+	| unknown:	std.fatal("unknown arch {}\n", unknown)
 	;;
 	for a in attrs
 		std.htput(sa, a, true)

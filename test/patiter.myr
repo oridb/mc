@@ -3,11 +3,11 @@ use std
 const main = {
 	/* should print 1,3,5, skipping 4 */
 	for (1,x) in [(1,2),(1,3),(2,4),(1,5)]
-		std.put("%i", x)
+		std.put("{}", x)
 	;;
 	/* should print 1, 2 skipping `None */
 	for `std.Some v in [`std.None, `std.Some 1, `std.Some 2]
-		std.put("%i", v)
+		std.put("{}", v)
 	;;
 	std.put("\n")
 }

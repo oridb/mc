@@ -1,7 +1,7 @@
 use std
 
 const main = {
-	std.put("%i,%w\n", a(), b())
+	std.put("{},{}\n", a(), b())
 }
 
 const a = {

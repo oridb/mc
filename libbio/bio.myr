@@ -109,7 +109,7 @@ const sysmode = {mode
 	| Rd:	-> std.Ordonly
 	| Wr:	-> std.Owronly
 	| Rw:	-> std.Ordwr
-	| _:	std.f2fatal("bio: bad file mode")
+	| _:	std.fatal("bio: bad file mode")
 	;;
 	-> 0
 }
@@ -407,7 +407,7 @@ const put = {f, fmt, args
 
 	ap = std.vastart(&args)
 	sb = std.mksb()
-	sl = std.f2fmt(fmt, &ap)
+	sl = std.fmt(fmt, &ap)
 	n = write(f, sl)
 	std.slfree(sl)
 	-> n

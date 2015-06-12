@@ -1,5 +1,4 @@
 use "die.use"
-use "fmt.use"
 use "types.use"
 use "alloc.use"
 /*

@@ -21,9 +21,9 @@ generic expect = {a : @a, b : @a, expected : bool
 		actual = false
 	;;
 	if actual == expected
-		std.put("a == b: expected: %t, got, %t: pass\n", expected, actual)
+		std.put("a == b: expected: {}, got, {}: pass\n", expected, actual)
 	else
-		std.put("a == b: expected: %t, got, %t: fail\n", expected, actual)
+		std.put("a == b: expected: {}, got, {}: fail\n", expected, actual)
 	;;
 }
 

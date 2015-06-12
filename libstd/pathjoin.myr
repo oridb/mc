@@ -92,7 +92,7 @@ const pathnorm = {p
 			;;
 		;;
 		s = strjoin(comps[i:], "/")
-		ret = fmt("/%s", s)
+		ret = fmt("/{}", s)
 		slfree(s)
 	elif comps.len == 0
 		ret = sldup(".")

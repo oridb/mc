@@ -1,27 +1,27 @@
 use std
 
 const main = {
-	std.put("\"%s\"\n", std.strstrip("cccc"))
-	std.put("\"%s\"\n", std.strfstrip("cccc"))
-	std.put("\"%s\"\n", std.strrstrip("cccc"))
+	std.put("\"{}\"\n", std.strstrip("cccc"))
+	std.put("\"{}\"\n", std.strfstrip("cccc"))
+	std.put("\"{}\"\n", std.strrstrip("cccc"))
 
 	std.put("--\n")
-	std.put("\"%s\"\n", std.strstrip("  abc  "))
-	std.put("\"%s\"\n", std.strfstrip("  abc  "))
-	std.put("\"%s\"\n", std.strrstrip("  abc  "))
+	std.put("\"{}\"\n", std.strstrip("  abc  "))
+	std.put("\"{}\"\n", std.strfstrip("  abc  "))
+	std.put("\"{}\"\n", std.strrstrip("  abc  "))
 
 	std.put("--\n")
-	std.put("\"%s\"\n", std.strstrip("  世界  "))
-	std.put("\"%s\"\n", std.strfstrip("  世界  "))
-	std.put("\"%s\"\n", std.strrstrip("  世界  "))
+	std.put("\"{}\"\n", std.strstrip("  世界  "))
+	std.put("\"{}\"\n", std.strfstrip("  世界  "))
+	std.put("\"{}\"\n", std.strrstrip("  世界  "))
 
 	std.put("--\n")
-	std.put("\"%s\"\n", std.strstrip("    "))
-	std.put("\"%s\"\n", std.strfstrip("    "))
-	std.put("\"%s\"\n", std.strrstrip("    "))
+	std.put("\"{}\"\n", std.strstrip("    "))
+	std.put("\"{}\"\n", std.strfstrip("    "))
+	std.put("\"{}\"\n", std.strrstrip("    "))
 
 	std.put("--\n")
-	std.put("\"%s\"\n", std.strstrip(""))
-	std.put("\"%s\"\n", std.strfstrip(""))
-	std.put("\"%s\"\n", std.strrstrip(""))
+	std.put("\"{}\"\n", std.strstrip(""))
+	std.put("\"{}\"\n", std.strfstrip(""))
+	std.put("\"{}\"\n", std.strrstrip(""))
 }

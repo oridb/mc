@@ -2,7 +2,7 @@ use std
 
 const main = {
 	for i in [1,2,3,4][:2]
-		std.put("%i", i)
+		std.put("{}", i)
 	;;
 	std.put("\n")
 }

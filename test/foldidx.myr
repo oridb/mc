@@ -11,6 +11,6 @@ const z : xy[1] = [
 ]
 
 const main = {
-	std.put("%i,%i\n", z[0].x, z[0].y)
+	std.put("{},{}\n", z[0].x, z[0].y)
 }
 

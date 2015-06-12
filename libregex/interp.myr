@@ -289,7 +289,7 @@ const trace : (re : regex#, thr : rethread#, msg : byte[:], args : ... -> void) 
 
 	if re.debug
 		ap = std.vastart(&args)
-		std.f2putv(msg, &ap)
+		std.putv(msg, &ap)
 	;;
 }
 

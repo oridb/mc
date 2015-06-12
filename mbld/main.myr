@@ -96,7 +96,7 @@ const main = {args : byte[:][:]
 		findproj(b, "bld.proj")
 		bld.load(b)
 		for t in b.all
-			std.f2put("{}\n", t)
+			std.put("{}\n", t)
 		;;
 	else
 		findproj(b, "bld.proj")
@@ -133,7 +133,7 @@ const mkbuild = {
 
 const findproj = {b, bldfile
 	if !findbase(b, bldfile) || !std.chdir(b.basedir)
-		std.f2fatal("could not find {}\n", bldfile)
+		std.fatal("could not find {}\n", bldfile)
 	;;
 	bld.setdir(b, "")
 }

@@ -8,15 +8,15 @@ const array = [1,2,3,4,5]
 const main = {
 	/* expected output 23 */
 	for x in slpart
-		std.put("%i", x)
+		std.put("{}", x)
 	;;
 	/* expected output 12345 */
 	for x in slfull
-		std.put("%i", x)
+		std.put("{}", x)
 	;;
 	/* expected output 678 */
 	for x in slinline
-		std.put("%i", x)
+		std.put("{}", x)
 	;;
 	std.put("\n")
 }

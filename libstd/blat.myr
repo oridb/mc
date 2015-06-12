@@ -1,5 +1,4 @@
 use "syswrap.use"
-use "fmt.use"
 
 pkg std =
 	const blat : (path : byte[:], buf : byte[:], perm : int64 -> bool)

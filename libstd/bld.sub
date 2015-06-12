@@ -39,8 +39,7 @@ lib std {inc=.} =
 	extremum.myr
 	fltbits.myr
 	fltfmt.myr
-	fmt.myr
-        fmt2.myr
+        fmt.myr
 	getcwd.myr
 	getint.myr
 	hashfuncs.myr

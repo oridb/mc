@@ -53,18 +53,18 @@ type alignstruct7 = struct
 ;;
 
 const main = {
-	std.put("size = %i\n", sizeof(alignstruct0))
-	std.put("size = %i\n", sizeof(alignstruct1))
-	std.put("size = %i\n", sizeof(alignstruct2))
-	std.put("size = %i\n", sizeof(alignstruct3))
-	std.put("size = %i\n", sizeof(alignstruct4))
-	std.put("size = %i\n", sizeof(alignstruct5))
-	std.put("size = %i\n", sizeof(alignstruct6))
-	std.put("size = %i\n", sizeof(alignstruct7))
+	std.put("size = {}\n", sizeof(alignstruct0))
+	std.put("size = {}\n", sizeof(alignstruct1))
+	std.put("size = {}\n", sizeof(alignstruct2))
+	std.put("size = {}\n", sizeof(alignstruct3))
+	std.put("size = {}\n", sizeof(alignstruct4))
+	std.put("size = {}\n", sizeof(alignstruct5))
+	std.put("size = {}\n", sizeof(alignstruct6))
+	std.put("size = {}\n", sizeof(alignstruct7))
 	/* size should be 8 */
-	std.put("size = %i\n", sizeof((int, byte, byte)))
+	std.put("size = {}\n", sizeof((int, byte, byte)))
 	/* size should be 16 */
-	std.put("size = %i\n", sizeof((int, byte, int, byte)))
+	std.put("size = {}\n", sizeof((int, byte, int, byte)))
 	/* size should be 12 */
-	std.put("size = %i\n", sizeof((int, int, byte, byte)))
+	std.put("size = {}\n", sizeof((int, int, byte, byte)))
 }

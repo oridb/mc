@@ -56,13 +56,13 @@ const initopts = {
 	| "Darwin":	opt_sys = "osx"
 	| "FreeBSD":	opt_sys = "freebsd"
 	| "Plan9":	opt_sys = "plan9"
-	| unknown:	std.fatal("unknown system \"%s\"\n", unknown)
+	| unknown:	std.fatal("unknown system \"{}\"\n", unknown)
 	;;
 
 	match si.arch
 	| "x86_64":	opt_arch = "x64"
 	| "amd64":	opt_arch = "x64"
-	| unknown:	std.fatal("unknown architecture \"%s\"\n", unknown)
+	| unknown:	std.fatal("unknown architecture \"{}\"\n", unknown)
 	;;
 
 	opt_incpaths = [][:]
@@ -76,8 +76,8 @@ const initopts = {
 		opt_runtime = std.pathjoin([opt_instroot, config.Libpath, config.Runtime][:]) 
 	;;
 
-	sysarchstr = std.fmt("+%s-%s", opt_sys, opt_arch)
-	sysstr = std.fmt("+%s", opt_sys)
-	archstr = std.fmt("+%s", opt_arch)
+	sysarchstr = std.fmt("+{}-{}", opt_sys, opt_arch)
+	sysstr = std.fmt("+{}", opt_sys)
+	archstr = std.fmt("+{}", opt_arch)
 }
 

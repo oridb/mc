@@ -48,7 +48,7 @@ const myrdeps = {b, mt, doclean, addsrc
 	])
 	/* direct dependencies of binary */
 	if mt.islib
-		out = std.f2fmt("lib{}.a", mt.name)
+		out = std.fmt("lib{}.a", mt.name)
 		useout = std.sldup(mt.name)
 	else
 		out = std.sldup(mt.name)
@@ -106,13 +106,13 @@ const dumpgraph = {dg
 		->
 	;;
 	keys = std.htkeys(dg.deps)
-	std.f2put("digraph dg {{\n")
+	std.put("digraph dg {{\n")
 	for k in keys
 		for v in std.htgetv(dg.deps, k, ["WTFUNKNOWN!"][:])
-			std.f2put("\t\"{}\" -> \"{}\";\n", k, v)
+			std.put("\t\"{}\" -> \"{}\";\n", k, v)
 		;;
 	;;
-	std.f2put("}\n")
+	std.put("}\n")
 }
 
 const srcdeps = {b, ds, g, path, obj, usefile
@@ -124,7 +124,7 @@ const srcdeps = {b, ds, g, path, obj, usefile
 
 	ds.depstk = std.slpush(ds.depstk, path)
 	if std.htgetv(g.seen, path, false)
-		std.f2fput(1, "dependency loop involving {}:\n", path)
+		std.fput(1, "dependency loop involving {}:\n", path)
 		for d in ds.depstk
 			std.fput(1, "\t{}\n", d)
 		;;
@@ -144,7 +144,7 @@ const srcdeps = {b, ds, g, path, obj, usefile
 			;;
 		| `Local (l, lnum):
 			if !std.hassuffix(l, ".use")
-				std.f2fatal("{}:{}: local dependency \"{}\" should end with .use\n", path, lnum, l)
+				std.fatal("{}:{}: local dependency \"{}\" should end with .use\n", path, lnum, l)
 			;;
 			if obj.len != 0
 				pushdep(g, l, obj)
@@ -165,7 +165,7 @@ const addusedep = {b, ds, g, f, usefile, line
 
 	if std.hthas(g.done, usefile)
 		if opt_debug
-			std.f2put("already loaded deps for {}\n", usefile)
+			std.put("already loaded deps for {}\n", usefile)
 		;;
 		->
 	;;
@@ -177,7 +177,7 @@ const addusedep = {b, ds, g, f, usefile, line
 		if ds.addsrc
 			std.htput(g.sources, src, true)
 		elif !std.hthas(g.input, usefile)
-			std.f2fatal("{}:{}: source file {} not listed in bldfile\n", f, line, src)
+			std.fatal("{}:{}: source file {} not listed in bldfile\n", f, line, src)
 		;;
 	;;
 	pushdep(g, src, usefile)
@@ -194,12 +194,12 @@ const getdeps = {b, ds, path
 	if !std.fexists(path)
 		match std.htget(b.gensrc, path)
 		| `std.Some gt:	run(gt.cmd)
-		| `std.None:	std.f2fatal("no input file {}\n", path)
+		| `std.None:	std.fatal("no input file {}\n", path)
 		;;
 	;;
 	match bio.open(path, bio.Rd)
 	| `std.Some fd:	f = fd
-	| `std.None:	std.f2fatal("could not open {}\n", path)
+	| `std.None:	std.fatal("could not open {}\n", path)
 	;;
 
 	lnum = 0
@@ -230,14 +230,14 @@ const scrapelibs = {dg, lib, incs
 	f = openlib(lib, incs)
 	match bio.getc(f)
 	| `std.Some 'U': /* nothing */
-	| `std.Some _:	std.f2fatal("library {}: corrupt or invalid usefile\n", lib)
-	| `std.None:	std.f2fatal("library {}: could not read usefile\n", lib)
+	| `std.Some _:	std.fatal("library {}: corrupt or invalid usefile\n", lib)
+	| `std.None:	std.fatal("library {}: could not read usefile\n", lib)
 	;;
 	match bio.getbe32(f)
 	| `std.Some 1:	/* nothing: version matches. */
-	| `std.Some 0:	std.f2fput(1, "library {}: warning: old usefile version\n", lib)
-	| `std.Some _:	std.f2fatal("library {}: usefile version unknown\n", lib)
-	| `std.None:	std.f2fatal("library {}: corrutpt or invalid usefile\n", lib)
+	| `std.Some 0:	std.fput(1, "library {}: warning: old usefile version\n", lib)
+	| `std.Some _:	std.fatal("library {}: usefile version unknown\n", lib)
+	| `std.None:	std.fatal("library {}: corrutpt or invalid usefile\n", lib)
 	;;
 	std.slfree(rdstr(f))
 	done = false
@@ -276,7 +276,7 @@ const openlib = {lib, incs
 	| `std.None:
 		/* nothing */
 	;;
-	std.f2fatal("could not find library {}.\n", lib)
+	std.fatal("could not find library {}.\n", lib)
 }
 
 const depname = {deps, ln, lnum
@@ -304,7 +304,7 @@ const pushdep = {dg, src, dst
 	var sl
 
 	if opt_debug
-		std.f2put("{} <= {}\n", dst, src)
+		std.put("{} <= {}\n", dst, src)
 	;;
 	std.assert(dst.len < 200, "BUG!")
 	sl = std.htgetv(dg.deps, dst, [][:])

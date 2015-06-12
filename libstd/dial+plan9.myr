@@ -40,10 +40,10 @@ const csdial = {netdir, proto, rem
 	var buf	: byte[Maxpath]
 
 	/* Try using the connection server */
-	dir = fmt("%s/cs", netdir)
+	dir = fmt("{}/cs", netdir)
 	csfd = open(dir, Ordwr)
 	if csfd < 0
-		clone = fmt("%s/%s/clone", netdir, proto)
+		clone = fmt("{}/{}/clone", netdir, proto)
 		ret = call(clone, rem, netdir)
 		slfree(clone)
 		if ret == -1
@@ -54,7 +54,7 @@ const csdial = {netdir, proto, rem
 	;;
 	slfree(dir)
 
-	csaddr = fmt("%s!%s", proto, rem)
+	csaddr = fmt("{}!{}", proto, rem)
 	if write(csfd, csaddr) < 0
 		close(csfd)
 		-> `Fail "couldn't blah cs"
@@ -106,13 +106,13 @@ const call = {clone, addr, netdir
 	if n < 0
 		goto cleanup
 	;;
-	fput(cfd, "connect %s", addr)
+	fput(cfd, "connect {}", addr)
 	name = strstrip(namebuf[:n])
 	match strrfind(c, "/")
 	| `None:	die("there should be a '/' here\n")
 	| `Some i:	base = c[:i]
 	;;
-	dpath = bfmt(databuf[:], "%s/%s/data", base, name)
+	dpath = bfmt(databuf[:], "{}/{}/data", base, name)
 	datafd = open(dpath, Ordwr)
 :cleanup
 	close(cfd)

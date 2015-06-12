@@ -1,7 +1,6 @@
 use "alloc.use"
 use "die.use"
 use "extremum.use"
-use "fmt.use"
 use "option.use"
 use "types.use"
 

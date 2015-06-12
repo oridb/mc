@@ -31,6 +31,6 @@ const main = {
 	a = foo(123)
 	b = foo(11 castto(int16))
 	c = frob("meeeeeeh")
-	std.put("%i,%w,%s\n", a, b, c)
+	std.put("{},{},{}\n", a, b, c)
 }
 

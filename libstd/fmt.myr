@@ -1,10 +1,12 @@
-use sys
 use "alloc.use"
 use "chartype.use"
 use "die.use"
 use "extremum.use"
 use "fltfmt.use"
+use "htab.use"
+use "hashfuncs.use"
 use "introspect.use"
+use "option.use"
 use "strbuf.use"
 use "syswrap-ss.use"
 use "syswrap.use"
@@ -12,60 +14,38 @@ use "types.use"
 use "utf.use"
 use "varargs.use"
 
-/*
-  printf-like functions. These use a different syntax from the C printf,
-  as described below:
-
-	  %s	- A string, ie, a utf8 encoded byte slice.
-	  %t	- A boolean
-	  %b	- A byte.
-	  %w	- A 16 bit integer
-	  %i	- A 32 bit integer
-	  %l	- A 64 bit integer
-	  %z	- A size
-	  %p	- A pointer
-	  %c	- A char
-*/
-
 pkg std =
+	/* write to fd */
 	const put	: (fmt : byte[:], args : ... -> size)
 	const fput	: (fd : fd, fmt : byte[:], args : ... -> size)
-	const putv	: (fmt : byte[:], ap : valist -> size)
-	const fputv	: (fd : fd, fmt : byte[:], ap : valist -> size)
+	const putv	: (fmt : byte[:], ap : valist# -> size)
+	const fputv	: (fd : fd, fmt : byte[:], ap : valist# -> size)
 
+	/* write to buffer */
 	const fmt	: (fmt : byte[:], args : ... -> byte[:])
-	const fmtv	: (fmt : byte[:], ap : valist -> byte[:])
+	const fmtv	: (fmt : byte[:], ap : valist# -> byte[:])
 	const bfmt	: (buf : byte[:], fmt : byte[:], args : ... -> byte[:])
-	const bfmtv	: (buf : byte[:], fmt : byte[:], ap : valist -> byte[:])
+	const bfmtv	: (buf : byte[:], fmt : byte[:], ap : valist# -> byte[:])
+
+	/* write to strbuf */
+	const sbfmt	: (buf : strbuf#, fmt : byte[:], args : ... -> size)
+	const sbfmtv	: (buf : strbuf#, fmt : byte[:], ap : valist# -> size)
+
+	/* add a formatter function */
+	const fmtinstall	: (ty : byte[:], \
+		fn : (sb : strbuf#, ap : valist#, opts : byte[:] -> void) \
+		-> void)
 
 	$noret const fatal	: (fmt : byte[:], args : ... -> void)
-	$noret const fatalv	: (fmt : byte[:], ap : valist -> void)
+	$noret const fatalv	: (fmt : byte[:], ap : valist# -> void)
 ;;
-
-/* Writes a string of text up to 2 kb in size to stdout */
-const put = {fmt, args
-	-> fputv(1, fmt, vastart(&args))
-}
-
-const fput = {fd, fmt, args
-	-> fputv(fd, fmt, vastart(&args))
-}
-
-const putv = {fmt, ap
-	-> fputv(1, fmt, ap)
-}
-
-/* Writes a string of text up to 2kb long to stdout, using a valist
-   as the source of the arguments */
-const fputv = {fd, fmt, ap
-	var buf : byte[2048]
-	
-	-> write(fd, bfmtv(buf[:], fmt, ap))
-}
 
 /* same as 'put', but exits the program after printing */
 const fatal = {fmt, args
-	putv(fmt, vastart(&args))
+	var ap
+
+	ap = vastart(&args)
+	putv(fmt, &ap)
 	exit(1)
 }
 
@@ -75,37 +55,307 @@ const fatalv = {fmt, ap
 	exit(1)
 }
 
-/* formats a string, allocating the slice. FIXME: calculate the
-   size needed. */
+var fmtmapinited : bool = false
+var fmtmap : htab(byte[:], (sb : strbuf#, ap : valist#, opts : byte[:] -> void))#
+
+const fmtinstall = {ty, fn
+	if !fmtmapinited
+		fmtmapinited = true
+		fmtmap = mkht(strhash, streq)
+	;;
+	htput(fmtmap, ty, fn)
+}
+
+const put = {fmt, args
+	var ap
+
+	ap = vastart(&args)
+	-> fputv(1, fmt, &ap)
+}
+
+const putv = {fmt, ap
+	-> fputv(1, fmt, ap)
+}
+
+const fput = {fd, fmt, args
+	var ap
+
+	ap = vastart(&args)
+	-> fputv(fd, fmt, &ap)
+}
+
+const fputv = {fd, fmt, ap
+	var sb, s
+
+	sb = mksb()
+	sbfmtv(sb, fmt, ap)
+	s = sbfin(sb)
+	-> writeall(fd, s)
+}
+
 const fmt = {fmt, args
-	-> fmtv(fmt, vastart(&args))
+	var ap
+
+	ap = vastart(&args)
+	-> fmtv(fmt, &ap)
 }
 
-/* formats a string, allocating the slice. FIXME: calculate the
-   size needed. Takes a valist as it's last argument. */
 const fmtv = {fmt, ap
-	var buf
+	var sb
 
-	buf = slalloc(2048)
-	-> bfmtv(buf, fmt, ap)
+	sb = mksb()
+	sbfmtv(sb, fmt, ap)
+	-> sbfin(sb)
 }
 
-/* formats a string of text as specified by 'fmt' into 'buf' */
 const bfmt = {buf, fmt, args
-	-> bfmtv(buf, fmt, vastart(&args))
+	var ap
+
+	ap = vastart(&args)
+	-> bfmtv(buf, fmt, &ap)
+}
+
+const bfmtv = {buf, fmt, ap
+	var sb
+
+	sb = mkbufsb(buf)
+	sbfmtv(sb, fmt, ap)
+	-> sbfin(sb)
+}
+
+const sbfmt = {sb, fmt, args
+	var ap
+
+	ap = vastart(&args)
+	-> sbfmtv(sb, fmt, &ap)
+}
+
+const sbfmtv = {sb, fmt, ap -> size
+	var c, params, ty
+	var nfmt, nparams
+
+	nparams = ap.tc.nelt
+	nfmt = 0
+	if !fmtmapinited
+		fmtmapinited = true
+		fmtmap = mkht(strhash, streq)
+	;;
+	while fmt.len != 0
+		(c, fmt) = striter(fmt)
+		match c
+		| '{':
+			if decode(fmt) == '{'
+				(c, fmt) = striter(fmt)
+				sbputc(sb, '{')
+			else
+				(params, fmt) = getparams(fmt)
+				nfmt++
+				if nfmt > nparams
+					die("too few params for fmt\n")
+				;;
+
+				ty = vatype(ap)
+				match htget(fmtmap, ty)
+				| `Some func:
+					func(sb, ap, params)
+				| `None:
+					fallbackfmt(sb, params, ty, ap)
+				;;
+			;;
+		| '}':
+			if decode(fmt) == '}'
+				sbputc(sb, '}')
+			;;
+		| chr:
+			sbputc(sb, chr)
+		;;
+:fmtdone
+	;;
+	if nfmt != nparams
+		die("too many params for fmt\n")
+	;;
+	-> sb.len
+}
+
+const fallbackfmt = {sb, params, tyenc, ap : valist# -> void
+	/* value types */
+	var t_val : bool
+	var b_val : int8, ub_val : uint8
+	var w_val : int16, uw_val : uint16
+	var i_val : int32, ui_val : uint32
+	var l_val : int64, ul_val : uint64
+	var z_val : size
+	var p_val : byte#
+        var c_val : char
+	var s_val : byte[:]
+	var f32_val : flt32, f64_val : flt64
+	var i8 : int8, i16: int16, i32 : int32
+	var by : byte
+	var i : int, i64 : int64, l : long
+	var ui8 : int8, ui16: int16, ui32 : int32
+	var ui : int, ui64 : int64, ul : long
+
+	match typedesc(tyenc)
+	| `Tynone:	/* nothing */
+	/* atomic types */
+	| `Tyvoid:
+		sbputs(sb, "void")
+	| `Tybool:
+		t_val = vanext(ap)
+		if t_val
+			sbputs(sb ,"true")
+		else
+			sbputs(sb, "false")
+		;;
+	| `Tychar:
+		c_val = vanext(ap)
+		sbputc(sb, c_val)
+	| `Tyint8:
+		b_val = vanext(ap)
+		intfmt(sb, intparams(params), true, b_val)
+	| `Tyint16:
+		w_val = vanext(ap)
+		intfmt(sb, intparams(params), true, w_val)
+	| `Tyint:
+		i_val = vanext(ap)
+		intfmt(sb, intparams(params), true, i_val)
+	| `Tyint32:
+		i_val = vanext(ap)
+		intfmt(sb, intparams(params), true, i_val)
+	| `Tyint64:
+		l_val = vanext(ap)
+		intfmt(sb, intparams(params), true, l_val)
+	| `Tylong:
+		l_val = vanext(ap)
+		intfmt(sb, intparams(params), true, l_val)
+
+	| `Tybyte:
+		ub_val = vanext(ap)
+		intfmt(sb, intparams(params), false, ub_val)
+	| `Tyuint8:
+		ub_val = vanext(ap)
+		intfmt(sb, intparams(params), false, ub_val)
+	| `Tyuint16:
+		w_val = vanext(ap)
+		intfmt(sb, intparams(params), false, uw_val)
+	| `Tyuint:
+		i_val = vanext(ap)
+		intfmt(sb, intparams(params), false, ui_val)
+	| `Tyuint32:
+		i_val = vanext(ap)
+		intfmt(sb, intparams(params), false, ui_val)
+	| `Tyuint64:
+		l_val = vanext(ap)
+		intfmt(sb, intparams(params), false, ul_val)
+	| `Tyulong:
+		l_val = vanext(ap)
+		intfmt(sb, intparams(params), false, ul_val)
+	| `Tyflt32:
+		f32_val = vanext(ap)
+		flt32bfmt(sb, f32_val, MNormal, 0)
+	| `Tyflt64:
+		f64_val = vanext(ap)
+		flt64bfmt(sb, f64_val, MNormal, 0)
+	| `Tyvalist:
+		sbputs(sb, "...")
+
+	/* compound types */
+	| `Typtr desc:
+		p_val = vanext(ap)
+		sbputs(sb, "0x")
+		intfmt(sb, \
+			[.base=16, .padto=2*sizeof(void#), .padfill='0'], \
+			false, p_val castto(intptr))
+	| `Tyslice desc:
+		match typedesc(desc)
+		| `Tybyte:
+			s_val = vanext(ap)
+			sbputs(sb, s_val)
+		| _:
+			sbputs(sb, "slice[:]")
+		;;
+	| `Tyfunc tc:
+		p_val = vanext(ap)
+		sbputs(sb, "func{")
+		intfmt(sb, \
+			[.base=16, .padto=2*sizeof(void#), .padfill='0'], \
+			false, p_val castto(intptr))
+		sbputs(sb, "}")
+	| `Tyarray (sz, data):
+		sbputs(sb, "array")
+	/* aggregate types */
+	| `Tytuple typecursor:
+		vabytes(ap)
+		sbputs(sb, "tuple")
+	| `Tystruct namecursor:
+		vabytes(ap)
+		sbputs(sb, "struct")
+	| `Tyunion namecursor:
+		vabytes(ap)
+		sbputs(sb, "union")
+	| `Tyname (name, desc):
+		fallbackfmt(sb, params, desc, ap)
+	;;
+}
+
+type intparams = struct
+	base	: size
+	padto	: size
+	padfill	: char
+;;
+
+const getparams = {fmt
+	var i
+
+	for i = 0; i < fmt.len; i++
+		if fmt[i] == '}' castto(byte)
+			goto foundparams
+		;;
+	;;
+	die("invalid format string")
+:foundparams
+	-> (fmt[:i], fmt[i+1:])
+}
+
+const intparams = {params
+	var ip : intparams
+	var c
+
+	ip = [
+		.base = 10,
+		.padfill = ' ',
+		.padto = 0
+	]
+
+	while params.len > 0
+		(c, params) = striter(params)
+		match c
+		| 'x':	ip.base = 16
+		| '0':	ip.padfill = '0'
+		| chr:
+			while isdigit(c)
+				ip.padto = ip.padto*10 + charval(c, 10)
+				(c, params) = striter(params)
+			;;
+		;;
+	;;
+	-> ip
+
 }
 
 const digitchars = [
-	'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'
+	'0','1','2','3','4',
+	'5','6','7','8','9',
+	'a','b','c','d','e','f'
 ]
-generic intfmt = {buf : byte[:], bits : @a::(integral,numeric), base, signed, padto, padfill
+generic intfmt = {sb, opts, signed, bits : @a::(integral,numeric)
 	var isneg
 	var val
 	var b : char[32]
-	var i, j, n, npad
+	var i, j, npad
+	var base
 
-	n = 0
-	i = 0
+	base = opts.base castto(uint64)
 	if signed && bits < 0
 		val = -bits castto(uint64)
 		isneg = true
@@ -115,6 +365,7 @@ generic intfmt = {buf : byte[:], bits : @a::(integral,numeric), base, signed, pa
 		isneg = false
 	;;
 
+	i = 0
 	if val == 0
 		b[0] = '0'
 		i++
@@ -125,192 +376,35 @@ generic intfmt = {buf : byte[:], bits : @a::(integral,numeric), base, signed, pa
 		i++
 	;;
 
-	npad = clamp(padto - i, 0, padto)
-	n = 0
+	npad = clamp(opts.padto - i, 0, opts.padto)
 	if isneg
 		npad--
 	;;
-	if padfill == '0' && isneg && n < buf.len
-		n += encode(buf[n:], '-')
+	if opts.padfill == '0' && isneg
+		sbputc(sb, '-')
 	;;
-	for j = 0; j < min(npad, buf.len); j++
-		if n >= buf.len
-			break
-		;;
-		n += encode(buf[n:], padfill)
+	for j = 0; j < npad; j++
+		sbputc(sb, opts.padfill)
 	;;
-	if padfill != '0' && isneg && n < buf.len
-		n += encode(buf[n:], '-')
+	if opts.padfill != '0' && isneg
+		sbputc(sb, '-')
 	;;
 	for j = i; j != 0; j--
-		if n >= buf.len
+		sbputc(sb, b[j - 1])
+	;;
+}
+
+const writeall = {fd, buf
+	var n, len
+
+	len = 0
+	while true
+		n = write(fd, buf)
+		if n <= 0 || n >= len
 			break
 		;;
-		n += encode(buf[n:], b[j - 1])
+		len += n
 	;;
-	-> n 
-}
-
-/* formats a string of text as specified by 'fmt' into 'buf',
-   using a valist for the arguments */
-const bfmtv = {buf, fmt, ap
-	var b
-	var c
-	var n
-	var padto
-	var base
-	var signed, padfill
-	var s_val : byte[:]
-	var t_val : bool
-	var b_val : int8, ub_val : uint8
-	var w_val : int16, uw_val : uint16
-	var i_val : int32, ui_val : uint32
-	var l_val : int64, ul_val : uint64
-	var z_val : size
-	var p_val : byte#
-        var c_val : char
-	var f_val : flt64, F_val : flt32
-	var sb
-
-	n = 0
-	while fmt.len != 0
-		(c, fmt) = striter(fmt)
-		if c == '%'
-			base = 10
-			padto = 0
-			signed = true
-			padfill = ' '
-			(c, fmt) = striter(fmt)
-			/* modifiers */
-			while fmt.len > 0
-				match c
-				| 'x':
-					(c, fmt) = striter(fmt)
-					base = 16
-					signed = false
-						
-				| 'u':
-					(c, fmt) = striter(fmt)
-					signed = false
-				| '0':
-					(c, fmt) = striter(fmt)
-					padfill = '0'
-				| _:	/* nothing */
-				;;
-				if isdigit(c) && padto == 0
-					/*
-					We can't get a 0 on the first iteration, since
-					that was matched above. So, no special checks
-					for nonzero on the first iteration.
-					*/
-					padto = 0
-					while isdigit(c)
-						padto = padto*10 + charval(c, 10)
-						(c, fmt) = striter(fmt)
-					;;
-				else
-					break
-				;;
-			;;
-			/* format specifiers */
-			match c
-			| 's':
-				s_val = vanext(&ap)
-				n += strfmt(buf[n:], s_val, padto, padfill)
-			| 't':
-				t_val = vanext(&ap)
-				n += boolfmt(buf[n:], t_val, padto, padfill)
-			| 'f':
-				f_val = vanext(&ap)
-				b = buf[n:]
-				sb = mkbufsb(b)
-				flt64bfmt(sb, f_val, 0, b.len)
-				n += sb.len
-				strfmt(buf[n:], sbfin(sb), 0, ' ')
-			| 'F':
-				F_val = vanext(&ap)
-				b = buf[n:]
-				sb = mkbufsb(b)
-				flt64bfmt(sb, F_val castto(flt64), 0, b.len)
-				n += sb.len
-				strfmt(buf[n:], sbfin(sb), 0, ' ')
-			/* format integers */
-			| 'b':
-				if signed
-					b_val = vanext(&ap)
-					n += intfmt(buf[n:], b_val, base, signed, padto, padfill)
-				else
-					ub_val = vanext(&ap)
-					n += intfmt(buf[n:], ub_val, base, signed, padto, padfill)
-				;;
-			| 'w':
-				if signed
-					w_val = vanext(&ap)
-					n += intfmt(buf[n:], w_val, base, signed, padto, padfill)
-				else
-					uw_val = vanext(&ap)
-					n += intfmt(buf[n:], uw_val, base, signed, padto, padfill)
-				;;
-			| 'i':
-				if signed
-					i_val = vanext(&ap)
-					n += intfmt(buf[n:], i_val, base, signed, padto, padfill)
-				else
-					ui_val = vanext(&ap)
-					n += intfmt(buf[n:], ui_val, base, signed, padto, padfill)
-				;;
-			| 'l':
-				if signed
-					l_val = vanext(&ap)
-					n += intfmt(buf[n:], l_val, base, signed, padto, padfill)
-				else
-					ul_val = vanext(&ap)
-					n += intfmt(buf[n:], ul_val, base, signed, padto, padfill)
-				;;
-
-			| 'z':
-				z_val = vanext(&ap)
-				n += intfmt(buf[n:], z_val castto(int64), base, signed, padto, padfill)
-			| 'p':
-				p_val = vanext(&ap)
-				n += intfmt(buf[n:], p_val castto(int64), 16, false, padto, padfill)
-			| 'c':
-				c_val = vanext(&ap)
-				n += encode(buf[n:], c_val)
-			| '%':
-				n += encode(buf[n:], '%')
-                        | _:
-                                die("Unknown format specifier\n")
-			;;
-		else
-			n += encode(buf[n:], c)
-		;;
-	;;
-	-> buf[:n]
-}
-
-const strfmt = {buf, str, padto, padfill
-	var i, n, npad
-
-	n = 0
-	npad = clamp(padto - str.len, 0, padto)
-	for i = 0; i < padto - str.len; i++
-		n += encode(buf[n:], padfill)
-	;;
-	for i = 0; i < min(str.len, buf.len); i++
-		buf[n++] = str[i]
-	;;
-	-> n
-}
-
-const boolfmt = {buf, val, padto, padfill
-	var s
-
-	if val
-		s = "true"
-	else
-		s = "false"
-	;;
-	-> strfmt(buf, s, padto, padfill)
+	-> len
 }
 

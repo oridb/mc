@@ -1,6 +1,5 @@
 use "cmp.use"
 use "option.use"
-use "fmt.use"
 
 pkg std =
 	generic lsearch	: (sl : @t[:], val : @t, cmp : (a : @t, b : @t -> order) -> option(@idx::(integral,numeric)))

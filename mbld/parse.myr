@@ -59,7 +59,7 @@ const loadall = {b, path, dir
 			loadall(b, subproj, subpath)
 			b.basedir = curbase
 		else
-			std.f2fatal("could not open {} or {} \n", subbld, subproj)
+			std.fatal("could not open {} or {} \n", subbld, subproj)
 		;;
 		std.slfree(subbld)
 		std.slfree(subproj)
@@ -91,7 +91,7 @@ const sortdeps = {b
 
 const visit = {all, b, targ, looped, marked
 	if std.hthas(looped, targ)
-		std.f2fatal("cycle in build depgraph involving {}\n", targ)
+		std.fatal("cycle in build depgraph involving {}\n", targ)
 	elif std.hthas(marked, targ)
 		-> all
 	;;
@@ -109,7 +109,7 @@ const getdeps = {targ
 	match targ
 	| `Bin t:	-> t.libdeps
 	| `Lib t:	-> t.libdeps
-	| _:	std.f2fatal("depending on non-library target")
+	| _:	std.fatal("depending on non-library target")
 	;;
 }
 
@@ -123,7 +123,7 @@ const mkparser = {path, dir, basedir
 	p.basedir = std.sldup(basedir)
 	match std.slurp(path)
 	| `std.Ok d:	p.data = d
-	| `std.Fail _:	std.f2fatal("could not open '{}'\n", path)
+	| `std.Fail _:	std.fatal("could not open '{}'\n", path)
 	;;
 	p.rest = p.data
 	-> p
@@ -144,8 +144,8 @@ const failparse = {p, msg, args : ...
 	var sl
 
 	ap = std.vastart(&args)
-	sl = std.bfmtv(buf[:], msg, ap)
-	std.f2fput(1, "{}:{}: {}", p.fname, p.line, sl)
+	sl = std.bfmtv(buf[:], msg, &ap)
+	std.fput(1, "{}:{}: {}", p.fname, p.line, sl)
 	std.exit(1)
 }
 
@@ -353,7 +353,7 @@ const myrtarget = {p, targ
 		| ("noinst", ""):	inst = false
 		| ("sys", tags):	systags = std.slpush(systags, tags)
 		| (invalid, _):
-			std.f2fatal("{}: got invalid attr '{}'\n", targ, invalid)
+			std.fatal("{}: got invalid attr '{}'\n", targ, invalid)
 		;;
 	;;
 	for inc in bld.opt_incpaths
@@ -596,7 +596,7 @@ const getc = {p
 const addtarg = {p, b, name, targ
 	var tn
 
-	tn = std.f2fmt("{}:{}", p.fdir, name)
+	tn = std.fmt("{}:{}", p.fdir, name)
 	if std.hthas(b.targs, tn)
 		failparse(p, "duplicate target {}\n", tn)
 	;;
@@ -611,10 +611,10 @@ const libpath = {p, libpath
 	| `std.None:
 		dir = std.sldup(".")
 		lib = std.sldup(libpath)
-		targ = std.f2fmt("{}:{}", p.fdir, lib)
+		targ = std.fmt("{}:{}", p.fdir, lib)
 	| `std.Some idx:
 		if idx == libpath.len
-			std.f2fatal("libdep {} missing library after ':'\n")
+			std.fatal("libdep {} missing library after ':'\n")
 		;;
 		/* absolute path */
 		if std.hasprefix(libpath, "@/") || std.hasprefix(libpath, "@:")
@@ -627,7 +627,7 @@ const libpath = {p, libpath
 			lib = std.sldup(libpath[idx+1:])
 			targ = std.pathcat(p.fdir, libpath)
 			if std.hasprefix(targ, "../")
-				std.f2fatal("library {} outside of project\n", libpath)
+				std.fatal("library {} outside of project\n", libpath)
 			;;
 		;;
 	;;

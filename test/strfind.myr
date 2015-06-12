@@ -15,7 +15,7 @@ const main = {
 
 const printloc = {l
 	match l
-	| `std.Some loc:	std.put("Found %z\n", loc)
+	| `std.Some loc:	std.put("Found {}\n", loc)
 	| `std.None:	std.put("No match\n")
 	;;
 }

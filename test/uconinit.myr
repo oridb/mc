@@ -13,7 +13,7 @@ const main = {
 		match v
 		| `A:	std.put("A ")
 		| `B:	std.put("B ")
-		| `C x:	std.put("C %i\n", x)
+		| `C x:	std.put("C {}\n", x)
 		;;
 	;;
 	std.put("\n")
