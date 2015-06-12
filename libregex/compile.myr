@@ -550,7 +550,7 @@ const repexpr = {re
 }
 
 const baseexpr = {re
-	var ret
+	var ret, m
 
 	if re.pat.len == 0
 		-> `None
@@ -567,11 +567,12 @@ const baseexpr = {re
 	| '^':	getc(re); ret = mk(`Bol)
 	| '$':	getc(re); ret = mk(`Eol)
 	| '(':	
+		m = re.nmatch++
 		getc(re)
 		match altexpr(re)
 		| `Some s:
 			if matchc(re, ')')
-				-> `Some mk(`Cap (re.nmatch++, s))
+				-> `Some mk(`Cap (m, s))
 			else
 				-> `Fail `Unbalanced
 			;;

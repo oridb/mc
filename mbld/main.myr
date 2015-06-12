@@ -73,7 +73,7 @@ const main = {args : byte[:][:]
 		bld.opt_incpaths = std.slpush(bld.opt_incpaths, libpath)
 	;;
 
-	match regex.compile("^\\s*use\\s+((\\<\\S+\\>)|(\"(\\S+)\")).*")
+	match regex.compile("^\\s*use\\s+((\\<\\S+\\>)|\"(\\S+)\").*")
 	| `std.Ok re:	bld.usepat = re
 	| `std.Fail f:	std.fatal("Failed to compile use pattern regex\n")
 	;;

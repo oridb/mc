@@ -144,7 +144,7 @@ const srcdeps = {b, ds, g, path, obj, usefile
 			;;
 		| `Local (l, lnum):
 			if !std.hassuffix(l, ".use")
-				std.fatal("%s:%s: local dependency \"%s\" should end with .use\n", path, lnum, l)
+				std.f2fatal("{}:{}: local dependency \"{}\" should end with .use\n", path, lnum, l)
 			;;
 			if obj.len != 0
 				pushdep(g, l, obj)
@@ -288,9 +288,9 @@ const depname = {deps, ln, lnum
 	match regex.exec(usepat, ln)
 	| `std.Some uses:
 		if uses[2].len > 0
-			deps = std.slpush(deps, `Local (std.sldup(uses[2]), lnum))
+			deps = std.slpush(deps, `Lib (std.sldup(uses[2]), lnum))
 		else
-			deps = std.slpush(deps, `Lib (std.sldup(uses[4]), lnum))
+			deps = std.slpush(deps, `Local (std.sldup(uses[3]), lnum))
 		;;
 	| `std.None:
 		/* nothing to do */
