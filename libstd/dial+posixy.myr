@@ -56,7 +56,6 @@ const dial = {str
 	var err
 	err = sys.connect(sock, (&sa) castto(sys.sockaddr#), sizeof(sys.sockaddr_in))
 	if err < 0
-		put("Errno %i\n", -err)
 		sys.close(sock)
 		-> `Fail "Failed to bind socket"
 	;;

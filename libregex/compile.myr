@@ -168,21 +168,21 @@ const rtdump = {rt, ind
 	var l, h
 
 	indent(ind)
-	std.put("Range (end = %t) {\n", rt.end)
+	std.f2put("Range (end = {}) {\n", rt.end)
 	for i = 0; i < rt.ranges.len; i++
 		indent(ind + 1)
 		(l, h) = rt.ranges[i]
-		std.put("0x%xb-0x%xb: \n", l, h)
+		std.f2put("0x{x}-0x{x}: \n", l, h)
 		rtdump(rt.link[i], ind + 1)
 	;;
 	indent(ind)
-	std.put("}\n")
+	std.f2put("}\n")
 }
 
 const indent = {ind
 	var i
 	for i = 0; i < ind; i++
-		std.put("\t")
+		std.f2put("\t")
 	;;
 }
 
@@ -373,28 +373,28 @@ const idump = {re
 		->
 	;;
 	for i = 0; i < re.proglen; i++
-		std.put("%i:\t", i)
+		std.f2put("{}:\t", i)
 		match re.prog[i]
 		/* Char matching. Consume exactly one byte from the string. */
-		| `Ibyte b:		std.put("`Ibyte %ub (%c)\n", b, b castto(char)) 
+		| `Ibyte b:		std.f2put("`Ibyte {} ({})\n", b, b castto(char)) 
 		| `Irange (start, end):	
-			std.put("`Irange (%ub,%ub)", start, end) 
+			std.f2put("`Irange ({},{})", start, end) 
 			if std.isalnum(start castto(char)) && std.isalnum(end castto(char))
-				std.put("\t/* %c-%c */", start castto(char), end castto(char))
+				std.f2put("\t/* {}-{} */", start castto(char), end castto(char))
 			;;
-			std.put("\n")
+			std.f2put("\n")
 		/* capture groups */
-		| `Ilbra m:		std.put("`Ilbra %z\n", m) 
-		| `Irbra m:		std.put("`Irbra %z\n", m) 
+		| `Ilbra m:		std.f2put("`Ilbra {}\n", m) 
+		| `Irbra m:		std.f2put("`Irbra {}\n", m) 
 		/* anchors */
-		| `Ibol:			std.put("`Ibol\n")
-		| `Ieol:			std.put("`Ieol\n")
-		| `Ibow:			std.put("`Ibow\n")
-		| `Ieow:			std.put("`Ieow\n")
+		| `Ibol:			std.f2put("`Ibol\n")
+		| `Ieol:			std.f2put("`Ieol\n")
+		| `Ibow:			std.f2put("`Ibow\n")
+		| `Ieow:			std.f2put("`Ieow\n")
 		/* control flow */
-		| `Ifork	(lip, rip):	std.put("`Ifork (%z,%z)\n", lip, rip) 
-		| `Ijmp ip:		std.put("`Ijmp %z\n", ip) 
-		| `Imatch id:		std.put("`Imatch %z\n", id) 
+		| `Ifork	(lip, rip):	std.f2put("`Ifork ({},{})\n", lip, rip) 
+		| `Ijmp ip:		std.f2put("`Ijmp {}\n", ip) 
+		| `Imatch id:		std.f2put("`Imatch {}\n", id) 
 		;;
 	;;
 }
@@ -407,58 +407,58 @@ const dump = {re, t, indent
 		->
 	;;
 	for i = 0; i < indent; i++
-		std.put("  ")
+		std.f2put("  ")
 	;;
 	match t#
 	| `Alt	(a, b):
-		std.put("Alt\n")
+		std.f2put("Alt\n")
 		dump(re, a, indent + 1)
 		dump(re, b, indent + 1)
 	| `Cat	(a, b):
-		std.put("Cat\n")
+		std.f2put("Cat\n")
 		dump(re, a, indent + 1)
 		dump(re, b, indent + 1)
 	/* repetition */
 	| `Star	a:
-		std.put("Star\n")
+		std.f2put("Star\n")
 		dump(re, a, indent + 1)
 	| `Rstar a:
-		std.put("Rstar\n")
+		std.f2put("Rstar\n")
 		dump(re, a, indent + 1)
 	| `Plus	a:
-		std.put("Plus\n")
+		std.f2put("Plus\n")
 		dump(re, a, indent + 1)
 	| `Rplus a:
-		std.put("Rplus\n")
+		std.f2put("Rplus\n")
 		dump(re, a, indent + 1)
 	| `Quest	a:
-		std.put("Quest\n")
+		std.f2put("Quest\n")
 		dump(re, a, indent + 1)
 	| `Bol:
-		std.put("Bol\n")
+		std.f2put("Bol\n")
 	| `Eol:
-		std.put("Eol\n")
+		std.f2put("Eol\n")
 	| `Bow:
-		std.put("Bow\n")
+		std.f2put("Bow\n")
 	| `Eow:
-		std.put("Eow\n")
+		std.f2put("Eow\n")
 	/* end matches */
 	| `Byte	b:
-		std.put("Byte %b\n", b)
+		std.f2put("Byte {}\n", b)
 	| `Chr	c:
-		std.put("Char %c\n", c)
+		std.f2put("Char {}\n", c)
 	| `Ranges rl:
-                std.put("Ranges")
+                std.f2put("Ranges")
 		for r in rl
 			for i = 0; i < indent + 1; i++
-				std.put("  ")
+				std.f2put("  ")
 			;;
-			std.put("\t(%ui-%ui)\n", r[0], r[1])
+			std.f2put("\t({}-{})\n", r[0], r[1])
 		;;
 
 	/* meta */
 	| `Cap	(m, a):
-		std.put("Cap %i\n", m)
+		std.f2put("Cap {}\n", m)
 		dump(re, a, indent + 1)
 	;;
 }

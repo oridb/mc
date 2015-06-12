@@ -42,6 +42,21 @@ pkg std =
 	$noret const f2fatalv	: (fmt : byte[:], ap : valist# -> void)
 ;;
 
+/* same as 'put', but exits the program after printing */
+const f2fatal = {fmt, args
+	var ap
+
+	ap = vastart(&args)
+	f2putv(fmt, &ap)
+	exit(1)
+}
+
+/* same as 'putv', but exits the program after printing */
+const f2fatalv = {fmt, ap
+	f2putv(fmt, ap)
+	exit(1)
+}
+
 var fmtmapinited : bool = false
 var fmtmap : htab(byte[:], (sb : strbuf#, ap : valist#, opts : byte[:] -> void))#
 
