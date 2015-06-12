@@ -15,7 +15,7 @@ include config.mk
 
 check: all
 	./mbldwrap.sh test:runtest
-	# BORKED. ./mbldwrap.sh test
+	./mbldwrap.sh test
 
 bench: all
 	$(MAKE) -C bench bench

@@ -75,7 +75,7 @@ const dotest = {b, targ
 			tt = [
 				.name = bin,
 				.dir = targ.dir,
-				.inputs = [path, s][:],
+				.inputs = [path][:],
 				.install = false,
 				.libdeps = targ.libdeps,
 				.incpath = targ.incpath,
@@ -96,6 +96,7 @@ const dotest = {b, targ
 		std.slfree(t)
 	;;
 	std.slfree(tests)
+	std.put("test {}: {}\n", targ.name, ok)
 	-> ok
 }
 

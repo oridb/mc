@@ -5,13 +5,14 @@ const check = {expected, fmt, args : ...
 	var sl, ap
 
 	ap = std.vastart(&args)
-	sl = std.bfmtv(buf[:], fmt, ap)
+	sl = std.bfmtv(buf[:], fmt, &ap)
 	if !std.sleq(expected, sl)
-		std.fatal(1, "mismatched expected fmt \"%s\", expected \"%s\"\n", sl, expected)
+		std.fatal("mismatched expected fmt \"{}\", expected \"{}\"\n", sl, expected)
 	;;
 }
 
 const main = {
+	/* FIXME: make these equivalents tested.
 	check("      abcd", "%10s", "abcd")
 	check("00000bdcae", "%010s", "bdcae")
 	check("abcdefghijkl", "%010s", "abcdefghijkl")
@@ -24,5 +25,10 @@ const main = {
 	check("100000"    , "%3i", 100000)
 	check("foobarbaz", "%sbar%s", "foo", "baz")
 	check("%sbarbaz", "%%sbar%s", "baz")
+	*/
+	check("abcd", "{}", "abcd")
+	check("123", "{}", 123)
+	check("7b", "{x}", 123)
+	check("0x7b", "0x{x}", 123)
 }
 

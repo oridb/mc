@@ -1,6 +1,4 @@
-use "chartype.use"
-
-use "die.use"
+use std
 
 const main = {
 	std.assert(std.isalpha('a'), "a should be alpha\n")

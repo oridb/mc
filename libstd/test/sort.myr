@@ -1,9 +1,4 @@
-use "sort.use"
-
-use "fmt.use"
-use "die.use"
-use "sleq.use"
-use "cmp.use"
+use std
 
 const main = {
 	var i

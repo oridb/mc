@@ -1,14 +1,4 @@
-use "bigint.use"
-
-/* suport libs */
-use "alloc.use"
-use "die.use"
-use "extremum.use"
-use "fmt.use"
-use "mk.use"
-use "option.use"
-use "slpush.use"
-use "sleq.use"
+use std
 
 type cmd = union
 	`Add (cmd#, cmd#)
@@ -99,7 +89,7 @@ const run = {e : cmd#, res : byte[:]
 	v = eval(e)
 	n = std.bigbfmt(buf[:], v, 0)
 	if !std.sleq(buf[:n], res)
-		std.fatal(1, "%s != %s\n", buf[:n], res)
+		std.fatal("%s != %s\n", buf[:n], res)
 	;;
 }
 

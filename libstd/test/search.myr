@@ -19,15 +19,15 @@ const expect = {a, b
 	match a
 	| `std.None:
 		match b
-		| `std.Some x: std.fatal(1, "Expected `std.None, `std.None, got `std.None, `std.Some %i\n", x)
+		| `std.Some x: std.fatal("Expected `std.None, `std.None, got `std.None, `std.Some %i\n", x)
 		| `std.None:	/* nothing */
 		;;
 	| `std.Some x:
 		match b
-		| `std.None: std.fatal(1, "Expected `std.Some %i, `std.Some %i, got `std.Some %i, `std.None\n", x, x, x)
+		| `std.None: std.fatal("Expected `std.Some %i, `std.Some %i, got `std.Some %i, `std.None\n", x, x, x)
 		| `std.Some y: 
 			if x != y
-				std.fatal(1, "Expected `std.Some %i, `std.Some %i, got `std.Some %i, `std.Some %i\n", x, x, x, y)
+				std.fatal("Expected `std.Some %i, `std.Some %i, got `std.Some %i, `std.Some %i\n", x, x, x, y)
 			;;
 		;;
 	;;

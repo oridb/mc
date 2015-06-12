@@ -1,8 +1,4 @@
-use "try.use"
-
-use "die.use"
-use "option.use"
-use "fmt.use"
+use std
 
 const main = {
 	var x = `std.Some 123
