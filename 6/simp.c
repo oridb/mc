@@ -1658,16 +1658,29 @@ static void flatten(Simp *s, Node *f)
     append(s, s->endlbl);
 }
 
+static int isexport(Node *dcl)
+{
+    Node *n;
+
+    /* Vishidden should also be exported. */
+    if (dcl->decl.vis != Visintern)
+        return 1;
+    n = dcl->decl.name;
+    if (!n->name.ns && streq(n->name.name, "main"))
+        return 1;
+    if (streq(n->name.name, "__init__"))
+        return 1;
+    return 0;
+}
+
 static Func *simpfn(Simp *s, char *name, Node *dcl)
 {
     Node *n;
-    Vis vis;
     size_t i;
     Func *fn;
     Cfg *cfg;
 
     n = dcl->decl.init;
-    vis = dcl->decl.vis;
     if(debugopt['i'] || debugopt['F'] || debugopt['f'])
         printf("\n\nfunction %s\n", name);
 
@@ -1704,8 +1717,7 @@ static Func *simpfn(Simp *s, char *name, Node *dcl)
 
     fn = zalloc(sizeof(Func));
     fn->name = strdup(name);
-    if (vis != Visintern)
-        fn->isexport = 1;
+    fn->isexport = isexport(dcl);
     fn->stksz = align(s->stksz, 8);
     fn->stkoff = s->stkoff;
     fn->ret = s->ret;

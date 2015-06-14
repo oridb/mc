@@ -9,6 +9,5 @@ const main = {args : byte[:][:]
 	| `std.Ok dat: 	std.write(1, dat)
 	| `std.Fail msg:	std.put("Failed to read file: {}\n", msg)
 	;;
-	-> 0
 }
 

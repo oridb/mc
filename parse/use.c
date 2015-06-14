@@ -962,6 +962,8 @@ void readuse(Node *use, Stab *st, Vis vis)
 
 /* Usefile format:
  * U<pkgname>
+ * L<liblist>
+ * I<initlist>
  * T<pickled-type>
  * D<picled-decl>
  * G<pickled-decl><pickled-initializer>

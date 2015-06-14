@@ -211,15 +211,16 @@ struct Node {
     int nid;
     union {
         struct {
-            size_t nfiles;
+            size_t nfiles;      /* file names for location mapping */
             char  **files;
-            Node **uses;
+            Node **uses;        /* use files that we loaded */
             size_t nuses;
-            char **libdeps;
+            char **libdeps;     /* library dependencies */
             size_t nlibdeps;
-            Node **stmts;
+            Node **stmts;       /* all top level statements */
             size_t nstmts;
-            Stab  *globls;
+            Stab  *globls;      /* global symtab */
+            int hasinit;        /* did we declare __init__? */
         } file;
 
         struct {

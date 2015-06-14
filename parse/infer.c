@@ -1952,6 +1952,37 @@ static void checkrange(Inferstate *st, Node *n)
     }
 }
 
+static int initcompatible(Type *t)
+{
+    if (t->type != Tyfunc)
+        return 0;
+    if (t->nsub != 1)
+        return 0;
+    if (tybase(t->sub[0])->type != Tyvoid)
+        return 0;
+    return 1;
+}
+
+static int maincompatible(Type *t)
+{
+    if (t->nsub > 2)
+        return 0;
+    if (tybase(t->sub[0])->type != Tyvoid)
+        return 0;
+    if (t->nsub == 2) {
+        t = tybase(t->sub[1]);
+        if (t->type != Tyslice)
+            return 0;
+        t = tybase(t->sub[0]);
+        if (t->type != Tyslice)
+            return 0;
+        t = tybase(t->sub[0]);
+        if (t->type != Tybyte)
+            return 0;
+    }
+    return 1;
+}
+
 /* After type inference, replace all types
  * with the final computed type */
 static void typesub(Inferstate *st, Node *n)
@@ -1972,6 +2003,12 @@ static void typesub(Inferstate *st, Node *n)
             settype(st, n, tyfix(st, n, type(st, n), 0));
             if (n->decl.init)
                 typesub(st, n->decl.init);
+            if (streq(declname(n), "main"))
+                if (!maincompatible(tybase(decltype(n))))
+                    fatal(n, "main must be (->void) or (byte[:][:] -> void), got %s", tystr(decltype(n)));
+            if (streq(declname(n), "__init__"))
+                if (!initcompatible(tybase(decltype(n))))
+                    fatal(n, "__init__ must be (->void), got %s", tystr(decltype(n)));
             break;
         case Nblock:
             pushstab(n->block.scope);

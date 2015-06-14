@@ -448,7 +448,7 @@ static void writeasm(FILE *fd, Isel *s, Func *fn)
     char *hidden;
 
     hidden = "";
-    if (fn->isexport || streq(fn->name, Symprefix "main"))
+    if (fn->isexport)
         hidden = "";
     /* we don't use the stack size directive: myrddin handles
      * the stack frobbing on its own */
