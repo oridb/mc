@@ -42,7 +42,7 @@ const dump = {re, fd
 	while true
 		match bio.readln(fd)
 		| `std.Some ln:
-			show(regex.exec(re, ln))
+			show(re, ln, regex.exec(re, ln))
 			std.slfree(ln)
 		| `std.None:
 			break
@@ -50,7 +50,7 @@ const dump = {re, fd
 	;;
 }
 
-const show = {mg
+const show = {re, ln, mg
 	var i
 
 	match mg
@@ -61,5 +61,10 @@ const show = {mg
 		;;
 	| `std.None:
 		std.put("Match failed\n")
+		std.put("{}\n", ln)
+		for i = 0; i < re.strp - 1; i++
+			std.put(" ")
+		;;
+		std.put("^\n")
 	;;
 }
