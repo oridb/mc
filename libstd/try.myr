@@ -1,13 +1,22 @@
+use "result.use"
 use "option.use"
 use "fmt.use"
 
 pkg std =
-	generic try : (v : option(@a) -> @a)
+	generic try : (v : result(@a, @b) -> @a)
+	generic val : (v : option(@a) -> @a)
 ;;
 
 generic try = {v
 	match v
+	| `Ok x:	-> x
+	| `Fail m:	fatal("error: {}\n", m)
+	;;
+}
+
+generic val = {v
+	match v
 	| `Some x:	-> x
-	| `None:	fatal("expected `Some @a, got `None\n")
+	| `None:	fatal("error: option had `None\n")
 	;;
 }
