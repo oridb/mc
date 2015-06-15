@@ -198,8 +198,8 @@ const getdeps = {b, ds, path
 		;;
 	;;
 	match bio.open(path, bio.Rd)
-	| `std.Some fd:	f = fd
-	| `std.None:	std.fatal("could not open {}\n", path)
+	| `std.Ok fd:	f = fd
+	| `std.Fail m:	std.fatal("could not open {}: {}\n", path, m)
 	;;
 
 	lnum = 0
@@ -263,18 +263,14 @@ const openlib = {lib, incs
 	for p in incs
 		path = std.pathjoin([p, lib][:])
 		match  bio.open(path, bio.Rd)
-		| `std.Some file:
-			-> file
-		| `std.None:
-			/* nothing */
+		| `std.Ok file:	-> file
+		| `std.Fail m:	/* nothing */
 		;;
 	;;
 	path = std.pathjoin([opt_instroot, "/lib/myr", lib][:])
 	match  bio.open(path, bio.Rd)
-	| `std.Some file:
-		-> file
-	| `std.None:
-		/* nothing */
+	| `std.Ok file:	-> file
+	| `std.Fail m:	/* nothing */
 	;;
 	std.fatal("could not find library {}.\n", lib)
 }

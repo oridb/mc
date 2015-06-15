@@ -45,11 +45,11 @@ const runall = {re, files
 
 	for f in files
 		match bio.open(f, bio.Rd)
-		| `std.Some fd:
+		| `std.Ok fd:
 			dump(re, fd)
 			bio.close(fd)
-		| `std.None:
-			std.fatal("failed to open {}\n", f)
+		| `std.Fail m:
+			std.fatal("failed to open {}: {}\n", f, m)
 		;;
 	;;
 }

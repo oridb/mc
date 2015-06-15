@@ -23,9 +23,9 @@ pkg bio =
 
 	/* creation */
 	const mkfile	: (fd : std.fd, mode : mode	-> file#)
-	const open	: (path : byte[:], mode : mode	-> std.option(file#))
-	const dial	: (srv	: byte[:], mode : mode	-> std.option(file#))
-	const create	: (path : byte[:], mode : mode, perm : int	-> std.option(file#))
+	const open	: (path : byte[:], mode : mode	-> std.result(file#, byte[:]))
+	const dial	: (srv	: byte[:], mode : mode	-> std.result(file#, byte[:]))
+	const create	: (path : byte[:], mode : mode, perm : int	-> std.result(file#, byte[:]))
 	const close	: (f : file# -> bool)
 	const free	: (f : file# -> void)
 
@@ -98,8 +98,8 @@ const create = {path, mode, perm
 /* dial the server, and open a file using the returned fd */
 const dial = {srv, mode
 	match std.dial(srv)
-	| `std.Ok sock:	-> `std.Some mkfile(sock, mode)
-	| `std.Fail _:	-> `std.None
+	| `std.Ok sock:	-> `std.Ok mkfile(sock, mode)
+	| `std.Fail m:	-> `std.Fail m
 	;;
 }
 
@@ -120,9 +120,9 @@ const sysopen = {path, mode, openmode, perm
 
 	fd = std.openmode(path, openmode, perm castto(int64))
 	if fd < 0
-		-> `std.None
+		-> `std.Fail "could not open fd"
 	else
-		-> `std.Some mkfile(fd, mode)
+		-> `std.Ok mkfile(fd, mode)
 	;;
 }
 
