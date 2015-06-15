@@ -15,53 +15,53 @@ const main = {
 
 const asciiclass = {
 	/* \d success */
-	testmatch("\\d", "1")
-	testmatch("\\d\\d", "13")
-	testmatch("\\d+", "13688")
+	testmatch("\\d", "1", `std.Some [][:])
+	testmatch("\\d\\d", "13", `std.Some [][:])
+	testmatch("\\d+", "13688", `std.Some [][:])
 	/* \d fail */
-	testmatch("\\d", "x")
-	testmatch("\\d\\d", "x3")
-	testmatch("\\d+", "1368f")
+	testmatch("\\d", "x", `std.None)
+	testmatch("\\d\\d", "x3", `std.None)
+	testmatch("\\d+", "1368f", `std.None)
 
 	/* \x success */
-	testmatch("\\x", "a")
-	testmatch("\\x\\x", "1F")
-	testmatch("\\x+", "13b8cDEf")
+	testmatch("\\x", "a", `std.Some [][:])
+	testmatch("\\x\\x", "1F", `std.Some [][:])
+	testmatch("\\x+", "13b8cDEf", `std.Some [][:])
 	/* \x fail */
-	testmatch("\\x", "Z")
-	testmatch("\\x\\x", "fg")
-	testmatch("\\x+", "13b8cg")
+	testmatch("\\x", "Z", `std.None)
+	testmatch("\\x\\x", "fg", `std.None)
+	testmatch("\\x+", "13b8cg", `std.None)
 
 	/* \s success */
-	testmatch("\\s", " ")
-	testmatch("\\s\\s", "\t\n")
-	testmatch("\\s+", "\t\n\r \t")
+	testmatch("\\s", " ", `std.Some [][:])
+	testmatch("\\s\\s", "\t\n", `std.Some [][:])
+	testmatch("\\s+", "\t\n\r \t", `std.Some [][:])
 	/* \s fail */
-	testmatch("\\s", "a")
-	testmatch("\\s\\s", "i\n")
-	testmatch("\\s+", "\t\n\r.\t")
+	testmatch("\\s", "a", `std.None)
+	testmatch("\\s\\s", "i\n", `std.None)
+	testmatch("\\s+", "\t\n\r.\t", `std.None)
 
 	/* word success */
-	testmatch("\\w+", "abcABC0123_")
+	testmatch("\\w+", "abcABC0123_", `std.Some [][:])
 	/* word fail */
-	testmatch("\\w+", "abcABC0123_.")
+	testmatch("\\w+", "abcABC0123_.", `std.None)
 
 	/* \h success */
-	testmatch("\\h", " ")
-	testmatch("\\h\\h", "\t ")
-	testmatch("\\h+", "\t \t ")
+	testmatch("\\h", " ", `std.Some [][:])
+	testmatch("\\h\\h", "\t ", `std.Some [][:])
+	testmatch("\\h+", "\t \t ", `std.Some [][:])
 	/* \h fail */
-	testmatch("\\h", "\n")
-	testmatch("\\h\\h", "\t\r")
-	testmatch("\\h+", "\t \t.")
+	testmatch("\\h", "\n", `std.None)
+	testmatch("\\h\\h", "\t\r", `std.None)
+	testmatch("\\h+", "\t \t.", `std.None)
 }
 
 const set = {
 	/* ranges */
-	testmatch("[a-z]*", "abcd")
-	testmatch("[a-zA-Z]*", "abCD")
-	testmatch("[a-zA-Z0-9_]*", "_abCD018")
+	testmatch("[a-z]*", "abcd", `std.Some [][:])
+	testmatch("[a-zA-Z]*", "abCD", `std.Some [][:])
+	testmatch("[a-zA-Z0-9_]*", "_abCD018", `std.Some [][:])
 
-	testmatch("[abc]*", "abba")
-	testmatch("[a-zABC]*", "abBa")
+	testmatch("[abc]*", "abba", `std.Some [][:])
+	testmatch("[a-zABC]*", "abBa", `std.Some [][:])
 }

@@ -2,33 +2,57 @@ use std
 use regex
 
 pkg =
-	const testmatch	: (pat : byte[:], text : byte[:] -> void)
-	const dbgmatch	: (pat : byte[:], text : byte[:] -> void)
+	const testmatch	: (pat : byte[:], text : byte[:], expected : std.option(byte[:][:]) -> void)
+	const dbgmatch	: (pat : byte[:], text : byte[:], expected : std.option(byte[:][:]) -> void)
 ;;
 
-const testmatch = {pat, text
-	run(regex.compile(pat), pat, text)
+const testmatch = {pat, text, expected
+	run(regex.compile(pat), pat, text, expected)
 }
 
-const dbgmatch = {pat, text
-	run(regex.dbgcompile(pat), pat, text)
+const dbgmatch = {pat, text, expected
+	run(regex.dbgcompile(pat), pat, text, expected)
 }
 
-const run = {regex, pat, text
-	var i
-	match regex
-	| `std.Ok re:
-		match regex.exec(re, text)
-		| `std.Some m:
-			std.put("Matched %s via %s : %i\n", text, pat, m.len)
-			for i = 0; i < m.len; i++
-				std.put("\tmatch %i: %s\n", i, m[i])
-			;;
+const run = {regex, pat, text, expected
+	var i, re
+
+	re = std.try(regex)
+	match regex.exec(re, text)
+	| `std.Some res:
+		match expected
 		| `std.None:
-			std.put("No match of %s via %s\n", text, pat)
+			std.fatal("expected no match, got:")
+			for i = 0; i < res.len; i++
+				std.put("\t{}: {}\n", i, res[i])
+			;;
+		| `std.Some exp:
+			if !std.sleq(res[0], text)
+				std.put("whole match does not match text!\n")
+				std.fatal("failed matching {} over {}\n", pat, text)
+			;;
+			res = res[1:]
+			if res.len != exp.len
+				std.put("mismatch: expected {} matches, got {}\n",  exp.len, res.len)
+				std.fatal("failed matching {} over {}\n", pat, text)
+			;;
+			for i = 0; i < exp.len; i++
+				if !std.sleq(res[i], exp[i])
+					std.put("mismatch on {}: expected {}, got {}\n", i, exp[i], res[i])
+					std.fatal("failed matching {} over {}\n", pat, text)
+				;;
+			;;
 		;;
-		regex.free(re)
-	| `std.Fail err:
-		std.put("failed to compile regex")
+	| `std.None:
+		match expected
+		| `std.None:	/* : expected failure */
+		| `std.Some matches:
+			std.put("expected matches:\n")
+			for i = 0; i < matches.len; i++
+				std.put("\t{}: {}\n", i, matches[i])
+			;;
+			std.fatal("no match found\n")
+		;;
 	;;
+	regex.free(re)
 }

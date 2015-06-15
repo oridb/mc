@@ -1,9 +1,17 @@
+use std
 use "testmatch.use"
 
 const main = {
-	testmatch("A(.*)", "Abc")
-	testmatch("A(.*)e", "Abcde")
-	testmatch("(a|b)+", "abab")
-	testmatch("A(b(.*)d)e", "Abcde")
-	testmatch("(a?)(a*)(a?)", "aaaa")
+	testmatch("A(.*)", "Abc", `std.Some ["bc"][:])
+	testmatch("A(.*)e", "Abcde", `std.Some ["bcd"][:])
+	testmatch("(a|b)+", "abab", `std.Some ["b"][:])
+	testmatch("A(b(.*)d)e", "Abcde", `std.Some [
+		"bcd",
+		"c"
+	][:])
+	testmatch("(a?)(a*)(a?)", "aaaa", `std.Some [
+		"a",
+		"aaa",
+		""
+	][:])
 }

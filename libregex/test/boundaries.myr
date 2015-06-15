@@ -1,17 +1,36 @@
+use std
 use "testmatch.use"
 
 const main = {
 	/* expected matches */
-	testmatch("\\<([a-z]*)\\>", "abcdef")	/* whole word */
-	testmatch(".*(\\<.*\\>).*", "!m!")	/* single char word in midstring */
-	testmatch(".*(\\<.*\\>).*", "!m")	/* single char word at end of string */
-	testmatch(".*(\\<.*\\>).*", "m!")	/* single char word at start of string */
-	testmatch(".*(\\<.*\\>).*", "!@#!!matches!!%!")	/* word in midstring */
-	testmatch(".*(\\<.*\\>).*", "matches!!%!")	/* word at start of string */
-	testmatch(".*(\\<.*\\>).*", "!@#!!matches")	/* word at end of string */
-	testmatch(".*(\\<.*\\>).*", "!@#!!matches!!%!foo")	/* matches last word in string */
-	testmatch(".*(\\<.*\\>).*", "123")	/* numbers are also word bounds */
+	testmatch("\\<([a-z]*)\\>", "abcdef", `std.Some [
+		"abcdef",
+	][:])
+	testmatch(".*(\\<.*\\>).*", "!m!", `std.Some [	/* single char word in midstring */
+		"m",
+	][:])
+	testmatch(".*(\\<.*\\>).*", "!m", `std.Some [	/* single char word at end of string */
+		"m",
+	][:])
+	testmatch(".*(\\<.*\\>).*", "m!", `std.Some [	/* single char word at start of string */
+		"m",
+	][:])
+	testmatch(".*(\\<.*\\>).*", "!@#!!matches!!%!", `std.Some [	/* word in midstring */
+		"matches",
+	][:])
+	testmatch(".*(\\<.*\\>).*", "matches!!%!", `std.Some [	/* word at start of string */
+		"matches",
+	][:])
+	testmatch(".*(\\<.*\\>).*", "!@#!!matches", `std.Some [	/* word at end of string */
+		"matches",
+	][:])
+	testmatch(".*(\\<.*\\>).*", "!@#!!matches!!%!foo", `std.Some [	/* matches last word in string */
+		"foo",
+	][:])
+	testmatch(".*(\\<.*\\>).*", "123", `std.Some [	/* numbers are also word bounds */
+		"123",
+	][:])
 	
 	/* nonmatches */
-	testmatch("\\<([a-z]*)\\>foo", "abcdefoo")	/* word boundary needed in midstring */
+	testmatch("\\<([a-z]*)\\>foo", "abcdefoo", `std.None)	/* word boundary needed in midstring */
 }

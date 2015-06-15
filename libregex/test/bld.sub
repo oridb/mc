@@ -1,0 +1,7 @@
+test basic = basic.myr testmatch.myr;;
+test boundaries = boundaries.myr testmatch.myr;;
+test capture = capture.myr testmatch.myr;;
+test class = class.myr testmatch.myr;;
+test failmatch = failmatch.myr testmatch.myr;;
+test negclass = negclass.myr testmatch.myr;;
+test unicode = unicode.myr testmatch.myr;;

@@ -15,58 +15,58 @@ const main = {
 
 const asciiclass = {
 	/* \D success */
-	testmatch("\\D", "x")
-	testmatch("\\D+", "xa!#^cs")
+	testmatch("\\D", "x", `std.Some [][:])
+	testmatch("\\D+", "xa!#^cs", `std.Some [][:])
 
 	/* \D fail: end of ranges chars */
-	testmatch("\\D", "0")
-	testmatch("\\D", "9")
-	testmatch("\\D+", "a35x")
-	testmatch("\\D+", "13688")
+	testmatch("\\D", "0", `std.None)
+	testmatch("\\D", "9", `std.None)
+	testmatch("\\D+", "a35x", `std.None)
+	testmatch("\\D+", "13688", `std.None)
 
 	/* \X success */
-	testmatch("\\X", "Z")
-	testmatch("\\X\\X", "gg")
+	testmatch("\\X", "Z", `std.Some [][:])
+	testmatch("\\X\\X", "gg", `std.Some [][:])
 	/* \X fail */
-	testmatch("\\X", "a")
-	testmatch("\\X+", "zz13b8cDEf")
+	testmatch("\\X", "a", `std.None)
+	testmatch("\\X+", "zz13b8cDEf", `std.None)
 
 	/* \S success */
-	testmatch("\\S", "a")
-	testmatch("\\S\\S", "i%")
-	testmatch("\\S+", "alskd690!#!!")
+	testmatch("\\S", "a", `std.Some [][:])
+	testmatch("\\S\\S", "i%", `std.Some [][:])
+	testmatch("\\S+", "alskd690!#!!", `std.Some [][:])
 
 	/* \S fail */
-	testmatch("\\S", " ")
-	testmatch("\\S\\S", "\t\n")
-	testmatch("\\S+", "\t \nkait")
+	testmatch("\\S", " ", `std.None)
+	testmatch("\\S\\S", "\t\n", `std.None)
+	testmatch("\\S+", "\t \nkait", `std.None)
 
 	/* word success */
-	testmatch("\\W+", "!%!^^@@!^")
+	testmatch("\\W+", "!%!^^@@!^", `std.Some [][:])
 	/* word fail */
-	testmatch("\\W+", "a^#$bcABC0123_")
+	testmatch("\\W+", "a^#$bcABC0123_", `std.None)
 
 	/* \H success */
-	testmatch("\\H", "\n")
-	testmatch("\\H\\H", "\n\r")
+	testmatch("\\H", "\n", `std.Some [][:])
+	testmatch("\\H\\H", "\n\r", `std.Some [][:])
 	/* \H fail */
-	testmatch("\\H+", "\t \t.")
-	testmatch("\\H\\H", "\t ")
-	testmatch("\\H+", "\ta35 \t ")
+	testmatch("\\H+", "\t \t.", `std.None)
+	testmatch("\\H\\H", "\t ", `std.None)
+	testmatch("\\H+", "\ta35 \t ", `std.None)
 }
 
 const set = {
 	/* ranges: should succeed */
-	testmatch("[^a-z]*", "ABCD")
-	testmatch("[^a-zA-Z]*", "1234")
-	testmatch("[^a-zA-Z0-9_]*", "-^^-")
-	testmatch("[^abc]*", "d6d")
-	testmatch("[^a-zABC]*", "!^!!))#")
+	testmatch("[^a-z]*", "ABCD", `std.Some [][:])
+	testmatch("[^a-zA-Z]*", "1234", `std.Some [][:])
+	testmatch("[^a-zA-Z0-9_]*", "-^^-", `std.Some [][:])
+	testmatch("[^abc]*", "d6d", `std.Some [][:])
+	testmatch("[^a-zABC]*", "!^!!))#", `std.Some [][:])
 
 	/* ranges: should fail */
-	testmatch("[^a-z]*", "abcd")
-	testmatch("[^a-zA-Z]*", "abCD")
-	testmatch("[^a-zA-Z0-9_]*", "_abCD018")
-	testmatch("[^abc]*", "abba")
-	testmatch("[^a-zABC]*", "abBa")
+	testmatch("[^a-z]*", "abcd", `std.None)
+	testmatch("[^a-zA-Z]*", "abCD", `std.None)
+	testmatch("[^a-zA-Z0-9_]*", "_abCD018", `std.None)
+	testmatch("[^abc]*", "abba", `std.None)
+	testmatch("[^a-zABC]*", "abBa", `std.None)
 }

@@ -33,37 +33,35 @@ const load = {b
 
 const loadall = {b, path, dir
 	var p : parser#
-	var subpath, subbld, subproj, ok
+	var subbld, subproj, ok
 	var curbase
 
 	p = mkparser(path, dir, b.basedir)
 	ok = bld.parse(b, p, "")
-	for s in p.subdirs
-		subpath = std.pathcat(p.fdir, s)
-		subbld = std.pathcat(subpath, "bld.sub")
-		subproj = std.pathcat(subpath, "bld.proj")
+	for sub in p.subdirs
+		subbld = std.pathcat(sub, "bld.sub")
+		subproj = std.pathcat(sub, "bld.proj")
 		/*
 		bld.sub is a subbuild. It doesn't change the
 		build root.
 		*/
 		if std.fexists(subbld)
-			loadall(b, subbld, subpath)
+			loadall(b, subbld, sub)
 		/*
 		bld.proj reroots the project -- @/
 		is relative to the most recent bld.proj
 		in the heirarchy.
 		*/
-		elif std.fexists(subproj)
+		elif std.fexists(sub)
 			curbase = b.basedir
-			b.basedir = subpath
-			loadall(b, subproj, subpath)
+			b.basedir = sub
+			loadall(b, subproj, sub)
 			b.basedir = curbase
 		else
 			std.fatal("could not open {} or {} \n", subbld, subproj)
 		;;
 		std.slfree(subbld)
 		std.slfree(subproj)
-		std.slfree(subpath)
 	;;
 	freeparser(p)
 	-> ok

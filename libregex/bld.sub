@@ -17,3 +17,5 @@ bin redump {noinst} =
 gen ranges.myr {durable} =
 	mkchartab -a -p_ranges UnicodeData.txt -o ranges.myr
 ;;
+
+sub = test ;;
