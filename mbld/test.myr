@@ -44,6 +44,13 @@ const test = {b
 				t.incpath = std.slput(t.incpath, 0, std.sldup("."))
 			;;
 			buildbin(b, t, false)
+		| _:
+			/* skip */
+		;;
+	;;
+	for tn in b.all
+		match gettarg(b.targs, tn)
+		| `Test t:
 			bin = std.strcat("./", t.name)
 			if !runtest(bin)
 				ok = false
