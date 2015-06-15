@@ -705,13 +705,29 @@ static int checktraits(Type *a, Type *b)
     return bsissubset(a->traits, b->traits);
 }
 
-/* Merges the constraints on types */
-static void mergetraits(Inferstate *st, Node *ctx, Type *a, Type *b)
+static void verifytraits(Inferstate *st, Node *ctx, Type *a, Type *b)
 {
     size_t i, n;
     char *sep;
     char traitbuf[1024], abuf[1024], bbuf[1024];
 
+    if (!checktraits(a, b)) {
+        sep = "";
+        n = 0;
+        for (i = 0; bsiter(a->traits, &i); i++) {
+            if (!b->traits || !bshas(b->traits, i))
+                n += snprintf(traitbuf + n, sizeof(traitbuf) - n, "%s%s", sep, namestr(traittab[i]->name));
+            sep = ",";
+        }
+        tyfmt(abuf, sizeof abuf, a);
+        tyfmt(bbuf, sizeof bbuf, b);
+        fatal(ctx, "%s missing traits %s for %s near %s", bbuf, traitbuf, abuf, ctxstr(st, ctx));
+    }
+}
+
+/* Merges the constraints on types */
+static void mergetraits(Inferstate *st, Node *ctx, Type *a, Type *b)
+{
     if (b->type == Tyvar) {
         /* make sure that if a = b, both have same traits */
         if (a->traits && b->traits)
@@ -721,18 +737,7 @@ static void mergetraits(Inferstate *st, Node *ctx, Type *a, Type *b)
         else if (b->traits)
             a->traits = bsdup(b->traits);
     } else {
-        if (!checktraits(a, b)) {
-            sep = "";
-            n = 0;
-            for (i = 0; bsiter(a->traits, &i); i++) {
-                if (!b->traits || !bshas(b->traits, i))
-                    n += snprintf(traitbuf + n, sizeof(traitbuf) - n, "%s%s", sep, namestr(traittab[i]->name));
-                sep = ",";
-            }
-            tyfmt(abuf, sizeof abuf, a);
-            tyfmt(bbuf, sizeof bbuf, b);
-            fatal(ctx, "%s missing traits %s for %s near %s", bbuf, traitbuf, abuf, ctxstr(st, ctx));
-        }
+        verifytraits(st, ctx, a, b);
     }
 }
 
@@ -888,6 +893,7 @@ static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
         if (a->type == Tyname && !nameeq(a->name, b->name))
             typeerror(st, a, b, ctx, NULL);
         if (a->nsub != b->nsub) {
+            verifytraits(st, ctx, a, b);
             if (tybase(a)->type == Tyfunc)
                 typeerror(st, a, b, ctx, "function arity mismatch");
             else
@@ -1525,7 +1531,7 @@ static void specializeimpl(Inferstate *st, Node *n)
         /* infer and unify types */
         if (n->impl.type->type == Tygeneric || n->impl.type->type == Typaram)
             fatal(n, "trait specialization requires concrete type, got %s", tystr(n->impl.type));
-        checktraits(t->param, n->impl.type);
+        verifytraits(st, n, t->param, n->impl.type);
         ht = mkht(tyhash, tyeq);
         htput(ht, t->param, n->impl.type);
         ty = tyspecialize(type(st, proto), ht, st->delayed);
