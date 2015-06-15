@@ -14,6 +14,8 @@ pkg std =
 	type optdef = struct
 		argdesc	: byte[:]	/* the description for the usage */
 		minargs	: std.size	/* the minimum number of positional args */
+		maxargs	: std.size	/* the maximum number of positional args (0 = unlimited) */
+		noargs	: std.bool	/* whether we accept args at all */
 		opts	: optdesc[:]	/* the description of the options */
 	;;
 
@@ -63,6 +65,16 @@ const optparse = {args, def
 	;;
 	if ctx.args.len < def.minargs
 		put("error: expected at least {} args, got {}\n", def.minargs, ctx.args.len)
+		optusage(ctx.optargs[0], ctx.optdef)
+		exit(1)
+	;;
+	if def.maxargs > 0 && ctx.args.len < def.minargs
+		put("error: expected at most {} args, got {}\n", def.minargs, ctx.args.len)
+		optusage(ctx.optargs[0], ctx.optdef)
+		exit(1)
+	;;
+	if def.noargs && ctx.args.len != 0
+		put("error: expected no args, got {}\n", ctx.args.len)
 		optusage(ctx.optargs[0], ctx.optdef)
 		exit(1)
 	;;
