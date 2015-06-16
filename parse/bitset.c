@@ -28,19 +28,23 @@ static void eqsz(Bitset *a, Bitset *b)
     else
         sz = b->nchunks;
 
-    p = zalloc(sz * sizeof(size_t));
-    for (i = 0; i < a->nchunks; i++)
-        p[i] = a->chunks[i];
-    free(a->chunks);
-    a->chunks = p;
-    a->nchunks = sz;
+    if (a->nchunks != sz) {
+        p = zalloc(sz * sizeof(size_t));
+        for (i = 0; i < a->nchunks; i++)
+            p[i] = a->chunks[i];
+        free(a->chunks);
+        a->chunks = p;
+        a->nchunks = sz;
+    }
 
-    p = zalloc(sz * sizeof(size_t));
-    for (i = 0; i < b->nchunks; i++)
-        p[i] = b->chunks[i];
-    free(b->chunks);
-    b->chunks = p;
-    b->nchunks = sz;
+    if (b->nchunks != sz) {
+        p = zalloc(sz * sizeof(size_t));
+        for (i = 0; i < b->nchunks; i++)
+            p[i] = b->chunks[i];
+        free(b->chunks);
+        b->chunks = p;
+        b->nchunks = sz;
+    }
 }
 
 /* Creates a new all-zero bit set */

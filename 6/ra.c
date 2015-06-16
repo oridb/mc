@@ -282,6 +282,7 @@ static void liveness(Isel *s)
     changed = 1;
     while (changed) {
         changed = 0;
+        old = NULL;
         for (i = nbb - 1; i >= 0; i--) {
             if (!bb[i])
                 continue;
@@ -297,6 +298,7 @@ static void liveness(Isel *s)
             if (!changed)
                 changed = !bseq(old, bb[i]->liveout);
         }
+        bsfree(old);
     }
 }
 
@@ -311,7 +313,7 @@ static int ismove(Insn *i)
 static int gbhasedge(Isel *s, size_t u, size_t v)
 {
     size_t i;
-    i = (maxregid * v) + u;
+    i = (s->nreg * v) + u;
     return (s->gbits[i/Sizetbits] & (1ULL <<(i % Sizetbits))) != 0;
 }
 
@@ -319,8 +321,8 @@ static void gbputedge(Isel *s, size_t u, size_t v)
 {
     size_t i, j;
 
-    i = (maxregid * u) + v;
-    j = (maxregid * v) + u;
+    i = (s->nreg * u) + v;
+    j = (s->nreg * v) + u;
     s->gbits[i/Sizetbits] |= 1ULL << (i % Sizetbits);
     s->gbits[j/Sizetbits] |= 1ULL << (j % Sizetbits);
     assert(gbhasedge(s, u, v) && gbhasedge(s, v, u));
@@ -418,19 +420,29 @@ static void addedge(Isel *s, regid u, regid v)
     }
 }
 
+static void gfree(Isel *s)
+{
+    size_t i;
+
+    for (i = 0; i < s->nreg; i++)
+        free(s->gadj[i]);
+    free(s->gbits);
+    free(s->gadj);
+    free(s->ngadj);
+}
+
 static void setup(Isel *s)
 {
     size_t gchunks;
     size_t i;
 
-    free(s->gbits);
-    gchunks = (maxregid*maxregid)/Sizetbits + 1;
+    gfree(s);
+    s->nreg = maxregid;
+    gchunks = (s->nreg*s->nreg)/Sizetbits + 1;
     s->gbits = zalloc(gchunks*sizeof(size_t));
     /* fresh adj list repr. */
-    free(s->gadj);
-    free(s->ngadj);
-    s->gadj = zalloc(maxregid * sizeof(regid*));
-    s->ngadj = zalloc(maxregid * sizeof(size_t));
+    s->gadj = zalloc(s->nreg * sizeof(regid*));
+    s->ngadj = zalloc(s->nreg * sizeof(size_t));
 
     s->mactiveset = bsclear(s->mactiveset);
     s->wlmoveset = bsclear(s->wlmoveset);
@@ -445,10 +457,10 @@ static void setup(Isel *s)
     free(s->rmoves);
     free(s->nrmoves);
 
-    s->aliasmap = zalloc(maxregid * sizeof(Loc*));
-    s->degree = zalloc(maxregid * sizeof(int));
-    s->rmoves = zalloc(maxregid * sizeof(Insn**));
-    s->nrmoves = zalloc(maxregid * sizeof(size_t));
+    s->aliasmap = zalloc(s->nreg * sizeof(Loc*));
+    s->degree = zalloc(s->nreg * sizeof(int));
+    s->rmoves = zalloc(s->nreg * sizeof(Insn**));
+    s->nrmoves = zalloc(s->nreg * sizeof(size_t));
 
     for (i = 0; bsiter(s->prepainted, &i); i++)
         s->degree[i] = 1<<16;
@@ -524,6 +536,7 @@ static void build(Isel *s)
             for (k = 0; k < nu; k++)
                 bsput(live, u[k]);
         }
+        bsfree(live);
     }
 }
 
@@ -611,7 +624,7 @@ static void decdegree(Isel *s, regid m)
     size_t idx, i;
     regid n;
 
-    assert(m < maxregid);
+    assert(m < s->nreg);
     before = istrivial(s, m);
     s->degree[m]--;
     after = istrivial(s, m);
@@ -1260,6 +1273,7 @@ void regalloc(Isel *s)
     bsfree(s->prepainted);
     bsfree(s->shouldspill);
     bsfree(s->neverspill);
+    gfree(s);
 }
 
 void wlprint(FILE *fd, char *name, Loc **wl, size_t nwl)
@@ -1331,8 +1345,8 @@ void dumpasm(Isel *s, FILE *fd)
     /* noisy to dump this all the time; only dump for higher debug levels */
     if (debugopt['r'] > 2) {
         fprintf(fd, "IGRAPH ----- \n");
-        for (i = 0; i < maxregid; i++) {
-            for (j = i; j < maxregid; j++) {
+        for (i = 0; i < s->nreg; i++) {
+            for (j = i; j < s->nreg; j++) {
                 if (gbhasedge(s, i, j))
                     printedge(stdout, "", i, j);
             }
