@@ -4,7 +4,9 @@ use "fmt.use"
 
 pkg std =
 	generic try : (v : result(@a, @b) -> @a)
-	generic val : (v : option(@a) -> @a)
+	generic tryv : (v : result(@a, @b), d : @a -> @a)
+	generic get : (v : option(@a) -> @a)
+	generic getv : (v : option(@a), d : @a -> @a)
 ;;
 
 generic try = {v
@@ -14,9 +16,23 @@ generic try = {v
 	;;
 }
 
-generic val = {v
+generic tryv = {v, d
+	match v
+	| `Ok x:	-> x
+	| `Fail m:	-> d
+	;;
+}
+
+generic get = {v
 	match v
 	| `Some x:	-> x
 	| `None:	fatal("error: option had `None\n")
+	;;
+}
+
+generic getv = {v, d
+	match v
+	| `Some x:	-> x
+	| `None:	-> d
 	;;
 }
