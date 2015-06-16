@@ -51,6 +51,7 @@ const test = {b
 	for tn in b.all
 		match gettarg(b.targs, tn)
 		| `Test t:
+			setdir(b, t.dir)
 			bin = std.strcat("./", t.name)
 			if !runtest(bin)
 				ok = false
