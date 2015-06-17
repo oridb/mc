@@ -24,7 +24,7 @@ function! s:CountMatches(line, lnum, pats)
         while idx >= 0
             let idx = match(a:line, p, idx)
             if idx >= 0
-                let ic = Quoted(a:lnum, idx)
+                let ic = Quoted(a:lnum, idx+1)
                 if !ic
                     let matches = matches + 1
                 endif
@@ -67,8 +67,8 @@ function! GetMyrIndent(ln)
                 \    '\<struct\>', '\<union\>',
                 \    '{', '\[', '(', '^\s*|', '=\s*$']
         let outpat = ['}', ']', '(', ';;']
-        let outalone = ['\<else\>', '\<elif\>.*', 
-                \       '}.*', '].*', ').*', ';;', '|.*']
+        let outalone = ['\<else\>', '\<elif\>.*', ';;', '|.*',
+                    \ '].*', ').*', '}.*']
         let width = &tabstop
 
         let n_in = s:CountMatches(prevln, ln - i, inpat)
@@ -84,7 +84,7 @@ function! GetMyrIndent(ln)
         endif
 
         " avoid double counting outdents that are also outalone
-        if n_out > 0 && s:LineMatch(prevln, outalone) != 0
+        if s:CountMatches(curln, ln, inpat) == 0 && s:LineMatch(prevln, outalone) != 0
             let n_out = n_out - 1
         endif
         let n_out = n_out + s:LineMatch(curln, outalone)
