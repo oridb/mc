@@ -76,17 +76,19 @@ generic idx = {ht, k
 	di = 0
 	h = hash(ht, k)
 	i = h & (ht.keys.len - 1)
-	while ht.hashes[i] != 0 && !ht.dead[i] && ht.hashes[i] != h
-:searchmore
-		di++
-		i = (h + di) & (ht.keys.len - 1)
-	;;
+	while true
+		while ht.hashes[i] != 0 && !ht.dead[i] && ht.hashes[i] != h
+			di++
+			i = (h + di) & (ht.keys.len - 1)
+		;;
 
-	if ht.hashes[i] == 0 || ht.dead[i]
-		-> `None
-	;;
-	if ht.eq(ht.keys[i], k)
-		goto searchmore
+		if ht.hashes[i] == 0 || ht.dead[i]
+			-> `None
+		;;
+		if ht.eq(ht.keys[i], k)
+			di++
+			i = (h + di) & (ht.keys.len - 1)
+		;;
 	;;
 	-> `Some i
 }
