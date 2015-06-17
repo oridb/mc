@@ -236,19 +236,19 @@ const fallbackfmt = {sb, params, tyenc, ap : valist# -> void
 		ub_val = vanext(ap)
 		intfmt(sb, intparams(params), false, ub_val)
 	| `Tyuint16:
-		w_val = vanext(ap)
+		uw_val = vanext(ap)
 		intfmt(sb, intparams(params), false, uw_val)
 	| `Tyuint:
-		i_val = vanext(ap)
+		ui_val = vanext(ap)
 		intfmt(sb, intparams(params), false, ui_val)
 	| `Tyuint32:
-		i_val = vanext(ap)
+		ui_val = vanext(ap)
 		intfmt(sb, intparams(params), false, ui_val)
 	| `Tyuint64:
-		l_val = vanext(ap)
+		ul_val = vanext(ap)
 		intfmt(sb, intparams(params), false, ul_val)
 	| `Tyulong:
-		l_val = vanext(ap)
+		ul_val = vanext(ap)
 		intfmt(sb, intparams(params), false, ul_val)
 	| `Tyflt32:
 		f32_val = vanext(ap)
