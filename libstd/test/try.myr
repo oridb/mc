@@ -3,6 +3,6 @@ use std
 const main = {
 	var x = `std.Some 123
 	var r : std.result(int, byte[:]) = `std.Ok 666
-	std.assert(std.val(x) == 123, "expected 123 from try")
+	std.assert(std.get(x) == 123, "expected 123 from try")
 	std.assert(std.try(r) == 666, "expected 123 from try")
 }
