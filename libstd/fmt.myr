@@ -3,11 +3,17 @@ use "chartype.use"
 use "die.use"
 use "extremum.use"
 use "fltfmt.use"
-use "htab.use"
 use "hashfuncs.use"
+use "hasprefix.use"
+use "htab.use"
 use "introspect.use"
+use "intparse.use"
 use "option.use"
+use "sleq.use"
+use "slpush.use"
 use "strbuf.use"
+use "strfind.use"
+use "strsplit.use"
 use "syswrap-ss.use"
 use "syswrap.use"
 use "types.use"
@@ -33,11 +39,17 @@ pkg std =
 
 	/* add a formatter function */
 	const fmtinstall	: (ty : byte[:], \
-		fn : (sb : strbuf#, ap : valist#, opts : byte[:] -> void) \
+		fn : (sb : strbuf#, ap : valist#, opts : (byte[:],byte[:])[:] -> void), \
+		optdesc : (byte[:], bool)[:] \
 		-> void)
 
 	$noret const fatal	: (fmt : byte[:], args : ... -> void)
 	$noret const fatalv	: (fmt : byte[:], ap : valist# -> void)
+;;
+
+type fmtdesc = struct
+	fn	: (sb : strbuf#, ap : valist#, opts : (byte[:],byte[:])[:] -> void)
+	optdesc	: (byte[:], bool)[:]
 ;;
 
 /* same as 'put', but exits the program after printing */
@@ -56,14 +68,14 @@ const fatalv = {fmt, ap
 }
 
 var fmtmapinited : bool = false
-var fmtmap : htab(byte[:], (sb : strbuf#, ap : valist#, opts : byte[:] -> void))#
+var fmtmap : htab(byte[:], fmtdesc)#
 
-const fmtinstall = {ty, fn
+const fmtinstall = {ty, fn, optdesc
 	if !fmtmapinited
 		fmtmapinited = true
 		fmtmap = mkht(strhash, streq)
 	;;
-	htput(fmtmap, ty, fn)
+	htput(fmtmap, ty, [.fn=fn, .optdesc=optdesc])
 }
 
 const put = {fmt, args
@@ -131,8 +143,8 @@ const sbfmt = {sb, fmt, args
 }
 
 const sbfmtv = {sb, fmt, ap -> size
+	var nfmt, nparams, pl
 	var c, params, ty
-	var nfmt, nparams
 
 	nparams = ap.tc.nelt
 	nfmt = 0
@@ -156,8 +168,10 @@ const sbfmtv = {sb, fmt, ap -> size
 
 				ty = vatype(ap)
 				match htget(fmtmap, ty)
-				| `Some func:
-					func(sb, ap, params)
+				| `Some f:
+					pl = parseparams(params, f.optdesc)
+					f.fn(sb, ap, pl)
+					std.slfree(pl)
 				| `None:
 					fallbackfmt(sb, params, ty, ap)
 				;;
@@ -176,6 +190,43 @@ const sbfmtv = {sb, fmt, ap -> size
 	;;
 	-> sb.len
 }
+
+const parseparams = {paramstr, optdesc
+	var params, opts
+	var o, a, ha : bool, gotarg : bool
+
+	opts = [][:]
+	params = strsplit(paramstr, ",")
+	for p in params
+		/* parse out the key/value pair */
+		match std.strfind(p, "=")
+		| `std.Some idx:
+			o = p[:idx]
+			a = p[idx+1:]
+			gotarg = true
+		| `std.None:
+			o = p
+			a = ""
+			gotarg = false
+		;;
+
+		/* verify and add the arg */
+		for (opt, hasarg) in optdesc
+			if !std.sleq(opt, o)
+				continue
+			;;
+			ha = hasarg
+			if ha == gotarg
+				opts = std.slpush(opts, (o, a))
+			else
+				std.fatal("invalid option {}", o)
+			;;
+		;;
+	;;
+	slfree(params)
+	-> opts
+}
+
 
 const fallbackfmt = {sb, params, tyenc, ap : valist# -> void
 	/* value types */
@@ -317,9 +368,9 @@ const getparams = {fmt
 	-> (fmt[:i], fmt[i+1:])
 }
 
+
 const intparams = {params
 	var ip : intparams
-	var c
 
 	ip = [
 		.base = 10,
@@ -327,20 +378,27 @@ const intparams = {params
 		.padto = 0
 	]
 
-	while params.len > 0
-		(c, params) = striter(params)
-		match c
-		| 'x':	ip.base = 16
-		| '0':	ip.padfill = '0'
-		| chr:
-			while isdigit(c)
-				ip.padto = ip.padto*10 + charval(c, 10)
-				(c, params) = striter(params)
+	var pl = parseparams(params, [
+		("x", false),
+		("w", true),
+		("p", true)][:])
+	for p in pl
+		match p
+		| ("x", ""):	ip.base = 16
+		| ("w", wid):	
+			/* would use get(), but that's a dep loop */
+			match std.intparse(wid)
+			| `Some w:	ip.padto = w;
+			| `None:	die("width was not number")
 			;;
+		| ("p", pad):
+			std.assert(pad.len == 1, "pad takes one character")
+			ip.padfill = decode(pad)
+		| _:
 		;;
 	;;
+	std.slfree(pl)
 	-> ip
-
 }
 
 const digitchars = [

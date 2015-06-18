@@ -324,7 +324,7 @@ const myrtarget = {p, targ
 
 	match inputlist(p)
 	| `std.Some (wl, libs): 
-		fsel = mkfsel()
+		fsel = mkfsel(p.fname, p.line, targ)
 		libdeps = libs
 		for w in wl
 			fseladd(fsel, w)

@@ -4,23 +4,30 @@ use "opts.use"
 
 pkg bld =
 	type syssel(@a) = struct
+		file	: byte[:]
+		line	: int
+		targ	: byte[:]
 		sysattrs	: std.htab(byte[:], bool)#
 		_match	: std.htab(byte[:], int)#
 		_best	: std.htab(byte[:], @a)#
 	;;
 
-	const mkfsel	: (-> syssel(byte[:])#)
+	const mkfsel	: (f : byte[:], line : int, targ : byte[:] -> syssel(byte[:])#)
 	const fseladd	: (fsel : syssel(byte[:])#, file : byte[:] -> void)
 	const fselfin	: (fsel : syssel(byte[:])# -> byte[:][:])
 ;;
 
-const mkfsel = {
+const mkfsel = {file, line, targ
 	var fsel
 
-	fsel = std.alloc()
-	fsel._match = std.mkht(std.strhash, std.streq)
-	fsel._best = std.mkht(std.strhash, std.streq)
-	fsel.sysattrs = std.mkht(std.strhash, std.streq)
+	fsel = std.mk([
+		.file = file,
+		.line = line,
+		.targ = targ,
+		._match = std.mkht(std.strhash, std.streq),
+		._best = std.mkht(std.strhash, std.streq),
+		.sysattrs = std.mkht(std.strhash, std.streq),
+	])
 	addsysattrs(fsel.sysattrs)
 	-> fsel
 }
@@ -72,7 +79,7 @@ const fselfin = {fsel
 	for k in keys
 		nmatch = std.htgetv(fsel._match, k, -1)
 		if nmatch == -1
-			std.fatal("no applicable file for '{}'\n", k)
+			std.fatal("{}:{}: target {}, no applicable file for '{}'\n", fsel.file, fsel.line, fsel.targ, k)
 		;;
 		ret = std.slpush(ret, std.htgetv(fsel._best, k, ""))
 	;;

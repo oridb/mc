@@ -86,6 +86,8 @@ generic idx = {ht, k
 			-> `None
 		;;
 		if ht.eq(ht.keys[i], k)
+			break
+		else
 			di++
 			i = (h + di) & (ht.keys.len - 1)
 		;;
