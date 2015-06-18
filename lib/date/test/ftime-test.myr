@@ -4,10 +4,16 @@ use date
 const main = {
 	var buf : byte[1024]
 	var d
-	var n
+	var f
 
 	/*Fri 29 Aug 2014 07:47:43 PM UTC*/
-	d = date.mkdate(1_409_341_663*1_000_000, "")
-	n = date.bfmt(buf[:], date.Datetimefmt, d)
-	std.put("%s\n", buf[:n])
+	d = date.mkinstant(1_409_341_663*1_000_000, "")
+	f = date.bfmt(buf[:], date.Datetimefmt, d)
+	eq("2014-8-29 19:47:43 +0000", f)
+}
+
+const eq = {expected, actual
+	if !std.sleq(expected, actual)
+		std.fatal("expected date {}, got {}\n", expected, actual)
+	;;
 }

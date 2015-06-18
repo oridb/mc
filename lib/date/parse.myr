@@ -173,6 +173,7 @@ const timezone = {dst, s, err
 	;;
 	s = intval(&tzoff, s[1:], 2, 4, err) 
 	dst# = (tzoff / 100) * 3600 * 1_000_000 + (tzoff % 100) * 60 * 1_000_000
+	-> s
 }
 
 

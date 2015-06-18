@@ -5,7 +5,7 @@ use "names.use"
 
 pkg date = 
 	const Datetimefmt	= "%Y-%m-%d %H:%M:%S %z"
-	const Timefmt	= "%h:%m:%s %z"
+	const Timefmt	= "%h:%m:{} %z"
 	const Datefmt	= "%Y-%m-%d %z"
 
 	const fmt	: (f : byte[:], d : instant	-> byte[:])
@@ -31,54 +31,54 @@ const bfmt = {buf, f, d
 		if c == '%'
 			(c, f) = std.striter(f)
 			match c
-			| 'a':	s = std.bfmt(buf[o:], "%s", _names.abbrevday[d.day])
-			| 'A':	s = std.bfmt(buf[o:], "%s", _names.fullday[d.day])
-			| 'b':	s = std.bfmt(buf[o:], "%s", _names.abbrevmon[d.mon])
-			| 'B':	s = std.bfmt(buf[o:], "%s", _names.fullmon[d.mon])
+			| 'a':	s = std.bfmt(buf[o:], "{}", _names.abbrevday[d.day])
+			| 'A':	s = std.bfmt(buf[o:], "{}", _names.fullday[d.day])
+			| 'b':	s = std.bfmt(buf[o:], "{}", _names.abbrevmon[d.mon])
+			| 'B':	s = std.bfmt(buf[o:], "{}", _names.fullmon[d.mon])
 			| 'c':	s = bfmt(buf[o:], "%Y-%m-%d", d)
-			| 'C':	s = std.bfmt(buf[o:], "%02i", d.year % 100)
-			| 'd':	s = std.bfmt(buf[o:], "%02i", d.day)
-			| 'D':	s = std.bfmt(buf[o:], "%m/%d/%y (wtf america)", d.mon, d.day, d.year)
-			| 'e':	s = std.bfmt(buf[o:], "%2i", d.day)
-			| 'F':	s = std.bfmt(buf[o:], "%y-%m-%d", d.year, d.mon, d.day)
+			| 'C':	s = std.bfmt(buf[o:], "{02}", d.year % 100)
+			| 'd':	s = std.bfmt(buf[o:], "{02}", d.day)
+			| 'D':	s = bfmt(buf[o:], "%m/%d/%y (wtf america)", d)
+			| 'e':	s = std.bfmt(buf[o:], "{2}", d.day)
+			| 'F':	s = bfmt(buf[o:], "%y-%m-%d", d)
 			/*
 			| 'G':	s = std.bfmt(buf[o:], ...?
 			| 'g':
 			*/
-			| 'h':	s = std.bfmt(buf[o:], "%s", _names.abbrevmon[d.mon])
-			| 'H':	s = std.bfmt(buf[o:], "%02i", d.h)
-			| 'I':	s = std.bfmt(buf[o:], "%02i", d.h % 12)
+			| 'h':	s = std.bfmt(buf[o:], "{}", _names.abbrevmon[d.mon])
+			| 'H':	s = std.bfmt(buf[o:], "{02}", d.h)
+			| 'I':	s = std.bfmt(buf[o:], "{02}", d.h % 12)
 			| 'j':	s = std.bfmt(buf[o:], "year day... unimplemented.")
-			| 'k':	s = std.bfmt(buf[o:], "%i", d.h)
-			| 'l':	s = std.bfmt(buf[o:], "%i", d.h % 12)
-			| 'm':	s = std.bfmt(buf[o:], "%i", d.mon)
-			| 'M':	s = std.bfmt(buf[o:], "%i", d.m)
+			| 'k':	s = std.bfmt(buf[o:], "{}", d.h)
+			| 'l':	s = std.bfmt(buf[o:], "{}", d.h % 12)
+			| 'm':	s = std.bfmt(buf[o:], "{}", d.mon)
+			| 'M':	s = std.bfmt(buf[o:], "{}", d.m)
 			| 'n':	s = std.bfmt(buf[o:], "\n")
 			| 'O':	s = std.bfmt(buf[o:], "unsupported %O")
-			| 'p':	s = std.bfmt(buf[o:], "%s", ["AM", "PM"][d.h/12])
-			| 'P':	s = std.bfmt(buf[o:], "%s", ["am", "pm"][d.h/12])
+			| 'p':	s = std.bfmt(buf[o:], "{}", ["AM", "PM"][d.h/12])
+			| 'P':	s = std.bfmt(buf[o:], "{}", ["am", "pm"][d.h/12])
 			| 'r':	s = bfmt(buf[o:], "%H:%M:%S %P", d) 
 			| 'R':	s = bfmt(buf[o:], "%H:%M %P", d)
-			| 's':	s = std.bfmt(buf[o:], "%l", d.actual)
-			| 'S':	s = std.bfmt(buf[o:], "%i", d.s)
+			| 's':	s = std.bfmt(buf[o:], "{}", d.actual)
+			| 'S':	s = std.bfmt(buf[o:], "{}", d.s)
 			| 't':	s = std.bfmt(buf[o:], "\t")
-			| 'u':	s = std.bfmt(buf[o:], "%i", d.wday)
+			| 'u':	s = std.bfmt(buf[o:], "{}", d.wday)
 			| 'U':	s = std.bfmt(buf[o:], "week number... unimplemented.")
 			| 'x':	s = bfmt(buf[o:], Datefmt, d)
 			| 'X':	s = bfmt(buf[o:], Timefmt, d)
-			| 'y':	s = std.bfmt(buf[o:], "%i", d.year % 100)
-			| 'Y':	s = std.bfmt(buf[o:], "%i", d.year)
+			| 'y':	s = std.bfmt(buf[o:], "{}", d.year % 100)
+			| 'Y':	s = std.bfmt(buf[o:], "{}", d.year)
 			| 'z':	s = timezone(buf[o:], d.tzoff)
-			| 'Z':	s = std.bfmt(buf[o:], "%s", d.tzname)
-			| '%':	s = std.bfmt(buf[o:], "%%")
-			| _:	std.fatal("unknown format character %c\n", c)
+			| 'Z':	s = std.bfmt(buf[o:], "{}", d.tzname)
+			| '%':	s = std.bfmt(buf[o:], "%")
+			| _:	std.fatal("unknown format character {}\n", c)
 			;;
 		else
-			s = std.bfmt(buf[o:], "%c", c)
+			s = std.bfmt(buf[o:], "{}", c)
 		;;
 		o += s.len
 	;;
-	-> s
+	-> buf[:o]
 }
 
 const timezone = {buf, off
@@ -93,5 +93,5 @@ const timezone = {buf, off
 	off /= 1_000_000
 	h = off / 3600
 	m = off % 3600
-	-> std.bfmt(buf, "%s%02l%02l", sep, h, m)
+	-> std.bfmt(buf, "{}{02}{02}", sep, h, m)
 }

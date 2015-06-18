@@ -6,3 +6,5 @@ lib date =
 	types.myr
 	zoneinfo.myr
 ;;
+
+sub = test ;;
