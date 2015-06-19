@@ -141,10 +141,9 @@ generic htput = {ht, k, v
 				neltincr = 0
 				break
 			;;
-		else
-			di++
-			i = (h + di) & (ht.keys.len - 1)
 		;;
+		di++
+		i = (h + di) & (ht.keys.len - 1)
 	;;
 	ht.nelt += neltincr
 	ht.hashes[i] = h

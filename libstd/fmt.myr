@@ -398,7 +398,7 @@ const intparams = {params
 const strfmt = {sb, str, params
 	var opts
 	var w, p, i
-	
+
 	p = ' '
 	w = 0
 	opts = parseparams(params, [
