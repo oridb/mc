@@ -12,12 +12,10 @@ const check = {expected, fmt, args : ...
 }
 
 const main = {
-	/* FIXME: make these equivalents tested.
-	check("      abcd", "%10s", "abcd")
-	check("00000bdcae", "%010s", "bdcae")
-	check("abcdefghijkl", "%010s", "abcdefghijkl")
-	check("a", "%01s", "a")
-	*/
+	check("      abcd", "{w=10}", "abcd")
+	check("00000bdcae", "{p=0,w=10}", "bdcae")
+	check("abcdefghijkl", "{p=0,w=10}", "abcdefghijkl")
+	check("a", "{w=0,p=1}", "a")
 	check("        10", "{w=10}", 10)
 	check("0000000010", "{p=0,w=10}", 10)
 	check("4294967295", "{p=0,w=10}", -1 castto(uint))

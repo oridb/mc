@@ -321,7 +321,7 @@ const fallbackfmt = {sb, params, tyenc, ap : valist# -> void
 		match typedesc(desc)
 		| `Tybyte:
 			s_val = vanext(ap)
-			sbputs(sb, s_val)
+			strfmt(sb, s_val, params)
 		| _:
 			sbputs(sb, "slice[:]")
 		;;
@@ -349,12 +349,6 @@ const fallbackfmt = {sb, params, tyenc, ap : valist# -> void
 	;;
 }
 
-type intparams = struct
-	base	: size
-	padto	: size
-	padfill	: char
-;;
-
 const getparams = {fmt
 	var i
 
@@ -368,9 +362,15 @@ const getparams = {fmt
 	-> (fmt[:i], fmt[i+1:])
 }
 
+type intparams = struct
+	base	: size
+	padto	: size
+	padfill	: char
+;;
 
 const intparams = {params
 	var ip : intparams
+	var opts
 
 	ip = [
 		.base = 10,
@@ -378,27 +378,53 @@ const intparams = {params
 		.padto = 0
 	]
 
-	var pl = parseparams(params, [
+	opts = parseparams(params, [
 		("x", false),
 		("w", true),
 		("p", true)][:])
-	for p in pl
-		match p
+	for o in opts
+		match o
 		| ("x", ""):	ip.base = 16
-		| ("w", wid):	
-			/* would use get(), but that's a dep loop */
-			match std.intparse(wid)
-			| `Some w:	ip.padto = w;
-			| `None:	die("width was not number")
-			;;
-		| ("p", pad):
-			std.assert(pad.len == 1, "pad takes one character")
-			ip.padfill = decode(pad)
-		| _:
+		| ("w", wid):	ip.padto = getint(wid, "fmt: width must be integer")
+		| ("p", pad):	ip.padfill = decode(pad)
+		| _:	std.die("unreachable")
 		;;
 	;;
-	std.slfree(pl)
+	std.assert(ip.padto >= 0, "pad must be >= 0")
+	std.slfree(opts)
 	-> ip
+}
+
+const strfmt = {sb, str, params
+	var opts
+	var w, p, i
+	
+	p = ' '
+	w = 0
+	opts = parseparams(params, [
+		("w", true),
+		("p", true)][:])
+	for o in opts
+		match o
+		| ("w", wid):	w = getint(wid, "fmt: width must be integer")
+		| ("p", pad):	p = decode(pad)
+		| _:	std.die("unreachable")
+		;;
+	;;
+	std.assert(p >= 0, "pad must be >= 0")
+	std.slfree(opts)
+	for i = 0; i < w - graphemewidth(str); i++
+		sbputc(sb, p)
+	;;
+	sbputs(sb, str)
+}
+
+/*
+Hah. like we're going to put in the work to actually
+count graphemes.
+*/
+const graphemewidth = {str
+	-> str.len
 }
 
 const digitchars = [
@@ -466,3 +492,11 @@ const writeall = {fd, buf
 	-> len
 }
 
+
+/* would use std.get(), but that's a dependency loop */
+const getint = {s, msg
+	match std.intparse(s)
+	| `Some w:	-> w;
+	| `None:	die(msg)
+	;;
+}
