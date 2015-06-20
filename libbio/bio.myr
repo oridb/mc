@@ -92,7 +92,7 @@ const open = {path, mode
    the requested mode, with the requested permissions
 */
 const create = {path, mode, perm
-	-> sysopen(path, mode, sysmode(mode) | std.Ocreat, perm)
+	-> sysopen(path, mode, sysmode(mode) | std.Ocreat | std.Otrunc, perm)
 }
 
 /* dial the server, and open a file using the returned fd */
@@ -403,11 +403,10 @@ FIXME: depends on std.fmt() having a flush buffer API. Until then,
 we're stuck with a small static buffer.
 */
 const put = {f, fmt, args
-	var sb, sl, ap, n
+	var sl, ap, n
 
 	ap = std.vastart(&args)
-	sb = std.mksb()
-	sl = std.fmt(fmt, &ap)
+	sl = std.fmtv(fmt, &ap)
 	n = write(f, sl)
 	std.slfree(sl)
 	-> n
