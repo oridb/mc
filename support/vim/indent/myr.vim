@@ -65,8 +65,8 @@ function! GetMyrIndent(ln)
         let inpat = ['\<if\>', '\<elif\>', '\<else\>',
                 \    '\<while\>','\<for\>', '\<match\>',
                 \    '\<struct\>', '\<union\>',
-                \    '{', '\[', '(', '^\s*|', '=\s*$']
-        let outpat = ['}', ']', '(', ';;']
+                \    '{', '\[', '(', '^\s*|.*:', '=\s*$']
+        let outpat = ['}', ']', ')', ';;']
         let outalone = ['\<else\>', '\<elif\>.*', ';;', '|.*',
                     \ '].*', ').*', '}.*']
         let width = &tabstop
@@ -78,17 +78,25 @@ function! GetMyrIndent(ln)
         if prevln =~ '\\\s*$' && getline(ln - i - 1) !~ '\\\s*$'
             let n_in = n_in + 1
         endif
+
         " if we break the set of indented line endings, outdent
         if getline(ln - i - 1) =~ '\\\s*$' && getline(ln - i) !~ '\\\s*$'
             let n_out = n_out + 1
         endif
 
-        " avoid double counting outdents that are also outalone
-        if s:CountMatches(curln, ln, inpat) == 0 && s:LineMatch(prevln, outalone) != 0
-            let n_out = n_out - 1
+        " we already outdented if we had an outalone
+        if s:LineMatch(prevln, outalone) != 0
+            let n_out = 0
         endif
         let n_out = n_out + s:LineMatch(curln, outalone)
-        let ind = ind + (n_in - n_out) * &tabstop
+
+        let change = 0
+        if n_in - n_out > 0
+            let change = 1
+        elseif n_in - n_out < 0
+            let change = -1
+        endif
+        let ind = ind + change * &tabstop
     endif
     return ind
 endfunction
