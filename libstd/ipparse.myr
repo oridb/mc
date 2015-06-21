@@ -29,46 +29,62 @@ const ipparse = {ip
 }
 
 const ip4parse = {ip
+	var a, b, c, d
+	var ok
+	/*
 	var addr
 	var last : size
 	var x : option(int32)
 	var val : int32 /* need int32 to check for overflow */
 	var i
 	var j : size
+	*/
 
-	i = 0
-	last = 0
-	for j = 0; j < ip.len; j++
-		if ip[j] == '.' castto(byte)
-			match intparsebase(ip[last:j], 10)
-			| `Some v:
-				val = v
-				if val < 0 || val > 255
-					-> `None
-				;;
-				addr[i++] = val castto(byte)
-				last = j + 1
-			| `None:
-				-> `None
-			;;
-		;;
-	;;
-	match intparsebase(ip[last:j], 10)
-	| `Some v:
-		val = v
-		if val < 0 || val > 255
-			-> `None
-		;;
-		addr[i] = val castto(byte)
-	| `None:
+	(a, ip, ok) = octet(ip, 10, true)
+	(ip, ok) = dot(ip, ok)
+	(b, ip, ok) = octet(ip, 10, ok)
+	(ip, ok) = dot(ip, ok)
+	(c, ip, ok) = octet(ip, 10, ok)
+	(ip, ok) = dot(ip, ok)
+	(d, ip, ok) = octet(ip, 10, ok)
+
+	if ok && ip.len == 0
+		-> `Some (`Ipv4 [a, b,c,d])
+	else
 		-> `None
 	;;
-	if j != ip.len
-		-> `None
-	;;
-	-> `Some (`Ipv4 addr)
 }
 
 const ip6parse = {ip
 	-> `None
 }
+
+const dot = {ip, ok
+	if ip.len > 0 && ip[0] == '.' castto(byte)
+		-> (ip[1:], ok)
+	else
+		-> ("", false)
+	;;
+}
+const octet = {ip, base, ok
+	var len
+
+	if !ok
+		-> (0, "", false)
+	;;
+	for len = 0; len < ip.len; len++
+		if ip[len] == '.' castto(byte)
+			break
+		;;
+	;;
+	match intparsebase(ip[:len], base)
+	| `std.Some v:
+		if v < 0 || v > 255
+			-> (0, "", false)
+		;;
+		-> (v castto(byte), ip[len:], true)
+	| `std.None:
+		-> (0, "", false)
+	;;
+}
+
