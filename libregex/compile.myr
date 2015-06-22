@@ -93,7 +93,6 @@ const gen = {re, t
 	|`Quest	a:	genquest(re, a)
 
 	/* end matches */
-	|`Byte	b: 	append(re, `Ibyte b)
 	|`Chr	c:	genchar(re, c)
 	|`Ranges  sl:	genranges(re, sl)
 
@@ -443,8 +442,6 @@ const dump = {re, t, indent
 	| `Eow:
 		std.put("Eow\n")
 	/* end matches */
-	| `Byte	b:
-		std.put("Byte {}\n", b)
 	| `Chr	c:
 		std.put("Char {}\n", c)
 	| `Ranges rl:
@@ -827,7 +824,6 @@ const astfree = {t
 	| `Quest a:	astfree(a)
 
 	/* end matches */
-	| `Byte	b:	
 	| `Chr c:	
 	| `Ranges rl:	std.slfree(rl)
 

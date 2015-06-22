@@ -24,7 +24,6 @@ pkg regex =
 		`Quest	ast#	
 
 		/* end matches */
-		`Byte	byte
 		`Chr	char
 		`Ranges	char[2][:]
 
