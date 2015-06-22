@@ -74,7 +74,7 @@ const ip6parse = {ip
 	;;
 	nseg = 0
 	for i = 0; ip.len > 0 && ok; i++
-		/* parse ':num' */
+		/* parse 'num' segment */
 		(v, ip, ok) = num(ip, 0, 65536, 16, ':', ok)
 		nseg++
 		if ip.len == 0 || nseg == 8
@@ -105,6 +105,7 @@ const ip6parse = {ip
 	;;
 }
 
+/* take "a:b::c:d" and expand it to "a:b:0:0:...:0:c:d" */
 const expandsplit = {ip, split, len
 	var width
 
