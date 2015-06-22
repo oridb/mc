@@ -31,8 +31,8 @@ var inited = false
 /* takes a plan 9 style dial string */
 const dial = {str
 	var proto, host, port
-	var sa4 : sys.sockaddr_in	/* we only support inet sockets right now.. ugh. */
-	var sa6 : sys.sockaddr_in6	/* we only support inet sockets right now.. ugh. */
+	var sa4 : sys.sockaddr_in
+	var sa6 : sys.sockaddr_in6
 	var sa	: sys.sockaddr#
 	var sock
 
