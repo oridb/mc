@@ -31,7 +31,9 @@ var inited = false
 /* takes a plan 9 style dial string */
 const dial = {str
 	var proto, host, port
-	var sa : sys.sockaddr_in	/* we only support inet sockets right now.. ugh. */
+	var sa4 : sys.sockaddr_in	/* we only support inet sockets right now.. ugh. */
+	var sa6 : sys.sockaddr_in6	/* we only support inet sockets right now.. ugh. */
+	var sa	: sys.sockaddr#
 	var sock
 
 	match parsedial(str)
@@ -41,19 +43,23 @@ const dial = {str
 
 	match getaddr(host)
 	| `Ipv4 bits:
-		sa.fam = sys.Afinet
-		sa.addr = bits
-		sa.port = hosttonet(port)
+		sa4.fam = sys.Afinet
+		sa4.addr = bits
+		sa4.port = hosttonet(port)
+		sa = &sa4 castto(sys.sockaddr#)
 	| `Ipv6 bits:
-		-> `Fail "ipv6 not yet supported"
+		sa6.fam = sys.Afinet6
+		sa6.addr = bits
+		sa6.port = hosttonet(port)
+		sa = &sa6 castto(sys.sockaddr#)
 	;;
-
 	sock = sys.socket(sa.fam, proto, 0)
+
 	if sock < 0
 		-> `Fail "failed to connect to socket"
 	;;
 	var err
-	err = sys.connect(sock, (&sa) castto(sys.sockaddr#), sizeof(sys.sockaddr_in))
+	err = sys.connect(sock, sa, sizeof(sys.sockaddr_in))
 	if err < 0
 		sys.close(sock)
 		-> `Fail "Failed to bind socket"

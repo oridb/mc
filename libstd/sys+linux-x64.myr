@@ -109,6 +109,13 @@ pkg sys =
 		zero	: byte[8]
 	;;
 
+	type sockaddr_in6 = struct
+		fam	: sockfam
+		port	: uint16
+		addr	: byte[16]
+		scope	: uint32
+	;;
+
 	type sockaddr_storage = struct
 		fam	: sockfam
 		__align	: uint32
