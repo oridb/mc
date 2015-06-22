@@ -51,17 +51,18 @@ static Blob *mkblobseq(Blob **sub, size_t nsub)
     return b;
 }
 
-static Blob *mkblobref(char *lbl)
+static Blob *mkblobref(char *lbl, int isextern)
 {
     Blob *b;
 
     b = zalloc(sizeof(Blob));
     b->type = Btref;
-    b->ref = strdup(lbl);
+    b->ref.str = strdup(lbl);
+    b->ref.isextern = isextern;
     return b;
 }
 
-static size_t blobsz(Blob *b)
+size_t blobsz(Blob *b)
 {
     size_t n;
     size_t i;
@@ -91,6 +92,7 @@ static size_t blobsz(Blob *b)
         default:
             die("unknown blob type");
     }
+    return 0;
 }
 
 void namevec(Blob ***sub, size_t *nsub, Node *n)
@@ -218,7 +220,7 @@ Blob *tydescsub(Type *ty)
         case Tyname:
             i = snprintf(buf, sizeof buf, "%s", Symprefix);
             tydescid(buf + i, sizeof buf - i, ty);
-            lappend(&sub, &nsub, mkblobref(buf));
+            lappend(&sub, &nsub, mkblobref(buf, ty->isimport));
             break;
     }
     b = mkblobseq(sub, nsub);

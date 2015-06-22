@@ -542,7 +542,7 @@ static void gentyblob(FILE *fd, Blob *b)
             encodemin(fd, b->ival);
             break;
         case Btref:
-            fprintf(fd, "\t.quad %s\n", b->ref);
+            fprintf(fd, "\t.quad %s\n", b->ref.str);
             break;
         case Btbytes:
             writebytes(fd, b->bytes.buf, b->bytes.len);

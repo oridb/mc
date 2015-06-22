@@ -76,7 +76,10 @@ struct Blob {
     char isglobl;
     union {
         uint64_t ival;
-        char *ref;
+        struct {
+            char *str;
+            char isextern;
+        } ref;
         struct {
             size_t len;
             char *buf;
@@ -236,6 +239,7 @@ void gen(Node *file, char *out);
 void gengas(Node *file, char *out);
 void genp9(Node *file, char *out);
 Blob *tydescblob(Type *t);
+size_t blobsz(Blob *b);
 
 /* location generation */
 extern size_t maxregid;

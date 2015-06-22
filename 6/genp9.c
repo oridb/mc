@@ -500,7 +500,7 @@ static void genfunc(FILE *fd, Func *fn, Htab *globls, Htab *strtab)
 
 static size_t encodemin(FILE *fd, uint64_t val, size_t off, char *lbl)
 {
-    size_t i, shift;
+    size_t i, shift, n;
     uint8_t b;
 
     if (val < 128) {
@@ -512,13 +512,15 @@ static size_t encodemin(FILE *fd, uint64_t val, size_t off, char *lbl)
         if (val < 1ULL << (7*i))
             break;
 
+    n = 0;
     shift = 8 - i;
     b = ~0 << (shift + 1);
     b |= val & ((1 << (8 - shift)) - 1);
     fprintf(fd, "\tDATA %s+%zd(SB)/1,$%u\n", lbl, off, b);
     val >>=  shift;
     while (val != 0) {
-        fprintf(fd, "\tDATA %s+%zd(SB)/1,$%u\n", lbl, off, (uint)val & 0xff);
+        n++;
+        fprintf(fd, "\tDATA %s+%zd(SB)/1,$%u\n", lbl, off+n, (uint)val & 0xff);
         val >>= 8;
     }
     return i;
@@ -533,34 +535,37 @@ static size_t gentyblob(FILE *fd, Blob *b, size_t off, char *lbl)
         return 0;
     switch (b->type) {
         case Bti8:
-            fprintf(fd, "\tDATA %s+%zd(SB)/1,$%zd\n", lbl, off, b->ival);
+            fprintf(fd, "DATA %s+%zd(SB)/1,$%zd\n", lbl, off+n, b->ival);
             n += 1;
             break;
         case Bti16:
-            fprintf(fd, "\tDATA %s+%zd(SB)/2,$%zd\n", lbl, off, b->ival);
+            fprintf(fd, "DATA %s+%zd(SB)/2,$%zd\n", lbl, off+n, b->ival);
             n += 2;
             break;
         case Bti32:
-            fprintf(fd, "\tDATA %s+%zd(SB)/4,$%zd\n", lbl, off, b->ival);
+            fprintf(fd, "DATA %s+%zd(SB)/4,$%zd\n", lbl, off+n, b->ival);
             n += 4;
             break;
         case Bti64:
-            fprintf(fd, "\tDATA %s+%zd(SB)/8,%zd\n", lbl, off, b->ival);
+            fprintf(fd, "DATA %s+%zd(SB)/8,%zd\n", lbl, off+n, b->ival);
             n += 8;
             break;
         case Btimin:
-            n += encodemin(fd, b->ival, off, lbl);
+            n += encodemin(fd, b->ival, off+n, lbl);
             break;
         case Btref:
-            fprintf(fd, "\tDATA %s+%zd/8,$%s\n", lbl, off, b->ref);
+            if (b->ref.isextern)
+                fprintf(fd, "DATA %s+%zd(SB)/8,$%s<>+0(SB)\n", lbl, off+n, b->ref.str);
+            else
+                fprintf(fd, "DATA %s+%zd(SB)/8,$%s+0(SB)\n", lbl, off+n, b->ref.str);
             n += 8;
             break;
         case Btbytes:
-            n += writebytes(fd, lbl, off, b->bytes.buf, b->bytes.len);
+            n += writebytes(fd, lbl, off+n, b->bytes.buf, b->bytes.len);
             break;
         case Btseq:
             for (i = 0; i < b->seq.nsub; i++)
-                n += gentyblob(fd, b->seq.sub[i], off, lbl);
+                n += gentyblob(fd, b->seq.sub[i], off+n, lbl);
             break;
     }
     return n;
@@ -574,11 +579,14 @@ static void gentype(FILE *fd, Type *ty)
     if (ty->type == Tyvar)
         return;
     b = tydescblob(ty);
-    if (b->lbl) {
-        if (b->isglobl)
-            snprintf(lbl, sizeof lbl, "DATA %s%s\n", Symprefix, lbl);
-        else
-            snprintf(lbl, sizeof lbl, "DATA %s%s<>+SB\n", Symprefix, lbl);
+    if (!b)
+        return;
+    if (b->isglobl) {
+        fprintf(fd, "GLOBL %s%s+0(SB),$%zd\n", Symprefix, b->lbl, blobsz(b));
+        snprintf(lbl, sizeof lbl, "%s%s", Symprefix, b->lbl);
+    } else {
+        fprintf(fd, "GLOBL %s%s<>+0(SB),$%zd\n", Symprefix, b->lbl, blobsz(b));
+        snprintf(lbl, sizeof lbl, "%s%s<>", Symprefix, b->lbl);
     }
     gentyblob(fd, b, 0, lbl);
 }
