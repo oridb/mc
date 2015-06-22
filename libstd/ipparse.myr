@@ -4,6 +4,10 @@ use "option.use"
 use "strfind.use"
 use "types.use"
 use "chartype.use"
+use "fmt.use"
+use "slcp.use"
+use "slfill.use"
+use "sleq.use"
 
  /* FIXME: needed for decls which should be pulled in as hidden */
 use "hasprefix.use"
@@ -40,49 +44,101 @@ const ip4parse = {ip
 	var j : size
 	*/
 
-	(a, ip, ok) = octet(ip, 10, true)
-	(ip, ok) = dot(ip, ok)
-	(b, ip, ok) = octet(ip, 10, ok)
-	(ip, ok) = dot(ip, ok)
-	(c, ip, ok) = octet(ip, 10, ok)
-	(ip, ok) = dot(ip, ok)
-	(d, ip, ok) = octet(ip, 10, ok)
+	(a, ip, ok) = num(ip, 0, 255, 10, '.', true)
+	(ip, ok) = delim(ip, '.', ok)
+	(b, ip, ok) = num(ip, 0, 255, 10, '.', ok)
+	(ip, ok) = delim(ip, '.', ok)
+	(c, ip, ok) = num(ip, 0, 255, 10, '.', ok)
+	(ip, ok) = delim(ip, '.', ok)
+	(d, ip, ok) = num(ip, 0, 255, 10, '.', ok)
 
 	if ok && ip.len == 0
-		-> `Some (`Ipv4 [a, b,c,d])
+		-> `Some (`Ipv4 [a, b, c, d])
 	else
 		-> `None
 	;;
 }
 
 const ip6parse = {ip
-	-> `None
+	var val : byte[16]
+	var expand, split
+	var v, ok
+	var i, nseg
+
+	ok = true
+	expand = false
+	split = 0
+	if ip.len > 2 && std.sleq(ip[:2], "::")
+		expand = true
+		split = 0
+	;;
+	nseg = 0
+	for i = 0; ip.len > 0 && ok; i++
+		/* parse ':num' */
+		(v, ip, ok) = num(ip, 0, 65536, 16, ':', ok)
+		nseg++
+		if ip.len == 0 || nseg == 8
+			break
+		;;
+		(ip, ok) = delim(ip, ':', ok)
+		/* only one '::' allowed once */
+		if ip.len > 0 && ip[0] == ':'castto(byte) && !expand
+			expand = true
+			split = i
+			(ip, ok) = delim(ip, ':', ok)
+		;;
+
+		/* pack it into the bytes */
+		val[i*2] = ((v & 0xff00) >> 8) castto(byte)
+		val[i*2 + 1] = (v & 0xff) castto(byte)
+	;;
+
+	if ok && ip.len == 0
+		if expand
+			expandsplit(val[:], split, i)
+		elif nseg != 8
+			-> `None
+		;;
+		-> `Some `Ipv6 val
+	else
+		-> `None
+	;;
 }
 
-const dot = {ip, ok
-	if ip.len > 0 && ip[0] == '.' castto(byte)
+const expandsplit = {ip, split, len
+	var width
+
+	width = 16 - len
+	std.slcp(ip[split:len], ip[split+width:len+width])
+	std.slfill(ip[len:len+width], 0)
+}
+
+const delim = {ip, sep, ok
+	if ip.len > 0 && ip[0] == sep castto(byte)
 		-> (ip[1:], ok)
 	else
 		-> ("", false)
 	;;
 }
-const octet = {ip, base, ok
+
+generic num = {ip, lo, hi, base, sep, ok -> (@a::(numeric,integral), byte[:], bool)
 	var len
 
 	if !ok
 		-> (0, "", false)
 	;;
+
 	for len = 0; len < ip.len; len++
-		if ip[len] == '.' castto(byte)
+		if ip[len] == sep castto(byte)
 			break
 		;;
 	;;
 	match intparsebase(ip[:len], base)
 	| `std.Some v:
-		if v < 0 || v > 255
+		if v < lo || v > hi
 			-> (0, "", false)
 		;;
-		-> (v castto(byte), ip[len:], true)
+		-> (v castto(@a::(numeric,integral)), ip[len:], true)
 	| `std.None:
 		-> (0, "", false)
 	;;

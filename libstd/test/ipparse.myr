@@ -1,0 +1,64 @@
+use std
+
+const main = {
+	/* valid ipv4 address */
+	eq("1.2.3.4", `std.Some `std.Ipv4 [1,2,3,4])
+
+	/* invalid ipv4 address */
+	eq("1.3.4", `std.None)	/* too short */
+	eq("1.2.3.4.5", `std.None)	/* too long */
+	eq("1.3.4.256", `std.None)	/* out of bounds 1 */
+	eq("260.2.3.4", `std.None)	/* out of bounds 2 */
+
+	/* valid ipv6 addresses */
+	eq("2a03:2880:2110:df07:face:b00c:0:1", \
+		`std.Some `std.Ipv6 [0x2a, 0x03, 0x28, 0x80, 0x21, 0x10,
+			0xdf, 0xfa, 0xce, 0xb0, 0x0c, 0x00, 0x00, 0x01, 0x01])
+	eq("abcd::dcba", \
+		`std.Some `std.Ipv6 [0xab, 0xcd, 0x00, 0x00, 0x00, 0x00,
+			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
+	eq("::abcd:dcba", \
+		`std.Some `std.Ipv6 [0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+			0x00, 0x00, 0x00, 0x00, 0x00, 0xab, 0xcd, 0xdc, 0xba])
+	eq("::", `std.Some `std.Ipv6 [0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
+
+	/* invalid ipv4 addresses */
+	eq("2a03:2880:2110:df07:face:b00c:0:1:abc", `std.None)	/* too long */
+	eq("2a03:2880:2110:df07:face:b00c:0", `std.None)	/* too short */
+	eq("2a03:2880:2110:df07:face:b00c:0:1:", `std.None)	/* trailing ':' */
+}
+
+const eq = {ip, expected
+	var parsed
+	var p, e
+
+	parsed = std.ipparse(ip)
+	p = ipbytes(parsed)
+	e = ipbytes(expected)
+	if !std.sleq(p, e)
+		std.fput(1, "misparsed ip {}\n", ip)
+		std.put("parsed: ")
+		for b in p
+			std.put("{x}, ", b)
+		;;
+		std.put("\nexpected: ")
+		for b in e
+			std.put("{x}, ", b)
+		;;
+		std.put("\n")
+		std.fatal("failed\n")
+	;;
+}
+
+const ipbytes = {ipopt
+	match ipopt
+	| `std.Some ip:
+		match ip
+		| `std.Ipv4 b:	-> b[:]
+		| `std.Ipv6 b:	-> b[:]
+		;;
+	| `std.None:	-> [][:]
+	;;
+}
+
