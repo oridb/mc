@@ -91,6 +91,16 @@ pkg sys =
 		zero	: byte[8]
 	;;
 
+	type sockaddr_in6 = struct
+		len	: byte
+		fam	: sockfam
+		port	: uint16
+		flowinf	: uint32
+		addr	: byte[16]
+		scope	: uint32
+	;;
+
+
 	type sockaddr_storage = struct
 		len	: byte
 		fam	: sockfam
