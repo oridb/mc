@@ -2,6 +2,7 @@ use "alloc.use"
 use "die.use"
 use "extremum.use"
 use "fmt.use"
+use "strbuf.use"
 use "option.use"
 use "sleq.use"
 use "slpush.use"
@@ -174,16 +175,30 @@ const next = {ctx
 }
 
 const optusage = {prog, def
-	std.put("usage: {} [-h?] ", prog)
+	var sb, s
+
+	sb = mksb()
+	std.sbfmt(sb, "usage: {} [-h?", prog)
 	for o in def.opts
-		std.put("[-{}{}{}] ", o.opt, sep(o.arg), o.arg)
+		if o.arg.len == 0
+			std.sbfmt(sb, "{}", o.opt)
+		;;
 	;;
-	std.put("{}\n", def.argdesc)
-	std.put("\t-h\tprint this help message\n")
-	std.put("\t-?\tprint this help message\n")
+	std.sbfmt(sb, "] ")
 	for o in def.opts
-		std.put("\t-{}{}{}\t{}\n", o.opt, sep(o.arg), o.arg, o.desc)
+		if o.arg.len != 0
+			std.sbfmt(sb, "[-{} {}] ", o.opt, o.arg)
+		;;
 	;;
+	std.sbfmt(sb, "{}\n", def.argdesc)
+	std.sbfmt(sb, "\t-h\tprint this help message\n")
+	std.sbfmt(sb, "\t-?\tprint this help message\n")
+	for o in def.opts
+		std.sbfmt(sb, "\t-{}{}{}\t{}\n", o.opt, sep(o.arg), o.arg, o.desc)
+	;;
+	s = sbfin(sb)
+	write(1, s)
+	slfree(s)
 }
 
 const sep = {s

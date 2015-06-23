@@ -165,8 +165,8 @@ const parse = {b, p, path
 const target = {b, p
 	match word(p)
 	| `std.Some "bin":	bintarget(b, p)
-	| `std.Some "test":	testtarget(b, p)
 	| `std.Some "lib":	libtarget(b, p)
+	| `std.Some "test":	testtarget(b, p)
 	| `std.Some "gen":	cmdtarget(b, p, "gen", false)
 	| `std.Some "cmd":	cmdtarget(b, p, "cmd", true)
 	| `std.Some "man":	mantarget(b, p)
