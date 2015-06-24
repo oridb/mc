@@ -1,15 +1,16 @@
 #!/bin/sh
 
+export PATH=`pwd`/6:`pwd`/muse:$PATH
 # this should be a bourne compatible shell script.
 if test `uname` = Plan9; then
-	export MYR_MUSE=../muse/$O.out
-	export MYR_MC=../$O/$O.out
-	export MYR_RT=../rt/_myrrt.$O
+	export MYR_MUSE=$O.out
+	export MYR_MC=$O.out
+	export MYR_RT=`pwd`/rt/_myrrt.$O
 	BOOT="./mk/bootstrap/bootstrap+`uname -s`-`uname -m`.sh"
 else
-	export MYR_MUSE=../muse/muse
-	export MYR_MC=../6/6m
-	export MYR_RT=../rt/_myrrt.o
+	export MYR_MUSE=muse
+	export MYR_MC=6m
+	export MYR_RT=`pwd`/rt/_myrrt.o
 	BOOT="./mk/bootstrap/bootstrap+`uname -s`-`uname -m`.sh"
 fi
 
