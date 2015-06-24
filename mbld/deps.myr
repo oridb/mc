@@ -267,7 +267,7 @@ const openlib = {lib, incs
 		| `std.Fail m:	/* nothing */
 		;;
 	;;
-	path = std.pathjoin([opt_instroot, "/lib/myr", lib][:])
+	path = std.pathjoin([opt_instroot, config.Libpath, lib][:])
 	match  bio.open(path, bio.Rd)
 	| `std.Ok file:	-> file
 	| `std.Fail m:	/* nothing */

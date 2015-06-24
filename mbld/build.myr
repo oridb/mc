@@ -331,6 +331,10 @@ const putlib = {cmd, head, lib, incs
 	else
 		match findlib(lib, incs)
 		| `std.None:
+			std.put("searched:\n")
+			for inc in incs
+				std.put("\t{}\n", inc)
+			;;
 			std.fatal("could not find library lib{}.a\n", lib)
 		| `std.Some p:
 			-> std.slput(cmd, head, p)

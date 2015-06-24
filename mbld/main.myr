@@ -69,7 +69,7 @@ const main = {args : byte[:][:]
 		;;
 	;;
 	if bld.opt_instroot.len > 0 && !std.sleq(bld.opt_instroot, "none")
-		libpath = std.pathcat(bld.opt_instroot, "lib/myr")
+		libpath = std.pathcat(bld.opt_instroot, config.Libpath)
 		bld.opt_incpaths = std.slpush(bld.opt_incpaths, libpath)
 	;;
 
