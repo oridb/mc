@@ -103,8 +103,8 @@ echo 	../6/6.out	-I ../libregex -I ../libbio -I ../libstd install.myr ;	../6/6.o
 echo 	../6/6.out	-I ../libregex -I ../libbio -I ../libstd clean.myr ;	../6/6.out	-I ../libregex -I ../libbio -I ../libstd clean.myr 
 echo 	../6/6.out	-I ../libregex -I ../libbio -I ../libstd test.myr ;	../6/6.out	-I ../libregex -I ../libbio -I ../libstd test.myr 
 echo 	../6/6.out	-I ../libregex -I ../libbio -I ../libstd main.myr ;	../6/6.out	-I ../libregex -I ../libbio -I ../libstd main.myr 
-echo 	6l	-lo mbld /usr/glenda/mc2/mc/rt/_myrrt.6 clean.6 types.6 deps.6 fsel.6 util.6 parse.6 main.6 build.6 opts.6 config.6 install.6 test.6 ../libregex/libregex.a ../libbio/libbio.a ../libstd/libstd.a ../libstd/libsys.a ;	6l	-lo mbld /usr/glenda/mc2/mc/rt/_myrrt.6 clean.6 types.6 deps.6 fsel.6 util.6 parse.6 main.6 build.6 opts.6 config.6 install.6 test.6 ../libregex/libregex.a ../libbio/libbio.a ../libstd/libstd.a ../libstd/libsys.a 
+echo 	6l	-lo mbld ../rt/_myrrt.6 clean.6 types.6 deps.6 fsel.6 util.6 parse.6 main.6 build.6 opts.6 config.6 install.6 test.6 ../libregex/libregex.a ../libbio/libbio.a ../libstd/libstd.a ../libstd/libsys.a ;	6l	-lo mbld ../rt/_myrrt.6 clean.6 types.6 deps.6 fsel.6 util.6 parse.6 main.6 build.6 opts.6 config.6 install.6 test.6 ../libregex/libregex.a ../libbio/libbio.a ../libstd/libstd.a ../libstd/libsys.a 
 echo 	cd $pwd;	cd $pwd
 echo 	cd $pwd/libregex;	cd $pwd/libregex
 echo 	../6/6.out	-I . -I ../libbio -I ../libstd redump.myr ;	../6/6.out	-I . -I ../libbio -I ../libstd redump.myr 
-echo 	6l	-lo redump /usr/glenda/mc2/mc/rt/_myrrt.6 redump.6 libregex.a ../libbio/libbio.a ../libstd/libstd.a ../libstd/libsys.a ;	6l	-lo redump /usr/glenda/mc2/mc/rt/_myrrt.6 redump.6 libregex.a ../libbio/libbio.a ../libstd/libstd.a ../libstd/libsys.a 
+echo 	6l	-lo redump ../rt/_myrrt.6 redump.6 libregex.a ../libbio/libbio.a ../libstd/libstd.a ../libstd/libsys.a ;	6l	-lo redump ../rt/_myrrt.6 redump.6 libregex.a ../libbio/libbio.a ../libstd/libstd.a ../libstd/libsys.a 

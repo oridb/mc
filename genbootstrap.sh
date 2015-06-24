@@ -1,14 +1,13 @@
 #!/bin/sh
 
-export PATH="`pwd`:`pwd`6:`pwd`/muse:$PATH"
 if test `uname` = Plan9; then
     export MYR_MUSE=../muse/6.out
     export MYR_MC=../6/6.out
-    export MYR_RT=`pwd`/rt/_myrrt.6
+    export MYR_RT=../rt/_myrrt.6
 else
-    export MYR_MUSE=muse
-    export MYR_MC=6m
-    export MYR_RT=`pwd`/rt/_myrrt.o
+    export MYR_MUSE=../muse
+    export MYR_MC=../6m
+    export MYR_RT=../rt/_myrrt.o
 fi
 ./mbldwrap.sh
 cp mbld/mbld xmbld
@@ -24,6 +23,7 @@ echo 'export PATH=`pwd`:`pwd`/6:`pwd`/muse:$PATH' >> $bootscript
     sed "s:Entering directory '\\(.*\\)':	cd \$pwd/\\1:g" | \
     sed "s:Leaving directory.*:	cd \$pwd:g" | \
     sed "s:\\([a-zA-Z0-9_-]*\\)+.*:\`\$pwd/sysselect.sh \1\`:" | \
+    sed "s:`pwd`:\`pwd\`:g" | \
     grep '^	' | \
     sed 's/.*/echo &;&/' | \
     tee -a $bootscript
