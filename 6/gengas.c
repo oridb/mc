@@ -399,6 +399,7 @@ static size_t writestruct(FILE *fd, Htab *globls, Htab *strtab, Node *n)
     sz += writepad(fd, end - sz);
     return sz;
 }
+
 static size_t writeblob(FILE *fd, Htab *globls, Htab *strtab, Node *n)
 {
     size_t i, sz;
