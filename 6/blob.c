@@ -150,7 +150,10 @@ static size_t bloblit(Blob *seq, Htab *strtab, Node *v, Type *ty)
                lbl = genlocallblstr(buf, sizeof buf);
                htput(strtab, &v->lit.strval, strdup(lbl));
            }
-           b(seq, mkblobref(lbl, 0, 1));
+           if (v->lit.strval.len > 0)
+               b(seq, mkblobref(lbl, 0, 1));
+           else
+               b(seq, mkblobi(Bti64, 0));
            b(seq, mkblobi(Bti64, v->lit.strval.len));
            break;
         case Lfunc:
