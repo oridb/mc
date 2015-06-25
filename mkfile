@@ -50,6 +50,7 @@ uninstall:V: $SUB config.h
 check:V: all
 	cd test
 	mk check
+	mbld test
 
 config.h:
 	echo '#define Instroot "/amd64"' > config.h

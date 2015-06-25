@@ -96,7 +96,7 @@ B sizeof	E	4
 B gsizeof	E	5
 B matchint	E	84
 B matchconst	E	88
-B matchnsconst	P	"matched badchar"
+B matchnsconst	P	'matched badchar'
 B matchunion	E	84
 B matchtup	E	42
 B matchstruct	E	42
