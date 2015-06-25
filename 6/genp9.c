@@ -349,7 +349,7 @@ static size_t writeblob(FILE *fd, Blob *b, size_t off, char *lbl)
             n += 4;
             break;
         case Bti64:
-            fprintf(fd, "DATA %s+%zd(SB)/8,$%zd\n", lbl, off+n, b->ival);
+            fprintf(fd, "DATA %s+%zd(SB)/8,$%lld\n", lbl, off+n, b->ival);
             n += 8;
             break;
         case Btimin:
