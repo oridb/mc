@@ -522,8 +522,8 @@ static void gentyblob(FILE *fd, Blob *b)
         return;
     if (b->lbl) {
         if (b->isglobl)
-            fprintf(fd, ".globl %s%s\n", Symprefix, b->lbl);
-        fprintf(fd, "%s%s:\n", Symprefix, b->lbl);
+            fprintf(fd, ".globl %s%sg\n", Symprefix, b->lbl);
+        fprintf(fd, "%s%s%s:\n", Symprefix, b->lbl, b->isglobl ? "g" : "");
     }
     switch (b->type) {
         case Bti8:
@@ -542,7 +542,7 @@ static void gentyblob(FILE *fd, Blob *b)
             encodemin(fd, b->ival);
             break;
         case Btref:
-            fprintf(fd, "\t.quad %s\n", b->ref.str);
+            fprintf(fd, "\t.quad %s%s\n", b->ref.str, b->ref.isextern ? "g" : "");
             break;
         case Btbytes:
             writebytes(fd, b->bytes.buf, b->bytes.len);

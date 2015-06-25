@@ -220,7 +220,7 @@ Blob *tydescsub(Type *ty)
         case Tyname:
             i = snprintf(buf, sizeof buf, "%s", Symprefix);
             tydescid(buf + i, sizeof buf - i, ty);
-            lappend(&sub, &nsub, mkblobref(buf, ty->isimport));
+            lappend(&sub, &nsub, mkblobref(buf, ty->isimport || ty->vis == Visexport));
             break;
     }
     b = mkblobseq(sub, nsub);
