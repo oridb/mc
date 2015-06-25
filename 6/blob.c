@@ -150,7 +150,7 @@ static size_t bloblit(Blob *seq, Htab *strtab, Node *v, Type *ty)
                lbl = genlocallblstr(buf, sizeof buf);
                htput(strtab, &v->lit.strval, strdup(lbl));
            }
-           b(seq, mkblobref(lbl, 0, 0));
+           b(seq, mkblobref(lbl, 0, 1));
            b(seq, mkblobi(Bti64, v->lit.strval.len));
            break;
         case Lfunc:
@@ -183,7 +183,7 @@ static size_t blobslice(Blob *seq,  Htab *globls, Htab *strtab, Node *n)
     sz = tysize(tybase(exprtype(base))->sub[0]);
 
     lbl = htget(globls, base);
-    b(seq, mkblobref(lbl, loval*sz, 0));
+    b(seq, mkblobref(lbl, loval*sz, 1));
     b(seq, mkblobi(Bti64, (hival - loval)));
     return 16;
 }

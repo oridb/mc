@@ -6,6 +6,7 @@ LDFLAGS=-L../parse -lparse -L../mi -lmi
 
 TARG=6m
 OFILES=\
+	blob.$O\
 	gen.$O\
 	gengas.$O\
 	genp9.$O\
