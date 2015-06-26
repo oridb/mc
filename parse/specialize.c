@@ -452,6 +452,7 @@ static Node *initdecl(Node *file, Node *name, Type *tyvoidfn)
         dcl = mkdecl(Zloc, name, tyvoidfn);
         dcl->decl.isconst = 1;
         dcl->decl.isinit = 1;
+        dcl->decl.isextern = 1;
         putnsdcl(dcl);
     }
     return dcl;
@@ -495,6 +496,7 @@ void geninit(Node *file)
     decl->decl.init = mkexpr(Zloc, Olit, func, NULL);
     decl->decl.isconst = 1;
     decl->decl.type = tyvoidfn;
+    decl->decl.vis = Vishidden;
 
     lappend(&file->file.stmts, &file->file.nstmts, decl);
 }
