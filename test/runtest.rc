@@ -7,7 +7,7 @@ nfailed=0
 
 fn build {
 	rm -f $1 $1^.6 $1^.use
-	../myrbuild/6.out -b $1 -C../6/6.out -M../muse/6.out -I../libstd -r../rt/_myrrt.6 $1^.myr
+	../mbld/mbld -b $1 -C../6/6.out -M../muse/6.out -I../libstd -r../rt/_myrrt.6 $1^.myr
 }
 
 fn pass {

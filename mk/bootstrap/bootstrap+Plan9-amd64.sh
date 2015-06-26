@@ -19,8 +19,10 @@ echo 	../6/6.out	-I . slfill.myr ;	../6/6.out	-I . slfill.myr
 echo 	../6/6.out	-I . clear.myr ;	../6/6.out	-I . clear.myr 
 echo 	../6/6.out	-I . extremum.myr ;	../6/6.out	-I . extremum.myr 
 echo 	../6/6.out	-I . units.myr ;	../6/6.out	-I . units.myr 
-echo 	../6/6.out	-I . alloc.myr ;	../6/6.out	-I . alloc.myr 
-echo 	../6/6.out	-I . utf.myr ;	../6/6.out	-I . utf.myr 
+echo 	../6/6.out	-I . alloc.myr ;	../6/6.out	-I . alloc.myr
+ echo 	../6/6.out	-I . intparse.myr ;	../6/6.out	-I . intparse.myr 
+echo 	../6/6.out	-I . utf.myr ;	../6/6.out	-I .	utf.myr 
+echo	../6/6.out	-I . hasprefix.myr; ../6/6.out	-I .	hasprefix.myr
 echo 	../6/6.out	-I . `$pwd/sysselect.sh errno`;	../6/6.out	-I . `$pwd/sysselect.sh errno`
 echo 	../6/6.out	-I . cstrconv.myr ;	../6/6.out	-I . cstrconv.myr 
 echo 	../6/6.out	-I . `$pwd/sysselect.sh syswrap-ss`;	../6/6.out	-I . `$pwd/sysselect.sh syswrap-ss`

@@ -555,9 +555,9 @@ static size_t gentyblob(FILE *fd, Blob *b, size_t off, char *lbl)
             break;
         case Btref:
             if (b->ref.isextern)
-                fprintf(fd, "DATA %s+%zd(SB)/8,$%s<>+0(SB)\n", lbl, off+n, b->ref.str);
-            else
                 fprintf(fd, "DATA %s+%zd(SB)/8,$%s+0(SB)\n", lbl, off+n, b->ref.str);
+            else
+                fprintf(fd, "DATA %s+%zd(SB)/8,$%s<>+0(SB)\n", lbl, off+n, b->ref.str);
             n += 8;
             break;
         case Btbytes:

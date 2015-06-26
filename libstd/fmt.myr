@@ -143,9 +143,10 @@ const sbfmt = {sb, fmt, args
 }
 
 const sbfmtv = {sb, fmt, ap -> size
-	var nfmt, nparams, pl
+	var nfmt, nparams, pl, orig
 	var c, params, ty
 
+	orig = fmt
 	nparams = ap.tc.nelt
 	nfmt = 0
 	if !fmtmapinited
@@ -186,6 +187,7 @@ const sbfmtv = {sb, fmt, ap -> size
 :fmtdone
 	;;
 	if nfmt != nparams
+		write(1, orig)
 		die("too many params for fmt\n")
 	;;
 	-> sb.len
