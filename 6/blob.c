@@ -75,6 +75,8 @@ void blobfree(Blob *b)
 {
     size_t i;
 
+    if (!b)
+        return;
     switch (b->type) {
         case Btref:
             free(b->lbl);

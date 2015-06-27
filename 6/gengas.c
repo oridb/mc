@@ -322,8 +322,8 @@ static void writeblob(FILE *fd, Blob *b)
         return;
     if (b->lbl) {
         if (b->isglobl)
-            fprintf(fd, ".globl %s%sg\n", Symprefix, b->lbl);
-        fprintf(fd, "%s%s%s:\n", Symprefix, b->lbl, b->isglobl ? "g" : "");
+            fprintf(fd, ".globl %s%s\n", Symprefix, b->lbl);
+        fprintf(fd, "%s%s:\n", Symprefix, b->lbl);
     }
     switch (b->type) {
         case Bti8:
@@ -342,7 +342,7 @@ static void writeblob(FILE *fd, Blob *b)
             encodemin(fd, b->ival);
             break;
         case Btref:
-            fprintf(fd, "\t.quad %s%s + %zd\n", b->ref.str, b->ref.isextern ? "g" : "", b->ref.off);
+            fprintf(fd, "\t.quad %s + %zd\n", b->ref.str, b->ref.off);
             break;
         case Btbytes:
             writebytes(fd, b->bytes.buf, b->bytes.len);
