@@ -297,8 +297,8 @@ static void liveness(Isel *s)
             bsunion(bb[i]->livein, bb[i]->use);
             if (!changed)
                 changed = !bseq(old, bb[i]->liveout);
+            bsfree(old);
         }
-        bsfree(old);
     }
 }
 

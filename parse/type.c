@@ -247,7 +247,7 @@ Type *mktytuple(Srcloc loc, Type **sub, size_t nsub)
 
     t = mktype(loc, Tytuple);
     t->nsub = nsub;
-    t->sub = xalloc(nsub*sizeof(Type));
+    t->sub = xalloc(nsub*sizeof(Type*));
     for (i = 0; i < nsub; i++)
         t->sub[i] = sub[i];
     return t;
@@ -260,7 +260,7 @@ Type *mktyfunc(Srcloc loc, Node **args, size_t nargs, Type *ret)
 
     t = mktype(loc, Tyfunc);
     t->nsub = nargs + 1;
-    t->sub = xalloc((1 + nargs)*sizeof(Type));
+    t->sub = xalloc((1 + nargs)*sizeof(Type*));
     t->sub[0] = ret;
     for (i = 0; i < nargs; i++)
         t->sub[i + 1] = nodetype(args[i]);

@@ -189,9 +189,10 @@ static Dtree *addstruct(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *nca
     for (i = 0; i < pat->expr.nargs; i++) {
         elt = pat->expr.args[i];
         for (j = 0; j < t->nval; j++) {
-            if (!strcmp(namestr(elt->expr.idx), namestr(t->val[j]->expr.idx)))
+            if (!strcmp(namestr(elt->expr.idx), namestr(t->val[j]->expr.idx))) {
                 t = addpat(t, pat->expr.args[i], NULL, cap, ncap);
-            break;
+                break;
+            }
         }
     }
     return t;
@@ -357,9 +358,13 @@ void dtdumpnode(Dtree *dt, FILE *f, int depth, int iswild)
 {
     Node *e;
     size_t i;
+    char *s;
+
     if (dt->patexpr) {
         e = dt->patexpr;
-        indentf(depth, "%s%s %s : %s\n", iswild ? "WILDCARD " : "", opstr[exprop(e)], dtnodestr(e), tystr(exprtype(e)));
+        s = tystr(exprtype(e));
+        indentf(depth, "%s%s %s : %s\n", iswild ? "WILDCARD " : "", opstr[exprop(e)], dtnodestr(e), s);
+        free(s);
     } 
     if (dt->cap)
         for (i = 0; i < dt->ncap; i++)

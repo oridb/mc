@@ -1034,12 +1034,13 @@ void writeuse(FILE *f, Node *file)
     k = htkeys(st->dcl, &n);
     for (i = 0; i < n; i++) {
         s = getdcl(st, k[i]);
+        assert(s != NULL);
         if (s->decl.vis == Visintern || s->decl.vis == Visbuiltin)
             continue;
         /* trait functions get written out with their traits */
         if (s->decl.trait)
             continue;
-        if (s && s->decl.isgeneric)
+        if (s->decl.isgeneric)
             wrbyte(f, 'G');
         else
             wrbyte(f, 'D');

@@ -67,7 +67,7 @@ Loc *loclbl(Node *e)
     assert(e->type == Nexpr);
     lbl = e->expr.args[0];
     assert(lbl->type == Nlit);
-    assert(lbl->lit.littype = Llbl);
+    assert(lbl->lit.littype == Llbl);
     return locstrlbl(lbl->lit.lblval);
 }
 

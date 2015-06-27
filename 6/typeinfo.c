@@ -391,7 +391,7 @@ ssize_t tyoffset(Type *ty, Node *memb)
             return off;
         off += size(ty->sdecls[i]);
     }
-    return -1;
+    die("bad offset");
 }
 
 size_t size(Node *n)

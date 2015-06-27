@@ -164,6 +164,7 @@ static char *ctxstr(Inferstate *st, Node *n)
                     break;
                 case OTzarg:
                     snprintf(buf, sizeof buf, "%s", oppretty[exprop(n)]);
+                    break;
                 case OTmisc:
                     switch (exprop(n)) {
                         case Ovar:
@@ -191,6 +192,9 @@ static char *ctxstr(Inferstate *st, Node *n)
                             snprintf(buf, sizeof buf, "%s:%s", d, t);
                             break;
                     }
+                default:
+		    snprintf(buf, sizeof buf, "%s", d);
+                    break;
             }
             free(t);
             free(t1);
@@ -1445,9 +1449,10 @@ static void inferexpr(Inferstate *st, Node **np, Type *ret, int *sawret)
             infersub(st, n, ret, sawret, &isconst);
             switch (args[0]->lit.littype) {
                 case Lfunc:
-                    infernode(st, &args[0]->lit.fnval, NULL, NULL); break;
+                    infernode(st, &args[0]->lit.fnval, NULL, NULL);
                     /* FIXME: env capture means this is non-const */
                     n->expr.isconst = 1;
+                    break;
                 default:
                     n->expr.isconst = 1;
                     break;
