@@ -37,7 +37,6 @@ static char* modenames[] = {
   [ModeD] = "D"
 };
 
-static size_t writeblob(FILE *fd, char *name, size_t off, Htab *globls, Htab *strtab, Node *blob);
 static void locprint(FILE *fd, Loc *l, char spec);
 
 static void fillglobls(Stab *st, Htab *globls)
@@ -262,169 +261,6 @@ static size_t writebytes(FILE *fd, char *name, size_t off, char *p, size_t sz)
     return sz;
 }
 
-static size_t writelit(FILE *fd, char *name, size_t off, Htab *strtab, Node *v, Type *ty)
-{
-    char buf[128];
-    char *lbl;
-    size_t sz;
-    union {
-        float fv;
-        double dv;
-        uint64_t qv;
-        uint32_t lv;
-    } u;
-
-    assert(v->type == Nlit);
-    sz = tysize(ty);
-    switch (v->lit.littype) {
-        case Lint:
-            fprintf(fd, "DATA %s+%zd(SB)/%zd,$%lld\n", name, off, sz, v->lit.intval);
-            break;
-        case Lbool:
-            fprintf(fd, "DATA %s+%zd(SB)/%zd,$%d\n", name, off, sz, v->lit.boolval);
-            break;
-        case Lchr:
-            fprintf(fd, "DATA %s+%zd(SB)/%zd,$%d\n", name, off, sz, v->lit.chrval);
-            break;
-        case Lflt:
-            if (tybase(v->lit.type)->type == Tyflt32) {
-                u.fv = v->lit.fltval;
-                fprintf(fd, "DATA %s+%zd(SB)/%zd, $0x%llx\n", name, off, sz, (vlong)u.lv);
-            } else if (tybase(v->lit.type)->type == Tyflt64) {
-                u.dv = v->lit.fltval;
-                fprintf(fd, "DATA %s+%zd(SB)/%zd, $0x%llx\n", name, off, sz, (vlong)u.qv);
-            }
-            break;
-        case Lstr:
-           if (hthas(strtab, &v->lit.strval)) {
-               lbl = htget(strtab, &v->lit.strval);
-           } else {
-               lbl = genlocallblstr(buf, sizeof buf);
-               htput(strtab, &v->lit.strval, strdup(lbl));
-           }
-           if (v->lit.strval.len > 0)
-               fprintf(fd, "DATA %s+%zd(SB)/8,$%s+0(SB)\n", name, off, lbl);
-           else
-               fprintf(fd, "DATA %s+%zd(SB)/8,$0\n", name, off);
-           fprintf(fd, "DATA %s+%zd(SB)/8,$%zd\n", name, off+8, v->lit.strval.len);
-           break;
-        case Lfunc:
-            die("Generating this shit ain't ready yet ");
-            break;
-        case Llbl:
-            die("Can't generate literal labels, ffs. They're not data.");
-            break;
-    }
-    return sz;
-}
-
-static size_t writepad(FILE *fd, char *name, size_t off, size_t sz)
-{
-    size_t n;
-
-    assert((ssize_t)sz >= 0);
-    while (sz > 0) {
-        n = min(sz, 8);
-        fprintf(fd, "DATA %s+%zd(SB)/%zd,$0\n", name, off, n);
-        sz -= n;
-    }
-    return sz;
-}
-
-static size_t getintlit(Node *n, char *failmsg)
-{
-    if (exprop(n) != Olit)
-        fatal(n, "%s", failmsg);
-    n = n->expr.args[0];
-    if (n->lit.littype != Lint)
-        fatal(n, "%s", failmsg);
-    return n->lit.intval;
-}
-
-static size_t writeslice(FILE *fd, char *name, size_t off, Htab *globls, Htab *strtab, Node *n)
-{
-    Node *base, *lo, *hi;
-    ssize_t loval, hival, sz;
-    char *lbl;
-
-    base = n->expr.args[0];
-    lo = n->expr.args[1];
-    hi = n->expr.args[2];
-
-    /* by this point, all slicing operations should have had their bases
-     * pulled out, and we should have vars with their pseudo-decls in their
-     * place */
-    if (exprop(base) != Ovar || !base->expr.isconst)
-        fatal(base, "slice base is not a constant value");
-    loval = getintlit(lo, "lower bound in slice is not constant literal");
-    hival = getintlit(hi, "upper bound in slice is not constant literal");
-    sz = tysize(tybase(exprtype(base))->sub[0]);
-
-    lbl = htget(globls, base);
-    fprintf(fd, "DATA %s+%zd(SB)/8,$%s+%zd(SB)\n", name, off, lbl, loval*sz);
-    fprintf(fd, "DATA %s+%zd(SB)/8,$%zd\n", name, off + Ptrsz, (hival - loval));
-    return size(n);
-}
-
-static size_t writestruct(FILE *fd, char *name, size_t off, Htab *globls, Htab *strtab, Node *n)
-{
-    Type *t;
-    Node **dcl;
-    int found;
-    size_t i, j;
-    size_t pad, start, end;
-    size_t ndcl;
-
-    start = off;
-    t = tybase(exprtype(n));
-    assert(t->type == Tystruct);
-    dcl = t->sdecls;
-    ndcl = t->nmemb;
-    for (i = 0; i < ndcl; i++) {
-        pad = alignto(off, decltype(dcl[i]));
-        off += writepad(fd, name, off, pad - off);
-        found = 0;
-        for (j = 0; j < n->expr.nargs; j++)
-            if (!strcmp(namestr(n->expr.args[j]->expr.idx), declname(dcl[i]))) {
-                found = 1;
-                off += writeblob(fd, name, off, globls, strtab, n->expr.args[j]);
-            }
-        if (!found)
-            off += writepad(fd, name, off, size(dcl[i]));
-    }
-    end = alignto(off, t);
-    off += writepad(fd, name, off, end - off);
-    return off - start;
-}
-
-static size_t writeblob(FILE *fd, char *name, size_t off, Htab *globls, Htab *strtab, Node *n)
-{
-    size_t i, sz;
-
-    switch(exprop(n)) {
-        case Otup:
-        case Oarr:
-            sz = 0;
-            for (i = 0; i < n->expr.nargs; i++)
-                sz += writeblob(fd, name, off + sz, globls, strtab, n->expr.args[i]);
-            break;
-        case Ostruct:
-            sz = writestruct(fd, name, off, globls, strtab, n);
-            break;
-        case Olit:
-            sz = writelit(fd, name, off, strtab, n->expr.args[0], exprtype(n));
-            break;
-        case Oslice:
-            sz = writeslice(fd, name, off, globls, strtab, n);
-            break;
-        default:
-            dump(n, stdout);
-            die("Nonliteral initializer for global");
-            break;
-    }
-    return sz;
-}
-
 static void genstrings(FILE *fd, Htab *strtab)
 {
     void **k;
@@ -464,40 +300,6 @@ static void writeasm(FILE *fd, Isel *s, Func *fn)
     }
 }
 
-static void genblob(FILE *fd, Node *blob, Htab *globls, Htab *strtab)
-{
-    char *lbl;
-
-    /* lits and such also get wrapped in decls */
-    assert(blob->type == Ndecl);
-
-    lbl = htget(globls, blob);
-    fprintf(fd, "GLOBL %s+0(SB),$%zd\n", lbl, size(blob));
-    if (blob->decl.init)
-        writeblob(fd, lbl, 0, globls, strtab, blob->decl.init);
-    else
-        writepad(fd, lbl, 0, size(blob));
-}
-
-/* genfunc requires all nodes in 'nl' to map cleanly to operations that are
- * natively supported, as promised in the output of reduce().  No 64-bit
- * operations on x32, no structures, and so on. */
-static void genfunc(FILE *fd, Func *fn, Htab *globls, Htab *strtab)
-{
-    Isel is = {0,};
-
-    is.reglocs = mkht(varhash, vareq);
-    is.stkoff = fn->stkoff;
-    is.globls = globls;
-    is.ret = fn->ret;
-    is.cfg = fn->cfg;
-
-    selfunc(&is, fn, globls, strtab);
-    if (debugopt['i'])
-        writeasm(stdout, &is, fn);
-    writeasm(fd, &is, fn);
-}
-
 static size_t encodemin(FILE *fd, uint64_t val, size_t off, char *lbl)
 {
     size_t i, shift, n;
@@ -526,7 +328,7 @@ static size_t encodemin(FILE *fd, uint64_t val, size_t off, char *lbl)
     return i;
 }
 
-static size_t gentyblob(FILE *fd, Blob *b, size_t off, char *lbl)
+static size_t writeblob(FILE *fd, Blob *b, size_t off, char *lbl)
 {
     size_t i, n;
 
@@ -555,9 +357,11 @@ static size_t gentyblob(FILE *fd, Blob *b, size_t off, char *lbl)
             break;
         case Btref:
             if (b->ref.isextern)
-                fprintf(fd, "DATA %s+%zd(SB)/8,$%s+0(SB)\n", lbl, off+n, b->ref.str);
+                fprintf(fd, "DATA %s+%zd(SB)/8,$%s+%zd(SB)\n",
+                        lbl, off+n, b->ref.str, b->ref.off);
             else
-                fprintf(fd, "DATA %s+%zd(SB)/8,$%s<>+0(SB)\n", lbl, off+n, b->ref.str);
+                fprintf(fd, "DATA %s+%zd(SB)/8,$%s<>+%zd(SB)\n",
+                        lbl, off+n, b->ref.str, b->ref.off);
             n += 8;
             break;
         case Btbytes:
@@ -565,10 +369,33 @@ static size_t gentyblob(FILE *fd, Blob *b, size_t off, char *lbl)
             break;
         case Btseq:
             for (i = 0; i < b->seq.nsub; i++)
-                n += gentyblob(fd, b->seq.sub[i], off+n, lbl);
+                n += writeblob(fd, b->seq.sub[i], off+n, lbl);
+            break;
+        case Btpad:
+            for (i = 0; i < b->npad; i++)
+                fprintf(fd, "DATA %s+%zd(SB)/1,$0\n", lbl, off+n+i);
+            n += b->npad;
             break;
     }
     return n;
+}
+/* genfunc requires all nodes in 'nl' to map cleanly to operations that are
+ * natively supported, as promised in the output of reduce().  No 64-bit
+ * operations on x32, no structures, and so on. */
+static void genfunc(FILE *fd, Func *fn, Htab *globls, Htab *strtab)
+{
+    Isel is = {0,};
+
+    is.reglocs = mkht(varhash, vareq);
+    is.stkoff = fn->stkoff;
+    is.globls = globls;
+    is.ret = fn->ret;
+    is.cfg = fn->cfg;
+
+    selfunc(&is, fn, globls, strtab);
+    if (debugopt['i'])
+        writeasm(stdout, &is, fn);
+    writeasm(fd, &is, fn);
 }
 
 static void gentype(FILE *fd, Type *ty)
@@ -588,7 +415,24 @@ static void gentype(FILE *fd, Type *ty)
         fprintf(fd, "GLOBL %s%s<>+0(SB),$%zd\n", Symprefix, b->lbl, blobsz(b));
         snprintf(lbl, sizeof lbl, "%s%s<>", Symprefix, b->lbl);
     }
-    gentyblob(fd, b, 0, lbl);
+    writeblob(fd, b, 0, lbl);
+}
+
+static void genblob(FILE *fd, Node *blob, Htab *globls, Htab *strtab)
+{
+    char *lbl;
+    Blob *b;
+
+    /* lits and such also get wrapped in decls */
+    assert(blob->type == Ndecl);
+
+    lbl = htget(globls, blob);
+    fprintf(fd, "GLOBL %s+0(SB),$%zd\n", lbl, size(blob));
+    if (blob->decl.init)
+        b = litblob(globls, strtab, blob->decl.init);
+    else
+        b = mkblobpad(size(blob));
+    writeblob(fd, b, 0, lbl);
 }
 
 void genp9(Node *file, char *out)

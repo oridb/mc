@@ -1,5 +1,6 @@
 INSTBIN=6m
 OBJ= \
+	blob.o \
 	gen.o \
 	gengas.o \
 	genp9.o \

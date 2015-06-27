@@ -68,6 +68,7 @@ typedef enum {
     Btref,
     Btbytes,
     Btseq,
+    Btpad,
 } Blobtype;
 
 struct Blob {
@@ -75,10 +76,12 @@ struct Blob {
     char *lbl;  /* may be null */
     char isglobl;
     union {
+        uint64_t npad;
         uint64_t ival;
         struct {
             char *str;
             char isextern;
+            size_t off;
         } ref;
         struct {
             size_t len;
@@ -238,7 +241,17 @@ void selfunc(Isel *is, Func *fn, Htab *globls, Htab *strtab);
 void gen(Node *file, char *out);
 void gengas(Node *file, char *out);
 void genp9(Node *file, char *out);
+
+/* blob stuff */
+Blob *mkblobpad(size_t sz);
+Blob *mkblobi(Blobtype type, uint64_t ival);
+Blob *mkblobbytes(char *buf, size_t len);
+Blob *mkblobseq(Blob **sub, size_t nsub);
+Blob *mkblobref(char *lbl, size_t off, int isextern);
+void blobfree(Blob *b);
+
 Blob *tydescblob(Type *t);
+Blob *litblob(Htab *globls, Htab *strtab, Node *n);
 size_t blobsz(Blob *b);
 
 /* location generation */

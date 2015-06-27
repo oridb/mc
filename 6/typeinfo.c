@@ -19,49 +19,6 @@
 
 Blob *tydescsub(Type *ty);
 
-static Blob *mkblobi(Blobtype type, uint64_t ival)
-{
-    Blob *b;
-
-    b = zalloc(sizeof(Blob));
-    b->type = type;
-    b->ival = ival;
-    return b;
-}
-
-static Blob *mkblobbytes(char *buf, size_t len)
-{
-    Blob *b;
-
-    b = zalloc(sizeof(Blob));
-    b->type = Btbytes;
-    b->bytes.len = len;
-    b->bytes.buf = buf;
-    return b;
-}
-
-static Blob *mkblobseq(Blob **sub, size_t nsub)
-{
-    Blob *b;
-
-    b = zalloc(sizeof(Blob));
-    b->type = Btseq;
-    b->seq.nsub = nsub;
-    b->seq.sub = sub;
-    return b;
-}
-
-static Blob *mkblobref(char *lbl, int isextern)
-{
-    Blob *b;
-
-    b = zalloc(sizeof(Blob));
-    b->type = Btref;
-    b->ref.str = strdup(lbl);
-    b->ref.isextern = isextern;
-    return b;
-}
-
 size_t blobsz(Blob *b)
 {
     size_t n;
@@ -220,7 +177,7 @@ Blob *tydescsub(Type *ty)
         case Tyname:
             i = snprintf(buf, sizeof buf, "%s", Symprefix);
             tydescid(buf + i, sizeof buf - i, ty);
-            lappend(&sub, &nsub, mkblobref(buf, ty->isimport || ty->vis == Visexport));
+            lappend(&sub, &nsub, mkblobref(buf, 0, ty->isimport || ty->vis == Visexport));
             break;
     }
     b = mkblobseq(sub, nsub);
