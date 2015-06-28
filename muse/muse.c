@@ -92,7 +92,7 @@ int main(int argc, char **argv)
     for (i = 0; i < ctx.nargs; i++)
         mergeuse(ctx.args[i]);
     infer(file);
-    tagexports(file->file.globls, 1);
+    tagexports(file, 1);
     f = fopen(outfile, "w");
     if (debugopt['s'] || show)
         dumpstab(file->file.globls, stdout);

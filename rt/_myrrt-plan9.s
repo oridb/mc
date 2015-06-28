@@ -57,6 +57,7 @@ TEXT	_main(SB), 1, $(2*8+NPRIVATES*8)
 	PUSHQ	R13
 	PUSHQ	DX
 
+	CALL	__init__(SB)
 	CALL	main(SB)
 	POPQ	DX
 	POPQ	R13

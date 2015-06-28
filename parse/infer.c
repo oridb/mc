@@ -2217,14 +2217,16 @@ static void nodetag(Stab *st, Node *n, int ingeneric, int hidelocal)
     }
 }
 
-void tagexports(Stab *st, int hidelocal)
+void tagexports(Node *file, int hidelocal)
 {
+    size_t i, j, n;
+    Trait *tr;
+    Stab *st;
     void **k;
     Node *s;
     Type *t;
-    Trait *tr;
-    size_t i, j, n;
 
+    st = file->file.globls;
     k = htkeys(st->dcl, &n);
     for (i = 0; i < n; i++) {
         s = getdcl(st, k[i]);
@@ -2240,6 +2242,11 @@ void tagexports(Stab *st, int hidelocal)
             nodetag(st, s, 0, hidelocal);
     }
     free(k);
+
+    for (i = 0; i < file->file.ninit; i++)
+        nodetag(st, file->file.init[i], 0, hidelocal);
+    if (file->file.localinit)
+        nodetag(st, file->file.localinit, 0, hidelocal);
 
     k = htkeys(st->tr, &n);
     for (i = 0; i < n; i++) {

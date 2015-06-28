@@ -66,9 +66,9 @@ function! GetMyrIndent(ln)
                 \    '\<while\>','\<for\>', '\<match\>',
                 \    '\<struct\>', '\<union\>',
                 \    '{', '\[', '(', '^\s*|.*:', '=\s*$']
-        let outpat = ['}', ']', ')', ';;']
+        let outpat = ['}', ']', ')']
         let outalone = ['\<else\>', '\<elif\>.*', ';;', '|.*',
-                    \ '].*', ').*', '}.*']
+                    \ '].*', '}.*']
         let width = &tabstop
 
         let n_in = s:CountMatches(prevln, ln - i, inpat)
@@ -84,9 +84,10 @@ function! GetMyrIndent(ln)
             let n_out = n_out + 1
         endif
 
-        " we already outdented if we had an outalone
-        if s:LineMatch(prevln, outalone) != 0
-            let n_out = 0
+        " we already outdented if we had an outalone, but since all
+        " outpats are also outalones, we don't want to double count.
+        if s:LineMatch(prevln, outalone) != 0 && n_out > 0
+            let n_out = n_out - 1
         endif
         let n_out = n_out + s:LineMatch(curln, outalone)
 

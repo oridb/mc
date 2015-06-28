@@ -117,6 +117,20 @@ static char *gentemp(char *buf, size_t bufsz, char *path, char *suffix)
     return buf;
 }
 
+static int hasmain(Node *file)
+{
+    Node *n, *name;
+
+    name = mknsname(Zloc, "", "main");
+    n = getdcl(file->file.globls, name);
+    if (!n)
+        return 0;
+    n = n->decl.name;
+    if (n->name.ns)
+        return 0;
+    return 1;
+}
+
 static void genuse(char *path)
 {
     FILE *f;
@@ -208,7 +222,9 @@ int main(int argc, char **argv)
         if (debugopt['T'])
             dump(file, stdout);
         infer(file);
-        tagexports(file->file.globls, 0);
+        if (hasmain(file))
+            geninit(file);
+        tagexports(file, 0);
         /* after all type inference */
         if (debugopt['t'])
             dump(file, stdout);

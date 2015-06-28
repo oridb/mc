@@ -25,6 +25,7 @@ static Node *unpickle(FILE *fd);
 static Htab *tydedup;   /* map from name -> type, contains all Tynames loaded ever */
 static Htab *tidmap;    /* map from tid -> type */
 static Htab *trmap;     /* map from trait id -> trait */
+static Htab *initmap;   /* map from init name -> int */
 
 #define Builtinmask (1 << 30)
 static Type ***typefixdest;     /* list of types we need to replace */
@@ -161,6 +162,7 @@ static void wrsym(FILE *fd, Node *val)
     wrbool(fd, val->decl.ispkglocal);
     wrbool(fd, val->decl.isnoret);
     wrbool(fd, val->decl.isexportinit);
+    wrbool(fd, val->decl.isinit);
     if (val->decl.isexportinit) {
         pickle(fd, val->decl.init);
     }
@@ -189,6 +191,7 @@ static Node *rdsym(FILE *fd, Trait *ctx)
     n->decl.isnoret = rdbool(fd);
     n->decl.isimport = 1;
     n->decl.isexportinit = rdbool(fd);
+    n->decl.isinit = rdbool(fd);
     if (n->decl.isexportinit)
         n->decl.init = unpickle(fd);
     return n;
@@ -818,7 +821,7 @@ int loaduse(char *path, FILE *f, Stab *st, Vis vis)
     intptr_t tid;
     size_t i;
     char *pkg;
-    Node *dcl, *impl;
+    Node *dcl, *impl, *init;
     Stab *s;
     Type *ty;
     Trait *tr;
@@ -859,6 +862,8 @@ int loaduse(char *path, FILE *f, Stab *st, Vis vis)
     }
     tidmap = mkht(ptrhash, ptreq);
     trmap = mkht(ptrhash, ptreq);
+    if (!initmap)
+        initmap = mkht(namehash, nameeq);
     /* builtin traits */
     for (i = 0; i < Ntraits; i++)
         htput(trmap, itop(i), traittab[i]);
@@ -881,6 +886,13 @@ foundlib:
                 dcl = rdsym(f, NULL);
                 dcl->decl.vis = vis;
                 putdcl(s, dcl);
+                break;
+            case 'S':
+                init = unpickle(f);
+                if (!hthas(initmap, init)) {
+                    htput(initmap, init, init);
+                    lappend(&file->file.init, &file->file.ninit, init);
+                }
                 break;
             case 'R':
                 tr = traitunpickle(f);
@@ -1038,13 +1050,21 @@ void writeuse(FILE *f, Node *file)
         if (s->decl.vis == Visintern || s->decl.vis == Visbuiltin)
             continue;
         /* trait functions get written out with their traits */
-        if (s->decl.trait)
+        if (s->decl.trait || s->decl.isinit)
             continue;
-        if (s->decl.isgeneric)
+        else if (s->decl.isgeneric)
             wrbyte(f, 'G');
         else
             wrbyte(f, 'D');
         wrsym(f, s);
+    }
+    for (i = 0; i < file->file.ninit; i++) {
+        wrbyte(f, 'S');
+        pickle(f, file->file.init[i]);
+    }
+    if (file->file.localinit) {
+        wrbyte(f, 'S');
+        pickle(f, file->file.localinit->decl.name);
     }
     free(k);
 }

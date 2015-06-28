@@ -38,6 +38,7 @@ const main = {args : byte[:][:]
 		][:]
 	])
 
+	targname = ""
 	bld.initopts()
 	for opt in cmd.opts
 		match opt

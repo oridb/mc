@@ -430,3 +430,71 @@ Node *specializedcl(Node *g, Type *to, Node **name)
         popstab();
     return d;
 }
+
+/*
+ * Not really specialization, but close enough.
+ *
+ * Generate an init function that's the equivalent of
+ * this code:
+ *
+ * const __init__ {
+ *      file1$myr$__init__
+ *      file2$myr$__init__
+ *      ...
+ * }
+ */
+static Node *initdecl(Node *file, Node *name, Type *tyvoidfn)
+{
+    Node *dcl;
+
+    dcl = getdcl(file->file.globls, name);
+    if (!dcl) {
+        dcl = mkdecl(Zloc, name, tyvoidfn);
+        dcl->decl.isconst = 1;
+        dcl->decl.isinit = 1;
+        putnsdcl(dcl);
+    }
+    return dcl;
+}
+
+static void callinit(Node *block, Node *init, Type *tyvoid, Type *tyvoidfn)
+{
+    Node *call, *var;
+
+    var = mkexpr(Zloc, Ovar, init->decl.name, NULL);
+    call = mkexpr(Zloc, Ocall, var, NULL);
+
+    var->expr.type = tyvoidfn;
+    call->expr.type = tyvoid;
+    var->expr.did = init->decl.did;
+    var->expr.isconst = 1;
+    lappend(&block->block.stmts, &block->block.nstmts, call);
+}
+
+void geninit(Node *file)
+{
+    Node *name, *decl, *func, *block, *init;
+    Type *tyvoid, *tyvoidfn;
+    size_t i;
+
+    name = mkname(Zloc, "__init__");
+    decl = mkdecl(Zloc, name, mktyvar(Zloc));
+    block = mkblock(Zloc, mkstab());
+    block->block.scope->super = file->file.globls;
+    tyvoid = mktype(Zloc, Tyvoid);
+    tyvoidfn = mktyfunc(Zloc, NULL, 0, tyvoid);
+
+    for (i = 0; i < file->file.ninit; i++) {
+        init = initdecl(file, file->file.init[i], tyvoidfn);
+        callinit(block, init, tyvoid, tyvoidfn);
+    }
+    if (file->file.localinit)
+        callinit(block, file->file.localinit, tyvoid, tyvoidfn);
+    func = mkfunc(Zloc, NULL, 0, mktype(Zloc, Tyvoid), block);
+    func->expr.type = tyvoidfn;
+    decl->decl.init = mkexpr(Zloc, Olit, func, NULL);
+    decl->decl.isconst = 1;
+    decl->decl.type = tyvoidfn;
+
+    lappend(&file->file.stmts, &file->file.nstmts, decl);
+}

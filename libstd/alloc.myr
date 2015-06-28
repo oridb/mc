@@ -54,7 +54,6 @@ const Pagesz	= 4*KiB
 const Align	= 16	/* minimum allocation alignment */
 
 var buckets	: bucket[32] /* excessive */
-var initdone	: bool
 
 type slheader = struct
 	cap	: size	/* capacity in bytes */
@@ -79,6 +78,14 @@ type slab = struct
 type chunk = struct	/* NB: must be smaller than sizeof(slab) */
 	next	: chunk#	/* the next chunk in the free list */
 ;;
+
+const __init__ = {
+	var i
+
+	for i = 0; i < buckets.len && (Align << i) <= Bktmax; i++
+		bktinit(&buckets[i], Align << i)
+	;;
+}
 
 /* Allocates an object of type @a, returning a pointer to it. */
 generic alloc = {-> @a#
@@ -209,14 +216,7 @@ const zfill = {sl
 
 /* Allocates a blob that is 'sz' bytes long. Dies if the allocation fails */
 const bytealloc = {sz
-	var i, bkt, p
-
-	if !initdone
-		for i = 0; i < buckets.len && (Align << i) <= Bktmax; i++
-			bktinit(&buckets[i], Align << i)
-		;;
-		initdone = true
-	;;
+	var bkt, p
 
 	if (sz <= Bktmax)
 		bkt = &buckets[bktnum(sz)]

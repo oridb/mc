@@ -40,28 +40,6 @@ static char* modenames[] = {
 
 static void locprint(FILE *fd, Loc *l, char spec);
 
-static void fillglobls(Stab *st, Htab *globls)
-{
-    void **k;
-    size_t i, nk;
-    Stab *stab;
-    Node *s;
-
-    k = htkeys(st->dcl, &nk);
-    for (i = 0; i < nk; i++) {
-        s = htget(st->dcl, k[i]);
-        htput(globls, s, asmname(s));
-    }
-    free(k);
-
-    k = htkeys(st->ns, &nk);
-    for (i = 0; i < nk; i++) {
-        stab = htget(st->ns, k[i]);
-        fillglobls(stab, globls);
-    }
-    free(k);
-}
-
 static void initconsts(Htab *globls)
 {
     Type *ty;

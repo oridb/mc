@@ -47,6 +47,10 @@ pkg std =
 	$noret const fatalv	: (fmt : byte[:], ap : valist# -> void)
 ;;
 
+const __init__ = {
+	fmtmap = mkht(strhash, streq)
+}
+
 type fmtdesc = struct
 	fn	: (sb : strbuf#, ap : valist#, opts : (byte[:],byte[:])[:] -> void)
 	optdesc	: (byte[:], bool)[:]
@@ -67,14 +71,9 @@ const fatalv = {fmt, ap
 	exit(1)
 }
 
-var fmtmapinited : bool = false
 var fmtmap : htab(byte[:], fmtdesc)#
 
 const fmtinstall = {ty, fn, optdesc
-	if !fmtmapinited
-		fmtmapinited = true
-		fmtmap = mkht(strhash, streq)
-	;;
 	htput(fmtmap, ty, [.fn=fn, .optdesc=optdesc])
 }
 
@@ -149,10 +148,6 @@ const sbfmtv = {sb, fmt, ap -> size
 	orig = fmt
 	nparams = ap.tc.nelt
 	nfmt = 0
-	if !fmtmapinited
-		fmtmapinited = true
-		fmtmap = mkht(strhash, streq)
-	;;
 	while fmt.len != 0
 		(c, fmt) = striter(fmt)
 		match c

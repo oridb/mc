@@ -26,6 +26,7 @@ static Node *mkpseudodecl(Type *t);
 static void installucons(Stab *st, Type *t);
 static void addtrait(Type *t, char *str);
 static void setattrs(Node *dcl, char **attrs, size_t nattrs);
+static void setupinit(Node *n);
 
 %}
 
@@ -219,11 +220,15 @@ toplev  : package
                 Node *n;
 
                 for (i = 0; i < $1.nn; i++) {
+                    if (!strcmp(declname($1.nl[i]), "__init__"))
+                        setupinit($1.nl[i]);
                     /* putdcl can merge, so we need to getdcl after */
                     putdcl(file->file.globls, $1.nl[i]);
                     n = getdcl(file->file.globls, $1.nl[i]->decl.name);
                     lappend(&file->file.stmts, &file->file.nstmts, n);
                     $1.nl[i]->decl.isglobl = 1;
+                    if ($1.nl[i]->decl.isinit)
+                        file->file.localinit = $1.nl[i];
                 }
             }
         | /* empty */
@@ -915,6 +920,23 @@ label   : Tcolon Tident
         ;
 
 %%
+
+static void setupinit(Node *n)
+{
+    char name[1024];
+    char *p;
+
+    snprintf(name, sizeof name, "%s$__init__", file->file.files[0]);
+    p = name;
+    while (*p) {
+        if (!isalnum(*p) && *p != '_')
+            *p = '$';
+        p++;
+    }
+    n->decl.isinit = 1;
+    n->decl.vis = Vishidden;
+    n->decl.name->name.name = strdup(name);
+}
 
 static void addtrait(Type *t, char *str)
 {

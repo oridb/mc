@@ -67,6 +67,8 @@ _start:
 	pushq %rdx
 
 	/* enter the main program */
+	call	__init__
+	/* enter the main program */
 	call	main
 	/* exit(0) */
         xorq	%rdi,%rdi

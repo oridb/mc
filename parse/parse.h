@@ -4,7 +4,7 @@
 #	define FATAL
 #endif
 
-#define Abiversion 1
+#define Abiversion 2
 
 typedef uint8_t         byte;
 typedef unsigned int    uint;
@@ -219,8 +219,10 @@ struct Node {
             size_t nlibdeps;
             Node **stmts;       /* all top level statements */
             size_t nstmts;
+            Node **init;        /* a list of all __init__ function names of our deps. NB, this is a Nname, not an Ndecl */
+            size_t ninit;
+            Node *localinit;    /* and the local one, if any */
             Stab  *globls;      /* global symtab */
-            int hasinit;        /* did we declare __init__? */
         } file;
 
         struct {
@@ -306,16 +308,19 @@ struct Node {
              impl.
             */
             Trait *trait;
-            char  vis;
-            char  isglobl;
-            char  isconst;
-            char  isgeneric;
-            char  isextern;
-            char  ispkglocal;
-            char  ishidden;
-            char  isimport;
-            char  isnoret;
-            char  isexportinit;
+            char vis;
+
+            /* flags */
+            char isglobl;
+            char isconst;
+            char isgeneric;
+            char isextern;
+            char ispkglocal;
+            char ishidden;
+            char isimport;
+            char isnoret;
+            char isexportinit;
+            char isinit;
         } decl;
 
         struct {
@@ -473,6 +478,7 @@ void puttrait(Stab *st, Node *n, Trait *trait);
 void putimpl(Stab *st, Node *impl);
 void updatetype(Stab *st, Node *n, Type *t);
 void putdcl(Stab *st, Node *dcl);
+void putnsdcl(Node *dcl);
 void forcedcl(Stab *st, Node *dcl);
 void putucon(Stab *st, Ucon *uc);
 
@@ -577,12 +583,13 @@ Op exprop(Node *n);
 Node *specializedcl(Node *n, Type *to, Node **name);
 Type *tyspecialize(Type *t, Htab *tymap, Htab *delayed);
 Node *genericname(Node *n, Type *t);
+void geninit(Node *file);
 
 /* usefiles */
 int  loaduse(char *path, FILE *f, Stab *into, Vis vis);
 void readuse(Node *use, Stab *into, Vis vis);
 void writeuse(FILE *fd, Node *file);
-void tagexports(Stab *st, int hidelocal);
+void tagexports(Node *file, int hidelocal);
 
 /* typechecking/inference */
 void infer(Node *file);

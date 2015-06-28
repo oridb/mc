@@ -253,6 +253,13 @@ static int mergedecl(Node *old, Node *new)
     return 1;
 }
 
+void forcedcl (Stab *st, Node *s) {
+    if (st->name)
+        setns(s->decl.name, st->name);
+    htput(st->dcl, s->decl.name, s);
+    assert(htget(st->dcl, s->decl.name) != NULL);
+}
+
 void putdcl(Stab *st, Node *s)
 {
     Node *old;
@@ -264,11 +271,19 @@ void putdcl(Stab *st, Node *s)
         fatal(old, "%s already declared on %s:%d", namestr(s->decl.name), fname(s->loc), lnum(s->loc));
 }
 
-void forcedcl (Stab *st, Node *s) {
-    if (st->name)
-        setns(s->decl.name, st->name);
-    htput(st->dcl, s->decl.name, s);
-    assert(htget(st->dcl, s->decl.name) != NULL);
+void putnsdcl(Node *dcl)
+{
+    Node *name;
+    Stab *ns;
+
+    name = dcl->decl.name;
+    ns = getns_str(file->file.globls, name->name.ns);
+    if (!ns) {
+        ns = mkstab();
+        updatens(ns, name->name.ns);
+        putns(file->file.globls, ns);
+    }
+    putdcl(ns, dcl);
 }
 
 void updatetype(Stab *st, Node *n, Type *t)
