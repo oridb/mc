@@ -105,8 +105,8 @@ echo 	6m	-I ../libregex -I ../libbio -I ../libstd install.myr ;	6m	-I ../librege
 echo 	6m	-I ../libregex -I ../libbio -I ../libstd clean.myr ;	6m	-I ../libregex -I ../libbio -I ../libstd clean.myr 
 echo 	6m	-I ../libregex -I ../libbio -I ../libstd test.myr ;	6m	-I ../libregex -I ../libbio -I ../libstd test.myr 
 echo 	6m	-I ../libregex -I ../libbio -I ../libstd main.myr ;	6m	-I ../libregex -I ../libbio -I ../libstd main.myr 
-echo 	ld	-o mbld /home/ori/src/myr/mc/rt/_myrrt.o clean.o config.o deps.o types.o fsel.o util.o parse.o main.o build.o opts.o install.o test.o -L../libregex -L../libbio -L../libstd -lregex -lbio -lstd -lsys ;	ld	-o mbld /home/ori/src/myr/mc/rt/_myrrt.o clean.o config.o deps.o types.o fsel.o util.o parse.o main.o build.o opts.o install.o test.o -L../libregex -L../libbio -L../libstd -lregex -lbio -lstd -lsys 
+echo 	ld	-o mbld ../rt/_myrrt.o clean.o config.o deps.o types.o fsel.o util.o parse.o main.o build.o opts.o install.o test.o -L../libregex -L../libbio -L../libstd -lregex -lbio -lstd -lsys ;	ld	-o mbld ../rt/_myrrt.o clean.o config.o deps.o types.o fsel.o util.o parse.o main.o build.o opts.o install.o test.o -L../libregex -L../libbio -L../libstd -lregex -lbio -lstd -lsys 
 echo 	cd $pwd;	cd $pwd
 echo 	cd $pwd/libregex;	cd $pwd/libregex
 echo 	6m	-I . -I ../libbio -I ../libstd redump.myr ;	6m	-I . -I ../libbio -I ../libstd redump.myr 
-echo 	ld	-o redump /home/ori/src/myr/mc/rt/_myrrt.o redump.o -L. -L../libbio -L../libstd -lregex -lbio -lstd -lsys ;	ld	-o redump /home/ori/src/myr/mc/rt/_myrrt.o redump.o -L. -L../libbio -L../libstd -lregex -lbio -lstd -lsys 
+echo 	ld	-o redump ../rt/_myrrt.o redump.o -L. -L../libbio -L../libstd -lregex -lbio -lstd -lsys ;	ld	-o redump ../rt/_myrrt.o redump.o -L. -L../libbio -L../libstd -lregex -lbio -lstd -lsys 
