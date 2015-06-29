@@ -5,8 +5,8 @@ if test `uname` = Plan9; then
     export MYR_MC=../6/6.out
     export MYR_RT=../rt/_myrrt.6
 else
-    export MYR_MUSE=../muse
-    export MYR_MC=../6m
+    export MYR_MUSE=../muse/muse
+    export MYR_MC=../6/6m
     export MYR_RT=../rt/_myrrt.o
 fi
 ./mbldwrap.sh
