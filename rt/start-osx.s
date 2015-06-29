@@ -54,6 +54,7 @@ start:
 	pushq %rsi
 	pushq %rdx
 
+	call	___init__
 	/* enter the main program */
 	call	_main
 	/* exit */
