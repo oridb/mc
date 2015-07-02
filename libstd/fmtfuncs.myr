@@ -1,0 +1,54 @@
+use "alloc.use"
+use "bigint.use"
+use "bitset.use"
+use "fmt.use"
+use "introspect.use"
+use "strbuf.use"
+use "varargs.use"
+
+pkg std =
+;;
+
+const __init__ = {
+	var bigint : bigint#
+	var bitset : bitset#
+
+	fmtinstall(typeof(bigint), bigfmt, [][:])
+	fmtinstall(typeof(bitset), bsfmt, [][:])
+}
+
+const bigfmt = {sb, ap, opts
+	var a, n, buf
+
+	a = vanext(ap)
+ 	/*
+	allocate a buffer guaranteed to be big enough.
+	that's 
+		2 + floor(nbits/(log_2(10)))
+	or
+		2 + a.dig.len * 32/3.32...
+	or
+		2 + a.dig.len * 10
+	plus one for the - sign.
+	*/
+	buf = slalloc(3 + a.dig.len * 10)
+	n = bigbfmt(buf, a, 10)
+	sbputs(sb, buf[:n])
+	slfree(buf)
+}
+
+const bsfmt = {sb, ap, opts
+	var i, bs
+
+	bs = vanext(ap)
+	sbputs(sb, "bitset{")
+	for i = 0; i < bsmax(bs); i++
+		if bshas(bs, i)
+			if i != 0
+				sbfmt(sb, ", ")
+			;;
+			sbfmt(sb, "{}", i)
+		;;
+	;;
+	sbputs(sb, "}")
+}
