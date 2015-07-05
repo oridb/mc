@@ -268,6 +268,20 @@ static void selcjmp(Isel *s, Node *n, Node **args)
     g(s, Ijmp, l2, NULL);
 }
 
+/* Generate variable length jump. There are 3 cases
+ * for this:
+ *
+ * 1) Short list: Simple comparison sequence.
+ * 2) Sparse list: binary search
+ * 3) Dense list: Jump table
+ *
+ * If a value is not in the jump table, then the 0th
+ * value is used.
+ */
+static void selvjmp(Isel *s, Node *n, Node **args)
+{
+}
+
 static Loc *binop(Isel *s, AsmOp op, Node *x, Node *y)
 {
     Loc *a, *b;
@@ -711,9 +725,9 @@ Loc *selexpr(Isel *s, Node *n)
         case Ocjmp:
             selcjmp(s, n, args);
             break;
-		case Ojtab:
-			die("jump tables not yet implemented\n");
-			break;
+        case Ovjmp:
+            selvjmp(s, n, args);
+            break;
         case Olit: /* fall through */
             r = loc(s, n);
             break;

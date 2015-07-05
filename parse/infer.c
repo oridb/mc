@@ -50,7 +50,7 @@ struct Inferstate {
 static void infernode(Inferstate *st, Node **np, Type *ret, int *sawret);
 static void inferexpr(Inferstate *st, Node **np, Type *ret, int *sawret);
 static void inferdecl(Inferstate *st, Node *n);
-static void typesub(Inferstate *st, Node *n);
+static void typesub(Inferstate *st, Node *n, int noerr);
 static void tybind(Inferstate *st, Type *t);
 static Type *tyfix(Inferstate *st, Node *ctx, Type *orig, int noerr);
 static void bind(Inferstate *st, Node *n);
@@ -192,6 +192,7 @@ static char *ctxstr(Inferstate *st, Node *n)
                             snprintf(buf, sizeof buf, "%s:%s", d, t);
                             break;
                     }
+                    break;
                 default:
 		    snprintf(buf, sizeof buf, "%s", d);
                     break;
@@ -830,7 +831,7 @@ static void structunify(Inferstate *st, Node *ctx, Type *u, Type *v)
             if (strcmp(namestr(u->sdecls[i]->decl.name), namestr(v->sdecls[i]->decl.name)) != 0)
                 continue;
             found = 1;
-            unify(st, u->sdecls[i], type(st, u->sdecls[i]), type(st, v->sdecls[i]));
+            unify(st, ctx, type(st, u->sdecls[i]), type(st, v->sdecls[i]));
         }
         if (!found)
             fatal(ctx, "can't unify %s and %s near %s\n", tystr(u), tystr(v), ctxstr(st, ctx));
@@ -1467,7 +1468,7 @@ static void inferexpr(Inferstate *st, Node **np, Type *ret, int *sawret)
         case Odead:
             n->expr.type = mktype(n->loc, Tyvoid);
             break;
-        case Obad: case Ocjmp: case Ojtab: case Oset:
+        case Obad: case Ocjmp: case Ovjmp: case Oset:
         case Oslbase: case Osllen: case Outag:
         case Oblit: case  Oclear: case Oudata:
         case Otrunc: case Oswiden: case Ozwiden:
@@ -1735,11 +1736,11 @@ static Type *tyfix(Inferstate *st, Node *ctx, Type *orig, int noerr)
     } else if (!t->fixed) {
         t->fixed = 1;
         if (t->type == Tyarray) {
-            typesub(st, t->asize);
+            typesub(st, t->asize, noerr);
         } else if (t->type == Tystruct) {
             st->intype++;
             for (i = 0; i < t->nmemb; i++)
-                typesub(st, t->sdecls[i]);
+                typesub(st, t->sdecls[i], noerr);
             st->intype--;
         } else if (t->type == Tyunion) {
             for (i = 0; i < t->nmemb; i++) {
@@ -1996,7 +1997,7 @@ static int maincompatible(Type *t)
 
 /* After type inference, replace all types
  * with the final computed type */
-static void typesub(Inferstate *st, Node *n)
+static void typesub(Inferstate *st, Node *n, int noerr)
 {
     size_t i;
 
@@ -2007,13 +2008,13 @@ static void typesub(Inferstate *st, Node *n)
             pushstab(n->file.globls);
             stabsub(st, n->file.globls);
             for (i = 0; i < n->file.nstmts; i++)
-                typesub(st, n->file.stmts[i]);
+                typesub(st, n->file.stmts[i], noerr);
             popstab();
             break;
         case Ndecl:
-            settype(st, n, tyfix(st, n, type(st, n), 0));
+            settype(st, n, tyfix(st, n, type(st, n), noerr));
             if (n->decl.init)
-                typesub(st, n->decl.init);
+                typesub(st, n->decl.init, noerr);
             if (streq(declname(n), "main"))
                 if (!maincompatible(tybase(decltype(n))))
                     fatal(n, "main must be (->void) or (byte[:][:] -> void), got %s", tystr(decltype(n)));
@@ -2024,58 +2025,58 @@ static void typesub(Inferstate *st, Node *n)
         case Nblock:
             pushstab(n->block.scope);
             for (i = 0; i < n->block.nstmts; i++)
-                typesub(st, n->block.stmts[i]);
+                typesub(st, n->block.stmts[i], noerr);
             popstab();
             break;
         case Nifstmt:
-            typesub(st, n->ifstmt.cond);
-            typesub(st, n->ifstmt.iftrue);
-            typesub(st, n->ifstmt.iffalse);
+            typesub(st, n->ifstmt.cond, noerr);
+            typesub(st, n->ifstmt.iftrue, noerr);
+            typesub(st, n->ifstmt.iffalse, noerr);
             break;
         case Nloopstmt:
-            typesub(st, n->loopstmt.cond);
-            typesub(st, n->loopstmt.init);
-            typesub(st, n->loopstmt.step);
-            typesub(st, n->loopstmt.body);
+            typesub(st, n->loopstmt.cond, noerr);
+            typesub(st, n->loopstmt.init, noerr);
+            typesub(st, n->loopstmt.step, noerr);
+            typesub(st, n->loopstmt.body, noerr);
             break;
         case Niterstmt:
-            typesub(st, n->iterstmt.elt);
-            typesub(st, n->iterstmt.seq);
-            typesub(st, n->iterstmt.body);
+            typesub(st, n->iterstmt.elt, noerr);
+            typesub(st, n->iterstmt.seq, noerr);
+            typesub(st, n->iterstmt.body, noerr);
             break;
         case Nmatchstmt:
-            typesub(st, n->matchstmt.val);
+            typesub(st, n->matchstmt.val, noerr);
             for (i = 0; i < n->matchstmt.nmatches; i++) {
-                typesub(st, n->matchstmt.matches[i]);
+                typesub(st, n->matchstmt.matches[i], noerr);
             }
             break;
         case Nmatch:
-            typesub(st, n->match.pat);
-            typesub(st, n->match.block);
+            typesub(st, n->match.pat, noerr);
+            typesub(st, n->match.block, noerr);
             break;
         case Nexpr:
             settype(st, n, tyfix(st, n, type(st, n), 0));
-            typesub(st, n->expr.idx);
+            typesub(st, n->expr.idx, noerr);
             if (exprop(n) == Ocast && exprop(n->expr.args[0]) == Olit && n->expr.args[0]->expr.args[0]->lit.littype == Lint) {
                 settype(st, n->expr.args[0], exprtype(n));
                 settype(st, n->expr.args[0]->expr.args[0], exprtype(n));
             }
             for (i = 0; i < n->expr.nargs; i++)
-                typesub(st, n->expr.args[i]);
+                typesub(st, n->expr.args[i], noerr);
             break;
         case Nfunc:
             pushstab(n->func.scope);
             settype(st, n, tyfix(st, n, n->func.type, 0));
             for (i = 0; i < n->func.nargs; i++)
-                typesub(st, n->func.args[i]);
-            typesub(st, n->func.body);
+                typesub(st, n->func.args[i], noerr);
+            typesub(st, n->func.body, noerr);
             popstab();
             break;
         case Nlit:
             settype(st, n, tyfix(st, n, type(st, n), 0));
             switch (n->lit.littype) {
                 case Lfunc:
-                    typesub(st, n->lit.fnval); break;
+                    typesub(st, n->lit.fnval, noerr); break;
                 case Lint:
                     checkrange(st, n);
                 default:        break;
@@ -2305,7 +2306,7 @@ static void specialize(Inferstate *st, Node *f)
 
         /* we need to sub in default types in the specialization, so call
          * typesub on the specialized function */
-        typesub(st, d);
+        typesub(st, d, 0);
         popstab();
     }
 }
@@ -2348,7 +2349,7 @@ void infer(Node *file)
     postcheck(&st, file);
 
     /* and replace type vars with actual types */
-    typesub(&st, file);
+    typesub(&st, file, 0);
     specialize(&st, file);
 }
 

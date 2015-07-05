@@ -60,7 +60,7 @@ O(Odead,        0,      OTmisc, "DEAD")         /* dead code */
 O(Oundef,       0,      OTmisc, "UNDEF")        /* undefined var */
 O(Odef,         0,      OTmisc, "DEF")          /* defined var */
 O(Ocjmp,	1,	OTmisc, "CJMP")         /* conditional jump */
-O(Ojtab,	1,	OTmisc, "JTAB")		/* jump table */
+O(Ovjmp,	1,	OTmisc, "VJMP")		/* variable arg list jump */
 O(Oset,	        1,	OTbin,  "=")            /* store to var */
 O(Osllen,	1,	OTpre,  "SLLEN")        /* size of slice */
 O(Oslbase,	1,	OTpre,  "SLBASE")       /* base of sice */
