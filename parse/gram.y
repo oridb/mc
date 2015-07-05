@@ -22,7 +22,7 @@ void yyerror(const char *s);
 int yylex(void);
 
 static Op binop(int toktype);
-static Node *mkpseudodecl(Type *t);
+static Node *mkpseudodecl(Srcloc l, Type *t);
 static void installucons(Stab *st, Type *t);
 static void addtrait(Type *t, char *str);
 static void setattrs(Node *dcl, char **attrs, size_t nattrs);
@@ -143,7 +143,7 @@ static void setupinit(Node *n);
 %type <node> littok literal asnexpr lorexpr landexpr borexpr
 %type <node> bandexpr cmpexpr unionexpr addexpr mulexpr shiftexpr prefixexpr postfixexpr
 %type <node> funclit seqlit tuplit name block stmt label use
-%type <node> declbody declcore typedeclcore structent arrayelt structelt tuphead
+%type <node> fnparam declbody declcore typedeclcore structent arrayelt structelt tuphead
 %type <node> ifstmt forstmt whilestmt matchstmt elifs optexprln optexpr
 %type <node> match
 %type <node> castexpr
@@ -715,7 +715,7 @@ atomicexpr
         | Toparen expr Tcparen
             {$$ = $2;}
         | Tsizeof Toparen type Tcparen
-            {$$ = mkexpr($1->loc, Osize, mkpseudodecl($3), NULL);}
+            {$$ = mkexpr($1->loc, Osize, mkpseudodecl($1->loc, $3), NULL);}
         ;
 
 tupbody : tuphead tuprest
@@ -761,13 +761,18 @@ funclit : Tobrace params Tendln blkbody Tcbrace
             {$$ = mkfunc($1->loc, $2.nl, $2.nn, $4, $6);}
         ;
 
-params  : declcore {
+params  : fnparam {
                 $$.nl = NULL;
                 $$.nn = 0;
                 lappend(&$$.nl, &$$.nn, $1);
             }
-        | params Tcomma declcore {lappend(&$$.nl, &$$.nn, $3);}
+        | params Tcomma fnparam {lappend(&$$.nl, &$$.nn, $3);}
         | /* empty */ {$$.nl = NULL; $$.nn = 0;}
+        ;
+
+fnparam : declcore {$$ = $1;}
+        | Tgap { $$ = mkpseudodecl($1->loc, mktyvar($1->loc)); }
+        | Tgap Tcolon type { $$ = mkpseudodecl($1->loc, $3); }
         ;
 
 seqlit  : Tosqbrac arrayelts optcomma Tcsqbrac
@@ -954,14 +959,11 @@ static void addtrait(Type *t, char *str)
     lfatal(t->loc, "Constraint %s does not exist", str);
 }
 
-static Node *mkpseudodecl(Type *t)
+static Node *mkpseudodecl(Srcloc l, Type *t)
 {
     static int nextpseudoid;
     char buf[128];
-    Srcloc l;
 
-    l.line = -1;
-    l.file = 0;
     snprintf(buf, 128, ".pdecl%d", nextpseudoid++);
     return mkdecl(l, mkname(l, buf), t);
 }
