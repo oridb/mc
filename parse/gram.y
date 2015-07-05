@@ -110,6 +110,7 @@ static void setupinit(Node *n);
 %token<tok> Texport  /* export */
 %token<tok> Tprotect /* protect */
 
+%token<tok> Tgap     /* _ */
 %token<tok> Tellipsis/* ... */
 %token<tok> Tendln   /* ; or \n */
 %token<tok> Tendblk  /* ;; */
@@ -708,6 +709,8 @@ arglist : asnexpr
 atomicexpr
         : Tident
             {$$ = mkexpr($1->loc, Ovar, mkname($1->loc, $1->id), NULL);}
+        | Tgap
+            {$$ = mkexpr($1->loc, Ogap, NULL);}
         | literal
         | Toparen expr Tcparen
             {$$ = $2;}

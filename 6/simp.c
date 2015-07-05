@@ -545,6 +545,9 @@ static void matchpattern(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, N
             jmp(s, iftrue);
             return;
         }
+    } else if (exprop(pat) == Ogap) {
+        jmp(s, iftrue);
+        return;
     }
     switch (t->type) {
         /* Never supported */
@@ -830,6 +833,7 @@ static Node *lval(Simp *s, Node *n)
         case Ostruct:   r = rval(s, n, NULL); break;
         case Oucon:     r = rval(s, n, NULL); break;
         case Oarr:      r = rval(s, n, NULL); break;
+        case Ogap:      r = temp(s, n); break;
         default:
             fatal(n, "%s cannot be an lvalue", opstr[exprop(n)]);
             break;
@@ -1454,6 +1458,9 @@ static Node *rval(Simp *s, Node *n, Node *dst)
             break;
         case Ovar:
             r = n;
+            break;
+        case Ogap:
+            fatal(n, "'_' may not be an rvalue");
             break;
         case Oret:
             if (s->isbigret) {

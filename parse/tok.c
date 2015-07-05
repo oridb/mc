@@ -163,6 +163,7 @@ static int kwd(char *s)
 {
     static const struct {char* kw; int tt;} kwmap[] = {
         {"$noret",      Tattr},
+        {"_",           Tgap},
         {"break",       Tbreak},
         {"castto",      Tcast},
         {"const",       Tconst},

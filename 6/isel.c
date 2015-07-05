@@ -544,6 +544,7 @@ Loc *selexpr(Isel *s, Node *n)
     Loc *edx, *cl; /* x86 wants some hard-coded regs */
     Node **args;
     size_t al;
+    Op op;
 
     args = n->expr.args;
     edx = locphysreg(Redx);
@@ -698,8 +699,13 @@ Loc *selexpr(Isel *s, Node *n)
             die("Unimplemented op %s", opstr[exprop(n)]);
             break;
         case Oset:
-            assert(exprop(args[0]) == Ovar || exprop(args[0]) == Oderef);
+            op = exprop(args[0]);
+            assert(op == Ovar || op == Oderef || op == Ogap);
             assert(!stacknode(args[0]));
+
+            if (op == Ogap)
+                break;
+
             b = selexpr(s, args[1]);
             if (exprop(args[0]) == Oderef)
                 a = memloc(s, args[0]->expr.args[0], mode(n));
@@ -739,6 +745,8 @@ Loc *selexpr(Isel *s, Node *n)
             } else {
                 r = loc(s, n);
             }
+            break;
+        case Ogap:
             break;
         case Oblit:
             a = selexpr(s, args[0]);

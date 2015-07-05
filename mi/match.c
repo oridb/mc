@@ -107,7 +107,8 @@ static Dtree *addwild(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *ncap)
         return t->any;
     t->any = mkdtree();
     t->any->patexpr = pat;
-    lappend(cap, ncap, pat);
+    if (cap && ncap)
+        lappend(cap, ncap, pat);
     return t->any;
 }
 
@@ -227,6 +228,9 @@ static Dtree *addpat(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *ncap)
             break;
         case Ostruct:
             ret = addstruct(t, pat, val, cap, ncap);
+            break;
+        case Ogap:
+            ret = addwild(t, pat, val, NULL, NULL);
             break;
         default:
             ret = NULL;

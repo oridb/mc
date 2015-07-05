@@ -1215,6 +1215,9 @@ static void inferpat(Inferstate *st, Node **np, Node *val, Node ***bind, size_t 
             settype(st, n, t);
             n->expr.did = s->decl.did;
             break;
+        case Ogap:
+            infernode(st, np, NULL, NULL);
+            break;
         default:
             fatal(n, "invalid pattern");
             break;
@@ -1433,6 +1436,11 @@ static void inferexpr(Inferstate *st, Node **np, Type *ret, int *sawret)
             if (!s)
                 fatal(n, "undeclared var %s", ctxstr(st, args[0]));
             initvar(st, n, s);
+            break;
+        case Ogap: /* _ -> @a */
+            if (n->expr.type)
+                return;
+            n->expr.type = mktyvar(n->loc);
             break;
         case Oucon:
             inferucon(st, n, &n->expr.isconst);
