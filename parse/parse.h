@@ -4,7 +4,7 @@
 #	define FATAL
 #endif
 
-#define Abiversion 3
+#define Abiversion 4
 
 typedef uint8_t         byte;
 typedef unsigned int    uint;
@@ -135,7 +135,6 @@ struct Stab {
      * types and values are in separate namespaces. */
     Htab *dcl;
     Htab *closure;      /* the syms we close over */
-    Htab *ns;           /* namespaces */
     Htab *ty;           /* types */
     Htab *tr;           /* traits */
     Htab *uc;           /* union constructors */
@@ -223,6 +222,7 @@ struct Node {
             size_t ninit;
             Node *localinit;    /* and the local one, if any */
             Stab  *globls;      /* global symtab */
+            Htab *ns;           /* namespaces */
         } file;
 
         struct {
@@ -478,12 +478,10 @@ void puttrait(Stab *st, Node *n, Trait *trait);
 void putimpl(Stab *st, Node *impl);
 void updatetype(Stab *st, Node *n, Type *t);
 void putdcl(Stab *st, Node *dcl);
-void putnsdcl(Node *dcl);
 void forcedcl(Stab *st, Node *dcl);
 void putucon(Stab *st, Ucon *uc);
 
-Stab *getns(Stab *st, Node *n);
-Stab *getns_str(Stab *st, char *n);
+Stab *getns(Node *file, char *n);
 Node *getdcl(Stab *st, Node *n);
 Type *gettype_l(Stab *st, Node *n);
 Type *gettype(Stab *st, Node *n);

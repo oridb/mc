@@ -67,12 +67,6 @@ static void wrstab(FILE *fd, Stab *val)
     }
     free(keys);
 
-    /* write stabs */
-    keys = htkeys(val->ns, &n);
-    wrint(fd, n);
-    for (i = 0; i < n; i++)
-        wrstab(fd, getns(val, keys[i]));
-    free(keys);
 }
 
 /* Reads a symbol table from file. The converse
@@ -99,12 +93,6 @@ static Stab *rdstab(FILE *fd)
         rdtype(fd, &ty);
         puttype(st, nm, ty);
     }
-
-    /* read stabs */
-    n = rdint(fd);
-    for (i = 0; i < n; i++)
-        putns(st, rdstab(fd));
-
     return st;
 }
 
@@ -714,7 +702,7 @@ static Stab *findstab(Stab *st, char *pkg)
             return NULL;
     }
 
-    s = getns_str(st, pkg);
+    s = getns(file, pkg);
     if (!s) {
         s = mkstab();
         s->name = strdup(pkg);

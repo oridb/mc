@@ -234,7 +234,8 @@ const scrapelibs = {dg, lib, incs
 	| `std.None:	std.fatal("library {}: could not read usefile\n", lib)
 	;;
 	match bio.getbe32(f)
-	| `std.Some 3:	/* nothing: version matches. */
+	| `std.Some 4:	/* nothing: version matches. */
+	| `std.Some 3:	std.fput(1, "library {}: warning: old usefile version\n", lib)
 	| `std.Some 2:	std.fput(1, "library {}: warning: old usefile version\n", lib)
 	| `std.Some 1:	std.fput(1, "library {}: warning: old usefile version\n", lib)
 	| `std.Some 0:	std.fput(1, "library {}: warning: old usefile version\n", lib)

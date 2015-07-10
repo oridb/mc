@@ -90,7 +90,6 @@ Stab *mkstab()
     Stab *st;
 
     st = zalloc(sizeof(Stab));
-    st->ns = mkht(strhash, streq);
     st->dcl = mkht(nsnamehash, nsnameeq);
     st->ty = mkht(nsnamehash, nsnameeq);
     st->tr = mkht(nsnamehash, nsnameeq);
@@ -186,23 +185,9 @@ Trait *gettrait(Stab *st, Node *n)
     return NULL;
 }
 
-Stab *getns_str(Stab *st, char *name)
+Stab *getns(Node *file, char *name)
 {
-    Stab *s;
-
-    do {
-        if (streq(st->name, name))
-            return st;
-        if ((s = htget(st->ns, name)))
-            return s;
-        st = st->super;
-    } while (st);
-    return NULL;
-}
-
-Stab *getns(Stab *st, Node *n)
-{
-    return getns_str(st, namestr(n));
+    return htget(file->file.ns, name);
 }
 
 static int mergedecl(Node *old, Node *new)
@@ -262,28 +247,24 @@ void forcedcl (Stab *st, Node *s) {
 
 void putdcl(Stab *st, Node *s)
 {
-    Node *old;
+    Node *name, *old;
+    Stab *ns;
 
+    name = s->decl.name;
+    if (name->name.ns) {
+        ns = getns(file, name->name.ns);
+        if (!ns) {
+            ns = mkstab();
+            updatens(ns, name->name.ns);
+            putns(file->file.globls, ns);
+        }
+        st = ns;
+    }
     old = htget(st->dcl, s->decl.name);
     if (!old)
         forcedcl(st, s);
     else if (!mergedecl(old, s))
         fatal(old, "%s already declared on %s:%d", namestr(s->decl.name), fname(s->loc), lnum(s->loc));
-}
-
-void putnsdcl(Node *dcl)
-{
-    Node *name;
-    Stab *ns;
-
-    name = dcl->decl.name;
-    ns = getns_str(file->file.globls, name->name.ns);
-    if (!ns) {
-        ns = mkstab();
-        updatens(ns, name->name.ns);
-        putns(file->file.globls, ns);
-    }
-    putdcl(ns, dcl);
 }
 
 void updatetype(Stab *st, Node *n, Type *t)
@@ -425,10 +406,10 @@ void putns(Stab *st, Stab *scope)
 {
     Stab *s;
 
-    s = getns_str(st, scope->name);
+    s = getns(file, scope->name);
     if (s)
         lfatal(Zloc, "Namespace %s already defined", st->name);
-    htput(st->ns, scope->name, scope);
+    htput(file->file.ns, scope->name, scope);
 }
 
 /*
@@ -445,6 +426,7 @@ void updatens(Stab *st, char *name)
     if (st->name)
         die("Stab %s already has namespace; Can't set to %s", st->name, name);
     st->name = strdup(name);
+    htput(file->file.ns, st->name, st);
     k = htkeys(st->dcl, &nk);
     for (i = 0; i < nk; i++)
         setns(k[i], name);
@@ -457,9 +439,5 @@ void updatens(Stab *st, char *name)
         if (td->type && (td->type->type == Tyname || td->type->type == Tygeneric))
             setns(td->type->name, name);
     }
-    free(k);
-    k = htkeys(st->ns, &nk);
-    for (i = 0; i < nk; i++)
-        setns(k[i], name);
     free(k);
 }

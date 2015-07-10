@@ -56,7 +56,7 @@ static void outstab(Stab *st, FILE *fd, int depth)
     char *ty;
     Type *t;
 
-    findentf(fd, depth, "Stab %p (super = %p, name=\"%s\")\n", st, st->super, st->ns);
+    findentf(fd, depth, "Stab %p (super = %p, name=\"%s\")\n", st, st->super, st->name);
     if (!st)
         return;
 
@@ -82,14 +82,6 @@ static void outstab(Stab *st, FILE *fd, int depth)
         findentf(fd, depth, "S ");
         /* already indented */
         outsym(getdcl(st, k[i]), fd, 0);
-    }
-    free(k);
-
-    /* dump sub-namespaces */
-    k = htkeys(st->ns, &n);
-    for (i = 0; i < n; i++) {
-        findentf(fd, depth + 1, "N  %s\n", (char*)k[i]);
-        outstab(getns_str(st, k[i]), fd, depth + 1);
     }
     free(k);
 }

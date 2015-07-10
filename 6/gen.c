@@ -17,8 +17,8 @@
 
 void fillglobls(Stab *st, Htab *globls)
 {
-    void **k;
-    size_t i, nk;
+    size_t i, j, nk, nns;
+    void **k, **ns;
     Stab *stab;
     Node *s;
 
@@ -29,13 +29,17 @@ void fillglobls(Stab *st, Htab *globls)
     }
     free(k);
 
-    k = htkeys(st->ns, &nk);
-    for (i = 0; i < nk; i++) {
-        stab = htget(st->ns, k[i]);
-        fillglobls(stab, globls);
+    ns = htkeys(file->file.ns, &nns);
+    for (j = 0; j < nns; j++) {
+        stab = htget(file->file.ns, ns[j]);
+        k = htkeys(stab->dcl, &nk);
+        for (i = 0; i < nk; i++) {
+            s = htget(stab->dcl, k[i]);
+            htput(globls, s, asmname(s));
+        }
+        free(k);
     }
-
-    free(k);
+    free(ns);
 }
 
 static int islocal(Node *dcl)

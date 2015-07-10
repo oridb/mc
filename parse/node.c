@@ -62,6 +62,7 @@ Node *mkfile(char *name)
     Node *n;
 
     n = mknode(Zloc, Nfile);
+    n->file.ns = mkht(strhash, streq);
     lappend(&n->file.files, &n->file.nfiles, strdup(name));
     return n;
 }

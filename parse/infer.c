@@ -446,7 +446,7 @@ Type *tysearch(Type *t)
         if (!tytab[t->tid] && t->type == Tyunres) {
             ns = curstab();
             if (t->name->name.ns) {
-                ns = getns_str(ns, t->name->name.ns);
+                ns = getns(file, t->name->name.ns);
             }
             if (!ns)
                 fatal(t->name, "could not resolve namespace \"%s\"", t->name->name.ns);
@@ -585,7 +585,7 @@ static Ucon *uconresolve(Inferstate *st, Node *n)
     args = n->expr.args;
     ns = curstab();
     if (args[0]->name.ns)
-        ns = getns_str(ns, args[0]->name.ns);
+        ns = getns(file, args[0]->name.ns);
     if (!ns)
         fatal(n, "no namespace %s\n", args[0]->name.ns);
     uc = getucon(ns, args[0]);
@@ -1073,7 +1073,7 @@ static Node *checkns(Inferstate *st, Node *n, Node **ret)
     if (args[0]->type != Nexpr || exprop(args[0]) != Ovar)
         return n;
     name = args[0]->expr.args[0];
-    stab = getns(curstab(), name);
+    stab = getns(file, namestr(name));
     if (!stab)
         return n;
 
@@ -1196,7 +1196,7 @@ static void inferpat(Inferstate *st, Node **np, Node *val, Node ***bind, size_t 
         case Ovar:
             ns = curstab();
             if (args[0]->name.ns)
-                ns = getns_str(ns, args[0]->name.ns);
+                ns = getns(file, args[0]->name.ns);
             s = getdcl(ns, args[0]);
             if (s && !s->decl.ishidden) {
                 if (s->decl.isgeneric)

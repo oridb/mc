@@ -164,7 +164,7 @@ static void fixup(Node *n)
             if (n->expr.op == Ovar) {
                 ns = curstab();
                 if (n->expr.args[0]->name.ns)
-                    ns = getns_str(ns, n->expr.args[0]->name.ns);
+                    ns = getns(file, n->expr.args[0]->name.ns);
                 if (!ns)
                     fatal(n, "No namespace %s\n", n->expr.args[0]->name.ns);
                 d = getdcl(ns, n->expr.args[0]);
@@ -393,7 +393,7 @@ Node *specializedcl(Node *g, Type *to, Node **name)
     n = genericname(g, to);
     *name = n;
     if (n->name.ns)
-        st = getns_str(curstab(), n->name.ns);
+        st = getns(file, n->name.ns);
     else
         st = file->file.globls;
     if (!st)
@@ -453,7 +453,7 @@ static Node *initdecl(Node *file, Node *name, Type *tyvoidfn)
         dcl->decl.isconst = 1;
         dcl->decl.isinit = 1;
         dcl->decl.isextern = 1;
-        putnsdcl(dcl);
+        putdcl(file->file.globls, dcl);
     }
     return dcl;
 }
