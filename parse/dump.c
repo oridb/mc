@@ -63,7 +63,7 @@ static void outstab(Stab *st, FILE *fd, int depth)
     /* print types */
     k = htkeys(st->ty, &n);
     for (i = 0; i < n; i++) {
-        findentf(fd, depth, "T ");
+        findentf(fd, depth + 1, "T ");
         /* already indented */
         outname(k[i], fd); 
         t = gettype(st, k[i]);
@@ -79,7 +79,7 @@ static void outstab(Stab *st, FILE *fd, int depth)
     /* dump declarations */
     k = htkeys(st->dcl, &n);
     for (i = 0; i < n; i++) {
-        findentf(fd, depth, "S ");
+        findentf(fd, depth + 1, "S ");
         /* already indented */
         outsym(getdcl(st, k[i]), fd, 0);
     }
@@ -89,6 +89,18 @@ static void outstab(Stab *st, FILE *fd, int depth)
 void dumpstab(Stab *st, FILE *fd)
 {
     outstab(st, fd, 0);
+}
+
+void dumpfilestabs(Node *file, int depth, FILE *fd)
+{
+    size_t nk, i;
+    void **k;
+
+    k = htkeys(file->file.ns, &nk);
+    for (i = 0; i < nk; i++) {
+        outstab(htget(file->file.ns, k[i]), fd, depth);
+    }
+    free(k);
 }
 
 /* Outputs a node in indented tree form. This is
@@ -110,8 +122,7 @@ static void outnode(Node *n, FILE *fd, int depth)
     switch(n->type) {
         case Nfile:
             fprintf(fd, "(name = %s)\n", n->file.files[0]);
-            findentf(fd, depth + 1, "Globls:\n");
-            outstab(n->file.globls, fd, depth + 2);
+            dumpfilestabs(file, depth + 1, fd);
             for (i = 0; i < n->file.nuses; i++)
                 outnode(n->file.uses[i], fd, depth + 1);
             for (i = 0; i < n->file.nstmts; i++)
