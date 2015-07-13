@@ -195,7 +195,9 @@ static void fixup(Node *n)
             fixup(n->loopstmt.body);
             break;
         case Niterstmt:
+            pushstab(n->iterstmt.body->block.scope);
             fixup(n->iterstmt.elt);
+            popstab();
             fixup(n->iterstmt.seq);
             fixup(n->iterstmt.body);
             break;
