@@ -459,11 +459,11 @@ static int fmtstruct(char *buf, size_t len, Type *t)
 
     p = buf;
     end = p + len;
-    p += snprintf(p, end - p, "struct ");
+    p += snprintf(p, end - p, "struct\n");
     for (i = 0; i < t->nmemb; i++) {
         name = declname(t->sdecls[i]);
         ty = tystr(decltype(t->sdecls[i]));
-        p += snprintf(p, end - p, "%s:%s; ", name, ty);
+        p += snprintf(p, end - p, "\t%s:%s\n ", name, ty);
         free(ty);
     }
     p += snprintf(p, end - p, ";;");
@@ -478,15 +478,15 @@ static int fmtunion(char *buf, size_t len, Type *t)
 
     p = buf;
     end = p + len;
-    p += snprintf(p, end - p, "union ");
+    p += snprintf(p, end - p, "union\n");
     for (i = 0; i < t->nmemb; i++) {
         name = namestr(t->udecls[i]->name);
         if (t->udecls[i]->etype) {
             ty = tystr(t->udecls[i]->etype);
-            p += snprintf(p, end - p, "`%s %s; ", name, ty);
+            p += snprintf(p, end - p, "\t`%s %s\n", name, ty);
             free(ty);
         } else {
-            p += snprintf(p, end - p, "`%s; ", name);
+            p += snprintf(p, end - p, "\t`%s\n", name);
         }
     }
     p += snprintf(p, end - p, ";;");

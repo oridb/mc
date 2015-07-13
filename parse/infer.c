@@ -895,8 +895,17 @@ static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
     /* if the tyrank of a is 0 (ie, a raw tyvar), just unify.
      * Otherwise, match up subtypes. */
     if ((a->type == b->type || idxhacked(a, b)) && tyrank(a) != 0) {
-        if (a->type == Tyname && !nameeq(a->name, b->name))
-            typeerror(st, a, b, ctx, NULL);
+        if (hasparam(a) && hasparam(b)) {
+            /* Only Tygeneric and Tyname should be able to unify. And they
+             * should have the same names for this to be true. */
+            if (!nameeq(a->name, b->name))
+                typeerror(st, a, b, ctx, NULL);
+            if (a->narg != b->narg)
+                typeerror(st, a, b, ctx, "Incompatible parameter lists");
+            for (i = 0; i < a->narg; i++)
+                unify(st, ctx, a->arg[i], b->arg[i]);
+            r = b;
+        }
         if (a->nsub != b->nsub) {
             verifytraits(st, ctx, a, b);
             if (tybase(a)->type == Tyfunc)
@@ -906,16 +915,6 @@ static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
         }
         for (i = 0; i < b->nsub; i++)
             unify(st, ctx, a->sub[i], b->sub[i]);
-        r = b;
-    } else if (hasparam(a) && hasparam(b)) {
-        /* Only Tygeneric and Tyname should be able to unify. And they
-         * should have the same names for this to be true. */
-        if (!nameeq(a->name, b->name))
-            typeerror(st, a, b, ctx, NULL);
-        if (a->narg != b->narg)
-            typeerror(st, a, b, ctx, "Incompatible parameter lists");
-        for (i = 0; i < a->narg; i++)
-            unify(st, ctx, a->arg[i], b->arg[i]);
         r = b;
     } else if (a->type != Tyvar) {
         typeerror(st, a, b, ctx, NULL);
