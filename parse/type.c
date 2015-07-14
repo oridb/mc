@@ -758,6 +758,8 @@ int tyeq(void *a, void *b)
     Bitset *bs;
     int eq;
 
+    if (a == b)
+        return 1;
     bs = mkbs();
     eq = tyeq_rec(a, b, bs);
     bsfree(bs);

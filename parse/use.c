@@ -750,6 +750,8 @@ static void fixtypemappings(Stab *st)
                 if (strcmp(tystr(old), tystr(t)))
                     printf("deduping %s -> %s\n", tystr(old), tystr(t));
             }
+            if (t != old && strcmp(tystr(old), tystr(t)))
+                printf("should have deduped %s -> %s\n", tystr(old), tystr(t));
             *typefixdest[i] = t;
         }
     }
