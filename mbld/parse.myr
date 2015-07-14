@@ -3,7 +3,7 @@ use std
 use "types.use"
 use "util.use"
 use "opts.use"
-use "fsel.use"
+use "syssel.use"
 
 pkg bld =
 	const load	: (b : build# -> bool)
@@ -20,23 +20,35 @@ type parser = struct
 
 	/* extracted data for further parsing */
 	subdirs	: byte[:][:]
+	targsel	: syssel((byte[:], targ))#
 ;;
 
 const load = {b
-	var ok
-	ok = loadall(b, b.bldfile, "")
+	var ok, sel
+	var targs
+
+	sel = mksyssel("mbld", 0, "mbld")
+	ok = loadall(b, b.bldfile, "", sel)
+
+	targs = sysselfin(sel)
+	for (name, targ) in targs
+		b.all = std.slpush(b.all, name)
+		std.htput(b.targs, name, targ)
+	;;
+	std.slfree(targs)
+
 	if ok
 		ok = sortdeps(b)
 	;;
 	-> ok
 }
 
-const loadall = {b, path, dir
+const loadall = {b, path, dir, sel
 	var p : parser#
 	var subbld, subproj, ok
 	var curbase
 
-	p = mkparser(path, dir, b.basedir)
+	p = mkparser(path, dir, b.basedir, sel)
 	ok = bld.parse(b, p, "")
 	for sub in p.subdirs
 		subbld = std.pathcat(sub, "bld.sub")
@@ -46,7 +58,7 @@ const loadall = {b, path, dir
 		build root.
 		*/
 		if std.fexists(subbld)
-			loadall(b, subbld, sub)
+			loadall(b, subbld, sub, sel)
 		/*
 		bld.proj reroots the project -- @/
 		is relative to the most recent bld.proj
@@ -55,7 +67,7 @@ const loadall = {b, path, dir
 		elif std.fexists(sub)
 			curbase = b.basedir
 			b.basedir = sub
-			loadall(b, subproj, sub)
+			loadall(b, subproj, sub, sel)
 			b.basedir = curbase
 		else
 			std.fatal("could not open {} or {} \n", subbld, subproj)
@@ -65,6 +77,24 @@ const loadall = {b, path, dir
 	;;
 	freeparser(p)
 	-> ok
+}
+
+const mkparser = {path, dir, basedir, sel
+	var p
+
+	p = std.mk([
+		.line = 1,
+		.fname = std.sldup(path),
+		.fdir = std.sldup(dir),
+		.basedir = std.sldup(basedir),
+		.targsel = sel,
+	])
+	match std.slurp(path)
+	| `std.Ok d:	p.data = d
+	| `std.Fail _:	std.fatal("could not open '{}'\n", path)
+	;;
+	p.rest = p.data
+	-> p
 }
 
 const sortdeps = {b
@@ -109,22 +139,6 @@ const getdeps = {targ
 	| `Lib t:	-> t.libdeps
 	| _:	std.fatal("depending on non-library target")
 	;;
-}
-
-const mkparser = {path, dir, basedir
-	var p
-
-	p = std.zalloc()
-	p.line = 1
-	p.fname = std.sldup(path)
-	p.fdir = std.sldup(dir)
-	p.basedir = std.sldup(basedir)
-	match std.slurp(path)
-	| `std.Ok d:	p.data = d
-	| `std.Fail _:	std.fatal("could not open '{}'\n", path)
-	;;
-	p.rest = p.data
-	-> p
 }
 
 const freeparser = {p
@@ -181,7 +195,7 @@ const target = {b, p
 const bintarget = {b, p
 	var t
 	t = myrtarget(p, "bin")
-	addtarg(p, b, t.name, `Bin t)
+	addtarg(p, b, t.name, t.systags, `Bin t)
 }
 
 /* libtarget: myrtarget */
@@ -189,14 +203,14 @@ const libtarget = {b, p
 	var t
 	t = myrtarget(p, "lib")
 	t.islib = true
-	addtarg(p, b, t.name, `Lib t)
+	addtarg(p, b, t.name, t.systags, `Lib t)
 }
 
 /* testtarget: myrtarget */
 const testtarget = {b, p
 	var t
 	t = myrtarget(p, "test")
-	addtarg(p, b, t.name, `Test t)
+	addtarg(p, b, t.name, t.systags, `Test t)
 }
 
 /* mantarget: anontarget */
@@ -207,7 +221,7 @@ const mantarget = {b, p
 		.dir=std.sldup(p.fdir),
 		.pages=anontarget(p, "man")
 	])
-	addtarg(p, b, "__man__", `Man targ)
+	addtarg(p, b, "__man__", [][:], `Man targ)
 }
 
 /* subtarget : anontarget */
@@ -263,11 +277,12 @@ const cmdtarget = {b, p, cmd, iscmd
 
 	durable = false
 	deplist = [][:]
+	systags = [][:]
 	for elt in attrs
 		match elt
 		| ("durable", ""):	durable = true
 		| ("dep", depname):	deplist = std.slpush(deplist, depname)
-		| ("sys", tags):	systags = std.slpush(systags, tags)
+		| ("sys", tag):	systags = std.slpush(systags, tag)
 		| (attr, ""):
 			failparse(p, "attribute {} not valid on {} targets\n", attr, cmd)
 		| (attr, val):
@@ -285,10 +300,10 @@ const cmdtarget = {b, p, cmd, iscmd
 	])
 	for o in outlist
 		if iscmd
-			addtarg(p, b, o, `Cmd gt)
+			addtarg(p, b, o, gt.systags, `Cmd gt)
 		else
 			std.htput(b.gensrc, o, gt)
-			addtarg(p, b, o, `Gen gt)
+			addtarg(p, b, o, gt.systags, `Gen gt)
 		;;
 	;;
 }
@@ -324,12 +339,12 @@ const myrtarget = {p, targ
 
 	match inputlist(p)
 	| `std.Some (wl, libs): 
-		fsel = mkfsel(p.fname, p.line, targ)
+		fsel = mksyssel(p.fname, p.line, targ)
 		libdeps = libs
 		for w in wl
-			fseladd(fsel, w)
+			sysseladd(fsel, w)
 		;;
-		inputs = fselfin(fsel)
+		inputs = sysselfin(fsel)
 		std.slfree(wl)
 	| `std.None: failparse(p, "expected list of file names after '{} {}'\n", targ, name)
 	;;
@@ -343,13 +358,14 @@ const myrtarget = {p, targ
 	ldscript = ""
 	runtime = ""
 	incpath = [][:]
+	systags = [][:]
 	for elt in attrs
 		match elt
 		| ("ldscript", lds):	ldscript = std.sldup(lds)
 		| ("runtime", rt):	runtime = std.sldup(rt)
 		| ("inc", path):	incpath = std.slpush(incpath, std.sldup(path))
 		| ("noinst", ""):	inst = false
-		| ("sys", tags):	systags = std.slpush(systags, tags)
+		| ("sys", tag):	systags = std.slpush(systags, tag)
 		| (invalid, _):
 			std.fatal("{}: got invalid attr '{}'\n", targ, invalid)
 		;;
@@ -591,15 +607,11 @@ const getc = {p
 	-> c
 }
 
-const addtarg = {p, b, name, targ
+const addtarg = {p, b, name, systags, targ
 	var tn
 
 	tn = std.fmt("{}:{}", p.fdir, name)
-	if std.hthas(b.targs, tn)
-		failparse(p, "duplicate target {}\n", tn)
-	;;
-	b.all = std.slpush(b.all, tn)
-	std.htput(b.targs, tn, targ)
+	sysseladdlist(p.targsel, tn, systags, (tn, targ))
 }
 
 const libpath = {p, libpath

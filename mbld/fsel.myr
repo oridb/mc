@@ -7,56 +7,58 @@ pkg bld =
 		file	: byte[:]
 		line	: int
 		targ	: byte[:]
-		sysattrs	: std.htab(byte[:], bool)#
+
+		_sysattrs	: std.htab(byte[:], bool)#
 		_match	: std.htab(byte[:], int)#
 		_best	: std.htab(byte[:], @a)#
 	;;
 
-	const mkfsel	: (f : byte[:], line : int, targ : byte[:] -> syssel(byte[:])#)
-	const fseladd	: (fsel : syssel(byte[:])#, file : byte[:] -> void)
-	const fselfin	: (fsel : syssel(byte[:])# -> byte[:][:])
+	generic mksyssel	: (f : byte[:], line : int, targ : byte[:] -> syssel(byte[:])#)
+	generic sysseladd	: (fsel : syssel(byte[:])#, file : byte[:] -> void)
+	generic sysselfin	: (fsel : syssel(byte[:])# -> byte[:][:])
 ;;
 
-const mkfsel = {file, line, targ
+generic mksyssel = {file, line, targ
 	var fsel
 
 	fsel = std.mk([
 		.file = file,
 		.line = line,
 		.targ = targ,
+
 		._match = std.mkht(std.strhash, std.streq),
 		._best = std.mkht(std.strhash, std.streq),
-		.sysattrs = std.mkht(std.strhash, std.streq),
+		._sysattrs = std.mkht(std.strhash, std.streq),
 	])
-	addsysattrs(fsel.sysattrs)
+	addsysattrs(fsel._sysattrs)
 	-> fsel
 }
 
-const fseladd = {fsel, f
+generic sysseladd = {fsel, f
 	var basename, attrs
 	var nmatch, curbest
-	var attrlist
+	var attrlist, i
 
 	match std.strfind(f, "+")
-	| `std.Some i:
-		basename = f[:i]
-		match std.strrfind(f[i+1:], ".")
-		| `std.Some j:	attrs = f[i+1:][:j]
+	| `std.Some idx:
+		basename = f[:idx]
+		match std.strrfind(f[idx+1:], ".")
+		| `std.Some j:	attrs = f[idx+1:][:j]
 		| `std.None:	std.fatal("unrecognized type for file {}\n", f)
 		;;
 	| `std.None:
 		match std.strrfind(f, ".")
 		| `std.None:	std.fatal("unrecognized type for file {}\n", f)
-		| `std.Some i:
-			basename = f[:i]
+		| `std.Some idx:
+			basename = f[:idx]
 			attrs = ""
 		;;
 	;;
 
 	nmatch = 0
 	attrlist = std.strsplit(attrs, "-")
-	for a in attrlist
-		if std.hthas(fsel.sysattrs, a)
+	for i = 0; i < attrlist.len; i++
+		if std.hthas(fsel._sysattrs, attrlist[i])
 			nmatch++
 		else
 			nmatch = -1
@@ -71,7 +73,7 @@ const fseladd = {fsel, f
 	;;
 }
 
-const fselfin = {fsel
+generic sysselfin = {fsel
 	var keys, nmatch, ret
 
 	keys = std.htkeys(fsel._match)
@@ -85,7 +87,7 @@ const fselfin = {fsel
 	;;
 	std.htfree(fsel._match)
 	std.htfree(fsel._best)
-	std.htfree(fsel.sysattrs)
+	std.htfree(fsel._sysattrs)
 	-> ret
 }
 
