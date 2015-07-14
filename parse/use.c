@@ -726,6 +726,7 @@ static void fixtypemappings(Stab *st)
     size_t i;
     Type *t, *old;
 
+
     /*
      * merge duplicate definitions.
      * This allows us to compare named types by id, instead
@@ -736,11 +737,23 @@ static void fixtypemappings(Stab *st)
         t = htget(tidmap, itop(typefixid[i]));
         if (!t)
             die("Unable to find type for id %zd\n", typefixid[i]);
-        if ((t->type == Tyname || t->type == Tygeneric) && !t->issynth) {
-            t = htget(tydedup, t);
-        }
         *typefixdest[i] = t;
     }
+    for (i = 0; i < ntypefixdest; i++) {
+        old = *typefixdest[i];
+        if (old->type == Tyname || old->type == Tygeneric) {
+            t = htget(tydedup, old);
+            if (!t) {
+                t = old;
+                htput(tydedup, old, old);
+            } else {
+                if (strcmp(tystr(old), tystr(t)))
+                    printf("deduping %s -> %s\n", tystr(old), tystr(t));
+            }
+            *typefixdest[i] = t;
+        }
+    }
+
     /* check for duplicate type definitions */
     for (i = 0; i < ntypefixdest; i++) {
         t = htget(tidmap, itop(typefixid[i]));
@@ -750,6 +763,7 @@ static void fixtypemappings(Stab *st)
         if (old && !tyeq(t, old) && !isspecialization(t, old))
             lfatal(t->loc, "Duplicate definition of type %s on %s:%d", tystr(old), file->file.files[old->loc.file], old->loc.line);
     }
+    for (i = 0; i < ntypefixdest; i++) 
     lfree(&typefixdest, &ntypefixdest);
     lfree(&typefixid, &ntypefixid);
 }
@@ -779,23 +793,6 @@ static void fixtraitmappings(Stab *st)
     lfree(&traitfixid, &ntraitfixid);
 }
 
-ulong tdhash(void *pt)
-{
-    Type *t;
-
-    t = pt;
-    return t->type * namehash(t->name);
-}
-
-int tdeq(void *pa, void *pb)
-{
-    Type *a, *b;
-
-    a = pa;
-    b = pb;
-    return a->type == b->type && nameeq(a->name, b->name);
-}
-
 /* Usefile format:
  *     U<pkgname>
  *     T<pickled-type>
@@ -818,7 +815,7 @@ int loaduse(char *path, FILE *f, Stab *st, Vis vis)
 
     pushstab(file->file.globls);
     if (!tydedup)
-        tydedup = mkht(tdhash, tdeq);
+        tydedup = mkht(tyhash, tyeq);
     if (fgetc(f) != 'U')
         return 0;
     if (rdint(f) != Abiversion) {
@@ -903,8 +900,6 @@ foundlib:
                         ty->ishidden = 1;
                     if (!gettype(s, ty->name) && !ty->ishidden)
                         puttype(s, ty->name, ty);
-                    if (!hthas(tydedup, ty))
-                        htput(tydedup, ty, ty);
                 } else if (ty->type == Tyunion)  {
                     for (i = 0; i < ty->nmemb; i++)
                         if (!getucon(s, ty->udecls[i]->name) && !ty->udecls[i]->synth)

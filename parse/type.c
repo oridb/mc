@@ -678,27 +678,31 @@ ulong tyhash(void *ty)
     return hash;
 }
 
-int tyeq(void *t1, void *t2)
+int tyeq_rec(Type *a, Type *b, Bitset *visited)
 {
-    Type *a, *b;
     size_t i;
 
-    a = (Type *)t1;
-    b = (Type *)t2;
-    if (a == b)
-        return 1;
     if (!a || !b)
         return 0;
     if (a->type != b->type)
         return 0;
-    if (a->tid == b->tid)
-        return 1;
     if (a->narg != b->narg)
         return 0;
     if (a->nsub != b->nsub)
         return 0;
     if (a->nmemb != b->nmemb)
         return 0;
+
+    if (a == b)
+        return 1;
+    if (a->tid == b->tid)
+        return 1;
+    if (bshas(visited, a->tid) || bshas(visited, b->tid))
+        return 1;
+
+    bsput(visited, a->tid);
+    bsput(visited, b->tid);
+
     switch (a->type) {
         case Typaram:
             return streq(a->pname, b->pname);
@@ -714,7 +718,7 @@ int tyeq(void *t1, void *t2)
             for (i = 0; i < a->nmemb; i++) {
                 if (!nameeq(a->udecls[i]->name, b->udecls[i]->name))
                     return 0;
-                if (!tyeq(a->udecls[i]->etype, b->udecls[i]->etype))
+                if (!tyeq_rec(a->udecls[i]->etype, b->udecls[i]->etype, visited))
                     return 0;
             }
             break;
@@ -722,7 +726,7 @@ int tyeq(void *t1, void *t2)
             for (i = 0; i < a->nmemb; i++) {
                 if (strcmp(declname(a->sdecls[i]), declname(b->sdecls[i])) != 0)
                     return 0;
-                if (!tyeq(decltype(a->sdecls[i]), decltype(b->sdecls[i])))
+                if (!tyeq_rec(decltype(a->sdecls[i]), decltype(b->sdecls[i]), visited))
                     return 0;
             }
             break;
@@ -730,10 +734,10 @@ int tyeq(void *t1, void *t2)
             if (!nameeq(a->name, b->name))
                 return 0;
             for (i = 0; i < a->narg; i++)
-                if (!tyeq(a->arg[i], b->arg[i]))
+                if (!tyeq_rec(a->arg[i], b->arg[i], visited))
                     return 0;
             for (i = 0; i < a->nsub; i++)
-                if (!tyeq(a->sub[i], b->sub[i]))
+                if (!tyeq_rec(a->sub[i], b->sub[i], visited))
                     return 0;
             break;
         case Tyarray:
@@ -744,9 +748,20 @@ int tyeq(void *t1, void *t2)
             break;
     }
     for (i = 0; i < a->nsub; i++)
-        if (!tyeq(a->sub[i], b->sub[i]))
+        if (!tyeq_rec(a->sub[i], b->sub[i], visited))
             return 0;
     return 1;
+}
+
+int tyeq(void *a, void *b)
+{
+    Bitset *bs;
+    int eq;
+
+    bs = mkbs();
+    eq = tyeq_rec(a, b, bs);
+    bsfree(bs);
+    return eq;
 }
 
 size_t tyidfmt(char *buf, size_t sz, Type *ty)
