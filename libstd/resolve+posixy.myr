@@ -71,8 +71,12 @@ const Resolvfile = "/etc/resolv.conf"
 var hostmap	: htab(byte[:], hostinfo)#
 var search	: byte[:][:]
 var nameservers	: netaddr[:]
-var inited	: bool = false
 
+const __init__ = {
+	hostmap = mkht(strhash, streq)
+	loadhosts()
+	loadresolv()
+}
 
 const resolve = {host
 	-> resolverec(host, DnsA)
@@ -92,12 +96,6 @@ const resolverec = {host, t
 }
 
 const hostfind = {host
-	if !inited
-		hostmap = mkht(strhash, streq)
-		loadhosts()
-		loadresolv()
-		inited = true
-	;;
 	-> htget(hostmap, host)
 }
 
@@ -147,6 +145,7 @@ const addhosts = {addr, as, str
 	while true
 		match word(str)
 		| `Some (name, rest):
+			str = rest
 			if hthas(hostmap, name)
 				continue
 			;;
@@ -157,7 +156,6 @@ const addhosts = {addr, as, str
 				.addr = addr
 			]
 			htput(hostmap, name, hinf)
-			str = rest
 		| `None:
 			->
 		;;
