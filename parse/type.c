@@ -683,7 +683,7 @@ int tyeq_rec(Type *a, Type *b, Bitset *visited)
     size_t i;
 
     if (!a || !b)
-        return 0;
+        return a == b;
     if (a->type != b->type)
         return 0;
     if (a->narg != b->narg)
@@ -693,8 +693,6 @@ int tyeq_rec(Type *a, Type *b, Bitset *visited)
     if (a->nmemb != b->nmemb)
         return 0;
 
-    if (a == b)
-        return 1;
     if (a->tid == b->tid)
         return 1;
     if (bshas(visited, a->tid) || bshas(visited, b->tid))
