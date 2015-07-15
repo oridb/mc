@@ -70,18 +70,14 @@ function! GetMyrIndent(ln)
         let width = &tabstop
 
         let n_in = s:CountMatches(prevln, ln - i, inpat)
-        echo "inpat matches: " n_in
         if s:LineMatch(prevln, outalone) != 0
             let n_out = 0
         else
             let n_out = s:CountMatches(prevln, ln - i, outpat)
         endif
-        echo "outpat matches: " n_out
         let n_in += s:LineMatch(prevln, inoutalone)
-        echo "post-inoutalone in matches: " n_in
         let n_out += s:LineMatch(curln, outalone)
         let n_out += s:LineMatch(curln, inoutalone)
-        echo "post-outalone out matches: " n_out
 
         " indent escaped line endings
         if prevln =~ '\\\s*$' && getline(ln - i - 1) !~ '\\\s*$'
