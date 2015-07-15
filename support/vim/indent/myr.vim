@@ -62,47 +62,42 @@ function! GetMyrIndent(ln)
 
         let curln = getline(ln)
 
-        let inpat = ['\<if\>', '\<elif\>', '\<else\>',
-                \    '\<while\>','\<for\>', '\<match\>',
-                \    '\<struct\>', '\<union\>',
-                \    '{', '\[', '(', '^\s*|.*:', '=\s*$']
-        let outpat = ['}', ']', ')']
-        let outalone = ['\<else\>', '\<elif\>.*', ';;', '|.*',
-                    \ '].*', '}.*']
+        let inpat = ['\<if\>', '\<while\>','\<for\>', '\<match\>',
+                \    '\<struct\>', '\<union\>', '{', '\[', '(', '=\s*$']
+        let outpat = ['}', ']', ')', ';;']
+        let outalone = ['].*', ').*', '}.*', ';;']
+        let inoutalone = ['\<else\>', '\<elif\>.*', '|.*']
         let width = &tabstop
 
         let n_in = s:CountMatches(prevln, ln - i, inpat)
-        let n_out = s:CountMatches(prevln, ln - i, outpat)
+        echo "inpat matches: " n_in
+        if s:LineMatch(prevln, outalone) != 0
+            let n_out = 0
+        else
+            let n_out = s:CountMatches(prevln, ln - i, outpat)
+        endif
+        echo "outpat matches: " n_out
+        let n_in += s:LineMatch(prevln, inoutalone)
+        echo "post-inoutalone in matches: " n_in
+        let n_out += s:LineMatch(curln, outalone)
+        let n_out += s:LineMatch(curln, inoutalone)
+        echo "post-outalone out matches: " n_out
 
         " indent escaped line endings
         if prevln =~ '\\\s*$' && getline(ln - i - 1) !~ '\\\s*$'
             let n_in = n_in + 1
         endif
-
         " if we break the set of indented line endings, outdent
         if getline(ln - i - 1) =~ '\\\s*$' && getline(ln - i) !~ '\\\s*$'
             let n_out = n_out + 1
         endif
 
-        " we already outdented if we had an outalone, but since all
-        " outpats are also outalones, we don't want to double count.
-        if s:LineMatch(prevln, outalone) != 0 && n_out > 0
-            let n_out = n_out - 1
-        endif
-        let n_out = n_out + s:LineMatch(curln, outalone)
-
-        let change = 0
-        if n_in - n_out > 0
-            let change = 1
-        elseif n_in - n_out < 0
-            let change = -1
-        endif
-        let ind = ind + change * &tabstop
+        let ind = ind + (n_in - n_out) * &tabstop
     endif
     return ind
 endfunction
 
-setlocal indentkeys+=,;\|],=elif
+setlocal indentkeys+=,;\|]),=elif,=else
 setlocal indentexpr=GetMyrIndent(v:lnum)
 
 let b:did_indent = 1
