@@ -45,6 +45,15 @@ function! s:LineMatch(line, pats)
     return 0
 endfunction
 
+function s:Clamp(val, lo, hi)
+    if a:val < a:lo
+        returnn a:lo
+    elseif a:val > a:hi
+        return a:hi
+    endif
+    return a:val
+endfunction
+
 function! GetMyrIndent(ln)
     let ln = a:ln
 
@@ -88,7 +97,9 @@ function! GetMyrIndent(ln)
             let n_out = n_out + 1
         endif
 
-        let ind = ind + (n_in - n_out) * &tabstop
+        let delta = s:Clamp(n_in - n_out, -1, 1) 
+        echo "n_in: " n_in " n_out: " n_out " delta: " delta
+        let ind = ind + delta * &tabstop
     endif
     return ind
 endfunction
