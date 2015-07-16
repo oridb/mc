@@ -478,15 +478,14 @@ static Loc *gencall(Isel *s, Node *n)
     Loc *stkbump;        /* calculated stack offset */
     int argsz, argoff;
     size_t i, a;
+    Type *t;
 
     rsp = locphysreg(Rrsp);
-    if (tybase(exprtype(n))->type == Tyvoid) {
+    t = exprtype(n);
+    if (tybase(t)->type == Tyvoid || stacktype(t)) {
         retloc = NULL;
         ret = NULL;
-    } else if (stacktype(exprtype(n))) {
-        retloc = locphysreg(Rrax);
-        ret = locreg(ModeQ);
-    } else if (floattype(exprtype(n))) {
+    } else if (floattype(t)) {
         retloc = coreg(Rxmm0d, mode(n));
         ret = locreg(mode(n));
     } else {
