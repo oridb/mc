@@ -40,6 +40,8 @@ Type *tyspecialize(Type *t, Htab *tsmap, Htab *delayed)
     t = tysearch(t);
     if (hthas(tsmap, t))
         return htget(tsmap, t);
+    arg = NULL;
+    narg = 0;
     switch (t->type) {
         case Typaram:
             ret = mktyvar(t->loc);
@@ -54,8 +56,8 @@ Type *tyspecialize(Type *t, Htab *tsmap, Htab *delayed)
                 lappend(&ret->arg, &ret->narg, tyspecialize(t->gparam[i], tsmap, delayed));
             break;
         case Tyname:
-            arg = NULL;
-            narg = 0;
+            if (!hasparams(t))
+                return t;
             for (i = 0; i < t->narg; i++)
                 lappend(&arg, &narg, tyspecialize(t->arg[i], tsmap, delayed));
             ret = mktyname(t->loc, t->name, tyspecialize(t->sub[0], tsmap, delayed));
