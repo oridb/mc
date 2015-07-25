@@ -934,7 +934,7 @@ static void setupinit(Node *n)
     char name[1024];
     char *p;
 
-    snprintf(name, sizeof name, "%s$__init__", file->file.files[0]);
+    bprintf(name, sizeof name, "%s$__init__", file->file.files[0]);
     p = name;
     while (*p) {
         if (!isalnum(*p) && *p != '_')
@@ -964,7 +964,7 @@ static Node *mkpseudodecl(Srcloc l, Type *t)
     static int nextpseudoid;
     char buf[128];
 
-    snprintf(buf, 128, ".pdecl%d", nextpseudoid++);
+    bprintf(buf, 128, ".pdecl%d", nextpseudoid++);
     return mkdecl(l, mkname(l, buf), t);
 }
 

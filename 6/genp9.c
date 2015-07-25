@@ -388,10 +388,10 @@ static void gentype(FILE *fd, Type *ty)
         return;
     if (b->isglobl) {
         fprintf(fd, "GLOBL %s%s+0(SB),$%zd\n", Symprefix, b->lbl, blobsz(b));
-        snprintf(lbl, sizeof lbl, "%s%s", Symprefix, b->lbl);
+        bprintf(lbl, sizeof lbl, "%s%s", Symprefix, b->lbl);
     } else {
         fprintf(fd, "GLOBL %s%s<>+0(SB),$%zd\n", Symprefix, b->lbl, blobsz(b));
-        snprintf(lbl, sizeof lbl, "%s%s<>", Symprefix, b->lbl);
+        bprintf(lbl, sizeof lbl, "%s%s<>", Symprefix, b->lbl);
     }
     writeblob(fd, b, 0, lbl);
 }

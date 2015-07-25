@@ -301,7 +301,7 @@ static Node *gentemp(Simp *simp, Node *e, Type *ty, Node **dcl)
     static int nexttmp;
     Node *t, *r, *n;
 
-    snprintf(buf, 128, ".t%d", nexttmp++);
+    bprintf(buf, 128, ".t%d", nexttmp++);
     n = mkname(e->loc, buf);
     t = mkdecl(e->loc, n, ty);
     r = mkexpr(e->loc, Ovar, n, NULL);

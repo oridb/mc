@@ -55,15 +55,15 @@ static int nextlbl;
 char *genlocallblstr(char *buf, size_t sz)
 {
     if (asmsyntax == Plan9)
-        snprintf(buf, 128, ".L%d<>", nextlbl++);
+        bprintf(buf, 128, ".L%d<>", nextlbl++);
     else
-        snprintf(buf, 128, ".L%d", nextlbl++);
+        bprintf(buf, 128, ".L%d", nextlbl++);
     return buf;
 }
 
 char *genlblstr(char *buf, size_t sz)
 {
-    snprintf(buf, 128, ".L%d", nextlbl++);
+    bprintf(buf, 128, ".L%d", nextlbl++);
     return buf;
 }
 
@@ -96,7 +96,7 @@ char *asmname(Node *dcl)
     if (name[0] == '.')
         pf = "";
 
-    snprintf(buf, sizeof buf, "%s%s%s%s%s", pf, ns, sep, name, vis);
+    bprintf(buf, sizeof buf, "%s%s%s%s%s", pf, ns, sep, name, vis);
     return strdup(buf);
 }
 
@@ -112,15 +112,15 @@ char *tydescid(char *buf, size_t bufsz, Type *ty)
             sep = "$";
         }
         if (ty->vis == Visexport || ty->isimport)
-            snprintf(buf, bufsz, "_tydesc$%s%s%s", ns, sep, ty->name->name.name);
+            bprintf(buf, bufsz, "_tydesc$%s%s%s", ns, sep, ty->name->name.name);
         else
-            snprintf(buf, bufsz, "_tydesc$%s%s%s$%d", ns, sep, ty->name->name.name, ty->tid);
+            bprintf(buf, bufsz, "_tydesc$%s%s%s$%d", ns, sep, ty->name->name.name, ty->tid);
     } else {
         if (file->file.globls->name) {
             ns = file->file.globls->name;
             sep = "$";
         }
-        snprintf(buf, bufsz, "_tydesc%s%s$%d",sep, ns, ty->tid);
+        bprintf(buf, bufsz, "_tydesc%s%s$%d",sep, ns, ty->tid);
     }
     return buf;
 }

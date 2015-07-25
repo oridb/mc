@@ -73,9 +73,9 @@ static void ctxstrcall(char *buf, size_t sz, Inferstate *st, Node *n)
     sep = "";
 
     if (exprop(args[0]) == Ovar)
-        p += snprintf(p, end - p, "%s(", namestr(args[0]->expr.args[0]));
+        p += bprintf(p, end - p, "%s(", namestr(args[0]->expr.args[0]));
     else
-        p += snprintf(p, end - p, "<e>(");
+        p += bprintf(p, end - p, "<e>(");
     for (i = 1; i < nargs; i++) {
         et = tyfix(st, NULL, exprtype(args[i]), 1);
         if (et != NULL)
@@ -84,14 +84,14 @@ static void ctxstrcall(char *buf, size_t sz, Inferstate *st, Node *n)
             t = strdup("?");
 
         if (exprop(args[i]) == Ovar)
-            p += snprintf(p, end - p, "%s%s:%s", sep, namestr(args[0]->expr.args[0]), t);
+            p += bprintf(p, end - p, "%s%s:%s", sep, namestr(args[0]->expr.args[0]), t);
         else
-            p += snprintf(p, end - p, "%s<e%zd>:%s", sep, i, t);
+            p += bprintf(p, end - p, "%s<e%zd>:%s", sep, i, t);
         sep = ", ";
         free(t);
     }
     t = tystr(tyfix(st, NULL, exprtype(args[0])->sub[0], 1));
-    p += snprintf(p, end - p, "): %s", t);
+    p += bprintf(p, end - p, "): %s", t);
     free(t);
 }
 
@@ -128,7 +128,7 @@ static char *ctxstr(Inferstate *st, Node *n)
         case Ndecl:
             d = declname(n);
             t = nodetystr(st, n);
-            snprintf(buf, sizeof buf, "%s:%s", d, t);
+            bprintf(buf, sizeof buf, "%s:%s", d, t);
             s = strdup(buf);
             free(t);
             break;
@@ -154,47 +154,47 @@ static char *ctxstr(Inferstate *st, Node *n)
                 t3 = nodetystr(st, args[2]);
             switch (opclass[exprop(n)]) {
                 case OTbin:
-                    snprintf(buf, sizeof buf, "<e1:%s> %s <e2:%s>", t1, oppretty[exprop(n)], t2);
+                    bprintf(buf, sizeof buf, "<e1:%s> %s <e2:%s>", t1, oppretty[exprop(n)], t2);
                     break;
                 case OTpre:
-                    snprintf(buf, sizeof buf, "%s<e%s>", t1, oppretty[exprop(n)]);
+                    bprintf(buf, sizeof buf, "%s<e%s>", t1, oppretty[exprop(n)]);
                     break;
                 case OTpost:
-                    snprintf(buf, sizeof buf, "<e:%s>%s", t1, oppretty[exprop(n)]);
+                    bprintf(buf, sizeof buf, "<e:%s>%s", t1, oppretty[exprop(n)]);
                     break;
                 case OTzarg:
-                    snprintf(buf, sizeof buf, "%s", oppretty[exprop(n)]);
+                    bprintf(buf, sizeof buf, "%s", oppretty[exprop(n)]);
                     break;
                 case OTmisc:
                     switch (exprop(n)) {
                         case Ovar:
-                            snprintf(buf, sizeof buf, "%s:%s", namestr(args[0]), t);
+                            bprintf(buf, sizeof buf, "%s:%s", namestr(args[0]), t);
                             break;
                         case Ocall:
                             ctxstrcall(buf, sizeof buf, st, n);
                             break;
                         case Oidx:
                             if (exprop(args[0]) == Ovar)
-                                snprintf(buf, sizeof buf, "%s[<e1:%s>]", namestr(args[0]->expr.args[0]), t2);
+                                bprintf(buf, sizeof buf, "%s[<e1:%s>]", namestr(args[0]->expr.args[0]), t2);
                             else
-                                snprintf(buf, sizeof buf, "<sl:%s>[<e1%s>]", t1, t2);
+                                bprintf(buf, sizeof buf, "<sl:%s>[<e1%s>]", t1, t2);
                             break;
                         case Oslice:
                             if (exprop(args[0]) == Ovar)
-                                snprintf(buf, sizeof buf, "%s[<e1:%s>:<e2:%s>]", namestr(args[0]->expr.args[0]), t2, t3);
+                                bprintf(buf, sizeof buf, "%s[<e1:%s>:<e2:%s>]", namestr(args[0]->expr.args[0]), t2, t3);
                             else
-                                snprintf(buf, sizeof buf, "<sl:%s>[<e1%s>:<e2:%s>]", t1, t2, t3);
+                                bprintf(buf, sizeof buf, "<sl:%s>[<e1%s>:<e2:%s>]", t1, t2, t3);
                             break;
                         case Omemb:
-                            snprintf(buf, sizeof buf, "<%s>.%s", t1, namestr(args[1]));
+                            bprintf(buf, sizeof buf, "<%s>.%s", t1, namestr(args[1]));
                             break;
                         default:
-                            snprintf(buf, sizeof buf, "%s:%s", d, t);
+                            bprintf(buf, sizeof buf, "%s:%s", d, t);
                             break;
                     }
                     break;
                 default:
-		    snprintf(buf, sizeof buf, "%s", d);
+		    bprintf(buf, sizeof buf, "%s", d);
                     break;
             }
             free(t);
@@ -721,7 +721,7 @@ static void verifytraits(Inferstate *st, Node *ctx, Type *a, Type *b)
         n = 0;
         for (i = 0; bsiter(a->traits, &i); i++) {
             if (!b->traits || !bshas(b->traits, i))
-                n += snprintf(traitbuf + n, sizeof(traitbuf) - n, "%s%s", sep, namestr(traittab[i]->name));
+                n += bprintf(traitbuf + n, sizeof(traitbuf) - n, "%s%s", sep, namestr(traittab[i]->name));
             sep = ",";
         }
         tyfmt(abuf, sizeof abuf, a);

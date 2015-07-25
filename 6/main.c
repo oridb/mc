@@ -56,7 +56,7 @@ static void swapout(char* buf, size_t sz, char* suf) {
     if (psuffix != NULL)
         swapsuffix(buf, sz, outfile, psuffix, suf);
     else
-        snprintf(buf, sz, "%s%s", outfile, suf);
+        bprintf(buf, sz, "%s%s", outfile, suf);
 }
 
 static void assemble(char *asmsrc, char *path)
@@ -113,7 +113,7 @@ static char *gentemp(char *buf, size_t bufsz, char *path, char *suffix)
     else
         base = path;
     gettimeofday(&tv, NULL);
-    snprintf(buf, bufsz, "%s/tmp%lx%lx-%s%s", tmpdir, (long)tv.tv_sec, (long)tv.tv_usec, base, suffix);
+    bprintf(buf, bufsz, "%s/tmp%lx%lx-%s%s", tmpdir, (long)tv.tv_sec, (long)tv.tv_usec, base, suffix);
     return buf;
 }
 

@@ -409,8 +409,8 @@ static int namefmt(char *buf, size_t len, Node *n)
     p = buf;
     end = p + len;
     if (n->name.ns)
-        p += snprintf(p, end - p, "%s.", n->name.ns);
-    p += snprintf(p, end - p, "%s", n->name.name);
+        p += bprintf(p, end - p, "%s.", n->name.ns);
+    p += bprintf(p, end - p, "%s", n->name.name);
     return len - (end - p);
 }
 
@@ -440,11 +440,11 @@ int traitfmt(char *buf, size_t len, Type *t)
     p = buf;
     end = p + len;
 
-    p += snprintf(p, end - p, " :: ");
+    p += bprintf(p, end - p, " :: ");
     sep = "";
     for (i = 0; i < ntraittab; i++) {
         if (bshas(t->traits, i)) {
-            p += snprintf(p, end - p, "%s%s", sep, namestr(traittab[i]->name));
+            p += bprintf(p, end - p, "%s%s", sep, namestr(traittab[i]->name));
             sep = ",";
         }
     }
@@ -459,14 +459,14 @@ static int fmtstruct(char *buf, size_t len, Type *t)
 
     p = buf;
     end = p + len;
-    p += snprintf(p, end - p, "struct\n");
+    p += bprintf(p, end - p, "struct\n");
     for (i = 0; i < t->nmemb; i++) {
         name = declname(t->sdecls[i]);
         ty = tystr(decltype(t->sdecls[i]));
-        p += snprintf(p, end - p, "\t%s:%s\n ", name, ty);
+        p += bprintf(p, end - p, "\t%s:%s\n ", name, ty);
         free(ty);
     }
-    p += snprintf(p, end - p, ";;");
+    p += bprintf(p, end - p, ";;");
     return p - buf;
 }
 
@@ -478,18 +478,18 @@ static int fmtunion(char *buf, size_t len, Type *t)
 
     p = buf;
     end = p + len;
-    p += snprintf(p, end - p, "union\n");
+    p += bprintf(p, end - p, "union\n");
     for (i = 0; i < t->nmemb; i++) {
         name = namestr(t->udecls[i]->name);
         if (t->udecls[i]->etype) {
             ty = tystr(t->udecls[i]->etype);
-            p += snprintf(p, end - p, "\t`%s %s\n", name, ty);
+            p += bprintf(p, end - p, "\t`%s %s\n", name, ty);
             free(ty);
         } else {
-            p += snprintf(p, end - p, "\t`%s\n", name);
+            p += bprintf(p, end - p, "\t`%s\n", name);
         }
     }
-    p += snprintf(p, end - p, ";;");
+    p += bprintf(p, end - p, ";;");
     return p - buf;
 }
 
@@ -501,13 +501,13 @@ static int fmtlist(char *buf, size_t len, Type **arg, size_t narg)
     sep = "";
     p = buf;
     end = p + len;
-    p += snprintf(p, end - p, "(");
+    p += bprintf(p, end - p, "(");
     for (i = 0; i < narg; i++)  {
-        p += snprintf(p, end - p, "%s", sep);
+        p += bprintf(p, end - p, "%s", sep);
         p += tybfmt(p, end - p, arg[i]);
         sep = ", ";
     }
-    p += snprintf(p, end - p, ")");
+    p += bprintf(p, end - p, ")");
     return p - buf;
 }
 
@@ -522,82 +522,82 @@ static int tybfmt(char *buf, size_t len, Type *t)
     p = buf;
     end = p + len;
     if (!t) {
-        p += snprintf(p, end - p, "tynil");
+        p += bprintf(p, end - p, "tynil");
         return len - (end - p);
     }
     switch (t->type) {
-        case Tybad:     p += snprintf(p, end - p, "BAD");       break;
-        case Tyvoid:    p += snprintf(p, end - p, "void");      break;
-        case Tybool:    p += snprintf(p, end - p, "bool");      break;
-        case Tychar:    p += snprintf(p, end - p, "char");      break;
-        case Tyint8:    p += snprintf(p, end - p, "int8");      break;
-        case Tyint16:   p += snprintf(p, end - p, "int16");     break;
-        case Tyint:     p += snprintf(p, end - p, "int");       break;
-        case Tyint32:   p += snprintf(p, end - p, "int32");     break;
-        case Tyint64:   p += snprintf(p, end - p, "int64");     break;
-        case Tylong:    p += snprintf(p, end - p, "long");      break;
-        case Tybyte:    p += snprintf(p, end - p, "byte");      break;
-        case Tyuint8:   p += snprintf(p, end - p, "uint8");     break;
-        case Tyuint16:  p += snprintf(p, end - p, "uint16");    break;
-        case Tyuint:    p += snprintf(p, end - p, "uint");      break;
-        case Tyuint32:  p += snprintf(p, end - p, "uint32");    break;
-        case Tyuint64:  p += snprintf(p, end - p, "uint64");    break;
-        case Tyulong:   p += snprintf(p, end - p, "ulong");     break;
-        case Tyflt32: p += snprintf(p, end - p, "flt32");   break;
-        case Tyflt64: p += snprintf(p, end - p, "flt64");   break;
-        case Tyvalist:  p += snprintf(p, end - p, "...");       break;
+        case Tybad:     p += bprintf(p, end - p, "BAD");       break;
+        case Tyvoid:    p += bprintf(p, end - p, "void");      break;
+        case Tybool:    p += bprintf(p, end - p, "bool");      break;
+        case Tychar:    p += bprintf(p, end - p, "char");      break;
+        case Tyint8:    p += bprintf(p, end - p, "int8");      break;
+        case Tyint16:   p += bprintf(p, end - p, "int16");     break;
+        case Tyint:     p += bprintf(p, end - p, "int");       break;
+        case Tyint32:   p += bprintf(p, end - p, "int32");     break;
+        case Tyint64:   p += bprintf(p, end - p, "int64");     break;
+        case Tylong:    p += bprintf(p, end - p, "long");      break;
+        case Tybyte:    p += bprintf(p, end - p, "byte");      break;
+        case Tyuint8:   p += bprintf(p, end - p, "uint8");     break;
+        case Tyuint16:  p += bprintf(p, end - p, "uint16");    break;
+        case Tyuint:    p += bprintf(p, end - p, "uint");      break;
+        case Tyuint32:  p += bprintf(p, end - p, "uint32");    break;
+        case Tyuint64:  p += bprintf(p, end - p, "uint64");    break;
+        case Tyulong:   p += bprintf(p, end - p, "ulong");     break;
+        case Tyflt32: p += bprintf(p, end - p, "flt32");   break;
+        case Tyflt64: p += bprintf(p, end - p, "flt64");   break;
+        case Tyvalist:  p += bprintf(p, end - p, "...");       break;
 
         case Typtr:     
             p += tybfmt(p, end - p, t->sub[0]);
-            p += snprintf(p, end - p, "#");
+            p += bprintf(p, end - p, "#");
             break;
         case Tyslice:
             p += tybfmt(p, end - p, t->sub[0]);
-            p += snprintf(p, end - p, "[:]");
+            p += bprintf(p, end - p, "[:]");
             break;
         case Tyarray:
             p += tybfmt(p, end - p, t->sub[0]);
             if (t->asize) {
                 i = t->asize->expr.args[0]->lit.intval;
-                p += snprintf(p, end - p, "[%zd]", i);
+                p += bprintf(p, end - p, "[%zd]", i);
             } else {
-                p += snprintf(p, end - p, "[]");
+                p += bprintf(p, end - p, "[]");
             }
             break;
         case Tyfunc:
-            p += snprintf(p, end - p, "(");
+            p += bprintf(p, end - p, "(");
             for (i = 1; i < t->nsub; i++) {
-                p += snprintf(p, end - p, "%s", sep);
+                p += bprintf(p, end - p, "%s", sep);
                 p += tybfmt(p, end - p, t->sub[i]);
                 sep = ", ";
             }
-            p += snprintf(p, end - p, " -> ");
+            p += bprintf(p, end - p, " -> ");
             p += tybfmt(p, end - p, t->sub[0]);
-            p += snprintf(p, end - p, ")");
+            p += bprintf(p, end - p, ")");
             break;
         case Tytuple:
-            p += snprintf(p, end - p, "(");
+            p += bprintf(p, end - p, "(");
             for (i = 0; i < t->nsub; i++) {
-                p += snprintf(p, end - p, "%s", sep);
+                p += bprintf(p, end - p, "%s", sep);
                 p += tybfmt(p, end - p, t->sub[i]);
                 sep = ",";
             }
-            p += snprintf(p, end - p, ")");
+            p += bprintf(p, end - p, ")");
             break;
         case Tyvar:
-            p += snprintf(p, end - p, "$%d", t->tid);
+            p += bprintf(p, end - p, "$%d", t->tid);
             if (t->nsub) {
-                p += snprintf(p, end - p, "(");
+                p += bprintf(p, end - p, "(");
                 for (i = 0; i < t->nsub; i++) {
-                    p += snprintf(p, end - p, "%s", sep);
+                    p += bprintf(p, end - p, "%s", sep);
                     p += tybfmt(p, end - p, t->sub[i]);
                     sep = ", ";
                 }
-                p += snprintf(p, end - p, ")[]");
+                p += bprintf(p, end - p, ")[]");
             }
             break;
         case Typaram:
-            p += snprintf(p, end - p, "@%s", t->pname);
+            p += bprintf(p, end - p, "@%s", t->pname);
             break;
         case Tyunres:
             p += namefmt(p, end - p, t->name);
@@ -606,15 +606,15 @@ static int tybfmt(char *buf, size_t len, Type *t)
             break;
         case Tyname:
             if (t->name->name.ns)
-                p += snprintf(p, end - p, "%s.", t->name->name.ns);
-            p += snprintf(p, end - p, "%s", namestr(t->name));
+                p += bprintf(p, end - p, "%s.", t->name->name.ns);
+            p += bprintf(p, end - p, "%s", namestr(t->name));
             if (t->narg)
                 p += fmtlist(p, end - p, t->arg, t->narg);
             break;
         case Tygeneric:
             if (t->name->name.ns)
-                p += snprintf(p, end - p, "%s.", t->name->name.ns);
-            p += snprintf(p, end - p, "%s", namestr(t->name));
+                p += bprintf(p, end - p, "%s.", t->name->name.ns);
+            p += bprintf(p, end - p, "%s", namestr(t->name));
             if (t->ngparam)
                 p += fmtlist(p, end - p, t->gparam, t->ngparam);
             break;
@@ -775,78 +775,78 @@ size_t tyidfmt(char *buf, size_t sz, Type *ty)
         case Ntypes:
         case Tybad:     die("invalid type");    break;
         case Tyvar:     die("tyvar has no idstr");      break;
-        case Tyvoid:    p += snprintf(p, end - p, "v");  break;
-        case Tychar:    p += snprintf(p, end - p, "c");  break;
-        case Tybool:    p += snprintf(p, end - p, "t");  break;
-        case Tyint8:    p += snprintf(p, end - p, "b");  break;
-        case Tyint16:   p += snprintf(p, end - p, "s");  break;
-        case Tyint:     p += snprintf(p, end - p, "i");  break;
-        case Tyint32:   p += snprintf(p, end - p, "w");  break;
-        case Tyint64:   p += snprintf(p, end - p, "q");  break;
-        case Tylong:    p += snprintf(p, end - p, "l");  break;
+        case Tyvoid:    p += bprintf(p, end - p, "v");  break;
+        case Tychar:    p += bprintf(p, end - p, "c");  break;
+        case Tybool:    p += bprintf(p, end - p, "t");  break;
+        case Tyint8:    p += bprintf(p, end - p, "b");  break;
+        case Tyint16:   p += bprintf(p, end - p, "s");  break;
+        case Tyint:     p += bprintf(p, end - p, "i");  break;
+        case Tyint32:   p += bprintf(p, end - p, "w");  break;
+        case Tyint64:   p += bprintf(p, end - p, "q");  break;
+        case Tylong:    p += bprintf(p, end - p, "l");  break;
 
-        case Tybyte:    p += snprintf(p, end - p, "H");  break;
-        case Tyuint8:   p += snprintf(p, end - p, "B");  break;
-        case Tyuint16:  p += snprintf(p, end - p, "S");  break;
-        case Tyuint:    p += snprintf(p, end - p, "I");  break;
-        case Tyuint32:  p += snprintf(p, end - p, "W");  break;
-        case Tyuint64:  p += snprintf(p, end - p, "Q");  break;
-        case Tyulong:   p += snprintf(p, end - p, "L");  break;
-        case Tyflt32:   p += snprintf(p, end - p, "f");  break;
-        case Tyflt64:   p += snprintf(p, end - p, "d");  break;
-        case Tyvalist:  p += snprintf(p, end - p, "V");  break;
+        case Tybyte:    p += bprintf(p, end - p, "H");  break;
+        case Tyuint8:   p += bprintf(p, end - p, "B");  break;
+        case Tyuint16:  p += bprintf(p, end - p, "S");  break;
+        case Tyuint:    p += bprintf(p, end - p, "I");  break;
+        case Tyuint32:  p += bprintf(p, end - p, "W");  break;
+        case Tyuint64:  p += bprintf(p, end - p, "Q");  break;
+        case Tyulong:   p += bprintf(p, end - p, "L");  break;
+        case Tyflt32:   p += bprintf(p, end - p, "f");  break;
+        case Tyflt64:   p += bprintf(p, end - p, "d");  break;
+        case Tyvalist:  p += bprintf(p, end - p, "V");  break;
         case Typtr:
-            p += snprintf(p, end - p, "$p");
+            p += bprintf(p, end - p, "$p");
             p += tyidfmt(p, end - p, ty->sub[0]);
             break;
         case Tyarray:
-            p += snprintf(p, end - p, "$a%lld", (vlong)arraysz(ty->asize));
+            p += bprintf(p, end - p, "$a%lld", (vlong)arraysz(ty->asize));
             p += tyidfmt(p, end - p, ty->sub[0]);
             break;
         case Tyslice:
-            p += snprintf(p, end - p, "$s");
+            p += bprintf(p, end - p, "$s");
             p += tyidfmt(p, end - p, ty->sub[0]);
             break;
         case Tyfunc:
-            p += snprintf(p, end - p, "$f");
+            p += bprintf(p, end - p, "$f");
             for (i = 0; i < ty->nsub; i++) {
                 p += tyidfmt(p, end - p, ty->sub[i]);
-                p += snprintf(p, end - p, "$");
+                p += bprintf(p, end - p, "$");
             }
             break;
         case Tytuple:
-            p += snprintf(p, end - p, "$e");
+            p += bprintf(p, end - p, "$e");
             for (i = 0; i < ty->nsub; i++) {
                 p += tyidfmt(p, end - p, ty->sub[i]);
             }
-            p += snprintf(p, end - p, "$");
+            p += bprintf(p, end - p, "$");
             break;
         case Tystruct:
-            p += snprintf(p, end - p, "$t");
+            p += bprintf(p, end - p, "$t");
             for (i = 0; i < ty->nmemb; i++) {
-                p += snprintf(p, end - p, "%s.", declname(ty->sdecls[i]));
+                p += bprintf(p, end - p, "%s.", declname(ty->sdecls[i]));
                 p += tyidfmt(p, end - p, decltype(ty->sdecls[i]));
-                p += snprintf(p, end - p, "$");
+                p += bprintf(p, end - p, "$");
             }
             break;
         case Tyunion:
-            p += snprintf(p, end - p, "$u");
+            p += bprintf(p, end - p, "$u");
             for (i = 0; i < ty->nmemb; i++) {
-                p += snprintf(p, end - p, "%s$", namestr(ty->udecls[i]->name));
+                p += bprintf(p, end - p, "%s$", namestr(ty->udecls[i]->name));
                 if (ty->udecls[i]->etype)
                     p += tyidfmt(p, end - p, ty->udecls[i]->etype);
-                p += snprintf(p, end - p, "$");
+                p += bprintf(p, end - p, "$");
             }
             break;
         case Typaram:
-            p += snprintf(p, end - p, "$r%s", ty->pname);
+            p += bprintf(p, end - p, "$r%s", ty->pname);
             break;
         case Tyunres:
         case Tyname:
-            p += snprintf(p, end - p, "$n");
+            p += bprintf(p, end - p, "$n");
             if (ty->name->name.ns)
-                p += snprintf(p, end - p, "%s", ty->name->name.ns);
-            p += snprintf(p, end - p, "$%s", ty->name->name.name);
+                p += bprintf(p, end - p, "%s", ty->name->name.ns);
+            p += bprintf(p, end - p, "$%s", ty->name->name.name);
             if (ty->arg)
                 for (i = 0; i < ty->narg; i++)
                     p += tyidfmt(p, end - p, ty->arg[i]);

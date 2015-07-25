@@ -938,7 +938,7 @@ void selfunc(Isel *is, Func *fn, Htab *globls, Htab *strtab)
         for (i = 0; i < bb->nnl; i++) {
             /* put in a comment that says where this line comes from */
             n = bb->nl[i];
-            snprintf(buf, sizeof buf, "bb = %ld, bbidx = %ld, %s:%d",
+            bprintf(buf, sizeof buf, "bb = %ld, bbidx = %ld, %s:%d",
                      j, i, file->file.files[n->loc.file], n->loc.line);
             g(is, Icomment, locstrlbl(buf), NULL);
             isel(is, fn->cfg->bb[j]->nl[i]);

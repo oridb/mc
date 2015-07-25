@@ -463,6 +463,7 @@ void lfatalv(Srcloc l, char *fmt, va_list ap) FATAL;
 char *strdupn(char *s, size_t len);
 char *strjoin(char *u, char *v);
 void *memdup(void *mem, size_t len);
+size_t bprintf(char *buf, size_t len, char *fmt, ...);
 
 /* parsing etc */
 void tokinit(char *file);

@@ -109,7 +109,7 @@ char *strjoin(char *u, char *v)
 
     n = strlen(u) + strlen(v) + 1;
     s = xalloc(n);
-    snprintf(s, n + 1, "%s%s", u, v);
+    bprintf(s, n + 1, "%s%s", u, v);
     return s;
 }
 
@@ -358,6 +358,19 @@ double rdflt(FILE *fd)
     return u.fval;
 }
 
+size_t bprintf(char *buf, size_t sz, char *fmt, ...)
+{
+    va_list ap;
+    size_t n;
+
+    va_start(ap, fmt);
+    n = vsnprintf(buf, sz, fmt, ap);
+    assert(n <= sz);
+    va_end(ap);
+
+    return n;
+}
+
 void wrbool(FILE *fd, int val)
 {
     wrbyte(fd, val);
@@ -387,7 +400,7 @@ char *swapsuffix(char *buf, size_t sz, char *s, char *suf, char *swap)
         strncat(buf, s, slen - suflen);
         strncat(buf, swap, swaplen);
     } else {
-        snprintf(buf, sz, "%s%s", s, swap);
+        bprintf(buf, sz, "%s%s", s, swap);
     }
 
     return buf;

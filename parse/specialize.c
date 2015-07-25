@@ -370,8 +370,8 @@ Node *genericname(Node *n, Type *t)
         return n->decl.name;
     p = buf;
     end = buf + sizeof buf;
-    p += snprintf(p, end - p, "%s", n->decl.name->name.name);
-    p += snprintf(p, end - p, "$");
+    p += bprintf(p, end - p, "%s", n->decl.name->name.name);
+    p += bprintf(p, end - p, "$");
     p += tyidfmt(p, end - p, t);
     name = mkname(n->loc, buf);
     if (n->decl.name->name.ns)

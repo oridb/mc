@@ -60,11 +60,11 @@ void namevec(Blob ***sub, size_t *nsub, Node *n)
     if (n->name.ns) {
         len = strlen(n->name.name) + strlen(n->name.ns) + 1;
         buf = xalloc(len + 1);
-        snprintf(buf, len + 1, "%s.%s", n->name.ns, n->name.name);
+        bprintf(buf, len + 1, "%s.%s", n->name.ns, n->name.name);
     } else {
         len = strlen(n->name.name);
         buf = xalloc(len + 1);
-        snprintf(buf, len + 1, "%s", n->name.name);
+        bprintf(buf, len + 1, "%s", n->name.name);
     }
     lappend(sub, nsub, mkblobi(Btimin, len));
     lappend(sub, nsub, mkblobbytes(buf, len));
@@ -175,7 +175,7 @@ Blob *tydescsub(Type *ty)
                 unionmemb(&sub, &nsub, ty->udecls[i]);
             break;
         case Tyname:
-            i = snprintf(buf, sizeof buf, "%s", Symprefix);
+            i = bprintf(buf, sizeof buf, "%s", Symprefix);
             tydescid(buf + i, sizeof buf - i, ty);
             lappend(&sub, &nsub, mkblobref(buf, 0, ty->isimport || ty->vis == Visexport));
             break;
