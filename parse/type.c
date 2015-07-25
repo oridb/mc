@@ -822,21 +822,10 @@ size_t tyidfmt(char *buf, size_t sz, Type *ty)
             p += bprintf(p, end - p, "$");
             break;
         case Tystruct:
-            p += bprintf(p, end - p, "$t");
-            for (i = 0; i < ty->nmemb; i++) {
-                p += bprintf(p, end - p, "%s.", declname(ty->sdecls[i]));
-                p += tyidfmt(p, end - p, decltype(ty->sdecls[i]));
-                p += bprintf(p, end - p, "$");
-            }
+            p += bprintf(p, end - p, "$t%lld", ty->tid);
             break;
         case Tyunion:
-            p += bprintf(p, end - p, "$u");
-            for (i = 0; i < ty->nmemb; i++) {
-                p += bprintf(p, end - p, "%s$", namestr(ty->udecls[i]->name));
-                if (ty->udecls[i]->etype)
-                    p += tyidfmt(p, end - p, ty->udecls[i]->etype);
-                p += bprintf(p, end - p, "$");
-            }
+            p += bprintf(p, end - p, "$u%lld", ty->tid);
             break;
         case Typaram:
             p += bprintf(p, end - p, "$r%s", ty->pname);
