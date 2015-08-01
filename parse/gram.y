@@ -16,6 +16,7 @@
 
 #include "parse.h"
 
+
 Stab *curscope;
 
 void yyerror(const char *s);
