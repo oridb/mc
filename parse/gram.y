@@ -792,13 +792,23 @@ arrayelts
         : optendlns arrayelt {
                 $$.nl = NULL;
                 $$.nn = 0;
-                lappend(&$$.nl, &$$.nn, mkidxinit($2->loc, mkint($2->loc, 0), $2));
+                if ($2->expr.idx)
+                    lappend(&$$.nl, &$$.nn, $2);
+                else
+                    lappend(&$$.nl, &$$.nn, mkidxinit($2->loc, mkintlit($2->loc, 0), $2));
             }
-        | arrayelts Tcomma optendlns arrayelt
-             {lappend(&$$.nl, &$$.nn, mkidxinit($4->loc, mkint($4->loc, $$.nn), $4));}
+        | arrayelts Tcomma optendlns arrayelt {
+                if ($4->expr.idx)
+                    lappend(&$$.nl, &$$.nn, $4);
+                else
+                    lappend(&$$.nl, &$$.nn, mkidxinit($4->loc, mkintlit($4->loc, $$.nn), $4));
+            }
         ;
 
 arrayelt: expr optendlns {$$ = $1;}
+        | expr Tcolon expr optendlns {
+                $$ = mkidxinit($2->loc, $1, $3);
+            }
         ;
 
 structelts
@@ -807,12 +817,15 @@ structelts
                 $$.nn = 0;
                 lappend(&$$.nl, &$$.nn, $2);
             }
-        | structelts Tcomma optendlns structelt
-             {lappend(&$$.nl, &$$.nn, $4);}
+        | structelts Tcomma optendlns structelt {
+                lappend(&$$.nl, &$$.nn, $4);
+            }
         ;
 
-structelt: Tdot Tident Tasn expr optendlns
-            {$$ = mkidxinit($2->loc, mkname($2->loc, $2->id), $4);}
+structelt: Tdot Tident Tasn expr optendlns {
+                $$ = $4;
+                mkidxinit($2->loc, mkname($2->loc, $2->id), $4);
+            }
          ;
 
 optendlns  : /* none */

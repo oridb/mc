@@ -255,6 +255,7 @@ static size_t blobrec(Blob *b, Htab *globls, Htab *strtab, Node *n)
         case Olit:      sz = bloblit(b, strtab, n->expr.args[0], exprtype(n));        break;
         case Otup:
         case Oarr:
+                        /* Assumption: We sorted this while folding */
                         sz = 0;
                         for (i = 0; i < n->expr.nargs; i++)
                             sz += blobrec(b, globls, strtab, n->expr.args[i]);

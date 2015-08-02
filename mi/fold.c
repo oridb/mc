@@ -13,7 +13,7 @@
 #include "parse.h"
 #include "mi.h"
 
-static int islit(Node *n, vlong *v)
+static int getintlit(Node *n, vlong *v)
 {
     Node *l;
 
@@ -26,11 +26,11 @@ static int islit(Node *n, vlong *v)
     return 1;
 }
 
-static int isval(Node *n, vlong val)
+static int isintval(Node *n, vlong val)
 {
     vlong v;
 
-    if (!islit(n, &v))
+    if (!getintlit(n, &v))
         return 0;
     return v == val;
 }
@@ -98,7 +98,25 @@ static Node *foldcast(Node *n)
     return n;
 }
 
+int idxcmp(const void *pa, const void *pb)
+{
+    Node *a, *b;
+    vlong av, bv;
 
+    a = *(Node **)pa;
+    b = *(Node **)pb;
+
+    assert(getintlit(a->expr.idx, &av));
+    assert(getintlit(b->expr.idx, &bv));
+
+    /* don't trust overflow with int64 */
+    if (av < bv)
+        return -1;
+    else if (av == bv)
+        return 0;
+    else
+        return 1;
+}
 
 Node *fold(Node *n, int foldvar)
 {
@@ -114,6 +132,8 @@ Node *fold(Node *n, int foldvar)
 
     r = NULL;
     args = n->expr.args;
+    if (n->expr.idx)
+        n->expr.idx = fold(n->expr.idx, foldvar);
     for (i = 0; i < n->expr.nargs; i++)
         args[i] = fold(args[i], foldvar);
     switch (exprop(n)) {
@@ -123,76 +143,76 @@ Node *fold(Node *n, int foldvar)
             break;
         case Oadd:
             /* x + 0 = 0 */
-            if (isval(args[0], 0))
+            if (isintval(args[0], 0))
                 r = args[1];
-            if (isval(args[1], 0))
+            if (isintval(args[1], 0))
                 r = args[0];
-            if (islit(args[0], &a) && islit(args[1], &b))
+            if (getintlit(args[0], &a) && getintlit(args[1], &b))
                 r = val(n->loc, a + b, exprtype(n));
             break;
         case Osub:
             /* x - 0 = 0 */
-            if (isval(args[1], 0))
+            if (isintval(args[1], 0))
                 r = args[0];
-            if (islit(args[0], &a) && islit(args[1], &b))
+            if (getintlit(args[0], &a) && getintlit(args[1], &b))
                 r = val(n->loc, a - b, exprtype(n));
             break;
         case Omul:
             /* 1 * x = x */
-            if (isval(args[0], 1))
+            if (isintval(args[0], 1))
                 r = args[1];
-            if (isval(args[1], 1))
+            if (isintval(args[1], 1))
                 r = args[0];
             /* 0 * x = 0 */
-            if (isval(args[0], 0))
+            if (isintval(args[0], 0))
                 r = args[0];
-            if (isval(args[1], 0))
+            if (isintval(args[1], 0))
                 r = args[1];
-            if (islit(args[0], &a) && islit(args[1], &b))
+            if (getintlit(args[0], &a) && getintlit(args[1], &b))
                 r = val(n->loc, a * b, exprtype(n));
             break;
         case Odiv:
             /* x/0 = error */
-            if (isval(args[1], 0))
+            if (isintval(args[1], 0))
                 fatal(args[1], "division by zero");
             /* x/1 = x */
-            if (isval(args[1], 1))
+            if (isintval(args[1], 1))
                 r = args[0];
             /* 0/x = 0 */
-            if (isval(args[1], 0))
+            if (isintval(args[1], 0))
                 r = args[1];
-            if (islit(args[0], &a) && islit(args[1], &b))
+            if (getintlit(args[0], &a) && getintlit(args[1], &b))
                 r = val(n->loc, a / b, exprtype(n));
             break;
         case Omod:
             /* x%1 = x */
-            if (isval(args[1], 0))
+            if (isintval(args[1], 0))
                 r = args[0];
-            if (islit(args[0], &a) && islit(args[1], &b))
+            if (getintlit(args[0], &a) && getintlit(args[1], &b))
                 r = val(n->loc, a % b, exprtype(n));
             break;
         case Oneg:
-            if (islit(args[0], &a))
+            if (getintlit(args[0], &a))
                 r = val(n->loc, -a, exprtype(n));
             break;
         case Obsl:
-            if (islit(args[0], &a) && islit(args[1], &b))
+            if (getintlit(args[0], &a) && getintlit(args[1], &b))
                 r = val(n->loc, a << b, exprtype(n));
             break;
         case Obsr:
-            if (islit(args[0], &a) && islit(args[1], &b))
+            if (getintlit(args[0], &a) && getintlit(args[1], &b))
                 r = val(n->loc, a >> b, exprtype(n));
             break;
         case Obor:
-            if (islit(args[0], &a) && islit(args[1], &b))
+            if (getintlit(args[0], &a) && getintlit(args[1], &b))
                 r = val(n->loc, a | b, exprtype(n));
             break;
         case Oband:
-            if (islit(args[0], &a) && islit(args[1], &b))
+            if (getintlit(args[0], &a) && getintlit(args[1], &b))
                 r = val(n->loc, a & b, exprtype(n));
             break;
         case Obxor:
-            if (islit(args[0], &a) && islit(args[1], &b))
+            if (getintlit(args[0], &a) && getintlit(args[1], &b))
                 r = val(n->loc, a ^ b, exprtype(n));
             break;
         case Omemb:
@@ -200,6 +220,9 @@ Node *fold(Node *n, int foldvar)
             /* we only fold lengths right now */
             if (t->type == Tyarray && !strcmp(namestr(args[1]), "len"))
                 r = t->asize;
+            break;
+        case Oarr:
+            qsort(n->expr.args, n->expr.nargs, sizeof(Node*), idxcmp);
             break;
         case Ocast:
             r = foldcast(n);
