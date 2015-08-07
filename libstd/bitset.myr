@@ -1,6 +1,9 @@
 use "alloc.use"
+use "die.use"
 use "extremum.use"
 use "mk.use"
+use "slcp.use"
+use "sldup.use"
 use "slfill.use"
 use "types.use"
 
@@ -34,7 +37,7 @@ const mkbs = {
 }
 
 const bsdup = {bs
-	-> mk([.bits=bs.bits])
+	-> mk([.bits=sldup(bs.bits)])
 }
 
 const bsfree = {bs
