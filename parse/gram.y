@@ -205,7 +205,6 @@ toplev  : package
         | use {lappend(&file->file.uses, &file->file.nuses, $1);}
         | implstmt {
                 lappend(&file->file.stmts, &file->file.nstmts, $1);
-                putimpl(file->file.globls, $1);
             }
         | traitdef {
                 size_t i;
@@ -329,7 +328,7 @@ pkgitem : decl {
             }
         | implstmt {
                 $1->impl.vis = Visexport;
-                putimpl(file->file.globls, $1);
+                lappend(&file->file.stmts, &file->file.nstmts, $1);
             }
         | /* empty */
         ;

@@ -1506,9 +1506,9 @@ static void inferfunc(Inferstate *st, Node *n)
 static void specializeimpl(Inferstate *st, Node *n)
 {
     Node *dcl, *proto, *name;
+    Type *ty;
     Htab *ht;
     Trait *t;
-    Type *ty;
     size_t i, j;
 
     t = gettrait(curstab(), n->impl.traitname);
@@ -1518,6 +1518,7 @@ static void specializeimpl(Inferstate *st, Node *n)
 
     dcl = NULL;
     proto = NULL;
+    n->impl.type = tf(st, n->impl.type);
     for (i = 0; i < n->impl.ndecls; i++) {
         /* look up the prototype */
         proto = NULL;
@@ -2090,6 +2091,8 @@ static void typesub(Inferstate *st, Node *n, int noerr)
             }
             break;
         case Nimpl:
+            putimpl(curstab(), n);
+            break;
         case Nname:
         case Nuse:
             break;

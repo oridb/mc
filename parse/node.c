@@ -214,6 +214,7 @@ Node *mkblock(Srcloc loc, Stab *scope)
     return n;
 }
 
+
 Node *mkimplstmt(Srcloc loc, Node *name, Type *t, Node **decls, size_t ndecls)
 {
     Node *n;
