@@ -337,9 +337,9 @@ const myrtarget = {p, targ
 		failparse(p, "expected '=' after '{} {}'\n", targ, name)
 	;;
 
+	fsel = mksyssel(p.fname, p.line, name)
 	match inputlist(p)
 	| `std.Some (wl, libs): 
-		fsel = mksyssel(p.fname, p.line, targ)
 		libdeps = libs
 		for w in wl
 			sysseladd(fsel, w)

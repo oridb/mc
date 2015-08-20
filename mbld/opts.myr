@@ -42,11 +42,6 @@ var opt_ld	= "ld"
 var opt_ar	= "ar"
 var opt_genasm  = false
 
-/* derived */
-var sysarchstr	= ""
-var archstr	= ""
-var sysstr	= ""
-
 const initopts = {
 	var si
 
@@ -75,9 +70,5 @@ const initopts = {
 	if opt_runtime.len == 0
 		opt_runtime = std.pathjoin([opt_instroot, config.Libpath, config.Runtime][:]) 
 	;;
-
-	sysarchstr = std.fmt("+{}-{}", opt_sys, opt_arch)
-	sysstr = std.fmt("+{}", opt_sys)
-	archstr = std.fmt("+{}", opt_arch)
 }
 

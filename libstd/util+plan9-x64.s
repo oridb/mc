@@ -46,27 +46,15 @@ TEXT sys$cstring+0(SB),$0
 
 TEXT sys$alloca+0(SB),$0
 	/* save registers */
-	MOVQ    SP,AX
-	SUBQ	$32,SP
-	MOVQ	BP,-8(AX)
-	MOVQ	R15,-16(AX)
-	MOVQ	BX,-24(AX)
-	MOVQ	AX,BP
-
-	MOVQ	(BP),R15	/* ret addr */
-	MOVQ	8(BP),BX	/* len */
+	MOVQ	(SP),R10	/* ret addr */
 
 	/* get stack space */
-	SUBQ	BX,SP		/* get stack space */
+	SUBQ	DI,SP		/* get stack space */
 	MOVQ	SP,AX		/* top of stack (return value) */
-	SUBQ	$32,SP		/* "unpop" the args, and make room for ret addr */
 	ANDQ	$(~15),SP	/* align */
+	SUBQ	$32,SP		/* "unpop" the args, and make room for ret addr */
 
-	MOVQ	R15,0(SP)	/* place ret addr */
-	/* restore registers */
-	MOVQ	-16(BP),R15
-	MOVQ	-24(SP),BX
-	MOVQ	-8(BP),BP
+	MOVQ	R10,(SP)	/* place ret addr */
 	RET
 
 GLOBL	sys$tosptr+0(SB),$8

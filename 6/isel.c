@@ -89,6 +89,7 @@ static Mode mode(Node *n)
         return tymode(n->decl.type);
     else
         die("invalid node type");
+    return ModeNone;
 }
 
 static Loc *loc(Isel *s, Node *n)

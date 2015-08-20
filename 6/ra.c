@@ -945,7 +945,6 @@ static void selspill(Isel *s)
     /* FIXME: pick a better heuristic for spilling */
     m = NULL;
     _isel = s;
-    qsort(s->wlspill, s->nwlspill, sizeof s->wlspill[0], loccmp);
     for (i = 0; i < s->nwlspill; i++) {
         if (!bshas(s->shouldspill, s->wlspill[i]->reg.id))
             continue;
