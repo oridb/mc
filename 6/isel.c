@@ -838,9 +838,7 @@ static void isel(Isel *s, Node *n)
 
 /* %rax is for int returns, %xmm0d is for floating returns */
 Reg savedregs[] = {
-    Rrcx, Rrdx, Rrbx, Rrsi, Rrdi, Rr8, Rr9, Rr10, Rr11, Rr12, Rr13, Rr14, Rr15,
-    Rxmm1d, Rxmm2d, Rxmm3d, Rxmm4d, Rxmm5d, Rxmm6d, Rxmm7d,
-    Rxmm8d, Rxmm9d, Rxmm10d, Rxmm11d, Rxmm12d, Rxmm13d, Rxmm14d, Rxmm15d,
+    Rr12, Rr13, Rr14, Rr15,
     Rnone
 };
 

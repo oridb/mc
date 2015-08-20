@@ -1,6 +1,4 @@
 #define Maxarg 4                /* maximum number of args an insn can have */
-#define Maxuse (2*Maxarg)       /* maximum number of registers an insn can use or def */
-#define Maxdef (2*Maxarg)       /* maximum number of registers an insn can use or def */
 #define Wordsz 4                /* the size of a "natural int" */
 #define Ptrsz 8                 /* the size of a machine word (ie, pointer size) */
 
@@ -180,6 +178,7 @@ struct Isel {
     size_t *ngadj;
     size_t nreg;      /* maxregid at time of alloc */
     int *degree;        /* degree of nodes */
+    int *nuses;         /* number of uses of nodes */
     Loc **aliasmap;     /* mapping of aliases */
 
     Bitset *shouldspill;        /* the first registers we should try to spill */
