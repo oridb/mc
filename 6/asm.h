@@ -130,10 +130,14 @@ struct Insn {
 struct Func {
     char *name;   /* function name */
     int   isexport; /* is this exported from the asm? */
-    size_t stksz; /* stack size */
     Type *type;   /* type of function */
+
+    Node **args;  /* argument list */
+    size_t nargs; /* number of args, including hidden ones */
     Htab *stkoff; /* Loc* -> int stackoff map */
+    size_t stksz; /* stack size */
     Node *ret;    /* return value */
+
     Cfg  *cfg;    /* flow graph */
 };
 

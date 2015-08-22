@@ -81,7 +81,7 @@ int main(int argc, char **argv)
 
     lappend(&incpaths, &nincpaths, Instroot "/lib/myr");
     if (!outfile) {
-        fprintf(stderr, "Output file needed when merging usefiles.");
+        fprintf(stderr, "output file needed when merging usefiles.\n");
         exit(1);
     }
 

@@ -19,6 +19,14 @@
 /* forward decls */
 Loc *selexpr(Isel *s, Node *n);
 
+#define Nfloatregargs 8
+#define Nintregargs 6
+regid floatargregs[] = {
+    Rxmm0d, Rxmm1d, Rxmm2d, Rxmm3d,
+    Rxmm4d, Rxmm5d, Rxmm6d, Rxmm7d,
+};
+regid intargregs[] = {Rrdi, Rrsi, Rrdx, Rrcx, Rr8, Rr9};
+
 /* used to decide which operator is appropriate
  * for implementing various conditional operators */
 struct {
@@ -50,21 +58,19 @@ struct {
     [Ofle] = {Icomis, Ijbe, Isetbe},
 };
 
-static Mode mode(Node *n)
+static Mode tymode(Type *t)
 {
-    Type *t;
-
-    t = tybase(exprtype(n));
     /* FIXME: What should the mode for, say, structs be when we have no
      * intention of loading /through/ the pointer? For now, we'll just say it's
      * the pointer mode, since we expect to address through the pointer */
+    t = tybase(t);
     switch (t->type) {
         case Tyflt32: return ModeF; break;
         case Tyflt64: return ModeD; break;
         default:
             if (stacktype(t))
                 return ModeQ;
-            switch (size(n)) {
+            switch (tysize(t)) {
                 case 1: return ModeB; break;
                 case 2: return ModeW; break;
                 case 4: return ModeL; break;
@@ -73,6 +79,16 @@ static Mode mode(Node *n)
             break;
     }
     return ModeQ;
+}
+
+static Mode mode(Node *n)
+{
+    if (n->type == Nexpr)
+        return tymode(exprtype(n));
+    else if (n->type == Ndecl)
+        return tymode(n->decl.type);
+    else
+        die("invalid node type");
 }
 
 static Loc *loc(Isel *s, Node *n)
@@ -90,9 +106,11 @@ static Loc *loc(Isel *s, Node *n)
                 stkoff = ptoi(htget(s->stkoff, n));
                 l = locmem(-stkoff, locphysreg(Rrbp), NULL, mode(n));
             }  else {
-                if (!hthas(s->reglocs, n))
-                    htput(s->reglocs, n, locreg(mode(n)));
-                return htget(s->reglocs, n);
+                l = htget(s->reglocs, n);
+                if (!l) {
+                    l = locreg(mode(n));
+                    htput(s->reglocs, n, l);
+                }
             }
             break;
         case Olit:
@@ -471,14 +489,31 @@ static void call(Isel *s, Node *n)
     g(s, op, f, NULL);
 }
 
+static size_t countargs(Type *t)
+{
+    size_t nargs;
+
+    t = tybase(t);
+    nargs = t->nsub - 1;
+    if (stacktype(t->sub[0]))
+        nargs++;
+    /* valists are replaced with hidden type parameter,
+     * which we want on the stack for ease of ABI */
+    if (tybase(t->sub[t->nsub - 1])->type == Tyvalist)
+        nargs--;
+    return nargs;
+}
+
 static Loc *gencall(Isel *s, Node *n)
 {
     Loc *src, *dst, *arg;  /* values we reduced */
+    size_t argsz, argoff, nargs;
+    size_t nfloats, nints;
     Loc *retloc, *rsp, *ret;       /* hard-coded registers */
     Loc *stkbump;        /* calculated stack offset */
-    int argsz, argoff;
     size_t i, a;
-    Type *t;
+    int vararg;
+    Type *t, *fn;
 
     rsp = locphysreg(Rrsp);
     t = exprtype(n);
@@ -492,6 +527,10 @@ static Loc *gencall(Isel *s, Node *n)
         retloc = coreg(Rrax, mode(n));
         ret = locreg(mode(n));
     }
+    fn = tybase(exprtype(n->expr.args[0]));
+    /* calculate the number of args we expect to see, adjust
+     * for a hidden return argument. */
+    nargs = countargs(fn);
     argsz = 0;
     /* Have to calculate the amount to bump the stack
      * pointer by in one pass first, otherwise if we push
@@ -510,20 +549,36 @@ static Loc *gencall(Isel *s, Node *n)
 
     /* Now, we can evaluate the arguments */
     argoff = 0;
+    nfloats = 0;
+    nints = 0;
+    vararg = 0;
     for (i = 1; i < n->expr.nargs; i++) {
         arg = selexpr(s, n->expr.args[i]);
         argoff = align(argoff, min(size(n->expr.args[i]), Ptrsz));
+        if (i > nargs)
+            vararg = 1;
         if (stacknode(n->expr.args[i])) {
             src = locreg(ModeQ);
             g(s, Ilea, arg, src, NULL);
             a = alignto(1, n->expr.args[i]->expr.type);
             blit(s, rsp, src, argoff, 0, size(n->expr.args[i]), a);
+            argoff += size(n->expr.args[i]);
+        } else if (!vararg && isfloatmode(arg->mode) && nfloats < Nfloatregargs) {
+            dst = coreg(floatargregs[nfloats], arg->mode);
+            arg = inri(s, arg);
+            g(s, Imovs, arg, dst, NULL);
+            nfloats++;
+        } else if (!vararg && isintmode(arg->mode) && nints < Nintregargs) {
+            dst = coreg(intargregs[nints], arg->mode);
+            arg = inri(s, arg);
+            g(s, Imov, arg, dst, NULL);
+            nints++;
         } else {
             dst = locmem(argoff, rsp, NULL, arg->mode);
             arg = inri(s, arg);
             stor(s, arg, dst);
+            argoff += size(n->expr.args[i]);
         }
-        argoff += size(n->expr.args[i]);
     }
     call(s, n->expr.args[0]);
     if (argsz)
@@ -842,7 +897,47 @@ Reg savedregs[] = {
     Rnone
 };
 
-static void prologue(Isel *s, size_t sz)
+void addarglocs(Isel *s, Func *fn)
+{
+    size_t i, nints, nfloats, nargs;
+    size_t argoff;
+    int vararg;
+    Node *arg;
+    Loc *a, *l;
+
+    argoff = 0;
+    nfloats = 0;
+    nints = 0;
+    vararg = 0;
+    nargs = countargs(fn->type);
+    for (i = 0; i < fn->nargs; i++) {
+        arg = fn->args[i]; 
+        argoff = align(argoff, min(size(arg), Ptrsz));
+        if (i >= nargs)
+            vararg = 1;
+        if (stacknode(arg)) {
+            htput(s->stkoff, arg, itop(-(argoff + 2*Ptrsz)));
+            argoff += size(arg);
+        } else if (!vararg && isfloatmode(mode(arg)) && nfloats < Nfloatregargs) {
+            a = coreg(floatargregs[nfloats], mode(arg));
+            l = locreg(mode(arg));
+            g(s, Imovs, a, l, NULL);
+            htput(s->reglocs, arg, l);
+            nfloats++;
+        } else if (!vararg && isintmode(mode(arg)) && nints < Nintregargs) {
+            a = coreg(intargregs[nints], mode(arg));
+            l = locreg(mode(arg));
+            g(s, Imov, a, l, NULL);
+            htput(s->reglocs, arg, l);
+            nints++;
+        } else {
+            htput(s->stkoff, arg, itop(-(argoff + 2*Ptrsz)));
+            argoff += size(arg);
+        }
+    }
+}
+
+static void prologue(Isel *s, Func *fn, size_t sz)
 {
     Loc *rsp;
     Loc *rbp;
@@ -867,6 +962,7 @@ static void prologue(Isel *s, size_t sz)
             g(s, Imov, phys, s->calleesave[i], NULL);
         }
     }
+    addarglocs(s, fn);
     s->nsaved = i;
     s->stksz = stksz; /* need to update if we spill */
 }
@@ -927,7 +1023,7 @@ void selfunc(Isel *is, Func *fn, Htab *globls, Htab *strtab)
         lappend(&is->bb, &is->nbb, mkasmbb(fn->cfg->bb[i]));
 
     is->curbb = is->bb[0];
-    prologue(is, fn->stksz);
+    prologue(is, fn, fn->stksz);
     for (j = 0; j < fn->cfg->nbb - 1; j++) {
         is->curbb = is->bb[j];
         if (!is->bb[j])
@@ -945,4 +1041,5 @@ void selfunc(Isel *is, Func *fn, Htab *globls, Htab *strtab)
     is->curbb = is->bb[is->nbb - 1];
     epilogue(is);
     regalloc(is);
+    is->stksz->lit = align(is->stksz->lit, 16);
 }

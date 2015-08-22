@@ -919,6 +919,8 @@ static int spillmetric(Isel *s, regid r)
 {
     if (s->nuses[r] == 0)
         return -1;
+    if (bshas(s->neverspill, r))
+        return -10000;
     return s->degree[r] * 100 / s->nuses[r];
 }
 
@@ -953,7 +955,6 @@ static void selspill(Isel *s)
     if (!m) {
         for (i = 0; i < s->nwlspill; i++) {
             if (bshas(s->neverspill, s->wlspill[i]->reg.id)) {
-                printf("Not spilling %zd\n", s->wlspill[i]->reg.id);
                 continue;
             }
             m = s->wlspill[i];

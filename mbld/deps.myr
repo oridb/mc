@@ -14,6 +14,7 @@ pkg bld =
 	var usepat	: regex.regex#
 ;;
 
+const Abiversion = 5
 var usepat	: regex.regex#
 
 type dep = union
@@ -234,12 +235,13 @@ const scrapelibs = {dg, lib, incs
 	| `std.None:	std.fatal("library {}: could not read usefile\n", lib)
 	;;
 	match bio.getbe32(f)
-	| `std.Some 4:	/* nothing: version matches. */
-	| `std.Some 3:	std.fput(1, "library {}: warning: old usefile version\n", lib)
-	| `std.Some 2:	std.fput(1, "library {}: warning: old usefile version\n", lib)
-	| `std.Some 1:	std.fput(1, "library {}: warning: old usefile version\n", lib)
-	| `std.Some 0:	std.fput(1, "library {}: warning: old usefile version\n", lib)
-	| `std.Some _:	std.fatal("library {}: usefile version unknown\n", lib)
+	| `std.Some Abiversion:	/* nothing: version matches. */
+	| `std.Some v:	
+		if v < Abiversion
+			std.fput(1, "library {}: warning: old abi version\n", lib)
+		else
+			std.fatal("library {}: usefile version unknown\n", lib)
+		;;
 	| `std.None:	std.fatal("library {}: corrutpt or invalid usefile\n", lib)
 	;;
 	std.slfree(rdstr(f))

@@ -56,10 +56,9 @@ sys$alloca:
 	pushq %rbx
 
 	movq 8(%rbp),%r15	/* ret addr */
-	movq 16(%rbp),%rbx	/* len */
 
 	/* get stack space */
-	subq %rbx,%rsp		/* get stack space */
+	subq %rdi,%rsp		/* get stack space */
 	movq %rsp,%rax		/* top of stack (return value) */
 	subq $31,%rsp		/* "unpop" the args for return */
 	andq $(~15),%rsp	/* align */

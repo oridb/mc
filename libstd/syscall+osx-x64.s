@@ -1,14 +1,6 @@
 .globl _sys$syscall
 _sys$syscall:
-	pushq %rbp
-	pushq %rdi
-	pushq %rsi
-	pushq %rdx
-	pushq %r10
-	pushq %r8
-	pushq %r9
-	pushq %rcx
-	pushq %r11
+
 	/*
 	hack: We load 6 args regardless of
 	how many we actually have. This may
@@ -16,29 +8,20 @@ _sys$syscall:
 	doesn't use them, it's going to be
 	harmless.
 	 */
-	movq 80 (%rsp),%rax
-	/* 88: hidden type arg */
-	movq 96 (%rsp),%rdi
-	movq 104(%rsp),%rsi
-	movq 112(%rsp),%rdx
-	movq 120(%rsp),%r10
-	movq 128(%rsp),%r8
-	movq 136(%rsp),%r9
+	movq %rdi,%rax
+        /* 8(%rsp): hidden type arg */
+	movq 16(%rsp),%rdi
+	movq 24(%rsp),%rsi
+	movq 32(%rsp),%rdx
+	movq 40(%rsp),%r10
+	movq 48(%rsp),%r8
+	movq 56(%rsp),%r9
 
 	syscall
 	jae .success
 	negq %rax
 
 .success:
-	popq %r11
-	popq %rcx
-	popq %r9
-	popq %r8
-	popq %r10
-	popq %rdx
-	popq %rsi
-	popq %rdi
-	popq %rbp
 	ret
 
 /*
@@ -51,16 +34,6 @@ _sys$syscall:
  */
 .globl _sys$__osx_fork
 _sys$__osx_fork:
-	pushq %rbp
-	pushq %rdi
-	pushq %rsi
-	pushq %rdx
-	pushq %r10
-	pushq %r8
-	pushq %r9
-	pushq %rcx
-	pushq %r11
-
 	movq $0x2000002,%rax
 	syscall
 
@@ -72,16 +45,6 @@ _sys$__osx_fork:
 	jz .isparent
 	xorq %rax,%rax
 .isparent:
-
-	popq %r11
-	popq %rcx
-	popq %r9
-	popq %r8
-	popq %r10
-	popq %rdx
-	popq %rsi
-	popq %rdi
-	popq %rbp
 	ret
 
 /*
@@ -91,16 +54,6 @@ _sys$__osx_fork:
  */
 .globl _sys$__osx_pipe
 _sys$__osx_pipe:
-	pushq %rbp
-	pushq %rdi
-	pushq %rsi
-	pushq %rdx
-	pushq %r10
-	pushq %r8
-	pushq %r9
-	pushq %rcx
-	pushq %r11
-
 	movq $0x200002a,%rax
 	syscall
 
@@ -112,30 +65,10 @@ _sys$__osx_pipe:
 	movl %eax,(%rdi)
 	movl %edx,4(%rdi)
 	xorq %rax,%rax
-
-	popq %r11
-	popq %rcx
-	popq %r9
-	popq %r8
-	popq %r10
-	popq %rdx
-	popq %rsi
-	popq %rdi
-	popq %rbp
 	ret
 
 .globl _sys$__osx_lseek
 _sys$__osx_lseek:
-	pushq %rbp
-	pushq %rdi
-	pushq %rsi
-	pushq %rdx
-	pushq %r10
-	pushq %r8
-	pushq %r9
-	pushq %rcx
-	pushq %r11
-
 	movq $0x20000C7,%rax
 	syscall
 
@@ -146,31 +79,11 @@ _sys$__osx_lseek:
 	movq 80(%rsp),%rdi
         shlq $32,%rdx
         orq  %rdx,%rax
-
-	popq %r11
-	popq %rcx
-	popq %r9
-	popq %r8
-	popq %r10
-	popq %rdx
-	popq %rsi
-	popq %rdi
-	popq %rbp
 	ret
 
 
 .globl _sys$__osx_gettimeofday
 _sys$__osx_gettimeofday:
-	pushq %rbp
-	pushq %rdi
-	pushq %rsi
-	pushq %rdx
-	pushq %r10
-	pushq %r8
-	pushq %r9
-	pushq %rcx
-	pushq %r11
-
 	movq $0x2000074,%rax
 	syscall
 
@@ -182,15 +95,5 @@ _sys$__osx_gettimeofday:
 	movq %rax, (%rdi)
 	movl %edx,8(%rdi)
 	xorq %rax,%rax
-
-	popq %r11
-	popq %rcx
-	popq %r9
-	popq %r8
-	popq %r10
-	popq %rdx
-	popq %rsi
-	popq %rdi
-	popq %rbp
 	ret
 

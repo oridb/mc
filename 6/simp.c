@@ -47,10 +47,13 @@ struct Simp {
     /* location handling */
     Node **blobs;
     size_t nblobs;
-    size_t stksz;
-    size_t argsz;
     Htab *globls;
-    Htab *stkoff;
+
+    Htab *_stkoff;
+    size_t stksz;
+
+    Node **args;
+    size_t nargs;
 };
 
 static Node *simp(Simp *s, Node *n);
@@ -166,7 +169,7 @@ static Node *mul(Node *a, Node *b)
 static int addressable(Simp *s, Node *a)
 {
     if (a->type == Ndecl || (a->type == Nexpr && exprop(a) == Ovar))
-        return hthas(s->stkoff, a) || hthas(s->globls, a);
+        return hthas(s->_stkoff, a) || hthas(s->globls, a);
     else
         return stacknode(a);
 }
@@ -209,7 +212,7 @@ static void forcelocal(Simp *s, Node *n)
         dump(n, stdout);
         printf("declared at %zd, size = %zd\n", s->stksz, size(n));
     }
-    htput(s->stkoff, n, itop(s->stksz));
+    htput(s->_stkoff, n, itop(s->stksz));
 }
 
 static void declarelocal(Simp *s, Node *n)
@@ -1565,13 +1568,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
 static void declarearg(Simp *s, Node *n)
 {
     assert(n->type == Ndecl || (n->type == Nexpr && exprop(n) == Ovar));
-    s->argsz = align(s->argsz, min(size(n), Ptrsz));
-    htput(s->stkoff, n, itop(-(s->argsz + 2*Ptrsz)));
-    if (debugopt['i']) {
-        dump(n, stdout);
-        printf("declared at %zd\n", -(s->argsz + 2*Ptrsz));
-    }
-    s->argsz += size(n);
+    lappend(&s->args, &s->nargs, n);
 }
 
 static int islbl(Node *n)
@@ -1724,10 +1721,13 @@ static Func *simpfn(Simp *s, char *name, Node *dcl)
 
     fn = zalloc(sizeof(Func));
     fn->name = strdup(name);
+    fn->type = dcl->decl.type;
     fn->isexport = isexport(dcl);
     fn->stksz = align(s->stksz, 8);
-    fn->stkoff = s->stkoff;
+    fn->stkoff = s->_stkoff;
     fn->ret = s->ret;
+    fn->args = s->args;
+    fn->nargs = s->nargs;
     fn->cfg = cfg;
     return fn;
 }
@@ -1800,7 +1800,7 @@ void simpglobl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***blob, s
 
     if (ismain(dcl))
         dcl->decl.vis = Vishidden;
-    s.stkoff = mkht(varhash, vareq);
+    s._stkoff = mkht(varhash, vareq);
     s.globls = globls;
     s.blobs = *blob;
     s.nblobs = *nblob;
