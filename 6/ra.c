@@ -926,16 +926,14 @@ static int spillmetric(Isel *s, regid r)
     return s->degree[r] * 100 / s->nuses[r];
 }
 
-static int loccmp(const void *pa, const void *pb, void *v)
+Isel *_isel;
+static int loccmp(const void *pa, const void *pb)
 {
     Loc *a, *b;
-    Isel *s;
 
     a = *(Loc**)pa;
     b = *(Loc**)pb;
-    s = v;
-
-    return spillmetric(s, b->reg.id) - spillmetric(s, a->reg.id);
+    return spillmetric(_isel, b->reg.id) - spillmetric(_isel, a->reg.id);
 }
 
 /* Select the spill candidates */
@@ -946,7 +944,8 @@ static void selspill(Isel *s)
 
     /* FIXME: pick a better heuristic for spilling */
     m = NULL;
-    qsort_r(s->wlspill, s->nwlspill, sizeof s->wlspill[0], loccmp, s);
+    _isel = s;
+    qsort(s->wlspill, s->nwlspill, sizeof s->wlspill[0], loccmp);
     for (i = 0; i < s->nwlspill; i++) {
         if (!bshas(s->shouldspill, s->wlspill[i]->reg.id))
             continue;
