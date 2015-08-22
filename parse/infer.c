@@ -524,6 +524,7 @@ static Type *littype(Node *n)
 {
     Type *t;
 
+    t = NULL;
     if (!n->lit.type) {
         switch (n->lit.littype) {
             case Lchr:      t = mktype(n->loc, Tychar);                         break;

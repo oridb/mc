@@ -609,6 +609,8 @@ static void enablemove(Isel *s, regid n)
 
     ni = nodemoves(s, n, &il);
     for (i = 0; i < ni; i++) {
+        if (!bshas(s->mactiveset, il[i]->uid))
+            continue;
         for (j = 0; j < s->nmactive; j++) {
             if (il[i] == s->mactive[j]) {
                 ldel(&s->mactive, &s->nmactive, j);
@@ -1137,6 +1139,15 @@ static int remap(Isel *s, Insn *insn, Remapping *use, size_t *nuse, Remapping *d
     return useidx > 0 || defidx > 0;
 }
 
+static int nopmov(Insn *insn)
+{
+    if (insn->op != Imov && insn->op != Imovs)
+        return 0;
+    if (insn->args[0]->type != Locreg || insn->args[1]->type != Locreg)
+        return 0;
+    return insn->args[0]->reg.id == insn->args[1]->reg.id;
+}
+
 /*
  * Rewrite instructions using spilled registers, inserting
  * appropriate loads and stores into the BB
@@ -1155,6 +1166,8 @@ static void rewritebb(Isel *s, Asmbb *bb)
     if (!bb)
         return;
     for (j = 0; j < bb->ni; j++) {
+        if (nopmov(bb->il[j]))
+            continue;
         /* if there is a remapping, insert the loads and stores as needed */
         if (remap(s, bb->il[j], use, &nuse, def, &ndef)) {
             for (i = 0; i < nuse; i++) {
@@ -1208,6 +1221,34 @@ static void addspill(Isel *s, Loc *l)
     htput(s->spillslots, itop(l->reg.id), itop(s->stksz->lit));
 }
 
+void replacealias(Isel *s, Asmbb *bb, Loc **map)
+{
+    size_t i, j;
+    Insn *insn;
+    Loc **alias;
+    Loc *l;
+
+    if (!map || !bb)
+        return;
+    alias = s->aliasmap;
+    s->aliasmap = alias;
+    for (i = 0; i < bb->ni; i++) {
+        insn = bb->il[i];
+        for (j = 0; j < insn->nargs; j++) {
+            l = insn->args[j];
+            if (l->type == Locreg) {
+                insn->args[j] = locmap[getalias(s, l->reg.id)];
+            } else if (l->type == Locmem || l->type == Locmeml) {
+                if (l->mem.base)
+                    l->mem.base = locmap[getalias(s, l->mem.base->reg.id)];
+                if (l->mem.idx)
+                    l->mem.idx = locmap[getalias(s, l->mem.idx->reg.id)];
+            }
+        }
+    }
+    s->aliasmap = alias;
+}
+
 /* 
  * Rewrites the function code so that it no longer contains
  * references to spilled registers. Every use of spilled regs
@@ -1220,7 +1261,7 @@ static void addspill(Isel *s, Loc *l)
  *      insn %rZ,%rW
  *      mov %rW,234(%rsp)
  */
-static void rewrite(Isel *s)
+static void rewrite(Isel *s, Loc **aliasmap)
 {
     size_t i;
 
@@ -1230,6 +1271,8 @@ static void rewrite(Isel *s)
         addspill(s, locmap[i]);
 
     /* rewrite instructions using them */
+    for (i = 0; i < s->nbb; i++)
+        replacealias(s, s->bb[i], aliasmap);
     for (i = 0; i < s->nbb; i++)
         rewritebb(s, s->bb[i]);
     htfree(s->spillslots);
@@ -1276,6 +1319,7 @@ void regalloc(Isel *s)
 {
     int spilled;
     size_t i;
+    Loc **aliasmap;
 
     /* Initialize the list of prepainted registers */
     s->prepainted = mkbs();
@@ -1289,6 +1333,7 @@ void regalloc(Isel *s)
     for (i = 0; i < s->nsaved; i++)
         bsput(s->shouldspill, s->calleesave[i]->reg.id);
     do {
+        aliasmap = NULL;
         setup(s);
         liveness(s);
         build(s);
@@ -1302,12 +1347,15 @@ void regalloc(Isel *s)
                 coalesce(s);
             else if (s->nwlfreeze)
                 freeze(s);
-            else if (s->nwlspill)
+            else if (s->nwlspill) {
+                if (!aliasmap)
+                    aliasmap = memdup(s->aliasmap, s->nreg * sizeof(Loc*));
                 selspill(s);
+            }
         } while (s->nwlsimp || s->nwlmove || s->nwlfreeze || s->nwlspill);
         spilled = paint(s);
         if (spilled)
-            rewrite(s);
+            rewrite(s, aliasmap);
     } while (spilled);
     delnops(s);
     bsfree(s->prepainted);
