@@ -8,6 +8,7 @@ OBJ= \
 	locs.o \
 	main.o \
 	ra.o \
+	peep.o \
 	simp.o \
 	typeinfo.o \
 

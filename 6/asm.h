@@ -290,6 +290,9 @@ void dbglocprint(FILE *fd, Loc *l, char spec);
 void regalloc(Isel *s);
 Rclass rclass(Loc *l);
 
+/* machine dependent optimization */
+void peep(Isel *s);
+
 /* useful functions */
 size_t tysize(Type *t);
 size_t tyalign(Type *t);

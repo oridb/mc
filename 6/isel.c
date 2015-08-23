@@ -1041,6 +1041,7 @@ void selfunc(Isel *is, Func *fn, Htab *globls, Htab *strtab)
     }
     is->curbb = is->bb[is->nbb - 1];
     epilogue(is);
+    peep(is);
     regalloc(is);
     is->stksz->lit = align(is->stksz->lit, 16);
 }
