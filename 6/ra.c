@@ -917,25 +917,6 @@ static void freeze(Isel *s)
     freezemoves(s, l);
 }
 
-static int spillmetric(Isel *s, regid r)
-{
-    if (s->nuses[r] == 0)
-        return -1;
-    if (bshas(s->neverspill, r))
-        return -10000;
-    return s->degree[r] * 100 / s->nuses[r];
-}
-
-Isel *_isel;
-static int loccmp(const void *pa, const void *pb)
-{
-    Loc *a, *b;
-
-    a = *(Loc**)pa;
-    b = *(Loc**)pb;
-    return spillmetric(_isel, b->reg.id) - spillmetric(_isel, a->reg.id);
-}
-
 /* Select the spill candidates */
 static void selspill(Isel *s)
 {
@@ -944,7 +925,6 @@ static void selspill(Isel *s)
 
     /* FIXME: pick a better heuristic for spilling */
     m = NULL;
-    _isel = s;
     for (i = 0; i < s->nwlspill; i++) {
         if (!bshas(s->shouldspill, s->wlspill[i]->reg.id))
             continue;
