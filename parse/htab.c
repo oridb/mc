@@ -85,6 +85,7 @@ static void grow(Htab *ht, int sz)
     for (i = 0; i < oldsz; i++)
         if (oldh[i] && !oldd[i])
             htput(ht, oldk[i], oldv[i]);
+
     free(oldh);
     free(oldk);
     free(oldv);
@@ -123,9 +124,10 @@ conflicted:
     ht->keys[i] = k;
     ht->vals[i] = v;
     ht->dead[i] = 0;
-    if (ht->sz < ht->nelt*2)
-        grow(ht, ht->sz*2);
-    if (ht->sz < ht->ndead*4)
+
+    if (ht->sz < ht->nelt * 2) 
+        grow(ht, ht->sz * 2);
+    if (ht->sz < ht->ndead * 4)
         grow(ht, ht->sz);
     return 1;
 }
@@ -176,10 +178,11 @@ void htdel(Htab *ht, void *k)
     i = htidx(ht, k);
     if (i < 0)
         return;
-    if (!ht->dead[i])
-        ht->ndead++;
+    assert(!ht->dead[i]);
+    assert(ht->hashes[i]);
     ht->dead[i] = 1;
     ht->nelt--;
+    ht->ndead++;
 }
 
 
