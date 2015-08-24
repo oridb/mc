@@ -19,6 +19,7 @@ Htab *mkht(ulong (*hash)(void *key), int (*cmp)(void *k1, void *k2))
 
     ht = xalloc(sizeof(Htab));
     ht->nelt = 0;
+    ht->ndead = 0;
     ht->sz = Initsz;
     ht->hash = hash;
     ht->cmp = cmp;
@@ -74,6 +75,7 @@ static void grow(Htab *ht, int sz)
     oldsz = ht->sz;
 
     ht->nelt = 0;
+    ht->ndead = 0;
     ht->sz = sz;
     ht->keys = zalloc(sz*sizeof(void*));
     ht->vals = zalloc(sz*sizeof(void*));
@@ -115,12 +117,16 @@ int htput(Htab *ht, void *k, void *v)
     }
     ht->nelt++;
 conflicted:
+    if (ht->dead[i])
+        ht->ndead--;
     ht->hashes[i] = h;
     ht->keys[i] = k;
     ht->vals[i] = v;
     ht->dead[i] = 0;
     if (ht->sz < ht->nelt*2)
         grow(ht, ht->sz*2);
+    if (ht->sz < ht->ndead*4)
+        grow(ht, ht->sz);
     return 1;
 }
 
@@ -135,16 +141,14 @@ static ssize_t htidx(Htab *ht, void *k)
     di = 0;
     h = hash(ht, k);
     i = h & (ht->sz - 1);
-    while (ht->hashes[i] && ht->hashes[i] != h) {
+    while (ht->hashes[i] && !ht->dead[i] && ht->hashes[i] != h) {
 searchmore:
         di++;
         i = (h + di) & (ht->sz - 1);
     }
-    if (ht->dead[i])
-        goto searchmore;
     if (!ht->hashes[i]) 
         return -1;
-    if (!ht->cmp(ht->keys[i], k))
+    if (!ht->cmp(ht->keys[i], k) || (ht->hashes[i] == h && ht->dead[i]))
         goto searchmore; /* collision */
     return i;
 }
@@ -172,6 +176,8 @@ void htdel(Htab *ht, void *k)
     i = htidx(ht, k);
     if (i < 0)
         return;
+    if (!ht->dead[i])
+        ht->ndead++;
     ht->dead[i] = 1;
     ht->nelt--;
 }

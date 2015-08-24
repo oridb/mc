@@ -105,6 +105,7 @@ struct Bitset {
 
 struct Htab {
     size_t nelt;
+    size_t ndead;
     size_t sz;
     ulong (*hash)(void *k);
     int (*cmp)(void *a, void *b);
