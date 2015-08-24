@@ -1174,13 +1174,6 @@ static void rewritebb(Isel *s, Asmbb *bb, Loc **aliasmap)
                 else
                     mov = mkinsn(Imov, spillslot(s, use[i]), tmp, NULL);
                 lappend(&new, &nnew, mov);
-                if (debugopt['r']) {
-                    printf("loading ");
-                    dbglocprint(stdout, locmap[use[i]], 'x');
-                    printf(" -> ");
-                    dbglocprint(stdout, tmp, 'x');
-                    printf("\n");
-                }
             }
             updatelocs(s, map, insn);
             lappend(&new, &nnew, insn);
@@ -1193,13 +1186,6 @@ static void rewritebb(Isel *s, Asmbb *bb, Loc **aliasmap)
                 else
                     mov = mkinsn(Imov, tmp, spillslot(s, def[i]), NULL);
                 lappend(&new, &nnew, mov);
-                if (debugopt['r']) {
-                    printf("storing ");
-                    dbglocprint(stdout, locmap[def[i]], 'x');
-                    printf(" -> ");
-                    dbglocprint(stdout, tmp, 'x');
-                    printf("\n");
-                }
             }
             for (i = 0; i < nuse; i++)
                 htdel(map, locmap[use[i]]);
