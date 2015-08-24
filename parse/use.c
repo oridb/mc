@@ -929,6 +929,7 @@ void readuse(Node *use, Stab *st, Vis vis)
 
     /* local (quoted) uses are always relative to the cwd */
     fd = NULL;
+    p = NULL;
     if (use->use.islocal) {
         p = strdup(use->use.name);
         fd = fopen(p, "r");

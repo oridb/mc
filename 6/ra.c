@@ -687,19 +687,24 @@ static void simp(Isel *s)
     }
 }
 
-static regid getalias(Isel *s, regid id)
+static regid getmappedalias(Loc **aliasmap, size_t nreg, regid id)
 {
     /* 
      * if we get called from rewrite(), we can get a register that
      * we just created, with an id bigger than the number of entries
      * in the alias map. We should just return its id in that case.
      */
-    while (id < s->nreg) {
-        if (!s->aliasmap[id])
+    while (id < nreg) {
+        if (!aliasmap[id])
             break;
-        id = s->aliasmap[id]->reg.id;
+        id = aliasmap[id]->reg.id;
     };
     return id;
+}
+
+static regid getalias(Isel *s, regid id)
+{
+    return getmappedalias(s->aliasmap, s->nreg, id);
 }
 
 static void wladd(Isel *s, regid u)
@@ -1126,14 +1131,34 @@ static int nopmov(Insn *insn)
     return insn->args[0]->reg.id == insn->args[1]->reg.id;
 }
 
+void replacealias(Isel *s, Loc **map, size_t nreg, Insn *insn)
+{
+    size_t i;
+    Loc *l;
+
+    if (!map) 
+        return;
+    for (i = 0; i < insn->nargs; i++) {
+        l = insn->args[i];
+        if (l->type == Locreg) {
+            insn->args[i] = locmap[getalias(s, l->reg.id)];
+        } else if (l->type == Locmem || l->type == Locmeml) {
+            if (l->mem.base)
+                l->mem.base = locmap[getalias(s, l->mem.base->reg.id)];
+            if (l->mem.idx)
+                l->mem.idx = locmap[getalias(s, l->mem.idx->reg.id)];
+        }
+    }
+}
+
 /*
  * Rewrite instructions using spilled registers, inserting
  * appropriate loads and stores into the BB
  */
-static void rewritebb(Isel *s, Asmbb *bb)
+static void rewritebb(Isel *s, Asmbb *bb, Loc **map)
 {
     Remapping use[Nreg], def[Nreg];
-    Insn *insn;
+    Insn *insn, *mov;
     size_t nuse, ndef;
     size_t i, j;
     Insn **new;
@@ -1144,16 +1169,18 @@ static void rewritebb(Isel *s, Asmbb *bb)
     if (!bb)
         return;
     for (j = 0; j < bb->ni; j++) {
-        if (nopmov(bb->il[j]))
+        insn = bb->il[j];
+        replacealias(s, map, s->nreg, insn);
+        if (nopmov(insn))
             continue;
         /* if there is a remapping, insert the loads and stores as needed */
-        if (remap(s, bb->il[j], use, &nuse, def, &ndef)) {
+        if (remap(s, insn, use, &nuse, def, &ndef)) {
             for (i = 0; i < nuse; i++) {
                 if (isfloatmode(use[i].newreg->mode))
-                    insn = mkinsn(Imovs, spillslot(s, use[i].oldreg), use[i].newreg, NULL);
+                    mov = mkinsn(Imovs, spillslot(s, use[i].oldreg), use[i].newreg, NULL);
                 else
-                    insn = mkinsn(Imov, spillslot(s, use[i].oldreg), use[i].newreg, NULL);
-                lappend(&new, &nnew, insn);
+                    mov = mkinsn(Imov, spillslot(s, use[i].oldreg), use[i].newreg, NULL);
+                lappend(&new, &nnew, mov);
                 if (debugopt['r']) {
                     printf("loading ");
                     dbglocprint(stdout, locmap[use[i].oldreg], 'x');
@@ -1162,14 +1189,14 @@ static void rewritebb(Isel *s, Asmbb *bb)
                     printf("\n");
                 }
             }
-            updatelocs(s, bb->il[j], use, nuse, def, ndef);
-            lappend(&new, &nnew, bb->il[j]);
+            updatelocs(s, insn, use, nuse, def, ndef);
+            lappend(&new, &nnew, insn);
             for (i = 0; i < ndef; i++) {
                 if (isfloatmode(def[i].newreg->mode))
-                    insn = mkinsn(Imovs, def[i].newreg, spillslot(s, def[i].oldreg), NULL);
+                    mov = mkinsn(Imovs, def[i].newreg, spillslot(s, def[i].oldreg), NULL);
                 else
-                    insn = mkinsn(Imov, def[i].newreg, spillslot(s, def[i].oldreg), NULL);
-                lappend(&new, &nnew, insn);
+                    mov = mkinsn(Imov, def[i].newreg, spillslot(s, def[i].oldreg), NULL);
+                lappend(&new, &nnew, mov);
                 if (debugopt['r']) {
                     printf("storing ");
                     dbglocprint(stdout, locmap[def[i].oldreg], 'x');
@@ -1179,7 +1206,7 @@ static void rewritebb(Isel *s, Asmbb *bb)
                 }
             }
         } else {
-            lappend(&new, &nnew, bb->il[j]);
+            lappend(&new, &nnew, insn);
         }
     }
     lfree(&bb->il, &bb->ni);
@@ -1197,34 +1224,6 @@ static void addspill(Isel *s, Loc *l)
         printf(" to %zd(%%rbp)\n", s->stksz->lit);
     }
     htput(s->spillslots, itop(l->reg.id), itop(s->stksz->lit));
-}
-
-void replacealias(Isel *s, Asmbb *bb, Loc **map)
-{
-    size_t i, j;
-    Insn *insn;
-    Loc **alias;
-    Loc *l;
-
-    if (!map || !bb)
-        return;
-    alias = s->aliasmap;
-    s->aliasmap = alias;
-    for (i = 0; i < bb->ni; i++) {
-        insn = bb->il[i];
-        for (j = 0; j < insn->nargs; j++) {
-            l = insn->args[j];
-            if (l->type == Locreg) {
-                insn->args[j] = locmap[getalias(s, l->reg.id)];
-            } else if (l->type == Locmem || l->type == Locmeml) {
-                if (l->mem.base)
-                    l->mem.base = locmap[getalias(s, l->mem.base->reg.id)];
-                if (l->mem.idx)
-                    l->mem.idx = locmap[getalias(s, l->mem.idx->reg.id)];
-            }
-        }
-    }
-    s->aliasmap = alias;
 }
 
 /* 
@@ -1250,9 +1249,7 @@ static void rewrite(Isel *s, Loc **aliasmap)
 
     /* rewrite instructions using them */
     for (i = 0; i < s->nbb; i++)
-        replacealias(s, s->bb[i], aliasmap);
-    for (i = 0; i < s->nbb; i++)
-        rewritebb(s, s->bb[i]);
+        rewritebb(s, s->bb[i], aliasmap);
     htfree(s->spillslots);
     bsclear(s->spilled);
 }
