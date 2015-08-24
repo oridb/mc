@@ -100,14 +100,14 @@ echo 	../6/6m	-I ../libregex -I ../libbio -I ../libstd opts.myr ;	../6/6m	-I ../
 echo 	../6/6m	-I ../libregex -I ../libbio -I ../libstd types.myr ;	../6/6m	-I ../libregex -I ../libbio -I ../libstd types.myr 
 echo 	../6/6m	-I ../libregex -I ../libbio -I ../libstd util.myr ;	../6/6m	-I ../libregex -I ../libbio -I ../libstd util.myr 
 echo 	../6/6m	-I ../libregex -I ../libbio -I ../libstd deps.myr ;	../6/6m	-I ../libregex -I ../libbio -I ../libstd deps.myr 
-echo 	../6/6m	-I ../libregex -I ../libbio -I ../libstd fsel.myr ;	../6/6m	-I ../libregex -I ../libbio -I ../libstd fsel.myr 
+echo 	../6/6m	-I ../libregex -I ../libbio -I ../libstd syssel.myr ;	../6/6m	-I ../libregex -I ../libbio -I ../libstd syssel.myr 
 echo 	../6/6m	-I ../libregex -I ../libbio -I ../libstd parse.myr ;	../6/6m	-I ../libregex -I ../libbio -I ../libstd parse.myr 
 echo 	../6/6m	-I ../libregex -I ../libbio -I ../libstd build.myr ;	../6/6m	-I ../libregex -I ../libbio -I ../libstd build.myr 
 echo 	../6/6m	-I ../libregex -I ../libbio -I ../libstd install.myr ;	../6/6m	-I ../libregex -I ../libbio -I ../libstd install.myr 
 echo 	../6/6m	-I ../libregex -I ../libbio -I ../libstd clean.myr ;	../6/6m	-I ../libregex -I ../libbio -I ../libstd clean.myr 
 echo 	../6/6m	-I ../libregex -I ../libbio -I ../libstd test.myr ;	../6/6m	-I ../libregex -I ../libbio -I ../libstd test.myr 
 echo 	../6/6m	-I ../libregex -I ../libbio -I ../libstd main.myr ;	../6/6m	-I ../libregex -I ../libbio -I ../libstd main.myr 
-echo 	ld	-pagezero_size 0x100000000 -macosx_version_min 10.6 -o mbld ../rt/_myrrt.o clean.o config.o deps.o types.o fsel.o util.o parse.o main.o build.o opts.o install.o test.o -L../libregex -L../libbio -L../libstd -lregex -lbio -lstd -lsys -macosx_version_min 10.6 ;	ld	-pagezero_size 0x100000000 -macosx_version_min 10.6 -o mbld ../rt/_myrrt.o clean.o config.o deps.o types.o fsel.o util.o parse.o main.o build.o opts.o install.o test.o -L../libregex -L../libbio -L../libstd -lregex -lbio -lstd -lsys -macosx_version_min 10.6 
+echo 	ld	-pagezero_size 0x100000000 -macosx_version_min 10.6 -o mbld ../rt/_myrrt.o clean.o config.o deps.o types.o syssel.o util.o parse.o main.o build.o opts.o install.o test.o -L../libregex -L../libbio -L../libstd -lregex -lbio -lstd -lsys -macosx_version_min 10.6 ;	ld	-pagezero_size 0x100000000 -macosx_version_min 10.6 -o mbld ../rt/_myrrt.o clean.o config.o deps.o types.o syssel.o util.o parse.o main.o build.o opts.o install.o test.o -L../libregex -L../libbio -L../libstd -lregex -lbio -lstd -lsys -macosx_version_min 10.6 
 echo 	cd $pwd;	cd $pwd
 echo 	cd $pwd/libregex;	cd $pwd/libregex
 echo 	../6/6m	-I . -I ../libbio -I ../libstd redump.myr ;	../6/6m	-I . -I ../libbio -I ../libstd redump.myr 

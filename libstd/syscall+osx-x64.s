@@ -61,7 +61,6 @@ _sys$__osx_pipe:
 	negq %rax
 
 .pipesuccess:
-	movq 80(%rsp),%rdi
 	movl %eax,(%rdi)
 	movl %edx,4(%rdi)
 	xorq %rax,%rax
@@ -76,7 +75,6 @@ _sys$__osx_lseek:
 	negq %rax
 
 .lseeksuccess:
-	movq 80(%rsp),%rdi
         shlq $32,%rdx
         orq  %rdx,%rax
 	ret
@@ -91,7 +89,6 @@ _sys$__osx_gettimeofday:
 	negq %rax
 
 .gettimeofdaysuccess:
-	movq 80(%rsp),%rdi
 	movq %rax, (%rdi)
 	movl %edx,8(%rdi)
 	xorq %rax,%rax
