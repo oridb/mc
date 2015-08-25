@@ -1,0 +1,19 @@
+use std
+
+pkg =
+	const hasheq	: (got : byte[:], expected : byte[:] -> void)
+;;
+
+const hasheq = {got, expected
+	var sb, str
+
+	sb = std.mksb()
+	for x in got
+		std.sbfmt(sb, "{p=0,w=2,x}", x)
+	;;
+	str = std.sbfin(sb)
+	if (!std.sleq(str, expected))
+		std.fatal("mismatched hashes:\n\tgot:\t{}\n\texpected:\t{}\n", str, expected)
+	;;
+	std.slfree(str)
+}

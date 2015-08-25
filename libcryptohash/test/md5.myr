@@ -1,0 +1,18 @@
+use std
+use cryptohash
+
+use "test/util.use"
+
+const main = {
+	hasheq(cryptohash.md5("")[:], \
+		"d41d8cd98f00b204e9800998ecf8427e")
+	hasheq(cryptohash.md5("h")[:], \
+		"2510c39011c5be704182423e3a695e91")
+	/* 64 byte block */
+	hasheq(cryptohash.md5("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")[:], \
+		"014842d480b571495a4a0363793f7367")
+	/* tail spanning */
+	hasheq(cryptohash.md5("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbb")[:], \
+		"3b0bb4c5ece4a6568caa7266e740a140")
+}
+

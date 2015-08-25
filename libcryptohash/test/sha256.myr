@@ -1,0 +1,29 @@
+use std
+use cryptohash
+
+use "test/util.use"
+
+const main = {
+	hasheq(cryptohash.sha224("")[:], \
+		"d14a028c2a3a2bc9476102bb288234c415a2b01f828ea62ac5b3e42f")
+	hasheq(cryptohash.sha224("h")[:], \
+		"e0ccaeadfef916630c35576679e4cd4b438e7fc95a60b7361705f708")
+	/* 64 byte block */
+	hasheq(cryptohash.sha224("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")[:], \
+		"a88cd5cde6d6fe9136a4e58b49167461ea95d388ca2bdb7afdc3cbf4")
+	/* tail spanning */
+	hasheq(cryptohash.sha224("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbb")[:], \
+		"4a5859b7efa22c3b25710520fc97b0a901f5cdba3e4f0becfeea725e")
+
+	hasheq(cryptohash.sha256("")[:], \
+		"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
+	hasheq(cryptohash.sha256("h")[:], \
+		"aaa9402664f1a41f40ebbc52c9993eb66aeb366602958fdfaa283b71e64db123")
+	/* 64 byte block */
+	hasheq(cryptohash.sha256("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")[:], \
+		"ffe054fe7ae0cb6dc65c3af9b61d5209f439851db43d0ba5997337df154668eb")
+	/* tail spanning */
+	hasheq(cryptohash.sha256("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbb")[:], \
+		"bac8bf0f9794a520a5bf0ec64d3206edd1b9f2ef5ea118c9cad5365d84578de4")
+}
+
