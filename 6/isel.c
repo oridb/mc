@@ -593,59 +593,6 @@ static Loc *gencall(Isel *s, Node *n)
     return ret;
 }
 
-static int litval(Node *n, vlong *v)
-{
-    Node *l;
-
-    if (exprop(n) != Olit)
-        return 0;
-    l = n->expr.args[0];
-    if (l->lit.littype != Lint)
-        return 0;
-    *v = l->lit.intval;
-    return 1;
-}
-
-int isrol(Isel *s, Node *l, Node *r, Loc **dist, Loc **rol)
-{
-    vlong a, b, sz;
-
-    sz = size(r)*8;
-    /* check if we have paired left/right shifts */
-    if (exprop(l) != Obsl && exprop(l) != Obsr)
-        return 0;
-    if (exprop(r) != Obsl && exprop(r) != Obsr)
-        return 0;
-    if (exprop(r) == exprop(l))
-        return 0;
-
-    /* check if we're shifting by constants */
-    if (!litval(l->expr.args[1], &a))
-        return 0;
-    if (!litval(r->expr.args[1], &b))
-        return 0;
-
-    /* and we're shifting the same variable */
-    if (exprop(l->expr.args[0]) != Ovar)
-        return 0;
-    if (exprop(r->expr.args[0]) != Ovar)
-        return 0;
-    if (l->expr.args[0]->expr.did != r->expr.args[0]->expr.did)
-        return 0;
-
-    /* and then figure out the shift amount */
-    if (a + b != sz)
-        return 0;
-    if (exprop(l) == Obsl)
-        *dist = loclit(a, mode(l));
-    else
-        *dist = loclit(sz - a, mode(l));
-    *rol = selexpr(s, l->expr.args[0]);
-    return 1;
-}
-
-
-
 Loc *selexpr(Isel *s, Node *n)
 {
     Loc *a, *b, *c, *d, *r;
@@ -661,14 +608,9 @@ Loc *selexpr(Isel *s, Node *n)
     switch (exprop(n)) {
         case Oadd:      r = binop(s, Iadd, args[0], args[1]); break;
         case Osub:      r = binop(s, Isub, args[0], args[1]); break;
+        case Obor:      r = binop(s, Ior,  args[0], args[1]); break;
         case Oband:     r = binop(s, Iand, args[0], args[1]); break;
         case Obxor:     r = binop(s, Ixor, args[0], args[1]); break;
-        case Obor:
-            if (isrol(s, args[0], args[1], &d, &r))
-                g(s, Irol, d, r, NULL);
-            else
-                r = binop(s, Ior,  args[0], args[1]);
-            break;
         case Omul:
             if (size(args[0]) == 1) {
                 a = selexpr(s, args[0]);

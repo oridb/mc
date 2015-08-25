@@ -92,7 +92,6 @@ Insn(Iimul,
     "\tIMUL%T %X,%R\n",
     Use(.l={1,2}),
     Def(.l={2}))
-
 /* there is no imul for 8 bit values. */
 Insn(Iimul_r,
     "\timul%t %r\n",
@@ -167,16 +166,6 @@ Insn(Isar,
 Insn(Ishr,
     "\tshr%2t %u,%r\n",
     "\tSHR%2T %U,%R\n",
-    Use(.l={1,2}),
-    Def(.l={2}))
-Insn(Irol,
-    "\trol%2t %u,%r\n",
-    "\tROL%2T %U,%R\n",
-    Use(.l={1,2}),
-    Def(.l={2}))
-Insn(Iror,
-    "\tror%2t %u,%r\n",
-    "\tROR%2T %U,%R\n",
     Use(.l={1,2}),
     Def(.l={2}))
 
