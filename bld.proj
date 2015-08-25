@@ -3,6 +3,7 @@ sub =
 	libstd
 	libbio
 	libregex
+	libcryptohash
 	test
 ;;
 
