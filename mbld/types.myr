@@ -28,6 +28,9 @@ pkg bld =
 	;;
 
 	type myrtarg = struct
+		file	: byte[:]
+		line	: int
+
 		islib	: bool
 		dir	: byte[:]
 		name	: byte[:]

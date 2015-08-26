@@ -35,11 +35,11 @@ const load = {b
 		b.all = std.slpush(b.all, name)
 		std.htput(b.targs, name, targ)
 	;;
-	std.slfree(targs)
 
 	if ok
 		ok = sortdeps(b)
 	;;
+	std.slfree(targs)
 	-> ok
 }
 
@@ -107,8 +107,8 @@ const sortdeps = {b
 	marked = std.mkht(std.strhash, std.streq)
 	for dep in b.all
 		match gettarg(b.targs, dep)
-		| `Bin _:	all = visit(all, b, dep, looped, marked)
-		| `Lib _:	all = visit(all, b, dep, looped, marked)
+		| `Bin _:	all = visit(all, b, "all", dep, looped, marked)
+		| `Lib _:	all = visit(all, b, "all", dep, looped, marked)
 		| targ:		all = std.slpush(all, dep)
 		;;
 	;;
@@ -117,7 +117,7 @@ const sortdeps = {b
 	-> true
 }
 
-const visit = {all, b, targ, looped, marked
+const visit = {all, b, parent, targ, looped, marked
 	if std.hthas(looped, targ)
 		std.fatal("cycle in build depgraph involving {}\n", targ)
 	elif std.hthas(marked, targ)
@@ -125,19 +125,24 @@ const visit = {all, b, targ, looped, marked
 	;;
 
 	std.htput(looped, targ, true)
-	for (dir, lib, dep) in getdeps(gettarg(b.targs, targ))
-		all = visit(all, b, dep, looped, marked)
+	for (dir, lib, dep) in getdeps(b, parent, targ)
+		all = visit(all, b, targ, dep, looped, marked)
 	;;
 	std.htdel(looped, targ)
 	std.htput(marked, targ, true)
 	-> std.slpush(all, targ)
 }
 
-const getdeps = {targ
-	match targ
-	| `Bin t:	-> t.libdeps
-	| `Lib t:	-> t.libdeps
-	| _:	std.fatal("depending on non-library target")
+const getdeps = {b, parent, targname
+	match std.htget(b.targs, targname)
+	| `std.Some targ:
+		match targ
+		| `Bin t:	-> t.libdeps
+		| `Lib t:	-> t.libdeps
+		| _:	std.fatal("{} depends on non-library target", parent)
+		;;
+	| `std.None:
+		std.fatal("{}: could not find dependency {}\n", parent, targname)
 	;;
 }
 
