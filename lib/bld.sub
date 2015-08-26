@@ -1,0 +1,6 @@
+sub =
+	std
+	bio
+	regex
+	cryptohash
+;;
