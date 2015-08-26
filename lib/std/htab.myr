@@ -29,8 +29,6 @@ pkg std =
 
 const Initsz = 32
 
-extern const put : (fmt : byte[:], args : ... -> size)
-
 generic hash = {ht, k
 	var h
 
@@ -161,7 +159,6 @@ generic htdel = {ht, k
 		ht.dead[i] = true
 		ht.nelt--
 		ht.ndead++
-		std.put("ndead = {}\n", ht.ndead)
 		/* remove tombstones if we shrink enough */
 		if ht.keys.len < ht.ndead * 4
 			resize(ht, ht.keys.len)
