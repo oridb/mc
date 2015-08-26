@@ -3,5 +3,5 @@ lib bio =
 	geti.myr
 	puti.myr
 
-        lib ../libstd:std
+        lib ../std:std
 ;;

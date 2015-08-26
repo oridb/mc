@@ -1,9 +1,6 @@
 sub =
 	mbld
-	libstd
-	libbio
-	libregex
-	libcryptohash
+	lib
 	test
 ;;
 

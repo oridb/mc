@@ -4,13 +4,13 @@ lib regex =
 	ranges.myr
 	types.myr
 
-        lib ../libstd:std
+        lib ../std:std
 ;;
 
 bin redump {noinst} =
 	redump.myr
-        lib ../libstd:std
-        lib ../libbio:bio
+        lib ../std:std
+        lib ../bio:bio
         lib regex
 ;;
 

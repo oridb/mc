@@ -17,10 +17,10 @@ bin mbld =
 	# Currently, mbld doesn't add all deps transitively.
 	# Until this gets fixed, we need to list all dependent
 	# libraries here explicitly.
-	lib ../libstd:sys
-	lib ../libstd:std
-	lib ../libbio:bio
-	lib ../libregex:regex
+	lib @/lib/std:sys
+	lib @/lib/std:std
+	lib @/lib/bio:bio
+	lib @/lib/regex:regex
 ;;
 
 man = mbld.1;;
