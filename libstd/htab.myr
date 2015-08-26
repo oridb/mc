@@ -10,6 +10,7 @@ pkg std =
 		eq	: (a : @k, b : @k -> bool)
 
 		nelt	: size
+		ndead	: size
 		keys	: @k[:]
 		vals	: @v[:]
 		hashes	: uint32[:]
@@ -28,6 +29,8 @@ pkg std =
 
 const Initsz = 32
 
+extern const put : (fmt : byte[:], args : ... -> size)
+
 generic hash = {ht, k
 	var h
 
@@ -39,25 +42,24 @@ generic hash = {ht, k
 	;;
 }
 
-generic resize = {ht
+generic resize = {ht, sz
 	var oldk
 	var oldv
 	var oldh
 	var oldd
-	var sz
 	var i
 
 	oldk = ht.keys
 	oldv = ht.vals
 	oldh = ht.hashes
 	oldd = ht.dead
-	sz = 2*max(ht.keys.len, 1)
 	ht.keys = slalloc(sz)
 	ht.vals = slalloc(sz)
 	ht.hashes = slzalloc(sz)
 	ht.dead = slzalloc(sz)
 
 	ht.nelt = 0
+	ht.ndead = 0
 	for i = 0; i < oldk.len; i++
 		if oldh[i] != 0 && !oldd[i]
 			htput(ht, oldk[i], oldv[i])
@@ -82,15 +84,14 @@ generic idx = {ht, k
 			i = (h + di) & (ht.keys.len - 1)
 		;;
 
-		if ht.hashes[i] == 0 || ht.dead[i]
+		if ht.hashes[i] == 0
 			-> `None
 		;;
-		if ht.eq(ht.keys[i], k)
+		if ht.hashes[i] == h && !ht.dead[i] && ht.eq(ht.keys[i], k)
 			break
-		else
-			di++
-			i = (h + di) & (ht.keys.len - 1)
 		;;
+		di++
+		i = (h + di) & (ht.keys.len - 1)
 	;;
 	-> `Some i
 }
@@ -104,6 +105,7 @@ generic mkht = {h, eq
 	ht.eq = eq
 
 	ht.nelt = 0
+	ht.ndead = 0
 	ht.keys = slalloc(Initsz)
 	ht.vals = slalloc(Initsz)
 	ht.hashes = slzalloc(Initsz)
@@ -129,14 +131,12 @@ generic htput = {ht, k, v
 	i = h & (ht.keys.len - 1)
 	neltincr = 1
 	while ht.hashes[i] != 0 && !ht.dead[i]
-		/*
-		second insertion just overwrites first.
-		nb: comparing keys for dead values is bad.
-		*/
-		if ht.hashes[i] == h
+		/* second insertion overwrites */
+		if ht.hashes[i] == h && !ht.dead[i]
+			/* dead key, we can just insert here */
 			if ht.dead[i]
 				break
-			/* replacing a key shouldn't grow the element count */
+			/* replacing a key */
 			elif ht.eq(ht.keys[i], k)
 				neltincr = 0
 				break
@@ -151,7 +151,7 @@ generic htput = {ht, k, v
 	ht.vals[i] = v
 	ht.dead[i] = false
 	if ht.keys.len < ht.nelt * 2
-		resize(ht)
+		resize(ht, 2*ht.keys.len)
 	;;
 }
 
@@ -160,9 +160,11 @@ generic htdel = {ht, k
 	| `Some i:
 		ht.dead[i] = true
 		ht.nelt--
+		ht.ndead++
+		std.put("ndead = {}\n", ht.ndead)
 		/* remove tombstones if we shrink enough */
-		if ht.keys.len > ht.nelt * 4
-			resize(ht)
+		if ht.keys.len < ht.ndead * 4
+			resize(ht, ht.keys.len)
 		;;
 	| _:	
 		/* do nothing */

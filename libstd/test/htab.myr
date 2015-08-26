@@ -1,0 +1,104 @@
+use std
+
+const insertion = {
+	/*
+	var ht
+	var i
+
+	ht = std.mkht(idhash, ideq)
+	/* only a few values; shouldn't trigger growth */
+	for i = 0; i < 5; i++
+		std.htput(ht, i, i)
+	;;
+	for i = 0; i < 5; i++
+		std.assert(std.htgetv(ht, i, -1) == i, "returned incorrect value from hash table")
+	;;
+
+	/* and grow */
+	for i = 0; i < 5000; i++
+		std.htput(ht, i, i)
+	;;
+	for i = 0; i < 5000; i++
+		std.assert(std.htgetv(ht, i, -1) == i, "returned incorrect value from hash table")
+	;;
+	*/
+}
+
+const deletion = {
+	var ht
+	var i
+
+	ht = std.mkht(idhash, ideq)
+	/* create a hash table with a few hundred values */
+	for i = 0; i < 4000; i++
+		std.htput(ht, i, i)
+	;;
+	for i = 0; i < 200; i++
+		std.htdel(ht, i*2)
+	;;
+	for i = 0; i < 200; i++
+		std.assert(!std.hthas(ht, i*2), "deleted item still present")
+	;;
+	for i = 0; i < 200; i++
+		std.assert(std.hthas(ht, i*2+1), "undeleted item missing")
+	;;
+	for i = 400; i < 4000; i++
+		std.assert(std.hthas(ht, i), "undeleted item missing")
+	;;
+
+}
+
+const collision = {
+	var ht
+	var i
+
+	ht = std.mkht(idhash, ideq)
+	/* insert an element a few hundred times */
+	for i = 0; i < 500; i++
+		std.htput(ht, 0, i)
+	;;
+	std.assert(std.hthas(ht, 0), "inserted element not present")
+	std.assert(std.htgetv(ht, 0, -1) == 499, "inserted element has wrong value")
+	std.htdel(ht, 0)
+	std.assert(!std.hthas(ht, 0), "element left in table")
+}
+
+const tombstonefill = {
+	var ht
+	var i
+
+	ht = std.mkht(idhash, ideq)
+	/* 
+	insert an element into each slot in the hash table, and
+	delete it. With direct hashing, this is guaranteed to have
+	put a tombstone into each slot.
+	*/
+	for i = 0; i <= ht.keys.len; i++
+		std.htput(ht, i, i)
+		std.htdel(ht, i)
+	;;
+	/* make sure we haven't actually got anything in the table */
+	std.assert(ht.nelt == 0, "elements left in hash table")
+	std.assert(!std.hthas(ht, 1), "found phantom element")
+}
+
+const main = {
+	/* only a few elements */
+	std.put("insertion\n")
+	insertion()
+	std.put("deletion\n")
+	deletion()
+	std.put("collision\n")
+	collision()
+
+	/* what happens if we try to fill everything up with tombstones? */
+	tombstonefill()
+}
+
+const idhash = {x
+	-> x
+}
+
+const ideq = {a, b
+	-> a == b
+}

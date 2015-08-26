@@ -150,7 +150,7 @@ searchmore:
     }
     if (!ht->hashes[i]) 
         return -1;
-    if (!ht->cmp(ht->keys[i], k) || (ht->hashes[i] == h && ht->dead[i]))
+    if ((ht->hashes[i] == h && ht->dead[i]) || !ht->cmp(ht->keys[i], k))
         goto searchmore; /* collision */
     return i;
 }
