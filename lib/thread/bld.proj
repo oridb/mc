@@ -1,0 +1,10 @@
+lib thread =
+	spawn+linux.myr
+	clone+linux-x64.s
+	atomic-impl+x64.s
+	atomic.myr
+;;
+
+test smoketest =
+	smoketest.myr
+;;

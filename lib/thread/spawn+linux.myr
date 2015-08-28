@@ -1,0 +1,56 @@
+use sys
+use std
+
+pkg thread =
+	type tid = sys.pid
+
+	const spawn : (fn : (-> void) -> std.result(tid, byte[:]))
+;;
+
+extern const clone	: ( flags : sys.cloneopt, \
+				stk : byte#, \
+				ptid : sys.pid#, \
+				tls : byte#, \
+				ctid : sys.pid#, \
+				ptreg : byte#, \
+				fn : (-> void) \
+				-> sys.pid)
+/* Holy shit flag mania. */
+const Thrflag = sys.Clonevm | sys.Clonefs | sys.Clonefiles  | \
+	sys.Clonesighand | sys.Clonethread |sys.Clonesysvsem | \
+	sys.Clonesettls | sys.Cloneparentsettid | sys.Clonechildcleartid
+
+const Stacksz = 8*std.MiB
+
+const spawn = {fn
+	-> spawnstk(fn, Stacksz)
+}
+
+const spawnstk = {fn, sz
+	var stk, tid, ctid, ret
+
+	stk = getstk(sz)
+	if stk == sys.Mapbad
+		-> `std.Fail "couldn't get stack"
+	;;
+
+	ret = clone(Thrflag, stk, &tid, 0 castto(byte#), &ctid, 0 castto(byte#), fn) castto(tid)
+	if ret < 0
+		std.put("errno={}\n", -ret)
+		-> `std.Fail "couldn't spawn thread"
+	;;
+	-> `std.Ok ret
+}
+
+const getstk = {sz
+	var p, m
+
+	p = sys.mmap(0 castto(byte#), sz, sys.Mprotrw, sys.Mpriv | sys.Manon, -1, 0)
+	if p == sys.Mapbad
+		-> p
+	;;
+	/* stack starts at the top of memory and grows down. */
+	m = p castto(std.intptr)
+	m += sz castto(std.intptr)
+	-> m castto(byte#)
+}

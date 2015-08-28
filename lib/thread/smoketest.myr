@@ -1,0 +1,33 @@
+use std
+use sys
+use thread
+
+var val : uint64 = 0
+var done : uint32 = 0
+
+const setvar = {
+	var i
+
+	for i = 0; i < 10_000_000; i++
+		thread.xadd(&val, 1)
+	;;
+	std.write(1, "done\n")
+	thread.xset(&done, 1)
+}
+
+const main = {
+	var i
+
+	match thread.spawn(setvar)
+	| `std.Ok tid:
+		for i = 0; i < 100_000; i++
+			thread.xadd(&val, 1)
+		;;
+		while thread.xget(&done) == 0
+			/* nothing */
+		;;
+		std.assert(val == 10_100_000, "atomics are broken")
+	| `std.Fail err:
+		std.fatal("errno = {}\n", err)
+	;;
+}
