@@ -62,9 +62,9 @@ const test = {b
 		->
 	;;
 	if ok
-		std.put("TESTS PASSED")
+		std.put("TESTS PASSED\n")
 	else
-		std.put("TESTS FAILED")
+		std.put("TESTS FAILED\n")
 	;;
 }
 
