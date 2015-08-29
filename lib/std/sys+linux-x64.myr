@@ -225,9 +225,9 @@ pkg sys =
 	const Epollcloexec	: epollflags	= 0o2000000
 
 	/* epoll ops */
-	const Epollctladd	: epollop	= 0
-	const Epollctlmod	: epollop	= 1
-	const Epollctldel	: epollop	= 1
+	const Epollctladd	: epollop	= 1
+	const Epollctlmod	: epollop	= 2
+	const Epollctldel	: epollop	= 3
 
 	/* epoll events */
 	const Epollin	: epollevttype = 0x001
