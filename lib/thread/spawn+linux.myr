@@ -7,14 +7,6 @@ pkg thread =
 	const spawn : (fn : (-> void) -> std.result(tid, byte[:]))
 ;;
 
-extern const clone	: ( flags : sys.cloneopt, \
-				stk : byte#, \
-				ptid : sys.pid#, \
-				tls : byte#, \
-				ctid : sys.pid#, \
-				ptreg : byte#, \
-				fn : (-> void) \
-				-> sys.pid)
 /* Holy shit flag mania. */
 const Thrflag = sys.Clonevm | sys.Clonefs | sys.Clonefiles  | \
 	sys.Clonesighand | sys.Clonethread |sys.Clonesysvsem | \
@@ -34,7 +26,7 @@ const spawnstk = {fn, sz
 		-> `std.Fail "couldn't get stack"
 	;;
 
-	ret = clone(Thrflag, stk, &tid, 0 castto(byte#), &ctid, 0 castto(byte#), fn) castto(tid)
+	ret = sys.fnclone(Thrflag, stk, &tid, 0 castto(byte#), &ctid, 0 castto(byte#), fn) castto(tid)
 	if ret < 0
 		std.put("errno={}\n", -ret)
 		-> `std.Fail "couldn't spawn thread"
