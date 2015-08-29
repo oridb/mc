@@ -593,6 +593,14 @@ pkg sys =
 	const fork	: (-> pid)
 	/* FIXME: where the fuck is 'struct pt_reg' defined?? */
 	const clone	: (flags : cloneopt, stk : byte#, ptid : pid#, ctid : pid#, ptreg : byte# -> pid)
+	extern const fnclone	: ( flags : cloneopt, \
+				stk : byte#, \
+				ptid : pid#, \
+				tls : byte#, \
+				ctid : pid#, \
+				ptreg : byte#, \
+				fn : (-> void) \
+				-> pid)
 	const wait4	: (pid:pid, loc:int32#, opt : int64, usage:rusage#	-> int64)
 	const waitpid	: (pid:pid, loc:int32#, opt : int64	-> int64)
 	const execv	: (cmd : byte[:], args : byte[:][:] -> int64)

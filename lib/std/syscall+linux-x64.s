@@ -20,3 +20,30 @@ sys$syscall:
 
 	ret
 
+/* clone(flags, stack, ptid, tls, ctid, regs) */
+.globl sys$fnclone
+sys$fnclone:
+	pushq %r15
+        /* %rsp is modified by clone(), so it's saved here */
+	movq 16(%rsp),%r15
+	/*
+        %rdi: flags, %rsi: stack, %rdx: ptid,
+        %rcx: tls, %r8: ctid, %r9: regs
+        */
+	movq $56,%rax	/* syscall num */
+	movq %rcx,%r10	/* tls */
+	syscall
+
+	/* fn() */
+	testl %eax,%eax
+	jnz parent
+	call *%r15
+
+	/* exit(0) */
+	movq $60, %rax  /* exit */
+	movq $0, %rdi   /* arg: 0 */
+	syscall
+
+parent:
+	popq %r15
+	ret

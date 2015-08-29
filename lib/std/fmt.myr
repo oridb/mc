@@ -30,6 +30,7 @@ pkg std =
 	/* write to buffer */
 	const fmt	: (fmt : byte[:], args : ... -> byte[:])
 	const fmtv	: (fmt : byte[:], ap : valist# -> byte[:])
+
 	const bfmt	: (buf : byte[:], fmt : byte[:], args : ... -> byte[:])
 	const bfmtv	: (buf : byte[:], fmt : byte[:], ap : valist# -> byte[:])
 
