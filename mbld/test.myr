@@ -15,64 +15,61 @@ pkg bld =
 ;;
 
 const test = {b
-	var ok, bin, hastest
+	var ok
+	var tests : (byte[:], byte[:])[:]
 
 	/* no implicit tests to run */
-	ok = true
-	hastest = false
+	tests = [][:]
 	if std.fexists("test")
 		for tn in b.all
 			match gettarg(b.targs, tn)
 			| `Bin bt:
-				hastest = true
-				if !dotest(b, bt)
-					ok = false
-				;;
+				tests = std.sljoin(tests, buildtests(b, bt))
 			| `Lib lt:
-				if !dotest(b, lt)
-					ok = false
-				;;
-			| _:	/* ignore */
+				tests = std.sljoin(tests, buildtests(b, lt))
+			| _:
+				/* nothing */
 			;;
 		;;
 	;;
 	for tn in b.all
 		match gettarg(b.targs, tn)
 		| `Test t:
-			hastest = true
 			if t.incpath.len == 0 || !std.sleq(t.incpath[0], ".")
 				t.incpath = std.slput(t.incpath, 0, std.sldup("."))
 			;;
 			buildbin(b, t, false)
+			tests = std.slpush(tests, (std.strcat("./", t.name), std.sldup(t.dir)))
 		| _:
 			/* skip */
 		;;
 	;;
-	for tn in b.all
-		match gettarg(b.targs, tn)
-		| `Test t:
-			setdir(b, t.dir)
-			bin = std.strcat("./", t.name)
-			if !runtest(bin)
-				ok = false
-			;;
-			std.slfree(bin)
-		| _:
-			/* skip */
+
+	ok = true
+	for (bin, dir) in tests
+		setdir(b, dir)
+		if !runtest(bin)
+			ok = false
 		;;
+
 	;;
-	if hastest
-		if ok
-			std.put("TESTS PASSED\n")
-		else
-			std.put("TESTS FAILED\n")
-			std.exit(1)
-		;;
+	for (bin, dir) in tests
+		std.slfree(bin)
+		std.slfree(dir)
+	;;
+	std.slfree(tests)
+	if tests.len == 0
+		->
+	;;
+	if ok
+		std.put("TESTS PASSED")
+	else
+		std.put("TESTS FAILED")
 	;;
 }
 
-const dotest = {b, targ
-	var tt, bin ,path, tests, ok
+const buildtests = {b, targ
+	var tt, bin ,path, tests
 
 	tests = [][:]
 	setdir(b, targ.dir)
@@ -91,22 +88,13 @@ const dotest = {b, targ
 
 			cleantest(b, path)
 			buildbin(b, &tt, true)
-			tests = std.slpush(tests, bin)
+			tests = std.slpush(tests, (std.strcat("./", bin), std.sldup(targ.dir)))
 			std.slfree(tt.libdeps)
 			std.slfree(tt.incpath)
 		;;
 		std.slfree(path)
 	;;
-
-	ok = true
-	for t in tests
-		if !runtest(t)
-			ok = false
-		;;
-		std.slfree(t)
-	;;
-	std.slfree(tests)
-	-> ok
+	-> tests
 }
 
 const cleantest = {b, src
