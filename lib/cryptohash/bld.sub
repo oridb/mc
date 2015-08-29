@@ -3,5 +3,7 @@ lib cryptohash =
 	sha1.myr
 	sha256.myr
 	sha512.myr
+
+	lib ../std:std
 ;;
 

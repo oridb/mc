@@ -22,6 +22,7 @@ bench: all
 
 .PHONY: bootstrap
 bootstrap: buildmyr
+	cp mbld/mbld xmbld
 	./genbootstrap.sh
 
 buildmyr:
