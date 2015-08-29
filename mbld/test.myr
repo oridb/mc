@@ -86,7 +86,7 @@ const dotest = {b, targ
 				.inputs = [path][:],
 				.install = false,
 				.libdeps = std.sldup(targ.libdeps),
-				.incpath = std.sldup(targ.incpath),
+				.incpath = std.slput(std.sldup(targ.incpath), 0, "."),
 			]
 
 			cleantest(b, path)
@@ -106,7 +106,6 @@ const dotest = {b, targ
 		std.slfree(t)
 	;;
 	std.slfree(tests)
-	std.put("test {}: {}\n", targ.name, ok)
 	-> ok
 }
 
