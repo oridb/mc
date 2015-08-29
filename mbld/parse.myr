@@ -622,7 +622,7 @@ const addtarg = {p, b, name, systags, targ
 const libpath = {p, libpath
 	var dir, lib, targ
 
-	match(std.strrfind(libpath, ":"))
+	match std.strrfind(libpath, ":")
 	| `std.None:
 		dir = std.sldup(".")
 		lib = std.sldup(libpath)

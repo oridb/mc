@@ -21,10 +21,10 @@ const test = {b
 	ok = true
 	hastest = false
 	if std.fexists("test")
-		hastest = true
 		for tn in b.all
 			match gettarg(b.targs, tn)
 			| `Bin bt:
+				hastest = true
 				if !dotest(b, bt)
 					ok = false
 				;;
@@ -85,13 +85,15 @@ const dotest = {b, targ
 				.dir = targ.dir,
 				.inputs = [path][:],
 				.install = false,
-				.libdeps = targ.libdeps,
-				.incpath = targ.incpath,
+				.libdeps = std.sldup(targ.libdeps),
+				.incpath = std.sldup(targ.incpath),
 			]
 
 			cleantest(b, path)
 			buildbin(b, &tt, true)
 			tests = std.slpush(tests, bin)
+			std.slfree(tt.libdeps)
+			std.slfree(tt.incpath)
 		;;
 		std.slfree(path)
 	;;

@@ -326,16 +326,20 @@ const visit = {cmd, head, g, lib, looped, marked, incs
 }
 
 const putlib = {cmd, head, lib, incs
+	var sep
+
 	if !config.Directlib
 		-> std.slput(cmd, head, std.fmt("-l{}", lib))
 	else
 		match findlib(lib, incs)
 		| `std.None:
-			std.put("searched:\n")
+			std.put("in path: ")
+			sep = ""
 			for inc in incs
-				std.put("\t{}\n", inc)
+				std.put("\t{}{}\n", sep, inc)
+				sep = ", "
 			;;
-			std.fatal("could not find library lib{}.a\n", lib)
+			std.fatal("could not find library lib{}.a.\n", lib)
 		| `std.Some p:
 			-> std.slput(cmd, head, p)
 		;;
