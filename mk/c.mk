@@ -6,7 +6,8 @@ _LIBSRCHPATHS=$(addprefix -L, $(dir $(DEPS)))
 _LIBINCPATHS=$(addprefix -I, $(dir $(DEPS)))
 _LIBPATHS=$(addprefix -l, $(patsubst lib%.a,%,$(notdir $(DEPS))))
 
-CFLAGS += -O -Wall -Werror -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -g
+# yeah, I should probably remove -Werror, but it's nice for developing alone.
+CFLAGS += -Wall -Werror -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -g
 CFLAGS += -MMD -MP -MF ${_DEPSDIR}/$(subst /,-,$*).d
 
 LIB ?= $(INSTLIB)
