@@ -5,12 +5,14 @@ lib regex =
 	types.myr
 
         lib ../std:std
+        lib ../sys:sys
 ;;
 
 bin redump {noinst} =
 	redump.myr
         lib ../std:std
         lib ../bio:bio
+        lib ../sys:sys
         lib regex
 ;;
 

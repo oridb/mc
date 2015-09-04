@@ -82,3 +82,43 @@ echo 	$pwd/muse/muse	-o std fmtfuncs.use fmt.use try.use pathjoin.use strjoin.us
 echo 	ar	-rcs libstd.a fmtfuncs.o fmt.o try.o pathjoin.o strjoin.o dir.o sljoin.o slpush.o strstrip.o htab.o now.o getcwd.o rand.o slurp.o varargs.o strbuf.o clear.o slput.o strsplit.o introspect.o alloc.o optparse.o fltbits.o sldup.o fltfmt.o extremum.o option.o slcp.o errno.o wait.o putint.o syswrap.o sort.o blat.o mk.o swap.o hassuffix.o execvp.o ipparse.o types.o strfind.o utf.o cstrconv.o search.o die.o units.o result.o bitset.o env.o resolve.o intparse.o hasprefix.o mkpath.o getint.o dirname.o sleq.o endian.o spork.o cmp.o syswrap-ss.o chartype.o bigint.o hashfuncs.o slfill.o dial.o ;	ar	-rcs libstd.a fmtfuncs.o fmt.o try.o pathjoin.o strjoin.o dir.o sljoin.o slpush.o strstrip.o htab.o now.o getcwd.o rand.o slurp.o varargs.o strbuf.o clear.o slput.o strsplit.o introspect.o alloc.o optparse.o fltbits.o sldup.o fltfmt.o extremum.o option.o slcp.o errno.o wait.o putint.o syswrap.o sort.o blat.o mk.o swap.o hassuffix.o execvp.o ipparse.o types.o strfind.o utf.o cstrconv.o search.o die.o units.o result.o bitset.o env.o resolve.o intparse.o hasprefix.o mkpath.o getint.o dirname.o sleq.o endian.o spork.o cmp.o syswrap-ss.o chartype.o bigint.o hashfuncs.o slfill.o dial.o 
 echo 	cd $pwd;	cd $pwd
 echo 	cd $pwd/lib/regex;	cd $pwd/lib/regex
+echo 	$pwd/6/6m	-I ../sys -I ../std types.myr ;	$pwd/6/6m	-I ../sys -I ../std types.myr 
+echo 	$pwd/6/6m	-I ../sys -I ../std interp.myr ;	$pwd/6/6m	-I ../sys -I ../std interp.myr 
+echo 	$pwd/6/6m	-I ../sys -I ../std ranges.myr ;	$pwd/6/6m	-I ../sys -I ../std ranges.myr 
+echo 	$pwd/6/6m	-I ../sys -I ../std compile.myr ;	$pwd/6/6m	-I ../sys -I ../std compile.myr 
+echo 	$pwd/muse/muse	-o regex interp.use types.use compile.use ranges.use ;	$pwd/muse/muse	-o regex interp.use types.use compile.use ranges.use 
+echo 	ar	-rcs libregex.a interp.o types.o compile.o ranges.o ;	ar	-rcs libregex.a interp.o types.o compile.o ranges.o 
+echo 	cd $pwd;	cd $pwd
+echo 	cd $pwd/lib/bio;	cd $pwd/lib/bio
+echo 	$pwd/6/6m	-I ../sys -I ../std bio.myr ;	$pwd/6/6m	-I ../sys -I ../std bio.myr 
+echo 	$pwd/6/6m	-I ../sys -I ../std puti.myr ;	$pwd/6/6m	-I ../sys -I ../std puti.myr 
+echo 	$pwd/6/6m	-I ../sys -I ../std geti.myr ;	$pwd/6/6m	-I ../sys -I ../std geti.myr 
+echo 	$pwd/muse/muse	-o bio puti.use bio.use geti.use ;	$pwd/muse/muse	-o bio puti.use bio.use geti.use 
+echo 	ar	-rcs libbio.a puti.o bio.o geti.o ;	ar	-rcs libbio.a puti.o bio.o geti.o 
+echo 	cd $pwd;	cd $pwd
+echo 	cd $pwd/lib/regex;	cd $pwd/lib/regex
+echo 	$pwd/6/6m	-I . -I ../sys -I ../bio -I ../std redump.myr ;	$pwd/6/6m	-I . -I ../sys -I ../bio -I ../std redump.myr 
+echo 	ld	-o redump $pwd/rt/_myrrt.o redump.o -L. -L../sys -L../bio -L../std -lregex -lbio -lstd -lsys ;	ld	-o redump $pwd/rt/_myrrt.o redump.o -L. -L../sys -L../bio -L../std -lregex -lbio -lstd -lsys 
+echo 	cd $pwd;	cd $pwd
+echo 	cd $pwd/lib/cryptohash;	cd $pwd/lib/cryptohash
+echo 	$pwd/6/6m	-I ../sys -I ../std sha1.myr ;	$pwd/6/6m	-I ../sys -I ../std sha1.myr 
+echo 	$pwd/6/6m	-I ../sys -I ../std sha512.myr ;	$pwd/6/6m	-I ../sys -I ../std sha512.myr 
+echo 	$pwd/6/6m	-I ../sys -I ../std sha256.myr ;	$pwd/6/6m	-I ../sys -I ../std sha256.myr 
+echo 	$pwd/6/6m	-I ../sys -I ../std md5.myr ;	$pwd/6/6m	-I ../sys -I ../std md5.myr 
+echo 	$pwd/muse/muse	-o cryptohash md5.use sha1.use sha512.use sha256.use ;	$pwd/muse/muse	-o cryptohash md5.use sha1.use sha512.use sha256.use 
+echo 	ar	-rcs libcryptohash.a md5.o sha1.o sha512.o sha256.o ;	ar	-rcs libcryptohash.a md5.o sha1.o sha512.o sha256.o 
+echo 	cd $pwd;	cd $pwd
+echo 	cd $pwd/mbld;	cd $pwd/mbld
+echo 	$pwd/6/6m	-I $pwd/lib/regex -I $pwd/lib/bio -I $pwd/lib/std -I $pwd/lib/sys config.myr ;	$pwd/6/6m	-I $pwd/lib/regex -I $pwd/lib/bio -I $pwd/lib/std -I $pwd/lib/sys config.myr 
+echo 	$pwd/6/6m	-I $pwd/lib/regex -I $pwd/lib/bio -I $pwd/lib/std -I $pwd/lib/sys opts.myr ;	$pwd/6/6m	-I $pwd/lib/regex -I $pwd/lib/bio -I $pwd/lib/std -I $pwd/lib/sys opts.myr 
+echo 	$pwd/6/6m	-I $pwd/lib/regex -I $pwd/lib/bio -I $pwd/lib/std -I $pwd/lib/sys types.myr ;	$pwd/6/6m	-I $pwd/lib/regex -I $pwd/lib/bio -I $pwd/lib/std -I $pwd/lib/sys types.myr 
+echo 	$pwd/6/6m	-I $pwd/lib/regex -I $pwd/lib/bio -I $pwd/lib/std -I $pwd/lib/sys util.myr ;	$pwd/6/6m	-I $pwd/lib/regex -I $pwd/lib/bio -I $pwd/lib/std -I $pwd/lib/sys util.myr 
+echo 	$pwd/6/6m	-I $pwd/lib/regex -I $pwd/lib/bio -I $pwd/lib/std -I $pwd/lib/sys deps.myr ;	$pwd/6/6m	-I $pwd/lib/regex -I $pwd/lib/bio -I $pwd/lib/std -I $pwd/lib/sys deps.myr 
+echo 	$pwd/6/6m	-I $pwd/lib/regex -I $pwd/lib/bio -I $pwd/lib/std -I $pwd/lib/sys syssel.myr ;	$pwd/6/6m	-I $pwd/lib/regex -I $pwd/lib/bio -I $pwd/lib/std -I $pwd/lib/sys syssel.myr 
+echo 	$pwd/6/6m	-I $pwd/lib/regex -I $pwd/lib/bio -I $pwd/lib/std -I $pwd/lib/sys parse.myr ;	$pwd/6/6m	-I $pwd/lib/regex -I $pwd/lib/bio -I $pwd/lib/std -I $pwd/lib/sys parse.myr 
+echo 	$pwd/6/6m	-I $pwd/lib/regex -I $pwd/lib/bio -I $pwd/lib/std -I $pwd/lib/sys build.myr ;	$pwd/6/6m	-I $pwd/lib/regex -I $pwd/lib/bio -I $pwd/lib/std -I $pwd/lib/sys build.myr 
+echo 	$pwd/6/6m	-I $pwd/lib/regex -I $pwd/lib/bio -I $pwd/lib/std -I $pwd/lib/sys install.myr ;	$pwd/6/6m	-I $pwd/lib/regex -I $pwd/lib/bio -I $pwd/lib/std -I $pwd/lib/sys install.myr 
+echo 	$pwd/6/6m	-I $pwd/lib/regex -I $pwd/lib/bio -I $pwd/lib/std -I $pwd/lib/sys clean.myr ;	$pwd/6/6m	-I $pwd/lib/regex -I $pwd/lib/bio -I $pwd/lib/std -I $pwd/lib/sys clean.myr 
+echo 	$pwd/6/6m	-I $pwd/lib/regex -I $pwd/lib/bio -I $pwd/lib/std -I $pwd/lib/sys test.myr ;	$pwd/6/6m	-I $pwd/lib/regex -I $pwd/lib/bio -I $pwd/lib/std -I $pwd/lib/sys test.myr 
+echo 	$pwd/6/6m	-I $pwd/lib/regex -I $pwd/lib/bio -I $pwd/lib/std -I $pwd/lib/sys main.myr ;	$pwd/6/6m	-I $pwd/lib/regex -I $pwd/lib/bio -I $pwd/lib/std -I $pwd/lib/sys main.myr 
+echo 	ld	-o mbld $pwd/rt/_myrrt.o clean.o config.o deps.o types.o syssel.o util.o parse.o main.o build.o opts.o install.o test.o -L$pwd/lib/regex -L$pwd/lib/bio -L$pwd/lib/std -L$pwd/lib/sys -lregex -lbio -lstd -lsys ;	ld	-o mbld $pwd/rt/_myrrt.o clean.o config.o deps.o types.o syssel.o util.o parse.o main.o build.o opts.o install.o test.o -L$pwd/lib/regex -L$pwd/lib/bio -L$pwd/lib/std -L$pwd/lib/sys -lregex -lbio -lstd -lsys 
