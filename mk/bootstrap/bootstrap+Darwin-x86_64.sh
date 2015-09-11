@@ -96,18 +96,6 @@ echo 	$pwd/6/6m	-I ../sys -I ../std geti.myr ;	$pwd/6/6m	-I ../sys -I ../std get
 echo 	$pwd/muse/muse	-o bio puti.use bio.use geti.use ;	$pwd/muse/muse	-o bio puti.use bio.use geti.use 
 echo 	ar	-rcs libbio.a puti.o bio.o geti.o ;	ar	-rcs libbio.a puti.o bio.o geti.o 
 echo 	cd $pwd;	cd $pwd
-echo 	cd $pwd/lib/regex;	cd $pwd/lib/regex
-echo 	$pwd/6/6m	-I . -I ../sys -I ../bio -I ../std redump.myr ;	$pwd/6/6m	-I . -I ../sys -I ../bio -I ../std redump.myr 
-echo 	ld	-pagezero_size 0x100000000 -macosx_version_min 10.6 -o redump $pwd/rt/_myrrt.o redump.o -L. -L../sys -L../bio -L../std -lregex -lbio -lstd -lsys -macosx_version_min 10.6 ;	ld	-pagezero_size 0x100000000 -macosx_version_min 10.6 -o redump $pwd/rt/_myrrt.o redump.o -L. -L../sys -L../bio -L../std -lregex -lbio -lstd -lsys -macosx_version_min 10.6 
-echo 	cd $pwd;	cd $pwd
-echo 	cd $pwd/lib/cryptohash;	cd $pwd/lib/cryptohash
-echo 	$pwd/6/6m	-I ../sys -I ../std sha1.myr ;	$pwd/6/6m	-I ../sys -I ../std sha1.myr 
-echo 	$pwd/6/6m	-I ../sys -I ../std sha512.myr ;	$pwd/6/6m	-I ../sys -I ../std sha512.myr 
-echo 	$pwd/6/6m	-I ../sys -I ../std sha256.myr ;	$pwd/6/6m	-I ../sys -I ../std sha256.myr 
-echo 	$pwd/6/6m	-I ../sys -I ../std md5.myr ;	$pwd/6/6m	-I ../sys -I ../std md5.myr 
-echo 	$pwd/muse/muse	-o cryptohash md5.use sha1.use sha512.use sha256.use ;	$pwd/muse/muse	-o cryptohash md5.use sha1.use sha512.use sha256.use 
-echo 	ar	-rcs libcryptohash.a md5.o sha1.o sha512.o sha256.o ;	ar	-rcs libcryptohash.a md5.o sha1.o sha512.o sha256.o 
-echo 	cd $pwd;	cd $pwd
 echo 	cd $pwd/mbld;	cd $pwd/mbld
 echo 	$pwd/6/6m	-I $pwd/lib/regex -I $pwd/lib/bio -I $pwd/lib/std -I $pwd/lib/sys config.myr ;	$pwd/6/6m	-I $pwd/lib/regex -I $pwd/lib/bio -I $pwd/lib/std -I $pwd/lib/sys config.myr 
 echo 	$pwd/6/6m	-I $pwd/lib/regex -I $pwd/lib/bio -I $pwd/lib/std -I $pwd/lib/sys opts.myr ;	$pwd/6/6m	-I $pwd/lib/regex -I $pwd/lib/bio -I $pwd/lib/std -I $pwd/lib/sys opts.myr 
