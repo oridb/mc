@@ -13,7 +13,7 @@ const main = {
 	;;
 }
 
-const eq = {expected, actual
+const eq = {actual, expected
 	if !std.sleq(expected, actual)
 		std.fatal("expected date {}, got {}\n", expected, actual)
 	;;

@@ -16,6 +16,7 @@ const parsefmtz = {f, s, tz
 	var d
 	var err
 
+	d = [.year = 0]
 	err = false
 	s = filldate(&d, f, s, tz, &err)
 	if err || s.len > 0

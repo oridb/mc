@@ -36,18 +36,18 @@ const bfmt = {buf, f, d
 			| 'b':	s = std.bfmt(buf[o:], "{}", _names.abbrevmon[d.mon])
 			| 'B':	s = std.bfmt(buf[o:], "{}", _names.fullmon[d.mon])
 			| 'c':	s = bfmt(buf[o:], "%Y-%m-%d", d)
-			| 'C':	s = std.bfmt(buf[o:], "{02}", d.year % 100)
-			| 'd':	s = std.bfmt(buf[o:], "{02}", d.day)
+			| 'C':	s = std.bfmt(buf[o:], "{p=0,w=2}", d.year % 100)
+			| 'd':	s = std.bfmt(buf[o:], "{p=0,w=2}", d.day)
 			| 'D':	s = bfmt(buf[o:], "%m/%d/%y (wtf america)", d)
-			| 'e':	s = std.bfmt(buf[o:], "{2}", d.day)
+			| 'e':	s = std.bfmt(buf[o:], "{w=2}", d.day)
 			| 'F':	s = bfmt(buf[o:], "%y-%m-%d", d)
 			/*
 			| 'G':	s = std.bfmt(buf[o:], ...?
 			| 'g':
 			*/
 			| 'h':	s = std.bfmt(buf[o:], "{}", _names.abbrevmon[d.mon])
-			| 'H':	s = std.bfmt(buf[o:], "{02}", d.h)
-			| 'I':	s = std.bfmt(buf[o:], "{02}", d.h % 12)
+			| 'H':	s = std.bfmt(buf[o:], "{p=0,w=2}", d.h)
+			| 'I':	s = std.bfmt(buf[o:], "{p=0,w=2}", d.h % 12)
 			| 'j':	s = std.bfmt(buf[o:], "year day... unimplemented.")
 			| 'k':	s = std.bfmt(buf[o:], "{}", d.h)
 			| 'l':	s = std.bfmt(buf[o:], "{}", d.h % 12)
@@ -93,5 +93,5 @@ const timezone = {buf, off
 	off /= 1_000_000
 	h = off / 3600
 	m = off % 3600
-	-> std.bfmt(buf, "{}{02}{02}", sep, h, m)
+	-> std.bfmt(buf, "{}{p=0,w=2}{p=0,w=2}", sep, h, m)
 }
