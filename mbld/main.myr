@@ -115,7 +115,7 @@ const main = {args : byte[:][:]
 				| "install":	bld.install(b)
 				| "uninstall":	bld.uninstall(b)
 				| "test":	bld.test(b)
-				| target:	bld.build(b, target)
+				| target:	bld.buildtarg(b, target)
 				;;
 			;;
 		;;

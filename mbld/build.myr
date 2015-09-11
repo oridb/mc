@@ -10,7 +10,7 @@ use "util.use"
 pkg bld =
 	const buildall	: (b : build# -> bool)
 	const genall	: (b : build# -> bool)
-	const build	: (b : build#, target : byte[:] -> bool)
+	const buildtarg	: (b : build#, target : byte[:] -> bool)
 	const buildbin	: (b : build#, bt : myrtarg#, addsrc : bool -> void)
 	const buildlib	: (b : build#, lt : myrtarg# -> void)
 ;;
@@ -31,6 +31,54 @@ const buildall = {b
 		;;
 	;;
 	-> true
+}
+
+const buildtarg = {b, targ
+	var depset
+
+	depset = std.mkht(std.strhash, std.streq)
+	addeps(b, targ, depset)
+	for tn in b.all
+		if std.hthas(b.built, tn)
+			continue
+		;;
+		if !std.hthas(depset, tn)
+			continue
+		;;
+		std.htput(b.built, tn, true)
+		match gettarg(b.targs, tn)
+		| `Bin bt:	buildbin(b, bt, false)
+		| `Lib lt:	buildlib(b, lt)
+		| `Test tt:	/* build on 'mbld test' by default */
+		| `Gen gt:	genfiles(b, gt)
+		| `Man mt:	/* nothing needed */
+		| `Cmd ct:	/* these are for manual commands */
+		;;
+		if std.sleq(tn, targ)
+			break
+		;;
+	;;
+	std.htfree(depset)
+	-> true
+}
+
+const addeps = {b, targ, depset
+	if std.hthas(depset, targ)
+		->
+	;;
+	std.put("#### Adding dep {}\n", targ)
+	std.htput(depset, targ, true)
+	match gettarg(b.targs, targ)
+	| `Bin bt:
+		for (dir, lib, targname) in bt.libdeps
+			addeps(b, targname, depset)
+		;;
+	| `Lib lt:
+		for (dir, lib, targname) in lt.libdeps
+			addeps(b, targname, depset)
+		;;
+	| _:
+	;;
 }
 
 const genall = {b
