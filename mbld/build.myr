@@ -63,6 +63,7 @@ const addeps = {b, targ, depset
 	if std.hthas(depset, targ)
 		->
 	;;
+
 	std.htput(depset, targ, true)
 	match gettarg(b.targs, targ)
 	| `Bin bt:

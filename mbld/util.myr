@@ -98,7 +98,7 @@ const strlistfree = {sl
 
 const gettarg = {tab, n
 	match std.htget(tab, n)
-	| `std.None:	std.fatal("internal: nonexistent {}\n", n)
+	| `std.None:	std.fatal("unknown target '{}'\n", n)
 	| `std.Some t:	-> t
 	;;
 }
