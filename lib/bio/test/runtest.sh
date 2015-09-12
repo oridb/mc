@@ -4,7 +4,7 @@ NPASSES=0
 
 function build {
     rm -f $1 $1.o $1.s $1.use
-    myrbuild $FLAGS -b $1 $1.myr $EXTRA_SRC
+    mbld $FLAGS -b $1 $1.myr $EXTRA_SRC
 }
 
 function pass {

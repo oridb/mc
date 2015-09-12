@@ -4,7 +4,7 @@ use bio
 generic try = {opt : std.option(@a::(integral,numeric))-> @a::(integral,numeric)
 	match opt
 	| `std.Some val:	-> val
-	| `std.None:	std.fatal(1, "read failed")
+	| `std.None:	std.fatal("read failed")
 	;;
 }
 const main = {
@@ -16,8 +16,8 @@ const main = {
 
 	/* use the expected write data as read data */
 	match bio.open("data/bio-endianwr-expected", bio.Rd)
-	| `std.Some bio:	f = bio
-	| `std.None:	std.fatal(1, "Unable to open data file")
+	| `std.Ok bio:	f = bio
+	| `std.Fail m:	std.fatal("Unable to open data file: {}\n", m)
 	;;
 	
 	/* byte */
@@ -47,7 +47,9 @@ const main = {
 	/* end of file */
 	match bio.getle64(f)
 	| `std.None:
-	| `std.Some v:	std.die("read past end of file\n")
+	| `std.Some v:
+		std.die("read past end of file\n")
+		v = q /* shut up type inference */
 	;;
 
 	bio.close(f);

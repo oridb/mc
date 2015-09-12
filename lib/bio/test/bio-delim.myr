@@ -6,8 +6,8 @@ const main = {
 	var d
 
 	match bio.open("data/lines", bio.Rd)
-	| `std.Some bio:	f = bio
-	| `std.None:	std.fatal(1, "Unable to open data file\n")
+	| `std.Ok bio:	f = bio
+	| `std.Fail m:	std.fatal("Unable to open data file: {}\n", m)
 	;;
 
 	/* read first line */

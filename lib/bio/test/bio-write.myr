@@ -8,8 +8,8 @@ const main = {
 	var buf : byte[64*1024]
 
 	match bio.create("tmpout/test-write", bio.Wr, 0o644)
-	| `std.Some bio:	f = bio
-	| `std.None:	std.fatal(1, "Unable to open data file")
+	| `std.Ok bio:	f = bio
+	| `std.Fail m:	std.fatal("Unable to open data file: {}", m)
 	;;
 
 	/* write a 5 byte chunk */

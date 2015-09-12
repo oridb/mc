@@ -4,8 +4,8 @@ use bio
 const main = {
 	var f
 	match bio.create("tmpout/test-unitwr", bio.Wr, 0o644)
-	| `std.Some bio:	f = bio
-	| `std.None:	std.fatal(1, "Unable to open data file")
+	| `std.Ok bio:	f = bio
+	| `std.Fail m:	std.fatal("Unable to open data file: {}\n", m)
 	;;
 	bio.putb(f, 42)
 	bio.putc(f, 'ה')
