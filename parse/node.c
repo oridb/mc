@@ -146,6 +146,7 @@ Node *mkloopstmt(Srcloc loc, Node *init, Node *cond, Node *incr, Node *body)
     n->loopstmt.cond = cond;
     n->loopstmt.step = incr;
     n->loopstmt.body = body;
+    n->loopstmt.scope = mkstab();
 
     return n;
 }

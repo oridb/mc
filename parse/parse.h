@@ -266,6 +266,7 @@ struct Node {
             Node *cond;
             Node *step;
             Node *body;
+            Stab *scope;
         } loopstmt;
 
         struct {

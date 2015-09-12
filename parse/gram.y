@@ -855,10 +855,14 @@ forstmt : Tfor optexprln optexprln optexprln block
             {$$ = mkloopstmt($1->loc, $2, $3, $4, $5);}
         | Tfor expr Tin exprln block
             {$$ = mkiterstmt($1->loc, $2, $4, $5);}
-        /* FIXME: allow decls in for loops
-        | Tfor decl Tendln optexprln optexprln block
-            {$$ = mkloopstmt($1->loc, $2, $4, $5, $6);}
-        */
+        | Tfor decl Tendln optexprln optexprln block {
+                //Node *init;
+                if ($2.nn != 1)
+                    lfatal($1->loc, "only one declaration is allowed in for loop");
+                $$ = mkloopstmt($1->loc, $2.nl[0], $4, $5, $6);
+                putdcl($$->loopstmt.scope, $2.nl[0]);
+            }
+
         ;
 
 whilestmt

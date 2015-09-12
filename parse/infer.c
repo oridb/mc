@@ -1651,11 +1651,14 @@ static void infernode(Inferstate *st, Node **np, Type *ret, int *sawret)
             unify(st, n, type(st, n->ifstmt.cond), mktype(n->loc, Tybool));
             break;
         case Nloopstmt:
+            setsuper(n->loopstmt.scope, curstab());
+            pushstab(n->loopstmt.scope);
             infernode(st, &n->loopstmt.init, ret, sawret);
             infernode(st, &n->loopstmt.cond, NULL, sawret);
             infernode(st, &n->loopstmt.step, ret, sawret);
             infernode(st, &n->loopstmt.body, ret, sawret);
             unify(st, n, type(st, n->loopstmt.cond), mktype(n->loc, Tybool));
+            popstab();
             break;
         case Niterstmt:
             bound = NULL;

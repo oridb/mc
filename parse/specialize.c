@@ -191,10 +191,12 @@ static void fixup(Node *n)
             fixup(n->ifstmt.iffalse);
             break;
         case Nloopstmt:
+            pushstab(n->loopstmt.scope);
             fixup(n->loopstmt.init);
             fixup(n->loopstmt.cond);
             fixup(n->loopstmt.step);
             fixup(n->loopstmt.body);
+            popstab();
             break;
         case Niterstmt:
             pushstab(n->iterstmt.body->block.scope);
@@ -290,10 +292,14 @@ static Node *specializenode(Node *n, Htab *tsmap)
             r->ifstmt.iffalse = specializenode(n->ifstmt.iffalse, tsmap);
             break;
         case Nloopstmt:
+            r->loopstmt.scope = mkstab();
+            r->loopstmt.scope->super = curstab();
+            pushstab(r->loopstmt.scope);
             r->loopstmt.init = specializenode(n->loopstmt.init, tsmap);
             r->loopstmt.cond = specializenode(n->loopstmt.cond, tsmap);
             r->loopstmt.step = specializenode(n->loopstmt.step, tsmap);
             r->loopstmt.body = specializenode(n->loopstmt.body, tsmap);
+            popstab();
             break;
         case Niterstmt:
             r->iterstmt.elt = specializenode(n->iterstmt.elt, tsmap);
