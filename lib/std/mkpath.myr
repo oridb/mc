@@ -7,9 +7,8 @@ pkg std =
 
 const mkpath = {p
 	var st
-	var i
 
-	for i = 0; i < p.len; i++
+	for var i = 0; i < p.len; i++
 		if p[i] == '/' castto(byte) && i != 0
 			st = mkdir(p[:i], 0o777)
 			if st != 0 && (st castto(errno)) != Eexist

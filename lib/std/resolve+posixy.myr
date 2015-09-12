@@ -314,7 +314,6 @@ const rquery = {srv, id
 const hosts = {pkt, id : uint16
 	var off
 	var v, q, a
-	var i
 	var hinf : hostinfo[:]
 
 	off = 0
@@ -330,7 +329,7 @@ const hosts = {pkt, id : uint16
 	(v, off) = unpack16(pkt, off)	/* arcount */
 
 	/* skip past query records */
-	for i = 0; i < q; i++
+	for var i = 0; i < q; i++
 		off = skipname(pkt, off)	/* name */
 		(v, off) = unpack16(pkt, off)	/* type */
 		(v, off) = unpack16(pkt, off)	/* class */
@@ -338,7 +337,7 @@ const hosts = {pkt, id : uint16
 
 	/* parse answer records */
 	hinf = slalloc(a castto(size))
-	for i = 0; i < a; i++
+	for var i = 0; i < a; i++
 		off = skipname(pkt, off)	/* name */
 		(v, off) = unpack16(pkt, off)	/* type */
 		(v, off) = unpack16(pkt, off)	/* class */
@@ -392,13 +391,12 @@ const unpack32 = {buf, off
 }
 
 const packname = {buf, off : size, host
-	var i
 	var start
 	var last
 
 	start = off
 	last = 0
-	for i = 0; i < host.len; i++
+	for var i = 0; i < host.len; i++
 		if host[i] == ('.' castto(byte))
 			off += addseg(buf, off, host[last:i])
 			last = i + 1

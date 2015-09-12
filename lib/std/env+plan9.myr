@@ -21,8 +21,7 @@ var envkey 	: byte[:][:]
 var envval	: byte[:][:]
 
 const envfind = {key
-	var i
-	for i = 0; i < envkey.len; i++
+	for var i = 0; i < envkey.len; i++
 		if std.sleq(envkey[i], key)
 			-> `Some envval[i]
 		;;

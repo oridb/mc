@@ -8,9 +8,7 @@ pkg std =
 
 /* linear search over a list of values */
 generic lsearch = {sl, val, cmp
-	var i
-
-	for i = 0; i < sl.len; i++
+	for var i = 0; i < sl.len; i++
 		match cmp(sl[i], val)
 		| `Equal:
 			-> `Some i

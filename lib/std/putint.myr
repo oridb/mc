@@ -22,10 +22,10 @@ generic putle8	= {buf, v;	-> putle(buf, v castto(uint64), 1)}
 generic putbe8	= {buf, v;	-> putbe(buf, v castto(uint64), 1)}
 
 const putbe = {buf, val, n
-	var i, k
+	var k
 	
 	assert(buf.len >= n, "buffer too small")
-	for i = 0; i < n; i++
+	for var i = 0; i < n; i++
 		k = val >> (8*(n-i-1))
 		buf[i] = (k & 0xff) castto(byte)
 	;;
@@ -33,10 +33,8 @@ const putbe = {buf, val, n
 }
 
 const putle = {buf, val, n
-	var i
-
 	assert(buf.len >= n, "buffer too small")
-	for i = 0; i < n; i++
+	for var i = 0; i < n; i++
 		buf[i] = (val & 0xff) castto(byte)
 		val >>= 8
 	;;

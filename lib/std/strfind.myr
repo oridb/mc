@@ -16,13 +16,13 @@ const strrfind = {haystack, needle
 }
 
 const strfindin = {haystack, needle, start, end
-	var i, j, inc : size
+	var inc : size
 
 	inc = 1
 	if start > end
 		inc = -1
 	;;
-	for i = start; i != end; i += inc
+	for var i = start; i != end; i += inc
 		/* 
 		if we knew the direction we could terminate early,
 		but we allow the start and end to be passed in.
@@ -31,7 +31,7 @@ const strfindin = {haystack, needle, start, end
 			continue
 		;;
 		if haystack[i] == needle[0]
-			for j = 0; j < needle.len; j++
+			for var j = 0; j < needle.len; j++
 				if haystack[i + j] != needle[j]
 					goto nextiter
 				;;

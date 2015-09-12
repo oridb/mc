@@ -3,9 +3,7 @@ pkg std =
 ;;
 
 generic slfill = {sl, v
-	var i
-
-	for i = 0; i < sl.len; i++
+	for var i = 0; i < sl.len; i++
 		sl[i] = v
 	;;
 	-> sl

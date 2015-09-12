@@ -7,9 +7,7 @@ pkg std =
 ;;
 
 const cstrconv = {buf
-	var i
-
-	for i = 0; i < buf.len; i++
+	for var i = 0; i < buf.len; i++
 		if buf[i] == 0
 			-> buf[:i]
 		;;
@@ -29,12 +27,10 @@ const cstrconvp = {p
 }
 
 const cstrlen = {buf
-	var i
-
-	for i = 0; i < buf.len; i++
+	for var i = 0; i < buf.len; i++
 		if buf[i] == 0
-			break
+			-> i
 		;;
 	;;
-	-> i
+	-> 0
 }

@@ -46,10 +46,9 @@ const cleanup = {re
 
 const getmatches = {re, thr
 	var ret
-	var i
 
 	ret = std.slalloc(re.nmatch)
-	for i = 0; i < re.nmatch; i++
+	for var i = 0; i < re.nmatch; i++
 		if thr.mstart[i] != -1 && thr.mend[i] != -1
 			ret[i] = re.str[thr.mstart[i]:thr.mend[i]]
 		else
@@ -62,7 +61,7 @@ const getmatches = {re, thr
 
 /* returns a matching thread, or Zthr if no threads matched */
 const run = {re
-	var i, ip
+	var ip
 	var consumed
 	var thr
 	var states
@@ -71,7 +70,7 @@ const run = {re
 	re.runq = mkthread(re, 0)
 	re.runq.mstart = std.slalloc(re.nmatch)
 	re.runq.mend = std.slalloc(re.nmatch)
-	for i = 0; i < re.nmatch; i++
+	for var i = 0; i < re.nmatch; i++
 		re.runq.mstart[i] = -1
 		re.runq.mend[i] = -1
 	;;

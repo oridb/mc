@@ -26,12 +26,11 @@ const strfstrip = {str
 
 /* strip reverse on str */
 const strrstrip = {str
-	var i
 	var end
 
 	/* scan backwards for start of utf8 char */
 	end = str.len
-	for i = str.len; i != 0; i--
+	for var i = str.len; i != 0; i--
 		if str[i - 1] & 0x80 == 0 || str[i-1] & 0xc0 != 0x80
 			if !isspace(decode(str[i-1:]))
 				break

@@ -25,10 +25,9 @@ generic numcmp = {a, b
 
 const strcmp = {a, b
 	var l
-	var i
 
 	l = min(a.len, b.len)
-	for i = 0; i < l; i++
+	for var i = 0; i < l; i++
 		if a[i] < b[i]
 			-> `Before
 		elif a[i] > b[i]

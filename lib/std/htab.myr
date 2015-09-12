@@ -45,7 +45,6 @@ generic resize = {ht, sz
 	var oldv
 	var oldh
 	var oldd
-	var i
 
 	oldk = ht.keys
 	oldv = ht.vals
@@ -58,7 +57,7 @@ generic resize = {ht, sz
 
 	ht.nelt = 0
 	ht.ndead = 0
-	for i = 0; i < oldk.len; i++
+	for var i = 0; i < oldk.len; i++
 		if oldh[i] != 0 && !oldd[i]
 			htput(ht, oldk[i], oldv[i])
 		;;
@@ -191,12 +190,11 @@ generic hthas = {ht, k
 
 generic htkeys = {ht
 	var keys
-	var i
 	var j
 
 	keys = slalloc(ht.nelt)
 	j = 0
-	for i = 0; i < ht.keys.len; i++
+	for var i = 0; i < ht.keys.len; i++
 		if ht.hashes[i] != 0 && !ht.dead[i]
 			keys[j++] = ht.keys[i]
 		;;

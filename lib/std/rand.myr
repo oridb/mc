@@ -75,13 +75,11 @@ const delrng = {rng
 
 /* initializes a random number generator from the seed `seed`. */
 const init = {rng, seed
-	var i
-
-	for i = 0; i < 624; i++
+	for var i = 0; i < 624; i++
 		rng.state[i] = seed
 		seed = 1812433253 * (seed ^ (seed >> 30)) + i + 1
 	;;
-	rng.i = i
+	rng.i = 624
 }
 
 /*
@@ -117,10 +115,10 @@ generic rand = {rng, lo, hi -> @a::(integral,numeric)
    may be negative, if the type is signed.
 */
 generic randN = {rng -> @a::(integral,numeric)
-	var i, val
+	var val
 
 	val = 0
-	for i = 0; i < sizeof(@a)/4; i++
+	for var i = 0; i < sizeof(@a)/4; i++
 		val <<= 8*sizeof(@a)
 		val |= rand32(rng) castto(@a::(integral,numeric))
 	;;
@@ -147,10 +145,10 @@ const rand32 = {rng
 }
 
 const randbytes = {rng, buf
-	var i, n, r
+	var n, r
 
 	n = 0
-	for i = 0; i < buf.len/4; i++
+	for var i = 0; i < buf.len/4; i++
 		r = rand32(rng)
 		buf[n++] = (r >>  0 & 0xff) castto(byte)
 		buf[n++] = (r >>  8 & 0xff) castto(byte)

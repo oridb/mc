@@ -38,12 +38,12 @@ const bigfmt = {sb, ap, opts
 }
 
 const bsfmt = {sb, ap, opts
-	var i, bs, sep
+	var bs, sep
 
 	bs = vanext(ap)
 	sep = ""
 	sbputs(sb, "bitset{")
-	for i = 0; i < bsmax(bs); i++
+	for var i = 0; i < bsmax(bs); i++
 		if bshas(bs, i)
 			sbfmt(sb, sep)
 			sbfmt(sb, "{}", i)

@@ -29,7 +29,6 @@ const charlen = {c
 const encode = {buf, c
 	var len
 	var mark
-	var i
 
 	len = charlen(c)
 	if len < 0 || buf.len < len
@@ -42,7 +41,7 @@ const encode = {buf, c
 		mark = (((1 << (8 - len)) - 1) ^ 0xff) castto(char)
 	;;
 
-	for i = len - 1; i > 0; i--
+	for var i = len - 1; i > 0; i--
 		buf[i] = (c & 0x3f | 0x80) castto(byte)
 		c >>= 6
 	;;
@@ -63,7 +62,6 @@ const striter = {str
 	var len
 	var mask
 	var chr
-	var i
 	var c
 	var tmp
 
@@ -94,7 +92,7 @@ const striter = {str
 
 	mask = (1 << (8 - len)) - 1
 	chr = (c castto(uint32)) & mask
-	for i = 1; i < len; i++
+	for var i = 1; i < len; i++
 		tmp = str[i] castto(uint32)
 		chr = (chr << 6) | (tmp & 0x3f)
 	;;

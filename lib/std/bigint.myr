@@ -229,12 +229,10 @@ const bigiszero = {v
 }
 
 const bigeq = {a, b
-	var i
-
 	if a.sign != b.sign || a.dig.len != b.dig.len
 		-> false
 	;;
-	for i = 0; i < a.dig.len; i++
+	for var i = 0; i < a.dig.len; i++
 		if a.dig[i] != b.dig[i]
 			-> false
 		;;
@@ -251,7 +249,6 @@ generic bigeqi = {a, b
 }
 
 const bigcmp = {a, b
-	var i
 	var da, db, sa, sb
 
 	sa = a.sign castto(int64)
@@ -266,7 +263,7 @@ const bigcmp = {a, b
 		-> signedorder(sa)
 	else
 		/* otherwise, the one with the first larger digit is bigger */
-		for i = a.dig.len; i > 0; i--
+		for var i = a.dig.len; i > 0; i--
 			da = a.dig[i - 1] castto(int64)
 			db = b.dig[i - 1] castto(int64)
 			-> signedorder(sa * (da - db))
@@ -647,7 +644,6 @@ generic bigdivi = {a, b
 generic bigshli = {a, s : @a::(numeric,integral)
 	var off, shift
 	var t, carry
-	var i
 
 	assert(s >= 0, "shift amount must be positive")
 	off = (s castto(uint64)) / 32
@@ -659,15 +655,15 @@ generic bigshli = {a, s : @a::(numeric,integral)
 	;;
 	a.dig = slzgrow(a.dig, 1 + a.dig.len + off castto(size))
 	/* blit over the base values */
-	for i = a.dig.len; i > off; i--
+	for var i = a.dig.len; i > off; i--
 		a.dig[i - 1] = a.dig[i - 1 - off]
 	;;
-	for i = 0; i < off; i++
+	for var i = 0; i < off; i++
 		a.dig[i] = 0
 	;;
 	/* and shift over by the remainder */
 	carry = 0
-	for i = 0; i < a.dig.len; i++
+	for var i = 0; i < a.dig.len; i++
 		t = (a.dig[i] castto(uint64)) << shift
 		a.dig[i] = (t | carry) castto(uint32) 
 		carry = t >> 32
@@ -679,22 +675,21 @@ generic bigshli = {a, s : @a::(numeric,integral)
 generic bigshri = {a, s
 	var off, shift
 	var t, carry
-	var i
 
 	assert(s >= 0, "shift amount must be positive")
 	off = (s castto(uint64)) / 32
 	shift = (s castto(uint64)) % 32
 
 	/* blit over the base values */
-	for i = 0; i < a.dig.len - off; i++
+	for var i = 0; i < a.dig.len - off; i++
 		a.dig[i] = a.dig[i + off]
 	;;
-	for i = a.dig.len - off; i < a.dig.len; i++
+	for var i = a.dig.len - off; i < a.dig.len; i++
 		a.dig[i] = 0
 	;;
 	/* and shift over by the remainder */
 	carry = 0
-	for i = a.dig.len; i > 0; i--
+	for var i = a.dig.len; i > 0; i--
 		t = (a.dig[i - 1] castto(uint64))
 		a.dig[i - 1] = (carry | (t >> shift)) castto(uint32) 
 		carry = t << (32 - shift)

@@ -291,9 +291,7 @@ const ensurecodepoint = {f
   little endian format
 */
 generic putle = {f, v : @a::(numeric,integral)
-	var i
-
-	for i = 0; i < sizeof(@a); i++
+	for var i = 0; i < sizeof(@a); i++
 		putb(f, (v & 0xff) castto(byte))
 		v >>= 8
 	;;
@@ -305,9 +303,7 @@ generic putle = {f, v : @a::(numeric,integral)
   big endian format
 */
 generic putbe = {f, v : @a::(numeric,integral)
-	var i
-
-	for i = sizeof(@a); i != 0; i--
+	for var i = sizeof(@a); i != 0; i--
 		putb(f, ((v >> ((i-1)*8)) & 0xff) castto(byte))
 	;;
 	-> sizeof(@a)
@@ -360,7 +356,6 @@ const readln = {f
 
 const readdelim = {f, delim, drop
 	var ret
-	var i, j
 
 	ret = [][:]
 	while true
@@ -374,9 +369,9 @@ const readdelim = {f, delim, drop
 				-> `std.None
 			;;
 		;;
-		for i = f.rstart; i < f.rend; i++
+		for var i = f.rstart; i < f.rend; i++
 			if f.rbuf[i] == delim[0]
-				for j = 0; j < delim.len; j++
+				for var j = 0; j < delim.len; j++
 					if f.rbuf[i + j] != delim[j]
 						goto nextiterread
 					;;

@@ -6,7 +6,6 @@ pkg std =
 ;;
 
 generic slcp = {a : @a[:], b : @a[:]
-	var i
 	var addr_a, addr_b
 
 	assert(a.len == b.len, "arguments to slcp() must be of equal length")
@@ -14,11 +13,11 @@ generic slcp = {a : @a[:], b : @a[:]
 	addr_a = a castto(@a#) castto(intptr)
 	addr_b = b castto(@a#) castto(intptr)
 	if addr_a <= addr_b
-		for i = 0; i < a.len; i++
+		for var i = 0; i < a.len; i++
 			a[i] = b[i]
 		;;
 	else
-		for i = a.len; i > 0; i--
+		for var i = a.len; i > 0; i--
 			a[i - 1] = b[i - 1]
 		;;
 	;;

@@ -142,14 +142,14 @@ const genranges = {re, sl
 }
 
 const bound = {buf, len, fill
-	var i, s
+	var s
 
 	if len == 1
 		buf[0] = 0x7f
 	else
 		s = len castto(byte)
 		buf[0] = (0xff << (8 - s)) | (fill >> (s + 1))
-		for i = 1; i < len; i++
+		for var i = 1; i < len; i++
 			buf[i] = 0x80 | (fill >> 2)
 		;;
 	;;
@@ -163,12 +163,11 @@ type rangetrie = struct
 ;;
 
 const rtdump = {rt, ind
-	var i
 	var l, h
 
 	indent(ind)
 	std.put("Range (end = {}) {{\n", rt.end)
-	for i = 0; i < rt.ranges.len; i++
+	for var i = 0; i < rt.ranges.len; i++
 		indent(ind + 1)
 		(l, h) = rt.ranges[i]
 		std.put("0x{x}-0x{x}: \n", l, h)
@@ -179,8 +178,7 @@ const rtdump = {rt, ind
 }
 
 const indent = {ind
-	var i
-	for i = 0; i < ind; i++
+	for var i = 0; i < ind; i++
 		std.put("\t")
 	;;
 }
@@ -273,10 +271,9 @@ const rangeprogsize = {rt
 /* calculates the forward jump distance for a utf8 character range */
 const jmpdist = {n
 	var d
-	var i
 
 	d = n - 1
-	for i = n - 1; i > 0; i--
+	for var i = n - 1; i > 0; i--
 		d += i
 	;;
 	-> d
@@ -344,11 +341,10 @@ const genquest = {re, q
 const genchar = {re, c
 	var b : byte[4]
 	var n
-	var i
 
 	n = std.encode(b[:], c)
 	std.assert(n > 0 && n < 4, "non-utf character in regex\n")
-	for i = 0; i < n; i++
+	for var i = 0; i < n; i++
 		append(re, `Ibyte b[i])
 	;;
 	-> re.proglen
@@ -366,12 +362,10 @@ const append = {re, insn
 
 /* instruction dump */
 const idump = {re
-	var i
-
 	if !re.debug
 		->
 	;;
-	for i = 0; i < re.proglen; i++
+	for var i = 0; i < re.proglen; i++
 		std.put("{}:\t", i)
 		match re.prog[i]
 		/* Char matching. Consume exactly one byte from the string. */
@@ -400,12 +394,10 @@ const idump = {re
 
 /* AST dump */
 const dump = {re, t, indent
-	var i
-
 	if !re.debug
 		->
 	;;
-	for i = 0; i < indent; i++
+	for var i = 0; i < indent; i++
 		std.put("  ")
 	;;
 	match t#
@@ -447,7 +439,7 @@ const dump = {re, t, indent
 	| `Ranges rl:
                 std.put("Ranges")
 		for r in rl
-			for i = 0; i < indent + 1; i++
+			for var i = 0; i < indent + 1; i++
 				std.put("  ")
 			;;
 			std.put("\t({}-{})\n", r[0], r[1])

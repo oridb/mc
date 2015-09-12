@@ -80,9 +80,7 @@ type chunk = struct	/* NB: must be smaller than sizeof(slab) */
 ;;
 
 const __init__ = {
-	var i
-
-	for i = 0; i < buckets.len && (Align << i) <= Bktmax; i++
+	for var i = 0; i < buckets.len && (Align << i) <= Bktmax; i++
 		bktinit(&buckets[i], Align << i)
 	;;
 }
@@ -162,7 +160,7 @@ generic slfree	 = {sl
 
 /* Grows a slice */
 generic slgrow = {sl : @a[:], len
-	var i, n
+	var n
 	var new
 
 	/* if the slice doesn't need a bigger bucket, we don't need to realloc. */
@@ -172,7 +170,7 @@ generic slgrow = {sl : @a[:], len
 
 	new = slalloc(len)
 	n = min(len, sl.len)
-	for i = 0; i < n; i++
+	for var i = 0; i < n; i++
 		new[i] = sl[i]
 	;;
 	if sl.len > 0
@@ -207,9 +205,7 @@ const zbytealloc = {sz
 }
 
 const zfill = {sl
-	var i
-
-	for i = 0; i < sl.len; i++
+	for var i = 0; i < sl.len; i++
 		sl[i] = 0
 	;;
 }
@@ -258,7 +254,7 @@ const bktinit = {b, sz
 
 /* Creates a slab for bucket 'bkt', and fills the chunk list */
 const mkslab = {bkt
-	var i, p, s
+	var p, s
 	var b, bnext
 	var off /* offset of chunk head */
 
@@ -287,7 +283,7 @@ const mkslab = {bkt
 	off = align(sizeof(slab), Align)
 	bnext = nextchunk(s castto(chunk#), off)
 	s.freehd = bnext
-	for i = 0; i < bkt.nper; i++
+	for var i = 0; i < bkt.nper; i++
 		b = bnext
 		bnext = nextchunk(b, bkt.sz)
 		b.next = bnext
@@ -365,10 +361,10 @@ Finds the correct bucket index to allocate from
 for allocations of size 'sz'
 */
 const bktnum = {sz
-	var i, bktsz
+	var bktsz
 
 	bktsz = Align
-	for i = 0; bktsz <= Bktmax; i++
+	for var i = 0; bktsz <= Bktmax; i++
 		if bktsz >= sz
 			-> i
 		;;
@@ -382,11 +378,11 @@ returns the actual size we allocated for a given
 size request
 */
 const allocsz = {sz
-	var i, bktsz
+	var bktsz
 
 	if sz <= Bktmax
 		bktsz = Align
-		for i = 0; bktsz <= Bktmax; i++
+		for var i = 0; bktsz <= Bktmax; i++
 			if bktsz >= sz
 				-> bktsz
 			;;

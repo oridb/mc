@@ -89,37 +89,33 @@ generic bshas = {bs, v
 }
 
 const bsunion = {a, b
-	var i
-
 	eqsz(a, b)
-	for i = 0; i < b.bits.len; i++
+	for var i = 0; i < b.bits.len; i++
 		a.bits[i] |= b.bits[i]
 	;;
 }
 
 const bsintersect = {a, b
-	var i, n
+	var n
 
 	n = min(a.bits.len, b.bits.len)
-	for i = 0; i < n; i++
+	for var i = 0; i < n; i++
 		a.bits[i] &= b.bits[i]
 	;;
 }
 
 const bsdiff = {a, b
-	var i, n
+	var n
 
 	n = min(b.bits.len, a.bits.len)
-	for i = 0; i < n; i++
+	for var i = 0; i < n; i++
 		a.bits[i] &= ~b.bits[i]
 	;;
 }
 
 const bsissubset = {a, b
-	var i
-
 	eqsz(a, b);
-	for i = 0; i < a.bits.len; i++
+	for var i = 0; i < a.bits.len; i++
 		if (b.bits[i] & a.bits[i]) != b.bits[i]
 			-> false
 		;;
@@ -128,10 +124,8 @@ const bsissubset = {a, b
 }
 
 const bseq = {a, b
-	var i
-
 	eqsz(a, b)
-	for i = 0; i < a.bits.len; i++
+	for var i = 0; i < a.bits.len; i++
 		if a.bits[i] != b.bits[i]
 			-> false
 		;;

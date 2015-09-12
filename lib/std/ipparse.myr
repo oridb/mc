@@ -35,14 +35,6 @@ const ipparse = {ip
 const ip4parse = {ip
 	var a, b, c, d
 	var ok
-	/*
-	var addr
-	var last : size
-	var x : option(int32)
-	var val : int32 /* need int32 to check for overflow */
-	var i
-	var j : size
-	*/
 
 	(a, ip, ok) = num(ip, 0, 255, 10, '.', true)
 	(ip, ok) = delim(ip, '.', ok)

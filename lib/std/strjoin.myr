@@ -13,11 +13,10 @@ const strcat = {a, b
 
 const strjoin = {strings, delim
 	var len, off
-	var i
 	var s
 
 	len = 0
-	for i = 0; i < strings.len; i++
+	for var i = 0; i < strings.len; i++
 		len += strings[i].len
 	;;
 	if strings.len > 0
@@ -26,7 +25,7 @@ const strjoin = {strings, delim
 
 	s = slalloc(len)
 	off = 0
-	for i = 0; i < strings.len; i++
+	for var i = 0; i < strings.len; i++
 		slcp(s[off:off + strings[i].len], strings[i])
 		off += strings[i].len
 		/* we don't want to terminate the last string with delim */
