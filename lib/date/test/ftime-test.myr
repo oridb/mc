@@ -8,7 +8,9 @@ const main = {
 
 	/*Fri 29 Aug 2014 07:47:43 PM UTC*/
 	d = date.mkinstant(1_409_341_663*1_000_000, "")
-	f = date.bfmt(buf[:], date.Datetimefmt, d)
+	std.put("Formatting d.year={}, d.mon={}, d.day={}, d.h={}, d.m={}, d.s={}\n", \
+		d.year, d.mon, d.day, d.h, d.m, d.s)
+	f = std.bfmt(buf[:], "{D}", d)
 	eq("2014-8-29 19:47:43 +0000", f)
 }
 

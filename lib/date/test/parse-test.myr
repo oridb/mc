@@ -7,7 +7,7 @@ const main = {
 	/*Fri 29 Aug 2014 07:47:43 PM UTC*/
 	match date.parsefmt("%Y-%m-%d %z", "1932-10-23 +0500")
 	| `std.Some d:
-		eq(date.bfmt(buf[:], date.Datetimefmt, d), "1932-10-23 00:0:0 +0500")
+		eq(std.bfmt(buf[:], "{D}", d), "1932-10-23 00:0:0 +0500")
 	| `std.None:
 		std.fatal("Failed to parse date")
 	;;
