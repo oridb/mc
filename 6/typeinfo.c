@@ -327,7 +327,7 @@ size_t tyalign(Type *ty)
         default:
             align = tysize(ty);
     }
-    return align;
+    return min(align, Ptrsz);
 }
 
 /* gets the byte offset of 'memb' within the aggregate type 'aggr' */

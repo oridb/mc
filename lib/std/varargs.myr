@@ -78,7 +78,6 @@ const vabytes = {ap
 }
 
 generic vanext = {ap -> @a
-	var v : @a
 	var ti
 	var align
 	var p
@@ -90,11 +89,9 @@ generic vanext = {ap -> @a
 	p = ap.args castto(intptr)
 	p = (p + align - 1) & ~(align - 1)
 
-	v = (p castto(@a#))#
-
 	/* TODO: check for type mismatch */
 	tcnext(&ap.tc)
 	/* only move on after we read through the value */
 	ap.args = ((p castto(intptr)) + sizeof(@a)) castto(byte#)
-	-> v
+	-> (p castto(@a#))#
 }

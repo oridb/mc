@@ -555,13 +555,13 @@ static Loc *gencall(Isel *s, Node *n)
     vararg = 0;
     for (i = 1; i < n->expr.nargs; i++) {
         arg = selexpr(s, n->expr.args[i]);
-        argoff = align(argoff, min(size(n->expr.args[i]), Ptrsz));
+        argoff = alignto(argoff, exprtype(n->expr.args[i]));
         if (i > nargs)
             vararg = 1;
         if (stacknode(n->expr.args[i])) {
             src = locreg(ModeQ);
             g(s, Ilea, arg, src, NULL);
-            a = alignto(1, n->expr.args[i]->expr.type);
+            a = tyalign(exprtype(n->expr.args[i]));
             blit(s, rsp, src, argoff, 0, size(n->expr.args[i]), a);
             argoff += size(n->expr.args[i]);
         } else if (!vararg && isfloatmode(arg->mode) && nfloats < Nfloatregargs) {

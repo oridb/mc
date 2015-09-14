@@ -71,6 +71,8 @@ const installed = {
 
 	/* multiple values */
 	check("formatted a pair: [-10, -10], formatted a pair: [-10, -10]", "{}, {}", p, p)
+	/* multiple values of different types */
+	check("11, formatted a pair: [-10, -10], formatted an int: 111", "{}, {}, {}", 11 castto(byte), p, 111)
 
 }
 
