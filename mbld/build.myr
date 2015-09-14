@@ -39,11 +39,11 @@ const buildtarg = {b, targ
 	depset = std.mkht(std.strhash, std.streq)
 	addeps(b, targ, depset)
 	for tn in b.all
-		if std.hthas(b.built, tn)
+		if std.hthas(b.built, tn) || !std.hthas(depset, tn)
 			continue
 		;;
-		if !std.hthas(depset, tn)
-			continue
+		if std.sleq(tn, targ)
+			break
 		;;
 		std.htput(b.built, tn, true)
 		match gettarg(b.targs, tn)
@@ -54,9 +54,6 @@ const buildtarg = {b, targ
 		| `Man mt:	/* nothing needed */
 		| `Cmd ct:	/* these are for manual commands */
 		;;
-		if std.sleq(tn, targ)
-			break
-		;;
 	;;
 	std.htfree(depset)
 	-> true
@@ -66,7 +63,6 @@ const addeps = {b, targ, depset
 	if std.hthas(depset, targ)
 		->
 	;;
-	std.put("#### Adding dep {}\n", targ)
 	std.htput(depset, targ, true)
 	match gettarg(b.targs, targ)
 	| `Bin bt:
