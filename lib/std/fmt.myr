@@ -194,6 +194,9 @@ const parseparams = {paramstr, optdesc
 	var o, a, ha : bool, gotarg : bool
 
 	opts = [][:]
+	if optdesc.len == 0 && paramstr.len > 0
+		std.fatal("invalid format options {}\n")
+	;;
 	params = strsplit(paramstr, ",")
 	for p in params
 		/* parse out the key/value pair */

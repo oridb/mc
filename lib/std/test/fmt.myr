@@ -1,5 +1,9 @@
 use std
 
+pkg =
+	type pair
+;;
+
 const check = {expected, fmt, args : ...
 	var buf : byte[2048]
 	var sl, ap
@@ -12,6 +16,11 @@ const check = {expected, fmt, args : ...
 }
 
 const main = {
+	builtins()
+	installed()
+}
+
+const builtins = {
 	check("      abcd", "{w=10}", "abcd")
 	check("00000bdcae", "{p=0,w=10}", "bdcae")
 	check("abcdefghijkl", "{p=0,w=10}", "abcdefghijkl")
@@ -32,3 +41,64 @@ const main = {
 	check("0x7b", "0x{x}", 123)
 }
 
+const installed = {
+	var x : int
+	var p : pair
+
+	std.fmtinstall(std.typeof(x), intfmt, [][:])
+	std.fmtinstall(std.typeof(p), pairfmt, [
+		("x", true),
+		("y", false)
+	][:])
+
+	/* single value */
+	check("formatted an int: 0", "{}", 0)
+	check("formatted an int: -10", "{}", -10)
+
+	/* multiple values */
+	check("formatted an int: 0, formatted an int: 10", "{}, {}", 0, 10)
+	check("formatted an int: -10, formatted an int: 20", "{}, {}", -10, 20)
+
+	/* single value, no options */
+	p = [.x=0, .y=0]
+	check("formatted a pair: [0, 0]", "{}", p)
+	/* single value, option combos */
+	p = [.x=-10, .y=-10]
+	check("formatted a pair: [-10, -10]", "{}", p)
+	check("formatted a pair: [-10, -10] x=foo", "{x=foo}", p)
+	check("formatted a pair: [-10, -10] y present", "{y}", p)
+	check("formatted a pair: [-10, -10] x=bar y present", "{x=bar,y}", p)
+
+	/* multiple values */
+	check("formatted a pair: [-10, -10], formatted a pair: [-10, -10]", "{}, {}", p, p)
+
+}
+
+type pair = struct
+	x : int16
+	y : int32
+;;
+
+const intfmt = {sb, ap, opts
+	var x : int
+
+	std.assert(opts.len == 0, "options passed where none should be")
+	x = std.vanext(ap)
+	/* cast to other int type so we don't recurse */
+	std.sbfmt(sb, "formatted an int: {}", x castto(int32))
+}
+
+const pairfmt = {sb, ap, opts
+	var x : pair
+
+	x = std.vanext(ap)
+	std.sbfmt(sb, "formatted a pair: [{}, {}]", x.x, x.y)
+	for opt in opts
+		std.sbputc(sb, ' ')
+		match opt
+		| ("x", val):	std.sbfmt(sb, "x={}", val)
+		| ("y", ""):	std.sbfmt(sb, "y present")
+		| _:	std.fatal("unknown option")
+		;;
+	;;
+}
