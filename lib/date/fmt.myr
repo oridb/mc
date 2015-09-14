@@ -27,6 +27,7 @@ const sbfmt = {sb, ap, opts
 	var fmt
 
 	d = std.vanext(ap)
+	fmt = Datetimefmt;
 	for o in opts
 		match o
 		| ("d", ""):	fmt = Datefmt
