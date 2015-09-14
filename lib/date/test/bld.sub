@@ -1,2 +1,0 @@
-test ftime-test {inc=..} = ftime-test.myr ;;
-test parse-test {inc=..} = parse-test.myr ;;
