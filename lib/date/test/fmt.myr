@@ -28,6 +28,10 @@ const main = {
 	/* large negative time stamp */
 	d = date.mkinstant(-50000000000*1_000_000, "")
 	eq("385-7-25 07:06:40 +0000", std.bfmt(buf[:], "{D}", d))
+
+	/* date in the bc */
+	d = date.mkinstant(-70000000000*1_000_000, "")
+	eq("-249-11-19 19:33:20 +0000", std.bfmt(buf[:], "{D}", d))
 }
 
 const eq = {expected, actual

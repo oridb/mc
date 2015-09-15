@@ -26,6 +26,7 @@ pkg date =
 const Days400y	= 365*400 + 4*25 - 3
 const Days4y	= 365*4 + 1
 const DayUsec	= (24*60*60*1_000_000)
+const Mdays	= [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
 const utcnow = {
 	-> mkinstant(std.now(), "")
@@ -70,10 +71,13 @@ const mkinstant = {tm, tz
 	inst.us  = (t % 1_000_000) castto(int)
 	t /= 1_000_000
 	inst.s = (t % 60) castto(int)
+	std.assert(inst.s >= 0, "inst.s negative??\n")
 	t /= 60
 	inst.m = (t % 60) castto(int)
+	std.assert(inst.m >= 0, "inst.m negative??\n")
 	t /= 60
 	inst.h = t castto(int)
+	std.assert(inst.h >= 0, "inst.h negative??\n")
 
 	/* weekday */
 	inst.wday = ((e + 4) % 7) castto(int)	/* the world started on Thursday */
@@ -88,9 +92,7 @@ const mkinstant = {tm, tz
 	Lots of magic. Yer a wizard, 'arry.
 	*/
 	j = (tm + 2440588 * DayUsec) / DayUsec 
-	std.put("j = {}\n", j)
 	j -= 1721119
-	std.assert(j > 0, "date too negative")
 
 	y = (4 * j - 1) / Days400y
 	j = 4 * j - 1 - Days400y * y
@@ -115,6 +117,13 @@ const mkinstant = {tm, tz
 	/* there's no year 0 */
 	if y <= 0
 		y--
+	;;
+	/* and if j negative, the day and month are also negative */
+	if m < 0
+		m += 12
+	;;
+	if d < 0
+		d += Mdays[m - 1] 
 	;;
 
 	inst.year = y castto(int)
