@@ -4,12 +4,30 @@ use date
 const main = {
 	var buf : byte[1024]
 	var d
-	var f
 
-	/*Fri 29 Aug 2014 07:47:43 PM UTC*/
+	/* epoch */
+	d = date.mkinstant(0, "")
+	eq("1970-1-01 00:00:00 +0000", std.bfmt(buf[:], "{D}", d))
+
+	/* epoch + 12 hours */
+	d = date.mkinstant(12*3600*1_000_000, "")
+	eq("1970-1-01 12:00:00 +0000", std.bfmt(buf[:], "{D}", d))
+
+	/* epoch - 6 hours */
+	d = date.mkinstant(-6*3600*1_000_000, "")
+	eq("1969-12-31 18:00:00 +0000", std.bfmt(buf[:], "{D}", d))
+
+	/* epoch - 12 hours */
+	d = date.mkinstant(-12*3600*1_000_000, "")
+	eq("1969-12-31 12:00:00 +0000", std.bfmt(buf[:], "{D}", d))
+
+	/* more or less random: Fri 29 Aug 2014 07:47:43 PM UTC*/
 	d = date.mkinstant(1_409_341_663*1_000_000, "")
-	f = std.bfmt(buf[:], "{D}", d)
-	eq("2014-8-29 19:47:43 +0000", f)
+	eq("2014-8-29 19:47:43 +0000", std.bfmt(buf[:], "{D}", d))
+
+	/* large negative time stamp */
+	d = date.mkinstant(-50000000000*1_000_000, "")
+	eq("385-7-25 07:06:40 +0000", std.bfmt(buf[:], "{D}", d))
 }
 
 const eq = {expected, actual

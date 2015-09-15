@@ -23,9 +23,9 @@ pkg date =
         */
 ;;
 
-const UnixJulianDiff	= 719468
 const Days400y	= 365*400 + 4*25 - 3
 const Days4y	= 365*4 + 1
+const DayUsec	= (24*60*60*1_000_000)
 
 const utcnow = {
 	-> mkinstant(std.now(), "")
@@ -58,18 +58,22 @@ const mkinstant = {tm, tz
 	tm += off castto(std.time)
 
 	/* break up time */
-	t = tm % (24*60*60*1_000_000)	/* time */
-	e = tm / (24*60*60*1_000_000)	/* epoch days */
+	t = tm % DayUsec	/* time */
+	e = tm / DayUsec	/* epoch day */
 
+	if t < 0
+		t += DayUsec
+		e -= 1
+	;;
 
 	/* microseconds, seconds, minutes, hours */
-	inst.us 	= (t % 1_000_000) castto(int)
+	inst.us  = (t % 1_000_000) castto(int)
 	t /= 1_000_000
-	inst.s 	= (t % 60) castto(int)
+	inst.s = (t % 60) castto(int)
 	t /= 60
-	inst.m	= (t % 60) castto(int)
+	inst.m = (t % 60) castto(int)
 	t /= 60
-	inst.h  = t castto(int)
+	inst.h = t castto(int)
 
 	/* weekday */
 	inst.wday = ((e + 4) % 7) castto(int)	/* the world started on Thursday */
@@ -83,16 +87,23 @@ const mkinstant = {tm, tz
 
 	Lots of magic. Yer a wizard, 'arry.
 	*/
-	j = e + UnixJulianDiff
+	j = (tm + 2440588 * DayUsec) / DayUsec 
+	std.put("j = {}\n", j)
+	j -= 1721119
+	std.assert(j > 0, "date too negative")
+
 	y = (4 * j - 1) / Days400y
 	j = 4 * j - 1 - Days400y * y
 	d = j / 4
+
 	j = (4 * d + 3) / Days4y
 	d = 4 * d + 3 - Days4y * j
 	d = (d + 4) / 4 ;
+
 	m = (5 * d - 3) / 153
 	d = 5 * d - 3 - 153 * m
 	d = (d + 5) / 5
+
 	y = 100 * y + j
 	if m < 10
 		m += 3
@@ -100,9 +111,15 @@ const mkinstant = {tm, tz
 		m -= 9 
 		y++
 	;;
+
+	/* there's no year 0 */
+	if y <= 0
+		y--
+	;;
+
 	inst.year = y castto(int)
 	inst.mon = m castto(int)
-	inst.day = (d + 1) castto(int)
+	inst.day = d castto(int)
 	-> inst
 }
 
@@ -125,8 +142,6 @@ const add  = {d, dt
 const sub  = {d, dt
 	-> mkinstant(d.actual - (dt castto(std.time)), d.tzname)
 }
-
-
 
 const delta = {a, b
 	-> (b.actual - a.actual) castto(delta)
