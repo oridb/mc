@@ -52,8 +52,6 @@ const mtxtrylock = {mtx
 }
 
 const mtxunlock = {mtx
-	var r
-
 	/* uncontended sleep means we can just unlock and move on */
 	if mtx._state == Sleep
 		mtx._state = Unlocked
@@ -71,8 +69,7 @@ const mtxunlock = {mtx
 		relax()
 	;;
 
-	r = sys.futex(&mtx._state, sys.Futexwake | sys.Futexpriv, Locked, Zptr, Zptr, 0)
-
+	sys.futex(&mtx._state, sys.Futexwake | sys.Futexpriv, 1, Zptr, Zptr, 0)
 }
 
 const relax = {

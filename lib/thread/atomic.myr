@@ -54,20 +54,35 @@ impl atomic uint64 =
 	xchg	= {p, v; -> xchg64(p, v)}
 ;;
 
+impl atomic std.intptr =
+	xget	= {p; -> xgetp(p)}
+	xset	= {p, v; xsetp(p, v)}
+	xadd	= {p, v; -> xaddp(p, v)}
+	xsub	= {p, v; -> xsubp(p, v)}
+	xcas	= {p, old, new; -> xcasp(p, old, new)}
+	xchg	= {p, v; -> xchgp(p, v)}
+;;
+
 extern const xget32	: (p : uint32# -> uint32)
 extern const xget64	: (p : uint64# -> uint64)
+extern const xgetp	: (p : std.intptr# -> std.intptr)
 
 extern const xset32	: (p : uint32#, v : uint32 -> void)
 extern const xset64	: (p : uint64#, v : uint64 -> void)
+extern const xsetp	: (p : std.intptr#, v : std.intptr -> void)
 
 extern const xadd32	: (p : uint32#, v : uint32 -> uint32)
 extern const xadd64	: (p : uint64#, v : uint64 -> uint64)
+extern const xaddp	: (p : std.intptr#, v : std.intptr -> std.intptr)
 
 extern const xsub32	: (p : uint32#, v : uint32 -> uint32)
 extern const xsub64	: (p : uint64#, v : uint64 -> uint64)
+extern const xsubp	: (p : std.intptr#, v : std.intptr -> std.intptr)
 
 extern const xcas32	: (p : uint32#, old: uint32, new : uint32 -> uint32)
 extern const xcas64	: (p : uint64#, old: uint64, new : uint64 -> uint64)
+extern const xcasp	: (p : std.intptr#, old: std.intptr, new : std.intptr -> std.intptr)
 
 extern const xchg32	: (p : uint32#, v : uint32 -> uint32)
 extern const xchg64	: (p : uint64#, v : uint64 -> uint64)
+extern const xchgp	: (p : std.intptr#, v : std.intptr -> std.intptr)
