@@ -4,8 +4,9 @@ use thread
 
 var val : uint64 = 0
 var done : uint32 = 0
+var mtx : thread.mutex
 
-const setvar = {
+const atomicincvar = {
 	var i
 
 	for i = 0; i < 10_000_000; i++
@@ -15,10 +16,10 @@ const setvar = {
 	thread.xset(&done, 1)
 }
 
-const main = {
+const atomictest = {
 	var i
 
-	match thread.spawn(setvar)
+	match thread.spawn(atomicincvar)
 	| `std.Ok tid:
 		for i = 0; i < 100_000; i++
 			thread.xadd(&val, 1)
@@ -26,8 +27,49 @@ const main = {
 		while thread.xget(&done) == 0
 			/* nothing */
 		;;
-		std.assert(val == 10_100_000, "atomics are broken")
+		std.assert(val == 10_100_000, "atomics are broken\n")
 	| `std.Fail err:
 		std.fatal("errno = {}\n", err)
 	;;
+}
+
+const mtxincvar = {
+	var i
+
+	for i = 0; i < 1_000_000; i++
+		thread.mtxlock(&mtx)
+		val++
+		thread.mtxunlock(&mtx)
+	;;
+	std.write(1, "done\n")
+	thread.xset(&done, 1)
+}
+
+const mtxtest = {
+	var i
+
+	mtx = thread.mkmtx()
+	match thread.spawn(mtxincvar)
+	| `std.Ok tid:
+		for i = 0; i < 1_000_000; i++
+			thread.mtxlock(&mtx)
+			val++
+			thread.mtxunlock(&mtx)
+		;;
+		while thread.xget(&done) == 0
+			/* nothing */
+		;;
+		if val != 2_000_000
+			std.fatal("mutexes are broken, got {}\n", val)
+		;;
+	| `std.Fail err:
+		std.fatal("errno = {}\n", err)
+	;;
+}
+
+const main = {
+	val = 0
+	atomictest()
+	val = 0
+	mtxtest()
 }

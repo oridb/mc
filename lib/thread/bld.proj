@@ -1,4 +1,5 @@
 lib thread =
+	mutex+linux.myr
 	spawn+linux.myr
 	atomic-impl+x64.s
 	atomic.myr

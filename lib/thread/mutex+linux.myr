@@ -1,0 +1,79 @@
+use std
+use sys
+
+use "atomic.use"
+
+pkg thread =
+	type mutex = struct
+		_state	: int32
+	;;	
+
+	const mkmtx	: (-> mutex)
+	const mtxlock	: (mtx : mutex# -> void)
+	const mtxtrylock	: (mtx : mutex# -> bool)
+	const mtxunlock	: (mtx : mutex# -> void)
+;;
+
+const Unlocked = 0
+const Locked = 1
+const Sleep = 2
+generic Zptr = 0 castto(@a#)
+var nspin = 1	/* FIXME: pick a sane number, based on CPU count */
+
+const mkmtx = {
+	-> [._state = Unlocked]
+}
+
+const mtxlock = {mtx
+	var c
+
+	/* uncontended case: we get an unlocked mutex, and we lock it */
+	for var i = 0; i < nspin; i++
+		c = xcas(&mtx._state, Unlocked, Locked) 
+		if c == Unlocked
+			->
+		;;
+		relax()
+	;;
+
+	/* contended: we set the lock _state to sleep */
+	if c == Locked
+		c = xchg(&mtx._state, Sleep)
+	;;
+
+	while c != Unlocked
+		sys.futex(&mtx._state, sys.Futexwait | sys.Futexpriv, Sleep, Zptr, Zptr, 0)
+		c = xchg(&mtx._state, 2)
+	;;
+}
+
+const mtxtrylock = {mtx
+	-> xcas(&mtx._state, Unlocked, Locked) == Unlocked
+}
+
+const mtxunlock = {mtx
+	var r
+
+	/* uncontended sleep means we can just unlock and move on */
+	if mtx._state == Sleep
+		mtx._state = Unlocked
+	elif xchg(&mtx._state, Unlocked) == Locked
+		->
+	;;
+
+	for var i = 0; i < nspin; i++
+		if mtx._state != Unlocked
+			/* there might have been waiters, but we set the _state to unlocked */
+			if xcas(&mtx._state, Locked, Sleep) == Sleep
+				->
+			;;
+		;;
+		relax()
+	;;
+
+	r = sys.futex(&mtx._state, sys.Futexwake | sys.Futexpriv, Locked, Zptr, Zptr, 0)
+
+}
+
+const relax = {
+}

@@ -34,11 +34,19 @@ thread$xsub64:
 thread$xcas32:
 	movl	%esi, %eax
 	lock cmpxchgl	%edx, (%rdi)
-	sete	%al
 	ret
 .globl thread$xcas64
 thread$xcas64:
 	movq	%rsi, %rax
 	lock cmpxchgq	%rdx, (%rdi)
-	sete	%al
+	ret
+.globl thread$xchg32
+thread$xchg32:
+	movl	%esi, %eax
+	lock xchgl	(%rdi), %eax
+	ret
+.globl thread$xchg64
+thread$xchg64:
+	movq	%rsi, %rax
+	lock xchgq	(%rdi), %rax
 	ret
