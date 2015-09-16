@@ -2,14 +2,15 @@
 set -x
 
 if test `uname` = Plan9; then
-    export MYR_MUSE=../muse/6.out
-    export MYR_MC=../6/6.out
-    export MYR_RT=../rt/_myrrt.6
+    export MYR_MUSE=`pwd`/muse/6.out
+    export MYR_MC=`pwd`/6/6.out
+    export MYR_RT=`pwd`/rt/_myrrt.6
 else
     export MYR_MUSE=`pwd`/muse/muse
     export MYR_MC=`pwd`/6/6m
     export MYR_RT=`pwd`/rt/_myrrt.o
 fi
+
 ./mbldwrap.sh
 cp mbld/mbld xmbld
 ./xmbld clean

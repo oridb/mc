@@ -15,6 +15,7 @@ OFILES=\
 	main.$O\
 	ra.$O\
 	simp.$O\
+	peep.$O\
 	typeinfo.$O\
 
 LIB=../parse/libparse.a ../mi/libmi.a
