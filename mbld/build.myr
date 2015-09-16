@@ -55,6 +55,7 @@ const buildtarg = {b, targ
 		| `Cmd ct:	/* these are for manual commands */
 		;;
 	;;
+	build(b, targ)
 	std.htfree(depset)
 	-> true
 }
