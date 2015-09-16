@@ -16,7 +16,7 @@ pkg thread =
 
 const Unlocked = 0
 const Locked = 1
-const Lockedcontended = 2
+const Contended = 2
 generic Zptr = 0 castto(@a#)
 var nspin = 1	/* FIXME: pick a sane number, based on CPU count */
 
@@ -27,7 +27,9 @@ const mkmtx = {
 const mtxlock = {mtx
 	var c
 
-	/* uncontended case: we get an unlocked mutex, and we lock it */
+	/* 
+	Uncontended case: we get an unlocked mutex, and we lock it.
+	*/
 	for var i = 0; i < nspin; i++
 		c = xcas(&mtx._state, Unlocked, Locked) 
 		if c == Unlocked
@@ -36,14 +38,18 @@ const mtxlock = {mtx
 		relax()
 	;;
 
-	/* contended: we set the lock _state to sleep */
+	/*
+	Contended case: we set the lock state to Contended. This indicates that there
+	the lock is locked, and we potentially have threads waiting on it, which means
+	that we will need to wake them up.
+	*/
 	if c == Locked
-		c = xchg(&mtx._state, Lockedcontended)
+		c = xchg(&mtx._state, Contended)
 	;;
 
 	while c != Unlocked
-		sys.futex(&mtx._state, sys.Futexwait | sys.Futexpriv, Lockedcontended, Zptr, Zptr, 0)
-		c = xchg(&mtx._state, Lockedcontended)
+		sys.futex(&mtx._state, sys.Futexwait | sys.Futexpriv, Contended, Zptr, Zptr, 0)
+		c = xchg(&mtx._state, Contended)
 	;;
 }
 
@@ -52,17 +58,30 @@ const mtxtrylock = {mtx
 }
 
 const mtxunlock = {mtx
-	/* uncontended sleep means we can just unlock and move on */
-	if mtx._state == Lockedcontended
-		mtx._state = Unlocked
-	elif xchg(&mtx._state, Unlocked) == Locked
+	/*
+	Uncontended case: If the mutex state is not contended, and we still
+	are uncontended by the xchg() call, then it's safe to simply return;
+	nobody was waiting for us.
+	*/
+	if mtx._state != Contended && xchg(&mtx._state, Unlocked) == Locked
 		->
 	;;
 
+	/*
+	Contended case: Now we unlock, and wait a little bit to see if anyone
+	takes the lock. If someone takes the lock, we can avoid waking entering
+	the kernel to wake processes. However, we need to set the lock to contended
+	so that if there are still waiters, the thread that took the lock takes
+	responsibility for unlocking.
+	*/
+	mtx._state = Unlocked
 	for var i = 0; i < nspin; i++
 		if mtx._state != Unlocked
-			/* there might have been waiters, but we set the _state to unlocked */
-			if xcas(&mtx._state, Locked, Lockedcontended) == Contendedlock
+			/*
+			If we're locked, set the state to contended to avoid
+			missed wakes.
+			*/
+			if xcas(&mtx._state, Locked, Contended) == Contended
 				->
 			;;
 		;;
@@ -73,4 +92,5 @@ const mtxunlock = {mtx
 }
 
 const relax = {
+	/* FIXME: what is an appropriate way to kill CPU time without entering kernel? */
 }
