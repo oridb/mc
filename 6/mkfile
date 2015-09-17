@@ -20,7 +20,7 @@ OFILES=\
 
 LIB=../parse/libparse.a ../mi/libmi.a
 
-HFILES=asm.h ../parse/parse.h ../mi/mi.h ../config.h
+HFILES=asm.h ../parse/parse.h ../mi/mi.h ../config.h insns.def regs.def
 
 BIN=/$objtype/bin
 </sys/src/cmd/mkone
