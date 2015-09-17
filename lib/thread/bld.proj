@@ -1,6 +1,11 @@
 lib thread =
+	future.myr
+
+	# linux impl of basic thread primitives
+	condvar+linux.myr
 	mutex+linux.myr
 	spawn+linux.myr
+
 	atomic-impl+x64.s
 	atomic.myr
 ;;
