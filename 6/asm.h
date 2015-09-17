@@ -71,6 +71,7 @@ typedef enum {
 
 struct Blob {
     Blobtype type;
+    size_t align;
     char *lbl;  /* may be null */
     char isglobl;
     union {

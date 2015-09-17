@@ -379,6 +379,7 @@ void genblob(FILE *fd, Node *blob, Htab *globls, Htab *strtab)
     lbl = htget(globls, blob);
     if (blob->decl.vis != Visintern)
         fprintf(fd, ".globl %s\n", lbl);
+    fprintf(fd, ".align %zd\n", tyalign(decltype(blob)));
     fprintf(fd, "%s:\n", lbl);
     if (blob->decl.init)
         b = litblob(globls, strtab, blob->decl.init);

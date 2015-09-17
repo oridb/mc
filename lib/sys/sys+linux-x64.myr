@@ -26,6 +26,8 @@ pkg sys =
 
 	type pollevt	= uint16
 
+	type futexop	= uint32
+
 	type clock = union
 		`Clockrealtime
 		`Clockmonotonic
@@ -244,6 +246,14 @@ pkg sys =
 	const Epollwakeup	: epollevttype = 1 << 29
 	const Epolloneshot	: epollevttype = 1 << 30
 	const Epolledge	: epollevttype = 1 << 31
+	
+	/* futex ops */
+	const Futexwait	: futexop = 0
+	const Futexwake	: futexop = 1
+	/* Futexfd: removed */
+	const Futexrequeue	: futexop  = 3
+	const Futexpriv	: futexop = 128
+	const Futexclockrt	: futexop = 256
 
 	/* poll events : posix */
 	const Pollin	: pollevt = 0x001	/* There is data to read.  */
@@ -632,8 +642,8 @@ pkg sys =
 	const dup2	: (src : fd, dst : fd -> fd)
 
 	/* threading */
-	const futex	: (uaddr : int32#, op : int32, val : int32, \
-		ts : timespec#, uaddr2 : int#, val3 : int# -> int64)
+	const futex	: (uaddr : int32#, op : futexop, val : int32, \
+		timeout : timespec#, uaddr2 : int#, val3 : int -> int64)
 
 	/* polling */
 	const epollcreate	: (flg : epollflags	-> fd)	/* actually epoll_create1 */
