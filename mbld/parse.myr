@@ -27,7 +27,7 @@ const load = {b
 	var ok, sel
 	var targs
 
-	sel = mksyssel("mbld", 0, "mbld")
+	sel = mksyssel(b, "mbld", 0, "mbld")
 	ok = loadall(b, b.bldfile, "", sel)
 
 	targs = sysselfin(sel)
@@ -199,14 +199,14 @@ const target = {b, p
 /* bintarget: myrtarget */
 const bintarget = {b, p
 	var t
-	t = myrtarget(p, "bin")
+	t = myrtarget(b, p, "bin")
 	addtarg(p, b, t.name, t.systags, `Bin t)
 }
 
 /* libtarget: myrtarget */
 const libtarget = {b, p
 	var t
-	t = myrtarget(p, "lib")
+	t = myrtarget(b, p, "lib")
 	t.islib = true
 	addtarg(p, b, t.name, t.systags, `Lib t)
 }
@@ -214,7 +214,7 @@ const libtarget = {b, p
 /* testtarget: myrtarget */
 const testtarget = {b, p
 	var t
-	t = myrtarget(p, "test")
+	t = myrtarget(b, p, "test")
 	t.istest = true
 	t.install = false
 	addtarg(p, b, t.name, t.systags, `Bin t)
@@ -322,7 +322,7 @@ const cmdtarget = {b, p, cmd, iscmd
 myrtarget: name '=' inputlist ';;'
 	| name attrlist = inputlist ';;'
 */
-const myrtarget = {p, targ
+const myrtarget = {b, p, targ
 	var ldscript, runtime, inst, incpath, systags
 	var name, inputs, libdeps, attrs
 	var istest
@@ -348,7 +348,7 @@ const myrtarget = {p, targ
 		failparse(p, "expected '=' after '{} {}'\n", targ, name)
 	;;
 
-	fsel = mksyssel(p.fname, p.line, name)
+	fsel = mksyssel(b, p.fname, p.line, name)
 	match inputlist(p)
 	| `std.Some (wl, libs): 
 		libdeps = libs

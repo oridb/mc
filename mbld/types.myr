@@ -7,6 +7,7 @@ pkg bld =
 		bldfile	: byte[:]
 		curdir	: byte[:]
 		built	: std.htab(byte[:], bool)#	/* set of targets built in this run */
+		sysattrs	: std.htab(byte[:], bool)#	/* set of tags that identify a system */
 
 		/* build params */
 		all	: byte[:][:]			/* all targets, in reverse topological order */

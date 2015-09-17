@@ -1,6 +1,7 @@
 use std
 
 use "opts.use"
+use "types.use"
 
 pkg bld =
 	type syssel(@a) = struct
@@ -12,13 +13,14 @@ pkg bld =
 		_best	: std.htab(byte[:], @a)#
 	;;
 
-	generic mksyssel	: (f : byte[:], line : int, targ : byte[:] -> syssel(@a)#)
+	generic mksyssel	: (b : build#, f : byte[:], line : int, targ : byte[:] -> syssel(@a)#)
 	generic sysseladd	: (syssel : syssel(byte[:])#, file : byte[:] -> void)
 	generic sysseladdlist	: (syssel : syssel(@a)#, base : byte[:], attrs : byte[:][:], val : @a -> void)
 	generic sysselfin	: (syssel : syssel(@a)# -> @a[:])
+	const addsysattrs	: (sa : std.htab(byte[:], bool)# -> void)
 ;;
 
-generic mksyssel = {file, line, targ
+generic mksyssel = {b, file, line, targ
 	var syssel
 
 	syssel = std.mk([
@@ -27,9 +29,8 @@ generic mksyssel = {file, line, targ
 		.targ = targ,
 		._match = std.mkht(std.strhash, std.streq),
 		._best = std.mkht(std.strhash, std.streq),
-		.sysattrs = std.mkht(std.strhash, std.streq),
+		.sysattrs = b.sysattrs
 	])
-	addsysattrs(syssel.sysattrs)
 	-> syssel
 }
 
@@ -91,12 +92,12 @@ generic sysselfin = {syssel
 	;;
 	std.htfree(syssel._match)
 	std.htfree(syssel._best)
-	std.htfree(syssel.sysattrs)
 	-> ret
 }
 
 const addsysattrs = {sa
 	var attrs
+
 	match opt_sys
 	| "freebsd":	attrs = ["freebsd", "posixy"][:]
 	| "osx":	attrs = ["osx", "posixy"][:]
