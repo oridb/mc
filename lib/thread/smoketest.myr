@@ -6,70 +6,63 @@ var val : uint64 = 0
 var done : uint32 = 0
 var mtx : thread.mutex
 
+const Nherd = 20
+
+const main = {
+	atomictest()
+	mtxtest()
+}
+
+
+const atomictest = {
+	done = 0
+	val = 0
+	mkherd(Nherd, atomicincvar)
+	while thread.xget(&done) != Nherd
+		/* nothing */
+	;;
+	std.assert(val == 20_000_000, "atomics are broken\n")
+}
+
 const atomicincvar = {
 	var i
 
-	for i = 0; i < 10_000_000; i++
+	for i = 0; i < 1_000_000; i++
 		thread.xadd(&val, 1)
 	;;
 	std.write(1, "done\n")
-	thread.xset(&done, 1)
+	thread.xadd(&done, 1)
 }
 
-const atomictest = {
-	var i
-
-	match thread.spawn(atomicincvar)
-	| `std.Ok tid:
-		for i = 0; i < 100_000; i++
-			thread.xadd(&val, 1)
-		;;
-		while thread.xget(&done) == 0
-			/* nothing */
-		;;
-		std.assert(val == 10_100_000, "atomics are broken\n")
-	| `std.Fail err:
-		std.fatal("errno = {}\n", err)
-	;;
-}
 
 const mtxincvar = {
 	var i
 
-	for i = 0; i < 1_000_000; i++
+	for i = 0; i < 100_000; i++
 		thread.mtxlock(&mtx)
 		val++
 		thread.mtxunlock(&mtx)
 	;;
 	std.write(1, "done\n")
-	thread.xset(&done, 1)
+	thread.xadd(&done, 1)
 }
 
 const mtxtest = {
-	var i
+	done = 0
+	val = 0
 
 	mtx = thread.mkmtx()
-	match thread.spawn(mtxincvar)
-	| `std.Ok tid:
-		for i = 0; i < 1_000_000; i++
-			thread.mtxlock(&mtx)
-			val++
-			thread.mtxunlock(&mtx)
-		;;
-		while thread.xget(&done) == 0
-			/* nothing */
-		;;
-		if val != 2_000_000
-			std.fatal("mutexes are broken, got {}\n", val)
-		;;
-	| `std.Fail err:
-		std.fatal("errno = {}\n", err)
+	mkherd(Nherd, mtxincvar)
+	while thread.xget(&done) != Nherd
+		/* nothing */
+	;;
+	if val != 100_000 * 20
+		std.fatal("mutexes are broken, got {}\n", val)
 	;;
 }
 
-const main = {
-	val = 0
-	atomictest()
-	val = 0
-	mtxtest()
+const mkherd = {n, fn
+	for var i = 0; i < n; i++
+		std.try(thread.spawn(fn))
+	;;
 }
