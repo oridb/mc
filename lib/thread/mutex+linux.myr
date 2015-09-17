@@ -12,13 +12,14 @@ pkg thread =
 	const mtxlock	: (mtx : mutex# -> void)
 	const mtxtrylock	: (mtx : mutex# -> bool)
 	const mtxunlock	: (mtx : mutex# -> void)
+
+	pkglocal const Unlocked = 0
+	pkglocal const Locked = 1
+	pkglocal const Contended = 2
 ;;
 
-const Unlocked = 0
-const Locked = 1
-const Contended = 2
 generic Zptr = 0 castto(@a#)
-var nspin = 1	/* FIXME: pick a sane number, based on CPU count */
+var nspin = 10	/* FIXME: pick a sane number, based on CPU count */
 
 const mkmtx = {
 	-> [._state = Unlocked]
@@ -35,7 +36,6 @@ const mtxlock = {mtx
 		if c == Unlocked
 			->
 		;;
-		relax()
 	;;
 
 	/*
@@ -69,29 +69,6 @@ const mtxunlock = {mtx
 		->
 	;;
 
-	/*
-	Contended case: Now we unlock, and wait a little bit to see if anyone
-	takes the lock. If someone takes the lock, we can avoid waking entering
-	the kernel to wake processes. However, we need to set the lock to contended
-	so that if there are still waiters, the thread that took the lock takes
-	responsibility for unlocking.
-	*/
-	for var i = 0; i < nspin; i++
-		if mtx._state != Unlocked
-			/*
-			If we're locked, set the state to contended to avoid
-			missed wakes.
-			*/
-			if xcas(&mtx._state, Locked, Contended) == Contended
-				->
-			;;
-		;;
-		relax()
-	;;
-
 	sys.futex(&mtx._state, sys.Futexwake | sys.Futexpriv, 1, Zptr, Zptr, 0)
 }
 
-const relax = {
-	/* FIXME: what is an appropriate way to kill CPU time without entering kernel? */
-}
