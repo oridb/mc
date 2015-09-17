@@ -17,7 +17,7 @@ pkg bld =
 	generic sysseladd	: (syssel : syssel(byte[:])#, file : byte[:] -> void)
 	generic sysseladdlist	: (syssel : syssel(@a)#, base : byte[:], attrs : byte[:][:], val : @a -> void)
 	generic sysselfin	: (syssel : syssel(@a)# -> @a[:])
-	const addsysattrs	: (sa : std.htab(byte[:], bool)# -> void)
+	const addsysattrs	: (sa : std.htab(byte[:], bool)#, tags : byte[:][:] -> void)
 ;;
 
 generic mksyssel = {b, file, line, targ
@@ -95,7 +95,7 @@ generic sysselfin = {syssel
 	-> ret
 }
 
-const addsysattrs = {sa
+const addsysattrs = {sa, tags
 	var attrs
 
 	match opt_sys
@@ -115,5 +115,8 @@ const addsysattrs = {sa
 	;;
 	for a in attrs
 		std.htput(sa, a, true)
+	;;
+	for t in tags
+		std.htput(sa, t, true)
 	;;
 }

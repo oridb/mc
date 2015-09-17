@@ -21,12 +21,14 @@ const main = {args : byte[:][:]
 	var bintarg
 	var cmd 
 	var libpath
+	var tags
 
 	dumponly = false
 	cmd = std.optparse(args, &[
 		.argdesc = "[inputs...]",
 		.opts = [
 			[.opt='t', .desc="list all available targets"],
+			[.opt='T', .arg="tag", .desc="build with specified systag"],
 			[.opt='S', .desc="generate assembly when building"],
 			[.opt='d', .desc="dump debugging information for mbld"],
 			[.opt='I', .arg="inc", .desc="add 'inc' to your include path"],
@@ -40,13 +42,15 @@ const main = {args : byte[:][:]
 	])
 
 	targname = ""
+	tags = [][:]
 	bld.initopts()
 	for opt in cmd.opts
 		match opt
-		| ('t', ""): dumponly = true
-		| ('S', ""): bld.opt_genasm = true
-		| ('I', arg): bld.opt_incpaths = std.slpush(bld.opt_incpaths, arg)
-		| ('R', arg): bld.opt_instroot = arg
+		| ('t', ""):	dumponly = true
+		| ('S', ""):	bld.opt_genasm = true
+		| ('I', arg):	bld.opt_incpaths = std.slpush(bld.opt_incpaths, arg)
+		| ('R', arg):	bld.opt_instroot = arg
+		| ('T', tag):	tags = std.slpush(tags, tag)
 		| ('b', arg):
 			targname = arg
 			bintarg = true
@@ -80,7 +84,7 @@ const main = {args : byte[:][:]
 	| `std.Fail f:	std.fatal("Failed to compile use pattern regex\n")
 	;;
 
-	b = mkbuild()
+	b = mkbuild(tags)
 	if targname.len != 0
 		mt = [
 			.name=targname,
@@ -123,14 +127,15 @@ const main = {args : byte[:][:]
 	;;
 }
 
-const mkbuild = {
+const mkbuild = {tags
 	var b
 
 	b = std.zalloc()
 	b.targs = std.mkht(std.strhash, std.streq)
 	b.gensrc = std.mkht(std.strhash, std.streq)
 	b.built = std.mkht(std.strhash, std.streq)
-	bld.addsysattrs(b.sysattrs)
+	b.sysattrs = std.mkht(std.strhash, std.streq)
+	bld.addsysattrs(b.sysattrs, tags)
 	-> b
 }
 
