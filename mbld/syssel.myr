@@ -17,7 +17,7 @@ pkg bld =
 	generic sysseladd	: (syssel : syssel(byte[:])#, file : byte[:] -> void)
 	generic sysseladdlist	: (syssel : syssel(@a)#, base : byte[:], attrs : byte[:][:], val : @a -> void)
 	generic sysselfin	: (syssel : syssel(@a)# -> @a[:])
-	const addsysattrs	: (sa : std.htab(byte[:], bool)#, tags : byte[:][:] -> void)
+	const addsysattrs	: (sa : build#, tags : byte[:][:] -> void)
 ;;
 
 generic mksyssel = {b, file, line, targ
@@ -95,28 +95,80 @@ generic sysselfin = {syssel
 	-> ret
 }
 
-const addsysattrs = {sa, tags
-	var attrs
+const addsysattrs = {b, tags
+	var tagfile
 
 	match opt_sys
-	| "freebsd":	attrs = ["freebsd", "posixy"][:]
-	| "osx":	attrs = ["osx", "posixy"][:]
-	| "linux":	attrs = ["linux", "posixy"][:]
-	| "plan9":	attrs = ["plan9"][:]
+	| "freebsd":	tag(b.sysattrs, ["freebsd", "posixy"][:])
+	| "osx":	tag(b.sysattrs, ["osx", "posixy"][:])
+	| "linux":	tag(b.sysattrs, ["linux", "posixy"][:])
+	| "plan9":	tag(b.sysattrs, ["plan9"][:])
 	| unknown:	std.fatal("unknown systemx \"{}\"\n", unknown)
-	;;
-	for a in attrs
-		std.htput(sa, a, true)
 	;;
 
 	match opt_arch
-	| "x64":	attrs = ["x64"][:]
+	| "x64":	tag(b.sysattrs, ["x64"][:])
 	| unknown:	std.fatal("unknown architecture {}\n", unknown)
 	;;
-	for a in attrs
-		std.htput(sa, a, true)
+	tag(b.sysattrs, tags)
+
+	tagfile = std.pathcat(b.basedir, "systags")
+	if std.fexists(tagfile)
+		loadtagfile(b, tagfile)
 	;;
+	std.slfree(tagfile)
+}
+
+const loadtagfile = {b, tagfile
+	var data, tag
+
+	data = std.try(std.slurp(tagfile))
+	while true
+		data = skipspace(data)
+		(tag, data) = word(data) 
+		match tag
+		| `std.Some w:
+			std.htput(b.sysattrs, w, true)
+		| `std.None:
+			if data.len > 0
+				std.fatal("junk character near '{}'\n", trailing(data, 10))
+			else
+				break
+			;;
+		;;
+	;;
+}
+
+const skipspace = {data
+	var c
+
+	c = std.decode(data)
+	while std.isspace(c)
+		data = data[std.charlen(c):]
+	;;
+	-> data
+}
+
+const word = {data
+	var c, split
+
+	c = std.decode(data[split:])
+	while std.isalnum(c) || c == '.' || c == '_' || c == '$'
+		split += std.charlen(c)
+	;;
+	if split > 0
+		-> (`std.Some data[:split], data[split:])
+	else
+		-> (`std.None, data)
+	;;
+}
+
+const tag  = {sa, tags
 	for t in tags
 		std.htput(sa, t, true)
 	;;
+}
+
+const trailing = {str, len
+	-> str[:std.min(len, str.len)]
 }

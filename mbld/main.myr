@@ -135,7 +135,7 @@ const mkbuild = {tags
 	b.gensrc = std.mkht(std.strhash, std.streq)
 	b.built = std.mkht(std.strhash, std.streq)
 	b.sysattrs = std.mkht(std.strhash, std.streq)
-	bld.addsysattrs(b.sysattrs, tags)
+	bld.addsysattrs(b, tags)
 	-> b
 }
 
