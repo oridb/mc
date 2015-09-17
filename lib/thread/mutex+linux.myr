@@ -63,7 +63,9 @@ const mtxunlock = {mtx
 	are uncontended by the xchg() call, then it's safe to simply return;
 	nobody was waiting for us.
 	*/
-	if mtx._state != Contended && xchg(&mtx._state, Unlocked) == Locked
+	if mtx._state == Contended
+		mtx._state = Unlocked
+	elif xchg(&mtx._state, Unlocked) == Locked
 		->
 	;;
 
@@ -74,7 +76,6 @@ const mtxunlock = {mtx
 	so that if there are still waiters, the thread that took the lock takes
 	responsibility for unlocking.
 	*/
-	mtx._state = Unlocked
 	for var i = 0; i < nspin; i++
 		if mtx._state != Unlocked
 			/*
