@@ -15,8 +15,9 @@ pkg bld =
 ;;
 
 const test = {b
+	var tests : (byte[:][:], byte[:])[:]
+	var bincmd
 	var ok
-	var tests : (byte[:], byte[:])[:]
 
 	/* no implicit tests to run */
 	tests = [][:]
@@ -34,27 +35,36 @@ const test = {b
 	;;
 	for tn in b.all
 		match gettarg(b.targs, tn)
-		| `Test t:
+		| `Bin t:
+			if !t.istest
+				continue
+			;;
 			if t.incpath.len == 0 || !std.sleq(t.incpath[0], ".")
 				t.incpath = std.slput(t.incpath, 0, std.sldup("."))
 			;;
 			buildbin(b, t, false)
-			tests = std.slpush(tests, (std.strcat("./", t.name), std.sldup(t.dir)))
+			bincmd = std.sldup([std.strcat("./", t.name)][:])
+			tests = std.slpush(tests, (bincmd, std.sldup(t.dir)))
+		| `Cmd t:
+			if !t.istest
+				continue
+			;;
+			tests = std.slpush(tests, (dupcmd(t.cmd), std.sldup(t.dir)))
 		| _:
 			/* skip */
 		;;
 	;;
 
 	ok = true
-	for (bin, dir) in tests
+	for (c, dir) in tests
 		setdir(b, dir)
-		if !runtest(bin)
+		if !runtest(c)
 			ok = false
 		;;
 
 	;;
 	for (bin, dir) in tests
-		std.slfree(bin)
+		freecmd(bin)
 		std.slfree(dir)
 	;;
 	std.slfree(tests)
@@ -68,8 +78,26 @@ const test = {b
 	;;
 }
 
+const dupcmd = {cmd
+	var ret
+
+	ret = [][:]
+	for c in cmd
+		ret = std.slpush(ret, std.sldup(c))
+	;;
+	-> ret
+}
+
+const freecmd = {cmd
+	for c in cmd
+		std.slfree(c)
+	;;
+	std.slfree(cmd)
+}
+
 const buildtests = {b, targ
 	var tt, bin, tests
+	var cmd
 
 	tests = [][:]
 	setdir(b, targ.dir)
@@ -89,7 +117,8 @@ const buildtests = {b, targ
 
 			cleantest(b, path)
 			buildbin(b, &tt, true)
-			tests = std.slpush(tests, (std.strcat("./", bin), std.sldup(targ.dir)))
+			cmd = std.sldup([std.strcat("./", bin)][:])
+			tests = std.slpush(tests, (cmd, std.sldup(targ.dir)))
 			std.slfree(tt.libdeps)
 			std.slfree(tt.incpath)
 			std.slfree(path)
@@ -117,15 +146,19 @@ const cleantest = {b, src
 	std.slfree(bin)
 }
 
-const runtest = {bin
+const runtest = {cmd
 	var r, log
 
-	std.put("run {}:\t", bin)
-	log = std.strcat(bin, ".log")
-	match std.spork([bin][:])
+	std.put("run")
+	for c in cmd
+		std.put(" {}", c)
+	;;
+	std.put(":\t")
+	match std.spork(cmd)
 	| `std.Fail m:
-		std.fatal("unable to run test: {}\n", m)
+		std.fatal("\nunable to run test: {}\n", m)
 	| `std.Ok (pid, infd, outfd):
+		log = std.strcat(cmd[0], ".log")
 		match std.fslurp(outfd)
 		| `std.Ok "":	/* empty output; nothing to log */
 		| `std.Ok buf:

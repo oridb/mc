@@ -28,11 +28,11 @@ const movetargs = {b, rm
 	for tn in b.all
 		match gettarg(b.targs, tn)
 		| `Bin bt:
-			if bt.install
+			if bt.install && !bt.istest
 				movefile(b, rm, bt.dir, bt.name, config.Binpath, 0o755)
 			;;
 		| `Lib lt:
-			if lt.install
+			if lt.install && !lt.istest
 				movefile(b, rm, lt.dir, lt.name, config.Libpath, 0o644)
 				libarchive = std.fmt("lib{}.a", lt.name)
 				movefile(b, rm, lt.dir, libarchive, config.Libpath, 0o644)
@@ -47,7 +47,6 @@ const movetargs = {b, rm
 			for m in mt.pages
 				moveman(b, rm, mt.dir, m)
 			;;
-		| `Test tt:	/* nothing */
 		;;
 	;;
 	-> true

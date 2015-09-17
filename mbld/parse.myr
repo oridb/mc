@@ -215,7 +215,9 @@ const libtarget = {b, p
 const testtarget = {b, p
 	var t
 	t = myrtarget(p, "test")
-	addtarg(p, b, t.name, t.systags, `Test t)
+	t.istest = true
+	t.install = false
+	addtarg(p, b, t.name, t.systags, `Bin t)
 }
 
 /* mantarget: anontarget */
@@ -242,7 +244,7 @@ const subtarget = {b, p
 /* gentarget: wordlist {attrs} = wordlist ;; */
 const cmdtarget = {b, p, cmd, iscmd
 	var outlist, deplist, cmdlist, systags
-	var durable
+	var durable, istest
 	var attrs
 	var gt
 
@@ -256,7 +258,7 @@ const cmdtarget = {b, p, cmd, iscmd
 	;;
 
 	skipspace(p)
-	if !iscmd && matchc(p, '{')
+	if matchc(p, '{')
 		match attrlist(p)
 		| `std.Some al:	attrs = al
 		| `std.None:	failparse(p, "invalid attr list for {}\n", outlist[0])
@@ -267,7 +269,7 @@ const cmdtarget = {b, p, cmd, iscmd
 
 	skipspace(p)
 	if !matchc(p, '=')
-		failparse(p, "expected '=' after '{} {}'\n", cmdlist, outlist[outlist.len-1])
+		failparse(p, "expected '=' after '{} {}'\n", cmd, outlist[outlist.len-1])
 	;;
 
 	match wordlist(p)
@@ -281,11 +283,13 @@ const cmdtarget = {b, p, cmd, iscmd
 	;;
 
 	durable = false
+	istest = false
 	deplist = [][:]
 	systags = [][:]
 	for elt in attrs
 		match elt
 		| ("durable", ""):	durable = true
+		| ("test", ""):	istest = true
 		| ("dep", depname):	deplist = std.slpush(deplist, depname)
 		| ("sys", tag):	systags = std.slpush(systags, tag)
 		| (attr, ""):
@@ -299,6 +303,7 @@ const cmdtarget = {b, p, cmd, iscmd
 		.dir=std.sldup(p.fdir),
 		.out=outlist,
 		.durable=durable,
+		.istest=istest,
 		.deps=deplist,
 		.cmd=cmdlist,
 		.systags=systags,
@@ -320,6 +325,7 @@ myrtarget: name '=' inputlist ';;'
 const myrtarget = {p, targ
 	var ldscript, runtime, inst, incpath, systags
 	var name, inputs, libdeps, attrs
+	var istest
 	var fsel
 
 	match word(p)
@@ -360,6 +366,7 @@ const myrtarget = {p, targ
 	;;
 
 	inst = true
+	istest = false
 	ldscript = ""
 	runtime = ""
 	incpath = [][:]
@@ -370,6 +377,7 @@ const myrtarget = {p, targ
 		| ("runtime", rt):	runtime = std.sldup(rt)
 		| ("inc", path):	incpath = std.slpush(incpath, std.sldup(path))
 		| ("noinst", ""):	inst = false
+		| ("test", ""):	istest = true
 		| ("sys", tag):	systags = std.slpush(systags, tag)
 		| (invalid, _):
 			std.fatal("{}: got invalid attr '{}'\n", targ, invalid)
@@ -385,6 +393,7 @@ const myrtarget = {p, targ
 		.inputs=inputs,
 		.libdeps=libdeps,
 		.islib=false,
+		.istest=istest,
 		/* attrs */
 		.systags=systags,
 		.install=inst,

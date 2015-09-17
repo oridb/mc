@@ -21,7 +21,6 @@ pkg bld =
 	type targ = union
 		`Bin	myrtarg#
 		`Lib	myrtarg#
-		`Test	myrtarg#
 		`Gen	cmdtarg#
 		`Cmd	cmdtarg#
 		`Man	mantarg#
@@ -32,6 +31,7 @@ pkg bld =
 		line	: int
 
 		islib	: bool
+		istest	: bool
 		dir	: byte[:]
 		name	: byte[:]
 		inputs	: byte[:][:]
@@ -52,6 +52,7 @@ pkg bld =
 		durable	: bool
 		/* we can have multiple outputs, but we only want to run once for each */
 		done	: bool
+		istest	: bool
 	;;
 
 	type mantarg = struct

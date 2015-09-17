@@ -19,8 +19,6 @@ const cleanall = {b
 			cleanup(b, bt, bt.inputs)
 		| `Lib lt:
 			cleanup(b, lt, lt.inputs)
-		| `Test tt:
-			cleanup(b, tt, tt.inputs)
 		| `Gen gt:
 			for f in gt.out
 				if !gt.durable && std.remove(f)
@@ -44,10 +42,6 @@ const clean = {b, targ
 		| `Lib lt:
 			if std.sleq(lt.name, targ)
 				cleanup(b, lt, lt.inputs)
-			;;
-		| `Test tt:
-			if std.sleq(tt.name, targ)
-				cleanup(b, tt, tt.inputs)
 			;;
 		| `Gen gt:
 			for f in gt.out

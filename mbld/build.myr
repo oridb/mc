@@ -22,12 +22,14 @@ const buildall = {b
 		;;
 		std.htput(b.built, tn, true)
 		match gettarg(b.targs, tn)
-		| `Bin bt:	buildbin(b, bt, false)
+		| `Bin bt:
+			if !bt.istest
+				buildbin(b, bt, false)
+			;;
 		| `Lib lt:	buildlib(b, lt)
-		| `Test tt:	/* build on 'mbld test' by default */
 		| `Gen gt:	genfiles(b, gt)
 		| `Man mt:	/* nothing needed */
-		| `Cmd ct:	/* these are for manual commands */
+		| `Cmd ct:	/* these are for manual commands or tests */
 		;;
 	;;
 	-> true
@@ -47,12 +49,14 @@ const buildtarg = {b, targ
 		;;
 		std.htput(b.built, tn, true)
 		match gettarg(b.targs, tn)
-		| `Bin bt:	buildbin(b, bt, false)
+		| `Bin bt:
+			if !bt.istest
+				buildbin(b, bt, false)
+			;;
 		| `Lib lt:	buildlib(b, lt)
-		| `Test tt:	/* build on 'mbld test' by default */
 		| `Gen gt:	genfiles(b, gt)
 		| `Man mt:	/* nothing needed */
-		| `Cmd ct:	/* these are for manual commands */
+		| `Cmd ct:	/* these are for manual commands or tests */
 		;;
 	;;
 	build(b, targ)
@@ -94,7 +98,6 @@ const build = {b, targ
 	match std.htget(b.targs, targ)
 	| `std.Some (`Bin bt):	buildbin(b, bt, false)
 	| `std.Some (`Lib lt):	buildlib(b, lt)
-	| `std.Some (`Test tt):	buildbin(b, tt, false)
 	| `std.Some (`Gen gt):	runin(b, gt.cmd, gt.dir)
 	| `std.Some (`Cmd ct):	runin(b, ct.cmd, ct.dir)
 	| `std.Some (`Man mt):	/* nothing needed */
