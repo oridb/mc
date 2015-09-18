@@ -816,7 +816,7 @@ int loaduse(char *path, FILE *f, Stab *st, Vis vis)
     if (fgetc(f) != 'U')
         return 0;
     if (rdint(f) != Abiversion) {
-        fprintf(stderr, "abi version mismatch\n");
+        fprintf(stderr, "%s: abi version mismatch\n", path);
         return 0;
     }
     pkg = rdstr(f);
