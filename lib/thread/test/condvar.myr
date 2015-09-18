@@ -41,7 +41,6 @@ const main = {
 	;;
 	thread.condbroadcast(&cv)
 	while nwoken != 100
-		std.put("{}\n", nwoken)
 		/* nothing */
 	;;
 	std.assert(nwoken == 100, "wrong thread count woken")

@@ -32,9 +32,14 @@ const condwait = {cond
 	mtxunlock(mtx)
 	sys.futex(&cond._seq, sys.Futexwait | sys.Futexpriv, seq, Zptr, Zptr, 0)
 
-	/* We need to atomically set the mutex to contended */
+	/*
+	We need to atomically set the mutex to contended. This allows us to
+	pass responsibility for waking up the potential other waiters on to the
+	unlocker of the mutex.
+	*/
 	while xchg(&mtx._state, Contended) != Unlocked
-		sys.futex(&mtx._state, sys.Futexwait | sys.Futexpriv, Contended, Zptr, Zptr, 0)
+		sys.futex(&mtx._state, sys.Futexwait | sys.Futexpriv, \
+			Contended, Zptr, Zptr, 0)
 	;;
 }
 
@@ -45,6 +50,13 @@ const condsignal = {cond : cond#
 
 const condbroadcast = {cond : cond#
 	xadd(&cond._seq, 1)
-	sys.futex(&cond._seq, sys.Futexwake | sys.Futexpriv, 0x7fffffff, Zptr, Zptr, 0)
+	/*
+	The futex docs seem to be broken -- the timeout parameter seems to be
+	used for the number of threads to move, and is not ignored when
+	requeueing
+	*/
+	sys.futex(&cond._seq, sys.Futexcmprequeue | sys.Futexpriv, \
+		1, 0x7fffffff castto(sys.timespec#), \
+		&cond._mtx._state, cond._seq)
 }
 
