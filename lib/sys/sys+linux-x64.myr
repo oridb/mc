@@ -643,7 +643,7 @@ pkg sys =
 
 	/* threading */
 	const futex	: (uaddr : int32#, op : futexop, val : int32, \
-		timeout : timespec#, uaddr2 : int#, val3 : int -> int64)
+		timeout : timespec#, uaddr2 : int32#, val3 : int32 -> int64)
 
 	/* polling */
 	const epollcreate	: (flg : epollflags	-> fd)	/* actually epoll_create1 */

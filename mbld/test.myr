@@ -69,13 +69,14 @@ const test = {b
 }
 
 const buildtests = {b, targ
-	var tt, bin ,path, tests
+	var tt, bin, tests
 
 	tests = [][:]
 	setdir(b, targ.dir)
 	for s in targ.inputs
-		path = std.pathcat("./test", s)
-		if std.fexists(path)
+		match testpath(s)
+		| `std.None: /* nothing to do */
+		| `std.Some path:
 			bin = srcswapsuffix(path, "")
 			tt = [
 				.name = bin,
@@ -91,8 +92,8 @@ const buildtests = {b, targ
 			tests = std.slpush(tests, (std.strcat("./", bin), std.sldup(targ.dir)))
 			std.slfree(tt.libdeps)
 			std.slfree(tt.incpath)
+			std.slfree(path)
 		;;
-		std.slfree(path)
 	;;
 	-> tests
 }
@@ -144,5 +145,25 @@ const runtest = {bin
 		;;
 	;;
 	-> r
+}
+
+const testpath = {s
+	var path, file
+
+	path = std.pathcat("./test", s)
+	if std.fexists(path)
+		-> `std.Some path
+	;;
+	match std.strfind(s, "+")
+	| `std.None:
+	| `std.Some idx:
+		file = std.strcat(s[:idx], ".myr")
+		path = std.pathcat("./test", file)
+		std.slfree(file)
+		if std.fexists(path)
+			-> `std.Some path
+		;;
+	;;
+	-> `std.None
 }
 
