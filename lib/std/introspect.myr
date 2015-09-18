@@ -15,7 +15,6 @@ pkg std =
 		`Tyint
 		`Tyint32
 		`Tyint64
-		`Tylong
 
 		`Tybyte
 		`Tyuint8
@@ -23,7 +22,6 @@ pkg std =
 		`Tyuint
 		`Tyuint32
 		`Tyuint64
-		`Tyulong
 		`Tyflt32
 		`Tyflt64
 		`Tyvalist
@@ -80,31 +78,29 @@ const Encint16	: byte = 5
 const Encint	: byte = 6
 const Encint32	: byte = 7
 const Encint64	: byte = 8
-const Enclong	: byte = 9
 
-const Encbyte	: byte = 10
-const Encuint8	: byte = 11
-const Encuint16	: byte = 12
-const Encuint	: byte = 13
-const Encuint32	: byte = 14
-const Encuint64	: byte = 15
-const Enculong	: byte = 16
-const Encflt32	: byte = 17
-const Encflt64	: byte = 18
-const Encvalist	: byte = 19
+const Encbyte	: byte = 9
+const Encuint8	: byte = 10
+const Encuint16	: byte = 11
+const Encuint	: byte = 12
+const Encuint32	: byte = 13
+const Encuint64	: byte = 14
+const Encflt32	: byte = 15
+const Encflt64	: byte = 16
+const Encvalist	: byte = 17
 
 /* compound types */
-const Encptr	: byte = 20
-const Encfunc	: byte = 21
-const Encslice	: byte = 22
-const Encarray	: byte = 23
+const Encptr	: byte = 18
+const Encfunc	: byte = 19
+const Encslice	: byte = 20
+const Encarray	: byte = 21
 
 /* aggregate types */
-const Enctuple	: byte = 24
-const Encstruct	: byte = 25
-const Encunion	: byte = 26
-const Encname	: byte = 30
-const Encindname	:byte = 30 | 0x80
+const Enctuple	: byte = 22
+const Encstruct	: byte = 23
+const Encunion	: byte = 24
+const Encname	: byte = 28
+const Encindname	:byte = 28 | 0x80
 
 generic typeof = {v : @a -> byte[:]
 	var tc
@@ -189,7 +185,6 @@ const typedesc = {ti
 	| Encint:	-> `Tyint
 	| Encint32:	-> `Tyint32
 	| Encint64:	-> `Tyint64
-	| Enclong:	-> `Tylong
 
 	| Encbyte:	-> `Tybyte
 	| Encuint8:	-> `Tyuint8
@@ -197,7 +192,6 @@ const typedesc = {ti
 	| Encuint:	-> `Tyuint
 	| Encuint32:	-> `Tyuint32
 	| Encuint64:	-> `Tyuint64
-	| Enculong:	-> `Tyulong
 	| Encflt32:	-> `Tyflt32
 	| Encflt64:	-> `Tyflt64
 	| Encvalist:	-> `Tyvalist
@@ -251,7 +245,6 @@ const typeinfo = {ti
 	| Encint:	-> [.size=4, .align=4]
 	| Encint32:	-> [.size=4, .align=4]
 	| Encint64:	-> [.size=8, .align=8]
-	| Enclong:	-> [.size=8, .align=8]
 
 	| Encbyte:	-> [.size=1, .align=1]
 	| Encuint8:	-> [.size=1, .align=1]
@@ -259,7 +252,6 @@ const typeinfo = {ti
 	| Encuint:	-> [.size=4, .align=4]
 	| Encuint32:	-> [.size=4, .align=4]
 	| Encuint64:	-> [.size=8, .align=8]
-	| Enculong:	-> [.size=8, .align=8]
 	| Encflt32:	-> [.size=4, .align=4]
 	| Encflt64:	-> [.size=8, .align=8]
 	| Encvalist:	-> [.size=8, .align=8]

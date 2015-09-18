@@ -243,9 +243,9 @@ const fallbackfmt = {sb, params, tyenc, ap : valist# -> void
 	var f32_val : flt32, f64_val : flt64
 	var i8 : int8, i16: int16, i32 : int32
 	var by : byte
-	var i : int, i64 : int64, l : long
+	var i : int, i64 : int64
 	var ui8 : int8, ui16: int16, ui32 : int32
-	var ui : int, ui64 : int64, ul : long
+	var ui : int, ui64 : int64
 
 	match typedesc(tyenc)
 	| `Tynone:	/* nothing */
@@ -277,10 +277,6 @@ const fallbackfmt = {sb, params, tyenc, ap : valist# -> void
 	| `Tyint64:
 		l_val = vanext(ap)
 		intfmt(sb, intparams(params), true, l_val)
-	| `Tylong:
-		l_val = vanext(ap)
-		intfmt(sb, intparams(params), true, l_val)
-
 	| `Tybyte:
 		ub_val = vanext(ap)
 		intfmt(sb, intparams(params), false, ub_val)
@@ -297,9 +293,6 @@ const fallbackfmt = {sb, params, tyenc, ap : valist# -> void
 		ui_val = vanext(ap)
 		intfmt(sb, intparams(params), false, ui_val)
 	| `Tyuint64:
-		ul_val = vanext(ap)
-		intfmt(sb, intparams(params), false, ul_val)
-	| `Tyulong:
 		ul_val = vanext(ap)
 		intfmt(sb, intparams(params), false, ul_val)
 	| `Tyflt32:

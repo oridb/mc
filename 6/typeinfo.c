@@ -125,8 +125,8 @@ Blob *tydescsub(Type *ty)
         /* atomic types -- nothing else to do */
         case Tyvoid: case Tychar: case Tybool: case Tyint8:
         case Tyint16: case Tyint: case Tyint32: case Tyint64:
-        case Tylong: case Tybyte: case Tyuint8: case Tyuint16:
-        case Tyuint: case Tyuint32: case Tyuint64: case Tyulong:
+        case Tybyte: case Tyuint8: case Tyuint16:
+        case Tyuint: case Tyuint32: case Tyuint64:
         case Tyflt32: case Tyflt64: case Tyvalist:
             break;
 
@@ -250,8 +250,8 @@ size_t tysize(Type *t)
         case Tyvalist: /* ptr to first element of valist */
             return Ptrsz;
 
-        case Tyint64: case Tylong:
-        case Tyuint64: case Tyulong:
+        case Tyint64:
+        case Tyuint64:
             return 8;
 
             /*end integer types*/

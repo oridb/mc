@@ -562,7 +562,7 @@ static void matchpattern(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, N
         case Tybool: case Tychar: case Tybyte:
         case Tyint8: case Tyint16: case Tyint32: case Tyint:
         case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint:
-        case Tyint64: case Tyuint64: case Tylong:  case Tyulong:
+        case Tyint64: case Tyuint64:
         case Tyflt32: case Tyflt64:
         case Typtr: case Tyfunc:
             v = mkexpr(pat->loc, Oeq, pat, val, NULL);
@@ -904,8 +904,7 @@ static Node *simpcast(Simp *s, Node *val, Type *to)
         case Tybool:
         case Tyint8: case Tyint16: case Tyint32: case Tyint64:
         case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint64:
-        case Tyint: case Tyuint: case Tylong: case Tyulong:
-        case Tychar: case Tybyte:
+        case Tyint: case Tyuint: case Tychar: case Tybyte:
         case Typtr:
             t = tybase(exprtype(val));
             switch (t->type) {
@@ -918,13 +917,13 @@ static Node *simpcast(Simp *s, Node *val, Type *to)
                     break;
                 /* signed conversions */
                 case Tyint8: case Tyint16: case Tyint32: case Tyint64:
-                case Tyint: case Tylong:
+                case Tyint:
                     r = intconvert(s, val, to, 1);
                     break;
                 /* unsigned conversions */
                 case Tybool:
                 case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint64:
-                case Tyuint: case Tyulong: case Tychar: case Tybyte:
+                case Tyuint: case Tychar: case Tybyte:
                 case Typtr:
                 case Tyfunc:
                     r = intconvert(s, val, to, 0);
@@ -946,8 +945,7 @@ static Node *simpcast(Simp *s, Node *val, Type *to)
             switch (t->type) {
                 case Tyint8: case Tyint16: case Tyint32: case Tyint64:
                 case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint64:
-                case Tyint: case Tyuint: case Tylong: case Tyulong:
-                case Tychar: case Tybyte:
+                case Tyint: case Tyuint: case Tychar: case Tybyte:
                     r = mkexpr(val->loc, Oint2flt, rval(s, val, NULL), NULL);
                     r->expr.type = to;
                     break;

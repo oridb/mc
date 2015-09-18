@@ -59,7 +59,6 @@ static size_t nconstructors(Type *t)
         case Tyint16:   return 0x10000;         break;
         case Tyint32:   return 0x100000000;     break;
         case Tyint:     return 0x100000000;     break;
-        case Tylong:    return ~0ull;           break;
         case Tyint64:   return ~0ull;           break;
 
         /* unsigned ints */
@@ -68,7 +67,6 @@ static size_t nconstructors(Type *t)
         case Tyuint16:  return 0x10000;         break;
         case Tyuint32:  return 0x100000000;     break;
         case Tyuint:    return 0x100000000;     break;
-        case Tyulong:   return ~0ull;           break;
         case Tyuint64:  return ~0ull;           break;
 
         /* floats */

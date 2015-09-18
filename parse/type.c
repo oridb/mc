@@ -303,7 +303,7 @@ int istyunsigned(Type *t)
 {
     switch (tybase(t)->type) {
         case Tybyte: case Tyuint8: case Tyuint16: case Tyuint:
-        case Tychar: case Tyuint32: case Tyuint64: case Tyulong:
+        case Tychar: case Tyuint32: case Tyuint64:
 	case Typtr: case Tybool:
             return 1;
         default:
@@ -315,7 +315,7 @@ int istysigned(Type *t)
 {
     switch (tybase(t)->type) {
         case Tyint8: case Tyint16: case Tyint:
-        case Tyint32: case Tyint64: case Tylong:
+        case Tyint32: case Tyint64:
             return 1;
         default:
             return 0;
@@ -535,14 +535,12 @@ static int tybfmt(char *buf, size_t len, Type *t)
         case Tyint:     p += bprintf(p, end - p, "int");       break;
         case Tyint32:   p += bprintf(p, end - p, "int32");     break;
         case Tyint64:   p += bprintf(p, end - p, "int64");     break;
-        case Tylong:    p += bprintf(p, end - p, "long");      break;
         case Tybyte:    p += bprintf(p, end - p, "byte");      break;
         case Tyuint8:   p += bprintf(p, end - p, "uint8");     break;
         case Tyuint16:  p += bprintf(p, end - p, "uint16");    break;
         case Tyuint:    p += bprintf(p, end - p, "uint");      break;
         case Tyuint32:  p += bprintf(p, end - p, "uint32");    break;
         case Tyuint64:  p += bprintf(p, end - p, "uint64");    break;
-        case Tyulong:   p += bprintf(p, end - p, "ulong");     break;
         case Tyflt32: p += bprintf(p, end - p, "flt32");   break;
         case Tyflt64: p += bprintf(p, end - p, "flt64");   break;
         case Tyvalist:  p += bprintf(p, end - p, "...");       break;
@@ -783,7 +781,6 @@ size_t tyidfmt(char *buf, size_t sz, Type *ty)
         case Tyint:     p += bprintf(p, end - p, "i");  break;
         case Tyint32:   p += bprintf(p, end - p, "w");  break;
         case Tyint64:   p += bprintf(p, end - p, "q");  break;
-        case Tylong:    p += bprintf(p, end - p, "l");  break;
 
         case Tybyte:    p += bprintf(p, end - p, "H");  break;
         case Tyuint8:   p += bprintf(p, end - p, "B");  break;
@@ -791,7 +788,6 @@ size_t tyidfmt(char *buf, size_t sz, Type *ty)
         case Tyuint:    p += bprintf(p, end - p, "I");  break;
         case Tyuint32:  p += bprintf(p, end - p, "W");  break;
         case Tyuint64:  p += bprintf(p, end - p, "Q");  break;
-        case Tyulong:   p += bprintf(p, end - p, "L");  break;
         case Tyflt32:   p += bprintf(p, end - p, "f");  break;
         case Tyflt64:   p += bprintf(p, end - p, "d");  break;
         case Tyvalist:  p += bprintf(p, end - p, "V");  break;

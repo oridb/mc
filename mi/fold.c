@@ -73,15 +73,13 @@ static Node *foldcast(Node *n)
         case Tybool:
         case Tyint8: case Tyint16: case Tyint32: case Tyint64:
         case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint64:
-        case Tyint: case Tyuint: case Tylong: case Tyulong:
-        case Tychar: case Tybyte:
+        case Tyint: case Tyuint: case Tychar: case Tybyte:
         case Typtr:
             switch (tybase(from)->type) {
                 case Tybool:
                 case Tyint8: case Tyint16: case Tyint32: case Tyint64:
                 case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint64:
-                case Tyint: case Tyuint: case Tylong: case Tyulong:
-                case Tychar: case Tybyte:
+                case Tyint: case Tyuint: case Tychar: case Tybyte:
                 case Typtr:
                     if (exprop(sub) == Olit || tybase(from)->type == tybase(to)->type) {
                         sub->expr.type = to;

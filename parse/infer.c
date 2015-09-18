@@ -1950,7 +1950,6 @@ static void checkrange(Inferstate *st, Node *n)
         [Tyint32] = {-2147483648LL, 2*2147483647LL}, /* FIXME: this has been doubled allow for uints... */
         [Tyint]   = {-2147483648LL, 2*2147483647LL},
         [Tyint64] = {-9223372036854775808ULL, 9223372036854775807LL},
-        [Tylong]  = {-9223372036854775808ULL, 9223372036854775807LL},
     };
 
     static const uint64_t uvranges[][2] = {
@@ -1959,17 +1958,16 @@ static void checkrange(Inferstate *st, Node *n)
         [Tyuint16] = {0, 65535ULL},
         [Tyuint32] = {0, 4294967295ULL},
         [Tyuint64] = {0, 18446744073709551615ULL},
-        [Tyulong]  = {0, 18446744073709551615ULL},
         [Tychar]   = {0, 4294967295ULL},
     };
 
     /* signed types */
     t = type(st, n);
-    if (t->type >= Tyint8 && t->type <= Tylong) {
+    if (t->type >= Tyint8 && t->type <= Tyint64) {
         sval = n->lit.intval;
         if (sval < svranges[t->type][0] || sval > svranges[t->type][1])
             fatal(n, "literal value %lld out of range for type \"%s\"", sval, tystr(t));
-    } else if ((t->type >= Tybyte && t->type <= Tyulong) || t->type == Tychar) {
+    } else if ((t->type >= Tybyte && t->type <= Tyint64) || t->type == Tychar) {
         uval = n->lit.intval;
         if (uval < uvranges[t->type][0] || uval > uvranges[t->type][1])
             fatal(n, "literal value %llu out of range for type \"%s\"", uval, tystr(t));

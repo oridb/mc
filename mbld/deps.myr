@@ -14,7 +14,7 @@ pkg bld =
 	var usepat	: regex.regex#
 ;;
 
-const Abiversion = 5
+const Abiversion = 6
 var usepat	: regex.regex#
 
 type dep = union

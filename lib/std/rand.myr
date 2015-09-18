@@ -1,6 +1,8 @@
 use "die.use"
 use "types.use"
 use "alloc.use"
+use "now.use"
+
 /*
    Translated from C by Ori Bernstein
  */
@@ -48,17 +50,25 @@ pkg std =
 	type rng
 
 	const mksrng	: (seed : uint32 -> rng#)
-	const delrng	: (rng : rng# -> void)
-	generic rand	: (rng : rng#, lo : @a::(numeric,integral), hi : @a::(numeric,integral) -> @a::(numeric,integral))
-	generic randN	: (rng : rng# -> @a::(numeric,integral))
-	const randbytes	: (rng : rng#, buf : byte[:]	-> size)
-	const rand32	: (rng : rng# -> uint32)
+	const freerng	: (rng : rng# -> void)
+
+	generic rand	: (lo : @a::(numeric,integral), hi : @a::(numeric,integral) -> @a::(numeric,integral))
+
+	generic rngrand	: (rng : rng#, lo : @a::(numeric,integral), hi : @a::(numeric,integral) -> @a::(numeric,integral))
+	generic rngrandnum	: (rng : rng# -> @a::(numeric,integral))
+	const rngrandbytes	: (rng : rng#, buf : byte[:]	-> size)
 ;;
 
 type rng = struct
 	state	: uint32[624]
 	i	: uint32
 ;;
+
+var _rng : rng#
+
+const __init__ = {
+	_rng = mksrng(now() castto(uint32))
+}
 
 /* allocates and initializes a random number generator */
 const mksrng = {seed
@@ -69,8 +79,12 @@ const mksrng = {seed
 	-> rng
 }
 
-const delrng = {rng
+const freerng = {rng
 	free(rng)
+}
+
+generic rand = {lo, hi
+	-> rngrand(_rng, lo, hi)
 }
 
 /* initializes a random number generator from the seed `seed`. */
@@ -88,7 +102,7 @@ const init = {rng, seed
    nonempty, and the difference between hi and lo must be
    less then 2^(type_bits - 1)
 */
-generic rand = {rng, lo, hi -> @a::(integral,numeric)
+generic rngrand = {rng, lo, hi -> @a::(integral,numeric)
 	var span, lim
 	var maxrand
 	var val
@@ -102,9 +116,9 @@ generic rand = {rng, lo, hi -> @a::(integral,numeric)
 	;;
 
 	lim = (maxrand/span)*span
-	val = (randN(rng) & maxrand)
+	val = (rngrandnum(rng) & maxrand)
 	while val > lim 
-		val = (randN(rng) & maxrand)
+		val = (rngrandnum(rng) & maxrand)
 	;;
 	-> val % span + lo
 }
@@ -114,7 +128,7 @@ generic rand = {rng, lo, hi -> @a::(integral,numeric)
    random number generator `rng`. The returned value
    may be negative, if the type is signed.
 */
-generic randN = {rng -> @a::(integral,numeric)
+generic rngrandN = {rng -> @a::(integral,numeric)
 	var val
 
 	val = 0
@@ -144,7 +158,7 @@ const rand32 = {rng
 	-> x ^ (x >> 18)
 }
 
-const randbytes = {rng, buf
+const rngrandbytes = {rng, buf
 	var n, r
 
 	n = 0
