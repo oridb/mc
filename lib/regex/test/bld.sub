@@ -1,7 +1,7 @@
-test basic {inc=../libstd,inc=..} = basic.myr testmatch.myr;;
-test boundaries {inc=../libstd,inc=..} = boundaries.myr testmatch.myr;;
-test capture {inc=../libstd,inc=..} = capture.myr testmatch.myr;;
-test class {inc=../libstd,inc=..} = class.myr testmatch.myr;;
-test failmatch {inc=../libstd,inc=..} = failmatch.myr testmatch.myr;;
-test negclass {inc=../libstd,inc=..} = negclass.myr testmatch.myr;;
-test unicode {inc=../libstd,inc=..} = unicode.myr testmatch.myr;;
+test basic {inc=../../std,inc=..} = basic.myr testmatch.myr;;
+test boundaries {inc=../../std,inc=..} = boundaries.myr testmatch.myr;;
+test capture {inc=../../std,inc=..} = capture.myr testmatch.myr;;
+test class {inc=../../std,inc=..} = class.myr testmatch.myr;;
+test failmatch {inc=../../std,inc=..} = failmatch.myr testmatch.myr;;
+test negclass {inc=../../std,inc=..} = negclass.myr testmatch.myr;;
+test unicode {inc=../../std,inc=..} = unicode.myr testmatch.myr;;
