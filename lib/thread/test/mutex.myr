@@ -18,13 +18,13 @@ const main = {
 	while thread.xget(&done) != Nherd
 		/* nothing */
 	;;
-	if val != 100_000 * 20
+	if val != 10_000 * 20
 		std.fatal("mutexes are broken, got {}\n", val)
 	;;
 }
 
 const incvar = {
-	for var i = 0; i < 100_000; i++
+	for var i = 0; i < 10_000; i++
 		thread.mtxlock(&mtx)
 		val++
 		thread.mtxunlock(&mtx)

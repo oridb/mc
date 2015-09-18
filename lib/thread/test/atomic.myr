@@ -15,13 +15,13 @@ const main = {
 	while thread.xget(&done) != Nherd
 		/* nothing */
 	;;
-	std.assert(val == 20_000_000, "atomics are broken\n")
+	std.assert(val == 2_000_000, "atomics are broken\n")
 }
 
 const incvar = {
 	var i
 
-	for i = 0; i < 1_000_000; i++
+	for i = 0; i < 100_000; i++
 		thread.xadd(&val, 1)
 	;;
 	std.write(1, "done\n")
