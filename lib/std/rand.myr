@@ -128,7 +128,7 @@ generic rngrand = {rng, lo, hi -> @a::(integral,numeric)
    random number generator `rng`. The returned value
    may be negative, if the type is signed.
 */
-generic rngrandN = {rng -> @a::(integral,numeric)
+generic rngrandnum = {rng -> @a::(integral,numeric)
 	var val
 
 	val = 0
