@@ -1,0 +1,30 @@
+use std
+use thread
+
+use "test/util.use"
+
+const Nherd = 20
+
+var val : uint64 = 0
+var done : uint32 = 0
+
+const main = {
+	done = 0
+	val = 0
+	mkherd(Nherd, incvar)
+	while thread.xget(&done) != Nherd
+		/* nothing */
+	;;
+	std.assert(val == 20_000_000, "atomics are broken\n")
+}
+
+const incvar = {
+	var i
+
+	for i = 0; i < 1_000_000; i++
+		thread.xadd(&val, 1)
+	;;
+	std.write(1, "done\n")
+	thread.xadd(&done, 1)
+}
+

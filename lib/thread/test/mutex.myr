@@ -1,0 +1,34 @@
+use std
+use thread
+
+use "test/util.use"
+
+const Nherd = 20
+
+var val : uint64 = 0
+var done : uint32 = 0
+var mtx : thread.mutex
+
+const main = {
+	done = 0
+	val = 0
+
+	mtx = thread.mkmtx()
+	mkherd(Nherd, incvar)
+	while thread.xget(&done) != Nherd
+		/* nothing */
+	;;
+	if val != 100_000 * 20
+		std.fatal("mutexes are broken, got {}\n", val)
+	;;
+}
+
+const incvar = {
+	for var i = 0; i < 100_000; i++
+		thread.mtxlock(&mtx)
+		val++
+		thread.mtxunlock(&mtx)
+	;;
+	std.write(1, "done\n")
+	thread.xadd(&done, 1)
+}

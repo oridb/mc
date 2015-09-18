@@ -10,6 +10,3 @@ lib thread =
 	atomic.myr
 ;;
 
-test smoketest =
-	smoketest.myr
-;;
