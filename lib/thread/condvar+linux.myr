@@ -10,58 +10,41 @@ pkg thread =
 		_seq	: int32
 	;;
 
-	const mkcond	: (-> cond)
-	const condwait	: (cond : cond#, mtx : mutex# -> void)
+	const mkcond	: (mtx : mutex# -> cond)
+	const condwait	: (cond : cond# -> void)
 	const condsignal	: (cond : cond# -> void)
 	const condbroadcast	: (cond : cond# -> void)
 ;;
 
 generic Zptr = 0 castto(@a#)
-const Zmtx = 0 castto(mutex#)
 
-const mkcond = {
-	-> [._mtx = Zmtx, ._seq = 0]
+const mkcond = {mtx
+	-> [._mtx = mtx, ._seq = 0]
 }
 
-const condwait = {cond, mtx
+const condwait = {cond
 	var seq
+	var mtx
 
+	mtx = cond._mtx
 	seq = cond._seq
-	if cond._mtx != mtx
-		if cond._mtx != Zmtx
-			std.die("multiple mutexes used with cond var")
-		;;
-		mtxcas(&cond._mtx, Zmtx, mtx)
-		if cond._mtx != Zmtx
-			std.die("multiple mutexes used with cond var")
-		;;
-	;;
-	mtxunlock(cond._mtx)
+
+	mtxunlock(mtx)
 	sys.futex(&cond._seq, sys.Futexwait | sys.Futexpriv, seq, Zptr, Zptr, 0)
 
+	/* We need to atomically set the mutex to contended */
 	while xchg(&mtx._state, Contended) != Unlocked
 		sys.futex(&mtx._state, sys.Futexwait | sys.Futexpriv, Contended, Zptr, Zptr, 0)
 	;;
 }
 
-const condsig = {cond : cond#
+const condsignal = {cond : cond#
 	xadd(&cond._seq, 1)
 	sys.futex(&cond._seq, sys.Futexwake | sys.Futexpriv, 1, Zptr, Zptr, 0)
 }
 
 const condbroadcast = {cond : cond#
-	var m
-
-	m = cond._mtx
-	if m != Zmtx
-		xadd(&cond._seq, 1)
-		sys.futex(&cond._seq, sys.Futexrequeue | sys.Futexpriv, 1, Zptr, &m._state, 0)
-	;;
-}
-
-const mtxcas = {mtxp, old, new
-	-> xcas(mtxp castto(std.intptr#), \
-		old castto(std.intptr), \
-		new castto(std.intptr)) castto(mutex#)
+	xadd(&cond._seq, 1)
+	sys.futex(&cond._seq, sys.Futexrequeue | sys.Futexpriv, 1, Zptr, &cond._mtx._state, 0)
 }
 
