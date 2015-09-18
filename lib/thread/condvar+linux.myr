@@ -45,6 +45,6 @@ const condsignal = {cond : cond#
 
 const condbroadcast = {cond : cond#
 	xadd(&cond._seq, 1)
-	sys.futex(&cond._seq, sys.Futexrequeue | sys.Futexpriv, 1, Zptr, &cond._mtx._state, 0)
+	sys.futex(&cond._seq, sys.Futexwake | sys.Futexpriv, 0x7fffffff, Zptr, Zptr, 0)
 }
 
