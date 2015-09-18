@@ -251,7 +251,17 @@ pkg sys =
 	const Futexwait	: futexop = 0
 	const Futexwake	: futexop = 1
 	/* Futexfd: removed */
-	const Futexrequeue	: futexop  = 3
+	const Futexrequeue	: futexop = 3
+	const Futexcmprequeue	: futexop = 4
+	const Futexwakeop	: futexop = 5
+	const Futexlockpi	: futexop = 6
+	const Futexunlockpi	: futexop = 7
+	const Futextrylockpi	: futexop = 8
+	const Futexwaitbitset	: futexop = 9
+	const Futexwakebitset	: futexop = 10
+	const Futexwaitrequeuepi	: futexop = 11
+	const Futexcmprequeuepi	: futexop = 12
+
 	const Futexpriv	: futexop = 128
 	const Futexclockrt	: futexop = 256
 
