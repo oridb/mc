@@ -8,14 +8,17 @@ sys$syscall:
 	harmless.
 	 */
 	movq %rdi,%rax
-	movq %rsi,%rdi
-	movq %rdx,%rsi
-	movq %rcx,%rdx
-	movq %r8,%r10
-	movq %r9,%r8
-	movq 8(%rsp),%r9
+        /* 8(%rsp): hidden type arg */
+	movq 16(%rsp),%rdi
+	movq 24(%rsp),%rsi
+	movq 32(%rsp),%rdx
+	movq 40(%rsp),%r10
+	movq 48(%rsp),%r8
+	movq 56(%rsp),%r9
 
 	syscall
+	jae .success
+	negq %rax
 
+.success:
 	ret
-

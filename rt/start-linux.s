@@ -66,7 +66,7 @@ _start:
 	pushq %rsi
 	pushq %rdx
 
-	/* enter the main program */
+	/* call pre-main initializers */
 	call	__init__
 	/* enter the main program */
 	call	main

@@ -1,5 +1,6 @@
 use "alloc.use"
 use "env.use"
+use "errno.use"
 use "fmt.use"
 use "option.use"
 use "strfind.use"

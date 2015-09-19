@@ -87,11 +87,11 @@ pkg sys =
 	;;
 
 	type utsname = struct
-		system	: byte[256]
-		node : byte[256] 
-		release : byte[256]
-		version : byte[256]
-		machine : byte[256]
+		system	: byte[32]
+		node : byte[32] 
+		release : byte[32]
+		version : byte[32]
+		machine : byte[32]
 	;;
 
 	type sockaddr = struct
@@ -712,9 +712,7 @@ pkg sys =
 wraps a syscall argument, converting it to 64 bits for the syscall function. This is
 the same as casting, but more concise than writing castto(int64)
 */
-generic a = {x : @t
-	-> a(x)
-}
+generic a = {x : @t; -> x castto(uint64)}
 
 extern const cstring	: (str : byte[:] -> byte#)
 extern const alloca	: (sz : size	-> byte#)
@@ -736,7 +734,7 @@ const execv	= {cmd, args
 	/* of course we fucking have to duplicate this code everywhere,
 	* since we want to stack allocate... */
 	p = alloca((args.len + 1)*sizeof(byte#))
-	cargs = (p castto(byte##))[:args.len]
+	cargs = (p castto(byte##))[:args.len + 1]
 	for i = 0; i < args.len; i++
 		cargs[i] = cstring(args[i])
 	;;

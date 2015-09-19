@@ -9,6 +9,7 @@ lib sys =
 	syscall+plan9-x64.s
 	syserrno+linux.myr
 	syserrno+osx.myr
+	syserrno+freebsd.myr
 	systypes.myr
 	ifreq+freebsd.myr
 	ifreq+linux.myr

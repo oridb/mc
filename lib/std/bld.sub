@@ -77,6 +77,7 @@ lib std {inc=.} =
 	syswrap-ss+linux.myr
 	syswrap-ss+osx.myr
 	syswrap-ss+plan9.myr
+	syswrap-ss+freebsd.myr
 	syswrap+plan9.myr
 	syswrap+posixy.myr
 ;;
