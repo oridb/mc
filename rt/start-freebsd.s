@@ -1,14 +1,14 @@
 .data
 /* std._environment : byte[:][:] */
-.globl std$_environment
-std$_environment:
+.globl sys$__environment
+sys$__environment:
 .envbase:
 .quad 0 /* env size */
 .envlen:
 .quad 0 /* env ptr */
 
-.globl std$__cenvp
-std$__cenvp:
+.globl sys$__cenvp
+sys$__cenvp:
 .quad 0
 
 .text
@@ -37,7 +37,7 @@ _start:
 	movq	(%rdi),%rax
 	leaq	16(%rdi,%rax,8), %rbx	/* envp = argv + 8*argc + 8 */
         /* store envp for some syscalls to use without spurious conversion. */
-        movq    %rbx,std$__cenvp(%rip)
+        movq    %rbx,sys$__cenvp(%rip)
 	movq	%r9,%rax
 	movq	%rsp, %rcx
 	movq	%r9,.envlen

@@ -1,9 +1,11 @@
 use "systypes.use"
 
 pkg sys =
-	type scno	= int64 /*syscall*/
+	type pid	= int	/* process id */
+	type scno	= int64	/*syscall*/
 	type fdopt	= int64	/* fd options */
 	type fd		= int64	/* fd */
+	type whence	= uint64	/* seek from whence */
 	type mprot	= int64	/* memory protection */
 	type mopt	= int64	/* memory mapping options */
 	type socktype	= int64	/* socket type */
@@ -11,6 +13,7 @@ pkg sys =
 	type sockfam	= uint8	/* socket family */
 	type filemode	= uint16
 	type filetype	= uint8
+	type fcntlcmd	= int64
 
 	type clock = union
 		`Clockrealtime
@@ -28,6 +31,7 @@ pkg sys =
 	;;
 
 	type waitstatus = union
+		`Waitfail int32
 		`Waitexit int32
 		`Waitsig  int32
 		`Waitstop int32
@@ -70,9 +74,9 @@ pkg sys =
 		uid	: uint32
 		gid	: uint32
 		rdev	: uint32
-		atim	: timespec
-		mtim	: timespec
-		ctim	: timespec
+		atime	: timespec
+		mtime	: timespec
+		ctime	: timespec
 		size	: int64
 		blocks	: int64
 		blksize	: uint32
@@ -102,6 +106,15 @@ pkg sys =
 		port	: uint16
 		addr	: byte[4]
 		zero	: byte[8]
+	;;
+
+	type sockaddr_in6 = struct
+		len	: byte
+		fam	: sockfam
+		port	: uint16
+		flow	: uint32
+		addr	: byte[16]
+		scope	: uint32
 	;;
 
 	type sockaddr_storage = struct
@@ -186,6 +199,34 @@ pkg sys =
 	const Ipproto_tcp	: sockproto = 6
 	const Ipproto_udp	: sockproto = 17
 	const Ipproto_raw	: sockproto = 255
+
+	const Seekset	: whence = 0
+	const Seekcur	: whence = 1
+	const Seekend	: whence = 2
+
+	/* system specific constants */
+	const Maxpathlen	: size = 1024
+
+	/* fcntl constants */
+	const Fdupfd	 : fcntlcmd = 0		/* duplicate file descriptor */
+	const Fgetfd	 : fcntlcmd = 1		/* get file descriptor flags */
+	const Fsetfd	 : fcntlcmd = 2		/* set file descriptor flags */
+	const Fgetfl	 : fcntlcmd = 3		/* get file status flags */
+	const Fsetfl	 : fcntlcmd = 4		/* set file status flags */
+	const Fgetown	 : fcntlcmd = 5		/* get SIGIO/SIGURG proc/pgrp */
+	const Fsetown	 : fcntlcmd = 6		/* set SIGIO/SIGURG proc/pgrp */
+	const Fogetlk	 : fcntlcmd = 7		/* get record locking information */
+	const Fosetlk	 : fcntlcmd = 8		/* set record locking information */
+	const Fosetlkw	 : fcntlcmd = 9		/* F_SETLK; wait if blocked */
+	const Fdup2fd	 : fcntlcmd = 10		/* duplicate file descriptor to arg */
+	const Fgetlk	 : fcntlcmd = 11		/* get record locking information */
+	const Fsetlk	 : fcntlcmd = 12		/* set record locking information */
+	const Fsetlkw	 : fcntlcmd = 13		/* F_SETLK; wait if blocked */
+	const Fsetlk_remote	 : fcntlcmd = 14		/* debugging support for remote locks */
+	const Freadahead	 : fcntlcmd = 15		/* read ahead */
+	const Frdahead	 : fcntlcmd = 16		/* Darwin compatible read ahead */
+	const Fdupfd_cloexec	 : fcntlcmd = 17		/* Like F_DUPFD, but FD_CLOEXEC is set */
+	const Fdup2fd_cloexec	 : fcntlcmd = 18		/* Like F_DUP2FD, but FD_CLOEXEC is set */
 
 	/* return value for a failed mapping */
 	const Mapbad	: byte# = -1 castto(byte#)
@@ -605,11 +646,11 @@ pkg sys =
 
 	/* process control */
 	const exit	: (status:int -> void)
-	const getpid	: ( -> int64)
-	const kill	: (pid:int64, sig:int64 -> int64)
-	const fork	: (-> int64)
-	const wait4	: (pid:int64, loc:int32#, opt : int64, usage:rusage#	-> int64)
-	const waitpid	: (pid:int64, loc:int32#, opt : int64	-> int64)
+	const getpid	: ( -> pid)
+	const kill	: (pid:pid, sig:int64 -> int64)
+	const fork	: (-> pid)
+	const wait4	: (pid:pid, loc:int32#, opt : int64, usage:rusage#	-> int64)
+	const waitpid	: (pid:pid, loc:int32#, opt : int64	-> int64)
 	const execv	: (cmd : byte[:], args : byte[:][:] -> int64)
 	const execve	: (cmd : byte[:], args : byte[:][:], env : byte[:][:] -> int64)
 	/* wrappers to extract wait status */
@@ -620,15 +661,25 @@ pkg sys =
 	const openmode	: (path:byte[:], opts:fdopt, mode:int64 -> fd)
 	const close	: (fd:fd -> int64)
 	const creat	: (path:byte[:], mode:int64 -> fd)
+	const unlink	: (path:byte[:] -> int)
 	const read	: (fd:fd, buf:byte[:] -> size)
 	const write	: (fd:fd, buf:byte[:] -> size)
-	const lseek	: (fd:fd, off:uint64, whence:int64 -> int64)
+	const lseek	: (fd:fd, off : off, whence : whence -> int64)
 	const stat	: (path:byte[:], sb:statbuf# -> int64)
 	const lstat	: (path:byte[:], sb:statbuf# -> int64)
 	const fstat	: (fd:fd, sb:statbuf# -> int64)
 	const mkdir	: (path : byte[:], mode : int64	-> int64)
 	generic ioctl	: (fd:fd, req : int64, arg:@a# -> int64)
-	const getdirentries64	: (fd : fd, buf : byte[:], basep : uint64# -> int64)
+	const getdirentries	: (fd : fd, buf : byte[:], basep : int64# -> int64)
+	const chdir	: (p : byte[:] -> int64)
+	const getcwd	: (buf : byte[:] -> int64)
+
+	/* fd stuff */
+	const pipe	: (fds : fd[2]# -> int64)
+	const dup	: (fd : fd -> fd)
+	const dup2	: (src : fd, dst : fd -> fd)
+	/* NB: the C ABI uses '...' for the args. */
+	const fcntl	: (fd : fd, cmd : fcntlcmd, args : byte# -> int64)
 
 	/* networking */
 	const socket	: (dom : sockfam, stype : socktype, proto : sockproto	-> fd)
@@ -651,6 +702,10 @@ pkg sys =
 	/* system information */
 	const uname 	: (buf : utsname# -> int)
 	const sysctl	: (mib : int[:], old : byte[:]#, new : byte[:] -> int)
+
+	/* filled by start code */
+	extern const __cenvp : byte##
+	extern const __environment : byte[:][:]
 ;;
 
 /* 
@@ -667,9 +722,9 @@ extern const __cenvp : byte##
 
 /* process management */
 const exit	= {status;		syscall(Sysexit, a(status))}
-const getpid	= {;			-> syscall(Sysgetpid, 1)}
+const getpid	= {;			-> syscall(Sysgetpid, 1) castto(pid)}
 const kill	= {pid, sig;		-> syscall(Syskill, pid, sig)}
-const fork	= {;			-> syscall(Sysfork)}
+const fork	= {;			-> syscall(Sysfork) castto(pid)}
 const wait4	= {pid, loc, opt, usage;	-> syscall(Syswait4, pid, loc, opt, usage)}
 const waitpid	= {pid, loc, opt;
 	-> wait4(pid, loc, opt, 0 castto(rusage#)) 
@@ -721,6 +776,7 @@ const open	= {path, opts;		-> syscall(Sysopen, cstring(path), a(opts), a(0o777))
 const openmode	= {path, opts, mode;	-> syscall(Sysopen, cstring(path), a(opts), a(mode)) castto(fd)}
 const close	= {fd;			-> syscall(Sysclose, a(fd))}
 const creat	= {path, mode;		-> openmode(path, Ocreat | Otrunc | Owronly, mode) castto(fd)}
+const unlink	= {path;		-> syscall(Sysunlink, cstring(path)) castto(int)}
 const read	= {fd, buf;		-> syscall(Sysread, a(fd), buf castto(byte#), a(buf.len)) castto(size)}
 const write	= {fd, buf;		-> syscall(Syswrite, a(fd), buf castto(byte#), a(buf.len)) castto(size)}
 const lseek	= {fd, off, whence;	-> syscall(Syslseek, a(fd), a(off), a(whence))}
@@ -730,7 +786,16 @@ const fstat	= {fd, sb;		-> syscall(Sysfstat, a(fd), a(sb))}
 const mkdir	= {path, mode;		-> syscall(Sysmkdir, cstring(path), a(mode)) castto(int64)}
 generic ioctl	= {fd, req, arg;	-> syscall(Sysioctl, a(fd), a(req), a(arg)) castto(int64)
 }
-const getdirentries64	= {fd, buf, basep;	-> syscall(Sysgetdirentries, a(fd), buf castto(byte#), a(buf.len), a(basep))}
+const getdirentries	= {fd, buf, basep;	-> syscall(Sysgetdirentries, a(fd), buf castto(byte#), a(buf.len), a(basep))}
+const chdir	= {dir;	-> syscall(Syschdir, cstring(dir))}
+const getcwd	= {buf;	-> syscall(Sys__getcwd, a(buf), a(buf.len))}
+
+/* file stuff */
+const pipe	= {fds;	-> syscall(Syspipe, a(fds))}
+const dup 	= {fd;	-> syscall(Sysdup, a(fd)) castto(fd)}
+const dup2 	= {src, dst;	-> syscall(Sysdup2, a(src), a(dst)) castto(fd)}
+const fcntl	= {fd, cmd, args; 	-> syscall(Sysfcntl, a(fd), a(cmd), a(args))}
+
 
 /* networking */
 const socket	= {dom, stype, proto;	-> syscall(Syssocket, a(dom), a(stype), a(proto)) castto(fd) }
@@ -748,6 +813,15 @@ const mmap	= {addr, len, prot, flags, fd, off;
 const clock_getres = {clk, ts;	-> syscall(Sysclock_getres, clockid(clk), a(ts)) castto(int32)}
 const clock_gettime = {clk, ts;	-> syscall(Sysclock_gettime, clockid(clk), a(ts)) castto(int32)}
 const clock_settime = {clk, ts;	-> syscall(Sysclock_settime, clockid(clk), a(ts)) castto(int32)}
+
+const sleep = {time
+	var req, rem
+	req = [.sec = time, .nsec = 0]
+	-> nanosleep(&req, &rem)
+}
+
+const nanosleep	= {req, rem;	-> syscall(Sysnanosleep, a(req), a(rem)) castto(int32)}
+
 
 /* system information */
 const uname	= {buf;	-> syscall(Sysfreebsd4_uname, a(buf)) castto(int)}
@@ -796,10 +870,12 @@ const clockid = {clk
 }
 
 const waitstatus = {st
+	if st < 0
+		-> `Waitfail st
+	;;
 	match st & 0o177
 	| 0:    -> `Waitexit (st >> 8)
 	| 0x7f:-> `Waitstop (st >> 8)
 	| sig:  -> `Waitsig sig
 	;;
 }
-
