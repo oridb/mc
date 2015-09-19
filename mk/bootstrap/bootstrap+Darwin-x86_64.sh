@@ -24,10 +24,10 @@ echo 	$pwd/6/6m	-I ../sys -I . hassuffix.myr ;	$pwd/6/6m	-I ../sys -I . hassuffi
 echo 	$pwd/6/6m	-I ../sys -I . extremum.myr ;	$pwd/6/6m	-I ../sys -I . extremum.myr 
 echo 	$pwd/6/6m	-I ../sys -I . units.myr ;	$pwd/6/6m	-I ../sys -I . units.myr 
 echo 	$pwd/6/6m	-I ../sys -I . alloc.myr ;	$pwd/6/6m	-I ../sys -I . alloc.myr 
+echo 	$pwd/6/6m	-I ../sys -I . now.myr ;	$pwd/6/6m	-I ../sys -I . now.myr 
 echo 	$pwd/6/6m	-I ../sys -I . rand.myr ;	$pwd/6/6m	-I ../sys -I . rand.myr 
 echo 	$pwd/6/6m	-I ../sys -I . slcp.myr ;	$pwd/6/6m	-I ../sys -I . slcp.myr 
 echo 	$pwd/6/6m	-I ../sys -I . sldup.myr ;	$pwd/6/6m	-I ../sys -I . sldup.myr 
-echo 	$pwd/6/6m	-I ../sys -I . now.myr ;	$pwd/6/6m	-I ../sys -I . now.myr 
 echo 	$pwd/6/6m	-I ../sys -I . sljoin.myr ;	$pwd/6/6m	-I ../sys -I . sljoin.myr 
 echo 	$pwd/6/6m	-I ../sys -I . result.myr ;	$pwd/6/6m	-I ../sys -I . result.myr 
 echo 	$pwd/6/6m	-I ../sys -I . slurp.myr ;	$pwd/6/6m	-I ../sys -I . slurp.myr 
