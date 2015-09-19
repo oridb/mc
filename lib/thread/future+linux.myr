@@ -1,0 +1,48 @@
+use std
+use sys
+
+use "atomic.use"
+use "common.use"
+
+pkg thread =
+	type future(@a) = struct
+		_state	: int32
+		_val	: @a
+	;;
+
+	generic mkfut	: (-> future(@a))
+	generic futset	: (fut : future(@a)#, val : @a -> bool)
+	generic futget	: (fut : future(@a)# -> @a)
+	generic futtryget	: (fut : future(@a)# -> std.option(@a))
+;;
+
+const Clear = 0
+const Setting = 1
+const Set = 2
+
+generic mkfut = {
+	-> [._state = Clear ]
+}
+
+generic futset = {fut, val
+	/* If we don't get a clear, we failed to set the value */
+	if xcas(&fut._state, Clear, Setting) != Clear
+		-> false
+	;;
+	fut._val = val
+	fut._state = Set
+	sys.futex(&fut._state, sys.Futexwake | sys.Futexpriv, 0x7fffffff, Zptr, Zptr, 0)
+	-> true
+}
+
+generic futget = {fut
+	var st
+
+	/* we can transition from Set to Setting. */
+	st = fut._state
+	while st != Set
+		sys.futex(&fut._state, sys.Futexwait | sys.Futexpriv, st, Zptr, Zptr, 0)
+		st = fut._state
+	;;
+	-> fut._val
+}

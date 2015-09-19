@@ -1,0 +1,51 @@
+use std
+use sys
+use thread
+
+use "test/util.use"
+
+var fut
+var nready : int32
+var ndone : int32
+
+const main = {
+	nready = 0
+	ndone = 0
+	fut = thread.mkfut()
+	/* set after we have some waiters */
+	mkherd(100, getfuture)
+	while nready != 100
+		/* spin */
+	;;
+	std.put("done waiting for ready\n")
+	std.assert(ndone == 0, "thread proceeded too soon\n")
+	thread.futset(&fut, 666)
+	std.assert(thread.futset(&fut, 1) == false, "double set future\n")
+	while ndone != 100
+		std.put("ndone: {}\n", ndone)
+		/* spin */
+	;;
+	std.put("double set future ok")
+	/* start up a few more to make sure we can still read */
+	mkherd(50, getfuture)
+	while ndone != 150
+		/* spin */
+	;;
+
+	
+	/* set ahead of time */
+	ndone = 0
+	fut = thread.mkfut()
+	thread.futset(&fut, 666)
+	std.assert(thread.futset(&fut, 666) == false, "double set future\n")
+	mkherd(100, getfuture)
+	while ndone != 100
+		/* spin */
+	;;
+}
+
+const getfuture = {
+	thread.xadd(&nready, 1)
+	std.assert(thread.futget(&fut) == 666, "wrong value gotten from future")
+	thread.xadd(&ndone, 1)
+}

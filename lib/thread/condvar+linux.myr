@@ -2,6 +2,7 @@ use std
 use sys
 
 use "atomic.use"
+use "common.use"
 use "mutex.use"
 
 pkg thread =
@@ -15,8 +16,6 @@ pkg thread =
 	const condsignal	: (cond : cond# -> void)
 	const condbroadcast	: (cond : cond# -> void)
 ;;
-
-generic Zptr = 0 castto(@a#)
 
 const mkcond = {mtx
 	-> [._mtx = mtx, ._seq = 0]

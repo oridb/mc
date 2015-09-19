@@ -2,6 +2,7 @@ use std
 use sys
 
 use "atomic.use"
+use "common.use"
 
 pkg thread =
 	type mutex = struct
@@ -18,7 +19,6 @@ pkg thread =
 	pkglocal const Contended = 2
 ;;
 
-generic Zptr = 0 castto(@a#)
 var nspin = 10	/* FIXME: pick a sane number, based on CPU count */
 
 const mkmtx = {

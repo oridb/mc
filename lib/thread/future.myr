@@ -1,0 +1,63 @@
+use std
+
+use "mutex.use"
+
+pkg thread =
+	type future(@a) = struct
+		mtx	: mutex
+		set	: bool
+		val	: @a
+	;;
+
+	generic mkfut	: (-> future(@a))
+	generic futset	: (fut : future(@a)#, val : @a -> bool)
+	generic futget	: (fut : future(@a)# -> @a)
+	generic futtryget	: (fut : future(@a)# -> std.option(@a))
+	generic futclear	: (fut : future(@a)# -> void)
+;;
+
+const Unset = 0
+const Waiting = 1
+const Set = 2
+
+generic mkfut = {
+	var fut
+
+	fut = [.mtx = mkmtx() ]
+	mtxlock(&fut.mtx)
+	-> fut
+}
+
+generic futset = {fut, val
+	if fut.set
+		-> false
+	;;
+	/* compiler doesn't reorder shit */
+	fut.val = val
+	fut.set = true
+	mtxunlock(&fut.mtx)
+	-> true
+}
+
+generic futtryget = {fut
+	var val
+
+	if !fut.set
+		-> `std.None
+	;;
+	mtxlock(&fut.mtx)
+	val = fut.val
+	mtxunlock(&fut.mtx)
+	-> `std.Some val
+}
+
+generic futget = {fut
+	var val
+
+	mtxlock(&fut.mtx)
+	val = fut.val
+	mtxunlock(&fut.mtx)
+	-> val
+}
+
+
