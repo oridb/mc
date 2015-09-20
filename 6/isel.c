@@ -92,41 +92,53 @@ static Mode mode(Node *n)
     return ModeNone;
 }
 
-static Loc *loc(Isel *s, Node *n)
+static Loc *varloc(Isel *s, Node *n)
 {
     ssize_t stkoff;
     Loc *l, *rip;
-    Node *v;
 
-    switch (exprop(n)) {
-        case Ovar:
-            if (hthas(s->globls, n)) {
-                rip = locphysreg(Rrip);
-                l = locmeml(htget(s->globls, n), rip, NULL, mode(n));
-            } else if (hthas(s->stkoff, n)) {
-                stkoff = ptoi(htget(s->stkoff, n));
-                l = locmem(-stkoff, locphysreg(Rrbp), NULL, mode(n));
-            }  else {
-                l = htget(s->reglocs, n);
-                if (!l) {
-                    l = locreg(mode(n));
-                    htput(s->reglocs, n, l);
+    if (hthas(s->globls, n)) {
+        rip = locphysreg(Rrip);
+        l = locmeml(htget(s->globls, n), rip, NULL, mode(n));
+    } else if (hthas(s->stkoff, n)) {
+        stkoff = ptoi(htget(s->stkoff, n));
+        l = locmem(-stkoff, locphysreg(Rrbp), NULL, mode(n));
+    }  else {
+        l = htget(s->reglocs, n);
+        if (!l) {
+            l = locreg(mode(n));
+            htput(s->reglocs, n, l);
+        }
+    }
+    return l;
+}
+
+static Loc *loc(Isel *s, Node *n)
+{
+    Node *v;
+    Loc *l;
+
+    if (n->type == Ndecl) {
+        l = varloc(s, n);
+    } else {
+        switch (exprop(n)) {
+            case Ovar:
+                l = varloc(s, n); 
+                break;
+            case Olit:
+                v = n->expr.args[0];
+                switch (v->lit.littype) {
+                    case Lchr:      l = loclit(v->lit.chrval, mode(n)); break;
+                    case Lbool:     l = loclit(v->lit.boolval, mode(n)); break;
+                    case Lint:      l = loclit(v->lit.intval, mode(n)); break;
+                    default:
+                                    die("Literal type %s should be blob", litstr[v->lit.littype]);
                 }
-            }
-            break;
-        case Olit:
-            v = n->expr.args[0];
-            switch (v->lit.littype) {
-                case Lchr:      l = loclit(v->lit.chrval, mode(n)); break;
-                case Lbool:     l = loclit(v->lit.boolval, mode(n)); break;
-                case Lint:      l = loclit(v->lit.intval, mode(n)); break;
-                default:
-                                die("Literal type %s should be blob", litstr[v->lit.littype]);
-            }
-            break;
-        default:
-            die("Node %s not leaf in loc()", opstr[exprop(n)]);
-            break;
+                break;
+            default:
+                die("Node %s not leaf in loc()", opstr[exprop(n)]);
+                break;
+        }
     }
     return l;
 }
@@ -921,13 +933,13 @@ void addarglocs(Isel *s, Func *fn)
             argoff += size(arg);
         } else if (!vararg && isfloatmode(mode(arg)) && nfloats < Nfloatregargs) {
             a = coreg(floatargregs[nfloats], mode(arg));
-            l = locreg(mode(arg));
+            l = loc(s, arg);
             g(s, Imovs, a, l, NULL);
             htput(s->reglocs, arg, l);
             nfloats++;
         } else if (!vararg && isintmode(mode(arg)) && nints < Nintregargs) {
             a = coreg(intargregs[nints], mode(arg));
-            l = locreg(mode(arg));
+            l = loc(s, arg);
             g(s, Imov, a, l, NULL);
             htput(s->reglocs, arg, l);
             nints++;
