@@ -37,6 +37,27 @@ const main = {
 	n = std.bigbfmt(buf[:], a, 0)
 	std.assert(std.sleq(buf[:n], "517347321949036993306"), "simple smoke test failed")
 
+	/* some comparison tests */
+	a = try(std.bigparse("1234_5678_1234_6789_6666_7777_8888"))
+	b = try(std.bigparse("2234_5678_1234_6789_6666_7777_8888"))
+	match std.bigcmp(a, b)
+	| `std.Before:	/* everything is as it should be */
+	| `std.Equal:	std.fatal("lies: {} == {}\n", a, b)
+	| `std.After:	std.fatal("lies: {} > {}\n", a, b)
+	;;
+	std.bigfree(a)
+	std.bigfree(b)
+
+	a = try(std.bigparse("36028797018963964"))
+	b = try(std.bigparse("36028797018963958"))
+	match std.bigcmp(a, b)
+	| `std.Before:	std.fatal("lies: {} < {}\n", a, b)
+	| `std.Equal:	std.fatal("lies: {} == {}\n", a, b)
+	| `std.After:	/* everything is as it should be */
+	;;
+	std.bigfree(a)
+	std.bigfree(b)
+
 	/* make sure we format '0' correctly */
 	run(std.mk(`Val "0"), "0")
 	/* smoke test for division */

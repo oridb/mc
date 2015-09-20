@@ -19,11 +19,17 @@ pkg std =
 
 const Dblbias = 1023
 const Fltbias = 127
+const Dblminmant	= 1 << 52	/* the minimum mantissa for a normal float. */
 
 const flt64bfmt = {sb, val, mode, precision
 	var isneg, exp, mant
 
 	(isneg, mant, exp) = flt64explode(val)
+	/* adjust for denormals */
+	while mant < Dblminmant
+		mant <<= 1
+		exp--
+	;;
 	dragon4(sb, isneg, mant, (exp - 52) castto(int64), Dblbias, mode, precision)
 }
 
@@ -163,6 +169,7 @@ const dragon4 = {sb, isneg, f, e, p, mode, cutoff
 	;;
 	while true
 		k--
+
 		bigmuli(r, 10)
 		u = bigdup(r);
 		bigdiv(u, s)
@@ -179,16 +186,20 @@ const dragon4 = {sb, isneg, f, e, p, mode, cutoff
 		| _:
 		;;
 		bigfree(t)
-		
+
+		/* v = 2*r */
 		v = bigdup(r)
 		bigshli(v, 1)
+
+		/* t = 2*s - mp */
 		t = bigdup(s)
 		bigshli(t, 1)
 		bigsub(t, mp)
+
 		match bigcmp(v, t)
-		| `After: high = true
-		| `Equal: high = roundup
-		| `Before: high = false
+		| `Before: high = false;
+		| `Equal: high = roundup;
+		| `After: high = true;
 		;;
 		bigfree(v)
 		bigfree(t)

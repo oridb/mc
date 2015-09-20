@@ -266,7 +266,9 @@ const bigcmp = {a, b
 		for var i = a.dig.len; i > 0; i--
 			da = a.dig[i - 1] castto(int64)
 			db = b.dig[i - 1] castto(int64)
-			-> signedorder(sa * (da - db))
+			if da != db
+				-> signedorder(sa * (da - db))
+			;;
 		;;
 	;;
 	-> `Equal
