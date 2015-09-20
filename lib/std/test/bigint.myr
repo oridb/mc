@@ -42,7 +42,7 @@ const main = {
 	b = try(std.bigparse("2234_5678_1234_6789_6666_7777_8888"))
 	match std.bigcmp(a, b)
 	| `std.Before:	/* everything is as it should be */
-	| `std.Equal:	std.fatal("lies: {} == {}\n", a, b)
+	| `std.Equal:	std.fatal("{} == {}\n", a, b)
 	| `std.After:	std.fatal("lies: {} > {}\n", a, b)
 	;;
 	std.bigfree(a)
