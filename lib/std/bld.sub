@@ -67,6 +67,7 @@ lib std {inc=.} =
 	memops.myr
 	memops-impl.myr
 	memops-impl+posixy-x64.s
+	memops-impl+plan9-x64.s
 
 	# platform specific files
 	env+plan9.myr
