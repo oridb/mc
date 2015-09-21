@@ -50,6 +50,7 @@ pkg bio =
 	const readln	: (f : file#	-> std.option(byte[:]))
 	const readto	: (f : file#, delim : byte[:]	-> std.option(byte[:]))
 	const skipto	: (f : file#, delim : byte[:]	-> bool)
+	const skipspace	: (f : file# -> void)
 
 	/* formatted i/o */
 	const put	: (f : file#, fmt : byte[:], args : ... -> std.size)
@@ -346,6 +347,20 @@ const skipto = {f, delim
 	match readdelim(f, delim, true)
 	| `std.Some ret:	-> true
 	| `std.None:	-> false
+	;;
+}
+
+const skipspace = {f
+	while true
+		match bio.peekc(f)
+		| `std.Some c:
+			if std.isspace(c)
+				break
+			;;
+			bio.getc(f)
+		| `std.None:
+			break
+		;;
 	;;
 }
 
