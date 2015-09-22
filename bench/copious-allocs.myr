@@ -43,7 +43,7 @@ const shuffle = {a
 
 	rng = std.mksrng(123)
 	for i = 0; i < a.len - 1; i++
-		j = std.rand(rng, i, a.len)
+		j = std.rngrand(rng, i, a.len)
 		t = a[j]
 		a[j] = a[i]
 		a[i] = t

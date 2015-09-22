@@ -27,8 +27,5 @@ parse/gram.h
 6/6m
 muse/muse
 myrbuild/myrbuild
-bench/*
-!bench/Makefile
-!bench/*.myr
 *~
 tags

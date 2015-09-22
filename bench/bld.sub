@@ -1,0 +1,17 @@
+bin intsort = intsort.myr ;;
+bin copious-allocs = copious-allocs.myr ;;
+bin sha1-compute = sha1-compute.myr ;;
+bin bigfactorial = bigfactorial.myr ;;
+bin mandelbrot = mandelbrot.myr ;;
+bin regex-match = regex-match.myr ;;
+bin runbench = runbench.myr ;;
+
+cmd benchit =
+	./runbench
+		intsort
+		copious-allocs 
+		sha1-compute
+		bigfactorial
+		mandelbrot
+		regex-match
+;;

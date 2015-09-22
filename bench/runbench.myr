@@ -1,0 +1,68 @@
+use std
+
+const Nsamp = 10
+
+const main = {args : byte[:][:]
+	var tot : flt64
+
+	std.put("Running benchmarks: {} samples per binary\n", Nsamp);
+	tot = 0.0;
+	for arg in args
+		tot = tot + timeit(arg)
+	;;
+	std.put("total:\t{}s\n", tot);
+}
+
+
+generic perror = {a : @a::(numeric,integral), msg : byte[:] -> @a
+	if a < 0
+		std.fatal("{}", msg)
+	else
+		-> a
+	;;
+}
+
+const timeit = {prog -> flt64
+	var avg, m, d, x, n : flt64
+
+	avg = 0.0;
+	m = 0.0;
+	n = 0.0;
+	for var i = 0; i < Nsamp; i++
+		n = n + 1.0;
+		x = run(prog);
+		d = (x - avg);
+		avg = avg + d/n;
+		m = m + d*(x - avg);
+	;;
+	std.put("{}:\t{}s (σ^2: {})\n", prog, avg, m/(n-1.0));
+	-> avg;
+}
+
+const run = {prog -> flt64
+	var infd, outfd
+	var pid
+	var tm
+
+	tm = std.now()
+	pid = std.fork();
+	if pid < 0
+		std.fatal("Could not fork\n");
+	elif pid == 0
+		infd = perror(std.open("/dev/zero", std.Ordonly), "could not open /dev/zero")
+		outfd = perror(std.open("/dev/null", std.Owronly), "could not open /dev/null")
+		perror(std.dup2(infd, 0), "could not redirect stdin")
+		perror(std.dup2(outfd, 1), "could not redirect stdout")
+		std.execv(prog, [prog][:])
+		std.fatal("Failed to exec\n")
+	else
+		match std.wait(pid)
+		| `std.Wfailure:	std.fatal("could not wait\n")
+		| `std.Waiterror:	std.fatal("running benchmark failed\n")
+		| `std.Wsignalled:	std.fatal("running benchmark failed\n")
+		| `std.Wsuccess:	/* nothing */
+		;;
+	;;
+	-> (std.now() - tm castto(flt64)) / 1_000_000.0
+}
+
