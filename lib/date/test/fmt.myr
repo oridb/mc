@@ -54,6 +54,14 @@ const main = {
 	d = date.subperiod(d, `date.Year 1)
 	eq("1969-1-01 00:00:00 +0000", std.bfmt(buf[:], "{D}", d))
 
+	d = date.addperiod(d, `date.Day 365)
+	eq("1970-1-01 00:00:00 +0000", std.bfmt(buf[:], "{D}", d))
+
+	d = date.addperiod(d, `date.Year 2)
+	eq("1972-1-01 00:00:00 +0000", std.bfmt(buf[:], "{D}", d))
+	d = date.addperiod(d, `date.Day 365)
+	eq("1972-12-31 00:00:00 +0000", std.bfmt(buf[:], "{D}", d))
+
 	d = date.mkinstant(12*3601*1_000_000, "")
 	for var i = 0; i < 50; i++
 		d = date.addperiod(d, `date.Day 1)
