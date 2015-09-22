@@ -7,7 +7,7 @@ const main = {args : byte[:][:]
 
 	std.put("Running benchmarks: {} samples per binary\n", Nsamp);
 	tot = 0.0;
-	for arg in args
+	for arg in args[1:]
 		tot = tot + timeit(arg)
 	;;
 	std.put("total:\t{}s\n", tot);
