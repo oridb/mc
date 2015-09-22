@@ -7,6 +7,9 @@ pkg date =
 	const utcnow	: (-> instant)
 	const now	: (tz : byte[:] -> instant)
 	const tozone	: (d : instant, zone : byte[:]	-> instant)
+	const mkdate	: (y : int, m : int, day : int, zone : byte[:]	-> instant)
+	const mkdatetime	: (year : int, mon : int, day : int, \
+		h : int, m : int, s : int, zone : byte[:]	-> instant)
 	const mkinstant	: (tm : std.time, zone : byte[:]	-> instant)
 
 	const localoff	: (tm : std.time -> duration)
@@ -40,6 +43,17 @@ const now = {tz : byte[:]
 
 const tozone = {d, tz
 	-> mkinstant(d.actual, tz)
+}
+
+const mkdate = {y, m, d, tz
+	-> mkinstant(recalc([.year=y, .mon=m, .day=d]), tz)
+}
+
+const mkdatetime = {year, mon, day, h, m, s, tz
+	-> mkinstant(recalc([
+		.year=year, .mon=mon, .day=day,
+		.h=h, .m=m, .s=s
+	]), tz)
 }
 
 const mkinstant = {tm, tz 
