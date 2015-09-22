@@ -9,18 +9,17 @@ pkg date =
 	const tozone	: (d : instant, zone : byte[:]	-> instant)
 	const mkinstant	: (tm : std.time, zone : byte[:]	-> instant)
 
-	const localoff	: (tm : std.time -> delta)
-	const tzoff	: (tzname : byte[:], tm : std.time	-> delta)
+	const localoff	: (tm : std.time -> duration)
+	const tzoff	: (tzname : byte[:], tm : std.time	-> duration)
 	const isleap	: (d : instant	-> bool)
 
 	/* date differences */
-	const add	: (d : instant, dt : delta	-> instant)
-	const sub	: (d : instant, dt : delta	-> instant)
-	const delta	: (a : instant, b : instant	-> delta)
-        /*
-	const duradd	: (d : instant, dt : period	-> instant)
-	const dursub	: (d : instant, dt : period	-> instant)
-        */
+	const add	: (d : instant, dt : duration	-> instant)
+	const sub	: (d : instant, dt : duration	-> instant)
+	const addperiod	: (d : instant, dt : period	-> instant)
+	const subperiod	: (d : instant, dt : period	-> instant)
+
+	const duration	: (a : instant, b : instant	-> duration)
 ;;
 
 const Days400y	= 365*400 + 4*25 - 3
@@ -71,13 +70,10 @@ const mkinstant = {tm, tz
 	inst.us  = (t % 1_000_000) castto(int)
 	t /= 1_000_000
 	inst.s = (t % 60) castto(int)
-	std.assert(inst.s >= 0, "inst.s negative??\n")
 	t /= 60
 	inst.m = (t % 60) castto(int)
-	std.assert(inst.m >= 0, "inst.m negative??\n")
 	t /= 60
 	inst.h = t castto(int)
-	std.assert(inst.h >= 0, "inst.h negative??\n")
 
 	/* weekday */
 	inst.wday = ((e + 4) % 7) castto(int)	/* the world started on Thursday */
@@ -152,7 +148,58 @@ const sub  = {d, dt
 	-> mkinstant(d.actual - (dt castto(std.time)), d.tzname)
 }
 
-const delta = {a, b
-	-> (b.actual - a.actual) castto(delta)
+const addperiod = {inst, p
+	match p
+	| `Year	y:	inst.year += y
+	| `Month m:	inst.mon += m
+	| `Day	d:	inst.day += d
+	| `Hour	h:	inst.h += h
+	| `Minute m:	inst.m += m
+	| `Second s:	inst.s += s
+	;;
+	-> mkinstant(recalc(inst), inst.tzname)
 }
 
+const subperiod = {inst, p
+	match p
+	| `Year	y:	inst.year -= y
+	| `Month m:	inst.mon -= m
+	| `Day	d:	inst.day -= d
+	| `Hour	h:	inst.h -= h
+	| `Minute m:	inst.m -= m
+	| `Second s:	inst.s -= s
+	;;
+	-> mkinstant(recalc(inst), inst.tzname)
+}
+
+const duration = {a, b
+	-> (b.actual - a.actual) castto(duration)
+}
+
+const recalc = {inst
+	var c, ya, j, tm
+	var year, mon, day
+	var h, m, s, us
+
+	year = inst.year castto(std.time)
+	mon = inst.mon castto(std.time)
+	day = inst.day castto(std.time)
+	h = inst.h castto(std.time)
+	m = inst.m castto(std.time)
+	s = inst.s castto(std.time)
+	us = inst.us castto(std.time)
+
+	if m > 2
+		mon -= 3
+	else
+		mon += 9
+		year -= 1
+	;;
+	c = year / 100
+	ya = year - 100 * c
+	j = (c*Days400y/4 + Days4y*ya/4 + (153*mon+2)/5 + day)
+	j -= 719469
+	tm = j * DayUsec
+	tm += (3600*h + 60*m + s)*1_000_000 + us
+	-> tm
+}

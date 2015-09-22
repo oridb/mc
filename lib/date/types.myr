@@ -3,7 +3,7 @@ use std
 pkg date = 
 	type instant = struct
 		actual	: std.time	/* epoch time in microseconds */
-		tzoff	: delta	/* timezone offset in microseconds */
+		tzoff	: duration	/* timezone offset in microseconds */
 		year	: int	/* year, starting at 0 (ie, 1 BCE) */
 		mon	: int	/* month, [1..12] */
 		day	: int	/* day, [1..31] */
@@ -16,12 +16,12 @@ pkg date =
 		_tzbuf	: byte[32]	/* current time zone name storage */
 	;;
 
-	type delta = std.time
+	type duration = std.time
 
 	type period = union
-		`Day	int
-		`Month	int
 		`Year	int
+		`Month	int
+		`Day	int
 		`Hour	int
 		`Minute	int
 		`Second	int

@@ -3,11 +3,13 @@ use date
 
 const main = {
 	var buf : byte[1024]
-	var d
+	var d, s
 
 	/* epoch */
 	d = date.mkinstant(0, "")
 	eq("1970-1-01 00:00:00 +0000", std.bfmt(buf[:], "{D}", d))
+	d = date.mkinstant(24*3600*1_000_000, "")
+	eq("1970-1-02 00:00:00 +0000", std.bfmt(buf[:], "{D}", d))
 
 	/* epoch + 12 hours */
 	d = date.mkinstant(12*3600*1_000_000, "")
@@ -32,6 +34,35 @@ const main = {
 	/* date in the bc */
 	d = date.mkinstant(-70000000000*1_000_000, "")
 	eq("-249-11-19 19:33:20 +0000", std.bfmt(buf[:], "{D}", d))
+
+	/* test addition and subtraction of dates */
+	d = date.mkinstant(-1, "")
+	d = date.addperiod(d, `date.Hour 1)
+	eq("1970-1-01 00:59:59 +0000", std.bfmt(buf[:], "{D}", d))
+
+	d = date.mkinstant(0, "")
+	d = date.addperiod(d, `date.Hour 24)
+	eq("1970-1-02 00:00:00 +0000", std.bfmt(buf[:], "{D}", d))
+
+	d = date.mkinstant(0, "")
+	d = date.addperiod(d, `date.Day 1)
+	eq("1970-1-02 00:00:00 +0000", std.bfmt(buf[:], "{D}", d))
+
+	d = date.subperiod(d, `date.Day 1)
+	eq("1970-1-01 00:00:00 +0000", std.bfmt(buf[:], "{D}", d))
+
+	d = date.subperiod(d, `date.Year 1)
+	eq("1969-1-01 00:00:00 +0000", std.bfmt(buf[:], "{D}", d))
+
+	d = date.mkinstant(12*3601*1_000_000, "")
+	for var i = 0; i < 50; i++
+		d = date.addperiod(d, `date.Day 1)
+		d = date.addperiod(d, `date.Second 1)
+		s = std.fmt("1970-{}-{p=0,w=2} 12:{p=0,w=2}:{p=0,w=2} +0000", \
+			(i+1)/31 + 1, (i+1)%31+1, (i+13)/60, (i+13)%60)
+		eq(s, std.bfmt(buf[:], "{D}", d))
+		std.slfree(s)
+	;;
 }
 
 const eq = {expected, actual
