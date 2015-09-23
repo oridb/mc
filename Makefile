@@ -17,8 +17,10 @@ check: all
 	./mbldwrap.sh test:runtest
 	./mbldwrap.sh test
 
-bench: all
-	$(MAKE) -C bench bench
+.PHONY: bench
+bench:
+	mbld
+	mbld bench:benchit
 
 .PHONY: bootstrap
 bootstrap: buildmyr

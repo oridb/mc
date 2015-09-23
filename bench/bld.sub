@@ -1,10 +1,41 @@
-bin intsort = intsort.myr ;;
-bin copious-allocs = copious-allocs.myr ;;
-bin sha1-compute = sha1-compute.myr ;;
-bin bigfactorial = bigfactorial.myr ;;
-bin mandelbrot = mandelbrot.myr ;;
-bin regex-match = regex-match.myr ;;
-bin runbench = runbench.myr ;;
+bin intsort =
+	intsort.myr
+	lib @/lib/std:std
+	lib @/lib/sys:sys
+;;
+bin copious-allocs =
+	copious-allocs.myr
+	lib @/lib/std:std
+	lib @/lib/sys:sys
+;;
+bin sha1-compute =
+	sha1-compute.myr
+	lib @/lib/std:std
+	lib @/lib/sys:sys
+	lib @/lib/cryptohash:cryptohash
+;;
+bin bigfactorial =
+	bigfactorial.myr
+	lib @/lib/std:std
+	lib @/lib/sys:sys
+;;
+bin mandelbrot =
+	mandelbrot.myr
+	lib @/lib/std:std
+	lib @/lib/sys:sys
+	lib @/lib/bio:bio
+;;
+bin regex-match =
+	regex-match.myr
+	lib @/lib/std:std
+	lib @/lib/sys:sys
+	lib @/lib/regex:regex
+;;
+bin runbench =
+	runbench.myr
+	lib @/lib/std:std
+	lib @/lib/sys:sys
+;;
 
 cmd benchit =
 	./runbench
