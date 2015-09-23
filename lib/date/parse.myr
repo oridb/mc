@@ -2,6 +2,7 @@ use std
 
 use "types.use"
 use "names.use"
+use "date.use"
 
 pkg date =
 	/* date i/o */
@@ -130,7 +131,7 @@ const filldate = {d, f, s, tz, err -> byte[:]
 			-> s
 		;;
 	;;
-	d.actual = time(d)
+	d.actual = recalc(d)
 	-> s
 }
 
@@ -200,33 +201,4 @@ const matchampm = {d, s, err
 		err# = true
 		-> s
 	;;
-}
-
-const time = {inst
-	var t
-	var c, y, ya, m, u
-
-	t = 0
-
-	if inst.mon > 2
-		m = (inst.mon - 3) castto(std.time)
-	else
-		m = (inst.mon + 9) castto(std.time)
-		y = (inst.year - 1) castto(std.time)
-	;;
-	
-	c = y / 100
-	ya = y - 100 * c
-	u = (146097 * c) / 4 + \
-		(1461 * ya) / 4 + \
-		(153 * m + 2) / 5 + \
-		(inst.day castto(std.time)) + \
-		UnixJulianDiff
-
-	t += (u * 24*60*60*1_000_000)
-	t += (inst.h castto(std.time)) * 60*60*1_000_000
-	t += (inst.m castto(std.time)) * 60*1_000_000
-	t += (inst.s castto(std.time)) * 1_000_000
-	t += inst.us castto(std.time)
-	-> t
 }

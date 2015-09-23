@@ -14,6 +14,7 @@ pkg date =
 
 	const localoff	: (tm : std.time -> duration)
 	const tzoff	: (tzname : byte[:], tm : std.time	-> duration)
+	const tzname	: (tzoff : int -> byte[:])
 	const isleap	: (d : instant	-> bool)
 
 	/* date differences */
@@ -23,6 +24,8 @@ pkg date =
 	const subperiod	: (d : instant, dt : period	-> instant)
 
 	const duration	: (a : instant, b : instant	-> duration)
+
+	pkglocal const recalc	: (inst : instant# -> std.time)
 ;;
 
 const Days400y	= 365*400 + 4*25 - 3
@@ -46,11 +49,11 @@ const tozone = {d, tz
 }
 
 const mkdate = {y, m, d, tz
-	-> mkinstant(recalc([.year=y, .mon=m, .day=d]), tz)
+	-> mkinstant(recalc(&[.year=y, .mon=m, .day=d]), tz)
 }
 
 const mkdatetime = {year, mon, day, h, m, s, tz
-	-> mkinstant(recalc([
+	-> mkinstant(recalc(&[
 		.year=year, .mon=mon, .day=day,
 		.h=h, .m=m, .s=s
 	]), tz)
@@ -171,7 +174,7 @@ const addperiod = {inst, p
 	| `Minute m:	inst.m += m
 	| `Second s:	inst.s += s
 	;;
-	-> mkinstant(recalc(inst), inst.tzname)
+	-> mkinstant(recalc(&inst), inst.tzname)
 }
 
 const subperiod = {inst, p
@@ -183,7 +186,7 @@ const subperiod = {inst, p
 	| `Minute m:	inst.m -= m
 	| `Second s:	inst.s -= s
 	;;
-	-> mkinstant(recalc(inst), inst.tzname)
+	-> mkinstant(recalc(&inst), inst.tzname)
 }
 
 const duration = {a, b
@@ -192,29 +195,29 @@ const duration = {a, b
 
 const recalc = {inst
 	var c, ya, j, tm
-	var year, mon, day
-	var h, m, s, us
+	var y, m, d
 
-	year = inst.year castto(std.time)
-	mon = inst.mon castto(std.time)
-	day = inst.day castto(std.time)
-	h = inst.h castto(std.time)
-	m = inst.m castto(std.time)
-	s = inst.s castto(std.time)
-	us = inst.us castto(std.time)
 
-	if m > 2
-		mon -= 3
+	if inst.mon > 2
+		m = (inst.mon - 3) castto(std.time)
+		y = inst.year castto(std.time)
 	else
-		mon += 9
-		year -= 1
+		m = (inst.mon + 9) castto(std.time)
+		y = (inst.year - 1) castto(std.time)
 	;;
-	c = year / 100
-	ya = year - 100 * c
-	j = (c*Days400y/4 + Days4y*ya/4 + (153*mon+2)/5 + day)
-	j -= 719469
+	d = inst.day castto(std.time)
+
+	c = y / 100
+	ya = y - 100 * c
+	j = c * Days400y / 4 + \
+		Days4y * ya / 4 + \
+		(153 * m + 2)/5 + d - \
+		719469
 	tm = j * DayUsec
-	tm += (3600*h + 60*m + s)*1_000_000 + us
+	tm += (inst.h castto(std.time)) * 3600*1_000_000
+	tm += (inst.m castto(std.time)) * 60*1_000_000
+	tm += (inst.s castto(std.time)) * 1_000_000
+	tm += (inst.us castto(std.time))
 	-> tm
 }
 
