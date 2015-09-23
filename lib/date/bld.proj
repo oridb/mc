@@ -4,6 +4,6 @@ lib date =
 	names.myr
 	parse.myr
 	types.myr
-	zoneinfo.myr
+	zoneinfo+posixy.myr
 ;;
 
