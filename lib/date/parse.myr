@@ -64,10 +64,11 @@ const strparse = {f, s, tz, replace
 	-> `std.Ok d
 }
 
-const filldate = {d, f, s, seen, err : std.option(parsefail)#
-	var fc, sc, z
+const filldate = {d, f, s, seen, err
+	var fc, sc, z, am
 
 	z = ""
+	am = `std.None
 	while f.len != 0
 		(fc, f) = std.striter(f)
 		if fc == '%'
@@ -98,8 +99,9 @@ const filldate = {d, f, s, seen, err : std.option(parsefail)#
 			| 'l':	s = intval(&d.h, s, 1, 2, err)
 			| 'm':	s = intval(&d.mon, s, 1, 2, err)
 			| 'M':	s = intval(&d.m, s, 1, 2, err)
-			| 'p':	s = matchampm(d, s, err)
-			| 'P':	s = matchampm(d, s, err)
+			| 'n':	s = matchstr(s, "\n", err)
+			| 'p':	s = matchampm(d, s, &am, err)
+			| 'P':	s = matchampm(d, s, &am, err)
 			| 'r':	s = filldate(d, "%H:%M:%S %P", s, seen, err) 
 			| 'R':	s = filldate(d, "%H:%M %P", s, seen, err)
 			| 's':	s = intval(&d.actual, s, 1, 64, err)
@@ -138,6 +140,16 @@ const filldate = {d, f, s, seen, err : std.option(parsefail)#
 		| `std.None:	err# = `std.Some `Badzone z
 		;;
 	;;
+
+	match am
+	| `std.None:
+	| `std.Some true:
+		d.h %= 12
+	| `std.Some false:
+		d.h %= 12
+		d.h += 12
+
+	;;
 	-> s
 }
 
@@ -151,8 +163,7 @@ const eatspace = {s
 }
 
 const indexof = {dst, s, set, err
-	var i
-	for i = 0; i < set.len; i++
+	for var i = 0; i < set.len; i++
 		if s.len >= set[i].len && std.streq(s, set[i])
 			dst# = i
 			-> s
@@ -211,15 +222,16 @@ const matchstr = {s, str, err
 	-> s[str.len:]
 }
 
-const matchampm = {d, s, err
+const matchampm = {d, s, am, err
 	if s.len < 2
 		err# = `std.Some `Badampm
 		-> s
 	;;
 	if std.sleq(s[:2], "am") || std.sleq(s[:2], "AM")
+		am# = `std.Some true
 		-> s[2:]
 	elif std.sleq(s[:2], "pm") || std.sleq(s[:2], "PM")
-		d.h += 12
+		am# = `std.Some false
 		-> s[2:]
 	else
 		err# = `std.Some `Badampm
@@ -229,9 +241,7 @@ const matchampm = {d, s, err
 generic intval = {dst : @a::(numeric,integral)#, s : byte[:], \
 		min : @a::(numeric,integral), max : @a::(numeric,integral), \
 		err : std.option(parsefail)# -> byte[:]
-	var i
-	var c
-	var num
+	var i, c, num
 
 	num = s
 	for i = 0; i < min; i++
