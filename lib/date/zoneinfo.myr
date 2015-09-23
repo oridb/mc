@@ -5,7 +5,7 @@ use "types.use"
 
 pkg _zoneinfo =
 	type zifile
-	const findtzoff : (tz : byte[:], tm : std.time -> date.duration)
+	const findtzoff : (tz : byte[:], tm : std.time -> std.option(date.duration))
 	const load	: (file : byte[:] -> zifile#)
 	const free	: (f : zifile# -> void)
 ;;
@@ -32,7 +32,7 @@ const zonepath = [
 	"/etc/zoneinfo"
 ]
 
-const findtzoff = {tz, tm
+const findtzoff = {tz, tm -> std.option(date.duration)
 	var path
 	var zone
 	var cur
@@ -42,7 +42,7 @@ const findtzoff = {tz, tm
 
 	/* load zone */
 	if std.sleq(tz, "") || std.sleq(tz, "UTC")
-		-> 0
+		-> `std.Some 0
 	elif std.sleq(tz, "local")
 		path = std.sldup("/etc/localtime")
 	else
@@ -54,7 +54,7 @@ const findtzoff = {tz, tm
 			std.slfree(path)
 		;;
 		std.slfree(path)
-		-> 0
+		-> `std.None
 	;;
 :found
 	zone = load(path)
@@ -63,14 +63,14 @@ const findtzoff = {tz, tm
 	/* find applicable gmt offset */
 	cur = (tm / 1_000_000) castto(int32)
 	if zone.time.len == 0
-		-> 0
+		-> `std.None
 	;;
 	for i = 0; i < zone.time.len && cur < zone.time[i]; i++
 		/* nothing */
 	;;
 	ds = zone.ttinfo[zone.timetype[i]].gmtoff
 	free(zone)
-	->  (ds castto(date.duration)) * 1_000_000
+	->  `std.Some (ds castto(date.duration)) * 1_000_000
 }
 
 const load = {file

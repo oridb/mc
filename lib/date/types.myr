@@ -26,4 +26,11 @@ pkg date =
 		`Minute	int
 		`Second	int
 	;;
+	const Datetimefmt
+	const Timefmt
+	const Datefmt
+
 ;;
+const Datetimefmt	= "%Y-%m-%d %H:%M:%S %z"
+const Timefmt	= "%h:%m:{} %z"
+const Datefmt	= "%Y-%m-%d %z"

@@ -4,9 +4,28 @@ use date
 const main = {
 	var buf : byte[1024]
 
+	/* should be unix epoch */
+	match date.parsefmt("%Y-%m-%d %H:%M:%S %z", "1969-12-31 16:00:00 -0800")
+	| `std.Some d:
+		std.assert(d.actual == 0, "got wrong date")
+		eq(std.bfmt(buf[:], "{D}", d), "1969-12-31 16:00:00 -0800")
+	| `std.None:
+		std.fatal("failed to parse date\n")
+	;;
+
+	/* parse into utc */
+	match date.parsefmtz("%Y-%m-%d %H:%M:%S %z", "1969-12-31 16:00:00 -0800", "")
+	| `std.Some d:
+		std.assert(d.actual == 0, "got wrong date")
+		eq(std.bfmt(buf[:], "{D}", d), "1970-1-01 00:00:00 +0000")
+	| `std.None:
+		std.fatal("failed to parse date\n")
+	;;
+
 	/*Fri 29 Aug 2014 07:47:43 PM UTC*/
 	match date.parsefmt("%Y-%m-%d %z", "1932-10-23 +0500")
 	| `std.Some d:
+		std.assert(d.actual ==  -1173675600 * 1_000_000, "wrong timestamp")
 		eq(std.bfmt(buf[:], "{D}", d), "1932-10-23 00:00:00 +0500")
 	| `std.None:
 		std.fatal("Failed to parse date")

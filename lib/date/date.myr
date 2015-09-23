@@ -63,16 +63,17 @@ const mkinstant = {tm, tz
 	var j, y, m, d
 	var t, e
 	var inst
-	var off
 
 	inst.actual = tm
 	/* time zones */
 	std.assert(tz.len <= inst._tzbuf.len, "time zone name too long\n")
-	off =_zoneinfo.findtzoff(tz, tm) 
-	inst.tzoff = off
+	match _zoneinfo.findtzoff(tz, tm)
+	| `std.Some o:	inst.tzoff = o
+	| `std.None:	std.fatal("no zone named {}\n", tz)
+	;;
 	std.slcp(inst._tzbuf[:tz.len], tz)
 	inst.tzname = inst._tzbuf[:tz.len]
-	tm += off castto(std.time)
+	tm += inst.tzoff castto(std.time)
 
 	/* break up time */
 	t = tm % DayUsec	/* time */
@@ -146,11 +147,14 @@ const mkinstant = {tm, tz
 }
 
 const localoff = {tm
-	-> _zoneinfo.findtzoff("local", tm)
+	-> tzoff("local", tm)
 }
 
 const tzoff = {tz, tm
-	-> _zoneinfo.findtzoff(tz, tm)
+	match _zoneinfo.findtzoff(tz, tm)
+	| `std.Some dt:	-> dt
+	| `std.None:	std.fatal("unable to load zoneinfo\n")
+	;;
 }
 
 const isleap = {d

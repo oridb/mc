@@ -3,65 +3,51 @@ use std
 use "types.use"
 use "names.use"
 use "date.use"
+use "zoneinfo.use"
 
 pkg date =
 	/* date i/o */
 	const parsefmt	: (f : byte[:], s: byte[:]	-> std.option(instant))
+	const parsefmtl	: (f : byte[:], s: byte[:]	-> std.option(instant))
 	const parsefmtz	: (f : byte[:], s: byte[:], tz : byte[:]	-> std.option(instant))
 ;;
 
 const UnixJulianDiff	= 719468
 
-const parsefmt	= {f, s;	-> parsefmtz(f, s, "")}
-const parsefmtz = {f, s, tz
-	var d
-	var err
+const parsefmt	= {f, s;	-> parse(f, s, "", false)}
+const parsefmtl = {f, s;	-> parse(f, s, "local", true)}
+const parsefmtz = {f, s, tz;	-> parse(f, s, tz, true)}
+
+const parse = {f, s, tz, replace
+	var d, err
 
 	d = [.year = 0]
 	err = false
-	s = filldate(&d, f, s, tz, &err)
+	s = filldate(&d, f, s, &err)
+
+	d.actual -= d.tzoff castto(std.time)
 	if err || s.len > 0
 		-> `std.None
 	;;
+
+	if replace
+		d = mkinstant(d.actual, tz)
+	;;
+
 	-> `std.Some d
 }
 
-generic intval = {dst : @a::(numeric,integral)#, s : byte[:], min : @a::(numeric,integral), max : @a::(numeric,integral), err : bool# -> byte[:]
-	var i
-	var c
-	var num
-
-	num = s
-	for i = 0; i < min; i++
-		(c, s) = std.striter(s)
-		if !std.isdigit(c)
-			err# = true
-			-> s
-		;;
-	;;
-
-	for i = min ; i < max; i++
-		(c, s) = std.striter(s)
-		if !std.isdigit(c)
-			break
-		;;
-	;;
-
-	num = num[:i]
-	match std.intparse(num)
-	| `std.Some v:
-		dst# = v
-		-> s
-	| `std.None:
-		err# = true
-		-> s
-	;;
-}
+type parsedtz = union
+	`None
+	`Off duration
+	`Name byte[:]
+;;
 
 
-const filldate = {d, f, s, tz, err -> byte[:]
-	var fc, sc
+const filldate = {d, f, s, err -> byte[:]
+	var fc, sc, z
 
+	z = ""
 	while f.len != 0
 		(fc, f) = std.striter(f)
 		if fc == '%'
@@ -72,49 +58,38 @@ const filldate = {d, f, s, tz, err -> byte[:]
 			| 'A':	s = indexof(&d.day, s, _names.fullday, err)
 			| 'b':	s = indexof(&d.mon, s, _names.abbrevmon, err)
 			| 'B':	s = indexof(&d.mon, s, _names.fullmon, err)
-			| 'c':	s = filldate(d, "%Y-%m-%d", s, tz, err)
+			| 'c':	s = filldate(d, "%Y-%m-%d", s, err)
 			| 'C':	
 				s = intval(&d.year, s, 2, 2, err)
 				d.year += 1900
 			| 'd':	s = intval(&d.day, s, 2, 2, err)
-			| 'D':	s = filldate(d, "%m/%d/%y", s, tz, err)
+			| 'D':	s = filldate(d, "%m/%d/%y", s, err)
 			| 'e':	s = intval(&d.day, s, 1, 2, err)
-			| 'F':	s = filldate(d, "%y-%m-%d", s, tz, err)
-			/*
-			| 'G':	o += std.bfmt(buf[o:], ...?
-			| 'g':
-			*/
+			| 'F':	s = filldate(d, "%y-%m-%d", s, err)
 			| 'h':	s = indexof(&d.day, s, _names.abbrevmon, err)
-			| 'H':	s = intval(&d.h, s, 2, 2, err)
-			| 'I':	s = intval(&d.h, s, 2, 2, err)
-			| 'j':	std.fatal("unsupported '%j'\n")
+			| 'H':	s = intval(&d.h, s, 1, 2, err)
+			| 'I':	s = intval(&d.h, s, 1, 2, err)
 			| 'k':	s = intval(&d.h, s, 1, 2, err)
 			| 'l':	s = intval(&d.h, s, 1, 2, err)
 			| 'm':	s = intval(&d.mon, s, 1, 2, err)
 			| 'M':	s = intval(&d.m, s, 1, 2, err)
 			| 'n':	s = matchstr(s, "\n", err)
-			| 'O':	std.fatal("unsupported %O\n")
 			| 'p':	s = matchampm(d, s, err)
 			| 'P':	s = matchampm(d, s, err)
-			| 'r':	s = filldate(d, "%H:%M:%S %P", s, tz, err) 
-			| 'R':	s = filldate(d, "%H:%M %P", s, tz, err)
+			| 'r':	s = filldate(d, "%H:%M:%S %P", s, err) 
+			| 'R':	s = filldate(d, "%H:%M %P", s, err)
 			| 's':	s = intval(&d.actual, s, 1, 64, err)
 			| 'S':	s = intval(&d.s, s, 1, 2, err)
 			| 't':	s = eatspace(s)
 			| 'u':	s = intval(&d.wday, s, 1, 1, err)
-			| 'U':	std.fatal("unsupported '%U'\n")
-				/*
-			| 'x':	o += bftime(buf[o:], Datefmt, d)
-			| 'X':	o += bftime(buf[o:], Timefmt, d)
-				*/
+			| 'x':	s = filldate(d, Datefmt, s, err)
+			| 'X':	s = filldate(d, Timefmt, s, err)
 			| 'y':	s = intval(&d.year, s, 1, 2, err)
 				d.year += 1900
 			| 'Y':	
 				s = intval(&d.year, s, 1, 4, err)
-			| 'z':	s = timezone(&d.tzoff, s, err)
-				/*
-			| 'Z':	o += std.bfmt(buf[o:], "%s", d.tzname)
-				*/
+			| 'z':	s = tzoffset(&d.tzoff, s, err)
+			| 'Z':	(s, z) = tzstring(d, s, err)
 			| '%':	s = matchstr(s, "%", err)
 			| _:	std.fatal("unknown format character %c\n", fc)
 			;;
@@ -132,6 +107,12 @@ const filldate = {d, f, s, tz, err -> byte[:]
 		;;
 	;;
 	d.actual = recalc(d)
+	if z.len > 0
+		match _zoneinfo.findtzoff(z, d.actual)
+		| `std.Some o:	d.tzoff = o
+		| `std.None:	err# = true
+		;;
+	;;
 	-> s
 }
 
@@ -157,8 +138,8 @@ const indexof = {dst, s, set, err
 	-> s
 }
 
-const timezone = {dst, s, err
-	var isneg
+const tzoffset = {dst, s, err
+	var sgn
 	var tzoff
 
 	if s.len < 1
@@ -166,16 +147,34 @@ const timezone = {dst, s, err
 		-> ""
 	;;
 	if std.sleq(s[:1], "-")
-		isneg = true
+		sgn = -1
 	elif std.sleq(s[:1], "+") 
-		isneg = false
+		sgn = 1
 	else
 		err# = true
 		-> ""
 	;;
 	s = intval(&tzoff, s[1:], 2, 4, err) 
-	dst# = (tzoff / 100) * 3600 * 1_000_000 + (tzoff % 100) * 60 * 1_000_000
+	dst# = sgn * (tzoff / 100) * 3600 * 1_000_000 + (tzoff % 100) * 60 * 1_000_000
 	-> s
+}
+
+const tzstring = {d, s, err
+	var c, n
+
+	while true
+		c = std.decode(s[n:])
+		if c != '/' && !std.isalnum(c)
+			break
+		;;
+		n += std.charlen(c)
+	;;
+	if n < d._tzbuf.len
+		std.slcp(d._tzbuf[:n], s[:n])
+	else
+		err# = true
+	;;
+	-> (s[n:], s[:n])
 }
 
 
@@ -202,3 +201,37 @@ const matchampm = {d, s, err
 		-> s
 	;;
 }
+generic intval = {dst : @a::(numeric,integral)#, s : byte[:], \
+		min : @a::(numeric,integral), max : @a::(numeric,integral), err : bool# -> byte[:]
+	var i
+	var c
+	var num
+
+	num = s
+	for i = 0; i < min; i++
+		(c, s) = std.striter(s)
+		if !std.isdigit(c)
+			err# = true
+			-> s
+		;;
+	;;
+
+	for i = min ; i < max; i++
+		c = std.decode(s)
+		if !std.isdigit(c)
+			break
+		;;
+		s = s[std.charlen(c):]
+	;;
+
+	num = num[:i]
+	match std.intparse(num)
+	| `std.Some v:
+		dst# = v
+		-> s
+	| `std.None:
+		err# = true
+		-> s
+	;;
+}
+

@@ -18,10 +18,6 @@ const __init__ = {
 	][:])
 }
 
-const Datetimefmt	= "%Y-%m-%d %H:%M:%S %z"
-const Timefmt	= "%h:%m:{} %z"
-const Datefmt	= "%Y-%m-%d %z"
-
 /* Always formats in proleptic Gregorian format */
 const sbfmt = {sb, ap, opts
 	var d : instant
