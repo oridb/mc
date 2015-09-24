@@ -1,6 +1,11 @@
 pkg std =
 	type errno = int
+	const Enone	: errno = 0
 	const Erange	: errno = 1
-	const Emisc	: errno = 2
+	const Ebadf	: errno = 2
 	const Eexist	: errno = 3
+	const Einval	: errno = 4
+	const Efault	: errno = 5
+	const Eio	: errno = 6
+	const Emisc	: errno = 40
 ;;

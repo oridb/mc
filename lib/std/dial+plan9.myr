@@ -41,30 +41,37 @@ const csdial = {netdir, proto, rem
 
 	/* Try using the connection server */
 	dir = fmt("{}/cs", netdir)
-	csfd = open(dir, Ordwr)
-	if csfd < 0
+	match open(dir, Ordwr)
+	| `Fail e:
 		clone = fmt("{}/{}/clone", netdir, proto)
-		ret = call(clone, rem, netdir)
-		slfree(clone)
-		if ret == -1
+		match call(clone, rem, netdir)
+		| `Ok fd:
+			std.slfree(clone)
+			-> `Ok fd
+		| `Fail err:
+			std.slfree(clone)
 			-> `Fail "unable to dial without cs"
-		else
-			-> `Ok ret
 		;;
+	| `Ok fd:
+		csfd = fd
 	;;
 	slfree(dir)
 
 	csaddr = fmt("{}!{}", proto, rem)
-	if write(csfd, csaddr) < 0
+	match write(csfd, csaddr)
+	| `Fail m:
 		close(csfd)
 		-> `Fail "couldn't blah cs"
+	| `Ok _:
+		/* nothing */
 	;;
 	slfree(csaddr)
 
 	seek(csfd, 0, 0)
 	while true
-		n = read(csfd, buf[:])
-		if n <= 0
+		match read(csfd, buf[:])
+		| `std.Ok _:
+		| `std.Fail e:
 			break
 		;;
 
@@ -75,9 +82,9 @@ const csdial = {netdir, proto, rem
 			addr = buf[i+1:n]
 		;;
 
-		ret = call(clone, addr, netdir)
-		if ret >= 0
-			break
+		match call(clone, addr, netdir)
+		| `Ok fd:	break
+		| `Fail _:	/* nothing */
 		;;
 	;;
 
@@ -88,23 +95,23 @@ const csdial = {netdir, proto, rem
 	-> `Ok ret
 }
 
-const call = {clone, addr, netdir
+const call : (a : byte[:], b : byte[:], c : byte[:] -> result(fd, byte[:])) = {clone, addr, netdir
 	var namebuf : byte[Maxpath]
 	var databuf : byte[Maxpath]
 	var name, base, dpath
 	var cfd, datafd
 	var c, n
 
-	datafd = -1
+	datafd = `Fail "didn't even try to open shit"
 	c = nsclonestr(clone, netdir)
-	cfd = open(c, Ordwr)
-	if cfd < 0
-		goto cleanup
+	match open(c, Ordwr)
+	| `Fail e:	goto cleanup
+	| `Ok fd:	cfd = fd
 	;;
 
-	n = read(cfd, namebuf[:])
-	if n < 0
-		goto cleanup
+	match read(cfd, namebuf[:])
+	| `Ok fd:	/* nothing */
+	| `Fail m:	goto cleanup
 	;;
 	fput(cfd, "connect {}", addr)
 	name = strstrip(namebuf[:n])
@@ -113,7 +120,10 @@ const call = {clone, addr, netdir
 	| `Some i:	base = c[:i]
 	;;
 	dpath = bfmt(databuf[:], "{}/{}/data", base, name)
-	datafd = open(dpath, Ordwr)
+	match open(dpath, Ordwr)
+	| `Ok fd:	datafd = `Ok fd
+	| `Fail m:	datafd = `Fail "could not open data"
+	;;
 :cleanup
 	close(cfd)
 	slfree(c)
