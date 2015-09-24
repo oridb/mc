@@ -34,8 +34,8 @@ pkg std =
 
 		/* aggregate types */
 		`Tytuple	typecursor
-		`Tystruct	namecursor
-		`Tyunion	namecursor
+		`Tystruct	typecursor
+		`Tyunion	typecursor
 		/* name info */
 		`Tyname (byte[:], byte[:])
 	;;
@@ -43,11 +43,8 @@ pkg std =
 	type typecursor = struct
 		nelt	: size
 		rem	: byte[:]
-	;;
-
-	type namecursor = struct
-		nelt	: size
-		rem	: byte[:]
+		isnamed	: bool
+		isiter	: bool
 	;;
 
 	type typeinfo = struct
@@ -57,13 +54,14 @@ pkg std =
 
 	generic typeof	: (v : @a -> byte[:])
 	const typeenc	: (p : ...# -> typecursor)
-	const typedecode	: (e : byte[:] -> typedesc)
+	const typeenccursor	: (e : byte[:] -> typecursor)
 	const typedesc	: (e : byte[:] -> typedesc)
 	const typeinfo	: (e : byte[:] -> typeinfo)
 
 	const tcnext	: (t : typecursor# -> byte[:])
 	const tcpeek	: (t : typecursor# -> byte[:])
-	const ncnext	: (t : namecursor# -> (byte[:], byte[:]))
+	const ncpeek	: (t : typecursor# -> (byte[:], byte[:]))
+	const ncnext	: (t : typecursor# -> (byte[:], byte[:]))
 ;;
 
 extern const put	: (fmt : byte[:], args : ... -> size)
@@ -116,49 +114,81 @@ const typeenc = {ap : ...#
 	e = skiptypeinfo(e[1:])
 	-> lentypecursor(e)
 }
+
+const typeenccursor = {e
+	-> [.nelt=1, .rem=e, .isiter=false]
+}
 	
 const typesof : (a : ... -> typecursor) = {a : ...
 	-> typeenc(&a)
 }
 
 const tcnext = {tc
-	var n, sz, cur
+	var enc
 
-	if tc.rem.len == 0
-		-> ""
-	;;
-	(n, sz) = getipacked(tc.rem)
-	cur = tc.rem[sz:sz+n]
-	tc.rem = tc.rem[sz+n:]
-	-> cur
+	(_, enc) = ncnext(tc)
+	-> enc
 }
 
 const tcpeek = {tc
-	var n, sz
+	var enc
 
-	if tc.rem.len == 0
-		-> ""
-	;;
-	(n, sz) = getipacked(tc.rem)
-	-> tc.rem[sz:sz+n]
+	(_, enc) = ncpeek(tc)
+	-> enc
 }
 
-const ncnext = {nc
-	var n, sz, name, enc
+const ncpeek = {tc
+	var name, enc, rem
+	var n, sz
 
-	if nc.rem.len == 0
+	if tc.rem.len == 0 || tc.nelt == 0
 		-> ("", "")
+	elif !tc.isiter
+		-> ("", tc.rem)
 	;;
 
-	/* get the name */
-	(n, sz) = getipacked(nc.rem)
-	name = nc.rem[sz:sz+n]
-	nc.rem = nc.rem[sz+n:]
+	n = 0
+	sz = 0
+	name = ""
+	rem = tc.rem
+	if tc.isnamed
+		/* get the name */
+		(n, sz) = getipacked(tc.rem)
+		name = rem[sz:sz+n]
+		rem = rem[sz+n:]
+	;;
 
 	/* and the type */
-	(n, sz) = getipacked(nc.rem)
-	enc = nc.rem[sz:sz+n]
-	nc.rem = nc.rem[sz+n:]
+	(n, sz) = getipacked(rem)
+	enc = rem[sz:sz+n]
+	-> (name, enc)
+}
+
+const ncnext = {tc
+	var n, sz, name, enc
+
+	if tc.rem.len == 0 || tc.nelt == 0
+		-> ("", "")
+	elif !tc.isiter
+		/* a bit of a trick, if we want to fake arrays */
+		tc.nelt--
+		-> ("", tc.rem)
+	;;
+
+	n = 0
+	sz = 0
+	name = ""
+	if tc.isnamed
+		/* get the name */
+		(n, sz) = getipacked(tc.rem)
+		name = tc.rem[sz:sz+n]
+		tc.rem = tc.rem[sz+n:]
+	;;
+
+	/* and the type */
+	(n, sz) = getipacked(tc.rem)
+	enc = tc.rem[sz:sz+n]
+	tc.rem = tc.rem[sz+n:]
 	-> (name, enc)
 }
 
@@ -320,14 +350,14 @@ const lentypecursor = {e
 	var n, sz
 
 	(n, sz) = getipacked(e)
-	-> [.nelt=n, .rem=e[sz:]]
+	-> [.nelt=n, .rem=e[sz:], .isnamed=false, .isiter=true]
 }
 
 const lennamecursor = {e 
 	var n, sz
 
 	(n, sz) = getipacked(e)
-	-> [.nelt=n, .rem=e[sz:]]
+	-> [.nelt=n, .rem=e[sz:], .isnamed=true, .isiter=true]
 }
 
 const getsub = {e

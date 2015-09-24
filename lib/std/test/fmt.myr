@@ -1,7 +1,20 @@
 use std
 
 pkg =
-	type pair
+	type blah
+	type blah = struct
+		a : byte[:]
+		b : int
+	;;
+	type u = union
+		`First
+		`Second int
+		`Third byte[:]
+	;;
+	type pair = struct
+		x : int16
+		y : int32
+	;;
 ;;
 
 const check = {expected, fmt, args : ...
@@ -15,12 +28,17 @@ const check = {expected, fmt, args : ...
 	;;
 }
 
+
 const main = {
 	builtins()
 	installed()
 }
 
 const builtins = {
+	var s : blah
+	var m : u
+
+	/* basic types */
 	check("      abcd", "{w=10}", "abcd")
 	check("00000bdcae", "{p=0,w=10}", "bdcae")
 	check("abcdefghijkl", "{p=0,w=10}", "abcdefghijkl")
@@ -43,6 +61,26 @@ const builtins = {
 	check("666.91972", "{}", 666.91972)
 	check("1.0001", "{}", 1.0001)
 	check("0.000101323461002", "{}", 0.000101323461002)
+
+	/* 
+	compound types, followed by single value to make
+	sure we consume the right byte count.
+	*/
+	check("(1, 2) true", "{} {}", (1, 2), true)
+	check("(1,) true", "{} {}", (1,), true)
+
+	s = [.a="foo true", .b=123]
+	/*check("[.a=foo, .b=123] true", "{} {}", s, true) BUSTED */
+
+	m = `First
+	check("`First  true", "{} {}", m, true)
+	m = `Second 123
+	check("`Second 123 true", "{} {}", m, true)
+	m = `Third "foo"
+	check("`Third foo true", "{} {}", m, true)
+
+	check("[1, 2, 3] true", "{} {}", [1,2,3], true)
+	check("[1, 2, 3] true", "{} {}", [1,2,3][:], true)
 }
 
 const installed = {
@@ -72,18 +110,18 @@ const installed = {
 	check("formatted a pair: [-10, -10] x=foo", "{x=foo}", p)
 	check("formatted a pair: [-10, -10] y present", "{y}", p)
 	check("formatted a pair: [-10, -10] x=bar y present", "{x=bar,y}", p)
+	check("formatted a pair: [-10, -10] x=bar y present", "{x=bar,y}", p)
 
 	/* multiple values */
 	check("formatted a pair: [-10, -10], formatted a pair: [-10, -10]", "{}, {}", p, p)
 	/* multiple values of different types */
 	check("11, formatted a pair: [-10, -10], formatted an int: 111", "{}, {}, {}", 11 castto(byte), p, 111)
 
-}
+	/* in aggregates */
+	check("[formatted a pair: [-10, -10]]", "{}", [p])
+	check("[formatted a pair: [-10, -10]]", "{}", [p][:])
 
-type pair = struct
-	x : int16
-	y : int32
-;;
+}
 
 const intfmt = {sb, ap, opts
 	var x : int

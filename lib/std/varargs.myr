@@ -9,6 +9,7 @@ pkg std =
 	const vastart	: (args : ...# -> valist)
 	const vatype	: (ap : valist# -> byte[:])
 	const vabytes	: (ap : valist# -> byte[:])
+	const vaenter	: (ap : valist# -> valist)
 	generic vanext	: (ap : valist# -> @a)
 ;;
 
@@ -49,6 +50,18 @@ const vastart = {args
 	ip = (args castto(intptr)) + sizeof(byte#)
 	a = ip castto(byte#)
 	-> [.args = a, .tc = tc]
+}
+
+const vaenter = {ap
+	match typedesc(vatype(ap))
+	| `Tyslice enc:	-> [.args=sliceptr(ap.args), .tc=[.nelt=slicelen(ap.args), .rem=enc, .isiter=false]]
+	| `Tytuple tc:	-> [.args=ap.args, .tc=tc]
+	| `Tystruct tc:	-> [.args=ap.args, .tc=tc]
+	| `Tyunion tc:	-> [.args=addp(ap.args, 4), .tc=tc]
+	| `Tyarray (sz, enc):	-> [.args=ap.args, .tc=[.nelt=sz, .rem=enc, .isiter=false]]
+	| `Tyname (name, enc):	-> [.args=ap.args, .tc=typeenccursor(enc)]
+	| _:	std.die("unable to enter type")
+	;;
 }
 
 const vatype = {ap
@@ -94,4 +107,17 @@ generic vanext = {ap -> @a
 	/* only move on after we read through the value */
 	ap.args = ((p castto(intptr)) + sizeof(@a)) castto(byte#)
 	-> (p castto(@a#))#
+}
+
+const addp = {p, k
+	-> (p castto(intptr)) + k castto(byte#)
+}
+
+const sliceptr = {p
+	-> (p castto(byte##))#
+}
+
+const slicelen = {p
+	p = addp(p, sizeof(intptr))
+	-> (p castto(size#))#
 }

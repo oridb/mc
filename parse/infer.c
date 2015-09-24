@@ -90,7 +90,10 @@ static void ctxstrcall(char *buf, size_t sz, Inferstate *st, Node *n)
         sep = ", ";
         free(t);
     }
-    t = tystr(tyfix(st, NULL, exprtype(args[0])->sub[0], 1));
+    if (exprtype(args[0])->nsub)
+        t = tystr(tyfix(st, NULL, exprtype(args[0])->sub[0], 1));
+    else
+        t = strdup("unknown");
     p += bprintf(p, end - p, "): %s", t);
     free(t);
 }
