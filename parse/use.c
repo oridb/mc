@@ -867,6 +867,7 @@ foundlib:
             case 'D':
                 dcl = rdsym(f, NULL);
                 dcl->decl.vis = vis;
+                dcl->decl.isglobl = 1;
                 putdcl(s, dcl);
                 break;
             case 'S':
