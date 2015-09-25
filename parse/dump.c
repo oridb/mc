@@ -52,11 +52,15 @@ void dumpsym(Node *s, FILE *fd)
 static void outstab(Stab *st, FILE *fd, int depth)
 {
     size_t i, n;
+    char *name;
     void **k;
     char *ty;
     Type *t;
 
-    findentf(fd, depth, "Stab %p (super = %p, name=\"%s\")\n", st, st->super, st->name);
+    name = "";
+    if (st->name)
+        name = st->name;
+    findentf(fd, depth, "Stab %p (super = %p, name=\"%s\")\n", st, st->super, name);
     if (!st)
         return;
 
@@ -86,12 +90,12 @@ static void outstab(Stab *st, FILE *fd, int depth)
     free(k);
 
     /* dump closure */
-    if (st->closure) {
-        k = htkeys(st->closure, &n);
+    if (st->env) {
+        k = htkeys(st->env, &n);
         for (i = 0; i < n; i++) {
             findentf(fd, depth + 1, "U ");
             /* already indented */
-            outsym(getdcl(st, k[i]), fd, 0);
+            outsym(getclosed(st, k[i]), fd, 0);
         }
         free(k);
     }

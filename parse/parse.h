@@ -131,11 +131,12 @@ struct Tok {
 struct Stab {
     Stab *super;
     char *name;
+    char isfunc;
 
     /* Contents of stab.
      * types and values are in separate namespaces. */
     Htab *dcl;
-    Htab *closure;      /* the syms we close over */
+    Htab *env;          /* the syms we close over, if we're a function */
     Htab *ty;           /* types */
     Htab *tr;           /* traits */
     Htab *uc;           /* union constructors */
@@ -473,7 +474,7 @@ int yylex(void);
 int yyparse(void);
 
 /* stab creation */
-Stab *mkstab(void);
+Stab *mkstab(int isfunc);
 
 void putns(Stab *st, Stab *scope);
 void puttype(Stab *st, Node *n, Type *ty);
@@ -486,7 +487,7 @@ void putucon(Stab *st, Ucon *uc);
 
 Stab *getns(Node *file, char *n);
 Node *getdcl(Stab *st, Node *n);
-Node *getcapture(Stab *st, Node *n);
+Node *getclosed(Stab *st, Node *n);
 Type *gettype_l(Stab *st, Node *n);
 Type *gettype(Stab *st, Node *n);
 Node *getimpl(Stab *st, Node *impl);

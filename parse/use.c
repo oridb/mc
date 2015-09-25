@@ -15,7 +15,7 @@
 static void wrtype(FILE *fd, Type *val);
 static void rdtype(FILE *fd, Type **dest);
 static void wrstab(FILE *fd, Stab *val);
-static Stab *rdstab(FILE *fd);
+static Stab *rdstab(FILE *fd, int isfunc);
 static void wrsym(FILE *fd, Node *val);
 static Node *rdsym(FILE *fd, Trait *ctx);
 static void pickle(FILE *fd, Node *n);
@@ -71,7 +71,7 @@ static void wrstab(FILE *fd, Stab *val)
 
 /* Reads a symbol table from file. The converse
  * of wrstab. */
-static Stab *rdstab(FILE *fd)
+static Stab *rdstab(FILE *fd, int isfunc)
 {
     Stab *st;
     Type *ty;
@@ -80,7 +80,7 @@ static Stab *rdstab(FILE *fd)
     int i;
 
     /* read dcls */
-    st = mkstab();
+    st = mkstab(isfunc);
     st->name = rdstr(fd);
     n = rdint(fd);
     for (i = 0; i < n; i++)
@@ -572,7 +572,7 @@ static Node *unpickle(FILE *fd)
             n->file.stmts = zalloc(sizeof(Node*)*n->file.nstmts);
             for (i = 0; i < n->file.nstmts; i++)
                 n->file.stmts[i] = unpickle(fd);
-            n->file.globls = rdstab(fd);
+            n->file.globls = rdstab(fd, 0);
             break;
 
         case Nexpr:
@@ -636,7 +636,7 @@ static Node *unpickle(FILE *fd)
             n->ifstmt.iffalse = unpickle(fd);
             break;
         case Nblock:
-            n->block.scope = rdstab(fd);
+            n->block.scope = rdstab(fd, 0);
             n->block.nstmts = rdint(fd);
             n->block.stmts = zalloc(sizeof(Node *)*n->block.nstmts);
             n->block.scope->super = curstab();
@@ -664,7 +664,7 @@ static Node *unpickle(FILE *fd)
             break;
         case Nfunc:
             rdtype(fd, &n->func.type);
-            n->func.scope = rdstab(fd);
+            n->func.scope = rdstab(fd, 1);
             n->func.nargs = rdint(fd);
             n->func.args = zalloc(sizeof(Node *)*n->func.nargs);
             n->func.scope->super = curstab();
@@ -704,7 +704,7 @@ static Stab *findstab(Stab *st, char *pkg)
 
     s = getns(file, pkg);
     if (!s) {
-        s = mkstab();
+        s = mkstab(0);
         s->name = strdup(pkg);
         putns(st, s);
     }

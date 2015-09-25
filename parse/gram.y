@@ -908,7 +908,7 @@ blkbody : decl {
                 size_t i;
                 Node *n, *d, *u;
 
-                $$ = mkblock($1.loc, mkstab());
+                $$ = mkblock($1.loc, mkstab(0));
                 for (i = 0; i < $1.nn; i++) {
                     d = $1.nl[i];
                     putdcl($$->block.scope, d);
@@ -922,7 +922,7 @@ blkbody : decl {
                 }
             }
         | stmt {
-                $$ = mkblock(curloc, mkstab());
+                $$ = mkblock(curloc, mkstab(0));
                 if ($1)
                     lappend(&$$->block.stmts, &$$->block.nstmts, $1);
             }

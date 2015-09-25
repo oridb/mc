@@ -86,7 +86,7 @@ int main(int argc, char **argv)
     }
 
     file = mkfile("internal");
-    file->file.globls = mkstab();
+    file->file.globls = mkstab(0);
     updatens(file->file.globls, outfile);
     tyinit(file->file.globls);
     for (i = 0; i < ctx.nargs; i++)

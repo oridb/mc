@@ -211,7 +211,7 @@ int main(int argc, char **argv)
         outfile = NULL;
 
     for (i = 0; i < ctx.nargs; i++) {
-        globls = mkstab();
+        globls = mkstab(0);
         tyinit(globls);
         tokinit(ctx.args[i]);
         file = mkfile(ctx.args[i]);

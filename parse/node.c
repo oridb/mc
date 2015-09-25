@@ -146,7 +146,7 @@ Node *mkloopstmt(Srcloc loc, Node *init, Node *cond, Node *incr, Node *body)
     n->loopstmt.cond = cond;
     n->loopstmt.step = incr;
     n->loopstmt.body = body;
-    n->loopstmt.scope = mkstab();
+    n->loopstmt.scope = mkstab(0);
 
     return n;
 }
@@ -194,7 +194,7 @@ Node *mkfunc(Srcloc loc, Node **args, size_t nargs, Type *ret, Node *body)
     f->func.args = args;
     f->func.nargs = nargs;
     f->func.body = body;
-    f->func.scope = mkstab();
+    f->func.scope = mkstab(1);
     f->func.type = mktyfunc(loc, args, nargs, ret);
 
     for (i = 0; i < nargs; i++)

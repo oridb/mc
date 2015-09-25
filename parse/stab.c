@@ -85,7 +85,7 @@ static int impleq(void *pa, void *pb)
     return 0;
 }
 
-Stab *mkstab()
+Stab *mkstab(int isfunc)
 {
     Stab *st;
 
@@ -94,15 +94,19 @@ Stab *mkstab()
     st->ty = mkht(nsnamehash, nsnameeq);
     st->tr = mkht(nsnamehash, nsnameeq);
     st->uc = mkht(nsnamehash, nsnameeq);
+    if (isfunc)
+        st->env = mkht(nsnamehash, nsnameeq);
     st->impl = mkht(implhash, impleq);
     return st;
 }
 
-Node *getcapture(Stab *st, Node *n)
+Node *getclosed(Stab *st, Node *n)
 {
-    if (!st->closure)
-        return NULL;
-    return htget(st->closure, n);
+    while (st && !st->env)
+        st = st->super;
+    if (st)
+        return htget(st->env, n);
+    return NULL;
 }
 
 /* 
@@ -118,17 +122,17 @@ Node *getcapture(Stab *st, Node *n)
 Node *getdcl(Stab *st, Node *n)
 {
     Node *s;
-    Stab *orig;
+    Stab *fn;
 
-    orig = st;
+    fn = NULL;
     do {
         s = htget(st->dcl, n);
+        if (!fn && st->env)
+            fn = st;
         if (s) {
             /* record that this is in the closure of this scope */
-            if (!orig->closure)
-                orig->closure = mkht(nsnamehash, nsnameeq);
-            if (st != orig && !n->decl.isglobl)
-                htput(orig->closure, s->decl.name, s);
+            if (fn && !n->decl.isglobl)
+                htput(fn->env, s->decl.name, s);
             return s;
         }
         st = st->super;
@@ -261,7 +265,7 @@ void putdcl(Stab *st, Node *s)
     if (name->name.ns) {
         ns = getns(file, name->name.ns);
         if (!ns) {
-            ns = mkstab();
+            ns = mkstab(0);
             updatens(ns, name->name.ns);
             putns(file->file.globls, ns);
         }

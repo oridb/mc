@@ -292,7 +292,7 @@ static Node *specializenode(Node *n, Htab *tsmap)
             r->ifstmt.iffalse = specializenode(n->ifstmt.iffalse, tsmap);
             break;
         case Nloopstmt:
-            r->loopstmt.scope = mkstab();
+            r->loopstmt.scope = mkstab(0);
             r->loopstmt.scope->super = curstab();
             pushstab(r->loopstmt.scope);
             r->loopstmt.init = specializenode(n->loopstmt.init, tsmap);
@@ -318,7 +318,7 @@ static Node *specializenode(Node *n, Htab *tsmap)
             r->match.block = specializenode(n->match.block, tsmap);
             break;
         case Nblock:
-            r->block.scope = mkstab();
+            r->block.scope = mkstab(0);
             r->block.scope->super = curstab();
             pushstab(r->block.scope);
             r->block.nstmts = n->block.nstmts;
@@ -346,7 +346,7 @@ static Node *specializenode(Node *n, Htab *tsmap)
             lappend(&decls, &ndecls, r);
             break;
         case Nfunc:
-            r->func.scope = mkstab();
+            r->func.scope = mkstab(0);
             r->func.scope->super = curstab();
             pushstab(r->func.scope);
             r->func.type = tysubst(n->func.type, tsmap);
@@ -490,7 +490,7 @@ void geninit(Node *file)
 
     name = mkname(Zloc, "__init__");
     decl = mkdecl(Zloc, name, mktyvar(Zloc));
-    block = mkblock(Zloc, mkstab());
+    block = mkblock(Zloc, mkstab(0));
     block->block.scope->super = file->file.globls;
     tyvoid = mktype(Zloc, Tyvoid);
     tyvoidfn = mktyfunc(Zloc, NULL, 0, tyvoid);
