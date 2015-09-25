@@ -109,6 +109,29 @@ Node *getclosed(Stab *st, Node *n)
     return NULL;
 }
 
+Node **getclosure(Stab *st, size_t *n)
+{
+    size_t nkeys, i;
+    void **keys;
+    Node **vals;
+
+    while (st && !st->env)
+        st = st->super;
+
+    if (!st) {
+        *n = 0;
+        return NULL;
+    }
+
+    vals = NULL;
+    *n = 0;
+    keys = htkeys(st->env, &nkeys);
+    for (i = 0; i < nkeys; i++)
+        lappend(&vals, n, htget(st->env, keys[i]));
+    free(keys);
+    return vals;
+}
+
 /* 
  * Searches for declarations from current
  * scope, and all enclosing scopes. Does
@@ -127,14 +150,14 @@ Node *getdcl(Stab *st, Node *n)
     fn = NULL;
     do {
         s = htget(st->dcl, n);
-        if (!fn && st->env)
-            fn = st;
         if (s) {
             /* record that this is in the closure of this scope */
-            if (fn && !n->decl.isglobl)
+            if (fn && !s->decl.isglobl)
                 htput(fn->env, s->decl.name, s);
             return s;
         }
+        if (!fn && st->env)
+            fn = st;
         st = st->super;
     } while (st);
     return NULL;

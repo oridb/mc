@@ -4,5 +4,5 @@ const main = {
 	var f = {b
 		-> a + b
 	}
-	-> f(13)
+	f(13)
 }

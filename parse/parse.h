@@ -488,6 +488,7 @@ void putucon(Stab *st, Ucon *uc);
 Stab *getns(Node *file, char *n);
 Node *getdcl(Stab *st, Node *n);
 Node *getclosed(Stab *st, Node *n);
+Node **getclosure(Stab *st, size_t *n);
 Type *gettype_l(Stab *st, Node *n);
 Type *gettype(Stab *st, Node *n);
 Node *getimpl(Stab *st, Node *impl);

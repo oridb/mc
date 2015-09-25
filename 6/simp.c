@@ -25,6 +25,7 @@
 typedef struct Simp Simp;
 struct Simp {
     int isglobl;
+    Bitset *env;
 
     Node **stmts;
     size_t nstmts;
@@ -345,6 +346,12 @@ static Node *slicelen(Simp *s, Node *sl)
     return load(addk(addr(s, sl, tyintptr), Ptrsz));
 }
 
+Node *loadvar(Simp *s, Node *n)
+{
+    if (bshas(s->env, n->expr.did))
+        fatal(n, "closure environment capture has not yet been implemented");
+    return n;
+}
 
 static Node *seqlen(Simp *s, Node *n, Type *ty)
 {
@@ -685,12 +692,10 @@ static void simpblk(Simp *s, Node *n)
 {
     size_t i;
 
-    pushstab(n->block.scope);
     for (i = 0; i < n->block.nstmts; i++) {
         n->block.stmts[i] = fold(n->block.stmts[i], 0);
         simp(s, n->block.stmts[i]);
     }
-    popstab();
 }
 
 static Node *simpblob(Simp *s, Node *blob, Node ***l, size_t *nl)
@@ -829,7 +834,7 @@ static Node *lval(Simp *s, Node *n)
 
     args = n->expr.args;
     switch (exprop(n)) {
-        case Ovar:      r = n;  break;
+        case Ovar:      r = loadvar(s, n);  break;
         case Oidx:      r = deref(idxaddr(s, args[0], args[1]), NULL); break;
         case Oderef:    r = deref(rval(s, args[0], NULL), NULL); break;
         case Omemb:     r = rval(s, n, NULL); break;
@@ -1458,7 +1463,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
             }
             break;
         case Ovar:
-            r = n;
+            r = loadvar(s, n);
             break;
         case Ogap:
             fatal(n, "'_' may not be an rvalue");
@@ -1675,6 +1680,18 @@ static int isexport(Node *dcl)
     return 0;
 }
 
+static void collectenv(Simp *s, Node *fn)
+{
+    size_t nenv, i;
+    Node **env;
+
+    s->env = mkbs();
+    env = getclosure(fn->func.scope, &nenv);
+    for (i = 0; i < nenv; i++)
+        bsput(s->env, env[i]->decl.did);
+    free(env);
+}
+
 static Func *simpfn(Simp *s, char *name, Node *dcl)
 {
     Node *n;
@@ -1690,9 +1707,8 @@ static Func *simpfn(Simp *s, char *name, Node *dcl)
     /* unwrap to the function body */
     n = n->expr.args[0];
     n = n->lit.fnval;
-    pushstab(n->func.scope);
+    collectenv(s, n);
     flatten(s, n);
-    popstab();
 
     if (debugopt['f'] || debugopt['F'])
         for (i = 0; i < s->nstmts; i++)
