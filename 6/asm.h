@@ -135,7 +135,8 @@ struct Func {
 
     Node **args;  /* argument list */
     size_t nargs; /* number of args, including hidden ones */
-    Htab *stkoff; /* Loc* -> int stackoff map */
+    Htab *stkoff; /* Loc* -> int stkoff map */
+    Htab *envoff; /* Loc* -> int envoff map */
     size_t stksz; /* stack size */
     Node *ret;    /* return value */
 
@@ -169,6 +170,7 @@ struct Isel {
     Htab *spillslots;   /* reg id  => int stkoff */
     Htab *reglocs;      /* decl id => Loc *reg */
     Htab *stkoff;       /* decl id => int stkoff */
+    Htab *envoff;       /* decl id => int envoff */
     Htab *globls;       /* decl id => char *globlname */
 
     /* increased when we spill */

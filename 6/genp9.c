@@ -357,6 +357,7 @@ static size_t writeblob(FILE *fd, Blob *b, size_t off, char *lbl)
     }
     return n;
 }
+
 /* genfunc requires all nodes in 'nl' to map cleanly to operations that are
  * natively supported, as promised in the output of reduce().  No 64-bit
  * operations on x32, no structures, and so on. */
@@ -366,6 +367,7 @@ static void genfunc(FILE *fd, Func *fn, Htab *globls, Htab *strtab)
 
     is.reglocs = mkht(varhash, vareq);
     is.stkoff = fn->stkoff;
+    is.envoff = fn->envoff;
     is.globls = globls;
     is.ret = fn->ret;
     is.cfg = fn->cfg;

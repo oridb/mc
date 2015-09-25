@@ -25,7 +25,6 @@
 typedef struct Simp Simp;
 struct Simp {
     int isglobl;
-    Bitset *env;
 
     Node **stmts;
     size_t nstmts;
@@ -50,7 +49,8 @@ struct Simp {
     size_t nblobs;
     Htab *globls;
 
-    Htab *_stkoff;
+    Htab *stkoff;
+    Htab *envoff;
     size_t stksz;
 
     Node **args;
@@ -170,7 +170,7 @@ static Node *mul(Node *a, Node *b)
 static int addressable(Simp *s, Node *a)
 {
     if (a->type == Ndecl || (a->type == Nexpr && exprop(a) == Ovar))
-        return hthas(s->_stkoff, a) || hthas(s->globls, a);
+        return hthas(s->envoff, a) || hthas(s->stkoff, a) || hthas(s->globls, a);
     else
         return stacknode(a);
 }
@@ -213,7 +213,7 @@ static void forcelocal(Simp *s, Node *n)
         dump(n, stdout);
         printf("declared at %zd, size = %zd\n", s->stksz, size(n));
     }
-    htput(s->_stkoff, n, itop(s->stksz));
+    htput(s->stkoff, n, itop(s->stksz));
 }
 
 static void declarelocal(Simp *s, Node *n)
@@ -348,8 +348,6 @@ static Node *slicelen(Simp *s, Node *sl)
 
 Node *loadvar(Simp *s, Node *n)
 {
-    if (bshas(s->env, n->expr.did))
-        fatal(n, "closure environment capture has not yet been implemented");
     return n;
 }
 
@@ -1680,15 +1678,34 @@ static int isexport(Node *dcl)
     return 0;
 }
 
+static int envcmp(const void *pa, const void *pb)
+{
+    const Node *a, *b;
+
+    a = *(const Node**)pa;
+    b = *(const Node**)pb;
+    return b->decl.did - a->decl.did;
+}
+
 static void collectenv(Simp *s, Node *fn)
 {
     size_t nenv, i;
     Node **env;
+    size_t off;
 
-    s->env = mkbs();
     env = getclosure(fn->func.scope, &nenv);
-    for (i = 0; i < nenv; i++)
-        bsput(s->env, env[i]->decl.did);
+    /*
+     we need these in a deterministic order so that we can
+     put them in the right place both when we use them and
+     when we capture them.
+     */
+    qsort(env, nenv, sizeof(Node*), envcmp);
+    off = Ptrsz;    /* we start with the size of the env */
+    for (i = 0; i < nenv; i++) {
+        off = alignto(off, decltype(env[i]));
+        htput(s->envoff, env[i], itop(off));
+        off += size(env[i]);
+    }
     free(env);
 }
 
@@ -1738,7 +1755,8 @@ static Func *simpfn(Simp *s, char *name, Node *dcl)
     fn->type = dcl->decl.type;
     fn->isexport = isexport(dcl);
     fn->stksz = align(s->stksz, 8);
-    fn->stkoff = s->_stkoff;
+    fn->stkoff = s->stkoff;
+    fn->envoff = s->envoff;
     fn->ret = s->ret;
     fn->args = s->args;
     fn->nargs = s->nargs;
@@ -1814,7 +1832,8 @@ void simpglobl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***blob, s
 
     if (ismain(dcl))
         dcl->decl.vis = Vishidden;
-    s._stkoff = mkht(varhash, vareq);
+    s.stkoff = mkht(varhash, vareq);
+    s.envoff = mkht(varhash, vareq);
     s.globls = globls;
     s.blobs = *blob;
     s.nblobs = *nblob;

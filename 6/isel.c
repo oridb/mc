@@ -97,9 +97,14 @@ static Loc *varloc(Isel *s, Node *n)
     ssize_t stkoff;
     Loc *l, *rip;
 
+    /* we need to try getting it from the stack first, in case we
+     * forced it to stack for addressing */
     if (hthas(s->globls, n)) {
         rip = locphysreg(Rrip);
         l = locmeml(htget(s->globls, n), rip, NULL, mode(n));
+    } else if (hthas(s->envoff, n)) {
+        stkoff = ptoi(htget(s->envoff, n));
+        l = locmem(-stkoff, locphysreg(Rrax), NULL, mode(n));
     } else if (hthas(s->stkoff, n)) {
         stkoff = ptoi(htget(s->stkoff, n));
         l = locmem(-stkoff, locphysreg(Rrbp), NULL, mode(n));
