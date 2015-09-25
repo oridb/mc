@@ -84,6 +84,17 @@ static void outstab(Stab *st, FILE *fd, int depth)
         outsym(getdcl(st, k[i]), fd, 0);
     }
     free(k);
+
+    /* dump closure */
+    if (st->closure) {
+        k = htkeys(st->closure, &n);
+        for (i = 0; i < n; i++) {
+            findentf(fd, depth + 1, "U ");
+            /* already indented */
+            outsym(getdcl(st, k[i]), fd, 0);
+        }
+        free(k);
+    }
 }
 
 void dumpstab(Stab *st, FILE *fd)

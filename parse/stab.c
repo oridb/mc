@@ -98,6 +98,13 @@ Stab *mkstab()
     return st;
 }
 
+Node *getcapture(Stab *st, Node *n)
+{
+    if (!st->closure)
+        return NULL;
+    return htget(st->closure, n);
+}
+
 /* 
  * Searches for declarations from current
  * scope, and all enclosing scopes. Does
@@ -118,10 +125,10 @@ Node *getdcl(Stab *st, Node *n)
         s = htget(st->dcl, n);
         if (s) {
             /* record that this is in the closure of this scope */
-            if (!st->closure)
-                st->closure = mkht(nsnamehash, nsnameeq);
+            if (!orig->closure)
+                orig->closure = mkht(nsnamehash, nsnameeq);
             if (st != orig && !n->decl.isglobl)
-                htput(st->closure, s->decl.name, s);
+                htput(orig->closure, s->decl.name, s);
             return s;
         }
         st = st->super;
