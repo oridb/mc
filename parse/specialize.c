@@ -501,10 +501,15 @@ void geninit(Node *file)
     }
     if (file->file.localinit)
         callinit(block, file->file.localinit, tyvoid, tyvoidfn);
+
     func = mkfunc(Zloc, NULL, 0, mktype(Zloc, Tyvoid), block);
     func->expr.type = tyvoidfn;
-    decl->decl.init = mkexpr(Zloc, Olit, func, NULL);
+    init = mkexpr(Zloc, Olit, func, NULL);
+    init->expr.type = tyvoidfn;
+
+    decl->decl.init = init;
     decl->decl.isconst = 1;
+    decl->decl.isglobl = 1;
     decl->decl.type = tyvoidfn;
     decl->decl.vis = Vishidden;
 

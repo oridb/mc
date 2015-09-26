@@ -478,26 +478,12 @@ static void clear(Isel *s, Loc *val, size_t sz, size_t align)
     }
 }
 
-static int isconstfunc(Isel *s, Node *n)
-{
-    Node *d;
-
-    if (exprop(n) != Ovar)
-        return 0;
-    if (!hthas(s->globls, n))
-        return 0;
-    d = decls[n->expr.did];
-    if (d && d->decl.isconst)
-        return tybase(decltype(d))->type == Tyfunc;
-    return 0;
-}
-
 static void call(Isel *s, Node *n)
 {
     AsmOp op;
     Loc *f;
 
-    if (isconstfunc(s, n)) {
+    if (isconstfn(n)) {
         op = Icall;
         f = locmeml(htget(s->globls, n), NULL, NULL, mode(n));
     } else {
@@ -810,7 +796,7 @@ Loc *selexpr(Isel *s, Node *n)
             r = loc(s, n);
             break;
         case Ovar:
-            if (isconstfunc(s, n)) {
+            if (isconstfn(n)) {
                 r = locreg(ModeQ);
                 a = loc(s, n);
                 g(s, Ilea, a, r, NULL);

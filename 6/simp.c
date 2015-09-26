@@ -85,11 +85,6 @@ static int ispure(Node *n)
     return opispure[exprop(n)];
 }
 
-static int isconstfn(Node *s)
-{
-    return s->decl.isconst && decltype(s)->type == Tyfunc;
-}
-
 size_t alignto(size_t sz, Type *t)
 {
     size_t a;
@@ -709,6 +704,7 @@ static Node *simpblob(Simp *s, Node *blob, Node ***l, size_t *nl)
     d->decl.init = blob;
     d->decl.type = blob->expr.type;
     d->decl.isconst = 1;
+    d->decl.isglobl = 1;
     htput(s->globls, d, asmname(d));
 
     r->expr.did = d->decl.did;

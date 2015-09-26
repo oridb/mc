@@ -67,6 +67,22 @@ char *genlblstr(char *buf, size_t sz)
     return buf;
 }
 
+int isconstfn(Node *n)
+{
+    Node *d;
+
+    if (n->type == Nexpr) {
+        if (exprop(n) != Ovar)
+            return 0;
+        d = decls[n->expr.did];
+    } else {
+        d = n;
+    }
+    if (d && d->decl.isconst && d->decl.isglobl)
+        return tybase(decltype(d))->type == Tyfunc;
+    return 0;
+}
+
 /* 
  * For x86, the assembly names are generated as follows:
  *      local symbols: .name
