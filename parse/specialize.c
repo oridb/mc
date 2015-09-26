@@ -461,6 +461,7 @@ static Node *initdecl(Node *file, Node *name, Type *tyvoidfn)
     if (!dcl) {
         dcl = mkdecl(Zloc, name, tyvoidfn);
         dcl->decl.isconst = 1;
+        dcl->decl.isglobl = 1;
         dcl->decl.isinit = 1;
         dcl->decl.isextern = 1;
         putdcl(file->file.globls, dcl);

@@ -378,6 +378,7 @@ implbody
                 d = mkdecl($2->loc, mkname($2->loc, $2->id), mktyvar($2->loc));
                 d->decl.init = $4;
                 d->decl.isconst = 1;
+                d->decl.isglobl = 1;
                 lappend(&$$.nl, &$$.nn, d);
             }
         ;
