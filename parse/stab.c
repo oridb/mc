@@ -228,8 +228,10 @@ static int mergedecl(Node *old, Node *new)
 {
     Node *e, *g;
 
-    if (old->decl.ishidden || new->decl.ishidden)
+    if (old->decl.ishidden || new->decl.ishidden) {
+        old->decl.ishidden = old->decl.ishidden && new->decl.ishidden;
         return 1;
+    }
     if (old->decl.vis == Visexport && new->decl.vis != Visexport) {
         e = old;
         g = new;
