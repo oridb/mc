@@ -57,6 +57,7 @@ struct Simp {
     size_t nargs;
 };
 
+static int envcmp(const void *pa, const void *pb);
 static Node *simp(Simp *s, Node *n);
 static Node *rval(Simp *s, Node *n, Node *dst);
 static Node *lval(Simp *s, Node *n);
@@ -299,16 +300,16 @@ static Node *word(Srcloc loc, uint v)
     return n;
 }
 
-static Node *gentemp(Simp *simp, Node *e, Type *ty, Node **dcl)
+static Node *gentemp(Simp *simp, Srcloc loc, Type *ty, Node **dcl)
 {
     char buf[128];
     static int nexttmp;
     Node *t, *r, *n;
 
     bprintf(buf, 128, ".t%d", nexttmp++);
-    n = mkname(e->loc, buf);
-    t = mkdecl(e->loc, n, ty);
-    r = mkexpr(e->loc, Ovar, n, NULL);
+    n = mkname(loc, buf);
+    t = mkdecl(loc, n, ty);
+    r = mkexpr(loc, Ovar, n, NULL);
     r->expr.type = t->decl.type;
     r->expr.did = t->decl.did;
     if (dcl)
@@ -321,7 +322,7 @@ static Node *temp(Simp *simp, Node *e)
     Node *t, *dcl;
 
     assert(e->type == Nexpr);
-    t = gentemp(simp, e, e->expr.type, &dcl);
+    t = gentemp(simp, e->loc, e->expr.type, &dcl);
     if (stacknode(e))
         declarelocal(simp, dcl);
     return t;
@@ -480,7 +481,7 @@ static void simpiter(Simp *s, Node *n)
     zero->expr.type = tyintptr;
 
     seq = rval(s, n->iterstmt.seq, NULL);
-    idx = gentemp(s, n, tyintptr, &dcl);
+    idx = gentemp(s, n->loc, tyintptr, &dcl);
     declarelocal(s, dcl);
 
     /* setup */
@@ -1311,6 +1312,47 @@ static void addvatype(Simp *s, Node *n)
     htput(s->globls, td, asmname(td));
 }
 
+static Node *capture(Simp *s, Node *n, Node *dst)
+{
+    size_t nenv, nenvt, off, i;
+    Node *fn, *t, *f, *e, *val, *dcl;
+    Type **envt;
+    Node **env;
+
+    f = simpblob(s, n, &file->file.stmts, &file->file.nstmts);
+    fn = n->expr.args[0];
+    fn = fn->lit.fnval;
+    env = getclosure(fn->func.scope, &nenv);
+    if (!env)
+        return f;
+    /* we need these in a deterministic order so that we can
+       put them in the right place both when we use them and
+       when we capture them.  */
+    qsort(env, nenv, sizeof(Node*), envcmp);
+
+    /* make the tuple that will hold the environment */
+    envt = NULL;
+    nenvt = 0;
+    for (i = 0; i < nenv; i++)
+        lappend(&envt, &nenvt, decltype(env[i]));
+
+    t = gentemp(s, n->loc, mktytuple(n->loc, envt, nenvt), &dcl);
+    forcelocal(s, dcl);
+    e = addr(s, t, exprtype(t));
+
+    off = Ptrsz;    /* we start with the size of the env */
+    for (i = 0; i < nenv; i++) {
+        off = alignto(off, decltype(env[i]));
+        val = mkexpr(n->loc, Ovar, env[i]->decl.name, NULL);
+        val->expr.type = env[i]->decl.type;
+        val->expr.did = env[i]->decl.did;
+        assignat(s, e, off, val);
+        off += size(env[i]);
+    }
+    free(env);
+    return f;
+}
+
 static Node *rval(Simp *s, Node *n, Node *dst)
 {
     Node *t, *u, *v; /* temporary nodes */
@@ -1456,7 +1498,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
                     r = simpblob(s, n, &s->blobs, &s->nblobs);
                     break;
                 case Lfunc:
-                    r = simpblob(s, n, &file->file.stmts, &file->file.nstmts);
+                    r = capture(s, n, dst);
                     break;
             }
             break;
@@ -1648,11 +1690,11 @@ static void flatten(Simp *s, Node *f)
     ty = f->func.type->sub[0];
     if (stacktype(ty)) {
         s->isbigret = 1;
-        s->ret = gentemp(s, f, mktyptr(f->loc, ty), &dcl);
+        s->ret = gentemp(s, f->loc, mktyptr(f->loc, ty), &dcl);
         declarearg(s, dcl);
     } else if (ty->type != Tyvoid) {
         s->isbigret = 0;
-        s->ret = gentemp(s, f, ty, &dcl);
+        s->ret = gentemp(s, f->loc, ty, &dcl);
     }
 
     for (i = 0; i < f->func.nargs; i++) {
