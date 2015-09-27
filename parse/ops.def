@@ -69,6 +69,7 @@ O(Outag,	1,	OTpre,  "UTAG")	        /* tag of union */
 O(Oudata,	1,	OTpre,  "UDATA")        /* pointer to contents of union */
 O(Oblit,	1,	OTbin,  "BLIT")         /* blit memory */
 O(Oclear,       1,      OTpre,  "CLEAR")        /* zero */
+O(Ocallind,     1,      OTpre,  "CALL")         /* call with environment */
 
 /* integer conversions */
 O(Otrunc,	1,	OTmisc, NULL)   /* truncating cast */

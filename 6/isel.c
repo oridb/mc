@@ -481,15 +481,17 @@ static void clear(Isel *s, Loc *val, size_t sz, size_t align)
 static void call(Isel *s, Node *n)
 {
     AsmOp op;
+    Node *fn;
     Loc *f;
 
-    if (isconstfn(n)) {
+    if (exprop(n) == Ocall) {
         op = Icall;
-        assert(tybase(exprtype(n))->type == Tycode);
-        f = locmeml(htget(s->globls, n), NULL, NULL, mode(n));
+        fn = n->expr.args[0];
+        assert(tybase(exprtype(fn))->type == Tycode);
+        f = locmeml(htget(s->globls, fn), NULL, NULL, mode(fn));
     } else {
         op = Icallind;
-        f = selexpr(s, n);
+        f = selexpr(s, n->expr.args[0]);
     }
     g(s, op, f, NULL);
 }
@@ -585,7 +587,7 @@ static Loc *gencall(Isel *s, Node *n)
             argoff += size(n->expr.args[i]);
         }
     }
-    call(s, n->expr.args[0]);
+    call(s, n);
     if (argsz)
         g(s, Iadd, stkbump, rsp, NULL);
     if (retloc) {
@@ -778,6 +780,7 @@ Loc *selexpr(Isel *s, Node *n)
             r = b;
             break;
         case Ocall:
+        case Ocallind:
             r = gencall(s, n);
             break;
         case Oret: 

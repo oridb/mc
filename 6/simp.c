@@ -1345,12 +1345,14 @@ static Node *getcode(Simp *s, Node *n)
 
 static Node *simpcall(Simp *s, Node *n, Node *dst)
 {
+    Node *r, *call, *fn;
     size_t i, nargs;
     Node **args;
-    Node *r, *call;
     Type *ft;
+    Op op;
 
-    ft = tybase(exprtype(n->expr.args[0]));
+    fn = n->expr.args[0];
+    ft = tybase(exprtype(fn));
     if (exprtype(n)->type == Tyvoid)
         r = NULL;
     else if (isstacktype(exprtype(n)) && dst)
@@ -1360,7 +1362,11 @@ static Node *simpcall(Simp *s, Node *n, Node *dst)
 
     args = NULL;
     nargs = 0;
-    lappend(&args, &nargs, getcode(s, n->expr.args[0]));
+    if (isconstfn(fn))
+        op = Ocall;
+    else
+        op = Ocallind;
+    lappend(&args, &nargs, getcode(s, fn));
 
     if (exprtype(n)->type != Tyvoid && isstacktype(exprtype(n)))
         lappend(&args, &nargs, addr(s, r, exprtype(n)));
@@ -1379,7 +1385,7 @@ static Node *simpcall(Simp *s, Node *n, Node *dst)
     if (r)
         def(s, r);
 
-    call = mkexprl(n->loc, Ocall, args, nargs);
+    call = mkexprl(n->loc, op, args, nargs);
     call->expr.type = exprtype(n);
     if (r && !isstacktype(exprtype(n))) {
         append(s, set(r, call));
