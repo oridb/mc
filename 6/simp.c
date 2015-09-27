@@ -1256,15 +1256,7 @@ static Node *compare(Simp *s, Node *n, int fields)
     return r;
 }
 
-static int isvariadic(Node *fn)
-{
-    Type *ty;
-
-    ty = exprtype(fn);
-    return tybase(ty->sub[ty->nsub - 1])->type == Tyvalist;
-}
-
-static void addvatype(Simp *s, Node *n)
+static Node *vatypeinfo(Simp *s, Node *n)
 {
     Node *ti, *tp, *td, *tn;
     Type *ft, *vt, **st;
@@ -1304,8 +1296,8 @@ static void addvatype(Simp *s, Node *n)
     tp = mkexpr(Zloc, Oaddr, ti, NULL);
     tp->expr.type = mktyptr(n->loc, td->decl.type);
 
-    linsert(&n->expr.args, &n->expr.nargs, ft->nsub - 1, tp);
     htput(s->globls, td, asmname(td));
+    return tp;
 }
 
 static Node *capture(Simp *s, Node *n, Node *dst)
@@ -1351,9 +1343,12 @@ static Node *capture(Simp *s, Node *n, Node *dst)
 
 static Node *simpcall(Simp *s, Node *n, Node *dst)
 {
-    Node *r;
-    size_t i;
+    size_t i, nargs;
+    Node **args;
+    Node *r, *call;
+    Type *ft;
 
+    ft = tybase(exprtype(n->expr.args[0]));
     if (exprtype(n)->type == Tyvoid)
         r = NULL;
     else if (stacktype(exprtype(n)) && dst)
@@ -1361,25 +1356,33 @@ static Node *simpcall(Simp *s, Node *n, Node *dst)
     else
         r = temp(s, n);
 
-    if (isvariadic(n->expr.args[0]))
-        addvatype(s, n);
-    if (exprtype(n)->type != Tyvoid && stacktype(exprtype(n)))
-        linsert(&n->expr.args, &n->expr.nargs, 1, addr(s, r, exprtype(n)));
+    args = NULL;
+    nargs = 0;
+    lappend(&args, &nargs, rval(s, n->expr.args[0], NULL));
 
-    for (i = 0; i < n->expr.nargs; i++) {
-        n->expr.args[i] = rval(s, n->expr.args[i], NULL);
+    if (exprtype(n)->type != Tyvoid && stacktype(exprtype(n)))
+        lappend(&args, &nargs, addr(s, r, exprtype(n)));
+
+    for (i = 1; i < n->expr.nargs; i++) {
+        if (i < ft->nsub && tybase(ft->sub[i])->type == Tyvalist)
+            lappend(&args, &nargs, vatypeinfo(s, n));
+        lappend(&args, &nargs, rval(s, n->expr.args[i], NULL));
         if (exprop(n->expr.args[i]) == Oaddr)
             if (exprop(n->expr.args[i]->expr.args[0]) == Ovar)
                 def(s, n->expr.args[i]->expr.args[0]);
     }
+    if (i < ft->nsub && tybase(ft->sub[i])->type == Tyvalist)
+        lappend(&args, &nargs, vatypeinfo(s, n));
 
     if (r)
         def(s, r);
 
+    call = mkexprl(n->loc, Ocall, args, nargs);
+    call->expr.type = exprtype(n);
     if (r && !stacktype(exprtype(n))) {
-        append(s, set(r, n));
+        append(s, set(r, call));
     } else {
-        append(s, n);
+        append(s, call);
     }
     return r;
 }
