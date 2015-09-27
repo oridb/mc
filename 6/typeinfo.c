@@ -260,10 +260,10 @@ size_t tysize(Type *t)
         case Tyflt64:
             return 8;
 
-        case Tyfunc:
-            return Ptrsz;
         case Tycode:
             return Ptrsz;
+        case Tyfunc:
+            return 2*Ptrsz;
         case Tyslice:
             return 2*Ptrsz; /* len; ptr */
         case Tyname:

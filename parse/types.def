@@ -30,7 +30,7 @@ Ty(Tyvalist, NULL, 0)
 
 /* end atomic types */
 Ty(Typtr, NULL, 0)
-Ty(Tyfunc, NULL, 0)
+Ty(Tyfunc, NULL, 1)
 
 /* these types live on the stack */
 Ty(Tyslice, NULL, 1)

@@ -62,6 +62,8 @@ static Node *simp(Simp *s, Node *n);
 static Node *rval(Simp *s, Node *n, Node *dst);
 static Node *lval(Simp *s, Node *n);
 static Node *assign(Simp *s, Node *lhs, Node *rhs);
+static Node *assignat(Simp *s, Node *r, size_t off, Node *val);
+static Node *getcode(Simp *s, Node *n);
 static void simpcond(Simp *s, Node *n, Node *ltrue, Node *lfalse);
 static void simpconstinit(Simp *s, Node *dcl);
 static Node *simpcast(Simp *s, Node *val, Type *to);
@@ -329,9 +331,22 @@ static Node *slicelen(Simp *s, Node *sl)
     return load(addk(addr(s, sl, tyintptr), Ptrsz));
 }
 
-Node *loadvar(Simp *s, Node *n)
+Node *loadvar(Simp *s, Node *n, Node *dst)
 {
-    return n;
+    Node *p, *f, *r;
+
+    if (isconstfn(n)) {
+        if (dst)
+            r = dst;
+        else
+            r = temp(s, n);
+        f = getcode(s, n);
+        p = addr(s, r, exprtype(n));
+        assignat(s, p, Ptrsz, f);
+    } else {
+        r = n;
+    }
+    return r;
 }
 
 static Node *seqlen(Simp *s, Node *n, Type *ty)
@@ -680,26 +695,45 @@ static void simpblk(Simp *s, Node *n)
     }
 }
 
-static Node *simpblob(Simp *s, Node *blob, Node ***l, size_t *nl)
+static Node *geninitdecl(Node *init, Type *ty, Node **dcl)
 {
     Node *n, *d, *r;
     char lbl[128];
 
-    n = mkname(blob->loc, genlblstr(lbl, 128));
-    d = mkdecl(blob->loc, n, blob->expr.type);
-    r = mkexpr(blob->loc, Ovar, n, NULL);
+    n = mkname(init->loc, genlblstr(lbl, 128));
+    d = mkdecl(init->loc, n, ty);
+    r = mkexpr(init->loc, Ovar, n, NULL);
 
-    d->decl.init = blob;
-    d->decl.type = blob->expr.type;
+    d->decl.init = init;
+    d->decl.type = ty;
     d->decl.isconst = 1;
     d->decl.isglobl = 1;
-    htput(s->globls, d, asmname(d));
 
     r->expr.did = d->decl.did;
-    r->expr.type = blob->expr.type;
+    r->expr.type = ty;
     r->expr.isconst = 1;
+    if (dcl)
+        *dcl = d;
+    return r;
+}
 
-    lappend(l, nl, d);
+static Node *simpcode(Simp *s, Node *fn)
+{
+    Node *r, *d;
+
+    r = geninitdecl(fn, codetype(exprtype(fn)), &d);
+    htput(s->globls, d, asmname(d));
+    lappend(&file->file.stmts, &file->file.nstmts, d);
+    return r;
+}
+
+static Node *simpblob(Simp *s, Node *blob)
+{
+    Node *r, *d;
+
+    r = geninitdecl(blob, exprtype(blob), &d);
+    htput(s->globls, d, asmname(d));
+    lappend(&s->blobs, &s->nblobs, d);
     return r;
 }
 
@@ -817,7 +851,7 @@ static Node *lval(Simp *s, Node *n)
 
     args = n->expr.args;
     switch (exprop(n)) {
-        case Ovar:      r = loadvar(s, n);  break;
+        case Ovar:      r = loadvar(s, n, NULL);  break;
         case Oidx:      r = deref(idxaddr(s, args[0], args[1]), NULL); break;
         case Oderef:    r = deref(rval(s, args[0], NULL), NULL); break;
         case Omemb:     r = rval(s, n, NULL); break;
@@ -1069,7 +1103,6 @@ static Node *assignat(Simp *s, Node *r, size_t off, Node *val)
     Node *sz;
     Node *st;
 
-    val = rval(s, val, NULL);
     pdst = add(r, disp(val->loc, off));
 
     if (stacknode(val)) {
@@ -1101,7 +1134,7 @@ static Node *simptup(Simp *s, Node *n, Node *dst)
     off = 0;
     for (i = 0; i < n->expr.nargs; i++) {
         off = alignto(off, exprtype(args[i]));
-        assignat(s, r, off, args[i]);
+        assignat(s, r, off, rval(s, args[i], NULL));
         off += size(args[i]);
     }
     return dst;
@@ -1289,48 +1322,65 @@ static Node *vatypeinfo(Simp *s, Node *n)
 
 static Node *capture(Simp *s, Node *n, Node *dst)
 {
+    Node *fn, *t, *f, *e, *val, *dcl, *fp;
     size_t nenv, nenvt, off, i;
-    Node *fn, *t, *f, *e, *val, *dcl;
     Type **envt;
     Node **env;
 
-    f = simpblob(s, n, &file->file.stmts, &file->file.nstmts);
+    f = simpcode(s, n);
     fn = n->expr.args[0];
     fn = fn->lit.fnval;
-    env = getclosure(fn->func.scope, &nenv);
-    if (!env)
-        return f;
-    /* we need these in a deterministic order so that we can
-       put them in the right place both when we use them and
-       when we capture them.  */
-    qsort(env, nenv, sizeof(Node*), envcmp);
-
-    /* make the tuple that will hold the environment */
-    envt = NULL;
-    nenvt = 0;
-    for (i = 0; i < nenv; i++)
-        lappend(&envt, &nenvt, decltype(env[i]));
-
-    t = gentemp(s, n->loc, mktytuple(n->loc, envt, nenvt), &dcl);
-    forcelocal(s, dcl);
-    e = addr(s, t, exprtype(t));
-
-    off = Ptrsz;    /* we start with the size of the env */
-    for (i = 0; i < nenv; i++) {
-        off = alignto(off, decltype(env[i]));
-        val = mkexpr(n->loc, Ovar, env[i]->decl.name, NULL);
-        val->expr.type = env[i]->decl.type;
-        val->expr.did = env[i]->decl.did;
-        assignat(s, e, off, val);
-        off += size(env[i]);
+    if (!dst) {
+        dst = gentemp(s, n->loc, closuretype(exprtype(f)), &dcl);
+        forcelocal(s, dcl);
     }
-    free(env);
-    return f;
+    fp = addr(s, dst, exprtype(dst));
+
+    env = getclosure(fn->func.scope, &nenv);
+    if (env) {
+        /* we need these in a deterministic order so that we can
+           put them in the right place both when we use them and
+           when we capture them.  */
+        qsort(env, nenv, sizeof(Node*), envcmp);
+
+        /* make the tuple that will hold the environment */
+        envt = NULL;
+        nenvt = 0;
+        /* reserve space for size */
+        lappend(&envt, &nenvt, tyintptr);
+        for (i = 0; i < nenv; i++)
+            lappend(&envt, &nenvt, decltype(env[i]));
+
+        t = gentemp(s, n->loc, mktytuple(n->loc, envt, nenvt), &dcl);
+        forcelocal(s, dcl);
+        e = addr(s, t, exprtype(t));
+
+        off = Ptrsz;    /* we start with the size of the env */
+        for (i = 0; i < nenv; i++) {
+            off = alignto(off, decltype(env[i]));
+            val = mkexpr(n->loc, Ovar, env[i]->decl.name, NULL);
+            val->expr.type = env[i]->decl.type;
+            val->expr.did = env[i]->decl.did;
+            assignat(s, e, off, rval(s, val, NULL));
+            off += size(env[i]);
+        }
+        free(env);
+        assignat(s, fp, 0, e);
+    }
+    assignat(s, fp, Ptrsz, f);
+    return dst;
+}
+
+static Node *getenvptr(Simp *s, Node *n)
+{
+    assert(tybase(exprtype(n))->type == Tyfunc);
+    return load(addr(s, n, tyintptr));
 }
 
 static Node *getcode(Simp *s, Node *n)
 {
-    Node *r, *d;
+    Node *r, *p, *d;
+    Type *ty;
 
     if (isconstfn(n)) {
         d = decls[n->expr.did];
@@ -1338,7 +1388,10 @@ static Node *getcode(Simp *s, Node *n)
         r->expr.did = d->decl.did;
         r->expr.type = codetype(exprtype(n));
     } else {
-        r = rval(s, n, NULL);
+        ty = tybase(exprtype(n));
+        assert(ty->type == Tyfunc);
+        p = addr(s, rval(s, n, NULL), codetype(ty));
+        r = load(addk(p, Ptrsz));
     }
     return r;
 }
@@ -1351,7 +1404,11 @@ static Node *simpcall(Simp *s, Node *n, Node *dst)
     Type *ft;
     Op op;
 
+    /* NB: If we called rval() on a const function, , we would end up with
+    a stack allocated closure. We don't want to do this. */
     fn = n->expr.args[0];
+    if (!isconstfn(fn))
+        fn = rval(s, fn, NULL);
     ft = tybase(exprtype(fn));
     if (exprtype(n)->type == Tyvoid)
         r = NULL;
@@ -1362,11 +1419,12 @@ static Node *simpcall(Simp *s, Node *n, Node *dst)
 
     args = NULL;
     nargs = 0;
-    if (isconstfn(fn))
-        op = Ocall;
-    else
-        op = Ocallind;
+    op = Ocall;
     lappend(&args, &nargs, getcode(s, fn));
+    if (!isconstfn(fn)) {
+        op = Ocallind;
+        lappend(&args, &nargs, getenvptr(s, fn));
+    }
 
     if (exprtype(n)->type != Tyvoid && isstacktype(exprtype(n)))
         lappend(&args, &nargs, addr(s, r, exprtype(n)));
@@ -1459,7 +1517,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
                 dst = temp(s, n);
             t = addr(s, dst, exprtype(dst));
             for (i = 0; i < n->expr.nargs; i++)
-                assignat(s, t, size(n->expr.args[i])*i, n->expr.args[i]);
+                assignat(s, t, size(n->expr.args[i])*i, rval(s, n->expr.args[i], NULL));
             r = dst;
             break;
         case Ostruct:
@@ -1474,7 +1532,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
             if (tybase(ty)->nmemb != n->expr.nargs)
                 append(s, mkexpr(n->loc, Oclear, t, mkintlit(n->loc, size(n)), NULL));
             for (i = 0; i < n->expr.nargs; i++)
-                assignat(s, t, offset(n, n->expr.args[i]->expr.idx), n->expr.args[i]);
+                assignat(s, t, offset(n, n->expr.args[i]->expr.idx), rval(s, n->expr.args[i], NULL));
             r = dst;
             break;
         case Ocast:
@@ -1534,10 +1592,10 @@ static Node *rval(Simp *s, Node *n, Node *dst)
                     if ((uint64_t)args[0]->lit.intval < 0x7fffffffULL)
                         r = n;
                     else
-                        r = simpblob(s, n, &s->blobs, &s->nblobs);
+                        r = simpblob(s, n);
                     break;
                 case Lstr: case Lflt:
-                    r = simpblob(s, n, &s->blobs, &s->nblobs);
+                    r = simpblob(s, n);
                     break;
                 case Lfunc:
                     r = capture(s, n, dst);
@@ -1545,7 +1603,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
             }
             break;
         case Ovar:
-            r = loadvar(s, n);
+            r = loadvar(s, n, dst);
             break;
         case Ogap:
             fatal(n, "'_' may not be an rvalue");
@@ -1590,7 +1648,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
                 u = mkexpr(n->loc, Olit, t, NULL);
                 t->lit.type = n->expr.type;
                 u->expr.type = n->expr.type;
-                v = simpblob(s, u, &s->blobs, &s->nblobs);
+                v = simpblob(s, u);
                 r = mkexpr(n->loc, Ofmul, v, rval(s, args[0], NULL), NULL);
                 r->expr.type = n->expr.type;
             } else {
@@ -1830,7 +1888,7 @@ static Func *simpfn(Simp *s, char *name, Node *dcl)
     return fn;
 }
 
-static void extractsub(Simp *s, Node ***blobs, size_t *nblobs, Node *e)
+static void extractsub(Simp *s, Node *e)
 {
     size_t i;
 
@@ -1838,12 +1896,12 @@ static void extractsub(Simp *s, Node ***blobs, size_t *nblobs, Node *e)
     switch (exprop(e)) {
         case Oslice:
             if (exprop(e->expr.args[0]) == Oarr)
-                e->expr.args[0] = simpblob(s, e->expr.args[0], blobs, nblobs);
+                e->expr.args[0] = simpblob(s, e->expr.args[0]);
             break;
         case Oarr:
         case Ostruct:
             for (i = 0; i < e->expr.nargs; i++)
-                extractsub(s, blobs, nblobs, e->expr.args[i]);
+                extractsub(s, e->expr.args[i]);
             break;
         default:
             break;
@@ -1858,7 +1916,7 @@ static void simpconstinit(Simp *s, Node *dcl)
     e = dcl->decl.init;
     if (e && exprop(e) == Olit) {
         if (e->expr.args[0]->lit.littype == Lfunc)
-            simpblob(s, e, &file->file.stmts, &file->file.nstmts);
+            simpcode(s, e);
         else
             lappend(&s->blobs, &s->nblobs, dcl);
     } else if (dcl->decl.isconst) {
@@ -1866,7 +1924,7 @@ static void simpconstinit(Simp *s, Node *dcl)
             case Oarr:
             case Ostruct:
             case Oslice:
-                extractsub(s, &s->blobs, &s->nblobs, e);
+                extractsub(s, e);
                 lappend(&s->blobs, &s->nblobs, dcl);
                 break;
             default:

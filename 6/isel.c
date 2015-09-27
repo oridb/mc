@@ -94,7 +94,7 @@ static Mode mode(Node *n)
 
 static Loc *varloc(Isel *s, Node *n)
 {
-    ssize_t stkoff;
+    ssize_t off;
     Loc *l, *rip;
 
     /* we need to try getting it from the stack first, in case we
@@ -103,11 +103,11 @@ static Loc *varloc(Isel *s, Node *n)
         rip = locphysreg(Rrip);
         l = locmeml(htget(s->globls, n), rip, NULL, mode(n));
     } else if (hthas(s->envoff, n)) {
-        stkoff = ptoi(htget(s->envoff, n));
-        l = locmem(-stkoff, locphysreg(Rrax), NULL, mode(n));
+        off = ptoi(htget(s->envoff, n));
+        l = locmem(off, locphysreg(Rrax), NULL, mode(n));
     } else if (hthas(s->stkoff, n)) {
-        stkoff = ptoi(htget(s->stkoff, n));
-        l = locmem(-stkoff, locphysreg(Rrbp), NULL, mode(n));
+        off = ptoi(htget(s->stkoff, n));
+        l = locmem(-off, locphysreg(Rrbp), NULL, mode(n));
     }  else {
         l = htget(s->reglocs, n);
         if (!l) {
@@ -482,7 +482,7 @@ static void call(Isel *s, Node *n)
 {
     AsmOp op;
     Node *fn;
-    Loc *f;
+    Loc *f, *e;
 
     if (exprop(n) == Ocall) {
         op = Icall;
@@ -492,6 +492,8 @@ static void call(Isel *s, Node *n)
     } else {
         op = Icallind;
         f = selexpr(s, n->expr.args[0]);
+        e = selexpr(s, n->expr.args[1]);
+        g(s, Imov, e, locphysreg(Rrax), NULL);
     }
     g(s, op, f, NULL);
 }
@@ -514,13 +516,14 @@ static size_t countargs(Type *t)
 static Loc *gencall(Isel *s, Node *n)
 {
     Loc *src, *dst, *arg;  /* values we reduced */
-    size_t argsz, argoff, nargs;
+    size_t argsz, argoff, nargs, vasplit;
     size_t nfloats, nints;
     Loc *retloc, *rsp, *ret;       /* hard-coded registers */
     Loc *stkbump;        /* calculated stack offset */
+    Type *t, *fn;
+    Node **args;
     size_t i, a;
     int vararg;
-    Type *t, *fn;
 
     rsp = locphysreg(Rrsp);
     t = exprtype(n);
@@ -537,17 +540,24 @@ static Loc *gencall(Isel *s, Node *n)
     fn = tybase(exprtype(n->expr.args[0]));
     /* calculate the number of args we expect to see, adjust
      * for a hidden return argument. */
-    nargs = countargs(fn);
+    vasplit = countargs(fn);
     argsz = 0;
+    if (exprop(n) == Ocall) {
+        args = &n->expr.args[1];
+        nargs = n->expr.nargs - 1;
+    } else {
+        args = &n->expr.args[2];
+        nargs = n->expr.nargs - 2;
+    }
     /* Have to calculate the amount to bump the stack
      * pointer by in one pass first, otherwise if we push
      * one at a time, we evaluate the args in reverse order.
      * Not good.
      *
      * Skip the first operand, since it's the function itself */
-    for (i = 1; i < n->expr.nargs; i++) {
-        argsz = align(argsz, min(size(n->expr.args[i]), Ptrsz));
-        argsz += size(n->expr.args[i]);
+    for (i = 0; i < nargs; i++) {
+        argsz = align(argsz, min(size(args[i]), Ptrsz));
+        argsz += size(args[i]);
     }
     argsz = align(argsz, 16);
     stkbump = loclit(argsz, ModeQ);
@@ -559,17 +569,17 @@ static Loc *gencall(Isel *s, Node *n)
     nfloats = 0;
     nints = 0;
     vararg = 0;
-    for (i = 1; i < n->expr.nargs; i++) {
-        arg = selexpr(s, n->expr.args[i]);
-        argoff = alignto(argoff, exprtype(n->expr.args[i]));
-        if (i > nargs)
+    for (i = 0; i < nargs; i++) {
+        arg = selexpr(s, args[i]);
+        argoff = alignto(argoff, exprtype(args[i]));
+        if (i >= vasplit)
             vararg = 1;
-        if (stacknode(n->expr.args[i])) {
+        if (stacknode(args[i])) {
             src = locreg(ModeQ);
             g(s, Ilea, arg, src, NULL);
-            a = tyalign(exprtype(n->expr.args[i]));
-            blit(s, rsp, src, argoff, 0, size(n->expr.args[i]), a);
-            argoff += size(n->expr.args[i]);
+            a = tyalign(exprtype(args[i]));
+            blit(s, rsp, src, argoff, 0, size(args[i]), a);
+            argoff += size(args[i]);
         } else if (!vararg && isfloatmode(arg->mode) && nfloats < Nfloatregargs) {
             dst = coreg(floatargregs[nfloats], arg->mode);
             arg = inri(s, arg);
@@ -584,7 +594,7 @@ static Loc *gencall(Isel *s, Node *n)
             dst = locmem(argoff, rsp, NULL, arg->mode);
             arg = inri(s, arg);
             stor(s, arg, dst);
-            argoff += size(n->expr.args[i]);
+            argoff += size(args[i]);
         }
     }
     call(s, n);

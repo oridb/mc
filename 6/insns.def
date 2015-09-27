@@ -320,7 +320,8 @@ Insn(Icallind,
     "\tcall *%v\n",
     "\tCALL *%V\n",
     Use(.l={1}, .r={
-            Rrdi, Rrsi, Rrdx, Rrcx, Rr8, Rr9,
+            /* ABI note: Rrax holds the env */
+            Rrax, Rrdi, Rrsi, Rrdx, Rrcx, Rr8, Rr9,
             Rxmm0d, Rxmm1d, Rxmm2d, Rxmm3d,
             Rxmm4d, Rxmm5d, Rxmm6d, Rxmm7d,
     }),

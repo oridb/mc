@@ -55,6 +55,16 @@ Type *codetype(Type *ft)
     return ft;
 }
 
+Type *closuretype(Type *ft)
+{
+    ft = tybase(ft);
+    if (ft->type == Tyfunc)
+        return ft;
+    assert(ft->type == Tycode);
+    ft = tydup(ft);
+    ft->type = Tyfunc;
+    return ft;
+}
 
 static int islocal(Node *dcl)
 {

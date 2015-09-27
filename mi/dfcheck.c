@@ -70,7 +70,6 @@ static void checkreach(Cfg *cfg)
     Bb *bb;
 
     r = reaching(cfg);
-//    dumpcfg(cfg, stdout);
     for (i = 0; i < cfg->nbb; i++) {
         bb = cfg->bb[i];
         if (!bb)

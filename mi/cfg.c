@@ -266,49 +266,54 @@ Cfg *mkcfg(Node *fn, Node **nl, size_t nn)
     return cfg;
 }
 
-void dumpcfg(Cfg *cfg, FILE *fd)
+void dumpbb(Bb *bb, FILE *fd)
 {
-    size_t i, j;
-    Bb *bb;
+    size_t i;
     char *sep;
 
-    for (j = 0; j < cfg->nbb; j++) {
-        bb = cfg->bb[j];
-        if (!bb)
-            continue;
-        fprintf(fd, "\n");
-        fprintf(fd, "Bb: %d labels=(", bb->id);
-        sep = "";
-        for (i = 0; i < bb->nlbls; i++) {;
-            fprintf(fd, "%s%s", bb->lbls[i], sep);
+    fprintf(fd, "Bb: %d labels=(", bb->id);
+    sep = "";
+    for (i = 0; i < bb->nlbls; i++) {;
+        fprintf(fd, "%s%s", bb->lbls[i], sep);
+        sep = ",";
+    }
+    fprintf(fd, ")\n");
+
+    /* in edges */
+    fprintf(fd, "Pred: ");
+    sep = "";
+    for (i = 0; i < bsmax(bb->pred); i++) {
+        if (bshas(bb->pred, i)) {
+            fprintf(fd, "%s%zd", sep, i);
             sep = ",";
         }
-        fprintf(fd, ")\n");
+    }
+    fprintf(fd, "\n");
 
-        /* in edges */
-        fprintf(fd, "Pred: ");
-        sep = "";
-        for (i = 0; i < bsmax(bb->pred); i++) {
-            if (bshas(bb->pred, i)) {
-                fprintf(fd, "%s%zd", sep, i);
-                sep = ",";
-            }
+    /* out edges */
+    fprintf(fd, "Succ: ");
+    sep = "";
+    for (i = 0; i < bsmax(bb->succ); i++) {
+        if (bshas(bb->succ, i)) {
+            fprintf(fd, "%s%zd", sep, i);
+            sep = ",";
         }
-        fprintf(fd, "\n");
+    }
+    fprintf(fd, "\n");
 
-        /* out edges */
-        fprintf(fd, "Succ: ");
-        sep = "";
-        for (i = 0; i < bsmax(bb->succ); i++) {
-             if (bshas(bb->succ, i)) {
-                fprintf(fd, "%s%zd", sep, i);
-                sep = ",";
-             }
-        }
-        fprintf(fd, "\n");
+    for (i = 0; i < bb->nnl; i++)
+        dump(bb->nl[i], fd);
+    fprintf(fd, "\n");
+}
 
-        for (i = 0; i < bb->nnl; i++)
-            dump(bb->nl[i], fd);
+void dumpcfg(Cfg *cfg, FILE *fd)
+{
+    size_t i;
+
+    for (i = 0; i < cfg->nbb; i++) {
+        if (!cfg->bb[i])
+            continue;
         fprintf(fd, "\n");
+        dumpbb(cfg->bb[i], fd);
     }
 }

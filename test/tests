@@ -58,7 +58,7 @@ B voidcall	E	12
 B callbig	E	42
 B nestfn	E	42
 B foldidx	P	123,456
-# B closure	E	55      ## BUGGERED
+B closure	E	55
 B loop		P	0123401236789
 B subrangefor	P       12
 B patiter	P	23512

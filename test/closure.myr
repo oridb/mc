@@ -1,8 +1,10 @@
+use std
+
 /* checks that functions with environment capture work. should exit with 42. */
 const main = {
 	var a = 42
 	var f = {b
 		-> a + b
 	}
-	f(13)
+	std.exit(f(13))
 }
