@@ -1,10 +1,16 @@
 use std
 
-/* checks that functions with environment capture work. should exit with 42. */
 const main = {
-	var a = 42
-	var f = {b
-		-> a + b
+	var a, b, c, fn
+
+	a = 111
+	b = 555
+	c = 333
+	fn = {
+		var x
+
+		x = 666
+		std.put("{}{}{}{}\n", a, b, c, x)
 	}
-	std.exit(f(13))
+	fn()
 }
