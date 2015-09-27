@@ -1349,6 +1349,41 @@ static Node *capture(Simp *s, Node *n, Node *dst)
     return f;
 }
 
+static Node *simpcall(Simp *s, Node *n, Node *dst)
+{
+    Node *r;
+    size_t i;
+
+    if (exprtype(n)->type == Tyvoid)
+        r = NULL;
+    else if (stacktype(exprtype(n)) && dst)
+        r = dst;
+    else
+        r = temp(s, n);
+
+    if (isvariadic(n->expr.args[0]))
+        addvatype(s, n);
+    if (exprtype(n)->type != Tyvoid && stacktype(exprtype(n)))
+        linsert(&n->expr.args, &n->expr.nargs, 1, addr(s, r, exprtype(n)));
+
+    for (i = 0; i < n->expr.nargs; i++) {
+        n->expr.args[i] = rval(s, n->expr.args[i], NULL);
+        if (exprop(n->expr.args[i]) == Oaddr)
+            if (exprop(n->expr.args[i]->expr.args[0]) == Ovar)
+                def(s, n->expr.args[i]->expr.args[0]);
+    }
+
+    if (r)
+        def(s, r);
+
+    if (r && !stacktype(exprtype(n))) {
+        append(s, set(r, n));
+    } else {
+        append(s, n);
+    }
+    return r;
+}
+
 static Node *rval(Simp *s, Node *n, Node *dst)
 {
     Node *t, *u, *v; /* temporary nodes */
@@ -1529,25 +1564,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
             r = assign(s, args[0], args[1]);
             break;
         case Ocall:
-            if (isvariadic(n->expr.args[0]))
-                addvatype(s, n);
-            if (exprtype(n)->type != Tyvoid && stacktype(exprtype(n))) {
-                if (dst)
-                    r = dst;
-                else
-                    r = temp(s, n);
-                linsert(&n->expr.args, &n->expr.nargs, 1, addr(s, r, exprtype(n)));
-                for (i = 0; i < n->expr.nargs; i++) {
-                    n->expr.args[i] = rval(s, n->expr.args[i], NULL);
-                    if (exprop(n->expr.args[i]) == Oaddr)
-                        if (exprop(n->expr.args[i]->expr.args[0]) == Ovar)
-                            def(s, n->expr.args[i]->expr.args[0]);
-                }
-                def(s, r);
-                append(s, n);
-            } else {
-                r = visit(s, n);
-            }
+            r = simpcall(s, n, dst);
             break;
         case Oaddr:
             t = lval(s, args[0]);
