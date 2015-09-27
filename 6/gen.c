@@ -25,6 +25,8 @@ void fillglobls(Stab *st, Htab *globls)
     k = htkeys(st->dcl, &nk);
     for (i = 0; i < nk; i++) {
         s = htget(st->dcl, k[i]);
+        if (isconstfn(s))
+            s->decl.type = codetype(s->decl.type);
         htput(globls, s, asmname(s));
     }
     free(k);
@@ -41,6 +43,18 @@ void fillglobls(Stab *st, Htab *globls)
     }
     free(ns);
 }
+
+Type *codetype(Type *ft)
+{
+    ft = tybase(ft);
+    if (ft->type == Tycode)
+        return ft;
+    assert(ft->type == Tyfunc);
+    ft = tydup(ft);
+    ft->type = Tycode;
+    return ft;
+}
+
 
 static int islocal(Node *dcl)
 {
@@ -70,6 +84,7 @@ char *genlblstr(char *buf, size_t sz)
 int isconstfn(Node *n)
 {
     Node *d;
+    Type *t;
 
     if (n->type == Nexpr) {
         if (exprop(n) != Ovar)
@@ -78,8 +93,9 @@ int isconstfn(Node *n)
     } else {
         d = n;
     }
+    t = tybase(decltype(d));
     if (d && d->decl.isconst && d->decl.isglobl)
-        return tybase(decltype(d))->type == Tyfunc;
+        return t->type == Tyfunc || t->type == Tycode;
     return 0;
 }
 

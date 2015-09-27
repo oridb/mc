@@ -75,14 +75,15 @@ static size_t nconstructors(Type *t)
 
         /* complex types */
         case Typtr:     return 1;       break;
-        case Tyfunc:    return 0;       break;
         case Tyarray:   return 1;       break;
         case Tytuple:   return 1;       break;
         case Tystruct:  return 1;
         case Tyunion:   return t->nmemb;        break;
         case Tyslice:   return ~0ULL;   break;
+
         case Tyvar: case Typaram: case Tyunres: case Tyname:
         case Tybad: case Tyvalist: case Tygeneric: case Ntypes:
+        case Tyfunc: case Tycode:
             die("Invalid constructor type %s in match", tystr(t));
             break;
     }
@@ -204,6 +205,7 @@ static Dtree *addpat(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *ncap)
 
     if (pat == NULL)
         return t;
+    pat = fold(pat, 1);
     switch (exprop(pat)) {
         case Ovar:
             dcl = decls[pat->expr.did];

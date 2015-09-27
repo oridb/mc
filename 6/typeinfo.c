@@ -119,7 +119,7 @@ Blob *tydescsub(Type *ty)
     lappend(&sub, &nsub, bt);
     switch (ty->type) {
         case Ntypes: case Tyvar: case Tybad: case Typaram:
-        case Tygeneric: case Tyunres:
+        case Tygeneric: case Tycode: case Tyunres:
             die("invalid type in tydesc");    break;
 
         /* atomic types -- nothing else to do */
@@ -246,7 +246,7 @@ size_t tysize(Type *t)
         case Tychar:  /* utf32 */
             return 4;
 
-        case Typtr: case Tyfunc:
+        case Typtr:
         case Tyvalist: /* ptr to first element of valist */
             return Ptrsz;
 
@@ -260,6 +260,10 @@ size_t tysize(Type *t)
         case Tyflt64:
             return 8;
 
+        case Tyfunc:
+            return Ptrsz;
+        case Tycode:
+            return Ptrsz;
         case Tyslice:
             return 2*Ptrsz; /* len; ptr */
         case Tyname:

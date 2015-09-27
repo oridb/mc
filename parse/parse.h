@@ -55,7 +55,7 @@ typedef enum {
 } Littype;
 
 typedef enum {
-#define Ty(t, n) t,
+#define Ty(t, n, stk) t,
 #include "types.def"
 #undef Ty
     Ntypes
@@ -520,6 +520,7 @@ Type *mktyunion(Srcloc l, Ucon **decls, size_t ndecls);
 Trait *mktrait(Srcloc l, Node *name, Type *param, Node **memb, size_t nmemb, Node **funcs, size_t nfuncs, int isproto);
 Type *mktylike(Srcloc l, Ty ty); /* constrains tyvar t like it was builtin ty */
 Ucon *finducon(Type *t, Node *name);
+int   isstacktype(Type *t);
 int   istysigned(Type *t);
 int   istyunsigned(Type *t);
 int   istyfloat(Type *t);

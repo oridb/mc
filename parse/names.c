@@ -50,7 +50,7 @@ char *litstr[] =  {
 };
 
 char *tidstr[] =  {
-#define Ty(t, n) n,
+#define Ty(t, n, stk) n,
 #include "types.def"
 #undef Ty
 };

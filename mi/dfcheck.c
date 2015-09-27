@@ -118,7 +118,7 @@ static void checkret(Cfg *cfg)
     Type *ft;
 
     ft = tybase(decltype(cfg->fn));
-    assert(ft->type == Tyfunc);
+    assert(ft->type == Tyfunc || ft->type == Tycode);
     if (ft->sub[0]->type == Tyvoid)
         return;
 

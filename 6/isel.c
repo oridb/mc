@@ -68,7 +68,7 @@ static Mode tymode(Type *t)
         case Tyflt32: return ModeF; break;
         case Tyflt64: return ModeD; break;
         default:
-            if (stacktype(t))
+            if (isstacktype(t))
                 return ModeQ;
             switch (tysize(t)) {
                 case 1: return ModeB; break;
@@ -485,6 +485,7 @@ static void call(Isel *s, Node *n)
 
     if (isconstfn(n)) {
         op = Icall;
+        assert(tybase(exprtype(n))->type == Tycode);
         f = locmeml(htget(s->globls, n), NULL, NULL, mode(n));
     } else {
         op = Icallind;
@@ -499,7 +500,7 @@ static size_t countargs(Type *t)
 
     t = tybase(t);
     nargs = t->nsub - 1;
-    if (stacktype(t->sub[0]))
+    if (isstacktype(t->sub[0]))
         nargs++;
     /* valists are replaced with hidden type parameter,
      * which we want on the stack for ease of ABI */
@@ -521,10 +522,10 @@ static Loc *gencall(Isel *s, Node *n)
 
     rsp = locphysreg(Rrsp);
     t = exprtype(n);
-    if (tybase(t)->type == Tyvoid || stacktype(t)) {
+    if (tybase(t)->type == Tyvoid || isstacktype(t)) {
         retloc = NULL;
         ret = NULL;
-    } else if (floattype(t)) {
+    } else if (istyfloat(t)) {
         retloc = coreg(Rxmm0d, mode(n));
         ret = locreg(mode(n));
     } else {
@@ -981,7 +982,7 @@ static void epilogue(Isel *s)
     rbp = locphysreg(Rrbp);
     if (s->ret) {
         ret = loc(s, s->ret);
-        if (floattype(exprtype(s->ret)))
+        if (istyfloat(exprtype(s->ret)))
             g(s, Imovs, ret, coreg(Rxmm0d, ret->mode), NULL);
         else
             g(s, Imov, ret, coreg(Rax, ret->mode), NULL);

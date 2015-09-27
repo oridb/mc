@@ -171,33 +171,20 @@ static int addressable(Simp *s, Node *a)
         return stacknode(a);
 }
 
-int stacktype(Type *t)
-{
-    /* the types are arranged in types.def such that this is true */
-    t = tybase(t);
-    return t->type >= Tyslice;
-}
-
-int floattype(Type *t)
-{
-    t = tybase(t);
-    return t->type == Tyflt32 || t->type == Tyflt64;
-}
-
 int stacknode(Node *n)
 {
     if (n->type == Nexpr)
-        return stacktype(n->expr.type);
+        return isstacktype(n->expr.type);
     else
-        return stacktype(n->decl.type);
+        return isstacktype(n->decl.type);
 }
 
 int floatnode(Node *n)
 {
     if (n->type == Nexpr)
-        return floattype(n->expr.type);
+        return istyfloat(n->expr.type);
     else
-        return floattype(n->decl.type);
+        return istyfloat(n->decl.type);
 }
 
 static void forcelocal(Simp *s, Node *n)
@@ -226,7 +213,7 @@ static Node *addr(Simp *s, Node *a, Type *bt)
 
     n = mkexpr(a->loc, Oaddr, a, NULL);
     if (!addressable(s, a))
-            forcelocal(s, a);
+        forcelocal(s, a);
     if (!bt)
         n->expr.type = mktyptr(a->loc, a->expr.type);
     else
@@ -557,6 +544,7 @@ static void matchpattern(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, N
         /* Never supported */
         case Tyvoid: case Tybad: case Tyvalist: case Tyvar:
         case Typaram: case Tyunres: case Tyname: case Ntypes:
+        case Tyfunc: case Tycode:
             die("Unsupported type for pattern");
             break;
         /* only valid for string literals */
@@ -565,7 +553,7 @@ static void matchpattern(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, N
         case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint:
         case Tyint64: case Tyuint64:
         case Tyflt32: case Tyflt64:
-        case Typtr: case Tyfunc:
+        case Typtr:
             v = mkexpr(pat->loc, Oeq, pat, val, NULL);
             v->expr.type = mktype(pat->loc, Tybool);
             cjmp(s, v, iftrue, iffalse);
@@ -925,7 +913,6 @@ static Node *simpcast(Simp *s, Node *val, Type *to)
                 case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint64:
                 case Tyuint: case Tychar: case Tybyte:
                 case Typtr:
-                case Tyfunc:
                     r = intconvert(s, val, to, 0);
                     break;
                 case Tyflt32: case Tyflt64:
@@ -1157,7 +1144,7 @@ static Node *simpucon(Simp *s, Node *n, Node *dst)
         return tmp;
     elt = rval(s, n->expr.args[1], NULL);
     u = addk(u, Wordsz);
-    if (stacktype(uc->etype)) {
+    if (isstacktype(uc->etype)) {
         elt = addr(s, elt, uc->etype);
         sz = disp(n->loc, tysize(uc->etype));
         r = mkexpr(n->loc, Oblit, u, elt, sz, NULL);
@@ -1341,6 +1328,21 @@ static Node *capture(Simp *s, Node *n, Node *dst)
     return f;
 }
 
+static Node *getcode(Simp *s, Node *n)
+{
+    Node *r, *d;
+
+    if (isconstfn(n)) {
+        d = decls[n->expr.did];
+        r = mkexpr(n->loc, Ovar, n->expr.args[0], NULL);
+        r->expr.did = d->decl.did;
+        r->expr.type = codetype(exprtype(n));
+    } else {
+        r = rval(s, n, NULL);
+    }
+    return r;
+}
+
 static Node *simpcall(Simp *s, Node *n, Node *dst)
 {
     size_t i, nargs;
@@ -1351,16 +1353,16 @@ static Node *simpcall(Simp *s, Node *n, Node *dst)
     ft = tybase(exprtype(n->expr.args[0]));
     if (exprtype(n)->type == Tyvoid)
         r = NULL;
-    else if (stacktype(exprtype(n)) && dst)
+    else if (isstacktype(exprtype(n)) && dst)
         r = dst;
     else
         r = temp(s, n);
 
     args = NULL;
     nargs = 0;
-    lappend(&args, &nargs, rval(s, n->expr.args[0], NULL));
+    lappend(&args, &nargs, getcode(s, n->expr.args[0]));
 
-    if (exprtype(n)->type != Tyvoid && stacktype(exprtype(n)))
+    if (exprtype(n)->type != Tyvoid && isstacktype(exprtype(n)))
         lappend(&args, &nargs, addr(s, r, exprtype(n)));
 
     for (i = 1; i < n->expr.nargs; i++) {
@@ -1379,7 +1381,7 @@ static Node *simpcall(Simp *s, Node *n, Node *dst)
 
     call = mkexprl(n->loc, Ocall, args, nargs);
     call->expr.type = exprtype(n);
-    if (r && !stacktype(exprtype(n))) {
+    if (r && !isstacktype(exprtype(n))) {
         append(s, set(r, call));
     } else {
         append(s, call);
@@ -1704,7 +1706,7 @@ static void flatten(Simp *s, Node *f)
 
     /* make a temp for the return type */
     ty = f->func.type->sub[0];
-    if (stacktype(ty)) {
+    if (isstacktype(ty)) {
         s->isbigret = 1;
         s->ret = gentemp(s, f->loc, mktyptr(f->loc, ty), &dcl);
         declarearg(s, dcl);

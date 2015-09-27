@@ -237,9 +237,9 @@ int main(int argc, char **argv)
         } else {
             gentemp(buf, sizeof buf, ctx.args[i], ".s");
         }
+        genuse(ctx.args[i]);
         gen(file, buf);
         assemble(buf, ctx.args[i]);
-        genuse(ctx.args[i]);
     }
 
     return 0;

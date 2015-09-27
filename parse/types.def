@@ -1,46 +1,48 @@
-Ty(Tybad, NULL)
-Ty(Tyvoid, "void")
+/* type, pretty, stack */
+Ty(Tybad, NULL, 0)
+Ty(Tyvoid, "void", 0)
 
 /* start integer types.
  * Keep them ordered between start
  * and end for faster
  * comparisons.*/
-Ty(Tybool, "bool")
-Ty(Tychar, "char")
+Ty(Tybool, "bool", 0)
+Ty(Tychar, "char", 0)
 
-Ty(Tyint8, "int8")
-Ty(Tyint16, "int16")
-Ty(Tyint, "int")
-Ty(Tyint32, "int32")
-Ty(Tyint64, "int64")
+Ty(Tyint8, "int8", 0)
+Ty(Tyint16, "int16", 0)
+Ty(Tyint, "int", 0)
+Ty(Tyint32, "int32", 0)
+Ty(Tyint64, "int64", 0)
 
-Ty(Tybyte, "byte")
-Ty(Tyuint8, "uint8")
-Ty(Tyuint16, "uint16")
-Ty(Tyuint, "uint")
-Ty(Tyuint32, "uint32")
-Ty(Tyuint64, "uint64")
+Ty(Tybyte, "byte", 0)
+Ty(Tyuint8, "uint8", 0)
+Ty(Tyuint16, "uint16", 0)
+Ty(Tyuint, "uint", 0)
+Ty(Tyuint32, "uint32", 0)
+Ty(Tyuint64, "uint64", 0)
 
 /*end integer types*/
-Ty(Tyflt32, "flt32")
-Ty(Tyflt64, "flt64")
+Ty(Tyflt32, "flt32", 0)
+Ty(Tyflt64, "flt64", 0)
 /* end primitive types */
-Ty(Tyvalist, NULL)
+Ty(Tyvalist, NULL, 0)
 
 /* end atomic types */
-Ty(Typtr, NULL)
-Ty(Tyfunc, NULL)
+Ty(Typtr, NULL, 0)
+Ty(Tyfunc, NULL, 0)
 
 /* these types live on the stack */
-Ty(Tyslice, NULL)
-Ty(Tyarray, NULL)
-Ty(Tytuple, NULL)
-Ty(Tystruct, NULL)
-Ty(Tyunion, NULL)
+Ty(Tyslice, NULL, 1)
+Ty(Tyarray, NULL, 1)
+Ty(Tytuple, NULL, 1)
+Ty(Tystruct, NULL, 1)
+Ty(Tyunion, NULL, 1)
 
 /* these have no memory repr */
-Ty(Tyvar, NULL)
-Ty(Typaram, NULL)
-Ty(Tyunres, NULL) /* unresolved */
-Ty(Tyname, NULL)
-Ty(Tygeneric, NULL)
+Ty(Tyvar, NULL, 1)
+Ty(Typaram, NULL, 1)
+Ty(Tyunres, NULL, 1) /* unresolved */
+Ty(Tyname, NULL, 1)
+Ty(Tygeneric, NULL, 1)
+Ty(Tycode, NULL, 0)

@@ -51,6 +51,7 @@ static void initconsts(Htab *globls)
     tyvoid = mktype(Zloc, Tyvoid);
 
     ty = mktyfunc(Zloc, NULL, 0, mktype(Zloc, Tyvoid));
+    ty->type = Tycode;
     name = mknsname(Zloc, "_rt", "abort_oob");
     dcl = mkdecl(Zloc, name, ty);
     dcl->decl.isconst = 1;

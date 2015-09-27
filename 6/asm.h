@@ -267,6 +267,7 @@ extern Loc **locmap; /* mapping from reg id => Loc * */
 
 char *genlocallblstr(char *buf, size_t sz);
 char *genlblstr(char *buf, size_t sz);
+Type *codetype(Type *ft);
 Node *genlbl(Srcloc loc);
 Loc *loclbl(Node *lbl);
 Loc *locstrlbl(char *lbl);
@@ -303,8 +304,6 @@ size_t tyalign(Type *t);
 size_t size(Node *n);
 ssize_t tyoffset(Type *ty, Node *memb);
 ssize_t offset(Node *aggr, Node *memb);
-int stacktype(Type *t);
-int floattype(Type *t);
 int stacknode(Node *n);
 int floatnode(Node *n);
 void breakhere();

@@ -29,6 +29,19 @@ size_t ntraittab;
 static Trait *traits[Ntypes + 1][4];
 static int tybfmt(char *buf, size_t len, Type *t);
 
+
+char stackness[] = {
+#define Ty(t, n, stk) \
+    stk,
+#include "types.def"
+#undef Ty
+};
+
+int isstacktype(Type *t)
+{
+    return stackness[tybase(t)->type];
+}
+
 Type *mktype(Srcloc loc, Ty ty)
 {
     Type *t;
@@ -324,12 +337,8 @@ int istysigned(Type *t)
 
 int istyfloat(Type *t)
 {
-    switch (tybase(t)->type) {
-        case Tyflt32: case Tyflt64:
-            return 1;
-        default:
-            return 0;
-    }
+    t = tybase(t);
+    return t->type == Tyflt32 || t->type == Tyflt64;
 }
 
 int istyprimitive(Type *t)
@@ -562,6 +571,7 @@ static int tybfmt(char *buf, size_t len, Type *t)
                 p += bprintf(p, end - p, "[]");
             }
             break;
+        case Tycode:
         case Tyfunc:
             p += bprintf(p, end - p, "(");
             for (i = 1; i < t->nsub; i++) {
@@ -803,6 +813,13 @@ size_t tyidfmt(char *buf, size_t sz, Type *ty)
             p += bprintf(p, end - p, "$s");
             p += tyidfmt(p, end - p, ty->sub[0]);
             break;
+        case Tycode:
+            p += bprintf(p, end - p, "$F");
+            for (i = 0; i < ty->nsub; i++) {
+                p += tyidfmt(p, end - p, ty->sub[i]);
+                p += bprintf(p, end - p, "$");
+            }
+            break;
         case Tyfunc:
             p += bprintf(p, end - p, "$f");
             for (i = 0; i < ty->nsub; i++) {
@@ -889,7 +906,7 @@ void tyinit(Stab *st)
 
 /* Definining and registering the types has to go after we define the
  * constraints, otherwise they will have no constraints set on them. */
-#define Ty(t, n) \
+#define Ty(t, n, stk) \
     if (t != Ntypes) {\
       ty = mktype(Zloc, t); \
       if (n) { \
