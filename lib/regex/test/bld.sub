@@ -1,7 +1,49 @@
-test basic {inc=../../std,inc=..} = basic.myr testmatch.myr;;
-test boundaries {inc=../../std,inc=..} = boundaries.myr testmatch.myr;;
-test capture {inc=../../std,inc=..} = capture.myr testmatch.myr;;
-test class {inc=../../std,inc=..} = class.myr testmatch.myr;;
-test failmatch {inc=../../std,inc=..} = failmatch.myr testmatch.myr;;
-test negclass {inc=../../std,inc=..} = negclass.myr testmatch.myr;;
-test unicode {inc=../../std,inc=..} = unicode.myr testmatch.myr;;
+test basic = 
+	basic.myr
+	testmatch.myr
+	lib @/lib/std:std
+	lib @/lib/sys:sys
+	lib @/lib/regex:regex
+;;
+test boundaries =
+	boundaries.myr
+	testmatch.myr
+	lib @/lib/std:std
+	lib @/lib/sys:sys
+	lib @/lib/regex:regex
+;;
+test capture =
+	capture.myr
+	testmatch.myr
+	lib @/lib/std:std
+	lib @/lib/sys:sys
+	lib @/lib/regex:regex
+;;
+test class =
+	class.myr
+	testmatch.myr
+	lib @/lib/std:std
+	lib @/lib/sys:sys
+	lib @/lib/regex:regex
+;;
+test failmatch =
+	failmatch.myr
+	testmatch.myr
+	lib @/lib/std:std
+	lib @/lib/sys:sys
+	lib @/lib/regex:regex
+;;
+test negclass =
+	negclass.myr 
+	testmatch.myr
+	lib @/lib/std:std
+	lib @/lib/sys:sys
+	lib @/lib/regex:regex
+;;
+test unicode  =
+	unicode.myr
+	testmatch.myr
+	lib @/lib/std:std
+	lib @/lib/sys:sys
+	lib @/lib/regex:regex
+;;
