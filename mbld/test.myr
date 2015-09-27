@@ -17,7 +17,7 @@ pkg bld =
 const test = {b
 	var tests : (byte[:][:], byte[:])[:]
 	var bincmd
-	var ok
+	var failed : byte[:][:], ok
 
 	/* no implicit tests to run */
 	tests = [][:]
@@ -56,10 +56,12 @@ const test = {b
 	;;
 
 	ok = true
+	failed = [][:]
 	for (c, dir) in tests
 		setdir(b, dir)
 		if !runtest(c)
 			ok = false
+			failed = std.slpush(failed, c[0])
 		;;
 
 	;;
@@ -71,10 +73,25 @@ const test = {b
 	if tests.len == 0
 		->
 	;;
+
+	printfailed(failed)
+	std.slfree(failed)
 	if ok
 		std.put("TESTS PASSED\n")
 	else
 		std.put("TESTS FAILED\n")
+	;;
+}
+
+const printfailed : (f : byte[:][:] -> void) = {failed
+	if failed.len > 10
+		std.put("{} tests failed\n", failed.len)
+	else
+		std.put("FAILURES: ")
+		for t in failed
+			std.put("{} ", t)
+		;;
+		std.put("\n")
 	;;
 }
 
