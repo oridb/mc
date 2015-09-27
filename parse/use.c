@@ -802,6 +802,7 @@ int loaduse(char *path, FILE *f, Stab *st, Vis vis)
 {
     intptr_t tid;
     size_t i;
+    int v;
     char *pkg;
     Node *dcl, *impl, *init;
     Stab *s;
@@ -815,8 +816,9 @@ int loaduse(char *path, FILE *f, Stab *st, Vis vis)
         tydedup = mkht(tyhash, tyeq);
     if (fgetc(f) != 'U')
         return 0;
-    if (rdint(f) != Abiversion) {
-        fprintf(stderr, "%s: abi version mismatch\n", path);
+    v = rdint(f);
+    if (v != Abiversion) {
+        fprintf(stderr, "%s: abi version %d, expected %d\n", path, v, Abiversion);
         return 0;
     }
     pkg = rdstr(f);

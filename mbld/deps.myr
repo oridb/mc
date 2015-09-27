@@ -14,7 +14,8 @@ pkg bld =
 	var usepat	: regex.regex#
 ;;
 
-const Abiversion = 6
+const Abiversion = 7
+
 var usepat	: regex.regex#
 
 type dep = union
@@ -238,9 +239,9 @@ const scrapelibs = {dg, lib, incs
 	| `std.Some Abiversion:	/* nothing: version matches. */
 	| `std.Some v:	
 		if v < Abiversion
-			std.fput(1, "library {}: warning: old abi version\n", lib)
+			std.fput(1, "library {}: warning: old abi version {}\n", lib, v)
 		else
-			std.fatal("library {}: usefile version unknown\n", lib)
+			std.fput(1, "library {}: usefile version {} unknown\n", lib, v)
 		;;
 	| `std.None:	std.fatal("library {}: corrutpt or invalid usefile\n", lib)
 	;;

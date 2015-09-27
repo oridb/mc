@@ -1322,7 +1322,7 @@ static Node *vatypeinfo(Simp *s, Node *n)
 
 static Node *capture(Simp *s, Node *n, Node *dst)
 {
-    Node *fn, *t, *f, *e, *val, *dcl, *fp;
+    Node *fn, *t, *f, *e, *val, *dcl, *fp, *envsz;
     size_t nenv, nenvt, off, i;
     Type **envt;
     Node **env;
@@ -1365,6 +1365,9 @@ static Node *capture(Simp *s, Node *n, Node *dst)
             off += size(env[i]);
         }
         free(env);
+        envsz = mkintlit(n->loc, off);
+        envsz->expr.type = tyintptr;
+        assignat(s, e, 0, envsz);
         assignat(s, fp, 0, e);
     }
     assignat(s, fp, Ptrsz, f);
