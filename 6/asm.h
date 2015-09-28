@@ -130,7 +130,6 @@ struct Insn {
 
 struct Func {
     char *name;   /* function name */
-    int   isexport; /* is this exported from the asm? */
     Type *type;   /* type of function */
 
     Node **args;  /* argument list */
@@ -140,7 +139,9 @@ struct Func {
     size_t stksz; /* stack size */
     Node *ret;    /* return value */
 
-    Cfg  *cfg;    /* flow graph */
+    Cfg  *cfg;     /* flow graph */
+    char isexport; /* is this exported from the asm? */
+    char hasenv;   /* do we have an environment? */
 };
 
 struct Asmbb {
@@ -172,6 +173,8 @@ struct Isel {
     Htab *stkoff;       /* decl id => int stkoff */
     Htab *envoff;       /* decl id => int envoff */
     Htab *globls;       /* decl id => char *globlname */
+
+    Loc *envp;
 
     /* increased when we spill */
     Loc *stksz;

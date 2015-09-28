@@ -104,7 +104,7 @@ static Loc *varloc(Isel *s, Node *n)
         l = locmeml(htget(s->globls, n), rip, NULL, mode(n));
     } else if (hthas(s->envoff, n)) {
         off = ptoi(htget(s->envoff, n));
-        l = locmem(off, locphysreg(Rrax), NULL, mode(n));
+        l = locmem(off, s->envp, NULL, mode(n));
     } else if (hthas(s->stkoff, n)) {
         off = ptoi(htget(s->stkoff, n));
         l = locmem(-off, locphysreg(Rrbp), NULL, mode(n));
@@ -980,6 +980,8 @@ static void prologue(Isel *s, Func *fn, size_t sz)
             g(s, Imov, phys, s->calleesave[i], NULL);
         }
     }
+    if (s->envp)
+        g(s, Imov, locphysreg(Rrax), s->envp, NULL);
     addarglocs(s, fn);
     s->nsaved = i;
     s->stksz = stksz; /* need to update if we spill */

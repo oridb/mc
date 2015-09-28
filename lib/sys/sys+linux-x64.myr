@@ -619,7 +619,7 @@ pkg sys =
 				tls : byte#, \
 				ctid : pid#, \
 				ptreg : byte#, \
-				fn : (-> void) \
+				fn : void# \	/* we need a raw pointer */ 
 				-> pid)
 	const wait4	: (pid:pid, loc:int32#, opt : int64, usage:rusage#	-> int64)
 	const waitpid	: (pid:pid, loc:int32#, opt : int64	-> int64)

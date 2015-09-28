@@ -351,6 +351,8 @@ static void genfunc(FILE *fd, Func *fn, Htab *globls, Htab *strtab)
     is.globls = globls;
     is.ret = fn->ret;
     is.cfg = fn->cfg;
+    if (fn->hasenv)
+        is.envp = locreg(ModeQ);
 
     selfunc(&is, fn, globls, strtab);
     if (debugopt['i'])

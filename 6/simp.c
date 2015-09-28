@@ -32,7 +32,8 @@ struct Simp {
     /* return handling */
     Node *endlbl;
     Node *ret;
-    int   isbigret;
+    int hasenv;
+    int isbigret;
 
     /* pre/postinc handling */
     Node **incqueue;
@@ -1821,11 +1822,14 @@ static void collectenv(Simp *s, Node *fn)
     size_t off;
 
     env = getclosure(fn->func.scope, &nenv);
+    if (!env)
+        return;
     /*
      we need these in a deterministic order so that we can
      put them in the right place both when we use them and
      when we capture them.
      */
+    s->hasenv = 1;
     qsort(env, nenv, sizeof(Node*), envcmp);
     off = Ptrsz;    /* we start with the size of the env */
     for (i = 0; i < nenv; i++) {
@@ -1888,6 +1892,7 @@ static Func *simpfn(Simp *s, char *name, Node *dcl)
     fn->args = s->args;
     fn->nargs = s->nargs;
     fn->cfg = cfg;
+    fn->hasenv = s->hasenv;
     return fn;
 }
 
@@ -1964,6 +1969,7 @@ void simpglobl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***blob, s
     s.globls = globls;
     s.blobs = *blob;
     s.nblobs = *nblob;
+    s.hasenv = 0;
     name = asmname(dcl);
 
     if (dcl->decl.isextern || dcl->decl.isgeneric)
