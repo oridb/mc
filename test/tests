@@ -59,6 +59,7 @@ B callbig	E	42
 B nestfn	E	42
 B foldidx	P	123,456
 B closure	P	111555333666
+B fncast	P	ok
 B loop		P	0123401236789
 B subrangefor	P       12
 B patiter	P	23512

@@ -933,10 +933,14 @@ static Node *simpcast(Simp *s, Node *val, Type *to)
             switch (t->type) {
                 /* ptr -> slice conversion is disallowed */
                 case Tyslice:
-                    if (t->type == Typtr)
-                        fatal(val, "bad cast from %s to %s",
-                              tystr(exprtype(val)), tystr(to));
+                    if (to->type != Typtr)
+                        fatal(val, "bad cast from %s to %s", tystr(exprtype(val)), tystr(to));
                     r = slicebase(s, val, NULL);
+                    break;
+                case Tyfunc:
+                    if (to->type != Typtr)
+                        fatal(val, "bad cast from %s to %s", tystr(exprtype(val)), tystr(to));
+                    r = getcode(s, val);
                     break;
                 /* signed conversions */
                 case Tyint8: case Tyint16: case Tyint32: case Tyint64:
