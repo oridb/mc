@@ -726,11 +726,11 @@ const execv	= {cmd, args
 
 const execve	= {cmd, args, env
 	var cargs, cenv, i
-	var p
+	var ap, ep
 
 	/* copy the args */
-	p = alloca((args.len + 1)*sizeof(byte#))
-	cargs = (p castto(byte##))[:args.len + 1]
+	ap = alloca((args.len + 1)*sizeof(byte#))
+	cargs = (ap castto(byte##))[:args.len + 1]
 	for i = 0; i < args.len; i++
 		cargs[i] = cstring(args[i])
 	;;
@@ -741,14 +741,14 @@ const execve	= {cmd, args, env
 	 of course we fucking have to duplicate this code everywhere,
 	 since we want to stack allocate... 
 	*/
-	p = alloca((env.len + 1)*sizeof(byte#))
-	cenv = (p castto(byte##))[:env.len]
+	ep = alloca((env.len + 1)*sizeof(byte#))
+	cenv = (ep castto(byte##))[:env.len]
 	for i = 0; i < env.len; i++
 		cenv[i] = cstring(env[i])
 	;;
 	cenv[env.len] = 0 castto(byte#)
 
-	-> syscall(Sysexecve, cstring(cmd), a(p), a(cenv))
+	-> syscall(Sysexecve, cstring(cmd), a(ap), a(ep))
 }
 
 /* file manipulation */
