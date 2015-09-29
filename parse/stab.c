@@ -373,12 +373,17 @@ void putucon(Stab *st, Ucon *uc)
 
 static int mergetrait(Trait *old, Trait *new)
 {
+    Vis vis;
+
+    vis = max(old->vis, new->vis);
     if (old->isproto && !new->isproto)
         *old = *new;
     else if (new->isproto && !old->isproto)
         *new = *old;
     else
         return 0;
+    old->vis = vis;
+    new->vis = vis;
     return 1;
 }
 
@@ -403,12 +408,17 @@ void puttrait(Stab *st, Node *n, Trait *c)
 
 static int mergeimpl(Node *old, Node *new)
 {
+    Vis vis;
+
+    vis = max(old->impl.vis, new->impl.vis);
     if (old->impl.isproto && !new->impl.isproto)
         *old = *new;
     else if (new->impl.isproto && !old->impl.isproto)
         *new = *old;
     else
         return 0;
+    old->impl.vis = vis;
+    new->impl.vis = vis;
     return 1;
 }
 

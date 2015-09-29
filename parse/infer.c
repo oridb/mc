@@ -2348,6 +2348,24 @@ void applytraits(Inferstate *st, Node *f)
     popstab();
 }
 
+void verify(Inferstate *st, Node *f)
+{
+    Node *n;
+    size_t i;
+
+    pushstab(f->file.globls);
+    /* for now, traits can only be declared globally */
+    for (i = 0; i < f->file.nstmts; i++) {
+        if (f->file.stmts[i]->type == Nimpl) {
+            n = f->file.stmts[i];
+            /* we merge, so we need to get it back again when error checking */
+            if (n->impl.isproto)
+                fatal(n, "missing implementation for prototype '%s %s'",
+                    namestr(n->impl.traitname), tystr(n->impl.type));
+        }
+    }
+}
+
 void infer(Node *file)
 {
     Inferstate st = {0,};
@@ -2366,5 +2384,6 @@ void infer(Node *file)
     /* and replace type vars with actual types */
     typesub(&st, file, 0);
     specialize(&st, file);
+    verify(&st, file);
 }
 
