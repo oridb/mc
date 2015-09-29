@@ -11,6 +11,6 @@ const main = {
 	}
 	ptr = fn castto(byte#)
 	ptr = envfn castto(byte#)
-	std.put("ok\n", ptr)
+	std.put("ok\n")
 }
 
