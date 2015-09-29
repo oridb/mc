@@ -933,7 +933,8 @@ static Node *simpcast(Simp *s, Node *val, Type *to)
             switch (t->type) {
                 /* ptr -> slice conversion is disallowed */
                 case Tyslice:
-                    if (to->type != Typtr)
+                    /* FIXME: we should only allow casting to pointers. */
+                    if (tysize(to) != Ptrsz)
                         fatal(val, "bad cast from %s to %s", tystr(exprtype(val)), tystr(to));
                     r = slicebase(s, val, NULL);
                     break;
