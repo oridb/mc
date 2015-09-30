@@ -4,7 +4,7 @@ pkg sys =
 	type pid	= int	/* process id */
 	type scno	= int64	/*syscall*/
 	type fdopt	= int64	/* fd options */
-	type fd		= int64	/* fd */
+	type fd		= int32	/* fd */
 	type whence	= uint64	/* seek from whence */
 	type mprot	= int64	/* memory protection */
 	type mopt	= int64	/* memory mapping options */
@@ -672,7 +672,7 @@ pkg sys =
 	generic ioctl	: (fd:fd, req : int64, arg:@a# -> int64)
 	const getdirentries	: (fd : fd, buf : byte[:], basep : int64# -> int64)
 	const chdir	: (p : byte[:] -> int64)
-	const getcwd	: (buf : byte[:] -> int64)
+	const __getcwd	: (buf : byte[:] -> int64)
 
 	/* fd stuff */
 	const pipe	: (fds : fd[2]# -> int64)
@@ -717,6 +717,8 @@ generic a = {x : @t; -> x castto(uint64)}
 extern const cstring	: (str : byte[:] -> byte#)
 extern const alloca	: (sz : size	-> byte#)
 extern const __cenvp : byte##
+
+extern const __freebsd_pipe	: (fds : fd[2]# -> int64)
 
 /* process management */
 const exit	= {status;		syscall(Sysexit, a(status))}
@@ -786,10 +788,10 @@ generic ioctl	= {fd, req, arg;	-> syscall(Sysioctl, a(fd), a(req), a(arg)) castt
 }
 const getdirentries	= {fd, buf, basep;	-> syscall(Sysgetdirentries, a(fd), buf castto(byte#), a(buf.len), a(basep))}
 const chdir	= {dir;	-> syscall(Syschdir, cstring(dir))}
-const getcwd	= {buf;	-> syscall(Sys__getcwd, a(buf), a(buf.len))}
+const __getcwd	= {buf;	-> syscall(Sys__getcwd, a(buf), a(buf.len))}
 
 /* file stuff */
-const pipe	= {fds;	-> syscall(Syspipe, a(fds))}
+const pipe	= {fds;	-> __freebsd_pipe(fds)}
 const dup 	= {fd;	-> syscall(Sysdup, a(fd)) castto(fd)}
 const dup2 	= {src, dst;	-> syscall(Sysdup2, a(src), a(dst)) castto(fd)}
 const fcntl	= {fd, cmd, args; 	-> syscall(Sysfcntl, a(fd), a(cmd), a(args))}

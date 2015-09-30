@@ -1,0 +1,24 @@
+use sys
+use "errno.use"
+use "cstrconv.use"
+use "slcp.use"
+use "die.use"
+
+pkg std =
+	const exit	: (status:int -> void)
+	pkglocal const bgetcwd	: (buf : byte[:] -> errno)
+;;
+
+const exit	= {status;	sys.exit(status)}
+const bgetcwd	= {buf
+	var res
+
+	res = sys.__getcwd(buf) castto(errno)
+	if res == 0
+		-> cstrlen(buf) castto(errno)
+	elif res == Enomem
+		-> Erange
+	else
+		-> res
+	;;
+}

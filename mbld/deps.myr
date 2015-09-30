@@ -243,7 +243,7 @@ const scrapelibs = {dg, lib, incs
 		else
 			std.fput(1, "library {}: usefile version {} unknown\n", lib, v)
 		;;
-	| `std.None:	std.fatal("library {}: corrutpt or invalid usefile\n", lib)
+	| `std.None:	std.fatal("library {}: corrupt or invalid usefile\n", lib)
 	;;
 	std.slfree(rdstr(f))
 	done = false

@@ -4,8 +4,8 @@ lib regex =
 	ranges.myr
 	types.myr
 
-        lib ../std:std
         lib ../sys:sys
+        lib ../std:std
 ;;
 
 bin redump {noinst} =
