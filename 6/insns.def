@@ -256,7 +256,7 @@ Insn(Icvttsd2si,
     Def(.l={2}))
 Insn(Icvttsi2sd,
     "\tcvtsi2s%2t %x,%f\n",
-    "\CVTS%T2S%2T %X,%F\n",
+    "\tCVTS%T2S%2T %X,%F\n",
     Use(.l={1}),
     Def(.l={2}))
 Insn(Icvttsd2ss,
