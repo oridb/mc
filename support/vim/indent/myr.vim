@@ -45,9 +45,9 @@ function! s:LineMatch(line, pats)
     return 0
 endfunction
 
-function s:Clamp(val, lo, hi)
+function! s:Clamp(val, lo, hi)
     if a:val < a:lo
-        returnn a:lo
+        return a:lo
     elseif a:val > a:hi
         return a:hi
     endif
@@ -62,7 +62,7 @@ function! GetMyrIndent(ln)
     else
         let i = 1
         let prevln = ''
-        while prevln =~ '^\s*$'
+        while prevln =~ '^\s*$\|^:.*'
             let prevln = getline(ln - i)
             let ind = indent(ln - i)
             let i = i + 1
@@ -71,40 +71,43 @@ function! GetMyrIndent(ln)
 
         let curln = getline(ln)
 
-        let inpat = ['\<if\>', '\<while\>','\<for\>', '\<match\>',
-                \    '\<struct\>', '\<union\>', '{', '\[', '(', '=\s*$']
-        let outpat = ['}', ']', ')', ';;']
-        let outalone = ['].*', ').*', '}.*', ';;']
-        let inoutalone = ['\<else\>', '\<elif\>.*', '|.*']
-        let width = &tabstop
-
-        let n_in = s:CountMatches(prevln, ln - i, inpat)
-        if s:LineMatch(prevln, outalone) != 0
-            let n_out = 0
+        if curln =~ '^\s*:.*'
+            let ind = 0
         else
-            let n_out = s:CountMatches(prevln, ln - i, outpat)
-        endif
-        let n_in += s:LineMatch(prevln, inoutalone)
-        let n_out += s:LineMatch(curln, outalone)
-        let n_out += s:LineMatch(curln, inoutalone)
+            let inpat = ['\<if\>', '\<while\>','\<for\>', '\<match\>',
+                        \    '\<struct\>', '\<union\>', '{', '\[', '(', '=\s*$']
+            let outpat = ['}', ']', ')', ';;']
+            let outalone = ['].*', ').*', '}.*', ';;']
+            let inoutalone = ['\<else\>', '\<elif\>.*', '|.*']
+            let width = &tabstop
 
-        " indent escaped line endings
-        if prevln =~ '\\\s*$' && getline(ln - i - 1) !~ '\\\s*$'
-            let n_in = n_in + 1
-        endif
-        " if we break the set of indented line endings, outdent
-        if getline(ln - i - 1) =~ '\\\s*$' && getline(ln - i) !~ '\\\s*$'
-            let n_out = n_out + 1
-        endif
+            let n_in = s:CountMatches(prevln, ln - i, inpat)
+            if s:LineMatch(prevln, outalone) != 0
+                let n_out = 0
+            else
+                let n_out = s:CountMatches(prevln, ln - i, outpat)
+            endif
+            let n_in += s:LineMatch(prevln, inoutalone)
+            let n_out += s:LineMatch(curln, outalone)
+            let n_out += s:LineMatch(curln, inoutalone)
 
-        let delta = s:Clamp(n_in - n_out, -1, 1) 
-        echo "n_in: " n_in " n_out: " n_out " delta: " delta
-        let ind = ind + delta * &tabstop
+            " indent escaped line endings
+            if prevln =~ '\\\s*$' && getline(ln - i - 1) !~ '\\\s*$'
+                let n_in = n_in + 1
+            endif
+            " if we break the set of indented line endings, outdent
+            if getline(ln - i - 1) =~ '\\\s*$' && getline(ln - i) !~ '\\\s*$'
+                let n_out = n_out + 1
+            endif
+
+            let delta = s:Clamp(n_in - n_out, -1, 1) 
+            let ind = ind + delta * &tabstop
+        endif
     endif
     return ind
 endfunction
 
-setlocal indentkeys+=,;\|]),=elif,=else
+setlocal indentkeys+=,;\|]),=elif,=else,=:
 setlocal indentexpr=GetMyrIndent(v:lnum)
 
 let b:did_indent = 1
