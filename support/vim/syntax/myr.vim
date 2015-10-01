@@ -8,7 +8,7 @@ endif
 
 syn region myrComment start=+/\*+ end=+\*/+
 syn match myrSpecial display contained "\\\(x\x\+\|\o\{1,3}\|u{.*}\|.\|$\)"
-syn match myrFormat display "%[sbwilpc]"
+syn match myrFormat display "[^{]{[^}]*}[^}]"
 syn region myrString start=+"+ skip=+\\"+ end=+"+ contains=myrSpecial,myrFormat extend
 syn region myrChar start=+'+ skip=+\\'+ end=+'+ contains=myrSpecial,myrFormat extend
 syn keyword myrKeyword castto
