@@ -904,6 +904,9 @@ void tyinit(Stab *st)
     traits[Tyarray][0] = traittab[Tcidx];
     traits[Tyarray][1] = traittab[Tcslice];
 
+    /* @a::function */
+    traits[Tyfunc][0] = traittab[Tcfunc];
+
 /* Definining and registering the types has to go after we define the
  * constraints, otherwise they will have no constraints set on them. */
 #define Ty(t, n, stk) \

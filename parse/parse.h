@@ -4,7 +4,7 @@
 #	define FATAL
 #endif
 
-#define Abiversion 7
+#define Abiversion 8
 
 typedef uint8_t         byte;
 typedef unsigned int    uint;

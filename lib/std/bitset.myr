@@ -18,8 +18,8 @@ pkg std =
 
 	const bsmax	: (a : bitset# -> size)
 
-	generic bsput	: (bs : bitset#, v : @a::(integral,numeric) -> void)
-	generic bsdel	: (bs : bitset#, v : @a::(integral,numeric) -> void)
+	generic bsput	: (bs : bitset#, v : @a::(integral,numeric) -> bool)
+	generic bsdel	: (bs : bitset#, v : @a::(integral,numeric) -> bool)
 	generic bshas	: (bs : bitset#, v : @a::(integral,numeric) -> bool)
 
 	const bsdiff	: (a : bitset#, b : bitset# -> void)
@@ -55,25 +55,28 @@ const bsmax = {bs
 }
 
 generic bsput = {bs, v
-	var idx
-	var off
+	var idx, off, has
 
 	idx = (v castto(size)) / (8*sizeof(size))
 	off = (v castto(size)) % (8*sizeof(size))
 	ensurelen(bs, idx)
+
+	has = (bs.bits[idx] & (1 << off)) != 0
 	bs.bits[idx] |= (1 << off)
+	-> has
 }
 
 generic bsdel = {bs, v
-	var idx
-	var off
+	var idx, off, had
 
+	had = false
 	idx = (v castto(size)) / (8*sizeof(size))
 	off = (v castto(size)) % (8*sizeof(size))
-	if idx >= bs.bits.len
-		->
+	if idx < bs.bits.len
+		had = (bs.bits[idx] & (1 << off)) != 0
+		bs.bits[idx] &= ~(1 << off)
 	;;
-	bs.bits[idx] &= ~(1 << off)
+	-> had
 }
 
 generic bshas = {bs, v

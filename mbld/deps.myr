@@ -14,7 +14,7 @@ pkg bld =
 	var usepat	: regex.regex#
 ;;
 
-const Abiversion = 7
+const Abiversion = 8
 
 var usepat	: regex.regex#
 

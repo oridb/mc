@@ -20,6 +20,7 @@ lib std {inc=.} =
 	fltfmt.myr
         fmt.myr
 	fmtfuncs.myr
+	fndup.myr
 	getcwd.myr
 	getint.myr
 	hashfuncs.myr

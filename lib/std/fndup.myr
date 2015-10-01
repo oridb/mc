@@ -1,0 +1,34 @@
+use "alloc.use"
+use "die.use"
+use "sldup.use"
+use "types.use"
+
+pkg std =
+	generic fndup	: (fn : @fn::function -> @fn::function)
+	generic fnfree	: (fn : @fn::function -> void)
+;;
+
+generic fndup = {fn
+	var repr : intptr[2]
+
+	repr = (&fn castto(intptr[2]#))#
+	repr[0] = sldup(envslice(repr[0])) castto(intptr)
+	-> (&repr castto(@fn::function#))#
+}
+
+generic fnfree = {fn
+	var repr : intptr[2]
+
+	repr = (&fn castto(intptr[2]#))#
+	std.slfree(envslice(repr[0]))
+}
+
+const envslice = {ep : intptr
+	var env : byte#
+	var szp : intptr#
+
+	env = ep castto(byte#)
+	szp = env castto(intptr#)
+	-> env[:szp#]
+}
+
