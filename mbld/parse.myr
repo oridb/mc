@@ -291,7 +291,7 @@ const cmdtarget = {b, p, cmd, iscmd
 		| ("durable", ""):	durable = true
 		| ("test", ""):	istest = true
 		| ("dep", depname):	deplist = std.slpush(deplist, depname)
-		| ("sys", tag):	systags = std.slpush(systags, tag)
+		| ("tag", tag):	systags = std.slpush(systags, tag)
 		| (attr, ""):
 			failparse(p, "attribute {} not valid on {} targets\n", attr, cmd)
 		| (attr, val):
@@ -378,7 +378,7 @@ const myrtarget = {b, p, targ
 		| ("inc", path):	incpath = std.slpush(incpath, std.sldup(path))
 		| ("noinst", ""):	inst = false
 		| ("test", ""):	istest = true
-		| ("sys", tag):	systags = std.slpush(systags, tag)
+		| ("tag", tag):	systags = std.slpush(systags, tag)
 		| (invalid, _):
 			std.fatal("{}: got invalid attr '{}'\n", targ, invalid)
 		;;
