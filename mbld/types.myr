@@ -70,5 +70,6 @@ pkg bld =
 		updated	: std.htab(byte[:], bool)#
 		seen	: std.htab(byte[:], bool)#
 		done	: std.htab(byte[:], bool)#
+		dynamic	: bool
 	;;
 ;;

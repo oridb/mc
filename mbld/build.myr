@@ -252,6 +252,14 @@ const compile = {src, incs
 		cmd = std.slpush(cmd, src)
 		run(cmd)
 		std.slfree(o)
+	elif std.hassuffix(src, ".glue.c")
+		o = srcswapsuffix(src, config.Objsuffix)
+		cmd = std.slpush(cmd, "cc")
+		cmd = std.slpush(cmd,"-c")
+		cmd = std.slpush(cmd,"-o")
+		cmd = std.slpush(cmd, o)
+		cmd = std.slpush(cmd, src)
+		run(cmd)
 	else
 		std.fatal("Unknown file type for {}\n", src)
 	;;
@@ -292,6 +300,9 @@ const linkbin = {dg, bin, srcfiles, ldscript, rt, incs, extralibs
 	if std.sleq(opt_sys, "osx")
 		cmd = std.slpush(cmd, std.sldup("-macosx_version_min"))
 		cmd = std.slpush(cmd, std.sldup("10.6"))
+	elif std.sleq(opt_sys, "linux") && dg.dynamic
+		cmd = std.slpush(cmd, std.sldup("-dynamic-linker"))
+		cmd = std.slpush(cmd, std.sldup("/lib64/ld-linux-x86-64.so.2"))
 	;;
 
 	run(cmd)

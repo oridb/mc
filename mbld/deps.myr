@@ -9,14 +9,19 @@ use "util.use"
 
 pkg bld =
 	const myrdeps	: (b : build#, mt : myrtarg#, doclean : bool, addsrc : bool -> depgraph#)
-
-	/* a bit ugly: initialized from main() */
-	var usepat	: regex.regex#
 ;;
 
 const Abiversion = 8
 
 var usepat	: regex.regex#
+
+const __init__ = {
+	match regex.compile("^\\s*use\\s+((\\<\\S+\\>)|\"(\\S+)\").*")
+	| `std.Ok re:	usepat = re
+	| `std.Fail f:	std.fatal("Failed to compile use pattern regex\n")
+	;;
+}
+
 
 type dep = union
 	`Local	(byte[:], int)
@@ -33,7 +38,7 @@ type depscan = struct
 ;;
 
 const myrdeps = {b, mt, doclean, addsrc
-	var objs, uses, srcs
+	var objs, uses, srcs, clib
 	var out, useout
 	var dg : depgraph#
 	var ds : depscan
@@ -47,6 +52,7 @@ const myrdeps = {b, mt, doclean, addsrc
 		.updated = std.mkht(std.strhash, std.streq),
 		.seen = std.mkht(std.strhash, std.streq),
 		.done = std.mkht(std.strhash, std.streq),
+		.dynamic = false,
 	])
 	/* direct dependencies of binary */
 	if mt.islib
@@ -74,6 +80,10 @@ const myrdeps = {b, mt, doclean, addsrc
 		if std.hassuffix(srcs[i], ".myr")
 			std.htput(dg.input, uses[i], srcs[i])
 			pushdep(dg, srcs[i], uses[i])
+		elif std.hassuffix(srcs[i], ".glue.c")
+			clib = swapsuffix(srcs[i], ".glue.c", "")
+			std.htput(dg.libs, clib, [][:])
+			dg.dynamic = true
 		;;
 	;;
 

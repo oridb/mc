@@ -51,7 +51,7 @@ const srcsplit = {src
 
 	platf = ""
 	suff = ""
-	match std.strrfind(src, ".")
+	match std.strfind(src, ".")
 	| `std.Some i:
 		suff = src[i:]
 		src = src[:i]
@@ -80,10 +80,12 @@ const srcswapsuffix = {src, new
 	var base, platf, suff
 
 	(base, platf, suff) = srcsplit(src)
-	if std.sleq(suff, ".myr")
+	if std.hassuffix(suff, ".myr")
 		-> std.strcat(base, new)
-	elif std.sleq(suff, ".s")
+	elif std.hassuffix(suff, ".s")
 		-> std.strcat(base, new)
+	elif std.hassuffix(suff, ".glue.c")
+		-> std.strjoin([base, ".glue", new][:], "")
 	else
 		std.fatal("unrecognized source {}\n", src)
 	;;
