@@ -32,9 +32,7 @@ function! GetMbldIndent(ln)
         endwhile
         echo "IND IS " ind
         let curln = getline(ln)
-        let inpat = ['^\s*\<bin\>', '^\s*\<lib\>',
-                    \'^\s*\<gen\>', '^\s*\<test\>',
-                    \'^\s*\<man\>', '^\s*\<sub\>']
+        let inpat = ['^\s*=\s*$']
         let level = 0
         if s:CheckMatch(prevln, inpat)
             let level = level + 1
