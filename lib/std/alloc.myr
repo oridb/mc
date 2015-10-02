@@ -231,9 +231,9 @@ const bytefree = {p, sz
 	var bkt
 	var b, i
 
-	b = p[:sz]
-	for i = 0; i < sz; i++
-		b[i] = 0xa8
+	b = (p castto(uint64#))[:sz/8]
+	for i = 0; i < sz>>3; i++
+		b[i] = 0xa8a8a8a8a8a8a8a8
 	;;
 	if (sz < Bktmax)
 		bkt = &buckets[bktnum(sz)]
