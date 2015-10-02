@@ -70,6 +70,10 @@ pkg bld =
 		updated	: std.htab(byte[:], bool)#
 		seen	: std.htab(byte[:], bool)#
 		done	: std.htab(byte[:], bool)#
+
+		/* used for linking C */
+		extralibs	: byte[:][:]
+		cflags	: std.htab(byte[:], byte[:][:])#
 		dynamic	: bool
 	;;
 ;;

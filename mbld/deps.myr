@@ -14,12 +14,13 @@ pkg bld =
 const Abiversion = 8
 
 var usepat	: regex.regex#
+var cflagpat	: regex.regex#
+var clibpat	: regex.regex#
 
 const __init__ = {
-	match regex.compile("^\\s*use\\s+((\\<\\S+\\>)|\"(\\S+)\").*")
-	| `std.Ok re:	usepat = re
-	| `std.Fail f:	std.fatal("Failed to compile use pattern regex\n")
-	;;
+	usepat = std.try(regex.compile("^\\s*use\\s+((\\<\\S+\\>)|\"(\\S+)\").*"))
+	cflagpat = std.try(regex.compile("/\\*\\s*CFLAGS:\\s*(.*)\\s*\\*/"))
+	clibpat = std.try(regex.compile("/\\*\\s*LIBS:\\s*(.*)\\s*\\*/"))
 }
 
 
@@ -38,7 +39,8 @@ type depscan = struct
 ;;
 
 const myrdeps = {b, mt, doclean, addsrc
-	var objs, uses, srcs, clib
+	var objs, uses, srcs
+	var cflags, libs 
 	var out, useout
 	var dg : depgraph#
 	var ds : depscan
@@ -52,6 +54,8 @@ const myrdeps = {b, mt, doclean, addsrc
 		.updated = std.mkht(std.strhash, std.streq),
 		.seen = std.mkht(std.strhash, std.streq),
 		.done = std.mkht(std.strhash, std.streq),
+		.cflags = std.mkht(std.strhash, std.streq),
+		.extralibs = [][:],
 		.dynamic = false,
 	])
 	/* direct dependencies of binary */
@@ -81,22 +85,24 @@ const myrdeps = {b, mt, doclean, addsrc
 			std.htput(dg.input, uses[i], srcs[i])
 			pushdep(dg, srcs[i], uses[i])
 		elif std.hassuffix(srcs[i], ".glue.c")
-			clib = swapsuffix(srcs[i], ".glue.c", "")
-			std.htput(dg.libs, clib, [][:])
+			(cflags, libs) = scrapecflags(b, dg, srcs[i])
+			std.htput(dg.cflags, srcs[i], cflags)
+			dg.extralibs = std.sljoin(dg.extralibs, libs)
 			dg.dynamic = true
 		;;
 	;;
 
 	for i = 0; i < srcs.len; i++
 		pushdep(dg, objs[i], out)
-		if mt.islib && std.hassuffix(srcs[i], ".myr")
+		if !std.hassuffix(srcs[i], ".myr")
+			continue
+		;;
+		if mt.islib
 			pushdep(dg, uses[i], useout)
 		;;
-	;;
-
-	for i = 0; i < srcs.len; i++
 		srcdeps(b, &ds, dg, srcs[i], objs[i], uses[i])
 	;;
+
 	dumpgraph(dg)
 	-> dg
 }
@@ -198,35 +204,106 @@ const addusedep = {b, ds, g, f, usefile, line
 	std.htput(g.done, usefile, true)
 }
 
-const getdeps = {b, ds, path
+const scrapecflags = {b, ds, path
+	var cflags, libs, lnum
+	var f
+
+	lnum = 0
+	cflags = [][:]
+	libs = [][:]
+	f = opensrc(b, path)
+	while true
+		lnum++
+		match bio.readln(f)
+		| `std.Some ln:
+			(cflags, libs) = getcflags(ln, cflags, libs)
+			std.slfree(ln)
+		| `std.None:
+			break
+		;;
+	;;
+	bio.close(f)
+	-> (cflags, libs)
+}
+
+const getcflags = {ln, cflags, libs
+	var flags
+
+	match regex.exec(cflagpat, ln)
+	| `std.None:
+	| `std.Some m:
+		std.put("Got cflags {}\n", m)
+		flags = std.strtok(m[1])
+		for fl in flags
+			cflags = std.slpush(cflags, std.sldup(fl))
+		;;
+		std.slfree(flags)
+	;;
+
+	match regex.exec(clibpat, ln)
+	| `std.None:
+	| `std.Some m:
+		std.put("Got libs {}\n", m)
+		flags = std.strtok(m[1])
+		for fl in flags
+			libs = std.slpush(libs, std.sldup(fl))
+		;;
+		std.slfree(flags)
+	;;
+	-> (cflags, libs)
+}
+
+const getdeps = {b : build#, ds : depscan#, path
 	var deps, lnum
 	var f
 
-	deps = [][:]
-	if !std.fexists(path)
-		match std.htget(b.gensrc, path)
-		| `std.Some gt:	run(gt.cmd)
-		| `std.None:	std.fatal("no input file {}\n", path)
-		;;
-	;;
-	match bio.open(path, bio.Rd)
-	| `std.Ok fd:	f = fd
-	| `std.Fail m:	std.fatal("could not open {}: {}\n", path, m)
-	;;
-
 	lnum = 0
+	deps = [][:]
+	f = opensrc(b, path)
 	while true
 		lnum++
 		match bio.readln(f)
 		| `std.Some ln:
 			deps = depname(deps, ln, lnum)
 			std.slfree(ln)
-		| `std.None:
-			bio.close(f)
-			-> deps
+		| `std.None:	break
 		;;
 	;;
-	std.die("unreachable")
+	bio.close(f)
+	-> deps
+}
+
+const opensrc = {b, path
+	if !std.fexists(path)
+		match std.htget(b.gensrc, path)
+		| `std.Some gt:	run(gt.cmd)
+		| `std.None:	std.fatal("no input file {}\n", path)
+		;;
+	;;
+
+	match bio.open(path, bio.Rd)
+	| `std.Fail m:	std.fatal("could not open {}: {}\n", path, m)
+	| `std.Ok f:	-> f
+	;;
+}
+
+const depname = {deps, ln, lnum
+	/*
+	the regex pattern does some contortions to either grab
+	an unquoted path and put it into uses[4], or a quoted
+	path, and put it (minus the quotes) into uses[2]
+	*/
+	match regex.exec(usepat, ln)
+	| `std.Some uses:
+		if uses[2].len > 0
+			deps = std.slpush(deps, `Lib (std.sldup(uses[2]), lnum))
+		else
+			deps = std.slpush(deps, `Local (std.sldup(uses[3]), lnum))
+		;;
+	| `std.None:
+		/* nothing to do */
+	;;
+	-> deps
 }
 
 const scrapelibs = {dg, lib, incs
@@ -290,26 +367,6 @@ const openlib = {lib, incs
 	;;
 	std.fatal("could not find library {}.\n", lib)
 }
-
-const depname = {deps, ln, lnum
-	/*
-	the regex pattern does some contortions to either grab
-	an unquoted path and put it into uses[4], or a quoted
-	path, and put it (minus the quotes) into uses[2]
-	*/
-	match regex.exec(usepat, ln)
-	| `std.Some uses:
-		if uses[2].len > 0
-			deps = std.slpush(deps, `Lib (std.sldup(uses[2]), lnum))
-		else
-			deps = std.slpush(deps, `Local (std.sldup(uses[3]), lnum))
-		;;
-	| `std.None:
-		/* nothing to do */
-	;;
-	-> deps
-}
-
 
 /* pushes a dep into the dependency list */
 const pushdep = {dg, src, dst

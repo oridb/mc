@@ -217,7 +217,7 @@ const builddep = {b, dg, out, incs
 	match std.htget(dg.input, out)
 	| `std.Some src:
 		if stale
-			compile(src, incs)
+			compile(dg, src, incs)
 		;;
 		std.htput(dg.updated, out, true)
 	| `std.None:
@@ -225,7 +225,7 @@ const builddep = {b, dg, out, incs
 	-> stale
 }
 
-const compile = {src, incs
+const compile = {dg, src, incs
 	var o
 	var cmd
 
@@ -259,6 +259,9 @@ const compile = {src, incs
 		cmd = std.slpush(cmd,"-o")
 		cmd = std.slpush(cmd, o)
 		cmd = std.slpush(cmd, src)
+		for flg in std.htgetv(dg.cflags, src, [][:])
+			cmd = std.slpush(cmd, flg)
+		;;
 		run(cmd)
 	else
 		std.fatal("Unknown file type for {}\n", src)
@@ -295,6 +298,11 @@ const linkbin = {dg, bin, srcfiles, ldscript, rt, incs, extralibs
 
 	/* -L path -l lib... */
 	cmd = addlibs(cmd, dg.libs, incs)
+
+	/* add extra libs */
+	for l in dg.extralibs
+		cmd = std.slpush(cmd, std.fmt("-l{}", l))
+	;;
 
 	/* special for OSX: it warns if we don't add this */
 	if std.sleq(opt_sys, "osx")

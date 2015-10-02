@@ -4,6 +4,7 @@ use "types.use"
 
 pkg regex =
 	const exec	: (re : regex#, str : byte[:] -> std.option(byte[:][:]))
+	const matchfree	: (pat : byte[:][:] -> void)
 	/*
 	FIXME: implement. This should scan for a possible start char in the
 		regex and use that to optimize.
@@ -42,6 +43,10 @@ const cleanup = {re
 		next = thr.next
 		thrfree(re, thr)
 	;;
+}
+
+const matchfree = {m
+	std.slfree(m)
 }
 
 const getmatches = {re, thr

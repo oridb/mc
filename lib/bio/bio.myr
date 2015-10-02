@@ -35,6 +35,7 @@ pkg bio =
 	const flush	: (f : file# -> bool)
 
 	/* seeking */
+	const seek	: (f : file#, std.off -> std.off)
 
 	/* single unit operations */
 	const putb	: (f : file#, b : byte	-> std.size)
@@ -224,6 +225,11 @@ const flush = {f
 		f.wend = 0
 	;;
 	-> ret
+}
+
+const seek = {f, off
+	flush(f)
+	-> std.seek(f.fd, off, std.Seekset)
 }
 
 /* writes a single byte to the output stream */
