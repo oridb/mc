@@ -476,7 +476,7 @@ int yyparse(void);
 /* stab creation */
 Stab *mkstab(int isfunc);
 
-void putns(Stab *st, Stab *scope);
+void putns(Node *file, Stab *scope);
 void puttype(Stab *st, Node *n, Type *ty);
 void puttrait(Stab *st, Node *n, Trait *trait);
 void putimpl(Stab *st, Node *impl);

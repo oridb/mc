@@ -292,7 +292,6 @@ void putdcl(Stab *st, Node *s)
         if (!ns) {
             ns = mkstab(0);
             updatens(ns, name->name.ns);
-            putns(file->file.globls, ns);
         }
         st = ns;
     }
@@ -438,13 +437,13 @@ Node *getimpl(Stab *st, Node *n)
     return NULL;
 }
 
-void putns(Stab *st, Stab *scope)
+void putns(Node *file, Stab *scope)
 {
     Stab *s;
 
     s = getns(file, scope->name);
     if (s)
-        lfatal(Zloc, "Namespace %s already defined", st->name);
+        lfatal(Zloc, "Namespace %s already defined", scope->name);
     htput(file->file.ns, scope->name, scope);
 }
 

@@ -464,6 +464,7 @@ static Node *initdecl(Node *file, Node *name, Type *tyvoidfn)
         dcl->decl.isglobl = 1;
         dcl->decl.isinit = 1;
         dcl->decl.isextern = 1;
+        dcl->decl.ishidden = 1;
         putdcl(file->file.globls, dcl);
     }
     return dcl;

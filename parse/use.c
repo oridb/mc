@@ -706,7 +706,7 @@ static Stab *findstab(Stab *st, char *pkg)
     if (!s) {
         s = mkstab(0);
         s->name = strdup(pkg);
-        putns(st, s);
+        putns(file, s);
     }
     return s;
 }
