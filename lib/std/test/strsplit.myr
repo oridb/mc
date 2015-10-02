@@ -1,0 +1,23 @@
+use std
+
+const main = {
+	check(std.strsplit("", ","), [][:])
+	check(std.strsplit("a,b,c ,,d,", ","), \
+		["a", "b", "c ", "", "d", ""][:])
+	check(std.strtok(""), [][:])
+	check(std.strtok(" "), [][:])
+	check(std.strtok("\t"), [][:])
+	check(std.strtok("a b  c\td"), ["a", "b", "c", "d"][:])
+}
+
+const check = {a, b
+	if a.len != b.len
+		std.fatal("a = {}, b = {}\n", a, b)
+		std.fatal("length mismatch: {} != {}: {}\n", a.len, b.len)
+	;;
+	for var i = 0; i < a.len; i++
+		if !std.sleq(a[i], b[i])
+			std.fatal("element {} mismatched: {} != {}\n", i, a[i], b[i])
+		;;
+	;;
+}

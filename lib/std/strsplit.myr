@@ -1,14 +1,19 @@
 use "alloc.use"
+use "chartype.use"
 use "die.use"
 use "extremum.use"
 use "option.use"
 use "slpush.use"
 use "strfind.use"
 use "types.use"
+use "utf.use"
 
 pkg std =
 	const strsplit	: (s : byte[:], delim : byte[:] -> byte[:][:])
+	const strtok	: (s : byte[:] -> byte[:][:])
 ;;
+
+extern const put	: (fmt : byte[:], args : ... -> size)
 
 const strsplit = {s, delim
 	var last
@@ -33,3 +38,24 @@ const strsplit = {s, delim
 	-> sp
 }
 
+const strtok = {s
+	var i, j
+	var toks
+
+	i = 0
+	toks = [][:]
+	while i != s.len
+		while isspace(std.decode(s[i:])) && i < s.len
+			i++
+		;;
+		j = i
+		while !std.isspace(std.decode(s[j:])) && j < s.len
+			j++
+		;;
+		if i != j
+			toks = slpush(toks, s[i:j])
+		;;
+		i = j
+	;;
+	-> toks
+}
