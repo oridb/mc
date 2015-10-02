@@ -21,6 +21,8 @@ int show;
 char debugopt[128];
 char **incpaths;
 size_t nincpaths;
+char **extralibs;
+size_t nextralibs;
 
 static void usage(char *prog)
 {
@@ -52,7 +54,7 @@ int main(int argc, char **argv)
     size_t i;
     FILE *f;
 
-    optinit(&ctx, "d:hmo:I:", argv, argc);
+    optinit(&ctx, "d:hmo:I:l:", argv, argc);
     while (!optdone(&ctx)) {
         switch (optnext(&ctx)) {
             case 'h':
@@ -68,6 +70,9 @@ int main(int argc, char **argv)
                 break;
             case 'I':
                 lappend(&incpaths, &nincpaths, ctx.optarg);
+                break;
+            case 'l':
+                lappend(&extralibs, &nextralibs, ctx.optarg);
                 break;
             case 's':
                 show = 1;
@@ -85,6 +90,7 @@ int main(int argc, char **argv)
         exit(1);
     }
 
+    /* read and parse the file */
     file = mkfile("internal");
     file->file.globls = mkstab(0);
     updatens(file->file.globls, outfile);
@@ -93,6 +99,9 @@ int main(int argc, char **argv)
         mergeuse(ctx.args[i]);
     infer(file);
     tagexports(file, 1);
+    addextlibs(file, extralibs, nextralibs);
+
+    /* generate the usefile */
     f = fopen(outfile, "w");
     if (debugopt['s'] || show)
         dumpstab(file->file.globls, stdout);

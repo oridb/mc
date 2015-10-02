@@ -234,8 +234,7 @@ size_t tysize(Type *t)
         die("size of empty type => bailing.");
     switch (t->type) {
         case Tyvoid:
-            die("void has no size");
-            return 1;
+            return 0;
         case Tybool: case Tyint8:
         case Tybyte: case Tyuint8:
             return 1;

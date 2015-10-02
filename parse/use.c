@@ -41,6 +41,18 @@ static intptr_t *traitfixid;    /* list of traits we need to replace */
 static size_t ntraitfixid; /* size of replacement list */
 
 
+void addextlibs(Node *file, char **libs, size_t nlibs)
+{
+    size_t i, j;
+
+    for (i = 0; i < nlibs; i++) {
+        for (j = 0; j < file->file.nextlibs; j++)
+            if (!strcmp(file->file.extlibs[j], libs[i]))
+                continue;
+        lappend(&file->file.extlibs, &file->file.nextlibs, libs[i]);
+    }
+}
+
 /* Outputs a symbol table to file in a way that can be
  * read back usefully. Only writes declarations, types
  * and sub-namespaces. Captured variables are ommitted. */
@@ -862,6 +874,15 @@ int loaduse(char *path, FILE *f, Stab *st, Vis vis)
                 lappend(&file->file.libdeps, &file->file.nlibdeps, lib);
 foundlib:
                 break;
+            case 'X':
+                lib = rdstr(f);
+                for (i = 0; i < file->file.nextlibs; i++)
+                    if (!strcmp(file->file.extlibs[i], lib))
+                        /* break out of both loop and switch */
+                        goto foundextlib;
+                lappend(&file->file.extlibs, &file->file.nextlibs, lib);
+foundextlib:
+                break;
             case 'F':
                 lappend(&file->file.files, &file->file.nfiles, rdstr(f));
                 break;
@@ -994,6 +1015,10 @@ void writeuse(FILE *f, Node *file)
     for (i = 0; i < file->file.nlibdeps; i++) {
         wrbyte(f, 'L');
         wrstr(f, file->file.libdeps[i]);
+    }
+    for (i = 0; i < file->file.nextlibs; i++) {
+        wrbyte(f, 'X');
+        wrstr(f, file->file.extlibs[i]);
     }
 
     /* source file name */

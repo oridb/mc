@@ -72,7 +72,7 @@ pkg bld =
 		done	: std.htab(byte[:], bool)#
 
 		/* used for linking C */
-		extralibs	: byte[:][:]
+		extlibs	: byte[:][:]
 		cflags	: std.htab(byte[:], byte[:][:])#
 		dynamic	: bool
 	;;

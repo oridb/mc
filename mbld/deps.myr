@@ -55,7 +55,7 @@ const myrdeps = {b, mt, doclean, addsrc
 		.seen = std.mkht(std.strhash, std.streq),
 		.done = std.mkht(std.strhash, std.streq),
 		.cflags = std.mkht(std.strhash, std.streq),
-		.extralibs = [][:],
+		.extlibs = [][:],
 		.dynamic = false,
 	])
 	/* direct dependencies of binary */
@@ -87,7 +87,7 @@ const myrdeps = {b, mt, doclean, addsrc
 		elif std.hassuffix(srcs[i], ".glue.c")
 			(cflags, libs) = scrapecflags(b, dg, srcs[i])
 			std.htput(dg.cflags, srcs[i], cflags)
-			dg.extralibs = std.sljoin(dg.extralibs, libs)
+			dg.extlibs = std.sljoin(dg.extlibs, libs)
 			dg.dynamic = true
 		;;
 	;;
@@ -232,7 +232,6 @@ const getcflags = {ln, cflags, libs
 	match regex.exec(cflagpat, ln)
 	| `std.None:
 	| `std.Some m:
-		std.put("Got cflags {}\n", m)
 		flags = std.strtok(m[1])
 		for fl in flags
 			cflags = std.slpush(cflags, std.sldup(fl))
@@ -243,7 +242,6 @@ const getcflags = {ln, cflags, libs
 	match regex.exec(clibpat, ln)
 	| `std.None:
 	| `std.Some m:
-		std.put("Got libs {}\n", m)
 		flags = std.strtok(m[1])
 		for fl in flags
 			libs = std.slpush(libs, std.sldup(fl))
@@ -315,7 +313,6 @@ const scrapelibs = {dg, lib, incs
 		->
 	;;
 
-	deps = [][:]
 	f = openlib(lib, incs)
 	match bio.getc(f)
 	| `std.Some 'U': /* nothing */
@@ -333,12 +330,17 @@ const scrapelibs = {dg, lib, incs
 	| `std.None:	std.fatal("library {}: corrupt or invalid usefile\n", lib)
 	;;
 	std.slfree(rdstr(f))
+
 	done = false
+	deps = [][:]
 	while !done
 		match bio.getc(f)
 		| `std.Some 'L':
 			d = rdstr(f)
 			deps = std.slpush(deps, d)
+		| `std.Some 'X':
+			d = rdstr(f)
+			dg.extlibs = std.slpush(dg.extlibs, d)
 		| `std.Some _:	done = true
 		| `std.None:	done = true
 		;;

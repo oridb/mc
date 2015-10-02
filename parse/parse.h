@@ -218,6 +218,8 @@ struct Node {
             size_t nuses;
             char **libdeps;     /* library dependencies */
             size_t nlibdeps;
+            char **extlibs;     /* non-myrddin libraries */
+            size_t nextlibs;
             Node **stmts;       /* all top level statements */
             size_t nstmts;
             Node **init;        /* a list of all __init__ function names of our deps. NB, this is a Nname, not an Ndecl */
@@ -595,6 +597,7 @@ int  loaduse(char *path, FILE *f, Stab *into, Vis vis);
 void readuse(Node *use, Stab *into, Vis vis);
 void writeuse(FILE *fd, Node *file);
 void tagexports(Node *file, int hidelocal);
+void addextlibs(Node *file, char **libs, size_t nlibs);
 
 /* typechecking/inference */
 void infer(Node *file);

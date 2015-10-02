@@ -268,7 +268,7 @@ const compile = {dg, src, incs
 	;;
 }
 
-const linkbin = {dg, bin, srcfiles, ldscript, rt, incs, extralibs
+const linkbin = {dg, bin, srcfiles, ldscript, rt, incs, extlibs
 	var cmd
 
 	cmd = [][:]
@@ -300,7 +300,7 @@ const linkbin = {dg, bin, srcfiles, ldscript, rt, incs, extralibs
 	cmd = addlibs(cmd, dg.libs, incs)
 
 	/* add extra libs */
-	for l in dg.extralibs
+	for l in dg.extlibs
 		cmd = std.slpush(cmd, std.fmt("-l{}", l))
 	;;
 
@@ -344,9 +344,12 @@ const mergeuse = {dg, lib, files, incs
 	for f in files
 		if std.hassuffix(f, ".myr")
 			cmd = std.slpush(cmd, srcswapsuffix(f, ".use"))
-		elif !std.hassuffix(f, ".s")
+		elif !std.hassuffix(f, ".s") && !std.hassuffix(f, ".glue.c")
 			std.fatal("unknown file type for {}\n", f)
 		;;
+	;;
+	for l in dg.extlibs
+		cmd = std.slpush(cmd, std.fmt("-l{}", l))
 	;;
 	run(cmd)
 	strlistfree(cmd)
