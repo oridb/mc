@@ -232,6 +232,10 @@ static int mergedecl(Node *old, Node *new)
         old->decl.ishidden = old->decl.ishidden && new->decl.ishidden;
         return 1;
     }
+    if (old->decl.isextern || new->decl.isextern) {
+        old->decl.isextern = old->decl.isextern && new->decl.isextern;
+        return 1;
+    }
     if (old->decl.vis == Visexport && new->decl.vis != Visexport) {
         e = old;
         g = new;
@@ -271,6 +275,7 @@ static int mergedecl(Node *old, Node *new)
     old->decl.isexportinit = e->decl.isexportinit || g->decl.isexportinit;
     old->decl.isglobl = e->decl.isglobl || g->decl.isglobl;
     old->decl.ispkglocal = e->decl.ispkglocal || g->decl.ispkglocal;
+    old->decl.isextern = e->decl.isextern || g->decl.isextern;
     return 1;
 }
 
