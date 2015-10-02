@@ -4,11 +4,11 @@ pkg regex =
 	type status = union
 		`Noimpl
 		`Incomplete
-		`Unbalanced
+		`Unbalanced char
 		`Emptyparen
-		`Badrep
-		`Badrange
-		`Badescape
+		`Badrep char
+		`Badrange byte[:]
+		`Badescape char
 	;;
 
 	type ast = union

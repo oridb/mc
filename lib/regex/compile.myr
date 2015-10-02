@@ -8,7 +8,6 @@ pkg regex =
 	const compile	: (re : byte[:] -> std.result(regex#, status))
 	const dbgcompile	: (re : byte[:] -> std.result(regex#, status))
 	const free	: (re : regex# -> void)
-	const failmsg	: (st : status -> byte[:])
 ;;
 
 type parseresult = union
@@ -548,9 +547,9 @@ const baseexpr = {re
 	/* lower prec operators */
 	| '|':	-> `None
 	| ')':	-> `None
-	| '*':	-> `Fail `Badrep
-	| '+':	-> `Fail `Badrep
-	| '?':	-> `Fail `Badrep
+	| '*':	-> `Fail `Badrep '*'
+	| '+':	-> `Fail `Badrep '+'
+	| '?':	-> `Fail `Badrep '?'
 	| '[':	-> chrclass(re)
 	| '.':	getc(re); ret = mk(`Ranges std.slpush([][:], [0, std.Maxcharval]))
 	| '^':	getc(re); ret = mk(`Bol)
@@ -563,7 +562,7 @@ const baseexpr = {re
 			if matchc(re, ')')
 				-> `Some mk(`Cap (m, s))
 			else
-				-> `Fail `Unbalanced
+				-> `Fail `Unbalanced '('
 			;;
 		| `None:	-> `Fail `Emptyparen
 		| `Fail st:	-> `Fail st
@@ -613,7 +612,8 @@ const escaped = {re
 	| '.': ret = `Some mk(`Chr '.')
 	| '+': ret = `Some mk(`Chr '+')
 	| '?': ret = `Some mk(`Chr '?')
-	| chr: ret = `Fail `Badescape
+	| '*': ret = `Some mk(`Chr '*')
+	| chr: ret = `Fail `Badescape chr
 	;;
 	-> ret
 }
@@ -661,7 +661,7 @@ const unicodeclass = {re, neg
 	elif std.sleq(s, "Zs") || std.sleq(s, "Space_Separator")
 		tab = _ranges.tabblank[:]
 	else
-		-> `Fail (`Badrange)
+		-> `Fail (`Badrange s)
 	;;
 	if !neg
 		t = mk(`Ranges std.sldup(tab))
@@ -688,7 +688,7 @@ const chrclass = {re
 	;;
 	if !matchc(re, ']')
 		std.slfree(rl)
-		-> `Fail `Unbalanced
+		-> `Fail `Unbalanced '['
 	;;
 
 	std.sort(rl, {a, b;
@@ -825,16 +825,21 @@ const astfree = {t
 	std.free(t)
 }
 
-const failmsg = {st
-	match st
-	| `Noimpl:	-> "no implementation"
-	| `Incomplete:	-> "regex ended before input fully parsed"
-	| `Unbalanced:	-> "unbalanced bracket"
-	| `Emptyparen:	-> "empty parentheses"
-	| `Badrep:	-> "invalid repetition"
-	| `Badrange:	-> "invalid range"
-	| `Badescape:	-> "invalid escape code"
 
+const fmtfail = {sb, ap, opt
+	match std.vanext(ap)
+	| `Noimpl:	std.sbfmt(sb, "no implementation")
+	| `Incomplete:	std.sbfmt(sb, "regex ended before input fully parsed")
+	| `Unbalanced c:	std.sbfmt(sb, "unbalanced {}", c)
+	| `Emptyparen:	std.sbfmt(sb, "empty parentheses")
+	| `Badrep c:	std.sbfmt(sb, "invalid repetition {}", c)
+	| `Badrange s:	std.sbfmt(sb, "invalid range name {}", s)
+	| `Badescape c:	std.sbfmt(sb, "invalid escape code {}", c)
 	;;
+}
+
+const __init__ = {
+	var e : status
+	std.fmtinstall(std.typeof(e), fmtfail, [][:])
 }
 
