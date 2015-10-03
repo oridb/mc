@@ -33,7 +33,7 @@ bin regex-match =
 ;;
 
 bin many-memcpy =
-	memcpy.myr
+	many-memcpy.myr
 	lib @/lib/std:std
 	lib @/lib/sys:sys
 ;;
