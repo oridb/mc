@@ -3,6 +3,7 @@ lib std {inc=.} =
 
 	# portable files
 	alloc.myr
+	assert.myr
 	bigint.myr
 	bitset.myr
 	blat.myr

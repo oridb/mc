@@ -7,6 +7,6 @@ pkg std =
 ;;
 
 generic slcp = {a : @a[:], b : @a[:]
-	assert(a.len == b.len, "arguments to slcp() must be of equal length\n")
+	iassert(a.len == b.len, "arguments to slcp() must be of equal length\n")
 	memblit(a castto(byte#), b castto(byte#), a.len * sizeof(@a))
 }

@@ -1,4 +1,5 @@
 use "die.use"
+use "assert.use"
 use "types.use"
 use "alloc.use"
 use "now.use"

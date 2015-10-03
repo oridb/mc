@@ -9,8 +9,6 @@ const main = {
 
 	std.slcp(a[:a.len-2], a[2:])
 	std.slcp(b[2:], b[:b.len-2])
-	std.put("a: {}, a_cped: {}\n", a[:], a_cped[:])
-	std.put("b: {}, b_cped: {}\n", b[:], b_cped[:])
-	std.assert(std.sleq(a[:], a_cped[:]), "slcp of a failed")
-	std.assert(std.sleq(b[:], b_cped[:]), "slcp of b failed")
+	std.assert(std.sleq(a[:], a_cped[:]), "slcp of a failed: got {}, wanted {}", a[:], a_cped[:])
+	std.assert(std.sleq(b[:], b_cped[:]), "slcp of b failed: got {}, wanted {}", a[:], a_cped[:])
 }

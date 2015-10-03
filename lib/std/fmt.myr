@@ -440,7 +440,7 @@ const intparams = {params
 		| _:	std.die("unreachable")
 		;;
 	;;
-	std.assert(ip.padto >= 0, "pad must be >= 0")
+	iassert(ip.padto >= 0, "pad must be >= 0")
 	std.slfree(opts)
 	-> ip
 }
@@ -461,7 +461,7 @@ const strfmt = {sb, str, params
 		| _:	std.die("unreachable")
 		;;
 	;;
-	std.assert(p >= 0, "pad must be >= 0")
+	iassert(p >= 0, "pad must be >= 0")
 	std.slfree(opts)
 	for i = 0; i < w - graphemewidth(str); i++
 		sbputc(sb, p)

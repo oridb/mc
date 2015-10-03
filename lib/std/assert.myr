@@ -1,0 +1,18 @@
+use "fmt.use"
+use "syswrap.use"
+use "varargs.use"
+
+pkg std =
+	const assert	: (cond : bool, fmt : byte[:], args : ... -> void)
+;;
+
+const assert = {cond, msg, args
+	var ap
+
+	ap = vastart(&args)
+	if !cond
+		std.fputv(2, msg, &ap)
+		suicide()
+	;;
+}
+

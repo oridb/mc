@@ -647,7 +647,7 @@ generic bigshli = {a, s : @a::(numeric,integral)
 	var off, shift
 	var t, carry
 
-	assert(s >= 0, "shift amount must be positive")
+	iassert(s >= 0, "shift amount must be positive")
 	off = (s castto(uint64)) / 32
 	shift = (s castto(uint64)) % 32
 
@@ -678,7 +678,7 @@ generic bigshri = {a, s
 	var off, shift
 	var t, carry
 
-	assert(s >= 0, "shift amount must be positive")
+	iassert(s >= 0, "shift amount must be positive")
 	off = (s castto(uint64)) / 32
 	shift = (s castto(uint64)) % 32
 
