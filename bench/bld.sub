@@ -31,6 +31,14 @@ bin regex-match =
 	lib @/lib/sys:sys
 	lib @/lib/regex:regex
 ;;
+
+bin many-memcpy =
+	memcpy.myr
+	lib @/lib/std:std
+	lib @/lib/sys:sys
+;;
+
+# benchmark runner
 bin runbench =
 	runbench.myr
 	lib @/lib/std:std
@@ -45,4 +53,5 @@ cmd benchit =
 		bigfactorial
 		mandelbrot
 		regex-match
+		many-memcpy
 ;;

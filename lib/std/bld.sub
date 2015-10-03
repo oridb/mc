@@ -62,6 +62,11 @@ lib std {inc=.} =
 	utf.myr
 	varargs.myr
 
+	# asm optimizations
+	memops.myr
+	memops-impl.myr
+	memops-impl+posixy-x64.s
+
 	# platform specific files
 	env+plan9.myr
 	env+posixy.myr

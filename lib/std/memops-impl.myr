@@ -1,0 +1,39 @@
+use "types.use"
+
+pkg std =
+	pkglocal const memblit	: (dst : byte#, src : byte#, len : std.size -> void)
+	pkglocal const memfill	: (dst : byte#, val : byte, len : std.size -> void)
+;;
+
+
+const memblit = {dst, src, len
+	var sa, da
+	var s, d
+
+	da = dst castto(intptr)
+	sa = src castto(intptr)
+	d = dst[:len]
+	s = src[:len]
+
+	if da == sa
+		->
+	elif da < sa
+		for var i = 0; i < d.len; i++
+			d[i] = s[i]
+		;;
+	else
+		for var i = d.len; i > 0; i--
+			d[i - 1] = s[i - 1]
+		;;
+	;;
+}
+
+const memfill = {dst, val, len
+	var d
+
+	d = dst[:len]
+	for var i = 0; i < d.len; i++
+		d[i] = val
+	;;
+}
+

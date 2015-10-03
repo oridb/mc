@@ -3,6 +3,7 @@ use "extremum.use"
 use "types.use"
 use "units.use"
 use "syswrap.use"
+use "memops.use"
 
 /*
 The allocator implementation here is based on Bonwick's slab allocator.
@@ -181,11 +182,15 @@ generic slgrow = {sl : @a[:], len
 
 /* Grows a slice, filling new entries with zero bytes */
 generic slzgrow = {sl : @a[:], len
-	var oldsz
+	var oldlen
+	var base
 
-	oldsz = sl.len*sizeof(@a)
+	oldlen = sl.len
 	sl = slgrow(sl, len)
-	zfill((sl castto(byte#))[oldsz:len*sizeof(@a)])
+	base = sl castto(byte#) castto(intptr)
+	if oldlen < len
+		memfill(sl[oldlen:] castto(byte#), 0, (len - oldlen)*sizeof(@a))
+	;;
 	-> sl
 }
 
@@ -200,14 +205,8 @@ const zbytealloc = {sz
 	var p
 
 	p = bytealloc(sz)
-	zfill(p[0:sz])
+	memfill(p, 0, sz)
 	-> p
-}
-
-const zfill = {sl
-	for var i = 0; i < sl.len; i++
-		sl[i] = 0
-	;;
 }
 
 /* Allocates a blob that is 'sz' bytes long. Dies if the allocation fails */
@@ -229,12 +228,8 @@ const bytealloc = {sz
 /* frees a blob that is 'sz' bytes long. */
 const bytefree = {p, sz
 	var bkt
-	var b, i
 
-	b = (p castto(uint64#))[:sz/8]
-	for i = 0; i < sz>>3; i++
-		b[i] = 0xa8a8a8a8a8a8a8a8
-	;;
+	memfill(p, 0xa8, sz)
 	if (sz < Bktmax)
 		bkt = &buckets[bktnum(sz)]
 		bktfree(bkt, p)

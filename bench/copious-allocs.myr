@@ -5,32 +5,31 @@ type blob = struct
 ;;
 
 const main = {
-	var i, j
 	var a : blob#[10000]
 
-	for j = 0; j < 100; j++
+	for var j = 0; j < 100; j++
 		/* alloc forwards, dealloc forwards */
-		for i = 0; i < a.len; i++
+		for var i = 0; i < a.len; i++
 			a[i] = std.alloc()
 		;;
-		for i = 0; i < a.len; i++
+		for var i = 0; i < a.len; i++
 			std.free(a[i])
 		;;
 
 		/* alloc forwards, dealloc backwards */
-		for i = 0; i < a.len; i++
+		for var i = 0; i < a.len; i++
 			a[i] = std.alloc()
 		;;
-		for i = a.len; i > 0; i--
+		for var i = a.len; i > 0; i--
 			std.free(a[i - 1])
 		;;
 
 		/* alloc forwards, dealloc randomly */
-		for i = 0; i < a.len; i++
+		for var i = 0; i < a.len; i++
 			a[i] = std.alloc()
 		;;
 		shuffle(a[:])
-		for i = a.len; i > 0; i--
+		for var i = a.len; i > 0; i--
 			std.free(a[i - 1])
 		;;
 	;;
@@ -39,10 +38,11 @@ const main = {
 const shuffle = {a
 	var t
 	var rng
-	var i, j
+	var j
 
+	/* we want determinism for benchmarking */
 	rng = std.mksrng(123)
-	for i = 0; i < a.len - 1; i++
+	for var i = 0; i < a.len - 1; i++
 		j = std.rngrand(rng, i, a.len)
 		t = a[j]
 		a[j] = a[i]

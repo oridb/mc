@@ -1,0 +1,27 @@
+use std
+
+const main = {
+	var a : uint64[100000]
+
+	for var j = 0; j < 100; j++
+		/* independent copies forward */
+		for var i = 0; i < 10; i++
+			std.slcp(a[:a.len/2-1], a[a.len/2+1:])
+		;;
+		/* independent copies backward */
+		for var i = 0; i < 10; i++
+			std.slcp(a[:a.len/2-1], a[a.len/2+1:])
+		;;
+
+		/* dependent copies forward */
+		for var i = 0; i < 10; i++
+			std.slcp(a[:a.len/2+1000], a[a.len/2-1000:])
+		;;
+		/* dependent copies backward */
+		for var i = 0; i < 10; i++
+			std.slcp(a[a.len/2-1000:], a[:a.len/2+1000])
+		;;
+	;;
+}
+
+

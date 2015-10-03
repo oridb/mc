@@ -1,25 +1,12 @@
 use "die.use"
 use "types.use"
+use "memops.use"
 
 pkg std =
 	generic slcp : (a : @a[:], b : @a[:] -> void)
 ;;
 
 generic slcp = {a : @a[:], b : @a[:]
-	var addr_a, addr_b
-
-	assert(a.len == b.len, "arguments to slcp() must be of equal length")
-
-	addr_a = a castto(@a#) castto(intptr)
-	addr_b = b castto(@a#) castto(intptr)
-	if addr_a <= addr_b
-		for var i = 0; i < a.len; i++
-			a[i] = b[i]
-		;;
-	else
-		for var i = a.len; i > 0; i--
-			a[i - 1] = b[i - 1]
-		;;
-	;;
-		
+	assert(a.len == b.len, "arguments to slcp() must be of equal length\n")
+	memblit(a castto(byte#), b castto(byte#), a.len * sizeof(@a))
 }

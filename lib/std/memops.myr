@@ -1,0 +1,7 @@
+use "types.use"
+
+pkg std =
+	pkglocal extern const memblit	: (src : byte#, dst : byte#, len : std.size -> void)
+	pkglocal extern const memfill	: (src : byte#, val : byte, len : std.size -> void)
+;;
+
