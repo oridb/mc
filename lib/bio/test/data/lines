@@ -1,4 +1,5 @@
 first line
 second line
-data with;semicolons;
+with-\r\n
+with-\rdata with;semicolons;
 and--no-terminator

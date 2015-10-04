@@ -22,6 +22,18 @@ const main = {
 	std.write(1, "\n")
 	std.slfree(d)
 
+	/* read second line, should not include \r\n */
+	d = readln(f)
+	std.write(1, d)
+	std.write(1, "\n")
+	std.slfree(d)
+
+	/* read second line, should not include \r */
+	d = readln(f)
+	std.write(1, d)
+	std.write(1, "\n")
+	std.slfree(d)
+
 	/* read to ';' */
 	d = readto(f, ";")
 	std.write(1, d)

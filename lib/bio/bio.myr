@@ -370,9 +370,39 @@ const skipspace = {f
 	;;
 }
 
-/* Same as readto, but the delimiter is always a '\n' */
+/* Same as delim, but with special handling for '\n', '\r', and '\r\n' */
 const readln = {f
-	-> readto(f, "\n")
+	var ret, c, n
+
+	ret = [][:]
+	while true
+		/* get at least delimiter count of characters */
+		if !ensureread(f, 1)
+			ret = readinto(f, ret, f.rend - f.rstart)
+			if ret.len > 0
+				-> `std.Some ret
+			else
+				-> `std.None
+			;;
+		;;
+		/* scan for delimiter */
+		for var i = f.rstart; i < f.rend; i++
+			c = f.rbuf[i] castto(char)
+			if c == '\r' || c == '\n'
+				n = 1
+				/* if we have '\r', we can get '\r\n'. */
+				if c == '\r' && std.getv(peekc(f), -1) == '\n'
+					n = 2
+				;;
+				ret = readinto(f, ret, i - f.rstart)
+				f.rstart += n
+				-> `std.Some ret
+			;;
+:nextitergetln
+		;;
+		ret = readinto(f, ret, f.rend - f.rstart)
+	;;
+	std.die("unreachable")
 }
 
 const readdelim = {f, delim, drop
@@ -380,6 +410,7 @@ const readdelim = {f, delim, drop
 
 	ret = [][:]
 	while true
+		/* get at least delimiter count of characters */
 		if !ensureread(f, delim.len)
 			if !drop
 				ret = readinto(f, ret, f.rend - f.rstart)
