@@ -10,6 +10,7 @@ pkg bio =
 		/* backing fd */
 		fd	: std.fd
 		mode	: mode
+		haderr	: bool
 
 		/* read buffer */
 		rbuf	: byte[:]
@@ -21,6 +22,12 @@ pkg bio =
 		wend	: std.size
 	;;
 
+	type status(@a) = union
+		`Eof
+		`Ok @a
+		`Err
+	;;
+
 	/* creation */
 	const mkfile	: (fd : std.fd, mode : mode	-> file#)
 	const open	: (path : byte[:], mode : mode	-> std.result(file#, byte[:]))
@@ -30,35 +37,36 @@ pkg bio =
 	const free	: (f : file# -> void)
 
 	/* basic i/o. Returns sub-buffer when applicable. */
-	const write	: (f : file#, src : byte[:]	-> std.size)
-	const read	: (f : file#, dst : byte[:]	-> std.option(byte[:]))
+	const write	: (f : file#, src : byte[:]	-> status(std.size))
+	const read	: (f : file#, dst : byte[:]	-> status(byte[:]))
 	const flush	: (f : file# -> bool)
 
 	/* seeking */
 	const seek	: (f : file#, std.off -> std.off)
 
 	/* single unit operations */
-	const putb	: (f : file#, b : byte	-> std.size)
-	const putc	: (f : file#, c : char	-> std.size)
-	const getb	: (f : file# -> std.option(byte))
-	const getc	: (f : file# -> std.option(char))
+	const putb	: (f : file#, b : byte	-> status(std.size))
+	const putc	: (f : file#, c : char	-> status(std.size))
+	const getb	: (f : file# -> status(byte))
+	const getc	: (f : file# -> status(char))
 
 	/* peeking */
-	const peekb	: (f : file# -> std.option(byte))
-	const peekc	: (f : file# -> std.option(char))
+	const peekb	: (f : file# -> status(byte))
+	const peekc	: (f : file# -> status(char))
 
 	/* delimited read; returns freshly allocated buffer. */
-	const readln	: (f : file#	-> std.option(byte[:]))
-	const readto	: (f : file#, delim : byte[:]	-> std.option(byte[:]))
+	const readln	: (f : file#	-> status(byte[:]))
+	const readto	: (f : file#, delim : byte[:]	-> status(byte[:]))
 	const skipto	: (f : file#, delim : byte[:]	-> bool)
 	const skipspace	: (f : file# -> void)
 
 	/* formatted i/o */
-	const put	: (f : file#, fmt : byte[:], args : ... -> std.size)
+	const put	: (f : file#, fmt : byte[:], args : ... -> status(std.size))
 
 	/* pkg funcs */
-	pkglocal const ensureread	: (f : file#, n : std.size -> bool)
-	pkglocal const ensurewrite	: (f : file#, n : std.size -> bool)
+	pkglocal const ensureread	: (f : file#, n : std.size -> status(std.size))
+	pkglocal const ensurewrite	: (f : file#, n : std.size -> status(std.size))
+	pkglocal const writebuf	: (fd : std.fd,  b : byte[:] -> status(std.size))
 ;;
 
 const Bufsz = 16*std.KiB
@@ -162,7 +170,7 @@ const write = {f, src
 	if src.len < (f.wbuf.len - f.wend)
 		std.slcp(f.wbuf[f.wend:f.wend+src.len], src)
 		f.wend += src.len
-		-> src.len
+		-> `Ok src.len
 	else
 		flush(f)
 		-> writebuf(f.fd, src)
@@ -178,6 +186,11 @@ const read = {f, dst
 	var d
 	var count
 
+	/* Clear the error state so we can retry */
+	if f.haderr
+		f.haderr = false
+		-> `Err
+	;;
 	std.assert(f.mode & Rd != 0, "File is not in read mode")
 	/* 
 	 * small reads should try to fill, so we don't have to make a
@@ -201,17 +214,23 @@ const read = {f, dst
 	d = dst[count:]
 	while dst.len > 0
 		n = std.read(f.fd, d)
-		if n <= 0
-			goto readdone
+		if n == 0
+			break
+		elif n < 0
+			if count > 0
+				f.haderr = true
+			;;
+			break
 		;;
 		count += n
 		d = d[n:]
 	;;
-:readdone
-	if count > 0
-		-> `std.Some dst[:count]
+	if n < 0 && count == 0
+		-> `Err
+	elif count == 0
+		-> `Eof
 	else
-		-> `std.None
+		-> `Ok dst[:count]
 	;;
 }
 
@@ -221,8 +240,13 @@ const flush = {f
 
 	ret = true
 	if f.mode & Wr != 0
-		ret = (writebuf(f.fd, f.wbuf[:f.wend]) == f.wend)
-		f.wend = 0
+		match writebuf(f.fd, f.wbuf[:f.wend])
+		| `Ok n:
+			ret = (n == f.wend)
+			f.wend = 0
+		| _:
+			-> false
+		;;
 	;;
 	-> ret
 }
@@ -234,9 +258,13 @@ const seek = {f, off
 
 /* writes a single byte to the output stream */
 const putb = {f, b
-	ensurewrite(f, 1)
-	f.wbuf[f.wend++] = b
-	-> 1
+	match ensurewrite(f, 1)
+	| `Err:	-> `Err
+	| `Eof: -> `Eof
+	| `Ok n:
+		f.wbuf[f.wend++] = b
+		-> `Ok 1
+	;;
 }
 
 /* writes a single character to the output stream, encoded in utf8 */
@@ -244,53 +272,63 @@ const putc = {f, c
 	var sz
 	
 	sz = std.charlen(c)
-	ensurewrite(f, sz)
-	std.encode(f.wbuf[f.wend:], c)
-	f.wend += sz
-	-> sz
+	match ensurewrite(f, sz)
+	| `Err:	-> `Err
+	| `Eof: -> `Eof
+	| `Ok n:
+		std.encode(f.wbuf[f.wend:], c)
+		f.wend += sz
+		-> `Ok sz
+	;;
 }
 
 /* reads a single byte from the input stream */
 const getb = {f
-	if ensureread(f, 1)
-		-> `std.Some f.rbuf[f.rstart++]
+	match ensureread(f, 1)
+	| `Eof:	-> `Eof
+	| `Err:	-> `Err
+	| `Ok n:
+		-> `Ok f.rbuf[f.rstart++]
 	;;
-	-> `std.None
 }
 
 /* reads a single character from the input stream, encoded in utf8 */
 const getc = {f
 	var c
 
-	if ensurecodepoint(f)
+	match ensurecodepoint(f)
+	| `Err:	-> `Err
+	| `Eof:	-> `Eof
+	| `Ok n:
 		c = std.decode(f.rbuf[f.rstart:f.rend])
 		f.rstart += std.charlen(c)
-		-> `std.Some c
+		-> `Ok c
 	;;
-	-> `std.None
 }
 
 /* ensures we have enough to read a single codepoint in the buffer */
-const ensurecodepoint = {f
+const ensurecodepoint : (f : file# -> status(std.size)) = {f
 	var b
 	var len
 
-	if !ensureread(f, 1)
-		-> false
+	match ensureread(f, 1)
+	| `Err:	-> `Err
+	| `Eof:	-> `Eof
+	| `Ok n:
+		b = f.rbuf[f.rstart]
+		if b & 0x80 == 0	/* 0b0xxx_xxxx */
+			len = 1
+		elif b & 0xe0 == 0xc0	/* 0b110x_xxxx */
+			len = 2
+		elif b & 0xf0 == 0xe0 	/* 0b1110_xxxx */
+			len = 3
+		elif b & 0xf8 == 0xf0 	/* 0b1111_0xxx */
+			len = 4
+		else
+			len = 1		/* invalid unicode char */
+		;;
+		-> ensureread(f, len)
 	;;
-	b = f.rbuf[f.rstart]
-	if b & 0x80 == 0	/* 0b0xxx_xxxx */
-		len = 1
-	elif b & 0xe0 == 0xc0	/* 0b110x_xxxx */
-		len = 2
-	elif b & 0xf0 == 0xe0 	/* 0b1110_xxxx */
-		len = 3
-	elif b & 0xf8 == 0xf0 	/* 0b1111_0xxx */
-		len = 4
-	else
-		len = 1		/* invalid unicode char */
-	;;
-	-> ensureread(f, len)
 }
 
 /*
@@ -319,19 +357,21 @@ generic putbe = {f, v : @a::(numeric,integral)
 
 /* peeks a single byte from an input stream */
 const peekb = {f
-	if !ensureread(f, 1)
-		-> `std.None
-	else
-		-> `std.Some f.rbuf[f.rstart]
+	match ensureread(f, 1)
+	| `Eof:	-> `Eof
+	| `Err:	-> `Err
+	| `Ok n:
+		-> `Ok f.rbuf[f.rstart]
 	;;
 }
 
 /* peeks a single character from a utf8 encoded input stream */
 const peekc = {f
-	if !ensurecodepoint(f)
-		-> `std.None
-	else
-		-> `std.Some std.decode(f.rbuf[f.rstart:f.rend])
+	match ensurecodepoint(f)
+	| `Eof:	-> `Eof
+	| `Err:	-> `Err
+	| `Ok n:
+		-> `Ok std.decode(f.rbuf[f.rstart:f.rend])
 	;;
 }
 
@@ -351,20 +391,23 @@ const readto = {f, delim
 /* same as readto, but drops the read data. */
 const skipto = {f, delim
 	match readdelim(f, delim, true)
-	| `std.Some ret:	-> true
-	| `std.None:	-> false
+	| `Ok ign:	-> true
+	| `Eof:		-> false
+	| `Err:		-> false
 	;;
 }
 
 const skipspace = {f
 	while true
 		match bio.peekc(f)
-		| `std.Some c:
+		| `Ok c:
 			if std.isspace(c)
 				break
 			;;
 			bio.getc(f)
-		| `std.None:
+		| `Eof:
+			break
+		| `Err:
 			break
 		;;
 	;;
@@ -377,12 +420,15 @@ const readln = {f
 	ret = [][:]
 	while true
 		/* get at least delimiter count of characters */
-		if !ensureread(f, 1)
+		match ensureread(f, 1)
+		| `Ok _:
+		| `Err:	-> `Err
+		| `Eof:
 			ret = readinto(f, ret, f.rend - f.rstart)
 			if ret.len > 0
-				-> `std.Some ret
+				-> `Ok ret
 			else
-				-> `std.None
+				-> `Eof
 			;;
 		;;
 		/* scan for delimiter */
@@ -391,12 +437,12 @@ const readln = {f
 			if c == '\r' || c == '\n'
 				n = 1
 				/* if we have '\r', we can get '\r\n'. */
-				if c == '\r' && std.getv(peekc(f), -1) == '\n'
+				if c == '\r' && unwrapc(peekc(f), -1) == '\n'
 					n = 2
 				;;
 				ret = readinto(f, ret, i - f.rstart)
 				f.rstart += n
-				-> `std.Some ret
+				-> `Ok ret
 			;;
 :nextitergetln
 		;;
@@ -405,20 +451,30 @@ const readln = {f
 	std.die("unreachable")
 }
 
+const unwrapc = {cc, v
+	match cc
+	| `Ok c:	-> c
+	| _:	-> v
+	;;
+}
+
 const readdelim = {f, delim, drop
 	var ret
 
 	ret = [][:]
 	while true
 		/* get at least delimiter count of characters */
-		if !ensureread(f, delim.len)
+		match ensureread(f, 1)
+		| `Ok _:
+		| `Err:	-> `Err
+		| `Eof:
 			if !drop
 				ret = readinto(f, ret, f.rend - f.rstart)
 			;;
 			if ret.len > 0
-				-> `std.Some ret
+				-> `Ok ret
 			else
-				-> `std.None
+				-> `Err
 			;;
 		;;
 		for var i = f.rstart; i < f.rend; i++
@@ -432,7 +488,7 @@ const readdelim = {f, delim, drop
 					ret = readinto(f, ret, i - f.rstart)
 				;;
 				f.rstart += delim.len
-				-> `std.Some ret
+				-> `Ok ret
 			;;
 :nextiterread
 		;;
@@ -476,9 +532,15 @@ const readinto = {f, buf, n
 const ensurewrite = {f, n
 	std.assert(n < f.wbuf.len, "ensured write capacity > buffer size")
 	if n > f.wbuf.len - f.wend
-		-> flush(f)
+		match writebuf(f.fd, f.wbuf[:f.wend])
+		| `Ok len:
+			f.wend = 0
+			-> `Ok len
+		| _:
+			-> `Err
+		;;
 	;;
-	-> true
+	-> `Ok n
 }
 
 /*
@@ -499,9 +561,18 @@ const ensureread = {f, n
 			f.rstart = 0
 			f.rend = cap
 		;;
-		-> fill(f, n) > n
+		match fill(f, n)
+		| `Eof:	-> `Eof
+		| `Err:	-> `Err
+		| `Ok len:
+			if len > n
+				-> `Ok len
+			else
+				-> `Eof
+			;;
+		;;
 	else
-		-> true
+		-> `Ok n
 	;;
 }
 
@@ -513,14 +584,16 @@ const writebuf = {fd, src
 	count = 0
 	while src.len != 0
 		n = std.write(fd, src)
-		if n <= 0
-			goto writedone
+		if n == 0
+			-> `Eof
+		elif n < 0
+			-> `Err
 		;;
 		count += n
 		src = src[n:]
 	;;
 :writedone
-	-> count
+	-> `Ok count
 }
 
 
@@ -534,16 +607,37 @@ const fill = {f, min
 	var count
 
 	count = 0
+	/* Clear the error state so we can retry */
+	if f.haderr
+		f.haderr = false
+		-> `Err
+	;;
 	while count < min
 		n = std.read(f.fd, f.rbuf[f.rend:])
-		if n <= 0
-			goto filldone
+		/*
+		If we've already read data, we don't want to
+		throw it away, so we report a successful short
+		read, and then error on the next read.
+		*/
+		if n == 0
+			break
+		elif n < 0
+			if count > 0
+				f.haderr = true
+			;;
+			break
 		;;
 		count += n
 		f.rend += n
 	;;
-:filldone
-	-> count
+
+	if n < 0 && count == 0
+		-> `Err
+	elif count == 0
+		-> `Eof
+	else
+		-> `Ok count
+	;;
 }
 
 

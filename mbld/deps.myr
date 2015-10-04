@@ -215,11 +215,11 @@ const scrapecflags = {b, ds, path
 	while true
 		lnum++
 		match bio.readln(f)
-		| `std.Some ln:
+		| `bio.Err:	std.fatal("unable to read {}\n", path)
+		| `bio.Eof:	break
+		| `bio.Ok ln:
 			(cflags, libs) = getcflags(ln, cflags, libs)
 			std.slfree(ln)
-		| `std.None:
-			break
 		;;
 	;;
 	bio.close(f)
@@ -251,7 +251,7 @@ const getcflags = {ln, cflags, libs
 	-> (cflags, libs)
 }
 
-const getdeps = {b : build#, ds : depscan#, path
+const getdeps = {b, ds, path
 	var deps, lnum
 	var f
 
@@ -261,10 +261,11 @@ const getdeps = {b : build#, ds : depscan#, path
 	while true
 		lnum++
 		match bio.readln(f)
-		| `std.Some ln:
+		| `bio.Err:	std.fatal("unable to read {}\n", path)
+		| `bio.Eof:	break
+		| `bio.Ok ln:
 			deps = depname(deps, ln, lnum)
 			std.slfree(ln)
-		| `std.None:	break
 		;;
 	;;
 	bio.close(f)
@@ -315,19 +316,21 @@ const scrapelibs = {dg, lib, incs
 
 	f = openlib(lib, incs)
 	match bio.getc(f)
-	| `std.Some 'U': /* nothing */
-	| `std.Some _:	std.fatal("library {}: corrupt or invalid usefile\n", lib)
-	| `std.None:	std.fatal("library {}: could not read usefile\n", lib)
+	| `bio.Ok 'U': /* nothing */
+	| `bio.Ok _:	std.fatal("library {}: corrupt or invalid usefile\n", lib)
+	| `bio.Err:	std.fatal("library {}: could not read usefile\n", lib)
+	| `bio.Eof:	std.fatal("library {}: could not read usefile\n", lib)
 	;;
 	match bio.getbe32(f)
-	| `std.Some Abiversion:	/* nothing: version matches. */
-	| `std.Some v:	
+	| `bio.Ok Abiversion:	/* nothing: version matches. */
+	| `bio.Ok v:	
 		if v < Abiversion
 			std.fput(1, "library {}: warning: old abi version {}\n", lib, v)
 		else
 			std.fput(1, "library {}: usefile version {} unknown\n", lib, v)
 		;;
-	| `std.None:	std.fatal("library {}: corrupt or invalid usefile\n", lib)
+	| `bio.Eof:	std.fatal("library {}: corrupt or truncated usefile\n", lib)
+	| `bio.Err:	std.fatal("library {}: error reading usefile\n", lib)
 	;;
 	std.slfree(rdstr(f))
 
@@ -335,14 +338,15 @@ const scrapelibs = {dg, lib, incs
 	deps = [][:]
 	while !done
 		match bio.getc(f)
-		| `std.Some 'L':
+		| `bio.Ok 'L':
 			d = rdstr(f)
 			deps = std.slpush(deps, d)
-		| `std.Some 'X':
+		| `bio.Ok 'X':
 			d = rdstr(f)
 			dg.extlibs = std.slpush(dg.extlibs, d)
-		| `std.Some _:	done = true
-		| `std.None:	done = true
+		| `bio.Ok _:	done = true
+		| `bio.Eof:	done = true
+		| `bio.Err:	std.fatal("io error reading {}", lib)
 		;;
 	;;
 	bio.close(f)
@@ -388,10 +392,11 @@ const rdstr = {f
 	var sl
 
 	match bio.getbe32(f)
-	| `std.Some l:
+	| `bio.Ok l:
 		len = l
 		sl = std.slalloc(len)
-	| `std.None:	std.die("string length not readable")
+	| `bio.Eof:	std.die("end of file while reading string")
+	| `bio.Err:	std.die("error while reading string")
 	;;
 	bio.read(f, sl)
 	-> sl
