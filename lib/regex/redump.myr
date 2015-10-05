@@ -62,8 +62,8 @@ const dump = {re, fd
 			std.slfree(ln)
 		| `bio.Eof:
 			break
-		| `bio.Err:
-			std.put("error reading from input")
+		| `bio.Err e:
+			std.put("error reading from input: {}", e)
 			break
 		;;
 	;;
