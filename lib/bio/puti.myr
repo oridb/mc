@@ -30,8 +30,8 @@ const putle = {f, v, n
 	var buf : byte[8]
 
 	match ensurewrite(f, n)
-	| `Err:	-> `Err
 	| `Eof:	-> `Eof
+	| `Err e:	-> `Err e
 	| `Ok _:
 		buf[0] = (v >> 0) & 0xff castto(byte)
 		buf[1] = (v >> 8) & 0xff castto(byte)
@@ -49,8 +49,8 @@ const putbe = {f, v, n
 	var buf : byte[8]
 
 	match ensurewrite(f, n)
-	| `Err:	-> `Err
 	| `Eof:	-> `Eof
+	| `Err e:	-> `Err e
 	| `Ok _:
 		buf[0] = (v >> 56) & 0xff castto(byte)
 		buf[1] = (v >> 48) & 0xff castto(byte)

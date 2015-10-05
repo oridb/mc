@@ -3,6 +3,7 @@ use sys
 pkg std =
 	type errno = int
 
+	const Enone	: errno = 0
 	const Eperm	: errno = sys.Eperm	castto(errno)
 	const Enoent	: errno = sys.Enoent	castto(errno)
 	const Esrch	: errno = sys.Esrch	castto(errno)

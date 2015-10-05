@@ -26,7 +26,7 @@ generic getle = {f, n -> status(@a::(numeric,integral))
 	v = 0
 	match ensureread(f, n)
 	| `Eof:	-> `Eof
-	| `Err:	-> `Err
+	| `Err e :	-> `Err e
 	| `Ok _:
 		for i = 0; i < n; i++
 			v |= (f.rbuf[f.rstart++] castto(uint64)) << (8*(i castto(uint64)))
@@ -45,7 +45,7 @@ generic getbe = {f, n -> status(@a::(numeric,integral))
 	v = 0
 	match ensureread(f, n)
 	| `Eof:	-> `Eof
-	| `Err:	-> `Err
+	| `Err e :	-> `Err e
 	| `Ok _:
 		for i = 0; i < n; i++
 			v <<= 8

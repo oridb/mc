@@ -215,7 +215,7 @@ const scrapecflags = {b, ds, path
 	while true
 		lnum++
 		match bio.readln(f)
-		| `bio.Err:	std.fatal("unable to read {}\n", path)
+		| `bio.Err e:	std.fatal("unable to read {}: {}\n", path, e)
 		| `bio.Eof:	break
 		| `bio.Ok ln:
 			(cflags, libs) = getcflags(ln, cflags, libs)
@@ -261,7 +261,7 @@ const getdeps = {b, ds, path
 	while true
 		lnum++
 		match bio.readln(f)
-		| `bio.Err:	std.fatal("unable to read {}\n", path)
+		| `bio.Err e:	std.fatal("unable to read {}: {}\n", path, e)
 		| `bio.Eof:	break
 		| `bio.Ok ln:
 			deps = depname(deps, ln, lnum)
@@ -318,7 +318,7 @@ const scrapelibs = {dg, lib, incs
 	match bio.getc(f)
 	| `bio.Ok 'U': /* nothing */
 	| `bio.Ok _:	std.fatal("library {}: corrupt or invalid usefile\n", lib)
-	| `bio.Err:	std.fatal("library {}: could not read usefile\n", lib)
+	| `bio.Err e:	std.fatal("library {}: could not read usefile: {}\n", lib, e)
 	| `bio.Eof:	std.fatal("library {}: could not read usefile\n", lib)
 	;;
 	match bio.getbe32(f)
@@ -329,8 +329,8 @@ const scrapelibs = {dg, lib, incs
 		else
 			std.fput(1, "library {}: usefile version {} unknown\n", lib, v)
 		;;
+	| `bio.Err e:	std.fatal("library {}: error reading usefile: {}\n", lib, e)
 	| `bio.Eof:	std.fatal("library {}: corrupt or truncated usefile\n", lib)
-	| `bio.Err:	std.fatal("library {}: error reading usefile\n", lib)
 	;;
 	std.slfree(rdstr(f))
 
@@ -346,7 +346,7 @@ const scrapelibs = {dg, lib, incs
 			dg.extlibs = std.slpush(dg.extlibs, d)
 		| `bio.Ok _:	done = true
 		| `bio.Eof:	done = true
-		| `bio.Err:	std.fatal("io error reading {}", lib)
+		| `bio.Err e:	std.fatal("io error reading {}: {}", lib, e)
 		;;
 	;;
 	bio.close(f)
@@ -395,8 +395,8 @@ const rdstr = {f
 	| `bio.Ok l:
 		len = l
 		sl = std.slalloc(len)
-	| `bio.Eof:	std.die("end of file while reading string")
-	| `bio.Err:	std.die("error while reading string")
+	| `bio.Eof:	std.fatal("end of file while reading string")
+	| `bio.Err e:	std.fatal("error while reading string: {}", e)
 	;;
 	bio.read(f, sl)
 	-> sl
