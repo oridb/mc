@@ -8,8 +8,8 @@ use "strsplit.use"
 use "syswrap.use"
 
 pkg std = 
-	const execvp	: (cmd : byte[:], args : byte[:][:] -> int64)
-	const execvpe	: (cmd : byte[:], args : byte[:][:], env : byte[:][:] -> int64)
+	const execvp	: (cmd : byte[:], args : byte[:][:] -> errno)
+	const execvpe	: (cmd : byte[:], args : byte[:][:], env : byte[:][:] -> errno)
 ;;
 
 const execvp = {cmd, args

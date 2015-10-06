@@ -3,41 +3,42 @@ use "die.use"
 use "result.use"
 use "extremum.use"
 use "syswrap.use"
+use "errno.use"
 use "types.use"
 
 pkg std =
-	const slurp : (path : byte[:] -> result(byte[:], byte[:]))
-	const fslurp : (path : fd -> result(byte[:], byte[:]))
+	const slurp : (path : byte[:] -> result(byte[:], errno))
+	const fslurp : (path : fd -> result(byte[:], errno))
 ;;
 
 const Bufstart = 4096
 
 const slurp = {path
-	var fd
-	fd = open(path, Ordonly)
-	if fd < 0
-		-> `Fail "Could not open file"
+	match open(path, Ordonly)
+	| `Ok fd:	-> fslurp(fd)
+	| `Fail e:	-> `Fail e
 	;;
-	-> fslurp(fd)
 }
 
 const fslurp = {fd
 	var len, bufsz
 	var buf
-	var n
 
 	len = 0
 	bufsz = Bufstart
 	buf = slalloc(bufsz)
 	while true
-		n = read(fd, buf[len:])
-		if n <= 0
-			goto done
+		match read(fd, buf[len:])
+		| `Ok n:
+			if n == 0
+				-> `Ok buf[:len]
+			;;
+			len += n
+			bufsz *= 2
+			buf = slgrow(buf, bufsz)
+		| `Fail e:
+			-> `Fail e
 		;;
-		len += n
-		bufsz *= 2
-		buf = slgrow(buf, bufsz)
 	;;
-:done
-	-> `Ok buf[:len]
+	die("unreachable")
 }

@@ -1,4 +1,5 @@
 use "syswrap.use"
+use "result.use"
 
 pkg std =
 	const blat : (path : byte[:], buf : byte[:], perm : int64 -> bool)
@@ -6,27 +7,26 @@ pkg std =
 ;;
 
 const blat = {path, buf, perm
-	var fd
-
-	fd = openmode(path, Ocreat|Owronly, perm)
-	if fd < 0
-		-> false
+	match openmode(path, Ocreat|Owronly, perm)
+	| `Ok fd:	-> fblat(fd, buf)
+	| `Fail e:	-> false
 	;;
-	-> fblat(fd, buf)
 }
 
 
 const fblat = {fd, buf
-	var written, n
+	var count
 
-	n = 0
+	count = 0
 	while true
-		written = write(fd, buf[n:])
-		if written <= 0
-			goto done
+		match write(fd, buf[count:])
+		| `Fail e:	-> false
+		| `Ok n:
+			if n == 0
+				break
+			;;
+			count += n
 		;;
-		n += written
 	;;
-:done
-	-> written == 0 && n == buf.len
+	-> count == buf.len
 }

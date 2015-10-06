@@ -818,6 +818,8 @@ TABLE OF CONTENTS:
 
 7. STANDARD LIBRARY:
 
+    This is documented separately.
+
 8. GRAMMAR:
 
 9. FUTURE DIRECTIONS:

@@ -15,6 +15,11 @@ file is named
 .I filename.myr
 then the the object file that is generated will be named
 .I filename.o.
+.PP
+Any text between the first '+' in the file name and the suffix are
+stripped. This functionality is used to specify system tags for
+tools like 'mbld'.
+.PP
 If the filename does not end with the suffix
 .I .myr
 then the suffix

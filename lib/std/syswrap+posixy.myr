@@ -1,8 +1,9 @@
 use sys
 use "cstrconv.use"
-use "option.use"
-use "types.use"
 use "errno.use"
+use "option.use"
+use "result.use"
+use "types.use"
 
 pkg std =
 	type fd		= sys.fd
@@ -29,23 +30,22 @@ pkg std =
 	const Ordwr    	: fdopt = sys.Ordwr	castto(fdopt)
 	const Ocreat   	: fdopt = sys.Ocreat	castto(fdopt)
 	const Otrunc   	: fdopt = sys.Otrunc	castto(fdopt)
-	const Oappend  	: fdopt = sys.Oappend	castto(fdopt)
 	const Odir	: fdopt = sys.Odir	castto(fdopt)
 
 	/* fd stuff */
-	const open	: (path : byte[:], opts : fdopt -> fd)
-	const openmode	: (path : byte[:], opts : fdopt, mode : int64 -> fd)
-	const close	: (fd : fd -> int64)
-	const creat	: (path : byte[:], mode : int64 -> fd)
-	const read	: (fd : fd, buf : byte[:] -> size)
-	const write	: (fd : fd, buf : byte[:] -> size)
-	const pipe	: (fds : fd[2]# -> int64)
-	const seek	: (fd : fd, delta : off, whence : whence -> off)
-	const dup2	: (ofd : fd, nfd : fd -> fd)
+	const open	: (path : byte[:], opts : fdopt -> result(fd, errno))
+	const openmode	: (path : byte[:], opts : fdopt, mode : int64 -> result(fd, errno))
+	const close	: (fd : fd -> errno)
+	const creat	: (path : byte[:], mode : int64 -> result(fd, errno))
+	const read	: (fd : fd, buf : byte[:] -> result(size, errno))
+	const write	: (fd : fd, buf : byte[:] -> result(size, errno))
+	const pipe	: (fds : fd[2]# -> errno)
+	const seek	: (fd : fd, delta : off, whence : whence -> result(off, errno))
+	const dup2	: (ofd : fd, nfd : fd -> result(fd, errno))
 
 	/* useful/portable bits of stat */
-	const fmtime	: (f : byte[:]	-> option(time))
-	const fsize	: (f : byte[:]	-> option(off))
+	const fmtime	: (f : byte[:]	-> result(time, errno))
+	const fsize	: (f : byte[:]	-> result(off, errno))
 	const fexists	: (f : byte[:]	-> bool)
 
 	/* useful/portable bits of uname */
@@ -60,26 +60,27 @@ pkg std =
 	const getpid	: ( -> pid)
 	const suicide	: ( -> void)
 	const fork	: (-> pid)
-	const execv	: (cmd : byte[:], args : byte[:][:] -> int64)
-	const execve	: (cmd : byte[:], args : byte[:][:], env : byte[:][:] -> int64)
-	const waitpid	: (pid:pid, loc:int32#, opt : int64	-> int64)
+	const execv	: (cmd : byte[:], args : byte[:][:] -> errno)
+	const execve	: (cmd : byte[:], args : byte[:][:], env : byte[:][:] -> errno)
 
 	pkglocal const Canunmap	: bool = true
 	pkglocal const getmem	: (sz : size -> byte#)
 	pkglocal const freemem	: (p : byte#, sz : size -> void)
 	pkglocal const curtime	: (-> time)
+	pkglocal const waitpid	: (pid:pid, loc:int32#, opt : int64	-> int64)
 ;;
 
 /* fd stuff */
-const open	= {path, opts;	-> sys.open(path, opts castto(sys.fdopt)) castto(fd)}
-const openmode	= {path, opts, mode;	-> sys.openmode(path, opts castto(sys.fdopt), mode) castto(fd)}
-const close	= {fd;		-> sys.close(fd castto(sys.fd))}
-const creat	= {path, mode;	-> sys.creat(path, mode) castto(fd)}
-const read	= {fd, buf;	-> sys.read(fd castto(sys.fd), buf) castto(size)}
-const write	= {fd, buf;	-> sys.write(fd castto(sys.fd), buf) castto(size)}
-const pipe	= {fds;		-> sys.pipe(fds castto(sys.fd[2]#))}
-const seek	= {fd, delta, whence;	-> sys.lseek(fd castto(sys.fd), delta castto(sys.off), whence castto(sys.whence)) castto(off)}
-const dup2	= {ofd, nfd;	-> sys.dup2(ofd castto(sys.fd), nfd castto(sys.fd)) castto(fd)}
+const open	= {path, opts;	-> check(sys.open(path, opts castto(sys.fdopt)))}
+const openmode	= {path, opts, mode;	-> check(sys.openmode(path, opts castto(sys.fdopt), mode))}
+const close	= {fd;		-> sys.close(fd castto(sys.fd)) castto(errno)}
+
+const creat	= {path, mode;	-> check(sys.creat(path, mode))}
+const read	= {fd, buf;	-> check(sys.read(fd castto(sys.fd), buf))}
+const write	= {fd, buf;	-> check(sys.write(fd castto(sys.fd), buf))}
+const pipe	= {fds;		-> sys.pipe(fds castto(sys.fd[2]#)) castto(errno)}
+const seek	= {fd, delta, whence;	-> check(sys.lseek(fd castto(sys.fd), delta castto(sys.off), whence castto(sys.whence)))}
+const dup2	= {ofd, nfd;	-> check(sys.dup2(ofd castto(sys.fd), nfd castto(sys.fd)) castto(fd))}
 
 /* path manipulation */
 const mkdir	= {path, mode;	-> sys.mkdir(path, mode)}
@@ -99,8 +100,8 @@ const getsysinfo = {si
 const getpid	= {;		-> sys.getpid() castto(pid)}
 const suicide	= {;		sys.kill(sys.getpid(), 6)}	/* kill self with sigabort */
 const fork	= {;		-> sys.fork() castto(pid)}
-const execv	= {cmd, args;	-> sys.execv(cmd, args)}
-const execve	= {cmd, args, env;	-> sys.execve(cmd, args, env)}
+const execv	= {cmd, args;	-> sys.execv(cmd, args) castto(errno)}
+const execve	= {cmd, args, env;	-> sys.execve(cmd, args, env) castto(errno)}
 const sleep	= {time;	sys.sleep(time)}
 
 /* memory stuff */
@@ -125,24 +126,34 @@ const fexists = {path
 }
 
 const fmtime = {path
-	var sb
+	var sb, r
 	var sec, nsec
 
-	if sys.stat(path, &sb) == 0
+	r = sys.stat(path, &sb)
+	if r >= 0
 		sec = sb.mtime.sec castto(time)
 		nsec = sb.mtime.nsec castto(time)
-		-> `Some sec*1000 + nsec/1_000_000
+		-> `Ok sec*1000 + nsec/1_000_000
 	else
-		-> `None
+		-> check(r)
 	;;
 }
 
 const fsize = {path
-	var sb
+	var sb, r
 
-	if sys.stat(path, &sb) == 0
-		-> `Some (sb.size castto(off))
+	r = sys.stat(path, &sb)
+	if r >= 0
+		-> `Ok (sb.size castto(off))
 	else
-		-> `None
+		-> check(r)
+	;;
+}
+
+generic check = {e : @a::(integral, numeric) -> result(@b, errno)
+	if e < 0
+		-> `Fail e castto(errno)
+	else
+		-> `Ok e castto(@b)
 	;;
 }

@@ -49,7 +49,7 @@ pkg bio =
 	const flush	: (f : file# -> bool)
 
 	/* seeking */
-	const seek	: (f : file#, std.off -> std.off)
+	const seek	: (f : file#, std.off -> std.result(std.off, ioerr))
 
 	/* single unit operations */
 	const putb	: (f : file#, b : byte	-> status(std.size))
@@ -133,13 +133,9 @@ const sysmode = {mode
 
 /* open the file, and return it */
 const sysopen = {path, mode, openmode, perm
-	var fd
-
-	fd = std.openmode(path, openmode, perm castto(int64))
-	if fd < 0
-		-> `std.Fail "could not open fd"
-	else
-		-> `std.Ok mkfile(fd, mode)
+	match std.openmode(path, openmode, perm castto(int64))
+	| `std.Ok fd:	-> `std.Ok mkfile(fd, mode)
+	| `std.Fail e:	-> `std.Fail "could not open fd"
 	;;
 }
 
@@ -189,8 +185,8 @@ reads as much into 'dst' as possible, up to the size of 'dst',
 returning the number of bytes read.
 */
 const read = {f, dst
-	var n, d
-	var count
+	var count : std.size
+	var d : byte[:]
 
 	/* Clear the error state so we can retry */
 	if f.lasterr != 0
@@ -218,21 +214,22 @@ const read = {f, dst
 	/* Read the rest directly from the fd */
 	d = dst[count:]
 	while dst.len > 0
-		n = std.read(f.fd, d)
-		if n == 0
+		match std.read(f.fd, d)
+		| `std.Ok 0:
 			break
-		elif n < 0
-			if count > 0
-				f.lasterr = n castto(std.errno)
+		| `std.Ok n:
+			count += n
+			d = d[n:]
+		| `std.Fail err:
+			if count == 0
+				-> `Err errtype(err)
+			else
+				f.lasterr = err
 			;;
 			break
 		;;
-		count += n
-		d = d[n:]
 	;;
-	if n < 0 && count == 0
-		-> `Err errtype(n)
-	elif count == 0
+	if count == 0
 		-> `Eof
 	else
 		-> `Ok dst[:count]
@@ -256,7 +253,10 @@ const flush = {f
 
 const seek = {f, off
 	flush(f)
-	-> std.seek(f.fd, off, std.Seekset)
+	match std.seek(f.fd, off, std.Seekset)
+	| `std.Ok ret:	-> `std.Ok ret
+	| `std.Fail e:	-> `std.Fail errtype(e)
+	;;
 }
 
 /* writes a single byte to the output stream */
@@ -581,19 +581,19 @@ const ensureread = {f, n
 
 /* blats a buffer to an fd */
 const writebuf = {fd, src
-	var n
 	var count
 
 	count = 0
 	while src.len != 0
-		n = std.write(fd, src)
-		if n == 0
+		match std.write(fd, src)
+		| `std.Ok 0:
 			-> `Eof
-		elif n < 0
-			-> `Err errtype(n)
+		| `std.Ok n:
+			count += n
+			src = src[n:]
+		| `std.Fail e:
+			-> `Err errtype(e)
 		;;
-		count += n
-		src = src[n:]
 	;;
 :writedone
 	-> `Ok count
@@ -606,7 +606,6 @@ Reads as many bytes as possible from the file into
 the read buffer.
 */
 const fill = {f, min
-	var n
 	var count
 
 	count = 0
@@ -615,27 +614,28 @@ const fill = {f, min
 		-> `Err geterr(f)
 	;;
 	while count < min
-		n = std.read(f.fd, f.rbuf[f.rend:])
 		/*
 		If we've already read data, we don't want to
 		throw it away, so we report a successful short
 		read, and then error on the next read.
 		*/
-		if n == 0
+		match std.read(f.fd, f.rbuf[f.rend:])
+		| `std.Ok 0:
 			break
-		elif n < 0
+		| `std.Ok n:
+			count += n
+			f.rend += n
+		| `std.Fail e:
 			if count > 0
-				f.lasterr = n castto(std.errno)
+				f.lasterr = e
+			else
+				-> `Err errtype(e)
 			;;
 			break
 		;;
-		count += n
-		f.rend += n
 	;;
 
-	if n < 0 && count == 0
-		-> `Err errtype(n)
-	elif count == 0
+	if count == 0
 		-> `Eof
 	else
 		-> `Ok count
@@ -647,10 +647,10 @@ const geterr = {f
 
 	e = f.lasterr
 	f.lasterr = 0
-	-> errtype(e castto(std.size))
+	-> errtype(e)
 }
 
-const errtype : (e : std.size -> ioerr )= {e : std.size -> ioerr
+const errtype : (e : std.errno -> ioerr )= {e : std.errno -> ioerr
 	var errno
 
 	errno = e castto(std.errno)

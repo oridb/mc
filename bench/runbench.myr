@@ -13,15 +13,6 @@ const main = {args : byte[:][:]
 	std.put("total:\t{}s\n", tot);
 }
 
-
-generic perror = {a : @a::(numeric,integral), msg : byte[:] -> @a
-	if a < 0
-		std.fatal("{}", msg)
-	else
-		-> a
-	;;
-}
-
 const timeit = {prog -> flt64
 	var avg, m, d, x, n : flt64
 
@@ -49,10 +40,10 @@ const run = {prog -> flt64
 	if pid < 0
 		std.fatal("Could not fork\n");
 	elif pid == 0
-		infd = perror(std.open("/dev/zero", std.Ordonly), "could not open /dev/zero")
-		outfd = perror(std.open("/dev/null", std.Owronly), "could not open /dev/null")
-		perror(std.dup2(infd, 0), "could not redirect stdin")
-		perror(std.dup2(outfd, 1), "could not redirect stdout")
+		infd = std.try(std.open("/dev/zero", std.Ordonly))
+		outfd = std.try(std.open("/dev/null", std.Owronly))
+		std.try(std.dup2(infd, 0))
+		std.try(std.dup2(outfd, 1))
 		std.execv(prog, [prog][:])
 		std.fatal("Failed to exec\n")
 	else

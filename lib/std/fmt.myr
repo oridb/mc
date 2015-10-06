@@ -9,6 +9,7 @@ use "htab.use"
 use "introspect.use"
 use "intparse.use"
 use "option.use"
+use "result.use"
 use "sleq.use"
 use "slpush.use"
 use "strbuf.use"
@@ -529,15 +530,18 @@ generic intfmt = {sb, opts, signed, bits : @a::(integral,numeric)
 }
 
 const writeall = {fd, buf
-	var n, len
+	var len
 
 	len = 0
 	while true
-		n = write(fd, buf)
-		if n <= 0 || n >= len
-			break
+		match write(fd, buf[len:])
+		| `Fail err:	break
+		| `Ok n:
+			len += n
+			if n == 0 || len == buf.len
+				break
+			;;
 		;;
-		len += n
 	;;
 	-> len
 }

@@ -1,5 +1,3 @@
-use "die.use"
-
 pkg std =
 	type result(@a, @b) = union
 		`Ok	@a

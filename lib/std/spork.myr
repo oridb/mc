@@ -3,10 +3,11 @@ use "execvp.use"
 use "fmt.use"
 use "result.use"
 use "syswrap.use"
+use "errno.use"
 
 pkg std =
-	const spork	: (cmd : byte[:][:]	-> result((pid, fd, fd), int))
-	const sporkfd	: (cmd : byte[:][:], infd : fd, outfd : fd	-> result(pid, int))
+	const spork	: (cmd : byte[:][:]	-> result((pid, fd, fd), errno))
+	const sporkfd	: (cmd : byte[:][:], infd : fd, outfd : fd	-> result(pid, errno))
 ;;
 
 const spork = {cmd
@@ -14,13 +15,13 @@ const spork = {cmd
 	var err
 
 	/* open up pipes */
-	err = pipe(&infds)
-	if err != 0
-		-> `Fail (-err castto(int))
+	err = pipe(&infds) 
+	if err != Enone
+		-> `Fail err
 	;;
 	err = pipe(&outfds)
-	if err != 0
-		-> `Fail (-err castto(int))
+	if err != Enone
+		-> `Fail err
 	;;
 
 	match sporkfd(cmd, infds[0] castto(fd), outfds[1] castto(fd))
@@ -35,7 +36,7 @@ const spork = {cmd
 }
 
 const sporkfd = {cmd, infd, outfd
-	var pid
+	var pid, err
 
 	pid = fork()
 	/* error  */
@@ -44,16 +45,22 @@ const sporkfd = {cmd, infd, outfd
 	/* child */
 	elif pid == 0
 		/* stdin/stdout for our communication. */
-		if dup2(infd castto(fd), 0) != 0
-			fatal("unable to set stdin\n")
+		match dup2(infd castto(fd), 0)
+		| `Ok _:	/* nothing */
+		| `Fail e:	-> `Fail e
 		;;
-		if dup2(outfd castto(fd), 1) != 1
-			fatal("unable to set stdout\n")
+		match dup2(outfd castto(fd), 1)
+		| `Ok _:	/* nothing */
+		| `Fail e:	-> `Fail e
 		;;
 		close(infd)
 		close(outfd)
-		execvp(cmd[0], cmd) < 0
-		fatal("failed to exec {}\n", cmd[0])
+		err = execvp(cmd[0], cmd)
+		if err != Enone
+			-> `Fail err
+		;;
+		/* if fork succeeds, we never return */
+		die("unreachable")
 	/* parent */
 	else
 		-> `Ok pid

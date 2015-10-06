@@ -479,12 +479,12 @@ const isfresh = {src, dst
 	up to date.
 	*/
 	match std.fmtime(src)
-	| `std.Some mt:	srcmt = mt
-	| `std.None:	std.fatal("could not stat {}\n", src)
+	| `std.Ok mt:	srcmt = mt
+	| `std.Fail e:	std.fatal("could not stat {}: {}\n", src, e)
 	;;
 	match std.fmtime(dst)
-	| `std.Some mt:	dstmt = mt
-	| `std.None:	-> false
+	| `std.Ok mt:	dstmt = mt
+	| `std.Fail e:	-> false
 	;;
 	-> srcmt <= dstmt
 }
