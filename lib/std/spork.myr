@@ -40,8 +40,8 @@ const sporkfd = {cmd, infd, outfd
 
 	pid = fork()
 	/* error  */
-	if pid == -1
-		-> `Fail -1
+	if pid < 0
+		-> `Fail pid castto(errno)
 	/* child */
 	elif pid == 0
 		/* stdin/stdout for our communication. */
