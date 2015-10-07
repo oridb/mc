@@ -1,0 +1,23 @@
+use std
+
+const main = {
+	eq(std.dirname("foo/bar"), "foo")
+	eq(std.dirname("/foo/bar"), "/foo")
+	eq(std.dirname("/foo/bar/"), "/foo")
+	eq(std.dirname("/bar/"), "/")
+	eq(std.dirname("/"), "/")
+	eq(std.dirname("///"), "/")
+
+	eq(std.basename("foo/bar"), "bar")
+	eq(std.basename("/foo/bar"), "bar")
+	eq(std.basename("/foo/bar/"), "bar")
+	eq(std.basename("/bar/"), "bar")
+	eq(std.basename("/"), "")
+	eq(std.basename("///"), "")
+}
+
+const eq = {a, e
+	if !std.sleq(e, a)
+		std.fatal("expected '{}', got '{}'\n", e, a)
+	;;
+}
