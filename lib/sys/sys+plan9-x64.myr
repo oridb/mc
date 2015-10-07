@@ -25,6 +25,7 @@ pkg sys =
 		what	: uint32	/* plink */
 	;;
 
+	const Maxerr	: size = 128
 
 	const Ordonly	: fdopt = 0
 	const Owronly	: fdopt = 1
