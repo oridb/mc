@@ -7,6 +7,7 @@ echo 	$pwd/6/6.out	systypes.myr ;	$pwd/6/6.out	systypes.myr
 echo 	$pwd/6/6.out	`$pwd/sysselect.sh sys`;	$pwd/6/6.out	`$pwd/sysselect.sh sys`
 echo 	$pwd/6/6.out	`$pwd/sysselect.sh ifreq`;	$pwd/6/6.out	`$pwd/sysselect.sh ifreq`
 echo 	6a	-o util.6 `$pwd/sysselect.sh util`;	6a	-o util.6 `$pwd/sysselect.sh util`
+echo 	$pwd/6/6.out	`$pwd/sysselect.sh sys`;	$pwd/6/6.out	`$pwd/sysselect.sh sys`
 echo 	6a	-o syscall.6 `$pwd/sysselect.sh syscall`;	6a	-o syscall.6 `$pwd/sysselect.sh syscall`
 echo 	$pwd/muse/6.out	-o sys sys.use ifreq.use systypes.use ;	$pwd/muse/6.out	-o sys sys.use ifreq.use systypes.use 
 echo 	ar	vu libsys.a sys.6 ifreq.6 syscall.6 systypes.6 util.6 ;	ar	vu libsys.a sys.6 ifreq.6 syscall.6 systypes.6 util.6 
@@ -14,42 +15,44 @@ echo 	cd $pwd;	cd $pwd
 echo 	cd $pwd/lib/std;	cd $pwd/lib/std
 echo 	$pwd/6/6.out	-I ../sys -I . option.myr ;	$pwd/6/6.out	-I ../sys -I . option.myr 
 echo 	$pwd/6/6.out	-I ../sys -I . types.myr ;	$pwd/6/6.out	-I ../sys -I . types.myr 
+echo 	$pwd/6/6.out	-I ../sys -I . `$pwd/sysselect.sh errno`;	$pwd/6/6.out	-I ../sys -I . `$pwd/sysselect.sh errno`
+echo 	$pwd/6/6.out	-I ../sys -I . result.myr ;	$pwd/6/6.out	-I ../sys -I . result.myr 
+echo 	$pwd/6/6.out	-I ../sys -I . cstrconv.myr ;	$pwd/6/6.out	-I ../sys -I . cstrconv.myr 
+echo 	$pwd/6/6.out	-I ../sys -I . strfind.myr ;	$pwd/6/6.out	-I ../sys -I . strfind.myr 
 echo 	$pwd/6/6.out	-I ../sys -I . `$pwd/sysselect.sh syswrap`;	$pwd/6/6.out	-I ../sys -I . `$pwd/sysselect.sh syswrap`
 echo 	$pwd/6/6.out	-I ../sys -I . die.myr ;	$pwd/6/6.out	-I ../sys -I . die.myr 
 echo 	$pwd/6/6.out	-I ../sys -I . sleq.myr ;	$pwd/6/6.out	-I ../sys -I . sleq.myr 
 echo 	$pwd/6/6.out	-I ../sys -I . hassuffix.myr ;	$pwd/6/6.out	-I ../sys -I . hassuffix.myr 
 echo 	$pwd/6/6.out	-I ../sys -I . extremum.myr ;	$pwd/6/6.out	-I ../sys -I . extremum.myr 
 echo 	$pwd/6/6.out	-I ../sys -I . units.myr ;	$pwd/6/6.out	-I ../sys -I . units.myr 
+echo 	$pwd/6/6.out	-I ../sys -I . memops.myr ;	$pwd/6/6.out	-I ../sys -I . memops.myr 
 echo 	$pwd/6/6.out	-I ../sys -I . alloc.myr ;	$pwd/6/6.out	-I ../sys -I . alloc.myr 
-echo 	$pwd/6/6.out	-I ../sys -I . now.myr ;	$pwd/6/6.out	-I ../sys -I . now.myr 
-echo 	$pwd/6/6.out	-I ../sys -I . rand.myr ;	$pwd/6/6.out	-I ../sys -I . rand.myr 
-echo 	$pwd/6/6.out	-I ../sys -I . slcp.myr ;	$pwd/6/6.out	-I ../sys -I . slcp.myr 
-echo 	$pwd/6/6.out	-I ../sys -I . sldup.myr ;	$pwd/6/6.out	-I ../sys -I . sldup.myr 
-echo 	$pwd/6/6.out	-I ../sys -I . sljoin.myr ;	$pwd/6/6.out	-I ../sys -I . sljoin.myr 
-echo 	$pwd/6/6.out	-I ../sys -I . result.myr ;	$pwd/6/6.out	-I ../sys -I . result.myr 
-echo 	$pwd/6/6.out	-I ../sys -I . slurp.myr ;	$pwd/6/6.out	-I ../sys -I . slurp.myr 
-echo 	$pwd/6/6.out	-I ../sys -I . strfind.myr ;	$pwd/6/6.out	-I ../sys -I . strfind.myr 
-echo 	$pwd/6/6.out	-I ../sys -I . dirname.myr ;	$pwd/6/6.out	-I ../sys -I . dirname.myr 
-echo 	$pwd/6/6.out	-I ../sys -I . `$pwd/sysselect.sh errno`;	$pwd/6/6.out	-I ../sys -I . `$pwd/sysselect.sh errno`
-echo 	$pwd/6/6.out	-I ../sys -I . introspect.myr ;	$pwd/6/6.out	-I ../sys -I . introspect.myr 
-echo 	$pwd/6/6.out	-I ../sys -I . slpush.myr ;	$pwd/6/6.out	-I ../sys -I . slpush.myr 
-echo 	$pwd/6/6.out	-I ../sys -I . strsplit.myr ;	$pwd/6/6.out	-I ../sys -I . strsplit.myr 
-echo 	$pwd/6/6.out	-I ../sys -I . fltbits.myr ;	$pwd/6/6.out	-I ../sys -I . fltbits.myr 
 echo 	$pwd/6/6.out	-I ../sys -I . chartype.myr ;	$pwd/6/6.out	-I ../sys -I . chartype.myr 
 echo 	$pwd/6/6.out	-I ../sys -I . cmp.myr ;	$pwd/6/6.out	-I ../sys -I . cmp.myr 
 echo 	$pwd/6/6.out	-I ../sys -I . hasprefix.myr ;	$pwd/6/6.out	-I ../sys -I . hasprefix.myr 
-echo 	$pwd/6/6.out	-I ../sys -I . utf.myr ;	$pwd/6/6.out	-I ../sys -I . utf.myr 
-echo 	$pwd/6/6.out	-I ../sys -I . intparse.myr ;	$pwd/6/6.out	-I ../sys -I . intparse.myr 
+echo 	$pwd/6/6.out	-I ../sys -I . slcp.myr ;	$pwd/6/6.out	-I ../sys -I . slcp.myr 
+echo 	$pwd/6/6.out	-I ../sys -I . sldup.myr ;	$pwd/6/6.out	-I ../sys -I . sldup.myr 
 echo 	$pwd/6/6.out	-I ../sys -I . slfill.myr ;	$pwd/6/6.out	-I ../sys -I . slfill.myr 
+echo 	$pwd/6/6.out	-I ../sys -I . slpush.myr ;	$pwd/6/6.out	-I ../sys -I . slpush.myr 
+echo 	$pwd/6/6.out	-I ../sys -I . utf.myr ;	$pwd/6/6.out	-I ../sys -I . utf.myr 
 echo 	$pwd/6/6.out	-I ../sys -I . bigint.myr ;	$pwd/6/6.out	-I ../sys -I . bigint.myr 
+echo 	$pwd/6/6.out	-I ../sys -I . fltbits.myr ;	$pwd/6/6.out	-I ../sys -I . fltbits.myr 
 echo 	$pwd/6/6.out	-I ../sys -I . strbuf.myr ;	$pwd/6/6.out	-I ../sys -I . strbuf.myr 
 echo 	$pwd/6/6.out	-I ../sys -I . fltfmt.myr ;	$pwd/6/6.out	-I ../sys -I . fltfmt.myr 
 echo 	$pwd/6/6.out	-I ../sys -I . hashfuncs.myr ;	$pwd/6/6.out	-I ../sys -I . hashfuncs.myr 
 echo 	$pwd/6/6.out	-I ../sys -I . htab.myr ;	$pwd/6/6.out	-I ../sys -I . htab.myr 
-echo 	$pwd/6/6.out	-I ../sys -I . cstrconv.myr ;	$pwd/6/6.out	-I ../sys -I . cstrconv.myr 
+echo 	$pwd/6/6.out	-I ../sys -I . introspect.myr ;	$pwd/6/6.out	-I ../sys -I . introspect.myr 
+echo 	$pwd/6/6.out	-I ../sys -I . intparse.myr ;	$pwd/6/6.out	-I ../sys -I . intparse.myr 
+echo 	$pwd/6/6.out	-I ../sys -I . strsplit.myr ;	$pwd/6/6.out	-I ../sys -I . strsplit.myr 
 echo 	$pwd/6/6.out	-I ../sys -I . `$pwd/sysselect.sh syswrap-ss`;	$pwd/6/6.out	-I ../sys -I . `$pwd/sysselect.sh syswrap-ss`
 echo 	$pwd/6/6.out	-I ../sys -I . varargs.myr ;	$pwd/6/6.out	-I ../sys -I . varargs.myr 
 echo 	$pwd/6/6.out	-I ../sys -I . fmt.myr ;	$pwd/6/6.out	-I ../sys -I . fmt.myr 
+echo 	$pwd/6/6.out	-I ../sys -I . assert.myr ;	$pwd/6/6.out	-I ../sys -I . assert.myr 
+echo 	$pwd/6/6.out	-I ../sys -I . now.myr ;	$pwd/6/6.out	-I ../sys -I . now.myr 
+echo 	$pwd/6/6.out	-I ../sys -I . rand.myr ;	$pwd/6/6.out	-I ../sys -I . rand.myr 
+echo 	$pwd/6/6.out	-I ../sys -I . sljoin.myr ;	$pwd/6/6.out	-I ../sys -I . sljoin.myr 
+echo 	$pwd/6/6.out	-I ../sys -I . slurp.myr ;	$pwd/6/6.out	-I ../sys -I . slurp.myr 
+echo 	$pwd/6/6.out	-I ../sys -I . dirname.myr ;	$pwd/6/6.out	-I ../sys -I . dirname.myr 
 echo 	$pwd/6/6.out	-I ../sys -I . optparse.myr ;	$pwd/6/6.out	-I ../sys -I . optparse.myr 
 echo 	$pwd/6/6.out	-I ../sys -I . ipparse.myr ;	$pwd/6/6.out	-I ../sys -I . ipparse.myr 
 echo 	$pwd/6/6.out	-I ../sys -I . `$pwd/sysselect.sh env`;	$pwd/6/6.out	-I ../sys -I . `$pwd/sysselect.sh env`
@@ -77,14 +80,16 @@ echo 	$pwd/6/6.out	-I ../sys -I . endian.myr ;	$pwd/6/6.out	-I ../sys -I . endia
 echo 	$pwd/6/6.out	-I ../sys -I . getcwd.myr ;	$pwd/6/6.out	-I ../sys -I . getcwd.myr 
 echo 	$pwd/6/6.out	-I ../sys -I . swap.myr ;	$pwd/6/6.out	-I ../sys -I . swap.myr 
 echo 	$pwd/6/6.out	-I ../sys -I . `$pwd/sysselect.sh dial`;	$pwd/6/6.out	-I ../sys -I . `$pwd/sysselect.sh dial`
-echo 	$pwd/muse/6.out	-o std fmtfuncs.use fmt.use try.use pathjoin.use strjoin.use syswrap-ss.use sljoin.use slpush.use strstrip.use htab.use now.use getcwd.use rand.use env.use slurp.use varargs.use strbuf.use clear.use slput.use strsplit.use introspect.use resolve.use alloc.use optparse.use fltbits.use sldup.use fltfmt.use extremum.use option.use slcp.use putint.use sort.use blat.use mk.use errno.use hassuffix.use execvp.use swap.use ipparse.use types.use strfind.use utf.use cstrconv.use search.use die.use units.use wait.use result.use bitset.use intparse.use hasprefix.use mkpath.use getint.use syswrap.use dirname.use sleq.use endian.use spork.use dial.use cmp.use chartype.use bigint.use hashfuncs.use slfill.use fndup.use ;	$pwd/muse/6.out	-o std fmtfuncs.use fmt.use try.use pathjoin.use strjoin.use syswrap-ss.use sljoin.use slpush.use strstrip.use htab.use now.use getcwd.use rand.use env.use slurp.use varargs.use strbuf.use clear.use slput.use strsplit.use introspect.use resolve.use alloc.use optparse.use fltbits.use sldup.use fltfmt.use extremum.use option.use slcp.use putint.use sort.use blat.use mk.use errno.use hassuffix.use execvp.use swap.use ipparse.use types.use strfind.use utf.use cstrconv.use search.use die.use units.use wait.use result.use bitset.use intparse.use hasprefix.use mkpath.use getint.use syswrap.use dirname.use sleq.use endian.use spork.use dial.use cmp.use chartype.use bigint.use hashfuncs.use slfill.use fndup.use 
-echo 	ar	vu libstd.a fmtfuncs.6 fmt.6 try.6 pathjoin.6 strjoin.6 syswrap-ss.6 sljoin.6 slpush.6 strstrip.6 htab.6 now.6 getcwd.6 rand.6 env.6 slurp.6 varargs.6 strbuf.6 clear.6 slput.6 strsplit.6 introspect.6 resolve.6 alloc.6 optparse.6 fltbits.6 sldup.6 fltfmt.6 extremum.6 option.6 slcp.6 putint.6 sort.6 blat.6 mk.6 errno.6 hassuffix.6 execvp.6 swap.6 ipparse.6 types.6 strfind.6 utf.6 cstrconv.6 search.6 die.6 units.6 wait.6 result.6 bitset.6 intparse.6 hasprefix.6 mkpath.6 getint.6 syswrap.6 dirname.6 sleq.6 endian.6 spork.6 dial.6 cmp.6 chartype.6 bigint.6 hashfuncs.6 slfill.6 fndup.6 ;	ar	vu libstd.a fmtfuncs.6 fmt.6 try.6 pathjoin.6 strjoin.6 syswrap-ss.6 sljoin.6 slpush.6 strstrip.6 htab.6 now.6 getcwd.6 rand.6 env.6 slurp.6 varargs.6 strbuf.6 clear.6 slput.6 strsplit.6 introspect.6 resolve.6 alloc.6 optparse.6 fltbits.6 sldup.6 fltfmt.6 extremum.6 option.6 slcp.6 putint.6 sort.6 blat.6 mk.6 errno.6 hassuffix.6 execvp.6 swap.6 ipparse.6 types.6 strfind.6 utf.6 cstrconv.6 search.6 die.6 units.6 wait.6 result.6 bitset.6 intparse.6 hasprefix.6 mkpath.6 getint.6 syswrap.6 dirname.6 sleq.6 endian.6 spork.6 dial.6 cmp.6 chartype.6 bigint.6 hashfuncs.6 slfill.6 fndup.6 
+echo 	$pwd/6/6.out	-I ../sys -I . `$pwd/sysselect.sh syswrap`;	$pwd/6/6.out	-I ../sys -I . `$pwd/sysselect.sh syswrap`
+echo 	6a	-o memops-impl.6 `$pwd/sysselect.sh memops-impl`;	6a	-o memops-impl.6 `$pwd/sysselect.sh memops-impl`
+echo 	$pwd/muse/6.out	-o std fmtfuncs.use fmt.use try.use pathjoin.use strjoin.use syswrap-ss.use sljoin.use slpush.use strstrip.use htab.use now.use getcwd.use rand.use env.use slurp.use varargs.use strbuf.use clear.use slput.use strsplit.use introspect.use resolve.use alloc.use optparse.use memops.use fltbits.use sldup.use fltfmt.use extremum.use option.use slcp.use putint.use sort.use blat.use mk.use errno.use hassuffix.use execvp.use swap.use ipparse.use types.use strfind.use utf.use cstrconv.use search.use die.use units.use wait.use result.use bitset.use intparse.use hasprefix.use mkpath.use getint.use syswrap.use dirname.use sleq.use endian.use spork.use dial.use assert.use cmp.use chartype.use bigint.use hashfuncs.use slfill.use fndup.use ;	$pwd/muse/6.out	-o std fmtfuncs.use fmt.use try.use pathjoin.use strjoin.use syswrap-ss.use sljoin.use slpush.use strstrip.use htab.use now.use getcwd.use rand.use env.use slurp.use varargs.use strbuf.use clear.use slput.use strsplit.use introspect.use resolve.use alloc.use optparse.use memops.use fltbits.use sldup.use fltfmt.use extremum.use option.use slcp.use putint.use sort.use blat.use mk.use errno.use hassuffix.use execvp.use swap.use ipparse.use types.use strfind.use utf.use cstrconv.use search.use die.use units.use wait.use result.use bitset.use intparse.use hasprefix.use mkpath.use getint.use syswrap.use dirname.use sleq.use endian.use spork.use dial.use assert.use cmp.use chartype.use bigint.use hashfuncs.use slfill.use fndup.use 
+echo 	ar	vu libstd.a fmtfuncs.6 fmt.6 try.6 pathjoin.6 strjoin.6 syswrap-ss.6 sljoin.6 slpush.6 strstrip.6 htab.6 now.6 getcwd.6 rand.6 env.6 slurp.6 varargs.6 strbuf.6 clear.6 slput.6 strsplit.6 introspect.6 resolve.6 alloc.6 optparse.6 memops.6 fltbits.6 sldup.6 fltfmt.6 extremum.6 option.6 slcp.6 putint.6 sort.6 blat.6 mk.6 errno.6 hassuffix.6 execvp.6 swap.6 ipparse.6 types.6 strfind.6 utf.6 cstrconv.6 search.6 die.6 units.6 wait.6 result.6 bitset.6 intparse.6 hasprefix.6 mkpath.6 getint.6 syswrap.6 dirname.6 sleq.6 endian.6 spork.6 dial.6 assert.6 cmp.6 chartype.6 memops-impl.6 bigint.6 hashfuncs.6 slfill.6 fndup.6 ;	ar	vu libstd.a fmtfuncs.6 fmt.6 try.6 pathjoin.6 strjoin.6 syswrap-ss.6 sljoin.6 slpush.6 strstrip.6 htab.6 now.6 getcwd.6 rand.6 env.6 slurp.6 varargs.6 strbuf.6 clear.6 slput.6 strsplit.6 introspect.6 resolve.6 alloc.6 optparse.6 memops.6 fltbits.6 sldup.6 fltfmt.6 extremum.6 option.6 slcp.6 putint.6 sort.6 blat.6 mk.6 errno.6 hassuffix.6 execvp.6 swap.6 ipparse.6 types.6 strfind.6 utf.6 cstrconv.6 search.6 die.6 units.6 wait.6 result.6 bitset.6 intparse.6 hasprefix.6 mkpath.6 getint.6 syswrap.6 dirname.6 sleq.6 endian.6 spork.6 dial.6 assert.6 cmp.6 chartype.6 memops-impl.6 bigint.6 hashfuncs.6 slfill.6 fndup.6 
 echo 	cd $pwd;	cd $pwd
 echo 	cd $pwd/lib/regex;	cd $pwd/lib/regex
-echo 	$pwd/6/6.out	-I ../sys -I ../std types.myr ;	$pwd/6/6.out	-I ../sys -I ../std types.myr 
-echo 	$pwd/6/6.out	-I ../sys -I ../std interp.myr ;	$pwd/6/6.out	-I ../sys -I ../std interp.myr 
-echo 	$pwd/6/6.out	-I ../sys -I ../std ranges.myr ;	$pwd/6/6.out	-I ../sys -I ../std ranges.myr 
-echo 	$pwd/6/6.out	-I ../sys -I ../std compile.myr ;	$pwd/6/6.out	-I ../sys -I ../std compile.myr 
+echo 	$pwd/6/6.out	-I ../std -I ../sys types.myr ;	$pwd/6/6.out	-I ../std -I ../sys types.myr 
+echo 	$pwd/6/6.out	-I ../std -I ../sys interp.myr ;	$pwd/6/6.out	-I ../std -I ../sys interp.myr 
+echo 	$pwd/6/6.out	-I ../std -I ../sys ranges.myr ;	$pwd/6/6.out	-I ../std -I ../sys ranges.myr 
+echo 	$pwd/6/6.out	-I ../std -I ../sys compile.myr ;	$pwd/6/6.out	-I ../std -I ../sys compile.myr 
 echo 	$pwd/muse/6.out	-o regex interp.use types.use compile.use ranges.use ;	$pwd/muse/6.out	-o regex interp.use types.use compile.use ranges.use 
 echo 	ar	vu libregex.a interp.6 types.6 compile.6 ranges.6 ;	ar	vu libregex.a interp.6 types.6 compile.6 ranges.6 
 echo 	cd $pwd;	cd $pwd
