@@ -54,7 +54,7 @@ pkg std =
 	const getsysinfo	: (si : sysinfo# -> void)
 
 	/* path manipulation */
-	const mkdir	: (path : byte[:], mode : int64 -> int64)
+	const mkdir	: (path : byte[:], mode : int64 -> errno)
 	const chdir	: (path : byte[:] -> bool)
 	const remove	: (path : byte[:] -> bool)
 
@@ -153,7 +153,7 @@ const mkdir	= {path, mode;
 
 	fd = sys.create(path, sys.Ordonly, sys.Dmdir | (mode castto(int)))
 	if fd < 0
-		-> -1
+		-> lasterr()
 	;;
 	sys.close(fd)
 	-> 0

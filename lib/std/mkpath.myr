@@ -2,20 +2,20 @@ use "syswrap.use"
 use "errno.use"
 
 pkg std =
-	const mkpath	: (p : byte[:] -> bool)
+	const mkpath	: (p : byte[:], mode : int64 -> errno)
 ;;
 
-const mkpath = {p
+const mkpath = {p, mode
 	var st
 
 	for var i = 0; i < p.len; i++
 		if p[i] == '/' castto(byte) && i != 0
-			st = mkdir(p[:i], 0o777)
-			if st != 0 && (st castto(errno)) != Eexist
-				-> false
+			st = mkdir(p[:i], mode)
+			if st != 0 && st != Eexist
+				-> st
 			;;
 		;;
 	;;
 
-	-> true
+	-> Enone
 }
