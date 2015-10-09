@@ -52,7 +52,7 @@ pkg std =
 	const getsysinfo	: (si : sysinfo# -> void)
 
 	/* path manipulation */
-	const mkdir	: (path : byte[:], mode : int64 -> int64)
+	const mkdir	: (path : byte[:], mode : int64 -> errno)
 	const remove	: (path : byte[:] -> bool)
 	const chdir	: (path : byte[:] -> bool)
 
@@ -83,7 +83,7 @@ const seek	= {fd, delta, whence;	-> check(sys.lseek(fd castto(sys.fd), delta cas
 const dup2	= {ofd, nfd;	-> check(sys.dup2(ofd castto(sys.fd), nfd castto(sys.fd)) castto(fd))}
 
 /* path manipulation */
-const mkdir	= {path, mode;	-> sys.mkdir(path, mode)}
+const mkdir	= {path, mode;	-> sys.mkdir(path, mode) castto(errno)}
 const chdir	= {path;	-> sys.chdir(path) == 0}
 const remove	= {path;	-> sys.unlink(path) == 0}
 

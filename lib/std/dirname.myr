@@ -4,34 +4,45 @@ use "die.use"
 use "sldup.use"
 use "strfind.use"
 use "option.use"
+use "types.use"
 
 pkg std =
 	const dirname	: (p : byte[:] -> byte[:])
 	const basename	: (p : byte[:] -> byte[:])
 ;;
 
+extern const put : (fmt : byte[:], args : ... -> size)
+
 const dirname = {p
+	var end
+
+	for end = p.len; end > 1; end--
+		if p[end-1] != '/' castto(byte)
+			break
+		;;
+	;;
+	std.put("p: {}, end: {}, p[:{}]: {}\n", p, end, end, p[:end])
+	p = p[:end]
 	match std.strrfind(p, "/")
-	| `std.Some idx:
-		-> std.sldup(p[:idx])
-	| `std.None:
-		-> std.sldup(".")
+	| `std.None:	-> std.sldup(".")
+	| `std.Some 0:	-> std.sldup("/")
+	| `std.Some i:	-> std.sldup(p[:i])
 	;;
 }
 
 const basename = {p
-:again
-	if p.len == 0
-		-> std.sldup(".")
+	var end
+
+	for end = p.len; end > 1; end--
+		if p[end-1] != '/' castto(byte)
+			break
+		;;
 	;;
 
+	std.put("p: {}, end: {}, p[:{}]: {}\n", p, end, end, p[:end])
+	p = p[:end]
 	match std.strrfind(p, "/")
-	| `std.Some idx:
-		if idx == p.len - 1
-			goto again
-		;;
-		-> std.sldup(p[idx+1:])
-	| `std.None:
-		-> std.sldup(p)
+	| `std.None:	-> std.sldup(p[:end])
+	| `std.Some i:	-> std.sldup(p[i+1:end])
 	;;
 }
