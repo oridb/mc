@@ -3,12 +3,12 @@ use "alloc.use"
 use "chartype.use"
 use "die.use"
 use "endian.use"
-use "result.use"
 use "extremum.use"
 use "hashfuncs.use"
 use "htab.use"
 use "ipparse.use"
 use "option.use"
+use "result.use"
 use "slcp.use"
 use "sleq.use"
 use "slpush.use"
@@ -20,26 +20,19 @@ use "types.use"
 use "utf.use"
 
 pkg std =
-	type rectype = uint16
-
-	const DnsA	: rectype = 1  /* host address */
-	const DnsNS	: rectype = 2  /* authoritative name server */
-	const DnsMD	: rectype = 3  /* mail destination (Obsolete - use MX) */
-	const DnsMF	: rectype = 4  /* mail forwarder (Obsolete - use MX) */
-	const DnsCNAME	: rectype = 5  /* canonical name for an alias */
-	const DnsSOA	: rectype = 6  /* marks the start of a zone of authority */
-	const DnsMB	: rectype = 7  /* mailbox domain name (EXPERIMENTAL) */
-	const DnsMG	: rectype = 8  /* mail group member (EXPERIMENTAL) */
-	const DnsMR	: rectype = 9  /* mail rename domain name (EXPERIMENTAL) */
-	const DnsNULL	: rectype = 10 /* null RR (EXPERIMENTAL) */
-	const DnsWKS	: rectype = 11 /* well known service description */
-	const DnsPTR	: rectype = 12 /* domain name pointer */
-	const DnsHINFO	: rectype = 13 /* host information */
-	const DnsMINFO	: rectype = 14 /* mailbox or mail list information */
-	const DnsMX	: rectype = 15 /* mail exchange */
-	const DnsTXT	: rectype = 16 /* text strings */
-	const DnsAAAA	: rectype = 28 /* ipv6 host address */
-
+	type rectype = union
+		`DnsA		/* host address */
+		`DnsNS		/* authoritative name server */
+		`DnsCNAME	/* canonical name for an alias */
+		`DnsSOA		/* marks the start of a zone of authority */
+		`DnsWKS		/* well known service description */
+		`DnsPTR		/* domain name pointer */
+		`DnsHINFO	/* host information */
+		`DnsMINFO	/* mailbox or mail list information */
+		`DnsMX		/* mail exchange */
+		`DnsTXT		/* text strings */
+		`DnsAAAA	/* ipv6 host address */
+	;;
 
 	type resolveerr = union
 		`Badhost
@@ -53,11 +46,6 @@ pkg std =
 		stype	: sys.socktype
 		ttl	: uint32
 		addr	: netaddr
-	/*
-		flags	: uint32
-		addr	: sockaddr[:]
-		canon	: byte[:]
-	*/
 	;;
 
 	const resolve	: (host : byte[:]	-> result(hostinfo[:], resolveerr))
@@ -79,11 +67,11 @@ const __init__ = {
 }
 
 const resolve = {host
-	-> resolverec(host, DnsA)
+	-> resolverec(host, `DnsA)
 }
 
 const resolvemx = {host
-	-> resolverec(host, DnsMX)
+	-> resolverec(host, `DnsMX)
 }
 
 const resolverec = {host, t
@@ -91,7 +79,7 @@ const resolverec = {host, t
 	| `Some hinf:
 		-> `Ok slpush([][:], hinf)
 	| `None:
-		-> dnsresolve(host, DnsA)
+		-> dnsresolve(host, rectype(`DnsA))
 	;;
 }
 
@@ -220,7 +208,7 @@ const word = {s
 }
 
 
-const dnsresolve = {host, t
+const dnsresolve = {host, rt
 	var nsrv
 
 	if !valid(host)
@@ -229,7 +217,7 @@ const dnsresolve = {host, t
 	for ns in nameservers
 		nsrv = dnsconnect(ns)
 		if nsrv >= 0
-			-> dnsquery(nsrv, host, t)
+			-> dnsquery(nsrv, host, rt)
 		;;
 	;;
 	-> `Fail (`Badsrv)
@@ -439,3 +427,20 @@ const valid = {host : byte[:]
 
 	-> true
 }
+
+const rectype = {rtype
+	match rtype
+	| `DnsA:	-> 1  /* host address */
+	| `DnsNS:	-> 2  /* authoritative name server */
+	| `DnsCNAME:	-> 5  /* canonical name for an alias */
+	| `DnsSOA:	-> 6  /* marks the start of a zone of authority */
+	| `DnsWKS:	-> 11 /* well known service description */
+	| `DnsPTR:	-> 12 /* domain name pointer */
+	| `DnsHINFO:	-> 13 /* host information */
+	| `DnsMINFO:	-> 14 /* mailbox or mail list information */
+	| `DnsMX:	-> 15 /* mail exchange */
+	| `DnsTXT:	-> 16 /* text strings */
+	| `DnsAAAA:	-> 28 /* ipv6 host address */
+	;;
+}
+
