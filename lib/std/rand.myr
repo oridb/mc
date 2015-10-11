@@ -54,6 +54,7 @@ pkg std =
 	const freerng	: (rng : rng# -> void)
 
 	generic rand	: (lo : @a::(numeric,integral), hi : @a::(numeric,integral) -> @a::(numeric,integral))
+	generic randnum	: (-> @a::(numeric,integral))
 
 	generic rngrand	: (rng : rng#, lo : @a::(numeric,integral), hi : @a::(numeric,integral) -> @a::(numeric,integral))
 	generic rngrandnum	: (rng : rng# -> @a::(numeric,integral))
@@ -84,10 +85,6 @@ const freerng = {rng
 	free(rng)
 }
 
-generic rand = {lo, hi
-	-> rngrand(_rng, lo, hi)
-}
-
 /* initializes a random number generator from the seed `seed`. */
 const init = {rng, seed
 	for var i = 0; i < 624; i++
@@ -95,6 +92,14 @@ const init = {rng, seed
 		seed = 1812433253 * (seed ^ (seed >> 30)) + i + 1
 	;;
 	rng.i = 624
+}
+
+generic rand = {lo, hi
+	-> rngrand(_rng, lo, hi)
+}
+
+generic randnum = {
+	-> rngrandnum(_rng)
 }
 
 /*

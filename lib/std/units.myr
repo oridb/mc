@@ -1,3 +1,5 @@
+use "types.use"
+
 pkg std =
 	/* JEDEC 100B.1 memory sizes */
 	generic KiB	: @a::(integral,numeric)	= 1024 
@@ -8,4 +10,8 @@ pkg std =
 	generic EiB	: @a::(integral,numeric)	= PiB*1024
 	generic ZiB	: @a::(integral,numeric)	= EiB*1024
 	generic YiB	: @a::(integral,numeric)	= ZiB*1024
+
+	generic Sec	: time	= 1_000_000
+	generic Msec	: time	= 1_000
+	generic Usec	: time	= 1
 ;;

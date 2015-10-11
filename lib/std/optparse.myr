@@ -30,6 +30,7 @@ pkg std =
 	type optparsed = struct
 		opts	: (char, byte[:])[:]
 		args	: byte[:][:]
+		prog	: byte[:]
 	;;
 
 	const optparse	: (optargs : byte[:][:], def : optdef# -> optparsed)
@@ -58,7 +59,8 @@ const optparse = {args, def
 
 	parsed = [
 		.opts=[][:],
-		.args=[][:]
+		.args=[][:],
+		.prog=args[0]
 	]
 	optinit(&ctx, args, def)
 	while !optdone(&ctx)

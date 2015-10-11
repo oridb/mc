@@ -87,7 +87,7 @@ const sbputb = {sb, v
 }
 
 const sbtrim = {sb, len
-	iassert(abs(len) <= sb.len, "trim out of range\n")
+	len = min(sb.len, len)
 	if len < 0
 		sb.len -= abs(len)
 	else

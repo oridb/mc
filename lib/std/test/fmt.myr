@@ -49,7 +49,7 @@ const builtins = {
 	check("-000000001", "{p=0,w=10}", -1)
 	check("xxxxxxxx-1", "{p=x,w=10}", -1)
 	check("        -1", "{w=10}", -1)
-	check("100000"    , "{3}", 100000)
+	check("100000"    , "{w=3}", 100000)
 	check("foobarbaz", "{}bar{}", "foo", "baz")
 	check("{}barbaz", "{{}}bar{}", "baz")
 	check("{barbaz}", "{{bar{}}}", "baz")

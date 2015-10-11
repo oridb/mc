@@ -53,7 +53,7 @@ pkg regex =
 		strp	: std.size
 	;;
 
-	type rethread = struct
+	pkglocal type rethread = struct
 		next	: rethread#	/* run queue link */
 
 		tid	: std.size	/* just for debugging */
