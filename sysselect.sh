@@ -21,7 +21,7 @@ elif test $uname_arch = "amd64"; then
 fi
 
 # check for system prefixes on .myr src
-for suffix in myr s; do
+for suffix in s myr; do
 	for platform in $posixy-$sys-$arch \
 		$posixy-$sys \
 		$posixy-$arch \
