@@ -208,9 +208,6 @@ const target = {b, p
 	| `std.Some "runtime":	p.runtime = expectword(b, p, "incpath")
 	| `std.Some "ldscript":	p.runtime = expectword(b, p, "runtime")
 	| `std.Some "noinst":	p.install = false
-	| `std.Some "testbin":	
-		p.istest = true
-		p.install = false
 	/* no word */
 	| `std.Some targtype:	failparse(p, "unknown keyword {}\n", targtype)
 	| `std.None:	-> false
