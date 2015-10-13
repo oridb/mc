@@ -18,6 +18,13 @@ type parser = struct
 	basedir	: byte[:]
 	line	: int
 
+	/* default parameter values */
+	incpath	: byte[:][:]
+	runtime	: byte[:]
+	ldscript: byte[:]
+	istest	: bool
+	install	: bool
+
 	/* extracted data for further parsing */
 	subdirs	: byte[:][:]
 	targsel	: syssel((byte[:], targ))#
@@ -88,6 +95,11 @@ const mkparser = {path, dir, basedir, sel
 		.fdir = std.sldup(dir),
 		.basedir = std.sldup(basedir),
 		.targsel = sel,
+		.incpath = [][:],
+		.runtime = "",
+		.ldscript = "",
+		.istest = false,
+		.install = true,
 	])
 	match std.slurp(path)
 	| `std.Ok d:	p.data = d
@@ -155,7 +167,7 @@ const freeparser = {p
 	std.free(p)
 }
 
-const failparse = {p, msg, args : ...
+$noret const failparse = {p, msg, args : ...
 	var buf : byte[1024]
 	var ap
 	var sl
@@ -183,6 +195,7 @@ const parse = {b, p, path
 
 const target = {b, p
 	match word(p)
+	/* targets */
 	| `std.Some "bin":	bintarget(b, p)
 	| `std.Some "lib":	libtarget(b, p)
 	| `std.Some "test":	testtarget(b, p)
@@ -190,10 +203,42 @@ const target = {b, p
 	| `std.Some "cmd":	cmdtarget(b, p, "cmd", true)
 	| `std.Some "man":	mantarget(b, p)
 	| `std.Some "sub":	subtarget(b, p)
-	| `std.Some targtype:	failparse(p, "unknown targtype type {}\n", targtype)
+	/* global attributes */
+	| `std.Some "incpath":	incpath(b, p)
+	| `std.Some "runtime":	p.runtime = expectword(b, p, "incpath")
+	| `std.Some "ldscript":	p.runtime = expectword(b, p, "runtime")
+	| `std.Some "noinst":	p.install = false
+	| `std.Some "testbin":	
+		p.istest = true
+		p.install = false
+	/* no word */
+	| `std.Some targtype:	failparse(p, "unknown keyword {}\n", targtype)
 	| `std.None:	-> false
 	;;
 	-> true
+}
+
+/* incpath: '=' wordlist ';;' */
+const incpath = {b, p
+	skipspace(p)
+	if !matchc(p, '=')
+		failparse(p, "expected '=' after incpath\n")
+	;;
+	match wordlist(p)
+	| `std.Some path:	p.incpath = path
+	| `std.None:
+	;;
+	skipspace(p)
+	if !matchc(p, ';') || !matchc(p, ';')
+		failparse(p, "expected ';;' after incpath path list\n")
+	;;
+}
+
+const expectword = {b, p, attr
+	match word(p)
+	| `std.Some w:	-> w
+	| `std.None:	failparse(p, "expected word after {}\n", attr)
+	;;
 }
 
 /* bintarget: myrtarget */
@@ -289,7 +334,8 @@ const cmdtarget = {b, p, cmd, iscmd
 	for elt in attrs
 		match elt
 		| ("durable", ""):	durable = true
-		| ("test", ""):	istest = true
+		| ("test", ""):		istest = true
+		| ("notest", ""):	istest = false
 		| ("dep", depname):	deplist = std.slpush(deplist, depname)
 		| ("tag", tag):	systags = std.slpush(systags, tag)
 		| (attr, ""):
@@ -323,7 +369,7 @@ myrtarget: name '=' inputlist ';;'
 	| name attrlist = inputlist ';;'
 */
 const myrtarget = {b, p, targ
-	var ldscript, runtime, inst, incpath, systags
+	var ldscript, runtime, install, incpath, systags
 	var name, inputs, libdeps, attrs
 	var istest
 	var fsel
@@ -365,22 +411,29 @@ const myrtarget = {b, p, targ
 		failparse(p, "expected ';;' terminating input list, got {}\n", peekc(p))
 	;;
 
-	inst = true
-	istest = false
-	ldscript = ""
-	runtime = ""
+	install = p.install
+	istest = p.istest
+	runtime = p.runtime
+	ldscript = p.ldscript
 	incpath = [][:]
+	for path in p.incpath
+		incpath = std.slpush(incpath, path)
+	;;
 	systags = [][:]
 	for elt in attrs
 		match elt
 		| ("ldscript", lds):	ldscript = std.sldup(lds)
 		| ("runtime", rt):	runtime = std.sldup(rt)
 		| ("inc", path):	incpath = std.slpush(incpath, std.sldup(path))
-		| ("noinst", ""):	inst = false
-		| ("test", ""):	istest = true
-		| ("tag", tag):	systags = std.slpush(systags, tag)
-		| (invalid, _):
+		| ("tag", tag):		systags = std.slpush(systags, tag)
+		| ("inst", ""):		install = true
+		| ("noinst", ""):	install = false
+		| ("test", ""):		istest = true
+		| ("notest", ""):	istest = false
+		| (invalid, ""):
 			std.fatal("{}: got invalid attr '{}'\n", targ, invalid)
+		| (invalid, attr):
+			std.fatal("{}: got invalid attr '{} = {}'\n", targ, invalid, attr)
 		;;
 	;;
 	for inc in bld.opt_incpaths
@@ -396,7 +449,7 @@ const myrtarget = {b, p, targ
 		.istest=istest,
 		/* attrs */
 		.systags=systags,
-		.install=inst,
+		.install=install,
 		.ldscript=ldscript,
 		.runtime=runtime,
 		.incpath=incpath,
