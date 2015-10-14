@@ -418,7 +418,7 @@ const skipspace = {f
 
 /* Same as delim, but with special handling for '\n', '\r', and '\r\n' */
 const readln = {f
-	var ret, c, n
+	var ret, c
 
 	ret = [][:]
 	while true
@@ -438,13 +438,12 @@ const readln = {f
 		for var i = f.rstart; i < f.rend; i++
 			c = f.rbuf[i] castto(char)
 			if c == '\r' || c == '\n'
-				n = 1
+				ret = readinto(f, ret, i - f.rstart)
+				f.rstart++
 				/* if we have '\r', we can get '\r\n'. */
 				if c == '\r' && unwrapc(peekc(f), -1) == '\n'
-					n = 2
+					f.rstart++
 				;;
-				ret = readinto(f, ret, i - f.rstart)
-				f.rstart += n
 				-> `Ok ret
 			;;
 :nextitergetln
