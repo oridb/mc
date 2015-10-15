@@ -1,5 +1,7 @@
 use "extremum.use"
 use "types.use"
+use "utf.use"
+use "chartype.use"
 
 pkg std =
 	type order = union
@@ -11,7 +13,10 @@ pkg std =
 	generic numcmp	: (a : @a, b : @a -> order)
 	const strcmp	: (a : byte[:], b : byte[:] -> order)
 	const strncmp	: (a : byte[:], b : byte[:], n : size -> order)
+	const strcasecmp	: (a : byte[:], b : byte[:] -> order)
 ;;
+
+extern const put : (str : byte[:], args : ... -> int64)
 
 generic numcmp = {a, b
 	if a < b
@@ -42,12 +47,36 @@ const strcmp = {a, b
 	else
 		-> `Equal
 	;;
-		
 }
 
 const strncmp = {a, b, n
 	a = a[:min(a.len, n)]
 	b = b[:min(b.len, n)]
 	-> strcmp(a, b)
+}
+
+
+const strcasecmp = {a, b
+	var ca, cb
+
+	while a.len > 0 && b.len > 0
+		(ca, a) = std.striter(a)
+		(cb, b) = std.striter(b)
+		ca = toupper(ca)
+		cb = toupper(cb)
+		std.put("{}, {}\n", ca, cb)
+		if ca < cb
+			-> `Before
+		elif ca > cb
+			-> `After
+		;;
+	;;
+	if a.len < b.len
+		-> `Before
+	elif a.len > b.len
+		-> `After
+	else
+		-> `Equal
+	;;
 }
 

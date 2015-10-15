@@ -1,0 +1,38 @@
+use std
+
+const main = {
+	expect(std.strcmp, "foo", "bar", `std.After)
+	expect(std.strcmp, "foo", "foo", `std.Equal)
+	expect(std.strcmp, "foo", "foos", `std.Before)
+	expect(std.strcmp, "Foo", "foos", `std.Before)
+
+	expect(std.strcasecmp, "FOo", "bar", `std.After)
+	expect(std.strcasecmp, "FOo", "Bar", `std.After)
+	expect(std.strcasecmp, "FOo", "FUCK", `std.Before)
+	expect(std.strcasecmp, "FOo", "fuck", `std.Before)
+	expect(std.strcasecmp, "FOo", "foo", `std.Equal)
+	expect(std.strcasecmp, "FOo", "foos", `std.Before)
+
+	expect(std.strcasecmp, "FOo", "bar", `std.After)
+	expect(std.strcasecmp, "FOo", "foo", `std.Equal)
+	expect(std.strcasecmp, "FOo", "foos", `std.Before)
+
+	expect(std.strcasecmp, "Γειά σας", "γειά σας", `std.Equal)
+	expect(std.strcasecmp, "γειά σας", "γειά σας", `std.Equal)
+	expect(std.strcasecmp, "γειά σας", "Γειά σας", `std.Equal)
+	expect(std.strcasecmp, "γειά", "Γειά σας", `std.Before)
+}
+
+const expect = {fn, a, b, e
+	var val
+
+	val = fn(a, b)
+	match (val, e)
+	| (`std.Before, `std.Before):	/* nothing */
+	| (`std.After, `std.After):	/* nothing */
+	| (`std.Equal, `std.Equal):	/* nothing */
+	| _:
+		std.fatal("cmp {}, {}: expected {}, got {}\n", a, b, e, val)
+	;;
+
+}

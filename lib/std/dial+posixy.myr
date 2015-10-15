@@ -80,8 +80,6 @@ const parsedial = {str
 		-> `Fail "missing proto"
 	elif host.len == 0
 		-> `Fail "missing host"
-	elif port.len == 0
-		-> `Fail "missing port"
 	;;
 
 	if sleq(proto, "net")
@@ -89,8 +87,14 @@ const parsedial = {str
 	elif sleq(proto, "unix")
 		-> `Fail "net unix proto not yet supported\n"
 	elif sleq(proto, "tcp")
+		if port.len == 0
+			-> `Fail "missing port"
+		;;
 		socktype = sys.Sockstream
 	elif sleq(proto, "udp")
+		if port.len == 0
+			-> `Fail "missing port"
+		;;
 		socktype = sys.Sockdgram
 	;;
 

@@ -68,7 +68,6 @@ const strcasehash = {s
 	h = murmurhash2(slbytes(chars), Seed)
 	slfree(chars)
 	-> h
-
 }
 
 const streq = {a, b
