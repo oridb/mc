@@ -2,6 +2,7 @@ use sys
 
 use "alloc.use"
 use "die.use"
+use "memops.use"
 use "option.use"
 use "result.use"
 use "slcp.use"

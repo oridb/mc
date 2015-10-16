@@ -5,6 +5,7 @@ use "sldup.use"
 use "strfind.use"
 use "option.use"
 use "types.use"
+use "memops.use"
 
 pkg std =
 	const dirname	: (p : byte[:] -> byte[:])

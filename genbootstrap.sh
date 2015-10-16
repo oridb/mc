@@ -25,7 +25,6 @@ echo 'pwd=`pwd`' >> $bootscript
 ./xmbld -Rnone mbld:mbld | \
     sed "s:Entering directory '\\(.*\\)':	cd \$pwd/\\1:g" | \
     sed "s:Leaving directory.*:	cd \$pwd:g" | \
-    sed "s:\\([a-zA-Z0-9_-]*\\)+.*:\`\$pwd/sysselect.sh \1\`:" | \
     sed "s:`pwd`:\$pwd:g" | \
     grep '^	' | \
     sed 's/.*/echo &;&/' | \

@@ -12,6 +12,7 @@ use "slpush.use"
 use "types.use"
 use "utf.use"
 use "errno.use"
+use "memops.use"
 
 pkg std =
 	type bigint = struct
