@@ -67,6 +67,7 @@ O(Osllen,	1,	OTpre,  "SLLEN")        /* size of slice */
 O(Oslbase,	1,	OTpre,  "SLBASE")       /* base of sice */
 O(Outag,	1,	OTpre,  "UTAG")	        /* tag of union */
 O(Oudata,	1,	OTpre,  "UDATA")        /* pointer to contents of union */
+O(Otupget,	1,	OTpre,  "TUPGET")        /* pointer to contents of union */
 O(Oblit,	1,	OTbin,  "BLIT")         /* blit memory */
 O(Oclear,       1,      OTpre,  "CLEAR")        /* zero */
 O(Ocallind,     1,      OTpre,  "CALL")         /* call with environment */

@@ -885,9 +885,9 @@ Loc *selexpr(Isel *s, Node *n)
         case Obandeq: case Obxoreq: case Obsleq: case Obsreq: case Omemb:
         case Oslbase: case Osllen: case Ocast: case Outag: case Oudata: 
         case Oucon: case Otup: case Oarr: case Ostruct:
-        case Oslice: case Oidx: case Osize:
-		case Obreak: case Ocontinue:
-		case Numops:
+        case Oslice: case Oidx: case Osize: case Otupget:
+        case Obreak: case Ocontinue:
+        case Numops:
             dump(n, stdout);
             die("Should not see %s in isel", opstr[exprop(n)]);
             break;

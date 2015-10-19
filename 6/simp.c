@@ -1049,29 +1049,51 @@ static Node *visit(Simp *s, Node *n)
     return r;
 }
 
+static Node *tupget(Simp *s, Node *tup, size_t idx, Node *dst)
+{
+    Node *plv, *prv, *sz, *stor, *dcl;
+    size_t off, i;
+    Type *ty;
+
+    off = 0;
+    ty = exprtype(tup);
+    for (i = 0; i < ty->nsub; i++) {
+        off = alignto(off, ty->sub[i]);
+        if (i == idx)
+            break;
+        off += tysize(ty->sub[i]);
+    }
+
+    if (!dst) {
+        dst = gentemp(s, tup->loc, ty->sub[idx], &dcl);
+        if (isstacktype(ty->sub[idx]))
+            declarelocal(s, dcl);
+    }
+    prv = add(addr(s, tup, ty->sub[i]), disp(tup->loc, off));
+    if (stacknode(dst)) {
+        sz = disp(dst->loc, size(dst));
+        plv = addr(s, dst, exprtype(dst));
+        stor = mkexpr(dst->loc, Oblit, plv, prv, sz, NULL);
+    } else {
+        stor = set(dst, load(prv));
+    }
+    append(s, stor);
+    return dst;
+}
+
 /* Takes a tuple and binds the i'th element of it to the
  * i'th name on the rhs of the assignment. */
 static Node *destructure(Simp *s, Node *lhs, Node *rhs)
 {
-    Node *plv, *prv, *lv, *sz, *stor, **args;
-    size_t off, i;
+    Node *lv, *rv, **args;
+    size_t i;
 
     args = lhs->expr.args;
     rhs = rval(s, rhs, NULL);
-    off = 0;
     for (i = 0; i < lhs->expr.nargs; i++) {
         lv = lval(s, args[i]);
-        off = alignto(off, exprtype(lv));
-        prv = add(addr(s, rhs, exprtype(args[i])), disp(rhs->loc, off));
-        if (stacknode(args[i])) {
-            sz = disp(lhs->loc, size(lv));
-            plv = addr(s, lv, exprtype(lv));
-            stor = mkexpr(lhs->loc, Oblit, plv, prv, sz, NULL);
-        } else {
-            stor = set(lv, load(prv));
-        }
-        append(s, stor);
-        off += size(lv);
+        rv = tupget(s, rhs, i, lv);
+        assert(rv == lv);
     }
 
     return NULL;
@@ -1469,6 +1491,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
     Node **args;
     size_t i;
     Type *ty;
+
     const Op fusedmap[Numops] = {
         [Oaddeq]        = Oadd,
         [Osubeq]        = Osub,
@@ -1513,7 +1536,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
             r = simpucon(s, n, dst);
             break;
         case Outag:
-            die("union tags not yet supported\n");
+            r = uconid(s, args[0]);
             break;
         case Oudata:
             r = simpuget(s, n, dst);
@@ -1680,6 +1703,10 @@ static Node *rval(Simp *s, Node *n, Node *dst)
         case Ogt: case Oge: case Olt: case Ole:
             r = compare(s, n, 0);
             break;
+        case Otupget:
+            assert(exprop(args[0]) == Olit);
+            i = args[0]->expr.args[0]->lit.intval;
+            r = tupget(s, args[0], i, dst);
         case Obad:
             die("bad operator");
             break;
