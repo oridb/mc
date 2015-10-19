@@ -1218,8 +1218,14 @@ static Node *simpucon(Simp *s, Node *n, Node *dst)
 
 static Node *simpuget(Simp *s, Node *n, Node *dst)
 {
-    die("No uget simplification yet");
-	return NULL;
+    Node *u, *p;
+
+    if (!dst)
+        dst = temp(s, n);
+    u = n->expr.args[0];
+    p = addk(addr(s, u, exprtype(n)), Wordsz);
+    assign(s, dst, load(p));
+    return dst;
 }
 
 /* simplifies 

@@ -154,16 +154,22 @@ static Dtree *addwild(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *ncap)
 
 static Dtree *addunion(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *ncap)
 {
-    Node *elt, *tag;
+    Node *elt, *tag, *id;
+    int32_t t1, t2;
     Dtree *sub;
+    Ucon *uc;
     size_t i;
 
     if (t->any)
         return t->any;
+    uc = finducon(tybase(exprtype(pat)), pat->expr.args[0]);
+    t2 = uc->id;
     /* if we have the value already... */
     sub = NULL;
     for (i = 0; i < t->nval; i++) {
-        if (nameeq(t->val[i], pat->expr.args[0])) {
+        tag = t->val[i]->expr.args[0];
+        t1 = tag->lit.intval;
+        if (t1 == t2) {
             if (pat->expr.nargs > 1) {
                 elt = uvalue(val, exprtype(pat->expr.args[1])); 
                 return addpat(t->sub[i], pat->expr.args[1], elt, cap, ncap);
@@ -173,11 +179,16 @@ static Dtree *addunion(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *ncap
         }
     }
 
+    /* otherwise create a new match */
     sub = mkdtree();
     sub->patexpr = pat;
     tag = mkexpr(pat->loc, Outag, val, NULL);
     tag->expr.type = mktype(pat->loc, Tyint32);
-    lappend(&t->val, &t->nval, pat->expr.args[0]);
+
+    id = mkintlit(pat->loc, uc->id);
+    id->expr.type = mktype(pat->loc, Tyint32);
+
+    lappend(&t->val, &t->nval, id);
     lappend(&t->sub, &t->nsub, sub);
     lappend(&t->load, &t->nload, tag);
     if (pat->expr.nargs == 2) {
