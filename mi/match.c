@@ -141,6 +141,17 @@ static Node *uvalue(Node *n, Type *ty)
     return elt;
 }
 
+static Node *deadblock()
+{
+    Node *blk, *dead;
+
+    blk = mkblock(Zloc, NULL);
+    dead = mkexpr(Zloc, Odead, NULL);
+    dead->expr.type = mktype(Zloc, Tyvoid);
+    lappend(&blk->block.stmts, &blk->block.nstmts, dead);
+    return blk;
+}
+
 static Dtree *addwild(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *ncap)
 {
     Node *asn;
@@ -203,23 +214,55 @@ static Dtree *addunion(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *ncap
     return sub;
 }
 
+static Dtree *addstr(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *ncap)
+{
+    Node *p, *v, *lit;
+    size_t i, n;
+    Type *ty;
+    char *s;
+
+    lit = pat->expr.args[0];
+    n = lit->lit.strval.len;
+    s = lit->lit.strval.buf;
+
+    ty = mktype(pat->loc, Tyuint64);
+    p = mkintlit(lit->loc, n);
+    v = structmemb(val, mkname(pat->loc, "len"), ty);
+    p->expr.type = ty;
+
+    t = addpat(t, p, v, cap, ncap);
+
+    ty = mktype(pat->loc, Tybyte);
+    for (i = 0; i < n; i++) {
+        p = mkintlit(lit->loc, s[i]);
+        p->expr.type = ty;
+        v = arrayelt(val, i);
+        t = addpat(t, p, v, cap, ncap);
+    }
+    return t;
+}
+
 static Dtree *addlit(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *ncap)
 {
     Dtree *sub;
     size_t i;
 
-    if (t->any)
-        return t->any;
-    for (i = 0; i < t->nval; i++) {
-        if (liteq(t->val[i]->expr.args[0], pat->expr.args[0]))
-            return t->sub[i];
-    }
+    if (pat->expr.args[0]->lit.littype == Lstr) {
+        sub = addstr(t, pat, val, cap, ncap);
+    } else {
+        if (t->any)
+            return t->any;
+        for (i = 0; i < t->nval; i++) {
+            if (liteq(t->val[i]->expr.args[0], pat->expr.args[0]))
+                return t->sub[i];
+        }
 
-    sub = mkdtree();
-    sub->patexpr = pat;
-    lappend(&t->val, &t->nval, pat);
-    lappend(&t->load, &t->nload, val);
-    lappend(&t->sub, &t->nsub, sub);
+        sub = mkdtree();
+        sub->patexpr = pat;
+        lappend(&t->val, &t->nval, pat);
+        lappend(&t->load, &t->nload, val);
+        lappend(&t->sub, &t->nsub, sub);
+    }
     return sub;
 }
 
@@ -397,11 +440,8 @@ Node *addcapture(Dtree *dt, Node *n)
     nblk = 0;
     blk = NULL;
 
-    /*
-    Disabled until we have all of this code working.
     for (i = 0; i < dt->ncap; i++)
         lappend(&blk, &nblk, dt->cap[i]);
-    */
     for (i = 0; i < n->block.nstmts; i++)
         lappend(&blk, &nblk, n->block.stmts[i]);
     lfree(&n->block.stmts, &n->block.nstmts);
@@ -470,6 +510,13 @@ Node *gensimpmatch(Node *m)
     if (!exhaustivematch(m, t, exprtype(m->matchstmt.val)))
         fatal(m, "nonexhaustive pattern set in match statement");
     n = genmatch(m->loc, t);
+    assert(n->type == Nifstmt);
+    if (!n->ifstmt.iftrue) {
+        n->ifstmt.iftrue = deadblock();
+    }
+    if (!n->ifstmt.iffalse) {
+        n->ifstmt.iffalse = deadblock();
+    }
     return n;
 }
 

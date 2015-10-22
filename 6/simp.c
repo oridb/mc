@@ -510,6 +510,7 @@ static Node *uconid(Simp *s, Node *n)
 {
     Ucon *uc;
 
+    n = rval(s, n, NULL);
     if (exprop(n) != Oucon)
         return load(addr(s, n, mktype(n->loc, Tyuint)));
 
@@ -860,6 +861,10 @@ static Node *lval(Simp *s, Node *n)
         case Oucon:     r = rval(s, n, NULL); break;
         case Oarr:      r = rval(s, n, NULL); break;
         case Ogap:      r = temp(s, n); break;
+
+        /* not actually expressible as lvalues in syntax, but we generate them */
+        case Oudata:    r = rval(s, n, NULL);   break;
+        case Outag:     r = rval(s, n, NULL);   break;
         default:
             fatal(n, "%s cannot be an lvalue", opstr[exprop(n)]);
             break;
@@ -1713,7 +1718,8 @@ static Node *rval(Simp *s, Node *n, Node *dst)
         case Otupget:
             assert(exprop(args[1]) == Olit);
             i = args[1]->expr.args[0]->lit.intval;
-            r = tupget(s, args[0], i, dst);
+            t = rval(s, args[0], NULL);
+            r = tupget(s, t, i, dst);
             break;
         case Obad:
             die("bad operator");
@@ -1762,7 +1768,9 @@ static Node *simp(Simp *s, Node *n)
         case Nifstmt:    simpif(s, n, NULL);    break;
         case Nloopstmt:  simploop(s, n);        break;
         case Niterstmt:  simpiter(s, n);        break;
-        case Nmatchstmt: simpmatch(s, n);       break;
+        case Nmatchstmt: /*simpmatch(s, n);       break;*/
+            simp(s, gensimpmatch(n));
+            break;
         case Nexpr:
             if (islbl(n))
                 append(s, n);
