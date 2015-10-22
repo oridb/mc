@@ -143,12 +143,17 @@ static Node *uvalue(Node *n, Type *ty)
 
 static Dtree *addwild(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *ncap)
 {
+    Node *asn;
+
     if (t->any)
         return t->any;
     t->any = mkdtree();
     t->any->patexpr = pat;
-    if (cap && ncap)
-        lappend(cap, ncap, pat);
+    if (cap && ncap) {
+        asn = mkexpr(pat->loc, Oasn, pat, val, NULL);
+        asn->expr.type = exprtype(pat);
+        lappend(cap, ncap, asn);
+    }
     return t->any;
 }
 
@@ -248,21 +253,32 @@ static Dtree *addarr(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *ncap)
 
 static Dtree *addstruct(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *ncap)
 {
-    Node *elt, *memb;
-    Type *ty;
+    Node *membpat, *membval, *name;
+    char *patname, *membname;
     size_t i, j;
+    int found;
+    Type *ty;
 
     if (t->any)
         return t->any;
-    for (i = 0; i < pat->expr.nargs; i++) {
-        elt = pat->expr.args[i];
-        for (j = 0; j < t->nval; j++) {
-            if (!strcmp(namestr(elt->expr.idx), namestr(t->val[j]->expr.idx))) {
-                ty = exprtype(pat->expr.args[i]);
-                memb = structmemb(val, elt->expr.idx, ty);
-                t = addpat(t, pat->expr.args[i], memb, cap, ncap);
-                break;
-            }
+    ty = tybase(exprtype(pat));
+    for (i = 0; i < ty->nmemb; i++) {
+        found = 0;
+        name = ty->sdecls[i]->decl.name;
+        membval = structmemb(val, name, decltype(ty->sdecls[i]));
+        for (j = 0; j < pat->expr.nargs; j++) {
+            membpat = pat->expr.args[j];
+            patname = namestr(membpat->expr.idx);
+            membname = namestr(ty->sdecls[i]->decl.name);
+            if (strcmp(patname, membname) != 0)
+                continue;
+            found = 1;
+            t = addpat(t, membpat, membval, cap, ncap);
+        }
+        if (!found) {
+            membpat = mkexpr(pat->loc, Ogap, NULL);
+            membpat->expr.type = decltype(ty->sdecls[i]);
+            t = addpat(t, membpat, membval, cap, ncap);
         }
     }
     return t;
@@ -373,29 +389,57 @@ static int exhaustivematch(Node *m, Dtree *t, Type *tt)
     return 1;
 }
 
+Node *addcapture(Dtree *dt, Node *n)
+{
+    Node **blk;
+    size_t nblk, i;
+
+    nblk = 0;
+    blk = NULL;
+
+    /*
+    Disabled until we have all of this code working.
+    for (i = 0; i < dt->ncap; i++)
+        lappend(&blk, &nblk, dt->cap[i]);
+    */
+    for (i = 0; i < n->block.nstmts; i++)
+        lappend(&blk, &nblk, n->block.stmts[i]);
+    lfree(&n->block.stmts, &n->block.nstmts);
+    n->block.stmts = blk;
+    n->block.nstmts = nblk;
+    return n;
+}
+
 static Node *genmatch(Srcloc loc, Dtree *dt)
 {
-    Node *lastcmp, *cmp, *eq, *pat;
+    Node *lastcmp, *cmp, *eq, *pat, *any;
     size_t i;
 
     lastcmp = NULL;
     cmp = NULL;
     pat = NULL;
-    if (dt->nsub == 0)
-        return dt->act;
+    /* we must have an action if this is a terminal leaf */
+    if (dt->nsub == 0 && !dt->any)
+        return addcapture(dt, dt->act);
     for (i = 0; i < dt->nsub; i++) {
         eq = mkexpr(loc, Oeq, dt->load[i], dt->val[i], NULL);
         cmp = mkifstmt(loc, eq, genmatch(loc, dt->sub[i]), NULL);
         if (!pat)
             pat = cmp;
-        if (lastcmp)
-            lastcmp->ifstmt.iffalse = cmp;
-        else
+        if (!lastcmp)
             lastcmp = cmp;
+        else
+            lastcmp->ifstmt.iffalse = cmp;
         lastcmp = cmp;
     }
-    if (dt->any)
-        lastcmp->ifstmt.iffalse = genmatch(loc, dt->any);
+    if (dt->any) {
+        any = genmatch(loc, dt->any);
+        if (lastcmp)
+            lastcmp->ifstmt.iffalse = any;
+        else
+            pat = any;
+    }
+
     return pat;
 }
 
@@ -446,6 +490,8 @@ char *dtnodestr(Node *n)
             return "struct";
         case Ogap:
             return "_";
+        case Oasn:
+            return dtnodestr(n->expr.args[0]);
         default:
             die("Invalid pattern in exhaustivenes check. BUG.");
             break;

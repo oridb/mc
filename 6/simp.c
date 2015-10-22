@@ -655,7 +655,7 @@ static void matchpattern(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, N
     }
 }
 
-static void simpmatch(Simp *s, Node *n)
+void simpmatch(Simp *s, Node *n)
 {
     Node *end, *cur, *next; /* labels */
     Node *val, *tmp;
@@ -1218,13 +1218,14 @@ static Node *simpucon(Simp *s, Node *n, Node *dst)
 
 static Node *simpuget(Simp *s, Node *n, Node *dst)
 {
-    Node *u, *p;
+    Node *u, *p, *l;
 
     if (!dst)
         dst = temp(s, n);
-    u = n->expr.args[0];
+    u = rval(s, n->expr.args[0], NULL);
     p = addk(addr(s, u, exprtype(n)), Wordsz);
-    assign(s, dst, load(p));
+    l = assign(s, dst, load(p));
+    append(s, l);
     return dst;
 }
 
@@ -1710,9 +1711,10 @@ static Node *rval(Simp *s, Node *n, Node *dst)
             r = compare(s, n, 0);
             break;
         case Otupget:
-            assert(exprop(args[0]) == Olit);
-            i = args[0]->expr.args[0]->lit.intval;
+            assert(exprop(args[1]) == Olit);
+            i = args[1]->expr.args[0]->lit.intval;
             r = tupget(s, args[0], i, dst);
+            break;
         case Obad:
             die("bad operator");
             break;
