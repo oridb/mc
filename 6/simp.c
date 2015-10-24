@@ -285,7 +285,7 @@ static Node *word(Srcloc loc, uint v)
     return n;
 }
 
-static Node *gentemp(Simp *simp, Srcloc loc, Type *ty, Node **dcl)
+static Node *gentemp(Srcloc loc, Type *ty, Node **dcl)
 {
     char buf[128];
     static int nexttmp;
@@ -307,7 +307,7 @@ static Node *temp(Simp *simp, Node *e)
     Node *t, *dcl;
 
     assert(e->type == Nexpr);
-    t = gentemp(simp, e->loc, e->expr.type, &dcl);
+    t = gentemp(e->loc, e->expr.type, &dcl);
     if (stacknode(e))
         declarelocal(simp, dcl);
     return t;
@@ -479,7 +479,7 @@ static void simpiter(Simp *s, Node *n)
     zero->expr.type = tyintptr;
 
     seq = rval(s, n->iterstmt.seq, NULL);
-    idx = gentemp(s, n->loc, tyintptr, &dcl);
+    idx = gentemp(n->loc, tyintptr, &dcl);
     declarelocal(s, dcl);
 
     /* setup */
@@ -671,7 +671,7 @@ static Node *geninitdecl(Node *init, Type *ty, Node **dcl)
     Node *n, *d, *r;
     char lbl[128];
 
-    n = mkname(init->loc, genlblstr(lbl, 128));
+    n = mkname(init->loc, genlblstr(lbl, 128, ""));
     d = mkdecl(init->loc, n, ty);
     r = mkexpr(init->loc, Ovar, n, NULL);
 
@@ -1040,7 +1040,7 @@ static Node *tupget(Simp *s, Node *tup, size_t idx, Node *dst)
     }
 
     if (!dst) {
-        dst = gentemp(s, tup->loc, ty->sub[idx], &dcl);
+        dst = gentemp(tup->loc, ty->sub[idx], &dcl);
         if (isstacktype(ty->sub[idx]))
             declarelocal(s, dcl);
     }
@@ -1341,7 +1341,7 @@ static Node *capture(Simp *s, Node *n, Node *dst)
     fn = n->expr.args[0];
     fn = fn->lit.fnval;
     if (!dst) {
-        dst = gentemp(s, n->loc, closuretype(exprtype(f)), &dcl);
+        dst = gentemp(n->loc, closuretype(exprtype(f)), &dcl);
         forcelocal(s, dcl);
     }
     fp = addr(s, dst, exprtype(dst));
@@ -1361,7 +1361,7 @@ static Node *capture(Simp *s, Node *n, Node *dst)
         for (i = 0; i < nenv; i++)
             lappend(&envt, &nenvt, decltype(env[i]));
 
-        t = gentemp(s, n->loc, mktytuple(n->loc, envt, nenvt), &dcl);
+        t = gentemp(n->loc, mktytuple(n->loc, envt, nenvt), &dcl);
         forcelocal(s, dcl);
         e = addr(s, t, exprtype(t));
 
@@ -1725,6 +1725,23 @@ static int islbl(Node *n)
     return l->type == Nlit && l->lit.littype == Llbl;
 }
 
+static void simpmatch(Simp *s, Node *n)
+{
+    Node *val, *tmp;
+    Node **match;
+    size_t i, nmatch;
+
+    tmp = temp(s, n->matchstmt.val);
+    val = rval(s, n->matchstmt.val, tmp);
+    append(s, assign(s, tmp, val));
+
+    match = NULL;
+    nmatch = 0;
+    gensimpmatch(n, tmp, &match, &nmatch);
+    for (i = 0; i < nmatch; i++)
+        simp(s, match[i]);
+}
+
 static Node *simp(Simp *s, Node *n)
 {
     Node *r, *t, *u;
@@ -1738,12 +1755,7 @@ static Node *simp(Simp *s, Node *n)
         case Nifstmt:    simpif(s, n, NULL);    break;
         case Nloopstmt:  simploop(s, n);        break;
         case Niterstmt:  simpiter(s, n);        break;
-        case Nmatchstmt: /*simpmatch(s, n);       break;*/
-            t = temp(s, n->matchstmt.val);
-            u = rval(s, n->matchstmt.val, t);
-            append(s, assign(s, t, u));
-            simp(s, gensimpmatch(n, t));
-            break;
+        case Nmatchstmt: simpmatch(s, n);       break;
         case Nexpr:
             if (islbl(n))
                 append(s, n);
@@ -1797,11 +1809,11 @@ static void flatten(Simp *s, Node *f)
     ty = f->func.type->sub[0];
     if (isstacktype(ty)) {
         s->isbigret = 1;
-        s->ret = gentemp(s, f->loc, mktyptr(f->loc, ty), &dcl);
+        s->ret = gentemp(f->loc, mktyptr(f->loc, ty), &dcl);
         declarearg(s, dcl);
     } else if (ty->type != Tyvoid) {
         s->isbigret = 0;
-        s->ret = gentemp(s, f->loc, ty, &dcl);
+        s->ret = gentemp(f->loc, ty, &dcl);
     }
 
     for (i = 0; i < f->func.nargs; i++) {

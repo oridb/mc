@@ -569,6 +569,8 @@ Node *mkname(Srcloc l, char *name);
 Node *mknsname(Srcloc l, char *ns, char *name);
 Node *mkdecl(Srcloc l, Node *name, Type *ty);
 Node *mklbl(Srcloc l, char *lbl);
+Node *genlbl(Srcloc loc);
+char *genlblstr(char *buf, size_t sz, char *suffix);
 Node *mkslice(Srcloc l, Node *base, Node *off);
 Ucon *mkucon(Srcloc l, Node *name, Type *ut, Type *uet);
 

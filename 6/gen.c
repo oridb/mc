@@ -75,20 +75,12 @@ static int islocal(Node *dcl)
     return 1;
 }
 
-static int nextlbl;
 char *genlocallblstr(char *buf, size_t sz)
 {
     if (asmsyntax == Plan9)
-        bprintf(buf, 128, ".L%d<>", nextlbl++);
+        return genlblstr(buf, 128, "<>");
     else
-        bprintf(buf, 128, ".L%d", nextlbl++);
-    return buf;
-}
-
-char *genlblstr(char *buf, size_t sz)
-{
-    bprintf(buf, 128, ".L%d", nextlbl++);
-    return buf;
+        return genlblstr(buf, 128, "");
 }
 
 int isconstfn(Node *n)

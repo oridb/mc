@@ -31,14 +31,6 @@ int isfloatmode(Mode m)
     return m == ModeF || m == ModeD;
 }
 
-Node *genlbl(Srcloc loc)
-{
-    char buf[128];
-
-    genlblstr(buf, 128);
-    return mklbl(loc, buf);
-}
-
 Loc *locstrlbl(char *lbl)
 {
     Loc *l;

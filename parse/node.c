@@ -245,6 +245,22 @@ Node *mklbl(Srcloc loc, char *lbl)
     return mkexpr(loc, Olit, n, NULL);
 }
 
+char *genlblstr(char *buf, size_t sz, char *suffix)
+{
+    static int nextlbl;
+    bprintf(buf, 128, ".L%d%s", nextlbl++, suffix);
+    return buf;
+}
+
+Node *genlbl(Srcloc loc)
+{
+    char buf[128];
+
+    genlblstr(buf, 128, "");
+    return mklbl(loc, buf);
+}
+
+
 Node *mkstr(Srcloc loc, Str val)
 {
     Node *n;
@@ -328,6 +344,23 @@ Node *mkdecl(Srcloc loc, Node *name, Type *ty)
     n->decl.type = ty;
     lappend(&decls, &ndecls, n);
     return n;
+}
+
+Node *gentemp(Srcloc loc, Type *ty, Node **dcl)
+{
+    char buf[128];
+    static int nexttmp;
+    Node *t, *r, *n;
+
+    bprintf(buf, 128, ".t%d", nexttmp++);
+    n = mkname(loc, buf);
+    t = mkdecl(loc, n, ty);
+    r = mkexpr(loc, Ovar, n, NULL);
+    r->expr.type = t->decl.type;
+    r->expr.did = t->decl.did;
+    if (dcl)
+        *dcl = t;
+    return r;
 }
 
 Ucon *mkucon(Srcloc loc, Node *name, Type *ut, Type *et)

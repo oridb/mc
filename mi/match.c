@@ -490,7 +490,7 @@ static Node *genmatch(Srcloc loc, Dtree *dt, Node *lastany)
 }
 
 /* val must be a pure, fully evaluated value */
-Node *gensimpmatch(Node *m, Node *val)
+void gensimpmatch(Node *m, Node *val, Node ***out, size_t *nout)
 {
     Node **pat, **cap;
     size_t npat, ncap;
@@ -505,9 +505,6 @@ Node *gensimpmatch(Node *m, Node *val)
         cap = NULL;
         ncap = 0;
         leaf = addpat(t, pat[i]->match.pat, val, &cap, &ncap);
-        /* TODO: NULL is returned by unsupported patterns. */
-        if (!leaf)
-            return NULL;
         if (leaf->act)
             fatal(pat[i], "pattern matched by earlier case on line %d", leaf->act->loc.line);
         leaf->act = pat[i]->match.block;
@@ -517,8 +514,7 @@ Node *gensimpmatch(Node *m, Node *val)
     if (!exhaustivematch(m, t, exprtype(m->matchstmt.val)))
         fatal(m, "nonexhaustive pattern set in match statement");
     n = genmatch(m->loc, t, deadblock());
-    assert(n->type == Nifstmt);
-    return n;
+    lappend(out, nout, n);
 }
 
 char *dtnodestr(Node *n)
