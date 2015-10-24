@@ -19,8 +19,7 @@ struct Dtree {
     Node *patexpr;      /* the full pattern for this node */
     Node **val;         /* pattern values to compare against */
     size_t nval;
-    Node **load;        /* expression value being compared */
-    size_t nload;
+    Node *load;         /* expression value being compared */
     Dtree **sub;        /* submatch to use if if equal */
     size_t nsub;
     Dtree *any;         /* tree for a wildcard match. */
@@ -198,15 +197,17 @@ static Dtree *addunion(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *ncap
     /* otherwise create a new match */
     sub = mkdtree();
     sub->patexpr = pat;
-    tag = mkexpr(pat->loc, Outag, val, NULL);
-    tag->expr.type = mktype(pat->loc, Tyint32);
+    if (!t->load) {
+        tag = mkexpr(pat->loc, Outag, val, NULL);
+        tag->expr.type = mktype(pat->loc, Tyint32);
+        t->load = tag;
+    }
 
     id = mkintlit(pat->loc, uc->id);
     id->expr.type = mktype(pat->loc, Tyint32);
 
     lappend(&t->val, &t->nval, id);
     lappend(&t->sub, &t->nsub, sub);
-    lappend(&t->load, &t->nload, tag);
     if (pat->expr.nargs == 2) {
         elt = uvalue(val, exprtype(pat->expr.args[1])); 
         sub = addpat(sub, pat->expr.args[1], elt, cap, ncap);
@@ -260,7 +261,8 @@ static Dtree *addlit(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *ncap)
         sub = mkdtree();
         sub->patexpr = pat;
         lappend(&t->val, &t->nval, pat);
-        lappend(&t->load, &t->nload, val);
+        if (!t->load)
+            t->load = val;
         lappend(&t->sub, &t->nsub, sub);
     }
     return sub;
@@ -464,7 +466,7 @@ static Node *genmatch(Srcloc loc, Dtree *dt, Node *lastany)
     if (dt->nsub == 0 && !dt->any)
         return addcapture(dt, dt->act);
     for (i = 0; i < dt->nsub; i++) {
-        eq = mkexpr(loc, Oeq, dt->load[i], dt->val[i], NULL);
+        eq = mkexpr(loc, Oeq, dt->load, dt->val[i], NULL);
         cmp = mkifstmt(loc, eq, genmatch(loc, dt->sub[i], lastany), NULL);
         if (!pat)
             pat = cmp;
