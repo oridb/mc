@@ -65,11 +65,12 @@ static int addnode(Cfg *cfg, Bb *bb, Node *n)
             lappend(&cfg->fixjmp, &cfg->nfixjmp, n);
             lappend(&cfg->fixblk, &cfg->nfixblk, bb);
             return 1;
-            break;
         case Ocall:
             lappend(&bb->nl, &bb->nnl, n);
             return isnonretcall(n->expr.args[0]);
-            break;
+        case Odead:
+            lappend(&bb->nl, &bb->nnl, n);
+            return 1;
         default:
             lappend(&bb->nl, &bb->nnl, n);
             break;

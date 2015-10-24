@@ -27,13 +27,13 @@ echo 	$pwd/6/6m	-I ../sys -I . units.myr ;	$pwd/6/6m	-I ../sys -I . units.myr
 echo 	$pwd/6/6m	-I ../sys -I . memops.myr ;	$pwd/6/6m	-I ../sys -I . memops.myr 
 echo 	$pwd/6/6m	-I ../sys -I . alloc.myr ;	$pwd/6/6m	-I ../sys -I . alloc.myr 
 echo 	$pwd/6/6m	-I ../sys -I . chartype.myr ;	$pwd/6/6m	-I ../sys -I . chartype.myr 
+echo 	$pwd/6/6m	-I ../sys -I . utf.myr ;	$pwd/6/6m	-I ../sys -I . utf.myr 
 echo 	$pwd/6/6m	-I ../sys -I . cmp.myr ;	$pwd/6/6m	-I ../sys -I . cmp.myr 
 echo 	$pwd/6/6m	-I ../sys -I . hasprefix.myr ;	$pwd/6/6m	-I ../sys -I . hasprefix.myr 
 echo 	$pwd/6/6m	-I ../sys -I . slcp.myr ;	$pwd/6/6m	-I ../sys -I . slcp.myr 
 echo 	$pwd/6/6m	-I ../sys -I . sldup.myr ;	$pwd/6/6m	-I ../sys -I . sldup.myr 
 echo 	$pwd/6/6m	-I ../sys -I . slfill.myr ;	$pwd/6/6m	-I ../sys -I . slfill.myr 
 echo 	$pwd/6/6m	-I ../sys -I . slpush.myr ;	$pwd/6/6m	-I ../sys -I . slpush.myr 
-echo 	$pwd/6/6m	-I ../sys -I . utf.myr ;	$pwd/6/6m	-I ../sys -I . utf.myr 
 echo 	$pwd/6/6m	-I ../sys -I . bigint.myr ;	$pwd/6/6m	-I ../sys -I . bigint.myr 
 echo 	$pwd/6/6m	-I ../sys -I . fltbits.myr ;	$pwd/6/6m	-I ../sys -I . fltbits.myr 
 echo 	$pwd/6/6m	-I ../sys -I . strbuf.myr ;	$pwd/6/6m	-I ../sys -I . strbuf.myr 

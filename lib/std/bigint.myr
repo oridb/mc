@@ -295,10 +295,10 @@ const bigadd = {a, b
 	else
 		match bigcmp(a, b)
 		| `Before: /* a is negative */
-		    a.sign = b.sign
-		    -> usub(b, a)
+			a.sign = b.sign
+			-> usub(b, a)
 		| `After: /* b is negative */
-		    -> usub(a, b)
+			-> usub(a, b)
 		| `Equal:
 			die("Impossible. Equal vals with different sign.")
 		;;

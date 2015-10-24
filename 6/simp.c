@@ -656,37 +656,6 @@ static void matchpattern(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, N
     }
 }
 
-void simpmatch(Simp *s, Node *n)
-{
-    Node *end, *cur, *next; /* labels */
-    Node *val, *tmp;
-    Node *m;
-    size_t i;
-
-    gensimpmatch(n);
-    end = genlbl(n->loc);
-    val = temp(s, n->matchstmt.val);
-    tmp = rval(s, n->matchstmt.val, val);
-    if (val != tmp)
-        append(s, assign(s, val, tmp));
-    for (i = 0; i < n->matchstmt.nmatches; i++) {
-        m = n->matchstmt.matches[i];
-
-        /* check pattern */
-        cur = genlbl(n->loc);
-        next = genlbl(n->loc);
-        matchpattern(s, m->match.pat, val, val->expr.type, cur, next);
-
-        /* do the action if it matches */
-        append(s, cur);
-        simp(s, m->match.block);
-        jmp(s, end);
-        append(s, next);
-    }
-    append(s, mkexpr(n->loc, Odead, NULL));
-    append(s, end);
-}
-
 static void simpblk(Simp *s, Node *n)
 {
     size_t i;
@@ -865,6 +834,7 @@ static Node *lval(Simp *s, Node *n)
         /* not actually expressible as lvalues in syntax, but we generate them */
         case Oudata:    r = rval(s, n, NULL);   break;
         case Outag:     r = rval(s, n, NULL);   break;
+        case Otupget:   r = rval(s, n, NULL);   break;
         default:
             fatal(n, "%s cannot be an lvalue", opstr[exprop(n)]);
             break;
@@ -1769,7 +1739,10 @@ static Node *simp(Simp *s, Node *n)
         case Nloopstmt:  simploop(s, n);        break;
         case Niterstmt:  simpiter(s, n);        break;
         case Nmatchstmt: /*simpmatch(s, n);       break;*/
-            simp(s, gensimpmatch(n));
+            t = temp(s, n->matchstmt.val);
+            u = rval(s, n->matchstmt.val, t);
+            append(s, assign(s, t, u));
+            simp(s, gensimpmatch(n, t));
             break;
         case Nexpr:
             if (islbl(n))

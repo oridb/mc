@@ -145,7 +145,7 @@ static Node *deadblock()
 {
     Node *blk, *dead;
 
-    blk = mkblock(Zloc, NULL);
+    blk = mkblock(Zloc, mkstab(0));
     dead = mkexpr(Zloc, Odead, NULL);
     dead->expr.type = mktype(Zloc, Tyvoid);
     lappend(&blk->block.stmts, &blk->block.nstmts, dead);
@@ -450,7 +450,7 @@ Node *addcapture(Dtree *dt, Node *n)
     return n;
 }
 
-static Node *genmatch(Srcloc loc, Dtree *dt)
+static Node *genmatch(Srcloc loc, Dtree *dt, Node *lastany)
 {
     Node *lastcmp, *cmp, *eq, *pat, *any;
     size_t i;
@@ -459,11 +459,13 @@ static Node *genmatch(Srcloc loc, Dtree *dt)
     cmp = NULL;
     pat = NULL;
     /* we must have an action if this is a terminal leaf */
+    if (dt->any && dt->any->act)
+        lastany = dt->any->act;
     if (dt->nsub == 0 && !dt->any)
         return addcapture(dt, dt->act);
     for (i = 0; i < dt->nsub; i++) {
         eq = mkexpr(loc, Oeq, dt->load[i], dt->val[i], NULL);
-        cmp = mkifstmt(loc, eq, genmatch(loc, dt->sub[i]), NULL);
+        cmp = mkifstmt(loc, eq, genmatch(loc, dt->sub[i], lastany), NULL);
         if (!pat)
             pat = cmp;
         if (!lastcmp)
@@ -473,21 +475,24 @@ static Node *genmatch(Srcloc loc, Dtree *dt)
         lastcmp = cmp;
     }
     if (dt->any) {
-        any = genmatch(loc, dt->any);
+        any = genmatch(loc, dt->any, lastany);
         if (lastcmp)
             lastcmp->ifstmt.iffalse = any;
         else
             pat = any;
+    } else if (lastcmp) {
+        lastcmp->ifstmt.iffalse = lastany;
     }
 
     return pat;
 }
 
-Node *gensimpmatch(Node *m)
+/* val must be a pure, fully evaluated value */
+Node *gensimpmatch(Node *m, Node *val)
 {
-    Dtree *t, *leaf;
     Node **pat, **cap;
     size_t npat, ncap;
+    Dtree *t, *leaf;
     size_t i;
     Node *n;
 
@@ -497,7 +502,7 @@ Node *gensimpmatch(Node *m)
     for (i = 0; i < npat; i++) {
         cap = NULL;
         ncap = 0;
-        leaf = addpat(t, pat[i]->match.pat, m->matchstmt.val, &cap, &ncap);
+        leaf = addpat(t, pat[i]->match.pat, val, &cap, &ncap);
         /* TODO: NULL is returned by unsupported patterns. */
         if (!leaf)
             return NULL;
@@ -509,14 +514,8 @@ Node *gensimpmatch(Node *m)
     }
     if (!exhaustivematch(m, t, exprtype(m->matchstmt.val)))
         fatal(m, "nonexhaustive pattern set in match statement");
-    n = genmatch(m->loc, t);
+    n = genmatch(m->loc, t, deadblock());
     assert(n->type == Nifstmt);
-    if (!n->ifstmt.iftrue) {
-        n->ifstmt.iftrue = deadblock();
-    }
-    if (!n->ifstmt.iffalse) {
-        n->ifstmt.iffalse = deadblock();
-    }
     return n;
 }
 
