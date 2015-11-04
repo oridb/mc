@@ -1,4 +1,3 @@
-#include <stdlib.h>
 #include <stdio.h>
 #include <inttypes.h>
 #include <stdarg.h>
@@ -15,34 +14,150 @@
 
 typedef struct Dtree Dtree;
 struct Dtree {
-    /* If the values are equal, go to 'sub'. If 'val' is null, anything matches. */
-    Node *patexpr;      /* the full pattern for this node */
-    Node **val;         /* pattern values to compare against */
-    size_t nval;
-    Node *load;         /* expression value being compared */
-    Dtree **sub;        /* submatch to use if if equal */
-    size_t nsub;
-    Dtree *any;         /* tree for a wildcard match. */
+    int id;
+    Srcloc loc;
+
+    /* values for matching */
+    Node *lbl;
+    Node *load;
+    size_t nconstructors;
+    int accept;
+    int emitted;
+
+    /* the decision tree step */
+    Node **pat;
+    size_t npat;
+    Dtree **next;
+    size_t nnext;
+    Dtree *any;
 
     /* captured variables and action */
     Node **cap;
     size_t ncap;
-    Node *act;
 
-    int id;
 };
 
-void dtdumpnode(Dtree *dt, FILE *f, int depth, int iswild);
-static Dtree *addpat(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *ncap);
-void dtdump(Dtree *dt, FILE *f);
+Dtree *gendtree(Node *m, Node *val, Node **lbl, size_t nlbl);
+static int addpat(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap, size_t *ncap, Dtree ***end, size_t *nend);
+void dtreedump(FILE *fd, Dtree *dt);
 
-/* We treat all integer types, boolean types, etc, as having 2^n constructors.
- *
- * since, of course, we can't represent all of the constructors for 64 bit
- * integers using 64 bit values, we just approximate it. We'd have failed (run
- * out of memory, etc) long before getting to this code if we actually had that
- * many branches of the switch statements anyways.
- */
+
+static Node *utag(Node *n)
+{
+    Node *tag;
+
+    tag = mkexpr(n->loc, Outag, n, NULL);
+    tag->expr.type = mktype(n->loc, Tyint32);
+    return tag;
+}
+
+static Node *uvalue(Node *n, Type *ty)
+{
+    Node *elt;
+
+    elt = mkexpr(n->loc, Oudata, n, NULL);
+    elt->expr.type = ty;
+    return elt;
+}
+
+static Node *tupelt(Node *n, size_t i)
+{
+    Node *idx, *elt;
+
+    idx = mkintlit(n->loc, i);
+    idx->expr.type = mktype(n->loc, Tyuint64);
+    elt = mkexpr(n->loc, Otupget, n, idx, NULL);
+    elt->expr.type = tybase(exprtype(n))->sub[i];
+    return elt;
+}
+
+static Node *arrayelt(Node *n, size_t i)
+{
+    Node *idx, *elt;
+
+    idx = mkintlit(n->loc, i);
+    idx->expr.type = mktype(n->loc, Tyuint64);
+    elt = mkexpr(n->loc, Oidx, n, idx, NULL);
+    elt->expr.type = tybase(exprtype(n))->sub[0];
+    return elt;
+}
+
+static Node *findmemb(Node *pat, Node *name)
+{
+    Node *n;
+    size_t i;
+
+    for (i = 0; i < pat->expr.nargs; i++) {
+        n = pat->expr.args[i];
+        if (nameeq(n->expr.idx, name))
+            return n;
+    }
+    return NULL;
+}
+
+static Dtree *dtbytag(Dtree *t, Ucon *uc)
+{
+    uint32_t tagval;
+    Node *taglit;
+    size_t i;
+
+    for (i = 0; i < t->npat; i++) {
+        taglit = t->pat[i]->expr.args[0];
+        tagval = taglit->lit.intval;
+        if (tagval == uc->id) {
+            return t->next[i];
+        }
+    }
+    return NULL;
+}
+
+static Node *structmemb(Node *n, Node *name, Type *ty)
+{
+    Node *elt;
+
+    elt = mkexpr(n->loc, Omemb, n, name, NULL);
+    elt->expr.type = ty;
+    return elt;
+}
+
+static Node *addcapture(Node *n, Node **cap, size_t ncap)
+{
+    Node **blk;
+    size_t nblk, i;
+
+    nblk = 0;
+    blk = NULL;
+
+    for (i = 0; i < ncap; i++)
+        lappend(&blk, &nblk, cap[i]);
+    for (i = 0; i < n->block.nstmts; i++)
+        lappend(&blk, &nblk, n->block.stmts[i]);
+    lfree(&n->block.stmts, &n->block.nstmts);
+    n->block.stmts = blk;
+    n->block.nstmts = nblk;
+    return n;
+}
+
+static Dtree *mkdtree(Srcloc loc, Node *lbl)
+{
+    static int ndtree;
+    Dtree *t;
+
+    t = zalloc(sizeof(Dtree));
+    t->lbl = lbl;
+    t->loc = loc;
+    t->id = ndtree++;
+    return t;
+}
+
+static Dtree *nextnode(Srcloc loc, size_t idx, size_t count, Dtree *accept)
+{
+    if (idx == count - 1)
+        return accept;
+    else
+        return mkdtree(loc, genlbl(loc));
+}
+
 static size_t nconstructors(Type *t)
 {
     if (!t)
@@ -90,137 +205,211 @@ static size_t nconstructors(Type *t)
     return 0;
 }
 
-static int ndt;
-static Dtree *mkdtree()
+static int verifymatch(Dtree *t)
 {
-    Dtree *t;
+    size_t i;
+    int ret;
 
-    t = zalloc(sizeof(Dtree));
-    t->id = ndt++;
-    return t;
+    if (t->accept)
+        return 1;
+
+    ret = 0;
+    if (t->nnext == t->nconstructors || t->any)
+        ret = 1;
+    for (i = 0; i < t->nnext; i++)
+        if (!verifymatch(t->next[i]))
+            ret = 0;
+    return ret;
 }
 
-static Node *tupelt(Node *n, size_t i)
+static int acceptall(Dtree *t, Dtree *accept)
 {
-    Node *idx, *elt;
+    size_t i;
+    int ret;
 
-    idx = mkintlit(n->loc, i);
-    idx->expr.type = mktype(n->loc, Tyuint64);
-    elt = mkexpr(n->loc, Otupget, n, idx, NULL);
-    elt->expr.type = tybase(exprtype(n))->sub[i];
-    return elt;
+    if (t->any == accept)
+        return 0;
+
+    ret = 0;
+    if (t->any) {
+        if (acceptall(t->any, accept))
+            ret = 1;
+    } else {
+        t->any = accept;
+        ret = 1;
+    }
+
+    for (i = 0; i < t->nnext; i++)
+        if (acceptall(t->next[i], accept))
+            ret = 1;
+    return ret;
 }
 
-static Node *arrayelt(Node *n, size_t i)
+static int addwildrec(Srcloc loc, Type *ty, Dtree *start, Dtree *accept, Dtree ***end, size_t *nend)
 {
-    Node *idx, *elt;
+    Dtree *next, **last, **tail;
+    size_t i, j, nelt, nlast, ntail;
+    Node *asize;
+    Ucon *uc;
+    int ret;
 
-    idx = mkintlit(n->loc, i);
-    idx->expr.type = mktype(n->loc, Tyuint64);
-    elt = mkexpr(n->loc, Oidx, n, idx, NULL);
-    elt->expr.type = tybase(exprtype(n))->sub[0];
-    return elt;
+    tail = NULL;
+    ntail = 0;
+    ty = tybase(ty);
+    if (istyprimitive(ty)) {
+        for (i = 0; i < start->nnext; i++)
+            lappend(end, nend, start->next[i]);
+        if (start->any) {
+            lappend(end, nend, start->any);
+            return 0;
+        } else {
+            start->any = accept;
+            lappend(end, nend, accept);
+            return 1;
+        }
+    }
+    
+    ret = 0;
+    last = NULL;
+    nlast = 0;
+    lappend(&last, &nlast, start);
+    switch (ty->type) {
+        case Tytuple:
+            for (i = 0; i < ty->nsub; i++) {
+                next = nextnode(loc, i, ty->nsub, accept);
+                tail = NULL;
+                ntail = 0;
+                for (j = 0; j < nlast; j++)
+                    if (addwildrec(loc, ty->sub[i], last[j], next, &tail, &ntail))
+                        ret = 1;
+                lfree(&last, &nlast);
+                last = tail;
+                nlast = ntail;
+            }
+            break;
+        case Tyarray:
+            asize = fold(ty->asize, 1);
+            nelt = asize->expr.args[0]->lit.intval;
+            for (i = 0; i < nelt; i++) {
+                next = nextnode(loc, i, nelt, accept);
+                tail = NULL;
+                ntail = 0;
+                for (j = 0; j < nlast; j++)
+                    if (addwildrec(loc, ty->sub[0], last[j], next, &tail, &ntail))
+                        ret = 1;
+                lfree(&last, &nlast);
+                last = tail;
+                nlast = ntail;
+            }
+            break;
+        case Tystruct:
+            for (i = 0; i < ty->nmemb; i++) {
+                next = nextnode(loc, i, ty->nmemb, accept);
+                tail = NULL;
+                ntail = 0;
+                for (j = 0; j < nlast; j++)
+                    if (addwildrec(loc, decltype(ty->sdecls[i]), last[j], next, &tail, &ntail))
+                        ret = 1;
+                lfree(&last, &nlast);
+                last = tail;
+                nlast = ntail;
+            }
+            break;
+        case Tyunion:
+            for (i = 0; i < ty->nmemb; i++) {
+                uc = ty->udecls[i];
+                next = dtbytag(start, uc);
+                if (next) {
+                    if (uc->etype) {
+                        if (addwildrec(loc, uc->etype, next, accept, end, nend))
+                            ret = 1;
+                    } else {
+                        lappend(end, nend, next);
+                    }
+                }
+            }
+            if (!start->any) {
+                start->any = accept;
+                ret = 1;
+            }
+            lappend(end, nend, start->any);
+            break;
+        case Tyslice:
+            ret = acceptall(start, accept);
+            lappend(&last, &nlast, accept);
+            break;
+        default:
+            lappend(&last, &nlast, accept);
+            break;
+    }
+    lcat(end, nend, last, nlast);
+    lfree(&last, &nlast);
+    return ret;
 }
 
-static Node *structmemb(Node *n, Node *name, Type *ty)
-{
-    Node *elt;
-
-    elt = mkexpr(n->loc, Omemb, n, name, NULL);
-    elt->expr.type = ty;
-    return elt;
-}
-
-static Node *uvalue(Node *n, Type *ty)
-{
-    Node *elt;
-
-    elt = mkexpr(n->loc, Oudata, n, NULL);
-    elt->expr.type = ty;
-    return elt;
-}
-
-static Node *deadblock()
-{
-    Node *blk, *dead;
-
-    blk = mkblock(Zloc, mkstab(0));
-    dead = mkexpr(Zloc, Odead, NULL);
-    dead->expr.type = mktype(Zloc, Tyvoid);
-    lappend(&blk->block.stmts, &blk->block.nstmts, dead);
-    return blk;
-}
-
-static Dtree *addwild(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *ncap)
+static int addwild(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap, size_t *ncap, Dtree ***end, size_t *nend)
 {
     Node *asn;
 
-    if (t->any)
-        return t->any;
-    t->any = mkdtree();
-    t->any->patexpr = pat;
+    asn = mkexpr(pat->loc, Oasn, pat, val, NULL);
+    asn->expr.type = exprtype(pat);
     if (cap && ncap) {
         asn = mkexpr(pat->loc, Oasn, pat, val, NULL);
         asn->expr.type = exprtype(pat);
         lappend(cap, ncap, asn);
     }
-    return t->any;
+    return addwildrec(pat->loc, exprtype(pat), start, accept, end, nend);
 }
 
-static Dtree *addunion(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *ncap)
+static int addunion(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap, size_t *ncap, Dtree ***end, size_t *nend)
 {
-    Node *elt, *tag, *id;
-    int32_t t1, t2;
-    Dtree *sub;
+    Node *tagid;
+    Dtree *next;
     Ucon *uc;
-    size_t i;
 
-    if (t->any)
-        return t->any;
+    if (start->any) {
+        lappend(end, nend, start->any);
+        return 0;
+    }
+
     uc = finducon(tybase(exprtype(pat)), pat->expr.args[0]);
-    t2 = uc->id;
-    /* if we have the value already... */
-    sub = NULL;
-    for (i = 0; i < t->nval; i++) {
-        tag = t->val[i]->expr.args[0];
-        t1 = tag->lit.intval;
-        if (t1 == t2) {
-            if (pat->expr.nargs > 1) {
-                elt = uvalue(val, exprtype(pat->expr.args[1])); 
-                return addpat(t->sub[i], pat->expr.args[1], elt, cap, ncap);
-            } else {
-                return t->sub[i];
-            }
+    next = dtbytag(start, uc);
+    if (next) {
+        if (!uc->etype) {
+            lappend(end, nend, next);
+            return 0;
+        } else {
+            return addpat(pat->expr.args[1], uvalue(val, uc->etype), next, accept, cap, ncap, end, nend);
         }
     }
 
-    /* otherwise create a new match */
-    sub = mkdtree();
-    sub->patexpr = pat;
-    if (!t->load) {
-        tag = mkexpr(pat->loc, Outag, val, NULL);
-        tag->expr.type = mktype(pat->loc, Tyint32);
-        t->load = tag;
+    if (!start->load) {
+        start->load = utag(val);
+        start->nconstructors = nconstructors(tybase(exprtype(pat)));
     }
 
-    id = mkintlit(pat->loc, uc->id);
-    id->expr.type = mktype(pat->loc, Tyint32);
-
-    lappend(&t->val, &t->nval, id);
-    lappend(&t->sub, &t->nsub, sub);
-    if (pat->expr.nargs == 2) {
-        elt = uvalue(val, exprtype(pat->expr.args[1])); 
-        sub = addpat(sub, pat->expr.args[1], elt, cap, ncap);
+    tagid = mkintlit(pat->loc, uc->id);
+    tagid->expr.type = mktype(pat->loc, Tyint32);
+    lappend(&start->pat, &start->npat, tagid);
+    if (uc->etype) {
+        next = mkdtree(pat->loc, genlbl(pat->loc));
+        lappend(&start->next, &start->nnext, next);
+        addpat(pat->expr.args[1], uvalue(val, uc->etype), next, accept, cap, ncap, end, nend);
+    } else {
+        lappend(&start->next, &start->nnext, accept);
+        lappend(end, nend, accept);
     }
-    return sub;
+    return 1;
 }
 
-static Dtree *addstr(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *ncap)
+static int addstr(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap, size_t *ncap, Dtree ***end, size_t *nend)
 {
+    Dtree **tail, **last, *next;
+    size_t i, j, n, ntail, nlast;
     Node *p, *v, *lit;
-    size_t i, n;
     Type *ty;
     char *s;
+    int ret;
 
     lit = pat->expr.args[0];
     n = lit->lit.strval.len;
@@ -231,342 +420,370 @@ static Dtree *addstr(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *ncap)
     v = structmemb(val, mkname(pat->loc, "len"), ty);
     p->expr.type = ty;
 
-    t = addpat(t, p, v, cap, ncap);
+    if (n == 0)
+        next = accept;
+    else
+        next = mkdtree(pat->loc, genlbl(pat->loc));
+
+    last = NULL;
+    nlast = 0;
+    if (addpat(p, v, start, next, cap, ncap, &last, &nlast))
+        ret = 1;
 
     ty = mktype(pat->loc, Tybyte);
     for (i = 0; i < n; i++) {
         p = mkintlit(lit->loc, s[i]);
         p->expr.type = ty;
         v = arrayelt(val, i);
-        t = addpat(t, p, v, cap, ncap);
+
+        tail = NULL;
+        ntail = 0;
+        next = nextnode(pat->loc, i, n, accept);
+        for (j = 0; j < nlast; j++) 
+            if (addpat(p, v, last[j], next, NULL, NULL, &tail, &ntail))
+                ret = 1;
+        lfree(&last, &nlast);
+        last = tail;
+        nlast = ntail;
     }
-    return t;
+    lcat(end, nend, last, nlast);
+    lfree(&last, &nlast);
+    return ret;
 }
 
-static Dtree *addlit(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *ncap)
+static int addlit(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap, size_t *ncap, Dtree ***end, size_t *nend)
 {
-    Dtree *sub;
     size_t i;
 
     if (pat->expr.args[0]->lit.littype == Lstr) {
-        sub = addstr(t, pat, val, cap, ncap);
+        return addstr(pat, val, start, accept, cap, ncap, end, nend);
     } else {
-        if (t->any)
-            return t->any;
-        for (i = 0; i < t->nval; i++) {
-            if (liteq(t->val[i]->expr.args[0], pat->expr.args[0]))
-                return t->sub[i];
+        /* if we already have a match, we're not adding a new node */
+        if (start->any) {
+            lappend(end, nend, start->any);
+            return 0;
         }
 
-        sub = mkdtree();
-        sub->patexpr = pat;
-        lappend(&t->val, &t->nval, pat);
-        if (!t->load)
-            t->load = val;
-        lappend(&t->sub, &t->nsub, sub);
+        for (i = 0; i < start->npat; i++) {
+            if (liteq(start->pat[i]->expr.args[0], pat->expr.args[0])) {
+                lappend(end, nend, start->next[i]);
+                return 0;
+            }
+        }
+
+        /* wire up an edge from start to 'accept' */
+        if (!start->load) {
+            start->load = val;
+            start->nconstructors = nconstructors(exprtype(pat));
+        }
+        lappend(&start->pat, &start->npat, pat);
+        lappend(&start->next, &start->nnext, accept);
+        lappend(end, nend, accept);
+        return 1;
     }
-    return sub;
 }
 
-static Dtree *addtup(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *ncap)
+static int addtup(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap, size_t *ncap, Dtree ***end, size_t *nend)
 {
-    size_t i;
-    Node *elt;
+    size_t nargs, nlast, ntail, i, j;
+    Dtree *next, **last, **tail;
+    Node **args;
+    int ret;
 
-    if (t->any)
-        return t->any;
-    for (i = 0; i < pat->expr.nargs; i++) {
-        elt = tupelt(val, i);
-        t = addpat(t, pat->expr.args[i], elt, cap, ncap);
+    args = pat->expr.args;
+    nargs = pat->expr.nargs;
+    last = NULL;
+    nlast = 0;
+    lappend(&last, &nlast, start);
+    ret = 0;
+
+    for (i = 0; i < nargs; i++) {
+        next = nextnode(args[i]->loc, i, nargs, accept);
+        tail = NULL;
+        ntail = 0;
+        for (j = 0; j < nlast; j++) 
+            if (addpat(pat->expr.args[i], tupelt(val, i), last[j], next, cap, ncap, &tail, &ntail))
+                ret = 1;
+        lfree(&last, &nlast);
+        last = tail;
+        nlast = ntail;
     }
-    return t;
+    lcat(end, nend, last, nlast);
+    lfree(&last, &nlast);
+    return ret;
 }
 
-static Dtree *addarr(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *ncap)
+static int addarr(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap, size_t *ncap, Dtree ***end, size_t *nend)
 {
-    size_t i;
-    Node *elt;
+    size_t nargs, nlast, ntail, i, j;
+    Dtree *next, **last, **tail;
+    Node **args;
+    int ret;
 
-    if (t->any)
-        return t->any;
-    for (i = 0; i < pat->expr.nargs; i++) {
-        elt = arrayelt(val, i);
-        t = addpat(t, pat->expr.args[i], elt, cap, ncap);
+    args = pat->expr.args;
+    nargs = pat->expr.nargs;
+    last = NULL;
+    nlast = 0;
+    lappend(&last, &nlast, start);
+    ret = 0;
+
+    for (i = 0; i < nargs; i++) {
+        next = nextnode(args[i]->loc, i, nargs, accept);
+        tail = NULL;
+        ntail = 0;
+        for (j = 0; j < nlast; j++) 
+            if (addpat(pat->expr.args[i], arrayelt(val, i), last[j], next, cap, ncap, &tail, &ntail))
+                ret = 1;
+        lfree(&last, &nlast);
+        last = tail;
+        nlast = ntail;
     }
-    return t;
+    lcat(end, nend, last, nlast);
+    lfree(&last, &nlast);
+    return ret;
 }
 
-static Dtree *addstruct(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *ncap)
+static int addstruct(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap, size_t *ncap, Dtree ***end, size_t *nend)
 {
-    Node *membpat, *membval, *name;
-    char *patname, *membname;
-    size_t i, j;
-    int found;
-    Type *ty;
+    Dtree *next, **last, **tail;
+    Node *memb, *name;
+    Type *ty, *mty;
+    size_t i, j, ntail, nlast;
+    int ret;
 
-    if (t->any)
-        return t->any;
+    ret = 0;
+    last = NULL;
+    nlast = 0;
+    lappend(&last, &nlast, start);
     ty = tybase(exprtype(pat));
+
     for (i = 0; i < ty->nmemb; i++) {
-        found = 0;
+        mty = decltype(ty->sdecls[i]);
         name = ty->sdecls[i]->decl.name;
-        membval = structmemb(val, name, decltype(ty->sdecls[i]));
-        for (j = 0; j < pat->expr.nargs; j++) {
-            membpat = pat->expr.args[j];
-            patname = namestr(membpat->expr.idx);
-            membname = namestr(ty->sdecls[i]->decl.name);
-            if (strcmp(patname, membname) != 0)
-                continue;
-            found = 1;
-            t = addpat(t, membpat, membval, cap, ncap);
+        memb = findmemb(pat, name);
+        next = nextnode(pat->loc, i, ty->nmemb, accept);
+        tail = NULL;
+        ntail = 0;
+
+        for (j = 0; j < nlast; j++) {
+            /* add a _ capture if we don't specify the value */
+            if (!memb) {
+                if (addwild(memb, NULL, last[j], next, NULL, NULL, &tail, &ntail))
+                    ret = 1;
+            } else {
+                if (addpat(memb, structmemb(val, name, mty), last[j], next, cap, ncap, &tail, &ntail))
+                    ret = 1;
+            }
         }
-        if (!found) {
-            membpat = mkexpr(pat->loc, Ogap, NULL);
-            membpat->expr.type = decltype(ty->sdecls[i]);
-            t = addpat(t, membpat, membval, cap, ncap);
-        }
+        lfree(&last, &nlast);
+        last = tail;
+        nlast = ntail;
     }
-    return t;
+    lcat(end, nend, last, nlast);
+    lfree(&last, &nlast);
+    return ret;
 }
 
-static Dtree *addpat(Dtree *t, Node *pat, Node *val, Node ***cap, size_t *ncap)
+static int addpat(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap, size_t *ncap, Dtree ***end, size_t *nend)
 {
-    Dtree *ret;
+    int ret;
     Node *dcl;
 
-    if (pat == NULL)
-        return t;
     pat = fold(pat, 1);
+    ret = 0;
     switch (exprop(pat)) {
         case Ovar:
             dcl = decls[pat->expr.did];
             if (dcl->decl.isconst)
-                ret = addpat(t, dcl->decl.init, val, cap, ncap);
+                ret = addpat(dcl->decl.init, val, start, accept, cap, ncap, end, nend);
             else
-                ret = addwild(t, pat, val, cap, ncap);
+                ret = addwild(pat, val, start, accept, cap, ncap, end, nend);
             break;
         case Oucon:
-            ret = addunion(t, pat, val, cap, ncap);
+            ret = addunion(pat, val, start, accept, cap, ncap, end, nend);
             break;
         case Olit:
-            ret = addlit(t, pat, val, cap, ncap);
+            ret = addlit(pat, val, start, accept, cap, ncap, end, nend);
             break;
         case Otup:
-            ret = addtup(t, pat, val, cap, ncap);
+            ret = addtup(pat, val, start, accept, cap, ncap, end, nend);
             break;
         case Oarr:
-            ret = addarr(t, pat, val, cap, ncap);
+            ret = addarr(pat, val, start, accept, cap, ncap, end, nend);
             break;
         case Ostruct:
-            ret = addstruct(t, pat, val, cap, ncap);
+            ret = addstruct(pat, val, start, accept, cap, ncap, end, nend);
             break;
         case Ogap:
-            ret = addwild(t, pat, val, NULL, NULL);
+            ret = addwild(pat, NULL, start, accept, NULL, NULL, end, nend);
             break;
         default:
-            ret = NULL;
             fatal(pat, "unsupported pattern %s of type %s", opstr[exprop(pat)], tystr(exprtype(pat)));
             break;
     }
     return ret;
 }
 
-static int isexhaustive(Dtree *dt)
-{
-    Type *subt;
-    size_t i;
-
-    if (dt->any)
-        return 1;
-
-    if (dt->nsub > 0) {
-        subt = tybase(exprtype(dt->sub[0]->patexpr));
-        if (dt->nsub != nconstructors(subt))
-            return 0;
-    }
-    switch (exprop(dt->patexpr)) {
-        case Ovar:
-            return 1;
-        case Olit:
-            return 1;
-        case Oucon:
-            for (i = 0; i < dt->nsub; i++)
-                if (!isexhaustive(dt->sub[i]))
-                    return 0;
-            return 1;
-            break;
-        case Otup:
-            for (i = 0; i < dt->nsub; i++)
-                if (!isexhaustive(dt->sub[i]))
-                    return 0;
-            return 1;
-            break;
-        case Oarr:
-            for (i = 0; i < dt->nsub; i++)
-                if (!isexhaustive(dt->sub[i]))
-                    return 0;
-            return 1;
-            break;
-        case Ostruct:
-            for (i = 0; i < dt->nsub; i++)
-                if (!isexhaustive(dt->sub[i]))
-                    return 0;
-            return 1;
-            break;
-        default:
-            die("Invalid pattern in exhaustivenes check. BUG.");
-            break;
-    }
-    return 0;
-}
-
-static int exhaustivematch(Node *m, Dtree *t, Type *tt)
-{
-    size_t i;
-
-    if (t->any)
-        return 1;
-    if (t->nsub != nconstructors(tt))
-        return 0;
-    for (i = 0; i < t->nsub; i++)
-        if (!isexhaustive(t->sub[i]))
-            return 0;
-    return 1;
-}
-
-Node *addcapture(Dtree *dt, Node *n)
-{
-    Node **blk;
-    size_t nblk, i;
-
-    nblk = 0;
-    blk = NULL;
-
-    for (i = 0; i < dt->ncap; i++)
-        lappend(&blk, &nblk, dt->cap[i]);
-    for (i = 0; i < n->block.nstmts; i++)
-        lappend(&blk, &nblk, n->block.stmts[i]);
-    lfree(&n->block.stmts, &n->block.nstmts);
-    n->block.stmts = blk;
-    n->block.nstmts = nblk;
-    return n;
-}
-
-static Node *genmatch(Srcloc loc, Dtree *dt, Node *lastany)
-{
-    Node *lastcmp, *cmp, *eq, *pat, *any;
-    size_t i;
-
-    lastcmp = NULL;
-    cmp = NULL;
-    pat = NULL;
-    /* we must have an action if this is a terminal leaf */
-    if (dt->any && dt->any->act)
-        lastany = dt->any->act;
-    if (dt->nsub == 0 && !dt->any)
-        return addcapture(dt, dt->act);
-    for (i = 0; i < dt->nsub; i++) {
-        eq = mkexpr(loc, Oeq, dt->load, dt->val[i], NULL);
-        cmp = mkifstmt(loc, eq, genmatch(loc, dt->sub[i], lastany), NULL);
-        if (!pat)
-            pat = cmp;
-        if (!lastcmp)
-            lastcmp = cmp;
-        else
-            lastcmp->ifstmt.iffalse = cmp;
-        lastcmp = cmp;
-    }
-    if (dt->any) {
-        any = genmatch(loc, dt->any, lastany);
-        if (lastcmp)
-            lastcmp->ifstmt.iffalse = any;
-        else
-            pat = any;
-    } else if (lastcmp) {
-        lastcmp->ifstmt.iffalse = lastany;
-    }
-
-    return pat;
-}
 
 /* val must be a pure, fully evaluated value */
-void gensimpmatch(Node *m, Node *val, Node ***out, size_t *nout)
+Dtree *gendtree(Node *m, Node *val, Node **lbl, size_t nlbl)
 {
+    Dtree *start, *accept, **end;
     Node **pat, **cap;
-    size_t npat, ncap;
-    Dtree *t, *leaf;
+    size_t npat, ncap, nend;
     size_t i;
-    Node *n;
 
     pat = m->matchstmt.matches;
     npat = m->matchstmt.nmatches;
-    t = mkdtree();
+
+    end = NULL;
+    nend = 0;
+    start = mkdtree(m->loc, genlbl(m->loc));
     for (i = 0; i < npat; i++) {
         cap = NULL;
         ncap = 0;
-        leaf = addpat(t, pat[i]->match.pat, val, &cap, &ncap);
-        if (leaf->act)
-            fatal(pat[i], "pattern matched by earlier case on line %d", leaf->act->loc.line);
-        leaf->act = pat[i]->match.block;
-        leaf->cap = cap;
-        leaf->ncap = ncap;
+        accept = mkdtree(lbl[i]->loc, lbl[i]);
+        accept->accept = 1;
+
+        if (!addpat(pat[i]->match.pat, val, start, accept, &cap, &ncap, &end, &nend))
+            fatal(pat[i], "pattern matched by earlier case");
+        addcapture(pat[i]->match.block, cap, ncap);
     }
-    if (!exhaustivematch(m, t, exprtype(m->matchstmt.val)))
+    if (!verifymatch(start))
         fatal(m, "nonexhaustive pattern set in match statement");
-    n = genmatch(m->loc, t, deadblock());
-    lappend(out, nout, n);
+    return start;
 }
 
-char *dtnodestr(Node *n)
+void genmatchcode(Dtree *dt, Node ***out, size_t *nout)
 {
-    switch (exprop(n)) {
-        case Ovar:
-            return namestr(n->expr.args[0]);
-        case Olit:
-            return litstr[n->expr.args[0]->lit.littype];
-        case Oucon:
-            return namestr(n->expr.args[0]);
-        case Otup:
-            return "tuple";
-        case Oarr:
-            return "array";
-        case Ostruct:
-            return "struct";
-        case Ogap:
-            return "_";
-        case Oasn:
-            return dtnodestr(n->expr.args[0]);
-        default:
-            die("Invalid pattern in exhaustivenes check. BUG.");
-            break;
-    }
-    return "???";
-}
-
-void dtdumpnode(Dtree *dt, FILE *f, int depth, int iswild)
-{
-    Node *e;
+    Node *jmp, *eq, *fail;
+    int emit;
     size_t i;
+
+    if (dt->emitted)
+        return;
+    dt->emitted = 1;
+
+    /* the we jump to the accept label when generating the parent */
+    if (dt->accept) {
+        jmp = mkexpr(dt->loc, Ojmp, dt->lbl, NULL);
+        jmp->expr.type = mktype(dt->loc, Tyvoid);
+        lappend(out, nout, jmp);
+        return;
+    }
+
+    lappend(out, nout, dt->lbl);
+    for (i = 0; i < dt->nnext; i++) {
+        if (i == dt->nnext - 1 && dt->any) {
+            fail = dt->any->lbl;
+            emit = 0;
+        } else {
+            fail = genlbl(dt->loc);
+            emit = 1;
+        }
+
+        eq = mkexpr(dt->loc, Oeq, dt->load, dt->pat[i], NULL);
+        eq->expr.type = mktype(dt->loc, Tybool);
+        jmp = mkexpr(dt->loc, Ocjmp, eq, dt->next[i]->lbl, fail, NULL);
+        jmp->expr.type = mktype(dt->loc, Tyvoid);
+        lappend(out, nout, jmp);
+
+        genmatchcode(dt->next[i], out, nout);
+        if (emit)
+            lappend(out, nout, fail);
+    }
+    if (dt->any)
+        genmatchcode(dt->any, out, nout);
+}
+
+void genonematch(Node *pat, Node *val, Node *iftrue, Node *iffalse, Node ***out, size_t *nout, Node ***cap, size_t *ncap)
+{
+    Dtree *start, *accept, *reject, **end;
+    size_t nend;
+
+    end = NULL;
+    nend = 0;
+
+    start = mkdtree(pat->loc, genlbl(pat->loc));
+    accept = mkdtree(iftrue->loc, iftrue);
+    accept->accept = 1;
+    reject = mkdtree(iffalse->loc, iffalse);
+    reject->accept = 1;
+
+    assert(addpat(pat, val, start, accept, cap, ncap, &end, &nend));
+    acceptall(start, reject);
+    genmatchcode(start, out, nout);
+}
+
+void genmatch(Node *m, Node *val, Node ***out, size_t *nout)
+{
+    Node **pat, **lbl, *end, *endlbl;
+    size_t npat, nlbl, i;
+    Dtree *dt;
+
+    lbl = NULL;
+    nlbl = 0;
+
+    pat = m->matchstmt.matches;
+    npat = m->matchstmt.nmatches;
+    for (i = 0; i < npat; i++)
+        lappend(&lbl, &nlbl, genlbl(pat[i]->match.block->loc));
+
+
+    endlbl = genlbl(m->loc);
+    dt = gendtree(m, val, lbl, nlbl);
+    genmatchcode(dt, out, nout);
+
+    for (i = 0; i < npat; i++) {
+        end = mkexpr(pat[i]->loc, Ojmp, endlbl, NULL);
+        end->expr.type = mktype(end->loc, Tyvoid);
+        lappend(out, nout, lbl[i]);
+        lappend(out, nout, pat[i]->match.block);
+        lappend(out, nout, end);
+    }
+    lappend(out, nout, endlbl);
+    
+    //dtreedump(stdout, dt);
+    //for (i = 0; i < *nout; i++)
+    //    dump((*out)[i], stdout);
+}
+
+
+void dtreedumplit(FILE *fd, Dtree *dt, Node *n, size_t depth)
+{
     char *s;
 
-    if (dt->patexpr) {
-        e = dt->patexpr;
-        s = tystr(exprtype(e));
-        indentf(depth, "%s%s %s : %s\n", iswild ? "WILDCARD " : "", opstr[exprop(e)], dtnodestr(e), s);
-        free(s);
-    } 
-    if (dt->cap)
-        for (i = 0; i < dt->ncap; i++)
-            indentf(depth + 1, "capture %s\n", dtnodestr(dt->cap[i]));
-    if (dt->act)
-        indentf(depth + 1, "action\n");
-    for (i = 0; i < dt->nsub; i++)
-        dtdumpnode(dt->sub[i], f, depth + 1, 0);
-    if (dt->any)
-        dtdumpnode(dt->any, f, depth + 1, 1);
+    s = lblstr(dt->lbl);
+    switch (n->lit.littype) {
+        case Lchr:      findentf(fd, depth, "%s: Lchr %c\n", s, n->lit.chrval); break;
+        case Lbool:     findentf(fd, depth, "%s: Lbool %s\n", s, n->lit.boolval ? "true" : "false"); break;
+        case Lint:      findentf(fd, depth, "%s: Lint %llu\n", s, n->lit.intval); break;
+        case Lflt:      findentf(fd, depth, "%s: Lflt %lf\n", s, n->lit.fltval); break;
+        case Lstr:      findentf(fd, depth, "%s: Lstr %.*s\n", s, (int)n->lit.strval.len, n->lit.strval.buf); break;
+        case Llbl:      findentf(fd, depth, "%s: Llbl %s\n", s, n->lit.lblval); break;
+        case Lfunc:     findentf(fd, depth, "%s: Lfunc\n"); break;
+    }
 }
 
-void dtdump(Dtree *dt, FILE *f)
+void dtreedumpnode(FILE *fd, Dtree *dt, size_t depth)
 {
-    dtdumpnode(dt, f, 0, 0);
+    size_t i;
+
+    if (dt->accept)
+        findentf(fd, depth, "%s: accept\n", lblstr(dt->lbl));
+
+    for (i = 0; i < dt->nnext; i++) {
+        dtreedumplit(fd, dt, dt->pat[i]->expr.args[0], depth);
+        dtreedumpnode(fd, dt->next[i], depth + 1);
+    }
+    if (dt->any) {
+        findentf(fd, depth, "%s: wildcard\n", lblstr(dt->lbl));
+        dtreedumpnode(fd, dt->any, depth + 1);
+    }
 }
+
+void dtreedump(FILE *fd, Dtree *dt)
+{
+    dtreedumpnode(fd, dt, 0);
+}
+

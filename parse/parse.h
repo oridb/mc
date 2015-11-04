@@ -568,6 +568,7 @@ Node *mkfunc(Srcloc l, Node **args, size_t nargs, Type *ret, Node *body);
 Node *mkname(Srcloc l, char *name);
 Node *mknsname(Srcloc l, char *ns, char *name);
 Node *mkdecl(Srcloc l, Node *name, Type *ty);
+Node *gentemp(Srcloc loc, Type *ty, Node **dcl);
 Node *mklbl(Srcloc l, char *lbl);
 Node *genlbl(Srcloc loc);
 char *genlblstr(char *buf, size_t sz, char *suffix);
@@ -577,6 +578,7 @@ Ucon *mkucon(Srcloc l, Node *name, Type *ut, Type *uet);
 /* node util functions */
 uint64_t arraysz(Node *sz);
 char *namestr(Node *name);
+char *lblstr(Node *n);
 char *declname(Node *n);
 Type *decltype(Node *n);
 Type *exprtype(Node *n);
@@ -617,6 +619,7 @@ int optdone(Optctx *c);
 
 /* convenience funcs */
 void lappend(void *l, size_t *len, void *n); /* hack; nl is void* b/c void*** is incompatible with T*** */
+void lcat(void *dst, size_t *ndst, void *src, size_t nsrc);
 void linsert(void *l, size_t *len, size_t idx, void *n);
 void *lpop(void *l, size_t *len);
 void ldel(void *l, size_t *len, size_t idx);

@@ -170,6 +170,17 @@ void ldel(void *p, size_t *len, size_t idx)
     *pl = xrealloc(l, *len * sizeof(void*));
 }
 
+void lcat(void *dst, size_t *ndst, void *src, size_t nsrc)
+{
+    size_t i;
+    void ***d, **s;
+
+    d = dst;
+    s = src;
+    for (i = 0; i < nsrc; i++)
+        lappend(d, ndst, s[i]);
+}
+
 
 void lfree(void *l, size_t *len)
 {

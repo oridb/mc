@@ -70,7 +70,6 @@ static void simpconstinit(Simp *s, Node *dcl);
 static Node *simpcast(Simp *s, Node *val, Type *to);
 static Node *simpslice(Simp *s, Node *n, Node *dst);
 static Node *idxaddr(Simp *s, Node *seq, Node *idx);
-static void matchpattern(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, Node *iffalse);
 
 /* useful constants */
 Type *tyintptr;
@@ -285,23 +284,6 @@ static Node *word(Srcloc loc, uint v)
     return n;
 }
 
-static Node *gentemp(Srcloc loc, Type *ty, Node **dcl)
-{
-    char buf[128];
-    static int nexttmp;
-    Node *t, *r, *n;
-
-    bprintf(buf, 128, ".t%d", nexttmp++);
-    n = mkname(loc, buf);
-    t = mkdecl(loc, n, ty);
-    r = mkexpr(loc, Ovar, n, NULL);
-    r->expr.type = t->decl.type;
-    r->expr.did = t->decl.did;
-    if (dcl)
-        *dcl = t;
-    return r;
-}
-
 static Node *temp(Simp *simp, Node *e)
 {
     Node *t, *dcl;
@@ -462,11 +444,14 @@ static void simploop(Simp *s, Node *n)
  */
 static void simpiter(Simp *s, Node *n)
 {
-    Node *lbody, *lstep, *lcond, *lmatch, *lend;
+    Node *lbody, *lload, *lstep, *lcond, *lmatch, *lend;
     Node *idx, *len, *dcl, *seq, *val, *done;
+    Node **cap, **out;
+    size_t i, ncap, nout;
     Node *zero;
 
     lbody = genlbl(n->loc);
+    lload = genlbl(n->loc);
     lstep = genlbl(n->loc);
     lcond = genlbl(n->loc);
     lmatch = genlbl(n->loc);
@@ -499,7 +484,19 @@ static void simpiter(Simp *s, Node *n)
     cjmp(s, done, lmatch, lend);
     simp(s, lmatch);
     val = load(idxaddr(s, seq, idx));
-    matchpattern(s, n->iterstmt.elt, val, val->expr.type, lbody, lstep);
+
+    /* pattern match */
+    out = NULL;
+    nout = 0;
+    cap = NULL;
+    ncap = 0;
+    genonematch(n->iterstmt.elt, val, lload, lstep, &out, &nout, &cap, &ncap);
+    for (i = 0; i < nout; i++)
+        simp(s, out[i]);
+    simp(s, lload);
+    for (i = 0; i < ncap; i++)
+        simp(s, cap[i]);
+    jmp(s, lbody);
     simp(s, lend);
 
     s->nloopstep--;
@@ -516,144 +513,6 @@ static Node *uconid(Simp *s, Node *n)
 
     uc = finducon(exprtype(n), n->expr.args[0]);
     return word(uc->loc, uc->id);
-}
-
-static Node *patval(Simp *s, Node *n, Type *t)
-{
-    if (exprop(n) == Oucon)
-        return n->expr.args[1];
-    else if (exprop(n) == Olit)
-        return n;
-    else
-        return load(addk(addr(s, n, t), Wordsz));
-}
-
-static void matchpattern(Simp *s, Node *pat, Node *val, Type *t, Node *iftrue, Node *iffalse)
-{
-    Node *n, *v, *x, *y;
-    Node *deeper, *next;
-    Node **patarg, *lit, *idx;
-    char *str;
-    size_t len;
-    Ucon *uc;
-    size_t i;
-    size_t off;
-
-    assert(pat->type == Nexpr);
-    t = tybase(t);
-    if (exprop(pat) == Ovar) {
-        n = decls[pat->expr.did];
-        if (n->decl.isconst) {
-            pat = n->decl.init;
-            if (!pat)
-                die("decl has no init in this file: this is currently unsupported.");
-        } else {
-            v = assign(s, pat, val);
-            append(s, v);
-            jmp(s, iftrue);
-            return;
-        }
-    } else if (exprop(pat) == Ogap) {
-        jmp(s, iftrue);
-        return;
-    }
-    switch (t->type) {
-        /* Never supported */
-        case Tyvoid: case Tybad: case Tyvalist: case Tyvar:
-        case Typaram: case Tyunres: case Tyname: case Ntypes:
-        case Tyfunc: case Tycode:
-            die("Unsupported type for pattern");
-            break;
-        /* only valid for string literals */
-        case Tybool: case Tychar: case Tybyte:
-        case Tyint8: case Tyint16: case Tyint32: case Tyint:
-        case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint:
-        case Tyint64: case Tyuint64:
-        case Tyflt32: case Tyflt64:
-        case Typtr:
-            v = mkexpr(pat->loc, Oeq, pat, val, NULL);
-            v->expr.type = mktype(pat->loc, Tybool);
-            cjmp(s, v, iftrue, iffalse);
-            break;
-        case Tyslice:
-            lit = pat->expr.args[0];
-            if (exprop(pat) != Olit || lit->lit.littype != Lstr)
-                die("Unsupported pattern");
-            str = lit->lit.strval.buf;
-            len = lit->lit.strval.len;
-
-            /* load slice length */
-            next = genlbl(pat->loc);
-            x = slicelen(s, val);
-            y = mkintlit(lit->loc, len);
-            y->expr.type = tyintptr;
-            v = mkexpr(pat->loc, Oeq, x, y, NULL);
-            cjmp(s, v, next, iffalse);
-            append(s, next);
-
-            for (i = 0; i < len; i++) {
-                next = genlbl(pat->loc);
-                x = mkintlit(pat->loc, str[i]);
-                x->expr.type = mktype(pat->loc, Tybyte);
-                idx = mkintlit(pat->loc, i);
-                idx->expr.type = tyintptr;
-                y = load(idxaddr(s, val, idx));
-                v = mkexpr(pat->loc, Oeq, x, y, NULL);
-                v->expr.type = mktype(pat->loc, Tybool);
-                cjmp(s, v, next, iffalse);
-                append(s, next);
-            }
-            jmp(s, iftrue);
-            break;
-        /* We got lucky. The structure of tuple, array, and struct literals
-         * is the same, so long as we don't inspect the type, so we can
-         * share the code*/
-        case Tytuple: case Tyarray: 
-            patarg = pat->expr.args;
-            off = 0;
-            for (i = 0; i < pat->expr.nargs; i++) {
-                off = alignto(off, exprtype(patarg[i]));
-                next = genlbl(pat->loc);
-                v = load(addk(addr(s, val, exprtype(patarg[i])), off));
-                matchpattern(s, patarg[i], v, exprtype(patarg[i]), next, iffalse);
-                append(s, next);
-                off += size(patarg[i]);
-            }
-            jmp(s, iftrue);
-            break;
-        case Tystruct:
-            patarg = pat->expr.args;
-            for (i = 0; i < pat->expr.nargs; i++) {
-                off = offset(pat, patarg[i]->expr.idx);
-                next = genlbl(pat->loc);
-                v = load(addk(addr(s, val, exprtype(patarg[i])), off));
-                matchpattern(s, patarg[i], v, exprtype(patarg[i]), next, iffalse);
-                append(s, next);
-            }
-            break;
-        case Tyunion:
-            if (exprop(pat) == Oucon)
-                uc = finducon(exprtype(pat), pat->expr.args[0]);
-            else
-                uc = finducon(exprtype(val), val->expr.args[0]);
-
-            deeper = genlbl(pat->loc);
-
-            x = uconid(s, pat);
-            y = uconid(s, val);
-            v = mkexpr(pat->loc, Oeq, x, y, NULL);
-            v->expr.type = tyintptr;
-            cjmp(s, v, deeper, iffalse);
-            append(s, deeper);
-            if (uc->etype) {
-                pat = patval(s, pat, uc->etype);
-                val = patval(s, val, uc->etype);
-                matchpattern(s, pat, val, uc->etype, iftrue, iffalse);
-            }
-            break;
-        case Tygeneric:
-            break;
-    }
 }
 
 static void simpblk(Simp *s, Node *n)
@@ -1727,17 +1586,15 @@ static int islbl(Node *n)
 
 static void simpmatch(Simp *s, Node *n)
 {
-    Node *val, *tmp;
+    Node *val;
     Node **match;
     size_t i, nmatch;
 
-    tmp = temp(s, n->matchstmt.val);
-    val = rval(s, n->matchstmt.val, tmp);
-    append(s, assign(s, tmp, val));
+    val = rval(s, n->matchstmt.val, NULL);
 
     match = NULL;
     nmatch = 0;
-    gensimpmatch(n, tmp, &match, &nmatch);
+    genmatch(n, val, &match, &nmatch);
     for (i = 0; i < nmatch; i++)
         simp(s, match[i]);
 }

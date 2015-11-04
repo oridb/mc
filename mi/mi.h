@@ -48,4 +48,5 @@ void dumpcfg(Cfg *c, FILE *fd);
 void check(Cfg *cfg);
 
 /* pattern matching */
-void gensimpmatch(Node *m, Node *val, Node ***out, size_t *nout);
+void genmatch(Node *m, Node *val, Node ***out, size_t *nout);
+void genonematch(Node *pat, Node *val, Node *iftrue, Node *iffalse, Node ***out, size_t *nout, Node ***cap, size_t *ncap);

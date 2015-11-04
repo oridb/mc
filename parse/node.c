@@ -260,7 +260,6 @@ Node *genlbl(Srcloc loc)
     return mklbl(loc, buf);
 }
 
-
 Node *mkstr(Srcloc loc, Str val)
 {
     Node *n;
@@ -483,6 +482,14 @@ char *namestr(Node *name)
         return "";
     assert(name->type == Nname);
     return name->name.name;
+}
+
+char *lblstr(Node *n)
+{
+    assert(exprop(n) == Olit);
+    assert(n->expr.args[0]->type == Nlit);
+    assert(n->expr.args[0]->lit.littype == Llbl);
+    return n->expr.args[0]->lit.lblval;
 }
 
 static size_t did(Node *n)

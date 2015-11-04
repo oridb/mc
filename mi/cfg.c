@@ -26,13 +26,6 @@ static Bb *mkbb(Cfg *cfg)
     return bb;
 }
 
-static char *lblstr(Node *n)
-{
-    assert(exprop(n) == Olit);
-    assert(n->expr.args[0]->type == Nlit);
-    assert(n->expr.args[0]->lit.littype == Llbl);
-    return n->expr.args[0]->lit.lblval;
-}
 
 static void strlabel(Cfg *cfg, char *lbl, Bb *bb)
 {
