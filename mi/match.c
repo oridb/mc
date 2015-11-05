@@ -378,8 +378,6 @@ static Node *genmatch(Srcloc loc, Dtree *dt)
     Node *lastcmp, *cmp, *eq, *pat;
     size_t i;
 
-    dtdumpnode(dt, stdout, 0, 0);
-
     lastcmp = NULL;
     cmp = NULL;
     pat = NULL;
