@@ -428,7 +428,6 @@ Node *gensimpmatch(Node *m)
     if (!exhaustivematch(m, t, exprtype(m->matchstmt.val)))
         fatal(m, "nonexhaustive pattern set in match statement");
     n = genmatch(m->loc, t);
-    dump(n, stdout);
     return n;
 }
 
