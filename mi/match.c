@@ -692,8 +692,12 @@ void genmatchcode(Dtree *dt, Node ***out, size_t *nout)
         if (emit)
             lappend(out, nout, fail);
     }
-    if (dt->any)
+    if (dt->any) {
+        jmp = mkexpr(dt->loc, Ojmp, dt->any->lbl, NULL);
+        jmp->expr.type = mktype(dt->loc, Tyvoid);
+        lappend(out, nout, jmp);
         genmatchcode(dt->any, out, nout);
+    }
 }
 
 void genonematch(Node *pat, Node *val, Node *iftrue, Node *iffalse, Node ***out, size_t *nout, Node ***cap, size_t *ncap)
@@ -743,9 +747,11 @@ void genmatch(Node *m, Node *val, Node ***out, size_t *nout)
     }
     lappend(out, nout, endlbl);
     
-    //dtreedump(stdout, dt);
-    //for (i = 0; i < *nout; i++)
-    //    dump((*out)[i], stdout);
+    if (debugopt['m']) {
+        dtreedump(stdout, dt);
+        for (i = 0; i < *nout; i++)
+            dump((*out)[i], stdout);
+    }
 }
 
 
