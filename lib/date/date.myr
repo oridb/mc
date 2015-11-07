@@ -1,0 +1,227 @@
+use std
+use "types.use"
+use "zoneinfo.use"
+
+pkg date =
+	/* useful constructors */
+	const utcnow	: (-> instant)
+	const now	: (tz : byte[:] -> instant)
+	const tozone	: (d : instant, zone : byte[:]	-> instant)
+	const mkdate	: (y : int, m : int, day : int, zone : byte[:]	-> instant)
+	const mkdatetime	: (year : int, mon : int, day : int, \
+		h : int, m : int, s : int, zone : byte[:]	-> instant)
+	const mkinstant	: (tm : std.time, zone : byte[:]	-> instant)
+
+	const localoff	: (tm : std.time -> duration)
+	const tzoff	: (tzname : byte[:], tm : std.time	-> duration)
+	const tzname	: (tzoff : int -> byte[:])
+	const isleap	: (d : instant	-> bool)
+
+	/* date differences */
+	const add	: (d : instant, dt : duration	-> instant)
+	const sub	: (d : instant, dt : duration	-> instant)
+	const addperiod	: (d : instant, dt : period	-> instant)
+	const subperiod	: (d : instant, dt : period	-> instant)
+
+	const duration	: (a : instant, b : instant	-> duration)
+
+	pkglocal const recalc	: (inst : instant# -> std.time)
+;;
+
+const Days400y	= 365*400 + 4*25 - 3
+const Days4y	= 365*4 + 1
+const DayUsec	= (24*60*60*1_000_000)
+const Mdays	= [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+
+const utcnow = {
+	-> mkinstant(std.now(), "")
+}
+
+const now = {tz : byte[:]
+	var tm
+
+	tm = std.now()
+	-> mkinstant(tm, tz)
+}
+
+const tozone = {d, tz
+	-> mkinstant(d.actual, tz)
+}
+
+const mkdate = {y, m, d, tz
+	-> mkinstant(recalc(&[.year=y, .mon=m, .day=d]), tz)
+}
+
+const mkdatetime = {year, mon, day, h, m, s, tz
+	-> mkinstant(recalc(&[
+		.year=year, .mon=mon, .day=day,
+		.h=h, .m=m, .s=s
+	]), tz)
+}
+
+const mkinstant = {tm, tz 
+	var j, y, m, d
+	var t, e
+	var inst
+
+	inst.actual = tm
+	/* time zones */
+	std.assert(tz.len <= inst._tzbuf.len, "time zone name too long\n")
+	match _zoneinfo.findtzoff(tz, tm)
+	| `std.Some o:	inst.tzoff = o
+	| `std.None:	std.fatal("no zone named {}\n", tz)
+	;;
+	std.slcp(inst._tzbuf[:tz.len], tz)
+	inst.tzname = inst._tzbuf[:tz.len]
+	tm += inst.tzoff castto(std.time)
+
+	/* break up time */
+	t = tm % DayUsec	/* time */
+	e = tm / DayUsec	/* epoch day */
+
+	if t < 0
+		t += DayUsec
+		e -= 1
+	;;
+
+	/* microseconds, seconds, minutes, hours */
+	inst.us  = (t % 1_000_000) castto(int)
+	t /= 1_000_000
+	inst.s = (t % 60) castto(int)
+	t /= 60
+	inst.m = (t % 60) castto(int)
+	t /= 60
+	inst.h = t castto(int)
+
+	/* weekday */
+	inst.wday = ((e + 4) % 7) castto(int)	/* the world started on Thursday */
+
+	/*
+	split up year, month, day.
+
+	Implemented according to "Algorithm 199, conversions between calendar 
+	date and Julian day number", Robert G. Tantzen, Air Force Missile Development
+	Center, Holloman AFB, New Mex.
+
+	Lots of magic. Yer a wizard, 'arry.
+	*/
+	j = (tm + 2440588 * DayUsec) / DayUsec 
+	j -= 1721119
+
+	y = (4 * j - 1) / Days400y
+	j = 4 * j - 1 - Days400y * y
+	d = j / 4
+
+	j = (4 * d + 3) / Days4y
+	d = 4 * d + 3 - Days4y * j
+	d = (d + 4) / 4 ;
+
+	m = (5 * d - 3) / 153
+	d = 5 * d - 3 - 153 * m
+	d = (d + 5) / 5
+
+	y = 100 * y + j
+	if m < 10
+		m += 3
+	else
+		m -= 9 
+		y++
+	;;
+
+	/* there's no year 0 */
+	if y <= 0
+		y--
+	;;
+	/* and if j negative, the day and month are also negative */
+	if m < 0
+		m += 12
+	;;
+	if d < 0
+		d += Mdays[m - 1] 
+	;;
+
+	inst.year = y castto(int)
+	inst.mon = m castto(int)
+	inst.day = d castto(int)
+	-> inst
+}
+
+const localoff = {tm
+	-> tzoff("local", tm)
+}
+
+const tzoff = {tz, tm
+	match _zoneinfo.findtzoff(tz, tm)
+	| `std.Some dt:	-> dt
+	| `std.None:	std.fatal("unable to load zoneinfo\n")
+	;;
+}
+
+const isleap = {d
+	-> d.year % 4 == 0 && (d.year % 100 != 0 || d.year % 400 == 0)
+}
+
+const add  = {d, dt
+	-> mkinstant(d.actual + (dt castto(std.time)), d.tzname)
+}
+
+const sub  = {d, dt
+	-> mkinstant(d.actual - (dt castto(std.time)), d.tzname)
+}
+
+const addperiod = {inst, p
+	match p
+	| `Year	y:	inst.year += y
+	| `Month m:	inst.mon += m
+	| `Day	d:	inst.day += d
+	| `Hour	h:	inst.h += h
+	| `Minute m:	inst.m += m
+	| `Second s:	inst.s += s
+	;;
+	-> mkinstant(recalc(&inst), inst.tzname)
+}
+
+const subperiod = {inst, p
+	match p
+	| `Year	y:	inst.year -= y
+	| `Month m:	inst.mon -= m
+	| `Day	d:	inst.day -= d
+	| `Hour	h:	inst.h -= h
+	| `Minute m:	inst.m -= m
+	| `Second s:	inst.s -= s
+	;;
+	-> mkinstant(recalc(&inst), inst.tzname)
+}
+
+const duration = {a, b
+	-> (b.actual - a.actual) castto(duration)
+}
+
+const recalc = {inst
+	var c, ya, j, tm
+	var y, m, d
+
+
+	if inst.mon > 2
+		m = (inst.mon - 3) castto(std.time)
+		y = inst.year castto(std.time)
+	else
+		m = (inst.mon + 9) castto(std.time)
+		y = (inst.year - 1) castto(std.time)
+	;;
+	d = inst.day castto(std.time)
+
+	c = y / 100
+	ya = y - 100 * c
+	j = c * Days400y / 4 + \
+		Days4y * ya / 4 + \
+		(153 * m + 2)/5 + d - \
+		719469
+	tm = j * DayUsec
+	tm += (inst.h castto(std.time)) * 3600*1_000_000
+	tm += (inst.m castto(std.time)) * 60*1_000_000
+	tm += (inst.s castto(std.time)) * 1_000_000
+	tm += (inst.us castto(std.time))
+	-> tm
+}
+

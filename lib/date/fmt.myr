@@ -1,0 +1,109 @@
+use std
+
+use "types.use"
+use "names.use"
+
+pkg date = 
+	const sbfmt	: (sb : std.strbuf#, args : std.valist#, opt : (byte[:], byte[:])[:] -> void)
+;;
+
+const __init__ = {
+	var d : instant
+
+	std.fmtinstall(std.typeof(d), sbfmt, [
+		("D", false),
+		("d", false),
+		("t", false),
+		("f", true),
+	][:])
+}
+
+/* Always formats in proleptic Gregorian format */
+const sbfmt = {sb, ap, opts
+	var d : instant
+	var fmt
+
+	d = std.vanext(ap)
+	fmt = Datetimefmt;
+	for o in opts
+		match o
+		| ("d", ""):	fmt = Datefmt
+		| ("t", ""):	fmt = Timefmt
+		| ("D", ""):	fmt = Datetimefmt
+		| ("f", opt):	fmt = opt
+		| _:	std.fatal("unknown option")
+		;;
+	;;
+	datefmt(sb, fmt, d)
+}
+
+const datefmt = {sb, fmt, d
+	var c
+	while fmt.len != 0
+		(c, fmt) = std.striter(fmt)
+		if c == '%'
+			(c, fmt) = std.striter(fmt)
+			match c
+			| 'a':	std.sbfmt(sb, "{}", _names.abbrevday[d.day])
+			| 'A':	std.sbfmt(sb, "{}", _names.fullday[d.day])
+			| 'b':	std.sbfmt(sb, "{}", _names.abbrevmon[d.mon])
+			| 'B':	std.sbfmt(sb, "{}", _names.fullmon[d.mon])
+			| 'c':	datefmt(sb, "%Y-%m-%d %H:%M:%S %z", d)
+			| 'C':	std.sbfmt(sb, "{p=0,w=2}", d.year % 100)
+			| 'd':	std.sbfmt(sb, "{p=0,w=2}", d.day)
+			| 'D':	datefmt(sb, "%m/%d/%y (wtf america)", d)
+			| 'e':	std.sbfmt(sb, "{w=2}", d.day)
+			| 'F':	datefmt(sb, "%Y-%m-%d", d)
+			/*
+			| 'G':	s = std.sbfmt(sb, ...?
+			| 'g':
+			*/
+			| 'h':	std.sbfmt(sb, "{}", _names.abbrevmon[d.mon])
+			| 'H':	std.sbfmt(sb, "{p=0,w=2}", d.h)
+			| 'I':	std.sbfmt(sb, "{p=0,w=2}", d.h % 12)
+			| 'j':	std.sbfmt(sb, "year day... unimplemented.")
+			| 'k':	std.sbfmt(sb, "{}", d.h)
+			| 'l':	std.sbfmt(sb, "{}", d.h % 12)
+			| 'm':	std.sbfmt(sb, "{}", d.mon)
+			| 'M':	std.sbfmt(sb, "{p=0,w=2}", d.m)
+			| 'n':	std.sbfmt(sb, "\n")
+			| 'O':	std.sbfmt(sb, "unsupported %O")
+			| 'p':	std.sbfmt(sb, "{}", ["AM", "PM"][d.h/12])
+			| 'P':	std.sbfmt(sb, "{}", ["am", "pm"][d.h/12])
+			| 'r':	datefmt(sb, "%I:%M:%S %P", d) 
+			| 'R':	datefmt(sb, "%H:%M", d)
+			| 's':	std.sbfmt(sb, "{}", d.actual / 1_000_000)
+			| 'S':	std.sbfmt(sb, "{p=0,w=2}", d.s)
+			| 'T':	datefmt(sb, "%H:%M:%S", d)
+			| 't':	std.sbfmt(sb, "\t")
+			| 'u':	std.sbfmt(sb, "{}", d.wday)
+			| 'U':	std.sbfmt(sb, "week number... unimplemented.")
+			| 'x':	datefmt(sb, Datefmt, d)
+			| 'X':	datefmt(sb, Timefmt, d)
+			| 'y':	std.sbfmt(sb, "{}", d.year % 100)
+			| 'Y':	std.sbfmt(sb, "{}", d.year)
+			| 'z':	timezone(sb, d.tzoff)
+			| 'Z':	std.sbfmt(sb, "{}", d.tzname)
+			| '%':	std.sbfmt(sb, "%")
+			| _:	std.fatal("unknown format character {}\n", c)
+			;;
+		else
+			std.sbfmt(sb, "{}", c)
+		;;
+	;;
+}
+
+const timezone = {sb, off
+	var h, m
+	var sep
+
+	sep = "+"
+	if off < 0
+		off = -off
+		sep = "-"
+	;;
+	off /= 1_000_000
+	h = off / 3600
+	m = off % 3600
+	-> std.sbfmt(sb, "{}{p=0,w=2}{p=0,w=2}", sep, h, m)
+}

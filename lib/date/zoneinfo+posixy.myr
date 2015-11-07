@@ -1,0 +1,178 @@
+use std
+use sys
+
+use "types.use"
+
+pkg _zoneinfo =
+	type zifile
+	const findtzoff : (tz : byte[:], tm : std.time -> std.option(date.duration))
+	const load	: (file : byte[:] -> zifile#)
+	const free	: (f : zifile# -> void)
+;;
+
+type zifile = struct
+	time	: int32[:]
+	timetype: byte[:]
+	ttinfo 	: ttinfo[:]
+	abbrev	: byte[:]
+	leap	: int32[2][:]
+	isstd	: byte[:]
+	isgmt	: byte[:]
+;;
+
+type ttinfo = struct
+	gmtoff	: int32
+	isdst	: byte
+	abbrind	: byte
+;;
+
+const zonepath = [
+	"/usr/share/zoneinfo",
+	"/share/zoneinfo",
+	"/etc/zoneinfo"
+]
+
+const findtzoff = {tz, tm -> std.option(date.duration)
+	var path
+	var zone
+	var cur
+	var sb
+	var ds
+	var i
+
+	/* load zone */
+	if std.sleq(tz, "") || std.sleq(tz, "UTC")
+		-> `std.Some 0
+	elif std.sleq(tz, "local")
+		path = std.sldup("/etc/localtime")
+	else
+		for z in zonepath
+			path = std.pathcat(z, tz)
+			if sys.stat(path, &sb) == 0
+				goto found
+			;;
+			std.slfree(path)
+		;;
+		std.slfree(path)
+		-> `std.None
+	;;
+:found
+	zone = load(path)
+	std.slfree(path)
+
+	/* find applicable gmt offset */
+	cur = (tm / 1_000_000) castto(int32)
+	if zone.time.len == 0
+		-> `std.None
+	;;
+	for i = 0; i < zone.time.len && cur < zone.time[i]; i++
+		/* nothing */
+	;;
+	ds = zone.ttinfo[zone.timetype[i]].gmtoff
+	free(zone)
+	->  `std.Some (ds castto(date.duration)) * 1_000_000
+}
+
+const load = {file
+	var nisgmt, nisstd, nleap, ntime, ntype, nchar
+	var i, f, p
+
+	/* check magic */
+	match std.slurp(file)
+	| `std.Ok d:	p = d
+	| `std.Fail m:	
+		-> std.zalloc()
+	;;
+
+	if !std.sleq(p[:4], "TZif\0")
+		std.put("%s is not a zone info file\n", file)
+		-> std.zalloc()
+	;;
+
+	/* skip to data */
+	p = p[20:]
+	(nisgmt, p) = fetchbe32(p)
+	(nisstd, p) = fetchbe32(p)
+	(nleap, p) = fetchbe32(p)
+	(ntime, p) = fetchbe32(p)
+	(ntype, p) = fetchbe32(p)
+	(nchar, p) = fetchbe32(p)
+
+
+	f = std.alloc()
+	f.time = std.slalloc(ntime castto(std.size))
+	for i = 0; i < ntime; i++
+		(f.time[i], p) = fetchbe32(p)
+	;;
+
+	f.timetype = std.slalloc(ntime castto(std.size))
+	for i = 0; i < ntime; i++
+		(f.timetype[i], p) = fetchbe8(p)
+	;;
+
+	f.ttinfo = std.slalloc(ntype castto(std.size))
+	for i = 0; i < ntype; i++
+		p = fetchttinfo(p, &f.ttinfo[i])
+	;;
+
+	f.abbrev = std.slalloc(nchar castto(std.size))
+	for i = 0; i < nchar; i++
+		(f.abbrev[i], p) = fetchbe8(p)
+	;;
+
+	f.leap = std.slalloc(nleap castto(std.size))
+	for i = 0; i < nleap; i++
+		(f.leap[i][0], p) = fetchbe32(p)
+		(f.leap[i][1], p) = fetchbe32(p)
+	;;
+
+	f.isstd = std.slalloc(nisstd castto(std.size))
+	for i = 0; i < nisstd; i++
+		(f.isstd[i], p) = fetchbe8(p)
+	;;
+
+	f.isgmt = std.slalloc(nisgmt castto(std.size))
+	for i = 0; i < nisgmt; i++
+		(f.isgmt[i], p) = fetchbe8(p)
+	;;
+
+	-> f
+}
+
+const free = {zi
+	std.slfree(zi.time)
+	std.slfree(zi.timetype)
+	std.slfree(zi.ttinfo)
+	std.slfree(zi.abbrev)
+	std.slfree(zi.leap)
+	std.slfree(zi.isstd)
+	std.slfree(zi.isgmt)
+	std.free(zi)
+}
+
+const fetchbe32 = {sl
+	var v
+
+	std.assert(sl.len >= 4, "Slice too small to fetch int32 from")
+	v = 	(sl[0] castto(int32)) << 24 | \
+		(sl[1] castto(int32)) << 16 | \
+		(sl[2] castto(int32)) << 8  | \
+		(sl[3] castto(int32)) << 0  
+	-> (v, sl[4:])
+}
+
+const fetchbe8 = {sl
+	var v
+
+	std.assert(sl.len >= 1, "Slice too small to fetch int8 from")
+	v = sl[0]
+	-> (v, sl[1:])
+}
+
+
+const fetchttinfo = {sl, dst : ttinfo#
+	(dst.gmtoff, sl) = fetchbe32(sl)
+	(dst.isdst, sl) = fetchbe8(sl)
+	(dst.abbrind, sl) = fetchbe8(sl)
+	-> sl
+}

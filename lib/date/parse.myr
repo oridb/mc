@@ -1,0 +1,286 @@
+use std
+
+use "types.use"
+use "names.use"
+use "date.use"
+use "zoneinfo.use"
+
+pkg date =
+	type parsefail = union
+		`Doublefmt char
+		`Badsep (char, char)
+		`Badfmt char
+		`Badzone byte[:]
+		`Badname byte[:]
+		`Badchar
+		`Badampm
+		`Shortint
+		`Badint
+	;;
+
+	/* date i/o */
+	const parsefmt	: (f : byte[:], s: byte[:]	-> std.result(instant, parsefail))
+	const parsefmtl	: (f : byte[:], s: byte[:]	-> std.result(instant, parsefail))
+	const parsefmtz	: (f : byte[:], s: byte[:], tz : byte[:]	-> std.result(instant, parsefail))
+;;
+
+const UnixJulianDiff	= 719468
+
+const parsefmt	= {f, s;	-> strparse(f, s, "", false)}
+const parsefmtl = {f, s;	-> strparse(f, s, "local", true)}
+const parsefmtz = {f, s, tz;	-> strparse(f, s, tz, true)}
+
+type parsedtz = union
+	`None
+	`Off duration
+	`Name byte[:]
+;;
+
+const __init__ = {
+	var fail : parsefail
+	std.fmtinstall(std.typeof(fail), failfmt, [][:])
+}
+
+const strparse = {f, s, tz, replace
+	var d, err
+	var seen
+
+	d = [.year = 0]
+	err = `std.None
+	seen = std.mkbs()
+	s = filldate(&d, f, s, seen, &err)
+	std.bsfree(seen)
+
+	d.actual -= d.tzoff castto(std.time)
+	match err
+	| `std.Some e:	-> `std.Fail e
+	| `std.None:	/* no error, we're ok */
+	;;
+
+	if replace
+		d = mkinstant(d.actual, tz)
+	;;
+
+	-> `std.Ok d
+}
+
+const filldate = {d, f, s, seen, err
+	var fc, sc, z, am
+
+	z = ""
+	am = `std.None
+	while f.len != 0
+		(fc, f) = std.striter(f)
+		if fc == '%'
+			(fc, f) = std.striter(f)
+			if std.bshas(seen, fc)
+				err# = `std.Some `Doublefmt fc
+				-> s
+			;;
+			std.bsput(seen, fc)
+			match fc
+			/* named things */
+			| 'a':	s = indexof(&d.day, s, _names.abbrevday, err)
+			| 'A':	s = indexof(&d.day, s, _names.fullday, err)
+			| 'b':	s = indexof(&d.mon, s, _names.abbrevmon, err)
+			| 'B':	s = indexof(&d.mon, s, _names.fullmon, err)
+			| 'c':	s = filldate(d, "%Y-%m-%d", s, seen, err)
+			| 'C':	
+				s = intval(&d.year, s, 2, 2, err)
+				d.year += 1900
+			| 'd':	s = intval(&d.day, s, 2, 2, err)
+			| 'D':	s = filldate(d, "%m/%d/%y", s, seen, err)
+			| 'e':	s = intval(&d.day, s, 1, 2, err)
+			| 'F':	s = filldate(d, "%y-%m-%d", s, seen, err)
+			| 'h':	s = indexof(&d.day, s, _names.abbrevmon, err)
+			| 'H':	s = intval(&d.h, s, 1, 2, err)
+			| 'I':	s = intval(&d.h, s, 1, 2, err)
+			| 'k':	s = intval(&d.h, s, 1, 2, err)
+			| 'l':	s = intval(&d.h, s, 1, 2, err)
+			| 'm':	s = intval(&d.mon, s, 1, 2, err)
+			| 'M':	s = intval(&d.m, s, 1, 2, err)
+			| 'n':	s = matchstr(s, "\n", err)
+			| 'p':	s = matchampm(d, s, &am, err)
+			| 'P':	s = matchampm(d, s, &am, err)
+			| 'r':	s = filldate(d, "%H:%M:%S %P", s, seen, err) 
+			| 'R':	s = filldate(d, "%H:%M %P", s, seen, err)
+			| 's':	s = intval(&d.actual, s, 1, 64, err)
+			| 'S':	s = intval(&d.s, s, 1, 2, err)
+			| 't':	s = eatspace(s)
+			| 'u':	s = intval(&d.wday, s, 1, 1, err)
+			| 'x':	s = filldate(d, Datefmt, s, seen, err)
+			| 'X':	s = filldate(d, Timefmt, s, seen, err)
+			| 'y':	s = intval(&d.year, s, 1, 2, err)
+				d.year += 1900
+			| 'Y':	
+				s = intval(&d.year, s, 1, 4, err)
+			| 'z':	s = tzoffset(&d.tzoff, s, err)
+			| 'Z':	(s, z) = tzstring(d, s, err)
+			| '%':	s = matchstr(s, "%", err)
+			| _:	std.fatal("unknown format character %c\n", fc)
+			;;
+		else
+			(sc, s) = std.striter(s)
+			if std.isspace(fc) && std.isspace(sc)
+				s = eatspace(s)
+			elif sc != fc
+				err# = `std.Some `Badsep (fc, sc)
+				-> s
+			;;
+		;;
+		match err#
+		| `std.Some _:	-> s
+		| `std.None:
+		;;
+	;;
+	d.actual = recalc(d)
+	if z.len > 0
+		match _zoneinfo.findtzoff(z, d.actual)
+		| `std.Some o:	d.tzoff = o
+		| `std.None:	err# = `std.Some `Badzone z
+		;;
+	;;
+
+	match am
+	| `std.None:
+	| `std.Some true:
+		d.h %= 12
+	| `std.Some false:
+		d.h %= 12
+		d.h += 12
+
+	;;
+	-> s
+}
+
+const eatspace = {s
+	var c
+
+	while std.isspace(std.decode(s))
+		(c, s) = std.striter(s)
+	;;
+	-> s
+}
+
+const indexof = {dst, s, set, err
+	for var i = 0; i < set.len; i++
+		if s.len >= set[i].len && std.streq(s, set[i])
+			dst# = i
+			-> s
+		;;
+	;;
+	err# = `std.Some `Badname s
+	dst# = 0
+	-> s
+}
+
+const tzoffset = {dst, s, err
+	var sgn
+	var tzoff
+
+	if s.len < 1
+		err# = `std.Some `Badzone s
+		-> ""
+	;;
+	if std.sleq(s[:1], "-")
+		sgn = -1
+	elif std.sleq(s[:1], "+") 
+		sgn = 1
+	else
+		err# = `std.Some `Badzone s
+		-> s
+	;;
+	s = intval(&tzoff, s[1:], 2, 4, err) 
+	dst# = sgn * (tzoff / 100) * 3600 * 1_000_000 + (tzoff % 100) * 60 * 1_000_000
+	-> s
+}
+
+const tzstring = {d, s, err
+	var c, n
+
+	while true
+		c = std.decode(s[n:])
+		if c != '/' && !std.isalnum(c)
+			break
+		;;
+		n += std.charlen(c)
+	;;
+	if n < d._tzbuf.len
+		std.slcp(d._tzbuf[:n], s[:n])
+	else
+		err# = `std.Some `Badzone s[:n]
+	;;
+	-> (s[n:], s[:n])
+}
+
+
+const matchstr = {s, str, err
+	if s.len <= str.len || !std.sleq(s[:str.len], str)
+		err# = `std.Some `Badchar
+		-> s
+	;;
+	-> s[str.len:]
+}
+
+const matchampm = {d, s, am, err
+	if s.len < 2
+		err# = `std.Some `Badampm
+		-> s
+	;;
+	if std.sleq(s[:2], "am") || std.sleq(s[:2], "AM")
+		am# = `std.Some true
+		-> s[2:]
+	elif std.sleq(s[:2], "pm") || std.sleq(s[:2], "PM")
+		am# = `std.Some false
+		-> s[2:]
+	else
+		err# = `std.Some `Badampm
+		-> s
+	;;
+}
+generic intval = {dst : @a::(numeric,integral)#, s : byte[:], \
+		min : @a::(numeric,integral), max : @a::(numeric,integral), \
+		err : std.option(parsefail)# -> byte[:]
+	var i, c, num
+
+	num = s
+	for i = 0; i < min; i++
+		(c, s) = std.striter(s)
+		if !std.isdigit(c)
+			err# = `std.Some `Shortint
+			-> s
+		;;
+	;;
+
+	for i = min ; i < max; i++
+		c = std.decode(s)
+		if !std.isdigit(c)
+			break
+		;;
+		s = s[std.charlen(c):]
+	;;
+
+	num = num[:i]
+	match std.intparse(num)
+	| `std.Some v:
+		dst# = v
+		-> s
+	| `std.None:
+		err# = `std.Some `Badint
+		-> s
+	;;
+}
+
+const failfmt = {sb, ap, opt
+	match std.vanext(ap)
+	| `Doublefmt chr:	std.sbfmt(sb, "saw duplicate format char '{}'", chr)
+	| `Badsep (e, f):	std.sbfmt(sb, "expected separator '{}', found '{}'", e, f)
+	| `Badfmt chr:		std.sbfmt(sb, "invalid format character '{}'", chr)
+	| `Badzone zone:	std.sbfmt(sb, "unknown time zone '{}'", zone)
+	| `Badname name:	std.sbfmt(sb, "could not find name '{}'", name)
+	| `Badchar:	std.sbfmt(sb, "unexpected character in parsed string")
+	| `Badampm:	std.sbfmt(sb, "invalid am/pm specifier")
+	| `Shortint:	std.sbfmt(sb, "integer had too few characters")
+	| `Badint:	std.sbfmt(sb, "integer could not be parsed")
+	;;
+}
