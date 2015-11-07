@@ -78,6 +78,7 @@ static void setupinit(Node *n);
 %token<tok> Tat      /* @ */
 %token<tok> Ttick    /* ` */
 %token<tok> Tderef   /* # */
+%token<tok> Tidxlen  /* $ */
 
 %token<tok> Ttype    /* type */
 %token<tok> Tfor     /* for */
@@ -712,6 +713,8 @@ atomicexpr
             {$$ = mkexpr($1->loc, Ovar, mkname($1->loc, $1->id), NULL);}
         | Tgap
             {$$ = mkexpr($1->loc, Ogap, NULL);}
+        | Tidxlen
+            {$$ = mkexpr($1->loc, Oidxlen, NULL);}
         | literal
         | Toparen expr Tcparen
             {$$ = $2;}

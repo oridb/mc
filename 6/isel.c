@@ -885,7 +885,7 @@ Loc *selexpr(Isel *s, Node *n)
         case Obandeq: case Obxoreq: case Obsleq: case Obsreq: case Omemb:
         case Oslbase: case Osllen: case Ocast: case Outag: case Oudata: 
         case Oucon: case Otup: case Oarr: case Ostruct:
-        case Oslice: case Oidx: case Osize: case Otupget:
+        case Oslice: case Oidx: case Osize: case Otupget: case Oidxlen:
         case Obreak: case Ocontinue:
         case Numops:
             dump(n, stdout);

@@ -1475,6 +1475,12 @@ static void inferexpr(Inferstate *st, Node **np, Type *ret, int *sawret)
             infersub(st, n, ret, sawret, &isconst);
             settype(st, n, mktype(n->loc, Tyvoid));
             break;
+        case Oidxlen:
+            t = mktyvar(n->loc);
+            constrain(st, n, t, traittab[Tcnum]);
+            constrain(st, n, t, traittab[Tcint]);
+            settype(st, n, t);
+            break;
         case Odef:
         case Odead:
             n->expr.type = mktype(n->loc, Tyvoid);

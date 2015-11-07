@@ -35,6 +35,10 @@ struct Simp {
     int hasenv;
     int isbigret;
 
+    /* the array we're indexing for context within [] */
+    Node **idxctx;
+    size_t nidxctx;
+
     /* pre/postinc handling */
     Node **incqueue;
     size_t nqueue;
@@ -650,17 +654,16 @@ static Node *idxaddr(Simp *s, Node *seq, Node *idx)
 
 static Node *slicebase(Simp *s, Node *n, Node *off)
 {
-    Node *t, *u, *v;
+    Node *u, *v;
     Type *ty;
     int sz;
 
-    t = rval(s, n, NULL);
     u = NULL;
     ty = tybase(exprtype(n));
     switch (ty->type) {
-        case Typtr:     u = t; break;
-        case Tyarray:   u = addr(s, t, base(exprtype(n))); break;
-        case Tyslice:   u = load(addr(s, t, mktyptr(n->loc, base(exprtype(n))))); break;
+        case Typtr:     u = n; break;
+        case Tyarray:   u = addr(s, n, base(exprtype(n))); break;
+        case Tyslice:   u = load(addr(s, n, mktyptr(n->loc, base(exprtype(n))))); break;
         default: die("Unslicable type %s", tystr(n->expr.type));
     }
     /* safe: all types we allow here have a sub[0] that we want to grab */
@@ -674,6 +677,17 @@ static Node *slicebase(Simp *s, Node *n, Node *off)
     }
 }
 
+static Node *loadidx(Simp *s, Node *arr, Node *idx)
+{
+    Node *v, *a;
+
+    a = rval(s, arr, NULL);
+    lappend(&s->idxctx, &s->nidxctx, a);
+    v = deref(idxaddr(s, a, idx), NULL);
+    lpop(&s->idxctx, &s->nidxctx);
+    return v;
+}
+
 static Node *lval(Simp *s, Node *n)
 {
     Node *r;
@@ -682,7 +696,7 @@ static Node *lval(Simp *s, Node *n)
     args = n->expr.args;
     switch (exprop(n)) {
         case Ovar:      r = loadvar(s, n, NULL);  break;
-        case Oidx:      r = deref(idxaddr(s, args[0], args[1]), NULL); break;
+        case Oidx:      r = loadidx(s, args[0], args[1]); break;
         case Oderef:    r = deref(rval(s, args[0], NULL), NULL); break;
         case Omemb:     r = rval(s, n, NULL); break;
         case Ostruct:   r = rval(s, n, NULL); break;
@@ -770,6 +784,7 @@ static Node *simpcast(Simp *s, Node *val, Type *to)
                     /* FIXME: we should only allow casting to pointers. */
                     if (tysize(to) != Ptrsz)
                         fatal(val, "bad cast from %s to %s", tystr(exprtype(val)), tystr(to));
+                    val = rval(s, val, NULL);
                     r = slicebase(s, val, NULL);
                     break;
                 case Tyfunc:
@@ -834,15 +849,18 @@ static Node *simpslice(Simp *s, Node *n, Node *dst)
 {
     Node *t;
     Node *start, *end;
-    Node *base, *sz, *len;
+    Node *seq, *base, *sz, *len;
     Node *stbase, *stlen;
 
     if (dst)
         t = dst;
     else
         t = temp(s, n);
+    seq = rval(s, n->expr.args[0], NULL);
+    if (tybase(exprtype(seq))->type != Typtr)
+        lappend(&s->idxctx, &s->nidxctx, seq);
     /* *(&slice) = (void*)base + off*sz */
-    base = slicebase(s, n->expr.args[0], n->expr.args[1]);
+    base = slicebase(s, seq, n->expr.args[1]);
     start = ptrsized(s, rval(s, n->expr.args[1], NULL));
     end = ptrsized(s, rval(s, n->expr.args[2], NULL));
     len = sub(end, start);
@@ -855,6 +873,8 @@ static Node *simpslice(Simp *s, Node *n, Node *dst)
         stbase = set(deref(addr(s, t, tyintptr), NULL), base);
         sz = addk(addr(s, t, tyintptr), Ptrsz);
     }
+    if (tybase(exprtype(seq))->type != Typtr)
+        lpop(&s->idxctx, &s->nidxctx);
     /* *(&slice + ptrsz) = len */
     stlen = set(deref(sz, NULL), len);
     append(s, stbase);
@@ -1360,8 +1380,11 @@ static Node *rval(Simp *s, Node *n, Node *dst)
             r = simpslice(s, n, dst);
             break;
         case Oidx:
-            t = idxaddr(s, n->expr.args[0], n->expr.args[1]);
-            r = load(t);
+            t = rval(s, n->expr.args[0], NULL);
+            lappend(&s->idxctx, &s->nidxctx, t);
+            u = idxaddr(s, t, n->expr.args[1]);
+            lpop(&s->idxctx, &s->nidxctx);
+            r = load(u);
             break;
         /* array.len slice.len are magic 'virtual' members.
          * they need to be special cased. */
@@ -1477,6 +1500,11 @@ static Node *rval(Simp *s, Node *n, Node *dst)
             break;
         case Ovar:
             r = loadvar(s, n, dst);
+            break;
+        case Oidxlen:
+            if (s->nidxctx == 0)
+                fatal(n, "'$' undefined outside of index or slice expression");
+            return seqlen(s, s->idxctx[s->nidxctx - 1], exprtype(n));
             break;
         case Ogap:
             fatal(n, "'_' may not be an rvalue");

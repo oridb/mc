@@ -1,0 +1,7 @@
+use std
+
+const main = {
+	var a = [1,2,3,4]
+	std.put("{} ", a[$-1])
+	std.put("{}\n", a[$-2:])
+}
