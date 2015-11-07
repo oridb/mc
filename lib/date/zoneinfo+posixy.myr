@@ -84,8 +84,8 @@ const load = {file
 		-> std.zalloc()
 	;;
 
-	if !std.sleq(p[:4], "TZif\0")
-		std.put("%s is not a zone info file\n", file)
+	if !std.sleq(p[:4], "TZif")
+		std.put("{} is not a zone info file\n", file)
 		-> std.zalloc()
 	;;
 

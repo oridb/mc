@@ -34,7 +34,7 @@ const DayUsec	= (24*60*60*1_000_000)
 const Mdays	= [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
 const utcnow = {
-	-> mkinstant(std.now(), "")
+	-> mkinstantoff(std.now(), "", 0)
 }
 
 const now = {tz : byte[:]
@@ -53,13 +53,27 @@ const mkdate = {y, m, d, tz
 }
 
 const mkdatetime = {year, mon, day, h, m, s, tz
-	-> mkinstant(recalc(&[
-		.year=year, .mon=mon, .day=day,
-		.h=h, .m=m, .s=s
-	]), tz)
+	var tm
+
+	tm = recalc(&[.year=year, .mon=mon, .day=day,
+		.h=h, .m=m, .s=s,])
+
+	match _zoneinfo.findtzoff(tz, tm)
+	| `std.Some off:
+		-> mkinstantoff(tm, tz, off)
+	| `std.None:
+		std.fatal("invalid timezone {}\n", tz)
+	;;
 }
 
-const mkinstant = {tm, tz 
+const mkinstant = {tm, tz
+	match _zoneinfo.findtzoff(tz, tm)
+	| `std.Some o:	-> mkinstantoff(tm, tz, o)
+	| `std.None:	std.fatal("no zone named {}\n", tz)
+	;;
+}
+
+const mkinstantoff = {tm, tz, tzoff
 	var j, y, m, d
 	var t, e
 	var inst
@@ -67,12 +81,9 @@ const mkinstant = {tm, tz
 	inst.actual = tm
 	/* time zones */
 	std.assert(tz.len <= inst._tzbuf.len, "time zone name too long\n")
-	match _zoneinfo.findtzoff(tz, tm)
-	| `std.Some o:	inst.tzoff = o
-	| `std.None:	std.fatal("no zone named {}\n", tz)
-	;;
 	std.slcp(inst._tzbuf[:tz.len], tz)
 	inst.tzname = inst._tzbuf[:tz.len]
+	inst.tzoff = tzoff
 	tm += inst.tzoff castto(std.time)
 
 	/* break up time */
@@ -162,11 +173,11 @@ const isleap = {d
 }
 
 const add  = {d, dt
-	-> mkinstant(d.actual + (dt castto(std.time)), d.tzname)
+	-> mkinstantoff(d.actual + (dt castto(std.time)), d.tzname, d.tzoff)
 }
 
 const sub  = {d, dt
-	-> mkinstant(d.actual - (dt castto(std.time)), d.tzname)
+	-> mkinstantoff(d.actual - (dt castto(std.time)), d.tzname, d.tzoff)
 }
 
 const addperiod = {inst, p
@@ -178,7 +189,7 @@ const addperiod = {inst, p
 	| `Minute m:	inst.m += m
 	| `Second s:	inst.s += s
 	;;
-	-> mkinstant(recalc(&inst), inst.tzname)
+	-> mkinstantoff(recalc(&inst), inst.tzname, inst.tzoff)
 }
 
 const subperiod = {inst, p
@@ -190,7 +201,7 @@ const subperiod = {inst, p
 	| `Minute m:	inst.m -= m
 	| `Second s:	inst.s -= s
 	;;
-	-> mkinstant(recalc(&inst), inst.tzname)
+	-> mkinstantoff(recalc(&inst), inst.tzname, inst.tzoff)
 }
 
 const duration = {a, b
