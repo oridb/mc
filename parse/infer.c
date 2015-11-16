@@ -269,22 +269,6 @@ static int isbound(Inferstate *st, Type *t)
     return 0;
 }
 
-void dumpbound(Inferstate *st)
-{
-    Type *t;
-    void **k;
-    ssize_t i;
-    size_t nk, j;
-
-    for (i = st->ntybindings - 1; i >= 0; i--) {
-        k = htkeys(st->tybindings[i], &nk);
-        for (j = 0; j < nk; j++) {
-            t = htget(st->tybindings[i], k[j]);
-            printf("bound: %s\n", t->pname);
-        }
-    }
-}
-
 /* Checks if a type that directly contains itself.
  * Recursive types that contain themselves through
  * pointers or slices are fine, but any other self-inclusion
