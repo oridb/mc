@@ -17,9 +17,10 @@
 typedef struct Inferstate Inferstate;
 struct Inferstate {
     int ingeneric;
+    int inaggr;
+    int innamed;
     int sawret;
     int indentdepth;
-    int intype;
     Type *ret;
 
     /* bound by patterns turn into decls in the action block */
@@ -260,14 +261,28 @@ static void setsuper(Stab *st, Stab *super)
 static int isbound(Inferstate *st, Type *t)
 {
     ssize_t i;
-    Type *p;
 
     for (i = st->ntybindings - 1; i >= 0; i--) {
-        p = htget(st->tybindings[i], t->pname);
-        if (p == t)
+        if (htget(st->tybindings[i], t->pname))
             return 1;
     }
     return 0;
+}
+
+void dumpbound(Inferstate *st)
+{
+    Type *t;
+    void **k;
+    ssize_t i;
+    size_t nk, j;
+
+    for (i = st->ntybindings - 1; i >= 0; i--) {
+        k = htkeys(st->tybindings[i], &nk);
+        for (j = 0; j < nk; j++) {
+            t = htget(st->tybindings[i], k[j]);
+            printf("bound: %s\n", t->pname);
+        }
+    }
 }
 
 /* Checks if a type that directly contains itself.
@@ -389,7 +404,6 @@ static Type *tyfreshen(Inferstate *st, Htab *subst, Type *t)
     return t;
 }
 
-
 /* Resolves a type and all it's subtypes recursively.*/
 static void tyresolve(Inferstate *st, Type *t)
 {
@@ -405,11 +419,12 @@ static void tyresolve(Inferstate *st, Type *t)
     t->resolved = 1;
     /* Walk through aggregate type members */
     if (t->type == Tystruct) {
-        st->intype++;
+        st->inaggr++;
         for (i = 0; i < t->nmemb; i++)
             infernode(st, &t->sdecls[i], NULL, NULL);
-        st->intype--;
+        st->inaggr--;
     } else if (t->type == Tyunion) {
+        st->inaggr++;
         for (i = 0; i < t->nmemb; i++) {
             t->udecls[i]->utype = t;
             t->udecls[i]->utype = tf(st, t->udecls[i]->utype);
@@ -418,12 +433,20 @@ static void tyresolve(Inferstate *st, Type *t)
                 t->udecls[i]->etype = tf(st, t->udecls[i]->etype);
             }
         }
+        st->inaggr--;
     } else if (t->type == Tyarray) {
-        if (!st->intype && !t->asize)
+        if (!st->inaggr && !t->asize)
             lfatal(t->loc, "unsized array type outside of struct");
         infernode(st, &t->asize, NULL, NULL);
+    } else if (t->type == Typaram && st->innamed) {
+        if (!isbound(st, t))
+            lfatal(t->loc, "type parameter %s is undefined in generic context", tystr(t));
     }
 
+    if (t->type == Tyname || t->type == Tygeneric) {
+        tybind(st, t);
+        st->innamed++;
+    }
     for (i = 0; i < t->nsub; i++)
         t->sub[i] = tf(st, t->sub[i]);
     base = tybase(t);
@@ -435,6 +458,10 @@ static void tyresolve(Inferstate *st, Type *t)
     if (tyinfinite(st, t, NULL))
         lfatal(t->loc, "type %s includes itself", tystr(t));
     st->ingeneric--;
+    if (t->type == Tyname || t->type == Tygeneric) {
+        tyunbind(st, t);
+        st->innamed--;
+    }
 }
 
 /* Look up the best type to date in the unification table, returning it */
@@ -602,31 +629,59 @@ static Ucon *uconresolve(Inferstate *st, Node *n)
     return uc;
 }
 
+static void putbindingsrec(Inferstate *st, Htab *bt, Type *t, Bitset *visited)
+{
+    size_t i;
+
+    if (bshas(visited, t->tid))
+        return;
+    bsput(visited, t->tid);
+    switch (t->type) {
+        case Typaram:
+            if (hthas(bt, t->pname))
+                unify(st, NULL, htget(bt, t->pname), t);
+            else if (!isbound(st, t))
+                htput(bt, t->pname, t);
+            break;
+        case Tygeneric:
+            for (i = 0; i < t->ngparam; i++)
+                putbindingsrec(st, bt, t->gparam[i], visited);
+            break;
+        case Tyname:
+            for (i = 0; i < t->narg; i++)
+                putbindingsrec(st, bt, t->arg[i], visited);
+            break;
+        case Tyunres:
+            for (i = 0; i < t->narg; i++)
+                putbindingsrec(st, bt, t->arg[i], visited);
+            break;
+        case Tystruct:
+            for (i = 0; i < t->nmemb; i++)
+                putbindingsrec(st, bt, t->sdecls[i]->decl.type, visited);
+            break;
+        case Tyunion:
+            for (i = 0; i < t->nmemb; i++)
+                if (t->udecls[i]->etype)
+                    putbindingsrec(st, bt, t->udecls[i]->etype, visited);
+            break;
+        default:
+            for (i = 0; i < t->nsub; i++)
+                putbindingsrec(st, bt, t->sub[i], visited);
+            break;
+    }
+}
+
 /* Binds the type parameters present in the
  * current type into the type environment */
 static void putbindings(Inferstate *st, Htab *bt, Type *t)
 {
-    size_t i;
-    char *s;
+    Bitset *visited;
 
     if (!t)
         return;
-    if (t->type != Typaram)
-        return;
-
-    if (debugopt['u']) {
-        s = tystr(t);
-        indentf(st->indentdepth, "Bind %s\n", s);
-        free(s);
-    }
-    if (hthas(bt, t->pname))
-        unify(st, NULL, htget(bt, t->pname), t);
-    else if (isbound(st, t))
-        return;
-
-    htput(bt, t->pname, t);
-    for (i = 0; i < t->narg; i++)
-        putbindings(st, bt, t->arg[i]);
+    visited = mkbs();
+    putbindingsrec(st, bt, t, visited);
+    bsfree(visited);
 }
 
 static void tybind(Inferstate *st, Type *t)
@@ -634,8 +689,6 @@ static void tybind(Inferstate *st, Type *t)
     Htab *bt;
     char *s;
 
-    if (t->type != Tygeneric)
-        return;
     if (debugopt['u']) {
         s = tystr(t);
         indentf(st->indentdepth, "Binding %s\n", s);
@@ -1610,6 +1663,9 @@ static void inferstab(Inferstate *st, Stab *s)
         if (!t)
             fatal(k[i], "undefined type %s", namestr(k[i]));
         t = tysearch(t);
+        tybind(st, t);
+        tyresolve(st, t);
+        tyunbind(st, t);
         updatetype(s, k[i], t);
     }
     free(k);
@@ -1618,7 +1674,7 @@ static void inferstab(Inferstate *st, Stab *s)
 static void infernode(Inferstate *st, Node **np, Type *ret, int *sawret)
 {
     size_t i, nbound;
-    Node **bound, *n;
+    Node **bound, *n, *pat;
     Type *t;
 
     n = *np;
@@ -1691,7 +1747,8 @@ static void infernode(Inferstate *st, Node **np, Type *ret, int *sawret)
                 fatal(n, "can't match against a void type near %s", ctxstr(st, n->matchstmt.val));
             for (i = 0; i < n->matchstmt.nmatches; i++) {
                 infernode(st, &n->matchstmt.matches[i], ret, sawret);
-                unify(st, n->matchstmt.matches[i]->match.pat, type(st, n->matchstmt.val), type(st, n->matchstmt.matches[i]->match.pat));
+                pat = n->matchstmt.matches[i]->match.pat;
+                unify(st, pat, type(st, n->matchstmt.val), type(st, n->matchstmt.matches[i]->match.pat));
             }
             break;
         case Nmatch:
@@ -1760,10 +1817,10 @@ static Type *tyfix(Inferstate *st, Node *ctx, Type *orig, int noerr)
         if (t->type == Tyarray) {
             typesub(st, t->asize, noerr);
         } else if (t->type == Tystruct) {
-            st->intype++;
+            st->inaggr++;
             for (i = 0; i < t->nmemb; i++)
                 typesub(st, t->sdecls[i], noerr);
-            st->intype--;
+            st->inaggr--;
         } else if (t->type == Tyunion) {
             for (i = 0; i < t->nmemb; i++) {
                 if (t->udecls[i]->etype) {
