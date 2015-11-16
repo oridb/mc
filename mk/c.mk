@@ -7,7 +7,7 @@ _LIBINCPATHS=$(addprefix -I, $(dir $(DEPS)))
 _LIBPATHS=$(addprefix -l, $(patsubst lib%.a,%,$(notdir $(DEPS))))
 
 # yeah, I should probably remove -Werror, but it's nice for developing alone.
-CFLAGS += -Wall -Werror -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -g
+CFLAGS += -Wall -Werror -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-sign-compare -Wno-array-bounds -g
 CFLAGS += -MMD -MP -MF ${_DEPSDIR}/$(subst /,-,$*).d
 
 LIB ?= $(INSTLIB)
@@ -114,7 +114,7 @@ uninstall: subdirs-uninstall $(EXTRAUNINSTALL)
 %.o: %.c $(GENHDR) .deps
 	$(CC) -c $(CFLAGS) $(_LIBINCPATHS) $<
 
-.deps: 
+.deps:
 	mkdir -p $(_DEPSDIR)
 
 config.mk: configure
