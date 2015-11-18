@@ -300,41 +300,28 @@ static void writeblob(FILE *fd, Blob *b)
 	if (!b)
 		return;
 	if (b->lbl) {
-		if (b->isglobl)
-			fprintf(fd, ".globl %s%s\n", Symprefix, b->lbl);
-		fprintf(fd, "%s%s:\n", Symprefix, b->lbl);
+		if (b->type == Btzero) {
+			fprintf(fd, ".comm %s%s,%zd,16\n", Symprefix, b->lbl, b->npad);
+		} else {
+			if (b->isglobl)
+				fprintf(fd, ".globl %s%s\n", Symprefix, b->lbl);
+			fprintf(fd, "%s%s:\n", Symprefix, b->lbl);
+		}
 	}
 	switch (b->type) {
-	case Bti8:
-		fprintf(fd, "\t.byte %zd\n", b->ival);
-		break;
-	case Bti16:
-		fprintf(fd, "\t.short %zd\n", b->ival);
-		break;
-	case Bti32:
-		fprintf(fd, "\t.long %zd\n", b->ival);
-		break;
-	case Bti64:
-		fprintf(fd, "\t.quad %zd\n", b->ival);
-		break;
-	case Btimin:
-		encodemin(fd, b->ival);
-		break;
-	case Btref:
-		fprintf(fd, "\t.quad %s + %zd\n", b->ref.str, b->ref.off);
-		break;
-	case Btbytes:
-		writebytes(fd, b->bytes.buf, b->bytes.len);
-		break;
+	case Btimin:	encodemin(fd, b->ival);	break;
+	case Bti8:	fprintf(fd, "\t.byte %zd\n", b->ival);	break;
+	case Bti16:	fprintf(fd, "\t.short %zd\n", b->ival);	break;
+	case Bti32:	fprintf(fd, "\t.long %zd\n", b->ival);	break;
+	case Bti64:	fprintf(fd, "\t.quad %zd\n", b->ival);	break;
+	case Btbytes:	writebytes(fd, b->bytes.buf, b->bytes.len);	break;
+	case Btpad:	fprintf(fd, "\t.fill %zd,1,0\n", b->npad);	break;
+	case Btzero:	fprintf(fd, "\t.fill %zd,1,0\n", b->npad);	break;
+	case Btref:	fprintf(fd, "\t.quad %s + %zd\n", b->ref.str, b->ref.off);	break;
 	case Btseq:
 		for (i = 0; i < b->seq.nsub; i++)
 			writeblob(fd, b->seq.sub[i]);
 		break;
-	case Btpad:
-		for (i = 0; i < b->npad; i++)
-			fprintf(fd, "\t.byte 0\n");
-		break;
-
 	}
 }
 
@@ -382,12 +369,14 @@ void genblob(FILE *fd, Node *blob, Htab *globls, Htab *strtab)
 	lbl = htget(globls, blob);
 	if (blob->decl.vis != Visintern)
 		fprintf(fd, ".globl %s\n", lbl);
-	fprintf(fd, ".align %zd\n", tyalign(decltype(blob)));
-	fprintf(fd, "%s:\n", lbl);
-	if (blob->decl.init)
+	if (blob->decl.init) {
+		fprintf(fd, ".align %zd\n", tyalign(decltype(blob)));
+		fprintf(fd, "%s:\n", lbl);
 		b = litblob(globls, strtab, blob->decl.init);
-	else
-		b = mkblobpad(size(blob));
+	} else {
+		b = mkblobzero(size(blob));
+		b->lbl = lbl;
+	}
 	writeblob(fd, b);
 	blobfree(b);
 }

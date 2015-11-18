@@ -67,6 +67,7 @@ typedef enum {
 	Btbytes,
 	Btseq,
 	Btpad,
+	Btzero,
 } Blobtype;
 
 struct Blob {
@@ -253,6 +254,7 @@ void gengas(Node *file, char *out);
 void genp9(Node *file, char *out);
 
 /* blob stuff */
+Blob *mkblobzero(size_t sz);
 Blob *mkblobpad(size_t sz);
 Blob *mkblobi(Blobtype type, uint64_t ival);
 Blob *mkblobbytes(char *buf, size_t len);
