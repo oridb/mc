@@ -21,218 +21,218 @@ typedef enum {
 #define Reg(r, gasname, p9name, mode) r,
 #include "regs.def"
 #undef Reg
-    Nreg
+	Nreg
 } Reg;
 
 typedef enum {
-    Locnone,
-    Loclbl,  /* label */
-    Locreg,  /* register */
-    Locmem,  /* reg offset mem */
-    Locmeml, /* label offset mem */
-    Loclit,  /* literal value */
-    Loclitl  /* label address */
+	Locnone,
+	Loclbl,  /* label */
+	Locreg,  /* register */
+	Locmem,  /* reg offset mem */
+	Locmeml, /* label offset mem */
+	Loclit,  /* literal value */
+	Loclitl  /* label address */
 } Loctype;
 
 typedef enum {
-    ModeNone,
-    ModeB, /* byte */
-    ModeW, /* short */
-    ModeL, /* long */
-    ModeQ, /* quad */
-    ModeF, /* float32 */
-    ModeD, /* float64 */
-    Nmode,
+	ModeNone,
+	ModeB, /* byte */
+	ModeW, /* short */
+	ModeL, /* long */
+	ModeQ, /* quad */
+	ModeF, /* float32 */
+	ModeD, /* float64 */
+	Nmode,
 } Mode;
 
 typedef enum {
-    Classbad,
-    Classint,
-    Classflt,
-    Nclass,
+	Classbad,
+	Classint,
+	Classflt,
+	Nclass,
 } Rclass;
 
 typedef enum {
-    Gnugas,
-    Plan9,
+	Gnugas,
+	Plan9,
 } Asmsyntax;
 
 typedef enum {
-    Bti8,
-    Bti16,
-    Bti32,
-    Bti64,
-    Btimin,     /* byte-packed uint */
-    Btref,
-    Btbytes,
-    Btseq,
-    Btpad,
+	Bti8,
+	Bti16,
+	Bti32,
+	Bti64,
+	Btimin,     /* byte-packed uint */
+	Btref,
+	Btbytes,
+	Btseq,
+	Btpad,
 } Blobtype;
 
 struct Blob {
-    Blobtype type;
-    size_t align;
-    char *lbl;  /* may be null */
-    char isglobl;
-    union {
-        uint64_t npad;
-        uint64_t ival;
-        struct {
-            char *str;
-            char isextern;
-            size_t off;
-        } ref;
-        struct {
-            size_t len;
-            char *buf;
-        } bytes;
-        struct {
-            size_t nsub;
-            Blob **sub;
-        } seq;
-    };
+	Blobtype type;
+	size_t align;
+	char *lbl;  /* may be null */
+	char isglobl;
+	union {
+		uint64_t npad;
+		uint64_t ival;
+		struct {
+			char *str;
+			char isextern;
+			size_t off;
+		} ref;
+		struct {
+			size_t len;
+			char *buf;
+		} bytes;
+		struct {
+			size_t nsub;
+			Blob **sub;
+		} seq;
+	};
 };
 
 /* a register, label, or memory location */
 struct Loc {
-    Loctype type; /* the type of loc */
-    Mode mode;    /* the mode of this location */
-    void *list;
-    union {
-        char *lbl;  /* for Loclbl, Loclitl */
-        struct {    /* for Locreg */
-            regid id;
-            Reg   colour;
-        } reg;
-        long  lit;  /* for Loclit */
-        /*
-         * for Locmem, Locmeml.
-         * address format is
-         *    disp(base + index)
-         */
-        struct {
-            /* only one of lbldisp and constdisp may be used */
-            char *lbldisp;
-            long constdisp;
-            int scale; /* 0,1,2,4, or 8 */
-            Loc *base; /* needed */
-            Loc *idx;  /* optional */
-        } mem;
-    };
+	Loctype type; /* the type of loc */
+	Mode mode;    /* the mode of this location */
+	void *list;
+	union {
+		char *lbl;  /* for Loclbl, Loclitl */
+		struct {    /* for Locreg */
+			regid id;
+			Reg   colour;
+		} reg;
+		long  lit;  /* for Loclit */
+		/*
+		 * for Locmem, Locmeml.
+		 * address format is
+		 *    disp(base + index)
+		 */
+		struct {
+			/* only one of lbldisp and constdisp may be used */
+			char *lbldisp;
+			long constdisp;
+			int scale; /* 0,1,2,4, or 8 */
+			Loc *base; /* needed */
+			Loc *idx;  /* optional */
+		} mem;
+	};
 };
 
 struct Insn {
-    size_t uid;
-    AsmOp op;
-    Loc *args[Maxarg];
-    size_t nargs;
+	size_t uid;
+	AsmOp op;
+	Loc *args[Maxarg];
+	size_t nargs;
 };
 
 struct Func {
-    char *name;   /* function name */
-    Type *type;   /* type of function */
+	char *name;   /* function name */
+	Type *type;   /* type of function */
 
-    Node **args;  /* argument list */
-    size_t nargs; /* number of args, including hidden ones */
-    Htab *stkoff; /* Loc* -> int stkoff map */
-    Htab *envoff; /* Loc* -> int envoff map */
-    size_t stksz; /* stack size */
-    Node *ret;    /* return value */
+	Node **args;  /* argument list */
+	size_t nargs; /* number of args, including hidden ones */
+	Htab *stkoff; /* Loc* -> int stkoff map */
+	Htab *envoff; /* Loc* -> int envoff map */
+	size_t stksz; /* stack size */
+	Node *ret;    /* return value */
 
-    Cfg  *cfg;     /* flow graph */
-    char isexport; /* is this exported from the asm? */
-    char hasenv;   /* do we have an environment? */
+	Cfg  *cfg;     /* flow graph */
+	char isexport; /* is this exported from the asm? */
+	char hasenv;   /* do we have an environment? */
 };
 
 struct Asmbb {
-    int id;       /* unique identifier */
-    char **lbls;  /* list of BB labels */
-    size_t nlbls; /* number of labels */
-    Insn **il;    /* instructions */
-    size_t ni;    /* number of instructions */
+	int id;       /* unique identifier */
+	char **lbls;  /* list of BB labels */
+	size_t nlbls; /* number of labels */
+	Insn **il;    /* instructions */
+	size_t ni;    /* number of instructions */
 
-    Bitset *pred; /* set of predecessor BB ids */
-    Bitset *succ; /* set of successor BB ids */
-    Bitset *use;  /* registers used by this BB */
-    Bitset *def;  /* registers defined by this BB */
-    Bitset *livein; /* variables live on entrance to BB */
-    Bitset *liveout;  /* variables live on exit from BB */
+	Bitset *pred; /* set of predecessor BB ids */
+	Bitset *succ; /* set of successor BB ids */
+	Bitset *use;  /* registers used by this BB */
+	Bitset *def;  /* registers defined by this BB */
+	Bitset *livein; /* variables live on entrance to BB */
+	Bitset *liveout;  /* variables live on exit from BB */
 };
 
 /* instruction selection state */
 struct Isel {
-    Cfg  *cfg;          /* cfg built with nodes */
+	Cfg  *cfg;          /* cfg built with nodes */
 
-    Asmbb **bb;         /* 1:1 mappings with the Node bbs in the CFG */
-    size_t nbb;
-    Asmbb *curbb;
+	Asmbb **bb;         /* 1:1 mappings with the Node bbs in the CFG */
+	size_t nbb;
+	Asmbb *curbb;
 
-    Node *ret;          /* we store the return into here */
-    Htab *spillslots;   /* reg id  => int stkoff */
-    Htab *reglocs;      /* decl id => Loc *reg */
-    Htab *stkoff;       /* decl id => int stkoff */
-    Htab *envoff;       /* decl id => int envoff */
-    Htab *globls;       /* decl id => char *globlname */
+	Node *ret;          /* we store the return into here */
+	Htab *spillslots;   /* reg id  => int stkoff */
+	Htab *reglocs;      /* decl id => Loc *reg */
+	Htab *stkoff;       /* decl id => int stkoff */
+	Htab *envoff;       /* decl id => int envoff */
+	Htab *globls;       /* decl id => char *globlname */
 
-    Loc *envp;
+	Loc *envp;
 
-    /* increased when we spill */
-    Loc *stksz;
-    Loc *calleesave[Nreg];
-    size_t nsaved;
+	/* increased when we spill */
+	Loc *stksz;
+	Loc *calleesave[Nreg];
+	size_t nsaved;
 
-    /* register allocator state */
+	/* register allocator state */
 
-    size_t *gbits;      /* igraph matrix repr */
-    regid **gadj;      /* igraph adj set repr */
-    size_t *ngadj;
-    size_t nreg;      /* maxregid at time of alloc */
-    int *degree;        /* degree of nodes */
-    int *nuses;         /* number of uses of nodes */
-    Loc **aliasmap;     /* mapping of aliases */
+	size_t *gbits;      /* igraph matrix repr */
+	regid **gadj;      /* igraph adj set repr */
+	size_t *ngadj;
+	size_t nreg;      /* maxregid at time of alloc */
+	int *degree;        /* degree of nodes */
+	int *nuses;         /* number of uses of nodes */
+	Loc **aliasmap;     /* mapping of aliases */
 
-    Bitset *shouldspill;        /* the first registers we should try to spill */
-    Bitset *neverspill;        /* registers we should never spill */
+	Bitset *shouldspill;        /* the first registers we should try to spill */
+	Bitset *neverspill;        /* registers we should never spill */
 
-    Insn ***rmoves;
-    size_t *nrmoves;
+	Insn ***rmoves;
+	size_t *nrmoves;
 
-    /* move sets */
-    Insn **mcoalesced;
-    size_t nmcoalesced;
+	/* move sets */
+	Insn **mcoalesced;
+	size_t nmcoalesced;
 
-    Insn **mconstrained;
-    size_t nmconstrained;
+	Insn **mconstrained;
+	size_t nmconstrained;
 
-    Insn **mfrozen;
-    size_t nmfrozen;
+	Insn **mfrozen;
+	size_t nmfrozen;
 
-    Bitset *mactiveset;
-    Insn **mactive;
-    size_t nmactive;
+	Bitset *mactiveset;
+	Insn **mactive;
+	size_t nmactive;
 
 
-    /* worklists */
-    Bitset *wlmoveset;
-    Insn **wlmove;
-    size_t nwlmove;
+	/* worklists */
+	Bitset *wlmoveset;
+	Insn **wlmove;
+	size_t nwlmove;
 
-    Loc **wlspill;
-    size_t nwlspill;
+	Loc **wlspill;
+	size_t nwlspill;
 
-    Loc **wlfreeze;
-    size_t nwlfreeze;
+	Loc **wlfreeze;
+	size_t nwlfreeze;
 
-    Loc **wlsimp;
-    size_t nwlsimp;
+	Loc **wlsimp;
+	size_t nwlsimp;
 
-    Loc  **selstk;
-    size_t nselstk;
+	Loc  **selstk;
+	size_t nselstk;
 
-    Bitset *coalesced;
-    Bitset *spilled;
-    Bitset *prepainted; /* locations that need to be a specific colour */
-    Bitset *initial;    /* initial set of locations used by this fn */
+	Bitset *coalesced;
+	Bitset *spilled;
+	Bitset *prepainted; /* locations that need to be a specific colour */
+	Bitset *initial;    /* initial set of locations used by this fn */
 };
 
 /* globals */

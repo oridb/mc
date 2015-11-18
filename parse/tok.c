@@ -22,36 +22,33 @@ Srcloc curloc;
 Tok *curtok;
 
 /* the file contents are stored globally */
-static int   fidx;
-static int   fbufsz;
+static int fidx;
+static int fbufsz;
 static char *fbuf;
 
 static int peekn(int n)
 {
-    if (fidx + n >= fbufsz)
-        return End;
-    else
-        return fbuf[fidx + n];
+	if (fidx + n >= fbufsz)
+		return End;
+	else
+		return fbuf[fidx + n];
 }
 
-static int peek(void)
-{
-    return peekn(0);
-}
+static int peek(void) { return peekn(0); }
 
 static int next(void)
 {
-    int c;
+	int c;
 
-    c = peek();
-    fidx++;
-    return c;
+	c = peek();
+	fidx++;
+	return c;
 }
 
 static void unget(void)
 {
-    fidx--;
-    assert(fidx >= 0);
+	fidx--;
+	assert(fidx >= 0);
 }
 
 /*
@@ -62,61 +59,57 @@ static void unget(void)
  */
 static int match(char c)
 {
-    if (peek() == c) {
-        next();
-        return 1;
-    } else {
-        return 0;
-    }
+	if (peek() == c) {
+		next();
+		return 1;
+	}
+	else {
+		return 0;
+	}
 }
 
 static Tok *mktok(int tt)
 {
-    Tok *t;
+	Tok *t;
 
-    t = zalloc(sizeof(Tok));
-    t->type = tt;
-    t->loc = curloc;
-    return t;
+	t = zalloc(sizeof(Tok));
+	t->type = tt;
+	t->loc = curloc;
+	return t;
 }
 
-static int identchar(int c)
-{
-    return isalnum(c) || c == '_' || c == '$';
-}
+static int identchar(int c) { return isalnum(c) || c == '_' || c == '$'; }
 
 static void eatcomment(void)
 {
-    int depth;
-    int startln;
-    int c;
+	int depth;
+	int startln;
+	int c;
 
-    depth = 0;
-    startln = curloc.line;
-    while (1) {
-        c = next();
-        switch (c) {
-            /* enter level of nesting */
-            case '/':
-                if (match('*'))
-                    depth++;
-                break;
-            /* leave level of nesting */
-            case '*':
-                if (match('/'))
-                    depth--;
-                break;
-            /* have to keep line numbers synced */
-            case '\n':
-                curloc.line++;
-                break;
-            case End:
-                lfatal(curloc, "File ended within comment starting at line %d", startln);
-                break;
-        }
-        if (depth == 0)
-            break;
-    }
+	depth = 0;
+	startln = curloc.line;
+	while (1) {
+		c = next();
+		switch (c) {
+			/* enter level of nesting */
+		case '/':
+			if (match('*'))
+				depth++;
+			break;
+			/* leave level of nesting */
+		case '*':
+			if (match('/'))
+				depth--;
+			break;
+			/* have to keep line numbers synced */
+		case '\n': curloc.line++; break;
+		case End:
+			   lfatal(curloc, "File ended within comment starting at line %d", startln);
+			   break;
+		}
+		if (depth == 0)
+			break;
+	}
 }
 
 /*
@@ -128,29 +121,34 @@ static void eatcomment(void)
  */
 static void eatspace(void)
 {
-    int c;
-    int ignorenl;
+	int c;
+	int ignorenl;
 
-    ignorenl = 0;
-    while (1) {
-        c = peek();
-        if (!ignorenl && c == '\n') {
-            break;
-        } else if (c == '\\') {
-            ignorenl = 1;
-            next();
-        } else if (ignorenl && c == '\n') {
-            next();
-            curloc.line++;
-            ignorenl = 0;
-        } else if (isspace(c)) {
-            next();
-        } else if (c == '/' && peekn(1) == '*') {
-            eatcomment();
-        } else {
-            break;
-        }
-    }
+	ignorenl = 0;
+	while (1) {
+		c = peek();
+		if (!ignorenl && c == '\n') {
+			break;
+		}
+		else if (c == '\\') {
+			ignorenl = 1;
+			next();
+		}
+		else if (ignorenl && c == '\n') {
+			next();
+			curloc.line++;
+			ignorenl = 0;
+		}
+		else if (isspace(c)) {
+			next();
+		}
+		else if (c == '/' && peekn(1) == '*') {
+			eatcomment();
+		}
+		else {
+			break;
+		}
+	}
 }
 
 /*
@@ -161,116 +159,93 @@ static void eatspace(void)
  */
 static int kwd(char *s)
 {
-    static const struct {char* kw; int tt;} kwmap[] = {
-        {"$",           Tidxlen},
-        {"$noret",      Tattr},
-        {"_",           Tgap},
-        {"break",       Tbreak},
-        {"castto",      Tcast},
-        {"const",       Tconst},
-        {"continue",    Tcontinue},
-        {"elif",        Telif},
-        {"else",        Telse},
-        {"export",      Texport},
-        {"extern",      Tattr},
-        {"false",       Tboollit},
-        {"for",         Tfor},
-        {"generic",     Tgeneric},
-        {"goto",        Tgoto},
-        {"if",          Tif},
-        {"impl",        Timpl},
-        {"in",          Tin},
-        {"match",       Tmatch},
-        {"pkg",         Tpkg},
-        {"pkglocal",    Tattr},
-        {"protect",     Tprotect},
-        {"sizeof",      Tsizeof},
-        {"struct",      Tstruct},
-        {"trait",       Ttrait},
-        {"true",        Tboollit},
-        {"type",        Ttype},
-        {"union",       Tunion},
-        {"use",         Tuse},
-        {"var",         Tvar},
-        {"while",       Twhile},
-    };
+	static const struct {
+		char *kw;
+		int tt;
+	} kwmap[] = {
+		{"$", Tidxlen}, {"$noret", Tattr}, {"_", Tgap}, {"break", Tbreak}, {"castto", Tcast},
+		{"const", Tconst}, {"continue", Tcontinue}, {"elif", Telif}, {"else", Telse},
+		{"export", Texport}, {"extern", Tattr}, {"false", Tboollit}, {"for", Tfor},
+		{"generic", Tgeneric}, {"goto", Tgoto}, {"if", Tif}, {"impl", Timpl}, {"in", Tin},
+		{"match", Tmatch}, {"pkg", Tpkg}, {"pkglocal", Tattr}, {"protect", Tprotect},
+		{"sizeof", Tsizeof}, {"struct", Tstruct}, {"trait", Ttrait}, {"true", Tboollit},
+		{"type", Ttype}, {"union", Tunion}, {"use", Tuse}, {"var", Tvar}, {"while", Twhile},
+	};
 
-    size_t min, max, mid;
-    int cmp;
+	size_t min, max, mid;
+	int cmp;
 
-
-    min = 0;
-    max = sizeof(kwmap)/sizeof(kwmap[0]);
-    while (max > min) {
-        mid = (max + min) / 2;
-        cmp = strcmp(s, kwmap[mid].kw);
-        if (cmp == 0)
-            return kwmap[mid].tt;
-        else if (cmp > 0)
-            min = mid + 1;
-        else if (cmp < 0)
-            max = mid;
-    }
-    return Tident;
+	min = 0;
+	max = sizeof(kwmap) / sizeof(kwmap[0]);
+	while (max > min) {
+		mid = (max + min) / 2;
+		cmp = strcmp(s, kwmap[mid].kw);
+		if (cmp == 0)
+			return kwmap[mid].tt;
+		else if (cmp > 0)
+			min = mid + 1;
+		else if (cmp < 0)
+			max = mid;
+	}
+	return Tident;
 }
 
 static int identstr(char *buf, size_t sz)
 {
-    size_t i;
-    char c;
+	size_t i;
+	char c;
 
-    i = 0;
-    for (c = peek(); i < sz && identchar(c); c = peek()) {
-        next();
-        buf[i++] = c;
-    }
-    buf[i] = '\0';
-    return i;
+	i = 0;
+	for (c = peek(); i < sz && identchar(c); c = peek()) {
+		next();
+		buf[i++] = c;
+	}
+	buf[i] = '\0';
+	return i;
 }
 
 static Tok *kwident(void)
 {
-    char buf[1024];
-    Tok *t;
+	char buf[1024];
+	Tok *t;
 
-    if (!identstr(buf, sizeof buf))
-        return NULL;
-    t = mktok(kwd(buf));
-    t->id = strdup(buf);
-    return t;
+	if (!identstr(buf, sizeof buf))
+		return NULL;
+	t = mktok(kwd(buf));
+	t->id = strdup(buf);
+	return t;
 }
 
 static void append(char **buf, size_t *len, size_t *sz, int c)
 {
-    if (!*sz) {
-        *sz = 16;
-        *buf = malloc(*sz);
-    }
-    if (*len == *sz - 1) {
-        *sz = *sz * 2;
-        *buf = realloc(*buf, *sz);
-    }
+	if (!*sz) {
+		*sz = 16;
+		*buf = malloc(*sz);
+	}
+	if (*len == *sz - 1) {
+		*sz = *sz * 2;
+		*buf = realloc(*buf, *sz);
+	}
 
-    buf[0][*len] = c;
-    (*len)++;
+	buf[0][*len] = c;
+	(*len)++;
 }
-
 
 static void encode(char *buf, size_t len, uint32_t c)
 {
-    int mark;
-    size_t i;
+	int mark;
+	size_t i;
 
-    assert(len > 0 && len < 5);
-    if (len == 1)
-        mark = 0;
-    else
-        mark = (((1 << (8 - len)) - 1) ^ 0xff);
-    for (i = len - 1; i > 0; i--) {
-        buf[i] = (c & 0x3f) | 0x80;
-        c >>= 6;
-    }
-    buf[0] = (c | mark);
+	assert(len > 0 && len < 5);
+	if (len == 1)
+		mark = 0;
+	else
+		mark = (((1 << (8 - len)) - 1) ^ 0xff);
+	for (i = len - 1; i > 0; i--) {
+		buf[i] = (c & 0x3f) | 0x80;
+		c >>= 6;
+	}
+	buf[0] = (c | mark);
 }
 
 /*
@@ -279,34 +254,34 @@ static void encode(char *buf, size_t len, uint32_t c)
  */
 static void appendc(char **buf, size_t *len, size_t *sz, uint32_t c)
 {
-    size_t i, charlen;
-    char charbuf[5] = {0};
+	size_t i, charlen;
+	char charbuf[5] = {0};
 
-    if (c < 0x80)
-        charlen = 1;
-    else if (c < 0x800)
-        charlen = 2;
-    else if (c < 0x10000)
-        charlen = 3;
-    else if (c < 0x200000)
-        charlen = 4;
-    else
-        lfatal(curloc, "invalid utf character '\\u{%x}'", c);
+	if (c < 0x80)
+		charlen = 1;
+	else if (c < 0x800)
+		charlen = 2;
+	else if (c < 0x10000)
+		charlen = 3;
+	else if (c < 0x200000)
+		charlen = 4;
+	else
+		lfatal(curloc, "invalid utf character '\\u{%x}'", c);
 
-    encode(charbuf, charlen, c);
-    for (i = 0; i < charlen; i++)
-         append(buf, len, sz, charbuf[i]);
+	encode(charbuf, charlen, c);
+	for (i = 0; i < charlen; i++)
+		append(buf, len, sz, charbuf[i]);
 }
 
 static int ishexval(char c)
 {
-    if (c >= 'a' && c <= 'f')
-        return 1;
-    else if (c >= 'A' && c <= 'F')
-        return 1;
-    else if (c >= '0' && c <= '9')
-        return 1;
-    return 0;
+	if (c >= 'a' && c <= 'f')
+		return 1;
+	else if (c >= 'A' && c <= 'F')
+		return 1;
+	else if (c >= '0' && c <= '9')
+		return 1;
+	return 0;
 }
 
 /*
@@ -314,35 +289,35 @@ static int ishexval(char c)
  */
 static int hexval(char c)
 {
-    if (c >= 'a' && c <= 'f')
-        return c - 'a' + 10;
-    else if (c >= 'A' && c <= 'F')
-        return c - 'A' + 10;
-    else if (c >= '0' && c <= '9')
-        return c - '0';
-    lfatal(curloc, "passed non-hex value '%c' to where hex was expected", c);
-    return -1;
+	if (c >= 'a' && c <= 'f')
+		return c - 'a' + 10;
+	else if (c >= 'A' && c <= 'F')
+		return c - 'A' + 10;
+	else if (c >= '0' && c <= '9')
+		return c - '0';
+	lfatal(curloc, "passed non-hex value '%c' to where hex was expected", c);
+	return -1;
 }
 
 /* \u{abc} */
 static int32_t unichar(void)
 {
-    uint32_t v;
-    int c;
+	uint32_t v;
+	int c;
 
-    /* we've already seen the \u */
-    if (next() != '{')
-        lfatal(curloc, "\\u escape sequence without initial '{'");
-    v = 0;
-    while (ishexval(peek())) {
-        c = next();
-        v = 16*v + hexval(c);
-        if (v > 0x10FFFF)
-            lfatal(curloc, "invalid codepoint for \\u escape sequence");
-    }
-    if (next() != '}')
-        lfatal(curloc, "\\u escape sequence without ending '}'");
-    return v;
+	/* we've already seen the \u */
+	if (next() != '{')
+		lfatal(curloc, "\\u escape sequence without initial '{'");
+	v = 0;
+	while (ishexval(peek())) {
+		c = next();
+		v = 16 * v + hexval(c);
+		if (v > 0x10FFFF)
+			lfatal(curloc, "invalid codepoint for \\u escape sequence");
+	}
+	if (next() != '}')
+		lfatal(curloc, "\\u escape sequence without ending '}'");
+	return v;
 }
 
 /*
@@ -352,492 +327,507 @@ static int32_t unichar(void)
  */
 static int decode(char **buf, size_t *len, size_t *sz)
 {
-    char c, c1, c2;
-    int32_t v;
+	char c, c1, c2;
+	int32_t v;
 
-    c = next();
-    /* we've already seen the '\' */
-    switch (c) {
-        case 'u':
-            v = unichar();
-            appendc(buf, len, sz, v);
-            return v;
-        case 'x': /* arbitrary hex */
-            c1 = next();
-            if (!isxdigit(c1))
-                lfatal(curloc, "expected hex digit, got %c", c1);
-            c2 = next();
-            if (!isxdigit(c2))
-                lfatal(curloc, "expected hex digit, got %c", c1);
-            v = 16*hexval(c1) + hexval(c2);
-            break;
-        case 'n': v = '\n'; break;
-        case 'r': v = '\r'; break;
-        case 't': v = '\t'; break;
-        case 'b': v = '\b'; break;
-        case '"': v = '\"'; break;
-        case '\'': v = '\''; break;
-        case 'v': v = '\v'; break;
-        case '\\': v = '\\'; break;
-        case '0': v = '\0'; break;
-        default: lfatal(curloc, "unknown escape code \\%c", c);
-    }
-    append(buf, len, sz, v);
-    return v;
+	c = next();
+	/* we've already seen the '\' */
+	switch (c) {
+	case 'u':
+		v = unichar();
+		appendc(buf, len, sz, v);
+		return v;
+	case 'x': /* arbitrary hex */
+		c1 = next();
+		if (!isxdigit(c1))
+			lfatal(curloc, "expected hex digit, got %c", c1);
+		c2 = next();
+		if (!isxdigit(c2))
+			lfatal(curloc, "expected hex digit, got %c", c1);
+		v = 16 * hexval(c1) + hexval(c2);
+		break;
+	case 'n': v = '\n'; break;
+	case 'r': v = '\r'; break;
+	case 't': v = '\t'; break;
+	case 'b': v = '\b'; break;
+	case '"': v = '\"'; break;
+	case '\'': v = '\''; break;
+	case 'v': v = '\v'; break;
+	case '\\': v = '\\'; break;
+	case '0': v = '\0'; break;
+	default: lfatal(curloc, "unknown escape code \\%c", c);
+	}
+	append(buf, len, sz, v);
+	return v;
 }
 
 static Tok *strlit(void)
 {
-    Tok *t;
-    int c;
-    size_t len, sz;
-    char *buf;
+	Tok *t;
+	int c;
+	size_t len, sz;
+	char *buf;
 
-    assert(next() == '"');
+	assert(next() == '"');
 
-    buf = NULL;
-    len = 0;
-    sz = 0;
-    while (1) {
-        c = next();
-        /* we don't unescape here, but on output */
-        if (c == '"')
-            break;
-        else if (c == End)
-            lfatal(curloc, "Unexpected EOF within string");
-        else if (c == '\n')
-            lfatal(curloc, "Newlines not allowed in strings");
-        else if (c == '\\')
-            decode(&buf, &len, &sz);
-        else
-            append(&buf, &len, &sz, c);
-    };
-    t = mktok(Tstrlit);
-    t->strval.len = len;
+	buf = NULL;
+	len = 0;
+	sz = 0;
+	while (1) {
+		c = next();
+		/* we don't unescape here, but on output */
+		if (c == '"')
+			break;
+		else if (c == End)
+			lfatal(curloc, "Unexpected EOF within string");
+		else if (c == '\n')
+			lfatal(curloc, "Newlines not allowed in strings");
+		else if (c == '\\')
+			decode(&buf, &len, &sz);
+		else
+			append(&buf, &len, &sz, c);
+	};
+	t = mktok(Tstrlit);
+	t->strval.len = len;
 
-    /* null terminator should not count towards length */
-    append(&buf, &len, &sz, '\0');
-    t->strval.buf = buf;
-    t->id = buf;
-    return t;
+	/* null terminator should not count towards length */
+	append(&buf, &len, &sz, '\0');
+	t->strval.buf = buf;
+	t->id = buf;
+	return t;
 }
 
-static uint32_t readutf(char c, char **buf, size_t *buflen, size_t *sz) {
-    size_t i, len;
-    uint32_t val;
+static uint32_t readutf(char c, char **buf, size_t *buflen, size_t *sz)
+{
+	size_t i, len;
+	uint32_t val;
 
-    if ((c & 0x80) == 0)
-        len = 1;
-    else if ((c & 0xe0) == 0xc0)
-        len = 2;
-    else if ((c & 0xf0) == 0xe0)
-        len = 3;
-    else if ((c & 0xf8) == 0xf0)
-        len = 4;
-    else
-        lfatal(curloc, "Invalid utf8 encoded character constant");
+	if ((c & 0x80) == 0)
+		len = 1;
+	else if ((c & 0xe0) == 0xc0)
+		len = 2;
+	else if ((c & 0xf0) == 0xe0)
+		len = 3;
+	else if ((c & 0xf8) == 0xf0)
+		len = 4;
+	else
+		lfatal(curloc, "Invalid utf8 encoded character constant");
 
-    val = c & ((1 << (8 - len)) - 1);
-    append(buf, buflen, sz, c);
-    for (i = 1; i < len; i++) {
-        c = next();
-        if ((c & 0xc0) != 0x80)
-            lfatal(curloc, "Invalid utf8 codepoint in character literal");
-        val = (val << 6) | (c & 0x3f);
-        append(buf, buflen, sz, c);
-    }
-    return val;
+	val = c & ((1 << (8 - len)) - 1);
+	append(buf, buflen, sz, c);
+	for (i = 1; i < len; i++) {
+		c = next();
+		if ((c & 0xc0) != 0x80)
+			lfatal(curloc, "Invalid utf8 codepoint in character literal");
+		val = (val << 6) | (c & 0x3f);
+		append(buf, buflen, sz, c);
+	}
+	return val;
 }
 
 static Tok *charlit(void)
 {
-    Tok *t;
-    int c;
-    uint32_t val;
-    size_t len, sz;
-    char *buf;
+	Tok *t;
+	int c;
+	uint32_t val;
+	size_t len, sz;
+	char *buf;
 
+	assert(next() == '\'');
 
-    assert(next() == '\'');
+	buf = NULL;
+	len = 0;
+	sz = 0;
+	val = 0;
+	c = next();
+	if (c == End)
+		lfatal(curloc, "Unexpected EOF within char lit");
+	else if (c == '\n')
+		lfatal(curloc, "Newlines not allowed in char lit");
+	else if (c == '\\')
+		val = decode(&buf, &len, &sz);
+	else
+		val = readutf(c, &buf, &len, &sz);
+	append(&buf, &len, &sz, '\0');
+	if (next() != '\'')
+		lfatal(curloc, "Character constant with multiple characters");
 
-    buf = NULL;
-    len = 0;
-    sz = 0;
-    val = 0;
-    c = next();
-    if (c == End)
-        lfatal(curloc, "Unexpected EOF within char lit");
-    else if (c == '\n')
-        lfatal(curloc, "Newlines not allowed in char lit");
-    else if (c == '\\')
-        val = decode(&buf, &len, &sz);
-    else
-        val = readutf(c, &buf, &len, &sz);
-    append(&buf, &len, &sz, '\0');
-    if (next() != '\'')
-        lfatal(curloc, "Character constant with multiple characters");
-
-    t = mktok(Tchrlit);
-    t->chrval = val;
-    t->id = buf;
-    return t;
+	t = mktok(Tchrlit);
+	t->chrval = val;
+	t->id = buf;
+	return t;
 }
 
 static Tok *oper(void)
 {
-    int tt;
-    char c;
+	int tt;
+	char c;
 
-    c = next();
-    switch (c) {
-        case '{': tt = Tobrace; break;
-        case '}': tt = Tcbrace; break;
-        case '(': tt = Toparen; break;
-        case ')': tt = Tcparen; break;
-        case '[': tt = Tosqbrac; break;
-        case ']': tt = Tcsqbrac; break;
-        case ',': tt = Tcomma; break;
-        case '`': tt = Ttick; break;
-        case '#': tt = Tderef; break;
-        case ':':
-                  if (match(':'))
-                      tt = Twith;
-                  else
-                      tt = Tcolon;
-                  break;
-        case '~': tt = Tbnot; break;
-        case ';':
-                  if (match(';'))
-                      tt = Tendblk;
-                  else
-                      tt = Tendln;
-                  break;
-        case '.':
-                  if (match('.')) {
-                      if (match('.')) {
-                          tt = Tellipsis;
-                      } else {
-                          unget();
-                          tt = Tdot;
-                      }
-                  } else {
-                      tt = Tdot;
-                  }
-                  break;
-        case '+':
-                  if (match('='))
-                      tt = Taddeq;
-                  else if (match('+'))
-                      tt = Tinc;
-                  else
-                      tt = Tplus;
-                  break;
-        case '-':
-                  if (match('='))
-                      tt = Tsubeq;
-                  else if (match('-'))
-                      tt = Tdec;
-                  else if (match('>'))
-                      tt = Tret;
-                  else
-                      tt = Tminus;
-                  break;
-        case '*':
-                  if (match('='))
-                      tt = Tmuleq;
-                  else
-                      tt = Tmul;
-                  break;
-        case '/':
-                  if (match('='))
-                      tt = Tdiveq;
-                  else
-                      tt = Tdiv;
-                  break;
-        case '%':
-                  if (match('='))
-                      tt = Tmodeq;
-                  else
-                      tt = Tmod;
-                  break;
-        case '=':
-                  if (match('='))
-                      tt = Teq;
-                  else
-                      tt = Tasn;
-                  break;
-        case '|':
-                  if (match('='))
-                      tt = Tboreq;
-                  else if (match('|'))
-                      tt = Tlor;
-                  else
-                      tt = Tbor;
-                  break;
-        case '&':
-                  if (match('='))
-                      tt = Tbandeq;
-                  else if (match('&'))
-                      tt = Tland;
-                  else
-                      tt = Tband;
-                  break;
-        case '^':
-                  if (match('='))
-                      tt = Tbxoreq;
-                  else
-                      tt = Tbxor;
-                  break;
-        case '<':
-                  if (match('=')) {
-                      tt = Tle;
-                  } else if (match('<')) {
-                      if (match('='))
-                          tt = Tbsleq;
-                      else
-                          tt = Tbsl;
-                  } else {
-                      tt = Tlt;
-                  }
-                  break;
-        case '>':
-                  if (match('=')) {
-                      tt = Tge;
-                  } else if (match('>')) {
-                      if (match('='))
-                          tt = Tbsreq;
-                      else
-                          tt = Tbsr;
-                  } else {
-                      tt = Tgt;
-                  }
-                  break;
+	c = next();
+	switch (c) {
+	case '{': tt = Tobrace; break;
+	case '}': tt = Tcbrace; break;
+	case '(': tt = Toparen; break;
+	case ')': tt = Tcparen; break;
+	case '[': tt = Tosqbrac; break;
+	case ']': tt = Tcsqbrac; break;
+	case ',': tt = Tcomma; break;
+	case '`': tt = Ttick; break;
+	case '#': tt = Tderef; break;
+	case ':':
+		  if (match(':'))
+			  tt = Twith;
+		  else
+			  tt = Tcolon;
+		  break;
+	case '~': tt = Tbnot; break;
+	case ';':
+		  if (match(';'))
+			  tt = Tendblk;
+		  else
+			  tt = Tendln;
+		  break;
+	case '.':
+		  if (match('.')) {
+			  if (match('.')) {
+				  tt = Tellipsis;
+			  }
+			  else {
+				  unget();
+				  tt = Tdot;
+			  }
+		  }
+		  else {
+			  tt = Tdot;
+		  }
+		  break;
+	case '+':
+		  if (match('='))
+			  tt = Taddeq;
+		  else if (match('+'))
+			  tt = Tinc;
+		  else
+			  tt = Tplus;
+		  break;
+	case '-':
+		  if (match('='))
+			  tt = Tsubeq;
+		  else if (match('-'))
+			  tt = Tdec;
+		  else if (match('>'))
+			  tt = Tret;
+		  else
+			  tt = Tminus;
+		  break;
+	case '*':
+		  if (match('='))
+			  tt = Tmuleq;
+		  else
+			  tt = Tmul;
+		  break;
+	case '/':
+		  if (match('='))
+			  tt = Tdiveq;
+		  else
+			  tt = Tdiv;
+		  break;
+	case '%':
+		  if (match('='))
+			  tt = Tmodeq;
+		  else
+			  tt = Tmod;
+		  break;
+	case '=':
+		  if (match('='))
+			  tt = Teq;
+		  else
+			  tt = Tasn;
+		  break;
+	case '|':
+		  if (match('='))
+			  tt = Tboreq;
+		  else if (match('|'))
+			  tt = Tlor;
+		  else
+			  tt = Tbor;
+		  break;
+	case '&':
+		  if (match('='))
+			  tt = Tbandeq;
+		  else if (match('&'))
+			  tt = Tland;
+		  else
+			  tt = Tband;
+		  break;
+	case '^':
+		  if (match('='))
+			  tt = Tbxoreq;
+		  else
+			  tt = Tbxor;
+		  break;
+	case '<':
+		  if (match('=')) {
+			  tt = Tle;
+		  }
+		  else if (match('<')) {
+			  if (match('='))
+				  tt = Tbsleq;
+			  else
+				  tt = Tbsl;
+		  }
+		  else {
+			  tt = Tlt;
+		  }
+		  break;
+	case '>':
+		  if (match('=')) {
+			  tt = Tge;
+		  }
+		  else if (match('>')) {
+			  if (match('='))
+				  tt = Tbsreq;
+			  else
+				  tt = Tbsr;
+		  }
+		  else {
+			  tt = Tgt;
+		  }
+		  break;
 
-        case '!':
-                  if (match('='))
-                      tt = Tne;
-                  else
-                      tt = Tlnot;
-                  break;
-        default:
-                  tt = Terror;
-                  lfatal(curloc, "Junk character %c", c);
-                  break;
-    }
-    return mktok(tt);
+	case '!':
+		  if (match('='))
+			  tt = Tne;
+		  else
+			  tt = Tlnot;
+		  break;
+	default:
+		  tt = Terror;
+		  lfatal(curloc, "Junk character %c", c);
+		  break;
+	}
+	return mktok(tt);
 }
 
 static Tok *number(int base)
 {
-    Tok *t;
-    int start;
-    int c;
-    int isfloat;
-    int unsignedval;
-    /* because we allow '_' in numbers, and strtod/stroull don't, we
-     * need a buffer that holds the number without '_'.
-     */
-    char buf[2048];
-    size_t nbuf;
+	Tok *t;
+	int start;
+	int c;
+	int isfloat;
+	int unsignedval;
+	/* because we allow '_' in numbers, and strtod/stroull don't, we
+	 * need a buffer that holds the number without '_'.
+	 */
+	char buf[2048];
+	size_t nbuf;
 
-    t = NULL;
-    isfloat = 0;
-    start = fidx;
-    nbuf = 0;
-    for (c = peek(); isxdigit(c) || c == '.' || c == '_'; c = peek()) {
-        next();
-        if (c == '_')
-            continue;
-        if (c == '.')
-            isfloat = 1;
-        else if (hexval(c) < 0 || hexval(c) > base)
-            lfatal(curloc, "Integer digit '%c' outside of base %d", c, base);
-        if (nbuf >= sizeof buf - 1) {
-            buf[nbuf-1] = '\0';
-            lfatal(curloc, "number %s... too long to represent", buf);
-        }
-        buf[nbuf++] = c;
-    }
-    buf[nbuf] = '\0';
+	t = NULL;
+	isfloat = 0;
+	start = fidx;
+	nbuf = 0;
+	for (c = peek(); isxdigit(c) || c == '.' || c == '_'; c = peek()) {
+		next();
+		if (c == '_')
+			continue;
+		if (c == '.')
+			isfloat = 1;
+		else if (hexval(c) < 0 || hexval(c) > base)
+			lfatal(curloc, "Integer digit '%c' outside of base %d", c, base);
+		if (nbuf >= sizeof buf - 1) {
+			buf[nbuf - 1] = '\0';
+			lfatal(curloc, "number %s... too long to represent", buf);
+		}
+		buf[nbuf++] = c;
+	}
+	buf[nbuf] = '\0';
 
-    /* we only support base 10 floats */
-    if (isfloat && base == 10) {
-        t = mktok(Tfloatlit);
-        t->id = strdupn(&fbuf[start], fidx - start);
-        t->fltval = strtod(buf, NULL);
-    } else {
-        t = mktok(Tintlit);
-        t->id = strdupn(&fbuf[start], fidx - start);
-        t->intval = strtoull(buf, NULL, base);
-        /* check suffixes:
-         *   u -> unsigned
-         *   l -> 64 bit
-         *   i -> 32 bit
-         *   w -> 16 bit
-         *   b -> 8 bit
-         */
-        unsignedval = 0;
+	/* we only support base 10 floats */
+	if (isfloat && base == 10) {
+		t = mktok(Tfloatlit);
+		t->id = strdupn(&fbuf[start], fidx - start);
+		t->fltval = strtod(buf, NULL);
+	}
+	else {
+		t = mktok(Tintlit);
+		t->id = strdupn(&fbuf[start], fidx - start);
+		t->intval = strtoull(buf, NULL, base);
+		/* check suffixes:
+		 *   u -> unsigned
+		 *   l -> 64 bit
+		 *   i -> 32 bit
+		 *   w -> 16 bit
+		 *   b -> 8 bit
+		 */
+		unsignedval = 0;
 nextsuffix:
-        switch (peek()) {
-            case 'u':
-                if (unsignedval == 1)
-                    lfatal(curloc, "Duplicate 'u' integer specifier");
-                next();
-                unsignedval = 1;
-                goto nextsuffix;
-            case 'l':
-                next();
-                if (unsignedval)
-                    t->inttype = Tyuint64;
-                else
-                    t->inttype = Tyint64;
-                break;
-            case 'i':
-                next();
-                if (unsignedval)
-                    t->inttype = Tyuint32;
-                else
-                    t->inttype = Tyint32;
-                break;
-            case 's':
-                next();
-                if (unsignedval)
-                    t->inttype = Tyuint16;
-                else
-                    t->inttype = Tyint16;
-                break;
-            case 'b':
-                next();
-                if (unsignedval)
-                    t->inttype = Tyuint8;
-                else
-                    t->inttype = Tyint8;
-                break;
-            default:
-                if (unsignedval)
-                    lfatal(curloc, "Unrecognized character int type specifier after 'u'");
-                break;
-        }
-    }
+		switch (peek()) {
+		case 'u':
+			if (unsignedval == 1)
+				lfatal(curloc, "Duplicate 'u' integer specifier");
+			next();
+			unsignedval = 1;
+			goto nextsuffix;
+		case 'l':
+			next();
+			if (unsignedval)
+				t->inttype = Tyuint64;
+			else
+				t->inttype = Tyint64;
+			break;
+		case 'i':
+			next();
+			if (unsignedval)
+				t->inttype = Tyuint32;
+			else
+				t->inttype = Tyint32;
+			break;
+		case 's':
+			next();
+			if (unsignedval)
+				t->inttype = Tyuint16;
+			else
+				t->inttype = Tyint16;
+			break;
+		case 'b':
+			next();
+			if (unsignedval)
+				t->inttype = Tyuint8;
+			else
+				t->inttype = Tyint8;
+			break;
+		default:
+			if (unsignedval)
+				lfatal(
+						curloc, "Unrecognized character int type specifier after 'u'");
+			break;
+		}
+	}
 
-    return t;
+	return t;
 }
 
 static Tok *numlit(void)
 {
-    Tok *t;
+	Tok *t;
 
-    /* check for 0x or 0b prefix */
-    if (match('0')) {
-        if (match('x'))
-            t = number(16);
-        else if (match('b'))
-            t = number(2);
-        else if (match('o'))
-            t = number(8);
-        else
-            t = number(10);
-    } else {
-        t = number(10);
-    }
+	/* check for 0x or 0b prefix */
+	if (match('0')) {
+		if (match('x'))
+			t = number(16);
+		else if (match('b'))
+			t = number(2);
+		else if (match('o'))
+			t = number(8);
+		else
+			t = number(10);
+	}
+	else {
+		t = number(10);
+	}
 
-    return t;
+	return t;
 }
 
 static Tok *typaram(void)
 {
-    Tok *t;
-    char buf[1024];
+	Tok *t;
+	char buf[1024];
 
-    t = NULL;
-    if (!match('@'))
-        return NULL;
-    if (!identstr(buf, 1024))
-        return NULL;
-    t = mktok(Ttyparam);
-    t->id = strdup(buf);
-    return t;
+	t = NULL;
+	if (!match('@'))
+		return NULL;
+	if (!identstr(buf, 1024))
+		return NULL;
+	t = mktok(Ttyparam);
+	t->id = strdup(buf);
+	return t;
 }
 
 static Tok *toknext()
 {
-    Tok *t;
-    int c;
+	Tok *t;
+	int c;
 
-    eatspace();
-    c = peek();
-    if (c == End) {
-        t =  mktok(0);
-    } else if (c == '\n') {
-        curloc.line++;
-        next();
-        t =  mktok(Tendln);
-    } else if (isalpha(c) || c == '_' || c == '$') {
-        t =  kwident();
-    } else if (c == '"') {
-        t =  strlit();
-    } else if (c == '\'') {
-        t = charlit();
-    } else if (isdigit(c)) {
-        t =  numlit();
-    } else if (c == '@') {
-        t = typaram();
-    } else {
-        t = oper();
-    }
+	eatspace();
+	c = peek();
+	if (c == End) {
+		t = mktok(0);
+	}
+	else if (c == '\n') {
+		curloc.line++;
+		next();
+		t = mktok(Tendln);
+	}
+	else if (isalpha(c) || c == '_' || c == '$') {
+		t = kwident();
+	}
+	else if (c == '"') {
+		t = strlit();
+	}
+	else if (c == '\'') {
+		t = charlit();
+	}
+	else if (isdigit(c)) {
+		t = numlit();
+	}
+	else if (c == '@') {
+		t = typaram();
+	}
+	else {
+		t = oper();
+	}
 
-    if (!t || t->type == Terror)
-        lfatal(curloc, "Unable to parse token starting with %c", c);
-    return t;
+	if (!t || t->type == Terror)
+		lfatal(curloc, "Unable to parse token starting with %c", c);
+	return t;
 }
 
 void tokinit(char *file)
 {
-    int fd;
-    int n;
-    int nread;
+	int fd;
+	int n;
+	int nread;
 
+	fd = open(file, O_RDONLY);
+	if (fd == -1) {
+		fprintf(stderr, "Unable to open file %s\n", file);
+		exit(1);
+	}
 
-    fd = open(file, O_RDONLY);
-    if (fd == -1) {
-        fprintf(stderr, "Unable to open file %s\n", file);
-        exit(1);
-    }
+	nread = 0;
+	fbuf = malloc(4096);
+	while (1) {
+		n = read(fd, fbuf + nread, 4096);
+		if (n < 0)
+			fatal(0, 0, "Error reading file %s", file);
+		if (n == 0)
+			break;
+		if (!fbuf)
+			die("Out of memory reading %s", file);
+		nread += n;
+		fbuf = xrealloc(fbuf, nread + 4096);
+	}
 
-    nread = 0;
-    fbuf = malloc(4096);
-    while (1) {
-        n = read(fd, fbuf + nread, 4096);
-        if (n < 0)
-            fatal(0, 0, "Error reading file %s", file);
-        if (n == 0)
-            break;
-        if (!fbuf)
-            die("Out of memory reading %s", file);
-        nread += n;
-        fbuf = xrealloc(fbuf, nread + 4096);
-    }
-
-    fbufsz = nread;
-    curloc.line = 1;
-    curloc.file = 0;
-    close(fd);
-    filename = strdup(file);
+	fbufsz = nread;
+	curloc.line = 1;
+	curloc.file = 0;
+	close(fd);
+	filename = strdup(file);
 }
 
 /* Interface to yacc */
 int yylex(void)
 {
-    curtok = toknext();
-    yylval.tok = curtok;
-    return curtok->type;
+	curtok = toknext();
+	yylval.tok = curtok;
+	return curtok->type;
 }
 
 void yyerror(const char *s)
 {
-    fprintf(stderr, "%s:%d: %s", filename, curloc.line, s);
-    if (curtok->id)
-        fprintf(stderr, " near \"%s\"", curtok->id);
-    fprintf(stderr, "\n");
-    exit(1);
+	fprintf(stderr, "%s:%d: %s", filename, curloc.line, s);
+	if (curtok->id)
+		fprintf(stderr, " near \"%s\"", curtok->id);
+	fprintf(stderr, "\n");
+	exit(1);
 }

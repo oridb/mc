@@ -12,18 +12,17 @@
 
 #include "parse.h"
 
-char *opstr[] =  {
+char *opstr[] = {
 #define O(op, pure, class, pretty) #op,
 #include "ops.def"
 #undef O
 };
 
-char * oppretty[] = {
+char *oppretty[] = {
 #define O(op, pure, class, pretty) pretty,
 #include "ops.def"
 #undef O
 };
-
 
 int opispure[] = {
 #define O(op, pure, class, pretty) pure,
@@ -37,19 +36,19 @@ int opclass[] = {
 #undef O
 };
 
-char *nodestr[] =  {
+char *nodestr[] = {
 #define N(nt) #nt,
 #include "nodes.def"
 #undef N
 };
 
-char *litstr[] =  {
+char *litstr[] = {
 #define L(lt) #lt,
 #include "lits.def"
 #undef L
 };
 
-char *tidstr[] =  {
+char *tidstr[] = {
 #define Ty(t, n, stk) n,
 #include "types.def"
 #undef Ty

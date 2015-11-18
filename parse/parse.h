@@ -1,15 +1,15 @@
 #ifdef __GNUC__
-#	define FATAL __attribute__((noreturn))
+#define FATAL __attribute__((noreturn))
 #else
-#	define FATAL
+#define FATAL
 #endif
 
 #define Abiversion 8
 
-typedef uint8_t         byte;
-typedef unsigned int    uint;
-typedef unsigned long   ulong;
-typedef long long       vlong;
+typedef uint8_t byte;
+typedef unsigned int uint;
+typedef unsigned long ulong;
+typedef long long vlong;
 typedef unsigned long long uvlong;
 
 typedef struct Srcloc Srcloc;
@@ -28,17 +28,17 @@ typedef struct Type Type;
 typedef struct Trait Trait;
 
 typedef enum {
-    OTmisc,
-    OTpre,
-    OTpost,
-    OTbin,
-    OTzarg,
+	OTmisc,
+	OTpre,
+	OTpost,
+	OTbin,
+	OTzarg,
 } Optype;
 
 typedef enum {
 #define O(op, pure, type, pretty) op,
 #include "ops.def"
-    Numops,
+	Numops,
 #undef O
 } Op;
 
@@ -58,342 +58,344 @@ typedef enum {
 #define Ty(t, n, stk) t,
 #include "types.def"
 #undef Ty
-    Ntypes
+	Ntypes
 } Ty;
 
 typedef enum {
 #define Tc(c, n) c,
 #include "trait.def"
 #undef Tc
-    Ntraits
+	Ntraits
 } Tc;
 
 #define Zloc ((Srcloc){-1, 0})
 
 struct Strbuf {
-    char *buf;
-    size_t sz;
-    size_t len;
+	char *buf;
+	size_t sz;
+	size_t len;
 };
 
 struct Srcloc {
-    int line;
-    int file;
+	int line;
+	int file;
 };
 
 struct Str {
-    size_t len;
-    char *buf;
+	size_t len;
+	char *buf;
 };
 
 typedef enum {
-    Visintern,
-    Visexport,
-    Vishidden,
-    Visbuiltin,
+	Visintern,
+	Visexport,
+	Vishidden,
+	Visbuiltin,
 } Vis;
 
 typedef enum {
-    Dclconst = 1 << 0,
-    Dclextern = 1 << 1,
+	Dclconst = 1 << 0,
+	Dclextern = 1 << 1,
 } Dclflags;
 
 struct Bitset {
-    size_t nchunks;
-    size_t *chunks;
+	size_t nchunks;
+	size_t *chunks;
 };
 
 struct Htab {
-    size_t nelt;
-    size_t ndead;
-    size_t sz;
-    ulong (*hash)(void *k);
-    int (*cmp)(void *a, void *b);
-    void **keys;
-    void **vals;
-    ulong *hashes;
-    char  *dead;
+	size_t nelt;
+	size_t ndead;
+	size_t sz;
+	ulong (*hash)(void *k);
+	int (*cmp)(void *a, void *b);
+	void **keys;
+	void **vals;
+	ulong *hashes;
+	char *dead;
 };
 
 struct Tok {
-    int type;
-    Srcloc loc;
-    char *id;
+	int type;
+	Srcloc loc;
+	char *id;
 
-    /* values parsed out */
-    vlong intval;
-    Ty inttype; /* for explicitly specified suffixes */
-    double fltval;
-    uint32_t chrval;
-    Str strval;
+	/* values parsed out */
+	vlong intval;
+	Ty inttype; /* for explicitly specified suffixes */
+	double fltval;
+	uint32_t chrval;
+	Str strval;
 };
 
 struct Stab {
-    Stab *super;
-    char *name;
-    char isfunc;
+	Stab *super;
+	char *name;
+	char isfunc;
 
-    /* Contents of stab.
-     * types and values are in separate namespaces. */
-    Htab *dcl;
-    Htab *env;          /* the syms we close over, if we're a function */
-    Htab *ty;           /* types */
-    Htab *tr;           /* traits */
-    Htab *uc;           /* union constructors */
-    Htab *impl;         /* trait implementations: really a set of implemented traits. */
+	/* Contents of stab.
+	 * types and values are in separate namespaces. */
+	Htab *dcl;
+	Htab *env;  /* the syms we close over, if we're a function */
+	Htab *ty;   /* types */
+	Htab *tr;   /* traits */
+	Htab *uc;   /* union constructors */
+	Htab *impl; /* trait implementations: really a set of implemented traits. */
 };
 
 struct Type {
-    Ty type;
-    int tid;
-    Srcloc loc;
-    Vis vis;
+	Ty type;
+	int tid;
+	Srcloc loc;
+	Vis vis;
 
-    int resolved;       /* Have we resolved the subtypes? Prevents infinite recursion. */
-    int fixed;          /* Have we fixed the subtypes? Prevents infinite recursion. */
+	int resolved; /* Have we resolved the subtypes? Prevents infinite recursion. */
+	int fixed;	/* Have we fixed the subtypes? Prevents infinite recursion. */
 
-    Bitset *traits;      /* the type constraints matched on this type */
-    Node **traitlist;    /* The names of the constraints on the type. Used to fill the bitset */
-    size_t ntraitlist;   /* The length of the constraint list above */
+	Bitset *traits;	/* the type constraints matched on this type */
+	Node **traitlist;  /* The names of the constraints on the type. Used to fill the bitset */
+	size_t ntraitlist; /* The length of the constraint list above */
 
-    Type **gparam;       /* Tygeneric: type parameters that match the type args */
-    size_t ngparam;      /* Tygeneric: count of type parameters */
-    Type **arg;         /* Tyname: type arguments instantiated */
-    size_t narg;        /* Tyname: count of type arguments */
-    Type **inst;        /* Tyname: instances created */
-    size_t ninst;       /* Tyname: count of instances created */
+	Type **gparam;  /* Tygeneric: type parameters that match the type args */
+	size_t ngparam; /* Tygeneric: count of type parameters */
+	Type **arg;	 /* Tyname: type arguments instantiated */
+	size_t narg;	/* Tyname: count of type arguments */
+	Type **inst;	/* Tyname: instances created */
+	size_t ninst;   /* Tyname: count of instances created */
 
-    Type **sub;         /* sub-types; shared by all composite types */
-    size_t nsub;        /* For compound types */
-    size_t nmemb;       /* for aggregate types (struct, union) */
-    union {
-        Node *name;     /* Tyname: unresolved name. Tyalias: alias name */
-        Node *asize;    /* array size */
-        char *pname;    /* Typaram: name of type parameter */
-        Node **sdecls;  /* Tystruct: decls in struct */
-        Ucon **udecls;  /* Tyunion: decls in union */
-    };
+	Type **sub;   /* sub-types; shared by all composite types */
+	size_t nsub;  /* For compound types */
+	size_t nmemb; /* for aggregate types (struct, union) */
+	union {
+		Node *name;	/* Tyname: unresolved name. Tyalias: alias name */
+		Node *asize;   /* array size */
+		char *pname;   /* Typaram: name of type parameter */
+		Node **sdecls; /* Tystruct: decls in struct */
+		Ucon **udecls; /* Tyunion: decls in union */
+	};
 
-    char issynth;       /* Tyname: whether this is synthesized or not */
-    char ishidden;      /* Tyname: whether this is hidden or not */
-    char ispkglocal;    /* Tyname: whether this is package local or not */
-    char isimport;      /* Tyname: whether tyis type was imported. */
-    char isreflect;     /* Tyname: whether this type has reflection info */
+	char issynth;	/* Tyname: whether this is synthesized or not */
+	char ishidden;   /* Tyname: whether this is hidden or not */
+	char ispkglocal; /* Tyname: whether this is package local or not */
+	char isimport;   /* Tyname: whether tyis type was imported. */
+	char isreflect;  /* Tyname: whether this type has reflection info */
 };
 
 struct Ucon {
-    Srcloc loc;
-    size_t id;  /* unique id */
-    int synth;  /* is it generated? */
-    Node *name; /* ucon name */
-    Type *utype;        /* type of the union this is an element of */
-    Type *etype;        /* type for the element */
+	Srcloc loc;
+	size_t id;   /* unique id */
+	int synth;   /* is it generated? */
+	Node *name;  /* ucon name */
+	Type *utype; /* type of the union this is an element of */
+	Type *etype; /* type for the element */
 };
 
 struct Trait {
-    int uid;            /* unique id */
-    Srcloc loc;
-    Vis vis;
+	int uid; /* unique id */
+	Srcloc loc;
+	Vis vis;
 
-    Node *name;         /* the name of the trait */
-    Type *param;        /* the type parameter */
-    Node **memb;        /* type must have these members */
-    size_t nmemb;
-    Node **funcs;       /* and declare these funcs */
-    size_t nfuncs;
+	Node *name;  /* the name of the trait */
+	Type *param; /* the type parameter */
+	Node **memb; /* type must have these members */
+	size_t nmemb;
+	Node **funcs; /* and declare these funcs */
+	size_t nfuncs;
 
-    char isproto;        /* is it a prototype (for exporting purposes) */
-    char ishidden;       /* should user code be able to use this? */
+	char isproto;  /* is it a prototype (for exporting purposes) */
+	char ishidden; /* should user code be able to use this? */
 };
 
 struct Node {
-    Srcloc loc;
-    Ntype type;
-    int nid;
-    union {
-        struct {
-            size_t nfiles;      /* file names for location mapping */
-            char  **files;
-            Node **uses;        /* use files that we loaded */
-            size_t nuses;
-            char **libdeps;     /* library dependencies */
-            size_t nlibdeps;
-            char **extlibs;     /* non-myrddin libraries */
-            size_t nextlibs;
-            Node **stmts;       /* all top level statements */
-            size_t nstmts;
-            Node **init;        /* a list of all __init__ function names of our deps. NB, this is a Nname, not an Ndecl */
-            size_t ninit;
-            Node *localinit;    /* and the local one, if any */
-            Stab  *globls;      /* global symtab */
-            Htab *ns;           /* namespaces */
-        } file;
+	Srcloc loc;
+	Ntype type;
+	int nid;
+	union {
+		struct {
+			size_t nfiles; /* file names for location mapping */
+			char **files;
+			Node **uses; /* use files that we loaded */
+			size_t nuses;
+			char **libdeps; /* library dependencies */
+			size_t nlibdeps;
+			char **extlibs; /* non-myrddin libraries */
+			size_t nextlibs;
+			Node **stmts; /* all top level statements */
+			size_t nstmts;
+			Node
+				**init; /* a list of all __init__ function names of our deps. NB, this
+					   is a Nname, not an Ndecl */
+			size_t ninit;
+			Node *localinit; /* and the local one, if any */
+			Stab *globls;	/* global symtab */
+			Htab *ns;	/* namespaces */
+		} file;
 
-        struct {
-            Op op;
-            Type *type;
-            int isconst;
-            size_t did; /* for Ovar, we want a mapping to the decl id */
-            size_t nargs;
-            Node *idx; /* used when this is in an indexed initializer */
-            Node **args;
-        } expr;
+		struct {
+			Op op;
+			Type *type;
+			int isconst;
+			size_t did; /* for Ovar, we want a mapping to the decl id */
+			size_t nargs;
+			Node *idx; /* used when this is in an indexed initializer */
+			Node **args;
+		} expr;
 
-        struct {
-            char *ns;
-            char *name;
-        } name;
+		struct {
+			char *ns;
+			char *name;
+		} name;
 
-        struct {
-            int islocal;
-            char *name;
-        } use;
+		struct {
+			int islocal;
+			char *name;
+		} use;
 
-        struct {
-            Littype littype;
-            Type    *type;
-            size_t   nelt;
-            union {
-                uvlong   intval;
-                double   fltval;
-                uint32_t chrval;
-                Str      strval;
-                char    *lblval;
-                int      boolval;
-                Node    *fnval;
-            };
-        } lit;
+		struct {
+			Littype littype;
+			Type *type;
+			size_t nelt;
+			union {
+				uvlong intval;
+				double fltval;
+				uint32_t chrval;
+				Str strval;
+				char *lblval;
+				int boolval;
+				Node *fnval;
+			};
+		} lit;
 
-        struct {
-            Node *init;
-            Node *cond;
-            Node *step;
-            Node *body;
-            Stab *scope;
-        } loopstmt;
+		struct {
+			Node *init;
+			Node *cond;
+			Node *step;
+			Node *body;
+			Stab *scope;
+		} loopstmt;
 
-        struct {
-            Node *elt;
-            Node *seq;
-            Node *body;
-        } iterstmt;
+		struct {
+			Node *elt;
+			Node *seq;
+			Node *body;
+		} iterstmt;
 
-        struct {
-            Node *cond;
-            Node *iftrue;
-            Node *iffalse;
-        } ifstmt;
+		struct {
+			Node *cond;
+			Node *iftrue;
+			Node *iffalse;
+		} ifstmt;
 
-        struct {
-            Node *val;
-            size_t nmatches;
-            Node **matches;
-        } matchstmt;
+		struct {
+			Node *val;
+			size_t nmatches;
+			Node **matches;
+		} matchstmt;
 
-        struct {
-            Node *pat;
-            Node *block;
-        } match;
+		struct {
+			Node *pat;
+			Node *block;
+		} match;
 
-        struct {
-            Stab *scope;
-            size_t nstmts;
-            Node **stmts;
-        } block;
+		struct {
+			Stab *scope;
+			size_t nstmts;
+			Node **stmts;
+		} block;
 
-        struct {
-            size_t did;
-            Node *name;
-            Type *type;
-            Node *init;
-            /* 
-             If we have a link to a trait, we should only look it up
-             when specializing, but we should not create a new decl
-             node for it. That will be done when specializing the
-             impl.
-            */
-            Trait *trait;
-            char vis;
+		struct {
+			size_t did;
+			Node *name;
+			Type *type;
+			Node *init;
+			/*
+			 If we have a link to a trait, we should only look it up
+			 when specializing, but we should not create a new decl
+			 node for it. That will be done when specializing the
+			 impl.
+			*/
+			Trait *trait;
+			char vis;
 
-            /* flags */
-            char isglobl;
-            char isconst;
-            char isgeneric;
-            char isextern;
-            char ispkglocal;
-            char ishidden;
-            char isimport;
-            char isnoret;
-            char isexportinit;
-            char isinit;
-        } decl;
+			/* flags */
+			char isglobl;
+			char isconst;
+			char isgeneric;
+			char isextern;
+			char ispkglocal;
+			char ishidden;
+			char isimport;
+			char isnoret;
+			char isexportinit;
+			char isinit;
+		} decl;
 
-        struct {
-            long  uid;
-            Node *name;
-            Type *elt;
-            Type *alt;
-        } uelt;
+		struct {
+			long uid;
+			Node *name;
+			Type *elt;
+			Type *alt;
+		} uelt;
 
-        struct {
-            Stab *scope;
-            Type *type;
-            size_t nargs;
-            Node **args;
-            Node *body;
-        } func;
+		struct {
+			Stab *scope;
+			Type *type;
+			size_t nargs;
+			Node **args;
+			Node *body;
+		} func;
 
-        struct {
-            Node *name;
-            size_t traitid;
+		struct {
+			Node *name;
+			size_t traitid;
 
-            Node **funcs;
-            size_t nfuncs;
-            Node **membs;
-            size_t nmembs;
-        } trait;
+			Node **funcs;
+			size_t nfuncs;
+			Node **membs;
+			size_t nmembs;
+		} trait;
 
-        struct {
-            Node *traitname;
-            Trait *trait;
-            Type *type;
-            Node **decls;
-            size_t ndecls;
-            Vis vis;
-            char isproto;
-        } impl;
-    };
+		struct {
+			Node *traitname;
+			Trait *trait;
+			Type *type;
+			Node **decls;
+			size_t ndecls;
+			Vis vis;
+			char isproto;
+		} impl;
+	};
 };
 
 struct Optctx {
-    /* public exports */
-    char *optarg;
-    char **args;
-    size_t nargs;
+	/* public exports */
+	char *optarg;
+	char **args;
+	size_t nargs;
 
-    /* internal state */
-    char *optstr;
-    char **optargs;
-    size_t noptargs;
-    size_t argidx;
-    int optdone;    /* seen -- */
-    int finished;
-    char *curarg;
+	/* internal state */
+	char *optstr;
+	char **optargs;
+	size_t noptargs;
+	size_t argidx;
+	int optdone; /* seen -- */
+	int finished;
+	char *curarg;
 };
 
 /* globals */
 extern Srcloc curloc;
 extern char *filename;
-extern Tok *curtok;     /* the last token we tokenized */
-extern Node *file;      /* the current file we're compiling */
-extern Type **tytab;    /* type -> type map used by inference. size maintained by type creation code */
+extern Tok *curtok;  /* the last token we tokenized */
+extern Node *file;   /* the current file we're compiling */
+extern Type **tytab; /* type -> type map used by inference. size maintained by type creation code */
 extern Type **types;
 extern size_t ntypes;
-extern Trait **traittab;  /* int -> trait map */
+extern Trait **traittab; /* int -> trait map */
 extern size_t ntraittab;
-extern Node **decls;    /* decl id -> decl map */
+extern Node **decls; /* decl id -> decl map */
 extern size_t nnodes;
-extern Node **nodes;    /* node id -> node map */
+extern Node **nodes; /* node id -> node map */
 extern size_t ndecls;
 extern Node **exportimpls;
 extern size_t nexportimpls;
@@ -409,7 +411,7 @@ extern char *tidstr[];
 
 /* data structures */
 Bitset *mkbs(void);
-void    bsfree(Bitset *bs);
+void bsfree(Bitset *bs);
 Bitset *bsdup(Bitset *bs);
 Bitset *bsclear(Bitset *bs);
 void delbs(Bitset *bs);
@@ -418,18 +420,19 @@ void bsdel(Bitset *bs, size_t elt);
 void bsunion(Bitset *a, Bitset *b);
 void bsintersect(Bitset *a, Bitset *b);
 void bsdiff(Bitset *a, Bitset *b);
-int  bseq(Bitset *a, Bitset *b);
-int  bsissubset(Bitset *set, Bitset *sub);
-int  bsisempty(Bitset *set);
-int  bsiter(Bitset *bs, size_t *elt);
+int bseq(Bitset *a, Bitset *b);
+int bsissubset(Bitset *set, Bitset *sub);
+int bsisempty(Bitset *set);
+int bsiter(Bitset *bs, size_t *elt);
 size_t bsmax(Bitset *bs);
 size_t bscount(Bitset *bs);
 /* inline for speed */
 static inline int bshas(Bitset *bs, size_t elt)
 {
-    if (elt >= bs->nchunks*8*sizeof(size_t))
-        return 0;
-    return (bs->chunks[elt/(8*sizeof(size_t))] & (1ULL << (elt % (8*sizeof(size_t))))) != 0;
+	if (elt >= bs->nchunks * 8 * sizeof(size_t))
+		return 0;
+	return (bs->chunks[elt / (8 * sizeof(size_t))] & (1ULL << (elt % (8 * sizeof(size_t))))) !=
+		   0;
 }
 
 Htab *mkht(ulong (*hash)(void *key), int (*cmp)(void *k1, void *k2));
@@ -519,15 +522,16 @@ Type *mktytuple(Srcloc l, Type **sub, size_t nsub);
 Type *mktyfunc(Srcloc l, Node **args, size_t nargs, Type *ret);
 Type *mktystruct(Srcloc l, Node **decls, size_t ndecls);
 Type *mktyunion(Srcloc l, Ucon **decls, size_t ndecls);
-Trait *mktrait(Srcloc l, Node *name, Type *param, Node **memb, size_t nmemb, Node **funcs, size_t nfuncs, int isproto);
+Trait *mktrait(Srcloc l, Node *name, Type *param, Node **memb, size_t nmemb, Node **funcs,
+	size_t nfuncs, int isproto);
 Type *mktylike(Srcloc l, Ty ty); /* constrains tyvar t like it was builtin ty */
 Ucon *finducon(Type *t, Node *name);
-int   isstacktype(Type *t);
-int   istysigned(Type *t);
-int   istyunsigned(Type *t);
-int   istyfloat(Type *t);
-int   istyprimitive(Type *t);
-int   hasparams(Type *t);
+int isstacktype(Type *t);
+int istysigned(Type *t);
+int istyunsigned(Type *t);
+int istyfloat(Type *t);
+int istyprimitive(Type *t);
+int hasparams(Type *t);
 
 /* type manipulation */
 Type *tybase(Type *t);
@@ -580,7 +584,7 @@ uint64_t arraysz(Node *sz);
 char *namestr(Node *name);
 char *lblstr(Node *n);
 char *declname(Node *n);
-Type *decltype(Node *n);
+Type *decltype(Node * n);
 Type *exprtype(Node *n);
 Type *nodetype(Node *n);
 void addstmt(Node *file, Node *stmt);
@@ -597,7 +601,7 @@ Node *genericname(Node *n, Type *t);
 void geninit(Node *file);
 
 /* usefiles */
-int  loaduse(char *path, FILE *f, Stab *into, Vis vis);
+int loaduse(char *path, FILE *f, Stab *into, Vis vis);
 void readuse(Node *use, Stab *into, Vis vis);
 void writeuse(FILE *fd, Node *file);
 void tagexports(Node *file, int hidelocal);
@@ -618,7 +622,8 @@ int optnext(Optctx *c);
 int optdone(Optctx *c);
 
 /* convenience funcs */
-void lappend(void *l, size_t *len, void *n); /* hack; nl is void* b/c void*** is incompatible with T*** */
+/* hack; nl is void* b/c void*** is incompatible with T*** */
+void lappend( void *l, size_t *len, void *n);
 void lcat(void *dst, size_t *ndst, void *src, size_t nsrc);
 void linsert(void *l, size_t *len, size_t idx, void *n);
 void *lpop(void *l, size_t *len);
@@ -630,8 +635,8 @@ void be64(vlong v, byte buf[8]);
 vlong host64(byte buf[8]);
 void be32(long v, byte buf[4]);
 long host32(byte buf[4]);
-static inline intptr_t ptoi(void *p) {return (intptr_t)p;}
-static inline void* itop(intptr_t i) {return (void*)i;}
+static inline intptr_t ptoi(void *p) { return (intptr_t)p; }
+static inline void *itop(intptr_t i) { return (void *)i; }
 
 void wrbuf(FILE *fd, void *buf, size_t sz);
 void rdbuf(FILE *fd, void *buf, size_t sz);
@@ -665,7 +670,7 @@ char *swapsuffix(char *buf, size_t sz, char *s, char *suf, char *swap);
 /* indented printf */
 void indentf(int depth, char *fmt, ...);
 void findentf(FILE *fd, int depth, char *fmt, ...);
-void vfindentf(FILE *fd, int depth, char *fmt, va_list ap); 
+void vfindentf(FILE *fd, int depth, char *fmt, va_list ap);
 
 /* Options to control the compilation */
 extern char debugopt[128];

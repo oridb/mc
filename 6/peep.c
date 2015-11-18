@@ -21,17 +21,17 @@
  * at that point */
 static void deadcode(Isel *s, Asmbb *bb)
 {
-    size_t i;
+	size_t i;
 
-    if (!bb)
-        return;
-    for (i = 0; i < bb->ni; i++) {
-        if (bb->il[i]->op == Ijmp) {
-            i++;
-            break;
-        }
-    }
-    bb->ni = i;
+	if (!bb)
+		return;
+	for (i = 0; i < bb->ni; i++) {
+		if (bb->il[i]->op == Ijmp) {
+			i++;
+			break;
+		}
+	}
+	bb->ni = i;
 }
 
 /* checks for of dumb jump code.
@@ -42,48 +42,48 @@ static void deadcode(Isel *s, Asmbb *bb)
  */     
 static void nopjmp(Isel *s, Asmbb *bb, size_t idx)
 {
-    Insn *jmp;
-    Loc *targ;
-    Asmbb *nextbb;
-    size_t i;
+	Insn *jmp;
+	Loc *targ;
+	Asmbb *nextbb;
+	size_t i;
 
-    /* skip empty bbs */
-    if (!bb || !bb->ni)
-        return;
-    /* find the target of the last unconditional
-     * jump in the bb */
-    targ = NULL;
-    if (bb->il[bb->ni - 1]->op == Ijmp) {
-        jmp = bb->il[bb->ni - 1];
-        if (jmp->args[0]->type == Loclbl)
-            targ = jmp->args[0];
-    }
-    if (!targ)
-        return;
-    
-    /* figure out if it's somewhere in the head of the next bb */
-    nextbb = NULL;
-    for (i = idx + 1; i < s->nbb; i++) {
-        nextbb = s->bb[i];
-        if (nextbb)
-            break;
-    }
-    if (!nextbb)
-        return;
-    for (i = 0; i < nextbb->nlbls; i++) {
-        if (!strcmp(nextbb->lbls[i], targ->lbl)) {
-            bb->ni--;
-            break;
-        }
-    }
+	/* skip empty bbs */
+	if (!bb || !bb->ni)
+		return;
+	/* find the target of the last unconditional
+	 * jump in the bb */
+	targ = NULL;
+	if (bb->il[bb->ni - 1]->op == Ijmp) {
+		jmp = bb->il[bb->ni - 1];
+		if (jmp->args[0]->type == Loclbl)
+			targ = jmp->args[0];
+	}
+	if (!targ)
+		return;
+
+	/* figure out if it's somewhere in the head of the next bb */
+	nextbb = NULL;
+	for (i = idx + 1; i < s->nbb; i++) {
+		nextbb = s->bb[i];
+		if (nextbb)
+			break;
+	}
+	if (!nextbb)
+		return;
+	for (i = 0; i < nextbb->nlbls; i++) {
+		if (!strcmp(nextbb->lbls[i], targ->lbl)) {
+			bb->ni--;
+			break;
+		}
+	}
 }
 
 void peep(Isel *s)
 {
-    size_t i;
+	size_t i;
 
-    for (i = 0; i < s->nbb; i++) {
-        deadcode(s, s->bb[i]);
-        nopjmp(s, s->bb[i], i);
-    }
+	for (i = 0; i < s->nbb; i++) {
+		deadcode(s, s->bb[i]);
+		nopjmp(s, s->bb[i], i);
+	}
 }

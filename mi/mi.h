@@ -3,36 +3,36 @@ typedef struct Bb Bb;
 typedef struct Reaching Reaching;
 
 struct  Cfg {
-    Node *fn;
-    Bb **bb;
-    Bb *start;
-    Bb *end;
-    size_t nbb;
+	Node *fn;
+	Bb **bb;
+	Bb *start;
+	Bb *end;
+	size_t nbb;
 
-    /* for building bb */
-    int nextbbid;
-    Htab *lblmap; /* label => Bb mapping */
-    Node **fixjmp;
-    size_t nfixjmp;
-    Bb **fixblk;
-    size_t nfixblk;
+	/* for building bb */
+	int nextbbid;
+	Htab *lblmap; /* label => Bb mapping */
+	Node **fixjmp;
+	size_t nfixjmp;
+	Bb **fixblk;
+	size_t nfixblk;
 };
 
 struct Bb {
-    int id;
-    char **lbls;
-    size_t nlbls;
-    Node **nl;
-    size_t nnl;
-    Bitset *pred;
-    Bitset *succ;
+	int id;
+	char **lbls;
+	size_t nlbls;
+	Node **nl;
+	size_t nnl;
+	Bitset *pred;
+	Bitset *succ;
 };
 
 struct Reaching {
-    Bitset **in;
-    Bitset **out;
-    size_t **defs;
-    size_t *ndefs;
+	Bitset **in;
+	Bitset **out;
+	size_t **defs;
+	size_t *ndefs;
 };
 
 /* expression folding */
