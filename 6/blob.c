@@ -27,16 +27,6 @@ Blob *mkblobi(Blobtype type, uint64_t ival)
 	return b;
 }
 
-Blob *mkblobzero(size_t sz)
-{
-	Blob *b;
-
-	b = zalloc(sizeof(Blob));
-	b->type = Btzero;
-	b->npad = sz;
-	return b;
-}
-
 Blob *mkblobpad(size_t sz)
 {
 	Blob *b;
@@ -118,7 +108,8 @@ void b(Blob *b, Blob *n)
 
 static size_t blobpad(Blob *seq, size_t sz)
 {
-	b(seq, mkblobpad(sz));
+	if (sz)
+		b(seq, mkblobpad(sz));
 	return sz;
 }
 

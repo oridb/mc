@@ -355,8 +355,6 @@ static size_t writeblob(FILE *fd, Blob *b, size_t off, char *lbl)
 			fprintf(fd, "DATA %s+%zd(SB)/1,$0\n", lbl, off+n+i);
 		n += b->npad;
 		break;
-	case Btzero:
-		break;
 	}
 	return n;
 }
