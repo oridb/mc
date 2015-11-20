@@ -14,7 +14,7 @@ BIN ?= $(INSTBIN)
 
 # disable implicit rules.
 .SUFFIXES:
-.PRECIOUS: $(GENHDR)
+.SECONDARY:
 .PHONY: clean clean-gen clean-bin clean-obj clean-misc clean-backups
 .PHONY: all
 
