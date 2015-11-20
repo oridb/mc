@@ -132,7 +132,6 @@ const buildtests = {b, targ
 				.incpath = std.slput(std.sldup(targ.incpath), 0, "."),
 			]
 
-			cleantest(b, path)
 			buildbin(b, &tt, true)
 			cmd = std.sldup([std.strcat("./", bin)][:])
 			tests = std.slpush(tests, (cmd, std.sldup(targ.dir)))
@@ -142,25 +141,6 @@ const buildtests = {b, targ
 		;;
 	;;
 	-> tests
-}
-
-const cleantest = {b, src
-	var obj, bin, log, usef
-
-	obj = srcswapsuffix(src, config.Objsuffix)
-	log = srcswapsuffix(src, ".log")
-	usef = srcswapsuffix(src, ".use")
-	bin = srcswapsuffix(src, "")
-
-	std.remove(obj)
-	std.remove(usef)
-	std.remove(log)
-	std.remove(bin)
-
-	std.slfree(obj)
-	std.slfree(usef)
-	std.slfree(log)
-	std.slfree(bin)
 }
 
 const runtest = {cmd
