@@ -1,6 +1,5 @@
 .DEFAULT_GOAL=all
-_DEPSDIR = .deps
-_DEPS=$(addprefix $(_DEPSDIR)/, $(OBJ:.o=.d))
+_DEPS=$(addprefix .deps/, $(OBJ:.o=.d))
 
 _LIBSRCHPATHS=$(addprefix -L, $(dir $(DEPS)))
 _LIBINCPATHS=$(addprefix -I, $(dir $(DEPS)))
@@ -8,13 +7,14 @@ _LIBPATHS=$(addprefix -l, $(patsubst lib%.a,%,$(notdir $(DEPS))))
 
 # yeah, I should probably remove -Werror, but it's nice for developing alone.
 CFLAGS += -Wall -Werror -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-sign-compare -Wno-array-bounds -g
-CFLAGS += -MMD -MP -MF ${_DEPSDIR}/$(subst /,-,$*).d
+CFLAGS += -MMD -MP -MF .deps/$(subst /,-,$*).d
 
 LIB ?= $(INSTLIB)
 BIN ?= $(INSTBIN)
 
 # disable implicit rules.
 .SUFFIXES:
+.PRECIOUS: $(GENHDR)
 .PHONY: clean clean-gen clean-bin clean-obj clean-misc clean-backups
 .PHONY: all
 
@@ -52,6 +52,7 @@ subdirs-install:
 
 clean: subdirs-clean $(EXTRACLEAN)
 	rm -f ${BIN} ${OBJ} ${CLEAN} ${LIB}
+	rm -rf .deps/
 
 install: subdirs-install $(INSTBIN) $(INSTLIB) $(INSTHDR) $(INSTPKG) $(EXTRAINSTALL)
 	@for i in $(INSTBIN); do \
@@ -111,11 +112,11 @@ uninstall: subdirs-uninstall $(EXTRAUNINSTALL)
 		rm -f $(abspath $(DESTDIR)/$(INST_ROOT)/share/man/man$${sect}/$$i); \
 	done
 
-%.o: %.c $(GENHDR) .deps
+%.o: %.c $(GENHDR) .deps/stamp
 	$(CC) -c $(CFLAGS) $(_LIBINCPATHS) $<
 
-.deps:
-	mkdir -p $(_DEPSDIR)
+.deps/stamp:
+	mkdir -p .deps && touch .deps/stamp
 
 config.mk: configure
 	./configure --redo
