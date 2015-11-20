@@ -46,6 +46,7 @@ lib std {inc=.} =
 	sleq.myr
 	slfill.myr
 	sljoin.myr
+	slpop.myr
 	slpush.myr
 	slput.myr
 	slurp.myr

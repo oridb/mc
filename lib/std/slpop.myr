@@ -1,0 +1,14 @@
+use "types.use"
+use "alloc.use"
+
+pkg std =
+	generic slpop	: (sl : @a[:] -> (@a, @a[:]))
+;;
+
+generic slpop = {sl
+	var elt
+
+	elt = sl[$ - 1]
+	sl = slgrow(sl, sl.len - 1)
+	-> (elt, sl)
+}
