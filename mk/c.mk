@@ -1,12 +1,15 @@
 .DEFAULT_GOAL=all
 _DEPS=$(addprefix .deps/, $(OBJ:.o=.d))
 
+_PCHDRS=$(shell [ -z "$(PCPKGS)" ] || pkg-config --cflags $(PCPKGS))
+_PCLIBS=$(shell [ -z "$(PCPKGS)" ] ||pkg-config --libs $(PCPKGS))
+
 _LIBSRCHPATHS=$(addprefix -L, $(dir $(DEPS)))
-_LIBINCPATHS=$(addprefix -I, $(dir $(DEPS)))
-_LIBPATHS=$(addprefix -l, $(patsubst lib%.a,%,$(notdir $(DEPS))))
+_LIBINCPATHS=$(addprefix -I, $(dir $(DEPS))) $(_PCHDRS)
+_LIBPATHS=$(addprefix -l, $(patsubst lib%.a,%,$(notdir $(DEPS)))) $(_PCLIBS)
 
 # yeah, I should probably remove -Werror, but it's nice for developing alone.
-CFLAGS += -Wall -Werror -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-sign-compare -Wno-array-bounds -g
+CFLAGS += -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-sign-compare -Wno-array-bounds -g
 CFLAGS += -MMD -MP -MF .deps/$(subst /,-,$*).d
 
 LIB ?= $(INSTLIB)
@@ -16,9 +19,9 @@ BIN ?= $(INSTBIN)
 .SUFFIXES:
 .SECONDARY:
 .PHONY: clean clean-gen clean-bin clean-obj clean-misc clean-backups
-.PHONY: all
+.PHONY: all _modversions
 
-all: subdirs $(BIN) $(LIB) $(EXTRA)
+all: _modversions subdirs $(BIN) $(LIB) $(EXTRA)
 
 $(LIB): $(OBJ) $(EXTRADEP) $(DEPS)
 	$(AR) -rcs $@ $(OBJ)
@@ -115,10 +118,19 @@ uninstall: subdirs-uninstall $(EXTRAUNINSTALL)
 %.o: %.c $(GENHDR) .deps/stamp
 	$(CC) -c $(CFLAGS) $(_LIBINCPATHS) $<
 
+%.o: %.cpp $(GENHDR) .deps/stamp
+	$(CXX) -c $(CFLAGS) $(_LIBINCPATHS) $<
+
+%.o: %.cc $(GENHDR) .deps/stamp
+	$(CXX) -c $(CFLAGS) $(_LIBINCPATHS) $<
+
 .deps/stamp:
 	mkdir -p .deps && touch .deps/stamp
 
 config.mk: configure
 	./configure --redo
+
+_modversions:
+	@[ -z "$(PCPKGS)" ] || pkg-config --modversion $(PCPKGS) > /dev/null
 
 -include $(_DEPS)
