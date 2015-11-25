@@ -8,3 +8,12 @@ lib inifile =
 	lib ../sys:sys
 	lib ../bio:bio
 ;;
+
+test test/inifile =
+	test/inifile.myr
+
+	lib ../std:std
+	lib ../sys:sys
+	lib ../bio:bio
+	lib inifile
+;;

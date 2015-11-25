@@ -1,0 +1,43 @@
+use std
+use inifile
+
+const main = {
+	failopen()
+	getkeys()
+}
+
+const failopen = {
+	match inifile.load("figment-of-my-imagination.ini")
+	| `std.Ok _:	std.die("found imaginary file\n")
+	| `std.Fail _:	/* as expected */
+	;;
+}
+
+const getkeys = {
+	var ini
+
+	ini = std.try(inifile.load("test/test.ini"))
+
+	checkval(ini, "", "toplev", "stuff")
+
+	checkval(ini, "somesect", "key", "foo")
+	checkval(ini, "somesect", "otherkey", "meh")
+	checkval(ini, "somesect", "whatever", "\"stuff here\"")
+
+	checkval(ini, "another section", "key", "foo1")
+	checkval(ini, "another section", "otherkey", "meh1")
+	checkval(ini, "another section", "whatever", "\"more stuff here\"")
+
+	inifile.free(ini)
+}
+
+const checkval = {ini, sect, key, expected
+	match inifile.get(ini, sect, key)
+	| `std.Some val:
+		if !std.sleq(val, expected)
+			std.fatal("{}.{}: expected {}, got {}\n", sect, key, expected, val)
+		;;
+	| `std.None:
+		std.fatal("{}.{}: missing key\n", sect, key)
+	;;
+}
