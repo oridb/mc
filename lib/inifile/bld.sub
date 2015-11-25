@@ -1,0 +1,10 @@
+lib inifile =
+	access.myr
+	parse.myr
+	types.myr
+	write.myr
+
+	lib ../std:std
+	lib ../sys:sys
+	lib ../bio:bio
+;;

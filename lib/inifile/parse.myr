@@ -1,0 +1,153 @@
+use std
+use bio
+
+use "types.use"
+
+pkg inifile =
+	/* reading */
+	const load	: (path : byte[:]	-> std.result(inifile#, error))
+	const loadf	: (file : std.fd	-> std.result(inifile#, error))
+	const free	: (ini : inifile#	-> void)
+;;
+
+
+type parser = struct
+	line	: int
+	sect	: byte[:]
+	err	: std.option(error)
+;;
+
+const load = {path
+	match std.open(path, std.Ordonly)
+	| `std.Ok fd:	-> loadf(fd)
+	| `std.Fail e:	-> `std.Fail `Fileerr
+	;;
+}
+
+const free = {ini
+	var kl
+
+	kl = std.htkeys(ini.elts)
+	for (sect, key) in kl
+		std.slfree(std.htgetv(ini.elts, (sect, key), ""))
+		std.slfree(sect)
+		std.slfree(key)
+	;;
+	std.slfree(kl)
+	std.htfree(ini.elts)
+	std.free(ini)
+}
+
+const loadf = {fd
+	var p : parser#
+	var ini
+	var f
+
+	ini = std.mk([
+		.elts = std.mkht(keyhash, keyeq)
+	])
+	p = std.mk([
+		.line = 1,
+		.sect = "",
+		.err = `std.None
+	])
+	f = bio.mkfile(fd, bio.Rd)
+	while true
+		match bio.readln(f)
+		| `bio.Eof:
+			break
+		| `bio.Ok ln:
+			if !parseline(p, ini, ln)
+				break
+			;;
+		| `bio.Err e:
+			p.err = `std.Some `Fileerr
+			break
+		;;
+		p.line++
+	;;
+	match p.err
+	| `std.None:
+		std.slfree(p.sect)
+		-> `std.Ok ini 
+	| `std.Some e:
+		free(ini)
+		-> `std.Fail e
+	;;
+}
+
+const parseline = {p, ini, ln
+	ln = std.strstrip(ln)
+
+	/* remove comments */
+	match std.strfind(ln, ";")
+	| `std.Some idx:	ln = ln[:idx]
+	| `std.None:
+	;;
+	match std.strfind(ln, "#")
+	| `std.Some idx:	ln = ln[:idx]
+	| `std.None:
+	;;
+
+	/* skip empty lines */
+	if ln.len == 0
+		-> true
+	;;
+
+	match ln[0] castto(char)
+	| '[':	-> parsesection(p, ini, ln)
+	| _:	-> parsekvp(p, ini, ln)
+	;;
+}
+
+const parsesection = {p, ini, ln
+	match std.strfind(ln, "]")
+	| `std.Some idx:
+		if idx != ln.len - 1
+			p.err = `std.Some (`Parseerr p.line)
+			-> false
+		;;
+		std.slfree(p.sect)
+		p.sect = std.sldup(std.strstrip(ln[1:$-1]))
+	| `std.None:
+		p.err = `std.Some (`Parseerr p.line)
+		-> false
+	;;
+	-> true
+}
+
+const parsekvp = {p, ini, ln
+	var key, val
+
+	match std.strfind(ln, "=")
+	| `std.None:
+		p.err = `std.Some (`Parseerr p.line)
+		-> false
+	| `std.Some idx:
+		key = std.strstrip(ln[:idx])
+		val = std.strstrip(ln[idx+1:])
+		if std.hthas(ini.elts, (p.sect, key))
+			p.err = `std.Some(`Dupkey p.line)
+			-> false
+		;;
+		std.htput(ini.elts, (std.sldup(p.sect), std.sldup(key)), std.sldup(val))
+		-> true
+	;;
+}
+
+const keyhash = {k
+	var sect, key
+
+	(sect, key) = k
+	-> std.strhash(sect) ^ std.strhash(key)
+}
+
+const keyeq = {a, b
+	var s1, k1
+	var s2, k2
+
+	(s1, k1) = a
+	(s2, k2) = a
+	-> std.streq(s1, s2) && std.streq(k1, k2)
+}
+

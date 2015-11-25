@@ -4,4 +4,5 @@ sub =
 	bio
 	regex
 	cryptohash
+	inifile
 ;;

@@ -1,0 +1,29 @@
+use std
+use bio
+
+use "types.use"
+
+pkg inifile =
+	/* key getting/setting */
+	const get	: (ini : inifile#, sect : byte[:], key : byte[:]	-> std.option(byte[:]))
+	const getv	: (ini : inifile#, sect : byte[:], key : byte[:], val : byte[:]	-> byte[:])
+	const has	: (ini : inifile#, sect : byte[:], key : byte[:] -> bool)
+	const put	: (ini : inifile#, sect : byte[:], key : byte[:], val : byte[:]	-> void)
+;;
+
+const get = {ini, sect, key
+	-> std.htget(ini.elts, (sect, key))
+}
+
+const getv = {ini, sect, key, val
+	-> std.htgetv(ini.elts, (sect, key), val)
+}
+
+const has = {ini, sect, key
+	-> std.hthas(ini.elts, (sect, key))
+}
+
+const put = {ini, sect, key, val
+	std.htput(ini.elts, (std.sldup(sect), std.sldup(key)), std.sldup(val))
+}
+

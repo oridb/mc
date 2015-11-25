@@ -1,0 +1,12 @@
+use std
+use bio
+
+use "types.use"
+
+pkg inifile =
+	const write	: (ini : inifile#, path : byte[:]	-> bool)
+;;
+
+const write = {ini, path
+	-> true
+}
