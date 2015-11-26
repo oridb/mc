@@ -24,6 +24,12 @@ const has = {ini, sect, key
 }
 
 const put = {ini, sect, key, val
-	std.htput(ini.elts, (std.sldup(sect), std.sldup(key)), std.sldup(val))
+	if std.hthas(ini.elts, (sect, key))
+		std.slfree(std.htgetv(ini.elts, (sect, key), ""))
+	else
+		sect = std.sldup(sect)
+		key = std.sldup(key)
+	;;
+	std.htput(ini.elts, (sect, key), std.sldup(val))
 }
 

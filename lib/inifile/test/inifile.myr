@@ -28,6 +28,10 @@ const getkeys = {
 	checkval(ini, "another section", "otherkey", "meh1")
 	checkval(ini, "another section", "whatever", "\"more stuff here\"")
 
+	inifile.put(ini, "new sect", "key", "val")
+	/* TODO: check this for validity */
+	std.assert(inifile.write(ini, "test/out.ini"), "failed to write test ini")
+
 	inifile.free(ini)
 }
 

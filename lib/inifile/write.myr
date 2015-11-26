@@ -5,8 +5,58 @@ use "types.use"
 
 pkg inifile =
 	const write	: (ini : inifile#, path : byte[:]	-> bool)
+	const writef	: (ini : inifile#, fd : std.fd	-> bool)
 ;;
 
 const write = {ini, path
+	var ret
+
+	match bio.create(path, bio.Wr, 0o666)
+	| `std.Fail e:	-> false
+	| `std.Ok f:
+		ret = writeini(f, ini)
+		bio.close(f)
+	;;
+	-> ret
+}
+
+const writef = {ini, fd
+	var f, ret
+
+	f = bio.mkfile(fd, bio.Wr)
+	ret = writeini(f, ini)
+	bio.close(f)
+	-> ret
+}
+
+
+const writeini = {f, ini
+	var oldsect, val
+	var keys
+
+	keys = std.htkeys(ini.elts)
+	std.sort(keys, {a, b
+		var sa, sb
+
+		(sa, _) = a
+		(sb, _) = b
+		-> std.strcmp(sa, sb)
+	})
+
+	oldsect = ""
+	for (sect, key) in keys 
+		std.put("sect={}, oldsect={}\n", sect, oldsect)
+		if !std.sleq(sect, oldsect)
+			bio.put(f, "[{}]\n", sect)
+		;;
+		oldsect = sect
+
+		val = std.htgetv(ini.elts, (sect, key), "")
+		match bio.put(f, "\t{} = {}\n", key, val)
+		| `bio.Err e: -> false
+		| _:
+		;;
+	;;
+	std.slfree(keys)
 	-> true
 }
