@@ -10,12 +10,13 @@ thread$exit:
 	andq	$~0xfff,%rdi	/* align it */
 	addq	$0x1000,%rdi
 
-	/* syscall args */
+	/* munmap(base, size) */
 	movq	$11,%rax	/* munmap */
 	movq	-8(%rdi),%rsi	/* size */
 	subq	%rsi,%rdi	/* move to base ptr */
 	syscall
 
+	/* thread_exit(0) */
 	movq	$60,%rax	/* exit */
 	xorq	%rdi,%rdi	/* 0 */
 	syscall
