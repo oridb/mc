@@ -6,6 +6,7 @@ lib thread =
 	mutex+linux.myr
 	spawn+linux.myr
 	future+linux.myr
+	exit+linux-x64.s
 
 	atomic-impl+x64.s
 	atomic.myr

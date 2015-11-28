@@ -1,0 +1,24 @@
+use std
+use thread
+
+var done : int32
+
+const main = {
+	var capture, ptr
+
+	capture = 666
+	ptr = &capture
+	thread.spawn({
+		std.assert(capture==666, "wrong captured value\n")
+		std.assert(ptr#==666, "wrong captured ptr value\n")
+		ptr# = 333
+		thread.xadd(&done, 1)
+	})
+
+	while done == 0
+		/* nothing */
+	;;
+
+	std.assert(capture == 333, "capture wasn't written to correctly\n")
+}
+

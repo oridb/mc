@@ -22,7 +22,6 @@ const main = {
 	thread.futset(&fut, 666)
 	std.assert(thread.futset(&fut, 1) == false, "double set future\n")
 	while ndone != 100
-		std.put("ndone: {}\n", ndone)
 		/* spin */
 	;;
 	std.put("double set future ok")

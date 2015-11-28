@@ -7,6 +7,8 @@ pkg thread =
 	const spawn : (fn : (-> void) -> std.result(tid, byte[:]))
 ;;
 
+extern const exit : (-> void)
+
 /* Holy shit flag mania. */
 const Thrflag = sys.Clonevm | sys.Clonefs | sys.Clonefiles  | \
 	sys.Clonesighand | sys.Clonethread |sys.Clonesysvsem | \
@@ -19,14 +21,26 @@ const spawn = {fn
 }
 
 const spawnstk = {fn, sz
-	var stk, tid, ctid, ret
+	var stk : byte#, tid, ctid, ret
+	var szp, fp, tos
 
 	stk = getstk(sz)
 	if stk == sys.Mapbad
 		-> `std.Fail "couldn't get stack"
 	;;
+	tos = stk castto(std.intptr)
+	tos -= sizeof(int64)
+	szp = tos castto(sys.size#)
+	szp# = Stacksz
+	tos -= sizeof((->void))
+	fp = tos castto((->void)#)
+	fp# = fn
 
-	ret = sys.fnclone(Thrflag, stk, &tid, 0 castto(byte#), &ctid, 0 castto(byte#), fn) castto(tid)
+	ret = sys.fnclone(Thrflag, \
+		tos castto(byte#),\
+		&tid, 0 castto(byte#), \
+		&ctid, 0 castto(byte#), \
+		startthread castto(void#)) castto(tid)
 	if ret < 0
 		std.put("errno={}\n", -ret)
 		-> `std.Fail "couldn't spawn thread"
@@ -46,3 +60,9 @@ const getstk = {sz
 	m += sz castto(std.intptr)
 	-> m castto(byte#)
 }
+
+const startthread = {fn : (-> void)
+	fn()
+	exit()
+}
+
