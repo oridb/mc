@@ -930,6 +930,11 @@ blkbody : decl {
 		if ($1)
 			lappend(&$$->block.stmts, &$$->block.nstmts, $1);
 	}
+	| tydef {
+		$$ = mkblock(curloc, mkstab(0));
+		puttype($$->block.scope, mkname($1.loc, $1.name), $1.type);
+		installucons($$->block.scope, $1.type);
+	}
 	| blkbody Tendln stmt {
 		if ($3)
 			lappend(&$1->block.stmts, &$1->block.nstmts, $3);
@@ -941,6 +946,10 @@ blkbody : decl {
 			putdcl($$->block.scope, $3.nl[i]);
 			lappend(&$1->block.stmts, &$1->block.nstmts, $3.nl[i]);
 		}
+	}
+	| blkbody Tendln tydef {
+		puttype($$->block.scope, mkname($3.loc, $3.name), $3.type);
+		installucons($$->block.scope, $3.type);
 	}
 	;
 
