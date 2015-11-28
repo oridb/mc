@@ -20,7 +20,6 @@ const main = {args : byte[:][:]
 	var targname
 	var bintarg
 	var cmd 
-	var libpath
 	var tags
 
 	dumponly = false
@@ -73,10 +72,6 @@ const main = {args : byte[:][:]
 		| _:	std.die("unreachable\n")
 
 		;;
-	;;
-	if bld.opt_instroot.len > 0 && !std.sleq(bld.opt_instroot, "none")
-		libpath = std.pathcat(bld.opt_instroot, config.Libpath)
-		bld.opt_incpaths = std.slpush(bld.opt_incpaths, libpath)
 	;;
 
 	b = mkbuild(tags)

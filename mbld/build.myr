@@ -113,6 +113,7 @@ const runin = {b, cmd, dir
 
 const buildbin = {b, targ, addsrc
 	var dg, src
+	var libpath, incs
 
 	setdir(b, targ.dir)
 	addincludes(b, targ)
@@ -123,7 +124,14 @@ const buildbin = {b, targ, addsrc
 	;;
 	if builddep(b, dg, targ.name, targ.incpath) || !freshlibs(targ, dg.libs)
 		src = std.htkeys(dg.sources)
-		linkbin(dg, targ.name, src, targ.ldscript, targ.runtime, targ.incpath, targ.libdeps)
+
+		incs = std.sldup(targ.incpath)
+		if opt_instroot.len > 0 && !std.sleq(opt_instroot, "none")
+			libpath = std.pathcat(bld.opt_instroot, config.Libpath)
+			incs = std.slpush(incs, libpath)
+		;;
+		linkbin(dg, targ.name, src, targ.ldscript, targ.runtime, incs, targ.libdeps)
+		std.slfree(incs)
 		std.slfree(src)
 	;;
 }
@@ -298,6 +306,7 @@ const linkbin = {dg, bin, srcfiles, ldscript, rt, incs, extlibs
 
 	/* -L path -l lib... */
 	cmd = addlibs(cmd, dg.libs, incs)
+
 
 	/* add extra libs */
 	for l in dg.extlibs
