@@ -127,7 +127,6 @@ static void setupinit(Node *n);
 %token<tok> Tsizeof  /* sizeof */
 
 %token<tok> Tident
-%token<tok> Teof
 
 %start file
 

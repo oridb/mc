@@ -2,7 +2,6 @@ SUB = parse \
       mi \
       6 \
       muse \
-      mxref \
       rt \
       doc
 
