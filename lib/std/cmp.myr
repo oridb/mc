@@ -64,7 +64,6 @@ const strcasecmp = {a, b
 		(cb, b) = std.striter(b)
 		ca = toupper(ca)
 		cb = toupper(cb)
-		std.put("{}, {}\n", ca, cb)
 		if ca < cb
 			-> `Before
 		elif ca > cb
