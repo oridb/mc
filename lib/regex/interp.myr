@@ -24,6 +24,7 @@ const exec = {re, str
 	thr = run(re)
 	if thr != Zthr
 		m = getmatches(re, thr)
+		thrfree(re, thr)
 		cleanup(re)
 		-> `std.Some m
 	else
@@ -99,6 +100,7 @@ const run = {re
 			if thr.dead
 				thrfree(re, thr)
 			elif thr.matched && re.strp == re.str.len
+				std.bsfree(states)
 				-> thr
 			elif !thr.matched
 				std.bsput(states, thr.ip)
@@ -120,6 +122,7 @@ const run = {re
 		re.expiredtail = Zthr
 		re.strp++
 	;;
+	std.bsfree(states)
 	-> Zthr
 }
 
