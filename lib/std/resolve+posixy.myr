@@ -10,6 +10,7 @@ use "ipparse.use"
 use "option.use"
 use "result.use"
 use "slcp.use"
+use "sldup.use"
 use "sleq.use"
 use "slpush.use"
 use "slurp.use"
@@ -120,6 +121,7 @@ const loadhosts = {
 		;;
 	;;
 	slfree(lines)
+	slfree(h)
 }
 
 const addhosts = {addr, as, str
@@ -143,7 +145,7 @@ const addhosts = {addr, as, str
 				.ttl = 0,
 				.addr = addr
 			]
-			htput(hostmap, name, hinf)
+			htput(hostmap, sldup(name), hinf)
 		| `None:
 			->
 		;;
@@ -176,6 +178,7 @@ const loadresolv = {
 		;;
 	;;
 	slfree(lines)
+	slfree(h)
 }
 
 const addns = {rest

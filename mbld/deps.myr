@@ -237,6 +237,7 @@ const getcflags = {ln, cflags, libs
 			cflags = std.slpush(cflags, std.sldup(fl))
 		;;
 		std.slfree(flags)
+		regex.matchfree(m)
 	;;
 
 	match regex.exec(clibpat, ln)
@@ -247,6 +248,7 @@ const getcflags = {ln, cflags, libs
 			libs = std.slpush(libs, std.sldup(fl))
 		;;
 		std.slfree(flags)
+		regex.matchfree(m)
 	;;
 	-> (cflags, libs)
 }
@@ -299,6 +301,7 @@ const depname = {deps, ln, lnum
 		else
 			deps = std.slpush(deps, `Local (std.sldup(uses[3]), lnum))
 		;;
+		regex.matchfree(uses)
 	| `std.None:
 		/* nothing to do */
 	;;
@@ -381,7 +384,6 @@ const pushdep = {dg, src, dst
 	if opt_debug
 		std.put("{} <= {}\n", dst, src)
 	;;
-	std.assert(dst.len < 200, "BUG!")
 	sl = std.htgetv(dg.deps, dst, [][:])
 	sl = std.slpush(sl, src)
 	std.htput(dg.deps, dst, sl)

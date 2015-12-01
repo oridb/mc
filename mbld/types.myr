@@ -62,7 +62,6 @@ pkg bld =
 	;;
 
 	type depgraph = struct
-		roots	: byte[:][:]
 		deps	: std.htab(byte[:], byte[:][:])#
 		libs	: std.htab(byte[:], byte[:][:])#
 		input	: std.htab(byte[:], byte[:])#
