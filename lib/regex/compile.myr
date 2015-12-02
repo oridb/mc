@@ -477,7 +477,7 @@ const altexpr = {re
 		if matchc(re, '|')
 			match altexpr(re)
 			| `Some rhs:
-				ret = mk(`Alt (ret, rhs))
+				ret = std.mk(`Alt (ret, rhs))
 			| `None:
 				astfree(ret)
 				-> `Fail (`Incomplete)
@@ -499,7 +499,7 @@ const catexpr = {re
 		ret = t
 		match catexpr(re)
 		| `Some rhs:
-			ret = mk(`Cat (t, rhs))
+			ret = std.mk(`Cat (t, rhs))
 		| `Fail f:	-> `Fail f
 		| `None:	/* nothing */
 		;;
@@ -516,18 +516,18 @@ const repexpr = {re
 	| `Some t:
 		if matchc(re, '*')
                         if matchc(re, '?')
-                                ret = mk(`Rstar t)
+                                ret = std.mk(`Rstar t)
                         else
-				ret = mk(`Star t)
+				ret = std.mk(`Star t)
 			;;
 		elif matchc(re, '+')
                         if matchc(re, '?')
-				ret = mk(`Rplus t)
+				ret = std.mk(`Rplus t)
 			else
-				ret = mk(`Plus t)
+				ret = std.mk(`Plus t)
 			;;
 		elif matchc(re, '?')
-			ret = mk(`Quest t)
+			ret = std.mk(`Quest t)
 		else
 			ret = t
 		;;
@@ -551,16 +551,16 @@ const baseexpr = {re
 	| '+':	-> `Fail `Badrep '+'
 	| '?':	-> `Fail `Badrep '?'
 	| '[':	-> chrclass(re)
-	| '.':	getc(re); ret = mk(`Ranges std.slpush([][:], [0, std.Maxcharval]))
-	| '^':	getc(re); ret = mk(`Bol)
-	| '$':	getc(re); ret = mk(`Eol)
+	| '.':	getc(re); ret = std.mk(`Ranges std.slpush([][:], [0, std.Maxcharval]))
+	| '^':	getc(re); ret = std.mk(`Bol)
+	| '$':	getc(re); ret = std.mk(`Eol)
 	| '(':	
 		m = re.nmatch++
 		getc(re)
 		match altexpr(re)
 		| `Some s:
 			if matchc(re, ')')
-				-> `Some mk(`Cap (m, s))
+				-> `Some std.mk(`Cap (m, s))
 			else
 				-> `Fail `Unbalanced '('
 			;;
@@ -575,7 +575,7 @@ const baseexpr = {re
 		-> escaped(re)
 	| c:
 		getc(re)
-		ret = mk(`Chr c)
+		ret = std.mk(`Chr c)
 	;;
 	-> `Some ret
 }
@@ -585,34 +585,34 @@ const escaped = {re
 
 	match getc(re)
 	/* character classes */
-	| 'd': ret = `Some mk(`Ranges std.sldup(_ranges.tabasciidigit[:]))
-	| 'x': ret = `Some mk(`Ranges std.sldup(_ranges.tabasciixdigit[:]))
-	| 's': ret = `Some mk(`Ranges std.sldup(_ranges.tabasciispace[:]))
-	| 'w': ret = `Some mk(`Ranges std.sldup(_ranges.tabasciiword[:]))
-	| 'h': ret = `Some mk(`Ranges std.sldup(_ranges.tabasciiblank[:]))
+	| 'd': ret = `Some std.mk(`Ranges std.sldup(_ranges.tabasciidigit[:]))
+	| 'x': ret = `Some std.mk(`Ranges std.sldup(_ranges.tabasciixdigit[:]))
+	| 's': ret = `Some std.mk(`Ranges std.sldup(_ranges.tabasciispace[:]))
+	| 'w': ret = `Some std.mk(`Ranges std.sldup(_ranges.tabasciiword[:]))
+	| 'h': ret = `Some std.mk(`Ranges std.sldup(_ranges.tabasciiblank[:]))
 
 	/* negated character classes */
-	| 'W': ret = `Some mk(`Ranges negate(_ranges.tabasciiword[:]))
-	| 'S': ret = `Some mk(`Ranges negate(_ranges.tabasciispace[:]))
-	| 'D': ret = `Some mk(`Ranges negate(_ranges.tabasciidigit[:]))
-	| 'X': ret = `Some mk(`Ranges negate(_ranges.tabasciixdigit[:]))
-	| 'H': ret = `Some mk(`Ranges negate(_ranges.tabasciiblank[:]))
+	| 'W': ret = `Some std.mk(`Ranges negate(_ranges.tabasciiword[:]))
+	| 'S': ret = `Some std.mk(`Ranges negate(_ranges.tabasciispace[:]))
+	| 'D': ret = `Some std.mk(`Ranges negate(_ranges.tabasciidigit[:]))
+	| 'X': ret = `Some std.mk(`Ranges negate(_ranges.tabasciixdigit[:]))
+	| 'H': ret = `Some std.mk(`Ranges negate(_ranges.tabasciiblank[:]))
 
 	/* unicode character classes */
 	| 'p':	ret = unicodeclass(re, false)
 	| 'P':  ret = unicodeclass(re, true)
 
 	/* operators that need an escape */
-	| '<': ret = `Some mk(`Bow)
-	| '>': ret = `Some mk(`Eow)
+	| '<': ret = `Some std.mk(`Bow)
+	| '>': ret = `Some std.mk(`Eow)
 
 	/* escaped metachars */
-	| '^': ret = `Some mk(`Chr '^')
-	| '$': ret = `Some mk(`Chr '$')
-	| '.': ret = `Some mk(`Chr '.')
-	| '+': ret = `Some mk(`Chr '+')
-	| '?': ret = `Some mk(`Chr '?')
-	| '*': ret = `Some mk(`Chr '*')
+	| '^': ret = `Some std.mk(`Chr '^')
+	| '$': ret = `Some std.mk(`Chr '$')
+	| '.': ret = `Some std.mk(`Chr '.')
+	| '+': ret = `Some std.mk(`Chr '+')
+	| '?': ret = `Some std.mk(`Chr '?')
+	| '*': ret = `Some std.mk(`Chr '*')
 	| chr: ret = `Fail `Badescape chr
 	;;
 	-> ret
@@ -664,9 +664,9 @@ const unicodeclass = {re, neg
 		-> `Fail (`Badrange s)
 	;;
 	if !neg
-		t = mk(`Ranges std.sldup(tab))
+		t = std.mk(`Ranges std.sldup(tab))
 	else
-		t = mk(`Ranges negate(tab))
+		t = std.mk(`Ranges negate(tab))
 	;;
 	-> `Some t
 }
@@ -704,9 +704,9 @@ const chrclass = {re
 	if neg
 		n = negate(m)
 		std.slfree(m)
-		t = mk(`Ranges n)
+		t = std.mk(`Ranges n)
 	else
-		t = mk(`Ranges m)
+		t = std.mk(`Ranges m)
 	;;
 	-> `Some t
 }
@@ -793,14 +793,6 @@ const peekc = {re
 
 	(c, _) = std.striter(re.pat)
 	-> c
-}
-
-const mk = {v
-	var t
-
-	t = std.alloc()
-	t# = v
-	-> t
 }
 
 const astfree = {t
