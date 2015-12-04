@@ -143,6 +143,7 @@ const findbase = {b, file
 	while !std.sleq(dir, "/")
 		bld = std.pathcat(dir, file)
 		if std.fexists(bld)
+			std.put("project base {}:\n", dir)
 			b.basedir = dir
 			b.bldfile = bld
 			-> true
