@@ -1,51 +1,51 @@
-bin intsort {noinst} =
+bin intsort {noinst,tag=bench} =
 	intsort.myr
 	lib ../lib/std:std
 	lib ../lib/sys:sys
 ;;
-bin copious-allocs {noinst} =
+bin copious-allocs {noinst,tag=bench} =
 	copious-allocs.myr
 	lib ../lib/std:std
 	lib ../lib/sys:sys
 ;;
-bin sha1-compute {noinst} =
+bin sha1-compute {noinst,tag=bench} =
 	sha1-compute.myr
 	lib ../lib/std:std
 	lib ../lib/sys:sys
 	lib ../lib/cryptohash:cryptohash
 ;;
-bin bigfactorial {noinst} =
+bin bigfactorial {noinst,tag=bench} =
 	bigfactorial.myr
 	lib ../lib/std:std
 	lib ../lib/sys:sys
 ;;
-bin mandelbrot {noinst} =
+bin mandelbrot {noinst,tag=bench} =
 	mandelbrot.myr
 	lib ../lib/std:std
 	lib ../lib/sys:sys
 	lib ../lib/bio:bio
 ;;
-bin regex-match {noinst} =
+bin regex-match {noinst,tag=bench} =
 	regex-match.myr
 	lib ../lib/std:std
 	lib ../lib/sys:sys
 	lib ../lib/regex:regex
 ;;
 
-bin many-memcpy {noinst} =
+bin many-memcpy {noinst,tag=bench} =
 	many-memcpy.myr
 	lib ../lib/std:std
 	lib ../lib/sys:sys
 ;;
 
 # benchmark runner
-bin runbench {noinst} =
+bin runbench {noinst,tag=bench} =
 	runbench.myr
 	lib ../lib/std:std
 	lib ../lib/sys:sys
 ;;
 
-cmd benchit =
+cmd benchit {tag=bench} =
 	./runbench
 		intsort
 		copious-allocs 

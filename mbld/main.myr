@@ -26,8 +26,8 @@ const main = {args : byte[:][:]
 	cmd = std.optparse(args, &[
 		.argdesc = "[inputs...]",
 		.opts = [
-			[.opt='t', .desc="list all available targets"],
-			[.opt='T', .arg="tag", .desc="build with specified systag"],
+			[.opt='T', .desc="list all available targets"],
+			[.opt='t', .arg="tag", .desc="build with specified systag"],
 			[.opt='S', .desc="generate assembly when building"],
 			[.opt='d', .desc="dump debugging information for mbld"],
 			[.opt='I', .arg="inc", .desc="add 'inc' to your include path"],
@@ -45,11 +45,11 @@ const main = {args : byte[:][:]
 	bld.initopts()
 	for opt in cmd.opts
 		match opt
-		| ('t', ""):	dumponly = true
+		| ('T', ""):	dumponly = true
 		| ('S', ""):	bld.opt_genasm = true
 		| ('I', arg):	bld.opt_incpaths = std.slpush(bld.opt_incpaths, arg)
 		| ('R', arg):	bld.opt_instroot = arg
-		| ('T', tag):	tags = std.slpush(tags, tag)
+		| ('t', tag):	tags = std.slpush(tags, tag)
 		| ('b', arg):
 			targname = arg
 			bintarg = true
