@@ -16,8 +16,8 @@ pkg bld =
 
 const test = {b
 	var tests : (byte[:][:], byte[:])[:]
+	var failed, p, ok
 	var bincmd
-	var failed : byte[:][:], ok
 
 	/* no implicit tests to run */
 	tests = [][:]
@@ -59,9 +59,10 @@ const test = {b
 	failed = [][:]
 	for (c, dir) in tests
 		setdir(b, dir)
-		if !runtest(c)
+		if !runtest(b, c)
 			ok = false
-			failed = std.slpush(failed, c[0])
+			p = std.pathcat(b.curdir, c[0])
+			failed = std.slpush(failed, p)
 		;;
 
 	;;
@@ -75,6 +76,9 @@ const test = {b
 	;;
 
 	printfailed(failed)
+	for f in failed
+		std.slfree(f)
+	;;
 	std.slfree(failed)
 	if ok
 		std.put("TESTS PASSED\n")
@@ -143,12 +147,14 @@ const buildtests = {b, targ
 	-> tests
 }
 
-const runtest = {cmd
-	var r, log
+const runtest = {b, cmd
+	var r, log, p
 
 	std.put("run")
 	for c in cmd
-		std.put(" {}", c)
+		p = std.pathcat(b.curdir, c)
+		std.put(" {}", p)
+		std.slfree(p)
 	;;
 	std.put(":\t")
 	match std.spork(cmd)
