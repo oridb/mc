@@ -110,11 +110,6 @@ const setdir = {b, dir
 
 	if !std.sleq(b.curdir, dir)
 		p = std.pathcat(b.basedir, dir)
-		if b.curdir.len != 0
-			std.put("Leaving directory '{}'\n", b.curdir)
-		;;
-
-		std.put("Entering directory '{}'\n", dir)
 		if !std.chdir(p)
 			std.fatal("could not cd into {}\n", p)
 		;;

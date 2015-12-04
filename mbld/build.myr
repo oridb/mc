@@ -117,7 +117,7 @@ const buildbin = {b, targ, addsrc
 
 	setdir(b, targ.dir)
 	addincludes(b, targ)
-	std.put("{}...\n", targ.name)
+	std.put("{}/{}...\n", b.curdir, targ.name)
 	dg = myrdeps(b, targ, false, addsrc)
 	if !std.hthas(dg.deps, targ.name)
 		std.fatal("no input files for {}\n", targ.name)
@@ -145,7 +145,7 @@ const buildlib = {b, targ
 	setdir(b, targ.dir)
 	addincludes(b, targ)
 	lib = targ.name
-	std.put("lib{}.a...\n", lib)
+	std.put("{}/lib{}.a...\n", b.curdir, lib)
 	archive = std.fmt("lib{}.a", lib)
 	dg = myrdeps(b, targ, false, false)
 	if !std.hthas(dg.deps, lib)
