@@ -109,9 +109,6 @@ static void setupinit(Node *n);
 %token<tok> Tgeneric /* var */
 %token<tok> Tcast    /* castto */
 
-%token<tok> Texport  /* export */
-%token<tok> Tprotect /* protect */
-
 %token<tok> Tgap     /* _ */
 %token<tok> Tellipsis/* ... */
 %token<tok> Tendln   /* ; or \n */
