@@ -89,13 +89,12 @@ const test = {b
 
 const printfailed : (f : byte[:][:] -> void) = {failed
 	if failed.len > 10
-		std.put("{} tests failed\n", failed.len)
+		std.put("\t{} tests failed\n", failed.len)
 	elif failed.len > 0
-		std.put("FAILURES: ")
+		std.put("FAILURES:\n")
 		for t in failed
-			std.put("{} ", t)
+			std.put("\t{}\n", t)
 		;;
-		std.put("\n")
 	;;
 }
 
