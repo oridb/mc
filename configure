@@ -83,7 +83,7 @@ case $OS in
     *)
         echo ''
         echo '********************************'
-        echo 'Unknown system'
+        echo 'Unknown system '$OS
         echo 'Cannot build'
         echo '********************************'
         rm -f config.h config.mk
@@ -92,14 +92,14 @@ case $OS in
 esac
 
 case $MACH in
-    *x86_64*)
-        echo 'export ARCH=x64' >> config.mk
+    *x86_64* | *amd64*)
+	echo 'export ARCH=x64' >> config.mk
         echo 'const Arch = "x64"' >> mbld/config.myr
         ;;
     *)
         echo ''
         echo '********************************'
-        echo 'Unknown system'
+        echo 'Unknown arch '$MACH
         echo 'Cannot build'
         echo '********************************'
 esac
