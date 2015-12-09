@@ -374,7 +374,11 @@ const openlib = {lib, incs
 	| `std.Ok file:	-> file
 	| `std.Fail m:	/* nothing */
 	;;
-	std.fatal("could not find library {}.\n", lib)
+	std.put("could not find library {} in search path:\n", lib)
+	for p in incs
+		std.put("\t{}\n", p)
+	;;
+	std.fatal("\t{}\n", config.Libpath)
 }
 
 /* pushes a dep into the dependency list */

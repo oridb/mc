@@ -438,6 +438,12 @@ const findlib = {lib, incs
 		;;
 		std.slfree(p)
 	;;
+
+	p = std.pathjoin([opt_instroot, config.Libpath, lib][:])
+	if std.fexists(p)
+		-> `std.Some p
+	;;
+	std.slfree(p)
 	-> `std.None
 }
 
@@ -459,6 +465,7 @@ const freshlibs = {targ, libgraph
 			for inc in targ.incpath
 				std.fput(1, "\t{}\n", inc)
 			;;
+			std.fput(1, "\t{}/{}\n", opt_instroot, config.Libpath)
 			std.exit(1)
 		;;
 	;;

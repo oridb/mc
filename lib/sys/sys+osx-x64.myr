@@ -658,8 +658,6 @@ pkg sys =
 	const kevent	: (q : fd, cl : kevent[:], el : kevent[:], flg : kflags, timeout : timespec# -> int64)
 	const kevent64	: (q : fd, cl : kevent64[:], el : kevent64[:], flg : kflags, timeout : timespec# -> int64)
 
-
-
 	/* networking */
 	const socket	: (dom : sockfam, stype : socktype, proto : sockproto	-> fd)
 	const connect	: (sock	: fd, addr : sockaddr#, len : size -> int)
