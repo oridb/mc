@@ -68,6 +68,7 @@ const dragon4 = {sb, isneg, f, e, p, mode, cutoff
 	s = bigshli(mkbigint(1), max(0, -(e - p)))
 	mm = bigshli(mkbigint(1), max((e - p), 0))
 	mp = bigdup(mm)
+	u = mkbigint(0)
 
 	/* fixup: unequal gaps */
 	t = mkbigint(1)

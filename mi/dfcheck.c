@@ -23,6 +23,8 @@ static void checkundef(Node *n, Reaching *r, Bitset *reach, Bitset *kill)
 		return;
 	if (exprop(n) == Ovar) {
 		did = n->expr.did;
+		if (decls[did]->decl.isconst)
+			return;
 		for (j = 0; j < r->ndefs[did]; j++) {
 			t = tybase(exprtype(n));
 			if (t->type == Tystruct || t->type == Tyunion || t->type == Tyarray || t->type == Tytuple)
@@ -33,7 +35,7 @@ static void checkundef(Node *n, Reaching *r, Bitset *reach, Bitset *kill)
 				continue;
 			def = nodes[r->defs[did][j]];
 			if (exprop(def) == Oundef)
-				fatal(n, "%s used before definition", namestr(n->expr.args[0]));
+				fatal(n, "%s used before definition [%d]", namestr(n->expr.args[0]), (int)did);
 		}
 	} else {
 		switch (exprop(n)) {
@@ -44,7 +46,7 @@ static void checkundef(Node *n, Reaching *r, Bitset *reach, Bitset *kill)
 			break;
 		case Oaddr:
 		case Oslice:
-			/* these don't actually look at the of args[0], so they're ok. */
+			/* these don't actually look at the value of args[0], so they're ok. */
 			for (i = 1; i < n->expr.nargs; i++)
 				checkundef(n->expr.args[i], r, reach, kill);
 			break;
@@ -127,5 +129,5 @@ static void checkret(Cfg *cfg)
 void check(Cfg *cfg)
 {
 	checkret(cfg);
-	if(0) checkreach(cfg);
+	checkreach(cfg);
 }

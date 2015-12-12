@@ -23,7 +23,7 @@
 Node *file;
 char debugopt[128];
 int writeasm;
-int extracheck;
+int extracheck = 1;
 int p9asm;
 char *outfile;
 char **incpaths;
@@ -164,7 +164,7 @@ int main(int argc, char **argv)
 
 	outfile = NULL;
 
-	optinit(&ctx, "d:hSo:I:9G", argv, argc);
+	optinit(&ctx, "cd:hSo:I:9G", argv, argc);
 	asmsyntax = Defaultasm;
 	while (!optdone(&ctx)) {
 		switch (optnext(&ctx)) {
@@ -181,6 +181,7 @@ int main(int argc, char **argv)
 			break;
 		case 'c':
 			extracheck = 1;
+			break;
 		case 'd':
 			while (ctx.optarg && *ctx.optarg)
 				debugopt[*ctx.optarg++ & 0x7f]++;

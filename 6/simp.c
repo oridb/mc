@@ -963,6 +963,10 @@ static Node *assign(Simp *s, Node *lhs, Node *rhs)
 		t = lval(s, lhs);
 		u = rval(s, rhs, t);
 
+		/* hack: we're assigning to lhs, but blitting shit over doesn't
+		 * trigger that */
+		if (stacknode(lhs))
+			def(s, lhs);
 		/* if we stored the result into t, rval() should return that,
 		 * so we know our work is done. */
 		if (u == t) {

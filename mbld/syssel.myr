@@ -152,7 +152,8 @@ const skipspace = {data
 const word = {data
 	var c, split
 
-	c = std.decode(data[split:])
+	split = 0
+	c = std.decode(data[:])
 	while std.isalnum(c) || c == '.' || c == '_' || c == '$'
 		split += std.charlen(c)
 	;;

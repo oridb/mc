@@ -61,6 +61,7 @@ const strcasehash = {s
 	var chars
 	var c, h
 
+	chars = [][:]
 	while s.len != 0
 		(c, s) = std.striter(s)
 		chars = std.slpush(chars, c)

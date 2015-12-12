@@ -13,8 +13,12 @@ const __init__ = {
 	var bigint : bigint#
 	var bitset : bitset#
 
+	bigint = mkbigint(0)
+	bitset = mkbs()
 	fmtinstall(typeof(bigint), bigfmt, [][:])
 	fmtinstall(typeof(bitset), bsfmt, [][:])
+	bigfree(bigint)
+	bsfree(bitset)
 }
 
 const bigfmt = {sb, ap, opts
