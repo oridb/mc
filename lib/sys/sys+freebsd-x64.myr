@@ -133,6 +133,25 @@ pkg sys =
 		name	: byte[256]	
 	;;	
 
+	type rtprio = struct
+		rttype	: uint16
+		rtprio	: uint16
+	;;
+
+	type thrparam = struct
+		startfn	: void#	/* pointer to code for thread entry */
+		arg	: void#	/* pointer argument for thread entry */
+		stkbase	: byte#	/* stack base address */
+		stksz	: size	/* size of stack */
+		tlsbase	: byte#	/* base of thread local storage */
+		tlssz	: size	/* size of tls */
+		tid	: uint64#	/* place to store new tid */
+		ptid	: uint64#	/* place to store parent tid */
+		flags	: int32	/* flags for the thread */
+		rtp	: rtprio#	/* realtime priority */
+		spare	: void#[3]	/* padding */
+	;;
+
 	/* open options */
 	const Ordonly  	: fdopt = 0x0
 	const Owronly  	: fdopt = 0x1
@@ -656,6 +675,10 @@ pkg sys =
 	/* wrappers to extract wait status */
 	const waitstatus	: (st : int32 -> waitstatus)
 
+	/* thread control */
+	const thr_new	: (param : thrparam#, paramsz : int -> int)
+	const thr_exit	: (state : int64# -> void)
+
 	/* fd manipulation */
 	const open	: (path:byte[:], opts:fdopt -> fd)
 	const openmode	: (path:byte[:], opts:fdopt, mode:int64 -> fd)
@@ -771,6 +794,11 @@ const execve	= {cmd, args, env
 	-> syscall(Sysexecve, cstring(cmd), a(p), a(cenv))
 }
 
+/* thread management */
+
+const thr_new	= {param, sz;	-> syscall(Systhr_create, a(param), a(sz)) castto(int)}
+const thr_exit	= {state;	syscall(Systhr_exit, a(state))}
+
 /* fd manipulation */
 const open	= {path, opts;		-> syscall(Sysopen, cstring(path), a(opts), a(0o777)) castto(fd)}
 const openmode	= {path, opts, mode;	-> syscall(Sysopen, cstring(path), a(opts), a(mode)) castto(fd)}
@@ -795,7 +823,6 @@ const pipe	= {fds;	-> __freebsd_pipe(fds)}
 const dup 	= {fd;	-> syscall(Sysdup, a(fd)) castto(fd)}
 const dup2 	= {src, dst;	-> syscall(Sysdup2, a(src), a(dst)) castto(fd)}
 const fcntl	= {fd, cmd, args; 	-> syscall(Sysfcntl, a(fd), a(cmd), a(args))}
-
 
 /* networking */
 const socket	= {dom, stype, proto;	-> syscall(Syssocket, a(dom), a(stype), a(proto)) castto(fd) }
