@@ -31,6 +31,7 @@ const mtxlock = {mtx
 	/* 
 	Uncontended case: we get an unlocked mutex, and we lock it.
 	*/
+        c = Locked
 	for var i = 0; i < nspin; i++
 		c = xcas(&mtx._state, Unlocked, Locked) 
 		if c == Unlocked
