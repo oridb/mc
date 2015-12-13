@@ -29,7 +29,7 @@ lib std {inc=.} =
 	hassuffix.myr
 	htab.myr
 	intparse.myr
-        introspect.myr
+	introspect.myr
 	ipparse.myr
 	mk.myr
 	mkpath.myr
@@ -63,6 +63,7 @@ lib std {inc=.} =
 	units.myr
 	utf.myr
 	varargs.myr
+	writeall.myr
 
 	# asm optimizations
 	memops.myr
