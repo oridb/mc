@@ -1,0 +1,24 @@
+use "errno.use"
+use "result.use"
+use "option.use"
+use "syswrap.use"
+use "types.use"
+
+pkg std =
+	const writeall : (fd : fd, src : byte[:] -> (size, option(errno)))
+;;
+
+const writeall = {fd, src
+	var sz
+
+	sz = src.len
+	while src.len != 0
+		match std.write(fd, src)
+		| `Ok n:
+			src = src[n:]
+		| `Fail e:
+			-> (sz - src.len, `Some e)
+		;;
+	;;
+	-> (sz, `None)
+}
