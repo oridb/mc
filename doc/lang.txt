@@ -323,8 +323,8 @@ TABLE OF CONTENTS:
         Match statements consist of the keyord 'match', followed by
         the expression to match against the patterns, followed by a
         newline. The body of the match statement consists of a list
-        of pattern clauses. A patterned clause is a pattern, followed
-        by a ':', followed by a block body.
+        of pattern clauses. A patterned clause is a '|', followed by
+        a pattern, followed by a ':', followed by a block body.
 
         An example of the syntax follows:
 
@@ -332,20 +332,17 @@ TABLE OF CONTENTS:
             var v = `Val 123            /* set up variable to match */
             match v
             /* pattern clauses */
-            `Val 123:
-                std.put("Matched literal union pat\n");;
-            Val234:
+            | `Val 123:
+                std.put("Matched literal union pat\n")
+            | Val234:
                 std.put("Matched const value pat\n")
-                ;;
-            `Val a:
+            | `Val a:
                 std.put("Matched pattern with capture\n")
                 std.put("Captured value: a = %i\n", a)
-                ;;
-            a
-                std.put("A top level bind matches anything.");;
-            `Val 111
+            | a
+                std.put("A top level bind matches anything.")
+            | `Val 111
                 std.put("Unreachable block.")
-                ;;
             ;;
 
 
