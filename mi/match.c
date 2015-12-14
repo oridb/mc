@@ -351,8 +351,6 @@ static int addwild(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***ca
 {
 	Node *asn;
 
-	asn = mkexpr(pat->loc, Oasn, pat, val, NULL);
-	asn->expr.type = exprtype(pat);
 	if (cap && ncap) {
 		asn = mkexpr(pat->loc, Oasn, pat, val, NULL);
 		asn->expr.type = exprtype(pat);
