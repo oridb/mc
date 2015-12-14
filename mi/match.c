@@ -565,6 +565,10 @@ static int addstruct(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***
 		tail = NULL;
 		ntail = 0;
 
+		if (!memb) {
+			memb = mkexpr(ty->sdecls[i]->loc, Ogap, NULL);
+			memb->expr.type = mty;
+		}
 		for (j = 0; j < nlast; j++) {
 			/* add a _ capture if we don't specify the value */
 			if (!memb) {

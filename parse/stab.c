@@ -318,7 +318,7 @@ void updatetype(Stab *st, Node *n, Type *t)
 int mergetype(Type *old, Type *new)
 {
 	if (!new) {
-		lfatal(new->loc, "double prototyping of %s", tystr(new));
+		lfatal(old->loc, "double prototyping of %s", tystr(new));
 	}
 	else if (old->vis == Visexport && new->vis != Visexport) {
 		if (!old->sub && new->sub) {
