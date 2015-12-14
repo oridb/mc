@@ -425,6 +425,7 @@ static int addstr(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap
 
 	last = NULL;
 	nlast = 0;
+	ret = 0;
 	if (addpat(p, v, start, next, cap, ncap, &last, &nlast))
 		ret = 1;
 
