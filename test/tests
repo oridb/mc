@@ -55,6 +55,7 @@ B slicelen	E	5
 B call		E	42
 B doublecall	P	42,33
 B voidcall	E	12
+B voidarg	P	3
 B callbig	E	42
 B nestfn	E	42
 B foldidx	P	123,456
