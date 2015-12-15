@@ -1540,8 +1540,12 @@ static Node *rval(Simp *s, Node *n, Node *dst)
 		append(s, mkexpr(n->loc, Oret, NULL));
 		break;
 	case Oasn:
-		if (tybase(exprtype(n))->type != Tyvoid)
+		if (tybase(exprtype(n))->type == Tyvoid) {
+			if (!ispure(args[1]))
+				r = rval(s, args[1], NULL);
+		} else {
 			r = assign(s, args[0], args[1]);
+		}
 		break;
 	case Ocall:
 		r = simpcall(s, n, dst);
