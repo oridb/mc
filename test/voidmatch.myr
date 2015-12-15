@@ -1,0 +1,8 @@
+use std
+
+const main = {
+	match `std.Some void
+	| `std.Some x:	std.put("ok\n")
+	| `std.None:	std.put("fail\n")
+	;;
+}

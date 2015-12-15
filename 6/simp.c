@@ -256,6 +256,9 @@ static Node *set(Node *a, Node *b)
 
 	assert(a != NULL && b != NULL);
 	assert(exprop(a) == Ovar || exprop(a) == Oderef);
+	if (tybase(exprtype(a))->type == Tyvoid)
+		return a;
+
 	n = mkexpr(a->loc, Oset, a, b, NULL);
 	n->expr.type = exprtype(a);
 	return n;
