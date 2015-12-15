@@ -1,0 +1,45 @@
+use std
+
+const main = {
+	var v32, t32 : int32
+	var vu64, tu64 : uint64
+	var allsame
+
+	/* basic int32 */
+	allsame = true
+	v32 = std.rand(0, 666)
+	for var i = 0; i < 128; i++
+		t32 = std.rand(0, 666)
+		std.assert(t32 >= 0 && t32 < 666, "value {} is out of range [0, 666)\n", t32)
+		if t32 != v32
+			allsame = false
+		;;
+	;;
+	std.assert(!allsame, "all values generated were identical.\n")
+
+
+	/* negative range */
+	allsame = true
+	v32 = std.rand(-888, -111)
+	for var i = 0; i < 128; i++
+		t32 = std.rand(-888, -111)
+		std.assert(t32 >= -888 && t32 < -111, "value {} is out of range [-888, -111)\n", t32)
+		if t32 != v32
+			allsame = false
+		;;
+	;;
+	std.assert(!allsame, "all values generated were identical.\n")
+
+
+	/* basic uint64 */
+	allsame = true
+	vu64 = std.rand(0, 88)
+	for var i = 0; i < 128; i++
+		tu64 = std.rand(0, 88)
+		std.assert(tu64 >= 0 && tu64 < 666, "value {} is out of range [0, 88)\n", tu64)
+		if tu64 != vu64
+			allsame = false
+		;;
+	;;
+	std.assert(!allsame, "all values generated were identical.\n")
+}

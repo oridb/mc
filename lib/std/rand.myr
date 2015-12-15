@@ -1,4 +1,5 @@
 use "die.use"
+use "extremum.use"
 use "assert.use"
 use "types.use"
 use "alloc.use"
@@ -113,11 +114,11 @@ generic rngrand = {rng, lo, hi -> @a::(integral,numeric)
 	var maxrand
 	var val
 
-	assert(hi - lo > 0, "rand.myr: range for random values must be >= 1")
+	span = abs(hi - lo)
+	assert(span > 0, "rand.myr: range for random values must be >= 1, got hi={}, lo={}\n", hi, lo)
 
-	span = hi - lo
-	maxrand = (1 << (8*sizeof(@a))) - 1 /* max for signed value */
-	if maxrand < 0 /* signed */
+	maxrand = ~0
+	if maxrand < 0 /* if we're signed the maximum value is different */
 		maxrand = (1 << (8*sizeof(@a)-1)) - 1 /* max for signed value */
 	;;
 
