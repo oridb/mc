@@ -87,6 +87,8 @@ const installed = {
 	var x : int
 	var p : pair
 
+	x = 0
+	p = [.x=0, .y=0]
 	std.fmtinstall(std.typeof(x), intfmt, [][:])
 	std.fmtinstall(std.typeof(p), pairfmt, [
 		("x", true),
