@@ -221,8 +221,6 @@ Node *mkimplstmt(Srcloc loc, Node *name, Type *t, Node **decls, size_t ndecls)
 	return n;
 }
 
-Node *mkintlit(Srcloc loc, uvlong val) { return mkexpr(loc, Olit, mkint(loc, val), NULL); }
-
 Node *mklbl(Srcloc loc, char *lbl)
 {
 	Node *n;
@@ -271,6 +269,10 @@ Node *mkint(Srcloc loc, uint64_t val)
 	n->lit.intval = val;
 
 	return n;
+}
+
+Node *mkintlit(Srcloc loc, uvlong val) {
+	return mkexpr(loc, Olit, mkint(loc, val), NULL);
 }
 
 Node *mkchar(Srcloc loc, uint32_t val)
@@ -372,6 +374,14 @@ Node *mkbool(Srcloc loc, int val)
 	n->lit.boolval = val;
 
 	return n;
+}
+
+Node *mkboollit(Srcloc loc, int val) {
+	Node *e;
+
+	e = mkexpr(loc, Olit, mkbool(loc, val), NULL);
+	e->expr.type = mktype(loc, Tybool);
+	return e;
 }
 
 Node *mkvoid(Srcloc loc)

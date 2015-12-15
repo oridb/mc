@@ -561,6 +561,7 @@ Node *mkmatch(Srcloc l, Node *pat, Node *body);
 Node *mkblock(Srcloc l, Stab *scope);
 Node *mkimplstmt(Srcloc l, Node *name, Type *type, Node **impls, size_t nimpls);
 Node *mkintlit(Srcloc l, uvlong val);
+Node *mkboollit(Srcloc l, int val);
 Node *mkidxinit(Srcloc l, Node *idx, Node *init);
 
 Node *mkvoid(Srcloc loc);

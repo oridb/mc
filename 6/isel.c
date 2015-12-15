@@ -949,8 +949,10 @@ void addarglocs(Isel *s, Func *fn)
 			g(s, Imov, a, l, NULL);
 			htput(s->reglocs, arg, l);
 			nints++;
-		} else {
-			assert(tybase(decltype(arg))->type == Tyvoid);
+		} else if (tybase(decltype(arg))->type != Tyvoid) {
+			/* varargs go on the stack */
+			htput(s->stkoff, arg, itop(-(argoff + 2*Ptrsz)));
+			argoff += size(arg);
 		}
 	}
 }

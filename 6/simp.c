@@ -963,6 +963,9 @@ static Node *assign(Simp *s, Node *lhs, Node *rhs)
 		t = lval(s, lhs);
 		u = rval(s, rhs, t);
 
+		if (tybase(exprtype(lhs))->type == Tyvoid)
+			return u;
+
 		/* hack: we're assigning to lhs, but blitting shit over doesn't
 		 * trigger that */
 		if (stacknode(lhs))
@@ -1149,6 +1152,10 @@ static Node *compare(Simp *s, Node *n, int fields)
 	};
 	Node *r;
 	Op newop;
+
+	/* void is always void */
+	if (tybase(exprtype(n->expr.args[0]))->type == Tyvoid)
+		return mkboollit(n->loc, 1);
 
 	newop = Obad;
 	if (istysigned(tybase(exprtype(n->expr.args[0]))))
@@ -1509,7 +1516,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
 		break;
 	case Ovar:
 		r = loadvar(s, n, dst);
-		break;
+		break;;
 	case Oidxlen:
 		if (s->nidxctx == 0)
 			fatal(n, "'$' undefined outside of index or slice expression");
@@ -1540,12 +1547,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
 		append(s, mkexpr(n->loc, Oret, NULL));
 		break;
 	case Oasn:
-		if (tybase(exprtype(n))->type == Tyvoid) {
-			if (!ispure(args[1]))
-				r = rval(s, args[1], NULL);
-		} else {
-			r = assign(s, args[0], args[1]);
-		}
+		r = assign(s, args[0], args[1]);
 		break;
 	case Ocall:
 		r = simpcall(s, n, dst);
