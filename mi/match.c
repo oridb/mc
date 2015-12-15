@@ -256,7 +256,7 @@ static int addwildrec(Srcloc loc, Type *ty, Dtree *start, Dtree *accept, Dtree *
 	tail = NULL;
 	ntail = 0;
 	ty = tybase(ty);
-	if (istyprimitive(ty)) {
+	if (istyprimitive(ty) || ty->type == Tyvoid) {
 		for (i = 0; i < start->nnext; i++)
 			lappend(end, nend, start->next[i]);
 		if (start->any) {
@@ -338,10 +338,8 @@ static int addwildrec(Srcloc loc, Type *ty, Dtree *start, Dtree *accept, Dtree *
 		ret = acceptall(start, accept);
 		lappend(&last, &nlast, accept);
 		break;
-	case Tyvoid:
-		ret = 1;
-		break;
 	default:
+		ret = 1;
 		lappend(&last, &nlast, accept);
 		break;
 	}
