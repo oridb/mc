@@ -329,7 +329,7 @@ size_t tyalign(Type *ty)
 			align = max(align, tyalign(decltype(ty->sdecls[i])));
 		break;
 	default:
-		align = tysize(ty);
+		align = max(align, tysize(ty));
 	}
 	return min(align, Ptrsz);
 }

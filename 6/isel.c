@@ -409,6 +409,8 @@ static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size
 	Loc *tmp, *src, *dst; /* source memory, dst memory */
 
 	assert(szmodes[align] != ModeNone);   /* make sure we have a valid alignment */
+	if (!sz)
+		return;
 	sp = inr(s, from);
 	dp = inr(s, to);
 
