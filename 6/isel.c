@@ -78,7 +78,7 @@ static Mode tymode(Type *t)
 		}
 		break;
 	}
-	return ModeQ;
+	return ModeNone;
 }
 
 static Mode mode(Node *n)
@@ -950,8 +950,7 @@ void addarglocs(Isel *s, Func *fn)
 			htput(s->reglocs, arg, l);
 			nints++;
 		} else {
-			htput(s->stkoff, arg, itop(-(argoff + 2*Ptrsz)));
-			argoff += size(arg);
+			assert(tybase(decltype(arg))->type == Tyvoid);
 		}
 	}
 }

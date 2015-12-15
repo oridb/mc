@@ -1,0 +1,12 @@
+use std
+
+const main = {
+	var x : void
+	
+
+	std.put("{}\n", f(x, 1, void, 2))
+}
+
+const f = {v1, n1, v2, n2
+	-> n1 + n2
+}
