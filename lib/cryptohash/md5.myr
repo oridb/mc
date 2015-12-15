@@ -45,7 +45,7 @@ const md5add = {st, data
 		std.slcp(st.tail[ntail:ntail + n], data[:n])
 		data = data[n:]
 		if n + ntail < 64
-			->
+			-> void
 		;;
 		step(st, st.tail[:])
 	;;

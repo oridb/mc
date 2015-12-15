@@ -180,12 +180,13 @@ static void fixup(Node *n)
 	case Nlit:
 		switch (n->lit.littype) {
 		case Lfunc:	fixup(n->lit.fnval);	break;
-		case Lchr:
-		case Lint:
-		case Lflt:
-		case Lstr:
-		case Llbl:
-		case Lbool: break;
+		case Lvoid:	break;
+		case Lchr:	break;
+		case Lint:	break;
+		case Lflt:	break;
+		case Lstr:	break;
+		case Llbl:	break;
+		case Lbool:	break;
 		}
 		break;
 	case Nifstmt:
@@ -273,6 +274,7 @@ static Node *specializenode(Node *n, Htab *tsmap)
 		r->lit.littype = n->lit.littype;
 		r->lit.type = tysubst(n->expr.type, tsmap);
 		switch (n->lit.littype) {
+		case Lvoid:	break;
 		case Lchr:	r->lit.chrval = n->lit.chrval;	break;
 		case Lint:	r->lit.intval = n->lit.intval;	break;
 		case Lflt:	r->lit.fltval = n->lit.fltval;	break;

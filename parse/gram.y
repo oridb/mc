@@ -97,6 +97,7 @@ static void setupinit(Node *n);
 %token<tok> Tfloatlit
 %token<tok> Tchrlit
 %token<tok> Tboollit
+%token<tok> Tvoidlit
 
 %token<tok> Ttrait   /* trait */
 %token<tok> Timpl   /* trait */
@@ -474,10 +475,11 @@ compoundtype
 	| type Tosqbrac Tcolon Tcsqbrac {$$ = mktyslice($2->loc, $1);}
 	| type Tosqbrac expr Tcsqbrac {$$ = mktyarray($2->loc, $1, $3);}
 	| type Tosqbrac Tellipsis Tcsqbrac {$$ = mktyarray($2->loc, $1, NULL);}
-	| type Tderef {$$ = mktyptr($2->loc, $1);}
-	| Tat Tident {$$ = mktyparam($1->loc, $2->id);}
-	| name       {$$ = mktyunres($1->loc, $1, NULL, 0);}
 	| name Toparen typelist Tcparen {$$ = mktyunres($1->loc, $1, $3.types, $3.ntypes);}
+	| type Tderef	{$$ = mktyptr($2->loc, $1);}
+	| Tat Tident	{$$ = mktyparam($1->loc, $2->id);}
+	| Tvoidlit	{$$ = mktyunres($1->loc, mkname($1->loc, $1->id), NULL, 0);}
+	| name	{$$ = mktyunres($1->loc, $1, NULL, 0);}
 	;
 
 functype: Toparen funcsig Tcparen {$$ = $2;}
@@ -748,6 +750,7 @@ littok  : Tstrlit       {$$ = mkstr($1->loc, $1->strval);}
 	| Tchrlit       {$$ = mkchar($1->loc, $1->chrval);}
 	| Tfloatlit     {$$ = mkfloat($1->loc, $1->fltval);}
 	| Tboollit      {$$ = mkbool($1->loc, !strcmp($1->id, "true"));}
+	| Tvoidlit      {$$ = mkvoid($1->loc);}
 	| Tintlit {
 		$$ = mkint($1->loc, $1->intval);
 		if ($1->inttype)

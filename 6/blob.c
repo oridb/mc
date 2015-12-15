@@ -134,6 +134,7 @@ static size_t bloblit(Blob *seq, Htab *strtab, Node *v, Type *ty)
 	assert(v->type == Nlit);
 	sz = tysize(ty);
 	switch (v->lit.littype) {
+	case Lvoid:	break;
 	case Lint:	b(seq, mkblobi(intsz[sz], v->lit.intval));	break;
 	case Lbool:	b(seq, mkblobi(Bti8, v->lit.boolval));	break;
 	case Lchr:	b(seq, mkblobi(Bti32, v->lit.chrval));	break;

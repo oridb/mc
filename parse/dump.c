@@ -209,6 +209,7 @@ static void outnode(Node *n, FILE *fd, int depth)
 		   break;
 	case Nlit:
 		   switch (n->lit.littype) {
+		   case Lvoid:	fprintf(fd, " Lvoid\n");	break;
 		   case Lchr:	fprintf(fd, " Lchr %c\n", n->lit.chrval);	break;
 		   case Lbool:	fprintf(fd, " Lbool %s\n", n->lit.boolval ? "true" : "false");	break;
 		   case Lint:	fprintf(fd, " Lint %llu\n", n->lit.intval);	break;

@@ -764,6 +764,7 @@ void dtreedumplit(FILE *fd, Dtree *dt, Node *n, size_t depth)
 
 	s = lblstr(dt->lbl);
 	switch (n->lit.littype) {
+	case Lvoid:	findentf(fd, depth, "%s: Lvoid\n");	break;
 	case Lchr:	findentf(fd, depth, "%s: Lchr %c\n", s, n->lit.chrval);	break;
 	case Lbool:	findentf(fd, depth, "%s: Lbool %s\n", s, n->lit.boolval ? "true" : "false");	break;
 	case Lint:	findentf(fd, depth, "%s: Lint %llu\n", s, n->lit.intval);	break;

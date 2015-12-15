@@ -191,6 +191,7 @@ static int kwd(char *s)
 		{"union", Tunion},
 		{"use", Tuse},
 		{"var", Tvar},
+		{"void", Tvoidlit},
 		{"while", Twhile},
 	};
 

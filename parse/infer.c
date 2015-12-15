@@ -526,6 +526,7 @@ static Type *littype(Node *n)
 	t = NULL;
 	if (!n->lit.type) {
 		switch (n->lit.littype) {
+		case Lvoid:	t = mktype(n->loc, Tyvoid);	break;
 		case Lchr:	t = mktype(n->loc, Tychar);	break;
 		case Lbool:	t = mktype(n->loc, Tybool);	break;
 		case Lint:	t = mktylike(n->loc, Tyint);	break;
@@ -999,9 +1000,6 @@ static void unifycall(Inferstate *st, Node *n)
 		fatal(n, "calling uncallable type %s", tystr(ft));
 	}
 	/* first arg: function itself */
-	for (i = 1; i < n->expr.nargs; i++)
-		if (exprtype(n->expr.args[i])->type == Tyvoid)
-			fatal(n, "void passed where value expected, near %s", ctxstr(st, n));
 	for (i = 1; i < n->expr.nargs; i++) {
 		if (i == ft->nsub)
 			fatal(n, "%s arity mismatch (expected %zd args, got %zd)",

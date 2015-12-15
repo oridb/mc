@@ -189,7 +189,7 @@ const rtinsert = {rt, lo, hi
 	std.assert(lo.len == hi.len, "range sizes differ")
 	if lo.len == 0
 		rt.end = true
-		->
+		-> void
 	;;
 
 	n = rt.ranges.len
@@ -362,7 +362,7 @@ const append = {re, insn
 /* instruction dump */
 const idump = {re
 	if !re.debug
-		->
+		-> void
 	;;
 	for var i = 0; i < re.proglen; i++
 		std.put("{}:\t", i)
@@ -394,7 +394,7 @@ const idump = {re
 /* AST dump */
 const dump = {re, t, indent
 	if !re.debug
-		->
+		-> void
 	;;
 	for var i = 0; i < indent; i++
 		std.put("  ")

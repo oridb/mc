@@ -121,7 +121,7 @@ const dumpgraph = {dg
 	var keys
 
 	if !opt_debug
-		->
+		-> void
 	;;
 	keys = std.htkeys(dg.deps)
 	std.put("digraph dg {{\n")
@@ -137,7 +137,7 @@ const srcdeps = {b, ds, g, path, obj, usefile
 	var deps
 
 	if std.hthas(g.done, path)
-		->
+		-> void
 	;;
 
 	ds.depstk = std.slpush(ds.depstk, path)
@@ -185,7 +185,7 @@ const addusedep = {b, ds, g, f, usefile, line
 		if opt_debug
 			std.put("already loaded deps for {}\n", usefile)
 		;;
-		->
+		-> void
 	;;
 	match std.htget(g.input, usefile)
 	| `std.Some path:
@@ -314,7 +314,7 @@ const scrapelibs = {dg, lib, incs
 	var done
 
 	if std.hthas(dg.libs, lib)
-		->
+		-> void
 	;;
 
 	f = openlib(lib, incs)

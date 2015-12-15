@@ -133,6 +133,7 @@ static Loc *loc(Isel *s, Node *n)
 		case Olit:
 			v = n->expr.args[0];
 			switch (v->lit.littype) {
+			case Lvoid:	l = NULL;	break;
 			case Lchr:	l = loclit(v->lit.chrval, mode(n));	break;
 			case Lbool:	l = loclit(v->lit.boolval, mode(n));	break;
 			case Lint:	l = loclit(v->lit.intval, mode(n));	break;

@@ -1328,6 +1328,8 @@ static Node *simpcall(Simp *s, Node *n, Node *dst)
 	for (i = 1; i < n->expr.nargs; i++) {
 		if (i < ft->nsub && tybase(ft->sub[i])->type == Tyvalist)
 			lappend(&args, &nargs, vatypeinfo(s, n));
+		if (tybase(exprtype(n->expr.args[i]))->type == Tyvoid)
+			continue;
 		lappend(&args, &nargs, rval(s, n->expr.args[i], NULL));
 		if (exprop(n->expr.args[i]) == Oaddr)
 			if (exprop(n->expr.args[i]->expr.args[0]) == Ovar)
@@ -1483,7 +1485,10 @@ static Node *rval(Simp *s, Node *n, Node *dst)
 		break;
 	case Olit:
 		switch (args[0]->lit.littype) {
-		case Lchr: case Lbool: case Llbl:
+		case Lvoid:
+		case Lchr:
+		case Lbool:
+		case Llbl:
 			r = n;
 			break;
 		case Lint: 
@@ -1535,7 +1540,8 @@ static Node *rval(Simp *s, Node *n, Node *dst)
 		append(s, mkexpr(n->loc, Oret, NULL));
 		break;
 	case Oasn:
-		r = assign(s, args[0], args[1]);
+		if (tybase(exprtype(n))->type != Tyvoid)
+			r = assign(s, args[0], args[1]);
 		break;
 	case Ocall:
 		r = simpcall(s, n, dst);

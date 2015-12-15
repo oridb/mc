@@ -150,7 +150,7 @@ generic slfree	 = {sl
 	var head
 
 	if sl.len == 0
-		->
+		-> void
 	;;
 
 	checkhdr(sl castto(byte#))

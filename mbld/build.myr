@@ -66,7 +66,7 @@ const buildtarg = {b, targ
 
 const addeps = {b, targ, depset
 	if std.hthas(depset, targ)
-		->
+		-> void
 	;;
 
 	std.htput(depset, targ, true)

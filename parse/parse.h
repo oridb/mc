@@ -563,6 +563,7 @@ Node *mkimplstmt(Srcloc l, Node *name, Type *type, Node **impls, size_t nimpls);
 Node *mkintlit(Srcloc l, uvlong val);
 Node *mkidxinit(Srcloc l, Node *idx, Node *init);
 
+Node *mkvoid(Srcloc loc);
 Node *mkbool(Srcloc l, int val);
 Node *mkint(Srcloc l, uint64_t val);
 Node *mkchar(Srcloc l, uint32_t val);

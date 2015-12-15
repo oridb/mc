@@ -54,7 +54,7 @@ generic siftdown = {sl, start, cmp
 			sl[s] = tmp
 			r = s
 		else
-			->
+			-> void
 		;;
 	;;
 }

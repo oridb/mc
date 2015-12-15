@@ -72,7 +72,7 @@ const test = {b
 	;;
 	std.slfree(tests)
 	if tests.len == 0
-		->
+		-> void
 	;;
 
 	printfailed(failed)

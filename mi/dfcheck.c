@@ -27,7 +27,7 @@ static void checkundef(Node *n, Reaching *r, Bitset *reach, Bitset *kill)
 			return;
 		for (j = 0; j < r->ndefs[did]; j++) {
 			t = tybase(exprtype(n));
-			if (t->type == Tystruct || t->type == Tyunion || t->type == Tyarray || t->type == Tytuple)
+			if (t->type == Tystruct || t->type == Tyunion || t->type == Tyarray || t->type == Tytuple || t->type == Tyvoid)
 				continue;
 			if (bshas(kill, r->defs[did][j]))
 				continue;
@@ -35,7 +35,7 @@ static void checkundef(Node *n, Reaching *r, Bitset *reach, Bitset *kill)
 				continue;
 			def = nodes[r->defs[did][j]];
 			if (exprop(def) == Oundef)
-				fatal(n, "%s used before definition [%d]", namestr(n->expr.args[0]), (int)did);
+				fatal(n, "%s used before definition", namestr(n->expr.args[0]));
 		}
 	} else {
 		switch (exprop(n)) {

@@ -94,7 +94,7 @@ const loadhosts = {
 
 	match slurp(Hostfile)
 	| `Ok d:	h = d
-	| `Fail m:	->
+	| `Fail m:	-> void
 	;;
 
 	lines = strsplit(h, "\n")
@@ -147,7 +147,7 @@ const addhosts = {addr, as, str
 			]
 			htput(hostmap, sldup(name), hinf)
 		| `None:
-			->
+			-> void
 		;;
 	;;
 }
@@ -158,7 +158,7 @@ const loadresolv = {
 
 	match slurp(Resolvfile)
 	| `Ok d:	h = d
-	| `Fail m:	->
+	| `Fail m:	-> void
 	;;
 
 	lines = strsplit(h, "\n")

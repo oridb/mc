@@ -469,6 +469,7 @@ static void pickle(FILE *fd, Node *n)
 		wrtype(fd, n->lit.type);
 		wrint(fd, n->lit.nelt);
 		switch (n->lit.littype) {
+		case Lvoid:	break;
 		case Lchr:	wrint(fd, n->lit.chrval);	break;
 		case Lint:	wrint(fd, n->lit.intval);	break;
 		case Lflt:	wrflt(fd, n->lit.fltval);	break;
@@ -598,6 +599,7 @@ static Node *unpickle(FILE *fd)
 		rdtype(fd, &n->lit.type);
 		n->lit.nelt = rdint(fd);
 		switch (n->lit.littype) {
+		case Lvoid:	break;
 		case Lchr:	n->lit.chrval = rdint(fd);	break;
 		case Lint:	n->lit.intval = rdint(fd);	break;
 		case Lflt:	n->lit.fltval = rdflt(fd);	break;

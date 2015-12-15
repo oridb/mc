@@ -374,6 +374,15 @@ Node *mkbool(Srcloc loc, int val)
 	return n;
 }
 
+Node *mkvoid(Srcloc loc)
+{
+	Node *n;
+
+	n = mknode(loc, Nlit);
+	n->lit.littype = Lvoid;
+	return n;
+}
+
 char *declname(Node *n)
 {
 	Node *name;
@@ -413,6 +422,7 @@ int liteq(Node *a, Node *b)
 	if (!tyeq(a->lit.type, b->lit.type))
 		return 0;
 	switch (a->lit.littype) {
+	case Lvoid:	return 1;
 	case Lchr:	return a->lit.chrval == b->lit.chrval;
 	case Lbool:	return a->lit.boolval == b->lit.boolval;
 	case Lint:	return a->lit.intval == b->lit.intval;

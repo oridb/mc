@@ -229,7 +229,7 @@ const fork = {re, thr, ip, curip, mstart, mend
 	var thr
 
 	if ip == curip /* loop detection */
-		->
+		-> void
 	;;
 	thr = mkthread(re, ip)
 	thr.next = re.runq
