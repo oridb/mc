@@ -1,5 +1,6 @@
                     The Myrddin Programming Language
                               Jul 2012
+                          Updated Dec 2015
                             Ori Bernstein
 
 TABLE OF CONTENTS:
@@ -12,7 +13,10 @@ TABLE OF CONTENTS:
         3.3. Control Constructs and Blocks
         3.4. Expressions
         3.5. Data Types
-        3.6. Packages and Uses
+        3.6. Type Inference
+        3.7. Generics
+        3.8. Traits
+        3.9. Packages and Uses
     4. TOOLCHAIN
     5. EXAMPLES
     6. STYLE GUIDE
@@ -72,9 +76,6 @@ TABLE OF CONTENTS:
         goto            var
         if              while
 
-
-    At the current stage of development, not all of these keywords are
-    implemented within the language.[1]
 
     Literals are a direct representation of a data object within the source of
     the program. There are several literals implemented within the language.
@@ -197,7 +198,7 @@ TABLE OF CONTENTS:
         or in the input character set for the compiler (generally UTF8).
         They share the same set of escape sequences as string literals.
 
-            eg: 'א', '\n', '\u1234'[3]
+            eg: 'א', '\n', '\u{1234}'
 
         Boolean literals are either the keyword "true" or the keyword
         "false".
@@ -255,8 +256,6 @@ TABLE OF CONTENTS:
         The control statements in Myrddin are similar to those in many other
         popular languages, and with the exception of 'match', there should
         be no surprises to a user of any of the Algol derived languages.
-        Where a truth value is required, any type with the builtin trait
-        'tctest' can be used in all of these.
 
         Blocks are the "carriers of code" in Myrddin programs. They consist
         of series of expressions, typically ending with a ';;', although the
@@ -278,17 +277,31 @@ TABLE OF CONTENTS:
                 std.put("The program never gets here")
             ;;
 
-        For statements begin with an initializer, followed by a test
-        condition, followed by an increment action. For statements run the
-        initializer once before the loop is run, the test each on each
-        iteration through the loop before the body, and the increment on
-        each iteration after the body. If the loop is broken out of early
-        (for example, by a goto), the final increment will not be run. The
-        syntax is as follows:
+        For statements come in two forms. There are the C style for loops
+        which begin with an initializer, followed by a test condition,
+        followed by an increment action. For statements run the initializer
+        once before the loop is run, the test each on each iteration through
+        the loop before the body, and the increment on each iteration after
+        the body. If the loop is broken out of early (for example, by a goto),
+        the final increment will not be run. The syntax is as follows:
 
             for init; test; increment
                 blockbody()
             ;;
+
+        The second form is the collection iteration form. This form allows
+        for iterating over a collection of values contained within something
+        which is iterable. Currently, only the built in sequences -- arrays
+        and slices -- can be iterated, however, there is work going towards
+        allowing user defined iterables.
+
+            for pat in expr
+                blockbody()
+            ;;
+
+        The pattern applied in the for loop is a full match statement style
+        pattern match, and will filter any elements in the iteration
+        expression which do not match the value.
 
         While loops are equivalent to for loops with empty initializers
         and increments. They run the test on every iteration of the loop,
@@ -469,7 +482,7 @@ TABLE OF CONTENTS:
                 lack of type, although for the sake of genericity, you can
                 assign between void types, return values of void, and so on.
                 This allows generics to not have to somehow work around void
-                being a toxic type.
+                being a toxic type. The void value is named `void`.
 
                 bool is a type that can only hold true and false. It can be
                 assigned, tested for equality, and used in the various boolean
@@ -577,7 +590,7 @@ TABLE OF CONTENTS:
                                                 named '@foo'.
 
 
-    3.6.
+    3.6. Type Inference:
 
         The myrddin type system is a system similar to the Hindley Milner
         system, however, types are not implicitly generalized. Instead, type
@@ -615,17 +628,21 @@ TABLE OF CONTENTS:
 
                 Char literals are of type 'char'
 
+            void            void
+
+                void is a literal value of type void.
+
             true            bool
             false           bool
 
                 true/false are boolean literals
 
-            123             $t::(tcint,tcnum,tctest)
+            123             $t::(integral,numeric)
 
                 Integer literals get a fresh type variable of type with
                 the constraints for int-like types.
 
-            123.1           $t::(tcfloat,tcnum,tctest)
+            123.1           $t::(floating,numeric)
 
                 Float literals get a fresh type variable of type with
                 the constraints for float-like types.
@@ -641,11 +658,11 @@ TABLE OF CONTENTS:
                 +           -               *               /               %
                 +=          -=              *=              /=              %
 
-            Number binops require the constraint 'tcnum' for both the
+            Number binops require the constraint 'numeric' for both the
 
         num-unary:
             -           +
-            Number binops require the constraint 'tcnum'.
+            Number binops require the constraint 'numeric'.
 
         int-binop:
             |           &               ^               <<              >>
@@ -823,9 +840,7 @@ TABLE OF CONTENTS:
 
 BUGS:
 
-[1] TODO: trait, default, protect,
 [2] TODO: exponential notation.
-[3] TODO: \uDDDD escape sequences not yet recognized
 [4] TODO: currently the only sequence literal implemented is the
           unindexed one
 
