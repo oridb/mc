@@ -8,7 +8,22 @@ lib thread =
 	future+linux.myr
 	exit+linux-x64.s
 
+	# freebsd impl of thread primitives
+	spawn+freebsd.myr
+	exit+freebsd-x64.s
+
+	# shitty spinlock based fallbacks
+	condvar.myr
+	mutex.myr
+	future.myr
+
 	atomic-impl+x64.s
 	atomic.myr
 ;;
 
+bin smoketest =
+	atomictest.myr
+	test/util.myr
+
+	lib thread
+;;
