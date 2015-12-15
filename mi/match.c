@@ -165,7 +165,7 @@ static size_t nconstructors(Type *t)
 
 	t = tybase(t);
 	switch (t->type) {
-	case Tyvoid:	return 0;	break;
+	case Tyvoid:	return 1;	break;
 	case Tybool:	return 2;	break;
 	case Tychar:	return 0x10ffff;	break;
 
@@ -337,6 +337,9 @@ static int addwildrec(Srcloc loc, Type *ty, Dtree *start, Dtree *accept, Dtree *
 	case Tyslice:
 		ret = acceptall(start, accept);
 		lappend(&last, &nlast, accept);
+		break;
+	case Tyvoid:
+		ret = 1;
 		break;
 	default:
 		lappend(&last, &nlast, accept);
