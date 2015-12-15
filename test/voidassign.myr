@@ -1,0 +1,12 @@
+use std
+
+const main = {
+	var x : void
+
+	x = f()
+}
+
+const f = {
+	std.put("ok\n")
+}
+
