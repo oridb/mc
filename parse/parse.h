@@ -197,6 +197,8 @@ struct Trait {
 
 	Node *name;  /* the name of the trait */
 	Type *param; /* the type parameter */
+	Type **aux;	/* auxiliary parameters */
+	size_t naux;
 	Node **memb; /* type must have these members */
 	size_t nmemb;
 	Node **funcs; /* and declare these funcs */
@@ -359,6 +361,8 @@ struct Node {
 			Node *traitname;
 			Trait *trait;
 			Type *type;
+			Type **aux;
+			size_t naux;
 			Node **decls;
 			size_t ndecls;
 			Vis vis;
@@ -522,8 +526,12 @@ Type *mktytuple(Srcloc l, Type **sub, size_t nsub);
 Type *mktyfunc(Srcloc l, Node **args, size_t nargs, Type *ret);
 Type *mktystruct(Srcloc l, Node **decls, size_t ndecls);
 Type *mktyunion(Srcloc l, Ucon **decls, size_t ndecls);
-Trait *mktrait(Srcloc l, Node *name, Type *param, Node **memb, size_t nmemb, Node **funcs,
-	size_t nfuncs, int isproto);
+Trait *mktrait(Srcloc l, Node *name,
+	Type *param,
+	Type **aux, size_t naux,
+	Node **memb, size_t nmemb,
+	Node **funcs, size_t nfuncs,
+	int isproto);
 Type *mktylike(Srcloc l, Ty ty); /* constrains tyvar t like it was builtin ty */
 Ucon *finducon(Type *t, Node *name);
 int isstacktype(Type *t);
@@ -559,7 +567,7 @@ Node *mkiterstmt(Srcloc l, Node *elt, Node *seq, Node *body);
 Node *mkmatchstmt(Srcloc l, Node *val, Node **matches, size_t nmatches);
 Node *mkmatch(Srcloc l, Node *pat, Node *body);
 Node *mkblock(Srcloc l, Stab *scope);
-Node *mkimplstmt(Srcloc l, Node *name, Type *type, Node **impls, size_t nimpls);
+Node *mkimplstmt(Srcloc loc, Node *name, Type *t, Type **aux, size_t naux, Node **decls, size_t ndecls);
 Node *mkintlit(Srcloc l, uvlong val);
 Node *mkboollit(Srcloc l, int val);
 Node *mkidxinit(Srcloc l, Node *idx, Node *init);

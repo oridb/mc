@@ -1573,20 +1573,24 @@ static void specializeimpl(Inferstate *st, Node *n)
 
 	dcl = NULL;
 	proto = NULL;
+	if (n->impl.naux != t->naux)
+		fatal(n, "%s incompatibly specialized with %zd types instead of %zd types",
+			namestr(n->impl.traitname), n->impl.naux, t->naux);
 	n->impl.type = tf(st, n->impl.type);
+	for (i = 0; i < n->impl.naux; i++)
+		n->impl.aux[i] = tf(st, n->impl.aux[i]);
 	for (i = 0; i < n->impl.ndecls; i++) {
 		/* look up the prototype */
 		proto = NULL;
 		dcl = n->impl.decls[i];
 
 		/*
-		   since the decls in an impl are not installed in a namespace, their names
-		   are not updated when we call updatens() on the symbol table. Because we
-		   need
-		   to do namespace dependent comparisons for specializing, we need to set
-		   the
-		   namespace here.
-		   */
+		   since the decls in an impl are not installed in a namespace,
+		   their names are not updated when we call updatens() on the
+		   symbol table. Because we need to do namespace dependent
+		   comparisons for specializing, we need to set the namespace
+		   here.
+		*/
 		if (file->file.globls->name)
 			setns(dcl->decl.name, file->file.globls->name);
 		for (j = 0; j < t->nfuncs; j++) {
@@ -1606,6 +1610,8 @@ static void specializeimpl(Inferstate *st, Node *n)
 		verifytraits(st, n, t->param, n->impl.type);
 		ht = mkht(tyhash, tyeq);
 		htput(ht, t->param, n->impl.type);
+		for (j = 0; j < t->naux; j++)
+			htput(ht, t->aux[j], n->impl.aux[j]);
 		ty = tyspecialize(type(st, proto), ht, st->delayed);
 		htfree(ht);
 

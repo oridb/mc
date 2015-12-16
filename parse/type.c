@@ -37,6 +37,9 @@ char stackness[] = {
 
 int isstacktype(Type *t) { return stackness[tybase(t)->type]; }
 
+void breakhere() {
+}
+
 Type *mktype(Srcloc loc, Ty ty)
 {
 	Type *t;
@@ -49,6 +52,8 @@ Type *mktype(Srcloc loc, Ty ty)
 	 * each builtin type in order. As we do this, we put the type into
 	 * the table as ususal, which gives us an identity mapping.
 	 */
+	if (ntypes == 37)
+		breakhere();
 	if (ty <= Tyvalist && ty < ntypes)
 		return types[ty];
 
@@ -121,8 +126,11 @@ Type *mktylike(Srcloc loc, Ty like)
 }
 
 /* steals memb, funcs */
-Trait *mktrait(Srcloc loc, Node *name, Type *param, Node **memb, size_t nmemb, Node **funcs,
-		size_t nfuncs, int isproto)
+Trait *mktrait(Srcloc loc, Node *name, Type *param,
+	Type **aux, size_t naux,
+	Node **memb, size_t nmemb,
+	Node **funcs, size_t nfuncs,
+	int isproto)
 {
 	Trait *t;
 
@@ -136,6 +144,8 @@ Trait *mktrait(Srcloc loc, Node *name, Type *param, Node **memb, size_t nmemb, N
 	t->param = param;
 	t->memb = memb;
 	t->nmemb = nmemb;
+	t->aux = aux;
+	t->naux = naux;
 	t->funcs = funcs;
 	t->nfuncs = nfuncs;
 	t->isproto = isproto;
@@ -851,7 +861,11 @@ void tyinit(Stab *st)
 
 	/* this must be done after all the types are created, otherwise we will
 	 * clobber the memoized bunch of types with the type params. */
-#define Tc(c, n) mktrait(Zloc, mkname(Zloc, n), NULL, NULL, 0, NULL, 0, 0);
+#define Tc(c, n) mktrait(Zloc, mkname(Zloc, n), NULL, \
+			 NULL, 0, \
+			 NULL, 0, \
+			 NULL, 0, \
+			 0);
 #include "trait.def"
 #undef Tc
 

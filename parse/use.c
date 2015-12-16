@@ -401,7 +401,11 @@ Trait *traitunpickle(FILE *fd)
 	intptr_t uid;
 
 	/* create an empty trait */
-	tr = mktrait(Zloc, NULL, NULL, NULL, 0, NULL, 0, 0);
+	tr = mktrait(Zloc, NULL, NULL, 
+		NULL, 0,
+		NULL, 0,
+		NULL, 0,
+		0);
 	uid = rdint(fd);
 	tr->ishidden = rdbool(fd);
 	tr->name = unpickle(fd);

@@ -209,13 +209,15 @@ Node *mkblock(Srcloc loc, Stab *scope)
 	return n;
 }
 
-Node *mkimplstmt(Srcloc loc, Node *name, Type *t, Node **decls, size_t ndecls)
+Node *mkimplstmt(Srcloc loc, Node *name, Type *t, Type **aux, size_t naux, Node **decls, size_t ndecls)
 {
 	Node *n;
 
 	n = mknode(loc, Nimpl);
 	n->impl.traitname = name;
 	n->impl.type = t;
+	n->impl.aux = aux;
+	n->impl.naux = naux;
 	n->impl.decls = decls;
 	n->impl.ndecls = ndecls;
 	return n;

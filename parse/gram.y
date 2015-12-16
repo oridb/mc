@@ -130,7 +130,7 @@ static void setupinit(Node *n);
 
 %type <ty> type structdef uniondef tupledef compoundtype functype funcsig
 %type <ty> generictype
-%type <tylist> typelist typarams
+%type <tylist> typelist typarams optauxtypes
 %type <nodelist> typaramlist
 
 %type <tok> asnop cmpop addop mulop shiftop optident
@@ -359,12 +359,12 @@ name    : Tident {$$ = mkname($1->loc, $1->id);}
 	| Tident Tdot name {$$ = $3; setns($3, $1->id);}
 	;
 
-implstmt: Timpl name type {
-		$$ = mkimplstmt($1->loc, $2, $3, NULL, 0);
+implstmt: Timpl name type optauxtypes {
+		$$ = mkimplstmt($1->loc, $2, $3, $4.types, $4.ntypes, NULL, 0);
 		$$->impl.isproto = 1;
 	}
-	| Timpl name type Tasn Tendln implbody Tendblk {
-		$$ = mkimplstmt($1->loc, $2, $3, $6.nl, $6.nn);
+	| Timpl name type optauxtypes Tasn Tendln implbody Tendblk {
+		$$ = mkimplstmt($1->loc, $2, $3, $4.types, $4.ntypes, $7.nl, $7.nn);
 	}
 	;
 
@@ -381,17 +381,30 @@ implbody
 	}
 	;
 
-traitdef: Ttrait Tident generictype /* trait prototype */ {
-		$$ = mktrait($1->loc, mkname($2->loc, $2->id), $3, NULL, 0, NULL, 0, 1);
+traitdef: Ttrait Tident generictype optauxtypes { /* trait prototype */
+		$$ = mktrait($1->loc, mkname($2->loc, $2->id), $3,
+			$4.types, $4.ntypes,
+			NULL, 0,
+			NULL, 0,
+			1);
 	}
-	| Ttrait Tident generictype Tasn traitbody Tendblk /* trait definition */ {
+	| Ttrait Tident generictype optauxtypes Tasn traitbody Tendblk /* trait definition */ {
 		size_t i;
-		$$ = mktrait($1->loc, mkname($2->loc, $2->id), $3, NULL, 0, $5.nl, $5.nn, 0);
-		for (i = 0; i < $5.nn; i++) {
-			$5.nl[i]->decl.trait = $$;
-			$5.nl[i]->decl.isgeneric = 1;
+		$$ = mktrait($1->loc, mkname($2->loc, $2->id), $3,
+			$4.types, $4.ntypes,
+			NULL, 0,
+			$6.nl, $6.nn,
+			0);
+		for (i = 0; i < $6.nn; i++) {
+			$6.nl[i]->decl.trait = $$;
+			$6.nl[i]->decl.isgeneric = 1;
 		}
 	}
+	;
+
+optauxtypes
+	: Tret typelist {$$ = $2;}
+	| /* empty */ { $$.types = NULL; $$.ntypes = 0; }
 	;
 
 traitbody
