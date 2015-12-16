@@ -1991,11 +1991,11 @@ static void checkvar(Inferstate *st, Node *n)
 	Type *ty;
 
 	dcl = decls[n->expr.did];
-	if (n->expr.param) {
+	ty = NULL;
+	if (n->expr.param)
 		ty = htget(dcl->decl.impls, tf(st, n->expr.param));
-	} else {
+	if (!ty)
 		ty = tyfreshen(st, NULL, type(st, dcl));
-	}
 	unify(st, n, type(st, n), ty);
 }
 
