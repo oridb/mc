@@ -157,10 +157,10 @@ static char *ctxstr(Inferstate *st, Node *n)
 		case OTpre:	bprintf(buf, sizeof buf, "%s<e%s>", t1, oppretty[exprop(n)]);	break;
 		case OTpost:	bprintf(buf, sizeof buf, "<e:%s>%s", t1, oppretty[exprop(n)]);	break;
 		case OTzarg:	bprintf(buf, sizeof buf, "%s", oppretty[exprop(n)]);	break;
-		case OTmisc:
 		case OTbin:
 			bprintf(buf, sizeof buf, "<e1:%s> %s <e2:%s>", t1, oppretty[exprop(n)], t2);
 			break;
+		case OTmisc:
 			switch (exprop(n)) {
 			case Ovar:	bprintf(buf, sizeof buf, "%s:%s", namestr(args[0]), t);	break;
 			case Ocall:	ctxstrcall(buf, sizeof buf, st, n);	break;
