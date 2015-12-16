@@ -1560,7 +1560,7 @@ static void inferfunc(Inferstate *st, Node *n)
 
 static void specializeimpl(Inferstate *st, Node *n)
 {
-	Node *dcl, *proto, *name;
+	Node *dcl, *proto, *name, *sym;
 	Type *ty;
 	Htab *ht;
 	Trait *t;
@@ -1620,6 +1620,11 @@ static void specializeimpl(Inferstate *st, Node *n)
 
 		/* and put the specialization into the global stab */
 		name = genericname(proto, ty);
+		sym = getdcl(file->file.globls, name);
+		if (sym)
+			fatal(n, "trait %s already specialized with %s on %s:%d",
+				namestr(t->name), tystr(n->impl.type),
+				fname(sym->loc), lnum(sym->loc));
 		dcl->decl.name = name;
 		putdcl(file->file.globls, dcl);
 		if (debugopt['S'])
@@ -1848,8 +1853,7 @@ static Type *tyfix(Inferstate *st, Node *ctx, Type *orig, int noerr)
 	if (t->type == Tyvar && !noerr) {
 		if (debugopt['T'])
 			dump(file, stdout);
-		fatal(
-				ctx, "underconstrained type %s near %s", tyfmt(buf, 1024, t), ctxstr(st, ctx));
+		fatal(ctx, "underconstrained type %s near %s", tyfmt(buf, 1024, t), ctxstr(st, ctx));
 	}
 
 	if (debugopt['u'] && !tyeq(orig, t)) {
@@ -1964,9 +1968,11 @@ static void checkstruct(Inferstate *st, Node *n)
 static void checkvar(Inferstate *st, Node *n)
 {
 	Node *dcl;
+	Type *ty;
 
 	dcl = decls[n->expr.did];
-	unify(st, n, type(st, n), tyfreshen(st, NULL, type(st, dcl)));
+	ty = tyfreshen(st, NULL, type(st, dcl));
+	unify(st, n, type(st, n), ty);
 }
 
 static void postcheck(Inferstate *st, Node *file)
@@ -2412,7 +2418,7 @@ void applytraits(Inferstate *st, Node *f)
 			trait = gettrait(f->file.globls, n->impl.traitname);
 			if (!trait)
 				fatal(n, "trait %s does not exist near %s",
-						namestr(n->impl.traitname), ctxstr(st, n));
+					namestr(n->impl.traitname), ctxstr(st, n));
 			ty = tf(st, n->impl.type);
 			settrait(ty, trait);
 		}
@@ -2433,7 +2439,7 @@ void verify(Inferstate *st, Node *f)
 			/* we merge, so we need to get it back again when error checking */
 			if (n->impl.isproto)
 				fatal(n, "missing implementation for prototype '%s %s'",
-						namestr(n->impl.traitname), tystr(n->impl.type));
+					namestr(n->impl.traitname), tystr(n->impl.type));
 		}
 	}
 }

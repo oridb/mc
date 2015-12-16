@@ -415,7 +415,7 @@ Node *specializedcl(Node *g, Type *to, Node **name)
 		return d;
 	if (g->decl.trait) {
 		printf("%s\n", namestr(n));
-		fatal(g, "No trait implemented for for %s:%s", namestr(g->decl.name), tystr(to));
+		fatal(g, "no trait implemented for for %s:%s", namestr(g->decl.name), tystr(to));
 	}
 	/* namespaced names need to be looked up in their correct
 	 * context. */
