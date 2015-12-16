@@ -466,19 +466,27 @@ Type *tysearch(Type *t)
 	return t;
 }
 
-static Type *tysubst(Inferstate *st, Type *t, Type *orig)
+static Type *tysubstmap(Inferstate *st, Htab *subst, Type *t, Type *orig)
 {
-	Htab *subst;
 	size_t i;
 
-	subst = mkht(tyhash, tyeq);
 	for (i = 0; i < t->ngparam; i++) {
 		htput(subst, t->gparam[i], tf(st, orig->arg[i]));
 	}
 	t = tyfreshen(st, subst, t);
+	return t;
+}
+
+static Type *tysubst(Inferstate *st, Type *t, Type *orig)
+{
+	Htab *subst;
+
+	subst = mkht(tyhash, tyeq);
+	t = tysubstmap(st, subst, t, orig);
 	htfree(subst);
 	return t;
 }
+
 
 /* fixd the most accurate type mapping we have (ie,
  * the end of the unification chain */
@@ -1058,16 +1066,27 @@ static void loaduses(Node *n)
 
 static Type *initvar(Inferstate *st, Node *n, Node *s)
 {
-	Type *t;
+	Type *t, *param;
+	Htab *subst;
 
 	if (s->decl.ishidden)
 		fatal(n, "attempting to refer to hidden decl %s", ctxstr(st, n));
-	if (s->decl.isgeneric)
-		t = tysubst(st, tf(st, s->decl.type), s->decl.type);
-	else
+
+	param = NULL;
+	if (s->decl.isgeneric) {
+		subst = mkht(tyhash, tyeq);
+		t = tysubstmap(st, subst, tf(st, s->decl.type), s->decl.type);
+		if (s->decl.trait) {
+			param = htget(subst, s->decl.trait->param);
+			delayedcheck(st, n, curstab());
+		}
+		htfree(subst);
+	} else {
 		t = s->decl.type;
+	}
 	n->expr.did = s->decl.did;
 	n->expr.isconst = s->decl.isconst;
+	n->expr.param = param;
 	if (s->decl.isgeneric && !st->ingeneric) {
 		t = tyfreshen(st, NULL, t);
 		addspecialization(st, n, curstab());
@@ -1625,6 +1644,7 @@ static void specializeimpl(Inferstate *st, Node *n)
 			fatal(n, "trait %s already specialized with %s on %s:%d",
 				namestr(t->name), tystr(n->impl.type),
 				fname(sym->loc), lnum(sym->loc));
+		htput(proto->decl.impls, n->impl.type, ty);
 		dcl->decl.name = name;
 		putdcl(file->file.globls, dcl);
 		if (debugopt['S'])
@@ -1971,7 +1991,11 @@ static void checkvar(Inferstate *st, Node *n)
 	Type *ty;
 
 	dcl = decls[n->expr.did];
-	ty = tyfreshen(st, NULL, type(st, dcl));
+	if (n->expr.param) {
+		ty = htget(dcl->decl.impls, tf(st, n->expr.param));
+	} else {
+		ty = tyfreshen(st, NULL, type(st, dcl));
+	}
 	unify(st, n, type(st, n), ty);
 }
 

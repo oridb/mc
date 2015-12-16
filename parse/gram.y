@@ -382,7 +382,8 @@ implbody
 	;
 
 traitdef: Ttrait Tident generictype optauxtypes { /* trait prototype */
-		$$ = mktrait($1->loc, mkname($2->loc, $2->id), $3,
+		$$ = mktrait($1->loc,
+			mkname($2->loc, $2->id), $3,
 			$4.types, $4.ntypes,
 			NULL, 0,
 			NULL, 0,
@@ -390,13 +391,15 @@ traitdef: Ttrait Tident generictype optauxtypes { /* trait prototype */
 	}
 	| Ttrait Tident generictype optauxtypes Tasn traitbody Tendblk /* trait definition */ {
 		size_t i;
-		$$ = mktrait($1->loc, mkname($2->loc, $2->id), $3,
+		$$ = mktrait($1->loc,
+			mkname($2->loc, $2->id), $3,
 			$4.types, $4.ntypes,
 			NULL, 0,
 			$6.nl, $6.nn,
 			0);
 		for (i = 0; i < $6.nn; i++) {
 			$6.nl[i]->decl.trait = $$;
+			$6.nl[i]->decl.impls = mkht(tyhash, tyeq); 
 			$6.nl[i]->decl.isgeneric = 1;
 		}
 	}

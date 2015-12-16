@@ -236,10 +236,11 @@ struct Node {
 		struct {
 			Op op;
 			Type *type;
+			Type *param;	/* for specialized traits, the primary param */
 			int isconst;
-			size_t did; /* for Ovar, we want a mapping to the decl id */
+			size_t did;	/* for Ovar, we want a mapping to the decl id */
 			size_t nargs;
-			Node *idx; /* used when this is in an indexed initializer */
+			Node *idx;	/* used when this is in an indexed initializer */
 			Node **args;
 		} expr;
 
@@ -317,6 +318,7 @@ struct Node {
 			 impl.
 			*/
 			Trait *trait;
+			Htab *impls;
 			char vis;
 
 			/* flags */
