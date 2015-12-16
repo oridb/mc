@@ -20,7 +20,7 @@ check: all
 .PHONY: bench
 bench:
 	mbld -tbench
-	mbld bench:benchit
+	mbld -tbench bench:benchit
 
 .PHONY: bootstrap
 bootstrap: buildmyr
