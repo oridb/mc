@@ -112,12 +112,14 @@ const runin = {b, cmd, dir
 }
 
 const buildbin = {b, targ, addsrc
-	var dg, src
+	var dg, src, path
 	var libpath, incs
 
 	setdir(b, targ.dir)
 	addincludes(b, targ)
-	std.put("{}/{}...\n", b.curdir, targ.name)
+	path = std.pathcat(b.curdir, targ.name)
+	std.put("{}...\n", path)
+	std.slfree(path)
 	dg = myrdeps(b, targ, false, addsrc)
 	if !std.hthas(dg.deps, targ.name)
 		std.fatal("no input files for {}\n", targ.name)
