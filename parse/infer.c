@@ -980,14 +980,6 @@ static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
 	return r;
 }
 
-static void markvatypes(Type **types, size_t ntypes)
-{
-	size_t i;
-
-	for (i = 0; i < ntypes; i++)
-		types[i]->isreflect = 1;
-}
-
 /* Applies unifications to function calls.
  * Funciton application requires a slightly
  * different approach to unification. */
@@ -1014,7 +1006,6 @@ static void unifycall(Inferstate *st, Node *n)
 					ctxstr(st, n->expr.args[0]), ft->nsub - 1, n->expr.nargs - 1);
 
 		if (ft->sub[i]->type == Tyvalist) {
-			markvatypes(&ft->sub[i], ft->nsub - i);
 			break;
 		}
 		inferexpr(st, &n->expr.args[i], NULL, NULL);

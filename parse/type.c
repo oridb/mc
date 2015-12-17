@@ -209,6 +209,7 @@ Type *mktyname(Srcloc loc, Node *name, Type *base)
 	t->traits = bsdup(base->traits);
 	t->sub = xalloc(sizeof(Type *));
 	t->sub[0] = base;
+	t->isreflect = 1;
 	return t;
 }
 
