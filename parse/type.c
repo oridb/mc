@@ -854,18 +854,69 @@ size_t tyidfmt(char *buf, size_t sz, Type *ty)
 	return p - buf;
 }
 
+void iterableinit(Stab *st, Trait *tr)
+{
+	Node *func, *arg, **args;
+	Type *ty;
+	size_t nargs;
+
+	/* trait iter @a -> @b = ... */
+	tr->param = mktyparam(Zloc, "a");
+	tr->aux = malloc(sizeof(Type*));
+	tr->aux[0] = mktyparam(Zloc, "b");
+	tr->naux = 1;
+
+	/* __iternext__ : (it : @a#, outval : @b# -> bool) */
+	args = NULL;
+	nargs = 0;
+	arg = mkdecl(Zloc, mkname(Zloc, "iter"), mktyptr(Zloc, mktyparam(Zloc, "a")));
+	lappend(&args, &nargs, arg);
+	arg = mkdecl(Zloc, mkname(Zloc, "ret"), mktyptr(Zloc, mktyparam(Zloc, "b")));
+	lappend(&args, &nargs, arg);
+	ty = mktyfunc(Zloc, args, nargs, mktype(Zloc, Tybool));
+
+	func = mkdecl(Zloc, mkname(Zloc, "__iternext__"), ty);
+	func->decl.trait = tr;
+	func->decl.impls = mkht(tyhash, tyeq); 
+	func->decl.isgeneric = 1;
+
+	lappend(&tr->funcs, &tr->nfuncs, func);
+	putdcl(st, func);
+
+	/* __iterfin__ : (it : @a#, outval : @b# -> void) */
+	args = NULL;
+	nargs = 0;
+	arg = mkdecl(Zloc, mkname(Zloc, "iter"), mktyptr(Zloc, mktyparam(Zloc, "a")));
+	lappend(&args, &nargs, arg);
+	arg = mkdecl(Zloc, mkname(Zloc, "val"), mktyptr(Zloc, mktyparam(Zloc, "b")));
+	lappend(&args, &nargs, arg);
+	ty = mktyfunc(Zloc, args, nargs, mktype(Zloc, Tyvoid));
+
+	func = mkdecl(Zloc, mkname(Zloc, "__iterfin__"), ty);
+	func->decl.trait = tr;
+	func->decl.impls = mkht(tyhash, tyeq); 
+	func->decl.isgeneric = 1;
+
+	lappend(&tr->funcs, &tr->nfuncs, func);
+	putdcl(st, func);
+}
+
 void tyinit(Stab *st)
 {
 	int i;
 	Type *ty;
+	Trait *tr;
 
 	/* this must be done after all the types are created, otherwise we will
 	 * clobber the memoized bunch of types with the type params. */
-#define Tc(c, n) mktrait(Zloc, mkname(Zloc, n), NULL, \
-			 NULL, 0, \
-			 NULL, 0, \
-			 NULL, 0, \
-			 0);
+#define Tc(c, n) \
+	tr = mktrait(Zloc, \
+		mkname(Zloc, n), NULL, \
+		NULL, 0, \
+		NULL, 0, \
+		NULL, 0, \
+		0); \
+	puttrait(st, tr->name, tr);
 #include "trait.def"
 #undef Tc
 
@@ -913,4 +964,11 @@ void tyinit(Stab *st)
 	}
 #include "types.def"
 #undef Ty
+
+	/*
+	 * finally, initializing the builtin traits for use in user code
+	 * comes last, since this needs both the types and the traits set up
+	 */
+	iterableinit(st, traittab[Tciter]);
+
 }

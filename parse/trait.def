@@ -1,7 +1,8 @@
 /* Definitions of built in constraints */
-Tc(Tcnum,       "numeric")      /* arith ops */
-Tc(Tcint,       "integral")     /* behaves like an int, defaults to int as fallback */
-Tc(Tcfloat,     "floating")     /* behaves like a float, defaults to float as fallback */
-Tc(Tcidx,       "indexable")    /* indexable */
-Tc(Tcslice,     "sliceable")    /* sliceable */
-Tc(Tcfunc,      "function")     /* behaves like a function */
+Tc(Tcnum,	"numeric")      /* arith ops */
+Tc(Tcint,	"integral")     /* behaves like an int, defaults to int as fallback */
+Tc(Tcfloat,	"floating")     /* behaves like a float, defaults to float as fallback */
+Tc(Tcidx,	"indexable")    /* indexable */
+Tc(Tcslice,	"sliceable")    /* sliceable */
+Tc(Tcfunc,	"function")     /* behaves like a function */
+Tc(Tciter,	"iterable")     /* behaves like a function */
