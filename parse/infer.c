@@ -1765,7 +1765,7 @@ static void infernode(Inferstate *st, Node **np, Type *ret, int *sawret)
 		infernode(st, &n->iterstmt.body, ret, sawret);
 
 		t = mktyidxhack(n->loc, mktyvar(n->loc));
-		constrain(st, n, type(st, n->iterstmt.seq), traittab[Tcidx]);
+		constrain(st, n, type(st, n->iterstmt.seq), traittab[Tciter]);
 		unify(st, n, type(st, n->iterstmt.seq), t);
 		unify(st, n, type(st, n->iterstmt.elt), t->sub[0]);
 		break;

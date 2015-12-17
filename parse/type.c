@@ -943,12 +943,14 @@ void tyinit(Stab *st)
 	traits[Typtr][0] = traittab[Tcslice];
 
 	/* @a[:]::(indexable,sliceable) */
-	traits[Tyslice][0] = traittab[Tcslice];
-	traits[Tyslice][1] = traittab[Tcidx];
+	traits[Tyslice][0] = traittab[Tcidx];
+	traits[Tyslice][1] = traittab[Tcslice];
+	traits[Tyslice][2] = traittab[Tciter];
 
 	/* @a[SZ]::(indexable,sliceable) */
 	traits[Tyarray][0] = traittab[Tcidx];
 	traits[Tyarray][1] = traittab[Tcslice];
+	traits[Tyarray][2] = traittab[Tciter];
 
 	/* @a::function */
 	traits[Tyfunc][0] = traittab[Tcfunc];
