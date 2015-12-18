@@ -257,7 +257,8 @@ decl    : attrs Tvar decllist {
 			$3.nl[i]->decl.isgeneric = 1;
 		}
 		$$ = $3;
-	 }
+	}
+        ;
 
 attrs   : /* empty */ {$$.nstr = 0; $$.str = NULL;}
 	| Tattr attrs {
@@ -844,7 +845,7 @@ structelt: Tdot Tident Tasn expr optendlns {
 		$$ = $4;
 		mkidxinit($2->loc, mkname($2->loc, $2->id), $4);
 	}
-	 ;
+	;
 
 optendlns  : /* none */
 	| optendlns Tendln
@@ -881,7 +882,6 @@ forstmt : Tfor optexprln optexprln optexprln block
 		$$ = mkloopstmt($1->loc, $2.nl[0], $4, $5, $6);
 		putdcl($$->loopstmt.scope, $2.nl[0]);
 	}
-
 	;
 
 whilestmt
