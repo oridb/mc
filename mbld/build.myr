@@ -32,6 +32,7 @@ const buildall = {b
 		| `Cmd ct:	/* these are for manual commands or tests */
 		;;
 	;;
+	setdir(b, "")
 	-> true
 }
 

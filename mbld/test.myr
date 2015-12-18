@@ -21,6 +21,8 @@ const test = {b
 
 	/* no implicit tests to run */
 	tests = [][:]
+	buildall(b)
+	setdir(b, "")
 	if std.fexists("test")
 		for tn in b.all
 			match gettarg(b.targs, tn)
