@@ -129,23 +129,21 @@ static void eatspace(void)
 		c = peek();
 		if (!ignorenl && c == '\n') {
 			break;
-		}
-		else if (c == '\\') {
+		} else if (c == '\\') {
 			ignorenl = 1;
 			next();
-		}
-		else if (ignorenl && c == '\n') {
+		} else if (ignorenl && c == '\n') {
 			next();
 			curloc.line++;
 			ignorenl = 0;
-		}
-		else if (isspace(c)) {
+		} else if (isspace(c)) {
 			next();
-		}
-		else if (c == '/' && peekn(1) == '*') {
+		} else if (c == '/' && peekn(1) == '*') {
 			eatcomment();
-		}
-		else {
+		} else if (c == '/' && peekn(1) == '/') {
+			while (peek() != End && peek() != '\n')
+				next();
+		} else {
 			break;
 		}
 	}
