@@ -257,6 +257,8 @@ static int addwildrec(Srcloc loc, Type *ty, Dtree *start, Dtree *accept, Dtree *
 	ntail = 0;
 	ty = tybase(ty);
 	if (istyprimitive(ty) || ty->type == Tyvoid) {
+		if (start == accept)
+			return 0;
 		for (i = 0; i < start->nnext; i++)
 			lappend(end, nend, start->next[i]);
 		if (start->any) {
