@@ -449,7 +449,7 @@ static void simploop(Simp *s, Node *n)
  *           cjmp (match) :body :step
  *      :end
  */
-static void simpiter(Simp *s, Node *n)
+static void simpidxiter(Simp *s, Node *n)
 {
 	Node *lbody, *lload, *lstep, *lcond, *lmatch, *lend;
 	Node *idx, *len, *dcl, *seq, *val, *done;
@@ -508,6 +508,36 @@ static void simpiter(Simp *s, Node *n)
 
 	s->nloopstep--;
 	s->nloopexit--;
+}
+
+/* for pat in seq
+ * 	body;;
+ * =>
+ * 	.seq = seq
+ * 	.elt = elt
+ * 	:body
+ * 		..body..
+ * 		__iterfin__(&seq, &elt)
+ * 	:step
+ * 		cond = __iternext__(&seq, &eltout)
+ * 		cjmp (cond) :match :end
+ * 	:match
+ * 		...match...
+ * 		cjmp (match) :body :step
+ * 	:end
+ */
+static void simptraititer(Simp *s, Node *n)
+{
+	die("unimplemented");
+}
+
+static void simpiter(Simp *s, Node *n)
+{
+	switch (tybase(exprtype(n->iterstmt.seq))->type) {
+	case Tyarray:	simpidxiter(s, n);	break;
+	case Tyslice:	simpidxiter(s, n);	break;
+	default:	simptraititer(s, n);	break;
+	}
 }
 
 static Node *uconid(Simp *s, Node *n)

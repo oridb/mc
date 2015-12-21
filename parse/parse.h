@@ -522,7 +522,6 @@ Type *mktyname(Srcloc l, Node *name, Type *base);
 Type *mktyunres(Srcloc l, Node *name, Type **params, size_t nparams);
 Type *mktyarray(Srcloc l, Type *base, Node *sz);
 Type *mktyslice(Srcloc l, Type *base);
-Type *mktyidxhack(Srcloc l, Type *base);
 Type *mktyptr(Srcloc l, Type *base);
 Type *mktytuple(Srcloc l, Type **sub, size_t nsub);
 Type *mktyfunc(Srcloc l, Node **args, size_t nargs, Type *ret);

@@ -237,17 +237,6 @@ Type *mktyslice(Srcloc loc, Type *base)
 	return t;
 }
 
-Type *mktyidxhack(Srcloc loc, Type *base)
-{
-	Type *t;
-
-	t = mktype(loc, Tyvar);
-	t->nsub = 1;
-	t->sub = xalloc(sizeof(Type *));
-	t->sub[0] = base;
-	return t;
-}
-
 Type *mktyptr(Srcloc loc, Type *base)
 {
 	Type *t;

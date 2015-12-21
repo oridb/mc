@@ -40,6 +40,8 @@ struct Inferstate {
 	/* delayed unification -- we fall back to these types in a post pass if we
 	 * haven't unifed to something more specific */
 	Htab *delayed;
+	/* mappings from iterator type to element type */
+	Htab *seqbase;
 	/* the nodes that we've specialized them to, and the scopes they
 	 * appear in */
 	Node **specializations;
@@ -786,15 +788,6 @@ static void mergetraits(Inferstate *st, Node *ctx, Type *a, Type *b)
 }
 
 /* Tells us if we have an index hack on the type */
-static int idxhacked(Type *a, Type *b)
-{
-	if (a->type == Tyvar && a->nsub > 0)
-		return 1;
-	if (a->type == Tyarray || a->type == Tyslice)
-		return a->type == b->type;
-	return 0;
-}
-
 /* prevents types that contain themselves in the unification;
  * eg @a U (@a -> foo) */
 static int occurs(Type *a, Type *b)
@@ -813,14 +806,15 @@ static int occurs(Type *a, Type *b)
  * direction should we unify. A lower ranked type
  * should be mapped to the higher ranked (ie, more
  * specific) type. */
-static int tyrank(Type *t)
+static int tyrank(Inferstate *st, Type *t)
 {
 	/* plain tyvar */
-	if (t->type == Tyvar && t->nsub == 0)
-		return 0;
-	/* parameterized tyvar */
-	if (t->type == Tyvar && t->nsub > 0)
-		return 1;
+	if (t->type == Tyvar) {
+		if (hthas(st->seqbase, t))
+			return 1;
+		else
+			return 0;
+	}
 	/* concrete type */
 	return 2;
 }
@@ -892,11 +886,25 @@ static void membunify(Inferstate *st, Node *ctx, Type *u, Type *v)
 		structunify(st, ctx, u, v);
 }
 
+static Type *basetype(Inferstate *st, Type *a)
+{
+	Type *t;
+
+	if (a->nsub == 1)
+		t = a->sub[0];
+	else
+		t = htget(st->seqbase, a);
+	if (t)
+		t = tf(st, t);
+	return t;
+}
+
 /* Unifies two types, or errors if the types are not unifiable. */
 static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
 {
 	Type *t, *r;
 	Type *a, *b;
+	Type *ea, *eb;
 	char *from, *to;
 	size_t i;
 
@@ -907,7 +915,7 @@ static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
 		return a;
 
 	/* we unify from lower to higher ranked types */
-	if (tyrank(b) < tyrank(a)) {
+	if (tyrank(st, b) < tyrank(st, a)) {
 		t = a;
 		a = b;
 		b = t;
@@ -917,6 +925,8 @@ static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
 		from = tystr(a);
 		to = tystr(b);
 		indentf(st->indentdepth, "Unify %s => %s\n", from, to);
+		indentf(st->indentdepth + 1, "indexes: %s => %s\n",
+				tystr(htget(st->seqbase, a)), tystr(htget(st->seqbase, b)));
 		free(from);
 		free(to);
 	}
@@ -924,6 +934,10 @@ static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
 	r = NULL;
 	if (a->type == Tyvar) {
 		tytab[a->tid] = b;
+		ea = basetype(st, a);
+		eb = basetype(st, b);
+		if (ea && eb)
+			unify(st, ctx, ea, eb);
 		r = b;
 	}
 
@@ -935,7 +949,7 @@ static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
 
 	/* if the tyrank of a is 0 (ie, a raw tyvar), just unify.
 	 * Otherwise, match up subtypes. */
-	if ((a->type == b->type || idxhacked(a, b)) && tyrank(a) != 0) {
+	if (a->type == b->type && a->type != Tyvar) {
 		if (hasparam(a) && hasparam(b)) {
 			/* Only Tygeneric and Tyname should be able to unify. And they
 			 * should have the same names for this to be true. */
@@ -957,8 +971,7 @@ static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
 		for (i = 0; i < b->nsub; i++)
 			unify(st, ctx, a->sub[i], b->sub[i]);
 		r = b;
-	}
-	else if (a->type != Tyvar) {
+	} else if (a->type != Tyvar) {
 		typeerror(st, a, b, ctx, NULL);
 	}
 	mergetraits(st, ctx, a, b);
@@ -1312,7 +1325,7 @@ static void inferexpr(Inferstate *st, Node **np, Type *ret, int *sawret)
 	Node **args;
 	size_t i, nargs;
 	Node *s, *n;
-	Type *t;
+	Type *t, *b;
 	int isconst;
 
 	n = *np;
@@ -1416,19 +1429,23 @@ static void inferexpr(Inferstate *st, Node **np, Type *ret, int *sawret)
 		break;
 	case Oidx: /* @a[@b::tcint] -> @a */
 		infersub(st, n, ret, sawret, &isconst);
-		t = mktyidxhack(n->loc, mktyvar(n->loc));
+		b = mktyvar(n->loc);
+		t = mktyvar(n->loc);
+		htput(st->seqbase, t, b);
 		unify(st, n, type(st, args[0]), t);
 		constrain(st, n, type(st, args[0]), traittab[Tcidx]);
 		constrain(st, n, type(st, args[1]), traittab[Tcint]);
-		settype(st, n, t->sub[0]);
+		settype(st, n, b);
 		break;
 	case Oslice: /* @a[@b::tcint,@b::tcint] -> @a[,] */
 		infersub(st, n, ret, sawret, &isconst);
-		t = mktyidxhack(n->loc, mktyvar(n->loc));
+		b = mktyvar(n->loc);
+		t = mktyvar(n->loc);
+		htput(st->seqbase, t, b);
 		unify(st, n, type(st, args[0]), t);
 		constrain(st, n, type(st, args[1]), traittab[Tcint]);
 		constrain(st, n, type(st, args[2]), traittab[Tcint]);
-		settype(st, n, mktyslice(n->loc, t->sub[0]));
+		settype(st, n, mktyslice(n->loc, b));
 		break;
 
 		/* special cases */
@@ -1693,7 +1710,7 @@ static void infernode(Inferstate *st, Node **np, Type *ret, int *sawret)
 {
 	size_t i, nbound;
 	Node **bound, *n, *pat;
-	Type *t;
+	Type *t, *b;
 
 	n = *np;
 	if (!n)
@@ -1755,10 +1772,12 @@ static void infernode(Inferstate *st, Node **np, Type *ret, int *sawret)
 		infernode(st, &n->iterstmt.seq, NULL, sawret);
 		infernode(st, &n->iterstmt.body, ret, sawret);
 
-		t = mktyidxhack(n->loc, mktyvar(n->loc));
+		b = mktyvar(n->loc);
+		t = mktyvar(n->loc);
+		htput(st->seqbase, t, b);
 		constrain(st, n, type(st, n->iterstmt.seq), traittab[Tciter]);
 		unify(st, n, type(st, n->iterstmt.seq), t);
-		unify(st, n, type(st, n->iterstmt.elt), t->sub[0]);
+		unify(st, n, type(st, n->iterstmt.elt), b);
 		break;
 	case Nmatchstmt:
 		infernode(st, &n->matchstmt.val, NULL, sawret);
@@ -2422,7 +2441,7 @@ void applytraits(Inferstate *st, Node *f)
 {
 	size_t i;
 	Node *n;
-	Trait *trait;
+	Trait *tr;
 	Type *ty;
 
 	pushstab(f->file.globls);
@@ -2430,12 +2449,15 @@ void applytraits(Inferstate *st, Node *f)
 	for (i = 0; i < f->file.nstmts; i++) {
 		if (f->file.stmts[i]->type == Nimpl) {
 			n = f->file.stmts[i];
-			trait = gettrait(f->file.globls, n->impl.traitname);
-			if (!trait)
+			tr = gettrait(f->file.globls, n->impl.traitname);
+			if (!tr)
 				fatal(n, "trait %s does not exist near %s",
 					namestr(n->impl.traitname), ctxstr(st, n));
 			ty = tf(st, n->impl.type);
-			settrait(ty, trait);
+			settrait(ty, tr);
+			if (tr->uid == Tciter) {
+				htput(st->seqbase, tf(st, n->impl.type), tf(st, n->impl.aux[0]));
+			}
 		}
 	}
 	popstab();
@@ -2467,6 +2489,7 @@ void infer(Node *file)
 
 	assert(file->type == Nfile);
 	st.delayed = mkht(tyhash, tyeq);
+	st.seqbase = mkht(tyhash, tyeq);
 	/* set up the symtabs */
 	loaduses(file);
 	// mergeexports(&st, file);
