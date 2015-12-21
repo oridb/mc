@@ -39,6 +39,15 @@ stated before, This library is implemented from scratch.
 
 [API Reference](http://eigenstate.org/myrddin/doc/)
 
+Mailing List
+-------------
+
+Annoucements of major changes, questions, complaints. We also give relationship advice.
+
+[Mailing List Archives](http://eigenstate.org/archive/myrddin-dev/)
+
+[Subscribe Here](http://eigenstate.org/myrddin/list-subscribe)
+
 Supported Platforms
 -------------------
 
