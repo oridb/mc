@@ -20,15 +20,16 @@ Introduction
 
 If you want to read more about what Myrddin is or does, there's a website up.
 
-### [Myrddin Homepage](http://eigenstate.org/myrddin/)
+[Myrddin Homepage](http://eigenstate.org/myrddin/)
 
 Try It Online
 -------------
 
 Since installing a new language is a chore, there is a sandbox with code you can mess
-around with.
+around with. This is a very restrictive environment, but it's enough to get an idea
+of what the language feels like.
 
-### [Online Playground: Type your code here and run it](http://eigenstate.org/myrddin/playground/)
+[Online Playground Environment](http://eigenstate.org/myrddin/playground/)
 
 API Documentation
 -------------
@@ -36,7 +37,7 @@ API Documentation
 Myrddin ships with a reasonably useful standard library, which covers many common uses. As
 stated before, This library is implemented from scratch.
 
-### [API Reference](http://eigenstate.org/myrddin/doc/)
+[API Reference](http://eigenstate.org/myrddin/doc/)
 
 Supported Platforms
 -------------------
