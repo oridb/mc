@@ -164,9 +164,8 @@ static void wrsym(FILE *fd, Node *val)
 	wrbool(fd, val->decl.isnoret);
 	wrbool(fd, val->decl.isexportinit);
 	wrbool(fd, val->decl.isinit);
-	if (val->decl.isexportinit) {
+	if (val->decl.isexportinit)
 		pickle(fd, val->decl.init);
-	}
 }
 
 static Node *rdsym(FILE *fd, Trait *ctx)
@@ -278,9 +277,10 @@ static void traitpickle(FILE *fd, Trait *tr)
 	wrbool(fd, tr->ishidden);
 	pickle(fd, tr->name);
 	typickle(fd, tr->param);
-	wrint(fd, tr->nmemb);
+	wrint(fd, tr->naux);
 	for (i = 0; i < tr->naux; i++)
 		wrtype(fd, tr->aux[i]);
+	wrint(fd, tr->nmemb);
 	for (i = 0; i < tr->nmemb; i++)
 		wrsym(fd, tr->memb[i]);
 	wrint(fd, tr->nfuncs);
@@ -416,10 +416,9 @@ Trait *traitunpickle(FILE *fd)
 	tr->name = unpickle(fd);
 	tr->param = tyunpickle(fd);
 	n = rdint(fd);
-	for (i = 0; i < n; i++) {
-		lappend(&tr->aux, &tr->naux, NULL);
+	tr->aux = zalloc(n * sizeof(Type*));
+	for (i = 0; i < n; i++)
 		rdtype(fd, &tr->aux[i]);
-	}
 	n = rdint(fd);
 	for (i = 0; i < n; i++)
 		lappend(&tr->memb, &tr->nmemb, rdsym(fd, tr));
@@ -705,6 +704,7 @@ static Node *unpickle(FILE *fd)
 		for (i = 0; i < n->impl.ndecls; i++)
 			n->impl.decls[i] = rdsym(fd, n->impl.trait);
 		lappend(&impltab, &nimpltab, n);
+		lappend(&implfix, &nimplfix, n);
 		break;
 	case Nnone:
 		die("Nnone should not be seen as node type!");
@@ -830,16 +830,19 @@ static void fiximplmappings(Stab *st)
 {
 	Node *impl;
 	Trait *tr;
-	size_t i;
+	size_t i, j;
+
 	for (i = 0; i < nimplfix; i++) {
 		impl = implfix[i];
 		tr = impl->impl.trait;
 
-		putimpl(st, impl);
+		/* FIXME: handle duplicate impls properly */
+		if (!getimpl(st, impl))
+			putimpl(st, impl);
 		settrait(impl->impl.type, tr);
-		for (i = 0; i < impl->impl.ndecls; i++) {
-			putdcl(file->file.globls, impl->impl.decls[i]);
-			protomap(tr, impl->impl.type, impl->impl.decls[i]);
+		for (j = 0; j < impl->impl.ndecls; j++) {
+			putdcl(file->file.globls, impl->impl.decls[j]);
+			protomap(tr, impl->impl.type, impl->impl.decls[j]);
 		}
 	}
 }
@@ -981,9 +984,9 @@ foundextlib:
 				  impl->impl.decls[i]->decl.isglobl = 1;
 				  putdcl(file->file.globls, impl->impl.decls[i]);
 			  }
-			  lappend(&implfix, &nimplfix, impl);
 			  break;
-		case EOF: break;
+		case EOF:
+			  break;
 		}
 	}
 	fixtypemappings(s);
