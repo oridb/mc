@@ -1,41 +1,79 @@
-A Toy With Delusions of Usefulness
-----------------------------------
+Myrddin
+-------
 
-    use std
-    const main = {
-            var i
-            for i = 0; i < 100; i++
-                    std.put("You're still reading?!?\n")
-            ;;
-    }
+Myrddin is a systems language that is both powerful and fun to use.
+It aims for C like low level control, a lightweight high quality implementation,
+and features you may find familiar from languages like like rust and ocaml.
 
-Myrddin is a language that I put together for fun, but which has slowly become
-a handly little language, and has attracted a number of contributors. The libraries
-are written from the ground up, with zero external dependencies -- not even libc.
+This combination makes Myrddin suitable for anything ranging from desktop
+applications, to embedded systems and potentially even kernel development.
+
+Examples
+--------
+
+A classic:
+```
+use std
+
+const main = {
+
+	for var i = 0; i < 1000; i++
+		/* pattern match on a tuple */
+		match (i % 3, i % 5)
+		| (0, 0): std.put("fizzbuzz\n")
+		| (0, _): std.put("fizz\n")
+		| (_, 0): std.put("buzz\n")
+		| _:
+		;;
+	;;
+}
+```
+How about regex, destructuring and algebraic data types?
+```
+use regex
+use std
+
+const main = {
+	var re, str
+
+	str = "match against this!"
+	match regex.compile(".*")
+	| `std.Ok r:	re = r
+	| `std.Fail m:	std.fatal("couldn't compile regex: {}\n", m)
+	;;
+	match regex.exec(re, str)
+	| `std.Some _:  std.put("regex matched\n")
+	| `std.None:	std.fatal("regex did not match\n")
+	;;
+	regex.free(re)
+}
+```
+
+More examples and a complete feature list can be found on the website.
+
+Status
+------
 
 ![Solid Engineering](http://eigenstate.org/myrddin/tacoma-narrows.jpg "Solid Engineering")
 
-Introduction
--------------
 
-If you want to read more about what Myrddin is or does, there's a website up.
+Website
+-------
 
 [Myrddin Homepage](http://eigenstate.org/myrddin/)
 
 Try It Online
 -------------
 
-Since installing a new language is a chore, there is a sandbox with code you can mess
-around with. This is a very restrictive environment, but it's enough to get an idea
-of what the language feels like.
+The online playground is a good place to get started with little setup.
 
 [Online Playground Environment](http://eigenstate.org/myrddin/playground/)
 
 API Documentation
 -------------
 
-Myrddin ships with a reasonably useful standard library, which covers many common uses. As
-stated before, This library is implemented from scratch.
+Myrddin ships with standard library which covers many common uses. It is becoming
+more useful every day.
 
 [API Reference](http://eigenstate.org/myrddin/doc/)
 
@@ -57,17 +95,4 @@ Myrddin currently runs on a number of platforms
 - OSX
 - FreeBSD
 - 9front
-
-Major Features
---------------
-
-- Type inference. Types are inferred across the whole program.
-- Algebraic data types.
-- And their friend, pattern matching.
-- Generics and traits
-- A package system.
-- Low level control.
-- (Almost) no runtime library.
-- Entirely self contained.
-- Simple and easy to understand implementation.
 
