@@ -4,7 +4,7 @@
 #define FATAL
 #endif
 
-#define Abiversion 8
+#define Abiversion 9
 
 typedef uint8_t byte;
 typedef unsigned int uint;
@@ -399,6 +399,8 @@ extern Type **types;
 extern size_t ntypes;
 extern Trait **traittab; /* int -> trait map */
 extern size_t ntraittab;
+extern Node **impltab; /* int -> impl map */
+extern size_t nimpltab;
 extern Node **decls; /* decl id -> decl map */
 extern size_t nnodes;
 extern Node **nodes; /* node id -> node map */

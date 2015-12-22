@@ -412,6 +412,14 @@ void puttrait(Stab *st, Node *n, Trait *c)
 
 static int mergeimpl(Node *old, Node *new)
 {
+	Vis vis;
+
+	if (old->impl.vis > new->impl.vis)
+		vis = old->impl.vis;
+	else
+		vis = new->impl.vis;
+	old->impl.vis = vis;
+	new->impl.vis = vis;
 	if (old->impl.isproto && !new->impl.isproto)
 		*old = *new;
 	else if (new->impl.isproto && !old->impl.isproto)

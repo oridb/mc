@@ -11,7 +11,7 @@ pkg bld =
 	const myrdeps	: (b : build#, mt : myrtarg#, doclean : bool, addsrc : bool -> depgraph#)
 ;;
 
-const Abiversion = 8
+const Abiversion = 9
 
 var usepat	: regex.regex#
 var cflagpat	: regex.regex#

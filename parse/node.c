@@ -220,6 +220,7 @@ Node *mkimplstmt(Srcloc loc, Node *name, Type *t, Type **aux, size_t naux, Node 
 	n->impl.naux = naux;
 	n->impl.decls = decls;
 	n->impl.ndecls = ndecls;
+	lappend(&impltab, &nimpltab, n);
 	return n;
 }
 

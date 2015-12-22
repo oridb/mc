@@ -24,6 +24,8 @@ Type **types = NULL;
 size_t ntypes;
 Trait **traittab;
 size_t ntraittab;
+Node **impltab;
+size_t nimpltab;
 
 /* Built in type constraints */
 static Trait *traits[Ntypes + 1][4];

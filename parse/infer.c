@@ -423,9 +423,9 @@ static void tyresolve(Inferstate *st, Type *t)
 		t->sub[i] = tf(st, t->sub[i]);
 	base = tybase(t);
 	/* no-ops if base == t */
-	if (t->traits)
+	if (t->traits && base->traits)
 		bsunion(t->traits, base->traits);
-	else
+	else if (base->traits)
 		t->traits = bsdup(base->traits);
 	if (tyinfinite(st, t, NULL))
 		lfatal(t->loc, "type %s includes itself", tystr(t));
@@ -2448,18 +2448,16 @@ void applytraits(Inferstate *st, Node *f)
 
 	pushstab(f->file.globls);
 	/* for now, traits can only be declared globally */
-	for (i = 0; i < f->file.nstmts; i++) {
-		if (f->file.stmts[i]->type == Nimpl) {
-			n = f->file.stmts[i];
-			tr = gettrait(f->file.globls, n->impl.traitname);
-			if (!tr)
-				fatal(n, "trait %s does not exist near %s",
+	for (i = 0; i < nimpltab; i++) {
+		n = impltab[i];
+		tr = gettrait(f->file.globls, n->impl.traitname);
+		if (!tr)
+			fatal(n, "trait %s does not exist near %s",
 					namestr(n->impl.traitname), ctxstr(st, n));
-			ty = tf(st, n->impl.type);
-			settrait(ty, tr);
-			if (tr->uid == Tciter) {
-				htput(st->seqbase, tf(st, n->impl.type), tf(st, n->impl.aux[0]));
-			}
+		ty = tf(st, n->impl.type);
+		settrait(ty, tr);
+		if (tr->uid == Tciter) {
+			htput(st->seqbase, tf(st, n->impl.type), tf(st, n->impl.aux[0]));
 		}
 	}
 	popstab();

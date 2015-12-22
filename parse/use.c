@@ -40,6 +40,9 @@ static size_t ntraitfixtype;	/* size of replacement list */
 static intptr_t *traitfixid;	/* list of traits we need to replace */
 static size_t ntraitfixid;	/* size of replacement list */
 
+static Node **implfix;	/* list of impls we need to fix up */
+static size_t nimplfix;		/* size of replacement list */
+
 void addextlibs(Node *file, char **libs, size_t nlibs)
 {
 	size_t i, j;
@@ -276,6 +279,8 @@ static void traitpickle(FILE *fd, Trait *tr)
 	pickle(fd, tr->name);
 	typickle(fd, tr->param);
 	wrint(fd, tr->nmemb);
+	for (i = 0; i < tr->naux; i++)
+		wrtype(fd, tr->aux[i]);
 	for (i = 0; i < tr->nmemb; i++)
 		wrsym(fd, tr->memb[i]);
 	wrint(fd, tr->nfuncs);
@@ -411,6 +416,11 @@ Trait *traitunpickle(FILE *fd)
 	tr->name = unpickle(fd);
 	tr->param = tyunpickle(fd);
 	n = rdint(fd);
+	for (i = 0; i < n; i++) {
+		lappend(&tr->aux, &tr->naux, NULL);
+		rdtype(fd, &tr->aux[i]);
+	}
+	n = rdint(fd);
 	for (i = 0; i < n; i++)
 		lappend(&tr->memb, &tr->nmemb, rdsym(fd, tr));
 	n = rdint(fd);
@@ -542,6 +552,9 @@ static void pickle(FILE *fd, Node *n)
 		pickle(fd, n->impl.traitname);
 		wrint(fd, n->impl.trait->uid);
 		wrtype(fd, n->impl.type);
+		wrint(fd, n->impl.naux);
+		for (i = 0; i < n->impl.naux; i++)
+			wrtype(fd, n->impl.aux[i]);
 		wrint(fd, n->impl.ndecls);
 		for (i = 0; i < n->impl.ndecls; i++)
 			wrsym(fd, n->impl.decls[i]);
@@ -681,13 +694,17 @@ static Node *unpickle(FILE *fd)
 		break;
 	case Nimpl:
 		n->impl.traitname = unpickle(fd);
-		i = rdint(fd);
 		rdtrait(fd, &n->impl.trait, NULL);
 		rdtype(fd, &n->impl.type);
+		n->impl.naux = rdint(fd);
+		n->impl.aux = zalloc(sizeof(Node *) * n->impl.naux);
+		for (i = 0; i < n->impl.naux; i++)
+			rdtype(fd, &n->impl.aux[i]);
 		n->impl.ndecls = rdint(fd);
 		n->impl.decls = zalloc(sizeof(Node *) * n->impl.ndecls);
 		for (i = 0; i < n->impl.ndecls; i++)
 			n->impl.decls[i] = rdsym(fd, n->impl.trait);
+		lappend(&impltab, &nimpltab, n);
 		break;
 	case Nnone:
 		die("Nnone should not be seen as node type!");
@@ -795,6 +812,38 @@ static void fixtraitmappings(Stab *st)
 	lfree(&traitfixid, &ntraitfixid);
 }
 
+static void protomap(Trait *tr, Type *ty, Node *dcl)
+{
+	size_t i, len;
+	char *protoname, *dclname;
+
+	dclname = declname(dcl);
+	for (i = 0; i < tr->nfuncs; i++) {
+		protoname = declname(tr->funcs[i]);
+		len = strlen(protoname);
+		if (strstr(dclname, protoname) == dclname && dclname[len] == '$')
+			htput(tr->funcs[i]->decl.impls, ty, dcl);
+	}
+}
+
+static void fiximplmappings(Stab *st)
+{
+	Node *impl;
+	Trait *tr;
+	size_t i;
+	for (i = 0; i < nimplfix; i++) {
+		impl = implfix[i];
+		tr = impl->impl.trait;
+
+		putimpl(st, impl);
+		settrait(impl->impl.type, tr);
+		for (i = 0; i < impl->impl.ndecls; i++) {
+			putdcl(file->file.globls, impl->impl.decls[i]);
+			protomap(tr, impl->impl.type, impl->impl.decls[i]);
+		}
+	}
+}
+
 /* Usefile format:
  *     U<pkgname>
  *     T<pickled-type>
@@ -898,8 +947,10 @@ foundextlib:
 			  tr = traitunpickle(f);
 			  tr->vis = vis;
 			  puttrait(s, tr->name, tr);
-			  for (i = 0; i < tr->nfuncs; i++)
+			  for (i = 0; i < tr->nfuncs; i++) {
 				  putdcl(s, tr->funcs[i]);
+				  tr->funcs[i]->decl.impls = mkht(tyhash, tyeq);
+			  }
 			  break;
 		case 'T':
 			  tid = rdint(f);
@@ -925,16 +976,19 @@ foundextlib:
 			  break;
 		case 'I':
 			  impl = unpickle(f);
-			  putimpl(s, impl);
 			  /* specialized declarations always go into the global stab */
-			  for (i = 0; i < impl->impl.ndecls; i++)
+			  for (i = 0; i < impl->impl.ndecls; i++) {
+				  impl->impl.decls[i]->decl.isglobl = 1;
 				  putdcl(file->file.globls, impl->impl.decls[i]);
+			  }
+			  lappend(&implfix, &nimplfix, impl);
 			  break;
 		case EOF: break;
 		}
 	}
 	fixtypemappings(s);
 	fixtraitmappings(s);
+	fiximplmappings(s);
 	htfree(tidmap);
 	popstab();
 	return 1;
