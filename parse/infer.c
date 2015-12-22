@@ -890,10 +890,9 @@ static Type *basetype(Inferstate *st, Type *a)
 {
 	Type *t;
 
-	if (a->type == Tyslice || a->type == Tyarray)
+	t = htget(st->seqbase, a);
+	if (!t && (a->type == Tyslice || a->type == Tyarray || a->type == Typtr))
 		t = a->sub[0];
-	else
-		t = htget(st->seqbase, a);
 	if (t)
 		t = tf(st, t);
 	return t;
