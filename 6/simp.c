@@ -83,6 +83,8 @@ Node *abortoob;
 
 static void append(Simp *s, Node *n)
 {
+	if (debugopt['S'])
+		dump(n, stdout);
 	lappend(&s->stmts, &s->nstmts, n);
 }
 
@@ -431,6 +433,26 @@ static void simploop(Simp *s, Node *n)
 	s->nloopexit--;
 }
 
+static void simploopmatch(Simp *s, Node *pat, Node *val, Node *ltrue, Node *lfalse)
+{
+	Node **cap, **out, *lload;
+	size_t i, ncap, nout;
+
+	/* pattern match */
+	lload = genlbl(pat->loc);
+	out = NULL;
+	nout = 0;
+	cap = NULL;
+	ncap = 0;
+	genonematch(pat, val, lload, lfalse, &out, &nout, &cap, &ncap);
+	for (i = 0; i < nout; i++)
+		simp(s, out[i]);
+	simp(s, lload);
+	for (i = 0; i < ncap; i++)
+		simp(s, cap[i]);
+	jmp(s, ltrue);
+}
+
 /* pat; seq; 
  *      body;;
  *
@@ -446,19 +468,18 @@ static void simploop(Simp *s, Node *n)
  *           cjmp (cond) :match :end
  *      :match
  *           ...match...
- *           cjmp (match) :body :step
+ *           cjmp (match) :load :step
+ *      :load
+ *           matchval = load
  *      :end
  */
 static void simpidxiter(Simp *s, Node *n)
 {
-	Node *lbody, *lload, *lstep, *lcond, *lmatch, *lend;
+	Node *lbody, *lstep, *lcond, *lmatch, *lend;
 	Node *idx, *len, *dcl, *seq, *val, *done;
-	Node **cap, **out;
-	size_t i, ncap, nout;
 	Node *zero;
 
 	lbody = genlbl(n->loc);
-	lload = genlbl(n->loc);
 	lstep = genlbl(n->loc);
 	lcond = genlbl(n->loc);
 	lmatch = genlbl(n->loc);
@@ -493,21 +514,32 @@ static void simpidxiter(Simp *s, Node *n)
 	val = load(idxaddr(s, seq, idx));
 
 	/* pattern match */
-	out = NULL;
-	nout = 0;
-	cap = NULL;
-	ncap = 0;
-	genonematch(n->iterstmt.elt, val, lload, lstep, &out, &nout, &cap, &ncap);
-	for (i = 0; i < nout; i++)
-		simp(s, out[i]);
-	simp(s, lload);
-	for (i = 0; i < ncap; i++)
-		simp(s, cap[i]);
+	simploopmatch(s, n->iterstmt.elt, val, lbody, lstep);
 	jmp(s, lbody);
 	simp(s, lend);
 
 	s->nloopstep--;
 	s->nloopexit--;
+}
+
+static Node *itertraitfn(Srcloc loc, Trait *tr, char *fn, Type *ty)
+{
+	Node *proto, *dcl, *var;
+	char *name;
+	size_t i;
+
+	for (i = 0; i < tr->nfuncs; i++) {
+		name = declname(tr->funcs[i]);
+		if (!strcmp(fn, name)) {
+			proto = tr->funcs[i];
+			dcl = htget(proto->decl.impls, ty);
+			var = mkexpr(loc, Ovar, dcl->decl.name, NULL);
+			var->expr.type = dcl->decl.type;
+			var->expr.did = dcl->decl.did;
+			return var;
+		}
+	}
+	return NULL;
 }
 
 /* for pat in seq
@@ -517,18 +549,73 @@ static void simpidxiter(Simp *s, Node *n)
  * 	.elt = elt
  * 	:body
  * 		..body..
- * 		__iterfin__(&seq, &elt)
  * 	:step
+ * 		__iterfin__(&seq, &elt)
  * 		cond = __iternext__(&seq, &eltout)
  * 		cjmp (cond) :match :end
  * 	:match
  * 		...match...
- * 		cjmp (match) :body :step
+ * 		cjmp (match) :load :step
+ * 	:load
+ * 		...load matches...
  * 	:end
  */
 static void simptraititer(Simp *s, Node *n)
 {
-	die("unimplemented");
+	Node *lbody, *lclean, *lstep, *lmatch, *lend;
+	Node *done, *val, *iter, *valptr, *iterptr;
+	Node *func, *call, *asn;
+	Trait *tr;
+
+	val = temp(s, n->iterstmt.elt);
+	valptr = mkexpr(val->loc, Oaddr, val, NULL);
+	valptr->expr.type = mktyptr(n->loc, exprtype(val));
+	iter = temp(s, n->iterstmt.seq);
+	iterptr = mkexpr(val->loc, Oaddr, iter, NULL);
+	iterptr->expr.type = mktyptr(n->loc, exprtype(iter));
+	tr = traittab[Tciter];
+
+	/* create labels */
+	lbody = genlbl(n->loc);
+	lclean = genlbl(n->loc);
+	lstep = genlbl(n->loc);
+	lmatch = genlbl(n->loc);
+	lend = genlbl(n->loc);
+	lappend(&s->loopstep, &s->nloopstep, lstep);
+	lappend(&s->loopexit, &s->nloopexit, lend);
+
+	asn = assign(s, iter, n->iterstmt.seq);
+	append(s, asn);
+	jmp(s, lstep);
+	simp(s, lbody);
+	/* body */
+	simp(s, n->iterstmt.body);
+	simp(s, lclean);
+
+	/* call iterator cleanup */
+	func = itertraitfn(n->loc, tr, "__iterfin__", exprtype(iter));
+	call = mkexpr(n->loc, Ocall, func, iterptr, valptr, NULL);
+	call->expr.type = mktype(n->loc, Tyvoid);
+	append(s, call);
+
+	simp(s, lstep);
+	/* call iterator step */
+	func = itertraitfn(n->loc, tr, "__iternext__", exprtype(iter));
+	call = mkexpr(n->loc, Ocall, func, iterptr, valptr, NULL);
+	done = gentemp(n->loc, mktype(n->loc, Tybool), NULL);
+	call->expr.type = exprtype(done);
+	asn = assign(s, done, call);
+	append(s, asn);
+	cjmp(s, done, lmatch, lend);
+
+	/* pattern match */
+	simp(s, lmatch);
+	simploopmatch(s, n->iterstmt.elt, val, lbody, lclean);
+	jmp(s, lbody);
+	simp(s, lend);
+
+	s->nloopstep--;
+	s->nloopexit--;
 }
 
 static void simpiter(Simp *s, Node *n)

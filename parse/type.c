@@ -868,6 +868,8 @@ void iterableinit(Stab *st, Trait *tr)
 	func->decl.trait = tr;
 	func->decl.impls = mkht(tyhash, tyeq); 
 	func->decl.isgeneric = 1;
+	func->decl.isconst = 1;
+	func->decl.isglobl = 1;
 
 	lappend(&tr->funcs, &tr->nfuncs, func);
 	putdcl(st, func);
@@ -885,6 +887,8 @@ void iterableinit(Stab *st, Trait *tr)
 	func->decl.trait = tr;
 	func->decl.impls = mkht(tyhash, tyeq); 
 	func->decl.isgeneric = 1;
+	func->decl.isconst = 1;
+	func->decl.isglobl = 1;
 
 	lappend(&tr->funcs, &tr->nfuncs, func);
 	putdcl(st, func);

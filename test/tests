@@ -66,6 +66,7 @@ B fncast	P	ok
 B loop		P	0123401236789
 B subrangefor	P       12
 B patiter	P	23512
+B custiter	P	67891011
 B condiftrue	E	7
 B condiffalse	E	9
 B condifrel	E	7

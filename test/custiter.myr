@@ -1,0 +1,33 @@
+use std
+
+type range = struct
+	lo	: int
+	hi	: int
+;;
+
+/* iterate up to 100 */
+impl iterable range -> int =
+        __iternext__ = {rng, output
+		if rng.lo > rng.hi
+			-> false
+		else
+			output# = rng.lo++
+                        -> true
+                ;;
+        }
+
+        __iterfin__ = {it, val
+        }
+;;
+
+const main = {
+	var r : range
+	var x : int
+
+	r = [.lo=6, .hi=11]
+	for v in r
+		x = v
+                std.put("{}", x)
+        ;;
+	std.put("\n")
+}

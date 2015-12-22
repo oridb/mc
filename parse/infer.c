@@ -890,7 +890,7 @@ static Type *basetype(Inferstate *st, Type *a)
 {
 	Type *t;
 
-	if (a->nsub == 1)
+	if (a->type == Tyslice || a->type == Tyarray)
 		t = a->sub[0];
 	else
 		t = htget(st->seqbase, a);
@@ -1652,9 +1652,9 @@ static void specializeimpl(Inferstate *st, Node *n)
 			fatal(n, "trait %s already specialized with %s on %s:%d",
 				namestr(t->name), tystr(n->impl.type),
 				fname(sym->loc), lnum(sym->loc));
-		htput(proto->decl.impls, n->impl.type, ty);
 		dcl->decl.name = name;
 		putdcl(file->file.globls, dcl);
+		htput(proto->decl.impls, n->impl.type, dcl);
 		if (debugopt['S'])
 			printf("specializing trait [%d]%s:%s => %s:%s\n", n->loc.line,
 					namestr(proto->decl.name), tystr(type(st, proto)), namestr(name),
@@ -1997,15 +1997,18 @@ static void checkstruct(Inferstate *st, Node *n)
 
 static void checkvar(Inferstate *st, Node *n)
 {
-	Node *dcl;
+	Node *proto, *dcl;
 	Type *ty;
 
-	dcl = decls[n->expr.did];
+	proto = decls[n->expr.did];
 	ty = NULL;
+	dcl = NULL;
 	if (n->expr.param)
-		ty = htget(dcl->decl.impls, tf(st, n->expr.param));
+		dcl = htget(proto->decl.impls, tf(st, n->expr.param));
+	if (dcl)
+		ty = dcl->decl.type;
 	if (!ty)
-		ty = tyfreshen(st, NULL, type(st, dcl));
+		ty = tyfreshen(st, NULL, type(st, proto));
 	unify(st, n, type(st, n), ty);
 }
 
