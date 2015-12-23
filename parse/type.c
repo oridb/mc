@@ -548,6 +548,7 @@ static int tybfmt(char *buf, size_t len, Type *t)
 	case Tyflt32:	p += bprintf(p, end - p, "flt32");	break;
 	case Tyflt64:	p += bprintf(p, end - p, "flt64");	break;
 	case Tyvalist:	p += bprintf(p, end - p, "...");	break;
+	case Tyvar:     p += bprintf(p, end - p, "$%d", t->tid);        break;
 
 	case Typtr:
 		p += tybfmt(p, end - p, t->sub[0]);
@@ -587,18 +588,6 @@ static int tybfmt(char *buf, size_t len, Type *t)
 			sep = ",";
 		}
 		p += bprintf(p, end - p, ")");
-		break;
-	case Tyvar:
-		p += bprintf(p, end - p, "$%d", t->tid);
-		if (t->nsub) {
-			p += bprintf(p, end - p, "(");
-			for (i = 0; i < t->nsub; i++) {
-				p += bprintf(p, end - p, "%s", sep);
-				p += tybfmt(p, end - p, t->sub[i]);
-				sep = ", ";
-			}
-			p += bprintf(p, end - p, ")[]");
-		}
 		break;
 	case Typaram:	p += bprintf(p, end - p, "@%s", t->pname);	break;
 	case Tyunres:
