@@ -230,6 +230,7 @@ struct Node {
 			size_t ninit;
 			Node *localinit; /* and the local one, if any */
 			Stab *globls;	/* global symtab */
+			Stab *builtins;	/* global symtab */
 			Htab *ns;	/* namespaces */
 		} file;
 
@@ -465,6 +466,8 @@ ulong tyhash(void *t);
 int tyeq(void *a, void *b);
 ulong namehash(void *t);
 int nameeq(void *a, void *b);
+ulong nsnamehash(void *t);
+int nsnameeq(void *a, void *b);
 
 /* util functions */
 char *fname(Srcloc l);

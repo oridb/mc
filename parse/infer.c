@@ -1598,7 +1598,6 @@ static void specializeimpl(Inferstate *st, Node *n)
 	n->impl.trait = t;
 
 	dcl = NULL;
-	proto = NULL;
 	if (n->impl.naux != t->naux)
 		fatal(n, "%s incompatibly specialized with %zd types instead of %zd types",
 			namestr(n->impl.traitname), n->impl.naux, t->naux);
@@ -1620,7 +1619,7 @@ static void specializeimpl(Inferstate *st, Node *n)
 		if (file->file.globls->name)
 			setns(dcl->decl.name, file->file.globls->name);
 		for (j = 0; j < t->nfuncs; j++) {
-			if (nameeq(dcl->decl.name, t->funcs[j]->decl.name)) {
+			if (nsnameeq(dcl->decl.name, t->funcs[j]->decl.name)) {
 				proto = t->funcs[j];
 				break;
 			}
@@ -2397,8 +2396,8 @@ void tagexports(Node *file, int hidelocal)
 	/* tag the traits */
 	free(k);
 	k = htkeys(st->tr, &n);
-	for (i = 0; i < n; i++) {
-		tr = gettrait(st, k[i]);
+	for (j = 0; j < n; j++) {
+		tr = gettrait(st, k[j]);
 		if (tr->vis == Visexport) {
 			tr->param->vis = Visexport;
 			for (i = 0; i < tr->nmemb; i++) {
@@ -2448,22 +2447,35 @@ static void specialize(Inferstate *st, Node *f)
 void applytraits(Inferstate *st, Node *f)
 {
 	size_t i;
-	Node *n;
+	Node *impl, *n;
 	Trait *tr;
 	Type *ty;
+	Stab *ns;
 
+	tr = NULL;
 	pushstab(f->file.globls);
 	/* for now, traits can only be declared globally */
 	for (i = 0; i < nimpltab; i++) {
-		n = impltab[i];
-		tr = gettrait(f->file.globls, n->impl.traitname);
-		if (!tr)
-			fatal(n, "trait %s does not exist near %s",
-					namestr(n->impl.traitname), ctxstr(st, n));
-		ty = tf(st, n->impl.type);
+		impl = impltab[i];
+		tr = impl->impl.trait;
+		if (!tr) {
+			n = impl->impl.traitname;
+			ns = file->file.globls;
+			if (n->name.ns)
+				ns = getns(file, n->name.ns);
+			if (ns)
+				tr = gettrait(ns, n);
+			if (!tr)
+				fatal(impl, "trait %s does not exist near %s",
+						namestr(impl->impl.traitname), ctxstr(st, impl));
+			if (tr->naux != impl->impl.naux)
+				fatal(impl, "incompatible implementation of %s: mismatched aux types",
+						namestr(impl->impl.traitname), ctxstr(st, impl));
+		}
+		ty = tf(st, impl->impl.type);
 		settrait(ty, tr);
 		if (tr->uid == Tciter) {
-			htput(st->seqbase, tf(st, n->impl.type), tf(st, n->impl.aux[0]));
+			htput(st->seqbase, tf(st, impl->impl.type), tf(st, impl->impl.aux[0]));
 		}
 	}
 	popstab();

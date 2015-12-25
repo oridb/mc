@@ -53,9 +53,15 @@ void popstab(void)
 /* name hashing: we want namespaced lookups to find the
  * name even if we haven't set the namespace up, since
  * we can update it after the fact. */
-static ulong nsnamehash(void *n) { return strhash(namestr(n)); }
+ulong nsnamehash(void *n)
+{
+	return strhash(namestr(n));
+}
 
-static int nsnameeq(void *a, void *b) { return a == b || !strcmp(namestr(a), namestr(b)); }
+int nsnameeq(void *a, void *b)
+{
+	return a == b || !strcmp(namestr(a), namestr(b));
+}
 
 static ulong implhash(void *p)
 {
@@ -66,6 +72,21 @@ static ulong implhash(void *p)
 	h = nsnamehash(n->impl.traitname);
 	h *= tyhash(n->impl.type);
 	return h;
+}
+
+Stab *findstab(Stab *st, Node *n)
+{
+	Stab *ns;
+
+	if (n->name.ns) {
+		ns = getns(file, n->name.ns);
+		if (!ns) {
+			ns = mkstab(0);
+			updatens(ns, n->name.ns);
+		}
+		st = ns;
+	}
+	return st;
 }
 
 static int impleq(void *pa, void *pb)
@@ -252,8 +273,7 @@ static int mergedecl(Node *old, Node *new)
 		fatal(e, "export %s declared with different externness on %s:%d", declname(e),
 				fname(g->loc), lnum(g->loc));
 
-	if (new->decl.name->name.ns)
-		setns(old->decl.name, new->decl.name->name.ns);
+	setns(old->decl.name, new->decl.name->name.ns);
 	if (e->decl.type->type == Tyvar)
 		e->decl.type = g->decl.type;
 	else if (g->decl.type->type == Tyvar)
@@ -277,26 +297,16 @@ static int mergedecl(Node *old, Node *new)
 
 void forcedcl(Stab *st, Node *s)
 {
-	if (st->name)
-		setns(s->decl.name, st->name);
+	setns(s->decl.name, st->name);
 	htput(st->dcl, s->decl.name, s);
 	assert(htget(st->dcl, s->decl.name) != NULL);
 }
 
 void putdcl(Stab *st, Node *s)
 {
-	Node *name, *old;
-	Stab *ns;
+	Node *old;
 
-	name = s->decl.name;
-	if (name->name.ns) {
-		ns = getns(file, name->name.ns);
-		if (!ns) {
-			ns = mkstab(0);
-			updatens(ns, name->name.ns);
-		}
-		st = ns;
-	}
+	st = findstab(st, s->decl.name);
 	old = htget(st->dcl, s->decl.name);
 	if (!old)
 		forcedcl(st, s);
@@ -342,8 +352,8 @@ void puttype(Stab *st, Node *n, Type *t)
 	Tydefn *td;
 	Type *ty;
 
-	if (st->name)
-		setns(n, st->name);
+	st = findstab(st, n);
+	setns(n, st->name);
 	if (st->name && t && t->name)
 		setns(t->name, st->name);
 
@@ -395,6 +405,7 @@ void puttrait(Stab *st, Node *n, Trait *c)
 	Trait *t;
 	Type *ty;
 
+	st = findstab(st, n);
 	t = gettrait(st, n);
 	if (t && !mergetrait(t, c))
 		fatal(n, "Trait %s already defined on %s:%d", namestr(n), fname(t->loc),
@@ -407,6 +418,7 @@ void puttrait(Stab *st, Node *n, Trait *c)
 	td->loc = n->loc;
 	td->name = n;
 	td->trait = c;
+	setns(td->name, st->name);
 	htput(st->tr, td->name, td);
 }
 
@@ -434,25 +446,17 @@ static int mergeimpl(Node *old, Node *new)
 
 void putimpl(Stab *st, Node *n)
 {
-	Node *impl, *name;
-	Stab *ns;
+	Node *impl;
 
-	name = n->impl.traitname;
-	if (name->name.ns) {
-		ns = getns(file, name->name.ns);
-		if (!ns) {
-			ns = mkstab(0);
-			updatens(ns, name->name.ns);
-		}
-		st = ns;
-	}
-
+	st = findstab(st, n->impl.traitname);
 	impl = getimpl(st, n);
 	if (impl && !mergeimpl(impl, n))
 		fatal(n, "Trait %s already implemented over %s at %s:%d",
 				namestr(n->impl.traitname), tystr(n->impl.type), fname(n->loc), lnum(n->loc));
-	if (st->name)
-		setns(n->impl.traitname, st->name);
+	/*
+	 * The impl is not defined in this file, so setting the trait name would be a bug here.
+	*/
+	setns(n->impl.traitname, st->name);
 	htput(st->impl, n, n);
 }
 
@@ -493,10 +497,12 @@ void updatens(Stab *st, char *name)
 		die("Stab %s already has namespace; Can't set to %s", st->name, name);
 	st->name = strdup(name);
 	htput(file->file.ns, st->name, st);
+
 	k = htkeys(st->dcl, &nk);
 	for (i = 0; i < nk; i++)
 		setns(k[i], name);
 	free(k);
+
 	k = htkeys(st->ty, &nk);
 	for (i = 0; i < nk; i++)
 		setns(k[i], name);
