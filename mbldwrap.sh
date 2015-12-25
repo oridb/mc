@@ -4,7 +4,6 @@
 export PATH=`pwd`:`pwd`/6:`pwd`/muse:$PATH
 if test `uname` = Plan9; then
 	O=6
-	echo $PATH/6/6.out
 	export MYR_MUSE=`pwd`/muse/$O.out
 	export MYR_MC=`pwd`/6/$O.out
 	export MYR_RT=`pwd`/rt/_myrrt.$O
@@ -20,5 +19,5 @@ if [ -f mbld/mbld ]; then
     ./mbld/mbld $@ || mbld $@ || \
         (echo "Unable to run mbld $@; have you build successfully"; false)
 else
-    ./mbld/mbld || mbld || $BOOT
+    ./mbld/mbld || mbld
 fi

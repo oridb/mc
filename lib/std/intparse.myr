@@ -43,13 +43,11 @@ generic intparsebase = {s, base
 }
 
 generic doparse = {s, isneg, base
-	var c
 	var v
 	var cv : int32
 	
 	v = 0
-	while s.len != 0
-		(c, s) = striter(s)
+	for c in std.chariter(s)
 		if c == '_'
 			continue
 		;;

@@ -104,7 +104,7 @@ const optnext = {ctx
 	var c
 	var arg
 
-	(c, ctx.curarg) = striter(ctx.curarg)
+	(c, ctx.curarg) = strstep(ctx.curarg)
 
 	match optinfo(ctx, c)
 	| `None:

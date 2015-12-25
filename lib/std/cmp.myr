@@ -60,8 +60,8 @@ const strcasecmp = {a, b
 	var ca, cb
 
 	while a.len > 0 && b.len > 0
-		(ca, a) = std.striter(a)
-		(cb, b) = std.striter(b)
+		(ca, a) = std.strstep(a)
+		(cb, b) = std.strstep(b)
 		ca = toupper(ca)
 		cb = toupper(cb)
 		if ca < cb

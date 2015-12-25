@@ -773,7 +773,7 @@ const matchc = {re, c
 	var str
 	var chr
 
-	(chr, str) = std.striter(re.pat)
+	(chr, str) = std.strstep(re.pat)
 	if chr != c
 		-> false
 	;;
@@ -784,14 +784,14 @@ const matchc = {re, c
 const getc = {re
 	var c
 
-	(c, re.pat) = std.striter(re.pat)
+	(c, re.pat) = std.strstep(re.pat)
 	-> c
 }
 
 const peekc = {re
 	var c
 
-	(c, _) = std.striter(re.pat)
+	(c, _) = std.strstep(re.pat)
 	-> c
 }
 

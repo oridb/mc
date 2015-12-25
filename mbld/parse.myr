@@ -650,7 +650,7 @@ const matchc = {p, c
 	if p.rest.len == 0
 		-> false
 	;;
-	(chr, s) = std.striter(p.rest)
+	(chr, s) = std.strstep(p.rest)
 	if c == chr
 		p.rest = s
 		-> true
@@ -666,7 +666,7 @@ const peekc = {p
 const getc = {p
 	var c, s
 
-	(c, s) = std.striter(p.rest)
+	(c, s) = std.strstep(p.rest)
 	p.rest = s
 	-> c
 }

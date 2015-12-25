@@ -6,11 +6,36 @@ pkg std =
 	const Maxcharlen : size = 4
 	const Maxcharval : char = 0x10FFFF
 
+	type chariter = struct
+		rest	: byte[:]
+	;;
+
+	impl iterable chariter -> char
+
+	const chariter	: (str : byte[:] -> chariter)
 	const charlen	: (chr : char -> size)
 	const encode	: (buf : byte[:], chr : char -> size)
 	const decode	: (buf : byte[:] -> char)
-	const striter	: (str : byte[:] -> (char, byte[:]))
+	const strstep	: (str : byte[:] -> (char, byte[:]))
+
 ;;
+
+impl iterable chariter -> char =
+	__iternext__ = {ci, c
+		if ci.rest.len == 0
+			-> false
+		;;
+		(c#, ci.rest) = strstep(ci.rest)
+		-> true
+	}
+
+	__iterfin__ = {ci, c
+	}
+;;
+
+const chariter = {str
+	-> [.rest = str]
+}
 
 const charlen = {c
 	if c < 0x80
@@ -54,11 +79,11 @@ const decode = {buf
 	var c
 	var b
 
-	(c, b) = striter(buf)
+	(c, b) = strstep(buf)
 	-> c
 }
 
-const striter = {str
+const strstep = {str
 	var len
 	var mask
 	var chr

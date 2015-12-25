@@ -151,11 +151,11 @@ const sbfmtv = {sb, fmt, ap -> size
 	nparams = ap.tc.nelt
 	nfmt = 0
 	while fmt.len != 0
-		(c, fmt) = striter(fmt)
+		(c, fmt) = strstep(fmt)
 		match c
 		| '{':
 			if decode(fmt) == '{'
-				(c, fmt) = striter(fmt)
+				(c, fmt) = strstep(fmt)
 				sbputc(sb, '{')
 			else
 				(params, fmt) = getparams(fmt)

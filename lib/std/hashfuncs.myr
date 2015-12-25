@@ -1,4 +1,5 @@
 use "alloc.use"
+use "chartype.use"
 use "die.use"
 use "sleq.use"
 use "slpush.use"
@@ -48,9 +49,9 @@ const strcaseeq = {a, b
 		if a.len == 0 || b.len == 0
 			break
 		;;
-		(ca, a) = std.striter(a)
-		(cb, b) = std.striter(b)
-		if ca != cb
+		(ca, a) = std.strstep(a)
+		(cb, b) = std.strstep(b)
+		if std.tolower(ca) != std.tolower(cb)
 			-> false
 		;;
 	;;
@@ -63,7 +64,7 @@ const strcasehash = {s
 
 	chars = [][:]
 	while s.len != 0
-		(c, s) = std.striter(s)
+		(c, s) = std.strstep(s)
 		chars = std.slpush(chars, c)
 	;;
 	h = murmurhash2(slbytes(chars), Seed)

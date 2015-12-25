@@ -175,7 +175,7 @@ const bigbfmt = {buf, x, base
 }
 
 const bigparse = {str
-	var c, val : int, base
+	var val : int, base
 	var v, b
 	var a
 
@@ -200,8 +200,7 @@ const bigparse = {str
 	 fit in one digit.
 	 */
 	v = mkbigint(1)
-	while str.len != 0
-		(c, str) = striter(str)
+	for c in std.chariter(str)
 		if c == '_'
 			continue
 		;;

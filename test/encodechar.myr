@@ -7,13 +7,11 @@ const main = {args : byte[:][:]
 
 const chartypes = {
 	var s
-	var c
 	var foo
 	var buf : byte[32]
 
 	s = "1世界äa\n"
-	while s.len != 0
-		(c, s) = std.striter(s)
+	for c in std.chariter(s)
 		foo = c
 		if std.encode(buf[:std.charlen(c)], c) == 0
 			std.write(1, "couldn't encode\n")
