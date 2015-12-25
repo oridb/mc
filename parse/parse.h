@@ -369,6 +369,7 @@ struct Node {
 			size_t ndecls;
 			Vis vis;
 			char isproto;
+			char isextern;
 		} impl;
 	};
 };

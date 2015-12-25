@@ -821,7 +821,7 @@ static void protomap(Trait *tr, Type *ty, Node *dcl)
 	for (i = 0; i < tr->nfuncs; i++) {
 		protoname = declname(tr->funcs[i]);
 		len = strlen(protoname);
-		if (strstr(dclname, protoname) == dclname && dclname[len] == '$')
+		if (strstr(dclname, protoname))
 			htput(tr->funcs[i]->decl.impls, ty, dcl);
 	}
 }
@@ -837,8 +837,9 @@ static void fiximplmappings(Stab *st)
 		tr = impl->impl.trait;
 
 		/* FIXME: handle duplicate impls properly */
-		if (!getimpl(st, impl))
-			putimpl(st, impl);
+		if (getimpl(st, impl))
+			continue;
+		putimpl(st, impl);
 		settrait(impl->impl.type, tr);
 		for (j = 0; j < impl->impl.ndecls; j++) {
 			putdcl(file->file.globls, impl->impl.decls[j]);
@@ -979,6 +980,8 @@ foundextlib:
 			  break;
 		case 'I':
 			  impl = unpickle(f);
+			  impl->impl.isextern = 1;
+			  impl->impl.vis = vis;
 			  /* specialized declarations always go into the global stab */
 			  for (i = 0; i < impl->impl.ndecls; i++) {
 				  impl->impl.decls[i]->decl.isglobl = 1;

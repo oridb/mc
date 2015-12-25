@@ -414,6 +414,9 @@ static int mergeimpl(Node *old, Node *new)
 {
 	Vis vis;
 
+	/* extern traits should be deduped in use.c. */
+	if (old->impl.isextern && new->impl.isextern)
+		return 1;
 	if (old->impl.vis > new->impl.vis)
 		vis = old->impl.vis;
 	else
@@ -431,7 +434,18 @@ static int mergeimpl(Node *old, Node *new)
 
 void putimpl(Stab *st, Node *n)
 {
-	Node *impl;
+	Node *impl, *name;
+	Stab *ns;
+
+	name = n->impl.traitname;
+	if (name->name.ns) {
+		ns = getns(file, name->name.ns);
+		if (!ns) {
+			ns = mkstab(0);
+			updatens(ns, name->name.ns);
+		}
+		st = ns;
+	}
 
 	impl = getimpl(st, n);
 	if (impl && !mergeimpl(impl, n))

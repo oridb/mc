@@ -2212,7 +2212,7 @@ static void typesub(Inferstate *st, Node *n, int noerr)
 		default: break;
 		}
 		break;
-	case Nimpl:	putimpl(curstab(), n);	break;
+	case Nimpl: putimpl(curstab(), n);
 	case Nname:
 	case Nuse: break;
 	case Nnone:	die("Nnone should not be seen as node type!");	break;
@@ -2356,6 +2356,14 @@ void tagexports(Node *file, int hidelocal)
 	Type *t;
 
 	st = file->file.globls;
+
+	/* tag the initializers */
+	for (i = 0; i < file->file.ninit; i++)
+		nodetag(st, file->file.init[i], 0, hidelocal);
+	if (file->file.localinit)
+		nodetag(st, file->file.localinit, 0, hidelocal);
+
+	/* tag the exported nodes */
 	k = htkeys(st->dcl, &n);
 	for (i = 0; i < n; i++) {
 		s = getdcl(st, k[i]);
@@ -2364,37 +2372,7 @@ void tagexports(Node *file, int hidelocal)
 	}
 	free(k);
 
-	k = htkeys(st->impl, &n);
-	for (i = 0; i < n; i++) {
-		s = getimpl(st, k[i]);
-		if (s->impl.vis == Visexport)
-			nodetag(st, s, 0, hidelocal);
-	}
-	free(k);
-
-	for (i = 0; i < file->file.ninit; i++)
-		nodetag(st, file->file.init[i], 0, hidelocal);
-	if (file->file.localinit)
-		nodetag(st, file->file.localinit, 0, hidelocal);
-
-	k = htkeys(st->tr, &n);
-	for (i = 0; i < n; i++) {
-		tr = gettrait(st, k[i]);
-		if (tr->vis == Visexport) {
-			tr->param->vis = Visexport;
-			for (i = 0; i < tr->nmemb; i++) {
-				tr->memb[i]->decl.vis = Visexport;
-				nodetag(st, tr->memb[i], 0, hidelocal);
-			}
-			for (i = 0; i < tr->nfuncs; i++) {
-				tr->funcs[i]->decl.vis = Visexport;
-				nodetag(st, tr->funcs[i], 0, hidelocal);
-			}
-		}
-	}
-	free(k);
-
-	/* get the explicitly exported symbols */
+	/* get the explicitly exported types */
 	k = htkeys(st->ty, &n);
 	for (i = 0; i < n; i++) {
 		t = gettype(st, k[i]);
@@ -2415,7 +2393,35 @@ void tagexports(Node *file, int hidelocal)
 				taghidden(t->gparam[j]);
 		}
 	}
+
+	/* tag the traits */
 	free(k);
+	k = htkeys(st->tr, &n);
+	for (i = 0; i < n; i++) {
+		tr = gettrait(st, k[i]);
+		if (tr->vis == Visexport) {
+			tr->param->vis = Visexport;
+			for (i = 0; i < tr->nmemb; i++) {
+				tr->memb[i]->decl.vis = Visexport;
+				nodetag(st, tr->memb[i], 0, hidelocal);
+			}
+			for (i = 0; i < tr->nfuncs; i++) {
+				tr->funcs[i]->decl.vis = Visexport;
+				nodetag(st, tr->funcs[i], 0, hidelocal);
+			}
+		}
+	}
+	free(k);
+
+	/* tag the impls */
+	k = htkeys(st->impl, &n);
+	for (i = 0; i < n; i++) {
+		s = getimpl(st, k[i]);
+		if (s->impl.vis == Visexport)
+			nodetag(st, s, 0, hidelocal);
+	}
+	free(k);
+
 }
 
 /* Take generics and build new versions of them
