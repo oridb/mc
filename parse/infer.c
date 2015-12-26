@@ -2400,6 +2400,8 @@ void tagexports(Node *file, int hidelocal)
 		tr = gettrait(st, k[j]);
 		if (tr->vis == Visexport) {
 			tr->param->vis = Visexport;
+			for (i = 0; i < tr->naux; i++)
+				tr->aux[i]->vis = Visexport;
 			for (i = 0; i < tr->nmemb; i++) {
 				tr->memb[i]->decl.vis = Visexport;
 				nodetag(st, tr->memb[i], 0, hidelocal);
@@ -2416,8 +2418,11 @@ void tagexports(Node *file, int hidelocal)
 	k = htkeys(st->impl, &n);
 	for (i = 0; i < n; i++) {
 		s = getimpl(st, k[i]);
-		if (s->impl.vis == Visexport)
-			nodetag(st, s, 0, hidelocal);
+		if (s->impl.vis != Visexport)
+			continue;
+		nodetag(st, s, 0, hidelocal);
+		for (i = 0; i < tr->naux; i++)
+			tr->aux[i]->vis = Visexport;
 	}
 	free(k);
 

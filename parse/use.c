@@ -415,9 +415,9 @@ Trait *traitunpickle(FILE *fd)
 	tr->ishidden = rdbool(fd);
 	tr->name = unpickle(fd);
 	tr->param = tyunpickle(fd);
-	n = rdint(fd);
-	tr->aux = zalloc(n * sizeof(Type*));
-	for (i = 0; i < n; i++)
+	tr->naux = rdint(fd);
+	tr->aux = zalloc(tr->naux * sizeof(Type*));
+	for (i = 0; i < tr->naux; i++)
 		rdtype(fd, &tr->aux[i]);
 	n = rdint(fd);
 	for (i = 0; i < n; i++)
