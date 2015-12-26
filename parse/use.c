@@ -815,13 +815,14 @@ static void fixtraitmappings(Stab *st)
 static void protomap(Trait *tr, Type *ty, Node *dcl)
 {
 	size_t i, len;
-	char *protoname, *dclname;
+	char *protoname, *dclname, *p;
 
 	dclname = declname(dcl);
 	for (i = 0; i < tr->nfuncs; i++) {
 		protoname = declname(tr->funcs[i]);
 		len = strlen(protoname);
-		if (strstr(dclname, protoname))
+		p = strstr(dclname, protoname);
+		if (p && p[len] == '$')
 			htput(tr->funcs[i]->decl.impls, ty, dcl);
 	}
 }
