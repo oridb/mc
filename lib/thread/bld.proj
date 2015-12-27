@@ -12,11 +12,6 @@ lib thread =
 	spawn+freebsd.myr
 	exit+freebsd-x64.s
 
-	# shitty spinlock based fallbacks
-	condvar.myr
-	mutex.myr
-	future.myr
-
 	atomic-impl+x64.s
 	atomic.myr
 ;;
