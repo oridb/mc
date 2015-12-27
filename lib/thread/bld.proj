@@ -16,9 +16,3 @@ lib thread =
 	atomic.myr
 ;;
 
-bin smoketest =
-	atomictest.myr
-	test/util.myr
-
-	lib thread
-;;
