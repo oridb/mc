@@ -115,6 +115,7 @@ B matchbind	E	8
 F matchmixed
 B bigliteral	P	34359738368
 B arraylit-ni	E	2
+B arraypass	P	1
 B livearraylit	E	21
 # B arraylit	E	3       ## BUGGERED
 B structlit	E	42

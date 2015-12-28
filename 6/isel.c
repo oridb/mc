@@ -415,6 +415,7 @@ static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size
 	dp = inr(s, to);
 
 	i = 0;
+	align = 8;
 	if (align == 0)
 		align = 8;
 	if (sz <= 128) { /* arbitrary threshold; should be tuned */
@@ -933,7 +934,7 @@ void addarglocs(Isel *s, Func *fn)
 	nargs = countargs(fn->type);
 	for (i = 0; i < fn->nargs; i++) {
 		arg = fn->args[i]; 
-		argoff = align(argoff, min(size(arg), Ptrsz));
+		argoff = alignto(argoff, decltype(arg));
 		if (i >= nargs)
 			vararg = 1;
 		if (stacknode(arg)) {

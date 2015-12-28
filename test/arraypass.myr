@@ -1,0 +1,12 @@
+use std
+
+const keq = {a, b
+    std.put("{}\n", b[0])
+}
+
+const main = {args : byte[:][:]
+    var k : byte[5]
+
+    k = [1,2,3,4,5]
+    keq(k, k)
+}
