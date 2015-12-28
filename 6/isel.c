@@ -415,7 +415,6 @@ static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size
 	dp = inr(s, to);
 
 	i = 0;
-	align = 8;
 	if (align == 0)
 		align = 8;
 	if (sz <= 128) { /* arbitrary threshold; should be tuned */
