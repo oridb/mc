@@ -567,7 +567,7 @@ const ensureread = {f, n
 		| `Eof:	-> `Eof
 		| `Err e:	-> `Err e
 		| `Ok len:
-			if len > n
+			if len >= n
 				-> `Ok len
 			else
 				-> `Eof
