@@ -129,8 +129,8 @@ const buildbin = {b, targ, addsrc
 		src = std.htkeys(dg.sources)
 
 		incs = std.sldup(targ.incpath)
-		if opt_instroot.len > 0 && !std.sleq(opt_instroot, "none")
-			libpath = std.pathcat(bld.opt_instroot, config.Libpath)
+		if opt_instbase.len > 0 && !std.sleq(opt_instbase, "none")
+			libpath = std.pathcat(bld.opt_instbase, config.Libpath)
 			incs = std.slpush(incs, libpath)
 		;;
 		linkbin(dg, targ.name, src, targ.ldscript, targ.runtime, incs, targ.libdeps)
@@ -442,7 +442,7 @@ const findlib = {lib, incs
 		std.slfree(p)
 	;;
 
-	p = std.pathjoin([opt_instroot, config.Libpath, lib][:])
+	p = std.pathjoin([opt_instbase, config.Libpath, lib][:])
 	if std.fexists(p)
 		-> `std.Some p
 	;;
@@ -468,7 +468,7 @@ const freshlibs = {targ, libgraph
 			for inc in targ.incpath
 				std.fput(1, "\t{}\n", inc)
 			;;
-			std.fput(1, "\t{}/{}\n", opt_instroot, config.Libpath)
+			std.fput(1, "\t{}/{}\n", opt_instbase, config.Libpath)
 			std.exit(1)
 		;;
 	;;

@@ -33,6 +33,7 @@ lib std {inc=.} =
 	ipparse.myr
 	mk.myr
 	mkpath.myr
+	mktemp.myr
 	now.myr
 	option.myr
 	optparse.myr

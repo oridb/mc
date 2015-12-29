@@ -4,11 +4,12 @@ mbld
 .SH SYNOPSIS
 .B mbld
 .I [all | clean | install | uninstall | test]
-.I -[hsSfr]
+.I -[?csSfr]
 .I [-b bin]
 .I [-l lib]
+.I [-R src]
 .I [-I inc]
-.I [-R root]
+.I [-B base]
 .I [-r runtime]
 .I [file... | targets...]
 .br
@@ -31,8 +32,12 @@ system.
 The myrbuild options are:
 
 .TP
-.B -h
+.B -[h|?]
 Print a summary of the available options.
+
+.TP
+.B -c
+cleans the code before building. This applies to both 
 
 .TP
 .B -b \fIbinname\fP
@@ -53,6 +58,12 @@ Compile source given into a library called 'lib\fIname\fP.a' (or the equivalent
 for the target platform), and a matching usefile called 'name'. Only static
 libraries are currently supported. Ignores the contents of \fIbld.proj\fP
 and \fIbld.sub\fP if they exist.
+
+.TP
+.B -R
+.I src
+Compile source given into a binary in temporary storage, and then execute it
+with the command line arguments passed in.
 
 .TP
 .B -S

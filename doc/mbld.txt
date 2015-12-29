@@ -39,7 +39,9 @@ list for the binaries. Local libraries will still need to be added manually.
 To build, install, and test this binary, the following commands can be run:
 
     mbld                # builds everything
+    mbld gen            # generates 'gen' targets
     mbld install        # installs
+    mbld uninstall      # uninstalls
     mbld test           # runs tests
     mbld clean          # removes generated files
 
@@ -125,6 +127,12 @@ Similarly, foo.sub may refer to other libraries:
 However, any attempts to use members of foo/ as part of the build from
 within bar/ will raise an error, as you are attempting to reference a
 build from outside of the project.
+
+Flags
+-----
+
+	-T	list all targets
+	-t	build with build tag 't
 
 Commands
 --------

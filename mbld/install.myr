@@ -57,7 +57,7 @@ const movefile = {b, rm, dir, file, prefix, perm
 	var path
 
 	setdir(b, dir)
-	path = std.pathjoin([opt_destdir, opt_instroot, prefix, file][:])
+	path = std.pathjoin([opt_destdir, opt_instbase, prefix, file][:])
 	if rm
 		std.put("\trm {}\n", path)
 		if !std.remove(path)

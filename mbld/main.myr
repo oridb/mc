@@ -15,16 +15,14 @@ use "syssel.use"
 
 const main = {args : byte[:][:]
 	var b : bld.build#
-	var mt : bld.myrtarg
 	var cleanfirst
 	var dumponly
-	var targname
 	var bintarg
+	var targname
+	var runsrc
 	var cmd 
 	var tags
 
-	dumponly = false
-	cleanfirst = false
 	cmd = std.optparse(args, &[
 		.argdesc = "[inputs...]",
 		.opts = [
@@ -36,6 +34,7 @@ const main = {args : byte[:][:]
 			[.opt='I', .arg="inc", .desc="add 'inc' to your include path"],
 			[.opt='R', .arg="root", .desc="install into 'root'"],
 			[.opt='b', .arg="bin", .desc="compile binary named 'bin' from inputs"],
+			[.opt='G', .arg="bin", .desc="compile and run binary 'bin' from inputs"],
 			[.opt='l', .arg="lib", .desc="compile lib named 'lib' from inputs"],
 			[.opt='r', .arg="rt", .desc="link against runtime 'rt' instead of default"],
 			[.opt='C', .arg="mc", .desc="compile with 'mc' instead of the default compiler"],
@@ -43,8 +42,12 @@ const main = {args : byte[:][:]
 		][:]
 	])
 
-	targname = ""
 	tags = [][:]
+	runsrc = ""
+	targname = ""
+	dumponly = false
+	cleanfirst = false
+
 	bld.initopts()
 	for opt in cmd.opts
 		match opt
@@ -52,8 +55,9 @@ const main = {args : byte[:][:]
 		| ('S', ""):	bld.opt_genasm = true
 		| ('c', ""):	cleanfirst = true
 		| ('I', arg):	bld.opt_incpaths = std.slpush(bld.opt_incpaths, arg)
-		| ('R', arg):	bld.opt_instroot = arg
+		| ('B', arg):	bld.opt_instbase = arg
 		| ('t', tag):	tags = std.slpush(tags, tag)
+		| ('R', arg):	runsrc = arg
 		| ('b', arg):
 			targname = arg
 			bintarg = true
@@ -80,20 +84,16 @@ const main = {args : byte[:][:]
 
 	b = mkbuild(tags)
 	if targname.len != 0
-		mt = [
-			.name=targname,
-			.inputs=cmd.args,
-			.runtime=bld.opt_runtime,
-			.incpath=bld.opt_incpaths,
-			.libdeps=[][:]
-		]
-		if cleanfirst
-			bld.cleanmyr(b, &mt)
-		;;
-		if bintarg
-			bld.buildbin(b, &mt, true)
-		else
-			bld.buildlib(b, &mt)
+		buildimm(b, targname, cmd.args, bintarg, cleanfirst)
+	elif runsrc.len != 0
+		match std.mktemp("run", std.Ordwr, 0o755)
+		| `std.Ok (fd, tmp):
+			buildimm(b, "/tmp/foo", [runsrc][:], true, cleanfirst)
+			runcmd("/tmp/foo", cmd.args)
+			std.remove(tmp)
+			std.close(fd)
+		| `std.Fail e:
+			std.put("unable to open tmp file: {}\n", e)
 		;;
 	elif dumponly
 		findproj(b, "bld.proj")
@@ -125,6 +125,30 @@ const main = {args : byte[:][:]
 			;;
 		;;
 	;;
+}
+
+const buildimm = {b, targ, inputs, bintarg, cleanfirst
+	var mt : bld.myrtarg
+
+	mt = [
+		.name=targ,
+		.inputs=inputs,
+		.runtime=bld.opt_runtime,
+		.incpath=bld.opt_incpaths,
+		.libdeps=[][:]
+	]
+	if cleanfirst
+		bld.cleanmyr(b, &mt)
+	;;
+	if bintarg
+		bld.buildbin(b, &mt, true)
+	else
+		bld.buildlib(b, &mt)
+	;;
+}
+
+const runcmd = {bin, args
+	bld.run(std.sljoin([bin][:], args))
 }
 
 const mkbuild = {tags

@@ -1,0 +1,51 @@
+use "die.use"
+use "alloc.use"
+use "env.use"
+use "errno.use"
+use "fmt.use"
+use "option.use"
+use "pathjoin.use"
+use "memops.use"
+use "rand.use"
+use "result.use"
+use "sldup.use"
+use "syswrap.use"
+use "types.use"
+
+pkg std =
+	const mktemp	: (base : byte[:], opt : fdopt, mode : int64 -> std.result((fd, byte[:]), errno))
+;;
+
+const Retries = 100
+
+const mktemp = {base, opt, mode
+	var tmpdir, path, uniq
+	var v : uint64
+
+	match std.getenv("TMPDIR")
+	| `std.Some d:	tmpdir = d
+	| `std.None:	tmpdir = std.sldup("/tmp")
+	;;
+
+	for var i = 0; i < Retries; i++
+		v = std.randnum()
+		uniq = fmt("{}{}", base, v)
+		path = pathcat(tmpdir, uniq)
+		match std.openmode(path, opt | Ocreat, mode)
+		| `Fail e:
+			if e != Eexist
+				std.slfree(uniq)
+				std.slfree(tmpdir)
+				-> `Fail e
+			;;
+		| `Ok fd:
+			std.slfree(uniq)
+			std.slfree(tmpdir)
+			-> `Ok (fd, path)
+		;;
+		std.slfree(uniq)
+		std.slfree(path)
+	;;
+	std.slfree(tmpdir)
+	-> `Fail Eexist
+}
