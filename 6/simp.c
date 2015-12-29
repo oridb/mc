@@ -95,28 +95,7 @@ static int ispure(Node *n)
 
 size_t alignto(size_t sz, Type *t)
 {
-	size_t a;
-	size_t i;
-
-	t = tybase(t);
-	a = 0;
-	switch (t->type) {
-	case Tyarray:
-		a = alignto(1, t->sub[0]);
-	case Tytuple:
-		for (i = 0; i < t->nsub; i++)
-			a = max(alignto(1, t->sub[i]), a);
-		break;
-	case Tystruct:
-		for (i = 0; i < t->nmemb; i++)
-			a = max(alignto(1, decltype(t->sdecls[i])), a);
-		break;
-	default:
-		a = tysize(t);
-		break;
-	}
-
-	return align(sz, min(a, Ptrsz));
+	return align(sz, tyalign(t));
 }
 
 static Type *base(Type *t)

@@ -295,7 +295,7 @@ size_t tysize(Type *t)
 		for (i = 0; i < t->nmemb; i++)
 			if (t->udecls[i]->etype)
 				sz = max(sz, tysize(t->udecls[i]->etype) + Wordsz);
-		return align(sz, Ptrsz);
+		return align(sz, tyalign(t));
 		break;
 	case Tygeneric: case Tybad: case Tyvar:
 	case Typaram: case Tyunres: case Ntypes:
@@ -310,6 +310,7 @@ size_t tyalign(Type *ty)
 	size_t align, i;
 
 	align = 1;
+	ty = tybase(ty);
 	switch (ty->type) {
 	case Tyarray:
 		align = tyalign(ty->sub[0]);
