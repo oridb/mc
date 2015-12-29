@@ -10,6 +10,7 @@ use "util.use"
 pkg bld =
 	const cleanall	: (b : build# -> bool)
 	const clean	: (b : build#, targ : byte[:] -> bool)
+	const cleanmyr	: (b : build#, mt : myrtarg# -> void)
 ;;
 
 const cleanall = {b
@@ -54,6 +55,10 @@ const clean = {b, targ
 		;;
 	;;
 	-> true
+}
+
+const cleanmyr = {b, targ
+	cleanup(b, targ, targ.inputs)
 }
 
 const cleanup = {b, targ, leaves

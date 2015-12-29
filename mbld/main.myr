@@ -16,6 +16,7 @@ use "syssel.use"
 const main = {args : byte[:][:]
 	var b : bld.build#
 	var mt : bld.myrtarg
+	var cleanfirst
 	var dumponly
 	var targname
 	var bintarg
@@ -23,9 +24,11 @@ const main = {args : byte[:][:]
 	var tags
 
 	dumponly = false
+	cleanfirst = false
 	cmd = std.optparse(args, &[
 		.argdesc = "[inputs...]",
 		.opts = [
+			[.opt='c', .desc="clean before building"],
 			[.opt='T', .desc="list all available targets"],
 			[.opt='t', .arg="tag", .desc="build with specified systag"],
 			[.opt='S', .desc="generate assembly when building"],
@@ -47,6 +50,7 @@ const main = {args : byte[:][:]
 		match opt
 		| ('T', ""):	dumponly = true
 		| ('S', ""):	bld.opt_genasm = true
+		| ('c', ""):	cleanfirst = true
 		| ('I', arg):	bld.opt_incpaths = std.slpush(bld.opt_incpaths, arg)
 		| ('R', arg):	bld.opt_instroot = arg
 		| ('t', tag):	tags = std.slpush(tags, tag)
@@ -83,6 +87,9 @@ const main = {args : byte[:][:]
 			.incpath=bld.opt_incpaths,
 			.libdeps=[][:]
 		]
+		if cleanfirst
+			bld.cleanmyr(b, &mt)
+		;;
 		if bintarg
 			bld.buildbin(b, &mt, true)
 		else
@@ -99,6 +106,9 @@ const main = {args : byte[:][:]
 		bld.load(b)
 		/*bld.configure()*/
 		/* default: buildall */
+		if cleanfirst
+			bld.cleanall(b)
+		;;
 		if cmd.args.len == 0
 			bld.buildall(b)
 		else
