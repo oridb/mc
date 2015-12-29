@@ -233,14 +233,17 @@ static size_t blobstruct(Blob *seq, Htab *globls, Htab *strtab, Node *n)
 
 static size_t blobucon(Blob *seq, Htab *globls, Htab *strtab, Node *n)
 {
-	size_t sz;
+	size_t sz, pad;
 	Ucon *uc;
 
 	sz = 4;
 	uc = finducon(exprtype(n), n->expr.args[0]);
 	b(seq, mkblobi(Bti32, uc->id));
-	if (n->expr.nargs > 1)
+	if (n->expr.nargs > 1) {
+		pad = tyalign(exprtype(n->expr.args[1])) - sz;
+		sz += blobpad(seq, pad);
 		sz += blobrec(seq, globls, strtab, n->expr.args[1]);
+	}
 	sz += blobpad(seq, size(n) - sz);
 	return sz;
 }

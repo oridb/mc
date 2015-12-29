@@ -809,7 +809,7 @@ Loc *selexpr(Isel *s, Node *n)
 	case Ovjmp:
 			 selvjmp(s, n, args);
 			 break;
-	case Olit: /* fall through */
+	case Olit:
 			 r = loc(s, n);
 			 break;
 	case Ovar:
@@ -835,7 +835,7 @@ Loc *selexpr(Isel *s, Node *n)
 			 clear(s, a, args[1]->expr.args[0]->lit.intval, 0);
 			 break;
 
-			 /* cast operators that actually modify the values */
+	/* cast operators that actually modify the values */
 	case Otrunc:
 			 a = selexpr(s, args[0]);
 			 a = inr(s, a);

@@ -1155,7 +1155,7 @@ static Node *simpucon(Simp *s, Node *n, Node *dst)
 	Node *r;
 	Type *ty;
 	Ucon *uc;
-	size_t i;
+	size_t i, o;
 
 	/* find the ucon we're constructing here */
 	ty = tybase(n->expr.type);
@@ -1185,7 +1185,8 @@ static Node *simpucon(Simp *s, Node *n, Node *dst)
 	if (!uc->etype)
 		return tmp;
 	elt = rval(s, n->expr.args[1], NULL);
-	u = addk(u, Wordsz);
+	o = alignto(Wordsz, uc->etype);
+	u = addk(u, o);
 	if (isstacktype(uc->etype)) {
 		elt = addr(s, elt, uc->etype);
 		sz = disp(n->loc, tysize(uc->etype));
@@ -1200,11 +1201,13 @@ static Node *simpucon(Simp *s, Node *n, Node *dst)
 static Node *simpuget(Simp *s, Node *n, Node *dst)
 {
 	Node *u, *p, *l;
+	size_t o;
 
 	if (!dst)
 		dst = temp(s, n);
 	u = rval(s, n->expr.args[0], NULL);
-	p = addk(addr(s, u, exprtype(n)), Wordsz);
+	o = alignto(Wordsz, exprtype(n));
+	p = addk(addr(s, u, exprtype(n)), o);
 	l = assign(s, dst, load(p));
 	append(s, l);
 	return dst;
