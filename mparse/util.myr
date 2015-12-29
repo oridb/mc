@@ -1,0 +1,14 @@
+use std
+
+use "types.use"
+
+pkg parse =
+	$noret const err	: (loc : srcloc, msg : byte[:], args : ... -> void)
+	$noret const verr	: (loc : srcloc, msg : byte[:], args : std.valist -> void)
+;;
+
+const err = {loc, msg, args
+}
+
+const verr = {loc, msg, ap
+}

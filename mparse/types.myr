@@ -1,0 +1,13 @@
+pkg parse =
+	type srcloc = struct
+		file	: byte[:]
+		line	: int
+		col	: int
+	;;
+
+	type attr = union
+		`Attrpkglocal
+		`Attrextern
+		`Attrnoret
+	;;
+;;

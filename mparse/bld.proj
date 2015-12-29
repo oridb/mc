@@ -1,0 +1,7 @@
+bin tok =
+	main.myr
+	types.myr
+	tok.myr
+	tokdefs.myr
+	util.myr
+;;

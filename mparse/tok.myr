@@ -1,0 +1,540 @@
+use std
+
+use "types.use"
+use "tokdefs.use"
+use "util.use"
+
+pkg parse =
+	type tokstream = struct
+		next	: std.option(tok)
+		rest	: byte[:]
+		data	: byte[:]
+		loc	: srcloc
+	;;
+
+	const tokinit	: (path : byte[:]	-> tokstream#)
+	const tokinitf	: (path : std.fd	-> tokstream#)
+	const tokclose	: (ts : tokstream#	-> void)
+
+	const toknext	: (ts : tokstream#	-> tok)
+	const tokpeek	: (ts : tokstream#	-> tok)
+;;
+
+const Eof = std.Badchar
+
+const tokinit = {path
+	match std.slurp(path)
+	| `std.Ok data:	-> std.mk([.next=`std.None, .rest=data, .data=data])
+	| `std.Fail e:	std.fatal("could not read file {}: {}\n", path, e)
+	;;
+}
+
+const tokinitf = {fd
+	match std.fslurp(fd)
+	| `std.Ok data:	-> std.mk([.next=`std.None, .rest=data, .data=data])
+	| `std.Fail e:	std.fatal("could not read file {}: {}\n", fd, e)
+	;;
+}
+
+const tokclose = {ts
+	std.slfree(ts.data)
+	std.free(ts)
+}
+
+const toknext = {ts
+	var t
+	match ts.next
+	| `std.Some tok:
+		ts.next = `std.None
+		std.put("tok: {}\n", tok)
+		-> tok
+	| `std.None:
+		t = tokread(ts)
+		std.put("t: {}\n", t)
+		-> t
+	;;
+}
+
+const tokpeek = {ts
+	var tok
+
+	match ts.next
+	| `std.Some t:
+		-> t
+	| `std.None:
+		tok = tokread(ts)
+		ts.next = `std.Some tok
+		-> tok
+	;;
+}
+
+const tokread : (ts : tokstream# -> tok) = {ts
+	var c
+
+	skipspace(ts)
+	c = peekc(ts)
+	if ts.rest.len == 0
+		-> `Teof
+	elif c == '\n'
+		takec(ts)
+		ts.loc.line++
+		ts.loc.col = 1
+		-> `Tendln
+	elif c == '\''
+		-> chrlit(ts)
+	elif c == '"'
+		-> strlit(ts)
+	elif c == '@'
+		-> typaram(ts)
+	elif isident(c)
+		-> kwident(ts)
+	elif std.isdigit(c)
+		-> numlit(ts)
+	else
+		-> oper(ts)
+	;;
+}
+
+const skipspace = {ts
+	var ignorenl
+
+	ignorenl = false
+	while true
+		match peekc(ts)
+		| '\n':
+			if ignorenl
+				takec(ts)
+				ts.loc.line++
+				ts.loc.col = 1
+			else
+				break
+			;;
+		| '\\':
+			ignorenl = true
+			takec(ts)
+		| '/':
+			match npeekc(ts, 1)
+			| '/':	skipto(ts, '\n')
+			| '*':	skipcomment(ts)
+			| _:	break
+			;;
+		| c:
+			if std.isspace(c)
+				takec(ts)
+			else
+				break
+			;;
+		;;
+	;;
+}
+
+const skipcomment = {ts
+	var depth, startln
+
+	depth = 0
+	startln = ts.loc.line
+	while true
+		match takec(ts)
+		| '/':
+			if matchc(ts, '*')
+				depth++
+			;;
+		| '*':
+			if matchc(ts, '/')
+				depth--
+			;;
+		| '\n':
+			ts.loc.line++
+			ts.loc.col = 1
+		| Eof:
+			err(ts.loc, "file ended in comment starting on line {}\n", startln)
+		| _:
+		;;
+
+		if depth == 0
+			break
+		;;
+	;;
+}
+
+const chrlit = {ts
+	var c, close
+
+	takec(ts)
+	c = takec(ts)
+	if c == '\\'
+		c = unescape(ts)
+	;;
+	close = takec(ts)
+	if close != '\''
+		err(ts.loc, "expected closing ' in character literal, got {}\n", close)
+	;;
+	-> `Tchrlit c
+}
+
+const strlit = {ts
+	var sb
+
+	takec(ts)
+	sb = std.mksb()
+	while true
+		match takec(ts)
+		| Eof:
+			err(ts.loc, "unexpected EOF within string literal\n")
+		| '\n':
+			err(ts.loc, "unexpected \\n within string literal\n")
+		| '"':
+			break
+		| '\\':
+			std.sbputc(sb, unescape(ts))
+		| c:
+			std.sbputc(sb, c)
+		;;
+	;;
+	-> `Tstrlit std.sbfin(sb)
+}
+
+const unescape = {ts
+	var c, c1, c2
+
+	c = takec(ts)
+	/* we've already seen the '\' */
+	match c
+	| 'n':	-> '\n'
+	| 'r':	-> '\r'
+	| 't':	-> '\t'
+	| 'b':	-> '\b'
+	| '"':	-> '\"'
+	| '\'':	-> '\''
+	| 'v':	-> '\v'
+	| '\\':	-> '\\'
+	| '0':	-> '\0'
+	| 'u':	-> utfesc(ts);
+	| 'x':
+		c1 = takec(ts)
+		if !std.isxdigit(c1)
+			err(ts.loc, "expected hex digit, got {}\n", c1)
+		;;
+		c2 = takec(ts)
+		if !std.isxdigit(c2)
+			err(ts.loc, "expected hex digit, got {}\n", c2)
+		;;
+		-> 16*std.charval(c1, 16) + std.charval(c2, 16)
+
+		c2 = takec(ts)
+	| esc:
+		err(ts.loc, "unknown escape code \\{}\n", esc)
+	;;
+}
+
+const utfesc = {ts
+	var c, v
+
+	if takec(ts) != '{'
+		err(ts.loc, "\\u escape sequence without initial '{'\n")
+	;;
+	v = 0
+	c = std.Badchar
+	while true
+		c = takec(ts)
+		if std.isxdigit(c)
+			v *= 16
+			v += std.charval(c, 16)
+		else
+			break
+		;;
+		if v > 0x10FFFF
+			err(ts.loc, "invalid codepoint in \\u escape sequence\n")
+		;;
+	;;
+	if c != '}'
+		err(ts.loc, "\\u escape sequence without closing '{'\n")
+	;;
+	-> v
+}
+
+const typaram = {ts
+	takec(ts)
+	match kwident(ts)
+	| `Tident id:
+		-> `Ttyparam id
+	| kw:
+		err(ts.loc, "'{}' used as type parameter\n", kw)
+	;;
+
+}
+
+const numlit = {ts
+	var t
+
+	if matchc(ts, '0')
+		if matchc(ts, 'x')
+			t = number(ts, 16)
+		elif matchc(ts, 'b')
+			t = number(ts, 2)
+		elif matchc('o')
+			t = number(ts, 8)
+		else
+			t = number(ts, 10)
+		;;
+	else
+		t = number(ts, 10)
+	;;
+	-> t
+}
+
+/*
+only deals with the body of the number. if we reach
+this code, then it's guaranteed that we already have
+a numerical value.
+*/
+const number = {ts, base
+
+}
+
+const kwident = {ts
+	match identstr(ts)
+	| "$": 	-> `Tidxlen
+	| "_": 	-> `Tgap
+	| "$noret": 	-> `Tattr `Attrnoret
+	| "break": 	-> `Tbreak
+	| "castto": 	-> `Tcast
+	| "const": 	-> `Tconst
+	| "continue": 	-> `Tcontinue
+	| "elif": 	-> `Telif
+	| "else": 	-> `Telse
+	| "extern": 	-> `Tattr `Attrextern
+	| "false": 	-> `Tboollit false
+	| "for": 	-> `Tfor
+	| "generic": 	-> `Tgeneric
+	| "goto": 	-> `Tgoto
+	| "if": 	-> `Tif
+	| "impl": 	-> `Timpl
+	| "in": 	-> `Tin
+	| "match": 	-> `Tmatch
+	| "pkg": 	-> `Tpkg
+	| "pkglocal": 	-> `Tattr `Attrpkglocal
+	| "sizeof": 	-> `Tsizeof
+	| "struct": 	-> `Tstruct
+	| "trait": 	-> `Ttrait
+	| "true": 	-> `Tboollit true
+	| "type": 	-> `Ttype
+	| "union": 	-> `Tunion
+	| "use": 	-> `Tuse
+	| "var": 	-> `Tvar
+	| "void": 	-> `Tvoidlit
+	| "while": 	-> `Twhile
+	| ident:	-> `Tident ident
+	;;
+}
+
+const oper = {ts
+	var t, chr
+
+	chr = takec(ts)
+	std.put("c = '{}'\n", chr)
+	t = `Tobrace
+	match chr
+	| '{': t = `Tobrace
+	| '}': t = `Tcbrace
+	| '(': t = `Toparen
+	| ')': t = `Tcparen
+	| '[': t = `Tosqbrac
+	| ']': t = `Tcsqbrac
+	| ',': t = `Tcomma
+	| '`': t = `Ttick
+	| '#': t = `Tderef
+	| '~': t = `Tbnot
+	| ':':
+		if matchc(ts, ':')
+			t = `Twith
+		else
+			t = `Tcolon;
+		;;
+	| ';':
+		if matchc(ts, ';')
+			t = `Tendblk;
+		else
+			t = `Tendln;
+		;;
+	| '.':
+		if npeekc(ts, 1) == '.' && npeekc(ts, 2) == '.'
+			takec(ts)
+			takec(ts)
+			t = `Tellipsis;
+		else
+			t = `Tdot;
+		;;
+	| '+':
+		if matchc(ts, '=')
+			t = `Taddeq;
+		elif matchc(ts, '+')
+			t = `Tinc;
+		else
+			t = `Tplus;
+		;;
+	| '-':
+		if matchc(ts, '=')
+			t = `Tsubeq;
+		elif matchc(ts, '-')
+			t = `Tdec;
+		elif matchc(ts, '>')
+			t = `Tret;
+		else
+			t = `Tminus;
+		;;
+	| '*':
+		if matchc(ts, '=')
+			t = `Tmuleq;
+		else
+			t = `Tmul;
+		;;
+	| '/':
+		if matchc(ts, '=')
+			t = `Tdiveq;
+		else
+			t = `Tdiv;
+		;;
+	| '%':
+		if matchc(ts, '=')
+			t = `Tmodeq;
+		else
+			t = `Tmod;
+		;;
+	| '=':
+		if matchc(ts, '=')
+			t = `Teq;
+		else
+			t = `Tasn;
+		;;
+	| '|':
+		if matchc(ts, '=')
+			t = `Tboreq;
+		elif matchc(ts, '|')
+			t = `Tlor;
+		else
+			t = `Tbor;
+		;;
+	| '&':
+		if matchc(ts, '=')
+			t = `Tbandeq;
+		elif matchc(ts, '&')
+			t = `Tland;
+		else
+			t = `Tband;
+		;;
+	| '^':
+		if matchc(ts, '=')
+			t = `Tbxoreq;
+		else
+			t = `Tbxor;
+		;;
+	| '<':
+		if matchc(ts, '=')
+			t = `Tle;
+		elif matchc(ts, '<')
+			if matchc(ts, '=')
+				t = `Tbsleq;
+			else
+				t = `Tbsl;
+			;;
+		else
+			t = `Tlt;
+		;;
+	| '>':
+		if matchc(ts, '=')
+			t = `Tge;
+		elif matchc(ts, '>')
+			if matchc(ts, '=')
+				t = `Tbsreq;
+			else
+				t = `Tbsr;
+			;;
+		else
+			t = `Tgt;
+		;;
+
+	| '!':
+		if matchc(ts, '=')
+			t = `Tne;
+		else
+			t = `Tlnot;
+		;;
+	| c:
+		t = `Terror;
+		err(ts.loc, "junk character {}", c);
+	;;
+	-> t
+}
+
+const identstr = {ts
+	var i, str
+
+	/* ASCII */
+	if ts.rest.len == 0 || std.isdigit(ts.rest[0] castto(char))
+		-> ""
+	;;
+
+	for i = 0; i < ts.rest.len; i++
+		if !isident(ts.rest[i] castto(char))
+			break
+		;;
+	;;
+	str = ts.rest[:i]
+	ts.rest = ts.rest[i:]
+	-> std.sldup(str)
+}
+
+const isident = {c
+	-> c & 0x80 == 0 && \
+		(c >= 'a' && c <= 'z' || \
+		 c >= 'A' && c <= 'Z' || \
+		 c >= '0' && c <= '9' || \
+		 c == '_' || c == '$')
+}
+
+const peekc = {ts
+	-> std.decode(ts.rest)
+}
+
+const npeekc = {ts, n
+	var c, s
+
+	s = ts.rest
+	for var i = 0; i < n; i++
+		(c, s) = std.strstep(s)
+	;;
+	-> std.decode(s)
+}
+
+const takec = {ts
+	var c, s
+
+	(c, s) = std.strstep(ts.rest)
+	ts.rest = s
+	-> c
+}
+
+const skipto = {ts, chr
+	var c, s
+
+	s = ts.rest
+	while true
+		(c, s) = std.strstep(s)
+		if s.len == 0 || c == chr
+			break
+		;;
+	;;
+}
+
+const matchc = {ts, chr
+	var c, s
+
+	(c, s) = std.strstep(ts.rest)
+	if c == chr
+		ts.rest = s
+		-> true
+	else
+		-> false
+	;;
+}
