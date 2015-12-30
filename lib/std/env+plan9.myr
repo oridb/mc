@@ -11,6 +11,7 @@ use "sldup.use"
 use "sleq.use"
 use "slpush.use"
 use "slurp.use"
+use "cstrconv.use"
 
 pkg std =
 	const getenv :	(name : byte[:] -> option(byte[:]))
@@ -40,7 +41,8 @@ const getenv = {name
 		match std.slurp(s)
 		| `Fail m: -> `None
 		| `Ok data:
-			envkey = slpush(envkey, sldup(name))
+			data = cstrconv(data)
+			envkey = slpush(envkey, sldup(data))
 			envval = slpush(envval, data)
 			-> `Some data
 		;;
