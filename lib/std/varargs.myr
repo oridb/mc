@@ -10,6 +10,7 @@ pkg std =
 	const vatype	: (ap : valist# -> byte[:])
 	const vabytes	: (ap : valist# -> byte[:])
 	const vaenter	: (ap : valist# -> valist)
+	const vaenterunion	: (ap : valist#, elt : int32 -> valist)
 	generic vanext	: (ap : valist# -> @a)
 ;;
 
@@ -52,15 +53,29 @@ const vastart = {args
 	-> [.args = a, .tc = tc]
 }
 
+extern const put	: (fmt : byte[:], args : ... -> size)
 const vaenter = {ap
 	match typedesc(vatype(ap))
 	| `Tyslice enc:	-> [.args=sliceptr(ap.args), .tc=[.nelt=slicelen(ap.args), .rem=enc, .isiter=false]]
 	| `Tytuple tc:	-> [.args=ap.args, .tc=tc]
 	| `Tystruct tc:	-> [.args=ap.args, .tc=tc]
-	| `Tyunion tc:	-> [.args=addp(ap.args, 4), .tc=tc]
 	| `Tyarray (sz, enc):	-> [.args=ap.args, .tc=[.nelt=sz, .rem=enc, .isiter=false]]
 	| `Tyname (name, enc):	-> [.args=ap.args, .tc=typeenccursor(enc)]
-	| _:	std.die("unable to enter type")
+	| _:	std.die("unable to enter type\n")
+	;;
+}
+
+const vaenterunion = {ap, elt
+	var sub
+
+	match typedesc(vatype(ap))
+	| `Tyunion nc:	
+		for var i = 0; i < elt; i++
+			ncnext(&nc)
+		;;
+		(_, sub) = ncnext(&nc)
+		-> [.args=addp(ap.args, 4), .tc=typeenccursor(sub)]
+	| t:	std.die("type is not a union\n")
 	;;
 }
 

@@ -384,8 +384,8 @@ const fallbackfmt = {sb, params, tyenc, ap : valist# -> void
 		sbfmt(sb, "]")
 		vabytes(ap)
 	| `Tyunion nc:
-		subap = vaenter(ap)
 		i_val = (ap.args castto(int32#))#
+		subap = vaenterunion(ap, i_val)
 		for var i = 0; i < i_val; i++
 			ncnext(&nc)
 		;;
