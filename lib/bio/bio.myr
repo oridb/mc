@@ -198,7 +198,7 @@ const read = {f, dst
 	 * syscall for every read
 	 */
 	if dst.len < Small
-		fill(f, f.rbuf.len - f.rend)
+		fill(f, dst.len)
 	;;
 	/* Read as much as we can from the buffer */
 	count = std.min(dst.len, f.rend - f.rstart)
@@ -213,7 +213,7 @@ const read = {f, dst
 
 	/* Read the rest directly from the fd */
 	d = dst[count:]
-	while dst.len > 0
+	while d.len > 0
 		match std.read(f.fd, d)
 		| `std.Ok 0:
 			break
