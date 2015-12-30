@@ -253,6 +253,7 @@ const flush = {f
 
 const seek = {f, off
 	flush(f)
+	f.rstart = f.rend = 0
 	match std.seek(f.fd, off, std.Seekset)
 	| `std.Ok ret:	-> `std.Ok ret
 	| `std.Fail e:	-> `std.Fail errtype(e)
