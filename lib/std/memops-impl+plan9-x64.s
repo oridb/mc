@@ -3,12 +3,12 @@ std.memblit	: (dst : byte#, src : byte#, len : std.size -> void)
 std.memfill	: (dst : byte#, val : byte, len : std.size -> void)
 */
 TEXT std$memblit+0(SB),$0
-	CMPQ	DI,SI
+	CMPQ	SI,DI
 	JZ	.done
 	JG	.fwdcpy
 	MOVQ	SI,AX
 	SUBQ	DI,AX
-	CMPQ	AX,CX
+	CMPQ	CX,AX
 	JG	.revcpy
 .fwdcpy:
 	MOVQ	DX,CX
