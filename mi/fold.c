@@ -217,7 +217,7 @@ Node *fold(Node *n, int foldvar)
 		t = tybase(exprtype(args[0]));
 		/* we only fold lengths right now */
 		if (t->type == Tyarray && !strcmp(namestr(args[1]), "len")) {
-			r = mkexpr(n->loc, Ocast, t->asize);
+			r = t->asize;
 			r->expr.type = exprtype(n);
 		}
 		break;

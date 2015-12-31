@@ -26,6 +26,9 @@ struct Inferstate {
 	/* bound by patterns turn into decls in the action block */
 	Node **binds;
 	size_t nbinds;
+	/* bound by patterns turn into decls in the action block */
+	Node **impldecl;
+	size_t nimpldecl;
 	/* nodes that need post-inference checking/unification */
 	Node **postcheck;
 	size_t npostcheck;
@@ -1658,7 +1661,7 @@ static void specializeimpl(Inferstate *st, Node *n)
 					namestr(proto->decl.name), tystr(type(st, proto)), namestr(name),
 					tystr(ty));
 		dcl->decl.vis = t->vis;
-		lappend(&file->file.stmts, &file->file.nstmts, dcl);
+		lappend(&st->impldecl, &st->nimpldecl, dcl);
 	}
 }
 
@@ -2435,6 +2438,12 @@ static void specialize(Inferstate *st, Node *f)
 {
 	Node *d, *name;
 	size_t i;
+
+	for (i = 0; i < st->nimpldecl; i++) {
+		d = st->impldecl[i];
+		lappend(&file->file.stmts, &file->file.nstmts, d);
+		typesub(st, d, 0);
+	}
 
 	for (i = 0; i < st->nspecializations; i++) {
 		pushstab(st->specializationscope[i]);
