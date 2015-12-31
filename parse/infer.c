@@ -2333,6 +2333,9 @@ static void nodetag(Stab *st, Node *n, int ingeneric, int hidelocal)
 		nodetag(st, n->func.body, ingeneric, hidelocal);
 		break;
 	case Nimpl:
+		taghidden(n->impl.type);
+		for (i = 0; i < n->impl.naux; i++)
+			taghidden(n->impl.aux[i]);
 		for (i = 0; i < n->impl.ndecls; i++) {
 			n->impl.decls[i]->decl.vis = Vishidden;
 			nodetag(st, n->impl.decls[i], 0, hidelocal);
