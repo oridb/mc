@@ -1,0 +1,31 @@
+use std
+use "bio.use"
+
+pkg bio =
+	type lineiter = file#
+	impl iterable lineiter -> byte[:]
+
+	const lineiter	: (f : file# -> lineiter)
+;;
+
+const lineiter = {f
+	-> f castto(lineiter)
+}
+
+impl iterable lineiter -> byte[:] =
+	__iternext__ = {itp, outp
+		match bio.readln(itp# castto(file#))
+		| `Ok ln:
+			outp# = ln
+			-> true
+		| `Eof:
+			-> false
+		| `Err _:
+			-> false
+		;;
+	}
+
+	__iterfin__ = {itp, outp
+		std.slfree(outp#)
+	}
+;;
