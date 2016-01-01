@@ -35,9 +35,6 @@ struct Reaching {
 	size_t *ndefs;
 };
 
-/* expression folding */
-Node *fold(Node *n, int foldvar);
-
 /* dataflow analysis */
 Reaching *reaching(Cfg *cfg);
 Node *assignee(Node *n);

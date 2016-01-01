@@ -429,10 +429,13 @@ Type *nodetype(Node *n)
 
 int liteq(Node *a, Node *b)
 {
+	return litvaleq(a, b) && tyeq(a->lit.type, b->lit.type);
+}
+
+int litvaleq(Node *a, Node *b)
+{
 	assert(a->type == Nlit && b->type == Nlit);
 	if (a->lit.littype != b->lit.littype)
-		return 0;
-	if (!tyeq(a->lit.type, b->lit.type))
 		return 0;
 	switch (a->lit.littype) {
 	case Lvoid:	return 1;

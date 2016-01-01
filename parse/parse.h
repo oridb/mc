@@ -454,6 +454,7 @@ int hthas(Htab *ht, void *k);
 void **htkeys(Htab *ht, size_t *nkeys);
 /* useful key types */
 int liteq(Node *a, Node *b);
+int litvaleq(Node *a, Node *b);
 ulong strhash(void *key);
 int streq(void *a, void *b);
 ulong strlithash(void *key);
@@ -623,6 +624,9 @@ void readuse(Node *use, Stab *into, Vis vis);
 void writeuse(FILE *fd, Node *file);
 void tagexports(Node *file, int hidelocal);
 void addextlibs(Node *file, char **libs, size_t nlibs);
+
+/* expression folding */
+Node *fold(Node *n, int foldvar);
 
 /* typechecking/inference */
 void infer(Node *file);

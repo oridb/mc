@@ -11,7 +11,6 @@
 #include <unistd.h>
 
 #include "parse.h"
-#include "mi.h"
 
 static int getintlit(Node *n, vlong *v)
 {

@@ -901,6 +901,29 @@ static Type *basetype(Inferstate *st, Type *a)
 	return t;
 }
 
+static void checksize(Inferstate *st, Node *ctx, Type *a, Type *b)
+{
+	if (a->asize)
+		a->asize = fold(a->asize, 1);
+	if (b->asize)
+		b->asize = fold(b->asize, 1);
+	if (a->asize && exprop(a->asize) != Olit)
+		lfatal(ctx->loc, "%s: array size is not constant near %s",
+				tystr(a), ctxstr(st, ctx));
+	if (a->asize && exprop(b->asize) != Olit)
+		lfatal(ctx->loc, "%s: array size is not constant near %s",
+				tystr(b), ctxstr(st, ctx));
+	if (!a->asize)
+		a->asize = b->asize;
+	else if (!b->asize)
+		b->asize = a->asize;
+	else if (a->asize && b->asize)
+		if (!litvaleq(a->asize->expr.args[0], b->asize->expr.args[0]))
+			lfatal(ctx->loc, "array size of %s does not match %s near %s",
+				tystr(a), tystr(b), ctxstr(st, ctx));
+}
+
+
 /* Unifies two types, or errors if the types are not unifiable. */
 static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
 {
@@ -947,6 +970,10 @@ static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
 	if (a->type == Tyvar && b->type != Tyvar) {
 		if (occurs(a, b))
 			typeerror(st, a, b, ctx, "Infinite type\n");
+	}
+
+	if (a->type == Tyarray && b->type == Tyarray) {
+		checksize(st, ctx, a, b);
 	}
 
 	/* if the tyrank of a is 0 (ie, a raw tyvar), just unify.

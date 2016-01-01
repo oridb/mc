@@ -1,6 +1,7 @@
 LIB=libparse.a
 OBJ=bitset.o \
     dump.o \
+    fold.o \
     gram.o \
     htab.o \
     infer.o \
