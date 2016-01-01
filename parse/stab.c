@@ -250,12 +250,10 @@ static int mergedecl(Node *old, Node *new)
 	if (old->decl.vis == Visexport && new->decl.vis != Visexport) {
 		e = old;
 		g = new;
-	}
-	else if (new->decl.vis == Visexport && old->decl.vis != Visexport) {
+	} else if (new->decl.vis == Visexport && old->decl.vis != Visexport) {
 		e = new;
 		g = old;
-	}
-	else {
+	} else {
 		return 0;
 	}
 	old->decl.vis = Visexport;
@@ -329,15 +327,13 @@ int mergetype(Type *old, Type *new)
 {
 	if (!new) {
 		lfatal(old->loc, "double prototyping of %s", tystr(old));
-	}
-	else if (old->vis == Visexport && new->vis != Visexport) {
+	} else if (old->vis == Visexport && new->vis != Visexport) {
 		if (!old->sub && new->sub) {
 			old->sub = new->sub;
 			old->nsub = new->nsub;
 			return 1;
 		}
-	}
-	else if (new->vis == Visexport && old->vis != Visexport) {
+	} else if (new->vis == Visexport && old->vis != Visexport) {
 		if (!new->sub && old->sub) {
 			new->sub = old->sub;
 			new->nsub = old->nsub;
@@ -362,16 +358,14 @@ void puttype(Stab *st, Node *n, Type *t)
 		if (t && hastype(st, n)) {
 			t->vis = Visexport;
 			updatetype(st, n, t);
-		}
-		else {
+		} else {
 			td = xalloc(sizeof(Tydefn));
 			td->loc = n->loc;
 			td->name = n;
 			td->type = t;
 			htput(st->ty, td->name, td);
 		}
-	}
-	else if (!mergetype(ty, t)) {
+	} else if (!mergetype(ty, t)) {
 		fatal(n, "Type %s already declared on %s:%d", tystr(ty), fname(ty->loc),
 				lnum(ty->loc));
 	}

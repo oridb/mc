@@ -62,8 +62,7 @@ static int match(char c)
 	if (peek() == c) {
 		next();
 		return 1;
-	}
-	else {
+	} else {
 		return 0;
 	}
 }
@@ -512,13 +511,11 @@ static Tok *oper(void)
 		  if (match('.')) {
 			  if (match('.')) {
 				  tt = Tellipsis;
-			  }
-			  else {
+			  } else {
 				  unget();
 				  tt = Tdot;
 			  }
-		  }
-		  else {
+		  } else {
 			  tt = Tdot;
 		  }
 		  break;
@@ -589,28 +586,24 @@ static Tok *oper(void)
 	case '<':
 		  if (match('=')) {
 			  tt = Tle;
-		  }
-		  else if (match('<')) {
+		  } else if (match('<')) {
 			  if (match('='))
 				  tt = Tbsleq;
 			  else
 				  tt = Tbsl;
-		  }
-		  else {
+		  } else {
 			  tt = Tlt;
 		  }
 		  break;
 	case '>':
 		  if (match('=')) {
 			  tt = Tge;
-		  }
-		  else if (match('>')) {
+		  } else if (match('>')) {
 			  if (match('='))
 				  tt = Tbsreq;
 			  else
 				  tt = Tbsr;
-		  }
-		  else {
+		  } else {
 			  tt = Tgt;
 		  }
 		  break;
@@ -667,8 +660,7 @@ static Tok *number(int base)
 		t = mktok(Tfloatlit);
 		t->id = strdupn(&fbuf[start], fidx - start);
 		t->fltval = strtod(buf, NULL);
-	}
-	else {
+	} else {
 		t = mktok(Tintlit);
 		t->id = strdupn(&fbuf[start], fidx - start);
 		t->intval = strtoull(buf, NULL, base);
@@ -741,8 +733,7 @@ static Tok *numlit(void)
 			t = number(8);
 		else
 			t = number(10);
-	}
-	else {
+	} else {
 		t = number(10);
 	}
 
@@ -773,28 +764,21 @@ static Tok *toknext()
 	c = peek();
 	if (c == End) {
 		t = mktok(0);
-	}
-	else if (c == '\n') {
+	} else if (c == '\n') {
 		curloc.line++;
 		next();
 		t = mktok(Tendln);
-	}
-	else if (isalpha(c) || c == '_' || c == '$') {
+	} else if (isalpha(c) || c == '_' || c == '$') {
 		t = kwident();
-	}
-	else if (c == '"') {
+	} else if (c == '"') {
 		t = strlit();
-	}
-	else if (c == '\'') {
+	} else if (c == '\'') {
 		t = charlit();
-	}
-	else if (isdigit(c)) {
+	} else if (isdigit(c)) {
 		t = numlit();
-	}
-	else if (c == '@') {
+	} else if (c == '@') {
 		t = typaram();
-	}
-	else {
+	} else {
 		t = oper();
 	}
 

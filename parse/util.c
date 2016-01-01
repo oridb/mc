@@ -302,8 +302,7 @@ void wrstr(FILE *fd, char *val)
 
 	if (!val) {
 		wrint(fd, -1);
-	}
-	else {
+	} else {
 		wrint(fd, strlen(val));
 		len = strlen(val);
 		wrbuf(fd, val, len);
@@ -318,8 +317,7 @@ char *rdstr(FILE *fd)
 	len = rdint(fd);
 	if (len == -1) {
 		return NULL;
-	}
-	else {
+	} else {
 		s = xalloc(len + 1);
 		rdbuf(fd, s, len);
 		s[len] = '\0';
@@ -404,8 +402,7 @@ char *swapsuffix(char *buf, size_t sz, char *s, char *suf, char *swap)
 	if (suflen < slen && !strcmp(suf, &s[slen - suflen])) {
 		strncat(buf, s, slen - suflen);
 		strncat(buf, swap, swaplen);
-	}
-	else {
+	} else {
 		bprintf(buf, sz, "%s%s", s, swap);
 	}
 
@@ -472,13 +469,11 @@ static int optinfo(Optctx *ctx, char arg, int *take, int *mand)
 				*take = 1;
 				*mand = 1;
 				return 1;
-			}
-			else if (*s == '?') {
+			} else if (*s == '?') {
 				*take = 1;
 				*mand = 0;
 				return 1;
-			}
-			else {
+			} else {
 				*take = 0;
 				*mand = 0;
 				return 1;
@@ -538,17 +533,14 @@ int optnext(Optctx *ctx)
 		if (*ctx->curarg) {
 			ctx->optarg = ctx->curarg;
 			ctx->curarg += strlen(ctx->optarg);
-		}
-		else if (ctx->argidx < ctx->noptargs - 1) {
+		} else if (ctx->argidx < ctx->noptargs - 1) {
 			ctx->optarg = ctx->optargs[ctx->argidx + 1];
 			ctx->argidx++;
-		}
-		else if (mand) {
+		} else if (mand) {
 			fprintf(stderr, "expected argument for %c\n", *ctx->curarg);
 		}
 		findnextopt(ctx);
-	}
-	else {
+	} else {
 		if (*ctx->curarg == '\0')
 			findnextopt(ctx);
 	}

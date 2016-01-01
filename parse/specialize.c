@@ -90,8 +90,7 @@ Type *tyspecialize(Type *t, Htab *tsmap, Htab *delayed)
 			ret = tydup(t);
 			tmp = htget(delayed, t);
 			htput(delayed, ret, tyspecialize(tmp, tsmap, delayed));
-		}
-		else {
+		} else {
 			ret = t;
 		}
 		break;
@@ -101,8 +100,7 @@ Type *tyspecialize(Type *t, Htab *tsmap, Htab *delayed)
 			htput(tsmap, t, ret);
 			for (i = 0; i < t->nsub; i++)
 				ret->sub[i] = tyspecialize(t->sub[i], tsmap, delayed);
-		}
-		else {
+		} else {
 			ret = t;
 		}
 		break;

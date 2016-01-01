@@ -488,8 +488,7 @@ static int fmtunion(char *buf, size_t len, Type *t)
 			ty = tystr(t->udecls[i]->etype);
 			p += bprintf(p, end - p, "\t`%s %s\n", name, ty);
 			free(ty);
-		}
-		else {
+		} else {
 			p += bprintf(p, end - p, "\t`%s\n", name);
 		}
 	}
@@ -563,8 +562,7 @@ static int tybfmt(char *buf, size_t len, Type *t)
 		if (t->asize) {
 			i = t->asize->expr.args[0]->lit.intval;
 			p += bprintf(p, end - p, "[%zd]", i);
-		}
-		else {
+		} else {
 			p += bprintf(p, end - p, "[]");
 		}
 		break;

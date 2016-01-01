@@ -507,8 +507,7 @@ static size_t did(Node *n)
 {
 	if (n->type == Ndecl) {
 		return n->decl.did;
-	}
-	else if (n->type == Nexpr) {
+	} else if (n->type == Nexpr) {
 		assert(exprop(n) == Ovar);
 		return n->expr.did;
 	}

@@ -360,8 +360,7 @@ static Type *tyfreshen(Inferstate *st, Htab *subst, Type *t)
 		subst = mkht(tyhash, tyeq);
 		t = tyspecialize(t, subst, st->delayed);
 		htfree(subst);
-	}
-	else {
+	} else {
 		t = tyspecialize(t, subst, st->delayed);
 	}
 	tyunbind(st, t);
@@ -394,8 +393,7 @@ static void tyresolve(Inferstate *st, Type *t)
 		for (i = 0; i < t->nmemb; i++)
 			infernode(st, &t->sdecls[i], NULL, NULL);
 		st->inaggr--;
-	}
-	else if (t->type == Tyunion) {
+	} else if (t->type == Tyunion) {
 		st->inaggr++;
 		for (i = 0; i < t->nmemb; i++) {
 			t->udecls[i]->utype = t;
@@ -406,13 +404,11 @@ static void tyresolve(Inferstate *st, Type *t)
 			}
 		}
 		st->inaggr--;
-	}
-	else if (t->type == Tyarray) {
+	} else if (t->type == Tyarray) {
 		if (!st->inaggr && !t->asize)
 			lfatal(t->loc, "unsized array type outside of struct");
 		infernode(st, &t->asize, NULL, NULL);
-	}
-	else if (t->type == Typaram && st->innamed) {
+	} else if (t->type == Typaram && st->innamed) {
 		if (!isbound(st, t))
 			lfatal(
 					t->loc, "type parameter %s is undefined in generic context", tystr(t));
@@ -731,8 +727,7 @@ static void constrain(Inferstate *st, Node *ctx, Type *a, Trait *c)
 		if (!a->traits)
 			a->traits = mkbs();
 		settrait(a, c);
-	}
-	else if (!a->traits || !bshas(a->traits, c->uid)) {
+	} else if (!a->traits || !bshas(a->traits, c->uid)) {
 		fatal(ctx, "%s needs %s near %s", tystr(a), namestr(c->name), ctxstr(st, ctx));
 	}
 }
@@ -784,8 +779,7 @@ static void mergetraits(Inferstate *st, Node *ctx, Type *a, Type *b)
 			b->traits = bsdup(a->traits);
 		else if (b->traits)
 			a->traits = bsdup(b->traits);
-	}
-	else {
+	} else {
 		verifytraits(st, ctx, a, b);
 	}
 }
@@ -1014,8 +1008,7 @@ static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
 			htput(st->delayed, b, htget(st->delayed, a));
 		else if (hthas(st->delayed, b) && !hthas(st->delayed, a))
 			htput(st->delayed, a, htget(st->delayed, b));
-	}
-	else if (hthas(st->delayed, a)) {
+	} else if (hthas(st->delayed, a)) {
 		unify(st, ctx, htget(st->delayed, a), tybase(b));
 	}
 
@@ -1037,8 +1030,7 @@ static void unifycall(Inferstate *st, Node *n)
 		/* the first arg is the function itself, so it shouldn't be counted */
 		ft = mktyfunc(n->loc, &n->expr.args[1], n->expr.nargs - 1, mktyvar(n->loc));
 		unify(st, n, ft, type(st, n->expr.args[0]));
-	}
-	else if (tybase(ft)->type != Tyfunc) {
+	} else if (tybase(ft)->type != Tyfunc) {
 		fatal(n, "calling uncallable type %s", tystr(ft));
 	}
 	/* first arg: function itself */
@@ -1126,12 +1118,10 @@ static Type *initvar(Inferstate *st, Node *n, Node *s)
 		if (t->type == Tyvar) {
 			settype(st, n, mktyvar(n->loc));
 			delayedcheck(st, n, curstab());
-		}
-		else {
+		} else {
 			settype(st, n, t);
 		}
-	}
-	else {
+	} else {
 		settype(st, n, t);
 	}
 	return t;
@@ -1295,8 +1285,7 @@ static void inferpat(Inferstate *st, Node **np, Node *val, Node ***bind, size_t 
 			else
 				fatal(n, "pattern shadows variable declared on %s:%d near %s",
 						fname(s->loc), lnum(s->loc), ctxstr(st, s));
-		}
-		else {
+		} else {
 			t = mktyvar(n->loc);
 			s = mkdecl(n->loc, n->expr.args[0], t);
 			s->decl.init = val;
@@ -1707,8 +1696,7 @@ static void inferdecl(Inferstate *st, Node *n)
 		unify(st, n, type(st, n), type(st, n->decl.init));
 		if (n->decl.isconst && !n->decl.init->expr.isconst)
 			fatal(n, "non-const initializer for \"%s\"", ctxstr(st, n));
-	}
-	else {
+	} else {
 		if ((n->decl.isconst || n->decl.isgeneric) && !n->decl.isextern)
 			fatal(n, "non-extern \"%s\" has no initializer", ctxstr(st, n));
 	}
@@ -1879,19 +1867,16 @@ static Type *tyfix(Inferstate *st, Node *ctx, Type *orig, int noerr)
 			t = tyint;
 		if (hastrait(t, traittab[Tcfloat]) && checktraits(t, tyflt))
 			t = tyflt;
-	}
-	else if (!t->fixed) {
+	} else if (!t->fixed) {
 		t->fixed = 1;
 		if (t->type == Tyarray) {
 			typesub(st, t->asize, noerr);
-		}
-		else if (t->type == Tystruct) {
+		} else if (t->type == Tystruct) {
 			st->inaggr++;
 			for (i = 0; i < t->nmemb; i++)
 				typesub(st, t->sdecls[i], noerr);
 			st->inaggr--;
-		}
-		else if (t->type == Tyunion) {
+		} else if (t->type == Tyunion) {
 			for (i = 0; i < t->nmemb; i++) {
 				if (t->udecls[i]->etype) {
 					tyresolve(st, t->udecls[i]->etype);
@@ -1899,8 +1884,7 @@ static Type *tyfix(Inferstate *st, Node *ctx, Type *orig, int noerr)
 						tyfix(st, ctx, t->udecls[i]->etype, noerr);
 				}
 			}
-		}
-		else if (t->type == Tyname) {
+		} else if (t->type == Tyname) {
 			for (i = 0; i < t->narg; i++)
 				t->arg[i] = tyfix(st, ctx, t->arg[i], noerr);
 		}
@@ -1959,8 +1943,7 @@ static void infercompn(Inferstate *st, Node *n)
 		 *	 ---------------------------------------
 		 *			   x.y : membtype
 		 */
-	}
-	else {
+	} else {
 		if (tybase(t)->type == Typtr)
 			t = tybase(tf(st, t->sub[0]));
 		if (tybase(t)->type != Tystruct) {
@@ -2115,8 +2098,7 @@ static void checkrange(Inferstate *st, Node *n)
 		sval = n->lit.intval;
 		if (sval < svranges[t->type][0] || sval > svranges[t->type][1])
 			fatal(n, "literal value %lld out of range for type \"%s\"", sval, tystr(t));
-	}
-	else if ((t->type >= Tybyte && t->type <= Tyint64) || t->type == Tychar) {
+	} else if ((t->type >= Tybyte && t->type <= Tyint64) || t->type == Tychar) {
 		uval = n->lit.intval;
 		if (uval < uvranges[t->type][0] || uval > uvranges[t->type][1])
 			fatal(n, "literal value %llu out of range for type \"%s\"", uval, tystr(t));
@@ -2419,8 +2401,7 @@ void tagexports(Node *file, int hidelocal)
 			t->isreflect = 1;
 			for (j = 0; j < t->narg; j++)
 				taghidden(t->arg[j]);
-		}
-		else if (t->type == Tygeneric) {
+		} else if (t->type == Tygeneric) {
 			for (j = 0; j < t->ngparam; j++)
 				taghidden(t->gparam[j]);
 		}

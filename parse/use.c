@@ -216,8 +216,7 @@ static void typickle(FILE *fd, Type *ty)
 	 * well */
 	if (!ty->traits) {
 		wrint(fd, 0);
-	}
-	else {
+	} else {
 		wrint(fd, bscount(ty->traits));
 		for (i = 0; bsiter(ty->traits, &i); i++) {
 			if (i < Ntraits)
@@ -305,8 +304,7 @@ static void rdtype(FILE *fd, Type **dest)
 	tid = rdint(fd);
 	if (tid & Builtinmask) {
 		*dest = mktype(Zloc, tid & ~Builtinmask);
-	}
-	else {
+	} else {
 		lappend(&typefixdest, &ntypefixdest, dest);
 		lappend(&typefixid, &ntypefixid, itop(tid));
 	}
@@ -322,8 +320,7 @@ static void rdtrait(FILE *fd, Trait **dest, Type *ty)
 			*dest = traittab[tid & ~Builtinmask];
 		if (ty)
 			settrait(ty, traittab[tid & ~Builtinmask]);
-	}
-	else {
+	} else {
 		lappend(&traitfixdest, &ntraitfixdest, dest);
 		lappend(&traitfixtype, &ntraitfixtype, ty);
 		lappend(&traitfixid, &ntraitfixid, itop(tid));
@@ -887,16 +884,13 @@ int loaduse(char *path, FILE *f, Stab *st, Vis vis)
 	if (st->name) {
 		if (pkg && !strcmp(pkg, st->name)) {
 			s = st;
-		}
-		else {
+		} else {
 			s = findstab(st, pkg);
 		}
-	}
-	else {
+	} else {
 		if (pkg) {
 			s = findstab(st, pkg);
-		}
-		else {
+		} else {
 			s = st;
 		}
 	}
@@ -971,8 +965,7 @@ foundextlib:
 					  ty->ishidden = 1;
 				  if (!gettype(s, ty->name) && !ty->ishidden)
 					  puttype(s, ty->name, ty);
-			  }
-			  else if (ty->type == Tyunion) {
+			  } else if (ty->type == Tyunion) {
 				  for (i = 0; i < ty->nmemb; i++)
 					  if (!getucon(s, ty->udecls[i]->name) &&
 							  !ty->udecls[i]->synth)
@@ -1014,8 +1007,7 @@ void readuse(Node *use, Stab *st, Vis vis)
 		p = strdup(use->use.name);
 		fd = fopen(p, "r");
 		/* nonlocal (barename) uses are always searched on the include path */
-	}
-	else {
+	} else {
 		for (i = 0; i < nincpaths; i++) {
 			t = strjoin(incpaths[i], "/");
 			p = strjoin(t, use->use.name);
