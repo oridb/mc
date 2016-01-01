@@ -1180,6 +1180,36 @@ static void inferstruct(Inferstate *st, Node *n, int *isconst)
 	delayedcheck(st, n, curstab());
 }
 
+static int64_t arraysize(Inferstate *st, Node *n)
+{
+	int64_t sz, off, i;
+	Node **args, *idx;
+
+	sz = 0;
+	args = n->expr.args;
+	for (i = 0; i < n->expr.nargs; i++) {
+		if (args[i]->expr.idx) {
+			args[i]->expr.idx = fold(args[i]->expr.idx, 1);
+			idx = args[i]->expr.idx;
+			if (exprop(idx) != Olit)
+				fatal(idx, "nonconstant array initializer index near %s\n",
+					ctxstr(st, idx));
+			if (idx->expr.args[0]->lit.littype == Lchr)
+				off = idx->expr.args[0]->lit.chrval;
+			else if (idx->expr.args[0]->lit.littype == Lint)
+				off = idx->expr.args[0]->lit.intval;
+			else
+				fatal(idx, "noninteger array initializer index near %s\n",
+					ctxstr(st, idx));
+			if (off >= sz)
+				sz = off + 1;
+		} else {
+			sz++;
+		}
+	}
+	return sz;
+}
+
 static void inferarray(Inferstate *st, Node *n, int *isconst)
 {
 	size_t i;
@@ -1187,7 +1217,7 @@ static void inferarray(Inferstate *st, Node *n, int *isconst)
 	Node *len;
 
 	*isconst = 1;
-	len = mkintlit(n->loc, n->expr.nargs);
+	len = mkintlit(n->loc, arraysize(st, n));
 	t = mktyarray(n->loc, mktyvar(n->loc), len);
 	for (i = 0; i < n->expr.nargs; i++) {
 		infernode(st, &n->expr.args[i], NULL, NULL);
