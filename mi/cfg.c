@@ -29,8 +29,10 @@ static Bb *mkbb(Cfg *cfg)
 
 static void strlabel(Cfg *cfg, char *lbl, Bb *bb)
 {
-	htput(cfg->lblmap, lbl, bb);
-	lappend(&bb->lbls, &bb->nlbls, lbl);
+	if (htget(cfg->lblmap, lbl) != bb) {
+		htput(cfg->lblmap, lbl, bb);
+		lappend(&bb->lbls, &bb->nlbls, lbl);
+	}
 }
 
 static void label(Cfg *cfg, Node *lbl, Bb *bb)
