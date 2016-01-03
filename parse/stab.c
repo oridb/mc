@@ -276,6 +276,8 @@ static int mergedecl(Node *old, Node *new)
 		e->decl.type = g->decl.type;
 	else if (g->decl.type->type == Tyvar)
 		g->decl.type = e->decl.type;
+	else
+		fatal(e, "FIXME: types on both prototype and decl not yet allowed\n");
 
 	if (!e->decl.init)
 		e->decl.init = g->decl.init;
