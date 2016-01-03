@@ -24,6 +24,7 @@ const uninstall = {b
 
 const movetargs = {b, rm
 	var libarchive
+	var pfx
 
 	for tn in b.all
 		match gettarg(b.targs, tn)
@@ -37,6 +38,15 @@ const movetargs = {b, rm
 				libarchive = std.fmt("lib{}.a", lt.name)
 				movefile(b, rm, lt.dir, libarchive, config.Libpath, 0o644)
 				std.slfree(libarchive)
+			;;
+		| `Data dt:
+			for blob in dt.blobs
+				if dt.base.len == 0
+					pfx = config.Sharepath
+				else
+					pfx = dt.base
+				;;
+				movefile(b, rm, dt.dir, blob, pfx, 0o644)
 			;;
 		| `Gen gt:
 			/* nothing to do */

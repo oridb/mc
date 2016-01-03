@@ -28,8 +28,9 @@ const buildall = {b
 			;;
 		| `Lib lt:	buildlib(b, lt)
 		| `Gen gt:	genfiles(b, gt)
-		| `Man mt:	/* nothing needed */
-		| `Cmd ct:	/* these are for manual commands or tests */
+		| `Data _:	/* nothing needed */
+		| `Man _:	/* nothing needed */
+		| `Cmd _:	/* these are for manual commands or tests */
 		;;
 	;;
 	setdir(b, "")
@@ -56,8 +57,9 @@ const buildtarg = {b, targ
 			;;
 		| `Lib lt:	buildlib(b, lt)
 		| `Gen gt:	genfiles(b, gt)
-		| `Man mt:	/* nothing needed */
-		| `Cmd ct:	/* these are for manual commands or tests */
+		| `Data _:	/* nothing needed */
+		| `Man _:	/* nothing needed */
+		| `Cmd _:	/* these are for manual commands or tests */
 		;;
 	;;
 	build(b, targ)
@@ -101,7 +103,8 @@ const build = {b, targ
 	| `std.Some (`Lib lt):	buildlib(b, lt)
 	| `std.Some (`Gen gt):	runin(b, gt.cmd, gt.dir)
 	| `std.Some (`Cmd ct):	runin(b, ct.cmd, ct.dir)
-	| `std.Some (`Man mt):	/* nothing needed */
+	| `std.Some (`Data _):	/* nothing needed */
+	| `std.Some (`Man _):	/* nothing needed */
 	| `std.None:	std.fatal("invalid target {}\n", targ)
 	;;
 	-> true

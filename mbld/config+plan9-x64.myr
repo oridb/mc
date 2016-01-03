@@ -11,4 +11,5 @@ pkg config =
 	const Manpath	= "sys/man/"
 	const Binpath	= "amd64/bin"
 	const Libpath	= "amd64/lib/myr"
+	const Sharepath	= "lib"
 ;;

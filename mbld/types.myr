@@ -25,6 +25,7 @@ pkg bld =
 		`Gen	cmdtarg#
 		`Cmd	cmdtarg#
 		`Man	mantarg#
+		`Data	datatarg#
 	;;
 
 	type myrtarg = struct
@@ -40,7 +41,7 @@ pkg bld =
 		install	: bool
 		runtime	: byte[:]
 		incpath	: byte[:][:]
-		systags	: byte[:][:]
+		tags	: byte[:][:]
 		ldscript	: byte[:]
 	;;
 
@@ -49,7 +50,7 @@ pkg bld =
 		out	: byte[:][:]
 		cmd	: byte[:][:] 
 		deps	: byte[:][:] 
-		systags	: byte[:][:]
+		tags	: byte[:][:]
 		durable	: bool
 		/* we can have multiple outputs, but we only want to run once for each */
 		done	: bool
@@ -58,7 +59,16 @@ pkg bld =
 
 	type mantarg = struct
 		dir	: byte[:]
+		tags	: byte[:][:]
 		pages	: byte[:][:]
+	;;
+
+	type datatarg = struct
+		dir	: byte[:]
+		name	: byte[:]
+		tags	: byte[:][:]
+		base	: byte[:]
+		blobs	: byte[:][:]
 	;;
 
 	type depgraph = struct

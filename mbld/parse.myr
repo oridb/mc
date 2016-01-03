@@ -201,6 +201,7 @@ const target = {b, p
 	| `std.Some "test":	testtarget(b, p)
 	| `std.Some "gen":	cmdtarget(b, p, "gen", false)
 	| `std.Some "cmd":	cmdtarget(b, p, "cmd", true)
+	| `std.Some "data":	datatarget(b, p, "data")
 	| `std.Some "man":	mantarget(b, p)
 	| `std.Some "sub":	subtarget(b, p)
 	/* global attributes */
@@ -242,7 +243,7 @@ const expectword = {b, p, attr
 const bintarget = {b, p
 	var t
 	t = myrtarget(b, p, "bin")
-	addtarg(p, b, t.name, t.systags, `Bin t)
+	addtarg(p, b, t.name, t.tags, `Bin t)
 }
 
 /* libtarget: myrtarget */
@@ -250,7 +251,7 @@ const libtarget = {b, p
 	var t
 	t = myrtarget(b, p, "lib")
 	t.islib = true
-	addtarg(p, b, t.name, t.systags, `Lib t)
+	addtarg(p, b, t.name, t.tags, `Lib t)
 }
 
 /* testtarget: myrtarget */
@@ -259,7 +260,7 @@ const testtarget = {b, p
 	t = myrtarget(b, p, "test")
 	t.istest = true
 	t.install = false
-	addtarg(p, b, t.name, t.systags, `Bin t)
+	addtarg(p, b, t.name, t.tags, `Bin t)
 }
 
 /* mantarget: anontarget */
@@ -285,7 +286,7 @@ const subtarget = {b, p
 
 /* gentarget: wordlist {attrs} = wordlist ;; */
 const cmdtarget = {b, p, cmd, iscmd
-	var outlist, deplist, cmdlist, systags
+	var outlist, deplist, cmdlist, tags
 	var durable, istest
 	var attrs
 	var gt
@@ -327,14 +328,14 @@ const cmdtarget = {b, p, cmd, iscmd
 	durable = false
 	istest = false
 	deplist = [][:]
-	systags = [][:]
+	tags = [][:]
 	for elt in attrs
 		match elt
 		| ("durable", ""):	durable = true
 		| ("test", ""):		istest = true
 		| ("notest", ""):	istest = false
 		| ("dep", depname):	deplist = std.slpush(deplist, depname)
-		| ("tag", tag):	systags = std.slpush(systags, tag)
+		| ("tag", tag):	tags = std.slpush(tags, tag)
 		| (attr, ""):
 			failparse(p, "attribute {} not valid on {} targets\n", attr, cmd)
 		| (attr, val):
@@ -349,14 +350,14 @@ const cmdtarget = {b, p, cmd, iscmd
 		.istest=istest,
 		.deps=deplist,
 		.cmd=cmdlist,
-		.systags=systags,
+		.tags=tags,
 	])
 	for o in outlist
 		if iscmd
-			addtarg(p, b, o, gt.systags, `Cmd gt)
+			addtarg(p, b, o, gt.tags, `Cmd gt)
 		else
 			std.htput(b.gensrc, o, gt)
-			addtarg(p, b, o, gt.systags, `Gen gt)
+			addtarg(p, b, o, gt.tags, `Gen gt)
 		;;
 	;;
 }
@@ -366,7 +367,7 @@ myrtarget: name '=' inputlist ';;'
 	| name attrlist = inputlist ';;'
 */
 const myrtarget = {b, p, targ
-	var ldscript, runtime, install, incpath, systags
+	var ldscript, runtime, install, incpath, tags
 	var name, inputs, libdeps, attrs
 	var istest
 	var fsel
@@ -416,13 +417,13 @@ const myrtarget = {b, p, targ
 	for path in p.incpath
 		incpath = std.slpush(incpath, path)
 	;;
-	systags = [][:]
+	tags = [][:]
 	for elt in attrs
 		match elt
 		| ("ldscript", lds):	ldscript = std.sldup(lds)
 		| ("runtime", rt):	runtime = std.sldup(rt)
 		| ("inc", path):	incpath = std.slpush(incpath, std.sldup(path))
-		| ("tag", tag):		systags = std.slpush(systags, tag)
+		| ("tag", tag):		tags = std.slpush(tags, tag)
 		| ("inst", ""):		install = true
 		| ("noinst", ""):	install = false
 		| ("test", ""):		istest = true
@@ -445,12 +446,68 @@ const myrtarget = {b, p, targ
 		.islib=false,
 		.istest=istest,
 		/* attrs */
-		.systags=systags,
+		.tags=tags,
 		.install=install,
 		.ldscript=ldscript,
 		.runtime=runtime,
 		.incpath=incpath,
 	])
+}
+
+const datatarget = {b, p, targ
+	var name, attrs, blobs
+	var tags, base
+
+	match word(p)
+	| `std.Some n:	name = n
+	| `std.None:	failparse(p, "expected target name after '{}'\n", targ)
+	;;
+
+	skipspace(p)
+	if matchc(p, '{')
+		match attrlist(p)
+		| `std.Some al:	attrs = al
+		| `std.None:	failparse(p, "invalid attr list for {} {}\n", targ, name)
+		;;
+	else
+		attrs = [][:]
+	;;
+
+	skipspace(p)
+	if !matchc(p, '=')
+		failparse(p, "expected '=' after '{} {}'\n", targ, name)
+	;;
+
+	match wordlist(p)
+	| `std.Some wl: 
+		blobs = wl
+	| `std.None: failparse(p, "expected list of file names after '{} {}'\n", targ, name)
+	;;
+
+	skipspace(p)
+	if !matchc(p, ';') || !matchc(p, ';')
+		failparse(p, "expected ';;' terminating input list, got {}\n", peekc(p))
+	;;
+
+	tags = [][:]
+	for elt in attrs
+		match elt
+		| ("tag", tag):		tags = std.slpush(tags, tag)
+		| ("base", basedir):	base = basedir
+		| (invalid, ""):
+			std.fatal("{}: got invalid attr '{}'\n", targ, invalid)
+		| (invalid, attr):
+			std.fatal("{}: got invalid attr '{} = {}'\n", targ, invalid, attr)
+		;;
+	;;
+
+	addtarg(p, b, name, tags, `Data std.mk([
+		.dir=std.sldup(p.fdir),
+		.name=name,
+		.tags=tags,
+		.base=base,
+		.blobs=blobs,
+	]))
 }
 
 /* anontarget: '=' wordlist ';;' */
@@ -671,11 +728,11 @@ const getc = {p
 	-> c
 }
 
-const addtarg = {p, b, name, systags, targ
+const addtarg = {p, b, name, tags, targ
 	var tn
 
 	tn = std.fmt("{}:{}", p.fdir, name)
-	sysseladdlist(p.targsel, tn, systags, (tn, targ))
+	sysseladdlist(p.targsel, tn, tags, (tn, targ))
 }
 
 const libpath = {p, libpath
