@@ -10,6 +10,7 @@ lib std {inc=.} =
 	chartype.myr
 	clear.myr
 	cmp.myr
+	consts.myr
 	cstrconv.myr
 	die.myr
 	dirname.myr

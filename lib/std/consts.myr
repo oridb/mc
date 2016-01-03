@@ -1,0 +1,7 @@
+use "syswrap.use"
+
+pkg std =
+	const In	: fd = 0
+	const Out	: fd = 1
+	const Err	: fd = 1
+;;
