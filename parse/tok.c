@@ -755,7 +755,7 @@ static Tok *typaram(void)
 	return t;
 }
 
-static Tok *toknext()
+static Tok *toknext(void)
 {
 	Tok *t;
 	int c;

@@ -39,9 +39,6 @@ char stackness[] = {
 
 int isstacktype(Type *t) { return stackness[tybase(t)->type]; }
 
-void breakhere() {
-}
-
 Type *mktype(Srcloc loc, Ty ty)
 {
 	Type *t;
@@ -54,8 +51,6 @@ Type *mktype(Srcloc loc, Ty ty)
 	 * each builtin type in order. As we do this, we put the type into
 	 * the table as ususal, which gives us an identity mapping.
 	 */
-	if (ntypes == 37)
-		breakhere();
 	if (ty <= Tyvalist && ty < ntypes)
 		return types[ty];
 
