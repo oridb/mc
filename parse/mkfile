@@ -6,7 +6,8 @@ CFLAGS=-c -D_POSIX_SOURCE -D_SUSV2_SOURCE -D_C99_SNPRINTF_EXTENSION
 LIB=libparse.a
 OFILES=bitset.$O \
     dump.$O \
-    gram.$O \
+ 	fold.$O\
+	gram.$O \
     htab.$O \
     infer.$O \
     names.$O \
