@@ -41,12 +41,13 @@ const movetargs = {b, rm
 			;;
 		| `Data dt:
 			for blob in dt.blobs
-				if dt.base.len == 0
-					pfx = config.Sharepath
+				if dt.path.len == 0
+					pfx = std.pathcat(config.Sharepath, dt.name)
+					movefile(b, rm, dt.dir, blob, pfx, 0o644)
+					std.slfree(pfx)
 				else
-					pfx = dt.base
+					movefile(b, rm, dt.dir, blob, dt.path, 0o644)
 				;;
-				movefile(b, rm, dt.dir, blob, pfx, 0o644)
 			;;
 		| `Gen gt:
 			/* nothing to do */

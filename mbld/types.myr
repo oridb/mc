@@ -67,7 +67,7 @@ pkg bld =
 		dir	: byte[:]
 		name	: byte[:]
 		tags	: byte[:][:]
-		base	: byte[:]
+		path	: byte[:]
 		blobs	: byte[:][:]
 	;;
 

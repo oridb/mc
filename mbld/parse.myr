@@ -456,7 +456,7 @@ const myrtarget = {b, p, targ
 
 const datatarget = {b, p, targ
 	var name, attrs, blobs
-	var tags, base
+	var tags, path
 
 	match word(p)
 	| `std.Some n:	name = n
@@ -493,7 +493,7 @@ const datatarget = {b, p, targ
 	for elt in attrs
 		match elt
 		| ("tag", tag):		tags = std.slpush(tags, tag)
-		| ("base", basedir):	base = basedir
+		| ("path", pathdir):	path = pathdir
 		| (invalid, ""):
 			std.fatal("{}: got invalid attr '{}'\n", targ, invalid)
 		| (invalid, attr):
@@ -505,7 +505,7 @@ const datatarget = {b, p, targ
 		.dir=std.sldup(p.fdir),
 		.name=name,
 		.tags=tags,
-		.base=base,
+		.path=path,
 		.blobs=blobs,
 	]))
 }
