@@ -1155,8 +1155,8 @@ static void rewritebb(Isel *s, Asmbb *bb, Loc **aliasmap)
 	if (!bb)
 		return;
 	map = mkht(reglochash, regloceq);
-	for (j = 0; j < bb->ni; j++) {
-		insn = bb->il[j];
+	for (j = bb->ni; j > 0; j--) {
+		insn = bb->il[j - 1];
 		replacealias(s, aliasmap, s->nreg, insn);
 		if (nopmov(insn))
 			continue;
@@ -1164,18 +1164,6 @@ static void rewritebb(Isel *s, Asmbb *bb, Loc **aliasmap)
 		ndef = defs(insn, def);
 		/* if there is a remapping, insert the loads and stores as needed */
 		if (remap(s, map, insn, use, nuse, def, ndef)) {
-			for (i = 0; i < nuse; i++) {
-				tmp = htget(map, locmap[use[i]]);
-				if (!tmp)
-					continue;
-				if (isfloatmode(tmp->mode))
-					mov = mkinsn(Imovs, spillslot(s, use[i]), tmp, NULL);
-				else
-					mov = mkinsn(Imov, spillslot(s, use[i]), tmp, NULL);
-				lappend(&new, &nnew, mov);
-			}
-			updatelocs(s, map, insn);
-			lappend(&new, &nnew, insn);
 			for (i = 0; i < ndef; i++) {
 				tmp = htget(map, locmap[def[i]]);
 				if (!tmp)
@@ -1186,6 +1174,18 @@ static void rewritebb(Isel *s, Asmbb *bb, Loc **aliasmap)
 					mov = mkinsn(Imov, tmp, spillslot(s, def[i]), NULL);
 				lappend(&new, &nnew, mov);
 			}
+			updatelocs(s, map, insn);
+			lappend(&new, &nnew, insn);
+			for (i = 0; i < nuse; i++) {
+				tmp = htget(map, locmap[use[i]]);
+				if (!tmp)
+					continue;
+				if (isfloatmode(tmp->mode))
+					mov = mkinsn(Imovs, spillslot(s, use[i]), tmp, NULL);
+				else
+					mov = mkinsn(Imov, spillslot(s, use[i]), tmp, NULL);
+				lappend(&new, &nnew, mov);
+			}
 			for (i = 0; i < nuse; i++)
 				htdel(map, locmap[use[i]]);
 			for (i = 0; i < ndef; i++)
@@ -1193,6 +1193,11 @@ static void rewritebb(Isel *s, Asmbb *bb, Loc **aliasmap)
 		} else {
 			lappend(&new, &nnew, insn);
 		}
+	}
+	for (i = 0; i < nnew/2; i++) {
+		insn = new[i];
+		new[i] = new[nnew - i - 1];
+		new[nnew - i -1] = insn;
 	}
 	lfree(&bb->il, &bb->ni);
 	bb->il = new;
