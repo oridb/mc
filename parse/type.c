@@ -854,6 +854,7 @@ void iterableinit(Stab *st, Trait *tr)
 	func->decl.isgeneric = 1;
 	func->decl.isconst = 1;
 	func->decl.isglobl = 1;
+	func->decl.isextern = 1;
 
 	lappend(&tr->funcs, &tr->nfuncs, func);
 	putdcl(st, func);
@@ -873,6 +874,7 @@ void iterableinit(Stab *st, Trait *tr)
 	func->decl.isgeneric = 1;
 	func->decl.isconst = 1;
 	func->decl.isglobl = 1;
+	func->decl.isextern = 1;
 
 	lappend(&tr->funcs, &tr->nfuncs, func);
 	putdcl(st, func);

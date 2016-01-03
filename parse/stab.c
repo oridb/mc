@@ -233,7 +233,9 @@ Trait *gettrait(Stab *st, Node *n)
 	return NULL;
 }
 
-Stab *getns(Node *file, char *name) { return htget(file->file.ns, name); }
+Stab *getns(Node *file, char *name) {
+	return htget(file->file.ns, name);
+}
 
 static int mergedecl(Node *old, Node *new)
 {

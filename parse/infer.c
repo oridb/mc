@@ -1726,9 +1726,6 @@ static void inferdecl(Inferstate *st, Node *n)
 		unify(st, n, type(st, n), type(st, n->decl.init));
 		if (n->decl.isconst && !n->decl.init->expr.isconst)
 			fatal(n, "non-const initializer for \"%s\"", ctxstr(st, n));
-	} else {
-		if ((n->decl.isconst || n->decl.isgeneric) && !n->decl.isextern)
-			fatal(n, "non-extern \"%s\" has no initializer", ctxstr(st, n));
 	}
 }
 
@@ -1736,7 +1733,15 @@ static void inferstab(Inferstate *st, Stab *s)
 {
 	void **k;
 	size_t n, i;
+	Node *dcl;
 	Type *t;
+
+	k = htkeys(s->dcl, &n);
+	for (i = 0; i < n; i++) {
+		dcl = htget(s->dcl, k[i]);
+		tf(st, type(st, dcl));
+	}
+	free(k);
 
 	k = htkeys(s->ty, &n);
 	for (i = 0; i < n; i++) {
@@ -2098,6 +2103,12 @@ static void stabsub(Inferstate *st, Stab *s)
 		d = getdcl(s, k[i]);
 		if (d)
 			d->decl.type = tyfix(st, d, d->decl.type, 0);
+		if (!d->decl.isconst && !d->decl.isgeneric)
+			continue;
+		if (d->decl.trait)
+			continue;
+		if (!d->decl.isimport && !d->decl.isextern && !d->decl.init)
+			fatal(d, "non-extern constant \"%s\" has no initializer", ctxstr(st, d));
 	}
 	free(k);
 }

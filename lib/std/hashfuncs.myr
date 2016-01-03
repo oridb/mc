@@ -22,7 +22,6 @@ pkg std =
 	const murmurhash2	: (data : byte[:], seed : uint32 -> uint32)
 
 	generic slhash	: (sl : @a[:] -> uint32)
-	generic tobytes	: (sl : @a[:] -> byte[:])
 ;;
 
 const Seed = 1234
