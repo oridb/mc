@@ -370,9 +370,10 @@ static int degreechange(Isel *s, regid u, regid v)
 
 static void alputedge(Isel *s, regid u, regid v)
 {
+	if (!s->gadj[u])
+		s->gadj[u] = xalloc(maxregid*sizeof(regid));
+	s->gadj[u][s->ngadj[u]] = v;
 	s->ngadj[u]++;
-	s->gadj[u] = xrealloc(s->gadj[u], s->ngadj[u]*sizeof(regid));
-	s->gadj[u][s->ngadj[u] - 1] = v;
 }
 
 static void wlput(Loc ***wl, size_t *nwl, Loc *l)
@@ -472,7 +473,10 @@ static void build(Isel *s)
 	size_t nu, nd;
 	size_t i, k, a;
 	ssize_t j;
-	Bitset *live;
+	regid *livesparse;
+	regid *livedense;
+	size_t nlive;
+	regid  r;
 	Asmbb **bb;
 	size_t nbb;
 	Insn *insn;
@@ -482,10 +486,35 @@ static void build(Isel *s)
 	bb = s->bb;
 	nbb = s->nbb;
 
+#define PUT(reg) do { \
+	assert(reg < maxregid); \
+	if (livesparse[reg] >= nlive || livedense[livesparse[reg]] != reg) {\
+		livesparse[reg] = nlive; \
+		livedense[nlive] = reg; \
+		nlive++; \
+	} \
+	} while(0)
+
+#define DEL(reg) do { \
+	assert(reg < maxregid); \
+	regid rtmp; \
+	if (livesparse[reg] < nlive && livedense[livesparse[reg]] == reg) { \
+		rtmp = livedense[nlive - 1]; \
+		livedense[livesparse[reg]] = rtmp; \
+		livesparse[rtmp] = livesparse[reg]; \
+		nlive--; \
+	} \
+	} while(0)
+
+	/* sparse sets are used here because we iterate them. A lot. */
+	livedense = xalloc((maxregid  + 1) * sizeof(regid));
+	livesparse = xalloc((maxregid  + 1) * sizeof(regid));
 	for (i = 0; i < nbb; i++) {
 		if (!bb[i])
 			continue;
-		live = bsdup(bb[i]->liveout);
+		nlive = 0;
+		for (k = 0; bsiter(bb[i]->liveout, &k); k++)
+			PUT(k);
 		for (j = bb[i]->ni - 1; j >= 0; j--) {
 			insn = bb[i]->il[j];
 			nu = uses(insn, u);
@@ -505,16 +534,17 @@ static void build(Isel *s)
 
 			/* moves get special treatment, since we don't want spurious
 			 * edges between the src and dest */
-			//iprintf(stdout, insn);
 			if (ismove(insn)) {
 				/* live \= uses(i) */
 				for (k = 0; k < nu; k++) {
 					/* remove all physical register aliases */
 					if (bshas(s->prepainted, u[k])) {
-						for (a = 0; a < Nmode; a++)
-							bsdel(live, regmap[colourmap[u[k]]][a]);
+						for (a = 0; a < Nmode; a++) {
+							r = regmap[colourmap[u[k]]][a];
+							DEL(r);
+						}
 					} else {
-						bsdel(live, u[k]);
+						DEL(u[k]);
 					}
 				}
 
@@ -526,27 +556,36 @@ static void build(Isel *s)
 				bsput(s->wlmoveset, insn->uid);
 			}
 			/* live = live U def(i) */
-			for (k = 0; k < nd; k++)
-				bsput(live, d[k]);
+			for (k = 0; k < nd; k++) {
+				PUT(d[k]);
+			}
 
-			for (k = 0; k < nd; k++)
-				for (l = 0; bsiter(live, &l); l++)
-					addedge(s, d[k], l);
+			for (k = 0; k < nd; k++) {
+				for (l = 0; l < nlive; l++) {
+					addedge(s, d[k], livedense[l]);
+				}
+			}
 			/* live = use(i) U (live \ def(i)) */
-			for (k = 0; k < nd; k++)
-				bsdel(live, d[k]);
-			for (k = 0; k < nu; k++)
-				bsput(live, u[k]);
+			for (k = 0; k < nd; k++) {
+				DEL(d[k]);
+			}
+
+			for (k = 0; k < nu; k++) {
+				PUT(u[k]);
+			}
 		}
-		bsfree(live);
 	}
+	free(livedense);
+	free(livesparse);
+#undef PUT
+#undef DEL
 }
 
 static int adjavail(Isel *s, regid r)
 {
-	if (bshas(s->coalesced, r))
-		return 0;
 	if (locmap[r]->list == &s->selstk)
+		return 0;
+	if (bshas(s->coalesced, r))
 		return 0;
 	return 1;
 }
