@@ -38,7 +38,6 @@ pkg std =
 	const open	: (path : byte[:], opts : fdopt -> result(fd, errno))
 	const openmode	: (path : byte[:], opts : fdopt, mode : int64 -> result(fd, errno))
 	const close	: (fd : fd -> errno)
-	const creat	: (path : byte[:], mode : int64 -> result(fd, errno))
 	const read	: (fd : fd, buf : byte[:] -> result(size, errno))
 	const write	: (fd : fd, buf : byte[:] -> result(size, errno))
 	const seek	: (fd : fd, delta : off, whence : whence -> result(off, errno))
@@ -70,7 +69,6 @@ pkg std =
 	pkglocal const freemem	: (p : byte#, sz : size -> void)
 	pkglocal const curtime	: (-> time)
 	pkglocal const p9errstr	: (buf : byte[:] -> byte[:])
-	pkglocal const waitpid	: (pid:pid, loc:int32#, opt : int64	-> pid)
 
 	/* statbuf offsets */
 	pkglocal const Sizeoff	: int64 = 0
