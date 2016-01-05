@@ -1,0 +1,59 @@
+use std
+use sys
+
+use "atomic.use"
+use "common.use"
+use "mutex.use"
+
+pkg thread =
+	type cond = struct
+		_mtx	: mutex#
+		_seq	: uint32
+	;;
+
+	const mkcond	: (mtx : mutex# -> cond)
+	const condwait	: (cond : cond# -> void)
+	const condsignal	: (cond : cond# -> void)
+	const condbroadcast	: (cond : cond# -> void)
+;;
+
+const mkcond = {mtx
+	-> [._mtx = mtx, ._seq = 0]
+}
+
+const condwait = {cond
+	var seq
+	var mtx
+
+	mtx = cond._mtx
+	seq = cond._seq
+
+	mtxunlock(mtx)
+	sys.umtx_op(&cond._seq castto(void#), \
+		sys.Umtxwaituintpriv, \
+		seq castto(uint64), \
+		Zptr, Zptr)
+
+	/*
+	We need to atomically set the mutex to contended. This allows us to
+	pass responsibility for waking up the potential other waiters on to the
+	unlocker of the mutex.
+	*/
+	while xchg(&mtx._state, Contended) != Unlocked
+		sys.umtx_op(&mtx._state castto(void#), \
+			sys.Umtxwaituintpriv, \
+			Contended castto(uint64), \
+			Zptr, Zptr)
+	;;
+}
+
+const condsignal = {cond : cond#
+	xadd(&cond._seq, 1)
+	sys.umtx_op(&cond._seq castto(void#), sys.Umtxwakepriv, 1, Zptr, Zptr)
+}
+
+const condbroadcast = {cond : cond#
+	xadd(&cond._seq, 1)
+	sys.umtx_op(&cond._seq castto(void#), sys.Umtxwakepriv, 0x7ffffff, Zptr, Zptr)
+}
+

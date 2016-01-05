@@ -3,14 +3,15 @@ lib thread =
 
 	# linux impl of basic thread primitives
 	condvar+linux.myr
+	future+linux.myr
 	mutex+linux.myr
 	spawn+linux.myr
-	future+linux.myr
 	exit+linux-x64.s
 
 	# freebsd impl of thread primitives
-	spawn+freebsd.myr
+	condvar+freebsd.myr
 	mutex+freebsd.myr
+	spawn+freebsd.myr
 	exit+freebsd-x64.s
 
 	atomic-impl+x64.s
