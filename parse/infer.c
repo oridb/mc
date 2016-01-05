@@ -2476,8 +2476,8 @@ void tagexports(Node *file, int hidelocal)
 		if (s->impl.vis != Visexport)
 			continue;
 		nodetag(st, s, 0, hidelocal);
-		for (i = 0; i < tr->naux; i++)
-			tr->aux[i]->vis = Visexport;
+		for (j = 0; j < tr->naux; j++)
+			tr->aux[j]->vis = Visexport;
 	}
 	free(k);
 

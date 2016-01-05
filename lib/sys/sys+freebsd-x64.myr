@@ -14,6 +14,7 @@ pkg sys =
 	type filemode	= uint16
 	type filetype	= uint8
 	type fcntlcmd	= int64
+	type umtxop	= int32
 
 	type clock = union
 		`Clockrealtime
@@ -249,6 +250,31 @@ pkg sys =
 
 	/* return value for a failed mapping */
 	const Mapbad	: byte# = -1 castto(byte#)
+
+	/* umtx ops */
+	const Umtxlock	: umtxop = 0
+	const Umtxunlock	: umtxop = 1
+	const Umtxwait	: umtxop = 2
+	const Umtxwake	: umtxop = 3
+	const UmtxmtxTrylock	: umtxop = 4
+	const Umtxmtxlock	: umtxop = 5
+	const Umtxmtxunlock	: umtxop = 6
+	const Umtxsetceiling	: umtxop = 7
+	const Umtxcvwait	: umtxop = 8
+	const Umtxcvsignal	: umtxop = 9
+	const Umtxcvbroadcast	: umtxop = 10
+	const Umtxwaituint	: umtxop = 11
+	const Umtxrwrdlock	: umtxop = 12
+	const Umtxrwwrlock	: umtxop = 13
+	const Umtxrwunlock	: umtxop = 14
+	const Umtxwaituintpriv	: umtxop = 15
+	const Umtxwakepriv	: umtxop = 16
+	const Umtxmutexwait	: umtxop = 17
+	const Umtxsemwait	: umtxop = 19
+	const Umtxsemwake	: umtxop = 20
+	const Umtxnwakepriv	: umtxop = 21
+	const Umtxmtxwake2	: umtxop = 22
+	const Umtxmax	: umtxop = 23
 
 	/* syscalls */
 	const Syssyscall                   : scno = 0
@@ -678,6 +704,7 @@ pkg sys =
 	/* thread control */
 	const thr_new	: (param : thrparam#, paramsz : int -> int)
 	const thr_exit	: (state : int64# -> void)
+	const umtx_op	: (obj : void#, op : umtxop, val : uint64, a1 : void#, a2 : void# -> int)
 
 	/* fd manipulation */
 	const open	: (path:byte[:], opts:fdopt -> fd)
@@ -796,8 +823,9 @@ const execve	= {cmd, args, env
 
 /* thread management */
 
-const thr_new	= {param, sz;	-> syscall(Systhr_create, a(param), a(sz)) castto(int)}
+const thr_new	= {param, sz;	-> syscall(Systhr_new, a(param), a(sz)) castto(int)}
 const thr_exit	= {state;	syscall(Systhr_exit, a(state))}
+const umtx_op	= {obj, op, val, a1, a2; -> syscall(Sys_umtx_op, a(obj), a(op), a(val), a(a1), a(a2)) castto(int)}
 
 /* fd manipulation */
 const open	= {path, opts;		-> syscall(Sysopen, cstring(path), a(opts), a(0o777)) castto(fd)}
