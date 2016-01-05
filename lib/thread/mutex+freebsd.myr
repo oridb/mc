@@ -6,7 +6,7 @@ use "common.use"
 
 pkg thread =
 	type mutex = struct
-		_state	: int32
+		_state	: uint32
 	;;	
 
 	const mkmtx	: (-> mutex)
@@ -49,7 +49,11 @@ const mtxlock = {mtx
 	;;
 
 	while c != Unlocked
-		sys.futex(&mtx._state, sys.Futexwait | sys.Futexpriv, Contended, Zptr, Zptr, 0)
+		sys.umtx_op( \
+			&mtx._state castto(void#), \
+			sys.Umtxwaituintpriv, \
+			Contended castto(uint64), \
+			Zptr, Zptr)
 		c = xchg(&mtx._state, Contended)
 	;;
 }
@@ -70,7 +74,7 @@ const mtxunlock = {mtx
 		->
 	;;
 
-	/* wake one thread */
-	sys.futex(&mtx._state, sys.Futexwake | sys.Futexpriv, 1, Zptr, Zptr, 0)
+	/* wake all threads: for some reason nwake */
+	sys.umtx_op(&mtx._state castto(void#), sys.Umtxwakepriv, 1, Zptr, Zptr)
 }
 

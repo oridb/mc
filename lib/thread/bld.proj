@@ -10,6 +10,7 @@ lib thread =
 
 	# freebsd impl of thread primitives
 	spawn+freebsd.myr
+	mutex+freebsd.myr
 	exit+freebsd-x64.s
 
 	atomic-impl+x64.s
