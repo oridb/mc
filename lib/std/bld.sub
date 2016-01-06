@@ -86,10 +86,14 @@ lib std {inc=.} =
 	dial+plan9.myr
 	resolve+posixy.myr
 	resolve+plan9.myr
+
+	# relatively generic syscall wrappers
+	syswrap+plan9.myr
+	syswrap+posixy.myr
+
+	# system-specific syscall wrappers
 	syswrap-ss+linux.myr
 	syswrap-ss+osx.myr
 	syswrap-ss+plan9.myr
 	syswrap-ss+freebsd.myr
-	syswrap+plan9.myr
-	syswrap+posixy.myr
 ;;
