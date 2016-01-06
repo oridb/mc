@@ -20,12 +20,15 @@ TEXT thread$xsetp+0(SB),1,$0
 
 TEXT thread$xadd32+0(SB),1,$0
 	LOCK; XADDL	SI, (DI)
+	MOVL	SI, AX
 	RET
 TEXT thread$xadd64+0(SB),1,$0
 	LOCK; XADDQ	SI, (DI)
+	MOVQ	SI, AX
 	RET
 TEXT thread$xaddp+0(SB),1,$0
 	LOCK; XADDQ	SI, (DI)
+	MOVQ	SI, AX
 	RET
 
 TEXT thread$xsub32+0(SB),1,$0

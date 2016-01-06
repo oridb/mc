@@ -18,11 +18,12 @@ pkg thread =
 ;;
 
 const mkmtx = {
-	-> [._state = 0]
+	-> [._state = 0, ._sem=0]
 }
 
 const mtxlock = {mtx
-	if xadd(&mtx._state, 1) == 1
+	/* if the old value was 0, we aren't contended */
+	if xadd(&mtx._state, 1) == 0
 		-> void
 	;;
 	
@@ -37,8 +38,10 @@ const mtxtrylock = {mtx
 
 	
 const mtxunlock = {mtx
-	if xadd(&mtx._state, -1) == 0
+	/* if we were the only thread waiting on the lock, there was no contention */
+	if xadd(&mtx._state, -1) == 1
 		-> void
 	;;
+
 	sys.semrelease(&mtx._sem, 1)
 }
