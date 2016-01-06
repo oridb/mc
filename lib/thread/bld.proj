@@ -16,8 +16,8 @@ lib thread =
 
 	# 9front impl of thread primitives
 	#condvar+plan9.myr
-	#mutex+plan9.myr
-	#spawn+plan9.myr
+	mutex+plan9.myr
+	spawn+plan9.myr
 	atomic-impl+plan9-x64.s
 
 	atomic-impl+x64.s

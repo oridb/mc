@@ -2,9 +2,10 @@ use std
 use thread
 
 var done : int32
+var capture
 
 const main = {
-	var capture, ptr
+	var ptr
 
 	capture = 666
 	ptr = &capture

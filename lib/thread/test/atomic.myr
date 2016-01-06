@@ -24,7 +24,6 @@ const incvar = {
 	for i = 0; i < 100_000; i++
 		thread.xadd(&val, 1)
 	;;
-	std.write(1, "done\n")
 	thread.xadd(&done, 1)
 }
 

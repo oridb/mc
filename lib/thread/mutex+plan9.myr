@@ -1,0 +1,44 @@
+use std
+use sys
+
+
+use "atomic.use"
+use "common.use"
+
+pkg thread =
+	type mutex = struct
+		_state	: uint32
+		_sem	: uint32
+	;;	
+
+	const mkmtx	: (-> mutex)
+	const mtxlock	: (mtx : mutex# -> void)
+	const mtxtrylock	: (mtx : mutex# -> bool)
+	const mtxunlock	: (mtx : mutex# -> void)
+;;
+
+const mkmtx = {
+	-> [._state = 0]
+}
+
+const mtxlock = {mtx
+	if xadd(&mtx._state, 1) == 1
+		-> void
+	;;
+	
+	while sys.semacquire(&mtx._sem, 1) < 0
+		/* interrupted; retry */
+	;;
+}
+
+const mtxtrylock = {mtx
+	-> xcas(&mtx._state, 0, 1) == 0
+}
+
+	
+const mtxunlock = {mtx
+	if xadd(&mtx._state, -1) == 0
+		-> void
+	;;
+	sys.semrelease(&mtx._sem, 1)
+}
