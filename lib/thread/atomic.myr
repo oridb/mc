@@ -5,7 +5,6 @@ pkg thread =
 		xget	: (p : @a# -> @a)
 		xset	: (p : @a#, v : @a -> void)
 		xadd	: (p : @a#, v : @a -> @a)
-		xsub	: (p : @a#, v : @a -> @a)
 		xcas	: (p : @a#, old : @a, new : @a -> @a)
 		xchg	: (p : @a#, new : @a -> @a)
 	;;
@@ -20,7 +19,6 @@ impl atomic int32 =
 	xget	= {p; -> xget32(p castto(uint32#)) castto(int32)}
 	xset	= {p, v; xset32(p castto(uint32#), v castto(uint32))}
 	xadd	= {p, v; -> xadd32(p castto(uint32#), v castto(uint32)) castto(int32)}
-	xsub	= {p, v; -> xsub32(p castto(uint32#), v castto(uint32)) castto(int32)}
 	xcas	= {p, old, new; -> xcas32(p castto(uint32#), old castto(uint32), new castto(uint32)) castto(int32)}
 	xchg	= {p, v; -> xchg32(p castto(uint32#), v castto(uint32)) castto(int32)}
 ;;
@@ -30,7 +28,6 @@ impl atomic int64 =
 	xget	= {p; -> xget64(p castto(uint64#)) castto(int64)}
 	xset	= {p, v; xset64(p castto(uint64#), v castto(uint64))}
 	xadd	= {p, v; -> xadd64(p castto(uint64#), v castto(uint64)) castto(int64)}
-	xsub	= {p, v; -> xsub64(p castto(uint64#), v castto(uint64)) castto(int64)}
 	xcas	= {p, old, new; -> xcas64(p castto(uint64#), old castto(uint64), new castto(uint64)) castto(int64)}
 	xchg	= {p, v; -> xchg64(p castto(uint64#), v castto(uint64)) castto(int64)}
 ;;
@@ -39,7 +36,6 @@ impl atomic uint32 =
 	xget	= {p; -> xget32(p)}
 	xset	= {p, v; xset32(p, v)}
 	xadd	= {p, v; -> xadd32(p, v)}
-	xsub	= {p, v; -> xsub32(p, v)}
 	xcas	= {p, old, new; -> xcas32(p, old, new)}
 	xchg	= {p, v; -> xchg32(p, v)}
 ;;
@@ -49,7 +45,6 @@ impl atomic uint64 =
 	xget	= {p; -> xget64(p)}
 	xset	= {p, v; xset64(p, v)}
 	xadd	= {p, v; -> xadd64(p, v)}
-	xsub	= {p, v; -> xsub64(p, v)}
 	xcas	= {p, old, new; -> xcas64(p, old, new)}
 	xchg	= {p, v; -> xchg64(p, v)}
 ;;
@@ -58,7 +53,6 @@ impl atomic std.intptr =
 	xget	= {p; -> xgetp(p)}
 	xset	= {p, v; xsetp(p, v)}
 	xadd	= {p, v; -> xaddp(p, v)}
-	xsub	= {p, v; -> xsubp(p, v)}
 	xcas	= {p, old, new; -> xcasp(p, old, new)}
 	xchg	= {p, v; -> xchgp(p, v)}
 ;;
@@ -74,10 +68,6 @@ extern const xsetp	: (p : std.intptr#, v : std.intptr -> void)
 extern const xadd32	: (p : uint32#, v : uint32 -> uint32)
 extern const xadd64	: (p : uint64#, v : uint64 -> uint64)
 extern const xaddp	: (p : std.intptr#, v : std.intptr -> std.intptr)
-
-extern const xsub32	: (p : uint32#, v : uint32 -> uint32)
-extern const xsub64	: (p : uint64#, v : uint64 -> uint64)
-extern const xsubp	: (p : std.intptr#, v : std.intptr -> std.intptr)
 
 extern const xcas32	: (p : uint32#, old: uint32, new : uint32 -> uint32)
 extern const xcas64	: (p : uint64#, old: uint64, new : uint64 -> uint64)
