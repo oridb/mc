@@ -4,7 +4,7 @@ use "errno.use"
 use "cstrconv.use"
 
 pkg std =
-	const exit	: (status : int -> void)
+	$noret const exit	: (status : int -> void)
 	pkglocal const bgetcwd	: (buf : byte[:] -> errno)
 ;;
 
