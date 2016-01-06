@@ -8,6 +8,7 @@ thread$xget64:
 thread$xgetp:
 	movq	(%rdi), %rax
 	ret
+
 .globl thread$xset32
 thread$xset32:
 	movl	%esi, (%rdi)
@@ -18,26 +19,20 @@ thread$xset64:
 thread$xsetp:
 	movq	%rsi, (%rdi)
 	ret
+
 .globl thread$xadd32
 thread$xadd32:
 	lock xaddl	%esi, (%rdi)
+	movl %esi,%eax
 	ret
 .globl thread$xadd64
 .globl thread$xaddp
 thread$xadd64:
 thread$xaddp:
 	lock xaddq	%rsi, (%rdi)
+	movq %rsi,%rax
 	ret
-.globl thread$xsub32
-thread$xsub32:
-	lock xaddl	%esi, (%rdi)
-	ret
-.globl thread$xsub64
-.globl thread$xsubp
-thread$xsub64:
-thread$xsubp:
-	lock xaddq	%rsi, (%rdi)
-	ret
+
 .globl thread$xcas32
 thread$xcas32:
 	movl	%esi, %eax
@@ -50,6 +45,7 @@ thread$xcasp:
 	movq	%rsi, %rax
 	lock cmpxchgq	%rdx, (%rdi)
 	ret
+
 .globl thread$xchg32
 thread$xchg32:
 	movl	%esi, %eax
