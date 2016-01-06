@@ -158,6 +158,10 @@ pkg sys =
 	const exec	: (bin : byte[:], args : byte[:][:] -> int64)
 	const brk_	: (endp : byte# -> int64)
 	const nsec	: (-> uint64)
+	const semacquire	: (addr : uint32#, block : int -> int)
+	const tsemacquire	: (addr : uint32#, ms : uint32 -> int)
+	const semrelsease	: (addr : uint32#, count : int32 -> int32)
+	
 
 	extern const alloca	: (sz : size	-> byte#)
 
@@ -234,10 +238,7 @@ const exec	= {bin, args
 	-> syscall(Sysexec, cstring(bin), a(cargs))
 }
 
-/* ??? do I care for now?
-const fversion	= {fd, bufsz, vers, nvers;	-> syscall(Sysfversion, fd, bufsz, }
-const rendezvous	= {;}
-const semacquire	= {;}
-const semrelease	= {;}
-const tsemacquire	= {;}
-*/
+/*const fversion	= {fd, bufsz, vers, nvers;	-> syscall(Sysfversion, fd, bufsz, }*/
+const semacquire	= {addr, block; -> syscall(Syssemacquire, a(addr), a(block)) castto(int)}
+const tsemacquire	= {addr, ms; -> syscall(Systsemacquire, a(addr), a(ms)) castto(int)}
+const semrelsease	= {addr, count; -> syscall(Syssemrelease, a(addr), a(count)) castto(int32)}
