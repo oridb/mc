@@ -14,13 +14,13 @@ use "types.use"
 
 pkg std =
 	const mktemp	: (base : byte[:], opt : fdopt, mode : int64 -> std.result((fd, byte[:]), errno))
+	const mktemppath	: (base : byte[:] -> byte[:])
 ;;
 
 const Retries = 100
 
 const mktemp = {base, opt, mode
 	var tmpdir, path, uniq
-	var v : uint64
 
 	match std.getenv("TMPDIR")
 	| `std.Some d:	tmpdir = d
@@ -28,8 +28,7 @@ const mktemp = {base, opt, mode
 	;;
 
 	for var i = 0; i < Retries; i++
-		v = std.randnum()
-		uniq = fmt("{}{}", base, v)
+		uniq = randpath(tmpdir, base)
 		path = pathcat(tmpdir, uniq)
 		match std.openmode(path, opt | Ocreat, mode)
 		| `Fail e:
@@ -48,4 +47,28 @@ const mktemp = {base, opt, mode
 	;;
 	std.slfree(tmpdir)
 	-> `Fail Eexist
+}
+
+const mktemppath = {base
+	var tmpdir, path
+
+	match std.getenv("TMPDIR")
+	| `std.Some d:	tmpdir = d
+	| `std.None:	tmpdir = std.sldup("/tmp")
+	;;
+
+	path = randpath(tmpdir, base)
+	std.slfree(tmpdir)
+	-> path
+}
+
+const randpath = {dir, base
+	var f, p
+	var v : uint64
+
+	v = std.randnum()
+	f = fmt("{}{}", base, v)
+	p = pathcat(dir, f)
+	std.slfree(f)
+	-> p
 }

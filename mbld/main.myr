@@ -20,6 +20,7 @@ const main = {args : byte[:][:]
 	var bintarg
 	var targname
 	var runsrc
+	var tmp
 	var cmd 
 	var tags
 
@@ -87,15 +88,10 @@ const main = {args : byte[:][:]
 	if targname.len != 0
 		buildimm(b, targname, cmd.args, bintarg, cleanfirst)
 	elif runsrc.len != 0
-		match std.mktemp("run", std.Ordwr, 0o755)
-		| `std.Ok (fd, tmp):
-			buildimm(b, "/tmp/foo", [runsrc][:], true, cleanfirst)
-			runcmd("/tmp/foo", cmd.args)
-			std.remove(tmp)
-			std.close(fd)
-		| `std.Fail e:
-			std.put("unable to open tmp file: {}\n", e)
-		;;
+		tmp = std.mktemppath("runmyr")
+		buildimm(b, tmp, [runsrc][:], true, cleanfirst)
+		runcmd(tmp, cmd.args)
+		std.remove(tmp)
 	elif dumponly
 		findproj(b, "bld.proj")
 		bld.load(b)
