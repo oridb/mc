@@ -705,6 +705,7 @@ pkg sys =
 	const thr_new	: (param : thrparam#, paramsz : int -> int)
 	const thr_exit	: (state : int64# -> void)
 	const umtx_op	: (obj : void#, op : umtxop, val : uint64, a1 : void#, a2 : void# -> int)
+	const yield	: (-> int)
 
 	/* fd manipulation */
 	const open	: (path:byte[:], opts:fdopt -> fd)
@@ -826,6 +827,7 @@ const execve	= {cmd, args, env
 const thr_new	= {param, sz;	-> syscall(Systhr_new, a(param), a(sz)) castto(int)}
 const thr_exit	= {state;	syscall(Systhr_exit, a(state))}
 const umtx_op	= {obj, op, val, a1, a2; -> syscall(Sys_umtx_op, a(obj), a(op), a(val), a(a1), a(a2)) castto(int)}
+const yield	= {;	-> syscall(Sysyield) castto(int)}
 
 /* fd manipulation */
 const open	= {path, opts;		-> syscall(Sysopen, cstring(path), a(opts), a(0o777)) castto(fd)}
