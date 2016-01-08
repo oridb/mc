@@ -1,0 +1,32 @@
+use "alloc.use"
+use "dir.use"
+use "option.use"
+
+pkg std =
+	type diriter = dir#
+	impl iterable diriter -> byte[:]
+
+	const byentry	: (d : dir# -> diriter)
+;;
+
+const byentry = {d
+	-> d castto(diriter)
+}
+
+impl iterable diriter -> byte[:] =
+	__iternext__ = {itp, valp
+		match dirread(itp# castto(dir#))
+		| `Some ent:
+			valp# = ent
+			-> true
+		| `None:
+			-> false
+		;;
+	}
+
+	__iterfin__ = {itp, valp
+		std.slfree(valp#)
+	}
+;;
+
+
