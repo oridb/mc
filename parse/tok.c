@@ -645,7 +645,7 @@ static Tok *number(int base)
 			continue;
 		if (c == '.')
 			isfloat = 1;
-		else if (hexval(c) < 0 || hexval(c) > base)
+		else if (hexval(c) < 0 || hexval(c) >= base)
 			lfatal(curloc, "Integer digit '%c' outside of base %d", c, base);
 		if (nbuf >= sizeof buf - 1) {
 			buf[nbuf - 1] = '\0';

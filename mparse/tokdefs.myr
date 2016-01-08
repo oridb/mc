@@ -66,7 +66,7 @@ pkg parse =
 		`Tbreak   /* break */
 		`Tcontinue   /* continue */
 	
-		`Tintlit int64
+		`Tintlit (int64, int, bool) /* val, sz, sign */
 		`Tstrlit byte[:]
 		`Tfltlit flt64
 		`Tchrlit char

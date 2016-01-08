@@ -6,7 +6,7 @@ use "util.use"
 
 pkg parse =
 	type tokstream = struct
-		next	: std.option(tok)
+		next	: std.option((srcloc, tok))
 		rest	: byte[:]
 		data	: byte[:]
 		loc	: srcloc
@@ -16,8 +16,8 @@ pkg parse =
 	const tokinitf	: (path : std.fd	-> tokstream#)
 	const tokclose	: (ts : tokstream#	-> void)
 
-	const toknext	: (ts : tokstream#	-> tok)
-	const tokpeek	: (ts : tokstream#	-> tok)
+	const toknext	: (ts : tokstream#	-> (srcloc, tok))
+	const tokpeek	: (ts : tokstream#	-> (srcloc, tok))
 ;;
 
 const Eof = std.Badchar
@@ -46,11 +46,9 @@ const toknext = {ts
 	match ts.next
 	| `std.Some tok:
 		ts.next = `std.None
-		std.put("tok: {}\n", tok)
 		-> tok
 	| `std.None:
 		t = tokread(ts)
-		std.put("t: {}\n", t)
 		-> t
 	;;
 }
@@ -68,30 +66,31 @@ const tokpeek = {ts
 	;;
 }
 
-const tokread : (ts : tokstream# -> tok) = {ts
-	var c
+const tokread = {ts
+	var c, loc
 
 	skipspace(ts)
+	loc = ts.loc
 	c = peekc(ts)
 	if ts.rest.len == 0
-		-> `Teof
+		-> (loc, `Teof)
 	elif c == '\n'
 		takec(ts)
 		ts.loc.line++
 		ts.loc.col = 1
-		-> `Tendln
+		-> (loc, `Tendln)
 	elif c == '\''
-		-> chrlit(ts)
+		-> (loc, chrlit(ts))
 	elif c == '"'
-		-> strlit(ts)
+		-> (loc, strlit(ts))
 	elif c == '@'
-		-> typaram(ts)
-	elif isident(c)
-		-> kwident(ts)
+		-> (loc, typaram(ts))
 	elif std.isdigit(c)
-		-> numlit(ts)
+		-> (loc, numlit(ts))
+	elif isident(c)
+		-> (loc, kwident(ts))
 	else
-		-> oper(ts)
+		-> (loc, oper(ts))
 	;;
 }
 
@@ -267,12 +266,13 @@ const typaram = {ts
 const numlit = {ts
 	var t
 
+	std.put("parsing number: {}\n", ts.rest[:10])
 	if matchc(ts, '0')
 		if matchc(ts, 'x')
 			t = number(ts, 16)
 		elif matchc(ts, 'b')
 			t = number(ts, 2)
-		elif matchc('o')
+		elif matchc(ts, 'o')
 			t = number(ts, 8)
 		else
 			t = number(ts, 10)
@@ -283,13 +283,61 @@ const numlit = {ts
 	-> t
 }
 
+
 /*
 only deals with the body of the number. if we reach
 this code, then it's guaranteed that we already have
 a numerical value.
 */
 const number = {ts, base
+	var buf, nbuf
+	var isfloat, issigned
+	var v, bits
 
+	buf = ts.rest
+	nbuf = 0
+	isfloat = false
+	for var c = peekc(ts); std.isxdigit(c) || c == '.' || c == '_'; c = peekc(ts)
+		takec(ts)
+		if c == '_'
+			continue
+		elif c == '.'
+			isfloat = true
+		else 
+			v = std.charval(c, base)
+			if v < 0
+				err(ts.loc, "digit {} out of range of base {}\n", c, base)
+			;;
+		;;
+		nbuf++
+	;;
+
+	if isfloat
+		if base != 10
+			err(ts.loc, "floats must be in base 10\n")
+		;;
+		std.fatal("unable to parse floats: fuck me\n")
+		/*
+		-> `Tfltlit std.flt64parse(buf[:n])
+		*/
+	else
+		issigned = true
+		if peekc(ts) == 'u'
+			takec(ts)
+			issigned = false
+		;;
+
+		match peekc(ts)
+		| 'l':	bits = 64
+		| 'i':	bits = 32
+		| 's':	bits = 16
+		| 'b':	bits = 8
+		| _:	bits = 0
+		;;
+		v = std.get(std.intparsebase(buf[:nbuf], base))
+		/* guaranteed to be ok */
+		-> `Tintlit (v, bits, issigned)
+	;;
 }
 
 const kwident = {ts
@@ -332,7 +380,6 @@ const oper = {ts
 	var t, chr
 
 	chr = takec(ts)
-	std.put("c = '{}'\n", chr)
 	t = `Tobrace
 	match chr
 	| '{': t = `Tobrace

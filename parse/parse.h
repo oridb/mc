@@ -224,8 +224,7 @@ struct Node {
 			size_t nextlibs;
 			Node **stmts; /* all top level statements */
 			size_t nstmts;
-			Node
-				**init; /* a list of all __init__ function names of our deps. NB, this
+			Node **init; /* a list of all __init__ function names of our deps. NB, this
 					   is a Nname, not an Ndecl */
 			size_t ninit;
 			Node *localinit; /* and the local one, if any */
@@ -334,13 +333,6 @@ struct Node {
 			char isexportinit;
 			char isinit;
 		} decl;
-
-		struct {
-			long uid;
-			Node *name;
-			Type *elt;
-			Type *alt;
-		} uelt;
 
 		struct {
 			Stab *scope;

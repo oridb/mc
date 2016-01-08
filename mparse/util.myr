@@ -3,12 +3,34 @@ use std
 use "types.use"
 
 pkg parse =
+	const ifmt	: (sb : std.strbuf#, ind : int, fmt : byte[:], args : ... -> void)
 	$noret const err	: (loc : srcloc, msg : byte[:], args : ... -> void)
-	$noret const verr	: (loc : srcloc, msg : byte[:], args : std.valist -> void)
+	$noret const verr	: (loc : srcloc, msg : byte[:], args : std.valist# -> void)
 ;;
 
 const err = {loc, msg, args
+	var ap
+	
+	ap = std.vastart(&args)
+	verr(loc, msg, &ap)
 }
 
 const verr = {loc, msg, ap
+	var sb, ln
+
+	sb = std.mksb()
+	std.sbfmtv(sb, msg, ap)
+	ln = std.sbfin(sb)
+	std.fatal("{}:{}:{}: {}\n", loc.file, loc.line, loc.col, ln)
+	std.slfree(ln)
+}
+
+const ifmt = {sb, ind, fmt, args : ...
+	var ap
+
+	ap = std.vastart(&args)
+	for var i = 0; i < ind; i++
+		std.sbputs(sb, "  ")
+	;;
+	std.sbfmtv(sb, fmt, &ap)
 }

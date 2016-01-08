@@ -1,15 +1,11 @@
 use std
 
 use "tok.use"
+use "parse.use"
 
 const main = {
 	var ts
 
 	ts = parse.tokinitf(0)
-	while true
-		match parse.toknext(ts)
-		| `parse.Teof:	break
-		| tok:	std.put("{}\n", tok)
-		;;
-	;;
+	parse.tsfile(ts)
 }

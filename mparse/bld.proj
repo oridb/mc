@@ -1,7 +1,11 @@
 bin tok =
+	ast.myr
+	dump.myr
 	main.myr
-	types.myr
+	parse.myr
+	stab.myr
 	tok.myr
 	tokdefs.myr
+	types.myr
 	util.myr
 ;;
