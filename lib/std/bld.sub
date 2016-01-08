@@ -14,6 +14,7 @@ lib std {inc=.} =
 	cstrconv.myr
 	die.myr
 	dirname.myr
+	diriter.myr
 	endian.myr
 	errno.myr
 	execvp.myr
