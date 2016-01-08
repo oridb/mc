@@ -47,7 +47,7 @@ generic doparse = {s, isneg, base
 	var cv : int32
 	
 	v = 0
-	for c in std.chariter(s)
+	for c in std.bychar(s)
 		if c == '_'
 			continue
 		;;

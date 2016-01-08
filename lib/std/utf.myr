@@ -12,7 +12,7 @@ pkg std =
 
 	impl iterable chariter -> char
 
-	const chariter	: (str : byte[:] -> chariter)
+	const bychar	: (str : byte[:] -> chariter)
 	const charlen	: (chr : char -> size)
 	const encode	: (buf : byte[:], chr : char -> size)
 	const decode	: (buf : byte[:] -> char)
@@ -33,7 +33,7 @@ impl iterable chariter -> char =
 	}
 ;;
 
-const chariter = {str
+const bychar = {str
 	-> [.rest = str]
 }
 

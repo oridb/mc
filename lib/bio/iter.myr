@@ -5,10 +5,10 @@ pkg bio =
 	type lineiter = file#
 	impl iterable lineiter -> byte[:]
 
-	const lineiter	: (f : file# -> lineiter)
+	const byline	: (f : file# -> lineiter)
 ;;
 
-const lineiter = {f
+const byline = {f
 	-> f castto(lineiter)
 }
 
