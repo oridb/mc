@@ -26,12 +26,11 @@ const tsfile = {ts
 		.ns = std.mkht(std.strhash, std.streq),
 	])
 	f.globls.super = `std.Some f.builtin
+	optendlns(ts)
 	while true
 		match tokpeek(ts)
 		| (loc, `Teof):	
 			break
-		| (loc, `Tendln):
-			toknext(ts)
 		| (loc, `Tuse):
 			usestmt(ts, f)
 		| (loc, `Tpkg):
@@ -40,14 +39,27 @@ const tsfile = {ts
 			traitdef(ts, f)
 		| (loc, `Ttype):
 			tydef(ts, f)
-		| _:	
-			decl(ts, ts)
+		| (loc, tok):	
+			if !decl(ts, ts)
+				err(loc, "invalid top level item near {}", tok)
+			;;
 		;;
+		endlns(ts)
 	;;
 	-> f
 }
 
 const usestmt = {ts, f
+	match toknext(ts)
+	| (loc, `Tuse): /* ok */
+	| (loc, t):	err(loc, "unexpected token in use {}\n", t)
+	;;
+
+	match toknext(ts)
+	| (loc, `Tstrlit str):	f.uses = std.slpush(f.uses, `Ulocal str)
+	| (loc, `Tident id):	f.uses = std.slpush(f.uses, `Ulib id)
+	| (loc, t):	err(loc, "unexpected {} after use\n", t)
+	;;
 }
 
 const pkgdef = {ts, f
@@ -73,7 +85,7 @@ const pkgdef = {ts, f
 }
 
 const pkgbody = {ts, f
-	endlns(ts)
+	optendlns(ts)
 }
 
 const traitdef = {ts, f
@@ -83,9 +95,17 @@ const tydef = {ts, f
 }
 
 const decl = {ts, f
+	-> false
 }
 
 const endlns = {ts
+	match tokpeek(ts)
+	| (loc, `Tendln):	optendlns(ts)
+	| (loc, t):	err(loc, "expected \\n, got {}\n", t)
+	;;
+}
+
+const optendlns = {ts
 	while true
 		match tokpeek(ts)
 		| (loc, `Tendln):	toknext(ts)
