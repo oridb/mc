@@ -374,7 +374,8 @@ size_t bprintf(char *buf, size_t sz, char *fmt, ...)
 
 	va_start(ap, fmt);
 	n = vsnprintf(buf, sz, fmt, ap);
-	assert(n <= sz);
+	if (n >= sz)
+		n = sz;
 	va_end(ap);
 
 	return n;
