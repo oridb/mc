@@ -11,7 +11,7 @@ const chartypes = {
 	var buf : byte[32]
 
 	s = "1世界äa\n"
-	for c in std.chariter(s)
+	for c in std.bychar(s)
 		foo = c
 		if std.encode(buf[:std.charlen(c)], c) == 0
 			std.write(1, "couldn't encode\n")
