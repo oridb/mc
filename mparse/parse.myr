@@ -18,11 +18,12 @@ const tsfile = {ts
 		.uses = [][:],
 		.libs = [][:],
 		.extlibs = [][:],
-		.stmts = [][:],
+		.dcls = [][:],
 		.extinit = [][:],
 		.init = `std.None,
 		.globls = mkstab(),
 		.builtin = mkstab(),
+		.ns = std.mkht(std.strhash, std.streq),
 	])
 	f.globls.super = `std.Some f.builtin
 	while true
@@ -30,8 +31,7 @@ const tsfile = {ts
 		| (loc, `Teof):	
 			break
 		| (loc, `Tendln):
-			continue
-
+			toknext(ts)
 		| (loc, `Tuse):
 			usestmt(ts, f)
 		| (loc, `Tpkg):
@@ -73,6 +73,7 @@ const pkgdef = {ts, f
 }
 
 const pkgbody = {ts, f
+	endlns(ts)
 }
 
 const traitdef = {ts, f
@@ -82,6 +83,15 @@ const tydef = {ts, f
 }
 
 const decl = {ts, f
+}
+
+const endlns = {ts
+	while true
+		match tokpeek(ts)
+		| (loc, `Tendln):	toknext(ts)
+		| _:	break
+		;;
+	;;
 }
 
 const expectendblk = {ts, f

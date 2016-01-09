@@ -22,7 +22,7 @@ pkg parse =
 		init	: std.option(dcl#)
 		builtin	: stab#
 		globls	: stab#
-		ns	: std.htab(byte[:], node#)#
+		ns	: std.htab(byte[:], stab#)#
 		dcls	: dcl#[:]
 	;;
 

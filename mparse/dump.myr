@@ -14,20 +14,11 @@ const __init__ = {
 
 	std.fmtinstall(std.typeof(&f), fmtfile, [][:])
 	std.fmtinstall(std.typeof(&d), fmtdcl, [][:])
-	/*std.fmtinstall(std.typeof(&n), fmtnode, [][:])*/
 	std.fmtinstall(std.typeof(&e), fmtexpr, [][:])
 	std.fmtinstall(std.typeof(&st), fmtstab, [][:])
 }
 
-/*
-const fmtnode = {sb, ap, opts
-	var f : node#
-	f = std.vanext(ap)
-	nodedump(sb, f, 0)
-}
-*/
-
-generic fmtfile = {sb, ap, opts
+const fmtfile = {sb, ap, opts
 	var f : file#
 	f = std.vanext(ap)
 	filedump(sb, f, 0)
@@ -166,8 +157,13 @@ const stabdump = {sb, st, ind
 	keys = std.htkeys(st.syms)
 	for k in keys
 		match std.get(std.htget(st.syms, k))
-		| `Dcl d:	ifmt(sb, ind, "{} : {}\n", k, d.ty)
-		| `Ucon uc:	ifmt(sb, ind, "{} : {}\n", k, uc.ety)
+		| `Dcl d:	
+			ifmt(sb, ind, "{} : {}\n", k, d.ty)
+		| `Ucon uc:	
+			match uc.ety
+			| `std.Some t:	ifmt(sb, ind, "{} : {}\n", k, t)
+			| `std.None:	ifmt(sb, ind, "{}\n", k)
+			;;
 		;;
 	;;
 	std.slfree(keys)

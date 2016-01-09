@@ -13,7 +13,7 @@ pkg parse =
 	;;
 
 	const tokinit	: (path : byte[:]	-> tokstream#)
-	const tokinitf	: (path : std.fd	-> tokstream#)
+	const tokinitf	: (fd : std.fd, path : byte[:]	-> tokstream#)
 	const tokclose	: (ts : tokstream#	-> void)
 
 	const toknext	: (ts : tokstream#	-> (srcloc, tok))
@@ -24,16 +24,25 @@ const Eof = std.Badchar
 
 const tokinit = {path
 	match std.slurp(path)
-	| `std.Ok data:	-> std.mk([.next=`std.None, .rest=data, .data=data])
+	| `std.Ok data: -> mkparser(path, data)
 	| `std.Fail e:	std.fatal("could not read file {}: {}\n", path, e)
 	;;
 }
 
-const tokinitf = {fd
+const tokinitf = {fd, name
 	match std.fslurp(fd)
-	| `std.Ok data:	-> std.mk([.next=`std.None, .rest=data, .data=data])
+	| `std.Ok data: -> mkparser(name, data)
 	| `std.Fail e:	std.fatal("could not read file {}: {}\n", fd, e)
 	;;
+}
+
+const mkparser = {name, data
+	-> std.mk([
+		.loc = [.file=name, .line=1, .col=1],
+		.next=`std.None,
+		.rest=data,
+		.data=data,
+	])
 }
 
 const tokclose = {ts
@@ -380,7 +389,6 @@ const oper = {ts
 	var t, chr
 
 	chr = takec(ts)
-	t = `Tobrace
 	match chr
 	| '{': t = `Tobrace
 	| '}': t = `Tcbrace

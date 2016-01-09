@@ -16,6 +16,7 @@ const mkstab = {
 		.name = "",
 		.isfunc = false,
 		.syms = std.mkht(stnamehash, stnameeq),
+		.types = std.mkht(stnamehash, stnameeq),
 		.impls = std.mkht(stnamehash, stnameeq),
 		.env = std.mkht(stnamehash, stnameeq),
 	])
@@ -29,7 +30,7 @@ const setpkg = {f, st, name
 	std.htput(f.ns, name, st)
 }
 
-const stnamehash = {n : name#
+const stnamehash = {n
 	-> std.strhash(n.name)
 }
 
