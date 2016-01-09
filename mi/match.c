@@ -34,7 +34,6 @@ struct Dtree {
 	/* captured variables and action */
 	Node **cap;
 	size_t ncap;
-
 };
 
 Dtree *gendtree(Node *m, Node *val, Node **lbl, size_t nlbl);
@@ -227,7 +226,7 @@ static int acceptall(Dtree *t, Dtree *accept)
 	size_t i;
 	int ret;
 
-	if (t->any == accept)
+	if (t->accept || t->any == accept)
 		return 0;
 
 	ret = 0;
@@ -257,7 +256,7 @@ static int addwildrec(Srcloc loc, Type *ty, Dtree *start, Dtree *accept, Dtree *
 	ntail = 0;
 	ty = tybase(ty);
 	if (istyprimitive(ty) || ty->type == Tyvoid) {
-		if (start == accept)
+		if (start->accept || start == accept)
 			return 0;
 		for (i = 0; i < start->nnext; i++)
 			lappend(end, nend, start->next[i]);
@@ -567,19 +566,14 @@ static int addstruct(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***
 		tail = NULL;
 		ntail = 0;
 
+		/* add a _ capture if we don't specify the value */
 		if (!memb) {
 			memb = mkexpr(ty->sdecls[i]->loc, Ogap, NULL);
 			memb->expr.type = mty;
 		}
 		for (j = 0; j < nlast; j++) {
-			/* add a _ capture if we don't specify the value */
-			if (!memb) {
-				if (addwild(memb, NULL, last[j], next, NULL, NULL, &tail, &ntail))
-					ret = 1;
-			} else {
-				if (addpat(memb, structmemb(val, name, mty), last[j], next, cap, ncap, &tail, &ntail))
-					ret = 1;
-			}
+			if (addpat(memb, structmemb(val, name, mty), last[j], next, cap, ncap, &tail, &ntail))
+				ret = 1;
 		}
 		lfree(&last, &nlast);
 		last = tail;
