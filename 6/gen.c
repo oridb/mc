@@ -137,18 +137,24 @@ char *asmname(Node *dcl)
 char *tydescid(char *buf, size_t bufsz, Type *ty)
 {
 	char *sep, *ns;
+	char *p, *end;
+	size_t i;
 
 	sep = "";
 	ns = "";
+	p = buf;
+	end = buf + bufsz;
 	if (ty->type == Tyname) {
 		if (ty->name->name.ns) {
 			ns = ty->name->name.ns;
 			sep = "$";
 		}
 		if (ty->vis == Visexport || ty->isimport)
-			bprintf(buf, bufsz, "_tydesc$%s%s%s", ns, sep, ty->name->name.name);
+			p += bprintf(p, end - p, "_tydesc$%s%s%s", ns, sep, ty->name->name.name);
 		else
-			bprintf(buf, bufsz, "_tydesc$%s%s%s$%d", ns, sep, ty->name->name.name, ty->tid);
+			p += bprintf(p, end - p, "_tydesc$%s%s%s$%d", ns, sep, ty->name->name.name, ty->tid);
+		for (i = 0; i < ty->narg; i++)
+			p += tyidfmt(p, end - p, ty->arg[i]);
 	} else {
 		if (file->file.globls->name) {
 			ns = file->file.globls->name;
