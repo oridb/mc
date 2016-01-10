@@ -434,7 +434,7 @@ void gengas(Node *file, char *out)
 	fprintf(fd, "\n");
 
 	for (i = 0; i < ntypes; i++)
-		if (types[i]->isreflect && !types[i]->isimport)
+		if (types[i]->isreflect && (!types[i]->isimport || types[i]->ishidden))
 			gentype(fd, types[i]);
 	fprintf(fd, "\n");
 
