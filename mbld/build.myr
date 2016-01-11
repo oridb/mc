@@ -300,7 +300,9 @@ const linkbin = {dg, bin, srcfiles, ldscript, rt, incs, extlibs
 	;;
 
 	if rt.len != 0
-		cmd = std.slpush(cmd, std.sldup(rt))
+		if !std.sleq(rt, "none")
+			cmd = std.slpush(cmd, std.sldup(rt))
+		;;
 	else
 		cmd = std.slpush(cmd, std.sldup(opt_runtime))
 	;;
