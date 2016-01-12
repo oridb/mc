@@ -269,7 +269,7 @@ static int mergedecl(Node *old, Node *new)
 	if (e->decl.isconst != g->decl.isconst)
 		fatal(e, "export %s declared with different constness on %s:%d", declname(e),
 				fname(g->loc), lnum(g->loc));
-	if (e->decl.isconst != g->decl.isconst)
+	if (e->decl.isextern != g->decl.isextern)
 		fatal(e, "export %s declared with different externness on %s:%d", declname(e),
 				fname(g->loc), lnum(g->loc));
 
