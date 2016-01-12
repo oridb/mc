@@ -148,3 +148,4 @@ F generic-in-const
 F aritylow
 F arityhigh
 F badop
+B voideffect	P	pass

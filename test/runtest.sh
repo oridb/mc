@@ -42,7 +42,6 @@ function expectprint {
     fi
 }
 
-
 function expectcompare {
     if [ x"" !=  x"$TMPDIR" ]; then 
         t=$TMPDIR/myrtest-$1-$RANDOM

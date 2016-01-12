@@ -1,0 +1,13 @@
+use std
+
+const bar = {
+	std.put("pass")
+}
+
+const foo = {
+	-> bar()
+}
+
+const main = {
+	foo()
+}

@@ -1638,9 +1638,10 @@ static Node *rval(Simp *s, Node *n, Node *dst)
 			append(s, v);
 		} else if (n->expr.nargs && n->expr.args[0]) {
 			t = s->ret;
+			u = rval(s, args[0], NULL);
 			/* void calls return nothing */
 			if (t) {
-				t = set(t, rval(s, args[0], NULL));
+				t = set(t, u);
 				append(s, t);
 			}
 		}
