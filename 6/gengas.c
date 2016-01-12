@@ -283,7 +283,7 @@ static void encodemin(FILE *fd, uint64_t val)
 		if (val < 1ULL << (7*i))
 			break;
 	shift = 8 - i;
-	b = ~0 << (shift + 1);
+	b = ~0ull << (shift + 1);
 	b |= val & ((1 << (8 - shift)) - 1);
 	fprintf(fd, "\t.byte %u\n", b);
 	val >>=  shift;

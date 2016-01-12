@@ -221,7 +221,8 @@ Node *fold(Node *n, int foldvar)
 		}
 		break;
 	case Oarr:
-		qsort(n->expr.args, n->expr.nargs, sizeof(Node*), idxcmp);
+                if (n->expr.nargs > 0)
+                    qsort(n->expr.args, n->expr.nargs, sizeof(Node*), idxcmp);
 		break;
 	case Ocast:
 		r = foldcast(n);

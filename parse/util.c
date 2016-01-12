@@ -116,6 +116,8 @@ void *memdup(void *mem, size_t len)
 {
 	void *ret;
 
+        if (!mem)
+            return NULL;
 	ret = xalloc(len);
 	return memcpy(ret, mem, len);
 }
