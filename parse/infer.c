@@ -2101,8 +2101,7 @@ static void stabsub(Inferstate *st, Stab *s)
 	k = htkeys(s->dcl, &n);
 	for (i = 0; i < n; i++) {
 		d = getdcl(s, k[i]);
-		if (d)
-			d->decl.type = tyfix(st, d, d->decl.type, 0);
+		d->decl.type = tyfix(st, d, d->decl.type, 0);
 		if (!d->decl.isconst && !d->decl.isgeneric)
 			continue;
 		if (d->decl.trait)
