@@ -1520,10 +1520,7 @@ static void inferexpr(Inferstate *st, Node **np, Type *ret, int *sawret)
 			*sawret = 1;
 		if (!ret)
 			fatal(n, "returns are not valid near %s", ctxstr(st, n));
-		if (nargs)
-			t = unify(st, n, ret, type(st, args[0]));
-		else
-			t = unify(st, n, mktype(Zloc, Tyvoid), ret);
+		t = unify(st, n, ret, type(st, args[0]));
 		settype(st, n, t);
 		break;
 	case Obreak:

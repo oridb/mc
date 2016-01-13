@@ -1636,7 +1636,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
 			u = disp(n->loc, size(args[0]));
 			v = mkexpr(n->loc, Oblit, s->ret, t, u, NULL);
 			append(s, v);
-		} else if (n->expr.nargs && n->expr.args[0]) {
+		} else {
 			t = s->ret;
 			u = rval(s, args[0], NULL);
 			/* void calls return nothing */

@@ -584,7 +584,6 @@ goto    : Tgoto Tident {$$ = mkexpr($1->loc, Ojmp, mklbl($2->loc, $2->id), NULL)
 	;
 
 retexpr : Tret expr {$$ = mkexpr($1->loc, Oret, $2, NULL);}
-	| Tret {$$ = mkexpr($1->loc, Oret, NULL);}
 	| expr
 	;
 
