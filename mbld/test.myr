@@ -23,18 +23,16 @@ const test = {b
 	tests = [][:]
 	buildall(b)
 	setdir(b, "")
-	if std.fexists("test")
-		for tn in b.all
-			match gettarg(b.targs, tn)
-			| `Bin bt:
-				tests = std.sljoin(tests, buildtests(b, bt))
-			| `Lib lt:
-				tests = std.sljoin(tests, buildtests(b, lt))
-			| _:
-				/* nothing */
-			;;
-		;;
-	;;
+        for tn in b.all
+            match gettarg(b.targs, tn)
+                | `Bin bt:
+                tests = std.sljoin(tests, buildtests(b, bt))
+                | `Lib lt:
+                tests = std.sljoin(tests, buildtests(b, lt))
+                | _:
+                /* nothing */
+                ;;
+        ;;
 	for tn in b.all
 		match gettarg(b.targs, tn)
 		| `Bin t:
