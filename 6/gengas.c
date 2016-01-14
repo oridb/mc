@@ -151,6 +151,9 @@ void iprintf(FILE *fd, Insn *insn)
 				insn->args[1] = coreg(insn->args[1]->reg.colour, ModeL);
 			}
 		}
+		/* moving a reg to itself is dumb. */
+		if (insn->args[0]->reg.colour == insn->args[1]->reg.colour)
+                    return;
 		break;
 	case Imovs:
 		if (insn->args[0]->reg.colour == Rnone || insn->args[1]->reg.colour == Rnone)
