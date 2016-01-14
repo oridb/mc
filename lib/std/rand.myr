@@ -56,6 +56,7 @@ pkg std =
 
 	generic rand	: (lo : @a::(numeric,integral), hi : @a::(numeric,integral) -> @a::(numeric,integral))
 	generic randnum	: (-> @a::(numeric,integral))
+	const randbytes	: (buf : byte[:]	-> size)
 
 	generic rngrand	: (rng : rng#, lo : @a::(numeric,integral), hi : @a::(numeric,integral) -> @a::(numeric,integral))
 	generic rngrandnum	: (rng : rng# -> @a::(numeric,integral))
@@ -101,6 +102,10 @@ generic rand = {lo, hi
 
 generic randnum = {
 	-> rngrandnum(_rng)
+}
+
+const randbytes = {buf
+	-> rngrandbytes(_rng, buf)
 }
 
 /*
@@ -182,7 +187,6 @@ const rngrandbytes = {rng, buf
 		r >>= 8
 	;;
 	-> n
-
 }
 
 /* updates random number generator state when we tick over. */
