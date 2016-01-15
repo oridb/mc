@@ -40,7 +40,7 @@ count:
  * argc in %rax, argv in %rbx, dest vector in %rcx
  */
 cvt:
-        jmp .cvttest
+	jmp .cvttest
 .cvtloop:
 	subq	$1,%rax
 	movq	(%rbx),%r8
@@ -53,5 +53,5 @@ cvt:
 	testq	%rax,%rax
 	jnz .cvtloop
 .cvtdone:
-        ret
+	ret
 

@@ -49,29 +49,29 @@ _start:
 	/* convert envp to byte[:][:] for sys._environment */
 	movq	(%rbp),%rax
 	leaq	16(%rbp,%rax,8), %rbx	/* envp = argv + 8*argc + 8 */
-        /* store envp for some syscalls to use without converting */
-        movq    %rbx,sys$__cenvp(%rip)
+	/* store envp for some syscalls to use without converting */
+	movq    %rbx,sys$__cenvp(%rip)
 	movq	%r9,%rax
 	movq	%rsp, %rcx
-	movq	%r9,.envlen
-	movq	%rdx,.envbase
-	call cvt
+	movq	%r9,.envlen(%rip)
+	movq	%rdx,.envbase(%rip)
+	call	cvt
 	movq	%rcx,%rdx
 
-        /* convert argc, argv to byte[:][:] for args. */
+	/* convert argc, argv to byte[:][:] for args. */
 	movq	(%rbp), %rax	/* argc */
 	leaq	8(%rbp), %rbx	/* argv */
 	movq	(%rbp), %rsi	/* saved argc */
-        call cvt
-	pushq %rsi
-	pushq %rdx
+	call	cvt
+	pushq	%rsi
+	pushq	%rdx
 
 	/* call pre-main initializers */
 	call	__init__
 	/* enter the main program */
 	call	main
 	/* exit(0) */
-        xorq	%rdi,%rdi
+	xorq	%rdi,%rdi
 	movq	$60,%rax
 	syscall
 

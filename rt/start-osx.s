@@ -29,7 +29,7 @@ start:
 	/* stack allocate sizeof(byte[:])*(argc + len(envp)) */
 	movq	(%rbp),%rax
 	leaq	16(%rbp,%rax,8), %rbx	/* argp = argv + 8*argc + 8 */
-        call    count
+	call    count
 	addq	%r9,%rax
 	imulq	$16,%rax
 	subq	%rax,%rsp
@@ -38,21 +38,21 @@ start:
 	/* convert envp to byte[:][:] for sys._environment */
 	movq	(%rbp),%rax
 	leaq	16(%rbp,%rax,8), %rbx	/* envp = argv + 8*argc + 8 */
-        movq    %rbx,_sys$__cenvp(%rip)
+	movq    %rbx,_sys$__cenvp(%rip)
 	movq	%r9,%rax
 	movq	%rsp, %rcx
 	movq	%r9,.envlen(%rip)
 	movq	%rdx,.envbase(%rip)
-	call cvt
+	call	cvt
 	movq	%rcx,%rdx
 
-        /* convert argc, argv to byte[:][:] for args. */
+	/* convert argc, argv to byte[:][:] for args. */
 	movq	(%rbp), %rax	/* argc */
 	leaq	8(%rbp), %rbx	/* argv */
 	movq	(%rbp), %rsi	/* saved argc */
-        call cvt
-	pushq %rsi
-	pushq %rdx
+	call	cvt
+	pushq	%rsi
+	pushq	%rdx
 
 	call	___init__
 	/* enter the main program */

@@ -27,7 +27,7 @@ _start:
 	/* stack allocate sizeof(byte[:])*(argc + len(envp)) */
 	movq	(%rdi),%rax
 	leaq	16(%rdi,%rax,8), %rbx	/* argp = argv + 8*argc + 8 */
-        call    count
+	call    count
 	addq	%r9,%rax
 	imulq	$16,%rax
 	subq	%rax,%rsp
@@ -36,20 +36,20 @@ _start:
 	/* convert envp to byte[:][:] for std._environment */
 	movq	(%rdi),%rax
 	leaq	16(%rdi,%rax,8), %rbx	/* envp = argv + 8*argc + 8 */
-        /* store envp for some syscalls to use without spurious conversion. */
-        movq    %rbx,sys$__cenvp(%rip)
+	/* store envp for some syscalls to use without spurious conversion. */
+	movq    %rbx,sys$__cenvp(%rip)
 	movq	%r9,%rax
 	movq	%rsp, %rcx
-	movq	%r9,.envlen
-	movq	%rdx,.envbase
-	call cvt
+	movq	%r9,.envlen(%rip)
+	movq	%rdx,.envbase(%rip)
+	call	cvt
 	movq	%rcx,%rdx
 
-        /* convert argc, argv to byte[:][:] for args. */
+	/* convert argc, argv to byte[:][:] for args. */
 	movq	(%rdi), %rax	/* argc */
 	leaq	8(%rdi), %rbx	/* argv */
 	movq	(%rdi), %rsi	/* saved argc */
-        call    cvt
+	call    cvt
 	pushq   %rsi
 	pushq   %rdx
 
@@ -59,7 +59,7 @@ _start:
 	/* enter the main program */
 	call	main
 	/* exit(0) */
-        xorq	%rdi,%rdi
+	xorq	%rdi,%rdi
 	movq	$1,%rax
 	syscall
 
