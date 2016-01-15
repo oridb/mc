@@ -8,11 +8,11 @@ __rt$abort_oob:
 	movq	(%rsp),%rax
 	movq	$15,%rdx
 	leaq	.digitchars(%rip),%r8
-        leaq    .pcstr(%rip),%r9
+	leaq    .pcstr(%rip),%r9
 .loop:
 	movq	%rax, %rcx
 	andq	$0xf, %rcx
-        movb    (%r8,%rcx),%r10b
+	movb    (%r8,%rcx),%r10b
 	movb	%r10b,(%r9,%rdx)
 	subq	$1, %rdx
 	shrq	$4, %rax
