@@ -81,6 +81,13 @@ case $OS in
         echo 'const Linkcmd = ["ld", "-o"]' >> mbld/config.myr
         echo 'const Sys = "FreeBSD"' >> mbld/config.myr
         ;;
+    *OpenBSD*)
+        echo '#define Symprefix ""' >> config.h
+        echo '#define Defaultasm Gnugas' >> config.h
+        echo 'export SYS=openbsd' >> config.mk
+        echo 'const Linkcmd = ["ld", "-static", "-o"]' >> mbld/config.myr
+        echo 'const Sys = "OpenBSD"' >> mbld/config.myr
+        ;;
     *)
         echo ''
         echo '********************************'
