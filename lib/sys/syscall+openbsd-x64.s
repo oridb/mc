@@ -6,9 +6,9 @@ sys$syscall:
 	load junk values, but if the syscall
 	doesn't use them, it's going to be
 	harmless.
-	 */
+	*/
 	movq %rdi,%rax
-        /* 8(%rsp): hidden type arg */
+	/* 8(%rsp): hidden type arg */
 	movq 16(%rsp),%rdi
 	movq 24(%rsp),%rsi
 	movq 32(%rsp),%rdx
