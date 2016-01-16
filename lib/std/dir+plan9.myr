@@ -26,9 +26,9 @@ const diropen = {p
 	var fd
 	var dir
 
-	fd = open(p, Ordonly)
-	if fd < 0
-		-> `Fail "couldn't open directory"
+	match open(p, Ordonly)
+	| `Ok f:	fd = f
+	| `Fail e:	-> `Fail "couldn't open directory"
 	;;
 
 	dir = zalloc()
@@ -38,16 +38,19 @@ const diropen = {p
 	
 
 const dirread = {d
-	var len : int64, name, base, namelen, dirlen
+	var name, base, namelen, dirlen
 
 	/* NB: On Plan 9, read(2) will always return whole directory entries */
 	if d.off >= d.len
-		len = read(d.fd, d.buf[:]) castto(int64)
-		if len <= 0
+		match read(d.fd, d.buf[:])
+		| `Ok 0:
 			-> `None
+		| `Fail e:
+			-> `None
+		| `Ok len:
+			d.len = len castto(int64)
+			d.off = 0
 		;;
-		d.len = len
-		d.off = 0
 	;;
 
 	namelen = (d.buf[d.off + Stringsoff] castto(int64)) | \

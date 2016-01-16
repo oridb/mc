@@ -81,6 +81,7 @@ lib std {inc=.} =
 	dir+freebsd.myr
 	dir+linux.myr
 	dir+osx.myr
+	dir+plan9.myr
 	wait+posixy.myr
 	wait+plan9.myr
 	dial+posixy.myr
