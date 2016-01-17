@@ -20,7 +20,7 @@ pkg std =
 const Retries = 100
 
 const mktemp = {base, opt, mode
-	var tmpdir, path, uniq
+	var tmpdir, path
 
 	match std.getenv("TMPDIR")
 	| `std.Some d:	tmpdir = d
@@ -28,21 +28,18 @@ const mktemp = {base, opt, mode
 	;;
 
 	for var i = 0; i < Retries; i++
-		uniq = randpath(tmpdir, base)
-		path = pathcat(tmpdir, uniq)
+		path = randpath(tmpdir, base)
 		match std.openmode(path, opt | Ocreat, mode)
 		| `Fail e:
 			if e != Eexist
-				std.slfree(uniq)
+				std.slfree(path)
 				std.slfree(tmpdir)
 				-> `Fail e
 			;;
 		| `Ok fd:
-			std.slfree(uniq)
 			std.slfree(tmpdir)
 			-> `Ok (fd, path)
 		;;
-		std.slfree(uniq)
 		std.slfree(path)
 	;;
 	std.slfree(tmpdir)
