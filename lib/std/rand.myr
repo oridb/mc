@@ -183,7 +183,7 @@ const rngrandbytes = {rng, buf
 	;;
 	r = rand32(rng)
 	for ; n != buf.len; n++
-		buf[n++] = (r & 0xff) castto(byte)
+		buf[n] = (r & 0xff) castto(byte)
 		r >>= 8
 	;;
 	-> n
