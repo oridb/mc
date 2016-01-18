@@ -14,6 +14,7 @@ pkg sys =
 	type kflags	= uint16	/* kqueue flags */
 	type whence	= int64
 	type fcntlcmd	= int64
+	type machport	= int32
 
 	type timespec = struct
 		sec	: uint64
@@ -628,6 +629,8 @@ pkg sys =
 	const execve	: (cmd : byte[:], args : byte[:][:], env : byte[:][:] -> int64)
 	/* wrappers to extract wait status */
 	const waitstatus	: (st : int32 -> waitstatus)
+	const bsdthread_create	: (func : void#, arg : void#, stk : void#, pthr : void#, flags : uint32 -> void#)
+	const bsdthread_terminate	: (stk : void#, len : size, port : machport, sem : machport -> int)
 
 	/* file manipulation */
 	const open	: (path:byte[:], opts:fdopt -> fd)
@@ -722,6 +725,14 @@ const fork	= {;			-> __osx_fork()}
 const wait4	= {pid, loc, opt, rusage;	-> syscall(Syswait4, a(pid), a(loc), a(opt), a(rusage))}
 const waitpid	= {pid, loc, opt;
 	-> wait4(pid, loc, opt, 0 castto(rusage#))
+}
+
+const bsdthread_create	= {func , arg , stk , pthr , flags
+	-> syscall(Sysbsdthread_create, a(func), a(arg), a(stk), a(pthr)) castto(void#)
+}
+
+const bsdthread_terminate	= {stk , len , port , sem
+	-> syscall(Sysbsdthread_terminate, a(stk), a(len), a(port), a(sem)) castto(int)
 }
 
 const sleep = {time;	-> 0}
