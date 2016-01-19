@@ -870,8 +870,11 @@ continue   : Tcontinue
 	{$$ = mkexpr($1->loc, Ocontinue, NULL);}
 	;
 
-forstmt : Tfor optexprln optexprln optexprln block
-	{$$ = mkloopstmt($1->loc, $2, $3, $4, $5);}
+forstmt : Tfor optexprln optexprln optexprln block {
+		if(!$3)
+			$3 = mkboollit($1->loc, 1);
+		$$ = mkloopstmt($1->loc, $2, $3, $4, $5);
+	}
 	| Tfor expr Tin exprln block
 	{$$ = mkiterstmt($1->loc, $2, $4, $5);}
 	| Tfor decl Tendln optexprln optexprln block {
