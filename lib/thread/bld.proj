@@ -14,6 +14,12 @@ lib thread =
 	spawn+freebsd.myr
 	exit+freebsd-x64.s
 
+	# osx impl of thread primitives
+	#condvar+osx.myr
+	#mutex+osx.myr
+	spawn+osx.myr
+	#exit+osx-x64.s
+
 	# 9front impl of thread primitives
 	#condvar+plan9.myr
 	mutex+plan9.myr

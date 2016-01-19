@@ -1,0 +1,40 @@
+use sys
+use std
+
+pkg thread =
+	type tid = uint64
+
+	const spawn : (fn : (-> void) -> std.result(tid, byte[:]))
+;;
+
+
+const Stacksz = 8*std.MiB
+extern const exit : (-> void)
+
+const spawn = {fn
+	-> spawnstk(fn, Stacksz)
+}
+
+const spawnstk = {fn, sz
+	var tid : tid, ret
+
+
+	ret = sys.bsdthread_create( \
+		startthread castto(void#), \
+		&fn castto(void#), \
+		sz castto(void#), \
+		&tid castto(void#), \
+		0)
+
+	if ret == -1 castto(void#)
+		-> `std.Fail "couldn't spawn thread"
+	;;
+	-> `std.Ok tid castto(tid)
+}
+
+const startthread = {fn : (-> void)# -> void
+	fn#()
+	std.write(1, "...bye mom\n")
+	sys.bsdthread_terminate(0 castto(void#), 0, 0, 0)
+}
+
