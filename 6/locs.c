@@ -206,7 +206,7 @@ Loc *coreg(Reg r, Mode m)
 		[Rrdx] = {Rnone, Rdl,  Rdx,  Redx, Rrdx},
 		[Rrbx] = {Rnone, Rbl,  Rbx,  Rebx, Rrbx},
 		[Rrsi] = {Rnone, Rsil, Rsi,  Resi, Rrsi},
-		[Rrdi] = {Rnone, Rsil, Rdi,  Redi, Rrdi},
+		[Rrdi] = {Rnone, Rdil, Rdi,  Redi, Rrdi},
 		[Rr8]   = {Rnone, Rr8b,  Rr8w,  Rr8d,  Rr8},
 		[Rr9]   = {Rnone, Rr9b,  Rr9w,  Rr9d,  Rr9},
 		[Rr10]  = {Rnone, Rr10b, Rr10w, Rr10d, Rr10},
