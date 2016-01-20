@@ -34,7 +34,6 @@ const dial = {str
 	var sa4 : sys.sockaddr_in
 	var sa6 : sys.sockaddr_in6
 	var sa	: sys.sockaddr#
-	var a
 	var sock
 
 	match parsedial(str)
