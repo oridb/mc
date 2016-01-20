@@ -149,4 +149,4 @@ F aritylow
 F arityhigh
 F badop
 B voideffect	P	pass
-B fornocond	P	pass
+B foroptexpr	P	pass
