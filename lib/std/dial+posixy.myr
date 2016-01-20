@@ -34,7 +34,7 @@ const dial = {str
 	var sa4 : sys.sockaddr_in
 	var sa6 : sys.sockaddr_in6
 	var sa	: sys.sockaddr#
-	var sock
+	var sock, sz
 
 	match parsedial(str)
 	| `Ok val:	(proto, host, port) = val
@@ -49,6 +49,7 @@ const dial = {str
 			.port = hosttonet(port),
 		]
 		sa = &sa4 castto(sys.sockaddr#)
+		sz = sizeof(sys.sockaddr_in)
 	| `Ipv6 bits:
 		sa6 = [
 			.fam = sys.Afinet6,
@@ -56,6 +57,7 @@ const dial = {str
 			.port = hosttonet(port),
 		]
 		sa = &sa6 castto(sys.sockaddr#)
+		sz = sizeof(sys.sockaddr_in6)
 	;;
 	sock = sys.socket(2, proto, 0)
 
@@ -63,7 +65,7 @@ const dial = {str
 		-> `Fail "failed to connect to socket"
 	;;
 	var err
-	err = sys.connect(sock, sa, sizeof(sys.sockaddr_in))
+	err = sys.connect(sock, sa, sz)
 	if err < 0
 		sys.close(sock)
 		-> `Fail "Failed to bind socket"
