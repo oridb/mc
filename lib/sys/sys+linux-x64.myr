@@ -118,6 +118,11 @@ pkg sys =
 		scope	: uint32
 	;;
 
+        type sockaddr_un = struct
+		fam	: sockfam
+		path	: byte[108]
+	;;
+
 	type sockaddr_storage = struct
 		fam	: sockfam
 		__align	: uint32
