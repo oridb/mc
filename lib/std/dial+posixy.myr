@@ -59,7 +59,7 @@ const dial = {str
 		sa = &sa6 castto(sys.sockaddr#)
 		sz = sizeof(sys.sockaddr_in6)
 	;;
-	sock = sys.socket(2, proto, 0)
+	sock = sys.socket(sa.fam, proto, 0)
 
 	if sock < 0
 		-> `Fail "failed to connect to socket"
