@@ -143,7 +143,7 @@ static void setupinit(Node *n);
 %type <node> bandexpr cmpexpr unionexpr addexpr mulexpr shiftexpr prefixexpr postfixexpr
 %type <node> funclit seqlit tuplit name block stmt label use
 %type <node> fnparam declbody declcore typedeclcore structent arrayelt structelt tuphead
-%type <node> ifstmt forstmt whilestmt matchstmt elifs optexprln optexpr
+%type <node> ifstmt forstmt whilestmt matchstmt elifs optexprln loopcond optexpr
 %type <node> match
 %type <node> castexpr
 %type <ucon> unionelt
@@ -591,6 +591,10 @@ optexpr : expr {$$ = $1;}
 	| /* empty */ {$$ = NULL;}
 	;
 
+loopcond : exprln {$$ = $1;}
+	| Tendln {$$ = mkboollit($1->loc, 1);}
+	;
+
 optexprln: exprln {$$ = $1;}
 	 | Tendln {$$ = NULL;}
 	 ;
@@ -870,14 +874,11 @@ continue   : Tcontinue
 	{$$ = mkexpr($1->loc, Ocontinue, NULL);}
 	;
 
-forstmt : Tfor optexprln optexprln optexprln block {
-		if(!$3)
-			$3 = mkboollit($1->loc, 1);
-		$$ = mkloopstmt($1->loc, $2, $3, $4, $5);
-	}
+forstmt : Tfor optexprln loopcond optexprln block
+	{$$ = mkloopstmt($1->loc, $2, $3, $4, $5);}
 	| Tfor expr Tin exprln block
 	{$$ = mkiterstmt($1->loc, $2, $4, $5);}
-	| Tfor decl Tendln optexprln optexprln block {
+	| Tfor decl Tendln loopcond optexprln block {
 		//Node *init;
 		if ($2.nn != 1)
 			lfatal($1->loc, "only one declaration is allowed in for loop");
