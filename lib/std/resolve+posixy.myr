@@ -212,7 +212,7 @@ const word = {s
 
 
 const dnsresolve = {host, rt
-	var nsrv
+	var nsrv, r
 
 	if !valid(host)
 		-> `Fail (`Badhost)
@@ -220,7 +220,9 @@ const dnsresolve = {host, rt
 	for ns in nameservers
 		nsrv = dnsconnect(ns)
 		if nsrv >= 0
-			-> dnsquery(nsrv, host, rt)
+			r = dnsquery(nsrv, host, rt)
+			sys.close(nsrv)
+			-> r
 		;;
 	;;
 	-> `Fail (`Badsrv)
@@ -242,9 +244,11 @@ const dnsconnectv4 = {addr
 	if s < 0
 		-> -1
 	;;
-	sa.fam = sys.Afinet
-	sa.port = hosttonet(53)
-	sa.addr = addr
+	sa = [
+		.fam = sys.Afinet,
+		.port = hosttonet(53),
+		.addr = addr,
+	]
 	status = sys.connect(s, (&sa) castto(sys.sockaddr#), sizeof(sys.sockaddr_in))
 	if status < 0
 		-> -1

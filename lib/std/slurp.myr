@@ -14,9 +14,13 @@ pkg std =
 const Bufstart = 4096
 
 const slurp = {path
+	var sl
 	match open(path, Ordonly)
-	| `Ok fd:	-> fslurp(fd)
 	| `Fail e:	-> `Fail e
+	| `Ok fd:
+		sl = fslurp(fd)
+		close(fd)
+		-> sl
 	;;
 }
 

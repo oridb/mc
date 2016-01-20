@@ -34,6 +34,7 @@ const dial = {str
 	var sa4 : sys.sockaddr_in
 	var sa6 : sys.sockaddr_in6
 	var sa	: sys.sockaddr#
+	var a
 	var sock
 
 	match parsedial(str)
@@ -43,17 +44,21 @@ const dial = {str
 
 	match getaddr(host)
 	| `Ipv4 bits:
-		sa4.fam = sys.Afinet
-		sa4.addr = bits
-		sa4.port = hosttonet(port)
+		sa4 = [
+			.fam = sys.Afinet,
+			.addr = bits,
+			.port = hosttonet(port),
+		]
 		sa = &sa4 castto(sys.sockaddr#)
 	| `Ipv6 bits:
-		sa6.fam = sys.Afinet6
-		sa6.addr = bits
-		sa6.port = hosttonet(port)
+		sa6 = [
+			.fam = sys.Afinet6,
+			.addr = bits,
+			.port = hosttonet(port),
+		]
 		sa = &sa6 castto(sys.sockaddr#)
 	;;
-	sock = sys.socket(sa.fam, proto, 0)
+	sock = sys.socket(2, proto, 0)
 
 	if sock < 0
 		-> `Fail "failed to connect to socket"
@@ -128,7 +133,8 @@ const getaddr = {addr
 	var ip
 
 	match ipparse(addr)
-	| `Some a:	ip = a
+	| `Some a:
+		ip = a
 	| `None:
 		match resolve(addr)
 		| `Ok hi:
