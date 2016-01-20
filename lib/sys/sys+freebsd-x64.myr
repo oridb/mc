@@ -119,7 +119,7 @@ pkg sys =
 	;;
 
 	type sockaddr_un = struct
-		len	: byte
+		len	: uint8
 		fam	: sockfam
 		path	: byte[104]
 	;;
