@@ -27,7 +27,7 @@ bootstrap: buildmyr
 	cp mbld/mbld xmbld
 	./genbootstrap.sh
 
-buildmyr:
+buildmyr: subdirs
 	./mbldwrap.sh
 
 cleanmyr:
