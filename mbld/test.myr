@@ -175,7 +175,7 @@ const runtest = {b, cmd
 		| `std.Wsuccess:
 			std.put("PASS\n")
 			r = true
-		| _:	std.put("???\n")
+		| `std.Waiterror:	std.put("failed waiting for pid {}\n", pid)
 		;;
 	;;
 	-> r
