@@ -140,6 +140,7 @@ struct Stab {
 	Htab *ty;   /* types */
 	Htab *tr;   /* traits */
 	Htab *uc;   /* union constructors */
+	Htab *lbl;  /* labels */
 	Htab *impl; /* trait implementations: really a set of implemented traits. */
 };
 
@@ -494,6 +495,7 @@ void updatetype(Stab *st, Node *n, Type *t);
 void putdcl(Stab *st, Node *dcl);
 void forcedcl(Stab *st, Node *dcl);
 void putucon(Stab *st, Ucon *uc);
+void putlbl(Stab *st, char *name, Node *lbl);
 
 Stab *getns(Node *file, char *n);
 Node *getdcl(Stab *st, Node *n);
@@ -504,6 +506,7 @@ Type *gettype(Stab *st, Node *n);
 Node *getimpl(Stab *st, Node *impl);
 Trait *gettrait(Stab *st, Node *n);
 Ucon *getucon(Stab *st, Node *n);
+Node *getlbl(Stab *st, Srcloc loc, char *name);
 
 Stab *curstab(void);
 void pushstab(Stab *st);

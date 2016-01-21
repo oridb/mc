@@ -109,8 +109,10 @@ Stab *mkstab(int isfunc)
 	st->ty = mkht(nsnamehash, nsnameeq);
 	st->tr = mkht(nsnamehash, nsnameeq);
 	st->uc = mkht(nsnamehash, nsnameeq);
-	if (isfunc)
+	if (isfunc) {
 		st->env = mkht(nsnamehash, nsnameeq);
+		st->lbl = mkht(strhash, streq);
+	}
 	st->impl = mkht(implhash, impleq);
 	return st;
 }
@@ -176,6 +178,26 @@ Node *getdcl(Stab *st, Node *n)
 		st = st->super;
 	} while (st);
 	return NULL;
+}
+
+void putlbl(Stab *st, char *name, Node *lbl)
+{
+	while (!st->isfunc && st->super)
+		st = st->super;
+	if (!st) 
+		fatal(lbl, "label %s defined outside function\n", name);
+	if (hthas(st->lbl, name))
+		fatal(lbl, "duplicate label %s, first defined on line %d\n", name, lbl->loc.line);
+	htput(st->lbl, name, lbl);
+}
+
+Node *getlbl(Stab *st, Srcloc loc, char *name)
+{
+	while (!st->isfunc && st->super)
+		st = st->super;
+	if (!st || !hthas(st->lbl, name))
+		lfatal(loc, "unable to find label %s in function scope\n", name);
+	return htget(st->lbl, name);
 }
 
 Type *gettype_l(Stab *st, Node *n)

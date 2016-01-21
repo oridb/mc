@@ -33,10 +33,9 @@ const fslurp = {fd
 	buf = slalloc(bufsz)
 	while true
 		match read(fd, buf[len:])
+		| `Ok 0:
+			-> `Ok buf[:len]
 		| `Ok n:
-			if n == 0
-				-> `Ok buf[:len]
-			;;
 			len += n
 			bufsz *= 2
 			buf = slgrow(buf, bufsz)

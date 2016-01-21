@@ -1400,27 +1400,27 @@ static void inferexpr(Inferstate *st, Node **np, Type *ret, int *sawret)
 		n->expr.isconst = isconst;
 		settype(st, n, t);
 		break;
-	case Omod:	 /* @a % @a -> @a */
-	case Obor:	 /* @a | @a -> @a */
+	case Omod:	/* @a % @a -> @a */
+	case Obor:	/* @a | @a -> @a */
 	case Oband:	/* @a & @a -> @a */
 	case Obxor:	/* @a ^ @a -> @a */
-	case Obsl:	 /* @a << @a -> @a */
-	case Obsr:	 /* @a >> @a -> @a */
+	case Obsl:	/* @a << @a -> @a */
+	case Obsr:	/* @a >> @a -> @a */
 	case Obnot:	/* ~@a -> @a */
-	case Opreinc:  /* ++@a -> @a */
-	case Opredec:  /* --@a -> @a */
-	case Opostinc: /* @a++ -> @a */
-	case Opostdec: /* @a-- -> @a */
-	case Oaddeq:   /* @a += @a -> @a */
-	case Osubeq:   /* @a -= @a -> @a */
-	case Omuleq:   /* @a *= @a -> @a */
-	case Odiveq:   /* @a /= @a -> @a */
-	case Omodeq:   /* @a %= @a -> @a */
-	case Oboreq:   /* @a |= @a -> @a */
-	case Obandeq:  /* @a &= @a -> @a */
-	case Obxoreq:  /* @a ^= @a -> @a */
-	case Obsleq:   /* @a <<= @a -> @a */
-	case Obsreq:   /* @a >>= @a -> @a */
+	case Opreinc:	/* ++@a -> @a */
+	case Opredec:	/* --@a -> @a */
+	case Opostinc:	/* @a++ -> @a */
+	case Opostdec:	/* @a-- -> @a */
+	case Oaddeq:	/* @a += @a -> @a */
+	case Osubeq:	/* @a -= @a -> @a */
+	case Omuleq:	/* @a *= @a -> @a */
+	case Odiveq:	/* @a /= @a -> @a */
+	case Omodeq:	/* @a %= @a -> @a */
+	case Oboreq:	/* @a |= @a -> @a */
+	case Obandeq:	/* @a &= @a -> @a */
+	case Obxoreq:	/* @a ^= @a -> @a */
+	case Obsleq:	/* @a <<= @a -> @a */
+	case Obsreq:	/* @a >>= @a -> @a */
 		infersub(st, n, ret, sawret, &isconst);
 		t = type(st, args[0]);
 		constrain(st, n, type(st, args[0]), traittab[Tcnum]);
@@ -1529,6 +1529,8 @@ static void inferexpr(Inferstate *st, Node **np, Type *ret, int *sawret)
 		settype(st, n, mktype(Zloc, Tyvoid));
 		break;
 	case Ojmp: /* goto void* -> void */
+		if (args[0]->type == Nlit && args[0]->lit.littype == Llbl)
+			args[0] = getlbl(curstab(), args[0]->loc, args[0]->lit.lblval);
 		infersub(st, n, ret, sawret, &isconst);
 		settype(st, n, mktype(Zloc, Tyvoid));
 		break;
@@ -1860,8 +1862,11 @@ static void infernode(Inferstate *st, Node **np, Type *ret, int *sawret)
 	case Nimpl:
 		specializeimpl(st, n);
 		break;
-	case Nname:
 	case Nlit:
+		if (n->lit.littype == Llbl)
+			putlbl(curstab(), n->lit.lblval, n);
+		break;
+	case Nname:
 	case Nuse:
 		break;
 	case Nnone:
