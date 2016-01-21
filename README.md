@@ -1,6 +1,8 @@
 Myrddin
 -------
 
+[Myrddin Website and Documentation](http://eigenstate.org/myrddin/)
+
 Myrddin is a systems language that is both powerful and fun to use.
 It aims for C like low level control, a lightweight high quality implementation,
 and features you may find familiar from languages like like rust and ocaml.
@@ -56,11 +58,6 @@ Status
 
 ![Solid Engineering](http://eigenstate.org/myrddin/tacoma-narrows.jpg "Solid Engineering")
 
-
-Website
--------
-
-[Myrddin Homepage](http://eigenstate.org/myrddin/)
 
 Try It Online
 -------------
