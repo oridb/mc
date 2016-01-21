@@ -165,6 +165,8 @@ const runtest = {b, cmd
 		| `std.Fail m:
 		;;
 		std.slfree(log)
+		std.close(infd)
+		std.close(outfd)
 
 		r = false
 		match std.wait(pid)
