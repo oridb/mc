@@ -264,7 +264,10 @@ struct Node {
 				double fltval;
 				uint32_t chrval;
 				Str strval;
-				char *lblval;
+				struct {
+					char *lblval;
+					char *lblname;
+				};
 				int boolval;
 				Node *fnval;
 			};

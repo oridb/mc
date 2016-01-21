@@ -580,7 +580,10 @@ unionelt /* nb: the ucon union type gets filled in when we have context */
 	| Tendln {$$ = NULL;}
 	;
 
-goto    : Tgoto Tident {$$ = mkexpr($1->loc, Ojmp, mklbl($2->loc, $2->id), NULL);}
+goto    : Tgoto Tident {
+		$$ = mkexpr($1->loc, Ojmp, mklbl($2->loc, ""), NULL);
+		$$->expr.args[0]->lit.lblname = strdup($2->id);
+	}
 	;
 
 retexpr : Tret expr {$$ = mkexpr($1->loc, Oret, $2, NULL);}
@@ -971,7 +974,12 @@ blkbody : decl {
 	}
 	;
 
-label   : Tcolon Tident {$$ = mklbl($2->loc, $2->id);}
+label   : Tcolon Tident {
+		char buf[512];
+		genlblstr(buf, sizeof buf, $2->id);
+		$$ = mklbl($2->loc, buf);
+		$$->expr.args[0]->lit.lblname = strdup($2->id);
+	}
 	;
 
 %%

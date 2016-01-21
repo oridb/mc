@@ -214,7 +214,7 @@ Cfg *mkcfg(Node *fn, Node **nl, size_t nn)
 		}
 	}
 	post = mkbb(cfg);
-	bprintf(buf, sizeof buf, ".R%d", nextret++);
+	bprintf(buf, sizeof buf, ".Lret.%d", nextret++);
 	label(cfg, mklbl(fn->loc, buf), post);
 
 	cfg->start = pre;

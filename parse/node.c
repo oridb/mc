@@ -231,6 +231,7 @@ Node *mklbl(Srcloc loc, char *lbl)
 	assert(lbl != NULL);
 	n = mknode(loc, Nlit);
 	n->lit.littype = Llbl;
+	n->lit.lblname = NULL;
 	n->lit.lblval = strdup(lbl);
 	return mkexpr(loc, Olit, n, NULL);
 }
@@ -238,7 +239,10 @@ Node *mklbl(Srcloc loc, char *lbl)
 char *genlblstr(char *buf, size_t sz, char *suffix)
 {
 	static int nextlbl;
-	bprintf(buf, 128, ".L%d%s", nextlbl++, suffix);
+	size_t len;
+
+	len = snprintf(buf, 128, ".L%d.%s", nextlbl++, suffix);
+	assert(len <= sz);
 	return buf;
 }
 

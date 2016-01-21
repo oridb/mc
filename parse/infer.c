@@ -1530,7 +1530,7 @@ static void inferexpr(Inferstate *st, Node **np, Type *ret, int *sawret)
 		break;
 	case Ojmp: /* goto void* -> void */
 		if (args[0]->type == Nlit && args[0]->lit.littype == Llbl)
-			args[0] = getlbl(curstab(), args[0]->loc, args[0]->lit.lblval);
+			args[0] = getlbl(curstab(), args[0]->loc, args[0]->lit.lblname);
 		infersub(st, n, ret, sawret, &isconst);
 		settype(st, n, mktype(Zloc, Tyvoid));
 		break;
@@ -1864,7 +1864,7 @@ static void infernode(Inferstate *st, Node **np, Type *ret, int *sawret)
 		break;
 	case Nlit:
 		if (n->lit.littype == Llbl)
-			putlbl(curstab(), n->lit.lblval, n);
+			putlbl(curstab(), n->lit.lblname, n);
 		break;
 	case Nname:
 	case Nuse:
