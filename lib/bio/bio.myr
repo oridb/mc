@@ -170,7 +170,7 @@ const write = {f, src
 	Tack small writes onto the buffer end. Big ones
 	flush the buffer and then go right to kernel.
 	*/
-	if src.len < (f.wbuf.len - f.wend)
+	if src.len <= (f.wbuf.len - f.wend)
 		std.slcp(f.wbuf[f.wend:f.wend+src.len], src)
 		f.wend += src.len
 		-> `Ok src.len
@@ -191,6 +191,16 @@ const read = {f, dst
 	/* Clear the error state so we can retry */
 	if f.lasterr != 0
 		-> `Err geterr(f)
+	;;
+
+	/*
+	a zero byte read always succeeds, reading 0 bytes; since
+	there are an infinite number of zero byte reads you can do
+	from anywhere in the file, including the end, this is not
+	an EOF condition.
+	*/
+	if dst.len == 0
+		-> `Ok dst
 	;;
 	std.assert(f.mode & Rd != 0, "File is not in read mode")
 	/* 
