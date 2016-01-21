@@ -37,8 +37,10 @@ const fslurp = {fd
 			-> `Ok buf[:len]
 		| `Ok n:
 			len += n
-			bufsz *= 2
-			buf = slgrow(buf, bufsz)
+			if len + 2*n >= bufsz
+				bufsz *= 2
+				buf = slgrow(buf, bufsz)
+			;;
 		| `Fail e:
 			-> `Fail e
 		;;
