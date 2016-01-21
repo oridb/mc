@@ -1614,7 +1614,9 @@ static void inferexpr(Inferstate *st, Node **np, Type *ret, int *sawret)
 	case Oult:
 	case Oule:
 	case Otupget:
-	case Numops:	die("Should not see %s in fe", opstr[exprop(n)]);	break;
+	case Numops:
+		die("Should not see %s in fe", opstr[exprop(n)]);
+		break;
 	}
 }
 
