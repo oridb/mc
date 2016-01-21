@@ -581,8 +581,11 @@ unionelt /* nb: the ucon union type gets filled in when we have context */
 	;
 
 goto    : Tgoto Tident {
-		$$ = mkexpr($1->loc, Ojmp, mklbl($2->loc, ""), NULL);
-		$$->expr.args[0]->lit.lblname = strdup($2->id);
+		Node *lbl;
+
+		lbl = mklbl($2->loc, "");
+		lbl->expr.args[0]->lit.lblname = strdup($2->id);
+		$$ = mkexpr($1->loc, Ojmp, lbl, NULL);
 	}
 	;
 

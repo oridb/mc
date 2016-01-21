@@ -1563,7 +1563,15 @@ static void inferexpr(Inferstate *st, Node **np, Type *ret, int *sawret)
 			   /* FIXME: env capture means this is non-const */
 			   n->expr.isconst = 1;
 			   break;
-		   default: n->expr.isconst = 1; break;
+		   case Llbl:
+			   s = getlbl(curstab(), args[0]->loc, args[0]->lit.lblname);
+			   if (!s)
+				   fatal(n, "unable to find label %s in function scope\n", args[0]->lit.lblname);
+			   *np = s;
+			   break;
+		   default: 
+			   n->expr.isconst = 1;
+			   break;
 		   }
 		   settype(st, n, type(st, args[0]));
 		   break;
@@ -1758,6 +1766,20 @@ static void inferstab(Inferstate *st, Stab *s)
 	free(k);
 }
 
+static void addlbl(Inferstate *st, Node *n)
+{
+	Node *lit;
+
+	if (n->type != Nexpr)
+		return;
+	if (exprop(n) != Olit)
+		return;
+	lit = n->expr.args[0];
+	if (lit->lit.littype != Llbl)
+		return;
+	putlbl(curstab(), lit->lit.lblname, n);
+}
+
 static void infernode(Inferstate *st, Node **np, Type *ret, int *sawret)
 {
 	size_t i, nbound;
@@ -1793,9 +1815,10 @@ static void infernode(Inferstate *st, Node **np, Type *ret, int *sawret)
 		setsuper(n->block.scope, curstab());
 		pushstab(n->block.scope);
 		inferstab(st, n->block.scope);
-		for (i = 0; i < n->block.nstmts; i++) {
+		for (i = 0; i < n->block.nstmts; i++)
+			addlbl(st, n->block.stmts[i]);
+		for (i = 0; i < n->block.nstmts; i++)
 			infernode(st, &n->block.stmts[i], ret, sawret);
-		}
 		popstab();
 		break;
 	case Nifstmt:
@@ -1865,9 +1888,6 @@ static void infernode(Inferstate *st, Node **np, Type *ret, int *sawret)
 		specializeimpl(st, n);
 		break;
 	case Nlit:
-		if (n->lit.littype == Llbl)
-			putlbl(curstab(), n->lit.lblname, n);
-		break;
 	case Nname:
 	case Nuse:
 		break;

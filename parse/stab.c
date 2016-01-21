@@ -114,6 +114,7 @@ Stab *mkstab(int isfunc)
 		st->lbl = mkht(strhash, streq);
 	}
 	st->impl = mkht(implhash, impleq);
+	st->isfunc = isfunc;
 	return st;
 }
 
@@ -182,7 +183,7 @@ Node *getdcl(Stab *st, Node *n)
 
 void putlbl(Stab *st, char *name, Node *lbl)
 {
-	while (!st->isfunc && st->super)
+	while (st && !st->isfunc)
 		st = st->super;
 	if (!st) 
 		fatal(lbl, "label %s defined outside function\n", name);
@@ -193,10 +194,10 @@ void putlbl(Stab *st, char *name, Node *lbl)
 
 Node *getlbl(Stab *st, Srcloc loc, char *name)
 {
-	while (!st->isfunc && st->super)
+	while (st && !st->isfunc)
 		st = st->super;
 	if (!st || !hthas(st->lbl, name))
-		lfatal(loc, "unable to find label %s in function scope\n", name);
+		return NULL;
 	return htget(st->lbl, name);
 }
 
