@@ -485,7 +485,7 @@ Node *mkidxinit(Srcloc l, Node *idx, Node *init);
 
 Node *mkvoid(Srcloc loc);
 Node *mkbool(Srcloc l, int val);
-Node *mkint(Srcloc l, uint64_t val);
+Node *mkint(Srcloc l, uvlong val);
 Node *mkchar(Srcloc l, uint32_t val);
 Node *mkstr(Srcloc l, Str str);
 Node *mkfloat(Srcloc l, double flt);
@@ -501,7 +501,7 @@ Node *mkslice(Srcloc l, Node *base, Node *off);
 Ucon *mkucon(Srcloc l, Node *name, Type *ut, Type *uet);
 
 /* node util functions */
-uint64_t arraysz(Node *sz);
+uvlong arraysz(Node *sz);
 char *namestr(Node *name);
 char *lblstr(Node *n);
 char *declname(Node *n);

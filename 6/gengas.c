@@ -273,13 +273,13 @@ static void writeasm(FILE *fd, Isel *s, Func *fn)
 	}
 }
 
-static void encodemin(FILE *fd, uint64_t val)
+static void encodemin(FILE *fd, uvlong val)
 {
 	size_t i, shift;
 	uint8_t b;
 
 	if (val < 128) {
-		fprintf(fd, "\t.byte %zd\n", val);
+		fprintf(fd, "\t.byte %llu\n", val);
 		return;
 	}
 
@@ -325,12 +325,12 @@ static void writeblob(FILE *fd, Blob *b)
 	}
 	switch (b->type) {
 	case Btimin:	encodemin(fd, b->ival);	break;
-	case Bti8:	fprintf(fd, "\t.byte %zd\n", b->ival);	break;
-	case Bti16:	fprintf(fd, "\t.short %zd\n", b->ival);	break;
-	case Bti32:	fprintf(fd, "\t.long %zd\n", b->ival);	break;
-	case Bti64:	fprintf(fd, "\t.quad %zd\n", b->ival);	break;
+	case Bti8:	fprintf(fd, "\t.byte %llu\n", b->ival);	break;
+	case Bti16:	fprintf(fd, "\t.short %llu\n", b->ival);	break;
+	case Bti32:	fprintf(fd, "\t.long %llu\n", b->ival);	break;
+	case Bti64:	fprintf(fd, "\t.quad %llu\n", b->ival);	break;
 	case Btbytes:	writebytes(fd, b->bytes.buf, b->bytes.len);	break;
-	case Btpad:	fprintf(fd, "\t.fill %zd,1,0\n", b->npad);	break;
+	case Btpad:	fprintf(fd, "\t.fill %llu,1,0\n", b->npad);	break;
 	case Btref:	fprintf(fd, "\t.quad %s + %zd\n", b->ref.str, b->ref.off);	break;
 	case Btseq:
 		for (i = 0; i < b->seq.nsub; i++)

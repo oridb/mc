@@ -280,13 +280,13 @@ static void writeasm(FILE *fd, Isel *s, Func *fn)
 	}
 }
 
-static size_t encodemin(FILE *fd, uint64_t val, size_t off, char *lbl)
+static size_t encodemin(FILE *fd, uvlong val, size_t off, char *lbl)
 {
 	size_t i, shift, n;
 	uint8_t b;
 
 	if (val < 128) {
-		fprintf(fd, "\tDATA %s+%zd(SB)/1,$%zd //x\n", lbl, off, val);
+		fprintf(fd, "\tDATA %s+%zd(SB)/1,$%llu //x\n", lbl, off, val);
 		return 1;
 	}
 
@@ -317,15 +317,15 @@ static size_t writeblob(FILE *fd, Blob *b, size_t off, char *lbl)
 		return 0;
 	switch (b->type) {
 	case Bti8:
-		fprintf(fd, "\tDATA %s+%zd(SB)/1,$%zd\n", lbl, off+n, b->ival);
+		fprintf(fd, "\tDATA %s+%zd(SB)/1,$%llud\n", lbl, off+n, b->ival);
 		n += 1;
 		break;
 	case Bti16:
-		fprintf(fd, "\tDATA %s+%zd(SB)/2,$%zd\n", lbl, off+n, b->ival);
+		fprintf(fd, "\tDATA %s+%zd(SB)/2,$%llud\n", lbl, off+n, b->ival);
 		n += 2;
 		break;
 	case Bti32:
-		fprintf(fd, "\tDATA %s+%zd(SB)/4,$%zd\n", lbl, off+n, b->ival);
+		fprintf(fd, "\tDATA %s+%zd(SB)/4,$%llud\n", lbl, off+n, b->ival);
 		n += 4;
 		break;
 	case Bti64:
