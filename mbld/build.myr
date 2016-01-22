@@ -11,8 +11,8 @@ pkg bld =
 	const buildall	: (b : build# -> bool)
 	const genall	: (b : build# -> bool)
 	const buildtarg	: (b : build#, target : byte[:] -> bool)
-	const buildbin	: (b : build#, bt : myrtarg#, addsrc : bool -> void)
-	const buildlib	: (b : build#, lt : myrtarg# -> void)
+	const buildbin	: (b : build#, bt : myrtarg#, addsrc : bool -> bool)
+	const buildlib	: (b : build#, lt : myrtarg# -> bool)
 ;;
 
 const buildall = {b
@@ -140,6 +140,7 @@ const buildbin = {b, targ, addsrc
 		std.slfree(incs)
 		std.slfree(src)
 	;;
+	-> true
 }
 
 const buildlib = {b, targ
@@ -166,6 +167,7 @@ const buildlib = {b, targ
 		std.slfree(src)
 	;;
 	std.slfree(archive)
+	-> true
 }
 
 const genfiles = {b, gt

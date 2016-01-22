@@ -23,7 +23,7 @@ const main = {args : byte[:][:]
 	var tmp
 	var cmd 
 	var tags
-	var st
+	var ok, r
 
 	cmd = std.optparse(args, &[
 		.argdesc = "[inputs...]",
@@ -90,8 +90,10 @@ const main = {args : byte[:][:]
 		buildimm(b, targname, cmd.args, bintarg, cleanfirst)
 	elif runsrc.len != 0
 		tmp = std.mktemppath("runmyr")
-		buildimm(b, tmp, [runsrc][:], true, cleanfirst)
-		runcmd(tmp, cmd.args)
+		ok = buildimm(b, tmp, [runsrc][:], true, cleanfirst)
+		if ok
+			ok = runcmd(tmp, cmd.args)
+		;;
 		std.remove(tmp)
 	elif dumponly
 		findproj(b, "bld.proj")
@@ -112,23 +114,24 @@ const main = {args : byte[:][:]
 		else
 			for c in cmd.args
 				match c
-				| "all":	st = bld.buildall(b)
-				| "gen":	st = bld.genall(b)
-				| "clean":	st = bld.cleanall(b)
-				| "install":	st = bld.install(b)
-				| "uninstall":	st = bld.uninstall(b)
-				| "test":	st = bld.test(b)
-				| target:	st = bld.buildtarg(b, target)
+				| "all":	r = bld.buildall(b)
+				| "gen":	r = bld.genall(b)
+				| "clean":	r = bld.cleanall(b)
+				| "install":	r = bld.install(b)
+				| "uninstall":	r = bld.uninstall(b)
+				| "test":	r = bld.test(b)
+				| target:	r = bld.buildtarg(b, target)
 				;;
+				ok = ok && r
 			;;
 		;;
 	;;
-	if (!st)
+	if !ok
 		std.exit(1)
 	;;
 }
 
-const buildimm = {b, targ, inputs, bintarg, cleanfirst
+const buildimm = {b, targ, inputs, bintarg, cleanfirst -> bool
 	var mt : bld.myrtarg
 
 	mt = [
@@ -142,14 +145,14 @@ const buildimm = {b, targ, inputs, bintarg, cleanfirst
 		bld.cleanmyr(b, &mt)
 	;;
 	if bintarg
-		bld.buildbin(b, &mt, true)
+		-> bld.buildbin(b, &mt, true)
 	else
-		bld.buildlib(b, &mt)
+		-> bld.buildlib(b, &mt)
 	;;
 }
 
 const runcmd = {bin, args
-	bld.run(std.sljoin([bin][:], args))
+	-> bld.run(std.sljoin([bin][:], args))
 }
 
 const mkbuild = {tags

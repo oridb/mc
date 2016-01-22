@@ -4,7 +4,7 @@ use "opts.use"
 use "types.use"
 
 pkg bld =
-	const run	: (cmd : byte[:][:] -> void)
+	const run	: (cmd : byte[:][:] -> bool)
 	const printcmd
 	const srcsplit	: (src : byte[:] -> (byte[:], byte[:], byte[:]))
 	const swapsuffix	: (f : byte[:], suff : byte[:], newsuff : byte[:] -> byte[:])
@@ -21,13 +21,15 @@ const run = {cmd
 	pid = std.fork()
 	if pid == -1
 		std.fatal("could not fork command\n")
+		-> false
 	elif pid == 0
 		if std.execvp(cmd[0], cmd) < 0
 			std.fatal("failed to exec {}\n", cmd[0])
 		;;
+		-> false
 	else
 		match std.wait(pid)
-		| `std.Wsuccess:	/* nothing */
+		| `std.Wsuccess:	-> true
 		| `std.Wfailure:	std.fatal("FAIL: \"{}\"\n", std.strjoin(cmd, " "))
 		| `std.Wsignalled:	std.fatal("CRASH: \"{}\"\n", std.strjoin(cmd, " "))
 		| `std.Waiterror:	std.fatal("WAT: \"{}\"\n", std.strjoin(cmd, " "))
