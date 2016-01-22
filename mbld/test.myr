@@ -11,7 +11,7 @@ use "util.use"
 use "config.use"
 
 pkg bld =
-	const test	: (b : build# -> void)
+	const test	: (b : build# -> bool)
 ;;
 
 const test = {b
@@ -69,7 +69,7 @@ const test = {b
 	;;
 	std.slfree(tests)
 	if tests.len == 0
-		-> void
+		-> true
 	;;
 
 	printfailed(failed)
@@ -82,6 +82,7 @@ const test = {b
 	else
 		std.put("TESTS FAILED\n")
 	;;
+	-> ok
 }
 
 const printfailed : (f : byte[:][:] -> void) = {failed

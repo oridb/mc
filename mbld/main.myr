@@ -23,6 +23,7 @@ const main = {args : byte[:][:]
 	var tmp
 	var cmd 
 	var tags
+	var st
 
 	cmd = std.optparse(args, &[
 		.argdesc = "[inputs...]",
@@ -111,16 +112,19 @@ const main = {args : byte[:][:]
 		else
 			for c in cmd.args
 				match c
-				| "all":	bld.buildall(b)
-				| "gen":	bld.genall(b)
-				| "clean":	bld.cleanall(b)
-				| "install":	bld.install(b)
-				| "uninstall":	bld.uninstall(b)
-				| "test":	bld.test(b)
-				| target:	bld.buildtarg(b, target)
+				| "all":	st = bld.buildall(b)
+				| "gen":	st = bld.genall(b)
+				| "clean":	st = bld.cleanall(b)
+				| "install":	st = bld.install(b)
+				| "uninstall":	st = bld.uninstall(b)
+				| "test":	st = bld.test(b)
+				| target:	st = bld.buildtarg(b, target)
 				;;
 			;;
 		;;
+	;;
+	if (!st)
+		std.exit(1)
 	;;
 }
 
