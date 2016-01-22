@@ -85,7 +85,9 @@ case $OS in
         echo '#define Symprefix ""' >> config.h
         echo '#define Defaultasm Gnugas' >> config.h
         echo 'export SYS=openbsd' >> config.mk
-        echo 'const Linkcmd = ["ld", "-static", "-o"]' >> mbld/config.myr
+        echo 'const Linkcmd = ["ld", "-static",' \
+		'"-Bstatic", "-dynamic-linker", "/usr/libexec/ld.so"' \
+		',"-o"]' >> mbld/config.myr
         echo 'const Sys = "OpenBSD"' >> mbld/config.myr
         ;;
     *)
