@@ -1016,10 +1016,14 @@ void readuse(Node *use, Stab *st, Vis vis)
 				free(t);
 				break;
 			}
+			free(p);
 		}
 	}
-	if (!fd)
-		fatal(use, "Could not open %s", use->use.name);
+	if (!fd) {
+		fatal(use, "could not open usefile %s in", use->use.name);
+		for (i = 0; i < nincpaths; i++)
+			printf("\t%s\n", incpaths[i]);
+	}
 
 	if (!loaduse(p, fd, st, vis))
 		die("Could not load usefile %s from %s", use->use.name, p);
