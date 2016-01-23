@@ -162,7 +162,7 @@ const srcdeps = {b, ds, g, path, obj, usefile
 			;;
 		| `Local (l, lnum):
 			if !std.hassuffix(l, ".use")
-				std.fatal("{}:{}: local dependency \"{}\" should end with .use\n", path, lnum, l)
+				l = std.sljoin(l, ".use")
 			;;
 			if obj.len != 0
 				pushdep(g, l, obj)

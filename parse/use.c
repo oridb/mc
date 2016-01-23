@@ -994,17 +994,34 @@ foundextlib:
 	return 1;
 }
 
+int hassuffix(char *str, char *suff)
+{
+	size_t nstr, nsuff;
+
+	nstr = strlen(str);
+	nsuff = strlen(suff);
+	if (nstr < nsuff)
+		return 0;
+	return !strcmp(str + nstr - nsuff, suff);
+}
+
 void readuse(Node *use, Stab *st, Vis vis)
 {
 	size_t i;
 	FILE *fd;
 	char *t, *p;
+	char buf[512];
 
 	/* local (quoted) uses are always relative to the cwd */
 	fd = NULL;
 	p = NULL;
 	if (use->use.islocal) {
-		p = strdup(use->use.name);
+		if (hassuffix(use->use.name, ".use"))
+			snprintf(buf, sizeof buf, "%s", use->use.name);
+		else
+			snprintf(buf,sizeof buf, "%s.use", use->use.name);
+
+		p = strdup(buf);
 		fd = fopen(p, "r");
 		/* nonlocal (barename) uses are always searched on the include path */
 	} else {
