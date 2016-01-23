@@ -1,9 +1,9 @@
-use "die.use"
-use "execvp.use"
-use "fmt.use"
-use "result.use"
-use "syswrap.use"
-use "errno.use"
+use "die"
+use "execvp"
+use "fmt"
+use "result"
+use "syswrap"
+use "errno"
 
 pkg std =
 	const spork	: (cmd : byte[:][:]	-> result((pid, fd, fd), errno))

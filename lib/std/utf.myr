@@ -1,5 +1,5 @@
-use "die.use"
-use "types.use"
+use "die"
+use "types"
 
 pkg std =
 	const Badchar	: char = -1 castto(char)

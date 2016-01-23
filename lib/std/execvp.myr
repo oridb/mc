@@ -1,11 +1,11 @@
-use "alloc.use"
-use "env.use"
-use "errno.use"
-use "fmt.use"
-use "option.use"
-use "strfind.use"
-use "strsplit.use"
-use "syswrap.use"
+use "alloc"
+use "env"
+use "errno"
+use "fmt"
+use "option"
+use "strfind"
+use "strsplit"
+use "syswrap"
 
 pkg std = 
 	const execvp	: (cmd : byte[:], args : byte[:][:] -> errno)

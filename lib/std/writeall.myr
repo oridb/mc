@@ -1,8 +1,8 @@
-use "errno.use"
-use "result.use"
-use "option.use"
-use "syswrap.use"
-use "types.use"
+use "errno"
+use "result"
+use "option"
+use "syswrap"
+use "types"
 
 pkg std =
 	const writeall : (fd : fd, src : byte[:] -> (size, option(errno)))

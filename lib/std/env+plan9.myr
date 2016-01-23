@@ -1,17 +1,17 @@
 use sys
 
-use "alloc.use"
-use "die.use"
-use "extremum.use"
-use "fmt.use"
-use "option.use"
-use "result.use"
-use "slcp.use"
-use "sldup.use"
-use "sleq.use"
-use "slpush.use"
-use "slurp.use"
-use "cstrconv.use"
+use "alloc"
+use "die"
+use "extremum"
+use "fmt"
+use "option"
+use "result"
+use "slcp"
+use "sldup"
+use "sleq"
+use "slpush"
+use "slurp"
+use "cstrconv"
 
 pkg std =
 	const getenv :	(name : byte[:] -> option(byte[:]))

@@ -1,6 +1,6 @@
-use "alloc.use"
-use "die.use"
-use "slcp.use"
+use "alloc"
+use "die"
+use "slcp"
 
 pkg std =
 	generic sldup : (sl : @a[:] -> @a[:])

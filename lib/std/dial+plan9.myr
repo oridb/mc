@@ -1,16 +1,16 @@
 use sys
 
-use "alloc.use"
-use "die.use"
-use "fmt.use"
-use "option.use"
-use "pathjoin.use"
-use "result.use"
-use "sleq.use"
-use "strfind.use"
-use "strstrip.use"
-use "syswrap.use"
-use "utf.use"
+use "alloc"
+use "die"
+use "fmt"
+use "option"
+use "pathjoin"
+use "result"
+use "sleq"
+use "strfind"
+use "strstrip"
+use "syswrap"
+use "utf"
 
 
 pkg std =

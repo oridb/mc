@@ -1,8 +1,8 @@
 use sys
-use "errno.use"
-use "cstrconv.use"
-use "slcp.use"
-use "die.use"
+use "errno"
+use "cstrconv"
+use "slcp"
+use "die"
 
 pkg std =
 	const exit	: (status:int -> void)

@@ -1,9 +1,9 @@
 use std
 
-use "types.use"
-use "names.use"
-use "date.use"
-use "zoneinfo.use"
+use "types"
+use "names"
+use "date"
+use "zoneinfo"
 
 pkg date =
 	type parsefail = union

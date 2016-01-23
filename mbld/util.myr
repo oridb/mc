@@ -1,7 +1,7 @@
 use std
 
-use "opts.use"
-use "types.use"
+use "opts"
+use "types"
 
 pkg bld =
 	const run	: (cmd : byte[:][:] -> bool)

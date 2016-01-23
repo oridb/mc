@@ -1,5 +1,5 @@
-use "assert.use"
-use "types.use"
+use "assert"
+use "types"
 
 pkg std =
 	generic putle64	: (buf : byte[:], v :  @a::(numeric,integral) -> size)

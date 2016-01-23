@@ -1,4 +1,4 @@
-use "cmp.use"
+use "cmp"
 
 pkg std =
 	generic sort	: (sl:@a[:], cmp:(a:@a, b:@a -> order) -> @a[:])

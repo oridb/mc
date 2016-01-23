@@ -1,6 +1,6 @@
 use std
 
-use "types.use"
+use "types"
 
 pkg regex =
 	const exec	: (re : regex#, str : byte[:] -> std.option(byte[:][:]))

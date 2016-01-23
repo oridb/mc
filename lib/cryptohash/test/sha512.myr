@@ -1,7 +1,7 @@
 use std
 use cryptohash
 
-use "test/util.use"
+use "test/util"
 
 const main = {
 	hasheq(cryptohash.sha384("")[:], \

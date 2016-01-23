@@ -1,5 +1,5 @@
-use "die.use"
-use "types.use"
+use "die"
+use "types"
 
 /* 
    Tables adapted from plan 9's runetype.c,

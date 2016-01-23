@@ -1,5 +1,5 @@
-use "syswrap.use"
-use "result.use"
+use "syswrap"
+use "result"
 
 pkg std =
 	const blat : (path : byte[:], buf : byte[:], perm : int64 -> bool)

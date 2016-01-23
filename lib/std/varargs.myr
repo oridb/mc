@@ -1,7 +1,7 @@
-use "types.use"
-use "introspect.use"
-use "sleq.use"
-use "die.use"
+use "types"
+use "introspect"
+use "sleq"
+use "die"
 
 pkg std =
 	type valist

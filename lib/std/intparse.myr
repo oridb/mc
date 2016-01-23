@@ -1,9 +1,9 @@
-use "chartype.use"
-use "die.use"
-use "hasprefix.use"
-use "option.use"
-use "types.use"
-use "utf.use"
+use "chartype"
+use "die"
+use "hasprefix"
+use "option"
+use "types"
+use "utf"
 
 pkg std =
 	generic intparsebase	: (s : byte[:], base : int -> option(@a::(integral,numeric)))

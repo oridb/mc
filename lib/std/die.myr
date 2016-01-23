@@ -1,5 +1,5 @@
-use "syswrap.use"
-use "types.use"
+use "syswrap"
+use "types"
 
 pkg std = 
 	$noret const die	: (msg : byte[:] -> void)

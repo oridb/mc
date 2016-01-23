@@ -1,4 +1,4 @@
-use "cmp.use"
+use "cmp"
 pkg std =
 	const hasprefix	: (s : byte[:], pre : byte[:] -> bool)
 ;;

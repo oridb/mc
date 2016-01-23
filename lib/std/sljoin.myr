@@ -1,5 +1,5 @@
-use "alloc.use"
-use "slcp.use"
+use "alloc"
+use "slcp"
 
 pkg std =
 	generic sljoin	: (dst : @a[:], src : @a[:]	-> @a[:])

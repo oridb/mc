@@ -1,7 +1,7 @@
 use sys
 
-use "errno.use"
-use "cstrconv.use"
+use "errno"
+use "cstrconv"
 
 pkg std =
 	$noret const exit	: (status : int -> void)

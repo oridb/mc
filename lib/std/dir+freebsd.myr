@@ -1,12 +1,12 @@
 use sys
 
-use "alloc.use"
-use "die.use"
-use "option.use"
-use "result.use"
-use "slcp.use"
-use "sldup.use"
-use "types.use"
+use "alloc"
+use "die"
+use "option"
+use "result"
+use "slcp"
+use "sldup"
+use "types"
 
 pkg std =
 	type dir = struct

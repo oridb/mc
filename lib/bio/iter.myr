@@ -1,5 +1,5 @@
 use std
-use "bio.use"
+use "bio"
 
 pkg bio =
 	type lineiter = file#

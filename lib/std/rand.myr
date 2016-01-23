@@ -1,9 +1,9 @@
-use "die.use"
-use "extremum.use"
-use "assert.use"
-use "types.use"
-use "alloc.use"
-use "now.use"
+use "die"
+use "extremum"
+use "assert"
+use "types"
+use "alloc"
+use "now"
 
 /*
    Translated from C by Ori Bernstein

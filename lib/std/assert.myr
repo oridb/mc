@@ -1,6 +1,6 @@
-use "fmt.use"
-use "syswrap.use"
-use "varargs.use"
+use "fmt"
+use "syswrap"
+use "varargs"
 
 pkg std =
 	const assert	: (cond : bool, fmt : byte[:], args : ... -> void)

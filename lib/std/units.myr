@@ -1,4 +1,4 @@
-use "types.use"
+use "types"
 
 pkg std =
 	/* JEDEC 100B.1 memory sizes */

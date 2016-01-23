@@ -1,9 +1,9 @@
 use sys
-use "cstrconv.use"
-use "errno.use"
-use "option.use"
-use "result.use"
-use "types.use"
+use "cstrconv"
+use "errno"
+use "option"
+use "result"
+use "types"
 
 pkg std =
 	type fd		= sys.fd

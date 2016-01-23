@@ -1,10 +1,10 @@
-use "alloc.use"
-use "die.use"
-use "extremum.use"
-use "slcp.use"
-use "types.use"
-use "utf.use"
-use "memops.use"
+use "alloc"
+use "die"
+use "extremum"
+use "slcp"
+use "types"
+use "utf"
+use "memops"
 
 pkg std =
 	type strbuf = struct

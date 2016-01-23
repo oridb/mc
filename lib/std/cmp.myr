@@ -1,7 +1,7 @@
-use "extremum.use"
-use "types.use"
-use "utf.use"
-use "chartype.use"
+use "extremum"
+use "types"
+use "utf"
+use "chartype"
 
 pkg std =
 	type order = union

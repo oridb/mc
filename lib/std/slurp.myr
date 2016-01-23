@@ -1,10 +1,10 @@
-use "alloc.use"
-use "die.use"
-use "result.use"
-use "extremum.use"
-use "syswrap.use"
-use "errno.use"
-use "types.use"
+use "alloc"
+use "die"
+use "result"
+use "extremum"
+use "syswrap"
+use "errno"
+use "types"
 
 pkg std =
 	const slurp : (path : byte[:] -> result(byte[:], errno))

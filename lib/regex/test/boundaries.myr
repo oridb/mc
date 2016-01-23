@@ -1,5 +1,5 @@
 use std
-use "testmatch.use"
+use "testmatch"
 
 const main = {
 	/* expected matches */

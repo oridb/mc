@@ -1,8 +1,8 @@
-use "alloc.use"
-use "die.use"
-use "extremum.use"
-use "option.use"
-use "types.use"
+use "alloc"
+use "die"
+use "extremum"
+use "option"
+use "types"
 
 pkg std =
 	type htab(@k, @v) = struct

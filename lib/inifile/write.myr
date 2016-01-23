@@ -1,7 +1,7 @@
 use std
 use bio
 
-use "types.use"
+use "types"
 
 pkg inifile =
 	const write	: (ini : inifile#, path : byte[:]	-> bool)

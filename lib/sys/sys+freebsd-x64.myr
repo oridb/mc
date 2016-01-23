@@ -1,4 +1,4 @@
-use "systypes.use"
+use "systypes"
 
 pkg sys =
 	type pid	= int	/* process id */

@@ -1,7 +1,7 @@
 use sys
 
-use "die.use"
-use "syswrap.use"
+use "die"
+use "syswrap"
 
 pkg std =
 	type waitstatus = union

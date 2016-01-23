@@ -1,7 +1,7 @@
 use std
 use regex
 
-use "testmatch.use"
+use "testmatch"
 
 const main = {
 	testmatch(".*bæc", "Abæc", `std.Some [][:])

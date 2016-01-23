@@ -1,5 +1,5 @@
-use "types.use"
-use "syswrap.use"
+use "types"
+use "syswrap"
 
 pkg std =
 	const now	: (-> time)

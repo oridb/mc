@@ -1,5 +1,5 @@
-use "syswrap.use"
-use "errno.use"
+use "syswrap"
+use "errno"
 
 pkg std =
 	const mkpath	: (p : byte[:], mode : int64 -> errno)

@@ -1,4 +1,4 @@
-use "types.use"
+use "types"
 
 pkg std =
 	pkglocal extern const memblit	: (src : byte#, dst : byte#, len : std.size -> void)

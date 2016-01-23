@@ -1,13 +1,13 @@
-use "alloc.use"
-use "bigint.use"
-use "die.use"
-use "extremum.use"
-use "fltbits.use"
-use "slpush.use"
-use "strbuf.use"
-use "types.use"
-use "utf.use"
-use "memops.use"
+use "alloc"
+use "bigint"
+use "die"
+use "extremum"
+use "fltbits"
+use "slpush"
+use "strbuf"
+use "types"
+use "utf"
+use "memops"
 
 pkg std =
 	pkglocal const MNormal = 0

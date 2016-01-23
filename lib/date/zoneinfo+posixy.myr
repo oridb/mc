@@ -1,7 +1,7 @@
 use std
 use sys
 
-use "types.use"
+use "types"
 
 pkg _zoneinfo =
 	type zifile

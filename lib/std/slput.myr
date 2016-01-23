@@ -1,6 +1,6 @@
-use "types.use"
-use "alloc.use"
-use "die.use"
+use "types"
+use "alloc"
+use "die"
 
 pkg std =
 	generic slput	: (sl : @a[:], idx : size, elt : @a	-> @a[:])

@@ -1,6 +1,6 @@
 use std
 
-use "bio.use"
+use "bio"
 
 pkg bio =
 	/* unsigned big endian */

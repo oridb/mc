@@ -1,9 +1,9 @@
-use "die.use"
-use "extremum.use"
-use "types.use"
-use "units.use"
-use "syswrap.use"
-use "memops.use"
+use "die"
+use "extremum"
+use "types"
+use "units"
+use "syswrap"
+use "memops"
 
 /*
 The allocator implementation here is based on Bonwick's slab allocator.

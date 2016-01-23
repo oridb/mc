@@ -1,6 +1,6 @@
-use "result.use"
-use "option.use"
-use "fmt.use"
+use "result"
+use "option"
+use "fmt"
 
 pkg std =
 	generic try : (v : result(@a, @b) -> @a)

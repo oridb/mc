@@ -2,10 +2,10 @@ use std
 use regex
 use bio
 
-use "config.use"
-use "opts.use"
-use "types.use"
-use "util.use"
+use "config"
+use "opts"
+use "types"
+use "util"
 
 pkg bld =
 	const myrdeps	: (b : build#, mt : myrtarg#, doclean : bool, addsrc : bool -> depgraph#)

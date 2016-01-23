@@ -1,5 +1,5 @@
 use sys
-use "errno.use"
+use "errno"
 
 pkg std =
 	const exit	: (status:int -> void)

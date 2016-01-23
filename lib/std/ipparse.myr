@@ -1,17 +1,17 @@
-use "die.use"
-use "intparse.use"
-use "option.use"
-use "strfind.use"
-use "types.use"
-use "chartype.use"
-use "fmt.use"
-use "slcp.use"
-use "slfill.use"
-use "sleq.use"
+use "die"
+use "intparse"
+use "option"
+use "strfind"
+use "types"
+use "chartype"
+use "fmt"
+use "slcp"
+use "slfill"
+use "sleq"
 
  /* FIXME: needed for decls which should be pulled in as hidden */
-use "hasprefix.use"
-use "utf.use"
+use "hasprefix"
+use "utf"
 
 pkg std =
 

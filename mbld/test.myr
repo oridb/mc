@@ -1,14 +1,14 @@
 use std
 
-use "build.use"
-use "clean.use"
-use "deps.use"
-use "opts.use"
-use "parse.use"
-use "types.use"
-use "util.use"
+use "build"
+use "clean"
+use "deps"
+use "opts"
+use "parse"
+use "types"
+use "util"
 
-use "config.use"
+use "config"
 
 pkg bld =
 	const test	: (b : build# -> bool)

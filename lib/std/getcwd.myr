@@ -1,9 +1,9 @@
 
-use "alloc.use"
-use "errno.use"
-use "extremum.use"
-use "syswrap.use"
-use "syswrap-ss.use"
+use "alloc"
+use "errno"
+use "extremum"
+use "syswrap"
+use "syswrap-ss"
 pkg std =
 	const getcwd : (-> byte[:])
 ;;

@@ -1,6 +1,6 @@
 use std
 
-use "config.use"
+use "config"
 
 pkg bld =
 	var opt_arch 	: byte[:]

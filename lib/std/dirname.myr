@@ -1,11 +1,11 @@
-use "alloc.use"
-use "slcp.use"
-use "die.use"
-use "sldup.use"
-use "strfind.use"
-use "option.use"
-use "types.use"
-use "memops.use"
+use "alloc"
+use "slcp"
+use "die"
+use "sldup"
+use "strfind"
+use "option"
+use "types"
+use "memops"
 
 pkg std =
 	const dirname	: (p : byte[:] -> byte[:])

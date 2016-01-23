@@ -1,7 +1,7 @@
-use "alloc.use"
-use "die.use"
-use "sldup.use"
-use "types.use"
+use "alloc"
+use "die"
+use "sldup"
+use "types"
 
 pkg std =
 	generic fndup	: (fn : @fn::function -> @fn::function)

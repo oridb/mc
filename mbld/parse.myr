@@ -1,9 +1,9 @@
 use std
 
-use "types.use"
-use "util.use"
-use "opts.use"
-use "syssel.use"
+use "types"
+use "util"
+use "opts"
+use "syssel"
 
 pkg bld =
 	const load	: (b : build# -> bool)

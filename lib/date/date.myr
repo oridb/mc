@@ -1,6 +1,6 @@
 use std
-use "types.use"
-use "zoneinfo.use"
+use "types"
+use "zoneinfo"
 
 pkg date =
 	/* useful constructors */

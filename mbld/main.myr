@@ -1,17 +1,17 @@
 use std
 use regex
 
-use "build.use"
-use "clean.use"
-use "config.use"
-use "deps.use"
-use "install.use"
-use "opts.use"
-use "parse.use"
-use "test.use"
-use "types.use"
-use "util.use"
-use "syssel.use"
+use "build"
+use "clean"
+use "config"
+use "deps"
+use "install"
+use "opts"
+use "parse"
+use "test"
+use "types"
+use "util"
+use "syssel"
 
 const main = {args : byte[:][:]
 	var b : bld.build#

@@ -1,12 +1,12 @@
-use "alloc.use"
-use "chartype.use"
-use "die.use"
-use "extremum.use"
-use "option.use"
-use "slpush.use"
-use "strfind.use"
-use "types.use"
-use "utf.use"
+use "alloc"
+use "chartype"
+use "die"
+use "extremum"
+use "option"
+use "slpush"
+use "strfind"
+use "types"
+use "utf"
 
 pkg std =
 	const strsplit	: (s : byte[:], delim : byte[:] -> byte[:][:])

@@ -1,5 +1,5 @@
-use "types.use"
-use "alloc.use"
+use "types"
+use "alloc"
 
 pkg std =
 	generic slpush	: (sl : @a[:], elt : @a	-> @a[:])

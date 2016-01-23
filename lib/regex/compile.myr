@@ -1,7 +1,7 @@
 use std
 
-use "types.use"
-use "ranges.use"
+use "types"
+use "ranges"
 
 pkg regex =
 	const parse	: (re : byte[:]	-> std.result(ast#, status))

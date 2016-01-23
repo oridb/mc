@@ -1,6 +1,6 @@
-use "alloc.use"
-use "dir.use"
-use "option.use"
+use "alloc"
+use "dir"
+use "option"
 
 pkg std =
 	type diriter = dir#

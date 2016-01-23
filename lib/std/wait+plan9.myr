@@ -1,17 +1,17 @@
 use sys
 
-use "alloc.use"
-use "chartype.use"
-use "die.use"
-use "extremum.use"
-use "hashfuncs.use"
-use "hasprefix.use"
-use "htab.use"
-use "intparse.use"
-use "option.use"
-use "strsplit.use"
-use "syswrap.use"
-use "utf.use"
+use "alloc"
+use "chartype"
+use "die"
+use "extremum"
+use "hashfuncs"
+use "hasprefix"
+use "htab"
+use "intparse"
+use "option"
+use "strsplit"
+use "syswrap"
+use "utf"
 
 pkg std =
 	type waitstatus = union

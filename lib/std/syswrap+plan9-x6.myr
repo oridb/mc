@@ -1,5 +1,5 @@
 use sys
-use "types.use"
+use "types"
 
 pkg std =
 	type fd		= sys.fd

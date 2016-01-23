@@ -1,10 +1,10 @@
-use "alloc.use"
-use "bigint.use"
-use "bitset.use"
-use "fmt.use"
-use "introspect.use"
-use "strbuf.use"
-use "varargs.use"
+use "alloc"
+use "bigint"
+use "bitset"
+use "fmt"
+use "introspect"
+use "strbuf"
+use "varargs"
 
 pkg std =
 ;;

@@ -1,9 +1,9 @@
-use "bytebuf.use"
+use "bytebuf"
 
 /* support */
-use "die.use"
-use "fmt.use"
-use "sleq.use"
+use "die"
+use "fmt"
+use "sleq"
 
 const main = {
 	var bb, v

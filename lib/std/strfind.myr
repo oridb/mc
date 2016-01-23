@@ -1,5 +1,5 @@
-use "types.use"
-use "option.use"
+use "types"
+use "option"
 
 pkg std =
 	const strfind	: (haystack : byte[:], needle : byte[:] -> option(size))

@@ -1,7 +1,7 @@
 use std
 
-use "types.use"
-use "names.use"
+use "types"
+use "names"
 
 pkg date = 
 	const sbfmt	: (sb : std.strbuf#, args : std.valist#, opt : (byte[:], byte[:])[:] -> void)

@@ -1,6 +1,6 @@
-use "die.use"
-use "types.use"
-use "memops.use"
+use "die"
+use "types"
+use "memops"
 
 pkg std =
 	generic slcp : (a : @a[:], b : @a[:] -> void)
