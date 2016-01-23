@@ -50,6 +50,7 @@ const main = {args : byte[:][:]
 	targname = ""
 	dumponly = false
 	cleanfirst = false
+	ok = true
 
 	bld.initopts()
 	for opt in cmd.opts
