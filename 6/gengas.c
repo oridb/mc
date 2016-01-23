@@ -248,6 +248,7 @@ void genstrings(FILE *fd, Htab *strtab)
 	size_t i, nk;
 
 	k = htkeys(strtab, &nk);
+	fprintf(fd, ".section .rodata\n");
 	for (i = 0; i < nk; i++) {
 		s = k[i];
 		fprintf(fd, "%s:\n", (char*)htget(strtab, k[i]));
