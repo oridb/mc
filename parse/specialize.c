@@ -57,7 +57,7 @@ Type *tyspecialize(Type *orig, Htab *tsmap, Htab *delayed)
 		ret->issynth = 1;
 		ret->arg = arg;
 		ret->narg = narg;
-		tytab[var->tid] = ret;
+		*var = *ret;
 		break;
 	case Tyname:
 		if (!hasparams(t))
@@ -69,7 +69,7 @@ Type *tyspecialize(Type *orig, Htab *tsmap, Htab *delayed)
 		ret = mktyname(t->loc, t->name, tyspecialize(t->sub[0], tsmap, delayed));
 		ret->arg = arg;
 		ret->narg = narg;
-		tytab[var->tid] = ret;
+		*var = *ret;
 		break;
 	case Tystruct:
 		ret = tydup(t);
