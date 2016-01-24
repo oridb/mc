@@ -701,7 +701,7 @@ static Node *membaddr(Simp *s, Node *n)
 	return r;
 }
 
-static void checkidx(Simp *s, Node *len, Node *idx)
+static void checkidx(Simp *s, Op op, Node *len, Node *idx)
 {
 	Node *cmp, *die;
 	Node *ok, *fail;
@@ -709,7 +709,7 @@ static void checkidx(Simp *s, Node *len, Node *idx)
 	if (!len)
 		return;
 	/* create expressions */
-	cmp = mkexpr(idx->loc, Olt, ptrsized(s, idx), ptrsized(s, len), NULL);
+	cmp = mkexpr(idx->loc, op, ptrsized(s, idx), ptrsized(s, len), NULL);
 	cmp->expr.type = mktype(len->loc, Tybool);
 	ok = genlbl(len->loc);
 	fail = genlbl(len->loc);
@@ -744,7 +744,7 @@ static Node *idxaddr(Simp *s, Node *seq, Node *idx)
 	assert(t->expr.type->type == Typtr);
 	u = rval(s, idx, NULL);
 	u = ptrsized(s, u);
-	checkidx(s, w, u);
+	checkidx(s, Olt, w, u);
 	sz = tysize(ty);
 	v = mul(u, disp(seq->loc, sz));
 	r = add(t, v);
@@ -969,6 +969,7 @@ static Node *simpslice(Simp *s, Node *n, Node *dst)
 		stbase = set(simpcast(s, t, mktyptr(t->loc, tyintptr)), base);
 		sz = addk(simpcast(s, t, mktyptr(t->loc, tyintptr)), Ptrsz);
 	} else {
+		checkidx(s, Ole, seqlen(s, seq, tyword), end);
 		stbase = set(deref(addr(s, t, tyintptr), NULL), base);
 		sz = addk(addr(s, t, tyintptr), Ptrsz);
 	}
