@@ -324,14 +324,14 @@ static Node *seqlen(Simp *s, Node *n, Type *ty)
 {
 	Node *t, *r;
 
+        r = NULL;
 	if (exprtype(n)->type == Tyslice) {
 		t = slicelen(s, n);
 		r = simpcast(s, t, ty);
 	} else if (exprtype(n)->type == Tyarray) {
 		t = exprtype(n)->asize;
-		r = simpcast(s, t, ty);
-	} else {
-		r = NULL;
+                if (t)
+                    r = simpcast(s, t, ty);
 	}
 	return r;
 }
