@@ -90,7 +90,7 @@ static void ctxstrcall(char *buf, size_t sz, Inferstate *st, Node *n)
 			t = strdup("?");
 
 		if (exprop(args[i]) == Ovar)
-			p += bprintf(p, end - p, "%s%s:%s", sep, namestr(args[0]->expr.args[0]), t);
+			p += bprintf(p, end - p, "%s%s:%s", sep, namestr(args[i]->expr.args[i]), t);
 		else
 			p += bprintf(p, end - p, "%s<e%zd>:%s", sep, i, t);
 		sep = ", ";
