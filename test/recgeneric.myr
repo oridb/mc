@@ -1,0 +1,14 @@
+use std
+
+type o(@a::integral) = union
+	`S @a
+;;
+
+type x(@k) = struct
+	n  : o(x(@k)#)
+;;
+
+const main = {
+	var test : x(int)
+	std.put("built\n")
+}

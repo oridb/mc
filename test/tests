@@ -94,6 +94,7 @@ B generictype	E	0
 B genericret	E	42
 B genericmatch	E	15
 B genericrec	E	0
+B recgeneric	P	'built'
 # B genericchain	P	'val = 123' ## BUGGERED
 B genericmake	P	'val = 123'
 B genericuret	E	42

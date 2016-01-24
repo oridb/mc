@@ -32,12 +32,12 @@ void addtraits(Type *t, Bitset *traits)
  * parameters (type schemes in most literature)
  * replaced with type variables that we can unify
  * against */
-Type *tyspecialize(Type *t, Htab *tsmap, Htab *delayed)
+Type *tyspecialize(Type *orig, Htab *tsmap, Htab *delayed)
 {
-	Type *ret, *tmp, **arg;
+	Type *t, *ret, *tmp, **arg, *var;
 	size_t i, narg;
 
-	t = tysearch(t);
+	t = tysearch(orig);
 	if (hthas(tsmap, t))
 		return htget(tsmap, t);
 	arg = NULL;
@@ -49,20 +49,27 @@ Type *tyspecialize(Type *t, Htab *tsmap, Htab *delayed)
 		htput(tsmap, t, ret);
 		break;
 	case Tygeneric:
+		var = mktyvar(t->loc);
+		htput(tsmap, t, var);
+		for (i = 0; i < t->ngparam; i++)
+			lappend(&arg, &narg, tyspecialize(t->gparam[i], tsmap, delayed));
 		ret = mktyname(t->loc, t->name, tyspecialize(t->sub[0], tsmap, delayed));
 		ret->issynth = 1;
-		htput(tsmap, t, ret);
-		for (i = 0; i < t->ngparam; i++)
-			lappend(&ret->arg, &ret->narg, tyspecialize(t->gparam[i], tsmap, delayed));
+		ret->arg = arg;
+		ret->narg = narg;
+		tytab[var->tid] = ret;
 		break;
 	case Tyname:
 		if (!hasparams(t))
 			return t;
+		var = mktyvar(t->loc);
+		htput(tsmap, t, var);
 		for (i = 0; i < t->narg; i++)
 			lappend(&arg, &narg, tyspecialize(t->arg[i], tsmap, delayed));
 		ret = mktyname(t->loc, t->name, tyspecialize(t->sub[0], tsmap, delayed));
 		ret->arg = arg;
 		ret->narg = narg;
+		tytab[var->tid] = ret;
 		break;
 	case Tystruct:
 		ret = tydup(t);
