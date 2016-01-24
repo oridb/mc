@@ -150,3 +150,4 @@ F arityhigh
 F badop
 B voideffect	P	pass
 B foroptexpr	P	pass
+B bounds	E	134
