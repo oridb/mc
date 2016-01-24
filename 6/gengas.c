@@ -288,7 +288,7 @@ static void encodemin(FILE *fd, uint64_t val)
 			break;
 	shift = 8 - i;
 	b = ~0ull << (shift + 1);
-	b |= val & ((1 << (8 - shift)) - 1);
+	b |= val & ~(~0ull << shift);
 	fprintf(fd, "\t.byte %u\n", b);
 	val >>=  shift;
 	while (val != 0) {

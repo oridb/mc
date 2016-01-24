@@ -368,20 +368,22 @@ const getsub = {e
 }
 
 const getipacked : (p : byte[:] -> (size, size)) = {p : byte[:]
-	var mask, val, len, i
+	var mask, val, len, shift, i
 
 	mask = 0x80
 	val = 0
 	len = 1
+	shift = 8 - len
 	while p[0] & mask != mask << 1
 		len++
 		mask >>= 1
 		mask |= 0x80
 	;;
 
-	val = (p[0] castto(size))  & ~(1 << (8 - len))
+	shift = 8 - len
+	val = (p[0] castto(std.size))  & ~(~0 << shift)
 	for i = 1; i < len; i++
-		val |= (p[i] castto(size)) << (i*8 - len)
+		val |= (p[i] castto(std.size)) << (i*8 - len)
 	;;
 	-> (val, len)
 }
