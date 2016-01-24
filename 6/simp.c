@@ -948,7 +948,7 @@ static Node *simpslice(Simp *s, Node *n, Node *dst)
 {
 	Node *t;
 	Node *start, *end;
-	Node *seq, *base, *sz, *len;
+	Node *seq, *base, *sz, *len, *max;
 	Node *stbase, *stlen;
 
 	if (dst)
@@ -965,11 +965,13 @@ static Node *simpslice(Simp *s, Node *n, Node *dst)
 	len = sub(end, start);
 	/* we can be storing through a pointer, in the case
 	 * of '*foo = bar'. */
+	max = seqlen(s, seq, tyword);
+	if (max)
+		checkidx(s, Ole, max, end);
 	if (tybase(exprtype(t))->type == Typtr) {
 		stbase = set(simpcast(s, t, mktyptr(t->loc, tyintptr)), base);
 		sz = addk(simpcast(s, t, mktyptr(t->loc, tyintptr)), Ptrsz);
 	} else {
-		checkidx(s, Ole, seqlen(s, seq, tyword), end);
 		stbase = set(deref(addr(s, t, tyintptr), NULL), base);
 		sz = addk(addr(s, t, tyintptr), Ptrsz);
 	}
