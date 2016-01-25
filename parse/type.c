@@ -314,7 +314,6 @@ int istyunsigned(Type *t)
 	case Tychar:
 	case Tyuint32:
 	case Tyuint64:
-	case Typtr:
 	case Tybool: return 1;
 	default: return 0;
 	}

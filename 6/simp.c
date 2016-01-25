@@ -1256,6 +1256,7 @@ static Node *compare(Simp *s, Node *n, int fields)
 		[Ole] = {Ole, Oule, Ofle}
 	};
 	Node *r;
+	Type *ty;
 	Op newop;
 
 	/* void is always void */
@@ -1263,11 +1264,16 @@ static Node *compare(Simp *s, Node *n, int fields)
 		return mkboollit(n->loc, 1);
 
 	newop = Obad;
-	if (istysigned(tybase(exprtype(n->expr.args[0]))))
+	ty = tybase(exprtype(n->expr.args[0]));
+	if (istysigned(ty))
 		newop = cmpmap[n->expr.op][0];
-	else if (istyunsigned(tybase(exprtype(n->expr.args[0]))))
+	else if (istyunsigned(ty))
 		newop = cmpmap[n->expr.op][1];
-	else if (istyfloat(tybase(exprtype(n->expr.args[0]))))
+	else if (istyunsigned(ty))
+		newop = cmpmap[n->expr.op][1];
+	else if (ty->type == Typtr)
+		newop = cmpmap[n->expr.op][1];
+	else if (istyfloat(ty))
 		newop = cmpmap[n->expr.op][2];
 
 	if (newop != Obad) {
