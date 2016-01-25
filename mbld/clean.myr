@@ -65,7 +65,7 @@ const cleanmyr = {b, targ
 
 const cleanup = {b, targ, leaves
 	var mchammer_files /* cant touch this */
-	var keys, dg
+	var keys, dg, test
 
 	/*
 	we want to automatically add 'clean' sources since otherwise,
@@ -83,6 +83,11 @@ const cleanup = {b, targ, leaves
 		if !std.htgetv(mchammer_files, k, false) && std.remove(k)
 			std.put("\tclean {}\n", k)
 		;;
+		test = std.pathcat("test", k)
+		if std.remove(test)
+			std.put("\tclean {}\n", test)
+		;;
+		std.slfree(test)
 	;;
 }
 
