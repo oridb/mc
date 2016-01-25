@@ -168,14 +168,14 @@ static size_t nconstructors(Type *t)
 	case Tybool:	return 2;	break;
 	case Tychar:	return 0x10ffff;	break;
 
-			/* signed ints */
+	/* signed ints */
 	case Tyint8:	return 0x100;	break;
 	case Tyint16:	return 0x10000;	break;
 	case Tyint32:	return 0x100000000;	break;
 	case Tyint:	return 0x100000000;	break;
 	case Tyint64:	return ~0ull;	break;
 
-			/* unsigned ints */
+	/* unsigned ints */
 	case Tybyte:	return 0x100;	break;
 	case Tyuint8:	return 0x100;	break;
 	case Tyuint16:	return 0x10000;	break;
@@ -183,11 +183,11 @@ static size_t nconstructors(Type *t)
 	case Tyuint:	return 0x100000000;	break;
 	case Tyuint64:	return ~0ull;	break;
 
-			/* floats */
+	/* floats */
 	case Tyflt32:	return ~0ull;	break;
 	case Tyflt64:	return ~0ull;	break;
 
-			/* complex types */
+	/* complex types */
 	case Typtr:	return 1;	break;
 	case Tyarray:	return 1;	break;
 	case Tytuple:	return 1;	break;
@@ -338,6 +338,11 @@ static int addwildrec(Srcloc loc, Type *ty, Dtree *start, Dtree *accept, Dtree *
 	case Tyslice:
 		ret = acceptall(start, accept);
 		lappend(&last, &nlast, accept);
+		break;
+	case Typtr:
+		/* we only want to descend if there's something to match here. */
+		if (start->any || start->nnext > 0)
+			ret = addwildrec(loc, ty->sub[0], start, accept, &last, &nlast);
 		break;
 	default:
 		ret = 1;
@@ -584,6 +589,16 @@ static int addstruct(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***
 	return ret;
 }
 
+static int addderefpat(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap, size_t *ncap, Dtree ***end, size_t *nend)
+{
+	Node *deref;
+
+	deref = mkexpr(val->loc, Oderef, val, NULL);
+	deref->expr.type = exprtype(pat->expr.args[0]);
+	start->nconstructors = nconstructors(exprtype(deref));
+	return addpat(pat->expr.args[0], deref, start, accept, cap, ncap, end, nend);
+}
+
 static int addpat(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap, size_t *ncap, Dtree ***end, size_t *nend)
 {
 	int ret;
@@ -616,6 +631,9 @@ static int addpat(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap
 		break;
 	case Ogap:
 		ret = addwild(pat, NULL, start, accept, NULL, NULL, end, nend);
+		break;
+	case Oaddr:
+		ret = addderefpat(pat, val, start, accept, cap, ncap, end, nend);
 		break;
 	default:
 		fatal(pat, "unsupported pattern %s of type %s", opstr[exprop(pat)], tystr(exprtype(pat)));

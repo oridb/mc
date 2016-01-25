@@ -1,0 +1,13 @@
+use std
+
+const main = {
+	var x : std.option(std.option(int)#)
+
+	x = `std.Some &(`std.Some 123)
+	match x
+	| `std.Some &(`std.None):	std.put("failed\n")
+	| `std.Some &(`std.Some 666):	std.put("failed\n")
+	| `std.Some &(`std.Some 123):	std.put("worked\n")
+	| _:	std.put("failed\n")
+	;;
+}
