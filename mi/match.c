@@ -21,8 +21,9 @@ struct Dtree {
 	Node *lbl;
 	Node *load;
 	size_t nconstructors;
-	int accept;
-	int emitted;
+	char accept;
+	char emitted;
+	char ptrwalk;
 
 	/* the decision tree step */
 	Node **pat;
@@ -244,6 +245,13 @@ static int acceptall(Dtree *t, Dtree *accept)
 	return ret;
 }
 
+static int isbasictype(Dtree *dt, Type *ty)
+{
+	if (ty->type == Typtr)
+		return !dt->ptrwalk;
+	return istyprimitive(ty) || ty->type == Tyvoid;
+}
+
 static int addwildrec(Srcloc loc, Type *ty, Dtree *start, Dtree *accept, Dtree ***end, size_t *nend)
 {
 	Dtree *next, **last, **tail;
@@ -255,7 +263,7 @@ static int addwildrec(Srcloc loc, Type *ty, Dtree *start, Dtree *accept, Dtree *
 	tail = NULL;
 	ntail = 0;
 	ty = tybase(ty);
-	if (istyprimitive(ty) || ty->type == Tyvoid) {
+	if (isbasictype(start, ty)) {
 		if (start->accept || start == accept)
 			return 0;
 		for (i = 0; i < start->nnext; i++)
@@ -340,15 +348,7 @@ static int addwildrec(Srcloc loc, Type *ty, Dtree *start, Dtree *accept, Dtree *
 		lappend(&last, &nlast, accept);
 		break;
 	case Typtr:
-		/* we only want to descend if there's something to match here. */
-		if (start->any || start->nnext > 0) {
-			ret = addwildrec(loc, ty->sub[0], start, accept, &last, &nlast);
-		} else if (!start->any) {
-			start->any = accept;
-			lappend(end, nend, accept);
-			return 1;
-		}
-		break;
+		ret = addwildrec(loc, ty->sub[0], start, accept, &last, &nlast);
 	default:
 		ret = 1;
 		lappend(&last, &nlast, accept);
@@ -601,6 +601,7 @@ static int addderefpat(Node *pat, Node *val, Dtree *start, Dtree *accept, Node *
 	deref = mkexpr(val->loc, Oderef, val, NULL);
 	deref->expr.type = exprtype(pat->expr.args[0]);
 	start->nconstructors = nconstructors(exprtype(deref));
+	start->ptrwalk = 1;
 	return addpat(pat->expr.args[0], deref, start, accept, cap, ncap, end, nend);
 }
 
