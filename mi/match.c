@@ -341,8 +341,13 @@ static int addwildrec(Srcloc loc, Type *ty, Dtree *start, Dtree *accept, Dtree *
 		break;
 	case Typtr:
 		/* we only want to descend if there's something to match here. */
-		if (start->any || start->nnext > 0)
+		if (start->any || start->nnext > 0) {
 			ret = addwildrec(loc, ty->sub[0], start, accept, &last, &nlast);
+		} else if (!start->any) {
+			start->any = accept;
+			lappend(end, nend, accept);
+			return 1;
+		}
 		break;
 	default:
 		ret = 1;
