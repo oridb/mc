@@ -60,7 +60,6 @@ B voidassign	P	ok
 B callbig	E	42
 B nestfn	E	42
 B foldidx	P	123,456
-B idxlen	P	'4 [3, 4]'
 B closure	P	111555333666
 B fncast	P	ok
 B loop		P	0123401236789

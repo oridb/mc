@@ -35,10 +35,6 @@ struct Simp {
 	int hasenv;
 	int isbigret;
 
-	/* the array we're indexing for context within [] */
-	Node **idxctx;
-	size_t nidxctx;
-
 	/* pre/postinc handling */
 	Node **incqueue;
 	size_t nqueue;
@@ -781,9 +777,7 @@ static Node *loadidx(Simp *s, Node *arr, Node *idx)
 	Node *v, *a;
 
 	a = rval(s, arr, NULL);
-	lappend(&s->idxctx, &s->nidxctx, a);
 	v = deref(idxaddr(s, a, idx), NULL);
-	lpop(&s->idxctx, &s->nidxctx);
 	return v;
 }
 
@@ -956,8 +950,6 @@ static Node *simpslice(Simp *s, Node *n, Node *dst)
 	else
 		t = temp(s, n);
 	seq = rval(s, n->expr.args[0], NULL);
-	if (tybase(exprtype(seq))->type != Typtr)
-		lappend(&s->idxctx, &s->nidxctx, seq);
 	/* *(&slice) = (void*)base + off*sz */
 	base = slicebase(s, seq, n->expr.args[1]);
 	start = ptrsized(s, rval(s, n->expr.args[1], NULL));
@@ -975,8 +967,6 @@ static Node *simpslice(Simp *s, Node *n, Node *dst)
 		stbase = set(deref(addr(s, t, tyintptr), NULL), base);
 		sz = addk(addr(s, t, tyintptr), Ptrsz);
 	}
-	if (tybase(exprtype(seq))->type != Typtr)
-		lpop(&s->idxctx, &s->nidxctx);
 	/* *(&slice + ptrsz) = len */
 	stlen = set(deref(sz, NULL), len);
 	append(s, stbase);
@@ -1507,9 +1497,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
 		break;
 	case Oidx:
 		t = rval(s, n->expr.args[0], NULL);
-		lappend(&s->idxctx, &s->nidxctx, t);
 		u = idxaddr(s, t, n->expr.args[1]);
-		lpop(&s->idxctx, &s->nidxctx);
 		r = load(u);
 		break;
 		/* array.len slice.len are magic 'virtual' members.
@@ -1630,11 +1618,6 @@ static Node *rval(Simp *s, Node *n, Node *dst)
 	case Ovar:
 		r = loadvar(s, n, dst);
 		break;;
-	case Oidxlen:
-		if (s->nidxctx == 0)
-			fatal(n, "'$' undefined outside of index or slice expression");
-		return seqlen(s, s->idxctx[s->nidxctx - 1], exprtype(n));
-		break;
 	case Ogap:
 		fatal(n, "'_' may not be an rvalue");
 		break;

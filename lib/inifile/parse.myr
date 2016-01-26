@@ -108,7 +108,7 @@ const parsesection = {p, ini, ln
 			-> false
 		;;
 		std.slfree(p.sect)
-		p.sect = std.sldup(std.strstrip(ln[1:$-1]))
+		p.sect = std.sldup(std.strstrip(ln[1:]))
 	| `std.None:
 		p.err = `std.Some (`Parseerr p.line)
 		-> false

@@ -77,7 +77,9 @@ static Tok *mktok(int tt)
 	return t;
 }
 
-static int identchar(int c) { return isalnum(c) || c == '_' || c == '$'; }
+static int identchar(int c) {
+    return isalnum(c) || c == '_' || c == '$';
+}
 
 static void eatcomment(void)
 {
@@ -160,7 +162,6 @@ static int kwd(char *s)
 		char *kw;
 		int tt;
 	} kwmap[] = {
-		{"$", Tidxlen},
 		{"$noret", Tattr},
 		{"_", Tgap},
 		{"break", Tbreak},

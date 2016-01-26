@@ -55,7 +55,6 @@ O(Oucon,	1,	OTmisc, "`")
 O(Otup,	        1,	OTmisc, NULL)
 O(Ostruct,	1,	OTmisc, NULL)
 O(Oarr,	        1,	OTmisc, NULL)
-O(Oidxlen,	1,	OTmisc, "$")
 
 /* all below this point are backend-only */
 O(Odead,        0,      OTmisc, "DEAD")         /* dead code */
