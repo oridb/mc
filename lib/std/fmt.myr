@@ -448,26 +448,38 @@ const intparams = {params
 
 const strfmt = {sb, str, params
 	var opts
-	var w, p, i
+	var w, p, i, raw
 
 	p = ' '
 	w = 0
+	raw = false
 	opts = parseparams(params, [
 		("w", true),
-		("p", true)][:])
+		("p", true),
+		("r", false)
+	][:])
+
 	for o in opts
 		match o
 		| ("w", wid):	w = getint(wid, "fmt: width must be integer")
 		| ("p", pad):	p = decode(pad)
+		| ("r", ""):	raw = true
 		| _:	std.die("unreachable")
 		;;
 	;;
 	iassert(p >= 0, "pad must be >= 0")
 	std.slfree(opts)
-	for i = 0; i < w - graphemewidth(str); i++
-		sbputc(sb, p)
+	if raw
+		for b in str
+			sbputs(sb, "\\x")
+			intfmt(sb, [.padto=2, .padfill='0', .base=16], false, b)
+		;;
+	else
+		for i = 0; i < w - graphemewidth(str); i++
+			sbputc(sb, p)
+		;;
+		sbputs(sb, str)
 	;;
-	sbputs(sb, str)
 }
 
 /*
