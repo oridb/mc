@@ -98,12 +98,14 @@ const fput = {fd, fmt, args
 }
 
 const fputv = {fd, fmt, ap
-	var sb, s
+	var sb, s, n
 
 	sb = mksb()
 	sbfmtv(sb, fmt, ap)
 	s = sbfin(sb)
-	-> writeall(fd, s)
+	n = writeall(fd, s)
+	slfree(s)
+	-> n
 }
 
 const fmt = {fmt, args
