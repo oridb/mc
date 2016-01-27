@@ -3,12 +3,22 @@ use std
 const main = {
 	var a = [1,2,3,4,5]
 	var b = [6,7,8,9,10]
+	var c : byte[16] = [
+		0,  1,  2,  3,  4,  5,  6,  7,
+		8,  9, 10,  11, 12, 13, 14, 15
+	]
 	var a_cped = [3, 4, 5, 4, 5]
 	var b_cped = [6, 7, 6, 7, 8]
+	var c_cped : byte[16] = [
+		0,  0, 1,  2,  3,  4,  5,  6,
+		7,  8,  9, 10,  11, 12, 13, 15
+	]
 	
 
 	std.slcp(a[:a.len-2], a[2:])
 	std.slcp(b[2:], b[:b.len-2])
+	std.slcp(c[1:15], c[0:14])
 	std.assert(std.sleq(a[:], a_cped[:]), "slcp of a failed: got {}, wanted {}", a[:], a_cped[:])
 	std.assert(std.sleq(b[:], b_cped[:]), "slcp of b failed: got {}, wanted {}", b[:], b_cped[:])
+	std.assert(std.sleq(c[:], c_cped[:]), "slcp of b failed: got {r}, wanted {r}", c[:], c_cped[:])
 }
