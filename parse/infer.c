@@ -159,7 +159,7 @@ static char *ctxstr(Inferstate *st, Node *n)
 			t3 = nodetystr(st, args[2]);
 
 		switch (opclass[exprop(n)]) {
-		case OTpre:	bprintf(buf, sizeof buf, "%s<e%s>", t1, oppretty[exprop(n)]);	break;
+		case OTpre:	bprintf(buf, sizeof buf, "%s<e:%s>", oppretty[exprop(n)], t1);	break;
 		case OTpost:	bprintf(buf, sizeof buf, "<e:%s>%s", t1, oppretty[exprop(n)]);	break;
 		case OTzarg:	bprintf(buf, sizeof buf, "%s", oppretty[exprop(n)]);	break;
 		case OTbin:
