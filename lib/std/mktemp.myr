@@ -24,7 +24,7 @@ const mktemp = {base, opt, mode
 
 	match std.getenv("TMPDIR")
 	| `std.Some d:	tmpdir = d
-	| `std.None:	tmpdir = std.sldup("/tmp")
+	| `std.None:	tmpdir = "/tmp"
 	;;
 
 	for var i = 0; i < Retries; i++
@@ -33,16 +33,13 @@ const mktemp = {base, opt, mode
 		| `Fail e:
 			if e != Eexist
 				std.slfree(path)
-				std.slfree(tmpdir)
 				-> `Fail e
 			;;
 		| `Ok fd:
-			std.slfree(tmpdir)
 			-> `Ok (fd, path)
 		;;
 		std.slfree(path)
 	;;
-	std.slfree(tmpdir)
 	-> `Fail Eexist
 }
 
