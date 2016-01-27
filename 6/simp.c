@@ -757,8 +757,8 @@ static Node *slicebase(Simp *s, Node *n, Node *off)
 	ty = tybase(exprtype(n));
 	switch (ty->type) {
 	case Typtr:	u = n;	break;
-	case Tyarray:	u = addr(s, n, base(exprtype(n)));	break;
 	case Tyslice:	u = load(addr(s, n, mktyptr(n->loc, base(exprtype(n)))));	break;
+	case Tyarray:	u = addr(s, n, base(exprtype(n)));	break;
 	default: die("Unslicable type %s", tystr(n->expr.type));
 	}
 	/* safe: all types we allow here have a sub[0] that we want to grab */
@@ -941,7 +941,7 @@ static Node *simpcast(Simp *s, Node *val, Type *to)
 static Node *simpslice(Simp *s, Node *n, Node *dst)
 {
 	Node *t;
-	Node *start, *end;
+	Node *start, *end, *arg;
 	Node *seq, *base, *sz, *len, *max;
 	Node *stbase, *stlen;
 
@@ -949,9 +949,16 @@ static Node *simpslice(Simp *s, Node *n, Node *dst)
 		t = dst;
 	else
 		t = temp(s, n);
-	seq = rval(s, n->expr.args[0], NULL);
-	/* *(&slice) = (void*)base + off*sz */
-	base = slicebase(s, seq, n->expr.args[1]);
+	arg = n->expr.args[0];
+	if (exprop(arg) == Oarr && arg->expr.nargs == 0) {
+		seq = arg;
+		base = mkintlit(n->loc, 0);
+		base->expr.type = tyintptr;
+	} else {
+		/* *(&slice) = (void*)base + off*sz */
+		seq = rval(s, arg, NULL);
+		base = slicebase(s, seq, n->expr.args[1]);
+	}
 	start = ptrsized(s, rval(s, n->expr.args[1], NULL));
 	end = ptrsized(s, rval(s, n->expr.args[2], NULL));
 	len = sub(end, start);
