@@ -7,6 +7,7 @@ std.memfill	: (dst : byte#, val : byte, len : std.size -> void)
 _std$memblit:
 std$memblit:
 	cmpq	%rdi,%rsi
+	movq	%rdx,%rcx
 	jz	.done
 	jg	.fwdcpy
 	movq	%rsi,%rax
@@ -14,7 +15,6 @@ std$memblit:
 	cmpq	%rax,%rcx
 	jg	.revcpy
 .fwdcpy:
-	movq	%rdx,%rcx
 	shrq	$3,%rcx
 	rep  movsq
 	movq	%rdx,%rcx
@@ -23,7 +23,6 @@ std$memblit:
 	jmp	.done
 .revcpy:
 	std
-	movq	%rdx,%rcx
 	leaq	-1(%rdx,%rsi),%rsi
 	leaq	-1(%rdx,%rdi),%rdi
 	rep movsb
