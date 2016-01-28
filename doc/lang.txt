@@ -824,7 +824,7 @@ TABLE OF CONTENTS:
 
             Acceptable:
                 const length_mm = {;...} /* '_' disambiguates returned values.  */
-                cosnt length_cm = {;...}
+                const length_cm = {;...}
 
     6.3. Collections:
 
