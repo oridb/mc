@@ -20,6 +20,7 @@ use "syswrap"
 use "types"
 use "utf"
 use "varargs"
+use "writeall"
 
 pkg std =
 	/* write to fd */
@@ -98,14 +99,16 @@ const fput = {fd, fmt, args
 }
 
 const fputv = {fd, fmt, ap
-	var sb, s, n
+	var sb, s
 
 	sb = mksb()
 	sbfmtv(sb, fmt, ap)
 	s = sbfin(sb)
-	n = writeall(fd, s)
-	slfree(s)
-	-> n
+	match writeall(fd, s)
+	| (n, _):
+		slfree(s)
+		-> n
+	;;
 }
 
 const fmt = {fmt, args
@@ -542,24 +545,6 @@ generic intfmt = {sb, opts, signed, bits : @a::(integral,numeric)
 		sbputc(sb, b[j - 1])
 	;;
 }
-
-const writeall = {fd, buf
-	var len
-
-	len = 0
-	while true
-		match write(fd, buf[len:])
-		| `Fail err:	break
-		| `Ok n:
-			len += n
-			if n == 0 || len == buf.len
-				break
-			;;
-		;;
-	;;
-	-> len
-}
-
 
 /* would use std.get(), but that's a dependency loop */
 const getint = {s, msg
