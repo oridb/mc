@@ -57,6 +57,8 @@ const Align	= 16	/* minimum allocation alignment */
 
 var buckets	: bucket[32] /* excessive */
 
+extern const put : (str : byte[:], args : ... -> void)
+
 type slheader = struct
 	cap	: size	/* capacity in bytes */
 	magic	: size	/* magic check value */
@@ -175,7 +177,13 @@ generic slgrow = {sl : @a[:], len
 		-> (sl castto(@a#))[:len]
 	;;
 
-	new = slalloc(len)
+	/* grow in factors of 1.5 */
+	cap = max(Align, cap)
+	while cap < len
+		cap += (cap >> 1)
+	;;
+
+	new = slalloc(cap)
 	n = min(len, sl.len)
 	for var i = 0; i < n; i++
 		new[i] = sl[i]
@@ -183,7 +191,7 @@ generic slgrow = {sl : @a[:], len
 	if sl.len > 0
 		slfree(sl)
 	;;
-	-> new
+	-> new[:len]
 }
 
 /* Grows a slice, filling new entries with zero bytes */
