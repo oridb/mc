@@ -83,6 +83,7 @@ void blobfree(Blob *b)
 		break;
 	case Btseq:
 		for (i = 0; i < b->seq.nsub; i++)
+
 			blobfree(b->seq.sub[i]);
 		break;
 	default:
@@ -174,6 +175,7 @@ static size_t blobslice(Blob *seq,  Htab *globls, Htab *strtab, Node *n)
 {
 	Node *base, *lo, *hi;
 	ssize_t loval, hival, sz;
+	Blob *slbase;
 	char *lbl;
 
 	base = n->expr.args[0];
@@ -183,14 +185,19 @@ static size_t blobslice(Blob *seq,  Htab *globls, Htab *strtab, Node *n)
 	/* by this point, all slicing operations should have had their bases
 	 * pulled out, and we should have vars with their pseudo-decls in their
 	 * place */
-	if (exprop(base) != Ovar || !base->expr.isconst)
-		fatal(base, "slice base is not a constant value");
 	loval = getintlit(lo, "lower bound in slice is not constant literal");
 	hival = getintlit(hi, "upper bound in slice is not constant literal");
-	sz = tysize(tybase(exprtype(base))->sub[0]);
+	if (exprop(base) == Ovar && base->expr.isconst) {
+		sz = tysize(tybase(exprtype(base))->sub[0]);
+		lbl = htget(globls, base);
+		slbase = mkblobref(lbl, loval*sz, 1);
+	} else if (exprop(base) == Olit) {
+		slbase = mkblobi(Bti64, getintlit(base, "invalid base expr"));
+	} else {
+		fatal(base, "slice base is not a constant value");
+	}
 
-	lbl = htget(globls, base);
-	b(seq, mkblobref(lbl, loval*sz, 1));
+	b(seq, slbase);
 	b(seq, mkblobi(Bti64, (hival - loval)));
 	return 16;
 }

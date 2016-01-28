@@ -1937,12 +1937,18 @@ static Func *simpfn(Simp *s, char *name, Node *dcl)
 static void extractsub(Simp *s, Node *e)
 {
 	size_t i;
+	Node *sub;
 
 	assert(e != NULL);
 	switch (exprop(e)) {
 	case Oslice:
-		if (exprop(e->expr.args[0]) == Oarr)
+		sub = e->expr.args[0];
+		if (exprop(sub) == Oarr && sub->expr.nargs > 0) {
 			e->expr.args[0] = simpblob(s, e->expr.args[0]);
+		} else  {
+			e->expr.args[0] = mkintlit(e->loc, 0);
+			e->expr.args[0]->expr.type = tyintptr;
+		}
 		break;
 	case Oarr:
 	case Ostruct:
