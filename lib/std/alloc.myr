@@ -47,6 +47,7 @@ pkg std =
 /* null pointers. only used internally. */
 const Zslab	= 0 castto(slab#)
 const Zchunk	= 0 castto(chunk#)
+const Zsliceptr	= 0 castto(byte#)
 
 const Slabsz 	= 1*MiB	/* 1 meg slabs */
 const Cachemax	= 16	/* maximum number of slabs in the cache */
@@ -149,7 +150,7 @@ const checkhdr = {p
 generic slfree	 = {sl
 	var head
 
-	if sl.len == 0
+	if sl castto(byte#) == Zsliceptr
 		-> void
 	;;
 
@@ -161,11 +162,16 @@ generic slfree	 = {sl
 
 /* Grows a slice */
 generic slgrow = {sl : @a[:], len
-	var n
+	var cap
 	var new
+	var n
 
 	/* if the slice doesn't need a bigger bucket, we don't need to realloc. */
-	if sl.len > 0 && slcap(sl castto(byte#)) >= allocsz(len*sizeof(@a))
+	cap = 0
+	if sl castto(byte#) != Zsliceptr
+		cap = slcap(sl castto(byte#))
+	;;
+	if cap >= allocsz(len*sizeof(@a))
 		-> (sl castto(@a#))[:len]
 	;;
 
