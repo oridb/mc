@@ -453,15 +453,17 @@ const intparams = {params
 
 const strfmt = {sb, str, params
 	var opts
-	var w, p, i, raw
+	var w, p, i, raw, esc
 
 	p = ' '
 	w = 0
 	raw = false
+	esc = false
 	opts = parseparams(params, [
 		("w", true),
 		("p", true),
-		("r", false)
+		("r", false),
+		("e", false),
 	][:])
 
 	for o in opts
@@ -469,9 +471,11 @@ const strfmt = {sb, str, params
 		| ("w", wid):	w = getint(wid, "fmt: width must be integer")
 		| ("p", pad):	p = decode(pad)
 		| ("r", ""):	raw = true
+		| ("e", ""):	esc = true
 		| _:	std.die("unreachable")
 		;;
 	;;
+	iassert(!raw || !esc == false, "raw and excaped strings conflict\n")
 	iassert(p >= 0, "pad must be >= 0")
 	std.slfree(opts)
 	if raw
@@ -479,12 +483,25 @@ const strfmt = {sb, str, params
 			sbputs(sb, "\\x")
 			intfmt(sb, [.padto=2, .padfill='0', .base=16], false, b)
 		;;
+	elif esc
+		for b in str
+			if isprint(b)
+				sbputb(sb, b)
+			else
+				sbputs(sb, "\\x")
+				intfmt(sb, [.padto=2, .padfill='0', .base=16], false, b)
+			;;
+		;;
 	else
 		for i = 0; i < w - graphemewidth(str); i++
 			sbputc(sb, p)
 		;;
 		sbputs(sb, str)
 	;;
+}
+
+const isprint = {b
+	-> (b >= ' ' castto(byte)) && (b < '~' castto(byte))
 }
 
 /*
