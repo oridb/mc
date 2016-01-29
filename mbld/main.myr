@@ -153,7 +153,7 @@ const buildimm = {b, targ, inputs, bintarg, cleanfirst -> bool
 }
 
 const runcmd = {bin, args
-	-> bld.run(std.sljoin([bin][:], args))
+	-> bld.run(std.sljoin(std.sldup([bin][:]), args))
 }
 
 const mkbuild = {tags
