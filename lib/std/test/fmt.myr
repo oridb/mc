@@ -51,6 +51,7 @@ const builtins = {
 	check("        -1", "{w=10}", -1)
 	check("100000"    , "{w=3}", 100000)
 	check("foobarbaz", "{}bar{}", "foo", "baz")
+	check("\\x0a\\x0d\\xff", "{e}", "\n\r\xff")
 	check("{}barbaz", "{{}}bar{}", "baz")
 	check("{barbaz}", "{{bar{}}}", "baz")
 	check("abcd", "{}", "abcd")
