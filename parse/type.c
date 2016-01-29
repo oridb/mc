@@ -515,6 +515,7 @@ static int tybfmt(char *buf, size_t len, Type *t)
 	char *end;
 	char *sep;
 
+	t = tysearch(t);
 	sep = "";
 	p = buf;
 	end = p + len;
@@ -747,6 +748,7 @@ size_t tyidfmt(char *buf, size_t sz, Type *ty)
 	size_t i;
 	char *p, *end;
 
+	ty = tysearch(ty);
 	p = buf;
 	end = buf + sz;
 	switch (ty->type) {

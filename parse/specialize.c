@@ -57,7 +57,7 @@ Type *tyspecialize(Type *orig, Htab *tsmap, Htab *delayed)
 		ret->issynth = 1;
 		ret->arg = arg;
 		ret->narg = narg;
-		*var = *ret;
+		tytab[var->tid] = ret;
 		break;
 	case Tyname:
 		if (!hasparams(t))

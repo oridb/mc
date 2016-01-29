@@ -829,13 +829,13 @@ static void unionunify(Inferstate *st, Node *ctx, Type *u, Type *v)
 	for (i = 0; i < u->nmemb; i++) {
 		found = 0;
 		for (j = 0; j < v->nmemb; j++) {
-			if (strcmp(namestr(u->udecls[i]->name), namestr(v->udecls[i]->name)) != 0)
+			if (strcmp(namestr(u->udecls[i]->name), namestr(v->udecls[j]->name)) != 0)
 				continue;
 			found = 1;
-			if (u->udecls[i]->etype == NULL && v->udecls[i]->etype == NULL)
+			if (u->udecls[i]->etype == NULL && v->udecls[j]->etype == NULL)
 				continue;
-			else if (u->udecls[i]->etype && v->udecls[i]->etype)
-				unify(st, ctx, u->udecls[i]->etype, v->udecls[i]->etype);
+			else if (u->udecls[i]->etype && v->udecls[j]->etype)
+				unify(st, ctx, u->udecls[i]->etype, v->udecls[j]->etype);
 			else
 				fatal(ctx, "can't unify %s and %s near %s\n", tystr(u), tystr(v),
 						ctxstr(st, ctx));
@@ -850,6 +850,7 @@ static void structunify(Inferstate *st, Node *ctx, Type *u, Type *v)
 {
 	size_t i, j;
 	int found;
+	char *ud, *vd;
 
 	if (u->nmemb != v->nmemb)
 		fatal(ctx, "can't unify %s and %s near %s\n", tystr(u), tystr(v), ctxstr(st, ctx));
@@ -857,12 +858,15 @@ static void structunify(Inferstate *st, Node *ctx, Type *u, Type *v)
 	for (i = 0; i < u->nmemb; i++) {
 		found = 0;
 		for (j = 0; j < v->nmemb; j++) {
-			if (strcmp(namestr(u->sdecls[i]->decl.name),
-						namestr(v->sdecls[i]->decl.name)) != 0)
-				continue;
-			found = 1;
-			unify(st, ctx, type(st, u->sdecls[i]), type(st, v->sdecls[i]));
+			ud = namestr(u->sdecls[i]->decl.name);
+			vd = namestr(v->sdecls[j]->decl.name);
+			if (strcmp(ud, vd) == 0) {
+				found = 1;
+				//printf("unifying member %s and %s\n", tystr(type(st, u->sdecls[i])), tystr(type(st, v->sdecls[j])));
+				unify(st, ctx, type(st, u->sdecls[i]), type(st, v->sdecls[j]));
+			}
 		}
+		/* we had at least one missing member */
 		if (!found)
 			fatal(ctx, "can't unify %s and %s near %s\n", tystr(u), tystr(v),
 					ctxstr(st, ctx));
