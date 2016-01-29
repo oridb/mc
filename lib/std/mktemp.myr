@@ -48,11 +48,10 @@ const mktemppath = {base
 
 	match std.getenv("TMPDIR")
 	| `std.Some d:	tmpdir = d
-	| `std.None:	tmpdir = std.sldup("/tmp")
+	| `std.None:	tmpdir = "/tmp"
 	;;
 
 	path = randpath(tmpdir, base)
-	std.slfree(tmpdir)
 	-> path
 }
 
