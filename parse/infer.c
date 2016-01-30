@@ -344,7 +344,7 @@ static int needfreshen(Inferstate *st, Type *t)
 }
 
 /* Freshens the type of a declaration. */
-static Type *tyfreshen(Inferstate *st, Htab *subst, Type *t)
+static Type *tyfreshen(Inferstate *st, Tysubst *subst, Type *t)
 {
 	char *from, *to;
 
@@ -357,9 +357,9 @@ static Type *tyfreshen(Inferstate *st, Htab *subst, Type *t)
 	from = tystr(t);
 	tybind(st, t);
 	if (!subst) {
-		subst = mkht(tyhash, tyeq);
+		subst = mksubst();
 		t = tyspecialize(t, subst, st->delayed);
-		htfree(subst);
+		substfree(subst);
 	} else {
 		t = tyspecialize(t, subst, st->delayed);
 	}
@@ -467,12 +467,12 @@ Type *tysearch(Type *t)
 	return t;
 }
 
-static Type *tysubstmap(Inferstate *st, Htab *subst, Type *t, Type *orig)
+static Type *tysubstmap(Inferstate *st, Tysubst *subst, Type *t, Type *orig)
 {
 	size_t i;
 
 	for (i = 0; i < t->ngparam; i++) {
-		htput(subst, t->gparam[i], tf(st, orig->arg[i]));
+		substput(subst, t->gparam[i], tf(st, orig->arg[i]));
 	}
 	t = tyfreshen(st, subst, t);
 	return t;
@@ -480,11 +480,11 @@ static Type *tysubstmap(Inferstate *st, Htab *subst, Type *t, Type *orig)
 
 static Type *tysubst(Inferstate *st, Type *t, Type *orig)
 {
-	Htab *subst;
+	Tysubst *subst;
 
-	subst = mkht(tyhash, tyeq);
+	subst = mksubst();
 	t = tysubstmap(st, subst, t, orig);
-	htfree(subst);
+	substfree(subst);
 	return t;
 }
 
@@ -1096,20 +1096,20 @@ static void loaduses(Node *n)
 static Type *initvar(Inferstate *st, Node *n, Node *s)
 {
 	Type *t, *param;
-	Htab *subst;
+	Tysubst *subst;
 
 	if (s->decl.ishidden)
 		fatal(n, "attempting to refer to hidden decl %s", ctxstr(st, n));
 
 	param = NULL;
 	if (s->decl.isgeneric) {
-		subst = mkht(tyhash, tyeq);
+		subst = mksubst();
 		t = tysubstmap(st, subst, tf(st, s->decl.type), s->decl.type);
 		if (s->decl.trait) {
-			param = htget(subst, s->decl.trait->param);
+			param = substget(subst, s->decl.trait->param);
 			delayedcheck(st, n, curstab());
 		}
-		htfree(subst);
+		substfree(subst);
 	} else {
 		t = s->decl.type;
 	}
@@ -1647,8 +1647,8 @@ static void inferfunc(Inferstate *st, Node *n)
 static void specializeimpl(Inferstate *st, Node *n)
 {
 	Node *dcl, *proto, *name, *sym;
+	Tysubst *subst;
 	Type *ty;
-	Htab *ht;
 	Trait *t;
 	size_t i, j;
 
@@ -1693,12 +1693,12 @@ static void specializeimpl(Inferstate *st, Node *n)
 			fatal(n, "trait specialization requires concrete type, got %s",
 					tystr(n->impl.type));
 		verifytraits(st, n, t->param, n->impl.type);
-		ht = mkht(tyhash, tyeq);
-		htput(ht, t->param, n->impl.type);
+		subst = mksubst();
+		substput(subst, t->param, n->impl.type);
 		for (j = 0; j < t->naux; j++)
-			htput(ht, t->aux[j], n->impl.aux[j]);
-		ty = tyspecialize(type(st, proto), ht, st->delayed);
-		htfree(ht);
+			substput(subst, t->aux[j], n->impl.aux[j]);
+		ty = tyspecialize(type(st, proto), subst, st->delayed);
+		substfree(subst);
 
 		inferdecl(st, dcl);
 		unify(st, n, type(st, dcl), ty);

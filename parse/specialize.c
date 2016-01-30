@@ -12,7 +12,57 @@
 
 #include "parse.h"
 
-static Node *specializenode(Node *g, Htab *tsmap);
+static Node *specializenode(Node *g, Tysubst *tsmap);
+
+Tysubst *mksubst()
+{
+	Tysubst *subst;
+
+	subst = zalloc(sizeof(Tysubst));
+	substpush(subst);
+	return subst;
+}
+
+void substfree(Tysubst *subst)
+{
+	size_t i;
+
+	for (i = 0; i < subst->nsubst; i++)
+		htfree(subst->subst[i]);
+	lfree(&subst->subst, &subst->nsubst);
+}
+
+void substpush(Tysubst *subst)
+{
+	lappend(&subst->subst, &subst->nsubst, mkht(tyhash, tyeq));
+}
+
+void substpop(Tysubst *subst)
+{
+	Htab *ht;
+
+	ht = lpop(&subst->subst, &subst->nsubst);
+	htfree(ht);
+}
+
+void substput(Tysubst *subst, Type *from, Type *to)
+{
+	htput(subst->subst[subst->nsubst - 1], from, to);
+}
+
+Type *substget(Tysubst *subst, Type *from)
+{
+	Type *t;
+	size_t i;
+
+	t = NULL;
+	for (i = subst->nsubst; i > 0; i--) {
+		t = htget(subst->subst[i-1], from);
+		if (t)
+			break;
+	}
+	return t;
+}
 
 void addtraits(Type *t, Bitset *traits)
 {
@@ -32,28 +82,36 @@ void addtraits(Type *t, Bitset *traits)
  * parameters (type schemes in most literature)
  * replaced with type variables that we can unify
  * against */
-Type *tyspecialize(Type *orig, Htab *tsmap, Htab *delayed)
+Type *tyspecialize(Type *orig, Tysubst *tsmap, Htab *delayed)
 {
 	Type *t, *ret, *tmp, **arg, *var;
 	size_t i, narg;
 
 	t = tysearch(orig);
-	if (hthas(tsmap, t))
-		return htget(tsmap, t);
+	tmp = substget(tsmap, t);
+	if (tmp)
+		return tmp;
 	arg = NULL;
 	narg = 0;
 	switch (t->type) {
 	case Typaram:
 		ret = mktyvar(t->loc);
 		addtraits(ret, t->traits);
-		htput(tsmap, t, ret);
+		substput(tsmap, t, ret);
 		break;
 	case Tygeneric:
 		var = mktyvar(t->loc);
-		htput(tsmap, t, var);
+		substput(tsmap, t, var);
+		if (orig->type == Tyunres) {
+			substpush(tsmap);
+			for (i = 0; i < orig->narg; i++)
+				substput(tsmap, t->gparam[i], orig->arg[i]);
+		}
 		for (i = 0; i < t->ngparam; i++)
 			lappend(&arg, &narg, tyspecialize(t->gparam[i], tsmap, delayed));
 		ret = mktyname(t->loc, t->name, tyspecialize(t->sub[0], tsmap, delayed));
+		if (orig->type == Tyunres)
+			substpop(tsmap);
 		ret->issynth = 1;
 		ret->arg = arg;
 		ret->narg = narg;
@@ -63,7 +121,7 @@ Type *tyspecialize(Type *orig, Htab *tsmap, Htab *delayed)
 		if (!hasparams(t))
 			return t;
 		var = mktyvar(t->loc);
-		htput(tsmap, t, var);
+		substput(tsmap, t, var);
 		for (i = 0; i < t->narg; i++)
 			lappend(&arg, &narg, tyspecialize(t->arg[i], tsmap, delayed));
 		ret = mktyname(t->loc, t->name, tyspecialize(t->sub[0], tsmap, delayed));
@@ -73,7 +131,7 @@ Type *tyspecialize(Type *orig, Htab *tsmap, Htab *delayed)
 		break;
 	case Tystruct:
 		ret = tydup(t);
-		htput(tsmap, t, ret);
+		substput(tsmap, t, ret);
 		pushstab(NULL);
 		for (i = 0; i < t->nmemb; i++)
 			ret->sdecls[i] = specializenode(t->sdecls[i], tsmap);
@@ -81,7 +139,7 @@ Type *tyspecialize(Type *orig, Htab *tsmap, Htab *delayed)
 		break;
 	case Tyunion:
 		ret = tydup(t);
-		htput(tsmap, t, ret);
+		substput(tsmap, t, ret);
 		for (i = 0; i < t->nmemb; i++) {
 			tmp = NULL;
 			if (ret->udecls[i]->etype)
@@ -104,7 +162,7 @@ Type *tyspecialize(Type *orig, Htab *tsmap, Htab *delayed)
 	default:
 		if (t->nsub > 0) {
 			ret = tydup(t);
-			htput(tsmap, t, ret);
+			substput(tsmap, t, ret);
 			for (i = 0; i < t->nsub; i++)
 				ret->sub[i] = tyspecialize(t->sub[i], tsmap, delayed);
 		} else {
@@ -118,7 +176,7 @@ Type *tyspecialize(Type *orig, Htab *tsmap, Htab *delayed)
 /* Checks if the type 't' is generic, and if it is
  * substitutes the types. This is here for efficiency,
  * so we don't gratuitously duplicate types */
-static Type *tysubst(Type *t, Htab *tsmap)
+static Type *tysubst(Type *t, Tysubst *tsmap)
 {
 	if (hasparams(t))
 		return tyspecialize(t, tsmap, NULL);
@@ -130,14 +188,14 @@ static Type *tysubst(Type *t, Htab *tsmap)
  * Fills the substitution map with a mapping from
  * the type parameter 'from' to it's substititon 'to'
  */
-static void fillsubst(Htab *tsmap, Type *to, Type *from)
+static void fillsubst(Tysubst *tsmap, Type *to, Type *from)
 {
 	size_t i;
 
 	if (from->type == Typaram) {
 		if (debugopt['S'])
 			printf("mapping %s => %s\n", tystr(from), tystr(to));
-		htput(tsmap, from, to);
+		substput(tsmap, from, to);
 		return;
 	}
 	assert(to->nsub == from->nsub);
@@ -249,7 +307,7 @@ static void fixup(Node *n)
  * need to be specialized to make it concrete
  * instead of generic, and returns it.
  */
-static Node *specializenode(Node *n, Htab *tsmap)
+static Node *specializenode(Node *n, Tysubst *tsmap)
 {
 	Node *r;
 	size_t i;
@@ -397,8 +455,8 @@ Node *genericname(Node *n, Type *t)
 Node *specializedcl(Node *g, Type *to, Node **name)
 {
 	extern int stabstkoff;
+	Tysubst *tsmap;
 	Node *d, *n;
-	Htab *tsmap;
 	Stab *st;
 
 	assert(g->type == Ndecl);
@@ -428,7 +486,7 @@ Node *specializedcl(Node *g, Type *to, Node **name)
 		pushstab(st);
 
 	/* specialize */
-	tsmap = mkht(tyhash, tyeq);
+	tsmap = mksubst();
 	fillsubst(tsmap, to, g->decl.type);
 
 	d = mkdecl(g->loc, n, tysubst(g->decl.type, tsmap));
@@ -443,6 +501,7 @@ Node *specializedcl(Node *g, Type *to, Node **name)
 	lappend(&file->file.stmts, &file->file.nstmts, d);
 	if (d->decl.name->name.ns)
 		popstab();
+	substfree(tsmap);
 	return d;
 }
 

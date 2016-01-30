@@ -18,6 +18,7 @@ typedef struct Optctx Optctx;
 typedef struct Strbuf Strbuf;
 typedef struct Htab Htab;
 typedef struct Str Str;
+typedef struct Tysubst Tysubst;
 
 typedef struct Tok Tok;
 typedef struct Node Node;
@@ -126,6 +127,11 @@ struct Tok {
 	double fltval;
 	uint32_t chrval;
 	Str strval;
+};
+
+struct Tysubst {
+	Htab **subst;
+	size_t nsubst;
 };
 
 struct Stab {
@@ -611,8 +617,14 @@ int vareq(void *a, void *b);
 Op exprop(Node *n);
 
 /* specialize generics */
+Tysubst *mksubst();
+void substfree();
+void substput(Tysubst *subst, Type *from, Type *to);
+Type *substget(Tysubst *subst, Type *from);
+void substpush(Tysubst *subst);
+void substpop(Tysubst *subst);
 Node *specializedcl(Node *n, Type *to, Node **name);
-Type *tyspecialize(Type *t, Htab *tymap, Htab *delayed);
+Type *tyspecialize(Type *t, Tysubst *tymap, Htab *delayed);
 Node *genericname(Node *n, Type *t);
 void geninit(Node *file);
 
