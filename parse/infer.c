@@ -262,7 +262,7 @@ static int isbound(Inferstate *st, Type *t)
  * Recursive types that contain themselves through
  * pointers or slices are fine, but any other self-inclusion
  * would lead to a value of infinite size */
-static int tyinfinite(Inferstate *st, Type *t, Type *sub)
+static int occurs(Inferstate *st, Type *t, Type *sub)
 {
 	size_t i;
 
@@ -278,20 +278,21 @@ static int tyinfinite(Inferstate *st, Type *t, Type *sub)
 	switch (sub->type) {
 	case Tystruct:
 		for (i = 0; i < sub->nmemb; i++)
-			if (tyinfinite(st, t, decltype(sub->sdecls[i])))
+			if (occurs(st, t, decltype(sub->sdecls[i])))
 				return 1;
 		break;
 	case Tyunion:
 		for (i = 0; i < sub->nmemb; i++) {
-			if (sub->udecls[i]->etype && tyinfinite(st, t, sub->udecls[i]->etype))
+			if (sub->udecls[i]->etype && occurs(st, t, sub->udecls[i]->etype))
 				return 1;
 		}
 		break;
 	case Typtr:
-	case Tyslice: return 0;
+	case Tyslice: 
+		return 0;
 	default:
 		for (i = 0; i < sub->nsub; i++)
-			if (tyinfinite(st, t, sub->sub[i]))
+			if (occurs(st, t, sub->sub[i]))
 				return 1;
 		break;
 	}
@@ -426,7 +427,7 @@ static void tyresolve(Inferstate *st, Type *t)
 		bsunion(t->traits, base->traits);
 	else if (base->traits)
 		t->traits = bsdup(base->traits);
-	if (tyinfinite(st, t, NULL))
+	if (occurs(st, t, NULL))
 		lfatal(t->loc, "type %s includes itself", tystr(t));
 	st->ingeneric--;
 	if (t->type == Tyname || t->type == Tygeneric) {
@@ -784,21 +785,6 @@ static void mergetraits(Inferstate *st, Node *ctx, Type *a, Type *b)
 	}
 }
 
-/* Tells us if we have an index hack on the type */
-/* prevents types that contain themselves in the unification;
- * eg @a U (@a -> foo) */
-static int occurs(Type *a, Type *b)
-{
-	size_t i;
-
-	if (a == b)
-		return 1;
-	for (i = 0; i < b->nsub; i++)
-		if (occurs(a, b->sub[i]))
-			return 1;
-	return 0;
-}
-
 /* Computes the 'rank' of the type; ie, in which
  * direction should we unify. A lower ranked type
  * should be mapped to the higher ranked (ie, more
@@ -954,6 +940,13 @@ static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
 		free(to);
 	}
 
+	/* Disallow recursive types */
+	if (a->type == Tyvar && b->type != Tyvar) {
+		if (occurs(st, a, b))
+			fatal(ctx, "%s occurs within %s, leading to infinite type near %s\n",
+				tystr(a), tystr(b), ctxstr(st, ctx));
+	}
+
 	r = NULL;
 	if (a->type == Tyvar) {
 		tytab[a->tid] = b;
@@ -962,12 +955,6 @@ static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
 		if (ea && eb)
 			unify(st, ctx, ea, eb);
 		r = b;
-	}
-
-	/* Disallow recursive types */
-	if (a->type == Tyvar && b->type != Tyvar) {
-		if (occurs(a, b))
-			typeerror(st, a, b, ctx, "Infinite type\n");
 	}
 
 	if (a->type == Tyarray && b->type == Tyarray) {

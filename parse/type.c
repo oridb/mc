@@ -515,7 +515,8 @@ static int tybfmt(char *buf, size_t len, Type *t)
 	char *end;
 	char *sep;
 
-	t = tysearch(t);
+	if (t)
+		t = tysearch(t);
 	sep = "";
 	p = buf;
 	end = p + len;
