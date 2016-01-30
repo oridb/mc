@@ -934,7 +934,7 @@ static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
 	/* a ==> b */
 	a = tf(st, u);
 	b = tf(st, v);
-	if (a == b)
+	if (a->tid == b->tid)
 		return a;
 
 	/* we unify from lower to higher ranked types */
@@ -955,16 +955,8 @@ static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
 	}
 
 	r = NULL;
-	/*
-	 * unify eagerly here, solving the problem of comparing two specialized types
-	 * that don't have pointer equality.
-	 *
-	 * If the types *actually* conflict, we will error out later in this function,
-	 * and the bogus unification won't matter. If the types *are* the same, though,
-	 * then this short circuits a whole bunch of infinite recursion.
-	 */
-	tytab[a->tid] = b;
 	if (a->type == Tyvar) {
+		tytab[a->tid] = b;
 		ea = basetype(st, a);
 		eb = basetype(st, b);
 		if (ea && eb)

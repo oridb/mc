@@ -90,7 +90,7 @@ Type *tyspecialize(Type *orig, Tysubst *tsmap, Htab *delayed)
 	t = tysearch(orig);
 	tmp = substget(tsmap, t);
 	if (tmp)
-		return tmp;
+		return tysearch(tmp);
 	arg = NULL;
 	narg = 0;
 	switch (t->type) {
