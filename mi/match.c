@@ -249,7 +249,7 @@ static int isbasictype(Dtree *dt, Type *ty)
 {
 	if (ty->type == Typtr)
 		return !dt->ptrwalk;
-	return istyprimitive(ty) || ty->type == Tyvoid;
+	return istyprimitive(ty) || ty->type == Tyvoid || ty->type == Tyfunc;
 }
 
 static int addwildrec(Srcloc loc, Type *ty, Dtree *start, Dtree *accept, Dtree ***end, size_t *nend)
