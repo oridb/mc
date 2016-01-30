@@ -127,7 +127,7 @@ Type *tyspecialize(Type *orig, Tysubst *tsmap, Htab *delayed)
 		ret = mktyname(t->loc, t->name, tyspecialize(t->sub[0], tsmap, delayed));
 		ret->arg = arg;
 		ret->narg = narg;
-		*var = *ret;
+		tytab[var->tid] = ret;
 		break;
 	case Tystruct:
 		ret = tydup(t);

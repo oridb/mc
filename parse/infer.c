@@ -955,8 +955,8 @@ static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
 	}
 
 	r = NULL;
+	tytab[a->tid] = b;
 	if (a->type == Tyvar) {
-		tytab[a->tid] = b;
 		ea = basetype(st, a);
 		eb = basetype(st, b);
 		if (ea && eb)
