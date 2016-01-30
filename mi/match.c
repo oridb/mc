@@ -199,8 +199,8 @@ static size_t nconstructors(Type *t)
 	case Tyvar: case Typaram: case Tyunres: case Tyname:
 	case Tybad: case Tyvalist: case Tygeneric: case Ntypes:
 	case Tyfunc: case Tycode:
-			die("Invalid constructor type %s in match", tystr(t));
-			break;
+		die("Invalid constructor type %s in match", tystr(t));
+		break;
 	}
 	return 0;
 }
@@ -250,6 +250,11 @@ static int isbasictype(Dtree *dt, Type *ty)
 	if (ty->type == Typtr)
 		return !dt->ptrwalk;
 	return istyprimitive(ty) || ty->type == Tyvoid || ty->type == Tyfunc;
+}
+
+static int ismatchable(Type *ty)
+{
+	return ty->type != Tyfunc && ty->type != Tycode && ty->type != Tyvalist;
 }
 
 static int addwildrec(Srcloc loc, Type *ty, Dtree *start, Dtree *accept, Dtree ***end, size_t *nend)
@@ -349,10 +354,9 @@ static int addwildrec(Srcloc loc, Type *ty, Dtree *start, Dtree *accept, Dtree *
 		break;
 	case Typtr:
 		ret = addwildrec(loc, ty->sub[0], start, accept, &last, &nlast);
-	default:
-		ret = 1;
-		lappend(&last, &nlast, accept);
 		break;
+	default:
+		die("unreachable");
 	}
 	lcat(end, nend, last, nlast);
 	lfree(&last, &nlast);
@@ -615,10 +619,13 @@ static int addpat(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap
 	switch (exprop(pat)) {
 	case Ovar:
 		dcl = decls[pat->expr.did];
-		if (dcl->decl.isconst)
+		if (dcl->decl.isconst) {
+			if (!ismatchable(decltype(dcl)))
+				fatal(dcl, "matching unmatchable type %s", tystr(decltype(dcl)));
 			ret = addpat(dcl->decl.init, val, start, accept, cap, ncap, end, nend);
-		else
+		} else {
 			ret = addwild(pat, val, start, accept, cap, ncap, end, nend);
+		}
 		break;
 	case Oucon:
 		ret = addunion(pat, val, start, accept, cap, ncap, end, nend);

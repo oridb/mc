@@ -45,4 +45,4 @@ Ty(Typaram, NULL, 1)
 Ty(Tyunres, NULL, 1) /* unresolved */
 Ty(Tyname, NULL, 1)
 Ty(Tygeneric, NULL, 1)
-Ty(Tycode, NULL, 0)
+Ty(Tycode, NULL, 0)	/* code ptr without env: backend-only */
