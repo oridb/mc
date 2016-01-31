@@ -667,6 +667,8 @@ int tyeq_rec(Type *a, Type *b, Bitset *visited)
 
 	if (!a || !b)
 		return a == b;
+	a = tysearch(a);
+	b = tysearch(b);
 	if (a->type != b->type)
 		return 0;
 	if (a->narg != b->narg)
@@ -685,7 +687,9 @@ int tyeq_rec(Type *a, Type *b, Bitset *visited)
 	bsput(visited, b->tid);
 
 	switch (a->type) {
-	case Typaram:	return streq(a->pname, b->pname);	break;
+	case Typaram:
+		return streq(a->pname, b->pname);
+		break;
 	case Tyvar:
 		if (a->tid != b->tid)
 			return 0;
