@@ -436,8 +436,15 @@ static void tyresolve(Inferstate *st, Type *t)
 	}
 }
 
-/* Look up the best type to date in the unification table, returning it */
 Type *tysearch(Type *t)
+{
+	while (tytab[t->tid])
+		t = tytab[t->tid];
+	return t;
+}
+
+/* Look up the best type to date in the unification table, returning it */
+static Type *tylookup(Type *t)
 {
 	Type *lu;
 	Stab *ns;
@@ -498,7 +505,7 @@ static Type *tf(Inferstate *st, Type *orig)
 	Type *t;
 
 	assert(orig != NULL);
-	t = tysearch(orig);
+	t = tylookup(orig);
 	isgeneric = t->type == Tygeneric;
 	st->ingeneric += isgeneric;
 	tyresolve(st, t);
