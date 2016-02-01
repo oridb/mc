@@ -429,6 +429,7 @@ static Node *specializenode(Node *n, Tysubst *tsmap)
 	}
 	return r;
 }
+
 Node *genericname(Node *n, Type *t)
 {
 	char buf[1024];
@@ -504,6 +505,16 @@ int matchquality(Type *pat, Type *to)
 				return -1;
 			match += q;
 		}
+		break;
+	case Tyarray:
+		/* unsized arrays are ok */
+		if (pat->size && to->asize) {
+			if (!!litvaleq(a->asize->expr.args[0], b->asize->expr.args[0]))
+				return -1;
+		} else if (pat->size != to->asize) {
+			return -1;
+		}
+		else return matchquality(pat->sub[0], to->sub[0]);
 		break;
 	default:
 		if (pat->nsub != to->nsub)
