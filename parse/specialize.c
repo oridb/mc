@@ -508,10 +508,10 @@ int matchquality(Type *pat, Type *to)
 		break;
 	case Tyarray:
 		/* unsized arrays are ok */
-		if (pat->size && to->asize) {
-			if (!!litvaleq(a->asize->expr.args[0], b->asize->expr.args[0]))
+		if (pat->asize && to->asize) {
+			if (!!litvaleq(pat->asize->expr.args[0], to->asize->expr.args[0]))
 				return -1;
-		} else if (pat->size != to->asize) {
+		} else if (pat->asize != to->asize) {
 			return -1;
 		}
 		else return matchquality(pat->sub[0], to->sub[0]);
