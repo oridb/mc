@@ -328,9 +328,13 @@ struct Node {
 			 impl.
 			*/
 			Trait *trait;
-			Htab *impls;
-			char vis;
+			Htab *__impls;
+			Node **gimpl; /* generic impls of this trait */
+			size_t ngimpl;
+			Node **gtype; /* generic impls of this trait */
+			size_t ngtype;
 
+			char vis;
 			/* flags */
 			char isglobl;
 			char isconst;

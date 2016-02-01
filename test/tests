@@ -93,6 +93,7 @@ B generictype	E	0
 B genericret	E	42
 B genericmatch	E	15
 B genericrec	E	0
+B genericimpl	P	'int string @a @a[:]'
 B recgeneric	P	'built'
 B bigtyblob	P	'`U100 '
 # B genericchain	P	'val = 123' ## BUGGERED

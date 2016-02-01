@@ -507,7 +507,7 @@ static Node *itertraitfn(Srcloc loc, Trait *tr, char *fn, Type *ty)
 		name = declname(tr->funcs[i]);
 		if (!strcmp(fn, name)) {
 			proto = tr->funcs[i];
-			dcl = htget(proto->decl.impls, ty);
+			dcl = htget(proto->decl.__impls, ty);
 			var = mkexpr(loc, Ovar, dcl->decl.name, NULL);
 			var->expr.type = codetype(dcl->decl.type);
 			var->expr.did = dcl->decl.did;

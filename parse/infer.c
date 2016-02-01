@@ -809,8 +809,6 @@ static int tyrank(Inferstate *st, Type *t)
 	return 2;
 }
 
-static int hasparam(Type *t) { return t->type == Tyname && t->narg > 0; }
-
 static void unionunify(Inferstate *st, Node *ctx, Type *u, Type *v)
 {
 	size_t i, j;
@@ -914,6 +912,10 @@ static void checksize(Inferstate *st, Node *ctx, Type *a, Type *b)
 				tystr(a), tystr(b), ctxstr(st, ctx));
 }
 
+static int hasargs(Type *t)
+{
+	return t->type == Tyname && t->narg > 0;
+}
 
 /* Unifies two types, or errors if the types are not unifiable. */
 static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
@@ -972,7 +974,7 @@ static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
 	/* if the tyrank of a is 0 (ie, a raw tyvar), just unify.
 	 * Otherwise, match up subtypes. */
 	if (a->type == b->type && a->type != Tyvar) {
-		if (hasparam(a) && hasparam(b)) {
+		if (hasargs(a) && hasargs(b)) {
 			/* Only Tygeneric and Tyname should be able to unify. And they
 			 * should have the same names for this to be true. */
 			if (!nameeq(a->name, b->name))
@@ -1684,9 +1686,6 @@ static void specializeimpl(Inferstate *st, Node *n)
 					namestr(t->name), ctxstr(st, n));
 
 		/* infer and unify types */
-		if (n->impl.type->type == Tygeneric || n->impl.type->type == Typaram)
-			fatal(n, "trait specialization requires concrete type, got %s",
-					tystr(n->impl.type));
 		verifytraits(st, n, t->param, n->impl.type);
 		subst = mksubst();
 		substput(subst, t->param, n->impl.type);
@@ -1707,7 +1706,13 @@ static void specializeimpl(Inferstate *st, Node *n)
 				fname(sym->loc), lnum(sym->loc));
 		dcl->decl.name = name;
 		putdcl(file->file.globls, dcl);
-		htput(proto->decl.impls, n->impl.type, dcl);
+		htput(proto->decl.__impls, n->impl.type, dcl);
+		dcl->decl.isconst = 1;
+		if (n->impl.type->type == Tygeneric || hasparams(n->impl.type)) {
+			dcl->decl.isgeneric = 1;
+			lappend(&proto->decl.gimpl, &proto->decl.ngimpl, dcl);
+			lappend(&proto->decl.gtype, &proto->decl.ngtype, ty);
+		}
 		if (debugopt['S'])
 			printf("specializing trait [%d]%s:%s => %s:%s\n", n->loc.line,
 					namestr(proto->decl.name), tystr(type(st, proto)), namestr(name),
@@ -2071,7 +2076,7 @@ static void checkvar(Inferstate *st, Node *n)
 	ty = NULL;
 	dcl = NULL;
 	if (n->expr.param)
-		dcl = htget(proto->decl.impls, tf(st, n->expr.param));
+		dcl = htget(proto->decl.__impls, tf(st, n->expr.param));
 	if (dcl)
 		ty = dcl->decl.type;
 	if (!ty)

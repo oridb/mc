@@ -317,7 +317,9 @@ static Node *specializenode(Node *n, Tysubst *tsmap)
 	r = mknode(n->loc, n->type);
 	switch (n->type) {
 	case Nfile:
-	case Nuse:	die("Node %s not allowed here\n", nodestr[n->type]);	break;
+	case Nuse:
+		die("Node %s not allowed here\n", nodestr[n->type]);
+		break;
 	case Nexpr:
 		r->expr.op = n->expr.op;
 		r->expr.type = tysubst(n->expr.type, tsmap);
@@ -447,6 +449,107 @@ Node *genericname(Node *n, Type *t)
 	return name;
 }
 
+/* this doesn't walk through named types, so it can't recurse infinitely. */
+int matchquality(Type *pat, Type *to)
+{
+	int match, q;
+	size_t i;
+	Ucon *puc, *tuc;
+
+	if (pat->type == Typaram)
+		return 0;
+	else if (pat->type != to->type)
+		return -1;
+
+	match = 0;
+	switch (pat->type) {
+	case Tystruct:
+		if (pat->nmemb != to->nmemb)
+			return -1;
+		for (i = 0; i < pat->nmemb; i++) {
+			if (!streq(declname(pat->sdecls[i]),declname( to->sdecls[i])))
+				return -1;
+			q = matchquality(decltype(pat->sdecls[i]), decltype(to->sdecls[i]));
+			if (q < 0)
+				return -1;
+			match += q;
+		}
+		break;
+	case Tyunion:
+		if (pat->nmemb != to->nmemb)
+			return -1;
+		for (i = 0; i < pat->nmemb; i++) {
+			if (!nameeq(pat->udecls[i], to->udecls[i]))
+				return -1;
+			puc = pat->udecls[i];
+			tuc = to->udecls[i];
+			if (puc->etype && tuc->etype) {
+				q = matchquality(puc->etype, tuc->etype);
+				if (q < 0)
+					return -1;
+				match += q;
+			} else if (puc->etype != tuc->etype) {
+				return -1;
+			}
+		}
+		break;
+	case Tyname:
+		if (!nameeq(pat->name, to->name))
+			return -1;
+		if (pat->narg != to->narg)
+			return -1;
+		for (i = 0; i < pat->narg; i++) {
+			q = matchquality(pat->sub[i], to->sub[i]);
+			if (q < 0)
+				return -1;
+			match += q;
+		}
+		break;
+	default:
+		if (pat->nsub != to->nsub)
+			break;
+		if (pat->type == to->type)
+			match = 1;
+		for (i = 0; i < pat->nsub; i++) {
+			q = matchquality(pat->sub[i], to->sub[i]);
+			if (q < 0)
+				return -1;
+			match += q;
+		}
+		break;
+	}
+	return match;
+}
+
+Node *bestimpl(Node *n, Type *to)
+{
+	Node **gimpl, **ambig, *match;
+	size_t ngimpl, nambig, i;
+	int score;
+	int best;
+
+	ambig = NULL;
+	nambig = 0;
+	best = -1;
+	gimpl = n->decl.gimpl;
+	ngimpl = n->decl.ngimpl;
+	for (i = 0; i < ngimpl; i++) {
+		score = matchquality(decltype(gimpl[i]), to);
+		if (score > best) {
+			lfree(&ambig, &nambig);
+			best = score;
+			match = gimpl[i];
+		} else if (score == best) {
+			lappend(&ambig, &nambig, gimpl[i]);
+		}
+	}
+	if (best < 0)
+		return NULL;
+	else if (nambig > 0)
+		fatal(n, "ambiguous implementation for %s", tystr(to));
+	return match;
+}
+
 /*
  * Takes a generic declaration, and creates a specialized
  * duplicate of it with type 'to'. It also generates
@@ -471,15 +574,16 @@ Node *specializedcl(Node *g, Type *to, Node **name)
 	if (!st)
 		fatal(n, "Can't find symbol table for %s.%s", n->name.ns, n->name.name);
 	d = getdcl(st, n);
-	if (debugopt['S'])
-		printf("depth[%d] specializing [%d]%s => %s\n", stabstkoff, g->loc.line,
-			namestr(g->decl.name), namestr(n));
 	if (d)
 		return d;
 	if (g->decl.trait) {
-		printf("%s\n", namestr(n));
-		fatal(g, "no trait implemented for for %s:%s", namestr(g->decl.name), tystr(to));
+		g = bestimpl(g, to);
+		if (!g)
+			fatal(g, "no trait implemented for for %s:%s", namestr(g->decl.name), tystr(to));
 	}
+	if (debugopt['S'])
+		printf("depth[%d] specializing [%d]%s => %s\n", stabstkoff, g->loc.line,
+			namestr(g->decl.name), namestr(n));
 	/* namespaced names need to be looked up in their correct
 	 * context. */
 	if (n->name.ns)

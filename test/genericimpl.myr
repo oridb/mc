@@ -1,0 +1,33 @@
+use std
+
+trait gimpl @a =
+	desc	: (x : @a -> byte[:])
+;;
+
+impl gimpl int =
+	desc = {x
+		-> "int"
+	}
+;;
+
+impl gimpl byte[:] =
+	desc = {x
+		-> "string"
+	}
+;;
+
+impl gimpl @a =
+	desc = {x
+		-> "@a"
+	}
+;;
+
+impl gimpl @b[:] =
+	desc = {x
+		-> "@a[:]"
+	}
+;;
+
+const main = {
+	std.put("{} {} {} {}\n", desc(123), desc("foo"), desc('x'), desc([true][:]))
+}
