@@ -54,7 +54,7 @@ int main(int argc, char **argv)
 	size_t i;
 	FILE *f;
 
-	optinit(&ctx, "d:hmo:I:l:", argv, argc);
+	optinit(&ctx, "sd:hmo:I:l:", argv, argc);
 	while (!optdone(&ctx)) {
 		switch (optnext(&ctx)) {
 		case 'h':
