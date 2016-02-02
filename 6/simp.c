@@ -723,21 +723,22 @@ static Node *idxaddr(Simp *s, Node *seq, Node *idx)
 {
 	Node *a, *t, *u, *v, *w; /* temps */
 	Node *r; /* result */
-	Type *ty;
+	Type *ty, *seqty;
 	size_t sz;
 
 	a = rval(s, seq, NULL);
-	ty = exprtype(seq)->sub[0];
-	if (exprtype(seq)->type == Tyarray) {
+	seqty = tybase(exprtype(seq));
+	ty = seqty->sub[0];
+	if (seqty->type == Tyarray) {
 		t = addr(s, a, ty);
-		w = exprtype(a)->asize;
-	} else if (seq->expr.type->type == Tyslice) {
+		w = seqty->asize;
+	} else if (seqty->type == Tyslice) {
 		t = load(addr(s, a, mktyptr(seq->loc, ty)));
 		w = slicelen(s, a);
 	} else {
-		die("Can't index type %s\n", tystr(seq->expr.type));
+		die("can't index type %s", tystr(seq->expr.type));
 	}
-	assert(t->expr.type->type == Typtr);
+	assert(exprtype(t)->type == Typtr);
 	u = rval(s, idx, NULL);
 	u = ptrsized(s, u);
 	checkidx(s, Olt, w, u);

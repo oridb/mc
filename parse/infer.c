@@ -882,6 +882,7 @@ static Type *basetype(Inferstate *st, Type *a)
 {
 	Type *t;
 
+	a = tybase(a);
 	t = htget(st->seqbase, a);
 	if (!t && (a->type == Tyslice || a->type == Tyarray || a->type == Typtr))
 		t = a->sub[0];
@@ -944,7 +945,7 @@ static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
 		to = tystr(b);
 		indentf(st->indentdepth, "Unify %s => %s\n", from, to);
 		indentf(st->indentdepth + 1, "indexes: %s => %s\n",
-				tystr(htget(st->seqbase, a)), tystr(htget(st->seqbase, b)));
+			tystr(htget(st->seqbase, a)), tystr(htget(st->seqbase, b)));
 		free(from);
 		free(to);
 	}
