@@ -7,7 +7,6 @@ lib std {inc=.} =
 	bigint.myr
 	bitset.myr
 	blat.myr
-	byzip.myr
 	chartype.myr
 	clear.myr
 	cmp.myr
