@@ -125,6 +125,7 @@ Type *tyspecialize(Type *orig, Tysubst *tsmap, Htab *delayed)
 		for (i = 0; i < t->narg; i++)
 			lappend(&arg, &narg, tyspecialize(t->arg[i], tsmap, delayed));
 		ret = mktyname(t->loc, t->name, tyspecialize(t->sub[0], tsmap, delayed));
+		ret->traits = bsdup(t->traits);
 		ret->arg = arg;
 		ret->narg = narg;
 		tytab[var->tid] = ret;
