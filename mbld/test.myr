@@ -41,12 +41,12 @@ const test = {b
 			;;
 			buildbin(b, t, false)
 			bincmd = std.sldup([std.strcat("./", t.name)][:])
-			tests = std.slpush(tests, (bincmd, std.sldup(t.dir)))
+			std.slpush(&tests, (bincmd, std.sldup(t.dir)))
 		| `Cmd t:
 			if !t.istest
 				continue
 			;;
-			tests = std.slpush(tests, (dupcmd(t.cmd), std.sldup(t.dir)))
+			std.slpush(&tests, (dupcmd(t.cmd), std.sldup(t.dir)))
 		| _:
 			/* skip */
 		;;
@@ -59,7 +59,7 @@ const test = {b
 		if !runtest(b, c)
 			ok = false
 			p = std.pathcat(b.curdir, c[0])
-			failed = std.slpush(failed, p)
+			std.slpush(&failed, p)
 		;;
 
 	;;
@@ -101,7 +101,7 @@ const dupcmd = {cmd
 
 	ret = [][:]
 	for c in cmd
-		ret = std.slpush(ret, std.sldup(c))
+		std.slpush(&ret, std.sldup(c))
 	;;
 	-> ret
 }
@@ -135,7 +135,7 @@ const buildtests = {b, targ
 
 			buildbin(b, &tt, true)
 			cmd = std.sldup([std.strcat("./", bin)][:])
-			tests = std.slpush(tests, (cmd, std.sldup(targ.dir)))
+			std.slpush(&tests, (cmd, std.sldup(targ.dir)))
 			std.slfree(tt.libdeps)
 			std.slfree(tt.incpath)
 			std.slfree(path)

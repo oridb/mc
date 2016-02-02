@@ -2,7 +2,7 @@ use "types"
 use "alloc"
 
 pkg std =
-	generic slpush	: (sl : @a[:], elt : @a	-> @a[:])
+	generic slpush	: (sl : @a[:]#, elt : @a -> @a[:])
 ;;
 
 generic slpush = {sl, elt
@@ -14,7 +14,7 @@ generic slpush = {sl, elt
 	a bucket boundary, this is effectively
 	growing the slice by powers of two.
 	*/
-	sl = slgrow(sl, sl.len + 1)
-	sl[sl.len - 1] = elt
-	-> sl
+	sl# = slgrow(sl#, sl#.len + 1)
+	sl#[sl#.len - 1] = elt
+	-> sl#
 }

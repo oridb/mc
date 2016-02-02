@@ -194,8 +194,8 @@ const rtinsert = {rt, lo, hi
 
 	n = rt.ranges.len
 	if n == 0
-		rt.ranges = std.slpush(rt.ranges, (lo[0], hi[0]))
-		rt.link = std.slpush(rt.link, std.zalloc())
+		std.slpush(&rt.ranges, (lo[0], hi[0]))
+		std.slpush(&rt.link, std.zalloc())
 	else
 		/*
 		this is a safe way to compare because we know that ranges
@@ -204,8 +204,8 @@ const rtinsert = {rt, lo, hi
 		*/
 		(a, b) = rt.ranges[n - 1]
 		if a != lo[0] || b != hi[0]
-			rt.ranges = std.slpush(rt.ranges, (lo[0], hi[0]))
-			rt.link = std.slpush(rt.link, std.zalloc())
+			std.slpush(&rt.ranges, (lo[0], hi[0]))
+			std.slpush(&rt.link, std.zalloc())
 		;;
 	;;
 
@@ -551,7 +551,7 @@ const baseexpr = {re
 	| '+':	-> `Fail `Badrep '+'
 	| '?':	-> `Fail `Badrep '?'
 	| '[':	-> chrclass(re)
-	| '.':	getc(re); ret = std.mk(`Ranges std.slpush([][:], [0, std.Maxcharval]))
+	| '.':	getc(re); ret = std.mk(`Ranges std.sldup([[0, std.Maxcharval]][:]))
 	| '^':	getc(re); ret = std.mk(`Bol)
 	| '$':	getc(re); ret = std.mk(`Eol)
 	| '(':	
@@ -719,12 +719,12 @@ const rangematch = {re, sl
 	if matchc(re, '-')
 		hi = getc(re)
 		if lo <= hi
-			-> std.slpush(sl, [lo, hi])
+			-> std.slpush(&sl, [lo, hi])
 		else
-			-> std.slpush(sl, [hi, lo])
+			-> std.slpush(&sl, [hi, lo])
 		;;
 	else
-		-> std.slpush(sl, [lo, lo])
+		-> std.slpush(&sl, [lo, lo])
 	;;
 }
 
@@ -737,10 +737,10 @@ const negate = {rng
 	next = 0 /* if we have no ranges */
 	for r in rng
 		(end, next) = (r[0], r[1])
-		neg = std.slpush(neg, [start, end - 1])
+		std.slpush(&neg, [start, end - 1])
 		start = next + 1
 	;;
-	neg = std.slpush(neg, [next + 1, std.Maxcharval])
+	std.slpush(&neg, [next + 1, std.Maxcharval])
 	-> neg
 }
 
@@ -760,12 +760,12 @@ const merge = {rl
 		if r[0] <= hi + 1
 			hi = r[1]
 		else
-			ret = std.slpush(ret, [lo, hi])
+			std.slpush(&ret, [lo, hi])
 			lo = r[0]
 			hi = r[1]
 		;;
 	;;
-	-> std.slpush(ret, [lo, hi])
+	-> std.slpush(&ret, [lo, hi])
 }
 
 

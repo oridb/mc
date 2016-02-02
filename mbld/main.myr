@@ -58,9 +58,9 @@ const main = {args : byte[:][:]
 		| ('T', ""):	dumponly = true
 		| ('S', ""):	bld.opt_genasm = true
 		| ('c', ""):	cleanfirst = true
-		| ('I', arg):	bld.opt_incpaths = std.slpush(bld.opt_incpaths, arg)
+		| ('I', arg):	std.slpush(&bld.opt_incpaths, arg)
 		| ('B', arg):	bld.opt_instbase = arg
-		| ('t', tag):	tags = std.slpush(tags, tag)
+		| ('t', tag):	std.slpush(&tags, tag)
 		| ('R', arg):	runsrc = arg
 		| ('b', arg):
 			targname = arg

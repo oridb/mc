@@ -27,14 +27,14 @@ const strsplit = {s, delim
 	while true
 		match strfind(s, delim)
 		| `Some i:
-			sp = slpush(sp, s[:i])
+			slpush(&sp, s[:i])
 			s = s[i + delim.len:]
 		| `None:
 			goto donesplit
 		;;
 	;;
 :donesplit
-	sp = slpush(sp, s[:])
+	slpush(&sp, s[:])
 	-> sp
 }
 
@@ -53,7 +53,7 @@ const strtok = {s
 			j++
 		;;
 		if i != j
-			toks = slpush(toks, s[i:j])
+			slpush(&toks, s[i:j])
 		;;
 		i = j
 	;;

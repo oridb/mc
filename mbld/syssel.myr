@@ -88,7 +88,7 @@ generic sysselfin = {syssel
 		if nmatch == -1
 			std.fatal("{}:{}: target {}, no applicable file for '{}'\n", syssel.file, syssel.line, syssel.targ, k)
 		;;
-		ret = std.slpush(ret, std.get(std.htget(syssel._best, k)))
+		std.slpush(&ret, std.get(std.htget(syssel._best, k)))
 	;;
 	std.htfree(syssel._match)
 	std.htfree(syssel._best)

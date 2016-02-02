@@ -78,7 +78,7 @@ const resolvemx = {host
 const resolverec = {host, t
 	match hostfind(host)
 	| `Some hinf:
-		-> `Ok slpush([][:], hinf)
+		-> `Ok sldup([hinf][:])
 	| `None:
 		-> dnsresolve(host, rectype(`DnsA))
 	;;
@@ -186,7 +186,7 @@ const addns = {rest
 	| `Some (name, _):
 		match ipparse(name)
 		| `Some addr: 
-			nameservers = slpush(nameservers, addr)
+			slpush(&nameservers, addr)
 		| `None:
 			/* nothing */
 		;;

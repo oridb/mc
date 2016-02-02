@@ -112,7 +112,7 @@ const swapall = {srcs, suff
 
 	sl = [][:]
 	for s in srcs
-		sl = std.slpush(sl, srcswapsuffix(s, suff))
+		std.slpush(&sl, srcswapsuffix(s, suff))
 	;;
 	-> sl
 }
@@ -140,7 +140,7 @@ const srcdeps = {b, ds, g, path, obj, usefile
 		-> void
 	;;
 
-	ds.depstk = std.slpush(ds.depstk, path)
+	std.slpush(&ds.depstk, path)
 	if std.htgetv(g.seen, path, false)
 		std.fput(1, "dependency loop involving {}:\n", path)
 		for d in ds.depstk
@@ -234,7 +234,7 @@ const getcflags = {ln, cflags, libs
 	| `std.Some m:
 		flags = std.strtok(m[1])
 		for fl in flags
-			cflags = std.slpush(cflags, std.sldup(fl))
+			std.slpush(&cflags, std.sldup(fl))
 		;;
 		std.slfree(flags)
 		regex.matchfree(m)
@@ -245,7 +245,7 @@ const getcflags = {ln, cflags, libs
 	| `std.Some m:
 		flags = std.strtok(m[1])
 		for fl in flags
-			libs = std.slpush(libs, std.sldup(fl))
+			std.slpush(&libs, std.sldup(fl))
 		;;
 		std.slfree(flags)
 		regex.matchfree(m)
@@ -297,9 +297,9 @@ const depname = {deps, ln, lnum
 	match regex.exec(usepat, ln)
 	| `std.Some uses:
 		if uses[2].len > 0
-			deps = std.slpush(deps, `Lib (std.sldup(uses[2]), lnum))
+			std.slpush(&deps, `Lib (std.sldup(uses[2]), lnum))
 		else
-			deps = std.slpush(deps, `Local (std.sldup(uses[3]), lnum))
+			std.slpush(&deps, `Local (std.sldup(uses[3]), lnum))
 		;;
 		regex.matchfree(uses)
 	| `std.None:
@@ -343,10 +343,10 @@ const scrapelibs = {dg, lib, incs
 		match bio.getc(f)
 		| `bio.Ok 'L':
 			d = rdstr(f)
-			deps = std.slpush(deps, d)
+			std.slpush(&deps, d)
 		| `bio.Ok 'X':
 			d = rdstr(f)
-			dg.extlibs = std.slpush(dg.extlibs, d)
+			std.slpush(&dg.extlibs, d)
 		| `bio.Ok _:	done = true
 		| `bio.Eof:	done = true
 		| `bio.Err e:	std.fatal("io error reading {}: {}", lib, e)
@@ -389,7 +389,7 @@ const pushdep = {dg, src, dst
 		std.put("{} <= {}\n", dst, src)
 	;;
 	sl = std.htgetv(dg.deps, dst, [][:])
-	sl = std.slpush(sl, src)
+	std.slpush(&sl, src)
 	std.htput(dg.deps, dst, sl)
 }
 

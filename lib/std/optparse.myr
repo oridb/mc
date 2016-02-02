@@ -64,7 +64,7 @@ const optparse = {args, def
 	]
 	optinit(&ctx, args, def)
 	while !optdone(&ctx)
-		parsed.opts = slpush(parsed.opts, optnext(&ctx))
+		slpush(&parsed.opts, optnext(&ctx))
 	;;
 	if ctx.args.len < def.minargs
 		put("error: expected at least {} args, got {}\n", def.minargs, ctx.args.len)
@@ -164,7 +164,7 @@ const next = {ctx
 				goto foundopt
 			;;
 		else
-			ctx.args = slpush(ctx.args, ctx.optargs[i])
+			slpush(&ctx.args, ctx.optargs[i])
 		;;
 	;;
 :finishedopt

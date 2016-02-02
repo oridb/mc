@@ -79,9 +79,9 @@ generic mkbigint = {v : @a::(integral,numeric)
 		a.sign = 1
 	;;
 	val = v castto(uint64)
-	a.dig = slpush([][:], val castto(uint32))
+	slpush(&a.dig, val castto(uint32))
 	if val > Base
-		a.dig = slpush(a.dig, (val/Base) castto(uint32))
+		slpush(&a.dig, (val/Base) castto(uint32))
 	;;
 	-> trim(a)
 }

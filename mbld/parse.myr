@@ -39,7 +39,7 @@ const load = {b
 
 	targs = sysselfin(sel)
 	for (name, targ) in targs
-		b.all = std.slpush(b.all, name)
+		std.slpush(&b.all, name)
 		std.htput(b.targs, name, targ)
 	;;
 
@@ -121,7 +121,7 @@ const sortdeps = {b
 		match gettarg(b.targs, dep)
 		| `Bin _:	all = visit(all, b, "all", dep, looped, marked)
 		| `Lib _:	all = visit(all, b, "all", dep, looped, marked)
-		| targ:		all = std.slpush(all, dep)
+		| targ:		std.slpush(&all, dep)
 		;;
 	;;
 	std.slfree(b.all)
@@ -142,7 +142,7 @@ const visit = {all, b, parent, targ, looped, marked
 	;;
 	std.htdel(looped, targ)
 	std.htput(marked, targ, true)
-	-> std.slpush(all, targ)
+	-> std.slpush(&all, targ)
 }
 
 const getdeps = {b, parent, targname
@@ -280,7 +280,7 @@ const subtarget = {b, p
 
 	subs = anontarget(p, "sub")
 	for s in subs
-		p.subdirs = std.slpush(p.subdirs, std.pathcat(p.fdir, s))
+		std.slpush(&p.subdirs, std.pathcat(p.fdir, s))
 	;;
 }
 
@@ -334,8 +334,8 @@ const cmdtarget = {b, p, cmd, iscmd
 		| ("durable", ""):	durable = true
 		| ("test", ""):		istest = true
 		| ("notest", ""):	istest = false
-		| ("dep", depname):	deplist = std.slpush(deplist, depname)
-		| ("tag", tag):	tags = std.slpush(tags, tag)
+		| ("dep", depname):	std.slpush(&deplist, depname)
+		| ("tag", tag):	std.slpush(&tags, tag)
 		| (attr, ""):
 			failparse(p, "attribute {} not valid on {} targets\n", attr, cmd)
 		| (attr, val):
@@ -415,15 +415,15 @@ const myrtarget = {b, p, targ
 	ldscript = p.ldscript
 	incpath = [][:]
 	for path in p.incpath
-		incpath = std.slpush(incpath, path)
+		std.slpush(&incpath, path)
 	;;
 	tags = [][:]
 	for elt in attrs
 		match elt
 		| ("ldscript", lds):	ldscript = std.sldup(lds)
 		| ("runtime", rt):	runtime = std.sldup(rt)
-		| ("inc", path):	incpath = std.slpush(incpath, std.sldup(path))
-		| ("tag", tag):		tags = std.slpush(tags, tag)
+		| ("inc", path):	std.slpush(&incpath, std.sldup(path))
+		| ("tag", tag):		std.slpush(&tags, tag)
 		| ("inst", ""):		install = true
 		| ("noinst", ""):	install = false
 		| ("test", ""):		istest = true
@@ -435,7 +435,7 @@ const myrtarget = {b, p, targ
 		;;
 	;;
 	for inc in bld.opt_incpaths
-		incpath = std.slpush(incpath, std.sldup(inc))
+		std.slpush(&incpath, std.sldup(inc))
 	;;
 	-> std.mk([
 		/* target */
@@ -492,7 +492,7 @@ const datatarget = {b, p, targ
 	tags = [][:]
 	for elt in attrs
 		match elt
-		| ("tag", tag):		tags = std.slpush(tags, tag)
+		| ("tag", tag):		std.slpush(&tags, tag)
 		| ("path", pathdir):	path = pathdir
 		| (invalid, ""):
 			std.fatal("{}: got invalid attr '{}'\n", targ, invalid)
@@ -551,12 +551,12 @@ const attrlist = {p
 			if matchc(p, '=')
 				match word(p)
 				| `std.Some v:
-					al = std.slpush(al, (k, v))
+					std.slpush(&al, (k, v))
 				| `std.None:
 					failparse(p, "invalid attr in attribute list\n")
 				;;
 			else
-				al = std.slpush(al, (k, [][:]))
+				std.slpush(&al, (k, [][:]))
 			;;
 			if !matchc(p, ',')
 				break
@@ -593,11 +593,11 @@ const inputlist = {p
 			match word(p)
 			| `std.Some l:
 				(dir, lib, targ) = libpath(p, l)
-				libs = std.slpush(libs, (dir, lib, targ))
+				std.slpush(&libs, (dir, lib, targ))
 			| `std.None:
 				failparse(p, "expected lib name after 'lib'\n")
 			;;
-		| `std.Some w:	wl = std.slpush(wl, w)
+		| `std.Some w:	std.slpush(&wl, w)
 		| `std.None:	break
 		;;
 	;;
@@ -615,7 +615,7 @@ const wordlist = {p
 	wl = [][:]
 	while true
 		match word(p)
-		| `std.Some w:	wl = std.slpush(wl, w)
+		| `std.Some w:	std.slpush(&wl, w)
 		| `std.None:	break
 		;;
 	;;

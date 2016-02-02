@@ -229,7 +229,7 @@ const parseparams = {paramstr, optdesc
 			;;
 			ha = hasarg
 			if ha == gotarg
-				opts = std.slpush(opts, (o, a))
+				std.slpush(&opts, (o, a))
 			else
 				std.fatal("invalid option {}", o)
 			;;
