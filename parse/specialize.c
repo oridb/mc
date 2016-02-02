@@ -151,13 +151,11 @@ Type *tyspecialize(Type *orig, Tysubst *tsmap, Htab *delayed)
 		}
 		break;
 	case Tyvar:
+		ret = t;
 		if (delayed && hthas(delayed, t)) {
-			ret = tydup(t);
 			tmp = htget(delayed, t);
 			htput(delayed, ret, tyspecialize(tmp, tsmap, delayed));
-		} else {
-			ret = t;
-		}
+		} 
 		break;
 	default:
 		if (t->nsub > 0) {
