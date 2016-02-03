@@ -42,6 +42,7 @@ const fslurp = {fd
 				buf = slgrow(buf, bufsz)
 			;;
 		| `Fail e:
+			slfree(buf)
 			-> `Fail e
 		;;
 	;;
