@@ -882,8 +882,11 @@ static Type *basetype(Inferstate *st, Type *a)
 {
 	Type *t;
 
-	a = tysearch(a);
 	t = htget(st->seqbase, a);
+        while (!t && a->type == Tyname) {
+            a = a->sub[0];
+            t = htget(st->seqbase, a);
+        }
 	if (!t && (a->type == Tyslice || a->type == Tyarray || a->type == Typtr))
 		t = a->sub[0];
 	if (t)
