@@ -882,7 +882,7 @@ static Type *basetype(Inferstate *st, Type *a)
 {
 	Type *t;
 
-	a = tybase(a);
+	a = tysearch(a);
 	t = htget(st->seqbase, a);
 	if (!t && (a->type == Tyslice || a->type == Tyarray || a->type == Typtr))
 		t = a->sub[0];
