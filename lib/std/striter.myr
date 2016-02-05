@@ -1,0 +1,31 @@
+use "die"
+use "types"
+use "utf"
+
+pkg std =
+	type chariter = struct
+		rest	: byte[:]
+	;;
+
+	impl iterable chariter -> char
+
+	const bychar	: (str : byte[:] -> chariter)
+;;
+
+impl iterable chariter -> char =
+	__iternext__ = {ci, c
+		if ci.rest.len == 0
+			-> false
+		;;
+		(c#, ci.rest) = strstep(ci.rest)
+		-> true
+	}
+
+	__iterfin__ = {ci, c
+	}
+;;
+
+const bychar = {str
+	-> [.rest = str]
+}
+
