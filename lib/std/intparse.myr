@@ -2,6 +2,7 @@ use "chartype"
 use "die"
 use "hasprefix"
 use "option"
+use "striter"
 use "types"
 use "utf"
 

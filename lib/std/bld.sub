@@ -60,6 +60,7 @@ lib std {inc=.} =
 	strjoin.myr
 	strsplit.myr
 	strstrip.myr
+	striter.myr
 	swap.myr
 	try.myr
 	types.myr
