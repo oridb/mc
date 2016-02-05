@@ -536,7 +536,7 @@ const readinto = {f, buf, n
 	var ret
 
 	std.assert(f.rstart + n <= f.rend, "Reading too much from buffer")
-	ret = std.sljoin(buf, f.rbuf[f.rstart:f.rstart + n])
+	ret = std.sljoin(&buf, f.rbuf[f.rstart:f.rstart + n])
 	f.rstart += n
 	-> ret
 }

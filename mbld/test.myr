@@ -25,8 +25,8 @@ const test = {b
 	setdir(b, "")
         for tn in b.all
 		match gettarg(b.targs, tn)
-		| `Bin bt:      tests = std.sljoin(tests, buildtests(b, bt))
-		| `Lib lt:	tests = std.sljoin(tests, buildtests(b, lt))
+		| `Bin bt:      std.sljoin(&tests, buildtests(b, bt))
+		| `Lib lt:	std.sljoin(&tests, buildtests(b, lt))
 		| _:	/* nothing */
 		;;
         ;;

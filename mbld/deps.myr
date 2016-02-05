@@ -87,7 +87,7 @@ const myrdeps = {b, mt, doclean, addsrc
 		elif std.hassuffix(srcs[i], ".glue.c")
 			(cflags, libs) = scrapecflags(b, dg, srcs[i])
 			std.htput(dg.cflags, srcs[i], cflags)
-			dg.extlibs = std.sljoin(dg.extlibs, libs)
+			std.sljoin(&dg.extlibs, libs)
 			dg.dynamic = true
 		;;
 	;;
@@ -162,7 +162,7 @@ const srcdeps = {b, ds, g, path, obj, usefile
 			;;
 		| `Local (l, lnum):
 			if !std.hassuffix(l, ".use")
-				l = std.sljoin(l, ".use")
+				std.sljoin(&l, ".use")
 			;;
 			if obj.len != 0
 				pushdep(g, l, obj)
