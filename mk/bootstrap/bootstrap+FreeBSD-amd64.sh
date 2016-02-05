@@ -45,6 +45,7 @@ echo 	$pwd/6/6m	-I ../sys -I . strfind.myr ;	$pwd/6/6m	-I ../sys -I . strfind.my
 echo 	$pwd/6/6m	-I ../sys -I . strsplit.myr ;	$pwd/6/6m	-I ../sys -I . strsplit.myr 
 echo 	$pwd/6/6m	-I ../sys -I . syswrap-ss+freebsd.myr ;	$pwd/6/6m	-I ../sys -I . syswrap-ss+freebsd.myr 
 echo 	$pwd/6/6m	-I ../sys -I . varargs.myr ;	$pwd/6/6m	-I ../sys -I . varargs.myr 
+echo 	$pwd/6/6m	-I ../sys -I . writeall.myr ;	$pwd/6/6m	-I ../sys -I . writeall.myr 
 echo 	$pwd/6/6m	-I ../sys -I . fmt.myr ;	$pwd/6/6m	-I ../sys -I . fmt.myr 
 echo 	$pwd/6/6m	-I ../sys -I . assert.myr ;	$pwd/6/6m	-I ../sys -I . assert.myr 
 echo 	$pwd/6/6m	-I ../sys -I . now.myr ;	$pwd/6/6m	-I ../sys -I . now.myr 
@@ -62,7 +63,6 @@ echo 	$pwd/6/6m	-I ../sys -I . spork.myr ;	$pwd/6/6m	-I ../sys -I . spork.myr
 echo 	$pwd/6/6m	-I ../sys -I . getint.myr ;	$pwd/6/6m	-I ../sys -I . getint.myr 
 echo 	$pwd/6/6m	-I ../sys -I . blat.myr ;	$pwd/6/6m	-I ../sys -I . blat.myr 
 echo 	$pwd/6/6m	-I ../sys -I . diriter.myr ;	$pwd/6/6m	-I ../sys -I . diriter.myr 
-echo 	$pwd/6/6m	-I ../sys -I . writeall.myr ;	$pwd/6/6m	-I ../sys -I . writeall.myr 
 echo 	$pwd/6/6m	-I ../sys -I . clear.myr ;	$pwd/6/6m	-I ../sys -I . clear.myr 
 echo 	$pwd/6/6m	-I ../sys -I . wait+posixy.myr ;	$pwd/6/6m	-I ../sys -I . wait+posixy.myr 
 echo 	$pwd/6/6m	-I ../sys -I . strjoin.myr ;	$pwd/6/6m	-I ../sys -I . strjoin.myr 
