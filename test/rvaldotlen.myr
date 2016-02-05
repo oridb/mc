@@ -1,0 +1,21 @@
+use std
+
+const f1 = { -> byte[:]
+	-> [1, 2, 3][:]
+}
+
+const f2 = { -> byte[3]
+	-> [1, 2, 3]
+}
+
+
+const main = {
+	if f1().len != 3
+		-> void
+	;;
+	if f2().len != 3
+		-> void
+	;;
+	std.put("pass\n")
+}
+
