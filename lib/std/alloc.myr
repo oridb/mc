@@ -34,7 +34,7 @@ pkg std =
 	generic slalloc	: (len : size	-> @a[:])
 	generic slzalloc	: (len : size	-> @a[:])
 	generic slgrow	: (sl : @a[:], len : size	-> @a[:])
-	generic slzgrow	: (sl : @a[:], len : size	-> @a[:])
+	generic slzgrow	: (sl : @a[:]#, len : size	-> @a[:])
 	generic slfree	: (sl : @a[:]	-> void)
 
 	const bytealloc	: (sz:size	-> byte#)
@@ -195,17 +195,17 @@ generic slgrow = {sl : @a[:], len
 }
 
 /* Grows a slice, filling new entries with zero bytes */
-generic slzgrow = {sl : @a[:], len
+generic slzgrow = {sl : @a[:]#, len
 	var oldlen
 	var base
 
-	oldlen = sl.len
-	sl = slgrow(sl, len)
-	base = sl castto(byte#) castto(intptr)
+	oldlen = sl#.len
+	sl# = slgrow(sl#, len)
+	base = sl# castto(byte#) castto(intptr)
 	if oldlen < len
-		memfill(sl[oldlen:] castto(byte#), 0, (len - oldlen)*sizeof(@a))
+		memfill(sl#[oldlen:] castto(byte#), 0, (len - oldlen)*sizeof(@a))
 	;;
-	-> sl
+	-> sl#
 }
 
 const slcap = {p

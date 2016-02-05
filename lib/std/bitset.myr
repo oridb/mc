@@ -138,7 +138,7 @@ const bseq = {a, b
 
 const ensurelen = {bs, len
 	if bs.bits.len <= len
-		bs.bits = slzgrow(bs.bits, len + 1)
+		slzgrow(&bs.bits, len + 1)
 	;;
 }
 

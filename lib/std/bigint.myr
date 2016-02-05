@@ -313,7 +313,7 @@ const uadd = {a, b
 	carry = 0
 	n = max(a.dig.len, b.dig.len)
 	/* guaranteed to carry no more than one value */
-	a.dig = slzgrow(a.dig, n + 1)
+	slzgrow(&a.dig, n + 1)
 	for i = 0; i < n; i++
 		v = (a.dig[i] castto(uint64)) + carry;
 		if i < b.dig.len
@@ -479,7 +479,7 @@ const bigdivmod = {a : bigint#, b : bigint# -> (bigint#, bigint#)
 	shift = nlz(v.dig[n - 1])
 	bigshli(u, shift)
 	bigshli(v, shift)
-	u.dig = slzgrow(u.dig, u.dig.len + 1)
+	slzgrow(&u.dig, u.dig.len + 1)
 
 	for j = m - n; j >= 0; j--
 		/* load a few temps */
@@ -655,7 +655,7 @@ generic bigshli = {a, s : @a::(numeric,integral)
 	if a.sign == 0
 		-> a
 	;;
-	a.dig = slzgrow(a.dig, 1 + a.dig.len + off castto(size))
+	slzgrow(&a.dig, 1 + a.dig.len + off castto(size))
 	/* blit over the base values */
 	for var i = a.dig.len; i > off; i--
 		a.dig[i - 1] = a.dig[i - 1 - off]
