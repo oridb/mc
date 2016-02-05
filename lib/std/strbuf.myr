@@ -101,7 +101,7 @@ const ensure = {sb, len
 		-> false
 	;;
 	while sb.buf.len < sb.len + len
-		sb.buf = slgrow(sb.buf, 2*sb.buf.len)
+		slgrow(&sb.buf, 2*sb.buf.len)
 	;;
 	-> true
 }

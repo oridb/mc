@@ -14,7 +14,7 @@ generic slpush = {sl, elt
 	a bucket boundary, this is effectively
 	growing the slice by powers of two.
 	*/
-	sl# = slgrow(sl#, sl#.len + 1)
+	slgrow(sl, sl#.len + 1)
 	sl#[sl#.len - 1] = elt
 	-> sl#
 }

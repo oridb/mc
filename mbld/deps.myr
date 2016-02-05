@@ -173,7 +173,7 @@ const srcdeps = {b, ds, g, path, obj, usefile
 			addusedep(b, ds, g, path, l, lnum)
 		;;
 	;;
-	ds.depstk = std.slgrow(ds.depstk, ds.depstk.len - 1)
+	std.slgrow(&ds.depstk, ds.depstk.len - 1)
 	std.htput(g.seen, path, false)
 	std.htput(g.done, path, true)
 }

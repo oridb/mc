@@ -11,7 +11,7 @@ generic slput = {sl, idx, elt
 	var len
 
 	len = sl.len
-	sl = slgrow(sl, sl.len + 1)
+	slgrow(&sl, sl.len + 1)
 	for i = len - 1; i >= idx; i--
 		sl[i + 1] = sl[i]
 	;;

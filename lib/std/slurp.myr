@@ -39,7 +39,7 @@ const fslurp = {fd
 			len += n
 			if len + 2*n >= bufsz
 				bufsz *= 2
-				buf = slgrow(buf, bufsz)
+				slgrow(&buf, bufsz)
 			;;
 		| `Fail e:
 			slfree(buf)

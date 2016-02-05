@@ -6,7 +6,7 @@ const main = {
 
 	sl = std.slalloc(42)
 	sl[0] = 12
-	sl = std.slgrow(sl, 123)
+	std.slgrow(&sl, 123)
 	sl[122] = 30
 	std.exit(sl[0] + sl[122])
 }

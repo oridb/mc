@@ -728,7 +728,7 @@ const trim = {a
 			break
 		;;
 	;;
-	a.dig = slgrow(a.dig, i)
+	slgrow(&a.dig, i)
 	if i == 0
 		a.sign = 0
 	elif a.sign == 0

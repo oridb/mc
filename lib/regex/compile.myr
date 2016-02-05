@@ -352,7 +352,7 @@ const genchar = {re, c
 /* appends an instructon to an re program */
 const append = {re, insn
 	if re.proglen == re.prog.len
-		re.prog = std.slgrow(re.prog, std.max(1, 2*re.proglen))
+		std.slgrow(&re.prog, std.max(1, 2*re.proglen))
 	;;
 	re.prog[re.proglen] = insn
 	re.proglen++

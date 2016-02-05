@@ -9,6 +9,6 @@ generic slpop = {sl
 	var elt
 
 	elt = sl[sl.len - 1]
-	sl = slgrow(sl, sl.len - 1)
+	slgrow(&sl, sl.len - 1)
 	-> (elt, sl)
 }

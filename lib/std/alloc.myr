@@ -33,7 +33,7 @@ pkg std =
 
 	generic slalloc	: (len : size	-> @a[:])
 	generic slzalloc	: (len : size	-> @a[:])
-	generic slgrow	: (sl : @a[:], len : size	-> @a[:])
+	generic slgrow	: (sl : @a[:]#, len : size	-> @a[:])
 	generic slzgrow	: (sl : @a[:]#, len : size	-> @a[:])
 	generic slfree	: (sl : @a[:]	-> void)
 
@@ -163,18 +163,19 @@ generic slfree	 = {sl
 }
 
 /* Grows a slice */
-generic slgrow = {sl : @a[:], len
+generic slgrow = {sl : @a[:]#, len
 	var cap
 	var new
 	var n
 
 	/* if the slice doesn't need a bigger bucket, we don't need to realloc. */
 	cap = 0
-	if sl castto(byte#) != Zsliceptr
-		cap = slcap(sl castto(byte#))
+	if sl# castto(byte#) != Zsliceptr
+		cap = slcap(sl# castto(byte#))
 	;;
 	if cap >= allocsz(len*sizeof(@a))
-		-> (sl castto(@a#))[:len]
+		sl# = (sl# castto(@a#))[:len]
+		-> sl#
 	;;
 
 	/* grow in factors of 1.5 */
@@ -184,14 +185,15 @@ generic slgrow = {sl : @a[:], len
 	;;
 
 	new = slalloc(cap)
-	n = min(len, sl.len)
+	n = min(len, sl#.len)
 	for var i = 0; i < n; i++
-		new[i] = sl[i]
+		new[i] = sl#[i]
 	;;
-	if sl.len > 0
-		slfree(sl)
+	if sl#.len > 0
+		slfree(sl#)
 	;;
-	-> new[:len]
+	sl# = new[:len]
+	-> sl#
 }
 
 /* Grows a slice, filling new entries with zero bytes */
@@ -200,7 +202,7 @@ generic slzgrow = {sl : @a[:]#, len
 	var base
 
 	oldlen = sl#.len
-	sl# = slgrow(sl#, len)
+	slgrow(sl, len)
 	base = sl# castto(byte#) castto(intptr)
 	if oldlen < len
 		memfill(sl#[oldlen:] castto(byte#), 0, (len - oldlen)*sizeof(@a))
