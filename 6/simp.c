@@ -295,7 +295,7 @@ static void cjmp(Simp *s, Node *cond, Node *iftrue, Node *iffalse)
 static Node *slicelen(Simp *s, Node *sl)
 {
 	/* *(&sl + sizeof(size_t)) */
-	return load(addk(addr(s, sl, tyintptr), Ptrsz));
+	return load(addk(addr(s, rval(s, sl, NULL), tyintptr), Ptrsz));
 }
 
 Node *loadvar(Simp *s, Node *n, Node *dst)

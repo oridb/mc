@@ -154,3 +154,4 @@ F badop
 B voideffect	P	pass
 B foroptexpr	P	pass
 B bounds	E	134
+B rvaldotlen	P	pass
