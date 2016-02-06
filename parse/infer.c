@@ -359,10 +359,10 @@ static Type *tyfreshen(Inferstate *st, Tysubst *subst, Type *t)
 	tybind(st, t);
 	if (!subst) {
 		subst = mksubst();
-		t = tyspecialize(t, subst, st->delayed);
+		t = tyspecialize(t, subst, st->delayed, st->seqbase);
 		substfree(subst);
 	} else {
-		t = tyspecialize(t, subst, st->delayed);
+		t = tyspecialize(t, subst, st->delayed, st->seqbase);
 	}
 	tyunbind(st, t);
 	if (debugopt['u']) {
@@ -1695,7 +1695,7 @@ static void specializeimpl(Inferstate *st, Node *n)
 		substput(subst, t->param, n->impl.type);
 		for (j = 0; j < t->naux; j++)
 			substput(subst, t->aux[j], n->impl.aux[j]);
-		ty = tyspecialize(type(st, proto), subst, st->delayed);
+		ty = tyspecialize(type(st, proto), subst, st->delayed, NULL);
 		substfree(subst);
 
 		inferdecl(st, dcl);

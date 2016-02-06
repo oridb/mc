@@ -25,6 +25,13 @@ pkg std =
 	generic htgetv	: (ht : htab(@k, @v)#, k : @k, fallback : @v-> @v)
 	generic hthas	: (ht : htab(@k, @v)#, k : @k -> bool)
 	generic htkeys	: (ht : htab(@k, @v)# -> @k[:])
+
+	generic htbykeyvals	: (ht : htab(@k, @v)# -> htkviter(@k, @v))
+	impl iterable htkviter(@k, @v) -> (@k, @v)
+	type htkviter(@k, @v) = struct
+		ht	: std.htab(@k, @v)#
+		idx	: size
+	;;
 ;;
 
 const Initsz = 32
@@ -202,3 +209,29 @@ generic htkeys = {ht
 	-> keys
 }
 
+generic htbykeyvals = {ht
+	-> [.ht = ht, .idx = 0]
+}
+
+impl iterable htkviter(@k, @v) -> (@k, @v) =
+	__iternext__ = {itp, valp
+		var i, ht
+
+		ht = itp.ht
+		for i = itp.idx; i < ht.keys.len; i++
+			if ht.hashes[i] != 0 && !ht.dead[i]
+				break
+			;;
+		;;
+		itp.idx = i
+		if i < ht.hashes.len
+			valp# = (ht.keys[i], ht.vals[i])
+			-> true
+		else
+			-> false
+		;;
+	}
+
+	__iterfin__ = {itp, valp
+	}
+;;

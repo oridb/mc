@@ -82,9 +82,10 @@ void addtraits(Type *t, Bitset *traits)
  * parameters (type schemes in most literature)
  * replaced with type variables that we can unify
  * against */
-Type *tyspecialize(Type *orig, Tysubst *tsmap, Htab *delayed)
+Type *tyspecialize(Type *orig, Tysubst *tsmap, Htab *delayed, Htab *trbase)
 {
-	Type *t, *ret, *tmp, **arg, *var;
+	Type *t, *ret, *tmp, *var, *base;
+	Type **arg;
 	size_t i, narg;
 
 	t = tysearch(orig);
@@ -108,8 +109,8 @@ Type *tyspecialize(Type *orig, Tysubst *tsmap, Htab *delayed)
 				substput(tsmap, t->gparam[i], orig->arg[i]);
 		}
 		for (i = 0; i < t->ngparam; i++)
-			lappend(&arg, &narg, tyspecialize(t->gparam[i], tsmap, delayed));
-		ret = mktyname(t->loc, t->name, tyspecialize(t->sub[0], tsmap, delayed));
+			lappend(&arg, &narg, tyspecialize(t->gparam[i], tsmap, delayed, trbase));
+		ret = mktyname(t->loc, t->name, tyspecialize(t->sub[0], tsmap, delayed, trbase));
 		if (orig->type == Tyunres)
 			substpop(tsmap);
 		ret->issynth = 1;
@@ -123,11 +124,15 @@ Type *tyspecialize(Type *orig, Tysubst *tsmap, Htab *delayed)
 		var = mktyvar(t->loc);
 		substput(tsmap, t, var);
 		for (i = 0; i < t->narg; i++)
-			lappend(&arg, &narg, tyspecialize(t->arg[i], tsmap, delayed));
-		ret = mktyname(t->loc, t->name, tyspecialize(t->sub[0], tsmap, delayed));
+			lappend(&arg, &narg, tyspecialize(t->arg[i], tsmap, delayed, trbase));
+		ret = mktyname(t->loc, t->name, tyspecialize(t->sub[0], tsmap, delayed, trbase));
 		ret->traits = bsdup(t->traits);
 		ret->arg = arg;
 		ret->narg = narg;
+		if (trbase && hthas(trbase, orig) && !hthas(trbase, ret)) {
+			base = htget(trbase, orig);
+			htput(trbase, ret, tyspecialize(base, tsmap, delayed, trbase));
+		}
 		tytab[var->tid] = ret;
 		break;
 	case Tystruct:
@@ -144,7 +149,7 @@ Type *tyspecialize(Type *orig, Tysubst *tsmap, Htab *delayed)
 		for (i = 0; i < t->nmemb; i++) {
 			tmp = NULL;
 			if (ret->udecls[i]->etype)
-				tmp = tyspecialize(t->udecls[i]->etype, tsmap, delayed);
+				tmp = tyspecialize(t->udecls[i]->etype, tsmap, delayed, trbase);
 			ret->udecls[i] = mkucon(t->loc, t->udecls[i]->name, ret, tmp);
 			ret->udecls[i]->utype = ret;
 			ret->udecls[i]->id = i;
@@ -155,7 +160,7 @@ Type *tyspecialize(Type *orig, Tysubst *tsmap, Htab *delayed)
 		ret = t;
 		if (delayed && hthas(delayed, t)) {
 			tmp = htget(delayed, t);
-			htput(delayed, ret, tyspecialize(tmp, tsmap, delayed));
+			htput(delayed, ret, tyspecialize(tmp, tsmap, delayed, trbase));
 		} 
 		break;
 	default:
@@ -163,7 +168,7 @@ Type *tyspecialize(Type *orig, Tysubst *tsmap, Htab *delayed)
 			ret = tydup(t);
 			substput(tsmap, t, ret);
 			for (i = 0; i < t->nsub; i++)
-				ret->sub[i] = tyspecialize(t->sub[i], tsmap, delayed);
+				ret->sub[i] = tyspecialize(t->sub[i], tsmap, delayed, trbase);
 		} else {
 			ret = t;
 		}
@@ -178,7 +183,7 @@ Type *tyspecialize(Type *orig, Tysubst *tsmap, Htab *delayed)
 static Type *tysubst(Type *t, Tysubst *tsmap)
 {
 	if (hasparams(t))
-		return tyspecialize(t, tsmap, NULL);
+		return tyspecialize(t, tsmap, NULL, NULL);
 	else
 		return t;
 }

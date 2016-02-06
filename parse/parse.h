@@ -628,7 +628,7 @@ Type *substget(Tysubst *subst, Type *from);
 void substpush(Tysubst *subst);
 void substpop(Tysubst *subst);
 Node *specializedcl(Node *n, Type *to, Node **name);
-Type *tyspecialize(Type *t, Tysubst *tymap, Htab *delayed);
+Type *tyspecialize(Type *t, Tysubst *tymap, Htab *delayed, Htab *tybase);
 Node *genericname(Node *n, Type *t);
 void geninit(Node *file);
 
