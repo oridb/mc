@@ -499,7 +499,7 @@ int matchquality(Type *pat, Type *to)
 		if (pat->narg != to->narg)
 			return -1;
 		for (i = 0; i < pat->narg; i++) {
-			q = matchquality(pat->sub[i], to->sub[i]);
+			q = matchquality(pat->arg[i], to->arg[i]);
 			if (q < 0)
 				return -1;
 			match += q;
