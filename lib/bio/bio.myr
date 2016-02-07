@@ -185,7 +185,7 @@ reads as much into 'dst' as possible, up to the size of 'dst',
 returning the number of bytes read.
 */
 const read = {f, dst
-	var count : std.size
+	var count, cap : std.size
 	var d : byte[:]
 
 	/* Clear the error state so we can retry */
@@ -204,10 +204,11 @@ const read = {f, dst
 	;;
 	std.assert(f.mode & Rd != 0, "File is not in read mode")
 	/* 
-	 * small reads should try to fill, so we don't have to make a
-	 * syscall for every read
-	 */
-	if dst.len < Small
+	small reads should try to fill, so we don't have to make a
+	syscall for every read
+	*/
+	cap = f.rend - f.rstart
+	if dst.len < Small && cap < dst.len
 		fill(f, dst.len)
 	;;
 	/* Read as much as we can from the buffer */
@@ -562,18 +563,10 @@ in buffering n bytes, false if we fail.
 */
 const ensureread = {f, n
 	var held
-	var cap
 
 	std.assert(n < f.rbuf.len, "ensured read capacity > buffer size")
 	held = f.rend - f.rstart
 	if n > held
-		/* if we need to shift the slice down to the start, do it */
-		cap = f.rend - f.rstart
-		if n > (cap + held)
-			std.slcp(f.rbuf[:cap], f.rbuf[f.rstart:f.rend])
-			f.rstart = 0
-			f.rend = cap
-		;;
 		match fill(f, n)
 		| `Eof:	-> `Eof
 		| `Err e:	-> `Err e
@@ -616,12 +609,20 @@ Reads as many bytes as possible from the file into
 the read buffer.
 */
 const fill = {f, min
-	var count
+	var count, cap
 
 	count = 0
 	/* Clear the error state so we can retry */
 	if f.lasterr != 0
 		-> `Err geterr(f)
+	;;
+
+	/* if we need to shift the slice down to the start, do it */
+	cap = f.rend - f.rstart
+	if min > cap
+		std.slcp(f.rbuf[:cap], f.rbuf[f.rstart:f.rend])
+		f.rstart = 0
+		f.rend = cap
 	;;
 	while count < min
 		/*
