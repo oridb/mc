@@ -25,15 +25,11 @@ const load = {path
 }
 
 const free = {ini
-	var kl
-
-	kl = std.htkeys(ini.elts)
-	for (sect, key) in kl
-		std.slfree(std.htgetv(ini.elts, (sect, key), ""))
+	for ((sect, key), val) in std.htbykeyvals(ini.elts)
+		std.slfree(val)
 		std.slfree(sect)
 		std.slfree(key)
 	;;
-	std.slfree(kl)
 	std.htfree(ini.elts)
 	std.free(ini)
 }
