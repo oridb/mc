@@ -821,9 +821,10 @@ static void protomap(Trait *tr, Type *ty, Node *dcl)
 		protoname = declname(proto);
 		len = strlen(protoname);
 		p = strstr(dclname, protoname);
-		if (!p || p[len] != '$') {
+		if (!p || p[len] != '$')
 			continue;
-		}
+		if (hthas(proto->decl.impls, ty))
+			continue;
 		htput(proto->decl.impls, ty, dcl);
 		if (ty->type == Tygeneric || hasparams(ty)) {
 			lappend(&proto->decl.gimpl, &proto->decl.ngimpl, dcl);
