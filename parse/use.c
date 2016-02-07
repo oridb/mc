@@ -821,8 +821,10 @@ static void protomap(Trait *tr, Type *ty, Node *dcl)
 		protoname = declname(proto);
 		len = strlen(protoname);
 		p = strstr(dclname, protoname);
-		if (p && p[len] == '$')
-			htput(proto->decl.__impls, ty, dcl);
+		if (!p || p[len] != '$') {
+			continue;
+		}
+		htput(proto->decl.impls, ty, dcl);
 		if (ty->type == Tygeneric || hasparams(ty)) {
 			lappend(&proto->decl.gimpl, &proto->decl.ngimpl, dcl);
 			lappend(&proto->decl.gtype, &proto->decl.ngtype, ty);
@@ -954,7 +956,7 @@ foundextlib:
 			  puttrait(s, tr->name, tr);
 			  for (i = 0; i < tr->nfuncs; i++) {
 				  putdcl(s, tr->funcs[i]);
-				  tr->funcs[i]->decl.__impls = mkht(tyhash, tyeq);
+				  tr->funcs[i]->decl.impls = mkht(tyhash, tyeq);
 			  }
 			  break;
 		case 'T':

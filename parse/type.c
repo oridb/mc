@@ -856,7 +856,7 @@ void iterableinit(Stab *st, Trait *tr)
 
 	func = mkdecl(Zloc, mkname(Zloc, "__iternext__"), ty);
 	func->decl.trait = tr;
-	func->decl.__impls = mkht(tyhash, tyeq); 
+	func->decl.impls = mkht(tyhash, tyeq); 
 	func->decl.isgeneric = 1;
 	func->decl.isconst = 1;
 	func->decl.isglobl = 1;
@@ -876,7 +876,7 @@ void iterableinit(Stab *st, Trait *tr)
 
 	func = mkdecl(Zloc, mkname(Zloc, "__iterfin__"), ty);
 	func->decl.trait = tr;
-	func->decl.__impls = mkht(tyhash, tyeq); 
+	func->decl.impls = mkht(tyhash, tyeq); 
 	func->decl.isgeneric = 1;
 	func->decl.isconst = 1;
 	func->decl.isglobl = 1;

@@ -211,6 +211,28 @@ static void addspecialization(Inferstate *st, Node *n, Stab *stab)
 	lappend(&st->genericdecls, &st->ngenericdecls, dcl);
 }
 
+static void additerspecializations(Inferstate *st, Node *n, Stab *stab)
+{
+	Trait *tr;
+	Type *ty;
+	size_t i;
+
+	tr = traittab[Tciter];
+	ty = exprtype(n->iterstmt.seq);
+	if (!ty->traits || !bshas(ty->traits, Tciter))
+		return;
+	if (ty->type == Tyslice || ty->type == Tyarray || ty->type == Typtr)
+		return;
+	for (i = 0; i < tr->nfuncs; i++) {
+		ty = exprtype(n->iterstmt.seq);
+		if (hthas(tr->funcs[i]->decl.impls, ty))
+			continue;
+		lappend(&st->specializationscope, &st->nspecializationscope, stab);
+		lappend(&st->specializations, &st->nspecializations, n);
+		lappend(&st->genericdecls, &st->ngenericdecls, tr->funcs[i]);
+	}
+}
+
 static void delayedcheck(Inferstate *st, Node *n, Stab *s)
 {
 	lappend(&st->postcheck, &st->npostcheck, n);
@@ -853,7 +875,6 @@ static void structunify(Inferstate *st, Node *ctx, Type *u, Type *v)
 			vd = namestr(v->sdecls[j]->decl.name);
 			if (strcmp(ud, vd) == 0) {
 				found = 1;
-				//printf("unifying member %s and %s\n", tystr(type(st, u->sdecls[i])), tystr(type(st, v->sdecls[j])));
 				unify(st, ctx, type(st, u->sdecls[i]), type(st, v->sdecls[j]));
 			}
 		}
@@ -1710,7 +1731,7 @@ static void specializeimpl(Inferstate *st, Node *n)
 				fname(sym->loc), lnum(sym->loc));
 		dcl->decl.name = name;
 		putdcl(file->file.globls, dcl);
-		htput(proto->decl.__impls, n->impl.type, dcl);
+		htput(proto->decl.impls, n->impl.type, dcl);
 		dcl->decl.isconst = 1;
 		if (n->impl.type->type == Tygeneric || hasparams(n->impl.type)) {
 			dcl->decl.isgeneric = 1;
@@ -1908,7 +1929,7 @@ static void infernode(Inferstate *st, Node **np, Type *ret, int *sawret)
 static Type *tyfix(Inferstate *st, Node *ctx, Type *orig, int noerr)
 {
 	static Type *tyint, *tyflt;
-	Type *t, *delayed;
+	Type *t, *delayed, *base;
 	char *from, *to;
 	size_t i;
 	char buf[1024];
@@ -1919,6 +1940,7 @@ static Type *tyfix(Inferstate *st, Node *ctx, Type *orig, int noerr)
 		tyflt = mktype(Zloc, Tyflt64);
 
 	t = tysearch(orig);
+	base = htget(st->seqbase, orig);
 	if (orig->type == Tyvar && hthas(st->delayed, orig)) {
 		delayed = htget(st->delayed, orig);
 		if (t->type == Tyvar)
@@ -1970,7 +1992,8 @@ static Type *tyfix(Inferstate *st, Node *ctx, Type *orig, int noerr)
 		free(from);
 		free(to);
 	}
-
+	if (base)
+		htput(st->seqbase, t, base);
 	return t;
 }
 
@@ -2080,7 +2103,7 @@ static void checkvar(Inferstate *st, Node *n)
 	ty = NULL;
 	dcl = NULL;
 	if (n->expr.param)
-		dcl = htget(proto->decl.__impls, tf(st, n->expr.param));
+		dcl = htget(proto->decl.impls, tf(st, n->expr.param));
 	if (dcl)
 		ty = dcl->decl.type;
 	if (!ty)
@@ -2255,6 +2278,7 @@ static void typesub(Inferstate *st, Node *n, int noerr)
 		typesub(st, n->iterstmt.elt, noerr);
 		typesub(st, n->iterstmt.seq, noerr);
 		typesub(st, n->iterstmt.body, noerr);
+		additerspecializations(st, n, curstab());
 		break;
 	case Nmatchstmt:
 		typesub(st, n->matchstmt.val, noerr);
@@ -2514,13 +2538,31 @@ void tagexports(Node *file, int hidelocal)
 
 }
 
+static Type *itertype(Inferstate *st, Node *n, Type *ret)
+{
+	Type *it, *val, *itp, *valp, *fn;
+
+	it = exprtype(n);
+	itp = mktyptr(n->loc, it);
+	val = basetype(st, it);
+	if (!val)
+		die("FAIL! %s", tystr(it));
+	valp = mktyptr(n->loc, val);
+	fn = mktyfunc(n->loc, NULL, 0, ret);
+	lappend(&fn->sub, &fn->nsub, itp);
+	lappend(&fn->sub, &fn->nsub, valp);
+	return fn;
+}
+
 /* Take generics and build new versions of them
  * with the type parameters replaced with the
  * specialized types */
 static void specialize(Inferstate *st, Node *f)
 {
-	Node *d, *name;
+	Node *d, *n, *name;
+	Type *ty, *it;
 	size_t i;
+	Trait *tr;
 
 	for (i = 0; i < st->nimpldecl; i++) {
 		d = st->impldecl[i];
@@ -2530,13 +2572,30 @@ static void specialize(Inferstate *st, Node *f)
 
 	for (i = 0; i < st->nspecializations; i++) {
 		pushstab(st->specializationscope[i]);
-		d = specializedcl(st->genericdecls[i], st->specializations[i]->expr.type, &name);
-		st->specializations[i]->expr.args[0] = name;
-		st->specializations[i]->expr.did = d->decl.did;
+		n = st->specializations[i];
+		if (n->type == Nexpr) {
+			d = specializedcl(st->genericdecls[i], n->expr.type, &name);
+			n->expr.args[0] = name;
+			n->expr.did = d->decl.did;
 
-		/* we need to sub in default types in the specialization, so call
-		 * typesub on the specialized function */
-		typesub(st, d, 0);
+			/* we need to sub in default types in the specialization, so call
+			 * typesub on the specialized function */
+			typesub(st, d, 0);
+		} else if (n->type == Niterstmt) {
+			tr = traittab[Tciter];
+			assert(tr->nfuncs == 2);
+			ty = exprtype(n->iterstmt.seq);
+
+			it = itertype(st, n->iterstmt.seq, mktype(n->loc, Tybool));
+			d = specializedcl(tr->funcs[0], it, &name);
+			htput(tr->funcs[0]->decl.impls, ty, d);
+
+			it = itertype(st, n->iterstmt.seq, mktype(n->loc, Tyvoid));
+			d = specializedcl(tr->funcs[1], it, &name);
+			htput(tr->funcs[1]->decl.impls, ty, d);
+		} else {
+			die("unknown node for specialization\n");
+		}
 		popstab();
 	}
 }

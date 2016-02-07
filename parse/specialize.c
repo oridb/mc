@@ -116,6 +116,7 @@ Type *tyspecialize(Type *orig, Tysubst *tsmap, Htab *delayed, Htab *trbase)
 		ret->issynth = 1;
 		ret->arg = arg;
 		ret->narg = narg;
+		ret->traits = bsdup(t->traits);
 		tytab[var->tid] = ret;
 		break;
 	case Tyname:
@@ -543,6 +544,8 @@ Node *bestimpl(Node *n, Type *to)
 	int score;
 	int best;
 
+	if (hthas(n->decl.impls, to))
+		return htget(n->decl.impls, to);
 	ambig = NULL;
 	nambig = 0;
 	best = -1;

@@ -328,7 +328,7 @@ struct Node {
 			 impl.
 			*/
 			Trait *trait;
-			Htab *__impls;
+			Htab *impls;
 			Node **gimpl; /* generic impls of this trait */
 			size_t ngimpl;
 			Node **gtype; /* generic impls of this trait */

@@ -399,7 +399,7 @@ traitdef: Ttrait Tident generictype optauxtypes { /* trait prototype */
 			0);
 		for (i = 0; i < $6.nn; i++) {
 			$6.nl[i]->decl.trait = $$;
-			$6.nl[i]->decl.__impls = mkht(tyhash, tyeq); 
+			$6.nl[i]->decl.impls = mkht(tyhash, tyeq); 
 			$6.nl[i]->decl.isgeneric = 1;
 		}
 	}
