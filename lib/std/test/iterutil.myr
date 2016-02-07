@@ -1,0 +1,19 @@
+use std
+
+const main = {
+	var n
+
+	n = 0
+	for (x, i) in std.byenum([0,2,4,6,8][:])
+		std.assert(x == n, "invalid enum idx")
+		std.assert(i == n*2, "invalid enum val")
+		n++
+	;;
+
+	n = 0
+	for (a, b) in std.byzip([0,2,4,6,8][:], [2,4][:])
+		std.assert(a == n*2, "invalid val from a")
+		std.assert(b == n*2 + 2, "invalid val from b")
+		n++
+	;;
+}

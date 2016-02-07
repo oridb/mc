@@ -33,6 +33,7 @@ lib std {inc=.} =
 	intparse.myr
 	introspect.myr
 	ipparse.myr
+	iterutil.myr
 	mk.myr
 	mkpath.myr
 	mktemp.myr

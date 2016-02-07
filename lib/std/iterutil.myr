@@ -1,0 +1,61 @@
+use "types"
+
+pkg std =
+	type zipiter(@a, @b) = struct
+		s1	: @a[:]
+		s2	: @b[:]
+	;;
+
+	type enumiter(@a) = struct
+		s	: @a[:]
+		idx	: size
+	;;
+
+	impl iterable zipiter(@a, @b) -> (@a, @b)
+	impl iterable enumiter(@a) -> (size, @a)
+
+	generic byzip	: (a : @a[:], b : @b[:]	 -> zipiter(@a, @b))
+	generic byenum	: (a : @a[:] -> enumiter(@a))
+;;
+
+generic byzip = {a, b
+	-> [.s1 = a, .s2 = b]
+}
+
+impl iterable zipiter(@a, @b) -> (@a, @b) =
+	__iternext__ = {itp, valp
+		if itp.s1.len > 0 && itp.s2.len > 0
+			valp# = (itp.s1[0], itp.s2[0])
+			itp.s1 = itp.s1[1:]
+			itp.s2 = itp.s2[1:]
+			-> true
+		else
+			-> false
+		;;
+	}
+
+	__iterfin__ = {itp, valp
+	}
+;;
+
+
+generic byenum = {a
+	-> [.s = a, .idx = 0]
+}
+
+impl iterable enumiter(@a) -> (size, @b) =
+	__iternext__ = {itp, valp
+		if itp.s.len > itp.idx
+			valp# = (itp.idx, itp.s[itp.idx])
+			itp.idx++
+			-> true
+		else
+			-> false
+		;;
+	}
+
+	__iterfin__ = {itp, valp
+	}
+;;
+
+
