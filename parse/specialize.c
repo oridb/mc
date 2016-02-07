@@ -570,17 +570,17 @@ Node *bestimpl(Node *n, Type *to)
  * duplicate of it with type 'to'. It also generates
  * a name for this specialized node, and returns it in '*name'.
  */
-Node *specializedcl(Node *g, Type *to, Node **name)
+Node *specializedcl(Node *gnode, Type *to, Node **name)
 {
 	extern int stabstkoff;
 	Tysubst *tsmap;
-	Node *d, *n;
+	Node *g, *d, *n;
 	Stab *st;
 
-	assert(g->type == Ndecl);
-	assert(g->decl.isgeneric);
+	assert(gnode->type == Ndecl);
+	assert(gnode->decl.isgeneric);
 
-	n = genericname(g, to);
+	n = genericname(gnode, to);
 	*name = n;
 	if (n->name.ns)
 		st = getns(file, n->name.ns);
@@ -591,10 +591,12 @@ Node *specializedcl(Node *g, Type *to, Node **name)
 	d = getdcl(st, n);
 	if (d)
 		return d;
-	if (g->decl.trait) {
-		g = bestimpl(g, to);
+	if (gnode->decl.trait) {
+		g = bestimpl(gnode, to);
 		if (!g)
-			fatal(g, "no trait implemented for for %s:%s", namestr(g->decl.name), tystr(to));
+			fatal(gnode, "no trait implemented for for %s:%s", namestr(gnode->decl.name), tystr(to));
+	} else {
+		g = gnode;
 	}
 	if (debugopt['S'])
 		printf("depth[%d] specializing [%d]%s => %s\n", stabstkoff, g->loc.line,
