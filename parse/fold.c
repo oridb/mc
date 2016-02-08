@@ -182,9 +182,12 @@ Node *fold(Node *n, int foldvar)
 			r = val(n->loc, a / b, exprtype(n));
 		break;
 	case Omod:
-		/* x%1 = x */
+		/* x%0 = error */
 		if (isintval(args[1], 0))
-			r = args[0];
+			fatal(args[1], "division by zero");
+		/* x%1 = 0 */
+		if (isintval(args[1], 1))
+			r = val(n->loc, 0, exprtype(n));
 		if (getintlit(args[0], &a) && getintlit(args[1], &b))
 			r = val(n->loc, a % b, exprtype(n));
 		break;
