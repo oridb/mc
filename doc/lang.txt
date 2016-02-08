@@ -205,7 +205,7 @@ TABLE OF CONTENTS:
 
             eg: true, false
 
-        Funciton literals describe a function. They begin with a '{',
+        Function literals describe a function. They begin with a '{',
         followed by a newline-terminated argument list, followed by a
         body and closing '}'. They will be described in more detail
         later in this manual.
@@ -753,7 +753,7 @@ TABLE OF CONTENTS:
             const main = {
                 var x = 123
                 var y = 456
-                std.put("The max of %i, %i is %i\n", x, y, max(x, y))
+                std.put("The max of %i, %i is %i\n", x, y, intmax(x, y))
             }
 
         TODO: DESCRIBE CONSTRUCTS.
