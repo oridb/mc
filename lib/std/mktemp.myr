@@ -14,18 +14,26 @@ use "types"
 
 pkg std =
 	const mktemp	: (base : byte[:], opt : fdopt, mode : int64 -> std.result((fd, byte[:]), errno))
+	const mktempat	: (dir : byte[:], base : byte[:], opt : fdopt, mode : int64 -> std.result((fd, byte[:]), errno))
 	const mktemppath	: (base : byte[:] -> byte[:])
 ;;
 
 const Retries = 100
 
 const mktemp = {base, opt, mode
-	var tmpdir, path
+	var tmpdir
 
 	match std.getenv("TMPDIR")
 	| `std.Some d:	tmpdir = d
 	| `std.None:	tmpdir = "/tmp"
 	;;
+	
+	-> mktempat(tmpdir, base, opt, mode)
+	
+}
+
+const mktempat = {tmpdir, base, opt, mode
+	var path
 
 	for var i = 0; i < Retries; i++
 		path = randpath(tmpdir, base)
