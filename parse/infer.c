@@ -390,9 +390,9 @@ static Type *tyfreshen(Inferstate *st, Tysubst *subst, Type *t)
 	if (debugopt['u']) {
 		to = tystr(t);
 		indentf(st->indentdepth, "Freshen %s => %s\n", from, to);
-		free(from);
 		free(to);
 	}
+	free(from);
 
 	return t;
 }
