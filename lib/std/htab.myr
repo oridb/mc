@@ -221,21 +221,16 @@ impl iterable htkviter(@k, @v) -> (@k, @v) =
 
 		ht = itp.ht
 		for i = itp.idx; i < ht.keys.len; i++
-			std.put("i: {}, ht.hashes[{}]: {}, ht.keys[{}]: {}, ht.dead[{}]: {}\n", \
-				i, i, ht.hashes[i], i, ht.keys[i], i, ht.dead[i])
 			if ht.hashes[i] != 0 && !ht.dead[i]
 				itp.idx = i + 1
 				valp# = (ht.keys[i], ht.vals[i])
-				std.put("....returning true\n")
 				-> true
 			;;
 		;;
-		std.put("returning false\n")
 		itp.idx = i
 		-> false
 	}
 
 	__iterfin__ = {itp, valp -> void
-		std.put("fin\n")
 	}
 ;;
