@@ -476,12 +476,13 @@ const strfmt = {sb, str, params
 		| _:	std.die("unreachable")
 		;;
 	;;
-	iassert(!raw || !esc == false, "raw and excaped strings conflict\n")
 	iassert(p >= 0, "pad must be >= 0")
 	std.slfree(opts)
 	if raw
 		for b in str
-			sbputs(sb, "\\x")
+			if esc
+				sbputs(sb, "\\x")
+			;;
 			intfmt(sb, [.padto=2, .padfill='0', .base=16], false, b)
 		;;
 	elif esc
