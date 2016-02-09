@@ -351,7 +351,7 @@ TABLE OF CONTENTS:
                 std.put("Matched const value pat\n")
             | `Val a:
                 std.put("Matched pattern with capture\n")
-                std.put("Captured value: a = %i\n", a)
+                std.put("Captured value: a = {}\n", a)
             | a
                 std.put("A top level bind matches anything.")
             | `Val 111
@@ -753,7 +753,7 @@ TABLE OF CONTENTS:
             const main = {
                 var x = 123
                 var y = 456
-                std.put("The max of %i, %i is %i\n", x, y, intmax(x, y))
+                std.put("The max of {}, {} is {}\n", x, y, intmax(x, y))
             }
 
         TODO: DESCRIBE CONSTRUCTS.
@@ -770,7 +770,7 @@ TABLE OF CONTENTS:
             }
 
             const main = {
-                std.put("The inner product is %i\n", innerprod([1,2,3], [4,5,6]))
+                std.put("The inner product is {}\n", innerprod([1,2,3], [4,5,6]))
             }
 
         TODO: DESCRIBE CONSTRUCTS.
