@@ -641,6 +641,7 @@ pkg sys =
 	const open	: (path:byte[:], opts:fdopt -> fd)
 	const openmode	: (path:byte[:], opts:fdopt, mode:int64 -> fd)
 	const close	: (fd:fd -> int64)
+	const rename	: (from : byte[:], to : byte[:] -> int64)
 	const creat	: (path:byte[:], mode:int64 -> fd)
 	const unlink	: (path:byte[:] -> int)
 	const read	: (fd:fd, buf:byte[:] -> size)
@@ -787,6 +788,7 @@ const execve	= {cmd, args, env
 const open	= {path, opts;		-> syscall(Sysopen, cstring(path), a(opts), a(0o777)) castto(fd)}
 const openmode	= {path, opts, mode;	-> syscall(Sysopen, cstring(path), a(opts), a(mode)) castto(fd)}
 const close	= {fd;			-> syscall(Sysclose, a(fd))}
+const rename	= {from, to;		-> syscall(Sysrename, cstring(from), cstring(to))}
 const creat	= {path, mode;		-> openmode(path, Ocreat | Otrunc | Owronly, mode) castto(fd)}
 const unlink	= {path;		-> syscall(Sysunlink, cstring(path)) castto(int)}
 const read	= {fd, buf;		-> syscall(Sysread, a(fd), buf castto(byte#), a(buf.len)) castto(size)}
