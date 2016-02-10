@@ -1235,7 +1235,7 @@ generic charval = {c, base -> @a::(numeric,integral)
 		v =  (c - 'A' + 10) castto(@a::(integral,numeric))
 	;;
 
-	if v < 0 || v > (base castto(@a::(integral,numeric)))
+	if v < 0 || v >= (base castto(@a::(integral,numeric)))
 		-> -1
 	;;
 	-> v
