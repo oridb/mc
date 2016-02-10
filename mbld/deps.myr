@@ -364,21 +364,35 @@ const openlib = {lib, incs
 
 	for p in incs
 		path = std.pathjoin([p, lib][:])
+		if !std.fisreg(path)
+			std.slfree(path)
+			continue
+		;;
 		match  bio.open(path, bio.Rd)
-		| `std.Ok file:	-> file
-		| `std.Fail m:	/* nothing */
+		| `std.Ok file:
+			std.slfree(path)
+			-> file
+		| `std.Fail m:
+			std.fput(std.Err, "could not open {}: {}\n", path, m)
+			goto error
 		;;
 	;;
 	path = std.pathjoin([opt_instbase, config.Libpath, lib][:])
 	match  bio.open(path, bio.Rd)
-	| `std.Ok file:	-> file
+	| `std.Ok file:
+		std.slfree(path)
+		-> file
 	| `std.Fail m:	/* nothing */
 	;;
-	std.put("could not find library {} in search path:\n", lib)
+	std.fput(std.Err, "could not find library {}\n", lib)
+
+	:error
+	std.fput(std.Err, "search path is:\n")
 	for p in incs
-		std.put("\t{}\n", p)
+		std.fput(std.Err, "\t{}\n", p)
 	;;
-	std.fatal("\t{}\n", config.Libpath)
+	std.fput(std.Err, "\t{}\n", path)
+	std.exit(1)
 }
 
 /* pushes a dep into the dependency list */
