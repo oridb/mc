@@ -258,6 +258,8 @@ Cfg *mkcfg(Node *fn, Node **nl, size_t nn)
 			bsput(targ->pred, bb->id);
 		}
 	}
+        if (debugopt['C'])
+            dumpcfg(cfg, stdout);
 	trim(cfg);
 	return cfg;
 }

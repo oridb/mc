@@ -108,7 +108,9 @@ static Loc *varloc(Isel *s, Node *n)
 	} else if (hthas(s->stkoff, n)) {
 		off = ptoi(htget(s->stkoff, n));
 		l = locmem(-off, locphysreg(Rrbp), NULL, mode(n));
-	}  else {
+	} else if (stacknode(n)) {
+		assert(0);
+	} else {
 		l = htget(s->reglocs, n);
 		if (!l) {
 			l = locreg(mode(n));

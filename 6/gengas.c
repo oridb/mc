@@ -412,6 +412,7 @@ void gengas(Node *file, char *out)
 		case Nimpl:
 			break;
 		case Ndecl:
+			n = flattenfn(n);
 			simpglobl(n, globls, &fn, &nfn, &blob, &nblob);
 			break;
 		default:

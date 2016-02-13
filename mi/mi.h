@@ -47,3 +47,7 @@ void check(Cfg *cfg);
 /* pattern matching */
 void genmatch(Node *m, Node *val, Node ***out, size_t *nout);
 void genonematch(Node *pat, Node *val, Node *iftrue, Node *iffalse, Node ***out, size_t *nout, Node ***cap, size_t *ncap);
+
+/* tree flattening */
+Node *flattenfn(Node *dcl);
+int isconstfn(Node *n);

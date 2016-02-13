@@ -35,10 +35,6 @@ struct Simp {
 	int hasenv;
 	int isbigret;
 
-	/* pre/postinc handling */
-	Node **incqueue;
-	size_t nqueue;
-
 	/* break/continue handling */
 	Node **loopstep;
 	size_t nloopstep;
@@ -65,7 +61,7 @@ static Node *lval(Simp *s, Node *n);
 static Node *assign(Simp *s, Node *lhs, Node *rhs);
 static Node *assignat(Simp *s, Node *r, size_t off, Node *val);
 static Node *getcode(Simp *s, Node *n);
-static void simpcond(Simp *s, Node *n, Node *ltrue, Node *lfalse);
+//static void simpcond(Simp *s, Node *n, Node *ltrue, Node *lfalse);
 static void simpconstinit(Simp *s, Node *dcl);
 static Node *simpcast(Simp *s, Node *val, Type *to);
 static Node *simpslice(Simp *s, Node *n, Node *dst);
@@ -81,6 +77,7 @@ static void append(Simp *s, Node *n)
 {
 	if (debugopt['S'])
 		dump(n, stdout);
+        assert(n->type != Ndecl);
 	lappend(&s->stmts, &s->nstmts, n);
 }
 
@@ -332,275 +329,6 @@ static Node *seqlen(Simp *s, Node *n, Type *ty)
 	return r;
 }
 
-/* if foo; bar; else baz;;
- *      => cjmp (foo) :bar :baz */
-static void simpif(Simp *s, Node *n, Node *exit)
-{
-	Node *l1, *l2, *l3;
-	Node *iftrue, *iffalse;
-
-	l1 = genlbl(n->loc);
-	l2 = genlbl(n->loc);
-	if (exit)
-		l3 = exit;
-	else
-		l3 = genlbl(n->loc);
-
-	iftrue = n->ifstmt.iftrue;
-	iffalse = n->ifstmt.iffalse;
-
-	simpcond(s, n->ifstmt.cond, l1, l2);
-	simp(s, l1);
-	simp(s, iftrue);
-	jmp(s, l3);
-	simp(s, l2);
-	/* because lots of bunched up end labels are ugly,
-	 * coalesce them by handling 'elif'-like constructs
-	 * separately */
-	if (iffalse && iffalse->type == Nifstmt) {
-		simpif(s, iffalse, exit);
-	} else {
-		simp(s, iffalse);
-		jmp(s, l3);
-	}
-
-	if (!exit)
-		simp(s, l3);
-}
-
-/* init; while cond; body;; 
- *    => init
- *       jmp :cond
- *       :body
- *           ...body...
- *           ...step...
- *       :cond
- *           ...cond...
- *            cjmp (cond) :body :end
- *       :end
- */
-static void simploop(Simp *s, Node *n)
-{
-	Node *lbody;
-	Node *lend;
-	Node *lcond;
-	Node *lstep;
-
-	lbody = genlbl(n->loc);
-	lcond = genlbl(n->loc);
-	lstep = genlbl(n->loc);
-	lend = genlbl(n->loc);
-
-	lappend(&s->loopstep, &s->nloopstep, lstep);
-	lappend(&s->loopexit, &s->nloopexit, lend);
-
-	simp(s, n->loopstmt.init);  /* init */
-	jmp(s, lcond);              /* goto test */
-	simp(s, lbody);             /* body lbl */
-	simp(s, n->loopstmt.body);  /* body */
-	simp(s, lstep);             /* test lbl */
-	simp(s, n->loopstmt.step);  /* step */
-	simp(s, lcond);             /* test lbl */
-	simpcond(s, n->loopstmt.cond, lbody, lend);    /* repeat? */
-	simp(s, lend);              /* exit */
-
-	s->nloopstep--;
-	s->nloopexit--;
-}
-
-static void simploopmatch(Simp *s, Node *pat, Node *val, Node *ltrue, Node *lfalse)
-{
-	Node **cap, **out, *lload;
-	size_t i, ncap, nout;
-
-	/* pattern match */
-	lload = genlbl(pat->loc);
-	out = NULL;
-	nout = 0;
-	cap = NULL;
-	ncap = 0;
-	genonematch(pat, val, lload, lfalse, &out, &nout, &cap, &ncap);
-	for (i = 0; i < nout; i++)
-		simp(s, out[i]);
-	simp(s, lload);
-	for (i = 0; i < ncap; i++)
-		simp(s, cap[i]);
-	jmp(s, ltrue);
-}
-
-/* pat; seq; 
- *      body;;
- *
- * =>
- *      .pseudo = seqinit
- *      jmp :cond
- *      :body
- *           ...body...
- *      :step
- *           ...step...
- *      :cond
- *           ...cond...
- *           cjmp (cond) :match :end
- *      :match
- *           ...match...
- *           cjmp (match) :load :step
- *      :load
- *           matchval = load
- *      :end
- */
-static void simpidxiter(Simp *s, Node *n)
-{
-	Node *lbody, *lstep, *lcond, *lmatch, *lend;
-	Node *idx, *len, *dcl, *seq, *val, *done;
-	Node *zero;
-
-	lbody = genlbl(n->loc);
-	lstep = genlbl(n->loc);
-	lcond = genlbl(n->loc);
-	lmatch = genlbl(n->loc);
-	lend = genlbl(n->loc);
-
-	lappend(&s->loopstep, &s->nloopstep, lstep);
-	lappend(&s->loopexit, &s->nloopexit, lend);
-
-	zero = mkintlit(n->loc, 0);
-	zero->expr.type = tyintptr;
-
-	seq = rval(s, n->iterstmt.seq, NULL);
-	idx = gentemp(n->loc, tyintptr, &dcl);
-	declarelocal(s, dcl);
-
-	/* setup */
-	append(s, assign(s, idx, zero));
-	jmp(s, lcond);
-	simp(s, lbody);
-
-	/* body */
-	simp(s, n->iterstmt.body);
-	/* step */
-	simp(s, lstep);
-	simp(s, assign(s, idx, addk(idx, 1)));
-	/* condition */
-	simp(s, lcond);
-	len = seqlen(s, seq, tyintptr);
-	done = mkexpr(n->loc, Olt, idx, len, NULL);
-	cjmp(s, done, lmatch, lend);
-	simp(s, lmatch);
-	val = load(idxaddr(s, seq, idx));
-
-	/* pattern match */
-	simploopmatch(s, n->iterstmt.elt, val, lbody, lstep);
-	jmp(s, lbody);
-	simp(s, lend);
-
-	s->nloopstep--;
-	s->nloopexit--;
-}
-
-static Node *itertraitfn(Srcloc loc, Trait *tr, char *fn, Type *ty)
-{
-	Node *proto, *dcl, *var;
-	char *name;
-	size_t i;
-
-	for (i = 0; i < tr->nfuncs; i++) {
-		name = declname(tr->funcs[i]);
-		if (!strcmp(fn, name)) {
-			proto = tr->funcs[i];
-			dcl = htget(proto->decl.impls, ty);
-			var = mkexpr(loc, Ovar, dcl->decl.name, NULL);
-			var->expr.type = codetype(dcl->decl.type);
-			var->expr.did = dcl->decl.did;
-			return var;
-		}
-	}
-	return NULL;
-}
-
-/* for pat in seq
- * 	body;;
- * =>
- * 	.seq = seq
- * 	.elt = elt
- * 	:body
- * 		..body..
- * 	:step
- * 		__iterfin__(&seq, &elt)
- * 		cond = __iternext__(&seq, &eltout)
- * 		cjmp (cond) :match :end
- * 	:match
- * 		...match...
- * 		cjmp (match) :load :step
- * 	:load
- * 		...load matches...
- * 	:end
- */
-static void simptraititer(Simp *s, Node *n)
-{
-	Node *lbody, *lclean, *lstep, *lmatch, *lend;
-	Node *done, *val, *iter, *valptr, *iterptr;
-	Node *func, *call, *asn;
-	Trait *tr;
-
-	val = temp(s, n->iterstmt.elt);
-	valptr = mkexpr(val->loc, Oaddr, val, NULL);
-	valptr->expr.type = mktyptr(n->loc, exprtype(val));
-	iter = temp(s, n->iterstmt.seq);
-	iterptr = mkexpr(val->loc, Oaddr, iter, NULL);
-	iterptr->expr.type = mktyptr(n->loc, exprtype(iter));
-	tr = traittab[Tciter];
-
-	/* create labels */
-	lbody = genlbl(n->loc);
-	lclean = genlbl(n->loc);
-	lstep = genlbl(n->loc);
-	lmatch = genlbl(n->loc);
-	lend = genlbl(n->loc);
-	lappend(&s->loopstep, &s->nloopstep, lstep);
-	lappend(&s->loopexit, &s->nloopexit, lend);
-
-	asn = assign(s, iter, n->iterstmt.seq);
-	append(s, asn);
-	jmp(s, lstep);
-	simp(s, lbody);
-	/* body */
-	simp(s, n->iterstmt.body);
-	simp(s, lclean);
-
-	/* call iterator cleanup */
-	func = itertraitfn(n->loc, tr, "__iterfin__", exprtype(iter));
-	call = mkexpr(n->loc, Ocall, func, iterptr, valptr, NULL);
-	call->expr.type = mktype(n->loc, Tyvoid);
-	append(s, call);
-
-	simp(s, lstep);
-	/* call iterator step */
-	func = itertraitfn(n->loc, tr, "__iternext__", exprtype(iter));
-	call = mkexpr(n->loc, Ocall, func, iterptr, valptr, NULL);
-	done = gentemp(n->loc, mktype(n->loc, Tybool), NULL);
-	call->expr.type = exprtype(done);
-	asn = assign(s, done, call);
-	append(s, asn);
-	cjmp(s, done, lmatch, lend);
-
-	/* pattern match */
-	simp(s, lmatch);
-	simploopmatch(s, n->iterstmt.elt, val, lbody, lclean);
-	jmp(s, lbody);
-	simp(s, lend);
-
-	s->nloopstep--;
-	s->nloopexit--;
-}
-
-static void simpiter(Simp *s, Node *n)
-{
-	switch (tybase(exprtype(n->iterstmt.seq))->type) {
-	case Tyarray:	simpidxiter(s, n);	break;
-	case Tyslice:	simpidxiter(s, n);	break;
-	default:	simptraititer(s, n);	break;
-	}
-}
 
 static Node *uconid(Simp *s, Node *n)
 {
@@ -807,35 +535,6 @@ static Node *lval(Simp *s, Node *n)
 			break;
 	}
 	return r;
-}
-
-static void simpcond(Simp *s, Node *n, Node *ltrue, Node *lfalse)
-{
-	Node **args;
-	Node *v, *lnext;
-
-	args = n->expr.args;
-	switch (exprop(n)) {
-	case Oland:
-		lnext = genlbl(n->loc);
-		simpcond(s, args[0], lnext, lfalse);
-		append(s, lnext);
-		simpcond(s, args[1], ltrue, lfalse);
-		break;
-	case Olor:
-		lnext = genlbl(n->loc);
-		simpcond(s, args[0], ltrue, lnext);
-		append(s, lnext);
-		simpcond(s, args[1], ltrue, lfalse);
-		break;
-	case Olnot:
-		simpcond(s, args[0], lfalse, ltrue);
-		break;
-	default:
-		v = rval(s, n, NULL);
-		cjmp(s, v, ltrue, lfalse);
-		break;
-	}
 }
 
 static Node *intconvert(Simp *s, Node *from, Type *to, int issigned)
@@ -1193,49 +892,6 @@ static Node *simpuget(Simp *s, Node *n, Node *dst)
 	return dst;
 }
 
-/* simplifies 
- *      a || b
- * to
- *      if a || b
- *              t = true
- *      else
- *              t = false
- *      ;;
- */
-static Node *simplazy(Simp *s, Node *n)
-{
-	Node *r, *t, *u;
-	Node *ltrue, *lfalse, *ldone;
-
-	/* set up temps and labels */
-	r = temp(s, n);
-	ltrue = genlbl(n->loc);
-	lfalse = genlbl(n->loc);
-	ldone = genlbl(n->loc);
-
-	/* simp the conditional */
-	simpcond(s, n, ltrue, lfalse);
-
-	/* if true */
-	append(s, ltrue);
-	u = mkexpr(n->loc, Olit, mkbool(n->loc, 1), NULL);
-	u->expr.type = mktype(n->loc, Tybool);
-	t = set(r, u);
-	append(s, t);
-	jmp(s, ldone);
-
-	/* if false */
-	append(s, lfalse);
-	u = mkexpr(n->loc, Olit, mkbool(n->loc, 0), NULL);
-	u->expr.type = mktype(n->loc, Tybool);
-	t = set(r, u);
-	append(s, t);
-	jmp(s, ldone);
-
-	/* finish */
-	append(s, ldone);
-	return r;
-}
 
 static Node *comparecomplex(Simp *s, Node *n, Op op)
 {
@@ -1493,9 +1149,6 @@ static Node *rval(Simp *s, Node *n, Node *dst)
 	r = NULL;
 	args = n->expr.args;
 	switch (exprop(n)) {
-	case Olor: case Oland:
-		r = simplazy(s, n);
-		break;
 	case Osize:
 		r = mkintlit(n->loc, size(args[0]));
 		r->expr.type = exprtype(n);
@@ -1511,12 +1164,11 @@ static Node *rval(Simp *s, Node *n, Node *dst)
 		/* array.len slice.len are magic 'virtual' members.
 		 * they need to be special cased. */
 	case Omemb:
-		if (exprtype(args[0])->type == Tyslice || exprtype(args[0])->type == Tyarray) {
-			r = seqlen(s, args[0], exprtype(n));
-		} else {
-			t = membaddr(s, n);
-			r = load(t);
-		}
+		t = membaddr(s, n);
+		r = load(t);
+		break;
+	case Osllen:
+		r = seqlen(s, args[0], exprtype(n));
 		break;
 	case Oucon:
 		r = simpucon(s, n, dst);
@@ -1589,16 +1241,6 @@ static Node *rval(Simp *s, Node *n, Node *dst)
 		 *   => expr
 		 *      x = x + 1
 		 */
-	case Opostinc:
-		r = lval(s, args[0]);
-		t = assign(s, r, addk(r, 1));
-		lappend(&s->incqueue, &s->nqueue, t);
-		break;
-	case Opostdec:
-		r = lval(s, args[0]);
-		t = assign(s, r, subk(r, 1));
-		lappend(&s->incqueue, &s->nqueue, t);
-		break;
 	case Olit:
 		switch (args[0]->lit.littype) {
 		case Lvoid:
@@ -1645,10 +1287,6 @@ static Node *rval(Simp *s, Node *n, Node *dst)
 				append(s, t);
 			}
 		}
-		/* drain the increment queue before we return */
-		for (i = 0; i < s->nqueue; i++)
-			append(s, s->incqueue[i]);
-		lfree(&s->incqueue, &s->nqueue);
 		append(s, mkexpr(n->loc, Oret, NULL));
 		break;
 	case Oasn:
@@ -1677,6 +1315,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
 			r = visit(s, n);
 		}
 		break;
+	/* FIXME: remove this after custom iters are done. */
 	case Obreak:
 		if (s->nloopexit == 0)
 			fatal(n, "trying to break when not in loop");
@@ -1699,6 +1338,9 @@ static Node *rval(Simp *s, Node *n, Node *dst)
 		t = rval(s, args[0], NULL);
 		r = tupget(s, t, i, dst);
 		break;
+	case Olor: case Oland:
+	case Opostinc: case Opostdec:
+                die("invalid operator: should have been removed");
 	case Obad:
 		die("bad operator");
 		break;
@@ -1733,35 +1375,16 @@ static int islbl(Node *n)
 	return l->type == Nlit && l->lit.littype == Llbl;
 }
 
-static void simpmatch(Simp *s, Node *n)
-{
-	Node *val;
-	Node **match;
-	size_t i, nmatch;
-
-	val = rval(s, n->matchstmt.val, NULL);
-
-	match = NULL;
-	nmatch = 0;
-	genmatch(n, val, &match, &nmatch);
-	for (i = 0; i < nmatch; i++)
-		simp(s, match[i]);
-}
-
 static Node *simp(Simp *s, Node *n)
 {
-	Node *r, *t, *u;
-	size_t i;
+	Node *r;
 
 	if (!n)
 		return NULL;
 	r = NULL;
 	switch (n->type) {
 	case Nblock:	simpblk(s, n);	break;
-	case Nloopstmt:	simploop(s, n);	break;
-	case Niterstmt:	simpiter(s, n);	break;
-	case Nifstmt:	simpif(s, n, NULL);	break;
-	case Nmatchstmt:	simpmatch(s, n);	break;
+	case Ndecl:     declarelocal(s, n);     break;
 	case Nexpr:
 		if (islbl(n))
 			append(s, n);
@@ -1769,22 +1392,6 @@ static Node *simp(Simp *s, Node *n)
 			r = rval(s, n, NULL);
 		if (r)
 			append(s, r);
-		/* drain the increment queue for this expr */
-		for (i = 0; i < s->nqueue; i++)
-			append(s, s->incqueue[i]);
-		lfree(&s->incqueue, &s->nqueue);
-		break;
-
-	case Ndecl:
-		declarelocal(s, n);
-		t = mkexpr(n->loc, Ovar, n->decl.name, NULL);
-		if (n->decl.init) {
-			u = mkexpr(n->loc, Oasn, t, n->decl.init, NULL);
-			u->expr.type = n->decl.type;
-			t->expr.type = n->decl.type;
-			t->expr.did = n->decl.did;
-			simp(s, u);
-		}
 		break;
 	default:
 		dump(n, stderr);
@@ -1799,7 +1406,7 @@ static Node *simp(Simp *s, Node *n)
  * and simpler representation, which maps easily and
  * directly to assembly instructions.
  */
-static void flatten(Simp *s, Node *f)
+static void simpinit(Simp *s, Node *f)
 {
 	Node *dcl;
 	Type *ty;
@@ -1864,10 +1471,10 @@ static void collectenv(Simp *s, Node *fn)
 	if (!env)
 		return;
 	/*
-	   we need these in a deterministic order so that we can
-	   put them in the right place both when we use them and
-	   when we capture them.
-	   */
+           we need these in a deterministic order so that we can
+           put them in the right place both when we use them and
+           when we capture them.
+         */
 	s->hasenv = 1;
 	qsort(env, nenv, sizeof(Node*), envcmp);
 	off = Ptrsz;    /* we start with the size of the env */
@@ -1895,7 +1502,7 @@ static Func *simpfn(Simp *s, char *name, Node *dcl)
 	n = n->expr.args[0];
 	n = n->lit.fnval;
 	collectenv(s, n);
-	flatten(s, n);
+	simpinit(s, n);
 
 	if (debugopt['f'] || debugopt['F'])
 		for (i = 0; i < s->nstmts; i++)
@@ -1993,24 +1600,12 @@ static void simpconstinit(Simp *s, Node *dcl)
 	}
 }
 
-int ismain(Node *dcl)
-{
-	Node *n;
-
-	n = dcl->decl.name;
-	if (n->name.ns)
-		return 0;
-	return strcmp(n->name.name, "main") == 0;
-}
-
 void simpglobl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***blob, size_t *nblob)
 {
 	Simp s = {0,};
 	char *name;
 	Func *f;
 
-	if (ismain(dcl))
-		dcl->decl.vis = Vishidden;
 	s.stkoff = mkht(varhash, vareq);
 	s.envoff = mkht(varhash, vareq);
 	s.globls = globls;
