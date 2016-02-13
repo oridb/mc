@@ -405,7 +405,7 @@ static const Mode szmodes[] = {
 static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size_t sz, size_t align)
 {
 	size_t i, modesz;
-	Loc *savsi, *savdi, *savcx; /* pointers to src, dst */
+	Loc *savsi, *savdi, *savcx; /* save the whales.. er, registers */
 	Loc *sp, *dp, *len; /* pointers to src, dst */
 	Loc *tmp, *src, *dst; /* source memory, dst memory */
 
@@ -418,7 +418,7 @@ static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size
 	i = 0;
 	if (align == 0)
 		align = 8;
-	if (sz <= 128) { /* arbitrary threshold; should be tuned */
+	if (sz <= 512) { /* arbitrary threshold; should be tuned */
 		for (modesz = align; szmodes[modesz] != ModeNone; modesz /= 2) {
 			tmp = locreg(szmodes[modesz]);
 			while (i + modesz <= sz) {
@@ -433,10 +433,11 @@ static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size
 		savsi = locreg(ModeQ);
 		savdi = locreg(ModeQ);
 		savcx = locreg(ModeQ);
-		len = loclit(sz, ModeQ);
 		g(s, Imov, locphysreg(Rrsi), savsi, NULL);
 		g(s, Imov, locphysreg(Rrdi), savdi, NULL);
 		g(s, Imov, locphysreg(Rrcx), savcx, NULL);
+
+		len = loclit(sz, ModeQ);
 		sp = newr(s, from);
 		dp = newr(s, to);
 
@@ -462,6 +463,7 @@ static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size
 
 static void clear(Isel *s, Loc *val, size_t sz, size_t align)
 {
+	Loc *savsi, *savdi, *savcx; /* save the whales.. er, registers */
 	Loc *dp, *len, *rax; /* pointers to src, dst */
 	Loc *zero, *dst; /* source memory, dst memory */
 	size_t modesz, i;
@@ -483,11 +485,22 @@ static void clear(Isel *s, Loc *val, size_t sz, size_t align)
 			}
 		}
 	} else {
+		savsi = locreg(ModeQ);
+		savdi = locreg(ModeQ);
+		savcx = locreg(ModeQ);
+		g(s, Imov, locphysreg(Rrsi), savsi, NULL);
+		g(s, Imov, locphysreg(Rrdi), savdi, NULL);
+		g(s, Imov, locphysreg(Rrcx), savcx, NULL);
+
 		len = loclit(sz, ModeQ);
 		/* length to blit */
 		g(s, Imov, len, locphysreg(Rrcx), NULL);
 		g(s, Imov, dp, locphysreg(Rrdi), NULL);
 		g(s, Irepstosb, NULL);
+
+		g(s, Imov, savsi, locphysreg(Rrsi), NULL);
+		g(s, Imov, savdi, locphysreg(Rrdi), NULL);
+		g(s, Imov, savcx, locphysreg(Rrcx), NULL);
 	}
 }
 

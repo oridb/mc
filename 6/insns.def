@@ -50,7 +50,7 @@ Insn(Irepstosb,
     "\trep stosb\n",
     "\tREP; STOSB\n",
     Use(.r={Rrax,Rrcx,Rrsi,Rrdi}),
-    Def(None))
+    Def(.r={Rrax,Rrcx,Rrsi,Rrdi}))
 Insn(Irepmovsb,
     "\trep movsb\n",
     "\tREP; MOVSB\n",
