@@ -55,22 +55,22 @@ Insn(Irepmovsb,
     "\trep movsb\n",
     "\tREP; MOVSB\n",
     Use(.r={Rrcx,Rrsi,Rrdi}),
-    Def(None))
+    Def(.r={Rrcx,Rrsi,Rrdi}))
 Insn(Irepmovsw,
     "\trep movsw\n",
     "\tREP; MOVSW\n",
     Use(.r={Rrcx,Rrsi,Rrdi}),
-    Def(None))
+    Def(.r={Rrcx,Rrsi,Rrdi}))
 Insn(Irepmovsl,
     "\trep movsl\n",
     "\tREP; MOVSL\n",
     Use(.r={Rrcx,Rrsi,Rrdi}),
-    Def(None))
+    Def(.r={Rrcx,Rrsi,Rrdi}))
 Insn(Irepmovsq,
     "\trep movsq\n",
     "\tREP; MOVSQ\n",
     Use(.r={Rrcx,Rrsi,Rrdi}),
-    Def(None))
+    Def(.r={Rrcx,Rrsi,Rrdi}))
 Insn(Ilea,
     "\tlea%2t %m,%r\n",
     "\tLEA%2T %M,%R\n",

@@ -405,6 +405,7 @@ static const Mode szmodes[] = {
 static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size_t sz, size_t align)
 {
 	size_t i, modesz;
+	Loc *savsi, *savdi, *savcx; /* pointers to src, dst */
 	Loc *sp, *dp, *len; /* pointers to src, dst */
 	Loc *tmp, *src, *dst; /* source memory, dst memory */
 
@@ -429,7 +430,13 @@ static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size
 			}
 		}
 	} else {
+		savsi = locreg(ModeQ);
+		savdi = locreg(ModeQ);
+		savcx = locreg(ModeQ);
 		len = loclit(sz, ModeQ);
+		g(s, Imov, locphysreg(Rrsi), savsi);
+		g(s, Imov, locphysreg(Rrdi), savdi);
+		g(s, Imov, locphysreg(Rrcx), savcx);
 		sp = newr(s, from);
 		dp = newr(s, to);
 
@@ -446,6 +453,9 @@ static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size
 		else
 			g(s, Imov, dp, locphysreg(Rrdi), NULL);
 		g(s, Irepmovsb, NULL);
+		g(s, Imov, savsi, locphysreg(Rrsi));
+		g(s, Imov, savdi, locphysreg(Rrdi));
+		g(s, Imov, savcx, locphysreg(Rrcx));
 	}
 
 }
