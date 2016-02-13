@@ -434,9 +434,9 @@ static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size
 		savdi = locreg(ModeQ);
 		savcx = locreg(ModeQ);
 		len = loclit(sz, ModeQ);
-		g(s, Imov, locphysreg(Rrsi), savsi);
-		g(s, Imov, locphysreg(Rrdi), savdi);
-		g(s, Imov, locphysreg(Rrcx), savcx);
+		g(s, Imov, locphysreg(Rrsi), savsi, NULL);
+		g(s, Imov, locphysreg(Rrdi), savdi, NULL);
+		g(s, Imov, locphysreg(Rrcx), savcx, NULL);
 		sp = newr(s, from);
 		dp = newr(s, to);
 
@@ -453,9 +453,9 @@ static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size
 		else
 			g(s, Imov, dp, locphysreg(Rrdi), NULL);
 		g(s, Irepmovsb, NULL);
-		g(s, Imov, savsi, locphysreg(Rrsi));
-		g(s, Imov, savdi, locphysreg(Rrdi));
-		g(s, Imov, savcx, locphysreg(Rrcx));
+		g(s, Imov, savsi, locphysreg(Rrsi), NULL);
+		g(s, Imov, savdi, locphysreg(Rrdi), NULL);
+		g(s, Imov, savcx, locphysreg(Rrcx), NULL);
 	}
 
 }
