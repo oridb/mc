@@ -405,8 +405,7 @@ static const Mode szmodes[] = {
 static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size_t sz, size_t align)
 {
 	size_t i, modesz;
-	Loc *savsi, *savdi, *savcx; /* save the whales.. er, registers */
-	Loc *sp, *dp, *len; /* pointers to src, dst */
+	Loc *sp, *dp; /* pointers to src, dst */
 	Loc *tmp, *src, *dst; /* source memory, dst memory */
 
 	assert(szmodes[align] != ModeNone);   /* make sure we have a valid alignment */
@@ -418,89 +417,36 @@ static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size
 	i = 0;
 	if (align == 0)
 		align = 8;
-	if (sz <= 512) { /* arbitrary threshold; should be tuned */
-		for (modesz = align; szmodes[modesz] != ModeNone; modesz /= 2) {
-			tmp = locreg(szmodes[modesz]);
-			while (i + modesz <= sz) {
-				src = locmem(i + srcoff, sp, NULL, szmodes[modesz]);
-				dst = locmem(i + dstoff, dp, NULL, szmodes[modesz]);
-				g(s, Imov, src, tmp, NULL);
-				g(s, Imov, tmp, dst, NULL);
-				i += modesz;
-			}
+	for (modesz = align; szmodes[modesz] != ModeNone; modesz /= 2) {
+		tmp = locreg(szmodes[modesz]);
+		while (i + modesz <= sz) {
+			src = locmem(i + srcoff, sp, NULL, szmodes[modesz]);
+			dst = locmem(i + dstoff, dp, NULL, szmodes[modesz]);
+			g(s, Imov, src, tmp, NULL);
+			g(s, Imov, tmp, dst, NULL);
+			i += modesz;
 		}
-	} else {
-		savsi = locreg(ModeQ);
-		savdi = locreg(ModeQ);
-		savcx = locreg(ModeQ);
-		g(s, Imov, locphysreg(Rrsi), savsi, NULL);
-		g(s, Imov, locphysreg(Rrdi), savdi, NULL);
-		g(s, Imov, locphysreg(Rrcx), savcx, NULL);
-
-		len = loclit(sz, ModeQ);
-		sp = newr(s, from);
-		dp = newr(s, to);
-
-		/* length to blit */
-		g(s, Imov, len, locphysreg(Rrcx), NULL);
-		/* source address with offset */
-		if (srcoff)
-			g(s, Ilea, locmem(srcoff, sp, NULL, ModeQ), locphysreg(Rrsi), NULL);
-		else
-			g(s, Imov, sp, locphysreg(Rrsi), NULL);
-		/* dest address with offset */
-		if (dstoff)
-			g(s, Ilea, locmem(dstoff, dp, NULL, ModeQ), locphysreg(Rrdi), NULL);
-		else
-			g(s, Imov, dp, locphysreg(Rrdi), NULL);
-		g(s, Irepmovsb, NULL);
-		g(s, Imov, savsi, locphysreg(Rrsi), NULL);
-		g(s, Imov, savdi, locphysreg(Rrdi), NULL);
-		g(s, Imov, savcx, locphysreg(Rrcx), NULL);
 	}
 
 }
 
 static void clear(Isel *s, Loc *val, size_t sz, size_t align)
 {
-	Loc *savsi, *savdi, *savcx; /* save the whales.. er, registers */
-	Loc *dp, *len, *rax; /* pointers to src, dst */
-	Loc *zero, *dst; /* source memory, dst memory */
+	Loc *dp, *zero, *dst; /* source memory, dst memory */
 	size_t modesz, i;
 
 	i = 0;
 	dp = inr(s, val);
-	rax = locphysreg(Rrax);
-	g(s, Ixor,  rax, rax, NULL);
 	if (align == 0)
 		align = 8;
-	if (sz <= 128) { /* arbitrary threshold; should be tuned */
-		for (modesz = align; szmodes[modesz] != ModeNone; modesz /= 2) {
-			zero = loclit(0, szmodes[modesz]);
-			while (i + modesz <= sz) {
-				zero = coreg(Rrax, szmodes[modesz]);
-				dst = locmem(i, dp, NULL, szmodes[modesz]);
-				g(s, Imov, zero, dst, NULL);
-				i += modesz;
-			}
+	for (modesz = align; szmodes[modesz] != ModeNone; modesz /= 2) {
+		zero = locreg(szmodes[modesz]);
+		g(s, Ixor, zero, zero, NULL);
+		while (i + modesz <= sz) {
+			dst = locmem(i, dp, NULL, szmodes[modesz]);
+			g(s, Imov, zero, dst, NULL);
+			i += modesz;
 		}
-	} else {
-		savsi = locreg(ModeQ);
-		savdi = locreg(ModeQ);
-		savcx = locreg(ModeQ);
-		g(s, Imov, locphysreg(Rrsi), savsi, NULL);
-		g(s, Imov, locphysreg(Rrdi), savdi, NULL);
-		g(s, Imov, locphysreg(Rrcx), savcx, NULL);
-
-		len = loclit(sz, ModeQ);
-		/* length to blit */
-		g(s, Imov, len, locphysreg(Rrcx), NULL);
-		g(s, Imov, dp, locphysreg(Rrdi), NULL);
-		g(s, Irepstosb, NULL);
-
-		g(s, Imov, savsi, locphysreg(Rrsi), NULL);
-		g(s, Imov, savdi, locphysreg(Rrdi), NULL);
-		g(s, Imov, savcx, locphysreg(Rrcx), NULL);
 	}
 }
 
