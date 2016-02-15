@@ -1,4 +1,5 @@
 use "alloc"
+use "consts"
 use "chartype"
 use "die"
 use "extremum"
@@ -65,13 +66,13 @@ const fatal = {fmt, args
 	var ap
 
 	ap = vastart(&args)
-	putv(fmt, &ap)
+	fputv(Err, fmt, &ap)
 	exit(1)
 }
 
 /* same as 'putv', but exits the program after printing */
 const fatalv = {fmt, ap
-	putv(fmt, ap)
+	fputv(Err, fmt, ap)
 	exit(1)
 }
 
