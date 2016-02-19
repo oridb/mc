@@ -1,5 +1,5 @@
 # Myrddin
-[Myrddin Website and Documentation](http://eigenstate.org/myrddin/)
+[Myrddin Website and Documentation](https://myrlang.org/)
 
 Myrddin is a systems language that is both powerful and fun to use.
 It aims for C like low level control, a lightweight high quality implementation,
@@ -53,26 +53,26 @@ const main = {
 More examples and a complete feature list can be found on the website.
 
 ## Status
-![Solid Engineering](http://eigenstate.org/myrddin/tacoma-narrows.jpg "Solid Engineering")
+![Solid Engineering](https://myrlang.org/tacoma-narrows.jpg "Solid Engineering")
 
 
 ## Try It Online
 The online playground is a good place to get started with little setup.
 
-[Online Playground Environment](http://eigenstate.org/myrddin/playground/)
+[Online Playground Environment](https://myrlang.org/playground)
 
 ## API Documentation
 Myrddin ships with standard library which covers many common uses. It is becoming
 more useful every day.
 
-[API Reference](http://eigenstate.org/myrddin/doc/)
+[API Reference](https://myrlang.org/doc/)
 
 ## Mailing List
 Annoucements of major changes, questions, complaints. We also give relationship advice.
 
 [Mailing List Archives](http://eigenstate.org/archive/myrddin-dev/)
 
-[Subscribe Here](http://eigenstate.org/myrddin/list-subscribe)
+[Subscribe Here](https://myrlang.org/list-subscribe)
 
 ## Supported Platforms
 Myrddin currently runs on a number of platforms
