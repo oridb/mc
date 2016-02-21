@@ -53,7 +53,7 @@ const srcsplit = {src
 
 	platf = ""
 	suff = ""
-	match std.strfind(src, ".")
+	match std.strrfind(src, ".")
 	| `std.Some i:
 		suff = src[i:]
 		src = src[:i]
