@@ -125,15 +125,6 @@ static Node *sub(Node *a, Node *b)
 	return n;
 }
 
-static Node *subk(Node *n, uvlong v)
-{
-	Node *k;
-
-	k = mkintlit(n->loc, v);
-	k->expr.type = exprtype(n);
-	return sub(n, k);
-}
-
 static Node *mul(Node *a, Node *b)
 {
 	Node *n;
@@ -274,11 +265,6 @@ static Node *temp(Simp *simp, Node *e)
 	if (stacknode(e))
 		declarelocal(simp, dcl);
 	return t;
-}
-
-static void jmp(Simp *s, Node *lbl)
-{
-	append(s, mkexpr(lbl->loc, Ojmp, lbl, NULL));
 }
 
 static void cjmp(Simp *s, Node *cond, Node *iftrue, Node *iffalse)
@@ -1064,19 +1050,6 @@ static Node *rval(Simp *s, Node *n, Node *dst)
 	size_t i;
 	Type *ty;
 
-	const Op fusedmap[Numops] = {
-		[Oaddeq]	= Oadd,
-		[Osubeq]	= Osub,
-		[Omuleq]	= Omul,
-		[Odiveq]	= Odiv,
-		[Omodeq]	= Omod,
-		[Oboreq]	= Obor,
-		[Obandeq]	= Oband,
-		[Obxoreq]	= Obxor,
-		[Obsleq]	= Obsl,
-		[Obsreq]	= Obsr,
-	};
-
 	r = NULL;
 	args = n->expr.args;
 	switch (exprop(n)) {
@@ -1140,38 +1113,9 @@ static Node *rval(Simp *s, Node *n, Node *dst)
 		r = simpcast(s, args[0], exprtype(n));
 		break;
 
-		/* fused ops:
-		 * foo ?= blah
-		 *    =>
-		 *     foo = foo ? blah*/
-	case Oaddeq: case Osubeq: case Omuleq: case Odiveq: case Omodeq:
-	case Oboreq: case Obandeq: case Obxoreq: case Obsleq: case Obsreq:
-		assert(fusedmap[exprop(n)] != Obad);
-		u = lval(s, args[0]);
-		v = rval(s, args[1], NULL);
-		v = mkexpr(n->loc, fusedmap[exprop(n)], u, v, NULL);
-		v->expr.type = u->expr.type;
-		r = set(u, v);
-		break;
-
 		/* ++expr(x)
 		 *  => args[0] = args[0] + 1
 		 *     expr(x) */
-	case Opreinc:
-		v = assign(s, args[0], addk(args[0], 1));
-		append(s, v);
-		r = rval(s, args[0], NULL);
-		break;
-	case Opredec:
-		v = assign(s, args[0], subk(args[0], 1));
-		append(s, v);
-		r = rval(s, args[0], NULL);
-		break;
-
-		/* expr(x++)
-		 *   => expr
-		 *      x = x + 1
-		 */
 	case Olit:
 		switch (args[0]->lit.littype) {
 		case Lvoid:
@@ -1246,17 +1190,6 @@ static Node *rval(Simp *s, Node *n, Node *dst)
 			r = visit(s, n);
 		}
 		break;
-	/* FIXME: remove this after custom iters are done. */
-	case Obreak:
-		if (s->nloopexit == 0)
-			fatal(n, "trying to break when not in loop");
-		jmp(s, s->loopexit[s->nloopexit - 1]);
-		break;
-	case Ocontinue:
-		if (s->nloopstep == 0)
-			fatal(n, "trying to continue when not in loop");
-		jmp(s, s->loopstep[s->nloopstep - 1]);
-		break;
 	case Otupget:
 		assert(exprop(args[1]) == Olit);
 		i = args[1]->expr.args[0]->lit.intval;
@@ -1264,6 +1197,9 @@ static Node *rval(Simp *s, Node *n, Node *dst)
 		r = tupget(s, t, i, dst);
 		break;
 	case Olor: case Oland:
+	case Oaddeq: case Osubeq: case Omuleq: case Odiveq: case Omodeq:
+	case Oboreq: case Obandeq: case Obxoreq: case Obsleq: case Obsreq:
+	case Opreinc: case Opredec:
 	case Opostinc: case Opostdec:
                 die("invalid operator: should have been removed");
 	case Obad:

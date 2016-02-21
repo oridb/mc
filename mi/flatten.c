@@ -328,24 +328,24 @@ static Node *compare(Flattenctx *s, Node *n, int fields)
 }
 static Node *rval(Flattenctx *s, Node *n)
 {
-	Node *t, *u; /* temporary nodes */
+	Node *t, *u, *v; /* temporary nodes */
 	Node *r; /* expression result */
 	Node **args;
 	size_t i;
 	Type *ty;
 
-//	const Op fusedmap[Numops] = {
-//		[Oaddeq]	= Oadd,
-//		[Osubeq]	= Osub,
-//		[Omuleq]	= Omul,
-//		[Odiveq]	= Odiv,
-//		[Omodeq]	= Omod,
-//		[Oboreq]	= Obor,
-//		[Obandeq]	= Oband,
-//		[Obxoreq]	= Obxor,
-//		[Obsleq]	= Obsl,
-//		[Obsreq]	= Obsr,
-//	};
+	const Op fusedmap[Numops] = {
+		[Oaddeq]	= Oadd,
+		[Osubeq]	= Osub,
+		[Omuleq]	= Omul,
+		[Odiveq]	= Odiv,
+		[Omodeq]	= Omod,
+		[Oboreq]	= Obor,
+		[Obandeq]	= Oband,
+		[Obxoreq]	= Obxor,
+		[Obsleq]	= Obsl,
+		[Obsreq]	= Obsr,
+	};
 
 	r = NULL;
 	args = n->expr.args;
@@ -418,38 +418,40 @@ static Node *rval(Flattenctx *s, Node *n)
 //		r = flattencast(s, args[0], exprtype(n));
 //		break;
 //
-//		/* fused ops:
-//		 * foo ?= blah
-//		 *    =>
-//		 *     foo = foo ? blah*/
-//	case Oaddeq: case Osubeq: case Omuleq: case Odiveq: case Omodeq:
-//	case Oboreq: case Obandeq: case Obxoreq: case Obsleq: case Obsreq:
-//		assert(fusedmap[exprop(n)] != Obad);
-//		u = lval(s, args[0]);
-//		v = rval(s, args[1], NULL);
-//		v = mkexpr(n->loc, fusedmap[exprop(n)], u, v, NULL);
-//		v->expr.type = u->expr.type;
-//		r = set(u, v);
-//		break;
-//
-//		/* ++expr(x)
-//		 *  => args[0] = args[0] + 1
-//		 *     expr(x) */
-//	case Opreinc:
-//		v = assign(s, args[0], addk(args[0], 1));
-//		append(s, v);
-//		r = rval(s, args[0], NULL);
-//		break;
-//	case Opredec:
-//		v = assign(s, args[0], subk(args[0], 1));
-//		append(s, v);
-//		r = rval(s, args[0], NULL);
-//		break;
-//
-//		/* expr(x++)
-//		 *   => expr
-//		 *      x = x + 1
-//		 */
+	/* fused ops:
+	 * foo ?= blah
+	 *    =>
+	 *     foo = foo ? blah*/
+	case Oaddeq: case Osubeq: case Omuleq: case Odiveq: case Omodeq:
+	case Oboreq: case Obandeq: case Obxoreq: case Obsleq: case Obsreq:
+		assert(fusedmap[exprop(n)] != Obad);
+		u = lval(s, args[0]);
+		v = rval(s, args[1]);
+		v = mkexpr(n->loc, fusedmap[exprop(n)], u, v, NULL);
+		v->expr.type = u->expr.type;
+		r = asn(u, v);
+		break;
+
+	/* ++expr(x)
+	 *  => args[0] = args[0] + 1
+	 *     expr(x) */
+	case Opreinc:
+		t = lval(s, args[0]);
+		v = asn(t, addk(t, 1));
+		append(s, v);
+		r = rval(s, t);
+		break;
+	case Opredec:
+		t = lval(s, args[0]);
+		v = asn(t, subk(t, 1));
+		append(s, v);
+		r = rval(s, t);
+		break;
+
+	/* expr(x++)
+	 *   => expr
+	 *      x = x + 1
+	 */
 	case Opostinc:
 		r = lval(s, args[0]);
 		t = asn(r, addk(r, 1));
