@@ -734,53 +734,31 @@ static Node *tupget(Simp *s, Node *tup, size_t idx, Node *dst)
 	return dst;
 }
 
-/* Takes a tuple and binds the i'th element of it to the
- * i'th name on the rhs of the assignment. */
-static Node *destructure(Simp *s, Node *lhs, Node *rhs)
-{
-	Node *lv, *rv, **args;
-	size_t i;
-
-	args = lhs->expr.args;
-	rhs = rval(s, rhs, NULL);
-	for (i = 0; i < lhs->expr.nargs; i++) {
-		lv = lval(s, args[i]);
-		rv = tupget(s, rhs, i, lv);
-		assert(rv == lv);
-	}
-
-	return NULL;
-}
-
 static Node *assign(Simp *s, Node *lhs, Node *rhs)
 {
 	Node *t, *u, *v, *r;
 
-	if (exprop(lhs) == Otup) {
-		r = destructure(s, lhs, rhs);
+	t = lval(s, lhs);
+	u = rval(s, rhs, t);
+
+	if (tybase(exprtype(lhs))->type == Tyvoid)
+		return u;
+
+	/* hack: we're assigning to lhs, but blitting shit over doesn't
+	 * trigger that */
+	if (stacknode(lhs))
+		def(s, lhs);
+	/* if we stored the result into t, rval() should return that,
+	 * so we know our work is done. */
+	if (u == t) {
+		r = t;
+	} else if (stacknode(lhs)) {
+		t = addr(s, t, exprtype(lhs));
+		u = addr(s, u, exprtype(lhs));
+		v = disp(lhs->loc, size(lhs));
+		r = mkexpr(lhs->loc, Oblit, t, u, v, NULL);
 	} else {
-		t = lval(s, lhs);
-		u = rval(s, rhs, t);
-
-		if (tybase(exprtype(lhs))->type == Tyvoid)
-			return u;
-
-		/* hack: we're assigning to lhs, but blitting shit over doesn't
-		 * trigger that */
-		if (stacknode(lhs))
-			def(s, lhs);
-		/* if we stored the result into t, rval() should return that,
-		 * so we know our work is done. */
-		if (u == t) {
-			r = t;
-		} else if (stacknode(lhs)) {
-			t = addr(s, t, exprtype(lhs));
-			u = addr(s, u, exprtype(lhs));
-			v = disp(lhs->loc, size(lhs));
-			r = mkexpr(lhs->loc, Oblit, t, u, v, NULL);
-		} else {
-			r = set(t, u);
-		}
+		r = set(t, u);
 	}
 	return r;
 }
@@ -893,53 +871,6 @@ static Node *simpuget(Simp *s, Node *n, Node *dst)
 }
 
 
-static Node *comparecomplex(Simp *s, Node *n, Op op)
-{
-	fatal(n, "Complex comparisons not yet supported\n");
-	return NULL;
-}
-
-static Node *compare(Simp *s, Node *n, int fields)
-{
-	const Op cmpmap[Numops][3] = {
-		[Oeq] = {Oeq, Oueq, Ofeq},
-		[One] = {One, Oune, Ofne},
-		[Ogt] = {Ogt, Ougt, Ofgt},
-		[Oge] = {Oge, Ouge, Ofge},
-		[Olt] = {Olt, Oult, Oflt},
-		[Ole] = {Ole, Oule, Ofle}
-	};
-	Node *r;
-	Type *ty;
-	Op newop;
-
-	/* void is always void */
-	if (tybase(exprtype(n->expr.args[0]))->type == Tyvoid)
-		return mkboollit(n->loc, 1);
-
-	newop = Obad;
-	ty = tybase(exprtype(n->expr.args[0]));
-	if (istysigned(ty))
-		newop = cmpmap[n->expr.op][0];
-	else if (istyunsigned(ty))
-		newop = cmpmap[n->expr.op][1];
-	else if (istyunsigned(ty))
-		newop = cmpmap[n->expr.op][1];
-	else if (ty->type == Typtr)
-		newop = cmpmap[n->expr.op][1];
-	else if (istyfloat(ty))
-		newop = cmpmap[n->expr.op][2];
-
-	if (newop != Obad) {
-		n->expr.op = newop;
-		r = visit(s, n);
-	} else if (fields) {
-		r = comparecomplex(s, n, exprop(n));
-	} else {
-		fatal(n, "unsupported comparison on values");
-	}
-	return r;
-}
 
 static Node *vatypeinfo(Simp *s, Node *n)
 {
@@ -1304,7 +1235,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
 		break;
 	case Oneg:
 		if (istyfloat(exprtype(n))) {
-			t =mkfloat(n->loc, -1.0); 
+			t = mkfloat(n->loc, -1.0); 
 			u = mkexpr(n->loc, Olit, t, NULL);
 			t->lit.type = n->expr.type;
 			u->expr.type = n->expr.type;
@@ -1325,12 +1256,6 @@ static Node *rval(Simp *s, Node *n, Node *dst)
 		if (s->nloopstep == 0)
 			fatal(n, "trying to continue when not in loop");
 		jmp(s, s->loopstep[s->nloopstep - 1]);
-		break;
-	case Oeq: case One:
-		r = compare(s, n, 1);
-		break;
-	case Ogt: case Oge: case Olt: case Ole:
-		r = compare(s, n, 0);
 		break;
 	case Otupget:
 		assert(exprop(args[1]) == Olit);

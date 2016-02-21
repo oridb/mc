@@ -278,6 +278,54 @@ static Node *destructure(Flattenctx *s, Node *lhs, Node *rhs)
 	return rhs;
 }
 
+static Node *comparecomplex(Flattenctx *s, Node *n, Op op)
+{
+	fatal(n, "Complex comparisons not yet supported\n");
+	return NULL;
+}
+
+static Node *compare(Flattenctx *s, Node *n, int fields)
+{
+	const Op cmpmap[Numops][3] = {
+		[Oeq] = {Oeq, Oueq, Ofeq},
+		[One] = {One, Oune, Ofne},
+		[Ogt] = {Ogt, Ougt, Ofgt},
+		[Oge] = {Oge, Ouge, Ofge},
+		[Olt] = {Olt, Oult, Oflt},
+		[Ole] = {Ole, Oule, Ofle}
+	};
+	Node *r;
+	Type *ty;
+	Op newop;
+
+	/* void is always void */
+	if (tybase(exprtype(n->expr.args[0]))->type == Tyvoid)
+		return mkboollit(n->loc, 1);
+
+	newop = Obad;
+	ty = tybase(exprtype(n->expr.args[0]));
+	if (istysigned(ty))
+		newop = cmpmap[n->expr.op][0];
+	else if (istyunsigned(ty))
+		newop = cmpmap[n->expr.op][1];
+	else if (istyunsigned(ty))
+		newop = cmpmap[n->expr.op][1];
+	else if (ty->type == Typtr)
+		newop = cmpmap[n->expr.op][1];
+	else if (istyfloat(ty))
+		newop = cmpmap[n->expr.op][2];
+
+	if (newop != Obad) {
+		n->expr.op = newop;
+		r = visit(s, n);
+	} else if (fields) {
+		r = comparecomplex(s, n, exprop(n));
+	} else {
+		fatal(n, "unsupported comparison on values");
+	}
+	r->expr.type = mktype(n->loc, Tybool);
+	return r;
+}
 static Node *rval(Flattenctx *s, Node *n)
 {
 	Node *t, *u; /* temporary nodes */
@@ -486,12 +534,12 @@ static Node *rval(Flattenctx *s, Node *n)
 			fatal(n, "trying to continue when not in loop");
 		jmp(s, s->loopstep[s->nloopstep - 1]);
 		break;
-//	case Oeq: case One:
-//		r = compare(s, n, 1);
-//		break;
-//	case Ogt: case Oge: case Olt: case Ole:
-//		r = compare(s, n, 0);
-//		break;
+	case Oeq: case One:
+		r = compare(s, n, 1);
+		break;
+	case Ogt: case Oge: case Olt: case Ole:
+		r = compare(s, n, 0);
+		break;
 //	case Otupget:
 //		assert(exprop(args[1]) == Olit);
 //		i = args[1]->expr.args[0]->lit.intval;
@@ -708,6 +756,7 @@ static void flattenidxiter(Flattenctx *s, Node *n)
 	flatten(s, lcond);
 	len = seqlen(s, seq, idxtype);
 	done = mkexpr(n->loc, Olt, idx, len, NULL);
+	done->expr.type = mktype(n->loc, Tybool);
 	cjmp(s, done, lmatch, lend);
 	flatten(s, lmatch);
 	val = mkexpr(n->loc, Oidx, seq, idx);
