@@ -13,6 +13,7 @@
 #include <sys/time.h>
 #include <sys/wait.h>
 
+#include "util.h"
 #include "parse.h"
 #include "mi.h"
 #include "asm.h"

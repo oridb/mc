@@ -6,7 +6,7 @@
 #include <limits.h>
 #include <string.h>
 
-#include "parse.h"
+#include "util.h"
 
 #define Initsz 16
 

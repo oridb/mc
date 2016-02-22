@@ -10,6 +10,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include "util.h"
 #include "parse.h"
 
 /* Allows us to look up types/traits by name nodes */

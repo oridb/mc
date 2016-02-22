@@ -12,7 +12,7 @@ OBJ= \
 	simp.o \
 	typeinfo.o \
 
-DEPS=../parse/libparse.a ../mi/libmi.a
+DEPS=../parse/libparse.a ../mi/libmi.a ../util/libutil.a
 
 include ../config.mk
 include ../mk/c.mk

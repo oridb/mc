@@ -11,7 +11,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include "parse.h"
+#include "util.h"
 
 /* malloc wrappers */
 void *zalloc(size_t sz)
@@ -52,43 +52,6 @@ void *xrealloc(void *mem, size_t sz)
 	return mem;
 }
 
-/* errors */
-void die(char *msg, ...)
-{
-	va_list ap;
-
-	va_start(ap, msg);
-	vfprintf(stderr, msg, ap);
-	fprintf(stderr, "\n");
-	va_end(ap);
-	abort();
-}
-
-void fatal(Node *n, char *msg, ...)
-{
-	va_list ap;
-
-	va_start(ap, msg);
-	lfatalv(n->loc, msg, ap);
-	va_end(ap);
-}
-
-void lfatal(Srcloc l, char *msg, ...)
-{
-	va_list ap;
-
-	va_start(ap, msg);
-	lfatalv(l, msg, ap);
-	va_end(ap);
-}
-
-void lfatalv(Srcloc l, char *msg, va_list ap)
-{
-	fprintf(stdout, "%s:%d: ", fname(l), lnum(l));
-	vfprintf(stdout, msg, ap);
-	fprintf(stdout, "\n");
-	exit(1);
-}
 
 /* Some systems don't have strndup. */
 char *strdupn(char *s, size_t len)

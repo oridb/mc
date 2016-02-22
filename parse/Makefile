@@ -1,21 +1,23 @@
 LIB=libparse.a
-OBJ=bitset.o \
-    dump.o \
-    fold.o \
-    gram.o \
-    htab.o \
-    infer.o \
-    names.o \
-    node.o \
-    specialize.o \
-    stab.o \
-    tok.o \
-    type.o \
-    use.o \
-    util.o
+OBJ=\
+	bitset.o \
+	dump.o \
+	err.o \
+	fold.o \
+	gram.o \
+	infer.o \
+	names.o \
+	node.o \
+	specialize.o \
+	stab.o \
+	tok.o \
+	type.o \
+	use.o \
 
 GENHDR=gram.h
 CLEAN=gram.c gram.h
+
+DEPS=../util/libutil.a
 
 include ../mk/lexyacc.mk
 include ../mk/c.mk

@@ -3,6 +3,7 @@ SUB = parse \
       6 \
       muse \
       rt \
+      util \
       doc
 
 EXTRA=buildmyr

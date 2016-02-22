@@ -7,6 +7,7 @@
 #include <limits.h>
 #include <string.h>
 
+#include "util.h"
 #include "parse.h"
 #include "mi.h"
 #include "asm.h"

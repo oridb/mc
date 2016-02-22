@@ -10,6 +10,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include "util.h"
 #include "parse.h"
 
 #include "../config.h"

@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <assert.h>
 
+#include "util.h"
 #include "parse.h"
 
 typedef struct Inferstate Inferstate;

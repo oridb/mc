@@ -7,6 +7,6 @@ OBJ=\
 	reaching.o \
 	
 
-DEPS=../parse/libparse.a
+DEPS=../parse/libparse.a ../util/libutil.a
 
 include ../mk/c.mk
