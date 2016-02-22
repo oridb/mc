@@ -61,7 +61,6 @@ static Node *lval(Simp *s, Node *n);
 static Node *assign(Simp *s, Node *lhs, Node *rhs);
 static Node *assignat(Simp *s, Node *r, size_t off, Node *val);
 static Node *getcode(Simp *s, Node *n);
-//static void simpcond(Simp *s, Node *n, Node *ltrue, Node *lfalse);
 static void simpconstinit(Simp *s, Node *dcl);
 static Node *simpcast(Simp *s, Node *val, Type *to);
 static Node *simpslice(Simp *s, Node *n, Node *dst);

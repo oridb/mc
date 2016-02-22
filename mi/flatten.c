@@ -382,42 +382,6 @@ static Node *rval(Flattenctx *s, Node *n)
 		r = mkexpr(n->loc, Oucon, args[0], t, NULL);
 		r->expr.type = n->expr.type;
 		break;
-//	case Outag:
-//		r = uconid(s, args[0]);
-//		break;
-//	case Oudata:
-//		r = flattenuget(s, n, dst);
-//		break;
-//	case Otup:
-//		r = flattentup(s, n, dst);
-//		break;
-//	case Oarr:
-//		if (!dst)
-//			dst = temp(s, n);
-//		t = addr(s, dst, exprtype(dst));
-//		for (i = 0; i < n->expr.nargs; i++)
-//			assignat(s, t, size(n->expr.args[i])*i, rval(s, n->expr.args[i], NULL));
-//		r = dst;
-//		break;
-//	case Ostruct:
-//		if (!dst)
-//		dst = temp(s, n);
-//		u = mkexpr(dst->loc, Odef, dst, NULL);
-//		u->expr.type = mktype(u->loc, Tyvoid);
-//		append(s, u);
-//		t = addr(s, dst, exprtype(dst));
-//		ty = exprtype(n);
-//		/* we only need to clear if we don't have things fully initialized */
-//		if (tybase(ty)->nmemb != n->expr.nargs)
-//			append(s, mkexpr(n->loc, Oclear, t, mkintlit(n->loc, size(n)), NULL));
-//		for (i = 0; i < n->expr.nargs; i++)
-//			assignat(s, t, offset(n, n->expr.args[i]->expr.idx), rval(s, n->expr.args[i], NULL));
-//		r = dst;
-//		break;
-//	case Ocast:
-//		r = flattencast(s, args[0], exprtype(n));
-//		break;
-//
 	/* fused ops:
 	 * foo ?= blah
 	 *    =>
@@ -479,9 +443,6 @@ static Node *rval(Flattenctx *s, Node *n)
 	case Ovar:
 		r = n;
 		break;;
-//	case Ogap:
-//		fatal(n, "'_' may not be an rvalue");
-//		break;
 	case Oret:
 		/* drain the increment queue before we return */
 		t = rval(s, args[0]);
@@ -501,29 +462,6 @@ static Node *rval(Flattenctx *s, Node *n)
 			r = rval(s, args[1]);
 		}
 		break;
-//	case Ocall:
-//		r = flattencall(s, n, dst);
-//		break;
-//	case Oaddr:
-//		t = lval(s, args[0]);
-//		if (exprop(t) == Ovar) /* Ovar is the only one that doesn't return Oderef(Oaddr(...)) */
-//			r = addr(s, t, exprtype(t));
-//		else
-//			r = t->expr.args[0];
-//		break;
-//	case Oneg:
-//		if (istyfloat(exprtype(n))) {
-//			t =mkfloat(n->loc, -1.0); 
-//			u = mkexpr(n->loc, Olit, t, NULL);
-//			t->lit.type = n->expr.type;
-//			u->expr.type = n->expr.type;
-//			v = flattenblob(s, u);
-//			r = mkexpr(n->loc, Ofmul, v, rval(s, args[0], NULL), NULL);
-//			r->expr.type = n->expr.type;
-//		} else {
-//			r = visit(s, n);
-//		}
-//		break;
 	case Obreak:
 		r = NULL;
 		if (s->nloopexit == 0)
@@ -542,15 +480,6 @@ static Node *rval(Flattenctx *s, Node *n)
 	case Ogt: case Oge: case Olt: case Ole:
 		r = compare(s, n, 0);
 		break;
-//	case Otupget:
-//		assert(exprop(args[1]) == Olit);
-//		i = args[1]->expr.args[0]->lit.intval;
-//		t = rval(s, args[0], NULL);
-//		r = tupget(s, t, i, dst);
-//		break;
-//	case Obad:
-//		die("bad operator");
-//		break;
 	default:
 		if (istyfloat(exprtype(n))) {
 			switch (exprop(n)) {
