@@ -55,14 +55,29 @@ const vastart = {args
 
 extern const put	: (fmt : byte[:], args : ... -> size)
 const vaenter = {ap
-	match typedesc(vatype(ap))
+	var ty
+
+	ty = vatype(ap)
+	match typedesc(ty)
 	| `Tyslice enc:	-> [.args=sliceptr(ap.args), .tc=[.nelt=slicelen(ap.args), .rem=enc, .isiter=false]]
 	| `Tytuple tc:	-> [.args=ap.args, .tc=tc]
-	| `Tystruct tc:	-> [.args=ap.args, .tc=tc]
+	| `Tystruct tc:	-> [.args=cursoralign(ap.args, ty), .tc=tc]
 	| `Tyarray (sz, enc):	-> [.args=ap.args, .tc=[.nelt=sz, .rem=enc, .isiter=false]]
 	| `Tyname (name, enc):	-> [.args=ap.args, .tc=typeenccursor(enc)]
 	| _:	std.die("unable to enter type\n")
 	;;
+}
+
+const cursoralign = {arg, ty
+	var ti, align, p
+
+	ti = typeinfo(ty)
+
+	/* apply the alignment to the arg pointer */
+	align = ti.align castto(intptr)
+	p = arg castto(intptr)
+	p = (p + align - 1) & ~(align - 1)
+	-> p castto(byte#)
 }
 
 const vaenterunion = {ap, elt
