@@ -158,8 +158,9 @@ static Node *seqlen(Flattenctx *s, Node *n, Type *ty)
 	} else if (exprtype(n)->type == Tyslice) {
 		r = mkexpr(n->loc, Osllen, rval(s, n), NULL);
 		r->expr.type = ty;
+	} else {
+		die("invalid seq type for len");
 	}
-	assert(r != NULL);
 	return r;
 }
 
