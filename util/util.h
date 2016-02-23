@@ -127,3 +127,15 @@ size_t max(size_t a, size_t b);
 size_t min(size_t a, size_t b);
 size_t align(size_t sz, size_t a);
 
+/* list funcs */
+/* hack; nl is void* b/c void*** is incompatible with T*** */
+void lappend( void *l, size_t *len, void *n);
+void lcat(void *dst, size_t *ndst, void *src, size_t nsrc);
+void linsert(void *l, size_t *len, size_t idx, void *n);
+void *lpop(void *l, size_t *len);
+void ldel(void *l, size_t *len, size_t idx);
+void lfree(void *l, size_t *len);
+
+/* suffix replacement */
+char *swapsuffix(char *buf, size_t sz, char *s, char *suf, char *swap);
+

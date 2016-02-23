@@ -572,18 +572,6 @@ void optinit(Optctx *ctx, char *optstr, char **optargs, size_t noptargs);
 int optnext(Optctx *c);
 int optdone(Optctx *c);
 
-/* convenience funcs */
-/* hack; nl is void* b/c void*** is incompatible with T*** */
-void lappend( void *l, size_t *len, void *n);
-void lcat(void *dst, size_t *ndst, void *src, size_t nsrc);
-void linsert(void *l, size_t *len, size_t idx, void *n);
-void *lpop(void *l, size_t *len);
-void ldel(void *l, size_t *len, size_t idx);
-void lfree(void *l, size_t *len);
-
-/* suffix replacement */
-char *swapsuffix(char *buf, size_t sz, char *s, char *suf, char *swap);
-
 /* Options to control the compilation */
 extern char debugopt[128];
 extern int asmonly;
