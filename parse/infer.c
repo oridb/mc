@@ -1198,13 +1198,14 @@ static void inferstruct(Inferstate *st, Node *n, int *isconst)
 	size_t i;
 
 	*isconst = 1;
+	/* we want to check outer nodes before inner nodes when unifying nested structs */
+	delayedcheck(st, n, curstab());
 	for (i = 0; i < n->expr.nargs; i++) {
 		infernode(st, &n->expr.args[i], NULL, NULL);
 		if (!n->expr.args[i]->expr.isconst)
 			*isconst = 0;
 	}
 	settype(st, n, mktyvar(n->loc));
-	delayedcheck(st, n, curstab());
 }
 
 static int64_t arraysize(Inferstate *st, Node *n)
@@ -2088,8 +2089,8 @@ static void checkstruct(Inferstate *st, Node *n)
 		}
 
 		if (!et)
-			fatal(n, "could not find member %s in struct %s, near %s", namestr(name),
-					tystr(t), ctxstr(st, n));
+			fatal(n, "could not find member %s in struct %s, near %s",
+				namestr(name), tystr(t), ctxstr(st, n));
 
 		unify(st, val, et, type(st, val));
 	}
