@@ -92,7 +92,7 @@ static inline int bshas(Bitset *bs, size_t elt)
 		return 0;
 	eltidx = elt / (8 * sizeof(size_t));
 	eltshift = elt % (8 * sizeof(size_t));
-	return (bs->chunks[eltidx] & (1ULL << (elt % (8 * sizeof(size_t))))) != 0;
+	return (bs->chunks[eltidx] & (1ULL << eltshift)) != 0;
 }
 
 
