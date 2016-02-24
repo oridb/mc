@@ -66,6 +66,36 @@ char *sbfin(Strbuf *sb);
 void sbputs(Strbuf *sb, char *s);
 void sbputb(Strbuf *sb, char b);
 
+/* bit sets */
+Bitset *mkbs(void);
+void bsfree(Bitset *bs);
+Bitset *bsdup(Bitset *bs);
+Bitset *bsclear(Bitset *bs);
+void delbs(Bitset *bs);
+void bsput(Bitset *bs, size_t elt);
+void bsdel(Bitset *bs, size_t elt);
+void bsunion(Bitset *a, Bitset *b);
+void bsintersect(Bitset *a, Bitset *b);
+void bsdiff(Bitset *a, Bitset *b);
+int bseq(Bitset *a, Bitset *b);
+int bsissubset(Bitset *set, Bitset *sub);
+int bsisempty(Bitset *set);
+int bsiter(Bitset *bs, size_t *elt);
+size_t bsmax(Bitset *bs);
+size_t bscount(Bitset *bs);
+/* inline for speed */
+static inline int bshas(Bitset *bs, size_t elt)
+{
+	size_t eltidx, eltshift;
+
+	if (elt >= bs->nchunks * 8 * sizeof(size_t))
+		return 0;
+	eltidx = elt / (8 * sizeof(size_t));
+	eltshift = elt % (8 * sizeof(size_t));
+	return (bs->chunks[eltidx] & (1ULL << (elt % (8 * sizeof(size_t))))) != 0;
+}
+
+
 /* hash tables */
 Htab *mkht(ulong (*hash)(void *key), int (*cmp)(void *k1, void *k2));
 void htfree(Htab *ht);

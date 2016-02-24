@@ -365,32 +365,6 @@ extern char *nodestr[];
 extern char *litstr[];
 extern char *tidstr[];
 
-/* data structures */
-Bitset *mkbs(void);
-void bsfree(Bitset *bs);
-Bitset *bsdup(Bitset *bs);
-Bitset *bsclear(Bitset *bs);
-void delbs(Bitset *bs);
-void bsput(Bitset *bs, size_t elt);
-void bsdel(Bitset *bs, size_t elt);
-void bsunion(Bitset *a, Bitset *b);
-void bsintersect(Bitset *a, Bitset *b);
-void bsdiff(Bitset *a, Bitset *b);
-int bseq(Bitset *a, Bitset *b);
-int bsissubset(Bitset *set, Bitset *sub);
-int bsisempty(Bitset *set);
-int bsiter(Bitset *bs, size_t *elt);
-size_t bsmax(Bitset *bs);
-size_t bscount(Bitset *bs);
-/* inline for speed */
-static inline int bshas(Bitset *bs, size_t elt)
-{
-	if (elt >= bs->nchunks * 8 * sizeof(size_t))
-		return 0;
-	return (bs->chunks[elt / (8 * sizeof(size_t))] & (1ULL << (elt % (8 * sizeof(size_t))))) !=
-		   0;
-}
-
 /* useful key types */
 int liteq(Node *a, Node *b);
 int litvaleq(Node *a, Node *b);

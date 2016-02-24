@@ -1,6 +1,7 @@
 LIB=libutil.a
 OBJ= \
 	alloc.o \
+	bitset.o \
 	htab.o \
 	pack.o \
 	util.o \

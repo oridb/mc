@@ -1,6 +1,5 @@
 LIB=libparse.a
 OBJ=\
-	bitset.o \
 	dump.o \
 	err.o \
 	fold.o \

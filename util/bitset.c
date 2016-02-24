@@ -7,7 +7,6 @@
 #include <string.h>
 
 #include "util.h"
-#include "parse.h"
 
 #define Sizetbits (CHAR_BIT * sizeof(size_t)) /* used in graph reprs */
 
