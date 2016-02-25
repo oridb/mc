@@ -1795,20 +1795,6 @@ static void inferstab(Inferstate *st, Stab *s)
 	free(k);
 }
 
-static void addlbl(Inferstate *st, Node *n)
-{
-	Node *lit;
-
-	if (n->type != Nexpr)
-		return;
-	if (exprop(n) != Olit)
-		return;
-	lit = n->expr.args[0];
-	if (lit->lit.littype != Llbl)
-		return;
-	putlbl(curstab(), lit->lit.lblname, n);
-}
-
 static void infernode(Inferstate *st, Node **np, Type *ret, int *sawret)
 {
 	size_t i, nbound;
@@ -1844,8 +1830,6 @@ static void infernode(Inferstate *st, Node **np, Type *ret, int *sawret)
 		setsuper(n->block.scope, curstab());
 		pushstab(n->block.scope);
 		inferstab(st, n->block.scope);
-		for (i = 0; i < n->block.nstmts; i++)
-			addlbl(st, n->block.stmts[i]);
 		for (i = 0; i < n->block.nstmts; i++)
 			infernode(st, &n->block.stmts[i], ret, sawret);
 		popstab();

@@ -19,6 +19,8 @@
 
 
 Stab *curscope;
+static Node **lbls;
+static size_t nlbls;
 
 void yyerror(const char *s);
 int yylex(void);
@@ -783,10 +785,30 @@ littok  : Tstrlit       {$$ = mkstr($1->loc, $1->strval);}
 	}
 	;
 
-funclit : Tobrace params Tendln blkbody Tcbrace
-	{$$ = mkfunc($1->loc, $2.nl, $2.nn, mktyvar($3->loc), $4);}
-	| Tobrace params Tret type Tendln blkbody Tcbrace
-	{$$ = mkfunc($1->loc, $2.nl, $2.nn, $4, $6);}
+funclit : Tobrace params Tendln blkbody Tcbrace {
+		size_t i;
+		Node *fn, *lit;
+
+		$$ = mkfunc($1->loc, $2.nl, $2.nn, mktyvar($3->loc), $4);
+		fn = $$->lit.fnval;
+		for (i = 0; i < nlbls; i++) {
+			lit = lbls[i]->expr.args[0];
+			putlbl(fn->func.scope, lit->lit.lblname, lbls[i]);
+		}
+		lfree(&lbls, &nlbls);
+	}
+	| Tobrace params Tret type Tendln blkbody Tcbrace {
+		size_t i;
+		Node *fn, *lit;
+
+		$$ = mkfunc($1->loc, $2.nl, $2.nn, $4, $6);
+		fn = $$->lit.fnval;
+		for (i = 0; i < nlbls; i++) {
+			lit = lbls[i]->expr.args[0];
+			putlbl(fn->func.scope, lbls[i]->lit.lblname, lbls[i]);
+		}
+		lfree(&lbls, &nlbls);
+	}
 	;
 
 params  : fnparam {
@@ -981,6 +1003,7 @@ label   : Tcolon Tident {
 		genlblstr(buf, sizeof buf, $2->id);
 		$$ = mklbl($2->loc, buf);
 		$$->expr.args[0]->lit.lblname = strdup($2->id);
+		lappend(&lbls, &nlbls, $$);
 	}
 	;
 

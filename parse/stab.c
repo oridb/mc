@@ -184,10 +184,7 @@ Node *getdcl(Stab *st, Node *n)
 
 void putlbl(Stab *st, char *name, Node *lbl)
 {
-	while (st && !st->isfunc)
-		st = st->super;
-	if (!st) 
-		fatal(lbl, "label %s defined outside function\n", name);
+	assert(st && st->isfunc);
 	if (hthas(st->lbl, name))
 		fatal(lbl, "duplicate label %s, first defined on line %d\n", name, lbl->loc.line);
 	htput(st->lbl, name, lbl);
