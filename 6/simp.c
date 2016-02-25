@@ -1473,10 +1473,11 @@ void simpglobl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***blob, s
 	s.blobs = *blob;
 	s.nblobs = *nblob;
 	s.hasenv = 0;
-	name = asmname(dcl);
 
 	if (dcl->decl.isextern || dcl->decl.isgeneric)
 		return;
+
+	name = asmname(dcl);
 	if (isconstfn(dcl)) {
 		f = simpfn(&s, name, dcl);
 		lappend(fn, nfn, f);
@@ -1485,5 +1486,6 @@ void simpglobl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***blob, s
 	}
 	*blob = s.blobs;
 	*nblob = s.nblobs;
+
 	free(name);
 }

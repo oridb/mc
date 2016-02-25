@@ -53,6 +53,7 @@ struct Flattenctx {
 static Node *flatten(Flattenctx *s, Node *n);
 static Node *rval(Flattenctx *s, Node *n);
 static Node *lval(Flattenctx *s, Node *n);
+static Node *assign(Flattenctx *s, Node *lhs, Node *rhs);
 
 static void append(Flattenctx *s, Node *n)
 {
@@ -268,14 +269,17 @@ static Node *destructure(Flattenctx *s, Node *lhs, Node *rhs)
 	args = lhs->expr.args;
 	rhs = rval(s, rhs);
 	for (i = 0; i < lhs->expr.nargs; i++) {
-		lv = lval(s, args[i]);
-
 		idx = mkintlit(rhs->loc, i);
 		idx->expr.type = mktype(rhs->loc, Tyuint64);
 		rv = mkexpr(rhs->loc, Otupget, rhs, idx, NULL);
 		rv->expr.type = lhs->expr.type;
 
-		append(s, asn(lv, rv));
+		if (exprop(args[i]) == Otup) {
+			destructure(s, args[i], rv);
+		} else {
+			lv = lval(s, args[i]);
+			append(s, assign(s, lv, rv));
+		}
 	}
 	return rhs;
 }
@@ -328,6 +332,23 @@ static Node *compare(Flattenctx *s, Node *n, int fields)
 	r->expr.type = mktype(n->loc, Tybool);
 	return r;
 }
+
+static Node *assign(Flattenctx *s, Node *lhs, Node *rhs)
+{
+	Node *r, *t, *u;
+
+	if (exprop(lhs) == Otup) {
+		r = destructure(s, lhs, rhs);
+	} else if (tybase(exprtype(lhs))->type != Tyvoid) {
+		t = lval(s, lhs);
+		u = rval(s, rhs);
+		r = asn(t, u);
+	} else {
+		r = rval(s, rhs);
+	}
+	return r;
+}
+
 static Node *rval(Flattenctx *s, Node *n)
 {
 	Node *t, *u, *v; /* temporary nodes */
@@ -454,15 +475,7 @@ static Node *rval(Flattenctx *s, Node *n)
 		append(s, mkexpr(n->loc, Oret, t, NULL));
 		break;
 	case Oasn:
-		if (exprop(args[0]) == Otup) {
-			r = destructure(s, args[0], args[1]);
-		} else if (tybase(exprtype(n))->type != Tyvoid) {
-			t = lval(s, args[0]);
-			u = rval(s, args[1]);
-			r = asn(t, u);
-		} else {
-			r = rval(s, args[1]);
-		}
+		r = assign(s, args[0], args[1]);
 		break;
 	case Obreak:
 		r = NULL;
