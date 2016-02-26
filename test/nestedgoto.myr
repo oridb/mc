@@ -1,0 +1,13 @@
+use std
+
+const main = {
+    match 0
+    | 0:
+        goto ok
+    | 1:
+        :ok
+        -> void
+    | _:
+    ;;
+    std.exit(1)
+}

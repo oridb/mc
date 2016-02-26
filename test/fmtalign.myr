@@ -1,0 +1,17 @@
+use std
+
+pkg = 
+    type msg = union
+        `Tversion   tversion
+    ;;
+    type tversion = struct
+        tag : uint16
+        version : byte[:]
+    ;;
+;;
+
+const main = {
+    var msg=`Tversion [.tag=45, .version="9P2000"]
+    std.fmt("{}\n", msg)
+}
+

@@ -96,7 +96,7 @@ B genericrec	E	0
 B genericimpl	P	'int string @a @a[:]'
 B recgeneric	P	'built'
 B bigtyblob	P	'`U100 '
-# B genericchain	P	'val = 123' ## BUGGERED
+B genericchain	P	'val = 123'
 B genericmake	P	'val = 123'
 B genericuret	E	42
 B sizeof	E	4
@@ -138,10 +138,10 @@ B strsplit	C
 B strfind	C
 B strjoin	C
 B exporttrait
-# B local-labels	E	10 ## BUGGERED
+B local-labels	E	10
 F declmismatch
 F infermismatch
-# F usedef      ## BUGGERED
+F usedef
 F occur
 F tyoccur
 F union-extraarg
@@ -155,3 +155,8 @@ B voideffect	P	pass
 B foroptexpr	P	pass
 B bounds	E	134
 B rvaldotlen	P	pass
+B destructuretup	E	0
+B nestedgoto	E	0
+B initializer	E	0
+B fmtalign	E	0
+

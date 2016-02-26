@@ -12,5 +12,5 @@ generic try = {opt : std.option(@b)
 }
 
 const main = {
-	std.put("val = %i\n", try(fail(123)))
+	std.put("val = {}\n", try(fail(123)))
 }

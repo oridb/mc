@@ -1,3 +1,5 @@
+use std
+
 /*
 should fail to compile because 'a' is used
 before it is defined.

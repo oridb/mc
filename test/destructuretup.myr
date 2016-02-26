@@ -1,0 +1,7 @@
+use std
+
+const main = {
+    var a,b
+    ((a, b), _) = ((1, 2), 3)
+    std.assert(a+b == 3, "fail\n")
+}

@@ -1,0 +1,18 @@
+use std
+
+pkg =
+    type qid = struct
+        ty  : uint8
+        path    : uint64
+    ;;
+
+    type stat = struct
+        dev : uint32
+        qid : qid
+    ;;
+;;
+
+const main = {
+    var stat : stat = [.dev=0, .qid=[.ty=0, .path=0]]
+    std.assert(stat.qid.path == 0, "fail\n")
+}
