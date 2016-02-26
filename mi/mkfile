@@ -1,13 +1,14 @@
 </$objtype/mkfile
 CC=pcc
 LD=pcc
-CFLAGS=-c -D_POSIX_SOURCE -D_SUSV2_SOURCE -D_C99_SNPRINTF_EXTENSION -I../parse
+CFLAGS=-c -D_POSIX_SOURCE -D_SUSV2_SOURCE -D_C99_SNPRINTF_EXTENSION -I../parse -I../util
 
 LIB=libmi.a
 OFILES=\
 	cfg.$O\
-	match.$O\
 	dfcheck.$O\
+	flatten.$O\
+	match.$O\
 	reaching.$O\
 
 HFILES=mi.h ../config.h ../parse/parse.h

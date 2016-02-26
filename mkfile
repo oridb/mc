@@ -1,11 +1,12 @@
 </$objtype/mkfile
 
-SUB = parse \
-      mi \
-      6 \
-      muse \
-      rt \
-      doc
+SUB = util \
+	parse \
+	mi \
+	6 \
+	muse \
+	rt \
+	doc
 
 all:V: $SUB config.h
 	for(dir in $SUB)@{
