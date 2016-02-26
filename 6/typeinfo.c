@@ -104,6 +104,7 @@ Blob *tydescsub(Type *ty)
 	char buf[512];
 	uint8_t tt;
 	Node *len;
+	int isintern;
 
 	sub = NULL;
 	nsub = 0;
@@ -179,7 +180,10 @@ Blob *tydescsub(Type *ty)
 	case Tyname:
 		i = bprintf(buf, sizeof buf, "%s", Symprefix);
 		tydescid(buf + i, sizeof buf - i, ty);
-		lappend(&sub, &nsub, mkblobref(buf, 0, ty->isimport || ty->vis == Visexport));
+		isintern = 0;
+		if (types[i]->isreflect && (!types[i]->isimport || types[i]->ishidden))
+			isintern = 1;
+		lappend(&sub, &nsub, mkblobref(buf, 0, isintern));
 		break;
 	}
 	b = mkblobseq(sub, nsub);
