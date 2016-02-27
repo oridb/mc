@@ -242,7 +242,7 @@ char *genlblstr(char *buf, size_t sz, char *suffix)
 	static int nextlbl;
 	size_t len;
 
-	len = snprintf(buf, 128, ".L%d.%s", nextlbl++, suffix);
+	len = snprintf(buf, 128, ".L%d%s", nextlbl++, suffix);
 	assert(len <= sz);
 	return buf;
 }

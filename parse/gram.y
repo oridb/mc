@@ -805,7 +805,7 @@ funclit : Tobrace params Tendln blkbody Tcbrace {
 		fn = $$->lit.fnval;
 		for (i = 0; i < nlbls; i++) {
 			lit = lbls[i]->expr.args[0];
-			putlbl(fn->func.scope, lbls[i]->lit.lblname, lbls[i]);
+			putlbl(fn->func.scope, lit->lit.lblname, lbls[i]);
 		}
 		lfree(&lbls, &nlbls);
 	}

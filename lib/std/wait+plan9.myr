@@ -10,6 +10,7 @@ use "htab"
 use "intparse"
 use "option"
 use "strsplit"
+use "striter"
 use "syswrap"
 use "utf"
 

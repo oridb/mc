@@ -226,7 +226,7 @@ static size_t writebytes(FILE *fd, char *name, size_t off, char *p, size_t sz)
 	for (i = 0; i < sz; i++) {
 		len = min(sz - i, 8);
 		if (i % 8 == 0)
-			fprintf(fd, "DATA %s+%zd(SB)/%zd,$\"", name, off + i, len);
+			fprintf(fd, "\tDATA %s+%zd(SB)/%zd,$\"", name, off + i, len);
 		if (p[i] == '"' || p[i] == '\\')
 			fprintf(fd, "\\");
 		if (isprint(p[i]))
@@ -286,7 +286,7 @@ static size_t encodemin(FILE *fd, uint64_t val, size_t off, char *lbl)
 	uint8_t b;
 
 	if (val < 128) {
-		fprintf(fd, "\tDATA %s+%zd(SB)/1,$%zd\n", lbl, off, val);
+		fprintf(fd, "\tDATA %s+%zd(SB)/1,$%zd //x\n", lbl, off, val);
 		return 1;
 	}
 
@@ -302,7 +302,7 @@ static size_t encodemin(FILE *fd, uint64_t val, size_t off, char *lbl)
 	val >>=  shift;
 	while (val != 0) {
 		n++;
-		fprintf(fd, "\tDATA %s+%zd(SB)/1,$%u\n", lbl, off+n, (uint)val & 0xff);
+		fprintf(fd, "\tDATA %s+%zd(SB)/1,$%u// y\n", lbl, off+n, (uint)val & 0xff);
 		val >>= 8;
 	}
 	return i;
@@ -317,19 +317,19 @@ static size_t writeblob(FILE *fd, Blob *b, size_t off, char *lbl)
 		return 0;
 	switch (b->type) {
 	case Bti8:
-		fprintf(fd, "DATA %s+%zd(SB)/1,$%zd\n", lbl, off+n, b->ival);
+		fprintf(fd, "\tDATA %s+%zd(SB)/1,$%zd\n", lbl, off+n, b->ival);
 		n += 1;
 		break;
 	case Bti16:
-		fprintf(fd, "DATA %s+%zd(SB)/2,$%zd\n", lbl, off+n, b->ival);
+		fprintf(fd, "\tDATA %s+%zd(SB)/2,$%zd\n", lbl, off+n, b->ival);
 		n += 2;
 		break;
 	case Bti32:
-		fprintf(fd, "DATA %s+%zd(SB)/4,$%zd\n", lbl, off+n, b->ival);
+		fprintf(fd, "\tDATA %s+%zd(SB)/4,$%zd\n", lbl, off+n, b->ival);
 		n += 4;
 		break;
 	case Bti64:
-		fprintf(fd, "DATA %s+%zd(SB)/8,$%lld\n", lbl, off+n, (vlong)b->ival);
+		fprintf(fd, "\tDATA %s+%zd(SB)/8,$%lld\n", lbl, off+n, (vlong)b->ival);
 		n += 8;
 		break;
 	case Btimin:
@@ -337,10 +337,10 @@ static size_t writeblob(FILE *fd, Blob *b, size_t off, char *lbl)
 		break;
 	case Btref:
 		if (b->ref.isextern || b->ref.str[0] == '.')
-			fprintf(fd, "DATA %s+%zd(SB)/8,$%s+%zd(SB)\n",
+			fprintf(fd, "\tDATA %s+%zd(SB)/8,$%s+%zd(SB)\n",
 					lbl, off+n, b->ref.str, b->ref.off);
 		else
-			fprintf(fd, "DATA %s+%zd(SB)/8,$%s<>+%zd(SB)\n",
+			fprintf(fd, "\tDATA %s+%zd(SB)/8,$%s<>+%zd(SB)\n",
 					lbl, off+n, b->ref.str, b->ref.off);
 		n += 8;
 		break;
@@ -353,7 +353,7 @@ static size_t writeblob(FILE *fd, Blob *b, size_t off, char *lbl)
 		break;
 	case Btpad:
 		for (i = 0; i < b->npad; i++)
-			fprintf(fd, "DATA %s+%zd(SB)/1,$0\n", lbl, off+n+i);
+			fprintf(fd, "\tDATA %s+%zd(SB)/1,$0\n", lbl, off+n+i);
 		n += b->npad;
 		break;
 	}
@@ -452,6 +452,7 @@ void genp9(Node *file, char *out)
 		case Nimpl:
 			break;
 		case Ndecl:
+			n = flattenfn(n);
 			simpglobl(n, globls, &fn, &nfn, &blob, &nblob);
 			break;
 		default:
@@ -471,8 +472,10 @@ void genp9(Node *file, char *out)
 	for (i = 0; i < nfn; i++)
 		genfunc(fd, fn[i], globls, strtab);
 	for (i = 0; i < ntypes; i++)
-		if (types[i]->isreflect && !types[i]->isimport)
+		if (types[i]->isreflect && !types[i]->isimport) {
 			gentype(fd, types[i]);
+			printf("gen %s\n", tystr(types[i]));
+		}
 	fprintf(fd, "\n");
 	genstrings(fd, strtab);
 

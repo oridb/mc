@@ -138,6 +138,7 @@ char *tydescid(char *buf, size_t bufsz, Type *ty)
 			p += bprintf(p, end - p, "_tydesc$%s%s%s$%d", ns, sep, ty->name->name.name, ty->tid);
 		for (i = 0; i < ty->narg; i++)
 			p += tyidfmt(p, end - p, ty->arg[i]);
+		printf("gen %s => %s\n", tystr(ty), buf);
 	} else {
 		if (file->file.globls->name) {
 			ns = file->file.globls->name;

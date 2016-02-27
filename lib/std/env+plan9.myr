@@ -42,8 +42,8 @@ const getenv = {name
 		| `Fail m: -> `None
 		| `Ok data:
 			data = cstrconv(data)
-			envkey = slpush(envkey, sldup(data))
-			envval = slpush(envval, data)
+			slpush(&envkey, sldup(data))
+			slpush(&envval, data)
 			-> `Some data
 		;;
 	;;
