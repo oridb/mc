@@ -472,10 +472,8 @@ void genp9(Node *file, char *out)
 	for (i = 0; i < nfn; i++)
 		genfunc(fd, fn[i], globls, strtab);
 	for (i = 0; i < ntypes; i++)
-		if (types[i]->isreflect && !types[i]->isimport) {
+		if (types[i]->isreflect && !types[i]->isimport)
 			gentype(fd, types[i]);
-			printf("gen %s\n", tystr(types[i]));
-		}
 	fprintf(fd, "\n");
 	genstrings(fd, strtab);
 
