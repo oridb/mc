@@ -371,6 +371,7 @@ int liteq(Node *a, Node *b);
 int litvaleq(Node *a, Node *b);
 ulong tyhash(void *t);
 int tyeq(void *a, void *b);
+int tystricteq(void *a, void *b);
 ulong namehash(void *t);
 int nameeq(void *a, void *b);
 ulong nsnamehash(void *t);

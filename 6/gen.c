@@ -127,17 +127,19 @@ char *tydescid(char *buf, size_t bufsz, Type *ty)
 	ns = "";
 	p = buf;
 	end = buf + bufsz;
+	ty = tydedup(ty);
 	if (ty->type == Tyname) {
 		if (ty->name->name.ns) {
 			ns = ty->name->name.ns;
 			sep = "$";
 		}
-		if (ty->vis == Visexport || ty->isimport)
-			p += bprintf(p, end - p, "_tydesc$%s%s%s", ns, sep, ty->name->name.name);
+		if (ty->vis != Visintern || ty->isimport)
+			p += bprintf(p, end - p, "_tydesc$%s%s%s", ns, sep, ty->name->name.name, ty->tid);
 		else
 			p += bprintf(p, end - p, "_tydesc$%s%s%s$%d", ns, sep, ty->name->name.name, ty->tid);
 		for (i = 0; i < ty->narg; i++)
 			p += tyidfmt(p, end - p, ty->arg[i]);
+		bprintf(p, end - p, "/* %zd */", ty->tid);
 	} else {
 		if (file->file.globls->name) {
 			ns = file->file.globls->name;

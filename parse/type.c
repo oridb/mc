@@ -672,14 +672,16 @@ ulong tyhash(void *ty)
 	return hash;
 }
 
-int tyeq_rec(Type *a, Type *b, Bitset *visited)
+int tyeq_rec(Type *a, Type *b, Bitset *visited, int search)
 {
 	size_t i;
 
 	if (!a || !b)
 		return a == b;
-	a = tysearch(a);
-	b = tysearch(b);
+	if (!search) {
+		a = tysearch(a);
+		b = tysearch(b);
+	}
 	if (a->type != b->type)
 		return 0;
 	if (a->narg != b->narg)
@@ -712,7 +714,7 @@ int tyeq_rec(Type *a, Type *b, Bitset *visited)
 		for (i = 0; i < a->nmemb; i++) {
 			if (!nameeq(a->udecls[i]->name, b->udecls[i]->name))
 				return 0;
-			if (!tyeq_rec(a->udecls[i]->etype, b->udecls[i]->etype, visited))
+			if (!tyeq_rec(a->udecls[i]->etype, b->udecls[i]->etype, visited, search))
 				return 0;
 		}
 		break;
@@ -720,7 +722,7 @@ int tyeq_rec(Type *a, Type *b, Bitset *visited)
 		for (i = 0; i < a->nmemb; i++) {
 			if (strcmp(declname(a->sdecls[i]), declname(b->sdecls[i])) != 0)
 				return 0;
-			if (!tyeq_rec(decltype(a->sdecls[i]), decltype(b->sdecls[i]), visited))
+			if (!tyeq_rec(decltype(a->sdecls[i]), decltype(b->sdecls[i]), visited, search))
 				return 0;
 		}
 		break;
@@ -728,10 +730,10 @@ int tyeq_rec(Type *a, Type *b, Bitset *visited)
 		if (!nameeq(a->name, b->name))
 			return 0;
 		for (i = 0; i < a->narg; i++)
-			if (!tyeq_rec(a->arg[i], b->arg[i], visited))
+			if (!tyeq_rec(a->arg[i], b->arg[i], visited, search))
 				return 0;
 		for (i = 0; i < a->nsub; i++)
-			if (!tyeq_rec(a->sub[i], b->sub[i], visited))
+			if (!tyeq_rec(a->sub[i], b->sub[i], visited, search))
 				return 0;
 		break;
 	case Tyarray:
@@ -741,9 +743,22 @@ int tyeq_rec(Type *a, Type *b, Bitset *visited)
 	default: break;
 	}
 	for (i = 0; i < a->nsub; i++)
-		if (!tyeq_rec(a->sub[i], b->sub[i], visited))
+		if (!tyeq_rec(a->sub[i], b->sub[i], visited, search))
 			return 0;
 	return 1;
+}
+
+int tystricteq(void *a, void *b)
+{
+	Bitset *bs;
+	int eq;
+
+	if (a == b)
+		return 1;
+	bs = mkbs();
+	eq = tyeq_rec(a, b, bs, 0);
+	bsfree(bs);
+	return eq;
 }
 
 int tyeq(void *a, void *b)
@@ -754,7 +769,7 @@ int tyeq(void *a, void *b)
 	if (a == b)
 		return 1;
 	bs = mkbs();
-	eq = tyeq_rec(a, b, bs);
+	eq = tyeq_rec(a, b, bs, 1);
 	bsfree(bs);
 	return eq;
 }
@@ -903,7 +918,7 @@ void tyinit(Stab *st)
 	Type *ty;
 	Trait *tr;
 
-	tydeduptab = mkht(tyhash, tyeq);
+	tydeduptab = mkht(tyhash, tystricteq);
 	/* this must be done after all the types are created, otherwise we will
 	 * clobber the memoized bunch of types with the type params. */
 #define Tc(c, n) \

@@ -402,6 +402,23 @@ static void gentype(FILE *fd, Type *ty)
 	writeblob(fd, b, 0, lbl);
 }
 
+static void gentypes(FILE *fd)
+{
+	Type *ty;
+	size_t i;
+
+	for (i = Ntypes; i < ntypes; i++) {
+		if (!types[i]->isreflect)
+			continue;
+		ty = tydedup(types[i]);
+		if (ty->isemitted || ty->isimport)
+			continue;
+		gentype(fd, ty);
+	}
+	fprintf(fd, "\n");
+}
+
+
 static void genblob(FILE *fd, Node *blob, Htab *globls, Htab *strtab)
 {
 	char *lbl;
@@ -471,11 +488,11 @@ void genp9(Node *file, char *out)
 		genblob(fd, blob[i], globls, strtab);
 	for (i = 0; i < nfn; i++)
 		genfunc(fd, fn[i], globls, strtab);
-	for (i = 0; i < ntypes; i++)
-		if (types[i]->isreflect && (!types[i]->isimport || types[i]->ishidden))
-			gentype(fd, types[i]);
+	gentypes(fd);
 	fprintf(fd, "\n");
+
 	genstrings(fd, strtab);
+	fprintf(fd, "\n");
 
 	fclose(fd);
 }

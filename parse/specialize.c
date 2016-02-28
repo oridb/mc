@@ -114,7 +114,6 @@ Type *tyspecialize(Type *orig, Tysubst *tsmap, Htab *delayed, Htab *trbase)
 		ret = mktyname(t->loc, t->name, tyspecialize(t->sub[0], tsmap, delayed, trbase));
 		if (orig->type == Tyunres)
 			substpop(tsmap);
-		ret->issynth = 1;
 		ret->arg = arg;
 		ret->narg = narg;
 		ret->traits = bsdup(t->traits);

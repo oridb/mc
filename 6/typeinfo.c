@@ -114,6 +114,7 @@ Blob *tydescsub(Type *ty)
 	if (ty->type == Tyvar)
 		return NULL;
 
+	ty = tydedup(ty);
 	if (ty->type == Tyname)
 		tt |= Tdindirect;
 	sz = mkblobi(Btimin, 0);
@@ -220,7 +221,7 @@ Blob *tydescblob(Type *ty)
 		sz->ival = blobsz(sub);
 		lappend(&b->seq.sub, &b->seq.nsub, sz);
 		lappend(&b->seq.sub, &b->seq.nsub, sub);
-		if (ty->vis == Visexport)
+		if (ty->vis != Visintern)
 			b->isglobl = 1;
 	} else {
 		b = tydescsub(ty);

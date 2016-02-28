@@ -346,16 +346,36 @@ static void genfunc(FILE *fd, Func *fn, Htab *globls, Htab *strtab)
 	writeasm(fd, &is, fn);
 }
 
-void gentype(FILE *fd, Type *ty)
+static void gentype(FILE *fd, Type *ty)
 {
 	Blob *b;
 
-	if (ty->type == Tyvar)
+	ty = tydedup(ty);
+	if (ty->type == Tyvar || ty->isemitted)
 		return;
+
+	ty->isemitted = 1;
 	b = tydescblob(ty);
 	writeblob(fd, b);
 	blobfree(b);
 }
+
+static void gentypes(FILE *fd)
+{
+	Type *ty;
+	size_t i;
+
+	for (i = Ntypes; i < ntypes; i++) {
+		if (!types[i]->isreflect)
+			continue;
+		ty = tydedup(types[i]);
+		if (ty->isemitted || ty->isimport)
+			continue;
+		gentype(fd, ty);
+	}
+	fprintf(fd, "\n");
+}
+
 
 void genblob(FILE *fd, Node *blob, Htab *globls, Htab *strtab)
 {
@@ -436,14 +456,12 @@ void gengas(Node *file, char *out)
 	fprintf(fd, ".text\n");
 	for (i = 0; i < nfn; i++)
 		genfunc(fd, fn[i], globls, strtab);
-	fprintf(fd, "\n");
-
-	for (i = 0; i < ntypes; i++)
-		if (types[i]->isreflect && (!types[i]->isimport || types[i]->ishidden))
-			gentype(fd, types[i]);
+	gentypes(fd);
 	fprintf(fd, "\n");
 
 	genstrings(fd, strtab);
+	fprintf(fd, "\n");
+
 	fclose(fd);
 }
 
