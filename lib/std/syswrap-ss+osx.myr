@@ -5,7 +5,7 @@ use "slcp"
 use "die"
 
 pkg std =
-	const exit	: (status:int -> void)
+	$noret const exit	: (status:int -> void)
 	pkglocal const bgetcwd	: (buf : byte[:] -> errno)
 ;;
 
