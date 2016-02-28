@@ -112,9 +112,6 @@ struct Type {
 	Srcloc loc;
 	Vis vis;
 
-	int resolved; /* Have we resolved the subtypes? Prevents infinite recursion. */
-	int fixed;	/* Have we fixed the subtypes? Prevents infinite recursion. */
-
 	Bitset *traits;	/* the type constraints matched on this type */
 	Node **traitlist;  /* The names of the constraints on the type. Used to fill the bitset */
 	size_t ntraitlist; /* The length of the constraint list above */
@@ -137,12 +134,16 @@ struct Type {
 		Ucon **udecls; /* Tyunion: decls in union */
 	};
 
-	char issynth;	/* Tyname: whether this is synthesized or not */
+	char hasparams;	 /* cache for whether this type has params */
+	char issynth;	 /* Tyname: whether this is synthesized or not */
 	char ishidden;   /* Tyname: whether this is hidden or not */
 	char ispkglocal; /* Tyname: whether this is package local or not */
 	char isimport;   /* Tyname: whether tyis type was imported. */
 	char isreflect;  /* Tyname: whether this type has reflection info */
 	char isemitted;  /* Tyname: whether this type has been emitted */
+	char resolved; /* Have we resolved the subtypes? Prevents infinite recursion. */
+	char fixed;	/* Have we fixed the subtypes? Prevents infinite recursion. */
+
 };
 
 struct Ucon {

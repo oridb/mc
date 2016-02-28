@@ -401,12 +401,13 @@ int hasparamsrec(Type *t, Bitset *visited)
 int hasparams(Type *t)
 {
 	Bitset *visited;
-	int r;
 
+	if (t->hasparams)
+		return 1;
 	visited = mkbs();
-	r = hasparamsrec(t, visited);
+	t->hasparams = hasparamsrec(t, visited);
 	bsfree(visited);
-	return r;
+	return t->hasparams;
 }
 
 Type *tybase(Type *t)
