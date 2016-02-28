@@ -387,8 +387,11 @@ static void gentype(FILE *fd, Type *ty)
 	Blob *b;
 	char lbl[1024];
 
-	if (ty->type == Tyvar)
+	ty = tydedup(ty);
+	if (ty->type == Tyvar || ty->isemitted)
 		return;
+
+	ty->isemitted = 1;
 	b = tydescblob(ty);
 	if (!b)
 		return;
