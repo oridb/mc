@@ -531,6 +531,7 @@ int loaduse(char *path, FILE *f, Stab *into, Vis vis);
 void readuse(Node *use, Stab *into, Vis vis);
 void writeuse(FILE *fd, Node *file);
 void tagexports(Node *file, int hidelocal);
+void tagreflect(Type *t);
 void addextlibs(Node *file, char **libs, size_t nlibs);
 
 /* expression folding */

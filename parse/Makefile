@@ -2,6 +2,7 @@ LIB=libparse.a
 OBJ=\
 	dump.o \
 	err.o \
+	export.o \
 	fold.o \
 	gram.o \
 	infer.o \

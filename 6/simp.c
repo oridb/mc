@@ -878,11 +878,10 @@ static Node *vatypeinfo(Simp *s, Node *n)
 	 * to count from ft->nsub - 1, up to n->expr.nsub.
 	 */
 	for (i = ft->nsub - 1; i < n->expr.nargs; i++) {
-		exprtype(n->expr.args[i])->isreflect = 1;
 		lappend(&st, &nst, exprtype(n->expr.args[i]));
 	}
 	vt = mktytuple(n->loc, st, nst);
-	vt->isreflect = 1;
+	tagreflect(vt);
 
 	/* make the decl */
 	tn = mkname(Zloc, tydescid(buf, sizeof buf, vt));
