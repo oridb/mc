@@ -181,8 +181,6 @@ Blob *tydescsub(Type *ty)
 	case Tyname:
 		i = bprintf(buf, sizeof buf, "%s", Symprefix);
 		tydescid(buf + i, sizeof buf - i, ty);
-		if (!strcmp("_tydesc$sys$size", buf))
-			printf("vis: %d\n", ty->vis);
 		isextern = ty->isimport || ty->vis != Visintern;
 		lappend(&sub, &nsub, mkblobref(buf, 0, isextern));
 		break;
