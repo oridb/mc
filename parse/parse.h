@@ -142,6 +142,7 @@ struct Type {
 	char ispkglocal; /* Tyname: whether this is package local or not */
 	char isimport;   /* Tyname: whether tyis type was imported. */
 	char isreflect;  /* Tyname: whether this type has reflection info */
+	char isemitted;  /* Tyname: whether this type has been emitted */
 };
 
 struct Ucon {
@@ -420,6 +421,7 @@ void tyinit(Stab *st); /* sets up built in types */
 
 Type *mktype(Srcloc l, Ty ty);
 Type *tydup(Type *t); /* shallow duplicate; all subtypes/members/... kept */
+Type *tydedup(Type *t);
 Type *mktyvar(Srcloc l);
 Type *mktyparam(Srcloc l, char *name);
 Type *mktygeneric(Srcloc l, Node *name, Type **params, size_t nparams, Type *base);

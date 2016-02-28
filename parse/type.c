@@ -28,6 +28,7 @@ size_t ntraittab;
 Node **impltab;
 size_t nimpltab;
 
+static Htab *tydeduptab;
 /* Built in type constraints */
 static Trait *traits[Ntypes + 1][4];
 static int tybfmt(char *buf, size_t len, Type *t);
@@ -39,6 +40,20 @@ char stackness[] = {
 };
 
 int isstacktype(Type *t) { return stackness[tybase(t)->type]; }
+
+Type *tydedup(Type *ty)
+{
+	Type *had;
+
+	had = htget(tydeduptab, ty);
+	if (!had) {
+		htput(tydeduptab, ty, ty);
+		return ty;
+	}
+	/* if one is emitted, both are */
+	ty->isemitted = ty->isemitted || had->isemitted;
+	return had;
+}
 
 Type *mktype(Srcloc loc, Ty ty)
 {
@@ -644,11 +659,6 @@ ulong tyhash(void *ty)
 
 	t = (Type *)ty;
 	switch (t->type) {
-		/* Important: we want tyhash to be consistent cross-file, since it
-		 * is used in naming trait impls and such.
-		 *
-		 * We should find a better name.
-		 */
 	case Tyvar:	hash = inthash(t->tid);	break;
 	case Typaram:	hash = strhash(t->pname);	break;
 	case Tyunion:	hash = inthash(t->type);	break;
@@ -893,6 +903,7 @@ void tyinit(Stab *st)
 	Type *ty;
 	Trait *tr;
 
+	tydeduptab = mkht(tyhash, tyeq);
 	/* this must be done after all the types are created, otherwise we will
 	 * clobber the memoized bunch of types with the type params. */
 #define Tc(c, n) \
@@ -948,6 +959,7 @@ void tyinit(Stab *st)
 		ty = mktype(Zloc, t);	\
 		if (n) {	\
 			puttype(st, mkname(Zloc, n), ty);	\
+			htput(tydeduptab, ty, ty); \
 		}	\
 	}
 #include "types.def"
