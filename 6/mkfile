@@ -18,7 +18,7 @@ OFILES=\
 	peep.$O\
 	typeinfo.$O\
 
-LIB=../parse/libparse.a ../mi/libmi.a
+LIB=../util/libutil.a ../parse/libparse.a ../mi/libmi.a
 
 HFILES=asm.h ../parse/parse.h ../mi/mi.h ../config.h insns.def regs.def
 

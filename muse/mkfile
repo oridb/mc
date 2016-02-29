@@ -7,7 +7,7 @@ TARG=muse
 OFILES=\
 	muse.$O\
 
-LIB=../parse/libparse.a
+LIB=../parse/libparse.a ../util/libutil.a
 
 BIN=/$objtype/bin
 </sys/src/cmd/mkone

@@ -6,7 +6,9 @@ CFLAGS=-c -D_POSIX_SOURCE -D_SUSV2_SOURCE -D_C99_SNPRINTF_EXTENSION -I../util
 LIB=libparse.a
 OFILES= \
 	dump.$O \
-	fold.$O\
+	err.$O \
+	export.$O \
+	fold.$O \
 	gram.$O \
 	infer.$O \
 	names.$O \

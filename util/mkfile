@@ -1,0 +1,20 @@
+</$objtype/mkfile
+CC=pcc
+LD=pcc
+CFLAGS=-c -D_POSIX_SOURCE -D_SUSV2_SOURCE -D_C99_SNPRINTF_EXTENSION
+
+LIB=libutil.a
+OFILES= \
+	alloc.$O \
+	bitset.$O \
+	htab.$O \
+	pack.$O \
+	util.$O \
+
+</sys/src/cmd/mklib
+
+install:V: $LIB
+	touch $LIB
+
+uninstall:V:
+	echo nothing to uninstall
