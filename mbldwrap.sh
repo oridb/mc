@@ -16,8 +16,8 @@ else
 fi
 
 if [ -f mbld/mbld ]; then
-    ./mbld/mbld -S $@ || mbld -S $@ || \
+    ./mbld/mbld $@ || mbld $@ || \
         (echo "Unable to run mbld $@; have you build successfully"; false)
 else
-    ./mbld/mbld -S || mbld -S || $BOOT
+    ./mbld/mbld || mbld || $BOOT
 fi

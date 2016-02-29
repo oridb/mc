@@ -6,6 +6,7 @@ use "errno"
 use "result"
 use "cstrconv"
 use "strfind"
+use "getint"
 
 pkg std =
 	type fd		= sys.fd
@@ -48,6 +49,7 @@ pkg std =
 	const fmtime	: (f : byte[:]	-> result(time, errno))
 	const fsize	: (f : byte[:]	-> result(off, errno))
 	const fexists	: (f : byte[:]	-> bool)
+	const fisdir	: (f : byte[:]	-> bool)
 
 	/* the important bits that uname provides */
 	const getsysinfo	: (si : sysinfo# -> void)
@@ -127,6 +129,16 @@ const fsize = {path
 		-> `Fail Emisc
 	;;
 	-> `Ok (getle64(buf[Lengthoff:Lengthoff + 8]) castto(off))
+}
+
+extern const put : (fmt : byte[:], args : ... -> int64)
+const fisdir = {path
+	var buf	: byte[Stringsoff + 39]	/* enough space for qid type */
+
+	if sys.stat(path, buf[:]) < Stringsoff
+		-> false
+	;;
+	-> (getle32(buf[Modeoff:Modeoff + 4]) & sys.Dmdir) != 0
 }
 
 const getsysinfo = {si
@@ -209,23 +221,6 @@ const statsz = {buf
 }
 */
 
-const getle32 = {buf
-	-> (buf[0] castto(int32)) \
-		| ((buf[1] castto(int32)) << 8) \
-		| ((buf[2] castto(int32)) << 16) \
-		| ((buf[3] castto(int32)) << 24)
-}
-
-const getle64 = {buf
-	-> (buf[0] castto(int64)) \
-		| ((buf[1] castto(int64)) << 8) \
-		| ((buf[2] castto(int64)) << 16) \
-		| ((buf[3] castto(int64)) << 24) \
-		| ((buf[4] castto(int64)) << 64) \
-		| ((buf[5] castto(int64)) << 40) \
-		| ((buf[6] castto(int64)) << 48) \
-		| ((buf[7] castto(int64)) << 56)
-}
 generic check = {e : @a::(integral, numeric) -> result(@b, errno)
 	if e < 0
 		-> `Fail lasterr()
