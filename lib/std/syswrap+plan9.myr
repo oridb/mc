@@ -141,6 +141,24 @@ const fisdir = {path
 	-> (getle32(buf[Modeoff:Modeoff + 4]) & sys.Dmdir) != 0
 }
 
+const fisreg = {path
+	var buf	: byte[Stringsoff + 39]	/* enough space for qid type */
+	var ty
+
+	if sys.stat(path, buf[:]) < Stringsoff
+		-> false
+	;;
+
+	ty = getle16(buf[Typeoff:Typeoff + 4])
+	if (getle32(buf[Modeoff:Modeoff + 4]) & sys.Dmdir) != 0
+		-> false
+	elif ty == '|' || ty == 's' || ty == 'M'
+		-> false
+	else
+		-> true
+	;;
+}
+
 const getsysinfo = {si
 	si.system = getenvv("osname", "Plan9")
 	si.release = "4"

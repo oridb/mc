@@ -17,6 +17,7 @@ echo 	$pwd/6/6.out	-I ../sys -I . errno+plan9.myr ;	$pwd/6/6.out	-I ../sys -I . 
 echo 	$pwd/6/6.out	-I ../sys -I . result.myr ;	$pwd/6/6.out	-I ../sys -I . result.myr 
 echo 	$pwd/6/6.out	-I ../sys -I . cstrconv.myr ;	$pwd/6/6.out	-I ../sys -I . cstrconv.myr 
 echo 	$pwd/6/6.out	-I ../sys -I . strfind.myr ;	$pwd/6/6.out	-I ../sys -I . strfind.myr 
+echo 	$pwd/6/6.out	-I ../sys -I . getint.myr ;	$pwd/6/6.out	-I ../sys -I . getint.myr 
 echo 	$pwd/6/6.out	-I ../sys -I . syswrap+plan9.myr ;	$pwd/6/6.out	-I ../sys -I . syswrap+plan9.myr 
 echo 	$pwd/6/6.out	-I ../sys -I . die.myr ;	$pwd/6/6.out	-I ../sys -I . die.myr 
 echo 	$pwd/6/6.out	-I ../sys -I . sleq.myr ;	$pwd/6/6.out	-I ../sys -I . sleq.myr 
@@ -62,7 +63,6 @@ echo 	$pwd/6/6.out	-I ../sys -I . env+plan9.myr ;	$pwd/6/6.out	-I ../sys -I . en
 echo 	$pwd/6/6.out	-I ../sys -I . execvp.myr ;	$pwd/6/6.out	-I ../sys -I . execvp.myr 
 echo 	$pwd/6/6.out	-I ../sys -I . slput.myr ;	$pwd/6/6.out	-I ../sys -I . slput.myr 
 echo 	$pwd/6/6.out	-I ../sys -I . spork.myr ;	$pwd/6/6.out	-I ../sys -I . spork.myr 
-echo 	$pwd/6/6.out	-I ../sys -I . getint.myr ;	$pwd/6/6.out	-I ../sys -I . getint.myr 
 echo 	$pwd/6/6.out	-I ../sys -I . blat.myr ;	$pwd/6/6.out	-I ../sys -I . blat.myr 
 echo 	$pwd/6/6.out	-I ../sys -I . diriter.myr ;	$pwd/6/6.out	-I ../sys -I . diriter.myr 
 echo 	$pwd/6/6.out	-I ../sys -I . clear.myr ;	$pwd/6/6.out	-I ../sys -I . clear.myr 
