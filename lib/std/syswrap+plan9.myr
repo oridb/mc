@@ -50,6 +50,7 @@ pkg std =
 	const fsize	: (f : byte[:]	-> result(off, errno))
 	const fexists	: (f : byte[:]	-> bool)
 	const fisdir	: (f : byte[:]	-> bool)
+	const fisreg	: (f : byte[:]	-> bool)
 
 	/* the important bits that uname provides */
 	const getsysinfo	: (si : sysinfo# -> void)
