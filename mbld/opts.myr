@@ -50,6 +50,7 @@ const initopts = {
 	| "Linux":	opt_sys = "linux"
 	| "Darwin":	opt_sys = "osx"
 	| "FreeBSD":	opt_sys = "freebsd"
+	| "OpenBSD":	opt_sys = "openbsd"
 	| "Plan9":	opt_sys = "plan9"
 	| unknown:	std.fatal("unknown systemy \"{}\"\n", unknown)
 	;;

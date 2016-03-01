@@ -100,6 +100,7 @@ const addsysattrs = {b, tags
 
 	match opt_sys
 	| "freebsd":	tag(b.sysattrs, ["freebsd", "posixy"][:])
+	| "openbsd":	tag(b.sysattrs, ["openbsd", "posixy"][:])
 	| "osx":	tag(b.sysattrs, ["osx", "posixy"][:])
 	| "linux":	tag(b.sysattrs, ["linux", "posixy"][:])
 	| "plan9":	tag(b.sysattrs, ["plan9"][:])

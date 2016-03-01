@@ -680,7 +680,58 @@ const nanosleep	= {req, rem;	-> syscall(Sysnanosleep, a(req), a(rem)) castto(int
 
 
 /* system information */
-const uname	= {buf;	-> -1}
+const uname	= {buf
+	var mib : int[2]
+	var ret
+	var sys
+	var nod
+	var rel
+	var ver
+	var mach
+
+	ret = 0
+	mib[0] = 1 /* CTL_KERN */
+	mib[1] = 1 /* KERN_OSTYPE */
+	sys = buf.system[:]
+	ret = sysctl(mib[:], &sys, [][:])
+	if ret < 0
+		-> ret
+	;;
+
+	mib[0] = 1 /* CTL_KERN */
+	mib[1] = 10 /* KERN_HOSTNAME */
+	nod = buf.node[:]
+	ret = sysctl(mib[:], &nod, [][:])
+	if ret < 0
+		-> ret
+	;;
+
+	mib[0] = 1 /* CTL_KERN */
+	mib[1] = 2 /* KERN_OSRELEASE */
+	rel = buf.release[:]
+	ret = sysctl(mib[:], &rel, [][:])
+	if ret < 0
+		-> ret
+	;;
+
+	mib[0] = 1 /* CTL_KERN */
+	mib[1] = 27 /* KERN_OSVERSION */
+	ver = buf.version[:]
+	ret = sysctl(mib[:], &ver, [][:])
+	if ret < 0
+		-> ret
+	;;
+
+	mib[0] = 6 /* CTL_HW */
+	mib[1] = 1 /* HW_MACHINE */
+	mach = buf.machine[:]
+	ret = sysctl(mib[:], &mach, [][:])
+	if ret < 0
+		-> ret
+	;;
+
+	-> 0
+}
 
 const sysctl = {mib, old, new
 	var mibp
@@ -696,12 +747,12 @@ const sysctl = {mib, old, new
 	mibsz = a(mib.len)
 	o = old#
 	oldp = o castto(byte#)
-	oldsz = a(o.len)
+	oldsz = o.len castto(int64)
 	newp = new castto(byte#)
 	newsz = a(new.len)
 
 	/* all args already passed through a() or ar  ptrs */
-	ret = syscall(Sys__sysctl, mibp, mibsz, oldp, oldsz, newp, newsz) castto(int)
+	ret = syscall(Sys__sysctl, mibp, mibsz, oldp, a(&oldsz), newp, newsz) castto(int)
 
 	old# = o[:oldsz]
 	-> ret
