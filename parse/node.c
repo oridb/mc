@@ -30,7 +30,9 @@ uint64_t arraysz(Node *sz)
 {
 	Node *n;
 
-	n = sz;
+        if (!sz)
+		return 0;
+        n = fold(sz, 1);
 	if (exprop(n) != Olit)
 		fatal(sz, "too much indirection when finding intializer. (initialization loop?)");
 
