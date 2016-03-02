@@ -111,6 +111,7 @@ const openmode	= {path, opts, mode;
 /* useful/portable bits of stat */
 const fexists = {path
 	var buf : byte[4]	/* big enough for size, nothing else. */
+
 	-> sys.stat(path, buf[:]) >= 0
 }
 
@@ -143,17 +144,18 @@ const fisdir = {path
 }
 
 const fisreg = {path
-	var buf	: byte[Stringsoff + 39]	/* enough space for qid type */
+	var buf	: byte[Stringsoff + 512]	/* enough space for some strings */
 	var ty
 
 	if sys.stat(path, buf[:]) < Stringsoff
 		-> false
 	;;
 
-	ty = getle16(buf[Typeoff:Typeoff + 4])
+	ty = getle16(buf[Typeoff:Typeoff + 2])
 	if (getle32(buf[Modeoff:Modeoff + 4]) & sys.Dmdir) != 0
 		-> false
-	elif ty == '|' || ty == 's' || ty == 'M'
+	/* ugh. maybe this call should just be '!fisdir()' */
+	elif ty == '|' || ty == 's' || ty == 'm'
 		-> false
 	else
 		-> true
