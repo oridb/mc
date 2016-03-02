@@ -15,7 +15,10 @@ const byentry = {d
 
 impl iterable diriter -> byte[:] =
 	__iternext__ = {itp, valp
+:nextfile
 		match dirread(itp# castto(dir#))
+		| `Some ".":	goto nextfile
+		| `Some "..":	goto nextfile
 		| `Some ent:
 			valp# = ent
 			-> true
