@@ -26,7 +26,8 @@ echo 'pwd=`pwd`' >> $bootscript
     sed "s:^\\(.*\\)/[^/]*\.\.\.:	cd \$pwd/\\1:g" | \
     sed "s:`pwd`:\$pwd:g" | \
     grep '^	' | \
-    sed 's/.*/echo &;&/' | \
+    sed 's/.*/echo & \&\& & \&\&\\/' | \
     tee -a $bootscript
+echo 'true' >> $bootscript
 chmod +x $bootscript
 rm ./xmbld
