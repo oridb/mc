@@ -1,12 +1,13 @@
 use sys
 
-use "alloc.use"
-use "die.use"
-use "option.use"
-use "result.use"
-use "slcp.use"
-use "sldup.use"
-use "types.use"
+use "alloc"
+use "die"
+use "memops"
+use "option"
+use "result"
+use "slcp"
+use "sldup"
+use "types"
 
 pkg std =
 	type dir = struct
@@ -14,7 +15,6 @@ pkg std =
 		buf	: byte[16384]
 		len	: int64
 		off	: int64
-		base	: int64
 	;;
 
 	const diropen	: (p : byte[:] -> std.result(dir#, byte[:]))
@@ -38,9 +38,10 @@ const diropen = {p
 const dirread = {d
 	var len
 	var dent
+	var namelen
 
 	if d.off >= d.len
-		len = sys.getdirentries(d.fd, d.buf[:], &d.base)
+		len = sys.getdents(d.fd, d.buf[:])
 		if len <= 0
 			-> `None
 		;;
@@ -49,8 +50,12 @@ const dirread = {d
 	;;
 
 	dent = &d.buf[d.off] castto(sys.dirent#)
+	namelen = 0
 	d.off += dent.reclen castto(int64)
-	-> `Some sldup(dent.name[:dent.namelen])
+	while dent.name[namelen] != 0
+		namelen++
+	;;
+	-> `Some sldup(dent.name[:namelen])
 }
 
 const dirclose = {d

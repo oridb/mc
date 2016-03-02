@@ -69,9 +69,9 @@ pkg sys =
 
 	type statbuf = struct
 		dev	: uint32 
-		ino	: uint32 
+		ino	: uint64
 		mode	: filemode
-		nlink	: uint16
+		nlink	: uint32
 		uid	: uint32
 		gid	: uint32
 		rdev	: uint32
@@ -118,6 +118,12 @@ pkg sys =
 		scope	: uint32
 	;;
 
+	type sockaddr_un = struct
+		len	: uint8
+		fam	: sockfam
+		path	: byte[104]
+	;;
+
 	type sockaddr_storage = struct
 		len	: byte
 		fam	: sockfam
@@ -127,12 +133,13 @@ pkg sys =
 	;;	
 	
 	type dirent = struct
-		fileno	: uint32
+		fileno	: uint64
+		off	: uint64
 		reclen	: uint16
-		ftype	: filetype
-		namelen	: uint8
+		ftype	: uint8
+		namlen	: uint8
 		name	: byte[256]	
-	;;	
+	;;
 
 	type rtprio = struct
 		rttype	: uint16
@@ -500,12 +507,6 @@ pkg sys =
 	/* wrappers to extract wait status */
 	const waitstatus	: (st : int32 -> waitstatus)
 
-	/* thread control */
-	const thr_new	: (param : thrparam#, paramsz : int -> int)
-	const thr_exit	: (state : int64# -> void)
-	const umtx_op	: (obj : void#, op : umtxop, val : uint64, a1 : void#, a2 : void# -> int)
-	const yield	: (-> int)
-
 	/* fd manipulation */
 	const open	: (path:byte[:], opts:fdopt -> fd)
 	const openmode	: (path:byte[:], opts:fdopt, mode:int64 -> fd)
@@ -520,7 +521,7 @@ pkg sys =
 	const fstat	: (fd:fd, sb:statbuf# -> int64)
 	const mkdir	: (path : byte[:], mode : int64	-> int64)
 	generic ioctl	: (fd:fd, req : int64, arg:@a# -> int64)
-	const getdirentries	: (fd : fd, buf : byte[:], basep : int64# -> int64)
+	const getdents	: (fd : fd, buf : byte[:] -> int64)
 	const chdir	: (p : byte[:] -> int64)
 	const __getcwd	: (buf : byte[:] -> int64)
 
@@ -621,13 +622,6 @@ const execve	= {cmd, args, env
 	-> syscall(Sysexecve, cstring(cmd), a(p), a(cenv))
 }
 
-/* thread management */
-
-const thr_new	= {param, sz;	-> -1}
-const thr_exit	= {state;	-> void}
-const umtx_op	= {obj, op, val, a1, a2; -> -1}
-const yield	= {;	-> -1}
-
 /* fd manipulation */
 const open	= {path, opts;		-> syscall(Sysopen, cstring(path), a(opts), a(0o777)) castto(fd)}
 const openmode	= {path, opts, mode;	-> syscall(Sysopen, cstring(path), a(opts), a(mode)) castto(fd)}
@@ -641,11 +635,10 @@ const stat	= {path, sb;		-> syscall(Sysstat, cstring(path), a(sb))}
 const lstat	= {path, sb;		-> syscall(Syslstat, cstring(path), a(sb))}
 const fstat	= {fd, sb;		-> syscall(Sysfstat, a(fd), a(sb))}
 const mkdir	= {path, mode;		-> syscall(Sysmkdir, cstring(path), a(mode)) castto(int64)}
-generic ioctl	= {fd, req, arg;	-> syscall(Sysioctl, a(fd), a(req), a(arg)) castto(int64)
-}
-const getdirentries	= {fd, buf, basep;	-> -1}
+generic ioctl	= {fd, req, arg;	-> syscall(Sysioctl, a(fd), a(req), a(arg)) castto(int64)}
 const chdir	= {dir;	-> syscall(Syschdir, cstring(dir))}
 const __getcwd	= {buf;	-> syscall(Sys__getcwd, a(buf), a(buf.len))}
+const getdents	= {fd, buf;		-> syscall(Sysgetdents, a(buf), a(buf.len)) castto(int64)}
 
 /* file stuff */
 const pipe	= {fds;	-> __freebsd_pipe(fds)}

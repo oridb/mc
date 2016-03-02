@@ -386,7 +386,7 @@ const openlib = {lib, incs
 	;;
 	std.fput(std.Err, "could not find library {}\n", lib)
 
-	:error
+:error
 	std.fput(std.Err, "search path is:\n")
 	for p in incs
 		std.fput(std.Err, "\t{}\n", p)
