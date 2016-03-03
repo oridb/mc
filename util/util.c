@@ -175,7 +175,7 @@ int optnext(Optctx *ctx)
 	c = *ctx->curarg;
 	ctx->curarg++;
 	if (!optinfo(ctx, c, &take, &mand)) {
-		printf("Unexpected argument %c\n", *ctx->curarg);
+		printf("Unexpected argument %c\n", c);
 		exit(1);
 	}
 
