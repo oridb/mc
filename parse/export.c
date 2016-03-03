@@ -15,6 +15,9 @@
 #include "util.h"
 #include "parse.h"
 
+static void tagtype(Stab *st, Type *t, int ingeneric, int hidelocal);
+static void tagnode(Stab *st, Node *n, int ingeneric, int hidelocal);
+
 void tagreflect(Type *t)
 {
 	size_t i;
@@ -43,32 +46,56 @@ void tagreflect(Type *t)
 	}
 }
 
-static void taghidden(Type *t)
+static void tagtrait(Stab *st, Trait *tr, int ingeneric, int hidelocal)
+{
+	size_t i;
+
+	if (!tr)
+		return;
+	if (tr->vis != Visintern)
+		return;
+
+	tr->vis = Vishidden;
+	if (tr->param)
+		tagtype(st, tr->param, ingeneric, hidelocal);
+	for (i = 0; i < tr->naux; i++)
+		tagtype(st, tr->aux[i], ingeneric, hidelocal);
+	for (i = 0; i < tr->nmemb; i++)
+		tagnode(st, tr->memb[i], ingeneric, hidelocal);
+	for (i = 0; i < tr->nfuncs; i++)
+		tagnode(st, tr->funcs[i], ingeneric, hidelocal);
+}
+
+static void tagtype(Stab *st, Type *t, int ingeneric, int hidelocal)
 {
 	size_t i;
 
 	if (t->vis != Visintern)
 		return;
 	t->vis = Vishidden;
+	/* export the user defined traits */
+	if (t->traits)
+		for (i = Ntraits; bsiter(t->traits, &i); i++)
+			tagtrait(st, traittab[i], ingeneric, hidelocal);
 	for (i = 0; i < t->nsub; i++)
-		taghidden(t->sub[i]);
+		tagtype(st, t->sub[i], ingeneric, hidelocal);
 	switch (t->type) {
 	case Tystruct:
 		for (i = 0; i < t->nmemb; i++)
-			taghidden(decltype(t->sdecls[i]));
+			tagtype(st, decltype(t->sdecls[i]), ingeneric, hidelocal);
 		break;
 	case Tyunion:
 		for (i = 0; i < t->nmemb; i++)
 			if (t->udecls[i]->etype)
-				taghidden(t->udecls[i]->etype);
+				tagtype(st, t->udecls[i]->etype, ingeneric, hidelocal);
 		break;
 	case Tyname:
 		tagreflect(t);
 		for (i = 0; i < t->narg; i++)
-			taghidden(t->arg[i]);
+			tagtype(st, t->arg[i], ingeneric, hidelocal);
 	case Tygeneric:
 		for (i = 0; i < t->ngparam; i++)
-			taghidden(t->gparam[i]);
+			tagtype(st, t->gparam[i], ingeneric, hidelocal);
 		break;
 	default:
 		break;
@@ -85,7 +112,7 @@ int isexportinit(Node *n)
 	return 0;
 }
 
-static void nodetag(Stab *st, Node *n, int ingeneric, int hidelocal)
+static void tagnode(Stab *st, Node *n, int ingeneric, int hidelocal)
 {
 	size_t i;
 	Node *d;
@@ -95,73 +122,73 @@ static void nodetag(Stab *st, Node *n, int ingeneric, int hidelocal)
 	switch (n->type) {
 	case Nblock:
 		for (i = 0; i < n->block.nstmts; i++)
-			nodetag(st, n->block.stmts[i], ingeneric, hidelocal);
+			tagnode(st, n->block.stmts[i], ingeneric, hidelocal);
 		break;
 	case Nifstmt:
-		nodetag(st, n->ifstmt.cond, ingeneric, hidelocal);
-		nodetag(st, n->ifstmt.iftrue, ingeneric, hidelocal);
-		nodetag(st, n->ifstmt.iffalse, ingeneric, hidelocal);
+		tagnode(st, n->ifstmt.cond, ingeneric, hidelocal);
+		tagnode(st, n->ifstmt.iftrue, ingeneric, hidelocal);
+		tagnode(st, n->ifstmt.iffalse, ingeneric, hidelocal);
 		break;
 	case Nloopstmt:
-		nodetag(st, n->loopstmt.init, ingeneric, hidelocal);
-		nodetag(st, n->loopstmt.cond, ingeneric, hidelocal);
-		nodetag(st, n->loopstmt.step, ingeneric, hidelocal);
-		nodetag(st, n->loopstmt.body, ingeneric, hidelocal);
+		tagnode(st, n->loopstmt.init, ingeneric, hidelocal);
+		tagnode(st, n->loopstmt.cond, ingeneric, hidelocal);
+		tagnode(st, n->loopstmt.step, ingeneric, hidelocal);
+		tagnode(st, n->loopstmt.body, ingeneric, hidelocal);
 		break;
 	case Niterstmt:
-		nodetag(st, n->iterstmt.elt, ingeneric, hidelocal);
-		nodetag(st, n->iterstmt.seq, ingeneric, hidelocal);
-		nodetag(st, n->iterstmt.body, ingeneric, hidelocal);
+		tagnode(st, n->iterstmt.elt, ingeneric, hidelocal);
+		tagnode(st, n->iterstmt.seq, ingeneric, hidelocal);
+		tagnode(st, n->iterstmt.body, ingeneric, hidelocal);
 		break;
 	case Nmatchstmt:
-		nodetag(st, n->matchstmt.val, ingeneric, hidelocal);
+		tagnode(st, n->matchstmt.val, ingeneric, hidelocal);
 		for (i = 0; i < n->matchstmt.nmatches; i++)
-			nodetag(st, n->matchstmt.matches[i], ingeneric, hidelocal);
+			tagnode(st, n->matchstmt.matches[i], ingeneric, hidelocal);
 		break;
 	case Nmatch:
-		nodetag(st, n->match.pat, ingeneric, hidelocal);
-		nodetag(st, n->match.block, ingeneric, hidelocal);
+		tagnode(st, n->match.pat, ingeneric, hidelocal);
+		tagnode(st, n->match.block, ingeneric, hidelocal);
 		break;
 	case Nexpr:
-		nodetag(st, n->expr.idx, ingeneric, hidelocal);
-		taghidden(n->expr.type);
+		tagnode(st, n->expr.idx, ingeneric, hidelocal);
+		tagtype(st, n->expr.type, ingeneric, hidelocal);
 		for (i = 0; i < n->expr.nargs; i++)
-			nodetag(st, n->expr.args[i], ingeneric, hidelocal);
+			tagnode(st, n->expr.args[i], ingeneric, hidelocal);
 		/* generics need to have the decls they refer to exported. */
 		if (ingeneric && exprop(n) == Ovar) {
 			d = decls[n->expr.did];
 			if (d->decl.isglobl && d->decl.vis == Visintern) {
 				d->decl.vis = Vishidden;
-				nodetag(st, d, ingeneric, hidelocal);
+				tagnode(st, d, ingeneric, hidelocal);
 			}
 		}
 		break;
 	case Nlit:
-		taghidden(n->lit.type);
+		tagtype(st, n->lit.type, ingeneric, hidelocal);
 		if (n->lit.littype == Lfunc)
-			nodetag(st, n->lit.fnval, ingeneric, hidelocal);
+			tagnode(st, n->lit.fnval, ingeneric, hidelocal);
 		break;
 	case Ndecl:
-		taghidden(n->decl.type);
+		tagtype(st, n->decl.type, ingeneric, hidelocal);
 		if (hidelocal && n->decl.ispkglocal)
 			n->decl.vis = Vishidden;
 		n->decl.isexportinit = isexportinit(n);
 		if (n->decl.isexportinit)
-			nodetag(st, n->decl.init, n->decl.isgeneric, hidelocal);
+			tagnode(st, n->decl.init, n->decl.isgeneric, hidelocal);
 		break;
 	case Nfunc:
-		taghidden(n->func.type);
+		tagtype(st, n->func.type, ingeneric, hidelocal);
 		for (i = 0; i < n->func.nargs; i++)
-			nodetag(st, n->func.args[i], ingeneric, hidelocal);
-		nodetag(st, n->func.body, ingeneric, hidelocal);
+			tagnode(st, n->func.args[i], ingeneric, hidelocal);
+		tagnode(st, n->func.body, ingeneric, hidelocal);
 		break;
 	case Nimpl:
-		taghidden(n->impl.type);
+		tagtype(st, n->impl.type, ingeneric, hidelocal);
 		for (i = 0; i < n->impl.naux; i++)
-			taghidden(n->impl.aux[i]);
+			tagtype(st, n->impl.aux[i], ingeneric, hidelocal);
 		for (i = 0; i < n->impl.ndecls; i++) {
 			n->impl.decls[i]->decl.vis = Vishidden;
-			nodetag(st, n->impl.decls[i], 0, hidelocal);
+			tagnode(st, n->impl.decls[i], 0, hidelocal);
 		}
 		break;
 	case Nuse:
@@ -187,16 +214,16 @@ void tagexports(Node *file, int hidelocal)
 
 	/* tag the initializers */
 	for (i = 0; i < file->file.ninit; i++)
-		nodetag(st, file->file.init[i], 0, hidelocal);
+		tagnode(st, file->file.init[i], 0, hidelocal);
 	if (file->file.localinit)
-		nodetag(st, file->file.localinit, 0, hidelocal);
+		tagnode(st, file->file.localinit, 0, hidelocal);
 
 	/* tag the exported nodes */
 	k = htkeys(st->dcl, &n);
 	for (i = 0; i < n; i++) {
 		s = getdcl(st, k[i]);
 		if (s->decl.vis == Visexport)
-			nodetag(st, s, 0, hidelocal);
+			tagnode(st, s, 0, hidelocal);
 	}
 	free(k);
 
@@ -208,16 +235,16 @@ void tagexports(Node *file, int hidelocal)
 			continue;
 		if (hidelocal && t->ispkglocal)
 			t->vis = Vishidden;
-		taghidden(t);
+		tagtype(st, t, 0, hidelocal);
 		for (j = 0; j < t->nsub; j++)
-			taghidden(t->sub[j]);
+			tagtype(st, t->sub[j], 0, hidelocal);
 		if (t->type == Tyname) {
 			tagreflect(t);
 			for (j = 0; j < t->narg; j++)
-				taghidden(t->arg[j]);
+				tagtype(st, t->arg[j], 0, hidelocal);
 		} else if (t->type == Tygeneric) {
 			for (j = 0; j < t->ngparam; j++)
-				taghidden(t->gparam[j]);
+				tagtype(st, t->gparam[j], 0, hidelocal);
 		}
 	}
 
@@ -233,11 +260,11 @@ void tagexports(Node *file, int hidelocal)
 				tr->aux[i]->vis = Visexport;
 			for (i = 0; i < tr->nmemb; i++) {
 				tr->memb[i]->decl.vis = Visexport;
-				nodetag(st, tr->memb[i], 0, hidelocal);
+				tagnode(st, tr->memb[i], 0, hidelocal);
 			}
 			for (i = 0; i < tr->nfuncs; i++) {
 				tr->funcs[i]->decl.vis = Visexport;
-				nodetag(st, tr->funcs[i], 0, hidelocal);
+				tagnode(st, tr->funcs[i], 0, hidelocal);
 			}
 		}
 	}
@@ -249,7 +276,7 @@ void tagexports(Node *file, int hidelocal)
 		s = getimpl(st, k[i]);
 		if (s->impl.vis != Visexport)
 			continue;
-		nodetag(st, s, 0, hidelocal);
+		tagnode(st, s, 0, hidelocal);
                 tr = s->impl.trait;
 		for (j = 0; j < tr->naux; j++)
 			tr->aux[j]->vis = Visexport;
