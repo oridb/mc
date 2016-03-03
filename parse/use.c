@@ -213,8 +213,8 @@ static void typickle(FILE *fd, Type *ty)
 	wrbyte(fd, ty->vis);
 	/* tid is generated; don't write */
 	/* FIXME: since we only support hardcoded traits, we just write
-	 * out the set of them. we should write out the trait list as
-	 * well */
+	* out the set of them. we should write out the trait list as
+	* well */
 	if (!ty->traits) {
 		wrint(fd, 0);
 	} else {
@@ -415,6 +415,7 @@ Trait *traitunpickle(FILE *fd)
 	tr->param = tyunpickle(fd);
 	tr->naux = rdint(fd);
 	tr->aux = zalloc(tr->naux * sizeof(Type*));
+	tr->isimport = 1;
 	for (i = 0; i < tr->naux; i++)
 		rdtype(fd, &tr->aux[i]);
 	n = rdint(fd);
@@ -747,11 +748,11 @@ static void fixtypemappings(Stab *st)
 	Type *t, *u, *old;
 
 	/*
-	 * merge duplicate definitions.
-	 * This allows us to compare named types by id, instead
-	 * of doing a deep walk through the type. This ability is
-	 * depended on when we do type inference.
-	 */
+	* merge duplicate definitions.
+	* This allows us to compare named types by id, instead
+	* of doing a deep walk through the type. This ability is
+	* depended on when we do type inference.
+	*/
 	for (i = 0; i < ntypefixdest; i++) {
 		t = htget(tidmap, itop(typefixid[i]));
 		if (!t)
@@ -793,11 +794,11 @@ static void fixtraitmappings(Stab *st)
 	Trait *t;
 
 	/*
-	 * merge duplicate definitions.
-	 * This allows us to compare named types by id, instead
-	 * of doing a deep walk through the type. This ability is
-	 * depended on when we do type inference.
-	 */
+	* merge duplicate definitions.
+	* This allows us to compare named types by id, instead
+	* of doing a deep walk through the type. This ability is
+	* depended on when we do type inference.
+	*/
 	for (i = 0; i < ntraitfixdest; i++) {
 		t = htget(trmap, itop(traitfixid[i]));
 		if (!t)
@@ -891,8 +892,8 @@ int loaduse(char *path, FILE *f, Stab *st, Vis vis)
 	}
 	pkg = rdstr(f);
 	/* if the package names match up, or the usefile has no declared
-	 * package, then we simply add to the current stab. Otherwise,
-	 * we add a new stab under the current one */
+	* package, then we simply add to the current stab. Otherwise,
+	* we add a new stab under the current one */
 	if (st->name) {
 		if (pkg && !strcmp(pkg, st->name)) {
 			s = st;
@@ -957,7 +958,8 @@ foundextlib:
 		case 'R':
 			  tr = traitunpickle(f);
 			  tr->vis = vis;
-			  puttrait(s, tr->name, tr);
+			  if (tr->vis != Vishidden)
+				  puttrait(s, tr->name, tr);
 			  for (i = 0; i < tr->nfuncs; i++) {
 				  putdcl(s, tr->funcs[i]);
 				  tr->funcs[i]->decl.impls = mkht(tyhash, tyeq);

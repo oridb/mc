@@ -413,8 +413,8 @@ static int mergetrait(Trait *old, Trait *new)
 		*old = *new;
 	else if (new->isproto && !old->isproto)
 		*new = *old;
-	else
-		return 0;
+	else if (!new->isimport && !old->isimport)
+		return new->vis == Vishidden || old->vis == Vishidden;
 	return 1;
 }
 

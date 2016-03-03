@@ -171,6 +171,7 @@ struct Trait {
 
 	char isproto;  /* is it a prototype (for exporting purposes) */
 	char ishidden; /* should user code be able to use this? */
+	char isimport; /* have we defined it locally? */
 };
 
 struct Node {
