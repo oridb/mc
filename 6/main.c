@@ -33,8 +33,8 @@ Asmsyntax asmsyntax;
 
 static void usage(char *prog)
 {
-	printf("%s [-?] [-o outfile] [-d[dbgopts]] inputs\n", prog);
-	printf("\t-?\tPrint this help\n");
+	printf("%s [-?|-h] [-o outfile] [-d[dbgopts]] inputs\n", prog);
+	printf("\t-?|-h\tPrint this help\n");
 	printf("\t-o\tOutput to outfile\n");
 	printf("\t-S\tGenerate assembly source alongside object code\n");
 	printf("\t-c\tEnable additional (possibly flaky) checking\n");
@@ -165,7 +165,7 @@ int main(int argc, char **argv)
 
 	outfile = NULL;
 
-	optinit(&ctx, "cd:hSo:I:9G", argv, argc);
+	optinit(&ctx, "cd:?hSo:I:9G", argv, argc);
 	asmsyntax = Defaultasm;
 	while (!optdone(&ctx)) {
 		switch (optnext(&ctx)) {
