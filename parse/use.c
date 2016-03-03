@@ -274,7 +274,7 @@ static void traitpickle(FILE *fd, Trait *tr)
 	size_t i;
 
 	wrint(fd, tr->uid);
-	wrbool(fd, tr->ishidden);
+	wrint(fd, tr->vis);
 	pickle(fd, tr->name);
 	typickle(fd, tr->param);
 	wrint(fd, tr->naux);
@@ -410,7 +410,8 @@ Trait *traitunpickle(FILE *fd)
 		NULL, 0,
 		0);
 	uid = rdint(fd);
-	tr->ishidden = rdbool(fd);
+	if (rdint(fd) == Vishidden)
+		tr->ishidden = 1;
 	tr->name = unpickle(fd);
 	tr->param = tyunpickle(fd);
 	tr->naux = rdint(fd);
@@ -958,11 +959,12 @@ foundextlib:
 		case 'R':
 			  tr = traitunpickle(f);
 			  tr->vis = vis;
-			  if (tr->vis != Vishidden)
+			  if (!tr->ishidden) {
 				  puttrait(s, tr->name, tr);
-			  for (i = 0; i < tr->nfuncs; i++) {
-				  putdcl(s, tr->funcs[i]);
-				  tr->funcs[i]->decl.impls = mkht(tyhash, tyeq);
+				  for (i = 0; i < tr->nfuncs; i++) {
+					  putdcl(s, tr->funcs[i]);
+					  tr->funcs[i]->decl.impls = mkht(tyhash, tyeq);
+				  }
 			  }
 			  break;
 		case 'T':
