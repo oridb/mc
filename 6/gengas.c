@@ -305,7 +305,7 @@ static void writeblob(FILE *fd, Blob *b)
 		return;
 	if (b->lbl) {
 		if (b->iscomdat)
-			fprintf(fd, ".section .text.%s%s,\"axG\",%s%s,comdat\n", Symprefix, b->lbl, Symprefix, b->lbl);
+			fprintf(fd, ".section .text.%s%s,\"aG\",%s%s,comdat\n", Symprefix, b->lbl, Symprefix, b->lbl);
 		if (b->isglobl)
 			fprintf(fd, ".globl %s%s\n", Symprefix, b->lbl);
 		fprintf(fd, "%s%s:\n", Symprefix, b->lbl);
@@ -324,6 +324,8 @@ static void writeblob(FILE *fd, Blob *b)
 			writeblob(fd, b->seq.sub[i]);
 		break;
 	}
+	if (b->lbl && b->iscomdat)
+		fprintf(fd, ".text\n");
 }
 
 /* genfunc requires all nodes in 'nl' to map cleanly to operations that are
