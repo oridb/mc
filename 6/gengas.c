@@ -304,6 +304,8 @@ static void writeblob(FILE *fd, Blob *b)
 	if (!b)
 		return;
 	if (b->lbl) {
+		if (b->iscomdat)
+			fprintf(fd, ".section .text.%s%s,\"axG\",%s%s,comdat\n", Symprefix, b->lbl, Symprefix, b->lbl);
 		if (b->isglobl)
 			fprintf(fd, ".globl %s%s\n", Symprefix, b->lbl);
 		fprintf(fd, "%s%s:\n", Symprefix, b->lbl);
@@ -356,6 +358,7 @@ static void gentype(FILE *fd, Type *ty)
 
 	ty->isemitted = 1;
 	b = tydescblob(ty);
+	b->iscomdat = 1;
 	writeblob(fd, b);
 	blobfree(b);
 }

@@ -74,6 +74,7 @@ struct Blob {
 	size_t align;
 	char *lbl;  /* may be null */
 	char isglobl;
+	char iscomdat;
 	union {
 		uint64_t npad;
 		uint64_t ival;
