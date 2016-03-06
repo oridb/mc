@@ -22,7 +22,6 @@ const dirname = {p
 			break
 		;;
 	;;
-	std.put("p: {}, end: {}, p[:{}]: {}\n", p, end, end, p[:end])
 	p = p[:end]
 	match std.strrfind(p, "/")
 	| `std.None:	-> std.sldup(".")
@@ -39,8 +38,6 @@ const basename = {p
 			break
 		;;
 	;;
-
-	std.put("p: {}, end: {}, p[:{}]: {}\n", p, end, end, p[:end])
 	p = p[:end]
 	match std.strrfind(p, "/")
 	| `std.None:	-> std.sldup(p[:end])
