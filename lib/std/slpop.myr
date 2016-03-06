@@ -2,13 +2,13 @@ use "types"
 use "alloc"
 
 pkg std =
-	generic slpop	: (sl : @a[:] -> (@a, @a[:]))
+	generic slpop	: (sl : @a[:]# -> @a)
 ;;
 
 generic slpop = {sl
 	var elt
 
-	elt = sl[sl.len - 1]
-	slgrow(&sl, sl.len - 1)
-	-> (elt, sl)
+	elt = sl#[sl#.len - 1]
+	slgrow(sl, sl#.len - 1)
+	-> elt
 }
