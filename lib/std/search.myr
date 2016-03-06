@@ -2,14 +2,14 @@ use "cmp"
 use "option"
 
 pkg std =
-	generic lsearch	: (sl : @t[:], val : @t, cmp : (a : @t, b : @t -> order) -> option(@idx::(integral,numeric)))
-	generic bsearch	: (sl : @t[:], val : @t, cmp : (a : @t, b : @t -> order) -> option(@idx::(integral,numeric)))
+	generic lsearch	: (sl : @t[:], key : @k, cmp : (v : @t, k : @k -> order) -> option(@idx::(integral,numeric)))
+	generic bsearch	: (sl : @t[:], key : @k, cmp : (v : @t, k : @k -> order) -> option(@idx::(integral,numeric)))
 ;;
 
 /* linear search over a list of values */
-generic lsearch = {sl, val, cmp
+generic lsearch = {sl, key, cmp
 	for var i = 0; i < sl.len; i++
-		match cmp(sl[i], val)
+		match cmp(sl[i], key)
 		| `Equal:
 			-> `Some i
 		| _:
@@ -20,7 +20,7 @@ generic lsearch = {sl, val, cmp
 }
 
 /* binary search over a sorted list of values. */
-generic bsearch  = {sl, val, cmp
+generic bsearch  = {sl, key, cmp
 	var hi, lo, mid
 
 	lo = 0
@@ -28,9 +28,9 @@ generic bsearch  = {sl, val, cmp
 
 	while lo <= hi
 		mid = (hi + lo) / 2
-		match cmp(val, sl[mid])
-		| `Before:	hi = mid - 1
-		| `After:	lo = mid + 1
+		match cmp(sl[mid], key)
+		| `After:	hi = mid - 1
+		| `Before:	lo = mid + 1
 		| `Equal:	
 			-> `Some mid
 		;;
