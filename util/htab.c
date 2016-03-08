@@ -265,7 +265,7 @@ int strliteq(void *_a, void *_b)
 		return 0;
 	if (a->len != b->len)
 		return 0;
-	return !memcmp(a, b, a->len);
+	return !memcmp(a->buf, b->buf, a->len);
 }
 
 ulong ptrhash(void *key) { return inthash((uintptr_t)key); }
