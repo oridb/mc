@@ -2013,13 +2013,14 @@ static void infercompn(Inferstate *st, Node *n)
 			constrain(st, n, type(st, n), traittab[Tcint]);
 			found = 1;
 		}
-		/* otherwise, we search aggregate types for the member, and unify
-		 * the expression with the member type; ie:
-		 *
-		 *	 x: aggrtype	y : memb in aggrtype
-		 *	 ---------------------------------------
-		 *			   x.y : membtype
-		 */
+	/* 
+ 	 * otherwise, we search aggregate types for the member, and unify
+	 * the expression with the member type; ie:
+	 *
+	 *	 x: aggrtype	y : memb in aggrtype
+	 *	 ---------------------------------------
+	 *			   x.y : membtype
+	 */
 	} else {
 		if (tybase(t)->type == Typtr)
 			t = tybase(tf(st, t->sub[0]));

@@ -705,7 +705,7 @@ static void flattenidxiter(Flattenctx *s, Node *n)
 	done->expr.type = mktype(n->loc, Tybool);
 	cjmp(s, done, lmatch, lend);
 	flatten(s, lmatch);
-	val = mkexpr(n->loc, Oidx, seq, idx);
+	val = mkexpr(n->loc, Oidx, seq, idx, NULL);
 	val->expr.type = tybase(exprtype(seq))->sub[0];
 
 	/* pattern match */
