@@ -53,7 +53,8 @@ typedef enum {
 } Rclass;
 
 typedef enum {
-	Gnugas,
+	Gnugaself,
+	Gnugasmacho,
 	Plan9,
 } Asmsyntax;
 

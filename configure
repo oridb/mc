@@ -40,7 +40,6 @@ echo export INST_ROOT=$prefix > config.mk
 
 echo '#define Instroot "'$prefix'"' > config.h
 echo '#define Asmcmd {"as", "-g", "-o", NULL}' >> config.h
-echo '#define Defaultasm Gnugas' >> config.h
 echo '#define Objsuffix ".o"' >> config.h
 echo 'export SYSCLASS=posixy' >> config.mk
 
@@ -60,13 +59,14 @@ echo "const Libpath = \"lib/myr\"" >> mbld/config.myr
 case $OS in
     *Linux*)
         echo '#define Symprefix ""' >> config.h
-        echo '#define Defaultasm Gnugas' >> config.h
+        echo '#define Defaultasm Gnugaself' >> config.h
         echo 'export SYS=linux' >> config.mk
         echo 'const Sys = "Linux"' >> mbld/config.myr
         echo 'const Linkcmd = ["ld", "-o"]' >> mbld/config.myr
         ;;
     *Darwin*)
         echo '#define Symprefix "_"' >> config.h
+        echo '#define Defaultasm Gnugasmacho' >> config.h
         echo 'export SYS=osx' >> config.mk
         echo 'const Linkcmd = ["ld", ' \
             '"-pagezero_size", "0x100000000",' \
@@ -76,7 +76,7 @@ case $OS in
         ;;
     *FreeBSD*)
         echo '#define Symprefix ""' >> config.h
-        echo '#define Defaultasm Gnugas' >> config.h
+        echo '#define Defaultasm Gnugaself' >> config.h
         echo 'export SYS=freebsd' >> config.mk
         echo 'const Linkcmd = ["ld", "-o"]' >> mbld/config.myr
         echo 'const Sys = "FreeBSD"' >> mbld/config.myr

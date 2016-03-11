@@ -297,6 +297,19 @@ static void encodemin(FILE *fd, uint64_t val)
 	}
 }
 
+static void emitonce(FILE *fd, Blob *b)
+{
+	if (asmsyntax == Gnugaself) {
+		fprintf(fd, ".section .text.%s%s,\"aG\",%s%s,comdat\n",
+			Symprefix, b->lbl, Symprefix, b->lbl);
+	} else if (asmsyntax == Gnugasmacho) {
+		if (b->isglobl)
+			fprintf(fd, ".weak_def_can_be_hidden %s%s\n", Symprefix, b->lbl);
+	} else {
+		die("Unknown asm flavor");
+	}
+}
+
 static void writeblob(FILE *fd, Blob *b)
 {
 	size_t i;
@@ -305,7 +318,7 @@ static void writeblob(FILE *fd, Blob *b)
 		return;
 	if (b->lbl) {
 		if (b->iscomdat)
-			fprintf(fd, ".section .text.%s%s,\"aG\",%s%s,comdat\n", Symprefix, b->lbl, Symprefix, b->lbl);
+			emitonce(fd, b);
 		if (b->isglobl)
 			fprintf(fd, ".globl %s%s\n", Symprefix, b->lbl);
 		fprintf(fd, "%s%s:\n", Symprefix, b->lbl);

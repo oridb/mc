@@ -165,7 +165,7 @@ int main(int argc, char **argv)
 
 	outfile = NULL;
 
-	optinit(&ctx, "cd:?hSo:I:9G", argv, argc);
+	optinit(&ctx, "cd:?hSo:I:9G:", argv, argc);
 	asmsyntax = Defaultasm;
 	while (!optdone(&ctx)) {
 		switch (optnext(&ctx)) {
@@ -191,7 +191,12 @@ int main(int argc, char **argv)
 			asmsyntax = Plan9;
 			break;
 		case 'G':
-			asmsyntax = Gnugas;
+			if (!strcmp(ctx.optarg, "e"))
+				asmsyntax = Gnugaself;
+			else if (!strcmp(ctx.optarg, "m"))
+				asmsyntax = Gnugasmacho;
+			else
+				die("unknown gnu syntax flavor");
 			break;
 		case 'I':
 			lappend(&incpaths, &nincpaths, ctx.optarg);

@@ -152,8 +152,12 @@ char *tydescid(char *buf, size_t bufsz, Type *ty)
 void gen(Node *file, char *out)
 {
 	switch (asmsyntax) {
-	case Plan9:	genp9(file, out);	break;
-	case Gnugas:	gengas(file, out);	break;
-	default:	die("unknown target");  break;
+	case Plan9:
+		genp9(file, out);	break;
+	case Gnugaself:
+	case Gnugasmacho:
+		gengas(file, out);	break;
+	default:
+		die("unknown target");  break;
 	}
 }
