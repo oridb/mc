@@ -2053,17 +2053,17 @@ static void checkstruct(Inferstate *st, Node *n)
 	size_t i, j;
 
 	t = tybase(tf(st, n->lit.type));
-	if (t->type != Tystruct) {
-		/*
-		 * If we haven't inferred the type, and it's inside another struct,
-		 * we'll eventually get to it.
-		 *
-		 * If, on the other hand, it is genuinely underspecified, we'll give
-		 * a better error on it later.
-		 */
+	/*
+	 * If we haven't inferred the type, and it's inside another struct,
+	 * we'll eventually get to it.
+	 *
+	 * If, on the other hand, it is genuinely underspecified, we'll give
+	 * a better error on it later.
+	 */
+	if (t->type == Tyvar)
 		return;
-	}
-
+	if (t->type != Tystruct)
+		fatal(n, "struct literal is used as non struct type %s", tystr(n->lit.type));
 	for (i = 0; i < n->expr.nargs; i++) {
 		val = n->expr.args[i];
 		name = val->expr.idx;
