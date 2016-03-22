@@ -20,6 +20,8 @@ use "strstrip"
 use "types"
 use "utf"
 
+use "fmt"
+
 pkg std =
 	type rectype = union
 		`DnsA		/* host address */
@@ -36,6 +38,7 @@ pkg std =
 	;;
 
 	type resolveerr = union
+		`Badconn
 		`Badhost
 		`Badsrv
 		`Badquery
@@ -278,6 +281,7 @@ const tquery = {srv, host, t
 
 	/* header */
 	off = 0
+	nextid++
 	off += pack16(pkt[:], off, nextid)	/* id */
 	off += pack16(pkt[:], off, Ra)	/* flags */
 	off += pack16(pkt[:], off, 1)	/* qdcount */
@@ -291,7 +295,7 @@ const tquery = {srv, host, t
 	off += pack16(pkt[:], off, 0x1) /* qclass: inet4 */
 
 	sys.write(srv, pkt[:off])
-	-> nextid++
+	-> nextid
 }
 
 const rquery = {srv, id
@@ -301,6 +305,7 @@ const rquery = {srv, id
 
 	n = sys.read(srv, pktbuf[:])
 	if n < 0
+		-> `Fail `Badconn
 	;;
 	pkt = pktbuf[:n]
 	-> hosts(pkt, id)
@@ -315,7 +320,7 @@ const hosts = {pkt, id : uint16
 	/* parse header */
 	(v, off) = unpack16(pkt, off)	/* id */
 	if v != id
-		-> `Fail (`Badresp)
+		-> `Fail `Badresp
 	;;
 	(v, off) = unpack16(pkt, off)	/* flags */
 	(q, off) = unpack16(pkt, off)	/* qdcount */

@@ -137,8 +137,13 @@ const getaddr = {addr
 	| `None:
 		match resolve(addr)
 		| `Ok hi:
-			ip = hi[0].addr
-			slfree(hi)
+			if hi.len > 0
+				ip = hi[0].addr
+				slfree(hi)
+			else
+				slfree(hi)
+				-> `Fail "no hosts resolved for addr"
+			;;
 		| `Fail m:
 			-> `Fail "could not get host info"
 		;;
