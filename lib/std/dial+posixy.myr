@@ -52,26 +52,28 @@ const dialsock = {proto, str
 	var sock, sz
 
 	match nameseg(str)
-	| `std.None:	-> `Fail "required host!port for ip dial"
-	| `std.Some ("", _):	-> `Fail "empty host"
-	| `std.Some (_, ""):	-> `Fail "empty host"
-	| `std.Some segs:	(host, portstr) = segs
+	| `None:	-> `Fail "required host!port for ip dial"
+	| `Some ("", _):	-> `Fail "empty host"
+	| `Some (_, ""):	-> `Fail "empty host"
+	| `Some segs:	(host, portstr) = segs
 	;;
 
 	match parseport(portstr)
-	| `std.Some p:	port = p
-	| `std.None:	-> `Fail("invalid port")
+	| `Some p:	port = p
+	| `None:	-> `Fail("invalid port")
 	;;
 
 	match getaddr(host)
-	| `Ipv4 bits:
+	| `Ok `Ipv4 bits:
 		sa4=[.fam=sys.Afinet, .addr=bits, .port=hosttonet(port)]
 		sa = &sa4 castto(sys.sockaddr#)
 		sz = sizeof(sys.sockaddr_in)
-	| `Ipv6 bits:
+	| `Ok `Ipv6 bits:
 		sa6=[.fam=sys.Afinet6, .addr=bits, .port=hosttonet(port)]
 		sa = &sa6 castto(sys.sockaddr#)
 		sz = sizeof(sys.sockaddr_in6)
+	| `Fail m:
+		-> `Fail m
 	;;
 	sock = sys.socket(sa.fam, proto, 0)
 
@@ -101,11 +103,11 @@ const dialunix = {path
 	if sock < 0
 		-> `Fail "failed to create socket"
 	;;
-	std.slcp(sa.path[:path.len], path)
+	slcp(sa.path[:path.len], path)
 	if sys.bind(sock, &sa castto(sys.sockaddr#), sizeof(sys.sockaddr_un)) < 0
 		-> `Fail "failed to bind address"
 	;;
-	-> `std.Ok (sock castto(fd))
+	-> `Ok (sock castto(fd))
 }
 
 const parseport = {port
@@ -138,9 +140,10 @@ const getaddr = {addr
 			ip = hi[0].addr
 			slfree(hi)
 		| `Fail m:
+			-> `Fail "could not get host info"
 		;;
 	;;
-	-> ip
+	-> `Ok ip
 }
 
 const nameseg = {str
