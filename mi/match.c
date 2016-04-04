@@ -287,9 +287,9 @@ static int addwildrec(Srcloc loc, Type *ty, Dtree *start, Dtree *accept, Dtree *
 	ret = 0;
 	last = NULL;
 	nlast = 0;
-	lappend(&last, &nlast, start);
 	switch (ty->type) {
 	case Tytuple:
+		lappend(&last, &nlast, start);
 		for (i = 0; i < ty->nsub; i++) {
 			next = nextnode(loc, i, ty->nsub, accept);
 			tail = NULL;
@@ -303,6 +303,7 @@ static int addwildrec(Srcloc loc, Type *ty, Dtree *start, Dtree *accept, Dtree *
 		}
 		break;
 	case Tyarray:
+		lappend(&last, &nlast, start);
 		asize = fold(ty->asize, 1);
 		nelt = asize->expr.args[0]->lit.intval;
 		for (i = 0; i < nelt; i++) {
@@ -318,6 +319,7 @@ static int addwildrec(Srcloc loc, Type *ty, Dtree *start, Dtree *accept, Dtree *
 		}
 		break;
 	case Tystruct:
+		lappend(&last, &nlast, start);
 		for (i = 0; i < ty->nmemb; i++) {
 			next = nextnode(loc, i, ty->nmemb, accept);
 			tail = NULL;
@@ -331,6 +333,7 @@ static int addwildrec(Srcloc loc, Type *ty, Dtree *start, Dtree *accept, Dtree *
 		}
 		break;
 	case Tyunion:
+		lappend(&last, &nlast, start);
 		for (i = 0; i < ty->nmemb; i++) {
 			uc = ty->udecls[i];
 			next = dtbytag(start, uc);
@@ -354,6 +357,7 @@ static int addwildrec(Srcloc loc, Type *ty, Dtree *start, Dtree *accept, Dtree *
 		lappend(&last, &nlast, accept);
 		break;
 	case Typtr:
+		lappend(&last, &nlast, start);
 		ret = addwildrec(loc, ty->sub[0], start, accept, &last, &nlast);
 		break;
 	default:
