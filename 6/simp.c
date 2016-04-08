@@ -36,12 +36,6 @@ struct Simp {
 	int hasenv;
 	int isbigret;
 
-	/* break/continue handling */
-	Node **loopstep;
-	size_t nloopstep;
-	Node **loopexit;
-	size_t nloopexit;
-
 	/* location handling */
 	Node **blobs;
 	size_t nblobs;
