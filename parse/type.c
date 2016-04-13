@@ -679,7 +679,7 @@ int tyeq_rec(Type *a, Type *b, Bitset *visited, int search)
 
 	if (!a || !b)
 		return a == b;
-	if (!search) {
+	if (search) {
 		a = tysearch(a);
 		b = tysearch(b);
 	}
