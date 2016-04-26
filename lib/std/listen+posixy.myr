@@ -1,0 +1,125 @@
+use sys
+
+use "alloc"
+use "chartype"
+use "dialparse"
+use "die"
+use "endian"
+use "option"
+use "resolve"
+use "result"
+use "slcp"
+use "sleq"
+use "strfind"
+use "striter"
+use "syswrap"
+use "utf"
+
+pkg std =
+	const announce	: (ds : byte[:] -> result(fd, byte[:]))
+	const listen	: (sock : fd -> result(fd, byte[:]))
+	const accept	: (lfd : fd -> result(fd, byte[:]))
+;;
+
+const announce = {ds
+	match nameseg(ds)
+	| `Some ("tcp", str):	-> announcesock(sys.Sockstream, str)
+	| `Some ("udp", str):	-> announcesock(sys.Sockdgram, str)
+	| `Some ("unix", str):	-> announceunix(str)
+	| `Some (proto, str):	-> `Fail "unknown protocol"
+	| `None:	-> `Fail "missing protocol"
+	;;
+}
+
+const announcesock = {proto, str
+	var sa4 : sys.sockaddr_in
+	var sa6 : sys.sockaddr_in6
+	var sa	: sys.sockaddr#
+	var hoststr, portstr, port
+	var sock, sz
+	var yes
+
+	match nameseg(str)
+	| `None:	-> `Fail "required addr!port for ip listen"
+	| `Some ("", _):	-> `Fail "empty host"
+	| `Some (_, ""):	-> `Fail "empty port"
+	| `Some segs:	(hoststr, portstr) = segs
+	;;
+
+	match parseport(portstr)
+	| `Some p:	port = p
+	| `None:	-> `Fail("invalid port")
+	;;
+
+	if std.sleq(hoststr, "*")
+		sa6=[.fam=sys.Afinet6, .port=hosttonet(port)]
+		sa = &sa6 castto(sys.sockaddr#)
+		sz = sizeof(sys.sockaddr_in6)
+	else
+		match getaddr(hoststr)
+		| `Ok `Ipv4 bits:
+			sa4=[.fam=sys.Afinet, .addr=bits, .port=hosttonet(port)]
+			sa = &sa4 castto(sys.sockaddr#)
+			sz = sizeof(sys.sockaddr_in)
+		| `Ok `Ipv6 bits:
+			sa6=[.fam=sys.Afinet6, .addr=bits, .port=hosttonet(port)]
+			sa = &sa6 castto(sys.sockaddr#)
+			sz = sizeof(sys.sockaddr_in6)
+		| `Fail m:
+			-> `Fail m
+		;;
+	;;
+	sock = sys.socket(sa.fam, proto, 0)
+	if sock < 0
+		-> `Fail "failed to create socket"
+	;;
+	yes = 1
+	if sys.setsockopt(sock, sys.Solsock, sys.Soreuseaddr, &yes castto(void#), sizeof(int)) < 0
+		-> `Fail "failed to set sock opts"
+	;;
+	if sys.bind(sock, sa, sz) < 0
+		-> `Fail "failed to bind socket"
+	;;
+	-> `Ok sock castto(fd)
+}
+
+const announceunix = {path
+	var sa : sys.sockaddr_un
+	var sock
+	
+	sa = [.fam = sys.Afunix]
+	if path.len >= sa.path.len
+		-> `Fail "path too long"
+	;;
+
+	slcp(sa.path[:path.len], path)
+	sock = sys.socket(sys.Afunix, sys.Sockstream, 0)
+	if sock < 0
+		-> `Fail "failed to create socket"
+	;;
+	if sys.bind(sock, &sa castto(sys.sockaddr#), sizeof(sys.sockaddr_un)) < 0
+		-> `Fail "failed to bind address"
+	;;
+	-> `Ok (sock castto(fd))
+
+}
+
+const listen = {sock : std.fd -> result(fd, byte[:])
+	if sys.listen(sock castto(sys.fd), 10) < 0
+		-> `Fail "unable to listen on socket"
+	;;
+	-> `Ok (sys.dup(sock castto(sys.fd)) castto(fd))
+}
+
+const accept = {lfd
+	var sa : sys.sockaddr_storage
+	var len : sys.size
+	var fd
+
+	fd = sys.accept(lfd castto(sys.fd), 0 castto(sys.sockaddr#), 0 castto(sys.size#))
+	if fd < 0
+		-> `Fail "unable to accept socket"
+	;;
+	-> `Ok (fd castto(fd))
+}
+

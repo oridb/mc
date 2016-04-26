@@ -220,6 +220,32 @@ pkg sys =
 	const Sockseqpacket	: socktype = 5	/* sequenced, reliable packets */
 	const Sockdccp		: socktype = 6	/* data congestion control protocol */
 	const Sockpack		: socktype = 10	/* linux specific packet */
+	const Solsock	: socktype =	1
+
+	/* socket options */
+	const Sodebug		: sockopt = 1
+	const Soreuseaddr	: sockopt = 2
+	const Sotype		: sockopt = 3
+	const Soerror		: sockopt = 4
+	const Sodontroute	: sockopt = 5
+	const Sobroadcast	: sockopt = 6
+	const Sosndbuf		: sockopt = 7
+	const Sorcvbuf		: sockopt = 8
+	const Sosndbufforce	: sockopt = 32
+	const Sorcvbufforce	: sockopt = 33
+	const Sokeepalive	: sockopt = 9
+	const Sooobinline	: sockopt = 10
+	const Sono_check	: sockopt = 11
+	const Sopriority	: sockopt = 12
+	const Solinger		: sockopt = 13
+	const Sobsdcompat	: sockopt = 14
+	const Soreuseport	: sockopt = 15
+	const Sopasscred	: sockopt = 16
+	const Sopeercred	: sockopt = 17
+	const Sorcvlowat	: sockopt = 18
+	const Sosndlowat	: sockopt = 19
+	const Sorcvtimeo	: sockopt = 20
+	const Sosndtimeo	: sockopt = 21
 
 	/* network protocols */
 	const Ipproto_ip	: sockproto = 0
@@ -673,6 +699,8 @@ pkg sys =
 	const accept	: (sock : fd, addr : sockaddr#, len : size# -> fd)
 	const listen	: (sock : fd, backlog : int	-> int)
 	const bind	: (sock : fd, addr : sockaddr#, len : size -> int)
+	const setsockopt	: (sock : fd, lev : socktype, opt : sockopt, val : void#, len : size -> int)
+	const getsockopt	: (sock : fd, lev : socktype, opt : sockopt, val : void#, len : size# -> int)
 
 	/* memory mapping */
 	const munmap	: (addr:byte#, len:size -> int64)

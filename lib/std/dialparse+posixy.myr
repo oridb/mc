@@ -1,0 +1,69 @@
+use "alloc"
+use "chartype"
+use "hasprefix"
+use "intparse"
+use "slcp"
+use "sleq"
+use "strfind"
+use "striter"
+use "option"
+use "result"
+use "ipparse"
+use "resolve"
+
+pkg std =
+	pkglocal const parseport	: (port : byte[:] -> option(uint16))
+	pkglocal const getaddr	: (addr : byte[:] -> result(netaddr, byte[:]))
+	pkglocal const nameseg	: (str : byte[:] -> option((byte[:], byte[:])))
+;;
+
+const parseport = {port
+	match intparse(port)
+	| `Some n:	-> `Some n
+	| `None:
+		/* a small number of hardcoded ports */
+		if sleq(port, "http")
+			-> `Some 80
+		elif sleq(port, "https")
+			-> `Some 443
+		elif sleq(port, "ircd")
+			-> `Some 6667
+		elif sleq(port, "dns")
+			-> `Some 53
+		;;
+	;;
+	-> `None
+}
+
+const getaddr = {addr
+	var ip
+
+	match ipparse(addr)
+	| `Some a:
+		ip = a
+	| `None:
+		match resolve(addr)
+		| `Ok hi:
+			if hi.len > 0
+				ip = hi[0].addr
+				slfree(hi)
+			else
+				slfree(hi)
+				-> `Fail "no hosts resolved for addr"
+			;;
+		| `Fail m:
+			-> `Fail "could not get host info"
+		;;
+	;;
+	-> `Ok ip
+}
+
+const nameseg = {str
+	match strfind(str, "!")
+	| `Some idx:
+		-> `Some (str[:idx], str[idx+1:])
+	| `None:
+		-> `None
+	;;
+}
+

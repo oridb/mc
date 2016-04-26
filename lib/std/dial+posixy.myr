@@ -2,13 +2,10 @@ use sys
 
 use "alloc"
 use "chartype"
+use "dialparse"
 use "die"
 use "endian"
-use "hasprefix"
-use "intparse"
-use "ipparse"
 use "option"
-use "resolve"
 use "result"
 use "slcp"
 use "sleq"
@@ -18,7 +15,7 @@ use "syswrap"
 use "utf"
 
 pkg std =
-	const dial	: (dialstr : byte[:] -> result(fd, byte[:]))
+	const dial	: (ds : byte[:] -> result(fd, byte[:]))
 ;;
 
 /*
@@ -33,9 +30,6 @@ var inited = false
 /* takes a plan 9 style dial string */
 const dial = {ds
 	match nameseg(ds)
-	/*
-	| `Some ("net", str):	-> guessdial(str)
-	*/
 	| `Some ("tcp", str):	-> dialsock(sys.Sockstream, str)
 	| `Some ("udp", str):	-> dialsock(sys.Sockdgram, str)
 	| `Some ("unix", u):	-> dialunix(u)
@@ -48,14 +42,15 @@ const dialsock = {proto, str
 	var sa4 : sys.sockaddr_in
 	var sa6 : sys.sockaddr_in6
 	var sa	: sys.sockaddr#
-	var host, portstr, port
+	var hoststr, portstr, port
 	var sock, sz
+	var err
 
 	match nameseg(str)
 	| `None:	-> `Fail "required host!port for ip dial"
 	| `Some ("", _):	-> `Fail "empty host"
-	| `Some (_, ""):	-> `Fail "empty host"
-	| `Some segs:	(host, portstr) = segs
+	| `Some (_, ""):	-> `Fail "empty port"
+	| `Some segs:	(hoststr, portstr) = segs
 	;;
 
 	match parseport(portstr)
@@ -63,7 +58,7 @@ const dialsock = {proto, str
 	| `None:	-> `Fail("invalid port")
 	;;
 
-	match getaddr(host)
+	match getaddr(hoststr)
 	| `Ok `Ipv4 bits:
 		sa4=[.fam=sys.Afinet, .addr=bits, .port=hosttonet(port)]
 		sa = &sa4 castto(sys.sockaddr#)
@@ -76,11 +71,10 @@ const dialsock = {proto, str
 		-> `Fail m
 	;;
 	sock = sys.socket(sa.fam, proto, 0)
-
 	if sock < 0
 		-> `Fail "failed to create socket"
 	;;
-	var err
+
 	err = sys.connect(sock, sa, sz)
 	if err < 0
 		sys.close(sock)
@@ -104,59 +98,8 @@ const dialunix = {path
 		-> `Fail "failed to create socket"
 	;;
 	slcp(sa.path[:path.len], path)
-	if sys.bind(sock, &sa castto(sys.sockaddr#), sizeof(sys.sockaddr_un)) < 0
+	if sys.connect(sock, &sa castto(sys.sockaddr#), sizeof(sys.sockaddr_un)) < 0
 		-> `Fail "failed to bind address"
 	;;
 	-> `Ok (sock castto(fd))
 }
-
-const parseport = {port
-	match intparse(port)
-	| `Some n:	-> `Some n
-	| `None:
-		/* a small number of hardcoded ports */
-		if sleq(port, "http")
-			-> `Some 80
-		elif sleq(port, "https")
-			-> `Some 443
-		elif sleq(port, "ircd")
-			-> `Some 6667
-		elif sleq(port, "dns")
-			-> `Some 53
-		;;
-	;;
-	-> `None
-}
-
-const getaddr = {addr
-	var ip
-
-	match ipparse(addr)
-	| `Some a:
-		ip = a
-	| `None:
-		match resolve(addr)
-		| `Ok hi:
-			if hi.len > 0
-				ip = hi[0].addr
-				slfree(hi)
-			else
-				slfree(hi)
-				-> `Fail "no hosts resolved for addr"
-			;;
-		| `Fail m:
-			-> `Fail "could not get host info"
-		;;
-	;;
-	-> `Ok ip
-}
-
-const nameseg = {str
-	match strfind(str, "!")
-	| `Some idx:
-		-> `Some (str[:idx], str[idx+1:])
-	| `None:
-		-> `None
-	;;
-}
-
