@@ -19,6 +19,7 @@ pkg sys =
 	type socktype	= int64	/* socket type */
 	type sockproto	= int64	/* socket protocol */
 	type sockfam	= uint16	/* socket family */
+	type sockopt	= int64
 
 	type epollflags	= uint32
 	type epollop	= uint32
@@ -827,6 +828,8 @@ const connect	= {sock, addr, len;	-> syscall(Sysconnect, a(sock), a(addr), a(len
 const bind	= {sock, addr, len;	-> syscall(Sysbind, a(sock), a(addr), a(len)) castto(int)}
 const listen	= {sock, backlog;	-> syscall(Syslisten, a(sock), a(backlog)) castto(int)}
 const accept	= {sock, addr, lenp;	-> syscall(Sysaccept, a(sock), a(addr), a(lenp)) castto(fd)}
+const setsockopt	= {sock, lev, opt, val, len;	-> syscall(Syssetsockopt, a(sock), a(lev), a(opt), a(val), a(len)) castto(int)}
+const getsockopt	= {sock, lev, opt, val, len;	-> syscall(Syssetsockopt, a(sock), a(lev), a(opt), a(val), a(len)) castto(int)}
 
 /* memory mapping */
 const munmap	= {addr, len;		-> syscall(Sysmunmap, a(addr), a(len))}
