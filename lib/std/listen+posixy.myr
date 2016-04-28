@@ -86,6 +86,7 @@ const announcesock = {proto, str
 const announceunix = {path
 	var sa : sys.sockaddr_un
 	var sock
+	var yes
 	
 	sa = [.fam = sys.Afunix]
 	if path.len >= sa.path.len
@@ -97,6 +98,11 @@ const announceunix = {path
 	if sock < 0
 		-> `Fail "failed to create socket"
 	;;
+	yes = 1
+	if sys.setsockopt(sock, sys.Solsock, sys.Soreuseaddr, &yes castto(void#), sizeof(int)) < 0
+		-> `Fail "failed to set sock opts"
+	;;
+	sys.unlink(path)
 	if sys.bind(sock, &sa castto(sys.sockaddr#), sizeof(sys.sockaddr_un)) < 0
 		-> `Fail "failed to bind address"
 	;;
