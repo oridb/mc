@@ -12,5 +12,5 @@ pkg std =
 const exit	= {status;	sys.exit(status)}
 
 const bgetcwd	= {buf
-	-> sys.__getcwd(buf) castto(errno)
+	-> (sys.__getcwd(buf) - 1) castto(errno)
 }

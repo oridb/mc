@@ -83,7 +83,6 @@ const movefile = {b, rm, dir, file, prefix, perm
 			if !std.blat(path, buf, perm)
 				std.put("Could not write {}\n", file)
 			;;
-			std.slfree(buf)
 		;;
 	;;
 	std.slfree(path)

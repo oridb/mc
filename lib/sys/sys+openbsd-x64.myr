@@ -1,7 +1,7 @@
 use "systypes.use"
 
 pkg sys =
-	type pid	= int	/* process id */
+	type pid	= int32	/* process id */
 	type scno	= int64	/*syscall*/
 	type fdopt	= int64	/* fd options */
 	type fd		= int32	/* fd */
@@ -11,7 +11,7 @@ pkg sys =
 	type socktype	= int64	/* socket type */
 	type sockproto	= int64	/* socket protocol */
 	type sockfam	= uint8	/* socket family */
-	type filemode	= uint16
+	type filemode	= uint32
 	type filetype	= uint8
 	type fcntlcmd	= int64
 	type umtxop	= int32
@@ -68,9 +68,9 @@ pkg sys =
 	;;
 
 	type statbuf = struct
+		mode	: filemode
 		dev	: uint32 
 		ino	: uint64
-		mode	: filemode
 		nlink	: uint32
 		uid	: uint32
 		gid	: uint32
@@ -78,12 +78,11 @@ pkg sys =
 		atime	: timespec
 		mtime	: timespec
 		ctime	: timespec
-		size	: int64
+		size	: off
 		blocks	: int64
 		blksize	: uint32
 		flags	: uint32
 		gen	: uint32
-		lspare	: int32
 		birthtim	: timespec 
 	;;
 

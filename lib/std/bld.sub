@@ -84,6 +84,7 @@ lib std {inc=.} =
 	dialparse+posixy.myr
 	dir+freebsd.myr
 	dir+linux.myr
+	dir+openbsd.myr
 	dir+osx.myr
 	dir+plan9.myr
 	env+plan9.myr
@@ -101,6 +102,7 @@ lib std {inc=.} =
 
 	# system-specific syscall wrappers
 	syswrap-ss+linux.myr
+	syswrap-ss+openbsd.myr
 	syswrap-ss+osx.myr
 	syswrap-ss+plan9.myr
 	syswrap-ss+freebsd.myr
