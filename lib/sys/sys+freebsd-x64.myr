@@ -47,6 +47,13 @@ pkg sys =
 	const Pollwrband	: uint16 = 0x0100	/* OOB/Urgent data can be written */
 	/* General FreeBSD extension (currently only supported for sockets): */
 	const Pollinigneof	: uint16 = 0x2000	/* like POLLIN, except ignore EOF */
+	/*
+	* These events are set if they occur regardless of whether they were
+	* requested.
+	*/
+	const Pollerr		: uint16 = 0x0008		/* some poll error occurred */
+	const Pollhup		: uint16 = 0x0010		/* file descriptor was "hung up" */
+	const Pollnval		: uint16 = 0x0020		/* requested events "invalid" */
 
 	type waitstatus = union
 		`Waitfail int32
