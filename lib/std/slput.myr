@@ -3,26 +3,26 @@ use "alloc"
 use "die"
 
 pkg std =
-	generic slput	: (sl : @a[:], idx : size, elt : @a	-> @a[:])
-	generic sldel	: (sl : @a[:], idx : size	-> @a[:])
+	generic slput	: (sl : @a[:]#, idx : size, elt : @a	-> @a[:])
+	generic sldel	: (sl : @a[:]#, idx : size	-> @a[:])
 ;;
 
 generic slput = {sl, idx, elt
 	var i
 	var len
 
-	len = sl.len
-	slgrow(&sl, sl.len + 1)
+	len = sl#.len
+	slgrow(sl, sl#.len + 1)
 	for i = len - 1; i >= idx; i--
-		sl[i + 1] = sl[i]
+		sl#[i + 1] = sl#[i]
 	;;
-	sl[idx] = elt
-	-> sl
+	sl#[idx] = elt
+	-> sl#
 }
 
 generic sldel = {sl, idx
-	for var i = idx; i < sl.len - 1; i++
-		sl[i] = sl[i + 1]
+	for var i = idx; i < sl#.len - 1; i++
+		sl#[i] = sl#[i + 1]
 	;;
-	-> sl[:sl.len - 1]
+	-> sl#[:sl#.len - 1]
 }
