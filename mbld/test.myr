@@ -37,7 +37,7 @@ const test = {b
 				continue
 			;;
 			if t.incpath.len == 0 || !std.sleq(t.incpath[0], ".")
-				t.incpath = std.slput(t.incpath, 0, std.sldup("."))
+				std.slput(&t.incpath, 0, std.sldup("."))
 			;;
 			buildbin(b, t, false)
 			bincmd = std.sldup([std.strcat("./", t.name)][:])
@@ -114,7 +114,7 @@ const freecmd = {cmd
 }
 
 const buildtests = {b, targ
-	var tt, bin, tests
+	var tt, bin, tests, incpath
 	var cmd
 
 	tests = [][:]
@@ -124,13 +124,14 @@ const buildtests = {b, targ
 		| `std.None: /* nothing to do */
 		| `std.Some path:
 			bin = srcswapsuffix(path, "")
+			incpath = std.sldup(targ.incpath)
 			tt = [
 				.name = bin,
 				.dir = targ.dir,
 				.inputs = [path][:],
 				.install = false,
 				.libdeps = std.sldup(targ.libdeps),
-				.incpath = std.slput(std.sldup(targ.incpath), 0, "."),
+				.incpath = std.slput(&incpath, 0, "."),
 			]
 
 			buildbin(b, &tt, true)

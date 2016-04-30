@@ -183,7 +183,7 @@ const genfiles = {b, gt
 const addincludes = {b, targ
 	for (inc, lib, subtarg) in targ.libdeps
 		if !hasinc(targ.incpath, inc)
-			targ.incpath = std.slput(targ.incpath, 0, inc)
+			std.slput(&targ.incpath, 0, inc)
 		;;
 	;;
 }
@@ -419,7 +419,7 @@ const putlib = {cmd, head, lib, incs
 	var sep
 
 	if !config.Directlib
-		-> std.slput(cmd, head, std.fmt("-l{}", lib))
+		-> std.slput(&cmd, head, std.fmt("-l{}", lib))
 	else
 		match findlib(lib, incs)
 		| `std.None:
@@ -431,7 +431,7 @@ const putlib = {cmd, head, lib, incs
 			;;
 			std.fatal("could not find library lib{}.a.\n", lib)
 		| `std.Some p:
-			-> std.slput(cmd, head, p)
+			-> std.slput(&cmd, head, p)
 		;;
 	;;
 }
