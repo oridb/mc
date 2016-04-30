@@ -32,6 +32,22 @@ pkg sys =
 		`Clocksecond
 	;;
 
+	type pollfd = struct
+		fd	: fd
+		events	: uint16
+		revents	: uint16
+	;;
+
+	const Pollin		: uint16 = 0x0001	/* any readable data available */
+	const Pollpri		: uint16 = 0x0002	/* OOB/Urgent readable data */
+	const Pollout		: uint16 = 0x0004	/* file descriptor is writeable */
+	const Pollrdnorm	: uint16 = 0x0040	/* non-OOB/URG data available */
+	const Pollwrnorm	: uint16 = Pollout	/* no write type differentiation */
+	const Pollrdband	: uint16 = 0x0080	/* OOB/Urgent readable data */
+	const Pollwrband	: uint16 = 0x0100	/* OOB/Urgent data can be written */
+	/* General FreeBSD extension (currently only supported for sockets): */
+	const Pollinigneof	: uint16 = 0x2000	/* like POLLIN, except ignore EOF */
+
 	type waitstatus = union
 		`Waitfail int32
 		`Waitexit int32
@@ -757,6 +773,7 @@ pkg sys =
 	const dup2	: (src : fd, dst : fd -> fd)
 	/* NB: the C ABI uses '...' for the args. */
 	const fcntl	: (fd : fd, cmd : fcntlcmd, args : byte# -> int64)
+	const poll	: (pfd : pollfd[:], tm : int -> int)
 
 	/* networking */
 	const socket	: (dom : sockfam, stype : socktype, proto : sockproto	-> fd)
@@ -881,6 +898,7 @@ const pipe	= {fds;	-> __freebsd_pipe(fds)}
 const dup 	= {fd;	-> syscall(Sysdup, a(fd)) castto(fd)}
 const dup2 	= {src, dst;	-> syscall(Sysdup2, a(src), a(dst)) castto(fd)}
 const fcntl	= {fd, cmd, args; 	-> syscall(Sysfcntl, a(fd), a(cmd), a(args))}
+const poll	= {pfd, tm;	-> syscall(Syspoll, pfd castto(byte#), a(pfd.len), a(tm)) castto(int)}
 
 /* networking */
 const socket	= {dom, stype, proto;	-> syscall(Syssocket, a(dom), a(stype), a(proto)) castto(fd) }
