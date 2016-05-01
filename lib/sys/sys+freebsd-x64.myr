@@ -38,23 +38,6 @@ pkg sys =
 		revents	: uint16
 	;;
 
-	const Pollin		: uint16 = 0x0001	/* any readable data available */
-	const Pollpri		: uint16 = 0x0002	/* OOB/Urgent readable data */
-	const Pollout		: uint16 = 0x0004	/* file descriptor is writeable */
-	const Pollrdnorm	: uint16 = 0x0040	/* non-OOB/URG data available */
-	const Pollwrnorm	: uint16 = Pollout	/* no write type differentiation */
-	const Pollrdband	: uint16 = 0x0080	/* OOB/Urgent readable data */
-	const Pollwrband	: uint16 = 0x0100	/* OOB/Urgent data can be written */
-	/* General FreeBSD extension (currently only supported for sockets): */
-	const Pollinigneof	: uint16 = 0x2000	/* like POLLIN, except ignore EOF */
-	/*
-	* These events are set if they occur regardless of whether they were
-	* requested.
-	*/
-	const Pollerr		: uint16 = 0x0008		/* some poll error occurred */
-	const Pollhup		: uint16 = 0x0010		/* file descriptor was "hung up" */
-	const Pollnval		: uint16 = 0x0020		/* requested events "invalid" */
-
 	type waitstatus = union
 		`Waitfail int32
 		`Waitexit int32
@@ -261,6 +244,7 @@ pkg sys =
 	const Sobintime		: sockopt = 0x2000	/* timestamp received dgram traffic */
 	const Sonooffload	: sockopt = 0x4000	/* socket cannot be offloaded */
 	const Sonoddp		: sockopt = 0x8000	/* disable direct data placement */
+	
 
 	/* network protocols */
 	const Ipproto_ip	: sockproto = 0
@@ -268,6 +252,24 @@ pkg sys =
 	const Ipproto_tcp	: sockproto = 6
 	const Ipproto_udp	: sockproto = 17
 	const Ipproto_raw	: sockproto = 255
+
+	/* poll options */
+	const Pollin		: uint16 = 0x0001	/* any readable data available */
+	const Pollpri		: uint16 = 0x0002	/* OOB/Urgent readable data */
+	const Pollout		: uint16 = 0x0004	/* file descriptor is writeable */
+	const Pollrdnorm	: uint16 = 0x0040	/* non-OOB/URG data available */
+	const Pollwrnorm	: uint16 = Pollout	/* no write type differentiation */
+	const Pollrdband	: uint16 = 0x0080	/* OOB/Urgent readable data */
+	const Pollwrband	: uint16 = 0x0100	/* OOB/Urgent data can be written */
+	/* General FreeBSD extension (currently only supported for sockets): */
+	const Pollinigneof	: uint16 = 0x2000	/* like POLLIN, except ignore EOF */
+	/*
+	* These events are set if they occur regardless of whether they were
+	* requested.
+	*/
+	const Pollerr		: uint16 = 0x0008		/* some poll error occurred */
+	const Pollhup		: uint16 = 0x0010		/* file descriptor was "hung up" */
+	const Pollnval		: uint16 = 0x0020		/* requested events "invalid" */
 
 	const Seekset	: whence = 0
 	const Seekcur	: whence = 1

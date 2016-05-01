@@ -44,6 +44,12 @@ pkg sys =
 		`Waitfail int32
 	;;
 
+	type pollfd = struct
+		fd	: fd
+		events	: uint16
+		revents	: uint16
+	;;
+
 	type statbuf = struct
 		dev	: int32
 		mode	: filemode
@@ -288,6 +294,35 @@ pkg sys =
 	const Ipproto_tcp	: sockproto = 6
 	const Ipproto_udp	: sockproto = 17
 	const Ipproto_raw	: sockproto = 255
+
+	/*
+	* Requestable events.  If poll(2) finds any of these set, they are
+	* copied to revents on return.
+	*/
+	const Pollin		: uint16 = 0x0001	/* any readable data available */
+	const Pollpri		: uint16 = 0x0002	/* OOB/Urgent readable data */
+	const Pollout		: uint16 = 0x0004	/* file descriptor is writeable */
+	const Pollrdnorm	: uint16 = 0x0040	/* non-OOB/URG data available */
+	const Pollwrnorm	: uint16 = Pollout	/* no write type differentiation */
+	const Pollrdband	: uint16 = 0x0080	/* OOB/Urgent readable data */
+	const Pollwrband	: uint16 = 0x0100	/* OOB/Urgent data can be written */
+
+	/*
+	* FreeBSD extensions: polling on a regular file might return one
+	* of these events (currently only supported on local filesystems).
+	*/
+	const Pollextend	: uint16 = 0x0200	/* file may have been extended */
+	const Pollattrib	: uint16 = 0x0400	/* file attributes may have changed */
+	const Pollnlink		: uint16 = 0x0800	/* (un)link/rename may have happened */
+	const Pollwrite		: uint16 = 0x1000	/* file's contents may have changed */
+
+	/*
+	* These events are set if they occur regardless of whether they were
+	* requested.
+	*/
+	const Pollerr		: uint16 = 0x0008	/* some poll error occurred */
+	const Pollhup		: uint16 = 0x0010	/* file descriptor was "hung up" */
+	const Pollnval		: uint16 = 0x0020	/* requested events "invalid" */
 
 	/* return value for a failed mapping */
 	const Mapbad	: byte# = -1 castto(byte#)
