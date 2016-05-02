@@ -1,0 +1,19 @@
+use std
+
+const main = {
+	var chars = ['a', 'b', 'c']
+	var splits = ["foo", "+bar"]
+	var i
+
+	i = 0
+	for c in std.bychar("abc")
+		std.assert(chars[i++] == c, "wrong char")
+	;;
+	std.assert(i == chars.len, "wrong split count")
+
+	i = 0
+	for sp in std.bysplit("foo+++bar", "++")
+		std.assert(std.streq(splits[i++], sp), "wrong split {}", sp)
+	;;
+	std.assert(i == splits.len, "wrong split count")
+}

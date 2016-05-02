@@ -1,15 +1,24 @@
 use "die"
 use "types"
 use "utf"
+use "strfind"
+use "option"
 
 pkg std =
 	type chariter = struct
 		rest	: byte[:]
 	;;
 
+	type splititer = struct
+		rest	: byte[:]
+		split	: byte[:]
+	;;
+
 	impl iterable chariter -> char
+	impl iterable splititer -> byte[:]
 
 	const bychar	: (str : byte[:] -> chariter)
+	const bysplit	: (str : byte[:], split : byte[:] -> splititer)
 ;;
 
 impl iterable chariter -> char =
@@ -27,5 +36,30 @@ impl iterable chariter -> char =
 
 const bychar = {str
 	-> [.rest = str]
+}
+
+impl iterable splititer -> byte[:] =
+	__iternext__ = {si, sp
+		match std.strfind(si.rest, si.split)
+		| `Some off:
+			sp# = si.rest[:off]
+			si.rest = si.rest[off + si.split.len:]
+			-> true
+		| `None:
+			if si.rest.len > 0
+				sp# = si.rest
+				si.rest = ""
+				-> true
+			;;
+		;;
+		-> false
+	}
+
+	__iterfin__ = {ci, c
+	}
+;;
+
+const bysplit = {str, split
+	-> [.rest = str, .split = split]
 }
 
