@@ -16,6 +16,8 @@ pkg sys =
 	type filetype	= uint8
 	type fcntlcmd	= int64
 	type umtxop	= int32
+	type signo	= int32
+	type sigflags	= int32
 
 	type clock = union
 		`Clockrealtime
@@ -36,6 +38,16 @@ pkg sys =
 		fd	: fd
 		events	: uint16
 		revents	: uint16
+	;;
+
+	type sigset = struct
+		bits	: uint32[4]
+	;;
+
+	type sigaction = struct
+		handler	: byte#	/* code pointer */
+		flags	: sigflags
+		mask	: sigset
 	;;
 
 	type waitstatus = union
@@ -326,6 +338,51 @@ pkg sys =
 	const Umtxnwakepriv	: umtxop = 21
 	const Umtxmtxwake2	: umtxop = 22
 	const Umtxmax	: umtxop = 23
+
+	/* signal actions */
+	const Saonstack		: sigflags = 0x0001	/* take signal on signal stack */
+	const Sarestart		: sigflags = 0x0002	/* restart system call on signal return */
+	const Saresethand	: sigflags = 0x0004	/* reset to SIG_DFL when taking signal */
+	const Sanodefer		: sigflags = 0x0010	/* don't mask the signal we're delivering */
+	const Sanocldwait	: sigflags = 0x0020	/* don't keep zombies around */
+	const Sasiginfo		: sigflags = 0x0040	/* signal handler with SA_SIGINFO args */
+
+	/* signal numbers */
+	const Sighup	: signo = 1	/* hangup */
+	const Sigint	: signo = 2	/* interrupt */
+	const Sigquit	: signo = 3	/* quit */
+	const Sigill	: signo = 4	/* illegal instr. (not reset when caught) */
+	const Sigtrap	: signo = 5	/* trace trap (not reset when caught) */
+	const Sigabrt	: signo = 6	/* abort() */
+	const Sigiot	: signo = Sigabrt	/* compatibility */
+	const Sigemt	: signo = 7	/* EMT instruction */
+	const Sigfpe	: signo = 8	/* floating point exception */
+	const Sigkill	: signo = 9	/* kill (cannot be caught or ignored) */
+	const Sigbus	: signo = 10	/* bus error */
+	const Sigsegv	: signo = 11	/* segmentation violation */
+	const Sigsys	: signo = 12	/* non-existent system call invoked */
+	const Sigpipe	: signo = 13	/* write on a pipe with no one to read it */
+	const Sigalrm	: signo = 14	/* alarm clock */
+	const Sigterm	: signo = 15	/* software termination signal from kill */
+	const Sigurg	: signo = 16	/* urgent condition on IO channel */
+	const Sigstop	: signo = 17	/* sendable stop signal not from tty */
+	const Sigtstp	: signo = 18	/* stop signal from tty */
+	const Sigcont	: signo = 19	/* continue a stopped process */
+	const Sigchld	: signo = 20	/* to parent on child stop or exit */
+	const Sigttin	: signo = 21	/* to readers pgrp upon background tty read */
+	const Sigttou	: signo = 22	/* like TTIN if (tp->t_local&LTOSTOP) */
+	const Sigio	: signo = 23	/* input/output possible signal */
+	const Sigxcpu	: signo = 24	/* exceeded CPU time limit */
+	const Sigxfsz	: signo = 25	/* exceeded file size limit */
+	const Sigvtalrm	: signo = 26	/* virtual time alarm */
+	const Sigprof	: signo = 27	/* profiling time alarm */
+	const Sigwinch	: signo = 28	/* window size changes */
+	const Siginfo	: signo = 29	/* information request */
+	const Sigusr1	: signo = 30	/* user defined signal 1 */
+	const Sigusr2	: signo = 31	/* user defined signal 2 */
+	const Sigthr	: signo = 32	/* reserved by thread library. */
+	const Siglwp	: signo = Sigthr
+	const Siglibrt	: signo = 33	/* reserved by real-time library. */
 
 	/* syscalls */
 	const Syssyscall                   : scno = 0
@@ -776,6 +833,10 @@ pkg sys =
 	const chdir	: (p : byte[:] -> int64)
 	const __getcwd	: (buf : byte[:] -> int64)
 
+	/* signals */
+	const sigaction	: (sig : signo, act : sigaction#, oact : sigaction# -> int)
+	const sigprocmask	: (how : int32, set : sigset#, oset : sigset# -> int)
+
 	/* fd stuff */
 	const pipe	: (fds : fd[2]# -> int64)
 	const dup	: (fd : fd -> fd)
@@ -877,7 +938,6 @@ const execve	= {cmd, args, env
 }
 
 /* thread management */
-
 const thr_new	= {param, sz;	-> syscall(Systhr_new, a(param), a(sz)) castto(int)}
 const thr_exit	= {state;	syscall(Systhr_exit, a(state))}
 const umtx_op	= {obj, op, val, a1, a2; -> syscall(Sys_umtx_op, a(obj), a(op), a(val), a(a1), a(a2)) castto(int)}
@@ -908,6 +968,10 @@ const dup 	= {fd;	-> syscall(Sysdup, a(fd)) castto(fd)}
 const dup2 	= {src, dst;	-> syscall(Sysdup2, a(src), a(dst)) castto(fd)}
 const fcntl	= {fd, cmd, args; 	-> syscall(Sysfcntl, a(fd), a(cmd), a(args))}
 const poll	= {pfd, tm;	-> syscall(Syspoll, pfd castto(byte#), a(pfd.len), a(tm)) castto(int)}
+
+/* signals */
+const sigaction	= {sig, act, oact;	-> syscall(Syssigaction, a(sig), a(act), a(oact)) castto(int)}
+const sigprocmask	= {sig, act, oact;	-> syscall(Syssigprocmask, a(sig), a(act), a(oact)) castto(int)}
 
 /* networking */
 const socket	= {dom, stype, proto;	-> syscall(Syssocket, a(dom), a(stype), a(proto)) castto(fd) }
