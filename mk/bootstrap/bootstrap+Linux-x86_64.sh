@@ -34,6 +34,7 @@ echo 	$pwd/6/6m	-I ../sys -I . slcp.myr  && 	$pwd/6/6m	-I ../sys -I . slcp.myr  
 echo 	$pwd/6/6m	-I ../sys -I . sldup.myr  && 	$pwd/6/6m	-I ../sys -I . sldup.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . slfill.myr  && 	$pwd/6/6m	-I ../sys -I . slfill.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . slpush.myr  && 	$pwd/6/6m	-I ../sys -I . slpush.myr  &&\
+echo 	$pwd/6/6m	-I ../sys -I . strfind.myr  && 	$pwd/6/6m	-I ../sys -I . strfind.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . striter.myr  && 	$pwd/6/6m	-I ../sys -I . striter.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . bigint.myr  && 	$pwd/6/6m	-I ../sys -I . bigint.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . fltbits.myr  && 	$pwd/6/6m	-I ../sys -I . fltbits.myr  &&\
@@ -43,7 +44,6 @@ echo 	$pwd/6/6m	-I ../sys -I . hashfuncs.myr  && 	$pwd/6/6m	-I ../sys -I . hashf
 echo 	$pwd/6/6m	-I ../sys -I . htab.myr  && 	$pwd/6/6m	-I ../sys -I . htab.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . intparse.myr  && 	$pwd/6/6m	-I ../sys -I . intparse.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . introspect.myr  && 	$pwd/6/6m	-I ../sys -I . introspect.myr  &&\
-echo 	$pwd/6/6m	-I ../sys -I . strfind.myr  && 	$pwd/6/6m	-I ../sys -I . strfind.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . strsplit.myr  && 	$pwd/6/6m	-I ../sys -I . strsplit.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . syswrap-ss+linux.myr  && 	$pwd/6/6m	-I ../sys -I . syswrap-ss+linux.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . varargs.myr  && 	$pwd/6/6m	-I ../sys -I . varargs.myr  &&\
