@@ -10,6 +10,24 @@ pkg thread =
 
 const Stacksz = 8*std.MiB
 extern const exit : (-> void)
+extern const start : (-> void)
+
+const __init__ = {
+	var ret
+
+	ret = sys.bsdthread_register(\
+		start castto(void#), \	/* start */
+		0 castto(void#), \	/* wqthread */
+		0 castto(uint32), \	/* sz */
+		0 castto(uint32), \	/* dummy */
+		0 castto(void#), \	/* targconc */
+		0 castto(uint32))	/* queueoff */
+	if ret < 0
+		std.fatal("unable to init threads: {}", ret)
+	;;
+}
+
+
 
 const spawn = {fn
 	-> spawnstk(fn, Stacksz)
@@ -19,22 +37,24 @@ const spawnstk = {fn, sz
 	var tid : tid, ret
 
 
+	std.put("...hi? fn={}\n", fn castto(void#))
 	ret = sys.bsdthread_create( \
-		startthread castto(void#), \
-		&fn castto(void#), \
+		fn castto(void#), \
+		envptr(&fn), \
 		sz castto(void#), \
-		&tid castto(void#), \
+		0 castto(void#), \
 		0)
 
-	if ret == -1 castto(void#)
+	if ret == (-1 castto(void#))
 		-> `std.Fail "couldn't spawn thread"
 	;;
-	-> `std.Ok tid castto(tid)
+	-> `std.Ok ret castto(tid)
 }
 
-const startthread = {fn : (-> void)# -> void
-	fn#()
-	std.write(1, "...bye mom\n")
-	sys.bsdthread_terminate(0 castto(void#), 0, 0, 0)
+const envptr = {fn
+	var repr : std.intptr[2]
+
+	repr = (fn castto(std.intptr[2]#))#
+	-> repr[0] castto(void#)
 }
 

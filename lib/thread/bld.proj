@@ -18,7 +18,7 @@ lib thread =
 	#condvar+osx.myr
 	#mutex+osx.myr
 	spawn+osx.myr
-	#exit+osx-x64.s
+	start+osx-x64.s
 
 	# 9front impl of thread primitives
 	#condvar+plan9.myr
