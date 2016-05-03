@@ -690,6 +690,7 @@ pkg sys =
 	const execve	: (cmd : byte[:], args : byte[:][:], env : byte[:][:] -> int64)
 	/* wrappers to extract wait status */
 	const waitstatus	: (st : int32 -> waitstatus)
+	const bsdthread_register	: (start : void#, wqthread : void#, sz : uint32, dummy : uint32, targetconc : void#, queueoff : uint32 -> int)
 	const bsdthread_create	: (func : void#, arg : void#, stk : void#, pthr : void#, flags : uint32 -> void#)
 	const bsdthread_terminate	: (stk : void#, len : size, port : machport, sem : machport -> int)
 
@@ -788,6 +789,16 @@ const fork	= {;			-> __osx_fork()}
 const wait4	= {pid, loc, opt, rusage;	-> syscall(Syswait4, a(pid), a(loc), a(opt), a(rusage))}
 const waitpid	= {pid, loc, opt;
 	-> wait4(pid, loc, opt, 0 castto(rusage#))
+}
+
+const bsdthread_register = {start, wqthread, sz, dummy, targetconc, queueoff
+	-> syscall(Sysbsdthread_register, \
+		a(start), \
+		a(wqthread), \
+		a(sz), \
+		a(dummy), \
+		a(targetconc), \
+		a(queueoff)) castto(int)
 }
 
 const bsdthread_create	= {func , arg , stk , pthr , flags
