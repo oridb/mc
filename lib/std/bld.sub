@@ -43,6 +43,7 @@ lib std {inc=.} =
 	pathjoin.myr
 	putint.myr
 	rand.myr
+	readall.myr
 	result.myr
 	search.myr
 	slcp.myr

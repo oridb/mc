@@ -1,0 +1,26 @@
+use "errno"
+use "result"
+use "option"
+use "syswrap"
+use "types"
+
+pkg std =
+	const readall : (fd : fd, dst : byte[:] -> result(size, errno))
+;;
+
+const readall = {fd, dst
+	var sz
+
+	sz = dst.len
+	while dst.len != 0
+		match std.read(fd, dst)
+		| `Ok 0:
+			break
+		| `Ok n:
+			dst = dst[n:]
+		| `Fail e:
+			-> `Fail e
+		;;
+	;;
+	-> `Ok sz - dst.len
+}
