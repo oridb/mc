@@ -35,14 +35,13 @@ const envfind = {key
 }
 
 const getenv = {name
-	var buf : byte[128]
 	var s, ret
 
 	match envfind(name)
 	| `Some val:
 		ret = `Some val
 	| `None:
-		s = bfmt(buf[:], "/env/{}", name)
+		s = fmt("/env/{}", name)
 		match std.slurp(s)
 		| `Fail m: 
 			ret = `None
