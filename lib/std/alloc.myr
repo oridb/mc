@@ -1,9 +1,10 @@
 use "die"
 use "extremum"
+use "memops"
+use "syswrap"
+use "threadhooks"
 use "types"
 use "units"
-use "syswrap"
-use "memops"
 
 /*
 The allocator implementation here is based on Bonwick's slab allocator.
@@ -231,7 +232,9 @@ const bytealloc = {sz
 
 	if (sz <= Bktmax)
 		bkt = &buckets[bktnum(sz)]
+		lock(memlck)
 		p = bktalloc(bkt)
+		unlock(memlck)
 	else
 		p = getmem(sz)
 		if p == Failmem
@@ -248,7 +251,9 @@ const bytefree = {p, sz
 	memfill(p, 0xa8, sz)
 	if (sz < Bktmax)
 		bkt = &buckets[bktnum(sz)]
+		lock(memlck)
 		bktfree(bkt, p)
+		lock(memlck)
 	else
 		freemem(p, sz)
 	;;

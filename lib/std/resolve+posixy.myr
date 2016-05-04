@@ -17,6 +17,7 @@ use "slurp"
 use "strfind"
 use "strsplit"
 use "strstrip"
+use "threadhooks"
 use "types"
 use "utf"
 
@@ -88,7 +89,11 @@ const resolverec = {host, t
 }
 
 const hostfind = {host
-	-> htget(hostmap, host)
+	var h
+	lock(netlck)
+	h = htget(hostmap, host)
+	unlock(netlck)
+	-> h
 }
 
 const loadhosts = {
@@ -112,7 +117,9 @@ const loadhosts = {
 		| `Some (ip, rest):
 			match ipparse(ip)
 			| `Some addr:
+				lock(netlck)
 				addhosts(addr, ip, rest)
+				unlock(netlck)
 			| `None:
 				/*
 				invalid addresses are ignored: we don't want to break stuff
@@ -142,6 +149,7 @@ const addhosts = {addr, as, str
 			if hthas(hostmap, name)
 				continue
 			;;
+			unlock(netlck)
 			hinf = [
 				.fam=fam,
 				.stype = 0,
@@ -159,6 +167,7 @@ const loadresolv = {
 	var h
 	var lines
 
+	lock(netlck)
 	match slurp(Resolvfile)
 	| `Ok d:	h = d
 	| `Fail m:	-> void
@@ -182,6 +191,7 @@ const loadresolv = {
 	;;
 	slfree(lines)
 	slfree(h)
+	unlock(netlck)
 }
 
 const addns = {rest

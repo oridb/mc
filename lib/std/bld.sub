@@ -64,6 +64,7 @@ lib std {inc=.} =
 	strstrip.myr
 	striter.myr
 	swap.myr
+	threadhooks.myr
 	try.myr
 	types.myr
 	units.myr

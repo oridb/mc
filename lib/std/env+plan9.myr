@@ -1,6 +1,7 @@
 use sys
 
 use "alloc"
+use "cstrconv"
 use "die"
 use "extremum"
 use "fmt"
@@ -11,7 +12,7 @@ use "sldup"
 use "sleq"
 use "slpush"
 use "slurp"
-use "cstrconv"
+use "threadhooks"
 
 pkg std =
 	const getenv :	(name : byte[:] -> option(byte[:]))
@@ -22,31 +23,40 @@ var envkey 	: byte[:][:]
 var envval	: byte[:][:]
 
 const envfind = {key
+	lock(envlck)
 	for var i = 0; i < envkey.len; i++
 		if std.sleq(envkey[i], key)
+			unlock(envlck)
 			-> `Some envval[i]
 		;;
 	;;
+	unlock(envlck)
 	-> `None
 }
 
 const getenv = {name
 	var buf : byte[128]
-	var s
+	var s, ret
 
 	match envfind(name)
-	| `Some val:	-> `Some val
+	| `Some val:
+		ret = `Some val
 	| `None:
 		s = bfmt(buf[:], "/env/{}", name)
 		match std.slurp(s)
-		| `Fail m: -> `None
+		| `Fail m: 
+			ret = `None
 		| `Ok data:
 			data = cstrconv(data)
+			lock(envlck)
 			slpush(&envkey, sldup(data))
 			slpush(&envval, data)
-			-> `Some data
+			unlock(envlck)
+			ret = `Some data
 		;;
+		std.slfree(s)
 	;;
+	-> ret
 }
 
 const getenvv = {name, default

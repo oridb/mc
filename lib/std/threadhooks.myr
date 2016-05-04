@@ -1,0 +1,43 @@
+use "die"
+
+pkg std =
+	pkglocal var lock	: (l : void# -> void)
+	pkglocal var unlock	: (l : void# -> void)
+	pkglocal var memlck	: void#
+	pkglocal var netlck	: void#
+	pkglocal var envlck	: void#
+
+	const __lockinit	: ( \
+		mem : void#, \
+		net : void#, \
+		env : void#, \
+		lck : (l : void# -> void), \
+		unlck : (l : void# -> void) \
+		-> void)
+;;
+
+/* thread lock wrapper functions */
+var lock
+var unlock
+
+/* locks for various parts of libstd */
+var memlck
+var netlck
+var envlck
+/*
+work around compiler bug: we don't generate
+syms for the funcs with an initializer
+*/
+const __init__ = {
+	lock = {l; }
+	unlock = {l; }
+}
+
+const __lockinit = {mem, net, env, lck, unlck
+	memlck = mem
+	netlck = net
+	envlck = env
+	lock = lck
+	unlock = unlck
+}
+
