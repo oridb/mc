@@ -90,7 +90,30 @@ static Node *ptrsized(Gen *g, Node *v)
 		return gencast(g, v, tyintptr);
 }
 
-char *qbetype(Gen *g, Type *ty)
+char *qbetag(Gen *g, Type *ty)
+{
+	switch (ty->type) {
+	case Tybool:	return "w";	break;
+	case Tychar:	return "w";	break;
+	case Tyint8:	return "w";	break;
+	case Tyint16:	return "w";	break;
+	case Tyint:	return "w";	break;
+	case Tyint32:	return "w";	break;
+	case Tyint64:	return "l";	break;
+	case Tybyte:	return "w";	break;
+	case Tyuint8:	return "w";	break;
+	case Tyuint16:	return "w";	break;
+	case Tyuint:	return "w";	break;
+	case Tyuint32:	return "w";	break;
+	case Tyuint64:	return "l";	break;
+	case Tyflt32:	return "s";	break;
+	case Tyflt64:	return "d";	break;
+	case Typtr:	return "l";	break;
+	default:	return "l";	break;
+	}
+}
+
+char *_qbetype(Gen *g, Type *ty)
 {
 	switch (ty->type) {
 	case Tybool:	return "b";	break;
@@ -278,7 +301,11 @@ void out(Gen *g, char *fmt, ...)
 		case 't':	
 				
 				t = va_arg(ap, Type*);
-				fputs(qbetype(g, t), g->file);	break;
+				fputs(qbetag(g, t), g->file);	break;
+		case 'T':	
+				
+				t = va_arg(ap, Type*);
+				fputs(_qbetype(g, t), g->file);	break;
 		default:	die("bad format character %c", *p);	break;
 		}
 	}
@@ -379,6 +406,7 @@ static Node *seqlen(Gen *g, Node *n, Type *ty)
 	Node *t, *r;
 
 	ty = tybase(exprtype(n));
+	r = NULL;
 	if (ty->type == Tyslice) {
 		t = slicelen(g, n);
 		r = gencast(g, t, ty);
@@ -799,6 +827,31 @@ void genbb(Gen *g, Cfg *cfg, Bb *bb)
 	}
 }
 
+int abileaks(Type *ty)
+{
+	switch (tybase(ty)->type) {
+	case Tybool:
+	case Tychar:
+	case Tyint8:
+	case Tyint16:
+	case Tyint:
+	case Tyint32:
+	case Tyint64:
+	case Tybyte:
+	case Tyuint8:
+	case Tyuint16:
+	case Tyuint:
+	case Tyuint32:
+	case Tyuint64:
+	case Tyflt32:
+	case Tyflt64:
+	case Typtr:
+		return 1;
+	default:
+		return 0;
+	}
+}
+
 void funcargs(Gen *g, Node *fn)
 {
 	Node *a;
@@ -807,7 +860,10 @@ void funcargs(Gen *g, Node *fn)
 	pr(g, "(");
 	for (i = 0; i < fn->func.nargs; i++) {
 		a = fn->func.args[i];
-		out(g, "%t %v", decltype(a), a);
+		if (abileaks(decltype(a)))
+			out(g, "%t %v", decltype(a), a);
+		else
+			out(g, "%T %v", decltype(a), a);
 	}
 	pr(g, ")");
 }
@@ -846,8 +902,12 @@ void genfn(Gen *g, Node *dcl)
 	ret = n->func.type->sub[0];
 	g->retval = gentemp(dcl->loc, ret, &retdcl);
 	g->retlbl = genlbl(dcl->loc);
-	if (tybase(ret)->type != Tyvoid)
-		pr(g, "%s ", qbetype(g, ret));
+	if (tybase(ret)->type != Tyvoid) {
+		if (abileaks(ret))
+			pr(g, "%s ", qbetag(g, ret));
+		else
+			pr(g, "%s ", _qbetype(g, ret));
+	}
 	pr(g, "%s", name);
 	funcargs(g, n);
 
@@ -985,7 +1045,7 @@ void outarray(Gen *g, Type *ty)
 	if (ty->asize)
 		sz = ty->asize->expr.args[0]->lit.intval;
 	outqbetype(g, ty->sub[0]);
-	pr(g, "\t%s %zd,\n", qbetype(g, ty->sub[0]), sz);
+	pr(g, "\t%s %zd,\n", _qbetype(g, ty->sub[0]), sz);
 }
 
 void outstruct(Gen *g, Type *ty)
@@ -996,7 +1056,7 @@ void outstruct(Gen *g, Type *ty)
 	for (i = 0; i < ty->nmemb; i++) {
 		mty = decltype(ty->sdecls[i]);
 		outqbetype(g, mty);
-		pr(g, "%s,\n", qbetype(g, mty));
+		pr(g, "%s,\n", _qbetype(g, mty));
 	}
 }
 
@@ -1023,7 +1083,7 @@ void outtuple(Gen *g, Type *ty)
 	for (i = 0; i < ty->nsub; i++) {
 		mty = ty->sub[i];
 		outqbetype(g, mty);
-		pr(g, "%s,\n", qbetype(g, mty));
+		pr(g, "%s,\n", _qbetype(g, mty));
 	}
 }
 

@@ -55,7 +55,7 @@ static void swapout(char* buf, size_t sz, char* suf) {
 
 static void assemble(char *asmsrc, char *path)
 {
-	char *asmcmd[] = {"/home/ori/myr/qbe/obj/qbe", "-o", NULL};
+	char *asmcmd[] = {"/home/ori/src/myr/qbe/obj/qbe", "-o", NULL};
 	char objfile[1024];
 	char *psuffix;
 	char **p, **cmd;
@@ -220,11 +220,11 @@ int main(int argc, char **argv)
 
 		if (writeasm) {
 			if (outfile != NULL)
-				swapout(buf, sizeof buf, ".s");
+				swapout(buf, sizeof buf, ".qs");
 			else
-				swapsuffix(buf, sizeof buf, ctx.args[i], ".myr", ".s");
+				swapsuffix(buf, sizeof buf, ctx.args[i], ".myr", ".qs");
 		} else {
-			gentempfile(buf, sizeof buf, ctx.args[i], ".s");
+			gentempfile(buf, sizeof buf, ctx.args[i], ".qs");
 		}
 		genuse(ctx.args[i]);
 		gen(file, buf);
