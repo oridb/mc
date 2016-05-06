@@ -35,7 +35,7 @@ const mtxlock = {mtx
 	for var i = 0; i < nspin; i++
 		c = xcas(&mtx._state, Unlocked, Locked) 
 		if c == Unlocked
-			->
+			-> void
 		;;
 	;;
 
@@ -67,7 +67,7 @@ const mtxunlock = {mtx
 	if mtx._state == Contended
 		mtx._state = Unlocked
 	elif xchg(&mtx._state, Unlocked) == Locked
-		->
+		-> void
 	;;
 
 	/* wake one thread */
