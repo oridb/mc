@@ -2,7 +2,7 @@ lib thread =
 	common.myr
 
 	# linux impl of basic thread primitives
-	condvar+linux.myr
+	#condvar+linux.myr
 	mutex+linux.myr
 	spawn+linux.myr
 	exit+linux-x64.s
