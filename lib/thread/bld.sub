@@ -8,7 +8,7 @@ lib thread =
 	exit+linux-x64.s
 
 	# freebsd impl of thread primitives
-	condvar+freebsd.myr
+	#condvar+freebsd.myr
 	mutex+freebsd.myr
 	spawn+freebsd.myr
 	exit+freebsd-x64.s
