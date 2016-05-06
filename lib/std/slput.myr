@@ -24,5 +24,6 @@ generic sldel = {sl, idx
 	for var i = idx; i < sl#.len - 1; i++
 		sl#[i] = sl#[i + 1]
 	;;
-	-> sl#[:sl#.len - 1]
+	sl# = sl#[:sl#.len - 1]
+	-> sl#
 }
