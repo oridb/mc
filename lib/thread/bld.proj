@@ -16,7 +16,7 @@ lib thread =
 
 	# osx impl of thread primitives
 	#condvar+osx.myr
-	#mutex+osx.myr
+	mutex+osx.myr
 	spawn+osx.myr
 	start+osx-x64.s
 
