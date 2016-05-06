@@ -230,14 +230,17 @@ const dnsresolve = {host, rt
 	if !valid(host)
 		-> `Fail (`Badhost)
 	;;
+	lock(netlck)
 	for ns in nameservers
 		nsrv = dnsconnect(ns)
 		if nsrv >= 0
 			r = dnsquery(nsrv, host, rt)
 			sys.close(nsrv)
+			unlock(netlck)
 			-> r
 		;;
 	;;
+	unlock(netlck)
 	-> `Fail (`Badsrv)
 }
 
