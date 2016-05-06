@@ -1,0 +1,12 @@
+use std
+use thread
+
+pkg =
+	const mkherd : (n : uint32, fn : (-> void) ->void)
+;;
+
+const mkherd = {n, fn
+	for var i = 0; i < n; i++
+		std.try(thread.spawn(fn))
+	;;
+}

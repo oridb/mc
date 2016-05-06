@@ -5,11 +5,33 @@ use "slcp"
 use "die"
 
 pkg std =
+	const nanosleep	: (nsecs : uint64 -> errno)
 	$noret const exit	: (status:int -> void)
+
 	pkglocal const bgetcwd	: (buf : byte[:] -> errno)
 ;;
 
-const exit	= {status;	sys.exit(status)}
+
+extern const put	: (fmt : byte[:], args : ... -> int64)
+
+const nanosleep	= {nsecs
+	var s, us
+
+	s = nsecs / 1_000_000_000
+	us = (nsecs % 1_000_000_000 / 1000) castto(uint32)
+	-> sys.select( \
+		0, \
+		0 castto(sys.fdset#), \
+		0 castto(sys.fdset#), \
+		0 castto(sys.fdset#), \
+		&[.sec = s, .usec = us] \
+	) castto(errno)
+}
+
+const exit	= {status;
+	sys.exit(status)
+}
+
 const bgetcwd	= {buf
 	var path : byte[sys.Maxpathlen]
 	var fd, len, err

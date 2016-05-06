@@ -1,0 +1,65 @@
+use std
+use sys
+
+
+use "atomic.use"
+use "common.use"
+
+pkg thread =
+	type mutex = struct
+		_state	: uint32
+	;;	
+
+	const mkmtx	: (-> mutex)
+	const mtxlock	: (mtx : mutex# -> void)
+	const mtxtrylock	: (mtx : mutex# -> bool)
+	const mtxunlock	: (mtx : mutex# -> void)
+;;
+
+const mkmtx = {
+	-> [._state = 0]
+}
+
+/* a shitty spinlock */
+const mtxlock = {mtx
+	/* first fast */
+	for var i = 0; i < 1000; i++
+		if xcas(&mtx._state, 0, 1) == 0
+			-> void
+		;;
+		std.nanosleep(0)
+	;;
+	
+	/* then slower */
+	for var i = 0; i < 1000; i++
+		if xcas(&mtx._state, 0, 1) == 0
+			-> void
+		;;
+		std.nanosleep(10_000) /* 10 us */
+	;;
+
+	/* even slower */
+	for var i = 0; i < 1000; i++
+		if xcas(&mtx._state, 0, 1) == 0
+			-> void
+		;;
+		std.nanosleep(100_000) /* 100 us */
+	;;
+
+	/* I'm rip van winkle! */
+	while true
+		if xcas(&mtx._state, 0, 1) == 0
+			-> void
+		;;
+		std.nanosleep(1000_000) /* 1 ms */
+	;;
+}
+
+const mtxtrylock = {mtx
+	-> xcas(&mtx._state, 0, 1) == 0
+}
+
+	
+const mtxunlock = {mtx
+	xset(&mtx._state, 0)
+}

@@ -1,0 +1,61 @@
+use std
+use sys
+
+use "atomic.use"
+use "common.use"
+use "mutex.use"
+
+pkg thread =
+	type cond = struct
+		_mtx	: mutex#
+		_seq	: int32
+	;;
+
+	const mkcond	: (mtx : mutex# -> cond)
+	const condwait	: (cond : cond# -> void)
+	const condsignal	: (cond : cond# -> void)
+	const condbroadcast	: (cond : cond# -> void)
+;;
+
+const mkcond = {mtx
+	-> [._mtx = mtx, ._seq = 0]
+}
+
+const condwait = {cond
+	var seq
+	var mtx
+
+	mtx = cond._mtx
+	seq = cond._seq
+
+	mtxunlock(mtx)
+	sys.futex(&cond._seq, sys.Futexwait | sys.Futexpriv, seq, Zptr, Zptr, 0)
+
+	/*
+	We need to atomically set the mutex to contended. This allows us to
+	pass responsibility for waking up the potential other waiters on to the
+	unlocker of the mutex.
+	*/
+	while xchg(&mtx._state, Contended) != Unlocked
+		sys.futex(&mtx._state, sys.Futexwait | sys.Futexpriv, \
+			Contended, Zptr, Zptr, 0)
+	;;
+}
+
+const condsignal = {cond : cond#
+	xadd(&cond._seq, 1)
+	sys.futex(&cond._seq, sys.Futexwake | sys.Futexpriv, 1, Zptr, Zptr, 0)
+}
+
+const condbroadcast = {cond : cond#
+	xadd(&cond._seq, 1)
+	/*
+	The futex docs seem to be broken -- the timeout parameter seems to be
+	used for the number of threads to move, and is not ignored when
+	requeueing
+	*/
+	sys.futex(&cond._seq, sys.Futexcmprequeue | sys.Futexpriv, \
+		1, 0x7fffffff castto(sys.timespec#), \
+		&cond._mtx._state, cond._seq)
+}
+

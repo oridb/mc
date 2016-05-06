@@ -1,0 +1,5 @@
+use std
+
+pkg thread = 
+	generic Zptr = 0 castto(@a#)
+;;

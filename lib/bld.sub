@@ -1,8 +1,9 @@
 sub =
-	sys
-	std
 	bio
-	regex
 	cryptohash
 	inifile
+	regex
+	std
+	sys
+	thread
 ;;
