@@ -1,0 +1,74 @@
+use sys
+use std
+
+pkg thread =
+	type tid = uint64
+
+	const spawn : (fn : (-> void) -> std.result(tid, byte[:]))
+;;
+
+
+const Stacksz = 8*std.MiB
+extern const exit : (-> void)
+
+const spawn = {fn
+	-> spawnstk(fn, Stacksz)
+}
+
+const spawnstk = {fn, sz
+	var stk : byte#, tid, ctid, ret
+	var szp, fp, tos
+
+	stk = getstk(sz)
+	if stk == sys.Mapbad
+		-> `std.Fail "couldn't get stack"
+	;;
+	tid = -1
+	/* find top of stack */
+	tos = (stk castto(std.intptr)) + (sz castto(std.intptr))
+
+	/* store the stack size */
+	tos -= sizeof(sys.size)
+	sz -= sizeof(sys.size)
+	szp = tos castto(sys.size#)
+	szp# = Stacksz
+
+	/* store the function we call */
+	tos -= sizeof((->void))
+	sz -= sizeof((->void))
+	fp = tos castto((->void)#)
+	fp# = fn
+
+	ret = sys.thr_new(&[
+		.startfn = startthread castto(void#),
+		.arg = tos castto(void#),
+		.stkbase = stk castto(byte#),
+		.stksz = sz,
+		.tid = &ctid,
+		.ptid = &tid,
+		.flags = 2,
+		.rtp = 0 castto(sys.rtprio#)
+	], sizeof(sys.thrparam))
+
+	if ret < 0
+		-> `std.Fail "couldn't spawn thread"
+	;;
+	-> `std.Ok tid castto(tid)
+}
+
+const getstk = {sz
+	var p, m
+
+	p = sys.mmap(0 castto(byte#), sz, sys.Mprotrw, sys.Mpriv | sys.Manon, -1, 0)
+	if p == sys.Mapbad
+		-> p
+	;;
+	m = p castto(std.intptr)
+	-> m castto(byte#)
+}
+
+const startthread = {fn : (-> void)#
+	fn#()
+	exit()
+}
+

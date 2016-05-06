@@ -1,0 +1,18 @@
+use std
+use sys
+
+pkg thread =
+	type tid = uint64
+
+	const spawn : (fn : (-> void) -> std.result(tid, byte[:]))
+;;
+
+const spawn = {fn
+	match sys.rfork(sys.Rfproc | sys.Rfmem | sys.Rfnowait)
+	| 0:
+		fn()
+		std.exit(0)
+	| -1:	-> `std.Fail "unable to spawn thread"
+	| thr:	-> `std.Ok thr castto(tid)
+	;;
+}

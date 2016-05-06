@@ -1,0 +1,31 @@
+lib thread =
+	common.myr
+
+	# linux impl of basic thread primitives
+	condvar+linux.myr
+	mutex+linux.myr
+	spawn+linux.myr
+	exit+linux-x64.s
+
+	# freebsd impl of thread primitives
+	condvar+freebsd.myr
+	mutex+freebsd.myr
+	spawn+freebsd.myr
+	exit+freebsd-x64.s
+
+	# osx impl of thread primitives
+	#condvar+osx.myr
+	mutex+osx.myr
+	spawn+osx.myr
+	start+osx-x64.s
+
+	# 9front impl of thread primitives
+	#condvar+plan9.myr
+	mutex+plan9.myr
+	spawn+plan9.myr
+	atomic-impl+plan9-x64.s
+
+	atomic-impl+x64.s
+	atomic.myr
+;;
+

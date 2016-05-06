@@ -1,0 +1,76 @@
+use std
+use sys
+
+use "atomic.use"
+use "common.use"
+
+pkg thread =
+	type mutex = struct
+		_state	: int32
+	;;	
+
+	const mkmtx	: (-> mutex)
+	const mtxlock	: (mtx : mutex# -> void)
+	const mtxtrylock	: (mtx : mutex# -> bool)
+	const mtxunlock	: (mtx : mutex# -> void)
+
+	pkglocal const Unlocked = 0
+	pkglocal const Locked = 1
+	pkglocal const Contended = 2
+;;
+
+var nspin = 10	/* FIXME: pick a sane number, based on CPU count */
+
+const mkmtx = {
+	-> [._state = Unlocked]
+}
+
+const mtxlock = {mtx
+	var c
+
+	/* 
+	Uncontended case: we get an unlocked mutex, and we lock it.
+	*/
+        c = Locked
+	for var i = 0; i < nspin; i++
+		c = xcas(&mtx._state, Unlocked, Locked) 
+		if c == Unlocked
+			-> void
+		;;
+	;;
+
+	/*
+	Contended case: we set the lock state to Contended. This indicates that there
+	the lock is locked, and we potentially have threads waiting on it, which means
+	that we will need to wake them up.
+	*/
+	if c == Locked
+		c = xchg(&mtx._state, Contended)
+	;;
+
+	while c != Unlocked
+		sys.futex(&mtx._state, sys.Futexwait | sys.Futexpriv, Contended, Zptr, Zptr, 0)
+		c = xchg(&mtx._state, Contended)
+	;;
+}
+
+const mtxtrylock = {mtx
+	-> xcas(&mtx._state, Unlocked, Locked) == Unlocked
+}
+
+const mtxunlock = {mtx
+	/*
+	Uncontended case: If the mutex state is not contended, and we still
+	are uncontended by the xchg() call, then it's safe to simply return;
+	nobody was waiting for us.
+	*/
+	if mtx._state == Contended
+		mtx._state = Unlocked
+	elif xchg(&mtx._state, Unlocked) == Locked
+		-> void
+	;;
+
+	/* wake one thread */
+	sys.futex(&mtx._state, sys.Futexwake | sys.Futexpriv, 1, Zptr, Zptr, 0)
+}
+
