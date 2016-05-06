@@ -37,6 +37,7 @@ const mtxlock = {mtx
 		if c == Unlocked
 			-> void
 		;;
+		sys.sched_yield()
 	;;
 
 	/*

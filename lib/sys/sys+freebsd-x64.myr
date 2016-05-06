@@ -863,6 +863,7 @@ pkg sys =
 	const clock_gettime	: (clk : clock, ts : timespec# -> int32)
 	const clock_settime	: (clk : clock, ts : timespec# -> int32)
 	const nanosleep	: (req : timespec#, rem : timespec# -> int32)
+	const sched_yield	: (-> void)
 
 	/* system information */
 	const uname 	: (buf : utsname# -> int)
@@ -991,6 +992,7 @@ const clock_getres = {clk, ts;	-> syscall(Sysclock_getres, clockid(clk), a(ts)) 
 const clock_gettime = {clk, ts;	-> syscall(Sysclock_gettime, clockid(clk), a(ts)) castto(int32)}
 const clock_settime = {clk, ts;	-> syscall(Sysclock_settime, clockid(clk), a(ts)) castto(int32)}
 const nanosleep	= {req, rem;	-> syscall(Sysnanosleep, a(req), a(rem)) castto(int32)}
+const sched_yield = {;	syscall(Syssched_yield)}
 
 
 /* system information */

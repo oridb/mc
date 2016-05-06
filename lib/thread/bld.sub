@@ -27,5 +27,8 @@ lib thread =
 
 	atomic-impl+x64.s
 	atomic.myr
+
+        lib ../sys:sys
+        lib ../std:std
 ;;
 
