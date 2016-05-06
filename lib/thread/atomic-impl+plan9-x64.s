@@ -31,19 +31,6 @@ TEXT thread$xaddp+0(SB),1,$0
 	MOVQ	SI, AX
 	RET
 
-TEXT thread$xsub32+0(SB),1,$0
-	LOCK; XSUBL	SI, (DI)
-	MOVL	SI, AX
-	RET
-TEXT thread$xsub64+0(SB),1,$0
-	LOCK; XSUBQ	SI, (DI)
-	MOVQ	SI, AX
-	RET
-TEXT thread$xsubp+0(SB),1,$0
-	LOCK; XSUBQ	SI, (DI)
-	MOVQ	SI, AX
-	RET
-
 TEXT thread$xcas32+0(SB),1,$0
 	MOVL	SI, AX
 	LOCK; CMPXCHGL	DX, (DI)

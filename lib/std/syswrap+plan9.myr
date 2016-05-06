@@ -206,9 +206,10 @@ const execve	= {cmd, args, env;
 }
 
 const nanosleep = {nsecs
-	if sys.sleep(nsecs/1_000_000) < 0
+	if sys.sleep((nsecs/1_000_000) castto(uint32)) < 0
 		-> lasterr()
 	;;
+	-> 0
 }
 
 /* memory stuff */
