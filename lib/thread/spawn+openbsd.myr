@@ -1,4 +1,5 @@
 use std
+use sys
 
 pkg thread =
 	type tid = uint64
@@ -6,7 +7,57 @@ pkg thread =
 	const spawn : (fn : (-> void) -> std.result(tid, byte[:]))
 ;;
 
+const Stacksz = 8*std.MiB
+extern const exit : (-> void)
+
 const spawn = {fn;
-	std.die("threads not supported yet on openbsd\n")
-	-> `std.Fail "not supported"
+	-> spawnstk(fn, Stacksz)
+}
+
+const spawnstk = {fn, sz
+	var stk, szp, fp, tos, tfp
+	var ret
+
+	stk = getstk(sz)
+	if stk == sys.Mapbad
+		-> `std.Fail "couldn't get stack"
+	;;
+	/* store size */
+	tos = stk castto(std.intptr)
+	tos -= sizeof(int64)
+	szp = tos castto(sys.size#)
+	szp# = Stacksz
+
+	/* store func */
+	tos -= sizeof((->void))
+	fp = tos castto((->void)#)
+	fp# = fn
+
+	tfp = [
+		.tcb = 0 castto(void#),
+		.tid = &ret,
+		.stk = tos castto(byte#),
+	]
+	if sys.__tfork_thread(&tfp, sizeof(sys.tforkparams), startthread castto(void#), 0 castto(void#))  < 0
+		-> `std.Fail "couldn't spawn thread"
+	;;
+	-> `std.Ok (ret castto(tid))
+}
+
+const getstk = {sz
+	var p, m
+
+	p = sys.mmap(0 castto(byte#), sz, sys.Mprotrw, sys.Mpriv | sys.Manon, -1, 0)
+	if p == sys.Mapbad
+		-> p
+	;;
+	/* stack starts at the top of memory and grows down. */
+	m = p castto(std.intptr)
+	m += sz castto(std.intptr)
+	-> m castto(byte#)
+}
+
+const startthread = {fn : (-> void)
+	fn()
+	exit()
 }

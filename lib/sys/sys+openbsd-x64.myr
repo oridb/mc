@@ -61,6 +61,12 @@ pkg sys =
 		nivcsw	: uint64 /* involuntary context switches */
 	;;
 
+	type tforkparams = struct
+		tcb	: void#
+		tid	: pid#
+		stk	: byte#
+	;;
+
 	type statbuf = struct
 		mode	: filemode
 		dev	: uint32 
@@ -472,6 +478,7 @@ pkg sys =
 	const execve	: (cmd : byte[:], args : byte[:][:], env : byte[:][:] -> int64)
 	/* wrappers to extract wait status */
 	const waitstatus	: (st : int32 -> waitstatus)
+	extern const __tfork_thread	: (tfp : tforkparams#, sz : size, fn : void#, arg : void# -> pid)
 
 	/* fd manipulation */
 	const open	: (path:byte[:], opts:fdopt -> fd)

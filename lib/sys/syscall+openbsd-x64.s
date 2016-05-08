@@ -22,3 +22,31 @@ sys$syscall:
 
 .success:
 	ret
+
+/* __tfork_thread(tfp : tforkparams#, sz : size, fn : void#, arg : void#-> tid) */
+.globl sys$__tfork_thread
+sys$__tfork_thread:
+	/* syscall */
+	movq	%rdx, %r8
+	movq	%rcx, %r9
+	movq	$8, %rax
+	syscall
+	jb	.failparent
+
+	/* are we in the parent? */
+	cmpq	$0,%rax
+	jnz	.doneparent
+
+	/* call the function and __threxit */
+	movq	%r9, %rdi
+	callq	*%r8
+
+	movq	$302,%rax
+	xorq	%rdi,%rdi
+	syscall
+
+.failparent:
+	negq	%rax
+
+.doneparent:
+	ret

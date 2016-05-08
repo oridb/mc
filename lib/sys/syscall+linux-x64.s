@@ -33,10 +33,13 @@ sys$fnclone:
 	movq $56,%rax	/* syscall num */
 	movq %rcx,%r10	/* tls */
 	syscall
+	cmpq $0,%rax
+	jb .doneparent
+
 
 	/* fn() */
 	testl %eax,%eax
-	jnz parent
+	jnz .doneparent
 	call *%r15
 
 	/* exit(0) */
@@ -44,6 +47,7 @@ sys$fnclone:
 	movq $0, %rdi   /* arg: 0 */
 	syscall
 
-parent:
+.doneparent:
 	popq %r15
 	ret
+

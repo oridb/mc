@@ -42,7 +42,6 @@ const spawnstk = {fn, sz
 		&ctid, 0 castto(byte#), \
 		startthread castto(void#)) castto(tid)
 	if ret < 0
-		std.put("errno={}\n", -ret)
 		-> `std.Fail "couldn't spawn thread"
 	;;
 	-> `std.Ok ret

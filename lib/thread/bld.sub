@@ -27,6 +27,7 @@ lib thread =
 
 	# openbsd impl of thread primitives
 	spawn+openbsd.myr
+	exit+openbsd-x64.s
 
 
 	atomic-impl+x64.s
