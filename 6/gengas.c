@@ -373,7 +373,8 @@ static void gentype(FILE *fd, Type *ty)
 
 	ty->isemitted = 1;
 	b = tydescblob(ty);
-	b->iscomdat = 1;
+	if (b->isglobl)
+		b->iscomdat = 1;
 	writeblob(fd, b);
 	blobfree(b);
 }

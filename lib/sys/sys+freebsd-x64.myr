@@ -256,7 +256,6 @@ pkg sys =
 	const Sobintime		: sockopt = 0x2000	/* timestamp received dgram traffic */
 	const Sonooffload	: sockopt = 0x4000	/* socket cannot be offloaded */
 	const Sonoddp		: sockopt = 0x8000	/* disable direct data placement */
-	
 
 	/* network protocols */
 	const Ipproto_ip	: sockproto = 0

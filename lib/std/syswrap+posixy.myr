@@ -105,7 +105,10 @@ const execv	= {cmd, args;	-> sys.execv(cmd, args) castto(errno)}
 const execve	= {cmd, args, env;	-> sys.execve(cmd, args, env) castto(errno)}
 
 /* memory stuff */
-const getmem	= {sz;		-> sys.mmap(0 castto(byte#), sz castto(sys.size), sys.Mprotrw, sys.Mpriv | sys.Manon, -1, 0)}
+const getmem	= {sz;		
+	sz = (sz + 4095) & ~4095
+	-> sys.mmap(0 castto(byte#), sz castto(sys.size), sys.Mprotrw, sys.Mpriv | sys.Manon, -1, 0)
+}
 const freemem	= {p, sz;	sys.munmap(p, sz castto(sys.size))}
 const curtime = {
 	var tm, sec, nsec

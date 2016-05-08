@@ -1,0 +1,12 @@
+use std
+
+pkg thread =
+	type tid = uint64
+
+	const spawn : (fn : (-> void) -> std.result(tid, byte[:]))
+;;
+
+const spawn = {fn;
+	std.die("threads not supported yet on openbsd\n")
+	-> `std.Fail "not supported"
+}

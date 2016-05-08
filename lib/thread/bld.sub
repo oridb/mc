@@ -25,6 +25,10 @@ lib thread =
 	spawn+plan9.myr
 	atomic-impl+plan9-x64.s
 
+	# openbsd impl of thread primitives
+	spawn+openbsd.myr
+
+
 	atomic-impl+x64.s
 	atomic.myr
 

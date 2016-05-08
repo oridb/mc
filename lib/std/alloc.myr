@@ -289,7 +289,7 @@ const mkslab = {bkt
 	*/
 	p = getmem(Slabsz*2)
 	if p == Failmem
-		die("Unable to mmap")
+		die("Unable to get memory")
 	;;
 
 	s = align(p castto(size), Slabsz) castto(slab#)

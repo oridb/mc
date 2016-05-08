@@ -10,6 +10,7 @@ pkg sys =
 	type mopt	= int64	/* memory mapping options */
 	type socktype	= int64	/* socket type */
 	type sockproto	= int64	/* socket protocol */
+	type sockopt	= int32	/* socket option */
 	type sockfam	= uint8	/* socket family */
 	type filemode	= uint32
 	type filetype	= uint8
@@ -218,6 +219,32 @@ pkg sys =
 	const Sockraw		: socktype = 3
 	const Sockrdm		: socktype = 4
 	const Sockseqpacket	: socktype = 5
+	const Solsock	: socktype =	0xffff
+
+	const Sodebug		: sockopt = 0x0001	/* turn on debugging info recording */
+	const Soacceptconn	: sockopt = 0x0002	/* socket has had listen() */
+	const Soreuseaddr	: sockopt = 0x0004	/* allow local address reuse */
+	const Sokeepalive	: sockopt = 0x0008	/* keep connections alive */
+	const Sodontroute	: sockopt = 0x0010	/* just use interface addresses */
+	const Sobroadcast	: sockopt = 0x0020	/* permit sending of broadcast msgs */
+	const Souseloopback	: sockopt = 0x0040	/* bypass hardware when possible */
+	const Solinger		: sockopt = 0x0080	/* linger on close if data present */
+	const Sooobinline	: sockopt = 0x0100	/* leave received OOB data in line */
+	const Soreuseport	: sockopt = 0x0200	/* allow local address & port reuse */
+	const Sotimestamp	: sockopt = 0x0800	/* timestamp received dgram traffic */
+	const Sobindany		: sockopt = 0x1000	/* allow bind to any address */
+	const Sosndbuf		: sockopt = 0x1001	/* send buffer size */
+	const Sorcvbuf		: sockopt = 0x1002	/* receive buffer size */
+	const Sosndlowat	: sockopt = 0x1003	/* send low-water mark */
+	const Sorcvlowat	: sockopt = 0x1004	/* receive low-water mark */
+	const Sosndtimeo	: sockopt = 0x1005	/* send timeout */
+	const Sorcvtimeo	: sockopt = 0x1006	/* receive timeout */
+	const Soerror		: sockopt = 0x1007	/* get error status and clear */
+	const Sotype		: sockopt = 0x1008	/* get socket type */
+	const Sonetproc		: sockopt = 0x1020	/* multiplex; network processing */
+	const Sortable		: sockopt = 0x1021	/* routing table to be used */
+	const Sopeercred	: sockopt = 0x1022	/* get connect-time credentials */
+	const Sosplice		: sockopt = 0x1023	/* splice data to other socket */
 
 	/* network protocols */
 	const Ipproto_ip	: sockproto = 0
@@ -537,6 +564,8 @@ pkg sys =
 	const accept	: (sock : fd, addr : sockaddr#, len : size# -> fd)
 	const listen	: (sock : fd, backlog : int	-> int)
 	const bind	: (sock : fd, addr : sockaddr#, len : size -> int)
+	const setsockopt	: (sock : fd, lev : socktype, opt : sockopt, val : void#, len : size -> int)
+	const getsockopt	: (sock : fd, lev : socktype, opt : sockopt, val : void#, len : size# -> int)
 
 	/* memory mapping */
 	const munmap	: (addr:byte#, len:size -> int64)
@@ -651,11 +680,14 @@ const connect	= {sock, addr, len;	-> syscall(Sysconnect, a(sock), a(addr), a(len
 const accept	= {sock, addr, len;	-> syscall(Sysaccept, a(sock), a(addr), a(len)) castto(fd)}
 const listen	= {sock, backlog;	-> syscall(Syslisten, a(sock), a(backlog)) castto(int)}
 const bind	= {sock, addr, len;	-> syscall(Sysbind, a(sock), a(addr), a(len)) castto(int)}
+const setsockopt	= {sock, lev, opt, val, len;	-> syscall(Syssetsockopt, a(sock), a(lev), a(opt), a(val), a(len)) castto(int)}
+const getsockopt	= {sock, lev, opt, val, len;	-> syscall(Syssetsockopt, a(sock), a(lev), a(opt), a(val), a(len)) castto(int)}
 
 /* memory management */
 const munmap	= {addr, len;		-> syscall(Sysmunmap, a(addr), a(len))}
 const mmap	= {addr, len, prot, flags, fd, off;
-	-> syscall(Sysmmap, a(addr), a(len), a(prot), a(flags), a(fd), a(off)) castto(byte#)}
+	-> syscall(Sysmmap, a(addr), a(len), a(prot), a(flags), a(fd), a(off)) castto(byte#)
+}
 
 /* time */
 const clock_getres = {clk, ts;	-> syscall(Sysclock_getres, clockid(clk), a(ts)) castto(int32)}

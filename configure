@@ -83,7 +83,7 @@ case $OS in
         ;;
     *OpenBSD*)
         echo '#define Symprefix ""' >> config.h
-        echo '#define Defaultasm Gnugas' >> config.h
+        echo '#define Defaultasm Gnugaself' >> config.h
         echo 'export SYS=openbsd' >> config.mk
         echo 'const Linkcmd = ["ld", "-static", "-nopie", "-o"]' >> mbld/config.myr
         echo 'const Sys = "OpenBSD"' >> mbld/config.myr
