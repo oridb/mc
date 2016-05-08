@@ -22,22 +22,3 @@ sys$syscall:
 
 .success:
 	ret
-
-/*
- * pipe() syscall returns the pipes created in eax:edx, and
- * needs to copy them to the destination locations manually.
- */
-.globl sys$__freebsd_pipe
-sys$__freebsd_pipe:
-	movq $0x2a,%rax
-	syscall
-
-	jae .pipesuccess
-	negq %rax
-
-.pipesuccess:
-	movl %eax,(%rdi)
-	movl %edx,4(%rdi)
-	xorq %rax,%rax
-	ret
-

@@ -19,17 +19,10 @@ pkg sys =
 
 	type clock = union
 		`Clockrealtime
-		`Clockrealtime_precise
-		`Clockrealtime_fast
 		`Clockmonotonic
-		`Clockmonotonic_precise     
-		`Clockmonotonic_fast
+		`Clockproccputime
+		`Clockthreadcputime
 		`Clockuptime
-		`Clockuptime_precise
-		`Clockuptime_fast
-		`Clockvirtual
-		`Clockprof
-		`Clocksecond
 	;;
 
 	type waitstatus = union
@@ -129,7 +122,7 @@ pkg sys =
 		fam	: sockfam
 		__pad1  : byte[6]
 		__align : int64
-		__pad2  : byte[112]
+		__pad2  : byte[240]
 	;;	
 	
 	type dirent = struct
@@ -138,26 +131,8 @@ pkg sys =
 		reclen	: uint16
 		ftype	: uint8
 		namlen	: uint8
+		__pad	: byte[4]
 		name	: byte[256]	
-	;;
-
-	type rtprio = struct
-		rttype	: uint16
-		rtprio	: uint16
-	;;
-
-	type thrparam = struct
-		startfn	: void#	/* pointer to code for thread entry */
-		arg	: void#	/* pointer argument for thread entry */
-		stkbase	: byte#	/* stack base address */
-		stksz	: size	/* size of stack */
-		tlsbase	: byte#	/* base of thread local storage */
-		tlssz	: size	/* size of tls */
-		tid	: uint64#	/* place to store new tid */
-		ptid	: uint64#	/* place to store parent tid */
-		flags	: int32	/* flags for the thread */
-		rtp	: rtprio#	/* realtime priority */
-		spare	: void#[3]	/* padding */
 	;;
 
 	/* open options */
@@ -180,6 +155,7 @@ pkg sys =
 	const Sifreg	: filemode = 0x8000
 	const Siflnk	: filemode = 0xa000
 	const Sifsock 	: filemode = 0xc000
+	const Sisvtx 	: filemode = 0x0200
 
 	/* mmap protection */
 	const Mprotnone	: mprot = 0x0
@@ -194,7 +170,7 @@ pkg sys =
 	const Mfixed	: mopt = 0x10
 	const Mfile	: mopt = 0x0
 	const Manon	: mopt = 0x1000
-	const M32bit	: mopt = 0x80000
+	const Mnoreplace	: mopt = 0x0800
 
 	/* file types */
 	const Dtunknown	: filetype = 0
@@ -205,13 +181,12 @@ pkg sys =
 	const Dtreg	: filetype = 8
 	const Dtlnk	: filetype = 10
 	const Dtsock	: filetype = 12
-	const Dtwht	: filetype = 14
 
 	/* socket families. INCOMPLETE. */
 	const Afunspec	: sockfam = 0
 	const Afunix	: sockfam = 1
 	const Afinet	: sockfam = 2
-	const Afinet6	: sockfam = 28
+	const Afinet6	: sockfam = 24
 
 	/* socket types. */
 	const Sockstream	: socktype = 1
@@ -270,44 +245,9 @@ pkg sys =
 	const Fsetown	 : fcntlcmd = 6		/* set SIGIO/SIGURG proc/pgrp */
 	const Fogetlk	 : fcntlcmd = 7		/* get record locking information */
 	const Fosetlk	 : fcntlcmd = 8		/* set record locking information */
-	const Fosetlkw	 : fcntlcmd = 9		/* F_SETLK; wait if blocked */
-	const Fdup2fd	 : fcntlcmd = 10		/* duplicate file descriptor to arg */
-	const Fgetlk	 : fcntlcmd = 11		/* get record locking information */
-	const Fsetlk	 : fcntlcmd = 12		/* set record locking information */
-	const Fsetlkw	 : fcntlcmd = 13		/* F_SETLK; wait if blocked */
-	const Fsetlk_remote	 : fcntlcmd = 14		/* debugging support for remote locks */
-	const Freadahead	 : fcntlcmd = 15		/* read ahead */
-	const Frdahead	 : fcntlcmd = 16		/* Darwin compatible read ahead */
-	const Fdupfd_cloexec	 : fcntlcmd = 17		/* Like F_DUPFD, but FD_CLOEXEC is set */
-	const Fdup2fd_cloexec	 : fcntlcmd = 18		/* Like F_DUP2FD, but FD_CLOEXEC is set */
 
 	/* return value for a failed mapping */
 	const Mapbad	: byte# = -1 castto(byte#)
-
-	/* umtx ops */
-	const Umtxlock	: umtxop = 0
-	const Umtxunlock	: umtxop = 1
-	const Umtxwait	: umtxop = 2
-	const Umtxwake	: umtxop = 3
-	const UmtxmtxTrylock	: umtxop = 4
-	const Umtxmtxlock	: umtxop = 5
-	const Umtxmtxunlock	: umtxop = 6
-	const Umtxsetceiling	: umtxop = 7
-	const Umtxcvwait	: umtxop = 8
-	const Umtxcvsignal	: umtxop = 9
-	const Umtxcvbroadcast	: umtxop = 10
-	const Umtxwaituint	: umtxop = 11
-	const Umtxrwrdlock	: umtxop = 12
-	const Umtxrwwrlock	: umtxop = 13
-	const Umtxrwunlock	: umtxop = 14
-	const Umtxwaituintpriv	: umtxop = 15
-	const Umtxwakepriv	: umtxop = 16
-	const Umtxmutexwait	: umtxop = 17
-	const Umtxsemwait	: umtxop = 19
-	const Umtxsemwake	: umtxop = 20
-	const Umtxnwakepriv	: umtxop = 21
-	const Umtxmtxwake2	: umtxop = 22
-	const Umtxmax	: umtxop = 23
 
 	/* syscalls */
 	const Syssyscall : scno = 0
@@ -784,20 +724,13 @@ const sysctl = {mib, old, new
 
 const clockid = {clk
 	match clk
-	| `Clockrealtime:		-> 0
-	| `Clockvirtual:		-> 1
-	| `Clockprof:			-> 2
-	| `Clockmonotonic:		-> 4
-	| `Clockuptime:			-> 5
-	| `Clockuptime_precise:		-> 7
-	| `Clockuptime_fast:		-> 8
-	| `Clockrealtime_precise:	-> 9
-	| `Clockrealtime_fast:		-> 10
-	| `Clockmonotonic_precise:	-> 11
-	| `Clockmonotonic_fast:		-> 12
-	| `Clocksecond:			-> 13
+	| `Clockrealtime:	-> 0
+	| `Clockproccputime:	-> 2
+	| `Clockmonotonic:	-> 3
+	| `Clockthreadcputime:	-> 4
+	| `Clockuptime:	-> 5
 	;;
-	-> a(-1)
+	-> -1
 }
 
 const waitstatus = {st
