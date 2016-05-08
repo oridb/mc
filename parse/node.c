@@ -26,7 +26,7 @@ int lnum(Srcloc l) { return l.line; }
  * Bah, this is going to need to know how to fold things.
  * FIXME: teach it.
  */
-uint64_t arraysz(Node *sz)
+uvlong arraysz(Node *sz)
 {
 	Node *n;
 
@@ -270,7 +270,7 @@ Node *mkstr(Srcloc loc, Str val)
 	return n;
 }
 
-Node *mkint(Srcloc loc, uint64_t val)
+Node *mkint(Srcloc loc, uvlong val)
 {
 	Node *n;
 
