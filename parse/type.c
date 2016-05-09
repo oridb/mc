@@ -31,7 +31,7 @@ size_t nimpltab;
 static Htab *tydeduptab;
 /* Built in type constraints */
 static Trait *traits[Ntypes + 1][4];
-static int tybfmt(char *buf, size_t len, Type *t);
+static int tybfmt(char *buf, size_t len, Bitset *visted, Type *t);
 
 char stackness[] = {
 #define Ty(t, n, stk) stk,
@@ -465,30 +465,31 @@ int traitfmt(char *buf, size_t len, Type *t)
 	return p - buf;
 }
 
-static int fmtstruct(char *buf, size_t len, Type *t)
+static int fmtstruct(char *buf, size_t len, Bitset *visited, Type *t)
 {
 	size_t i;
 	char *end, *p;
-	char *name, *ty;
+	char *name;
+	char subbuf[512];
 
 	p = buf;
 	end = p + len;
 	p += bprintf(p, end - p, "struct\n");
 	for (i = 0; i < t->nmemb; i++) {
 		name = declname(t->sdecls[i]);
-		ty = tystr(decltype(t->sdecls[i]));
-		p += bprintf(p, end - p, "\t%s:%s\n ", name, ty);
-		free(ty);
+		tybfmt(subbuf, sizeof subbuf, visited, decltype(t->sdecls[i]));
+		p += bprintf(p, end - p, "\t%s:%s\n ", name, subbuf);
 	}
 	p += bprintf(p, end - p, ";;");
 	return p - buf;
 }
 
-static int fmtunion(char *buf, size_t len, Type *t)
+static int fmtunion(char *buf, size_t len, Bitset *visited, Type *t)
 {
 	size_t i;
 	char *end, *p;
-	char *name, *ty;
+	char *name;
+	char subbuf[512];
 
 	p = buf;
 	end = p + len;
@@ -496,9 +497,8 @@ static int fmtunion(char *buf, size_t len, Type *t)
 	for (i = 0; i < t->nmemb; i++) {
 		name = namestr(t->udecls[i]->name);
 		if (t->udecls[i]->etype) {
-			ty = tystr(t->udecls[i]->etype);
-			p += bprintf(p, end - p, "\t`%s %s\n", name, ty);
-			free(ty);
+			tybfmt(subbuf, sizeof subbuf, visited, t->udecls[i]->etype);
+			p += bprintf(p, end - p, "\t`%s %s\n", name, subbuf);
 		} else {
 			p += bprintf(p, end - p, "\t`%s\n", name);
 		}
@@ -507,7 +507,7 @@ static int fmtunion(char *buf, size_t len, Type *t)
 	return p - buf;
 }
 
-static int fmtlist(char *buf, size_t len, Type **arg, size_t narg)
+static int fmtlist(char *buf, size_t len, Bitset *visited, Type **arg, size_t narg)
 {
 	char *end, *p, *sep;
 	size_t i;
@@ -518,14 +518,14 @@ static int fmtlist(char *buf, size_t len, Type **arg, size_t narg)
 	p += bprintf(p, end - p, "(");
 	for (i = 0; i < narg; i++) {
 		p += bprintf(p, end - p, "%s", sep);
-		p += tybfmt(p, end - p, arg[i]);
+		p += tybfmt(p, end - p, visited, arg[i]);
 		sep = ", ";
 	}
 	p += bprintf(p, end - p, ")");
 	return p - buf;
 }
 
-static int tybfmt(char *buf, size_t len, Type *t)
+static int tybfmt(char *buf, size_t len, Bitset *visited, Type *t)
 {
 	size_t i;
 	char *p;
@@ -534,13 +534,21 @@ static int tybfmt(char *buf, size_t len, Type *t)
 
 	if (t)
 		t = tysearch(t);
+
 	sep = "";
 	p = buf;
 	end = p + len;
+
 	if (!t) {
 		p += bprintf(p, end - p, "tynil");
 		return len - (end - p);
 	}
+
+	if (bshas(visited, t->tid)) {
+		p += bprintf(buf, len, "<...>");
+		return len - (end - p);
+	}
+        bsput(visited, t->tid);
 	switch (t->type) {
 	case Tybad:	p += bprintf(p, end - p, "BAD");	break;
 	case Tyvoid:	p += bprintf(p, end - p, "void");	break;
@@ -563,15 +571,15 @@ static int tybfmt(char *buf, size_t len, Type *t)
 	case Tyvar:     p += bprintf(p, end - p, "$%d", t->tid);        break;
 
 	case Typtr:
-		p += tybfmt(p, end - p, t->sub[0]);
+		p += tybfmt(p, end - p, visited, t->sub[0]);
 		p += bprintf(p, end - p, "#");
 		break;
 	case Tyslice:
-		p += tybfmt(p, end - p, t->sub[0]);
+		p += tybfmt(p, end - p, visited, t->sub[0]);
 		p += bprintf(p, end - p, "[:]");
 		break;
 	case Tyarray:
-		p += tybfmt(p, end - p, t->sub[0]);
+		p += tybfmt(p, end - p, visited, t->sub[0]);
 		if (t->asize) {
 			i = t->asize->expr.args[0]->lit.intval;
 			p += bprintf(p, end - p, "[%zd]", i);
@@ -584,18 +592,18 @@ static int tybfmt(char *buf, size_t len, Type *t)
 		p += bprintf(p, end - p, "(");
 		for (i = 1; i < t->nsub; i++) {
 			p += bprintf(p, end - p, "%s", sep);
-			p += tybfmt(p, end - p, t->sub[i]);
+			p += tybfmt(p, end - p, visited, t->sub[i]);
 			sep = ", ";
 		}
 		p += bprintf(p, end - p, " -> ");
-		p += tybfmt(p, end - p, t->sub[0]);
+		p += tybfmt(p, end - p, visited, t->sub[0]);
 		p += bprintf(p, end - p, ")");
 		break;
 	case Tytuple:
 		p += bprintf(p, end - p, "(");
 		for (i = 0; i < t->nsub; i++) {
 			p += bprintf(p, end - p, "%s", sep);
-			p += tybfmt(p, end - p, t->sub[i]);
+			p += tybfmt(p, end - p, visited, t->sub[i]);
 			sep = ",";
 		}
 		p += bprintf(p, end - p, ")");
@@ -604,24 +612,24 @@ static int tybfmt(char *buf, size_t len, Type *t)
 	case Tyunres:
 		p += namefmt(p, end - p, t->name);
 		if (t->narg)
-			p += fmtlist(p, end - p, t->arg, t->narg);
+			p += fmtlist(p, end - p, visited, t->arg, t->narg);
 		break;
 	case Tyname:
 		if (t->name->name.ns)
 			p += bprintf(p, end - p, "%s.", t->name->name.ns);
 		p += bprintf(p, end - p, "%s", namestr(t->name));
 		if (t->narg)
-			p += fmtlist(p, end - p, t->arg, t->narg);
+			p += fmtlist(p, end - p, visited, t->arg, t->narg);
 		break;
 	case Tygeneric:
 		if (t->name->name.ns)
 			p += bprintf(p, end - p, "%s.", t->name->name.ns);
 		p += bprintf(p, end - p, "%s", namestr(t->name));
 		if (t->ngparam)
-			p += fmtlist(p, end - p, t->gparam, t->ngparam);
+			p += fmtlist(p, end - p, visited, t->gparam, t->ngparam);
 		break;
-	case Tystruct:	p += fmtstruct(p, end - p, t);	break;
-	case Tyunion:	p += fmtunion(p, end - p, t);	break;
+	case Tystruct:	p += fmtstruct(p, end - p, visited, t);	break;
+	case Tyunion:	p += fmtunion(p, end - p, visited, t);	break;
 	case Ntypes:	die("Ntypes is not a type");	break;
 	}
 
@@ -634,7 +642,11 @@ static int tybfmt(char *buf, size_t len, Type *t)
 
 char *tyfmt(char *buf, size_t len, Type *t)
 {
-	tybfmt(buf, len, t);
+	Bitset *bs;
+
+	bs = mkbs();
+	tybfmt(buf, len, bs, t);
+	bsfree(bs);
 	return buf;
 }
 
