@@ -81,8 +81,13 @@ const cursoralign = {arg, ty
 }
 
 const vaenterunion = {ap, elt
-	var sub
+	var sub, ti, p, align
 
+	ti = typeinfo(tcpeek(&ap.tc))
+	align = ti.align castto(intptr)
+	p = ap.args castto(intptr)
+	p = (p + align - 1) & ~(align - 1)
+	ap.args = p castto(byte#)
 	match typedesc(vatype(ap))
 	| `Tyunion nc:	
 		for var i = 0; i < elt; i++

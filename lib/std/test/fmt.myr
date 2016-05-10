@@ -28,6 +28,10 @@ const check = {expected, fmt, args : ...
 	;;
 }
 
+type aligncheck = union
+	`Foo
+	`Bar int64
+;;
 
 const main = {
 	builtins()
@@ -62,6 +66,7 @@ const builtins = {
 	check("666.91972", "{}", 666.91972)
 	check("1.0001", "{}", 1.0001)
 	check("0.000101323461002", "{}", 0.000101323461002)
+	check("(1, `Bar 123, `Foo )", "{}", (1, `Bar 123, `Foo))
 
 	/* 
 	compound types, followed by single value to make
