@@ -359,7 +359,9 @@ typedeclcore
 	;
 
 name    : Tident {$$ = mkname($1->loc, $1->id);}
-	| Tident Tdot name {$$ = $3; setns($3, $1->id);}
+	| Tident Tdot Tident {
+		$$ = mkname($3->loc, $3->id); setns($$, $1->id);
+	}
 	;
 
 implstmt: Timpl name type optauxtypes {
