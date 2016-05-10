@@ -36,7 +36,6 @@ sys$fnclone:
 	cmpq $0,%rax
 	jb .doneparent
 
-
 	/* fn() */
 	testl %eax,%eax
 	jnz .doneparent
