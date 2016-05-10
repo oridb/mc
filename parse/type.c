@@ -637,6 +637,7 @@ static int tybfmt(char *buf, size_t len, Bitset *visited, Type *t)
 	if (t->type == Tyvar || t->type == Typaram)
 		p += traitfmt(p, end - p, t);
 
+        bsdel(visited, t->tid);
 	return p - buf;
 }
 
