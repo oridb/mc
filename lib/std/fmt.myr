@@ -260,6 +260,7 @@ const fallbackfmt = {sb, params, tyenc, ap : valist# -> void
 	var ui8 : int8, ui16: int16, ui32 : int32
 	var ui : int, ui64 : int64
 	var subap, subenc, subname
+	var inf, p
 
 	match typedesc(tyenc)
 	| `Tynone:	/* nothing */
@@ -391,7 +392,10 @@ const fallbackfmt = {sb, params, tyenc, ap : valist# -> void
 		sbfmt(sb, "]")
 		vabytes(ap)
 	| `Tyunion nc:
-		i_val = (ap.args castto(int32#))#
+		inf = typeinfo(tcpeek(&ap.tc))
+		p = ap.args castto(size)
+		p = (p + inf.align - 1) & ~(inf.align - 1)
+		i_val = (p castto(int32#))#
 		subap = vaenterunion(ap, i_val)
 		for var i = 0; i < i_val; i++
 			ncnext(&nc)
