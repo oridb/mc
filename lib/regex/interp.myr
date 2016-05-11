@@ -4,6 +4,7 @@ use "types"
 
 pkg regex =
 	const exec	: (re : regex#, str : byte[:] -> std.option(byte[:][:]))
+	const search	: (re : regex#, str : byte[:] -> std.option(byte[:][:]))
 	const matchfree	: (pat : byte[:][:] -> void)
 	/*
 	FIXME: implement. This should scan for a possible start char in the
@@ -21,7 +22,7 @@ const exec = {re, str
 
 	re.str = str
 	re.strp = 0
-	thr = run(re)
+	thr = run(re, true)
 	if thr != Zthr
 		m = getmatches(re, thr)
 		thrfree(re, thr)
@@ -31,6 +32,26 @@ const exec = {re, str
 		cleanup(re)
 		->  `std.None
 	;;
+}
+
+const search = {re, str
+	var thr
+	var m
+
+	for var i = 0; i < str.len; i++
+		re.str = str[i:]
+		re.strp = 0
+		thr = run(re, false)
+		if thr != Zthr
+			m = getmatches(re, thr)
+			thrfree(re, thr)
+			cleanup(re)
+			-> `std.Some m
+		else
+			cleanup(re)
+		;;
+	;;
+	->  `std.None
 }
 
 const cleanup = {re
@@ -66,12 +87,14 @@ const getmatches = {re, thr
 
 
 /* returns a matching thread, or Zthr if no threads matched */
-const run = {re
-	var ip
+const run = {re, wholestr
+	var bestmatch
 	var consumed
-	var thr
 	var states
+	var thr
+	var ip
 
+	bestmatch = Zthr
 	states = std.mkbs()
 	re.runq = mkthread(re, 0)
 	re.runq.mstart = std.slalloc(re.nmatch)
@@ -99,9 +122,18 @@ const run = {re
 
 			if thr.dead
 				thrfree(re, thr)
-			elif thr.matched && re.strp == re.str.len
-				std.bsfree(states)
-				-> thr
+			elif thr.matched
+				trace(re, thr, "new bestmatch\n")
+				if bestmatch != Zthr
+					thrfree(re, bestmatch)
+				;;
+
+				if re.strp == re.str.len
+					bestmatch = thr
+					goto done
+				elif !wholestr
+					bestmatch = thr
+				;;
 			elif !thr.matched
 				std.bsput(states, thr.ip)
 				if re.expired == Zthr
@@ -122,8 +154,9 @@ const run = {re
 		re.expiredtail = Zthr
 		re.strp++
 	;;
+:done
 	std.bsfree(states)
-	-> Zthr
+	-> bestmatch
 }
 
 /* 

@@ -1,0 +1,27 @@
+use std
+
+use "testmatch"
+
+const main = {
+	var s : byte[:]
+		
+	s = std.strjoin([
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+	][:], "")
+	testsearch("bc", "Abcd", `std.Some [][:])
+	testsearch("Abc", "Abc", `std.Some [][:])
+	testsearch("(bc)", "Abc", `std.Some ["bc"][:])
+	testsearch("(bc.*)", "Abcde", `std.Some ["bcde"][:])
+	testsearch("(b.*c)", "ABbasdfcrap", `std.Some ["basdfc"][:])
+}

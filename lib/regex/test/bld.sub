@@ -47,3 +47,11 @@ test unicode  =
 	lib @/lib/sys:sys
 	lib @/lib/regex:regex
 ;;
+
+test search  =
+	search.myr
+	testmatch.myr
+	lib @/lib/std:std
+	lib @/lib/sys:sys
+	lib @/lib/regex:regex
+;;
