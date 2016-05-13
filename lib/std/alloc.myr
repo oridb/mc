@@ -253,7 +253,7 @@ const bytefree = {p, sz
 		bkt = &buckets[bktnum(sz)]
 		lock(memlck)
 		bktfree(bkt, p)
-		lock(memlck)
+		unlock(memlck)
 	else
 		freemem(p, sz)
 	;;
