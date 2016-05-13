@@ -1,5 +1,6 @@
 lib thread =
 	common.myr
+	hookstd.myr    # install thread hooks
 
 	# linux impl of basic thread primitives
 	#condvar+linux.myr

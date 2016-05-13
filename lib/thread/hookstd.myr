@@ -1,0 +1,23 @@
+use std
+use "mutex"
+
+pkg thread =
+;;
+
+var memlck
+var netlck
+var envlck
+
+const __init__ = {
+	memlck = mkmtx()
+	netlck = mkmtx()
+	envlck = mkmtx()
+	std.__lockinit( \
+		&memlck castto(void#), \
+		&netlck castto(void#), \
+		&envlck castto(void#), \
+		{mtx; mtxlock(mtx castto(mutex#))}, \
+		{mtx; mtxunlock(mtx castto(mutex#))} \
+	)
+}
+
