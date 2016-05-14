@@ -1,6 +1,7 @@
 lib thread =
 	common.myr
-	hookstd.myr    # install thread hooks
+	hookstd.myr	# install thread hooks
+	mutex.myr	# fallback, for unimplemented platforms
 
 	# linux impl of basic thread primitives
 	#condvar+linux.myr
@@ -16,7 +17,6 @@ lib thread =
 
 	# osx impl of thread primitives
 	#condvar+osx.myr
-	mutex+osx.myr
 	spawn+osx.myr
 	start+osx-x64.s
 
