@@ -23,7 +23,7 @@ const uninstall = {b
 }
 
 const movetargs = {b, rm
-	var libarchive
+	var libarchive, libuse
 	var pfx
 
 	for tn in b.all
@@ -34,10 +34,12 @@ const movetargs = {b, rm
 			;;
 		| `Lib lt:
 			if lt.install && !lt.istest
-				movefile(b, rm, lt.dir, lt.name, config.Libpath, 0o644)
+				libuse = std.fmt("lib{}.use", lt.name)
+				movefile(b, rm, lt.dir, libuse, config.Libpath, 0o644)
 				libarchive = std.fmt("lib{}.a", lt.name)
 				movefile(b, rm, lt.dir, libarchive, config.Libpath, 0o644)
 				std.slfree(libarchive)
+				std.slfree(libuse)
 			;;
 		| `Data dt:
 			for blob in dt.blobs
@@ -75,13 +77,14 @@ const movefile = {b, rm, dir, file, prefix, perm
 			std.put("\t\tno such file {}\n", file)
 		;;
 	else
-		std.put("\t{} => {}\n", file, path)
 		std.remove(path)
 		match std.slurp(file)
-		| `std.Fail m:	std.fatal("Could not open {} for reading\n", file)
+		| `std.Fail m:	std.fatal("could not open {} for reading\n", file)
 		| `std.Ok buf:
-			if !std.blat(path, buf, perm)
-				std.put("Could not write {}\n", file)
+			if std.blat(path, buf, perm)
+				std.put("\t{} => {}\n", file, path)
+			else
+				std.put("could not write {}\n", file)
 			;;
 		;;
 	;;

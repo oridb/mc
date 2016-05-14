@@ -1042,6 +1042,16 @@ void readuse(Node *use, Stab *st, Vis vis)
 		/* nonlocal (barename) uses are always searched on the include path */
 	} else {
 		for (i = 0; i < nincpaths; i++) {
+			snprintf(buf, sizeof buf, "lib%s.use", use->use.name);
+			t = strjoin(incpaths[i], "/");
+			p = strjoin(t, buf);
+			fd = fopen(p, "r");
+			if (fd) {
+				free(t);
+				break;
+			}
+			free(p);
+
 			t = strjoin(incpaths[i], "/");
 			p = strjoin(t, use->use.name);
 			fd = fopen(p, "r");

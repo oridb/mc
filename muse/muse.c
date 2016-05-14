@@ -18,6 +18,7 @@
 /* FIXME: move into one place...? */
 Node *file;
 char *outfile;
+char *pkgname;
 int show;
 char debugopt[128];
 char **incpaths;
@@ -27,7 +28,7 @@ size_t nextralibs;
 
 static void usage(char *prog)
 {
-	printf("%s [-hIdos] [-o outfile] [-m] inputs\n", prog);
+	printf("%s [-hIdos] [-o outfile] [-p pkgname] [-m] inputs\n", prog);
 	printf("\t-h\tprint this help\n");
 	printf("\t\tThe outfile must be the same name as each package merged.\n");
 	printf("\t-I path\tAdd 'path' to use search path\n");
@@ -55,12 +56,15 @@ int main(int argc, char **argv)
 	size_t i;
 	FILE *f;
 
-	optinit(&ctx, "sd:hmo:I:l:", argv, argc);
+	optinit(&ctx, "sd:hmo:p:I:l:", argv, argc);
 	while (!optdone(&ctx)) {
 		switch (optnext(&ctx)) {
 		case 'h':
 			usage(argv[0]);
 			exit(0);
+			break;
+		case 'p':
+			pkgname = ctx.optarg;
 			break;
 		case 'o':
 			outfile = ctx.optarg;
@@ -90,11 +94,13 @@ int main(int argc, char **argv)
 		fprintf(stderr, "output file needed when merging usefiles.\n");
 		exit(1);
 	}
+	if (!pkgname)
+		pkgname = outfile;
 
 	/* read and parse the file */
 	file = mkfile("internal");
 	file->file.globls = mkstab(0);
-	updatens(file->file.globls, outfile);
+	updatens(file->file.globls, pkgname);
 	tyinit(file->file.globls);
 	for (i = 0; i < ctx.nargs; i++)
 		mergeuse(ctx.args[i]);

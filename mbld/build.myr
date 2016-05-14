@@ -359,6 +359,8 @@ const mergeuse = {dg, lib, files, incs
 	cmd = [][:]
 	std.slpush(&cmd, std.sldup(opt_muse))
 	std.slpush(&cmd, std.sldup("-o"))
+	std.slpush(&cmd, std.fmt("lib{}.use", lib))
+	std.slpush(&cmd, std.sldup("-p"))
 	std.slpush(&cmd, std.sldup(lib))
 	for f in files
 		if std.hassuffix(f, ".myr")
@@ -449,7 +451,7 @@ const findlib = {lib, incs
 		std.slfree(p)
 	;;
 
-	p = std.pathjoin([opt_instbase, config.Libpath, lib][:])
+	p = std.pathjoin([opt_instbase, config.Libpath, sl][:])
 	if std.fexists(p)
 		-> `std.Some p
 	;;

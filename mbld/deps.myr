@@ -360,38 +360,40 @@ const scrapelibs = {dg, lib, incs
 }
 
 const openlib = {lib, incs
-	var path
+	var path, libname
 
 	for p in incs
+		libname = std.fmt("lib{}.use", lib)
+		path = std.pathjoin([p, libname][:])
+		std.slfree(libname)
+		if std.fisreg(path)
+			goto found
+		;;
+		std.slfree(path)
+
 		path = std.pathjoin([p, lib][:])
-		if !std.fisreg(path)
-			std.slfree(path)
-			continue
+		if std.fisreg(path)
+			goto found
 		;;
-		match  bio.open(path, bio.Rd)
-		| `std.Ok file:
-			std.slfree(path)
-			-> file
-		| `std.Fail m:
-			std.fput(std.Err, "could not open {}: {}\n", path, m)
-			goto error
-		;;
+		std.slfree(path)
 	;;
-	path = std.pathjoin([opt_instbase, config.Libpath, lib][:])
+
+	libname = std.fmt("lib{}.use", lib)
+	path = std.pathjoin([opt_instbase, config.Libpath, libname][:])
+	std.slfree(libname)
+:found
 	match  bio.open(path, bio.Rd)
 	| `std.Ok file:
 		std.slfree(path)
 		-> file
-	| `std.Fail m:	/* nothing */
+	| `std.Fail m:
 	;;
 	std.fput(std.Err, "could not find library {}\n", lib)
-
-:error
 	std.fput(std.Err, "search path is:\n")
 	for p in incs
 		std.fput(std.Err, "\t{}\n", p)
 	;;
-	std.fput(std.Err, "\t{}\n", path)
+	std.fput(std.Err, "\t{}\n", config.Libpath)
 	std.exit(1)
 }
 
