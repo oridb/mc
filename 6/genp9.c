@@ -317,19 +317,19 @@ static size_t writeblob(FILE *fd, Blob *b, size_t off, char *lbl)
 		return 0;
 	switch (b->type) {
 	case Bti8:
-		fprintf(fd, "\tDATA %s+%zd(SB)/1,$%llud\n", lbl, off+n, b->ival);
+		fprintf(fd, "\tDATA %s+%zd(SB)/1,$%llu\n", lbl, off+n, b->ival);
 		n += 1;
 		break;
 	case Bti16:
-		fprintf(fd, "\tDATA %s+%zd(SB)/2,$%llud\n", lbl, off+n, b->ival);
+		fprintf(fd, "\tDATA %s+%zd(SB)/2,$%llu\n", lbl, off+n, b->ival);
 		n += 2;
 		break;
 	case Bti32:
-		fprintf(fd, "\tDATA %s+%zd(SB)/4,$%llud\n", lbl, off+n, b->ival);
+		fprintf(fd, "\tDATA %s+%zd(SB)/4,$%llu\n", lbl, off+n, b->ival);
 		n += 4;
 		break;
 	case Bti64:
-		fprintf(fd, "\tDATA %s+%zd(SB)/8,$%lld\n", lbl, off+n, (vlong)b->ival);
+		fprintf(fd, "\tDATA %s+%zd(SB)/8,$%llu\n", lbl, off+n, (vlong)b->ival);
 		n += 8;
 		break;
 	case Btimin:
