@@ -6,6 +6,7 @@ use "ranges"
 pkg regex =
 	const parse	: (re : byte[:]	-> std.result(ast#, status))
 	const compile	: (re : byte[:] -> std.result(regex#, status))
+	const compileast	: (re : ast# -> regex#)
 	const dbgcompile	: (re : byte[:] -> std.result(regex#, status))
 	const free	: (re : regex# -> void)
 ;;
@@ -69,6 +70,19 @@ const regexcompile = {re, id
 		-> `std.Ok re
 	;;
 	-> `std.Fail (`Noimpl)
+}
+
+const compileast = {ast
+	var re
+
+	re = std.mk([.pat = "", .nmatch = 1])
+	dump(re, ast, 0)
+	append(re, `Ilbra 0)
+	gen(re, ast)
+	append(re, `Irbra 0)
+	append(re, `Imatch 0)
+	idump(re)
+	-> re
 }
 
 const free = {re
