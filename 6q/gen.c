@@ -57,7 +57,7 @@ static int isexport(Node *dcl)
 	return 0;
 }
 
-char *asmname(char *buf, size_t nbuf, Node *n, char sigil)
+char *asmname(char *buf, size_t nbuf, Node *n, char *sigil)
 {
 	char *ns, *name, *sep;
 
@@ -67,7 +67,7 @@ char *asmname(char *buf, size_t nbuf, Node *n, char sigil)
 	ns = "";
 	if (ns && ns[0])
 		sep = "$";
-	bprintf(buf, nbuf, "%c%s%s%s", sigil, ns, sep, name);
+	bprintf(buf, nbuf, "%s%s%s%s", sigil, ns, sep, name);
 	return buf;
 }
 
@@ -149,7 +149,7 @@ void fillglobls(Stab *st, Htab *globls)
 		s = htget(st->dcl, k[i]);
 		if (isconstfn(s))
 			s->decl.type = codetype(s->decl.type);
-		asmname(buf, sizeof buf, s->decl.name, '$');
+		asmname(buf, sizeof buf, s->decl.name, "$");
 		htput(globls, s, strdup(buf));
 	}
 	free(k);
@@ -160,7 +160,7 @@ void fillglobls(Stab *st, Htab *globls)
 		k = htkeys(stab->dcl, &nk);
 		for (i = 0; i < nk; i++) {
 			s = htget(stab->dcl, k[i]);
-			asmname(buf, sizeof buf, s->decl.name, '$');
+			asmname(buf, sizeof buf, s->decl.name, "$");
 			htput(globls, s, strdup(buf));
 		}
 		free(k);
@@ -186,7 +186,7 @@ static void initconsts(Htab *globls)
 	dcl->decl.isconst = 1;
 	dcl->decl.isextern = 1;
 	dcl->decl.isglobl = 1;
-	asmname(buf, sizeof buf, dcl->decl.name, '$');
+	asmname(buf, sizeof buf, dcl->decl.name, "$");
 	htput(globls, dcl, strdup(buf));
 
 	abortoob = mkexpr(Zloc, Ovar, name, NULL);
@@ -249,22 +249,22 @@ void putnode(Gen *g, Node *n, FILE *f)
 {
 	char buf[1024];
 	Node *dcl;
-	char sigil;
+	char *sigil;
 
 	switch (n->type) {
 	case Ndecl:
-		sigil = '%';
+		sigil = "%";
 		if (n->decl.isglobl)
-		      sigil = '$';
+		      sigil = "$";
 		asmname(buf, sizeof buf, n->decl.name, sigil);
 		fprintf(f, "%s", buf);
 		break;
 	case Nexpr:
 		if (exprop(n) == Ovar) {
 		      dcl = decls[n->expr.did];
-		      sigil = '%';
+		      sigil = "%";
 		      if (dcl->decl.isglobl)
-			    sigil = '$';
+			    sigil = "$";
 		      asmname(buf, sizeof buf, n->expr.args[0], sigil);
 		      fprintf(f, "%s", buf);
 		} else if (exprop(n) == Olit) {
@@ -879,7 +879,7 @@ void genfn(Gen *g, Node *dcl)
 
 
 	n = dcl->decl.init;
-	asmname(name, sizeof name, dcl->decl.name, '$');
+	asmname(name, sizeof name, dcl->decl.name, "$");
 	if(debugopt['i'] || debugopt['F'] || debugopt['f'])
 		printf("\n\nfunction %s\n", name);
 
@@ -1056,7 +1056,7 @@ void outstruct(Gen *g, Type *ty)
 	for (i = 0; i < ty->nmemb; i++) {
 		mty = decltype(ty->sdecls[i]);
 		outqbetype(g, mty);
-		pr(g, "%s,\n", _qbetype(g, mty));
+		//pr(g, "\t%s,\n", outqbetype(g, mty));
 	}
 }
 
@@ -1079,7 +1079,7 @@ void outunion(Gen *g, Type *ty)
 			maxsize = tysize(mty);
 	}
 	maxsize += align(4, maxalign);
-	pr(g, "align %d { %d }\n", maxalign, maxsize);
+	pr(g, "%zd\n", maxsize);
 }
 
 void outtuple(Gen *g, Type *ty)
@@ -1090,15 +1090,12 @@ void outtuple(Gen *g, Type *ty)
 	for (i = 0; i < ty->nsub; i++) {
 		mty = ty->sub[i];
 		outqbetype(g, mty);
-		pr(g, "%s,\n", _qbetype(g, mty));
+		pr(g, "\t%s,\n", _qbetype(g, mty));
 	}
 }
 
 void outqbetype(Gen *g, Type *ty)
 {
-	if (g->typenames[ty->tid])
-		return;
-
 	switch (ty->type) {
 	case Tyvoid:	break;
 	case Tybool:	pr(g, "\tb,\n");	break;
@@ -1144,21 +1141,37 @@ void genqbetypes(Gen *g)
 	char buf[1024];
 	size_t i;
 	Type *ty;
+	Ty tt;
 	char *n;
 
 	g->typenames = zalloc(ntypes * sizeof(Type *));
 	for (i = Ntypes; i < ntypes; i++) {
 		ty = tydedup(types[i]);
-		if (ty->type == Tycode || ty->type == Tyvar || hasparams(ty))
+		tt = ty->type;
+		if (tt == Tycode || tt == Tyvar || tt == Tyunres || hasparams(ty))
+			continue;
+		if (g->typenames[ty->tid])
 			continue;
 		if (ty->vis == Visbuiltin)
 			continue;
-		n = tystr(ty);
+
 		if (ty->type == Tyname)
-			pr(g, "type :%s = { # %s\n", asmname(buf, sizeof buf, ty->name, 0), n);
+			asmname(buf, sizeof buf, ty->name, ":");
 		else
-			pr(g, "type :t%zd = { # %s\n", i, n);
-		free(n);
+			snprintf(buf, sizeof buf, ":t%zd", ty->tid);
+		g->typenames[ty->tid] = strdup(buf);
+	}
+
+	for (i = Ntypes; i < ntypes; i++) {
+		ty = tydedup(types[i]);
+		if (!g->typenames[ty->tid])
+			continue;
+		if (ty->type == Tyname) {
+			n = tystr(ty);
+			pr(g, "# %s\n", n);
+			free(n);
+		}
+		pr(g, "type %s = align %zd {\n", g->typenames[ty->tid], tyalign(ty));
 		outqbetype(g, ty);
 		pr(g, "}\n\n");
 	}
