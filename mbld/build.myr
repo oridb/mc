@@ -128,7 +128,7 @@ const buildbin = {b, targ, addsrc
 	if !std.hthas(dg.deps, targ.name)
 		std.fatal("no input files for {}\n", targ.name)
 	;;
-	if builddep(b, dg, targ.name, targ.incpath) || !freshlibs(targ, dg.libs)
+	if builddep(b, dg, targ.name, targ.incpath) || !freshlibs(targ, targ.name, dg.libs)
 		src = std.htkeys(dg.sources)
 
 		incs = std.sldup(targ.incpath)
@@ -144,7 +144,7 @@ const buildbin = {b, targ, addsrc
 }
 
 const buildlib = {b, targ
-	var archive
+	var archive, usefile
 	var u, l
 	var dg
 	var lib, src
@@ -154,13 +154,14 @@ const buildlib = {b, targ
 	lib = targ.name
 	std.put("{}/lib{}.a...\n", b.curdir, lib)
 	archive = std.fmt("lib{}.a", lib)
+	usefile = std.fmt("lib{}.use", lib)
 	dg = myrdeps(b, targ, false, false)
 	if !std.hthas(dg.deps, lib)
 		std.fatal("no target declared for {}\n", lib)
 	;;
-	u = builddep(b, dg, targ.name, targ.incpath)
+	u = builddep(b, dg, usefile, targ.incpath)
 	l = builddep(b, dg, archive, targ.incpath)
-	if  u || l || !freshlibs(targ, dg.libs)
+	if  u || l || !freshlibs(targ, usefile, dg.libs)
 		src = std.htkeys(dg.sources)
 		mergeuse(dg, lib, src, targ.incpath)
 		archivelib(dg, lib, src, targ.incpath)
@@ -459,14 +460,14 @@ const findlib = {lib, incs
 	-> `std.None
 }
 
-const freshlibs = {targ, libgraph
+const freshlibs = {targ, output, libgraph
 	var libs
 
 	libs = std.htkeys(libgraph)
 	for l in libs
 		match findlib(l, targ.incpath)
 		| `std.Some lib:
-			if !isfresh(lib, targ.name)
+			if !isfresh(lib, output)
 				std.slfree(lib)
 				-> false
 			;;
