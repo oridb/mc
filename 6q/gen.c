@@ -1062,17 +1062,24 @@ void outstruct(Gen *g, Type *ty)
 
 void outunion(Gen *g, Type *ty)
 {
-	die("qbe union: not implemented");
-	// size_t i;
-	// Type *mty;
-	// size_t maxalign;
-	// size_t maxsize;
+	size_t i;
+	Type *mty;
+	size_t maxalign;
+	size_t maxsize;
 
-	// for (i = 0; i < ty->nmemb; i++) {
-	// 	mty = ty->udecls[i]->etype;
-	// 	outqbetype(g, mty);
-	// 	pr(g, "%s,\n", qbetype(g, mty));
-	// }
+	maxalign = 1;
+	maxsize = 0;
+	for (i = 0; i < ty->nmemb; i++) {
+		mty = ty->udecls[i]->etype;
+		if (!mty)
+			continue;
+		if (tyalign(mty) > maxalign)
+			maxalign = tyalign(mty);
+		if (tysize(mty) > maxsize)
+			maxsize = tysize(mty);
+	}
+	maxsize += align(4, maxalign);
+	pr(g, "align %d { %d }\n", maxalign, maxsize);
 }
 
 void outtuple(Gen *g, Type *ty)
@@ -1174,6 +1181,7 @@ void gen(Node *file, char *out)
 	g->file = fopen(out, "w");
 	if (!g->file)
 		die("Couldn't open fd %s", out);
+	g->strtab = mkht(strlithash, strliteq);
 
 	genqbetypes(g);
 	pushstab(file->file.globls);
