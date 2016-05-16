@@ -8,7 +8,7 @@ lib regex =
         lib ../std:std
 ;;
 
-bin redump {noinst} =
+bin redump =
 	redump.myr
         lib ../std:std
         lib ../bio:bio
