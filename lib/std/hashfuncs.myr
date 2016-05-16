@@ -79,7 +79,7 @@ generic ptrhash = {p : @a#
 	var x
 
 	x = &p castto(byte#)
-	-> murmurhash2(x[0:sizeof(@a)], Seed)
+	-> murmurhash2(x[0:sizeof(@a#)], Seed)
 }
 
 generic ptreq = {a, b
