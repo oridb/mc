@@ -16,7 +16,7 @@ const testsearch = {pat, text, expected
 }
 
 const dbgmatch = {pat, text, expected
-	run(regex.dbgcompile(pat), pat, text, expected, false)
+	run(regex.dbgcompile(pat, true), pat, text, expected, false)
 }
 
 const run = {regex, pat, text, expected, search
