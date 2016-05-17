@@ -39,7 +39,9 @@ pkg regex =
 	type regex = struct
 		/* compile state */
 		debug	: bool
+		trace	: bool
 		pat	: byte[:]
+		idx	: std.size
 		nmatch	: std.size
 
 		/* VM state */
@@ -51,6 +53,11 @@ pkg regex =
 		nthr	: std.size
 		str	: byte[:]
 		strp	: std.size
+
+		/* debug state */
+		astloc	: std.htab(ast#, std.size)#
+		pcidx	: std.size[:]
+		lastip	: std.size
 	;;
 
 	pkglocal type rethread = struct

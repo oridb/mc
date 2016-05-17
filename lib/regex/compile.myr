@@ -6,8 +6,7 @@ use "ranges"
 pkg regex =
 	const parse	: (re : byte[:]	-> std.result(ast#, status))
 	const compile	: (re : byte[:] -> std.result(regex#, status))
-	const compileast	: (re : ast# -> regex#)
-	const dbgcompile	: (re : byte[:] -> std.result(regex#, status))
+	const dbgcompile	: (re : byte[:], trace : bool -> std.result(regex#, status))
 	const free	: (re : regex# -> void)
 ;;
 
@@ -30,7 +29,7 @@ const parse = {pat
 	| `None:	-> `std.Fail `Incomplete
 	| `Fail f:	-> `std.Fail f
 	| `Some t:
-		if re.pat.len > 0
+		if re.pat.len != re.idx
 			-> `std.Fail `Incomplete
 		else
 			-> `std.Ok t
@@ -39,11 +38,18 @@ const parse = {pat
 }
 
 /* Compiles a pattern into a debug regex. This can be verbose. */
-const dbgcompile = {pat
-	var re
+const dbgcompile = {pat, trace
+	var re, res
 
-	re = std.mk([.pat = pat, .nmatch = 1, .debug = true])
-	-> regexcompile(re, 0)
+	re = std.mk([
+		.pat = pat,
+		.nmatch = 1,
+		.debug = true,
+		.trace = trace,
+		.astloc = std.mkht(std.ptrhash, std.ptreq),
+	])
+	res = regexcompile(re, 0)
+	-> res
 }
 
 /* compiles a pattern into an allocated regex */
@@ -53,18 +59,19 @@ const regexcompile = {re, id
 	| `Fail f:	-> `std.Fail f
 	| `Some t:
 		/*
-		we can stop early if we get 
+		we can bail out of parsing early if we get 
 		an incorrectly encoded char
 		*/
-		if re.pat.len > 0
+		if re.pat.len != re.idx
 			astfree(t)
 			-> `std.Fail (`Incomplete)
 		;;
 		dump(re, t, 0)
-		append(re, `Ilbra 0)
+		append(re, `Ilbra 0, t)
 		gen(re, t)
-		append(re, `Irbra 0)
-		append(re, `Imatch id)
+		std.htput(re.astloc, t, re.pat.len)
+		append(re, `Irbra 0, t)
+		append(re, `Imatch id, t)
 		idump(re)
 		astfree(t)
 		-> `std.Ok re
@@ -72,23 +79,14 @@ const regexcompile = {re, id
 	-> `std.Fail (`Noimpl)
 }
 
-const compileast = {ast
-	var re
-
-	re = std.mk([.pat = "", .nmatch = 1])
-	dump(re, ast, 0)
-	append(re, `Ilbra 0)
-	gen(re, ast)
-	append(re, `Irbra 0)
-	append(re, `Imatch 0)
-	idump(re)
-	-> re
-}
-
 const free = {re
 	/* all the threads should be dead,
 	 so we shouldn't have to free any*/
 	std.slfree(re.prog)
+	if re.debug
+		std.htfree(re.astloc)
+		std.slfree(re.pcidx)
+	;;
 	std.free(re)
 }
 
@@ -106,23 +104,23 @@ const gen = {re, t
 	|`Quest	a:	genquest(re, a)
 
 	/* end matches */
-	|`Chr	c:	genchar(re, c)
-	|`Ranges  sl:	genranges(re, sl)
+	|`Chr	c:	genchar(re, c, t)
+	|`Ranges  sl:	genranges(re, sl, t)
 
 	/* meta */
-	|`Bol:	append(re, `Ibol)
-	|`Eol:	append(re, `Ibol)
-	|`Bow:	append(re, `Ibow)
-	|`Eow:	append(re, `Ieow)
+	|`Bol:	append(re, `Ibol, t)
+	|`Eol:	append(re, `Ibol, t)
+	|`Bow:	append(re, `Ibow, t)
+	|`Eow:	append(re, `Ieow, t)
 	|`Cap	(m, a):
-		append(re, `Ilbra m)
+		append(re, `Ilbra m, t)
 		gen(re, a)
-		append(re, `Irbra m)
+		append(re, `Irbra m, t)
 	;;
 	-> re.proglen
 }
 
-const genranges = {re, sl
+const genranges = {re, sl, ast
 	var lbuf : byte[4], hbuf : byte[4], boundbuf : byte[4]
 	var lsz, hsz, bsz, i
 	var rt : rangetrie#
@@ -146,10 +144,10 @@ const genranges = {re, sl
 		;;
 		rtinsert(rt, lbuf[:lsz], hbuf[:hsz])
 	;;
-	if re.debug
+	if re.trace
 		rtdump(rt, 0)
 	;;
-	rangegen(re, rt, rt.ranges, rt.link, rangeprogsize(rt) + re.proglen)
+	rangegen(re, ast, rt, rt.ranges, rt.link, rangeprogsize(rt) + re.proglen)
 	rtfree(rt)
 	-> re.proglen
 }
@@ -235,7 +233,7 @@ const rtfree = {rt
 	std.free(rt)
 }
 
-const rangegen = {re, rt, ranges, links, end
+const rangegen = {re, ast, rt, ranges, links, end
 	var alt, l0, l1, l2
 	var a, b
 	var n
@@ -245,20 +243,20 @@ const rangegen = {re, rt, ranges, links, end
 		-> re.proglen
 	elif n == 1
 		(a, b) = ranges[0]
-		append(re, `Irange (a, b))
+		append(re, `Irange (a, b), ast)
 		if links[0].end
 			if links[0].ranges.len > 0
-				append(re, `Ifork (re.prog.len + 1, end))
+				append(re, `Ifork (re.prog.len + 1, end), ast)
 			else
-				append(re, `Ijmp end)
+				append(re, `Ijmp end, ast)
 			;;
 		;;
-		rangegen(re, links[0], links[0].ranges, links[0].link, end)
+		rangegen(re, ast, links[0], links[0].ranges, links[0].link, end)
 	else
 		alt = re.proglen
-		l0 = append(re, `Ifork (-1, -1))
-		l1 = rangegen(re, rt, ranges[0:n/2], links[0:n/2], end)
-		l2 = rangegen(re, rt, ranges[n/2:n], links[n/2:n], end)
+		l0 = append(re, `Ifork (-1, -1), ast)
+		l1 = rangegen(re, ast, rt, ranges[0:n/2], links[0:n/2], end)
+		l2 = rangegen(re, ast, rt, ranges[n/2:n], links[n/2:n], end)
 		re.prog[alt] = `Ifork (l0, l1)
 	;;
 	-> re.proglen
@@ -301,10 +299,10 @@ const genalt = {re, l, r
 	var l2
 
 	alt 	= re.proglen
-	l0	= append(re, `Ifork (-1, -1)) /* needs to be replaced */
+	l0	= append(re, `Ifork (-1, -1), l) /* needs to be replaced */
 		  gen(re, l)
 	jmp	= re.proglen
-	l1 	= append(re, `Ijmp -1) /* needs to be replaced */
+	l1 	= append(re, `Ijmp -1, r) /* needs to be replaced */
 	l2	= gen(re, r)
 
 	re.prog[alt] = `Ifork(l0, l1)
@@ -322,9 +320,9 @@ const genstar = {re, rep, reluct
 
 	l0 	= re.proglen
 	alt	= re.proglen
-	l1 	= append(re, `Ifork (-1, -1)) /* needs to be replaced */
+	l1 	= append(re, `Ifork (-1, -1), rep) /* needs to be replaced */
 	jmp	= gen(re, rep)
-	l2	= append(re, `Ijmp -1)
+	l2	= append(re, `Ijmp -1, rep)
 
 
 	/* reluctant matches should prefer jumping to the end. */
@@ -344,29 +342,38 @@ const genquest = {re, q
 	var l1
 
 	alt	= re.proglen
-	l0	= append(re, `Ifork (-1, -1)) /* needs to be replaced */
+	l0	= append(re, `Ifork (-1, -1), q) /* needs to be replaced */
 	l1	= gen(re, q)
 	re.prog[alt] = `Ifork (l0, l1)
 	-> re.proglen
 }
 
 /* generates a single char match */
-const genchar = {re, c
+const genchar = {re, c, ast
 	var b : byte[4]
 	var n
 
 	n = std.encode(b[:], c)
 	std.assert(n > 0 && n < 4, "non-utf character in regex\n")
 	for var i = 0; i < n; i++
-		append(re, `Ibyte b[i])
+		append(re, `Ibyte b[i], ast)
 	;;
 	-> re.proglen
 }
 
 /* appends an instructon to an re program */
-const append = {re, insn
+const append = {re, insn, ast
+	var sz
+
 	if re.proglen == re.prog.len
-		std.slgrow(&re.prog, std.max(1, 2*re.proglen))
+		sz = std.max(1, 2*re.proglen)
+		std.slgrow(&re.prog, sz)
+		if re.debug
+			std.slgrow(&re.pcidx, sz)
+		;;
+	;;
+	if re.debug
+		re.pcidx[re.proglen] = std.htgetv(re.astloc, ast, -1)
 	;;
 	re.prog[re.proglen] = insn
 	re.proglen++
@@ -375,11 +382,11 @@ const append = {re, insn
 
 /* instruction dump */
 const idump = {re
-	if !re.debug
+	if !re.trace
 		-> void
 	;;
 	for var i = 0; i < re.proglen; i++
-		std.put("{}:\t", i)
+		std.put("{}@{}:\t", i, re.pcidx[i])
 		match re.prog[i]
 		/* Char matching. Consume exactly one byte from the string. */
 		| `Ibyte b:		std.put("`Ibyte {} ({})\n", b, b castto(char)) 
@@ -407,7 +414,7 @@ const idump = {re
 
 /* AST dump */
 const dump = {re, t, indent
-	if !re.debug
+	if !re.trace
 		-> void
 	;;
 	for var i = 0; i < indent; i++
@@ -469,7 +476,7 @@ const dump = {re, t, indent
 const regexparse = {re
 	match altexpr(re)
 	| `Some t:
-		if re.pat.len == 0
+		if re.pat.len == re.idx
 			-> `Some t
 		else
 			astfree(t)
@@ -484,14 +491,16 @@ const regexparse = {re
 
 const altexpr = {re
 	var ret
+	var idx
 
 	match catexpr(re)
 	| `Some t:
 		ret = t
 		if matchc(re, '|')
+			idx = re.idx
 			match altexpr(re)
 			| `Some rhs:
-				ret = std.mk(`Alt (ret, rhs))
+				ret = mk(re, `Alt (ret, rhs), idx)
 			| `None:
 				astfree(ret)
 				-> `Fail (`Incomplete)
@@ -507,13 +516,15 @@ const altexpr = {re
 
 const catexpr = {re
 	var ret
+	var idx
 
 	match repexpr(re)
 	| `Some t: 
+		idx = re.idx
 		ret = t
 		match catexpr(re)
 		| `Some rhs:
-			ret = std.mk(`Cat (t, rhs))
+			ret = mk(re, `Cat (t, rhs), idx)
 		| `Fail f:	-> `Fail f
 		| `None:	/* nothing */
 		;;
@@ -525,23 +536,25 @@ const catexpr = {re
 
 const repexpr = {re
 	var ret
+	var idx
 
 	match baseexpr(re)
 	| `Some t:
+		idx = re.idx
 		if matchc(re, '*')
                         if matchc(re, '?')
-                                ret = std.mk(`Rstar t)
+				ret = mk(re, `Rstar t, idx)
                         else
-				ret = std.mk(`Star t)
+				ret = mk(re, `Star t, idx)
 			;;
 		elif matchc(re, '+')
                         if matchc(re, '?')
-				ret = std.mk(`Rplus t)
+				ret = mk(re, `Rplus t, idx)
 			else
-				ret = std.mk(`Plus t)
+				ret = mk(re, `Plus t, idx)
 			;;
 		elif matchc(re, '?')
-			ret = std.mk(`Quest t)
+			ret = mk(re, `Quest t, idx)
 		else
 			ret = t
 		;;
@@ -552,9 +565,9 @@ const repexpr = {re
 }
 
 const baseexpr = {re
-	var ret, m
+	var ret, m, idx
 
-	if re.pat.len == 0
+	if re.pat.len == re.idx
 		-> `None
 	;;
 	match peekc(re)
@@ -565,16 +578,19 @@ const baseexpr = {re
 	| '+':	-> `Fail `Badrep '+'
 	| '?':	-> `Fail `Badrep '?'
 	| '[':	-> chrclass(re)
-	| '.':	getc(re); ret = std.mk(`Ranges std.sldup([[0, std.Maxcharval]][:]))
-	| '^':	getc(re); ret = std.mk(`Bol)
-	| '$':	getc(re); ret = std.mk(`Eol)
+	| '^':	getc(re); ret = mk(re, `Bol, re.idx)
+	| '$':	getc(re); ret = mk(re, `Eol, re.idx)
+	| '.':	
+		getc(re);
+		ret = mk(re, `Ranges std.sldup([[0, std.Maxcharval]][:]), re.idx)
 	| '(':	
 		m = re.nmatch++
+		idx = re.idx
 		getc(re)
 		match altexpr(re)
 		| `Some s:
 			if matchc(re, ')')
-				-> `Some std.mk(`Cap (m, s))
+				-> `Some mk(re, `Cap (m, s), idx)
 			else
 				-> `Fail `Unbalanced '('
 			;;
@@ -583,13 +599,13 @@ const baseexpr = {re
 		;;
 	| '\\':
 		getc(re) /* consume the slash */
-		if re.pat.len == 0
+		if re.pat.len == re.idx
 			-> `Fail `Incomplete
 		;;
 		-> escaped(re)
 	| c:
 		getc(re)
-		ret = std.mk(`Chr c)
+		ret = mk(re, `Chr c, re.idx)
 	;;
 	-> `Some ret
 }
@@ -599,34 +615,34 @@ const escaped = {re
 
 	match getc(re)
 	/* character classes */
-	| 'd': ret = `Some std.mk(`Ranges std.sldup(_ranges.tabasciidigit[:]))
-	| 'x': ret = `Some std.mk(`Ranges std.sldup(_ranges.tabasciixdigit[:]))
-	| 's': ret = `Some std.mk(`Ranges std.sldup(_ranges.tabasciispace[:]))
-	| 'w': ret = `Some std.mk(`Ranges std.sldup(_ranges.tabasciiword[:]))
-	| 'h': ret = `Some std.mk(`Ranges std.sldup(_ranges.tabasciiblank[:]))
+	| 'd': ret = `Some mk(re, `Ranges std.sldup(_ranges.tabasciidigit[:]), re.idx)
+	| 'x': ret = `Some mk(re, `Ranges std.sldup(_ranges.tabasciixdigit[:]), re.idx)
+	| 's': ret = `Some mk(re, `Ranges std.sldup(_ranges.tabasciispace[:]), re.idx)
+	| 'w': ret = `Some mk(re, `Ranges std.sldup(_ranges.tabasciiword[:]), re.idx)
+	| 'h': ret = `Some mk(re, `Ranges std.sldup(_ranges.tabasciiblank[:]), re.idx)
 
 	/* negated character classes */
-	| 'W': ret = `Some std.mk(`Ranges negate(_ranges.tabasciiword[:]))
-	| 'S': ret = `Some std.mk(`Ranges negate(_ranges.tabasciispace[:]))
-	| 'D': ret = `Some std.mk(`Ranges negate(_ranges.tabasciidigit[:]))
-	| 'X': ret = `Some std.mk(`Ranges negate(_ranges.tabasciixdigit[:]))
-	| 'H': ret = `Some std.mk(`Ranges negate(_ranges.tabasciiblank[:]))
+	| 'W': ret = `Some mk(re, `Ranges negate(_ranges.tabasciiword[:]), re.idx)
+	| 'S': ret = `Some mk(re, `Ranges negate(_ranges.tabasciispace[:]), re.idx)
+	| 'D': ret = `Some mk(re, `Ranges negate(_ranges.tabasciidigit[:]), re.idx)
+	| 'X': ret = `Some mk(re, `Ranges negate(_ranges.tabasciixdigit[:]), re.idx)
+	| 'H': ret = `Some mk(re, `Ranges negate(_ranges.tabasciiblank[:]), re.idx)
 
 	/* unicode character classes */
 	| 'p':	ret = unicodeclass(re, false)
 	| 'P':  ret = unicodeclass(re, true)
 
 	/* operators that need an escape */
-	| '<': ret = `Some std.mk(`Bow)
-	| '>': ret = `Some std.mk(`Eow)
+	| '<': ret = `Some mk(re, `Bow, re.idx)
+	| '>': ret = `Some mk(re, `Eow, re.idx)
 
 	/* escaped metachars */
-	| '^': ret = `Some std.mk(`Chr '^')
-	| '$': ret = `Some std.mk(`Chr '$')
-	| '.': ret = `Some std.mk(`Chr '.')
-	| '+': ret = `Some std.mk(`Chr '+')
-	| '?': ret = `Some std.mk(`Chr '?')
-	| '*': ret = `Some std.mk(`Chr '*')
+	| '^': ret = `Some mk(re, `Chr '^', re.idx)
+	| '$': ret = `Some mk(re, `Chr '$', re.idx)
+	| '.': ret = `Some mk(re, `Chr '.', re.idx)
+	| '+': ret = `Some mk(re, `Chr '+', re.idx)
+	| '?': ret = `Some mk(re, `Chr '?', re.idx)
+	| '*': ret = `Some mk(re, `Chr '*', re.idx)
 	| chr: ret = `Fail `Badescape chr
 	;;
 	-> ret
@@ -637,17 +653,19 @@ const unicodeclass = {re, neg
 	var tab
 	var t
 	var n
+	var idx
 
-	if re.pat.len == 0
+	if re.pat.len == re.idx
 		-> `Fail (`Incomplete)
 	;;
 	n = 0
-	s = re.pat
+	idx = re.idx
+	s = re.pat[idx:]
 	/* either a single char pattern, or {pat} */
 	match getc(re)
 	| '{':
 		s = s[1:]
-		while re.pat.len > 0
+		while re.pat.len > re.idx
 			c = getc(re)
 			if c == '}'
 				break
@@ -678,9 +696,9 @@ const unicodeclass = {re, neg
 		-> `Fail (`Badrange s)
 	;;
 	if !neg
-		t = std.mk(`Ranges std.sldup(tab))
+		t = mk(re, `Ranges std.sldup(tab), idx)
 	else
-		t = std.mk(`Ranges negate(tab))
+		t = mk(re, `Ranges negate(tab), idx)
 	;;
 	-> `Some t
 }
@@ -688,16 +706,18 @@ const unicodeclass = {re, neg
 const chrclass = {re
 	var rl, m, n
 	var neg
+	var idx
 	var t
 
 	/* we know we saw '[' on entry */
 	matchc(re, '[')
+	idx = re.idx
 	neg = false
 	if matchc(re, '^')
 		neg = true
 	;;
 	rl = rangematch(re, [][:])
-	while peekc(re) != ']' && re.pat.len > 0
+	while peekc(re) != ']' && re.pat.len > re.idx
 		rl = rangematch(re, rl)
 	;;
 	if !matchc(re, ']')
@@ -718,9 +738,9 @@ const chrclass = {re
 	if neg
 		n = negate(m)
 		std.slfree(m)
-		t = std.mk(`Ranges n)
+		t = mk(re, `Ranges n, idx)
 	else
-		t = std.mk(`Ranges m)
+		t = mk(re, `Ranges m, idx)
 	;;
 	-> `Some t
 }
@@ -784,29 +804,26 @@ const merge = {rl
 
 
 const matchc = {re, c
-	var str
 	var chr
 
-	(chr, str) = std.strstep(re.pat)
+	chr = std.decode(re.pat[re.idx:])
 	if chr != c
 		-> false
 	;;
-	re.pat = str
+	re.idx += std.charlen(chr)
 	-> true
 }
 
 const getc = {re
 	var c
 
-	(c, re.pat) = std.strstep(re.pat)
+	c = std.decode(re.pat[re.idx:])
+	re.idx += std.charlen(c)
 	-> c
 }
 
 const peekc = {re
-	var c
-
-	(c, _) = std.strstep(re.pat)
-	-> c
+	-> std.decode(re.pat[re.idx:])
 }
 
 const astfree = {t
@@ -842,6 +859,16 @@ const fmtfail = {sb, ap, opt
 	| `Badrange s:	std.sbfmt(sb, "invalid range name {}", s)
 	| `Badescape c:	std.sbfmt(sb, "invalid escape code {}", c)
 	;;
+}
+
+const mk = {re, ast, loc
+	var n
+
+	n = std.mk(ast)
+	if re.debug
+		std.htput(re.astloc, n, loc)
+	;;
+	-> n
 }
 
 const __init__ = {

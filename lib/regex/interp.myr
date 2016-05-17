@@ -104,7 +104,8 @@ const run = {re, wholestr
 			thr = re.runq
 			re.runq = thr.next
 
-			trace(re, thr, "\nrunning tid={}, ip={}, s[{}]={}\n", thr.tid, thr.ip, re.strp, std.decode(re.str[re.strp:]))
+			trace(re, thr, "\nrunning tid={}, ip={}, s[{}]={}\n", \
+				thr.tid, thr.ip, re.strp, std.decode(re.str[re.strp:]))
 			ip = thr.ip
 			consumed = step(re, thr, -1)
 			while !consumed
@@ -143,7 +144,7 @@ const run = {re, wholestr
 			;;
 		;;
 		std.bsclear(states)
-		trace(re, thr, "switch\n")
+		trace(re, Zthr, "switch\n")
 		re.runq = re.expired
 		re.expired = Zthr
 		re.expiredtail = Zthr
@@ -277,7 +278,8 @@ const die = {re, thr, msg
 	trace(re, thr, "\t\tdie {}: {}\n", thr.tid, msg)
         if !thr.dead
 		re.nthr--
-        ;;
+	;;
+	re.lastip = thr.ip
 	thr.dead = true
 }
 
@@ -322,9 +324,15 @@ const within = {re, str
 const trace : (re : regex#, thr : rethread#, msg : byte[:], args : ... -> void) = {re, thr, msg, args
 	var ap
 
-	if re.debug
+	if re.trace && thr != Zthr
 		ap = std.vastart(&args)
 		std.putv(msg, &ap)
+		std.put("\t{}\n", re.pat)
+		std.put("\t")
+		for var i = 0; i < re.pcidx[thr.ip] - 1; i++
+			std.put(" ")
+		;;
+		std.put("^\n")
 	;;
 }
 
