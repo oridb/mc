@@ -69,7 +69,6 @@ const regexcompile = {re, id
 		dump(re, t, 0)
 		append(re, `Ilbra 0, t)
 		gen(re, t)
-		std.htput(re.astloc, t, re.pat.len)
 		append(re, `Irbra 0, t)
 		append(re, `Imatch id, t)
 		idump(re)
