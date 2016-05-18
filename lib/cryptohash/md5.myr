@@ -70,32 +70,32 @@ const md5fin = {st
 	;;
 
         /* append size block */
-	st.tail[56] = ((st.msglen * 8) >> 0)    castto(byte)
-	st.tail[57] = ((st.msglen * 8) >> 8)	castto(byte)
-	st.tail[58] = ((st.msglen * 8) >> 16)	castto(byte)
-	st.tail[59] = ((st.msglen * 8) >> 24)	castto(byte)
-	st.tail[60] = ((st.msglen * 8) >> 32)	castto(byte)
-	st.tail[61] = ((st.msglen * 8) >> 40)	castto(byte)
-	st.tail[62] = ((st.msglen * 8) >> 48)	castto(byte)
-	st.tail[63] = ((st.msglen * 8) >> 56)	castto(byte)
+	st.tail[56] = ((st.msglen * 8) >> 0	: byte)
+	st.tail[57] = ((st.msglen * 8) >> 8	: byte)
+	st.tail[58] = ((st.msglen * 8) >> 16	: byte)
+	st.tail[59] = ((st.msglen * 8) >> 24	: byte)
+	st.tail[60] = ((st.msglen * 8) >> 32	: byte)
+	st.tail[61] = ((st.msglen * 8) >> 40	: byte)
+	st.tail[62] = ((st.msglen * 8) >> 48	: byte)
+	st.tail[63] = ((st.msglen * 8) >> 56	: byte)
         step(st, st.tail[:])
 
-	r[0] = (st.a >> 0)	castto(byte)
-	r[1] = (st.a >> 8)	castto(byte)
-	r[2] = (st.a >> 16)	castto(byte)
-	r[3] = (st.a >> 24)	castto(byte)
-	r[4] = (st.b >> 0)	castto(byte)
-	r[5] = (st.b >> 8)	castto(byte)
-	r[6] = (st.b >> 16)	castto(byte)
-	r[7] = (st.b >> 24)	castto(byte)
-	r[8] = (st.c >> 0)	castto(byte)
-	r[9] = (st.c >> 8)	castto(byte)
-	r[10] = (st.c >> 16)	castto(byte)
-	r[11] = (st.c >> 24)	castto(byte)
-	r[12] = (st.d >> 0)	castto(byte)
-	r[13] = (st.d >> 8)	castto(byte)
-	r[14] = (st.d >> 16)	castto(byte)
-	r[15] = (st.d >> 24)	castto(byte)
+	r[0] = (st.a >> 0	: byte)
+	r[1] = (st.a >> 8	: byte)
+	r[2] = (st.a >> 16	: byte)
+	r[3] = (st.a >> 24	: byte)
+	r[4] = (st.b >> 0	: byte)
+	r[5] = (st.b >> 8	: byte)
+	r[6] = (st.b >> 16	: byte)
+	r[7] = (st.b >> 24	: byte)
+	r[8] = (st.c >> 0	: byte)
+	r[9] = (st.c >> 8	: byte)
+	r[10] = (st.c >> 16	: byte)
+	r[11] = (st.c >> 24	: byte)
+	r[12] = (st.d >> 0	: byte)
+	r[13] = (st.d >> 8	: byte)
+	r[14] = (st.d >> 16	: byte)
+	r[15] = (st.d >> 24	: byte)
 	-> r
 }
 
@@ -207,9 +207,10 @@ const step = {st, blk
 const unpack = {b
 	var v : uint32
 
-	v = ((b[0] castto(uint32)) << 0)
-	v |= ((b[1] castto(uint32)) << 8)
-	v |= ((b[2] castto(uint32)) << 16)
-	v |= ((b[3] castto(uint32)) << 24)
+	v = 0
+	v |= (b[0] : uint32) << 0
+	v |= (b[1] : uint32) << 8
+	v |= (b[2] : uint32) << 16
+	v |= (b[3] : uint32) << 24
 	-> v
 }

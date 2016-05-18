@@ -2,7 +2,7 @@ use "die"
 use "types"
 
 pkg std =
-	const Badchar	: char = -1 castto(char)
+	const Badchar	: char	= -1
 	const Maxcharlen : size = 4
 	const Maxcharval : char = 0x10FFFF
 
@@ -40,15 +40,15 @@ const encode = {buf, c
 	if (len == 1)
 		mark = 0
 	else
-		mark = (((1 << (8 - len)) - 1) ^ 0xff) castto(char)
+		mark = ((1 << (8 - len) - 1) ^ 0xff : char)
 	;;
 
 	for var i = len - 1; i > 0; i--
-		buf[i] = (c & 0x3f | 0x80) castto(byte)
+		buf[i] = (c & 0x3f | 0x80 : byte)
 		c >>= 6
 	;;
 
-	buf[0] = (c | mark) castto(byte)
+	buf[0] = (c | mark : byte)
 	-> len
 }
 
@@ -93,11 +93,11 @@ const strstep = {str
 	;;
 
 	mask = (1 << (8 - len)) - 1
-	chr = (c castto(uint32)) & mask
+	chr = (c : uint32) & mask
 	for var i = 1; i < len; i++
-		tmp = str[i] castto(uint32)
+		tmp = (str[i] : uint32)
 		chr = (chr << 6) | (tmp & 0x3f)
 	;;
 
-	-> (chr castto(char), str[len:])
+	-> ((chr : char), str[len:])
 }

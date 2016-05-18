@@ -25,14 +25,14 @@ const flt64bfmt = {sb, val, mode, precision
 	var isneg, exp, mant
 
 	(isneg, mant, exp) = flt64explode(val)
-	dragon4(sb, isneg, mant, (exp - 52) castto(int64), Dblbias, mode, precision)
+	dragon4(sb, isneg, mant, (exp - 52 : int64), Dblbias, mode, precision)
 }
 
 const flt32bfmt = {sb, val, mode, precision
 	var isneg, exp, mant
 
 	(isneg, mant, exp) = flt32explode(val)
-	dragon4(sb, isneg, mant castto(int64), (exp - 52) castto(int64), Fltbias, mode, precision)
+	dragon4(sb, isneg, (mant : int64), (exp - 52 : int64), Fltbias, mode, precision)
 }
 
 /*

@@ -1,5 +1,6 @@
 sub =
 	bio
+	date
 	cryptohash
 	inifile
 	regex

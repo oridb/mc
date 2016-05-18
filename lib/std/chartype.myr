@@ -1228,14 +1228,14 @@ generic charval = {c, base -> @a::(numeric,integral)
 	var v = -1
 
 	if c >= '0' && c <= '9'
-		v =  (c - '0') castto(@a::(integral,numeric))
+		v =  (c - '0' : @a::(integral,numeric))
 	elif c >= 'a' && c <= 'z'
-		v =  (c - 'a' + 10) castto(@a::(integral,numeric))
+		v =  (c - 'a' + 10 : @a::(integral,numeric))
 	elif c >= 'A' && c <= 'Z'
-		v =  (c - 'A' + 10) castto(@a::(integral,numeric))
+		v =  (c - 'A' + 10 : @a::(integral,numeric))
 	;;
 
-	if v < 0 || v >= (base castto(@a::(integral,numeric)))
+	if v < 0 || v >= (base : @a::(integral,numeric))
 		-> -1
 	;;
 	-> v

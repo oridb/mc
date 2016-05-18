@@ -181,24 +181,24 @@ ABI mismatch: Plan 9 aligns all arguments individually to
 8 bytes, Myrddin uses natural alignment (min(sizeof(t), 16).
 Cast to a 64 bit type to paper over this.
 */
-generic a	= {a : @t;	-> a castto(uint64)}
-generic s	= {a : @t;	-> a castto(int64)}
-generic p	= {a : @t;	-> a castto(byte#)}
+generic a	= {a : @t;	-> (a : uint64)}
+generic s	= {a : @t;	-> (a : int64)}
+generic p	= {a : @t;	-> (a : byte#)}
 
 const sysr1	= {;		-> syscall(Syssysr1)}
 const bind	= {name, old;	-> syscall(Sysbind, cstring(name), cstring(old))}
 const chdir 	= {dir;		-> syscall(Syschdir, cstring(dir)) }
 const close 	= {fd;		-> syscall(Sysclose, a(fd))}
-const dup	= {ofd, nfd;	-> syscall(Sysdup, a(ofd), a(nfd)) castto(fd)}
+const dup	= {ofd, nfd;	-> (syscall(Sysdup, a(ofd), a(nfd)) : fd)}
 const alarm 	= {msec;	-> syscall(Sysalarm, a(msec))}
 const exits 	= {msg;		-> syscall(Sysexits, cstring(msg))}
 const fauth 	= {fd, aname;	-> syscall(Sysfauth, a(fd), cstring(aname))}
 const segbrk 	= {saddr, addr;	-> syscall(Syssegbrk, a(saddr), a(addr))}
-const open 	= {path, opt;	-> syscall(Sysopen, cstring(path), a(opt)) castto(fd)}
+const open 	= {path, opt;	-> (syscall(Sysopen, cstring(path), a(opt)) : fd)}
 const sleep 	= {msec;	-> syscall(Syssleep, a(msec))}
-const rfork 	= {rflags;	-> syscall(Sysrfork, a(rflags)) castto(pid)}
+const rfork 	= {rflags;	-> (syscall(Sysrfork, a(rflags)) : pid)}
 const pipe 	= {fds;		-> syscall(Syspipe, a(fds))}
-const create 	= {path, mode, perm;	-> syscall(Syscreate, cstring(path), a(mode), a(perm)) castto(fd)}
+const create 	= {path, mode, perm;	-> (syscall(Syscreate, cstring(path), a(mode), a(perm)) : fd)}
 const fd2path	= {fd, buf;	-> syscall(Sysfd2path, a(fd), p(buf), a(buf.len))}
 const remove	= {path;	-> syscall(Sysremove, cstring(path))}
 const notify	= {fn;		-> syscall(Sysnotify, fn)}	/* FIXME: this is likely to break when we do closures... */
@@ -214,11 +214,11 @@ const fstat	= {fd, edir;	-> syscall(Sysstat, a(fd), p(edir), a(edir.len))}
 const wstat	= {name, edir;	-> syscall(Syswstat, cstring(name), p(edir), a(edir.len))}
 const fwstat	= {fd, edir;	-> syscall(Sysfwstat, a(fd), p(edir), a(edir.len))}
 const mount	= {fd, afd, old, flag, aname;	-> syscall(Sysmount, a(fd), a(afd), cstring(old), a(flag), cstring(aname))}
-const pread	= {fd, buf, off;	-> syscall(Syspread, a(fd), p(buf), a(buf.len), off) castto(size)}
-const pwrite	= {fd, buf, off;	-> syscall(Syspwrite, a(fd), p(buf), a(buf.len), s(off)) castto(size)}
+const pread	= {fd, buf, off;	-> (syscall(Syspread, a(fd), p(buf), a(buf.len), off) : size)}
+const pwrite	= {fd, buf, off;	-> (syscall(Syspwrite, a(fd), p(buf), a(buf.len), s(off)) : size)}
 const await	= {buf;	-> syscall(Sysawait, p(buf), a(buf.len))}
 const brk_	= {endp;	-> syscall(Sysbrk_, p(endp))}
-const nsec	= {;	-> syscall(Sys_nsec) castto(uint64)}
+const nsec	= {;	-> (syscall(Sys_nsec) : uint64)}
 const seek	= {fd, n, ty
 	var ret : off
 	syscall(Sysseek, a(&ret), a(fd), a(n), a(ty))
@@ -230,15 +230,15 @@ const exec	= {bin, args
 
 	/* we need an array of C strings. */
 	p = alloca((args.len + 1)*sizeof(byte#))
-	cargs = (a(p) castto(byte##))[:args.len + 1]
+	cargs = (a(p) : byte##)[:args.len + 1]
 	for i = 0; i < args.len; i++
 		cargs[i] = cstring(args[i])
 	;;
-	cargs[args.len] = 0 castto(byte#)
+	cargs[args.len] = (0 : byte#)
 	-> syscall(Sysexec, cstring(bin), a(cargs))
 }
 
 /*const fversion	= {fd, bufsz, vers, nvers;	-> syscall(Sysfversion, fd, bufsz, }*/
-const semacquire	= {addr, block; -> syscall(Syssemacquire, a(addr), a(block)) castto(int)}
-const tsemacquire	= {addr, ms; -> syscall(Systsemacquire, a(addr), a(ms)) castto(int)}
-const semrelease	= {addr, count; -> syscall(Syssemrelease, a(addr), a(count)) castto(int32)}
+const semacquire	= {addr, block; -> (syscall(Syssemacquire, a(addr), a(block)) : int)}
+const tsemacquire	= {addr, ms; -> (syscall(Systsemacquire, a(addr), a(ms)) : int)}
+const semrelease	= {addr, count; -> (syscall(Syssemrelease, a(addr), a(count)) : int32)}

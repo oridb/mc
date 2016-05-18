@@ -54,6 +54,6 @@ const run = {prog -> flt64
 		| `std.Wsuccess:	/* nothing */
 		;;
 	;;
-	-> (std.now() - tm castto(flt64)) / 1_000_000.0
+	-> (std.now() - (tm : flt64)) / 1_000_000.0
 }
 

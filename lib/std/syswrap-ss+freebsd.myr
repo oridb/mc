@@ -19,7 +19,7 @@ const nanosleep	= {nsecs
 	ns = nsecs % 1_000_000_000
 	req = [.sec = s, .nsec = ns]
 
-	-> sys.nanosleep(&req, &rem) castto(errno)
+	-> (sys.nanosleep(&req, &rem) : errno)
 }
 
 const exit = {status
@@ -29,9 +29,9 @@ const exit = {status
 const bgetcwd = {buf
 	var res
 
-	res = sys.__getcwd(buf) castto(errno)
+	res = (sys.__getcwd(buf) : errno)
 	if res == 0
-		-> cstrlen(buf) castto(errno)
+		-> (cstrlen(buf) : errno)
 	elif res == Enomem
 		-> Erange
 	else

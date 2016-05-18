@@ -9,7 +9,7 @@ pkg regex =
 ;;
 
 /* Ugly: for performance. std.option() should be used instead when unions get faster. */
-const Zthr = 0 castto(rethread#)
+const Zthr = (0 : rethread#)
 
 const exec = {re, str
 	var thr
@@ -168,7 +168,7 @@ const step = {re, thr, curip
 	match re.prog[thr.ip]
 	/* Char matching. Consume exactly one byte from the string. */
 	| `Ibyte b:
-		trace(re, thr, "\t{}:\tByte {} ({})\n", thr.ip, b, b castto(char))
+		trace(re, thr, "\t{}:\tByte {} ({})\n", thr.ip, b, (b : char))
 		if !within(re, str)
 			die(re, thr, "end of string")
 		elif b != str[re.strp]
@@ -178,7 +178,7 @@ const step = {re, thr, curip
 			trace(re, thr, "\t\tmatched {} with {}\n", b, str[re.strp])
 		;;
 	| `Irange (start, end):
-		trace(re, thr, "\t{}:\tRange ({}, {}) /* {} - {} */\n", thr.ip, start, end, start castto(char), end castto(char))
+		trace(re, thr, "\t{}:\tRange ({}, {}) /* {} - {} */\n", thr.ip, start, end, (start : char), (end : char))
 		if !within(re, str) || start > str[re.strp] || end < str[re.strp]
 			die(re, thr, "bad range")
 		else
@@ -190,7 +190,7 @@ const step = {re, thr, curip
 	 */
 	| `Ibol:
 		trace(re, thr, "\t{}:\tBol\n", thr.ip)
-		if re.strp == 0 || str[re.strp - 1] == '\n' castto(byte)
+		if re.strp == 0 || str[re.strp - 1] == ('\n' : byte)
 			thr.ip++
 			-> false
 		else
@@ -198,7 +198,7 @@ const step = {re, thr, curip
 		;;
 	| `Ieol:
 		trace(re, thr, "\t{}:\tEol\n", thr.ip)
-		if re.strp == str.len || str[re.strp] == '\n' castto(byte)
+		if re.strp == str.len || str[re.strp] == ('\n' : byte)
 			thr.ip++
 			-> false
 		else

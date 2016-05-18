@@ -9,5 +9,5 @@ const a = {
 }
 
 const b = {
-	-> 33 castto(int16)
+	-> (33 : int16)
 }

@@ -34,7 +34,7 @@ generic slbytes = {data : @a[:]
 	var n
 
 	n = data.len * sizeof(@a)
-	-> (data castto(byte#))[:n]
+	-> (data : byte#)[:n]
 }
 
 const strhash = {s
@@ -78,7 +78,7 @@ const streq = {a, b
 generic ptrhash = {p : @a#
 	var x
 
-	x = &p castto(byte#)
+	x = (&p : byte#)
 	-> murmurhash2(x[0:sizeof(@a#)], Seed)
 }
 
@@ -89,7 +89,7 @@ generic ptreq = {a, b
 generic inthash = {v : @a::(integral,numeric)
 	var p
 
-	p = &v castto(byte#)
+	p = (&v : byte#)
 	-> murmurhash2(p[0:sizeof(@a)], Seed)
 }
 
@@ -104,10 +104,10 @@ const murmurhash2 = {data, seed
 	
 	h = seed ^ data.len
 	while data.len >= 4
-		k = (data[0] castto(uint32))
-		k |= (data[1] castto(uint32)) << 8
-		k |= (data[2] castto(uint32)) << 16
-		k |= (data[3] castto(uint32)) << 24
+		k = (data[0] : uint32)
+		k |= (data[1] : uint32) << 8
+		k |= (data[2] : uint32) << 16
+		k |= (data[3] : uint32) << 24
 
 		k *= m
 		k ^= k >> r
@@ -120,14 +120,14 @@ const murmurhash2 = {data, seed
 
 	match data.len
 	| 3:
-		h ^= (data[2] castto(uint32)) << 16
-		h ^= (data[1] castto(uint32)) <<8
-		h ^= (data[0] castto(uint32))
+		h ^= (data[2] : uint32) << 16
+		h ^= (data[1] : uint32) <<8
+		h ^= (data[0] : uint32)
 	| 2:
-		h ^= (data[1] castto(uint32)) <<8
-		h ^= (data[0] castto(uint32))
+		h ^= (data[1] : uint32) <<8
+		h ^= (data[0] : uint32)
 	| 1:
-		h ^= (data[0] castto(uint32))
+		h ^= (data[0] : uint32)
 	| 0:	/* nothing */
 	| _:	die("0 < len < 4 must be true")
 	;;

@@ -29,7 +29,7 @@ generic foo = {x : @a::frobable
 const main = {
 	var a, b, c
 	a = foo(123)
-	b = foo(11 castto(int16))
+	b = foo((11 : int16))
 	c = frob("meeeeeeh")
 	std.put("{},{},{}\n", a, b, c)
 }

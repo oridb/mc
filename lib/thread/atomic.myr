@@ -16,20 +16,20 @@ pkg thread =
 ;;
 
 impl atomic int32 =
-	xget	= {p; -> xget32(p castto(uint32#)) castto(int32)}
-	xset	= {p, v; xset32(p castto(uint32#), v castto(uint32))}
-	xadd	= {p, v; -> xadd32(p castto(uint32#), v castto(uint32)) castto(int32)}
-	xcas	= {p, old, new; -> xcas32(p castto(uint32#), old castto(uint32), new castto(uint32)) castto(int32)}
-	xchg	= {p, v; -> xchg32(p castto(uint32#), v castto(uint32)) castto(int32)}
+	xget	= {p; -> (xget32((p : uint32#)) : int32)}
+	xset	= {p, v; xset32((p : uint32#), (v : uint32))}
+	xadd	= {p, v; -> (xadd32((p : uint32#), (v : uint32)) : int32)}
+	xcas	= {p, old, new; -> (xcas32((p : uint32#), (old : uint32), (new : uint32)) : int32)}
+	xchg	= {p, v; -> (xchg32((p : uint32#), (v : uint32)) : int32)}
 ;;
 
 
 impl atomic int64 =
-	xget	= {p; -> xget64(p castto(uint64#)) castto(int64)}
-	xset	= {p, v; xset64(p castto(uint64#), v castto(uint64))}
-	xadd	= {p, v; -> xadd64(p castto(uint64#), v castto(uint64)) castto(int64)}
-	xcas	= {p, old, new; -> xcas64(p castto(uint64#), old castto(uint64), new castto(uint64)) castto(int64)}
-	xchg	= {p, v; -> xchg64(p castto(uint64#), v castto(uint64)) castto(int64)}
+	xget	= {p; -> (xget64((p : uint64#)) : int64)}
+	xset	= {p, v; xset64((p : uint64#), (v : uint64))}
+	xadd	= {p, v; -> (xadd64((p : uint64#), (v : uint64)) : int64)}
+	xcas	= {p, old, new; -> (xcas64((p : uint64#), (old : uint64), (new : uint64)) : int64)}
+	xchg	= {p, v; -> (xchg64((p : uint64#), (v : uint64)) : int64)}
 ;;
 
 impl atomic uint32 =

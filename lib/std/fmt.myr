@@ -325,7 +325,7 @@ const fallbackfmt = {sb, params, tyenc, ap : valist# -> void
 		sbputs(sb, "0x")
 		intfmt(sb, \
 			[.base=16, .padto=2*sizeof(void#), .padfill='0'], \
-			false, p_val castto(intptr))
+			false, (p_val : intptr))
 	| `Tyslice desc:
 		match typedesc(desc)
 		| `Tybyte:
@@ -348,7 +348,7 @@ const fallbackfmt = {sb, params, tyenc, ap : valist# -> void
 		sbputs(sb, "func{")
 		intfmt(sb, \
 			[.base=16, .padto=2*sizeof(void#), .padfill='0'], \
-			false, p_val castto(intptr))
+			false, (p_val : intptr))
 		sbputs(sb, "}")
 		vabytes(ap)
 	| `Tyarray (sz, desc):
@@ -393,9 +393,9 @@ const fallbackfmt = {sb, params, tyenc, ap : valist# -> void
 		vabytes(ap)
 	| `Tyunion nc:
 		inf = typeinfo(tcpeek(&ap.tc))
-		p = ap.args castto(size)
+		p = (ap.args : size)
 		p = (p + inf.align - 1) & ~(inf.align - 1)
-		i_val = (p castto(int32#))#
+		i_val = (p : int32#)#
 		subap = vaenterunion(ap, i_val)
 		for var i = 0; i < i_val; i++
 			ncnext(&nc)
@@ -415,7 +415,7 @@ const getparams = {fmt
 	var i
 
 	for i = 0; i < fmt.len; i++
-		if fmt[i] == '}' castto(byte)
+		if fmt[i] == ('}' : byte)
 			goto foundparams
 		;;
 	;;
@@ -508,7 +508,7 @@ const strfmt = {sb, str, params
 }
 
 const isprint = {b
-	-> (b >= ' ' castto(byte)) && (b < '~' castto(byte))
+	-> b >= (' ' : byte) && b < ('~' : byte)
 }
 
 /*
@@ -531,12 +531,12 @@ generic intfmt = {sb, opts, signed, bits : @a::(integral,numeric)
 	var i, j, npad
 	var base
 
-	base = opts.base castto(uint64)
+	base = (opts.base : uint64)
 	if signed && bits < 0
-		val = -bits castto(uint64)
+		val = (-bits : uint64)
 		isneg = true
 	else
-		val = bits castto(uint64)
+		val = (bits : uint64)
 		val &= ~0 >> (8*(sizeof(uint64)-sizeof(@a)))
 		isneg = false
 	;;

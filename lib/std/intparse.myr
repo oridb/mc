@@ -54,8 +54,8 @@ generic doparse = {s, isneg, base
 		;;
 		cv = charval(c, base)
 		if cv >= 0
-			v *= (base castto(@a::(integral,numeric)))
-			v += cv castto(@a::(integral,numeric))
+			v *= (base : @a::(integral,numeric))
+			v += (cv : @a::(integral,numeric))
 		else
 			-> `None
 		;;

@@ -20,49 +20,49 @@ const main = {
 	std.assert(std.sleq(bb.buf[:bb.len], "abc"), \
 		"byte buf contents not \"abc\"\n")
 
-	std.bytebufputb(bb, 'd' castto(byte))
+	std.bytebufputb(bb, ('d' : byte))
 	std.assert(bb.len == 4, "byte buf size wrong\n")
 	std.assert(std.sleq(bb.buf[:bb.len], "abcd"), \
 		"byte buf contents not \"abcd\"\n")
 
-	std.bytebufputle8(bb, 'e' castto(int64))
+	std.bytebufputle8(bb, ('e' : int64))
 	std.assert(bb.len == 5, "byte buf size wrong\n")
 	std.assert(std.sleq(bb.buf[:bb.len], "abcde"), \
 		"byte buf contents not \"abcde\"\n")
 
-	std.bytebufputbe8(bb, 'e' castto(int64))
+	std.bytebufputbe8(bb, ('e' : int64))
 	std.assert(bb.len == 6, "byte buf size wrong\n")
 	std.assert(std.sleq(bb.buf[:bb.len], "abcdee"), \
 		"byte buf contents not \"abcdee\"\n")
 
-	std.bytebufputle16(bb, ('f' | ('g' << 8)) castto(int64))
+	std.bytebufputle16(bb, ('f' | ('g' << 8) : int64))
 	std.assert(bb.len == 8, "byte buf size wrong\n")
 	std.assert(std.sleq(bb.buf[:bb.len], "abcdeefg"), \
 		"byte buf contents not \"abcdeefg\"\n")
 
-	std.bytebufputbe16(bb, ('f' | ('g' << 8)) castto(int64))
+	std.bytebufputbe16(bb, ('f' | ('g' << 8) : int64))
 	std.assert(bb.len == 10, "byte buf size wrong\n")
 	std.assert(std.sleq(bb.buf[:bb.len], "abcdeefggf"), \
 		"byte buf contents not \"abcdeefggf\"\n")
 
-	std.bytebufputle32(bb, ('h' | ('i' << 8) | ('j' << 16) | ('k' << 24)) castto(int64))
+	std.bytebufputle32(bb, ('h' | ('i' << 8) | ('j' << 16) | ('k' << 24) : int64))
 	std.assert(bb.len == 14, "byte buf size wrong\n")
 	std.assert(std.sleq(bb.buf[:bb.len], "abcdeefggfhijk"), \
 		"byte buf contents not \"abcdeefggfhijk\"\n")
 
-	std.bytebufputbe32(bb, ('h' | ('i' << 8) | ('j' << 16) | ('k' << 24)) castto(int64))
+	std.bytebufputbe32(bb, ('h' | ('i' << 8) | ('j' << 16) | ('k' << 24) : int64))
 	std.assert(bb.len == 18, "byte buf size wrong\n")
 	std.assert(std.sleq(bb.buf[:bb.len], "abcdeefggfhijkkjih"), \
 		"byte buf contents not \"abcdeefggfhijkkji\"\n")
 
-	v = ('l' | ('m' << 8) | ('n' << 16) | ('o' << 24)) castto(int64)
+	v = ('l' | ('m' << 8) | ('n' << 16) | ('o' << 24) : int64)
 	v |= v << 32
 	std.bytebufputle64(bb, v)
 	std.assert(bb.len == 26, "byte buf size wrong\n")
 	std.assert(std.sleq(bb.buf[:bb.len], "abcdeefggfhijkkjihlmnolmno"), \
 		"byte buf contents not \"abcdeefggfhijkkjihlmnolmno\"\n")
 
-	v = ('l' | ('m' << 8) | ('n' << 16) | ('o' << 24)) castto(int64)
+	v = ('l' | ('m' << 8) | ('n' << 16) | ('o' << 24) : int64)
 	v |= v << 32
 	std.bytebufputbe64(bb, v)
 	std.assert(bb.len == 34, "byte buf size wrong\n")

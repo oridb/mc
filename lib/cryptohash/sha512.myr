@@ -160,14 +160,14 @@ const tail = {x, msglen, tail
 	;;
 
 	/* append size block */
-	tail[120] = ((msglen * 8) >> 56)	castto(byte)
-	tail[121] = ((msglen * 8) >> 48)	castto(byte)
-	tail[122] = ((msglen * 8) >> 40)	castto(byte)
-	tail[123] = ((msglen * 8) >> 32)	castto(byte)
-	tail[124] = ((msglen * 8) >> 24)	castto(byte)
-	tail[125] = ((msglen * 8) >> 16)	castto(byte)
-	tail[126] = ((msglen * 8) >> 8)	castto(byte)
-	tail[127] = ((msglen * 8) >> 0)	castto(byte)
+	tail[120] = ((msglen * 8) >> 56	: byte)
+	tail[121] = ((msglen * 8) >> 48	: byte)
+	tail[122] = ((msglen * 8) >> 40	: byte)
+	tail[123] = ((msglen * 8) >> 32	: byte)
+	tail[124] = ((msglen * 8) >> 24	: byte)
+	tail[125] = ((msglen * 8) >> 16	: byte)
+	tail[126] = ((msglen * 8) >> 8	: byte)
+	tail[127] = ((msglen * 8) >> 0	: byte)
 	step(x, tail)
 }
 
@@ -450,25 +450,26 @@ const step = {x : uint64[:], msg
 const unpack = {b
 	var v : uint64
 
-	v = ((b[0] castto(uint64)) << 56)
-	v |= ((b[1] castto(uint64)) << 48)
-	v |= ((b[2] castto(uint64)) << 40)
-	v |= ((b[3] castto(uint64)) << 32)
-	v |= ((b[4] castto(uint64)) << 24)
-	v |= ((b[5] castto(uint64)) << 16)
-	v |= ((b[6] castto(uint64)) << 8)
-	v |= ((b[7] castto(uint64)) << 0)
+	v = 0
+	v |= (b[0]	: uint64) << 56
+	v |= (b[1]	: uint64) << 48
+	v |= (b[2]	: uint64) << 40
+	v |= (b[3]	: uint64) << 32
+	v |= (b[4]	: uint64) << 24
+	v |= (b[5]	: uint64) << 16
+	v |= (b[6]	: uint64) << 8
+	v |= (b[7]	: uint64) << 0
 	-> v
 }
 
 const pack = {out, v
-	out[0]  = (v >> 56)	castto(byte)
-	out[1]  = (v >> 48)	castto(byte)
-	out[2]  = (v >> 40)	castto(byte)
-	out[3]  = (v >> 32)	castto(byte)
-	out[4]  = (v >> 24)	castto(byte)
-	out[5]  = (v >> 16)	castto(byte)
-	out[6]  = (v >> 8)	castto(byte)
-	out[7]  = (v >> 0)	castto(byte)
+	out[0]  = (v >> 56	: byte)
+	out[1]  = (v >> 48	: byte)
+	out[2]  = (v >> 40	: byte)
+	out[3]  = (v >> 32	: byte)
+	out[4]  = (v >> 24	: byte)
+	out[5]  = (v >> 16	: byte)
+	out[6]  = (v >> 8	: byte)
+	out[7]  = (v >> 0	: byte)
 }
 

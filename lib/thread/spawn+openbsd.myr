@@ -23,38 +23,41 @@ const spawnstk = {fn, sz
 		-> `std.Fail "couldn't get stack"
 	;;
 	/* store size */
-	tos = stk castto(std.intptr)
+	tos = (stk : std.intptr)
 	tos -= sizeof(int64)
-	szp = tos castto(sys.size#)
+	szp = (tos : sys.size#)
 	szp# = Stacksz
 
 	/* store func */
 	tos -= sizeof((->void))
-	fp = tos castto((->void)#)
+	fp = (tos : (->void)#)
 	fp# = fn
 
 	tfp = [
-		.tcb = 0 castto(void#),
+		.tcb = (0 : void#),
 		.tid = &ret,
-		.stk = tos castto(byte#),
+		.stk = (tos : byte#),
 	]
-	if sys.__tfork_thread(&tfp, sizeof(sys.tforkparams), startthread castto(void#), 0 castto(void#))  < 0
+	if sys.__tfork_thread(&tfp, \
+		sizeof(sys.tforkparams), \
+		(startthread : void#), \
+		(0 : void#))  < 0
 		-> `std.Fail "couldn't spawn thread"
 	;;
-	-> `std.Ok (ret castto(tid))
+	-> `std.Ok (ret : tid)
 }
 
 const getstk = {sz
 	var p, m
 
-	p = sys.mmap(0 castto(byte#), sz, sys.Mprotrw, sys.Mpriv | sys.Manon, -1, 0)
+	p = sys.mmap((0 : byte#), sz, sys.Mprotrw, sys.Mpriv | sys.Manon, -1, 0)
 	if p == sys.Mapbad
 		-> p
 	;;
 	/* stack starts at the top of memory and grows down. */
-	m = p castto(std.intptr)
-	m += sz castto(std.intptr)
-	-> m castto(byte#)
+	m = (p : std.intptr)
+	m += (sz : std.intptr)
+	-> (m : byte#)
 }
 
 const startthread = {fn : (-> void)

@@ -133,7 +133,7 @@ const sysmode = {mode
 
 /* open the file, and return it */
 const sysopen = {path, mode, openmode, perm
-	match std.openmode(path, openmode, perm castto(int64))
+	match std.openmode(path, openmode, (perm : int64))
 	| `std.Ok fd:	-> `std.Ok mkfile(fd, mode)
 	| `std.Fail e:	-> `std.Fail "could not open fd"
 	;;
@@ -352,7 +352,7 @@ const ensurecodepoint : (f : file# -> status(std.size)) = {f
 */
 generic putle = {f, v : @a::(numeric,integral)
 	for var i = 0; i < sizeof(@a); i++
-		putb(f, (v & 0xff) castto(byte))
+		putb(f, (v & 0xff : byte))
 		v >>= 8
 	;;
 	-> sizeof(@a)
@@ -364,7 +364,7 @@ generic putle = {f, v : @a::(numeric,integral)
 */
 generic putbe = {f, v : @a::(numeric,integral)
 	for var i = sizeof(@a); i != 0; i--
-		putb(f, ((v >> ((i-1)*8)) & 0xff) castto(byte))
+		putb(f, ((v >> ((i-1)*8)) & 0xff : byte))
 	;;
 	-> sizeof(@a)
 }
@@ -448,7 +448,7 @@ const readln = {f
 		;;
 		/* scan for delimiter */
 		for var i = f.rstart; i < f.rend; i++
-			c = f.rbuf[i] castto(char)
+			c = (f.rbuf[i] : char)
 			if c == '\r' || c == '\n'
 				ret = readinto(f, ret, i - f.rstart)
 				f.rstart++
@@ -664,7 +664,7 @@ const geterr = {f
 const errtype : (e : std.errno -> ioerr )= {e : std.errno -> ioerr
 	var errno
 
-	errno = e castto(std.errno)
+	errno = (e : std.errno)
 	if errno == std.Ebadf
 		-> `Ebadfile
 	elif errno == std.Einval

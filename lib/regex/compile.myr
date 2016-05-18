@@ -157,7 +157,7 @@ const bound = {buf, len, fill
 	if len == 1
 		buf[0] = 0x7f
 	else
-		s = len castto(byte)
+		s = (len : byte)
 		buf[0] = (0xff << (8 - s)) | (fill >> (s + 1))
 		for var i = 1; i < len; i++
 			buf[i] = 0x80 | (fill >> 2)
@@ -388,11 +388,11 @@ const idump = {re
 		std.put("{}@{}:\t", i, re.pcidx[i])
 		match re.prog[i]
 		/* Char matching. Consume exactly one byte from the string. */
-		| `Ibyte b:		std.put("`Ibyte {} ({})\n", b, b castto(char)) 
+		| `Ibyte b:		std.put("`Ibyte {} ({})\n", b, (b : char)) 
 		| `Irange (start, end):	
 			std.put("`Irange ({},{})", start, end) 
-			if std.isalnum(start castto(char)) && std.isalnum(end castto(char))
-				std.put("\t/* {}-{} */", start castto(char), end castto(char))
+			if std.isalnum((start : char)) && std.isalnum((end : char))
+				std.put("\t/* {}-{} */", (start : char), (end : char))
 			;;
 			std.put("\n")
 		/* capture groups */

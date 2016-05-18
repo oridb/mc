@@ -19,18 +19,18 @@ pkg std =
 		uname	: sys.utsname	/* storage */
 	;;
 
-	const Failmem	: byte#	= -1 castto(byte#)
+	const Failmem	: byte#	= (-1	: byte#)
 
-	const Seekset	: whence = sys.Seekset	castto(whence)
-	const Seekcur	: whence = sys.Seekcur	castto(whence)
-	const Seekend	: whence = sys.Seekend	castto(whence)
+	const Seekset	: whence = (sys.Seekset	: whence)
+	const Seekcur	: whence = (sys.Seekcur	: whence)
+	const Seekend	: whence = (sys.Seekend	: whence)
 
-	const Ordonly  	: fdopt = sys.Ordonly	castto(fdopt)
-	const Owronly  	: fdopt = sys.Owronly	castto(fdopt)
-	const Ordwr    	: fdopt = sys.Ordwr	castto(fdopt)
-	const Ocreat   	: fdopt = sys.Ocreat	castto(fdopt)
-	const Otrunc   	: fdopt = sys.Otrunc	castto(fdopt)
-	const Odir	: fdopt = sys.Odir	castto(fdopt)
+	const Ordonly  	: fdopt = (sys.Ordonly	: fdopt)
+	const Owronly  	: fdopt = (sys.Owronly	: fdopt)
+	const Ordwr    	: fdopt = (sys.Ordwr	: fdopt)
+	const Ocreat   	: fdopt = (sys.Ocreat	: fdopt)
+	const Otrunc   	: fdopt = (sys.Otrunc	: fdopt)
+	const Odir	: fdopt = (sys.Odir	: fdopt)
 
 	/* fd stuff */
 	const open	: (path : byte[:], opts : fdopt -> result(fd, errno))
@@ -72,19 +72,19 @@ pkg std =
 ;;
 
 /* fd stuff */
-const open	= {path, opts;	-> check(sys.open(path, opts castto(sys.fdopt)))}
-const openmode	= {path, opts, mode;	-> check(sys.openmode(path, opts castto(sys.fdopt), mode))}
-const close	= {fd;		-> sys.close(fd castto(sys.fd)) castto(errno)}
+const open	= {path, opts;	-> check(sys.open(path, (opts : sys.fdopt)))}
+const openmode	= {path, opts, mode;	-> check(sys.openmode(path, (opts : sys.fdopt), mode))}
+const close	= {fd;		-> (sys.close((fd : sys.fd)) : errno)}
 
 const creat	= {path, mode;	-> check(sys.creat(path, mode))}
-const read	= {fd, buf;	-> check(sys.read(fd castto(sys.fd), buf))}
-const write	= {fd, buf;	-> check(sys.write(fd castto(sys.fd), buf))}
-const pipe	= {fds;		-> sys.pipe(fds castto(sys.fd[2]#)) castto(errno)}
-const seek	= {fd, delta, whence;	-> check(sys.lseek(fd castto(sys.fd), delta castto(sys.off), whence castto(sys.whence)))}
-const dup2	= {ofd, nfd;	-> check(sys.dup2(ofd castto(sys.fd), nfd castto(sys.fd)) castto(fd))}
+const read	= {fd, buf;	-> check(sys.read((fd : sys.fd), buf))}
+const write	= {fd, buf;	-> check(sys.write((fd : sys.fd), buf))}
+const pipe	= {fds;		-> (sys.pipe((fds : sys.fd[2]#)) : errno)}
+const seek	= {fd, delta, whence;	-> check(sys.lseek((fd : sys.fd), (delta : sys.off), (whence : sys.whence)))}
+const dup2	= {ofd, nfd;	-> check((sys.dup2((ofd : sys.fd), (nfd : sys.fd)) : fd))}
 
 /* path manipulation */
-const mkdir	= {path, mode;	-> sys.mkdir(path, mode) castto(errno)}
+const mkdir	= {path, mode;	-> (sys.mkdir(path, mode) : errno)}
 const chdir	= {path;	-> sys.chdir(path) == 0}
 const remove	= {path;	-> sys.unlink(path) == 0}
 
@@ -98,25 +98,25 @@ const getsysinfo = {si
 }
 
 /* process stuff */
-const getpid	= {;		-> sys.getpid() castto(pid)}
+const getpid	= {;		-> (sys.getpid() : pid)}
 const suicide	= {;		sys.kill(sys.getpid(), 6)}	/* kill self with sigabort */
-const fork	= {;		-> sys.fork() castto(pid)}
-const execv	= {cmd, args;	-> sys.execv(cmd, args) castto(errno)}
-const execve	= {cmd, args, env;	-> sys.execve(cmd, args, env) castto(errno)}
+const fork	= {;		-> (sys.fork() : pid)}
+const execv	= {cmd, args;	-> (sys.execv(cmd, args) : errno)}
+const execve	= {cmd, args, env;	-> (sys.execve(cmd, args, env) : errno)}
 
 /* memory stuff */
 const getmem	= {sz;		
 	sz = (sz + 4095) & ~4095
-	-> sys.mmap(0 castto(byte#), sz castto(sys.size), sys.Mprotrw, sys.Mpriv | sys.Manon, -1, 0)
+	-> sys.mmap((0 : byte#), (sz : sys.size), sys.Mprotrw, sys.Mpriv | sys.Manon, -1, 0)
 }
-const freemem	= {p, sz;	sys.munmap(p, sz castto(sys.size))}
+const freemem	= {p, sz;	sys.munmap(p, (sz : sys.size))}
 const curtime = {
 	var tm, sec, nsec
 
 	if sys.clock_gettime(`sys.Clockrealtime, &tm) == 0
 		sec = tm.sec
-		nsec = tm.nsec castto(uint64)
-		-> (sec*1_000_000 + nsec/1000) castto(time)
+		nsec = (tm.nsec : uint64)
+		-> ((sec*1_000_000 + nsec/1000) : time)
 	else
 		-> -1
 	;;
@@ -154,8 +154,8 @@ const fmtime = {path
 
 	r = sys.stat(path, &sb)
 	if r >= 0
-		sec = sb.mtime.sec castto(time)
-		nsec = sb.mtime.nsec castto(time)
+		sec = (sb.mtime.sec : time)
+		nsec = (sb.mtime.nsec : time)
 		-> `Ok sec*1000 + nsec/1_000_000
 	else
 		-> check(r)
@@ -167,7 +167,7 @@ const fsize = {path
 
 	r = sys.stat(path, &sb)
 	if r >= 0
-		-> `Ok (sb.size castto(off))
+		-> `Ok ((sb.size : off))
 	else
 		-> check(r)
 	;;
@@ -175,8 +175,8 @@ const fsize = {path
 
 generic check = {e : @a::(integral, numeric) -> result(@b, errno)
 	if e < 0
-		-> `Fail e castto(errno)
+		-> `Fail (e : errno)
 	else
-		-> `Ok e castto(@b)
+		-> `Ok (e : @b)
 	;;
 }

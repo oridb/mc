@@ -40,7 +40,7 @@ const main = {
 	std.assert(try(bio.getbe32(f)) == l, "be long broken\n")
 
 	/* quad */
-	q = 0x11223344aabbccdd castto(uint64)
+	q = (0x11223344aabbccdd : uint64)
 	std.assert(try(bio.getle64(f)) == q, "le quad broken\n")
 	std.assert(try(bio.getbe64(f)) == q, "be quad broken\n")
 

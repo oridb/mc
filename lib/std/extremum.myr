@@ -32,7 +32,7 @@ generic clamp = {a, min, max
 }
 
 generic abs = {a : @a::numeric
-	if a < (0 castto(@a::numeric))
+	if a < (0 : @a::numeric)
 		-> -a
 	else
 		-> a

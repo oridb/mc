@@ -9,8 +9,8 @@ const main = {
 	envfn = {
 		ptr = ptr
 	}
-	ptr = fn castto(byte#)
-	ptr = envfn castto(byte#)
+	ptr = (fn : byte#)
+	ptr = (envfn : byte#)
 	std.put("ok\n")
 }
 

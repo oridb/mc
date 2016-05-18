@@ -10,8 +10,8 @@ const memblit = {dst, src, len
 	var sa, da
 	var s, d
 
-	da = dst castto(intptr)
-	sa = src castto(intptr)
+	da = (dst : intptr)
+	sa = (src : intptr)
 	d = dst[:len]
 	s = src[:len]
 

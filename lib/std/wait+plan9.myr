@@ -34,7 +34,7 @@ const wait = {pid
 	var n
 
 	if !statusinit
-		statusmap = mkht(pidhash, pideq)
+		statusmap = mkht(inthash, inteq)
 		statusinit = true
 	;;
 		
@@ -91,5 +91,3 @@ const parsestatus = {status	-> (waitstatus, pid)
 
 }
 
-const pidhash	= {x;	-> inthash(x castto(int32))}
-const pideq	= {a, b;	-> a == b}

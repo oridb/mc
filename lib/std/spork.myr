@@ -24,7 +24,7 @@ const spork = {cmd
 		-> `Fail err
 	;;
 
-	match sporkfd(cmd, infds[0] castto(fd), outfds[1] castto(fd))
+	match sporkfd(cmd, infds[0], outfds[1])
 	| `Ok pid:
 		/* close unused fd ends */
 		close(infds[0]);
@@ -41,15 +41,15 @@ const sporkfd = {cmd, infd, outfd
 	pid = fork()
 	/* error  */
 	if pid < 0
-		-> `Fail pid castto(errno)
+		-> `Fail (pid : errno)
 	/* child */
 	elif pid == 0
 		/* stdin/stdout for our communication. */
-		match dup2(infd castto(fd), 0)
+		match dup2(infd, 0)
 		| `Ok _:	/* nothing */
 		| `Fail e:	-> `Fail e
 		;;
-		match dup2(outfd castto(fd), 1)
+		match dup2(outfd, 1)
 		| `Ok _:	/* nothing */
 		| `Fail e:	-> `Fail e
 		;;

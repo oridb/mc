@@ -9,12 +9,12 @@ pkg bio =
 ;;
 
 const byline = {f
-	-> f castto(lineiter)
+	-> (f : lineiter)
 }
 
 impl iterable lineiter -> byte[:] =
 	__iternext__ = {itp, outp
-		match bio.readln(itp# castto(file#))
+		match bio.readln((itp# : file#))
 		| `Ok ln:
 			outp# = ln
 			-> true

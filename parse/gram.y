@@ -146,8 +146,8 @@ static void setupinit(Node *n);
 %type <node> funclit seqlit tuplit name block stmt label use
 %type <node> fnparam declbody declcore typedeclcore structent arrayelt structelt tuphead
 %type <node> ifstmt forstmt whilestmt matchstmt elifs optexprln loopcond optexpr
-%type <node> match
 %type <node> castexpr
+%type <node> match
 %type <ucon> unionelt
 %type <node> blkbody
 %type <node> implstmt
@@ -644,7 +644,7 @@ landexpr: landexpr Tland cmpexpr
 	| cmpexpr
 	;
 
-cmpexpr : cmpexpr cmpop castexpr
+cmpexpr : cmpexpr cmpop unionexpr
 	{$$ = mkexpr($1->loc, binop($2->type), $1, $3, NULL);}
 	| unionexpr
 	;
@@ -658,6 +658,7 @@ unionexpr
 	;
 
 castexpr: castexpr Tcast Toparen type Tcparen {
+		fprintf(stdout, "%s:%d: deprecated cast syntax being removed\n", fname($2->loc), lnum($2->loc));
 		$$ = mkexpr($1->loc, Ocast, $1, NULL);
 		$$->expr.type = $4;
 	}
@@ -745,6 +746,10 @@ atomicexpr
 	| literal
 	| Toparen expr Tcparen
 	{$$ = $2;}
+	| Toparen expr Tcolon type Tcparen {
+		$$ = mkexpr($1->loc, Ocast, $2, NULL);
+		$$->expr.type = $4;
+	}
 	| Tsizeof Toparen type Tcparen
 	{$$ = mkexpr($1->loc, Osize, mkpseudodecl($1->loc, $3), NULL);}
 	;

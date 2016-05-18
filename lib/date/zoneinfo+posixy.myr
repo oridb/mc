@@ -46,6 +46,7 @@ const findtzoff = {tz, tm -> std.option(date.duration)
 	elif std.sleq(tz, "local")
 		path = std.sldup("/etc/localtime")
 	else
+		path = ""
 		for z in zonepath
 			path = std.pathcat(z, tz)
 			if sys.stat(path, &sb) == 0
@@ -61,7 +62,7 @@ const findtzoff = {tz, tm -> std.option(date.duration)
 	std.slfree(path)
 
 	/* find applicable gmt offset */
-	cur = (tm / 1_000_000) castto(int32)
+	cur = (tm / 1_000_000 : int32)
 	if zone.time.len == 0
 		-> `std.None
 	;;
@@ -70,7 +71,7 @@ const findtzoff = {tz, tm -> std.option(date.duration)
 	;;
 	ds = zone.ttinfo[zone.timetype[i]].gmtoff
 	free(zone)
-	->  `std.Some (ds castto(date.duration)) * 1_000_000
+	->  `std.Some (ds : date.duration) * 1_000_000
 }
 
 const load = {file
@@ -100,38 +101,38 @@ const load = {file
 
 
 	f = std.alloc()
-	f.time = std.slalloc(ntime castto(std.size))
+	f.time = std.slalloc((ntime : std.size))
 	for i = 0; i < ntime; i++
 		(f.time[i], p) = fetchbe32(p)
 	;;
 
-	f.timetype = std.slalloc(ntime castto(std.size))
+	f.timetype = std.slalloc((ntime : std.size))
 	for i = 0; i < ntime; i++
 		(f.timetype[i], p) = fetchbe8(p)
 	;;
 
-	f.ttinfo = std.slalloc(ntype castto(std.size))
+	f.ttinfo = std.slalloc((ntype : std.size))
 	for i = 0; i < ntype; i++
 		p = fetchttinfo(p, &f.ttinfo[i])
 	;;
 
-	f.abbrev = std.slalloc(nchar castto(std.size))
+	f.abbrev = std.slalloc((nchar : std.size))
 	for i = 0; i < nchar; i++
 		(f.abbrev[i], p) = fetchbe8(p)
 	;;
 
-	f.leap = std.slalloc(nleap castto(std.size))
+	f.leap = std.slalloc((nleap : std.size))
 	for i = 0; i < nleap; i++
 		(f.leap[i][0], p) = fetchbe32(p)
 		(f.leap[i][1], p) = fetchbe32(p)
 	;;
 
-	f.isstd = std.slalloc(nisstd castto(std.size))
+	f.isstd = std.slalloc((nisstd : std.size))
 	for i = 0; i < nisstd; i++
 		(f.isstd[i], p) = fetchbe8(p)
 	;;
 
-	f.isgmt = std.slalloc(nisgmt castto(std.size))
+	f.isgmt = std.slalloc((nisgmt : std.size))
 	for i = 0; i < nisgmt; i++
 		(f.isgmt[i], p) = fetchbe8(p)
 	;;
@@ -154,10 +155,7 @@ const fetchbe32 = {sl
 	var v
 
 	std.assert(sl.len >= 4, "Slice too small to fetch int32 from")
-	v = 	(sl[0] castto(int32)) << 24 | \
-		(sl[1] castto(int32)) << 16 | \
-		(sl[2] castto(int32)) << 8  | \
-		(sl[3] castto(int32)) << 0  
+	v = std.getbe32(sl[:4])
 	-> (v, sl[4:])
 }
 

@@ -48,16 +48,16 @@ const dirread = {d
 		| `Fail e:
 			-> `None
 		| `Ok len:
-			d.len = len castto(int64)
+			d.len = (len : int64)
 			d.off = 0
 		;;
 	;;
 
-	namelen = (d.buf[d.off + Stringsoff] castto(int64)) | \
-		((d.buf[d.off + Stringsoff + 1] castto(int64)) << 8)
+	namelen = (d.buf[d.off + Stringsoff] : int64) | \
+		((d.buf[d.off + Stringsoff + 1] : int64) << 8)
 	base = d.off + Stringsoff + 2
-	dirlen = (d.buf[d.off] castto(int64)) | \
-		((d.buf[d.off + 1] castto(int64)) << 8)
+	dirlen = (d.buf[d.off] : int64) | \
+		((d.buf[d.off + 1] : int64) << 8)
 	name = d.buf[base:base + namelen]
 	d.off += dirlen + 2
 	-> `Some std.sldup(name)

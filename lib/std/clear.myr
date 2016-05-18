@@ -6,7 +6,7 @@ pkg std =
 generic clear = {p : @a#
 	var bp
 
-	bp = p castto(byte#)
+	bp = (p : byte#)
 	slfill(bp[:sizeof(@a)], 0)
 }
 

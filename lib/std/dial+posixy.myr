@@ -61,11 +61,11 @@ const dialsock = {proto, str
 	match getaddr(hoststr)
 	| `Ok `Ipv4 bits:
 		sa4=[.fam=sys.Afinet, .addr=bits, .port=hosttonet(port)]
-		sa = &sa4 castto(sys.sockaddr#)
+		sa = (&sa4 : sys.sockaddr#)
 		sz = sizeof(sys.sockaddr_in)
 	| `Ok `Ipv6 bits:
 		sa6=[.fam=sys.Afinet6, .addr=bits, .port=hosttonet(port)]
-		sa = &sa6 castto(sys.sockaddr#)
+		sa = (&sa6 : sys.sockaddr#)
 		sz = sizeof(sys.sockaddr_in6)
 	| `Fail m:
 		-> `Fail m
@@ -81,7 +81,7 @@ const dialsock = {proto, str
 		-> `Fail "Failed to bind socket"
 	;;
 
-	-> `Ok (sock castto(fd))
+	-> `Ok (sock : fd)
 }
 
 const dialunix = {path
@@ -98,8 +98,8 @@ const dialunix = {path
 		-> `Fail "failed to create socket"
 	;;
 	slcp(sa.path[:path.len], path)
-	if sys.connect(sock, &sa castto(sys.sockaddr#), sizeof(sys.sockaddr_un)) < 0
+	if sys.connect(sock, (&sa : sys.sockaddr#), sizeof(sys.sockaddr_un)) < 0
 		-> `Fail "failed to bind address"
 	;;
-	-> `Ok (sock castto(fd))
+	-> `Ok (sock : fd)
 }

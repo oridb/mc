@@ -29,9 +29,9 @@ generic getle = {f, n -> status(@a::(numeric,integral))
 	| `Err e :	-> `Err e
 	| `Ok _:
 		for i = 0; i < n; i++
-			v |= (f.rbuf[f.rstart++] castto(uint64)) << (8*(i castto(uint64)))
+			v |= (f.rbuf[f.rstart++] : uint64) << (8*(i : uint64))
 		;;
-		-> `Ok v castto(@a::(numeric,integral))
+		-> `Ok (v : @a::(numeric,integral))
 	;;
 }
 
@@ -49,9 +49,9 @@ generic getbe = {f, n -> status(@a::(numeric,integral))
 	| `Ok _:
 		for i = 0; i < n; i++
 			v <<= 8
-			v |= (f.rbuf[f.rstart++] castto(uint64))
+			v |= (f.rbuf[f.rstart++] : uint64)
 		;;
-		-> `Ok v castto(@a::(numeric,integral))
+		-> `Ok (v : @a::(numeric,integral))
 	;;
 }
 

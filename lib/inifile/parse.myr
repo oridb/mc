@@ -90,7 +90,7 @@ const parseline = {p, ini, ln
 		-> true
 	;;
 
-	match ln[0] castto(char)
+	match (ln[0] : char)
 	| '[':	-> parsesection(p, ini, ln)
 	| _:	-> parsekvp(p, ini, ln)
 	;;

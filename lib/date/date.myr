@@ -14,7 +14,6 @@ pkg date =
 
 	const localoff	: (tm : std.time -> duration)
 	const tzoff	: (tzname : byte[:], tm : std.time	-> duration)
-	const tzname	: (tzoff : int -> byte[:])
 	const isleap	: (d : instant	-> bool)
 
 	/* date differences */
@@ -84,7 +83,7 @@ const mkinstantoff = {tm, tz, tzoff
 	std.slcp(inst._tzbuf[:tz.len], tz)
 	inst.tzname = inst._tzbuf[:tz.len]
 	inst.tzoff = tzoff
-	tm += inst.tzoff castto(std.time)
+	tm += (inst.tzoff : std.time)
 
 	/* break up time */
 	t = tm % DayUsec	/* time */
@@ -96,16 +95,16 @@ const mkinstantoff = {tm, tz, tzoff
 	;;
 
 	/* microseconds, seconds, minutes, hours */
-	inst.us  = (t % 1_000_000) castto(int)
+	inst.us  = (t % 1_000_000 : int)
 	t /= 1_000_000
-	inst.s = (t % 60) castto(int)
+	inst.s = (t % 60 : int)
 	t /= 60
-	inst.m = (t % 60) castto(int)
+	inst.m = (t % 60 : int)
 	t /= 60
-	inst.h = t castto(int)
+	inst.h = (t : int)
 
 	/* weekday */
-	inst.wday = ((e + 4) % 7) castto(int)	/* the world started on Thursday */
+	inst.wday = ((e + 4) % 7 : int)	/* the world started on Thursday */
 
 	/*
 	split up year, month, day.
@@ -151,9 +150,9 @@ const mkinstantoff = {tm, tz, tzoff
 		d += Mdays[m - 1] 
 	;;
 
-	inst.year = y castto(int)
-	inst.mon = m castto(int)
-	inst.day = d castto(int)
+	inst.year = (y : int)
+	inst.mon = (m : int)
+	inst.day = (d : int)
 	-> inst
 }
 
@@ -173,11 +172,11 @@ const isleap = {d
 }
 
 const add  = {d, dt
-	-> mkinstantoff(d.actual + (dt castto(std.time)), d.tzname, d.tzoff)
+	-> mkinstantoff(d.actual + (dt : std.time), d.tzname, d.tzoff)
 }
 
 const sub  = {d, dt
-	-> mkinstantoff(d.actual - (dt castto(std.time)), d.tzname, d.tzoff)
+	-> mkinstantoff(d.actual - (dt : std.time), d.tzname, d.tzoff)
 }
 
 const addperiod = {inst, p
@@ -205,7 +204,7 @@ const subperiod = {inst, p
 }
 
 const duration = {a, b
-	-> (b.actual - a.actual) castto(duration)
+	-> (b.actual - a.actual : duration)
 }
 
 const recalc = {inst
@@ -214,13 +213,13 @@ const recalc = {inst
 
 
 	if inst.mon > 2
-		m = (inst.mon - 3) castto(std.time)
-		y = inst.year castto(std.time)
+		m = (inst.mon - 3 : std.time)
+		y = (inst.year : std.time)
 	else
-		m = (inst.mon + 9) castto(std.time)
-		y = (inst.year - 1) castto(std.time)
+		m = (inst.mon + 9 : std.time)
+		y = (inst.year - 1 : std.time)
 	;;
-	d = inst.day castto(std.time)
+	d = (inst.day : std.time)
 
 	c = y / 100
 	ya = y - 100 * c
@@ -229,10 +228,10 @@ const recalc = {inst
 		(153 * m + 2)/5 + d - \
 		719469
 	tm = j * DayUsec
-	tm += (inst.h castto(std.time)) * 3600*1_000_000
-	tm += (inst.m castto(std.time)) * 60*1_000_000
-	tm += (inst.s castto(std.time)) * 1_000_000
-	tm += (inst.us castto(std.time))
+	tm += (inst.h : std.time) * 3600*1_000_000
+	tm += (inst.m : std.time) * 60*1_000_000
+	tm += (inst.s : std.time) * 1_000_000
+	tm += (inst.us : std.time)
 	-> tm
 }
 

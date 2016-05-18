@@ -5,6 +5,6 @@ const main = {
 	var v : int32
 	
 	u = 99
-	v = u castto(int32)
-	std.exit(v castto(int))
+	v = (u : int32)
+	std.exit((v : int))
 }

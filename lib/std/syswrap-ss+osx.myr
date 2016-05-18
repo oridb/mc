@@ -18,14 +18,14 @@ const nanosleep	= {nsecs
 	var s, us
 
 	s = nsecs / 1_000_000_000
-	us = (nsecs % 1_000_000_000 / 1000) castto(uint32)
-	-> sys.select( \
+	us = (nsecs % 1_000_000_000 / 1000 : uint32)
+	-> (sys.select( \
 		0, \
-		0 castto(sys.fdset#), \
-		0 castto(sys.fdset#), \
-		0 castto(sys.fdset#), \
+		(0 : sys.fdset#), \
+		(0 : sys.fdset#), \
+		(0 : sys.fdset#), \
 		&[.sec = s, .usec = us] \
-	) castto(errno)
+	) : errno)
 }
 
 const exit	= {status;
@@ -38,13 +38,13 @@ const bgetcwd	= {buf
 
 	fd = sys.open(".", sys.Ordonly)
 	if fd < 0
-		-> fd castto(errno)
+		-> (fd : errno)
 	;;
 	/* 
 	FIXME: if the path is longer than sys.Pathmax, we should fall back to
 	the ugly method of finding the path.
 	*/
-	err = sys.fcntl(fd, sys.Fgetpath, path[:] castto(byte#)) castto(errno)
+	err = (sys.fcntl(fd, sys.Fgetpath, (path[:] : byte#)) : errno)
 	if err < 0
 		-> err
 	;;
@@ -53,5 +53,5 @@ const bgetcwd	= {buf
 		-> Erange
 	;;
 	slcp(buf[:len], path[:len])
-	-> len castto(errno)
+	-> (len : errno)
 }

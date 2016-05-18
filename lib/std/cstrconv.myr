@@ -19,8 +19,8 @@ const cstrconvp = {p
 	var i, base
 
 	i = 0
-	base = p castto(intptr)
-	while ((base + i) castto(byte#))# != 0
+	base = (p : intptr)
+	while (base + i : byte#)# != 0
 		i++
 	;;
 	-> p[:i]

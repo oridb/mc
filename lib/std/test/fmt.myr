@@ -49,7 +49,7 @@ const builtins = {
 	check("a", "{w=0,p=1}", "a")
 	check("        10", "{w=10}", 10)
 	check("0000000010", "{p=0,w=10}", 10)
-	check("4294967295", "{p=0,w=10}", -1 castto(uint))
+	check("4294967295", "{p=0,w=10}", (-1 : uint))
 	check("-000000001", "{p=0,w=10}", -1)
 	check("xxxxxxxx-1", "{p=x,w=10}", -1)
 	check("        -1", "{w=10}", -1)
@@ -123,7 +123,7 @@ const installed = {
 	/* multiple values */
 	check("formatted a pair: [-10, -10], formatted a pair: [-10, -10]", "{}, {}", p, p)
 	/* multiple values of different types */
-	check("11, formatted a pair: [-10, -10], formatted an int: 111", "{}, {}, {}", 11 castto(byte), p, 111)
+	check("11, formatted a pair: [-10, -10], formatted an int: 111", "{}, {}, {}", (11 : byte), p, 111)
 
 	/* in aggregates */
 	check("[formatted a pair: [-10, -10]]", "{}", [p])
@@ -137,7 +137,7 @@ const intfmt = {sb, ap, opts
 	std.assert(opts.len == 0, "options passed where none should be")
 	x = std.vanext(ap)
 	/* cast to other int type so we don't recurse */
-	std.sbfmt(sb, "formatted an int: {}", x castto(int32))
+	std.sbfmt(sb, "formatted an int: {}", (x : int32))
 }
 
 const pairfmt = {sb, ap, opts

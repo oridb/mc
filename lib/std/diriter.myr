@@ -10,13 +10,13 @@ pkg std =
 ;;
 
 const byentry = {d
-	-> d castto(diriter)
+	-> (d : diriter)
 }
 
 impl iterable diriter -> byte[:] =
 	__iternext__ = {itp, valp
 :nextfile
-		match dirread(itp# castto(dir#))
+		match dirread((itp# : dir#))
 		| `Some ".":	goto nextfile
 		| `Some "..":	goto nextfile
 		| `Some ent:

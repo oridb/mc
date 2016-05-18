@@ -55,7 +55,7 @@ const condbroadcast = {cond : cond#
 	requeueing
 	*/
 	sys.futex(&cond._seq, sys.Futexcmprequeue | sys.Futexpriv, \
-		1, 0x7fffffff castto(sys.timespec#), \
+		1, (0x7fffffff : sys.timespec#), \
 		&cond._mtx._state, cond._seq)
 }
 

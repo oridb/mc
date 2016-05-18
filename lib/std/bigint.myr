@@ -79,10 +79,10 @@ generic mkbigint = {v : @a::(integral,numeric)
 	elif v > 0
 		a.sign = 1
 	;;
-	val = v castto(uint64)
-	slpush(&a.dig, val castto(uint32))
+	val = (v : uint64)
+	slpush(&a.dig, (val : uint32))
 	if val > Base
-		slpush(&a.dig, (val/Base) castto(uint32))
+		slpush(&a.dig, (val/Base : uint32))
 	;;
 	-> trim(a)
 }
@@ -212,7 +212,7 @@ const bigparse = {str
 			bigfree(v)
 			-> `None
 		;;
-		v.dig[0] = val castto(uint32)
+		v.dig[0] = (val : uint32)
 		if val == 0
 			v.sign = 0
 		else
@@ -245,15 +245,15 @@ generic bigeqi = {a, b
 	var v
 	var dig : uint32[2]
 
-	bigdigit(&v, b < 0, b castto(uint64), dig[:])
+	bigdigit(&v, b < 0, (b : uint64), dig[:])
 	-> bigeq(a, &v)
 }
 
 const bigcmp = {a, b
 	var da, db, sa, sb
 
-	sa = a.sign castto(int64)
-	sb = b.sign castto(int64)
+	sa = (a.sign : int64)
+	sb = (b.sign : int64)
 	if sa < sb
 		-> `Before
 	elif sa > sb
@@ -265,8 +265,8 @@ const bigcmp = {a, b
 	else
 		/* otherwise, the one with the first larger digit is bigger */
 		for var i = a.dig.len; i > 0; i--
-			da = a.dig[i - 1] castto(int64)
-			db = b.dig[i - 1] castto(int64)
+			da = (a.dig[i - 1]  : int64)
+			db = (b.dig[i - 1]  : int64)
 			if da != db
 				-> signedorder(sa * (da - db))
 			;;
@@ -316,9 +316,9 @@ const uadd = {a, b
 	/* guaranteed to carry no more than one value */
 	slzgrow(&a.dig, n + 1)
 	for i = 0; i < n; i++
-		v = (a.dig[i] castto(uint64)) + carry;
+		v = (a.dig[i] : uint64) + carry;
 		if i < b.dig.len
-			v += (b.dig[i] castto(uint64))
+			v += ((b.dig[i]  : uint64))
 		;;
 
 		if v >= Base
@@ -326,9 +326,9 @@ const uadd = {a, b
 		else
 			carry = 0
 		;;
-		a.dig[i] = v castto(uint32)
+		a.dig[i] = (v  : uint32)
 	;;
-	a.dig[i] += carry castto(uint32)
+	a.dig[i] += (carry  : uint32)
 	-> trim(a)
 }
 
@@ -365,16 +365,16 @@ const usub = {a, b
 
 	carry = 0
 	for i = 0; i < a.dig.len; i++
-		v = (a.dig[i] castto(int64)) - carry
+		v = (a.dig[i] : int64) - carry
 		if i < b.dig.len
-			v -= (b.dig[i] castto(int64)) 
+			v -= (b.dig[i] : int64)
 		;;
 		if v < 0
 			carry = 1
 		else
 			carry = 0
 		;;
-		a.dig[i] = v castto(uint32)
+		a.dig[i] = (v  : uint32)
 	;;
 	-> trim(a)
 }
@@ -400,14 +400,14 @@ const bigmul = {a, b
 	for j = 0; j < b.dig.len; j++
 		carry = 0
 		for i = 0; i < a.dig.len; i++
-			ai = a.dig[i] castto(uint64)
-			bj = b.dig[j] castto(uint64)
-			wij = w[i+j] castto(uint64)
+			ai = (a.dig[i]  : uint64)
+			bj = (b.dig[j]  : uint64)
+			wij = (w[i+j]  : uint64)
 			t = ai * bj + wij + carry
-			w[i + j] = (t castto(uint32))
+			w[i + j] = ((t  : uint32))
 			carry = t >> 32
 		;;
-		w[i+j] = carry castto(uint32)
+		w[i+j] = (carry  : uint32)
 	;;
 	slfree(a.dig)
 	a.dig = w
@@ -462,14 +462,14 @@ const bigdivmod = {a : bigint#, b : bigint# -> (bigint#, bigint#)
 	/* handle single digit divisor separately: the knuth algorithm needs at least 2 digits. */
 	if b.dig.len == 1
 		carry = 0
-		b0 = (b.dig[0] castto(uint64))
+		b0 = ((b.dig[0]  : uint64))
 		for j = a.dig.len; j > 0; j--
-			aj = (a.dig[j - 1] castto(uint64))
-			q.dig[j - 1] = (((carry << 32) + aj)/b0) castto(uint32)
-			carry = (carry << 32) + aj - (q.dig[j-1] castto(uint64))*b0
+			aj = ((a.dig[j - 1]  : uint64))
+			q.dig[j - 1] = ((((carry << 32) + aj)/b0)  : uint32)
+			carry = (carry << 32) + aj - (q.dig[j-1] : uint64)*b0
 		;;
 		q = trim(q)
-		-> (q, trim(mkbigint(carry castto(int32))))
+		-> (q, trim(mkbigint((carry : int32))))
 	;;
 
 	u = bigdup(a)
@@ -484,11 +484,11 @@ const bigdivmod = {a : bigint#, b : bigint# -> (bigint#, bigint#)
 
 	for j = m - n; j >= 0; j--
 		/* load a few temps */
-		x = u.dig[j + n] castto(uint64)
-		y = u.dig[j + n - 1] castto(uint64)
-		z = v.dig[n - 1] castto(uint64)
-		w = v.dig[n - 2] castto(uint64)
-		t = u.dig[j + n - 2] castto(uint64)
+		x = (u.dig[j + n]  : uint64)
+		y = (u.dig[j + n - 1]  : uint64)
+		z = (v.dig[n - 1]  : uint64)
+		w = (v.dig[n - 2]  : uint64)
+		t = (u.dig[j + n - 2]  : uint64)
 
 		/* estimate qhat */
 		qhat = (x*Base + y)/z
@@ -505,26 +505,25 @@ const bigdivmod = {a : bigint#, b : bigint# -> (bigint#, bigint#)
 		/* multiply and subtract */
 		carry = 0
 		for i = 0; i < n; i++
-			p = qhat * (v.dig[i] castto(uint64))
+			p = (qhat * (v.dig[i]  : uint64))
 
-			t = (u.dig[i+j] castto(uint64)) - carry - (p % Base)
-			u.dig[i+j] = t castto(uint32)
-
-			carry = (((p castto(int64)) >> 32) - ((t castto(int64)) >> 32)) castto(uint64);
+			t = ((u.dig[i+j]  : uint64)) - carry - (p % Base)
+			u.dig[i+j] = (t  : uint32)
+			carry = (((p : int64) >> 32) - ((t : int64) >> 32) : uint64)
 		;;
-		t = (u.dig[j + n] castto(uint64)) - carry
-		u.dig[j + n] = t castto(uint32)
-		q.dig[j] = qhat castto(uint32)
+		t = (u.dig[j + n] : uint64) - carry
+		u.dig[j + n] = (t  : uint32)
+		q.dig[j] = (qhat  : uint32)
 		/* adjust */
-		if t castto(int64) < 0
+		if (t : int64) < 0
 			q.dig[j]--
 			carry = 0
 			for i = 0; i < n; i++
-				t = (u.dig[i+j] castto(uint64)) + (v.dig[i] castto(uint64)) + carry
-				u.dig[i+j] = t castto(uint32)
+				t = (u.dig[i+j] : uint64) + (v.dig[i] : uint64) + carry
+				u.dig[i+j] = (t  : uint32)
 				carry = t >> 32
 			;;
-			u.dig[j+n] = u.dig[j+n] + (carry castto(uint32));
+			u.dig[j+n] = u.dig[j+n] + (carry : uint32)
 		;;
 
 	;;
@@ -587,7 +586,7 @@ const nlz = {a : uint32
 const bigshl = {a, b
 	match b.dig.len
 	| 0:	-> a
-	| 1:	-> bigshli(a, b.dig[0] castto(uint64))
+	| 1:	-> bigshli(a, (b.dig[0] : uint64))
 	| n:	die("shift by way too much\n")
 	;;
 }
@@ -596,7 +595,7 @@ const bigshl = {a, b
 const bigshr = {a, b
 	match b.dig.len
 	| 0:	-> a
-	| 1:	-> bigshri(a, b.dig[0] castto(uint64))
+	| 1:	-> bigshri(a, (b.dig[0]:  uint64))
 	| n:	die("shift by way too much\n")
 	;;
 }
@@ -608,7 +607,7 @@ generic bigaddi = {a, b
 	var bigb : bigint
 	var dig : uint32[2]
 
-	bigdigit(&bigb, b < 0, b castto(uint64), dig[:])
+	bigdigit(&bigb, b < 0, (b : uint64), dig[:])
 	bigadd(a, &bigb)
 	-> a
 }
@@ -617,7 +616,7 @@ generic bigsubi = {a, b : @a::(numeric,integral)
 	var bigb : bigint
 	var dig : uint32[2]
 
-	bigdigit(&bigb, b < 0, b castto(uint64), dig[:])
+	bigdigit(&bigb, b < 0, (b : uint64), dig[:])
 	bigsub(a, &bigb)
 	-> a
 }
@@ -626,7 +625,7 @@ generic bigmuli = {a, b
 	var bigb : bigint
 	var dig : uint32[2]
 
-	bigdigit(&bigb, b < 0, b castto(uint64), dig[:])
+	bigdigit(&bigb, b < 0, (b : uint64), dig[:])
 	bigmul(a, &bigb)
 	-> a
 }
@@ -635,7 +634,7 @@ generic bigdivi = {a, b
 	var bigb : bigint
 	var dig : uint32[2]
 
-	bigdigit(&bigb, b < 0, b castto(uint64), dig[:])
+	bigdigit(&bigb, b < 0, (b : uint64), dig[:])
 	bigdiv(a, &bigb)
 	-> a
 }
@@ -649,14 +648,14 @@ generic bigshli = {a, s : @a::(numeric,integral)
 	var t, carry
 
 	iassert(s >= 0, "shift amount must be positive")
-	off = (s castto(uint64)) / 32
-	shift = (s castto(uint64)) % 32
+	off = (s : uint64) / 32
+	shift = (s : uint64) % 32
 
 	/* zero shifted by anything is zero */
 	if a.sign == 0
 		-> a
 	;;
-	slzgrow(&a.dig, 1 + a.dig.len + off castto(size))
+	slzgrow(&a.dig, (1 + a.dig.len + off : size))
 	/* blit over the base values */
 	for var i = a.dig.len; i > off; i--
 		a.dig[i - 1] = a.dig[i - 1 - off]
@@ -667,8 +666,8 @@ generic bigshli = {a, s : @a::(numeric,integral)
 	/* and shift over by the remainder */
 	carry = 0
 	for var i = 0; i < a.dig.len; i++
-		t = (a.dig[i] castto(uint64)) << shift
-		a.dig[i] = (t | carry) castto(uint32) 
+		t = (a.dig[i] : uint64) << shift
+		a.dig[i] = (t | carry: uint32) 
 		carry = t >> 32
 	;;
 	-> trim(a)
@@ -680,8 +679,8 @@ generic bigshri = {a, s
 	var t, carry
 
 	iassert(s >= 0, "shift amount must be positive")
-	off = (s castto(uint64)) / 32
-	shift = (s castto(uint64)) % 32
+	off = (s : uint64) / 32
+	shift = (s : uint64) % 32
 
 	/* blit over the base values */
 	for var i = 0; i < a.dig.len - off; i++
@@ -693,8 +692,8 @@ generic bigshri = {a, s
 	/* and shift over by the remainder */
 	carry = 0
 	for var i = a.dig.len; i > 0; i--
-		t = (a.dig[i - 1] castto(uint64))
-		a.dig[i - 1] = (carry | (t >> shift)) castto(uint32) 
+		t = ((a.dig[i - 1]  : uint64))
+		a.dig[i - 1] = (carry | (t >> shift): uint32)
 		carry = t << (32 - shift)
 	;;
 	-> trim(a)
@@ -712,11 +711,11 @@ const bigdigit = {v, isneg : bool, val : uint64, dig
 		v.dig = [][:]
 	elif val < Base
 		v.dig = dig[:1]
-		v.dig[0] = val castto(uint32)
+		v.dig[0] = (val  : uint32)
 	else
 		v.dig = dig
-		v.dig[0] = val castto(uint32)
-		v.dig[1] = (val >> 32) castto(uint32)
+		v.dig[0] = (val  : uint32)
+		v.dig[1] = ((val >> 32)  : uint32)
 	;;
 }
 

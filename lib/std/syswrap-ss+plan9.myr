@@ -13,7 +13,7 @@ const bgetcwd = {buf
 
 	fd = sys.open(".", sys.Ordonly)
 	if fd < 0
-		-> fd castto(errno)
+		-> (fd : errno)
 	;;
 
 	if sys.fd2path(fd, buf) == 0
@@ -27,7 +27,7 @@ const bgetcwd = {buf
 		if cstrlen(buf) + 5 == buf.len
 			-> Erange
 		else
-			-> cstrlen(buf) castto(errno)
+			-> (cstrlen(buf) : errno)
 		;;
 	;;
 	-> Emisc

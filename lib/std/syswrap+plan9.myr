@@ -25,12 +25,12 @@ pkg std =
 	const Seekcur	: whence = 1
 	const Seekend	: whence = 2
 
-	const Failmem	: byte#	= -1 castto(byte#)
+	const Failmem	: byte#	= (-1 : byte#)
 
-	const Ordonly  	: fdopt = sys.Ordonly	castto(fdopt)
-	const Owronly  	: fdopt = sys.Owronly	castto(fdopt)
-	const Ordwr    	: fdopt = sys.Ordwr	castto(fdopt)
-	const Otrunc   	: fdopt = sys.Otrunc	castto(fdopt)
+	const Ordonly  	: fdopt = (sys.Ordonly	: fdopt)
+	const Owronly  	: fdopt = (sys.Owronly	: fdopt)
+	const Ordwr    	: fdopt = (sys.Ordwr	: fdopt)
+	const Otrunc   	: fdopt = (sys.Otrunc	: fdopt)
 	const Ocreat   	: fdopt = 0x1000000	/* emulated by redirecting to creat(). */
 	const Oappend  	: fdopt = 0x2000000	/* emulated by seeking to EOF */
 	const Odir	: fdopt = 0x0	/* no-op on plan9 */
@@ -92,15 +92,15 @@ pkg std =
 extern const getenvv : (name : byte[:], default : byte[:] -> byte[:])
 
 /* fd stuff */
-const open	= {path, opts;	-> check(sys.open(path, opts castto(sys.fdopt)))}
+const open	= {path, opts;	-> check(sys.open(path, (opts : sys.fdopt)))}
 const openmode	= {path, opts, mode;
 	var fd
 
 
 	if opts & Ocreat != 0
-		fd = sys.create(path, (opts & ~Ocreat) castto(sys.fdopt), mode castto(int))
+		fd = sys.create(path, (opts & ~Ocreat : sys.fdopt), (mode : int))
 	else
-		fd = sys.open(path, opts castto(sys.fdopt))
+		fd = sys.open(path, (opts : sys.fdopt))
 	;;
 	if opts & Oappend != 0
 		sys.seek(fd, 0, 2)
@@ -122,7 +122,7 @@ const fmtime = {path
 	if sys.stat(path, buf[:]) < Stringsoff
 		-> `Fail Emisc
 	;;
-	-> `Ok (getle32(buf[Mtimeoff:Mtimeoff + 8]) castto(time))
+	-> `Ok (getle32(buf[Mtimeoff:Mtimeoff + 8] : ime))
 }
 
 const fsize = {path
@@ -131,7 +131,7 @@ const fsize = {path
 	if sys.stat(path, buf[:]) < Stringsoff
 		-> `Fail Emisc
 	;;
-	-> `Ok (getle64(buf[Lengthoff:Lengthoff + 8]) castto(off))
+	-> `Ok (getle64(buf[Lengthoff:Lengthoff + 8] : off))
 }
 
 extern const put : (fmt : byte[:], args : ... -> int64)
@@ -170,12 +170,12 @@ const getsysinfo = {si
 	si.arch = getenvv("objtype", "amd64")
 }
 
-const close	= {fd;		-> sys.close(fd castto(sys.fd)) castto(errno)}
-const read	= {fd, buf;	-> check(sys.pread(fd castto(sys.fd), buf, -1))}
-const write	= {fd, buf;	-> check(sys.pwrite(fd castto(sys.fd), buf, -1))}
-const seek	= {fd, off, whence; 	-> check(sys.seek(fd castto(sys.fd), off castto(sys.off), whence castto(int64)))}
-const pipe	= {fds;		-> sys.pipe(fds castto(sys.fd[2]#)) castto(errno)}
-const dup2	= {ofd, nfd;	-> check(sys.dup(ofd castto(sys.fd), nfd castto(sys.fd)))}
+const close	= {fd;		-> (sys.close((fd : sys.fd)) : errno)}
+const read	= {fd, buf;	-> check(sys.pread((fd : sys.fd), buf, -1))}
+const write	= {fd, buf;	-> check(sys.pwrite((fd : sys.fd), buf, -1))}
+const seek	= {fd, off, whence; 	-> check(sys.seek((fd : sys.fd), (off : sys.off), (whence : nt64)))}
+const pipe	= {fds;		-> (sys.pipe((fds : sys.fd[2]#)) : errno)}
+const dup2	= {ofd, nfd;	-> check(sys.dup((ofd : sys.fd), (nfd : sys.fd)))}
 
 /* path manipulation */
 const remove	= {path;	-> sys.remove(path) == 0}
@@ -183,7 +183,7 @@ const chdir	= {path;	-> sys.chdir(path) == 0}
 const mkdir	= {path, mode;
 	var fd
 
-	fd = sys.create(path, sys.Ordonly, sys.Dmdir | (mode castto(int)))
+	fd = sys.create(path, sys.Ordonly, sys.Dmdir | (mode : int))
 	if fd < 0
 		-> lasterr()
 	;;
@@ -192,9 +192,9 @@ const mkdir	= {path, mode;
 }
 
 /* process stuff */
-const getpid	= {;	-> sys.tosptr.pid castto(pid)}
-const suicide	= {;	(0 castto(byte#))#}	/* let's happy segfault!! t */
-const fork	= {;		-> sys.rfork(sys.Rffdg | sys.Rfrend | sys.Rfproc) castto(pid)}
+const getpid	= {;	-> (sys.tosptr.pid : pid)}
+const suicide	= {;	(0 : byte#)#}	/* let's happy segfault!! t */
+const fork	= {;		-> (sys.rfork(sys.Rffdg | sys.Rfrend | sys.Rfproc) : pid)}
 const execv	= {cmd, args;
 	sys.exec(cmd, args)
 	-> lasterr()
@@ -206,7 +206,7 @@ const execve	= {cmd, args, env;
 }
 
 const nanosleep = {nsecs
-	if sys.sleep((nsecs/1_000_000) castto(uint32)) < 0
+	if (sys.sleep((nsecs/1_000_000) : int32)) < 0
 		-> lasterr()
 	;;
 	-> 0
@@ -217,22 +217,22 @@ const getmem	= {sz
 	var endp, oldp
 
 	oldp = sys.curbrk
-	endp = (sys.curbrk castto(intptr)) + (sz castto(intptr))
+	endp = (sys.curbrk : intptr) + (sz : intptr)
 	endp = (endp + 4095) & ~4095
-	if sys.brk_(endp castto(byte#)) < 0
+	if sys.brk_((endp : byte#)) < 0
 		-> Failmem
 	;;
-	sys.curbrk = endp castto(byte#)
+	sys.curbrk = (endp : byte#)
 	-> oldp
 }
 	
 const freemem = {p, sz
 	/* FIXME: we leak address space */
-	sys.segfree(p, sz castto(sys.size))
+	sys.segfree(p, (sz : sys.size))
 }
 
 const curtime = {
-	-> sys.nsec()/1000 castto(time)
+	-> (sys.nsec()/1000 : time)
 }
 
 const p9errstr = {errbuf
@@ -247,7 +247,7 @@ const p9errstr = {errbuf
 
 /* FIXME: will be needed when we resize stat bufs when statting.
 const statsz = {buf
-	-> (buf[0] castto(int64)) | ((buf[1] << 8) castto(int64))
+	-> (buf[0] : int64)) | ((buf[1] << 8 : int64))
 }
 */
 
@@ -255,7 +255,7 @@ generic check = {e : @a::(integral, numeric) -> result(@b, errno)
 	if e < 0
 		-> `Fail lasterr()
 	else
-		-> `Ok e castto(@b)
+		-> `Ok (e : @b)
 	;;
 }
 

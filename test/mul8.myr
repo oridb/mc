@@ -5,5 +5,5 @@ const f = { -> int8
 	-> 3
 }
 const main = {
-	std.exit(((a*f()) castto(int)))
+	std.exit(((a*f() : int)))
 }

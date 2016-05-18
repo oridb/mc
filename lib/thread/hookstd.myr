@@ -13,11 +13,11 @@ const __init__ = {
 	netlck = mkmtx()
 	envlck = mkmtx()
 	std.__lockinit( \
-		&memlck castto(void#), \
-		&netlck castto(void#), \
-		&envlck castto(void#), \
-		{mtx; mtxlock(mtx castto(mutex#))}, \
-		{mtx; mtxunlock(mtx castto(mutex#))} \
+		(&memlck : void#), \
+		(&netlck : void#), \
+		(&envlck : void#), \
+		{mtx; mtxlock((mtx : mutex#))}, \
+		{mtx; mtxunlock((mtx : mutex#))} \
 	)
 }
 

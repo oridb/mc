@@ -14,7 +14,7 @@ pkg std =
 const exit	= {status;	sys.exit(status)}
 
 const bgetcwd	= {buf
-	-> (sys.__getcwd(buf) - 1) castto(errno)
+	-> (sys.__getcwd(buf) - 1 : errno)
 }
 
 const nanosleep	= {nsecs
@@ -25,6 +25,6 @@ const nanosleep	= {nsecs
 	ns = nsecs % 1_000_000_000
 	req = [.sec = s, .nsec = ns]
 
-	-> sys.nanosleep(&req, &rem) castto(errno)
+	-> (sys.nanosleep(&req, &rem) : errno)
 }
 

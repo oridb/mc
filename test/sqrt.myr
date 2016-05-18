@@ -28,6 +28,9 @@ const sqrt = {x : flt64
 }
 
 const main = {
-	std.exit(sqrt(20.0) castto(int))
+	var r
+
+	r = (sqrt(20.0) : int)
+	std.exit(r)
 }
 

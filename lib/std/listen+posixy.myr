@@ -53,17 +53,17 @@ const announcesock = {proto, str
 
 	if std.sleq(hoststr, "*")
 		sa6=[.fam=sys.Afinet6, .port=hosttonet(port)]
-		sa = &sa6 castto(sys.sockaddr#)
+		sa = (&sa6 : sys.sockaddr#)
 		sz = sizeof(sys.sockaddr_in6)
 	else
 		match getaddr(hoststr)
 		| `Ok `Ipv4 bits:
 			sa4=[.fam=sys.Afinet, .addr=bits, .port=hosttonet(port)]
-			sa = &sa4 castto(sys.sockaddr#)
+			sa = (&sa4 : sys.sockaddr#)
 			sz = sizeof(sys.sockaddr_in)
 		| `Ok `Ipv6 bits:
 			sa6=[.fam=sys.Afinet6, .addr=bits, .port=hosttonet(port)]
-			sa = &sa6 castto(sys.sockaddr#)
+			sa = (&sa6 : sys.sockaddr#)
 			sz = sizeof(sys.sockaddr_in6)
 		| `Fail m:
 			-> `Fail m
@@ -74,13 +74,13 @@ const announcesock = {proto, str
 		-> `Fail "failed to create socket"
 	;;
 	yes = 1
-	if sys.setsockopt(sock, sys.Solsock, sys.Soreuseaddr, &yes castto(void#), sizeof(int)) < 0
+	if sys.setsockopt(sock, sys.Solsock, sys.Soreuseaddr, (&yes : void#), sizeof(int)) < 0
 		-> `Fail "failed to set sock opts"
 	;;
 	if sys.bind(sock, sa, sz) < 0
 		-> `Fail "failed to bind socket"
 	;;
-	-> `Ok sock castto(fd)
+	-> `Ok (sock : fd)
 }
 
 const announceunix = {path
@@ -99,22 +99,22 @@ const announceunix = {path
 		-> `Fail "failed to create socket"
 	;;
 	yes = 1
-	if sys.setsockopt(sock, sys.Solsock, sys.Soreuseaddr, &yes castto(void#), sizeof(int)) < 0
+	if sys.setsockopt(sock, sys.Solsock, sys.Soreuseaddr, (&yes : void#), sizeof(int)) < 0
 		-> `Fail "failed to set sock opts"
 	;;
 	sys.unlink(path)
-	if sys.bind(sock, &sa castto(sys.sockaddr#), sizeof(sys.sockaddr_un)) < 0
+	if sys.bind(sock, (&sa : sys.sockaddr#), sizeof(sys.sockaddr_un)) < 0
 		-> `Fail "failed to bind address"
 	;;
-	-> `Ok (sock castto(fd))
+	-> `Ok (sock : fd)
 
 }
 
 const listen = {sock : std.fd -> result(fd, byte[:])
-	if sys.listen(sock castto(sys.fd), 10) < 0
+	if sys.listen((sock : sys.fd), 10) < 0
 		-> `Fail "unable to listen on socket"
 	;;
-	-> `Ok (sys.dup(sock castto(sys.fd)) castto(fd))
+	-> `Ok (sys.dup((sock : sys.fd)) : fd)
 }
 
 const accept = {lfd
@@ -122,10 +122,10 @@ const accept = {lfd
 	var len : sys.size
 	var fd
 
-	fd = sys.accept(lfd castto(sys.fd), 0 castto(sys.sockaddr#), 0 castto(sys.size#))
+	fd = sys.accept((lfd : sys.fd), (0 : sys.sockaddr#), (0 : sys.size#))
 	if fd < 0
 		-> `Fail "unable to accept socket"
 	;;
-	-> `Ok (fd castto(fd))
+	-> `Ok (fd : fd)
 }
 

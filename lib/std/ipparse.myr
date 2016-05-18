@@ -75,15 +75,15 @@ const ip6parse = {ip
 		;;
 		(ip, ok) = delim(ip, ':', ok)
 		/* only one '::' allowed once */
-		if ip.len > 0 && ip[0] == ':'castto(byte) && !expand
+		if ip.len > 0 && ip[0] == (':' : byte) && !expand
 			expand = true
 			split = i
 			(ip, ok) = delim(ip, ':', ok)
 		;;
 
 		/* pack it into the bytes */
-		val[i*2] = ((v & 0xff00) >> 8) castto(byte)
-		val[i*2 + 1] = (v & 0xff) castto(byte)
+		val[i*2] = ((v & 0xff00) >> 8 : byte)
+		val[i*2 + 1] = (v & 0xff : byte)
 	;;
 
 	if ok && ip.len == 0
@@ -108,7 +108,7 @@ const expandsplit = {ip, split, len
 }
 
 const delim = {ip, sep, ok
-	if ip.len > 0 && ip[0] == sep castto(byte)
+	if ip.len > 0 && ip[0] == (sep : byte)
 		-> (ip[1:], ok)
 	else
 		-> ("", false)
@@ -123,7 +123,7 @@ generic num = {ip, lo, hi, base, sep, ok -> (@a::(numeric,integral), byte[:], bo
 	;;
 
 	for len = 0; len < ip.len; len++
-		if ip[len] == sep castto(byte)
+		if ip[len] == (sep : byte)
 			break
 		;;
 	;;
@@ -132,7 +132,7 @@ generic num = {ip, lo, hi, base, sep, ok -> (@a::(numeric,integral), byte[:], bo
 		if v < lo || v > hi
 			-> (0, "", false)
 		;;
-		-> (v castto(@a::(numeric,integral)), ip[len:], true)
+		-> ((v : @a::(numeric,integral)), ip[len:], true)
 	| `std.None:
 		-> (0, "", false)
 	;;

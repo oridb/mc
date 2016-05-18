@@ -13,6 +13,6 @@ const spawn = {fn
 		fn()
 		std.exit(0)
 	| -1:	-> `std.Fail "unable to spawn thread"
-	| thr:	-> `std.Ok thr castto(tid)
+	| thr:	-> `std.Ok (thr : tid)
 	;;
 }

@@ -7,10 +7,10 @@ pkg std =
 	const flt32explode	: (flt : flt32 -> (bool, int32, int32))
 ;;
 
-const flt64bits	= {flt;	-> (&flt castto(int64#))#}
-const flt32bits	= {flt;	-> (&flt castto(int32#))#}
-const flt64frombits	= {bits;	-> (&bits castto(flt64#))#}
-const flt32frombits	= {bits;	-> (&bits castto(flt32#))#}
+const flt64bits	= {flt;	-> (&flt : int64#)#}
+const flt32bits	= {flt;	-> (&flt : int32#)#}
+const flt64frombits	= {bits;	-> (&bits : flt64#)#}
+const flt32frombits	= {bits;	-> (&bits : flt32#)#}
 
 const flt64explode = {flt
 	var bits, isneg, mant, exp

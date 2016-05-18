@@ -18,7 +18,7 @@ const wait = {pid
 	var st
 
 :again
-	if sys.waitpid(pid castto(sys.pid), &st, 0) > 0
+	if sys.waitpid((pid : sys.pid), &st, 0) > 0
 		match sys.waitstatus(st)
 		/* 
 		when a process stops, eg, if paused by a debugger,

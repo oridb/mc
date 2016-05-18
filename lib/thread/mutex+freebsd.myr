@@ -51,9 +51,9 @@ const mtxlock = {mtx
 
 	while c != Unlocked
 		sys.umtx_op( \
-			&mtx._state castto(void#), \
+			(&mtx._state : void#), \
 			sys.Umtxwaituintpriv, \
-			Contended castto(uint64), \
+			(Contended : uint64), \
 			Zptr, Zptr)
 		c = xchg(&mtx._state, Contended)
 	;;
@@ -76,6 +76,6 @@ const mtxunlock = {mtx
 	;;
 
 	/* wake all threads: for some reason nwake */
-	sys.umtx_op(&mtx._state castto(void#), sys.Umtxwakepriv, 1, Zptr, Zptr)
+	sys.umtx_op((&mtx._state : void#), sys.Umtxwakepriv, 1, Zptr, Zptr)
 }
 

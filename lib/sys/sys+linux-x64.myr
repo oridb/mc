@@ -318,7 +318,7 @@ pkg sys =
 	const Seekend	: whence = 2
 
 	/* return value for a failed mapping */
-	const Mapbad	: byte# = -1 castto(byte#)
+	const Mapbad	: byte# = (-1 : byte#)
 
 	/* syscalls */
 	const Sysread			: scno = 0
@@ -723,9 +723,9 @@ pkg sys =
 
 /* 
 wraps a syscall argument, converting it to 64 bits for the syscall function.
-This is the same as casting, but more concise than writing castto(int64).
+This is the same as casting, but more concise than writing a cast to int64.
 */
-generic a = {x : @t; -> x castto(uint64)}
+generic a = {x : @t; -> (x : uint64)}
 
 /* asm stubs from util.s */
 extern const cstring	: (str : byte[:] -> byte#)
@@ -734,10 +734,10 @@ extern const alloca	: (sz : size	-> byte#)
 /* process management */
 const exit	= {status;		syscall(Sysexit, a(status))}
 const exit_group	= {status;	syscall(Sysexit_group, a(status))}
-const getpid	= {;			-> syscall(Sysgetpid) castto(pid)}
+const getpid	= {;			-> (syscall(Sysgetpid) : pid)}
 const kill	= {pid, sig;		-> syscall(Syskill, a(pid), a(sig))}
-const fork	= {;			-> syscall(Sysfork) castto(pid)}
-const clone	= {flags, stk, ptid, ctid, ptreg;	-> syscall(Sysclone, a(flags), a(stk), a(ptid), a(ctid), a(ptreg)) castto(pid)}
+const fork	= {;			-> (syscall(Sysfork) : pid)}
+const clone	= {flags, stk, ptid, ctid, ptreg;	-> (syscall(Sysclone, a(flags), a(stk), a(ptid), a(ctid), a(ptreg)) : pid)}
 const wait4	= {pid, loc, opt, usage;	-> syscall(Syswait4, a(pid), a(loc), a(opt), a(usage))}
 const waitpid	= {pid, loc, opt;
 	var rusage
@@ -750,11 +750,11 @@ const execv	= {cmd, args
 	/* of course we fucking have to duplicate this code everywhere,
 	* since we want to stack allocate... */
 	p = alloca((args.len + 1)*sizeof(byte#))
-	cargs = (p castto(byte##))[:args.len + 1]
+	cargs = (p : byte##)[:args.len + 1]
 	for i = 0; i < args.len; i++
 		cargs[i] = cstring(args[i])
 	;;
-	cargs[args.len] = 0 castto(byte#)
+	cargs[args.len] = (0 : byte#)
 	-> syscall(Sysexecve, cstring(cmd), a(p), a(__cenvp))
 }
 
@@ -764,11 +764,11 @@ const execve	= {cmd, args, env
 
 	/* copy the args */
 	ap = alloca((args.len + 1)*sizeof(byte#))
-	cargs = (ap castto(byte##))[:args.len + 1]
+	cargs = (ap : byte##)[:args.len + 1]
 	for i = 0; i < args.len; i++
 		cargs[i] = cstring(args[i])
 	;;
-	cargs[args.len] = 0 castto(byte#)
+	cargs[args.len] = (0 : byte#)
 
 	/*
 	 copy the env.
@@ -776,74 +776,74 @@ const execve	= {cmd, args, env
 	 since we want to stack allocate... 
 	*/
 	ep = alloca((env.len + 1)*sizeof(byte#))
-	cenv = (ep castto(byte##))[:env.len]
+	cenv = (ep : byte##)[:env.len]
 	for i = 0; i < env.len; i++
 		cenv[i] = cstring(env[i])
 	;;
-	cenv[env.len] = 0 castto(byte#)
+	cenv[env.len] = (0 : byte#)
 
 	-> syscall(Sysexecve, cstring(cmd), a(ap), a(ep))
 }
 
 /* file manipulation */
-const open	= {path, opts;		-> syscall(Sysopen, cstring(path), a(opts), a(0o777)) castto(fd)}
-const openmode	= {path, opts, mode;	-> syscall(Sysopen, cstring(path), a(opts), a(mode)) castto(fd)}
+const open	= {path, opts;		-> (syscall(Sysopen, cstring(path), a(opts), a(0o777)) : fd)}
+const openmode	= {path, opts, mode;	-> (syscall(Sysopen, cstring(path), a(opts), a(mode)) : fd)}
 const close	= {fd;			-> syscall(Sysclose, a(fd))}
-const creat	= {path, mode;		-> syscall(Syscreat, cstring(path), a(mode)) castto(fd)}
+const creat	= {path, mode;		-> (syscall(Syscreat, cstring(path), a(mode)) : fd)}
 const rename	= {from, to;		-> syscall(Sysrename, cstring(from), cstring(to))}
-const unlink	= {path;		-> syscall(Sysunlink, cstring(path)) castto(int)}
-const read	= {fd, buf;		-> syscall(Sysread, a(fd), buf castto(byte#), a(buf.len)) castto(size)}
-const write	= {fd, buf;		-> syscall(Syswrite, a(fd), buf castto(byte#), a(buf.len)) castto(size)}
+const unlink	= {path;		-> (syscall(Sysunlink, cstring(path)) : int)}
+const read	= {fd, buf;		-> (syscall(Sysread, a(fd), (buf : byte#), a(buf.len)) : size)}
+const write	= {fd, buf;		-> (syscall(Syswrite, a(fd), (buf : byte#), a(buf.len)) : size)}
 const lseek	= {fd, off, whence;	-> syscall(Syslseek, a(fd), a(off), a(whence))}
 const stat	= {path, sb;		-> syscall(Sysstat, cstring(path), a(sb))}
 const lstat	= {path, sb;		-> syscall(Syslstat, cstring(path), a(sb))}
 const fstat	= {fd, sb;		-> syscall(Sysfstat, a(fd), a(sb))}
-const mkdir	= {path, mode;		-> syscall(Sysmkdir, cstring(path), a(mode)) castto(int64)}
-generic ioctl	= {fd, req, arg;	-> syscall(Sysioctl, a(fd), a(req), a(arg)) castto(int64)}
-const getdents64	= {fd, buf;	-> syscall(Sysgetdents64, a(fd), buf castto(byte#), a(buf.len))}
+const mkdir	= {path, mode;		-> (syscall(Sysmkdir, cstring(path), a(mode)) : int64)}
+generic ioctl	= {fd, req, arg;	-> (syscall(Sysioctl, a(fd), a(req), a(arg)) : int64)}
+const getdents64	= {fd, buf;	-> syscall(Sysgetdents64, a(fd), (buf : byte#), a(buf.len))}
 const chdir	= {dir;	-> syscall(Syschdir, cstring(dir))}
 const getcwd	= {buf;	-> syscall(Sysgetcwd, a(buf), a(buf.len))}
 
 /* file stuff */
 const pipe	= {fds;	-> syscall(Syspipe, a(fds))}
-const dup 	= {fd;	-> syscall(Sysdup, a(fd)) castto(fd)}
-const dup2 	= {src, dst;	-> syscall(Sysdup2, a(src), a(dst)) castto(fd)}
+const dup 	= {fd;	-> (syscall(Sysdup, a(fd)) : fd)}
+const dup2 	= {src, dst;	-> (syscall(Sysdup2, a(src), a(dst)) : fd)}
 
 /* threading */
 const futex	= {uaddr, op, val, timeout, uaddr2, val3
 	-> syscall(Sysfutex, a(uaddr), a(op), a(val), a(timeout), a(uaddr2), a(val3))}
 
 /* poll */
-const poll	= {pfd, timeout;	-> syscall(Syspoll, pfd castto(pollfd#), a(pfd.len), a(timeout)) castto(int)}
+const poll	= {pfd, timeout;	-> (syscall(Syspoll, (pfd : pollfd#), a(pfd.len), a(timeout)) : int)}
 const epollctl	= {epfd, op, fd, evt;
-	-> syscall(Sysepoll_ctl, a(epfd), a(op), a(fd), a(evt)) castto(int)}
+	-> (syscall(Sysepoll_ctl, a(epfd), a(op), a(fd), a(evt)) : int)}
 const epollwait	= {epfd, evts, timeout;
-	-> syscall(Sysepoll_wait, a(epfd), evts castto(epollevt#), a(evts.len), a(timeout)) castto(int)}
-const epollcreate	= {flg;	-> syscall(Sysepoll_create1, a(flg)) castto(fd)}
+	-> (syscall(Sysepoll_wait, a(epfd), (evts : epollevt#), a(evts.len), a(timeout)) : int)}
+const epollcreate	= {flg;	-> (syscall(Sysepoll_create1, a(flg)) : fd)}
 
 /* networking */
-const socket	= {dom, stype, proto;	-> syscall(Syssocket, a(dom), a(stype), a(proto)) castto(fd)}
-const connect	= {sock, addr, len;	-> syscall(Sysconnect, a(sock), a(addr), a(len)) castto(int)}
-const bind	= {sock, addr, len;	-> syscall(Sysbind, a(sock), a(addr), a(len)) castto(int)}
-const listen	= {sock, backlog;	-> syscall(Syslisten, a(sock), a(backlog)) castto(int)}
-const accept	= {sock, addr, lenp;	-> syscall(Sysaccept, a(sock), a(addr), a(lenp)) castto(fd)}
-const setsockopt	= {sock, lev, opt, val, len;	-> syscall(Syssetsockopt, a(sock), a(lev), a(opt), a(val), a(len)) castto(int)}
-const getsockopt	= {sock, lev, opt, val, len;	-> syscall(Syssetsockopt, a(sock), a(lev), a(opt), a(val), a(len)) castto(int)}
+const socket	= {dom, stype, proto;	-> (syscall(Syssocket, a(dom), a(stype), a(proto)) : fd)}
+const connect	= {sock, addr, len;	-> (syscall(Sysconnect, a(sock), a(addr), a(len)) : int)}
+const bind	= {sock, addr, len;	-> (syscall(Sysbind, a(sock), a(addr), a(len)) : int)}
+const listen	= {sock, backlog;	-> (syscall(Syslisten, a(sock), a(backlog)) : int)}
+const accept	= {sock, addr, lenp;	-> (syscall(Sysaccept, a(sock), a(addr), a(lenp)) : fd)}
+const setsockopt	= {sock, lev, opt, val, len;	-> (syscall(Syssetsockopt, a(sock), a(lev), a(opt), a(val), a(len)) : int)}
+const getsockopt	= {sock, lev, opt, val, len;	-> (syscall(Syssetsockopt, a(sock), a(lev), a(opt), a(val), a(len)) : int)}
 
 /* memory mapping */
 const munmap	= {addr, len;		-> syscall(Sysmunmap, a(addr), a(len))}
 const mmap	= {addr, len, prot, flags, fd, off;
-	-> syscall(Sysmmap, a(addr), a(len), a(prot), a(flags), a(fd), a(off)) castto(byte#)
+	-> (syscall(Sysmmap, a(addr), a(len), a(prot), a(flags), a(fd), a(off)) : byte#)
 }
 
 /* time */
-const clock_getres = {clk, ts;	-> syscall(Sysclock_getres, clockid(clk), a(ts)) castto(int32)}
-const clock_gettime = {clk, ts;	-> syscall(Sysclock_gettime, clockid(clk), a(ts)) castto(int32)}
-const clock_settime = {clk, ts;	-> syscall(Sysclock_settime, clockid(clk), a(ts)) castto(int32)}
-const nanosleep	= {req, rem;	-> syscall(Sysnanosleep, a(req), a(rem)) castto(int32)}
+const clock_getres = {clk, ts;	-> (syscall(Sysclock_getres, clockid(clk), a(ts)) : int32)}
+const clock_gettime = {clk, ts;	-> (syscall(Sysclock_gettime, clockid(clk), a(ts)) : int32)}
+const clock_settime = {clk, ts;	-> (syscall(Sysclock_settime, clockid(clk), a(ts)) : int32)}
+const nanosleep	= {req, rem;	-> (syscall(Sysnanosleep, a(req), a(rem)) : int32)}
 
 /* system information */
-const uname	= {buf;	-> syscall(Sysuname, buf) castto(int)}
+const uname	= {buf;	-> (syscall(Sysuname, buf) : int)}
 
 const clockid = {clk
 	match clk

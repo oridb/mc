@@ -33,7 +33,7 @@ const main = {
 	bio.putbe32(f, l)
 
 	/* quad */
-	q = 0x11223344aabbccdd castto(uint64)
+	q = (0x11223344aabbccdd : uint64)
 	bio.putle64(f, q)
 	bio.putbe64(f, q)
 

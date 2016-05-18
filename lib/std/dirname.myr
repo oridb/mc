@@ -18,7 +18,7 @@ const dirname = {p
 	var end
 
 	for end = p.len; end > 1; end--
-		if p[end-1] != '/' castto(byte)
+		if p[end-1] != ('/' : byte)
 			break
 		;;
 	;;
@@ -34,7 +34,7 @@ const basename = {p
 	var end
 
 	for end = p.len; end > 1; end--
-		if p[end-1] != '/' castto(byte)
+		if p[end-1] != ('/' : byte)
 			break
 		;;
 	;;

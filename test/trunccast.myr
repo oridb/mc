@@ -5,6 +5,6 @@ const main = {
 	var y : int32
 
 	y = 9999
-	x = y castto(uint8)
-	std.exit((x % 73) castto(int))
+	x = (y : uint8)
+	std.exit((x % 73 : int))
 }

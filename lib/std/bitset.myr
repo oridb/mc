@@ -57,8 +57,8 @@ const bsmax = {bs
 generic bsput = {bs, v
 	var idx, off, changed
 
-	idx = (v castto(size)) / (8*sizeof(size))
-	off = (v castto(size)) % (8*sizeof(size))
+	idx = (v : size) / (8*sizeof(size))
+	off = (v : size) % (8*sizeof(size))
 	ensurelen(bs, idx)
 
 	changed = (bs.bits[idx] & (1 << off)) == 0
@@ -70,8 +70,8 @@ generic bsdel = {bs, v
 	var idx, off, changed
 
 	changed = false
-	idx = (v castto(size)) / (8*sizeof(size))
-	off = (v castto(size)) % (8*sizeof(size))
+	idx = (v : size) / (8*sizeof(size))
+	off = (v : size) % (8*sizeof(size))
 	if idx < bs.bits.len
 		changed = (bs.bits[idx] & (1 << off)) != 0
 		bs.bits[idx] &= ~(1 << off)
@@ -83,8 +83,8 @@ generic bshas = {bs, v
 	var idx
 	var off
 
-	idx = (v castto(size)) / (8*sizeof(size))
-	off = (v castto(size)) % (8*sizeof(size))
+	idx = (v : size) / (8*sizeof(size))
+	off = (v : size) % (8*sizeof(size))
 	if idx >= bs.bits.len
 		-> false
 	;;

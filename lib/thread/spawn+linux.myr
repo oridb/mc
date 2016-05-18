@@ -28,36 +28,36 @@ const spawnstk = {fn, sz
 	if stk == sys.Mapbad
 		-> `std.Fail "couldn't get stack"
 	;;
-	tos = stk castto(std.intptr)
+	tos = (stk : std.intptr)
 	tos -= sizeof(int64)
-	szp = tos castto(sys.size#)
+	szp = (tos : sys.size#)
 	szp# = Stacksz
 	tos -= sizeof((->void))
-	fp = tos castto((->void)#)
+	fp = (tos : (->void)#)
 	fp# = fn
 
 	ret = sys.fnclone(Thrflag, \
-		tos castto(byte#),\
-		&tid, 0 castto(byte#), \
-		&ctid, 0 castto(byte#), \
-		startthread castto(void#)) castto(tid)
+		(tos : byte#),\
+		&tid, (0 : byte#), \
+		&ctid, (0 : byte#), \
+		(startthread : void#))
 	if ret < 0
 		-> `std.Fail "couldn't spawn thread"
 	;;
-	-> `std.Ok ret
+	-> `std.Ok (ret : tid)
 }
 
 const getstk = {sz
 	var p, m
 
-	p = sys.mmap(0 castto(byte#), sz, sys.Mprotrw, sys.Mpriv | sys.Manon, -1, 0)
+	p = sys.mmap((0 : byte#), sz, sys.Mprotrw, sys.Mpriv | sys.Manon, -1, 0)
 	if p == sys.Mapbad
 		-> p
 	;;
 	/* stack starts at the top of memory and grows down. */
-	m = p castto(std.intptr)
-	m += sz castto(std.intptr)
-	-> m castto(byte#)
+	m = (p : std.intptr)
+	m += (sz : std.intptr)
+	-> (m : byte#)
 }
 
 const startthread = {fn : (-> void)

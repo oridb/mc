@@ -49,9 +49,9 @@ const dirread = {d
 		d.off = 0
 	;;
 
-	dent = &d.buf[d.off] castto(sys.dirent#)
+	dent = (&d.buf[d.off] : sys.dirent#)
 	namelen = 0
-	d.off += dent.reclen castto(int64)
+	d.off += (dent.reclen : int64)
 	while dent.name[namelen] != 0
 		namelen++
 	;;

@@ -71,7 +71,7 @@ type rng = struct
 var _rng : rng#
 
 const __init__ = {
-	_rng = mksrng(now() castto(uint32))
+	_rng = mksrng((now() : uint32))
 }
 
 /* allocates and initializes a random number generator */
@@ -146,7 +146,7 @@ generic rngrandnum = {rng -> @a::(integral,numeric)
 	val = 0
 	for var i = 0; i < sizeof(@a)/4; i++
 		val <<= 8*sizeof(@a)
-		val |= rand32(rng) castto(@a::(integral,numeric))
+		val |= (rand32(rng)  : @a::(integral,numeric))
 	;;
 	-> val
 }
@@ -176,14 +176,14 @@ const rngrandbytes = {rng, buf
 	n = 0
 	for var i = 0; i < buf.len/4; i++
 		r = rand32(rng)
-		buf[n++] = (r >>  0 & 0xff) castto(byte)
-		buf[n++] = (r >>  8 & 0xff) castto(byte)
-		buf[n++] = (r >> 16 & 0xff) castto(byte)
-		buf[n++] = (r >> 32 & 0xff) castto(byte)
+		buf[n++] = (r >>  0 & 0xff : byte)
+		buf[n++] = (r >>  8 & 0xff : byte)
+		buf[n++] = (r >> 16 & 0xff : byte)
+		buf[n++] = (r >> 32 & 0xff : byte)
 	;;
 	r = rand32(rng)
 	for ; n != buf.len; n++
-		buf[n] = (r & 0xff) castto(byte)
+		buf[n] = (r & 0xff : byte)
 		r >>= 8
 	;;
 	-> n

@@ -46,9 +46,9 @@ pkg std =
 ;;
 
 /* null pointers. only used internally. */
-const Zslab	= 0 castto(slab#)
-const Zchunk	= 0 castto(chunk#)
-const Zsliceptr	= 0 castto(byte#)
+const Zslab	= (0 : slab#)
+const Zchunk	= (0 : chunk#)
+const Zsliceptr	= (0 : byte#)
 
 const Slabsz 	= 1*MiB	/* 1 meg slabs */
 const Cachemax	= 16	/* maximum number of slabs in the cache */
@@ -92,16 +92,16 @@ const __init__ = {
 
 /* Allocates an object of type @a, returning a pointer to it. */
 generic alloc = {-> @a#
-	-> bytealloc(sizeof(@a)) castto(@a#)
+	-> (bytealloc(sizeof(@a)) : @a#)
 }
 
 generic zalloc = {-> @a#
-	-> zbytealloc(sizeof(@a)) castto(@a#)
+	-> (zbytealloc(sizeof(@a)) : @a#)
 }
 
 /* Frees a value of type @a */
 generic free = {v:@a# -> void
-	bytefree(v castto(byte#), sizeof(@a))
+	bytefree((v : byte#), sizeof(@a))
 }
 
 /* allocates a slice of 'len' elements. */
@@ -114,7 +114,7 @@ generic slalloc = {len
 	sz = len*sizeof(@a) + align(sizeof(slheader), Align)
 	p = bytealloc(sz)
 	p = inithdr(p, sz)
-	-> (p castto(@a#))[0:len]
+	-> (p : @a#)[0:len]
 }
 
 generic slzalloc = {len
@@ -126,41 +126,41 @@ generic slzalloc = {len
 	sz = len*sizeof(@a) + align(sizeof(slheader), Align)
 	p = zbytealloc(sz)
 	p = inithdr(p, sz)
-	-> (p castto(@a#))[0:len]
+	-> (p : @a#)[0:len]
 }
 
 const inithdr = {p, sz
 	var phdr, prest
 
-	phdr = p castto(slheader#)
+	phdr = (p : slheader#)
 	phdr.cap = allocsz(sz) - align(sizeof(slheader), Align)
-	phdr.magic = (0xdeadbeefbadf00d castto(size))
+	phdr.magic = (0xdeadbeefbadf00d : size)
 
-	prest = (p castto(size)) + align(sizeof(slheader), Align)
-	-> prest castto(byte#)
+	prest = (p : size) + align(sizeof(slheader), Align)
+	-> (prest : byte#)
 }
 
 const checkhdr = {p
 	var phdr, addr
 
-	addr = p castto(size)
+	addr = (p : size)
 	addr -= align(sizeof(slheader), Align)
-	phdr = addr castto(slheader#)
-	iassert(phdr.magic == (0xdeadbeefbadf00d castto(size)), "corrupt memory\n")
+	phdr = (addr : slheader#)
+	iassert(phdr.magic == (0xdeadbeefbadf00d : size), "corrupt memory\n")
 }
 
 /* Frees a slice */
 generic slfree	 = {sl
 	var head
 
-	if sl castto(byte#) == Zsliceptr
+	if (sl : byte#) == Zsliceptr
 		-> void
 	;;
 
-	checkhdr(sl castto(byte#))
-	head = (sl castto(byte#)) castto(size)
+	checkhdr((sl : byte#))
+	head = ((sl : byte#) : size)
 	head -= align(sizeof(slheader), Align)
-	bytefree(head castto(byte#), slcap(sl castto(byte#)))
+	bytefree((head : byte#), slcap((sl : byte#)))
 }
 
 /* Grows a slice */
@@ -171,11 +171,11 @@ generic slgrow = {sl : @a[:]#, len
 
 	/* if the slice doesn't need a bigger bucket, we don't need to realloc. */
 	cap = 0
-	if sl# castto(byte#) != Zsliceptr
-		cap = slcap(sl# castto(byte#))
+	if (sl# : byte#) != Zsliceptr
+		cap = slcap((sl# : byte#))
 	;;
 	if cap >= allocsz(len*sizeof(@a))
-		sl# = (sl# castto(@a#))[:len]
+		sl# = (sl# : @a#)[:len]
 		-> sl#
 	;;
 
@@ -204,9 +204,9 @@ generic slzgrow = {sl : @a[:]#, len
 
 	oldlen = sl#.len
 	slgrow(sl, len)
-	base = sl# castto(byte#) castto(intptr)
+	base = ((sl# : byte#) : intptr)
 	if oldlen < len
-		memfill(sl#[oldlen:] castto(byte#), 0, (len - oldlen)*sizeof(@a))
+		memfill((sl#[oldlen:] : byte#), 0, (len - oldlen)*sizeof(@a))
 	;;
 	-> sl#
 }
@@ -214,7 +214,7 @@ generic slzgrow = {sl : @a[:]#, len
 const slcap = {p
 	var phdr
 
-	phdr = (p castto(size)) - align(sizeof(slheader), Align) castto(slheader#)
+	phdr = ((p : size) - align(sizeof(slheader), Align) : slheader#)
 	-> phdr.cap
 }
 
@@ -292,12 +292,12 @@ const mkslab = {bkt
 		die("Unable to get memory")
 	;;
 
-	s = align(p castto(size), Slabsz) castto(slab#)
+	s = (align((p : size), Slabsz) : slab#)
 	s.head = p
 	s.nfree = bkt.nper
 	/* skip past the slab header */
 	off = align(sizeof(slab), Align)
-	bnext = nextchunk(s castto(chunk#), off)
+	bnext = nextchunk((s : chunk#), off)
 	s.freehd = bnext
 	for var i = 0; i < bkt.nper; i++
 		b = bnext
@@ -336,7 +336,7 @@ const bktalloc = {bkt
 		s.next = Zslab
 	;;
 
-	-> b castto(byte#)
+	-> (b : byte#)
 }
 
 /*
@@ -348,8 +348,8 @@ if this is not the case.
 const bktfree = {bkt, m
 	var s, b
 
-	s = mtrunc(m, Slabsz) castto(slab#)
-	b = m castto(chunk#)
+	s = (mtrunc(m, Slabsz) : slab#)
+	b = (m : chunk#)
 	if s.nfree == 0
 		s.next = bkt.slabs
 		bkt.slabs = s
@@ -423,7 +423,7 @@ chunks are variable sizes, so we can't just
 index to get to the next one
 */
 const nextchunk = {b, sz : size
-	-> ((b castto(intptr)) + (sz castto(intptr))) castto(chunk#)
+	-> ((b : intptr) + (sz : intptr) : chunk#)
 }
 
 /*
@@ -431,5 +431,5 @@ truncates a pointer to 'align'. 'align' must
 be a power of two.
 */
 const mtrunc = {m, align
-	-> ((m castto(intptr)) & ~((align castto(intptr)) - 1)) castto(byte#)
+	-> ((m : intptr) & ~((align : intptr) - 1) : byte#)
 }

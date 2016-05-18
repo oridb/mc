@@ -40,9 +40,9 @@ const sbfmt = {sb, ap, opts
 const datefmt = {sb, fmt, d
 	var c
 	while fmt.len != 0
-		(c, fmt) = std.striter(fmt)
+		(c, fmt) = std.strstep(fmt)
 		if c == '%'
-			(c, fmt) = std.striter(fmt)
+			(c, fmt) = std.strstep(fmt)
 			match c
 			| 'a':	std.sbfmt(sb, "{}", _names.abbrevday[d.day])
 			| 'A':	std.sbfmt(sb, "{}", _names.fullday[d.day])

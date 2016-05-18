@@ -11,15 +11,15 @@ pkg std =
 generic fndup = {fn
 	var repr : intptr[2]
 
-	repr = (&fn castto(intptr[2]#))#
-	repr[0] = sldup(envslice(repr[0])) castto(intptr)
-	-> (&repr castto(@fn::function#))#
+	repr = (&fn : intptr[2]#)#
+	repr[0] = (sldup(envslice(repr[0])) : intptr)
+	-> (&repr : @fn::function#)#
 }
 
 generic fnfree = {fn
 	var repr : intptr[2]
 
-	repr = (&fn castto(intptr[2]#))#
+	repr = (&fn : intptr[2]#)#
 	std.slfree(envslice(repr[0]))
 }
 
@@ -27,8 +27,8 @@ const envslice = {ep : intptr
 	var env : byte#
 	var szp : intptr#
 
-	env = ep castto(byte#)
-	szp = env castto(intptr#)
+	env = (ep : byte#)
+	szp = (env : intptr#)
 	-> env[:szp#]
 }
 

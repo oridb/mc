@@ -48,8 +48,8 @@ const vastart = {args
 	*/
 		
 	tc = typeenc(args)
-	ip = (args castto(intptr)) + sizeof(byte#)
-	a = ip castto(byte#)
+	ip = (args : intptr) + sizeof(byte#)
+	a = (ip : byte#)
 	-> [.args = a, .tc = tc]
 }
 
@@ -74,20 +74,20 @@ const cursoralign = {arg, ty
 	ti = typeinfo(ty)
 
 	/* apply the alignment to the arg pointer */
-	align = ti.align castto(intptr)
-	p = arg castto(intptr)
+	align = (ti.align : intptr)
+	p = (arg : intptr)
 	p = (p + align - 1) & ~(align - 1)
-	-> p castto(byte#)
+	-> (p : byte#)
 }
 
 const vaenterunion = {ap, elt
 	var sub, ti, p, align
 
 	ti = typeinfo(tcpeek(&ap.tc))
-	align = ti.align castto(intptr)
-	p = ap.args castto(intptr)
+	align = (ti.align : intptr)
+	p = (ap.args : intptr)
 	p = (p + align - 1) & ~(align - 1)
-	ap.args = p castto(byte#)
+	ap.args = (p : byte#)
 	match typedesc(vatype(ap))
 	| `Tyunion nc:	
 		for var i = 0; i < elt; i++
@@ -111,16 +111,16 @@ const vabytes = {ap
 	ti = typeinfo(tcpeek(&ap.tc))
 
 	/* apply the alignment to the arg pointer */
-	align = ti.align castto(intptr)
-	p = ap.args castto(intptr)
+	align = (ti.align : intptr)
+	p = (ap.args : intptr)
 	p = (p + align - 1) & ~(align - 1)
-	ap.args = p castto(byte#)
+	ap.args = (p : byte#)
 
 	sl = ap.args[:ti.size]
 	tcnext(&ap.tc)
 
-	sz = ti.size castto(intptr)
-	ap.args = ((p castto(intptr)) + sz) castto(byte#)
+	sz = (ti.size : intptr)
+	ap.args = ((p : intptr) + sz : byte#)
 
 	-> sl
 }
@@ -133,26 +133,26 @@ generic vanext = {ap -> @a
 	ti = typeinfo(tcpeek(&ap.tc))
 
 	/* apply the alignment to the arg pointer */
-	align = ti.align castto(intptr)
-	p = ap.args castto(intptr)
+	align = (ti.align : intptr)
+	p = (ap.args : intptr)
 	p = (p + align - 1) & ~(align - 1)
 
 	/* TODO: check for type mismatch */
 	tcnext(&ap.tc)
 	/* only move on after we read through the value */
-	ap.args = ((p castto(intptr)) + sizeof(@a)) castto(byte#)
-	-> (p castto(@a#))#
+	ap.args = ((p : intptr) + sizeof(@a) : byte#)
+	-> (p : @a#)#
 }
 
 const addp = {p, k
-	-> (p castto(intptr)) + k castto(byte#)
+	-> ((p : intptr) + k  : byte#)
 }
 
 const sliceptr = {p
-	-> (p castto(byte##))#
+	-> (p : byte##)#
 }
 
 const slicelen = {p
 	p = addp(p, sizeof(intptr))
-	-> (p castto(size#))#
+	-> (p : size#)#
 }

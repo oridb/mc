@@ -110,7 +110,7 @@ generic typeof = {v : @a -> byte[:]
 const typeenc = {ap : ...#
 	var e
 
-	e = getenc(ap castto(byte##))
+	e = getenc((ap : byte##))
 	e = skiptypeinfo(e[1:])
 	-> lentypecursor(e)
 }
@@ -197,7 +197,7 @@ const getenc = {p : byte##
 	var val, sz, x
 
 	(val, sz) = getipacked(p#[:8])
-	x = &sz castto(byte#)
+	x = (&sz : byte#)
 	-> p#[sz:sz+val]
 }
 
@@ -254,7 +254,7 @@ const typedesc = {ti
 		value, so if we cast it to a byte##, we can
 		pull the indirect value out of the pointer.
 		*/
-		p = ti[1:] castto(byte##)
+		p = (ti[1:] : byte##)
 		-> typedesc(getenc(p))
 	| _:
 		std.die("unknown type encoding")
@@ -297,7 +297,7 @@ const typeinfo = {ti
 	| Encunion:	-> gettypeinfo(ti[1:])
 	| Encname:	-> getnameinfo(ti[1:])
 	| Encindname:
-		p = ti[1:] castto(byte##)
+		p = (ti[1:] : byte##)
 		-> typeinfo(getenc(p))
 	| _:
 		std.die("unknown type encoding")
@@ -381,9 +381,9 @@ const getipacked : (p : byte[:] -> (size, size)) = {p : byte[:]
 	;;
 
 	shift = 8 - len
-	val = (p[0] castto(std.size))  & ~(~0 << shift)
+	val = (p[0] : size)  & ~(~0 << shift)
 	for i = 1; i < len; i++
-		val |= (p[i] castto(std.size)) << (i*8 - len)
+		val |= (p[i] : size) << (i*8 - len)
 	;;
 	-> (val, len)
 }

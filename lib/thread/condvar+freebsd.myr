@@ -29,9 +29,9 @@ const condwait = {cond
 	seq = cond._seq
 
 	mtxunlock(mtx)
-	sys.umtx_op(&cond._seq castto(void#), \
+	sys.umtx_op((&cond._seq : void#), \
 		sys.Umtxwaituintpriv, \
-		seq castto(uint64), \
+		(seq : uint64), \
 		Zptr, Zptr)
 
 	/*
@@ -40,20 +40,20 @@ const condwait = {cond
 	unlocker of the mutex.
 	*/
 	while xchg(&mtx._state, Contended) != Unlocked
-		sys.umtx_op(&mtx._state castto(void#), \
+		sys.umtx_op((&mtx._state : void#), \
 			sys.Umtxwaituintpriv, \
-			Contended castto(uint64), \
+			(Contended : uint64), \
 			Zptr, Zptr)
 	;;
 }
 
 const condsignal = {cond : cond#
 	xadd(&cond._seq, 1)
-	sys.umtx_op(&cond._seq castto(void#), sys.Umtxwakepriv, 1, Zptr, Zptr)
+	sys.umtx_op((&cond._seq : void#), sys.Umtxwakepriv, 1, Zptr, Zptr)
 }
 
 const condbroadcast = {cond : cond#
 	xadd(&cond._seq, 1)
-	sys.umtx_op(&cond._seq castto(void#), sys.Umtxwakepriv, 0x7ffffff, Zptr, Zptr)
+	sys.umtx_op((&cond._seq : void#), sys.Umtxwakepriv, 0x7ffffff, Zptr, Zptr)
 }
 
