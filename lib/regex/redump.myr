@@ -76,10 +76,13 @@ const show = {re, ln, mg
 		for var i = 1; i < rl.len; i++
 			std.put("\tgroup {}: {}\n", i, rl[i])
 		;;
-	| `std.None:
-		std.put("Match failed:\n")
+		std.put("coverage:\n")
 		std.put("\t{}\n", re.pat)
-		caret(re, re.pcidx[re.lastip] - 1)
+		showcoverage(re)
+	| `std.None:
+		std.put("Match failed at {}:\n", re.lastip)
+		std.put("\t{}\n", re.pat)
+		caret(re, re.pcidx[re.lastip])
 		std.put("\t{}\n", ln)
 		caret(re, re.strp - 1)
 	;;
@@ -93,3 +96,28 @@ const caret = {re, idx
 	std.put("^\n")
 }
 
+const showcoverage = {re
+	var hit
+	var idx
+
+	hit = std.slzalloc(re.pat.len)
+	for var ip = 0; ip < re.proglen; ip++
+		if !std.bshas(re.traces[re.lastthr], ip)
+			continue
+		;;
+		idx = re.pcidx[ip]
+		if idx >= 0 && idx < hit.len
+			hit[idx] = true
+		;;
+	;;
+
+	std.put("\t")
+	for h in hit
+		if h
+			std.put("^")
+		else
+			std.put(" ")
+		;;
+	;;
+	std.put("\n")
+}

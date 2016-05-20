@@ -11,6 +11,33 @@ pkg regex =
 		`Badescape char
 	;;
 
+	type regex = struct
+		/* compile state */
+		debug	: bool
+		trace	: bool
+		pat	: byte[:]
+		idx	: std.size
+		nmatch	: std.size
+
+		/* VM state */
+		runq	: rethread#
+		expired	: rethread#
+		expiredtail	: rethread#
+		proglen	: std.size
+		prog	: reinst[:]
+		nthr	: std.size
+		str	: byte[:]
+		strp	: std.size
+		nexttid : std.size
+
+		/* debug state */
+		astloc	: std.htab(ast#, std.size)#
+		traces	: std.bitset#[:]
+		pcidx	: std.size[:]
+		lastip	: std.size
+		lastthr	: std.size
+	;;
+
 	type ast = union
 		/* basic string building */
 		`Alt	(ast#, ast#)
@@ -33,31 +60,6 @@ pkg regex =
 		`Eol	/* end of line */
 		`Bow	/* beginning of word */
 		`Eow	/* end of word */
-	;;
-
-
-	type regex = struct
-		/* compile state */
-		debug	: bool
-		trace	: bool
-		pat	: byte[:]
-		idx	: std.size
-		nmatch	: std.size
-
-		/* VM state */
-		runq	: rethread#
-		expired	: rethread#
-		expiredtail	: rethread#
-		proglen	: std.size
-		prog	: reinst[:]
-		nthr	: std.size
-		str	: byte[:]
-		strp	: std.size
-
-		/* debug state */
-		astloc	: std.htab(ast#, std.size)#
-		pcidx	: std.size[:]
-		lastip	: std.size
 	;;
 
 	pkglocal type rethread = struct

@@ -60,6 +60,7 @@ const cleanup = {re
 		next = thr.next
 		thrfree(re, thr)
 	;;
+	re.nexttid = 0
 }
 
 const matchfree = {m
@@ -92,6 +93,15 @@ const run = {re, wholestr
 	bestmatch = Zthr
 	states = std.mkbs()
 	re.runq = mkthread(re, 0)
+	if re.debug
+		/* The last run could have left things here, since we need this info after the run */
+		for bs in re.traces
+			std.bsfree(bs)
+		;;
+		std.slfree(re.traces)
+		re.traces = [][:]
+		std.slpush(&re.traces, std.mkbs())
+	;;
 	re.runq.mstart = std.slalloc(re.nmatch)
 	re.runq.mend = std.slalloc(re.nmatch)
 	for var i = 0; i < re.nmatch; i++
@@ -174,6 +184,7 @@ const step = {re, thr, curip
 		elif b != str[re.strp]
 			die(re, thr, "not right char")
 		else
+			hit(re, thr)
 			thr.ip++
 			trace(re, thr, "\t\tmatched {} with {}\n", b, str[re.strp])
 		;;
@@ -182,6 +193,7 @@ const step = {re, thr, curip
 		if !within(re, str) || start > str[re.strp] || end < str[re.strp]
 			die(re, thr, "bad range")
 		else
+			hit(re, thr)
 			thr.ip++
 		;;
 	/*
@@ -191,6 +203,7 @@ const step = {re, thr, curip
 	| `Ibol:
 		trace(re, thr, "\t{}:\tBol\n", thr.ip)
 		if re.strp == 0 || str[re.strp - 1] == ('\n' : byte)
+			hit(re, thr)
 			thr.ip++
 			-> false
 		else
@@ -199,6 +212,7 @@ const step = {re, thr, curip
 	| `Ieol:
 		trace(re, thr, "\t{}:\tEol\n", thr.ip)
 		if re.strp == str.len || str[re.strp] == ('\n' : byte)
+			hit(re, thr)
 			thr.ip++
 			-> false
 		else
@@ -208,6 +222,7 @@ const step = {re, thr, curip
 	| `Ibow:
 		trace(re, thr, "\t{}:\tBow\n", thr.ip)
 		if iswordchar(str[re.strp:]) && (re.strp == 0 || !iswordchar(prevchar(str, re.strp)))
+			hit(re, thr)
 			thr.ip++
 			-> false
 		else
@@ -216,9 +231,11 @@ const step = {re, thr, curip
 	| `Ieow:
 		trace(re, thr, "\t{}:\tEow\n", thr.ip)
 		if re.strp == str.len && iswordchar(prevchar(str, re.strp))
+			hit(re, thr)
 			thr.ip++
 			-> false
 		elif re.strp > 0 && !iswordchar(str[re.strp:]) && iswordchar(prevchar(str, re.strp))
+			hit(re, thr)
 			thr.ip++
 			-> false
 		else
@@ -228,26 +245,34 @@ const step = {re, thr, curip
 		trace(re, thr, "\t{}:\tLbra {}\n", thr.ip, m)
 		trace(re, thr, "\t\tmatch start = {}\n", re.strp)
 		thr.mstart[m] = re.strp
+		hit(re, thr)
 		thr.ip++
 		-> false
 	| `Irbra m:
 		trace(re, thr, "\t{}:\tRbra {}\n", thr.ip, m)
 		thr.mend[m] = re.strp
+		hit(re, thr)
 		thr.ip++
 		-> false
 	| `Ifork (lip, rip):
 		trace(re, thr, "\t{}:\tFork ({}, {})\n", thr.ip, lip, rip)
 		mstart = std.sldup(thr.mstart)
 		mend = std.sldup(thr.mend)
+		hit(re, thr)
 		fork(re, thr, rip, curip, mstart, mend)
+		if re.debug
+			std.slpush(&re.traces, std.bsdup(re.traces[thr.tid]))
+		;;
 		thr.ip = lip
 		-> false
 	| `Ijmp ip:
 		trace(re, thr, "\t{}:\tJmp {}\n", thr.ip, ip)
+		hit(re, thr)
 		thr.ip = ip
 		-> false
 	| `Imatch id:
 		trace(re, thr, "\t{}:\tMatch\n", thr.ip)
+		re.lastthr = thr.tid
 		finish(re, thr)
 		-> true
 	;;
@@ -280,6 +305,7 @@ const die = {re, thr, msg
 		re.nthr--
 	;;
 	re.lastip = thr.ip
+	re.lastthr = thr.tid
 	thr.dead = true
 }
 
@@ -289,7 +315,6 @@ const finish = {re, thr
 	re.nthr--
 }
 
-var nexttid = 0
 const mkthread = {re, ip
 	var thr : rethread#
 
@@ -298,7 +323,7 @@ const mkthread = {re, ip
 	thr.next = Zthr
 
 	thr.ip = ip
-	thr.tid = nexttid++
+	thr.tid = re.nexttid++
 	thr.dead = false
 	thr.matched = false
 
@@ -334,6 +359,12 @@ const trace : (re : regex#, thr : rethread#, msg : byte[:], args : ... -> void) 
 		;;
 		std.put("^\n")
 	;;
+}
+
+const hit = {re, thr
+        if re.debug
+                std.bsput(re.traces[thr.tid], thr.ip)
+        ;;
 }
 
 /* must be called with i >= 1 */
