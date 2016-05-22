@@ -380,6 +380,11 @@ const openlib = {lib, incs
 
 	libname = std.fmt("lib{}.use", lib)
 	path = std.pathjoin([opt_instbase, config.Libpath, libname][:])
+	if !std.fisreg(path)
+		std.slfree(path)
+		path = std.pathjoin([opt_instbase, config.Libpath, lib][:])
+	;;
+
 	std.slfree(libname)
 :found
 	match  bio.open(path, bio.Rd)
