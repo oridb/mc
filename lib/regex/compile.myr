@@ -570,6 +570,7 @@ const repexpr = {re
 
 const baseexpr = {re
 	var ret, m, idx
+	var nocap
 
 	if re.pat.len == re.idx
 		-> `None
@@ -589,12 +590,25 @@ const baseexpr = {re
 		getc(re);
 		ret = mk(re, `Ranges std.sldup([[0, std.Maxcharval]][:]), idx)
 	| '(':	
-		m = re.nmatch++
+		nocap = false
+		m = 0
 		getc(re)
+		if matchc(re, '?')
+			if !matchc(re, ':')
+				-> `Fail `Badrep '?'
+			;;
+			nocap = true
+		else
+			m = re.nmatch++
+		;;
 		match altexpr(re)
 		| `Some s:
 			if matchc(re, ')')
-				-> `Some mk(re, `Cap (m, s), idx)
+				if nocap
+					-> `Some s
+				else
+					-> `Some mk(re, `Cap (m, s), idx)
+				;;
 			else
 				-> `Fail `Unbalanced '('
 			;;
@@ -648,6 +662,10 @@ const escaped = {re
 	| '+': ret = `Some mk(re, `Chr '+', idx)
 	| '?': ret = `Some mk(re, `Chr '?', idx)
 	| '*': ret = `Some mk(re, `Chr '*', idx)
+	/* escaped nonprintable characters */
+	| 'r': ret = `Some mk(re, `Chr '\r', idx)
+	| 'n': ret = `Some mk(re, `Chr '\n', idx)
+	| 'b': ret = `Some mk(re, `Chr '\b', idx)
 	| chr: ret = `Fail `Badescape chr
 	;;
 	-> ret
