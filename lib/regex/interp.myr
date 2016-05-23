@@ -5,6 +5,8 @@ use "types"
 pkg regex =
 	const exec	: (re : regex#, str : byte[:] -> std.option(byte[:][:]))
 	const search	: (re : regex#, str : byte[:] -> std.option(byte[:][:]))
+	const sub	: (re : regex#, str : byte[:], subst : byte[:][:] -> std.option(byte[:]))
+	const sbsub	: (sb : std.strbuf#, re : regex#, str : byte[:], subst : byte[:][:] -> bool)
 	const matchfree	: (pat : byte[:][:] -> void)
 ;;
 
@@ -40,6 +42,53 @@ const search = {re, str
 		cleanup(re)
 	;;
 	->  m
+}
+
+const sub = {re, str, subst
+	var sb
+
+	sb = std.mksb()
+	if !sbsub(sb, re, str, subst)
+		-> `std.None
+	else
+		-> `std.Some std.sbfin(sb)
+	;;
+}
+
+const sbsub = {sb, re, str, subst
+	var thr, m
+
+	/* we always have m[0] as the full match */
+	if re.nmatch != subst.len + 1
+		-> false
+	;;
+
+	re.str = str
+	re.strp = 0
+	thr = run(re, true)
+	if thr == Zthr
+		m = false
+	else
+		m = dosubst(sb, re, thr, subst)
+	;;
+	cleanup(re)
+	-> m
+}
+
+const dosubst = {sb, re, thr, subst
+	var off
+
+	off = 0
+	for var i = 1; i < re.nmatch; i++
+		if thr.mstart[i] != -1 && thr.mend[i] != -1
+			std.sbputs(sb, re.str[off:thr.mstart[i]])
+			std.sbputs(sb, subst[i - 1])
+			off = thr.mend[i]
+		;;
+	;;
+	std.sbputs(sb, re.str[off:])
+	thrfree(re, thr)
+	-> true
 }
 
 const cleanup = {re

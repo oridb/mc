@@ -1,0 +1,52 @@
+use std
+
+use "testmatch"
+
+const main = {
+	var s : byte[:]
+	var e : byte[:]
+		
+	s = std.strjoin([
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+	][:], "")
+	e = std.strcat(s[:s.len - 2], "XYZ")
+	
+	testsub(".*bc", "Abc", [][:], `std.Some "Abc")
+	testsub("(a*)*", "a", ["b"][:], `std.Some "b")
+	testsub("(aa|aab?)*", s, ["XYZ"][:], `std.Some e)
+
+        /* greedy matches */
+	testsub("(<.*>).*", \
+		"<a foo> blah <bar>", \
+		["some shite"][:], \
+		`std.Some "some shite")
+
+        /* reluctant matches */
+	testsub("(<.*?>).*", \
+		"<a foo> blah <bar>", \
+		["<some tag>"][:], \
+		`std.Some "<some tag> blah <bar>")
+
+	/* multiple subs */
+	testsub("([a-z]*)[^a-z]*([a-z]*)foo", \
+		"abc123foofoo", \
+		["XYZ", "ABC"][:], \
+		`std.Some "XYZ123ABCfoo")
+
+	/* failure */
+	testsub("([a-z]*).*([a-z]*)foo", \
+		"abc123foobar", \
+		["XYZ", "ABC"][:], \
+		`std.None)
+}

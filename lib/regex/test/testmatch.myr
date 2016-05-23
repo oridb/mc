@@ -2,9 +2,30 @@ use std
 use regex
 
 pkg =
-	const testmatch	: (pat : byte[:], text : byte[:], expected : std.option(byte[:][:]) -> void)
-	const testsearch	: (pat : byte[:], text : byte[:], expected : std.option(byte[:][:]) -> void)
-	const dbgmatch	: (pat : byte[:], text : byte[:], expected : std.option(byte[:][:]) -> void)
+	const testmatch	: (\
+		pat : byte[:], \
+		text : byte[:], \
+		expected : std.option(byte[:][:]) \
+		-> void)
+
+	const testsub	: ( \
+		pat : byte[:], \
+		text : byte[:], \
+		sub : byte[:][:], \
+		expected : std.option(byte[:]) \
+		-> void)
+
+	const testsearch	: ( \
+		pat : byte[:], \
+		text : byte[:], \
+		expected : std.option(byte[:][:]) \
+		-> void)
+
+	const dbgmatch	: ( \
+		pat : byte[:], \
+		text : byte[:], \
+		expected : std.option(byte[:][:]) \
+		-> void)
 ;;
 
 const testmatch = {pat, text, expected
@@ -15,8 +36,36 @@ const testsearch = {pat, text, expected
 	run(regex.compile(pat), pat, text, expected, true)
 }
 
+const testsub = {pat, text, sub, expected
+	subst(regex.compile(pat), pat, text, sub, expected)
+}
+
 const dbgmatch = {pat, text, expected
 	run(regex.dbgcompile(pat, true), pat, text, expected, false)
+}
+
+const subst = {regex, pat, text, sub, expected
+	var re
+
+	re = std.try(regex)
+	match regex.sub(re, text, sub)
+	| `std.Some res:
+		std.put("res: {}\n", res)
+		match expected
+		| `std.Some e:
+			if !std.sleq(res, e)
+				std.fatal("bad subst: expected {}, got {}\n", e, res)
+			;;
+		| `std.None:
+			std.fatal("expected no subst, got {}", res)
+		;;
+	| `std.None:
+		match expected
+		| `std.Some e:
+			std.fatal("got no sub, expected {}\n", e)
+		| `std.None:
+		;;
+	;;
 }
 
 const run = {regex, pat, text, expected, search

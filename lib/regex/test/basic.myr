@@ -19,27 +19,20 @@ const main = {
 		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 	][:], "")
-	std.put("hi\n")
 	testmatch(".*bc", "Abc", `std.Some [][:])
-	std.put("1\n")
-	dbgmatch("(a*)*", "a", `std.Some ["a"][:])
-	std.put("2\n")
+	testmatch("(a*)*", "a", `std.Some ["a"][:])
 	testmatch("(aa|aab?)*", s, `std.Some ["aa"][:])
-	std.put("3\n")
         /* greedy matches */
 	testmatch("(<.*>).*", "<a foo> blah <bar>", `std.Some [
 			"<a foo> blah <bar>",
 		][:])
-	std.put("3\n")
 	testmatch("(<.+>).*", "<a foo> blah <bar>", `std.Some [
 			"<a foo> blah <bar>",
 		][:])
-	std.put("4\n")
         /* reluctant matches */
 	testmatch("(<.*?>).*", "<a foo> blah <bar>", `std.Some [
 			"<a foo>",
 		][:])
-	std.put("5\n")
 	testmatch("(<.+?>).*", "<a foo> blah <bar>", `std.Some [
 			"<a foo>",
 		][:])
