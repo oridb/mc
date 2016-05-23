@@ -18,35 +18,28 @@ const exec = {re, str
 	re.str = str
 	re.strp = 0
 	thr = run(re, true)
-	if thr != Zthr
-		m = getmatches(re, thr)
-		thrfree(re, thr)
-		cleanup(re)
-		-> `std.Some m
-	else
-		cleanup(re)
-		->  `std.None
-	;;
+	m = getmatches(re, thr)
+	cleanup(re)
+	-> m
 }
 
 const search = {re, str
 	var thr
 	var m
 
+	m = `std.None
 	for var i = 0; i < str.len; i++
 		re.str = str[i:]
 		re.strp = 0
 		thr = run(re, false)
-		if thr != Zthr
-			m = getmatches(re, thr)
-			thrfree(re, thr)
-			cleanup(re)
-			-> `std.Some m
-		else
-			cleanup(re)
+		m = getmatches(re, thr)
+		match m
+		| `std.Some _:	break
+		| `std.None:	/* nothing */
 		;;
+		cleanup(re)
 	;;
-	->  `std.None
+	->  m
 }
 
 const cleanup = {re
@@ -70,6 +63,9 @@ const matchfree = {m
 const getmatches = {re, thr
 	var ret
 
+	if thr == Zthr
+		-> `std.None
+	;;
 	ret = std.slalloc(re.nmatch)
 	for var i = 0; i < re.nmatch; i++
 		if thr.mstart[i] != -1 && thr.mend[i] != -1
@@ -78,7 +74,8 @@ const getmatches = {re, thr
 			ret[i] = [][:]
 		;;
 	;;
-	-> ret
+	thrfree(re, thr)
+	-> `std.Some ret
 }
 
 
