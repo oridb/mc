@@ -7,4 +7,5 @@ sub =
 	std
 	sys
 	thread
+	testr
 ;;

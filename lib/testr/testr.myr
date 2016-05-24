@@ -1,0 +1,53 @@
+use std
+
+pkg testr =
+	type ctx = struct
+		ok	: bool
+		reason	: byte[:]
+	;;
+
+	type spec = struct
+		name	: byte[:]
+		fn	: (ctx : ctx# -> void)
+	;;
+
+	const run	: (specs : spec[:] -> void)
+	const ok	: (ctx : ctx# -> void)
+	const fail	: (ctx : ctx#, msg : byte[:] -> void)
+;;
+
+const run = {specs
+	std.put("MTEST {}\n", specs.len)
+	for s in specs
+		runspec(&s)
+	;;
+}
+
+const ok = {ctx
+	/* nothing to do here */
+}
+
+const fail = {ctx, msg
+	ctx.ok = false
+	ctx.reason = msg
+}
+
+const runspec = {ts
+	var ctx : ctx
+	var status, reason
+
+	ctx.ok = true
+	ctx.reason = ""
+	std.put("test {} <<{{!\n", ts.name)
+
+	ts.fn(&ctx)
+
+	if ctx.ok
+		status = "ok"
+		reason = ""
+	else
+		status = "fail"
+		reason = ctx.reason
+	;;
+	std.put("!}}>> {} {}\n", status, reason)
+}
