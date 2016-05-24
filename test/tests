@@ -15,6 +15,7 @@
 #	C tells us that the result is on stdout,
 #         and should be compared to the contents of
 #         the file passed on the line.
+#       D 
 #    result: Result value
 #	What we compare with. This should be self-
 #	evident.
@@ -137,7 +138,7 @@ B strstrip	C
 B strsplit	C
 B strfind	C
 B strjoin	C
-B exporttrait
+B exporttrait	E	0
 B local-labels	E	10
 F declmismatch
 F infermismatch
@@ -153,7 +154,7 @@ F arityhigh
 F badop
 B voideffect	P	pass
 B foroptexpr	P	pass
-B bounds	E	134
+#B bounds	D	134
 B rvaldotlen	P	pass
 B destructuretup	E	0
 B nestedgoto	E	0

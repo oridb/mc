@@ -15,7 +15,6 @@ include mk/c.mk
 include config.mk
 
 check: all
-	./mbldwrap.sh test:runtest
 	./mbldwrap.sh test
 
 .PHONY: bench

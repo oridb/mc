@@ -1,1 +1,1 @@
-cmd runtest = ./runtest.sh ;;
+cmd runtest {test} = ./runtest.sh ;;
