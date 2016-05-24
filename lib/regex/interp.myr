@@ -7,6 +7,8 @@ pkg regex =
 	const search	: (re : regex#, str : byte[:] -> std.option(byte[:][:]))
 	const sub	: (re : regex#, str : byte[:], subst : byte[:][:] -> std.option(byte[:]))
 	const sbsub	: (sb : std.strbuf#, re : regex#, str : byte[:], subst : byte[:][:] -> bool)
+	const suball	: (re : regex#, str : byte[:], subst : byte[:][:] -> byte[:])
+	const sbsuball	: (sb : std.strbuf#, re : regex#, str : byte[:], subst : byte[:][:] -> void)
 	const matchfree	: (pat : byte[:][:] -> void)
 ;;
 
@@ -69,24 +71,59 @@ const sbsub = {sb, re, str, subst
 	if thr == Zthr
 		m = false
 	else
-		m = dosubst(sb, re, thr, subst)
+		m = dosubst(sb, re, thr, str, subst)
 	;;
 	cleanup(re)
 	-> m
 }
 
-const dosubst = {sb, re, thr, subst
+const suball = {re, str, subst
+	var sb
+
+	sb = std.mksb()
+	sbsuball(sb, re, str, subst)
+	-> std.sbfin(sb)
+}
+
+const sbsuball = {sb, re, str, subst
+	var thr, len, s, i
+
+	/* we always have m[0] as the full match */
+	if re.nmatch != subst.len + 1
+		-> void
+	;;
+
+	i = 0
+	while i < str.len
+		re.str = str[i:]
+		re.strp = 0
+		thr = run(re, false)
+		if thr == Zthr
+			std.sbputb(sb, str[i])
+			i++
+		else
+			len = thr.mend[0]
+			s = str[i:len + i]
+			dosubst(sb, re, thr, s, subst)
+			i += len
+		;;
+		cleanup(re)
+	;;
+}
+
+
+const dosubst = {sb, re, thr, str, subst
 	var off
 
 	off = 0
 	for var i = 1; i < re.nmatch; i++
 		if thr.mstart[i] != -1 && thr.mend[i] != -1
-			std.sbputs(sb, re.str[off:thr.mstart[i]])
+			std.sbputs(sb, str[off:thr.mstart[i]])
 			std.sbputs(sb, subst[i - 1])
 			off = thr.mend[i]
 		;;
 	;;
-	std.sbputs(sb, re.str[off:])
+	std.sbputs(sb, str[off:])
 	thrfree(re, thr)
 	-> true
 }

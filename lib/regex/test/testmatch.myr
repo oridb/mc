@@ -8,6 +8,12 @@ pkg =
 		expected : std.option(byte[:][:]) \
 		-> void)
 
+	const testsearch	: ( \
+		pat : byte[:], \
+		text : byte[:], \
+		expected : std.option(byte[:][:]) \
+		-> void)
+
 	const testsub	: ( \
 		pat : byte[:], \
 		text : byte[:], \
@@ -15,10 +21,11 @@ pkg =
 		expected : std.option(byte[:]) \
 		-> void)
 
-	const testsearch	: ( \
+	const testsuball	: ( \
 		pat : byte[:], \
 		text : byte[:], \
-		expected : std.option(byte[:][:]) \
+		sub : byte[:][:], \
+		expected : std.option(byte[:]) \
 		-> void)
 
 	const dbgmatch	: ( \
@@ -37,18 +44,27 @@ const testsearch = {pat, text, expected
 }
 
 const testsub = {pat, text, sub, expected
-	subst(regex.compile(pat), pat, text, sub, expected)
+	subst(regex.compile(pat), pat, text, sub, expected, false)
+}
+
+const testsuball = {pat, text, sub, expected
+	subst(regex.compile(pat), pat, text, sub, expected, true)
 }
 
 const dbgmatch = {pat, text, expected
 	run(regex.dbgcompile(pat, true), pat, text, expected, false)
 }
 
-const subst = {regex, pat, text, sub, expected
-	var re
+const subst = {regex, pat, text, sub, expected, all
+	var re, r
 
 	re = std.try(regex)
-	match regex.sub(re, text, sub)
+	if all
+		r = `std.Some regex.suball(re, text, sub)
+	else
+		r = regex.sub(re, text, sub)
+	;;
+	match r
 	| `std.Some res:
 		std.put("res: {}\n", res)
 		match expected

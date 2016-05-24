@@ -49,4 +49,10 @@ const main = {
 		"abc123foobar", \
 		["XYZ", "ABC"][:], \
 		`std.None)
+
+	/* suball */
+	testsuball("([a-z]*)_", \
+		"a_1bb_2ccccccc_12d", \
+		["---"][:], \
+		`std.Some "---_1---_2---_12d")
 }
