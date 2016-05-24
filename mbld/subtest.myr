@@ -59,6 +59,7 @@ const showraw = {f, log
 }
 
 const showtests = {f, log, ntests
+	var curtest
 	var nresults
 	var ok
 
@@ -67,13 +68,15 @@ const showtests = {f, log, ntests
 		-> false
 	;;
 	ok = true
+	curtest = ""
 	nresults = 0
+	std.put("\n")
 	for ln in bio.byline(f)
 		ln = std.strstrip(ln)
 		match testhead(ln)
 		| `std.None:
 		| `std.Some t:	
-			std.put("\trun {}:\t", std.strstrip(t))
+			starttest(&curtest, t)
 			bio.put(log, "RUN {}\n", t)
 			continue
 		;;
@@ -81,13 +84,11 @@ const showtests = {f, log, ntests
 		match testfoot(ln)
 		| `std.None:
 		| `std.Some `std.Ok _:
-			std.put("PASS\n")
-			nresults++
+			endtest(&curtest, &nresults, true)
 			continue
 		| `std.Some `std.Fail m:
-			std.put("FAIL\n")
+			endtest(&curtest, &nresults, false)
 			ok = false
-			nresults++
 			continue
 		;;
 
@@ -98,6 +99,28 @@ const showtests = {f, log, ntests
 		-> false
 	;;
 	-> ok
+}
+
+const starttest = {curtest, t
+	if curtest#.len != 0
+		std.fatal("malformed input: test {} nested in {}\n", t, curtest)
+	;;
+	std.put("\trun {}:\t", std.strstrip(t))
+	curtest# = t
+}
+
+const endtest = {curtest, nresults, pass
+	if curtest#.len == 0
+		std.fatal("malformed input: test ended without start\n")
+	;;
+	std.slfree(curtest#)
+	curtest# = ""
+	if pass
+		std.put("PASS\n")
+	else
+		std.put("FAIL\n")
+	;;
+	nresults#++
 }
 
 const testhead = {ln

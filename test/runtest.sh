@@ -87,7 +87,7 @@ function B {
 
 # Should fail
 function F {
-	echo "test $test <<{!"
+	echo "test $1 <<{!"
 	(build $1) > /dev/null 2>1
 	if [ $? -eq '1' ]; then
 		pass $1
