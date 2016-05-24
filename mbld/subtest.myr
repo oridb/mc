@@ -13,12 +13,11 @@ var footpat
 const __init__ = {
 	planpat = std.try(regex.compile("MTEST\\s+(-?\\d+)\\s*"))
 	headpat = std.try(regex.compile("test\\s+(.*)<<{!"))
-	footpat = std.try(regex.compile("!}>>\\s*(ok|fail\\s*(.*))"))
+	footpat = std.try(regex.compile("!}>>\\s*(ok|fail\\s*(.*))\\s*"))
 }
 
 const showsub = {fd, logfd
 	var f, log
-	var ntests
 	var res
 
 	f = bio.mkfile(fd, bio.Rd)
@@ -28,15 +27,14 @@ const showsub = {fd, logfd
 	| `bio.Err e:	std.fatal("error reading subfile: {}\n", e)
 	| `bio.Eof:	-> `std.None
 	| `bio.Ok ln:
-		match regex.exec(planpat, ln)
+		match testplan(ln)
 		| `std.None:
 			bio.write(log, ln)
 			showraw(fd, logfd)
-		| `std.Some m:
-			ntests = std.get(std.intparse(m[1]))
-			regex.matchfree(m)
+		| `std.Some ntests:
 			res = `std.Some showtests(f, log, ntests)
 		;;
+
 		std.slfree(ln)
 	;;
 	bio.close(f)
@@ -92,6 +90,15 @@ const showtests = {f, log, ntests
 			continue
 		;;
 
+		match testplan(ln)
+		| `std.None:
+		| `std.Some n:
+			if curtest.len == 0
+				ntests += n
+				continue
+			;;
+		;;
+
 		bio.put(log, "\t{}\n", ln)
 	;;
 	if ntests > 0 && ntests != nresults
@@ -121,6 +128,19 @@ const endtest = {curtest, nresults, pass
 		std.put("FAIL\n")
 	;;
 	nresults#++
+}
+
+const testplan = {ln
+	var ntests
+
+	match regex.exec(planpat, ln)
+	| `std.None:
+		-> `std.None
+	| `std.Some m:
+		ntests = std.get(std.intparse(m[1]))
+		regex.matchfree(m)
+		-> `std.Some ntests
+	;;
 }
 
 const testhead = {ln
