@@ -633,7 +633,7 @@ const getsockopt	= {sock, lev, opt, val, len;	-> (syscall(Syssetsockopt, a(sock)
 /* memory management */
 const munmap	= {addr, len;		-> syscall(Sysmunmap, a(addr), a(len))}
 const mmap	= {addr, len, prot, flags, fd, off;
-	-> (syscall(Sysmmap, a(addr), a(len), a(prot), a(flags), a(fd), a(off)) : byte#)}
+	-> (syscall(Sysmmap, a(addr), a(len), a(prot), a(flags), a(fd), a(off)) : byte#)
 }
 
 /* time */

@@ -3,12 +3,12 @@
 # to regenerate, run "make bootstrap"
 pwd=`pwd`
 echo 	cd $pwd/lib/sys && 	cd $pwd/lib/sys &&\
+echo 	as	-g -o util.o util+posixy-x64.s  && 	as	-g -o util.o util+posixy-x64.s  &&\
 echo 	$pwd/6/6m	syserrno+openbsd.myr  && 	$pwd/6/6m	syserrno+openbsd.myr  &&\
 echo 	$pwd/6/6m	systypes.myr  && 	$pwd/6/6m	systypes.myr  &&\
 echo 	$pwd/6/6m	sys+openbsd-x64.myr  && 	$pwd/6/6m	sys+openbsd-x64.myr  &&\
-echo 	$pwd/6/6m	ifreq+openbsd.myr  && 	$pwd/6/6m	ifreq+openbsd.myr  &&\
-echo 	as	-g -o util.o util+posixy-x64.s  && 	as	-g -o util.o util+posixy-x64.s  &&\
 echo 	as	-g -o syscall.o syscall+openbsd-x64.s  && 	as	-g -o syscall.o syscall+openbsd-x64.s  &&\
+echo 	$pwd/6/6m	ifreq+openbsd.myr  && 	$pwd/6/6m	ifreq+openbsd.myr  &&\
 echo 	$pwd/muse/muse	-o libsys.use -p sys ifreq.use systypes.use syserrno.use sys.use  && 	$pwd/muse/muse	-o libsys.use -p sys ifreq.use systypes.use syserrno.use sys.use  &&\
 echo 	ar	-rcs libsys.a util.o syscall.o ifreq.o systypes.o syserrno.o sys.o  && 	ar	-rcs libsys.a util.o syscall.o ifreq.o systypes.o syserrno.o sys.o  &&\
 echo 	cd $pwd/lib/std && 	cd $pwd/lib/std &&\
@@ -78,6 +78,7 @@ echo 	$pwd/6/6m	-I ../sys -I . strjoin.myr  && 	$pwd/6/6m	-I ../sys -I . strjoin
 echo 	$pwd/6/6m	-I ../sys -I . mk.myr  && 	$pwd/6/6m	-I ../sys -I . mk.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . pathjoin.myr  && 	$pwd/6/6m	-I ../sys -I . pathjoin.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . mktemp.myr  && 	$pwd/6/6m	-I ../sys -I . mktemp.myr  &&\
+echo 	as	-g -o memops-impl.o memops-impl+posixy-x64.s  && 	as	-g -o memops-impl.o memops-impl+posixy-x64.s  &&\
 echo 	$pwd/6/6m	-I ../sys -I . fndup.myr  && 	$pwd/6/6m	-I ../sys -I . fndup.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . putint.myr  && 	$pwd/6/6m	-I ../sys -I . putint.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . mkpath.myr  && 	$pwd/6/6m	-I ../sys -I . mkpath.myr  &&\
@@ -91,7 +92,6 @@ echo 	$pwd/6/6m	-I ../sys -I . search.myr  && 	$pwd/6/6m	-I ../sys -I . search.m
 echo 	$pwd/6/6m	-I ../sys -I . getcwd.myr  && 	$pwd/6/6m	-I ../sys -I . getcwd.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . swap.myr  && 	$pwd/6/6m	-I ../sys -I . swap.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . dial+posixy.myr  && 	$pwd/6/6m	-I ../sys -I . dial+posixy.myr  &&\
-echo 	as	-g -o memops-impl.o memops-impl+posixy-x64.s  && 	as	-g -o memops-impl.o memops-impl+posixy-x64.s  &&\
 echo 	$pwd/muse/muse	-o libstd.use -p std fmtfuncs.use fmt.use try.use pathjoin.use strjoin.use sljoin.use slpush.use strstrip.use htab.use now.use getcwd.use rand.use syswrap-ss.use slurp.use varargs.use listen.use strbuf.use clear.use slput.use strsplit.use introspect.use mktemp.use alloc.use optparse.use memops.use fltbits.use striter.use sldup.use fltfmt.use extremum.use option.use errno.use wait.use slcp.use writeall.use putint.use consts.use syswrap.use readall.use sort.use blat.use diriter.use mk.use swap.use hassuffix.use execvp.use ipparse.use types.use slpop.use strfind.use utf.use dialparse.use cstrconv.use search.use die.use units.use result.use bitset.use dir.use env.use resolve.use intparse.use hasprefix.use mkpath.use getint.use dirname.use sleq.use endian.use iterutil.use spork.use assert.use cmp.use chartype.use bigint.use threadhooks.use slfill.use hashfuncs.use fndup.use dial.use  && 	$pwd/muse/muse	-o libstd.use -p std fmtfuncs.use fmt.use try.use pathjoin.use strjoin.use sljoin.use slpush.use strstrip.use htab.use now.use getcwd.use rand.use syswrap-ss.use slurp.use varargs.use listen.use strbuf.use clear.use slput.use strsplit.use introspect.use mktemp.use alloc.use optparse.use memops.use fltbits.use striter.use sldup.use fltfmt.use extremum.use option.use errno.use wait.use slcp.use writeall.use putint.use consts.use syswrap.use readall.use sort.use blat.use diriter.use mk.use swap.use hassuffix.use execvp.use ipparse.use types.use slpop.use strfind.use utf.use dialparse.use cstrconv.use search.use die.use units.use result.use bitset.use dir.use env.use resolve.use intparse.use hasprefix.use mkpath.use getint.use dirname.use sleq.use endian.use iterutil.use spork.use assert.use cmp.use chartype.use bigint.use threadhooks.use slfill.use hashfuncs.use fndup.use dial.use  &&\
 echo 	ar	-rcs libstd.a fmtfuncs.o fmt.o try.o pathjoin.o strjoin.o memops-impl.o sljoin.o slpush.o strstrip.o htab.o now.o getcwd.o rand.o syswrap-ss.o slurp.o varargs.o listen.o strbuf.o clear.o slput.o strsplit.o introspect.o mktemp.o alloc.o optparse.o memops.o fltbits.o striter.o sldup.o fltfmt.o extremum.o option.o errno.o wait.o slcp.o writeall.o putint.o consts.o syswrap.o readall.o sort.o blat.o diriter.o mk.o swap.o hassuffix.o execvp.o ipparse.o types.o slpop.o strfind.o utf.o dialparse.o cstrconv.o search.o die.o units.o result.o bitset.o dir.o env.o resolve.o intparse.o hasprefix.o mkpath.o getint.o dirname.o sleq.o endian.o iterutil.o spork.o assert.o cmp.o chartype.o bigint.o threadhooks.o slfill.o hashfuncs.o fndup.o dial.o  && 	ar	-rcs libstd.a fmtfuncs.o fmt.o try.o pathjoin.o strjoin.o memops-impl.o sljoin.o slpush.o strstrip.o htab.o now.o getcwd.o rand.o syswrap-ss.o slurp.o varargs.o listen.o strbuf.o clear.o slput.o strsplit.o introspect.o mktemp.o alloc.o optparse.o memops.o fltbits.o striter.o sldup.o fltfmt.o extremum.o option.o errno.o wait.o slcp.o writeall.o putint.o consts.o syswrap.o readall.o sort.o blat.o diriter.o mk.o swap.o hassuffix.o execvp.o ipparse.o types.o slpop.o strfind.o utf.o dialparse.o cstrconv.o search.o die.o units.o result.o bitset.o dir.o env.o resolve.o intparse.o hasprefix.o mkpath.o getint.o dirname.o sleq.o endian.o iterutil.o spork.o assert.o cmp.o chartype.o bigint.o threadhooks.o slfill.o hashfuncs.o fndup.o dial.o  &&\
 echo 	cd $pwd/lib/regex && 	cd $pwd/lib/regex &&\
@@ -118,8 +118,9 @@ echo 	$pwd/6/6m	-I ../lib/regex -I ../lib/bio -I ../lib/std -I ../lib/sys syssel
 echo 	$pwd/6/6m	-I ../lib/regex -I ../lib/bio -I ../lib/std -I ../lib/sys parse.myr  && 	$pwd/6/6m	-I ../lib/regex -I ../lib/bio -I ../lib/std -I ../lib/sys parse.myr  &&\
 echo 	$pwd/6/6m	-I ../lib/regex -I ../lib/bio -I ../lib/std -I ../lib/sys build.myr  && 	$pwd/6/6m	-I ../lib/regex -I ../lib/bio -I ../lib/std -I ../lib/sys build.myr  &&\
 echo 	$pwd/6/6m	-I ../lib/regex -I ../lib/bio -I ../lib/std -I ../lib/sys install.myr  && 	$pwd/6/6m	-I ../lib/regex -I ../lib/bio -I ../lib/std -I ../lib/sys install.myr  &&\
+echo 	$pwd/6/6m	-I ../lib/regex -I ../lib/bio -I ../lib/std -I ../lib/sys subtest.myr  && 	$pwd/6/6m	-I ../lib/regex -I ../lib/bio -I ../lib/std -I ../lib/sys subtest.myr  &&\
 echo 	$pwd/6/6m	-I ../lib/regex -I ../lib/bio -I ../lib/std -I ../lib/sys clean.myr  && 	$pwd/6/6m	-I ../lib/regex -I ../lib/bio -I ../lib/std -I ../lib/sys clean.myr  &&\
 echo 	$pwd/6/6m	-I ../lib/regex -I ../lib/bio -I ../lib/std -I ../lib/sys test.myr  && 	$pwd/6/6m	-I ../lib/regex -I ../lib/bio -I ../lib/std -I ../lib/sys test.myr  &&\
 echo 	$pwd/6/6m	-I ../lib/regex -I ../lib/bio -I ../lib/std -I ../lib/sys main.myr  && 	$pwd/6/6m	-I ../lib/regex -I ../lib/bio -I ../lib/std -I ../lib/sys main.myr  &&\
-echo 	ld	-static -nopie -o mbld $pwd/rt/_myrrt.o clean.o config.o deps.o types.o syssel.o util.o parse.o main.o build.o opts.o install.o test.o -L../lib/regex -L../lib/bio -L../lib/std -L../lib/sys -lregex -lbio -lstd -lsys  && 	ld	-static -nopie -o mbld $pwd/rt/_myrrt.o clean.o config.o deps.o types.o syssel.o util.o parse.o main.o build.o opts.o install.o test.o -L../lib/regex -L../lib/bio -L../lib/std -L../lib/sys -lregex -lbio -lstd -lsys  &&\
+echo 	ld	-static -nopie -o mbld $pwd/rt/_myrrt.o clean.o config.o deps.o types.o syssel.o util.o subtest.o parse.o main.o build.o opts.o install.o test.o -L../lib/regex -L../lib/bio -L../lib/std -L../lib/sys -lregex -lbio -lstd -lsys  && 	ld	-static -nopie -o mbld $pwd/rt/_myrrt.o clean.o config.o deps.o types.o syssel.o util.o subtest.o parse.o main.o build.o opts.o install.o test.o -L../lib/regex -L../lib/bio -L../lib/std -L../lib/sys -lregex -lbio -lstd -lsys  &&\
 true
