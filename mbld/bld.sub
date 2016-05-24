@@ -9,6 +9,7 @@ bin mbld =
 	main.myr
 	opts.myr
 	parse.myr
+	subtest.myr
 	syssel.myr
 	test.myr
         types.myr

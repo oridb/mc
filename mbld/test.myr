@@ -8,6 +8,7 @@ use "parse"
 use "types"
 use "util"
 use "syssel"
+use "subtest"
 
 use "config"
 
@@ -149,7 +150,8 @@ const buildtests = {b, targ
 }
 
 const runtest = {b, cmd
-	var r, log, p
+	var res, log, logfd, p
+	var sub
 
 	std.put("run")
 	for c in cmd
@@ -163,27 +165,27 @@ const runtest = {b, cmd
 		std.fatal("\nunable to run test: {}\n", m)
 	| `std.Ok (pid, infd, outfd):
 		log = std.strcat(cmd[0], ".log")
-		match std.fslurp(outfd)
-		| `std.Ok "":	/* empty output; nothing to log */
-		| `std.Ok buf:
-			std.blat(log, buf, 0o644)
-		| `std.Fail m:
-		;;
+		logfd = std.try(std.open(log, std.Owronly | std.Ocreat))
+		sub = showsub(outfd, logfd)
 		std.slfree(log)
 		std.close(infd)
 		std.close(outfd)
 
-		r = false
+		res = false
 		match std.wait(pid)
 		| `std.Wfailure:	std.put("FAIL\n")
 		| `std.Wsignalled:	std.put("CRASH\n")
 		| `std.Wsuccess:
-			std.put("PASS\n")
-			r = true
+			res = true
+			/* if we have subtests, we've already printed the output */
+			match sub
+			| `std.Some r:	res = r
+			| `std.None:	std.put("PASS\n")
+			;;
 		| `std.Waiterror:	std.put("failed waiting for pid {}\n", pid)
 		;;
 	;;
-	-> r
+	-> res
 }
 
 const testpath = {s

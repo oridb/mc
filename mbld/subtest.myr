@@ -1,0 +1,128 @@
+use std
+use bio
+use regex
+
+pkg bld =
+	const showsub	: (f : std.fd, logfd : std.fd -> std.option(bool))
+;;
+
+var planpat
+var headpat
+var footpat
+
+const __init__ = {
+	planpat = std.try(regex.compile("MTEST\\s+(-?\\d+)\\s*"))
+	headpat = std.try(regex.compile("test\\s+(.*)<<{!"))
+	footpat = std.try(regex.compile("!}>>\\s*(ok|fail\\s*(.*))"))
+}
+
+const showsub = {fd, logfd
+	var f, log
+	var ntests
+	var res
+
+	f = bio.mkfile(fd, bio.Rd)
+	log = bio.mkfile(logfd, bio.Wr)
+	res = `std.None
+	match bio.readln(f)
+	| `bio.Err e:	std.fatal("error reading subfile: {}\n", e)
+	| `bio.Eof:	-> `std.None
+	| `bio.Ok ln:
+		match regex.exec(planpat, ln)
+		| `std.None:
+			bio.write(log, ln)
+			showraw(fd, logfd)
+		| `std.Some m:
+			ntests = std.get(std.intparse(m[1]))
+			regex.matchfree(m)
+			res = `std.Some showtests(f, log, ntests)
+		;;
+		std.slfree(ln)
+	;;
+	bio.close(f)
+	bio.close(log)
+	-> res
+}
+
+const showraw = {f, log
+	var buf : byte[:]
+
+	buf = std.slalloc(64*std.KiB)
+	while true
+		match std.read(f, buf[:])
+		| `std.Ok 0:	break
+		| `std.Ok n:	std.write(log, buf[:n])
+		| `std.Fail e:	std.fatal("error writing log: {}\n", e)
+		;;
+	;;
+	std.slfree(buf)
+}
+
+const showtests = {f, log, ntests
+	var nresults
+	var ok
+
+	if ntests == 0
+		std.put("FAIL: missing tests\n")
+		-> false
+	;;
+	ok = true
+	nresults = 0
+	for ln in bio.byline(f)
+		ln = std.strstrip(ln)
+		match testhead(ln)
+		| `std.None:
+		| `std.Some t:	
+			std.put("\trun {}:\t", std.strstrip(t))
+			bio.put(log, "RUN {}\n", t)
+			continue
+		;;
+
+		match testfoot(ln)
+		| `std.None:
+		| `std.Some `std.Ok _:
+			std.put("PASS\n")
+			nresults++
+			continue
+		| `std.Some `std.Fail m:
+			std.put("FAIL\n")
+			ok = false
+			nresults++
+			continue
+		;;
+
+		bio.put(log, "\t{}\n", ln)
+	;;
+	if ntests > 0 && ntests != nresults
+		std.put("mismatched test count: expected {}, got {}\n", ntests, nresults)
+		-> false
+	;;
+	-> ok
+}
+
+const testhead = {ln
+	var t
+
+	match regex.exec(headpat, ln)
+	| `std.Some m:
+		t = std.sldup(m[1])
+		regex.matchfree(m)
+		-> `std.Some t
+	| `std.None:
+		-> `std.None
+	;;
+}
+
+const testfoot : (ln : byte[:] -> std.option(std.result(void, byte[:]))) = {ln
+	match regex.exec(footpat, ln)
+	| `std.Some m:
+		if std.sleq(m[1], "ok")
+			-> `std.Some `std.Ok void
+		else
+			-> `std.Some `std.Fail std.sldup(m[2])
+		;;
+	| `std.None:
+		-> `std.None
+	;;
+}
+
