@@ -10,40 +10,78 @@ use "utf"
 
 pkg std =
 	const strsplit	: (s : byte[:], delim : byte[:] -> byte[:][:])
+	const bstrsplit	: (sp : byte[:][:], s : byte[:], delim : byte[:] -> byte[:][:])
 	const strtok	: (s : byte[:] -> byte[:][:])
+	const bstrtok	: (sp : byte[:][:], s : byte[:] -> byte[:][:])
 ;;
 
 extern const put	: (fmt : byte[:], args : ... -> size)
 
 const strsplit = {s, delim
-	var last
 	var sp
 
 	sp = [][:]
-	if s.len == 0
-		-> sp
-	;;
+	-> dostrsplit(&sp, s, delim, true)
+}
+
+const bstrsplit = {sp, s, delim
+	-> dostrsplit(&sp, s, delim, false)
+}
+
+const dostrsplit : (sp : byte[:][:]#, s : byte[:], delim : byte[:], grow : bool -> byte[:][:]) = {sp : byte[:][:]#, s, delim, grow
+	var last
+	var idx
+
 	last = 0
+	idx = 0
+
+	if s.len == 0
+		-> sp#[:idx]
+	;;
+
 	while true
 		match strfind(s, delim)
 		| `Some i:
-			slpush(&sp, s[:i])
+			if grow
+				slpush(sp, s[:i])
+			elif idx < sp#.len - 1
+				sp#[idx] = s[:i]
+			else
+				goto donesplit
+			;;
 			s = s[i + delim.len:]
+			idx++
 		| `None:
 			goto donesplit
 		;;
 	;;
 :donesplit
-	slpush(&sp, s[:])
-	-> sp
+	if grow
+		slpush(sp, s)
+	else
+		sp#[idx] = s
+	;;
+	idx++
+	-> sp#[:idx]
 }
 
 const strtok = {s
-	var i, j
 	var toks
+	toks = [][:]
+
+	-> dostrtok(&toks, s, true)
+}
+
+const bstrtok = {toks, s
+	-> dostrtok(&toks, s, false)
+}
+
+const dostrtok = {toks, s, grow
+	var i, j
+	var idx
 
 	i = 0
-	toks = [][:]
+	idx = 0
 	while i != s.len
 		while isspace(std.decode(s[i:])) && i < s.len
 			i++
@@ -53,9 +91,18 @@ const strtok = {s
 			j++
 		;;
 		if i != j
-			slpush(&toks, s[i:j])
+			if grow
+				slpush(toks, s[i:j])
+			elif idx < toks#.len - 1
+				toks#[idx] = s[i:j]
+			else
+				toks#[idx] = s[i:]
+				idx++
+				break
+			;;
+			idx++
 		;;
 		i = j
 	;;
-	-> toks
+	-> toks#[:idx]
 }

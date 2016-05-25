@@ -1,13 +1,32 @@
 use std
 
 const main = {
+	var b : byte[:][6]
+
+	/* dynamic str split */
 	check(std.strsplit("", ","), [][:])
 	check(std.strsplit("a,b,c ,,d,", ","), \
 		["a", "b", "c ", "", "d", ""][:])
+	check(std.strsplit("a,b,c ,,d,", ","), \
+		["a", "b", "c ", "", "d", ""][:])
+
+	/* buffered str split */
+	check(std.bstrsplit(b[:], "a,b", ","), \
+		["a", "b"][:])
+	check(std.bstrsplit(b[:], "a,b,c ,,d,", ","), \
+		["a", "b", "c ", "", "d", ""][:])
+	check(std.bstrsplit(b[:], "a,b,c,d,e,f,g,h", ","), \
+		["a", "b", "c", "d", "e", "f,g,h",][:])
+
+	/* tokenizing */
 	check(std.strtok(""), [][:])
 	check(std.strtok(" "), [][:])
 	check(std.strtok("\t"), [][:])
 	check(std.strtok("a b  c\td"), ["a", "b", "c", "d"][:])
+
+	/* buffered tokenizing */
+	check(std.bstrtok(b[:], "a b  c\td"), ["a", "b", "c", "d"][:])
+	check(std.bstrtok(b[:2], "a b  c\td"), ["a", "b  c\td"][:])
 }
 
 const check = {a, b
@@ -17,7 +36,7 @@ const check = {a, b
 	;;
 	for var i = 0; i < a.len; i++
 		if !std.sleq(a[i], b[i])
-			std.fatal("element {} mismatched: {} != {}\n", i, a[i], b[i])
+			std.fatal("element {} mismatched: '{}' != '{}'\n", i, a[i], b[i])
 		;;
 	;;
 }
