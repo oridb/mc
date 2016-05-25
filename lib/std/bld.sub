@@ -46,6 +46,8 @@ lib std {inc=.} =
 	readall.myr
 	result.myr
 	search.myr
+	sjlj.myr
+	sjlj-impl+posixy-x64.s
 	slcp.myr
 	sldup.myr
 	sleq.myr

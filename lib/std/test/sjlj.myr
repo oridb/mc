@@ -1,0 +1,17 @@
+use std
+
+const main = {
+	var jb
+
+	if std.setjmp(&jb)
+		std.put("nonlocal return\n")
+		std.exit(0)
+	;;
+	std.put("doing jmp\n")
+	dolongjmp(&jb)
+	std.fatal("unreachable\n")
+}
+
+const dolongjmp = {jb
+	std.longjmp(jb)
+}
