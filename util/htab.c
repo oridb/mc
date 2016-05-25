@@ -9,6 +9,9 @@
 #include "util.h"
 
 #define Initsz 16
+#define Seed 2928213749
+
+ulong murmurhash2(void *key, size_t len);
 
 /* Creates a new empty hash table, using 'hash' as the
  * hash funciton, and 'cmp' to verify that there are no
@@ -210,20 +213,11 @@ void **htkeys(Htab *ht, size_t *nkeys)
 ulong strhash(void *_s)
 {
 	char *s;
-	ulong h;
-	ulong g;
 
 	s = _s;
-	h = 0;
-	while (s && *s) {
-		h = ((h << 4) + *s++);
-
-		if ((g = (h & 0xF0000000)))
-			h ^= (g >> 24);
-
-		h &= ~g;
-	}
-	return h;
+	if (!s)
+		return Seed;
+	return murmurhash2(_s, strlen(_s));
 }
 
 int streq(void *a, void *b)
@@ -238,19 +232,11 @@ int streq(void *a, void *b)
 ulong strlithash(void *_s)
 {
 	Str *s;
-	ulong h, g, i;
 
 	s = _s;
-	h = 0;
-	for (i = 0; i < s->len; i++) {
-		h = ((h << 4) + s->buf[i]);
-
-		if ((g = (h & 0xF0000000)))
-			h ^= (g >> 24);
-
-		h &= ~g;
-	}
-	return h;
+	if (!s)
+		return Seed;
+	return murmurhash2(s->buf, s->len);
 }
 
 int strliteq(void *_a, void *_b)
@@ -272,17 +258,58 @@ ulong ptrhash(void *key) { return inthash((uintptr_t)key); }
 
 ulong inthash(uint64_t key)
 {
-	uintptr_t h;
-
-	h = (uintptr_t)key;
-	h *= 357913941;
-	h ^= h << 24;
-	h += ~357913941;
-	h ^= h >> 31;
-	h ^= h << 31;
-	return h;
+	return murmurhash2(&key, sizeof key);
 }
 
-int inteq(uint64_t a, uint64_t b) { return a == b; }
+int inteq(uint64_t a, uint64_t b)
+{
+	return a == b;
+}
 
-int ptreq(void *a, void *b) { return a == b; }
+int ptreq(void *a, void *b)
+{
+	return a == b;
+}
+
+ulong murmurhash2 (void *ptr, size_t len)
+{
+	uint32_t m = 0x5bd1e995;
+	uint32_t r = 24;
+	uint32_t h, k;
+	uint32_t *data;
+	char *buf;
+	
+	buf = ptr;
+	data = (uint32_t*)buf;
+	h = Seed ^ len;
+	while (len >= 4) {
+		k = *data;
+
+		k *= m;
+		k ^= k >> r;
+		k *= m;
+
+		h *= m;
+		h ^= k;
+		data++;
+		len -= sizeof(*data);
+	}
+
+	switch (len) {
+	case 3:
+		h ^= buf[2] << 16;
+	case 2:
+		h ^= buf[1] << 8;
+	case 1:
+		h ^= buf[0] << 0;
+	default:
+		break;
+	};
+	h *= m;
+
+	h ^= h >> 13;
+	h *= m;
+	h ^= h >> 15;
+
+	return h;
+}
