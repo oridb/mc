@@ -634,41 +634,61 @@ const escaped = {re
 	idx = re.idx
 	match getc(re)
 	/* character classes */
-	| 'd': ret = `Some mk(re, `Ranges std.sldup(_ranges.tabasciidigit[:]), idx)
-	| 'x': ret = `Some mk(re, `Ranges std.sldup(_ranges.tabasciixdigit[:]), idx)
-	| 's': ret = `Some mk(re, `Ranges std.sldup(_ranges.tabasciispace[:]), idx)
-	| 'w': ret = `Some mk(re, `Ranges std.sldup(_ranges.tabasciiword[:]), idx)
-	| 'h': ret = `Some mk(re, `Ranges std.sldup(_ranges.tabasciiblank[:]), idx)
+	| 'd':	ret = `Some mk(re, `Ranges std.sldup(_ranges.tabasciidigit[:]), idx)
+	| 'x':	ret = `Some mk(re, `Ranges std.sldup(_ranges.tabasciixdigit[:]), idx)
+	| 's':	ret = `Some mk(re, `Ranges std.sldup(_ranges.tabasciispace[:]), idx)
+	| 'w':	ret = `Some mk(re, `Ranges std.sldup(_ranges.tabasciiword[:]), idx)
+	| 'h':	ret = `Some mk(re, `Ranges std.sldup(_ranges.tabasciiblank[:]), idx)
 
 	/* negated character classes */
-	| 'W': ret = `Some mk(re, `Ranges negate(_ranges.tabasciiword[:]), idx)
-	| 'S': ret = `Some mk(re, `Ranges negate(_ranges.tabasciispace[:]), idx)
-	| 'D': ret = `Some mk(re, `Ranges negate(_ranges.tabasciidigit[:]), idx)
-	| 'X': ret = `Some mk(re, `Ranges negate(_ranges.tabasciixdigit[:]), idx)
-	| 'H': ret = `Some mk(re, `Ranges negate(_ranges.tabasciiblank[:]), idx)
+	| 'W':	ret = `Some mk(re, `Ranges negate(_ranges.tabasciiword[:]), idx)
+	| 'S':	ret = `Some mk(re, `Ranges negate(_ranges.tabasciispace[:]), idx)
+	| 'D':	ret = `Some mk(re, `Ranges negate(_ranges.tabasciidigit[:]), idx)
+	| 'X':	ret = `Some mk(re, `Ranges negate(_ranges.tabasciixdigit[:]), idx)
+	| 'H':	ret = `Some mk(re, `Ranges negate(_ranges.tabasciiblank[:]), idx)
 
 	/* unicode character classes */
 	| 'p':	ret = unicodeclass(re, false)
-	| 'P':  ret = unicodeclass(re, true)
+	| 'P':	 ret = unicodeclass(re, true)
 
 	/* operators that need an escape */
-	| '<': ret = `Some mk(re, `Bow, idx)
-	| '>': ret = `Some mk(re, `Eow, idx)
+	| '<':	ret = `Some mk(re, `Bow, idx)
+	| '>':	ret = `Some mk(re, `Eow, idx)
 
 	/* escaped metachars */
-	| '^': ret = `Some mk(re, `Chr '^', idx)
-	| '$': ret = `Some mk(re, `Chr '$', idx)
-	| '.': ret = `Some mk(re, `Chr '.', idx)
-	| '+': ret = `Some mk(re, `Chr '+', idx)
-	| '?': ret = `Some mk(re, `Chr '?', idx)
-	| '*': ret = `Some mk(re, `Chr '*', idx)
+	| '^':	ret = `Some mk(re, `Chr '^', idx)
+	| '$':	ret = `Some mk(re, `Chr '$', idx)
+	| '.':	ret = `Some mk(re, `Chr '.', idx)
+	| '+':	ret = `Some mk(re, `Chr '+', idx)
+	| '?':	ret = `Some mk(re, `Chr '?', idx)
+	| '*':	ret = `Some mk(re, `Chr '*', idx)
+
 	/* escaped nonprintable characters */
-	| 'r': ret = `Some mk(re, `Chr '\r', idx)
-	| 'n': ret = `Some mk(re, `Chr '\n', idx)
-	| 'b': ret = `Some mk(re, `Chr '\b', idx)
-	| chr: ret = `Fail `Badescape chr
+	| 'r':	ret = `Some mk(re, `Chr '\r', idx)
+	| 'n':	ret = `Some mk(re, `Chr '\n', idx)
+	| 'b':	ret = `Some mk(re, `Chr '\b', idx)
+	| 'u':	ret = unichar(re, idx)
+	| chr:	ret = `Fail `Badescape chr
 	;;
 	-> ret
+}
+
+const unichar = {re, idx
+	var c
+
+	if !matchc(re, '{')
+		-> `Fail `Badescape 'u'
+	;;
+
+	c = 0
+	while std.isxdigit(peekc(re))
+		c *= 16
+		c += std.charval(getc(re), 16)
+	;;
+	if !matchc(re, '}')
+		-> `Fail `Badescape 'u'
+	;;
+	-> `Some mk(re, `Chr c, idx)
 }
 
 const unicodeclass = {re, neg
