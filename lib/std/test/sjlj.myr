@@ -1,7 +1,9 @@
 use std
 
+var st
+
 const main = {
-	var jb, st
+	var jb
 
 	st = 1
 	if std.setjmp(&jb)
