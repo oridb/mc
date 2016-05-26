@@ -165,7 +165,7 @@ const runtest = {b, cmd
 		std.fatal("\nunable to run test: {}\n", m)
 	| `std.Ok (pid, infd, outfd):
 		log = std.strcat(cmd[0], ".log")
-		logfd = std.try(std.open(log, std.Owronly | std.Ocreat))
+		logfd = std.try(std.openmode(log, std.Owronly | std.Ocreat, 0o644))
 		sub = showsub(outfd, logfd)
 		std.slfree(log)
 		std.close(infd)
