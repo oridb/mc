@@ -5,6 +5,7 @@ lib date =
 	parse.myr
 	types.myr
 	zoneinfo+posixy.myr
+	zoneinfo+plan9.myr
 
         lib ../sys:sys
         lib ../std:std

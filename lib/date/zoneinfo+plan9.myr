@@ -1,0 +1,25 @@
+use std
+use sys
+
+use "types"
+
+pkg _zoneinfo =
+	type zifile
+	const findtzoff : (tz : byte[:], tm : std.time -> std.option(date.duration))
+	const load	: (file : byte[:] -> zifile#)
+	const free	: (f : zifile# -> void)
+;;
+
+type zifile = byte
+
+const findtzoff	= {tz, tm
+	-> `std.Some 0
+}
+
+const load = {f
+	-> std.alloc()
+}
+
+const free = {p
+	-> std.free(p)
+}
