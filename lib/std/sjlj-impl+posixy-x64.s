@@ -11,13 +11,13 @@ _std$setjmp:
 	movq	%r15, 40(%rdi)
 
 	/* save %rsp */
-	leaq	8(%rsp),%rdx
-	movq	%rdx,48(%rdi)
+	leaq	8(%rsp), %rdx
+	movq	%rdx, 48(%rdi)
 
 	/* save %rip */
-	movq	(%rsp),%rdx
-	movq	%rdx,56(%rdi)
-	xorq	%rax,%rax
+	movq	(%rsp), %rdx
+	movq	%rdx, 56(%rdi)
+	xorq	%rax, %rax
 	ret	
 
 .globl std$longjmp

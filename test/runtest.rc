@@ -12,11 +12,13 @@ fn build {
 
 fn pass {
 	passed=$passed ^ ' ' ^ $1
+	echo "!}>> ok"
 }
 
 fn fail {
 	echo FAIL: $1
-	failed=$failed ^ ' ' ^ $1
+	failed=$failed ^ ' ' ^ $1}
+	echo "!}>> fail $1"
 }
 
 fn expectstatus {
@@ -62,6 +64,7 @@ fn B {
 	type=$1; shift
 	res=$1; shift
 
+	echo "test $test <<{!"
 	build $test
 	switch($type) {
 	case E
@@ -76,6 +79,7 @@ fn B {
 }
 
 fn F {
+	echo "test $test <<{!"
 	@{ build $1 } > /dev/null
 	if (~ $status ''/)
 		fail $1
@@ -83,6 +87,7 @@ fn F {
 		pass $1
 }
 
+echo "MTEST `{grep '^[BF]' tests | wc -l}"
 
 . tests
 
