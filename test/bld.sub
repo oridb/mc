@@ -1,1 +1,2 @@
-cmd runtest {test} = ./runtest.sh ;;
+cmd runtest {test,tag=posixy} = ./runtest.sh ;;
+cmd runtest {test,tag=plan9} = ./runtest.rc ;;

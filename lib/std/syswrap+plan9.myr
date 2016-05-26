@@ -98,7 +98,8 @@ const openmode	= {path, opts, mode;
 
 
 	if opts & Ocreat != 0
-		fd = sys.create(path, (opts & ~Ocreat : sys.fdopt), (mode : int))
+		opts &= ~Ocreat
+		fd = sys.create(path, (opts : sys.fdopt), (mode : int))
 	else
 		fd = sys.open(path, (opts : sys.fdopt))
 	;;
