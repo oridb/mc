@@ -69,21 +69,23 @@ const ip6parse = {ip
 	for i = 0; ip.len > 0 && ok; i++
 		/* parse 'num' segment */
 		(v, ip, ok) = num(ip, 0, 65536, 16, ':', ok)
-		nseg++
-		if ip.len == 0 || nseg == 8
-			break
-		;;
-		(ip, ok) = delim(ip, ':', ok)
-		/* only one '::' allowed once */
-		if ip.len > 0 && ip[0] == (':' : byte) && !expand
-			expand = true
-			split = i
-			(ip, ok) = delim(ip, ':', ok)
-		;;
 
 		/* pack it into the bytes */
 		val[i*2] = ((v & 0xff00) >> 8 : byte)
 		val[i*2 + 1] = (v & 0xff : byte)
+
+		nseg++
+		if ip.len == 0 || nseg == 8
+			break
+		;;
+
+		(ip, ok) = delim(ip, ':', ok)
+		/* only one '::' allowed once */
+		if ip.len > 0 && ip[0] == (':' : byte) && !expand
+			(ip, ok) = delim(ip, ':', ok)
+			expand = true
+			split = i
+		;;
 	;;
 
 	if ok && ip.len == 0
