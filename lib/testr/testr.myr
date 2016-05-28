@@ -4,8 +4,7 @@ pkg testr =
 	type ctx = struct
 		ok	: bool
 		reason	: byte[:]
-
-		retctx	: std.jmpbuf#
+		jmpbuf	: std.jmpbuf#
 	;;
 
 	type spec = struct
@@ -14,10 +13,11 @@ pkg testr =
 	;;
 
 	const run	: (specs : spec[:] -> void)
-	const check	: (ctx : ctx#, cond : bool, msg : byte[:], args : ... -> void)
 	const ok	: (ctx : ctx# -> void)
-	const fail	: (ctx : ctx#, msg : byte[:], args : ... -> void)
-	const softfail	: (ctx : ctx#, msg : byte[:], args : ... -> void)
+	const fail	: (ctx : ctx#, msg : byte[:] -> void)
+	const check	: (ctx : ctx#, cond : bool, msg : byte[:] -> void)
+
+	const softfail	: (ctx : ctx#, msg : byte[:] -> void)
 ;;
 
 const run = {specs
@@ -27,54 +27,37 @@ const run = {specs
 	;;
 }
 
-const check	= {ctx, cond, msg, args
-	var ap
-	var msg
+const ok = {ctx
+	/* nothing to do here */
+}
 
+const check = {ctx, cond, msg
 	if !cond
-		ap = std.vastart(&args)
-		failv(ctx, msg, &ap)
+		fail(ctx, msg)
 	;;
 }
 
-const ok = {ctx
-	/* nothing to do here? */
+const fail = {ctx, msg
+	softfail(ctx, msg)
+	std.longjmp(ctx.jmpbuf)
 }
 
-const fail = {ctx, msg, args
-	var ap
-
-	ap = std.vastart(&args)
-	failv(ctx, msg, &ap)
-}
-
-const softfail = {ctx, msg, args
-	var ap
-
-	ap = std.vastart(&args)
-	softfailv(ctx, msg, &ap)
-}
-
-const failv = {ctx, msg, ap
-	softfailv(ctx, msg, ap)
-	std.longjmp(ctx.retctx)
-}
-
-const softfailv = {ctx, msg, ap
+const softfail = {ctx, msg
 	ctx.ok = false
-	ctx.reason = std.fmtv(msg, ap)
+	ctx.reason = msg
 }
 
 const runspec = {ts
-	var status, reason, jbuf
 	var ctx : ctx
+	var status, reason
+	var jmpbuf
 
 	ctx.ok = true
 	ctx.reason = ""
-	ctx.retctx = &jbuf
-	std.put("test {} <<{{!\n", ts.name)
+	ctx.jmpbuf = &jmpbuf
 
-	if !std.setjmp(&jbuf)
+	std.put("test {} <<{{!\n", ts.name)
+	if !std.setjmp(&jmpbuf)
 		ts.fn(&ctx)
 	;;
 
@@ -86,5 +69,4 @@ const runspec = {ts
 		reason = ctx.reason
 	;;
 	std.put("!}}>> {} {}\n", status, reason)
-	std.slfree(reason)
 }
