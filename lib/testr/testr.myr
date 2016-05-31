@@ -14,9 +14,10 @@ pkg testr =
 	;;
 
 	const run	: (specs : spec[:] -> void)
+	const check	: (ctx : ctx#, cond : bool, msg : byte[:], args : ... -> void)
 	const ok	: (ctx : ctx# -> void)
-	const fail	: (ctx : ctx#, msg : byte[:] -> void)
-	const softfail	: (ctx : ctx#, msg : byte[:] -> void)
+	const fail	: (ctx : ctx#, msg : byte[:], args : ... -> void)
+	const softfail	: (ctx : ctx#, msg : byte[:], args : ... -> void)
 ;;
 
 const run = {specs
@@ -26,18 +27,42 @@ const run = {specs
 	;;
 }
 
+const check	= {ctx, cond, msg, args
+	var ap
+	var msg
+
+	if !cond
+		ap = std.vastart(&args)
+		failv(ctx, msg, &ap)
+	;;
+}
+
 const ok = {ctx
 	/* nothing to do here? */
 }
 
-const fail = {ctx, msg
-	softfail(ctx, msg)
+const fail = {ctx, msg, args
+	var ap
+
+	ap = std.vastart(&args)
+	failv(ctx, msg, &ap)
+}
+
+const softfail = {ctx, msg, args
+	var ap
+
+	ap = std.vastart(&args)
+	softfailv(ctx, msg, &ap)
+}
+
+const failv = {ctx, msg, ap
+	softfailv(ctx, msg, ap)
 	std.longjmp(ctx.retctx)
 }
 
-const softfail = {ctx, msg
+const softfailv = {ctx, msg, ap
 	ctx.ok = false
-	ctx.reason = msg
+	ctx.reason = std.fmtv(msg, ap)
 }
 
 const runspec = {ts
@@ -61,4 +86,5 @@ const runspec = {ts
 		reason = ctx.reason
 	;;
 	std.put("!}}>> {} {}\n", status, reason)
+	std.slfree(reason)
 }
