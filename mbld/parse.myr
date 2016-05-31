@@ -20,6 +20,7 @@ type parser = struct
 
 	/* default parameter values */
 	incpath	: byte[:][:]
+	libdeps	: byte[:][:]
 	runtime	: byte[:]
 	ldscript: byte[:]
 	istest	: bool
@@ -205,9 +206,10 @@ const target = {b, p
 	| `std.Some "man":	mantarget(b, p)
 	| `std.Some "sub":	subtarget(b, p)
 	/* global attributes */
-	| `std.Some "incpath":	incpath(b, p)
-	| `std.Some "runtime":	p.runtime = expectword(b, p, "incpath")
-	| `std.Some "ldscript":	p.runtime = expectword(b, p, "runtime")
+	| `std.Some "incpath":	incpath(b, p, &p.incpath, "incpath")
+	| `std.Some "libdeps":	incpath(b, p, &p.libdeps, "libdeps")
+	| `std.Some "runtime":	p.runtime = expectword(b, p, "runtime")
+	| `std.Some "ldscript":	p.runtime = expectword(b, p, "ldscript")
 	| `std.Some "noinst":	p.install = false
 	/* no word */
 	| `std.Some targtype:	failparse(p, "unknown keyword {}\n", targtype)
@@ -216,21 +218,22 @@ const target = {b, p
 	-> true
 }
 
-/* incpath: '=' wordlist ';;' */
-const incpath = {b, p
+/* <name>: '=' wordlist ';;' */
+const incpath = {b, p, words, name
 	skipspace(p)
 	if !matchc(p, '=')
-		failparse(p, "expected '=' after incpath\n")
+		failparse(p, "expected '=' after {}\n", name)
 	;;
 	match wordlist(p)
-	| `std.Some path:	p.incpath = path
+	| `std.Some path:	words# = path
 	| `std.None:
 	;;
 	skipspace(p)
 	if !matchc(p, ';') || !matchc(p, ';')
-		failparse(p, "expected ';;' after incpath path list\n")
+		failparse(p, "expected ';;' after {} list\n", name)
 	;;
 }
+
 
 const expectword = {b, p, attr
 	match word(p)
@@ -368,7 +371,7 @@ myrtarget: name '=' inputlist ';;'
 */
 const myrtarget = {b, p, targ
 	var ldscript, runtime, install, incpath, tags
-	var name, inputs, libdeps, attrs
+	var name, inputs, libdeps, libdep, attrs
 	var istest
 	var fsel
 
@@ -414,9 +417,12 @@ const myrtarget = {b, p, targ
 	runtime = p.runtime
 	ldscript = p.ldscript
 	incpath = [][:]
-	for path in p.incpath
-		std.slpush(&incpath, path)
+	std.sljoin(&incpath, p.incpath)
+	for l in p.libdeps
+		libdep = libpath(p, l)
+		std.slpush(&libdeps, libdep)
 	;;
+
 	tags = [][:]
 	for elt in attrs
 		match elt
@@ -434,9 +440,8 @@ const myrtarget = {b, p, targ
 			std.fatal("{}: got invalid attr '{} = {}'\n", targ, invalid, attr)
 		;;
 	;;
-	for inc in bld.opt_incpaths
-		std.slpush(&incpath, std.sldup(inc))
-	;;
+	std.sljoin(&incpath, bld.opt_incpaths)
+	std.sljoin(&incpath, bld.opt_incpaths)
 	-> std.mk([
 		/* target */
 		.dir=std.sldup(p.fdir),
