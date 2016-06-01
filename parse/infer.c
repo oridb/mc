@@ -2219,6 +2219,25 @@ static int maincompatible(Type *t)
 	return 1;
 }
 
+static void verifyop(Inferstate *st, Node *n)
+{
+	Type *ty;
+
+	ty = exprtype(n);
+	switch (exprop(n)) {
+	case Ostruct:
+		if (tybase(ty)->type != Tystruct)
+			fatal(n, "wrong type for struct literal: %s\n", tystr(ty));
+		break;
+	case Oarr:
+		if (tybase(ty)->type != Tyarray)
+			fatal(n, "wrong type for struct literal: %s\n", tystr(ty));
+		break;
+	default:
+		break;
+	}
+}
+
 /* After type inference, replace all types
  * with the final computed type */
 static void typesub(Inferstate *st, Node *n, int noerr)
@@ -2290,6 +2309,8 @@ static void typesub(Inferstate *st, Node *n, int noerr)
 		}
 		for (i = 0; i < n->expr.nargs; i++)
 			typesub(st, n->expr.args[i], noerr);
+                if (!noerr)
+                    verifyop(st, n);
 		break;
 	case Nfunc:
 		pushstab(n->func.scope);
