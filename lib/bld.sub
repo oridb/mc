@@ -3,6 +3,7 @@ sub =
 	date
 	cryptohash
 	inifile
+	fileutil
 	regex
 	std
 	sys

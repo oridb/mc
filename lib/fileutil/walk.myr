@@ -1,0 +1,61 @@
+use std
+
+pkg fileutil =
+	type walkiter = struct
+		dirstk	: std.dir#[:]
+		curdir	: byte[:][:]
+		iterdir	: bool
+	;;
+
+	impl iterable walkiter -> byte[:]
+	const bywalk	: (dir : std.dir# -> walkiter)
+;;
+
+const bywalk = {d
+	-> [.dirstk = std.sldup([d][:]), .curdir = std.sldup([""][:])]
+}
+
+impl iterable walkiter -> byte[:] =
+	__iternext__ = {itp, valp
+		var cur, p
+
+:nextfile
+		cur = itp.dirstk[itp.dirstk.len - 1]
+		match std.dirread(cur)
+		| `std.Some ".":	goto nextfile
+		| `std.Some "..":	goto nextfile
+		| `std.Some ent:
+			p = std.pathcat(itp.curdir[itp.curdir.len - 1], ent)
+			if std.fisdir(p)
+				match std.diropen(p)
+				| `std.Ok d:	std.slpush(&itp.dirstk, d)
+				| `std.Fail e:	/* ? */
+				;;
+				std.slpush(&itp.curdir, p)
+				goto nextfile
+			else
+				valp# = p
+			;;
+			-> true
+		| `std.None:
+			/* don't close the directory given to us by the user */
+			if itp.dirstk.len > 1
+				std.dirclose(itp.dirstk[itp.dirstk.len - 1])
+				std.slfree(itp.curdir[itp.curdir.len - 1])
+				std.slpop(&itp.curdir)
+				std.slpop(&itp.dirstk)
+				goto nextfile
+			else
+				-> false
+			;;
+		;;
+	}
+
+	__iterfin__ = {itp, valp
+		std.slfree(valp#)
+	}
+;;
+
+generic last = {sl : @a[:]
+	-> sl[sl.len - 1]
+}
