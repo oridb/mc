@@ -1,0 +1,13 @@
+use "hasprefix"
+
+pkg std =
+	const chomp	: (str : byte[:], pfx : byte[:] -> byte[:])
+;;
+
+const chomp = {str, pfx
+	if std.hasprefix(str)
+		-> str[pfx.len:]
+	else
+		-> str
+	;;
+}
