@@ -6,6 +6,13 @@ const main = {
 	expect(std.strcmp, "foo", "foos", `std.Before)
 	expect(std.strcmp, "Foo", "foos", `std.Before)
 
+	expect1(std.strncmp, "foo", "bar", 3, `std.After)
+	expect1(std.strncmp, "foo", "foo", 3, `std.Equal)
+	expect1(std.strncmp, "foo", "foos", 3, `std.Equal)
+	expect1(std.strncmp, "foo", "foos", 4, `std.Before)
+	expect1(std.strncmp, "Foo", "foos", 2, `std.Before)
+
+
 	expect(std.strcasecmp, "FOo", "bar", `std.After)
 	expect(std.strcasecmp, "FOo", "Bar", `std.After)
 	expect(std.strcasecmp, "FOo", "FUCK", `std.Before)
@@ -27,6 +34,20 @@ const expect = {fn, a, b, e
 	var val
 
 	val = fn(a, b)
+	match (val, e)
+	| (`std.Before, `std.Before):	/* nothing */
+	| (`std.After, `std.After):	/* nothing */
+	| (`std.Equal, `std.Equal):	/* nothing */
+	| _:
+		std.fatal("cmp {}, {}: expected {}, got {}\n", a, b, e, val)
+	;;
+
+}
+
+const expect1 = {fn, a, b, n, e
+	var val
+
+	val = fn(a, b, n)
 	match (val, e)
 	| (`std.Before, `std.Before):	/* nothing */
 	| (`std.After, `std.After):	/* nothing */
