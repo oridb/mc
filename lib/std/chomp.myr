@@ -5,7 +5,7 @@ pkg std =
 ;;
 
 const chomp = {str, pfx
-	if std.hasprefix(str)
+	if std.hasprefix(str, pfx)
 		-> str[pfx.len:]
 	else
 		-> str
