@@ -73,8 +73,10 @@ expectfcompare() {
 B() {
 	test="$1"; shift
 	type="$1"; shift
-	res="$1"; shift
-	if [ $# > 0 ]; then
+	if [ $# -gt 0 ]; then
+		res="$1"; shift
+	fi
+	if [ $# -gt 0 ]; then
 		args="$1"; shift
 	fi
 	echo "test $test <<{!"
