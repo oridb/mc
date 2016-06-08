@@ -1,4 +1,5 @@
-#!/usr/bin/env bash
+#!/bin/sh
+#set -x
 export PATH=.:$PATH
 export MC=../6/6m
 export MU=../muse/muse
@@ -8,25 +9,25 @@ ARGS=$*
 NFAILURES=0
 NPASSES=0
 
-function build {
+build() {
 	rm -f $1 $1.o $1.s $1.use
 	echo mbld -b $1 -C../6/6m -M../muse/muse -I../lib/std -I../lib/sys -r../rt/_myrrt.o $1.myr
-	mbld -b $1 -C../6/6m -M../muse/muse -I../lib/std -I../lib/sys -r../rt/_myrrt.o $1.myr
+	../mbld/mbld -b $1 -C../6/6m -M../muse/muse -I../lib/std -I../lib/sys -r../rt/_myrrt.o $1.myr
 }
 
-function pass {
+pass() {
 	PASSED="$PASSED $1"
-	NPASSED=$[$NPASSED + 1]
+	NPASSED=$(($NPASSED + 1))
 	echo "!}>> ok"
 }
 
-function fail {
+fail() {
 	FAILED="$FAILED $1"
-	NFAILED=$[$NFAILED + 1]
+	NFAILED=$(($NFAILED + 1))
 	echo "!}>> fail $1"
 }
 
-function expectstatus {
+expectstatus() {
 	./$1 $3
 	if [ $? -eq $2 ]; then
 		pass $1
@@ -36,7 +37,7 @@ function expectstatus {
 	fi
 }
 
-function expectprint {
+expectprint() {
 	if [ "`./$1 $3`" != "$2" ]; then
 		fail $1
 	else
@@ -44,7 +45,7 @@ function expectprint {
 	fi
 }
 
-function expectcompare {
+expectcompare() {
 	if [ x"" !=  x"$TMPDIR" ]; then 
 		t=$TMPDIR/myrtest-$1-$RANDOM
 	else
@@ -59,7 +60,7 @@ function expectcompare {
 	rm -f $t
 }
 
-function expectfcompare {
+expectfcompare() {
 	./$1 $3
 	if cmp data/$1-expected $2; then
 		pass $1
@@ -69,7 +70,7 @@ function expectfcompare {
 }
 
 # Should build and run
-function B {
+B() {
 	test="$1"; shift
 	type="$1"; shift
 	res="$1"; shift
@@ -87,7 +88,7 @@ function B {
 }
 
 # Should fail
-function F {
+F() {
 	echo "test $1 <<{!"
 	(build $1) > /dev/null 2>1
 	if [ $? -eq '1' ]; then
@@ -98,7 +99,7 @@ function F {
 }
 
 echo "MTEST $(egrep '^[BF]' tests | wc -l)"
-source tests
+. tests
 
 echo "PASSED ($NPASSED): $PASSED"
 if [ -z "$NFAILED" ]; then
