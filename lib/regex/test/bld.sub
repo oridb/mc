@@ -5,6 +5,15 @@ test basic =
 	lib @/lib/sys:sys
 	lib @/lib/regex:regex
 ;;
+
+test idxmatch = 
+	idxmatch.myr
+	testmatch.myr
+	lib @/lib/std:std
+	lib @/lib/sys:sys
+	lib @/lib/regex:regex
+;;
+
 test boundaries =
 	boundaries.myr
 	testmatch.myr

@@ -1,0 +1,48 @@
+use std
+
+use "testmatch"
+
+const main = {
+	var s : byte[:]
+		
+	s = std.strjoin([
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+	][:], "")
+
+	testidxmatch(".*bc", "Abc", `std.Some [(0, 3)][:])
+	testidxmatch("(a*)*", "a", `std.Some [(0,1), (0, 1)][:])
+	testidxmatch("(aa|aab?)*", s, `std.Some [(0, 408), (406, 408)][:])
+        /* greedy matches */
+	testidxmatch("(<.*>).*", "<a foo> blah <bar>", `std.Some [
+			(0, 18),
+			(0, 18),
+		][:])
+	testidxmatch("(<.+>).*", "<a foo> blah <bar>", `std.Some [
+			(0, 18),
+			(0, 18),
+		][:])
+        /* reluctant matches */
+	testidxmatch("(<.*?>).*", "<a foo> blah <bar>", `std.Some [
+			(0, 18),
+			(0, 7),
+		][:])
+	testidxmatch("(<.+?>).*", "<a foo> blah <bar>", `std.Some [
+			(0, 18),
+			(0, 7),
+		][:])
+	testidxmatch(".*(<b.+?>).*", "<a foo> blah <bar>", `std.Some [
+			(0, 18),
+			(13, 18),
+		][:])
+}

@@ -3,12 +3,20 @@ use std
 use "types"
 
 pkg regex =
+	/* regex execution */
 	const exec	: (re : regex#, str : byte[:] -> std.option(byte[:][:]))
 	const search	: (re : regex#, str : byte[:] -> std.option(byte[:][:]))
+
+	/* regex execution returning indexes */
+	const iexec	: (re : regex#, str : byte[:] -> std.option((std.size, std.size)[:]))
+	const isearch	: (re : regex#, str : byte[:] -> std.option((std.size, std.size)[:]))
+
+	/* substitution */
 	const sub	: (re : regex#, str : byte[:], subst : byte[:][:] -> std.option(byte[:]))
 	const sbsub	: (sb : std.strbuf#, re : regex#, str : byte[:], subst : byte[:][:] -> bool)
 	const suball	: (re : regex#, str : byte[:], subst : byte[:][:] -> byte[:])
 	const sbsuball	: (sb : std.strbuf#, re : regex#, str : byte[:], subst : byte[:][:] -> void)
+
 	const matchfree	: (pat : byte[:][:] -> void)
 ;;
 
@@ -16,13 +24,19 @@ pkg regex =
 const Zthr = (0 : rethread#)
 
 const exec = {re, str
-	var thr
-	var m
+	var thr, m
 
-	re.str = str
-	re.strp = 0
-	thr = run(re, true)
+	thr = run(re, str, 0, true)
 	m = getmatches(re, thr)
+	cleanup(re)
+	-> m
+}
+
+const iexec = {re, str
+	var thr, m
+
+	thr = run(re, str, 0, true)
+	m = getidxmatches(re, thr)
 	cleanup(re)
 	-> m
 }
@@ -33,10 +47,25 @@ const search = {re, str
 
 	m = `std.None
 	for var i = 0; i < str.len; i++
-		re.str = str[i:]
-		re.strp = 0
-		thr = run(re, false)
+		thr = run(re, str[i:], 0, false)
 		m = getmatches(re, thr)
+		match m
+		| `std.Some _:	break
+		| `std.None:	/* nothing */
+		;;
+		cleanup(re)
+	;;
+	->  m
+}
+
+const isearch = {re, str
+	var thr
+	var m
+
+	m = `std.None
+	for var i = 0; i < str.len; i++
+		thr = run(re, str[i:], 0, false)
+		m = getidxmatches(re, thr)
 		match m
 		| `std.Some _:	break
 		| `std.None:	/* nothing */
@@ -65,9 +94,7 @@ const sbsub = {sb, re, str, subst
 		-> false
 	;;
 
-	re.str = str
-	re.strp = 0
-	thr = run(re, true)
+	thr = run(re, str, 0, true)
 	if thr == Zthr
 		m = false
 	else
@@ -95,9 +122,7 @@ const sbsuball = {sb, re, str, subst
 
 	i = 0
 	while i < str.len
-		re.str = str[i:]
-		re.strp = 0
-		thr = run(re, false)
+		thr = run(re, str[i:], 0, false)
 		if thr == Zthr
 			std.sbputb(sb, str[i])
 			i++
@@ -164,14 +189,34 @@ const getmatches = {re, thr
 	-> `std.Some ret
 }
 
+const getidxmatches = {re, thr
+	var ret
+
+	if thr == Zthr
+		-> `std.None
+	;;
+	ret = std.slalloc(re.nmatch)
+	for var i = 0; i < re.nmatch; i++
+		if thr.mstart[i] != -1 && thr.mend[i] != -1
+			ret[i] = (thr.mstart[i], thr.mend[i])
+		else
+			ret[i] = (-1, -1)
+		;;
+	;;
+	thrfree(re, thr)
+	-> `std.Some ret
+}
 
 /* returns a matching thread, or Zthr if no threads matched */
-const run = {re, wholestr
+const run = {re, str, idx, wholestr
 	var bestmatch
 	var consumed
 	var states
 	var thr
 	var ip
+
+	re.str = str
+	re.strp = 0
 
 	bestmatch = Zthr
 	states = std.mkbs()

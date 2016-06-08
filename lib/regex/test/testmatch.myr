@@ -8,6 +8,12 @@ pkg =
 		expected : std.option(byte[:][:]) \
 		-> void)
 
+	const testidxmatch	: (\
+		pat : byte[:], \
+		text : byte[:], \
+		expected : std.option((std.size, std.size)[:]) \
+		-> void)
+
 	const testsearch	: ( \
 		pat : byte[:], \
 		text : byte[:], \
@@ -37,6 +43,10 @@ pkg =
 
 const testmatch = {pat, text, expected
 	run(regex.compile(pat), pat, text, expected, false)
+}
+
+const testidxmatch = {pat, text, expected
+	runidx(regex.compile(pat), pat, text, expected, false)
 }
 
 const testsearch = {pat, text, expected
@@ -84,6 +94,51 @@ const subst = {regex, pat, text, sub, expected, all
 	;;
 }
 
+const runidx = {regex, pat, text, expected : std.option((std.size, std.size)[:]), search
+	var re, r
+	var lo, elo, hi, ehi
+
+	re = std.try(regex)
+	if search
+		r = regex.isearch(re, text)
+	else
+		r = regex.iexec(re, text)
+	;;
+	match r
+	| `std.Some res:
+		match expected
+		| `std.None:
+			std.fatal("expected no match, got:")
+			for var i = 0; i < res.len; i++
+				std.put("\t{}: {}\n", i, res[i])
+			;;
+		| `std.Some exp:
+			if res.len != exp.len
+				std.put("mismatch: expected {} matches, got {}\n",  exp.len, res.len)
+				std.fatal("failed matching {} over {}\n", pat, text)
+			;;
+			for var i = 0; i < exp.len; i++
+				(elo, ehi) = exp[i]
+				(lo, hi) = res[i]
+				if lo != elo || hi != ehi
+					std.put("mismatch on {}: expected {}, got {}\n", i, exp[i], res[i])
+					std.fatal("failed matching {} over {}\n", pat, text)
+				;;
+			;;
+		;;
+	| `std.None:
+		match expected
+		| `std.None:	/* : expected failure */
+		| `std.Some matches:
+			std.put("expected matches:\n")
+			for var i = 0; i < matches.len; i++
+				std.put("\t{}: {}\n", i, matches[i])
+			;;
+			std.fatal("no match found\n")
+		;;
+	;;
+	regex.free(re)
+}
 const run = {regex, pat, text, expected, search
 	var i, re, r
 
