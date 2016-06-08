@@ -1,5 +1,6 @@
 lib fileutil =
 	walk.myr
+	lib ../sys:sys
 	lib ../std:std
 ;;
 
