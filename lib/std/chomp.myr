@@ -1,13 +1,14 @@
 use "hasprefix"
 
 pkg std =
-	const chomp	: (str : byte[:], pfx : byte[:] -> byte[:])
+	const chomp	: (str : byte[:]#, pfx : byte[:] -> bool)
 ;;
 
 const chomp = {str, pfx
-	if std.hasprefix(str, pfx)
-		-> str[pfx.len:]
+	if std.hasprefix(str#, pfx)
+		str# = str#[pfx.len:]
+		-> true
 	else
-		-> str
+		-> false
 	;;
 }
