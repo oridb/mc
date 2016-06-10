@@ -1,7 +1,16 @@
 use std
 
 const main = {
-	std.assert(std.sleq(std.chomp("aaab", "aaa"), "b"), "expected chomp(aaab, aaa) => b\n")
-	std.assert(std.sleq(std.chomp("aaa", "aaa"), ""), "expected chomp(aaa,aaa) => ''\n")
-	std.assert(std.sleq(std.chomp("aa", "aaa"), "aa"), "expected chomp(aa,aaa) => aa\n")
+	check("aaab", "aaa", "b")
+	check("aaa", "aaa", "")
+	check("aa", "aaa", "aa")
+}
+
+const check = {sl, pfx, expected
+	var r
+
+	r = sl
+	std.chomp(&r, pfx)
+	std.assert(std.sleq(r, expected), \
+		"expected chomp({}, {}) => {}, got {}\n", sl, pfx, expected, r)
 }
