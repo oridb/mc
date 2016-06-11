@@ -100,10 +100,8 @@ const gen = {re, t
 	|`Alt	(a, b): genalt(re, a, b, t)
 	|`Cat	(a, b): gen(re, a); gen(re, b)
 	/* repetition */
-	|`Star	a:	genstar(re, a, false, t)
-	|`Rstar a:	genstar(re, a, true, t)
-	|`Plus	a:	gen(re, a); genstar(re, a, false, t)
-	|`Rplus	a:	gen(re, a); genstar(re, a, true, t)
+	|`Star	(a, r):	genstar(re, a, r, t)
+	|`Plus	(a, r):	gen(re, a); genstar(re, a, r, t)
 	|`Quest	a:	genquest(re, a)
 
 	/* end matches */
@@ -434,17 +432,11 @@ const dump = {re, t, indent
 		dump(re, a, indent + 1)
 		dump(re, b, indent + 1)
 	/* repetition */
-	| `Star	a:
-		std.put("Star\n")
+	| `Star	(a, r):
+		std.put("Star reluct={}\n", r)
 		dump(re, a, indent + 1)
-	| `Rstar a:
-		std.put("Rstar\n")
-		dump(re, a, indent + 1)
-	| `Plus	a:
-		std.put("Plus\n")
-		dump(re, a, indent + 1)
-	| `Rplus a:
-		std.put("Rplus\n")
+	| `Plus	(a, r):
+		std.put("Plus reluct={}\n", r)
 		dump(re, a, indent + 1)
 	| `Quest	a:
 		std.put("Quest\n")
@@ -546,17 +538,9 @@ const repexpr = {re
 	| `Some t:
 		idx = re.idx
 		if matchc(re, '*')
-                        if matchc(re, '?')
-				ret = mk(re, `Rstar t, idx)
-                        else
-				ret = mk(re, `Star t, idx)
-			;;
+			ret = mk(re, `Star (t, matchc(re, '?')), idx)
 		elif matchc(re, '+')
-                        if matchc(re, '?')
-				ret = mk(re, `Rplus t, idx)
-			else
-				ret = mk(re, `Plus t, idx)
-			;;
+			ret = mk(re, `Plus (t, matchc(re, '?')), idx)
 		elif matchc(re, '?')
 			ret = mk(re, `Quest t, idx)
 		else
@@ -874,10 +858,8 @@ const astfree = {t
 	| `Alt	(a, b): astfree(a); astfree(b)
 	| `Cat	(a, b): astfree(a); astfree(b)
 	/* repetition */
-	| `Star	a:	astfree(a)
-	| `Rstar a:	astfree(a)
-	| `Plus	a:	astfree(a)
-	| `Rplus a:	astfree(a)
+	| `Star	(a, r):	astfree(a)
+	| `Plus	(a, r):	astfree(a)
 	| `Quest a:	astfree(a)
 
 	/* end matches */

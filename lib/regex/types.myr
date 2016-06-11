@@ -44,10 +44,8 @@ pkg regex =
 		`Cat	(ast#, ast#)
 
 		/* repetition */
-		`Star	ast#
-		`Rstar  ast#
-		`Plus	ast#
-		`Rplus	ast#
+		`Star	(ast#, bool)
+		`Plus	(ast#, bool)
 		`Quest	ast#	
 
 		/* end matches */
