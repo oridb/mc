@@ -82,10 +82,10 @@ const showtests = {f, log, ntests
 		match testfoot(ln)
 		| `std.None:
 		| `std.Some `std.Ok _:
-			endtest(&curtest, &nresults, true)
+			endtest(&curtest, &nresults, true, "")
 			continue
 		| `std.Some `std.Fail m:
-			endtest(&curtest, &nresults, false)
+			endtest(&curtest, &nresults, false, m)
 			ok = false
 			continue
 		;;
@@ -116,7 +116,7 @@ const starttest = {curtest, t
 	curtest# = t
 }
 
-const endtest = {curtest, nresults, pass
+const endtest = {curtest, nresults, pass, msg
 	if curtest#.len == 0
 		std.fatal("malformed input: test ended without start\n")
 	;;
@@ -124,6 +124,8 @@ const endtest = {curtest, nresults, pass
 	curtest# = ""
 	if pass
 		std.put("PASS\n")
+	elif msg.len > 0
+		std.put("FAIL {}\n", msg)
 	else
 		std.put("FAIL\n")
 	;;
