@@ -18,6 +18,7 @@ pkg std =
 	;;
 
 	generic mkht	: (h : (k : @k -> uint32), eq : (a : @k, b : @k -> bool) -> htab(@k, @v)#)
+	generic htinit	: (ht : htab(@k, @v)#, h : (k : @k -> uint32), eq : (a : @k, b : @k -> bool) -> void)
 	generic htfree	: (ht : htab(@k, @v)# -> void)
 	generic htput	: (ht : htab(@k, @v)#, k : @k, v : @v -> void)
 	generic htdel	: (ht : htab(@k, @v)#, k : @k -> void)
@@ -103,6 +104,12 @@ generic mkht = {h, eq
 	var ht
 
 	ht = alloc()
+	htinit(ht, h, eq)
+
+	-> ht
+}
+
+generic htinit = {ht, h, eq
 
 	ht.hash = h
 	ht.eq = eq
@@ -113,7 +120,6 @@ generic mkht = {h, eq
 	ht.vals = slalloc(Initsz)
 	ht.hashes = slzalloc(Initsz)
 	ht.dead = slzalloc(Initsz)
-	-> ht
 }
 
 generic htfree = {ht
