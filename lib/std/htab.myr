@@ -87,7 +87,6 @@ generic idx = {ht, k
 			di++
 			i = (h + di) & (ht.keys.len - 1)
 		;;
-
 		if ht.hashes[i] == 0
 			-> `None
 		;;
@@ -135,16 +134,9 @@ generic htput = {ht, k, v
 	i = h & (ht.keys.len - 1)
 	neltincr = 1
 	while ht.hashes[i] != 0 && !ht.dead[i]
-		/* second insertion overwrites */
-		if ht.hashes[i] == h && !ht.dead[i]
-			/* dead key, we can just insert here */
-			if ht.dead[i]
-				break
-			/* replacing a key */
-			elif ht.eq(ht.keys[i], k)
-				neltincr = 0
-				break
-			;;
+		if ht.hashes[i] == h &&	ht.eq(ht.keys[i], k)
+			neltincr = 0
+			break
 		;;
 		di++
 		i = (h + di) & (ht.keys.len - 1)
@@ -212,8 +204,6 @@ generic htkeys = {ht
 generic htbykeyvals = {ht
 	-> [.ht = ht, .idx = 0]
 }
-
-extern const put	: (str : byte[:], args : ... -> size)
 
 impl iterable htkviter(@k, @v) -> (@k, @v) =
 	__iternext__ = {itp, valp
