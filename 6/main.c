@@ -122,7 +122,7 @@ static int hasmain(Node *file)
 {
 	Node *n, *name;
 
-	name = mknsname(Zloc, "", "main");
+	name = mknsname(Zloc, NULL, "main");
 	n = getdcl(file->file.globls, name);
 	if (!n)
 		return 0;

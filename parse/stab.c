@@ -167,6 +167,8 @@ Node *getdcl(Stab *st, Node *n)
 	Stab *fn;
 
 	fn = NULL;
+	if (n->name.ns)
+		st = getns(file, n->name.ns);
 	do {
 		s = htget(st->dcl, n);
 		if (s) {
@@ -246,6 +248,8 @@ Trait *gettrait(Stab *st, Node *n)
 {
 	Traitdefn *c;
 
+	if (n->name.ns)
+		st = getns(file, n->name.ns);
 	do {
 		if ((c = htget(st->tr, n)))
 			return c->trait;

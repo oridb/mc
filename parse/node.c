@@ -328,7 +328,8 @@ Node *mknsname(Srcloc loc, char *ns, char *name)
 	Node *n;
 
 	n = mknode(loc, Nname);
-	n->name.ns = strdup(ns);
+	if (ns)
+		n->name.ns = strdup(ns);
 	n->name.name = strdup(name);
 
 	return n;
