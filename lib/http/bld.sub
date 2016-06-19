@@ -1,0 +1,14 @@
+bin h =
+	main.myr
+
+	lib http
+;;
+
+lib http =
+	parse.myr
+	types.myr
+	url.myr
+	verbs.myr
+	session.myr
+
+;;

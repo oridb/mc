@@ -1,0 +1,61 @@
+use std
+use http
+
+const main = {args
+	var data, method, hdr
+	var s, u, r
+	var cmd
+
+	cmd = std.optparse(args, &[
+		.argdesc = "url...",
+		.opts = [
+			[.opt='m', .arg="method", .desc="http method to use"],
+			[.opt='d', .arg="data", .desc="data to put in request body"],
+			[.opt='H', .desc="show headers"],
+		][:]
+	])
+
+	hdr = false
+	method = "get"
+	data = ""
+	for opt in cmd.opts
+		match opt
+		| ('m', m):	method = m
+		| ('d', d):	data = d
+		| ('h', ""):	hdr = true
+		| _:	std.die("unreachable")
+		;;
+	;;
+
+
+	for url in cmd.args
+		u = std.try(http.parseurl(url))
+		std.put("URL: {}\n", u#)
+		s = std.try(http.mksession(u.host))
+
+		match method
+		| "get":	r = http.get(s, u.path)
+		| "head":	r = http.head(s, u.path)
+		| "delete":	r = http.delete(s, u.path)
+		| "trace":	r = http.trace(s, u.path)
+		| "options":	r = http.trace(s, u.path)
+		| "put":	r = http.put(s, u.path, data)
+		| "post":	r = http.post(s, u.path, data)
+		| unknown:	std.fatal("unknown method '{}'\n", unknown)
+		;;
+
+		match r
+		| `std.Ok resp:
+			std.put("status: {}\n", resp.status)
+			for h in resp.hdrs
+				std.put("{}\n", h)
+			;;
+			std.put("{}\n", resp.body)
+			http.freeresp(resp)
+		| `std.Fail e:
+			std.put("{}\n", e)
+		;;
+		http.urlfree(u)
+	;;
+}
+

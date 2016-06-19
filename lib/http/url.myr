@@ -1,0 +1,140 @@
+use std
+
+use "types"
+use "parse"
+
+pkg http =
+	const parseurl	: (url : byte[:] -> std.result(url#, err))
+	const urlfree	: (url : url# -> void)
+;;
+
+const parseurl = {url
+	var schema, host, path, port
+
+	match parseschema(&url)
+	| `std.Ok s:	schema = s
+	| `std.Fail e:	-> `std.Fail e
+	;;
+
+	match parsehostname(&url)
+	| `std.Ok h:	host = h
+	| `std.Fail e:	-> `std.Fail e
+	;;
+
+	match parseport(&url)
+	| `std.Ok p:	port = p
+	| `std.Fail e:	-> `std.Fail e
+	;;
+
+	match parsepath(&url)
+	| `std.Ok p:	path = p
+	| `std.Fail e:	-> `std.Fail e
+	;;
+
+	/* todo: params */
+	-> `std.Ok std.mk([
+		.schema=schema,
+		.host=std.sldup(host),
+		.path=std.sldup(path),
+	])
+}
+
+const urlfree = {url
+	std.slfree(url.host)
+	std.slfree(url.path)
+	std.free(url)
+}
+
+const parseschema = {url
+	if std.chomp(url, "http://")
+		-> `std.Ok `Http
+	elif std.chomp(url, "https://")
+		-> `std.Fail `Eunsupp
+	else
+		-> `std.Fail `Eproto
+	;;
+}
+
+const parsehostname = {url
+	if std.chomp(url, "[")
+		-> ipv6hostname(url)
+	else
+		-> hostname(url)
+	;;
+}
+
+const parsepath = {url
+	if url#.len == 0
+		-> `std.Ok "/"
+	elif std.decode(url#) == '/'
+		-> `std.Ok url#
+	else
+		-> `std.Fail `Esyntax
+	;;
+}
+
+const hostname = {url
+	var len, host
+
+	len = 0
+	for c in std.bychar(url#)
+		match c
+		| ':':	break
+		| '/':	break
+		| chr:
+			if ishostchar(chr)
+				len += std.charlen(chr)
+			else
+				-> `std.Fail `Esyntax
+			;;
+		;;
+	;;
+
+	host = url#[:len]
+	url# = url#[len:]
+	-> `std.Ok host
+}
+
+const ipv6hostname = {url -> std.result(byte[:], err)
+	var ip
+
+	match std.strfind(url#, "]")
+	| `std.None:	-> `std.Fail `Esyntax
+	| `std.Some idx:
+		ip = url#[:idx]
+		url# = url#[idx+1:]
+		match std.ip6parse(url#[:idx])
+		| `std.Some _:	-> `std.Ok ip
+		| `std.None:	-> `std.Fail `Esyntax
+		;;
+	;;
+}
+
+const parseport = {url
+	if std.chomp(url, ":")
+		match parsenumber(url, 10)
+		| `std.Some n:	-> `std.Ok n
+		| `std.None:	-> `std.Fail `Esyntax
+		;;
+	else
+		-> `std.Ok 80
+	;;
+}
+
+const ishostchar = {c
+	if !std.isascii(c)
+		-> false
+	else
+		-> std.isalnum(c) || unreserved(c) || subdelim(c)
+	;;
+}
+
+const unreserved = {c
+	-> c == '.' || c == '-' || c == '_' || c == '~'
+}
+
+const subdelim = {c
+	-> c == '.' || c == '-' || c == '_' || c == '~' || c == '!' || \
+		c == '$' || c == '&' || c == '\'' || c ==  '(' || c ==  ')' \
+		|| c ==  '*' || c ==  '+' || c ==  ',' || c ==  ';' || c ==  '='
+}

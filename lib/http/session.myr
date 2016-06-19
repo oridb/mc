@@ -1,0 +1,56 @@
+use std
+use bio
+
+use "types"
+
+pkg http =
+	const mksession	: (host	: byte[:] -> std.result(session#, err))
+	const freesession	: (s : session# -> void)
+
+	pkglocal const ioput	: (s : session#, fmt : byte[:], args : ... -> bool)
+	pkglocal const ioflush	: (s : session# -> void)
+;;
+
+const mksession = {host
+	var s, sess
+
+	s = std.fmt("tcp!{}!80", host)
+	match std.dial(s)
+	| `std.Fail e:	sess = `std.Fail `Econn
+	| `std.Ok fd:	sess = `std.Ok std.mk([
+		.err = false,
+		.ua = std.sldup("Myrfoo HTTP"),
+		.host = std.sldup(host),
+		.f = bio.mkfile(fd, bio.Rw)
+	])
+	;;
+	-> sess
+}
+
+const freesession = {s
+	bio.close(s.f)
+	std.slfree(s.host)
+	std.slfree(s.ua)
+	std.free(s)
+}
+
+const ioput = {s, fmt, args
+	var ap
+
+	if s.err
+		-> false
+	;;
+	ap = std.vastart(&args)
+	std.putv(fmt, &ap)
+	ap = std.vastart(&args)
+	match bio.putv(s.f, fmt, &ap)
+	| `bio.Ok _:	/* nothing */
+	| `bio.Err _:	s.err = true
+	| `bio.Eof:	s.err = true
+	;;
+	-> s.err
+}
+
+const ioflush = {s
+	bio.flush(s.f)
+}

@@ -1,0 +1,262 @@
+use std
+use bio
+
+use "types"
+use "session"
+use "parse"
+
+pkg http =
+	const get	: (s : session#, path : byte[:]	-> std.result(resp#, err))
+	const head	: (s : session#, path : byte[:] -> std.result(resp#, err))
+	const put	: (s : session#, path : byte[:], data : byte[:] -> std.result(resp#, err))
+	const post	: (s : session#, path : byte[:], data : byte[:] -> std.result(resp#, err))
+	const delete	: (s : session#, path : byte[:] -> std.result(resp#, err))
+	const options	: (s : session#, path : byte[:] -> std.result(resp#, err))
+	const trace	: (s : session#, path : byte[:] -> std.result(resp#, err))
+
+	const freeresp	: (r : resp# -> void)
+;;
+
+const get = {s, path
+	match request(s, `Get, path, [][:], `std.None)
+	| `std.Ok _:	/* nothing */
+	| `std.Fail e:	-> `std.Fail e
+	;;
+
+	-> response(s, true)
+}
+
+const head = {s, path
+	match request(s, `Head, path, [][:], `std.None)
+	| `std.Ok _:	/* nothing */
+	| `std.Fail e:	-> `std.Fail e
+	;;
+
+	-> response(s, false)
+}
+
+const put = {s, path, data
+	match request(s, `Put, path, [][:], `std.Some data)
+	| `std.Ok _:	/* nothing */
+	| `std.Fail e:	-> `std.Fail e
+	;;
+
+	-> response(s, true)
+}
+
+const post = {s, path, data
+	match request(s, `Post, path, [][:], `std.Some data)
+	| `std.Ok _:	/* nothing */
+	| `std.Fail e:	-> `std.Fail e
+	;;
+
+	-> response(s, true)
+}
+
+const delete = {s, path
+	match request(s, `Delete, path, [][:], `std.None)
+	| `std.Ok _:	/* nothing */
+	| `std.Fail e:	-> `std.Fail e
+	;;
+
+	-> response(s, true)
+}
+
+const options = {s, path
+	match request(s, `Options, path, [][:], `std.None)
+	| `std.Ok _:	/* nothing */
+	| `std.Fail e:	-> `std.Fail e
+	;;
+
+	-> response(s, true)
+}
+
+const trace = {s, path
+	match request(s, `Options, path, [][:], `std.None)
+	| `std.Ok _:	/* nothing */
+	| `std.Fail e:	-> `std.Fail e
+	;;
+
+	-> response(s, true)
+}
+
+const response = {s, body
+	var resp
+
+	resp = std.mk([
+		.hdrs = [][:],
+		.len = 0,
+		.err = `std.None,
+		.reason = "",
+		.status = 0,
+		.enc = `Length,
+	])
+
+	if parseresp(s, resp)
+		if !body
+			-> `std.Ok resp
+		else
+			match readbody(s, resp)
+			| `std.Ok buf:	resp.body = buf
+			| `std.Fail e:	-> `std.Fail e
+			;;
+		;;
+	else
+		match resp.err
+		| `std.Some e:	-> `std.Fail e
+		| `std.None:	-> `std.Fail `Ewat
+		;;
+	;;
+	-> `std.Ok resp
+}
+
+const request = {s, method, path, hdrs : (byte[:], byte[:])[:], data
+	/* status */
+	ioput(s, "{} {} HTTP/1.1\r\n", method, path)
+
+	/* headers */
+	ioput(s, "Host: {}\r\n", s.host)
+	ioput(s, "User-Agent: {}\r\n", s.ua)
+	match data
+	| `std.Some d:	ioput(s, "Content-Length: {}\r\n", d.len)
+	| `std.None:	/* nothing to do */
+	;;
+	for (k, v) in hdrs
+		ioput(s, "{}: {}\r\n", k, v)
+	;;
+	ioput(s, "\r\n")
+
+	/* body */
+	match data
+	| `std.None:	/* nothing to do */
+	| `std.Some d:
+		ioput(s, d)
+		ioput(s, "\r\n")
+	;;
+	ioflush(s)
+
+	if s.err
+		-> `std.Fail `Econn
+	else
+		-> `std.Ok void
+	;;
+
+}
+
+const readbody = {s, r -> std.result(byte[:], err)
+	match r.enc
+	| `Length:	-> readlenbody(s, r)
+	| `Chunked:	-> readchunkedbody(s, r)
+	| badenc:	std.fatal("unsupported encoding {}\n", badenc)
+	;;
+}
+
+const readlenbody = {s, r
+	var buf
+
+	buf = ""
+	if r.len == 0
+		-> `std.Ok buf
+	;;
+
+	buf = std.slalloc(r.len)
+	match bio.read(s.f, buf)
+	| `bio.Err e:	goto shortread
+	| `bio.Eof:	goto shortread
+	| `bio.Ok rd:
+		if rd.len != r.len
+			goto shortread
+		;;
+	;;
+	-> `std.Ok buf
+:shortread
+	std.slfree(buf)
+	-> `std.Fail `Eshort
+}
+
+const __init__ = {
+	var m
+
+	m = `Get
+	std.fmtinstall(std.typeof(m), fmtmethod, [][:])
+}
+
+const readchunkedbody = {s, r
+	var buf, len
+
+	buf = ""
+	len = 0
+	while true
+		match parsechunksz(s)
+		| `std.Fail e:
+			std.slfree(buf)
+			-> `std.Fail e
+		| `std.Ok 0:
+			break
+		| `std.Ok sz:
+			std.slgrow(&buf, buf.len + sz)
+			match bio.read(s.f, buf[len:len + sz])
+			| `bio.Eof:
+				std.slfree(buf)
+				-> `std.Fail `Eshort
+			| `bio.Err e:
+				std.slfree(buf)
+				-> `std.Fail `Econn
+			| `bio.Ok str:
+				if str.len != sz
+					std.slfree(buf)
+					-> `std.Fail `Eshort
+				;;
+				len += sz
+				match checkendln(s)
+				| `std.Ok _:	/* nothing */
+				| `std.Fail e:	
+					std.slfree(buf)
+					-> `std.Fail e
+				;;
+			;;
+		;;
+	;;
+	-> `std.Ok buf
+}
+
+const checkendln = {s
+	var r
+
+	match bio.readln(s.f)
+	| `bio.Err e:	r = `std.Fail `Econn
+	| `bio.Eof:	r = `std.Fail `Econn
+	| `bio.Ok crlf:
+		if std.strstrip(crlf).len == 0
+			r = `std.Ok void
+		else
+			r = `std.Fail `Eproto
+		;;
+		std.slfree(crlf)
+	;;
+	-> r
+}
+
+const fmtmethod = {sb, ap, opt
+	var r
+
+	r = std.vanext(ap)
+	match r
+	| `Get: std.sbputs(sb, "GET")
+	| `Head: std.sbputs(sb, "HEAD")
+	| `Put: std.sbputs(sb, "PUT")
+	| `Post: std.sbputs(sb, "POST")
+	| `Delete: std.sbputs(sb, "DELETE")
+	| `Trace: std.sbputs(sb, "TRACE")
+	| `Options: std.sbputs(sb, "OPTIONS")
+	;;
+}
+
+const freeresp = {r
+	for (k, v) in r.hdrs
+		std.slfree(k)
+		std.slfree(v)
+	;;
+	std.slfree(r.reason)
+	std.free(r)
+}

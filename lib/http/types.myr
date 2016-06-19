@@ -1,0 +1,70 @@
+use std
+use bio
+
+pkg http =
+	type session = struct
+		f	: bio.file#
+		host	: byte[:]
+		ua	: byte[:]
+		err	: bool
+	;;
+
+	type url = struct
+		schema	: schema
+		port	: int
+		host	: byte[:]
+		path	: byte[:]
+	;;
+
+
+	type err = union
+		`Ewat
+		`Eunsupp
+		`Econn
+		`Ehttp int
+		`Ehdr
+		`Eproto
+		`Eshort
+		`Esyntax
+		`Eenc
+	;;
+
+	type schema = union
+		`Http
+		`Https
+	;;
+
+	type method = union
+		`Get
+		`Head
+		`Put
+		`Post
+		`Delete
+		`Trace
+		`Options
+	;;
+
+	type encoding = union
+		`Length
+		`Chunked
+		`Compress
+		`Deflate
+		`Gzip
+	;;
+
+	type req = struct
+		hdrs	: (byte[:], byte[:])[:]
+		method	: method
+	;;
+
+	type resp = struct
+		status	: int
+		hdrs	: (byte[:], byte[:])[:]
+		len	: std.size
+		err	: std.option(err)
+		reason	: byte[:]
+		body	: byte[:]
+		enc	: encoding
+	;;
+
+;;

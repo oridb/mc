@@ -1,0 +1,176 @@
+use std
+use bio
+
+use "types"
+
+pkg http =
+	pkglocal const parseresp	: (s : session#, r : resp# -> bool)
+	pkglocal const parsechunksz	: (s : session# -> std.result(std.size, err))
+	pkglocal const parsenumber	: (str : byte[:]#, base : int -> std.option(int))
+;;
+
+const parseresp = {s, r
+	match bio.readln(s.f)
+	| `bio.Err e:	r.err = `std.Some `Econn
+	| `bio.Eof:	r.err = `std.Some `Econn
+	| `bio.Ok ln:
+		if !parsestatus(s, r, ln)
+			std.slfree(ln)
+			-> false
+		;;
+		std.slfree(ln)
+	;;
+
+	while true
+		match bio.readln(s.f)
+		| `bio.Err e:	r.err = `std.Some `Econn
+		| `bio.Eof:	r.err = `std.Some `Econn
+		| `bio.Ok ln:
+			if std.strstrip(ln).len == 0
+				break
+			;;
+			if !parsehdr(s, r, ln)
+				std.slfree(ln)
+				-> false
+			;;
+			std.slfree(ln)
+		;;
+	;;
+
+	match getenc(r)
+	| `std.Ok `Length:
+		r.enc = `Length
+		match getlen(r)
+		| `std.Some n:
+			r.len = n
+		| `std.None:
+			r.err = `std.Some `Eproto
+			-> false
+		;;
+	| `std.Ok enc:
+		r.enc = enc
+	| `std.Fail e:
+		r.err = `std.Some e
+		-> false
+	;;
+	-> true
+
+}
+
+const parsechunksz = {s
+	var ret, str
+
+	match bio.readln(s.f)
+	| `bio.Eof:	ret = `std.Fail `Econn
+	| `bio.Err e:	ret = `std.Fail `Econn
+	| `bio.Ok ln:
+		str = ln
+		match parsenumber(&str, 16)
+		| `std.Some n:	ret = `std.Ok (n : std.size)
+		| `std.None:
+			ret = `std.Fail `Eproto
+		;;
+		std.slfree(ln)
+	;;
+	-> ret
+}
+
+const parsestatus = {s, r, ln
+	/* HTTP/1.1 */
+	ln = std.strfstrip(ln)
+	if !std.chomp(&ln, "HTTP")
+		r.err = `std.Some `Eproto
+		-> false
+	;;
+	if !std.chomp(&ln, "/1.1")
+		r.err = `std.Some `Eproto
+		-> false
+	;;
+
+	ln = std.strfstrip(ln)
+	match parsenumber(&ln, 10)
+	| `std.Some n:
+		r.status = n
+	| `std.None:
+		r.err = `std.Some `Eproto
+		-> false
+	;;
+
+	ln = std.strfstrip(ln)
+	r.reason = std.sldup(ln)
+	-> true
+}
+
+const parsehdr = {s, r, ln
+	var key, val
+
+	match std.strfind(ln, ":")
+	| `std.Some idx:
+		key = std.sldup(std.strstrip(ln[:idx]))
+		val = std.sldup(std.strstrip(ln[idx+1:]))
+		std.slpush(&r.hdrs, (key, val))
+		-> true
+	| `std.None:
+		r.err = `std.Some `Ehdr
+		-> false
+	;;
+}
+
+const getlen = {r
+	match findhdr(r, "Content-Length")
+	| `std.Some v:
+		match std.intparsebase(v, 10)
+		| `std.Some n:	-> `std.Some n
+		| `std.None:	-> `std.None
+		;;
+	| `std.None:
+		-> `std.None
+	;;
+}
+
+const getenc = {r
+	match findhdr(r, "Transfer-Encoding")
+	| `std.None:	-> `std.Ok `Length
+	| `std.Some "chunked":	-> `std.Ok `Chunked
+	| `std.Some "compress":	-> `std.Ok `Compress
+	| `std.Some "deflate":	-> `std.Ok `Deflate
+	| `std.Some "gzip":	-> `std.Ok `Gzip
+	| `std.Some unknown:	-> `std.Fail `Eenc
+	;;
+}
+
+const findhdr = {r, name
+	for (k, v) in r.hdrs
+		if std.strcaseeq(k, name)
+			-> `std.Some v
+		;;
+	;;
+	-> `std.None
+}
+
+const parsenumber = {ln, base
+	var n, ok
+	var c, s, dig
+
+	n = 0
+	s = ln#
+	ok = false
+	while true
+		(c, s) = std.strstep(s)
+		dig = std.charval(c, base)
+		if dig >= 0 && dig < base
+			ok = true
+			n *= base
+			n += dig
+		else
+			break
+		;;
+	;;
+	ln# = s
+	if ok
+		-> `std.Some n
+	else
+		-> `std.None
+	;;
+}
+
