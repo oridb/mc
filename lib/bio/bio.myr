@@ -69,6 +69,7 @@ pkg bio =
 
 	/* formatted i/o */
 	const put	: (f : file#, fmt : byte[:], args : ... -> status(std.size))
+	const putv	: (f : file#, fmt : byte[:], ap : std.valist# -> status(std.size))
 
 	/* pkg funcs */
 	pkglocal const ensureread	: (f : file#, n : std.size -> status(std.size))
@@ -524,6 +525,15 @@ const put = {f, fmt, args
 
 	ap = std.vastart(&args)
 	sl = std.fmtv(fmt, &ap)
+	n = write(f, sl)
+	std.slfree(sl)
+	-> n
+}
+
+const putv = {f, fmt, ap
+	var sl, n
+
+	sl = std.fmtv(fmt, ap)
 	n = write(f, sl)
 	std.slfree(sl)
 	-> n
