@@ -35,6 +35,7 @@ const parseurl = {url
 	-> `std.Ok std.mk([
 		.schema=schema,
 		.host=std.sldup(host),
+		.port=port,
 		.path=std.sldup(path),
 	])
 }

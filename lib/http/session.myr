@@ -4,17 +4,22 @@ use bio
 use "types"
 
 pkg http =
-	const mksession	: (host	: byte[:] -> std.result(session#, err))
+	const mksession	: (schema : schema, host : byte[:], port : int -> std.result(session#, err))
 	const freesession	: (s : session# -> void)
 
 	pkglocal const ioput	: (s : session#, fmt : byte[:], args : ... -> bool)
 	pkglocal const ioflush	: (s : session# -> void)
 ;;
 
-const mksession = {host
+const mksession = {schema, host, port
 	var s, sess
 
-	s = std.fmt("tcp!{}!80", host)
+	match schema
+	| `Http:	/* nothing */
+	| `Https:	std.fatal("unsupported protocol\n")
+	;;
+
+	s = std.fmt("tcp!{}!{}", host, port)
 	match std.dial(s)
 	| `std.Fail e:	sess = `std.Fail `Econn
 	| `std.Ok fd:	sess = `std.Ok std.mk([
@@ -24,6 +29,7 @@ const mksession = {host
 		.f = bio.mkfile(fd, bio.Rw)
 	])
 	;;
+	std.slfree(s)
 	-> sess
 }
 

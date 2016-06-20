@@ -72,7 +72,7 @@ const options = {s, path
 }
 
 const trace = {s, path
-	match request(s, `Options, path, [][:], `std.None)
+	match request(s, `Trace, path, [][:], `std.None)
 	| `std.Ok _:	/* nothing */
 	| `std.Fail e:	-> `std.Fail e
 	;;
