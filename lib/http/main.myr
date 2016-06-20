@@ -2,15 +2,17 @@ use std
 use http
 
 const main = {args
-	var data, method, showhdr, hdrs
+	var data, method, showhdr, hdrs, out
 	var s, u, r
 	var cmd
 
 	cmd = std.optparse(args, &[
 		.argdesc = "url...",
+		.minargs = 1,
 		.opts = [
 			[.opt='m', .arg="method", .desc="http method to use"],
 			[.opt='d', .arg="data", .desc="data to put in request body"],
+			[.opt='o', .arg="out", .desc="output file name"],
 			[.opt='H', .desc="show headers"],
 			[.opt='D', .arg="hdr", .desc="define custom header"]
 		][:]
@@ -20,16 +22,17 @@ const main = {args
 	method = "get"
 	data = ""
 	hdrs = [][:]
+	out = ""
 	for opt in cmd.opts
 		match opt
 		| ('m', m):	method = m
 		| ('d', d):	data = d
+		| ('o', o):	out = o
 		| ('H', ""):	showhdr = true
 		| ('D', def):	parsedef(&hdrs, def)
 		| _:	std.die("unreachable")
 		;;
 	;;
-
 
 	for url in cmd.args
 		u = std.try(http.parseurl(url))
@@ -54,7 +57,13 @@ const main = {args
 					std.put("{}: {}\n", k, v)
 				;;
 			;;
-			std.put("{}\n", resp.body)
+			if out.len != 0
+				if !std.blat(out, resp.body, 0o644)
+					std.fatal("could not write output: {}\n", out)
+				;;
+			else
+				std.fblat(std.Out, resp.body)
+			;;
 			http.freeresp(resp)
 		| `std.Fail e:
 			std.put("{}\n", e)
