@@ -18,6 +18,7 @@ pkg std =
 	const islower	: (c : char -> bool)
 	const isupper	: (c : char -> bool)
 	const istitle	: (c : char -> bool)
+	const isascii	: (c : char -> bool)
 
 	/* transforms */
 	const tolower	: (c : char -> char)
@@ -1181,6 +1182,10 @@ const isupper = {c
 
 const istitle = {c
 	-> isupper(c) && islower(c)
+}
+
+const isascii = {c
+	-> c < 0x80
 }
 
 const tolower = {c
