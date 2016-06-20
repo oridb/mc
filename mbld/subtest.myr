@@ -12,7 +12,7 @@ var footpat
 
 const __init__ = {
 	planpat = std.try(regex.compile("MTEST\\s+(-?\\d+)\\s*"))
-	headpat = std.try(regex.compile("test\\s+(.*)<<{!"))
+	headpat = std.try(regex.compile("test\\s+(.*)<<{!\\s*"))
 	footpat = std.try(regex.compile("!}>>\\s*(ok|fail\\s*(.*))\\s*"))
 }
 
@@ -94,18 +94,28 @@ const showtests = {f, log, ntests
 		| `std.None:
 		| `std.Some n:
 			if curtest.len == 0
-				ntests += n
+				if !checktests(ntests, nresults)
+					ok = false
+				;;
+				ntests = n
 				continue
 			;;
 		;;
 
 		bio.put(log, "\t{}\n", ln)
 	;;
+	if !checktests(ntests, nresults)
+		ok = false
+	;;
+	-> ok
+}
+
+const checktests = {ntests, nresults
 	if ntests > 0 && ntests != nresults
 		std.put("mismatched test count: expected {}, got {}\n", ntests, nresults)
 		-> false
 	;;
-	-> ok
+	-> true
 }
 
 const starttest = {curtest, t
