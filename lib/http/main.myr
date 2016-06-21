@@ -35,6 +35,9 @@ const main = {args
 	;;
 
 	for url in cmd.args
+		if !std.hasprefix(url, "http")
+			url = std.fmt("http://{}", url)
+		;;
 		u = std.try(http.parseurl(url))
 		s = std.try(http.mksession(u.schema, u.host, u.port))
 
