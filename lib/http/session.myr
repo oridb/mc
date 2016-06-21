@@ -51,8 +51,6 @@ const ioput = {s, fmt, args
 		-> false
 	;;
 	ap = std.vastart(&args)
-	std.putv(fmt, &ap)
-	ap = std.vastart(&args)
 	match bio.putv(s.f, fmt, &ap)
 	| `bio.Ok _:	/* nothing */
 	| `bio.Err _:	s.err = true
