@@ -14,7 +14,7 @@ const main = {
 
 	x = make(123)
 	match x
-	| `std.Some v:	std.put("val = {}\n", v)
-	| `std.None:	std.die("Unreachable\n")
+	| `Some v:	std.put("val = {}\n", v)
+	| `None:	std.die("Unreachable\n")
 	;;
 }
