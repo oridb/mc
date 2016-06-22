@@ -843,7 +843,7 @@ static void unionunify(Inferstate *st, Node *ctx, Type *u, Type *v)
 	for (i = 0; i < u->nmemb; i++) {
 		found = 0;
 		for (j = 0; j < v->nmemb; j++) {
-			if (strcmp(namestr(u->udecls[i]->name), namestr(v->udecls[j]->name)) != 0)
+			if (!nameeq(u->udecls[i]->name, v->udecls[j]->name))
 				continue;
 			found = 1;
 			if (u->udecls[i]->etype == NULL && v->udecls[j]->etype == NULL)

@@ -406,6 +406,7 @@ void putucon(Stab *st, Ucon *uc)
 	if (old)
 		lfatal(old->loc, "`%s already defined on %s:%d", namestr(uc->name), fname(uc->loc),
 				lnum(uc->loc));
+	setns(uc->name, st->name);
 	htput(st->uc, uc->name, uc);
 }
 
@@ -532,5 +533,10 @@ void updatens(Stab *st, char *name)
 		if (td->type && (td->type->type == Tyname || td->type->type == Tygeneric))
 			setns(td->type->name, name);
 	}
+	free(k);
+
+	k = htkeys(st->uc, &nk);
+	for (i = 0; i < nk; i++)
+		setns(k[i], name);
 	free(k);
 }

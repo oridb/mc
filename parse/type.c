@@ -486,21 +486,30 @@ static int fmtstruct(char *buf, size_t len, Bitset *visited, Type *t)
 
 static int fmtunion(char *buf, size_t len, Bitset *visited, Type *t)
 {
-	size_t i;
-	char *end, *p;
-	char *name;
 	char subbuf[512];
+	char *name, *ns, *sep;
+	char *end, *p;
+	size_t i;
+	Node *n;
 
 	p = buf;
 	end = p + len;
 	p += bprintf(p, end - p, "union\n");
 	for (i = 0; i < t->nmemb; i++) {
-		name = namestr(t->udecls[i]->name);
+		n = t->udecls[i]->name;
+		if (n->name.ns) {
+			sep = ".";
+			ns = n->name.ns;
+		} else {
+			sep = "";
+			ns = "";
+		}
+		name = n->name.name;
 		if (t->udecls[i]->etype) {
 			tybfmt(subbuf, sizeof subbuf, visited, t->udecls[i]->etype);
-			p += bprintf(p, end - p, "\t`%s %s\n", name, subbuf);
+			p += bprintf(p, end - p, "\t`%s%s%s %s\n", ns, sep, name, subbuf);
 		} else {
-			p += bprintf(p, end - p, "\t`%s\n", name);
+			p += bprintf(p, end - p, "\t`%s%s%s\n", ns, sep, name);
 		}
 	}
 	p += bprintf(p, end - p, ";;");
