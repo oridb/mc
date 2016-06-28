@@ -14,8 +14,8 @@ pkg http =
 		port	: int
 		host	: byte[:]
 		path	: byte[:]
+		params	: (byte[:], byte[:])[:]
 	;;
-
 
 	type err = union
 		`Ewat
@@ -53,8 +53,8 @@ pkg http =
 	;;
 
 	type req = struct
+		url	: url#
 		hdrs	: (byte[:], byte[:])[:]
-		method	: method
 	;;
 
 	type resp = struct

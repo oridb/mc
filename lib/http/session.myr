@@ -7,6 +7,10 @@ pkg http =
 	const mksession	: (schema : schema, host : byte[:], port : int -> std.result(session#, err))
 	const freesession	: (s : session# -> void)
 
+	//const setcookie	: (s : session#, name : byte[:], val : byte[:] -> void)
+	//const getcookie	: (s : session#, name : byte[:] -> void)
+	//const clearjar	: (s : session# -> void)
+
 	pkglocal const ioput	: (s : session#, fmt : byte[:], args : ... -> bool)
 	pkglocal const ioflush	: (s : session# -> void)
 ;;

@@ -6,19 +6,38 @@ use "session"
 use "parse"
 
 pkg http =
-	const get	: (s : session#, path : byte[:]	-> std.result(resp#, err))
-	const head	: (s : session#, path : byte[:] -> std.result(resp#, err))
-	const put	: (s : session#, path : byte[:], data : byte[:] -> std.result(resp#, err))
-	const post	: (s : session#, path : byte[:], data : byte[:] -> std.result(resp#, err))
-	const delete	: (s : session#, path : byte[:] -> std.result(resp#, err))
-	const options	: (s : session#, path : byte[:] -> std.result(resp#, err))
-	const trace	: (s : session#, path : byte[:] -> std.result(resp#, err))
+	/* simple versions */
+	const get	: (s : session#, r : byte[:] -> std.result(resp#, err))
+	const head	: (s : session#, r : byte[:] -> std.result(resp#, err))
+	const put	: (s : session#, r : byte[:], data : byte[:] -> std.result(resp#, err))
+	const post	: (s : session#, r : byte[:], data : byte[:] -> std.result(resp#, err))
+	const delete	: (s : session#, r : byte[:] -> std.result(resp#, err))
+	const options	: (s : session#, r : byte[:] -> std.result(resp#, err))
+	const trace	: (s : session#, r : byte[:] -> std.result(resp#, err))
+
+	/* request versions */
+	const getreq	: (s : session#, r : req# -> std.result(resp#, err))
+	const headreq	: (s : session#, r : req# -> std.result(resp#, err))
+	const putreq	: (s : session#, r : req#, data : byte[:] -> std.result(resp#, err))
+	const postreq	: (s : session#, r : req#, data : byte[:] -> std.result(resp#, err))
+	const deletereq	: (s : session#, r : req# -> std.result(resp#, err))
+	const optionsreq	: (s : session#, r : req# -> std.result(resp#, err))
+	const tracereq	: (s : session#, r : req# -> std.result(resp#, err))
 
 	const freeresp	: (r : resp# -> void)
 ;;
 
-const get = {s, path
-	match request(s, `Get, path, [][:], `std.None)
+const get = {s, path; -> getreq(s, &[.url=&[.path=path]])}
+const head = {s, path; -> headreq(s, &[.url=&[.path=path]])}
+const put = {s, path, data; -> putreq(s, &[.url=&[.path=path]], data)}
+const post = {s, path, data; -> postreq(s, &[.url=&[.path=path]], data)}
+const delete = {s, path; -> deletereq(s, &[.url=&[.path=path]])}
+const options = {s, path; -> optionsreq(s, &[.url=&[.path=path]])}
+const trace = {s, path; -> tracereq(s, &[.url=&[.path=path]])}
+
+
+const getreq = {s, r
+	match request(s, `Get, r, `std.None)
 	| `std.Ok _:	/* nothing */
 	| `std.Fail e:	-> `std.Fail e
 	;;
@@ -26,8 +45,8 @@ const get = {s, path
 	-> response(s, true)
 }
 
-const head = {s, path
-	match request(s, `Head, path, [][:], `std.None)
+const headreq = {s, r
+	match request(s, `Head, r, `std.None)
 	| `std.Ok _:	/* nothing */
 	| `std.Fail e:	-> `std.Fail e
 	;;
@@ -35,8 +54,8 @@ const head = {s, path
 	-> response(s, false)
 }
 
-const put = {s, path, data
-	match request(s, `Put, path, [][:], `std.Some data)
+const putreq = {s, r, data
+	match request(s, `Put, r, `std.Some data)
 	| `std.Ok _:	/* nothing */
 	| `std.Fail e:	-> `std.Fail e
 	;;
@@ -44,8 +63,8 @@ const put = {s, path, data
 	-> response(s, true)
 }
 
-const post = {s, path, data
-	match request(s, `Post, path, [][:], `std.Some data)
+const postreq = {s, r, data
+	match request(s, `Post, r, `std.Some data)
 	| `std.Ok _:	/* nothing */
 	| `std.Fail e:	-> `std.Fail e
 	;;
@@ -53,8 +72,8 @@ const post = {s, path, data
 	-> response(s, true)
 }
 
-const delete = {s, path
-	match request(s, `Delete, path, [][:], `std.None)
+const deletereq = {s, r
+	match request(s, `Delete, r, `std.None)
 	| `std.Ok _:	/* nothing */
 	| `std.Fail e:	-> `std.Fail e
 	;;
@@ -62,8 +81,8 @@ const delete = {s, path
 	-> response(s, true)
 }
 
-const options = {s, path
-	match request(s, `Options, path, [][:], `std.None)
+const optionsreq = {s, r
+	match request(s, `Options, r, `std.None)
 	| `std.Ok _:	/* nothing */
 	| `std.Fail e:	-> `std.Fail e
 	;;
@@ -71,8 +90,8 @@ const options = {s, path
 	-> response(s, true)
 }
 
-const trace = {s, path
-	match request(s, `Trace, path, [][:], `std.None)
+const tracereq = {s, r
+	match request(s, `Trace, r, `std.None)
 	| `std.Ok _:	/* nothing */
 	| `std.Fail e:	-> `std.Fail e
 	;;
@@ -110,9 +129,9 @@ const response = {s, body
 	-> `std.Ok resp
 }
 
-const request = {s, method, path, hdrs : (byte[:], byte[:])[:], data
+const request = {s, method, r, data
 	/* status */
-	ioput(s, "{} {} HTTP/1.1\r\n", method, path)
+	ioput(s, "{} {p} HTTP/1.1\r\n", method, r.url)
 
 	/* headers */
 	ioput(s, "Host: {}\r\n", s.host)
@@ -121,7 +140,7 @@ const request = {s, method, path, hdrs : (byte[:], byte[:])[:], data
 	| `std.Some d:	ioput(s, "Content-Length: {}\r\n", d.len)
 	| `std.None:	/* nothing to do */
 	;;
-	for (k, v) in hdrs
+	for (k, v) in r.hdrs
 		ioput(s, "{}: {}\r\n", k, v)
 	;;
 	ioput(s, "\r\n")

@@ -4,10 +4,44 @@ use bio
 use "types"
 
 pkg http =
+	pkglocal const parsereq		: (s : session#, r : req# -> bool)
 	pkglocal const parseresp	: (s : session#, r : resp# -> bool)
 	pkglocal const parsechunksz	: (s : session# -> std.result(std.size, err))
 	pkglocal const parsenumber	: (str : byte[:]#, base : int -> std.option(int))
 ;;
+
+const parsereq = {s, r
+	-> false
+	/*
+	match bio.readln(s.f)
+	| `bio.Err e:	r.err = `std.Some `Econn
+	| `bio.Eof:	r.err = `std.Some `Econn
+	| `bio.Ok ln:
+		if !parsereqstatus(s, r, ln)
+			std.slfree(ln)
+			-> false
+		;;
+		std.slfree(ln)
+	;;
+
+	while true
+		match bio.readln(s.f)
+		| `bio.Err e:	r.err = `std.Some `Econn
+		| `bio.Eof:	r.err = `std.Some `Econn
+		| `bio.Ok ln:
+			if std.strstrip(ln).len == 0
+				std.slfree(ln)
+				break
+			;;
+			if !parsehdr(s, r, ln)
+				std.slfree(ln)
+				-> false
+			;;
+			std.slfree(ln)
+		;;
+	;;
+	*/
+}
 
 const parseresp = {s, r
 	match bio.readln(s.f)
@@ -27,6 +61,7 @@ const parseresp = {s, r
 		| `bio.Eof:	r.err = `std.Some `Econn
 		| `bio.Ok ln:
 			if std.strstrip(ln).len == 0
+				std.slfree(ln)
 				break
 			;;
 			if !parsehdr(s, r, ln)

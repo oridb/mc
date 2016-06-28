@@ -8,8 +8,59 @@ pkg http =
 	const urlfree	: (url : url# -> void)
 ;;
 
+const __init__ = {
+	var u : url#
+
+	u = u
+	std.fmtinstall(std.typeof(u), urlfmt, [
+		("p", false)
+	][:])
+}
+
+const urlfmt = {sb, ap, opts
+	var url : url#
+	var defaultport
+	var sep
+	var showhost 
+
+	showhost = true
+	url = std.vanext(ap)
+	for o in opts
+		match o
+		| ("p", ""):	showhost = false
+		| _:	std.fatal("unknown param\n")
+		;;
+	;;
+
+	if showhost
+		match url.schema
+		| `Http:
+			std.sbputs(sb, "http://")
+			defaultport = 80
+		| `Https:
+			std.sbputs(sb, "https://")
+			defaultport = 443
+		;;
+
+		std.sbputs(sb, url.host)
+		if url.port != defaultport
+			std.sbfmt(sb, ":{}", url.port)
+		;;
+	;;
+
+	std.sbfmt(sb, url.path)
+
+	if url.params.len > 0
+		sep = '?'
+		for (k, v) in url.params
+			std.sbfmt(sb, "{}{}={}", sep, k, v)
+			sep = '&'
+		;;
+	;;
+}
+
 const parseurl = {url
-	var schema, host, path, port
+	var schema, host, port, path, params
 
 	match parseschema(&url)
 	| `std.Ok s:	schema = s
@@ -31,12 +82,18 @@ const parseurl = {url
 	| `std.Fail e:	-> `std.Fail e
 	;;
 
+	match parseparams(&url)
+	| `std.Ok p:	params = p
+	| `std.Fail e:	-> `std.Fail e
+	;;
+
 	/* todo: params */
 	-> `std.Ok std.mk([
 		.schema=schema,
 		.host=std.sldup(host),
 		.port=port,
 		.path=std.sldup(path),
+		.params=params,
 	])
 }
 
@@ -65,13 +122,47 @@ const parsehostname = {url
 }
 
 const parsepath = {url
+	var len, p
+
 	if url#.len == 0
 		-> `std.Ok "/"
+	elif std.decode(url#) == '?'
+		-> `std.Ok "/"
 	elif std.decode(url#) == '/'
-		-> `std.Ok url#
+		match std.strfind(url#, "?")
+		| `std.Some i:	len = i
+		| `std.None:	len = url#.len
+		;;
+		p = url#[:len]
+		url# = url#[len:]
+		-> `std.Ok p
 	else
 		-> `std.Fail `Esyntax
 	;;
+}
+
+const parseparams = {url
+	var kvp : byte[:][2]
+	var params
+
+	if url#.len == 0
+		-> `std.Ok [][:]
+	;;
+
+	match std.decode(url#)
+	| '?':	(_, url#) = std.strstep(url#)
+	| _:	-> `std.Fail `Esyntax
+	;;
+
+	params = [][:]
+	for sp in std.bysplit(url#, "&")
+		if std.bstrsplit(kvp[:], sp, "=").len != 2
+			-> `std.Fail `Esyntax
+		;;
+		std.slpush(&params, (std.sldup(kvp[0]), std.sldup(kvp[1])))
+	;;
+
+	-> `std.Ok params
 }
 
 const hostname = {url
@@ -82,6 +173,7 @@ const hostname = {url
 		match c
 		| ':':	break
 		| '/':	break
+		| '?':	break
 		| chr:
 			if ishostchar(chr)
 				len += std.charlen(chr)
@@ -136,6 +228,6 @@ const unreserved = {c
 
 const subdelim = {c
 	-> c == '.' || c == '-' || c == '_' || c == '~' || c == '!' || \
-		c == '$' || c == '&' || c == '\'' || c ==  '(' || c ==  ')' \
-		|| c ==  '*' || c ==  '+' || c ==  ',' || c ==  ';' || c ==  '='
+		c == '$' || c == '&' || c == '\'' || c ==  '(' || c ==  ')' || \
+		c ==  '*' || c ==  '+' || c ==  ',' || c ==  ';' || c ==  '='
 }
