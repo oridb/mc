@@ -9,8 +9,10 @@ use "hasprefix"
 use "htab"
 use "intparse"
 use "introspect"
+use "memops"
 use "option"
 use "result"
+use "sldup"
 use "sleq"
 use "slpush"
 use "strbuf"
@@ -79,7 +81,10 @@ const fatalv = {fmt, ap
 var fmtmap : htab(byte[:], fmtdesc)#
 
 const fmtinstall = {ty, fn, optdesc
-	htput(fmtmap, ty, [.fn=fn, .optdesc=optdesc])
+	match std.htget(fmtmap, ty)
+	| `std.Some _:	std.fatal("doubly installed format\n")
+	| `std.None:	htput(fmtmap, ty, [.fn=fn, .optdesc=sldup(optdesc)])
+	;;
 }
 
 const put = {fmt, args
