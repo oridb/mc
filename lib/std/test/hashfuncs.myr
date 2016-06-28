@@ -1,0 +1,24 @@
+use std
+
+const main = {
+	var x, y: int
+
+	std.assert(std.strhash("abc") == 1241861192, "wrong hash\n")
+	std.assert(std.streq("abc\0def", "abc\0def"), "equal strings not equal\n")
+	std.assert(!std.streq("abc\0def", "abcdef"), "unstrings are equal\n")
+
+	std.assert(std.strcasehash("abc") == std.strcasehash("AbC"), "wrong case insensitive hash\n")
+	std.assert(std.strcaseeq("abc", "AbC"), "equal case insensitive strings not equal")
+	std.assert(!std.strcaseeq("abc", "AbCd"), "unequal case insensitive strings equal")
+
+	/* can't sanely test ptrhash; it will change every time */
+	std.assert(std.ptreq(&x, &x), "equal pointers not equal")
+	std.assert(!std.ptreq(&x, &y), "unequal pointers are equal")
+
+	std.assert(std.inthash(123) == 2379201998, "wrong int hash")
+	std.assert(std.inteq(123, 123), "equal integers not equal")
+	std.assert(!std.inteq(123, 456), "unequal integers are equal")
+
+	std.assert(std.murmurhash2("foobar", 1234) == 2203212445, "wrong murmurhash value")
+
+}

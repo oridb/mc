@@ -64,7 +64,7 @@ const strcasehash = {s
 	chars = [][:]
 	while s.len != 0
 		(c, s) = std.strstep(s)
-		std.slpush(&chars, c)
+		std.slpush(&chars, std.tolower(c))
 	;;
 	h = murmurhash2(slbytes(chars), Seed)
 	slfree(chars)
