@@ -204,7 +204,7 @@ const fmtval = {sb, ty, ap, params
 
 const parseparams = {paramstr, optdesc
 	var params, opts
-	var o, a, ha : bool, gotarg : bool
+	var o, a, ha, gotarg, found
 
 	opts = [][:]
 	if optdesc.len == 0 && paramstr.len > 0
@@ -224,17 +224,26 @@ const parseparams = {paramstr, optdesc
 			gotarg = false
 		;;
 
+		found = false
 		/* verify and add the arg */
 		for (opt, hasarg) in optdesc
 			if !std.sleq(opt, o)
 				continue
 			;;
+			found = true
 			ha = hasarg
 			if ha == gotarg
 				std.slpush(&opts, (o, a))
 			else
-				std.fatal("invalid option {} ", o)
+				std.fatal("invalid arg for option {} ", a, o)
 			;;
+		;;
+		if !found
+			std.put("options: \n")
+			for (opt, hasarg) in optdesc
+				std.put("\t'{}', hasarg={}\n", opt, hasarg)
+			;;
+			std.fatal("invalid option '{}' ", o)
 		;;
 	;;
 	slfree(params)
