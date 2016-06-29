@@ -8,7 +8,9 @@ lib http =
 	parse.myr
 	types.myr
 	url.myr
-	verbs.myr
+	client.myr
+	server.myr
+	router.myr
 	session.myr
 
 ;;

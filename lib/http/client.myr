@@ -15,7 +15,7 @@ pkg http =
 	const options	: (s : session#, r : byte[:] -> std.result(resp#, err))
 	const trace	: (s : session#, r : byte[:] -> std.result(resp#, err))
 
-	/* request versions */
+	/* request based versions */
 	const getreq	: (s : session#, r : req# -> std.result(resp#, err))
 	const headreq	: (s : session#, r : req# -> std.result(resp#, err))
 	const putreq	: (s : session#, r : req#, data : byte[:] -> std.result(resp#, err))
