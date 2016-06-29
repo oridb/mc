@@ -10,7 +10,6 @@ lib http =
 	url.myr
 	client.myr
 	server.myr
-	router.myr
 	session.myr
 
 ;;
