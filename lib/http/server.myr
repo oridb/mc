@@ -1,0 +1,9 @@
+use std
+
+pkg http =
+	const announce	: (ds : byte[:] -> void)
+;;
+
+const announce = {ds
+	std.fatal("announce not yet implemented\n")
+}
