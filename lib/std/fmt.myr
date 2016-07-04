@@ -509,8 +509,19 @@ const strfmt = {sb, str, params
 			if isprint(b)
 				sbputb(sb, b)
 			else
-				sbputs(sb, "\\x")
-				intfmt(sb, [.padto=2, .padfill='0', .base=16], false, b)
+				match (b : char)
+				| '\n':	sbputs(sb, "\\n")
+				| '\r':	sbputs(sb, "\\r")
+				| '\t':	sbputs(sb, "\\t")
+				| '\b':	sbputs(sb, "\\b")
+				| '\"':	sbputs(sb, "\\\"")
+				| '\'':	sbputs(sb, "\\\'")
+				| '\\':	sbputs(sb, "\\\\")
+				| '\0':	sbputs(sb, "\\0")
+				| _:
+					sbputs(sb, "\\x")
+					intfmt(sb, [.padto=2, .padfill='0', .base=16], false, b)
+				;;
 			;;
 		;;
 	else
