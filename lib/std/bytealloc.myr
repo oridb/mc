@@ -8,14 +8,7 @@ use "units"
 
 pkg std =
 	/* null pointers. only used internally. */
-	pkglocal const Zslab	= (0 : slab#)
-	pkglocal const Zchunk	= (0 : chunk#)
 	pkglocal const Zsliceptr	= (0 : byte#)
-
-	pkglocal const Slabsz 	= 1*MiB	/* 1 meg slabs */
-	pkglocal const Cachemax	= 16	/* maximum number of slabs in the cache */
-	pkglocal const Bktmax	= 32*KiB	/* Slabsz / 8; a balance. */
-	pkglocal const Pagesz	= 4*KiB
 	pkglocal const Align	= 16	/* minimum allocation alignment */
 
 	pkglocal const align	: (m : std.size, align : std.size -> std.size)
@@ -25,6 +18,13 @@ pkg std =
 	pkglocal const zbytealloc	: (sz:size	-> byte#)
 	pkglocal const bytefree	: (m:byte#, sz:size	-> void)
 ;;
+
+const Zslab	= (0 : slab#)
+const Zchunk	= (0 : chunk#)
+const Slabsz 	= 1*MiB	/* 1 meg slabs */
+const Cachemax	= 16	/* maximum number of slabs in the cache */
+const Bktmax	= 32*KiB	/* Slabsz / 8; a balance. */
+const Pagesz	= 4*KiB
 
 var buckets	: bucket[32] /* excessive */
 
