@@ -1,0 +1,270 @@
+use "die"
+use "extremum"
+use "memops"
+use "syswrap"
+use "threadhooks"
+use "types"
+use "units"
+
+pkg std =
+	/* null pointers. only used internally. */
+	pkglocal const Zslab	= (0 : slab#)
+	pkglocal const Zchunk	= (0 : chunk#)
+	pkglocal const Zsliceptr	= (0 : byte#)
+
+	pkglocal const Slabsz 	= 1*MiB	/* 1 meg slabs */
+	pkglocal const Cachemax	= 16	/* maximum number of slabs in the cache */
+	pkglocal const Bktmax	= 32*KiB	/* Slabsz / 8; a balance. */
+	pkglocal const Pagesz	= 4*KiB
+	pkglocal const Align	= 16	/* minimum allocation alignment */
+
+	pkglocal const align	: (m : std.size, align : std.size -> std.size)
+	pkglocal const allocsz	: (sz : std.size -> std.size)
+
+	pkglocal const bytealloc	: (sz:size	-> byte#)
+	pkglocal const zbytealloc	: (sz:size	-> byte#)
+	pkglocal const bytefree	: (m:byte#, sz:size	-> void)
+;;
+
+var buckets	: bucket[32] /* excessive */
+
+type bucket = struct
+	sz	: size	/* aligned size */
+	nper	: size	/* max number of elements per slab */
+	slabs	: slab#	/* partially filled or free slabs */
+	cache	: slab# /* cache of empty slabs, to prevent thrashing */
+	ncache	: size  /* size of cache */
+;;
+
+type slab = struct
+	head	: byte#	/* head of virtual addresses, so we don't leak address space */
+	next	: slab#	/* the next slab on the chain */
+	freehd	: chunk#	/* the nodes we're allocating */
+	nfree	: size	/* the number of free nodes */
+;;
+
+type chunk = struct	/* NB: must be smaller than sizeof(slab) */
+	next	: chunk#	/* the next chunk in the free list */
+;;
+
+const __init__ = {
+	for var i = 0; i < buckets.len && (Align << i) <= Bktmax; i++
+		bktinit(&buckets[i], Align << i)
+	;;
+}
+
+const zbytealloc = {sz
+	var p
+
+	p = bytealloc(sz)
+	memfill(p, 0, sz)
+	-> p
+}
+
+/* Allocates a blob that is 'sz' bytes long. Dies if the allocation fails */
+const bytealloc = {sz
+	var bkt, p
+
+	if (sz <= Bktmax)
+		bkt = &buckets[bktnum(sz)]
+		lock(memlck)
+		p = bktalloc(bkt)
+		unlock(memlck)
+	else
+		p = getmem(sz)
+		if p == Failmem
+			die("could not get memory\n")
+		;;
+	;;
+	-> p
+}
+
+/* frees a blob that is 'sz' bytes long. */
+const bytefree = {p, sz
+	var bkt
+
+	memfill(p, 0xa8, sz)
+	if (sz < Bktmax)
+		bkt = &buckets[bktnum(sz)]
+		lock(memlck)
+		bktfree(bkt, p)
+		unlock(memlck)
+	else
+		freemem(p, sz)
+	;;
+}
+
+/* Sets up a single empty bucket */
+const bktinit = {b, sz
+	b.sz = align(sz, Align)
+	b.nper = (Slabsz - sizeof(slab))/b.sz
+	b.slabs = Zslab
+	b.cache = Zslab
+	b.ncache = 0
+}
+
+/* Creates a slab for bucket 'bkt', and fills the chunk list */
+const mkslab = {bkt
+	var p, s
+	var b, bnext
+	var off /* offset of chunk head */
+
+	if bkt.ncache > 0
+		s = bkt.cache
+		bkt.cache = s.next
+		bkt.ncache--
+	;;
+	/*
+	tricky: we need power of two alignment, so we allocate double the
+	needed size, chop off the unaligned ends, and waste the address
+	space. Since the OS is "smart enough", this shouldn't actually
+	cost us memory, and 64 bits of address space means that we're not
+	going to have issues with running out of address space for a
+	while. On a 32 bit system this would be a bad idea.
+	*/
+	p = getmem(Slabsz*2)
+	if p == Failmem
+		die("Unable to get memory")
+	;;
+
+	s = (align((p : size), Slabsz) : slab#)
+	s.head = p
+	s.nfree = bkt.nper
+	/* skip past the slab header */
+	off = align(sizeof(slab), Align)
+	bnext = nextchunk((s : chunk#), off)
+	s.freehd = bnext
+	for var i = 0; i < bkt.nper; i++
+		b = bnext
+		bnext = nextchunk(b, bkt.sz)
+		b.next = bnext
+	;;
+	b.next = Zchunk
+	-> s
+}
+
+/* 
+Allocates a node from bucket 'bkt', crashing if the
+allocation cannot be satisfied. Will create a new slab
+if there are no slabs on the freelist.
+*/
+const bktalloc = {bkt
+	var s
+	var b
+
+	/* find a slab */
+	s = bkt.slabs
+	if s == Zslab
+		s = mkslab(bkt)
+		if s == Zslab
+			die("No memory left")
+		;;
+		bkt.slabs = s
+	;;
+
+	/* grab the first chunk on the slab */
+	b = s.freehd
+	s.freehd = b.next
+	s.nfree--
+	if s.nfree == 0
+		bkt.slabs = s.next
+		s.next = Zslab
+	;;
+
+	-> (b : byte#)
+}
+
+/*
+Frees a chunk of memory 'm' into bucket 'bkt'.
+Assumes that the memory already came from a slab
+that was created for bucket 'bkt'. Will crash
+if this is not the case.
+*/
+const bktfree = {bkt, m
+	var s, b
+
+	s = (mtrunc(m, Slabsz) : slab#)
+	b = (m : chunk#)
+	if s.nfree == 0
+		s.next = bkt.slabs
+		bkt.slabs = s
+	elif s.nfree == bkt.nper
+		/*
+		HACK HACK HACK: if we can't unmap, keep an infinite cache per slab size.
+		We should solve this better somehow.
+		*/
+		if bkt.ncache < Cachemax || !Canunmap
+			s.next = bkt.cache
+			bkt.cache = s
+		else
+			/* we mapped 2*Slabsz so we could align it,
+			 so we need to unmap the same */
+			freemem(s.head, Slabsz*2)
+		;;
+	;;
+	s.nfree++
+	b.next = s.freehd
+	s.freehd = b
+}
+
+/*
+Finds the correct bucket index to allocate from
+for allocations of size 'sz'
+*/
+const bktnum = {sz
+	var bktsz
+
+	bktsz = Align
+	for var i = 0; bktsz <= Bktmax; i++
+		if bktsz >= sz
+			-> i
+		;;
+		bktsz *= 2
+	;;
+	die("Size does not match any buckets")
+}
+
+/*
+returns the actual size we allocated for a given
+size request
+*/
+const allocsz = {sz
+	var bktsz
+
+	if sz <= Bktmax
+		bktsz = Align
+		for var i = 0; bktsz <= Bktmax; i++
+			if bktsz >= sz
+				-> bktsz
+			;;
+			bktsz *= 2
+		;;
+	else
+		-> align(sz, Pagesz)
+	;;
+	die("Size does not match any buckets")
+}
+
+/*
+aligns a size to a requested alignment.
+'align' must be a power of two
+*/
+const align = {v, align
+	-> (v + align - 1) & ~(align - 1)
+}
+
+/*
+chunks are variable sizes, so we can't just
+index to get to the next one
+*/
+const nextchunk = {b, sz : size
+	-> ((b : intptr) + (sz : intptr) : chunk#)
+}
+
+/*
+truncates a pointer to 'align'. 'align' must
+be a power of two.
+*/
+const mtrunc = {m, align
+	-> ((m : intptr) & ~((align : intptr) - 1) : byte#)
+}
