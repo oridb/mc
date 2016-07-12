@@ -400,6 +400,7 @@ static Type *tyunpickle(FILE *fd)
 Trait *traitunpickle(FILE *fd)
 {
 	Trait *tr;
+	Node *fn;
 	size_t i, n;
 	intptr_t uid;
 
@@ -423,8 +424,11 @@ Trait *traitunpickle(FILE *fd)
 	for (i = 0; i < n; i++)
 		lappend(&tr->memb, &tr->nmemb, rdsym(fd, tr));
 	n = rdint(fd);
-	for (i = 0; i < n; i++)
-		lappend(&tr->funcs, &tr->nfuncs, rdsym(fd, tr));
+	for (i = 0; i < n; i++) {
+		fn = rdsym(fd, tr);
+		fn->decl.impls = mkht(tyhash, tyeq);
+		lappend(&tr->funcs, &tr->nfuncs, fn);
+	}
 	htput(trmap, itop(uid), tr);
 	return tr;
 }
@@ -963,7 +967,6 @@ foundextlib:
 				  puttrait(s, tr->name, tr);
 				  for (i = 0; i < tr->nfuncs; i++) {
 					  putdcl(s, tr->funcs[i]);
-					  tr->funcs[i]->decl.impls = mkht(tyhash, tyeq);
 				  }
 			  }
 			  break;
