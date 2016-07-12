@@ -278,7 +278,6 @@ void tagexports(Node *file, int hidelocal)
 			continue;
 		tagnode(st, s, 0, hidelocal);
                 tr = s->impl.trait;
-		tagtrait(st, tr, 0, hidelocal);
 		for (j = 0; j < tr->naux; j++)
 			tr->aux[j]->vis = Visexport;
 	}
