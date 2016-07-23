@@ -2,7 +2,7 @@ use sys
 
 pkg std =
 	type size	= sys.size	/* spans entire address space */
-	type usize	= sys.usize	/* signed size */
+	type usize	= sys.usize	/* unsigned size */
 	type off	= sys.off	/* file offsets */
 	type intptr	= sys.intptr	/* can hold any pointer losslessly */
 	type time	= sys.time	/* milliseconds since epoch */
