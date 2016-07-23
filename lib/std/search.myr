@@ -1,5 +1,6 @@
 use "cmp"
 use "option"
+use "types"
 
 pkg std =
 	generic lsearch	: (sl : @t[:], key : @k, cmp : (v : @t, k : @k -> order) -> option(@idx::(integral,numeric)))
@@ -21,7 +22,7 @@ generic lsearch = {sl, key, cmp
 
 /* binary search over a sorted list of values. */
 generic bsearch  = {sl, key, cmp
-	var hi, lo, mid
+	var hi, lo, mid : usize
 
 	lo = 0
 	hi = sl.len - 1
@@ -32,7 +33,7 @@ generic bsearch  = {sl, key, cmp
 		| `After:	hi = mid - 1
 		| `Before:	lo = mid + 1
 		| `Equal:	
-			-> `Some mid
+			-> `Some (mid : @idx)
 		;;
 	;;
 	-> `None
