@@ -4,11 +4,18 @@ use bio
 use "types"
 
 pkg inifile =
+	type inisectiter = struct
+		it : std.htkviter((byte[:], byte[:]), byte[:])
+	;;
+	impl iterable inisectiter -> byte[:]
+
 	/* key getting/setting */
 	const get	: (ini : inifile#, sect : byte[:], key : byte[:]	-> std.option(byte[:]))
 	const getv	: (ini : inifile#, sect : byte[:], key : byte[:], val : byte[:]	-> byte[:])
 	const has	: (ini : inifile#, sect : byte[:], key : byte[:] -> bool)
 	const put	: (ini : inifile#, sect : byte[:], key : byte[:], val : byte[:]	-> void)
+
+	const bysection	: (ini : inifile# -> inisectiter)
 ;;
 
 const get = {ini, sect, key
@@ -33,3 +40,22 @@ const put = {ini, sect, key, val
 	std.htput(ini.elts, (sect, key), std.sldup(val))
 }
 
+const bysection = {ini
+	-> [.it=std.htbykeyvals(ini.elts)]
+}
+
+impl iterable inisectiter -> byte[:] =
+	__iternext__ = {itp, valp : byte[:]#
+		var kvp : ((byte[:], byte[:]), byte[:])
+		if __iternext__(&itp.it, &kvp)
+			match kvp
+			| ((s, _), _):	valp# = s
+			;;
+			-> true
+		;;
+		-> false
+	}
+
+	__iterfin__ = {itp, valp -> void
+	}
+;;
