@@ -277,7 +277,7 @@ ulong murmurhash2 (void *ptr, size_t len)
 	uint32_t r = 24;
 	uint32_t h, k;
 	uint32_t *data;
-	char *buf;
+	uint8_t *buf;
 	
 	buf = ptr;
 	data = (uint32_t*)buf;

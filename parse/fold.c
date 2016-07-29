@@ -153,7 +153,7 @@ Node *fold(Node *n, int foldvar)
 		if (isintval(args[1], 0))
 			r = args[0];
 		if (getintlit(args[0], &a) && getintlit(args[1], &b))
-			r = val(n->loc, a - b, exprtype(n));
+			r = val(n->loc, (uint64_t)a - b, exprtype(n));
 		break;
 	case Omul:
 		/* 1 * x = x */
@@ -198,7 +198,7 @@ Node *fold(Node *n, int foldvar)
 		break;
 	case Obsl:
 		if (getintlit(args[0], &a) && getintlit(args[1], &b))
-			r = val(n->loc, a << b, exprtype(n));
+			r = val(n->loc, (uint64_t)a << b, exprtype(n));
 		break;
 	case Obsr:
 		if (getintlit(args[0], &a) && getintlit(args[1], &b))

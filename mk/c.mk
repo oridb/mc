@@ -9,8 +9,9 @@ _LIBINCPATHS=$(addprefix -I, $(dir $(DEPS))) $(_PCHDRS)
 _LIBPATHS=$(addprefix -l, $(patsubst lib%.a,%,$(notdir $(DEPS)))) $(_PCLIBS)
 
 # yeah, I should probably remove -Werror, but it's nice for developing alone.
-CFLAGS += -Wall -Wextra -Werror -Wno-unused-parameter -Wno-missing-field-initializers -Wno-sign-compare -g -O0
+CFLAGS += -Wall -Wextra -Werror -Wno-unused-parameter -Wno-missing-field-initializers -Wno-sign-compare -g -O0 -fsanitize=undefined
 CFLAGS += -MMD -MP -MF .deps/$(subst /,-,$*).d
+LDFLAGS += -fsanitize=undefined
 
 LIB ?= $(INSTLIB)
 BIN ?= $(INSTBIN)
