@@ -291,10 +291,23 @@ Type *mktyfunc(Srcloc loc, Node **args, size_t nargs, Type *ret)
 Type *mktystruct(Srcloc loc, Node **decls, size_t ndecls)
 {
 	Type *t;
+	Htab *ht;
+	int i;
+	char *s;
 
 	t = mktype(loc, Tystruct);
 	t->nsub = 0;
 	t->nmemb = ndecls;
+
+	ht = mkht(strhash, streq);
+	for (i = 0; i < ndecls; i++) {
+		s = declname(decls[i]);
+		if (hthas(ht, s))
+			fatal(decls[i], "duplicate struct member %s\n", declname(decls[i]));
+		htput(ht, s, s);
+	}
+	htfree(ht);
+
 	t->sdecls = memdup(decls, ndecls * sizeof(Node *));
 	return t;
 }
