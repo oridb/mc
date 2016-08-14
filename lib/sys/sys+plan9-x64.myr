@@ -173,7 +173,6 @@ pkg sys =
 extern const syscall : (scno : scno, args : ... -> int64)
 /* asm stubs from util+plan9.s */
 extern const cstring	: (str : byte[:] -> byte#)
-extern const alloca	: (sz : size	-> byte#)
 
 
 /*
