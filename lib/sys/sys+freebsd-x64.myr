@@ -881,7 +881,6 @@ generic a = {x : @t; -> (x : uint64)}
 
 extern const cstring	: (str : byte[:] -> byte#)
 extern const alloca	: (sz : size	-> byte#)
-extern const __cenvp : byte##
 
 extern const __freebsd_pipe	: (fds : fd[2]# -> int64)
 
