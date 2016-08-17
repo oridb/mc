@@ -25,9 +25,6 @@ struct Inferstate {
 	Type *ret;
 
 	/* bound by patterns turn into decls in the action block */
-	Node **binds;
-	size_t nbinds;
-	/* bound by patterns turn into decls in the action block */
 	Node **impldecl;
 	size_t nimpldecl;
 	/* nodes that need post-inference checking/unification */
