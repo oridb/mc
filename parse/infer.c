@@ -20,7 +20,6 @@ struct Inferstate {
 	int ingeneric;
 	int inaggr;
 	int innamed;
-	int sawret;
 	int indentdepth;
 	Type *ret;
 
