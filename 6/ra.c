@@ -1431,6 +1431,7 @@ void dumpasm(Isel *s, FILE *fd)
 	char *sep;
 	Asmbb *bb;
 
+	fprintf(fd, "function %s\n", s->name);
 	fprintf(fd, "WORKLISTS -- \n");
 	wlprint(stdout, "spill", s->wlspill, s->nwlspill);
 	wlprint(stdout, "simp", s->wlsimp, s->nwlsimp);

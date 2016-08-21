@@ -349,6 +349,7 @@ static void genfunc(FILE *fd, Func *fn, Htab *globls, Htab *strtab)
 	Isel is = {0,};
 
 	is.reglocs = mkht(varhash, vareq);
+	is.name = fn->name;
 	is.stkoff = fn->stkoff;
 	is.envoff = fn->envoff;
 	is.globls = globls;

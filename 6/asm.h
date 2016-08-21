@@ -163,6 +163,8 @@ struct Asmbb {
 
 /* instruction selection state */
 struct Isel {
+	char *name;
+
 	Cfg  *cfg;          /* cfg built with nodes */
 
 	Asmbb **bb;         /* 1:1 mappings with the Node bbs in the CFG */
