@@ -1,13 +1,34 @@
 use std
 
+type loop = struct
+	l	: loop#
+	val	: int
+;;
+
 const main = {
 	var x : std.option(std.option(int)#)
+	var y : loop
+	var ok
 
 	x = `std.Some &(`std.Some 123)
 	match x
 	| `std.Some &(`std.None):	std.put("failed\n")
 	| `std.Some &(`std.Some 666):	std.put("failed\n")
-	| `std.Some &(`std.Some 123):	std.put("worked\n")
+	| `std.Some &(`std.Some 123):	ok = true
 	| _:	std.put("failed\n")
+	;;
+
+	y.val=666
+	match &y
+	| &[.val=777]:	std.put("failed\n")
+	| &[.val=123]:	ok = ok && true
+	| &[.val=999]:	std.put("failed\n")
+	| _:
+	;;
+
+	if ok
+		std.put("worked\n")
+	else
+		std.put("failed\n")
 	;;
 }

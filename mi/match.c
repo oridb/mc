@@ -248,9 +248,7 @@ static int acceptall(Dtree *t, Dtree *accept)
 
 static int isbasictype(Dtree *dt, Type *ty)
 {
-	if (ty->type == Typtr)
-		return !dt->ptrwalk;
-	return istyprimitive(ty) || ty->type == Tyvoid || ty->type == Tyfunc;
+	return istyprimitive(ty) || ty->type == Tyvoid || ty->type == Tyfunc || ty->type == Typtr;
 }
 
 static int ismatchable(Type *ty)
@@ -269,7 +267,9 @@ static int addwildrec(Srcloc loc, Type *ty, Dtree *start, Dtree *accept, Dtree *
 	tail = NULL;
 	ntail = 0;
 	ty = tybase(ty);
-	if (isbasictype(start, ty)) {
+	if (ty->type == Typtr && start->any && start->any->ptrwalk) {
+		return addwildrec(loc, ty->sub[0], start->any, accept, end, nend);
+	} else if (isbasictype(start, ty)) {
 		if (start->accept || start == accept)
 			return 0;
 		for (i = 0; i < start->nnext; i++)
@@ -360,9 +360,6 @@ static int addwildrec(Srcloc loc, Type *ty, Dtree *start, Dtree *accept, Dtree *
 	case Tyslice:
 		ret = acceptall(start, accept);
 		lappend(&last, &nlast, accept);
-		break;
-	case Typtr:
-		ret = addwildrec(loc, ty->sub[0], start, accept, &last, &nlast);
 		break;
 	default:
 		die("unreachable");
@@ -610,12 +607,18 @@ static int addstruct(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***
 static int addderefpat(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap, size_t *ncap, Dtree ***end, size_t *nend)
 {
 	Node *deref;
+	Dtree *walk;
 
 	deref = mkexpr(val->loc, Oderef, val, NULL);
 	deref->expr.type = exprtype(pat->expr.args[0]);
 	start->nconstructors = nconstructors(exprtype(deref));
-	start->ptrwalk = 1;
-	return addpat(pat->expr.args[0], deref, start, accept, cap, ncap, end, nend);
+	if (start->any && !start->any->ptrwalk)
+		return 0;
+	else if (!start->any)
+		start->any = mkdtree(pat->loc, genlbl(pat->loc));
+	walk = start->any;
+	walk->ptrwalk = 1;
+	return addpat(pat->expr.args[0], deref, walk, accept, cap, ncap, end, nend);
 }
 
 static int addpat(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap, size_t *ncap, Dtree ***end, size_t *nend)
