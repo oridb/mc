@@ -1129,13 +1129,14 @@ static int remap(Isel *s, Htab *map, Insn *insn, regid *use, size_t nuse, regid 
 	return remapped;
 }
 
-static int nopmov(Insn *insn)
+static int nopmov(Isel *s, Insn *insn)
 {
-	if (insn->op != Imov && insn->op != Imovs)
+	if (insn->op != Imov)
 		return 0;
 	if (insn->args[0]->type != Locreg || insn->args[1]->type != Locreg)
 		return 0;
-	return insn->args[0]->reg.id == insn->args[1]->reg.id;
+	/* Prepainted register moves need to be kept live to avoid coalescing over them */
+	return insn->args[0]->reg.id == insn->args[1]->reg.id && !bshas(s->prepainted, insn->args[0]->reg.id);
 }
 
 void replacealias(Isel *s, Loc **map, size_t nreg, Insn *insn)
@@ -1198,7 +1199,7 @@ static void rewritebb(Isel *s, Asmbb *bb, Loc **aliasmap)
 	for (j = bb->ni; j > 0; j--) {
 		insn = bb->il[j - 1];
 		replacealias(s, aliasmap, s->nreg, insn);
-		if (nopmov(insn))
+		if (nopmov(s, insn))
 			continue;
 		nuse = uses(insn, use);
 		ndef = defs(insn, def);
