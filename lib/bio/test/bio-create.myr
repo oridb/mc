@@ -7,7 +7,7 @@ const main = {
 	std.mkdir("tmpout", 0o755);
 	match bio.create("tmpout/test-create", bio.Wr, 0o644)
 	| `std.Ok bio:	f = bio
-	| `std.Fail m:	std.fatal("Failed to open file: {}\n", m)
+	| `std.Err m:	std.fatal("Failed to open file: {}\n", m)
 	;;
 	bio.close(f)
 }

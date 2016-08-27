@@ -175,7 +175,7 @@ const fsize = {path
 
 generic check = {e : @a::(integral, numeric) -> result(@b, errno)
 	if e < 0
-		-> `Fail (e : errno)
+		-> `Err (e : errno)
 	else
 		-> `Ok (e : @b)
 	;;

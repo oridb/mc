@@ -43,7 +43,7 @@ const getenv = {name
 	| `None:
 		s = fmt("/env/{}", name)
 		match std.slurp(s)
-		| `Fail m: 
+		| `Err m: 
 			ret = `None
 		| `Ok data:
 			data = cstrconv(data)

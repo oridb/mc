@@ -30,7 +30,7 @@ const diropen = {p
 
 	fd = sys.open(p, sys.Ordonly | sys.Odir)
 	if fd < 0
-		-> `Fail "couldn't open directory"
+		-> `Err "couldn't open directory"
 	;;
 	dir = zalloc()
 	dir.fd = fd

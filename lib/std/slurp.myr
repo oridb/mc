@@ -16,7 +16,7 @@ const Bufstart = 4096
 const slurp = {path
 	var sl
 	match open(path, Ordonly)
-	| `Fail e:	-> `Fail e
+	| `Err e:	-> `Err e
 	| `Ok fd:
 		sl = fslurp(fd)
 		close(fd)
@@ -41,9 +41,9 @@ const fslurp = {fd
 				bufsz *= 2
 				slgrow(&buf, bufsz)
 			;;
-		| `Fail e:
+		| `Err e:
 			slfree(buf)
-			-> `Fail e
+			-> `Err e
 		;;
 	;;
 	die("unreachable")

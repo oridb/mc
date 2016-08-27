@@ -81,7 +81,7 @@ const load = {file
 	/* check magic */
 	match std.slurp(file)
 	| `std.Ok d:	p = d
-	| `std.Fail m:	
+	| `std.Err m:	
 		-> std.zalloc()
 	;;
 

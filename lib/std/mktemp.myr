@@ -38,17 +38,17 @@ const mktempat = {tmpdir, base, opt, mode
 	for var i = 0; i < Retries; i++
 		path = randpath(tmpdir, base)
 		match std.openmode(path, opt | Ocreat, mode)
-		| `Fail e:
+		| `Err e:
 			if e != Eexist
 				std.slfree(path)
-				-> `Fail e
+				-> `Err e
 			;;
 		| `Ok fd:
 			-> `Ok (fd, path)
 		;;
 		std.slfree(path)
 	;;
-	-> `Fail Eexist
+	-> `Err Eexist
 }
 
 const mktemppath = {base

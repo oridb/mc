@@ -5,7 +5,7 @@ const main = {
 	var f
 	match bio.create("tmpout/test-unitwr", bio.Wr, 0o644)
 	| `std.Ok bio:	f = bio
-	| `std.Fail m:	std.fatal("Unable to open data file: {}\n", m)
+	| `std.Err m:	std.fatal("Unable to open data file: {}\n", m)
 	;;
 	bio.putb(f, 42)
 	bio.putc(f, 'ה')

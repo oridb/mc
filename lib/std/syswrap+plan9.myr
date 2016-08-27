@@ -120,7 +120,7 @@ const fmtime = {path
 	var buf	: byte[Stringsoff + 512]	/* enough space for some strings */
 
 	if sys.stat(path, buf[:]) < Stringsoff
-		-> `Fail Emisc
+		-> `Err Emisc
 	;;
 	-> `Ok (getle32(buf[Mtimeoff:Mtimeoff + 8]) : time)
 }
@@ -129,7 +129,7 @@ const fsize = {path
 	var buf	: byte[Stringsoff + 512]	/* enough space for some strings */
 
 	if sys.stat(path, buf[:]) < Stringsoff
-		-> `Fail Emisc
+		-> `Err Emisc
 	;;
 	-> `Ok (getle64(buf[Lengthoff:Lengthoff + 8]) : off)
 }
@@ -246,7 +246,7 @@ const statsz = {buf
 
 generic check = {e : @a::(integral, numeric) -> result(@b, errno)
 	if e < 0
-		-> `Fail lasterr()
+		-> `Err lasterr()
 	else
 		-> `Ok (e : @b)
 	;;

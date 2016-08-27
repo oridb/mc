@@ -28,7 +28,7 @@ const main = {args
 		comp = regex.dbgcompile(cmd.args[0], false)
 	;;
 	match comp
-	| `std.Fail m:	
+	| `std.Err m:	
 		std.fatal("unable to compile regex: {}\n", m)
 	| `std.Ok re:
 		if cmd.args.len > 1
@@ -48,7 +48,7 @@ const runall = {re, files
 		| `std.Ok fd:
 			dump(re, fd)
 			bio.close(fd)
-		| `std.Fail m:
+		| `std.Err m:
 			std.fatal("failed to open {}: {}\n", f, m)
 		;;
 	;;

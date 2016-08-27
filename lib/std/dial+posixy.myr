@@ -33,8 +33,8 @@ const dial = {ds
 	| `Some ("tcp", str):	-> dialsock(sys.Sockstream, str)
 	| `Some ("udp", str):	-> dialsock(sys.Sockdgram, str)
 	| `Some ("unix", u):	-> dialunix(u)
-	| `Some (proto, str):	-> `Fail "unknown protocol"
-	| `None:	-> `Fail "missing protocol"
+	| `Some (proto, str):	-> `Err "unknown protocol"
+	| `None:	-> `Err "missing protocol"
 	;;
 }
 
@@ -47,15 +47,15 @@ const dialsock = {proto, str
 	var err
 
 	match nameseg(str)
-	| `None:	-> `Fail "required host!port for ip dial"
-	| `Some ("", _):	-> `Fail "empty host"
-	| `Some (_, ""):	-> `Fail "empty port"
+	| `None:	-> `Err "required host!port for ip dial"
+	| `Some ("", _):	-> `Err "empty host"
+	| `Some (_, ""):	-> `Err "empty port"
 	| `Some segs:	(hoststr, portstr) = segs
 	;;
 
 	match parseport(portstr)
 	| `Some p:	port = p
-	| `None:	-> `Fail("invalid port")
+	| `None:	-> `Err("invalid port")
 	;;
 
 	match getaddr(hoststr)
@@ -67,18 +67,18 @@ const dialsock = {proto, str
 		sa6=[.fam=sys.Afinet6, .addr=bits, .port=hosttonet(port)]
 		sa = (&sa6 : sys.sockaddr#)
 		sz = sizeof(sys.sockaddr_in6)
-	| `Fail m:
-		-> `Fail m
+	| `Err m:
+		-> `Err m
 	;;
 	sock = sys.socket(sa.fam, proto, 0)
 	if sock < 0
-		-> `Fail "failed to create socket"
+		-> `Err "failed to create socket"
 	;;
 
 	err = sys.connect(sock, sa, sz)
 	if err < 0
 		sys.close(sock)
-		-> `Fail "Failed to bind socket"
+		-> `Err "Failed to bind socket"
 	;;
 
 	-> `Ok (sock : fd)
@@ -90,16 +90,16 @@ const dialunix = {path
 	
 	sa = [.fam = sys.Afunix]
 	if path.len >= sa.path.len
-		-> `Fail "path too long"
+		-> `Err "path too long"
 	;;
 
 	sock = sys.socket(sys.Afunix, sys.Sockstream, 0)
 	if sock < 0
-		-> `Fail "failed to create socket"
+		-> `Err "failed to create socket"
 	;;
 	slcp(sa.path[:path.len], path)
 	if sys.connect(sock, (&sa : sys.sockaddr#), sizeof(sys.sockaddr_un)) < 0
-		-> `Fail "failed to bind address"
+		-> `Err "failed to bind address"
 	;;
 	-> `Ok (sock : fd)
 }

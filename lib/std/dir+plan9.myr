@@ -28,7 +28,7 @@ const diropen = {p
 
 	match open(p, Ordonly)
 	| `Ok f:	fd = f
-	| `Fail e:	-> `Fail "couldn't open directory"
+	| `Err e:	-> `Err "couldn't open directory"
 	;;
 
 	dir = zalloc()
@@ -45,7 +45,7 @@ const dirread = {d
 		match read(d.fd, d.buf[:])
 		| `Ok 0:
 			-> `None
-		| `Fail e:
+		| `Err e:
 			-> `None
 		| `Ok len:
 			d.len = (len : int64)

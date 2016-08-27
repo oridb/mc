@@ -21,7 +21,7 @@ const spawnstk = {fn, sz
 
 	stk = getstk(sz)
 	if stk == sys.Mapbad
-		-> `std.Fail "couldn't get stack"
+		-> `std.Err "couldn't get stack"
 	;;
 	tid = -1
 	/* find top of stack */
@@ -51,7 +51,7 @@ const spawnstk = {fn, sz
 	], sizeof(sys.thrparam))
 
 	if ret < 0
-		-> `std.Fail "couldn't spawn thread"
+		-> `std.Err "couldn't spawn thread"
 	;;
 	-> `std.Ok (tid : tid)
 }

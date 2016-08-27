@@ -283,7 +283,7 @@ const opensrc = {b, path
 	;;
 
 	match bio.open(path, bio.Rd)
-	| `std.Fail m:	std.fatal("could not open {}: {}\n", path, m)
+	| `std.Err m:	std.fatal("could not open {}: {}\n", path, m)
 	| `std.Ok f:	-> f
 	;;
 }
@@ -391,7 +391,7 @@ const openlib = {lib, incs
 	| `std.Ok file:
 		std.slfree(path)
 		-> file
-	| `std.Fail m:
+	| `std.Err m:
 	;;
 	std.fput(std.Err, "could not find library {}\n", lib)
 	std.fput(std.Err, "search path is:\n")

@@ -7,7 +7,7 @@ const main = {args : byte[:][:]
 	r = std.slurp("data/catfile-in")
 	match r
 	| `std.Ok dat: 	std.write(1, dat)
-	| `std.Fail msg:	std.put("Failed to read file: {}\n", msg)
+	| `std.Err msg:	std.put("Failed to read file: {}\n", msg)
 	;;
 }
 

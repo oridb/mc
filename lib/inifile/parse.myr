@@ -20,7 +20,7 @@ type parser = struct
 const load = {path
 	match std.open(path, std.Ordonly)
 	| `std.Ok fd:	-> loadf(fd)
-	| `std.Fail e:	-> `std.Fail `Fileerr
+	| `std.Err e:	-> `std.Err `Fileerr
 	;;
 }
 
@@ -68,7 +68,7 @@ const loadf = {fd
 		-> `std.Ok ini 
 	| `std.Some e:
 		free(ini)
-		-> `std.Fail e
+		-> `std.Err e
 	;;
 }
 

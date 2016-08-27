@@ -20,7 +20,7 @@ const spawnstk = {fn, sz
 
 	stk = getstk(sz)
 	if stk == sys.Mapbad
-		-> `std.Fail "couldn't get stack"
+		-> `std.Err "couldn't get stack"
 	;;
 	/* store size */
 	tos = (stk : std.intptr)
@@ -42,7 +42,7 @@ const spawnstk = {fn, sz
 		sizeof(sys.tforkparams), \
 		(startthread : void#), \
 		(0 : void#))  < 0
-		-> `std.Fail "couldn't spawn thread"
+		-> `std.Err "couldn't spawn thread"
 	;;
 	-> `std.Ok (ret : tid)
 }

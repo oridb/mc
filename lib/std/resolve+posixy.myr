@@ -102,7 +102,7 @@ const loadhosts = {
 
 	match slurp(Hostfile)
 	| `Ok d:	h = d
-	| `Fail m:	-> void
+	| `Err m:	-> void
 	;;
 
 	lines = strsplit(h, "\n")
@@ -170,7 +170,7 @@ const loadresolv = {
 	lock(netlck)
 	match slurp(Resolvfile)
 	| `Ok d:	h = d
-	| `Fail m:	-> void
+	| `Err m:	-> void
 	;;
 
 	lines = strsplit(h, "\n")
@@ -228,7 +228,7 @@ const dnsresolve = {host, rt
 	var nsrv, r
 
 	if !valid(host)
-		-> `Fail (`Badhost)
+		-> `Err (`Badhost)
 	;;
 	lock(netlck)
 	for ns in nameservers
@@ -241,7 +241,7 @@ const dnsresolve = {host, rt
 		;;
 	;;
 	unlock(netlck)
-	-> `Fail (`Badsrv)
+	-> `Err (`Badsrv)
 }
 
 const dnsconnect = {ns
@@ -318,7 +318,7 @@ const rquery = {srv, id
 
 	n = sys.read(srv, pktbuf[:])
 	if n < 0
-		-> `Fail `Badconn
+		-> `Err `Badconn
 	;;
 	pkt = pktbuf[:n]
 	-> hosts(pkt, id)
@@ -333,7 +333,7 @@ const hosts = {pkt, id : uint16
 	/* parse header */
 	(v, off) = unpack16(pkt, off)	/* id */
 	if v != id
-		-> `Fail `Badresp
+		-> `Err `Badresp
 	;;
 	(v, off) = unpack16(pkt, off)	/* flags */
 	(q, off) = unpack16(pkt, off)	/* qdcount */

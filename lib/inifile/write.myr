@@ -12,7 +12,7 @@ const write = {ini, path
 	var ret
 
 	match bio.create(path, bio.Wr, 0o666)
-	| `std.Fail e:	-> false
+	| `std.Err e:	-> false
 	| `std.Ok f:
 		ret = writeini(f, ini)
 		bio.close(f)

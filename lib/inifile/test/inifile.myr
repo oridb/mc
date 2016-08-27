@@ -9,7 +9,7 @@ const main = {
 const failopen = {
 	match inifile.load("figment-of-my-imagination.ini")
 	| `std.Ok _:	std.die("found imaginary file\n")
-	| `std.Fail _:	/* as expected */
+	| `std.Err _:	/* as expected */
 	;;
 }
 

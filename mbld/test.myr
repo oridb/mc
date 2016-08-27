@@ -161,7 +161,7 @@ const runtest = {b, cmd
 	;;
 	std.put(":\t")
 	match std.spork(cmd)
-	| `std.Fail m:
+	| `std.Err m:
 		std.fatal("\nunable to run test: {}\n", m)
 	| `std.Ok (pid, infd, outfd):
 		log = std.strcat(cmd[0], ".log")

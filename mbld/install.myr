@@ -79,7 +79,7 @@ const movefile = {b, rm, dir, file, prefix, perm
 	else
 		std.remove(path)
 		match std.slurp(file)
-		| `std.Fail m:	std.fatal("could not open {} for reading\n", file)
+		| `std.Err m:	std.fatal("could not open {} for reading\n", file)
 		| `std.Ok buf:
 			if std.blat(path, buf, perm)
 				std.put("\t{} => {}\n", file, path)

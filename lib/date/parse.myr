@@ -53,7 +53,7 @@ const strparse = {f, s, tz, replace
 
 	d.actual -= (d.tzoff : std.time)
 	match err
-	| `std.Some e:	-> `std.Fail e
+	| `std.Some e:	-> `std.Err e
 	| `std.None:	/* no error, we're ok */
 	;;
 

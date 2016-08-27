@@ -46,7 +46,7 @@ const spawnstk = {fn, sz
 		0)
 
 	if ret == (-1 : void#)
-		-> `std.Fail "couldn't spawn thread"
+		-> `std.Err "couldn't spawn thread"
 	;;
 	-> `std.Ok (ret : tid)
 }

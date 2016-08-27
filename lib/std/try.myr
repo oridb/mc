@@ -12,14 +12,14 @@ pkg std =
 generic try = {v
 	match v
 	| `Ok x:	-> x
-	| `Fail m:	fatal("error: {}\n", m)
+	| `Err m:	fatal("error: {}\n", m)
 	;;
 }
 
 generic tryv = {v, d
 	match v
 	| `Ok x:	-> x
-	| `Fail m:	-> d
+	| `Err m:	-> d
 	;;
 }
 

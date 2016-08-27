@@ -17,7 +17,7 @@ const main = {
 	/* use the expected write data as read data */
 	match bio.open("data/bio-endianwr-expected", bio.Rd)
 	| `std.Ok bio:	f = bio
-	| `std.Fail m:	std.fatal("Unable to open data file: {}\n", m)
+	| `std.Err m:	std.fatal("Unable to open data file: {}\n", m)
 	;;
 	
 	/* byte */

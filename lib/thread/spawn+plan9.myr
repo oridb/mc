@@ -12,7 +12,7 @@ const spawn = {fn
 	| 0:
 		fn()
 		std.exit(0)
-	| -1:	-> `std.Fail "unable to spawn thread"
+	| -1:	-> `std.Err "unable to spawn thread"
 	| thr:	-> `std.Ok (thr : tid)
 	;;
 }

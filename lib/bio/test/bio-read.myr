@@ -9,7 +9,7 @@ const main = {
 
 	match bio.open("data/datafile", bio.Rd)
 	| `std.Ok bio:	f = bio
-	| `std.Fail m:	std.fatal("Unable to open data file: {}", m)
+	| `std.Err m:	std.fatal("Unable to open data file: {}", m)
 	;;
 	
 	/* read a 4 byte chunk j*/

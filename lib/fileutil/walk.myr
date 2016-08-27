@@ -29,7 +29,7 @@ impl iterable walkiter -> byte[:] =
 			if std.fisdir(p)
 				match std.diropen(p)
 				| `std.Ok d:	std.slpush(&itp.dirstk, d)
-				| `std.Fail e:	/* ? */
+				| `std.Err e:	/* ? */
 				;;
 				std.slpush(&itp.curdir, p)
 				goto nextfile

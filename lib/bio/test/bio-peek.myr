@@ -8,7 +8,7 @@ const main = {
 
 	match bio.open("data/datafile", bio.Rd)
 	| `std.Ok bio:	f = bio
-	| `std.Fail m:	std.fatal("Unable to open data file: {}", m)
+	| `std.Err m:	std.fatal("Unable to open data file: {}", m)
 	;;
 	
 	std.assert(peekb(f) == 0x30, "wrong byte value read from datafile")

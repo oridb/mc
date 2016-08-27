@@ -9,7 +9,7 @@ pkg std =
 const blat = {path, buf, perm
 	match openmode(path, Ocreat|Owronly, perm)
 	| `Ok fd:	-> fblat(fd, buf)
-	| `Fail e:	-> false
+	| `Err e:	-> false
 	;;
 }
 
@@ -20,7 +20,7 @@ const fblat = {fd, buf
 	count = 0
 	while true
 		match write(fd, buf[count:])
-		| `Fail e:	-> false
+		| `Err e:	-> false
 		| `Ok n:
 			if n == 0
 				break

@@ -26,8 +26,8 @@ const announce = {ds
 	| `Some ("tcp", str):	-> announcesock(sys.Sockstream, str)
 	| `Some ("udp", str):	-> announcesock(sys.Sockdgram, str)
 	| `Some ("unix", str):	-> announceunix(str)
-	| `Some (proto, str):	-> `Fail "unknown protocol"
-	| `None:	-> `Fail "missing protocol"
+	| `Some (proto, str):	-> `Err "unknown protocol"
+	| `None:	-> `Err "missing protocol"
 	;;
 }
 
@@ -40,15 +40,15 @@ const announcesock = {proto, str
 	var yes
 
 	match nameseg(str)
-	| `None:	-> `Fail "required addr!port for ip listen"
-	| `Some ("", _):	-> `Fail "empty host"
-	| `Some (_, ""):	-> `Fail "empty port"
+	| `None:	-> `Err "required addr!port for ip listen"
+	| `Some ("", _):	-> `Err "empty host"
+	| `Some (_, ""):	-> `Err "empty port"
 	| `Some segs:	(hoststr, portstr) = segs
 	;;
 
 	match parseport(portstr)
 	| `Some p:	port = p
-	| `None:	-> `Fail("invalid port")
+	| `None:	-> `Err("invalid port")
 	;;
 
 	if std.sleq(hoststr, "*")
@@ -65,20 +65,20 @@ const announcesock = {proto, str
 			sa6=[.fam=sys.Afinet6, .addr=bits, .port=hosttonet(port)]
 			sa = (&sa6 : sys.sockaddr#)
 			sz = sizeof(sys.sockaddr_in6)
-		| `Fail m:
-			-> `Fail m
+		| `Err m:
+			-> `Err m
 		;;
 	;;
 	sock = sys.socket(sa.fam, proto, 0)
 	if sock < 0
-		-> `Fail "failed to create socket"
+		-> `Err "failed to create socket"
 	;;
 	yes = 1
 	if sys.setsockopt(sock, sys.Solsock, sys.Soreuseaddr, (&yes : void#), sizeof(int)) < 0
-		-> `Fail "failed to set sock opts"
+		-> `Err "failed to set sock opts"
 	;;
 	if sys.bind(sock, sa, sz) < 0
-		-> `Fail "failed to bind socket"
+		-> `Err "failed to bind socket"
 	;;
 	-> `Ok (sock : fd)
 }
@@ -90,21 +90,21 @@ const announceunix = {path
 	
 	sa = [.fam = sys.Afunix]
 	if path.len >= sa.path.len
-		-> `Fail "path too long"
+		-> `Err "path too long"
 	;;
 
 	slcp(sa.path[:path.len], path)
 	sock = sys.socket(sys.Afunix, sys.Sockstream, 0)
 	if sock < 0
-		-> `Fail "failed to create socket"
+		-> `Err "failed to create socket"
 	;;
 	yes = 1
 	if sys.setsockopt(sock, sys.Solsock, sys.Soreuseaddr, (&yes : void#), sizeof(int)) < 0
-		-> `Fail "failed to set sock opts"
+		-> `Err "failed to set sock opts"
 	;;
 	sys.unlink(path)
 	if sys.bind(sock, (&sa : sys.sockaddr#), sizeof(sys.sockaddr_un)) < 0
-		-> `Fail "failed to bind address"
+		-> `Err "failed to bind address"
 	;;
 	-> `Ok (sock : fd)
 
@@ -112,7 +112,7 @@ const announceunix = {path
 
 const listen = {sock : std.fd -> result(fd, byte[:])
 	if sys.listen((sock : sys.fd), 10) < 0
-		-> `Fail "unable to listen on socket"
+		-> `Err "unable to listen on socket"
 	;;
 	-> `Ok (sys.dup((sock : sys.fd)) : fd)
 }
@@ -124,7 +124,7 @@ const accept = {lfd
 
 	fd = sys.accept((lfd : sys.fd), (0 : sys.sockaddr#), (0 : sys.size#))
 	if fd < 0
-		-> `Fail "unable to accept socket"
+		-> `Err "unable to accept socket"
 	;;
 	-> `Ok (fd : fd)
 }

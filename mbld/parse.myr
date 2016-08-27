@@ -104,7 +104,7 @@ const mkparser = {path, dir, basedir, sel
 	])
 	match std.slurp(path)
 	| `std.Ok d:	p.data = d
-	| `std.Fail _:	std.fatal("could not open '{}'\n", path)
+	| `std.Err _:	std.fatal("could not open '{}'\n", path)
 	;;
 	p.rest = p.data
 	-> p

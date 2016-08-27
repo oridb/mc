@@ -13,7 +13,7 @@ pkg regex =
 type parseresult = union
 	`Some ast#
 	`None
-	`Fail status
+	`Err status
 ;;
 
 /* Compiles a pattern into a regex */
@@ -26,11 +26,11 @@ const parse = {pat
 
 	re = std.mk([.pat = pat, .nmatch = 1])
 	match regexparse(re)
-	| `None:	-> `std.Fail `Incomplete
-	| `Fail f:	-> `std.Fail f
+	| `None:	-> `std.Err `Incomplete
+	| `Err f:	-> `std.Err f
 	| `Some t:
 		if re.pat.len != re.idx
-			-> `std.Fail `Incomplete
+			-> `std.Err `Incomplete
 		else
 			-> `std.Ok t
 		;;
@@ -55,8 +55,8 @@ const dbgcompile = {pat, trace
 /* compiles a pattern into an allocated regex */
 const regexcompile = {re, id
 	match regexparse(re)
-	| `None:	-> `std.Fail (`Incomplete)
-	| `Fail f:	-> `std.Fail f
+	| `None:	-> `std.Err (`Incomplete)
+	| `Err f:	-> `std.Err f
 	| `Some t:
 		/*
 		we can bail out of parsing early if we get 
@@ -64,7 +64,7 @@ const regexcompile = {re, id
 		*/
 		if re.pat.len != re.idx
 			astfree(t)
-			-> `std.Fail (`Incomplete)
+			-> `std.Err (`Incomplete)
 		;;
 		dump(re, t, 0)
 		append(re, `Ilbra 0, t)
@@ -75,7 +75,7 @@ const regexcompile = {re, id
 		astfree(t)
 		-> `std.Ok re
 	;;
-	-> `std.Fail (`Noimpl)
+	-> `std.Err (`Noimpl)
 }
 
 const free = {re
@@ -476,12 +476,12 @@ const regexparse = {re
 			-> `Some t
 		else
 			astfree(t)
-			-> `Fail `Incomplete
+			-> `Err `Incomplete
 		;;
 	| `None:
 		-> `None
-	| `Fail st:
-		-> `Fail st
+	| `Err st:
+		-> `Err st
 	;;
 }
 
@@ -499,9 +499,9 @@ const altexpr = {re
 				ret = mk(re, `Alt (ret, rhs), idx)
 			| `None:
 				astfree(ret)
-				-> `Fail (`Incomplete)
-			| `Fail f:
-				-> `Fail f
+				-> `Err (`Incomplete)
+			| `Err f:
+				-> `Err f
 			;;
 		;;
 	| other:
@@ -521,7 +521,7 @@ const catexpr = {re
 		match catexpr(re)
 		| `Some rhs:
 			ret = mk(re, `Cat (t, rhs), idx)
-		| `Fail f:	-> `Fail f
+		| `Err f:	-> `Err f
 		| `None:	/* nothing */
 		;;
 	| other:
@@ -564,9 +564,9 @@ const baseexpr = {re
 	/* lower prec operators */
 	| '|':	-> `None
 	| ')':	-> `None
-	| '*':	-> `Fail `Badrep '*'
-	| '+':	-> `Fail `Badrep '+'
-	| '?':	-> `Fail `Badrep '?'
+	| '*':	-> `Err `Badrep '*'
+	| '+':	-> `Err `Badrep '+'
+	| '?':	-> `Err `Badrep '?'
 	| '[':	-> chrclass(re)
 	| '^':	getc(re); ret = mk(re, `Bol, re.idx)
 	| '$':	getc(re); ret = mk(re, `Eol, re.idx)
@@ -579,7 +579,7 @@ const baseexpr = {re
 		getc(re)
 		if matchc(re, '?')
 			if !matchc(re, ':')
-				-> `Fail `Badrep '?'
+				-> `Err `Badrep '?'
 			;;
 			nocap = true
 		else
@@ -594,15 +594,15 @@ const baseexpr = {re
 					-> `Some mk(re, `Cap (m, s), idx)
 				;;
 			else
-				-> `Fail `Unbalanced '('
+				-> `Err `Unbalanced '('
 			;;
-		| `None:	-> `Fail `Emptyparen
-		| `Fail st:	-> `Fail st
+		| `None:	-> `Err `Emptyparen
+		| `Err st:	-> `Err st
 		;;
 	| '\\':
 		getc(re) /* consume the slash */
 		if re.pat.len == re.idx
-			-> `Fail `Incomplete
+			-> `Err `Incomplete
 		;;
 		-> escaped(re)
 	| c:
@@ -652,7 +652,7 @@ const escaped = {re
 	| 'n':	ret = `Some mk(re, `Chr '\n', idx)
 	| 'b':	ret = `Some mk(re, `Chr '\b', idx)
 	| 'u':	ret = unichar(re, idx)
-	| chr:	ret = `Fail `Badescape chr
+	| chr:	ret = `Err `Badescape chr
 	;;
 	-> ret
 }
@@ -661,7 +661,7 @@ const unichar = {re, idx
 	var c
 
 	if !matchc(re, '{')
-		-> `Fail `Badescape 'u'
+		-> `Err `Badescape 'u'
 	;;
 
 	c = 0
@@ -670,7 +670,7 @@ const unichar = {re, idx
 		c += std.charval(getc(re), 16)
 	;;
 	if !matchc(re, '}')
-		-> `Fail `Badescape 'u'
+		-> `Err `Badescape 'u'
 	;;
 	-> `Some mk(re, `Chr c, idx)
 }
@@ -683,7 +683,7 @@ const unicodeclass = {re, neg
 	var idx
 
 	if re.pat.len == re.idx
-		-> `Fail (`Incomplete)
+		-> `Err (`Incomplete)
 	;;
 	n = 0
 	idx = re.idx
@@ -720,7 +720,7 @@ const unicodeclass = {re, neg
 	elif std.sleq(s, "Zs") || std.sleq(s, "Space_Separator")
 		tab = _ranges.tabblank[:]
 	else
-		-> `Fail (`Badrange s)
+		-> `Err (`Badrange s)
 	;;
 	if !neg
 		t = mk(re, `Ranges std.sldup(tab), idx)
@@ -749,7 +749,7 @@ const chrclass = {re
 	;;
 	if !matchc(re, ']')
 		std.slfree(rl)
-		-> `Fail `Unbalanced '['
+		-> `Err `Unbalanced '['
 	;;
 
 	std.sort(rl, {a, b;

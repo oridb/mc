@@ -9,7 +9,7 @@ const main = {
 
 	match bio.create("tmpout/test-write", bio.Wr, 0o644)
 	| `std.Ok bio:	f = bio
-	| `std.Fail m:	std.fatal("Unable to open data file: {}", m)
+	| `std.Err m:	std.fatal("Unable to open data file: {}", m)
 	;;
 
 	/* write a 5 byte chunk */

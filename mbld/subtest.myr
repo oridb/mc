@@ -50,7 +50,7 @@ const showraw = {f, log
 		match std.read(f, buf[:])
 		| `std.Ok 0:	break
 		| `std.Ok n:	std.write(log, buf[:n])
-		| `std.Fail e:	std.fatal("error writing log: {}\n", e)
+		| `std.Err e:	std.fatal("error writing log: {}\n", e)
 		;;
 	;;
 	std.slfree(buf)
@@ -84,7 +84,7 @@ const showtests = {f, log, ntests
 		| `std.Some `std.Ok _:
 			endtest(&curtest, &nresults, true, "")
 			continue
-		| `std.Some `std.Fail m:
+		| `std.Some `std.Err m:
 			endtest(&curtest, &nresults, false, m)
 			ok = false
 			continue
@@ -174,7 +174,7 @@ const testfoot : (ln : byte[:] -> std.option(std.result(void, byte[:]))) = {ln
 		if std.sleq(m[1], "ok")
 			-> `std.Some `std.Ok void
 		else
-			-> `std.Some `std.Fail std.sldup(m[2])
+			-> `std.Some `std.Err std.sldup(m[2])
 		;;
 	| `std.None:
 		-> `std.None

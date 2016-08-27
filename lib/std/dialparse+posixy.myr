@@ -49,10 +49,10 @@ const getaddr = {addr
 				slfree(hi)
 			else
 				slfree(hi)
-				-> `Fail "no hosts resolved for addr"
+				-> `Err "no hosts resolved for addr"
 			;;
-		| `Fail m:
-			-> `Fail "could not get host info"
+		| `Err m:
+			-> `Err "could not get host info"
 		;;
 	;;
 	-> `Ok ip

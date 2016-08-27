@@ -29,7 +29,7 @@ const dial = {str
 
 	match csdial("/net", proto, rem)
 	| `Ok fd:	-> `Ok fd
-	| `Fail m:
+	| `Err m:
 		-> csdial("/net.alt", proto, rem)
 	;;
 }
@@ -42,15 +42,15 @@ const csdial = {netdir, proto, rem
 	/* Try using the connection server */
 	dir = fmt("{}/cs", netdir)
 	match open(dir, Ordwr)
-	| `Fail e:
+	| `Err e:
 		clone = fmt("{}/{}/clone", netdir, proto)
 		match call(clone, rem, netdir)
 		| `Ok fd:
 			std.slfree(clone)
 			-> `Ok fd
-		| `Fail err:
+		| `Err err:
 			std.slfree(clone)
-			-> `Fail "unable to dial without cs"
+			-> `Err "unable to dial without cs"
 		;;
 	| `Ok fd:
 		csfd = fd
@@ -59,9 +59,9 @@ const csdial = {netdir, proto, rem
 
 	csaddr = fmt("{}!{}", proto, rem)
 	match write(csfd, csaddr)
-	| `Fail m:
+	| `Err m:
 		close(csfd)
-		-> `Fail "couldn't blah cs"
+		-> `Err "couldn't blah cs"
 	| `Ok _:
 		/* nothing */
 	;;
@@ -71,7 +71,7 @@ const csdial = {netdir, proto, rem
 	while true
 		match read(csfd, buf[:])
 		| `std.Ok _:
-		| `std.Fail e:
+		| `std.Err e:
 			break
 		;;
 
@@ -84,13 +84,13 @@ const csdial = {netdir, proto, rem
 
 		match call(clone, addr, netdir)
 		| `Ok fd:	break
-		| `Fail _:	/* nothing */
+		| `Err _:	/* nothing */
 		;;
 	;;
 
 	close(csfd)
 	if ret < 0
-		-> `Fail "unable to dial"
+		-> `Err "unable to dial"
 	;;
 	-> `Ok ret
 }
@@ -102,16 +102,16 @@ const call : (a : byte[:], b : byte[:], c : byte[:] -> result(fd, byte[:])) = {c
 	var cfd, datafd
 	var c, n
 
-	datafd = `Fail "didn't even try to open shit"
+	datafd = `Err "didn't even try to open shit"
 	c = nsclonestr(clone, netdir)
 	match open(c, Ordwr)
-	| `Fail e:	goto cleanup
+	| `Err e:	goto cleanup
 	| `Ok fd:	cfd = fd
 	;;
 
 	match read(cfd, namebuf[:])
 	| `Ok fd:	/* nothing */
-	| `Fail m:	goto cleanup
+	| `Err m:	goto cleanup
 	;;
 	fput(cfd, "connect {}", addr)
 	name = strstrip(namebuf[:n])
@@ -122,7 +122,7 @@ const call : (a : byte[:], b : byte[:], c : byte[:] -> result(fd, byte[:])) = {c
 	dpath = bfmt(databuf[:], "{}/{}/data", base, name)
 	match open(dpath, Ordwr)
 	| `Ok fd:	datafd = `Ok fd
-	| `Fail m:	datafd = `Fail "could not open data"
+	| `Err m:	datafd = `Err "could not open data"
 	;;
 :cleanup
 	close(cfd)

@@ -117,7 +117,7 @@ const create = {path, mode, perm
 const dial = {srv, mode
 	match std.dial(srv)
 	| `std.Ok sock:	-> `std.Ok mkfile(sock, mode)
-	| `std.Fail m:	-> `std.Fail m
+	| `std.Err m:	-> `std.Err m
 	;;
 }
 
@@ -136,7 +136,7 @@ const sysmode = {mode
 const sysopen = {path, mode, openmode, perm
 	match std.openmode(path, openmode, (perm : int64))
 	| `std.Ok fd:	-> `std.Ok mkfile(fd, mode)
-	| `std.Fail e:	-> `std.Fail "could not open fd"
+	| `std.Err e:	-> `std.Err "could not open fd"
 	;;
 }
 
@@ -232,7 +232,7 @@ const read = {f, dst
 		| `std.Ok n:
 			count += n
 			d = d[n:]
-		| `std.Fail err:
+		| `std.Err err:
 			if count == 0
 				-> `Err errtype(err)
 			else
@@ -268,7 +268,7 @@ const seek = {f, off
 	f.rstart = f.rend = 0
 	match std.seek(f.fd, off, std.Seekset)
 	| `std.Ok ret:	-> `std.Ok ret
-	| `std.Fail e:	-> `std.Fail errtype(e)
+	| `std.Err e:	-> `std.Err errtype(e)
 	;;
 }
 
@@ -604,7 +604,7 @@ const writebuf = {fd, src
 		| `std.Ok n:
 			count += n
 			src = src[n:]
-		| `std.Fail e:
+		| `std.Err e:
 			-> `Err errtype(e)
 		;;
 	;;
@@ -646,7 +646,7 @@ const fill = {f, min
 		| `std.Ok n:
 			count += n
 			f.rend += n
-		| `std.Fail e:
+		| `std.Err e:
 			if count > 0
 				f.lasterr = e
 			else

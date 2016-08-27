@@ -17,11 +17,11 @@ const spork = {cmd
 	/* open up pipes */
 	err = pipe(&infds) 
 	if err != Enone
-		-> `Fail err
+		-> `Err err
 	;;
 	err = pipe(&outfds)
 	if err != Enone
-		-> `Fail err
+		-> `Err err
 	;;
 
 	match sporkfd(cmd, infds[0], outfds[1])
@@ -30,8 +30,8 @@ const spork = {cmd
 		close(infds[0]);
 		close(outfds[1]);
 		-> `Ok (pid, infds[1], outfds[0])
-	| `Fail m:
-		-> `Fail m
+	| `Err m:
+		-> `Err m
 	;;
 }
 
@@ -41,23 +41,23 @@ const sporkfd = {cmd, infd, outfd
 	pid = fork()
 	/* error  */
 	if pid < 0
-		-> `Fail (pid : errno)
+		-> `Err (pid : errno)
 	/* child */
 	elif pid == 0
 		/* stdin/stdout for our communication. */
 		match dup2(infd, 0)
 		| `Ok _:	/* nothing */
-		| `Fail e:	-> `Fail e
+		| `Err e:	-> `Err e
 		;;
 		match dup2(outfd, 1)
 		| `Ok _:	/* nothing */
-		| `Fail e:	-> `Fail e
+		| `Err e:	-> `Err e
 		;;
 		close(infd)
 		close(outfd)
 		err = execvp(cmd[0], cmd)
 		if err != Enone
-			-> `Fail err
+			-> `Err err
 		;;
 		/* if fork succeeds, we never return */
 		die("unreachable")

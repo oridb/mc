@@ -18,8 +18,8 @@ const readall = {fd, dst
 			break
 		| `Ok n:
 			dst = dst[n:]
-		| `Fail e:
-			-> `Fail e
+		| `Err e:
+			-> `Err e
 		;;
 	;;
 	-> `Ok sz - dst.len
