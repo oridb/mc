@@ -1,11 +1,12 @@
 use sys
+use "types"
 use "errno"
 use "cstrconv"
 use "slcp"
 use "die"
 
 pkg std =
-	const nanosleep	: (nsecs : uint64 -> errno)
+	const nanosleep	: (nsecs : time -> errno)
 	$noret const exit	: (status:int -> void)
 
 	pkglocal const bgetcwd	: (buf : byte[:] -> errno)
@@ -15,8 +16,8 @@ const nanosleep	= {nsecs
 	var req, rem
 	var s, ns
 
-	s = nsecs / 1_000_000_000
-	ns = nsecs % 1_000_000_000
+	s = (nsecs : uint64) / 1_000_000_000
+	ns = (nsecs : uint64) % 1_000_000_000
 	req = [.sec = s, .nsec = ns]
 
 	-> (sys.nanosleep(&req, &rem) : errno)

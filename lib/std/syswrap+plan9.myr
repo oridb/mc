@@ -66,7 +66,6 @@ pkg std =
 	const fork	: (-> pid)
 	const execv	: (cmd : byte[:], args : byte[:][:] -> errno)
 	const execve	: (cmd : byte[:], args : byte[:][:], env : byte[:][:] -> errno)
-	const nanosleep	: (nsecs : uint64 -> errno)
 
 	pkglocal const Canunmap	: bool = true
 	pkglocal const getmem	: (sz : size -> byte#)
@@ -204,13 +203,6 @@ const execv	= {cmd, args;
 const execve	= {cmd, args, env;
 	sys.exec(cmd, args)
 	-> lasterr()
-}
-
-const nanosleep = {nsecs
-	if sys.sleep((nsecs/1_000_000 : uint32)) < 0
-		-> lasterr()
-	;;
-	-> 0
 }
 
 /* memory stuff */

@@ -1,12 +1,21 @@
 use sys
 
+use "types"
 use "errno"
 use "cstrconv"
 
 pkg std =
+	const nanosleep	: (nsecs : time -> errno)
 	$noret const exit	: (status : int -> void)
 	pkglocal const bgetcwd	: (buf : byte[:] -> errno)
 ;;
+
+const nanosleep = {nsecs
+	if sys.sleep((nsecs/1_000_000 : uint32)) < 0
+		-> lasterr()
+	;;
+	-> 0
+}
 
 const bgetcwd = {buf
 	var fd
