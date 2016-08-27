@@ -1,5 +1,11 @@
 bin h =
-	main.myr
+	h.myr
+
+	lib http
+;;
+
+bin srvdot =
+	srvdot.myr
 
 	lib http
 ;;
@@ -9,7 +15,7 @@ lib http =
 	types.myr
 	url.myr
 	client.myr
+	router.myr
 	server.myr
 	session.myr
-
 ;;

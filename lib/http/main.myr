@@ -68,7 +68,7 @@ const main = {args
 				std.fblat(std.Out, resp.body)
 			;;
 			http.freeresp(resp)
-		| `std.Fail e:
+		| `std.Err e:
 			std.put("{}\n", e)
 		;;
 		http.urlfree(u)

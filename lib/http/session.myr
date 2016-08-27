@@ -25,7 +25,7 @@ const mksession = {schema, host, port
 
 	s = std.fmt("tcp!{}!{}", host, port)
 	match std.dial(s)
-	| `std.Fail e:	sess = `std.Fail `Econn
+	| `std.Err e:	sess = `std.Err `Econn
 	| `std.Ok fd:	sess = `std.Ok std.mk([
 		.err = false,
 		.ua = std.sldup("Myrfoo HTTP"),

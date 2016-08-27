@@ -2,12 +2,34 @@ use std
 use bio
 
 pkg http =
+	type status = int
+
+	const Ok = 200
+
 	type session = struct
 		f	: bio.file#
 		host	: byte[:]
 		ua	: byte[:]
 		err	: bool
 	;;
+
+	type server = struct
+		lfd	: std.fd
+	;;
+
+	type router = struct
+		paths	: route[:]
+	;;
+
+	type ctx = struct
+		fd	: byte[:]
+	;;
+
+	type route = struct
+		path	: byte[:]
+		render	: (ctx : ctx# -> status)
+	;;
+
 
 	type url = struct
 		schema	: schema

@@ -84,7 +84,7 @@ const parseresp = {s, r
 		;;
 	| `std.Ok enc:
 		r.enc = enc
-	| `std.Fail e:
+	| `std.Err e:
 		r.err = `std.Some e
 		-> false
 	;;
@@ -96,14 +96,14 @@ const parsechunksz = {s
 	var ret, str
 
 	match bio.readln(s.f)
-	| `bio.Eof:	ret = `std.Fail `Econn
-	| `bio.Err e:	ret = `std.Fail `Econn
+	| `bio.Eof:	ret = `std.Err `Econn
+	| `bio.Err e:	ret = `std.Err `Econn
 	| `bio.Ok ln:
 		str = ln
 		match parsenumber(&str, 16)
 		| `std.Some n:	ret = `std.Ok (n : std.size)
 		| `std.None:
-			ret = `std.Fail `Eproto
+			ret = `std.Err `Eproto
 		;;
 		std.slfree(ln)
 	;;
@@ -170,7 +170,7 @@ const getenc = {r
 	| `std.Some "compress":	-> `std.Ok `Compress
 	| `std.Some "deflate":	-> `std.Ok `Deflate
 	| `std.Some "gzip":	-> `std.Ok `Gzip
-	| `std.Some unknown:	-> `std.Fail `Eenc
+	| `std.Some unknown:	-> `std.Err `Eenc
 	;;
 }
 

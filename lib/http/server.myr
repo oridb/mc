@@ -1,9 +1,42 @@
 use std
 
+use "types"
+
 pkg http =
-	const announce	: (ds : byte[:] -> void)
+	const announce	: (ds : byte[:] -> std.result(server#, err))
+	const shutdown	: (srv : server# -> void)
+
+	const waitconn	: (srv : server# -> std.result(std.fd, err))
+//	const readmsg	: (srv : server# -> std.option(req#, err))
+//	const writemsg	: (srv : server# -> std.option(req#, err))
+//	const writehdr	: (srv : server# -> std.option(req#, err))
 ;;
 
 const announce = {ds
-	std.fatal("announce not yet implemented\n")
+	var afd
+
+	match std.announce(ds)
+	| `std.Ok f:	afd = f
+	| `std.Err e:	-> `std.Err `Econn
+	;;
+
+	match std.listen(afd)
+	| `std.Err e:	-> `std.Err `Econn
+	| `std.Ok lfd:
+		std.close(afd)
+		-> `std.Ok std.mk([.lfd=lfd])
+	;;
 }
+
+const shutdown = {srv
+	std.close(srv.lfd)
+}
+
+
+const waitconn = {srv
+	match std.accept(srv.lfd)
+	| `std.Ok afd:	-> `std.Ok afd
+	| `std.Err e:	-> `std.Err `Econn
+	;;
+}
+

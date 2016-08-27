@@ -64,27 +64,27 @@ const parseurl = {url
 
 	match parseschema(&url)
 	| `std.Ok s:	schema = s
-	| `std.Fail e:	-> `std.Fail e
+	| `std.Err e:	-> `std.Err e
 	;;
 
 	match parsehostname(&url)
 	| `std.Ok h:	host = h
-	| `std.Fail e:	-> `std.Fail e
+	| `std.Err e:	-> `std.Err e
 	;;
 
 	match parseport(&url)
 	| `std.Ok p:	port = p
-	| `std.Fail e:	-> `std.Fail e
+	| `std.Err e:	-> `std.Err e
 	;;
 
 	match parsepath(&url)
 	| `std.Ok p:	path = p
-	| `std.Fail e:	-> `std.Fail e
+	| `std.Err e:	-> `std.Err e
 	;;
 
 	match parseparams(&url)
 	| `std.Ok p:	params = p
-	| `std.Fail e:	-> `std.Fail e
+	| `std.Err e:	-> `std.Err e
 	;;
 
 	/* todo: params */
@@ -107,9 +107,9 @@ const parseschema = {url
 	if std.chomp(url, "http://")
 		-> `std.Ok `Http
 	elif std.chomp(url, "https://")
-		-> `std.Fail `Eunsupp
+		-> `std.Err `Eunsupp
 	else
-		-> `std.Fail `Eproto
+		-> `std.Err `Eproto
 	;;
 }
 
@@ -137,7 +137,7 @@ const parsepath = {url
 		url# = url#[len:]
 		-> `std.Ok p
 	else
-		-> `std.Fail `Esyntax
+		-> `std.Err `Esyntax
 	;;
 }
 
@@ -151,13 +151,13 @@ const parseparams = {url
 
 	match std.decode(url#)
 	| '?':	(_, url#) = std.strstep(url#)
-	| _:	-> `std.Fail `Esyntax
+	| _:	-> `std.Err `Esyntax
 	;;
 
 	params = [][:]
 	for sp in std.bysplit(url#, "&")
 		if std.bstrsplit(kvp[:], sp, "=").len != 2
-			-> `std.Fail `Esyntax
+			-> `std.Err `Esyntax
 		;;
 		std.slpush(&params, (std.sldup(kvp[0]), std.sldup(kvp[1])))
 	;;
@@ -178,7 +178,7 @@ const hostname = {url
 			if ishostchar(chr)
 				len += std.charlen(chr)
 			else
-				-> `std.Fail `Esyntax
+				-> `std.Err `Esyntax
 			;;
 		;;
 	;;
@@ -192,13 +192,13 @@ const ipv6hostname = {url -> std.result(byte[:], err)
 	var ip
 
 	match std.strfind(url#, "]")
-	| `std.None:	-> `std.Fail `Esyntax
+	| `std.None:	-> `std.Err `Esyntax
 	| `std.Some idx:
 		ip = url#[:idx]
 		url# = url#[idx+1:]
 		match std.ip6parse(url#[:idx])
 		| `std.Some _:	-> `std.Ok ip
-		| `std.None:	-> `std.Fail `Esyntax
+		| `std.None:	-> `std.Err `Esyntax
 		;;
 	;;
 }
@@ -207,7 +207,7 @@ const parseport = {url
 	if std.chomp(url, ":")
 		match parsenumber(url, 10)
 		| `std.Some n:	-> `std.Ok n
-		| `std.None:	-> `std.Fail `Esyntax
+		| `std.None:	-> `std.Err `Esyntax
 		;;
 	else
 		-> `std.Ok 80

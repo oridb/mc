@@ -39,7 +39,7 @@ const trace = {s, path; -> tracereq(s, &[.url=&[.path=path]])}
 const getreq = {s, r
 	match request(s, `Get, r, `std.None)
 	| `std.Ok _:	/* nothing */
-	| `std.Fail e:	-> `std.Fail e
+	| `std.Err e:	-> `std.Err e
 	;;
 
 	-> response(s, true)
@@ -48,7 +48,7 @@ const getreq = {s, r
 const headreq = {s, r
 	match request(s, `Head, r, `std.None)
 	| `std.Ok _:	/* nothing */
-	| `std.Fail e:	-> `std.Fail e
+	| `std.Err e:	-> `std.Err e
 	;;
 
 	-> response(s, false)
@@ -57,7 +57,7 @@ const headreq = {s, r
 const putreq = {s, r, data
 	match request(s, `Put, r, `std.Some data)
 	| `std.Ok _:	/* nothing */
-	| `std.Fail e:	-> `std.Fail e
+	| `std.Err e:	-> `std.Err e
 	;;
 
 	-> response(s, true)
@@ -66,7 +66,7 @@ const putreq = {s, r, data
 const postreq = {s, r, data
 	match request(s, `Post, r, `std.Some data)
 	| `std.Ok _:	/* nothing */
-	| `std.Fail e:	-> `std.Fail e
+	| `std.Err e:	-> `std.Err e
 	;;
 
 	-> response(s, true)
@@ -75,7 +75,7 @@ const postreq = {s, r, data
 const deletereq = {s, r
 	match request(s, `Delete, r, `std.None)
 	| `std.Ok _:	/* nothing */
-	| `std.Fail e:	-> `std.Fail e
+	| `std.Err e:	-> `std.Err e
 	;;
 
 	-> response(s, true)
@@ -84,7 +84,7 @@ const deletereq = {s, r
 const optionsreq = {s, r
 	match request(s, `Options, r, `std.None)
 	| `std.Ok _:	/* nothing */
-	| `std.Fail e:	-> `std.Fail e
+	| `std.Err e:	-> `std.Err e
 	;;
 
 	-> response(s, true)
@@ -93,7 +93,7 @@ const optionsreq = {s, r
 const tracereq = {s, r
 	match request(s, `Trace, r, `std.None)
 	| `std.Ok _:	/* nothing */
-	| `std.Fail e:	-> `std.Fail e
+	| `std.Err e:	-> `std.Err e
 	;;
 
 	-> response(s, true)
@@ -117,13 +117,13 @@ const response = {s, body
 		else
 			match readbody(s, resp)
 			| `std.Ok buf:	resp.body = buf
-			| `std.Fail e:	-> `std.Fail e
+			| `std.Err e:	-> `std.Err e
 			;;
 		;;
 	else
 		match resp.err
-		| `std.Some e:	-> `std.Fail e
-		| `std.None:	-> `std.Fail `Ewat
+		| `std.Some e:	-> `std.Err e
+		| `std.None:	-> `std.Err `Ewat
 		;;
 	;;
 	-> `std.Ok resp
@@ -155,7 +155,7 @@ const request = {s, method, r, data
 	ioflush(s)
 
 	if s.err
-		-> `std.Fail `Econn
+		-> `std.Err `Econn
 	else
 		-> `std.Ok void
 	;;
@@ -190,7 +190,7 @@ const readlenbody = {s, r
 	-> `std.Ok buf
 :shortread
 	std.slfree(buf)
-	-> `std.Fail `Eshort
+	-> `std.Err `Eshort
 }
 
 const __init__ = {
@@ -207,9 +207,9 @@ const readchunkedbody = {s, r
 	len = 0
 	while true
 		match parsechunksz(s)
-		| `std.Fail e:
+		| `std.Err e:
 			std.slfree(buf)
-			-> `std.Fail e
+			-> `std.Err e
 		| `std.Ok 0:
 			break
 		| `std.Ok sz:
@@ -217,21 +217,21 @@ const readchunkedbody = {s, r
 			match bio.read(s.f, buf[len:len + sz])
 			| `bio.Eof:
 				std.slfree(buf)
-				-> `std.Fail `Eshort
+				-> `std.Err `Eshort
 			| `bio.Err e:
 				std.slfree(buf)
-				-> `std.Fail `Econn
+				-> `std.Err `Econn
 			| `bio.Ok str:
 				if str.len != sz
 					std.slfree(buf)
-					-> `std.Fail `Eshort
+					-> `std.Err `Eshort
 				;;
 				len += sz
 				match checkendln(s)
 				| `std.Ok _:	/* nothing */
-				| `std.Fail e:	
+				| `std.Err e:	
 					std.slfree(buf)
-					-> `std.Fail e
+					-> `std.Err e
 				;;
 			;;
 		;;
@@ -243,13 +243,13 @@ const checkendln = {s
 	var r
 
 	match bio.readln(s.f)
-	| `bio.Err e:	r = `std.Fail `Econn
-	| `bio.Eof:	r = `std.Fail `Econn
+	| `bio.Err e:	r = `std.Err `Econn
+	| `bio.Eof:	r = `std.Err `Econn
 	| `bio.Ok crlf:
 		if std.strstrip(crlf).len == 0
 			r = `std.Ok void
 		else
-			r = `std.Fail `Eproto
+			r = `std.Err `Eproto
 		;;
 		std.slfree(crlf)
 	;;
