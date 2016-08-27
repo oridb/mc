@@ -15,7 +15,6 @@ lib http =
 	types.myr
 	url.myr
 	client.myr
-	router.myr
 	server.myr
 	session.myr
 ;;
