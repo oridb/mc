@@ -84,6 +84,12 @@ lib std {inc=.} =
 	memops-impl+posixy-x64.s
 	memops-impl+plan9-x64.s
 
+
+	# arch specific files
+	backtrace+x64.myr
+	getbp+posixy-x64.s
+	getbp+plan9-x64.s
+
 	# platform specific files
 	dial+plan9.myr
 	dial+posixy.myr

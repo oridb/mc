@@ -1,0 +1,26 @@
+use "types"
+use "fmt"
+
+pkg std =
+	const backtrace	: (pc	: void#[:] -> std.size)
+;;
+
+type stackrec = struct
+	next	: stackrec#
+	pc	: void#
+;;
+
+extern const getbp	: (-> stackrec#)
+const backtrace = {pc
+	var bp, i, len
+
+	i = 0
+	len = pc.len
+	bp = getbp()
+	while bp != (0 : stackrec#) && i < len
+		pc[i++] = bp.pc
+		bp = bp.next
+	;;
+	-> i
+}
+
