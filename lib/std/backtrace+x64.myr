@@ -1,5 +1,4 @@
 use "types"
-use "fmt"
 
 pkg std =
 	const backtrace	: (pc	: void#[:] -> std.size)

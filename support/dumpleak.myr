@@ -1,0 +1,103 @@
+use std
+use bio
+
+var stackaggr = 10
+
+const main = {args
+	var tab : std.htab(int64, (int64, int64[:]))#
+	var cmd
+
+	cmd = std.optparse(args, &[
+		.argdesc="dumps...",
+		.opts=[
+			[.opt='d', .arg="depth", .desc="aggregate by at most `depth` stack elements"],
+		][:]
+	])
+
+	for opt in cmd.opts
+		match opt
+		| ('d', depth):
+			match std.intparse(depth)
+			| `std.Some d:	stackaggr = d
+			| `std.None:	std.fatal("could not parse stack depth {}\n", depth)
+			;;
+		| _:	std.die("unreachable")
+		;;
+	;;
+
+	tab = std.mkht(std.inthash, std.inteq)
+	for d in cmd.args
+		match bio.open(d, bio.Rd)
+		| `std.Ok f:	dump(d, f, tab)
+		| `std.Err e:	std.fatal("could not open {}: {}\n", d, e)
+		;;
+	;;
+}
+
+const dump = {path, f, tab
+	while true
+		match bio.getle64(f)
+		| `bio.Ok 0:	tracealloc(path, f, tab)
+		| `bio.Ok 1:	tracefree(path, f, tab)
+		| `bio.Eof:	break
+		| `bio.Ok wat:	std.fatal("unknown action type {x}\n", wat)
+		| `bio.Err e:	std.fatal("failed to read {}: {}\n", path, e)
+		;;
+	;;
+	dumptrace(tab)
+}
+
+const tracealloc = {path, f, tab
+	var ptr, sz, stk
+
+	ptr = get64(path, f)
+	sz = get64(path, f)
+	stk = [][:]
+	for var i = 0; i < 10; i++
+		std.slpush(&stk, get64(path, f))
+	;;
+	std.htput(tab, ptr, (sz, stk))
+}
+
+const tracefree = {path, f, tab
+	var ptr, sz
+
+	ptr = get64(path, f)
+	sz = get64(path, f)
+	std.htdel(tab, ptr)
+}
+
+const dumptrace = {tab
+	var aggr
+
+	aggr = std.mkht(hashintsl, std.sleq)
+	for (k, (sz, stk)) in std.htbykeyvals(tab)
+		match std.htget(aggr, stk[:stackaggr])
+		| `std.Some (count, total):	
+			std.htput(aggr, stk[:stackaggr], (count + 1, sz + total))
+		| `std.None:	
+			std.htput(aggr, stk[:stackaggr], (1, sz))
+		;;
+	;;
+	
+	for (stk, (n, sz)) in std.htbykeyvals(aggr)
+		std.put("unfreed: {} (size: {}): {}\n", n, sz, stk)
+	;;
+}
+
+const get64 = {path, f
+	match bio.getle64(f)
+	| `bio.Ok v:	-> v
+	| res:	std.fatal("failed to read {}: {}\n", path, res)
+	;;
+}
+
+const hashintsl = {sl
+	var h
+
+	h = 0
+	for i in sl
+		h ^= std.inthash(i)
+	;;
+	-> h
+}

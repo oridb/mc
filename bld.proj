@@ -3,5 +3,6 @@ sub =
 	lib
 	test
 	bench
+	support
 ;;
 

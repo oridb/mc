@@ -5,8 +5,14 @@ use "syswrap"
 use "threadhooks"
 use "types"
 use "units"
+use "result"
+use "slfill"
+use "backtrace"
 
 pkg std =
+	const startalloctrace	: (f : byte[:]	-> void)
+	const endalloctrace	: (-> void)
+
 	/* null pointers. only used internally. */
 	pkglocal const Zsliceptr	= (0 : byte#)
 	pkglocal const Align	= 16	/* minimum allocation alignment */
@@ -27,6 +33,8 @@ const Bktmax	= 32*KiB	/* Slabsz / 8; a balance. */
 const Pagesz	= 4*KiB
 
 var buckets	: bucket[32] /* excessive */
+var trace	: bool
+var tracefd	: std.fd
 
 type bucket = struct
 	sz	: size	/* aligned size */
@@ -53,12 +61,53 @@ const __init__ = {
 	;;
 }
 
+const startalloctrace = {path
+	match openmode(path, Owronly | Ocreat, 0o644)
+	| `Ok fd:	tracefd = fd
+	| `Err e:	-> void
+	;;
+	trace = true
+}
+
+const endalloctrace = {
+	std.close(tracefd)
+	trace = false
+}
+
 const zbytealloc = {sz
 	var p
 
 	p = bytealloc(sz)
 	memfill(p, 0, sz)
 	-> p
+}
+
+const tracealloc = {p, sz
+	var stk	: void#[13]	/* [type, addr, sz, 10 stack slots] */
+
+	slfill(stk[:], (0 : void#))
+	stk[0] = (0 : void#)
+	stk[1] = (p : void#)
+	stk[2] = (sz : void#)
+	backtrace(stk[3:])
+	writealloctrace(stk[:])
+}
+
+const tracefree = {p, sz
+	var stk	: void#[3]
+
+	stk[0] = (1 : void#)
+	stk[1] = (p : void#)
+	stk[2] = (sz : void#)
+	writealloctrace(stk[:])
+}
+
+const writealloctrace = {sl
+	var len, p
+
+	len = sl.len * sizeof(void#)
+	p = (sl : byte#)
+	write(tracefd, p[:len])
 }
 
 /* Allocates a blob that is 'sz' bytes long. Dies if the allocation fails */
@@ -76,6 +125,11 @@ const bytealloc = {sz
 			die("could not get memory\n")
 		;;
 	;;
+	if trace
+		lock(memlck)
+		tracealloc(p, sz)
+		unlock(memlck)
+	;;
 	-> p
 }
 
@@ -83,6 +137,11 @@ const bytealloc = {sz
 const bytefree = {p, sz
 	var bkt
 
+	if trace
+		lock(memlck)
+		tracefree(p, sz)
+		unlock(memlck)
+	;;
 	memfill(p, 0xa8, sz)
 	if (sz < Bktmax)
 		bkt = &buckets[bktnum(sz)]
