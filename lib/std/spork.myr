@@ -59,6 +59,7 @@ const espork = {cmd
 		/* close unused fd ends */
 		close(infds[0]);
 		close(outfds[1]);
+		close(errfds[1]);
 		-> `Ok (pid, infds[1], outfds[0], errfds[0])
 	| `Err m:
 		-> `Err m
