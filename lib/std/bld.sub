@@ -53,6 +53,7 @@ lib std {inc=.} =
 	sjlj-impl+posixy-x64.s
 	slcp.myr
 	sldup.myr
+	sleep.myr
 	sleq.myr
 	slfill.myr
 	sljoin.myr

@@ -5,7 +5,7 @@ use "errno"
 use "cstrconv"
 
 pkg std =
-	const nanosleep	: (nsecs : time -> errno)
+	const nanosleep	: (nsecs : uint64 -> errno)
 	$noret const exit	: (status : int -> void)
 	pkglocal const bgetcwd	: (buf : byte[:] -> errno)
 ;;

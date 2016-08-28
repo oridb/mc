@@ -1,0 +1,11 @@
+use "syswrap-ss"
+use "types"
+
+pkg std =
+	const usleep	: (tm : time -> void)
+;;
+
+const usleep = {tm
+	nanosleep((tm * 1000 : uint64))
+}
+
