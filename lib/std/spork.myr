@@ -6,12 +6,12 @@ use "syswrap"
 use "errno"
 
 pkg std =
-	const spork	: (cmd : byte[:][:]	-> result((pid, fd, fd), errno))
-	const sporkfd	: (cmd : byte[:][:], infd : fd, outfd : fd	-> result(pid, errno))
+	const spork	: (cmd : byte[:][:]	-> result((pid, fd, fd, fd), errno))
+	const sporkfd	: (cmd : byte[:][:], infd : fd, outfd : fd, errfd : fd	-> result(pid, errno))
 ;;
 
 const spork = {cmd
-	var infds  :fd[2], outfds : fd[2]
+	var infds : fd[2], outfds : fd[2], errfds : fd[2]
 	var err
 
 	/* open up pipes */
@@ -23,19 +23,23 @@ const spork = {cmd
 	if err != Enone
 		-> `Err err
 	;;
+	err = pipe(&errfds)
+	if err != Enone
+		-> `Err err
+	;;
 
-	match sporkfd(cmd, infds[0], outfds[1])
+	match sporkfd(cmd, infds[0], outfds[1], errfds[1])
 	| `Ok pid:
 		/* close unused fd ends */
 		close(infds[0]);
 		close(outfds[1]);
-		-> `Ok (pid, infds[1], outfds[0])
+		-> `Ok (pid, infds[1], outfds[0], errfds[0])
 	| `Err m:
 		-> `Err m
 	;;
 }
 
-const sporkfd = {cmd, infd, outfd
+const sporkfd = {cmd, infd, outfd, errfd
 	var pid, err
 
 	pid = fork()
@@ -53,8 +57,13 @@ const sporkfd = {cmd, infd, outfd
 		| `Ok _:	/* nothing */
 		| `Err e:	-> `Err e
 		;;
+		match dup2(outfd, 2)
+		| `Ok _:	/* nothing */
+		| `Err e:	-> `Err e
+		;;
 		close(infd)
 		close(outfd)
+		close(errfd)
 		err = execvp(cmd[0], cmd)
 		if err != Enone
 			-> `Err err
