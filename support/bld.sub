@@ -1,3 +1,8 @@
 bin dumpleak =
 	dumpleak.myr
+
+	lib ../lib/sys:sys
+	lib ../lib/std:std
+	lib ../lib/bio:bio
+	lib ../lib/regex:regex
 ;;
