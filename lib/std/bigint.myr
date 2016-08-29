@@ -421,6 +421,7 @@ const bigdiv = {a : bigint#, b : bigint# -> bigint#
 	bigfree(r)
 	-> bigmove(a, q)
 }
+
 const bigmod = {a : bigint#, b : bigint# -> bigint#
 	var q, r
 
