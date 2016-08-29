@@ -1,0 +1,79 @@
+use std
+use bio
+
+type memstats = struct
+	allocs : uint64
+	allocsz : uint64
+	frees : uint64
+	freesz : uint64
+;;
+
+const main = {args
+	var cmd
+	var stats : memstats
+
+	cmd = std.optparse(args, &[
+		.argdesc="dumps...",
+		.opts=[][:]
+	])
+
+	for opt in cmd.opts
+		match opt
+		| _:	std.die("unreachable")
+		;;
+	;;
+
+	std.clear(&stats)
+
+	for d in cmd.args
+		match bio.open(d, bio.Rd)
+		| `std.Ok f:	processdump(d, f, &stats)
+		| `std.Err e:	std.fatal("could not open {}: {}\n", d, e)
+		;;
+	;;
+	
+	printstats(&stats)
+}
+
+const printstats = {stats
+	std.put("allocs: {}\n", stats.allocs)
+	std.put("allocsz: {}\n", stats.allocsz)
+	std.put("frees: {}\n", stats.frees)
+	std.put("freesz: {}\n", stats.freesz)
+	std.put("leaked: {}\n", stats.allocsz - stats.freesz)
+}
+
+const processdump = {path, f, stats
+	while true
+		match bio.getle64(f)
+		| `bio.Ok 0:	processalloc(path, f, stats)
+		| `bio.Ok 1:	processfree(path, f, stats)
+		| `bio.Eof:	break
+		| `bio.Ok wat:	std.fatal("unknown action type {x}\n", wat)
+		| `bio.Err e:	std.fatal("failed to read {}: {}\n", path, e)
+		;;
+	;;
+}
+
+const processalloc = {path, f, stats
+	get64(path, f)
+	stats.allocs += 1
+	stats.allocsz += get64(path, f)
+	for var i = 0; i < 10; i++
+		get64(path, f)
+	;;
+}
+
+const processfree = {path, f, stats
+	get64(path, f)
+	stats.frees += 1
+	stats.freesz += get64(path, f)
+}
+
+const get64 = {path, f
+	match bio.getle64(f)
+	| `bio.Ok v:	-> v
+	| res:	std.fatal("failed to read {}: {}\n", path, res)
+	;;
+}
+
