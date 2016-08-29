@@ -2,15 +2,15 @@ use "syswrap"
 use "errno"
 
 pkg std =
-	const mkpath	: (p : byte[:], mode : int64 -> errno)
+	const mkpath	: (p : byte[:] -> errno)
 ;;
 
-const mkpath = {p, mode
+const mkpath = {p
 	var st
 
 	for var i = 0; i < p.len; i++
 		if p[i] == ('/' : byte) && i != 0
-			st = mkdir(p[:i], mode)
+			st = mkdir(p[:i], 0o755)
 			if st != 0 && st != Eexist
 				-> st
 			;;
