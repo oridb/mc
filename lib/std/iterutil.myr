@@ -1,4 +1,5 @@
 use "types"
+use "fmt"
 
 pkg std =
 	type zipiter(@a, @b) = struct
@@ -7,8 +8,8 @@ pkg std =
 	;;
 
 	type enumiter(@a) = struct
-		s	: @a[:]
 		idx	: size
+		s	: @a[:]
 	;;
 
 	impl iterable zipiter(@a, @b) -> (@a, @b)
@@ -45,7 +46,8 @@ generic byenum = {a
 
 impl iterable enumiter(@a) -> (size, @b) =
 	__iternext__ = {itp, valp
-		if itp.s.len > itp.idx
+		if itp.idx < itp.s.len
+			std.put("itp.idx: {}, itp.s[{}]: {}\n", itp.idx, itp.idx, itp.s[itp.idx])
 			valp# = (itp.idx, itp.s[itp.idx])
 			itp.idx++
 			-> true

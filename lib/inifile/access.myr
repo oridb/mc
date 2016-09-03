@@ -5,7 +5,8 @@ use "types"
 
 pkg inifile =
 	type inisectiter = struct
-		it : std.htkviter((byte[:], byte[:]), byte[:])
+		ini : inifile#
+		idx : int
 	;;
 	impl iterable inisectiter -> byte[:]
 
@@ -41,19 +42,18 @@ const put = {ini, sect, key, val
 }
 
 const bysection = {ini
-	-> [.it=std.htbykeyvals(ini.elts)]
+	-> [.ini=ini, .idx=0]
 }
 
 impl iterable inisectiter -> byte[:] =
 	__iternext__ = {itp, valp : byte[:]#
-		var kvp : ((byte[:], byte[:]), byte[:])
-		if __iternext__(&itp.it, &kvp)
-			match kvp
-			| ((s, _), _):	valp# = s
-			;;
+		if itp.idx < itp.ini.sects.len
+			valp# = itp.ini.sects[itp.idx]
+			itp.idx++
 			-> true
+		else
+			-> false
 		;;
-		-> false
 	}
 
 	__iterfin__ = {itp, valp -> void

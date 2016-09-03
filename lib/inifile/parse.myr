@@ -30,6 +30,10 @@ const free = {ini
 		std.slfree(sect)
 		std.slfree(key)
 	;;
+	for s in ini.sects
+		std.slfree(s)
+	;;
+	std.slfree(ini.sects)
 	std.htfree(ini.elts)
 	std.free(ini)
 }
@@ -105,6 +109,10 @@ const parsesection = {p, ini, ln
 		;;
 		std.slfree(p.sect)
 		p.sect = std.sldup(std.strstrip(ln[1:idx]))
+		match std.lsearch(ini.sects, p.sect, std.strcmp)
+		| `std.Some s:	/* nothing */
+		| `std.None:	std.slpush(&ini.sects, std.sldup(p.sect))
+		;;
 	| `std.None:
 		p.err = `std.Some (`Parseerr p.line)
 		-> false
