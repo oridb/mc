@@ -38,20 +38,18 @@ const getkeys = {
 
 const itersects = {
 	var ini
-	var somesect, anothersection, newsect
+	var somesect, anothersection
 
 	ini = std.try(inifile.load("test/test.ini"))
 	for k in inifile.bysection(ini)
 		match k
 		| "somesect":	somesect++
 		| "another section":	anothersection++
-		| "new sect":	newsect++
 		| bad:	std.fatal("invalid section {}\n", bad)
 		;;
 	;;
 	std.assert(somesect==1, "wrong section count for 'somesect'\n")
 	std.assert(anothersection==1, "wrong section count for 'another section'\n")
-	std.assert(newsect==1, "wrong section count for 'new sect'\n")
 }
 
 const checkval = {ini, sect, key, expected
