@@ -8,7 +8,6 @@ use "errno"
 pkg std =
 	const spork	: (cmd : byte[:][:]	-> result((pid, fd, fd), errno))
 	const espork	: (cmd : byte[:][:]	-> result((pid, fd, fd, fd), errno))
-	const sporkfd	: (cmd : byte[:][:], infd : fd, outfd : fd, errfd : fd	-> result(pid, errno))
 ;;
 
 const spork = {cmd
@@ -25,7 +24,7 @@ const spork = {cmd
 		-> `Err err
 	;;
 
-	match sporkfd(cmd, infds[0], outfds[1], 2)
+	match sporkfd(cmd, infds, outfds, [-1, 2])
 	| `Ok pid:
 		/* close unused fd ends */
 		close(infds[0]);
@@ -54,7 +53,7 @@ const espork = {cmd
 		-> `Err err
 	;;
 
-	match sporkfd(cmd, infds[0], outfds[1], errfds[1])
+	match sporkfd(cmd, infds, outfds, errfds)
 	| `Ok pid:
 		/* close unused fd ends */
 		close(infds[0]);
@@ -66,7 +65,7 @@ const espork = {cmd
 	;;
 }
 
-const sporkfd = {cmd, infd, outfd, errfd
+const sporkfd = {cmd, infds, outfds, errfds
 	var pid, err
 
 	pid = fork()
@@ -76,21 +75,35 @@ const sporkfd = {cmd, infd, outfd, errfd
 	/* child */
 	elif pid == 0
 		/* stdin/stdout for our communication. */
-		match dup2(infd, 0)
+		match dup2(infds[0], 0)
 		| `Ok _:	/* nothing */
 		| `Err e:	-> `Err e
 		;;
-		match dup2(outfd, 1)
+		match dup2(outfds[1], 1)
 		| `Ok _:	/* nothing */
 		| `Err e:	-> `Err e
 		;;
-		match dup2(errfd, 2)
+		match dup2(errfds[1], 2)
 		| `Ok _:	/* nothing */
 		| `Err e:	-> `Err e
 		;;
-		close(infd)
-		close(outfd)
-		close(errfd)
+
+		/* close the fds we duped */
+		if infds[0] != 0
+			close(infds[0])
+		;;
+		if outfds[1] != 1
+			close(outfds[1])
+		;;
+		if errfds[1] != 2
+			close(errfds[1])
+		;;
+
+		/* close the unused ends */
+		close(infds[1])
+		close(outfds[0])
+		close(errfds[0])
+
 		err = execvp(cmd[0], cmd)
 		if err != Enone
 			-> `Err err
