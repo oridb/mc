@@ -7,6 +7,11 @@ pkg std =
 		s2	: @b[:]
 	;;
 
+	type reverseiter(@a) = struct
+		sl	: @a[:]
+		idx	: size
+	;;
+
 	type enumiter(@a) = struct
 		idx	: size
 		s	: @a[:]
@@ -14,9 +19,11 @@ pkg std =
 
 	impl iterable zipiter(@a, @b) -> (@a, @b)
 	impl iterable enumiter(@a) -> (size, @a)
+	impl iterable reverseiter(@a) -> (size, @a)
 
 	generic byzip	: (a : @a[:], b : @b[:]	 -> zipiter(@a, @b))
 	generic byenum	: (a : @a[:] -> enumiter(@a))
+	generic byreverse 	: (sl : @a[:] -> reverseiter(@a))
 ;;
 
 generic byzip = {a, b
@@ -39,6 +46,24 @@ impl iterable zipiter(@a, @b) -> (@a, @b) =
 	}
 ;;
 
+generic byreverse = {sl
+	-> [.sl = sl, .idx = sl.len]
+}
+
+impl iterable reverseiter(@a) -> @a =
+	__iternext__ = {itp, valp
+		if itp.idx > 0
+			valp# = itp.sl[itp.idx - 1]
+			itp.idx--
+			-> true
+		else
+			-> false
+		;;
+	}
+
+	__iterfin__ = {itp, valp
+	}
+;;
 
 generic byenum = {a
 	-> [.s = a, .idx = 0]
@@ -47,7 +72,6 @@ generic byenum = {a
 impl iterable enumiter(@a) -> (size, @b) =
 	__iternext__ = {itp, valp
 		if itp.idx < itp.s.len
-			std.put("itp.idx: {}, itp.s[{}]: {}\n", itp.idx, itp.idx, itp.s[itp.idx])
 			valp# = (itp.idx, itp.s[itp.idx])
 			itp.idx++
 			-> true

@@ -16,4 +16,11 @@ const main = {
 		std.assert(b == n*2 + 2, "invalid val from b: {}", b)
 		n++
 	;;
+
+	n = 0
+	for x in std.byreverse([3, 2, 1, 0][:])
+		std.assert(x == n, "invalid reversed value {}, expected {}", x, n)
+		n++
+	;;
+
 }
