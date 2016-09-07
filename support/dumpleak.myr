@@ -2,15 +2,26 @@ use std
 use bio
 
 var stackaggr = 10
+var summary
+
+type memstats = struct
+	allocs	: uint64
+	allocsz	: uint64
+	frees	: uint64
+	freesz	: uint64
+	tab	: std.htab(uint64, (uint64, uint64[:]))#
+;;
+
 
 const main = {args
-	var tab : std.htab(int64, (int64, int64[:]))#
 	var cmd
+	var stats : memstats
 
 	cmd = std.optparse(args, &[
 		.argdesc="dumps...",
 		.opts=[
 			[.opt='d', .arg="depth", .desc="aggregate by at most `depth` stack elements"],
+			[.opt='s', .arg="", .desc="only show a summary of memory activity"],
 		][:]
 	])
 
@@ -21,33 +32,47 @@ const main = {args
 			| `std.Some d:	stackaggr = d
 			| `std.None:	std.fatal("could not parse stack depth {}\n", depth)
 			;;
+		| ('s', ""):
+			summary = true
 		| _:	std.die("unreachable")
 		;;
 	;;
 
-	tab = std.mkht(std.inthash, std.inteq)
+	stats.tab = std.mkht(std.inthash, std.inteq)
 	for d in cmd.args
 		match bio.open(d, bio.Rd)
-		| `std.Ok f:	dump(d, f, tab)
+		| `std.Ok f:	dump(d, f, &stats)
 		| `std.Err e:	std.fatal("could not open {}: {}\n", d, e)
 		;;
 	;;
 }
 
-const dump = {path, f, tab
+const dump = {path, f, stats
 	while true
 		match bio.getle64(f)
-		| `bio.Ok 0:	tracealloc(path, f, tab)
-		| `bio.Ok 1:	tracefree(path, f, tab)
+		| `bio.Ok 0:	tracealloc(path, f, stats)
+		| `bio.Ok 1:	tracefree(path, f, stats)
 		| `bio.Eof:	break
 		| `bio.Ok wat:	std.fatal("unknown action type {x}\n", wat)
 		| `bio.Err e:	std.fatal("failed to read {}: {}\n", path, e)
 		;;
 	;;
-	dumptrace(tab)
+	if !summary
+		dumptrace(stats.tab)
+	;;
+	dumpsummary(stats)
 }
 
-const tracealloc = {path, f, tab
+const dumpsummary = {stats
+	std.put("allocs:\t{}\n", stats.allocs)
+	std.put("allocsz:\t{}\n", stats.allocsz)
+	std.put("frees:\t{}\n", stats.frees)
+	std.put("freesz:\t{}\n", stats.freesz)
+	std.put("livesz:\t{}\n", stats.allocsz - stats.freesz)
+}
+
+
+const tracealloc = {path, f, stats
 	var ptr, sz, stk
 
 	ptr = get64(path, f)
@@ -56,15 +81,19 @@ const tracealloc = {path, f, tab
 	for var i = 0; i < 10; i++
 		std.slpush(&stk, get64(path, f))
 	;;
-	std.htput(tab, ptr, (sz, stk))
+	stats.allocs++
+	stats.allocsz += sz
+	std.htput(stats.tab, ptr, (sz, stk))
 }
 
-const tracefree = {path, f, tab
+const tracefree = {path, f, stats
 	var ptr, sz
 
 	ptr = get64(path, f)
 	sz = get64(path, f)
-	std.htdel(tab, ptr)
+	stats.allocs++
+	stats.allocsz += sz
+	std.htdel(stats.tab, ptr)
 }
 
 const dumptrace = {tab

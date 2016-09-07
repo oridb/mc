@@ -1,4 +1,4 @@
-bin dumpleak =
+bin mdumpleak =
 	dumpleak.myr
 
 	lib ../lib/sys:sys
