@@ -543,6 +543,12 @@ static Node *simpcast(Simp *s, Node *val, Type *to)
 	Type *t;
 
 	r = NULL;
+	t = tybase(exprtype(val));
+	if (tyeq(tybase(to), tybase(t))) {
+		r = rval(s, val, NULL);
+		r->expr.type = to;
+		return r;
+	}
 	/* do the type conversion */
 	switch (tybase(to)->type) {
 	case Tybool:
@@ -550,7 +556,6 @@ static Node *simpcast(Simp *s, Node *val, Type *to)
 	case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint64:
 	case Tyint: case Tyuint: case Tychar: case Tybyte:
 	case Typtr:
-		t = tybase(exprtype(val));
 		switch (t->type) {
 			/* ptr -> slice conversion is disallowed */
 		case Tyslice:
@@ -590,7 +595,6 @@ static Node *simpcast(Simp *s, Node *val, Type *to)
 		}
 		break;
 	case Tyflt32: case Tyflt64:
-		t = tybase(exprtype(val));
 		switch (t->type) {
 		case Tyint8: case Tyint16: case Tyint32: case Tyint64:
 		case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint64:
