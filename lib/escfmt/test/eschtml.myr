@@ -1,0 +1,29 @@
+use std
+use escfmt
+use testr
+
+const main = {
+	testr.run([\
+		[.name="nop", .fn={ctx
+			var s = std.fmt("{}", escfmt.html("word"))
+			testr.check(ctx, std.sleq("word", s), "mismatched escape")
+			std.slfree(s)
+		}],
+		[.name="twowords", .fn={ctx
+			var s = std.fmt("{}", escfmt.html("spaced word"))
+			testr.check(ctx, std.sleq("spaced word", s), "mismatched escape")
+			std.slfree(s)
+		}],
+		[.name="quoted", .fn={ctx
+			var s = std.fmt("{}", escfmt.html("<stuff>&nbsp;</stuff>"))
+			testr.check(ctx, std.sleq("&lt;stuff&gt;&amp;nbsp;&lt;&#x2f;stuff&gt;", s), std.fmt("mismatched escape {}", s))
+			std.slfree(s)
+		}],
+		[.name="doublequoted", .fn={ctx
+			var s = std.fmt("{}", escfmt.html("&lt;stuff&gt;&amp;nbsp;&lt;&#x2f;stuff&gt;"))
+			testr.check(ctx, std.sleq("&amp;lt;stuff&amp;gt;&amp;amp;nbsp;&amp;lt;&amp;#x2f;stuff&amp;gt;", s), std.fmt("mismatched escape {}", s))
+			std.slfree(s)
+		}],
+	][:])
+}
+

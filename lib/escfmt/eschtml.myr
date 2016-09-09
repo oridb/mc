@@ -1,0 +1,31 @@
+use std
+
+pkg escfmt =
+	type eschtml = byte[:]
+
+	const html	: (s : byte[:] -> eschtml) 
+;;
+
+const __init__ = {
+	var s = ("" : eschtml)
+	std.fmtinstall(std.typeof(s), htmlfmt, [][:])
+}
+
+const html = {s
+	-> (s : eschtml)
+}
+
+const htmlfmt = {sb, ap, args
+	var s : byte[:]
+
+	s = std.vanext(ap)
+	for c in std.bychar(s)
+		match c
+		| '&': std.sbputs(sb, "&amp;")
+		| '<': std.sbputs(sb, "&lt;")
+		| '>': std.sbputs(sb, "&gt;")
+		| '/': std.sbputs(sb, "&#x2f;")
+		| _:   std.sbputc(sb, c)
+		;;
+	;;
+}
