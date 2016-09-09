@@ -118,7 +118,7 @@ const freecmd = {cmd
 }
 
 const buildtests = {b, targ
-	var tt, bin, tests, incpath
+	var tt, bin, tests, incpath, libdeps
 	var cmd
 
 	tests = [][:]
@@ -129,12 +129,14 @@ const buildtests = {b, targ
 		| `std.Some path:
 			bin = srcswapsuffix(path, "")
 			incpath = std.sldup(targ.incpath)
+			libdeps = std.sldup(targ.libdeps)
+			std.sljoin(&libdeps, targ.tstdeps)
 			tt = [
 				.name = bin,
 				.dir = targ.dir,
 				.inputs = [path][:],
 				.install = false,
-				.libdeps = std.sldup(targ.libdeps),
+				.libdeps = libdeps,
 				.incpath = std.slput(&incpath, 0, "."),
 			]
 

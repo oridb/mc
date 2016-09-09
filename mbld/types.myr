@@ -38,6 +38,7 @@ pkg bld =
 		name	: byte[:]
 		inputs	: byte[:][:]
 		libdeps	: (byte[:], byte[:], byte[:])[:]	/* dir, lib, targname */
+		tstdeps	: (byte[:], byte[:], byte[:])[:]	/* dir, lib, targname */
 		install	: bool
 		runtime	: byte[:]
 		incpath	: byte[:][:]

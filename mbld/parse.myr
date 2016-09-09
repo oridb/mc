@@ -21,6 +21,7 @@ type parser = struct
 	/* default parameter values */
 	incpath	: byte[:][:]
 	libdeps	: byte[:][:]
+	tstdeps	: byte[:][:]
 	runtime	: byte[:]
 	ldscript: byte[:]
 	istest	: bool
@@ -97,6 +98,8 @@ const mkparser = {path, dir, basedir, sel
 		.basedir = std.sldup(basedir),
 		.targsel = sel,
 		.incpath = [][:],
+		.libdeps = [][:],
+		.tstdeps = [][:],
 		.runtime = "",
 		.ldscript = "",
 		.istest = false,
@@ -208,6 +211,7 @@ const target = {b, p
 	/* global attributes */
 	| `std.Some "incpath":	incpath(b, p, &p.incpath, "incpath")
 	| `std.Some "libdeps":	incpath(b, p, &p.libdeps, "libdeps")
+	| `std.Some "testdeps":	incpath(b, p, &p.tstdeps, "testdeps")
 	| `std.Some "runtime":	p.runtime = expectword(b, p, "runtime")
 	| `std.Some "ldscript":	p.runtime = expectword(b, p, "ldscript")
 	| `std.Some "noinst":	p.install = false
@@ -371,7 +375,8 @@ myrtarget: name '=' inputlist ';;'
 */
 const myrtarget = {b, p, targ
 	var ldscript, runtime, install, incpath, tags
-	var name, inputs, libdeps, libdep, attrs
+	var libdeps, libdep, tstdeps, tstdep
+	var name, inputs, attrs
 	var istest
 	var fsel
 
@@ -423,6 +428,12 @@ const myrtarget = {b, p, targ
 		std.slpush(&libdeps, libdep)
 	;;
 
+	tstdeps = [][:]
+	for l in p.tstdeps
+		tstdep = libpath(p, l)
+		std.slpush(&tstdeps, tstdep)
+	;;
+
 	tags = [][:]
 	for elt in attrs
 		match elt
@@ -448,6 +459,7 @@ const myrtarget = {b, p, targ
 		.name=name,
 		.inputs=inputs,
 		.libdeps=libdeps,
+		.tstdeps=tstdeps,
 		.islib=false,
 		.istest=istest,
 		/* attrs */
