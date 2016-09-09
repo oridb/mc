@@ -1,0 +1,31 @@
+use std
+
+pkg escfmt =
+	type escsh = byte[:]
+
+	const sh	: (s : byte[:] -> escsh) 
+;;
+
+const __init__ = {
+	var s = ("" : escsh)
+	std.fmtinstall(std.typeof(s), shfmt, [][:])
+}
+
+const sh = {s
+	-> (s : escsh)
+}
+
+const shfmt = {sb, ap, args
+	var s : byte[:]
+
+	s = std.vanext(ap)
+	std.sbputb(sb, ('\'' : byte))
+	for b in s
+		if b == ('\'' : byte)
+			std.sbputs(sb, "'\\''")
+		else
+			std.sbputb(sb, b)
+		;;
+	;;
+	std.sbputb(sb, ('\'' : byte))
+}

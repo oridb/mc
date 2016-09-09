@@ -2,6 +2,7 @@ sub =
 	bio
 	date
 	cryptohash
+	escfmt
 	inifile
 	fileutil
 	regex
