@@ -1,0 +1,28 @@
+use std
+use escfmt
+use testr
+
+const main = {
+	testr.run([\
+		[.name="unchanged", .fn={ctx
+			var s = std.fmt("{}", escfmt.url("word"))
+			testr.check(ctx, std.sleq("word", s), std.fmt("mismatched escape {}", s))
+			std.slfree(s)
+		}],
+		[.name="allspecials", .fn={ctx
+			var s = std.fmt("{}", escfmt.url(":/?#[]@!$&'()*+,;=%"))
+			testr.check(ctx, \
+				std.sleq("%3a%2f%3f%23%5b%5d%40%21%24%26%27%28%29%2a%2b%2c%3b%3d%25", s), \
+				std.fmt("mismatched escape {}", s))
+			std.slfree(s)
+		}],
+		[.name="unicodes", .fn={ctx
+			var s = std.fmt("{}", escfmt.url("᚛᚛ᚉᚑᚅᚔᚉᚉᚔ"))
+			testr.check(ctx, \
+				std.sleq("%e1%9a%9b%e1%9a%9b%e1%9a%89%e1%9a%91%e1%9a%85%e1%9a%94%e1%9a%89%e1%9a%89%e1%9a%94", s), \
+					std.fmt("mismatched escape {}", s))
+			std.slfree(s)
+		}],
+	][:])
+}
+

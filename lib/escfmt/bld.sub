@@ -1,7 +1,8 @@
 lib escfmt =
 	escsh.myr
 	eschtml.myr
+	escurl.myr
 
 	lib ../std:std
-	lib ../sys:sys
+        lib ../sys:sys
 ;;

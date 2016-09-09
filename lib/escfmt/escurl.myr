@@ -1,0 +1,52 @@
+use std
+
+pkg escfmt =
+	type escurl = byte[:]
+
+	const url	: (s : byte[:] -> escurl) 
+;;
+
+const __init__ = {
+	var s = ("" : escurl)
+	std.fmtinstall(std.typeof(s), urlfmt, [][:])
+}
+
+const url = {s
+	-> (s : escurl)
+}
+
+const urlfmt = {sb, ap, args
+	var s : byte[:]
+
+	s = std.vanext(ap)
+	for b in s
+		match (b : char)
+		| ':':	std.sbfmt(sb, "%{x}", b)
+		| '/':	std.sbfmt(sb, "%{x}", b)
+		| '?':	std.sbfmt(sb, "%{x}", b)
+		| '#':	std.sbfmt(sb, "%{x}", b)
+		| '[':	std.sbfmt(sb, "%{x}", b)
+		| ']':	std.sbfmt(sb, "%{x}", b)
+		| '@':	std.sbfmt(sb, "%{x}", b)
+		| '!':	std.sbfmt(sb, "%{x}", b)
+		| '$':	std.sbfmt(sb, "%{x}", b)
+		| '&':	std.sbfmt(sb, "%{x}", b)
+		| '\'':	std.sbfmt(sb, "%{x}", b)
+		| '(':	std.sbfmt(sb, "%{x}", b)
+		| ')':	std.sbfmt(sb, "%{x}", b)
+		| '*':	std.sbfmt(sb, "%{x}", b)
+		| '+':	std.sbfmt(sb, "%{x}", b)
+		| ',':	std.sbfmt(sb, "%{x}", b)
+		| ';':	std.sbfmt(sb, "%{x}", b)
+		| '=':	std.sbfmt(sb, "%{x}", b)
+		| '%':	std.sbfmt(sb, "%{x}", b)
+		| c:
+			if b >= 0x80
+				std.sbfmt(sb, "%{x}", b)
+			else
+				std.sbfmt(sb, "{}", c)
+			;;
+
+		;;
+	;;
+}
