@@ -53,7 +53,9 @@ echo 	$pwd/6/6m	-I ../sys -I . varargs.myr  && 	$pwd/6/6m	-I ../sys -I . varargs
 echo 	$pwd/6/6m	-I ../sys -I . writeall.myr  && 	$pwd/6/6m	-I ../sys -I . writeall.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . fmt.myr  && 	$pwd/6/6m	-I ../sys -I . fmt.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . assert.myr  && 	$pwd/6/6m	-I ../sys -I . assert.myr  &&\
+echo 	$pwd/6/6m	-I ../sys -I . mk.myr  && 	$pwd/6/6m	-I ../sys -I . mk.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . now.myr  && 	$pwd/6/6m	-I ../sys -I . now.myr  &&\
+echo 	$pwd/6/6m	-I ../sys -I . putint.myr  && 	$pwd/6/6m	-I ../sys -I . putint.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . rand.myr  && 	$pwd/6/6m	-I ../sys -I . rand.myr  &&\
 echo 	as	-g -o getbp.o getbp+posixy-x64.s  && 	as	-g -o getbp.o getbp+posixy-x64.s  &&\
 echo 	$pwd/6/6m	-I ../sys -I . sljoin.myr  && 	$pwd/6/6m	-I ../sys -I . sljoin.myr  &&\
@@ -78,13 +80,11 @@ echo 	$pwd/6/6m	-I ../sys -I . diriter.myr  && 	$pwd/6/6m	-I ../sys -I . diriter
 echo 	$pwd/6/6m	-I ../sys -I . clear.myr  && 	$pwd/6/6m	-I ../sys -I . clear.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . wait+posixy.myr  && 	$pwd/6/6m	-I ../sys -I . wait+posixy.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . strjoin.myr  && 	$pwd/6/6m	-I ../sys -I . strjoin.myr  &&\
-echo 	$pwd/6/6m	-I ../sys -I . mk.myr  && 	$pwd/6/6m	-I ../sys -I . mk.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . pathjoin.myr  && 	$pwd/6/6m	-I ../sys -I . pathjoin.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . mktemp.myr  && 	$pwd/6/6m	-I ../sys -I . mktemp.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . chomp.myr  && 	$pwd/6/6m	-I ../sys -I . chomp.myr  &&\
 echo 	as	-g -o memops-impl.o memops-impl+posixy-x64.s  && 	as	-g -o memops-impl.o memops-impl+posixy-x64.s  &&\
 echo 	$pwd/6/6m	-I ../sys -I . fndup.myr  && 	$pwd/6/6m	-I ../sys -I . fndup.myr  &&\
-echo 	$pwd/6/6m	-I ../sys -I . putint.myr  && 	$pwd/6/6m	-I ../sys -I . putint.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . mkpath.myr  && 	$pwd/6/6m	-I ../sys -I . mkpath.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . listen+posixy.myr  && 	$pwd/6/6m	-I ../sys -I . listen+posixy.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . slpop.myr  && 	$pwd/6/6m	-I ../sys -I . slpop.myr  &&\
