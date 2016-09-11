@@ -2,7 +2,7 @@
 
 fn build {
 	rm -f $1 $1^.6 $1^.use
-	../mbld/mbld -b $1 -C../6/6.out -M../muse/6.out -I../libstd -r../rt/_myrrt.6 $1^.myr
+	../mbld/mbld -b $1 -C../6/6.out -M../muse/6.out -I../lib/std -r../rt/_myrrt.6 $1^.myr
 }
 
 fn pass {
@@ -71,9 +71,9 @@ fn B {
 }
 
 fn F {
-	echo 'test' ^ $1 '<<{!'
-	@{ build $1 } > /dev/null
-	if (~ $status ''/)
+	echo 'test ' ^ $1 '<<{!'
+	@{ build $1 } >[2=1]
+	if (~ $status '')
 		fail $1
 	if not
 		pass $1
