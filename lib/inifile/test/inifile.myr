@@ -41,6 +41,8 @@ const itersects = {
 	var somesect, anothersection
 
 	ini = std.try(inifile.load("test/test.ini"))
+	somesect=0
+	anothersection=0
 	for k in inifile.bysection(ini)
 		match k
 		| "somesect":	somesect++
