@@ -3,11 +3,13 @@ use sys
 use "types"
 use "errno"
 use "cstrconv"
+use "strfind"
 
 pkg std =
 	const nanosleep	: (nsecs : uint64 -> errno)
 	$noret const exit	: (status : int -> void)
 	pkglocal const bgetcwd	: (buf : byte[:] -> errno)
+	pkglocal const lasterr	: (-> errno)
 ;;
 
 const nanosleep = {nsecs
@@ -63,3 +65,26 @@ const exit	= {status
 	;;
 }
 
+
+const lasterr = {
+	var errbuf	: byte[sys.Maxerr]
+	var err
+
+	sys.errstr(errbuf[:])
+	err = cstrconv(errbuf[:])
+	if strhas(err, "no error")
+		-> Enone
+	elif strhas(err, "already exists")
+		-> Eexist
+	elif strhas(err, "read or write too large")
+		-> Erange
+	elif strhas(err, "read or write too small")
+		-> Erange
+	elif strhas(err, "i/o error")
+		-> Eio
+	elif strhas(err, "fd out of range or not open")
+		-> Ebadf
+	else
+		-> Emisc
+	;;
+}
