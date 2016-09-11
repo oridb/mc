@@ -333,7 +333,7 @@ TABLE OF CONTENTS:
 
         More types of pattern to match will be added over time.
 
-        Match statements consist of the keyord 'match', followed by
+        Match statements consist of the keyword 'match', followed by
         the expression to match against the patterns, followed by a
         newline. The body of the match statement consists of a list
         of pattern clauses. A patterned clause is a '|', followed by
