@@ -297,7 +297,7 @@ static size_t encodemin(FILE *fd, uvlong val, size_t off, char *lbl)
 	n = 0;
 	shift = 8 - i;
 	b = ~0ull << (shift + 1);
-	b |= val & ((1 << (8 - shift)) - 1);
+	b |= val & ~(~0ull << shift);
 	fprintf(fd, "\tDATA %s+%zd(SB)/1,$%u\n", lbl, off, b);
 	val >>=  shift;
 	while (val != 0) {
