@@ -1,23 +1,15 @@
 #!/bin/rc
 
-passed=''
-failed=''
-npassed=0
-nfailed=0
-
 fn build {
 	rm -f $1 $1^.6 $1^.use
 	../mbld/mbld -b $1 -C../6/6.out -M../muse/6.out -I../libstd -r../rt/_myrrt.6 $1^.myr
 }
 
 fn pass {
-	passed=$passed ^ ' ' ^ $1
 	echo '!}>> ok'
 }
 
 fn fail {
-	echo FAIL: $1
-	failed=$failed ^ ' ' ^ $1
 	echo '!}>> fail '
 }
 
@@ -91,10 +83,5 @@ echo 'MTEST ' `{grep '^[BF]' tests | wc -l}
 
 . tests
 
-echo PASSED ^ ' ' ^ $passed
-if(~ $failed '')
-	echo SUCCESS
-if not
-	echo FAILURES ^ ' ' ^ $failed
 
 

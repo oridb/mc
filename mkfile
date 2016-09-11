@@ -49,11 +49,7 @@ uninstall:V: $SUB config.h
 	ape/psh mbldwrap.sh uninstall
 
 check:V: all
-	@{
-		cd test
-		mk check
-	}
-	ape/psh mbldwrap.sh test
+	mbld/mbld test
 
 config.h:
 	echo '#define Instroot "/amd64"' > config.h
