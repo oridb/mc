@@ -13,6 +13,8 @@ use "strsplit"
 use "striter"
 use "syswrap"
 use "utf"
+use "sleq"
+use "fmt"
 
 pkg std =
 	type waitstatus = union
@@ -63,20 +65,22 @@ const wait = {pid
 }
 
 const parsestatus = {status	-> (waitstatus, pid)
-	var st : waitstatus, xpid, sp
+	var st : waitstatus
+	var spbuf : byte[:][5]
+	var xpid, sp
 
-	sp = strsplit(status, " ")
+	sp = bstrsplit(spbuf[:], status, " ")
 	if sp.len == 0
-		slfree(sp)
 		-> (`Wfailure, -1)
 	;;
 
 	match intparse(sp[0])
 	| `Some pid:
 		xpid = pid
-		if sp.len == 4 || (sp.len == 5 && sp[4].len > 0)	/* we exited with nil */
+		/* exits(nil) => sp[0] either not present or equal to '' */
+		if sp.len == 4 || (sp.len == 5 && sleq(sp[4], "''"))
 			st = `Wsuccess
-		elif sp.len == 5	/* we have a status */
+		elif sp.len == 5
 			st = `Wfailure
 		else	/* we have a malformed await message */
 			st = `Waiterror
@@ -86,7 +90,6 @@ const parsestatus = {status	-> (waitstatus, pid)
 		st = `Waiterror
 	;;
 
-	slfree(sp)
 	-> (st, xpid)
 
 }
