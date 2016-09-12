@@ -28,18 +28,24 @@ const main = {
 
 const peekc = {f
 	match bio.peekc(f)
-	| `std.Some c:	-> c
-	| `std.None:
+	| `bio.Ok c:	-> c
+	| `bio.Eof:
 		std.put("eof")
+		-> -1
+	| `bio.Err e:
+		std.fatal("error reading\n")
 		-> -1
 	;;
 }
 
 const peekb = {f
 	match bio.peekb(f)
-	| `std.Some b:	-> b
-	| `std.None:
+	| `bio.Ok b:	-> b
+	| `bio.Eof:
 		std.put("eof")
+		-> -1
+	| `bio.Err e:
+		std.fatal("error reading\n")
 		-> -1
 	;;
 }

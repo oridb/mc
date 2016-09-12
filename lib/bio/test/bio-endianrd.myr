@@ -1,12 +1,13 @@
 use std
 use bio
 
-generic try = {opt : std.option(@a::(integral,numeric))-> @a::(integral,numeric)
+generic try = {opt : bio.status(@a::(integral,numeric))-> @a::(integral,numeric)
 	match opt
-	| `std.Some val:	-> val
-	| `std.None:	std.fatal("read failed")
+	| `bio.Ok val:	-> val
+	| _: std.fatal("read failed")
 	;;
 }
+
 const main = {
 	var b : byte
 	var w : uint16
@@ -21,13 +22,10 @@ const main = {
 	;;
 	
 	/* byte */
-	/*
-	/* FIXME: compiler bug. multiplication on byte
-	   values is currently broken. */
 	b = 0xaa
-	std.assert(try(bio.getle8(f)) == b, "le byte broken\n")
+	var r = try(bio.getle8(f))
+	std.assert(r == b, "le byte broken: {x}\n", r)
 	std.assert(try(bio.getbe8(f)) == b, "be byte broken\n")
-	*/
 
 	/* word */
 	w = 0xaabb
@@ -46,8 +44,10 @@ const main = {
 
 	/* end of file */
 	match bio.getle64(f)
-	| `std.None:
-	| `std.Some v:
+	| `bio.Eof:
+	| `bio.Err _:
+		std.die("error on reading file\n")
+	| `bio.Ok v:
 		std.die("read past end of file\n")
 		v = q /* shut up type inference */
 	;;

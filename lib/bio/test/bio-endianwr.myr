@@ -8,19 +8,15 @@ const main = {
 	var q : uint64
 	var f
 
-	match bio.create("tmpout/test-endianwr", bio.Wr, 0o644)
+	match bio.create("data/out-endianwr", bio.Wr, 0o644)
 	| `std.Ok bio:	f = bio
 	| `std.Err m:	std.fatal("Unable to open data file: {}\n", m)
 	;;
 	
 	/* byte */
-	/*
-	/* FIXME: compiler bug. multiplication on byte
-	   values is currently broken. */
 	b = 0xaa
-	bio.putle(f, b)
-	bio.putbe(f, b)
-	*/
+	bio.putle8(f, b)
+	bio.putbe8(f, b)
 
 	/* word */
 	w = 0xaabb
