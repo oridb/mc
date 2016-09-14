@@ -7,6 +7,7 @@ const main = {
 	/* Must be bigger than a bio buffer (ie, > 64k) */
 	var buf : byte[64*1024]
 
+	std.mkpath("tmpout")
 	match bio.create("tmpout/test-write", bio.Wr, 0o644)
 	| `std.Ok bio:	f = bio
 	| `std.Err m:	std.fatal("Unable to open data file: {}", m)
