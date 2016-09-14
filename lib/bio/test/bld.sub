@@ -1,0 +1,53 @@
+bin create {test} =
+	bio-create.myr
+        lib @/lib/std:std
+        lib @/lib/sys:sys
+        lib @/lib/bio:bio
+;;
+
+bin delim {test} =
+	bio-delim.myr
+;;
+
+bin endianrd {test} =
+	bio-endianrd.myr
+	lib @/lib/std:std
+	lib @/lib/sys:sys
+	lib @/lib/bio:bio
+;;
+
+bin endianwr {test} =
+	bio-endianwr.myr
+	lib @/lib/std:std
+	lib @/lib/sys:sys
+	lib @/lib/bio:bio
+;;
+
+bin peek {test} =
+	bio-peek.myr
+	lib @/lib/std:std
+	lib @/lib/sys:sys
+	lib @/lib/bio:bio
+;;
+
+bin read {test} =
+	bio-read.myr
+	lib @/lib/std:std
+	lib @/lib/sys:sys
+	lib @/lib/bio:bio
+;;
+
+bin unitwr {test} =
+	bio-unitwr.myr
+	lib @/lib/std:std
+	lib @/lib/sys:sys
+	lib @/lib/bio:bio
+;;
+
+bin write {test} =
+	bio-write.myr
+	lib @/lib/std:std
+	lib @/lib/sys:sys
+	lib @/lib/bio:bio
+;;
+
