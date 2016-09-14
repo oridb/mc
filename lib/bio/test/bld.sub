@@ -1,5 +1,6 @@
 bin create {test} =
 	bio-create.myr
+
         lib @/lib/std:std
         lib @/lib/sys:sys
         lib @/lib/bio:bio
@@ -7,6 +8,10 @@ bin create {test} =
 
 bin delim {test} =
 	bio-delim.myr
+
+        lib @/lib/std:std
+        lib @/lib/sys:sys
+        lib @/lib/bio:bio
 ;;
 
 bin endianrd {test} =
