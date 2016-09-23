@@ -12,6 +12,6 @@ pkg =
 
 const main = {
     var msg=`Tversion [.tag=45, .version="9P2000"]
-    std.fmt("{}\n", msg)
+    std.put("{}\n", msg)
 }
 
