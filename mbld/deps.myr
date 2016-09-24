@@ -347,6 +347,7 @@ const scrapelibs = {dg, lib, incs
 		| `bio.Ok 'X':
 			d = rdstr(f)
 			std.slpush(&dg.extlibs, d)
+                        dg.dynamic = true
 		| `bio.Ok _:	done = true
 		| `bio.Eof:	done = true
 		| `bio.Err e:	std.fatal("io error reading {}: {}", lib, e)

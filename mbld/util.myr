@@ -86,7 +86,7 @@ const srcswapsuffix = {src, new
 		-> std.strcat(base, new)
 	elif std.hassuffix(suff, ".s")
 		-> std.strcat(base, new)
-	elif std.hassuffix(base, ".glue.c")
+	elif std.hassuffix(suff, ".glue.c")
 		-> std.strjoin([base, ".glue", new][:], "")
 	else
 		std.fatal("unrecognized source {}\n", src)
