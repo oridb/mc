@@ -41,7 +41,7 @@ e: exponent
 p: precision
 f: mantissa
 
-flting value: x = f^(e - p)
+floating value: x = f^(e - p)
 */
 const dragon4 = {sb, isneg, f, e, p, mode, cutoff
 	var r, s, t, u, v, y
@@ -49,16 +49,16 @@ const dragon4 = {sb, isneg, f, e, p, mode, cutoff
 	var mm, mp	/* margins above and below */
 	var roundup
 	var low, high
-	var k, n
+	var k
 	var a, i
 
 	/* if we have zero for the mantissa, we can return early */
-	n = 0
 	if isneg
 		sbputs(sb, "-")
 	;;
 	if f == 0
 		sbputs(sb, "0.0")
+		-> void
 	;;
 
 	/* initialize */
@@ -223,7 +223,6 @@ const dragon4 = {sb, isneg, f, e, p, mode, cutoff
 		| `After:	format(sb, udig + 1, k)
 		;;
 	;;
-	-> n
 }
 
 const lowdig = {u
