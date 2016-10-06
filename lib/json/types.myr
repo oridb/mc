@@ -1,0 +1,19 @@
+use std
+
+pkg json =
+	type elt = union
+		`Null
+		`Bool	bool
+		`Num	flt64
+		`Str	byte[:]
+		`Arr	elt#[:]
+		`Obj	(byte[:], elt#)[:]
+	;;
+
+	type err = union
+		`Junk char
+		`Badesc char
+		`End
+	;;
+;;
+

@@ -1,0 +1,273 @@
+use std
+
+use "types"
+
+pkg json =
+	const parse	: (str : byte[:] -> std.result(elt#, err))
+	const free	: (j : elt# -> void)
+;;
+
+type parser = struct
+	str	: byte[:]
+	line	: std.size
+	off	: std.size
+	idx	: std.size
+;;
+
+const parse = {str
+	var parser : parser
+
+	parser = [
+		.str = str,
+		.line = 1,
+		.off = 1,
+		.idx = 0,
+	]
+	-> parseelt(&parser)
+}
+
+const free = {j
+	match j
+	| &(`Null):	/* nothing */
+	| &(`Bool _):	/* nothing */
+	| &(`Num _):	/* nothing */
+	| &(`Str s):	std.slfree(s)
+	| &(`Arr a):
+		for e in a
+			free(j)
+		;;
+	| &(`Obj o):
+		for (k, v) in o
+			std.slfree(k)
+			free(v)
+		;;
+	;;
+}
+
+const parseelt = {p
+	takespace(p)
+	match peekc(p)
+	| '{':	-> parseobj(p)
+	| '[':	-> parsearr(p)
+	| '"':	-> parsestr(p)
+	| chr:
+		if std.hasprefix(p.str[p.idx:], "false")
+			-> `std.Ok std.mk(`Bool false)
+		elif std.hasprefix(p.str[p.idx:], "true")
+			-> `std.Ok std.mk(`Bool true)
+		elif std.hasprefix(p.str[p.idx:], "null")
+			-> `std.Ok std.mk(`Null)
+		elif std.isdigit(peekc(p)) || peekc(p) == '-'
+			match parsenum(p)
+			| `std.Some n:	-> `std.Ok std.mk(`Num (n : flt64))
+			| `std.None:	-> `std.Err `Junk chr
+			;;
+		else
+			-> `std.Err `Junk chr
+		;;
+	;;
+}
+
+const parseobj = {p
+	var membs
+	var err
+
+	std.assert(takec(p) == '{', "should only enter 'obj' after '{'")
+	membs = [][:]
+	while true
+		match member(p)
+		| `std.Ok m:
+			std.slpush(&membs, m)
+			takespace(p)
+			match peekc(p)
+			| ',':	/* nothing */
+			| '}':	break
+			| chr:
+				err = `Junk chr
+				goto error
+			;;
+		| `std.Err e:
+			err = e
+			goto error
+		;;
+	;;
+	-> `std.Ok std.mk(`Obj membs)
+:error
+	for (k, v) in membs
+		std.slfree(k)
+		free(v)
+	;;
+	std.slfree(membs)
+	-> `std.Err err
+}
+
+const member = {p
+	var str
+
+	takespace(p)
+	match jsonstr(p)
+	| `std.Ok s:	str = s
+	| `std.Err e:	-> `std.Err e
+	;;
+
+	takespace(p)
+	match takec(p)
+	| ':':	/* nothing */
+	| chr:	-> `std.Err `Junk chr
+	;;
+
+	takespace(p)
+	match parseelt(p)
+	| `std.Ok elt:
+		-> `std.Ok (str, elt)
+	| `std.Err e:
+		std.slfree(str)
+		-> `std.Err e
+	;;
+}
+
+const parsearr = {p
+	var elts
+	var err
+
+	std.assert(takec(p) == '[', "should only enter 'obj' after '['")
+	elts = [][:]
+	while true
+		match parseelt(p)
+		| `std.Ok e:	std.slpush(&elts, e)
+		| `std.Err e:
+			err = e
+			goto error
+		;;
+		match peekc(p)
+		| ',':	/* nothing */
+		| ']':	break
+		| chr:
+			err = `Junk chr
+			goto error
+		;;
+	;;
+	-> `std.Ok std.mk(`Arr elts)
+:error
+	for e in elts
+		free(e)
+	;;
+	std.slfree(elts)
+	-> `std.Err err
+}
+
+const parsestr = {p
+	match jsonstr(p)
+	| `std.Ok str:	-> `std.Ok std.mk(`Str str)
+	| `std.Err e:	-> `std.Err e
+	;;
+}
+
+const parsenum = {p -> std.option(int64)
+	var start
+
+	start = p.idx
+	if peekc(p) == '+' || peekc(p) == '-'
+		p.idx++
+	;;
+	while p.idx < p.str.len
+		if !std.isdigit((p.str[p.idx] : char))
+			break
+		;;
+		p.idx++
+	;;
+
+	if peekc(p) == '.'
+		p.idx++
+		while p.idx < p.str.len
+			if !std.isdigit((p.str[p.idx] : char))
+				break
+			;;
+			p.idx++
+		;;
+	;;
+	if peekc(p) == 'e' || peekc(p) == 'E'
+		if peekc(p) == '+' || peekc(p) == '-'
+			p.idx++
+		;;
+		while p.idx < p.str.len
+			if !std.isdigit((p.str[p.idx] : char))
+				break
+			;;
+			p.idx++
+		;;
+	;;
+
+	-> std.intparse(p.str[start:p.idx])
+}
+
+const jsonstr = {p
+	var sb, idx, err
+
+	sb = std.mksb()
+	match takec(p)
+	| '"':	/* nothing */
+	| chr:
+		err = `Junk chr
+		goto error
+	;;
+	while p.idx < p.str.len
+		match takec(p)
+		| '\\':
+			takec(p)
+			match takec(p)
+			| '"':	std.sbputc(sb, '"')
+			| '\\':	std.sbputc(sb, '\\')
+			| '/':	std.sbputc(sb, '/')
+			| 'b':	std.sbputc(sb, '\b')
+			| 'n':	std.sbputc(sb, '\n')
+			| 'f':	std.sbputc(sb, '\u{0c}')
+			| 'r':	std.sbputc(sb, '\r')
+			| 't':	std.sbputc(sb, '\t')
+			| chr:
+				err = `Badesc chr
+				goto error
+			;;
+		| '"':
+			-> `std.Ok std.sbfin(sb)
+		| chr:
+			std.sbputc(sb, chr)
+			idx += std.charlen(chr)
+		;;
+	;;
+
+:error
+	std.sbfree(sb)
+	-> `std.Err err
+}
+
+const takespace = {p
+	while true
+		match (p.str[p.idx] : char)
+		| ' ':
+		| '\t':
+		| '\n':
+		| '\r':
+		| _:
+			break
+		;;
+		p.idx++
+	;;
+}
+
+const peekc = {p
+	-> std.decode(p.str[p.idx:])
+}
+
+const takec = {p
+	var c
+
+	c = std.decode(p.str[p.idx:])
+	p.idx += std.charlen(c)
+	if c == '\n'
+		p.line++
+		p.off = 1
+	;;
+	-> c
+}
+
