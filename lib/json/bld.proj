@@ -1,5 +1,10 @@
 lib json =
 	types.myr
 	parse.myr
+	fmt.myr
 ;;
 
+bin j =
+	j.myr
+	lib json
+;;

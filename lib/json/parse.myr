@@ -34,7 +34,7 @@ const free = {j
 	| &(`Str s):	std.slfree(s)
 	| &(`Arr a):
 		for e in a
-			free(j)
+			free(e)
 		;;
 	| &(`Obj o):
 		for (k, v) in o
@@ -60,10 +60,10 @@ const parseelt = {p
 		elif std.isdigit(peekc(p)) || peekc(p) == '-'
 			match parsenum(p)
 			| `std.Some n:	-> `std.Ok std.mk(`Num (n : flt64))
-			| `std.None:	-> `std.Err `Junk chr
+			| `std.None:	-> `std.Err [.e=`Junk chr, .line=p.line, .off=p.off]
 			;;
 		else
-			-> `std.Err `Junk chr
+			-> `std.Err [.e=`Junk chr, .line=p.line, .off=p.off]
 		;;
 	;;
 }
@@ -79,11 +79,11 @@ const parseobj = {p
 		| `std.Ok m:
 			std.slpush(&membs, m)
 			takespace(p)
-			match peekc(p)
+			match takec(p)
 			| ',':	/* nothing */
 			| '}':	break
 			| chr:
-				err = `Junk chr
+				err = [.e=`Junk chr, .line=p.line, .off=p.off]
 				goto error
 			;;
 		| `std.Err e:
@@ -113,7 +113,7 @@ const member = {p
 	takespace(p)
 	match takec(p)
 	| ':':	/* nothing */
-	| chr:	-> `std.Err `Junk chr
+	| chr:	-> `std.Err [.e=`Junk chr, .line=p.line, .off=p.off]
 	;;
 
 	takespace(p)
@@ -139,11 +139,11 @@ const parsearr = {p
 			err = e
 			goto error
 		;;
-		match peekc(p)
+		match takec(p)
 		| ',':	/* nothing */
 		| ']':	break
 		| chr:
-			err = `Junk chr
+			err = [.e=`Junk chr, .line=p.line, .off=p.off]
 			goto error
 		;;
 	;;
@@ -208,7 +208,7 @@ const jsonstr = {p
 	match takec(p)
 	| '"':	/* nothing */
 	| chr:
-		err = `Junk chr
+		err = [.e=`Junk chr, .line=p.line, .off=p.off]
 		goto error
 	;;
 	while p.idx < p.str.len
@@ -225,7 +225,7 @@ const jsonstr = {p
 			| 'r':	std.sbputc(sb, '\r')
 			| 't':	std.sbputc(sb, '\t')
 			| chr:
-				err = `Badesc chr
+				err = [.e=`Badesc chr, .line=p.line, .off=p.off]
 				goto error
 			;;
 		| '"':
@@ -246,8 +246,10 @@ const takespace = {p
 		match (p.str[p.idx] : char)
 		| ' ':
 		| '\t':
-		| '\n':
 		| '\r':
+		| '\n':
+			p.line++
+			p.off=1
 		| _:
 			break
 		;;

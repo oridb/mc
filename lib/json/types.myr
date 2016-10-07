@@ -10,7 +10,13 @@ pkg json =
 		`Obj	(byte[:], elt#)[:]
 	;;
 
-	type err = union
+	type err = struct
+		e	: errtype
+		line	: std.size
+		off	: std.size
+	;;
+
+	type errtype = union
 		`Junk char
 		`Badesc char
 		`End
