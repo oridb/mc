@@ -1,6 +1,3 @@
-test/*.o
-test/*.use
-test/*.use
 !test/*.myr
 libstd/sys*.myr
 !libstd/sys*+*.myr
@@ -16,9 +13,9 @@ libstd/resolve.myr
 libstd/wait.myr
 rt/*.s
 !rt/*-*.s
-*/*.o
-*/*.use
-*/*.a
+*.o
+*.use
+*.a
 */.deps
 config.h
 config.mk
