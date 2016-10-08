@@ -26,3 +26,8 @@ muse/muse
 myrbuild/myrbuild
 *~
 tags
+configvar_cache
+lib/regex/redump
+mbld/config.myr
+mbld/mbld
+support/mdumpleak
