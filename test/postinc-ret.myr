@@ -1,0 +1,12 @@
+use std
+
+const main = {
+	std.put("{}\n", f())
+}
+
+const a = [1,2,3][:]
+const f = {
+	var i = 0
+	-> a[i++]
+}
+

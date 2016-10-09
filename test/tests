@@ -33,6 +33,7 @@ B zwidencast	E	99
 B swidencast	E	99
 B derefassign	E	123
 B ptrpreinc	E	9
+B postinc-ret	P	'1'
 B incret        E       1
 B outparam	E	42
 B outparam-sl	E	2

@@ -468,10 +468,17 @@ static Node *rval(Flattenctx *s, Node *n)
 		break;;
 	case Oret:
 		/* drain the increment queue before we return */
-		t = rval(s, args[0]);
-		for (i = 0; i < s->nqueue; i++)
-			append(s, s->incqueue[i]);
-		lfree(&s->incqueue, &s->nqueue);
+		v = rval(s, args[0]);
+		if (!s->nqueue) {
+			t = v;
+		} else {
+			t = temp(s, v);
+			u = assign(s, t, v);
+			append(s, u);
+			for (i = 0; i < s->nqueue; i++)
+				append(s, s->incqueue[i]);
+			lfree(&s->incqueue, &s->nqueue);
+		}
 		append(s, mkexpr(n->loc, Oret, t, NULL));
 		break;
 	case Oasn:
