@@ -178,6 +178,7 @@ struct Node {
 	Srcloc loc;
 	Ntype type;
 	int nid;
+	char inferred;
 	union {
 		struct {
 			size_t nfiles; /* file names for location mapping */

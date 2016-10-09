@@ -1068,7 +1068,6 @@ static void unifycall(Inferstate *st, Node *n)
 		if (ft->sub[i]->type == Tyvalist) {
 			break;
 		}
-		inferexpr(st, &n->expr.args[i], NULL, NULL);
 		unify(st, n->expr.args[0], ft->sub[i], type(st, n->expr.args[i]));
 	}
 	if (i < ft->nsub && ft->sub[i]->type != Tyvalist)
@@ -1803,6 +1802,9 @@ static void infernode(Inferstate *st, Node **np, Type *ret, int *sawret)
 	n = *np;
 	if (!n)
 		return;
+	if (n->inferred)
+		return;
+	n->inferred = 1;
 	switch (n->type) {
 	case Nfile:
 		pushstab(n->file.globls);
