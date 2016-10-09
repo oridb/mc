@@ -22,6 +22,7 @@ const eltfmt = {sb, e, ind
 	match e
 	| &(`Null):	std.sbfmt(sb, "null")
 	| &(`Bool b):	std.sbfmt(sb, "{}", b)
+	| &(`Num n):	std.sbfmt(sb, "{}", n)
 	| &(`Str s):	jstrfmt(sb, s)
 	| &(`Arr a):	arrfmt(sb, a, ind)
 	| &(`Obj o):	objfmt(sb, o, ind)

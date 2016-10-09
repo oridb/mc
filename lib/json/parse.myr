@@ -51,11 +51,11 @@ const parseelt = {p
 	| '[':	-> parsearr(p)
 	| '"':	-> parsestr(p)
 	| chr:
-		if std.hasprefix(p.str[p.idx:], "false")
+		if matchprefix(p, "false")
 			-> `std.Ok std.mk(`Bool false)
-		elif std.hasprefix(p.str[p.idx:], "true")
+		elif matchprefix(p, "true")
 			-> `std.Ok std.mk(`Bool true)
-		elif std.hasprefix(p.str[p.idx:], "null")
+		elif matchprefix(p, "null")
 			-> `std.Ok std.mk(`Null)
 		elif std.isdigit(peekc(p)) || peekc(p) == '-'
 			match parsenum(p)
@@ -239,6 +239,14 @@ const jsonstr = {p
 :error
 	std.sbfree(sb)
 	-> `std.Err err
+}
+
+const matchprefix = {p, pfx
+	if std.hasprefix(p.str[p.idx:], pfx)
+		p.idx += pfx.len
+		-> true
+	;;
+	-> false
 }
 
 const takespace = {p
