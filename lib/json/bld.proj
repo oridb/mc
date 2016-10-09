@@ -4,7 +4,3 @@ lib json =
 	fmt.myr
 ;;
 
-bin j =
-	j.myr
-	lib json
-;;
