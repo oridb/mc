@@ -347,14 +347,7 @@ const fallbackfmt = {sb, params, tyenc, ap : valist# -> void
 			strfmt(sb, s_val, params)
 		| _:
 			subap = vaenter(ap)
-			sbputs(sb, "[")
-			while subap.tc.nelt != 0
-				fmtval(sb, vatype(&subap), &subap, "")
-				if subap.tc.nelt > 0
-					sbfmt(sb, ", ")
-				;;
-			;;
-			sbputs(sb, "]")
+			fmtslice(sb, subap, params)
 			vabytes(ap)
 		;;
 	| `Tyfunc tc:
@@ -422,6 +415,37 @@ const fallbackfmt = {sb, params, tyenc, ap : valist# -> void
 		subap = vaenter(ap)
 		fmtval(sb, desc, &subap, params)
 		vabytes(ap)
+	;;
+}
+
+const fmtslice = {sb, subap, params
+	var opts, join, joined
+
+	opts = parseparams(params, [
+		("j", true),
+	][:])
+	join = ", "
+	joined = false
+	for o in opts
+		match o
+		| ("j", j):
+			joined = true
+			join = j
+		| _:	std.die("unreacahable")
+		;;
+	;;
+
+	if !joined
+		sbputs(sb, "[")
+	;;
+	while subap.tc.nelt != 0
+		fmtval(sb, vatype(&subap), &subap, "")
+		if subap.tc.nelt > 0
+			sbfmt(sb, join)
+		;;
+	;;
+	if !joined
+		sbputs(sb, "]")
 	;;
 }
 
