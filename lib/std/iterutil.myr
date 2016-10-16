@@ -19,7 +19,7 @@ pkg std =
 
 	impl iterable zipiter(@a, @b) -> (@a, @b)
 	impl iterable enumiter(@a) -> (size, @a)
-	impl iterable reverseiter(@a) -> (size, @a)
+	impl iterable reverseiter(@a) -> @a
 
 	generic byzip	: (a : @a[:], b : @b[:]	 -> zipiter(@a, @b))
 	generic byenum	: (a : @a[:] -> enumiter(@a))
