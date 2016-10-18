@@ -3,7 +3,7 @@ use escfmt
 use testr
 
 const main = {
-	testr.run([\
+	testr.run([
 		[.name="basic", .fn={ctx
 			var s = std.fmt("{}", escfmt.sh("word"))
 			testr.check(ctx, std.sleq("'word'", s), "mismatched escape")

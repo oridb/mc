@@ -15,6 +15,7 @@ pkg std =
 	const mkbs	: (-> bitset#)
 	const bsdup	: (bs : bitset# -> bitset#)
 	const bsfree	: (bs : bitset# -> void)
+	const bsclear	: (bs : bitset# -> bitset#)
 
 	const bsmax	: (a : bitset# -> size)
 
@@ -28,8 +29,13 @@ pkg std =
 	const bseq	: (a : bitset#, b : bitset# -> bool)
 	const bsissubset	: (a : bitset#, b : bitset# -> bool)
 
+	type bsiter = struct
+		idx	: size
+		bs	: bitset#
+	;;
 
-	const bsclear	: (bs : bitset# -> bitset#)
+	impl iterable bsiter -> size
+	generic bsbyvalue	: (bs : bitset# -> bsiter)
 ;;
 
 const mkbs = {
@@ -149,4 +155,29 @@ const eqsz = {a, b
 	ensurelen(a, sz)
 	ensurelen(b, sz)
 }
+
+generic bsbyvalue = {bs
+	-> [.idx=0, .bs=bs]
+}
+
+impl iterable bsiter -> size =
+	__iternext__ = {itp, valp
+		var bs = itp.bs
+		var n = bsmax(bs)
+		for var i = itp.idx; i < n; i++
+			/* fast forward by whole chunks */
+			while i < n && bs.bits[i >> 8*sizeof(size)] != 0
+				i = (i + 8*sizeof(size)) & ~(8*sizeof(size) - 1)
+			;;
+			if bshas(bs, i)
+				valp# = i
+				-> true
+			;;
+		;;
+		-> false
+	}
+
+	__iterfin__ = {itp, valp
+	}
+;;
 

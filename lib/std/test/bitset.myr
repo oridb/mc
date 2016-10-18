@@ -1,0 +1,57 @@
+use std
+use testr
+
+const main = {
+	testr.run([
+		[.name="basic", .fn={ctx
+			var bs = std.mkbs()
+			std.bsput(bs, 0)
+			std.bsput(bs, 1)
+			std.bsput(bs, 16)
+			testr.check(ctx, std.bshas(bs, 0), "missing 0")
+			testr.check(ctx, std.bshas(bs, 1), "missing 1")
+			testr.check(ctx, std.bshas(bs, 16), "missing 16")
+			testr.check(ctx, !std.bshas(bs, -1), "negative val")
+			testr.check(ctx, !std.bshas(bs, 2), "extra 2")
+			testr.check(ctx, !std.bshas(bs, 15), "extra 15")
+			testr.check(ctx, !std.bshas(bs, 17), "extra 2")
+			std.bsfree(bs)
+		}],
+		[.name="bigsets", .fn={ctx
+			var bs = std.mkbs()
+			/* multiple chunks */
+			std.bsput(bs, 0)
+			std.bsput(bs, 63)
+			std.bsput(bs, 64)
+			std.bsput(bs, 65)
+			std.bsput(bs, 73)
+			std.bsput(bs, 127)
+			std.bsput(bs, 128)
+			std.bsput(bs, 129)
+			testr.check(ctx, std.bshas(bs, 0), "missing 0")
+			testr.check(ctx, std.bshas(bs, 63), "missing 63")
+			testr.check(ctx, std.bshas(bs, 64), "missing 64")
+			testr.check(ctx, std.bshas(bs, 65), "missing 65")
+			testr.check(ctx, std.bshas(bs, 127), "missing 127")
+			testr.check(ctx, std.bshas(bs, 128), "missing 128")
+			testr.check(ctx, std.bshas(bs, 129), "missing 129")
+			std.bsfree(bs)
+		}],
+		[.name="iter", .fn={ctx
+			var bs = std.mkbs()
+			var expected = [0,1,3,7,16][:]
+			var i = 0
+
+			std.bsput(bs, 1)
+			std.bsput(bs, 0)
+			std.bsput(bs, 16)
+			std.bsput(bs, 7)
+			std.bsput(bs, 3)
+			for e in std.bsbyvalue(bs)
+				testr.check(ctx, e == expected[i], "expected[{}] ({}) != {}", i, e, expected[i])
+				i++
+			;;
+			std.bsfree(bs)
+		}],
+	][:])
+}
