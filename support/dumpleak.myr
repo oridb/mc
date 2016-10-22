@@ -100,7 +100,7 @@ const dumptrace = {tab
 	var aggr
 
 	aggr = std.mkht(hashintsl, std.sleq)
-	for (k, (sz, stk)) in std.htbykeyvals(tab)
+	for (k, (sz, stk)) in std.byhtkeyvals(tab)
 		match std.htget(aggr, stk[:stackaggr])
 		| `std.Some (count, total):	
 			std.htput(aggr, stk[:stackaggr], (count + 1, sz + total))
@@ -109,7 +109,7 @@ const dumptrace = {tab
 		;;
 	;;
 	
-	for (stk, (n, sz)) in std.htbykeyvals(aggr)
+	for (stk, (n, sz)) in std.byhtkeyvals(aggr)
 		std.put("unfreed: {} (size: {}): {}\n", n, sz, stk)
 	;;
 }
