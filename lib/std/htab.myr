@@ -27,7 +27,7 @@ pkg std =
 	generic hthas	: (ht : htab(@k, @v)#, k : @k -> bool)
 	generic htkeys	: (ht : htab(@k, @v)# -> @k[:])
 
-	generic htbykeyvals	: (ht : htab(@k, @v)# -> htkviter(@k, @v))
+	generic byhtkeyvals	: (ht : htab(@k, @v)# -> htkviter(@k, @v))
 	impl iterable htkviter(@k, @v) -> (@k, @v)
 	type htkviter(@k, @v) = struct
 		ht	: std.htab(@k, @v)#
@@ -207,7 +207,7 @@ generic htkeys = {ht
 	-> keys
 }
 
-generic htbykeyvals = {ht
+generic byhtkeyvals = {ht
 	-> [.ht = ht, .idx = 0]
 }
 
