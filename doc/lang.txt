@@ -82,8 +82,8 @@ TABLE OF CONTENTS:
     These are fully described in section 3.2 of this manual.
 
     In the compiler, single semicolons (';') and newline (\x10)
-    characters are treated identically, and are therefore interchangable.
-    They will both be referred to "endline"s thoughout this manual.
+    characters are treated identically, and are therefore interchangeable.
+    They will both be referred to "endline"s throughout this manual.
 
 
 3. SYNTAX OVERVIEW:
@@ -104,7 +104,7 @@ TABLE OF CONTENTS:
             var:        Declares a variable value. This value may be
                         assigned to, copied from, and modified.
             generic:    Declares a specializable value. This value
-                        has the same restricitions as a const, but
+                        has the same restrictions as a const, but
                         taking its address is not defined. The type
                         parameters for a generic must be explicitly
                         named in the declaration in order for their
@@ -260,7 +260,7 @@ TABLE OF CONTENTS:
         Blocks are the "carriers of code" in Myrddin programs. They consist
         of series of expressions, typically ending with a ';;', although the
         function-level block ends at the function's '}', and in if
-        statemments, an 'elif' may terminate a block. They can contain any
+        statements, an 'elif' may terminate a block. They can contain any
         number of declarations, expressions, control constructs, and empty
         lines. Every control statement example below will (and, in fact,
         must) have a block attached to the control statement.
@@ -545,7 +545,7 @@ TABLE OF CONTENTS:
                 current contents, and a type to hold. They are declared by
                 placing the keyword 'union' before a list of tag-type pairs.
                 They may also omit the type, in which case, the tag is
-                suficient to determine which option was selected.
+                sufficient to determine which option was selected.
 
                     [int, int, char]            a tuple of 2 ints and a char
 
@@ -694,7 +694,7 @@ TABLE OF CONTENTS:
         The quoted form searches the local directory for "localpkg".  By
         convention, the package it imports does not match the name
         "localpkg", but instead is used as partial of the definition of the
-        importer's package. This is a confusing description.
+        importers package. This is a confusing description.
 
         A typical use of a quoted import is to allow splitting one package
         into multiple files. In order to support this behavior, if a package
@@ -783,7 +783,7 @@ TABLE OF CONTENTS:
         possible, and it is not well served by overly abstract or bulky code.
         The code written should be a readable description of an algorithm,
         aimed at conveying the essential operations in a linear and
-        straightforward fasion.
+        straightforward fashion.
 
         Write for humans, not machines. Write linearly, so that an algorithm
         can be understood with minimal function-chasing.

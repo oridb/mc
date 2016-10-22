@@ -52,13 +52,13 @@ TABLE OF CONTENTS:
     function by function into simple operations that are relatively close to
     the machine. Sizes are fixed, and all loops, if statements, etc. are
     replaced with gotos. The next phase is a machine-independent optimizer,
-    which currenty does nothing other than simply folding trees. In the final
+    which currently does nothing other than simply folding trees. In the final
     phase, the instructions are selected and the registers are allocated.
 
     So, to recap, the phases are as follows:
 
         parse           Tokenize, parse, and analyze the source
-        flatten         Rewrite the complex nodes into simpe ones
+        flatten         Rewrite the complex nodes into simple ones
         opt             Optimize the flattened source trees
         gen             Generate the assembly code
 
@@ -126,7 +126,7 @@ TABLE OF CONTENTS:
         'parse/gram.h'. The lexer and parser code is the only code that
         depends on these token constants.
 
-        The lexer is initalized through 'tokinit(char *file)'. This function
+        The lexer is initialized through 'tokinit(char *file)'. This function
         will open the file passed in, read all the data from it in one go
         and set up the internal data for the tokenizer. The tokenizing is then
         done while the whole file is in memory, which means that this code
@@ -177,7 +177,7 @@ TABLE OF CONTENTS:
         'checkns()' function. Second, because we need to know the LHS of a
         member expression before we can check if the RHS is valid, and we
         are not guaranteed to know this at the first time that we see it, the
-        expression is assumed to be valid, and this asumption is verified in
+        expression is assumed to be valid, and this assumption is verified in
         a post-processing pass. Casts are validated in a deferred manner
         similarly.
 
@@ -225,7 +225,7 @@ TABLE OF CONTENTS:
         deserialized meaningfully.
 
         The format for this is only documented in the source, and is a
-        straighforward dump of the trees to memory. It is constantly shifting,
+        straightforward dump of the trees to memory. It is constantly shifting,
         and will not reliably work between compiler versions.
 
     2.6. Usefiles:
@@ -314,7 +314,7 @@ TABLE OF CONTENTS:
     5.2. Register Allocation:
 
         Register allocation is done via the algorithm described in "Iterated
-        Regster Coalescing" by Appel and George. As of the time of this
+        Register Coalescing" by Appel and George. As of the time of this
         writing, the register allocator does not yet implement overlapping
         register classes. This will be done as described in "A generalized
         algorithm for graph-coloring register allocation" by Smith, Ramsey,
