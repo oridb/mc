@@ -4,10 +4,7 @@ use testr
 const main = {
 	testr.run([
 		[.name="basic", .fn={ctx
-			var bs = std.mkbs()
-			std.bsput(bs, 0)
-			std.bsput(bs, 1)
-			std.bsput(bs, 16)
+			var bs = mkset([0, 1, 16][:])
 			testr.check(ctx, std.bshas(bs, 0), "missing 0")
 			testr.check(ctx, std.bshas(bs, 1), "missing 1")
 			testr.check(ctx, std.bshas(bs, 16), "missing 16")
@@ -18,16 +15,8 @@ const main = {
 			std.bsfree(bs)
 		}],
 		[.name="bigsets", .fn={ctx
-			var bs = std.mkbs()
 			/* multiple chunks */
-			std.bsput(bs, 0)
-			std.bsput(bs, 63)
-			std.bsput(bs, 64)
-			std.bsput(bs, 65)
-			std.bsput(bs, 73)
-			std.bsput(bs, 127)
-			std.bsput(bs, 128)
-			std.bsput(bs, 129)
+			var bs = mkset([0, 63, 64, 65, 73, 127, 128, 129][:])
 			testr.check(ctx, std.bshas(bs, 0), "missing 0")
 			testr.check(ctx, std.bshas(bs, 63), "missing 63")
 			testr.check(ctx, std.bshas(bs, 64), "missing 64")
@@ -38,8 +27,8 @@ const main = {
 			std.bsfree(bs)
 		}],
 		[.name="iter", .fn={ctx
-			var bs = std.mkbs()
 			var expected = [0,1,3,7,16][:]
+			var bs = mkset(expected)
 			var i = 0
 
 			std.bsput(bs, 1)
@@ -53,5 +42,20 @@ const main = {
 			;;
 			std.bsfree(bs)
 		}],
+		[.name="count", .fn={ctx
+			var bs = mkset([0, 63, 64, 65, 73, 127, 128, 129][:])
+			testr.check(ctx, std.bscount(bs) == 8, "wrong element count, expected {}", std.bscount(bs))
+			std.bsfree(bs)
+		}]
 	][:])
+}
+
+const mkset = {elts
+	var bs
+
+	bs = std.mkbs()
+	for e in elts
+		std.bsput(bs, e)
+	;;
+	-> bs
 }

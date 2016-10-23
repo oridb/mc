@@ -18,6 +18,7 @@ pkg std =
 	const bsclear	: (bs : bitset# -> bitset#)
 
 	const bsmax	: (a : bitset# -> size)
+	const bscount	: (a : bitset# -> size)
 
 	generic bsput	: (bs : bitset#, v : @a::(integral,numeric) -> bool)
 	generic bsdel	: (bs : bitset#, v : @a::(integral,numeric) -> bool)
@@ -58,6 +59,16 @@ const bsclear = {bs
 
 const bsmax = {bs
 	-> bs.bits.len * sizeof(size) * 8
+}
+
+const bscount = {bs
+	var n
+
+	n = 0
+	for v in bybsvalue(bs)
+		n++
+	;;
+	-> n
 }
 
 generic bsput = {bs, v
@@ -166,14 +177,16 @@ impl iterable bsiter -> size =
 		var n = bsmax(bs)
 		for var i = itp.idx; i < n; i++
 			/* fast forward by whole chunks */
-			while i < n && bs.bits[i >> 8*sizeof(size)] != 0
+			while i < n && bs.bits[i / (8*sizeof(size))] == 0
 				i = (i + 8*sizeof(size)) & ~(8*sizeof(size) - 1)
 			;;
 			if bshas(bs, i)
+				itp.idx = i + 1
 				valp# = i
 				-> true
 			;;
 		;;
+		itp.idx = n
 		-> false
 	}
 
