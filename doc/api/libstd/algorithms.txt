@@ -1,0 +1,129 @@
+{
+        title:  Algorithms
+        description:    libstd: Algorithms
+}
+
+Algorithms
+----------
+
+    pkg std =
+            /* the result of a comparison */
+            type order = union
+                    `Before
+                    `Equal
+                    `After
+            ;;
+
+            /* sorting and searching */
+            generic sort	: (sl:@a[:], cmp:(a:@a, b:@a -> order) -> @a[:])
+            generic lsearch	: (sl : @t[:], val : @t, cmp : (a : @t, b : @t -> order) -> option(@idx::(integral,numeric)))
+            generic bsearch	: (sl : @t[:], val : @t, cmp : (a : @t, b : @t -> order) -> option(@idx::(integral,numeric)))
+            generic swap	: (a : @a#, b : @a# -> void)
+
+            /* prepackaged comparisons */
+            generic numcmp	: (a : @a, b : @a -> order)
+            const strcmp	: (a : byte[:], b : byte[:] -> order)
+            const strncmp	: (a : byte[:], b : byte[:], n : size -> order)
+
+            /* extrema and absolute values */
+            generic min	: (a : @a::numeric, b : @a::numeric  -> @a::numeric)
+            generic max	: (a : @a::numeric, b : @a::numeric  -> @a::numeric)
+            generic clamp	: (a : @a::numeric, min : @a::numeric, max : @a::numeric -> @a::numeric)
+            generic abs	: (a : @a::numeric -> @a::numeric)
+    ;;
+
+Overview
+--------
+
+There are a number of algorithms that are pervasive through many programs.
+These include sorting, searching, and similar
+
+We only cover sorting and searching here, although more would be a good
+addition. Maybe in a separate library.
+
+Types
+-----
+
+    type order = union
+            `Before
+            `Equal
+            `After
+    ;;
+
+When comparing, it's useful to have an ordering between values. The order type
+is the result of a comparison, `a CMP b` describing whether the first value
+`a` comes before, after, or is equivalent to `b`.
+
+Functions: Sorting and Searching
+--------------------------------
+
+    generic sort	: (sl:@a[:], cmp:(a:@a, b:@a -> order) -> @a[:])
+
+This function will sort a slice, modifying it in place. The comparison
+function `cmp` is used to decide how to order the slice. This comparison
+function must be transitive -- in otherwords, if A comes before B, and B comes
+before C, then A must come before C. This is true of most comparisons, but
+some care should be taken when attempting to provide "humanized" sorting.
+
+Returns: the same slice it was pased. The slice will not be reallocated or
+moved.
+
+    generic lsearch	: (sl : @t[:], val : @t, cmp : (a : @t, b : @t -> order) -> option(@idx::(integral,numeric)))
+
+Performs a linear search for a value using the comparison predicate `cmp`. The
+slice is walked in order until the first value where `cmp` returns `\`Equal`.
+
+Returns: `\`Some idx`, or `\`None` if the value is not present.
+
+    generic bsearch	: (sl : @t[:], val : @t, cmp : (a : @t, b : @t -> order) -> option(@idx::(integral,numeric)))
+
+Performs a binary search for a value using the comparison predicate `cmp`. The
+input slice `sl` must be sorted according to the comparsion function `cmp`
+such that for a value at index `idx`, the comparison `cmp(sl[idx - 1],
+sl[idx])` must return either `\`Before` or `\`Equal`.
+
+If there are multiple equal copies value within a list, the index retuned is
+not defined.
+
+Returns: `\`Some idx`, or `\`None` if the value is not present.
+
+    generic swap	: (a : @a#, b : @a# -> void)
+
+Takes two pointers to two values, and switches them. If the pointers are
+equal, this is a no-op.
+
+    generic numcmp	: (a : @a::numeric, b : @a::numeric -> order)
+    const strcmp	: (a : byte[:], b : byte[:] -> order)
+    const strncmp	: (a : byte[:], b : byte[:], n : size -> order)
+
+These functions are helpers for comparing values. They will compare any two
+numeric values, and will return the ordering between the two.
+
+Numcmp simply returns the result comparing whether `a` is less than `b`,
+relying on the behavior of the built in operators.
+
+Strcmp and strncmp will do a lexicographical comparison, comparing strings
+byte by byte. This is a useful and correct behavior for both strings of
+arbitrary data, and utf8 encoded strings, where it is equivalent to doing
+a comparison by codepoint.
+
+Functions: Extrema and Clamping
+-------------------------------
+
+    generic min	: (a : @a::numeric, b : @a::numeric  -> @a::numeric)
+    generic max	: (a : @a::numeric, b : @a::numeric  -> @a::numeric)
+
+Min and max return the larger or smaller of the two numeric values passed to
+them, respectively. They rely on the built in comparison functions.
+
+    generic clamp	: (a : @a::numeric, min : @a::numeric, max : @a::numeric -> @a::numeric)
+
+Clamp clamps the value `a` to the range [min, max], and returns it. This means
+that if `a` is lower than `min`, or greater than `max`, it is adjusted to
+those bounds and returned.
+
+    generic abs	: (a : @a::numeric -> @a::numeric)
+
+Abs returns the absolute value of a number. This means that if the number is
+less than 0, it is retuned with the sign inverted. If the type `@a` is
+unsigned, then this function is a no-op.

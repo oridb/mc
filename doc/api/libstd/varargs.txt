@@ -1,0 +1,189 @@
+{
+        title:  Varargs
+        description:  libstd: Varargs
+}
+
+Varargs
+-------
+
+    pkg std =
+            type typedesc = union
+                    `Tynone
+                    
+                    /* atomic types */
+                    `Tyvoid
+                    `Tybool
+                    `Tychar
+                    
+                    `Tyint8
+                    `Tyint16
+                    `Tyint
+                    `Tyint32
+                    `Tyint64
+                    
+                    `Tybyte
+                    `Tyuint8
+                    `Tyuint16
+                    `Tyuint
+                    `Tyuint32
+                    `Tyuint64
+                    `Tyflt32
+                    `Tyflt64
+                    `Tyvalist
+                    
+                    /* compound types */
+                    `Typtr byte[:]
+                    `Tyfunc	typecursor
+                    `Tyslice byte[:]
+                    `Tyarray (size, byte[:])
+                    
+                    /* aggregate types */
+                    `Tytuple	typecursor
+                    `Tystruct	typecursor
+                    `Tyunion	typecursor
+                    /* name info */
+                    `Tyname (byte[:], byte[:])
+            ;;
+
+            type typecursor = struct
+                    nelt	: size
+            ;;
+
+            type typeinfo = struct
+                    size	: size
+                    align	: size
+            ;;
+
+            generic typeof	: (v : @a -> byte[:])
+            const typeenc	: (p : ...# -> typecursor)
+            const typeenccursor	: (e : byte[:] -> typecursor)
+            const typedesc	: (e : byte[:] -> typedesc)
+            const typeinfo	: (e : byte[:] -> typeinfo)
+            const tcnext	: (t : typecursor# -> byte[:])
+            const tcpeek	: (t : typecursor# -> byte[:])
+            const ncpeek	: (t : typecursor# -> (byte[:], byte[:]))
+            const ncnext	: (t : typecursor# -> (byte[:], byte[:]))
+
+            const vastart	: (args : ...# -> valist)
+            const vatype	: (ap : valist# -> byte[:])
+            const vabytes	: (ap : valist# -> byte[:])
+            const vaenter	: (ap : valist# -> valist)
+            generic vanext	: (ap : valist# -> @a)
+    ;;
+
+Overview
+--------
+
+Type descriptions are encoded byte strings. 
+
+Types
+-----
+
+
+    type typedesc = union
+            ...
+    ;;
+
+
+Typedesc provides a description of a type. It can be paired with a valist for
+walking over the contents of a value, but this is ugly.
+
+
+    type typecursor = struct
+            nelt	: size
+    ;;
+
+A type cursor allows for iterating over the subtypes of a type. It exposes the
+number of elements in the subtype.
+
+    type typeinfo = struct
+            size	: size
+            align	: size
+    ;;
+
+Typeinfo contains all of the attributes that we care about for the type. This
+may expand in the future.
+
+
+Type iteration
+---------
+
+    generic typeof	: (v : @a -> byte[:])
+
+Typeof takes any arbitrary value, and returns an encoded type description for
+the type of the value. It would be better to provide a first class interface
+for finding type encodings, but this needs thought.
+
+    const typeenc	: (p : ...# -> typecursor)
+
+Typeenc returns a type cursor for an argument list, allowing for iteration
+over the type of values within it.
+
+    const typeenccursor	: (e : byte[:] -> typecursor)
+
+Typeenccursor takes a type encoding, and converts it to a cursor with a single
+type. Iterating the cursor will return only the one type encoding that was
+passed to this function.
+
+    const typedesc	: (e : byte[:] -> typedesc)
+
+Typedesc extracts a typedesc from an encoded type. The type description
+may contain other type cursors for iterating over subtypes.
+
+    const typeinfo	: (e : byte[:] -> typeinfo)
+
+Typeinfo extracts a typeinfo from an encoded type. The type description
+contains attributes about the type, such as the size and alignment.
+
+    const tcnext	: (t : typecursor# -> byte[:])
+
+Tcnext pulls an encoded subtype from a type cursor and advances it.
+Calling this on a cursor that has a name is acceptable, and will
+discard the name.
+
+    const tcpeek	: (t : typecursor# -> byte[:])
+
+Tcnext pulls an encoded subtype from a type cursor and does not it.
+Calling this on a cursor that has a name is acceptable, and will
+discard the name.
+
+    const ncnext	: (t : typecursor# -> (byte[:], byte[:]))
+
+Ncnext pulls an encoded subtype from a type cursor for a type with named
+subtypes, and advances the type cursor. such as a struct or union, and returns
+the name and encoded type.
+
+    const ncpeek	: (t : typecursor# -> (byte[:], byte[:]))
+
+Ncpeek pulls an encoded subtype from a type cursor for a type with named
+subtypes, such as a struct or union, and returns the name and encoded
+type. This does not advance the cursor.
+
+Variadic Arguments
+-----------------
+
+    const vastart	: (args : ...# -> valist)
+
+Vastart takes a pointer to a variadic argument list, and returns a valist,
+which is basically an iterator for arguments.
+
+    const vatype	: (ap : valist# -> byte[:])
+
+Vatype returns a type encoding for the current variadic argument that the
+valist is pointing to.
+
+    generic vanext	: (ap : valist# -> @a)
+
+Vanext returns the next value for the variadic type, and advances the valist.
+
+    const vabytes	: (ap : valist# -> byte[:])
+
+Vanext returns a slice to the bytes of the variadic argument, and advances the
+valist.
+
+    const vaenter	: (ap : valist# -> valist)
+
+Vaenter does not advance the valist, but returns a new valist for the
+argument, allowing iteration over the fields within the argument. For example,
+if you had a struct passed as a variadic argument, calling 'vaenter' on it
+would allow iterating over the members of the struct.

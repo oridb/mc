@@ -1,0 +1,115 @@
+{
+        title:  libthread
+        description:    Myrddin Thread Library
+}
+
+Libthread
+---------
+
+    pkg thread =
+            trait atomic @a::(integral,numeric) =
+                    xget	: (p : @a# -> @a)
+                    xset	: (p : @a#, v : @a -> void)
+                    xadd	: (p : @a#, v : @a -> @a)
+                    xsub	: (p : @a#, v : @a -> @a)
+                    xcas	: (p : @a#, old : @a, new : @a -> @a)
+                    xchg	: (p : @a#, new : @a -> @a)
+            ;;
+
+            type cond = struct
+                    ...
+            ;;
+
+            type mutex = struct
+                    ...
+            ;;	
+
+            impl atomic int32
+            impl atomic int64
+            impl atomic uint32
+            impl atomic uint64
+
+            /* mutexes */
+            const mkmtx	: (-> mutex)
+            const mtxlock	: (mtx : mutex# -> void)
+            const mtxtrylock	: (mtx : mutex# -> bool)
+            const mtxunlock	: (mtx : mutex# -> void)
+
+            /* condition variables */
+            const mkcond	: (mtx : mutex# -> cond)
+            const condwait	: (cond : cond# -> void)
+            const condsignal	: (cond : cond# -> void)
+            const condbroadcast	: (cond : cond# -> void)
+    ;;
+
+Types
+-----
+
+    type cond = struct
+            ...
+    ;;
+
+Condition variable.
+
+    type mutex = struct
+            ...
+    ;;	
+
+    trait atomic @a::(integral,numeric) =
+            xget	: (p : @a# -> @a)
+            xset	: (p : @a#, v : @a -> void)
+            xadd	: (p : @a#, v : @a -> @a)
+            xsub	: (p : @a#, v : @a -> @a)
+            xcas	: (p : @a#, old : @a, new : @a -> @a)
+            xchg	: (p : @a#, new : @a -> @a)
+    ;;
+
+
+Mutex.
+
+Functions: Mutexes
+------------------
+
+    const mkmtx	: (-> mutex)
+
+Crates a new mutex, in the unlocked state.
+
+    const mtxlock	: (mtx : mutex# -> void)
+
+Locks a mutex. Blocks if the mutex is already locked.
+
+    const mtxtrylock	: (mtx : mutex# -> bool)
+
+Attempts to lock a mutex. Returns true if the lock was
+taken successful. Returns false if the lock was not taken.
+
+This call does not block.
+
+    const mtxunlock	: (mtx : mutex# -> void)
+
+Unlocks a mutex that is taken. It is a bug to call this on a mutex that you
+have not successfully locked.
+
+Functions: Condition Variables.
+------------------------------
+
+    const mkcond	: (mtx : mutex# -> cond)
+
+Creates a condition variable. Associates the mutex with the condition
+variable.
+
+    const condwait	: (cond : cond# -> void)
+
+Waits on the condition to be notiifed on. Must be called with the associated
+mutex locked. Unlocks the mutex that is associated with the condition variable
+and sleeps until someone has notified on the condition variable.
+
+    const condsignal	: (cond : cond# -> void)
+
+Wakes at least one waiter on the condition variable, allowing them to take the
+mutex.
+
+    const condbroadcast	: (cond : cond# -> void)
+
+Wakes all waiters on the condition variable.
+

@@ -1,0 +1,102 @@
+{
+        title: DNS
+        description:    libstd: DNS
+}
+
+Networking
+----------
+
+     pkg std =
+            type rectype = union
+                    `DnsA	/* host address */
+                    `DnsNS	/* authoritative name server */
+                    `DnsCNAME	/* canonical name for an alias */
+                    `DnsSOA	/* marks the start of a zone of authority */
+                    `DnsWKS	/* well known service description */
+                    `DnsPTR	/* domain name pointer */
+                    `DnsHINFO	/* host information */
+                    `DnsMINFO	/* mailbox or mail list information */
+                    `DnsMX	/* mail exchange */
+                    `DnsTXT	/* text strings */
+                    `DnsAAAA	/* ipv6 host address */
+            ;;
+
+            type resolveerr = union
+                    `Badhost
+                    `Badsrv
+                    `Badquery
+                    `Badresp
+            ;;
+
+            type hostinfo = struct
+                    fam	: sys.sockfam
+                    stype	: sys.socktype
+                    ttl	: uint32
+                    addr	: netaddr
+            ;;
+
+            const resolve	: (host : byte[:]	-> result(hostinfo[:], resolveerr))
+            const resolvemx	: (host : byte[:]	-> result(hostinfo[:], resolveerr))
+            const resolverec	: (host : byte[:], t : rectype	-> result(hostinfo[:], resolveerr))
+    ;;
+
+
+Data Types
+----------
+
+    type rectype = union
+            `DnsA	/* host address */
+            `DnsNS	/* authoritative name server */
+            `DnsCNAME	/* canonical name for an alias */
+            `DnsSOA	/* marks the start of a zone of authority */
+            `DnsWKS	/* well known service description */
+            `DnsPTR	/* domain name pointer */
+            `DnsHINFO	/* host information */
+            `DnsMINFO	/* mailbox or mail list information */
+            `DnsMX	/* mail exchange */
+            `DnsTXT	/* text strings */
+            `DnsAAAA	/* ipv6 host address */
+    ;;
+
+This union contains all of the record types that we claim to know how to
+resolve. At the moment, few of them have been tested sufficiently (only A
+records can reasonably be said to be exercised).
+
+    type resolveerr = union
+            `Badhost
+            `Badsrv
+            `Badquery
+            `Badresp
+    ;;
+
+This union contains the errors that we can encounter when trying to resolve a
+host.
+
+    type hostinfo = struct
+            fam	: sys.sockfam
+            stype	: sys.socktype
+            ttl	: uint32
+            addr	: netaddr
+    ;;
+
+DNS Resolution
+--------------
+
+    const resolve	: (host : byte[:]	-> result(hostinfo[:], resolveerr))
+
+Resolves the A or AAAA record for the host `host` using DNS. This function
+does caching, expiring based on the TTL. Returns all of the host info entries sent
+back by DNS or found in the cache on success, or a resolve error on failure.
+
+    const resolvemx	: (host : byte[:]	-> result(hostinfo[:], resolveerr))
+
+Resolves the MX record for the host `host` using DNS. This function does
+caching, expiring based on the TTL. Returns all of the host info entries sent
+back by DNS or found in the cache on success, or a resolve error on failure.
+
+    const resolverec	: (host : byte[:], t : rectype	-> result(hostinfo[:], resolveerr))
+
+Resolves a record from DNS. This function's interface is slightly broken, as
+it will never work for TXT or CNAME records.
+
+

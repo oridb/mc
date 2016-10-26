@@ -1,0 +1,711 @@
+{
+        title:  libstd
+        description:  libstd: Summary
+}
+
+Libstd Summary
+---------------
+
+This is a summary page listing all of the functions and types available
+in libstd, sorted by category. The library is a bit of a grab bag of
+functionality, but a good chunk of what is needed will be built in to
+the library.
+
+
+#### [Memory Allocation](alloc)
+
+Memory allocation is a function that nearly every program needs
+to be able to do. Myrddin's generics allow for relatively easy
+to use and typesafe functions for this to be written.
+
+    pkg std =
+            generic mk	: (val : @a -> @a#)
+            generic alloc	: (		-> @a#)
+            generic zalloc	: (		-> @a#)
+            generic free	: (v:@a#	-> void)
+            generic slalloc	: (len : size	-> @a[:])
+            generic slzalloc	: (len : size	-> @a[:])
+            generic slgrow	: (sl : @a[:]#, len : size	-> @a[:])
+            generic slzgrow	: (sl : @a[:]#, len : size	-> @a[:])
+            generic slfree	: (sl : @a[:]	-> void)
+            const bytealloc	: (sz:size	-> byte#)
+            const zbytealloc	: (sz:size	-> byte#)
+            const bytefree	: (m:byte#, sz:size	-> void)
+    ;;
+
+#### [Error Handling](err)
+
+Myrddin provides a number of types and operations for propagating errors
+for later handling.
+
+It also provides operations for throwing up your hands, setting yourself on
+fire, and screaming, if that's more appropriate.
+
+    pkg std =
+            type option(@a) = union
+                    `Some @a
+                    `None
+            ;;
+            pkg std =
+                    type result(@a, @b) = union
+                            `Ok	@a
+                            `Fail	@b
+                    ;;
+            ;;
+
+            $noret const fatalv	: (fmt : byte[:], ap : valist# -> void)
+            $noret const fatal	: (fmt : byte[:], args : ... -> void)
+            const assert	: (cond : bool, fmt : byte[:], args : ... -> void)
+            const suicide	: ( -> void)
+
+            generic try : (v : result(@a, @b) -> @a)
+            generic tryv : (v : result(@a, @b), d : @a -> @a)
+            generic get : (v : option(@a) -> @a)
+            generic getv : (v : option(@a), d : @a -> @a)
+    ;;
+
+#### [OS Interfaces](os)
+
+The OS interfaces cover some portable primitives for handling processes
+and OS errors. It restricts itself to a set of portable wrappers for OS
+functionality.
+
+For complete interfaces, the `sys` library is your friend, providing
+all OS functionality that can be provided.
+
+    pkg std =
+            type sysinfo = struct
+                    system	: byte[:]
+                    version	: byte[:]
+                    release	: byte[:]
+                    arch	: byte[:]
+                    uname	: sys.utsname	/* storage */
+            ;;
+
+            type waitstatus = union
+                    `Wsuccess
+                    `Wfailure
+                    `Wsignalled
+                    `Waiterror
+            ;;
+
+            const Enone	: errno
+            const Erange	: errno
+            const Ebadf	: errno
+            const Eexist	: errno
+            const Einval	: errno
+            const Efault	: errno
+            const Eio	: errno
+            const Emisc : errno
+
+            const getsysinfo	: (si : sysinfo# -> void)
+            const execvp	: (cmd : byte[:], args : byte[:][:] -> int64)
+            const execvpe	: (cmd : byte[:], args : byte[:][:], env : byte[:][:] -> int64)
+            const getenv	: (name : byte[:] -> option(byte[:]))
+            const getenvv	: (name : byte[:], default : byte[:] -> byte[:])
+            const getpid	: ( -> pid)
+            const fork		: (-> pid)
+            const exec		: (cmd : byte[:], args : byte[:][:] -> int64)
+            const execve	: (cmd : byte[:], args : byte[:][:], env : byte[:][:] -> int64)
+            const waitpid	: (pid:pid, loc:int32#, opt : int64	-> int64)
+            const spork	: (cmd : byte[:][:]	-> result((pid, fd, fd), int))
+            const sporkfd	: (cmd : byte[:][:], infd : fd, outfd : fd	-> result(pid, int))
+            const exit	: (status:int -> void)
+            const wait	: (pid : pid -> waitstatus)
+    ;;
+
+#### [File Handling](files)
+
+Many programs do file i/o by default. This package provides a portable
+interface to the common subset that most programs need and most OSes provide.
+
+    pkg std =
+            type dir = struct
+            ;;
+
+            /* seek options */
+            const Seekset	: whence 
+            const Seekcur	: whence 
+            const Seekend	: whence 
+
+            /* open options */
+            const Ordonly  	: fdopt 
+            const Owronly  	: fdopt 
+            const Ordwr    	: fdopt 
+            const Otrunc   	: fdopt 
+            const Ocreat   	: fdopt 
+            const Oappend  	: fdopt 
+            const Odir	: fdopt 
+
+            /* directory handling */
+            const diropen	: (p : byte[:] -> std.result(dir#, byte[:]))
+            const dirread	: (d : dir# -> std.option(byte[:]))
+            const dirclose	: (d : dir# -> void)
+            const dirname	: (p : byte[:] -> byte[:])
+            const mkdir	: (path : byte[:], mode : int64 -> int64)
+            const mkpath	: (p : byte[:] -> bool)
+            const chdir	: (path : byte[:] -> bool)
+
+            /* file handling */
+            const open	: (path : byte[:], opts : fdopt -> fd)
+            const openmode	: (path : byte[:], opts : fdopt, mode : int64 -> fd)
+            const close	: (fd : fd -> int64)
+            const creat	: (path : byte[:], mode : int64 -> fd)
+            const read	: (fd : fd, buf : byte[:] -> size)
+            const write	: (fd : fd, buf : byte[:] -> size)
+            const seek	: (fd : fd, delta : off, whence : whence -> off)
+            const pipe	: (fds : fd[2]# -> int64)
+            const dup2	: (ofd : fd, nfd : fd -> fd)
+            const remove	: (path : byte[:] -> bool)
+            const unlink	: (path : byte[:] -> int)
+
+            /* path manipulation */
+            const basename	: (p : byte[:] -> byte[:])
+            const pathcat	: (a : byte[:], b : byte[:] -> byte[:])
+            const pathjoin	: (p : byte[:][:] -> byte[:])
+            const pathnorm	: (p : byte[:] -> byte[:])
+            const getcwd : (-> byte[:])
+
+            /* file properties */
+            const fmtime	: (f : byte[:]	-> option(time))
+            const fsize	: (f : byte[:]	-> option(off))
+            const fexists	: (f : byte[:]	-> bool)
+            const fisdir	: (f : byte[:]	-> bool)
+
+            /* convenience functions */
+            const slurp : (path : byte[:] -> result(byte[:], byte[:]))
+            const fslurp : (path : fd -> result(byte[:], byte[:]))
+            const blat : (path : byte[:], buf : byte[:], perm : int64 -> bool)
+            const fblat : (f : fd, buf : byte[:] -> bool)
+    ;;
+
+#### [Networking](networking)
+
+The networking related functionality in libstd provides the ability to
+quickly and easily open file descriptors to a server, as well as to 
+resolve servers and handle IP parsing.
+
+Currently, there is a large hole in functionality for announcing and
+serving, where raw system specific network APIs neeed to be used
+from the `sys` library.
+
+    pkg std =
+            type rectype = union
+                    `DnsA	/* host address */
+                    `DnsNS	/* authoritative name server */
+                    `DnsCNAME	/* canonical name for an alias */
+                    `DnsSOA	/* marks the start of a zone of authority */
+                    `DnsWKS	/* well known service description */
+                    `DnsPTR	/* domain name pointer */
+                    `DnsHINFO	/* host information */
+                    `DnsMINFO	/* mailbox or mail list information */
+                    `DnsMX	/* mail exchange */
+                    `DnsTXT	/* text strings */
+                    `DnsAAAA	/* ipv6 host address */
+            ;;
+
+            type resolveerr = union
+                    `Badhost
+                    `Badsrv
+                    `Badquery
+                    `Badresp
+            ;;
+
+            type hostinfo = struct
+                    fam	: sys.sockfam
+                    stype	: sys.socktype
+                    ttl	: uint32
+                    addr	: ipaddr
+            ;;
+
+            type ipaddr = union
+                    `Ipv4	byte[4]
+                    `Ipv6	byte[16]
+            ;;
+
+            /* network connections */
+            const dial	: (dialstr : byte[:] -> result(fd, byte[:]))
+            const resolve	: (host : byte[:]	-> result(hostinfo[:], resolveerr))
+            const resolvemx	: (host : byte[:]	-> result(hostinfo[:], resolveerr))
+            const resolverec	: (host : byte[:], t : rectype	-> result(hostinfo[:], resolveerr))
+
+            /* ip parsing */
+            const ipparse	: (ip : byte[:]	-> option(ipaddr))
+            const ip4parse	: (ip : byte[:] -> option(ipaddr))
+            const ip6parse	: (ip : byte[:] -> option(ipaddr))
+
+            generic hosttonet	: (v : @a -> @a)
+            generic nettohost	: (v : @a -> @a)
+    ;;
+
+#### [Command Line Parsing](cli)
+
+Simple command line parsing is offered, designed to meet the needs of most
+programs quickly and easily. There isn't much to say here.
+    
+    pkg std =
+            type optdef = struct
+                    argdesc	: byte[:]	/* the description for the usage */
+                    minargs	: std.size	/* the minimum number of positional args */
+                    maxargs	: std.size	/* the maximum number of positional args (0 = unlimited) */
+                    noargs	: std.bool	/* whether we accept args at all */
+                    opts	: optdesc[:]	/* the description of the options */
+            ;;
+            type optdesc = struct
+                    opt	: char
+                    arg	: byte[:]
+                    desc	: byte[:]
+                    optional	: bool
+            ;;
+            type optparsed = struct
+                    opts	: (char, byte[:])[:]
+                    args	: byte[:][:]
+            ;;
+
+            const optparse	: (optargs : byte[:][:], def : optdef# -> optparsed)
+            const optusage	: (prog : byte[:], def : optdef# -> void)
+    ;;
+
+#### [Formatted Output](fmt)
+
+libstd supports a number of simple, easy to use formatting functions,
+which can provide a sane format for any type out of the box, but also
+support custom formatters for specific types, so that they can be pretty
+printed. Many of the builtin types, such as bigints, install custom
+formatters by default.
+
+    pkg std =
+            /* output to file descriptors */
+            const put	: (fmt : byte[:], args : ... -> size)
+            const fput	: (fd : fd, fmt : byte[:], args : ... -> size)
+            const putv	: (fmt : byte[:], ap : valist# -> size)
+            const fputv	: (fd : fd, fmt : byte[:], ap : valist# -> size)
+
+            /* formatting values */
+            const fmt	: (fmt : byte[:], args : ... -> byte[:])
+            const fmtv	: (fmt : byte[:], ap : valist# -> byte[:])
+            const bfmt	: (buf : byte[:], fmt : byte[:], args : ... -> byte[:])
+            const bfmtv	: (buf : byte[:], fmt : byte[:], ap : valist# -> byte[:])
+            const sbfmt	: (buf : strbuf#, fmt : byte[:], args : ... -> size)
+            const sbfmtv	: (buf : strbuf#, fmt : byte[:], ap : valist# -> size)
+            
+            /* custom formatting */
+            const fmtinstall	: (ty : byte[:], \
+                    fn : (sb : strbuf#, \
+                            ap : valist#, \
+                            opts : (byte[:],byte[:])[:] \
+                            -> void), \
+		optdesc : (byte[:], bool)[:] \
+		-> void)
+    ;;
+
+#### [Iteration Utilities](iterutil)
+
+Support for some common iteration patterns is provided. There are many kinds
+of iteration that are done, and some of the most common ones are directly
+supported by libstd.
+
+There are a few syntactic(!) issues in the language preventing these from
+taking arbitrary iterators as parameters, but when this is resolved, that
+restriction will be lifted.
+
+	pkg std =
+		type zipiter(@a, @b)
+		type reverseiter(@a)
+		type enumiter(@a)
+
+		impl iterable zipiter(@a, @b) -> (@a, @b)
+		impl iterable enumiter(@a) -> (size, @a)
+		impl iterable reverseiter(@a) -> @a
+
+		generic byzip	: (a : @a[:], b : @b[:]	 -> zipiter(@a, @b))
+		generic byenum	: (a : @a[:] -> enumiter(@a))
+		generic byreverse 	: (sl : @a[:] -> reverseiter(@a))
+	;;
+
+
+#### [Variadic Arguments](varargs)
+
+Myrddin supports variadic arguments for functions, and allows you
+to walk over them, similar to the varargs functions in C, but safer.
+
+In addition, the Myrddin compiler generates type information for the types
+that are compiled into a program. This code provides a rather awkward API
+for iterating over them, and inspecting their values.
+
+    pkg std =
+            type typedesc = union
+                    `Tynone
+                    
+                    /* atomic types */
+                    `Tyvoid
+                    `Tybool
+                    `Tychar
+                    
+                    `Tyint8
+                    `Tyint16
+                    `Tyint
+                    `Tyint32
+                    `Tyint64
+                    
+                    `Tybyte
+                    `Tyuint8
+                    `Tyuint16
+                    `Tyuint
+                    `Tyuint32
+                    `Tyuint64
+                    `Tyflt32
+                    `Tyflt64
+                    `Tyvalist
+                    
+                    /* compound types */
+                    `Typtr byte[:]
+                    `Tyfunc	typecursor
+                    `Tyslice byte[:]
+                    `Tyarray (size, byte[:])
+                    
+                    /* aggregate types */
+                    `Tytuple	typecursor
+                    `Tystruct	typecursor
+                    `Tyunion	typecursor
+                    /* name info */
+                    `Tyname (byte[:], byte[:])
+            ;;
+            type typecursor = struct
+                    nelt	: size
+                    rem	: byte[:]
+                    isnamed	: bool
+                    isiter	: bool
+            ;;
+            type typeinfo = struct
+                    size	: size
+                    align	: size
+            ;;
+            generic typeof	: (v : @a -> byte[:])
+            const typeenc	: (p : ...# -> typecursor)
+            const typeenccursor	: (e : byte[:] -> typecursor)
+            const typedesc	: (e : byte[:] -> typedesc)
+            const typeinfo	: (e : byte[:] -> typeinfo)
+            const tcnext	: (t : typecursor# -> byte[:])
+            const tcpeek	: (t : typecursor# -> byte[:])
+            const ncpeek	: (t : typecursor# -> (byte[:], byte[:]))
+            const ncnext	: (t : typecursor# -> (byte[:], byte[:]))
+
+            const vastart	: (args : ...# -> valist)
+            const vatype	: (ap : valist# -> byte[:])
+            const vabytes	: (ap : valist# -> byte[:])
+            const vaenter	: (ap : valist# -> valist)
+            generic vanext	: (ap : valist# -> @a)
+    ;;
+
+#### [Slice manipulation](slices)
+
+Slices are used everywhere within Myrddin code, so clearly we have
+some functions to manipulate them. They're listed here. Boopity boopity
+boo.
+
+    pkg std =
+            generic sleq	: (a : @a[:], b : @a[:] -> bool)
+            generic slcp    : (a : @a[:], b : @a[:] -> void)
+            generic slput	: (sl : @a[:], idx : size, elt : @a	-> @a[:])
+            generic slpush	: (sl : @a[:]#, elt : @a	-> @a[:])
+            generic sldup   : (sl : @a[:] -> @a[:])
+            generic slfill	: (sl : @a[:], v : @a	-> @a[:])
+            generic sljoin	: (dst : @a[:]#, src : @a[:]	-> @a[:])
+    ;;
+
+#### [String Manipulation](strings)
+
+String manipulation also tends to show up in code sometimes. Here are some
+functions that do that. These are all unicode aware, and will not corrupt
+utf8 data.
+
+    pkg std =
+            /* string buffers */
+            type strbuf = struct
+            ;;
+
+            const mksb	: (-> strbuf#)
+            const mkbufsb	: (buf : byte[:] -> strbuf#)
+            const sbfin	: (sb : strbuf# -> byte[:])
+            const sbfree	: (sb : strbuf# -> void)
+            const sbpeek	: (sb : strbuf# -> byte[:])
+            const sbputc	: (sb : strbuf#, v : char -> bool)
+            const sbputs	: (sb : strbuf#, v : byte[:] -> bool)
+            const sbputb	: (sb : strbuf#, v : byte -> bool)
+            const sbtrim	: (sb : strbuf#, len : size -> void)
+
+            /* string searching */
+            const strfind	: (haystack : byte[:], needle : byte[:] -> option(size))
+            const strrfind	: (haystack : byte[:], needle : byte[:] -> option(size))
+            const strhas	: (haystack : byte[:], needle : byte[:]	-> bool)
+            const hasprefix	: (s : byte[:], pre : byte[:] -> bool)
+            const hassuffix	: (s : byte[:], suff : byte[:] -> bool)
+
+            /* C strings */
+            const cstrlen	: (buf : byte[:] -> size)
+            const cstrconv	: (buf : byte[:] -> byte[:])
+            const cstrconvp	: (p : byte# -> byte[:])
+
+            /* tokenizing and splitting */
+            const strsplit	: (s : byte[:], delim : byte[:] -> byte[:][:])
+            const strtok	: (s : byte[:] -> byte[:][:])
+
+            /* string joining and stripping */
+            const strcat	: (a : byte[:], b : byte[:] -> byte[:])
+            const strjoin	: (strings : byte[:][:], delim : byte[:] -> byte[:])
+            const strstrip	: (str : byte[:] -> byte[:])
+            const strfstrip	: (str : byte[:] -> byte[:])
+            const strrstrip	: (str : byte[:] -> byte[:])
+
+            /* parsing numbers out of strings */
+            generic intparsebase	: (s : byte[:], base : int -> option(@a::(integral,numeric)))
+            generic intparse	: (s : byte[:]	-> option(@a::(integral,numeric)))
+            generic charval : (c : char, base : int -> @a::(integral,numeric))
+    ;;
+
+#### [Unicode](unicode)
+
+A bunch of predicates and conversions to handle unicode. This only
+provides simple functionality. For canonicalization, collation, and
+all of the other UAX algorithms, go look in.. oh, who am I kidding.
+I haven't had a chance to write them yet.
+
+    pkg std =
+            const Badchar	: char 
+            const Maxcharlen : size 
+            const Maxcharval : char 
+
+            /* utf8 information */
+            const charlen	: (chr : char -> size)
+            const encode	: (buf : byte[:], chr : char -> size)
+            const decode	: (buf : byte[:] -> char)
+            const striter	: (str : byte[:] -> (char, byte[:]))
+
+            /* character class predicates */
+            const isalpha	: (c : char -> bool)
+            const isdigit	: (c : char -> bool)
+            const isxdigit	: (c : char -> bool)
+            const isnum	: (c : char -> bool)
+            const isalnum	: (c : char -> bool)
+            const isspace	: (c : char -> bool)
+            const isblank	: (c : char -> bool)
+            const islower	: (c : char -> bool)
+            const isupper	: (c : char -> bool)
+            const istitle	: (c : char -> bool)
+
+            /* character class conversions */
+            const tolower	: (c : char -> char)
+            const toupper	: (c : char -> char)
+            const totitle	: (c : char -> char)
+    ;;
+
+#### [Pervasive Data Structures](datastruct)
+
+There are some data structures that basically every program seems to use:
+Sets, and hash tables. Libstd includes them for that reason.
+
+    pkg std =
+            type bitset = struct
+            ;;
+
+            type htab(@k, @v) = struct
+            ;;
+
+	    type htkviter(@k, @v)
+	    impl iterable htkviter
+
+	    type bsiter = struct
+	    impl iterable bsiter
+
+            /* bit sets */
+            const mkbs	: (-> bitset#)
+            const bsdup	: (bs : bitset# -> bitset#)
+            const bsfree	: (bs : bitset# -> void)
+            const bsmax	: (a : bitset# -> size)
+            const bscount	: (a : bitset# -> size)
+            generic bsput	: (bs : bitset#, v : @a::(integral,numeric) -> bool)
+            generic bsdel	: (bs : bitset#, v : @a::(integral,numeric) -> bool)
+            generic bshas	: (bs : bitset#, v : @a::(integral,numeric) -> bool)
+            const bsdiff	: (a : bitset#, b : bitset# -> void)
+            const bsintersect	: (a : bitset#, b : bitset# -> void)
+            const bsunion	: (a : bitset#, b : bitset# -> void)
+            const bseq	: (a : bitset#, b : bitset# -> bool)
+            const bsissubset	: (a : bitset#, b : bitset# -> bool)
+            const bsclear	: (bs : bitset# -> bitset#)
+	    const bybsvalue	: (bs : bitset# -> bsiter)
+
+            /* hash tables */
+            generic mkht	: (h : (k : @k -> uint32), eq : (a : @k, b : @k -> bool) -> htab(@k, @v)#)
+            generic htfree	: (ht : htab(@k, @v)# -> void)
+            generic htput	: (ht : htab(@k, @v)#, k : @k, v : @v -> void)
+            generic htdel	: (ht : htab(@k, @v)#, k : @k -> void)
+            generic htget	: (ht : htab(@k, @v)#, k : @k -> option(@v))
+            generic htgetv	: (ht : htab(@k, @v)#, k : @k, fallback : @v-> @v)
+            generic hthas	: (ht : htab(@k, @v)#, k : @k -> bool)
+            generic htkeys	: (ht : htab(@k, @v)# -> @k[:])
+            generic byhtkeyvals	: (ht : htab(@k, @v)# -> htkviter(@k, @v))
+
+            /* prepackaged hashing and equality tests */
+            const strhash	: (s : byte[:]	-> uint32)
+            const streq	: (a : byte[:], b : byte[:]	-> bool)
+            generic ptrhash	: (p : @a#	-> uint32)
+            generic ptreq	: (a : @a#, b : @a#	-> bool)
+            generic inthash	: (v : @a::(integral,numeric)	-> uint32)
+            generic inteq	: (a : @a::(integral,numeric), b : @a::(integral,numeric) -> bool)
+            generic slhash	: (sl : @a[:] -> uint32)
+    ;;
+
+
+#### [Pervasive Algorithms](algorithms)
+
+Many programs also use sorting and searching, so this is also provided by
+libstd. In addition, we package some useful comparison and hashing functions
+
+    pkg std =
+            /* the result of a comparison */
+            type order = union
+                    `Before
+                    `Equal
+                    `After
+            ;;
+
+            /* sorting and searching */
+            generic sort	: (sl:@a[:], cmp:(a:@a, b:@a -> order) -> @a[:])
+            generic lsearch	: (sl : @t[:], val : @t, cmp : (a : @t, b : @t -> order) -> option(@idx::(integral,numeric)))
+            generic bsearch	: (sl : @t[:], val : @t, cmp : (a : @t, b : @t -> order) -> option(@idx::(integral,numeric)))
+            generic swap	: (a : @a#, b : @a# -> void)
+
+            /* prepackaged comparisons */
+            generic numcmp	: (a : @a, b : @a -> order)
+            const strcmp	: (a : byte[:], b : byte[:] -> order)
+            const strncmp	: (a : byte[:], b : byte[:], n : size -> order)
+
+            /* extrema and absolute values */
+            generic min	: (a : @a::numeric, b : @a::numeric  -> @a::numeric)
+            generic max	: (a : @a::numeric, b : @a::numeric  -> @a::numeric)
+            generic clamp	: (a : @a::numeric, min : @a::numeric, max : @a::numeric -> @a::numeric)
+            generic abs	: (a : @a::numeric -> @a::numeric)
+    ;;
+
+#### [Randomness](randomness)
+    
+And of course, you can't go without being a little random at times.
+
+    pkg std =
+            const mksrng	: (seed : uint32 -> rng#)
+            const freerng	: (rng : rng# -> void)
+            generic rand	: (lo : @a::(numeric,integral), hi : @a::(numeric,integral) -> @a::(numeric,integral))
+            generic rngrand	: (rng : rng#, lo : @a::(numeric,integral), hi : @a::(numeric,integral) -> @a::(numeric,integral))
+            generic rngrandnum	: (rng : rng# -> @a::(numeric,integral))
+            const rngrandbytes	: (rng : rng#, buf : byte[:]	-> size)
+    ;;
+
+#### [Bigint Operations](bigint)
+
+While bigint usage in most programs is relatively rare, libstd needs them
+internally for handling floats, and several other widely used pieces of
+functionality also need them.
+
+As they are a significant amount of code, I decided it made sense to
+expose them in the public API.
+
+    pkg std =
+            type bigint = struct
+            ;;
+
+            generic mkbigint	: (v : @a::(numeric,integral) -> bigint#)
+            const bigfree	: (a : bigint# -> void)
+            const bigdup	: (a : bigint# -> bigint#)
+            const bigassign	: (d : bigint#, s : bigint# -> bigint#)
+            const bigmove	: (d : bigint#, s : bigint# -> bigint#)
+            const bigparse	: (s : byte[:] -> option(bigint#))
+            const bigclear	: (a : bigint# -> bigint#)
+            const bigbfmt	: (b : byte[:], a : bigint#, base : int -> size)
+            const bigtoint	: (a : bigint#	-> @a::(numeric,integral))
+            const bigiszero	: (a : bigint# -> bool)
+            const bigeq	: (a : bigint#, b : bigint# -> bool)
+            const bigcmp	: (a : bigint#, b : bigint# -> order)
+            const bigadd	: (a : bigint#, b : bigint# -> bigint#)
+            const bigsub	: (a : bigint#, b : bigint# -> bigint#)
+            const bigmul	: (a : bigint#, b : bigint# -> bigint#)
+            const bigdiv	: (a : bigint#, b : bigint# -> bigint#)
+            const bigmod	: (a : bigint#, b : bigint# -> bigint#)
+            const bigdivmod	: (a : bigint#, b : bigint# -> (bigint#, bigint#))
+            const bigshl	: (a : bigint#, b : bigint# -> bigint#)
+            const bigshr	: (a : bigint#, b : bigint# -> bigint#)
+            const bigmodpow	: (b : bigint#, e : bigint#, m : bigint# -> bigint#)
+            const bigpow	: (a : bigint#, b : bigint# -> bigint#)
+            generic bigeqi	: (a : bigint#, b : @a::(numeric,integral) -> bool)
+            generic bigaddi	: (a : bigint#, b : @a::(integral,numeric) -> bigint#)
+            generic bigsubi	: (a : bigint#, b : @a::(integral,numeric) -> bigint#)
+            generic bigmuli	: (a : bigint#, b : @a::(integral,numeric) -> bigint#)
+            generic bigdivi	: (a : bigint#, b : @a::(integral,numeric) -> bigint#)
+            generic bigshli	: (a : bigint#, b : @a::(integral,numeric) -> bigint#)
+            generic bigshri	: (a : bigint#, b : @a::(integral,numeric) -> bigint#)
+            const bigpowi	: (a : bigint#, b : uint64 -> bigint#)
+    ;;
+
+
+#### [Closures](closures)
+
+There are functions for heapifying closures, too.
+
+    pkg std =
+            generic fndup	: (fn : @fn::function -> @fn::function)
+            generic fnfree	: (fn : @fn::function -> void)
+    ;;
+
+#### [Misc](misc)
+
+Well, I said it was a grab bag.  These don't really fit into any overarching
+category.
+
+    pkg std =
+            generic KiB	: @a::(integral,numeric)	
+            generic MiB	: @a::(integral,numeric)	
+            generic GiB	: @a::(integral,numeric)	
+            generic TiB	: @a::(integral,numeric)	
+            generic PiB	: @a::(integral,numeric)	
+            generic EiB	: @a::(integral,numeric)	
+            generic ZiB	: @a::(integral,numeric)	
+            generic YiB	: @a::(integral,numeric)	
+
+            generic Sec  : @a::(integral,numeric)
+            generic Msec  : @a::(integral,numeric)
+            generic Usec  : @a::(integral,numeric)
+
+            /* time */
+            const now	: (-> time)
+
+            /* packing integers */
+            generic putle64	: (buf : byte[:], v :  @a::(numeric,integral) -> size)
+            generic putbe64	: (buf : byte[:], v :  @a::(numeric,integral) -> size)
+            generic putle32	: (buf : byte[:], v :  @a::(numeric,integral) -> size)
+            generic putbe32	: (buf : byte[:], v :  @a::(numeric,integral) -> size)
+            generic putle16	: (buf : byte[:], v :  @a::(numeric,integral) -> size)
+            generic putbe16	: (buf : byte[:], v :  @a::(numeric,integral) -> size)
+            generic putle8	: (buf : byte[:], v :  @a::(numeric,integral) -> size)
+            generic putbe8	: (buf : byte[:], v :  @a::(numeric,integral) -> size)
+
+            /* unpacking integers */
+            generic getle64	: (buf : byte[:]	-> @a::(numeric,integral))
+            generic getbe64	: (buf : byte[:]	-> @a::(numeric,integral))
+            generic getle32	: (buf : byte[:]	-> @a::(numeric,integral))
+            generic getbe32	: (buf : byte[:]	-> @a::(numeric,integral))
+            generic getle16	: (buf : byte[:]	-> @a::(numeric,integral))
+            generic getbe16	: (buf : byte[:]	-> @a::(numeric,integral))
+            generic getle8	: (buf : byte[:]	-> @a::(numeric,integral))
+            generic getbe8	: (buf : byte[:]	-> @a::(numeric,integral))
+
+            /* exploding and stitching floats */
+            const flt64bits	: (flt : flt64 -> int64)
+            const flt32bits	: (flt : flt32 -> int32)
+            const flt64frombits	: (bits : uint64 -> flt64)
+            const flt32frombits	: (bits : uint32 -> flt32)
+            const flt64explode	: (flt : flt64 -> (bool, int64, int64))
+            const flt32explode	: (flt : flt32 -> (bool, int32, int32))
+            const flt64stitch	: (flt : flt64 -> (bool, int64, int64))
+            const flt32stitch	: (flt : flt32 -> (bool, int32, int32))
+
+    ;;

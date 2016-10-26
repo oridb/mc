@@ -1,0 +1,99 @@
+{
+	title: Formatting
+	description: Libdate API documentation.
+}
+
+Date and Time Formatting
+---------------------
+
+Formatting in libdate is done through the standard formatting
+functionality, and there are actually no functions exposed by libdate.
+Instead, you would write something like:
+
+```{runmyr stdfmt1}
+use date
+
+const main = {
+	std.put("{}\n", date.now())
+}
+```
+
+Custom formatting is done with a format option passed to std.format that
+looks like `f=dateformat`. The format strings used resemble the strings
+provided in strptime. Any characters preceded with a '%' are format
+characters, otherwise they are copied to the output stream directly.
+
+The format strings used to control formatting are also used to control parsing.
+
+An example would look like:
+
+```{runmyr stdfmt1}
+use date
+
+const main = {
+	std.put("{f=year is %Y, the day is %d}\n", date.now())
+}
+
+
+There are a number of short format options installed, specifically, `d`,
+`D`, and `t`, which respectively map to the default date format, the
+default date and time format, and the default time only format.
+
+```{runmyr stdfmt1}
+use date
+
+const main = {
+	std.put("{d}\n", date.now())
+	std.put("{D}\n", date.now())
+	std.put("{T}\n", date.now())
+}
+```
+
+Date and Time Formatting
+---------------------
+
+Both parsing and formatting use the same format strings. The
+modifiers that are supported by libdate are listed below.
+
+When possible, the default format verbs `D`, `d`, or `t`
+should be used for formatting, and the default constants
+`Datefmt`, `Datetimefmt`, or `Timefmt` should be used for
+parsing.
+
+
+Char  | Meaning
+------|----------------------------------------------
+_%a_  | Abbreviated day of week: Mon, Tues, etc
+_%A_  | Full day of week: Monday, Tuesday, Wednesday, etc
+_%b_  | Abbreviated month of year: Jan, Feb, Mar, etc.
+_%B_  | Full month of year: January, February, etc
+_%c_  | Short for %Y-%m-%d %H:%M:%S %z (ISO 8601)
+_%C_  | Century number of year, as two digit integer.
+_%d_  | Day of month as a decimal number, 00 to 31.
+_%D_  | Short for "%m/%d/%y (wtf america)"
+_%e_  | Same as d, but space padded instead of zero padded.
+_%F_  | Short for ISO 8601 date format %Y-%m-%d
+_%h_  | Same as '%b'.
+_%H_  | Hour number using the 24 hour clock, zero padded.
+_%I_  | Hour number using the 12 hour clock, zero padded.
+_%j_  | Day of year as a decimal number, 001 to 366.
+_%k_  | Hour number using the 24 hour clock, space padded.
+_%l_  | Hour number using the 12 hour clock, space padded.
+_%m_  | The month number, zero padded.
+_%M_  | The minute number, zero padded.
+_%p_  | AM or PM, according to the time provided.
+_%P_  | am or pm, according to the time provided.
+_%r_  | 12 hour time: %I:%M %p
+_%R_  | 24 hour time: %H:%M
+_%s_  | The number of seconds since the Epoch
+_%S_  | The second number, zero padded. 0 to 60.
+_%T_  | The time including seconds in 24 hour format.
+_%u_  | The day of the week in decimal, 0 to 7.
+_%x_  | The date without the time. Same as %F
+_%X_  | The date with the time. Same as %c
+_%y_  | The final two digits of year.
+_%Y_  | The full year, including century. BC dates are negative.
+_%z_  | Timezone offset.
+_%Z_  | Timezone name or abbreviation. Offset if this is not available.
+_%%_  | A literal '%'
+

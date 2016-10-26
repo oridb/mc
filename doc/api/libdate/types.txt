@@ -1,0 +1,71 @@
+{
+	title: Types
+	description: Libdate API documentation.
+}
+
+Contents
+--------
+
+    pkg date = 
+            type instant = struct
+                    actual	: std.time	/* epoch time in microseconds */
+                    tzoff	: duration	/* timezone offset in microseconds */
+                    year	: int	/* year, != 0 */
+                    mon	: int	/* month, [1..12] */
+                    day	: int	/* day, [1..31] */
+                    wday	: int	/* weekday, [0..6] */
+                    h	: int	/* hour: [0..23] */
+                    m	: int	/* minute: [0..59] */
+                    s	: int	/* second: [0..59] */
+                    us	: int	/* microsecond: [0..999,999] */
+                    tzname	: byte[:]	/* current time zone name */
+            ;;
+
+            type duration = std.time
+
+            type period = union
+		`Year	int
+		`Month	int
+		`Day	int
+		`Hour	int
+		`Minute	int
+		`Second	int
+	;;
+    ;;
+
+Descriptions
+------------
+
+    type instant
+
+Instant represents a single instant of time, with a resolution
+of microseconds. It contains the actual instant in the member
+`actual`, which is a timestamp in microseconds since Jan 1, 1970
+at 00:00 in UTC, and breaks out the "humanized" time out into the
+various members that are exposed.
+
+The instant type always has a timezone attached, and the humanized
+time components are always in that timezone.
+
+    type duration
+
+A duration is an absolute number of microseconds that can be added
+or subtracted from an instant. This is not timezone adjusted.
+
+    type period
+
+A period is a time delta that is adjusted for crossing timezones,
+daylight savings, and other similar events. If you add a day to
+an instant, you would get the same wallclock time the next day,
+should that wallclock time exist.
+
+For example, if I were to add `\`Day 2` to the instant 
+`Oct 31 2015 3:00`, then the result would be the date
+`Nov 2 2015 3:00`, regardless of the daylight savings time adjustment.
+However, adding `\`Hour 48` would not have that effect.
+
+In cases where the adjustment does not exist -- for example, leap years,
+then the time will "wrap around" to the next available day. For example,
+Feb 29th on a leap year will become Mar 1st.
+
+

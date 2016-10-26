@@ -1,0 +1,116 @@
+{
+        title:  Error Handling
+        description:  libstd: Error Handling
+}
+
+
+Error Handling
+--------------
+
+    pkg std =
+            type option(@a) = union
+                    `Some @a
+                    `None
+            ;;
+
+            type result(@a, @b) = union
+                    `Ok	@a
+                    `Fail	@b
+            ;;
+
+            $noret const fatalv	: (fmt : byte[:], ap : valist# -> void)
+            $noret const fatal	: (fmt : byte[:], args : ... -> void)
+            const assert	: (cond : bool, fmt : byte[:], args : ... -> void)
+            const die           : (msg : byte[:] -> void)
+            const suicide	: ( -> void)
+
+            generic try : (v : result(@a, @b) -> @a)
+            generic tryv : (v : result(@a, @b), d : @a -> @a)
+            generic get : (v : option(@a) -> @a)
+            generic getv : (v : option(@a), d : @a -> @a)
+    ;;
+
+Overview
+--------
+
+Myrddin does not have exceptions. By convention, code will abort on
+programmer errors, such as passing invalid values where valid ones
+were expected -- for example, calling `std.fmt("{}")` with the wrong
+number of arguments int the list.
+
+For recoverable error conditions that depend on the environment, and
+not the developer making a mistake, one of the branched return types
+are conventionally used.
+
+For conditions where something can be either present or not, the `option(@a)`
+type is used. For places where there can be either a result or an error, the
+`result(@a, @e)` type is used.
+
+Generally, by convention, the type returned for the result should have a
+custom that converts it to something directly displayable to the user.
+
+Types
+-----
+
+    type option(@a) = union
+            `Some @a
+            `None
+    ;;
+
+As mentioned in the overview, `option(@a)` is a type that wraps up a result
+and error type. It is typically used  in places where a missing value is the
+only exceptional condition.
+
+    type result(@a, @b) = union
+            `Ok	@a
+            `Fail	@b
+    ;;
+
+
+The type `result(@a, @e)` is used to signal either success or an error
+condition. The first type parameter, `@a` is what is returned on success,
+and the second, `@b` is returned on failure.
+
+
+Functions
+---------
+    $noret const fatalv	: (fmt : byte[:], ap : valist# -> void)
+    $noret const fatal	: (fmt : byte[:], args : ... -> void)
+
+Both fatal and fatalv exit the program with an error message, formatted as
+in `std.fmt`. They do not return.
+
+They exit with a failure status. On Unix, this status is `1`. On Plan 9,
+the status is the failure message that it prints out before exiting.
+
+    const assert	: (cond : bool, fmt : byte[:], args : ... -> void)
+
+Assert checks that condition is true. If it is not true, then the message
+is printed as in `std.fmt`, and the program is aborted with `suicide()`.
+
+    const suicide	: ( -> void)
+
+Suicide aborts a program. It does not print any message, it simply sends
+the program a SIGABRT or segfaults it. All threads are terminated, and the
+program goes away.
+
+    generic try : (v : result(@a, @b) -> @a)
+    generic get : (v : option(@a) -> @a)
+
+Try and get both return the value from the successful branch of their type:
+`try` returns the value contained in `\`std.Ok`, and `get` returns the value
+in `\`std.Some`.
+
+If this does not match the union, a diagnostic message is printed and the
+program is aborted.
+
+    generic tryv : (v : result(@a, @b), default : @a -> @a)
+    generic getv : (v : option(@a), default : @a -> @a)
+
+Try and get both return the value from the successful branch of their type:
+`try` returns the value contained in `\`std.Ok`, and `get` returns the value
+in `\`std.Some`.
+
+If this does not match the union, the default value is returned to the
+caller, as though the type had contained `\`Some default` or `\`Ok default` 
+

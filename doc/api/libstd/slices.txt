@@ -1,0 +1,71 @@
+{
+        title:  Slice Manipulation
+        description:  libstd: Slice Manipulation
+}
+
+
+Slice Manipulation
+------------------
+
+    pkg std =
+            generic sleq	: (a : @a[:], b : @a[:] -> bool)
+            generic slcp        : (dst : @a[:], src : @a[:] -> void)
+            generic slput	: (sl : @a[:], idx : size, elt : @a	-> @a[:])
+            generic slpush	: (sl : @a[:], elt : @a	-> @a[:])
+            generic slpop	: (sl : @a[:] -> (@a, @a[:]))
+            generic sldup       : (sl : @a[:] -> @a[:])
+            generic slfill	: (sl : @a[:], v : @a	-> @a[:])
+            generic sljoin	: (dst : @a[:]#, src : @a[:]	-> @a[:])
+    ;;
+
+
+Functions
+---------
+
+    generic sleq	: (a : @a[:], b : @a[:] -> bool)
+
+Compares if two slices are equal, elementwise. Uses the '==' operator for
+each value. Returns true if they are equal, false otherwise.
+
+    generic slcp    : (dst : @a[:], src : @a[:] -> void)
+
+Copies all the elements from `src` to `dst`. The copy made is shallow,
+and done using the `=` operator. The two slices must be equal size. If they
+are not equal, this will cause the program to abort.
+
+    generic slput	: (sl : @a[:], idx : size, elt : @a	-> @a[:])
+
+Inserts a value `elt` into the slice `sl` at index `idx`, moving all values
+from `sl[idx:len]` to `sl[idx+1:len+1]`. This assumes that the slice is either
+empty, or is allocated on the heap using `slalloc`.
+
+This may move the slice, invalidating the original input argument.
+
+    generic slpush	: (sl : @a[:], elt : @a	-> @a[:])
+
+Inserts a value `elt` into the slice `sl` at index the end of the slice.
+
+This may move the slice, invalidating the original input argument.
+
+
+    generic slpop	: (sl : @a[:] -> (@a, @a[:]))
+
+Removes an element from the end of the slice, returning the element and the
+new, truncated slice.
+
+This may move the slice, invalidating the original input argument.
+
+    generic sldup   : (sl : @a[:] -> @a[:])
+
+Duplicates a slice. This function is equivalent to calling slalloc() followed
+by slcp().
+
+    generic slfill	: (sl : @a[:], v : @a	-> @a[:])
+
+Fills a slice with a value.
+
+    generic sljoin	: (dst : @a[:]#, src : @a[:]	-> @a[:])
+
+Concatenates `src` onto the end of `dst#`. Equivalent to iterating through
+every element of `src` and `slpush()`ing it onto `dst`.
+

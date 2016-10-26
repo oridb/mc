@@ -1,0 +1,130 @@
+
+{
+	title: Creation and Manipulation
+	description: Libdate API documentation.
+}
+
+Creation and Manipulation
+-------------------------
+    pkg date =
+            /* useful constructors */
+            const utcnow	: (-> instant)
+            const now	: (tz : byte[:] -> instant)
+            const tozone	: (d : instant, zone : byte[:]	-> instant)
+            const mkdate	: (y : int, m : int, day : int, zone : byte[:]	-> instant)
+            const mkdatetime	: (year : int, mon : int, day : int, \
+                    h : int, m : int, s : int, zone : byte[:]	-> instant)
+            const mkinstant	: (tm : std.time, zone : byte[:]	-> instant)
+
+            const localoff	: (tm : std.time -> duration)
+            const tzoff	: (tzname : byte[:], tm : std.time	-> duration)
+            const tzname	: (tzoff : int -> byte[:])
+            const isleap	: (d : instant	-> bool)
+
+            /* date differences */
+            const add	: (d : instant, dt : duration	-> instant)
+            const sub	: (d : instant, dt : duration	-> instant)
+            const addperiod	: (d : instant, dt : period	-> instant)
+            const subperiod	: (d : instant, dt : period	-> instant)
+
+            const duration	: (a : instant, b : instant	-> duration)
+
+            pkglocal const recalc	: (inst : instant# -> std.time)
+    ;;
+
+Creation
+-----------
+
+    const utcnow	: (-> instant)
+
+Creates an instant representing the current time. The timezone is UTC. As a
+general philosophical point, dates written out persisetntly should generally
+be in UTC, so this function should generally be used to get dates.
+
+Returns: An instant representing the current time in the UTC timezone.
+
+    const now	: (tz : byte[:] -> instant)
+
+Creates an instant representing the current time. The timezone is the local
+time. This is useful for displaying dates and times to the user.
+
+Returns: An instant representing the current time in the local timezone.
+
+    const tozone	: (d : instant, zone : byte[:]	-> instant)
+
+Takes an instant and converts it to a new timezone. This takes the instants by
+value, and therefore, does not mutate any of its arguments.
+
+Returns: An instant representing provided time in the requested timezone.
+
+    const mkdate	: (y : int, m : int, day : int, zone : byte[:]	-> instant)
+
+Creates a date with the given year, month, and day in the given timezone. The
+time is set to 0:00:00
+
+Returns: A date representing the given ymd
+
+    const mkdatetime	: (year : int, mon : int, day : int, \
+            h : int, m : int, s : int, zone : byte[:]	-> instant)
+
+Creates a date and time pair with the given year, month, day, at the time
+h, m, s, in the provided timezone. The microseconds are zeroed.
+
+Returns: A date representing the given ymd:hms
+
+    const mkinstant	: (tm : std.time, zone : byte[:]	-> instant)
+
+Creates an instant from a time type. This time can be derived from the
+standard library, or computed from any other source. The time is in
+microseconds since the Unix epoch (Jan 1 1970, 0:00, UTC).
+
+Returns: An instant representing a std.time in the requested timezone
+
+Timezones
+---------
+
+    const localoff	: (tm : std.time -> duration)
+
+Gets the local timezone offset for a time. Note that timezones can change due
+daylight savings, politics, and other similar factors, so a timezone offset
+needs to be associated with a specific instant.
+
+Returns: a duration representing the local timezone offset.
+
+    const tzoff	: (tzname : byte[:], tm : std.time	-> duration)
+
+Gets the timezone offset for a time and timezone pair. Note that timezones can
+change due daylight savings, politics, and other similar factors, so a
+timezone offset needs to be associated with a specific instant.
+
+Returns: a duration representing the requested timezone offset.
+
+    const isleap	: (d : instant	-> bool)
+
+Returns: whether a specific instant is within a leap year or not.
+
+Manipulation
+------------
+    
+    const add	: (d : instant, dt : duration	-> instant)
+    const sub	: (d : instant, dt : duration	-> instant)
+
+Adds or subtracts a duration from a date. A duration is an absolute length of
+time, and is not adjusted for calendar shifts around DST and similar events.
+
+Returns: an instant representing the adjusted time.
+
+    const addperiod	: (d : instant, dt : period	-> instant)
+    const subperiod	: (d : instant, dt : period	-> instant)
+
+Adds or subtracts a period from a date. A period is a humanized length of
+time, and is adjusted for calendar shifts around DST and similar events.
+
+Returns: an instant representing the adjusted time.
+
+    const duration	: (a : instant, b : instant	-> duration)
+
+Returns: the duration representing the difference between the two provided
+instants.
+
+

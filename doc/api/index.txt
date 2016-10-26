@@ -1,0 +1,91 @@
+{
+        title:  API Reference
+        description:    Myrddin API Reference
+}
+
+This is the page where the Myrddin language is documented. You want to know
+all the boring, dull details? Well, they're here.
+
+APIs
+----
+
+### [Libstd](libstd)
+
+The standard library. You'll probably be using it in all your code, because
+it's the standard. It's intended to cover a good portion of the functionality
+that you'll need for any program. It's a bit of a grab bag, but can be roughly
+categorized into the following subsections:
+
+- [Memory Allocation](libstd/alloc): All of your memory allocation needs.
+- [Error Handling](libstd/err): Convenient utilities for aborting your program.
+- [OS Interfaces](libstd/os): Ask not what you can do for your OS, ask what
+  your OS can do for you.
+- [File Handling](libstd/files): Sometimes data just wants to persist.
+- [Networking](libstd/networking): Communicating with other sytems isn't just
+  a fad.
+- [Command Line Parsing](libstd/cli): Makes it easy to parse options from the
+  commad line.
+- [Formatted Output](libstd/fmt): I/O. Without monads.
+- [Variadic Arguments](libstd/varargs): If you want ugly APIs, we've got you
+  covered.
+- [Slice manipulation](libstd/slices): Some generic functions. Easy to write
+  yourself, but a bit tedious.
+- [String Manipulation](libstd/strings): Some unicode aware string poking.
+- [Unicode](libstd/unicode): Wait a second, all languages aren't english?
+- [Pervasive Data Structures](libstd/datastruct): At least, I use them a lot.
+  If you use them too, we've got you covered.
+- [Misc](libstd/misc): Random crap that doesn't really fit into a category.
+
+### [Libsys](libsys)
+
+Libsys is a direct interface to system calls provided by the platform. It is 
+
+- [Linux Syscalls](libsys/linux)
+- [OSX Syscalls](libsys/osx)
+- [FreeBSD Syscalls](libsys/freebsd)
+- [Plan 9 Syscalls](libsys/plan9)
+
+### [Libbio](/myrddin/doc/libbio)
+
+This is a buffered IO library. It allows for many small reads and writes to be
+done with better performance than writing a system call for each one. On top
+of that, it allows for more convenient interfaces to handle linewise or
+delimited input, where peeking at the input stream may be necessary.
+
+### [Libregex](/myrddin/doc/libregex)
+
+This is a regex library, as implied by the name. It implements a simple but
+powerful regex syntax, with full unicode support. It also exposes the regex
+syntax tree if needed, which is useful for code that wants custom regex
+handling, but wants to remain consistent with the regexes in hairless.
+
+### [Libcryptohash](/myrddin/doc/libcryptohash)
+
+This is a library that handles cryptographic hashes. It implements many of the
+most common cryptographic hashes, and provides a fairly consistent interface
+to it.
+
+### [Libdate](/myrddin/doc/libdate)
+
+Libdate provides a fairly complete interface for manipulating dates, times,
+and timezones. It handles adding durations and periods to dates, formatting
+and parsing dates.
+
+### [Libthread](/myrddin/doc/libthread)
+
+Libthread is currently half assed and broken, and it doesn't work very well
+with libstd, which is not yet thread aware. This needs work.
+
+Utilities
+---------
+
+### [Mbld](/myrddin/doc/mbld)
+
+Mbld is the Myrddin build tool. It knows how to handle source and library
+dependencies, as well as build generated sources.
+
+### [Hairless](/myrddin/doc/mbld)
+
+Hairless is the Myrddin parser generator. It's currently in a half-finished
+state, but is quit
+

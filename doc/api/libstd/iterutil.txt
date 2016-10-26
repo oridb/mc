@@ -1,0 +1,100 @@
+{
+        title:  libstd
+        description:  libstd: Summary
+}
+
+
+Iteration Utilities
+----------------
+
+	pkg std =
+		type zipiter(@a, @b)
+		type reverseiter(@a)
+		type enumiter(@a)
+
+		impl iterable zipiter(@a, @b) -> (@a, @b)
+		impl iterable enumiter(@a) -> (size, @a)
+		impl iterable reverseiter(@a) -> @a
+
+		generic byzip	: (a : @a[:], b : @b[:]	 -> zipiter(@a, @b))
+		generic byenum	: (a : @a[:] -> enumiter(@a))
+		generic byreverse 	: (sl : @a[:] -> reverseiter(@a))
+	;;
+
+Summary
+--------
+
+Iteration over sequence is something that turns up regularly. The iteration
+utilities provided here simplify a number of common instances of iteration
+over collections. They allow for iterating over a zipped sequence,
+enumerating a collection of elements, or going over a collection of elements
+in reverse.
+
+All of these iterators hold a reference to the original data, and require that
+it not be freed until they are finished consuming it. They do not copy the
+slices that they iterate over, and all consume O(1) storage.
+
+Zip Iterators
+-------------
+
+	impl iterable zipiter(@a, @b) -> (@a, @b)
+	generic byzip	: (a : @a[:], b : @b[:]	 -> zipiter(@a, @b))
+
+The zipiter takes two slices, and returns an iterator that will walk over them
+pair by pair. So, for example, if you were to call `std.byzip([1,2,3][:],
+[4,5,6][:])`, you would iterate through the elements `(1,4), (2,5), (3, 6)`.
+
+Zip Iterators
+-------------
+	impl iterable enumiter(@a) -> (size, @a)
+	generic byenum	: (a : @a[:] -> enumiter(@a))
+
+The enumiter takes a single sequence, and returns the pair of (index, element)
+tuples. If you were to call `std.byenum(["hello", "there", "friend"][:])`, you
+iterate through the elements `(1, "hello"), (2, "there"), (3, "friend")`.
+
+Reverse Iterators
+-----------------
+
+	impl iterable reverseiter(@a) -> @a
+	generic byreverse 	: (sl : @a[:] -> reverseiter(@a))
+
+
+The reverse takes a single slice, and returns the same elements back, but in
+the reverse order. Calling `std.byenum(["hello", "there", "friend"][:])`
+would iterate in the sequence `"friend", "there", "hello".
+
+Examples
+--------
+
+This is a simple zip iterator:
+
+```{runmyr zipiter}
+use std
+const main = {
+	for x in std.byzip([1,2,3][:], [4,5,6][:])
+		std.put("{}\n", x)
+	;;
+}
+```
+
+This is a simple enum iterator:
+
+```{runmyr enumiter}
+use std
+const main = {
+	for x in std.byenum(["hello", "world"][:])
+		std.put("{}\n", x)
+	;;
+}
+```
+
+```{runmyr reverseiter}
+use std
+const main = {
+	for x in std.byreverse(["hello", "world"][:])
+		std.put("{}\n", x)
+	;;
+}
+```
+

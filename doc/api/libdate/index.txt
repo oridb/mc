@@ -1,0 +1,95 @@
+{
+	title: libdate
+	description: Libdate API documentation.
+}
+
+Summary
+-------
+
+Libdate is a date API designed to cover most date related functinality in a
+sane, easy to use way. It will format, parse, and do basic manipulations on
+dates.  All operations are done on the proleptic Gregorian calendar, and the
+Julian to transition is not handled.
+
+Core Concepts
+-------------
+
+### Instants
+
+An instant is a point in time. Immovable, unchanging for eternity, it is
+anchored in one spot through the microseconds of unix time in the UTC time
+zone. It is broken up into a local representation, consisting of years,
+months, days, weekdays, hours, minutes, seconds, and microseconds, with a
+timezone attached.
+
+### Durations
+
+A duration is a difference between two instants. It has a fixed magnitude, and
+is independent of timezones and the oddities of human calendars. It may be
+added or subtracted from instants of other durations. Durations have a
+resolution of microseconds. It is signed, and negative durations move instants
+backwards in time.
+
+### Periods
+
+A period is another form of differece between two instants. However, a period
+is a flighty creature, which does not anchor itself to the world of men in any
+strong way. A year may be 365 or 366 days, according to the whims and vagaries
+of the local calendar. An hour added to a time may jump ahead by two hours, if
+it so desires to follow the savings of daylight. These creatures attempt to
+mold themselves to the irrationalities of man's mind, and eschew the divine
+ordering of absolute time handed down by the prophets.
+
+### Timezones
+
+A timezone is a named zone, as decreed by the mighty IANA timezone database.
+It may take the form of a location such as "America/New_York", a well-known
+abbreviation like "EST", or a special value such as "local" or "", which mean,
+respectively, the current zone or UTC.
+
+Conventions
+-----------
+
+Timezones are pervasive, and no time is manipulated in this API without
+the awareness of the timezone. As a result, it is useful to know that dates
+are represeted using IANA zoneinfo database names. These are documented
+fully here: http://www.iana.org/time-zones
+
+There are two extensions that libdate supports: The empty string represents
+the UTC timezone, and "local" represents the time zone of the system that
+the system libdate is running on has been configured to.
+
+In the case of ambiguous timezones -- for example, parsing a date with no
+time attached, while using API call that does not specify the timezone,
+libdate will assume UTC dates.
+
+Functionality
+-------------
+
+The functionality in libdate can be grouped into three main sections: Parsing,
+Manipulation, and Formatting.
+
+### [Types](types)
+
+This covers the set of all types provided by, and used throughout, the API
+of libdate, including all public fields and types.
+
+### [Parsing](parsing)
+
+This covers parse formatted dates in a manner similar to strptime. There are
+currently plans for an flexible parse() function, but this has not yet been
+implemented.
+
+### [Creation and Manipulation](manipulation)
+
+Manipulation covers date and time creation, and transition aware APIs that
+will work for timezone crossings, daylight savings time, and so on.
+
+#### Formatting
+
+This covers date formatting, which is done through strftime-like format
+strings. There are actually no functions exposed for formatting, as this is
+done through custom formatters for libstd, however, the format strings used
+to customize the date output are described here.
+
+
