@@ -71,7 +71,6 @@ const test = {b
 		freecmd(bin)
 		std.slfree(dir)
 	;;
-	std.slfree(tests)
 	if tests.len == 0
 		-> true
 	;;
@@ -80,16 +79,17 @@ const test = {b
 	for f in failed
 		std.slfree(f)
 	;;
-	std.slfree(failed)
 	if ok
 		std.put("TESTS PASSED\n")
 	else
-		std.put("TESTS FAILED\n")
+		std.put("TESTS FAILED ({}/P{\n")
 	;;
+	std.slfree(failed)
+	std.slfree(tests)
 	-> ok
 }
 
-const printfailed : (f : byte[:][:] -> void) = {failed
+const printfailed = {failed
 	if failed.len > 10
 		std.put("\t{} tests failed\n", failed.len)
 	elif failed.len > 0
