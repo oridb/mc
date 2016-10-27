@@ -1,20 +1,18 @@
 use std
 
-pkg =
-	type blah
-	type blah = struct
-		a : byte[:]
-		b : int
-	;;
-	type u = union
-		`First
-		`Second int
-		`Third byte[:]
-	;;
-	type pair = struct
-		x : int16
-		y : int32
-	;;
+type blah
+type blah = struct
+	a : byte[:]
+	b : int
+;;
+type u = union
+	`First
+	`Second int
+	`Third byte[:]
+;;
+type pair = struct
+	x : int16
+	y : int32
 ;;
 
 const check = {expected, fmt, args : ...
