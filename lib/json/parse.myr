@@ -23,7 +23,22 @@ const parse = {str
 		.off = 1,
 		.idx = 0,
 	]
-	-> parseelt(&parser)
+	match parseelt(&parser)
+	| `std.Ok j:
+		takespace(&parser)
+		std.put("parser: {}\n", parser)
+		if parser.idx != parser.str.len
+			free(j)
+			-> `std.Err [
+				.e=`Junk std.decode(parser.str[parser.idx:]),
+				.line=parser.line,
+				.off=parser.off
+			]
+		;;
+		-> `std.Ok j
+	| `std.Err e:
+		-> `std.Err e
+	;;
 }
 
 const free = {j
@@ -126,7 +141,7 @@ const member = {p
 	;;
 }
 
-const parsearr = {p
+const parsearr = {p -> std.result(elt#, err)
 	var elts
 	var err
 
@@ -230,7 +245,14 @@ const jsonstr = {p
 			;;
 		| '"':
 			-> `std.Ok std.sbfin(sb)
+		| std.Badchar:
+			err = [.e=`Junk std.Badchar, .line=p.line, .off=p.off]
+			goto error
 		| chr:
+			if !unescaped(chr)
+				err = [.e=`Junk chr, .line=p.line, .off=p.off]
+				goto error
+			;;
 			std.sbputc(sb, chr)
 			idx += std.charlen(chr)
 		;;
@@ -249,8 +271,16 @@ const matchprefix = {p, pfx
 	-> false
 }
 
+const unescaped = {c
+	const tab	: byte[128]
+
+	-> c == 0x20 || c == 0x21 || \
+		(c >= 0x23 && c < 0x5b) || \
+		(c > 0x5d && c < 0x10ffff)
+}
+
 const takespace = {p
-	while true
+	while p.idx < p.str.len
 		match (p.str[p.idx] : char)
 		| ' ':
 		| '\t':

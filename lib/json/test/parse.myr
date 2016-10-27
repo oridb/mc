@@ -3,6 +3,11 @@ use json
 use testr
 
 const main = {
+	strtest()
+	filetest()
+}
+
+const strtest = {
 	testr.run([
 		[.name="null", .fn={ctx
 			var j = std.try(json.parse("null"))
@@ -85,3 +90,41 @@ const main = {
 	][:])
 }
 
+const filetest = {
+	var dir, data, path
+
+	dir = std.try(std.diropen("test/inputs"))
+	for f in std.byentry(dir)
+		path = std.pathcat("test/inputs", f)
+		data = std.try(std.slurp(path))
+		/* 'n' indicates expected failure, 'y' indicates expected success, 'i' indicates implementation defined */
+		match std.decode(f)
+		| 'n':
+			testr.run([
+				[.name=f, .fn={ctx
+					match json.parse(data)
+					| `std.Err e:	/* ok */
+					| `std.Ok r:	testr.fail(ctx, "succeeded in parsing malformed json: {}\n", r)
+						std.die("hah")
+					;;
+				}]
+			][:])
+
+		| 'y':
+			testr.run([
+				[.name=f, .fn={ctx
+					match json.parse(data)
+					| `std.Err e:	testr.fail(ctx, "failed to parse json\n")
+					| `std.Ok r:	json.free(r)
+					;;
+				}]
+			][:])
+		| 'i':
+			std.put("ignoring implementation defined test {}\n", f)
+		| wat:
+			std.fatal("unknown test {}: needs to start with y or n\n", f)
+		;;
+		std.slfree(data)
+		std.slfree(path)
+	;;
+}
