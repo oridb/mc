@@ -1419,6 +1419,10 @@ static void inferexpr(Inferstate *st, Node **np, Type *ret, int *sawret)
 	case Omul: /* @a * @a -> @a */
 	case Odiv: /* @a / @a -> @a */
 	case Oneg: /* -@a -> @a */
+	case Oaddeq:	/* @a += @a -> @a */
+	case Osubeq:	/* @a -= @a -> @a */
+	case Omuleq:	/* @a *= @a -> @a */
+	case Odiveq:	/* @a /= @a -> @a */
 		infersub(st, n, ret, sawret, &isconst);
 		t = type(st, args[0]);
 		constrain(st, n, type(st, args[0]), traittab[Tcnum]);
@@ -1441,10 +1445,6 @@ static void inferexpr(Inferstate *st, Node **np, Type *ret, int *sawret)
 	case Opredec:	/* --@a -> @a */
 	case Opostinc:	/* @a++ -> @a */
 	case Opostdec:	/* @a-- -> @a */
-	case Oaddeq:	/* @a += @a -> @a */
-	case Osubeq:	/* @a -= @a -> @a */
-	case Omuleq:	/* @a *= @a -> @a */
-	case Odiveq:	/* @a /= @a -> @a */
 	case Omodeq:	/* @a %= @a -> @a */
 	case Oboreq:	/* @a |= @a -> @a */
 	case Obandeq:	/* @a &= @a -> @a */
