@@ -1,33 +1,33 @@
-!test/*.myr
-libstd/sys*.myr
-!libstd/sys*+*.myr
-libstd/*.s
-!libstd/*+*.s
-libstd/sys
-libstd/std
-libstd/dial.myr
-libstd/dir.myr
-libstd/env.myr
-libstd/ifreq.myr
-libstd/resolve.myr
-libstd/wait.myr
-rt/*.s
-!rt/*-*.s
+# file patterns
 *.o
 *.use
 *.a
 */.deps
+
+# common tool generated scratch files
+tags
+*~
+
+# generated files
 config.h
 config.mk
+mbld/config.myr
 parse/gram.c
 parse/gram.h
+configvar_cache
+rt/_*.s
+!rt/*-*.s
+
+# outputs
 6/6m
 muse/muse
-myrbuild/myrbuild
-*~
-tags
-configvar_cache
-lib/regex/redump
-mbld/config.myr
 mbld/mbld
 support/mdumpleak
+myrbuild/myrbuild
+lib/regex/redump
+
+# test outputs
+*.log
+**/test/*
+!**/test/*.myr
+!**/test/runtest.sh
