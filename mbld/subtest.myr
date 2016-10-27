@@ -98,6 +98,7 @@ const showtests = {f, log, ntests
 					ok = false
 				;;
 				ntests = n
+				nresults = 0
 				continue
 			;;
 		;;

@@ -82,7 +82,7 @@ const test = {b
 	if ok
 		std.put("TESTS PASSED\n")
 	else
-		std.put("TESTS FAILED ({}/P{\n")
+		std.put("TESTS FAILED\n")
 	;;
 	std.slfree(failed)
 	std.slfree(tests)
