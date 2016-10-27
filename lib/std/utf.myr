@@ -24,7 +24,7 @@ const charlen = {c
 	elif c < 0x200000
 		-> 4
 	else
-		-> -1
+		-> 1 /* attempt to resync */
 	;;
 }
 
