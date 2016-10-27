@@ -223,6 +223,11 @@ const dragon4 = {sb, isneg, f, e, p, mode, cutoff
 		| `After:	format(sb, udig + 1, k)
 		;;
 	;;
+	k--
+
+	while k >= -1
+		format(sb, 0, k--)
+	;;
 }
 
 const lowdig = {u
