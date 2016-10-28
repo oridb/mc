@@ -141,7 +141,7 @@ static void setupinit(Node *n);
 %type <trait> traitdef
 
 %type <node> exprln retexpr goto continue break expr atomicexpr
-%type <node> littok literal asnexpr lorexpr landexpr borexpr
+%type <node> littok literal asnexpr lorexpr landexpr borexpr strlit
 %type <node> bandexpr cmpexpr unionexpr addexpr mulexpr shiftexpr prefixexpr postfixexpr
 %type <node> funclit seqlit tuplit name block stmt label use
 %type <node> fnparam declbody declcore typedeclcore structent arrayelt structelt tuphead
@@ -780,7 +780,7 @@ literal : funclit       {$$ = mkexpr($1->loc, Olit, $1, NULL);}
 tuplit  : Toparen tupbody Tcparen
 	{$$ = mkexprl($1->loc, Otup, $2.nl, $2.nn);}
 
-littok  : Tstrlit       {$$ = mkstr($1->loc, $1->strval);}
+littok  : strlit	{$$ = $1;}
 	| Tchrlit       {$$ = mkchar($1->loc, $1->chrval);}
 	| Tfloatlit     {$$ = mkfloat($1->loc, $1->fltval);}
 	| Tboollit      {$$ = mkbool($1->loc, !strcmp($1->id, "true"));}
@@ -789,6 +789,18 @@ littok  : Tstrlit       {$$ = mkstr($1->loc, $1->strval);}
 		$$ = mkint($1->loc, $1->intval);
 		if ($1->inttype)
 			$$->lit.type = mktype($1->loc, $1->inttype);
+	}
+	;
+
+strlit : Tstrlit { $$ = mkstr($1->loc, $1->strval); }
+	| strlit Tstrlit {
+		Str merged;
+		
+		merged.len = $1->lit.strval.len + $2->strval.len;
+		merged.buf = malloc(merged.len);
+		memcpy(merged.buf, $1->lit.strval.buf, $1->lit.strval.len);
+		memcpy(merged.buf + $1->lit.strval.len, $2->strval.buf, $2->strval.len);
+		$$ = mkstr($1->loc, merged);
 	}
 	;
 

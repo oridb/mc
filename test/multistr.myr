@@ -1,0 +1,13 @@
+use std
+
+const main = {
+	var multi
+
+	multi = "abc" "def" \
+	"ghi"
+	
+	match multi
+	| "abcdefghi":
+	| fail: std.fatal("failed: {}\n", fail)
+	;;
+}

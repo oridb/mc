@@ -192,6 +192,13 @@ TABLE OF CONTENTS:
 
             eg: "foo\"bar"
 
+        Multiple consecutive string literals are implicitly merged to create
+        a single combined string literal. To allow a string literal to span
+        across multiple lines, the new line characters must be be escaped.
+        
+            eg: "foo" \
+                "bar"
+
         Character literals represent a single codepoint in the character
         set. A character starts with a single quote, contains a single
         codepoint worth of text, encoded either as an escape sequence
