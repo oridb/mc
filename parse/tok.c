@@ -635,6 +635,7 @@ static Tok *number(int base)
 	 * need a buffer that holds the number without '_'.
 	 */
 	char buf[2048];
+	char *endp;
 	size_t nbuf;
 
 	t = NULL;
@@ -645,27 +646,47 @@ static Tok *number(int base)
 		next();
 		if (c == '_')
 			continue;
-		if (c == '.')
-			isfloat = 1;
-		else if (hexval(c) < 0 || hexval(c) >= base)
-			lfatal(curloc, "Integer digit '%c' outside of base %d", c, base);
 		if (nbuf >= sizeof buf - 1) {
 			buf[nbuf - 1] = '\0';
 			lfatal(curloc, "number %s... too long to represent", buf);
 		}
-		buf[nbuf++] = c;
+
+		/* float radix */
+		if (c == '.') {
+			isfloat = 1;
+			buf[nbuf++] = c;
+		/* exponential notation */
+		} else if (base == 10 && (c == 'e' || c == 'E')) {
+			isfloat = 1;
+			buf[nbuf++] = c;
+			if ((peek() == '+' || peek() == '-') && nbuf < sizeof buf - 1)
+				buf[nbuf++] = next();
+		/* out of range */
+		} else if (hexval(c) < 0 || hexval(c) >= base) {
+			lfatal(curloc, "Integer digit '%c' outside of base %d", c, base);
+		/* just a number */
+		} else {
+			buf[nbuf++] = c;
+		}
 	}
 	buf[nbuf] = '\0';
 
 	/* we only support base 10 floats */
-	if (isfloat && base == 10) {
+	if (isfloat) {
+		if (base != 10)
+			lfatal(curloc, "%s is not a valid floating point value", buf);
 		t = mktok(Tfloatlit);
 		t->id = strdupn(&fbuf[start], fidx - start);
-		t->fltval = strtod(buf, NULL);
+		t->fltval = strtod(buf, &endp);
+		if (endp == buf)
+			lfatal(curloc, "%s is not a valid floating point value", buf);
 	} else {
 		t = mktok(Tintlit);
 		t->id = strdupn(&fbuf[start], fidx - start);
-		t->intval = strtoull(buf, NULL, base);
+		t->intval = strtoull(buf, &endp, base);
+		if (endp == buf)
+			lfatal(curloc, "%s is not a valid integer value", buf);
+			
 		/* check suffixes:
 		 *   u -> unsigned
 		 *   l -> 64 bit
@@ -733,8 +754,10 @@ static Tok *numlit(void)
 			t = number(2);
 		else if (match('o'))
 			t = number(8);
-		else
+		else {
+			unget();
 			t = number(10);
+		}
 	} else {
 		t = number(10);
 	}
