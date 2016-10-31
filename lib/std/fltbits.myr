@@ -10,6 +10,8 @@ pkg std =
 	const flt32frombits	: (bits : uint32 -> flt32)
 	const flt64explode	: (flt : flt64 -> (bool, int64, int64))
 	const flt32explode	: (flt : flt32 -> (bool, int32, int32))
+	const flt64assem	: (sign : bool, mant : int64, exp : int64 -> flt64)
+	const flt32assem	: (sign : bool, mant : int32, exp : int32 -> flt32)
 ;;
 
 const flt64bits	= {flt;	-> (&flt : int64#)#}
@@ -63,6 +65,24 @@ const flt32explode = {flt
 	-> (isneg, mant, exp)
 }
 
+const flt64assem = {sign, mant, exp
+	var s, m, e
+
+	s = (sign : uint64)
+	e = (exp : uint64) & 0x3ff
+	m = (mant : uint64) & ((1ul<<52) - 1)
+	-> std.flt64frombits((s << 63) | (e << 52) | m)
+}
+
+const flt32assem = {sign, mant, exp
+	var s, m, e
+
+	s = (sign : uint32)
+	e = (exp : uint32) & 0x3ff
+	m = (mant : uint32) & ((1<<22) - 1)
+	-> std.flt32frombits(s << 31 | e << 22 | m)
+
+}
 const flt64inf = {
 	-> std.flt64frombits(0x7ff0000000000000ul)
 }
