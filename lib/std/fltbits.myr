@@ -69,7 +69,7 @@ const flt64assem = {sign, mant, exp
 	var s, m, e
 
 	s = (sign : uint64)
-	e = (exp : uint64) & 0x3ff
+	e = (exp : uint64) & 0x7ff
 	m = (mant : uint64) & ((1ul<<52) - 1)
 	-> std.flt64frombits((s << 63) | (e << 52) | m)
 }
@@ -78,7 +78,7 @@ const flt32assem = {sign, mant, exp
 	var s, m, e
 
 	s = (sign : uint32)
-	e = (exp : uint32) & 0x3ff
+	e = (exp : uint32) & 0xff
 	m = (mant : uint32) & ((1<<22) - 1)
 	-> std.flt32frombits(s << 31 | e << 22 | m)
 
