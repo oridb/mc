@@ -1,6 +1,11 @@
 pkg std =
 	const flt64bits	: (flt : flt64 -> int64)
 	const flt32bits	: (flt : flt32 -> int32)
+	const flt64inf	: (-> flt64)
+	const flt64nan	: (-> flt64)
+	const flt32inf	: (-> flt32)
+	const flt32nan	: (-> flt32)
+
 	const flt64frombits	: (bits : uint64 -> flt64)
 	const flt32frombits	: (bits : uint32 -> flt32)
 	const flt64explode	: (flt : flt64 -> (bool, int64, int64))
@@ -58,3 +63,18 @@ const flt32explode = {flt
 	-> (isneg, mant, exp)
 }
 
+const flt64inf = {
+	-> std.flt64frombits(0x7ff0000000000000ul)
+}
+
+const flt64nan = {
+	-> std.flt64frombits(0x7ff8000000000000ul)
+}
+
+const flt32inf = {
+	-> std.flt32frombits(0x7f800000)
+}
+
+const flt32nan = {
+	-> std.flt32frombits(0x7fc00000)
+}
