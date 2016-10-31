@@ -36,9 +36,21 @@ pkg std =
 
 	/* some useful predicates */
 	const bigiszero	: (a : bigint# -> bool)
-	const bigeq	: (a : bigint#, b : bigint# -> bool)
-	generic bigeqi	: (a : bigint#, b : @a::(numeric,integral) -> bool)
+	const bigiseven	: (a : bigint# -> bool)
 	const bigcmp	: (a : bigint#, b : bigint# -> order)
+	generic bigcmpi	: (a : bigint#, b : @a::(numeric,integral) -> order)
+
+	/* shorthand for comparisons */
+	const bigeq	: (a : bigint#, b : bigint# -> bool)
+	const biglt	: (a : bigint#, b : bigint# -> bool)
+	const bigle	: (a : bigint#, b : bigint# -> bool)
+	const biggt	: (a : bigint#, b : bigint# -> bool)
+	const bigge	: (a : bigint#, b : bigint# -> bool)
+	generic bigeqi	: (a : bigint#, b : @a::(numeric,integral) -> bool)
+	generic biglti	: (a : bigint#, b : @a::(numeric,integral) -> bool)
+	generic biglei	: (a : bigint#, b : @a::(numeric,integral) -> bool)
+	generic biggti	: (a : bigint#, b : @a::(numeric,integral) -> bool)
+	generic biggei	: (a : bigint#, b : @a::(numeric,integral) -> bool)
 
 	/* bigint*bigint -> bigint ops */
 	const bigadd	: (a : bigint#, b : bigint# -> bigint#)
@@ -64,6 +76,9 @@ pkg std =
 	/*
 	const bigpowi	: (a : bigint#, b : uint64 -> bigint#)
 	*/
+
+	/* information about bigints */
+	const bigbitcount	: (a : bigint# -> size)
 ;;
 
 const Base = 0x100000000ul
@@ -229,6 +244,10 @@ const bigiszero = {v
 	-> v.dig.len == 0
 }
 
+const bigiseven = {v
+	-> v.dig.len == 0 || v.dig[0] & 1 == 0
+}
+
 const bigeq = {a, b
 	if a.sign != b.sign || a.dig.len != b.dig.len
 		-> false
@@ -241,12 +260,84 @@ const bigeq = {a, b
 	-> true
 }
 
+const biglt = {a, b
+	match bigcmp(a, b)
+	| `Before:	-> true
+	| _:	-> false
+	;;
+}
+
+
+const bigle = {a, b
+	match bigcmp(a, b)
+	| `Before:	-> true
+	| `Equal:	-> true
+	| _:	-> false
+	;;
+}
+
+const biggt = {a, b
+	match bigcmp(a, b)
+	| `After:	-> true
+	| _:	-> false
+	;;
+}
+
+
+const bigge = {a, b
+	match bigcmp(a, b)
+	| `After:	-> true
+	| `Equal:	-> true
+	| _:	-> false
+	;;
+}
+
 generic bigeqi = {a, b
 	var v
 	var dig : uint32[2]
 
 	bigdigit(&v, b < 0, (b : uint64), dig[:])
 	-> bigeq(a, &v)
+}
+
+generic biglti = {a, b
+	match bigcmpi(a, b)
+	| `Before:	-> true
+	| _:	-> false
+	;;
+}
+
+
+generic biglei = {a, b
+	match bigcmpi(a, b)
+	| `Before:	-> true
+	| `Equal:	-> true
+	| _:	-> false
+	;;
+}
+
+generic biggti = {a, b
+	match bigcmpi(a, b)
+	| `After:	-> true
+	| _:	-> false
+	;;
+}
+
+
+generic biggei = {a, b
+	match bigcmpi(a, b)
+	| `After:	-> true
+	| `Equal:	-> true
+	| _:	-> false
+	;;
+}
+
+generic bigcmpi = {a, b
+	var v
+	var dig : uint32[2]
+
+	bigdigit(&v, b < 0, (b : uint64), dig[:])
+	-> bigcmp(a, &v)
 }
 
 const bigcmp = {a, b
@@ -738,3 +829,18 @@ const trim = {a
 	-> a
 }
 
+
+const bigbitcount = {a
+	var top, len, mask
+
+	len = 32*a.dig.len
+	if len > 0
+		top = a.dig[a.dig.len - 1]
+		mask = 1 << 31
+		while top & mask == 0
+			len--
+			mask >>= 1
+		;;
+	;;
+	-> len
+}
