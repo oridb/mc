@@ -107,7 +107,7 @@ static void locprint(FILE *fd, Loc *l, char spec)
 				spec == 'x' ||
 				spec == 'u');
 		if (l->reg.colour == Rnone)
-			fprintf(fd, "%%P.%zd%s", l->reg.id, modenames[l->mode]);
+			fprintf(fd, "%%P.%llu%s", (uvlong)l->reg.id, modenames[l->mode]);
 		else
 			fprintf(fd, "%s", regnames[l->reg.colour]);
 		break;
@@ -226,7 +226,7 @@ static size_t writebytes(FILE *fd, char *name, size_t off, char *p, size_t sz)
 	for (i = 0; i < sz; i++) {
 		len = min(sz - i, 8);
 		if (i % 8 == 0)
-			fprintf(fd, "\tDATA %s+%zd(SB)/%zd,$\"", name, off + i, len);
+			fprintf(fd, "\tDATA %s+%llu(SB)/%llu,$\"", name, (uvlong)off + i, (uvlong)len);
 		if (p[i] == '"' || p[i] == '\\')
 			fprintf(fd, "\\");
 		if (isprint(p[i]))
@@ -286,7 +286,7 @@ static size_t encodemin(FILE *fd, uvlong val, size_t off, char *lbl)
 	uint8_t b;
 
 	if (val < 128) {
-		fprintf(fd, "\tDATA %s+%zd(SB)/1,$%llu //x\n", lbl, off, val);
+		fprintf(fd, "\tDATA %s+%llu(SB)/1,$%u // single\n", lbl, (uvlong)off, (unsigned)val);
 		return 1;
 	}
 
@@ -298,11 +298,11 @@ static size_t encodemin(FILE *fd, uvlong val, size_t off, char *lbl)
 	shift = 8 - i;
 	b = ~0ull << (shift + 1);
 	b |= val & ~(~0ull << shift);
-	fprintf(fd, "\tDATA %s+%zd(SB)/1,$%u\n", lbl, off, b);
+	fprintf(fd, "\tDATA %s+%llu(SB)/1,$%u //first\n", lbl, (uvlong)off, b);
 	val >>=  shift;
 	while (val != 0) {
 		n++;
-		fprintf(fd, "\tDATA %s+%zd(SB)/1,$%u// y\n", lbl, off+n, (uint)val & 0xff);
+		fprintf(fd, "\tDATA %s+%llu(SB)/1,$%llu // tail\n", lbl, (uvlong)off+n, (uvlong)val & 0xff);
 		val >>= 8;
 	}
 	return i;
@@ -317,19 +317,19 @@ static size_t writeblob(FILE *fd, Blob *b, size_t off, char *lbl)
 		return 0;
 	switch (b->type) {
 	case Bti8:
-		fprintf(fd, "\tDATA %s+%zd(SB)/1,$%lld\n", lbl, off+n, b->ival);
+		fprintf(fd, "\tDATA %s+%llu(SB)/1,$%lld\n", lbl, (uvlong)off+n, b->ival);
 		n += 1;
 		break;
 	case Bti16:
-		fprintf(fd, "\tDATA %s+%zd(SB)/2,$%lld\n", lbl, off+n, b->ival);
+		fprintf(fd, "\tDATA %s+%llu(SB)/2,$%lld\n", lbl, (uvlong)off+n, b->ival);
 		n += 2;
 		break;
 	case Bti32:
-		fprintf(fd, "\tDATA %s+%zd(SB)/4,$%lld\n", lbl, off+n, b->ival);
+		fprintf(fd, "\tDATA %s+%llu(SB)/4,$%lld\n", lbl, (uvlong)off+n, b->ival);
 		n += 4;
 		break;
 	case Bti64:
-		fprintf(fd, "\tDATA %s+%zd(SB)/8,$%lld\n", lbl, off+n, (vlong)b->ival);
+		fprintf(fd, "\tDATA %s+%llu(SB)/8,$%lld\n", lbl, (uvlong)off+n, (vlong)b->ival);
 		n += 8;
 		break;
 	case Btimin:
@@ -337,11 +337,11 @@ static size_t writeblob(FILE *fd, Blob *b, size_t off, char *lbl)
 		break;
 	case Btref:
 		if (b->ref.isextern || b->ref.str[0] == '.')
-			fprintf(fd, "\tDATA %s+%zd(SB)/8,$%s+%zd(SB)\n",
-					lbl, off+n, b->ref.str, b->ref.off);
+			fprintf(fd, "\tDATA %s+%llu(SB)/8,$%s+%llu(SB)\n",
+					lbl, (uvlong)off+n, b->ref.str, (uvlong)b->ref.off);
 		else
-			fprintf(fd, "\tDATA %s+%zd(SB)/8,$%s<>+%zd(SB)\n",
-					lbl, off+n, b->ref.str, b->ref.off);
+			fprintf(fd, "\tDATA %s+%llu(SB)/8,$%s<>+%llu(SB)\n",
+					lbl, (uvlong)off+n, b->ref.str, (uvlong)b->ref.off);
 		n += 8;
 		break;
 	case Btbytes:
@@ -353,7 +353,7 @@ static size_t writeblob(FILE *fd, Blob *b, size_t off, char *lbl)
 		break;
 	case Btpad:
 		for (i = 0; i < b->npad; i++)
-			fprintf(fd, "\tDATA %s+%zd(SB)/1,$0\n", lbl, off+n+i);
+			fprintf(fd, "\tDATA %s+%llu(SB)/1,$0\n", lbl, (uvlong)off+n+i);
 		n += b->npad;
 		break;
 	}
@@ -397,10 +397,10 @@ static void gentype(FILE *fd, Type *ty)
 	if (!b)
 		return;
 	if (b->isglobl) {
-		fprintf(fd, "GLOBL %s%s+0(SB),$%zd\n", Symprefix, b->lbl, blobsz(b));
+		fprintf(fd, "GLOBL %s%s+0(SB),$%llu\n", Symprefix, b->lbl, (uvlong)blobsz(b));
 		bprintf(lbl, sizeof lbl, "%s%s", Symprefix, b->lbl);
 	} else {
-		fprintf(fd, "GLOBL %s%s<>+0(SB),$%zd\n", Symprefix, b->lbl, blobsz(b));
+		fprintf(fd, "GLOBL %s%s<>+0(SB),$%llu\n", Symprefix, b->lbl, (uvlong)blobsz(b));
 		bprintf(lbl, sizeof lbl, "%s%s<>", Symprefix, b->lbl);
 	}
 	writeblob(fd, b, 0, lbl);
@@ -432,7 +432,7 @@ static void genblob(FILE *fd, Node *blob, Htab *globls, Htab *strtab)
 	assert(blob->type == Ndecl);
 
 	lbl = htget(globls, blob);
-	fprintf(fd, "GLOBL %s+0(SB),$%zd\n", lbl, size(blob));
+	fprintf(fd, "GLOBL %s+0(SB),$%llu\n", lbl, (uvlong)size(blob));
 	if (blob->decl.init)
 		b = litblob(globls, strtab, blob->decl.init);
 	else
