@@ -1,0 +1,55 @@
+use std
+use testr
+
+const main = {
+	testr.run([
+		/* 64 bit tests */
+		[.name="flt64-intzero", .fn={ctx; is64(ctx, "0", 0.0)}],
+		[.name="flt64-floatzero", .fn={ctx; is64(ctx, "0.0", 0.0)}],
+		[.name="flt64-expzero", .fn={ctx; is64(ctx, "0.0e10", 0.0)}],
+		[.name="flt64-negzero", .fn={ctx; is64(ctx, "-0.0e10", -0.0)}],
+		[.name="flt64-smallint", .fn={ctx; is64(ctx, "123", 123.0)}],
+		[.name="flt64-negsmallint", .fn={ctx; is64(ctx, "-123", -123.0)}],
+		[.name="flt64-neednext", .fn={ctx; is64(ctx, "1.2332", 1.2332)}],
+		[.name="flt64-dblmax", .fn={ctx; is64(ctx, "1.7976931348623157e308", 1.7976931348623157e308)}],
+		[.name="flt64-toobig", .fn={ctx; is64(ctx, "17.976931348623157e308", std.flt64inf())}],
+		[.name="flt64-exptoobig", .fn={ctx; is64(ctx, "1.7976931348623157e309", std.flt64inf())}],
+		[.name="flt64-denorm", .fn={ctx; is64(ctx, "2.2250738585072014e-311", 2.2250738585072014e-311)}],
+		/* 32 bit tests */
+		[.name="flt32-intzero", .fn={ctx; is32(ctx, "0", 0.0)}],
+		[.name="flt32-floatzero", .fn={ctx; is32(ctx, "0.0", 0.0)}],
+		[.name="flt32-expzero", .fn={ctx; is32(ctx, "0.0e10", 0.0)}],
+		[.name="flt32-negzero", .fn={ctx; is32(ctx, "-0.0e10", -0.0)}],
+		[.name="flt32-smallint", .fn={ctx; is32(ctx, "123", 123.0)}],
+		[.name="flt32-negsmallint", .fn={ctx; is32(ctx, "-123", -123.0)}],
+		[.name="flt32-neednext", .fn={ctx; is32(ctx, "1.2332", 1.2332)}],
+		[.name="flt32-dblmax", .fn={ctx; is32(ctx, "3.40282346638528860e+38", 3.40282346638528860e+38)}],
+		[.name="flt32-toobig", .fn={ctx; is32(ctx, "34.0282346638528860e+38", std.flt32inf())}],
+		[.name="flt32-exptoobig", .fn={ctx; is32(ctx, "3.40282346638528860e+39", std.flt32inf())}],
+		/* test bad parses */
+		[.name="badfmt-empty", .fn={ctx; isjunk(ctx, "")}],
+		[.name="badfmt-twodot", .fn={ctx; isjunk(ctx, "1.2.3")}],
+		[.name="badfmt-badexp", .fn={ctx; isjunk(ctx, "1.2ee3")}],
+	][:])
+}
+
+const is64 = {ctx, str, val
+	match std.flt64parse(str)
+	| `std.Some f:	testr.check(ctx, f == val, "mismatch: {} (from {}) != {}\n", f, str, val)
+	| `std.None:	testr.fail(ctx, "unable to parse float from {}\n", str)
+	;;
+}
+
+const is32 = {ctx, str, val
+	match std.flt32parse(str)
+	| `std.Some f:	testr.check(ctx, f == val, "mismatch: {} (from {}) != {}\n", f, str, val)
+	| `std.None:	testr.fail(ctx, "unable to parse float from {}\n", str)
+	;;
+}
+
+const isjunk = {ctx, str
+	match std.flt64parse(str)
+	| `std.Some f:	testr.fail(ctx, "misparse: should have failed on {}, got {}\n", str, f)
+	| `std.None:	/* all ok */
+	;;
+}

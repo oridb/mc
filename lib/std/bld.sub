@@ -25,6 +25,7 @@ lib std {inc=.} =
 	extremum.myr
 	fltbits.myr
 	fltfmt.myr
+	fltparse.myr
         fmt.myr
 	fmtfuncs.myr
 	fndup.myr
