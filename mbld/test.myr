@@ -18,7 +18,7 @@ pkg bld =
 
 const test = {b
 	var tests : (byte[:][:], byte[:])[:]
-	var failed, p, ok
+	var failed, ok
 	var bincmd
 
 	/* build with the test tag */
@@ -60,10 +60,8 @@ const test = {b
 	failed = [][:]
 	for (c, dir) in tests
 		setdir(b, dir)
-		if !runtest(b, c)
+		if !runtest(b, c, &failed)
 			ok = false
-			p = std.pathcat(b.curdir, c[0])
-			std.slpush(&failed, p)
 		;;
 
 	;;
@@ -90,10 +88,8 @@ const test = {b
 }
 
 const printfailed = {failed
-	if failed.len > 10
-		std.put("\t{} tests failed\n", failed.len)
-	elif failed.len > 0
-		std.put("FAILURES:\n")
+	if failed.len > 0
+		std.put("FAILURES: {}\n", failed.len)
 		for t in failed
 			std.put("\t{}\n", t)
 		;;
@@ -151,7 +147,7 @@ const buildtests = {b, targ
 	-> tests
 }
 
-const runtest = {b, cmd
+const runtest = {b, cmd, failed
 	var res, log, logfd, p
 	var sub
 
@@ -168,7 +164,7 @@ const runtest = {b, cmd
 	| `std.Ok (pid, infd, outfd):
 		log = std.strcat(cmd[0], ".log")
 		logfd = std.try(std.openmode(log, std.Owronly | std.Ocreat, 0o644))
-		sub = showsub(outfd, logfd)
+		sub = showsub(b, cmd[0], outfd, logfd, failed)
 		std.slfree(log)
 		std.close(infd)
 		std.close(outfd)
@@ -185,6 +181,10 @@ const runtest = {b, cmd
 			| `std.None:	std.put("PASS\n")
 			;;
 		| `std.Waiterror:	std.put("failed waiting for pid {}\n", pid)
+		;;
+		if !res
+			p = std.pathcat(b.curdir, cmd[0])
+			std.slpush(failed, p)
 		;;
 	;;
 	-> res

@@ -2,8 +2,12 @@ use std
 use bio
 use regex
 
+use "types"
+
 pkg bld =
-	const showsub	: (f : std.fd, logfd : std.fd -> std.option(bool))
+	const showsub	: (b : build#, cmd : byte[:], \
+		f : std.fd, logfd : std.fd, \
+		failed : byte[:][:]# -> std.option(bool))
 ;;
 
 var planpat
@@ -16,7 +20,7 @@ const __init__ = {
 	footpat = std.try(regex.compile("!}>>\\s*(ok|fail\\s*(.*))\\s*"))
 }
 
-const showsub = {fd, logfd
+const showsub = {b, cmd, fd, logfd, failed
 	var f, log
 	var res
 
@@ -32,7 +36,8 @@ const showsub = {fd, logfd
 			bio.write(log, ln)
 			showraw(fd, logfd)
 		| `std.Some ntests:
-			res = `std.Some showtests(f, log, ntests)
+			res = `std.Some showtests(b, cmd, failed, \
+				f, log, ntests)
 		;;
 
 		std.slfree(ln)
@@ -56,7 +61,7 @@ const showraw = {f, log
 	std.slfree(buf)
 }
 
-const showtests = {f, log, ntests
+const showtests = {b, cmd, failed, f, log, ntests
 	var curtest
 	var nresults
 	var ok
@@ -82,10 +87,10 @@ const showtests = {f, log, ntests
 		match testfoot(ln)
 		| `std.None:
 		| `std.Some `std.Ok _:
-			endtest(&curtest, &nresults, true, "")
+			endtest(b, cmd, &curtest, failed, &nresults, true, "")
 			continue
 		| `std.Some `std.Err m:
-			endtest(&curtest, &nresults, false, m)
+			endtest(b, cmd, &curtest, failed, &nresults, false, m)
 			ok = false
 			continue
 		;;
@@ -127,19 +132,27 @@ const starttest = {curtest, t
 	curtest# = t
 }
 
-const endtest = {curtest, nresults, pass, msg
+const endtest = {b, cmd, curtest, failed, nresults, pass, msg
+	var p
+
 	if curtest#.len == 0
 		std.fatal("malformed input: test ended without start\n")
 	;;
-	std.slfree(curtest#)
-	curtest# = ""
+
 	if pass
 		std.put("PASS\n")
-	elif msg.len > 0
-		std.put("FAIL {}\n", msg)
 	else
-		std.put("FAIL\n")
+		if msg.len > 0
+			std.put("FAIL {}\n", msg)
+		else
+			std.put("FAIL\n")
+		;;
+		p = std.pathjoin([b.curdir, cmd, curtest#][:])
+		std.slpush(failed, p)
 	;;
+
+	std.slfree(curtest#)
+	curtest# = ""
 	nresults#++
 }
 
