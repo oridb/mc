@@ -2,6 +2,8 @@ use std
 use testr
 
 const main = {
+	var si
+
 	testr.run([
 		/* 64 bit tests */
 		[.name="flt64-intzero", .fn={ctx; is64(ctx, "0", 0.0)}],
@@ -14,17 +16,6 @@ const main = {
 		[.name="flt64-dblmax", .fn={ctx; is64(ctx, "1.7976931348623157e308", 1.7976931348623157e308)}],
 		[.name="flt64-toobig", .fn={ctx; is64(ctx, "17.976931348623157e308", std.flt64inf())}],
 		[.name="flt64-exptoobig", .fn={ctx; is64(ctx, "1.7976931348623157e309", std.flt64inf())}],
-
-		/*
-		skip the test for denormalized values on 9front; the APE float parser returns denormalized
-		values as 0, which means that we get a spurious failure.
-		*/
-		std.getsysinfo(&si)
-		match si.system
-		| "Plan9":
-		| _:
-			[.name="flt64-denorm", .fn={ctx; is64(ctx, "2.2250738585072014e-311", 2.2250738585072014e-311)}],
-		;;
 
 		/* 32 bit tests */
 		[.name="flt32-intzero", .fn={ctx; is32(ctx, "0", 0.0)}],
@@ -42,6 +33,19 @@ const main = {
 		[.name="badfmt-twodot", .fn={ctx; isjunk(ctx, "1.2.3")}],
 		[.name="badfmt-badexp", .fn={ctx; isjunk(ctx, "1.2ee3")}],
 	][:])
+
+	/*
+	skip the test for denormalized values on 9front; the APE float parser returns denormalized
+	values as 0, which means that we get a spurious failure.
+	*/
+	std.getsysinfo(&si)
+	match si.system
+	| "Plan9":
+	| _:
+		testr.run([
+			[.name="flt64-denorm", .fn={ctx; is64(ctx, "2.2250738585072014e-311", 2.2250738585072014e-311)}],
+		][:])
+	;;
 }
 
 const is64 = {ctx, str, val
