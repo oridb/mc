@@ -24,6 +24,7 @@ pkg std =
 		opt	: char
 		arg	: byte[:]
 		desc	: byte[:]
+		dest	: std.option(byte[:]#)
 		optional	: bool
 	;;
 
@@ -114,7 +115,7 @@ const optnext = {ctx
 		else
 			fatal("unexpected argument '{}'\n", c)
 		;;
-	| `Some (true, needed):
+	| `Some (true, needed, dest):
 		/* -arg => '-a' 'rg' */
 		if ctx.curarg.len > 0
 			arg = ctx.curarg
@@ -129,7 +130,11 @@ const optnext = {ctx
 			put("Expected argument for {}\n", c)
 			exit(1)
 		;;
-	| `Some (false, _):
+		match dest
+		| `std.Some d:	d# = arg
+		| `std.None:	/* nothing */
+		;;
+	| `Some (false, _, _):
 		arg = ""
 		if ctx.curarg.len == 0
 			next(ctx)
@@ -147,7 +152,7 @@ const optdone = {ctx
 const optinfo = {ctx, opt
 	for o in ctx.optdef.opts
 		if o.opt == opt
-			-> `Some (o.arg.len != 0, !o.optional)
+			-> `Some (o.arg.len != 0, !o.optional, o.dest)
 		;;
 	;;
 	-> `None
