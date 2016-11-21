@@ -15,7 +15,8 @@ pkg sys =
 	type filemode	= uint32
 	type filetype	= uint8
 	type fcntlcmd	= int64
-	type umtxop	= int32
+	type signo	= int32
+	type sigflags	= int32
 
 	type clock = union
 		`Clockrealtime
@@ -40,6 +41,14 @@ pkg sys =
 	type timeval = struct
 		sec	: uint64
 		usec	: uint64
+	;;
+
+	type sigset = uint32
+
+	type sigaction = struct
+		handler	: byte#	/* code pointer */
+		mask	: sigset
+		flags	: sigflags
 	;;
 
 	type rusage = struct
@@ -254,6 +263,50 @@ pkg sys =
 
 	/* return value for a failed mapping */
 	const Mapbad	: byte# = (-1 : byte#)
+
+	/* signal flags */
+	const Saonstack		: sigflags = 0x0001	/* take signal on signal stack */
+	const Sarestart		: sigflags = 0x0002	/* restart system on signal return */
+	const Saresethand	: sigflags = 0x0004	/* reset to SIG_DFL when taking signal */
+	const Sanodefer		: sigflags = 0x0010	/* don't mask the signal we're delivering */
+	const Sanocldwait	: sigflags = 0x0020	/* don't create zombies (assign to pid 1) */
+	const Sanocldstop	: sigflags = 0x0008	/* do not generate SIGCHLD on child stop */
+	const Sasiginfo		: sigflags = 0x0040	/* generate siginfo_t */
+
+	/* signals */
+	const Sighup	: signo = 1	/* hangup */
+	const Sigint	: signo = 2	/* interrupt */
+	const Sigquit	: signo = 3	/* quit */
+	const Sigill	: signo = 4	/* illegal instruction (not reset when caught) */
+	const Sigtrap	: signo = 5	/* trace trap (not reset when caught) */
+	const Sigabrt	: signo = 6	/* abort() */
+	const Sigiot	: signo = Sigabrt	/* compatibility */
+	const Sigemt	: signo = 7	/* EMT instruction */
+	const Sigfpe	: signo = 8	/* floating point exception */
+	const Sigkill	: signo = 9	/* kill (cannot be caught or ignored) */
+	const Sigbus	: signo = 10	/* bus error */
+	const Sigsegv	: signo = 11	/* segmentation violation */
+	const Sigsys	: signo = 12	/* bad argument to system call */
+	const Sigpipe	: signo = 13	/* write on a pipe with no one to read it */
+	const Sigalrm	: signo = 14	/* alarm clock */
+	const Sigterm	: signo = 15	/* software termination signal from kill */
+	const Sigurg	: signo = 16	/* urgent condition on IO channel */
+	const Sigstop	: signo = 17	/* sendable stop signal not from tty */
+	const Sigtstp	: signo = 18	/* stop signal from tty */
+	const Sigcont	: signo = 19	/* continue a stopped process */
+	const Sigchld	: signo = 20	/* to parent on child stop or exit */
+	const Sigttin	: signo = 21	/* to readers pgrp upon background tty read */
+	const Sigttou	: signo = 22	/* like TTIN for output if (tp->t_local&LTOSTOP) */
+	const Sigio	: signo = 23	/* input/output possible signal */
+	const Sigxcpu	: signo = 24	/* exceeded CPU time limit */
+	const Sigxfsz	: signo = 25	/* exceeded file size limit */
+	const Sigvtalrm : signo = 26	/* virtual time alarm */
+	const Sigprof	: signo = 27	/* profiling time alarm */
+	const Sigwinch	: signo = 28	/* window size changes */
+	const Siginfo	: signo = 29	/* information request */
+	const Sigusr1	: signo = 30	/* user defined signal 1 */
+	const Sigusr2	: signo = 31	/* user defined signal 2 */
+	const Sigthr	: signo = 32	/* thread library AST */
 
 	/* syscalls */
 	const Syssyscall : scno = 0
@@ -498,6 +551,10 @@ pkg sys =
 	const chdir	: (p : byte[:] -> int64)
 	const __getcwd	: (buf : byte[:] -> int64)
 
+	/* signals */
+	const sigaction	: (sig : signo, act : sigaction#, oact : sigaction# -> int)
+	const sigprocmask	: (how : int32, set : sigset#, oset : sigset# -> int)
+
 	/* fd stuff */
 	const pipe	: (fds : fd[2]# -> int64)
 	const dup	: (fd : fd -> fd)
@@ -617,6 +674,10 @@ generic ioctl	= {fd, req, arg;	-> (syscall(Sysioctl, a(fd), a(req), a(arg)) : in
 const chdir	= {dir;	-> syscall(Syschdir, cstring(dir))}
 const __getcwd	= {buf;	-> syscall(Sys__getcwd, a(buf), a(buf.len))}
 const getdents	= {fd, buf;		-> (syscall(Sysgetdents, a(buf), a(buf.len)) : int64)}
+
+/* signals */
+const sigaction	= {sig, act, oact;	-> (syscall(Syssigaction, a(sig), a(act), a(oact)) : int)}
+const sigprocmask	= {sig, act, oact;	-> (syscall(Syssigprocmask, a(sig), a(act), a(oact)) : int)}
 
 /* file stuff */
 const pipe	= {fds;	-> syscall(Syspipe, fds)}
