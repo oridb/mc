@@ -1,5 +1,6 @@
 lib sys =
 	systypes.myr
+	setup+posixy.myr
 
 	sys+freebsd-x64.myr
 	sys+linux-x64.myr
