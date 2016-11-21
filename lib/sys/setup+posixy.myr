@@ -10,7 +10,6 @@ const __init__ = {
 	sa = [
 		.handler = ({;} : byte#),
 		.flags = sys.Sarestart,
-		.mask = [.bits = [0,0,0,0]]
 	]
 	sys.sigaction(Sigpipe, &sa, &osa)
 }

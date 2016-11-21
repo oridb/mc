@@ -28,6 +28,8 @@ pkg sys =
 	type pollevt	= uint16
 
 	type futexop	= uint32
+	type signo	= int32
+	type sigflags	= int64
 
 	type clock = union
 		`Clockrealtime
@@ -47,6 +49,17 @@ pkg sys =
 		`Waitsig  int32
 		`Waitstop int32
 		`Waitfail int32
+	;;
+
+	type sigset = struct
+		bits : uint32[2]
+	;;
+
+	type sigaction = struct
+		handler	: byte#	/* code pointer */
+		flags	: sigflags
+		restore	: byte#	/* code pointer */
+		mask	: sigset
 	;;
 
 	type timespec = struct
@@ -319,6 +332,50 @@ pkg sys =
 
 	/* return value for a failed mapping */
 	const Mapbad	: byte# = (-1 : byte#)
+
+	/* signal flags */
+	const Sanocldstop	: sigflags = 0x00000001
+	const Sanocldwait	: sigflags = 0x00000002
+	const Sasiginfo		: sigflags = 0x00000004
+	const Saonstack		: sigflags = 0x08000000
+	const Sarestart		: sigflags = 0x10000000
+	const Sanodefer		: sigflags = 0x40000000
+	const Saresethand	: sigflags = 0x80000000
+	const Sanomask		: sigflags = Sanodefer
+	const Saoneshot		: sigflags = Saresethand
+
+	/* signal numbers */
+	const Sighup	: signo = 1
+	const Sigint	: signo = 2
+	const Sigquit	: signo = 3
+	const Sigill	: signo = 4
+	const Sigtrap	: signo = 5
+	const Sigabrt	: signo = 6
+	const Sigiot	: signo = 6
+	const Sigbus	: signo = 7
+	const Sigfpe	: signo = 8
+	const Sigkill	: signo = 9
+	const Sigusr1	: signo = 10
+	const Sigsegv	: signo = 11
+	const Sigusr2	: signo = 12
+	const Sigpipe	: signo = 13
+	const Sigalrm	: signo = 14
+	const Sigterm	: signo = 15
+	const Sigstkflt	: signo = 16
+	const Sigchld	: signo = 17
+	const Sigcont	: signo = 18
+	const Sigstop	: signo = 19
+	const Sigtstp	: signo = 20
+	const Sigttin	: signo = 21
+	const Sigttou	: signo = 22
+	const Sigurg	: signo = 23
+	const Sigxcpu	: signo = 24
+	const Sigxfsz	: signo = 25
+	const Sigvtalrm	: signo = 26
+	const Sigprof	: signo = 27
+	const Sigwinch	: signo = 28
+	const Sigio	: signo = 29
+	const Sigpoll	: signo = Sigio
 
 	/* syscalls */
 	const Sysread			: scno = 0
@@ -679,6 +736,10 @@ pkg sys =
 	const chdir	: (p : byte[:] -> int64)
 	const getcwd	: (buf : byte[:] -> int64)
 
+	/* signals */
+	const sigaction	: (sig : signo, act : sigaction#, oact : sigaction# -> int)
+	const sigprocmask	: (how : int32, set : sigset#, oset : sigset# -> int)
+
 	/* fd stuff */
 	const pipe	: (fds : fd[2]# -> int64)
 	const dup	: (fd : fd -> fd)
@@ -808,6 +869,9 @@ const getcwd	= {buf;	-> syscall(Sysgetcwd, a(buf), a(buf.len))}
 const pipe	= {fds;	-> syscall(Syspipe, a(fds))}
 const dup 	= {fd;	-> (syscall(Sysdup, a(fd)) : fd)}
 const dup2 	= {src, dst;	-> (syscall(Sysdup2, a(src), a(dst)) : fd)}
+
+const sigaction	= {sig, act, oact;	-> (syscall(Sysrt_sigaction, a(sig), a(act), a(oact), a(sizeof(sigflags))) : int)}
+const sigprocmask	= {sig, act, oact;	-> (syscall(Sysrt_sigprocmask, a(sig), a(act), a(oact), a(sizeof(sigflags))) : int)}
 
 /* threading */
 const futex	= {uaddr, op, val, timeout, uaddr2, val3
