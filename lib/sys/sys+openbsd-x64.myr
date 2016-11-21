@@ -676,6 +676,12 @@ const uname	= {buf
 
 	mib[0] = 1 /* CTL_KERN */
 	mib[1] = 10 /* KERN_HOSTNAME */
+	nod = (buf.node[:] : void#)
+	nodsz = buf.node.len
+	ret = sysctl(mib[:], nod, &nodsz, (0 : void#), (0 : size#))
+	if ret < 0
+		-> ret
+	;;
 
 	mib[0] = 1 /* CTL_KERN */
 	mib[1] = 2 /* KERN_OSRELEASE */

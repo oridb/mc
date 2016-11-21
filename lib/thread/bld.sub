@@ -13,6 +13,7 @@ lib thread =
 	#condvar+freebsd.myr
 	mutex+freebsd.myr
 	spawn+freebsd.myr
+	ncpu+freebsd.myr
 	exit+freebsd-x64.s
 
 	# osx impl of thread primitives
