@@ -7,10 +7,11 @@ echo 	as	-g -o util.o util+posixy-x64.s  && 	as	-g -o util.o util+posixy-x64.s  
 echo 	$pwd/6/6m	syserrno+linux.myr  && 	$pwd/6/6m	syserrno+linux.myr  &&\
 echo 	$pwd/6/6m	systypes.myr  && 	$pwd/6/6m	systypes.myr  &&\
 echo 	$pwd/6/6m	sys+linux-x64.myr  && 	$pwd/6/6m	sys+linux-x64.myr  &&\
+echo 	$pwd/6/6m	setup+posixy.myr  && 	$pwd/6/6m	setup+posixy.myr  &&\
 echo 	as	-g -o syscall.o syscall+linux-x64.s  && 	as	-g -o syscall.o syscall+linux-x64.s  &&\
 echo 	$pwd/6/6m	ifreq+linux.myr  && 	$pwd/6/6m	ifreq+linux.myr  &&\
-echo 	$pwd/muse/muse	-o libsys.use -p sys ifreq.use syserrno.use systypes.use sys.use  && 	$pwd/muse/muse	-o libsys.use -p sys ifreq.use syserrno.use systypes.use sys.use  &&\
-echo 	ar	-rcs libsys.a ifreq.o util.o syserrno.o syscall.o systypes.o sys.o  && 	ar	-rcs libsys.a ifreq.o util.o syserrno.o syscall.o systypes.o sys.o  &&\
+echo 	$pwd/muse/muse	-o libsys.use -p sys ifreq.use setup.use syserrno.use systypes.use sys.use  && 	$pwd/muse/muse	-o libsys.use -p sys ifreq.use setup.use syserrno.use systypes.use sys.use  &&\
+echo 	ar	-rcs libsys.a ifreq.o util.o setup.o syserrno.o syscall.o systypes.o sys.o  && 	ar	-rcs libsys.a ifreq.o util.o setup.o syserrno.o syscall.o systypes.o sys.o  &&\
 echo 	cd $pwd/lib/std && 	cd $pwd/lib/std &&\
 echo 	$pwd/6/6m	-I ../sys -I . types.myr  && 	$pwd/6/6m	-I ../sys -I . types.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . cstrconv.myr  && 	$pwd/6/6m	-I ../sys -I . cstrconv.myr  &&\
