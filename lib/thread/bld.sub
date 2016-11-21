@@ -25,6 +25,7 @@ lib thread =
 	#condvar+plan9.myr
 	mutex+plan9.myr
 	spawn+plan9.myr
+	ncpu+plan9.myr
 	atomic-impl+plan9-x64.s
 
 	# openbsd impl of thread primitives

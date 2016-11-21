@@ -1,0 +1,12 @@
+use std
+
+pkg thread =
+	const ncpu	: (-> int)
+;;
+
+const ncpu = {
+	match std.intparse(std.getenvv("NPROC", ""))
+	| `std.Some n:	-> n
+	| `std.None:	-> 1
+	;;
+}
