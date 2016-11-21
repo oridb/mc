@@ -866,7 +866,10 @@ pkg sys =
 
 	/* system information */
 	const uname 	: (buf : utsname# -> int)
-	const sysctl	: (mib : int[:], old : byte[:]#, new : byte[:] -> int)
+	const sysctl	: (mib : int[:], \
+		old : void#, oldsz : size#, \
+		new : void#, newsz : size# \
+		-> int)
 
 	/* filled by start code */
 	extern const __cenvp : byte##
@@ -996,29 +999,10 @@ const sched_yield = {;	syscall(Syssched_yield)}
 /* system information */
 const uname	= {buf;	-> (syscall(Sysfreebsd4_uname, a(buf)) : int)}
 
-const sysctl = {mib, old, new
-	var mibp
-	var mibsz
-	var o
-	var oldp
-	var oldsz
-	var newp
-	var newsz
-	var ret
-
-	mibp = (mib : byte#)
-	mibsz = a(mib.len)
-	o = old#
-	oldp = (o : byte#)
-	oldsz = a(o.len)
-	newp = (new : byte#)
-	newsz = a(new.len)
-
+const sysctl = {mib, old, oldsz, new, newsz
 	/* all args already passed through a() or ar  ptrs */
-	ret = (syscall(Sys__sysctl, mibp, mibsz, oldp, oldsz, newp, newsz) : int)
-
-	old# = o[:oldsz]
-	-> ret
+	-> (syscall(Sys__sysctl, \
+		(mib : int#), a(mib.len), old, oldsz, new, newsz) : int)
 }
 
 const clockid = {clk

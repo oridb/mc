@@ -755,7 +755,10 @@ pkg sys =
 
 	/* system information */
 	const uname 	: (buf : utsname# -> int)
-	const sysctl	: (mib : int[:], old : byte[:]#, new : byte[:] -> int)
+	const sysctl	: (mib : int[:], \
+		old : void#, oldsz : size#, \
+		new : void#, newsz : size# \
+		-> int)
 
 	/* filled by start code */
 	extern const __cenvp : byte##
@@ -949,49 +952,54 @@ const clock_settime = {clk, ts
 const uname	= {buf;
 	var mib : int[2]
 	var ret
-	var sys
-	var nod
-	var rel
-	var ver
-	var mach
+	var sys, syssz
+	var nod, nodsz
+	var rel, relsz
+	var ver, versz
+	var mach, machsz
 
 	ret = 0
 	mib[0] = 1 /* CTL_KERN */
 	mib[1] = 1 /* KERN_OSTYPE */
-	sys = buf.system[:]
-	ret = sysctl(mib[:], &sys, [][:])
+	sys = (buf.system[:] : void#)
+	syssz = buf.system.len
+	ret = sysctl(mib[:], sys, &syssz, (0 : void#), (0 : size#))
 	if ret < 0
 		-> ret
 	;;
 
 	mib[0] = 1 /* CTL_KERN */
 	mib[1] = 10 /* KERN_HOSTNAME */
-	nod = buf.node[:]
-	ret = sysctl(mib[:], &nod, [][:])
+	nod = (buf.node[:] : void#)
+	nodsz = buf.node.len
+	ret = sysctl(mib[:], nod, &nodsz, (0 : void#), (0 : size#))
 	if ret < 0
 		-> ret
 	;;
 
 	mib[0] = 1 /* CTL_KERN */
 	mib[1] = 2 /* KERN_OSRELEASE */
-	rel = buf.release[:]
-	ret = sysctl(mib[:], &rel, [][:])
+	rel = (buf.release[:] : void#)
+	relsz = buf.release.len
+	ret = sysctl(mib[:], rel, &relsz, (0 : void#), (0 : size#))
 	if ret < 0
 		-> ret
 	;;
 
 	mib[0] = 1 /* CTL_KERN */
 	mib[1] = 4 /* KERN_VERSION */
-	ver = buf.version[:]
-	ret = sysctl(mib[:], &ver, [][:])
+	ver = (buf.version[:] : void#)
+	versz = buf.version.len
+	ret = sysctl(mib[:], ver, &versz, (0 : void#), (0 : size#))
 	if ret < 0
 		-> ret
 	;;
 
 	mib[0] = 6 /* CTL_HW */
 	mib[1] = 1 /* HW_MACHINE */
-	mach = buf.machine[:]
-	ret = sysctl(mib[:], &mach, [][:])
+	mach = (buf.machine[:] : void#)
+	machsz = buf.machine.len
+	ret = sysctl(mib[:], mach, &machsz, (0 : void#), (0 : size#))
 	if ret < 0
 		-> ret
 	;;
@@ -999,33 +1007,10 @@ const uname	= {buf;
 	-> 0
 }
 
-const sysctl = {mib, old, new
-	var mibp
-	var mibsz
-	var o
-	var oldp
-	var oldsz
-	var newp
-	var newsz
-	var ret
-
-	mibp = (mib : byte#)
-	mibsz = (mib.len : uint64)
-	o = old#
-	oldp = (o : byte#)
-	oldsz = (o.len : uint64)
-	if new.len > 0
-		newp = (new : byte#)
-		newsz = (new.len : uint64)
-	else
-		newp = (0 : byte#)
-		newsz = 0
-	;;
-
-	ret = (syscall(Sys__sysctl, a(mibp), a(mibsz), a(oldp), a(&oldsz), a(newp), a(newsz)) : int)
-
-	old# = o[:oldsz]
-	-> ret
+const sysctl = {mib, old, oldsz, new, newsz
+	/* all args already passed through a() or ar  ptrs */
+	-> (syscall(Sys__sysctl, \
+		(mib : int#), a(mib.len), old, oldsz, new, newsz) : int)
 }
 
 const waitstatus = {st
