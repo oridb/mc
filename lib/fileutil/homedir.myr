@@ -1,0 +1,21 @@
+use std
+
+pkg fileutil =
+	const homedir	: (-> byte[:])
+;;
+
+const homedir = {
+	match std.getenv("HOME")
+	| `std.Some h:	-> h
+	| `std.None:	/* nothing */
+	;;
+
+	/* 9front uses $home */
+	match std.getenv("home")
+	| `std.Some h:	-> h
+	| `std.None:	/* nothing */
+	;;
+
+	/* really, we should read from /etc/passwd or ldap/nss */
+	-> ""
+}
