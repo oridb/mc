@@ -1,0 +1,18 @@
+use std
+use crypto
+
+use "test/util"
+
+const main = {
+	hasheq(crypto.sha1("")[:], \
+		"da39a3ee5e6b4b0d3255bfef60951890d8af0709")
+	hasheq(crypto.sha1("h")[:], \
+		"27d5482eebd075de44389774e2fc8c695cf48a75")
+	/* 64 byte block */
+	hasheq(crypto.sha1("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")[:], \
+		"0098ba824b5c16427bd7a1125a2a442aec25644d")
+	/* tail spanning */
+	hasheq(crypto.sha1("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbb")[:], \
+		"4eb17e52bb55910b037869438f69d9c87643d75a")
+}
+

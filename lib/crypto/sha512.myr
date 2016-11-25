@@ -1,6 +1,6 @@
 use std
 
-pkg cryptohash =
+pkg crypto =
 	type sha512
 	type sha384
 

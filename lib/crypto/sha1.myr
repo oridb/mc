@@ -1,6 +1,6 @@
 use std
 
-pkg cryptohash =
+pkg crypto =
 	type sha1
 
 	const sha1	: (data : byte[:] -> byte[20])

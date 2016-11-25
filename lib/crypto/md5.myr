@@ -1,6 +1,6 @@
 use std
 
-pkg cryptohash =
+pkg crypto =
 	type md5
 
 	const md5	: (data : byte[:] -> byte[16])

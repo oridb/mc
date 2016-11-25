@@ -1,7 +1,7 @@
 sub =
 	bio
 	date
-	cryptohash
+	crypto
 	escfmt
 	inifile
 	fileutil

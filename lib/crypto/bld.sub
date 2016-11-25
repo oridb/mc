@@ -1,8 +1,14 @@
-lib cryptohash =
+testdeps = ../testr:testr ;;
+
+lib crypto =
+	# hashes
 	md5.myr
 	sha1.myr
 	sha256.myr
 	sha512.myr
+
+	# ciphers
+	chacha20.myr
 
 	lib ../std:std
 	lib ../sys:sys
