@@ -9,15 +9,22 @@ pkg std =
 		rest	: byte[:]
 	;;
 
+	type charoffiter = struct
+		str	: byte[:]
+		idx	: size
+	;;
+
 	type splititer = struct
 		rest	: byte[:]
 		split	: byte[:]
 	;;
 
-	impl iterable chariter -> char
+	impl iterable chariter	-> char
+	impl iterable charoffiter	-> (char, size)
 	impl iterable splititer -> byte[:]
 
 	const bychar	: (str : byte[:] -> chariter)
+	const bycharoff	: (str : byte[:] -> charoffiter)
 	const bysplit	: (str : byte[:], split : byte[:] -> splititer)
 ;;
 
@@ -36,6 +43,28 @@ impl iterable chariter -> char =
 
 const bychar = {str
 	-> [.rest = str]
+}
+
+
+impl iterable charoffiter -> (char, size) = 
+	__iternext__ = {ci, cv
+		var c
+
+		if ci.idx == ci.str.len
+			-> false
+		;;
+		c = std.decode(ci.str[ci.idx:])
+		ci.idx += std.charlen(c)
+		cv# = (c, ci.idx)
+		-> true
+	}
+
+	__iterfin__ = {ci, c
+	}
+;;
+
+const bycharoff = {s
+	-> [.str=s, .idx=0]
 }
 
 impl iterable splititer -> byte[:] =
@@ -62,4 +91,3 @@ impl iterable splititer -> byte[:] =
 const bysplit = {str, split
 	-> [.rest = str, .split = split]
 }
-
