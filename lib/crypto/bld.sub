@@ -9,6 +9,7 @@ lib crypto =
 
 	# ciphers
 	chacha20.myr
+	aes.myr
 
 	lib ../std:std
 	lib ../sys:sys
