@@ -1,0 +1,24 @@
+use std
+
+pkg crypto =
+	const getentropy : (buf : byte[:] -> void)
+;;
+
+var randfd
+
+const __init__ = {
+	randfd = std.try(std.open("/dev/random", std.Ordonly))
+}
+
+const getentropy = {buf
+	var nread
+
+	nread = 0
+	while nread < buf.len
+		match std.read(randfd, buf)
+		| `std.Err e:	std.die(std.fmt("unable to read from randfd: {}\n", e))
+		| `std.Ok 0:	std.die("could not get entropy from randfd: EOF\n")
+		| `std.Ok n:	nread += n
+		;;
+	;;
+}

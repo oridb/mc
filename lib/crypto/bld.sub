@@ -11,6 +11,9 @@ lib crypto =
 	chacha20.myr
 	aes.myr
 
+	# randomness
+	entropy.myr	# currently assumes a /dev/random
+
 	lib ../std:std
 	lib ../sys:sys
 ;;
