@@ -1,4 +1,5 @@
 use std
+use thread
 
 use "entropy"
 use "sha256"
@@ -20,6 +21,7 @@ var rem	: std.size	/* size remaining in buffer */
 var cnt	: std.size	/* count we've read since last stirring of entropy */
 var ctx	: chacha20ctx	/* the generator */
 var pid	: std.pid	/* for rekeying on fork and exec */
+var mtx	: thread.mutex	/* there can be only one */
 
 generic rand = {lo, hi
 	var span, lim, val, max
@@ -49,6 +51,7 @@ generic randnum	= {
 const randbytes	 = {dst
 	var n, off, rdlen
 
+	thread.mtxlock(&mtx)
 	/* costly? */
 	if pid != std.getpid()
 		stir()
@@ -70,6 +73,7 @@ const randbytes	 = {dst
 			rekey([][:])
 		;;
 	;;
+	thread.mtxunlock(&mtx)
 }
 
 const stir = {
