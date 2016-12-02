@@ -13,7 +13,6 @@ pkg crypto =
 ;;
 
 const Stirinterval = 16*std.MiB
-const Secretsz = 40
 var buf : byte[4096]	/* let's not encrypt too often */
 var rem	: std.size	/* size remaining in buffer */
 var cnt	: std.size	/* count we've read since last stirring of entropy */
