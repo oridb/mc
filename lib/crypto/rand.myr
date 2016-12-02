@@ -1,0 +1,100 @@
+use std
+
+use "entropy"
+use "sha256"
+use "chacha20"
+
+pkg crypto =
+	/* designed to mirror std.rand() */
+	const randbytes	: (buf : byte[:] -> void)
+	generic rand	: (lo : @a::(integral,numeric), hi : @a::(integral,numeric) -> @a::(numeric,integral))
+	generic randnum	: (-> @a::(numeric,integral))
+
+	pkglocal const rekey : (entropy : byte[:] -> void)
+;;
+
+const Stirinterval = 16*std.MiB
+const Secretsz = 40
+var buf : byte[4096]	/* let's not encrypt too often */
+var rem	: std.size	/* size remaining in buffer */
+var cnt	: std.size	/* count we've read since last stirring of entropy */
+var ctx	: chacha20ctx	/* the generator */
+var pid	: std.pid	/* for rekeying on fork and exec */
+
+generic rand = {lo, hi
+	var span, lim, val, max
+	
+	span = std.abs(hi - lo)
+	max = ~0
+	/* if ~0 is negative, we have a signed value with a different max */
+	if max < 0
+	        max = (1 << (8*sizeof(@a)-1)) - 1
+	;;
+	
+	lim = (max/span)*span
+	val = (randnum() & max)
+	while val > lim
+	        val = (randnum() & max)
+	;;
+	-> val % span + lo
+}
+
+generic randnum	= {
+	var buf : byte[8]
+
+	randbytes(buf[:])
+	-> std.getle64(buf[:])
+}
+
+const randbytes	 = {dst
+	var n, off, rdlen
+
+	/* costly? */
+	if pid != std.getpid()
+		stir()
+		pid = std.getpid()
+	;;
+	n = 0
+	while n < dst.len
+		if cnt + buf.len >= Stirinterval
+			stir()
+		;;
+		off = buf.len - rem
+		rdlen = std.min(dst.len - n, rem)
+		std.slcp(dst[n:n+rdlen], buf[off:off+rdlen])
+		std.slfill(buf[off:off+rdlen], 0)
+		cnt += rdlen
+		rem -= rdlen
+		n += rdlen
+		if rem == 0
+			rekey([][:])
+		;;
+	;;
+}
+
+const stir = {
+	var entropy : byte[40]
+	rekey(entropy[:])
+	std.slfill(entropy[:], 0)
+	std.slfill(buf[:], 0)
+	rem = 0
+	cnt = 0
+}
+
+const rekey = {entropy
+	var len
+
+	chacha20encrypt(&ctx, buf[:], buf[:])
+	len = std.min(buf.len, entropy.len)
+	for var i = 0; i < len; i++
+		buf[i] ^= entropy[i]
+	;;
+	init(buf[:])
+	std.slfill(buf[:40], 0)
+	rem = buf.len - 40
+}
+
+const init = {buf
+	chacha20keysetup(&ctx, buf[:32])
+	chacha20ivsetup(&ctx, buf[32:40])
+}

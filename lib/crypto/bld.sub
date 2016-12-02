@@ -13,6 +13,7 @@ lib crypto =
 
 	# randomness
 	entropy.myr	# currently assumes a /dev/random
+	rand.myr
 
 	lib ../std:std
 	lib ../sys:sys
