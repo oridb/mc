@@ -17,5 +17,6 @@ lib crypto =
 
 	lib ../std:std
 	lib ../sys:sys
+	lib ../thread:thread
 ;;
 
