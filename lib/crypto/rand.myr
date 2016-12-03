@@ -75,6 +75,8 @@ const randbytes	 = {dst
 
 const stir = {
 	var entropy : byte[40]
+
+	getentropy(entropy[:])
 	rekey(entropy[:])
 	std.slfill(entropy[:], 0)
 	std.slfill(buf[:], 0)
