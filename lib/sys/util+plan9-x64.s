@@ -57,8 +57,6 @@ TEXT sys$alloca+0(SB),$0
 	MOVQ	R10,(SP)	/* place ret addr */
 	RET
 
-GLOBL	sys$tosptr+0(SB),$8
-DATA	sys$tosptr+0(SB)/8,$_tos+0(SB)
 GLOBL	sys$curbrk+0(SB),$8
 DATA	sys$curbrk+0(SB)/8,$end+0(SB)
 

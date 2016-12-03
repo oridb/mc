@@ -38,7 +38,7 @@ TEXT cvt(SB),$0
 	
 
 TEXT	_main(SB), 1, $(2*8+NPRIVATES*8)
-	MOVQ	AX, _tos(SB)
+	MOVQ	AX, sys$tosptr(SB)
 	LEAQ	16(SP), AX
 	MOVQ	AX, _privates(SB)
 	MOVL	$NPRIVATES, _nprivates(SB)
@@ -76,6 +76,6 @@ broke:
 	JMP		broke
 
 GLOBL	argv0(SB), $8
-GLOBL	_tos(SB), $8
+GLOBL	sys$tosptr(SB), $8
 GLOBL	_privates(SB), $8
 GLOBL	_nprivates(SB), $4
