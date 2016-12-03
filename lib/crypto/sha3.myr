@@ -1,0 +1,340 @@
+use std
+
+pkg crypto =
+	type keccak224 = struct
+		x	: uint64[25]
+		tail	: byte[144]
+		msglen	: std.size
+	;;
+
+	type keccak256 = struct
+		x	: uint64[25]
+		tail	: byte[136]
+		msglen	: std.size
+	;;
+	
+	type keccak384 = struct
+		x	: uint64[25]
+		tail	: byte[104]
+		msglen	: std.size
+	;;
+	
+	type keccak512 = struct
+		x	: uint64[25]
+		tail	: byte[72]
+		msglen	: std.size
+	;;
+
+	const keccak224	: (data : byte[:] -> byte[28])
+	const keccak224init	: (st : keccak224# -> void)
+	const keccak224add	: (st : keccak224#, data : byte[:] -> void)
+	const keccak224fin	: (st : keccak224# -> byte[28])
+	
+	const keccak256	: (data : byte[:] -> byte[32])
+	const keccak256init	: (st : keccak256# -> void)
+	const keccak256add	: (st : keccak256#, data : byte[:] -> void)
+	const keccak256fin	: (st : keccak256# -> byte[32])
+
+	const keccak384	: (data : byte[:] -> byte[48])
+	const keccak384init	: (st : keccak384# -> void)
+	const keccak384add	: (st : keccak384#, data : byte[:] -> void)
+	const keccak384fin	: (st : keccak384# -> byte[48])
+
+	const keccak512	: (data : byte[:] -> byte[64])
+	const keccak512init	: (st : keccak512# -> void)
+	const keccak512add	: (st : keccak512#, data : byte[:] -> void)
+	const keccak512fin	: (st : keccak512# -> byte[64])
+;;
+
+const Nrounds = 24
+
+const keccak224 = {data
+	var st
+
+	keccak224init(&st)
+	keccak224add(&st, data)
+	-> keccak224fin(&st)
+}
+
+const keccak224init = {st; 
+	std.slfill(st.x[:], 0)
+	st.msglen = 0
+}
+
+const keccak224add = {st, data
+	st.msglen += keccak(st.x[:], data, 144, st.tail[:], st.msglen)
+}
+
+const keccak224fin = {st
+	var ret : byte[28]
+
+	fin(st.x[:], 144, st.tail[:], st.msglen)
+	std.putle64(ret[ 0: 8], st.x[0])
+	std.putle64(ret[ 8:16], st.x[1])
+	std.putle64(ret[16:24], st.x[2])
+	std.putle32(ret[24:28], st.x[3])
+	-> ret
+}
+
+const keccak256 = {data
+	var st
+
+	keccak256init(&st)
+	keccak256add(&st, data)
+	-> keccak256fin(&st)
+}
+
+const keccak256init = {st
+	std.slfill(st.x[:], 0)
+	st.msglen = 0
+}
+
+const keccak256add = {st, data
+	st.msglen += keccak(st.x[:], data, 136, st.tail[:], st.msglen)
+}
+
+const keccak256fin = {st
+	var ret : byte[32]
+
+	fin(st.x[:], 136, st.tail[:], st.msglen) 
+	std.putle64(ret[ 0: 8], st.x[0])
+	std.putle64(ret[ 8:16], st.x[1])
+	std.putle64(ret[16:24], st.x[2])
+	std.putle64(ret[24:32], st.x[3])
+	-> ret
+}
+
+const keccak384 = {data
+	var st
+
+	keccak384init(&st)
+	keccak384add(&st, data)
+	-> keccak384fin(&st)
+}
+
+const keccak384init = {st
+	std.slfill(st.x[:], 0)
+	st.msglen = 0
+}
+
+const keccak384add = {st, data
+	st.msglen += keccak(st.x[:], data, 104, st.tail[:], st.msglen)
+}
+
+const keccak384fin = {st
+	var ret : byte[48]
+
+	fin(st.x[:], 104, st.tail[:], st.msglen) 
+	std.putle64(ret[ 0: 8], st.x[0])
+	std.putle64(ret[ 8:16], st.x[1])
+	std.putle64(ret[16:24], st.x[2])
+	std.putle64(ret[24:32], st.x[3])
+	std.putle64(ret[32:40], st.x[4])
+	std.putle64(ret[40:48], st.x[5])
+	-> ret
+}
+
+const keccak512init = {st
+	std.slfill(st.x[:], 0)
+	st.msglen = 0
+}
+const keccak512 = {data
+	var st
+
+	keccak512init(&st)
+	keccak512add(&st, data)
+	-> keccak512fin(&st)
+}
+
+const keccak512add = {st, data
+	st.msglen += keccak(st.x[:], data, 72, st.tail[:], st.msglen)
+}
+
+const keccak512fin = {st
+	var ret : byte[64]
+
+	fin(st.x[:], 72, st.tail[:], st.msglen) 
+	std.putle64(ret[ 0: 8], st.x[0])
+	std.putle64(ret[ 8:16], st.x[1])
+	std.putle64(ret[16:24], st.x[2])
+	std.putle64(ret[24:32], st.x[3])
+	std.putle64(ret[32:40], st.x[4])
+	std.putle64(ret[40:48], st.x[5])
+	std.putle64(ret[48:56], st.x[6])
+	std.putle64(ret[56:64], st.x[7])
+	-> ret
+}
+
+const fin = {x, blocksz, tail, msgsz
+	var ntail
+
+	ntail = msgsz % blocksz
+	std.slfill(tail[ntail:], 0)
+	tail[ntail] |= 0x01 /* wat */
+	tail[tail.len - 1] |= 0x80
+	addblock(x, tail)
+	keccakf(x)
+}
+
+const keccak = {x, data, blocksz, tail, msglen
+	var n, ntail, len
+
+	len = data.len
+	/* handle tail of last block */
+	ntail = msglen % blocksz
+	if ntail > 0
+		n = std.min(blocksz - ntail, data.len)
+		std.slcp(tail[ntail:ntail + n], data[:n])
+		data = data[n:]
+		if n + ntail < blocksz
+			-> n + ntail
+		;;
+		addblock(x, tail)
+		keccakf(x)
+	;;
+	while data.len >= blocksz
+		addblock(x, data)
+		keccakf(x)
+		data = data[blocksz:]
+	;;
+	std.slcp(tail[:data.len], data)
+	-> len
+}
+
+const keccakf = {x : uint64[:]
+	var bc0, bc1, bc2, bc3, bc4
+	var t0, t1, t2, t3, t4
+
+	for var round = 0; round < Nrounds; round++
+		/* theta(x) */
+		bc0 = x[0] ^ x[5] ^ x[10] ^ x[15] ^ x[20]
+		bc1 = x[1] ^ x[6] ^ x[11] ^ x[16] ^ x[21]
+		bc2 = x[2] ^ x[7] ^ x[12] ^ x[17] ^ x[22]
+		bc3 = x[3] ^ x[8] ^ x[13] ^ x[18] ^ x[23]
+		bc4 = x[4] ^ x[9] ^ x[14] ^ x[19] ^ x[24]
+
+		t0 = bc4 ^ ((bc1 << 1) | (bc1 >> 63))
+		t1 = bc0 ^ ((bc2 << 1) | (bc2 >> 63))
+		t2 = bc1 ^ ((bc3 << 1) | (bc3 >> 63))
+		t3 = bc2 ^ ((bc4 << 1) | (bc4 >> 63))
+		t4 = bc3 ^ ((bc0 << 1) | (bc0 >> 63))
+
+		x[ 0] ^= t0
+		x[ 5] ^= t0
+		x[10] ^= t0
+		x[15] ^= t0
+		x[20] ^= t0
+
+		x[ 1] ^= t1
+		x[ 6] ^= t1
+		x[11] ^= t1
+		x[16] ^= t1
+		x[21] ^= t1
+
+		x[ 2] ^= t2
+		x[ 7] ^= t2
+		x[12] ^= t2
+		x[17] ^= t2
+		x[22] ^= t2
+
+		x[ 3] ^= t3
+		x[ 8] ^= t3
+		x[13] ^= t3
+		x[18] ^= t3
+		x[23] ^= t3
+
+		x[ 4] ^= t4
+		x[ 9] ^= t4
+		x[14] ^= t4
+		x[19] ^= t4
+		x[24] ^= t4
+
+		/* rho(x) */
+
+		t0 = x[1]
+		t1 = x[10]; x[10] = ((t0 <<  1) | (t0 >> 63)); t0 = t1
+		t1 = x[ 7]; x[ 7] = ((t0 <<  3) | (t0 >> 61)); t0 = t1
+		t1 = x[11]; x[11] = ((t0 <<  6) | (t0 >> 58)); t0 = t1
+		t1 = x[17]; x[17] = ((t0 << 10) | (t0 >> 54)); t0 = t1
+		t1 = x[18]; x[18] = ((t0 << 15) | (t0 >> 49)); t0 = t1
+		t1 = x[ 3]; x[ 3] = ((t0 << 21) | (t0 >> 43)); t0 = t1
+		t1 = x[ 5]; x[ 5] = ((t0 << 28) | (t0 >> 36)); t0 = t1
+		t1 = x[16]; x[16] = ((t0 << 36) | (t0 >> 28)); t0 = t1
+		t1 = x[ 8]; x[ 8] = ((t0 << 45) | (t0 >> 19)); t0 = t1
+		t1 = x[21]; x[21] = ((t0 << 55) | (t0 >>  9)); t0 = t1
+		t1 = x[24]; x[24] = ((t0 <<  2) | (t0 >> 62)); t0 = t1
+		t1 = x[ 4]; x[ 4] = ((t0 << 14) | (t0 >> 50)); t0 = t1
+		t1 = x[15]; x[15] = ((t0 << 27) | (t0 >> 37)); t0 = t1
+		t1 = x[23]; x[23] = ((t0 << 41) | (t0 >> 23)); t0 = t1
+		t1 = x[19]; x[19] = ((t0 << 56) | (t0 >>  8)); t0 = t1
+		t1 = x[13]; x[13] = ((t0 <<  8) | (t0 >> 56)); t0 = t1
+		t1 = x[12]; x[12] = ((t0 << 25) | (t0 >> 39)); t0 = t1
+		t1 = x[ 2]; x[ 2] = ((t0 << 43) | (t0 >> 21)); t0 = t1
+		t1 = x[20]; x[20] = ((t0 << 62) | (t0 >>  2)); t0 = t1
+		t1 = x[14]; x[14] = ((t0 << 18) | (t0 >> 46)); t0 = t1
+		t1 = x[22]; x[22] = ((t0 << 39) | (t0 >> 25)); t0 = t1
+		t1 = x[ 9]; x[ 9] = ((t0 << 61) | (t0 >>  3)); t0 = t1
+		t1 = x[ 6]; x[ 6] = ((t0 << 20) | (t0 >> 44)); t0 = t1
+		t1 = x[ 1]; x[ 1] = ((t0 << 44) | (t0 >> 20)); t0 = t1
+
+		/* chi */
+		for var i = 0; i < 25; i += 5
+			bc0 = x[i+0]
+			bc1 = x[i+1]
+			bc2 = x[i+2]
+			bc3 = x[i+3]
+			bc4 = x[i+4]
+			x[i+0] ^= ~bc1 & bc2
+			x[i+1] ^= ~bc2 & bc3
+			x[i+2] ^= ~bc3 & bc4
+			x[i+3] ^= ~bc4 & bc0
+			x[i+4] ^= ~bc0 & bc1
+		;;
+
+
+		/* iota */
+		x[0] ^= rconst[round]
+	;;
+}
+
+const addblock = {x, buf
+	x[0] ^= std.getle64(buf[ 0: 8])
+	x[1] ^= std.getle64(buf[ 8:16])
+	x[2] ^= std.getle64(buf[16:24])
+	x[3] ^= std.getle64(buf[24:32])
+	x[4] ^= std.getle64(buf[32:40])
+	x[5] ^= std.getle64(buf[40:48])
+	x[6] ^= std.getle64(buf[48:56])
+	x[7] ^= std.getle64(buf[56:64])
+	x[8] ^= std.getle64(buf[64:72])
+	if buf.len <= 72
+		-> void
+	;;
+	x[ 9] ^= std.getle64(buf[72:80]);
+	x[10] ^= std.getle64(buf[80:88]);
+	x[11] ^= std.getle64(buf[88:96]);
+	x[12] ^= std.getle64(buf[96:104]);
+	if buf.len <= 104
+		-> void
+	;;
+	x[13] ^= std.getle64(buf[104:112]);
+	x[14] ^= std.getle64(buf[112:120]);
+	x[15] ^= std.getle64(buf[120:128]);
+	x[16] ^= std.getle64(buf[128:136]);
+	if buf.len <= 136
+		-> void
+	;;
+	x[17] ^= std.getle64(buf[136:144]);
+}
+
+const rconst = [
+	0x0000000000000001ul, 0x0000000000008082ul, 0x800000000000808aul,
+	0x8000000080008000ul, 0x000000000000808bul, 0x0000000080000001ul,
+	0x8000000080008081ul, 0x8000000000008009ul, 0x000000000000008aul,
+	0x0000000000000088ul, 0x0000000080008009ul, 0x000000008000000aul,
+	0x000000008000808bul, 0x800000000000008bul, 0x8000000000008089ul,
+	0x8000000000008003ul, 0x8000000000008002ul, 0x8000000000000080ul, 
+	0x000000000000800aul, 0x800000008000000aul, 0x8000000080008081ul,
+	0x8000000000008080ul, 0x0000000080000001ul, 0x8000000080008008ul
+]
+

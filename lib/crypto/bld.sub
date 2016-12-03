@@ -6,6 +6,7 @@ lib crypto =
 	sha1.myr
 	sha256.myr
 	sha512.myr
+	sha3.myr
 
 	# ciphers
 	chacha20.myr

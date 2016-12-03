@@ -1,0 +1,117 @@
+use std
+use crypto
+use testr
+
+const main = {
+	testr.run([
+		[.name="keccak224empty", .fn={ctx
+			var ret
+
+			ret = crypto.keccak224("")
+			testr.check(ctx, \
+				std.sleq(\
+					ret[:],  \
+					"\xf7\x18\x37\x50\x2b\xa8\xe1\x08\x37\xbd\xd8\xd3\x65\xad" \
+					"\xb8\x55\x91\x89\x56\x02\xfc\x55\x2b\x48\xb7\x39\x0a\xbd"), \
+				"invalid hash result {r}", ret[:])
+		}],
+		[.name="keccak256empty", .fn={ctx
+			var ret
+
+			ret = crypto.keccak256("")
+			testr.check(ctx, \
+				std.sleq(\
+					ret[:],  \
+					"\xC5\xD2\x46\x01\x86\xF7\x23\x3C\x92\x7E\x7D\xB2\xDC\xC7\x03\xC0" \
+					"\xE5\x00\xB6\x53\xCA\x82\x27\x3B\x7B\xFA\xD8\x04\x5D\x85\xA4\x70"), \
+				"invalid hash result {r}", ret[:])
+		}],
+		[.name="keccak384empty", .fn={ctx
+			var ret
+
+			ret = crypto.keccak384("")
+			testr.check(ctx, \
+				std.sleq(\
+					ret[:],  \
+					"\x2C\x23\x14\x6A\x63\xA2\x9A\xCF" \
+					"\x99\xE7\x3B\x88\xF8\xC2\x4E\xAA" \
+					"\x7D\xC6\x0A\xA7\x71\x78\x0C\xCC" \
+					"\x00\x6A\xFB\xFA\x8F\xE2\x47\x9B" \
+					"\x2D\xD2\xB2\x13\x62\x33\x74\x41" \
+					"\xAC\x12\xB5\x15\x91\x19\x57\xFF"), \
+				"invalid hash result {r}", ret[:])
+		}],
+		[.name="keccak512empty", .fn={ctx
+			var ret
+
+			ret = crypto.keccak512("")
+			testr.check(ctx, \
+				std.sleq(\
+					ret[:],  \
+					"\x0E\xAB\x42\xDE\x4C\x3C\xEB\x92" \
+					"\x35\xFC\x91\xAC\xFF\xE7\x46\xB2" \
+					"\x9C\x29\xA8\xC3\x66\xB7\xC6\x0E" \
+					"\x4E\x67\xC4\x66\xF3\x6A\x43\x04" \
+					"\xC0\x0F\xA9\xCA\xF9\xD8\x79\x76" \
+					"\xBA\x46\x9B\xCB\xE0\x67\x13\xB4" \
+					"\x35\xF0\x91\xEF\x27\x69\xFB\x16" \
+					"\x0C\xDA\xB3\x3D\x36\x70\x68\x0E"), \
+				"invalid hash result {r}", ret[:])
+		}],
+
+		[.name="keccak224smoke", .fn={ctx
+			var ret
+
+			ret = crypto.keccak224("Keccak-224 Test Hash")
+			testr.check(ctx, \
+				std.sleq(\
+					ret[:],  \
+					"\x30\x04\x5B\x34\x94\x6E\x1B\x2E\x09\x16\x13\x36\x2F\xD2" \
+					"\x2A\xA0\x8E\x2B\xEA\xFE\xC5\xE8\xDA\xEE\x42\xC2\xE6\x65"), \
+				"invalid hash result {r}", ret[:])
+		}],
+		[.name="keccak256smoke", .fn={ctx
+			var ret
+
+			ret = crypto.keccak256("Keccak-256 Test Hash")
+			testr.check(ctx, \
+				std.sleq(\
+					ret[:],  \
+					"\xA8\xD7\x1B\x07\xF4\xAF\x26\xA4\xFF\x21\x02\x7F\x62\xFF\x60\x26"  \
+					"\x7F\xF9\x55\xC9\x63\xF0\x42\xC4\x6D\xA5\x2E\xE3\xCF\xAF\x3D\x3C"), \
+				"invalid hash result {r}", ret[:])
+		}],
+		[.name="keccak384smoke", .fn={ctx
+			var ret
+
+			ret = crypto.keccak384("Keccak-384 Test Hash")
+			testr.check(ctx, \
+				std.sleq(\
+					ret[:],  \
+					"\xE2\x13\xFD\x74\xAF\x0C\x5F\xF9" \
+					"\x1B\x42\x3C\x8B\xCE\xEC\xD7\x01" \
+					"\xF8\xDD\x64\xEC\x18\xFD\x6F\x92" \
+					"\x60\xFC\x9E\xC1\xED\xBD\x22\x30" \
+					"\xA6\x90\x86\x65\xBC\xD9\xFB\xF4" \
+					"\x1A\x99\xA1\x8A\x7D\x9E\x44\x6E"), \
+				"invalid hash result {r}", ret[:])
+		}],
+		[.name="keccak512smoke", .fn={ctx
+			var ret
+
+			ret = crypto.keccak512("Keccak-512 Test Hash")
+			testr.check(ctx, \
+				std.sleq(\
+					ret[:],  \
+					"\x96\xEE\x47\x18\xDC\xBA\x3C\x74" \
+					"\x61\x9B\xA1\xFA\x7F\x57\xDF\xE7" \
+					"\x76\x9D\x3F\x66\x98\xA8\xB3\x3F" \
+					"\xA1\x01\x83\x89\x70\xA1\x31\xE6" \
+					"\x21\xCC\xFD\x05\xFE\xFF\xBC\x11" \
+					"\x80\xF2\x63\xC2\x7F\x1A\xDA\xB4" \
+					"\x60\x95\xD6\xF1\x25\x33\x14\x72" \
+					"\x4B\x5C\xBF\x78\x28\x65\x8E\x6A"), \
+				"invalid hash result {r}", ret[:])
+		}],
+	][:])
+}
