@@ -593,21 +593,21 @@ static int adjavail(Isel *s, regid r)
 
 static size_t nodemoves(Isel *s, regid n, Insn ***pil)
 {
-	size_t i;
-	size_t count;
+	size_t i, count;
+	regid rid;
+	Insn **il;
 
-	/* FIXME: inefficient. Do I care? */
 	count = 0;
-	if (pil)
-		*pil = NULL;
+	il = malloc(s->nrmoves[n] * sizeof(Insn*));
 	for (i = 0; i < s->nrmoves[n]; i++) {
-		if (bshas(s->mactiveset, s->rmoves[n][i]->uid))
-			lappend(pil, &count, s->rmoves[n][i]);
-		if (bshas(s->wlmoveset, s->rmoves[n][i]->uid))
-			lappend(pil, &count, s->rmoves[n][i]);
+		rid = s->rmoves[n][i]->uid;
+		if (bshas(s->mactiveset, rid) || bshas(s->wlmoveset, rid))
+			il[count++] = s->rmoves[n][i];
 	}
+	*pil = il;
 	return count;
 }
+
 
 static int moverelated(Isel *s, regid n)
 {
