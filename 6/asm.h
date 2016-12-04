@@ -272,6 +272,7 @@ size_t blobsz(Blob *b);
 extern size_t maxregid;
 extern Loc **locmap; /* mapping from reg id => Loc * */
 
+void resetregs(void);
 char *genlocallblstr(char *buf, size_t sz);
 Type *codetype(Type *ft);
 Type *closuretype(Type *ft);

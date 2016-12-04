@@ -348,6 +348,7 @@ static void genfunc(FILE *fd, Func *fn, Htab *globls, Htab *strtab)
 {
 	Isel is = {0,};
 
+	resetregs();
 	is.reglocs = mkht(varhash, vareq);
 	is.name = fn->name;
 	is.stkoff = fn->stkoff;
@@ -355,6 +356,7 @@ static void genfunc(FILE *fd, Func *fn, Htab *globls, Htab *strtab)
 	is.globls = globls;
 	is.ret = fn->ret;
 	is.cfg = fn->cfg;
+
 	if (fn->hasenv)
 		is.envp = locreg(ModeQ);
 

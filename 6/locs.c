@@ -67,6 +67,11 @@ Loc *loclbl(Node *e)
 Loc **locmap = NULL;
 size_t maxregid = 0;
 
+void resetregs()
+{
+	maxregid = Nreg;
+}
+
 static Loc *locregid(regid id, Mode m)
 {
 	Loc *l;
