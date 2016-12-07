@@ -190,6 +190,7 @@ struct Isel {
 	size_t *gbits;      /* igraph matrix repr */
 	regid **gadj;      /* igraph adj set repr */
 	size_t *ngadj;
+	size_t *gadjsz;
 	size_t nreg;      /* maxregid at time of alloc */
 	int *degree;        /* degree of nodes */
 	int *nuses;         /* number of uses of nodes */

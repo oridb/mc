@@ -371,8 +371,10 @@ static int degreechange(Isel *s, regid u, regid v)
 
 static void alputedge(Isel *s, regid u, regid v)
 {
-	if (!s->gadj[u])
-		s->gadj[u] = xalloc(maxregid*sizeof(regid));
+	if (s->ngadj[u] == s->gadjsz[u]) {
+		s->gadjsz[u] = s->gadjsz[u]*2 + 1;
+		s->gadj[u] = xrealloc(s->gadj[u], s->gadjsz[u]*sizeof(regid));
+	}
 	s->gadj[u][s->ngadj[u]] = v;
 	s->ngadj[u]++;
 }
@@ -444,6 +446,7 @@ static void setup(Isel *s)
 	/* fresh adj list repr. */
 	s->gadj = zalloc(s->nreg * sizeof(regid*));
 	s->ngadj = zalloc(s->nreg * sizeof(size_t));
+	s->gadjsz = zalloc(s->nreg * sizeof(size_t));
 
 	s->mactiveset = bsclear(s->mactiveset);
 	s->wlmoveset = bsclear(s->wlmoveset);
