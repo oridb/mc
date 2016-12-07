@@ -26,6 +26,7 @@ pkg std =
 	generic htgetv	: (ht : htab(@k, @v)#, k : @k, fallback : @v-> @v)
 	generic hthas	: (ht : htab(@k, @v)#, k : @k -> bool)
 	generic htkeys	: (ht : htab(@k, @v)# -> @k[:])
+	generic htcount	: (ht : htab(@k, @v)# -> std.size)
 
 	generic byhtkeyvals	: (ht : htab(@k, @v)# -> htkviter(@k, @v))
 	impl iterable htkviter(@k, @v) -> (@k, @v)
@@ -205,6 +206,10 @@ generic htkeys = {ht
 		;;
 	;;
 	-> keys
+}
+
+generic htcount = {ht
+	-> ht.nelt
 }
 
 generic byhtkeyvals = {ht
