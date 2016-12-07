@@ -94,6 +94,7 @@ static void checkreach(Cfg *cfg)
 		bsfree(reach);
 		bsfree(kill);
 	}
+	reachingfree(r);
 }
 
 static void checkpredret(Cfg *cfg, Bb *bb)

@@ -33,10 +33,13 @@ struct Reaching {
 	Bitset **out;
 	size_t **defs;
 	size_t *ndefs;
+	size_t nbb;
 };
 
 /* dataflow analysis */
 Reaching *reaching(Cfg *cfg);
+void reachingfree(Reaching *r);
+
 Node *assignee(Node *n);
 
 /* Takes a reduced block, and returns a flow graph. */

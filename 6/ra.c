@@ -662,6 +662,7 @@ static void enablemove(Isel *s, regid n)
 			}
 		}
 	}
+	free(il);
 }
 
 static void decdegree(Isel *s, regid m)

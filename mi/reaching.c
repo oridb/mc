@@ -139,15 +139,44 @@ Reaching *reaching(Cfg *cfg)
 				bsfree(out[i]);
 				in[i] = bbin;
 				out[i] = bbout;
+			} else {
+				bsfree(bbin);
+				bsfree(bbout);
 			}
 		}
 	} while (changed);
 
+
+	for (i = 0; i < cfg->nbb; i++) {
+		bsfree(gen[i]);
+		bsfree(kill[i]);
+	}
+	free(gen);
+	free(kill);
 
 	reaching = xalloc(sizeof(Reaching));
 	reaching->in = in;
 	reaching->out = out;
 	reaching->defs = defs;
 	reaching->ndefs = ndefs;
+	reaching->nbb = cfg->nbb;
 	return reaching;
 }
+
+void reachingfree(Reaching *r)
+{
+	size_t i;
+
+	for (i = 0; i < r->nbb; i++) {
+		bsfree(r->in[i]);
+		bsfree(r->out[i]);
+	}
+	for (i = 0; i < ndecls; i++)
+		free(r->defs[i]);
+	free(r->in);
+	free(r->out);
+	free(r->defs);
+	free(r->ndefs);
+	free(r);
+}
+
