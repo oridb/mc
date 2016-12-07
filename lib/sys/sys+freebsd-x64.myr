@@ -821,7 +821,9 @@ pkg sys =
 	const creat	: (path:byte[:], mode:int64 -> fd)
 	const unlink	: (path:byte[:] -> int)
 	const read	: (fd:fd, buf:byte[:] -> size)
+	const readv	: (fd:fd, iov:byte[:][:] -> size)
 	const write	: (fd:fd, buf:byte[:] -> size)
+	const writev	: (fd:fd, iov : byte[:][:] -> size)
 	const lseek	: (fd:fd, off : off, whence : whence -> int64)
 	const stat	: (path:byte[:], sb:statbuf# -> int64)
 	const lstat	: (path:byte[:], sb:statbuf# -> int64)
@@ -951,7 +953,9 @@ const close	= {fd;			-> syscall(Sysclose, a(fd))}
 const creat	= {path, mode;		-> (openmode(path, Ocreat | Otrunc | Owronly, mode) : fd)}
 const unlink	= {path;		-> (syscall(Sysunlink, cstring(path)) : int)}
 const read	= {fd, buf;		-> (syscall(Sysread, a(fd), (buf : byte#), a(buf.len)) : size)}
+const readv	= {fd, vec;		-> (syscall(Sysreadv, a(fd), (vec : byte[:]#), a(vec.len)) : size)}
 const write	= {fd, buf;		-> (syscall(Syswrite, a(fd), (buf : byte#), a(buf.len)) : size)}
+const writev	= {fd, vec;		-> (syscall(Syswritev, a(fd), (vec : byte[:]#), a(vec.len)) : size)}
 const lseek	= {fd, off, whence;	-> syscall(Syslseek, a(fd), a(off), a(whence))}
 const stat	= {path, sb;		-> syscall(Sysstat, cstring(path), a(sb))}
 const lstat	= {path, sb;		-> syscall(Syslstat, cstring(path), a(sb))}
