@@ -22,7 +22,7 @@ generic lsearch = {sl, key, cmp
 
 /* binary search over a sorted list of values. */
 generic bsearch  = {sl, key, cmp
-	var hi, lo, mid : usize
+	var hi, lo, mid : size
 
 	lo = 0
 	hi = sl.len - 1
