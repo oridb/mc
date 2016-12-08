@@ -16,6 +16,8 @@ pkg sys =
 	type whence	= int64
 	type fcntlcmd	= int64
 	type machport	= int32
+	type signo	= int32
+	type sigflags	= int32
 
 	type fdset = struct
 		bits	: int32[1024/4]
@@ -39,6 +41,14 @@ pkg sys =
 	type clock = union
 		`Clockrealtime
 		`Clockmonotonic
+	;;
+
+	type sigset = uint32
+
+	type sigaction = struct
+		handler	: byte#	/* code pointer */
+		mask	: sigset
+		flags	: sigflags
 	;;
 
 	type waitstatus = union
@@ -330,6 +340,49 @@ pkg sys =
 
 	/* return value for a failed mapping */
 	const Mapbad	: byte# = (-1 : byte#)
+
+	/* signal actions */
+	const Saonstack		: sigflags = 0x0001  /* take signal on signal stack */
+	const Sarestart		: sigflags = 0x0002  /* restart system on signal return */
+	const Saresethand	: sigflags = 0x0004  /* reset to SIG_DFL when taking signal */
+	const Sanocldstop	: sigflags = 0x0008  /* do not generate SIGCHLD on child stop */
+	const Sanodefer		: sigflags = 0x0010  /* don't mask the signal we're delivering */
+	const Sanocldwait	: sigflags = 0x0020  /* don't keep zombies around */
+	const Sasiginfo		: sigflags = 0x0040  /* signal handler with SA_SIGINFO args */
+
+	/* signals */
+	const Sighup	: signo = 1	/* hangup */
+	const Sigint	: signo = 2	/* interrupt */
+	const Sigquit	: signo = 3	/* quit */
+	const Sigill	: signo = 4	/* illegal instruction (not reset when caught) */
+	const Sigtrap	: signo = 5	/* trace trap (not reset when caught) */
+	const Sigabrt	: signo = 6	/* abort() */
+	const Sigiot	: signo = Sigabrt	/* compatibility */
+	const Sigemt	: signo = 7	/* EMT instruction */
+	const Sigfpe	: signo = 8	/* floating point exception */
+	const Sigkill	: signo = 9	/* kill (cannot be caught or ignored) */
+	const Sigbus	: signo = 10	/* bus error */
+	const Sigsegv	: signo = 11	/* segmentation violation */
+	const Sigsys	: signo = 12	/* bad argument to system call */
+	const Sigpipe	: signo = 13	/* write on a pipe with no one to read it */
+	const Sigalrm	: signo = 14	/* alarm clock */
+	const Sigterm	: signo = 15	/* software termination signal from kill */
+	const Sigurg	: signo = 16	/* urgent condition on IO channel */
+	const Sigstop	: signo = 17	/* sendable stop signal not from tty */
+	const Sigtstp	: signo = 18	/* stop signal from tty */
+	const Sigcont	: signo = 19	/* continue a stopped process */
+	const Sigchld	: signo = 20	/* to parent on child stop or exit */
+	const Sigttin	: signo = 21	/* to readers pgrp upon background tty read */
+	const Sigttou	: signo = 22	/* like TTIN for output if (tp->t_local&LTOSTOP) */
+	const Sigio	: signo = 23	/* input/output possible signal */
+	const Sigxcpu	: signo = 24	/* exceeded CPU time limit */
+	const Sigxfsz	: signo = 25	/* exceeded file size limit */
+	const Sigvtalrm : signo = 26	/* virtual time alarm */
+	const Sigprof	: signo = 27	/* profiling time alarm */
+	const Sigwinch	: signo = 28	/* window size changes */
+	const Siginfo	: signo = 29	/* information request */
+	const Sigusr1	: signo = 30	/* user defined signal 1 */
+	const Sigusr2	: signo = 31	/* user defined signal 2 */
 
 	/* syscalls.
 	note, creat() implemented as open(path, Creat|Trunc|Wronly) */
@@ -716,6 +769,10 @@ pkg sys =
 	const getdirentries64	: (fd : fd, buf : byte[:], basep : int64# -> int64)
 	const chdir	: (p : byte[:] -> int64)
 
+	/* signals */
+	const sigaction	: (sig : signo, act : sigaction#, oact : sigaction# -> int)
+	const sigprocmask	: (how : int32, set : sigset#, oset : sigset# -> int)
+
 	/* fd stuff */
 	const pipe	: (fd : fd[2]# -> int64)
 	const dup	: (fd : fd -> fd)
@@ -878,6 +935,10 @@ const mkdir	= {path, mode;		-> (syscall(Sysmkdir, cstring(path), a(mode)) : int6
 generic ioctl	= {fd, req, arg;	-> (syscall(Sysioctl, a(fd), a(req), a(arg)) : int64)}
 const getdirentries64	= {fd, buf, basep;	-> syscall(Sysgetdirentries64, a(fd), (buf : byte#), a(buf.len), a(basep))}
 const chdir	= {dir;	-> syscall(Syschdir, cstring(dir))}
+
+/* signals */
+const sigaction	= {sig, act, oact;	-> (syscall(Syssigaction, a(sig), a(act), a(oact)) : int)}
+const sigprocmask	= {sig, act, oact;	-> (syscall(Syssigprocmask, a(sig), a(act), a(oact)) : int)}
 
 /* fd stuff */
 const pipe	= {fd;	-> __osx_pipe(fd)}
