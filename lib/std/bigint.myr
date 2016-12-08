@@ -23,6 +23,7 @@ pkg std =
 
 	/* administrivia */
 	generic mkbigint	: (v : @a::(numeric,integral) -> bigint#)
+	const bigfrombytes	: (isneg : bool, v : byte[:] -> bigint#)
 	const bigfree	: (a : bigint# -> void)
 	const bigdup	: (a : bigint# -> bigint#)
 	const bigassign	: (d : bigint#, s : bigint# -> bigint#)
@@ -61,10 +62,12 @@ pkg std =
 	const bigdivmod	: (a : bigint#, b : bigint# -> (bigint#, bigint#))
 	const bigshl	: (a : bigint#, b : bigint# -> bigint#)
 	const bigshr	: (a : bigint#, b : bigint# -> bigint#)
+	const bigand	: (a : bigint#, b : bigint# -> bigint#)
+	const bigor	: (a : bigint#, b : bigint# -> bigint#)
+
 	const bigmodpow	: (b : bigint#, e : bigint#, m : bigint# -> bigint#)
-	/*
-	const bigpow	: (a : bigint#, b : bigint# -> bigint#)
-	*/
+	//const bigpow	: (a : bigint#, b : bigint# -> bigint#)
+
 
 	/* bigint*int -> bigint ops */
 	generic bigaddi	: (a : bigint#, b : @a::(integral,numeric) -> bigint#)
@@ -73,9 +76,11 @@ pkg std =
 	generic bigdivi	: (a : bigint#, b : @a::(integral,numeric) -> bigint#)
 	generic bigshli	: (a : bigint#, b : @a::(integral,numeric) -> bigint#)
 	generic bigshri	: (a : bigint#, b : @a::(integral,numeric) -> bigint#)
-	/*
-	const bigpowi	: (a : bigint#, b : uint64 -> bigint#)
-	*/
+	generic bigandi	: (a : bigint#, b : @a::(integral,numeric) -> bigint#)
+	generic bigori	: (a : bigint#, b : @a::(integral,numeric) -> bigint#)
+
+	//const bigpowi	: (a : bigint#, b : uint64 -> bigint#)
+	//const bigmodpowi	: (b : bigint#, e : bigint#, m : bigint# -> bigint#)
 
 	/* information about bigints */
 	const bigbitcount	: (a : bigint# -> size)
@@ -99,6 +104,32 @@ generic mkbigint = {v : @a::(integral,numeric)
 	if val > Base
 		slpush(&a.dig, (val/Base : uint32))
 	;;
+	-> trim(a)
+}
+
+const bigfrombytes = {isneg, v
+	var i, off, a, last
+
+	a = mkbigint(0)
+	if isneg
+		a.sign = -1
+	else
+		a.sign = 1
+	;;
+
+	for i = 0; i + 4 <= v.len; i += 4
+		std.slpush(&a.dig, \
+			(v[i + 0] <<  0 : uint32) | \
+			(v[i + 1] <<  8 : uint32) | \
+			(v[i + 2] << 16 : uint32) | \
+			(v[i + 3] << 24 : uint32))
+	;;
+	last = 0
+	for i; i < v.len; i++
+		off = i & 0x3
+		last |= (v[off] : uint32) << (8 *off)
+	;;
+	std.slpush(&a.dig, last)
 	-> trim(a)
 }
 
@@ -624,6 +655,21 @@ const bigdivmod = {a : bigint#, b : bigint# -> (bigint#, bigint#)
 	-> (trim(q), trim(u))
 }
 
+const bigand = {a, b
+	for var i = 0; i < min(a.dig.len, b.dig.len); i++
+		a.dig[i] &= b.dig[i]
+	;;
+	-> trim(a)
+}
+
+const bigor = {a, b
+	slzgrow(&a.dig, max(a.dig.len, b.dig.len))
+	for var i = 0; i < a.dig.len; i++
+		a.dig[i] |= b.dig[i]
+	;;
+	-> trim(a)
+}
+
 /* computes b^e % m */
 const bigmodpow = {base, exp, mod
 	var r, n
@@ -789,6 +835,20 @@ generic bigshri = {a, s
 		carry = t << (32 - shift)
 	;;
 	-> trim(a)
+}
+
+generic bigandi = {a, b
+	var v
+	var dig : uint32[2]
+	bigdigit(&v, b < 0, (b : uint64), dig[:])
+	-> bigand(a, &v)
+}
+
+generic bigori = {a, b
+	var v
+	var dig : uint32[2]
+	bigdigit(&v, b < 0, (b : uint64), dig[:])
+	-> bigor(a, &v)
 }
 
 /* creates a bigint on the stack; should not be modified. */
