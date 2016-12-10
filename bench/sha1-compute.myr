@@ -1,4 +1,4 @@
-use cryptohash
+use crypto
 use std
 
 const N = 20
@@ -12,9 +12,9 @@ const main = {
 		buf[i] = b++
 	;;
 	for i = 0; i < N; i++
-		cryptohash.sha1init(&st)
-		cryptohash.sha1add(&st, buf[:])
-		cryptohash.sha1fin(&st)
+		crypto.sha1init(&st)
+		crypto.sha1add(&st, buf[:])
+		crypto.sha1fin(&st)
 	;;
 }
 

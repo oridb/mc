@@ -12,7 +12,7 @@ bin sha1-compute {noinst,tag=bench} =
 	sha1-compute.myr
 	lib ../lib/std:std
 	lib ../lib/sys:sys
-	lib ../lib/cryptohash:cryptohash
+	lib ../lib/crypto:crypto
 ;;
 bin bigfactorial {noinst,tag=bench} =
 	bigfactorial.myr
