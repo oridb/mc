@@ -183,8 +183,7 @@ double rdflt(FILE *fd)
 		double fval;
 	} u;
 
-	if (fread(buf, 8, 1, fd) < 8)
-		die("Unexpected EOF");
+	rdbuf(fd, buf, 8);
 	u.ival = host64(buf);
 	return u.fval;
 }
