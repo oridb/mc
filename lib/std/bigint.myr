@@ -74,6 +74,7 @@ pkg std =
 	generic bigsubi	: (a : bigint#, b : @a::(integral,numeric) -> bigint#)
 	generic bigmuli	: (a : bigint#, b : @a::(integral,numeric) -> bigint#)
 	generic bigdivi	: (a : bigint#, b : @a::(integral,numeric) -> bigint#)
+	generic bigmodi	: (a : bigint#, b : @a::(integral,numeric) -> bigint#)
 	generic bigshli	: (a : bigint#, b : @a::(integral,numeric) -> bigint#)
 	generic bigshri	: (a : bigint#, b : @a::(integral,numeric) -> bigint#)
 	generic bigandi	: (a : bigint#, b : @a::(integral,numeric) -> bigint#)
@@ -786,6 +787,15 @@ generic bigdivi = {a, b
 
 	bigdigit(&bigb, b < 0, (b : uint64), dig[:])
 	bigdiv(a, &bigb)
+	-> a
+}
+
+generic bigmodi = {a, b
+	var bigb : bigint
+	var dig : uint32[2]
+
+	bigdigit(&bigb, b < 0, (b : uint64), dig[:])
+	bigmod(a, &bigb)
 	-> a
 }
 
