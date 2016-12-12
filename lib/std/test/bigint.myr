@@ -96,6 +96,16 @@ const main = {
 		std.mk(`Val "755578"))), \
 		"49054")
 	run(std.mk(`Modpow (\
+		std.mk(`Val "2393"), \
+		std.mk(`Val "2"), \
+		std.mk(`Val "6737"))), \
+		"6736")
+	run(std.mk(`Modpow (\
+		std.mk(`Val "6193257528475266832463188301662235"), \
+		std.mk(`Val "6157075615645799356061575607567581"), \
+		std.mk(`Val "12314151231291598712123151215135163"))), \
+		"1540381241336817586803754632242117")
+	run(std.mk(`Modpow (\
 		std.mk(`Val "7220"), \
 		std.mk(`Val "755578"), \
 		std.mk(`Val "75557863709417659441940"))), \
@@ -110,7 +120,7 @@ const run = {e : cmd#, res : byte[:]
 	v = eval(e)
 	n = std.bigbfmt(buf[:], v, 0)
 	if !std.sleq(buf[:n], res)
-		std.fatal("%s != %s\n", buf[:n], res)
+		std.fatal("{} != {}\n", buf[:n], res)
 	;;
 }
 
