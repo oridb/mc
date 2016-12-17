@@ -8,6 +8,7 @@ use "errno"
 pkg std =
 	const spork	: (cmd : byte[:][:]	-> result((pid, fd, fd), errno))
 	const espork	: (cmd : byte[:][:]	-> result((pid, fd, fd, fd), errno))
+	const filterfd	: (fd : fd, cmd  : byte[:][:] -> result(pid, errno))
 ;;
 
 const spork = {cmd
@@ -65,12 +66,39 @@ const espork = {cmd
 	;;
 }
 
+const filterfd = {fd, cmd
+	var outfds : fd[2]
+	var err
+
+	err = pipe(&outfds)
+	if err != Enone
+		-> `Err err
+	;;
+
+	match sporkfd(cmd, [fd, -1], outfds, [-1, 2])
+	| `Ok pid:
+		dup2(outfds[0], fd)
+		close(outfds[0]);
+		close(outfds[1]);
+		-> `Ok pid
+	| `Err e:
+		-> `Err e
+	;;
+}
+
 const sporkfd = {cmd, infds, outfds, errfds
 	var pid, err
 
 	pid = fork()
 	/* error  */
 	if pid < 0
+		/* we don't want to leak the pipe fds on error */
+		close(infds[0]);
+		close(infds[1]);
+		close(outfds[0]);
+		close(outfds[1]);
+		close(errfds[0]);
+		close(errfds[1]);
 		-> `Err (pid : errno)
 	/* child */
 	elif pid == 0
