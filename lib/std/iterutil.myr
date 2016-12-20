@@ -1,5 +1,6 @@
 use "types"
 use "fmt"
+use "extremum"
 
 pkg std =
 	type zipiter(@a, @b) = struct
@@ -22,14 +23,23 @@ pkg std =
 		sl	: @a[:]
 	;;
 
+	type chunkiter(@a) = struct
+		idx	: size
+		blksz	: size
+		sl	: @a[:]
+	;;
+
 	impl iterable zipiter(@a, @b) -> (@a, @b)
 	impl iterable enumiter(@a) -> (size, @a)
 	impl iterable reverseiter(@a) -> @a
+	impl iterable refiter(@a) -> @a#
+	impl iterable chunkiter(@a) -> @a[:]
 
 	generic byzip	: (a : @a[:], b : @b[:]	 -> zipiter(@a, @b))
 	generic byenum	: (a : @a[:] -> enumiter(@a))
-	generic byref 	: (sl : @a[:] -> reverseiter(@a))
 	generic byreverse 	: (sl : @a[:] -> reverseiter(@a))
+	generic byref 	: (sl : @a[:] -> reverseiter(@a))
+	generic bychunk	: (a : @a[:], chunk : size -> chunkiter(@a))
 ;;
 
 generic byzip = {a, b
@@ -100,6 +110,27 @@ impl iterable refiter(@a) -> @a# =
 		;;
 		valp# = &itp.sl[itp.idx]
 		itp.idx++
+		-> true
+	}
+
+	__iterfin__ = {itp, valp
+	}
+;;
+
+generic bychunk = {a, sz
+	-> [.sl = a, .idx = 0, .blksz = sz]
+}
+
+impl iterable chunkiter(@a) -> @a[:] =
+	__iternext__ = {itp, valp
+		var len
+
+		len = min(itp.blksz, itp.sl.len - itp.idx)
+		if itp.idx + len == itp.sl.len
+			-> false
+		;;
+		valp# = itp.sl[itp.idx: itp.idx + len]
+		itp.idx += itp.blksz
 		-> true
 	}
 
