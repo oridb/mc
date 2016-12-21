@@ -59,4 +59,5 @@ config.h:
 	echo '#define Symprefix ""' >> config.h
 	echo '#define Defaultasm Plan9' >> config.h
 	echo '#define Objsuffix ".6"' >> config.h
+	echo '#define Sysinit' >> config.h
 
