@@ -208,6 +208,9 @@ int main(int argc, char **argv)
 		}
 	}
 
+	/* Sysinit is arbitrary code defined by the configure script */
+	Sysinit;
+
 	lappend(&incpaths, &nincpaths, Instroot "/lib/myr");
 
 	if (ctx.nargs == 0) {

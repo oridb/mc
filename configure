@@ -36,57 +36,44 @@ done
 OS=`uname`
 MACH=`uname -m`
 
-echo export INST_ROOT=$prefix > config.mk
+rm -f config.mk
+rm -f config.h
+rm -f mbld/config.myr
+rm -f configvar_cache
 
-echo '#define Instroot "'$prefix'"' > config.h
-echo '#define Asmcmd {"as", "-g", "-o", NULL}' >> config.h
-echo '#define Objsuffix ".o"' >> config.h
-echo 'export SYSCLASS=posixy' >> config.mk
+echo export INST_ROOT=$prefix >> config.mk
 
-# mbld mbld/config.myr
-echo "pkg config = " > mbld/config.myr
-echo "const Instroot = \"$prefix\"" >> mbld/config.myr
-echo "const Objsuffix = \".o\"" >> mbld/config.myr
-echo "const Arcmd = [\"ar\", \"-rcs\"]" >> mbld/config.myr
-echo "const Ascmd = [\"as\", \"-g\"]" >> mbld/config.myr
-echo "const Directlib = false" >> mbld/config.myr
-echo "const Runtime = \"_myrrt.o\"" >> mbld/config.myr
-# paths to install to
-echo "const Manpath = \"share/man/man\"" >> mbld/config.myr
-echo "const Sharepath = \"share\"" >> mbld/config.myr
-echo "const Binpath = \"bin\"" >> mbld/config.myr
-echo "const Libpath = \"lib/myr\"" >> mbld/config.myr
+echo "pkg config = " >> mbld/config.myr
+
+symprefix='""'
+defaultasm='Gnugaself'
+sysinit=''
 case $OS in
     *Linux*)
-        echo '#define Symprefix ""' >> config.h
-        echo '#define Defaultasm Gnugaself' >> config.h
         echo 'export SYS=linux' >> config.mk
         echo 'const Sys = "Linux"' >> mbld/config.myr
         echo 'const Linkcmd = ["ld", "-o"]' >> mbld/config.myr
         ;;
     *Darwin*)
-        echo '#define Symprefix "_"' >> config.h
-        echo '#define Defaultasm Gnugasmacho' >> config.h
+	symprefix='"_"'
+	defaultasm=Gnugasmacho
+	sysinit='setenv("MACOSX_DEPLOYMENT_TARGET", "10.6", 0)'
         echo 'export SYS=osx' >> config.mk
+        echo 'const Sys = "OSX"' >> mbld/config.myr
         echo 'const Linkcmd = ["ld", ' \
             '"-pagezero_size", "0x100000000",' \
             '"-macosx_version_min", "10.6",'\
             '"-o"]' >> mbld/config.myr
-        echo 'const Sys = "OSX"' >> mbld/config.myr
         ;;
     *FreeBSD*)
-        echo '#define Symprefix ""' >> config.h
-        echo '#define Defaultasm Gnugaself' >> config.h
         echo 'export SYS=freebsd' >> config.mk
-        echo 'const Linkcmd = ["ld", "-o"]' >> mbld/config.myr
         echo 'const Sys = "FreeBSD"' >> mbld/config.myr
+        echo 'const Linkcmd = ["ld", "-o"]' >> mbld/config.myr
         ;;
     *OpenBSD*)
-        echo '#define Symprefix ""' >> config.h
-        echo '#define Defaultasm Gnugaself' >> config.h
         echo 'export SYS=openbsd' >> config.mk
-        echo 'const Linkcmd = ["ld", "-static", "-nopie", "-o"]' >> mbld/config.myr
         echo 'const Sys = "OpenBSD"' >> mbld/config.myr
+        echo 'const Linkcmd = ["ld", "-static", "-nopie", "-o"]' >> mbld/config.myr
         ;;
     *)
         echo ''
@@ -99,6 +86,30 @@ case $OS in
         ;;
 esac
 
+# config.h
+echo '#define Instroot "'$prefix'"' >> config.h
+echo '#define Asmcmd {"as", "-g", "-o", NULL}' >> config.h
+echo '#define Objsuffix ".o"' >> config.h
+echo 'export SYSCLASS=posixy' >> config.mk
+echo '#define Symprefix' $symprefix >> config.h
+echo '#define Defaultasm' $defaultasm >> config.h
+echo '#define Sysinit ' $sysinit >> config.h
+
+# mbld mbld/config.myr
+echo "const Instroot = \"$prefix\"" >> mbld/config.myr
+echo "const Objsuffix = \".o\"" >> mbld/config.myr
+echo "const Arcmd = [\"ar\", \"-rcs\"]" >> mbld/config.myr
+echo "const Ascmd = [\"as\", \"-g\"]" >> mbld/config.myr
+echo "const Directlib = false" >> mbld/config.myr
+echo "const Runtime = \"_myrrt.o\"" >> mbld/config.myr
+
+# paths to install to
+echo "const Manpath = \"share/man/man\"" >> mbld/config.myr
+echo "const Sharepath = \"share\"" >> mbld/config.myr
+echo "const Binpath = \"bin\"" >> mbld/config.myr
+echo "const Libpath = \"lib/myr\"" >> mbld/config.myr
+
+
 case $MACH in
     *x86_64* | *amd64*)
 	echo 'export ARCH=x64' >> config.mk
@@ -110,7 +121,9 @@ case $MACH in
         echo 'Unknown arch '$MACH
         echo 'Cannot build'
         echo '********************************'
+	;;
 esac
+
 echo ';;' >> mbld/config.myr
 
 echo "prefix=$prefix" > configvar_cache
