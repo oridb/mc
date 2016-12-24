@@ -10,7 +10,8 @@ const main = {args : byte[:][:]
 		| `std.Ok j:
 			std.put("{}\n", j)
 			json.free(j)
-		| `std.Err e:	std.put("{}\n", e)
+		| `std.Err e:
+			std.put("{}\n", e)
 		;;
 		std.slfree(data)
 	;;

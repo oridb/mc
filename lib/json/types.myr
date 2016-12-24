@@ -17,8 +17,8 @@ pkg json =
 	;;
 
 	type errtype = union
-		`Junk char
 		`Badesc char
+		`Junk char
 		`End
 	;;
 ;;

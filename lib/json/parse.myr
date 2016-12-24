@@ -26,7 +26,6 @@ const parse = {str
 	match parseelt(&parser)
 	| `std.Ok j:
 		takespace(&parser)
-		std.put("parser: {}\n", parser)
 		if parser.idx != parser.str.len
 			free(j)
 			-> `std.Err [
@@ -74,7 +73,7 @@ const parseelt = {p
 			-> `std.Ok std.mk(`Null)
 		elif std.isdigit(peekc(p)) || peekc(p) == '-'
 			match parsenum(p)
-			| `std.Some n:	-> `std.Ok std.mk(`Num (n : flt64))
+			| `std.Some n:	-> `std.Ok std.mk(`Num n)
 			| `std.None:	-> `std.Err [.e=`Junk chr, .line=p.line, .off=p.off]
 			;;
 		else
@@ -89,7 +88,12 @@ const parseobj = {p
 
 	std.assert(takec(p) == '{', "should only enter 'obj' after '{'")
 	membs = [][:]
-	while true
+	takespace(p)
+	if peekc(p) == '}'
+		takec(p)
+		-> `std.Ok std.mk(`Obj membs)
+	;;
+	while peekc(p) != '}'
 		match member(p)
 		| `std.Ok m:
 			std.slpush(&membs, m)
@@ -97,6 +101,9 @@ const parseobj = {p
 			match takec(p)
 			| ',':	/* nothing */
 			| '}':	break
+			| std.Badchar:
+				err = [.e=`End,  .line=p.line, .off=p.off]
+				goto error
 			| chr:
 				err = [.e=`Junk chr, .line=p.line, .off=p.off]
 				goto error
@@ -145,18 +152,28 @@ const parsearr = {p -> std.result(elt#, err)
 	var elts
 	var err
 
-	std.assert(takec(p) == '[', "should only enter 'obj' after '['")
+	std.assert(takec(p) == '[', "should only enter 'obj' after '['\n")
 	elts = [][:]
+	takespace(p)
+	if peekc(p) == ']'
+		takec(p)
+		-> `std.Ok std.mk(`Arr elts)
+	;;
 	while true
 		match parseelt(p)
-		| `std.Ok e:	std.slpush(&elts, e)
+		| `std.Ok e:
+			std.slpush(&elts, e)
 		| `std.Err e:
 			err = e
 			goto error
 		;;
+		takespace(p)
 		match takec(p)
 		| ',':	/* nothing */
 		| ']':	break
+		| std.Badchar:
+			err = [.e=`End,  .line=p.line, .off=p.off]
+			goto error
 		| chr:
 			err = [.e=`Junk chr, .line=p.line, .off=p.off]
 			goto error
@@ -178,30 +195,47 @@ const parsestr = {p
 	;;
 }
 
-const parsenum = {p -> std.option(int64)
+const parsenum = {p
 	var start
+	var ok
 
 	start = p.idx
-	if peekc(p) == '+' || peekc(p) == '-'
+	if peekc(p) == '-'
 		p.idx++
 	;;
-	while p.idx < p.str.len
-		if !std.isdigit((p.str[p.idx] : char))
-			break
-		;;
+	if peekc(p) == '0'
 		p.idx++
+	else
+		ok = false
+		while p.idx < p.str.len
+			if !std.isdigit((p.str[p.idx] : char))
+				break
+			;;
+			ok = true
+			p.idx++
+		;;
+		if !ok
+			-> `std.None
+		;;
 	;;
 
 	if peekc(p) == '.'
+		ok = false
 		p.idx++
 		while p.idx < p.str.len
 			if !std.isdigit((p.str[p.idx] : char))
 				break
 			;;
+			ok = true
 			p.idx++
+		;;
+		if !ok
+			-> `std.None
 		;;
 	;;
 	if peekc(p) == 'e' || peekc(p) == 'E'
+		p.idx++
+		ok = false
 		if peekc(p) == '+' || peekc(p) == '-'
 			p.idx++
 		;;
@@ -209,11 +243,15 @@ const parsenum = {p -> std.option(int64)
 			if !std.isdigit((p.str[p.idx] : char))
 				break
 			;;
+			ok = true
 			p.idx++
+		;;
+		if !ok
+			-> `std.None
 		;;
 	;;
 
-	-> std.intparse(p.str[start:p.idx])
+	-> std.flt64parse(p.str[start:p.idx])
 }
 
 const jsonstr = {p
@@ -229,7 +267,6 @@ const jsonstr = {p
 	while p.idx < p.str.len
 		match takec(p)
 		| '\\':
-			takec(p)
 			match takec(p)
 			| '"':	std.sbputc(sb, '"')
 			| '\\':	std.sbputc(sb, '\\')
@@ -239,6 +276,13 @@ const jsonstr = {p
 			| 'f':	std.sbputc(sb, '\u{0c}')
 			| 'r':	std.sbputc(sb, '\r')
 			| 't':	std.sbputc(sb, '\t')
+			| 'u':	
+				match unichar(p)
+				| `std.Some c: std.sbputc(sb, c)
+				| `std.None:
+					err = [.e=`Badesc 'u', .line=p.line, .off=p.off]
+					goto error
+				;;
 			| chr:
 				err = [.e=`Badesc chr, .line=p.line, .off=p.off]
 				goto error
@@ -257,10 +301,28 @@ const jsonstr = {p
 			idx += std.charlen(chr)
 		;;
 	;;
+	err = [.e=`End, .line=p.line, .off=p.off]
 
 :error
 	std.sbfree(sb)
 	-> `std.Err err
+}
+
+const unichar = {p
+	var c, i
+
+	c = 0
+	/* must be exactly 4 hex digits */
+	for i = 0; i < 4; i++
+		match std.charval(takec(p), 16)
+		| -1:	-> `std.None
+		| n:	c += n*16
+		;;
+	;;
+	if i == 0
+		-> `std.None
+	;;
+	-> `std.Some c
 }
 
 const matchprefix = {p, pfx
@@ -272,11 +334,10 @@ const matchprefix = {p, pfx
 }
 
 const unescaped = {c
-	const tab	: byte[128]
-
+	std.put("{x}\n", (c : uint32))
 	-> c == 0x20 || c == 0x21 || \
 		(c >= 0x23 && c < 0x5b) || \
-		(c > 0x5d && c < 0x10ffff)
+		(c > 0x5d && c <= 0x10ffff)
 }
 
 const takespace = {p
@@ -302,8 +363,12 @@ const peekc = {p
 const takec = {p
 	var c
 
+	if p.idx == p.str.len
+		-> std.Badchar
+	;;
 	c = std.decode(p.str[p.idx:])
 	p.idx += std.charlen(c)
+	p.off++
 	if c == '\n'
 		p.line++
 		p.off = 1

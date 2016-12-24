@@ -119,6 +119,8 @@ const filetest = {
 					;;
 				}]
 			][:])
+		| '_':
+			std.put("skip: {}\n", f)
 		| 'i':
 			std.put("ignoring implementation defined test {}\n", f)
 		| wat:
