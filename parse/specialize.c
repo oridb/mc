@@ -547,6 +547,7 @@ Node *bestimpl(Node *n, Type *to)
 	if (hthas(n->decl.impls, to))
 		return htget(n->decl.impls, to);
 	ambig = NULL;
+	match = NULL;
 	nambig = 0;
 	best = -1;
 	gimpl = n->decl.gimpl;
