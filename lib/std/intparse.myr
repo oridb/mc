@@ -14,10 +14,14 @@ pkg std =
 generic intparse = {s
 	var isneg 
 
+
 	isneg = false
 	if hasprefix(s, "-")
 		s = s[1:]
 		isneg = true
+	;;
+	if s.len == 0
+		-> `None
 	;;
 
 	if hasprefix(s, "0x")

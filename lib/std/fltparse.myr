@@ -284,7 +284,9 @@ const mulexp = {val, exp, pow
 const denormal = {x, v, rem, lim
 	var m, z
 
-	if x.dig.len == 2
+	if x.dig.len == 0
+		m = 0
+	elif x.dig.len == 2
 		m = (x.dig[0] : uint64) 
 		m |= (x.dig[1] : uint64) << 32
 	else
