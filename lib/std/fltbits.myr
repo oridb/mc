@@ -6,6 +6,7 @@ pkg std =
 	const flt32inf	: (-> flt32)
 	const flt32nan	: (-> flt32)
 
+	generic isnan	: (f : @a::floating -> bool)
 	const flt64frombits	: (bits : uint64 -> flt64)
 	const flt32frombits	: (bits : uint32 -> flt32)
 	const flt64explode	: (flt : flt64 -> (bool, int64, int64))
@@ -83,6 +84,15 @@ const flt32assem = {sign, mant, exp
 	-> std.flt32frombits(s << 31 | e << 22 | m)
 
 }
+
+generic isnan = {f
+	var b
+
+	b = flt64bits((f : flt64))
+	-> (b >> 52) & 0x7ffl == 0x7ffl && \
+		b & ~(0x7ffl) != 0
+}
+
 const flt64inf = {
 	-> std.flt64frombits(0x7ff0000000000000ul)
 }
