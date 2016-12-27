@@ -1984,13 +1984,13 @@ static Type *tyfix(Inferstate *st, Node *ctx, Type *orig, int noerr)
 	return t;
 }
 
-static void checkcast(Inferstate *st, Node *n)
+static void checkcast(Inferstate *st, Node *n, Node ***rem, size_t *nrem, Stab ***remscope, size_t *nremscope)
 {
 	/* FIXME: actually verify the casts. Right now, it's ok to leave this
 	 * unimplemented because bad casts get caught by the backend. */
 }
 
-static void infercompn(Inferstate *st, Node *n)
+static void infercompn(Inferstate *st, Node *n, Node ***rem, size_t *nrem, Stab ***remscope, size_t *nremscope)
 {
 	Node *aggr;
 	Node *memb;
@@ -2022,13 +2022,16 @@ static void infercompn(Inferstate *st, Node *n)
 	} else {
 		if (tybase(t)->type == Typtr)
 			t = tybase(tf(st, t->sub[0]));
-		if (tybase(t)->type != Tystruct) {
-			if (tybase(t)->type == Tyvar)
+		if (tybase(t)->type == Tyvar) {
+			if (!rem)
 				fatal(n, "underspecified type defined on %s:%d used near %s",
 						fname(t->loc), lnum(t->loc), ctxstr(st, n));
-			else
-				fatal(n, "type %s does not support member operators near %s",
-						tystr(t), ctxstr(st, n));
+			lappend(rem, nrem, n);
+			lappend(remscope, nremscope, curstab());
+			return;
+		} else if (tybase(t)->type != Tystruct) {
+			fatal(n, "type %s does not support member operators near %s",
+					tystr(t), ctxstr(st, n));
 		}
 		nl = t->sdecls;
 		for (i = 0; i < t->nmemb; i++) {
@@ -2044,7 +2047,7 @@ static void infercompn(Inferstate *st, Node *n)
 				ctxstr(st, memb), ctxstr(st, aggr));
 }
 
-static void checkstruct(Inferstate *st, Node *n)
+static void checkstruct(Inferstate *st, Node *n, Node ***rem, size_t *nrem, Stab ***remscope, size_t *nremscope)
 {
 	Type *t, *et;
 	Node *val, *name;
@@ -2074,15 +2077,22 @@ static void checkstruct(Inferstate *st, Node *n)
 			}
 		}
 
-		if (!et)
-			fatal(n, "could not find member %s in struct %s, near %s",
-				namestr(name), tystr(t), ctxstr(st, n));
+		if (!et) {
+			if (rem) {
+				lappend(rem, nrem, n);
+				lappend(remscope, nremscope, curstab());
+				return;
+			} else {
+				fatal(n, "could not find member %s in struct %s, near %s",
+						namestr(name), tystr(t), ctxstr(st, n));
+			}
+		}
 
 		unify(st, val, et, type(st, val));
 	}
 }
 
-static void checkvar(Inferstate *st, Node *n)
+static void checkvar(Inferstate *st, Node *n, Node ***rem, size_t *nrem, Stab ***remscope, size_t *nremscope)
 {
 	Node *proto, *dcl;
 	Type *ty;
@@ -2099,7 +2109,7 @@ static void checkvar(Inferstate *st, Node *n)
 	unify(st, n, type(st, n), ty);
 }
 
-static void postcheck(Inferstate *st, Node *file)
+static void postcheckpass(Inferstate *st, Node ***rem, size_t *nrem, Stab ***remscope, size_t *nremscope)
 {
 	size_t i;
 	Node *n;
@@ -2108,17 +2118,40 @@ static void postcheck(Inferstate *st, Node *file)
 		n = st->postcheck[i];
 		pushstab(st->postcheckscope[i]);
 		if (n->type == Nexpr && exprop(n) == Omemb)
-			infercompn(st, n);
+			infercompn(st, n, rem, nrem, remscope, nremscope);
 		else if (n->type == Nexpr && exprop(n) == Ocast)
-			checkcast(st, n);
+			checkcast(st, n, rem, nrem, remscope, nremscope);
 		else if (n->type == Nexpr && exprop(n) == Ostruct)
-			checkstruct(st, n);
+			checkstruct(st, n, rem, nrem, remscope, nremscope);
 		else if (n->type == Nexpr && exprop(n) == Ovar)
-			checkvar(st, n);
+			checkvar(st, n, rem, nrem, remscope, nremscope);
 		else
 			die("Thing we shouldn't be checking in postcheck\n");
 		popstab();
 	}
+}
+
+static void postcheck(Inferstate *st)
+{
+	size_t nrem, nremscope;
+	Stab **remscope;
+	Node **rem;
+
+	while (1) {
+		remscope = NULL;
+		nremscope = 0;
+		rem = NULL;
+		nrem = 0;
+		postcheckpass(st, &rem, &nrem, &remscope, &nremscope);
+		if (nrem == st->npostcheck) {
+			break;
+		}
+		st->postcheck = rem;
+		st->npostcheck = nrem;
+		st->postcheckscope = remscope;
+		st->npostcheckscope = nremscope;
+	}
+	postcheckpass(st, NULL, NULL, NULL, NULL);
 }
 
 /* After inference, replace all
@@ -2466,7 +2499,7 @@ void infer(Node *file)
 	/* do the inference */
 	applytraits(&st, file);
 	infernode(&st, &file, NULL, NULL);
-	postcheck(&st, file);
+	postcheck(&st);
 
 	/* and replace type vars with actual types */
 	typesub(&st, file, 0);
