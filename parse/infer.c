@@ -1378,6 +1378,9 @@ static void infersub(Inferstate *st, Node *n, Type *ret, int *sawret, int *exprc
 	size_t i, nargs;
 	int isconst;
 
+	/* Ovar has no subexpressions */
+	if (exprop(n) == Ovar)
+		return;
 	args = n->expr.args;
 	nargs = n->expr.nargs;
 	isconst = 1;
