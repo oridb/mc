@@ -1391,9 +1391,7 @@ static void infersub(Inferstate *st, Node *n, Type *ret, int *sawret, int *exprc
 			isconst = isconst && args[i]->expr.isconst;
 		}
 	}
-	if (exprop(n) == Ovar)
-		n->expr.isconst = decls[n->expr.did]->decl.isconst;
-	else if (opispure[exprop(n)])
+	if (opispure[exprop(n)])
 		n->expr.isconst = isconst;
 	*exprconst = n->expr.isconst;
 }
@@ -1930,11 +1928,14 @@ static Type *tyfix(Inferstate *st, Node *ctx, Type *orig, int noerr)
 	base = htget(st->seqbase, orig);
 	if (orig->type == Tyvar && hthas(st->delayed, orig)) {
 		delayed = htget(st->delayed, orig);
-		if (t->type == Tyvar)
-			t = delayed;
-		else if (tybase(t)->type != delayed->type && !noerr)
+		if (t->type == Tyvar) {
+			/* tyvar is guaranteed to unify error-free */
+			unify(st, ctx, t, delayed);
+			t = tf(st, t);
+		} else if (tybase(t)->type != delayed->type && !noerr) {
 			fatal(ctx, "type %s not compatible with %s near %s\n", tystr(t),
 					tystr(delayed), ctxstr(st, ctx));
+		}
 	}
 	if (t->type == Tyvar) {
 		if (hastrait(t, traittab[Tcint]) && checktraits(t, tyint))
