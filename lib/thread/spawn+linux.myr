@@ -22,22 +22,15 @@ const spawn = {fn
 
 const spawnstk = {fn, sz
 	var stk : byte#, tid, ctid, ret
-	var szp, fp, tos
 
 	stk = getstk(sz)
 	if stk == sys.Mapbad
 		-> `std.Err "couldn't get stack"
 	;;
-	tos = (stk : std.intptr)
-	tos -= sizeof(int64)
-	szp = (tos : sys.size#)
-	szp# = Stacksz
-	tos -= sizeof((->void))
-	fp = (tos : (->void)#)
-	fp# = fn
+        stk = initstack(stk, fn, Stacksz)
 
 	ret = sys.fnclone(Thrflag, \
-		(tos : byte#),\
+		(stk : byte#),\
 		&tid, (0 : byte#), \
 		&ctid, (0 : byte#), \
 		(startthread : void#))
@@ -45,6 +38,19 @@ const spawnstk = {fn, sz
 		-> `std.Err "couldn't spawn thread"
 	;;
 	-> `std.Ok (ret : tid)
+}
+
+const initstack = {stk, fn, sz
+	var tos, szp, fp
+
+	tos = (stk : std.intptr)
+	tos -= sizeof(int64)
+	szp = (tos : sys.size#)
+	szp# = sz
+        tos -= sizeof((->void))
+        fp = (tos : (->void)#)
+        fp# = fn
+        -> (tos : byte#)
 }
 
 const getstk = {sz
