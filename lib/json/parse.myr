@@ -7,8 +7,11 @@ pkg json =
 	const free	: (j : elt# -> void)
 ;;
 
+const Maxdepth = 1024
+
 type parser = struct
 	str	: byte[:]
+	depth	: std.size
 	line	: std.size
 	off	: std.size
 	idx	: std.size
@@ -19,6 +22,7 @@ const parse = {str
 
 	parser = [
 		.str = str,
+		.depth = 0,
 		.line = 1,
 		.off = 1,
 		.idx = 0,
@@ -88,6 +92,10 @@ const parseobj = {p
 
 	std.assert(takec(p) == '{', "should only enter 'obj' after '{'")
 	membs = [][:]
+	if !enter(p)
+		err = [.e = `Depth, .line=p.line, .off=p.off]
+		goto error
+	;;
 	takespace(p)
 	if peekc(p) == '}'
 		takec(p)
@@ -113,6 +121,7 @@ const parseobj = {p
 			goto error
 		;;
 	;;
+	exit(p)
 	-> `std.Ok std.mk(`Obj membs)
 :error
 	for (k, v) in membs
@@ -120,6 +129,7 @@ const parseobj = {p
 		free(v)
 	;;
 	std.slfree(membs)
+	exit(p)
 	-> `std.Err err
 }
 
@@ -154,6 +164,10 @@ const parsearr = {p -> std.result(elt#, err)
 
 	std.assert(takec(p) == '[', "should only enter 'obj' after '['\n")
 	elts = [][:]
+	if !enter(p)
+		err = [.e = `Depth, .line=p.line, .off=p.off]
+		goto error
+	;;
 	takespace(p)
 	if peekc(p) == ']'
 		takec(p)
@@ -179,12 +193,14 @@ const parsearr = {p -> std.result(elt#, err)
 			goto error
 		;;
 	;;
+	exit(p)
 	-> `std.Ok std.mk(`Arr elts)
 :error
 	for e in elts
 		free(e)
 	;;
 	std.slfree(elts)
+	exit(p)
 	-> `std.Err err
 }
 
@@ -376,3 +392,12 @@ const takec = {p
 	-> c
 }
 
+const enter = {p
+	std.put("depth: {}, max: {}\n", p.depth, Maxdepth)
+	p.depth++
+	-> p.depth <= Maxdepth
+}
+
+const exit = {p
+	p.depth--
+}
