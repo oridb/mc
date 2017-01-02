@@ -1350,6 +1350,7 @@ static void inferpat(Inferstate *st, Node **np, Node *val, Node ***bind, size_t 
 		}
 		settype(st, n, t);
 		n->expr.did = s->decl.did;
+		n->expr.isconst = s->decl.isconst;
 		break;
 	case Oaddr:
 		infernode(st, np, NULL, NULL);
