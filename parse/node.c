@@ -95,7 +95,7 @@ Node *mkexprl(Srcloc loc, Op op, Node **args, size_t nargs)
 	return n;
 }
 
-Node *mkexpr(Srcloc loc, Op op, ...)
+Node *mkexpr(Srcloc loc, int op, ...)
 {
 	Node *n;
 	va_list ap;

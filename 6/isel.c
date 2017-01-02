@@ -169,7 +169,7 @@ static Insn *mkinsnv(AsmOp op, va_list ap)
 	return i;
 }
 
-Insn *mkinsn(AsmOp op, ...)
+Insn *mkinsn(int op, ...)
 {
 	va_list ap;
 	Insn *i;
@@ -180,7 +180,7 @@ Insn *mkinsn(AsmOp op, ...)
 	return i;
 }
 
-static void g(Isel *s, AsmOp op, ...)
+static void g(Isel *s, int op, ...)
 {
 	va_list ap;
 	Insn *i;

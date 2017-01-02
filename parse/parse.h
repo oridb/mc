@@ -471,7 +471,7 @@ Node *mkfile(char *name);
 Node *mkuse(Srcloc l, char *use, int islocal);
 Node *mksliceexpr(Srcloc l, Node *sl, Node *base, Node *off);
 Node *mkexprl(Srcloc l, Op op, Node **args, size_t nargs);
-Node *mkexpr(Srcloc l, Op op, ...); /* NULL terminated */
+Node *mkexpr(Srcloc l, int op, ...); /* NULL terminated */
 Node *mkcall(Srcloc l, Node *fn, Node **args, size_t nargs);
 Node *mkifstmt(Srcloc l, Node *cond, Node *iftrue, Node *iffalse);
 Node *mkloopstmt(Srcloc l, Node *init, Node *cond, Node *incr, Node *body);

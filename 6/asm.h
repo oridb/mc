@@ -294,7 +294,7 @@ int isfloatmode(Mode m);
 int isintmode(Mode m);
 
 /* emitting instructions */
-Insn *mkinsn(AsmOp op, ...);
+Insn *mkinsn(int op, ...);
 void dbgiprintf(FILE *fd, Insn *insn);
 void dbglocprint(FILE *fd, Loc *l, char spec);
 
