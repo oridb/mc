@@ -1,0 +1,40 @@
+use std
+
+pkg escfmt =
+	type escre = byte[:]
+
+	const re	: (s : byte[:] -> escre) 
+;;
+
+const __init__ = {
+	var s = ("" : escre)
+	std.fmtinstall(std.typeof(s), refmt, [][:])
+}
+
+const re = {s
+	-> (s : escre)
+}
+
+const refmt = {sb, ap, args
+	var s : byte[:]
+
+	s = std.vanext(ap)
+	for c in std.bychar(s)
+		match c
+		| '|':	std.sbputs(sb, "\\|")
+		| '*':	std.sbputs(sb, "\\*")
+		| '+':	std.sbputs(sb, "\\+")
+		| '?':	std.sbputs(sb, "\\?")
+		| '[':	std.sbputs(sb, "\\[")
+		| ']':	std.sbputs(sb, "\\]")
+		| '^':	std.sbputs(sb, "\\^")
+		| '$':	std.sbputs(sb, "\\$")
+		| '.':	std.sbputs(sb, "\\.")
+		| '\\':	std.sbputs(sb, "\\.")
+		| '(':	std.sbputs(sb, "\\(")
+		| ')':	std.sbputs(sb, "\\)")
+		| _:	std.sbputc(sb, c)
+		;;
+	;;
+}
+

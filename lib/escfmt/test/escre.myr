@@ -1,0 +1,21 @@
+use std
+use escfmt
+use testr
+
+const main = {
+	testr.run([\
+		[.name="unchanged", .fn={ctx
+			var s = std.fmt("{}", escfmt.url("word"))
+			testr.check(ctx, std.sleq("word", s), std.fmt("mismatched escape {}", s))
+			std.slfree(s)
+		}],
+		[.name="randomcrud", .fn={ctx
+			var s = std.fmt("{}", escfmt.re("^:/?#[]@!$&'()*+,;=%"))
+			testr.check(ctx, \
+				std.sleq("\\^:/\\?#\\[\\]@!\\$&'\\(\\)\\*\\+,;=%", s), \
+				std.fmt("mismatched escape {}", s))
+			std.slfree(s)
+		}],
+	][:])
+}
+

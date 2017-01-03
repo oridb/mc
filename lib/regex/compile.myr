@@ -651,6 +651,7 @@ const escaped = {re
 	| 'r':	ret = `Some mk(re, `Chr '\r', idx)
 	| 'n':	ret = `Some mk(re, `Chr '\n', idx)
 	| 'b':	ret = `Some mk(re, `Chr '\b', idx)
+	| ')':	ret = `Some mk(re, `Chr ')', idx)
 	| 'u':	ret = unichar(re, idx)
 	| chr:	ret = `Err `Badescape chr
 	;;
