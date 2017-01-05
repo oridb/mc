@@ -83,6 +83,7 @@ int bsisempty(Bitset *set);
 int bsiter(Bitset *bs, size_t *elt);
 size_t bsmax(Bitset *bs);
 size_t bscount(Bitset *bs);
+
 /* inline for speed */
 static inline int bshas(Bitset *bs, size_t elt)
 {

@@ -106,6 +106,31 @@ size_t bscount(Bitset *bs)
 	return n;
 }
 
+inline static int firstbit(size_t b)
+{
+	int n;
+
+	n = 0;
+	if (!(b & 0xffffffff)) {
+		n += 32;
+		b >>= 32;
+	}
+	if (!(b & 0xffff)) {
+		n += 16;
+		b >>= 16;
+	}
+	if (!(b & 0xff)) {
+		n += 8;
+		b >>= 8;
+	}
+	if (!(b & 0xf)) {
+		n += 4;
+		b >>= 4;
+	}
+	n += (char[16]){4,0,1,0,2,0,1,0,3,0,1,0,2,0,1,0}[b & 0xf];
+	return n;
+}
+
 /* A slightly tricky function to iterate over the contents
  * of a bitset. It returns true immediately if 'elt' is in
  * the bitset, otherwise it seeks forward to the next value
@@ -125,18 +150,24 @@ size_t bscount(Bitset *bs)
  */
 int bsiter(Bitset *bs, size_t *elt)
 {
-	size_t i;
+	size_t b, t, i;
 
-	for (i = *elt; i < bsmax(bs); i++) {
-		while (i < bsmax(bs) && !bs->chunks[i / Sizetbits])
-			i = (i + Sizetbits) & ~(Sizetbits - 1);
-		if (bshas(bs, i)) {
-			*elt = i;
-			return 1;
-		}
+	i = *elt;
+	t = i/Sizetbits;
+	if (t >= bs->nchunks)
+		return 0;
+	b = bs->chunks[t];
+	b &= ~((1ull << (i%Sizetbits)) - 1);
+	while (!b) {
+		++t;
+		if (t >= bs->nchunks)
+			return 0;
+		b = bs->chunks[t];
 	}
-	return 0;
+	*elt = Sizetbits*t + firstbit(b);
+	return 1;
 }
+
 
 /* Returns the largest value that the bitset can possibly
  * hold. It's conservative, but scanning the entire bitset
