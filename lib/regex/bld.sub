@@ -21,3 +21,5 @@ gen ranges.myr {durable} =
 ;;
 
 sub = test ;;
+
+man = myr-regex.3 ;;
