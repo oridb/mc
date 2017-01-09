@@ -254,7 +254,10 @@ int strliteq(void *_a, void *_b)
 	return !memcmp(a->buf, b->buf, a->len);
 }
 
-ulong ptrhash(void *key) { return inthash((uintptr_t)key); }
+ulong ptrhash(void *key)
+{ 
+	return inthash((uintptr_t)key);
+}
 
 ulong inthash(uint64_t key)
 {
@@ -275,15 +278,16 @@ ulong murmurhash2 (void *ptr, size_t len)
 {
 	uint32_t m = 0x5bd1e995;
 	uint32_t r = 24;
-	uint32_t h, k;
-	uint32_t *data;
-	uint8_t *buf;
+	uint32_t h, k, n;
+	uint8_t *p;
 	
-	buf = ptr;
-	data = (uint32_t*)buf;
 	h = Seed ^ len;
-	while (len >= 4) {
-		k = *data;
+	n = len & ~0x3ull;
+	for (p = ptr; p != ptr + n; p += 4) {
+		k = (p[0] <<  0) |
+			(p[1] <<  8) |
+			(p[2] << 16) |
+			(p[3] << 24);
 
 		k *= m;
 		k ^= k >> r;
@@ -291,17 +295,15 @@ ulong murmurhash2 (void *ptr, size_t len)
 
 		h *= m;
 		h ^= k;
-		data++;
-		len -= sizeof(*data);
 	}
 
-	switch (len) {
+	switch (len & 0x3) {
 	case 3:
-		h ^= buf[2] << 16;
+		h ^= p[2] << 16;
 	case 2:
-		h ^= buf[1] << 8;
+		h ^= p[1] << 8;
 	case 1:
-		h ^= buf[0] << 0;
+		h ^= p[0] << 0;
 	default:
 		break;
 	};
