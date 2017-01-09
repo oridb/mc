@@ -250,6 +250,7 @@ extern Node *abortoob;
 extern int extracheck;
 extern Asmsyntax asmsyntax;
 
+void initconsts(Htab *globls);
 void fillglobls(Stab *st, Htab *globls);
 void simpglobl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***blob, size_t *nblob);
 void selfunc(Isel *is, Func *fn, Htab *globls, Htab *strtab);

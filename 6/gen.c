@@ -45,6 +45,31 @@ void fillglobls(Stab *st, Htab *globls)
 	free(ns);
 }
 
+
+void initconsts(Htab *globls)
+{
+	Type *ty;
+	Node *name;
+	Node *dcl;
+
+	tyintptr = mktype(Zloc, Tyuint64);
+	tyword = mktype(Zloc, Tyuint);
+	tyvoid = mktype(Zloc, Tyvoid);
+
+	ty = mktyfunc(Zloc, NULL, 0, mktype(Zloc, Tyvoid));
+	ty->type = Tycode;
+	name = mknsname(Zloc, "_rt", "abort_oob");
+	dcl = mkdecl(Zloc, name, ty);
+	dcl->decl.isconst = 1;
+	dcl->decl.isextern = 1;
+	htput(globls, dcl, asmname(dcl));
+
+	abortoob = mkexpr(Zloc, Ovar, name, NULL);
+	abortoob->expr.type = ty;
+	abortoob->expr.did = dcl->decl.did;
+	abortoob->expr.isconst = 1;
+}
+
 Type *codetype(Type *ft)
 {
 	ft = tybase(ft);
