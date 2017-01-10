@@ -32,6 +32,7 @@ pkg std =
 	const Owronly  	: fdopt = (sys.Owronly	: fdopt)
 	const Ordwr    	: fdopt = (sys.Ordwr	: fdopt)
 	const Otrunc   	: fdopt = (sys.Otrunc	: fdopt)
+	const Ocexec	: fdopt = (sys.Ocexec	: fdopt)
 	const Ocreat   	: fdopt = 0x1000000	/* emulated by redirecting to creat(). */
 	const Oappend  	: fdopt = 0x2000000	/* emulated by seeking to EOF */
 	const Odir	: fdopt = 0x0	/* no-op on plan9 */

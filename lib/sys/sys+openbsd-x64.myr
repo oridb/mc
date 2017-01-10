@@ -155,9 +155,9 @@ pkg sys =
 	const Owronly  	: fdopt = 0x1
 	const Ordwr    	: fdopt = 0x2
 	const Oappend  	: fdopt = 0x8
+	const Ondelay  	: fdopt = 0x4
 	const Ocreat   	: fdopt = 0x200
 	const Onofollow	: fdopt = 0x100
-	const Ondelay  	: fdopt = 0x4
 	const Otrunc   	: fdopt = 0x400
 	const Odir	: fdopt = 0x20000
 

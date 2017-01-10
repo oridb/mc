@@ -196,7 +196,6 @@ pkg sys =
 	const Oexcl	: fdopt = 0x0800	/* error if already exists */
 	const Ocloexec	: fdopt = 0x00100000
 
-
         /* stat modes */	
 	const Sifmt	: filemode = 0xf000
 	const Sififo	: filemode = 0x1000

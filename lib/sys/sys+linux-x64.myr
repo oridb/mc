@@ -192,8 +192,11 @@ pkg sys =
 	const Oappend  	: fdopt = 0x400
 	const Ondelay  	: fdopt = 0x800
 	const Odirect	: fdopt = 0x4000
+	const Olarge	: fdopt = 0x8000
 	const Odir	: fdopt = 0x10000
 	const Onofollow	: fdopt = 0x20000
+	const Onoatime	: fdopt = 0x40000
+	const Ocloexec	: fdopt = 0x80000
 
 	/* stat modes */
 	const Sifmt	: filemode = 0xf000
