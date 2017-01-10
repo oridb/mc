@@ -1,3 +1,4 @@
+use sys
 use "die"
 use "extremum"
 use "memops"
@@ -27,9 +28,9 @@ pkg std =
 
 const Zslab	= (0 : slab#)
 const Zchunk	= (0 : chunk#)
-const Slabsz 	= 1*MiB	/* 1 meg slabs */
-const Cachemax	= 16	/* maximum number of slabs in the cache */
-const Bktmax	= 32*KiB	/* Slabsz / 8; a balance. */
+const Slabsz 	= 4*MiB
+const Cachemax	= 4
+const Bktmax	= 128*KiB	/* a balance between wasted space and falling back to mmap */
 const Pagesz	= 4*KiB
 
 var buckets	: bucket[32] /* excessive */
@@ -47,6 +48,7 @@ type bucket = struct
 type slab = struct
 	head	: byte#	/* head of virtual addresses, so we don't leak address space */
 	next	: slab#	/* the next slab on the chain */
+	prev	: slab#	/* the prev slab on the chain */
 	freehd	: chunk#	/* the nodes we're allocating */
 	nfree	: size	/* the number of free nodes */
 ;;
@@ -189,6 +191,8 @@ const mkslab = {bkt
 	s = (align((p : size), Slabsz) : slab#)
 	s.head = p
 	s.nfree = bkt.nper
+	s.next = Zslab
+	s.prev = Zslab
 	/* skip past the slab header */
 	off = align(sizeof(slab), Align)
 	bnext = nextchunk((s : chunk#), off)
@@ -215,10 +219,10 @@ const bktalloc = {bkt
 	s = bkt.slabs
 	if s == Zslab
 		s = mkslab(bkt)
+		bkt.slabs = s
 		if s == Zslab
 			die("No memory left")
 		;;
-		bkt.slabs = s
 	;;
 
 	/* grab the first chunk on the slab */
@@ -227,7 +231,9 @@ const bktalloc = {bkt
 	s.nfree--
 	if s.nfree == 0
 		bkt.slabs = s.next
-		s.next = Zslab
+		if s.next != Zslab
+			s.next.prev = Zslab
+		;;
 	;;
 
 	-> (b : byte#)
@@ -245,21 +251,37 @@ const bktfree = {bkt, m
 	s = (mtrunc(m, Slabsz) : slab#)
 	b = (m : chunk#)
 	if s.nfree == 0
+		if bkt.slabs != Zslab
+			bkt.slabs.prev = s
+		;;
 		s.next = bkt.slabs
+		s.prev = Zslab
 		bkt.slabs = s
-	elif s.nfree == bkt.nper
+	elif s.nfree == bkt.nper - 1
 		/*
 		HACK HACK HACK: if we can't unmap, keep an infinite cache per slab size.
 		We should solve this better somehow.
 		*/
 		if bkt.ncache < Cachemax || !Canunmap
 			s.next = bkt.cache
+			s.prev = Zslab
 			bkt.cache = s
 		else
+			/* unlink the slab from the list */
+			if s.next != Zslab
+				s.next.prev = s.prev
+			;;
+			if s.prev != Zslab
+				s.prev.next = s.next
+			;;
+			if bkt.slabs == s
+				bkt.slabs = s.next
+			;;
 			/* we mapped 2*Slabsz so we could align it,
 			 so we need to unmap the same */
 			freemem(s.head, Slabsz*2)
 		;;
+		-> void
 	;;
 	s.nfree++
 	b.next = s.freehd
