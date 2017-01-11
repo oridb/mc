@@ -65,11 +65,11 @@ const movetargs = {b, rm
 	-> true
 }
 
-
 const movefile = {b, rm, dir, file, prefix, perm
 	var path
 
 	setdir(b, dir)
+	makepath(prefix)
 	path = std.pathjoin([opt_destdir, opt_instbase, prefix, file][:])
 	if rm
 		mbldput("\trm {}\n", path)
@@ -104,7 +104,16 @@ const moveman = {b, rm, dir, man
 		;;
 	;;
 
-	manrel = std.fmt("{}{}", opt_manpath, man[sect:])
+	manrel = std.fmt("{}{}", config.Manpath, man[sect:])
+	makepath(manrel)
 	movefile(b, rm, dir, man, manrel, 0o644)
 	std.slfree(manrel)
+}
+
+const makepath = {prefix
+	var p
+	
+	p = std.pathjoin([opt_destdir, opt_instbase, prefix][:])
+	std.mkpath(p)
+	std.slfree(p)
 }
