@@ -122,7 +122,7 @@ const buildbin = {b, targ, addsrc
 	setdir(b, targ.dir)
 	addincludes(b, targ)
 	path = std.pathcat(b.curdir, targ.name)
-	std.put("{}...\n", path)
+	mbldput("{}...\n", path)
 	std.slfree(path)
 	dg = myrdeps(b, targ, false, addsrc)
 	if !std.hthas(dg.deps, targ.name)
@@ -152,7 +152,7 @@ const buildlib = {b, targ
 	setdir(b, targ.dir)
 	addincludes(b, targ)
 	lib = targ.name
-	std.put("{}/lib{}.a...\n", b.curdir, lib)
+	mbldput("{}/lib{}.a...\n", b.curdir, lib)
 	archive = std.fmt("lib{}.a", lib)
 	usefile = std.fmt("lib{}.use", lib)
 	dg = myrdeps(b, targ, false, false)
@@ -426,10 +426,10 @@ const putlib = {cmd, head, lib, incs
 	else
 		match findlib(lib, incs)
 		| `std.None:
-			std.put("in path: ")
+			mbldput("in path: ")
 			sep = ""
 			for inc in incs
-				std.put("\t{}{}\n", sep, inc)
+				mbldput("\t{}{}\n", sep, inc)
 				sep = ", "
 			;;
 			std.fatal("could not find library lib{}.a.\n", lib)

@@ -72,9 +72,9 @@ const movefile = {b, rm, dir, file, prefix, perm
 	setdir(b, dir)
 	path = std.pathjoin([opt_destdir, opt_instbase, prefix, file][:])
 	if rm
-		std.put("\trm {}\n", path)
+		mbldput("\trm {}\n", path)
 		if !std.remove(path)
-			std.put("\t\tno such file {}\n", file)
+			mbldput("\t\tno such file {}\n", file)
 		;;
 	else
 		std.remove(path)
@@ -82,9 +82,9 @@ const movefile = {b, rm, dir, file, prefix, perm
 		| `std.Err m:	std.fatal("could not open {} for reading\n", file)
 		| `std.Ok buf:
 			if std.blat(path, buf, perm)
-				std.put("\t{} => {}\n", file, path)
+				mbldput("\t{} => {}\n", file, path)
 			else
-				std.put("could not write {}\n", file)
+				mbldput("could not write {}\n", file)
 			;;
 		;;
 	;;

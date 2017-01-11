@@ -78,9 +78,9 @@ const test = {b
 		std.slfree(f)
 	;;
 	if ok
-		std.put("TESTS PASSED\n")
+		mbldput("TESTS PASSED\n")
 	else
-		std.put("TESTS FAILED\n")
+		mbldput("TESTS FAILED\n")
 	;;
 	std.slfree(failed)
 	std.slfree(tests)
@@ -89,9 +89,9 @@ const test = {b
 
 const printfailed = {failed
 	if failed.len > 0
-		std.put("FAILURES: {}\n", failed.len)
+		mbldput("FAILURES: {}\n", failed.len)
 		for t in failed
-			std.put("\t{}\n", t)
+			mbldput("\t{}\n", t)
 		;;
 	;;
 }
@@ -151,13 +151,13 @@ const runtest = {b, cmd, failed
 	var res, log, logfd, p
 	var sub
 
-	std.put("run")
+	mbldput("run")
 	for c in cmd
 		p = std.pathcat(b.curdir, c)
-		std.put(" {}", p)
+		mbldput(" {}", p)
 		std.slfree(p)
 	;;
-	std.put(":\t")
+	mbldput(":\t")
 	match std.spork(cmd)
 	| `std.Err m:
 		std.fatal("\nunable to run test: {}\n", m)
@@ -171,16 +171,16 @@ const runtest = {b, cmd, failed
 
 		res = false
 		match std.wait(pid)
-		| `std.Wfailure:	std.put("FAIL\n")
-		| `std.Wsignalled:	std.put("CRASH\n")
+		| `std.Wfailure:	mbldput("FAIL\n")
+		| `std.Wsignalled:	mbldput("CRASH\n")
 		| `std.Wsuccess:
 			res = true
 			/* if we have subtests, we've already printed the output */
 			match sub
 			| `std.Some r:	res = r
-			| `std.None:	std.put("PASS\n")
+			| `std.None:	mbldput("PASS\n")
 			;;
-		| `std.Waiterror:	std.put("failed waiting for pid {}\n", pid)
+		| `std.Waiterror:	mbldput("failed waiting for pid {}\n", pid)
 		;;
 		if !res
 			p = std.pathcat(b.curdir, cmd[0])

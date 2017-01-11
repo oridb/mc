@@ -124,13 +124,13 @@ const dumpgraph = {dg
 		-> void
 	;;
 	keys = std.htkeys(dg.deps)
-	std.put("digraph dg {{\n")
+	mbldput("digraph dg {{\n")
 	for k in keys
 		for v in std.htgetv(dg.deps, k, ["WTFUNKNOWN!"][:])
-			std.put("\t\"{}\" -> \"{}\";\n", k, v)
+			mbldput("\t\"{}\" -> \"{}\";\n", k, v)
 		;;
 	;;
-	std.put("}\n")
+	mbldput("}\n")
 }
 
 const srcdeps = {b, ds, g, path, obj, usefile
@@ -183,7 +183,7 @@ const addusedep = {b, ds, g, f, usefile, line
 
 	if std.hthas(g.done, usefile)
 		if opt_debug
-			std.put("already loaded deps for {}\n", usefile)
+			mbldput("already loaded deps for {}\n", usefile)
 		;;
 		-> void
 	;;
@@ -408,7 +408,7 @@ const pushdep = {dg, src, dst
 	var sl
 
 	if opt_debug
-		std.put("{} <= {}\n", dst, src)
+		mbldput("{} <= {}\n", dst, src)
 	;;
 	sl = std.htgetv(dg.deps, dst, [][:])
 	std.slpush(&sl, src)

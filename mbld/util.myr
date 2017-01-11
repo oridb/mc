@@ -5,7 +5,8 @@ use "types"
 
 pkg bld =
 	const run	: (cmd : byte[:][:] -> bool)
-	const printcmd
+	const printcmd	: (cmd : byte[:][:] -> void)
+	const mbldput	: (fmt : byte[:], args : ... -> void)
 	const srcsplit	: (src : byte[:] -> (byte[:], byte[:], byte[:]))
 	const swapsuffix	: (f : byte[:], suff : byte[:], newsuff : byte[:] -> byte[:])
 	const srcswapsuffix	: (f : byte[:], newsuff : byte[:] -> byte[:])
@@ -37,15 +38,24 @@ const run = {cmd
 	;;
 }
 
+const mbldput = {fmt, args
+	var ap
+
+	if !opt_silent
+		ap = std.vastart(&args)
+		std.putv(fmt, &ap)
+	;;
+}
+
 const printcmd = {lst
 	if lst.len > 0
-		std.put("\t")
-		std.put("{}\t", lst[0])
+		mbldput("\t")
+		mbldput("{}\t", lst[0])
 		for l in lst[1:]
-			std.put("{} ", l)
+			mbldput("{} ", l)
 		;;
 	;;
-	std.put("\n")
+	mbldput("\n")
 }
 
 const srcsplit = {src

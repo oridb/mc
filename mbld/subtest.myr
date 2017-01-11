@@ -3,6 +3,7 @@ use bio
 use regex
 
 use "types"
+use "util"
 
 pkg bld =
 	const showsub	: (b : build#, cmd : byte[:], \
@@ -67,13 +68,13 @@ const showtests = {b, cmd, failed, f, log, ntests
 	var ok
 
 	if ntests == 0
-		std.put("FAIL: missing tests\n")
+		mbldput("FAIL: missing tests\n")
 		-> false
 	;;
 	ok = true
 	curtest = ""
 	nresults = 0
-	std.put("\n")
+	mbldput("\n")
 	for ln in bio.byline(f)
 		ln = std.strstrip(ln)
 		match testhead(ln)
@@ -118,7 +119,7 @@ const showtests = {b, cmd, failed, f, log, ntests
 
 const checktests = {ntests, nresults
 	if ntests > 0 && ntests != nresults
-		std.put("mismatched test count: expected {}, got {}\n", ntests, nresults)
+		mbldput("mismatched test count: expected {}, got {}\n", ntests, nresults)
 		-> false
 	;;
 	-> true
@@ -128,7 +129,7 @@ const starttest = {curtest, t
 	if curtest#.len != 0
 		std.fatal("malformed input: test {} nested in {}\n", t, curtest)
 	;;
-	std.put("\trun {}:\t", std.strstrip(t))
+	mbldput("\trun {}:\t", std.strstrip(t))
 	curtest# = t
 }
 
@@ -140,12 +141,12 @@ const endtest = {b, cmd, curtest, failed, nresults, pass, msg
 	;;
 
 	if pass
-		std.put("PASS\n")
+		mbldput("PASS\n")
 	else
 		if msg.len > 0
-			std.put("FAIL {}\n", msg)
+			mbldput("FAIL {}\n", msg)
 		else
-			std.put("FAIL\n")
+			mbldput("FAIL\n")
 		;;
 		p = std.pathjoin([b.curdir, cmd, curtest#][:])
 		std.slpush(failed, p)

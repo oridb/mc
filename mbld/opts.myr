@@ -13,6 +13,7 @@ pkg bld =
 	var opt_destdir	: byte[:]
 	var opt_outdir	: byte[:]
 	var opt_debug	: bool
+	var opt_silent	: bool
 
 	/* undocumented/unsupported opts */
 	var opt_mc	: byte[:]
@@ -41,6 +42,7 @@ var opt_muse	= "muse"
 var opt_ld	= "ld"
 var opt_ar	= "ar"
 var opt_genasm  = false
+var opt_silent	= false
 
 const initopts = {
 	var si

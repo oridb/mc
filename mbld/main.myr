@@ -90,6 +90,7 @@ const main = {args : byte[:][:]
 	if targname.len != 0
 		buildimm(b, targname, cmd.args, bintarg, cleanfirst)
 	elif runsrc.len != 0
+		bld.opt_silent = true
 		tmp = std.mktemppath("runmyr")
 		ok = buildimm(b, tmp, [runsrc][:], true, cleanfirst)
 		if ok
@@ -100,7 +101,7 @@ const main = {args : byte[:][:]
 		findproj(b, "bld.proj")
 		bld.load(b)
 		for t in b.all
-			std.put("{}\n", t)
+			bld.mbldput("{}\n", t)
 		;;
 	else
 		findproj(b, "bld.proj")
@@ -185,7 +186,7 @@ const findbase = {b, file
 	while !std.sleq(dir, "/")
 		bld = std.pathcat(dir, file)
 		if std.fexists(bld)
-			std.put("project base {}:\n", dir)
+			bld.mbldput("project base {}:\n", dir)
 			b.basedir = dir
 			b.bldfile = bld
 			-> true
