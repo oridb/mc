@@ -156,9 +156,17 @@ pkg sys =
 	const Ordwr    	: fdopt = 0x2
 	const Oappend  	: fdopt = 0x8
 	const Ondelay  	: fdopt = 0x4
-	const Ocreat   	: fdopt = 0x200
+	const Oshlock	: fdopt = 0x10		/* open with shared file lock */
+	const Oexlock	: fdopt = 0x20		/* open with exclusive file lock */
+	const Oasync	: fdopt = 0x40		/* signal pgrp when data ready */
+	const Osync	: fdopt = 0x80		/* backwards compatibility */
 	const Onofollow	: fdopt = 0x100
+	const Ocreat   	: fdopt = 0x200
 	const Otrunc   	: fdopt = 0x400
+	const Oexcl   	: fdopt = 0x800
+	const Ocloexec	: fdopt = 0x10000
+	const Odsync	: fdopt = Osync		/* synchronous data writes */
+	const Orsync	: fdopt = Osync		/* synchronous reads */
 	const Odir	: fdopt = 0x20000
 
         /* stat modes */	
