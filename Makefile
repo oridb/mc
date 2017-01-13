@@ -4,7 +4,6 @@ SUB = parse \
       6 \
       muse \
       rt \
-      doc
 
 EXTRA=buildmyr
 EXTRACLEAN=cleanmyr

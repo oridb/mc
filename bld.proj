@@ -4,5 +4,6 @@ sub =
 	test
 	bench
 	support
+	doc
 ;;
 
