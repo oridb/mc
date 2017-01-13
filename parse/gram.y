@@ -35,64 +35,64 @@ static void setupinit(Node *n);
 %}
 
 %token<tok> Terror
-%token<tok> Tplus    /* + */
-%token<tok> Tminus   /* - */
-%token<tok> Tmul     /* * */
-%token<tok> Tdiv     /* / */
-%token<tok> Tinc     /* ++ */
-%token<tok> Tdec     /* -- */
-%token<tok> Tmod     /* % */
-%token<tok> Tasn     /* = */
-%token<tok> Taddeq   /* += */
-%token<tok> Tsubeq   /* -= */
-%token<tok> Tmuleq   /* *= */
-%token<tok> Tdiveq   /* /= */
-%token<tok> Tmodeq   /* %= */
-%token<tok> Tboreq   /* |= */
-%token<tok> Tbxoreq  /* ^= */
-%token<tok> Tbandeq  /* &= */
-%token<tok> Tbsleq   /* <<= */
-%token<tok> Tbsreq   /* >>= */
+%token<tok> Tplus	/* + */
+%token<tok> Tminus	/* - */
+%token<tok> Tmul	/* * */
+%token<tok> Tdiv	/* / */
+%token<tok> Tinc	/* ++ */
+%token<tok> Tdec	/* -- */
+%token<tok> Tmod	/* % */
+%token<tok> Tasn	/* = */
+%token<tok> Taddeq	/* += */
+%token<tok> Tsubeq	/* -= */
+%token<tok> Tmuleq	/* *= */
+%token<tok> Tdiveq	/* /= */
+%token<tok> Tmodeq	/* %= */
+%token<tok> Tboreq	/* |= */
+%token<tok> Tbxoreq	/* ^= */
+%token<tok> Tbandeq	/* &= */
+%token<tok> Tbsleq	/* <<= */
+%token<tok> Tbsreq	/* >>= */
 
-%token<tok> Tbor     /* | */
-%token<tok> Tbxor    /* ^ */
-%token<tok> Tband    /* & */
-%token<tok> Tbsl     /* << */
-%token<tok> Tbsr     /* >> */
-%token<tok> Tbnot    /* ~ */
+%token<tok> Tbor	/* | */
+%token<tok> Tbxor	/* ^ */
+%token<tok> Tband	/* & */
+%token<tok> Tbsl	/* << */
+%token<tok> Tbsr	/* >> */
+%token<tok> Tbnot	/* ~ */
 
-%token<tok> Teq      /* == */
-%token<tok> Tgt      /* > */
-%token<tok> Tlt      /* < */
-%token<tok> Tge      /* >= */
-%token<tok> Tle      /* <= */
-%token<tok> Tne      /* != */
+%token<tok> Teq		/* == */
+%token<tok> Tgt		/* > */
+%token<tok> Tlt		/* < */
+%token<tok> Tge		/* >= */
+%token<tok> Tle		/* <= */
+%token<tok> Tne		/* != */
 
-%token<tok> Tlor     /* || */
-%token<tok> Tland    /* && */
-%token<tok> Tlnot    /* ! */
+%token<tok> Tlor	/* || */
+%token<tok> Tland	/* && */
+%token<tok> Tlnot	/* ! */
 
-%token<tok> Tobrace  /* { */
-%token<tok> Tcbrace  /* } */
-%token<tok> Toparen  /* ( */
-%token<tok> Tcparen  /* ) */
-%token<tok> Tosqbrac /* [ */
-%token<tok> Tcsqbrac /* ] */
-%token<tok> Tat      /* @ */
-%token<tok> Ttick    /* ` */
-%token<tok> Tderef   /* # */
+%token<tok> Tobrace	/* { */
+%token<tok> Tcbrace	/* } */
+%token<tok> Toparen	/* ( */
+%token<tok> Tcparen	/* ) */
+%token<tok> Tosqbrac	/* [ */
+%token<tok> Tcsqbrac	/* ] */
+%token<tok> Tat		/* @ */
+%token<tok> Ttick	/* ` */
+%token<tok> Tderef	/* # */
 
-%token<tok> Ttype    /* type */
-%token<tok> Tfor     /* for */
-%token<tok> Tin      /* in */
-%token<tok> Twhile   /* while */
-%token<tok> Tif      /* if */
-%token<tok> Telse    /* else */
-%token<tok> Telif    /* else */
-%token<tok> Tmatch   /* match */
-%token<tok> Tgoto    /* goto */
-%token<tok> Tbreak   /* break */
-%token<tok> Tcontinue   /* continue */
+%token<tok> Ttype	/* type */
+%token<tok> Tfor	/* for */
+%token<tok> Tin		/* in */
+%token<tok> Twhile	/* while */
+%token<tok> Tif		/* if */
+%token<tok> Telse	/* else */
+%token<tok> Telif	/* else */
+%token<tok> Tmatch	/* match */
+%token<tok> Tgoto	/* goto */
+%token<tok> Tbreak	/* break */
+%token<tok> Tcontinue	/* continue */
 
 %token<tok> Tintlit
 %token<tok> Tstrlit
@@ -101,30 +101,30 @@ static void setupinit(Node *n);
 %token<tok> Tboollit
 %token<tok> Tvoidlit
 
-%token<tok> Ttrait   /* trait */
-%token<tok> Timpl   /* trait */
-%token<tok> Tstruct  /* struct */
-%token<tok> Tunion   /* union */
-%token<tok> Ttyparam /* @typename */
+%token<tok> Ttrait	/* trait */
+%token<tok> Timpl	/* trait */
+%token<tok> Tstruct	/* struct */
+%token<tok> Tunion	/* union */
+%token<tok> Ttyparam	/* @typename */
 
-%token<tok> Tconst   /* const */
-%token<tok> Tvar     /* var */
-%token<tok> Tgeneric /* var */
-%token<tok> Tcast    /* castto */
+%token<tok> Tconst	/* const */
+%token<tok> Tvar	/* var */
+%token<tok> Tgeneric	/* var */
+%token<tok> Tcast	/* castto */
 
-%token<tok> Tgap     /* _ */
-%token<tok> Tellipsis/* ... */
-%token<tok> Tendln   /* ; or \n */
-%token<tok> Tendblk  /* ;; */
-%token<tok> Tcolon   /* : */
-%token<tok> Twith    /* :: */
-%token<tok> Tdot     /* . */
-%token<tok> Tcomma   /* , */
-%token<tok> Tret     /* -> */
-%token<tok> Tuse     /* use */
-%token<tok> Tpkg     /* pkg */
-%token<tok> Tattr    /* $attr */
-%token<tok> Tsizeof  /* sizeof */
+%token<tok> Tgap	/* _ */
+%token<tok> Tellipsis	/* ... */
+%token<tok> Tendln	/* ; or \n */
+%token<tok> Tendblk	/* ;; */
+%token<tok> Tcolon	/* : */
+%token<tok> Twith	/* :: */
+%token<tok> Tdot	/* . */
+%token<tok> Tcomma	/* , */
+%token<tok> Tret	/* -> */
+%token<tok> Tuse	/* use */
+%token<tok> Tpkg	/* pkg */
+%token<tok> Tattr	/* $attr */
+%token<tok> Tsizeof	/* sizeof */
 
 %token<tok> Tident
 
