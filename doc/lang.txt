@@ -6,89 +6,113 @@
 TABLE OF CONTENTS:
 
     1. ABOUT
-    2. LEXICAL CONVENTIONS
-    3. SYNTAX
-        3.1. Declarations
-        3.2. Literal Values
-        3.3. Control Constructs and Blocks
-        3.4. Expressions
-        3.5. Data Types
-        3.6. Type Inference
-        3.7. Generics
-        3.8. Traits
-        3.9. Packages and Uses
-    4. TOOLCHAIN
-    5. EXAMPLES
-    6. STYLE GUIDE
-    7. STANDARD LIBRARY
-    8. GRAMMAR
-    9. FUTURE DIRECTIONS
+    2. NOTATION
+        2.1. Grammar
+    3. LEXICAL CONVENTIONS
+        3.1. Summary
+    4. SYNTAX
+        4.1. Declarations
+        4.2. Literal Values
+        4.3. Control Constructs and Blocks
+        4.4. Expressions
+        4.5. Data Types
+        4.6. Type Inference
+        4.7. Generics
+        4.8. Traits
+        4.9. Packages and Uses
+    5. TOOLCHAIN
+    6. EXAMPLES
+    7. STYLE GUIDE
+    8. STANDARD LIBRARY
+    9. FULL GRAMMAR
+    10. FUTURE DIRECTIONS
 
 1. ABOUT:
 
         Myrddin is designed to be a simple, low-level programming
         language.  It is designed to provide the programmer with
         predictable behavior and a transparent compilation model,
-        while at the same time providing the benefits of strong
-        type checking, generics, type inference, and similar.
-        Myrddin is not a language designed to explore the forefront
-        of type theory or compiler technology. It is not a language
-        that is focused on guaranteeing perfect safety. Its focus
-        is on being a practical, small, fairly well defined, and
-        easy to understand language for work that needs to be close
-        to the hardware.
+        while at the same time providing the benefits of strong type
+        checking, generics, type inference, and similar.  Myrddin is
+        not a language designed to explore the forefront of type
+        theory or compiler technology. It is not a language that is
+        focused on guaranteeing perfect safety. Its focus is on being
+        a practical, small, fairly well defined, and easy to
+        understand language for work that needs to be close to the
+        hardware.
 
-        Myrddin is a computer language influenced strongly by C
-        and ML, with ideas from Rust, Go, C++, and numerous other
-        sources and resources.
-
-
-2. LEXICAL CONVENTIONS:
-
-    The language is composed of several classes of tokens. There
-    are comments, identifiers, keywords, punctuation, and whitespace.
-
-    Comments begin with "/*" and end with "*/". They may nest.
-
-        /* this is a comment /* with another inside */ */
-
-    Identifiers begin with any alphabetic character or underscore,
-    and continue with any number of alphanumeric characters or
-    underscores. Currently the compiler places a limit of 1024
-    bytes on the length of the identifier.
-
-        some_id_234__
-
-    Keywords are a special class of identifier that is reserved
-    by the language and given a special meaning. The set of
-    keywords in Myrddin are as follows:
-
-        castto          match
-        const           pkg
-        default         protect
-        elif            sizeof
-        else            struct
-        export          trait
-        extern          true
-        false           type
-        for             union
-        generic         use
-        goto            var
-        if              while
+        Myrddin is a computer language influenced strongly by C and
+        ML, with ideas from too many other places to name. 
 
 
-    Literals are a direct representation of a data object within the source of
-    the program. There are several literals implemented within the language.
-    These are fully described in section 3.2 of this manual.
+2. NOTATION:
 
-    In the compiler, single semicolons (';') and newline (\x10)
-    characters are treated identically, and are therefore interchangeable.
-    They will both be referred to "endline"s throughout this manual.
+    2.1. Grammar:
 
+        Syntax is defined using an informal variant of EBNF.
 
-3. SYNTAX OVERVIEW:
+            token:      /regex/ | "quoted"
+            prod:       prodname ":" [ expr ]
+            expr:       alt ( "|" alt )*
+            alt:        term term*
+            term:       prodname | token | group | opt | rep
+            group:      "(" expr ")" .
+            opt:        "[" expr "]" .
+            rep:        zerorep | onerep
+            zerorep:    expr "*"
+            onerep:     expr "+"
 
-    3.1. Declarations:
+3. LEXICAL CONVENTIONS:
+
+    3.1. Summary:
+
+        The language is composed of several classes of tokens. There are
+        comments, identifiers, keywords, punctuation, and whitespace.
+
+        Comments begin with "/*" and end with "*/". They may nest.
+
+            /* this is a comment /* with another inside */ */
+
+        Identifiers begin with any alphabetic character or underscore, and
+        continue with alphanumeric characters or underscores. Currently the
+        compiler places a limit of 1024 bytes on the length of the identifier.
+
+            some_id_234__
+
+        Keywords are a special class of identifier that is reserved by the
+        language and given a special meaning. The full set of keywords are
+        listed below. Their meanings will be covered later in this reference
+        manual.
+
+            $noret          _               break
+            castto          const           continue
+            elif            else            extern
+            false           for             generic
+            goto            if              impl
+            in              match           pkg
+            pkglocal        sizeof          struct
+            trait           true            type
+            union           use             var
+            void            while
+
+        Literals are a direct representation of a data object within the
+        source of the program. There are several literals implemented within
+        the language.  These are fully described in section 3.2 of this
+        manual. 
+
+        Single semicolons (';') and newline (\n) characters are synonymous and
+        interchangable. They both are used to mark the end of logical lines,
+        and will be uniformly referred to as line terminators.
+
+4. SYNTAX OVERVIEW:
+
+    4.1. Declarations:
+
+            decl:       attrs ("var" | "const" | "generic")  decllist
+            attrs:      ("exern" | "pkglocal" | "$noret")+
+            decllist:   declbody ("," declbody)*
+            declbody:   declcore ["=" expr]
+            declcore:   name [":" type
 
         A declaration consists of a declaration class (i.e., one
         of 'const', 'var', or 'generic'), followed by a declaration
@@ -101,8 +125,10 @@ TABLE OF CONTENTS:
             const:      Declares a constant value, which may not be
                         modified at run time. Constants must have
                         initializers defined.
+
             var:        Declares a variable value. This value may be
                         assigned to, copied from, and modified.
+
             generic:    Declares a specializable value. This value
                         has the same restrictions as a const, but
                         taking its address is not defined. The type
@@ -110,11 +136,20 @@ TABLE OF CONTENTS:
                         named in the declaration in order for their
                         substitution to be allowed.
 
-        In addition, there is one modifier allowed on declarations:
-        'extern'. Extern declarations are used to declare symbols from
-        another module which cannot be provided via the 'use' mechanism.
-        Typical uses would be to expose a function written in assembly. They
-        can also be used as a workaround for external dependencies.
+        In addition, declarations may accept a number of modifiers which
+        change the attributes of the declarations:
+
+            extern:     Declares a variable as having external linkage.
+                        Assigning a definition to this variable within the
+                        file that contains the extern definition is an error.
+
+            pkglocal:   Declares a variable which is local to the package.
+                        This variable may be used from other files that
+                        declare the same `pkg` namespace, but referring to
+                        it from outside the namespace is an error.
+
+            $noret:     Declares the function to which this is applied as
+                        a non-returning function.
 
         Examples:
 
@@ -149,112 +184,137 @@ TABLE OF CONTENTS:
                     -> a + b + c
                 }
 
-    3.2. Literal Values
+    4.2. Literal Values
 
-        Integers literals are a sequence of digits, beginning with a
-        digit and possibly separated by underscores. They are of a
-        generic type, and can be used where any numeric type is
-        expected. They may be prefixed with "0x" to indicate that the
-        following number is a hexadecimal value, or 0b to indicate a
-        binary value. Decimal values are not prefixed, and octal values
-        are not supported.
+        4.2.1. Atomic Literals:
 
-            eg: 0x123_fff, 0b1111, 1234
+                literal:    strlit | chrlit | floatlit |
+                            boollit | voidlit | intlit |
+                            funclit | seqlit | tuplit
 
-        Floating-point literals are also a sequence of digits beginning with
-        a digit and possibly separated by underscores. They are also of a
-        generic type, and may be used whenever a floating-point type is
-        expected. Floating point literals are always in decimal, and
-        as of this writing, exponential notation is not supported[2]
+                strlit:     \"(char|escape)*\"
+                chrlit:     \'(char|escape)\'
+                intlit:     "0x" digits | "0o" digits | "0b" digits | digits
+                floatlit:   digit+"."digit+["e" digit+]
+                boollit:    "true"|"false"
+                voidlit:    "void"
 
-            eg: 123.456
+            Integers literals are a sequence of digits, beginning with a digit and
+            possibly separated by underscores. They are of a generic type, and can
+            be used where any numeric type is expected. They may be prefixed with
+            "0x" to indicate that the following number is a hexadecimal value, 0o
+            to indicate an octal value, or 0b to indicate a binary value. Decimal
+            values are not prefixed.
 
-        String literals represent a compact method of representing a byte
-        array. Any byte values are allowed in a string literal, and will be
-        spit out again by the compiler unmodified, with the exception of
-        escape sequences.
+                eg: 0x123_fff, 0b1111, 0o777, 1234
 
-        There are a number of escape sequences supported for both character
-        and string literals:
-            \n          newline
-            \r          carriage return
-            \t          tab
-            \b          backspace
-            \"          double quote
-            \'          single quote
-            \v          vertical tab
-            \\          single slash
-            \0          nul character
-            \xDD        single byte value, where DD are two hex digits.
+            Floating-point literals are also a sequence of digits beginning with a
+            digit and possibly separated by underscores. They are also of a
+            generic type, and may be used whenever a floating-point type is
+            expected. Floating point literals are always in decimal, but may
+            have an exponent attached to them.
 
-        String literals begin with a ", and continue to the next
-        unescaped ".
+                eg: 123.456, 10.0e7, 1_000.
 
-            eg: "foo\"bar"
+            String literals represent a compact method of representing a byte
+            array. Any byte values are allowed in a string literal, and will be
+            spit out again by the compiler unmodified, with the exception of
+            escape sequences.
 
-        Multiple consecutive string literals are implicitly merged to create
-        a single combined string literal. To allow a string literal to span
-        across multiple lines, the new line characters must be escaped.
-        
-            eg: "foo" \
-                "bar"
+            There are a number of escape sequences supported for both character
+            and string literals:
+                \n          newline
+                \r          carriage return
+                \t          tab
+                \b          backspace
+                \"          double quote
+                \'          single quote
+                \v          vertical tab
+                \\          single slash
+                \0          nul character
+                \xDD        single byte value, where DD are two hex digits.
+                \u{xxx}     unicode escape, emitted as utf8.
 
-        Character literals represent a single codepoint in the character
-        set. A character starts with a single quote, contains a single
-        codepoint worth of text, encoded either as an escape sequence
-        or in the input character set for the compiler (generally UTF8).
-        They share the same set of escape sequences as string literals.
+            String literals begin with a ", and continue to the next
+            unescaped ".
 
-            eg: 'א', '\n', '\u{1234}'
+                eg: "foo\"bar"
 
-        Boolean literals are either the keyword "true" or the keyword
-        "false".
+            Multiple consecutive string literals are implicitly merged to create
+            a single combined string literal. To allow a string literal to span
+            across multiple lines, the new line characters must be escaped.
+            
+                eg: "foo" \
+                    "bar"
 
-            eg: true, false
+            Character literals represent a single codepoint in the character
+            set. A character starts with a single quote, contains a single
+            codepoint worth of text, encoded either as an escape sequence
+            or in the input character set for the compiler (generally UTF8).
+            They share the same set of escape sequences as string literals.
 
-        Function literals describe a function. They begin with a '{',
-        followed by a newline-terminated argument list, followed by a
-        body and closing '}'. They will be described in more detail
-        later in this manual.
+                eg: 'א', '\n', '\u{1234}'
 
-            eg: {a : int, b
-                    -> a + b
-                }
+            Boolean literals are either the keyword "true" or the keyword
+            "false".
 
-        Sequence literals describe either an array or a structure
-        literal. They begin with a '[', followed by an initializer
-        sequence and closing ']'. For array literals, the initializer
-        sequence is either an indexed initializer sequence[4], or an
-        unindexed initializer sequence. For struct literals, the
-        initializer sequence is always a named initializer sequence.
+                eg: true, false
 
-        An unindexed initializer sequence is simply a comma separated
-        list of values. An indexed initializer sequence contains a
-        '#number=value' comma separated sequence, which indicates the
-        index of the array into which the value is inserted. A named
-        initializer sequence contains a comma separated list of
-        '.name=value' pairs.
+        4.2.2. Sequence and Tuple Literals:
+            
+            seqlit:     "[" structelts | arrayelts "]"
+            structelts: 
+            arrayelts:  
 
-            eg: [1,2,3], [#2=3, #1=2, #0=1], [.a = 42, .b="str"]
+            tuplit:     "(" tuplelts ")"
+            tupelts:    expr
 
-        A tuple literal is a parentheses separated list of values.
-        A single element tuple contains a trailing comma.
+        4.2.3. Function Literals
 
-            eg: (1,), (1,'b',"three")
+            Function literals describe a function. They begin with a '{',
+            followed by a newline-terminated argument list, followed by a
+            body and closing '}'. They will be described in more detail
+            later in this manual.
 
-        Finally, while strictly not a literal, it's not a control
-        flow construct either. Labels are identifiers preceded by
-        colons.
+                eg: {a : int, b
+                        -> a + b
+                    }
 
-            eg: :my_label
+            Sequence literals describe either an array or a structure
+            literal. They begin with a '[', followed by an initializer
+            sequence and closing ']'. For array literals, the initializer
+            sequence is either an indexed initializer sequence[4], or an
+            unindexed initializer sequence. For struct literals, the
+            initializer sequence is always a named initializer sequence.
 
-        They can be used as targets for gotos, as follows:
+            An unindexed initializer sequence is simply a comma separated
+            list of values. An indexed initializer sequence contains a
+            '#number=value' comma separated sequence, which indicates the
+            index of the array into which the value is inserted. A named
+            initializer sequence contains a comma separated list of
+            '.name=value' pairs.
 
-            goto my_label
+                eg: [1,2,3], [#2=3, #1=2, #0=1], [.a = 42, .b="str"]
 
-        the ':' is not part of the label name.
+            A tuple literal is a parentheses separated list of values.
+            A single element tuple contains a trailing comma.
 
-    3.3. Control Constructs and Blocks:
+                eg: (1,), (1,'b',"three")
+
+            Finally, while strictly not a literal, it's not a control
+            flow construct either. Labels are identifiers preceded by
+            colons.
+
+                eg: :my_label
+
+            They can be used as targets for gotos, as follows:
+
+                goto my_label
+
+            the ':' is not part of the label name.
+
+
+    4.3. Control Constructs and Blocks:
 
             if          for
             while       match
@@ -366,7 +426,7 @@ TABLE OF CONTENTS:
             ;;
 
 
-    3.4. Expressions:
+    4.4. Expressions:
 
         Myrddin expressions are relatively similar to expressions in C.  The
         operators are listed below in order of precedence, and a short
@@ -462,7 +522,7 @@ TABLE OF CONTENTS:
         on overflow. Right shift expressions fill with the sign bit on
         signed types, and fill with zeros on unsigned types.
 
-    3.5. Data Types:
+    4.5. Data Types:
 
         The language defines a number of built in primitive types. These
         are not keywords, and in fact live in a separate namespace from
@@ -473,7 +533,7 @@ TABLE OF CONTENTS:
         must be explicitly cast if you want to convert, and the casts must
         be of compatible types, as will be described later.
 
-            3.5.1. Primitive types:
+            4.5.1. Primitive types:
 
                     void
                     bool            char
@@ -490,6 +550,10 @@ TABLE OF CONTENTS:
                 assign between void types, return values of void, and so on.
                 This allows generics to not have to somehow work around void
                 being a toxic type. The void value is named `void`.
+
+                It is interesting to note that these types are not keywords,
+                but are instead merely predefined identifiers in the type
+                namespace.
 
                 bool is a type that can only hold true and false. It can be
                 assigned, tested for equality, and used in the various boolean
@@ -509,7 +573,7 @@ TABLE OF CONTENTS:
                     var y : float32     declare y as a 32 bit float
 
 
-            3.5.2. Composite types:
+            4.5.2. Composite types:
 
                     pointer
                     slice           array
@@ -533,7 +597,7 @@ TABLE OF CONTENTS:
                     foo[123]    type: array of 123 foo
                     foo[,]      type: slice of foo
 
-            3.5.3. Aggregate types:
+            4.5.3. Aggregate types:
 
                     tuple           struct
                     union
@@ -567,7 +631,7 @@ TABLE OF CONTENTS:
                     ;;
 
 
-            3.5.4. Magic types:
+            4.5.4. Magic types:
 
                     tyvar           typaram
                     tyname
@@ -597,7 +661,7 @@ TABLE OF CONTENTS:
                                                 named '@foo'.
 
 
-    3.6. Type Inference:
+    4.6. Type Inference:
 
         The myrddin type system is a system similar to the Hindley Milner
         system, however, types are not implicitly generalized. Instead, type
@@ -612,7 +676,7 @@ TABLE OF CONTENTS:
         It begins by initializing all leaf nodes with the most specific
         known type for them as follows:
 
-        3.6.1 Types for leaf nodes:
+        4.6.1 Types for leaf nodes:
 
             Variable        Type
             ----------------------
@@ -682,7 +746,7 @@ TABLE OF CONTENTS:
             <           <=              >               >=
 
 
-    3.7. Packages and Uses:
+    4.7. Packages and Uses:
 
             pkg     use
 
@@ -724,7 +788,7 @@ TABLE OF CONTENTS:
         them in the body of the code for readability. Scanning the export
         list is desirable from a readability perspective.
 
-4. TOOLCHAIN:
+5. TOOLCHAIN:
 
     The toolchain used is inspired by the Plan 9 toolchain in name. There
     is currently one compiler for x64, called '6m'. This compiler outputs
@@ -734,9 +798,9 @@ TABLE OF CONTENTS:
             -I path	Add 'path' to use search path
             -o	Output to outfile
 
-5. EXAMPLES:
+6. EXAMPLES:
 
-    5.1. Hello World:
+    6.1. Hello World:
 
             use std
             const main = {
@@ -746,7 +810,7 @@ TABLE OF CONTENTS:
 
         TODO: DESCRIBE CONSTRUCTS.
 
-    5.2. Conditions
+    6.2. Conditions
 
             use std
             const intmax = {a, b
@@ -765,7 +829,7 @@ TABLE OF CONTENTS:
 
         TODO: DESCRIBE CONSTRUCTS.
 
-    5.3. Looping
+    6.3. Looping
 
             use std
             const innerprod = {a, b
@@ -782,9 +846,9 @@ TABLE OF CONTENTS:
 
         TODO: DESCRIBE CONSTRUCTS.
 
-6. STYLE GUIDE:
+7. STYLE GUIDE:
 
-    6.1. Brevity:
+    7.1. Brevity:
 
         Myrddin is a simple language which aims to strip away abstraction when
         possible, and it is not well served by overly abstract or bulky code.
@@ -795,7 +859,7 @@ TABLE OF CONTENTS:
         Write for humans, not machines. Write linearly, so that an algorithm
         can be understood with minimal function-chasing.
 
-    6.2. Naming:
+    7.2. Naming:
 
         Names should be brief and evocative. A good name serves as a reminder
         to what the function does. For functions, a single verb is ideal. For
@@ -833,21 +897,17 @@ TABLE OF CONTENTS:
                 const length_mm = {;...} /* '_' disambiguates returned values.  */
                 const length_cm = {;...}
 
-    6.3. Collections:
+    7.3. Collections:
 
 
 
-7. STANDARD LIBRARY:
+8. STANDARD LIBRARY:
 
     This is documented separately.
 
-8. GRAMMAR:
+9. GRAMMAR:
 
-9. FUTURE DIRECTIONS:
+10. FUTURE DIRECTIONS:
 
 BUGS:
-
-[2] TODO: exponential notation.
-[4] TODO: currently the only sequence literal implemented is the
-          unindexed one
 
