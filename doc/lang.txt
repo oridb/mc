@@ -381,14 +381,33 @@ TABLE OF CONTENTS:
             stmt:       goto | break | continue | retexpr | label |
                         ifstmt | forstmt | whilestmt | matchstmt
 
-        Blocks are the basic building block of functionality in Myrddin.
-        They are simply sequences of statements that are completed one after
-        the
+        Blocks are the basic building block of functionality in Myrddin.  They
+        are simply sequences of statements that are completed one after the
+        other. They are generally terminated by a double semicolon (";;"),
+        although they may be terminated by keywords if they are part of a more
+        complex control flow construct.
+
+        Any declarations within the block are scoped to within the block,
+        and are not accessible outside of it. Their storage duration is
+        limited to within the block, and any attempts to access the associated
+        storage (via pointer, for example) is not valid.
 
     4.3. Control Constructs:
 
-            if          for
-            while       match
+            ifstmt:     "if" cond "\n" blockbody
+                        ("elif" blockbody)*
+                        ["else" blockbody] ";;"
+
+            forstmt:    foriter | foreach
+            foreach:    "for" pattern "in" expr "\n" block
+            foriter:    "for" init "\n" cond "\n" step "\n" block
+
+            whilestmt:  "while" cond "\n" block
+
+            matchstmt:  "match" expr "\n" matchpat* ";;"
+            matchpat:   "|" pat ":" blockbody
+
+            
             goto
 
         The control statements in Myrddin are similar to those in many other
