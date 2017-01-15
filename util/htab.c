@@ -279,11 +279,13 @@ ulong murmurhash2 (void *ptr, size_t len)
 	uint32_t m = 0x5bd1e995;
 	uint32_t r = 24;
 	uint32_t h, k, n;
-	uint8_t *p;
+	uint8_t *p, *end;
 	
 	h = Seed ^ len;
 	n = len & ~0x3ull;
-	for (p = ptr; p != ptr + n; p += 4) {
+	end = ptr;
+	end += n;
+	for (p = ptr; p != end; p += 4) {
 		k = (p[0] <<  0) |
 			(p[1] <<  8) |
 			(p[2] << 16) |

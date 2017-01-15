@@ -109,6 +109,9 @@ size_t bscount(Bitset *bs)
 inline static int firstbit(size_t b)
 {
 	int n;
+	static const char bits[] = {
+		4,0,1,0,2,0,1,0,3,0,1,0,2,0,1,0
+	};
 
 	n = 0;
 	if (!(b & 0xffffffff)) {
@@ -127,7 +130,7 @@ inline static int firstbit(size_t b)
 		n += 4;
 		b >>= 4;
 	}
-	n += (char[16]){4,0,1,0,2,0,1,0,3,0,1,0,2,0,1,0}[b & 0xf];
+	n += bits[b & 0xf];
 	return n;
 }
 
