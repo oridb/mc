@@ -6,8 +6,9 @@
 TABLE OF CONTENTS:
 
     1. ABOUT
-    2. NOTATION
+    2. NOTATION AND SEMANTICS
         2.1. Grammar
+        2.2. As-If Rule
     3. LEXICAL CONVENTIONS
         3.1. Summary
     4. SYNTAX
@@ -45,7 +46,7 @@ TABLE OF CONTENTS:
         ML, with ideas from too many other places to name. 
 
 
-2. NOTATION:
+2. NOTATION AND SEMANTICS:
 
     2.1. Grammar:
 
@@ -61,6 +62,12 @@ TABLE OF CONTENTS:
             rep:        zerorep | onerep
             zerorep:    expr "*"
             onerep:     expr "+"
+
+    2.2. As-If Rule:
+
+        Anything specified here may be treated however the compiler wishes,
+        as long as the result is observed as if the semantics specified were
+        followed strictly.
 
 3. LEXICAL CONVENTIONS:
 
@@ -262,23 +269,24 @@ TABLE OF CONTENTS:
 
         4.2.2. Sequence and Tuple Literals:
             
-            seqlit:     "[" structelts | arrayelts "]"
-            structelts: 
-            arrayelts:  
+                seqlit:     "[" structelts | arrayelts "]"
+                tuplit:     "(" tuplelts ")"
 
-            tuplit:     "(" tuplelts ")"
-            tupelts:    expr
+                structelts: ("." ident "=" expr)+
+                arrayelts:  (expr ":" expr | expr)*
+                tupelts:    expr ("," expr)* [","]
 
-        4.2.3. Function Literals
+            Sequence literals are used to initialize either a structure
+            or an array. They are '['-bracketed expressions, and are evaluated
+            Tuple literals are similarly used to initialize a tuple.
 
-            Function literals describe a function. They begin with a '{',
-            followed by a newline-terminated argument list, followed by a
-            body and closing '}'. They will be described in more detail
-            later in this manual.
-
-                eg: {a : int, b
-                        -> a + b
-                    }
+            Struct literals describe a fully initialized struct value.
+            A struct must have at least one member specified, in
+            order to distinguish them from the empty array literal. All
+            members which are designated with a `.name` expression are
+            initialized to the expression passed. If an initializer is
+            omitted, then the value is initialized to the zero value for
+            that type.
 
             Sequence literals describe either an array or a structure
             literal. They begin with a '[', followed by an initializer
@@ -294,12 +302,65 @@ TABLE OF CONTENTS:
             initializer sequence contains a comma separated list of
             '.name=value' pairs.
 
-                eg: [1,2,3], [#2=3, #1=2, #0=1], [.a = 42, .b="str"]
 
             A tuple literal is a parentheses separated list of values.
             A single element tuple contains a trailing comma.
 
-                eg: (1,), (1,'b',"three")
+            Example: Struct literal.
+                [.a = 42, .b="str"]
+
+            Example: Array literal:
+                [1,2,3], [2:3, 1:2, 0:1], 
+
+            Example: Tuple literals:
+                (1,), (1,'b',"three")
+
+
+        4.2.3. Function Literals:
+
+                funclit:        "{" arglist "\n" blockbody "}"
+                arglist:        (ident [":" type])*
+
+            Function literals describe a function. They begin with a '{',
+            followed by a newline-terminated argument list, followed by a
+            body and closing '}'. These may be specified at any place that
+            an expression is specified, assigned to any variable, and are
+            not distinguished from expressions in any significant way.
+
+            Function literals may refer to variables outside of their scope.
+            These are treated differently in a number of ways. Variables with
+            global scope are used directly, by value.
+            
+            If a function is defined where stack variables are in scope,
+            and it refers to them, then the stack variables shall be copied
+            to an environment on thes stack. That environment is scoped to
+            the lifetime of the stack frame in which it was defined. If it
+            does not refer to any of its enclosing stack variables, then
+            this environment will not be created or accessed by the function.
+
+            This environment must be transferrable to the heap in an
+            implementation specific manner.
+
+            Example: Empty function literal:
+                {;}
+
+            Example: Function literal
+
+                {a : int, b
+                    -> a + b
+                }
+
+            Example: Nested function with environment:
+
+                const fn = {a
+                    var b = {; a + 1}
+                }
+
+
+        4.2.4: Labels:
+
+                label:  ":" ident
+                goto:   "goto" ident
 
             Finally, while strictly not a literal, it's not a control
             flow construct either. Labels are identifiers preceded by
@@ -313,8 +374,18 @@ TABLE OF CONTENTS:
 
             the ':' is not part of the label name.
 
+    4.3. Blocks:
 
-    4.3. Control Constructs and Blocks:
+            block:      blockbody ";;"
+            blockbody:  (decl | stmt | tydef | "\n")*
+            stmt:       goto | break | continue | retexpr | label |
+                        ifstmt | forstmt | whilestmt | matchstmt
+
+        Blocks are the basic building block of functionality in Myrddin.
+        They are simply sequences of statements that are completed one after
+        the
+
+    4.3. Control Constructs:
 
             if          for
             while       match
