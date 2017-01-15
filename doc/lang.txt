@@ -21,12 +21,7 @@ TABLE OF CONTENTS:
         4.7. Generics
         4.8. Traits
         4.9. Packages and Uses
-    5. TOOLCHAIN
-    6. EXAMPLES
-    7. STYLE GUIDE
-    8. STANDARD LIBRARY
-    9. FULL GRAMMAR
-    10. FUTURE DIRECTIONS
+    5. GRAMMAR
 
 1. ABOUT:
 
@@ -52,7 +47,7 @@ TABLE OF CONTENTS:
 
         Syntax is defined using an informal variant of EBNF.
 
-            token:      /regex/ | "quoted"
+            token:      /regex/ | "quoted" | <english description>
             prod:       prodname ":" [ expr ]
             expr:       alt ( "|" alt )*
             alt:        term term*
@@ -104,7 +99,7 @@ TABLE OF CONTENTS:
 
         Literals are a direct representation of a data object within the
         source of the program. There are several literals implemented within
-        the language.  These are fully described in section 3.2 of this
+        the language.  These are fully described in section 4.2 of this
         manual. 
 
         Single semicolons (';') and newline (\n) characters are synonymous and
@@ -199,8 +194,10 @@ TABLE OF CONTENTS:
                             boollit | voidlit | intlit |
                             funclit | seqlit | tuplit
 
-                strlit:     \"(char|escape)*\"
-                chrlit:     \'(char|escape)\'
+                strlit:     \"(byte|escape)*\"
+                chrlit:     \'(utf8seq|escape)\'
+                char:       <any byte value>
+                escape:     <any escape sequence>
                 intlit:     "0x" digits | "0o" digits | "0b" digits | digits
                 floatlit:   digit+"."digit+["e" digit+]
                 boollit:    "true"|"false"
@@ -877,123 +874,6 @@ TABLE OF CONTENTS:
         defined in the 'pkg' specification, but it is preferred to implement
         them in the body of the code for readability. Scanning the export
         list is desirable from a readability perspective.
-
-5. TOOLCHAIN:
-
-    The toolchain used is inspired by the Plan 9 toolchain in name. There
-    is currently one compiler for x64, called '6m'. This compiler outputs
-    standard elf .o files, and supports these options:
-
-        6m [-h] [-o outfile] [-d[dbgopts]] inputs
-            -I path	Add 'path' to use search path
-            -o	Output to outfile
-
-6. EXAMPLES:
-
-    6.1. Hello World:
-
-            use std
-            const main = {
-                std.put("Hello World!\n")
-                -> 0
-            }
-
-        TODO: DESCRIBE CONSTRUCTS.
-
-    6.2. Conditions
-
-            use std
-            const intmax = {a, b
-                if a > b
-                    -> a
-                else
-                    -> b
-                ;;
-            }
-
-            const main = {
-                var x = 123
-                var y = 456
-                std.put("The max of {}, {} is {}\n", x, y, intmax(x, y))
-            }
-
-        TODO: DESCRIBE CONSTRUCTS.
-
-    6.3. Looping
-
-            use std
-            const innerprod = {a, b
-                var i
-                var sum
-                for i = 0; i < a.len; i++
-                    sum += a[i]*b[i]
-                ;;
-            }
-
-            const main = {
-                std.put("The inner product is {}\n", innerprod([1,2,3], [4,5,6]))
-            }
-
-        TODO: DESCRIBE CONSTRUCTS.
-
-7. STYLE GUIDE:
-
-    7.1. Brevity:
-
-        Myrddin is a simple language which aims to strip away abstraction when
-        possible, and it is not well served by overly abstract or bulky code.
-        The code written should be a readable description of an algorithm,
-        aimed at conveying the essential operations in a linear and
-        straightforward fashion.
-
-        Write for humans, not machines. Write linearly, so that an algorithm
-        can be understood with minimal function-chasing.
-
-    7.2. Naming:
-
-        Names should be brief and evocative. A good name serves as a reminder
-        to what the function does. For functions, a single verb is ideal. For
-        local variables, a single character might suffice.  Compact notation
-        is simpler to read, typographically.
-
-        Variables names should describe the value contained, and function
-        names should describe the value returned.
-
-            Good: spawn(myfunc)
-            Bad:  create_new_thread_starting_at_function(myfunc)
-
-        The identifiers used for constant values are put in Initialcase.
-        Functions and types are in singleword style, although underscores are
-        occasionally necessary to specify additional information within
-        functions, due to the lack of overloading.
-
-            Good:
-                type mytype = int
-                var myvar : mytype
-                const Myconst = 42
-                union
-                    `Tagone int
-                ;;
-
-            Bad:
-                type MyType = int       /* types are 'singleword' */
-                const my_func = {;...}  /* function names should avoid _ */
-                const myconst           /* constants start with Uppercase */
-                union
-                    `sometag            /* tags start with uppercase */
-                ;;
-
-            Acceptable:
-                const length_mm = {;...} /* '_' disambiguates returned values.  */
-                const length_cm = {;...}
-
-    7.3. Collections:
-
-
-
-8. STANDARD LIBRARY:
-
-    This is documented separately.
 
 9. GRAMMAR:
 
