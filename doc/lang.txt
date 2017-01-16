@@ -15,12 +15,13 @@ TABLE OF CONTENTS:
         4.1. Declarations
         4.2. Data Types
         4.3. Literal Values
-        4.4. Control Constructs and Blocks
-        4.5. Expressions
-        4.6. Type Inference
-        4.7. Generics
-        4.8. Traits
-        4.9. Packages and Uses
+        4.4. Blocks
+        4.5. Control Constructs
+        4.6. Expressions
+        4.7. Type Inference
+        4.8. Generics
+        4.9. Traits
+        4.10. Packages and Uses
     5. GRAMMAR
 
 1. ABOUT:
