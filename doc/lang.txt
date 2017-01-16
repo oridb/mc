@@ -13,10 +13,10 @@ TABLE OF CONTENTS:
         3.1. Summary
     4. SYNTAX
         4.1. Declarations
-        4.2. Literal Values
-        4.3. Control Constructs and Blocks
-        4.4. Expressions
-        4.5. Data Types
+        4.2. Data Types
+        4.3. Literal Values
+        4.4. Control Constructs and Blocks
+        4.5. Expressions
         4.6. Type Inference
         4.7. Generics
         4.8. Traits
@@ -48,15 +48,30 @@ TABLE OF CONTENTS:
         Syntax is defined using an informal variant of EBNF.
 
             token:      /regex/ | "quoted" | <english description>
-            prod:       prodname ":" [ expr ]
+            prod:       prodname ":" expr*
             expr:       alt ( "|" alt )*
             alt:        term term*
-            term:       prodname | token | group | opt | rep
+            term:       prod | token | group | opt | rep
             group:      "(" expr ")" .
             opt:        "[" expr "]" .
             rep:        zerorep | onerep
-            zerorep:    expr "*"
-            onerep:     expr "+"
+            zerorep:    term "*"
+            onerep:     term "+"
+
+        Whitespace and comments are ommitted in this description.
+
+        To put it in words, /regex/ defines a regular expression that would
+        match a single token in the input. "quoted" would match a single
+        string. <english description> contains an informal description of what
+        characters would match.
+
+        Productions are defined by any number of expressions, in which
+        expressions are '|' separated sequences of terms.
+
+        Terms can are productions or tokens, and may come with a repeat
+        specifier. wrapping a term in "[]" denotes that the term is repeated
+        0 or 1 times. suffixing it with a '*' denotes 0 or more repetitions,
+        and '+' denotes 1 or more repetitions.
 
     2.2. As-If Rule:
 
@@ -186,9 +201,149 @@ TABLE OF CONTENTS:
                     -> a + b + c
                 }
 
-    4.2. Literal Values
 
-        4.2.1. Atomic Literals:
+
+    4.2. Data Types:
+
+        The language defines a number of built in primitive types. These
+        are not keywords, and in fact live in a separate namespace from
+        the variable names. Yes, this does mean that you could, if you want,
+        define a variable named 'int'.
+
+        There are no implicit conversions within the language. All types
+        must be explicitly cast if you want to convert, and the casts must
+        be of compatible types, as will be described later.
+
+            4.2.1. Primitive types:
+
+                    void
+                    bool            char
+                    int8            uint8
+                    int16           uint16
+                    int32           uint32
+                    int64           uint64
+                    int             uint
+                    long            ulong
+                    float32         float64
+
+                These types are as you would expect. 'void' represents a
+                lack of type, although for the sake of genericity, you can
+                assign between void types, return values of void, and so on.
+                This allows generics to not have to somehow work around void
+                being a toxic type. The void value is named `void`.
+
+                It is interesting to note that these types are not keywords,
+                but are instead merely predefined identifiers in the type
+                namespace.
+
+                bool is a type that can only hold true and false. It can be
+                assigned, tested for equality, and used in the various boolean
+                operators.
+
+                char is a 32 bit integer type, and is guaranteed to be able
+                to hold exactly one codepoint. It can be assigned integer
+                literals, tested against, compared, and all the other usual
+                numeric types.
+
+                The various [u]intXX types hold, as expected, signed and
+                unsigned integers of the named sizes respectively.
+                Similarly, floats hold floating point types with the
+                indicated precision.
+
+                    var x : int         declare x as an int
+                    var y : float32     declare y as a 32 bit float
+
+
+            4.2.2. Composite types:
+
+                    pointer
+                    slice           array
+
+                Pointers are, as expected, values that hold the address of
+                the pointed to value. They are declared by appending a '#'
+                to the type. Pointer arithmetic is not allowed. They are
+                declared by appending a '#' to the base type
+
+                Arrays are a group of N values, where N is part of the type.
+                Arrays of different sizes are incompatible. Arrays in
+                Myrddin, unlike many other languages, are passed by value.
+                They are declared by appending a '[SIZE]' to the base type.
+
+                Slices are similar to arrays in many contemporary languages.
+                They are reference types that store the length of their
+                contents. They are declared by appending a '[,]' to the base
+                type.
+
+                    foo#        type: pointer to foo
+                    foo[123]    type: array of 123 foo
+                    foo[,]      type: slice of foo
+
+            4.2.3. Aggregate types:
+
+                    tuple           struct
+                    union
+
+                Tuples are the traditional product type. They are declared
+                by putting the comma separated list of types within square
+                brackets.
+
+                Structs are aggregations of types with named members. They
+                are declared by putting the word 'struct' before a block of
+                declaration cores (ie, declarations without the storage type
+                specifier).
+
+                Unions are the traditional sum type. They consist of a tag
+                (a keyword prefixed with a '`' (backtick)) indicating their
+                current contents, and a type to hold. They are declared by
+                placing the keyword 'union' before a list of tag-type pairs.
+                They may also omit the type, in which case, the tag is
+                sufficient to determine which option was selected.
+
+                    [int, int, char]            a tuple of 2 ints and a char
+
+                    struct                      a struct containing an int named
+                        a : int                 'a', and a char named 'b'.
+                        b : char
+                    ;;
+
+                    union                       a union containing one of
+                        `Thing int              int or char. The values are not
+                        `Other float32          named, but they are tagged.
+                    ;;
+
+
+            4.2.4. Magic types:
+
+                    tyvar           typaram
+                    tyname
+
+                A tyname is a named type, similar to a typedef in C, however
+                it genuinely creates a new type, and not an alias. There are
+                no implicit conversions, but a tyname will inherit all
+                constraints of its underlying type.
+
+                A typaram is a parametric type. It is used in generics as
+                a placeholder for a type that will be substituted in later.
+                It is an identifier prefixed with '@'. These are only valid
+                within generic contexts, and may not appear elsewhere.
+
+                A tyvar is an internal implementation detail that currently
+                leaks in error messages out during type inference, and is a
+                major cause of confusing error messages. It should not be in
+                this manual, except that the current incarnation of the
+                compiler will make you aware of it. It looks like '@$type',
+                and is a variable that holds an incompletely inferred type.
+
+                    type mine = int             creates a tyname named
+                                                'mine', equivalent to int.
+
+
+                    @foo                        creates a type parameter
+                                                named '@foo'.
+
+    4.3. Literal Values
+
+        4.3.1. Atomic Literals:
 
                 literal:    strlit | chrlit | floatlit |
                             boollit | voidlit | intlit |
@@ -264,7 +419,7 @@ TABLE OF CONTENTS:
 
                 eg: true, false
 
-        4.2.2. Sequence and Tuple Literals:
+        4.3.2. Sequence and Tuple Literals:
             
                 seqlit:     "[" structelts | arrayelts "]"
                 tuplit:     "(" tuplelts ")"
@@ -313,7 +468,7 @@ TABLE OF CONTENTS:
                 (1,), (1,'b',"three")
 
 
-        4.2.3. Function Literals:
+        4.3.3. Function Literals:
 
                 funclit:        "{" arglist "\n" blockbody "}"
                 arglist:        (ident [":" type])*
@@ -354,7 +509,7 @@ TABLE OF CONTENTS:
                 }
 
 
-        4.2.4: Labels:
+        4.3.4: Labels:
 
                 label:  ":" ident
                 goto:   "goto" ident
@@ -371,7 +526,7 @@ TABLE OF CONTENTS:
 
             the ':' is not part of the label name.
 
-    4.3. Blocks:
+    4.4. Blocks:
 
             block:      blockbody ";;"
             blockbody:  (decl | stmt | tydef | "\n")*
@@ -389,7 +544,7 @@ TABLE OF CONTENTS:
         limited to within the block, and any attempts to access the associated
         storage (via pointer, for example) is not valid.
 
-    4.3. Control Constructs:
+    4.5. Control Constructs:
 
             ifstmt:     "if" cond "\n" blockbody
                         ("elif" blockbody)*
@@ -513,7 +668,7 @@ TABLE OF CONTENTS:
             ;;
 
 
-    4.4. Expressions:
+    4.6. Expressions:
 
         Myrddin expressions are relatively similar to expressions in C.  The
         operators are listed below in order of precedence, and a short
@@ -609,146 +764,8 @@ TABLE OF CONTENTS:
         on overflow. Right shift expressions fill with the sign bit on
         signed types, and fill with zeros on unsigned types.
 
-    4.5. Data Types:
 
-        The language defines a number of built in primitive types. These
-        are not keywords, and in fact live in a separate namespace from
-        the variable names. Yes, this does mean that you could, if you want,
-        define a variable named 'int'.
-
-        There are no implicit conversions within the language. All types
-        must be explicitly cast if you want to convert, and the casts must
-        be of compatible types, as will be described later.
-
-            4.5.1. Primitive types:
-
-                    void
-                    bool            char
-                    int8            uint8
-                    int16           uint16
-                    int32           uint32
-                    int64           uint64
-                    int             uint
-                    long            ulong
-                    float32         float64
-
-                These types are as you would expect. 'void' represents a
-                lack of type, although for the sake of genericity, you can
-                assign between void types, return values of void, and so on.
-                This allows generics to not have to somehow work around void
-                being a toxic type. The void value is named `void`.
-
-                It is interesting to note that these types are not keywords,
-                but are instead merely predefined identifiers in the type
-                namespace.
-
-                bool is a type that can only hold true and false. It can be
-                assigned, tested for equality, and used in the various boolean
-                operators.
-
-                char is a 32 bit integer type, and is guaranteed to be able
-                to hold exactly one codepoint. It can be assigned integer
-                literals, tested against, compared, and all the other usual
-                numeric types.
-
-                The various [u]intXX types hold, as expected, signed and
-                unsigned integers of the named sizes respectively.
-                Similarly, floats hold floating point types with the
-                indicated precision.
-
-                    var x : int         declare x as an int
-                    var y : float32     declare y as a 32 bit float
-
-
-            4.5.2. Composite types:
-
-                    pointer
-                    slice           array
-
-                Pointers are, as expected, values that hold the address of
-                the pointed to value. They are declared by appending a '#'
-                to the type. Pointer arithmetic is not allowed. They are
-                declared by appending a '#' to the base type
-
-                Arrays are a group of N values, where N is part of the type.
-                Arrays of different sizes are incompatible. Arrays in
-                Myrddin, unlike many other languages, are passed by value.
-                They are declared by appending a '[SIZE]' to the base type.
-
-                Slices are similar to arrays in many contemporary languages.
-                They are reference types that store the length of their
-                contents. They are declared by appending a '[,]' to the base
-                type.
-
-                    foo#        type: pointer to foo
-                    foo[123]    type: array of 123 foo
-                    foo[,]      type: slice of foo
-
-            4.5.3. Aggregate types:
-
-                    tuple           struct
-                    union
-
-                Tuples are the traditional product type. They are declared
-                by putting the comma separated list of types within square
-                brackets.
-
-                Structs are aggregations of types with named members. They
-                are declared by putting the word 'struct' before a block of
-                declaration cores (ie, declarations without the storage type
-                specifier).
-
-                Unions are the traditional sum type. They consist of a tag
-                (a keyword prefixed with a '`' (backtick)) indicating their
-                current contents, and a type to hold. They are declared by
-                placing the keyword 'union' before a list of tag-type pairs.
-                They may also omit the type, in which case, the tag is
-                sufficient to determine which option was selected.
-
-                    [int, int, char]            a tuple of 2 ints and a char
-
-                    struct                      a struct containing an int named
-                        a : int                 'a', and a char named 'b'.
-                        b : char
-                    ;;
-
-                    union                       a union containing one of
-                        `Thing int              int or char. The values are not
-                        `Other float32          named, but they are tagged.
-                    ;;
-
-
-            4.5.4. Magic types:
-
-                    tyvar           typaram
-                    tyname
-
-                A tyname is a named type, similar to a typedef in C, however
-                it genuinely creates a new type, and not an alias. There are
-                no implicit conversions, but a tyname will inherit all
-                constraints of its underlying type.
-
-                A typaram is a parametric type. It is used in generics as
-                a placeholder for a type that will be substituted in later.
-                It is an identifier prefixed with '@'. These are only valid
-                within generic contexts, and may not appear elsewhere.
-
-                A tyvar is an internal implementation detail that currently
-                leaks in error messages out during type inference, and is a
-                major cause of confusing error messages. It should not be in
-                this manual, except that the current incarnation of the
-                compiler will make you aware of it. It looks like '@$type',
-                and is a variable that holds an incompletely inferred type.
-
-                    type mine = int             creates a tyname named
-                                                'mine', equivalent to int.
-
-
-                    @foo                        creates a type parameter
-                                                named '@foo'.
-
-
-    4.6. Type Inference:
+    4.7. Type Inference:
 
         The myrddin type system is a system similar to the Hindley Milner
         system, however, types are not implicitly generalized. Instead, type
@@ -833,7 +850,7 @@ TABLE OF CONTENTS:
             <           <=              >               >=
 
 
-    4.7. Packages and Uses:
+    4.8. Packages and Uses:
 
             pkg     use
 
