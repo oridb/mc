@@ -675,7 +675,7 @@ TABLE OF CONTENTS:
 
 5. TYPES:
 
-    4.2. Data Types:
+    5.1. Data Types:
 
         The language defines a number of built in primitive types. These
         are not keywords, and in fact live in a separate namespace from
@@ -686,7 +686,7 @@ TABLE OF CONTENTS:
         must be explicitly cast if you want to convert, and the casts must
         be of compatible types, as will be described later.
 
-            4.2.1. Primitive types:
+            5.1.1. Primitive types:
 
                     void
                     bool            char
@@ -726,7 +726,7 @@ TABLE OF CONTENTS:
                     var y : float32     declare y as a 32 bit float
 
 
-            4.2.2. Composite types:
+            5.1.2. Composite types:
 
                     pointer
                     slice           array
@@ -750,7 +750,7 @@ TABLE OF CONTENTS:
                     foo[123]    type: array of 123 foo
                     foo[,]      type: slice of foo
 
-            4.2.3. Aggregate types:
+            5.1.3. Aggregate types:
 
                     tuple           struct
                     union
@@ -784,7 +784,7 @@ TABLE OF CONTENTS:
                     ;;
 
 
-            4.2.4. Generic types:
+            5.1.4. Generic types:
 
                     tyvar           typaram
                     tyname
