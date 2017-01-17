@@ -68,11 +68,11 @@ echo 	$pwd/6/6.out	-I ../sys -I . optparse.myr  && 	$pwd/6/6.out	-I ../sys -I . 
 echo 	$pwd/6/6.out	-I ../sys -I . dir+plan9.myr  && 	$pwd/6/6.out	-I ../sys -I . dir+plan9.myr  &&\
 echo 	$pwd/6/6.out	-I ../sys -I . ipparse.myr  && 	$pwd/6/6.out	-I ../sys -I . ipparse.myr  &&\
 echo 	$pwd/6/6.out	-I ../sys -I . iterutil.myr  && 	$pwd/6/6.out	-I ../sys -I . iterutil.myr  &&\
+echo 	$pwd/6/6.out	-I ../sys -I . blat.myr  && 	$pwd/6/6.out	-I ../sys -I . blat.myr  &&\
 echo 	$pwd/6/6.out	-I ../sys -I . env+plan9.myr  && 	$pwd/6/6.out	-I ../sys -I . env+plan9.myr  &&\
 echo 	$pwd/6/6.out	-I ../sys -I . execvp.myr  && 	$pwd/6/6.out	-I ../sys -I . execvp.myr  &&\
 echo 	$pwd/6/6.out	-I ../sys -I . slput.myr  && 	$pwd/6/6.out	-I ../sys -I . slput.myr  &&\
 echo 	$pwd/6/6.out	-I ../sys -I . spork.myr  && 	$pwd/6/6.out	-I ../sys -I . spork.myr  &&\
-echo 	$pwd/6/6.out	-I ../sys -I . blat.myr  && 	$pwd/6/6.out	-I ../sys -I . blat.myr  &&\
 echo 	$pwd/6/6.out	-I ../sys -I . diriter.myr  && 	$pwd/6/6.out	-I ../sys -I . diriter.myr  &&\
 echo 	$pwd/6/6.out	-I ../sys -I . clear.myr  && 	$pwd/6/6.out	-I ../sys -I . clear.myr  &&\
 echo 	$pwd/6/6.out	-I ../sys -I . wait+plan9.myr  && 	$pwd/6/6.out	-I ../sys -I . wait+plan9.myr  &&\
