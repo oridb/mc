@@ -12,11 +12,13 @@ use "sldup"
 use "sleq"
 use "slpush"
 use "slurp"
+use "blat"
 use "threadhooks"
 
 pkg std =
-	const getenv :	(name : byte[:] -> option(byte[:]))
-	const getenvv :	(name : byte[:], default : byte[:] -> byte[:])
+	const getenv	: (name : byte[:] -> option(byte[:]))
+	const getenvv	: (name : byte[:], default : byte[:] -> byte[:])
+	const setenv	: (name : byte[:], val : byte[:] -> void)
 ;;
 
 var envkey 	: byte[:][:]
@@ -63,4 +65,12 @@ const getenvv = {name, default
 	| `Some val:	-> val
 	| `None:	-> default
 	;;
+}
+
+const setenv = {name, val
+	var p
+
+	p = fmt("/env/{}", name)
+	blat(p, val, 0o644)
+	slfree(p)
 }
