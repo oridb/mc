@@ -5,7 +5,7 @@ all:V: _myrrt.$O
 _myrrt.$O: _myrrt-plan9.s
 	$AS -o _myrrt.$O _myrrt-plan9.s
 
-install:V:
+install:V: all
 	mkdir -p /$objtype/lib/myr
 	cp _myrrt.$O /$objtype/lib/myr
 
