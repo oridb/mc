@@ -781,8 +781,7 @@ pkg sys =
 	const uname 	: (buf : utsname# -> int)
 
 	/* exported values: initialized by start code */
-	extern const __environment : byte[:][:]
-	extern const __cenvp : byte##
+	extern var __cenvp : byte##
 ;;
 
 /* 

@@ -598,8 +598,7 @@ pkg sys =
 		-> int)
 
 	/* filled by start code */
-	extern const __cenvp : byte##
-	extern const __environment : byte[:][:]
+	extern var __cenvp : byte##
 ;;
 
 /* 

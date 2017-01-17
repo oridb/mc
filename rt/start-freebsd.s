@@ -1,11 +1,4 @@
 .data
-/* std._environment : byte[:][:] */
-.globl sys$__environment
-sys$__environment:
-.envbase:
-.quad 0 /* env size */
-.envlen:
-.quad 0 /* env ptr */
 
 .globl sys$__cenvp
 sys$__cenvp:
@@ -38,14 +31,9 @@ _start:
 	leaq	16(%rdi,%rax,8), %rbx	/* envp = argv + 8*argc + 8 */
 	/* store envp for some syscalls to use without spurious conversion. */
 	movq    %rbx,sys$__cenvp(%rip)
-	movq	%r9,%rax
-	movq	%rsp, %rcx
-	movq	%r9,.envlen(%rip)
-	movq	%rdx,.envbase(%rip)
-	call	cvt
-	movq	%rcx,%rdx
 
 	/* convert argc, argv to byte[:][:] for args. */
+	movq	%rsp, %rcx
 	movq	(%rdi), %rax	/* argc */
 	leaq	8(%rdi), %rbx	/* argv */
 	movq	(%rdi), %rsi	/* saved argc */
