@@ -534,32 +534,24 @@ TABLE OF CONTENTS:
 
     4.6. Expressions:
 
-        Myrddin expressions are relatively similar to expressions in C.  The
-        operators are listed below in order of precedence, and a short
-        summary of what they do is listed given. For the sake of clarity,
-        'x' will stand in for any expression composed entirely of
-        subexpressions with higher precedence than the current current
-        operator. 'e' will stand in for any expression. Unless marked
-        otherwise, expressions are left associative.
+	Myrddin expressions should be fairly familiiar to most programmers.
+	The operators are listed below in order of precedence, and a short
+	summary of what they do is listed given. For the sake of clarity, 'x'
+	will stand in for any expression composed entirely of subexpressions
+	with higher precedence than the current current operator. 'e' will
+	stand in for any expression. Unless marked otherwise, expressions are
+	left associative.
 
-        BUG: There are too many precedence levels.
-
-
-            Precedence 14: (*ok, not really operators)
-                (,,,)           Tuple Construction
-                (e)             Grouping
-                name            Bare names
-                literal         Values
-
-            Precedence 13:
+            Precedence 12:
                 x.name          Member lookup
                 x++             Postincrement
                 x--             Postdecrement
                 x#              Dereference
                 x[e]            Index
-                x[from,to]      Slice
+                x[lo:hi]        Slice
+		x(arg,list)	Call
 
-            Precedence 12:
+            Precedence 11:
                 ++x             Preincrement
                 --x             Predecrement
                 &x              Address
@@ -568,31 +560,28 @@ TABLE OF CONTENTS:
                 +x              Positive (no operation)
                 -x              Negate x
 
-            Precedence 11:
-                x << x          Shift left
-                x >> x          Shift right
-
             Precedence 10:
-                x * x           Multiply
-                x / x           Divide
-                x % x           Modulo
+                x << y          Shift left
+                x >> y          Shift right
 
             Precedence 9:
-                x + x           Add
-                x - x           Subtract
+                x * y           Multiply
+                x / y           Divide
+                x % y           Modulo
 
             Precedence 8:
-                x & y           Bitwise and
+                x + y           Add
+                x - y           Subtract
 
             Precedence 7:
+                x & y           Bitwise and
+
+            Precedence 6:
                 x | y           Bitwise or
                 x ^ y           Bitwise xor
 
-            Precedence 6:
-                `Name x         Union construction
-
             Precedence 5:
-                x castto(type)  Cast expression
+                `Name x         Union construction
 
             Precedence 4:
                 x == x          Equality
@@ -603,32 +592,30 @@ TABLE OF CONTENTS:
                 x <= x          Less than or equal to
 
             Precedence 3:
-                x && x          Logical and
+                x && y          Logical and
 
             Precedence 2:
-                x || x          Logical or
+                x || y          Logical or
 
             Precedence 1:
-                x = x           Assign                  Right assoc
-                x += x          Fused add/assign        Right assoc
-                x -= x          Fused sub/assign        Right assoc
-                x *= x          Fused mul/assign        Right assoc
-                x /= x          Fused div/assign        Right assoc
-                x %= x          Fused mod/assign        Right assoc
-                x |= x          Fused or/assign         Right assoc
-                x ^= x          Fused xor/assign        Right assoc
-                x &= x          Fused and/assign        Right assoc
-                x <<= x         Fused shl/assign        Right assoc
-                x >>= x         Fused shr/assign        Right assoc
+                x = y           Assign                  Right assoc
+                x += y          Fused add/assign        Right assoc
+                x -= y          Fused sub/assign        Right assoc
+                x *= y          Fused mul/assign        Right assoc
+                x /= y          Fused div/assign        Right assoc
+                x %= y          Fused mod/assign        Right assoc
+                x |= y          Fused or/assign         Right assoc
+                x ^= y          Fused xor/assign        Right assoc
+                x &= y          Fused and/assign        Right assoc
+                x <<= y         Fused shl/assign        Right assoc
+                x >>= y         Fused shr/assign        Right assoc
 
             Precedence 0:
                 -> x            Return expression
 
-        All expressions on integers act on two's complement values which wrap
-        on overflow. Right shift expressions fill with the sign bit on
-        signed types, and fill with zeros on unsigned types.
-
-
+	All expressions on integers act on two's complement values which wrap
+	on overflow. Right shift expressions fill with the sign bit on signed
+	types, and fill with zeros on unsigned types.
 
 
     4.8. Packages and Uses:
