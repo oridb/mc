@@ -110,7 +110,6 @@ static void setupinit(Node *n);
 %token<tok> Tconst	/* const */
 %token<tok> Tvar	/* var */
 %token<tok> Tgeneric	/* var */
-%token<tok> Tcast	/* castto */
 
 %token<tok> Tgap	/* _ */
 %token<tok> Tellipsis	/* ... */
@@ -140,14 +139,14 @@ static void setupinit(Node *n);
 %type <tydef> tydef pkgtydef typeid
 %type <trait> traitdef
 
-%type <node> exprln retexpr goto continue break expr atomicexpr
-%type <node> littok literal asnexpr lorexpr landexpr borexpr strlit
-%type <node> bandexpr cmpexpr unionexpr addexpr mulexpr shiftexpr prefixexpr postfixexpr
-%type <node> funclit seqlit tuplit name block stmt label use
-%type <node> fnparam declbody declcore typedeclcore structent arrayelt structelt tuphead
-%type <node> ifstmt forstmt whilestmt matchstmt elifs optexprln loopcond optexpr
-%type <node> castexpr
-%type <node> match
+%type<node> exprln retexpr goto continue break expr atomicexpr
+%type<node> littok literal lorexpr landexpr borexpr strlit bandexpr
+%type<node> cmpexpr unionexpr addexpr mulexpr shiftexpr prefixexpr
+%type<node> postfixexpr funclit seqlit tuplit name block stmt label
+%type<node> use fnparam declbody declcore typedeclcore structent
+%type<node> arrayelt structelt tuphead ifstmt forstmt whilestmt
+%type<node> matchstmt elifs optexprln loopcond optexpr match
+
 %type <ucon> unionelt
 %type <node> blkbody
 %type <node> implstmt
@@ -614,10 +613,7 @@ optexprln
 exprln  : expr Tendln
 	;
 
-expr    : asnexpr
-	;
-
-asnexpr : lorexpr asnop asnexpr
+expr	: lorexpr asnop expr
 	{$$ = mkexpr($1->loc, binop($2->type), $1, $3, NULL);}
 	| lorexpr
 	;
@@ -655,14 +651,6 @@ cmpop   : Teq | Tgt | Tlt | Tge | Tle | Tne ;
 unionexpr
 	: Ttick name unionexpr {$$ = mkexpr($1->loc, Oucon, $2, $3, NULL);}
 	| Ttick name {$$ = mkexpr($1->loc, Oucon, $2, NULL);}
-	| castexpr
-	;
-
-castexpr: castexpr Tcast Toparen type Tcparen {
-		fprintf(stdout, "%s:%d: deprecated cast syntax being removed\n", fname($2->loc), lnum($2->loc));
-		$$ = mkexpr($1->loc, Ocast, $1, NULL);
-		$$->expr.type = $4;
-	}
 	| borexpr
 	;
 
@@ -731,9 +719,9 @@ postfixexpr
 	| atomicexpr
 	;
 
-arglist : asnexpr
+arglist : expr 
 	{$$.nl = NULL; $$.nn = 0; lappend(&$$.nl, &$$.nn, $1);}
-	| arglist Tcomma asnexpr
+	| arglist Tcomma expr
 	{lappend(&$$.nl, &$$.nn, $3);}
 	| /* empty */
 	{$$.nl = NULL; $$.nn = 0;}

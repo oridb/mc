@@ -166,7 +166,6 @@ static int kwd(char *s)
 		{"$noret", Tattr},
 		{"_", Tgap},
 		{"break", Tbreak},
-		{"castto", Tcast},
 		{"const", Tconst},
 		{"continue", Tcontinue},
 		{"elif", Telif},
