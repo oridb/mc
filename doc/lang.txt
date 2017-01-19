@@ -1,29 +1,38 @@
                     The Myrddin Programming Language
                               Jul 2012
-                          Updated Dec 2015
+                          Updated Dec 2016
                             Ori Bernstein
 
 TABLE OF CONTENTS:
 
     1. ABOUT
-    2. NOTATION AND SEMANTICS
-        2.1. Grammar
+    2. LEXICAL CONVENTIONS
+        2.1. EBNF-ish
         2.2. As-If Rule
-    3. LEXICAL CONVENTIONS
-        3.1. Summary
-    4. SYNTAX
-        4.1. Declarations
-        4.2. Literal Values
-        4.3. Blocks
-        4.4. Control Constructs
-        4.5. Expressions
-        4.6. Packages and Uses
-    5. TYPES
-        5.1. Data Types
-        5.2. Type Inference
-        5.3. Traits
-        5.4. Generics
-    6. GRAMMAR
+    3. STRUCTURE:
+        3.1. Whitespace and Keywords
+        3.2. File Structure
+        3.3. Declarations
+        3.4. Packages and Uses
+        3.5. Scoping
+    4. TYPES
+        4.1. Type Definitions
+        4.2. Traits and Impls
+        4.3. Generics
+        4.4. Type Inference
+    5. VALUES AND EXPRESSIONS
+        5.1. Declarations
+        5.2. Literal Values
+        5.3. Control Constructs
+        5.4. Expressions
+        5.6. Packages and Uses
+    6. CONTROL FLOW
+        6.1. Blocks
+        6.2. Conditionals
+        6.3. Matches
+        6.4. Looping
+        6.5. Goto
+    7. GRAMMAR
 
 1. ABOUT:
 
@@ -43,9 +52,9 @@ TABLE OF CONTENTS:
         ML, with ideas from too many other places to name. 
 
 
-2. NOTATION AND SEMANTICS:
+2. LEXICAL CONVENTIONS:
 
-    2.1. Grammar:
+    2.1. EBNF-ish:
 
         Syntax is defined using an informal variant of EBNF.
 
@@ -81,9 +90,9 @@ TABLE OF CONTENTS:
         as long as the result is observed as if the semantics specified were
         followed strictly.
 
-3. LEXICAL CONVENTIONS:
+3. STRUCTURE:
 
-    3.1. Summary:
+    3.1. Whitespace and Keywords:
 
         The language is composed of several classes of tokens. There are
         comments, identifiers, keywords, punctuation, and whitespace.
@@ -123,9 +132,48 @@ TABLE OF CONTENTS:
         interchangable. They both are used to mark the end of logical lines,
         and will be uniformly referred to as line terminators.
 
-4. SYNTAX OVERVIEW:
+    3.2. File Structure:
 
-    4.1. Declarations:
+            file:       (decl | package | use | implstmt | traitdef | tydef)*
+
+        A file is composed of a sequence of top level elements. These
+        top level elements consist of:
+
+            - Declarations:
+
+                These define a constant or a variable. It's worth noting
+                that Myrddin has no special syntax for declaring functions,
+                but instead assigns a closure to a variable or constant.
+
+            - Package Definitions:
+
+                These define the list of exported values from a file. As
+                part of compilation, all the exported names from a package
+                will get merged together from all the files being built
+                into that package.
+
+            - Use Statements:
+
+                These import symbols for use within the file. These symbols
+                come from either installed packages or files within the
+                project being compiled.
+
+            - Type Definitions:
+
+                These define new types.
+
+            - Trait Definitions:
+
+                These define traits, which are attributes on types that
+                may be implemented by impl functions. They define required
+                functions on the type.
+
+            - Impl Statements:
+
+                These define implementations of traits, allowing an 
+                existing trait to be attached to an existing type.
+
+    3.3. Declarations:
 
             decl:       attrs ("var" | "const" | "generic")  decllist
             attrs:      ("exern" | "pkglocal" | "$noret")+
@@ -204,6 +252,105 @@ TABLE OF CONTENTS:
                 }
 
 
+    3.4. Packages and Uses
+
+	    bareuse:	use ident
+	    quoteuse:	use "<quoted string>"
+	    pkgdef:	"pkg" ident = decl* ";;"
+
+
+        There are two keywords for module system. 'use' is the simpler
+        of the two, and has two cases:
+
+            use syspkg
+            use "localfile"
+
+	The first form, which does not have the package name quoted, will
+	search the system include paths for the package listed. It does not
+	search relative to the file or the compiler working directory.
+
+        The quoted form searches the current directory for a use file named
+	"localpkg" and imports it.
+
+        The 'pkg' keyword allows you to define a (partial) package by
+        listing the symbols and types for export. For example,
+
+            pkg mypkg =
+                type mytype
+
+                const Myconst   : int = 42
+                const myfunc    : (v : int -> bool)
+            ;;
+
+        declares a package "mypkg", which defines three exports, "mytype",
+        "Myconst", and "myfunc". The definitions of the values may be
+        defined in the 'pkg' specification, but it is preferred to implement
+        them in the body of the code for readability. Scanning the export
+        list is desirable from a readability perspective.
+
+    3.5. Scoping:
+
+    	Myrddin is a lexically scoped language, with namespaces and types
+	defined in a way that facilitates separate compilation with minimal
+	burden on the linker.
+        
+        In Myrddin, declarations may appear in any order, and be used at any
+        point at which it is in scope. Any global symbols are initialized
+        before the program begins. Any nonglobal symbols are initialized
+        on the line where they are defined. This decision allows for slightly
+        strange code, but allows for mutually recursive functions with no
+        forward declarations or special cases.
+
+	3.5.1. Scope Rules:
+
+            Myrddin follows the usual lexical scoping rules. A variable
+            may be defined on any line in the program. From there, any
+            expressions within that block and its sub blocks may refer
+            to it.
+
+            The variables declared in constructs starting a block are
+            scoped to that block. For example, in `for var i = 0; ...`,
+            the variable `i` is scoped to the body of the for loop.
+            In the function `{x, y; funcbody()}`, the variables `x` and
+            `y` are scoped to the body of the function.
+
+            Variables may shadow other variables, with the exception of
+            captured variables in pattern matches. The rules for matches
+            are covered in depth in section 6.3, but the rationale for
+            this is to prevent ambiguity when matching against defined
+            constants.
+
+        3.5.2. Capturing Variables:
+
+            When a closure is created, it captures all of the variables
+            that it refers to in its scope by value. This allows for
+            simple heapification of the closure.
+
+            For example:
+
+                var x = 1
+                var closure = {; -> x}
+                x++
+                std.put("x: {}, closure(): {}\n", x, closure())
+
+            should output:
+
+                x: 2, closure(): 1
+
+	3.5.2. Namespaces:
+
+            A namespace introduced by importing a package is gramatically
+            equivalent to a struct member lookup. The namespace is not
+            optional.
+
+    3.6. Program Initialization:
+
+        Any file may define a single function name `__init__`. This function
+        will be invoked before `main` runs, and after the `__init__ `function
+        for all files included through use statements.
+
+
+4. VALUES AND EXPRESSIONS:
 
     4.3. Literal Values
 
@@ -540,7 +687,13 @@ TABLE OF CONTENTS:
 		postfixexpr:	<prefixop> postfixexpr
 		prefixexpr:	atomicexpr <unaryop>
 
-	    Myrddin expressions should be fairly familiiar to most programmers.
+	    Myrddin expressions should be fairly familiar to most programmers.
+            Expressions are represented by a precedence sorted heirarchy of
+            binary operators. These operators operate on prefix expressions,
+            which in turn operate on postfix expressions. And postfix
+            expressions operate on parenthesized expressions, literals, or
+            values.
+
 	    The operators are listed below in order of precedence, and a short
 	    summary of what they do is listed given. For the sake of clarity, 'x'
 	    will stand in for any expression composed entirely of subexpressions
@@ -653,6 +806,9 @@ TABLE OF CONTENTS:
             match, again, given that it is never read from in the body of the
             match.
 
+            An  represents a location in the machine that can be stored
+            to persistently and manipulated by the programmer. An obvious
+            example of this would be a variable name, although 
 
         4.6.3. Cast Expressions:
 
@@ -747,6 +903,8 @@ TABLE OF CONTENTS:
 
 	4.6.4. Assignment:
 
+            The assignment operators 
+
 	4.6.5. Bitwise Expressions:
 
 	4.6.6: Arithmetic Expressons:
@@ -754,45 +912,6 @@ TABLE OF CONTENTS:
         4.6.7: Postfix Expressiosn:
 
         4.6.8: Prefix Expressions
-
-
-    4.8. Packages and Uses:
-
-	    bareuse:	use ident
-	    quoteuse:	use "<quoted string>"
-	    pkgdef:	"pkg" ident = decl* ";;"
-
-
-        There are two keywords for module system. 'use' is the simpler
-        of the two, and has two cases:
-
-            use syspkg
-            use "localfile"
-
-	The first form, which does not have the package name quoted, will
-	search the system include paths for the package listed. It does not
-	search relative to the file or the compiler working directory.
-
-        The quoted form searches the current directory for a use file named
-	"localpkg" and imports it.
-
-        The 'pkg' keyword allows you to define a (partial) package by
-        listing the symbols and types for export. For example,
-
-            pkg mypkg =
-                type mytype
-
-                const Myconst   : int = 42
-                const myfunc    : (v : int -> bool)
-            ;;
-
-        declares a package "mypkg", which defines three exports, "mytype",
-        "Myconst", and "myfunc". The definitions of the values may be
-        defined in the 'pkg' specification, but it is preferred to implement
-        them in the body of the code for readability. Scanning the export
-        list is desirable from a readability perspective.
-
-    4.9. Scoping and Namespaces:
 
 
 5. TYPES:
