@@ -21,11 +21,9 @@ TABLE OF CONTENTS:
         4.3. Generics
         4.4. Type Inference
     5. VALUES AND EXPRESSIONS
-        5.1. Declarations
-        5.2. Literal Values
+        5.1. Literal Values
+        5.2. Expressions
         5.3. Control Constructs
-        5.4. Expressions
-        5.6. Packages and Uses
     6. CONTROL FLOW
         6.1. Blocks
         6.2. Conditionals
@@ -350,11 +348,235 @@ TABLE OF CONTENTS:
         for all files included through use statements.
 
 
-4. VALUES AND EXPRESSIONS:
 
-    4.3. Literal Values
+4. TYPES:
 
-        4.3.1. Atomic Literals:
+    4.1. Data Types:
+
+        The language defines a number of built in primitive types. These
+        are not keywords, and in fact live in a separate namespace from
+        the variable names. Yes, this does mean that you could, if you want,
+        define a variable named 'int'.
+
+        There are no implicit conversions within the language. All types
+        must be explicitly cast if you want to convert, and the casts must
+        be of compatible types, as will be described later.
+
+            4.1.1. Primitive types:
+
+                    void
+                    bool            char
+                    int8            uint8
+                    int16           uint16
+                    int32           uint32
+                    int64           uint64
+                    int             uint
+                    long            ulong
+                    float32         float64
+
+		'void' is a type and a value  although for the sake of
+		genericity, you can assign between void types, return values
+		of void, and so on.  This allows generics to not have to
+		somehow work around void being a toxic type. The void value is
+		named `void`.
+
+                It is interesting to note that these types are not keywords,
+                but are instead merely predefined identifiers in the type
+                namespace.
+
+                bool is a type that can only hold true and false. It can be
+                assigned, tested for equality, and used in the various boolean
+                operators.
+
+		char is a 32 bit integer type, and is guaranteed to hold
+		exactly one Unicode codepoint. It can be assigned integer
+		literals, tested against, compared, and all the other usual
+		numeric types.
+
+                The various [u]intXX types hold, as expected, signed and
+                unsigned integers of the named sizes respectively.
+                Similarly, floats hold floating point types with the
+                indicated precision.
+
+                    var x : int         declare x as an int
+                    var y : float32     declare y as a 32 bit float
+
+
+            4.1.2. Composite types:
+
+                    pointer
+                    slice           array
+
+                Pointers are, as expected, values that hold the address of
+                the pointed to value. They are declared by appending a '#'
+                to the type. Pointer arithmetic is not allowed. They are
+                declared by appending a '#' to the base type
+
+                Arrays are a group of N values, where N is part of the type.
+                Arrays of different sizes are incompatible. Arrays in
+                Myrddin, unlike many other languages, are passed by value.
+                They are declared by appending a '[SIZE]' to the base type.
+
+                Slices are similar to arrays in many contemporary languages.
+                They are reference types that store the length of their
+                contents. They are declared by appending a '[,]' to the base
+                type.
+
+                    foo#        type: pointer to foo
+                    foo[123]    type: array of 123 foo
+                    foo[,]      type: slice of foo
+
+            4.1.3. Aggregate types:
+
+                    tuple           struct
+                    union
+
+                Tuples are the traditional product type. They are declared
+                by putting the comma separated list of types within square
+                brackets.
+
+                Structs are aggregations of types with named members. They
+                are declared by putting the word 'struct' before a block of
+                declaration cores (ie, declarations without the storage type
+                specifier).
+
+                Unions are the traditional sum type. They consist of a tag
+                (a keyword prefixed with a '`' (backtick)) indicating their
+                current contents, and a type to hold. They are declared by
+                placing the keyword 'union' before a list of tag-type pairs.
+                They may also omit the type, in which case, the tag is
+                sufficient to determine which option was selected.
+
+                    [int, int, char]            a tuple of 2 ints and a char
+
+                    struct                      a struct containing an int named
+                        a : int                 'a', and a char named 'b'.
+                        b : char
+                    ;;
+
+                    union                       a union containing one of
+                        `Thing int              int or char. The values are not
+                        `Other float32          named, but they are tagged.
+                    ;;
+
+
+            4.1.4. Generic types:
+
+                    tyvar           typaram
+                    tyname
+
+                A tyname is a named type, similar to a typedef in C, however
+                it genuinely creates a new type, and not an alias. There are
+                no implicit conversions, but a tyname will inherit all
+                constraints of its underlying type.
+
+                A typaram is a parametric type. It is used in generics as
+                a placeholder for a type that will be substituted in later.
+                It is an identifier prefixed with '@'. These are only valid
+                within generic contexts, and may not appear elsewhere.
+
+                A tyvar is an internal implementation detail that currently
+                leaks in error messages out during type inference, and is a
+                major cause of confusing error messages. It should not be in
+                this manual, except that the current incarnation of the
+                compiler will make you aware of it. It looks like '@$type',
+                and is a variable that holds an incompletely inferred type.
+
+                    type mine = int             creates a tyname named
+                                                'mine', equivalent to int.
+
+
+                    @foo                        creates a type parameter
+                                                named '@foo'.
+    4.2. Type Inference:
+
+        The myrddin type system is a system similar to the Hindley Milner
+        system, however, types are not implicitly generalized. Instead, type
+        schemes (type parameters, in Myrddin lingo) must be explicitly provided
+        in the declarations. For purposes of brevity, instead of specifying type
+        rules for every operator, we group operators which behave identically
+        from the type system perspective into a small set of classes. and define
+        the constraints that they require.
+
+        Type inference in Myrddin operates as a bottom up tree walk,
+        applying the type equations for the operator to its arguments.
+        It begins by initializing all leaf nodes with the most specific
+        known type for them as follows:
+
+        4.6.1 Types for leaf nodes:
+
+            Variable        Type
+            ----------------------
+            var foo         $t
+
+                A type variable is the most specific type for a declaration
+                or function without any specified type
+
+            var foo : t     t
+
+                If a type is specified, that type is taken for the
+                declaration.
+
+            "asdf"          byte[:]
+
+                String literals are byte arrays.
+
+
+            'a'             char
+
+                Char literals are of type 'char'
+
+            void            void
+
+                void is a literal value of type void.
+
+            true            bool
+            false           bool
+
+                true/false are boolean literals
+
+            123             $t::(integral,numeric)
+
+                Integer literals get a fresh type variable of type with
+                the constraints for int-like types.
+
+            123.1           $t::(floating,numeric)
+
+                Float literals get a fresh type variable of type with
+                the constraints for float-like types.
+
+            {a,b:t; }       ($a,t -> $b)
+
+                Function literals get the most specific type that can
+                be determined by their signature.
+
+
+        num-binop:
+
+                +           -               *               /               %
+                +=          -=              *=              /=              %
+
+            Number binops require the constraint 'numeric' for both the
+
+        num-unary:
+            -           +
+            Number binops require the constraint 'numeric'.
+
+        int-binop:
+            |           &               ^               <<              >>
+            |=          &=              ^=              <<=             >>
+        int-unary:
+            ~           ++              --
+
+        bool-binop:
+            ||          &&              ==              !=
+            <           <=              >               >=
+
+5. VALUES AND EXPRESSIONS:
+
+    5.2. Literal Values
+
+        5.1.1. Atomic Literals:
 
                 literal:    strlit | chrlit | floatlit |
                             boollit | voidlit | intlit |
@@ -430,7 +652,7 @@ TABLE OF CONTENTS:
 
                 eg: true, false
 
-        4.3.2. Sequence and Tuple Literals:
+        5.1.2. Sequence and Tuple Literals:
             
                 seqlit:     "[" structelts | arrayelts "]"
                 tuplit:     "(" tuplelts ")"
@@ -479,7 +701,7 @@ TABLE OF CONTENTS:
                 (1,), (1,'b',"three")
 
 
-        4.3.3. Function Literals:
+        5.1.3. Function Literals:
 
                 funclit:        "{" arglist "\n" blockbody "}"
                 arglist:        (ident [":" type])*
@@ -520,7 +742,7 @@ TABLE OF CONTENTS:
                 }
 
 
-        4.3.4: Labels:
+        5.1.4: Labels:
 
                 label:  ":" ident
                 goto:   "goto" ident
@@ -537,7 +759,341 @@ TABLE OF CONTENTS:
 
             the ':' is not part of the label name.
 
-    4.4. Blocks:
+    5.2. Expressions:
+
+	5.2.1. Summary and Precedence:
+
+		expr:		expr <binop> expr | prefixexpr | postfixexpr
+		postfixexpr:	<prefixop> postfixexpr
+		prefixexpr:	atomicexpr <unaryop>
+
+	    Myrddin expressions should be fairly familiar to most programmers.
+            Expressions are represented by a precedence sorted heirarchy of
+            binary operators. These operators operate on prefix expressions,
+            which in turn operate on postfix expressions. And postfix
+            expressions operate on parenthesized expressions, literals, or
+            values.
+
+	    The operators are listed below in order of precedence, and a short
+	    summary of what they do is listed given. For the sake of clarity, 'x'
+	    will stand in for any expression composed entirely of subexpressions
+	    with higher precedence than the current current operator. 'e' will
+	    stand in for any expression. Assignment is right associative. All
+            other expressions are left associative.
+
+            Arguments are evaluated in the order of associativity. That is,
+            if an operator is left associative, then the left hand side of
+            the operator will be evaluated before the right side. If the
+            operator is right associative, the opposite is true.
+
+            The specific semantics are covered in later parts of section 5.2.
+
+	    Precedence 13:
+		    x		    Atomic expression
+		    literal	    Atomic expression
+		    (expr)	    Atomic expression
+
+	    Precedence 12:
+		    x.name          Member lookup
+		    x++             Postincrement
+		    x--             Postdecrement
+		    x#              Dereference
+		    x[e]            Index
+		    x[lo:hi]        Slice
+		    x(arg,list)	Call
+
+	    Precedence 11:
+		    ++x             Preincrement
+		    --x             Predecrement
+		    &x              Address
+		    !x              Logical negation
+		    ~x              Bitwise negation
+		    +x              Positive (no operation)
+		    -x              Negate x
+
+	    Precedence 10:
+		    x << y          Shift left
+		    x >> y          Shift right
+
+	    Precedence 9:
+		    x * y           Multiply
+		    x / y           Divide
+		    x % y           Modulo
+
+	    Precedence 8:
+		    x + y           Add
+		    x - y           Subtract
+
+	    Precedence 7:
+		    x & y           Bitwise and
+
+	    Precedence 6:
+		    x | y           Bitwise or
+		    x ^ y           Bitwise xor
+
+	    Precedence 5:
+		    `Name x         Union construction
+
+	    Precedence 4:
+		    x == x          Equality
+		    x != x          Inequality
+		    x > x           Greater than
+		    x >= x          Greater than or equal to
+		    x < x           Less than
+		    x <= x          Less than or equal to
+
+	    Precedence 3:
+		    x && y          Logical and
+
+	    Precedence 2:
+		    x || y          Logical or
+
+	    Precedence 1: Assignment Operators
+		    x = y           Assign                  Right assoc
+		    x += y          Fused add/assign        Right assoc
+		    x -= y          Fused sub/assign        Right assoc
+		    x *= y          Fused mul/assign        Right assoc
+		    x /= y          Fused div/assign        Right assoc
+		    x %= y          Fused mod/assign        Right assoc
+		    x |= y          Fused or/assign         Right assoc
+		    x ^= y          Fused xor/assign        Right assoc
+		    x &= y          Fused and/assign        Right assoc
+		    x <<= y         Fused shl/assign        Right assoc
+		    x >>= y         Fused shr/assign        Right assoc
+
+	    Precedence 0:
+		    -> x            Return expression
+
+	5.2.2. Atomic Expressions:
+	    
+                atomicexpr:     ident | gap | literal | "(" expr ")" | 
+                                "sizeof" "(" type ")" | castexpr
+                castexpr:       "(" expr ":" type ")"
+                gap:            "_"
+
+            Atomic expressions are the building blocks of expressions, and
+            are either parenthesized expressions or directly represent
+            literals. Literals are covered in depth in section 4.2.
+
+            An identifier specifies a variable, and are looked up via
+            the scoping rules specified in section 4.9.
+
+            Gap expressions (`_`) represent an anonymous sink value. Anything
+            can be assigned to a gap, and it may be used in pattern matching.
+            It is equivalent to creating a new temporary that is never read
+            from whenever it is used. For example:
+
+                _ = 123
+
+            is equivalent to:
+                
+                var anon666 = 123
+
+            In match contexts, it is equivalent to a fresh variable in the
+            match, again, given that it is never read from in the body of the
+            match.
+
+            An  represents a location in the machine that can be stored
+            to persistently and manipulated by the programmer. An obvious
+            example of this would be a variable name, although 
+
+        5.2.3. Cast Expressions:
+
+            Cast expressions convert a value from one type to another.
+            Casting proceeds according to the following rules:
+
+
+                SType   DType        Action
+                -------------------------------------------------------------
+                int/int Conversions
+                -------------------------------------------------------------
+                intN    intK        If n < k, sign extend the source
+                                    type, filling the top bits with the
+                                    sign bit of the source until it is the
+                                    same width as the destination type.
+
+                                    if n > k, truncate the top bits of the
+                                    source to the width of the destination
+                                    type.
+
+                uintN  uintK        If n < k, zero extend the source
+                                    type, filling the top bits with zero
+                                    until it is the same width as the
+                                    destination type.
+
+                                    If n > k, truncate the top bits of the
+                                    source to the width of the destination
+                                    type.
+                -------------------------------------------------------------
+                int/float conversions
+                -------------------------------------------------------------
+                intN    fltN        The closest representable integer value
+                                    to the source should be stored in the
+                                    destination.
+
+                uintN   fltN        The closest representable integer value
+                                    to the source should be stored in the
+                                    destination.
+
+                fltN    intN        The closest representable integer value
+                                    to the source should be stored in the
+                                    destination.
+
+                fltN    uintN       The closest representable integer value
+                                    to the source should be stored in the
+                                    destination.
+                -------------------------------------------------------------
+                int/pointer conversions
+                -------------------------------------------------------------
+                intN   T#           Extend the source value to the width
+                                    of a pointer in bits in an implementation
+                                    defined manner.
+
+                uintN  T#           Extend the source value to the width
+                                    of a pointer in bits in an implementation
+                                    defined manner.
+
+                T#     intN         Convert the address of the pointer to an
+                                    integer in an implementation specified
+                                    manner. There should exist at least one
+                                    integer type for which this conversion
+                                    will round trip.
+
+                T#     uintN        Convert the address of the pointer to an
+                                    integer in an implementation specified
+                                    manner. There should exist at least one
+                                    integer type for which this conversion
+                                    will round trip.
+                -------------------------------------------------------------
+                pointer/pointer conversions
+                -------------------------------------------------------------
+                T#      U#          If the destination type has compatible
+                                    alignment and other storage requirements,
+                                    the pointer should be converted losslessly
+                                    and in a round-tripping manner to point to
+                                    a U. If it does not have compatible
+                                    requirements, the conversion is not
+                                    required to round trip safely, but should
+                                    still produce a valid pointer.
+                -------------------------------------------------------------
+                pointer/slice conversions
+                -------------------------------------------------------------
+                T[:]    T#          Returns a pointer to t[0]
+                -------------------------------------------------------------
+                pointer/function conversions
+                -------------------------------------------------------------
+                (args->ret)   T#    Returns a pointer to an implementation
+                                    specific value representing the executable
+                                    code for the function.
+
+
+
+	5.2.4. Assignments:
+        
+                lval = rval, lval <op>= rval
+
+            The assignment operators, group from right to left. These are the
+            only operators that have right associativity. All of them require
+            the left operand to be an lvalue. The value of the right hand side
+            of the expression is stored on the left hand side after this
+            statement has executed.
+
+            The fused assignment operators are equivalent to applying the
+            arithmetic or bitwise operator to the lhs and rhs of the
+            expression before storing into the lhs.
+
+	5.2.5. Logical Or:
+        
+                expr || expr
+
+            The `||` operator returns true if the left hand side evaluates to
+            true. Otherwise it returns the result of evaluating the lhs. It is
+            guaranteed if the rhs is true, the lhs will not be evaluated.
+
+	5.2.6. Logical And:
+
+                expr && expr
+
+            The `&&` operator returns false if the left hand side evaluates to
+            false. Otherwise it returns the result of evaluating the lhs. It
+            is guaranteed if the rhs is true, the lhs will not be evaluated.
+
+        5.2.7. Comparisons:
+        
+                expr == expr, expr != expr, expr > expr,
+                expr >= expr, expr < expr, expr <= expr
+
+        5.2.8. Union
+        
+                `Name rval:
+
+        5.2.9. Bitwise:
+
+                expr | expr, expr ^ expr, expr & expr
+
+        5.2.10. Addition:
+        
+                expr + expr, expr - expr:
+
+        
+        5.2.11. Multiplication:
+        
+                expr * expr
+
+        5.2.12. Division:
+        
+                expr / expr, expr % expr:
+
+        5.2.13. Shift:
+
+                expr >> expr, expr << expr
+
+        5.2.14. Preincrement:
+
+                ++expr, --expr
+
+        5.2.25: Address:
+
+                &expr
+
+        5.2.16: Dereference:
+
+                &expr
+
+        5.2.17: Sign Operators:
+
+                -expr, +expr
+
+        5.2.18: Logical Negation:
+
+                !expr
+
+        5.2.19: Member Lookup:
+
+                expr.name
+
+        5.2.20: Postincrement:
+
+                expr++, expr--
+
+        5.2.21: Dereference:
+
+                expr#
+
+        5.2.22: Index:
+
+                expr[expr]
+
+        5.2.23: Slice:
+
+                expr[expr:expr]
+
+        5.2.24: Call:
+
+                expr(expr, expr, ...)
+
+
+    5.3. Blocks:
 
             block:      blockbody ";;"
             blockbody:  (decl | stmt | tydef | "\n")*
@@ -555,7 +1111,7 @@ TABLE OF CONTENTS:
         limited to within the block, and any attempts to access the associated
         storage (via pointer, for example) is not valid.
 
-    4.5. Control Constructs:
+    5.5. Control Constructs:
 
             ifstmt:     "if" cond "\n" blockbody
                         ("elif" blockbody)*
@@ -679,463 +1235,6 @@ TABLE OF CONTENTS:
             ;;
 
 
-    4.6. Expressions:
-
-	4.6.1. Summary and Precedence:
-
-		expr:		expr <binop> expr | prefixexpr | postfixexpr
-		postfixexpr:	<prefixop> postfixexpr
-		prefixexpr:	atomicexpr <unaryop>
-
-	    Myrddin expressions should be fairly familiar to most programmers.
-            Expressions are represented by a precedence sorted heirarchy of
-            binary operators. These operators operate on prefix expressions,
-            which in turn operate on postfix expressions. And postfix
-            expressions operate on parenthesized expressions, literals, or
-            values.
-
-	    The operators are listed below in order of precedence, and a short
-	    summary of what they do is listed given. For the sake of clarity, 'x'
-	    will stand in for any expression composed entirely of subexpressions
-	    with higher precedence than the current current operator. 'e' will
-	    stand in for any expression. Unless marked otherwise, expressions are
-	    left associative.
-
-	    Precedence 13:
-		    x		    Atomic expression
-		    literal	    Atomic expression
-		    (expr)	    Atomic expression
-
-	    Precedence 12:
-		    x.name          Member lookup
-		    x++             Postincrement
-		    x--             Postdecrement
-		    x#              Dereference
-		    x[e]            Index
-		    x[lo:hi]        Slice
-		    x(arg,list)	Call
-
-	    Precedence 11:
-		    ++x             Preincrement
-		    --x             Predecrement
-		    &x              Address
-		    !x              Logical negation
-		    ~x              Bitwise negation
-		    +x              Positive (no operation)
-		    -x              Negate x
-
-	    Precedence 10:
-		    x << y          Shift left
-		    x >> y          Shift right
-
-	    Precedence 9:
-		    x * y           Multiply
-		    x / y           Divide
-		    x % y           Modulo
-
-	    Precedence 8:
-		    x + y           Add
-		    x - y           Subtract
-
-	    Precedence 7:
-		    x & y           Bitwise and
-
-	    Precedence 6:
-		    x | y           Bitwise or
-		    x ^ y           Bitwise xor
-
-	    Precedence 5:
-		    `Name x         Union construction
-
-	    Precedence 4:
-		    x == x          Equality
-		    x != x          Inequality
-		    x > x           Greater than
-		    x >= x          Greater than or equal to
-		    x < x           Less than
-		    x <= x          Less than or equal to
-
-	    Precedence 3:
-		    x && y          Logical and
-
-	    Precedence 2:
-		    x || y          Logical or
-
-	    Precedence 1:
-		    x = y           Assign                  Right assoc
-		    x += y          Fused add/assign        Right assoc
-		    x -= y          Fused sub/assign        Right assoc
-		    x *= y          Fused mul/assign        Right assoc
-		    x /= y          Fused div/assign        Right assoc
-		    x %= y          Fused mod/assign        Right assoc
-		    x |= y          Fused or/assign         Right assoc
-		    x ^= y          Fused xor/assign        Right assoc
-		    x &= y          Fused and/assign        Right assoc
-		    x <<= y         Fused shl/assign        Right assoc
-		    x >>= y         Fused shr/assign        Right assoc
-
-	    Precedence 0:
-		    -> x            Return expression
-
-	4.6.2. Atomic Expressions:
-	    
-                atomicexpr:     ident | gap | literal | "(" expr ")" | 
-                                "sizeof" "(" type ")" | castexpr
-                castexpr:       "(" expr ":" type ")"
-                gap:            "_"
-
-            Atomic expressions are the building blocks of expressions, and
-            are either parenthesized expressions or directly represent
-            literals. Literals are covered in depth in section 4.2.
-
-            An identifier specifies a variable, and are looked up via
-            the scoping rules specified in section 4.9.
-
-            Gap expressions (`_`) represent an anonymous sink value. Anything
-            can be assigned to a gap, and it may be used in pattern matching.
-            It is equivalent to creating a new temporary that is never read
-            from whenever it is used. For example:
-
-                _ = 123
-
-            is equivalent to:
-                
-                var anon666 = 123
-
-            In match contexts, it is equivalent to a fresh variable in the
-            match, again, given that it is never read from in the body of the
-            match.
-
-            An  represents a location in the machine that can be stored
-            to persistently and manipulated by the programmer. An obvious
-            example of this would be a variable name, although 
-
-        4.6.3. Cast Expressions:
-
-            Cast expressions convert a value from one type to another.
-            Casting proceeds according to the following rules:
-
-
-                SType   DType        Action
-                -------------------------------------------------------------
-                int/int Conversions
-                -------------------------------------------------------------
-                intN    intK        If n < k, sign extend the source
-                                    type, filling the top bits with the
-                                    sign bit of the source until it is the
-                                    same width as the destination type.
-
-                                    if n > k, truncate the top bits of the
-                                    source to the width of the destination
-                                    type.
-
-                uintN  uintK        If n < k, zero extend the source
-                                    type, filling the top bits with zero
-                                    until it is the same width as the
-                                    destination type.
-
-                                    If n > k, truncate the top bits of the
-                                    source to the width of the destination
-                                    type.
-                -------------------------------------------------------------
-                int/float conversions
-                -------------------------------------------------------------
-                intN    fltN        The closest representable integer value
-                                    to the source should be stored in the
-                                    destination.
-
-                uintN   fltN        The closest representable integer value
-                                    to the source should be stored in the
-                                    destination.
-
-                fltN    intN        The closest representable integer value
-                                    to the source should be stored in the
-                                    destination.
-
-                fltN    uintN       The closest representable integer value
-                                    to the source should be stored in the
-                                    destination.
-                -------------------------------------------------------------
-                int/pointer conversions
-                -------------------------------------------------------------
-                intN   T#           Extend the source value to the width
-                                    of a pointer in bits in an implementation
-                                    defined manner.
-
-                uintN  T#           Extend the source value to the width
-                                    of a pointer in bits in an implementation
-                                    defined manner.
-
-                T#     intN         Convert the address of the pointer to an
-                                    integer in an implementation specified
-                                    manner. There should exist at least one
-                                    integer type for which this conversion
-                                    will round trip.
-
-                T#     uintN        Convert the address of the pointer to an
-                                    integer in an implementation specified
-                                    manner. There should exist at least one
-                                    integer type for which this conversion
-                                    will round trip.
-                -------------------------------------------------------------
-                pointer/pointer conversions
-                -------------------------------------------------------------
-                T#      U#          If the destination type has compatible
-                                    alignment and other storage requirements,
-                                    the pointer should be converted losslessly
-                                    and in a round-tripping manner to point to
-                                    a U. If it does not have compatible
-                                    requirements, the conversion is not
-                                    required to round trip safely, but should
-                                    still produce a valid pointer.
-                -------------------------------------------------------------
-                pointer/slice conversions
-                -------------------------------------------------------------
-                T[:]    T#          Returns a pointer to t[0]
-                -------------------------------------------------------------
-                pointer/function conversions
-                -------------------------------------------------------------
-                (args->ret)   T#    Returns a pointer to an implementation
-                                    specific value representing the executable
-                                    code for the function.
-
-
-
-	4.6.4. Assignment:
-
-            The assignment operators 
-
-	4.6.5. Bitwise Expressions:
-
-	4.6.6: Arithmetic Expressons:
-
-        4.6.7: Postfix Expressiosn:
-
-        4.6.8: Prefix Expressions
-
-
-5. TYPES:
-
-    5.1. Data Types:
-
-        The language defines a number of built in primitive types. These
-        are not keywords, and in fact live in a separate namespace from
-        the variable names. Yes, this does mean that you could, if you want,
-        define a variable named 'int'.
-
-        There are no implicit conversions within the language. All types
-        must be explicitly cast if you want to convert, and the casts must
-        be of compatible types, as will be described later.
-
-            5.1.1. Primitive types:
-
-                    void
-                    bool            char
-                    int8            uint8
-                    int16           uint16
-                    int32           uint32
-                    int64           uint64
-                    int             uint
-                    long            ulong
-                    float32         float64
-
-		'void' is a type and a value  although for the sake of
-		genericity, you can assign between void types, return values
-		of void, and so on.  This allows generics to not have to
-		somehow work around void being a toxic type. The void value is
-		named `void`.
-
-                It is interesting to note that these types are not keywords,
-                but are instead merely predefined identifiers in the type
-                namespace.
-
-                bool is a type that can only hold true and false. It can be
-                assigned, tested for equality, and used in the various boolean
-                operators.
-
-		char is a 32 bit integer type, and is guaranteed to hold
-		exactly one Unicode codepoint. It can be assigned integer
-		literals, tested against, compared, and all the other usual
-		numeric types.
-
-                The various [u]intXX types hold, as expected, signed and
-                unsigned integers of the named sizes respectively.
-                Similarly, floats hold floating point types with the
-                indicated precision.
-
-                    var x : int         declare x as an int
-                    var y : float32     declare y as a 32 bit float
-
-
-            5.1.2. Composite types:
-
-                    pointer
-                    slice           array
-
-                Pointers are, as expected, values that hold the address of
-                the pointed to value. They are declared by appending a '#'
-                to the type. Pointer arithmetic is not allowed. They are
-                declared by appending a '#' to the base type
-
-                Arrays are a group of N values, where N is part of the type.
-                Arrays of different sizes are incompatible. Arrays in
-                Myrddin, unlike many other languages, are passed by value.
-                They are declared by appending a '[SIZE]' to the base type.
-
-                Slices are similar to arrays in many contemporary languages.
-                They are reference types that store the length of their
-                contents. They are declared by appending a '[,]' to the base
-                type.
-
-                    foo#        type: pointer to foo
-                    foo[123]    type: array of 123 foo
-                    foo[,]      type: slice of foo
-
-            5.1.3. Aggregate types:
-
-                    tuple           struct
-                    union
-
-                Tuples are the traditional product type. They are declared
-                by putting the comma separated list of types within square
-                brackets.
-
-                Structs are aggregations of types with named members. They
-                are declared by putting the word 'struct' before a block of
-                declaration cores (ie, declarations without the storage type
-                specifier).
-
-                Unions are the traditional sum type. They consist of a tag
-                (a keyword prefixed with a '`' (backtick)) indicating their
-                current contents, and a type to hold. They are declared by
-                placing the keyword 'union' before a list of tag-type pairs.
-                They may also omit the type, in which case, the tag is
-                sufficient to determine which option was selected.
-
-                    [int, int, char]            a tuple of 2 ints and a char
-
-                    struct                      a struct containing an int named
-                        a : int                 'a', and a char named 'b'.
-                        b : char
-                    ;;
-
-                    union                       a union containing one of
-                        `Thing int              int or char. The values are not
-                        `Other float32          named, but they are tagged.
-                    ;;
-
-
-            5.1.4. Generic types:
-
-                    tyvar           typaram
-                    tyname
-
-                A tyname is a named type, similar to a typedef in C, however
-                it genuinely creates a new type, and not an alias. There are
-                no implicit conversions, but a tyname will inherit all
-                constraints of its underlying type.
-
-                A typaram is a parametric type. It is used in generics as
-                a placeholder for a type that will be substituted in later.
-                It is an identifier prefixed with '@'. These are only valid
-                within generic contexts, and may not appear elsewhere.
-
-                A tyvar is an internal implementation detail that currently
-                leaks in error messages out during type inference, and is a
-                major cause of confusing error messages. It should not be in
-                this manual, except that the current incarnation of the
-                compiler will make you aware of it. It looks like '@$type',
-                and is a variable that holds an incompletely inferred type.
-
-                    type mine = int             creates a tyname named
-                                                'mine', equivalent to int.
-
-
-                    @foo                        creates a type parameter
-                                                named '@foo'.
-    5.2. Type Inference:
-
-        The myrddin type system is a system similar to the Hindley Milner
-        system, however, types are not implicitly generalized. Instead, type
-        schemes (type parameters, in Myrddin lingo) must be explicitly provided
-        in the declarations. For purposes of brevity, instead of specifying type
-        rules for every operator, we group operators which behave identically
-        from the type system perspective into a small set of classes. and define
-        the constraints that they require.
-
-        Type inference in Myrddin operates as a bottom up tree walk,
-        applying the type equations for the operator to its arguments.
-        It begins by initializing all leaf nodes with the most specific
-        known type for them as follows:
-
-        4.6.1 Types for leaf nodes:
-
-            Variable        Type
-            ----------------------
-            var foo         $t
-
-                A type variable is the most specific type for a declaration
-                or function without any specified type
-
-            var foo : t     t
-
-                If a type is specified, that type is taken for the
-                declaration.
-
-            "asdf"          byte[:]
-
-                String literals are byte arrays.
-
-
-            'a'             char
-
-                Char literals are of type 'char'
-
-            void            void
-
-                void is a literal value of type void.
-
-            true            bool
-            false           bool
-
-                true/false are boolean literals
-
-            123             $t::(integral,numeric)
-
-                Integer literals get a fresh type variable of type with
-                the constraints for int-like types.
-
-            123.1           $t::(floating,numeric)
-
-                Float literals get a fresh type variable of type with
-                the constraints for float-like types.
-
-            {a,b:t; }       ($a,t -> $b)
-
-                Function literals get the most specific type that can
-                be determined by their signature.
-
-
-        num-binop:
-
-                +           -               *               /               %
-                +=          -=              *=              /=              %
-
-            Number binops require the constraint 'numeric' for both the
-
-        num-unary:
-            -           +
-            Number binops require the constraint 'numeric'.
-
-        int-binop:
-            |           &               ^               <<              >>
-            |=          &=              ^=              <<=             >>
-        int-unary:
-            ~           ++              --
-
-        bool-binop:
-            ||          &&              ==              !=
-            <           <=              >               >=
 
 6. GRAMMAR:
 
