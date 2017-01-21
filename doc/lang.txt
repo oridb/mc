@@ -591,22 +591,23 @@ TABLE OF CONTENTS:
                 boollit:    "true"|"false"
                 voidlit:    "void"
 
-            Integers literals are a sequence of digits, beginning with a digit and
-            possibly separated by underscores. They are of a generic type, and can
-            be used where any numeric type is expected. They may be prefixed with
-            "0x" to indicate that the following number is a hexadecimal value, 0o
-            to indicate an octal value, or 0b to indicate a binary value. Decimal
-            values are not prefixed.
+            Integers literals are a sequence of digits, beginning with a digit
+            and possibly separated by underscores. They may be prefixed with
+            "0x" to indicate that the following number is a hexadecimal value,
+            0o to indicate an octal value, or 0b to indicate a binary value.
+            Decimal values are not prefixed.
 
                 eg: 0x123_fff, 0b1111, 0o777, 1234
 
+            Integer literals have the type `@a::(numeric,integral)`.
+
             Floating-point literals are also a sequence of digits beginning with a
-            digit and possibly separated by underscores. They are also of a
-            generic type, and may be used whenever a floating-point type is
-            expected. Floating point literals are always in decimal, but may
-            have an exponent attached to them.
+            digit and possibly separated by underscores. Floating point
+            literals are always in decimal.
 
                 eg: 123.456, 10.0e7, 1_000.
+
+            Floating point literals have the type `@a::(numeric,floating)`.
 
             String literals represent a compact method of representing a byte
             array. Any byte values are allowed in a string literal, and will be
@@ -639,6 +640,8 @@ TABLE OF CONTENTS:
                 eg: "foo" \
                     "bar"
 
+            String literals have the type `byte[:]`
+
             Character literals represent a single codepoint in the character
             set. A character starts with a single quote, contains a single
             codepoint worth of text, encoded either as an escape sequence
@@ -647,10 +650,14 @@ TABLE OF CONTENTS:
 
                 eg: 'א', '\n', '\u{1234}'
 
+            Character literals have the type `char`
+
             Boolean literals are either the keyword "true" or the keyword
             "false".
 
                 eg: true, false
+
+            Boolean literals have the type `bool`
 
         5.1.2. Sequence and Tuple Literals:
             
@@ -695,7 +702,7 @@ TABLE OF CONTENTS:
                 [.a = 42, .b="str"]
 
             Example: Array literal:
-                [1,2,3], [2:3, 1:2, 0:1], 
+                [1,2,3], [2:3, 1:2, 0:1], []
 
             Example: Tuple literals:
                 (1,), (1,'b',"three")
@@ -774,6 +781,11 @@ TABLE OF CONTENTS:
             expressions operate on parenthesized expressions, literals, or
             values.
 
+            For integers, all operations are done in complement twos
+            arithmetic, with the same bit width as the type being operated on.
+            For floating point values, the operation is according to the
+            IEE754 rules.
+
 	    The operators are listed below in order of precedence, and a short
 	    summary of what they do is listed given. For the sake of clarity, 'x'
 	    will stand in for any expression composed entirely of subexpressions
@@ -803,8 +815,6 @@ TABLE OF CONTENTS:
 		    x(arg,list)	Call
 
 	    Precedence 11:
-		    ++x             Preincrement
-		    --x             Predecrement
 		    &x              Address
 		    !x              Logical negation
 		    ~x              Bitwise negation
@@ -986,6 +996,13 @@ TABLE OF CONTENTS:
                                     specific value representing the executable
                                     code for the function.
 
+                -------------------------------------------------------------
+                arbitrary type conversions
+                -------------------------------------------------------------
+                T       U           Returns a T as a U. T must be transitively
+                                    defined in terms of U, or U in terms of T
+                                    for this cast to be valid.
+
 
 
 	5.2.4. Assignments:
@@ -1002,13 +1019,21 @@ TABLE OF CONTENTS:
             arithmetic or bitwise operator to the lhs and rhs of the
             expression before storing into the lhs.
 
+            Type:
+
+                ( e1 : @a <op>= e2 : @a ) : @a
+
 	5.2.5. Logical Or:
         
-                expr || expr
+                e1 || e2 
 
             The `||` operator returns true if the left hand side evaluates to
             true. Otherwise it returns the result of evaluating the lhs. It is
             guaranteed if the rhs is true, the lhs will not be evaluated.
+
+            Types:
+
+                ( e1 : bool || e2 : bool ) : bool
 
 	5.2.6. Logical And:
 
@@ -1018,79 +1043,277 @@ TABLE OF CONTENTS:
             false. Otherwise it returns the result of evaluating the lhs. It
             is guaranteed if the rhs is true, the lhs will not be evaluated.
 
-        5.2.7. Comparisons:
-        
-                expr == expr, expr != expr, expr > expr,
-                expr >= expr, expr < expr, expr <= expr
+            The left hand side and right hand side of the expression must
+            be of the same type. The whole expression evaluates to the type
+            of the lhs.
 
-        5.2.8. Union
-        
-                `Name rval:
+            Type:
 
-        5.2.9. Bitwise:
+                ( e1 : bool && e2 : bool ) : bool
+
+        5.2.7: Logical Negation:
+
+                !expr
+
+            Takes the boolean expression `expr` and inverts its truth value,
+            evaluating to `true` when `expr` is false, and `false` when `expr`
+            is true.
+
+            Type:
+
+                !(expr : bool) : bool
+
+        5.2.8. Equality Comparisons:
+        
+                expr == expr, expr != expr
+
+            The equality operators do a shallow identity comparison between
+            types. The `==` operator yields true if the values compare equal,
+            or false if they compare unequal. The `!=` operator evaluates to
+            the inverse of this.
+                
+            Type:
+
+                ( e1 : @a == e2 : @a ) : bool
+                ( e1 : @a != e2 : @a ) : bool
+
+        5.2.9. Relational Comparisons:
+        
+                expr > expr, expr >= expr, expr < expr, expr <= expr
+
+            The relational operators (>, >=, <, <=) compare two values
+            numerically. The `>` operator evaluates to true if its left
+            operand is greater than the right operand. The >= operand returns
+            true if the left operand is greater than or equal to the right
+            operand. The `<` and `<=` operators are similar, but compare
+            for less than.
+
+            Type:
+
+                ( e1 : @a OP e2 : @a ) : bool
+                where @a :: numeric
+
+
+        5.2.10. Union Constructors:
+        
+                `Name expr:
+
+            The union constructor operator takes the value in `expr` and wraps
+            it in a union. The type of the expression and the argument of the
+            union tag must match. The result of this expression is subject to
+            delayed unification, with a default value being the type of the
+            union the tag belongs to.
+
+            Type:
+
+                Delayed unification with the type of the union tag.
+
+        5.2.11. Bitwise:
 
                 expr | expr, expr ^ expr, expr & expr
 
-        5.2.10. Addition:
+            These operators (|, ^, &) compute the bitwise or, xor, and and
+            of their operands respectively. The arguments must be integers.
+
+            Type:
+
+                (e1 : @a OP e2:@a) : @a
+                where @a :: integral
+
+        5.2.12. Addition:
         
                 expr + expr, expr - expr:
 
-        
-        5.2.11. Multiplication:
-        
-                expr * expr
+            These operators (+, -) add and subtract their operands. For
+            integers, all operations are done in complement twos arithmetic,
+            with the same bit width as the type being operated on. For
+            floating point values, the operation is according to the IEE754
+            rules.
 
-        5.2.12. Division:
-        
-                expr / expr, expr % expr:
+            Type:
 
-        5.2.13. Shift:
+                ( e1 : @a OP e2 : @a ) : bool
+                where @a :: numeric
+
+        
+        5.2.13. Multiplication and Division
+        
+                expr * expr, expr / expr
+
+            These operators (+, -) multiply and divide their operands,
+            according to the usual arithmetic rules.
+
+            Type:
+
+                ( e1 : @a OP e2 : @a ) : bool
+                where @a :: numeric
+
+        5.2.14. Modulo:
+        
+                expr % expr
+
+            The modulo operator computes the remainder of the left operand
+            when divided by the right operand.
+
+            Type:
+
+                ( e1 : @a OP e2 : @a ) : bool
+                where @a :: (numeric,integral)
+
+        5.2.15. Shift:
 
                 expr >> expr, expr << expr
 
-        5.2.14. Preincrement:
+            The shift operators (>>, <<) perform right or left shift on their
+            operands respectively. If an operand is signed, a right shift will
+            shifts sign extend its operand. If it is unsigned, it will fill
+            the top bits with zeros.
 
-                ++expr, --expr
+            Shifting by more bits than the size of the type is implementation
+            defined.
 
-        5.2.25: Address:
+            Type:
+
+                (e1 : @a OP e2:@a) : @a
+                where @a :: integral
+
+        5.2.16: Postincrement, Postdecrement:
+
+                expr++, expr--
+
+            These expressions evaluate to `expr`, and produce a decrement after
+            the expression is fully evaluated. Multiple increments and
+            decrements within the same expression are aggregated and applied
+            together. For example:
+
+                y = x++ + x++
+
+            is equivalent to:
+
+                y = x + x
+                x += 2
+
+            The operand must be integral.
+
+            Type:
+
+                (e1++ : @a) : @a
+                (e1-- : @a) : @a
+                where @a :: integral
+
+        5.2.17: Address:
 
                 &expr
 
-        5.2.16: Dereference:
+            The `&` operator computes the address of the object referred to
+            by `expr`. `expr` must be an lvalue.
 
-                &expr
+            Type:
+            
+                &(expr : @a) : @a#
+
+        5.2.18: Dereference:
+
+                expr#
+
+            The `#` operator refers to the value at the pointer `expr`. This
+            is an lvalue, and may be stored to.
+
+            Type:
+            
+                (expr : @a#)# : @a
 
         5.2.17: Sign Operators:
 
                 -expr, +expr
 
-        5.2.18: Logical Negation:
+            The `-` operator computes the complement two negation of the value
+            `expr`. It may be applied to unsigned values. The `+` operator
+            only exists for symmetry, and is a no-op.
 
-                !expr
+            Type:
+            
+                OP(expr : @a) : @a
+
 
         5.2.19: Member Lookup:
 
                 expr.name
 
-        5.2.20: Postincrement:
+            Member lookup operates on two classes of types: User defined
+            struct and sequences. For user defined structs, the type of `expr`
+            must be a structure containing the member `name`. The result of
+            the expression is an lvalue of the type of that member.
 
-                expr++, expr--
+            For sequences such as slices or arrays, there is exactly one
+            member that may be accessed, `len`. The value returned is the
+            count of elements in the sequence.
 
-        5.2.21: Dereference:
+            Type:
 
-                expr#
+                (expr : <aggregate>).name : @a
+                (expr : <seq>).len : @idx
+                where @idx :: (integral,numeric)
 
         5.2.22: Index:
 
-                expr[expr]
+                expr[idx]
+
+            The indexing operator operates on slices and arrays. The
+            `idx`th value in the sequence is referred to. This expression
+            produces an lvalue.
+
+            If `idx` is larger than `expr.len`, then the program must
+            terminate.
+
+            Type:
+
+                (expr : @a[N])[(idx : @idx)] : @a
+                (expr : @a[:])[(idx : @idx)] : @a
+                where @idx :: (integral,numeric)
 
         5.2.23: Slice:
 
-                expr[expr:expr]
+                expr[lo:hi], expr[:hi], expr[lo:], expr[:]
+
+            The slice expression produces a sub-slice of the sequence
+            or pointer expression being sliced. The elements contained
+            in this slice are expr[lo]..expr[hi-1].
+            
+            If the lower bound is omitted, then it is implicitly zero. If the
+            upper bound is ommitted, then it is implicitly `expr.len`.
+
+            Type:
+
+                (expr : @a[N])[(lo : @lo) : (hi : @hi)] : @a[:]
+                (expr : @a[:])[(lo : @lo) : (hi : @hi)] : @a[:]
+                (expr : @#)[(lo : @lo) : (hi : @hi)] : @a[:]
+                where @lo :: (integral,numeric)
+                and   @hi :: (integral,numeric)
 
         5.2.24: Call:
 
-                expr(expr, expr, ...)
+                expr()
+                expr(arg1, arg2)
+                expr(arg1, arg2, ...)
+
+            A function call expression takes an expression of type
+            (arg, list -> ret), and applies the arguments to it,
+            producing a value of type `ret`.  The argument types and
+            arity must must match, unless the final argument is of
+            type `...`.
+
+            If the final type is `...`, then the `...` consumes as many
+            arguments as are provided, and passes both them and an
+            implementation defined description of their types to the function.
+
+
+            Type:
+
+                (expr : @fn)(e1 : @a, e2 : @b) : @ret
+                where @fn is a function of type (@a, @b -> @ret)
+                or    @fn is a function of type (@a, ... -> ret)
+                adjusted appropriately for arity.
 
 
     5.3. Blocks:
