@@ -461,38 +461,59 @@ TABLE OF CONTENTS:
 
     4.4. Generic types:
 
-            nametype:       name ["(" typeargs ")"]
+            nametype:       name ["(" typeargs ")"] | typaram
             name:           ident ["." ident]
             typeargs:       type ("," type)*
+            typaram:        "@" ident ["::" paramlist]
+            paramlist:      ident | "(" ident ("," ident)* ")"
             
 
-        A tyname is a named type, similar to a typedef in C, however it
-        genuinely creates a new type, and not an alias. There are no implicit
-        conversions, but a tyname will inherit all constraints of its
-        underlying type.
+        A nametype refers to a (potentially parameterized) named type, as
+        defined in section 4.5.
 
-        A typaram is a parametric type. It is used in generics as a
-        placeholder for a type that will be substituted in later.  It is an
-        identifier prefixed with '@'. These are only valid within generic
-        contexts, and may not appear elsewhere.
+        A typaram ("@ident") is a type parameter. It is introduced as either a
+        parameter of a generic declaration, or as a type paramteter in a
+        defined type. It can be constrained by any number of traits, as
+        described in section 4.6.
 
-        A tyvar is an internal implementation detail that currently leaks in
-        error messages out during type inference, and is a major cause of
-        confusing error messages. It should not be in this manual, except that
-        the current incarnation of the compiler will make you aware of it. It
-        looks like '@$type', and is a variable that holds an incompletely
-        inferred type.
+        These types must be specialized to a concrete type in order to be
+        used.
 
-            type mine = int             creates a tyname named
-                                        'mine', equivalent to int.
+            std.htab(@k, @v)            A hash table with key and value
+                                        types @k and @v.
 
-
-            @foo                        creates a type parameter
+            @foo                        A type parameter
                                         named '@foo'.
 
     4.5. Defined Types:
 
+            tydefn:         "type" ident "(" params ")" = type
+            params:         typaram ("," typaram)*
+
+        Users can define new types based on other types. These defined
+        types may be freely cast to the base type, but are otherwise
+        distinct.
+
+        A defined type can be given a set of parameters, which will
+        be used when specializing it at use.
+
+            type mine = int             creates a tyname named
+                                        'mine', equivalent to int.
+
+            type ptr(@a) = @a#          creates a parameterized named
+                                        type called `ptr`.
+
     4.6. Traits and Impls:
+
+            traitdef:       "trait" ident traittypes "=" traitbody ";;"
+            traittypes:     typaram ["->" type ("," type)*]
+            traitbody:      (name ":" type)*
+
+            impldef:        "impl" ident imptypes "=" implbody
+            traittypes:     type ["->" type ("," type)*]
+            traitbody:      (name [":" type] "=" expr)*
+
+        Traits act as constraints over generic parameters. 
 
     4.7. Type Inference:
 
