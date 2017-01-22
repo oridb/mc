@@ -362,132 +362,131 @@ TABLE OF CONTENTS:
         must be explicitly cast if you want to convert, and the casts must
         be of compatible types, as will be described later.
 
-            4.1.1. Primitive types:
+        4.1.1. Primitive types:
 
-                    void
-                    bool            char
-                    int8            uint8
-                    int16           uint16
-                    int32           uint32
-                    int64           uint64
-                    int             uint
-                    long            ulong
-                    float32         float64
+                void
+                bool            char
+                int8            uint8
+                int16           uint16
+                int32           uint32
+                int64           uint64
+                int             uint
+                long            ulong
+                flt32         flt64
 
-		'void' is a type and a value  although for the sake of
-		genericity, you can assign between void types, return values
-		of void, and so on.  This allows generics to not have to
-		somehow work around void being a toxic type. The void value is
-		named `void`.
+            'void' is a type and a value  although for the sake of
+            genericity, you can assign between void types, return values
+            of void, and so on.  This allows generics to not have to
+            somehow work around void being a toxic type. The void value is
+            named `void`.
 
-                It is interesting to note that these types are not keywords,
-                but are instead merely predefined identifiers in the type
-                namespace.
+            It is interesting to note that these types are not keywords,
+            but are instead merely predefined identifiers in the type
+            namespace.
 
-                bool is a type that can only hold true and false. It can be
-                assigned, tested for equality, and used in the various boolean
-                operators.
+            bool is a type that can only hold true and false. It can be
+            assigned, tested for equality, and used in the various boolean
+            operators.
 
-		char is a 32 bit integer type, and is guaranteed to hold
-		exactly one Unicode codepoint. It can be assigned integer
-		literals, tested against, compared, and all the other usual
-		numeric types.
+            char is a 32 bit integer type, and is guaranteed to hold
+            exactly one Unicode codepoint. It can be assigned integer
+            literals, tested against, compared, and all the other usual
+            numeric types.
 
-                The various [u]intXX types hold, as expected, signed and
-                unsigned integers of the named sizes respectively.
-                Similarly, floats hold floating point types with the
-                indicated precision.
+            The various [u]intXX types hold, as expected, signed and
+            unsigned integers of the named sizes respectively.
+            Similarly, floats hold floating point types with the
+            indicated precision.
 
-                    var x : int         declare x as an int
-                    var y : float32     declare y as a 32 bit float
-
-
-            4.1.2. Composite types:
-
-                    pointer
-                    slice           array
-
-                Pointers are, as expected, values that hold the address of
-                the pointed to value. They are declared by appending a '#'
-                to the type. Pointer arithmetic is not allowed. They are
-                declared by appending a '#' to the base type
-
-                Arrays are a group of N values, where N is part of the type.
-                Arrays of different sizes are incompatible. Arrays in
-                Myrddin, unlike many other languages, are passed by value.
-                They are declared by appending a '[SIZE]' to the base type.
-
-                Slices are similar to arrays in many contemporary languages.
-                They are reference types that store the length of their
-                contents. They are declared by appending a '[,]' to the base
-                type.
-
-                    foo#        type: pointer to foo
-                    foo[123]    type: array of 123 foo
-                    foo[,]      type: slice of foo
-
-            4.1.3. Aggregate types:
-
-                    tuple           struct
-                    union
-
-                Tuples are the traditional product type. They are declared
-                by putting the comma separated list of types within square
-                brackets.
-
-                Structs are aggregations of types with named members. They
-                are declared by putting the word 'struct' before a block of
-                declaration cores (ie, declarations without the storage type
-                specifier).
-
-                Unions are the traditional sum type. They consist of a tag
-                (a keyword prefixed with a '`' (backtick)) indicating their
-                current contents, and a type to hold. They are declared by
-                placing the keyword 'union' before a list of tag-type pairs.
-                They may also omit the type, in which case, the tag is
-                sufficient to determine which option was selected.
-
-                    [int, int, char]            a tuple of 2 ints and a char
-
-                    struct                      a struct containing an int named
-                        a : int                 'a', and a char named 'b'.
-                        b : char
-                    ;;
-
-                    union                       a union containing one of
-                        `Thing int              int or char. The values are not
-                        `Other float32          named, but they are tagged.
-                    ;;
+                var x : int         declare x as an int
+                var y : float32     declare y as a 32 bit float
 
 
-            4.1.4. Generic types:
+        4.1.2. Composite types:
 
-                    tyvar           typaram
-                    tyname
+                pointer
+                slice           array
 
-                A tyname is a named type, similar to a typedef in C, however
-                it genuinely creates a new type, and not an alias. There are
-                no implicit conversions, but a tyname will inherit all
-                constraints of its underlying type.
+            Pointers are, as expected, values that hold the address of
+            the pointed to value. They are declared by appending a '#'
+            to the type. Pointer arithmetic is not allowed. They are
+            declared by appending a '#' to the base type
 
-                A typaram is a parametric type. It is used in generics as
-                a placeholder for a type that will be substituted in later.
-                It is an identifier prefixed with '@'. These are only valid
-                within generic contexts, and may not appear elsewhere.
+            Arrays are a group of N values, where N is part of the type,
+            meaning that different sizes are incompatible. They are
+            passed by value. Their size must be a compile time constant.
 
-                A tyvar is an internal implementation detail that currently
-                leaks in error messages out during type inference, and is a
-                major cause of confusing error messages. It should not be in
-                this manual, except that the current incarnation of the
-                compiler will make you aware of it. It looks like '@$type',
-                and is a variable that holds an incompletely inferred type.
+            Slices are similar to arrays in many contemporary languages.
+            They are reference types that store the length of their
+            contents. They are declared by appending a '[,]' to the base
+            type.
 
-                    type mine = int             creates a tyname named
-                                                'mine', equivalent to int.
+                foo#        type: pointer to foo
+                foo[N]      type: array size N of foo
+                foo[:]      type: slice of foo
+
+        4.1.3. Aggregate types:
+
+                tuple           struct
+                union
+
+            Tuples are the traditional product type. They are declared
+            by putting the comma separated list of types within square
+            brackets.
+
+            Structs are aggregations of types with named members. They
+            are declared by putting the word 'struct' before a block of
+            declaration cores (ie, declarations without the storage type
+            specifier).
+
+            Unions are the traditional sum type. They consist of a tag
+            (a keyword prefixed with a '`' (backtick)) indicating their
+            current contents, and a type to hold. They are declared by
+            placing the keyword 'union' before a list of tag-type pairs.
+            They may also omit the type, in which case, the tag is
+            sufficient to determine which option was selected.
+
+                [int, int, char]            a tuple of 2 ints and a char
+
+                struct                      a struct containing an int named
+                    a : int                 'a', and a char named 'b'.
+                    b : char
+                ;;
+
+                union                       a union containing one of
+                    `Thing int              int or char. The values are not
+                    `Other float32          named, but they are tagged.
+                ;;
 
 
-                    @foo                        creates a type parameter
-                                                named '@foo'.
+        4.1.4. Generic types:
+
+                tyvar           typaram
+                tyname
+
+            A tyname is a named type, similar to a typedef in C, however
+            it genuinely creates a new type, and not an alias. There are
+            no implicit conversions, but a tyname will inherit all
+            constraints of its underlying type.
+
+            A typaram is a parametric type. It is used in generics as
+            a placeholder for a type that will be substituted in later.
+            It is an identifier prefixed with '@'. These are only valid
+            within generic contexts, and may not appear elsewhere.
+
+            A tyvar is an internal implementation detail that currently
+            leaks in error messages out during type inference, and is a
+            major cause of confusing error messages. It should not be in
+            this manual, except that the current incarnation of the
+            compiler will make you aware of it. It looks like '@$type',
+            and is a variable that holds an incompletely inferred type.
+
+                type mine = int             creates a tyname named
+                                            'mine', equivalent to int.
+
+
+                @foo                        creates a type parameter
+                                            named '@foo'.
     4.2. Type Inference:
 
         The myrddin type system is a system similar to the Hindley Milner
@@ -503,161 +502,113 @@ TABLE OF CONTENTS:
         It begins by initializing all leaf nodes with the most specific
         known type for them as follows:
 
-        4.6.1 Types for leaf nodes:
-
-            Variable        Type
-            ----------------------
-            var foo         $t
-
-                A type variable is the most specific type for a declaration
-                or function without any specified type
-
-            var foo : t     t
-
-                If a type is specified, that type is taken for the
-                declaration.
-
-            "asdf"          byte[:]
-
-                String literals are byte arrays.
-
-
-            'a'             char
-
-                Char literals are of type 'char'
-
-            void            void
-
-                void is a literal value of type void.
-
-            true            bool
-            false           bool
-
-                true/false are boolean literals
-
-            123             $t::(integral,numeric)
-
-                Integer literals get a fresh type variable of type with
-                the constraints for int-like types.
-
-            123.1           $t::(floating,numeric)
-
-                Float literals get a fresh type variable of type with
-                the constraints for float-like types.
-
-            {a,b:t; }       ($a,t -> $b)
-
-                Function literals get the most specific type that can
-                be determined by their signature.
-
-
-        num-binop:
-
-                +           -               *               /               %
-                +=          -=              *=              /=              %
-
-            Number binops require the constraint 'numeric' for both the
-
-        num-unary:
-            -           +
-            Number binops require the constraint 'numeric'.
-
-        int-binop:
-            |           &               ^               <<              >>
-            |=          &=              ^=              <<=             >>
-        int-unary:
-            ~           ++              --
-
-        bool-binop:
-            ||          &&              ==              !=
-            <           <=              >               >=
-
-5. VALUES AND EXPRESSIONS:
-
     5.2. Literal Values
 
         5.1.1. Atomic Literals:
 
-                literal:    strlit | chrlit | floatlit |
-                            boollit | voidlit | intlit |
+                literal:    strlit | chrlit | intlit |
+                            boollit | voidlit | floatlit |
                             funclit | seqlit | tuplit
 
                 strlit:     \"(byte|escape)*\"
                 chrlit:     \'(utf8seq|escape)\'
                 char:       <any byte value>
+                boollit:    "true"|"false"
+                voidlit:    "void"
                 escape:     <any escape sequence>
                 intlit:     "0x" digits | "0o" digits | "0b" digits | digits
                 floatlit:   digit+"."digit+["e" digit+]
-                boollit:    "true"|"false"
-                voidlit:    "void"
 
-            Integers literals are a sequence of digits, beginning with a digit
-            and possibly separated by underscores. They may be prefixed with
-            "0x" to indicate that the following number is a hexadecimal value,
-            0o to indicate an octal value, or 0b to indicate a binary value.
-            Decimal values are not prefixed.
+            5.1.1.1. String Literals:
 
-                eg: 0x123_fff, 0b1111, 0o777, 1234
+                String literals represent a compact method of representing a
+                byte array. Any byte values are allowed in a string literal,
+                and will be spit out again by the compiler unmodified, with
+                the exception of escape sequences.
 
-            Integer literals have the type `@a::(numeric,integral)`.
+                There are a number of escape sequences supported for both character
+                and string literals:
+                    \n          newline
+                    \r          carriage return
+                    \t          tab
+                    \b          backspace
+                    \"          double quote
+                    \'          single quote
+                    \v          vertical tab
+                    \\          single slash
+                    \0          nul character
+                    \xDD        single byte value, where DD are two hex digits.
+                    \u{xxx}     unicode escape, emitted as utf8.
 
-            Floating-point literals are also a sequence of digits beginning with a
-            digit and possibly separated by underscores. Floating point
-            literals are always in decimal.
+                String literals begin with a ", and continue to the next
+                unescaped ".
 
-                eg: 123.456, 10.0e7, 1_000.
+                    eg: "foo\"bar"
 
-            Floating point literals have the type `@a::(numeric,floating)`.
+                Multiple consecutive string literals are implicitly merged to create
+                a single combined string literal. To allow a string literal to span
+                across multiple lines, the new line characters must be escaped.
+                
+                    eg: "foo" \
+                        "bar"
 
-            String literals represent a compact method of representing a byte
-            array. Any byte values are allowed in a string literal, and will be
-            spit out again by the compiler unmodified, with the exception of
-            escape sequences.
+                They have the type `byte[:]`
 
-            There are a number of escape sequences supported for both character
-            and string literals:
-                \n          newline
-                \r          carriage return
-                \t          tab
-                \b          backspace
-                \"          double quote
-                \'          single quote
-                \v          vertical tab
-                \\          single slash
-                \0          nul character
-                \xDD        single byte value, where DD are two hex digits.
-                \u{xxx}     unicode escape, emitted as utf8.
+            5.1.1.2. Character Literals:
 
-            String literals begin with a ", and continue to the next
-            unescaped ".
+                Character literals represent a single codepoint in the
+                character set. A character starts with a single quote,
+                contains a single codepoint worth of text, encoded either as
+                an escape sequence or in the input character set for the
+                compiler (generally UTF8).  They share the same set of escape
+                sequences as string literals.
 
-                eg: "foo\"bar"
+                    eg: 'א', '\n', '\u{1234}'
 
-            Multiple consecutive string literals are implicitly merged to create
-            a single combined string literal. To allow a string literal to span
-            across multiple lines, the new line characters must be escaped.
-            
-                eg: "foo" \
-                    "bar"
+                They have the type `char`.
 
-            String literals have the type `byte[:]`
+            5.1.1.3. Integer Literals
 
-            Character literals represent a single codepoint in the character
-            set. A character starts with a single quote, contains a single
-            codepoint worth of text, encoded either as an escape sequence
-            or in the input character set for the compiler (generally UTF8).
-            They share the same set of escape sequences as string literals.
+                Integers literals are a sequence of digits, beginning with a digit
+                and possibly separated by underscores. They may be prefixed with
+                "0x" to indicate that the following number is a hexadecimal value,
+                0o to indicate an octal value, or 0b to indicate a binary value.
+                Decimal values are not prefixed.
 
-                eg: 'א', '\n', '\u{1234}'
+                    eg: 0x123_fff, 0b1111, 0o777, 1234
 
-            Character literals have the type `char`
+                They have the type `@a::(numeric,integral)
 
-            Boolean literals are either the keyword "true" or the keyword
-            "false".
+            5.1.1.4: Boolean Literals:
 
-                eg: true, false
+                Boolean literals are spelled `true` or `false`.
+                Unsurprisingly, they evaluate to `true` or `false`
+                respectively.
 
-            Boolean literals have the type `bool`
+                    eg: true, false
+
+                They have the type `bool`
+
+            5.1.1.4: Boolean Literals:
+
+                Void literals are spelled `void`. They evaluate to the void
+                value, a value that takes zero bytes storage, and contains
+                only the value `void`. Like my soul.
+
+                    eg: void
+
+                They have type `void`.
+
+            5.1.1.5: Floating point literals:
+
+                Floating-point literals are also a sequence of digits beginning with a
+                digit and possibly separated by underscores. Floating point
+                literals are always in decimal.
+
+                    eg: 123.456, 10.0e7, 1_000.
+
+                They have type `@a::(numeric,floating)`
+
 
         5.1.2. Sequence and Tuple Literals:
             
@@ -707,6 +658,11 @@ TABLE OF CONTENTS:
             Example: Tuple literals:
                 (1,), (1,'b',"three")
 
+            A tuple has the type of its constituent values grouped
+            into a tuple:
+
+                (@a, @b, @c, ..., @z)
+
 
         5.1.3. Function Literals:
 
@@ -748,6 +704,9 @@ TABLE OF CONTENTS:
                     var b = {; a + 1}
                 }
 
+            A function literal has the arity of its argument list,
+            and shares their type if it is provided. Otherwise,
+            they are left generic. The same applies to the return type.
 
         5.1.4: Labels:
 
