@@ -16,14 +16,16 @@ TABLE OF CONTENTS:
         3.4. Packages and Uses
         3.5. Scoping
     4. TYPES
-        4.1. Type Definitions
-        4.2. Traits and Impls
-        4.3. Generics
-        4.4. Type Inference
+        4.1. Primitive Types
+        4.2. Composite Types
+        4.3. Aggregate Types
+        4.4. Generic Types
+        4.5. Defined Types
+        4.6. Traits and Impls
+        4.7. Type Inference
     5. VALUES AND EXPRESSIONS
         5.1. Literal Values
         5.2. Expressions
-        5.3. Control Constructs
     6. CONTROL FLOW
         6.1. Blocks
         6.2. Conditionals
@@ -351,7 +353,7 @@ TABLE OF CONTENTS:
 
 4. TYPES:
 
-    4.1. Data Types:
+            type:       primitivetype | compositetype | aggrtype | nametype
 
         The language defines a number of built in primitive types. These
         are not keywords, and in fact live in a separate namespace from
@@ -362,147 +364,154 @@ TABLE OF CONTENTS:
         must be explicitly cast if you want to convert, and the casts must
         be of compatible types, as will be described later.
 
-        4.1.1. Primitive types:
+    4.1. Primitive types:
 
-                void
-                bool            char
-                int8            uint8
-                int16           uint16
-                int32           uint32
-                int64           uint64
-                int             uint
-                long            ulong
-                flt32         flt64
+        primitivetype:      misctype | inttype | flttype
+        misctype:           "void"  | "bool" | "char" | "byte"
+        inttype:             "int8" |  "uint8" |
+                            "int16" | "uint16" |
+                            "int32" | "uint32" |
+                            "int64" | "uint64" |
+                            "int"   | "uint"
+        flttype:            "flt32" | "flt64"
 
-            'void' is a type and a value  although for the sake of
-            genericity, you can assign between void types, return values
-            of void, and so on.  This allows generics to not have to
-            somehow work around void being a toxic type. The void value is
-            named `void`.
+        It is important to note that these types are not keywords, but are
+        instead merely predefined identifiers in the type namespace.
 
-            It is interesting to note that these types are not keywords,
-            but are instead merely predefined identifiers in the type
-            namespace.
+        'void' is a type containing exactly one value, `void`. It is a full
+        first class value, which can be assigned between variables, stored in
+        arrays, and used in any place any other type is used.  Void has size
+        `0`.
 
-            bool is a type that can only hold true and false. It can be
-            assigned, tested for equality, and used in the various boolean
-            operators.
+        bool is a type that can only hold true and false. It can be assigned,
+        tested for equality, and used in the various boolean operators.
 
-            char is a 32 bit integer type, and is guaranteed to hold
-            exactly one Unicode codepoint. It can be assigned integer
-            literals, tested against, compared, and all the other usual
-            numeric types.
+        char is a 32 bit integer type, and is guaranteed to hold exactly one
+        Unicode codepoint. It can be assigned integer literals, tested
+        against, compared, and all the other usual numeric types.
 
-            The various [u]intXX types hold, as expected, signed and
-            unsigned integers of the named sizes respectively.
-            Similarly, floats hold floating point types with the
-            indicated precision.
+        The various [u]intN types hold, as expected, signed and unsigned
+        integers of the named sizes respectively. All arithmetic on them is
+        done in complement twos of bit size N.
 
-                var x : int         declare x as an int
-                var y : float32     declare y as a 32 bit float
+        Similarly, floats hold floating point types with the indicated
+        precision. They are operated on according to the IEEE754 rules.
+
+            var x : int         declare x as an int
+            var y : float32     declare y as a 32 bit float
 
 
-        4.1.2. Composite types:
+    4.2. Composite types:
 
-                pointer
-                slice           array
+            compositetype:  ptrtype | slicetype | arraytype
+            ptrtype:        type "#"
+            slicetype:      type "[" ":" "]"
+            arraytype:      type "[" expr "]" | type "[" "..." "]"
 
-            Pointers are, as expected, values that hold the address of
-            the pointed to value. They are declared by appending a '#'
-            to the type. Pointer arithmetic is not allowed. They are
-            declared by appending a '#' to the base type
+        Pointers are, as expected, values that hold the address of the pointed
+        to value. They are declared by appending a '#' to the type. Pointer
+        arithmetic is not allowed. They are declared by appending a '#' to the
+        base type
 
-            Arrays are a group of N values, where N is part of the type,
-            meaning that different sizes are incompatible. They are
-            passed by value. Their size must be a compile time constant.
+        Arrays are a group of N values, where N is part of the type, meaning
+        that different sizes are incompatible. They are passed by value. Their
+        size must be a compile time constant.
 
-            Slices are similar to arrays in many contemporary languages.
-            They are reference types that store the length of their
-            contents. They are declared by appending a '[,]' to the base
-            type.
+        If the array size is specified as "...", then the array has zero bytes
+        allocated to store it, and bounds are not checked.  This is used to
+        facilitate flexible arrays at the end of a struct, as well as C ABI.
 
-                foo#        type: pointer to foo
-                foo[N]      type: array size N of foo
-                foo[:]      type: slice of foo
+        Slices are similar to arrays in many contemporary languages.  They are
+        reference types that store the length of their contents. They are
+        declared by appending a '[,]' to the base type.
 
-        4.1.3. Aggregate types:
+            foo#        type: pointer to foo
+            foo[N]      type: array size N of foo
+            foo[:]      type: slice of foo
 
-                tuple           struct
-                union
+    4.3. Aggregate types:
 
-            Tuples are the traditional product type. They are declared
-            by putting the comma separated list of types within square
-            brackets.
+            aggrtype:       tupletype | structtype | uniontype
+            tupletype:      "(" (tupleelt ",")+ ")"
+            structtype:     "struct" "\n" (declcore "\n"| "\n")* ";;"
+            uniontype:      "union" "\n" ("`" Ident [type] "\n"| "\n")* ";;"
 
-            Structs are aggregations of types with named members. They
-            are declared by putting the word 'struct' before a block of
-            declaration cores (ie, declarations without the storage type
-            specifier).
+        Tuples are the traditional product type. They are declared by putting
+        the comma separated list of types within square brackets.
 
-            Unions are the traditional sum type. They consist of a tag
-            (a keyword prefixed with a '`' (backtick)) indicating their
-            current contents, and a type to hold. They are declared by
-            placing the keyword 'union' before a list of tag-type pairs.
-            They may also omit the type, in which case, the tag is
-            sufficient to determine which option was selected.
+        Structs are aggregations of types with named members. They are
+        declared by putting the word 'struct' before a block of declaration
+        cores (ie, declarations without the storage type specifier).
 
-                [int, int, char]            a tuple of 2 ints and a char
+        Unions are a traditional sum type. The tag defines the value that may
+        be held by the type at the current time. If the tag has an argument,
+        then this value may be extracted with a pattern match. Otherwise, only
+        the tag may be matched against.
 
-                struct                      a struct containing an int named
-                    a : int                 'a', and a char named 'b'.
-                    b : char
-                ;;
+            (int, int, char)            a tuple of 2 ints and a char
 
-                union                       a union containing one of
-                    `Thing int              int or char. The values are not
-                    `Other float32          named, but they are tagged.
-                ;;
+            struct                      a struct containing an int named a :
+            int                 'a', and a char named 'b'.  b : char ;;
 
-
-        4.1.4. Generic types:
-
-                tyvar           typaram
-                tyname
-
-            A tyname is a named type, similar to a typedef in C, however
-            it genuinely creates a new type, and not an alias. There are
-            no implicit conversions, but a tyname will inherit all
-            constraints of its underlying type.
-
-            A typaram is a parametric type. It is used in generics as
-            a placeholder for a type that will be substituted in later.
-            It is an identifier prefixed with '@'. These are only valid
-            within generic contexts, and may not appear elsewhere.
-
-            A tyvar is an internal implementation detail that currently
-            leaks in error messages out during type inference, and is a
-            major cause of confusing error messages. It should not be in
-            this manual, except that the current incarnation of the
-            compiler will make you aware of it. It looks like '@$type',
-            and is a variable that holds an incompletely inferred type.
-
-                type mine = int             creates a tyname named
-                                            'mine', equivalent to int.
+            union                       a union containing one of
+                `Thing int              int or char. The values are not
+                `Other float32          named, but they are tagged.
+            ;;
 
 
-                @foo                        creates a type parameter
-                                            named '@foo'.
-    4.2. Type Inference:
+    4.4. Generic types:
+
+            nametype:       name ["(" typeargs ")"]
+            name:           ident ["." ident]
+            typeargs:       type ("," type)*
+            
+
+        A tyname is a named type, similar to a typedef in C, however it
+        genuinely creates a new type, and not an alias. There are no implicit
+        conversions, but a tyname will inherit all constraints of its
+        underlying type.
+
+        A typaram is a parametric type. It is used in generics as a
+        placeholder for a type that will be substituted in later.  It is an
+        identifier prefixed with '@'. These are only valid within generic
+        contexts, and may not appear elsewhere.
+
+        A tyvar is an internal implementation detail that currently leaks in
+        error messages out during type inference, and is a major cause of
+        confusing error messages. It should not be in this manual, except that
+        the current incarnation of the compiler will make you aware of it. It
+        looks like '@$type', and is a variable that holds an incompletely
+        inferred type.
+
+            type mine = int             creates a tyname named
+                                        'mine', equivalent to int.
+
+
+            @foo                        creates a type parameter
+                                        named '@foo'.
+
+    4.5. Defined Types:
+
+    4.6. Traits and Impls:
+
+    4.7. Type Inference:
 
         The myrddin type system is a system similar to the Hindley Milner
         system, however, types are not implicitly generalized. Instead, type
-        schemes (type parameters, in Myrddin lingo) must be explicitly provided
-        in the declarations. For purposes of brevity, instead of specifying type
-        rules for every operator, we group operators which behave identically
-        from the type system perspective into a small set of classes. and define
-        the constraints that they require.
+        schemes (type parameters, in Myrddin lingo) must be explicitly
+        provided in the declarations. For purposes of brevity, instead of
+        specifying type rules for every operator, we group operators which
+        behave identically from the type system perspective into a small set
+        of classes. and define the constraints that they require.
 
-        Type inference in Myrddin operates as a bottom up tree walk,
-        applying the type equations for the operator to its arguments.
-        It begins by initializing all leaf nodes with the most specific
-        known type for them as follows:
+        Type inference in Myrddin operates as a bottom up tree walk, applying
+        the type equations for the operator to its arguments.  It begins by
+        initializing all leaf nodes with the most specific known type for them
+        as follows:
 
-    5.2. Literal Values
+5. VALUES AND EXPRESSIONS
+
+    5.1. Literal Values
 
         5.1.1. Atomic Literals:
 
@@ -1275,7 +1284,14 @@ TABLE OF CONTENTS:
                 adjusted appropriately for arity.
 
 
-    5.3. Blocks:
+
+6. CONTROL FLOW
+
+    The control statements in Myrddin are similar to those in many other
+    popular languages, and with the exception of 'match', there should
+    be no surprises to a user of any of the Algol derived languages.
+
+    6.1. Blocks:
 
             block:      blockbody ";;"
             blockbody:  (decl | stmt | tydef | "\n")*
@@ -1293,35 +1309,12 @@ TABLE OF CONTENTS:
         limited to within the block, and any attempts to access the associated
         storage (via pointer, for example) is not valid.
 
-    5.5. Control Constructs:
+    6.2. Conditionals
 
             ifstmt:     "if" cond "\n" blockbody
                         ("elif" blockbody)*
                         ["else" blockbody] ";;"
 
-            forstmt:    foriter | foreach
-            foreach:    "for" pattern "in" expr "\n" block
-            foriter:    "for" init "\n" cond "\n" step "\n" block
-
-            whilestmt:  "while" cond "\n" block
-
-            matchstmt:  "match" expr "\n" matchpat* ";;"
-            matchpat:   "|" pat ":" blockbody
-
-            
-            goto
-
-        The control statements in Myrddin are similar to those in many other
-        popular languages, and with the exception of 'match', there should
-        be no surprises to a user of any of the Algol derived languages.
-
-        Blocks are the "carriers of code" in Myrddin programs. They consist
-        of series of expressions, typically ending with a ';;', although the
-        function-level block ends at the function's '}', and in if
-        statements, an 'elif' may terminate a block. They can contain any
-        number of declarations, expressions, control constructs, and empty
-        lines. Every control statement example below will (and, in fact,
-        must) have a block attached to the control statement.
 
         If statements branch one way or the other depending on the truth
         value of their argument. The truth statement is separated from the
@@ -1335,35 +1328,10 @@ TABLE OF CONTENTS:
                 std.put("The program never gets here")
             ;;
 
-        For statements come in two forms. There are the C style for loops
-        which begin with an initializer, followed by a test condition,
-        followed by an increment action. For statements run the initializer
-        once before the loop is run, the test each on each iteration through
-        the loop before the body, and the increment on each iteration after
-        the body. If the loop is broken out of early (for example, by a goto),
-        the final increment will not be run. The syntax is as follows:
+    6.3. Matches
 
-            for init; test; increment
-                blockbody()
-            ;;
-
-        The second form is the collection iteration form. This form allows
-        for iterating over a collection of values contained within something
-        which is iterable. Currently, only the built in sequences -- arrays
-        and slices -- can be iterated, however, there is work going towards
-        allowing user defined iterables.
-
-            for pat in expr
-                blockbody()
-            ;;
-
-        The pattern applied in the for loop is a full match statement style
-        pattern match, and will filter any elements in the iteration
-        expression which do not match the value.
-
-        While loops are equivalent to for loops with empty initializers
-        and increments. They run the test on every iteration of the loop,
-        and exit only if it returns false.
+            matchstmt:  "match" expr "\n" matchpat* ";;"
+            matchpat:   "|" pat ":" blockbody
 
         Match statements do pattern matching on values. They take as an
         argument a value of type 't', and match it against a list of other
@@ -1416,7 +1384,47 @@ TABLE OF CONTENTS:
                 std.put("Unreachable block.")
             ;;
 
+    6.4. Looping
 
+            forstmt:    foriter | foreach
+            foreach:    "for" pattern "in" expr "\n" block
+            foriter:    "for" init "\n" cond "\n" step "\n" block
+            whilestmt:  "while" cond "\n" block
+
+        For statements come in two forms. There are the C style for loops
+        which begin with an initializer, followed by a test condition,
+        followed by an increment action. For statements run the initializer
+        once before the loop is run, the test each on each iteration through
+        the loop before the body, and the increment on each iteration after
+        the body. If the loop is broken out of early (for example, by a goto),
+        the final increment will not be run. The syntax is as follows:
+
+            for init; test; increment
+                blockbody()
+            ;;
+
+        The second form is the collection iteration form. This form allows
+        for iterating over a collection of values contained within something
+        which is iterable. Currently, only the built in sequences -- arrays
+        and slices -- can be iterated, however, there is work going towards
+        allowing user defined iterables.
+
+            for pat in expr
+                blockbody()
+            ;;
+
+        The pattern applied in the for loop is a full match statement style
+        pattern match, and will filter any elements in the iteration
+        expression which do not match the value.
+
+        While loops are equivalent to for loops with empty initializers
+        and increments. They run the test on every iteration of the loop,
+        and exit only if it returns false.
+
+    6.5. Goto
+
+            label:      ":" ident
+            goto:       goto ident
 
 6. GRAMMAR:
 
