@@ -139,39 +139,39 @@ TABLE OF CONTENTS:
         A file is composed of a sequence of top level elements. These
         top level elements consist of:
 
-            - Declarations:
+        - Declarations:
 
-                These define a constant or a variable. It's worth noting
-                that Myrddin has no special syntax for declaring functions,
-                but instead assigns a closure to a variable or constant.
+            These define a constant or a variable. It's worth noting
+            that Myrddin has no special syntax for declaring functions,
+            but instead assigns a closure to a variable or constant.
 
-            - Package Definitions:
+        - Package Definitions:
 
-                These define the list of exported values from a file. As
-                part of compilation, all the exported names from a package
-                will get merged together from all the files being built
-                into that package.
+            These define the list of exported values from a file. As
+            part of compilation, all the exported names from a package
+            will get merged together from all the files being built
+            into that package.
 
-            - Use Statements:
+        - Use Statements:
 
-                These import symbols for use within the file. These symbols
-                come from either installed packages or files within the
-                project being compiled.
+            These import symbols for use within the file. These symbols
+            come from either installed packages or files within the
+            project being compiled.
 
-            - Type Definitions:
+        - Type Definitions:
 
-                These define new types.
+            These define new types.
 
-            - Trait Definitions:
+        - Trait Definitions:
 
-                These define traits, which are attributes on types that
-                may be implemented by impl functions. They define required
-                functions on the type.
+            These define traits, which are attributes on types that
+            may be implemented by impl functions. They define required
+            functions on the type.
 
-            - Impl Statements:
+        - Impl Statements:
 
-                These define implementations of traits, allowing an 
-                existing trait to be attached to an existing type.
+            These define implementations of traits, allowing an 
+            existing trait to be attached to an existing type.
 
     3.3. Declarations:
 
@@ -254,9 +254,10 @@ TABLE OF CONTENTS:
 
     3.4. Packages and Uses
 
+	    package:	"pkg" ident = decl* ";;"
+            use:        bareuse | quoteuse
 	    bareuse:	use ident
 	    quoteuse:	use "<quoted string>"
-	    pkgdef:	"pkg" ident = decl* ";;"
 
 
         There are two keywords for module system. 'use' is the simpler
@@ -487,7 +488,7 @@ TABLE OF CONTENTS:
 
     4.5. Defined Types:
 
-            tydefn:         "type" ident "(" params ")" = type
+            tydef:          "type" ident "(" params ")" = type
             params:         typaram ("," typaram)*
 
         Users can define new types based on other types. These defined
@@ -509,7 +510,7 @@ TABLE OF CONTENTS:
             traittypes:     typaram ["->" type ("," type)*]
             traitbody:      (name ":" type)*
 
-            impldef:        "impl" ident imptypes "=" implbody
+            implstmt:        "impl" ident imptypes "=" implbody
             traittypes:     type ["->" type ("," type)*]
             traitbody:      (name [":" type] "=" expr)*
 
@@ -525,10 +526,6 @@ TABLE OF CONTENTS:
         behave identically from the type system perspective into a small set
         of classes. and define the constraints that they require.
 
-        Type inference in Myrddin operates as a bottom up tree walk, applying
-        the type equations for the operator to its arguments.  It begins by
-        initializing all leaf nodes with the most specific known type for them
-        as follows:
 
 5. VALUES AND EXPRESSIONS
 
