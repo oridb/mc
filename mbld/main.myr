@@ -86,6 +86,10 @@ const main = {args : byte[:][:]
 		;;
 	;;
 
+	for (e, v) in config.Env
+		std.setenv(e, v)
+	;;
+
 	b = mkbuild(tags)
 	if targname.len != 0
 		buildimm(b, targname, cmd.args, bintarg, cleanfirst)

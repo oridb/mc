@@ -48,6 +48,7 @@ echo "pkg config = " >> mbld/config.myr
 symprefix='""'
 defaultasm='Gnugaself'
 sysinit=''
+env='[][:]'
 case $OS in
     *Linux*)
         echo 'export SYS=linux' >> config.mk
@@ -64,6 +65,7 @@ case $OS in
             '"-pagezero_size", "0x100000000",' \
             '"-macosx_version_min", "10.6",'\
             '"-o"]' >> mbld/config.myr
+	env='[("MACOSX_DEPLOYMENT_TARGET", "10.6")][:]'
         ;;
     *FreeBSD*)
         echo 'export SYS=freebsd' >> config.mk
@@ -108,6 +110,7 @@ echo "const Manpath = \"share/man/man\"" >> mbld/config.myr
 echo "const Sharepath = \"share\"" >> mbld/config.myr
 echo "const Binpath = \"bin\"" >> mbld/config.myr
 echo "const Libpath = \"lib/myr\"" >> mbld/config.myr
+echo "const Env : (byte[:], byte[:])[:] = $env" >> mbld/config.myr
 
 
 case $MACH in
