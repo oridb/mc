@@ -19,7 +19,7 @@ OFILES= \
 	type.$O \
 	use.$O \
 
-HFILES=parse.h ../util/util.h ../config.h
+HFILES=parse.h ../util/util.h ../config.h gram.h
 CLEANFILES=gram.c gram.h
 
 </sys/src/cmd/mklib
