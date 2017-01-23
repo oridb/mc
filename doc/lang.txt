@@ -11,7 +11,7 @@ TABLE OF CONTENTS:
         2.2. As-If Rule
     3. STRUCTURE:
         3.1. Whitespace and Keywords
-        3.2. File Structure
+        3.2. Top Level Structure
         3.3. Declarations
         3.4. Packages and Uses
         3.5. Scoping
@@ -19,10 +19,10 @@ TABLE OF CONTENTS:
         4.1. Primitive Types
         4.2. Composite Types
         4.3. Aggregate Types
+        4.5. Named Types
         4.4. Generic Types
-        4.5. Defined Types
-        4.6. Traits and Impls
-        4.7. Type Inference
+        4.7. Traits and Impls
+        4.8. Type Inference
     5. VALUES AND EXPRESSIONS
         5.1. Literal Values
         5.2. Expressions
@@ -132,7 +132,7 @@ TABLE OF CONTENTS:
         interchangable. They both are used to mark the end of logical lines,
         and will be uniformly referred to as line terminators.
 
-    3.2. File Structure:
+    3.2. Top Level Structure:
 
             file:       (decl | package | use | implstmt | traitdef | tydef)*
 
@@ -459,12 +459,8 @@ TABLE OF CONTENTS:
                 `Other float32          named, but they are tagged.
             ;;
 
-
     4.4. Generic types:
 
-            nametype:       name ["(" typeargs ")"] | typaram
-            name:           ident ["." ident]
-            typeargs:       type ("," type)*
             typaram:        "@" ident ["::" paramlist]
             paramlist:      ident | "(" ident ("," ident)* ")"
             
@@ -480,41 +476,99 @@ TABLE OF CONTENTS:
         These types must be specialized to a concrete type in order to be
         used.
 
-            std.htab(@k, @v)            A hash table with key and value
-                                        types @k and @v.
-
             @foo                        A type parameter
                                         named '@foo'.
+    4.6. Named Types:
 
-    4.5. Defined Types:
-
-            tydef:          "type" ident "(" params ")" = type
+            tydef:          "type" ident ["(" params ")"] = type
             params:         typaram ("," typaram)*
 
-        Users can define new types based on other types. These defined
-        types may be freely cast to the base type, but are otherwise
-        distinct.
+            nametype:       name ["(" typeargs ")"]
+            typeargs:       type ("," type)*
 
-        A defined type can be given a set of parameters, which will
-        be used when specializing it at use.
 
-            type mine = int             creates a tyname named
-                                        'mine', equivalent to int.
+        Users can define new types based on other types. These named 
+        types may optionally have parameters, which make the type into
+        a parameterized type.
+        
+        For example:
 
-            type ptr(@a) = @a#          creates a parameterized named
-                                        type called `ptr`.
+            type size = int64
+
+        would define a new type, distinct from int64, but inheriting
+        the same traits.
+
+            type list(@a) = struct
+                next : list(@a)#
+                val : @a
+            ;;
+
+        would define a parameterized type named `list`, which takes a single
+        type parameter `@a`. When this type is used, it must be supplied a
+        type argument, which will be substituted throughout the right hand
+        side of the type definition. For example:
+
+            var x : list(int)
+
+        would specialize the above list type to an integer. All
+        specializations with compatible types are compatible. All
+        specializations with incompatible types are not compatible.
+
 
     4.6. Traits and Impls:
 
-            traitdef:       "trait" ident traittypes "=" traitbody ";;"
-            traittypes:     typaram ["->" type ("," type)*]
-            traitbody:      (name ":" type)*
+        4.6.1. Traits:
 
-            implstmt:        "impl" ident imptypes "=" implbody
-            traittypes:     type ["->" type ("," type)*]
-            traitbody:      (name [":" type] "=" expr)*
+                traitdef:       "trait" ident traittypes "=" traitbody ";;"
+                traittypes:     typaram ["->" type ("," type)*]
+                traitbody:      (name ":" type)*
 
-        Traits act as constraints over generic parameters. 
+            Traits provide an interface that types implementing the trait
+            must conform to. They are defined using the `trait` keyword,
+            and implemented using the `impl` keyword.
+
+            A trait is defined over a primary type, and may also define
+            a number of auxiliary types that the implementation can make
+            more specific. The body of the trait lists a number of
+            declarations that must be implemented by the implementation of the
+            trait. This body may be empty.
+            
+            For example:
+
+                trait foo @a = ;;
+
+            defines a trait named `foo`. This trait has an empty body. It
+            applies over a type parameter named @a.
+
+            The definition:
+
+                trait foo @a -> @aux = ;;
+
+            is similar, but also has a single auxiliary type. This type can be
+            used to associate types with the primary type when the impl is
+            specialized. For example:
+
+                trait gettable @container -> @contained =
+                    const get : (c : @container -> @contained)
+                ;;
+
+            would define a trait that requires a get function which accepts
+            a parameter of type `@container`, and returns a value of type
+            `@contained`.
+
+        4.6.2. Impls:
+
+                implstmt:        "impl" ident imptypes "=" implbody
+                traittypes:     type ["->" type ("," type)*]
+                traitbody:      (name [":" type] "=" expr)*
+
+            Impls take the interfaces provided by traits, and attach them
+            to types, as well as providing the concrete implementation of
+            these types. The declarations are inserted into the global
+            namespace, and act identically to generics in.
+
+            The declarations need not be functions.
+
 
     4.7. Type Inference:
 
