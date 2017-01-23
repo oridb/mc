@@ -17,12 +17,10 @@ TABLE OF CONTENTS:
         3.5. Scoping
     4. TYPES
         4.1. Primitive Types
-        4.2. Composite Types
-        4.3. Aggregate Types
-        4.5. Named Types
-        4.4. Generic Types
-        4.7. Traits and Impls
-        4.8. Type Inference
+        4.2. User Defined Types
+        4.3. Generic Types
+        4.4. Traits and Impls
+        4.5. Type Inference
     5. VALUES AND EXPRESSIONS
         5.1. Literal Values
         5.2. Expressions
@@ -402,64 +400,101 @@ TABLE OF CONTENTS:
             var y : float32     declare y as a 32 bit float
 
 
-    4.2. Composite types:
+    4.2. User Defined Types:
 
-            compositetype:  ptrtype | slicetype | arraytype
-            ptrtype:        type "#"
-            slicetype:      type "[" ":" "]"
-            arraytype:      type "[" expr "]" | type "[" "..." "]"
+        4.2.1: Composite Types
 
-        Pointers are, as expected, values that hold the address of the pointed
-        to value. They are declared by appending a '#' to the type. Pointer
-        arithmetic is not allowed. They are declared by appending a '#' to the
-        base type
+                compositetype:  ptrtype | slicetype | arraytype
+                ptrtype:        type "#"
+                slicetype:      type "[" ":" "]"
+                arraytype:      type "[" expr "]" | type "[" "..." "]"
 
-        Arrays are a group of N values, where N is part of the type, meaning
-        that different sizes are incompatible. They are passed by value. Their
-        size must be a compile time constant.
+            Pointers are, as expected, values that hold the address of the pointed
+            to value. They are declared by appending a '#' to the type. Pointer
+            arithmetic is not allowed. They are declared by appending a '#' to the
+            base type
 
-        If the array size is specified as "...", then the array has zero bytes
-        allocated to store it, and bounds are not checked.  This is used to
-        facilitate flexible arrays at the end of a struct, as well as C ABI.
+            Arrays are a group of N values, where N is part of the type, meaning
+            that different sizes are incompatible. They are passed by value. Their
+            size must be a compile time constant.
 
-        Slices are similar to arrays in many contemporary languages.  They are
-        reference types that store the length of their contents. They are
-        declared by appending a '[,]' to the base type.
+            If the array size is specified as "...", then the array has zero bytes
+            allocated to store it, and bounds are not checked.  This is used to
+            facilitate flexible arrays at the end of a struct, as well as C ABI.
 
-            foo#        type: pointer to foo
-            foo[N]      type: array size N of foo
-            foo[:]      type: slice of foo
+            Slices are similar to arrays in many contemporary languages.  They are
+            reference types that store the length of their contents. They are
+            declared by appending a '[,]' to the base type.
 
-    4.3. Aggregate types:
+                foo#        type: pointer to foo
+                foo[N]      type: array size N of foo
+                foo[:]      type: slice of foo
 
-            aggrtype:       tupletype | structtype | uniontype
-            tupletype:      "(" (tupleelt ",")+ ")"
-            structtype:     "struct" "\n" (declcore "\n"| "\n")* ";;"
-            uniontype:      "union" "\n" ("`" Ident [type] "\n"| "\n")* ";;"
+        4.2.2. Aggregate types:
 
-        Tuples are the traditional product type. They are declared by putting
-        the comma separated list of types within square brackets.
+                aggrtype:       tupletype | structtype | uniontype
+                tupletype:      "(" (tupleelt ",")+ ")"
+                structtype:     "struct" "\n" (declcore "\n"| "\n")* ";;"
+                uniontype:      "union" "\n" ("`" Ident [type] "\n"| "\n")* ";;"
 
-        Structs are aggregations of types with named members. They are
-        declared by putting the word 'struct' before a block of declaration
-        cores (ie, declarations without the storage type specifier).
+            Tuples are the traditional product type. They are declared by putting
+            the comma separated list of types within square brackets.
 
-        Unions are a traditional sum type. The tag defines the value that may
-        be held by the type at the current time. If the tag has an argument,
-        then this value may be extracted with a pattern match. Otherwise, only
-        the tag may be matched against.
+            Structs are aggregations of types with named members. They are
+            declared by putting the word 'struct' before a block of declaration
+            cores (ie, declarations without the storage type specifier).
 
-            (int, int, char)            a tuple of 2 ints and a char
+            Unions are a traditional sum type. The tag defines the value that may
+            be held by the type at the current time. If the tag has an argument,
+            then this value may be extracted with a pattern match. Otherwise, only
+            the tag may be matched against.
 
-            struct                      a struct containing an int named a :
-            int                 'a', and a char named 'b'.  b : char ;;
+                (int, int, char)            a tuple of 2 ints and a char
 
-            union                       a union containing one of
-                `Thing int              int or char. The values are not
-                `Other float32          named, but they are tagged.
-            ;;
+                struct                      a struct containing an int named a :
+                int                 'a', and a char named 'b'.  b : char ;;
 
-    4.4. Generic types:
+                union                       a union containing one of
+                    `Thing int              int or char. The values are not
+                    `Other float32          named, but they are tagged.
+                ;;
+
+        4.2.3. Named Types:
+
+                tydef:          "type" ident ["(" params ")"] = type
+                params:         typaram ("," typaram)*
+
+                nametype:       name ["(" typeargs ")"]
+                typeargs:       type ("," type)*
+
+
+            Users can define new types based on other types. These named 
+            types may optionally have parameters, which make the type into
+            a parameterized type.
+            
+            For example:
+
+                type size = int64
+
+            would define a new type, distinct from int64, but inheriting
+            the same traits.
+
+                type list(@a) = struct
+                    next : list(@a)#
+                    val : @a
+                ;;
+
+            would define a parameterized type named `list`, which takes a single
+            type parameter `@a`. When this type is used, it must be supplied a
+            type argument, which will be substituted throughout the right hand
+            side of the type definition. For example:
+
+                var x : list(int)
+
+            would specialize the above list type to an integer. All
+            specializations with compatible types are compatible.
+
+    4.3. Generic types:
 
             typaram:        "@" ident ["::" paramlist]
             paramlist:      ident | "(" ident ("," ident)* ")"
@@ -478,46 +513,10 @@ TABLE OF CONTENTS:
 
             @foo                        A type parameter
                                         named '@foo'.
-    4.6. Named Types:
 
-            tydef:          "type" ident ["(" params ")"] = type
-            params:         typaram ("," typaram)*
+    4.4. Traits and Impls:
 
-            nametype:       name ["(" typeargs ")"]
-            typeargs:       type ("," type)*
-
-
-        Users can define new types based on other types. These named 
-        types may optionally have parameters, which make the type into
-        a parameterized type.
-        
-        For example:
-
-            type size = int64
-
-        would define a new type, distinct from int64, but inheriting
-        the same traits.
-
-            type list(@a) = struct
-                next : list(@a)#
-                val : @a
-            ;;
-
-        would define a parameterized type named `list`, which takes a single
-        type parameter `@a`. When this type is used, it must be supplied a
-        type argument, which will be substituted throughout the right hand
-        side of the type definition. For example:
-
-            var x : list(int)
-
-        would specialize the above list type to an integer. All
-        specializations with compatible types are compatible. All
-        specializations with incompatible types are not compatible.
-
-
-    4.6. Traits and Impls:
-
-        4.6.1. Traits:
+        4.4.1. Traits:
 
                 traitdef:       "trait" ident traittypes "=" traitbody ";;"
                 traittypes:     typaram ["->" type ("," type)*]
@@ -556,7 +555,7 @@ TABLE OF CONTENTS:
             a parameter of type `@container`, and returns a value of type
             `@contained`.
 
-        4.6.2. Impls:
+        4.4.2. Impls:
 
                 implstmt:        "impl" ident imptypes "=" implbody
                 traittypes:     type ["->" type ("," type)*]
@@ -570,16 +569,50 @@ TABLE OF CONTENTS:
             The declarations need not be functions.
 
 
-    4.7. Type Inference:
+    4.5. Type Inference:
 
-        The myrddin type system is a system similar to the Hindley Milner
-        system, however, types are not implicitly generalized. Instead, type
-        schemes (type parameters, in Myrddin lingo) must be explicitly
-        provided in the declarations. For purposes of brevity, instead of
-        specifying type rules for every operator, we group operators which
-        behave identically from the type system perspective into a small set
-        of classes. and define the constraints that they require.
+        4.7.1. Overview:
 
+            Myrddin uses a variant on the Hindley Milner type system. The
+            largest divergence is the lack of implicit generalization when
+            a type is unconstrained. In Myrddin, this unconstrained type
+            results in a type checking failure.
+
+            In the Myrddin type system, each leaf expression is assigned
+            an appropriate type, or a placeholder indicated by `$n`. Then,
+            expressions and declarations are walked over and unified,
+            fixing and constraining the types, as well as recording delayed
+            unifications where needed.
+
+            Delayed unifications and default types are then applied, and
+            the unit of the program is checked for underconstrained types.
+
+        4.7.2. Unification
+
+            When an expression is applied, the types are unified according to
+            the type of the operator, as specified in section 5.2. The type of
+            the operator is freshened, replacing @t with $n. This produces
+            the appropriate type variables. Then the left hand and right hand
+            side of the of the expression are unified with this freshened
+            type equation.
+
+
+
+        4.7.3. Delayed Unification
+
+            In order to allow for the assignment of literals to defined types,
+            when a union literal or integer literal has its type inferred,
+            instead of immediately unifying it with a concrete type, a delayed
+            unification is recorded. Because checking the validity of members
+            is impossible when the base type is not known, member lookups are
+            also inserted into the delayed unification list.
+
+            After the initial unification pass is complete, the delayed
+            unification list is walked, and any unifications on this list
+            are applied. Because a delayed unification may complete members
+            and permit additional auxiliary type lookups, this step may need
+            to be repeated a number of times, although this is rare: Usually
+            a single pass suffices.
 
 5. VALUES AND EXPRESSIONS
 
