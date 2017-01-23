@@ -216,7 +216,7 @@ static void flattencond(Flattenctx *s, Node *n, Node *ltrue, Node *lfalse)
 	}
 }
 
-/* flattenlifies 
+/* flatten
  *      a || b
  * to
  *      if a || b
@@ -238,6 +238,7 @@ static Node *flattenlazy(Flattenctx *s, Node *n)
 
 	/* flatten the conditional */
 	flattencond(s, n, ltrue, lfalse);
+
 
 	/* if true */
 	append(s, ltrue);
@@ -570,10 +571,13 @@ static void flattenloop(Flattenctx *s, Node *n)
 {
 	Node *lbody;
 	Node *lend;
+	Node *ldec;
 	Node *lcond;
 	Node *lstep;
+	size_t i;
 
 	lbody = genlbl(n->loc);
+	ldec = genlbl(n->loc);
 	lcond = genlbl(n->loc);
 	lstep = genlbl(n->loc);
 	lend = genlbl(n->loc);
@@ -588,8 +592,16 @@ static void flattenloop(Flattenctx *s, Node *n)
 	flatten(s, lstep);             /* test lbl */
 	flatten(s, n->loopstmt.step);  /* step */
 	flatten(s, lcond);             /* test lbl */
-	flattencond(s, n->loopstmt.cond, lbody, lend);    /* repeat? */
-	flatten(s, lend);              /* exit */
+	flattencond(s, n->loopstmt.cond, ldec, lend);    /* repeat? */
+	flatten(s, ldec);        	/* drain decrements */
+	for (i = 0; i < s->nqueue; i++)
+		append(s, s->incqueue[i]);
+	jmp(s, lbody);              	/* goto test */
+	flatten(s, lend);             	/* exit */
+
+	for (i = 0; i < s->nqueue; i++)
+		append(s, s->incqueue[i]);
+	lfree(&s->incqueue, &s->nqueue);
 
 	s->nloopstep--;
 	s->nloopexit--;
@@ -601,6 +613,7 @@ static void flattenif(Flattenctx *s, Node *n, Node *exit)
 {
 	Node *l1, *l2, *l3;
 	Node *iftrue, *iffalse;
+	size_t i;
 
 	l1 = genlbl(n->loc);
 	l2 = genlbl(n->loc);
@@ -614,9 +627,15 @@ static void flattenif(Flattenctx *s, Node *n, Node *exit)
 
 	flattencond(s, n->ifstmt.cond, l1, l2);
 	flatten(s, l1);
+	for (i = 0; i < s->nqueue; i++)
+		append(s, s->incqueue[i]);
+	/* goto test */
 	flatten(s, iftrue);
 	jmp(s, l3);
 	flatten(s, l2);
+	for (i = 0; i < s->nqueue; i++)
+		append(s, s->incqueue[i]);
+	lfree(&s->incqueue, &s->nqueue);
 	/* because lots of bunched up end labels are ugly,
 	 * coalesce them by handling 'elif'-like constructs
 	 * separately */
