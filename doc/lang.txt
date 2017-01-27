@@ -56,7 +56,7 @@ TABLE OF CONTENTS:
 
         Syntax is defined using an informal variant of EBNF.
 
-            token:      /regex/ | "quoted" | <english description>
+            token:      /regex/ | "quoted" | <informal description>
             prod:       prodname ":" expr*
             expr:       alt ( "|" alt )*
             alt:        term term*
@@ -98,6 +98,13 @@ TABLE OF CONTENTS:
         Comments begin with "/*" and end with "*/". They may nest.
 
             /* this is a comment /* with another inside */ */
+
+        Alternatively, '//' may be used to denote a comment. This comment
+        will extend to the end of the current line. Newlines within a line
+        comment may not be escaped.
+
+            // this is a line comment
+            // it will end on this line, regardless of the trailing \
 
         Identifiers begin with any alphabetic character or underscore, and
         continue with alphanumeric characters or underscores. Currently the
@@ -595,8 +602,6 @@ TABLE OF CONTENTS:
             the appropriate type variables. Then the left hand and right hand
             side of the of the expression are unified with this freshened
             type equation.
-
-
 
         4.7.3. Delayed Unification
 
