@@ -184,7 +184,7 @@ TABLE OF CONTENTS:
             attrs:      ("exern" | "pkglocal" | "$noret")+
             decllist:   declbody ("," declbody)*
             declbody:   declcore ["=" expr]
-            declcore:   name [":" type
+            declcore:   name [":" type]
 
         A declaration consists of a declaration class (i.e., one
         of 'const', 'var', or 'generic'), followed by a declaration
@@ -221,7 +221,8 @@ TABLE OF CONTENTS:
                         it from outside the namespace is an error.
 
             $noret:     Declares the function to which this is applied as
-                        a non-returning function.
+                        a non-returning function. This attribute is only
+                        valid when applied to a function.
 
         Examples:
 
@@ -320,9 +321,9 @@ TABLE OF CONTENTS:
             In the function `{x, y; funcbody()}`, the variables `x` and
             `y` are scoped to the body of the function.
 
-            Variables may shadow other variables, with the exception of
-            captured variables in pattern matches. The rules for matches
-            are covered in depth in section 6.3, but the rationale for
+            Variables may shadow other variables in enclosing scopes, with the
+            exception of captured variables in pattern matches. The rules for
+            matches are covered in depth in section 6.3, but the rationale for
             this is to prevent ambiguity when matching against defined
             constants.
 
@@ -416,12 +417,10 @@ TABLE OF CONTENTS:
                 slicetype:      type "[" ":" "]"
                 arraytype:      type "[" expr "]" | type "[" "..." "]"
 
-            Pointers are, as expected, values that hold the address of the pointed
-            to value. They are declared by appending a '#' to the type. Pointer
-            arithmetic is not allowed. They are declared by appending a '#' to the
-            base type
+            Pointers are values that contain the address of the value of their
+	    base type. If `t` is a type, then `t#` is a `pointer to t`.
 
-            Arrays are a group of N values, where N is part of the type, meaning
+            Arrays are a sequence of N values, where N is part of the type, meaning
             that different sizes are incompatible. They are passed by value. Their
             size must be a compile time constant.
 
@@ -444,8 +443,8 @@ TABLE OF CONTENTS:
                 structtype:     "struct" "\n" (declcore "\n"| "\n")* ";;"
                 uniontype:      "union" "\n" ("`" Ident [type] "\n"| "\n")* ";;"
 
-            Tuples are the traditional product type. They are declared by putting
-            the comma separated list of types within square brackets.
+	    Tuples are a sequence of unnamed values. They are declared by
+	    putting the comma separated list of types within round brackets.
 
             Structs are aggregations of types with named members. They are
             declared by putting the word 'struct' before a block of declaration
@@ -952,7 +951,39 @@ TABLE OF CONTENTS:
 	    Precedence 0:
 		    -> x            Return expression
 
-	5.2.2. Atomic Expressions:
+	5.2.2. Lvalues and Rvalues:
+
+	    Expressions can largely be grouped into two categories: lvaues and
+	    rvalues. Lvalues are expressions that may appear on the left hand
+	    side of an assignment. Rvalues are expressions that may appear on
+	    the right hand side of an assignment. All lvalues are also
+	    rvalues.
+
+	    Lvalues consist of the following expressions:
+
+                - Variables.
+                - Gaps.
+                - Index Expressions
+                - Pointer Dereferences
+                - Member lookups.
+                - Tuple constructors
+
+            Assigning to an lvalue stores the value on the rhs of the
+            expression into the location designated by the lhs, with the
+            exception of gaps and tuple constructors.
+
+            Assigning into a gap lvalue discards it.
+            
+            When assigning to a tuple constructor, the rhs of the expression
+            is broken up elementwise and stored into each lvalue of the tuple
+            constructor element by element. For example:
+
+                (a, b#, _) = tuplefunc()
+
+            will store the first element of the tuple returned by tuplefunc
+            into a, the second into b#, and the third into the gap.
+
+	5.2.3. Atomic Expressions:
 	    
                 atomicexpr:     ident | gap | literal | "(" expr ")" | 
                                 "sizeof" "(" type ")" | castexpr
@@ -985,7 +1016,7 @@ TABLE OF CONTENTS:
             to persistently and manipulated by the programmer. An obvious
             example of this would be a variable name, although 
 
-        5.2.3. Cast Expressions:
+        5.2.4. Cast Expressions:
 
             Cast expressions convert a value from one type to another.
             Casting proceeds according to the following rules:
@@ -1083,7 +1114,7 @@ TABLE OF CONTENTS:
 
 
 
-	5.2.4. Assignments:
+	5.2.5. Assignments:
         
                 lval = rval, lval <op>= rval
 
@@ -1101,7 +1132,7 @@ TABLE OF CONTENTS:
 
                 ( e1 : @a <op>= e2 : @a ) : @a
 
-	5.2.5. Logical Or:
+	5.2.6. Logical Or:
         
                 e1 || e2 
 
@@ -1113,7 +1144,7 @@ TABLE OF CONTENTS:
 
                 ( e1 : bool || e2 : bool ) : bool
 
-	5.2.6. Logical And:
+	5.2.7. Logical And:
 
                 expr && expr
 
@@ -1129,7 +1160,7 @@ TABLE OF CONTENTS:
 
                 ( e1 : bool && e2 : bool ) : bool
 
-        5.2.7: Logical Negation:
+        5.2.8: Logical Negation:
 
                 !expr
 
@@ -1141,7 +1172,7 @@ TABLE OF CONTENTS:
 
                 !(expr : bool) : bool
 
-        5.2.8. Equality Comparisons:
+        5.2.9. Equality Comparisons:
         
                 expr == expr, expr != expr
 
@@ -1155,7 +1186,7 @@ TABLE OF CONTENTS:
                 ( e1 : @a == e2 : @a ) : bool
                 ( e1 : @a != e2 : @a ) : bool
 
-        5.2.9. Relational Comparisons:
+        5.2.10. Relational Comparisons:
         
                 expr > expr, expr >= expr, expr < expr, expr <= expr
 
@@ -1172,7 +1203,7 @@ TABLE OF CONTENTS:
                 where @a :: numeric
 
 
-        5.2.10. Union Constructors:
+        5.2.11. Union Constructors:
         
                 `Name expr:
 
@@ -1186,7 +1217,7 @@ TABLE OF CONTENTS:
 
                 Delayed unification with the type of the union tag.
 
-        5.2.11. Bitwise:
+        5.2.12. Bitwise:
 
                 expr | expr, expr ^ expr, expr & expr
 
@@ -1198,7 +1229,7 @@ TABLE OF CONTENTS:
                 (e1 : @a OP e2:@a) : @a
                 where @a :: integral
 
-        5.2.12. Addition:
+        5.2.13. Addition:
         
                 expr + expr, expr - expr:
 
@@ -1214,7 +1245,7 @@ TABLE OF CONTENTS:
                 where @a :: numeric
 
         
-        5.2.13. Multiplication and Division
+        5.2.14. Multiplication and Division
         
                 expr * expr, expr / expr
 
@@ -1226,7 +1257,7 @@ TABLE OF CONTENTS:
                 ( e1 : @a OP e2 : @a ) : bool
                 where @a :: numeric
 
-        5.2.14. Modulo:
+        5.2.15. Modulo:
         
                 expr % expr
 
@@ -1238,7 +1269,7 @@ TABLE OF CONTENTS:
                 ( e1 : @a OP e2 : @a ) : bool
                 where @a :: (numeric,integral)
 
-        5.2.15. Shift:
+        5.2.16. Shift:
 
                 expr >> expr, expr << expr
 
@@ -1255,7 +1286,7 @@ TABLE OF CONTENTS:
                 (e1 : @a OP e2:@a) : @a
                 where @a :: integral
 
-        5.2.16: Postincrement, Postdecrement:
+        5.2.17: Postincrement, Postdecrement:
 
                 expr++, expr--
 
@@ -1279,7 +1310,7 @@ TABLE OF CONTENTS:
                 (e1-- : @a) : @a
                 where @a :: integral
 
-        5.2.17: Address:
+        5.2.18: Address:
 
                 &expr
 
@@ -1290,7 +1321,7 @@ TABLE OF CONTENTS:
             
                 &(expr : @a) : @a#
 
-        5.2.18: Dereference:
+        5.2.19: Dereference:
 
                 expr#
 
@@ -1301,7 +1332,7 @@ TABLE OF CONTENTS:
             
                 (expr : @a#)# : @a
 
-        5.2.17: Sign Operators:
+        5.2.20: Sign Operators:
 
                 -expr, +expr
 
@@ -1314,7 +1345,7 @@ TABLE OF CONTENTS:
                 OP(expr : @a) : @a
 
 
-        5.2.19: Member Lookup:
+        5.2.21: Member Lookup:
 
                 expr.name
 

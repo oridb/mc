@@ -33,7 +33,6 @@ pkg crypto =
 		accum	: byte[16]
 	;;
 
-	const ortho	: (q : uint64[:] -> void)
 	const aeskeysched	: (x : aesctx#, k : byte[:] -> void) 
 	const aesencrypt	: (x : aesctx#, m : byte[:], c : byte[:] -> void)
 	const aesdecrypt	: (x : aesctx#, c : byte[:], m : byte[:] -> void)

@@ -527,15 +527,17 @@ static Node *lval(Flattenctx *s, Node *n)
 
 	switch (exprop(n)) {
 	case Ovar:	r = n;	break;
-	case Oidx:	r = rval(s, n);	break;//loadidx(s, args[0], args[1]);	break;
+	case Oidx:	r = rval(s, n);	break;
 	case Oderef:	r = rval(s, n);	break;
 	case Omemb:	r = rval(s, n);	break;
 	case Ostruct:	r = rval(s, n);	break;
+
+	/* for chaining */
 	case Oucon:	r = rval(s, n);	break;
 	case Oarr:	r = rval(s, n);	break;
 	case Ogap:	r = temp(s, n);	break;
 
-			/* not actually expressible as lvalues in syntax, but we generate them */
+	/* not actually expressible as lvalues in syntax, but we generate them */
 	case Oudata:	r = rval(s, n);	break;
 	case Outag:	r = rval(s, n);	break;
 	case Otupget:	r = rval(s, n);	break;
