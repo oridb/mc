@@ -1384,8 +1384,8 @@ TABLE OF CONTENTS:
             `idx`th value in the sequence is referred to. This expression
             produces an lvalue.
 
-            If `idx` is larger than `expr.len`, then the program must
-            terminate.
+            If `idx` is larger than `expr.len` or smaller than 0, then the
+            program must terminate.
 
             Type:
 
@@ -1403,6 +1403,9 @@ TABLE OF CONTENTS:
             
             If the lower bound is omitted, then it is implicitly zero. If the
             upper bound is ommitted, then it is implicitly `expr.len`.
+
+            If the bounds are not fully contained within the slice being
+            indexed, the program must terminate.
 
             Type:
 
