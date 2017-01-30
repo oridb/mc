@@ -1473,57 +1473,160 @@ TABLE OF CONTENTS:
 
             matchstmt:  "match" expr "\n" matchpat* ";;"
             matchpat:   "|" pat ":" blockbody
+            pat:        expr
 
-        Match statements do pattern matching on values. They take as an
-        argument a value of type 't', and match it against a list of other
-        values of the same type. The patterns matched against can also contain
-        free names, which will be bound to the sub-value matched against. The
-        patterns are checked in order, and the first matching pattern has its
-        body executed, after which no other patterns will be matched. This
-        implies that if you have specific patterns mixed with by more general
-        ones, the specific patterns must come first.
+        Match statements perform deep pattern matching on values. They take as
+        an argument a value of type 't', and match it against a list of other
+        values of the same type.
+        
+        The patterns matched against may free variables, which will be bound
+        to the sub-value matched against.  The patterns are checked in order,
+        and the first matching pattern has its body executed, after which no
+        other patterns will be matched. This implies that if you have specific
+        patterns mixed with by more general ones, the specific patterns must
+        come first.
+
+        All potential cases must be covered exhaustively. Non-exhaustive
+        matches are a compilation error.
 
         Match patterns can be one of the following:
 
+            - Wildcard patterns
+            - Gap patterns
+            - Atomic literal patterns
+	    - String patterns
             - Union patterns
-
-                These look like union constructors, only they define
-                a value to match against.
-
-            - Literal patterns
-
-                Any literal value can be matched against.
-
+	    - Tuple patterns
+	    - Struct patterns
+	    - Array patterns
             - Constant patterns
+	    - Pointer chasing patterns
 
-                Any constant value can be matched against.
+        6.3.1. Wildcards and Gaps:
 
-        More types of pattern to match will be added over time.
+            Wildcard patterns an identifier that is not currently in scope.
+            This variable name captures the variable. That is, in the body of
+            the match, there will be a variable in scope with the same name as
+            the identifier, and it will contain a copy of the value that is
+            being matched against. A wildcard pattern always matches
+            successfully.
 
-        Match statements consist of the keyword 'match', followed by
-        the expression to match against the patterns, followed by a
-        newline. The body of the match statement consists of a list
-        of pattern clauses. A patterned clause is a '|', followed by
-        a pattern, followed by a ':', followed by a block body.
+            Gap patterns are identical to wildcard patterns, but they do not
+            capture a copy of the value being matched against.
 
-        An example of the syntax follows:
+        6.3.2. Literal and Constant Patterns:
 
-            const Val234 = `Val 234     /* set up a constant value */
-            var v = `Val 123            /* set up variable to match */
-            match v
-            /* pattern clauses */
-            | `Val 123:
-                std.put("Matched literal union pat\n")
-            | Val234:
-                std.put("Matched const value pat\n")
-            | `Val a:
-                std.put("Matched pattern with capture\n")
-                std.put("Captured value: a = {}\n", a)
-            | a
-                std.put("A top level bind matches anything.")
-            | `Val 111
-                std.put("Unreachable block.")
-            ;;
+            Most pattern matches types are literal patterns. These are simply
+            written out as a literal value of the type that is being matched
+            against.
+
+            Atomic literal patterns match on a literal value. The pattern is
+            compared to the value using semantics equivalent to the `==`
+            operator. If the `==` operator would return true, the match is
+            successful.
+
+            String patterns match a byte sequence. The pattern is compared to
+            the value by first comparing the lengths. Then, each byte in the
+            string is compared, in turn, to the byte of the pattern. If the
+            length and all characters are equal, the pattern succeeds.
+
+            Union patterns compare the union tag of the pattern wtih the union
+            tag on the value. If there is a union body associated with the
+            tag, then the pattern must also have a body. This is recursively
+            matched on.  If the tag and the body (if present) both match, this
+            match is considered successful.
+            
+            Tuple patterns proceed to recursively check each tuple element for
+            a match. If all elements match, this is a successful match.
+
+            Struct patterns recursively check each named member that is
+            provided.  Not all named members are mandatory. If a named member
+            is omitted, then it is equivalent to matching it against a gap
+            pattern. If all elements match, then this is a successful match.
+
+            Array pattenrs recursively check each member of the array that is
+            provided. The array length must be part of the match. If all array
+            elements match, then this is a successful match.
+
+            Constant patterns use a compile time constant that is in scope for
+            the pattern. The semantics are the same any of the literal
+            patterns listed above.
+
+        6.3.3. Pointer Chasing Patterns:
+
+            Pointer chasing patterns allow matching on pointer-to-values. They
+            are written with the `&` operator, as though you were taking the
+            address of the pattern being matched against.
+
+            This pattern is matched by dereferencing the value being matched,
+            and recursively matching the value against the pattern being
+            addressed.
+
+            The pointer provided to a pointer chasing match must be a valid
+            pointer. Providing an invalid pointer leads to undefined behavior.
+
+        6.4.4. Examples:
+
+            6.4.4.1. Wildcard:
+
+                var e = 123
+                match expr
+                | x:    std.put("x = {}\n", x)
+                ;;
+
+            6.4.4.2. Atomic Literal:
+
+                var e = 123
+                match expr
+                | 666:  std.put("wrong branch\n")
+                | 123:  std.put("correct match\n")
+                | _:    std.put("default branch\n")
+                ;;
+
+            6.4.4.3. Tuple Literal:
+
+                var e = (123, 999)
+                match expr
+                | (123, 666):   std.put("wrong branch\n")
+                | (123, 999):   std.put("right branch\n")
+                | _:            std.put("default branch\n")
+                ;;
+
+            6.4.4.3. Union Literal:
+
+                var e = `std.Some 123
+                match expr
+                | `std.Some 888:   std.put("wrong branch\n")
+                | `std.Some 123:   std.put("right branch\n")
+                | `std.Some x:     std.put("other wrong branch\n")
+                | `std.None:       std.put("other wrong branch\n")
+                ;;
+
+            6.4.4.4 Struct Literal:
+
+                type s = struct
+                    x : int
+                ;;
+
+                var e : s = [.x=999]
+                match expr
+                | [.x=123]:   td.put("wtf, x=123\n")
+                | [.x=x]:     std.put("x={}\n", x)
+                ;;
+
+            6.4.4.5 Pointer Chasing:
+
+                type s = struct
+                    x : int#
+                ;;
+
+                var p = 123
+                var e : s = [.x=&p]
+                match expr
+                | [.x=&123]:   td.put("good, x=123\n")
+                | [.x=&x]:     std.put("wtf, x={}\n", x)
+                ;;
+
 
     6.4. Looping
 
