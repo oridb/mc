@@ -1328,6 +1328,18 @@ TABLE OF CONTENTS:
             The `#` operator refers to the value at the pointer `expr`. This
             is an lvalue, and may be stored to.
 
+            The pointer being dereferenced may have at some point come from a
+            cast expression. It may also be constructed by arbitrary code via
+            integer manipulations and system specific memory allocation.
+
+            If this happens, there are two cases. If the pointed-to type of
+            the accessing pointer is larger than the declaration type of the
+            object, the behavior is undefined.  Similarly, if the pointer
+            value has an incompatible alignment at runtime, the behavior is
+            undefined. Otherwise, the value read back through the pointer is
+            implementation specific. These system specific values may include
+            trap representations.
+
             Type:
             
                 (expr : @a#)# : @a
