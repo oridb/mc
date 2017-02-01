@@ -5,4 +5,4 @@ Tc(Tcfloat,	"floating")     /* behaves like a float, defaults to float as fallba
 Tc(Tcidx,	"indexable")    /* indexable */
 Tc(Tcslice,	"sliceable")    /* sliceable */
 Tc(Tcfunc,	"function")     /* behaves like a function */
-Tc(Tciter,	"iterable")     /* behaves like a function */
+Tc(Tciter,	"iterable")     /* can be iterated over */
