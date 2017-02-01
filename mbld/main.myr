@@ -37,7 +37,6 @@ const main = {args : byte[:][:]
 			[.opt='R', .arg="runsrc", .desc="source to compile and run"],
 			[.opt='B', .arg="base", .desc="install into 'base'"],
 			[.opt='b', .arg="bin", .desc="compile binary named 'bin' from inputs"],
-			[.opt='G', .arg="bin", .desc="compile and run binary 'bin' from inputs"],
 			[.opt='l', .arg="lib", .desc="compile lib named 'lib' from inputs"],
 			[.opt='r', .arg="rt", .desc="link against runtime 'rt' instead of default"],
 			[.opt='C', .arg="mc", .desc="compile with 'mc' instead of the default compiler"],
