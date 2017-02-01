@@ -889,7 +889,7 @@ TABLE OF CONTENTS:
 
                 They have the type `bool`
 
-            5.1.1.4: Boolean Literals:
+            5.1.1.5: Void Literals:
 
                 Void literals are spelled `void`. They evaluate to the void
                 value, a value that takes zero bytes storage, and contains
@@ -899,7 +899,7 @@ TABLE OF CONTENTS:
 
                 They have type `void`.
 
-            5.1.1.5: Floating point literals:
+            5.1.1.6: Floating point literals:
 
                 Floating-point literals are also a sequence of digits beginning with a
                 digit and possibly separated by underscores. Floating point
