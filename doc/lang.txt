@@ -21,6 +21,7 @@ TABLE OF CONTENTS:
         4.3. Generic Types
         4.4. Traits and Impls
         4.5. Type Inference
+        4.6. Built in Traits
     5. VALUES AND EXPRESSIONS
         5.1. Literal Values
         5.2. Expressions
@@ -577,32 +578,128 @@ TABLE OF CONTENTS:
 
     4.5. Type Inference:
 
-        4.7.1. Overview:
+        Myrddin uses a variant on the Hindley Milner type system. The
+        largest divergence is the lack of implicit generalization when
+        a type is unconstrained. In Myrddin, this unconstrained type
+        results in a failure in type checking.
 
-            Myrddin uses a variant on the Hindley Milner type system. The
-            largest divergence is the lack of implicit generalization when
-            a type is unconstrained. In Myrddin, this unconstrained type
-            results in a type checking failure.
+        4.5.1. Initialization:
 
-            In the Myrddin type system, each leaf expression is assigned
-            an appropriate type, or a placeholder indicated by `$n`. Then,
-            expressions and declarations are walked over and unified,
-            fixing and constraining the types, as well as recording delayed
-            unifications where needed.
+            In the Myrddin type system, each leaf expression is assigned an
+            appropriate type, or a placeholder. For clarity in the
+            description, this will be called a type variable, and indicated by
+            `$n`, where n is an integer which uniquely identifies the type
+            variable. This is an implementation detail of type inference, and
+            is not accessible by users.
 
-            Delayed unifications and default types are then applied, and
-            the unit of the program is checked for underconstrained types.
+            When a generic type is encountered, it is freshened. Freshening a
+            generic type replaces all free type parameters in the type with a
+            type variable, inheriting all of the traits.. So, a type '@a' is
+            replaced with the type '$1', and a trait-constrained type
+            '@a::foo' is replaced with a trait constrained type '$1::foo'.
 
-        4.7.2. Unification
+            
+            Once each leaf expression is assigned a type, a depth first walk
+            over the tree is done. Each leaf's type is resolved as well as it
+            can be:
 
-            When an expression is applied, the types are unified according to
-            the type of the operator, as specified in section 5.2. The type of
-            the operator is freshened, replacing @t with $n. This produces
-            the appropriate type variables. Then the left hand and right hand
-            side of the of the expression are unified with this freshened
-            type equation.
+                - Declarations are looked up, and their types are unified with
+                variables that refer to them.
+                - string, character, and boolean literals are unified with the
+                specific type that represents them.
+                - Types are freshened. Freshening is the process of replacing
+                unbound type parameters with type variables, such that
+                '@a::(integral,numeric)' is replaced with the type variable
+                '$n::(integral,numeric)'.
+                - Union tags are registered for delayed unification, with the type
+                for unions being the declaration type of the variable.
 
-        4.7.3. Delayed Unification
+            Note that a generic declaration must *not* have its type unfied with
+            its use until after it has been freshened. This may imply that the
+            type of a generic must be registered for delayed unification.
+
+        4.5.2. Unification:
+
+            Once the types of the leaf nodes is initialized, type inference
+            proceeds via unification. Each expression using the leaves is
+            checked.  The operator type is freshened, and then the expressions
+            are unified.
+
+            Unification of expressions proceeds by taking the types, and
+            mapping corresponding parts of the expression to each other. 
+            
+            For unifying two types `t1` and `t2`, the following rules are
+            observed:
+            
+            First, the most specific mapping that has been derived is looked
+            up. Then, one of the following rules are followed:
+
+            Case 1:
+
+                If t1 is a type variable, and t2 is a type variable, then t1
+                is mapped to t2, and the list of traits from t1 is appended to
+                the list of traits for t2. The delayed type for t1 is
+                transferred to t2, if t2 does not have a delayed type yet.
+                Otherwise, the delayed types are unified.
+
+            Case 2: 
+
+                If t1 is a type variable, and t2 is not a type variable, then
+                t1 is checked for recursive inclusions and trait
+                incompatility.
+                
+                If t2 refers to t1 by value, then the type would be infinitely
+                sized, and therefore the program must be rejected with a type
+                error. If t2 does not satisfy all the traits that t1 requires,
+                then the program must be rejected with a type error.
+
+            Case 3:
+
+                If the type t1 is not a type variable, and t2 is a type
+                variable, then t1 and t2 are swapped, and the rules for case 2
+                are applied.
+
+            Case 4:
+
+                If neither the type `t1` and `t2` is a variable type, then the
+                following rules are applied, in order.
+
+                    - If the types are arrays, then their sizes are checked.
+                      If only one of the types has an array size inferred,
+                      then the size is transferred to the other. Otherwise,
+                      the sizes are verified for equality after constant
+                      folding. If the sizes mismatch, then the program must be
+                      rejected with a type error.
+
+                    - If one of the types is a named type, then all the
+                      parameters passed to the named type are unified
+                      recursively.
+
+                    - If the types are equivalent at the root (ie, $1# and
+                      int# are both pointers at the root), then all subtypes
+                      are recursively unfied. The number of subtypes for both
+                      types must be the same. If the types are not equivalent
+                      at the root, then the program must be rejected with a
+                      type error.
+
+                    - If the base type of the expression is a union, then all
+                      union tags associated with the `t1` and `t2` are unified
+                      recursively.
+
+                    - If the base type of an expression is a struct, then all
+                      struct members associated with `t1` and `t2` are unified
+                      recursively.
+
+            A special case exists for variadic functions, where the type of a
+            variadic functon is unified argument by argument, up to the first
+            variadic argument. Any arguments which are part of the variadic
+            argument list are left unconstrained.
+
+            When all expressions are inferred, and all declaration types
+            have been unified with their initializer types, then delayed
+            unification is applied.
+
+        4.5.3. Delayed Unification
 
             In order to allow for the assignment of literals to defined types,
             when a union literal or integer literal has its type inferred,
@@ -617,6 +714,91 @@ TABLE OF CONTENTS:
             and permit additional auxiliary type lookups, this step may need
             to be repeated a number of times, although this is rare: Usually
             a single pass suffices.
+
+    4.6. Built In Traits:
+
+        4.6.1. numeric:
+
+            The numeric trait is a built in trait which implies that the
+            operand is a number. A number of operators require it, including
+            comparisons and arithmetic operations. It is present on the types
+
+                byte char
+                int8 uint8 int16 uint16
+                int32 uint32 int64 uint64
+                flt32 flt64
+
+            A user cannot currently implement this trait on their types.
+
+        4.6.2. integral:
+
+            The integral trait is a built in trait which implies that the
+            operand is an integer. A number of operators require it, including
+            bitwise operators and increments. It is implemented over the
+            following types:
+
+                byte char
+                int8 uint8 int16 uint16
+                int32 uint32 int64 uint64
+
+            A user cannot currently implement this trait on their types.
+
+        4.6.3. floating:
+
+            The floating trait is a built in trait which implies that the
+            operand is an floating point value.  It is implemented for the
+            following types:
+
+                flt32 flt64
+
+            A user cannot currently implement this trait on their types.
+
+        4.6.4. indexable:
+
+            The indexable trait is a built in trait which implies that
+            the index operator can be used on the type. It is implemented
+            for slice and array types.
+
+        4.6.5. sliceable
+
+            The sliceable trait is a built in trait which implies that
+            the slice soperator can be used on the type. It is implemented
+            for slice, pointer, and array types.
+
+            A user cannot currently implement this trait on their types.
+
+        4.6.6. function:
+
+            The function trait is a built in trait which implies that the
+            argument is a callable function. It specifies nothing about the
+            parameters, which is a significant flaw.  It is implemented for
+            all function types.
+
+            A user cannot currently implement this trait on their types.
+
+        4.6.7. iterable:
+
+            The iterable trait implies that a for loop can iterate over
+            the values provided by this type. The iterable trait is the
+            only one of the builtin traits which users can implement. It
+            has the signature:
+
+                trait iterable @it -> @val =
+                    __iternext__ : (itp : @it#, valp : @val# -> bool)
+                    __iterfin : (itp : @it#, valp : @val# -> bool)
+                ;;
+
+            A for loop iterating over an iterable will call __iternext__
+            to get a value for the iteration of a loop. The result of
+            __iternext__ should return `true` if the loop should continue
+            and `false` if the loop should stop. If the loop should
+            continue, then the implementation of __iternext__ should store
+            the value for the next loop interation into val#.
+
+            __iterfin__ is called at the end of the loop to do any cleanup
+            of resources set up by __iternext__.
+
+            The iterable trait is implemented for slices and arrays.
 
 5. VALUES AND EXPRESSIONS
 
