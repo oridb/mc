@@ -16,14 +16,13 @@ const cstrconv = {buf
 }
 
 const cstrconvp = {p
-	var i, base
+	var len
 
-	i = 0
-	base = (p : intptr)
-	while (base + i : byte#)# != 0
-		i++
+	len = 1
+	while p[:len][len -1] != 0
+		len++
 	;;
-	-> p[:i]
+	-> p[:len-1]
 }
 
 const cstrlen = {buf
