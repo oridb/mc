@@ -3,9 +3,12 @@ use "bio"
 
 pkg bio =
 	type lineiter = file#
+	type chariter = file#
 	impl iterable lineiter -> byte[:]
+	impl iterable chariter -> char
 
 	const byline	: (f : file# -> lineiter)
+	const bychar	: (f : file# -> chariter)
 ;;
 
 const byline = {f
@@ -27,5 +30,26 @@ impl iterable lineiter -> byte[:] =
 
 	__iterfin__ = {itp, outp
 		std.slfree(outp#)
+	}
+;;
+
+const bychar = {f
+	-> (f : chariter)
+}
+
+impl iterable chariter -> char =
+	__iternext__ = {itp, outp : char#
+		match bio.getc((itp# : file#))
+		| `Ok c:
+			outp# = c
+			-> true
+		| `Eof:
+			-> false
+		| `Err _:
+			-> false
+		;;
+	}
+
+	__iterfin__ = {itp, outp
 	}
 ;;
