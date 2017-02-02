@@ -1061,11 +1061,6 @@ TABLE OF CONTENTS:
 
             The specific semantics are covered in later parts of section 5.2.
 
-	    Precedence 13:
-		    x		    Atomic expression
-		    literal	    Atomic expression
-		    (expr)	    Atomic expression
-
 	    Precedence 12:
 		    x.name          Member lookup
 		    x++             Postincrement
