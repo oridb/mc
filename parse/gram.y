@@ -582,7 +582,7 @@ unionelt /* nb: the ucon union type gets filled in when we have context */
 	| Tendln {$$ = NULL;}
 	;
 
-goto    : Tgoto Tident Tendln {
+goto    : Tgoto Tident {
 		Node *lbl;
 
 		lbl = mklbl($2->loc, "");
@@ -899,11 +899,11 @@ stmt    : goto
 	| /* empty */ {$$ = NULL;}
 	;
 
-break   : Tbreak Tendln
+break   : Tbreak
 	{$$ = mkexpr($1->loc, Obreak, NULL);}
 	;
 
-continue   : Tcontinue Tendln
+continue   : Tcontinue
 	{$$ = mkexpr($1->loc, Ocontinue, NULL);}
 	;
 
@@ -1004,7 +1004,7 @@ blkbody : decl {
 	}
 	;
 
-label   : Tcolon Tident Tendln {
+label   : Tcolon Tident {
 		char buf[512];
 		genlblstr(buf, sizeof buf, $2->id);
 		$$ = mklbl($2->loc, buf);
