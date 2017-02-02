@@ -1,6 +1,6 @@
                     The Myrddin Programming Language
                               Jul 2012
-                          Updated Dec 2016
+                          Updated Feb 2017
                             Ori Bernstein
 
 TABLE OF CONTENTS:
@@ -140,7 +140,7 @@ TABLE OF CONTENTS:
 
     3.2. Top Level Structure:
 
-            file:       (decl | package | use | implstmt | traitdef | tydef)*
+            file:       (decl | package | use | impldef | traitdef | tydef)*
 
         A file is composed of a sequence of top level elements. These
         top level elements consist of:
@@ -564,7 +564,7 @@ TABLE OF CONTENTS:
 
         4.4.2. Impls:
 
-                implstmt:        "impl" ident imptypes "=" implbody
+                impldef:        "impl" ident imptypes "=" implbody
                 traittypes:     type ["->" type ("," type)*]
                 traitbody:      (name [":" type] "=" expr)*
 
@@ -1868,6 +1868,119 @@ TABLE OF CONTENTS:
             goto:       goto ident
 
 6. GRAMMAR:
+
+    /* top level */
+    file:       toplev*
+    toplev:     use | pkgdef | decl | traitdef | impldef | tydef
+
+    /* packages */
+    use:        use ident | strlit
+    pkgdef:    "pkg" [ident] "=" pkgbody ";;"
+    pkgbody:   (decl | attrs tydef | traitdef | impldef)*
+
+    /* declarations */
+    decl:       attrs ("var" | "const") decllist
+    attrs:      ("$noret" | "extern" | "pkglocal")*
+    decllist:   declbody ("," declbody)+
+    declbody:   declcore ["=" expr]
+    declcore:   ident [":" type]
+
+    /* traits */
+    traitdef:   "trait" ident typaram [auxtypes] ("\n" | "=" traitbody ";;")
+    auxtypes:   "->" type ("," type)*
+    traitbody:  "\n"* (ident ":" type "\n"*)*
+    impldef:    "impl" ident type [auxtypes] ("\n" | "=" implbody ";;")
+    implbody:   "\n"* (ident [":" type] "=" expr "\n"*)*
+
+    /* types */
+    tydef:      "type" typeid "=" type
+    typeid:     ident | ident "(" typarams ")"
+    typarams:   typaram ("," typaram)*
+    type:       structdef | uniondef | tupledef |
+                compound | generic | "..."
+    structdef:  "struct" structbody ";;"
+    uniondef:   "union" unionbody ";;"
+    tupledef:   "(" type ("," type)* ")"
+    generic:    typaram ["::" traitlist]
+    traitlist:  name | "(" name ("," name)
+    compound:   functype | sicetype | arraytype | ptrtype | void | name
+    functype:   "(" arglist "->" type ")"
+    arglist:    [arg ("," arg)*]
+    arg:        name ":" type
+    slicetype:  type "[" ":" "]"
+    arraytype:  type "[" (expr | "...") "]"
+    ptrtype:    type "#"
+    void:       "void"
+
+    /* expressions */
+    retexpr:    "->" expr | expr
+    exprln:     expr ";"
+    expr:       lorepxr asnop expr | lorexpr
+    lorexpr:    lorexpr "||" landexpr | landexpr
+    landexpr:   landexpr "&&" cmpexpr | cmpexpr
+    cmpexpr:    cmpexpr ("<" | "<=" | "==" | ">=" | ">") unionexpr | unionexpr
+    unionexpr:  "`" name unionexpr | "`" name | borexpr
+    borexpr:    borexpr ("|" | "^" ) bandexpr | bandexpr
+    bandexpr:   bandexpr "&" addexpr | addexpr
+    addexpr:    addexpr ("+" | "-") mulexpr
+    mulexpr:    mulexpr ("*" | "/" | "%") shiftexpr
+    shiftexpr:  shiftexpr ("<<" | ">>") prefixexpr
+    preexpr:    "++" prefixexpr | "--" prefixexpr |
+                "!" prefixexpr | "~" prefixexpr |
+                "-" prefixexpr | "+" prefixexpr |
+                "&" prefixexpr | postexpr
+    postexpr:   postexpr "." ident |
+                postexpr "++" | postexpr "--" |
+                postexpr "[" expr "]" |
+                postexpr "[" [expr] ":" [expr] "]" |
+                postepxr "#" |
+                atomicexpr
+    atomicexpr: ident | literal | "(" expr ")" | "sizeof" "(" type ")"
+
+    /* literals */
+    literal:    funclit | seqlit | tuplit | simplelit
+    funclit:    "{" [funcargs] ";" blockbody "}"
+    funcargs:   ident [ ":" type] ("," ident [ ":" type])*
+    seqlit:     "[" structelts | [arrayelts] "]"
+    arrayelts:  arrayelt ("," arrayelt)*
+    arrayelt:   ";'* expr [":" expr] ";"*
+    structelts: structelt ("," ";"* structelt)*
+    structelt:  ";"* "." name "=" expr ";"*
+    tuplit:     "(" expr "," [expr ("," expr)*] ")"
+    simplelit:  strlist | chrlit | fltlit | boollit | voidlit | intlit
+    fltlit:     <float literal>
+    boollit:    "true" | "false"
+    voidlit:    "void"
+    strlit:     <string literal>
+    chrlit:     <char literal>
+
+    /* statements */
+    blkbody:    (decl | stmt | tydef | ";")*
+    stmt:       jmpstmt | flowstmt | retexpr
+    jmpstmt:    goto | break | continue | label
+    flowstmt:   ifstmt | forstmt | whilestmt | matchstmt
+
+    ifstmt:     "if" exprln blkbody elifs ["else" blkbody] ";;"
+    elifs:      ("elif" exprln blkbody)*
+    forstmt:    foriter | forstep
+    foriter:    "for" expr "in" exprln blkbody ";;"
+    forstep:    "for" exprln exprln exprln blkbody ";;"
+    whilestmt:  "while" exprln blkbody ";;"
+    matchstmt:  "match" exprln pattern* ";;"
+    pattern:      "|" expr ":" blkbody ";"
+    goto:       "goto" ident ";"
+    break:      "break" ";"
+    continue:   "continue" ";"
+    label:      ":" ident ";"
+
+    /* misc */
+    name:       ident | ident "." ident
+    asnop:      "=" | "+=" | "-=" | "*=" | "/=" | "%=" |
+                "|=" | "^=" | "&=" | "<<=" | ">>="
+
+    /* pattern tokens */
+    typaram:    /@[a-zA-Z_][a-zA-Z0-9_]*/
+    ident:      /[a-zA-Z_][a-zA-Z0-9_]*/
 
 BUGS:
 

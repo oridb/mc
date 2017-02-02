@@ -78,7 +78,6 @@ static void setupinit(Node *n);
 %token<tok> Tcparen	/* ) */
 %token<tok> Tosqbrac	/* [ */
 %token<tok> Tcsqbrac	/* ] */
-%token<tok> Tat		/* @ */
 %token<tok> Ttick	/* ` */
 %token<tok> Tderef	/* # */
 
@@ -385,7 +384,7 @@ implbody
 	}
 	;
 
-traitdef: Ttrait Tident generictype optauxtypes { /* trait prototype */
+traitdef: Ttrait Tident generictype optauxtypes Tendln { /* trait prototype */
 		$$ = mktrait($1->loc,
 			mkname($2->loc, $2->id), $3,
 			$4.types, $4.ntypes,
@@ -498,7 +497,6 @@ compoundtype
 	| type Tosqbrac Tellipsis Tcsqbrac {$$ = mktyarray($2->loc, $1, NULL);}
 	| name Toparen typelist Tcparen {$$ = mktyunres($1->loc, $1, $3.types, $3.ntypes);}
 	| type Tderef	{$$ = mktyptr($2->loc, $1);}
-	| Tat Tident	{$$ = mktyparam($1->loc, $2->id);}
 	| Tvoidlit	{$$ = mktyunres($1->loc, mkname($1->loc, $1->id), NULL, 0);}
 	| name	{$$ = mktyunres($1->loc, $1, NULL, 0);}
 	;
@@ -584,7 +582,7 @@ unionelt /* nb: the ucon union type gets filled in when we have context */
 	| Tendln {$$ = NULL;}
 	;
 
-goto    : Tgoto Tident {
+goto    : Tgoto Tident Tendln {
 		Node *lbl;
 
 		lbl = mklbl($2->loc, "");
@@ -901,11 +899,11 @@ stmt    : goto
 	| /* empty */ {$$ = NULL;}
 	;
 
-break   : Tbreak
+break   : Tbreak Tendln
 	{$$ = mkexpr($1->loc, Obreak, NULL);}
 	;
 
-continue   : Tcontinue
+continue   : Tcontinue Tendln
 	{$$ = mkexpr($1->loc, Ocontinue, NULL);}
 	;
 
@@ -1006,7 +1004,7 @@ blkbody : decl {
 	}
 	;
 
-label   : Tcolon Tident {
+label   : Tcolon Tident Tendln {
 		char buf[512];
 		genlblstr(buf, sizeof buf, $2->id);
 		$$ = mklbl($2->loc, buf);
