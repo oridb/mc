@@ -431,7 +431,7 @@ TABLE OF CONTENTS:
 
             Slices are similar to arrays in many contemporary languages.  They are
             reference types that store the length of their contents. They are
-            declared by appending a '[,]' to the base type.
+            declared by appending a '[:]' to the base type.
 
                 foo#        type: pointer to foo
                 foo[N]      type: array size N of foo
@@ -458,8 +458,10 @@ TABLE OF CONTENTS:
 
                 (int, int, char)            a tuple of 2 ints and a char
 
-                struct                      a struct containing an int named a :
-                int                 'a', and a char named 'b'.  b : char ;;
+		struct                      a struct containing an int named
+		    a : int                 'a', and a char named 'b'.
+		    b : char
+		;;
 
                 union                       a union containing one of
                     `Thing int              int or char. The values are not
@@ -511,7 +513,7 @@ TABLE OF CONTENTS:
         defined in section 4.5.
 
         A typaram ("@ident") is a type parameter. It is introduced as either a
-        parameter of a generic declaration, or as a type paramteter in a
+        parameter of a generic declaration, or as a type paramter in a
         defined type. It can be constrained by any number of traits, as
         described in section 4.6.
 
@@ -564,9 +566,9 @@ TABLE OF CONTENTS:
 
         4.4.2. Impls:
 
-                impldef:        "impl" ident imptypes "=" implbody
-                traittypes:     type ["->" type ("," type)*]
-                traitbody:      (name [":" type] "=" expr)*
+                implstmt:        "impl" ident impltypes "=" implbody
+                impltypes:       type ["->" type ("," type)*]
+                implbody:        (name [":" type] "=" expr)*
 
             Impls take the interfaces provided by traits, and attach them
             to types, as well as providing the concrete implementation of
