@@ -261,10 +261,10 @@ TABLE OF CONTENTS:
 
     3.4. Packages and Uses
 
-	    package:	"pkg" ident = decl* ";;"
+            package:        "pkg" ident = decl* ";;"
             use:        bareuse | quoteuse
-	    bareuse:	use ident
-	    quoteuse:	use "<quoted string>"
+            bareuse:        use ident
+            quoteuse:        use "<quoted string>"
 
 
         There are two keywords for module system. 'use' is the simpler
@@ -273,12 +273,12 @@ TABLE OF CONTENTS:
             use syspkg
             use "localfile"
 
-	The first form, which does not have the package name quoted, will
-	search the system include paths for the package listed. It does not
-	search relative to the file or the compiler working directory.
+        The first form, which does not have the package name quoted, will
+        search the system include paths for the package listed. It does not
+        search relative to the file or the compiler working directory.
 
         The quoted form searches the current directory for a use file named
-	"localpkg" and imports it.
+        "localpkg" and imports it.
 
         The 'pkg' keyword allows you to define a (partial) package by
         listing the symbols and types for export. For example,
@@ -298,9 +298,9 @@ TABLE OF CONTENTS:
 
     3.5. Scoping:
 
-    	Myrddin is a lexically scoped language, with namespaces and types
-	defined in a way that facilitates separate compilation with minimal
-	burden on the linker.
+            Myrddin is a lexically scoped language, with namespaces and types
+        defined in a way that facilitates separate compilation with minimal
+        burden on the linker.
         
         In Myrddin, declarations may appear in any order, and be used at any
         point at which it is in scope. Any global symbols are initialized
@@ -309,7 +309,7 @@ TABLE OF CONTENTS:
         strange code, but allows for mutually recursive functions with no
         forward declarations or special cases.
 
-	3.5.1. Scope Rules:
+        3.5.1. Scope Rules:
 
             Myrddin follows the usual lexical scoping rules. A variable
             may be defined on any line in the program. From there, any
@@ -345,7 +345,7 @@ TABLE OF CONTENTS:
 
                 x: 2, closure(): 1
 
-	3.5.2. Namespaces:
+        3.5.2. Namespaces:
 
             A namespace introduced by importing a package is gramatically
             equivalent to a struct member lookup. The namespace is not
@@ -419,7 +419,7 @@ TABLE OF CONTENTS:
                 arraytype:      type "[" expr "]" | type "[" "..." "]"
 
             Pointers are values that contain the address of the value of their
-	    base type. If `t` is a type, then `t#` is a `pointer to t`.
+            base type. If `t` is a type, then `t#` is a `pointer to t`.
 
             Arrays are a sequence of N values, where N is part of the type, meaning
             that different sizes are incompatible. They are passed by value. Their
@@ -444,8 +444,8 @@ TABLE OF CONTENTS:
                 structtype:     "struct" "\n" (declcore "\n"| "\n")* ";;"
                 uniontype:      "union" "\n" ("`" Ident [type] "\n"| "\n")* ";;"
 
-	    Tuples are a sequence of unnamed values. They are declared by
-	    putting the comma separated list of types within round brackets.
+            Tuples are a sequence of unnamed values. They are declared by
+            putting the comma separated list of types within round brackets.
 
             Structs are aggregations of types with named members. They are
             declared by putting the word 'struct' before a block of declaration
@@ -458,10 +458,10 @@ TABLE OF CONTENTS:
 
                 (int, int, char)            a tuple of 2 ints and a char
 
-		struct                      a struct containing an int named
-		    a : int                 'a', and a char named 'b'.
-		    b : char
-		;;
+                struct                      a struct containing an int named
+                    a : int                 'a', and a char named 'b'.
+                    b : char
+                ;;
 
                 union                       a union containing one of
                     `Thing int              int or char. The values are not
@@ -1029,13 +1029,13 @@ TABLE OF CONTENTS:
 
     5.2. Expressions:
 
-	5.2.1. Summary and Precedence:
+        5.2.1. Summary and Precedence:
 
-		expr:		expr <binop> expr | prefixexpr | postfixexpr
-		postfixexpr:	<prefixop> postfixexpr
-		prefixexpr:	atomicexpr <unaryop>
+                expr:                expr <binop> expr | prefixexpr | postfixexpr
+                postfixexpr:        <prefixop> postfixexpr
+                prefixexpr:        atomicexpr <unaryop>
 
-	    Myrddin expressions should be fairly familiar to most programmers.
+            Myrddin expressions should be fairly familiar to most programmers.
             Expressions are represented by a precedence sorted heirarchy of
             binary operators. These operators operate on prefix expressions,
             which in turn operate on postfix expressions. And postfix
@@ -1047,11 +1047,11 @@ TABLE OF CONTENTS:
             For floating point values, the operation is according to the
             IEE754 rules.
 
-	    The operators are listed below in order of precedence, and a short
-	    summary of what they do is listed given. For the sake of clarity, 'x'
-	    will stand in for any expression composed entirely of subexpressions
-	    with higher precedence than the current current operator. 'e' will
-	    stand in for any expression. Assignment is right associative. All
+            The operators are listed below in order of precedence, and a short
+            summary of what they do is listed given. For the sake of clarity, 'x'
+            will stand in for any expression composed entirely of subexpressions
+            with higher precedence than the current current operator. 'e' will
+            stand in for any expression. Assignment is right associative. All
             other expressions are left associative.
 
             Arguments are evaluated in the order of associativity. That is,
@@ -1061,84 +1061,84 @@ TABLE OF CONTENTS:
 
             The specific semantics are covered in later parts of section 5.2.
 
-	    Precedence 12:
-		    x.name          Member lookup
-		    x++             Postincrement
-		    x--             Postdecrement
-		    x#              Dereference
-		    x[e]            Index
-		    x[lo:hi]        Slice
-		    x(arg,list)	Call
+            Precedence 12:
+                    x.name          Member lookup
+                    x++             Postincrement
+                    x--             Postdecrement
+                    x#              Dereference
+                    x[e]            Index
+                    x[lo:hi]        Slice
+                    x(arg,list)        Call
 
-	    Precedence 11:
-		    &x              Address
-		    !x              Logical negation
-		    ~x              Bitwise negation
-		    +x              Positive (no operation)
-		    -x              Negate x
+            Precedence 11:
+                    &x              Address
+                    !x              Logical negation
+                    ~x              Bitwise negation
+                    +x              Positive (no operation)
+                    -x              Negate x
 
-	    Precedence 10:
-		    x << y          Shift left
-		    x >> y          Shift right
+            Precedence 10:
+                    x << y          Shift left
+                    x >> y          Shift right
 
-	    Precedence 9:
-		    x * y           Multiply
-		    x / y           Divide
-		    x % y           Modulo
+            Precedence 9:
+                    x * y           Multiply
+                    x / y           Divide
+                    x % y           Modulo
 
-	    Precedence 8:
-		    x + y           Add
-		    x - y           Subtract
+            Precedence 8:
+                    x + y           Add
+                    x - y           Subtract
 
-	    Precedence 7:
-		    x & y           Bitwise and
+            Precedence 7:
+                    x & y           Bitwise and
 
-	    Precedence 6:
-		    x | y           Bitwise or
-		    x ^ y           Bitwise xor
+            Precedence 6:
+                    x | y           Bitwise or
+                    x ^ y           Bitwise xor
 
-	    Precedence 5:
-		    `Name x         Union construction
+            Precedence 5:
+                    `Name x         Union construction
 
-	    Precedence 4:
-		    x == x          Equality
-		    x != x          Inequality
-		    x > x           Greater than
-		    x >= x          Greater than or equal to
-		    x < x           Less than
-		    x <= x          Less than or equal to
+            Precedence 4:
+                    x == x          Equality
+                    x != x          Inequality
+                    x > x           Greater than
+                    x >= x          Greater than or equal to
+                    x < x           Less than
+                    x <= x          Less than or equal to
 
-	    Precedence 3:
-		    x && y          Logical and
+            Precedence 3:
+                    x && y          Logical and
 
-	    Precedence 2:
-		    x || y          Logical or
+            Precedence 2:
+                    x || y          Logical or
 
-	    Precedence 1: Assignment Operators
-		    x = y           Assign                  Right assoc
-		    x += y          Fused add/assign        Right assoc
-		    x -= y          Fused sub/assign        Right assoc
-		    x *= y          Fused mul/assign        Right assoc
-		    x /= y          Fused div/assign        Right assoc
-		    x %= y          Fused mod/assign        Right assoc
-		    x |= y          Fused or/assign         Right assoc
-		    x ^= y          Fused xor/assign        Right assoc
-		    x &= y          Fused and/assign        Right assoc
-		    x <<= y         Fused shl/assign        Right assoc
-		    x >>= y         Fused shr/assign        Right assoc
+            Precedence 1: Assignment Operators
+                    x = y           Assign                  Right assoc
+                    x += y          Fused add/assign        Right assoc
+                    x -= y          Fused sub/assign        Right assoc
+                    x *= y          Fused mul/assign        Right assoc
+                    x /= y          Fused div/assign        Right assoc
+                    x %= y          Fused mod/assign        Right assoc
+                    x |= y          Fused or/assign         Right assoc
+                    x ^= y          Fused xor/assign        Right assoc
+                    x &= y          Fused and/assign        Right assoc
+                    x <<= y         Fused shl/assign        Right assoc
+                    x >>= y         Fused shr/assign        Right assoc
 
-	    Precedence 0:
-		    -> x            Return expression
+            Precedence 0:
+                    -> x            Return expression
 
-	5.2.2. Lvalues and Rvalues:
+        5.2.2. Lvalues and Rvalues:
 
-	    Expressions can largely be grouped into two categories: lvaues and
-	    rvalues. Lvalues are expressions that may appear on the left hand
-	    side of an assignment. Rvalues are expressions that may appear on
-	    the right hand side of an assignment. All lvalues are also
-	    rvalues.
+            Expressions can largely be grouped into two categories: lvaues and
+            rvalues. Lvalues are expressions that may appear on the left hand
+            side of an assignment. Rvalues are expressions that may appear on
+            the right hand side of an assignment. All lvalues are also
+            rvalues.
 
-	    Lvalues consist of the following expressions:
+            Lvalues consist of the following expressions:
 
                 - Variables.
                 - Gaps.
@@ -1162,8 +1162,8 @@ TABLE OF CONTENTS:
             will store the first element of the tuple returned by tuplefunc
             into a, the second into b#, and the third into the gap.
 
-	5.2.3. Atomic Expressions:
-	    
+        5.2.3. Atomic Expressions:
+            
                 atomicexpr:     ident | gap | literal | "(" expr ")" | 
                                 "sizeof" "(" type ")" | castexpr
                 castexpr:       "(" expr ":" type ")"
@@ -1293,7 +1293,7 @@ TABLE OF CONTENTS:
 
 
 
-	5.2.5. Assignments:
+        5.2.5. Assignments:
         
                 lval = rval, lval <op>= rval
 
@@ -1311,7 +1311,7 @@ TABLE OF CONTENTS:
 
                 ( e1 : @a <op>= e2 : @a ) : @a
 
-	5.2.6. Logical Or:
+        5.2.6. Logical Or:
         
                 e1 || e2 
 
@@ -1323,7 +1323,7 @@ TABLE OF CONTENTS:
 
                 ( e1 : bool || e2 : bool ) : bool
 
-	5.2.7. Logical And:
+        5.2.7. Logical And:
 
                 expr && expr
 
@@ -1688,13 +1688,13 @@ TABLE OF CONTENTS:
             - Wildcard patterns
             - Gap patterns
             - Atomic literal patterns
-	    - String patterns
+            - String patterns
             - Union patterns
-	    - Tuple patterns
-	    - Struct patterns
-	    - Array patterns
+            - Tuple patterns
+            - Struct patterns
+            - Array patterns
             - Constant patterns
-	    - Pointer chasing patterns
+            - Pointer chasing patterns
 
         6.3.1. Wildcards and Gaps:
 
