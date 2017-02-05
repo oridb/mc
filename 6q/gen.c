@@ -613,7 +613,7 @@ Node *gencall(Gen *g, Node *n)
 	if (ret)
 		out(g, "\t%v =%t call %v (", ret, exprtype(ret), fn);
 	else
-		out(g, "\tcall %v (", ret, fn);
+		out(g, "\tcall %v (", fn);
 	for (i = 1; i < nargs; i++)
 		out(g, "%t %v", exprtype(args[i]), args[i]);
 	out(g, ")\n");
