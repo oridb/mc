@@ -22,5 +22,5 @@ const readall = {fd, dst
 			-> `Err e
 		;;
 	;;
-	-> `Ok sz - dst.len
+	-> `Ok (sz - dst.len)
 }

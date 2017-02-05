@@ -2,6 +2,7 @@ use std
 
 pkg =
 	trait t @a
+
 	impl t int
 ;;
 

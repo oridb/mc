@@ -1927,8 +1927,7 @@ TABLE OF CONTENTS:
     expr:       lorepxr asnop expr | lorexpr
     lorexpr:    lorexpr "||" landexpr | landexpr
     landexpr:   landexpr "&&" cmpexpr | cmpexpr
-    cmpexpr:    cmpexpr ("<" | "<=" | "==" | ">=" | ">") unionexpr | unionexpr
-    unionexpr:  "`" name unionexpr | "`" name | borexpr
+    cmpexpr:    cmpexpr ("<" | "<=" | "==" | ">=" | ">") borexprexpr | borexpr
     borexpr:    borexpr ("|" | "^" ) bandexpr | bandexpr
     bandexpr:   bandexpr "&" addexpr | addexpr
     addexpr:    addexpr ("+" | "-") mulexpr
@@ -1942,8 +1941,10 @@ TABLE OF CONTENTS:
                 postexpr "++" | postexpr "--" |
                 postexpr "[" expr "]" |
                 postexpr "[" [expr] ":" [expr] "]" |
+                "`" name postexpr | "`" name
                 postepxr "#" |
                 atomicexpr
+
     atomicexpr: ident | literal | "(" expr ")" | "sizeof" "(" type ")"
 
     /* literals */

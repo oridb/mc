@@ -140,7 +140,7 @@ static void setupinit(Node *n);
 
 %type<node> exprln retexpr goto continue break expr atomicexpr
 %type<node> littok literal lorexpr landexpr borexpr strlit bandexpr
-%type<node> cmpexpr unionexpr addexpr mulexpr shiftexpr prefixexpr
+%type<node> cmpexpr addexpr mulexpr shiftexpr prefixexpr
 %type<node> postfixexpr funclit seqlit tuplit name block stmt label
 %type<node> use fnparam declbody declcore typedeclcore structent
 %type<node> arrayelt structelt tuphead ifstmt forstmt whilestmt
@@ -384,7 +384,7 @@ implbody
 	}
 	;
 
-traitdef: Ttrait Tident generictype optauxtypes Tendln { /* trait prototype */
+traitdef: Ttrait Tident generictype optauxtypes { /* trait prototype */
 		$$ = mktrait($1->loc,
 			mkname($2->loc, $2->id), $3,
 			$4.types, $4.ntypes,
@@ -639,18 +639,12 @@ landexpr: landexpr Tland cmpexpr
 	| cmpexpr
 	;
 
-cmpexpr : cmpexpr cmpop unionexpr
+cmpexpr : cmpexpr cmpop borexpr
 	{$$ = mkexpr($1->loc, binop($2->type), $1, $3, NULL);}
-	| unionexpr
+	| borexpr
 	;
 
 cmpop   : Teq | Tgt | Tlt | Tge | Tle | Tne ;
-
-unionexpr
-	: Ttick name unionexpr {$$ = mkexpr($1->loc, Oucon, $2, $3, NULL);}
-	| Ttick name {$$ = mkexpr($1->loc, Oucon, $2, NULL);}
-	| borexpr
-	;
 
 
 borexpr : borexpr Tbor bandexpr
@@ -696,6 +690,8 @@ prefixexpr
 	| Tbnot prefixexpr     {$$ = mkexpr($1->loc, Obnot, $2, NULL);}
 	| Tminus prefixexpr    {$$ = mkexpr($1->loc, Oneg, $2, NULL);}
 	| Tplus prefixexpr     {$$ = $2;} /* positive is a nop */
+	| Ttick name prefixexpr {$$ = mkexpr($1->loc, Oucon, $2, $3, NULL);}
+	| Ttick name {$$ = mkexpr($1->loc, Oucon, $2, NULL);}
 	| postfixexpr
 	;
 

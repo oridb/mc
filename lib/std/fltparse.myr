@@ -27,8 +27,8 @@ const flt64parse = {str
 
 	match fltparse(str)
 	| `Badflt:	-> `std.None
-	| `Inf sign:	-> `std.Some (sign : flt64) * std.flt64inf()
-	| `Nan sign:	-> `std.Some (sign : flt64) * std.flt64nan()
+	| `Inf sign:	-> `std.Some ((sign : flt64) * std.flt64inf())
+	| `Nan sign:	-> `std.Some ((sign : flt64) * std.flt64nan())
 	| `Flt (sign, mant, exp):
 		val = toflt(sign, mant, exp, &lim64)
 		std.bigfree(mant)
@@ -41,8 +41,8 @@ const flt32parse = {str
 
 	match fltparse(str)
 	| `Badflt:	-> `std.None
-	| `Inf sign:	-> `std.Some (sign : flt32) * std.flt32inf()
-	| `Nan sign:	-> `std.Some (sign : flt32) * std.flt32nan()
+	| `Inf sign:	-> `std.Some ((sign : flt32) * std.flt32inf())
+	| `Nan sign:	-> `std.Some ((sign : flt32) * std.flt32nan())
 	| `Flt (sign, mant, exp):
 		val = toflt(sign, mant, exp, &lim32)
 		std.bigfree(mant)

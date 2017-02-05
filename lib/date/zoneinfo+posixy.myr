@@ -71,7 +71,7 @@ const findtzoff = {tz, tm -> std.option(date.duration)
 	;;
 	ds = zone.ttinfo[zone.timetype[i]].gmtoff
 	free(zone)
-	->  `std.Some (ds : date.duration) * 1_000_000
+	->  `std.Some ((ds : date.duration) * 1_000_000)
 }
 
 const load = {file

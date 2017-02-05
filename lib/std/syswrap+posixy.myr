@@ -156,7 +156,7 @@ const fmtime = {path
 	if r >= 0
 		sec = (sb.mtime.sec : time)
 		nsec = (sb.mtime.nsec : time)
-		-> `Ok sec*1000 + nsec/1_000_000
+		-> `Ok (sec*1000 + nsec/1_000_000)
 	else
 		-> check(r)
 	;;
