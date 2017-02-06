@@ -1007,23 +1007,9 @@ void gendata(Gen *g, Node *data)
 {
 }
 
-void gentydescblob(Gen *g, Type *ty)
-{
-	Blob *b;
-
-	ty = tydedup(ty);
-	if (ty->type == Tyvar || ty->isemitted)
-		return;
-
-	ty->isemitted = 1;
-	b = tydescblob(ty);
-	b->iscomdat = 1;
-	genblob(g, b);
-	blobfree(b);
-}
-
 void gentydesc(Gen *g)
 {
+	Blob *b;
 	Type *ty;
 	size_t i;
 
@@ -1033,7 +1019,11 @@ void gentydesc(Gen *g)
 		ty = tydedup(types[i]);
 		if (ty->isemitted || ty->isimport)
 			continue;
-		gentydescblob(g, ty);
+		ty->isemitted = 1;
+		b = tydescblob(ty);
+		b->iscomdat = 1;
+		genblob(g, b);
+		blobfree(b);
 	}
 	pr(g, "\n");
 }
@@ -1123,7 +1113,7 @@ void outqbetype(Gen *g, Type *ty)
 	case Tystruct:	outstruct(g, ty);	break;
 	case Tytuple:	outtuple(g, ty);	break;
 	case Tyunion:	outunion(g, ty);	break;
-	case Tyname:	outqbetype(g, ty->sub[0]);	break;
+	case Tyname:	pr(g, "\t:t%zd\n", ty->tid);	break;
 
 	/* frontend/invalid types */
 	case Tyvar:
@@ -1156,24 +1146,21 @@ void genqbetypes(Gen *g)
 		if (ty->vis == Visbuiltin)
 			continue;
 
-		if (ty->type == Tyname)
-			asmname(buf, sizeof buf, ty->name, ":");
-		else
-			snprintf(buf, sizeof buf, ":t%zd", ty->tid);
+		snprintf(buf, sizeof buf, ":t%zd", ty->tid);
 		g->typenames[ty->tid] = strdup(buf);
-	}
 
-	for (i = Ntypes; i < ntypes; i++) {
-		ty = tydedup(types[i]);
-		if (!g->typenames[ty->tid])
-			continue;
+		/* gen the type */
 		if (ty->type == Tyname) {
 			n = tystr(ty);
 			pr(g, "# %s\n", n);
 			free(n);
 		}
 		pr(g, "type %s = align %zd {\n", g->typenames[ty->tid], tyalign(ty));
-		outqbetype(g, ty);
+		if (ty->type == Tyname) {
+			outqbetype(g, ty->sub[0]);
+		} else {
+			outqbetype(g, ty);
+		}
 		pr(g, "}\n\n");
 	}
 }
