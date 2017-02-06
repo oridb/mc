@@ -113,7 +113,7 @@ char *qbetag(Gen *g, Type *ty)
 	}
 }
 
-char *_qbetype(Gen *g, Type *ty)
+char *qbetype(Gen *g, Type *ty)
 {
 	switch (ty->type) {
 	case Tybool:	return "b";	break;
@@ -132,6 +132,7 @@ char *_qbetype(Gen *g, Type *ty)
 	case Tyflt32:	return "s";	break;
 	case Tyflt64:	return "d";	break;
 	case Typtr:	return "l";	break;
+	case Tyslice:	return "l, l";	break;
 	default:	return g->typenames[ty->tid];	break;
 	}
 }
@@ -305,7 +306,7 @@ void out(Gen *g, char *fmt, ...)
 		case 'T':	
 				
 				t = va_arg(ap, Type*);
-				fputs(_qbetype(g, t), g->file);	break;
+				fputs(qbetype(g, t), g->file);	break;
 		default:	die("bad format character %c", *p);	break;
 		}
 	}
@@ -906,7 +907,7 @@ void genfn(Gen *g, Node *dcl)
 		if (abileaks(ret))
 			pr(g, "%s ", qbetag(g, ret));
 		else
-			pr(g, "%s ", _qbetype(g, ret));
+			pr(g, "%s ", qbetype(g, ret));
 	}
 	pr(g, "%s", name);
 	funcargs(g, n);
@@ -1045,7 +1046,7 @@ void outarray(Gen *g, Type *ty)
 	if (ty->asize)
 		sz = ty->asize->expr.args[0]->lit.intval;
 	outqbetype(g, ty->sub[0]);
-	pr(g, "\t%s %zd,\n", _qbetype(g, ty->sub[0]), sz);
+	pr(g, "\t%s %zd,\n", qbetype(g, ty->sub[0]), sz);
 }
 
 void outstruct(Gen *g, Type *ty)
@@ -1090,7 +1091,7 @@ void outtuple(Gen *g, Type *ty)
 	for (i = 0; i < ty->nsub; i++) {
 		mty = ty->sub[i];
 		outqbetype(g, mty);
-		pr(g, "\t%s,\n", _qbetype(g, mty));
+		pr(g, "\t%s,\n", qbetype(g, mty));
 	}
 }
 
