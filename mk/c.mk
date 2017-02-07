@@ -81,9 +81,9 @@ install: subdirs-install $(INSTBIN) $(INSTLIB) $(INSTHDR) $(INSTPKG) $(EXTRAINST
 	    done
 	@for i in $(INSTMAN); do \
 		sect="$${i##*.}"; \
-		echo install -m 644 $$i $(abspath $(DESTDIR)/$(INST_ROOT)/share/man/man$${sect}); \
-		mkdir -p $(abspath $(DESTDIR)/$(INST_ROOT)/share/man/man$${sect}); \
-		install -m 644 $$i $(abspath $(DESTDIR)/$(INST_ROOT)/share/man/man$${sect}); \
+		echo install -m 644 $$i $(abspath $(DESTDIR)/$(INST_MAN)$${sect}); \
+		mkdir -p $(abspath $(DESTDIR)/$(INST_MAN)$${sect}); \
+		install -m 644 $$i $(abspath $(DESTDIR)/$(INST_MAN)$${sect}); \
 	done
 
 subdirs-uninstall:
@@ -112,8 +112,8 @@ uninstall: subdirs-uninstall $(EXTRAUNINSTALL)
 	done
 	@for i in $(INSTMAN); do \
 		sect="$${i##*.}" \
-		echo rm -f $$i $(abspath $(DESTDIR)/$(INST_ROOT)/share/man/man$${sect}/$$i); \
-		rm -f $(abspath $(DESTDIR)/$(INST_ROOT)/share/man/man$${sect}/$$i); \
+		echo rm -f $$i $(abspath $(DESTDIR)/$(INST_MAN)$${sect}/$$i); \
+		rm -f $(abspath $(DESTDIR)/$(INST_MAN)$${sect}/$$i); \
 	done
 
 %.o: %.c $(GENHDR) .deps/stamp

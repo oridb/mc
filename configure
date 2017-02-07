@@ -1,13 +1,5 @@
 #!/bin/sh
 
-for i in `seq 30`; do
-    echo "Lots of output to emulate automake... ok"
-    echo "Testing for things you'll never use... fail"
-    echo "Satisfying the fortran77 lobby... ok"
-    echo "Burning CPU time checking for the bloody obvious... ok"
-done
-echo "Automake emulated successfully"
-
 prefix="/usr/local"
 
 for arg in $*; do
@@ -18,13 +10,13 @@ for arg in $*; do
                 . ./configvar_cache
             fi
             ;;
-        "--prefix" | "-p") 
+        "--prefix" | "-p")
             prefix=shift $*
             ;;
         --prefix=*)
             prefix=`echo $arg | sed 's/^--prefix=//g'`
             ;;
-        "--help" | "-h") 
+        "--help" | "-h")
             echo "Usage:"
             echo "      --prefix | -p: The prefix to install to"
             break;
@@ -52,30 +44,38 @@ env='[][:]'
 case $OS in
     *Linux*)
         echo 'export SYS=linux' >> config.mk
+        echo export INST_MAN=$prefix/share/man/man >> config.mk
         echo 'const Sys = "Linux"' >> mbld/config.myr
         echo 'const Linkcmd = ["ld", "-o"]' >> mbld/config.myr
+        echo "const Manpath = \"share/man/man\"" >> mbld/config.myr
         ;;
     *Darwin*)
 	symprefix='"_"'
 	defaultasm=Gnugasmacho
 	sysinit='setenv("MACOSX_DEPLOYMENT_TARGET", "10.6", 0)'
         echo 'export SYS=osx' >> config.mk
+        echo export INST_MAN=$prefix/share/man/man >> config.mk
         echo 'const Sys = "OSX"' >> mbld/config.myr
         echo 'const Linkcmd = ["ld", ' \
             '"-pagezero_size", "0x100000000",' \
             '"-macosx_version_min", "10.6",'\
             '"-o"]' >> mbld/config.myr
+        echo "const Manpath = \"share/man/man\"" >> mbld/config.myr
 	env='[("MACOSX_DEPLOYMENT_TARGET", "10.6")][:]'
         ;;
     *FreeBSD*)
         echo 'export SYS=freebsd' >> config.mk
+        echo export INST_MAN=$prefix/share/man/man >> config.mk
         echo 'const Sys = "FreeBSD"' >> mbld/config.myr
         echo 'const Linkcmd = ["ld", "-o"]' >> mbld/config.myr
+        echo "const Manpath = \"share/man/man\"" >> mbld/config.myr
         ;;
     *OpenBSD*)
         echo 'export SYS=openbsd' >> config.mk
+        echo export INST_MAN=$prefix/man/man >> config.mk
         echo 'const Sys = "OpenBSD"' >> mbld/config.myr
         echo 'const Linkcmd = ["ld", "-static", "-nopie", "-o"]' >> mbld/config.myr
+        echo "const Manpath = \"man/man\"" >> mbld/config.myr
         ;;
     *)
         echo ''
@@ -106,7 +106,6 @@ echo "const Directlib = false" >> mbld/config.myr
 echo "const Runtime = \"_myrrt.o\"" >> mbld/config.myr
 
 # paths to install to
-echo "const Manpath = \"share/man/man\"" >> mbld/config.myr
 echo "const Sharepath = \"share\"" >> mbld/config.myr
 echo "const Binpath = \"bin\"" >> mbld/config.myr
 echo "const Libpath = \"lib/myr\"" >> mbld/config.myr
