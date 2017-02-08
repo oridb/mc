@@ -68,7 +68,7 @@ case $OS in
         echo export INST_MAN=$prefix/man/man >> config.mk
         echo 'const Sys = "FreeBSD"' >> mbld/config.myr
         echo 'const Linkcmd = ["ld", "-o"]' >> mbld/config.myr
-        echo "const Manpath = \"share/man/man\"" >> mbld/config.myr
+        echo "const Manpath = \"man/man\"" >> mbld/config.myr
         ;;
     *OpenBSD*)
         echo 'export SYS=openbsd' >> config.mk
