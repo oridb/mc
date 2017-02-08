@@ -69,6 +69,12 @@ const builtins = {
 	check("0.000101323461002", "{}", 0.000101323461002)
 	check("(1, `Bar 123, `Foo )", "{}", (1, `Bar 123, `Foo))
 
+	/* tricky cases: min values for integers */
+	check("-128", "{}", (-128 : int8))
+	check("-32768", "{}", (-32768 : int16))
+	check("-2147483648", "{}", (-2147483648 : int32))
+	check("-9223372036854775808", "{}", -9223372036854775808l)
+
 	/* 
 	compound types, followed by single value to make
 	sure we consume the right byte count.
