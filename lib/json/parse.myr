@@ -350,7 +350,6 @@ const matchprefix = {p, pfx
 }
 
 const unescaped = {c
-	std.put("{x}\n", (c : uint32))
 	-> c == 0x20 || c == 0x21 || \
 		(c >= 0x23 && c < 0x5b) || \
 		(c > 0x5d && c <= 0x10ffff)
@@ -393,7 +392,6 @@ const takec = {p
 }
 
 const enter = {p
-	std.put("depth: {}, max: {}\n", p.depth, Maxdepth)
 	p.depth++
 	-> p.depth <= Maxdepth
 }
