@@ -1,0 +1,86 @@
+use std
+
+use "types"
+
+pkg json =
+;;
+
+const __init__ = {
+	var j : elt
+
+	std.fmtinstall(std.typeof(&j), jsonfmt, [][:])
+}
+
+const jsonfmt = {sb, ap, opts
+	var e : elt#
+
+	e = std.vanext(ap)
+	eltfmt(sb, e, 0)
+}
+
+const eltfmt = {sb, e, ind
+	match e
+	| &(`Null):	std.sbfmt(sb, "null")
+	| &(`Bool b):	std.sbfmt(sb, "{}", b)
+	| &(`Num n):	std.sbfmt(sb, "{}", n)
+	| &(`Str s):	jstrfmt(sb, s)
+	| &(`Arr a):	arrfmt(sb, a, ind)
+	| &(`Obj o):	objfmt(sb, o, ind)
+	;;
+}
+
+
+const jstrfmt = {sb, str
+	std.sbputs(sb, "\"")
+	for c in str
+		match (c : char)
+		| '\x0c':	std.sbputs(sb, "\\f")
+		| '\\':	std.sbputs(sb, "\\\\")
+		| '\n': std.sbputs(sb, "\\n")
+		| '\r':	std.sbputs(sb, "\\r")
+		| '\t': std.sbputs(sb, "\\t")
+		| _:	std.sbputb(sb, c)
+		;;
+	;;
+	std.sbputs(sb, "\"")
+}
+
+const arrfmt = {sb, arr, ind
+	var sep
+
+	sep = ""
+	std.sbputs(sb, "[\n")
+	for e in arr
+		std.sbputs(sb, sep)
+		indent(sb, ind + 1)
+		eltfmt(sb, e, ind + 1)
+		sep = ",\n"
+	;;
+	std.sbputs(sb, "\n")
+	indent(sb, ind)
+	std.sbputs(sb, "]")
+}
+
+const objfmt = {sb, obj, ind
+	var sep
+
+	sep = ""
+	std.sbputs(sb, "{\n")
+	for (k, v) in obj
+		std.sbputs(sb, sep)
+		indent(sb, ind + 1)
+		jstrfmt(sb, k)
+		std.sbputs(sb, ": ")
+		eltfmt(sb, v, ind + 1)
+		sep = ",\n"
+	;;
+	std.sbputs(sb, "\n")
+	indent(sb, ind)
+	std.sbputs(sb, "}")
+}
+
+const indent = {sb, ind
+	for var i = 0; i < ind; i++
+		std.sbputc(sb, '\t')
+	;;
+}

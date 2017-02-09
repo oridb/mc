@@ -1,0 +1,132 @@
+use std
+use json
+use testr
+
+const main = {
+	strtest()
+	filetest()
+}
+
+const strtest = {
+	testr.run([
+		[.name="null", .fn={ctx
+			var j = std.try(json.parse("null"))
+			match j
+			| &(`json.Null):	std.put("ok\n")
+			| val:	testr.fail(ctx, "wrong value {}", val)
+			;;
+			json.free(j)
+		}],
+		[.name="bool", .fn={ctx
+			var j = std.try(json.parse("true"))
+			match j
+			| &(`json.Bool true):	std.put("ok\n")
+			| val:	testr.fail(ctx, "wrong value {}", val)
+			;;
+			j = std.try(json.parse("false"))
+			match j
+			| &(`json.Bool false):	std.put("ok\n")
+			| val:	testr.fail(ctx, "wrong value {}", val)
+			;;
+			json.free(j)
+		}],
+		[.name="num", .fn={ctx
+			var j = std.try(json.parse("123"))
+			match j
+			| &(`json.Num 123.0):	std.put("ok\n")
+			| val:	testr.fail(ctx, "wrong value {}", val)
+			;;
+			json.free(j)
+		}],
+		[.name="str", .fn={ctx
+			var j = std.try(json.parse("\"some str\""))
+			match j
+			| &(`json.Str "some str"):	std.put("ok\n")
+			| val:	testr.fail(ctx, "wrong value {}", val)
+			;;
+			json.free(j)
+		}],
+		[.name="arr", .fn={ctx
+			var j = std.try(json.parse("[\"some str\", 123, false]"))
+			match j
+			| &(`json.Arr a):
+				match a[0]
+				| &(`json.Str "some str"):	std.put("ok\n")
+				| val:	testr.fail(ctx, "wrong value {}", val)
+				;;
+				match a[1]
+				| &(`json.Num 123.0):	std.put("ok\n")
+				| val:	testr.fail(ctx, "wrong value {}", val)
+				;;
+				match a[2]
+				| &(`json.Bool false):	std.put("ok\n")
+				| val:	testr.fail(ctx, "wrong value {}", val)
+				;;
+			| val:	testr.fail(ctx, "wrong value {}", val)
+			;;
+			json.free(j)
+		}],
+		[.name="obj", .fn={ctx
+			var j = std.try(json.parse("{\"key\": 123, \"another\": \"foo\"}"))
+			match j
+			| &(`json.Obj a):
+				match a[0]
+				| ("key", &(`json.Num 123.0)):
+					std.put("ok\n")
+				| val:
+					testr.fail(ctx, "wrong value {}", val)
+				;;
+				match a[1]
+				| ("another", &(`json.Str "foo")):
+					std.put("ok\n")
+				| val:
+					testr.fail(ctx, "wrong value {}", val)
+				;;
+			| val:
+				testr.fail(ctx, "wrong value {}", val)
+			;;
+			json.free(j)
+		}],
+	][:])
+}
+
+const filetest = {
+	var dir, data, path
+
+	dir = std.try(std.diropen("test/inputs"))
+	for f in std.byentry(dir)
+		path = std.pathcat("test/inputs", f)
+		data = std.try(std.slurp(path))
+		/* 'n' indicates expected failure, 'y' indicates expected success, 'i' indicates implementation defined */
+		match std.decode(f)
+		| 'n':
+			testr.run([
+				[.name=f, .fn={ctx
+					match json.parse(data)
+					| `std.Err e:	/* ok */
+					| `std.Ok r:	testr.fail(ctx, "succeeded in parsing malformed json: {}\n", r)
+						std.die("hah")
+					;;
+				}]
+			][:])
+
+		| 'y':
+			testr.run([
+				[.name=f, .fn={ctx
+					match json.parse(data)
+					| `std.Err e:	testr.fail(ctx, "failed to parse json\n")
+					| `std.Ok r:	json.free(r)
+					;;
+				}]
+			][:])
+		| '_':
+			std.put("skip: {}\n", f)
+		| 'i':
+			std.put("ignoring implementation defined test {}\n", f)
+		| wat:
+			std.fatal("unknown test {}: needs to start with y or n\n", f)
+		;;
+		std.slfree(data)
+		std.slfree(path)
+	;;
+}

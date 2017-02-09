@@ -1,0 +1,26 @@
+use std
+
+pkg json =
+	type elt = union
+		`Null
+		`Bool	bool
+		`Num	flt64
+		`Str	byte[:]
+		`Arr	elt#[:]
+		`Obj	(byte[:], elt#)[:]
+	;;
+
+	type err = struct
+		e	: errtype
+		line	: std.size
+		off	: std.size
+	;;
+
+	type errtype = union
+		`Badesc char
+		`Junk char
+		`Depth
+		`End
+	;;
+;;
+

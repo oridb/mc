@@ -1,13 +1,14 @@
 sub =
 	bio
-	date
 	crypto
+	date
 	escfmt
-	inifile
 	fileutil
+	inifile
+	json
 	regex
 	std
 	sys
-	thread
 	testr
+	thread
 ;;

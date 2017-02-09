@@ -1,0 +1,9 @@
+lib json =
+	types.myr
+	parse.myr
+	fmt.myr
+
+        lib ../sys:sys
+        lib ../std:std
+;;
+
