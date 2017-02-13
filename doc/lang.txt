@@ -1071,44 +1071,42 @@ TABLE OF CONTENTS:
 
             The specific semantics are covered in later parts of section 5.2.
 
-            Precedence 12:
+            Precedence 11:
                     x.name          Member lookup
                     x++             Postincrement
-                    x--             Postdecrement
+                    x--             Postdecremendoc/libstd/varargst
                     x#              Dereference
                     x[e]            Index
                     x[lo:hi]        Slice
                     x(arg,list)        Call
 
-            Precedence 11:
+            Precedence 10:
                     &x              Address
                     !x              Logical negation
                     ~x              Bitwise negation
                     +x              Positive (no operation)
                     -x              Negate x
+		    `Tag val	    Union constructor
 
-            Precedence 10:
+            Precedence 9:
                     x << y          Shift left
                     x >> y          Shift right
 
-            Precedence 9:
+            Precedence 8:
                     x * y           Multiply
                     x / y           Divide
                     x % y           Modulo
 
-            Precedence 8:
+            Precedence 7:
                     x + y           Add
                     x - y           Subtract
 
-            Precedence 7:
+            Precedence 6:
                     x & y           Bitwise and
 
-            Precedence 6:
+            Precedence 5:
                     x | y           Bitwise or
                     x ^ y           Bitwise xor
-
-            Precedence 5:
-                    `Name x         Union construction
 
             Precedence 4:
                     x == x          Equality
