@@ -68,11 +68,12 @@ TABLE OF CONTENTS:
 
         Whitespace and comments are implicitly stripped out before parsing.
 
-        To put it in words, /regex/ defines a regular expression that would
-        match a single token in the input. "quoted" would match a single
-        string. <english description> contains an informal description of what
-        characters would match. In the case of ambiguity, longest match wins.
-        In the case of ambiguity with a quoted string, the quoted string wins.
+        To put the description in words, /regex/ defines a regular
+        expression that would match a single token in the input. "quoted"
+        would match a single string. <english description> contains an
+        informal description of what characters would match. In the case of
+        ambiguity, longest match wins.  In the case of ambiguity with a
+        quoted string, the quoted string wins.
 
         Productions are defined by any number of expressions, in which
         expressions are '|' separated sequences of terms.
