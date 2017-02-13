@@ -722,6 +722,11 @@ TABLE OF CONTENTS:
             to be repeated a number of times, although this is rare: Usually
             a single pass suffices.
 
+	    At this point, default types are applied. An unconstrained type
+	    with type $t::(numeric,integral) is replaced with int. An
+	    unconstrained type with $t::(numeric,floating) is replaced with
+	    flt64.
+
     4.6. Built In Traits:
 
         4.6.1. numeric:
