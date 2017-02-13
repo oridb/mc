@@ -85,7 +85,7 @@ TABLE OF CONTENTS:
 
     2.2. As-If Rule:
 
-        Anything specified in this document may be treated however the
+        Any behavior specified in this document may be treated however the
         compiler wishes, as long as the result is observed as if the semantics
         specified were followed strictly.
 
@@ -93,18 +93,19 @@ TABLE OF CONTENTS:
 
     3.1. Whitespace and Keywords:
 
-        The language is composed of several classes of tokens. There are
-        comments, identifiers, keywords, punctuation, and whitespace.
+        The language is composed of several classes of tokens: comments,
+        identifiers, keywords, punctuation, and whitespace.
 
         Comments begin with "/*" and end with "*/". This style of comment
         may nest, meaning that /* and */ still have a meaning within the
-        comment. No other text in this comment is interpreted.
+        comment. No other text in this type of comment is interpreted.
 
             /* this is a comment /* with another inside */ */
 
         Alternatively, '//' may be used to denote a comment. This comment
         will extend to the end of the current line. Newlines within a line
-        comment may not be escaped.
+        comment may not be escaped. /* has no special meaning within a //
+        comment.
 
             // this is a line comment
             // it will end on this line, regardless of the trailing \
