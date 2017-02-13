@@ -35,20 +35,18 @@ TABLE OF CONTENTS:
 
 1. ABOUT:
 
-        Myrddin is designed to be a simple, low-level programming
-        language.  It is designed to provide the programmer with
-        predictable behavior and a transparent compilation model,
-        while at the same time providing the benefits of strong type
-        checking, generics, type inference, and similar.  Myrddin is
-        not a language designed to explore the forefront of type
-        theory or compiler technology. It is not a language that is
-        focused on guaranteeing perfect safety. Its focus is on being
-        a practical, small, fairly well defined, and easy to
-        understand language for work that needs to be close to the
-        hardware.
+        Myrddin is designed to be a simple programming language.
+        It is designed to provide the programmer with predictable
+        behavior and a pragmatic set of semantics, providing the
+        benefits of strong type checking, generics, type inference,
+        and modern features with a high cost-benefit ratio. Myrddin
+        is not a language designed to explore the forefront of type
+        theory or compiler technology. Its focus is on being a
+        practical, small, well defined, and easy to understand
+        language for work that needs to be close to the hardware.
 
-        Myrddin is a computer language influenced strongly by C and
-        ML, with ideas from too many other places to name. 
+        Myrddin is influenced strongly by C and ML, with ideas from
+        too many other places to name.
 
 
 2. LEXICAL CONVENTIONS:
