@@ -66,7 +66,7 @@ TABLE OF CONTENTS:
             zerorep:    term "*"
             onerep:     term "+"
 
-        Whitespace and comments are ommitted in this description.
+        Whitespace and comments are implicitly stripped out before parsing.
 
         To put it in words, /regex/ defines a regular expression that would
         match a single token in the input. "quoted" would match a single
