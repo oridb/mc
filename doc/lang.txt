@@ -1109,12 +1109,12 @@ TABLE OF CONTENTS:
                     x ^ y           Bitwise xor
 
             Precedence 4:
-                    x == x          Equality
-                    x != x          Inequality
-                    x > x           Greater than
-                    x >= x          Greater than or equal to
-                    x < x           Less than
-                    x <= x          Less than or equal to
+                    x == y          Equality
+                    x != y          Inequality
+                    x > y           Greater than
+                    x >= y          Greater than or equal to
+                    x < y           Less than
+                    x <= y          Less than or equal to
 
             Precedence 3:
                     x && y          Logical and
