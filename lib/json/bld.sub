@@ -1,3 +1,5 @@
+testdeps = ../testr:testr ;;
+
 lib json =
 	types.myr
 	parse.myr
