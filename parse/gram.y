@@ -159,6 +159,26 @@ static void setupinit(Node *n);
 
 %type <uconlist> unionbody
 
+/*
+We want to bind more tightly to `Foo unaryexpr
+than to binary operators around it. Eg:
+
+	`Foo +bar
+
+should be interpreted as
+
+	(`Foo (+bar))
+
+and not
+
+	(`Foo) + (bar)
+
+The default action of shifting does the right thing,
+but warnings suck.
+*/
+%left Ttick
+%left Tplus Tminus Tband
+
 %union {
 	struct {
 		Srcloc loc;
@@ -683,15 +703,15 @@ shiftexpr
 shiftop : Tbsl | Tbsr;
 
 prefixexpr
-	: Tinc prefixexpr      {$$ = mkexpr($1->loc, Opreinc, $2, NULL);}
-	| Tdec prefixexpr      {$$ = mkexpr($1->loc, Opredec, $2, NULL);}
-	| Tband prefixexpr     {$$ = mkexpr($1->loc, Oaddr, $2, NULL);}
-	| Tlnot prefixexpr     {$$ = mkexpr($1->loc, Olnot, $2, NULL);}
-	| Tbnot prefixexpr     {$$ = mkexpr($1->loc, Obnot, $2, NULL);}
-	| Tminus prefixexpr    {$$ = mkexpr($1->loc, Oneg, $2, NULL);}
-	| Tplus prefixexpr     {$$ = $2;} /* positive is a nop */
-	| Ttick name prefixexpr {$$ = mkexpr($1->loc, Oucon, $2, $3, NULL);}
-	| Ttick name {$$ = mkexpr($1->loc, Oucon, $2, NULL);}
+	: Tinc prefixexpr	{$$ = mkexpr($1->loc, Opreinc, $2, NULL);}
+	| Tdec prefixexpr	{$$ = mkexpr($1->loc, Opredec, $2, NULL);}
+	| Tband prefixexpr	{$$ = mkexpr($1->loc, Oaddr, $2, NULL);}
+	| Tlnot prefixexpr	{$$ = mkexpr($1->loc, Olnot, $2, NULL);}
+	| Tbnot prefixexpr	{$$ = mkexpr($1->loc, Obnot, $2, NULL);}
+	| Tminus prefixexpr	{$$ = mkexpr($1->loc, Oneg, $2, NULL);}
+	| Tplus prefixexpr	{$$ = $2;} /* positive is a nop */
+	| Ttick name prefixexpr	{$$ = mkexpr($1->loc, Oucon, $2, $3, NULL);}
+	| Ttick name 		{$$ = mkexpr($1->loc, Oucon, $2, NULL);}
 	| postfixexpr
 	;
 
