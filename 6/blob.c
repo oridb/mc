@@ -259,7 +259,7 @@ static size_t blobucon(Blob *seq, Htab *globls, Htab *strtab, Node *n)
 
 static size_t blobrec(Blob *b, Htab *globls, Htab *strtab, Node *n)
 {
-	size_t i, sz;
+	size_t i, sz, end;
 
 	switch(exprop(n)) {
 	case Oucon:	sz = blobucon(b, globls, strtab, n);	break;
@@ -269,9 +269,17 @@ static size_t blobrec(Blob *b, Htab *globls, Htab *strtab, Node *n)
 	case Otup:
 	case Oarr:
 		/* Assumption: We sorted this while folding */
+		if (!n->expr.args)
+			break;
 		sz = 0;
-		for (i = 0; i < n->expr.nargs; i++)
+		for (i = 0; i < n->expr.nargs; i++) {
+			end = alignto(sz, exprtype(n->expr.args[i]));
+			sz += blobpad(b, end - sz);
 			sz += blobrec(b, globls, strtab, n->expr.args[i]);
+		}
+		/* if we need padding at the end.. */
+		end = alignto(sz, exprtype(n));
+		sz += blobpad(b, end - sz);
 		break;
 	default:
 		dump(n, stdout);
