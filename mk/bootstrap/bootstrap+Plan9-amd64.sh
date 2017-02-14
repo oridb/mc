@@ -72,10 +72,10 @@ echo 	$pwd/6/6.out	-I ../sys -I . blat.myr  && 	$pwd/6/6.out	-I ../sys -I . blat
 echo 	$pwd/6/6.out	-I ../sys -I . env+plan9.myr  && 	$pwd/6/6.out	-I ../sys -I . env+plan9.myr  &&\
 echo 	$pwd/6/6.out	-I ../sys -I . execvp.myr  && 	$pwd/6/6.out	-I ../sys -I . execvp.myr  &&\
 echo 	$pwd/6/6.out	-I ../sys -I . slput.myr  && 	$pwd/6/6.out	-I ../sys -I . slput.myr  &&\
+echo 	$pwd/6/6.out	-I ../sys -I . wait+plan9.myr  && 	$pwd/6/6.out	-I ../sys -I . wait+plan9.myr  &&\
 echo 	$pwd/6/6.out	-I ../sys -I . spork.myr  && 	$pwd/6/6.out	-I ../sys -I . spork.myr  &&\
 echo 	$pwd/6/6.out	-I ../sys -I . diriter.myr  && 	$pwd/6/6.out	-I ../sys -I . diriter.myr  &&\
 echo 	$pwd/6/6.out	-I ../sys -I . clear.myr  && 	$pwd/6/6.out	-I ../sys -I . clear.myr  &&\
-echo 	$pwd/6/6.out	-I ../sys -I . wait+plan9.myr  && 	$pwd/6/6.out	-I ../sys -I . wait+plan9.myr  &&\
 echo 	$pwd/6/6.out	-I ../sys -I . strjoin.myr  && 	$pwd/6/6.out	-I ../sys -I . strjoin.myr  &&\
 echo 	$pwd/6/6.out	-I ../sys -I . pathjoin.myr  && 	$pwd/6/6.out	-I ../sys -I . pathjoin.myr  &&\
 echo 	$pwd/6/6.out	-I ../sys -I . mktemp.myr  && 	$pwd/6/6.out	-I ../sys -I . mktemp.myr  &&\
