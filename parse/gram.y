@@ -34,7 +34,6 @@ static void setupinit(Node *n);
 
 %}
 
-%token<tok> Terror
 %token<tok> Tplus	/* + */
 %token<tok> Tminus	/* - */
 %token<tok> Tmul	/* * */

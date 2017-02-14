@@ -484,6 +484,7 @@ static Tok *oper(void)
 	int tt;
 	char c;
 
+	tt = 0;
 	c = next();
 	switch (c) {
 	case '{': tt = Tobrace; break;
@@ -616,7 +617,6 @@ static Tok *oper(void)
 			  tt = Tlnot;
 		  break;
 	default:
-		  tt = Terror;
 		  lfatal(curloc, "Junk character %c", c);
 		  break;
 	}
@@ -806,7 +806,7 @@ static Tok *toknext(void)
 		t = oper();
 	}
 
-	if (!t || t->type == Terror)
+	if (!t)
 		lfatal(curloc, "Unable to parse token starting with %c", c);
 	return t;
 }
