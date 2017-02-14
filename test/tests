@@ -121,6 +121,7 @@ B matchptr	P	'worked'
 F matchmixed
 B bigliteral	P	34359738368
 B arraylit-ni	E	2
+B arraypack	P	'(1, foo)(2, bar)(3, baz)'
 B arraypass	P	1
 B livearraylit	E	21
 # B arraylit	E	3       ## BUGGERED

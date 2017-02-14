@@ -21,7 +21,7 @@ generic foo = {x : @a::frobable
 }
 
 const main = {
-	var a = 123
+	var a = (123 : int)
 	var b = 'c'
 	foo(&a)
 	foo(&b)

@@ -1,0 +1,15 @@
+use std
+
+/* test for accidentally packed values */
+const a = [
+	(1, "foo"),
+	(2, "bar"),
+	(3, "baz"),
+]
+
+const main = {
+	for x in a[:]
+		std.put("{}", x)
+	;;
+	std.put("\n")
+}
