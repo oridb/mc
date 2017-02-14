@@ -1,15 +1,33 @@
 use "die"
+use "errno"
 use "execvp"
 use "fmt"
 use "result"
 use "syswrap"
-use "errno"
+use "wait"
 
 pkg std =
+	const run	: (cmd : byte[:][:]	-> waitstatus)
 	const spork	: (cmd : byte[:][:]	-> result((pid, fd, fd), errno))
 	const espork	: (cmd : byte[:][:]	-> result((pid, fd, fd, fd), errno))
 	const filterfd	: (fd : fd, cmd  : byte[:][:] -> result(pid, errno))
 ;;
+
+const run = {cmd
+	var pid
+
+	pid = fork()
+	/* error  */
+	if pid < 0
+		-> `Waiterror
+	elif pid == 0
+		execvp(cmd[0], cmd)
+		die("failed exec\n")
+	else
+		-> wait(pid)
+	;;
+}
+
 
 const spork = {cmd
 	var infds : fd[2], outfds : fd[2]
