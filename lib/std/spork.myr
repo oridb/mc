@@ -87,7 +87,7 @@ const filterfd = {fd, cmd
 }
 
 const sporkfd = {cmd, infds, outfds, errfds
-	var pid, err
+	var pid
 
 	pid = fork()
 	/* error  */
@@ -132,12 +132,9 @@ const sporkfd = {cmd, infds, outfds, errfds
 		close(outfds[0])
 		close(errfds[0])
 
-		err = execvp(cmd[0], cmd)
-		if err != Enone
-			-> `Err err
-		;;
+		execvp(cmd[0], cmd)
 		/* if fork succeeds, we never return */
-		die("unreachable")
+		die("exec failed")
 	/* parent */
 	else
 		-> `Ok pid
