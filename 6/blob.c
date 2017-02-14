@@ -269,9 +269,9 @@ static size_t blobrec(Blob *b, Htab *globls, Htab *strtab, Node *n)
 	case Otup:
 	case Oarr:
 		/* Assumption: We sorted this while folding */
+		sz = 0;
 		if (!n->expr.args)
 			break;
-		sz = 0;
 		for (i = 0; i < n->expr.nargs; i++) {
 			end = alignto(sz, exprtype(n->expr.args[i]));
 			sz += blobpad(b, end - sz);
