@@ -76,12 +76,12 @@ echo 	$pwd/6/6m	-I ../sys -I . iterutil.myr  && 	$pwd/6/6m	-I ../sys -I . iterut
 echo 	$pwd/6/6m	-I ../sys -I . env+posixy.myr  && 	$pwd/6/6m	-I ../sys -I . env+posixy.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . execvp.myr  && 	$pwd/6/6m	-I ../sys -I . execvp.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . slput.myr  && 	$pwd/6/6m	-I ../sys -I . slput.myr  &&\
+echo 	$pwd/6/6m	-I ../sys -I . wait+posixy.myr  && 	$pwd/6/6m	-I ../sys -I . wait+posixy.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . spork.myr  && 	$pwd/6/6m	-I ../sys -I . spork.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . getint.myr  && 	$pwd/6/6m	-I ../sys -I . getint.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . blat.myr  && 	$pwd/6/6m	-I ../sys -I . blat.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . diriter.myr  && 	$pwd/6/6m	-I ../sys -I . diriter.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . clear.myr  && 	$pwd/6/6m	-I ../sys -I . clear.myr  &&\
-echo 	$pwd/6/6m	-I ../sys -I . wait+posixy.myr  && 	$pwd/6/6m	-I ../sys -I . wait+posixy.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . strjoin.myr  && 	$pwd/6/6m	-I ../sys -I . strjoin.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . pathjoin.myr  && 	$pwd/6/6m	-I ../sys -I . pathjoin.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . mktemp.myr  && 	$pwd/6/6m	-I ../sys -I . mktemp.myr  &&\
