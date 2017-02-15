@@ -142,6 +142,11 @@ Node *fold(Node *n, int foldvar)
 		uc = finducon(tybase(exprtype(args[0])), args[0]->expr.args[0]);
 		r = val(n->loc, uc->id, exprtype(n));
 		break;
+	case Oudata:
+		if (exprop(args[0]) != Oucon || args[0]->expr.nargs != 2)
+			break;
+		r = args[0]->expr.args[1];
+		break;
 	case Ovar:
 		if (foldvar && issmallconst(decls[n->expr.did]))
 			r = fold(decls[n->expr.did]->decl.init, foldvar);
