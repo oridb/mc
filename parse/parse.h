@@ -148,7 +148,7 @@ struct Type {
 
 struct Ucon {
 	Srcloc loc;
-	size_t id;   /* unique id */
+	size_t id;   /* tag id */
 	int synth;   /* is it generated? */
 	Node *name;  /* ucon name */
 	Type *utype; /* type of the union this is an element of */
