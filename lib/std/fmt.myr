@@ -277,7 +277,8 @@ const fallbackfmt = {sb, params, tyenc, ap : valist# -> void
 	var inf, p
 
 	match typedesc(tyenc)
-	| `Tynone:	/* nothing */
+	/* shows up in a union with no body */
+	| `Tynone:
 	/* atomic types */
 	| `Tyvoid:
 		sbputs(sb, "void")
