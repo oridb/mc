@@ -16,6 +16,13 @@ lib thread =
 	ncpu+freebsd.myr
 	exit+freebsd-x64.s
 
+	# netbsd impl of thread primitives
+	#condvar+netbsd.myr
+	mutex+netbsd.myr
+	spawn+netbsd.myr
+	ncpu+netbsd.myr
+	exit+netbsd-x64.s
+
 	# osx impl of thread primitives
 	#condvar+osx.myr
 	spawn+osx.myr
@@ -39,4 +46,3 @@ lib thread =
         lib ../sys:sys
         lib ../std:std
 ;;
-

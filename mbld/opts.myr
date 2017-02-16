@@ -50,6 +50,7 @@ const initopts = {
 	| "Linux":	opt_sys = "linux"
 	| "Darwin":	opt_sys = "osx"
 	| "FreeBSD":	opt_sys = "freebsd"
+	| "NetBSD":	opt_sys = "netbsd"
 	| "OpenBSD":	opt_sys = "openbsd"
 	| "Plan9":	opt_sys = "plan9"
 	| unknown:	std.fatal("unknown systemy \"{}\"\n", unknown)
@@ -71,4 +72,3 @@ const initopts = {
 		opt_runtime = std.pathjoin([opt_instbase, config.Libpath, config.Runtime][:]) 
 	;;
 }
-
