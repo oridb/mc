@@ -4,12 +4,12 @@
 pwd=`pwd`
 echo 	cd $pwd/lib/sys && 	cd $pwd/lib/sys &&\
 echo 	as	-g -o util.o util+posixy-x64.s  && 	as	-g -o util.o util+posixy-x64.s  &&\
-echo 	$pwd/6/6m	syserrno+freebsd.myr  && 	$pwd/6/6m	syserrno+freebsd.myr  &&\
+echo 	$pwd/6/6m	syserrno+netbsd.myr  && 	$pwd/6/6m	syserrno+netbsd.myr  &&\
 echo 	$pwd/6/6m	systypes.myr  && 	$pwd/6/6m	systypes.myr  &&\
-echo 	$pwd/6/6m	sys+freebsd-x64.myr  && 	$pwd/6/6m	sys+freebsd-x64.myr  &&\
+echo 	$pwd/6/6m	sys+netbsd-x64.myr  && 	$pwd/6/6m	sys+netbsd-x64.myr  &&\
 echo 	$pwd/6/6m	setup+posixy.myr  && 	$pwd/6/6m	setup+posixy.myr  &&\
-echo 	as	-g -o syscall.o syscall+freebsd-x64.s  && 	as	-g -o syscall.o syscall+freebsd-x64.s  &&\
-echo 	$pwd/6/6m	ifreq+freebsd.myr  && 	$pwd/6/6m	ifreq+freebsd.myr  &&\
+echo 	as	-g -o syscall.o syscall+netbsd-x64.s  && 	as	-g -o syscall.o syscall+netbsd-x64.s  &&\
+echo 	$pwd/6/6m	ifreq+netbsd.myr  && 	$pwd/6/6m	ifreq+netbsd.myr  &&\
 echo 	$pwd/muse/muse	-o libsys.use -p sys sys.use syserrno.use setup.use systypes.use ifreq.use  && 	$pwd/muse/muse	-o libsys.use -p sys sys.use syserrno.use setup.use systypes.use ifreq.use  &&\
 echo 	ar	-rcs libsys.a sys.o syscall.o syserrno.o util.o setup.o systypes.o ifreq.o  && 	ar	-rcs libsys.a sys.o syscall.o syserrno.o util.o setup.o systypes.o ifreq.o  &&\
 echo 	cd $pwd/lib/std && 	cd $pwd/lib/std &&\
@@ -48,8 +48,8 @@ echo 	$pwd/6/6m	-I ../sys -I . hashfuncs.myr  && 	$pwd/6/6m	-I ../sys -I . hashf
 echo 	$pwd/6/6m	-I ../sys -I . htab.myr  && 	$pwd/6/6m	-I ../sys -I . htab.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . intparse.myr  && 	$pwd/6/6m	-I ../sys -I . intparse.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . introspect.myr  && 	$pwd/6/6m	-I ../sys -I . introspect.myr  &&\
-echo 	$pwd/6/6m	-I ../sys -I . strsplit.myr  && 	$pwd/6/6m	-I ../sys -I . strsplit.myr  &&\
-echo 	$pwd/6/6m	-I ../sys -I . syswrap-ss+freebsd.myr  && 	$pwd/6/6m	-I ../sys -I . syswrap-ss+freebsd.myr  &&\
+echo 	$pwd/6/6m	-I ../sys -I . strsplit.mye  && 	$pwd/6/6m	-I ../sys -I . strsplit.myr  &&\
+echo 	$pwd/6/6m	-I ../sys -I . syswrap-ss+netbsd.myr  && 	$pwd/6/6m	-I ../sys -I . syswrap-ss+netbsd.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . varargs.myr  && 	$pwd/6/6m	-I ../sys -I . varargs.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . writeall.myr  && 	$pwd/6/6m	-I ../sys -I . writeall.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . fmt.myr  && 	$pwd/6/6m	-I ../sys -I . fmt.myr  &&\
@@ -66,7 +66,7 @@ echo 	$pwd/6/6m	-I ../sys -I . dirname.myr  && 	$pwd/6/6m	-I ../sys -I . dirname
 echo 	$pwd/6/6m	-I ../sys -I . chomp.myr  && 	$pwd/6/6m	-I ../sys -I . chomp.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . fltparse.myr  && 	$pwd/6/6m	-I ../sys -I . fltparse.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . optparse.myr  && 	$pwd/6/6m	-I ../sys -I . optparse.myr  &&\
-echo 	$pwd/6/6m	-I ../sys -I . dir+freebsd.myr  && 	$pwd/6/6m	-I ../sys -I . dir+freebsd.myr  &&\
+echo 	$pwd/6/6m	-I ../sys -I . dir+netbsd.myr  && 	$pwd/6/6m	-I ../sys -I . dir+netbsd.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . ipparse.myr  && 	$pwd/6/6m	-I ../sys -I . ipparse.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . endian.myr  && 	$pwd/6/6m	-I ../sys -I . endian.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . strstrip.myr  && 	$pwd/6/6m	-I ../sys -I . strstrip.myr  &&\
