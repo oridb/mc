@@ -80,5 +80,6 @@ Myrddin currently runs on a number of platforms
 - Linux
 - OSX
 - FreeBSD
+- OpenBSD
 - 9front
 
