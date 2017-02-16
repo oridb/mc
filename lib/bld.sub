@@ -10,5 +10,5 @@ sub =
 	std
 	sys
 	testr
-	thread
+	#thread
 ;;

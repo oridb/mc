@@ -911,6 +911,8 @@ generic a = {x : @t; -> (x : uint64)}
 extern const cstring	: (str : byte[:] -> byte#)
 extern const alloca	: (sz : size	-> byte#)
 
+extern const __netbsd_pipe	: (fds : fd[2]# -> int64)
+
 /* process management */
 const exit	= {status;		syscall(Sysexit, a(status))}
 const getpid	= {;			-> (syscall(Sysgetpid, 1) : pid)}
@@ -992,7 +994,7 @@ const chdir	= {dir;	-> syscall(Syschdir, cstring(dir))}
 const __getcwd	= {buf;	-> syscall(Sys__getcwd, a(buf), a(buf.len))}
 
 /* file stuff */
-const pipe	= {fds;	-> syscall(Syspipe, fds)}
+const pipe	= {fds;	-> __netbsd_pipe(fds)}
 const dup 	= {fd;	-> (syscall(Sysdup, a(fd)) : fd)}
 const dup2 	= {src, dst;	-> (syscall(Sysdup2, a(src), a(dst)) : fd)}
 const fcntl	= {fd, cmd, args; 	-> syscall(Sysfcntl, a(fd), a(cmd), a(args))}
