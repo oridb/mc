@@ -160,14 +160,14 @@ pkg sys =
 	const Onofollow	: fdopt = 0x100
 	const Ondelay  	: fdopt = 0x4
 	const Otrunc   	: fdopt = 0x400
-	const Odir	: fdopt = 0x20000
+	const Odir	: fdopt = 0x200000
 
 	const Oshlock	: fdopt = 0x0010	/* open with shared file lock */
 	const Oexlock	: fdopt = 0x0020	/* open with exclusive file lock */
 	const Oasync	: fdopt = 0x0040	/* signal pgrp when data ready */
 	const Ofsync	: fdopt = 0x0080	/* synchronous writes */
 	const Oexcl	: fdopt = 0x0800	/* error if already exists */
-	const Ocloexec	: fdopt = 0x00100000
+	const Ocloexec	: fdopt = 0x400000
 
         /* stat modes */	
 	const Sifmt	: filemode = 0xf000
@@ -178,6 +178,7 @@ pkg sys =
 	const Sifreg	: filemode = 0x8000
 	const Siflnk	: filemode = 0xa000
 	const Sifsock 	: filemode = 0xc000
+	const Sifwht	: filemode = 0xe000
 
 	/* mmap protection */
 	const Mprotnone	: mprot = 0x0
@@ -192,7 +193,7 @@ pkg sys =
 	const Mfixed	: mopt = 0x10
 	const Mfile	: mopt = 0x0
 	const Manon	: mopt = 0x1000
-	const M32bit	: mopt = 0x80000
+	const Mstack	: mopt = 0x2000
 
 	/* file types */
 	const Dtunknown	: filetype = 0
@@ -209,7 +210,7 @@ pkg sys =
 	const Afunspec	: sockfam = 0
 	const Afunix	: sockfam = 1
 	const Afinet	: sockfam = 2
-	const Afinet6	: sockfam = 28
+	const Afinet6	: sockfam = 24
 
 	/* socket types. */
 	const Sockstream	: socktype = 1
@@ -227,15 +228,12 @@ pkg sys =
 	const Sodontroute	: sockopt = 0x0010	/* just use interface addresses */
 	const Sobroadcast	: sockopt = 0x0020	/* permit sending of broadcast msgs */
 	const Souseloopback	: sockopt = 0x0040	/* bypass hardware when possible */
-	const Solinger		: sockopt = 0x0080	/* linger on close if data present */
+	const Solinger	: sockopt = 0x0080		/* linger on close if data present */
 	const Sooobinline	: sockopt = 0x0100	/* leave received OOB data in line */
 	const Soreuseport	: sockopt = 0x0200	/* allow local address & port reuse */
-	const Sotimestamp	: sockopt = 0x0400	/* timestamp received dgram traffic */
 	const Sonosigpipe	: sockopt = 0x0800	/* no SIGPIPE from EPIPE */
 	const Soacceptfilter	: sockopt = 0x1000	/* there is an accept filter */
-	const Sobintime		: sockopt = 0x2000	/* timestamp received dgram traffic */
-	const Sonooffload	: sockopt = 0x4000	/* socket cannot be offloaded */
-	const Sonoddp		: sockopt = 0x8000	/* disable direct data placement */
+	const Sotimestamp	: sockopt = 0x2000	/* timestamp received dgram traffic */
 
 	/* network protocols */
 	const Ipproto_ip	: sockproto = 0
@@ -252,8 +250,7 @@ pkg sys =
 	const Pollwrnorm	: uint16 = Pollout	/* no write type differentiation */
 	const Pollrdband	: uint16 = 0x0080	/* OOB/Urgent readable data */
 	const Pollwrband	: uint16 = 0x0100	/* OOB/Urgent data can be written */
-	/* General FreeBSD extension (currently only supported for sockets): */
-	const Pollinigneof	: uint16 = 0x2000	/* like POLLIN, except ignore EOF */
+
 	/*
 	* These events are set if they occur regardless of whether they were
 	* requested.
@@ -270,76 +267,48 @@ pkg sys =
 	const Maxpathlen	: size = 1024
 
 	/* fcntl constants */
-	const Fdupfd	 : fcntlcmd = 0		/* duplicate file descriptor */
-	const Fgetfd	 : fcntlcmd = 1		/* get file descriptor flags */
-	const Fsetfd	 : fcntlcmd = 2		/* set file descriptor flags */
-	const Fgetfl	 : fcntlcmd = 3		/* get file status flags */
-	const Fsetfl	 : fcntlcmd = 4		/* set file status flags */
-	const Fgetown	 : fcntlcmd = 5		/* get SIGIO/SIGURG proc/pgrp */
-	const Fsetown	 : fcntlcmd = 6		/* set SIGIO/SIGURG proc/pgrp */
-	const Fogetlk	 : fcntlcmd = 7		/* get record locking information */
-	const Fosetlk	 : fcntlcmd = 8		/* set record locking information */
-	const Fosetlkw	 : fcntlcmd = 9		/* F_SETLK; wait if blocked */
-	const Fdup2fd	 : fcntlcmd = 10		/* duplicate file descriptor to arg */
-	const Fgetlk	 : fcntlcmd = 11		/* get record locking information */
-	const Fsetlk	 : fcntlcmd = 12		/* set record locking information */
-	const Fsetlkw	 : fcntlcmd = 13		/* F_SETLK; wait if blocked */
-	const Fsetlk_remote	 : fcntlcmd = 14		/* debugging support for remote locks */
-	const Freadahead	 : fcntlcmd = 15		/* read ahead */
-	const Frdahead	 : fcntlcmd = 16		/* Darwin compatible read ahead */
-	const Fdupfd_cloexec	 : fcntlcmd = 17		/* Like F_DUPFD, but FD_CLOEXEC is set */
-	const Fdup2fd_cloexec	 : fcntlcmd = 18		/* Like F_DUP2FD, but FD_CLOEXEC is set */
+	const Fdupfd	: fcntlcmd = 0		/* duplicate file descriptor */
+	const Fgetfd	: fcntlcmd = 1		/* get file descriptor flags */
+	const Fsetfd	: fcntlcmd = 2		/* set file descriptor flags */
+	const Fgetfl	: fcntlcmd = 3		/* get file status flags */
+	const Fsetfl	: fcntlcmd = 4		/* set file status flags */
+	const Fgetown	: fcntlcmd = 5		/* get SIGIO/SIGURG proc/pgrp */
+	const Fsetown	: fcntlcmd = 6		/* set SIGIO/SIGURG proc/pgrp */
+	const Fogetlk	: fcntlcmd = 7		/* get record locking information */
+	const Fosetlk	: fcntlcmd = 8		/* set record locking information */
+	const Fosetlkw	: fcntlcmd = 9		/* F_SETLK; wait if blocked */
+	const Fclosem	: fcntlcmd = 10		/* close all fds >= to the one given */
+	const Fmaxfd	: fcntlcmd = 11		/* return the max open fd */
+	const Fdupfd_cloexec	: fnctlcmd =12		/* close on exec duplicated fd */
+	const Fgetnosigpipe	: fnctlcmd =13		/* get SIGPIPE disposition */
+	const Fsetnosigpipe	: fnctlcmd =14		/* set SIGPIPE disposition */
 
 	/* return value for a failed mapping */
 	const Mapbad	: byte# = (-1 : byte#)
-
-	/* umtx ops */
-	const Umtxlock	: umtxop = 0
-	const Umtxunlock	: umtxop = 1
-	const Umtxwait	: umtxop = 2
-	const Umtxwake	: umtxop = 3
-	const UmtxmtxTrylock	: umtxop = 4
-	const Umtxmtxlock	: umtxop = 5
-	const Umtxmtxunlock	: umtxop = 6
-	const Umtxsetceiling	: umtxop = 7
-	const Umtxcvwait	: umtxop = 8
-	const Umtxcvsignal	: umtxop = 9
-	const Umtxcvbroadcast	: umtxop = 10
-	const Umtxwaituint	: umtxop = 11
-	const Umtxrwrdlock	: umtxop = 12
-	const Umtxrwwrlock	: umtxop = 13
-	const Umtxrwunlock	: umtxop = 14
-	const Umtxwaituintpriv	: umtxop = 15
-	const Umtxwakepriv	: umtxop = 16
-	const Umtxmutexwait	: umtxop = 17
-	const Umtxsemwait	: umtxop = 19
-	const Umtxsemwake	: umtxop = 20
-	const Umtxnwakepriv	: umtxop = 21
-	const Umtxmtxwake2	: umtxop = 22
-	const Umtxmax	: umtxop = 23
 
 	/* signal actions */
 	const Saonstack		: sigflags = 0x0001	/* take signal on signal stack */
 	const Sarestart		: sigflags = 0x0002	/* restart system call on signal return */
 	const Saresethand	: sigflags = 0x0004	/* reset to SIG_DFL when taking signal */
 	const Sanodefer		: sigflags = 0x0010	/* don't mask the signal we're delivering */
+	const Sanocldstop	: sigflags = 0x0008	/* do not generate SIGCHLD on child stop */
 	const Sanocldwait	: sigflags = 0x0020	/* don't keep zombies around */
 	const Sasiginfo		: sigflags = 0x0040	/* signal handler with SA_SIGINFO args */
+	const Sanokerninfo	: sigflags = 0x0080	/* siginfo does not print kernel info on tty */
 
 	/* signal numbers */
 	const Sighup	: signo = 1	/* hangup */
 	const Sigint	: signo = 2	/* interrupt */
 	const Sigquit	: signo = 3	/* quit */
-	const Sigill	: signo = 4	/* illegal instr. (not reset when caught) */
+	const Sigill	: signo = 4	/* illegal instruction (not reset when caught) */
 	const Sigtrap	: signo = 5	/* trace trap (not reset when caught) */
 	const Sigabrt	: signo = 6	/* abort() */
-	const Sigiot	: signo = Sigabrt	/* compatibility */
 	const Sigemt	: signo = 7	/* EMT instruction */
 	const Sigfpe	: signo = 8	/* floating point exception */
 	const Sigkill	: signo = 9	/* kill (cannot be caught or ignored) */
 	const Sigbus	: signo = 10	/* bus error */
 	const Sigsegv	: signo = 11	/* segmentation violation */
-	const Sigsys	: signo = 12	/* non-existent system call invoked */
+	const Sigsys	: signo = 12	/* bad argument to system call */
 	const Sigpipe	: signo = 13	/* write on a pipe with no one to read it */
 	const Sigalrm	: signo = 14	/* alarm clock */
 	const Sigterm	: signo = 15	/* software termination signal from kill */
@@ -349,7 +318,7 @@ pkg sys =
 	const Sigcont	: signo = 19	/* continue a stopped process */
 	const Sigchld	: signo = 20	/* to parent on child stop or exit */
 	const Sigttin	: signo = 21	/* to readers pgrp upon background tty read */
-	const Sigttou	: signo = 22	/* like TTIN if (tp->t_local&LTOSTOP) */
+	const Sigttou	: signo = 22	/* like TTIN for output if (tp->t_local&LTOSTOP) */
 	const Sigio	: signo = 23	/* input/output possible signal */
 	const Sigxcpu	: signo = 24	/* exceeded CPU time limit */
 	const Sigxfsz	: signo = 25	/* exceeded file size limit */
@@ -358,10 +327,8 @@ pkg sys =
 	const Sigwinch	: signo = 28	/* window size changes */
 	const Siginfo	: signo = 29	/* information request */
 	const Sigusr1	: signo = 30	/* user defined signal 1 */
-	const Sigusr2	: signo = 31	/* user defined signal 2 */
-	const Sigthr	: signo = 32	/* reserved by thread library. */
-	const Siglwp	: signo = Sigthr
-	const Siglibrt	: signo = 33	/* reserved by real-time library. */
+	const Sigusr1	: signo = 31	/* user defined signal 2 */
+	const Sigpwr	: signo = 32	/* power fail/restart (not reset when caught) */
 
 	/* syscalls */
 	const Syssyscall	 : scno = 0
