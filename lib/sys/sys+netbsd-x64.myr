@@ -38,8 +38,8 @@ pkg sys =
 
 	type sigaction = struct
 		handler	: byte#	/* code pointer */
-		flags	: sigflags
 		mask	: sigset
+		flags	: sigflags
 	;;
 
 	type waitstatus = union
@@ -144,30 +144,11 @@ pkg sys =
 	;;	
 	
 	type dirent = struct
-		fileno	: uint32
+		fileno	: uint64
 		reclen	: uint16
+		namelen	: uint16
 		ftype	: filetype
-		namelen	: uint8
-		name	: byte[256]	
-	;;	
-
-	type rtprio = struct
-		rttype	: uint16
-		rtprio	: uint16
-	;;
-
-	type thrparam = struct
-		startfn	: void#	/* pointer to code for thread entry */
-		arg	: void#	/* pointer argument for thread entry */
-		stkbase	: byte#	/* stack base address */
-		stksz	: size	/* size of stack */
-		tlsbase	: byte#	/* base of thread local storage */
-		tlssz	: size	/* size of tls */
-		tid	: uint64#	/* place to store new tid */
-		ptid	: uint64#	/* place to store parent tid */
-		flags	: int32	/* flags for the thread */
-		rtp	: rtprio#	/* realtime priority */
-		spare	: void#[3]	/* padding */
+		name	: byte[512]
 	;;
 
 	/* open options */
