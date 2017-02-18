@@ -1909,13 +1909,13 @@ TABLE OF CONTENTS:
     typeid:     ident | ident "(" typarams ")"
     typarams:   typaram ("," typaram)*
     type:       structdef | uniondef | tupledef |
-                compound | generic | "..."
+                constructed | generic | "..."
     structdef:  "struct" structbody ";;"
     uniondef:   "union" unionbody ";;"
     tupledef:   "(" type ("," type)* ")"
     generic:    typaram ["::" traitlist]
     traitlist:  name | "(" name ("," name)
-    compound:   functype | sicetype | arraytype | ptrtype | void | name
+    constructed: functype | sicetype | arraytype | ptrtype | void | name
     functype:   "(" arglist "->" type ")"
     arglist:    [arg ("," arg)*]
     arg:        name ":" type
