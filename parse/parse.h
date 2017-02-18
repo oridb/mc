@@ -559,5 +559,6 @@ extern int asmonly;
 extern char *outfile;
 extern char **incpaths;
 extern size_t nincpaths;
+extern char *localincpath;
 
 void yyerror(const char *s);

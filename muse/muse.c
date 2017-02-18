@@ -25,6 +25,7 @@ char **incpaths;
 size_t nincpaths;
 char **extralibs;
 size_t nextralibs;
+char *localincpath;
 
 static void usage(char *prog)
 {
@@ -94,6 +95,7 @@ int main(int argc, char **argv)
 		fprintf(stderr, "output file needed when merging usefiles.\n");
 		exit(1);
 	}
+	localincpath = ".";
 	if (!pkgname)
 		pkgname = outfile;
 

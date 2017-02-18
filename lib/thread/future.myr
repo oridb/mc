@@ -1,6 +1,6 @@
 use std
 
-use "mutex.use"
+use "mutex"
 
 pkg thread =
 	type future(@a) = struct
