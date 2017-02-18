@@ -42,7 +42,7 @@ static void usage(char *prog)
 	printf("\t-I path\tAdd 'path' to use search path\n");
 	printf("\t-d\tPrint debug dumps. Recognized options: f r p i\n");
 	printf("\t-G\tGenerate asm in gas syntax\n");
-	printf("\t-8\tGenerate asm in plan 9 syntax\n");
+	printf("\t-9\tGenerate asm in plan 9 syntax\n");
 	printf("\t-d opts: additional debug logging. Options are listed below:\n");
 	printf("\t\tf: log folded trees\n");
 	printf("\t\tl: log lowered pre-cfg trees\n");
