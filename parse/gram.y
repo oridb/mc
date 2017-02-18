@@ -287,7 +287,7 @@ attrs   : /* empty */ {$$.nstr = 0; $$.str = NULL;}
 	;
 
 decllist: declbody {
-		$$.nl = NULL; $$.nn = 0;
+		$$.loc = $1->loc; $$.nl = NULL; $$.nn = 0;
 		lappend(&$$.nl, &$$.nn, $1);
 	}
 	| declbody Tcomma decllist {
