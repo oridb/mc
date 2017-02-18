@@ -57,6 +57,7 @@ int main(int argc, char **argv)
 	size_t i;
 	FILE *f;
 
+	localincpath = ".";
 	optinit(&ctx, "sd:hmo:p:I:l:", argv, argc);
 	while (!optdone(&ctx)) {
 		switch (optnext(&ctx)) {
@@ -80,9 +81,6 @@ int main(int argc, char **argv)
 		case 'l':
 			lappend(&extralibs, &nextralibs, ctx.optarg);
 			break;
-		case 's':
-			show = 1;
-			break;
 		default:
 			usage(argv[0]);
 			exit(0);
@@ -91,13 +89,14 @@ int main(int argc, char **argv)
 	}
 
 	lappend(&incpaths, &nincpaths, Instroot "/lib/myr");
-	if (!outfile) {
+	if (!outfile && !show) {
 		fprintf(stderr, "output file needed when merging usefiles.\n");
 		exit(1);
 	}
-	localincpath = ".";
-	if (!pkgname)
-		pkgname = outfile;
+	if (!pkgname) {
+		fprintf(stderr, "package needed when merging usefiles.\n");
+		exit(1);
+	}
 
 	/* read and parse the file */
 	file = mkfile("internal");
@@ -112,10 +111,7 @@ int main(int argc, char **argv)
 
 	/* generate the usefile */
 	f = fopen(outfile, "w");
-	if (debugopt['s'] || show)
-		dumpstab(file->file.globls, stdout);
-	else
-		writeuse(f, file);
+	writeuse(f, file);
 	fclose(f);
 	return 0;
 }
