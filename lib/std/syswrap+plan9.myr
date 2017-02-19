@@ -77,16 +77,26 @@ pkg std =
 
 	/* statbuf offsets */
 	pkglocal const Sizeoff	: int64 = 0
-	pkglocal const Typeoff	: int64 = 2
-	pkglocal const Devoff	: int64 = 4
-	pkglocal const Qidtypeoff	: int64 =8
-	pkglocal const Qidversoff	: int64 = 9
-	pkglocal const Qidpathoff	: int64 = 13
-	pkglocal const Modeoff	: int64 = 21
-	pkglocal const Atimeoff	: int64 = 25
-	pkglocal const Mtimeoff	: int64 = 29
-	pkglocal const Lengthoff	: int64 = 31
-	pkglocal const Stringsoff	: int64 = 39
+	pkglocal const Sizesz	: int64 = 2
+	pkglocal const Typeoff	: int64 = Sizeoff + Sizesz
+	pkglocal const Typesz	: int64 = 2
+	pkglocal const Devoff	: int64 = Typeoff + Typesz
+	pkglocal const Devsz	: int64 = 4
+	pkglocal const Qidtypeoff	: int64 = Devoff + Devsz
+	pkglocal const Qidtypesz	: int64 = 1
+	pkglocal const Qidversoff	: int64 = Qidtypeoff + Qidtypesz
+	pkglocal const Qidverssz	: int64	= 4
+	pkglocal const Qidpathoff	: int64 = Qidversoff + Qidverssz
+	pkglocal const Qidpathsz	: int64 = 8
+	pkglocal const Modeoff	: int64 = Qidpathoff + Qidpathsz
+	pkglocal const Modesz	: int64 = 4
+	pkglocal const Atimeoff	: int64 = Modeoff + Modesz
+	pkglocal const Atimesz	: int64 = 4
+	pkglocal const Mtimeoff	: int64 = Atimeoff + Atimesz
+	pkglocal const Mtimesz	: int64 = 4
+	pkglocal const Lengthoff	: int64 = Mtimeoff + Mtimesz
+	pkglocal const Lengthsz	: int64 = 8
+	pkglocal const Stringsoff	: int64 = Lengthoff + Lengthsz
 ;;
 
 /* UGLY: circular dependency breaking... */

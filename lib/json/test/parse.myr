@@ -125,7 +125,7 @@ const filetest = {
 			std.put("ignoring implementation defined test {}\n", f)
 		| wat:
 			if !std.sleq(f, "LICENSE")
-				std.fatal("unknown test {}: needs to start with y or n\n", f)
+				std.fatal("unknown test '{}': needs to start with y or n\n", f)
 			;;
 		;;
 		std.slfree(data)
