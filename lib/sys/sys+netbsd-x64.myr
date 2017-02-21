@@ -18,6 +18,7 @@ pkg sys =
 	type umtxop	= int32
 	type signo	= int32
 	type sigflags	= int32
+	type lwpid	= int32
 
 	type clock = union
 		`Clockrealtime
@@ -151,6 +152,24 @@ pkg sys =
 		name	: byte[512]
 	;;
 
+	type stack = struct
+		sp	: void#		/* signal stack base */
+		size	: size		/* signal stack length */
+		flags	: int32		/* SS_DISABLE and/or SS_ONSTACK */
+	;;
+
+	const Ngreg = 26
+	const Fpregsz = 512
+	type ucontext = struct
+		flags	: uint32
+		link	: ucontext#
+		sigset	: sigset
+		stack	: stack
+		gregs	: uint64[Ngreg]
+		tlsbase	: uint64
+		fpregs	: byte[Fpregsz]
+	;;
+
 	/* open options */
 	const Ordonly  	: fdopt = 0x0
 	const Owronly  	: fdopt = 0x1
@@ -279,9 +298,9 @@ pkg sys =
 	const Fosetlkw	: fcntlcmd = 9		/* F_SETLK; wait if blocked */
 	const Fclosem	: fcntlcmd = 10		/* close all fds >= to the one given */
 	const Fmaxfd	: fcntlcmd = 11		/* return the max open fd */
-	const Fdupfd_cloexec	: fnctlcmd =12		/* close on exec duplicated fd */
-	const Fgetnosigpipe	: fnctlcmd =13		/* get SIGPIPE disposition */
-	const Fsetnosigpipe	: fnctlcmd =14		/* set SIGPIPE disposition */
+	const Fdupfd_cloexec	: fcntlcmd =12		/* close on exec duplicated fd */
+	const Fgetnosigpipe	: fcntlcmd =13		/* get SIGPIPE disposition */
+	const Fsetnosigpipe	: fcntlcmd =14		/* set SIGPIPE disposition */
 
 	/* return value for a failed mapping */
 	const Mapbad	: byte# = (-1 : byte#)
@@ -327,7 +346,7 @@ pkg sys =
 	const Sigwinch	: signo = 28	/* window size changes */
 	const Siginfo	: signo = 29	/* information request */
 	const Sigusr1	: signo = 30	/* user defined signal 1 */
-	const Sigusr1	: signo = 31	/* user defined signal 2 */
+	const Sigusr2	: signo = 31	/* user defined signal 2 */
 	const Sigpwr	: signo = 32	/* power fail/restart (not reset when caught) */
 
 	/* syscalls */
@@ -785,6 +804,13 @@ pkg sys =
 	const execv	: (cmd : byte[:], args : byte[:][:] -> int64)
 	const execve	: (cmd : byte[:], args : byte[:][:], env : byte[:][:] -> int64)
 
+	/* thread control */
+	const _lwp_create	: (uc : ucontext#, flags : uint64, nlwp : lwpid# -> int32)
+	const _lwp_exit		: (-> void)
+	const _lwp_park		: (clk: clock, flags : int32, ts : timespec#, \
+					unpark : lwpid, hint : void#, unparkhint : void# -> int32)
+	const _lwp_unpark	: (pid : lwpid, hint : void# -> int32)
+
 	/* wrappers to extract wait status */
 	const waitstatus	: (st : int32 -> waitstatus)
 
@@ -913,12 +939,15 @@ const execve	= {cmd, args, env
 }
 
 /* thread management */
-/* FIXME: not implemented
-const thr_new	= {param, sz;	-> (syscall(Sys_lwp_create, a(param), a(sz)) : int)}
-const thr_exit	= {state;	syscall(Systhr_exit, a(state))}
-const umtx_op	= {obj, op, val, a1, a2; -> (syscall(Sys_umtx_op, a(obj), a(op), a(val), a(a1), a(a2)) : int)}
-const yield	= {;	-> (syscall(Sysyield) : int)}
-*/
+const _lwp_create	= {uc, flags, nlwp; -> (syscall(Sys_lwp_create, a(uc), a(flags), a(nlwp)) : int32)}
+const _lwp_unpark	= {pid, hint; -> (syscall(Sys_lwp_unpark, a(pid), a(hint)) : int32)}
+const _lwp_park	= {clk, flags, ts, unpark, hint, unparkhint
+	-> (syscall(Sys___lwp_park60, \
+		a(clockid(clk)), \
+		a(flags), a(ts), \
+		a(unpark), a(unparkhint)) : int32)}
+const _lwp_exit	= {; syscall(Sys_lwp_exit)}
+const sched_yield = {; syscall(Syssched_yield)}
 
 /* fd manipulation */
 const open	= {path, opts;		-> (syscall(Sysopen, cstring(path), a(opts), a(0o777)) : fd)}
@@ -971,7 +1000,6 @@ const clock_getres = {clk, ts;	-> (syscall(Sys__clock_getres50, clockid(clk), a(
 const clock_gettime = {clk, ts;	-> (syscall(Sys__clock_gettime50, clockid(clk), a(ts)) : int32)}
 const clock_settime = {clk, ts;	-> (syscall(Sys__clock_settime50, clockid(clk), a(ts)) : int32)}
 const nanosleep	= {req, rem;	-> (syscall(Sys__nanosleep50, a(req), a(rem)) : int32)}
-const sched_yield = {;	syscall(Syssched_yield)}
 
 /* system information */
 const uname	= {buf
