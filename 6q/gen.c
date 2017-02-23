@@ -1146,7 +1146,7 @@ void genqbetypes(Gen *g)
 		if (ty->vis == Visbuiltin)
 			continue;
 
-		snprintf(buf, sizeof buf, ":t%zd", ty->tid);
+		snprintf(buf, sizeof buf, ":t%d", ty->tid);
 		g->typenames[ty->tid] = strdup(buf);
 
 		/* gen the type */

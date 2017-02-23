@@ -26,6 +26,7 @@ char debugopt[128];
 int writeasm;
 char *outfile;
 char **incpaths;
+char *localincpath;
 size_t nincpaths;
 
 static void usage(char *prog)
@@ -53,9 +54,10 @@ static void swapout(char* buf, size_t sz, char* suf) {
 		bprintf(buf, sz, "%s%s", outfile, suf);
 }
 
-static void assemble(char *asmsrc, char *path)
+static void assemble(char *qbesrc, char *asmsrc, char *path)
 {
-	char *asmcmd[] = {"/home/ori/src/myr/qbe/obj/qbe", "-o", NULL};
+	char *qbecmd[] = {"qbe", "-o", NULL};
+	char *asmcmd[] = Asmcmd;
 	char objfile[1024];
 	char *psuffix;
 	char **p, **cmd;
@@ -73,10 +75,10 @@ static void assemble(char *asmsrc, char *path)
 	}
 	cmd = NULL;
 	ncmd = 0;
-	for (p = asmcmd; *p != NULL; p++)
+	for (p = qbecmd; *p != NULL; p++)
 		lappend(&cmd, &ncmd, *p);
-	lappend(&cmd, &ncmd, objfile);
 	lappend(&cmd, &ncmd, asmsrc);
+	lappend(&cmd, &ncmd, qbesrc);
 	lappend(&cmd, &ncmd, NULL);
 
 	for (p = cmd; *p; p++)
@@ -88,14 +90,49 @@ static void assemble(char *asmsrc, char *path)
 		die("couldn't fork");
 	} else if (pid == 0) {
 		if (execvp(cmd[0], cmd) == -1)
+			die("Couldn't exec qbe\n");
+	} else {
+		waitpid(pid, &status, 0);
+		if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
+			die("Couldn't run qbe\n");
+	}
+	lfree(&cmd, &ncmd);
+
+	cmd = NULL;
+	ncmd = 0;
+	for (p = asmcmd; *p != NULL; p++)
+		lappend(&cmd, &ncmd, *p);
+	lappend(&cmd, &ncmd, objfile);
+	lappend(&cmd, &ncmd, asmsrc);
+	lappend(&cmd, &ncmd, NULL);
+
+	for (p = cmd; *p; p++)
+		printf("%s ", *p);
+	printf("\n");
+	pid = fork();
+	if (pid == -1) {
+		die("couldn't fork");
+	} else if (pid == 0) {
+		if (execvp(cmd[0], cmd) == -1)
 			die("Couldn't exec assembler\n");
 	} else {
 		waitpid(pid, &status, 0);
 		if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
 			die("Couldn't run assembler");
 	}
+	lfree(&cmd, &ncmd);
 }
 
+static char *dirname(char *path)
+{
+	char *p;
+
+	p = strrchr(path, '/');
+	if (p)
+		return strdupn(path, p - path);
+	else
+		return xstrdup(".");
+}
 static char *gentempfile(char *buf, size_t bufsz, char *path, char *suffix)
 {
 	char *tmpdir;
@@ -155,7 +192,8 @@ static void genuse(char *path)
 
 int main(int argc, char **argv)
 {
-	char buf[1024];
+	char qsbuf[256];
+	char asbuf[256];
 	Stab *globls;
 	Optctx ctx;
 	size_t i;
@@ -200,6 +238,10 @@ int main(int argc, char **argv)
 		outfile = NULL;
 
 	for (i = 0; i < ctx.nargs; i++) {
+		if (outfile)
+			localincpath = dirname(outfile);
+		else
+			localincpath = dirname(ctx.args[i]);
 		globls = mkstab(0);
 		tyinit(globls);
 		tokinit(ctx.args[i]);
@@ -219,16 +261,22 @@ int main(int argc, char **argv)
 			dump(file, stdout);
 
 		if (writeasm) {
-			if (outfile != NULL)
-				swapout(buf, sizeof buf, ".qs");
-			else
-				swapsuffix(buf, sizeof buf, ctx.args[i], ".myr", ".qs");
+			if (outfile != NULL) {
+				swapout(qsbuf, sizeof qsbuf, ".qs");
+				swapout(asbuf, sizeof asbuf, ".s");
+			} else {
+				swapsuffix(qsbuf, sizeof qsbuf, ctx.args[i], ".myr", ".qs");
+				swapsuffix(asbuf, sizeof asbuf, ctx.args[i], ".myr", ".s");
+			}
 		} else {
-			gentempfile(buf, sizeof buf, ctx.args[i], ".qs");
+			gentempfile(qsbuf, sizeof qsbuf, ctx.args[i], ".qs");
+			gentempfile(asbuf, sizeof asbuf, ctx.args[i], ".s");
 		}
 		genuse(ctx.args[i]);
-		gen(file, buf);
-		assemble(buf, ctx.args[i]);
+		gen(file, qsbuf);
+		assemble(qsbuf, asbuf, ctx.args[i]);
+
+		free(localincpath);
 	}
 
 	return 0;
