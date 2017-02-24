@@ -63,9 +63,10 @@ char *asmname(char *buf, size_t nbuf, Node *n, char *sigil)
 	char *ns, *name, *sep;
 
 	ns = n->name.ns;
+	if (!ns)
+		ns = "";
 	name = n->name.name;
 	sep = "";
-	ns = "";
 	if (ns && ns[0])
 		sep = "$";
 	bprintf(buf, nbuf, "%s%s%s%s", sigil, ns, sep, name);
@@ -301,7 +302,6 @@ void out(Gen *g, char *fmt, ...)
 		case 'd':	fprintf(g->file, "%d", va_arg(ap, int)); break;
 		case 'l':	fprintf(g->file, "%lld", (vlong)va_arg(ap, int64_t)); break;
 		case 't':	
-				
 				t = va_arg(ap, Type*);
 				fputs(qbetag(g, t), g->file);	break;
 		case 'T':	
