@@ -34,6 +34,7 @@ struct Gen {
 
 void pr(Gen *g, char *fmt, ...);
 void out(Gen *g, char *fmt, ...);
+void outtypebody(Gen *g, Type *ty);
 void outqbetype(Gen *g, Type *ty);
 Node *rval(Gen *g, Node *n, Node *dst);
 Node *lval(Gen *g, Node *n);
@@ -1035,7 +1036,7 @@ void outarray(Gen *g, Type *ty)
 	sz = 0;
 	if (ty->asize)
 		sz = ty->asize->expr.args[0]->lit.intval;
-	outqbetype(g, ty->sub[0]);
+	outtypebody(g, ty->sub[0]);
 	pr(g, "\t%s %zd,\n", qbetype(g, ty->sub[0]), sz);
 }
 
@@ -1046,8 +1047,7 @@ void outstruct(Gen *g, Type *ty)
 
 	for (i = 0; i < ty->nmemb; i++) {
 		mty = decltype(ty->sdecls[i]);
-		outqbetype(g, mty);
-		//pr(g, "\t%s,\n", outqbetype(g, mty));
+		outtypebody(g, mty);
 	}
 }
 
@@ -1080,12 +1080,12 @@ void outtuple(Gen *g, Type *ty)
 
 	for (i = 0; i < ty->nsub; i++) {
 		mty = ty->sub[i];
-		outqbetype(g, mty);
+		outtypebody(g, mty);
 		pr(g, "\t%s,\n", qbetype(g, mty));
 	}
 }
 
-void outqbetype(Gen *g, Type *ty)
+void outtypebody(Gen *g, Type *ty)
 {
 	switch (ty->type) {
 	case Tyvoid:	break;
@@ -1113,7 +1113,7 @@ void outqbetype(Gen *g, Type *ty)
 	case Tystruct:	outstruct(g, ty);	break;
 	case Tytuple:	outtuple(g, ty);	break;
 	case Tyunion:	outunion(g, ty);	break;
-	case Tyname:	pr(g, "\t:t%zd\n", ty->tid);	break;
+	case Tyname:	pr(g, "\t:t%zd,\n", ty->tid);	break;
 
 	/* frontend/invalid types */
 	case Tyvar:
@@ -1127,41 +1127,78 @@ void outqbetype(Gen *g, Type *ty)
 	}
 }
 
-void genqbetypes(Gen *g)
+static void outstructtype(Gen *g, Type *ty)
+{
+	size_t i;
+
+	for (i = 0; i < ty->nmemb; i++)
+		outqbetype(g, decltype(ty->sdecls[i]));
+}
+
+static void outtupletype(Gen *g, Type *ty)
+{
+	size_t i;
+
+	for (i = 0; i < ty->nsub; i++)
+		outqbetype(g, ty->sub[i]);
+}
+
+
+static void outuniontype(Gen *g, Type *ty)
+{
+	size_t i;
+	Type *mty;
+
+	for (i = 0; i < ty->nmemb; i++) {
+		mty = ty->udecls[i]->etype;
+		if (!mty)
+			continue;
+		outqbetype(g, mty);
+	}
+}
+
+void outqbetype(Gen *g, Type *ty)
 {
 	char buf[1024];
-	size_t i;
-	Type *ty;
 	Ty tt;
-	char *n;
+
+	ty = tydedup(ty);
+	tt = ty->type;
+	if (tt == Tycode || tt == Tyvar || tt == Tyunres || hasparams(ty))
+		return;
+	if (g->typenames[ty->tid])
+		return;
+	if (ty->vis == Visbuiltin)
+		return;
+
+	snprintf(buf, sizeof buf, ":t%d", ty->tid);
+	g->typenames[ty->tid] = strdup(buf);
+
+	switch (tt) {
+	case Tyarray:	outqbetype(g, ty->sub[0]);	break;
+	case Tystruct:	outstructtype(g, ty);		break;
+	case Tytuple:	outtupletype(g, ty);		break;
+	case Tyunion:	outuniontype(g, ty);		break;
+	case Tyname:	outqbetype(g, ty->sub[0]);	break;
+	default:
+		break;
+	}
+
+	pr(g, "type %s = align %zd {\n", g->typenames[ty->tid], tyalign(ty));
+	if (tt != Tyname)
+		outtypebody(g, ty);
+	else
+		outtypebody(g, ty->sub[0]);
+	pr(g, "}\n\n");
+}
+
+void genqbetypes(Gen *g)
+{
+	size_t i;
 
 	g->typenames = zalloc(ntypes * sizeof(Type *));
 	for (i = Ntypes; i < ntypes; i++) {
-		ty = tydedup(types[i]);
-		tt = ty->type;
-		if (tt == Tycode || tt == Tyvar || tt == Tyunres || hasparams(ty))
-			continue;
-		if (g->typenames[ty->tid])
-			continue;
-		if (ty->vis == Visbuiltin)
-			continue;
-
-		snprintf(buf, sizeof buf, ":t%d", ty->tid);
-		g->typenames[ty->tid] = strdup(buf);
-
-		/* gen the type */
-		if (ty->type == Tyname) {
-			n = tystr(ty);
-			pr(g, "# %s\n", n);
-			free(n);
-		}
-		pr(g, "type %s = align %zd {\n", g->typenames[ty->tid], tyalign(ty));
-		if (ty->type == Tyname) {
-			outqbetype(g, ty->sub[0]);
-		} else {
-			outqbetype(g, ty);
-		}
-		pr(g, "}\n\n");
+		outqbetype(g, types[i]);
 	}
 }
 
