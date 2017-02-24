@@ -343,6 +343,20 @@ Node *binopk(Gen *g, char *op, Node *l, uvlong r)
 	return t;
 }
 
+static Node *addr(Gen *g, Node *a, Type *bt)
+{
+	Node *n;
+
+	n = mkexpr(a->loc, Oaddr, a, NULL);
+	// if (!addressable(s, a))
+	//	forcelocal(s, a);
+	if (!bt)
+		n->expr.type = mktyptr(a->loc, a->expr.type);
+	else
+		n->expr.type = mktyptr(a->loc, bt);
+	return n;
+}
+
 static Node *load(Gen *g, Node *ptr, Type *ty)
 {
 	Node *tmp, *dcl;
@@ -658,6 +672,30 @@ Node *genslice(Gen *g, Node *sl, Node *dst)
 	return dst;
 }
 
+static Node *tupget(Gen *g, Node *tup, size_t idx, Node *dst)
+{
+	Node *dcl, *memb;
+	size_t off, i;
+	Type *ty;
+
+	off = 0;
+	ty = exprtype(tup);
+	for (i = 0; i < ty->nsub; i++) {
+		off = alignto(off, ty->sub[i]);
+		if (i == idx)
+			break;
+		off += tysize(ty->sub[i]);
+	}
+
+	if (!dst)
+		dst = gentemp(tup->loc, ty->sub[idx], &dcl);
+
+	memb = addr(g, tup, ty->sub[idx]);
+	memb = binopk(g, "add", memb, off);
+	dst = assign(g, dst, memb);
+	return dst;
+}
+
 Node *rval(Gen *g, Node *n, Node *dst)
 {
 	Node *r; /* expression result */
@@ -737,6 +775,7 @@ Node *rval(Gen *g, Node *n, Node *dst)
 			out(g, "\t%v =%t load%t %v\n", r, ty, ty, args[0]);
 		}
 		break;
+
 	case Oaddr:
 		ty = tybase(exprtype(args[0]));
 		if (isstacktype(ty)) {
@@ -749,6 +788,7 @@ Node *rval(Gen *g, Node *n, Node *dst)
 	case Ojmp:
 		out(g, "\tjmp %v\n", args[0]);
 		break;
+
 	case Ocjmp:
 		out(g, "\tjnz %v, %v, %v\n", rval(g, args[0], NULL), args[1], args[2]);
 		break;
@@ -757,6 +797,16 @@ Node *rval(Gen *g, Node *n, Node *dst)
 		r = genslice(g, n, dst);
 		break;
 
+	case Otupget: {
+		Node *t;
+		int i;
+
+		assert(exprop(args[1]) == Olit);
+		i = args[1]->expr.args[0]->lit.intval;
+		t = rval(g, args[0], NULL);
+		r = tupget(g, t, i, dst);
+		break;
+	}
 	case Oidx:
 	case Omemb:
 	case Osllen:
@@ -769,7 +819,6 @@ Node *rval(Gen *g, Node *n, Node *dst)
 	case Ocast:
 	case Ogap:
 	case Oneg:
-	case Otupget:
 	case Olnot:
 	case Ovjmp:
 	case Oset:
