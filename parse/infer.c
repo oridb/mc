@@ -1568,14 +1568,17 @@ static void inferexpr(Inferstate *st, Node **np, Type *ret, int *sawret)
 		break;
 	case Ovar: /* a:@a -> @a */
 		infersub(st, n, ret, sawret, &isconst);
-		/* if we created this from a namespaced var, the type should be
-		 * set, and the normal lookup is expected to fail. Since we're
-		 * already done with this node, we can just return. */
-		if (n->expr.type)
+		/* 
+		if we created this from a namespaced var, the type and did
+		should be set, and the normal lookup is expected to fail.
+		Since we're already done with this node, we can just return. 
+		 */
+		if (n->expr.type && n->expr.did != 0)
 			return;
 		s = getdcl(curstab(), args[0]);
 		if (!s)
 			fatal(n, "undeclared var %s", ctxstr(st, args[0]));
+		n->expr.did = s->decl.did;
 		initvar(st, n, s);
 		break;
 	case Ogap: /* _ -> @a */
