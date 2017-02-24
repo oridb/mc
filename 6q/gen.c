@@ -879,6 +879,8 @@ void genfn(Gen *g, Node *dcl)
 	Type *ret;
 	char name[1024];
 
+	if (dcl->decl.isextern || dcl->decl.isgeneric)
+		return;
 
 	n = dcl->decl.init;
 	asmname(name, sizeof name, dcl->decl.name, "$");
@@ -936,7 +938,7 @@ static void encodemin(Gen *g, uint64_t val)
 	uint8_t b;
 
 	if (val < 128) {
-		pr(g, "\tb %zd\n", val);
+		pr(g, "\tb %zd,\n", val);
 		return;
 	}
 
@@ -946,10 +948,10 @@ static void encodemin(Gen *g, uint64_t val)
 	shift = 8 - i;
 	b = ~0ull << (shift + 1);
 	b |= val & ~(~0ull << shift);
-	pr(g, "\tb %u\n", b);
+	pr(g, "\tb %u,\n", b);
 	val >>=  shift;
 	while (val != 0) {
-		pr(g, "\tb %u\n", (uint)val & 0xff);
+		pr(g, "\tb %u,\n", (uint)val & 0xff);
 		val >>= 8;
 	}
 }
@@ -960,7 +962,7 @@ static void outbytes(Gen *g, char *p, size_t sz)
 
 	for (i = 0; i < sz; i++) {
 		if (i % 60 == 0)
-			pr(g, "\t.ascii \"");
+			pr(g, "\tb \"");
 		if (p[i] == '"' || p[i] == '\\')
 			pr(g, "\\");
 		if (isprint(p[i]))
@@ -969,7 +971,7 @@ static void outbytes(Gen *g, char *p, size_t sz)
 			pr(g, "\\%03o", (uint8_t)p[i] & 0xff);
 		/* line wrapping for readability */
 		if (i % 60 == 59 || i == sz - 1)
-			pr(g, "\"\n");
+			pr(g, "\",\n");
 	}
 }
 
@@ -982,18 +984,18 @@ void genblob(Gen *g, Blob *b)
 			/* FIXME: emit once */
 		if (b->isglobl)
 			pr(g, "export ");
-		pr(g, "$%s {\n", b->lbl);
+		pr(g, "data $%s = {\n", b->lbl);
 	}
 
 	switch (b->type) {
 	case Btimin:	encodemin(g, b->ival);	break;
-	case Bti8:	pr(g, "\tb %zd\n", b->ival);	break;
-	case Bti16:	pr(g, "\th %zd\n", b->ival);	break;
-	case Bti32:	pr(g, "\tw %zd\n", b->ival);	break;
-	case Bti64:	pr(g, "\tl %zd\n", b->ival);	break;
+	case Bti8:	pr(g, "\tb %zd,\n", b->ival);	break;
+	case Bti16:	pr(g, "\th %zd,\n", b->ival);	break;
+	case Bti32:	pr(g, "\tw %zd,\n", b->ival);	break;
+	case Bti64:	pr(g, "\tl %zd,\n", b->ival);	break;
 	case Btbytes:	outbytes(g, b->bytes.buf, b->bytes.len);	break;
-	case Btpad:	pr(g, "\tz %zd\n", b->npad);	break;
-	case Btref:	pr(g, "\tl $%s + %zd\n", b->ref.str, b->ref.off);	break;
+	case Btpad:	pr(g, "\tz %zd,\n", b->npad);	break;
+	case Btref:	pr(g, "\tl $%s + %zd,\n", b->ref.str, b->ref.off);	break;
 	case Btseq:
 		for (i = 0; i < b->seq.nsub; i++)
 			genblob(g, b->seq.sub[i]);
