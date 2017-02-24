@@ -1800,9 +1800,11 @@ static void inferstab(Inferstate *st, Stab *s)
 
 static void infernode(Inferstate *st, Node **np, Type *ret, int *sawret)
 {
-	size_t i, nbound;
+	size_t i, nk, nbound;
 	Node **bound, *n, *pat;
 	Type *t, *b;
+	void **k;
+	Stab *s;
 
 	n = *np;
 	if (!n)
@@ -1812,6 +1814,14 @@ static void infernode(Inferstate *st, Node **np, Type *ret, int *sawret)
 	n->inferred = 1;
 	switch (n->type) {
 	case Nfile:
+		k = htkeys(n->file.ns, &nk);
+		for (i = 0; i < nk; i++) {
+			s = htget(n->file.ns, k[i]);
+			pushstab(s);
+			inferstab(st, s);
+			popstab();
+		}
+		free(k);
 		pushstab(n->file.globls);
 		inferstab(st, n->file.globls);
 		for (i = 0; i < n->file.nstmts; i++)
