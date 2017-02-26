@@ -28,20 +28,26 @@ struct Gen {
 	char **typenames;
 	Htab *strtab;
 
+	/* memory offsets/addrs */
+	Htab *envoff;
+	Htab *stkoff;
+	Htab *globls;
+	size_t stksz;
+
 	Node *retval;
 	Node *retlbl;
 };
 
-void pr(Gen *g, char *fmt, ...);
-void out(Gen *g, char *fmt, ...);
-void outtypebody(Gen *g, Type *ty);
-void outqbetype(Gen *g, Type *ty);
-Node *rval(Gen *g, Node *n, Node *dst);
-Node *lval(Gen *g, Node *n);
+static void pr(Gen *g, char *fmt, ...);
+static void out(Gen *g, char *fmt, ...);
+static void outtypebody(Gen *g, Type *ty);
+static void outqbetype(Gen *g, Type *ty);
+static Node *rval(Gen *g, Node *n, Node *dst);
+static Node *lval(Gen *g, Node *n);
 static Node *slicebase(Gen *g, Node *sl, Node *off);
 static Node *slicelen(Gen *g, Node *sl);
 static Node *gencast(Gen *g, Node *val, Type *to);
-
+static Node *loadidx(Gen *g, Node *base, Node *idx);
 
 static int isexport(Node *dcl)
 {
@@ -345,11 +351,9 @@ Node *binopk(Gen *g, char *op, Node *l, uvlong r)
 
 static Node *load(Gen *g, Node *ptr, Type *ty)
 {
-	Node *tmp, *dcl;
+	Node *tmp, *loc, *dcl;
 
-	tmp = gentemp(ptr->loc, ty, &dcl);
-	out(g, "\t%v =%t load%t %v", tmp, ty, ptr);
-	return tmp;
+	return rval(g, ptr, NULL);
 }
 
 static Node *getcode(Gen *g, Node *n)
@@ -451,7 +455,7 @@ static Node *intconvert(Gen *g, Node *val, Type *to, int signconv)
 	if (tysize(to) > size(val))
 		out(g, "\t%v =%t ext%s%t %v", t, to, sign, exprtype(val), val);
 	else
-		out(g, "\t%v =%t copy %v", t, to, exprtype(val), val);
+		out(g, "\t%v =%t copy %v", t, to, val);
 	return t;
 }
 
@@ -567,15 +571,15 @@ static void checkidx(Gen *g, char *op, Node *len, Node *idx)
 	out(g, "%v", ok);
 }
 
-Node *lval(Gen *g, Node *n)
+static Node *lval(Gen *g, Node *n)
 {
 	Node *r;
-	//Node **args;
+	Node **args;
 
-	//args = n->expr.args;
+	args = n->expr.args;
 	switch (exprop(n)) {
 	case Ovar:	r = n;	break;
-	//case Oidx:	r = loadidx(g, args[0], args[1]);	break;
+	case Oidx:	r = loadidx(g, args[0], args[1]);	break;
 	//case Oderef:	r = deref(rval(s, args[0], NULL), NULL);	break;
 	case Omemb:	r = rval(g, n, NULL);	break;
 	case Ostruct:	r = rval(g, n, NULL);	break;
@@ -623,7 +627,7 @@ Node *gencall(Gen *g, Node *n)
 	return ret;
 }
 
-Node *genslice(Gen *g, Node *sl, Node *dst)
+static Node *genslice(Gen *g, Node *sl, Node *dst)
 {
 	Node *lo, *hi, *lim, *base, *len;
 	Node *basep, *lenp;
@@ -653,9 +657,184 @@ Node *genslice(Gen *g, Node *sl, Node *dst)
 	if (lim)
 		checkidx(g, "cle", lim, hi);
 
-	out(g, "\tstor%t %v, %v\n", basep, base);
-	out(g, "\tstor%t %v, %v\n", lenp, len);
+	out(g, "\tstor%t %v, %v\n", exprtype(basep), basep, base);
+	out(g, "\tstor%t %v, %v\n", exprtype(basep), lenp, len);
 	return dst;
+}
+
+int stacknode(Node *n)
+{
+	if (n->type == Nexpr)
+		return isstacktype(n->expr.type);
+	else
+		return isstacktype(n->decl.type);
+}
+
+static int addressable(Gen *g, Node *a)
+{
+	if (a->type == Ndecl || (a->type == Nexpr && exprop(a) == Ovar))
+		return hthas(g->envoff, a) || hthas(g->stkoff, a) || hthas(g->globls, a);
+	else
+		return stacknode(a);
+}
+
+static void forcelocal(Gen *g, Node *n)
+{
+	assert(n->type == Ndecl || (n->type == Nexpr && exprop(n) == Ovar));
+	g->stksz += size(n);
+	g->stksz = align(g->stksz, min(size(n), Ptrsz));
+	if (debugopt['i']) {
+		dump(n, stdout);
+		printf("declared at %zd, size = %zd\n", g->stksz, size(n));
+	}
+	htput(g->stkoff, n, itop(g->stksz));
+}
+
+/* takes the address of a node, possibly converting it to
+ * a pointer to the base type 'bt' */
+static Node *addr(Gen *g, Node *a, Type *bt)
+{
+	Node *n;
+
+	n = mkexpr(a->loc, Oaddr, a, NULL);
+	if (!addressable(g, a))
+		forcelocal(g, a);
+	if (!bt)
+		n->expr.type = mktyptr(a->loc, a->expr.type);
+	else
+		n->expr.type = mktyptr(a->loc, bt);
+	return n;
+}
+
+static Node *disp(Srcloc loc, uint v)
+{
+	Node *n;
+
+	n = mkintlit(loc, v);
+	n->expr.type = tyintptr;
+	return n;
+}
+
+static Node *idxaddr(Gen *g, Node *seq, Node *idx)
+{
+	Node *a, *t, *u, *v, *w; /* temps */
+	Node *r; /* result */
+	Type *ty, *seqty;
+	size_t sz;
+
+	a = rval(g, seq, NULL);
+	seqty = tybase(exprtype(seq));
+	ty = seqty->sub[0];
+	if (seqty->type == Tyarray) {
+		t = addr(g, a, ty);
+		w = seqty->asize;
+	} else if (seqty->type == Tyslice) {
+		t = load(g, addr(g, a, mktyptr(seq->loc, ty)), ty);
+		w = slicelen(g, a);
+	} else {
+		die("can't index type %s", tystr(seq->expr.type));
+	}
+	assert(exprtype(t)->type == Typtr);
+	u = rval(g, idx, NULL);
+	u = ptrsized(g, u);
+	checkidx(g, "slt", w, u);
+	sz = tysize(ty);
+	v = binop(g, "mul", u, disp(seq->loc, sz));
+	r = binop(g, "add", v, disp(seq->loc, sz));
+	return r;
+}
+
+static Node *loadidx(Gen *g, Node *base, Node *idx)
+{
+	Node *t, *u;
+
+	t = rval(g, base, NULL);
+	u = idxaddr(g, t, idx);
+	return load(g, u, exprtype(u));
+}
+
+
+static Node *simpcast(Gen *g, Node *val, Type *to)
+{
+	Node *r;
+	Type *t;
+
+	r = NULL;
+	t = tybase(exprtype(val));
+	if (tyeq(tybase(to), tybase(t))) {
+		r = rval(g, val, NULL);
+		r->expr.type = to;
+		return r;
+	}
+	/* do the type conversion */
+	switch (tybase(to)->type) {
+	case Tybool:
+	case Tyint8: case Tyint16: case Tyint32: case Tyint64:
+	case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint64:
+	case Tyint: case Tyuint: case Tychar: case Tybyte:
+	case Typtr:
+		switch (t->type) {
+			/* ptr -> slice conversion is disallowed */
+		case Tyslice:
+			/* FIXME: we should only allow casting to pointers. */
+			if (tysize(to) != Ptrsz)
+				fatal(val, "bad cast from %s to %s", tystr(exprtype(val)), tystr(to));
+			val = rval(g, val, NULL);
+			r = slicebase(g, val, NULL);
+			break;
+		case Tyfunc:
+			if (to->type != Typtr)
+				fatal(val, "bad cast from %s to %s", tystr(exprtype(val)), tystr(to));
+			r = getcode(g, val);
+			break;
+			/* signed conversions */
+		case Tyint8: case Tyint16: case Tyint32: case Tyint64:
+		case Tyint:
+			r = intconvert(g, val, to, 1);
+			break;
+			/* unsigned conversions */
+		case Tybool:
+		case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint64:
+		case Tyuint: case Tychar: case Tybyte:
+		case Typtr:
+			r = intconvert(g, val, to, 0);
+			break;
+		case Tyflt32: case Tyflt64:
+			if (tybase(to)->type == Typtr)
+				fatal(val, "bad cast from %s to %s",
+						tystr(exprtype(val)), tystr(to));
+			r = mkexpr(val->loc, Oflt2int, rval(g, val, NULL), NULL);
+			r->expr.type = to;
+			break;
+		default:
+			fatal(val, "bad cast from %s to %s",
+					tystr(exprtype(val)), tystr(to));
+		}
+		break;
+	case Tyflt32: case Tyflt64:
+		switch (t->type) {
+		case Tyint8: case Tyint16: case Tyint32: case Tyint64:
+		case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint64:
+		case Tyint: case Tyuint: case Tychar: case Tybyte:
+			r = mkexpr(val->loc, Oint2flt, rval(g, val, NULL), NULL);
+			r->expr.type = to;
+			break;
+		case Tyflt32: case Tyflt64:
+			r = mkexpr(val->loc, Oflt2flt, rval(g, val, NULL), NULL);
+			r->expr.type = to;
+			break;
+		default:
+			fatal(val, "bad cast from %s to %s",
+					tystr(exprtype(val)), tystr(to));
+			break;
+		}
+		break;
+		/* no other destination types are handled as things stand */
+	default:
+		fatal(val, "bad cast from %s to %s",
+				tystr(exprtype(val)), tystr(to));
+	}
+	return r;
 }
 
 Node *rval(Gen *g, Node *n, Node *dst)
@@ -683,11 +862,11 @@ Node *rval(Gen *g, Node *n, Node *dst)
 	case Obxor:	r = binop(g, "xor", args[0], args[1]);	break;
 	case Obsl:	r = binop(g, "shl", args[0], args[1]);	break;
 	case Obsr:	
-			if (istysigned(exprtype(n)))
-				r = binop(g, "shr", args[0], args[1]);
-			else
-				r = binop(g, "shl", args[0], args[1]);
-			break;
+		if (istysigned(exprtype(n)))
+			r = binop(g, "shr", args[0], args[1]);
+		else
+			r = binop(g, "shl", args[0], args[1]);
+		break;
 	case Obnot:	die("what's the operator for negate bits?\n");
 
 	/* equality */
@@ -711,14 +890,21 @@ Node *rval(Gen *g, Node *n, Node *dst)
 	case Oule:	r = cmpop(g, "ule", args[0], args[1]);	break;
 
 	case Oasn:	r = assign(g, args[0], args[1]);	break;
+
+	case Oslbase:	r = slicebase(g, args[0], args[1]);	break;
+	case Osllen:	r = slicelen(g, args[0]);		break;
+	case Oslice:	r = genslice(g, n, dst);		break;
+	case Oidx:	r = loadidx(g, args[0], args[1]);	break;
+
+	case Ojmp:	out(g, "\tjmp %v\n", args[0]);		break;
+	case Ocast:	r = simpcast(g, args[0], exprtype(n));	break;
+	case Ocall:	r = gencall(g, n);			break;
+
 	case Ovar:	r = n;	break;
 	case Olit:	r = n;	break;
 	case Osize:
 		r = mkintlit(n->loc, size(args[0]));
 		r->expr.type = exprtype(n);
-		break;
-	case Ocall:
-		r = gencall(g, n);
 		break;
 
 	case Oret:
@@ -746,34 +932,23 @@ Node *rval(Gen *g, Node *n, Node *dst)
 		}
 		break;
 
-	case Ojmp:
-		out(g, "\tjmp %v\n", args[0]);
-		break;
 	case Ocjmp:
 		out(g, "\tjnz %v, %v, %v\n", rval(g, args[0], NULL), args[1], args[2]);
 		break;
 
-	case Oslice:
-		r = genslice(g, n, dst);
-		break;
-
-	case Oidx:
 	case Omemb:
-	case Osllen:
 	case Oucon:
 	case Outag:
 	case Oudata:
 	case Otup:
 	case Oarr:
 	case Ostruct:
-	case Ocast:
 	case Ogap:
 	case Oneg:
 	case Otupget:
 	case Olnot:
 	case Ovjmp:
 	case Oset:
-	case Oslbase:
 	case Oblit:
 	case Oclear:
 	case Ocallind:
@@ -1222,6 +1397,9 @@ void gen(Node *file, char *out)
 	if (!g->file)
 		die("Couldn't open fd %s", out);
 	g->strtab = mkht(strlithash, strliteq);
+	g->stkoff = mkht(varhash, vareq);
+	g->envoff = mkht(varhash, vareq);
+	g->globls = mkht(varhash, vareq);
 
 	genqbetypes(g);
 	pushstab(file->file.globls);
