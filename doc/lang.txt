@@ -1948,7 +1948,7 @@ TABLE OF CONTENTS:
     toplev:     use | pkgdef | decl | traitdef | impldef | tydef
 
     /* packages */
-    use:        use ident | strlit
+    use:       "use" ident | strlit
     pkgdef:    "pkg" [ident] "=" pkgbody ";;"
     pkgbody:   (decl | attrs tydef | traitdef | impldef)*
 
@@ -1973,7 +1973,9 @@ TABLE OF CONTENTS:
     type:       structdef | uniondef | tupledef |
                 constructed | generic | "..."
     structdef:  "struct" structbody ";;"
+    structbody:	declcore*
     uniondef:   "union" unionbody ";;"
+    unionbody:	("`" ident [type])*
     tupledef:   "(" type ("," type)* ")"
     generic:    typaram ["::" traitlist]
     traitlist:  name | "(" name ("," name)
