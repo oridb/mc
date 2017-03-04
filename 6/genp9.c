@@ -357,9 +357,9 @@ static void genfunc(FILE *fd, Func *fn, Htab *globls, Htab *strtab)
 	writeasm(fd, &is, fn);
 }
 
-static size_t writetextbytes(FILE *fd, char *name, size_t off, char *p, size_t sz)
+static size_t writetextbytes(FILE *fd, char *p, size_t sz)
 {
-	size_t i, len;
+	size_t i;
 
 	assert(sz != 0);
 	for (i = 0; i < sz; i++)
@@ -368,7 +368,7 @@ static size_t writetextbytes(FILE *fd, char *name, size_t off, char *p, size_t s
 	return sz;
 }
 
-static size_t encodetextmin(FILE *fd, uvlong val, size_t off, char *lbl)
+static size_t encodetextmin(FILE *fd, uvlong val)
 {
 	size_t i, shift, n;
 	uint8_t b;
@@ -396,7 +396,7 @@ static size_t encodetextmin(FILE *fd, uvlong val, size_t off, char *lbl)
 	return i;
 }
 
-static size_t writetextblob(FILE *fd, Blob *b, size_t off, char *lbl)
+static size_t writetextblob(FILE *fd, Blob *b)
 {
 	size_t i, n;
 
@@ -421,7 +421,7 @@ static size_t writetextblob(FILE *fd, Blob *b, size_t off, char *lbl)
 		n += 8;
 		break;
 	case Btimin:
-		n += encodetextmin(fd, b->ival, off+n, lbl);
+		n += encodetextmin(fd, b->ival);
 		break;
 	case Btref:
 		if (b->ref.isextern || b->ref.str[0] == '.')
@@ -432,11 +432,11 @@ static size_t writetextblob(FILE *fd, Blob *b, size_t off, char *lbl)
 		n += 8;
 		break;
 	case Btbytes:
-		n += writetextbytes(fd, lbl, off+n, b->bytes.buf, b->bytes.len);
+		n += writetextbytes(fd, b->bytes.buf, b->bytes.len);
 		break;
 	case Btseq:
 		for (i = 0; i < b->seq.nsub; i++)
-			n += writetextblob(fd, b->seq.sub[i], off+n, lbl);
+			n += writetextblob(fd, b->seq.sub[i]);
 		break;
 	case Btpad:
 		for (i = 0; i < b->npad; i++)
@@ -450,7 +450,6 @@ static size_t writetextblob(FILE *fd, Blob *b, size_t off, char *lbl)
 static void gentype(FILE *fd, Type *ty)
 {
 	Blob *b;
-	char lbl[1024];
 
 	ty = tydedup(ty);
 	if (ty->type == Tyvar || ty->isemitted)
@@ -460,14 +459,11 @@ static void gentype(FILE *fd, Type *ty)
 	b = tydescblob(ty);
 	if (!b)
 		return;
-	if (b->isglobl) {
-		fprintf(fd, "TEXT %s%s+0(SB),2,$0\n", Symprefix, b->lbl, (uvlong)blobsz(b));
-		bprintf(lbl, sizeof lbl, "%s%s", Symprefix, b->lbl);
-	} else {
-		fprintf(fd, "TEXT %s%s<>+0(SB),2,$0\n", Symprefix, b->lbl, (uvlong)blobsz(b));
-		bprintf(lbl, sizeof lbl, "%s%s<>", Symprefix, b->lbl);
-	}
-	writetextblob(fd, b, 0, lbl);
+	if (b->isglobl)
+		fprintf(fd, "TEXT %s%s+0(SB),2,$0\n", Symprefix, b->lbl);
+	else
+		fprintf(fd, "TEXT %s%s<>+0(SB),2,$0\n", Symprefix, b->lbl);
+	writetextblob(fd, b);
 }
 
 static void gentypes(FILE *fd)
