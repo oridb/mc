@@ -25,13 +25,13 @@ char **incpaths;
 size_t nincpaths;
 char **extralibs;
 size_t nextralibs;
+char *localincpath;
 
 static void usage(char *prog)
 {
 	printf("%s [-hIdos] [-o outfile] [-p pkgname] [-m] inputs\n", prog);
 	printf("\t-h\tprint this help\n");
 	printf("\t\tThe outfile must be the same name as each package merged.\n");
-	printf("\t-I path\tAdd 'path' to use search path\n");
 	printf("\t-d\tPrint debug dumps\n");
 	printf("\t-o out\tOutput to outfile\n");
 	printf("\t-s\tShow the contents of usefiles `inputs`\n");
@@ -56,7 +56,8 @@ int main(int argc, char **argv)
 	size_t i;
 	FILE *f;
 
-	optinit(&ctx, "sd:hmo:p:I:l:", argv, argc);
+	localincpath = ".";
+	optinit(&ctx, "sd:hmo:p:l:", argv, argc);
 	while (!optdone(&ctx)) {
 		switch (optnext(&ctx)) {
 		case 'h':
@@ -73,14 +74,8 @@ int main(int argc, char **argv)
 			while (ctx.optarg && *ctx.optarg)
 				debugopt[*ctx.optarg++ & 0x7f] = 1;
 			break;
-		case 'I':
-			lappend(&incpaths, &nincpaths, ctx.optarg);
-			break;
 		case 'l':
 			lappend(&extralibs, &nextralibs, ctx.optarg);
-			break;
-		case 's':
-			show = 1;
 			break;
 		default:
 			usage(argv[0]);
@@ -89,13 +84,14 @@ int main(int argc, char **argv)
 		}
 	}
 
-	lappend(&incpaths, &nincpaths, Instroot "/lib/myr");
-	if (!outfile) {
+	if (!outfile && !show) {
 		fprintf(stderr, "output file needed when merging usefiles.\n");
 		exit(1);
 	}
-	if (!pkgname)
-		pkgname = outfile;
+	if (!pkgname) {
+		fprintf(stderr, "package needed when merging usefiles.\n");
+		exit(1);
+	}
 
 	/* read and parse the file */
 	file = mkfile("internal");
@@ -110,10 +106,7 @@ int main(int argc, char **argv)
 
 	/* generate the usefile */
 	f = fopen(outfile, "w");
-	if (debugopt['s'] || show)
-		dumpstab(file->file.globls, stdout);
-	else
-		writeuse(f, file);
+	writeuse(f, file);
 	fclose(f);
 	return 0;
 }

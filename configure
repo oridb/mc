@@ -55,6 +55,7 @@ case $OS in
 	sysinit='setenv("MACOSX_DEPLOYMENT_TARGET", "10.6", 0)'
         echo 'export SYS=osx' >> config.mk
         echo export INST_MAN=$prefix/share/man/man >> config.mk
+        echo export MACOSX_DEPLOYMENT_TARGET=10.6 >> config.mk
         echo 'const Sys = "OSX"' >> mbld/config.myr
         echo 'const Linkcmd = ["ld", ' \
             '"-pagezero_size", "0x100000000",' \

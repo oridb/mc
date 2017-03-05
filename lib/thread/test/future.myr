@@ -2,7 +2,7 @@ use std
 use sys
 use thread
 
-use "test/util.use"
+use "util"
 
 var fut
 var nready : int32

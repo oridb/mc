@@ -1031,18 +1031,18 @@ void readuse(Node *use, Stab *st, Vis vis)
 	char *t, *p;
 	char buf[512];
 
-	/* local (quoted) uses are always relative to the cwd */
+	/* local (quoted) uses are always relative to the output */
 	fd = NULL;
 	p = NULL;
 	if (use->use.islocal) {
-		if (hassuffix(use->use.name, ".use"))
-			snprintf(buf, sizeof buf, "%s", use->use.name);
-		else
-			snprintf(buf,sizeof buf, "%s.use", use->use.name);
-
+		snprintf(buf,sizeof buf, "%s/%s.use", localincpath, use->use.name);
 		p = strdup(buf);
 		fd = fopen(p, "r");
-		/* nonlocal (barename) uses are always searched on the include path */
+		if (!fd) {
+			fprintf(stderr, "could not open usefile %s\n", buf);
+			exit(1);
+		}
+	/* nonlocal (barename) uses are always searched on the include path */
 	} else {
 		for (i = 0; i < nincpaths; i++) {
 			snprintf(buf, sizeof buf, "lib%s.use", use->use.name);
@@ -1064,12 +1064,12 @@ void readuse(Node *use, Stab *st, Vis vis)
 			}
 			free(p);
 		}
-	}
-	if (!fd) {
-		fprintf(stderr, "could not open usefile %s in search path:\n", use->use.name);
-		for (i = 0; i < nincpaths; i++)
-			fprintf(stderr, "\t%s\n", incpaths[i]);
-		exit(1);
+		if (!fd) {
+			fprintf(stderr, "could not open usefile %s in search path:\n", use->use.name);
+			for (i = 0; i < nincpaths; i++)
+				fprintf(stderr, "\t%s\n", incpaths[i]);
+			exit(1);
+		}
 	}
 
 	if (!loaduse(p, fd, st, vis))

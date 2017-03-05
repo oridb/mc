@@ -28,6 +28,7 @@ int extracheck = 1;
 int p9asm;
 char *outfile;
 char **incpaths;
+char *localincpath;
 size_t nincpaths;
 Asmsyntax asmsyntax;
 
@@ -41,7 +42,7 @@ static void usage(char *prog)
 	printf("\t-I path\tAdd 'path' to use search path\n");
 	printf("\t-d\tPrint debug dumps. Recognized options: f r p i\n");
 	printf("\t-G\tGenerate asm in gas syntax\n");
-	printf("\t-8\tGenerate asm in plan 9 syntax\n");
+	printf("\t-9\tGenerate asm in plan 9 syntax\n");
 	printf("\t-d opts: additional debug logging. Options are listed below:\n");
 	printf("\t\tf: log folded trees\n");
 	printf("\t\tl: log lowered pre-cfg trees\n");
@@ -97,6 +98,17 @@ static void assemble(char *asmsrc, char *path)
 		if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
 			die("Couldn't run assembler");
 	}
+}
+
+static char *dirname(char *path)
+{
+	char *p;
+
+	p = strrchr(path, '/');
+	if (p)
+		return strdupn(path, p - path);
+	else
+		return xstrdup(".");
 }
 
 static char *gentempfile(char *buf, size_t bufsz, char *path, char *suffix)
@@ -216,11 +228,15 @@ int main(int argc, char **argv)
 	if (ctx.nargs == 0) {
 		fprintf(stderr, "No input files given\n");
 		exit(1);
-	}
-	else if (ctx.nargs > 1)
+	} else if (ctx.nargs > 1)
 		outfile = NULL;
 
 	for (i = 0; i < ctx.nargs; i++) {
+		if (outfile)
+			localincpath = dirname(outfile);
+		else
+			localincpath = dirname(ctx.args[i]);
+
 		globls = mkstab(0);
 		tyinit(globls);
 		tokinit(ctx.args[i]);
@@ -250,6 +266,8 @@ int main(int argc, char **argv)
 		genuse(ctx.args[i]);
 		gen(file, buf);
 		assemble(buf, ctx.args[i]);
+
+		free(localincpath);
 	}
 
 	return 0;

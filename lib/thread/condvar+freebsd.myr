@@ -1,9 +1,9 @@
 use std
 use sys
 
-use "atomic.use"
-use "common.use"
-use "mutex.use"
+use "atomic"
+use "common"
+use "mutex"
 
 pkg thread =
 	type cond = struct

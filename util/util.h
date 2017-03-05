@@ -121,6 +121,7 @@ void *zrealloc(void *p, size_t oldsz, size_t size);
 void *xrealloc(void *p, size_t size);
 void die(char *msg, ...) FATAL;
 char *strdupn(char *s, size_t len);
+char *xstrdup(char *s);
 char *strjoin(char *u, char *v);
 void *memdup(void *mem, size_t len);
 size_t bprintf(char *buf, size_t len, char *fmt, ...);

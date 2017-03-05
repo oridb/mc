@@ -148,7 +148,7 @@ const srcdeps = {b, ds, g, path, obj, usefile
 		;;
 		std.exit(1)
 	;;
-	deps = getdeps(b, ds, path)
+	deps = getdeps(b, ds, path, std.dirname(path))
 	std.htput(g.seen, path, true)
 	for d in deps
 		match d
@@ -253,7 +253,7 @@ const getcflags = {ln, cflags, libs
 	-> (cflags, libs)
 }
 
-const getdeps = {b, ds, path
+const getdeps = {b, ds, path, dir
 	var deps, lnum
 	var f
 
@@ -266,7 +266,7 @@ const getdeps = {b, ds, path
 		| `bio.Err e:	std.fatal("unable to read {}: {}\n", path, e)
 		| `bio.Eof:	break
 		| `bio.Ok ln:
-			deps = depname(deps, ln, lnum)
+			deps = depname(deps, ln, lnum, dir)
 			std.slfree(ln)
 		;;
 	;;
@@ -288,7 +288,9 @@ const opensrc = {b, path
 	;;
 }
 
-const depname = {deps, ln, lnum
+const depname = {deps, ln, lnum, dir
+	var p
+
 	/*
 	the regex pattern does some contortions to either grab
 	an unquoted path and put it into uses[4], or a quoted
@@ -299,7 +301,8 @@ const depname = {deps, ln, lnum
 		if uses[2].len > 0
 			std.slpush(&deps, `Lib (std.sldup(uses[2]), lnum))
 		else
-			std.slpush(&deps, `Local (std.sldup(uses[3]), lnum))
+			p = std.pathcat(dir, std.sldup(uses[3]))
+			std.slpush(&deps, `Local (p, lnum))
 		;;
 		regex.matchfree(uses)
 	| `std.None:

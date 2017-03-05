@@ -1,7 +1,7 @@
 use std
 use thread
 
-use "test/util.use"
+use "util"
 
 const Nwakes = 1000
 

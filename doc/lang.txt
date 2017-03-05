@@ -53,7 +53,8 @@ TABLE OF CONTENTS:
 
     2.1. EBNF-ish:
 
-        Syntax is defined using an informal variant of EBNF.
+        Syntax is defined using an informal variant of EBNF (Extended
+        Backus Naur Form).
 
             token:      /regex/ | "quoted" | <informal description>
             prod:       prodname ":" expr*
@@ -78,10 +79,10 @@ TABLE OF CONTENTS:
         Productions are defined by any number of expressions, in which
         expressions are '|' separated sequences of terms.
 
-        Terms can are productions or tokens, and may come with a repeat
-        specifier. wrapping a term in "[]" denotes that the term is repeated
-        0 or 1 times. suffixing it with a '*' denotes 0 or more repetitions,
-        and '+' denotes 1 or more repetitions.
+        Terms are productions or tokens, and may come with a repeat specifier.
+        wrapping a term in "[]" denotes that the term is repeated 0 or 1
+        times. suffixing it with a '*' denotes 0 or more repetitions, and '+'
+        denotes 1 or more repetitions.
 
     2.2. As-If Rule:
 
@@ -157,8 +158,8 @@ TABLE OF CONTENTS:
 
         - Package Definitions:
 
-            These define the list of exported values from a file. As
-            part of compilation, all the exported names from a package
+            These define the list of exported symbols from a file. As
+            part of compilation, all the exported symbols from a package
             will get merged together from all the files being built
             into that package.
 
@@ -174,14 +175,18 @@ TABLE OF CONTENTS:
 
         - Trait Definitions:
 
-            These define traits, which are attributes on types that
-            may be implemented by impl functions. They define required
-            functions on the type.
+            These define traits. Traits are attributes on types that
+            may be implemented by impl statements. They define a
+            constraint that may be set on types passed to generic
+            functions, and the required functions that must be defined
+            by an impl for a type to satisfy that constraint.
 
         - Impl Statements:
 
-            These define implementations of traits, allowing an 
-            existing trait to be attached to an existing type.
+            These define implementations of traits. Impl statements
+            tag a type as satisfying a trait defined by the constraint,
+            and contain the code needed to implement the requirements
+            imposed by the trait being implemented.
 
     3.3. Declarations:
 
@@ -191,13 +196,12 @@ TABLE OF CONTENTS:
             declbody:   declcore ["=" expr]
             declcore:   name [":" type]
 
-        A declaration consists of a declaration class (i.e., one
-        of 'const', 'var', or 'generic'), followed by a declaration
-        name, optionally followed by a type and assignment. One thing
-        you may note is that unlike most other languages, there is no
-        special function declaration syntax. Instead, a function is
-        declared like any other value: by assigning its name to a
-        constant or variable.
+        A declaration consists of a declaration class (i.e., one of 'const',
+        'var', or 'generic'), followed by a declaration name, optionally
+        followed by a type and assignment. It is noteworthy that, unlike most
+        languages, there is no function declaration syntax. Instead, a
+        function is declared like any other symbol: by assigning a function
+        value to a symbol.
 
             const:      Declares a constant value, which may not be
                         modified at run time. Constants must have
@@ -229,6 +233,7 @@ TABLE OF CONTENTS:
                         a non-returning function. This attribute is only
                         valid when applied to a function.
 
+        The 
         Examples:
 
             Declare a constant with a value 123. The type is not defined,
@@ -312,7 +317,11 @@ TABLE OF CONTENTS:
         the line where they are declared, if they have an initializer.
         Otherwise, their contents are indeterminate. This decision allows for
         slightly strange code, but allows for mutually recursive functions
-        with no forward declarations or special cases.
+        with no forward declarations or special cases. That is, functions
+        may call each other without regards to order of declaration:
+
+                const f = {; g() }
+                const g = {; f() }
 
         3.5.1. Scope Rules:
 
@@ -335,9 +344,11 @@ TABLE OF CONTENTS:
 
         3.5.2. Capturing Variables:
 
-            When a closure is created, it captures the stack variables that
-            are in its scope by value. This allows for simple heapification of
-            the closure.
+            Closures are functions that can refer to variables from their
+            enclosing scopes. When a closure is created, it copies the
+            stack variables that are in scope by value. Global variables are
+            referred to normally. The copying is intended to facilitate moving
+            the closure to the heap with a simple block memory copy.
 
             For example:
 
@@ -400,12 +411,13 @@ TABLE OF CONTENTS:
         tested for equality, and used in the various boolean operators.
 
         char is a 32 bit integer type, and is guaranteed to hold exactly one
-        Unicode codepoint. It can be assigned integer literals, tested
-        against, compared, and all the other usual numeric types.
+        Unicode codepoint. It is a numeric type. 
 
         The various [u]intN types hold, as expected, signed and unsigned
         integers of the named sizes respectively. All arithmetic on them is
         done in complement twos of bit size N.
+
+        Int and uint vary by machine, but are at least 32 bits in size.
 
         Similarly, floats hold floating point types with the indicated
         precision. They are operated on according to the IEEE754 rules.
@@ -431,8 +443,16 @@ TABLE OF CONTENTS:
             size must be a compile time constant.
 
             If the array size is specified as "...", then the array has zero bytes
-            allocated to store it, and bounds are not checked.  This is used to
-            facilitate flexible arrays at the end of a struct, as well as C ABI.
+            allocated to store it, and bounds are not checked. This allows
+            flexible arrays. Flexible arrays are arrays defined at the end of
+            a struct, which do not contrbute to the size of the array. When
+            allocating a struct on the heap, extra space may be reserved for
+            the array, allowing variable sizes of trailing data. This is not
+            used commonly, but turns out to be useful for C ABI comatibility.
+
+            Flexible arrays can also be used another way when emulating the C
+            ABI. Myrddin has no tagless unions, but because runs of flexible
+            arrays take zero bytes, a union can be emulated using them.
 
             Slices are similar to arrays in many contemporary languages.  They are
             reference types that store the length of their contents. They are
@@ -456,7 +476,7 @@ TABLE OF CONTENTS:
             declared by putting the word 'struct' before a block of declaration
             cores (ie, declarations without the storage type specifier).
 
-            Unions are a traditional sum type. The tag defines the value that may
+            Unions are a tag and body pair. The tag defines the value that may
             be held by the type at the current time. If the tag has an argument,
             then this value may be extracted with a pattern match. Otherwise, only
             the tag may be matched against.
@@ -578,9 +598,10 @@ TABLE OF CONTENTS:
             Impls take the interfaces provided by traits, and attach them
             to types, as well as providing the concrete implementation of
             these types. The declarations are inserted into the global
-            namespace, and act identically to generics in.
+            namespace.
 
-            The declarations need not be functions.
+            The declarations need not be functions, and if the types can
+            be appropriately inferred, can define impl specific constants.
 
 
     4.5. Type Inference:
@@ -601,11 +622,11 @@ TABLE OF CONTENTS:
 
             When a generic type is encountered, it is freshened. Freshening a
             generic type replaces all free type parameters in the type with a
-            type variable, inheriting all of the traits.. So, a type '@a' is
+            type variable, inheriting all of the traits. So, a type '@a' is
             replaced with the type '$1', and a trait-constrained type
             '@a::foo' is replaced with a trait constrained type '$1::foo'.
+            This is also done for subtypes. For example, '@a#' becomes '$t#'
 
-            
             Once each leaf expression is assigned a type, a depth first walk
             over the tree is done. Each leaf's type is resolved as well as it
             can be:
@@ -626,6 +647,44 @@ TABLE OF CONTENTS:
             type of a generic must be registered for delayed unification.
 
         4.5.2. Unification:
+
+            The core of type inference is unification. Unification makes
+            two values equal. This proceeds in several cases.
+
+                - If both types being unified are type variables,
+                  then the type variables are set to be equal. The
+                  set union of the required traits is attached to
+                  the type variable.
+
+                - If one type is a type variable, and the other is
+                  a concrete type, then the type variable is set to
+                  the concrete type. All traits on the type variable
+                  must be satisfied.
+
+                - If both types are compatible concrete types, then
+                  all subtypes are unfied recursively.
+
+                - If both types are incompatible concrete types, a
+                  type error is flagged.
+
+            For example:
+
+                unify($t1, $t2)
+                        => we set $t1 = $t2
+
+                unify($t1, int)
+                        => we set $t1 = int
+
+                unify(int, int)
+                        => success, int is an int
+
+                unify(int, char)
+                        => error, char != int
+
+                unify(list($t1), list(int)) 
+                        => list is compatible, so we unify subtypes.
+                           $t1 is set to int.
+                           success, list($t1) is set to list(int)
 
             Once the types of the leaf nodes is initialized, type inference
             proceeds via unification. Each expression using the leaves is
@@ -722,10 +781,10 @@ TABLE OF CONTENTS:
             to be repeated a number of times, although this is rare: Usually
             a single pass suffices.
 
-	    At this point, default types are applied. An unconstrained type
-	    with type $t::(numeric,integral) is replaced with int. An
-	    unconstrained type with $t::(numeric,floating) is replaced with
-	    flt64.
+            At this point, default types are applied. An unconstrained type
+            with type $t::(numeric,integral) is replaced with int. An
+            unconstrained type with $t::(numeric,floating) is replaced with
+            flt64.
 
     4.6. Built In Traits:
 
@@ -934,8 +993,9 @@ TABLE OF CONTENTS:
                 tupelts:    expr ("," expr)* [","]
 
             Sequence literals are used to initialize either a structure
-            or an array. They are '['-bracketed expressions, and are evaluated
-            Tuple literals are similarly used to initialize a tuple.
+            or an array. Both structure and array literals are bracketed
+            by square brackets. Tuple literals are used to initialize a
+            tuple, and are bracketed by parentheses.
 
             Struct literals describe a fully initialized struct value.
             A struct must have at least one member specified, in
@@ -966,7 +1026,7 @@ TABLE OF CONTENTS:
             A tuple literal is a parentheses separated list of values.
             A single element tuple contains a trailing comma.
 
-            Example: Struct literal.
+            Example: Struct literal:
                 [.a = 42, .b="str"]
 
             Example: Array literal:
@@ -983,7 +1043,7 @@ TABLE OF CONTENTS:
 
         5.1.3. Function Literals:
 
-                funclit:        "{" arglist "\n" blockbody "}"
+                funclit:        "{" arglist ["->" rettype] "\n" blockbody "}"
                 arglist:        (ident [":" type])*
 
             Function literals describe a function. They begin with a '{',
@@ -1021,9 +1081,10 @@ TABLE OF CONTENTS:
                     var b = {; a + 1}
                 }
 
-            A function literal has the arity of its argument list,
-            and shares their type if it is provided. Otherwise,
-            they are left generic. The same applies to the return type.
+            A function literal's arity is the same as the number of arguments
+            it takes. The type of the funciton argument list is derived from
+            the type of the arguments. The return type may be provided, or
+            can be left to type inference.
 
         5.1.4: Labels:
 
@@ -1060,14 +1121,14 @@ TABLE OF CONTENTS:
             For integers, all operations are done in complement twos
             arithmetic, with the same bit width as the type being operated on.
             For floating point values, the operation is according to the
-            IEE754 rules.
+            IEEE754 rules.
 
             The operators are listed below in order of precedence, and a short
-            summary of what they do is listed given. For the sake of clarity, 'x'
-            will stand in for any expression composed entirely of subexpressions
-            with higher precedence than the current current operator. 'e' will
-            stand in for any expression. Assignment is right associative. All
-            other expressions are left associative.
+            summary of what they do is given. For simplicity, 'x' and 'y' fill
+            in for any expression composed of operators with higher precedence
+            than the operator defined. Similiarly, 'e' will stand in for any
+            valid expression, regardless of precedence. Assignment is right
+            associative. All other expressions are left associative.
 
             Arguments are evaluated in the order of associativity. That is,
             if an operator is left associative, then the left hand side of
@@ -1091,7 +1152,7 @@ TABLE OF CONTENTS:
                     ~x              Bitwise negation
                     +x              Positive (no operation)
                     -x              Negate x
-		    `Tag val	    Union constructor
+                    `Tag val        Union constructor
 
             Precedence 9:
                     x << y          Shift left
@@ -1204,13 +1265,13 @@ TABLE OF CONTENTS:
             match, again, given that it is never read from in the body of the
             match.
 
-            An  represents a location in the machine that can be stored
-            to persistently and manipulated by the programmer. An obvious
-            example of this would be a variable name, although 
-
         5.2.4. Cast Expressions:
 
-            Cast expressions convert a value from one type to another.
+            Cast expressions convert a value from one type to another.  Some
+            conversions may lose precision, others may convert back and forth
+            without data loss. The former case is referred to as lossy
+            conversion. The latter case is known as round trip conversion.
+
             Casting proceeds according to the following rules:
 
 
@@ -1310,7 +1371,7 @@ TABLE OF CONTENTS:
         
                 lval = rval, lval <op>= rval
 
-            The assignment operators, group from right to left. These are the
+            The assignment operators group from right to left. These are the
             only operators that have right associativity. All of them require
             the left operand to be an lvalue. The value of the right hand side
             of the expression is stored on the left hand side after this
@@ -1344,7 +1405,7 @@ TABLE OF CONTENTS:
 
             The `&&` operator returns false if the left hand side evaluates to
             false. Otherwise it returns the result of evaluating the lhs. It
-            is guaranteed if the rhs is true, the lhs will not be evaluated.
+            is guaranteed if the rhs is false, the lhs will not be evaluated.
 
             The left hand side and right hand side of the expression must
             be of the same type. The whole expression evaluates to the type
@@ -1430,7 +1491,7 @@ TABLE OF CONTENTS:
             These operators (+, -) add and subtract their operands. For
             integers, all operations are done in complement twos arithmetic,
             with the same bit width as the type being operated on. For
-            floating point values, the operation is according to the IEE754
+            floating point values, the operation is according to the IEEE754
             rules.
 
             Type:
@@ -1591,9 +1652,10 @@ TABLE OF CONTENTS:
 
                 expr[lo:hi], expr[:hi], expr[lo:], expr[:]
 
-            The slice expression produces a sub-slice of the sequence
-            or pointer expression being sliced. The elements contained
-            in this slice are expr[lo]..expr[hi-1].
+            The slice expression produces a sub-slice of the sequence or
+            pointer expression being sliced. The lower bound is inclusive, and
+            the upper bound is exclusive. The elements contained in this slice
+            are expr[lo]..expr[hi-1].
             
             If the lower bound is omitted, then it is implicitly zero. If the
             upper bound is ommitted, then it is implicitly `expr.len`.
@@ -1886,7 +1948,7 @@ TABLE OF CONTENTS:
     toplev:     use | pkgdef | decl | traitdef | impldef | tydef
 
     /* packages */
-    use:        use ident | strlit
+    use:       "use" ident | strlit
     pkgdef:    "pkg" [ident] "=" pkgbody ";;"
     pkgbody:   (decl | attrs tydef | traitdef | impldef)*
 
@@ -1909,13 +1971,15 @@ TABLE OF CONTENTS:
     typeid:     ident | ident "(" typarams ")"
     typarams:   typaram ("," typaram)*
     type:       structdef | uniondef | tupledef |
-                compound | generic | "..."
+                constructed | generic | "..."
     structdef:  "struct" structbody ";;"
+    structbody:	declcore*
     uniondef:   "union" unionbody ";;"
+    unionbody:	("`" ident [type])*
     tupledef:   "(" type ("," type)* ")"
     generic:    typaram ["::" traitlist]
     traitlist:  name | "(" name ("," name)
-    compound:   functype | sicetype | arraytype | ptrtype | void | name
+    constructed: functype | sicetype | arraytype | ptrtype | void | name
     functype:   "(" arglist "->" type ")"
     arglist:    [arg ("," arg)*]
     arg:        name ":" type

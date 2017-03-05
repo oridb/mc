@@ -24,6 +24,16 @@ char *strdupn(char *s, size_t len)
 	return ret;
 }
 
+char *xstrdup(char *s)
+{
+	char *p;
+
+	p = strdup(s);
+	if (!p && s)
+		die("Out of memory");
+	return p;
+}
+
 char *strjoin(char *u, char *v)
 {
 	size_t n;

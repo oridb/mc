@@ -1,8 +1,8 @@
 use std
 use sys
 
-use "atomic.use"
-use "common.use"
+use "atomic"
+use "common"
 
 pkg thread =
 	type mutex = struct

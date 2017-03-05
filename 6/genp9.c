@@ -193,7 +193,6 @@ done:
 	return;
 }
 
-
 static size_t writebytes(FILE *fd, char *name, size_t off, char *p, size_t sz)
 {
 	size_t i, len;
@@ -216,7 +215,6 @@ static size_t writebytes(FILE *fd, char *name, size_t off, char *p, size_t sz)
 
 	return sz;
 }
-
 static void genstrings(FILE *fd, Htab *strtab)
 {
 	void **k;
@@ -245,7 +243,7 @@ static void writeasm(FILE *fd, Isel *s, Func *fn)
 		hidden = "";
 	/* we don't use the stack size directive: myrddin handles
 	 * the stack frobbing on its own */
-	fprintf(fd, "TEXT %s%s+0(SB),$0\n", fn->name, hidden);
+	fprintf(fd, "TEXT %s%s+0(SB),2,$0\n", fn->name, hidden);
 	for (j = 0; j < s->cfg->nbb; j++) {
 		if (!s->bb[j])
 			continue;
@@ -359,10 +357,99 @@ static void genfunc(FILE *fd, Func *fn, Htab *globls, Htab *strtab)
 	writeasm(fd, &is, fn);
 }
 
+static size_t writetextbytes(FILE *fd, char *p, size_t sz)
+{
+	size_t i;
+
+	assert(sz != 0);
+	for (i = 0; i < sz; i++)
+		fprintf(fd, "\tBYTE $%d\n", p[i]);
+
+	return sz;
+}
+
+static size_t encodetextmin(FILE *fd, uvlong val)
+{
+	size_t i, shift, n;
+	uint8_t b;
+
+	if (val < 128) {
+		fprintf(fd, "\tBYTE $%u // single\n", (unsigned)val);
+		return 1;
+	}
+
+	for (i = 1; i < 8; i++)
+		if (val < 1ULL << (7*i))
+			break;
+
+	n = 0;
+	shift = 8 - i;
+	b = ~0ull << (shift + 1);
+	b |= val & ~(~0ull << shift);
+	fprintf(fd, "\tBYTE $%u //first\n", b);
+	val >>=  shift;
+	while (val != 0) {
+		n++;
+		fprintf(fd, "BYTE $%llu // tail\n", (uvlong)val & 0xff);
+		val >>= 8;
+	}
+	return i;
+}
+
+static size_t writetextblob(FILE *fd, Blob *b)
+{
+	size_t i, n;
+
+	n = 0;
+	if (!b)
+		return 0;
+	switch (b->type) {
+	case Bti8:
+		fprintf(fd, "\tBYTE $%lld\n", b->ival);
+		n += 1;
+		break;
+	case Bti16:
+		fprintf(fd, "\tSHORT $%lld\n", b->ival);
+		n += 2;
+		break;
+	case Bti32:
+		fprintf(fd, "\tWORD $%lld\n", b->ival);
+		n += 4;
+		break;
+	case Bti64:
+		fprintf(fd, "\tLONG $%lld\n", (vlong)b->ival);
+		n += 8;
+		break;
+	case Btimin:
+		n += encodetextmin(fd, b->ival);
+		break;
+	case Btref:
+		if (b->ref.isextern || b->ref.str[0] == '.')
+			fprintf(fd, "\tLONG $%s+%llu(SB)\n", b->ref.str, (uvlong)b->ref.off);
+		else
+			fprintf(fd, "\tLONG $%s<>+%llu(SB)\n", b->ref.str, (uvlong)b->ref.off);
+		fprintf(fd, "\tLONG $0\n");
+		n += 8;
+		break;
+	case Btbytes:
+		n += writetextbytes(fd, b->bytes.buf, b->bytes.len);
+		break;
+	case Btseq:
+		for (i = 0; i < b->seq.nsub; i++)
+			n += writetextblob(fd, b->seq.sub[i]);
+		break;
+	case Btpad:
+		for (i = 0; i < b->npad; i++)
+			fprintf(fd, "\tBYTE $0\n");
+		n += b->npad;
+		break;
+	}
+	return n;
+}
+
 static void gentype(FILE *fd, Type *ty)
 {
 	Blob *b;
-	char lbl[1024];
 
 	ty = tydedup(ty);
 	if (ty->type == Tyvar || ty->isemitted)
@@ -372,14 +459,11 @@ static void gentype(FILE *fd, Type *ty)
 	b = tydescblob(ty);
 	if (!b)
 		return;
-	if (b->isglobl) {
-		fprintf(fd, "GLOBL %s%s+0(SB),$%llu\n", Symprefix, b->lbl, (uvlong)blobsz(b));
-		bprintf(lbl, sizeof lbl, "%s%s", Symprefix, b->lbl);
-	} else {
-		fprintf(fd, "GLOBL %s%s<>+0(SB),$%llu\n", Symprefix, b->lbl, (uvlong)blobsz(b));
-		bprintf(lbl, sizeof lbl, "%s%s<>", Symprefix, b->lbl);
-	}
-	writeblob(fd, b, 0, lbl);
+	if (b->isglobl)
+		fprintf(fd, "TEXT %s%s+0(SB),2,$0\n", Symprefix, b->lbl);
+	else
+		fprintf(fd, "TEXT %s%s<>+0(SB),2,$0\n", Symprefix, b->lbl);
+	writetextblob(fd, b);
 }
 
 static void gentypes(FILE *fd)

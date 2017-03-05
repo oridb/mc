@@ -1,7 +1,7 @@
 use std
 use crypto
 
-use "test/util"
+use "util"
 
 const main = {
 	hasheq(crypto.md5("")[:], \

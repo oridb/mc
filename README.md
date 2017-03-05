@@ -8,6 +8,19 @@ and features you may find familiar from languages like like rust and ocaml.
 This combination makes Myrddin suitable for anything ranging from desktop
 applications, to embedded systems and potentially even kernel development.
 
+## Build
+
+Compile with ./configure --prefix="/home/wherever/I/want" && make && make install
+The result will be among other things, the binaries 6m and mbld
+
+## Usage
+
+Compile and execute:
+`mbld -R test.myr` 
+
+Compile into a binary:
+`mbld -b binary test.myr`
+
 ## Examples
 A classic:
 
@@ -77,8 +90,9 @@ Annoucements of major changes, questions, complaints. We also give relationship 
 ## Supported Platforms
 Myrddin currently runs on a number of platforms
 
-- Linux
-- OSX
 - FreeBSD
+- Linux
 - NetBSD
-- 9front
+- OSX
+- OpenBSD
+- Plan9front
