@@ -17,6 +17,7 @@ pkg sys =
 	type fcntlcmd	= int64
 	type signo	= int32
 	type sigflags	= int32
+	type sigset = uint32
 
 	type clock = union
 		`Clockrealtime
@@ -43,7 +44,12 @@ pkg sys =
 		usec	: uint64
 	;;
 
-	type sigset = uint32
+
+	type pollfd = struct
+                fd      : fd
+                events  : uint16
+                revents : uint16
+        ;;
 
 	type sigaction = struct
 		handler	: byte#	/* code pointer */
@@ -696,6 +702,7 @@ const pipe	= {fds;	-> syscall(Syspipe, fds)}
 const dup 	= {fd;	-> (syscall(Sysdup, a(fd)) : fd)}
 const dup2 	= {src, dst;	-> (syscall(Sysdup2, a(src), a(dst)) : fd)}
 const fcntl	= {fd, cmd, args; 	-> syscall(Sysfcntl, a(fd), a(cmd), a(args))}
+const poll      = {pfd, tm;     -> (syscall(Syspoll, (pfd : byte#), a(pfd.len), a(tm)) : int)}
 
 /* networking */
 const socket	= {dom, stype, proto;	-> (syscall(Syssocket, a(dom), a(stype), a(proto)) : fd)}
