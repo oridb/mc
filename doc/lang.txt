@@ -191,7 +191,7 @@ TABLE OF CONTENTS:
     3.3. Declarations:
 
             decl:       attrs ("var" | "const" | "generic")  decllist
-            attrs:      ("extern" | "pkglocal" | "$noret")+
+            attrs:      ("extern" | "pkglocal" | "$noret")*
             decllist:   declbody ("," declbody)*
             declbody:   declcore ["=" expr]
             declcore:   name [":" type]
