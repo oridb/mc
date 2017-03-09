@@ -879,7 +879,7 @@ int loaduse(char *path, FILE *f, Stab *st, Vis vis)
 	int v;
 	char *pkg;
 	Node *dcl, *impl, *init;
-	Stab *s;
+	Stab *s, *ns;
 	Type *ty;
 	Trait *tr;
 	char *lib;
@@ -985,10 +985,14 @@ foundextlib:
 				  if (!gettype(s, ty->name) && !ty->ishidden)
 					  puttype(s, ty->name, ty);
 			  } else if (ty->type == Tyunion) {
-				  for (i = 0; i < ty->nmemb; i++)
-					  if (!getucon(s, ty->udecls[i]->name) &&
-							  !ty->udecls[i]->synth)
-						  putucon(s, ty->udecls[i]);
+				  for (i = 0; i < ty->nmemb; i++) {
+					  ns = findstab(s, ty->udecls[i]->name->name.ns);
+					  if (getucon(ns, ty->udecls[i]->name))
+						  continue;
+					  if (ty->udecls[i]->synth)
+						  continue;
+					  putucon(ns, ty->udecls[i]);
+				  }
 			  }
 			  break;
 		case 'I':
