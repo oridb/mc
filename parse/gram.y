@@ -19,8 +19,11 @@
 
 
 Stab *curscope;
-static Node **lbls;
-static size_t nlbls;
+#define LBLSTKSZ 64
+static Node **lbls[LBLSTKSZ];
+static size_t nlbls[LBLSTKSZ];
+/* the first time we see a label, we increment to 0 */
+static int lbldepth = -1;
 
 void yyerror(const char *s);
 int yylex(void);
@@ -132,7 +135,7 @@ static void setupinit(Node *n);
 %type <tylist> typelist typarams optauxtypes
 %type <nodelist> typaramlist
 
-%type <tok> asnop cmpop addop mulop shiftop optident
+%type <tok> asnop cmpop addop mulop shiftop optident obrace
 
 %type <tydef> tydef pkgtydef typeid
 %type <trait> traitdef
@@ -806,29 +809,39 @@ strlit : Tstrlit { $$ = mkstr($1->loc, $1->strval); }
 	}
 	;
 
-funclit : Tobrace params Tendln blkbody Tcbrace {
+obrace	: Tobrace {
+		assert(lbldepth < LBLSTKSZ);
+		lbldepth++;
+	}
+	;
+
+funclit : obrace params Tendln blkbody Tcbrace {
 		size_t i;
 		Node *fn, *lit;
 
 		$$ = mkfunc($1->loc, $2.nl, $2.nn, mktyvar($3->loc), $4);
 		fn = $$->lit.fnval;
-		for (i = 0; i < nlbls; i++) {
-			lit = lbls[i]->expr.args[0];
-			putlbl(fn->func.scope, lit->lit.lblname, lbls[i]);
+		for (i = 0; i < nlbls[lbldepth]; i++) {
+			lit = lbls[lbldepth][i]->expr.args[0];
+			putlbl(fn->func.scope, lit->lit.lblname, lbls[lbldepth][i]);
 		}
-		lfree(&lbls, &nlbls);
+		lfree(&lbls[lbldepth], &nlbls[lbldepth]);
+		assert(lbldepth >= 0);
+		lbldepth--;
 	}
-	| Tobrace params Tret type Tendln blkbody Tcbrace {
+	| obrace params Tret type Tendln blkbody Tcbrace {
 		size_t i;
 		Node *fn, *lit;
 
 		$$ = mkfunc($1->loc, $2.nl, $2.nn, $4, $6);
 		fn = $$->lit.fnval;
-		for (i = 0; i < nlbls; i++) {
-			lit = lbls[i]->expr.args[0];
-			putlbl(fn->func.scope, lit->lit.lblname, lbls[i]);
+		for (i = 0; i < nlbls[lbldepth]; i++) {
+			lit = lbls[lbldepth][i]->expr.args[0];
+			putlbl(fn->func.scope, lit->lit.lblname, lbls[lbldepth][i]);
 		}
-		lfree(&lbls, &nlbls);
+		lfree(&lbls[lbldepth], &nlbls[lbldepth]);
+		assert(lbldepth >= 0);
+		lbldepth--;
 	}
 	;
 
@@ -1024,7 +1037,7 @@ label   : Tcolon Tident {
 		genlblstr(buf, sizeof buf, $2->id);
 		$$ = mklbl($2->loc, buf);
 		$$->expr.args[0]->lit.lblname = strdup($2->id);
-		lappend(&lbls, &nlbls, $$);
+		lappend(&lbls[lbldepth], &nlbls[lbldepth], $$);
 	}
 	;
 
