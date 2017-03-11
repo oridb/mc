@@ -39,4 +39,4 @@ uninstallmyr:
 	./mbldwrap.sh uninstall
 
 release:
-	./support/release.sh 0.1
+	./support/release.sh 0.1.1
