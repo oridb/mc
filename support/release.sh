@@ -8,6 +8,7 @@ mkdir -p $tmp
 cp -r ../mc $tmp/
 (
 	cd $tmp/mc
+	git reset --hard
 	git clean -xfd
 	rm -rf .git
 )
