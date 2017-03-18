@@ -156,7 +156,13 @@ const bseq = {a, b
 }
 
 const bshash = {a
-	-> std.slhash(a.bits)
+	var end : size
+
+	end = a.bits.len
+	while end > 0 && a.bits[end - 1] == 0
+		end--
+	;;
+	-> std.slhash(a.bits[:end])
 }
 
 const ensurelen = {bs, len
