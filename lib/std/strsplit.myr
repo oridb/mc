@@ -5,6 +5,7 @@ use "extremum"
 use "option"
 use "slpush"
 use "strfind"
+use "strstrip"
 use "types"
 use "utf"
 
@@ -96,7 +97,7 @@ const dostrtok = {toks, s, grow
 			elif idx < toks#.len - 1
 				toks#[idx] = s[i:j]
 			else
-				toks#[idx] = s[i:]
+				toks#[idx] = strrstrip(s[i:])
 				idx++
 				break
 			;;

@@ -27,6 +27,7 @@ const main = {
 	/* buffered tokenizing */
 	check(std.bstrtok(b[:], "a b  c\td"), ["a", "b", "c", "d"][:])
 	check(std.bstrtok(b[:2], "a b  c\td"), ["a", "b  c\td"][:])
+	check(std.bstrtok(b[:2], "a b  c\td   "), ["a", "b  c\td"][:])
 }
 
 const check = {a, b
