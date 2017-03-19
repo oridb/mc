@@ -48,6 +48,7 @@ echo 	$pwd/6/6.out	-I ../sys -I . hashfuncs.myr  && 	$pwd/6/6.out	-I ../sys -I .
 echo 	$pwd/6/6.out	-I ../sys -I . htab.myr  && 	$pwd/6/6.out	-I ../sys -I . htab.myr  &&\
 echo 	$pwd/6/6.out	-I ../sys -I . intparse.myr  && 	$pwd/6/6.out	-I ../sys -I . intparse.myr  &&\
 echo 	$pwd/6/6.out	-I ../sys -I . introspect.myr  && 	$pwd/6/6.out	-I ../sys -I . introspect.myr  &&\
+echo 	$pwd/6/6.out	-I ../sys -I . strstrip.myr  && 	$pwd/6/6.out	-I ../sys -I . strstrip.myr  &&\
 echo 	$pwd/6/6.out	-I ../sys -I . strsplit.myr  && 	$pwd/6/6.out	-I ../sys -I . strsplit.myr  &&\
 echo 	$pwd/6/6.out	-I ../sys -I . varargs.myr  && 	$pwd/6/6.out	-I ../sys -I . varargs.myr  &&\
 echo 	$pwd/6/6.out	-I ../sys -I . writeall.myr  && 	$pwd/6/6.out	-I ../sys -I . writeall.myr  &&\
@@ -88,7 +89,6 @@ echo 	6a	-o sjlj-impl.6 sjlj-impl+plan9-x64.s  && 	6a	-o sjlj-impl.6 sjlj-impl+p
 echo 	$pwd/6/6.out	-I ../sys -I . bitset.myr  && 	$pwd/6/6.out	-I ../sys -I . bitset.myr  &&\
 echo 	$pwd/6/6.out	-I ../sys -I . fmtfuncs.myr  && 	$pwd/6/6.out	-I ../sys -I . fmtfuncs.myr  &&\
 echo 	$pwd/6/6.out	-I ../sys -I . sleep.myr  && 	$pwd/6/6.out	-I ../sys -I . sleep.myr  &&\
-echo 	$pwd/6/6.out	-I ../sys -I . strstrip.myr  && 	$pwd/6/6.out	-I ../sys -I . strstrip.myr  &&\
 echo 	$pwd/6/6.out	-I ../sys -I . try.myr  && 	$pwd/6/6.out	-I ../sys -I . try.myr  &&\
 echo 	$pwd/6/6.out	-I ../sys -I . sort.myr  && 	$pwd/6/6.out	-I ../sys -I . sort.myr  &&\
 echo 	$pwd/6/6.out	-I ../sys -I . search.myr  && 	$pwd/6/6.out	-I ../sys -I . search.myr  &&\
