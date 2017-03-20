@@ -500,14 +500,13 @@ static void genblob(FILE *fd, Node *blob, Htab *globls, Htab *strtab)
 	writeblob(fd, b, 0, lbl);
 }
 
-void genp9(Node *file, char *out)
+void genp9(Node *file, FILE *fd)
 {
 	Htab *globls, *strtab;
 	Node *n, **blob;
 	Func **fn;
 	size_t nfn, nblob;
 	size_t i;
-	FILE *fd;
 
 	/* ensure that all physical registers have a loc created before any
 	 * other locs, so that locmap[Physreg] maps to the Loc for the physreg
@@ -542,10 +541,6 @@ void genp9(Node *file, char *out)
 		}
 	}
 	popstab();
-
-	fd = fopen(out, "w");
-	if (!fd)
-		die("Couldn't open fd %s", out);
 
 	strtab = mkht(strlithash, strliteq);
 	for (i = 0; i < nblob; i++)

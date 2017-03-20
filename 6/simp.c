@@ -1387,6 +1387,7 @@ static Func *simpfn(Simp *s, char *name, Node *dcl)
 
 	fn = zalloc(sizeof(Func));
 	fn->name = strdup(name);
+	fn->loc = dcl->loc;
 	fn->type = dcl->decl.type;
 	fn->isexport = isexport(dcl);
 	fn->stksz = align(s->stksz, 8);

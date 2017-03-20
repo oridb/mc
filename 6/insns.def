@@ -375,6 +375,18 @@ Insn(Ilbl,
     Use(None),
     Def(None))
 
+Insn(Ifile,
+    "\t.file %v \"%v\"\n",
+    "\t//file: %V \"%V\"\n",
+    Use(None),
+    Def(None))
+
+Insn(Iloc,
+    "\t.loc %v\n",
+    "",
+    Use(None),
+    Def(None))
+
 Insn(Icomment,
     "\t#%v\n",
     "\t//%V:\n",

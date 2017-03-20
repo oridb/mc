@@ -1009,17 +1009,30 @@ static Asmbb *mkasmbb(Bb *bb)
 
 void selfunc(Isel *is, Func *fn, Htab *globls, Htab *strtab)
 {
+	int fileid, lastline;
 	Node *n;
 	Bb *bb;
 	size_t i, j;
 	char buf[128];
+	char *path;
 
 
 	for (i = 0; i < fn->cfg->nbb; i++)
 		lappend(&is->bb, &is->nbb, mkasmbb(fn->cfg->bb[i]));
 
 	is->curbb = is->bb[0];
+
+	fileid = fn->loc.file;
+	if (fileid >= 0 && fn->loc.line > 0) {
+		path = file->file.files[fileid];
+		bprintf(buf, sizeof buf, "%s/%s:%d", is->cwd, path, fn->loc.line);
+		g(is, Icomment, locstrlbl(buf), NULL);
+		bprintf(buf, sizeof buf, "%zd %d", fileid + 1, fn->loc.line);
+		g(is, Iloc, locstrlbl(buf), NULL);
+	}
+
 	prologue(is, fn, fn->stksz);
+	lastline = -1;
 	for (j = 0; j < fn->cfg->nbb - 1; j++) {
 		is->curbb = is->bb[j];
 		if (!is->bb[j])
@@ -1028,9 +1041,15 @@ void selfunc(Isel *is, Func *fn, Htab *globls, Htab *strtab)
 		for (i = 0; i < bb->nnl; i++) {
 			/* put in a comment that says where this line comes from */
 			n = bb->nl[i];
-			bprintf(buf, sizeof buf, "bb = %ld, bbidx = %ld, %s:%d",
-					j, i, file->file.files[n->loc.file], n->loc.line);
-			g(is, Icomment, locstrlbl(buf), NULL);
+			fileid = n->loc.file;
+			if (n->loc.file >= 0 && n->loc.line != -1 && n->loc.line != lastline) {
+				lastline = n->loc.line;
+				path = file->file.files[fileid];
+				bprintf(buf, sizeof buf, "%s/%s:%d", is->cwd, path, n->loc.line);
+				g(is, Icomment, locstrlbl(buf), NULL);
+				bprintf(buf, sizeof buf, "%zd %d", fileid + 1, n->loc.line);
+				g(is, Iloc, locstrlbl(buf), NULL);
+			}
 			isel(is, fn->cfg->bb[j]->nl[i]);
 		}
 	}
