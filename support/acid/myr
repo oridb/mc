@@ -1,0 +1,16 @@
+// acid support for Myrddin.
+
+// Myrddin doesn't use the Plan 9 ABI, so we
+// define our own stack function.
+defn myrstk()
+{
+	local b
+	b = *BP;
+	while *b do {
+		line = pcline(*(b + 8));
+		file = pcfile(*(b + 8));
+		func = fmt(*(b + 8), 'a');
+		print(file, ":", line, ":\t", func, "\n");
+		b = *b;
+	}
+}
