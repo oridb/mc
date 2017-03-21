@@ -11,19 +11,21 @@ use "slfill"
 use "backtrace"
 
 pkg std =
-	const startalloctrace	: (f : byte[:]	-> void)
+	const startalloctrace	: (f : byte[:] -> void)
 	const endalloctrace	: (-> void)
+
+	/* public for testing */
+	pkglocal const zbytealloc	: (sz:size -> byte#)
+	const bytealloc			: (sz:size -> byte#)
+	const bytefree			: (m:byte#, sz:size -> void)
 
 	/* null pointers. only used internally. */
 	pkglocal const Zsliceptr	= (0 : byte#)
-	pkglocal const Align	= 16	/* minimum allocation alignment */
+	pkglocal const Align		= 16	/* minimum allocation alignment */
 
 	pkglocal const align	: (m : std.size, align : std.size -> std.size)
 	pkglocal const allocsz	: (sz : std.size -> std.size)
 
-	pkglocal const bytealloc	: (sz:size	-> byte#)
-	pkglocal const zbytealloc	: (sz:size	-> byte#)
-	pkglocal const bytefree	: (m:byte#, sz:size	-> void)
 ;;
 
 const Zslab	= (0 : slab#)
@@ -193,9 +195,9 @@ const bigalloc = {sz
 const bigfree = {p, sz
 	var minsz, minp, minidx
 
-	minsz = sz
 	minp = p
 	minidx = -1
+	minsz = align(sz, Align)
 	lock(memlck)
 	for var i = 0; i < cache.len; i++
 		if cache[i].sz < minsz
