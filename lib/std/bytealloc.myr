@@ -11,7 +11,7 @@ use "slfill"
 use "backtrace"
 
 pkg std =
-	const startalloctrace	: (f : byte[:]	-> void)
+	const startalloctrace	: (f : byte[:] -> void)
 	const endalloctrace	: (-> void)
 
 	/* null pointers. only used internally. */
@@ -21,9 +21,9 @@ pkg std =
 	pkglocal const align	: (m : std.size, align : std.size -> std.size)
 	pkglocal const allocsz	: (sz : std.size -> std.size)
 
-	pkglocal const bytealloc	: (sz:size	-> byte#)
-	pkglocal const zbytealloc	: (sz:size	-> byte#)
-	pkglocal const bytefree	: (m:byte#, sz:size	-> void)
+	pkglocal const bytealloc	: (sz:size -> byte#)
+	pkglocal const zbytealloc	: (sz:size -> byte#)
+	pkglocal const bytefree		: (m:byte#, sz:size -> void)
 ;;
 
 const Zslab	= (0 : slab#)
