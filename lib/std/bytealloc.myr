@@ -36,6 +36,7 @@ const Pagesz	= 4*KiB
 var buckets	: bucket[32] /* excessive */
 var trace	: bool
 var tracefd	: std.fd
+var cache	: cacheelt[32]
 
 type bucket = struct
 	sz	: size	/* aligned size */
@@ -55,6 +56,11 @@ type slab = struct
 
 type chunk = struct	/* NB: must be smaller than sizeof(slab) */
 	next	: chunk#	/* the next chunk in the free list */
+;;
+
+type cacheelt = struct
+	sz	: std.size
+	p	: byte#
 ;;
 
 const __init__ = {
@@ -116,16 +122,13 @@ const writealloctrace = {sl
 const bytealloc = {sz
 	var bkt, p
 
-	if (sz <= Bktmax)
+	if sz <= Bktmax
 		bkt = &buckets[bktnum(sz)]
 		lock(memlck)
 		p = bktalloc(bkt)
 		unlock(memlck)
 	else
-		p = getmem(sz)
-		if p == Failmem
-			die("could not get memory\n")
-		;;
+		p = bigalloc(sz)
 	;;
 	if trace
 		lock(memlck)
@@ -151,7 +154,67 @@ const bytefree = {p, sz
 		bktfree(bkt, p)
 		unlock(memlck)
 	else
-		freemem(p, sz)
+		bigfree(p, sz)
+	;;
+}
+
+const bigalloc = {sz
+	var p
+
+	p = Failmem
+	sz = align(sz, Align)
+
+	/* check our cache */
+	lock(memlck)
+	for var i = 0; i < cache.len; i++
+		if sz > cache[i].sz
+			continue
+		;;
+		p = cache[i].p
+		if cache[i].sz - sz >= Bktmax
+			cache[i].sz -= sz
+			cache[i].p = ((p : intptr) + (sz : intptr) : byte#)
+		;;
+		break
+	;;
+	unlock(memlck)
+	if p != Failmem
+		-> p
+	;;
+
+	/* ok, lets give up and get memory from the os */
+	p = getmem(sz)
+	if p != Failmem
+		-> p
+	;;
+	die("could not get memory\n")
+}
+
+const bigfree = {p, sz
+	var minsz, minp, minidx
+
+	minsz = sz
+	minp = p
+	minidx = -1
+	lock(memlck)
+	for var i = 0; i < cache.len; i++
+		if cache[i].sz < minsz
+			minsz = cache[i].sz
+			minp = cache[i].p
+			minidx = i
+		;;
+	;;
+	unlock(memlck)
+
+	/* size of 0 means we found a slot. */
+	if minsz == 0
+		-> void
+	;;
+
+	freemem(minp, minsz)
+	if minidx >= 0
+		cache[minidx].p = p
+		cache[minidx].sz = sz
 	;;
 }
 
