@@ -229,7 +229,7 @@ static void genstrings(FILE *fd, Htab *strtab)
 		s = k[i];
 		lbl = htget(strtab, k[i]);
 		if (s->len) {
-			fprintf(fd, "GLOBL %s+0(SB),$%lld\n", lbl, (vlong)s->len);
+			fprintf(fd, "GLOBL %s+0(SB),2,$%lld\n", lbl, (vlong)s->len);
 			writebytes(fd, lbl, 0, s->buf, s->len);
 		}
 	}
@@ -373,10 +373,10 @@ static void gentype(FILE *fd, Type *ty)
 	if (!b)
 		return;
 	if (b->isglobl) {
-		fprintf(fd, "GLOBL %s%s+0(SB),$%llu\n", Symprefix, b->lbl, (uvlong)blobsz(b));
+		fprintf(fd, "GLOBL %s%s+0(SB),2,$%llu\n", Symprefix, b->lbl, (uvlong)blobsz(b));
 		bprintf(lbl, sizeof lbl, "%s%s", Symprefix, b->lbl);
 	} else {
-		fprintf(fd, "GLOBL %s%s<>+0(SB),$%llu\n", Symprefix, b->lbl, (uvlong)blobsz(b));
+		fprintf(fd, "GLOBL %s%s<>+0(SB),2,$%llu\n", Symprefix, b->lbl, (uvlong)blobsz(b));
 		bprintf(lbl, sizeof lbl, "%s%s<>", Symprefix, b->lbl);
 	}
 	writeblob(fd, b, 0, lbl);
