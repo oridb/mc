@@ -194,7 +194,7 @@ const bigalloc = {sz
 
 const bigfree = {p, sz
 	var minsz, minp, minidx
-	var endp, endcache
+	var endp, endblk
 
 	minp = p
 	minidx = -1
@@ -202,13 +202,13 @@ const bigfree = {p, sz
 	endp = ((p : intptr) + (sz : intptr) : byte#)
 	lock(memlck)
 	for var i = 0; i < cache.len; i++
-		endcache = ((cache[i].p : intptr) + (sz : intptr) : byte#)
+		endblk = ((cache[i].p : intptr) + (sz : intptr) : byte#)
 		if cache[i].p == endp
 			cache[i].sz += sz
 			cache[i].p = p
 			minsz = 0
 			break
-		elif endcache == p
+		elif endblk == p
 			cache[i].sz += sz
 			minsz = 0
 			break
