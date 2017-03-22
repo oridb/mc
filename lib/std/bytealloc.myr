@@ -194,12 +194,26 @@ const bigalloc = {sz
 
 const bigfree = {p, sz
 	var minsz, minp, minidx
+	var endp, endcache
 
 	minp = p
 	minidx = -1
 	minsz = align(sz, Align)
+	endp = ((p : intptr) + (sz : intptr) : byte#)
 	lock(memlck)
 	for var i = 0; i < cache.len; i++
+		endcache = ((cache[i].p : intptr) + (sz : intptr) : byte#)
+		if cache[i].p == endp
+			cache[i].sz += sz
+			cache[i].p = p
+			minsz = 0
+			break
+		elif endcache == p
+			cache[i].sz += sz
+			minsz = 0
+			break
+		;;
+		/* check for merges */
 		if cache[i].sz < minsz
 			minsz = cache[i].sz
 			minp = cache[i].p
