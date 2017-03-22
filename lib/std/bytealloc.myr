@@ -203,6 +203,7 @@ const bigfree = {p, sz
 	lock(memlck)
 	for var i = 0; i < cache.len; i++
 		endblk = ((cache[i].p : intptr) + (sz : intptr) : byte#)
+		/* try to merge with a saved block */
 		if cache[i].p == endp
 			cache[i].sz += sz
 			cache[i].p = p
