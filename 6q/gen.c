@@ -108,7 +108,7 @@ char *asmname(char *buf, size_t nbuf, Node *n, char sigil)
 	sep = "";
 	if (ns && ns[0])
 		sep = "$";
-	bprintf(buf, nbuf, "%s%s%s%s", sigil, ns, sep, name);
+	bprintf(buf, nbuf, "%c%s%s%s", sigil, ns, sep, name);
 	return buf;
 }
 
@@ -551,7 +551,7 @@ static Loc simpcast(Gen *g, Node *val, Type *to)
 	Loc l;
 
 	l = rval(g, val);
-	return gencast(g, val->loc, l, to, exprtype(val->expr.args[0]));
+	return gencast(g, val->loc, l, to, exprtype(val));
 }
 
 
