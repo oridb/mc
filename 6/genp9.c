@@ -449,7 +449,7 @@ void genp9(Node *file, char *out)
 		case Nimpl:
 			break;
 		case Ndecl:
-			n = flattenfn(n);
+			n = flattenfn(n, NULL, NULL);
 			simpglobl(n, globls, &fn, &nfn, &blob, &nblob);
 			break;
 		default:

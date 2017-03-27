@@ -253,7 +253,7 @@ Node *genlbl(Srcloc loc)
 {
 	char buf[128];
 
-	genlblstr(buf, 128, "");
+	genlblstr(buf, sizeof buf, "");
 	return mklbl(loc, buf);
 }
 

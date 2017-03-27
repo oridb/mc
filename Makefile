@@ -1,7 +1,7 @@
 SUB = parse \
       mi \
       util \
-      6 \
+      6q \
       muse \
       rt \
 

@@ -46,6 +46,8 @@ struct Flattenctx {
 
 	/* location handling */
 	Htab *globls;
+	Node **locals;
+	size_t nlocals;
 
 	size_t stksz;
 };
@@ -102,12 +104,13 @@ static int islbl(Node *n)
 	return l->type == Nlit && l->lit.littype == Llbl;
 }
 
-static Node *temp(Flattenctx *flatten, Node *e)
+static Node *temp(Flattenctx *fc, Node *e)
 {
 	Node *t, *dcl;
 
 	assert(e->type == Nexpr);
 	t = gentemp(e->loc, e->expr.type, &dcl);
+	lappend(&fc->locals, &fc->nlocals, dcl);
 	return t;
 }
 
@@ -896,6 +899,7 @@ static Node *flatten(Flattenctx *fc, Node *n)
 	case Nexpr:	flattenexpr(fc, n);     break;
 	case Ndecl:
 		append(fc, n);
+		lappend(&fc->locals, &fc->nlocals, n);
 		r = mkexpr(n->loc, Ovar, n->decl.name, NULL);
 		if (n->decl.init) {
 			t = rval(fc, n->decl.init);
@@ -914,7 +918,7 @@ static Node *flatten(Flattenctx *fc, Node *n)
 	return r;
 }
 
-static Node *flatteninit(Node *dcl)
+static Node *flatteninit(Node *dcl, Node ***locals, size_t *nlocals)
 {
 	Flattenctx fc = {0,};
 	Node *lit, *fn, *blk, *body;
@@ -928,6 +932,11 @@ static Node *flatteninit(Node *dcl)
 	blk->block.nstmts = fc.nstmts;
 	fn->func.body = blk;
 
+	if (locals) {
+		*locals = fc.locals;
+		*nlocals = fc.nlocals;
+	}
+
 	return dcl;
 }
 
@@ -939,18 +948,16 @@ static int ismain(Node *n)
 	return strcmp(n->name.name, "main") == 0;
 }
 
-Node *flattenfn(Node *dcl)
+Node *flattenfn(Node *dcl, Node ***locals, size_t *nlocals)
 {
-	if (ismain(dcl))
+	if (ismain(dcl) && dcl->decl.vis == Visintern)
 		dcl->decl.vis = Vishidden;
 	if (dcl->decl.isextern || dcl->decl.isgeneric)
 		return dcl;
 	if (isconstfn(dcl)) {
-		dcl = flatteninit(dcl);
-		//lappend(fn, nfn, f);
+		dcl = flatteninit(dcl, locals, nlocals);
 	}
 
-	//lappend(fn, nfn, f);
 	return dcl;
 }
 

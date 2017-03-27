@@ -1,8 +1,5 @@
 .DEFAULT_GOAL=all
-_DEPS=$(addprefix .deps/, $(OBJ:.o=.d))
-
-_PCHDRS=$(shell [ -z "$(PCPKGS)" ] || pkg-config --cflags $(PCPKGS))
-_PCLIBS=$(shell [ -z "$(PCPKGS)" ] ||pkg-config --libs $(PCPKGS))
+_DEPS != echo $(OBJ) | sed 's@\(.*\).o@.deps/.d@g'
 
 _LIBSRCHPATHS=$(addprefix -L, $(dir $(DEPS)))
 _LIBINCPATHS=$(addprefix -I, $(dir $(DEPS))) $(_PCHDRS)
@@ -119,12 +116,12 @@ uninstall: subdirs-uninstall $(EXTRAUNINSTALL)
 %.o: %.c $(GENHDR) .deps/stamp
 	$(CC) -c $(CFLAGS) $(_LIBINCPATHS) $<
 
-%.o: %.cpp $(GENHDR) .deps/stamp
-	$(CXX) -c $(CFLAGS) $(_LIBINCPATHS) $<
-
-%.o: %.cc $(GENHDR) .deps/stamp
-	$(CXX) -c $(CFLAGS) $(_LIBINCPATHS) $<
-
+#%.o: %.cpp $(GENHDR) .deps/stamp
+#	$(CXX) -c $(CFLAGS) $(_LIBINCPATHS) $<
+#
+#%.o: %.cc $(GENHDR) .deps/stamp
+#	$(CXX) -c $(CFLAGS) $(_LIBINCPATHS) $<
+#
 .deps/stamp:
 	mkdir -p .deps && touch .deps/stamp
 

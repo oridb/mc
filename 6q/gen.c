@@ -16,12 +16,28 @@
 #include "qasm.h"
 #include "../config.h"
 
-Type *tyintptr;
-Type *tyword;
-Type *tyvoid;
-Node *abortoob;
-
 typedef struct Gen Gen;
+typedef struct Loc Loc;
+
+typedef enum {
+	Ldecl,
+	Ltemp,
+	Llabel,
+	Lconst
+} Loctype;
+
+
+struct Loc {
+	char tag;
+	char kind;
+	union {
+		int64_t dcl;
+		int64_t tmp;
+		int64_t cst;
+		char *lbl;
+	};
+};
+
 struct Gen {
 	FILE *file;
 	Cfg *cfg;
@@ -36,18 +52,35 @@ struct Gen {
 
 	Node *retval;
 	Node *retlbl;
+	Node **locals;
+	size_t nlocals;
+	size_t nexttmp;
 };
 
+char qtag(Gen *g, Type *ty);
 static void pr(Gen *g, char *fmt, ...);
 static void out(Gen *g, char *fmt, ...);
 static void outtypebody(Gen *g, Type *ty);
-static void outqbetype(Gen *g, Type *ty);
-static Node *rval(Gen *g, Node *n, Node *dst);
-static Node *lval(Gen *g, Node *n);
-static Node *slicebase(Gen *g, Node *sl, Node *off);
-static Node *slicelen(Gen *g, Node *sl);
-static Node *gencast(Gen *g, Node *val, Type *to);
-static Node *loadidx(Gen *g, Node *base, Node *idx);
+static void outqtype(Gen *g, Type *ty);
+static Loc rval(Gen *g, Node *n);
+static Loc lval(Gen *g, Node *n);
+static Loc slicebase(Gen *g, Node *sl, Node *off);
+static Loc slicelen(Gen *g, Loc sl);
+static Loc gencast(Gen *g, Srcloc loc, Loc val, Type *to, Type *from);
+static Loc loadidx(Gen *g, Node *base, Node *idx);
+
+Type *tyintptr;
+Type *tyword;
+Type *tyvoid;
+Node *abortoob;
+Loc Z;
+
+int qtagsizes[256] = {
+	['b'] = 1, 
+	['h'] = 2,
+	['w'] = 4,
+	['l'] = 8
+};
 
 static int isexport(Node *dcl)
 {
@@ -64,7 +97,7 @@ static int isexport(Node *dcl)
 	return 0;
 }
 
-char *asmname(char *buf, size_t nbuf, Node *n, char *sigil)
+char *asmname(char *buf, size_t nbuf, Node *n, char sigil)
 {
 	char *ns, *name, *sep;
 
@@ -79,6 +112,40 @@ char *asmname(char *buf, size_t nbuf, Node *n, char *sigil)
 	return buf;
 }
 
+Loc qtemp(Gen *g, char type)
+{
+	return (Loc){.kind=Ltemp, .dcl=g->nexttmp++, .tag=type};
+}
+
+Loc temp(Gen *g, Node *n)
+{
+	char type;
+
+	if (n->type == Ndecl)
+		type = qtag(g, decltype(n));
+	else
+		type = qtag(g, exprtype(n));
+	return (Loc){.kind=Ltemp, .tmp=g->nexttmp++, .tag=type};
+}
+
+Loc qvar(Gen *g, Node *dcl)
+{
+	char tag;
+
+	tag = qtag(g, dcl->decl.type);
+	return (Loc){.kind=Ldecl, .dcl=dcl->decl.did, .tag=tag};
+}
+
+Loc qlabel(Gen *g, char *lbl, char tag)
+{
+	return (Loc){.kind=Lconst, .lbl=lbl, .tag=tag};
+}
+
+Loc qconst(Gen *g, uint64_t cst, char tag)
+{
+	return (Loc){.kind=Lconst, .cst=cst, .tag=tag};
+}
+
 Type *codetype(Type *ft)
 {
 	ft = tybase(ft);
@@ -90,38 +157,41 @@ Type *codetype(Type *ft)
 	return ft;
 }
 
-static Node *ptrsized(Gen *g, Node *v)
+static Loc ptrsized(Gen *g, Loc v)
 {
-	if (size(v) == Ptrsz)
+	Loc r;
+
+	if (v.tag == 'l')
 		return v;
-	else
-		return gencast(g, v, tyintptr);
+	r = qtemp(g, 'l');
+	out(g, "\t%v =l copy %v", r, v);
+	return r;
 }
 
-char *qbetag(Gen *g, Type *ty)
+char qtag(Gen *g, Type *ty)
 {
 	switch (ty->type) {
-	case Tybool:	return "w";	break;
-	case Tychar:	return "w";	break;
-	case Tyint8:	return "w";	break;
-	case Tyint16:	return "w";	break;
-	case Tyint:	return "w";	break;
-	case Tyint32:	return "w";	break;
-	case Tyint64:	return "l";	break;
-	case Tybyte:	return "w";	break;
-	case Tyuint8:	return "w";	break;
-	case Tyuint16:	return "w";	break;
-	case Tyuint:	return "w";	break;
-	case Tyuint32:	return "w";	break;
-	case Tyuint64:	return "l";	break;
-	case Tyflt32:	return "s";	break;
-	case Tyflt64:	return "d";	break;
-	case Typtr:	return "l";	break;
-	default:	return "l";	break;
+	case Tybool:	return 'w';	break;
+	case Tychar:	return 'w';	break;
+	case Tyint8:	return 'w';	break;
+	case Tyint16:	return 'w';	break;
+	case Tyint:	return 'w';	break;
+	case Tyint32:	return 'w';	break;
+	case Tyint64:	return 'l';	break;
+	case Tybyte:	return 'w';	break;
+	case Tyuint8:	return 'w';	break;
+	case Tyuint16:	return 'w';	break;
+	case Tyuint:	return 'w';	break;
+	case Tyuint32:	return 'w';	break;
+	case Tyuint64:	return 'l';	break;
+	case Tyflt32:	return 's';	break;
+	case Tyflt64:	return 'd';	break;
+	case Typtr:	return 'l';	break;
+	default:	return 'l';	break;
 	}
 }
 
-char *qbetype(Gen *g, Type *ty)
+char *qtype(Gen *g, Type *ty)
 {
 	switch (ty->type) {
 	case Tybool:	return "b";	break;
@@ -158,7 +228,7 @@ void fillglobls(Stab *st, Htab *globls)
 		s = htget(st->dcl, k[i]);
 		if (isconstfn(s))
 			s->decl.type = codetype(s->decl.type);
-		asmname(buf, sizeof buf, s->decl.name, "$");
+		asmname(buf, sizeof buf, s->decl.name, '$');
 		htput(globls, s, strdup(buf));
 	}
 	free(k);
@@ -169,7 +239,7 @@ void fillglobls(Stab *st, Htab *globls)
 		k = htkeys(stab->dcl, &nk);
 		for (i = 0; i < nk; i++) {
 			s = htget(stab->dcl, k[i]);
-			asmname(buf, sizeof buf, s->decl.name, "$");
+			asmname(buf, sizeof buf, s->decl.name, '$');
 			htput(globls, s, strdup(buf));
 		}
 		free(k);
@@ -195,37 +265,13 @@ static void initconsts(Htab *globls)
 	dcl->decl.isconst = 1;
 	dcl->decl.isextern = 1;
 	dcl->decl.isglobl = 1;
-	asmname(buf, sizeof buf, dcl->decl.name, "$");
+	asmname(buf, sizeof buf, dcl->decl.name, '$');
 	htput(globls, dcl, strdup(buf));
 
 	abortoob = mkexpr(Zloc, Ovar, name, NULL);
 	abortoob->expr.type = ty;
 	abortoob->expr.did = dcl->decl.did;
 	abortoob->expr.isconst = 1;
-}
-
-static Node *tyloctemp(Gen *g, Srcloc loc, Type *ty)
-{
-	Node *t, *dcl;
-
-	t = NULL;
-	if (isstacktype(ty)) {
-		t = gentemp(loc, mktyptr(loc, ty), &dcl);
-		out(g, "%v =l alloc4 %l\n", t, tysize(ty));
-	} else {
-		t = gentemp(loc, ty, &dcl);
-	}
-	return t;
-}
-
-static Node *tytemp(Gen *g, Type *ty)
-{
-	return tyloctemp(g, ty->loc, ty);
-}
-
-static Node *temp(Gen *g, Node *e)
-{
-	return tyloctemp(g, e->loc, exprtype(e));
 }
 
 void putlit(Gen *g, Node *n, FILE *f)
@@ -254,36 +300,22 @@ void putlit(Gen *g, Node *n, FILE *f)
 	}
 }
 
-void putnode(Gen *g, Node *n, FILE *f)
+void putloc(FILE *f, Loc l)
 {
 	char buf[1024];
+	char sigil;
 	Node *dcl;
-	char *sigil;
 
-	switch (n->type) {
-	case Ndecl:
-		sigil = "%";
-		if (n->decl.isglobl)
-		      sigil = "$";
-		asmname(buf, sizeof buf, n->decl.name, sigil);
+	switch (l.kind) {
+	case Ldecl:
+		dcl = decls[l.dcl];
+		sigil = dcl->decl.isglobl ? '$' : '%';
+		asmname(buf, sizeof buf, dcl->decl.name, sigil);
 		fprintf(f, "%s", buf);
 		break;
-	case Nexpr:
-		if (exprop(n) == Ovar) {
-		      dcl = decls[n->expr.did];
-		      sigil = "%";
-		      if (dcl->decl.isglobl)
-			    sigil = "$";
-		      asmname(buf, sizeof buf, n->expr.args[0], sigil);
-		      fprintf(f, "%s", buf);
-		} else if (exprop(n) == Olit) {
-			putlit(g, n, f);
-		} else {
-		      die("out invalid expr?");
-		}
-		break;
-	default:
-		die("bad node type %s", nodestr[n->type]);
+	case Ltemp:	fprintf(f, "%%%lld", (vlong)l.tmp);	break;
+	case Lconst:	fprintf(f, "%lld", (vlong)l.cst);	break;
+	case Llabel:	fprintf(f, "@%s", l.lbl);		break;
 	}
 }
 
@@ -303,18 +335,18 @@ void out(Gen *g, char *fmt, ...)
 		p++;
 		switch (*p) {
 		case '%':	fputc('%', g->file);	break;
-		case 's':	fputs(va_arg(ap, char*), g->file);	break;
-		case 'v':	putnode(g, va_arg(ap, Node*), g->file);	break;
-		case 'd':	fprintf(g->file, "%d", va_arg(ap, int)); break;
-		case 'l':	fprintf(g->file, "%lld", (vlong)va_arg(ap, int64_t)); break;
-		case 't':	
-				t = va_arg(ap, Type*);
-				fputs(qbetag(g, t), g->file);	break;
+		case 's':	fprintf(g->file, "%s", va_arg(ap, char*));	break;
+		case 'v':	putloc(g->file, va_arg(ap, Loc));		break;
+		case 'd':	fprintf(g->file, "%d", va_arg(ap, int));	break;
+		case 'l':	fprintf(g->file, "%lld", va_arg(ap, vlong));	break;
+		case 't':	fprintf(g->file, "%c", va_arg(ap, int));	break;
 		case 'T':	
-				
-				t = va_arg(ap, Type*);
-				fputs(qbetype(g, t), g->file);	break;
-		default:	die("bad format character %c", *p);	break;
+			t = va_arg(ap, Type*);
+			fputs(qtype(g, t), g->file);
+			break;
+		default:	
+			die("bad format character %c", *p);
+			break;
 		}
 	}
 }
@@ -328,143 +360,120 @@ void pr(Gen *g, char *fmt, ...)
 	va_end(ap);
 }
 
-Node *binop(Gen *g, char *op, Node *l, Node *r)
+static Loc binop(Gen *g, char *op, Node *a, Node *b)
 {
-	Node *t;
+	Loc t, l, r;
+	char tag;
 
-	t = temp(g, l);
-	l = rval(g, l, NULL);
-	r = rval(g, r, NULL);
-	out(g, "\t%v =%t %s %v, %v\n", t, exprtype(t), op, l, r);
+	tag = qtag(g, exprtype(a));
+	t = qtemp(g, tag);
+	l = rval(g, a);
+	r = rval(g, b);
+	out(g, "\t%v =%t %s %v, %v\n", t, tag, op, l, r);
 	return t;
 }
 
-Node *binopk(Gen *g, char *op, Node *l, uvlong r)
+static Loc binopk(Gen *g, char *op, Node *n, uvlong r)
 {
-	Node *t;
+	Loc t, l;
+	char tag;
 
-	t = temp(g, l);
-	l = rval(g, l, NULL);
-	out(g, "\t%v =%t %s %v, %l\n", t, exprtype(t), op, l, r);
+	tag = qtag(g, exprtype(n));
+	t = qtemp(g, tag);
+	l = rval(g, n);
+	out(g, "\t%v =%t %s %v, %l\n", t, tag, op, l, r);
 	return t;
 }
 
-static Node *load(Gen *g, Node *ptr, Type *ty)
+/*static*/ Loc getcode(Gen *g, Node *n)
 {
-	Node *tmp, *loc, *dcl;
+	Loc r, p;
 
-	return rval(g, ptr, NULL);
-}
-
-static Node *getcode(Gen *g, Node *n)
-{
-	Node *r, *d;
-	Type *ty;
-
-	if (isconstfn(n)) {
-		d = decls[n->expr.did];
-		r = mkexpr(n->loc, Ovar, n->expr.args[0], NULL);
-		r->expr.did = d->decl.did;
-		r->expr.type = codetype(exprtype(n));
-	} else {
-		ty = tybase(exprtype(n));
-		assert(ty->type == Tyfunc);
-		r = load(g, binopk(g, "add", n, Ptrsz), tyintptr);
+	if (isconstfn(n))
+		r = qvar(g, decls[n->expr.did]);
+	else {
+		r = qtemp(g, 'l');
+		p = binopk(g, "add", n, Ptrsz);
+		out(g, "\t%v =l loadl %v", r, p);
 	}
 	return r;
 }
 
-static Node *slicebase(Gen *g, Node *sl, Node *off)
+static Loc slicebase(Gen *g, Node *slnode, Node *offnode)
 {
-	Node *u, *v;
+	Loc u, v, r;
 	Type *ty;
 	size_t sz;
+	Loc sl, off;
 
-	sl = rval(g, sl, NULL);
-	ty = tybase(exprtype(sl));
+	ty = tybase(exprtype(slnode));
+	sl = rval(g, slnode);
 	switch (ty->type) {
 	case Typtr:	u = sl;	break;
 	case Tyarray:	u = sl;	break;
-	case Tyslice:	u = load(g, sl, mktyptr(ty->loc, ty->sub[0]));	break;
-	default: die("Unslicable type %s", tystr(sl->expr.type));
+	case Tyslice:	
+		u = qtemp(g, 'l');
+		out(g, "\t%v =l loadl %v", u, sl); break;
+	default: die("Unslicable type %s", tystr(ty));
 	}
 	/* safe: all types we allow here have a sub[0] that we want to grab */
-	if (off) {
-		off = ptrsized(g, rval(g, off, NULL));
-		sz = tysize(sl->expr.type->sub[0]);
-		v = binopk(g, "mul", off, sz);
-		return binop(g, "add", u, v);
-	} else {
+	if (!offnode)
 		return u;
-	}
-}
-
-static Node *slicelen(Gen *g, Node *sl)
-{
-	Node *szp;
-
-	szp = binopk(g, "add", sl, Ptrsz);
-	return load(g, szp, tyintptr);
-}
-
-static Node *seqlen(Gen *g, Node *n, Type *ty)
-{
-	Node *t, *r;
-
-	ty = tybase(exprtype(n));
-	r = NULL;
-	if (ty->type == Tyslice) {
-		t = slicelen(g, n);
-		r = gencast(g, t, ty);
-	} else if (ty->type == Tyarray) {
-		t = exprtype(n)->asize;
-                if (t)
-                    r = gencast(g, t, ty);
-	} else if (ty->type == Typtr) {
-		return NULL;
-	} else {
-		die("invalid type for seqlen");
-	}
+	off = ptrsized(g, rval(g, offnode));
+	sz = tysize(slnode->expr.type->sub[0]);
+	v = qtemp(g, 'l');
+	out(g, "\t%v =l mull %v, %l\n", v, off, sz);
+	r = qtemp(g, 'l');
+	out(g, "\t%v =l add %v, %v\n", r, off, sz);
 	return r;
 }
 
-Node *cmpop(Gen *g, char *op, Node *l, Node *r)
+static Loc slicelen(Gen *g, Loc sl)
 {
-	Node *t;
-	Type *ty;
+	Loc szp, r;
 
-	t = tytemp(g, tyword);
-	ty = exprtype(t);
-	l = rval(g, l, NULL);
-	r = rval(g, r, NULL);
-	out(g, "\t%v =%t c%s%t %v, %v\n", t, ty, op, exprtype(l), l, r);
+	szp = qtemp(g, 'l');
+	out(g, "\t%v =l add %v, %l\n", szp, sl, Ptrsz);
+	r = qtemp(g, 'l');
+	out(g, "\t%v =l loadl %v", r, szp);
+	return r;
+}
+
+Loc cmpop(Gen *g, char *op, Node *ln, Node *rn)
+{
+	Loc l, r, t;
+	char tag;
+
+	tag = qtag(g, exprtype(ln));
+	t = qtemp(g, tag);
+	l = rval(g, ln);
+	r = rval(g, rn);
+	out(g, "\t%v =w c%s%c %v, %v\n", t, op, tag, l, r);
 	return t;
 }
 
-static Node *intconvert(Gen *g, Node *val, Type *to, int signconv)
+static Loc intcvt(Gen *g, Loc val, char to, char from, int signconv)
 {
-	Node *t;
-	char *sign;
+	char sign;
+	Loc t;
 
-	t = tytemp(g, to);
-
-	sign = "u";
+	sign = 'u';
 	if (signconv)
-		sign = "s";
+		sign = 's';
 
-	if (tysize(to) > size(val))
-		out(g, "\t%v =%t ext%s%t %v", t, to, sign, exprtype(val), val);
+	t = qtemp(g, to);
+	if (qtagsizes[to & 0x7f] > qtagsizes[from & 0x7f])
+		out(g, "\t%v =%t ext%s%c %v", t, to, sign, from, val);
 	else
 		out(g, "\t%v =%t copy %v", t, to, val);
 	return t;
 }
 
-static Node *gencast(Gen *g, Node *val, Type *to)
+static Loc gencast(Gen *g, Srcloc loc, Loc val, Type *to, Type *from)
 {
-	Node *r;
-	Type *t;
+	Loc a, r;
 
-	r = NULL;
+	r = val;
 	/* do the type conversion */
 	switch (tybase(to)->type) {
 	case Tybool:
@@ -472,125 +481,137 @@ static Node *gencast(Gen *g, Node *val, Type *to)
 	case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint64:
 	case Tyint: case Tyuint: case Tychar: case Tybyte:
 	case Typtr:
-		t = tybase(exprtype(val));
-		switch (t->type) {
+		switch (from->type) {
 		/* ptr -> slice conversion is disallowed */
 		case Tyslice:
 			if (tybase(to)->type != Typtr)
-				fatal(val, "bad cast from %s to %s", tystr(exprtype(val)), tystr(to));
-			val = rval(g, val, NULL);
-			r = slicebase(g, val, NULL);
+				lfatal(loc, "bad cast from %s to %s", tystr(from), tystr(to));
+			r = qtemp(g, 'l');
+			out(g, "\t%v =l loadl %v", r, val);
 			break;
 		case Tyfunc:
 			if (to->type != Typtr)
-				fatal(val, "bad cast from %s to %s", tystr(exprtype(val)), tystr(to));
-			r = getcode(g, val);
+				lfatal(loc, "bad cast from %s to %s", tystr(from), tystr(to));
+			a = qtemp(g, 'l');
+			r = qtemp(g, 'l');
+			out(g, "\t%v =l addl %v, %l", a, val, Ptrsz);
+			out(g, "\t%v =l loadl %v", r, a);
 			break;
 		/* signed conversions */
 		case Tyint8: case Tyint16: case Tyint32: case Tyint64:
 		case Tyint:
-			r = intconvert(g, val, to, 1);
+			r = intcvt(g, val, qtag(g, to), qtag(g, from), 1);
 			break;
 		/* unsigned conversions */
 		case Tybool:
 		case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint64:
 		case Tyuint: case Tychar: case Tybyte:
 		case Typtr:
-			r = intconvert(g, val, to, 0);
+			r = intcvt(g, val, qtag(g, to), qtag(g, from), 0);
 			break;
 		case Tyflt32: case Tyflt64:
 			if (tybase(to)->type == Typtr)
-				fatal(val, "bad cast from %s to %s",
-						tystr(exprtype(val)), tystr(to));
-			r = mkexpr(val->loc, Oflt2int, rval(g, val, NULL), NULL);
-			r->expr.type = to;
+				lfatal(loc, "bad cast from %s to %s", tystr(from), tystr(to));
+			die("unimplemented cast type");
+			//r = mkexpr(loc, Oflt2int, rval(g, val, NULL), NULL);
+			//r->expr.type = to;
 			break;
 		default:
-			fatal(val, "bad cast from %s to %s",
-					tystr(exprtype(val)), tystr(to));
+			lfatal(loc, "bad cast from %s to %s", tystr(from), tystr(to));
 		}
 		break;
 	case Tyflt32: case Tyflt64:
-		t = tybase(exprtype(val));
-		switch (t->type) {
+		switch (from->type) {
 		case Tyint8: case Tyint16: case Tyint32: case Tyint64:
 		case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint64:
 		case Tyint: case Tyuint: case Tychar: case Tybyte:
-			r = mkexpr(val->loc, Oint2flt, rval(g, val, NULL), NULL);
-			r->expr.type = to;
+			die("unimplemented cast type");
+			//r = mkexpr(loc, Oint2flt, rval(g, val, NULL), NULL);
+			//r->expr.type = to;
 			break;
 		case Tyflt32: case Tyflt64:
-			r = mkexpr(val->loc, Oflt2flt, rval(g, val, NULL), NULL);
-			r->expr.type = to;
+			die("unimplemented cast type");
+			//r = mkexpr(val->loc, Oflt2flt, rval(g, val, NULL), NULL);
+			//r->expr.type = to;
 			break;
 		default:
-			fatal(val, "bad cast from %s to %s",
-					tystr(exprtype(val)), tystr(to));
+			lfatal(loc, "bad cast from %s to %s", tystr(from), tystr(to));
 			break;
 		}
 		break;
 		/* no other destination types are handled as things stand */
 	default:
-		fatal(val, "bad cast from %s to %s",
-				tystr(exprtype(val)), tystr(to));
+		lfatal(loc, "bad cast from %s to %s", tystr(from), tystr(to));
 	}
 	return r;
 }
 
-
-void blit(Gen *g, Node *dst, Node *src)
+static Loc simpcast(Gen *g, Node *val, Type *to)
 {
-	die("unimplemented blit");
+	Loc l;
+
+	l = rval(g, val);
+	return gencast(g, val->loc, l, to, exprtype(val->expr.args[0]));
 }
 
-Node *assign(Gen *g, Node *dst, Node *src)
+
+void blit(Gen *g, Loc dst, Loc src, size_t sz)
 {
-	dst = lval(g, dst);
-	src = rval(g, src, dst);
+	out(g, "\tblit %v, %v, %l\n", dst, src, sz);
+}
+
+Loc assign(Gen *g, Node *dst, Node* src)
+{
+	Loc d, s;
+
+	d = lval(g, dst);
+	s = rval(g, src);
 	if (src != dst) {
 		if (isstacktype(exprtype(dst)))
-			blit(g, dst, src);
+			blit(g, d, s, size(dst));
 		else
 			out(g, "\t%v =%t copy %v\n", dst, exprtype(dst), src);
 	}
-	return dst;
+	return d;
 }
 
-static void checkidx(Gen *g, char *op, Node *len, Node *idx)
+/*static*/ void checkidx(Gen *g, char *op, Node *len, Node *idx)
 {
-	Node *inrange, *ok, *fail;
+	char ok[128], fail[128];
+	Loc inrange;
 
 	if (!len)
 		return;
-	ok = genlbl(len->loc);
-	fail = genlbl(len->loc);
+	genlblstr(ok, sizeof ok, "");
+	genlblstr(fail, sizeof fail, "");
 	inrange = binop(g, op, len, idx);
-	out(g, "\tjnz %v, %v, %v\n", inrange, ok, fail);
-	out(g, "%v", fail);
+
+	out(g, "\tjnz %v, %s, %s\n", inrange, ok, fail);
+	out(g, "@%s", fail);
 	out(g, "\tcall %_rt$abort_oob()\n");
-	out(g, "%v", ok);
+	out(g, "@%s", ok);
 }
 
-static Node *lval(Gen *g, Node *n)
+static Loc lval(Gen *g, Node *n)
 {
-	Node *r;
 	Node **args;
+	Loc r;
 
 	args = n->expr.args;
 	switch (exprop(n)) {
-	case Ovar:	r = n;	break;
+	case Ovar:	r = qvar(g, decls[n->expr.did]);	break;
 	case Oidx:	r = loadidx(g, args[0], args[1]);	break;
 	//case Oderef:	r = deref(rval(s, args[0], NULL), NULL);	break;
-	case Omemb:	r = rval(g, n, NULL);	break;
-	case Ostruct:	r = rval(g, n, NULL);	break;
-	case Oucon:	r = rval(g, n, NULL);	break;
-	case Oarr:	r = rval(g, n, NULL);	break;
+	case Omemb:	r = rval(g, n);	break;
+	case Ostruct:	r = rval(g, n);	break;
+	case Oucon:	r = rval(g, n);	break;
+	case Oarr:	r = rval(g, n);	break;
 	case Ogap:	r = temp(g, n);	break;
 
 	/* not actually expressible as lvalues in syntax, but we generate them */
-	case Oudata:	r = rval(g, n, NULL);	break;
-	case Outag:	r = rval(g, n, NULL);	break;
-	case Otupget:	r = rval(g, n, NULL);	break;
+	case Oudata:	r = rval(g, n);	break;
+	case Outag:	r = rval(g, n);	break;
+	case Otupget:	r = rval(g, n);	break;
 	default:
 			fatal(n, "%s cannot be an lvalue", opstr[exprop(n)]);
 			break;
@@ -598,68 +619,54 @@ static Node *lval(Gen *g, Node *n)
 	return r;
 }
 
-Node *gencall(Gen *g, Node *n)
+static Loc gencall(Gen *g, Node *n)
 {
-	Node *ret, *fn;
-	Node **args;
+	Loc ret, fn;
+	Loc *args;
+	Type **types, *ty;
 	size_t nargs, i;
+	int hasret;
+	char *sep;
 
-	nargs = n->expr.nargs;
-	args = malloc(nargs * sizeof(Node *));
+	args = malloc(n->expr.nargs * sizeof(Loc));
+	types = malloc(n->expr.nargs * sizeof(Type *));
 
-	if (tybase(exprtype(n))->type != Tyvoid)
+	ret = Z;
+	hasret = 0;
+	if (tybase(exprtype(n))->type != Tyvoid) {
 		ret = temp(g, n);
-	else
-		ret = NULL;
+		hasret = 1;
+	}
 
-	for (i = 1; i < nargs; i++)
-		args[i] = rval(g, n->expr.args[i], NULL);
-	fn = rval(g, n->expr.args[0], NULL);
+	nargs = 0;
+	for (i = 1; i < n->expr.nargs; i++) {
+		ty = exprtype(n->expr.args[i]);
+		ty = tybase(ty);
+		if (ty->type == Tyvoid)
+			continue;
+		args[nargs] = rval(g, n->expr.args[i]);
+		types[nargs] = ty;
+	}
+	fn = rval(g, n->expr.args[0]);
 
-	if (ret)
-		out(g, "\t%v =%t call %v (", ret, exprtype(ret), fn);
+	if (hasret)
+		out(g, "\t%v =%t call %v (", ret, exprtype(n), fn);
 	else
 		out(g, "\tcall %v (", fn);
-	for (i = 1; i < nargs; i++)
-		out(g, "%t %v", exprtype(args[i]), args[i]);
+
+	sep = "";
+	for (i = 1; i < nargs; i++) {
+		out(g, "%s%t %v", sep, types[i], args[i]);
+		sep = ", ";
+	}
 	out(g, ")\n");
 	free(args);
 	return ret;
 }
 
-static Node *genslice(Gen *g, Node *sl, Node *dst)
+static Loc genslice(Gen *g, Node *sl)
 {
-	Node *lo, *hi, *lim, *base, *len;
-	Node *basep, *lenp;
-	Node *seq;
-
-	if (!dst)
-		dst = temp(g, sl);
-	basep = dst;
-	lenp = binopk(g, "add", dst, Ptrsz);
-
-	seq = rval(g, sl->expr.args[0], NULL);
-	/*
-	 * special case: the ptr arg of slices off the empty array need to be zeroed,
-	 * so that the allocator can be happy.
-	 */
-	if (exprop(seq) == Oarr && seq->expr.nargs == 0) {
-		base = mkintlit(sl->loc, 0);
-		base->expr.type = tyintptr;
-	} else {
-		seq = rval(g, seq, NULL);
-		base = slicebase(g, seq, sl->expr.args[0]);
-	}
-	lo = ptrsized(g, rval(g, sl->expr.args[1], NULL));
-	hi = ptrsized(g, rval(g, sl->expr.args[2], NULL));
-	len = binop(g, "sub", hi, lo);
-	lim = seqlen(g, seq, tyword);
-	if (lim)
-		checkidx(g, "cle", lim, hi);
-
-	out(g, "\tstor%t %v, %v\n", exprtype(basep), basep, base);
-	out(g, "\tstor%t %v, %v\n", exprtype(basep), lenp, len);
-	return dst;
+	die("genslize not implemented\n");
 }
 
 int stacknode(Node *n)
@@ -670,180 +677,37 @@ int stacknode(Node *n)
 		return isstacktype(n->decl.type);
 }
 
-static int addressable(Gen *g, Node *a)
+static Loc loadidx(Gen *g, Node *base, Node *idx)
 {
-	if (a->type == Ndecl || (a->type == Nexpr && exprop(a) == Ovar))
-		return hthas(g->envoff, a) || hthas(g->stkoff, a) || hthas(g->globls, a);
-	else
-		return stacknode(a);
+	die("loadidx not implemented\n");
 }
 
-static void forcelocal(Gen *g, Node *n)
+static char *strlabel(Gen *g, Node *str) {
+	die("strval not implemented\n");
+}
+
+static Loc loadlit(Gen *g, Node *n)
 {
-	assert(n->type == Ndecl || (n->type == Nexpr && exprop(n) == Ovar));
-	g->stksz += size(n);
-	g->stksz = align(g->stksz, min(size(n), Ptrsz));
-	if (debugopt['i']) {
-		dump(n, stdout);
-		printf("declared at %zd, size = %zd\n", g->stksz, size(n));
+	n = n->expr.args[0];
+	switch (n->lit.littype) {
+	case Lchr:	return qconst(g, n->lit.chrval, 'w');	break;
+	case Lbool:	return qconst(g, n->lit.boolval, 'w');	break;
+	case Lint:	return qconst(g, n->lit.intval, 'w');	break;
+	case Lflt:	return qconst(g, n->lit.fltval, 'w');	break;
+	case Lstr:	return qlabel(g, strlabel(g, n), 'l');	break;
+	case Llbl:	return qlabel(g, n->lit.lblval, 'l');	break;
+	case Lvoid:	return qconst(g, n->lit.chrval, 'w');	break;
+	case Lfunc:	die("func literals not implemented\n");	break;
 	}
-	htput(g->stkoff, n, itop(g->stksz));
 }
 
-/* takes the address of a node, possibly converting it to
- * a pointer to the base type 'bt' */
-static Node *addr(Gen *g, Node *a, Type *bt)
+Loc rval(Gen *g, Node *n)
 {
-	Node *n;
-
-	n = mkexpr(a->loc, Oaddr, a, NULL);
-	if (!addressable(g, a))
-		forcelocal(g, a);
-	if (!bt)
-		n->expr.type = mktyptr(a->loc, a->expr.type);
-	else
-		n->expr.type = mktyptr(a->loc, bt);
-	return n;
-}
-
-static Node *disp(Srcloc loc, uint v)
-{
-	Node *n;
-
-	n = mkintlit(loc, v);
-	n->expr.type = tyintptr;
-	return n;
-}
-
-static Node *idxaddr(Gen *g, Node *seq, Node *idx)
-{
-	Node *a, *t, *u, *v, *w; /* temps */
-	Node *r; /* result */
-	Type *ty, *seqty;
-	size_t sz;
-
-	a = rval(g, seq, NULL);
-	seqty = tybase(exprtype(seq));
-	ty = seqty->sub[0];
-	if (seqty->type == Tyarray) {
-		t = addr(g, a, ty);
-		w = seqty->asize;
-	} else if (seqty->type == Tyslice) {
-		t = load(g, addr(g, a, mktyptr(seq->loc, ty)), ty);
-		w = slicelen(g, a);
-	} else {
-		die("can't index type %s", tystr(seq->expr.type));
-	}
-	assert(exprtype(t)->type == Typtr);
-	u = rval(g, idx, NULL);
-	u = ptrsized(g, u);
-	checkidx(g, "slt", w, u);
-	sz = tysize(ty);
-	v = binop(g, "mul", u, disp(seq->loc, sz));
-	r = binop(g, "add", v, disp(seq->loc, sz));
-	return r;
-}
-
-static Node *loadidx(Gen *g, Node *base, Node *idx)
-{
-	Node *t, *u;
-
-	t = rval(g, base, NULL);
-	u = idxaddr(g, t, idx);
-	return load(g, u, exprtype(u));
-}
-
-
-static Node *simpcast(Gen *g, Node *val, Type *to)
-{
-	Node *r;
-	Type *t;
-
-	r = NULL;
-	t = tybase(exprtype(val));
-	if (tyeq(tybase(to), tybase(t))) {
-		r = rval(g, val, NULL);
-		r->expr.type = to;
-		return r;
-	}
-	/* do the type conversion */
-	switch (tybase(to)->type) {
-	case Tybool:
-	case Tyint8: case Tyint16: case Tyint32: case Tyint64:
-	case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint64:
-	case Tyint: case Tyuint: case Tychar: case Tybyte:
-	case Typtr:
-		switch (t->type) {
-			/* ptr -> slice conversion is disallowed */
-		case Tyslice:
-			/* FIXME: we should only allow casting to pointers. */
-			if (tysize(to) != Ptrsz)
-				fatal(val, "bad cast from %s to %s", tystr(exprtype(val)), tystr(to));
-			val = rval(g, val, NULL);
-			r = slicebase(g, val, NULL);
-			break;
-		case Tyfunc:
-			if (to->type != Typtr)
-				fatal(val, "bad cast from %s to %s", tystr(exprtype(val)), tystr(to));
-			r = getcode(g, val);
-			break;
-			/* signed conversions */
-		case Tyint8: case Tyint16: case Tyint32: case Tyint64:
-		case Tyint:
-			r = intconvert(g, val, to, 1);
-			break;
-			/* unsigned conversions */
-		case Tybool:
-		case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint64:
-		case Tyuint: case Tychar: case Tybyte:
-		case Typtr:
-			r = intconvert(g, val, to, 0);
-			break;
-		case Tyflt32: case Tyflt64:
-			if (tybase(to)->type == Typtr)
-				fatal(val, "bad cast from %s to %s",
-						tystr(exprtype(val)), tystr(to));
-			r = mkexpr(val->loc, Oflt2int, rval(g, val, NULL), NULL);
-			r->expr.type = to;
-			break;
-		default:
-			fatal(val, "bad cast from %s to %s",
-					tystr(exprtype(val)), tystr(to));
-		}
-		break;
-	case Tyflt32: case Tyflt64:
-		switch (t->type) {
-		case Tyint8: case Tyint16: case Tyint32: case Tyint64:
-		case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint64:
-		case Tyint: case Tyuint: case Tychar: case Tybyte:
-			r = mkexpr(val->loc, Oint2flt, rval(g, val, NULL), NULL);
-			r->expr.type = to;
-			break;
-		case Tyflt32: case Tyflt64:
-			r = mkexpr(val->loc, Oflt2flt, rval(g, val, NULL), NULL);
-			r->expr.type = to;
-			break;
-		default:
-			fatal(val, "bad cast from %s to %s",
-					tystr(exprtype(val)), tystr(to));
-			break;
-		}
-		break;
-		/* no other destination types are handled as things stand */
-	default:
-		fatal(val, "bad cast from %s to %s",
-				tystr(exprtype(val)), tystr(to));
-	}
-	return r;
-}
-
-Node *rval(Gen *g, Node *n, Node *dst)
-{
-	Node *r; /* expression result */
+	Loc r; /* expression result */
 	Node **args;
 	Type *ty;
 
-	r = NULL;
+	r = Z;
 	args = n->expr.args;
 	switch (exprop(n)) {
 	/* arithmetic */
@@ -892,21 +756,17 @@ Node *rval(Gen *g, Node *n, Node *dst)
 	case Oasn:	r = assign(g, args[0], args[1]);	break;
 
 	case Oslbase:	r = slicebase(g, args[0], args[1]);	break;
-	case Osllen:	r = slicelen(g, args[0]);		break;
-	case Oslice:	r = genslice(g, n, dst);		break;
+	case Osllen:	r = slicelen(g, rval(g, args[0]));	break;
+	case Oslice:	r = genslice(g, n);			break;
 	case Oidx:	r = loadidx(g, args[0], args[1]);	break;
 
 	case Ojmp:	out(g, "\tjmp %v\n", args[0]);		break;
 	case Ocast:	r = simpcast(g, args[0], exprtype(n));	break;
 	case Ocall:	r = gencall(g, n);			break;
 
-	case Ovar:	r = n;	break;
-	case Olit:	r = n;	break;
-	case Osize:
-		r = mkintlit(n->loc, size(args[0]));
-		r->expr.type = exprtype(n);
-		break;
-
+	case Ovar:	r = qvar(g, decls[n->expr.did]);	break;
+	case Olit:	r = loadlit(g, n);			break;
+	case Osize:	r = qconst(g, size(args[0]), 'l');	break;
 	case Oret:
 		ty = tybase(exprtype(args[0]));
 		if (ty->type != Tyvoid)
@@ -917,7 +777,7 @@ Node *rval(Gen *g, Node *n, Node *dst)
 	case Oderef:
 		ty = tybase(exprtype(args[0]));
 		if (isstacktype(ty)) {
-			r = rval(g, args[0], args[0]);
+			r = rval(g, args[0]);
 		} else {
 			r = temp(g, args[0]);
 			out(g, "\t%v =%t load%t %v\n", r, ty, ty, args[0]);
@@ -926,14 +786,14 @@ Node *rval(Gen *g, Node *n, Node *dst)
 	case Oaddr:
 		ty = tybase(exprtype(args[0]));
 		if (isstacktype(ty)) {
-			r = rval(g, args[0], args[0]);
+			r = rval(g, args[0]);
 		} else {
 			die("taking address of non-addressable value");
 		}
 		break;
 
 	case Ocjmp:
-		out(g, "\tjnz %v, %v, %v\n", rval(g, args[0], NULL), args[1], args[2]);
+		out(g, "\tjnz %v, %v, %v\n", rval(g, args[0]), args[1], args[2]);
 		break;
 
 	case Omemb:
@@ -990,10 +850,9 @@ void genbb(Gen *g, Cfg *cfg, Bb *bb)
 	for (i = 0; i < bb->nnl; i++) {
 		switch (bb->nl[i]->type) {
 		case Ndecl:
-			//declarelocal(s, n);
 			break;
 		case Nexpr:
-			rval(g, bb->nl[i], NULL);
+			rval(g, bb->nl[i]);
 			break;
 		default:
 			dump(bb->nl[i], stderr);
@@ -1045,7 +904,18 @@ void funcargs(Gen *g, Node *fn)
 	pr(g, ")");
 }
 
-void genfn(Gen *g, Node *dcl)
+void genlocals(Gen *g, Node **locals, size_t nlocals)
+{
+	Type *ty;
+	size_t i;
+
+	for (i = 0; i < nlocals; i++) {
+		ty = decltype(locals[i]);
+		pr(g, "\t%%%s =l alloc%zd %zd\n", declname(locals[i]), tyalign(ty), tysize(ty));
+	}
+}
+
+void genfn(Gen *g, Node *dcl, Node **locals, size_t nlocals)
 {
 	Node *n, *b, *retdcl;
 	size_t i;
@@ -1058,7 +928,7 @@ void genfn(Gen *g, Node *dcl)
 		return;
 
 	n = dcl->decl.init;
-	asmname(name, sizeof name, dcl->decl.name, "$");
+	asmname(name, sizeof name, dcl->decl.name, '$');
 	if(debugopt['i'] || debugopt['F'] || debugopt['f'])
 		printf("\n\nfunction %s\n", name);
 
@@ -1083,9 +953,9 @@ void genfn(Gen *g, Node *dcl)
 	g->retlbl = genlbl(dcl->loc);
 	if (tybase(ret)->type != Tyvoid) {
 		if (abileaks(ret))
-			pr(g, "%s ", qbetag(g, ret));
+			pr(g, "%c ", qtag(g, ret));
 		else
-			pr(g, "%s ", qbetype(g, ret));
+			pr(g, "%c ", qtype(g, ret));
 	}
 	pr(g, "%s", name);
 	funcargs(g, n);
@@ -1093,6 +963,7 @@ void genfn(Gen *g, Node *dcl)
 	/* func body */
 	pr(g, "{\n");
 	pr(g, "@start\n");
+	genlocals(g, locals, nlocals);
 	for (i = 0; i < cfg->nbb; i++) {
 		bb = cfg->bb[i];
 		if (!bb)
@@ -1214,7 +1085,7 @@ void outarray(Gen *g, Type *ty)
 	if (ty->asize)
 		sz = ty->asize->expr.args[0]->lit.intval;
 	outtypebody(g, ty->sub[0]);
-	pr(g, "\t%s %zd,\n", qbetype(g, ty->sub[0]), sz);
+	pr(g, "\t%s %zd,\n", qtype(g, ty->sub[0]), sz);
 }
 
 void outstruct(Gen *g, Type *ty)
@@ -1258,7 +1129,7 @@ void outtuple(Gen *g, Type *ty)
 	for (i = 0; i < ty->nsub; i++) {
 		mty = ty->sub[i];
 		outtypebody(g, mty);
-		pr(g, "\t%s,\n", qbetype(g, mty));
+		pr(g, "\t%s,\n", qtype(g, mty));
 	}
 }
 
@@ -1309,7 +1180,7 @@ static void outstructtype(Gen *g, Type *ty)
 	size_t i;
 
 	for (i = 0; i < ty->nmemb; i++)
-		outqbetype(g, decltype(ty->sdecls[i]));
+		outqtype(g, decltype(ty->sdecls[i]));
 }
 
 static void outtupletype(Gen *g, Type *ty)
@@ -1317,7 +1188,7 @@ static void outtupletype(Gen *g, Type *ty)
 	size_t i;
 
 	for (i = 0; i < ty->nsub; i++)
-		outqbetype(g, ty->sub[i]);
+		outqtype(g, ty->sub[i]);
 }
 
 
@@ -1330,11 +1201,11 @@ static void outuniontype(Gen *g, Type *ty)
 		mty = ty->udecls[i]->etype;
 		if (!mty)
 			continue;
-		outqbetype(g, mty);
+		outqtype(g, mty);
 	}
 }
 
-void outqbetype(Gen *g, Type *ty)
+void outqtype(Gen *g, Type *ty)
 {
 	char buf[1024];
 	Ty tt;
@@ -1352,11 +1223,11 @@ void outqbetype(Gen *g, Type *ty)
 	g->typenames[ty->tid] = strdup(buf);
 
 	switch (tt) {
-	case Tyarray:	outqbetype(g, ty->sub[0]);	break;
+	case Tyarray:	outqtype(g, ty->sub[0]);	break;
 	case Tystruct:	outstructtype(g, ty);		break;
 	case Tytuple:	outtupletype(g, ty);		break;
 	case Tyunion:	outuniontype(g, ty);		break;
-	case Tyname:	outqbetype(g, ty->sub[0]);	break;
+	case Tyname:	outqtype(g, ty->sub[0]);	break;
 	default:
 		break;
 	}
@@ -1369,19 +1240,21 @@ void outqbetype(Gen *g, Type *ty)
 	pr(g, "}\n\n");
 }
 
-void genqbetypes(Gen *g)
+void genqtypes(Gen *g)
 {
 	size_t i;
 
 	g->typenames = zalloc(ntypes * sizeof(Type *));
 	for (i = Ntypes; i < ntypes; i++) {
-		outqbetype(g, types[i]);
+		outqtype(g, types[i]);
 	}
 }
 
 void gen(Node *file, char *out)
 {
 	Htab *globls;
+	Node **locals;
+	size_t nlocals;
 	Node *n;
 	Gen *g;
 	size_t i;
@@ -1401,7 +1274,7 @@ void gen(Node *file, char *out)
 	g->envoff = mkht(varhash, vareq);
 	g->globls = mkht(varhash, vareq);
 
-	genqbetypes(g);
+	genqtypes(g);
 	pushstab(file->file.globls);
 	for (i = 0; i < file->file.nstmts; i++) {
 		n = file->file.stmts[i];
@@ -1412,8 +1285,8 @@ void gen(Node *file, char *out)
 				break;
 		case Ndecl:
 			if (isconstfn(n)) {
-				n = flattenfn(n);
-				genfn(g, n);
+				n = flattenfn(n, &locals, &nlocals);
+				genfn(g, n, locals, nlocals);
 			} else {
 				gendata(g, n);
 			}

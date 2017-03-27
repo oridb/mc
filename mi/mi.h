@@ -52,5 +52,5 @@ void genmatch(Node *m, Node *val, Node ***out, size_t *nout);
 void genonematch(Node *pat, Node *val, Node *iftrue, Node *iffalse, Node ***out, size_t *nout, Node ***cap, size_t *ncap);
 
 /* tree flattening */
-Node *flattenfn(Node *dcl);
+Node *flattenfn(Node *dcl, Node ***locals, size_t *nlocals);
 int isconstfn(Node *n);
