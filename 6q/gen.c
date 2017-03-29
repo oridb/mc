@@ -830,7 +830,7 @@ Loc rval(Gen *g, Node *n)
 	case Oaddeq: case Osubeq: case Omuleq: case Odiveq: case Omodeq:
 	case Oboreq: case Obandeq: case Obxoreq: case Obsleq: case Obsreq:
 	case Opreinc: case Opredec: case Opostinc: case Opostdec:
-	case Obreak: case Ocontinue:
+	case Obreak: case Ocontinue: case Oslgen:
 	case Numops:
                 die("invalid operator: should have been removed");
 	case Obad:

@@ -57,20 +57,21 @@ O(Ostruct,	1,	OTmisc, NULL)
 O(Oarr,	        1,	OTmisc, NULL)
 
 /* all below this point are backend-only */
-O(Odead,        0,      OTmisc, "DEAD")         /* dead code */
-O(Oundef,       0,      OTmisc, "UNDEF")        /* undefined var */
-O(Odef,         0,      OTmisc, "DEF")          /* defined var */
-O(Ocjmp,	1,	OTmisc, "CJMP")         /* conditional jump */
+O(Odead,        0,      OTmisc, "DEAD")		/* dead code */
+O(Oundef,       0,      OTmisc, "UNDEF")	/* undefined var */
+O(Odef,         0,      OTmisc, "DEF")		/* defined var */
+O(Ocjmp,	1,	OTmisc, "CJMP")		/* conditional jump */
 O(Ovjmp,	1,	OTmisc, "VJMP")		/* variable arg list jump */
-O(Oset,	        1,	OTbin,  "=")            /* store to var */
+O(Oset,	        1,	OTbin,  "=")		/* store to var */
 O(Osllen,	1,	OTpre,  "SLLEN")        /* size of slice */
 O(Oslbase,	1,	OTpre,  "SLBASE")       /* base of sice */
-O(Outag,	1,	OTpre,  "UTAG")	        /* tag of union */
-O(Oudata,	1,	OTpre,  "UDATA")        /* pointer to contents of union */
-O(Otupget,	1,	OTpre,  "TUPGET")        /* pointer to contents of union */
-O(Oblit,	1,	OTbin,  "BLIT")         /* blit memory */
-O(Oclear,       1,      OTpre,  "CLEAR")        /* zero */
-O(Ocallind,     1,      OTpre,  "CALL")         /* call with environment */
+O(Oslgen,	0,	OTpre,  "SLGEN")	/* generate slice into temp */
+O(Outag,	1,	OTpre,  "UTAG")		/* tag of union */
+O(Oudata,	1,	OTpre,  "UDATA")	/* pointer to contents of union */
+O(Otupget,	1,	OTpre,  "TUPGET")	/* pointer to contents of union */
+O(Oblit,	1,	OTbin,  "BLIT")		/* blit memory */
+O(Oclear,       1,      OTpre,  "CLEAR")	/* zero */
+O(Ocallind,     1,      OTpre,  "CALL")		/* call with environment */
 
 /* integer conversions */
 O(Otrunc,	1,	OTmisc, NULL)   /* truncating cast */
