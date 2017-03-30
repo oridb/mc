@@ -1,8 +1,17 @@
-#define Maxarg 4                /* maximum number of args an insn can have */
-#define Wordsz 4                /* the size of a "natural int" */
-#define Ptrsz 8                 /* the size of a machine word (ie, pointer size) */
+#define Maxarg	4	/* maximum number of args an insn can have */
+#define Wordsz	4	/* the size of a "natural int" */
+#define Ptrsz	8	/* the size of a machine word (ie, pointer size) */
+#define Narg	2	/* the maximum number of args for 'normal' instructions */
 
 typedef struct Blob Blob;
+typedef struct Insn Insn;
+typedef struct Loc Loc;
+
+typedef enum {
+#define Insn(op) Q##op,
+#include "qbe.def"
+#undef Insn
+} Qop;
 
 typedef enum {
 	Bti8,
@@ -17,14 +26,39 @@ typedef enum {
 } Blobtype;
 
 typedef enum {
-	Mbyte,
-	Mhalf,
-	Mword,
-	Mlong,
-	Msingle,
-	Mdouble,
-	Mmem,
-} Mode;
+	Ldecl,
+	Ltemp,
+	Llabel,
+	Lconst
+} Loctype;
+
+struct Loc {
+	char tag;
+	char kind;
+	union {
+		vlong dcl;
+		vlong tmp;
+		vlong cst;
+		char *lbl;
+	};
+};
+
+#define Zq ((Loc){.tag=0, .kind=0})
+
+struct Insn {
+	Qop op;
+	Loc dst;
+	Loc ret;
+	union {
+		Loc arg[Narg];
+		/* for func call */
+		struct {
+			Loc env;
+			Loc *farg;
+			size_t nfarg;
+		};
+	};
+};
 
 struct Blob {
 	Blobtype type;
