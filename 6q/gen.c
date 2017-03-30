@@ -835,14 +835,14 @@ void emitloc(Gen *g, Loc l)
 	if (!l.tag)
 		return;
 	switch (l.kind) {
-	case Ltemp:	fprintf(g->f, "%lld", l.tmp);	break;
+	case Ltemp:	fprintf(g->f, "%%%lld", l.tmp);	break;
 	case Lconst:	fprintf(g->f, "%lld", l.cst);	break;
 	case Llabel:	fprintf(g->f, "@%s", l.lbl);	break;
 	case Ldecl:
 		dcl = decls[l.dcl];
 		globl = dcl->decl.isglobl ? '$' : '%';
-		asmname(name, sizeof name, dcl->decl.name, '$');
-		fprintf(g->f, "%c%s", globl, name);
+		asmname(name, sizeof name, dcl->decl.name, globl);
+		fprintf(g->f, "%s", name);
 	}
 }
 
@@ -888,8 +888,7 @@ void emitfn(Gen *g, Node *dcl)
 
 	n = dcl->decl.init;
 	n = n->expr.args[0];
-	n = n->lit.fnval;
-	fn = n->func.body;
+	fn = n->lit.fnval;
 	rtype = tybase(g->rettype);
 	export = isexport(dcl) ? "export" : "";
 	asmname(name, sizeof name, dcl->decl.name, '$');
