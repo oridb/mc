@@ -116,12 +116,16 @@ static Loc temp(Gen *g, Node *n)
 	return (Loc){.kind=Ltemp, .tmp=g->nexttmp++, .tag=type};
 }
 
-static Loc qvar(Gen *g, Node *dcl)
+static Loc qvar(Gen *g, Node *n)
 {
 	char tag;
 
-	tag = qtag(g, dcl->decl.type);
-	return (Loc){.kind=Ldecl, .dcl=dcl->decl.did, .tag=tag};
+	assert(n);
+	if (n->type == Nexpr && exprop(n) == Ovar)
+		n = decls[n->expr.did];
+	assert(n->type == Ndecl);
+	tag = qtag(g, n->decl.type);
+	return (Loc){.kind=Ldecl, .dcl=n->decl.did, .tag=tag};
 }
 
 static Loc qlabels(Gen *g, char *lbl)
@@ -324,7 +328,7 @@ static Loc binopk(Gen *g, Qop op, Node *n, uvlong k)
 	Loc r, p;
 
 	if (isconstfn(n))
-		r = qvar(g, decls[n->expr.did]);
+		r = qvar(g, n);
 	else {
 		r = qtemp(g, 'l');
 		p = binopk(g, Qadd, n, Ptrsz);
@@ -641,8 +645,8 @@ static Loc lval(Gen *g, Node *n)
 	args = n->expr.args;
 	switch (exprop(n)) {
 	case Oidx:	r = loadidx(g, args[0], args[1]);	break;
-	case Ovar:	r = qvar(g, decls[n->expr.did]);	break;
 	case Oderef:	r = deref(g, args[0]);	break;
+	case Ovar:	r = qvar(g, n);	break;
 	case Omemb:	r = rval(g, n);	break;
 	case Ostruct:	r = rval(g, n);	break;
 	case Oucon:	r = rval(g, n);	break;
@@ -806,7 +810,10 @@ Loc rval(Gen *g, Node *n)
 		break;
 	case Oaddr:
 		ty = tybase(exprtype(args[0]));
-		r = rval(g, args[0]);
+		if (exprop(n) == Ovar)
+			r = qvar(g, n);
+		else
+			r = lval(g, args[0]);
 		break;
 
 	case Ocjmp:
