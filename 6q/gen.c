@@ -102,7 +102,7 @@ char *asmname(char *buf, size_t nbuf, Node *n, char sigil)
 
 static Loc qtemp(Gen *g, char type)
 {
-	return (Loc){.kind=Ltemp, .dcl=g->nexttmp++, .tag=type};
+	return (Loc){.kind=Ltemp, .tmp=g->nexttmp++, .tag=type};
 }
 
 static Loc temp(Gen *g, Node *n)
@@ -574,14 +574,10 @@ Loc assign(Gen *g, Node *dst, Node* src)
 	ty = exprtype(dst);
 	d = lval(g, dst);
 	s = rval(g, src);
-	if (src != dst) {
-		if (isstacktype(ty))
-			blit(g, d, s, size(dst));
-		else if (d.kind == Ldecl)
-			o(g, storeop(ty), Zq, s, d);
-		else
-			o(g, Qcopy, d, s, Zq);
-	}
+	if (isstacktype(ty))
+		blit(g, d, s, size(dst));
+	else 
+		o(g, storeop(ty), Zq, s, d);
 	return d;
 }
 
@@ -623,6 +619,20 @@ static Loc loadvar(Gen *g, Node *var)
 	return r;
 }
 
+static Loc deref(Gen *g, Node *n)
+{
+	Loc l, r;
+	Type *ty;
+
+	ty = exprtype(n);
+	l = rval(g, n);
+	if (isstacktype(ty))
+		return l;
+	r = qtemp(g, qtag(g, ty));
+	o(g, loadop(ty), r, l, Zq);
+	return r;
+}
+
 static Loc lval(Gen *g, Node *n)
 {
 	Node **args;
@@ -631,8 +641,8 @@ static Loc lval(Gen *g, Node *n)
 	args = n->expr.args;
 	switch (exprop(n)) {
 	case Oidx:	r = loadidx(g, args[0], args[1]);	break;
-	case Ovar:	r = loadvar(g, n);	break;
-	case Oderef:	r = rval(g, args[0]);	break;
+	case Ovar:	r = qvar(g, decls[n->expr.did]);	break;
+	case Oderef:	r = deref(g, args[0]);	break;
 	case Omemb:	r = rval(g, n);	break;
 	case Ostruct:	r = rval(g, n);	break;
 	case Oucon:	r = rval(g, n);	break;
@@ -774,7 +784,7 @@ Loc rval(Gen *g, Node *n)
 	case Ocast:	r = simpcast(g, args[0], exprtype(n));	break;
 	case Ocall:	r = gencall(g, n);			break;
 
-	case Ovar:	r = qvar(g, decls[n->expr.did]);	break;
+	case Ovar:	r = loadvar(g, n);			break;
 	case Olit:	r = loadlit(g, n);			break;
 	case Osize:	r = qconst(g, size(args[0]), 'l');	break;
 	case Ojmp:	o(g, Qjmp, Zq, qlabel(g, args[0]), Zq);	break;
@@ -797,7 +807,6 @@ Loc rval(Gen *g, Node *n)
 	case Oaddr:
 		ty = tybase(exprtype(args[0]));
 		r = rval(g, args[0]);
-		assert(r.kind == Ldecl);
 		break;
 
 	case Ocjmp:
@@ -903,7 +912,8 @@ void emitinsn(Gen *g, Insn *insn)
 	size_t i;
 	char *sep;
 
-	fprintf(g->f, "\t");
+	if (insn->op != Qlabel)
+		fprintf(g->f, "\t");
 	emitloc(g, insn->ret, "");
 	if (insn->ret.tag)
 		fprintf(g->f, " =%c ", insn->ret.tag);
@@ -932,6 +942,10 @@ void declare(Gen *g, Node *n)
 	char *name;
 	Type *ty;
 
+	assert(n);
+	if (n->type == Nexpr && exprop(n) == Ovar)
+		n = decls[n->expr.did];
+	assert(n->type == Ndecl);
 	name = declname(n);
 	ty = decltype(n);
 	align = tyalign(ty);
@@ -963,6 +977,8 @@ void emitfn(Gen *g, Node *dcl)
 	fprintf(g->f, ")\n");
 	fprintf(g->f, "{\n");
 	fprintf(g->f, "@start\n");
+	if (g->retval)
+		declare(g, g->retval);
 	for (i = 0; i < g->nlocal; i++)
 		declare(g, g->local[i]);
 	for (i = 0; i < g->ninsn; i++)
