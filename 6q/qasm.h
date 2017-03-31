@@ -54,6 +54,7 @@ struct Insn {
 		/* for func call */
 		struct {
 			Loc env;
+			Loc fn;
 			Loc *farg;
 			size_t nfarg;
 		};

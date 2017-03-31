@@ -151,6 +151,7 @@ static void ocall(Gen *g, Loc fn, Loc ret, Loc env, Loc *args, size_t nargs)
 		g->insn = xrealloc(g->insn, g->insnsz * sizeof(Insn));
 	}
 	g->insn[g->ninsn].op = Qcall;
+	g->insn[g->ninsn].fn = fn;
 	g->insn[g->ninsn].ret = ret;
 	g->insn[g->ninsn].env = env;
 	g->insn[g->ninsn].farg = args;
@@ -826,7 +827,7 @@ static const char *insnname[] = {
 #undef Insn
 };
 
-void emitloc(Gen *g, Loc l)
+void emitloc(Gen *g, Loc l, char *sep)
 {
 	char name[1024];
 	Node *dcl;
@@ -835,35 +836,40 @@ void emitloc(Gen *g, Loc l)
 	if (!l.tag)
 		return;
 	switch (l.kind) {
-	case Ltemp:	fprintf(g->f, "%%%lld", l.tmp);	break;
-	case Lconst:	fprintf(g->f, "%lld", l.cst);	break;
-	case Llabel:	fprintf(g->f, "@%s", l.lbl);	break;
+	case Ltemp:	fprintf(g->f, "%%.%lld%s", l.tmp, sep);	break;
+	case Lconst:	fprintf(g->f, "%lld%s", l.cst, sep);	break;
+	case Llabel:	fprintf(g->f, "@%s%s", l.lbl, sep);	break;
 	case Ldecl:
 		dcl = decls[l.dcl];
 		globl = dcl->decl.isglobl ? '$' : '%';
 		asmname(name, sizeof name, dcl->decl.name, globl);
-		fprintf(g->f, "%s", name);
+		fprintf(g->f, "%s%s", name, sep);
 	}
 }
 
 void emitinsn(Gen *g, Insn *insn)
 {
 	size_t i;
+	char *sep;
 
 	fprintf(g->f, "\t");
-	emitloc(g, insn->ret);
+	emitloc(g, insn->ret, "");
 	if (insn->ret.tag)
 		fprintf(g->f, " =%c ", insn->ret.tag);
 	if (insn->op != Qlabel)
 		fprintf(g->f, "%s ", insnname[insn->op]);
 	if (insn->op != Qcall) {
-		emitloc(g, insn->arg[0]);
-		emitloc(g, insn->arg[1]);
+		sep = insn->arg[1].tag ? ", " : "";
+		emitloc(g, insn->arg[0], sep);
+		emitloc(g, insn->arg[1], "");
 	} else {
+		emitloc(g, insn->fn, " ");
+		fprintf(g->f, "(");
 		for (i = 0; i < insn->nfarg; i++) {
-			emitloc(g, insn->farg[i]);
-			fprintf(g->f, ", ");
+			sep = (i == insn->nfarg - 1) ? ", " : "";
+			emitloc(g, insn->farg[i], sep);
 		}
+		fprintf(g->f, ")");
 	}
 	fprintf(g->f, "\n");
 }
@@ -898,7 +904,7 @@ void emitfn(Gen *g, Node *dcl)
 	for (i = 0; i < fn->func.nargs; i++) {
 		a = fn->func.args[i];
 		ty = decltype(a);
-		fprintf(g->f, "%s %s", qtype(g, ty), declname(a));
+		fprintf(g->f, "%s %%%s", qtype(g, ty), declname(a));
 	}
 	fprintf(g->f, ")\n");
 	fprintf(g->f, "{\n");
@@ -953,7 +959,7 @@ void genfn(Gen *g, Node *dcl, Node **locals, size_t nlocals)
 		r = rval(g, g->retval);
 	else
 		r = Zq;
-	o(g, Qret, r, Zq, Zq);
+	o(g, Qret, Zq, r, Zq);
 	emitfn(g, dcl);
 	g->ninsn = 0;
 }
