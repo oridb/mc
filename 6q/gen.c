@@ -37,6 +37,8 @@ struct Gen {
 
 	Type *rettype;
 	Node *retval;
+	Loc *arg;
+	size_t narg;
 	Loc retlbl;
 
 	Insn *insn;
@@ -181,6 +183,11 @@ Type *codetype(Type *ft)
 	ft = tydup(ft);
 	ft->type = Tycode;
 	return ft;
+}
+
+void addlocal(Gen *g, Node *n)
+{
+	lappend(&g->local, &g->nlocal, n);
 }
 
 static Loc ptrsized(Gen *g, Loc v)
@@ -888,6 +895,49 @@ void genbb(Gen *g, Cfg *cfg, Bb *bb)
 	}
 }
 
+void spillargs(Gen *g, Node *fn)
+{	
+	Loc arg, val;
+	Type *ty;
+	Node *a;
+	size_t i;
+
+	g->arg = zalloc(fn->func.nargs * sizeof(Loc));
+	for (i = 0; i < fn->func.nargs; i++) {
+		a = fn->func.args[i];
+		ty = tybase(decltype(a));
+		if (ty->type == Tyvoid)
+			continue;
+		if (isstacktype(ty)) {
+			arg = qvar(g, a);
+		} else {
+			arg = qtemp(g, qtag(g, ty));
+			val = qvar(g, a);
+			o(g, storeop(ty), Zq, arg, val);
+			addlocal(g, a);
+		}
+		g->arg[i] = arg;
+		g->narg++;
+	}
+}
+
+void declare(Gen *g, Node *n)
+{
+	size_t align, size;
+	char *name;
+	Type *ty;
+
+	assert(n);
+	if (n->type == Nexpr && exprop(n) == Ovar)
+		n = decls[n->expr.did];
+	assert(n->type == Ndecl);
+	name = declname(n);
+	ty = decltype(n);
+	align = tyalign(ty);
+	size = tysize(ty);
+	fprintf(g->f, "\t%%%s =l alloc%zd %zd\n", name, align, size);
+}
+
 static const char *insnname[] = {
 #define Insn(name) #name,
 #include "qbe.def"
@@ -943,29 +993,13 @@ void emitinsn(Gen *g, Insn *insn)
 	fprintf(g->f, "\n");
 }
 
-void declare(Gen *g, Node *n)
-{
-	size_t align, size;
-	char *name;
-	Type *ty;
-
-	assert(n);
-	if (n->type == Nexpr && exprop(n) == Ovar)
-		n = decls[n->expr.did];
-	assert(n->type == Ndecl);
-	name = declname(n);
-	ty = decltype(n);
-	align = tyalign(ty);
-	size = tysize(ty);
-	fprintf(g->f, "\t%%%s =l alloc%zd %zd\n", name, align, size);
-}
-
 void emitfn(Gen *g, Node *dcl)
 {
 	char name[1024], *export, *retname;
 	Node *a, *n, *fn;
 	Type *ty, *rtype;
-	size_t i;
+	size_t i, arg;
+	char *sep;
 
 	n = dcl->decl.init;
 	n = n->expr.args[0];
@@ -976,10 +1010,15 @@ void emitfn(Gen *g, Node *dcl)
 	retname = (rtype->type == Tyvoid) ? "" : qtype(g, rtype);
 	fprintf(g->f, "%s function %s %s", export, retname, name);
 	fprintf(g->f, "(");
+	arg = 0;
 	for (i = 0; i < fn->func.nargs; i++) {
 		a = fn->func.args[i];
-		ty = decltype(a);
-		fprintf(g->f, "%s %%%s", qtype(g, ty), declname(a));
+		ty = tybase(decltype(a));
+		if (ty->type != Tyvoid) {
+			sep = (arg == g->narg - 1) ? "" : ", ";
+			fprintf(g->f, "%s ", qtype(g, ty));
+			emitloc(g, g->arg[arg++], sep);
+		}
 	}
 	fprintf(g->f, ")\n");
 	fprintf(g->f, "{\n");
@@ -993,7 +1032,7 @@ void emitfn(Gen *g, Node *dcl)
 	fprintf(g->f, "}\n");
 }
 
-void genfn(Gen *g, Node *dcl, Node **locals, size_t nlocals)
+void genfn(Gen *g, Node *dcl)
 {
 	Node *n, *b, *retdcl;
 	size_t i;
@@ -1022,11 +1061,10 @@ void genfn(Gen *g, Node *dcl, Node **locals, size_t nlocals)
 	g->retval = NULL;
 	g->rettype = tybase(dcl->decl.type->sub[0]);
 	g->retlbl = qlabel(g, genlbl(dcl->loc));
-	g->local = locals;
-	g->nlocal = nlocals;
+
 	if (tybase(g->rettype)->type != Tyvoid)
 		g->retval = gentemp(dcl->loc, g->rettype, &retdcl);
-
+	spillargs(g, n);
 	for (i = 0; i < cfg->nbb; i++) {
 		bb = cfg->bb[i];
 		if (!bb)
@@ -1041,6 +1079,8 @@ void genfn(Gen *g, Node *dcl, Node **locals, size_t nlocals)
 	o(g, Qret, Zq, r, Zq);
 	emitfn(g, dcl);
 	g->ninsn = 0;
+	g->narg = 0;
+	free(g->arg);
 }
 
 static void encodemin(Gen *g, uint64_t val)
@@ -1351,7 +1391,9 @@ void gen(Node *file, char *out)
 		case Ndecl:
 			if (isconstfn(n)) {
 				n = flattenfn(n, &locals, &nlocals);
-				genfn(g, n, locals, nlocals);
+				g->local = locals;
+				g->nlocal = nlocals;
+				genfn(g, n);
 			} else {
 				gendata(g, n);
 			}
