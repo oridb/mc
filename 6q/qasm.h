@@ -56,6 +56,7 @@ struct Insn {
 			Loc env;
 			Loc fn;
 			Loc *farg;
+			Type **fty;
 			size_t nfarg;
 		};
 	};
