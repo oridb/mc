@@ -367,25 +367,35 @@ static Loc slicelen(Gen *g, Loc sl)
 
 Loc cmpop(Gen *g, Op op, Node *ln, Node *rn)
 {
+	Qop intcmptab[][2][2] = {
+		[Ole] = {{Qcslew, Qculew}, {Qcslel, Qculel}},
+		[Olt] = {{Qcsltw, Qcultw}, {Qcsltl, Qcultl}},
+		[Ogt] = {{Qcsgtw, Qcugtw}, {Qcsgtl, Qcugtl}},
+		[Oge] = {{Qcsgew, Qcugew}, {Qcsgel, Qcugel}},
+		[Oeq] = {{Qceqw, Qceqw}, {Qceql, Qceql}},
+		[One] = {{Qcnew, Qcnew}, {Qcnel, Qcnel}},
+	};
+
+	Qop fltcmptab[][2] = {
+		[Ofle] = {Qcles, Qcled},
+		[Oflt] = {Qclts,  Qcltd},
+		[Ofgt] = {Qcgts,  Qcgtd},
+		[Ofge] = {Qcges,  Qcged},
+		[Ofeq] = {Qceqs,  Qceqd},
+		[Ofne] = {Qcnes,  Qcned},
+	};
+
 	Loc l, r, t;
 	char tag;
+	Type *ty;
 	Qop qop;
 
-	tag = qtag(g, exprtype(ln));
-	switch (op) {
-	case Ole:	qop = (tag == 'w') ? Qcmpwle : Qcmpwle;	break;
-	case Olt:	qop = (tag == 'w') ? Qcmpwlt : Qcmpwlt;	break;
-	case Ogt:	qop = (tag == 'w') ? Qcmpwgt : Qcmpwgt;	break;
-	case Oge:	qop = (tag == 'w') ? Qcmpwge : Qcmpwge;	break;
-	case Oeq:	qop = (tag == 'w') ? Qcmpweq : Qcmpweq;	break;
-
-	case Ofle:	qop = (tag == 's') ? Qcmpsle : Qcmpdle;	break;
-	case Oflt:	qop = (tag == 's') ? Qcmpslt : Qcmpdlt;	break;
-	case Ofgt:	qop = (tag == 's') ? Qcmpsgt : Qcmpdgt;	break;
-	case Ofge:	qop = (tag == 's') ? Qcmpsge : Qcmpdge;	break;
-	case Ofeq:	qop = (tag == 's') ? Qcmpseq : Qcmpdeq;	break;
-	default:	die("bad compare");
-	}
+	ty = exprtype(ln);
+	tag = qtag(g, ty);
+	if (istyfloat(ty))
+		qop = fltcmptab[op][tag == 'd'];
+	else
+		qop = intcmptab[op][istysigned(ty)][tag == 'l'];
 
 	t = qtemp(g, tag);
 	l = rval(g, ln);
@@ -606,9 +616,9 @@ Loc assign(Gen *g, Node *dst, Node* src)
 
 	o(g, op, inrange, len, idx);
 	o(g, Qjnz, inrange, oklbl, faillbl);
-	o(g, Qlabel, Zq, faillbl, Zq);
+	o(g, Qlabel, faillbl, Zq, Zq);
 	ocall(g, abortoob, Zq, Zq, NULL, NULL, 0);
-	o(g, Qlabel, Zq, oklbl, Zq);
+	o(g, Qlabel, oklbl, Zq, Zq);
 }
 
 static Loc loadvar(Gen *g, Node *var)
@@ -894,12 +904,12 @@ Loc rval(Gen *g, Node *n)
 	case Ovar:	r = loadvar(g, n);			break;
 	case Olit:	r = loadlit(g, n);			break;
 	case Osize:	r = qconst(g, size(args[0]), 'l');	break;
-	case Ojmp:	o(g, Qjmp, Zq, qlabel(g, args[0]), Zq);	break;
+	case Ojmp:	o(g, Qjmp, qlabel(g, args[0]), Zq, Zq);	break;
 	case Oret:
 		ty = tybase(exprtype(args[0]));
 		if (ty->type != Tyvoid)
 			assign(g, g->retval, args[0]);
-		o(g, Qjmp, Zq, g->retlbl, Zq);
+		o(g, Qjmp, g->retlbl, Zq, Zq);
 		break;
 
 	case Oderef:
@@ -982,7 +992,7 @@ void genbb(Gen *g, Cfg *cfg, Bb *bb)
 	size_t i;
 
 	for (i = 0; i < bb->nlbls; i++)
-		o(g, Qlabel, Zq, qlabelstr(g, bb->lbls[i]), Zq);
+		o(g, Qlabel, qlabelstr(g, bb->lbls[i]), Zq, Zq);
 
 	for (i = 0; i < bb->nnl; i++) {
 		switch (bb->nl[i]->type) {
@@ -1076,16 +1086,25 @@ void emitinsn(Gen *g, Insn *insn)
 
 	if (insn->op != Qlabel)
 		fprintf(g->f, "\t");
-	emitloc(g, insn->ret, "");
-	if (insn->ret.tag)
-		fprintf(g->f, " =%c ", insn->ret.tag);
-	if (insn->op != Qlabel)
+	switch (insn->op) {
+	case Qlabel:
+		emitloc(g, insn->ret, "");
+		break;
+	case Qjmp:
 		fprintf(g->f, "%s ", insnname[insn->op]);
-	if (insn->op != Qcall) {
-		sep = insn->arg[1].tag ? ", " : "";
-		emitloc(g, insn->arg[0], sep);
+		emitloc(g, insn->ret, "");
+		break;
+	case Qjnz:
+		fprintf(g->f, "%s ", insnname[insn->op]);
+		emitloc(g, insn->ret, ", ");
+		emitloc(g, insn->arg[0], ", ");
 		emitloc(g, insn->arg[1], "");
-	} else {
+		break;
+	case Qcall:
+		emitloc(g, insn->ret, "");
+		if (insn->ret.tag)
+			fprintf(g->f, " =%c ", insn->ret.tag);
+		fprintf(g->f, "%s ", insnname[insn->op]);
 		emitloc(g, insn->fn, " ");
 		fprintf(g->f, "(");
 		for (i = 0; i < insn->nfarg; i++) {
@@ -1094,6 +1113,16 @@ void emitinsn(Gen *g, Insn *insn)
 			emitloc(g, insn->farg[i], sep);
 		}
 		fprintf(g->f, ")");
+		break;
+	default:
+		emitloc(g, insn->ret, "");
+		if (insn->ret.tag)
+			fprintf(g->f, " =%c ", insn->ret.tag);
+		fprintf(g->f, "%s ", insnname[insn->op]);
+		sep = insn->arg[1].tag ? ", " : "";
+		emitloc(g, insn->arg[0], sep);
+		emitloc(g, insn->arg[1], "");
+		break;
 	}
 	fprintf(g->f, "\n");
 }
@@ -1176,7 +1205,7 @@ void genfn(Gen *g, Node *dcl)
 			continue;
 		genbb(g, cfg, bb);
 	}
-	o(g, Qlabel, Zq, g->retlbl, Zq);
+	o(g, Qlabel, g->retlbl, Zq, Zq);
 	if (g->retval)
 		r = rval(g, g->retval);
 	else
