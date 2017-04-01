@@ -131,9 +131,9 @@ static Loc qvar(Gen *g, Node *n)
 	return (Loc){.kind=Ldecl, .dcl=n->decl.did, .tag=tag};
 }
 
-static Loc qlabels(Gen *g, char *lbl)
+static Loc qlabelstr(Gen *g, char *lbl)
 {
-	return (Loc){.kind=Lconst, .lbl=lbl, .tag=0};
+	return (Loc){.kind=Llabel, .lbl=lbl, .tag='l'};
 }
 
 static Loc qlabel(Gen *g, Node *lbl)
@@ -254,7 +254,6 @@ char *qtype(Gen *g, Type *ty)
 	case Tyflt32:	return "s";	break;
 	case Tyflt64:	return "d";	break;
 	case Typtr:	return "l";	break;
-	case Tyslice:	return "l, l";	break;
 	default:	return g->typenames[ty->tid];	break;
 	}
 }
@@ -453,15 +452,18 @@ static Qop storeop(Type *ty)
 
 
 
-static Loc intcvt(Gen *g, Loc val, char to, int sign)
+static Loc intcvt(Gen *g, Loc val, char to, int sz, int sign)
 {
 	Loc t;
+	Qop optab[][2] = {
+		[8] = {Qcopy,	Qcopy},
+		[4] = {Qextuw,	Qextsw},
+		[2] = {Qextuh,	Qextsh},
+		[1] = {Qextub,	Qextsb},
+	};
 
 	t = qtemp(g, to);
-	if (sign)
-		o(g, Qexts, t, val, Zq);
-	else
-		o(g, Qcopy, t, val, Zq);
+	o(g, optab[sz][sign], t, val, Zq);
 	return t;
 }
 
@@ -497,14 +499,14 @@ static Loc gencast(Gen *g, Srcloc loc, Loc val, Type *to, Type *from)
 		/* signed conversions */
 		case Tyint8: case Tyint16: case Tyint32: case Tyint64:
 		case Tyint:
-			r = intcvt(g, val, qtag(g, to), 1);
+			r = intcvt(g, val, qtag(g, to), tysize(from), 1);
 			break;
 		/* unsigned conversions */
 		case Tybool:
 		case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint64:
 		case Tyuint: case Tychar: case Tybyte:
 		case Typtr:
-			r = intcvt(g, val, qtag(g, to), 0);
+			r = intcvt(g, val, qtag(g, to), tysize(from), 0);
 			break;
 		case Tyflt32: case Tyflt64:
 			if (tybase(to)->type == Typtr)
@@ -599,8 +601,8 @@ Loc assign(Gen *g, Node *dst, Node* src)
 	genlblstr(fail, sizeof fail, "");
 
 	inrange = qtemp(g, 'w');
-	oklbl = qlabels(g, strdup(fail));
-	faillbl = qlabels(g, strdup(fail));
+	oklbl = qlabelstr(g, strdup(fail));
+	faillbl = qlabelstr(g, strdup(fail));
 
 	o(g, op, inrange, len, idx);
 	o(g, Qjnz, inrange, oklbl, faillbl);
@@ -980,7 +982,7 @@ void genbb(Gen *g, Cfg *cfg, Bb *bb)
 	size_t i;
 
 	for (i = 0; i < bb->nlbls; i++)
-		o(g, Qlabel, Zq, qlabels(g, bb->lbls[i]), Zq);
+		o(g, Qlabel, Zq, qlabelstr(g, bb->lbls[i]), Zq);
 
 	for (i = 0; i < bb->nnl; i++) {
 		switch (bb->nl[i]->type) {
@@ -1413,19 +1415,22 @@ static void outuniontype(Gen *g, Type *ty)
 	}
 }
 
-void outqtype(Gen *g, Type *ty)
+void outqtype(Gen *g, Type *t)
 {
 	char buf[1024];
+	Type *ty;
 	Ty tt;
 
-	ty = tydedup(ty);
+	ty = tydedup(t);
 	tt = ty->type;
 	if (tt == Tycode || tt == Tyvar || tt == Tyunres || hasparams(ty))
 		return;
-	if (g->typenames[ty->tid])
-		return;
 	if (ty->vis == Visbuiltin)
 		return;
+	if (g->typenames[ty->tid]) {
+		g->typenames[t->tid] = g->typenames[ty->tid];
+		return;
+	}
 
 	snprintf(buf, sizeof buf, ":t%d", ty->tid);
 	g->typenames[ty->tid] = strdup(buf);
