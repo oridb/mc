@@ -59,10 +59,11 @@ static Loc slicelen(Gen *g, Loc sl);
 static Loc gencast(Gen *g, Srcloc loc, Loc val, Type *to, Type *from);
 static Loc loadidx(Gen *g, Node *base, Node *idx);
 
-Type *tyintptr;
-Type *tyword;
-Type *tyvoid;
-Loc abortoob;
+static Type *tyintptr;
+static Type *tyword;
+static Type *tyvoid;
+static Loc abortoob;
+static Loc ptrsize;
 
 static int isexport(Node *dcl)
 {
@@ -101,6 +102,7 @@ char *asmname(char *buf, size_t nbuf, Node *n, char sigil)
 	bprintf(buf, nbuf, "%c%s%s%s", sigil, ns, sep, name);
 	return buf;
 }
+
 
 static Loc qtemp(Gen *g, char type)
 {
@@ -185,9 +187,19 @@ Type *codetype(Type *ft)
 	return ft;
 }
 
-void addlocal(Gen *g, Node *n)
+static void addlocal(Gen *g, Node *n)
 {
 	lappend(&g->local, &g->nlocal, n);
+}
+
+static Loc local(Gen *g, Node *e)
+{
+	Node *dcl;
+
+	assert(e->type == Nexpr);
+	gentemp(e->loc, e->expr.type, &dcl);
+	addlocal(g, dcl);
+	return qvar(g, dcl); 
 }
 
 static Loc ptrsized(Gen *g, Loc v)
@@ -341,37 +353,6 @@ static Loc binopk(Gen *g, Qop op, Node *n, uvlong k)
 		p = binopk(g, Qadd, n, Ptrsz);
 		o(g, Qloadl, r, p, Zq);
 	}
-	return r;
-}
-
-static Loc slicebase(Gen *g, Node *slnode, Node *offnode)
-{
-	Loc u, v, r;
-	Type *ty;
-	size_t sz;
-	Loc sl, off;
-
-	ty = tybase(exprtype(slnode));
-	sl = rval(g, slnode);
-	switch (ty->type) {
-	case Typtr:	u = sl;	break;
-	case Tyarray:	u = sl;	break;
-	case Tyslice:	
-		u = qtemp(g, 'l');
-		o(g, Qloadl, u, sl, Zq);
-		break;
-	default: 
-		die("Unslicable type %s", tystr(ty));
-	}
-	/* safe: all types we allow here have a sub[0] that we want to grab */
-	if (!offnode)
-		return u;
-	off = ptrsized(g, rval(g, offnode));
-	sz = tysize(slnode->expr.type->sub[0]);
-	v = qtemp(g, 'l');
-	r = qtemp(g, 'l');
-	o(g, Qmul, v, off, qconst(g, sz, 'l'));
-	o(g, Qadd, r, u, v);
 	return r;
 }
 
@@ -571,10 +552,26 @@ static Loc simpcast(Gen *g, Node *val, Type *to)
 }
 
 
-void blit(Gen *g, Loc dst, Loc src, size_t sz)
+void blit(Gen *g, Loc dst, Loc src, size_t sz, size_t align)
 {
-	die("no blit support yet");
-	//out(g, "\tblit %v, %v, %l\n", dst, src, sz);
+	static const Qop ops[][2] = {
+		[8] = {Qloadl, Qstorel},
+		[4] = {Qloaduw, Qstorew},
+		[2] = {Qloaduh, Qstoreh},
+		[1] = {Qloadub, Qstoreb},
+	};
+	Loc l, a;
+	size_t i;
+
+	assert(sz % align == 0);
+	l = qtemp(g, 'l');
+	a = qconst(g, align, 'l');
+	for (i = 0; i < sz; i += align) {
+		o(g, ops[align][0], l, src, Zq);
+		o(g, ops[align][1], Zq, l, dst);
+		o(g, Qadd, src, src, a);
+		o(g, Qadd, dst, dst, a);
+	}
 }
 
 Loc assign(Gen *g, Node *dst, Node* src)
@@ -586,7 +583,7 @@ Loc assign(Gen *g, Node *dst, Node* src)
 	d = lval(g, dst);
 	s = rval(g, src);
 	if (isstacktype(ty))
-		blit(g, d, s, size(dst));
+		blit(g, d, s, tysize(ty), tyalign(ty));
 	else 
 		o(g, storeop(ty), Zq, s, d);
 	return d;
@@ -702,9 +699,79 @@ static Loc gencall(Gen *g, Node *n)
 	return ret;
 }
 
-static Loc genslice(Gen *g, Node *sl)
+static void checkbounds(Gen *g, Node *n, Loc len)
 {
-	die("genslize not implemented\n");
+}
+
+static Loc slicebase(Gen *g, Node *slnode, Node *offnode)
+{
+	Loc u, v, r;
+	Type *ty;
+	size_t sz;
+	Loc sl, off;
+
+	ty = tybase(exprtype(slnode));
+	sl = rval(g, slnode);
+	switch (ty->type) {
+	case Typtr:	u = sl;	break;
+	case Tyarray:	u = sl;	break;
+	case Tyslice:	
+		u = qtemp(g, 'l');
+		o(g, Qloadl, u, sl, Zq);
+		break;
+	default: 
+		die("Unslicable type %s", tystr(ty));
+	}
+	/* safe: all types we allow here have a sub[0] that we want to grab */
+	if (!offnode)
+		return u;
+	off = ptrsized(g, rval(g, offnode));
+	sz = tysize(slnode->expr.type->sub[0]);
+	v = qtemp(g, 'l');
+	r = qtemp(g, 'l');
+	o(g, Qmul, v, off, qconst(g, sz, 'l'));
+	o(g, Qadd, r, u, v);
+	return r;
+}
+
+static Loc genslice(Gen *g, Node *n)
+{
+	Node *arg, *off, *lim;
+	Loc lo, hi, start, sz;
+	Loc base, len;
+	Loc sl, lenp;
+	Type *ty;
+
+
+	arg = n->expr.args[0];
+	off = n->expr.args[1];
+	lim = n->expr.args[1];
+	ty = exprtype(arg);
+	sl = local(g, n);
+	lenp = qtemp(g, 'l');
+	o(g, Qadd, lenp, sl, ptrsize);
+	/* Special case: Literal arrays with 0 need to be
+	have zero base pointers and lengths in order to 
+	act as nice initializers */
+	if (exprop(arg) == Oarr && arg->expr.nargs == 0) {
+		base = qconst(g, 0, 'l');
+	} else {
+		base = slicebase(g, arg, off);
+	}
+	lo = rval(g, off);
+	hi = rval(g, lim);
+	sz = qconst(g, tysize(ty->sub[0]), 'l');
+	len = qtemp(g, 'l');
+	start = qtemp(g, 'l');
+
+	o(g, Qadd, base, base, lo);
+	o(g, Qsub, len, hi, lo);
+	o(g, Qmul, start, len, sz);
+
+	checkbounds(g, n, len);
+	o(g, Qstorel, Zq, base, sl);
+	o(g, Qstorel, Zq, len, lenp);
+	return sl;
 }
 
 static Loc loadidx(Gen *g, Node *base, Node *idx)
