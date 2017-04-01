@@ -477,10 +477,11 @@ static Loc gencast(Gen *g, Srcloc loc, Loc val, Type *to, Type *from)
 	case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint64:
 	case Tyint: case Tyuint: case Tychar: case Tybyte:
 	case Typtr:
-		switch (from->type) {
+		switch (tybase(from)->type) {
 		/* ptr -> slice conversion is disallowed */
 		case Tyslice:
-			if (tybase(to)->type != Typtr)
+			/* FIXME: we should only allow casting to pointers. */
+			if (tysize(to) != Ptrsz)
 				lfatal(loc, "bad cast from %s to %s", tystr(from), tystr(to));
 			r = qtemp(g, 'l');
 			o(g, Qloadl, r, val, Zq);
