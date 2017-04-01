@@ -800,13 +800,7 @@ static Node *simpucon(Simp *s, Node *n, Node *dst)
 
 	/* find the ucon we're constructing here */
 	ty = tybase(n->expr.type);
-	uc = NULL;
-	for (i = 0; i < ty->nmemb; i++) {
-		if (!strcmp(namestr(n->expr.args[0]), namestr(ty->udecls[i]->name))) {
-			uc = ty->udecls[i];
-			break;
-		}
-	}
+	uc = finducon(ty, n->expr.args[0]);
 	if (!uc)
 		die("Couldn't find union constructor");
 

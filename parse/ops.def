@@ -65,7 +65,6 @@ O(Ovjmp,	1,	OTmisc, "VJMP")		/* variable arg list jump */
 O(Oset,	        1,	OTbin,  "=")		/* store to var */
 O(Osllen,	1,	OTpre,  "SLLEN")        /* size of slice */
 O(Oslbase,	1,	OTpre,  "SLBASE")       /* base of sice */
-O(Oslgen,	0,	OTpre,  "SLGEN")	/* generate slice into temp */
 O(Outag,	1,	OTpre,  "UTAG")		/* tag of union */
 O(Oudata,	1,	OTpre,  "UDATA")	/* pointer to contents of union */
 O(Otupget,	1,	OTpre,  "TUPGET")	/* pointer to contents of union */

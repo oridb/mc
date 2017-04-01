@@ -54,10 +54,9 @@ static void o(Gen *g, Qop o, Loc r, Loc a, Loc b);
 static void ocall(Gen *g, Loc fn, Loc ret, Loc env, Loc *args, Type **types, size_t nargs);
 static Loc rval(Gen *g, Node *n);
 static Loc lval(Gen *g, Node *n);
-static Loc slicebase(Gen *g, Node *sl, Node *off);
+static Loc seqbase(Gen *g, Node *sl, Node *off);
 static Loc slicelen(Gen *g, Loc sl);
 static Loc gencast(Gen *g, Srcloc loc, Loc val, Type *to, Type *from);
-static Loc loadidx(Gen *g, Node *base, Node *idx);
 
 static Type *tyintptr;
 static Type *tyword;
@@ -192,7 +191,7 @@ static void addlocal(Gen *g, Node *n)
 	lappend(&g->local, &g->nlocal, n);
 }
 
-static Loc local(Gen *g, Node *e)
+static Loc qstacktmp(Gen *g, Node *e)
 {
 	Node *dcl;
 
@@ -648,7 +647,7 @@ static Loc lval(Gen *g, Node *n)
 
 	args = n->expr.args;
 	switch (exprop(n)) {
-	case Oidx:	r = loadidx(g, args[0], args[1]);	break;
+	case Oidx:	r = seqbase(g, args[0], args[1]);	break;
 	case Oderef:	r = deref(g, args[0]);	break;
 	case Ovar:	r = qvar(g, n);	break;
 	case Omemb:	r = rval(g, n);	break;
@@ -703,7 +702,7 @@ static void checkbounds(Gen *g, Node *n, Loc len)
 {
 }
 
-static Loc slicebase(Gen *g, Node *slnode, Node *offnode)
+static Loc seqbase(Gen *g, Node *slnode, Node *offnode)
 {
 	Loc u, v, r;
 	Type *ty;
@@ -747,7 +746,7 @@ static Loc genslice(Gen *g, Node *n)
 	off = n->expr.args[1];
 	lim = n->expr.args[1];
 	ty = exprtype(arg);
-	sl = local(g, n);
+	sl = qstacktmp(g, n);
 	lenp = qtemp(g, 'l');
 	o(g, Qadd, lenp, sl, ptrsize);
 	/* Special case: Literal arrays with 0 need to be
@@ -756,7 +755,7 @@ static Loc genslice(Gen *g, Node *n)
 	if (exprop(arg) == Oarr && arg->expr.nargs == 0) {
 		base = qconst(g, 0, 'l');
 	} else {
-		base = slicebase(g, arg, off);
+		base = seqbase(g, arg, off);
 	}
 	lo = rval(g, off);
 	hi = rval(g, lim);
@@ -774,9 +773,36 @@ static Loc genslice(Gen *g, Node *n)
 	return sl;
 }
 
-static Loc loadidx(Gen *g, Node *base, Node *idx)
+static Loc genucon(Gen *g, Node *n)
 {
-	die("loadidx not implemented\n");
+	Loc u, tag, dst, elt, align;
+	size_t sz, al;
+	Type *ty;
+	Ucon *uc;
+
+	ty = tybase(exprtype(n));
+	uc = finducon(ty, n->expr.args[0]);
+	if (!uc)
+		die("Couldn't find union constructor");
+
+	u = qstacktmp(g, n);
+	tag = qconst(g, uc->id, 'w');
+	o(g, Qstorew, Zq, tag, u);
+	if (!uc->etype)
+		return u;
+
+	al = max(4, tyalign(uc->etype));
+	sz = tysize(uc->etype);
+	dst = qtemp(g, 'l');
+	align = qconst(g, al, 'l');
+	o(g, Qadd, dst, u, align);
+
+	elt = rval(g, n->expr.args[1]);
+	if (isstacktype(uc->etype))
+		blit(g, dst, elt, sz, al);
+	else
+		o(g, storeop(uc->etype), Zq, elt, dst);
+	return u;
 }
 
 static Loc strlabel(Gen *g, Node *str) {
@@ -800,9 +826,9 @@ static Loc loadlit(Gen *g, Node *n)
 
 Loc rval(Gen *g, Node *n)
 {
-	Loc r; /* expression result */
 	Node **args;
 	Type *ty;
+	Loc r, l;
 	Op op;
 
 	r = Zq;
@@ -854,10 +880,10 @@ Loc rval(Gen *g, Node *n)
 
 	case Oasn:	r = assign(g, args[0], args[1]);	break;
 
-	case Oslbase:	r = slicebase(g, args[0], args[1]);	break;
+	case Oslbase:	r = seqbase(g, args[0], args[1]);	break;
 	case Osllen:	r = slicelen(g, rval(g, args[0]));	break;
 	case Oslice:	r = genslice(g, n);			break;
-	case Oidx:	r = loadidx(g, args[0], args[1]);	break;
+	case Oidx:	r = seqbase(g, args[0], args[1]);	break;
 
 	case Ocast:	r = simpcast(g, args[0], exprtype(n));	break;
 	case Ocall:	r = gencall(g, n);			break;
@@ -894,9 +920,17 @@ Loc rval(Gen *g, Node *n)
 		o(g, Qjnz, rval(g, args[0]), qlabel(g, args[1]), qlabel(g, args[2]));
 		break;
 
-	case Omemb:
-	case Oucon:
 	case Outag:
+		l = rval(g, args[0]);
+		r = qtemp(g, 'w');
+		o(g, Qloadw, r, l, Zq);
+		break;
+
+	case Oucon:
+		r = genucon(g, n);
+		break;
+
+	case Omemb:
 	case Oudata:
 	case Otup:
 	case Oarr:
@@ -918,6 +952,7 @@ Loc rval(Gen *g, Node *n)
 	case Oflt2flt:
 	case Ofneg:
                 die("unimplemented operator %s", opstr[exprop(n)]);
+		break;
 
 	case Odead:
 	case Oundef:
@@ -929,9 +964,9 @@ Loc rval(Gen *g, Node *n)
 	case Oaddeq: case Osubeq: case Omuleq: case Odiveq: case Omodeq:
 	case Oboreq: case Obandeq: case Obxoreq: case Obsleq: case Obsreq:
 	case Opreinc: case Opredec: case Opostinc: case Opostdec:
-	case Obreak: case Ocontinue: case Oslgen:
+	case Obreak: case Ocontinue:
 	case Numops:
-                die("invalid operator: should have been removed");
+                die("invalid operator %s: should have been removed", opstr[exprop(n)]);
 	case Obad:
 		die("bad operator");
 		break;
