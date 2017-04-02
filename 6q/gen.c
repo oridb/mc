@@ -145,11 +145,6 @@ static Loc qconst(Gen *g, uint64_t cst, char tag)
 
 static void o(Gen *g, Qop op, Loc r, Loc a, Loc b)
 {
-	if (op == Qadd) {
-		assert(r.tag);
-		assert(a.tag);
-		assert(b.tag);
-	}
 	if (g->ninsn == g->insnsz) {
 		g->insnsz += g->insnsz/2 + 1;
 		g->insn = xrealloc(g->insn, g->insnsz * sizeof(Insn));
@@ -210,7 +205,12 @@ static Loc ptrsized(Gen *g, Loc v)
 	if (v.tag == 'l')
 		return v;
 	r = qtemp(g, 'l');
-	o(g, Qcopy, r, v, Zq);
+	switch (v.tag) {
+	case 'w':	o(g, Qextuw, r, v, Zq);	break;
+	case 'h':	o(g, Qextuh, r, v, Zq);	break;
+	case 'b':	o(g, Qextub, r, v, Zq);	break;
+	default:	die("invalid tag\n");	break;
+	}
 	return r;
 }
 
