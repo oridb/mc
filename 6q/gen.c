@@ -55,7 +55,7 @@ static void ocall(Gen *g, Loc fn, Loc ret, Loc env, Loc *args, Type **types, siz
 static Loc rval(Gen *g, Node *n);
 static Loc lval(Gen *g, Node *n);
 static Loc seqbase(Gen *g, Node *sl, Node *off);
-static Loc slicelen(Gen *g, Loc sl);
+static Loc slicelen(Gen *g, Node *n, Type *rty);
 static Loc gencast(Gen *g, Srcloc loc, Loc val, Type *to, Type *from);
 
 static Loc abortoob;
@@ -145,8 +145,6 @@ static Loc qconst(Gen *g, uint64_t cst, char tag)
 
 static void o(Gen *g, Qop op, Loc r, Loc a, Loc b)
 {
-	if (op == Qcsltl)
-		assert(a.tag == b.tag);
 	if (g->ninsn == g->insnsz) {
 		g->insnsz += g->insnsz/2 + 1;
 		g->insn = xrealloc(g->insn, g->insnsz * sizeof(Insn));
@@ -411,14 +409,16 @@ static Loc binopk(Gen *g, Qop op, Node *n, uvlong k)
 	return r;
 }
 
-static Loc slicelen(Gen *g, Loc sl)
+static Loc slicelen(Gen *g, Node *n, Type *ty)
 {
-	Loc lp, r;
+	Loc sl, lp, r;
 
+	ty = tybase(ty);
+	sl = rval(g, n);
 	lp = qtemp(g, 'l');
-	r = qtemp(g, 'l');
+	r = qtemp(g, qtag(g, ty));
 	o(g, Qadd, lp, sl, ptrsize);
-	o(g, Qloadl, r, lp, Zq);
+	o(g, loadop(ty), r, lp, Zq);
 	return r;
 }
 
@@ -443,20 +443,18 @@ Loc cmpop(Gen *g, Op op, Node *ln, Node *rn)
 	};
 
 	Loc l, r, t;
-	char tag;
 	Type *ty;
 	Qop qop;
 
 	ty = exprtype(ln);
-	tag = qtag(g, ty);
-	if (istyfloat(ty))
-		qop = fltcmptab[op][tag == 'd'];
-	else
-		qop = intcmptab[op][istysigned(ty)][tag == 'l'];
-
-	t = qtemp(g, tag);
 	l = rval(g, ln);
 	r = rval(g, rn);
+	t = qtemp(g, qtag(g, ty));
+	if (istyfloat(ty))
+		qop = fltcmptab[op][l.tag == 'd'];
+	else
+		qop = intcmptab[op][l.tag == 'l'][istysigned(ty)];
+
 	o(g, qop, t, l, r);
 	return t;
 }
@@ -893,7 +891,7 @@ Loc rval(Gen *g, Node *n)
 	case Oasn:	r = assign(g, args[0], args[1]);	break;
 
 	case Oslbase:	r = seqbase(g, args[0], args[1]);	break;
-	case Osllen:	r = slicelen(g, rval(g, args[0]));	break;
+	case Osllen:	r = slicelen(g, args[0], exprtype(n));	break;
 	case Oslice:	r = genslice(g, n);			break;
 	case Oidx:	r = seqbase(g, args[0], args[1]);	break;
 
