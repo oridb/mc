@@ -145,6 +145,8 @@ static Loc qconst(Gen *g, uint64_t cst, char tag)
 
 static void o(Gen *g, Qop op, Loc r, Loc a, Loc b)
 {
+	if (op == Qcsltl)
+		assert(a.tag == b.tag);
 	if (g->ninsn == g->insnsz) {
 		g->insnsz += g->insnsz/2 + 1;
 		g->insn = xrealloc(g->insn, g->insnsz * sizeof(Insn));
@@ -258,6 +260,62 @@ char *qtype(Gen *g, Type *ty)
 	case Typtr:	return "l";	break;
 	default:	return g->typenames[ty->tid];	break;
 	}
+}
+
+static Qop loadop(Type *ty)
+{
+	Qop op;
+
+	switch (tybase(ty)->type) {
+	case Tybool:	op = Qloadub;	break;
+	case Tybyte:	op = Qloadub;	break;
+	case Tyuint8:	op = Qloadub;	break;
+	case Tyint8:	op = Qloadsb;	break;
+
+	case Tyint16:	op = Qloadsh;	break;
+	case Tyuint16:	op = Qloaduh;	break;
+
+	case Tyint:	op = Qloadsw;	break;
+	case Tyint32:	op = Qloadsw;	break;
+	case Tychar:	op = Qloaduw;	break;
+	case Tyuint32:	op = Qloaduw;	break;
+
+	case Tyint64:	op = Qloadl;	break;
+	case Tyuint64:	op = Qloadl;	break;
+	case Typtr:	op = Qloadl;	break;
+	case Tyflt32:	op = Qloads;	break;
+	case Tyflt64:	op = Qloadd;	break;
+	default:	die("badload");	break;
+	}
+	return op;
+}
+
+static Qop storeop(Type *ty)
+{
+	Qop op;
+
+	switch (tybase(ty)->type) {
+	case Tybool:	op = Qstoreb;	break;
+	case Tybyte:	op = Qstoreb;	break;
+	case Tyuint8:	op = Qstoreb;	break;
+	case Tyint8:	op = Qstoreb;	break;
+
+	case Tyint16:	op = Qstoreh;	break;
+	case Tyuint16:	op = Qstoreh;	break;
+
+	case Tyint:	op = Qstorew;	break;
+	case Tyint32:	op = Qstorew;	break;
+	case Tychar:	op = Qstorew;	break;
+	case Tyuint32:	op = Qstorew;	break;
+
+	case Tyint64:	op = Qstorel;	break;
+	case Tyuint64:	op = Qstorel;	break;
+	case Typtr:	op = Qstorel;	break;
+	case Tyflt32:	op = Qstores;	break;
+	case Tyflt64:	op = Qstored;	break;
+	default:	die("badstore");	break;
+	}
+	return op;
 }
 
 void fillglobls(Stab *st, Htab *globls)
@@ -402,64 +460,6 @@ Loc cmpop(Gen *g, Op op, Node *ln, Node *rn)
 	o(g, qop, t, l, r);
 	return t;
 }
-
-static Qop loadop(Type *ty)
-{
-	Qop op;
-
-	switch (tybase(ty)->type) {
-	case Tybool:	op = Qloadub;	break;
-	case Tybyte:	op = Qloadub;	break;
-	case Tyuint8:	op = Qloadub;	break;
-	case Tyint8:	op = Qloadsb;	break;
-
-	case Tyint16:	op = Qloadsh;	break;
-	case Tyuint16:	op = Qloaduh;	break;
-
-	case Tyint:	op = Qloadsw;	break;
-	case Tyint32:	op = Qloadsw;	break;
-	case Tychar:	op = Qloaduw;	break;
-	case Tyuint32:	op = Qloaduw;	break;
-
-	case Tyint64:	op = Qloadl;	break;
-	case Tyuint64:	op = Qloadl;	break;
-	case Typtr:	op = Qloadl;	break;
-	case Tyflt32:	op = Qloads;	break;
-	case Tyflt64:	op = Qloadd;	break;
-	default:	die("badload");	break;
-	}
-	return op;
-}
-
-static Qop storeop(Type *ty)
-{
-	Qop op;
-
-	switch (tybase(ty)->type) {
-	case Tybool:	op = Qstoreb;	break;
-	case Tybyte:	op = Qstoreb;	break;
-	case Tyuint8:	op = Qstoreb;	break;
-	case Tyint8:	op = Qstoreb;	break;
-
-	case Tyint16:	op = Qstoreh;	break;
-	case Tyuint16:	op = Qstoreh;	break;
-
-	case Tyint:	op = Qstorew;	break;
-	case Tyint32:	op = Qstorew;	break;
-	case Tychar:	op = Qstorew;	break;
-	case Tyuint32:	op = Qstorew;	break;
-
-	case Tyint64:	op = Qstorel;	break;
-	case Tyuint64:	op = Qstorel;	break;
-	case Typtr:	op = Qstorel;	break;
-	case Tyflt32:	op = Qstores;	break;
-	case Tyflt64:	op = Qstored;	break;
-	default:	die("badstore");	break;
-	}
-	return op;
-}
-
-
 
 static Loc intcvt(Gen *g, Loc val, char to, int sz, int sign)
 {
