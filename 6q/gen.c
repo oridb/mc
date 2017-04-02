@@ -58,9 +58,6 @@ static Loc seqbase(Gen *g, Node *sl, Node *off);
 static Loc slicelen(Gen *g, Loc sl);
 static Loc gencast(Gen *g, Srcloc loc, Loc val, Type *to, Type *from);
 
-static Type *tyintptr;
-static Type *tyword;
-static Type *tyvoid;
 static Loc abortoob;
 static Loc ptrsize;
 
@@ -148,6 +145,11 @@ static Loc qconst(Gen *g, uint64_t cst, char tag)
 
 static void o(Gen *g, Qop op, Loc r, Loc a, Loc b)
 {
+	if (op == Qadd) {
+		assert(r.tag);
+		assert(a.tag);
+		assert(b.tag);
+	}
 	if (g->ninsn == g->insnsz) {
 		g->insnsz += g->insnsz/2 + 1;
 		g->insn = xrealloc(g->insn, g->insnsz * sizeof(Insn));
@@ -297,10 +299,7 @@ static void initconsts(Gen *g, Htab *globls)
 	Node *dcl;
 	char buf[1024];
 
-	tyintptr = mktype(Zloc, Tyuint64);
-	tyword = mktype(Zloc, Tyuint);
-	tyvoid = mktype(Zloc, Tyvoid);
-
+	ptrsize = qconst(g, Ptrsz, 'l');
 	ty = mktyfunc(Zloc, NULL, 0, mktype(Zloc, Tyvoid));
 	ty->type = Tycode;
 	name = mknsname(Zloc, "_rt", "abort_oob");
@@ -360,7 +359,7 @@ static Loc slicelen(Gen *g, Loc sl)
 
 	lp = qtemp(g, 'l');
 	r = qtemp(g, 'l');
-	o(g, Qadd, lp, sl, qconst(g, Ptrsz, 'l'));
+	o(g, Qadd, lp, sl, ptrsize);
 	o(g, Qloadl, r, lp, Zq);
 	return r;
 }
@@ -503,7 +502,7 @@ static Loc gencast(Gen *g, Srcloc loc, Loc val, Type *to, Type *from)
 				lfatal(loc, "bad cast from %s to %s", tystr(from), tystr(to));
 			a = qtemp(g, 'l');
 			r = qtemp(g, 'l');
-			o(g, Qadd, a, val, qconst(g, Ptrsz, 'l'));
+			o(g, Qadd, a, val, ptrsize);
 			o(g, Qloadl, r, a, Zq);
 			break;
 		/* signed conversions */
