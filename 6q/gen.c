@@ -1078,8 +1078,8 @@ void emitloc(Gen *g, Loc l, char *sep)
 
 void emitinsn(Gen *g, Insn *insn)
 {
+	char *sep, *t;
 	size_t i;
-	char *sep;
 
 	if (insn->op != Qlabel)
 		fprintf(g->f, "\t");
@@ -1106,7 +1106,10 @@ void emitinsn(Gen *g, Insn *insn)
 		fprintf(g->f, "(");
 		for (i = 0; i < insn->nfarg; i++) {
 			sep = (i == insn->nfarg - 1) ? "" : ", ";
-			fprintf(g->f, "%s ", qtype(g, insn->fty[i]));
+			t = qtype(g, insn->fty[i]);
+			if (!strcmp(t, "b") || !strcmp(t, "h"))
+				t = "w";
+			fprintf(g->f, "%s ", t);
 			emitloc(g, insn->farg[i], sep);
 		}
 		fprintf(g->f, ")");
@@ -1130,7 +1133,7 @@ void emitfn(Gen *g, Node *dcl)
 	Node *a, *n, *fn;
 	Type *ty, *rtype;
 	size_t i, arg;
-	char *sep;
+	char *sep, *t;
 
 	n = dcl->decl.init;
 	n = n->expr.args[0];
@@ -1147,7 +1150,10 @@ void emitfn(Gen *g, Node *dcl)
 		ty = tybase(decltype(a));
 		if (ty->type != Tyvoid) {
 			sep = (arg == g->narg - 1) ? "" : ", ";
-			fprintf(g->f, "%s ", qtype(g, ty));
+			t = qtype(g, ty);
+			if (!strcmp(t, "b") || !strcmp(t, "h"))
+				t = "w";
+			fprintf(g->f, "%s ", t);
 			emitloc(g, g->arg[arg++], sep);
 		}
 	}
