@@ -209,9 +209,12 @@ char *strfmt(char *fmt, ...)
 	size_t n;
 
 	va_start(ap, fmt);
-	n = sprintf(NULL, fmt, ap);
+	n = vsnprintf(NULL, 0, fmt, ap);
 	buf = xalloc(n + 1);
-	sprintf(buf, fmt, ap);
+	va_end(ap);
+
+	va_start(ap, fmt);
+	vsnprintf(buf, n + 1, fmt, ap);
 	va_end(ap);
 	return buf;
 }

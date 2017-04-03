@@ -41,7 +41,7 @@ struct Loc {
 		vlong tmp;
 		vlong cst;
 		char *lbl;
-		char *blob;
+		Blob *blob;
 	};
 };
 

@@ -23,11 +23,9 @@ struct Gen {
 	FILE *f;
 	Cfg *cfg;
 	char **typenames;
-	Htab *strtab;
-
-	/* memory offsets/addrs */
 	Htab *globls;
-	Htab *strings;
+	Blob **blobs;
+	size_t nblobs;
 
 	Node **local;
 	size_t nlocal;
@@ -138,6 +136,11 @@ static Loc qlabel(Gen *g, Node *lbl)
 static Loc qconst(Gen *g, uint64_t cst, char tag)
 {
 	return (Loc){.kind=Lconst, .cst=cst, .tag=tag};
+}
+
+static Loc qblob(Gen *g, Blob *b)
+{
+	return (Loc){.kind=Lblob, .blob=b, .tag='l'};
 }
 
 static void o(Gen *g, Qop op, Loc r, Loc a, Loc b)
@@ -812,9 +815,26 @@ static Loc genucon(Gen *g, Node *n)
 	return u;
 }
 
+static Blob *strblob(Str s)
+{
+	Blob **v, *b;
+	char buf[128];
+
+	v = xalloc(2*sizeof(Blob*));
+	v[0] = mkblobi(Bti64, s.len);
+	v[1] = mkblobbytes(s.buf, s.len); 
+	b = mkblobseq(v, 2);
+	b->lbl = strdup(genlblstr(buf, sizeof buf, ""));
+	return b;
+}
+
 static Loc strlabel(Gen *g, Node *s)
 {
-	die("unimplemented");
+	Blob *b;
+
+	b = strblob(s->lit.strval);
+	lappend(&g->blobs, &g->nblobs, b);
+	return qblob(g, b);
 }
 
 static Loc loadlit(Gen *g, Node *n)
@@ -1063,6 +1083,7 @@ void emitloc(Gen *g, Loc l, char *sep)
 	if (!l.tag)
 		return;
 	switch (l.kind) {
+	case Lblob:	fprintf(g->f, "$%s%s", l.blob->lbl, sep);	break;
 	case Ltemp:	fprintf(g->f, "%%.%lld%s", l.tmp, sep);	break;
 	case Lconst:	fprintf(g->f, "%lld%s", l.cst, sep);	break;
 	case Llabel:	fprintf(g->f, "@%s%s", l.lbl, sep);	break;
@@ -1220,6 +1241,10 @@ void genfn(Gen *g, Node *dcl)
 	free(g->arg);
 }
 
+void genglobl(Gen *g, Node *dcl)
+{
+}
+
 static void encodemin(Gen *g, uint64_t val)
 {
 	size_t i, shift;
@@ -1294,8 +1319,12 @@ void genblob(Gen *g, Blob *b)
 	}
 }
 
-void gendata(Gen *g, Node *n)
+void gendata(Gen *g)
 {
+	size_t i;
+
+	for (i = 0; i < g->nblobs; i++)
+		genblob(g, g->blobs[i]);
 }
 
 void gentydesc(Gen *g)
@@ -1514,7 +1543,6 @@ void gen(Node *file, char *out)
 	initconsts(g, globls);
 	fillglobls(file->file.globls, globls);
 
-	g->strtab = mkht(strlithash, strliteq);
 	g->globls = mkht(varhash, vareq);
 
 	genqtypes(g);
@@ -1533,7 +1561,7 @@ void gen(Node *file, char *out)
 				g->nlocal = nlocals;
 				genfn(g, n);
 			} else {
-				gendata(g, n);
+				genglobl(g, n);
 			}
 			break;
 		default:
@@ -1542,6 +1570,7 @@ void gen(Node *file, char *out)
 		}
 	}
 	popstab();
+	gendata(g);
 	gentydesc(g);
 	fclose(g->f);
 }
