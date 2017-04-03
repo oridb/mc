@@ -815,16 +815,20 @@ static Loc genucon(Gen *g, Node *n)
 	return u;
 }
 
-static Blob *strblob(Str s)
+static Blob *strblob(Gen *g, Str s)
 {
-	Blob **v, *b;
+	Blob **v, *d, *b;
 	char buf[128];
 
+	d = mkblobbytes(s.buf, s.len);
+	d->lbl = strdup(genlblstr(buf, sizeof buf, ""));
+	lappend(&g->blobs, &g->nblobs, d);
 	v = xalloc(2*sizeof(Blob*));
 	v[0] = mkblobi(Bti64, s.len);
-	v[1] = mkblobbytes(s.buf, s.len); 
+	v[1] = mkblobref(d->lbl, 0, 0);
 	b = mkblobseq(v, 2);
 	b->lbl = strdup(genlblstr(buf, sizeof buf, ""));
+	lappend(&g->blobs, &g->nblobs, b);
 	return b;
 }
 
@@ -832,8 +836,7 @@ static Loc strlabel(Gen *g, Node *s)
 {
 	Blob *b;
 
-	b = strblob(s->lit.strval);
-	lappend(&g->blobs, &g->nblobs, b);
+	b = strblob(g, s->lit.strval);
 	return qblob(g, b);
 }
 
