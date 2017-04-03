@@ -29,7 +29,8 @@ typedef enum {
 	Ldecl,
 	Ltemp,
 	Llabel,
-	Lconst
+	Lconst,
+	Lblob,
 } Loctype;
 
 struct Loc {
@@ -40,6 +41,7 @@ struct Loc {
 		vlong tmp;
 		vlong cst;
 		char *lbl;
+		char *blob;
 	};
 };
 

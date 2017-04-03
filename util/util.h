@@ -123,6 +123,7 @@ void die(char *msg, ...) FATAL;
 char *strdupn(char *s, size_t len);
 char *xstrdup(char *s);
 char *strjoin(char *u, char *v);
+char *strfmt(char *fmt, ...);
 void *memdup(void *mem, size_t len);
 size_t bprintf(char *buf, size_t len, char *fmt, ...);
 

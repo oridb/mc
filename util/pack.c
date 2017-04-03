@@ -202,6 +202,20 @@ size_t bprintf(char *buf, size_t sz, char *fmt, ...)
 	return n;
 }
 
+char *strfmt(char *fmt, ...)
+{
+	va_list ap;
+	char *buf;
+	size_t n;
+
+	va_start(ap, fmt);
+	n = sprintf(NULL, fmt, ap);
+	buf = xalloc(n + 1);
+	sprintf(buf, fmt, ap);
+	va_end(ap);
+	return buf;
+}
+
 void wrbool(FILE *fd, int val)
 { 
 	wrbyte(fd, val);

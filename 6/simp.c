@@ -381,7 +381,7 @@ static Node *ptrsized(Simp *s, Node *v)
 	else if (size(v) < Ptrsz)
 		v = mkexpr(v->loc, Ozwiden, v, NULL);
 	else if (size(v) > Ptrsz)
-		v = mkexpr(v->loc, Otrunc, v, NULL);
+		v = mkexpr(v->loc, O:rtrunc, v, NULL);
 	v->expr.type = tyintptr;
 	return v;
 }

@@ -26,10 +26,8 @@ struct Gen {
 	Htab *strtab;
 
 	/* memory offsets/addrs */
-	Htab *envoff;
-	Htab *stkoff;
 	Htab *globls;
-	size_t stksz;
+	Htab *strings;
 
 	Node **local;
 	size_t nlocal;
@@ -84,7 +82,7 @@ int isstack(Node *n)
 		return isstacktype(n->decl.type);
 }
 
-char *asmname(char *buf, size_t nbuf, Node *n, char sigil)
+char *asmname(Node *n, char sigil)
 {
 	char *ns, *name, *sep;
 
@@ -95,8 +93,7 @@ char *asmname(char *buf, size_t nbuf, Node *n, char sigil)
 	sep = "";
 	if (ns && ns[0])
 		sep = "$";
-	bprintf(buf, nbuf, "%c%s%s%s", sigil, ns, sep, name);
-	return buf;
+	return strfmt("%c%s%s%s", sigil, ns, sep, name);
 }
 
 
@@ -318,19 +315,19 @@ static Qop storeop(Type *ty)
 
 void fillglobls(Stab *st, Htab *globls)
 {
-	char buf[1024];
 	size_t i, j, nk, nns;
 	void **k, **ns;
 	Stab *stab;
 	Node *s;
+	char *n;
 
 	k = htkeys(st->dcl, &nk);
 	for (i = 0; i < nk; i++) {
 		s = htget(st->dcl, k[i]);
 		if (isconstfn(s))
 			s->decl.type = codetype(s->decl.type);
-		asmname(buf, sizeof buf, s->decl.name, '$');
-		htput(globls, s, strdup(buf));
+		n = asmname(s->decl.name, '$');
+		htput(globls, s, n);
 	}
 	free(k);
 
@@ -340,8 +337,8 @@ void fillglobls(Stab *st, Htab *globls)
 		k = htkeys(stab->dcl, &nk);
 		for (i = 0; i < nk; i++) {
 			s = htget(stab->dcl, k[i]);
-			asmname(buf, sizeof buf, s->decl.name, '$');
-			htput(globls, s, strdup(buf));
+			n = asmname(s->decl.name, '$');
+			htput(globls, s, n);
 		}
 		free(k);
 	}
@@ -353,7 +350,7 @@ static void initconsts(Gen *g, Htab *globls)
 	Type *ty;
 	Node *name;
 	Node *dcl;
-	char buf[1024];
+	char *n;
 
 	ptrsize = qconst(g, Ptrsz, 'l');
 	ty = mktyfunc(Zloc, NULL, 0, mktype(Zloc, Tyvoid));
@@ -363,8 +360,8 @@ static void initconsts(Gen *g, Htab *globls)
 	dcl->decl.isconst = 1;
 	dcl->decl.isextern = 1;
 	dcl->decl.isglobl = 1;
-	asmname(buf, sizeof buf, dcl->decl.name, '$');
-	htput(globls, dcl, strdup(buf));
+	n = asmname(dcl->decl.name, '$');
+	htput(globls, dcl, n);
 
 	abortoob = qvar(g, dcl);
 }
@@ -815,8 +812,9 @@ static Loc genucon(Gen *g, Node *n)
 	return u;
 }
 
-static Loc strlabel(Gen *g, Node *str) {
-	die("strval not implemented\n");
+static Loc strlabel(Gen *g, Node *s)
+{
+	die("unimplemented");
 }
 
 static Loc loadlit(Gen *g, Node *n)
@@ -1058,9 +1056,9 @@ static const char *insnname[] = {
 
 void emitloc(Gen *g, Loc l, char *sep)
 {
-	char name[1024];
-	Node *dcl;
-	char globl;
+	Node *d;
+	char *n;
+	char c;
 	
 	if (!l.tag)
 		return;
@@ -1069,10 +1067,11 @@ void emitloc(Gen *g, Loc l, char *sep)
 	case Lconst:	fprintf(g->f, "%lld%s", l.cst, sep);	break;
 	case Llabel:	fprintf(g->f, "@%s%s", l.lbl, sep);	break;
 	case Ldecl:
-		dcl = decls[l.dcl];
-		globl = dcl->decl.isglobl ? '$' : '%';
-		asmname(name, sizeof name, dcl->decl.name, globl);
-		fprintf(g->f, "%s%s", name, sep);
+		d = decls[l.dcl];
+		c = d->decl.isglobl ? '$' : '%';
+		n = asmname(d->decl.name, c);
+		fprintf(g->f, "%s%s", n, sep);
+		free(n);
 	}
 }
 
@@ -1127,22 +1126,23 @@ void emitinsn(Gen *g, Insn *insn)
 	fprintf(g->f, "\n");
 }
 
-void emitfn(Gen *g, Node *dcl)
+void emitfn(Gen *g, Node *d)
 {
-	char name[1024], *export, *retname;
+	char *export, *retname;
 	Node *a, *n, *fn;
 	Type *ty, *rtype;
 	size_t i, arg;
-	char *sep, *t;
+	char *sep, *t, *name;
 
-	n = dcl->decl.init;
+	n = d->decl.init;
 	n = n->expr.args[0];
 	fn = n->lit.fnval;
 	rtype = tybase(g->rettype);
-	export = isexport(dcl) ? "export" : "";
-	asmname(name, sizeof name, dcl->decl.name, '$');
+	export = isexport(d) ? "export" : "";
+	name = asmname(d->decl.name, '$');
 	retname = (rtype->type == Tyvoid) ? "" : qtype(g, rtype);
 	fprintf(g->f, "%s function %s %s", export, retname, name);
+	free(name);
 	fprintf(g->f, "(");
 	arg = 0;
 	for (i = 0; i < fn->func.nargs; i++) {
@@ -1515,8 +1515,6 @@ void gen(Node *file, char *out)
 	fillglobls(file->file.globls, globls);
 
 	g->strtab = mkht(strlithash, strliteq);
-	g->stkoff = mkht(varhash, vareq);
-	g->envoff = mkht(varhash, vareq);
 	g->globls = mkht(varhash, vareq);
 
 	genqtypes(g);
