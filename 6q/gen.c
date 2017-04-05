@@ -27,6 +27,9 @@ struct Gen {
 	Blob **blobs;
 	size_t nblobs;
 
+	Type **vatype;
+	size_t nvatype;
+
 	Node **local;
 	size_t nlocal;
 	size_t nexttmp;
@@ -569,17 +572,21 @@ void blit(Gen *g, Loc dst, Loc src, size_t sz, size_t align)
 		[2] = {Qloaduh, Qstoreh},
 		[1] = {Qloadub, Qstoreb},
 	};
-	Loc l, a;
+	Loc l, a, s, d;
 	size_t i;
 
 	assert(sz % align == 0);
+	s = qtemp(g, 'l');
+	d = qtemp(g, 'l');
 	l = qtemp(g, 'l');
 	a = qconst(g, align, 'l');
+	o(g, Qcopy, s, src, Zq);
+	o(g, Qcopy, d, dst, Zq);
 	for (i = 0; i < sz; i += align) {
-		o(g, ops[align][0], l, src, Zq);
-		o(g, ops[align][1], Zq, l, dst);
-		o(g, Qadd, src, src, a);
-		o(g, Qadd, dst, dst, a);
+		o(g, ops[align][0], l, s, Zq);
+		o(g, ops[align][1], Zq, l, d);
+		o(g, Qadd, s, s, a);
+		o(g, Qadd, d, d, a);
 	}
 }
 
@@ -677,34 +684,126 @@ static Loc lval(Gen *g, Node *n)
 	return r;
 }
 
+static size_t countargs(Type *t)
+{
+	size_t n, i;
+
+	n = 0;
+	t = tybase(t);
+	for (i = 1; i < t->nsub; i++) {
+		if (tybase(t->sub[i])->type == Tyvalist)
+			break;
+		if (tybase(t->sub[i])->type != Tyvoid)
+			n++;
+	}
+	return n;
+}
+
+static Type *vatype(Gen *g, Srcloc l, Node **al, size_t na)
+{
+	Type **t;
+	size_t i, nt;
+
+	nt = 0;
+	t = NULL;
+	for (i = 0; i < na; i++) {
+		lappend(&t, &nt, exprtype(al[i]));
+	}
+	return mktytuple(l, t, nt);
+}
+
+static Loc vablob(Gen *g, Srcloc l, Type *t)
+{
+	Node *d;
+
+	gentemp(l, t, &d);
+	addlocal(g, d);
+	return qvar(g, d);
+}
+
+static Loc genvarargs(Gen *g, Srcloc l, Node **al, size_t na, Type **t)
+{
+	size_t i, sz, a, off;
+	Loc va, s, d;
+	Type *ty, *tt;
+	Blob *b;
+
+	assert(na >= 0);
+	/* genrate varargs */
+	sz = Ptrsz;	/* tydesc */
+	for (i = 0; i < na; i++) {
+		a  = min(size(al[i]), Ptrsz);
+		sz = align(sz, a);
+		sz += size(al[i]);
+	}
+	tt = vatype(g, l, al, na);
+	b = tydescblob(tt);
+	tagreflect(tt);
+	va = vablob(g, l, tt);
+	off = 0;
+	d = qtemp(g, 'l');
+	o(g, Qstorel, Zq, qblob(g, b), va);
+	o(g, Qadd, d, va, ptrsize);
+	for (i = 0; i < na; i++) {
+		ty = exprtype(al[i]);
+		off = align(off, tyalign(ty));
+		s = rval(g, al[i]);
+		d = qtemp(g, 'l');
+		o(g, Qadd, d, va, qconst(g, off, 'l'));
+		if (isstacktype(ty))
+			blit(g, d, s, tysize(ty), tyalign(ty));
+		else 
+			o(g, storeop(ty), Zq, s, d);
+		off += tysize(ty);
+	}
+
+	lappend(&g->vatype, &g->nvatype, tt);
+	g->typenames = xrealloc(g->typenames, ntypes * sizeof(Type*));
+	g->typenames[tt->tid] = strfmt(":t%d", tt->tid);
+
+	*t = tt;
+	return va;
+}
+
 static Loc gencall(Gen *g, Node *n)
 {
+	Type **tl, *ft, *vt, *ty;
+	size_t nva, na, i;
 	Loc env, ret, fn;
-	Loc *args;
-	Type **types, *ty;
-	size_t nargs, i;
+	Loc *al;
+	Node **va;
 
-	args = malloc(n->expr.nargs * sizeof(Loc));
-	types = malloc(n->expr.nargs * sizeof(Type *));
+	ft = exprtype(n->expr.args[0]);
+	al = xalloc(ft->nsub * sizeof(Loc));
+	tl = xalloc(ft->nsub * sizeof(Type *));
+	va = n->expr.args + (ft->nsub - 1);
+	nva = n->expr.nargs - (ft->nsub - 1);
 
 	ret = Zq;
 	env = Zq;
 	if (tybase(exprtype(n))->type != Tyvoid)
 		ret = temp(g, n);
 
-	nargs = 0;
-	for (i = 1; i < n->expr.nargs; i++) {
+	na = countargs(ft);
+	/* +1 to skip past the function */
+	for (i = 1; i <= na; i++) {
 		ty = exprtype(n->expr.args[i]);
 		ty = tybase(ty);
-		if (ty->type == Tyvoid)
+		if (ty->type == Tyvoid) {
+			rval(g, n->expr.args[i]);
 			continue;
-		args[nargs] = rval(g, n->expr.args[i]);
-		types[nargs] = ty;
-		nargs++;
+		}
+		al[i - 1] = rval(g, n->expr.args[i]);
+		tl[i - 1] = ty;
+	}
+	if (ft->sub[ft->nsub - 1]->type == Tyvalist) {
+		al[i - 1] = genvarargs(g, n->loc, va, nva, &vt);
+		tl[i - 1] = vt;
+		na++;
 	}
 	fn = rval(g, n->expr.args[0]);
 
-	ocall(g, fn, ret, env, args, types, nargs);
+	ocall(g, fn, ret, env, al, tl, na);
 	return ret;
 }
 
@@ -961,11 +1060,13 @@ Loc rval(Gen *g, Node *n)
 		r = genucon(g, n);
 		break;
 
+	case Ostruct:
+		r = genstruct(g, n);
+
 	case Omemb:
 	case Oudata:
 	case Otup:
 	case Oarr:
-	case Ostruct:
 	case Ogap:
 	case Oneg:
 	case Otupget:
@@ -1161,6 +1262,12 @@ void emitfn(Gen *g, Node *d)
 	n = d->decl.init;
 	n = n->expr.args[0];
 	fn = n->lit.fnval;
+
+	for (i = 0; i < g->nvatype; i++) {
+		ty = g->vatype[i];
+		fprintf(g->f, "type :t%d = align %zd { %zd }\n", ty->tid, tyalign(ty), tysize(ty));
+	}
+
 	rtype = tybase(g->rettype);
 	export = isexport(d) ? "export" : "";
 	name = asmname(d->decl.name, '$');
