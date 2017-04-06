@@ -711,7 +711,7 @@ static Loc genvarargs(Gen *g, Srcloc l, Node **al, size_t na, Type **t)
 	b = tydescblob(tt);
 	tagreflect(tt);
 	va = vablob(g, l, tt);
-	off = 0;
+	off =Ptrsz;
 	d = qtemp(g, 'l');
 	out(g, Qstorel, Zq, qblob(g, b), va);
 	out(g, Qadd, d, va, ptrsize);
@@ -894,8 +894,8 @@ static Blob *strblob(Gen *g, Str s)
 	d->lbl = strdup(genlblstr(buf, sizeof buf, ""));
 	lappend(&g->blobs, &g->nblobs, d);
 	v = xalloc(2*sizeof(Blob*));
-	v[0] = mkblobi(Bti64, s.len);
-	v[1] = mkblobref(d->lbl, 0, 0);
+	v[0] = mkblobref(d->lbl, 0, 0);
+	v[1] = mkblobi(Bti64, s.len);
 	b = mkblobseq(v, 2);
 	b->lbl = strdup(genlblstr(buf, sizeof buf, ""));
 	lappend(&g->blobs, &g->nblobs, b);
@@ -1275,7 +1275,8 @@ void emitfn(Gen *g, Node *d)
 
 	for (i = 0; i < g->nvatype; i++) {
 		ty = g->vatype[i];
-		fprintf(g->f, "type :t%d = align %zd { %zd }\n", ty->tid, tyalign(ty), tysize(ty));
+		fprintf(g->f, "type :t%d = align %zd { %zd }\n", 
+			ty->tid, tyalign(ty), tysize(ty) + Ptrsz);
 	}
 
 	rtype = tybase(g->rettype);

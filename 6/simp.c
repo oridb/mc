@@ -381,7 +381,7 @@ static Node *ptrsized(Simp *s, Node *v)
 	else if (size(v) < Ptrsz)
 		v = mkexpr(v->loc, Ozwiden, v, NULL);
 	else if (size(v) > Ptrsz)
-		v = mkexpr(v->loc, O:rtrunc, v, NULL);
+		v = mkexpr(v->loc, Otrunc, v, NULL);
 	v->expr.type = tyintptr;
 	return v;
 }
@@ -796,7 +796,7 @@ static Node *simpucon(Simp *s, Node *n, Node *dst)
 	Node *r;
 	Type *ty;
 	Ucon *uc;
-	size_t i, o;
+	size_t o;
 
 	/* find the ucon we're constructing here */
 	ty = tybase(n->expr.type);
