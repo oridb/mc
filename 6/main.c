@@ -102,7 +102,7 @@ static void assemble(char *asmsrc, char *path)
 	We don't want to keep the asm source around, but it's useful
 	for deubgging without mapping to line numbers.
 	*/
-	if (asmsyntax != Plan9)
+	if (asmsyntax != Plan9 && !writeasm)
 		unlink(asmsrc);
 }
 
