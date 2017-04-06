@@ -20,7 +20,7 @@ char qtag(Gen *g, Type *ty);
 static void outtypebody(Gen *g, Type *ty);
 static void outqtype(Gen *g, Type *ty);
 
-static void o(Gen *g, Qop o, Loc r, Loc a, Loc b);
+static void out(Gen *g, Qop o, Loc r, Loc a, Loc b);
 static void ocall(Gen *g, Loc fn, Loc ret, Loc env, Loc *args, Type **types, size_t nargs);
 static Loc rval(Gen *g, Node *n);
 static Loc lval(Gen *g, Node *n);
@@ -117,7 +117,7 @@ static Loc qblob(Gen *g, Blob *b)
 	return (Loc){.kind=Lblob, .blob=b, .tag='l'};
 }
 
-static void o(Gen *g, Qop op, Loc r, Loc a, Loc b)
+static void out(Gen *g, Qop op, Loc r, Loc a, Loc b)
 {
 	if (g->ninsn == g->insnsz) {
 		g->insnsz += g->insnsz/2 + 1;
@@ -162,7 +162,7 @@ static void addlocal(Gen *g, Node *n)
 	lappend(&g->local, &g->nlocal, n);
 }
 
-static Loc qstacktmp(Gen *g, Node *e)
+static Loc qstacktemp(Gen *g, Node *e)
 {
 	Node *dcl;
 
@@ -180,9 +180,9 @@ static Loc ptrsized(Gen *g, Loc v)
 		return v;
 	r = qtemp(g, 'l');
 	switch (v.tag) {
-	case 'w':	o(g, Qextuw, r, v, Zq);	break;
-	case 'h':	o(g, Qextuh, r, v, Zq);	break;
-	case 'b':	o(g, Qextub, r, v, Zq);	break;
+	case 'w':	out(g, Qextuw, r, v, Zq);	break;
+	case 'h':	out(g, Qextuh, r, v, Zq);	break;
+	case 'b':	out(g, Qextub, r, v, Zq);	break;
 	default:	die("invalid tag\n");	break;
 	}
 	return r;
@@ -352,7 +352,7 @@ static Loc binop(Gen *g, Qop op, Node *a, Node *b)
 	t = qtemp(g, tag);
 	l = rval(g, a);
 	r = rval(g, b);
-	o(g, op, t, l, r);
+	out(g, op, t, l, r);
 	return t;
 }
 
@@ -365,7 +365,7 @@ static Loc binopk(Gen *g, Qop op, Node *n, uvlong k)
 	t = qtemp(g, tag);
 	l = rval(g, n);
 	r = qconst(g, k, l.tag);
-	o(g, op, t, l, r);
+	out(g, op, t, l, r);
 	return t;
 }
 
@@ -378,7 +378,7 @@ static Loc binopk(Gen *g, Qop op, Node *n, uvlong k)
 	else {
 		r = qtemp(g, 'l');
 		p = binopk(g, Qadd, n, Ptrsz);
-		o(g, Qloadl, r, p, Zq);
+		out(g, Qloadl, r, p, Zq);
 	}
 	return r;
 }
@@ -391,8 +391,8 @@ static Loc slicelen(Gen *g, Node *n, Type *ty)
 	sl = rval(g, n);
 	lp = qtemp(g, 'l');
 	r = qtemp(g, qtag(g, ty));
-	o(g, Qadd, lp, sl, ptrsize);
-	o(g, loadop(ty), r, lp, Zq);
+	out(g, Qadd, lp, sl, ptrsize);
+	out(g, loadop(ty), r, lp, Zq);
 	return r;
 }
 
@@ -429,7 +429,7 @@ Loc cmpop(Gen *g, Op op, Node *ln, Node *rn)
 	else
 		qop = intcmptab[op][l.tag == 'l'][istysigned(ty)];
 
-	o(g, qop, t, l, r);
+	out(g, qop, t, l, r);
 	return t;
 }
 
@@ -444,7 +444,7 @@ static Loc intcvt(Gen *g, Loc val, char to, int sz, int sign)
 	};
 
 	t = qtemp(g, to);
-	o(g, optab[sz][sign], t, val, Zq);
+	out(g, optab[sz][sign], t, val, Zq);
 	return t;
 }
 
@@ -467,15 +467,15 @@ static Loc gencast(Gen *g, Srcloc loc, Loc val, Type *to, Type *from)
 			if (tysize(to) != Ptrsz)
 				lfatal(loc, "bad cast from %s to %s", tystr(from), tystr(to));
 			r = qtemp(g, 'l');
-			o(g, Qloadl, r, val, Zq);
+			out(g, Qloadl, r, val, Zq);
 			break;
 		case Tyfunc:
 			if (to->type != Typtr)
 				lfatal(loc, "bad cast from %s to %s", tystr(from), tystr(to));
 			a = qtemp(g, 'l');
 			r = qtemp(g, 'l');
-			o(g, Qadd, a, val, ptrsize);
-			o(g, Qloadl, r, a, Zq);
+			out(g, Qadd, a, val, ptrsize);
+			out(g, Qloadl, r, a, Zq);
 			break;
 		/* signed conversions */
 		case Tyint8: case Tyint16: case Tyint32: case Tyint64:
@@ -551,13 +551,13 @@ void blit(Gen *g, Loc dst, Loc src, size_t sz, size_t align)
 	d = qtemp(g, 'l');
 	l = qtemp(g, 'l');
 	a = qconst(g, align, 'l');
-	o(g, Qcopy, s, src, Zq);
-	o(g, Qcopy, d, dst, Zq);
+	out(g, Qcopy, s, src, Zq);
+	out(g, Qcopy, d, dst, Zq);
 	for (i = 0; i < sz; i += align) {
-		o(g, ops[align][0], l, s, Zq);
-		o(g, ops[align][1], Zq, l, d);
-		o(g, Qadd, s, s, a);
-		o(g, Qadd, d, d, a);
+		out(g, ops[align][0], l, s, Zq);
+		out(g, ops[align][1], Zq, l, d);
+		out(g, Qadd, s, s, a);
+		out(g, Qadd, d, d, a);
 	}
 }
 
@@ -572,7 +572,7 @@ Loc assign(Gen *g, Node *dst, Node* src)
 	if (isstacktype(ty))
 		blit(g, d, s, tysize(ty), tyalign(ty));
 	else 
-		o(g, storeop(ty), Zq, s, d);
+		out(g, storeop(ty), Zq, s, d);
 	return d;
 }
 
@@ -589,11 +589,11 @@ Loc assign(Gen *g, Node *dst, Node* src)
 	oklbl = qlabelstr(g, strdup(fail));
 	faillbl = qlabelstr(g, strdup(fail));
 
-	o(g, op, inrange, len, idx);
-	o(g, Qjnz, inrange, oklbl, faillbl);
-	o(g, Qlabel, faillbl, Zq, Zq);
+	out(g, op, inrange, len, idx);
+	out(g, Qjnz, inrange, oklbl, faillbl);
+	out(g, Qlabel, faillbl, Zq, Zq);
 	ocall(g, abortoob, Zq, Zq, NULL, NULL, 0);
-	o(g, Qlabel, oklbl, Zq, Zq);
+	out(g, Qlabel, oklbl, Zq, Zq);
 }
 
 static Loc loadvar(Gen *g, Node *var)
@@ -609,7 +609,7 @@ static Loc loadvar(Gen *g, Node *var)
 		r = l;
 	} else {
 		r = qtemp(g, l.tag);
-		o(g, loadop(ty), r, l, Zq);
+		out(g, loadop(ty), r, l, Zq);
 	}
 	return r;
 }
@@ -624,7 +624,7 @@ static Loc deref(Gen *g, Node *n)
 	if (isstacktype(ty))
 		return l;
 	r = qtemp(g, qtag(g, ty));
-	o(g, loadop(ty), r, l, Zq);
+	out(g, loadop(ty), r, l, Zq);
 	return r;
 }
 
@@ -713,18 +713,18 @@ static Loc genvarargs(Gen *g, Srcloc l, Node **al, size_t na, Type **t)
 	va = vablob(g, l, tt);
 	off = 0;
 	d = qtemp(g, 'l');
-	o(g, Qstorel, Zq, qblob(g, b), va);
-	o(g, Qadd, d, va, ptrsize);
+	out(g, Qstorel, Zq, qblob(g, b), va);
+	out(g, Qadd, d, va, ptrsize);
 	for (i = 0; i < na; i++) {
 		ty = exprtype(al[i]);
 		off = align(off, tyalign(ty));
 		s = rval(g, al[i]);
 		d = qtemp(g, 'l');
-		o(g, Qadd, d, va, qconst(g, off, 'l'));
+		out(g, Qadd, d, va, qconst(g, off, 'l'));
 		if (isstacktype(ty))
 			blit(g, d, s, tysize(ty), tyalign(ty));
 		else 
-			o(g, storeop(ty), Zq, s, d);
+			out(g, storeop(ty), Zq, s, d);
 		off += tysize(ty);
 	}
 
@@ -796,7 +796,7 @@ static Loc seqbase(Gen *g, Node *slnode, Node *offnode)
 	case Tyarray:	u = sl;	break;
 	case Tyslice:	
 		u = qtemp(g, 'l');
-		o(g, Qloadl, u, sl, Zq);
+		out(g, Qloadl, u, sl, Zq);
 		break;
 	default: 
 		die("Unslicable type %s", tystr(ty));
@@ -808,8 +808,8 @@ static Loc seqbase(Gen *g, Node *slnode, Node *offnode)
 	sz = tysize(slnode->expr.type->sub[0]);
 	v = qtemp(g, 'l');
 	r = qtemp(g, 'l');
-	o(g, Qmul, v, off, qconst(g, sz, 'l'));
-	o(g, Qadd, r, u, v);
+	out(g, Qmul, v, off, qconst(g, sz, 'l'));
+	out(g, Qadd, r, u, v);
 	return r;
 }
 
@@ -826,9 +826,9 @@ static Loc genslice(Gen *g, Node *n)
 	off = n->expr.args[1];
 	lim = n->expr.args[1];
 	ty = exprtype(arg);
-	sl = qstacktmp(g, n);
+	sl = qstacktemp(g, n);
 	lenp = qtemp(g, 'l');
-	o(g, Qadd, lenp, sl, ptrsize);
+	out(g, Qadd, lenp, sl, ptrsize);
 	/* Special case: Literal arrays with 0 need to be
 	have zero base pointers and lengths in order to 
 	act as nice initializers */
@@ -843,13 +843,13 @@ static Loc genslice(Gen *g, Node *n)
 	len = qtemp(g, 'l');
 	start = qtemp(g, 'l');
 
-	o(g, Qadd, base, base, lo);
-	o(g, Qsub, len, hi, lo);
-	o(g, Qmul, start, len, sz);
+	out(g, Qadd, base, base, lo);
+	out(g, Qsub, len, hi, lo);
+	out(g, Qmul, start, len, sz);
 
 	checkbounds(g, n, len);
-	o(g, Qstorel, Zq, base, sl);
-	o(g, Qstorel, Zq, len, lenp);
+	out(g, Qstorel, Zq, base, sl);
+	out(g, Qstorel, Zq, len, lenp);
 	return sl;
 }
 
@@ -865,9 +865,9 @@ static Loc genucon(Gen *g, Node *n)
 	if (!uc)
 		die("Couldn't find union constructor");
 
-	u = qstacktmp(g, n);
+	u = qstacktemp(g, n);
 	tag = qconst(g, uc->id, 'w');
-	o(g, Qstorew, Zq, tag, u);
+	out(g, Qstorew, Zq, tag, u);
 	if (!uc->etype)
 		return u;
 
@@ -875,13 +875,13 @@ static Loc genucon(Gen *g, Node *n)
 	sz = tysize(uc->etype);
 	dst = qtemp(g, 'l');
 	align = qconst(g, al, 'l');
-	o(g, Qadd, dst, u, align);
+	out(g, Qadd, dst, u, align);
 
 	elt = rval(g, n->expr.args[1]);
 	if (isstacktype(uc->etype))
 		blit(g, dst, elt, sz, al);
 	else
-		o(g, storeop(uc->etype), Zq, elt, dst);
+		out(g, storeop(uc->etype), Zq, elt, dst);
 	return u;
 }
 
@@ -925,11 +925,34 @@ static Loc loadlit(Gen *g, Node *n)
 	}
 }
 
+ssize_t memboff(Gen *g, Type *ty, Node *memb)
+{
+	size_t i;
+	size_t off;
+
+	ty = tybase(ty);
+	if (ty->type == Typtr)
+		ty = tybase(ty->sub[0]);
+
+	assert(ty->type == Tystruct);
+	off = 0;
+	for (i = 0; i < ty->nmemb; i++) {
+		off = alignto(off, decltype(ty->sdecls[i]));
+		if (!strcmp(namestr(memb), declname(ty->sdecls[i])))
+			return off;
+		off += size(ty->sdecls[i]);
+	}
+	die("bad member in offset");
+	return 0;
+}
+
 Loc rval(Gen *g, Node *n)
 {
-	Node **args;
-	Type *ty;
+	Node **args, *a;
+	Type *ty, *ety;
+	size_t i, o;
 	Loc r, l;
+	Loc d, s;
 	Op op;
 
 	r = Zq;
@@ -992,12 +1015,12 @@ Loc rval(Gen *g, Node *n)
 	case Ovar:	r = loadvar(g, n);			break;
 	case Olit:	r = loadlit(g, n);			break;
 	case Osize:	r = qconst(g, size(args[0]), 'l');	break;
-	case Ojmp:	o(g, Qjmp, qlabel(g, args[0]), Zq, Zq);	break;
+	case Ojmp:	out(g, Qjmp, qlabel(g, args[0]), Zq, Zq);	break;
 	case Oret:
 		ty = tybase(exprtype(args[0]));
 		if (ty->type != Tyvoid)
 			assign(g, g->retval, args[0]);
-		o(g, Qjmp, g->retlbl, Zq, Zq);
+		out(g, Qjmp, g->retlbl, Zq, Zq);
 		break;
 
 	case Oderef:
@@ -1006,7 +1029,7 @@ Loc rval(Gen *g, Node *n)
 			r = rval(g, args[0]);
 		} else {
 			r = temp(g, args[0]);
-			o(g, loadop(ty), r, rval(g, args[0]), Zq);
+			out(g, loadop(ty), r, rval(g, args[0]), Zq);
 		}
 		break;
 	case Oaddr:
@@ -1018,13 +1041,13 @@ Loc rval(Gen *g, Node *n)
 		break;
 
 	case Ocjmp:
-		o(g, Qjnz, rval(g, args[0]), qlabel(g, args[1]), qlabel(g, args[2]));
+		out(g, Qjnz, rval(g, args[0]), qlabel(g, args[1]), qlabel(g, args[2]));
 		break;
 
 	case Outag:
 		l = rval(g, args[0]);
 		r = qtemp(g, 'w');
-		o(g, Qloadw, r, l, Zq);
+		out(g, Qloadw, r, l, Zq);
 		break;
 
 	case Oucon:
@@ -1032,7 +1055,22 @@ Loc rval(Gen *g, Node *n)
 		break;
 
 	case Ostruct:
-		printf("unimplemented Ostruct\n");
+		r = qstacktemp(g, n);
+		d = r;
+		o = 0;
+		ety = exprtype(n);
+		for (i = 0; i < n->expr.nargs; i++) {
+			ty = exprtype(n);
+			a = n->expr.args[i];
+
+			s = rval(g, a);
+			o = memboff(g, ty, a->expr.idx);
+			out(g, Qadd, d, d, qconst(g, o, 'l'));
+			if (isstacktype(ty))
+				blit(g, d, s, tysize(ty), tyalign(ty));
+			else 
+				out(g, storeop(ty), Zq, s, d);
+		}
 		break;
 
 	case Omemb:
@@ -1083,7 +1121,7 @@ void genbb(Gen *g, Cfg *cfg, Bb *bb)
 	size_t i;
 
 	for (i = 0; i < bb->nlbls; i++)
-		o(g, Qlabel, qlabelstr(g, bb->lbls[i]), Zq, Zq);
+		out(g, Qlabel, qlabelstr(g, bb->lbls[i]), Zq, Zq);
 
 	for (i = 0; i < bb->nnl; i++) {
 		switch (bb->nl[i]->type) {
@@ -1119,7 +1157,7 @@ void spillargs(Gen *g, Node *fn)
 		} else {
 			arg = qtemp(g, qtag(g, ty));
 			val = qvar(g, a);
-			o(g, storeop(ty), Zq, arg, val);
+			out(g, storeop(ty), Zq, arg, val);
 			addlocal(g, a);
 		}
 		g->arg[i] = arg;
@@ -1311,12 +1349,12 @@ void genfn(Gen *g, Node *dcl)
 			continue;
 		genbb(g, cfg, bb);
 	}
-	o(g, Qlabel, g->retlbl, Zq, Zq);
+	out(g, Qlabel, g->retlbl, Zq, Zq);
 	if (g->retval)
 		r = rval(g, g->retval);
 	else
 		r = Zq;
-	o(g, Qret, Zq, r, Zq);
+	out(g, Qret, Zq, r, Zq);
 	emitfn(g, dcl);
 	g->ninsn = 0;
 	g->narg = 0;
@@ -1580,6 +1618,8 @@ void gen(Node *file, char *out)
 				/* nothing to do */ :
 				break;
 		case Ndecl:
+			if (n->decl.isgeneric)
+				break;
 			if (isconstfn(n)) {
 				n = flattenfn(n, &locals, &nlocals);
 				g->local = locals;
