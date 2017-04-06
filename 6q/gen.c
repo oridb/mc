@@ -16,35 +16,6 @@
 #include "qasm.h"
 #include "../config.h"
 
-typedef struct Gen Gen;
-
-
-struct Gen {
-	FILE *f;
-	Cfg *cfg;
-	char **typenames;
-	Htab *globls;
-	Blob **blobs;
-	size_t nblobs;
-
-	Type **vatype;
-	size_t nvatype;
-
-	Node **local;
-	size_t nlocal;
-	size_t nexttmp;
-
-	Type *rettype;
-	Node *retval;
-	Loc *arg;
-	size_t narg;
-	Loc retlbl;
-
-	Insn *insn;
-	size_t ninsn;
-	size_t insnsz;
-};
-
 char qtag(Gen *g, Type *ty);
 static void outtypebody(Gen *g, Type *ty);
 static void outqtype(Gen *g, Type *ty);
@@ -1061,7 +1032,8 @@ Loc rval(Gen *g, Node *n)
 		break;
 
 	case Ostruct:
-		r = genstruct(g, n);
+		printf("unimplemented Ostruct\n");
+		break;
 
 	case Omemb:
 	case Oudata:
@@ -1351,84 +1323,6 @@ void genfn(Gen *g, Node *dcl)
 	free(g->arg);
 }
 
-void genglobl(Gen *g, Node *dcl)
-{
-}
-
-static void encodemin(Gen *g, uint64_t val)
-{
-	size_t i, shift;
-	uint8_t b;
-
-	if (val < 128) {
-		fprintf(g->f, "\tb %zd,\n", val);
-		return;
-	}
-
-	for (i = 1; i < 8; i++)
-		if (val < 1ULL << (7*i))
-			break;
-	shift = 8 - i;
-	b = ~0ull << (shift + 1);
-	b |= val & ~(~0ull << shift);
-	fprintf(g->f, "\tb %u,\n", b);
-	val >>=  shift;
-	while (val != 0) {
-		fprintf(g->f, "\tb %u,\n", (uint)val & 0xff);
-		val >>= 8;
-	}
-}
-
-static void outbytes(Gen *g, char *p, size_t sz)
-{
-	size_t i;
-
-	for (i = 0; i < sz; i++) {
-		if (i % 60 == 0)
-			fprintf(g->f, "\tb \"");
-		if (p[i] == '"' || p[i] == '\\')
-			fprintf(g->f, "\\");
-		if (isprint(p[i]))
-			fprintf(g->f, "%c", p[i]);
-		else
-			fprintf(g->f, "\\%03o", (uint8_t)p[i] & 0xff);
-		/* line wrapping for readability */
-		if (i % 60 == 59 || i == sz - 1)
-			fprintf(g->f, "\",\n");
-	}
-}
-
-void genblob(Gen *g, Blob *b)
-{
-	size_t i;
-
-	if (b->lbl) {
-		if (b->iscomdat)
-			/* FIXME: emit once */
-		if (b->isglobl)
-			fprintf(g->f, "export ");
-		fprintf(g->f, "data $%s = {\n", b->lbl);
-	}
-
-	switch (b->type) {
-	case Btimin:	encodemin(g, b->ival);	break;
-	case Bti8:	fprintf(g->f, "\tb %zd,\n", b->ival);	break;
-	case Bti16:	fprintf(g->f, "\th %zd,\n", b->ival);	break;
-	case Bti32:	fprintf(g->f, "\tw %zd,\n", b->ival);	break;
-	case Bti64:	fprintf(g->f, "\tl %zd,\n", b->ival);	break;
-	case Btbytes:	outbytes(g, b->bytes.buf, b->bytes.len);	break;
-	case Btpad:	fprintf(g->f, "\tz %zd,\n", b->npad);	break;
-	case Btref:	fprintf(g->f, "\tl $%s + %zd,\n", b->ref.str, b->ref.off);	break;
-	case Btseq:
-		for (i = 0; i < b->seq.nsub; i++)
-			genblob(g, b->seq.sub[i]);
-		break;
-	}
-	if(b->lbl) {
-		fprintf(g->f, "}\n\n");
-	}
-}
-
 void gendata(Gen *g)
 {
 	size_t i;
@@ -1586,7 +1480,7 @@ static void outuniontype(Gen *g, Type *ty)
 	}
 }
 
-void outqtype(Gen *g, Type *t)
+static void outqtype(Gen *g, Type *t)
 {
 	char buf[1024];
 	Type *ty;
@@ -1624,7 +1518,8 @@ void outqtype(Gen *g, Type *t)
 	fprintf(g->f, "}\n\n");
 }
 
-void genqtypes(Gen *g)
+
+static void genqtypes(Gen *g)
 {
 	size_t i;
 
@@ -1632,6 +1527,26 @@ void genqtypes(Gen *g)
 	for (i = Ntypes; i < ntypes; i++) {
 		outqtype(g, types[i]);
 	}
+}
+
+static void genglobl(Gen *g, Node *dcl)
+{
+	Node *e;
+	Blob *b;
+	char *s;
+
+
+	e = dcl->decl.init;
+	e = fold(e, 1);
+	dcl->decl.init = e;
+	b = mkblobseq(NULL, 0);
+	blobrec(g, b, e);
+
+	s = asmname(dcl->decl.name, '$');
+	fprintf(g->f, "data %s =  {\n", s);
+	genblob(g, b);
+	fprintf(g->f, "}\n\n");
+	free(s);
 }
 
 void gen(Node *file, char *out)

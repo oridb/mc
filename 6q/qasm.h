@@ -6,6 +6,7 @@
 typedef struct Blob Blob;
 typedef struct Insn Insn;
 typedef struct Loc Loc;
+typedef struct Gen Gen;
 
 typedef enum {
 #define Insn(op) Q##op,
@@ -89,6 +90,31 @@ struct Blob {
 	};
 };
 
+struct Gen {
+	FILE *f;
+	Cfg *cfg;
+	char **typenames;
+	Htab *globls;
+	Blob **blobs;
+	size_t nblobs;
+
+	Type **vatype;
+	size_t nvatype;
+
+	Node **local;
+	size_t nlocal;
+	size_t nexttmp;
+
+	Type *rettype;
+	Node *retval;
+	Loc *arg;
+	size_t narg;
+	Loc retlbl;
+
+	Insn *insn;
+	size_t ninsn;
+	size_t insnsz;
+};
 
 void gen(Node *file, char *out);
 
@@ -109,6 +135,7 @@ Blob *mkblobref(char *lbl, size_t off, int isextern);
 void blobfree(Blob *b);
 
 Blob *tydescblob(Type *t);
-Blob *litblob(Htab *globls, Htab *strtab, Node *n);
 size_t blobsz(Blob *b);
+size_t blobrec(Gen *g, Blob *b, Node *n);
+void genblob(Gen *g, Blob *b);
 char *tydescid(char *buf, size_t bufsz, Type *ty);
