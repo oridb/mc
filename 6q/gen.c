@@ -402,13 +402,21 @@ static Loc slicelen(Gen *g, Node *n, Type *ty)
 
 Loc cmpop(Gen *g, Op op, Node *ln, Node *rn)
 {
-	Qop intcmptab[][2][2] = {
-		[Ole] = {{Qcslew, Qculew}, {Qcslel, Qculel}},
-		[Olt] = {{Qcsltw, Qcultw}, {Qcsltl, Qcultl}},
-		[Ogt] = {{Qcsgtw, Qcugtw}, {Qcsgtl, Qcugtl}},
-		[Oge] = {{Qcsgew, Qcugew}, {Qcsgel, Qcugel}},
-		[Oeq] = {{Qceqw, Qceqw}, {Qceql, Qceql}},
-		[One] = {{Qcnew, Qcnew}, {Qcnel, Qcnel}},
+	Qop intcmptab[][2] = {
+		/* signed */
+		[Ole]  = {Qcslew, Qcslel},
+		[Olt]  = {Qcsltw, Qcsltl},
+		[Ogt]  = {Qcsgtw, Qcsgtl},
+		[Oge]  = {Qcsgew, Qcsgel},
+		[Oeq]  = {Qceqw,  Qceql},
+		[One]  = {Qcnew,  Qcnel},
+		/* unsigned */
+		[Oule] = {Qculew, Qculel},
+		[Oult] = {Qcultw, Qcultl},
+		[Ougt] = {Qcugtw, Qcugtl},
+		[Ouge] = {Qcugew, Qcugel},
+		[Oueq] = {Qceqw,  Qceql},
+		[Oune] = {Qcnew,  Qcnel},
 	};
 
 	Qop fltcmptab[][2] = {
@@ -431,13 +439,13 @@ Loc cmpop(Gen *g, Op op, Node *ln, Node *rn)
 	if (istyfloat(ty))
 		qop = fltcmptab[op][l.tag == 'd'];
 	else
-		qop = intcmptab[op][l.tag == 'l'][istysigned(ty)];
+		qop = intcmptab[op][l.tag == 'l'];
 
 	out(g, qop, t, l, r);
 	return t;
 }
 
-static Loc intcvt(Gen *g, Loc val, char to, int sz, int sign)
+static Loc intcvt(Gen *g, Loc v, char to, int sz, int sign)
 {
 	Loc t;
 	Qop optab[][2] = {
@@ -448,7 +456,7 @@ static Loc intcvt(Gen *g, Loc val, char to, int sz, int sign)
 	};
 
 	t = qtemp(g, to);
-	out(g, optab[sz][sign], t, val, Zq);
+	out(g, optab[sz][sign], t, v, Zq);
 	return t;
 }
 
@@ -846,7 +854,11 @@ static Loc genslice(Gen *g, Node *n)
 		base = seqbase(g, arg, off);
 	}
 	lo = rval(g, off);
+	if (lo.tag != 'l')
+		lo = intcvt(g, lo, 'l', size(off), 1);
 	hi = rval(g, lim);
+	if (hi.tag != 'l')
+		hi = intcvt(g, hi, 'l', size(lim), 1);
 	sz = qconst(g, tysize(ty->sub[0]), 'l');
 	len = qtemp(g, 'l');
 	start = qtemp(g, 'l');
@@ -1061,7 +1073,11 @@ Loc rval(Gen *g, Node *n)
 		else
 			r = binop(g, Qshl, args[0], args[1]);
 		break;
-	case Obnot:	die("what's the operator for negate bits?\n");
+	case Obnot:	
+		r = qtemp(g, qtag(g, exprtype(n)));
+		l = qconst(g, ~0, qtag(g, exprtype(n)));
+		out(g, Qxor, r, rval(g, args[0]), l);
+		break;
 
 	/* comparisons */
 	case Oeq:	r = cmpop(g, op, args[0], args[1]);	break;
@@ -1155,6 +1171,18 @@ Loc rval(Gen *g, Node *n)
 		break;
 
 	case Omemb:
+		ty = exprtype(n->expr.args[0]);
+		s = rval(g, n->expr.args[0]);
+		o = memboff(g, ty, n->expr.args[1]);
+		l = qtemp(g, 'l');
+		out(g, Qadd, l, s, qconst(g, o, 'l'));
+		if (isstacktype(ty)) {
+			r = l;
+		} else {
+			r = qtemp(g, qtag(g, ty));
+			out(g, loadop(ty), r, l, Zq);
+		}
+		break;
 	case Oudata:
 	case Otup:
 	case Oarr:
@@ -1348,11 +1376,10 @@ void emitinsn(Gen *g, Insn *insn)
 
 void emitfn(Gen *g, Node *d)
 {
-	char *x, *rn;
 	Node *a, *n, *fn;
 	Type *ty, *rtype;
 	size_t i, arg;
-	char *sep, *t, *name;
+	char *x, *sep, *t, *name;
 
 	n = d->decl.init;
 	n = n->expr.args[0];
@@ -1367,8 +1394,10 @@ void emitfn(Gen *g, Node *d)
 	rtype = tybase(g->rettype);
 	x = isexport(d) ? "export " : "";
 	name = asmname(d->decl.name, '$');
-	rn = (rtype->type == Tyvoid) ? "" : qtype(g, rtype);
-	fprintf(g->f, "%sfunction %s %s", x, rn, name);
+	t = (rtype->type == Tyvoid) ? "" : qtype(g, rtype);
+	if (!strcmp(t, "b") || !strcmp(t, "h"))
+		t = "w";
+	fprintf(g->f, "%sfunction %s %s", x, t, name);
 	free(name);
 	fprintf(g->f, "(");
 	arg = 0;
@@ -1535,6 +1564,7 @@ void outtuple(Gen *g, Type *ty)
 
 void outtypebody(Gen *g, Type *ty)
 {
+	ty = tydedup(ty);
 	switch (ty->type) {
 	case Tyvoid:	break;
 	case Tybool:	fprintf(g->f, "\tb,\n");	break;
