@@ -1267,7 +1267,7 @@ void emitinsn(Gen *g, Insn *insn)
 
 void emitfn(Gen *g, Node *d)
 {
-	char *export, *retname;
+	char *x, *rn;
 	Node *a, *n, *fn;
 	Type *ty, *rtype;
 	size_t i, arg;
@@ -1284,10 +1284,10 @@ void emitfn(Gen *g, Node *d)
 	}
 
 	rtype = tybase(g->rettype);
-	export = isexport(d) ? "export" : "";
+	x = isexport(d) ? "export " : "";
 	name = asmname(d->decl.name, '$');
-	retname = (rtype->type == Tyvoid) ? "" : qtype(g, rtype);
-	fprintf(g->f, "%s function %s %s", export, retname, name);
+	rn = (rtype->type == Tyvoid) ? "" : qtype(g, rtype);
+	fprintf(g->f, "%sfunction %s %s", x, rn, name);
 	free(name);
 	fprintf(g->f, "(");
 	arg = 0;
@@ -1575,9 +1575,9 @@ static void genqtypes(Gen *g)
 
 static void genglobl(Gen *g, Node *dcl)
 {
+	char *s, *x;
 	Node *e;
 	Blob *b;
-	char *s;
 
 
 	e = dcl->decl.init;
@@ -1587,7 +1587,8 @@ static void genglobl(Gen *g, Node *dcl)
 	blobrec(g, b, e);
 
 	s = asmname(dcl->decl.name, '$');
-	fprintf(g->f, "data %s =  {\n", s);
+	x = isexport(dcl) ? "export " : "";
+	fprintf(g->f, "%sdata %s =  {\n", x, s);
 	genblob(g, b);
 	fprintf(g->f, "}\n\n");
 	free(s);

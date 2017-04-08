@@ -4,12 +4,12 @@ pkg sys =
 ;;
 
 const __init__ = {
-//	var sa, osa
-//
-//	/* is there ever a time we care about sigpipe? */
-//	sa = [
-//		.handler = ({;} : byte#),
-//		.flags = sys.Sarestart,
-//	]
-//	sys.sigaction(Sigpipe, &sa, &osa)
+	var sa, osa
+
+	/* is there ever a time we care about sigpipe? */
+	sa = [
+		.handler = ({;} : byte#),
+		.flags = sys.Sarestart,
+	]
+	sys.sigaction(Sigpipe, &sa, &osa)
 }
