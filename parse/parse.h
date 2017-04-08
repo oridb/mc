@@ -451,6 +451,7 @@ int istysigned(Type *t);
 int istyunsigned(Type *t);
 int istyfloat(Type *t);
 int istyprimitive(Type *t);
+int istyconcrete(Type *t);
 int hasparams(Type *t);
 
 /* type manipulation */

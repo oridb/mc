@@ -1078,6 +1078,12 @@ Loc rval(Gen *g, Node *n)
 		l = qconst(g, ~0, qtag(g, exprtype(n)));
 		out(g, Qxor, r, rval(g, args[0]), l);
 		break;
+	case Oneg:
+	case Ofneg:
+		r = qtemp(g, qtag(g, exprtype(n)));
+		l = qconst(g, 0, qtag(g, exprtype(n)));
+		out(g, Qsub, r, l, rval(g, args[0]));
+		break;
 
 	/* comparisons */
 	case Oeq:	r = cmpop(g, op, args[0], args[1]);	break;
@@ -1170,6 +1176,28 @@ Loc rval(Gen *g, Node *n)
 		}
 		break;
 
+	/* Otup and Oarr have a similar enough structure that this works */
+	case Oarr:
+	case Otup:
+		r = qstacktemp(g, n);
+		d = r;
+		o = 0;
+		ety = exprtype(n);
+		for (i = 0; i < n->expr.nargs; i++) {
+			a = n->expr.args[i];
+			ty = exprtype(a);
+
+			o = alignto(o, ty);
+			s = rval(g, a);
+			out(g, Qadd, d, d, qconst(g, o, 'l'));
+			if (isstacktype(ty))
+				blit(g, d, s, tysize(ty), tyalign(ty));
+			else 
+				out(g, storeop(ty), Zq, s, d);
+			o += tysize(ty);
+		}
+		break;
+
 	case Omemb:
 		ty = exprtype(n->expr.args[0]);
 		s = rval(g, n->expr.args[0]);
@@ -1184,10 +1212,13 @@ Loc rval(Gen *g, Node *n)
 		}
 		break;
 	case Oudata:
-	case Otup:
-	case Oarr:
+		ty = exprtype(n->expr.args[0]);
+		s = rval(g, n->expr.args[0]);
+		r = qtemp(g, 'l');
+		out(g, Qadd, r, s, qconst(g, Ptrsz, 'l'));
+		break;
+
 	case Ogap:
-	case Oneg:
 	case Otupget:
 	case Olnot:
 	case Ovjmp:
@@ -1201,7 +1232,6 @@ Loc rval(Gen *g, Node *n)
 	case Oflt2int:
 	case Oint2flt:
 	case Oflt2flt:
-	case Ofneg:
                 die("unimplemented operator %s", opstr[exprop(n)]);
 		break;
 
@@ -1644,6 +1674,8 @@ static void outqtype(Gen *g, Type *t)
 	ty = tydedup(t);
 	tt = ty->type;
 	if (tt == Tycode || tt == Tyvar || tt == Tyunres || hasparams(ty))
+		return;
+	if (!istyconcrete(ty))
 		return;
 	if (ty->vis == Visbuiltin)
 		return;

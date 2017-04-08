@@ -336,6 +336,65 @@ Ucon *finducon(Type *ty, Node *name)
 	return NULL;
 }
 
+/*
+ * Checks if a type contains any type
+ * parameers at all (ie, if it generic).
+ */
+int hasparamsrec(Type *t, Bitset *visited, int chkconcrete)
+{
+	size_t i;
+
+	if (bshas(visited, t->tid))
+		return 0;
+	bsput(visited, t->tid);
+	switch (t->type) {
+	case Tyvar:	return chkconcrete;
+	case Typaram:
+	case Tygeneric: return 1;
+	case Tyname:
+			for (i = 0; i < t->narg; i++)
+				if (hasparamsrec(t->arg[i], visited, chkconcrete))
+					return 1;
+			return hasparamsrec(t->sub[0], visited, chkconcrete);
+	case Tyunres:
+			if (chkconcrete)
+				return 0;
+			for (i = 0; i < t->narg; i++)
+				if (hasparamsrec(t->arg[i], visited, chkconcrete))
+					return 1;
+			break;
+	case Tystruct:
+			for (i = 0; i < t->nmemb; i++)
+				if (hasparamsrec(t->sdecls[i]->decl.type, visited, chkconcrete))
+					return 1;
+			break;
+	case Tyunion:
+			for (i = 0; i < t->nmemb; i++)
+				if (t->udecls[i]->etype && hasparamsrec(t->udecls[i]->etype, visited, chkconcrete))
+					return 1;
+			break;
+	default:
+			for (i = 0; i < t->nsub; i++)
+				if (hasparamsrec(t->sub[i], visited, chkconcrete))
+					return 1;
+			break;
+	}
+	return 0;
+}
+
+int hasparams(Type *t)
+{
+	Bitset *visited;
+
+	if (t->hasparams)
+		return 1;
+	visited = mkbs();
+	t->hasparams = hasparamsrec(t, visited, 0);
+	bsfree(visited);
+	return t->hasparams;
+}
+
+
 int istyunsigned(Type *t)
 {
 	switch (tybase(t)->type) {
@@ -371,59 +430,16 @@ int istyfloat(Type *t)
 
 int istyprimitive(Type *t) { return istysigned(t) || istyunsigned(t) || istyfloat(t); }
 
-/*
- * Checks if a type contains any type
- * parameers at all (ie, if it generic).
- */
-int hasparamsrec(Type *t, Bitset *visited)
-{
-	size_t i;
-
-	if (bshas(visited, t->tid))
-		return 0;
-	bsput(visited, t->tid);
-	switch (t->type) {
-	case Typaram:
-	case Tygeneric: return 1;
-	case Tyname:
-			for (i = 0; i < t->narg; i++)
-				if (hasparamsrec(t->arg[i], visited))
-					return 1;
-			return hasparamsrec(t->sub[0], visited);
-	case Tyunres:
-			for (i = 0; i < t->narg; i++)
-				if (hasparamsrec(t->arg[i], visited))
-					return 1;
-			break;
-	case Tystruct:
-			for (i = 0; i < t->nmemb; i++)
-				if (hasparamsrec(t->sdecls[i]->decl.type, visited))
-					return 1;
-			break;
-	case Tyunion:
-			for (i = 0; i < t->nmemb; i++)
-				if (t->udecls[i]->etype && hasparamsrec(t->udecls[i]->etype, visited))
-					return 1;
-			break;
-	default:
-			for (i = 0; i < t->nsub; i++)
-				if (hasparamsrec(t->sub[i], visited))
-					return 1;
-			break;
-	}
-	return 0;
-}
-
-int hasparams(Type *t)
-{
-	Bitset *visited;
-
+int istyconcrete(Type *t) {
+	Bitset *s;
+	int r;
+	
 	if (t->hasparams)
-		return 1;
-	visited = mkbs();
-	t->hasparams = hasparamsrec(t, visited);
-	bsfree(visited);
-	return t->hasparams;
+		return 0;
+	s = mkbs();
+	r = hasparamsrec(t, s, 1);
+	bsfree(s);
+	return !r;
 }
 
 Type *tybase(Type *t)
