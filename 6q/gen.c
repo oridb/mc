@@ -686,8 +686,12 @@ static Type *vatype(Gen *g, Srcloc l, Node **al, size_t na)
 static Loc vablob(Gen *g, Srcloc l, Type *t)
 {
 	Node *d;
+	Type *tt, *tl[2];
 
-	gentemp(l, t, &d);
+	tl[0] = mktype(l, Tyuint64);
+	tl[1] = t;
+	tt = mktytuple(l, tl, 2);
+	gentemp(l, tt, &d);
 	addlocal(g, d);
 	return qvar(g, d);
 }
@@ -1340,6 +1344,7 @@ void genfn(Gen *g, Node *dcl)
 	g->retval = NULL;
 	g->rettype = tybase(dcl->decl.type->sub[0]);
 	g->retlbl = qlabel(g, genlbl(dcl->loc));
+	lfree(&g->vatype, &g->nvatype);
 
 	if (tybase(g->rettype)->type != Tyvoid)
 		g->retval = gentemp(dcl->loc, g->rettype, &retdcl);
