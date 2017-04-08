@@ -1689,13 +1689,20 @@ static void genglobl(Gen *g, Node *dcl)
 	char *s, *x;
 	Node *e;
 	Blob *b;
+	Type *t;
 
 
 	e = dcl->decl.init;
 	e = fold(e, 1);
-	dcl->decl.init = e;
-	b = mkblobseq(NULL, 0);
-	blobrec(g, b, e);
+	if (e) {
+		dcl->decl.init = e;
+		b = mkblobseq(NULL, 0);
+		blobrec(g, b, e);
+	} else {
+		t = decltype(dcl);
+		b = mkblobpad(tysize(t));
+	}
+
 
 	s = asmname(dcl->decl.name, '$');
 	x = isexport(dcl) ? "export " : "";
