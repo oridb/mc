@@ -166,8 +166,12 @@ static Loc qstacktemp(Gen *g, Node *e)
 {
 	Node *dcl;
 
-	assert(e->type == Nexpr);
-	gentemp(e->loc, e->expr.type, &dcl);
+	if (e->type == Nexpr)
+		gentemp(e->loc, e->expr.type, &dcl);
+	else if (e->type == Nfunc)
+		gentemp(e->loc, e->func.type, &dcl);
+	else
+		dcl = e;
 	addlocal(g, dcl);
 	return qvar(g, dcl); 
 }
@@ -914,9 +918,82 @@ static Loc strlabel(Gen *g, Node *s)
 	return qblob(g, b);
 }
 
-static Loc loadlit(Gen *g, Node *n)
+static int envcmp(const void *pa, const void *pb)
 {
-	n = n->expr.args[0];
+	const Node *a, *b;
+
+	a = *(const Node**)pa;
+	b = *(const Node**)pb;
+	return b->decl.did - a->decl.did;
+}
+
+static Loc code(Gen *g, Node *fn)
+{
+	Node *d, *n;
+	char lbl[128];
+
+	n = mkname(fn->loc, genlblstr(lbl, 128, ""));
+	d = mkdecl(fn->loc, n, exprtype(fn));
+
+	d->decl.type = exprtype(fn);
+	d->decl.init = fn;
+	d->decl.isconst = 1;
+	d->decl.isglobl = 1;
+
+	lappend(&file->file.stmts, &file->file.nstmts, d);
+	return qvar(g, d);
+}
+
+static Loc capture(Gen *g, Node *n, Node *fn)
+{
+	size_t nenv, nenvt, off, i;
+	Loc f, e, s, d, fp;
+	Type **envt, *t;
+	Node **env, *dcl;
+
+	fp = qstacktemp(g, n);
+	env = getclosure(fn->func.scope, &nenv);
+	if (env && 0) {
+		/* we need these in a deterministic order so that we can
+		   put them in the right place both when we use them and
+		   when we capture them.  */
+		qsort(env, nenv, sizeof(Node*), envcmp);
+
+		/* make the tuple type that will hold the environment */
+		envt = NULL;
+		nenvt = 0;
+		/* reserve space for size */
+		lappend(&envt, &nenvt, mktype(n->loc, Tyuint64));
+		for (i = 0; i < nenv; i++)
+			lappend(&envt, &nenvt, decltype(env[i]));
+
+		gentemp(n->loc, mktytuple(n->loc, envt, nenvt), &dcl);
+		e = qstacktemp(g, dcl);
+		d = qtemp(g, 'l');
+		off = Ptrsz;    /* we start with the size of the env */
+		for (i = 0; i < nenv; i++) {
+			off = alignto(off, decltype(env[i]));
+			t = decltype(env[i]);
+			s = qvar(g, env[i]);
+			out(g, Qadd, d, e, qconst(g, off, 'l'));
+			blit(g, d, s, tysize(t), tyalign(t));
+			off += size(env[i]);
+		}
+		free(env);
+		out(g, Qstorel, Zq, qconst(g, off, 'l'), e);
+		out(g, Qstorel, Zq, e, fp);
+	}
+	f = code(g, n);
+	out(g, Qadd, fp, fp, qconst(g, Ptrsz, 'l'));
+	out(g, Qstorel, Zq, f, fp);
+	return fp;
+}
+
+static Loc loadlit(Gen *g, Node *e)
+{
+	Node *n;
+
+	n = e->expr.args[0];
 	switch (n->lit.littype) {
 	case Llbl:	return qlabel(g, n);			break;
 	case Lstr:	return strlabel(g, n);			break;
@@ -925,7 +1002,7 @@ static Loc loadlit(Gen *g, Node *n)
 	case Lint:	return qconst(g, n->lit.intval, 'w');	break;
 	case Lflt:	return qconst(g, n->lit.fltval, 'w');	break;
 	case Lvoid:	return qconst(g, n->lit.chrval, 'w');	break;
-	case Lfunc:	die("func literals not implemented\n");	break;
+	case Lfunc:	return capture(g, e, n->lit.fnval);	break;
 	}
 }
 
@@ -1064,11 +1141,11 @@ Loc rval(Gen *g, Node *n)
 		o = 0;
 		ety = exprtype(n);
 		for (i = 0; i < n->expr.nargs; i++) {
-			ty = exprtype(n);
 			a = n->expr.args[i];
+			ty = exprtype(a);
 
 			s = rval(g, a);
-			o = memboff(g, ty, a->expr.idx);
+			o = memboff(g, ety, a->expr.idx);
 			out(g, Qadd, d, d, qconst(g, o, 'l'));
 			if (isstacktype(ty))
 				blit(g, d, s, tysize(ty), tyalign(ty));
@@ -1238,8 +1315,10 @@ void emitinsn(Gen *g, Insn *insn)
 	case Qcall:
 		emitloc(g, insn->ret, "");
 		if (insn->ret.tag)
-			fprintf(g->f, " =%c ", insn->ret.tag);
-		fprintf(g->f, "%s ", insnname[insn->op]);
+			fprintf(g->f, " =%c\t", insn->ret.tag);
+		else
+			fprintf(g->f, "\t");
+		fprintf(g->f, "%s\t", insnname[insn->op]);
 		emitloc(g, insn->fn, " ");
 		fprintf(g->f, "(");
 		for (i = 0; i < insn->nfarg; i++) {
@@ -1255,8 +1334,10 @@ void emitinsn(Gen *g, Insn *insn)
 	default:
 		emitloc(g, insn->ret, "");
 		if (insn->ret.tag)
-			fprintf(g->f, " =%c ", insn->ret.tag);
-		fprintf(g->f, "%s ", insnname[insn->op]);
+			fprintf(g->f, "=%c\t", insn->ret.tag);
+		else
+			fprintf(g->f, "\t");
+		fprintf(g->f, "%s\t", insnname[insn->op]);
 		sep = insn->arg[1].tag ? ", " : "";
 		emitloc(g, insn->arg[0], sep);
 		emitloc(g, insn->arg[1], "");

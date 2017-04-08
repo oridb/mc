@@ -39,7 +39,10 @@ char stackness[] = {
 #undef Ty
 };
 
-int isstacktype(Type *t) { return stackness[tybase(t)->type]; }
+int isstacktype(Type *t)
+{
+	return stackness[tybase(t)->type];
+}
 
 Type *tydedup(Type *ty)
 {
