@@ -8,13 +8,15 @@ pkg thread =
 ;;
 
 const spawn = {fn
+	fn = std.fndup(fn)
 	match sys.rfork(sys.Rfproc | sys.Rfmem | sys.Rfnowait)
 	| 0:
-		fn = std.fndup(fn)
 		fn()
 		std.fnfree(fn)
 		std.exit(0)
-	| -1:	-> `std.Err "unable to spawn thread"
+	| -1:	
+		std.fnfree(fn)
+		-> `std.Err "unable to spawn thread"
 	| thr:	-> `std.Ok (thr : tid)
 	;;
 }
