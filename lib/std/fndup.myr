@@ -27,10 +27,12 @@ generic fnenvsz = {fn
 
 generic fnbdup = {fn, buf
 	var repr : intptr[2]
+	var env
 
 	repr = (&fn : intptr[2]#)#
-	slcp(buf, envslice(repr[0]))
-	repr[0] = (buf[0] : intptr)
+	env = envslice(repr[0])
+	slcp(buf[:env.len], env)
+	repr[0] = (buf : intptr)
 	-> (&repr : @fn::function#)#
 }
 
@@ -45,6 +47,9 @@ const envslice = {ep : intptr
 	var env : byte#
 	var szp : intptr#
 
+	if ep == 0
+		-> [][:]
+	;;
 	env = (ep : byte#)
 	szp = (env : intptr#)
 	-> env[:szp#]

@@ -37,7 +37,6 @@ const spawnstk = {fn, sz
 	var tid : tid, ret
 
 
-	std.put("...hi? fn={}\n", (fn : void#))
 	ret = sys.bsdthread_create( \
 		(fn	: void#), \
 		envptr(&fn), \

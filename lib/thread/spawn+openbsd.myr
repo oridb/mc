@@ -15,7 +15,7 @@ const spawn = {fn;
 }
 
 const spawnstk = {fn, sz
-	var stk, szp, fp, tos, tfp
+	var stk, szp, fp, tos, tfp, env, envsz
 	var ret
 
 	stk = getstk(sz)
@@ -29,9 +29,12 @@ const spawnstk = {fn, sz
 	szp# = Stacksz
 
 	/* store func */
+	envsz = std.fnenvsz(fn)
+	tos -= (envsz : std.intptr)
+	env = tos
 	tos -= sizeof((->void))
 	fp = (tos : (->void)#)
-	fp# = fn
+	fp# = std.fnbdup(fn, (env : byte#)[:envsz])
 
 	tfp = [
 		.tcb = (0 : void#),
