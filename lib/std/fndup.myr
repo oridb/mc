@@ -1,18 +1,36 @@
 use "alloc"
 use "die"
 use "sldup"
+use "slcp"
 use "types"
 
 pkg std =
+	generic fnenvsz	: (fn : @fn::function -> size)
 	generic fndup	: (fn : @fn::function -> @fn::function)
+	generic fnbdup	: (fn : @fn::function, buf : byte[:] -> @fn::function)
 	generic fnfree	: (fn : @fn::function -> void)
 ;;
 
 generic fndup = {fn
+	var sl
+
+	sl = std.slalloc(fnenvsz(fn))
+	-> fnbdup(fn, sl)
+}
+
+generic fnenvsz = {fn
 	var repr : intptr[2]
 
 	repr = (&fn : intptr[2]#)#
-	repr[0] = (sldup(envslice(repr[0])) : intptr)
+	-> envslice(repr[0]).len
+}
+
+generic fnbdup = {fn, buf
+	var repr : intptr[2]
+
+	repr = (&fn : intptr[2]#)#
+	slcp(buf, envslice(repr[0]))
+	repr[0] = (buf[0] : intptr)
 	-> (&repr : @fn::function#)#
 }
 
