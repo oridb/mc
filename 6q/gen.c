@@ -119,6 +119,8 @@ static Loc qblob(Gen *g, Blob *b)
 
 static void out(Gen *g, Qop op, Loc r, Loc a, Loc b)
 {
+	if (op == Qceql)
+		assert(a.tag == b.tag);
 	if (g->ninsn == g->insnsz) {
 		g->insnsz += g->insnsz/2 + 1;
 		g->insn = xrealloc(g->insn, g->insnsz * sizeof(Insn));
@@ -259,6 +261,8 @@ static Qop loadop(Type *ty)
 	case Tyint64:	op = Qloadl;	break;
 	case Tyuint64:	op = Qloadl;	break;
 	case Typtr:	op = Qloadl;	break;
+	case Tycode:	op = Qloadl;	break;
+
 	case Tyflt32:	op = Qloads;	break;
 	case Tyflt64:	op = Qloadd;	break;
 	default:	die("badload");	break;
@@ -448,7 +452,9 @@ Loc cmpop(Gen *g, Op op, Node *ln, Node *rn)
 static Loc intcvt(Gen *g, Loc v, char to, int sz, int sign)
 {
 	Loc t;
-	Qop optab[][2] = {
+	Qop op;
+
+	static const Qop optab[][2] = {
 		[8] = {Qcopy,	Qcopy},
 		[4] = {Qextuw,	Qextsw},
 		[2] = {Qextuh,	Qextsh},
@@ -456,7 +462,11 @@ static Loc intcvt(Gen *g, Loc v, char to, int sz, int sign)
 	};
 
 	t = qtemp(g, to);
-	out(g, optab[sz][sign], t, v, Zq);
+	if (sz == 4 && to == 'w')
+		op = Qcopy;
+	else
+		op = optab[sz][sign];
+	out(g, op, t, v, Zq);
 	return t;
 }
 
@@ -640,33 +650,6 @@ static Loc deref(Gen *g, Node *n)
 	return r;
 }
 
-static Loc lval(Gen *g, Node *n)
-{
-	Node **args;
-	Loc r;
-
-	args = n->expr.args;
-	switch (exprop(n)) {
-	case Oidx:	r = seqbase(g, args[0], args[1]);	break;
-	case Oderef:	r = deref(g, args[0]);	break;
-	case Ovar:	r = qvar(g, n);	break;
-	case Omemb:	r = rval(g, n);	break;
-	case Ostruct:	r = rval(g, n);	break;
-	case Oucon:	r = rval(g, n);	break;
-	case Oarr:	r = rval(g, n);	break;
-	case Ogap:	r = temp(g, n);	break;
-
-	/* not actually expressible as lvalues in syntax, but we generate them */
-	case Oudata:	r = rval(g, n);	break;
-	case Outag:	r = rval(g, n);	break;
-	case Otupget:	r = rval(g, n);	break;
-	default:
-			fatal(n, "%s cannot be an lvalue", opstr[exprop(n)]);
-			break;
-	}
-	return r;
-}
-
 static size_t countargs(Type *t)
 {
 	size_t n, i;
@@ -798,6 +781,41 @@ static void checkbounds(Gen *g, Node *n, Loc len)
 {
 }
 
+ssize_t memboff(Gen *g, Type *ty, Node *memb)
+{
+	size_t i;
+	size_t off;
+
+	ty = tybase(ty);
+	if (ty->type == Typtr)
+		ty = tybase(ty->sub[0]);
+
+	assert(ty->type == Tystruct);
+	off = 0;
+	for (i = 0; i < ty->nmemb; i++) {
+		off = alignto(off, decltype(ty->sdecls[i]));
+		if (!strcmp(namestr(memb), declname(ty->sdecls[i])))
+			return off;
+		off += size(ty->sdecls[i]);
+	}
+	die("bad member in offset");
+	return 0;
+}
+
+static Loc membaddr(Gen *g, Node *n)
+{
+	Type *t;
+	Loc b, r;
+	size_t o;
+
+	t = exprtype(n->expr.args[0]);
+	b = rval(g, n->expr.args[0]);
+	o = memboff(g, t, n->expr.args[1]);
+	r = qtemp(g, 'l');
+	out(g, Qadd, r, b, qconst(g, o, 'l'));
+	return r;
+}
+
 static Loc seqbase(Gen *g, Node *slnode, Node *offnode)
 {
 	Loc u, v, r;
@@ -833,7 +851,7 @@ static Loc genslice(Gen *g, Node *n)
 {
 	Node *arg, *off, *lim;
 	Loc lo, hi, start, sz;
-	Loc base, len;
+	Loc base, p, len;
 	Loc sl, lenp;
 	Type *ty;
 
@@ -863,12 +881,13 @@ static Loc genslice(Gen *g, Node *n)
 	len = qtemp(g, 'l');
 	start = qtemp(g, 'l');
 
-	out(g, Qadd, base, base, lo);
+	p = qtemp(g, 'l');
+	out(g, Qadd, p, base, lo);
 	out(g, Qsub, len, hi, lo);
 	out(g, Qmul, start, len, sz);
 
 	checkbounds(g, n, len);
-	out(g, Qstorel, Zq, base, sl);
+	out(g, Qstorel, Zq, p, sl);
 	out(g, Qstorel, Zq, len, lenp);
 	return sl;
 }
@@ -1004,39 +1023,20 @@ static Loc capture(Gen *g, Node *n, Node *fn)
 static Loc loadlit(Gen *g, Node *e)
 {
 	Node *n;
+	char t;
 
+	t = qtag(g, exprtype(e));
 	n = e->expr.args[0];
 	switch (n->lit.littype) {
 	case Llbl:	return qlabel(g, n);			break;
 	case Lstr:	return strlabel(g, n);			break;
-	case Lchr:	return qconst(g, n->lit.chrval, 'w');	break;
-	case Lbool:	return qconst(g, n->lit.boolval, 'w');	break;
-	case Lint:	return qconst(g, n->lit.intval, 'w');	break;
-	case Lflt:	return qconst(g, n->lit.fltval, 'w');	break;
-	case Lvoid:	return qconst(g, n->lit.chrval, 'w');	break;
+	case Lchr:	return qconst(g, n->lit.chrval, t);	break;
+	case Lbool:	return qconst(g, n->lit.boolval, t);	break;
+	case Lint:	return qconst(g, n->lit.intval, t);	break;
+	case Lflt:	return qconst(g, n->lit.fltval, t);	break;
+	case Lvoid:	return qconst(g, n->lit.chrval, t);	break;
 	case Lfunc:	return capture(g, e, n->lit.fnval);	break;
 	}
-}
-
-ssize_t memboff(Gen *g, Type *ty, Node *memb)
-{
-	size_t i;
-	size_t off;
-
-	ty = tybase(ty);
-	if (ty->type == Typtr)
-		ty = tybase(ty->sub[0]);
-
-	assert(ty->type == Tystruct);
-	off = 0;
-	for (i = 0; i < ty->nmemb; i++) {
-		off = alignto(off, decltype(ty->sdecls[i]));
-		if (!strcmp(namestr(memb), declname(ty->sdecls[i])))
-			return off;
-		off += size(ty->sdecls[i]);
-	}
-	die("bad member in offset");
-	return 0;
 }
 
 Loc rval(Gen *g, Node *n)
@@ -1110,7 +1110,6 @@ Loc rval(Gen *g, Node *n)
 	case Oslbase:	r = seqbase(g, args[0], args[1]);	break;
 	case Osllen:	r = slicelen(g, args[0], exprtype(n));	break;
 	case Oslice:	r = genslice(g, n);			break;
-	case Oidx:	r = seqbase(g, args[0], args[1]);	break;
 
 	case Ocast:	r = simpcast(g, args[0], exprtype(n));	break;
 	case Ocall:	r = gencall(g, n);			break;
@@ -1119,6 +1118,16 @@ Loc rval(Gen *g, Node *n)
 	case Olit:	r = loadlit(g, n);			break;
 	case Osize:	r = qconst(g, size(args[0]), 'l');	break;
 	case Ojmp:	out(g, Qjmp, qlabel(g, args[0]), Zq, Zq);	break;
+	case Oidx:
+		ty = exprtype(n);
+		s = seqbase(g, args[0], args[1]);
+		if (isstacktype(ty)) {
+			r = s;
+		} else {
+			r = temp(g, n);
+			out(g, loadop(ty), r, s, Zq);
+		}
+		break;
 	case Oret:
 		ty = tybase(exprtype(args[0]));
 		if (ty->type != Tyvoid)
@@ -1199,11 +1208,8 @@ Loc rval(Gen *g, Node *n)
 		break;
 
 	case Omemb:
-		ty = exprtype(n->expr.args[0]);
-		s = rval(g, n->expr.args[0]);
-		o = memboff(g, ty, n->expr.args[1]);
-		l = qtemp(g, 'l');
-		out(g, Qadd, l, s, qconst(g, o, 'l'));
+		ty = exprtype(n);
+		l = membaddr(g, n);
 		if (isstacktype(ty)) {
 			r = l;
 		} else {
@@ -1269,6 +1275,33 @@ Loc rval(Gen *g, Node *n)
 	case Obad:
 		die("bad operator");
 		break;
+	}
+	return r;
+}
+
+static Loc lval(Gen *g, Node *n)
+{
+	Node **args;
+	Loc r;
+
+	args = n->expr.args;
+	switch (exprop(n)) {
+	case Oidx:	r = seqbase(g, args[0], args[1]);	break;
+	case Oderef:	r = deref(g, args[0]);	break;
+	case Ovar:	r = qvar(g, n);	break;
+	case Omemb:	r = membaddr(g, n);	break;
+	case Ostruct:	r = rval(g, n);	break;
+	case Oucon:	r = rval(g, n);	break;
+	case Oarr:	r = rval(g, n);	break;
+	case Ogap:	r = temp(g, n);	break;
+
+	/* not actually expressible as lvalues in syntax, but we generate them */
+	case Oudata:	r = rval(g, n);	break;
+	case Outag:	r = rval(g, n);	break;
+	case Otupget:	r = rval(g, n);	break;
+	default:
+			fatal(n, "%s cannot be an lvalue", opstr[exprop(n)]);
+			break;
 	}
 	return r;
 }
