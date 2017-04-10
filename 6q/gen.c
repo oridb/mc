@@ -1043,7 +1043,7 @@ Loc rval(Gen *g, Node *n)
 {
 	Node **args, *a;
 	Type *ty, *ety;
-	size_t i, o;
+	size_t i, o, idx;
 	Loc r, l;
 	Loc d, s;
 	Op op;
@@ -1218,8 +1218,26 @@ Loc rval(Gen *g, Node *n)
 		out(g, Qadd, r, s, qconst(g, Ptrsz, 'l'));
 		break;
 
-	case Ogap:
 	case Otupget:
+		assert(exprop(args[1]) == Olit);
+		s = rval(g, args[0]);
+		ty = exprtype(n);
+		idx = args[1]->expr.args[0]->lit.intval;
+		for (i = 0; i < ty->nsub; i++) {
+			o = alignto(o, ty->sub[i]);
+			if (i == idx)
+				break;
+			o += tysize(ty->sub[i]);
+		}
+		l = qtemp(g, 'l');
+		out(g, Qadd, l, s, qconst(g, o, 'l'));
+		if (isstacktype(ty)) {
+			r = l;
+		} else {
+			r = qtemp(g, qtag(g, ty));
+			out(g, loadop(ty), r, l, Zq);
+		}
+		break;
 	case Olnot:
 	case Ovjmp:
 	case Oset:
@@ -1246,7 +1264,7 @@ Loc rval(Gen *g, Node *n)
 	case Oboreq: case Obandeq: case Obxoreq: case Obsleq: case Obsreq:
 	case Opreinc: case Opredec: case Opostinc: case Opostdec:
 	case Obreak: case Ocontinue:
-	case Numops:
+	case Numops: case Ogap:
                 die("invalid operator %s: should have been removed", opstr[exprop(n)]);
 	case Obad:
 		die("bad operator");
