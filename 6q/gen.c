@@ -698,7 +698,6 @@ static Loc genvarargs(Gen *g, Srcloc l, Node **al, size_t na, Type **t)
 	Type *ty, *tt;
 	Blob *b;
 
-	assert(na >= 0);
 	/* genrate varargs */
 	sz = Ptrsz;	/* tydesc */
 	for (i = 0; i < na; i++) {
@@ -1037,6 +1036,8 @@ static Loc loadlit(Gen *g, Node *e)
 	case Lvoid:	return qconst(g, n->lit.chrval, t);	break;
 	case Lfunc:	return capture(g, e, n->lit.fnval);	break;
 	}
+	die("unreachable");
+	return Zq;
 }
 
 Loc rval(Gen *g, Node *n)
@@ -1672,7 +1673,7 @@ void outtypebody(Gen *g, Type *ty)
 	case Tystruct:	outstruct(g, ty);	break;
 	case Tytuple:	outtuple(g, ty);	break;
 	case Tyunion:	outunion(g, ty);	break;
-	case Tyname:	fprintf(g->f, "\t:t%zd,\n", ty->tid);	break;
+	case Tyname:	fprintf(g->f, "\t:t%d,\n", ty->tid);	break;
 
 	/* frontend/invalid types */
 	case Tyvar:
