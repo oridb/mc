@@ -718,6 +718,7 @@ static void flattenidxiter(Flattenctx *s, Node *n)
 
 	seq = rval(s, n->iterstmt.seq);
 	idx = gentemp(n->loc, idxtype, &dcl);
+	lappend(&s->locals, &s->nlocals, dcl);
 
 	/* setup */
 	append(s, asn(idx, zero));
@@ -790,7 +791,7 @@ static void flattentraititer(Flattenctx *s, Node *n)
 {
 	Node *lbody, *lclean, *lstep, *lmatch, *lend;
 	Node *done, *val, *iter, *valptr, *iterptr;
-	Node *func, *call;
+	Node *func, *call, *dcl;
 	Trait *tr;
 
 	val = temp(s, n->iterstmt.elt);
@@ -827,7 +828,8 @@ static void flattentraititer(Flattenctx *s, Node *n)
 	/* call iterator step */
 	func = itertraitfn(n->loc, tr, "__iternext__", exprtype(iter));
 	call = mkexpr(n->loc, Ocall, func, iterptr, valptr, NULL);
-	done = gentemp(n->loc, mktype(n->loc, Tybool), NULL);
+	done = gentemp(n->loc, mktype(n->loc, Tybool), &dcl);
+	lappend(&s->locals, &s->nlocals, dcl);
 	call->expr.type = exprtype(done);
 	append(s, asn(done, call));
 	cjmp(s, done, lmatch, lend);

@@ -119,8 +119,6 @@ static Loc qblob(Gen *g, Blob *b)
 
 static void out(Gen *g, Qop op, Loc r, Loc a, Loc b)
 {
-	if (op == Qceql)
-		assert(a.tag == b.tag);
 	if (g->ninsn == g->insnsz) {
 		g->insnsz += g->insnsz/2 + 1;
 		g->insn = xrealloc(g->insn, g->insnsz * sizeof(Insn));
@@ -1137,11 +1135,11 @@ Loc rval(Gen *g, Node *n)
 		break;
 
 	case Oderef:
-		ty = tybase(exprtype(args[0]));
+		ty = tybase(exprtype(n));
 		if (isstacktype(ty)) {
 			r = rval(g, args[0]);
 		} else {
-			r = temp(g, args[0]);
+			r = temp(g, n);
 			out(g, loadop(ty), r, rval(g, args[0]), Zq);
 		}
 		break;
