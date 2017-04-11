@@ -1761,6 +1761,8 @@ static void genqtypes(Gen *g)
 	size_t i;
 
 	g->typenames = zalloc(ntypes * sizeof(Type *));
+	g->typenames[Tyvalist] = ":.vablob";
+	fprintf(g->f, "type :.vablob = align 8 { 8 }\n");
 	for (i = Ntypes; i < ntypes; i++) {
 		outqtype(g, types[i]);
 	}

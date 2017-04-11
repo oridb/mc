@@ -26,7 +26,7 @@ Ty(Tyuint64, "uint64", 0)
 Ty(Tyflt32, "flt32", 0)
 Ty(Tyflt64, "flt64", 0)
 /* end primitive types */
-Ty(Tyvalist, NULL, 0)
+Ty(Tyvalist, NULL, 1)
 
 /* end atomic types */
 Ty(Typtr, NULL, 0)
