@@ -217,6 +217,7 @@ char qtag(Gen *g, Type *ty)
 
 char *qtype(Gen *g, Type *ty)
 {
+	ty = tydedup(ty);
 	switch (ty->type) {
 	case Tybool:	return "b";	break;
 	case Tychar:	return "w";	break;
@@ -509,12 +510,17 @@ static Loc gencast(Gen *g, Srcloc loc, Loc val, Type *to, Type *from)
 		case Typtr:
 			r = intcvt(g, val, qtag(g, to), tysize(from), 0);
 			break;
-		case Tyflt32: case Tyflt64:
+		case Tyflt32: 
 			if (tybase(to)->type == Typtr)
 				lfatal(loc, "bad cast from %s to %s", tystr(from), tystr(to));
-			die("unimplemented cast type");
-			//r = mkexpr(loc, Oflt2int, rval(g, val, NULL), NULL);
-			//r->expr.type = to;
+			r = qtemp(g, qtag(g, to));
+			out(g, Qstosi, r, val, Zq);
+			break;
+		case Tyflt64:
+			if (tybase(to)->type == Typtr)
+				lfatal(loc, "bad cast from %s to %s", tystr(from), tystr(to));
+			r = qtemp(g, qtag(g, to));
+			out(g, Qdtosi, r, val, Zq);
 			break;
 		default:
 			lfatal(loc, "bad cast from %s to %s", tystr(from), tystr(to));
@@ -525,14 +531,13 @@ static Loc gencast(Gen *g, Srcloc loc, Loc val, Type *to, Type *from)
 		case Tyint8: case Tyint16: case Tyint32: case Tyint64:
 		case Tyuint8: case Tyuint16: case Tyuint32: case Tyuint64:
 		case Tyint: case Tyuint: case Tychar: case Tybyte:
-			die("unimplemented cast type");
-			//r = mkexpr(loc, Oint2flt, rval(g, val, NULL), NULL);
-			//r->expr.type = to;
+			r = qtemp(g, qtag(g, to));
+			out(g, Qswtof, r, val, Zq);
 			break;
 		case Tyflt32: case Tyflt64:
-			die("unimplemented cast type");
-			//r = mkexpr(val->loc, Oflt2flt, rval(g, val, NULL), NULL);
-			//r->expr.type = to;
+			fprintf(stderr, "flt<->flt casts not supported");
+			r = qconst(g, 0, qtag(g, to));
+			break;
 			break;
 		default:
 			lfatal(loc, "bad cast from %s to %s", tystr(from), tystr(to));
@@ -1680,7 +1685,7 @@ void outtypebody(Gen *g, Type *ty)
 	case Tyunres:
 	case Tygeneric:
 	case Ntypes:
-			//die("invalid type %s");
+			die("invalid type %s");
 			break;
 	}
 }
