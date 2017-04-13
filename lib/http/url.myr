@@ -206,8 +206,13 @@ const ipv6hostname = {url -> std.result(byte[:], err)
 const parseport = {url
 	if std.chomp(url, ":")
 		match parsenumber(url, 10)
-		| `std.Some n:	-> `std.Ok n
 		| `std.None:	-> `std.Err `Esyntax
+		| `std.Some n:
+			if n > 65535
+				-> `std.Err `Esyntax
+			else
+				-> `std.Ok (n : uint16)
+			;;
 		;;
 	else
 		-> `std.Ok 80

@@ -1,15 +1,15 @@
+use bio
 use std
+use thread
 
 use "types"
+use "session"
+use "parse"
 
 pkg http =
 	const announce	: (ds : byte[:] -> std.result(server#, err))
 	const shutdown	: (srv : server# -> void)
-
-	const waitconn	: (srv : server# -> std.result(std.fd, err))
-//	const readmsg	: (srv : server# -> std.option(req#, err))
-//	const writemsg	: (srv : server# -> std.option(req#, err))
-//	const writehdr	: (srv : server# -> std.option(req#, err))
+	const serve	: (srv : server# -> void)
 ;;
 
 const announce = {ds
@@ -28,6 +28,72 @@ const announce = {ds
 	;;
 }
 
+const serve = {srv
+	std.put("waiting for connection\n")
+	while true
+		match waitconn(srv)
+		| `std.Ok fd:	communicate(srv, fd)
+		| `std.Err e:	/* eh? */
+		;;
+	;;
+}
+
+const communicate = {srv, fd
+	var s
+
+	s = mksrvsession(fd)
+	while !srv.quit
+		match parsereq(s)
+		| `std.Ok req:
+			dispatch(srv, s, req)
+		| `std.Err e:
+			std.put("failed to parse request: {}\n", e)
+			break
+		;;
+	;;
+	std.close(fd)
+}
+
+const dispatch = {srv, sess, req
+	var resp : resp#
+
+	std.put("got req: {}\n", req)
+	resp = std.mk([
+		.status=200,
+		.hdrs = [][:],
+		.len = 0,
+		.err = `std.None,
+		.reason = "",
+		.body = "heard you loud and clear\n",
+		.enc = `Length
+	])
+	respond(srv, sess, resp)
+}
+
+const respond = {srv, s, resp
+	var sb
+
+	sb = std.mksb()
+	bio.put(s.f, "HTTP/1.1 {} {}\r\n", resp.status, statusstr(resp.status))
+	bio.put(s.f, "Content-Length: {}\r\n", resp.body.len)
+	bio.put(s.f, "Encoding: {}\r\n", resp.enc)
+	for (k, v) in resp.hdrs
+		bio.put(s.f, "{}: {}\r\n", k, v)
+	;;
+	bio.put(s.f, "\r\n")
+	bio.write(s.f, resp.body)
+	bio.flush(s.f)
+}
+
+const statusstr = {st
+	match st
+	| 200:	-> "OK"
+	| 404:	-> "Not Found"
+	| 503:	-> "Internal Error"
+	| _:	-> "Bad State"
+	;;
+}
+
 const shutdown = {srv
 	std.close(srv.lfd)
 }
@@ -35,7 +101,7 @@ const shutdown = {srv
 
 const waitconn = {srv
 	match std.accept(srv.lfd)
-	| `std.Ok afd:	-> `std.Ok afd
+	| `std.Ok fd:	-> `std.Ok fd
 	| `std.Err e:	-> `std.Err `Econn
 	;;
 }

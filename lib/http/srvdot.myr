@@ -1,0 +1,49 @@
+use std
+use http
+
+const main = {
+	var srv //, router
+
+	match http.announce("tcp!localhost!8080")
+	| `std.Ok s:	srv = s
+	| `std.Err e:	std.fatal("unable to announce: {}\n", e)
+	;;
+
+	http.serve(srv)
+
+	//router = http.mkrouter(srv, [
+	//	[.path="*", .render=showfile],
+	//	[.path="/foo", .render={ctx; show(ctx, "foo")}],
+	//	[.path="/foo/bar", .render={ctx; show(ctx, "foobar")}],
+	//	[.path="/foo/baz", .render={ctx; show(ctx, "foobarbaz")}],
+	//][:])
+	//
+	//http.run(router)
+}
+
+// const showfile = {ctx
+// 	var buf : byte[32*std.KiB]
+// 	var fd
+// 
+// 	match std.open(ctx.path, std.Ordonly)
+// 	| `std.Ok f:
+// 		fd = f
+// 	| `std.Err e:
+// 		http.srvput(ctx, "unable to open path {}\n", ctx.path)
+// 		-> 404
+// 	;;
+// 
+// 	http.setchunk(ctx)
+// 	while true
+// 		match std.read(fd, buf[:])
+// 		| `std.Ok n:	http.writechunk(ctx, buf[:n])
+// 		| `std.Ok 0:	http.closechunk(ctx); break
+// 		| `std.Err e:	http.closechunk(ctx); break
+// 		;;
+// 	;;
+// 	-> 200
+// }
+// 
+// const show = {ctx, txt
+// 	http.srvput(ctx, "{}", txt)
+// }

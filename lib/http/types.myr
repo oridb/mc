@@ -9,12 +9,16 @@ pkg http =
 	type session = struct
 		f	: bio.file#
 		host	: byte[:]
+		port	: uint16
+		srvname	: byte[:]
 		ua	: byte[:]
 		err	: bool
 	;;
 
+
 	type server = struct
 		lfd	: std.fd
+		quit	: bool
 	;;
 
 	type router = struct
@@ -33,7 +37,7 @@ pkg http =
 
 	type url = struct
 		schema	: schema
-		port	: int
+		port	: uint16
 		host	: byte[:]
 		path	: byte[:]
 		params	: (byte[:], byte[:])[:]
@@ -77,6 +81,7 @@ pkg http =
 	type req = struct
 		url	: url#
 		hdrs	: (byte[:], byte[:])[:]
+		err	: std.option(err)
 	;;
 
 	type resp = struct

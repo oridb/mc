@@ -4,51 +4,81 @@ use bio
 use "types"
 
 pkg http =
-	pkglocal const parsereq		: (s : session#, r : req# -> bool)
+	pkglocal const parsereq		: (s : session# -> std.result(req#, err))
 	pkglocal const parseresp	: (s : session#, r : resp# -> bool)
 	pkglocal const parsechunksz	: (s : session# -> std.result(std.size, err))
 	pkglocal const parsenumber	: (str : byte[:]#, base : int -> std.option(int))
 ;;
 
-const parsereq = {s, r
-	-> false
-	/*
+const parsereq = {s
+	var r, err
+
+	r.hdrs = [][:]
+	r.url = std.mk([
+		.schema=`Http,
+		.host=std.sldup(s.host),
+		.port=s.port,
+		.path="",
+		.params=[][:],
+	])
+
+	std.put("parsing request\n")
 	match bio.readln(s.f)
-	| `bio.Err e:	r.err = `std.Some `Econn
-	| `bio.Eof:	r.err = `std.Some `Econn
+	| `bio.Err e:
+		err = `Econn
+		goto error
+	| `bio.Eof:	
+		err = `Econn
+		goto error
 	| `bio.Ok ln:
-		if !parsereqstatus(s, r, ln)
+		std.put("status line: {}\n", ln)
+		match parsereqstatus(s, r, ln)
+		| `std.Ok void:
+		| `std.Err e:
+			std.put("err: {}\n", e)
 			std.slfree(ln)
-			-> false
+			err = e
+			-> `std.Err e
 		;;
 		std.slfree(ln)
 	;;
 
 	while true
+		std.put("parsing headers\n")
 		match bio.readln(s.f)
-		| `bio.Err e:	r.err = `std.Some `Econn
-		| `bio.Eof:	r.err = `std.Some `Econn
+		| `bio.Err e:	
+			err = `Econn
+			goto error
+		| `bio.Eof:
+			err = `Econn
+			goto error
 		| `bio.Ok ln:
+			std.put("ln: {}\n", ln)
 			if std.strstrip(ln).len == 0
 				std.slfree(ln)
 				break
 			;;
-			if !parsehdr(s, r, ln)
+			match parsehdr(s, ln)
+			| `std.Ok kvp:
+				std.slpush(&r.hdrs, kvp)
+			| `std.Err e:
 				std.slfree(ln)
-				-> false
+				-> `std.Err e
 			;;
 			std.slfree(ln)
 		;;
 	;;
-	*/
+	-> `std.Ok std.mk(r)
+:error
+	-> `std.Err err
 }
 
-const parseresp = {s, r
+const parseresp = {s, r : resp#
 	match bio.readln(s.f)
 	| `bio.Err e:	r.err = `std.Some `Econn
 	| `bio.Eof:	r.err = `std.Some `Econn
 	| `bio.Ok ln:
-		if !parsestatus(s, r, ln)
+		if !parserespstatus(s, r, ln)
 			std.slfree(ln)
 			-> false
 		;;
@@ -64,7 +94,11 @@ const parseresp = {s, r
 				std.slfree(ln)
 				break
 			;;
-			if !parsehdr(s, r, ln)
+			match parsehdr(s, ln)
+			| `std.Ok kvp:
+				std.slpush(&r.hdrs, kvp)
+			| `std.Err e:
+				r.err = `std.Some e
 				std.slfree(ln)
 				-> false
 			;;
@@ -92,25 +126,32 @@ const parseresp = {s, r
 
 }
 
-const parsechunksz = {s
-	var ret, str
+const parsereqstatus = {s, r, ln
+	var m, p, v
 
-	match bio.readln(s.f)
-	| `bio.Eof:	ret = `std.Err `Econn
-	| `bio.Err e:	ret = `std.Err `Econn
-	| `bio.Ok ln:
-		str = ln
-		match parsenumber(&str, 16)
-		| `std.Some n:	ret = `std.Ok (n : std.size)
-		| `std.None:
-			ret = `std.Err `Eproto
-		;;
-		std.slfree(ln)
+	match parseword(&ln)
+	| `std.Some w:	m = w
+	| `std.None:	-> `std.Err `Eproto
 	;;
-	-> ret
+	std.put("got method: {}\n", m)
+
+	match parseword(&ln)
+	| `std.Some w:	p = w
+	| `std.None:	-> `std.Err `Eproto
+	;;
+	std.put("got path: {}\n", p)
+
+	match parseword(&ln)
+	| `std.Some w:	v = w
+	| `std.None:	-> `std.Err `Eproto
+	;;
+	std.put("got version: {}\n", v)
+
+	ln = std.strfstrip(ln)
+	-> `std.Ok void
 }
 
-const parsestatus = {s, r, ln
+const parserespstatus = {s, r, ln
 	/* HTTP/1.1 */
 	ln = std.strfstrip(ln)
 	if !std.chomp(&ln, "HTTP")
@@ -136,18 +177,16 @@ const parsestatus = {s, r, ln
 	-> true
 }
 
-const parsehdr = {s, r, ln
+const parsehdr = {s, ln
 	var key, val
 
 	match std.strfind(ln, ":")
 	| `std.Some idx:
 		key = std.sldup(std.strstrip(ln[:idx]))
 		val = std.sldup(std.strstrip(ln[idx+1:]))
-		std.slpush(&r.hdrs, (key, val))
-		-> true
+		-> `std.Ok (key, val)
 	| `std.None:
-		r.err = `std.Some `Ehdr
-		-> false
+		-> `std.Err `Ehdr
 	;;
 }
 
@@ -161,6 +200,24 @@ const getlen = {r
 	| `std.None:
 		-> `std.None
 	;;
+}
+
+const parsechunksz = {s
+	var ret, str
+
+	match bio.readln(s.f)
+	| `bio.Eof:	ret = `std.Err `Econn
+	| `bio.Err e:	ret = `std.Err `Econn
+	| `bio.Ok ln:
+		str = ln
+		match parsenumber(&str, 16)
+		| `std.Some n:	ret = `std.Ok (n : std.size)
+		| `std.None:
+			ret = `std.Err `Eproto
+		;;
+		std.slfree(ln)
+	;;
+	-> ret
 }
 
 const getenc = {r
@@ -181,6 +238,26 @@ const findhdr = {r, name
 		;;
 	;;
 	-> `std.None
+}
+
+const parseword = {ln
+	var w, end
+
+	ln# = std.strfstrip(ln#)
+	end = 0
+	for var i = 0; i < ln#.len; i++
+		if i == ln#.len - 1 || std.isspace(std.decode(ln#[i:]))
+			end = i
+			break
+		;;
+	;;
+	if end == 0
+		-> `std.None
+	else
+		w = ln#[:end]
+		ln# = ln#[end:]
+		-> `std.Some w
+	;;
 }
 
 const parsenumber = {ln, base
