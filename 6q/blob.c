@@ -128,6 +128,8 @@ static size_t bloblit(Gen *g, Blob *seq, Node *n, Type *ty)
 		uint64_t qv;
 		uint32_t lv;
 	} u;
+	char buf[128];
+	char *lbl;
 	size_t sz;
 	Node *v;
 
@@ -150,20 +152,23 @@ static size_t bloblit(Gen *g, Blob *seq, Node *n, Type *ty)
 		break;
 	case Lstr:
 		/* 
+		FIXME: dedup strings.
 		if (hthas(strtab, &v->lit.strval)) {
 			lbl = htget(strtab, &v->lit.strval);
 		} else {
 			lbl = genlocallblstr(buf, sizeof buf);
 			htput(strtab, &v->lit.strval, strdup(lbl));
 		}
+		*/
+		lbl = genlblstr(buf, sizeof buf, "");
 		if (v->lit.strval.len > 0)
 			b(seq, mkblobref(lbl, 0, 1));
 		else
 			b(seq, mkblobi(Bti64, 0));
 		b(seq, mkblobi(Bti64, v->lit.strval.len));
-		*/
+		break;
 	case Lfunc:
-		die("Generating this shit ain't ready yet ");
+		fatal(n, "Generating this shit ain't ready yet");
 		break;
 	case Llbl:
 		die("Can't generate literal labels, ffs. They're not data.");
