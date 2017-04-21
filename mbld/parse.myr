@@ -7,6 +7,7 @@ use "syssel"
 
 pkg bld =
 	const load	: (b : build# -> bool)
+	$noret const failparse : (p : parser#, msg : byte[:], args : ... -> void)
 ;;
 
 type parser = struct
@@ -124,6 +125,46 @@ const setmyropt = {p, t
 	;;
 }
 
+const parse = {b, p, path
+	while true
+		skipspace(p)
+		if !target(b, p)
+			break
+		;;
+	;;
+	skipspace(p)
+	if p.rest.len > 0
+		failparse(p, "junk in file near {}\n", p.rest[:std.min(p.rest.len, 10)])
+		-> false
+	;;
+	-> true
+}
+
+const target = {b, p
+	match word(p)
+	/* targets */
+	| `std.Some "bin":	bintarget(b, p)
+	| `std.Some "lib":	libtarget(b, p)
+	| `std.Some "test":	testtarget(b, p)
+	| `std.Some "gen":	cmdtarget(b, p, "gen", false)
+	| `std.Some "cmd":	cmdtarget(b, p, "cmd", true)
+	| `std.Some "data":	datatarget(b, p, "data")
+	| `std.Some "man":	mantarget(b, p)
+	| `std.Some "sub":	subtarget(b, p)
+	/* global attributes */
+	| `std.Some "incpath":	incpath(b, p, &p.incpath, "incpath")
+	| `std.Some "libdeps":	incpath(b, p, &p.libdeps, "libdeps")
+	| `std.Some "testdeps":	incpath(b, p, &p.tstdeps, "testdeps")
+	| `std.Some "runtime":	p.runtime = expectword(b, p, "runtime")
+	| `std.Some "ldscript":	p.runtime = expectword(b, p, "ldscript")
+	| `std.Some "noinst":	p.install = false
+	/* no word */
+	| `std.Some targtype:	failparse(p, "unknown keyword {}\n", targtype)
+	| `std.None:	-> false
+	;;
+	-> true
+}
+
 const mkparser = {path, dir, basedir, sel
 	var p
 
@@ -146,6 +187,15 @@ const mkparser = {path, dir, basedir, sel
 	;;
 	p.rest = p.data
 	-> p
+}
+
+const freeparser = {p
+	std.slfree(p.fname)
+	std.slfree(p.fdir)
+	std.slfree(p.basedir)
+	std.slfree(p.subdirs)
+	std.slfree(p.data)
+	std.free(p)
 }
 
 const sortdeps = {b
@@ -195,66 +245,6 @@ const getdeps = {b, parent, targname
 	| `std.None:
 		std.fatal("{}: could not find dependency {}\n", parent, targname)
 	;;
-}
-
-const freeparser = {p
-	std.slfree(p.fname)
-	std.slfree(p.fdir)
-	std.slfree(p.basedir)
-	std.slfree(p.subdirs)
-	std.slfree(p.data)
-	std.free(p)
-}
-
-$noret const failparse = {p, msg, args : ...
-	var buf : byte[1024]
-	var ap
-	var sl
-
-	ap = std.vastart(&args)
-	sl = std.bfmtv(buf[:], msg, &ap)
-	std.fput(1, "{}:{}: {}", p.fname, p.line, sl)
-	std.exit(1)
-}
-
-const parse = {b, p, path
-	while true
-		skipspace(p)
-		if !target(b, p)
-			break
-		;;
-	;;
-	skipspace(p)
-	if p.rest.len > 0
-		failparse(p, "junk in file near {}\n", p.rest[:std.min(p.rest.len, 10)])
-		-> false
-	;;
-	-> true
-}
-
-const target = {b, p
-	match word(p)
-	/* targets */
-	| `std.Some "bin":	bintarget(b, p)
-	| `std.Some "lib":	libtarget(b, p)
-	| `std.Some "test":	testtarget(b, p)
-	| `std.Some "gen":	cmdtarget(b, p, "gen", false)
-	| `std.Some "cmd":	cmdtarget(b, p, "cmd", true)
-	| `std.Some "data":	datatarget(b, p, "data")
-	| `std.Some "man":	mantarget(b, p)
-	| `std.Some "sub":	subtarget(b, p)
-	/* global attributes */
-	| `std.Some "incpath":	incpath(b, p, &p.incpath, "incpath")
-	| `std.Some "libdeps":	incpath(b, p, &p.libdeps, "libdeps")
-	| `std.Some "testdeps":	incpath(b, p, &p.tstdeps, "testdeps")
-	| `std.Some "runtime":	p.runtime = expectword(b, p, "runtime")
-	| `std.Some "ldscript":	p.runtime = expectword(b, p, "ldscript")
-	| `std.Some "noinst":	p.install = false
-	/* no word */
-	| `std.Some targtype:	failparse(p, "unknown keyword {}\n", targtype)
-	| `std.None:	-> false
-	;;
-	-> true
 }
 
 /* <name>: '=' wordlist ';;' */
@@ -804,3 +794,15 @@ const libpath = {p, libpath
 	;;
 	-> (dir, lib, targ)
 }
+
+$noret const failparse = {p, msg, args : ...
+	var buf : byte[1024]
+	var ap
+	var sl
+
+	ap = std.vastart(&args)
+	sl = std.bfmtv(buf[:], msg, &ap)
+	std.fput(1, "{}:{}: {}", p.fname, p.line, sl)
+	std.exit(1)
+}
+
