@@ -18,13 +18,15 @@ type parser = struct
 	basedir	: byte[:]
 	line	: int
 
+	/* all targets */
+	targs	: targ[:]
+
 	/* default parameter values */
 	incpath	: byte[:][:]
 	libdeps	: byte[:][:]
 	tstdeps	: byte[:][:]
 	runtime	: byte[:]
 	ldscript: byte[:]
-	istest	: bool
 	install	: bool
 
 	/* extracted data for further parsing */
@@ -59,6 +61,10 @@ const loadall = {b, path, dir, sel
 
 	p = mkparser(path, dir, b.basedir, sel)
 	ok = bld.parse(b, p, "")
+	for t in p.targs
+		setopts(p, t)
+	;;
+
 	for sub in p.subdirs
 		subbld = std.pathcat(sub, "bld.sub")
 		subproj = std.pathcat(sub, "bld.proj")
@@ -88,6 +94,36 @@ const loadall = {b, path, dir, sel
 	-> ok
 }
 
+const setopts = {p, targ
+	match targ
+	| `Bin t:	setmyropt(p, t)
+	| `Lib t:	setmyropt(p, t)
+	| _:	/* only myr targets have settable defaults so far */
+	;;
+}
+
+const setmyropt = {p, t
+	var libdep, tstdep
+
+	t.install = t.install && p.install
+	if t.runtime.len == 0
+		t.runtime = p.runtime
+	;;
+	if t.ldscript.len == 0
+		t.ldscript = p.ldscript
+	;;
+
+	std.sljoin(&t.incpath, p.incpath)
+	for l in p.libdeps
+		libdep = libpath(p, l)
+		std.slpush(&t.libdeps, libdep)
+	;;
+	for l in p.tstdeps
+		tstdep = libpath(p, l)
+		std.slpush(&t.tstdeps, tstdep)
+	;;
+}
+
 const mkparser = {path, dir, basedir, sel
 	var p
 
@@ -102,7 +138,6 @@ const mkparser = {path, dir, basedir, sel
 		.tstdeps = [][:],
 		.runtime = "",
 		.ldscript = "",
-		.istest = false,
 		.install = true,
 	])
 	match std.slurp(path)
@@ -375,7 +410,7 @@ myrtarget: name '=' inputlist ';;'
 */
 const myrtarget = {b, p, targ
 	var ldscript, runtime, install, incpath, tags
-	var libdeps, libdep, tstdeps, tstdep
+	var libdeps, tstdeps
 	var name, inputs, attrs
 	var istest
 	var fsel
@@ -417,24 +452,13 @@ const myrtarget = {b, p, targ
 		failparse(p, "expected ';;' terminating input list, got {}\n", peekc(p))
 	;;
 
-	install = p.install
-	istest = p.istest
-	runtime = p.runtime
-	ldscript = p.ldscript
+	install = true
+	ldscript = ""
+	runtime = ""
 	incpath = [][:]
-	std.sljoin(&incpath, p.incpath)
-	for l in p.libdeps
-		libdep = libpath(p, l)
-		std.slpush(&libdeps, libdep)
-	;;
-
-	tstdeps = [][:]
-	for l in p.tstdeps
-		tstdep = libpath(p, l)
-		std.slpush(&tstdeps, tstdep)
-	;;
-
 	tags = [][:]
+	istest = false
+	tstdeps = [][:]
 	for elt in attrs
 		match elt
 		| ("ldscript", lds):	ldscript = std.sldup(lds)
@@ -445,10 +469,8 @@ const myrtarget = {b, p, targ
 		| ("noinst", ""):	install = false
 		| ("test", ""):		istest = true
 		| ("notest", ""):	istest = false
-		| (invalid, ""):
-			std.fatal("{}: got invalid attr '{}'\n", targ, invalid)
-		| (invalid, attr):
-			std.fatal("{}: got invalid attr '{} = {}'\n", targ, invalid, attr)
+		| (invalid, ""):	std.fatal("{}: got invalid attr '{}'\n", targ, invalid)
+		| (invalid, attr):	std.fatal("{}: got invalid attr '{} = {}'\n", targ, invalid, attr)
 		;;
 	;;
 	std.sljoin(&incpath, bld.opt_incpaths)
@@ -750,6 +772,7 @@ const addtarg = {p, b, name, tags, targ
 
 	tn = std.fmt("{}:{}", p.fdir, name)
 	sysseladdlist(p.targsel, tn, tags, (tn, targ))
+	std.slpush(&p.targs, targ)
 }
 
 const libpath = {p, libpath

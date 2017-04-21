@@ -10,10 +10,10 @@ pkg bld =
 		sysattrs	: std.htab(byte[:], bool)#	/* set of tags that identify a system */
 
 		/* build params */
-		all	: byte[:][:]			/* all targets, in reverse topological order */
-		targs	: std.htab(byte[:], targ)#	/* dir => target mapping */
-		tdeps	: std.htab(byte[:], byte[:][:])	/* targname => depname[:] mapping */
-		gensrc	: std.htab(byte[:], cmdtarg#)#	/* generated src => generating target mapping */
+		all	: byte[:][:]			/* targets in reverse topological order */
+		targs	: std.htab(byte[:], targ)#	/* name => target mapping */
+		tdeps	: std.htab(byte[:], byte[:][:])	/* targname => depname[:][:] */
+		gensrc	: std.htab(byte[:], cmdtarg#)#	/* generated => generator mapping */
 		prefix	: byte[:]
 		system	: byte[:]
 		arch	: byte[:]
