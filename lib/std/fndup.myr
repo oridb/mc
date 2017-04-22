@@ -25,12 +25,15 @@ generic fnenvsz = {fn
 	-> envslice(repr[0]).len
 }
 
+extern const put : (fmt : byte[:], args : ... -> int64)
+
 generic fnbdup = {fn, buf
 	var repr : intptr[2]
 	var env
 
 	repr = (&fn : intptr[2]#)#
 	env = envslice(repr[0])
+	std.put("repr: {}\n", repr)
 	slcp(buf[:env.len], env)
 	repr[0] = (buf : intptr)
 	-> (&repr : @fn::function#)#

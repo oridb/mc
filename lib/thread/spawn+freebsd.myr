@@ -17,7 +17,7 @@ const spawn = {fn
 
 const spawnstk = {fn, sz
 	var stk : byte#, tid, ctid, ret
-	var szp, fp, tos, env, envsz
+	var szp, f, tos, env, envsz
 
 	stk = getstk(sz)
 	if stk == sys.Mapbad
@@ -36,11 +36,13 @@ const spawnstk = {fn, sz
 	/* store the function we call */
 	envsz = std.fnenvsz(fn)
 	tos -= (envsz : std.intptr)
+	sz -= (envsz : sys.size)
 	env = tos
 	tos -= sizeof((->void))
 	sz -= sizeof((->void))
-	fp = (tos : (->void)#)
-	fp# = std.fnbdup(fn, (env : byte#)[:envsz])
+	f = (tos : (->void)#)
+	f# = std.fnbdup(fn, (env : byte#)[:envsz])
+	var repr = (&fn : int64[2]#)#
 
 	ret = sys.thr_new(&[
 		.startfn = (startthread : void#),
@@ -70,8 +72,8 @@ const getstk = {sz
 	-> (m : byte#)
 }
 
-const startthread = {fn : (-> void)#
-	fn#()
+const startthread = {f : (-> void)#
+	f#()
 	exit()
 }
 
