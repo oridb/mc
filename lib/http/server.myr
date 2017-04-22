@@ -29,10 +29,10 @@ const announce = {ds
 }
 
 const serve = {srv
-	std.put("waiting for connection\n")
 	while true
 		match waitconn(srv)
-		| `std.Ok fd:	communicate(srv, fd)
+		| `std.Ok fd:	
+			thread.spawn({;communicate(srv, fd)})
 		| `std.Err e:	/* eh? */
 		;;
 	;;
@@ -47,7 +47,6 @@ const communicate = {srv, fd
 		| `std.Ok req:
 			dispatch(srv, s, req)
 		| `std.Err e:
-			std.put("failed to parse request: {}\n", e)
 			break
 		;;
 	;;
@@ -57,14 +56,13 @@ const communicate = {srv, fd
 const dispatch = {srv, sess, req
 	var resp : resp#
 
-	std.put("got req: {}\n", req)
 	resp = std.mk([
 		.status=200,
 		.hdrs = [][:],
 		.len = 0,
 		.err = `std.None,
 		.reason = "",
-		.body = "heard you loud and clear\n",
+		.body = "pong\n",
 		.enc = `Length
 	])
 	respond(srv, sess, resp)

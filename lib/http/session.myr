@@ -4,7 +4,7 @@ use bio
 use "types"
 
 pkg http =
-	const mksession		: (schema : schema, host : byte[:], port : int -> std.result(session#, err))
+	const mksession		: (schema : schema, host : byte[:], port : uint16 -> std.result(session#, err))
 	const mksrvsession	: (fd	: std.fd -> session#)
 	const freesession	: (s : session# -> void)
 
@@ -42,7 +42,7 @@ const mksrvsession = {fd
 	-> std.mk([
 		.err = false,
 		.srvname = std.sldup("Myrfoo HTTP Server"),
-		.f = bio.mkfile(fd, bio.Rw)
+		.f = bio.mkfile(fd, bio.Rw),
 	])
 }
 
