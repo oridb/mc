@@ -250,22 +250,24 @@ void tagexports(Node *file, int hidelocal)
 
 	/* tag the traits */
 	free(k);
-        tr = NULL;
+	tr = NULL;
 	k = htkeys(st->tr, &n);
 	for (j = 0; j < n; j++) {
 		tr = gettrait(st, k[j]);
-		if (tr->vis == Visexport) {
-			tr->param->vis = Visexport;
-			for (i = 0; i < tr->naux; i++)
-				tr->aux[i]->vis = Visexport;
-			for (i = 0; i < tr->nmemb; i++) {
-				tr->memb[i]->decl.vis = Visexport;
-				tagnode(st, tr->memb[i], 0, hidelocal);
-			}
-			for (i = 0; i < tr->nfuncs; i++) {
-				tr->funcs[i]->decl.vis = Visexport;
-				tagnode(st, tr->funcs[i], 0, hidelocal);
-			}
+		if (tr->vis != Visexport)
+			continue;
+		if (hidelocal && tr->ishidden)
+			tr->vis = Vishidden;
+		tr->param->vis = tr->vis;
+		for (i = 0; i < tr->naux; i++)
+			tr->aux[i]->vis = tr->vis;
+		for (i = 0; i < tr->nmemb; i++) {
+			tr->memb[i]->decl.vis = tr->vis;
+			tagnode(st, tr->memb[i], 0, hidelocal);
+		}
+		for (i = 0; i < tr->nfuncs; i++) {
+			tr->funcs[i]->decl.vis = tr->vis;
+			tagnode(st, tr->funcs[i], 0, hidelocal);
 		}
 	}
 	free(k);
