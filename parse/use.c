@@ -24,6 +24,7 @@ static Node *unpickle(FILE *fd);
 
 /* type fixup list */
 static Htab *tydeduptab;	/* map from name -> type, contains all Tynames loaded ever */
+static Htab *trdeduptab;	/* map from name -> type, contains all Tynames loaded ever */
 static Htab *tidmap;	/* map from tid -> type */
 static Htab *trmap;	/* map from trait id -> trait */
 static Htab *initmap;	/* map from init name -> int */
@@ -796,7 +797,7 @@ static void fixtypemappings(Stab *st)
 static void fixtraitmappings(Stab *st)
 {
 	size_t i;
-	Trait *t;
+	Trait *t, *tr;
 
 	/*
 	* merge duplicate definitions.
@@ -808,10 +809,16 @@ static void fixtraitmappings(Stab *st)
 		t = htget(trmap, itop(traitfixid[i]));
 		if (!t)
 			die("Unable to find trait for id %zd\n", traitfixid[i]);
+
+		tr = htget(trdeduptab, t->name);
+		if (!tr) {
+			htput(trdeduptab, t->name, t);
+			tr = t;
+		}
 		if (traitfixdest[i])
-			*traitfixdest[i] = t;
+			*traitfixdest[i] = tr;
 		if (traitfixtype[i])
-			settrait(traitfixtype[i], t);
+			settrait(traitfixtype[i], tr);
 	}
 
 	lfree(&traitfixdest, &ntraitfixdest);
@@ -888,6 +895,8 @@ int loaduse(char *path, FILE *f, Stab *st, Vis vis)
 	pushstab(file->file.globls);
 	if (!tydeduptab)
 		tydeduptab = mkht(tyhash, tyeq);
+	if (!trdeduptab)
+		trdeduptab = mkht(namehash, nameeq);
 	if (fgetc(f) != 'U')
 		return 0;
 	v = rdint(f);
@@ -962,8 +971,8 @@ foundextlib:
 			  break;
 		case 'R':
 			  tr = traitunpickle(f);
-			  tr->vis = vis;
 			  if (!tr->ishidden) {
+				  tr->vis = vis;
 				  puttrait(s, tr->name, tr);
 				  for (i = 0; i < tr->nfuncs; i++) {
 					  putdcl(s, tr->funcs[i]);
