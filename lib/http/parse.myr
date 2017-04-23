@@ -243,7 +243,9 @@ const parseword = {ln
 	ln# = std.strfstrip(ln#)
 	end = 0
 	for var i = 0; i < ln#.len; i++
-		if i == ln#.len - 1 || std.isspace(std.decode(ln#[i:]))
+		if i == ln#.len - 1
+			end = i + 1
+		elif std.isspace(std.decode(ln#[i:]))
 			end = i
 			break
 		;;
