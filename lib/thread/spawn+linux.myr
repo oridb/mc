@@ -27,7 +27,7 @@ const spawnstk = {fn, sz
 	if stk == sys.Mapbad
 		-> `std.Err "couldn't get stack"
 	;;
-        stk = initstack(stk, fn, Stacksz)
+	stk = initstack(stk, fn, Stacksz)
 
 	ret = sys.fnclone(Thrflag, \
 		(stk : byte#),\
@@ -41,16 +41,19 @@ const spawnstk = {fn, sz
 }
 
 const initstack = {stk, fn, sz
-	var tos, szp, fp
+	var tos, szp, fp, env, envsz
 
+	envsz = std.fnenvsz(fn)
 	tos = (stk : std.intptr)
 	tos -= sizeof(int64)
 	szp = (tos : sys.size#)
 	szp# = sz
-        tos -= sizeof((->void))
-        fp = (tos : (->void)#)
-        fp# = fn
-        -> (tos : byte#)
+	tos -= (envsz : std.intptr)
+	env = tos
+	tos -= sizeof((->void))
+	fp = (tos : (->void)#)
+	fp# = std.fnbdup(fn, (env : byte#)[:envsz])
+	-> (tos : byte#)
 }
 
 const getstk = {sz

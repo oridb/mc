@@ -322,8 +322,10 @@ static void writeblob(FILE *fd, Blob *b)
 static void genfunc(FILE *fd, Func *fn, Htab *globls, Htab *strtab)
 {
 	Isel is = {0,};
+	char cwd[1024];
 
 	resetregs();
+	getcwd(cwd, sizeof cwd);
 	is.reglocs = mkht(varhash, vareq);
 	is.name = fn->name;
 	is.stkoff = fn->stkoff;
@@ -331,6 +333,7 @@ static void genfunc(FILE *fd, Func *fn, Htab *globls, Htab *strtab)
 	is.globls = globls;
 	is.ret = fn->ret;
 	is.cfg = fn->cfg;
+	is.cwd = strdup(cwd);
 
 	if (fn->hasenv)
 		is.envp = locreg(ModeQ);
@@ -397,14 +400,14 @@ void genblob(FILE *fd, Node *blob, Htab *globls, Htab *strtab)
 	}
 }
 
-void gengas(Node *file, char *out)
+void gengas(Node *file, FILE *fd)
 {
 	Htab *globls, *strtab;
 	Node *n, **blob;
 	Func **fn;
+	char dir[1024], *path;
 	size_t nfn, nblob;
 	size_t i;
-	FILE *fd;
 
 	/* ensure that all physical registers have a loc created before any
 	 * other locs, so that locmap[Physreg] maps to the Loc for the physreg
@@ -440,9 +443,11 @@ void gengas(Node *file, char *out)
 	}
 	popstab();
 
-	fd = fopen(out, "w");
-	if (!fd)
-		die("Couldn't open fd %s", out);
+	getcwd(dir, sizeof dir);
+	for (i = 0; i < file->file.nfiles; i++) {
+		path = file->file.files[i];
+		fprintf(fd, ".file %zd \"%s/%s\"\n", i + 1, dir, path);
+	}
 
 	strtab = mkht(strlithash, strliteq);
 	fprintf(fd, ".data\n");

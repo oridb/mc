@@ -7,6 +7,7 @@ use "syssel"
 
 pkg bld =
 	const load	: (b : build# -> bool)
+	$noret const failparse : (p : parser#, msg : byte[:], args : ... -> void)
 ;;
 
 type parser = struct
@@ -18,13 +19,15 @@ type parser = struct
 	basedir	: byte[:]
 	line	: int
 
+	/* all targets */
+	targs	: targ[:]
+
 	/* default parameter values */
 	incpath	: byte[:][:]
 	libdeps	: byte[:][:]
 	tstdeps	: byte[:][:]
 	runtime	: byte[:]
 	ldscript: byte[:]
-	istest	: bool
 	install	: bool
 
 	/* extracted data for further parsing */
@@ -59,6 +62,10 @@ const loadall = {b, path, dir, sel
 
 	p = mkparser(path, dir, b.basedir, sel)
 	ok = bld.parse(b, p, "")
+	for t in p.targs
+		setopts(p, t)
+	;;
+
 	for sub in p.subdirs
 		subbld = std.pathcat(sub, "bld.sub")
 		subproj = std.pathcat(sub, "bld.proj")
@@ -88,6 +95,76 @@ const loadall = {b, path, dir, sel
 	-> ok
 }
 
+const setopts = {p, targ
+	match targ
+	| `Bin t:	setmyropt(p, t)
+	| `Lib t:	setmyropt(p, t)
+	| _:	/* only myr targets have settable defaults so far */
+	;;
+}
+
+const setmyropt = {p, t
+	var libdep, tstdep
+
+	t.install = t.install && p.install
+	if t.runtime.len == 0
+		t.runtime = p.runtime
+	;;
+	if t.ldscript.len == 0
+		t.ldscript = p.ldscript
+	;;
+
+	std.sljoin(&t.incpath, p.incpath)
+	for l in p.libdeps
+		libdep = libpath(p, l)
+		std.slpush(&t.libdeps, libdep)
+	;;
+	for l in p.tstdeps
+		tstdep = libpath(p, l)
+		std.slpush(&t.tstdeps, tstdep)
+	;;
+}
+
+const parse = {b, p, path
+	while true
+		skipspace(p)
+		if !target(b, p)
+			break
+		;;
+	;;
+	skipspace(p)
+	if p.rest.len > 0
+		failparse(p, "junk in file near {}\n", p.rest[:std.min(p.rest.len, 10)])
+		-> false
+	;;
+	-> true
+}
+
+const target = {b, p
+	match word(p)
+	/* targets */
+	| `std.Some "bin":	bintarget(b, p)
+	| `std.Some "lib":	libtarget(b, p)
+	| `std.Some "test":	testtarget(b, p)
+	| `std.Some "gen":	cmdtarget(b, p, "gen", false)
+	| `std.Some "cmd":	cmdtarget(b, p, "cmd", true)
+	| `std.Some "data":	datatarget(b, p, "data")
+	| `std.Some "man":	mantarget(b, p)
+	| `std.Some "sub":	subtarget(b, p)
+	/* global attributes */
+	| `std.Some "incpath":	incpath(b, p, &p.incpath, "incpath")
+	| `std.Some "libdeps":	incpath(b, p, &p.libdeps, "libdeps")
+	| `std.Some "testdeps":	incpath(b, p, &p.tstdeps, "testdeps")
+	| `std.Some "runtime":	p.runtime = expectword(b, p, "runtime")
+	| `std.Some "ldscript":	p.runtime = expectword(b, p, "ldscript")
+	| `std.Some "noinst":	p.install = false
+	/* no word */
+	| `std.Some targtype:	failparse(p, "unknown keyword {}\n", targtype)
+	| `std.None:	-> false
+	;;
+	-> true
+}
+
 const mkparser = {path, dir, basedir, sel
 	var p
 
@@ -102,7 +179,6 @@ const mkparser = {path, dir, basedir, sel
 		.tstdeps = [][:],
 		.runtime = "",
 		.ldscript = "",
-		.istest = false,
 		.install = true,
 	])
 	match std.slurp(path)
@@ -111,6 +187,15 @@ const mkparser = {path, dir, basedir, sel
 	;;
 	p.rest = p.data
 	-> p
+}
+
+const freeparser = {p
+	std.slfree(p.fname)
+	std.slfree(p.fdir)
+	std.slfree(p.basedir)
+	std.slfree(p.subdirs)
+	std.slfree(p.data)
+	std.free(p)
 }
 
 const sortdeps = {b
@@ -160,66 +245,6 @@ const getdeps = {b, parent, targname
 	| `std.None:
 		std.fatal("{}: could not find dependency {}\n", parent, targname)
 	;;
-}
-
-const freeparser = {p
-	std.slfree(p.fname)
-	std.slfree(p.fdir)
-	std.slfree(p.basedir)
-	std.slfree(p.subdirs)
-	std.slfree(p.data)
-	std.free(p)
-}
-
-$noret const failparse = {p, msg, args : ...
-	var buf : byte[1024]
-	var ap
-	var sl
-
-	ap = std.vastart(&args)
-	sl = std.bfmtv(buf[:], msg, &ap)
-	std.fput(1, "{}:{}: {}", p.fname, p.line, sl)
-	std.exit(1)
-}
-
-const parse = {b, p, path
-	while true
-		skipspace(p)
-		if !target(b, p)
-			break
-		;;
-	;;
-	skipspace(p)
-	if p.rest.len > 0
-		failparse(p, "junk in file near {}\n", p.rest[:std.min(p.rest.len, 10)])
-		-> false
-	;;
-	-> true
-}
-
-const target = {b, p
-	match word(p)
-	/* targets */
-	| `std.Some "bin":	bintarget(b, p)
-	| `std.Some "lib":	libtarget(b, p)
-	| `std.Some "test":	testtarget(b, p)
-	| `std.Some "gen":	cmdtarget(b, p, "gen", false)
-	| `std.Some "cmd":	cmdtarget(b, p, "cmd", true)
-	| `std.Some "data":	datatarget(b, p, "data")
-	| `std.Some "man":	mantarget(b, p)
-	| `std.Some "sub":	subtarget(b, p)
-	/* global attributes */
-	| `std.Some "incpath":	incpath(b, p, &p.incpath, "incpath")
-	| `std.Some "libdeps":	incpath(b, p, &p.libdeps, "libdeps")
-	| `std.Some "testdeps":	incpath(b, p, &p.tstdeps, "testdeps")
-	| `std.Some "runtime":	p.runtime = expectword(b, p, "runtime")
-	| `std.Some "ldscript":	p.runtime = expectword(b, p, "ldscript")
-	| `std.Some "noinst":	p.install = false
-	/* no word */
-	| `std.Some targtype:	failparse(p, "unknown keyword {}\n", targtype)
-	| `std.None:	-> false
-	;;
-	-> true
 }
 
 /* <name>: '=' wordlist ';;' */
@@ -375,7 +400,7 @@ myrtarget: name '=' inputlist ';;'
 */
 const myrtarget = {b, p, targ
 	var ldscript, runtime, install, incpath, tags
-	var libdeps, libdep, tstdeps, tstdep
+	var libdeps, tstdeps
 	var name, inputs, attrs
 	var istest
 	var fsel
@@ -417,24 +442,13 @@ const myrtarget = {b, p, targ
 		failparse(p, "expected ';;' terminating input list, got {}\n", peekc(p))
 	;;
 
-	install = p.install
-	istest = p.istest
-	runtime = p.runtime
-	ldscript = p.ldscript
+	install = true
+	ldscript = ""
+	runtime = ""
 	incpath = [][:]
-	std.sljoin(&incpath, p.incpath)
-	for l in p.libdeps
-		libdep = libpath(p, l)
-		std.slpush(&libdeps, libdep)
-	;;
-
-	tstdeps = [][:]
-	for l in p.tstdeps
-		tstdep = libpath(p, l)
-		std.slpush(&tstdeps, tstdep)
-	;;
-
 	tags = [][:]
+	istest = false
+	tstdeps = [][:]
 	for elt in attrs
 		match elt
 		| ("ldscript", lds):	ldscript = std.sldup(lds)
@@ -445,10 +459,8 @@ const myrtarget = {b, p, targ
 		| ("noinst", ""):	install = false
 		| ("test", ""):		istest = true
 		| ("notest", ""):	istest = false
-		| (invalid, ""):
-			std.fatal("{}: got invalid attr '{}'\n", targ, invalid)
-		| (invalid, attr):
-			std.fatal("{}: got invalid attr '{} = {}'\n", targ, invalid, attr)
+		| (invalid, ""):	std.fatal("{}: got invalid attr '{}'\n", targ, invalid)
+		| (invalid, attr):	std.fatal("{}: got invalid attr '{} = {}'\n", targ, invalid, attr)
 		;;
 	;;
 	std.sljoin(&incpath, bld.opt_incpaths)
@@ -750,6 +762,7 @@ const addtarg = {p, b, name, tags, targ
 
 	tn = std.fmt("{}:{}", p.fdir, name)
 	sysseladdlist(p.targsel, tn, tags, (tn, targ))
+	std.slpush(&p.targs, targ)
 }
 
 const libpath = {p, libpath
@@ -781,3 +794,15 @@ const libpath = {p, libpath
 	;;
 	-> (dir, lib, targ)
 }
+
+$noret const failparse = {p, msg, args : ...
+	var buf : byte[1024]
+	var ap
+	var sl
+
+	ap = std.vastart(&args)
+	sl = std.bfmtv(buf[:], msg, &ap)
+	std.fput(1, "{}:{}: {}", p.fname, p.line, sl)
+	std.exit(1)
+}
+

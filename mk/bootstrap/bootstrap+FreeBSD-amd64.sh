@@ -48,6 +48,7 @@ echo 	$pwd/6/6m	-I ../sys -I . hashfuncs.myr  && 	$pwd/6/6m	-I ../sys -I . hashf
 echo 	$pwd/6/6m	-I ../sys -I . htab.myr  && 	$pwd/6/6m	-I ../sys -I . htab.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . intparse.myr  && 	$pwd/6/6m	-I ../sys -I . intparse.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . introspect.myr  && 	$pwd/6/6m	-I ../sys -I . introspect.myr  &&\
+echo 	$pwd/6/6m	-I ../sys -I . strstrip.myr  && 	$pwd/6/6m	-I ../sys -I . strstrip.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . strsplit.myr  && 	$pwd/6/6m	-I ../sys -I . strsplit.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . syswrap-ss+freebsd.myr  && 	$pwd/6/6m	-I ../sys -I . syswrap-ss+freebsd.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . varargs.myr  && 	$pwd/6/6m	-I ../sys -I . varargs.myr  &&\
@@ -69,7 +70,6 @@ echo 	$pwd/6/6m	-I ../sys -I . optparse.myr  && 	$pwd/6/6m	-I ../sys -I . optpar
 echo 	$pwd/6/6m	-I ../sys -I . dir+freebsd.myr  && 	$pwd/6/6m	-I ../sys -I . dir+freebsd.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . ipparse.myr  && 	$pwd/6/6m	-I ../sys -I . ipparse.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . endian.myr  && 	$pwd/6/6m	-I ../sys -I . endian.myr  &&\
-echo 	$pwd/6/6m	-I ../sys -I . strstrip.myr  && 	$pwd/6/6m	-I ../sys -I . strstrip.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . resolve+posixy.myr  && 	$pwd/6/6m	-I ../sys -I . resolve+posixy.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . dialparse+posixy.myr  && 	$pwd/6/6m	-I ../sys -I . dialparse+posixy.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . iterutil.myr  && 	$pwd/6/6m	-I ../sys -I . iterutil.myr  &&\

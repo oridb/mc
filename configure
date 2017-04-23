@@ -55,6 +55,7 @@ case $OS in
 	sysinit='setenv("MACOSX_DEPLOYMENT_TARGET", "10.6", 0)'
         echo 'export SYS=osx' >> config.mk
         echo export INST_MAN=$prefix/share/man/man >> config.mk
+        echo export MACOSX_DEPLOYMENT_TARGET=10.6 >> config.mk
         echo 'const Sys = "OSX"' >> mbld/config.myr
         echo 'const Linkcmd = ["ld", ' \
             '"-pagezero_size", "0x100000000",' \
@@ -67,6 +68,13 @@ case $OS in
         echo 'export SYS=freebsd' >> config.mk
         echo export INST_MAN=$prefix/man/man >> config.mk
         echo 'const Sys = "FreeBSD"' >> mbld/config.myr
+        echo 'const Linkcmd = ["ld", "-o"]' >> mbld/config.myr
+        echo "const Manpath = \"man/man\"" >> mbld/config.myr
+        ;;
+    *NetBSD*)
+        echo 'export SYS=netbsd' >> config.mk
+        echo export INST_MAN=$prefix/man/man >> config.mk
+        echo 'const Sys = "NetBSD"' >> mbld/config.myr
         echo 'const Linkcmd = ["ld", "-o"]' >> mbld/config.myr
         echo "const Manpath = \"man/man\"" >> mbld/config.myr
         ;;
@@ -90,7 +98,7 @@ esac
 
 # config.h
 echo '#define Instroot "'$prefix'"' >> config.h
-echo '#define Asmcmd {"as", "-g", "-o", NULL}' >> config.h
+echo '#define Asmcmd {"as", "-o", NULL}' >> config.h
 echo '#define Objsuffix ".o"' >> config.h
 echo 'export SYSCLASS=posixy' >> config.mk
 echo '#define Symprefix' $symprefix >> config.h
@@ -133,4 +141,3 @@ cat << EOF
     Building with:
         prefix=$prefix
 EOF
-

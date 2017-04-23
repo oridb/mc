@@ -176,12 +176,20 @@ char *tydescid(char *buf, size_t bufsz, Type *ty)
 
 void gen(Node *file, char *out)
 {
+	FILE *fd;
+
+	fd = fopen(out, "w");
+	if (!fd)
+		die("Couldn't open fd %s", out);
+
 	switch (asmsyntax) {
 	case Plan9:
-		genp9(file, out);	break;
+		genp9(file, fd);
+		break;
 	case Gnugaself:
 	case Gnugasmacho:
-		gengas(file, out);	break;
+		gengas(file, fd);
+		break;
 	default:
 		die("unknown target");  break;
 	}

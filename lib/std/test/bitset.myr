@@ -46,6 +46,15 @@ const main = {
 			var bs = mkset([0, 63, 64, 65, 73, 127, 128, 129][:])
 			testr.check(ctx, std.bscount(bs) == 8, "wrong element count, expected {}", std.bscount(bs))
 			std.bsfree(bs)
+		}],
+		[.name="hash", .fn={ctx
+			var bs = mkset([][:])
+			testr.check(ctx, std.bshash(bs) == 493832887, "wrong hash, expected {}", std.bshash(bs))
+			std.bsput(bs, 123456)
+			testr.check(ctx, std.bshash(bs) == 746495367, "wrong hash, expected {}", std.bshash(bs))
+			std.bsdel(bs, 123456)
+			testr.check(ctx, std.bshash(bs) == 493832887, "wrong hash, expected {}", std.bshash(bs))
+			std.bsfree(bs)
 		}]
 	][:])
 }

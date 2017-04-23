@@ -59,22 +59,27 @@ const printcmd = {lst
 }
 
 const srcsplit = {src
-	var platf, suff
+	var platf, fbase, suff
 
 	platf = ""
 	suff = ""
-	match std.strfind(src, ".")
+
+	match std.strfind(src, "/")
+	| `std.Some i:	fbase = i
+	| `std.None:	fbase = 0
+	;;
+	match std.strfind(src[fbase:], ".")
 	| `std.Some i:
-		suff = src[i:]
-		src = src[:i]
+		suff = src[fbase+i:]
+		src = src[:fbase+i]
 	| `std.None:
 		/* no suffix to trim */
 	;;
 
-	match std.strrfind(src, "+")
+	match std.strrfind(src[fbase:], "+")
 	| `std.Some i:
-		platf = src[i:]
-		src = src[:i]
+		platf = src[fbase+i:]
+		src = src[:fbase+i]
 	| `std.None:
 		/* no platform to trim */
 	;;

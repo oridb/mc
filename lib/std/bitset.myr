@@ -6,6 +6,7 @@ use "slcp"
 use "sldup"
 use "slfill"
 use "types"
+use "hashfuncs"
 
 pkg std =
 	type bitset = struct
@@ -29,6 +30,7 @@ pkg std =
 	const bsunion	: (a : bitset#, b : bitset# -> void)
 	const bseq	: (a : bitset#, b : bitset# -> bool)
 	const bsissubset	: (a : bitset#, b : bitset# -> bool)
+	const bshash	: (a : bitset# -> uint32)
 
 	type bsiter = struct
 		idx	: size
@@ -151,6 +153,16 @@ const bseq = {a, b
 		;;
 	;;
 	-> true
+}
+
+const bshash = {a
+	var end : size
+
+	end = a.bits.len
+	while end > 0 && a.bits[end - 1] == 0
+		end--
+	;;
+	-> std.slhash(a.bits[:end])
 }
 
 const ensurelen = {bs, len

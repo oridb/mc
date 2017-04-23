@@ -131,39 +131,41 @@ struct Insn {
 };
 
 struct Func {
-	char *name;   /* function name */
-	Type *type;   /* type of function */
+	char *name;	/* function name */
+	Srcloc loc;	/* location of definition */
+	Type *type;	/* type of function */
 
-	Node **args;  /* argument list */
-	size_t nargs; /* number of args, including hidden ones */
-	Htab *stkoff; /* Loc* -> int stkoff map */
-	Htab *envoff; /* Loc* -> int envoff map */
-	size_t stksz; /* stack size */
-	Node *ret;    /* return value */
+	Node **args;	/* argument list */
+	size_t nargs;	/* number of args, including hidden ones */
+	Htab *stkoff;	/* Loc* -> int stkoff map */
+	Htab *envoff;	/* Loc* -> int envoff map */
+	size_t stksz;	/* stack size */
+	Node *ret;	/* return value */
 
-	Cfg  *cfg;     /* flow graph */
-	char isexport; /* is this exported from the asm? */
-	char hasenv;   /* do we have an environment? */
+	Cfg  *cfg;	/* flow graph */
+	char isexport;	/* is this exported from the asm? */
+	char hasenv;	/* do we have an environment? */
 };
 
 struct Asmbb {
-	int id;       /* unique identifier */
-	char **lbls;  /* list of BB labels */
-	size_t nlbls; /* number of labels */
-	Insn **il;    /* instructions */
-	size_t ni;    /* number of instructions */
+	int id;		/* unique identifier */
+	char **lbls;	/* list of BB labels */
+	size_t nlbls;	/* number of labels */
+	Insn **il;	/* instructions */
+	size_t ni;	/* number of instructions */
 
-	Bitset *pred; /* set of predecessor BB ids */
-	Bitset *succ; /* set of successor BB ids */
-	Bitset *use;  /* registers used by this BB */
-	Bitset *def;  /* registers defined by this BB */
-	Bitset *livein; /* variables live on entrance to BB */
-	Bitset *liveout;  /* variables live on exit from BB */
+	Bitset *pred;	/* set of predecessor BB ids */
+	Bitset *succ;	/* set of successor BB ids */
+	Bitset *use;	/* registers used by this BB */
+	Bitset *def;	/* registers defined by this BB */
+	Bitset *livein;	/* variables live on entrance to BB */
+	Bitset *liveout;	/* variables live on exit from BB */
 };
 
 /* instruction selection state */
 struct Isel {
 	char *name;
+	char *cwd;
 
 	Cfg  *cfg;          /* cfg built with nodes */
 
@@ -255,8 +257,8 @@ void fillglobls(Stab *st, Htab *globls);
 void simpglobl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***blob, size_t *nblob);
 void selfunc(Isel *is, Func *fn, Htab *globls, Htab *strtab);
 void gen(Node *file, char *out);
-void gengas(Node *file, char *out);
-void genp9(Node *file, char *out);
+void gengas(Node *file, FILE *fd);
+void genp9(Node *file, FILE *fd);
 
 /* blob stuff */
 Blob *mkblobpad(size_t sz);

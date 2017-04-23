@@ -1,0 +1,52 @@
+use std
+
+const main = {
+	var a : byte#[1000]
+
+	for sz in [10, 100, 1000, 10000, 10000]
+		std.put("sz: {}\n", sz)
+		for cnt in [1, 10, 100]
+			std.put("cnt: {}\n", cnt)
+			/* alloc forwards, dealloc forwards */
+			for var i = 0; i < cnt; i++
+				a[i] = std.bytealloc(sz)
+			;;
+			for var i = 0; i < cnt; i++
+				std.bytefree(a[i], sz)
+			;;
+
+			/* alloc forwards, dealloc backwards */
+			for var i = 0; i < cnt; i++
+				a[i] = std.bytealloc(sz)
+			;;
+			for var i = cnt; i > 0; i--
+				std.bytefree(a[i - 1], sz)
+			;;
+
+			/* alloc forwards, dealloc randomly */
+			for var i = 0; i < cnt; i++
+				a[i] = std.bytealloc(sz)
+			;;
+			shuffle(a[:cnt])
+			for var i = cnt; i > 0; i--
+				std.bytefree(a[i - 1], sz)
+			;;
+		;;
+	;;
+}
+
+const shuffle = {a
+	var t
+	var rng
+	var j
+
+	/* we want determinism for benchmarking */
+	rng = std.mksrng(123)
+	for var i = 0; i < a.len - 1; i++
+		j = std.rngrand(rng, i, a.len)
+		t = a[j]
+		a[j] = a[i]
+		a[i] = t
+	;;
+}
+

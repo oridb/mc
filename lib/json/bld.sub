@@ -1,5 +1,3 @@
-testdeps = ../testr:testr ;;
-
 lib json =
 	types.myr
 	parse.myr
@@ -9,3 +7,4 @@ lib json =
         lib ../std:std
 ;;
 
+testdeps = ../testr:testr ;;
