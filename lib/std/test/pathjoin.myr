@@ -29,6 +29,7 @@ const main = {
 	norm("/foo/../bar/../..", "/")
 
 	/* mix all of the above */
+	norm("./", ".")
 	norm("/../foo//bar", "/foo/bar")
 	norm("..//../foo/bar", "../../foo/bar")
 	norm("foo//./bar/..", "foo")
