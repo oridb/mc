@@ -22,7 +22,6 @@ const parsereq = {s
 		.params=[][:],
 	])
 
-	std.put("parsing request\n")
 	match bio.readln(s.f)
 	| `bio.Err e:
 		err = `Econn
@@ -31,11 +30,9 @@ const parsereq = {s
 		err = `Econn
 		goto error
 	| `bio.Ok ln:
-		std.put("status line: {}\n", ln)
 		match parsereqstatus(s, r, ln)
 		| `std.Ok void:
 		| `std.Err e:
-			std.put("err: {}\n", e)
 			std.slfree(ln)
 			err = e
 			-> `std.Err e
@@ -44,7 +41,6 @@ const parsereq = {s
 	;;
 
 	while true
-		std.put("parsing headers\n")
 		match bio.readln(s.f)
 		| `bio.Err e:	
 			err = `Econn
@@ -53,7 +49,6 @@ const parsereq = {s
 			err = `Econn
 			goto error
 		| `bio.Ok ln:
-			std.put("ln: {}\n", ln)
 			if std.strstrip(ln).len == 0
 				std.slfree(ln)
 				break
@@ -127,25 +122,27 @@ const parseresp = {s, r : resp#
 }
 
 const parsereqstatus = {s, r, ln
-	var m, p, v
-
 	match parseword(&ln)
-	| `std.Some w:	m = w
+	| `std.Some "GET":	r.method = `Get
+	| `std.Some "HEAD":	r.method = `Head
+	| `std.Some "POST":	r.method = `Post
+	| `std.Some "DELETE":	r.method = `Delete
+	| `std.Some "TRACE":	r.method = `Trace
+	| `std.Some "OPTIONS":	r.method = `Options
+	| `std.Some _:	-> `std.Err `Eproto
 	| `std.None:	-> `std.Err `Eproto
 	;;
-	std.put("got method: {}\n", m)
 
 	match parseword(&ln)
-	| `std.Some w:	p = w
+	| `std.Some w:	r.url.path = std.sldup(w)
 	| `std.None:	-> `std.Err `Eproto
 	;;
-	std.put("got path: {}\n", p)
 
 	match parseword(&ln)
-	| `std.Some w:	v = w
+	| `std.Some "HTTP/1.1":	/* ok */
+	| `std.Some w:	std.put("warn: http version '{}'\n", w)
 	| `std.None:	-> `std.Err `Eproto
 	;;
-	std.put("got version: {}\n", v)
 
 	ln = std.strfstrip(ln)
 	-> `std.Ok void

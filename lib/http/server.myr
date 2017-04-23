@@ -9,7 +9,8 @@ use "parse"
 pkg http =
 	const announce	: (ds : byte[:] -> std.result(server#, err))
 	const shutdown	: (srv : server# -> void)
-	const serve	: (srv : server# -> void)
+	const serve	: (srv : server#, fn : (srv : server#, s : session#, req : req# -> void) -> void)
+	const respond	: (srv : server#, sess : session#, resp : resp# -> void)
 ;;
 
 const announce = {ds
@@ -28,44 +29,27 @@ const announce = {ds
 	;;
 }
 
-const serve = {srv
+const serve = {srv, fn
 	while true
 		match waitconn(srv)
 		| `std.Ok fd:	
-			thread.spawn({;communicate(srv, fd)})
+			thread.spawn({;communicate(srv, fd, fn)})
 		| `std.Err e:	/* eh? */
 		;;
 	;;
 }
 
-const communicate = {srv, fd
+const communicate = {srv, fd, fn
 	var s
 
 	s = mksrvsession(fd)
 	while !srv.quit
 		match parsereq(s)
-		| `std.Ok req:
-			dispatch(srv, s, req)
-		| `std.Err e:
-			break
+		| `std.Ok req:	fn(srv, s, req)
+		| `std.Err e:	break
 		;;
 	;;
 	std.close(fd)
-}
-
-const dispatch = {srv, sess, req
-	var resp : resp#
-
-	resp = std.mk([
-		.status=200,
-		.hdrs = [][:],
-		.len = 0,
-		.err = `std.None,
-		.reason = "",
-		.body = "pong\n",
-		.enc = `Length
-	])
-	respond(srv, sess, resp)
 }
 
 const respond = {srv, s, resp

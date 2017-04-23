@@ -82,6 +82,7 @@ pkg http =
 		url	: url#
 		hdrs	: (byte[:], byte[:])[:]
 		err	: std.option(err)
+		method	: method
 	;;
 
 	type resp = struct
