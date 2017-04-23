@@ -149,7 +149,6 @@ const addhosts = {addr, as, str
 			if hthas(hostmap, name)
 				continue
 			;;
-			unlock(netlck)
 			hinf = [
 				.fam=fam,
 				.stype = 0,
