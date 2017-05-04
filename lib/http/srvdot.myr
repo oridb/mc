@@ -1,10 +1,22 @@
 use std
 use http
 
-const main = {
-	var srv //, router
+const main = {args
+	var srv, ann, cmd
 
-	match http.announce("tcp!localhost!8080")
+	cmd = std.optparse(args, &[
+		.maxargs=0,
+		.opts = [[.opt='a', .arg="ann", .desc="announce on `ann`"]][:]
+	])
+	ann = "tcp!localhost!8080"
+	for opt in cmd.opts
+		match opt
+		| ('a', a):	ann = a
+		| _:	std.die("unreachable")
+		;;
+	;;
+
+	match http.announce(ann)
 	| `std.Ok s:	srv = s
 	| `std.Err e:	std.fatal("unable to announce: {}\n", e)
 	;;
