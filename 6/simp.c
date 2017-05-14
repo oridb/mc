@@ -1282,7 +1282,7 @@ static void simpinit(Simp *s, Node *f)
 		s->isbigret = 1;
 		s->ret = gentemp(f->loc, mktyptr(f->loc, ty), &dcl);
 		declarearg(s, dcl);
-	} else if (ty->type != Tyvoid) {
+	} else if (tybase(ty)->type != Tyvoid) {
 		s->isbigret = 0;
 		s->ret = gentemp(f->loc, ty, &dcl);
 	}
