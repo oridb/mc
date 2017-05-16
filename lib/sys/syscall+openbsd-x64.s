@@ -15,12 +15,22 @@ sys$syscall:
 	movq 40(%rsp),%r10
 	movq 48(%rsp),%r8
 	movq 56(%rsp),%r9
+	/*
+	if there syscalls are more than 6
+	args (eg, mmap), the remaining args
+	are on the stack, with 8 dummy bytes 
+	for a return address.
+	*/
+	movq 64(%rsp),%rbx
+	pushq %rbx
+	pushq %rbx
 
 	syscall
 	jae .success
 	negq %rax
 
 .success:
+	addq $16,%rsp
 	ret
 
 /* __tfork_thread(tfp : tforkparams#, sz : size, fn : void#, arg : void#-> tid) */
