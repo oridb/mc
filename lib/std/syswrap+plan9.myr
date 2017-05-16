@@ -42,7 +42,9 @@ pkg std =
 	const openmode	: (path : byte[:], opts : fdopt, mode : int64 -> result(fd, errno))
 	const close	: (fd : fd -> errno)
 	const read	: (fd : fd, buf : byte[:] -> result(size, errno))
+	const pread	: (fd : fd, buf : byte[:], off : off -> result(size, errno))
 	const write	: (fd : fd, buf : byte[:] -> result(size, errno))
+	const pwrite	: (fd : fd, buf : byte[:], off : off -> result(size, errno))
 	const seek	: (fd : fd, delta : off, whence : whence -> result(off, errno))
 	const pipe	: (fds : fd[2]# -> errno)
 	const dup2	: (ofd : fd, nfd : fd -> result(fd, errno))
@@ -184,7 +186,9 @@ const getsysinfo = {si
 
 const close	= {fd;		-> (sys.close((fd : sys.fd)) : errno)}
 const read	= {fd, buf;	-> check(sys.pread((fd : sys.fd), buf, -1))}
+const pread	= {fd, buf,off;	-> check(sys.pread((fd : sys.fd), buf, (off : sys.off)))}
 const write	= {fd, buf;	-> check(sys.pwrite((fd : sys.fd), buf, -1))}
+const pwrite	= {fd, buf,off;	-> check(sys.pwrite((fd : sys.fd), buf, (off : sys.off)))}
 const seek	= {fd, off, whence; 	-> check(sys.seek((fd : sys.fd), (off : sys.off), (whence : int64)))}
 const pipe	= {fds;		-> (sys.pipe((fds : sys.fd[2]#)) : errno)}
 const dup2	= {ofd, nfd;	-> check(sys.dup((ofd : sys.fd), (nfd : sys.fd)))}
