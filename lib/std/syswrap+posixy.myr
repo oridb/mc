@@ -30,6 +30,7 @@ pkg std =
 	const Ordwr    	: fdopt = (sys.Ordwr	: fdopt)
 	const Ocreat   	: fdopt = (sys.Ocreat	: fdopt)
 	const Otrunc   	: fdopt = (sys.Otrunc	: fdopt)
+	const Ocexec	: fdopt = (sys.Ocloexec	: fdopt)
 	const Odir	: fdopt = (sys.Odir	: fdopt)
 
 	/* fd stuff */

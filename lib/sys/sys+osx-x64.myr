@@ -241,6 +241,8 @@ pkg sys =
 	const Onofollow	: fdopt = 0x100
 	const Otrunc   	: fdopt = 0x400
 	const Odir	: fdopt = 0x100000
+	const Ocloexec	: fdopt = 0x1000000
+
 
 	/* stat modes */
 	const Sifmt	: filemode = 0xf000
