@@ -111,6 +111,7 @@ lib std {inc=.} =
 	resolve+posixy.myr
 	wait+plan9.myr
 	wait+posixy.myr
+	muxfd+posixy.myr
 
 	# relatively generic syscall wrappers
 	syswrap+plan9.myr

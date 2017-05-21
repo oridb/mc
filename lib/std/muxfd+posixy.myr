@@ -1,0 +1,61 @@
+use sys
+
+use "alloc"
+use "mk"
+use "syswrap"
+use "types"
+use "slpush"
+
+pkg std =
+	type muxflag = int32
+	type fdmux = struct
+		pollfd	: sys.pollfd[:]
+	;;
+
+	const Muxread	: muxflag = 1<<0
+	const Muxwrite	: muxflag = 1<<1
+	const Forever	: time = 0
+
+	const mkmux	: (-> fdmux#)
+	const freemux	: (w : fdmux# -> void)
+	const muxfd	: (w : fdmux#, fd : fd, flg : muxflag -> void)
+	const muxwait	: (w : fdmux#, tm : time -> void)
+;;
+
+const mkmux = {
+	-> std.mk([
+		.pollfd = [][:]
+	])
+}
+
+const freemux = {w
+	std.slfree(w.pollfd)
+	std.free(w)
+}
+
+const muxfd = {w, fd, flg
+	var evt
+
+	evt = 0
+	if flg & Muxread != 0
+		sys.write(1, "reading\n")
+		evt |= sys.Pollin
+	;;
+	if flg & Muxwrite != 0
+		evt |= sys.Pollout
+	;;
+	std.slpush(&w.pollfd, [.fd=(fd : sys.fd), .events=evt, .revents=0])
+}
+
+const muxwait = {w, tm
+	var sl, ms
+
+	sl = (&tm : byte#)[:8]
+	if tm < 0
+		ms = -1
+	else
+		ms = (tm / 1000 : int)
+	;;
+	sys.poll(w.pollfd, ms)
+}
+
