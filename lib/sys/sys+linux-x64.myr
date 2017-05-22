@@ -317,6 +317,9 @@ pkg sys =
 	const Pollin	: pollevt = 0x001	/* There is data to read.  */
 	const Pollpri	: pollevt = 0x002	/* There is urgent data to read.  */
 	const Pollout	: pollevt = 0x004	/* Writing now will not block.  */
+	const Pollerr	: pollevt = 0x008           /* Error condition.  */
+	const Pollhup	: pollevt = 0x010           /* Hung up.  */
+	const Pollnval	: pollevt = 0x020           /* Invalid polling request.  */
 
 	/* poll events: xopen */
 	const Pollrdnorm	: pollevt = 0x040	/* Normal data may be read.  */
