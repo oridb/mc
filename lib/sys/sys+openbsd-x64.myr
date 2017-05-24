@@ -17,7 +17,7 @@ pkg sys =
 	type fcntlcmd	= int64
 	type signo	= int32
 	type sigflags	= int32
-	type sigset = uint32
+	type sigset	= uint32
 
 	type clock = union
 		`Clockrealtime

@@ -7,10 +7,14 @@ pkg bio =
 	const Rw	: mode = 1 | 2
 
 	type file = struct
-		/* backing fd */
-		fd	: std.fd
+		/* backing io ops */
 		mode	: mode
 		lasterr	: std.errno
+
+		read	: (buf : byte[:] -> std.result(std.size, std.errno))
+		write	: (buf : byte[:] -> std.result(std.size, std.errno))
+		seek	: (idx : std.off -> std.result(std.size, std.errno))
+		close	: (-> void)
 
 		/* read buffer */
 		rbuf	: byte[:]
@@ -20,6 +24,13 @@ pkg bio =
 		/* write buffer */
 		wbuf	: byte[:]
 		wend	: std.size
+	;;
+
+	type vtab = struct
+		read	: (buf : byte[:] -> std.result(std.size, std.errno))
+		write	: (buf : byte[:] -> std.result(std.size, std.errno))
+		seek	: (idx : std.off -> std.result(std.size, std.errno))
+		close	: (-> void)
 	;;
 
 	type status(@a) = union
@@ -37,10 +48,11 @@ pkg bio =
 
 	/* creation */
 	const mkfile	: (fd : std.fd, mode : mode	-> file#)
+	const mk	: (mode : mode, vt : vtab	-> file#)
 	const open	: (path : byte[:], mode : mode	-> std.result(file#, byte[:]))
 	const dial	: (srv	: byte[:], mode : mode	-> std.result(file#, byte[:]))
 	const create	: (path : byte[:], mode : mode, perm : int	-> std.result(file#, byte[:]))
-	const close	: (f : file# -> bool)
+	const close	: (f : file# -> void)
 	const free	: (f : file# -> void)
 
 	/* basic i/o. Returns sub-buffer when applicable. */
@@ -81,12 +93,25 @@ const Small = 512
 
 /* Creates a file from an fd, opened in the given mode. */
 const mkfile = {fd, mode
+	-> mk(mode, [
+		.read = {buf; -> std.read(fd, buf)},
+		.write = {buf; -> std.write(fd, buf)},
+		.seek = {off; -> std.seek(fd, off, std.Seekset)},
+		.close = {; std.close(fd)},
+	])
+}
+
+const mk = {mode, vt
 	var f
 
 	f = std.alloc()
 
-	f.fd = fd
 	f.mode = mode
+	f.read = std.fndup(vt.read)
+	f.write = std.fndup(vt.write)
+	f.seek = std.fndup(vt.seek)
+	f.close = std.fndup(vt.close)
+
 	f.lasterr = 0
 	if mode & Rd != 0
 		f.rbuf = std.slalloc(Bufsz)
@@ -142,15 +167,17 @@ const sysopen = {path, mode, openmode, perm
 
 /* closes a file, flushing it to the output fd */
 const close = {f
-	var fd
-
-	fd = f.fd
-	free(f)
-	-> std.close(fd) == 0
+	flush(f)
+	f.close()
+	_free(f)
 }
 
 const free = {f
 	flush(f)
+	_free(f)
+}
+
+const _free = {f
 	if f.mode & Rd != 0
 		std.slfree(f.rbuf)
 	;;
@@ -158,6 +185,10 @@ const free = {f
 	if f.mode & Wr != 0
 		std.slfree(f.wbuf)
 	;;
+	std.fnfree(f.read)
+	std.fnfree(f.write)
+	std.fnfree(f.seek)
+	std.fnfree(f.close)
 	std.free(f)
 }
 
@@ -177,7 +208,7 @@ const write = {f, src
 		-> `Ok src.len
 	else
 		flush(f)
-		-> writebuf(f.fd, src)
+		-> writebuf(f, src)
 	;;
 }
 
@@ -226,7 +257,7 @@ const read = {f, dst
 	/* Read the rest directly from the fd */
 	d = dst[count:]
 	while d.len > 0
-		match std.read(f.fd, d)
+		match f.read(d)
 		| `std.Ok 0:
 			break
 		| `std.Ok n:
@@ -254,7 +285,7 @@ const flush = {f
 
 	ret = true
 	if f.mode & Wr != 0
-		match writebuf(f.fd, f.wbuf[:f.wend])
+		match writebuf(f, f.wbuf[:f.wend])
 		| `Ok n: ret = (n == f.wend)
 		| _:	ret = false
 		;;
@@ -266,7 +297,7 @@ const flush = {f
 const seek = {f, off
 	flush(f)
 	f.rstart = f.rend = 0
-	match std.seek(f.fd, off, std.Seekset)
+	match f.seek(off)
 	| `std.Ok ret:	-> `std.Ok ret
 	| `std.Err e:	-> `std.Err errtype(e)
 	;;
@@ -556,7 +587,7 @@ const readinto = {f, buf, n
 const ensurewrite = {f, n
 	std.assert(n < f.wbuf.len, "ensured write capacity > buffer size")
 	if n > f.wbuf.len - f.wend
-		match writebuf(f.fd, f.wbuf[:f.wend])
+		match writebuf(f, f.wbuf[:f.wend])
 		| `Ok len:
 			f.wend = 0
 			-> `Ok len
@@ -593,12 +624,12 @@ const ensureread = {f, n
 }
 
 /* blats a buffer to an fd */
-const writebuf = {fd, src
+const writebuf = {f, src
 	var count
 
 	count = 0
 	while src.len != 0
-		match std.write(fd, src)
+		match f.write(src)
 		| `std.Ok 0:
 			-> `Eof
 		| `std.Ok n:
@@ -640,7 +671,7 @@ const fill = {f, min
 		throw it away, so we report a successful short
 		read, and then error on the next read.
 		*/
-		match std.read(f.fd, f.rbuf[f.rend:])
+		match f.read(f.rbuf[f.rend:])
 		| `std.Ok 0:
 			break
 		| `std.Ok n:
