@@ -173,7 +173,7 @@ static void tagnode(Stab *st, Node *n, int ingeneric, int hidelocal)
 		if (hidelocal && n->decl.ispkglocal)
 			n->decl.vis = Vishidden;
 		n->decl.isexportinit = isexportinit(n);
-		if (n->decl.isexportinit)
+		if (n->decl.isexportinit || ingeneric)
 			tagnode(st, n->decl.init, n->decl.isgeneric, hidelocal);
 		break;
 	case Nfunc:

@@ -33,7 +33,6 @@ generic fnbdup = {fn, buf
 
 	repr = (&fn : intptr[2]#)#
 	env = envslice(repr[0])
-	std.put("repr: {}\n", repr)
 	slcp(buf[:env.len], env)
 	repr[0] = (buf : intptr)
 	-> (&repr : @fn::function#)#

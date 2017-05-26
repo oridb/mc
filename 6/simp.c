@@ -1276,7 +1276,7 @@ static void simpinit(Simp *s, Node *f)
 		s->isbigret = 1;
 		s->ret = gentemp(f->loc, mktyptr(f->loc, ty), &dcl);
 		declarearg(s, dcl);
-	} else if (ty->type != Tyvoid) {
+	} else if (tybase(ty)->type != Tyvoid) {
 		s->isbigret = 0;
 		s->ret = gentemp(f->loc, ty, &dcl);
 	}
@@ -1434,7 +1434,9 @@ static void simpconstinit(Simp *s, Node *dcl)
 			simpcode(s, e);
 		else
 			lappend(&s->blobs, &s->nblobs, dcl);
-	} else if (dcl->decl.isconst) {
+	} else if (!dcl->decl.isconst && !e) {
+		lappend(&s->blobs, &s->nblobs, dcl);
+	} else if (e->expr.isconst) {
 		switch (exprop(e)) {
 		case Oarr:
 		case Ostruct:
@@ -1446,8 +1448,6 @@ static void simpconstinit(Simp *s, Node *dcl)
 			fatal(dcl, "unsupported initializer for %s", declname(dcl));
 			break;
 		}
-	} else if (!dcl->decl.isconst && !e) {
-		lappend(&s->blobs, &s->nblobs, dcl);
 	} else {
 		die("Non-constant initializer for %s\n", declname(dcl));
 	}
