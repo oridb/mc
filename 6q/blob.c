@@ -302,7 +302,7 @@ static void encodemin(Gen *g, uint64_t val)
 	uint8_t b;
 
 	if (val < 128) {
-		fprintf(g->f, "\tb %zd,\n", val);
+		fprintf(g->f, "\tb %lld,\n", (long long)val);
 		return;
 	}
 
@@ -353,13 +353,13 @@ void genblob(Gen *g, Blob *b)
 
 	switch (b->type) {
 	case Btimin:	encodemin(g, b->ival);	break;
-	case Bti8:	fprintf(g->f, "\tb %zd,\n", b->ival);	break;
-	case Bti16:	fprintf(g->f, "\th %zd,\n", b->ival);	break;
-	case Bti32:	fprintf(g->f, "\tw %zd,\n", b->ival);	break;
-	case Bti64:	fprintf(g->f, "\tl %zd,\n", b->ival);	break;
+	case Bti8:	fprintf(g->f, "\tb %lld,\n", (long long)b->ival);	break;
+	case Bti16:	fprintf(g->f, "\th %lld,\n", (long long)b->ival);	break;
+	case Bti32:	fprintf(g->f, "\tw %lld,\n", (long long)b->ival);	break;
+	case Bti64:	fprintf(g->f, "\tl %lld,\n", (long long)b->ival);	break;
 	case Btbytes:	outbytes(g, b->bytes.buf, b->bytes.len);	break;
-	case Btpad:	fprintf(g->f, "\tz %zd,\n", b->npad);	break;
-	case Btref:	fprintf(g->f, "\tl $%s + %zd,\n", b->ref.str, b->ref.off);	break;
+	case Btpad:	fprintf(g->f, "\tz %lld,\n", (long long)b->npad);	break;
+	case Btref:	fprintf(g->f, "\tl $%s + %lld,\n", b->ref.str, (long long)b->ref.off);	break;
 	case Btseq:
 		for (i = 0; i < b->seq.nsub; i++)
 			genblob(g, b->seq.sub[i]);
