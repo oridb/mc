@@ -8,7 +8,7 @@ pkg bld =
 		file	: byte[:]
 		line	: int
 		targ	: byte[:]
-		sysattrs	: std.htab(byte[:], bool)#
+		sysattrs	: std.htab(byte[:], (int, int, int))#
 		_match	: std.htab(byte[:], int)#
 		_best	: std.htab(byte[:], @a)#
 	;;
@@ -29,7 +29,7 @@ generic mksyssel = {b, file, line, targ
 		.targ = targ,
 		._match = std.mkht(std.strhash, std.streq),
 		._best = std.mkht(std.strhash, std.streq),
-		.sysattrs = b.sysattrs
+		.sysattrs = b.tags
 	])
 	-> syssel
 }
@@ -60,15 +60,25 @@ generic sysseladd = {syssel, f
 }
 
 generic sysseladdlist = {syssel, base, attrs, val
-	var nmatch, curbest
+	var nmatch, curbest, n, v
 
 	nmatch = 0
 	for a in attrs
-		if std.hthas(syssel.sysattrs, a)
-			nmatch++
-		else
+		match std.strfind(a, ":")
+		| `std.Some i:
+			n = a[:i]
+			v = parseversion(a[1:])
+		| `std.None:
+			n = a
+			v = (-1, -1, -1)
+		;;
+
+		if !std.hthas(syssel.sysattrs, n)
 			nmatch = -1
 			break
+		;;
+		if newenough(syssel, a, v)
+			nmatch++
 		;;
 	;;
 	curbest = std.htgetv(syssel._match, base, -1)
@@ -76,6 +86,10 @@ generic sysseladdlist = {syssel, base, attrs, val
 		std.htput(syssel._match, base, nmatch)
 		std.htput(syssel._best, base, val)
 	;;
+}
+
+const newenough = {syssel, attr, vers
+	-> true
 }
 
 generic sysselfin = {syssel
@@ -99,20 +113,20 @@ const addsysattrs = {b, tags
 	var tagfile
 
 	match opt_sys
-	| "freebsd":	tag(b.sysattrs, ["freebsd", "posixy"][:])
-	| "netbsd":	tag(b.sysattrs, ["netbsd", "posixy"][:])
-	| "openbsd":	tag(b.sysattrs, ["openbsd", "posixy"][:])
-	| "osx":	tag(b.sysattrs, ["osx", "posixy"][:])
-	| "linux":	tag(b.sysattrs, ["linux", "posixy"][:])
-	| "plan9":	tag(b.sysattrs, ["plan9"][:])
+	| "freebsd":	tag(b.tags, ["freebsd", "posixy"][:])
+	| "netbsd":	tag(b.tags, ["netbsd", "posixy"][:])
+	| "openbsd":	tag(b.tags, ["openbsd", "posixy"][:])
+	| "osx":	tag(b.tags, ["osx", "posixy"][:])
+	| "linux":	tag(b.tags, ["linux", "posixy"][:])
+	| "plan9":	tag(b.tags, ["plan9"][:])
 	| unknown:	std.fatal("unknown system \"{}\"\n", unknown)
 	;;
 
 	match opt_arch
-	| "x64":	tag(b.sysattrs, ["x64"][:])
+	| "x64":	tag(b.tags, ["x64"][:])
 	| unknown:	std.fatal("unknown architecture {}\n", unknown)
 	;;
-	tag(b.sysattrs, tags)
+	tag(b.tags, tags)
 
 	tagfile = std.pathcat(b.basedir, "systags")
 	if std.fexists(tagfile)
@@ -130,7 +144,7 @@ const loadtagfile = {b, tagfile
 		(tag, data) = word(data) 
 		match tag
 		| `std.Some w:
-			std.htput(b.sysattrs, w, true)
+			std.htput(b.tags, w, (-1, -1, -1))
 		| `std.None:
 			if data.len > 0
 				std.fatal("junk character near '{}'\n", trailing(data, 10))
@@ -168,7 +182,7 @@ const word = {data
 
 const tag  = {sa, tags
 	for t in tags
-		std.htput(sa, t, true)
+		std.htput(sa, t, (-1, -1, -1))
 	;;
 }
 
