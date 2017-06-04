@@ -67,18 +67,20 @@ generic sysseladdlist = {syssel, base, attrs, val
 		match std.strfind(a, ":")
 		| `std.Some i:
 			n = a[:i]
-			v = parseversion(a[1:])
+			v = parseversion(a[i+1:])
 		| `std.None:
 			n = a
 			v = (-1, -1, -1)
 		;;
 
-		if !std.hthas(syssel.sysattrs, n)
+		match std.htget(syssel.sysattrs, n)
+		| `std.None:
 			nmatch = -1
 			break
-		;;
-		if newenough(syssel, a, v)
-			nmatch++
+		| `std.Some av:
+			if newenough(syssel, av, v)
+				nmatch++
+			;;
 		;;
 	;;
 	curbest = std.htgetv(syssel._match, base, -1)
@@ -89,7 +91,14 @@ generic sysseladdlist = {syssel, base, attrs, val
 }
 
 const newenough = {syssel, attr, vers
-	-> true
+	match (attr, vers)
+	| ((a0, a1, a2), (v0, v1, v2)):
+		if a0 == -1 && a1 == -1 && a2 == -1
+			-> true
+		else
+			-> a0 >= v0 && a1 >= v1 && a2 >= v2
+		;;
+	;;
 }
 
 generic sysselfin = {syssel
@@ -112,13 +121,14 @@ generic sysselfin = {syssel
 const addsysattrs = {b, tags
 	var tagfile
 
+	std.htput(b.tags, opt_sys, opt_sysvers)
 	match opt_sys
-	| "freebsd":	tag(b.tags, ["freebsd", "posixy"][:])
-	| "netbsd":	tag(b.tags, ["netbsd", "posixy"][:])
-	| "openbsd":	tag(b.tags, ["openbsd", "posixy"][:])
-	| "osx":	tag(b.tags, ["osx", "posixy"][:])
-	| "linux":	tag(b.tags, ["linux", "posixy"][:])
-	| "plan9":	tag(b.tags, ["plan9"][:])
+	| "freebsd":	std.htput(b.tags, "posixy", (-1, -1, -1))
+	| "netbsd":	std.htput(b.tags, "posixy", (-1, -1, -1))
+	| "openbsd":	std.htput(b.tags, "posixy", (-1, -1, -1))
+	| "osx":	std.htput(b.tags, "posixy", (-1, -1, -1))
+	| "linux":	std.htput(b.tags, "posixy", (-1, -1, -1))
+	| "plan9":
 	| unknown:	std.fatal("unknown system \"{}\"\n", unknown)
 	;;
 
@@ -128,7 +138,7 @@ const addsysattrs = {b, tags
 	;;
 	tag(b.tags, tags)
 
-	tagfile = std.pathcat(b.basedir, "systags")
+	tagfile = std.pathcat(b.basedir, " bld.tag")
 	if std.fexists(tagfile)
 		loadtagfile(b, tagfile)
 	;;
