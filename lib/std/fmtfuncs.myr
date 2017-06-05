@@ -5,6 +5,7 @@ use "fmt"
 use "introspect"
 use "strbuf"
 use "varargs"
+use "ipparse"
 
 pkg std =
 ;;
@@ -12,11 +13,13 @@ pkg std =
 const __init__ = {
 	var bigint : bigint#
 	var bitset : bitset#
+	var ipaddr : netaddr
 
 	bigint = mkbigint(0)
 	bitset = mkbs()
 	fmtinstall(typeof(bigint), bigfmt, [][:])
 	fmtinstall(typeof(bitset), bsfmt, [][:])
+	fmtinstall(typeof(ipaddr), ipfmt, [][:])
 	bigfree(bigint)
 	bsfree(bitset)
 }
@@ -56,3 +59,21 @@ const bsfmt = {sb, ap, opts
 	;;
 	sbputs(sb, "}")
 }
+
+const ipfmt = {sb, ap, opts
+	var ip : netaddr
+	var sep = "" 
+
+	ip = std.vanext(ap)
+	match ip
+	| `Ipv4 a:
+		std.put("{}.{}.{}.{}", a[0], a[1], a[2], a[3])
+	| `Ipv6 a:	
+		sep = ""
+		for var i = 0; i < 16; i += 2
+			std.put("{}{w=2,p=0,x}{w=2,p=0,x}", sep, a[i+0], a[i+1])
+			sep = ":"
+		;;
+	;;
+}
+
