@@ -73,6 +73,7 @@ const __init__ = {
 }
 
 const resolve = {host
+	/*TODO: v4 and v6 */
 	-> resolverec(host, `DnsA)
 }
 
@@ -85,7 +86,7 @@ const resolverec = {host, t
 	| `Some hinf:
 		-> `Ok sldup([hinf][:])
 	| `None:
-		-> dnsresolve(host, rectype(`DnsA))
+		-> dnsresolve(host, rectype(t))
 	;;
 }
 
