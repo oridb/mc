@@ -30,6 +30,7 @@ var inited = false
 /* takes a plan 9 style dial string */
 const dial = {ds
 	match nameseg(ds)
+	| `Some ("net", str):	-> dialsock(sys.Sockstream, str)
 	| `Some ("tcp", str):	-> dialsock(sys.Sockstream, str)
 	| `Some ("udp", str):	-> dialsock(sys.Sockdgram, str)
 	| `Some ("unix", u):	-> dialunix(u)

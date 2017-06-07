@@ -1,0 +1,38 @@
+use "alloc"
+use "die"
+use "memops"
+use "endian"
+use "fmt"
+use "option"
+use "result"
+use "sldup"
+use "strfind"
+use "utf"
+
+pkg std =
+	const netaddr	: (addr : byte[:], net : byte[:], port : byte[:] -> byte[:])
+;;
+
+const netaddr = {addr, net, port
+	match strfind(addr, "!")
+	| `Some idx:
+		match strfind(addr[idx+1:], "!")
+		| `Some _:	-> sldup(addr)
+		| `None:	/* fall through */
+		;;
+		if port.len > 0
+			-> fmt("{}!{}", addr, port)
+		elif net.len > 0
+			-> fmt("{}!{}", net, addr)
+		else
+			-> sldup(addr)
+		;;
+	| `None:
+		match (net.len, port.len)
+		| (0, 0):	-> sldup(addr)
+		| (0, _):	-> fmt("net!{}!{}", addr, port)
+		| (_, 0):	-> fmt("{}!{}", net, addr)
+		| (_, _):	-> fmt("{}!{}!{}", net, addr, port)
+		;;
+	;;
+}
