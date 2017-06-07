@@ -175,6 +175,17 @@ pkg sys =
 	const Orsync	: fdopt = Osync		/* synchronous reads */
 	const Odir	: fdopt = 0x20000
 
+	/* poll options */
+	const Pollin	: uint16 = 0x0001
+	const Pollpri	: uint16 = 0x0002
+	const Pollout	: uint16 = 0x0004
+	const Pollerr	: uint16 = 0x0008
+	const Pollhup	: uint16 = 0x0010
+	const Pollnval	: uint16 = 0x0020
+	const Pollnorm	: uint16 = 0x0040
+	const Pollrdband: uint16 = 0x0080
+	const Pollwrband: uint16 = 0x0100
+
         /* stat modes */	
 	const Sifmt	: filemode = 0xf000
 	const Sififo	: filemode = 0x1000
