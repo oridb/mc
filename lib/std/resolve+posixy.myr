@@ -36,6 +36,7 @@ pkg std =
 		`DnsMX		/* mail exchange */
 		`DnsTXT		/* text strings */
 		`DnsAAAA	/* ipv6 host address */
+		`DnsInval	/* invalid */
 	;;
 
 	type resolveerr = union
@@ -72,6 +73,7 @@ const __init__ = {
 }
 
 const resolve = {host
+	/*TODO: v4 and v6 */
 	-> resolverec(host, `DnsA)
 }
 
@@ -84,7 +86,7 @@ const resolverec = {host, t
 	| `Some hinf:
 		-> `Ok sldup([hinf][:])
 	| `None:
-		-> dnsresolve(host, rectype(`DnsA))
+		-> dnsresolve(host, rectype(t))
 	;;
 }
 
@@ -325,42 +327,55 @@ const rquery = {srv, id
 }
 
 const hosts = {pkt, id : uint16
-	var off
-	var v, q, a
+	var off, ni
+	var r, n, q, a, t
 	var hinf : hostinfo[:]
+	var v6dat : byte[16]
 
 	off = 0
 	/* parse header */
-	(v, off) = unpack16(pkt, off)	/* id */
-	if v != id
+	(r, off) = unpack16(pkt, off)	/* id */
+	if r != id
 		-> `Err `Badresp
 	;;
-	(v, off) = unpack16(pkt, off)	/* flags */
+	(_, off) = unpack16(pkt, off)	/* flags */
 	(q, off) = unpack16(pkt, off)	/* qdcount */
 	(a, off) = unpack16(pkt, off)	/* ancount */
-	(v, off) = unpack16(pkt, off)	/* nscount */
-	(v, off) = unpack16(pkt, off)	/* arcount */
+	(_, off) = unpack16(pkt, off)	/* nscount */
+	(_, off) = unpack16(pkt, off)	/* arcount */
 
 	/* skip past query records */
 	for var i = 0; i < q; i++
 		off = skipname(pkt, off)	/* name */
-		(v, off) = unpack16(pkt, off)	/* type */
-		(v, off) = unpack16(pkt, off)	/* class */
+		(_, off) = unpack16(pkt, off)	/* type */
+		(_, off) = unpack16(pkt, off)	/* class */
 	;;
 
 	/* parse answer records */
+	ni = 0
 	hinf = slalloc((a : size))
 	for var i = 0; i < a; i++
 		off = skipname(pkt, off)	/* name */
-		(v, off) = unpack16(pkt, off)	/* type */
-		(v, off) = unpack16(pkt, off)	/* class */
-		(hinf[i].ttl, off) = unpack32(pkt, off)	/* ttl */
-		(v, off) = unpack16(pkt, off)	/* rdatalen */
-		/* the thing we're interested in: our IP address */
-		hinf[i].addr = `Ipv4 [pkt[off], pkt[off+1], pkt[off+2], pkt[off+3]]
-		off += 4;
+		(t, off) = unpack16(pkt, off)	/* type */
+		(_, off) = unpack16(pkt, off)	/* class */
+		(hinf[ni].ttl, off) = unpack32(pkt, off)	/* ttl */
+		(n, off) = unpack16(pkt, off)	/* rdatalen */
+		match id2type(t)
+		| `DnsA:
+			/* the thing we're interested in: our IP address */
+			hinf[ni].addr = `Ipv4 [pkt[off], pkt[off+1], pkt[off+2], pkt[off+3]]
+			off += 4;
+			ni++
+		| `DnsAAAA:
+			std.slcp(v6dat[:], pkt[off:off+16])
+			hinf[ni].addr = `Ipv6 v6dat
+			off += 16
+			ni++
+		| _:
+			off += (n : std.size)
+		;;
 	;;
-	-> `Ok hinf
+	-> `Ok hinf[:ni]
 }
 
 
@@ -454,6 +469,23 @@ const valid = {host : byte[:]
 	-> true
 }
 
+const id2type = {rtype
+	match rtype
+	| 1:	-> `DnsA
+	| 2:	-> `DnsNS
+	| 5:	-> `DnsCNAME
+	| 6:	-> `DnsSOA
+	| 11:	-> `DnsWKS
+	| 12:	-> `DnsPTR
+	| 13:	-> `DnsHINFO
+	| 14:	-> `DnsMINFO
+	| 15:	-> `DnsMX
+	| 16:	-> `DnsTXT
+	| 28:	-> `DnsAAAA
+	| _:	-> `DnsInval
+	;;
+}
+
 const rectype = {rtype
 	match rtype
 	| `DnsA:	-> 1  /* host address */
@@ -467,6 +499,7 @@ const rectype = {rtype
 	| `DnsMX:	-> 15 /* mail exchange */
 	| `DnsTXT:	-> 16 /* text strings */
 	| `DnsAAAA:	-> 28 /* ipv6 host address */
+	| `DnsInval:	-> -1
 	;;
 }
 
