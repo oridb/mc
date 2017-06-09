@@ -40,6 +40,7 @@ pkg std =
 	;;
 
 	type resolveerr = union
+		`Timeout
 		`Badconn
 		`Badhost
 		`Badsrv
@@ -61,6 +62,7 @@ pkg std =
 
 const Hostfile = "/etc/hosts"
 const Resolvfile = "/etc/resolv.conf"
+const Timeout = 2_000
 
 var hostmap	: htab(byte[:], hostinfo)#
 var search	: byte[:][:]
@@ -316,14 +318,25 @@ const tquery = {srv, host, t
 const rquery = {srv, id
 	var pktbuf : byte[1024]
 	var pkt
-	var n
+	var pfd
+	var r, n
 
-	n = sys.read(srv, pktbuf[:])
-	if n < 0
+	pfd = [
+		[.fd=srv, .events=sys.Pollin, .revents=0]
+	][:]
+	r = sys.poll(pfd[:], Timeout)
+	if r < 0
 		-> `Err `Badconn
+	elif r == 0
+		-> `Err `Timeout
+	else
+		n = sys.read(srv, pktbuf[:])
+		if n < 0
+			-> `Err `Badconn
+		;;
+		pkt = pktbuf[:n]
+		-> hosts(pkt, id)
 	;;
-	pkt = pktbuf[:n]
-	-> hosts(pkt, id)
 }
 
 const hosts = {pkt, id : uint16

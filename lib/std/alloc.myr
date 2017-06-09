@@ -170,7 +170,7 @@ const slcap = {p
 	var phdr
 
 	phdr = ((p : size) - align(sizeof(slheader), Align) : slheader#)
-	std.iassert(phdr.magic == (0xdeadbeefbadf00d : size), "corrupt header")
+	std.iassert(phdr.magic == (0xdeadbeefbadf00d : size), "corrupt memory\n")
 	-> phdr.cap
 }
 
