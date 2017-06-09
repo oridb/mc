@@ -325,14 +325,15 @@ const tquery = {srv, host, t
 
 const rquery = {srv, host, id
 	var pktbuf : byte[1024]
-	var pkt
-	var pfd
-	var r, n
+	var pkt, pfd, giveup
+	var r, n, inf
 
+	giveup = std.now() + 1000*Timeout
+:again
 	pfd = [
 		[.fd=srv, .events=sys.Pollin, .revents=0]
 	][:]
-	r = sys.poll(pfd[:], Timeout)
+	r = sys.poll(pfd[:], (std.now() - giveup : int)/1000)
 	if r < 0
 		-> `Err `Badconn
 	elif r == 0
@@ -343,7 +344,13 @@ const rquery = {srv, host, id
 			-> `Err `Badconn
 		;;
 		pkt = pktbuf[:n]
-		-> hosts(pkt, host, id)
+		inf = hosts(pkt, host, id)
+		match inf
+		| `std.Err `Badresp:
+			goto again
+		| _:	
+			-> inf
+		;;
 	;;
 }
 
