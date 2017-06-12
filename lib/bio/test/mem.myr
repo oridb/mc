@@ -1,0 +1,30 @@
+use std
+use bio
+
+const main = {
+	var f
+	var buf : byte[16]
+
+	f = bio.mkmem("hello world")
+	match bio.read(f, buf[:3])
+	| `bio.Ok "hel":
+		/* ok */
+	| _:
+		std.fatal("invalid read from memfile")
+	;;
+
+	match bio.read(f, buf[:])
+	| `bio.Ok "lo world":
+		/* ok */
+	| _:
+		std.fatal("invalid read from memfile")
+	;;
+
+	match bio.read(f, buf[:])
+	| `bio.Eof:
+		/* ok */
+	| _:
+		std.fatal("expected eof in memfile")
+	;;
+}
+
