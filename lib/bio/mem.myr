@@ -1,0 +1,45 @@
+use std
+use "bio"
+
+pkg bio =
+	const mkmem	: (buf : byte[:] -> file#)
+;;
+
+type mem = struct
+	buf	: byte[:]
+	off	: std.size
+;;
+
+const mkmem = {buf
+	var mem : mem#
+
+	mem = std.mk([
+		.buf = buf,
+		.off = 0
+	])
+
+	-> mk(Rd, [
+		.read = {buf; -> memread(mem, buf)},
+		.write = {buf; -> memwrite(mem, buf)},
+		.seek = {off; mem.off = std.clamp(off, 0, mem.buf.len); -> `std.Ok mem.off},
+		.close = {; std.free(mem)},
+	])
+}
+
+const memread = {mem, dst
+	var n
+
+	n = std.min(mem.buf.len - mem.off, dst.len)
+	std.slcp(dst[:n], mem.buf[mem.off:mem.off+n])
+	mem.off += n
+	-> `std.Ok n
+}
+
+const memwrite = {mem, src
+	var n
+
+	n = std.min(mem.buf.len - mem.off, src.len)
+	std.slcp(mem.buf[mem.off:mem.off+n], src[:n])
+	mem.off += n
+	-> `std.Ok n
+}
