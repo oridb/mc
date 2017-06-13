@@ -72,8 +72,8 @@ const optparse = {args, def
 		optusage(ctx.optargs[0], ctx.optdef)
 		exit(1)
 	;;
-	if def.maxargs > 0 && ctx.args.len < def.minargs
-		put("error: expected at most {} args, got {}\n", def.minargs, ctx.args.len)
+	if def.maxargs > 0 && ctx.args.len > def.maxargs
+		put("error: expected at most {} args, got {}\n", def.maxargs, ctx.args.len)
 		optusage(ctx.optargs[0], ctx.optdef)
 		exit(1)
 	;;
