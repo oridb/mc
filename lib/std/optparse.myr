@@ -113,7 +113,9 @@ const optnext = {ctx
 			optusage(ctx.optargs[0], ctx.optdef)
 			exit(0)
 		else
-			fatal("unexpected argument '{}'\n", c)
+			put("Unexpected argument '{}'\n", c)
+			optusage(ctx.optargs[0], ctx.optdef)
+			exit(1)
 		;;
 	| `Some (true, needed, dest):
 		/* -arg => '-a' 'rg' */
@@ -127,7 +129,8 @@ const optnext = {ctx
 			ctx.argidx++
 			next(ctx)
 		elif needed
-			put("Expected argument for {}\n", c)
+			put("Expected argument for '{}'\n", c)
+			optusage(ctx.optargs[0], ctx.optdef)
 			exit(1)
 		;;
 		match dest
