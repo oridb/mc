@@ -146,6 +146,7 @@ pkg sys =
 	const segflush	: (va : void#, len : uint32 -> int64)
 	const unmount	: (name : byte[:], old : byte[:] -> int64)
 	const errstr	: (buf : byte[:] -> int64)
+	const _errstr	: (buf : byte[:] -> int64)
 	const stat	: (name : byte[:], edir : byte[:] -> int64)
 	const fstat	: (fd : fd, edir : byte[:] -> int64)
 	const wstat	: (name : byte[:], edir : byte[:] -> int64)
@@ -207,7 +208,7 @@ const segdetach	= {va;		-> syscall(Syssegdetach, a(va))}
 const segfree	= {va, len;	-> syscall(Syssegfree, a(va), a(len))}
 const segflush	= {va, len;	-> syscall(Syssegfree, a(va), a(len))}
 const unmount	= {name, old;	-> syscall(Sysunmount, cstring(name), cstring(old))}
-const errstr	= {buf;		-> syscall(Syserrstr, p(buf), a(buf.len))}
+const _errstr	= {buf;		-> syscall(Syserrstr, p(buf), a(buf.len))}
 const stat	= {name, edir;	-> syscall(Sysstat, cstring(name), p(edir), a(edir.len))}
 const fstat	= {fd, edir;	-> syscall(Sysstat, a(fd), p(edir), a(edir.len))}
 const wstat	= {name, edir;	-> syscall(Syswstat, cstring(name), p(edir), a(edir.len))}
@@ -236,6 +237,23 @@ const exec	= {bin, args
 	cargs[args.len] = (0 : byte#)
 	-> syscall(Sysexec, cstring(bin), a(cargs))
 }
+
+const errstr = {eb
+	var tmp : byte[128]
+	var n
+
+	n = 128
+	if eb.len < tmp.len
+		n = eb.len
+	;;
+	_errstr(tmp[:])
+	for var i = 0; i < n; i++
+		eb[i] = tmp[i]
+	;;
+	_errstr(tmp[:])
+	-> 0
+}
+	
 
 /*const fversion	= {fd, bufsz, vers, nvers;	-> syscall(Sysfversion, fd, bufsz, }*/
 const semacquire	= {addr, block; -> (syscall(Syssemacquire, a(addr), a(block)) : int)}

@@ -109,7 +109,7 @@ static char *nodetystr(Inferstate *st, Node *n)
 	if (n->type == Nexpr && exprtype(n) != NULL)
 		t = tyfix(st, NULL, exprtype(n), 1);
 	else if (n->type == Ndecl && decltype(n) != NULL)
-		t = tyfix(st, NULL, decltype(n), 1);
+		t = tyfix(st, n, decltype(n), 1);
 
 	if (t && tybase(t)->type != Tyvar)
 		return tystr(t);
