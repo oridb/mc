@@ -20,13 +20,13 @@ pkg std =
 generic puthost64	= {buf, v;	-> puthost(buf, (v : uint64), 8)}
 generic putle64		= {buf, v;	-> putle(buf, (v : uint64), 8)}
 generic putbe64		= {buf, v;	-> putbe(buf, (v : uint64), 8)}
-generic puthost32	= {buf, v;	-> puthost(buf, (v : uint64), 4)}
+generic puthost32	= {buf, v;	-> puthost(buf, (v : uint32), 4)}
 generic putle32		= {buf, v;	-> putle(buf, (v : uint64), 4)}
 generic putbe32		= {buf, v;	-> putbe(buf, (v : uint64), 4)}
-generic puthost16	= {buf, v;	-> puthost(buf, (v : uint64), 2)}
+generic puthost16	= {buf, v;	-> puthost(buf, (v : uint16), 2)}
 generic putle16		= {buf, v;	-> putle(buf, (v : uint64), 2)}
 generic putbe16		= {buf, v;	-> putbe(buf, (v : uint64), 2)}
-generic puthost8	= {buf, v;	-> puthost(buf, (v : uint64), 1)}
+generic puthost8	= {buf, v;	-> buf[0] = (v : uint8)}
 generic putle8		= {buf, v;	-> putle(buf, (v : uint64), 1)}
 generic putbe8		= {buf, v;	-> putbe(buf, (v : uint64), 1)}
 
@@ -50,8 +50,8 @@ const putle = {buf, val, n
 	-> (n : size)
 }
 
-const puthost = {buf, val, n
+generic puthost = {buf, val : @a::(integral, numeric)
 	iassert(buf.len >= n, "buffer too small")
-	memblit((buf : byte#), (&val : byte#), n)
+	memblit((buf : byte#), (&val : byte#), sizeof(@a))
 	-> (n : size)
 }
