@@ -1,30 +1,39 @@
-use "assert"
+use "die"
+use "memops"
 use "types"
 
 pkg std =
-	generic putle64	: (buf : byte[:], v :  @a::(numeric,integral) -> size)
-	generic putbe64	: (buf : byte[:], v :  @a::(numeric,integral) -> size)
-	generic putle32	: (buf : byte[:], v :  @a::(numeric,integral) -> size)
-	generic putbe32	: (buf : byte[:], v :  @a::(numeric,integral) -> size)
-	generic putle16	: (buf : byte[:], v :  @a::(numeric,integral) -> size)
-	generic putbe16	: (buf : byte[:], v :  @a::(numeric,integral) -> size)
-	generic putle8	: (buf : byte[:], v :  @a::(numeric,integral) -> size)
-	generic putbe8	: (buf : byte[:], v :  @a::(numeric,integral) -> size)
+	generic puthost64	: (buf : byte[:], v :  @a::(numeric,integral) -> size)
+	generic putle64		: (buf : byte[:], v :  @a::(numeric,integral) -> size)
+	generic putbe64		: (buf : byte[:], v :  @a::(numeric,integral) -> size)
+	generic puthost32	: (buf : byte[:], v :  @a::(numeric,integral) -> size)
+	generic putle32		: (buf : byte[:], v :  @a::(numeric,integral) -> size)
+	generic putbe32		: (buf : byte[:], v :  @a::(numeric,integral) -> size)
+	generic puthost16	: (buf : byte[:], v :  @a::(numeric,integral) -> size)
+	generic putle16		: (buf : byte[:], v :  @a::(numeric,integral) -> size)
+	generic putbe16		: (buf : byte[:], v :  @a::(numeric,integral) -> size)
+	generic puthost8	: (buf : byte[:], v :  @a::(numeric,integral) -> size)
+	generic putle8		: (buf : byte[:], v :  @a::(numeric,integral) -> size)
+	generic putbe8		: (buf : byte[:], v :  @a::(numeric,integral) -> size)
 ;;
 
-generic putle64	= {buf, v;	-> putle(buf, (v : uint64), 8)}
-generic putbe64	= {buf, v;	-> putbe(buf, (v : uint64), 8)}
-generic putle32	= {buf, v;	-> putle(buf, (v : uint64), 4)}
-generic putbe32	= {buf, v;	-> putbe(buf, (v : uint64), 4)}
-generic putle16	= {buf, v;	-> putle(buf, (v : uint64), 2)}
-generic putbe16	= {buf, v;	-> putbe(buf, (v : uint64), 2)}
-generic putle8	= {buf, v;	-> putle(buf, (v : uint64), 1)}
-generic putbe8	= {buf, v;	-> putbe(buf, (v : uint64), 1)}
+generic puthost64	= {buf, v;	-> puthost(buf, (v : uint64), 8)}
+generic putle64		= {buf, v;	-> putle(buf, (v : uint64), 8)}
+generic putbe64		= {buf, v;	-> putbe(buf, (v : uint64), 8)}
+generic puthost32	= {buf, v;	-> puthost(buf, (v : uint64), 4)}
+generic putle32		= {buf, v;	-> putle(buf, (v : uint64), 4)}
+generic putbe32		= {buf, v;	-> putbe(buf, (v : uint64), 4)}
+generic puthost16	= {buf, v;	-> puthost(buf, (v : uint64), 2)}
+generic putle16		= {buf, v;	-> putle(buf, (v : uint64), 2)}
+generic putbe16		= {buf, v;	-> putbe(buf, (v : uint64), 2)}
+generic puthost8	= {buf, v;	-> puthost(buf, (v : uint64), 1)}
+generic putle8		= {buf, v;	-> putle(buf, (v : uint64), 1)}
+generic putbe8		= {buf, v;	-> putbe(buf, (v : uint64), 1)}
 
 const putbe = {buf, val, n
 	var k
 	
-	assert(buf.len >= n, "buffer too small")
+	iassert(buf.len >= n, "buffer too small")
 	for var i = 0; i < n; i++
 		k = val >> (8*(n-i-1))
 		buf[i] = (k & 0xff: byte)
@@ -33,10 +42,16 @@ const putbe = {buf, val, n
 }
 
 const putle = {buf, val, n
-	assert(buf.len >= n, "buffer too small")
+	iassert(buf.len >= n, "buffer too small")
 	for var i = 0; i < n; i++
 		buf[i] = (val & 0xff : byte)
 		val >>= 8
 	;;
+	-> (n : size)
+}
+
+const puthost = {buf, val, n
+	iassert(buf.len >= n, "buffer too small")
+	memblit((buf : byte#), (&val : byte#), n)
 	-> (n : size)
 }
