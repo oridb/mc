@@ -825,7 +825,9 @@ static void fixtraitmappings(Stab *st)
 			settrait(traitfix[i].type, tr);
 	}
 
-	lfree(&traitfix, &ntraitfix);
+	free(traitfix);
+	traitfix = NULL;
+	ntraitfix = 0;
 }
 
 static void protomap(Trait *tr, Type *ty, Node *dcl)
