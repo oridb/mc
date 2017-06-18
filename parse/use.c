@@ -13,6 +13,19 @@
 #include "util.h"
 #include "parse.h"
 
+typedef struct Typefix Typefix;
+struct Typefix {
+	Type **dest;
+	intptr_t id;
+};
+
+typedef struct Traitfix Traitfix;
+struct Traitfix {
+	Trait **dest;
+	Type *type;
+	intptr_t id;
+};
+
 static void wrtype(FILE *fd, Type *val);
 static void rdtype(FILE *fd, Type **dest);
 static void wrstab(FILE *fd, Stab *val);
@@ -30,17 +43,11 @@ static Htab *trmap;	/* map from trait id -> trait */
 static Htab *initmap;	/* map from init name -> int */
 
 #define Builtinmask (1 << 30)
-static Type ***typefixdest;	/* list of types we need to replace */
-static size_t ntypefixdest;	/* size of replacement list */
-static intptr_t *typefixid;	/* list of types we need to replace */
-static size_t ntypefixid;	/* size of replacement list */
+static Typefix *typefix;	/* list of types we need to replace */
+static size_t ntypefix;		/* size of replacement list */
 
-static Trait ***traitfixdest;	/* list of traits we need to replace */
-static size_t ntraitfixdest;	/* size of replacement list */
-static Type **traitfixtype;	/* list of types we need to set the trait on */
-static size_t ntraitfixtype;	/* size of replacement list */
-static intptr_t *traitfixid;	/* list of traits we need to replace */
-static size_t ntraitfixid;	/* size of replacement list */
+static Traitfix *traitfix;	/* list of traits we need to replace */
+static size_t ntraitfix;	/* size of replacement list */
 
 static Node **implfix;	/* list of impls we need to fix up */
 static size_t nimplfix;		/* size of replacement list */
@@ -307,8 +314,8 @@ static void rdtype(FILE *fd, Type **dest)
 	if (tid & Builtinmask) {
 		*dest = mktype(Zloc, tid & ~Builtinmask);
 	} else {
-		lappend(&typefixdest, &ntypefixdest, dest);
-		lappend(&typefixid, &ntypefixid, itop(tid));
+		typefix = xrealloc(typefix, (ntypefix + 1) * sizeof(typefix[0]));
+		typefix[ntypefix++] = (Typefix){dest, tid};
 	}
 }
 
@@ -323,9 +330,8 @@ static void rdtrait(FILE *fd, Trait **dest, Type *ty)
 		if (ty)
 			settrait(ty, traittab[tid & ~Builtinmask]);
 	} else {
-		lappend(&traitfixdest, &ntraitfixdest, dest);
-		lappend(&traitfixtype, &ntraitfixtype, ty);
-		lappend(&traitfixid, &ntraitfixid, itop(tid));
+		traitfix = xrealloc(traitfix, (ntraitfix + 1) * sizeof(traitfix[0]));
+		traitfix[ntraitfix++] = (Traitfix){dest, ty, tid};
 	}
 }
 
@@ -759,14 +765,14 @@ static void fixtypemappings(Stab *st)
 	* of doing a deep walk through the type. This ability is
 	* depended on when we do type inference.
 	*/
-	for (i = 0; i < ntypefixdest; i++) {
-		t = htget(tidmap, itop(typefixid[i]));
+	for (i = 0; i < ntypefix; i++) {
+		t = htget(tidmap, itop(typefix[i].id));
 		if (!t)
-			die("Unable to find type for id %zd\n", typefixid[i]);
-		*typefixdest[i] = t;
+			die("Unable to find type for id %zd\n", typefix[i].id);
+		*typefix[i].dest = t;
 	}
-	for (i = 0; i < ntypefixdest; i++) {
-		old = *typefixdest[i];
+	for (i = 0; i < ntypefix; i++) {
+		old = *typefix[i].dest;
 		if (old->type == Tyname || old->type == Tygeneric) {
 			t = htget(tydeduptab, old);
 			if (!t) {
@@ -775,13 +781,13 @@ static void fixtypemappings(Stab *st)
 			}
 			u = tydedup(old);
 			assert(tyeq(t, u));
-			*typefixdest[i] = t;
+			*typefix[i].dest = t;
 		}
 	}
 
 	/* check for duplicate type definitions */
-	for (i = 0; i < ntypefixdest; i++) {
-		t = htget(tidmap, itop(typefixid[i]));
+	for (i = 0; i < ntypefix; i++) {
+		t = htget(tidmap, itop(typefix[i].id));
 		if ((t->type != Tyname && t->type != Tygeneric) || t->issynth)
 			continue;
 		old = htget(tydeduptab, t);
@@ -789,8 +795,7 @@ static void fixtypemappings(Stab *st)
 			lfatal(t->loc, "Duplicate definition of type %s on %s:%d", tystr(old),
 					file->file.files[old->loc.file], old->loc.line);
 	}
-	lfree(&typefixdest, &ntypefixdest);
-	lfree(&typefixid, &ntypefixid);
+	lfree(&typefix, &ntypefix);
 }
 
 static void fixtraitmappings(Stab *st)
@@ -804,25 +809,23 @@ static void fixtraitmappings(Stab *st)
 	* of doing a deep walk through the type. This ability is
 	* depended on when we do type inference.
 	*/
-	for (i = 0; i < ntraitfixdest; i++) {
-		t = htget(trmap, itop(traitfixid[i]));
+	for (i = 0; i < ntraitfix; i++) {
+		t = htget(trmap, itop(traitfix[i].id));
 		if (!t)
-			die("Unable to find trait for id %zd\n", traitfixid[i]);
+			die("Unable to find trait for id %zd\n", traitfix[i].id);
 
 		tr = htget(trdeduptab, t->name);
 		if (!tr) {
 			htput(trdeduptab, t->name, t);
 			tr = t;
 		}
-		if (traitfixdest[i])
-			*traitfixdest[i] = tr;
-		if (traitfixtype[i])
-			settrait(traitfixtype[i], tr);
+		if (traitfix[i].dest)
+			*traitfix[i].dest = tr;
+		if (traitfix[i].type)
+			settrait(traitfix[i].type, tr);
 	}
 
-	lfree(&traitfixdest, &ntraitfixdest);
-	lfree(&traitfixtype, &ntraitfixtype);
-	lfree(&traitfixid, &ntraitfixid);
+	lfree(&traitfix, &ntraitfix);
 }
 
 static void protomap(Trait *tr, Type *ty, Node *dcl)
