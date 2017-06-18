@@ -789,8 +789,7 @@ static void fixtypemappings(Stab *st)
 			lfatal(t->loc, "Duplicate definition of type %s on %s:%d", tystr(old),
 					file->file.files[old->loc.file], old->loc.line);
 	}
-	for (i = 0; i < ntypefixdest; i++)
-		lfree(&typefixdest, &ntypefixdest);
+	lfree(&typefixdest, &ntypefixdest);
 	lfree(&typefixid, &ntypefixid);
 }
 
