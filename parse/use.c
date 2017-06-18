@@ -822,6 +822,7 @@ static void fixtraitmappings(Stab *st)
 	}
 
 	lfree(&traitfixdest, &ntraitfixdest);
+	lfree(&traitfixtype, &ntraitfixtype);
 	lfree(&traitfixid, &ntraitfixid);
 }
 
