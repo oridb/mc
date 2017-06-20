@@ -171,7 +171,7 @@ Node *getdcl(Stab *st, Node *n)
 		s = htget(st->dcl, n);
 		if (s) {
 			/* record that this is in the closure of this scope */
-			if (fn && !s->decl.isglobl)
+			if (fn && !s->decl.isglobl && !s->decl.isgeneric)
 				htput(fn->env, s->decl.name, s);
 			return s;
 		}
