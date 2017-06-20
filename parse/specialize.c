@@ -414,7 +414,7 @@ static Node *specializenode(Node *n, Tysubst *tsmap)
 		lappend(&decls, &ndecls, r);
 		break;
 	case Nfunc:
-		r->func.scope = mkstab(0);
+		r->func.scope = mkstab(1);
 		r->func.scope->super = curstab();
 		pushstab(r->func.scope);
 		r->func.type = tysubst(n->func.type, tsmap);
