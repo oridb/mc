@@ -3,5 +3,13 @@ pkg std =
 		`None
 		`Some @a
 	;;
+
+	generic canget	: (o : option(@a) -> bool)
 ;;
 
+generic canget = {o
+	match o
+	| `None: -> false
+	| `Some _: -> true
+	;;
+}
