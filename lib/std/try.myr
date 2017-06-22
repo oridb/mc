@@ -23,6 +23,13 @@ generic tryv = {v, d
 	;;
 }
 
+generic canget = {o
+	match o
+	| `None: -> false
+	| `Some _: -> true
+	;;
+}
+
 generic get = {v
 	match v
 	| `Some x:	-> x
