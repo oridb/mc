@@ -7,6 +7,7 @@ pkg std =
 	generic tryv : (v : result(@a, @b), d : @a -> @a)
 	generic get : (v : option(@a) -> @a)
 	generic getv : (v : option(@a), d : @a -> @a)
+	generic canget	: (o : option(@a) -> bool)
 ;;
 
 generic try = {v
