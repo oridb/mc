@@ -7,11 +7,10 @@ echo 	as	-g -o util.o util+posixy-x64.s  && 	as	-g -o util.o util+posixy-x64.s  
 echo 	$pwd/6/6m	syserrno+openbsd.myr  && 	$pwd/6/6m	syserrno+openbsd.myr  &&\
 echo 	$pwd/6/6m	systypes.myr  && 	$pwd/6/6m	systypes.myr  &&\
 echo 	$pwd/6/6m	sys+openbsd-x64.myr  && 	$pwd/6/6m	sys+openbsd-x64.myr  &&\
-echo 	$pwd/6/6m	setup+posixy.myr  && 	$pwd/6/6m	setup+posixy.myr  &&\
 echo 	as	-g -o syscall.o syscall+openbsd-x64.s  && 	as	-g -o syscall.o syscall+openbsd-x64.s  &&\
 echo 	$pwd/6/6m	ifreq+openbsd.myr  && 	$pwd/6/6m	ifreq+openbsd.myr  &&\
-echo 	$pwd/muse/muse	-o libsys.use -p sys setup.use ifreq.use systypes.use syserrno.use sys.use  && 	$pwd/muse/muse	-o libsys.use -p sys setup.use ifreq.use systypes.use syserrno.use sys.use  &&\
-echo 	ar	-rcs libsys.a util.o setup.o syscall.o ifreq.o systypes.o syserrno.o sys.o  && 	ar	-rcs libsys.a util.o setup.o syscall.o ifreq.o systypes.o syserrno.o sys.o  &&\
+echo 	$pwd/muse/muse	-o libsys.use -p sys ifreq.use systypes.use syserrno.use sys.use  && 	$pwd/muse/muse	-o libsys.use -p sys ifreq.use systypes.use syserrno.use sys.use  &&\
+echo 	ar	-rcs libsys.a util.o syscall.o ifreq.o systypes.o syserrno.o sys.o  && 	ar	-rcs libsys.a util.o syscall.o ifreq.o systypes.o syserrno.o sys.o  &&\
 echo 	cd $pwd/lib/std && 	cd $pwd/lib/std &&\
 echo 	$pwd/6/6m	-I ../sys -I . types.myr  && 	$pwd/6/6m	-I ../sys -I . types.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I . cstrconv.myr  && 	$pwd/6/6m	-I ../sys -I . cstrconv.myr  &&\
@@ -115,9 +114,10 @@ echo 	cd $pwd/lib/bio && 	cd $pwd/lib/bio &&\
 echo 	$pwd/6/6m	-I ../sys -I ../std bio.myr  && 	$pwd/6/6m	-I ../sys -I ../std bio.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I ../std puti.myr  && 	$pwd/6/6m	-I ../sys -I ../std puti.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I ../std iter.myr  && 	$pwd/6/6m	-I ../sys -I ../std iter.myr  &&\
+echo 	$pwd/6/6m	-I ../sys -I ../std mem.myr  && 	$pwd/6/6m	-I ../sys -I ../std mem.myr  &&\
 echo 	$pwd/6/6m	-I ../sys -I ../std geti.myr  && 	$pwd/6/6m	-I ../sys -I ../std geti.myr  &&\
-echo 	$pwd/muse/muse	-o libbio.use -p bio puti.use bio.use geti.use iter.use  && 	$pwd/muse/muse	-o libbio.use -p bio puti.use bio.use geti.use iter.use  &&\
-echo 	ar	-rcs libbio.a puti.o bio.o geti.o iter.o  && 	ar	-rcs libbio.a puti.o bio.o geti.o iter.o  &&\
+echo 	$pwd/muse/muse	-o libbio.use -p bio puti.use bio.use mem.use geti.use iter.use  && 	$pwd/muse/muse	-o libbio.use -p bio puti.use bio.use mem.use geti.use iter.use  &&\
+echo 	ar	-rcs libbio.a puti.o bio.o mem.o geti.o iter.o  && 	ar	-rcs libbio.a puti.o bio.o mem.o geti.o iter.o  &&\
 echo 	cd $pwd/mbld && 	cd $pwd/mbld &&\
 echo 	$pwd/6/6m	-I ../lib/regex -I ../lib/bio -I ../lib/std -I ../lib/sys config.myr  && 	$pwd/6/6m	-I ../lib/regex -I ../lib/bio -I ../lib/std -I ../lib/sys config.myr  &&\
 echo 	$pwd/6/6m	-I ../lib/regex -I ../lib/bio -I ../lib/std -I ../lib/sys opts.myr  && 	$pwd/6/6m	-I ../lib/regex -I ../lib/bio -I ../lib/std -I ../lib/sys opts.myr  &&\
