@@ -120,14 +120,11 @@ static char *nodetystr(Inferstate *st, Node *n)
 
 static void marksrc(Inferstate *st, Type *t, Srcloc l)
 {
-	size_t sz;
-
-	sz = max(t->tid + 1, st->nusrc);
-	if (sz > st->nusrc) {
-		st->usrc = zrealloc(st->usrc, st->nusrc*sizeof(Srcloc), sz*sizeof(Srcloc));
-		st->nusrc = sz;
-	}
 	t = tf(st, t);
+	if (t->tid >= st->nusrc) {
+		st->usrc = zrealloc(st->usrc, st->nusrc*sizeof(Srcloc), (t->tid + 1)*sizeof(Srcloc));
+		st->nusrc = t->tid + 1;
+	}
 	if (st->usrc[t->tid].line <= 0)
 		st->usrc[t->tid] = l;
 }
