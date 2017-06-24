@@ -23,6 +23,8 @@ struct Inferstate {
 	int innamed;
 	int indentdepth;
 	Type *ret;
+	Srcloc *usrc;
+	size_t nusrc;
 
 	/* post-inference checking/unification */
 	Htab *delayed;
@@ -114,6 +116,36 @@ static char *nodetystr(Inferstate *st, Node *n)
 		return tystr(t);
 	else
 		return strdup("unknown");
+}
+
+static void marksrc(Inferstate *st, Type *t, Srcloc l)
+{
+	size_t sz;
+
+	sz = max(t->tid + 1, st->nusrc);
+	if (sz > st->nusrc) {
+		st->usrc = zrealloc(st->usrc, st->nusrc*sizeof(Srcloc), sz*sizeof(Srcloc));
+		st->nusrc = sz;
+	}
+	t = tf(st, t);
+	if (st->usrc[t->tid].line <= 0)
+		st->usrc[t->tid] = l;
+}
+
+static char *srcstr(Inferstate *st, Type *ty)
+{
+	char src[128];
+	Srcloc l;
+	char *s;
+
+	src[0] = 0;
+	if (st->nusrc > ty->tid && st->usrc[ty->tid].line > 0) {
+		l = st->usrc[ty->tid];
+		s = tystr(ty);
+		snprintf(src, sizeof src, "\n\t%s from %s:%d", s, fname(l), lnum(l));
+		free(s);
+	}
+	return strdup(src);
 }
 
 /* Tries to give a good string describing the context
@@ -237,17 +269,21 @@ static void delayedcheck(Inferstate *st, Node *n, Stab *s)
 
 static void typeerror(Inferstate *st, Type *a, Type *b, Node *ctx, char *msg)
 {
-	char *t1, *t2, *c;
+	char *t1, *t2, *s1, *s2, *c;
 
 	t1 = tystr(tyfix(st, NULL, a, 1));
 	t2 = tystr(tyfix(st, NULL, b, 1));
+	s1 = srcstr(st, a);
+	s2 = srcstr(st, b);
 	c = ctxstr(st, ctx);
 	if (msg)
-		fatal(ctx, "type \"%s\" incompatible with \"%s\" near %s: %s", t1, t2, c, msg);
+		fatal(ctx, "type \"%s\" incompatible with \"%s\" near %s: %s%s%s", t1, t2, c, msg, s1, s2);
 	else
-		fatal(ctx, "type \"%s\" incompatible with \"%s\" near %s", t1, t2, c);
+		fatal(ctx, "type \"%s\" incompatible with \"%s\" near %s%s%s", t1, t2, c, s1, s2);
 	free(t1);
 	free(t2);
+	free(s1);
+	free(s2);
 	free(c);
 }
 
@@ -571,6 +607,8 @@ static void settype(Inferstate *st, Node *n, Type *t)
 	case Nfunc:	n->func.type = t;	break;
 	default: die("untypable node %s", nodestr[n->type]); break;
 	}
+	if (t->type != Tyvar)
+		marksrc(st, t, n->loc);
 }
 
 /* Gets the type of a literal value */
@@ -795,8 +833,10 @@ static int checktraits(Type *a, Type *b)
 static void verifytraits(Inferstate *st, Node *ctx, Type *a, Type *b)
 {
 	size_t i, n;
+	Srcloc l;
 	char *sep;
-	char traitbuf[1024], abuf[1024], bbuf[1024];
+	char traitbuf[64], abuf[64], bbuf[64];
+	char asrc[64], bsrc[64];
 
 	if (!checktraits(a, b)) {
 		sep = "";
@@ -809,8 +849,14 @@ static void verifytraits(Inferstate *st, Node *ctx, Type *a, Type *b)
 		}
 		tyfmt(abuf, sizeof abuf, a);
 		tyfmt(bbuf, sizeof bbuf, b);
-		fatal(ctx, "%s missing traits %s for %s near %s", bbuf, traitbuf, abuf,
-				ctxstr(st, ctx));
+		bsrc[0] = 0;
+		if (st->nusrc > b->tid && st->usrc[b->tid].line > 0) {
+			l = st->usrc[b->tid];
+			snprintf(bsrc, sizeof asrc, "\n\t%s from %s:%d", bbuf, fname(l), lnum(l));
+		}
+		fatal(ctx, "%s missing traits %s for %s near %s%s%s",
+				bbuf, traitbuf, abuf, ctxstr(st, ctx),
+				srcstr(st, a), srcstr(st, b));
 	}
 }
 
@@ -853,7 +899,9 @@ static void unionunify(Inferstate *st, Node *ctx, Type *u, Type *v)
 	int found;
 
 	if (u->nmemb != v->nmemb)
-		fatal(ctx, "can't unify %s and %s near %s\n", tystr(u), tystr(v), ctxstr(st, ctx));
+		fatal(ctx, "can't unify %s and %s near %s%s%s\n",
+			tystr(u), tystr(v), ctxstr(st, ctx),
+			srcstr(st, u), srcstr(st, v));
 
 	for (i = 0; i < u->nmemb; i++) {
 		found = 0;
@@ -866,12 +914,14 @@ static void unionunify(Inferstate *st, Node *ctx, Type *u, Type *v)
 			else if (u->udecls[i]->etype && v->udecls[j]->etype)
 				unify(st, ctx, u->udecls[i]->etype, v->udecls[j]->etype);
 			else
-				fatal(ctx, "can't unify %s and %s near %s\n", tystr(u), tystr(v),
-						ctxstr(st, ctx));
+				fatal(ctx, "can't unify %s and %s near %s%s%s",
+					tystr(u), tystr(v), ctxstr(st, ctx),
+					srcstr(st, u), srcstr(st, v));
 		}
 		if (!found)
-			fatal(ctx, "can't unify %s and %s near %s\n", tystr(u), tystr(v),
-					ctxstr(st, ctx));
+			fatal(ctx, "can't unify %s and %s near %s%s%s",
+				tystr(u), tystr(v), ctxstr(st, ctx),
+				srcstr(st, u), srcstr(st, v));
 	}
 }
 
@@ -882,7 +932,9 @@ static void structunify(Inferstate *st, Node *ctx, Type *u, Type *v)
 	char *ud, *vd;
 
 	if (u->nmemb != v->nmemb)
-		fatal(ctx, "can't unify %s and %s near %s\n", tystr(u), tystr(v), ctxstr(st, ctx));
+		fatal(ctx, "can't unify %s and %s near %s%s%s",
+			tystr(u), tystr(v), ctxstr(st, ctx),
+			srcstr(st, u), srcstr(st, v));
 
 	for (i = 0; i < u->nmemb; i++) {
 		found = 0;
@@ -896,8 +948,9 @@ static void structunify(Inferstate *st, Node *ctx, Type *u, Type *v)
 		}
 		/* we had at least one missing member */
 		if (!found)
-			fatal(ctx, "can't unify %s and %s near %s\n", tystr(u), tystr(v),
-					ctxstr(st, ctx));
+			fatal(ctx, "can't unify %s and %s near %s%s%s",
+				tystr(u), tystr(v), ctxstr(st, ctx),
+				srcstr(st, u), srcstr(st, v));
 	}
 }
 
@@ -998,8 +1051,13 @@ static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
 	}
 
 	r = NULL;
-	if (a->type == Tyvar || tyeq(a, b))
+	if (a->type == Tyvar || tyeq(a, b)) {
 		tytab[a->tid] = b;
+		if (ctx) {
+			marksrc(st, a, ctx->loc);
+			marksrc(st, b, ctx->loc);
+		}
+	}
 	if (a->type == Tyvar) {
 		ea = basetype(st, a);
 		eb = basetype(st, b);
