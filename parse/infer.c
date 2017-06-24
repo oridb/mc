@@ -17,37 +17,36 @@
 
 typedef struct Inferstate Inferstate;
 struct Inferstate {
+	/* tracking where we are in the inference */
 	int ingeneric;
 	int inaggr;
 	int innamed;
 	int indentdepth;
 	Type *ret;
 
-	/* bound by patterns turn into decls in the action block */
-	Node **impldecl;
-	size_t nimpldecl;
-	/* nodes that need post-inference checking/unification */
+	/* post-inference checking/unification */
+	Htab *delayed;
 	Node **postcheck;
 	size_t npostcheck;
 	Stab **postcheckscope;
 	size_t npostcheckscope;
-	/* the type params bound at the current point */
+
+	/* type params bound at the current point */
 	Htab **tybindings;
 	size_t ntybindings;
+
 	/* generic declarations to be specialized */
 	Node **genericdecls;
 	size_t ngenericdecls;
-	/* delayed unification -- we fall back to these types in a post pass if we
-	 * haven't unifed to something more specific */
-	Htab *delayed;
-	/* mappings from iterator type to element type */
-	Htab *seqbase;
-	/* the nodes that we've specialized them to, and the scopes they
-	 * appear in */
+	Node **impldecl;
+	size_t nimpldecl;
+
+	/* specializations of generics */
 	Node **specializations;
 	size_t nspecializations;
 	Stab **specializationscope;
 	size_t nspecializationscope;
+	Htab *seqbase;
 };
 
 static void infernode(Inferstate *st, Node **np, Type *ret, int *sawret);
