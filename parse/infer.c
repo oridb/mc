@@ -281,41 +281,61 @@ static int isbound(Inferstate *st, Type *t)
  * Recursive types that contain themselves through
  * pointers or slices are fine, but any other self-inclusion
  * would lead to a value of infinite size */
-static int occurs(Inferstate *st, Type *t, Type *sub)
+static int occurs_rec(Inferstate *st, Type *sub, Bitset *bs)
 {
 	size_t i;
 
-	assert(t != NULL);
-	if (t == sub) /* FIXME: is this actually right? */
+	if (bshas(bs, sub->tid))
 		return 1;
-	/* if we're on the first iteration, the subtype is the type
-	 * itself. The assignment must come after the equality check
-	 * for obvious reasons. */
-	if (!sub)
-		sub = t;
-
+	bsput(bs, sub->tid);
 	switch (sub->type) {
+	case Typtr:
+	case Tyslice: 
+		break;
 	case Tystruct:
 		for (i = 0; i < sub->nmemb; i++)
-			if (occurs(st, t, decltype(sub->sdecls[i])))
+			if (occurs_rec(st, decltype(sub->sdecls[i]), bs))
 				return 1;
 		break;
 	case Tyunion:
 		for (i = 0; i < sub->nmemb; i++) {
-			if (sub->udecls[i]->etype && occurs(st, t, sub->udecls[i]->etype))
+			if (!sub->udecls[i]->etype)
+				continue;
+			if (occurs_rec(st, sub->udecls[i]->etype, bs))
 				return 1;
 		}
 		break;
-	case Typtr:
-	case Tyslice: 
-		return 0;
 	default:
 		for (i = 0; i < sub->nsub; i++)
-			if (occurs(st, t, sub->sub[i]))
+			if (occurs_rec(st, sub->sub[i], bs))
 				return 1;
 		break;
 	}
+	bsdel(bs, sub->tid);
 	return 0;
+}
+
+static int occursin(Inferstate *st, Type *a, Type *b)
+{
+	Bitset *bs;
+	int r;
+
+	bs = mkbs();
+	bsput(bs, b->tid);
+	r = occurs_rec(st, a, bs);
+	bsfree(bs);
+	return r;
+}
+
+static int occurs(Inferstate *st, Type *t)
+{
+	Bitset *bs;
+	int r;
+
+	bs = mkbs();
+	r = occurs_rec(st, t, bs);
+	bsfree(bs);
+	return r;
 }
 
 static int needfreshenrec(Inferstate *st, Type *t, Bitset *visited)
@@ -446,7 +466,7 @@ static void tyresolve(Inferstate *st, Type *t)
 		bsunion(t->traits, base->traits);
 	else if (base->traits)
 		t->traits = bsdup(base->traits);
-	if (occurs(st, t, NULL))
+	if (occurs(st, t))
 		lfatal(t->loc, "type %s includes itself", tystr(t));
 	st->ingeneric--;
 	if (t->type == Tyname || t->type == Tygeneric) {
@@ -973,7 +993,7 @@ static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
 
 	/* Disallow recursive types */
 	if (a->type == Tyvar && b->type != Tyvar) {
-		if (occurs(st, a, b))
+		if (occursin(st, a, b))
 			fatal(ctx, "%s occurs within %s, leading to infinite type near %s\n",
 				tystr(a), tystr(b), ctxstr(st, ctx));
 	}
