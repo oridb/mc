@@ -35,6 +35,8 @@ pkg sys =
 
 	type fallocmode	= uint32
 
+	type mfdflags	= uint32
+
 	type clock = union
 		`Clockrealtime
 		`Clockmonotonic
@@ -433,6 +435,10 @@ pkg sys =
 	const Falloczerorange		: fallocmode = 0x10
 	const Fallocinsertrange		: fallocmode = 0x20
 
+	/* memfd flags */
+	const Mfdcloexec	: mfdflags = 0x01
+	const Mfdallowsealing	: mfdflags = 0x02
+
 	/* syscalls */
 	const Sysread			: scno = 0
 	const Syswrite			: scno = 1
@@ -817,6 +823,7 @@ pkg sys =
 	const sendmsg	: (fd:fd, msg:msghdr#, flags:msgflags -> int64)
 	const recvmsg	: (fd:fd, msg:msghdr#, flags:msgflags -> int64)
 	const fallocate : (fd:fd, mode:fallocmode, off:off, len:off -> int64)
+	const memfdcreate	: (name:byte[:], flags:mfdflags -> fd)
 
 	/* signals */
 	const sigaction	: (sig : signo, act : sigaction#, oact : sigaction# -> int)
@@ -950,6 +957,7 @@ const getcwd	= {buf;	-> syscall(Sysgetcwd, a(buf), a(buf.len))}
 const sendmsg	= {fd, msg, flags;	-> syscall(Syssendmsg, a(fd), msg, a(flags))}
 const recvmsg	= {fd, msg, flags;	-> syscall(Sysrecvmsg, a(fd), msg, a(flags))}
 const fallocate	= {fd, mode, off, len;	-> syscall(Sysfallocate, a(fd), a(mode),  a(off), a(len))}
+const memfdcreate	= {name, flags;	-> (syscall(Sysmemfd_create, cstring(name), a(flags)) : fd)}
 
 /* file stuff */
 const pipe	= {fds;	-> syscall(Syspipe, a(fds))}
