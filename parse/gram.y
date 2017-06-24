@@ -110,7 +110,7 @@ static void setupinit(Node *n);
 
 %token<tok> Tconst	/* const */
 %token<tok> Tvar	/* var */
-%token<tok> Tgeneric	/* var */
+%token<tok> Tgeneric	/* generic */
 
 %token<tok> Tgap	/* _ */
 %token<tok> Tellipsis	/* ... */

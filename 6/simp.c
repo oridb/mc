@@ -988,7 +988,7 @@ static Node *simpcall(Simp *s, Node *n, Node *dst)
 	Type *ft;
 	Op op;
 
-	/* NB: If we called rval() on a const function, , we would end up with
+	/* NB: If we called rval() on a const function, we would end up with
 	   a stack allocated closure. We don't want to do this. */
 	fn = n->expr.args[0];
 	if (!isconstfn(fn))

@@ -921,7 +921,7 @@ static void checksize(Inferstate *st, Node *ctx, Type *a, Type *b)
 	if (a->asize && exprop(a->asize) != Olit)
 		lfatal(ctx->loc, "%s: array size is not constant near %s",
 				tystr(a), ctxstr(st, ctx));
-	if (a->asize && exprop(b->asize) != Olit)
+	if (b->asize && exprop(b->asize) != Olit)
 		lfatal(ctx->loc, "%s: array size is not constant near %s",
 				tystr(b), ctxstr(st, ctx));
 	if (!a->asize)
@@ -1538,11 +1538,11 @@ static void inferexpr(Inferstate *st, Node **np, Type *ret, int *sawret)
 		infersub(st, n, ret, sawret, &isconst);
 		settype(st, n, mktylike(n->loc, Tyuint));
 		break;
-	case Ocall: /* (@a, @b, @c, ... -> @r)(@a,@b,@c, ... -> @r) -> @r */
+	case Ocall: /* (@a, @b, @c, ... -> @r)(@a, @b, @c, ...) -> @r */
 		infersub(st, n, ret, sawret, &isconst);
 		unifycall(st, n);
 		break;
-	case Ocast: /* cast(@a, @b) -> @b */
+	case Ocast: /* (@a : @b) -> @b */
 		infersub(st, n, ret, sawret, &isconst);
 		delayedcheck(st, n, curstab());
 		break;

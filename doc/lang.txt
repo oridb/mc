@@ -124,15 +124,15 @@ TABLE OF CONTENTS:
         manual.
 
             $noret          _               break
-            castto          const           continue
-            elif            else            extern
-            false           for             generic
-            goto            if              impl
-            in              match           pkg
-            pkglocal        sizeof          struct
-            trait           true            type
-            union           use             var
-            void            while
+            const           continue        elif
+            else            extern          false
+            for             generic         goto
+            if              impl            in
+            match           pkg             pkglocal
+            sizeof          struct          trait
+            true            type            union
+            use             var             void
+            while
 
         Literals are a direct representation of a data object within the
         source of the program. There are several literals implemented within
@@ -271,9 +271,9 @@ TABLE OF CONTENTS:
     3.4. Packages and Uses
 
             package:        "pkg" ident = decl* ";;"
-            use:        bareuse | quoteuse
+            use:            bareuse | quoteuse
             bareuse:        use ident
-            quoteuse:        use "<quoted string>"
+            quoteuse:       use "<quoted string>"
 
 
         There are two keywords for module system. 'use' is the simpler
@@ -392,7 +392,7 @@ TABLE OF CONTENTS:
 
         primitivetype:      misctype | inttype | flttype
         misctype:           "void"  | "bool" | "char" | "byte"
-        inttype:             "int8" |  "uint8" |
+        inttype:            "int8"  |  "uint8" |
                             "int16" | "uint16" |
                             "int32" | "uint32" |
                             "int64" | "uint64" |
@@ -445,7 +445,7 @@ TABLE OF CONTENTS:
             If the array size is specified as "...", then the array has zero bytes
             allocated to store it, and bounds are not checked. This allows
             flexible arrays. Flexible arrays are arrays defined at the end of
-            a struct, which do not contrbute to the size of the array. When
+            a struct, which do not contribute to the size of the struct. When
             allocating a struct on the heap, extra space may be reserved for
             the array, allowing variable sizes of trailing data. This is not
             used commonly, but turns out to be useful for C ABI comatibility.
@@ -582,7 +582,7 @@ TABLE OF CONTENTS:
             specialized. For example:
 
                 trait gettable @container -> @contained =
-                    const get : (c : @container -> @contained)
+                    get : (c : @container -> @contained)
                 ;;
 
             would define a trait that requires a get function which accepts
@@ -1107,8 +1107,8 @@ TABLE OF CONTENTS:
 
         5.2.1. Summary and Precedence:
 
-                expr:                expr <binop> expr | prefixexpr | postfixexpr
-                postfixexpr:        <prefixop> postfixexpr
+                expr:              expr <binop> expr | prefixexpr | postfixexpr
+                postfixexpr:       <prefixop> postfixexpr
                 prefixexpr:        atomicexpr <unaryop>
 
             Myrddin expressions should be fairly familiar to most programmers.
@@ -1144,7 +1144,7 @@ TABLE OF CONTENTS:
                     x#              Dereference
                     x[e]            Index
                     x[lo:hi]        Slice
-                    x(arg,list)        Call
+                    x(arg,list)     Call
 
             Precedence 10:
                     &x              Address
@@ -1953,7 +1953,7 @@ TABLE OF CONTENTS:
     pkgbody:   (decl | attrs tydef | traitdef | impldef)*
 
     /* declarations */
-    decl:       attrs ("var" | "const") decllist
+    decl:       attrs ("var" | "const" | "generic") decllist
     attrs:      ("$noret" | "extern" | "pkglocal")*
     decllist:   declbody ("," declbody)+
     declbody:   declcore ["=" expr]

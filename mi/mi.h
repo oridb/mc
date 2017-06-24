@@ -2,7 +2,7 @@ typedef struct Cfg Cfg;
 typedef struct Bb Bb;
 typedef struct Reaching Reaching;
 
-struct  Cfg {
+struct Cfg {
 	Node *fn;
 	Bb **bb;
 	Bb *start;

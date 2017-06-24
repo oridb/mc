@@ -598,7 +598,7 @@ Node *specializedcl(Node *gnode, Type *to, Node **name)
 	if (gnode->decl.trait) {
 		g = bestimpl(gnode, to);
 		if (!g)
-			fatal(gnode, "no trait implemented for for %s:%s", namestr(gnode->decl.name), tystr(to));
+			fatal(gnode, "no trait implemented for %s:%s", namestr(gnode->decl.name), tystr(to));
 	} else {
 		g = gnode;
 	}
