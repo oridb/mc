@@ -736,6 +736,26 @@ pkg sys =
 	const Sysgetcpu			: scno = 309
 	const Sysprocess_vm_readv	: scno = 310
 	const Sysprocess_vm_writev	: scno = 311
+	const Syskcmp			: scno = 312
+	const Sysfinit_module		: scno = 313
+	const Syssched_setattr		: scno = 314
+	const Syssched_getattr		: scno = 315
+	const Sysrenameat2		: scno = 316
+	const Sysseccomp		: scno = 317
+	const Sysgetrandom		: scno = 318
+	const Sysmemfd_create		: scno = 319
+	const Syskexec_file_load	: scno = 320
+	const Sysbpf			: scno = 321
+	const Sysexecveat		: scno = 322
+	const Sysuserfaultfd		: scno = 323
+	const Sysmembarrier		: scno = 324
+	const Sysmlock2			: scno = 325
+	const Syscopy_file_range	: scno = 326
+	const Syspreadv2		: scno = 327
+	const Syspwritev2		: scno = 328
+	const Syspkey_mprotect		: scno = 329
+	const Syspkey_alloc		: scno = 330
+	const Syspkey_free		: scno = 331
 
 	/* getting to the os */
 	extern const syscall	: (sc:scno, args:... -> int64)
