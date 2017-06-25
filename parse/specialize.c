@@ -414,7 +414,7 @@ static Node *specializenode(Node *n, Tysubst *tsmap)
 		lappend(&decls, &ndecls, r);
 		break;
 	case Nfunc:
-		r->func.scope = mkstab(0);
+		r->func.scope = mkstab(1);
 		r->func.scope->super = curstab();
 		pushstab(r->func.scope);
 		r->func.type = tysubst(n->func.type, tsmap);
@@ -598,7 +598,7 @@ Node *specializedcl(Node *gnode, Type *to, Node **name)
 	if (gnode->decl.trait) {
 		g = bestimpl(gnode, to);
 		if (!g)
-			fatal(gnode, "no trait implemented for for %s:%s", namestr(gnode->decl.name), tystr(to));
+			fatal(gnode, "no trait implemented for %s:%s", namestr(gnode->decl.name), tystr(to));
 	} else {
 		g = gnode;
 	}

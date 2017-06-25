@@ -17,37 +17,38 @@
 
 typedef struct Inferstate Inferstate;
 struct Inferstate {
+	/* tracking where we are in the inference */
 	int ingeneric;
 	int inaggr;
 	int innamed;
 	int indentdepth;
 	Type *ret;
+	Srcloc *usrc;
+	size_t nusrc;
 
-	/* bound by patterns turn into decls in the action block */
-	Node **impldecl;
-	size_t nimpldecl;
-	/* nodes that need post-inference checking/unification */
+	/* post-inference checking/unification */
+	Htab *delayed;
 	Node **postcheck;
 	size_t npostcheck;
 	Stab **postcheckscope;
 	size_t npostcheckscope;
-	/* the type params bound at the current point */
+
+	/* type params bound at the current point */
 	Htab **tybindings;
 	size_t ntybindings;
+
 	/* generic declarations to be specialized */
 	Node **genericdecls;
 	size_t ngenericdecls;
-	/* delayed unification -- we fall back to these types in a post pass if we
-	 * haven't unifed to something more specific */
-	Htab *delayed;
-	/* mappings from iterator type to element type */
-	Htab *seqbase;
-	/* the nodes that we've specialized them to, and the scopes they
-	 * appear in */
+	Node **impldecl;
+	size_t nimpldecl;
+
+	/* specializations of generics */
 	Node **specializations;
 	size_t nspecializations;
 	Stab **specializationscope;
 	size_t nspecializationscope;
+	Htab *seqbase;
 };
 
 static void infernode(Inferstate *st, Node **np, Type *ret, int *sawret);
@@ -109,12 +110,39 @@ static char *nodetystr(Inferstate *st, Node *n)
 	if (n->type == Nexpr && exprtype(n) != NULL)
 		t = tyfix(st, NULL, exprtype(n), 1);
 	else if (n->type == Ndecl && decltype(n) != NULL)
-		t = tyfix(st, NULL, decltype(n), 1);
+		t = tyfix(st, n, decltype(n), 1);
 
 	if (t && tybase(t)->type != Tyvar)
 		return tystr(t);
 	else
 		return strdup("unknown");
+}
+
+static void marksrc(Inferstate *st, Type *t, Srcloc l)
+{
+	t = tf(st, t);
+	if (t->tid >= st->nusrc) {
+		st->usrc = zrealloc(st->usrc, st->nusrc*sizeof(Srcloc), (t->tid + 1)*sizeof(Srcloc));
+		st->nusrc = t->tid + 1;
+	}
+	if (st->usrc[t->tid].line <= 0)
+		st->usrc[t->tid] = l;
+}
+
+static char *srcstr(Inferstate *st, Type *ty)
+{
+	char src[128];
+	Srcloc l;
+	char *s;
+
+	src[0] = 0;
+	if (st->nusrc > ty->tid && st->usrc[ty->tid].line > 0) {
+		l = st->usrc[ty->tid];
+		s = tystr(ty);
+		snprintf(src, sizeof src, "\n\t%s from %s:%d", s, fname(l), lnum(l));
+		free(s);
+	}
+	return strdup(src);
 }
 
 /* Tries to give a good string describing the context
@@ -238,17 +266,21 @@ static void delayedcheck(Inferstate *st, Node *n, Stab *s)
 
 static void typeerror(Inferstate *st, Type *a, Type *b, Node *ctx, char *msg)
 {
-	char *t1, *t2, *c;
+	char *t1, *t2, *s1, *s2, *c;
 
 	t1 = tystr(tyfix(st, NULL, a, 1));
 	t2 = tystr(tyfix(st, NULL, b, 1));
+	s1 = srcstr(st, a);
+	s2 = srcstr(st, b);
 	c = ctxstr(st, ctx);
 	if (msg)
-		fatal(ctx, "type \"%s\" incompatible with \"%s\" near %s: %s", t1, t2, c, msg);
+		fatal(ctx, "type \"%s\" incompatible with \"%s\" near %s: %s%s%s", t1, t2, c, msg, s1, s2);
 	else
-		fatal(ctx, "type \"%s\" incompatible with \"%s\" near %s", t1, t2, c);
+		fatal(ctx, "type \"%s\" incompatible with \"%s\" near %s%s%s", t1, t2, c, s1, s2);
 	free(t1);
 	free(t2);
+	free(s1);
+	free(s2);
 	free(c);
 }
 
@@ -281,41 +313,61 @@ static int isbound(Inferstate *st, Type *t)
  * Recursive types that contain themselves through
  * pointers or slices are fine, but any other self-inclusion
  * would lead to a value of infinite size */
-static int occurs(Inferstate *st, Type *t, Type *sub)
+static int occurs_rec(Inferstate *st, Type *sub, Bitset *bs)
 {
 	size_t i;
 
-	assert(t != NULL);
-	if (t == sub) /* FIXME: is this actually right? */
+	if (bshas(bs, sub->tid))
 		return 1;
-	/* if we're on the first iteration, the subtype is the type
-	 * itself. The assignment must come after the equality check
-	 * for obvious reasons. */
-	if (!sub)
-		sub = t;
-
+	bsput(bs, sub->tid);
 	switch (sub->type) {
+	case Typtr:
+	case Tyslice: 
+		break;
 	case Tystruct:
 		for (i = 0; i < sub->nmemb; i++)
-			if (occurs(st, t, decltype(sub->sdecls[i])))
+			if (occurs_rec(st, decltype(sub->sdecls[i]), bs))
 				return 1;
 		break;
 	case Tyunion:
 		for (i = 0; i < sub->nmemb; i++) {
-			if (sub->udecls[i]->etype && occurs(st, t, sub->udecls[i]->etype))
+			if (!sub->udecls[i]->etype)
+				continue;
+			if (occurs_rec(st, sub->udecls[i]->etype, bs))
 				return 1;
 		}
 		break;
-	case Typtr:
-	case Tyslice: 
-		return 0;
 	default:
 		for (i = 0; i < sub->nsub; i++)
-			if (occurs(st, t, sub->sub[i]))
+			if (occurs_rec(st, sub->sub[i], bs))
 				return 1;
 		break;
 	}
+	bsdel(bs, sub->tid);
 	return 0;
+}
+
+static int occursin(Inferstate *st, Type *a, Type *b)
+{
+	Bitset *bs;
+	int r;
+
+	bs = mkbs();
+	bsput(bs, b->tid);
+	r = occurs_rec(st, a, bs);
+	bsfree(bs);
+	return r;
+}
+
+static int occurs(Inferstate *st, Type *t)
+{
+	Bitset *bs;
+	int r;
+
+	bs = mkbs();
+	r = occurs_rec(st, t, bs);
+	bsfree(bs);
+	return r;
 }
 
 static int needfreshenrec(Inferstate *st, Type *t, Bitset *visited)
@@ -446,7 +498,7 @@ static void tyresolve(Inferstate *st, Type *t)
 		bsunion(t->traits, base->traits);
 	else if (base->traits)
 		t->traits = bsdup(base->traits);
-	if (occurs(st, t, NULL))
+	if (occurs(st, t))
 		lfatal(t->loc, "type %s includes itself", tystr(t));
 	st->ingeneric--;
 	if (t->type == Tyname || t->type == Tygeneric) {
@@ -552,6 +604,8 @@ static void settype(Inferstate *st, Node *n, Type *t)
 	case Nfunc:	n->func.type = t;	break;
 	default: die("untypable node %s", nodestr[n->type]); break;
 	}
+	if (t->type != Tyvar)
+		marksrc(st, t, n->loc);
 }
 
 /* Gets the type of a literal value */
@@ -776,8 +830,10 @@ static int checktraits(Type *a, Type *b)
 static void verifytraits(Inferstate *st, Node *ctx, Type *a, Type *b)
 {
 	size_t i, n;
+	Srcloc l;
 	char *sep;
-	char traitbuf[1024], abuf[1024], bbuf[1024];
+	char traitbuf[64], abuf[64], bbuf[64];
+	char asrc[64], bsrc[64];
 
 	if (!checktraits(a, b)) {
 		sep = "";
@@ -790,8 +846,14 @@ static void verifytraits(Inferstate *st, Node *ctx, Type *a, Type *b)
 		}
 		tyfmt(abuf, sizeof abuf, a);
 		tyfmt(bbuf, sizeof bbuf, b);
-		fatal(ctx, "%s missing traits %s for %s near %s", bbuf, traitbuf, abuf,
-				ctxstr(st, ctx));
+		bsrc[0] = 0;
+		if (st->nusrc > b->tid && st->usrc[b->tid].line > 0) {
+			l = st->usrc[b->tid];
+			snprintf(bsrc, sizeof asrc, "\n\t%s from %s:%d", bbuf, fname(l), lnum(l));
+		}
+		fatal(ctx, "%s missing traits %s for %s near %s%s%s",
+				bbuf, traitbuf, abuf, ctxstr(st, ctx),
+				srcstr(st, a), srcstr(st, b));
 	}
 }
 
@@ -834,7 +896,9 @@ static void unionunify(Inferstate *st, Node *ctx, Type *u, Type *v)
 	int found;
 
 	if (u->nmemb != v->nmemb)
-		fatal(ctx, "can't unify %s and %s near %s\n", tystr(u), tystr(v), ctxstr(st, ctx));
+		fatal(ctx, "can't unify %s and %s near %s%s%s\n",
+			tystr(u), tystr(v), ctxstr(st, ctx),
+			srcstr(st, u), srcstr(st, v));
 
 	for (i = 0; i < u->nmemb; i++) {
 		found = 0;
@@ -847,12 +911,14 @@ static void unionunify(Inferstate *st, Node *ctx, Type *u, Type *v)
 			else if (u->udecls[i]->etype && v->udecls[j]->etype)
 				unify(st, ctx, u->udecls[i]->etype, v->udecls[j]->etype);
 			else
-				fatal(ctx, "can't unify %s and %s near %s\n", tystr(u), tystr(v),
-						ctxstr(st, ctx));
+				fatal(ctx, "can't unify %s and %s near %s%s%s",
+					tystr(u), tystr(v), ctxstr(st, ctx),
+					srcstr(st, u), srcstr(st, v));
 		}
 		if (!found)
-			fatal(ctx, "can't unify %s and %s near %s\n", tystr(u), tystr(v),
-					ctxstr(st, ctx));
+			fatal(ctx, "can't unify %s and %s near %s%s%s",
+				tystr(u), tystr(v), ctxstr(st, ctx),
+				srcstr(st, u), srcstr(st, v));
 	}
 }
 
@@ -863,7 +929,9 @@ static void structunify(Inferstate *st, Node *ctx, Type *u, Type *v)
 	char *ud, *vd;
 
 	if (u->nmemb != v->nmemb)
-		fatal(ctx, "can't unify %s and %s near %s\n", tystr(u), tystr(v), ctxstr(st, ctx));
+		fatal(ctx, "can't unify %s and %s near %s%s%s",
+			tystr(u), tystr(v), ctxstr(st, ctx),
+			srcstr(st, u), srcstr(st, v));
 
 	for (i = 0; i < u->nmemb; i++) {
 		found = 0;
@@ -877,8 +945,9 @@ static void structunify(Inferstate *st, Node *ctx, Type *u, Type *v)
 		}
 		/* we had at least one missing member */
 		if (!found)
-			fatal(ctx, "can't unify %s and %s near %s\n", tystr(u), tystr(v),
-					ctxstr(st, ctx));
+			fatal(ctx, "can't unify %s and %s near %s%s%s",
+				tystr(u), tystr(v), ctxstr(st, ctx),
+				srcstr(st, u), srcstr(st, v));
 	}
 }
 
@@ -921,7 +990,7 @@ static void checksize(Inferstate *st, Node *ctx, Type *a, Type *b)
 	if (a->asize && exprop(a->asize) != Olit)
 		lfatal(ctx->loc, "%s: array size is not constant near %s",
 				tystr(a), ctxstr(st, ctx));
-	if (a->asize && exprop(b->asize) != Olit)
+	if (b->asize && exprop(b->asize) != Olit)
 		lfatal(ctx->loc, "%s: array size is not constant near %s",
 				tystr(b), ctxstr(st, ctx));
 	if (!a->asize)
@@ -973,14 +1042,19 @@ static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
 
 	/* Disallow recursive types */
 	if (a->type == Tyvar && b->type != Tyvar) {
-		if (occurs(st, a, b))
+		if (occursin(st, a, b))
 			fatal(ctx, "%s occurs within %s, leading to infinite type near %s\n",
 				tystr(a), tystr(b), ctxstr(st, ctx));
 	}
 
 	r = NULL;
-	if (a->type == Tyvar || tyeq(a, b))
+	if (a->type == Tyvar || tyeq(a, b)) {
 		tytab[a->tid] = b;
+		if (ctx) {
+			marksrc(st, a, ctx->loc);
+			marksrc(st, b, ctx->loc);
+		}
+	}
 	if (a->type == Tyvar) {
 		ea = basetype(st, a);
 		eb = basetype(st, b);
@@ -1538,11 +1612,11 @@ static void inferexpr(Inferstate *st, Node **np, Type *ret, int *sawret)
 		infersub(st, n, ret, sawret, &isconst);
 		settype(st, n, mktylike(n->loc, Tyuint));
 		break;
-	case Ocall: /* (@a, @b, @c, ... -> @r)(@a,@b,@c, ... -> @r) -> @r */
+	case Ocall: /* (@a, @b, @c, ... -> @r)(@a, @b, @c, ...) -> @r */
 		infersub(st, n, ret, sawret, &isconst);
 		unifycall(st, n);
 		break;
-	case Ocast: /* cast(@a, @b) -> @b */
+	case Ocast: /* (@a : @b) -> @b */
 		infersub(st, n, ret, sawret, &isconst);
 		delayedcheck(st, n, curstab());
 		break;

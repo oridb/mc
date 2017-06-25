@@ -3,6 +3,7 @@ lib bio =
 	geti.myr
 	puti.myr
 	iter.myr
+	mem.myr
 
         lib ../std:std
         lib ../sys:sys

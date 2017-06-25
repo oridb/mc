@@ -2,16 +2,18 @@
 
 prefix="/usr/local"
 
-for arg in $*; do
-    shift 1
-    case $arg in
+while [ $# -gt 0 ]; do
+    arg=$1
+    shift
+    case "$arg" in
         "--redo" | "-r")
             if [ -f ./configvar_cache ]; then
                 . ./configvar_cache
             fi
             ;;
         "--prefix" | "-p")
-            prefix=shift $*
+            prefix=$1
+            shift
             ;;
         --prefix=*)
             prefix=`echo $arg | sed 's/^--prefix=//g'`
@@ -19,7 +21,7 @@ for arg in $*; do
         "--help" | "-h")
             echo "Usage:"
             echo "      --prefix | -p: The prefix to install to"
-            break;
+            exit
             ;;
         *) echo "Unrecognized argument $arg";;
     esac

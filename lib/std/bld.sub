@@ -42,6 +42,7 @@ lib std {inc=.} =
 	mk.myr
 	mkpath.myr
 	mktemp.myr
+	netaddr.myr
 	now.myr
 	option.myr
 	optparse.myr

@@ -586,15 +586,16 @@ generic intfmt = {sb, opts, signed, bits : @a::(integral,numeric)
 		sval = -(bits : int64)
 		val = (sval : uint64)
 		isneg = true
+
+		/* if its negative after inverting, we have int64 min */
+		if sval < 0
+			std.sbputs(sb, "-9223372036854775808")
+			-> void
+		;;
 	else
 		val = (bits : uint64)
 		val &= ~0 >> (8*(sizeof(uint64)-sizeof(@a)))
 		isneg = false
-	;;
-	/* if its negative after inverting, we have int64 min */
-	if sval < 0
-		std.sbputs(sb, "-9223372036854775808")
-		-> void
 	;;
 
 	i = 0

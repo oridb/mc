@@ -50,3 +50,7 @@ sys$fnclone:
 	popq %r15
 	ret
 
+.globl sys$sigreturn
+sys$sigreturn:
+	movq $15,%rax
+	syscall

@@ -1,0 +1,24 @@
+use std
+use testr
+
+const main = {
+	testr.run([
+		/* 64 bit tests */
+		[.name="nop", .fn={ctx; matches(ctx, "tcp!foo!bar", "tcp!foo!bar", "nope", "nope")}],
+		[.name="addboth", .fn={ctx; matches(ctx, "tcp!foo!bar", "foo", "tcp", "bar")}],
+		[.name="addnet", .fn={ctx; matches(ctx, "tcp!foo!bar", "foo!bar", "tcp", "")}],
+		[.name="addport", .fn={ctx; matches(ctx, "tcp!foo!bar", "tcp!foo", "tcp", "bar")}],
+		[.name="addnetport", .fn={ctx; matches(ctx, "net!foo!bar", "foo", "", "bar")}],
+	][:])
+}
+
+const matches = {ctx, expected, addr, net, port
+	var s
+
+	s = std.netaddr(addr, net, port)
+	testr.check(ctx, std.sleq(expected, s), \
+		"mismatch: expected {}, got {} from ({}, {}, {})\n", \
+		expected, s, addr, net, port)
+	std.slfree(s)
+}
+
