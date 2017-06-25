@@ -241,7 +241,6 @@ pkg sys =
 	const Sockraw		: socktype = 3
 	const Sockrdm		: socktype = 4
 	const Sockseqpacket	: socktype = 5
-	const Solsock	: socktype =	0xffff
 
 	/* socket options */
 	const Sodebug	: sockopt = 0x0001		/* turn on debugging info recording */
@@ -260,6 +259,9 @@ pkg sys =
 	const Sobintime		: sockopt = 0x2000	/* timestamp received dgram traffic */
 	const Sonooffload	: sockopt = 0x4000	/* socket cannot be offloaded */
 	const Sonoddp		: sockopt = 0x8000	/* disable direct data placement */
+
+	/* socket option levels */
+	const Solsocket		: sockproto = 0xffff
 
 	/* network protocols */
 	const Ipproto_ip	: sockproto = 0
@@ -885,8 +887,8 @@ pkg sys =
 	const accept	: (sock : fd, addr : sockaddr#, len : size# -> fd)
 	const listen	: (sock : fd, backlog : int	-> int)
 	const bind	: (sock : fd, addr : sockaddr#, len : size -> int)
-	const setsockopt	: (sock : fd, lev : socktype, opt : sockopt, val : void#, len : size -> int)
-	const getsockopt	: (sock : fd, lev : socktype, opt : sockopt, val : void#, len : size# -> int)
+	const setsockopt	: (sock : fd, lev : sockproto, opt : sockopt, val : void#, len : size -> int)
+	const getsockopt	: (sock : fd, lev : sockproto, opt : sockopt, val : void#, len : size# -> int)
 
 	/* memory mapping */
 	const munmap	: (addr:byte#, len:size -> int64)

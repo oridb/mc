@@ -283,7 +283,6 @@ pkg sys =
 	const Sockraw		: socktype = 3
 	const Sockrdm		: socktype = 4
 	const Sockseqpacket	: socktype = 5
-	const Solsock	: socktype =	0xffff
 
 	/* socket options */
 	const Sodebug	: sockopt = 0x0001		/* turn on debugging info recording */
@@ -303,6 +302,9 @@ pkg sys =
 	const Sodonttrunc	: sockopt = 0x2000	/* APPLE: Retain unread data */
 	const Sowantmore	: sockopt = 0x4000	/* APPLE: Give hint when more data ready */
 	const Sowantoobflag	: sockopt = 0x8000	/* APPLE: Want OOB in MSG_FLAG on receive */
+
+	/* socket option levels */
+	const Solsocket		: sockproto = 0xffff
 
 	/* network protocols */
 	const Ipproto_ip	: sockproto = 0
@@ -797,8 +799,8 @@ pkg sys =
 	const accept	: (sock : fd, addr : sockaddr#, len : size# -> fd)
 	const listen	: (sock : fd, backlog : int	-> int)
 	const bind	: (sock : fd, addr : sockaddr#, len : size -> int)
-	const setsockopt	: (sock : fd, lev : socktype, opt : sockopt, val : void#, len : size -> int)
-	const getsockopt	: (sock : fd, lev : socktype, opt : sockopt, val : void#, len : size# -> int)
+	const setsockopt	: (sock : fd, lev : sockproto, opt : sockopt, val : void#, len : size -> int)
+	const getsockopt	: (sock : fd, lev : sockproto, opt : sockopt, val : void#, len : size# -> int)
 
 	/* memory mapping */
 	const munmap	: (addr:byte#, len:size -> int64)

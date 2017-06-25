@@ -237,7 +237,6 @@ pkg sys =
 	const Sockseqpacket	: socktype = 5	/* sequenced, reliable packets */
 	const Sockdccp		: socktype = 6	/* data congestion control protocol */
 	const Sockpack		: socktype = 10	/* linux specific packet */
-	const Solsock	: socktype =	1
 
 	/* socket options */
 	const Sodebug		: sockopt = 1
@@ -263,6 +262,9 @@ pkg sys =
 	const Sosndlowat	: sockopt = 19
 	const Sorcvtimeo	: sockopt = 20
 	const Sosndtimeo	: sockopt = 21
+
+	/* socket option levels */
+	const Solsocket		: sockproto = 1
 
 	/* network protocols */
 	const Ipproto_ip	: sockproto = 0
@@ -771,8 +773,8 @@ pkg sys =
 	const accept	: (sock : fd, addr : sockaddr#, len : size# -> fd)
 	const listen	: (sock : fd, backlog : int	-> int)
 	const bind	: (sock : fd, addr : sockaddr#, len : size -> int)
-	const setsockopt	: (sock : fd, lev : socktype, opt : sockopt, val : void#, len : size -> int)
-	const getsockopt	: (sock : fd, lev : socktype, opt : sockopt, val : void#, len : size# -> int)
+	const setsockopt	: (sock : fd, lev : sockproto, opt : sockopt, val : void#, len : size -> int)
+	const getsockopt	: (sock : fd, lev : sockproto, opt : sockopt, val : void#, len : size# -> int)
 
 	/* memory mapping */
 	const munmap	: (addr:byte#, len:size -> int64)

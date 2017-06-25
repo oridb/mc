@@ -239,8 +239,8 @@ pkg sys =
 	const Sockraw		: socktype = 3
 	const Sockrdm		: socktype = 4
 	const Sockseqpacket	: socktype = 5
-	const Solsock	: socktype =	0xffff
 
+	/* socket options */
 	const Sodebug		: sockopt = 0x0001	/* turn on debugging info recording */
 	const Soacceptconn	: sockopt = 0x0002	/* socket has had listen() */
 	const Soreuseaddr	: sockopt = 0x0004	/* allow local address reuse */
@@ -265,6 +265,9 @@ pkg sys =
 	const Sortable		: sockopt = 0x1021	/* routing table to be used */
 	const Sopeercred	: sockopt = 0x1022	/* get connect-time credentials */
 	const Sosplice		: sockopt = 0x1023	/* splice data to other socket */
+
+	/* socket option levels */
+	const Solsocket		: sockproto = 0xffff
 
 	/* network protocols */
 	const Ipproto_ip	: sockproto = 0
@@ -603,8 +606,8 @@ pkg sys =
 	const accept	: (sock : fd, addr : sockaddr#, len : size# -> fd)
 	const listen	: (sock : fd, backlog : int	-> int)
 	const bind	: (sock : fd, addr : sockaddr#, len : size -> int)
-	const setsockopt	: (sock : fd, lev : socktype, opt : sockopt, val : void#, len : size -> int)
-	const getsockopt	: (sock : fd, lev : socktype, opt : sockopt, val : void#, len : size# -> int)
+	const setsockopt	: (sock : fd, lev : sockproto, opt : sockopt, val : void#, len : size -> int)
+	const getsockopt	: (sock : fd, lev : sockproto, opt : sockopt, val : void#, len : size# -> int)
 
 	/* memory mapping */
 	const munmap	: (addr:byte#, len:size -> int64)
