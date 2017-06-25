@@ -210,7 +210,6 @@ const builddep = {b, dg, out, incs
 
 	match std.htget(dg.deps, out)
 	| `std.Some deps:
-		std.put("deps: {} => {}\n", out, deps)
 		for d in deps
 			if std.sleq(out, d)
 				continue
