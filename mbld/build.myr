@@ -210,8 +210,12 @@ const builddep = {b, dg, out, incs
 
 	match std.htget(dg.deps, out)
 	| `std.Some deps:
+		std.put("deps: {} => {}\n", out, deps)
 		for d in deps
-			if builddep(b, dg, d, incs)
+			if std.sleq(out, d)
+				continue
+			;;
+			if std.sleq(out, d) || builddep(b, dg, d, incs)
 				stale = true
 			;;
 			match std.htget(b.gensrc, d)
@@ -280,6 +284,8 @@ const compile = {dg, src, incs
 			std.slpush(&cmd, flg)
 		;;
 		run(cmd)
+	elif std.hassuffix(src, ".o") || std.hassuffix(src, ".6")
+		/* nothing to do with object files*/
 	else
 		std.fatal("Unknown file type for {}\n", src)
 	;;

@@ -64,7 +64,7 @@ const srcsplit = {src
 	platf = ""
 	suff = ""
 
-	match std.strfind(src, "/")
+	match std.strrfind(src, "/")
 	| `std.Some i:	fbase = i
 	| `std.None:	fbase = 0
 	;;
@@ -103,6 +103,8 @@ const srcswapsuffix = {src, new
 		-> std.strcat(base, new)
 	elif std.hassuffix(suff, ".glue.c")
 		-> std.strjoin([base, ".glue", new][:], "")
+	elif std.hassuffix(src, ".o") || std.hassuffix(src, ".6")
+		-> std.sldup(src)
 	else
 		std.fatal("unrecognized source {}\n", src)
 	;;
