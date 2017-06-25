@@ -212,6 +212,13 @@ const builddep = {b, dg, out, incs
 	| `std.Some deps:
 		for d in deps
 			if std.sleq(out, d)
+				/*
+				if an input generates itself (eg, object files), we
+				shouldn't recurse here, because that would be infinite.
+
+				The generation rule will be invoked from the target that
+				consumes this file.
+				*/
 				continue
 			;;
 			if std.sleq(out, d) || builddep(b, dg, d, incs)
