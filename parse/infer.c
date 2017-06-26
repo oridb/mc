@@ -1070,13 +1070,16 @@ static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
 	/* if the tyrank of a is 0 (ie, a raw tyvar), just unify.
 	 * Otherwise, match up subtypes. */
 	if (a->type == b->type && a->type != Tyvar) {
+		if (a->type == Tyname)
+			if (a->tid != b->tid)
+				typeerror(st, a, b, ctx, "incompatible types");
 		if (hasargs(a) && hasargs(b)) {
 			/* Only Tygeneric and Tyname should be able to unify. And they
 			 * should have the same names for this to be true. */
 			if (!nameeq(a->name, b->name))
 				typeerror(st, a, b, ctx, NULL);
 			if (a->narg != b->narg)
-				typeerror(st, a, b, ctx, "Incompatible parameter lists");
+				typeerror(st, a, b, ctx, "incompatible parameter lists");
 			for (i = 0; i < a->narg; i++)
 				unify(st, ctx, a->arg[i], b->arg[i]);
 			r = b;
