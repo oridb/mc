@@ -1071,7 +1071,7 @@ static Type *unify(Inferstate *st, Node *ctx, Type *u, Type *v)
 	 * Otherwise, match up subtypes. */
 	if (a->type == b->type && a->type != Tyvar) {
 		if (a->type == Tyname)
-			if (a->tid != b->tid)
+			if (!nameeq(a->name, b->name))
 				typeerror(st, a, b, ctx, "incompatible types");
 		if (hasargs(a) && hasargs(b)) {
 			/* Only Tygeneric and Tyname should be able to unify. And they

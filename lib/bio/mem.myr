@@ -21,7 +21,7 @@ const mkmem = {buf
 	-> mk(Rd, [
 		.read = {buf; -> memread(mem, buf)},
 		.write = {buf; -> memwrite(mem, buf)},
-		.seek = {off; mem.off = std.clamp(off, 0, mem.buf.len); -> `std.Ok mem.off},
+		.seek = {off; -> memseek(mem, off)},
 		.close = {; std.free(mem)},
 	])
 }
@@ -42,4 +42,10 @@ const memwrite = {mem, src
 	std.slcp(mem.buf[mem.off:mem.off+n], src[:n])
 	mem.off += n
 	-> `std.Ok n
+}
+
+const memseek = {mem, off : std.off
+	off = std.clamp(off, 0, mem.buf.len)
+	mem.off = (off : std.size)
+	-> `std.Ok off
 }
