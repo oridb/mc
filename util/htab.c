@@ -300,12 +300,9 @@ ulong murmurhash2 (void *ptr, size_t len)
 	}
 
 	switch (len & 0x3) {
-	case 3:
-		h ^= p[2] << 16;
-	case 2:
-		h ^= p[1] << 8;
-	case 1:
-		h ^= p[0] << 0;
+	case 3:	h ^= p[2] << 16;
+	case 2:	h ^= p[1] << 8;
+	case 1:	h ^= p[0] << 0;
 	default:
 		break;
 	};

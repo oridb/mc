@@ -17,9 +17,11 @@ pkg sys =
 	type mprot	= int64	/* memory protection */
 	type mopt	= int64	/* memory mapping options */
 	type socktype	= int64	/* socket type */
-	type sockproto	= int64	/* socket protocol */
+	type sockproto	= int32	/* socket protocol */
 	type sockfam	= uint16	/* socket family */
 	type sockopt	= int64
+	type msgflags	= uint32
+	type cmsgtype	= uint32
 
 	type epollflags	= uint32
 	type epollop	= uint32
@@ -30,6 +32,10 @@ pkg sys =
 	type futexop	= uint32
 	type signo	= int32
 	type sigflags	= int64
+
+	type fallocmode	= uint32
+
+	type mfdflags	= uint32
 
 	type clock = union
 		`Clockrealtime
@@ -154,6 +160,28 @@ pkg sys =
 		revents	: pollevt
 	;;
 
+	type iovec = struct
+		base	: byte#
+		len	: uint64
+	;;
+
+	type msghdr = struct
+		name		: sockaddr#
+		namelen		: int32
+		iov		: iovec#
+		iovlen		: uint64
+		control		: byte#
+		controllen	: uint64
+		flags		: msgflags
+	;;
+
+	type cmsghdr = struct
+		len	: uint64
+		level	: sockproto
+		cmtype	: cmsgtype
+		data	: byte[...]
+	;;
+
 	/* clone options */
 	const Clonesignal	: cloneopt = 0xff
 	const Clonevm		: cloneopt = 0x100
@@ -237,7 +265,6 @@ pkg sys =
 	const Sockseqpacket	: socktype = 5	/* sequenced, reliable packets */
 	const Sockdccp		: socktype = 6	/* data congestion control protocol */
 	const Sockpack		: socktype = 10	/* linux specific packet */
-	const Solsock	: socktype =	1
 
 	/* socket options */
 	const Sodebug		: sockopt = 1
@@ -264,12 +291,28 @@ pkg sys =
 	const Sorcvtimeo	: sockopt = 20
 	const Sosndtimeo	: sockopt = 21
 
+	/* socket option levels */
+	const Solsocket		: sockproto = 1
+
 	/* network protocols */
 	const Ipproto_ip	: sockproto = 0
 	const Ipproto_icmp	: sockproto = 1
 	const Ipproto_tcp	: sockproto = 6
 	const Ipproto_udp	: sockproto = 17
 	const Ipproto_raw	: sockproto = 255
+
+	/* message flags */
+	const Msgoob		: msgflags = 0x0001
+	const Msgpeek		: msgflags = 0x0002
+	const Msgdontroute	: msgflags = 0x0004
+	const Msgctrunc		: msgflags = 0x0008
+	const Msgtrunc		: msgflags = 0x0020
+	const Msgeor		: msgflags = 0x0080
+	const Msgwaitall	: msgflags = 0x0100
+	const Msgnosignal	: msgflags = 0x4000
+
+	/* ancillary data */
+	const Scmrights		: cmsgtype = 1
 
 	/* epoll flags */
 	const Epollcloexec	: epollflags	= 0o2000000
@@ -383,6 +426,18 @@ pkg sys =
 	const Sigwinch	: signo = 28
 	const Sigio	: signo = 29
 	const Sigpoll	: signo = Sigio
+
+	/* fallocate mode */
+	const Fallockeepsize		: fallocmode = 0x01
+	const Fallocpunchhole		: fallocmode = 0x02
+	const Fallocnohidestale		: fallocmode = 0x04
+	const Falloccollapserange	: fallocmode = 0x08
+	const Falloczerorange		: fallocmode = 0x10
+	const Fallocinsertrange		: fallocmode = 0x20
+
+	/* memfd flags */
+	const Mfdcloexec	: mfdflags = 0x01
+	const Mfdallowsealing	: mfdflags = 0x02
 
 	/* syscalls */
 	const Sysread			: scno = 0
@@ -697,6 +752,26 @@ pkg sys =
 	const Sysgetcpu			: scno = 309
 	const Sysprocess_vm_readv	: scno = 310
 	const Sysprocess_vm_writev	: scno = 311
+	const Syskcmp			: scno = 312
+	const Sysfinit_module		: scno = 313
+	const Syssched_setattr		: scno = 314
+	const Syssched_getattr		: scno = 315
+	const Sysrenameat2		: scno = 316
+	const Sysseccomp		: scno = 317
+	const Sysgetrandom		: scno = 318
+	const Sysmemfd_create		: scno = 319
+	const Syskexec_file_load	: scno = 320
+	const Sysbpf			: scno = 321
+	const Sysexecveat		: scno = 322
+	const Sysuserfaultfd		: scno = 323
+	const Sysmembarrier		: scno = 324
+	const Sysmlock2			: scno = 325
+	const Syscopy_file_range	: scno = 326
+	const Syspreadv2		: scno = 327
+	const Syspwritev2		: scno = 328
+	const Syspkey_mprotect		: scno = 329
+	const Syspkey_alloc		: scno = 330
+	const Syspkey_free		: scno = 331
 
 	/* getting to the os */
 	extern const syscall	: (sc:scno, args:... -> int64)
@@ -745,6 +820,10 @@ pkg sys =
 	const getdents64	: (fd:fd, buf : byte[:] -> int64)
 	const chdir	: (p : byte[:] -> int64)
 	const getcwd	: (buf : byte[:] -> int64)
+	const sendmsg	: (fd:fd, msg:msghdr#, flags:msgflags -> int64)
+	const recvmsg	: (fd:fd, msg:msghdr#, flags:msgflags -> int64)
+	const fallocate : (fd:fd, mode:fallocmode, off:off, len:off -> int64)
+	const memfdcreate	: (name:byte[:], flags:mfdflags -> fd)
 
 	/* signals */
 	const sigaction	: (sig : signo, act : sigaction#, oact : sigaction# -> int)
@@ -771,8 +850,8 @@ pkg sys =
 	const accept	: (sock : fd, addr : sockaddr#, len : size# -> fd)
 	const listen	: (sock : fd, backlog : int	-> int)
 	const bind	: (sock : fd, addr : sockaddr#, len : size -> int)
-	const setsockopt	: (sock : fd, lev : socktype, opt : sockopt, val : void#, len : size -> int)
-	const getsockopt	: (sock : fd, lev : socktype, opt : sockopt, val : void#, len : size# -> int)
+	const setsockopt	: (sock : fd, lev : sockproto, opt : sockopt, val : void#, len : size -> int)
+	const getsockopt	: (sock : fd, lev : sockproto, opt : sockopt, val : void#, len : size# -> int)
 
 	/* memory mapping */
 	const munmap	: (addr:byte#, len:size -> int64)
@@ -875,6 +954,10 @@ generic ioctl	= {fd, req, arg;	-> (syscall(Sysioctl, a(fd), a(req), a(arg)) : in
 const getdents64	= {fd, buf;	-> syscall(Sysgetdents64, a(fd), (buf : byte#), a(buf.len))}
 const chdir	= {dir;	-> syscall(Syschdir, cstring(dir))}
 const getcwd	= {buf;	-> syscall(Sysgetcwd, a(buf), a(buf.len))}
+const sendmsg	= {fd, msg, flags;	-> syscall(Syssendmsg, a(fd), msg, a(flags))}
+const recvmsg	= {fd, msg, flags;	-> syscall(Sysrecvmsg, a(fd), msg, a(flags))}
+const fallocate	= {fd, mode, off, len;	-> syscall(Sysfallocate, a(fd), a(mode),  a(off), a(len))}
+const memfdcreate	= {name, flags;	-> (syscall(Sysmemfd_create, cstring(name), a(flags)) : fd)}
 
 /* file stuff */
 const pipe	= {fds;	-> syscall(Syspipe, a(fds))}

@@ -74,7 +74,7 @@ const announcesock = {proto, str
 		-> `Err "failed to create socket"
 	;;
 	yes = 1
-	if sys.setsockopt(sock, sys.Solsock, sys.Soreuseaddr, (&yes : void#), sizeof(int)) < 0
+	if sys.setsockopt(sock, sys.Solsocket, sys.Soreuseaddr, (&yes : void#), sizeof(int)) < 0
 		-> `Err "failed to set sock opts"
 	;;
 	if sys.bind(sock, sa, sz) < 0
@@ -99,7 +99,7 @@ const announceunix = {path
 		-> `Err "failed to create socket"
 	;;
 	yes = 1
-	if sys.setsockopt(sock, sys.Solsock, sys.Soreuseaddr, (&yes : void#), sizeof(int)) < 0
+	if sys.setsockopt(sock, sys.Solsocket, sys.Soreuseaddr, (&yes : void#), sizeof(int)) < 0
 		-> `Err "failed to set sock opts"
 	;;
 	sys.unlink(path)
