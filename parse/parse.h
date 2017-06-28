@@ -317,16 +317,6 @@ struct Node {
 		} func;
 
 		struct {
-			Node *name;
-			size_t traitid;
-
-			Node **funcs;
-			size_t nfuncs;
-			Node **membs;
-			size_t nmembs;
-		} trait;
-
-		struct {
 			Node *traitname;
 			Trait *trait;
 			Type *type;
