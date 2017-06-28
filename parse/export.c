@@ -60,10 +60,8 @@ static void tagtrait(Stab *st, Trait *tr, int ingeneric, int hidelocal)
 		tagtype(st, tr->param, ingeneric, hidelocal);
 	for (i = 0; i < tr->naux; i++)
 		tagtype(st, tr->aux[i], ingeneric, hidelocal);
-	for (i = 0; i < tr->nmemb; i++)
-		tagnode(st, tr->memb[i], ingeneric, hidelocal);
-	for (i = 0; i < tr->nfuncs; i++)
-		tagnode(st, tr->funcs[i], ingeneric, hidelocal);
+	for (i = 0; i < tr->nproto; i++)
+		tagnode(st, tr->proto[i], ingeneric, hidelocal);
 }
 
 static void tagtype(Stab *st, Type *t, int ingeneric, int hidelocal)
@@ -261,13 +259,9 @@ void tagexports(Node *file, int hidelocal)
 		tr->param->vis = tr->vis;
 		for (i = 0; i < tr->naux; i++)
 			tr->aux[i]->vis = tr->vis;
-		for (i = 0; i < tr->nmemb; i++) {
-			tr->memb[i]->decl.vis = tr->vis;
-			tagnode(st, tr->memb[i], 0, hidelocal);
-		}
-		for (i = 0; i < tr->nfuncs; i++) {
-			tr->funcs[i]->decl.vis = tr->vis;
-			tagnode(st, tr->funcs[i], 0, hidelocal);
+		for (i = 0; i < tr->nproto; i++) {
+			tr->proto[i]->decl.vis = tr->vis;
+			tagnode(st, tr->proto[i], 0, hidelocal);
 		}
 	}
 	free(k);

@@ -248,13 +248,13 @@ static void additerspecializations(Inferstate *st, Node *n, Stab *stab)
 		return;
 	if (ty->type == Tyslice || ty->type == Tyarray || ty->type == Typtr)
 		return;
-	for (i = 0; i < tr->nfuncs; i++) {
+	for (i = 0; i < tr->nproto; i++) {
 		ty = exprtype(n->iterstmt.seq);
-		if (hthas(tr->funcs[i]->decl.impls, ty))
+		if (hthas(tr->proto[i]->decl.impls, ty))
 			continue;
 		lappend(&st->specializationscope, &st->nspecializationscope, stab);
 		lappend(&st->specializations, &st->nspecializations, n);
-		lappend(&st->genericdecls, &st->ngenericdecls, tr->funcs[i]);
+		lappend(&st->genericdecls, &st->ngenericdecls, tr->proto[i]);
 	}
 }
 
@@ -1779,9 +1779,9 @@ static void specializeimpl(Inferstate *st, Node *n)
 		*/
 		if (file->file.globls->name)
 			setns(dcl->decl.name, file->file.globls->name);
-		for (j = 0; j < t->nfuncs; j++) {
-			if (nsnameeq(dcl->decl.name, t->funcs[j]->decl.name)) {
-				proto = t->funcs[j];
+		for (j = 0; j < t->nproto; j++) {
+			if (nsnameeq(dcl->decl.name, t->proto[j]->decl.name)) {
+				proto = t->proto[j];
 				break;
 			}
 		}
@@ -2493,16 +2493,16 @@ static void specialize(Inferstate *st, Node *f)
 			typesub(st, d, 0);
 		} else if (n->type == Niterstmt) {
 			tr = traittab[Tciter];
-			assert(tr->nfuncs == 2);
+			assert(tr->nproto == 2);
 			ty = exprtype(n->iterstmt.seq);
 
 			it = itertype(st, n->iterstmt.seq, mktype(n->loc, Tybool));
-			d = specializedcl(tr->funcs[0], it, &name);
-			htput(tr->funcs[0]->decl.impls, ty, d);
+			d = specializedcl(tr->proto[0], it, &name);
+			htput(tr->proto[0]->decl.impls, ty, d);
 
 			it = itertype(st, n->iterstmt.seq, mktype(n->loc, Tyvoid));
-			d = specializedcl(tr->funcs[1], it, &name);
-			htput(tr->funcs[1]->decl.impls, ty, d);
+			d = specializedcl(tr->proto[1], it, &name);
+			htput(tr->proto[1]->decl.impls, ty, d);
 		} else {
 			die("unknown node for specialization\n");
 		}

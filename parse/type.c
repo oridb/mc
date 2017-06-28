@@ -141,8 +141,7 @@ Type *mktylike(Srcloc loc, Ty like)
 /* steals memb, funcs */
 Trait *mktrait(Srcloc loc, Node *name, Type *param,
 	Type **aux, size_t naux,
-	Node **memb, size_t nmemb,
-	Node **funcs, size_t nfuncs,
+	Node **proto, size_t nproto,
 	int isproto)
 {
 	Trait *t;
@@ -155,12 +154,10 @@ Trait *mktrait(Srcloc loc, Node *name, Type *param,
 	t->vis = Visintern;
 	t->name = name;
 	t->param = param;
-	t->memb = memb;
-	t->nmemb = nmemb;
+	t->proto = proto;
+	t->nproto = nproto;
 	t->aux = aux;
 	t->naux = naux;
-	t->funcs = funcs;
-	t->nfuncs = nfuncs;
 	t->isproto = isproto;
 
 	traittab = xrealloc(traittab, ntraittab * sizeof(Trait *));
@@ -924,7 +921,7 @@ void iterableinit(Stab *st, Trait *tr)
 	func->decl.isglobl = 1;
 	func->decl.isextern = 1;
 
-	lappend(&tr->funcs, &tr->nfuncs, func);
+	lappend(&tr->proto, &tr->nproto, func);
 	putdcl(st, func);
 
 	/* __iterfin__ : (it : @a#, outval : @b# -> void) */
@@ -944,7 +941,7 @@ void iterableinit(Stab *st, Trait *tr)
 	func->decl.isglobl = 1;
 	func->decl.isextern = 1;
 
-	lappend(&tr->funcs, &tr->nfuncs, func);
+	lappend(&tr->proto, &tr->nproto, func);
 	putdcl(st, func);
 }
 
@@ -960,7 +957,6 @@ void tyinit(Stab *st)
 #define Tc(c, n) \
 	tr = mktrait(Zloc, \
 		mkname(Zloc, n), NULL, \
-		NULL, 0, \
 		NULL, 0, \
 		NULL, 0, \
 		0); \

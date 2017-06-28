@@ -164,10 +164,8 @@ struct Trait {
 	Type *param; /* the type parameter */
 	Type **aux;	/* auxiliary parameters */
 	size_t naux;
-	Node **memb; /* type must have these members */
-	size_t nmemb;
-	Node **funcs; /* and declare these funcs */
-	size_t nfuncs;
+	Node **proto; /* type must implement these prototypes */
+	size_t nproto;
 
 	char isproto;  /* is it a prototype (for exporting purposes) */
 	char ishidden; /* should user code be able to use this? */
@@ -431,8 +429,7 @@ Type *mktyunion(Srcloc l, Ucon **decls, size_t ndecls);
 Trait *mktrait(Srcloc l, Node *name,
 	Type *param,
 	Type **aux, size_t naux,
-	Node **memb, size_t nmemb,
-	Node **funcs, size_t nfuncs,
+	Node **proto, size_t nproto,
 	int isproto);
 Type *mktylike(Srcloc l, Ty ty); /* constrains tyvar t like it was builtin ty */
 Ucon *finducon(Type *t, Node *name);
