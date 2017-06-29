@@ -2199,16 +2199,13 @@ static void postcheckpass(Inferstate *st, Node ***rem, size_t *nrem, Stab ***rem
 	for (i = 0; i < st->npostcheck; i++) {
 		n = st->postcheck[i];
 		pushstab(st->postcheckscope[i]);
-		if (n->type == Nexpr && exprop(n) == Omemb)
-			infercompn(st, n, rem, nrem, remscope, nremscope);
-		else if (n->type == Nexpr && exprop(n) == Ocast)
-			checkcast(st, n, rem, nrem, remscope, nremscope);
-		else if (n->type == Nexpr && exprop(n) == Ostruct)
-			checkstruct(st, n, rem, nrem, remscope, nremscope);
-		else if (n->type == Nexpr && exprop(n) == Ovar)
-			checkvar(st, n, rem, nrem, remscope, nremscope);
-		else
-			die("Thing we shouldn't be checking in postcheck\n");
+		switch (exprop(n)) {
+		case Omemb:	infercompn(st, n, rem, nrem, remscope, nremscope);	break;
+		case Ocast:	checkcast(st, n, rem, nrem, remscope, nremscope);	break;
+		case Ostruct:	checkstruct(st, n, rem, nrem, remscope, nremscope);	break;
+		case Ovar:	checkvar(st, n, rem, nrem, remscope, nremscope);	break;
+		default:	die("should not see %s in postcheck\n", opstr[exprop(n)]);
+		}
 		popstab();
 	}
 }
