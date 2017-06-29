@@ -113,8 +113,6 @@ struct Type {
 	Vis vis;
 
 	Bitset *traits;	/* the type constraints matched on this type */
-	Node **traitlist;  /* The names of the constraints on the type. Used to fill the bitset */
-	size_t ntraitlist; /* The length of the constraint list above */
 
 	Type **gparam;  /* Tygeneric: type parameters that match the type args */
 	size_t ngparam; /* Tygeneric: count of type parameters */

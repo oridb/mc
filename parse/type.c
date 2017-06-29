@@ -100,8 +100,6 @@ Type *tydup(Type *t)
 	r->fixed = 0;		/* re-resolving doesn't hurt */
 
 	r->traits = bsdup(t->traits);
-	r->traitlist = memdup(t->traitlist, t->ntraitlist * sizeof(Node *));
-	r->ntraitlist = t->ntraitlist;
 
 	r->arg = memdup(t->arg, t->narg * sizeof(Type *));
 	r->narg = t->narg;
