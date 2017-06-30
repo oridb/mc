@@ -858,7 +858,7 @@ TABLE OF CONTENTS:
 
                 trait iterable @it -> @val =
                     __iternext__ : (itp : @it#, valp : @val# -> bool)
-                    __iterfin : (itp : @it#, valp : @val# -> bool)
+                    __iterfin__ : (itp : @it#, valp : @val# -> void)
                 ;;
 
             A for loop iterating over an iterable will call __iternext__

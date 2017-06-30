@@ -446,7 +446,7 @@ static Type *tyfreshen(Inferstate *st, Tysubst *subst, Type *t)
 	return t;
 }
 
-/* Resolves a type and all it's subtypes recursively.*/
+/* Resolves a type and all its subtypes recursively. */
 static void tyresolve(Inferstate *st, Type *t)
 {
 	size_t i;
@@ -568,7 +568,7 @@ static Type *tysubst(Inferstate *st, Type *t, Type *orig)
 }
 
 
-/* fixd the most accurate type mapping we have (ie,
+/* find the most accurate type mapping we have (ie,
  * the end of the unification chain */
 static Type *tf(Inferstate *st, Type *orig)
 {
@@ -1611,7 +1611,7 @@ static void inferexpr(Inferstate *st, Node **np, Type *ret, int *sawret)
 		settype(st, n, mktyvar(n->loc));
 		delayedcheck(st, n, curstab());
 		break;
-	case Osize: /* sizeof @a -> size */
+	case Osize: /* sizeof(@a) -> size */
 		infersub(st, n, ret, sawret, &isconst);
 		settype(st, n, mktylike(n->loc, Tyuint));
 		break;
