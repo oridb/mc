@@ -1424,6 +1424,10 @@ static void extractsub(Simp *s, Node *e)
 		for (i = 0; i < e->expr.nargs; i++)
 			extractsub(s, e->expr.args[i]);
 		break;
+	case Oucon:
+		if (e->expr.nargs == 2)
+			extractsub(s, e->expr.args[1]);
+		break;
 	default:
 		break;
 	}
@@ -1447,6 +1451,7 @@ static void simpconstinit(Simp *s, Node *dcl)
 		case Oarr:
 		case Ostruct:
 		case Oslice:
+		case Oucon:
 			extractsub(s, e);
 			lappend(&s->blobs, &s->nblobs, dcl);
 			break;

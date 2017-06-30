@@ -45,6 +45,7 @@ B structasn	E	42
 B structarray	E	42
 B structret	E	42
 B constslice	P	2312345678
+B constunion	P	'`std.Some thing'
 B exportmain	E	42
 B slalloc	E	123
 B neststruct	E	3

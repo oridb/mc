@@ -1,0 +1,7 @@
+use std
+
+const x = `std.Some "thing"
+
+const main = {
+	std.put("{}\n", x)
+}
