@@ -150,6 +150,8 @@ static void tagnode(Stab *st, Node *n, int ingeneric, int hidelocal)
 	case Nexpr:
 		tagnode(st, n->expr.idx, ingeneric, hidelocal);
 		tagtype(st, n->expr.type, ingeneric, hidelocal);
+		if (n->expr.param)
+			tagtype(st, n->expr.param, ingeneric, hidelocal);
 		for (i = 0; i < n->expr.nargs; i++)
 			tagnode(st, n->expr.args[i], ingeneric, hidelocal);
 		/* generics need to have the decls they refer to exported. */

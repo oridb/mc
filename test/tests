@@ -165,3 +165,4 @@ B nestedgoto	E	0
 B initializer	E	0
 B fmtalign	E	0
 B implexpr	P	12,z,hello
+B implexpr-concrete	P	zigzag

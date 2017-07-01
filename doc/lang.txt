@@ -1268,7 +1268,9 @@ TABLE OF CONTENTS:
 
             An impl expression chooses the implementation of the given trait
             declaration for the given type. It is useful for refering to trait
-            declarations in a generic context.
+            declarations in a generic context. It also allows you to
+            disambiguate a trait declaration whose type does not refer to the
+            trait parameter.
 
         5.2.4. Cast Expressions:
 

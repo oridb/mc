@@ -1814,7 +1814,7 @@ static void specializeimpl(Inferstate *st, Node *n)
 		unify(st, n, type(st, dcl), ty);
 
 		/* and put the specialization into the global stab */
-		name = genericname(proto, ty);
+		name = genericname(proto, n->impl.type, ty);
 		sym = getdcl(file->file.globls, name);
 		if (sym)
 			fatal(n, "trait %s already specialized with %s on %s:%d",
@@ -2423,6 +2423,8 @@ static void typesub(Inferstate *st, Node *n, int noerr)
 		break;
 	case Nexpr:
 		settype(st, n, tyfix(st, n, type(st, n), 0));
+		if (n->expr.param)
+			n->expr.param = tyfix(st, n, n->expr.param, 0);
 		typesub(st, n->expr.idx, noerr);
 		if (exprop(n) == Ocast && exprop(n->expr.args[0]) == Olit &&
 				n->expr.args[0]->expr.args[0]->lit.littype == Lint) {
@@ -2493,7 +2495,7 @@ static void specialize(Inferstate *st, Node *f)
 		pushstab(st->specializationscope[i]);
 		n = st->specializations[i];
 		if (n->type == Nexpr) {
-			d = specializedcl(st->genericdecls[i], n->expr.type, &name);
+			d = specializedcl(st->genericdecls[i], n->expr.param, n->expr.type, &name);
 			n->expr.args[0] = name;
 			n->expr.did = d->decl.did;
 
@@ -2506,11 +2508,11 @@ static void specialize(Inferstate *st, Node *f)
 			ty = exprtype(n->iterstmt.seq);
 
 			it = itertype(st, n->iterstmt.seq, mktype(n->loc, Tybool));
-			d = specializedcl(tr->proto[0], it, &name);
+			d = specializedcl(tr->proto[0], ty, it, &name);
 			htput(tr->proto[0]->decl.impls, ty, d);
 
 			it = itertype(st, n->iterstmt.seq, mktype(n->loc, Tyvoid));
-			d = specializedcl(tr->proto[1], it, &name);
+			d = specializedcl(tr->proto[1], ty, it, &name);
 			htput(tr->proto[1]->decl.impls, ty, d);
 		} else {
 			die("unknown node for specialization\n");

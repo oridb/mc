@@ -241,7 +241,7 @@ static void fixup(Node *n)
 			if (!d)
 				die("Missing decl %s", namestr(n->expr.args[0]));
 			if (d->decl.isgeneric)
-				d = specializedcl(d, n->expr.type, &n->expr.args[0]);
+				d = specializedcl(d, n->expr.param, n->expr.type, &n->expr.args[0]);
 			n->expr.did = d->decl.did;
 		}
 		break;
@@ -328,6 +328,8 @@ static Node *specializenode(Node *n, Tysubst *tsmap)
 	case Nexpr:
 		r->expr.op = n->expr.op;
 		r->expr.type = tysubst(n->expr.type, tsmap);
+		if (n->expr.param)
+			r->expr.param = tysubst(n->expr.param, tsmap);
 		r->expr.isconst = n->expr.isconst;
 		r->expr.nargs = n->expr.nargs;
 		r->expr.idx = specializenode(n->expr.idx, tsmap);
@@ -435,7 +437,7 @@ static Node *specializenode(Node *n, Tysubst *tsmap)
 	return r;
 }
 
-Node *genericname(Node *n, Type *t)
+Node *genericname(Node *n, Type *param, Type *t)
 {
 	char buf[1024];
 	char *p;
@@ -447,6 +449,10 @@ Node *genericname(Node *n, Type *t)
 	p = buf;
 	end = buf + sizeof buf;
 	p += bprintf(p, end - p, "%s", n->decl.name->name.name);
+	if (param) {
+		p += bprintf(p, end - p, "$");
+		p += tyidfmt(p, end - p, param);
+	}
 	p += bprintf(p, end - p, "$");
 	p += tyidfmt(p, end - p, t);
 	name = mkname(n->loc, buf);
@@ -574,7 +580,7 @@ Node *bestimpl(Node *n, Type *to)
  * duplicate of it with type 'to'. It also generates
  * a name for this specialized node, and returns it in '*name'.
  */
-Node *specializedcl(Node *gnode, Type *to, Node **name)
+Node *specializedcl(Node *gnode, Type *param, Type *to, Node **name)
 {
 	extern int stabstkoff;
 	Tysubst *tsmap;
@@ -584,7 +590,7 @@ Node *specializedcl(Node *gnode, Type *to, Node **name)
 	assert(gnode->type == Ndecl);
 	assert(gnode->decl.isgeneric);
 
-	n = genericname(gnode, to);
+	n = genericname(gnode, param, to);
 	*name = n;
 	if (n->name.ns)
 		st = getns(file, n->name.ns);
@@ -598,7 +604,7 @@ Node *specializedcl(Node *gnode, Type *to, Node **name)
 	if (gnode->decl.trait) {
 		g = bestimpl(gnode, to);
 		if (!g)
-			fatal(gnode, "no trait implemented for %s:%s", namestr(gnode->decl.name), tystr(to));
+			fatal(gnode, "type %s does not implement %s:%s", tystr(param), namestr(gnode->decl.name), tystr(to));
 	} else {
 		g = gnode;
 	}

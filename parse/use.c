@@ -464,6 +464,9 @@ static void pickle(FILE *fd, Node *n)
 	case Nexpr:
 		wrbyte(fd, n->expr.op);
 		wrtype(fd, n->expr.type);
+		wrbool(fd, n->expr.param != NULL);
+		if (n->expr.param)
+			wrtype(fd, n->expr.param);
 		wrbool(fd, n->expr.isconst);
 		pickle(fd, n->expr.idx);
 		wrint(fd, n->expr.nargs);
@@ -598,6 +601,8 @@ static Node *unpickle(FILE *fd)
 	case Nexpr:
 		n->expr.op = rdbyte(fd);
 		rdtype(fd, &n->expr.type);
+		if (rdbool(fd))
+			rdtype(fd, &n->expr.param);
 		n->expr.isconst = rdbool(fd);
 		n->expr.idx = unpickle(fd);
 		n->expr.nargs = rdint(fd);

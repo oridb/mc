@@ -1,4 +1,4 @@
-#define Abiversion 12
+#define Abiversion 13
 
 typedef struct Srcloc Srcloc;
 typedef struct Tysubst Tysubst;
@@ -508,9 +508,9 @@ void substput(Tysubst *subst, Type *from, Type *to);
 Type *substget(Tysubst *subst, Type *from);
 void substpush(Tysubst *subst);
 void substpop(Tysubst *subst);
-Node *specializedcl(Node *n, Type *to, Node **name);
+Node *specializedcl(Node *n, Type *param, Type *to, Node **name);
 Type *tyspecialize(Type *t, Tysubst *tymap, Htab *delayed, Htab *tybase);
-Node *genericname(Node *n, Type *t);
+Node *genericname(Node *n, Type *param, Type *t);
 void geninit(Node *file);
 
 /* usefiles */
