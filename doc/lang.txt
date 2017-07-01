@@ -1239,7 +1239,8 @@ TABLE OF CONTENTS:
         5.2.3. Atomic Expressions:
             
                 atomicexpr:     ident | gap | literal | "(" expr ")" | 
-                                "sizeof" "(" type ")" | castexpr
+                                "sizeof" "(" type ")" | castexpr |
+                                "impl" "(" name "," type ")"
                 castexpr:       "(" expr ":" type ")"
                 gap:            "_"
 
@@ -1264,6 +1265,10 @@ TABLE OF CONTENTS:
             In match contexts, it is equivalent to a fresh variable in the
             match, again, given that it is never read from in the body of the
             match.
+
+            An impl expression chooses the implementation of the given trait
+            declaration for the given type. It is useful for refering to trait
+            declarations in a generic context.
 
         5.2.4. Cast Expressions:
 
@@ -2012,7 +2017,8 @@ TABLE OF CONTENTS:
                 postepxr "#" |
                 atomicexpr
 
-    atomicexpr: ident | literal | "(" expr ")" | "sizeof" "(" type ")"
+    atomicexpr: ident | literal | "(" expr ")" | "sizeof" "(" type ")" |
+                "(" expr ":" type ")" | "impl" "(" name "," type ")"
 
     /* literals */
     literal:    funclit | seqlit | tuplit | simplelit

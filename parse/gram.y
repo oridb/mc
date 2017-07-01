@@ -380,7 +380,7 @@ typedeclcore
 
 name    : Tident {$$ = mkname($1->loc, $1->id);}
 	| Tident Tdot Tident {
-		$$ = mkname($3->loc, $3->id); setns($$, $1->id);
+		$$ = mknsname($3->loc, $1->id, $3->id);
 	}
 	;
 
@@ -755,6 +755,10 @@ atomicexpr
 	}
 	| Tsizeof Toparen type Tcparen
 	{$$ = mkexpr($1->loc, Osize, mkpseudodecl($1->loc, $3), NULL);}
+	| Timpl Toparen name Tcomma type Tcparen {
+		$$ = mkexpr($1->loc, Ovar, $3, NULL);
+		$$->expr.param = $5;
+	}
 	;
 
 tupbody : tuphead tuprest

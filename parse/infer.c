@@ -1199,13 +1199,16 @@ static Type *initvar(Inferstate *st, Node *n, Node *s)
 	if (s->decl.ishidden)
 		fatal(n, "attempting to refer to hidden decl %s", ctxstr(st, n));
 
-	param = NULL;
+	param = n->expr.param;
 	if (s->decl.isgeneric) {
 		subst = mksubst();
+		if (param)
+			substput(subst, s->decl.trait->param, param);
 		t = tysubstmap(st, subst, tf(st, s->decl.type), s->decl.type);
-		if (s->decl.trait) {
+		if (s->decl.trait && !param) {
 			param = substget(subst, s->decl.trait->param);
-			delayedcheck(st, n, curstab());
+			if (!param)
+				fatal(n, "ambiguous trait decl %s", ctxstr(st, s));
 		}
 		substfree(subst);
 	} else {
@@ -1213,7 +1216,10 @@ static Type *initvar(Inferstate *st, Node *n, Node *s)
 	}
 	n->expr.did = s->decl.did;
 	n->expr.isconst = s->decl.isconst;
-	n->expr.param = param;
+	if (param) {
+		n->expr.param = param;
+		delayedcheck(st, n, curstab());
+	}
 	if (s->decl.isgeneric && !st->ingeneric) {
 		t = tyfreshen(st, NULL, t);
 		addspecialization(st, n, curstab());
@@ -1484,6 +1490,7 @@ static void inferexpr(Inferstate *st, Node **np, Type *ret, int *sawret)
 	Node *s, *n;
 	Type *t, *b;
 	int isconst;
+	Stab *ns;
 
 	n = *np;
 	assert(n->type == Nexpr);
@@ -1650,9 +1657,14 @@ static void inferexpr(Inferstate *st, Node **np, Type *ret, int *sawret)
 		 * already done with this node, we can just return. */
 		if (n->expr.type)
 			return;
-		s = getdcl(curstab(), args[0]);
+		ns = curstab();
+		if (args[0]->name.ns)
+			ns = getns(file, args[0]->name.ns);
+		s = getdcl(ns, args[0]);
 		if (!s)
 			fatal(n, "undeclared var %s", ctxstr(st, args[0]));
+		if (n->expr.param && !s->decl.trait)
+			fatal(n, "var %s must refer to a trait decl", ctxstr(st, args[0]));
 		initvar(st, n, s);
 		break;
 	case Ogap: /* _ -> @a */
@@ -1812,7 +1824,7 @@ static void specializeimpl(Inferstate *st, Node *n)
 		putdcl(file->file.globls, dcl);
 		htput(proto->decl.impls, n->impl.type, dcl);
 		dcl->decl.isconst = 1;
-		if (n->impl.type->type == Tygeneric || hasparams(n->impl.type)) {
+		if (ty->type == Tygeneric || hasparams(ty)) {
 			dcl->decl.isgeneric = 1;
 			lappend(&proto->decl.gimpl, &proto->decl.ngimpl, dcl);
 			lappend(&proto->decl.gtype, &proto->decl.ngtype, ty);
