@@ -231,7 +231,7 @@ static void typickle(FILE *fd, Type *ty)
 			if (i < Ntraits)
 				wrint(fd, i | Builtinmask);
 			else
-				wrint(fd, i);
+				wrint(fd, traittab[i]->uid);
 		}
 	}
 	wrint(fd, ty->nsub);
@@ -1145,7 +1145,7 @@ void writeuse(FILE *f, Node *file)
 	}
 
 	for (i = 0; i < ntraittab; i++) {
-		if (i < Ntraits)
+		if (i < Ntraits || i != traittab[i]->uid)
 			continue;
 		if (traittab[i]->vis == Visexport || traittab[i]->vis == Vishidden) {
 			wrbyte(f, 'R');
