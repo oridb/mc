@@ -955,65 +955,65 @@ foundextlib:
 		case 'F': lappend(&file->file.files, &file->file.nfiles, rdstr(f)); break;
 		case 'G':
 		case 'D':
-			  dcl = rdsym(f, NULL);
-			  dcl->decl.vis = vis;
-			  dcl->decl.isglobl = 1;
-			  putdcl(s, dcl);
-			  break;
+			dcl = rdsym(f, NULL);
+			dcl->decl.vis = vis;
+			dcl->decl.isglobl = 1;
+			putdcl(s, dcl);
+			break;
 		case 'S':
-			  init = unpickle(f);
-			  if (!hthas(initmap, init)) {
-				  htput(initmap, init, init);
-				  lappend(&file->file.init, &file->file.ninit, init);
-			  }
-			  break;
+			init = unpickle(f);
+			if (!hthas(initmap, init)) {
+				htput(initmap, init, init);
+				lappend(&file->file.init, &file->file.ninit, init);
+			}
+			break;
 		case 'R':
-			  tr = traitunpickle(f);
-			  if (!tr->ishidden) {
-				  tr->vis = vis;
-				  puttrait(s, tr->name, tr);
-				  for (i = 0; i < tr->nproto; i++) {
-					  putdcl(s, tr->proto[i]);
-				  }
-			  }
-			  break;
+			tr = traitunpickle(f);
+			if (!tr->ishidden) {
+				tr->vis = vis;
+				puttrait(s, tr->name, tr);
+				for (i = 0; i < tr->nproto; i++) {
+					putdcl(s, tr->proto[i]);
+				}
+			}
+			break;
 		case 'T':
-			  tid = rdint(f);
-			  ty = tyunpickle(f);
-			  if (!ty->ishidden)
-				  ty->vis = vis;
-			  htput(tidmap, itop(tid), ty);
-			  /* fix up types */
-			  if (ty->type == Tyname || ty->type == Tygeneric) {
-				  if (ty->issynth)
-					  break;
-				  if (!streq(s->name, ty->name->name.ns))
-					  ty->ishidden = 1;
-				  if (!gettype(s, ty->name) && !ty->ishidden)
-					  puttype(s, ty->name, ty);
-			  } else if (ty->type == Tyunion) {
-				  for (i = 0; i < ty->nmemb; i++) {
-					  ns = findstab(s, ty->udecls[i]->name->name.ns);
-					  if (getucon(ns, ty->udecls[i]->name))
-						  continue;
-					  if (ty->udecls[i]->synth)
-						  continue;
-					  putucon(ns, ty->udecls[i]);
-				  }
-			  }
-			  break;
+			tid = rdint(f);
+			ty = tyunpickle(f);
+			if (!ty->ishidden)
+				ty->vis = vis;
+			htput(tidmap, itop(tid), ty);
+			/* fix up types */
+			if (ty->type == Tyname || ty->type == Tygeneric) {
+				if (ty->issynth)
+					break;
+				if (!streq(s->name, ty->name->name.ns))
+					ty->ishidden = 1;
+				if (!gettype(s, ty->name) && !ty->ishidden)
+					puttype(s, ty->name, ty);
+			} else if (ty->type == Tyunion) {
+				for (i = 0; i < ty->nmemb; i++) {
+					ns = findstab(s, ty->udecls[i]->name->name.ns);
+					if (getucon(ns, ty->udecls[i]->name))
+						continue;
+					if (ty->udecls[i]->synth)
+						continue;
+					putucon(ns, ty->udecls[i]);
+				}
+			}
+			break;
 		case 'I':
-			  impl = unpickle(f);
-			  impl->impl.isextern = 1;
-			  impl->impl.vis = vis;
-			  /* specialized declarations always go into the global stab */
-			  for (i = 0; i < impl->impl.ndecls; i++) {
-				  impl->impl.decls[i]->decl.isglobl = 1;
-				  putdcl(file->file.globls, impl->impl.decls[i]);
-			  }
-			  break;
+			impl = unpickle(f);
+			impl->impl.isextern = 1;
+			impl->impl.vis = vis;
+			/* specialized declarations always go into the global stab */
+			for (i = 0; i < impl->impl.ndecls; i++) {
+				impl->impl.decls[i]->decl.isglobl = 1;
+				putdcl(file->file.globls, impl->impl.decls[i]);
+			}
+			break;
 		case EOF:
-			  break;
+			break;
 		}
 	}
 	fixtypemappings(s);
