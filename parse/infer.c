@@ -2005,7 +2005,7 @@ static Type *tyfix(Inferstate *st, Node *ctx, Type *orig, int noerr)
 	if (!tyflt)
 		tyflt = mktype(Zloc, Tyflt64);
 
-	t = tysearch(orig);
+	t = tysearch(tf(st, orig));
 	base = htget(st->seqbase, orig);
 	if (orig->type == Tyvar && hthas(st->delayed, orig)) {
 		delayed = htget(st->delayed, orig);
