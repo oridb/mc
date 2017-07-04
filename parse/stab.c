@@ -404,8 +404,8 @@ void putucon(Stab *st, Ucon *uc)
 
 	old = getucon(st, uc->name);
 	if (old)
-		lfatal(old->loc, "`%s already defined on %s:%d", namestr(uc->name), fname(uc->loc),
-				lnum(uc->loc));
+		lfatal(old->loc, "`%s already defined on %s:%d",
+			namestr(uc->name), fname(uc->loc), lnum(uc->loc));
 	setns(uc->name, st->name);
 	htput(st->uc, uc->name, uc);
 }
@@ -430,12 +430,12 @@ void puttrait(Stab *st, Node *n, Trait *c)
 	st = findstab(st, n);
 	t = gettrait(st, n);
 	if (t && !mergetrait(t, c))
-		fatal(n, "Trait %s already defined on %s:%d", namestr(n), fname(t->loc),
-				lnum(t->loc));
+		fatal(n, "Trait %s already defined on %s:%d",
+			namestr(n), fname(t->loc), lnum(t->loc));
 	ty = gettype(st, n);
 	if (ty)
-		fatal(n, "Trait %s defined as a type on %s:%d", namestr(n), fname(ty->loc),
-				lnum(ty->loc));
+		fatal(n, "Trait %s defined as a type on %s:%d",
+			namestr(n), fname(ty->loc), lnum(ty->loc));
 	td = xalloc(sizeof(Traitdefn));
 	td->loc = n->loc;
 	td->name = n;
@@ -474,10 +474,12 @@ void putimpl(Stab *st, Node *n)
 	impl = getimpl(st, n);
 	if (impl && !mergeimpl(impl, n))
 		fatal(n, "Trait %s already implemented over %s at %s:%d",
-				namestr(n->impl.traitname), tystr(n->impl.type), fname(n->loc), lnum(n->loc));
+			namestr(n->impl.traitname), tystr(n->impl.type),
+			fname(n->loc), lnum(n->loc));
 	/*
-	 * The impl is not defined in this file, so setting the trait name would be a bug here.
-	*/
+	 The impl is not defined in this file, so setting the
+	 trait name would be a bug here.
+	 */
 	setns(n->impl.traitname, st->name);
 	htput(st->impl, n, n);
 }
