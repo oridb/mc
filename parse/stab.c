@@ -346,7 +346,7 @@ void updatetype(Stab *st, Node *n, Type *t)
 
 	td = htget(st->ty, n);
 	if (!td)
-		die("No type %s to update", namestr(n));
+		die("no type %s to update", namestr(n));
 	td->type = t;
 }
 
@@ -393,7 +393,7 @@ void puttype(Stab *st, Node *n, Type *t)
 			htput(st->ty, td->name, td);
 		}
 	} else if (!mergetype(ty, t)) {
-		fatal(n, "Type %s already declared on %s:%d", tystr(ty), fname(ty->loc),
+		fatal(n, "type %s already declared on %s:%d", tystr(ty), fname(ty->loc),
 				lnum(ty->loc));
 	}
 }
@@ -430,11 +430,11 @@ void puttrait(Stab *st, Node *n, Trait *c)
 	st = findstab(st, n);
 	t = gettrait(st, n);
 	if (t && !mergetrait(t, c))
-		fatal(n, "Trait %s already defined on %s:%d",
+		fatal(n, "trait %s already defined on %s:%d",
 			namestr(n), fname(t->loc), lnum(t->loc));
 	ty = gettype(st, n);
 	if (ty)
-		fatal(n, "Trait %s defined as a type on %s:%d",
+		fatal(n, "trait %s defined as a type on %s:%d",
 			namestr(n), fname(ty->loc), lnum(ty->loc));
 	td = xalloc(sizeof(Traitdefn));
 	td->loc = n->loc;
@@ -473,7 +473,7 @@ void putimpl(Stab *st, Node *n)
 	st = findstab(st, n->impl.traitname);
 	impl = getimpl(st, n);
 	if (impl && !mergeimpl(impl, n))
-		fatal(n, "Trait %s already implemented over %s at %s:%d",
+		fatal(n, "trait %s already implemented over %s at %s:%d",
 			namestr(n->impl.traitname), tystr(n->impl.type),
 			fname(n->loc), lnum(n->loc));
 	/*
@@ -518,7 +518,7 @@ void updatens(Stab *st, char *name)
 	Tydefn *td;
 
 	if (st->name)
-		die("Stab %s already has namespace; Can't set to %s", st->name, name);
+		die("stab %s already has namespace; Can't set to %s", st->name, name);
 	st->name = strdup(name);
 	htput(file->file.ns, st->name, st);
 
