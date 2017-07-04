@@ -46,15 +46,6 @@ _start:
 	subq	%rax,%rsp
 	movq	%rsp, %rdx	/* saved args[:] */
 
-	/* stack allocate sizeof(byte[:])*(argc + len(envp)) */
-	movq	(%rbp),%rax
-	leaq	16(%rbp,%rax,8), %rbx	/* argp = argv + 8*argc + 8 */
-	call    count
-	addq	%r9,%rax
-	imulq	$16,%rax
-	subq	%rax,%rsp
-	movq	%rsp, %rdx	/* saved args[:] */
-
 	/* convert envp to byte[:][:] for sys._environment */
 	movq	(%rbp),%rax
 	leaq	16(%rbp,%rax,8), %rbx	/* envp = argv + 8*argc + 8 */
