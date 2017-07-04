@@ -502,8 +502,8 @@ int vareq(void *a, void *b);
 Op exprop(Node *n);
 
 /* specialize generics */
-Tysubst *mksubst();
-void substfree();
+Tysubst *mksubst(void);
+void substfree(Tysubst *subst);
 void substput(Tysubst *subst, Type *from, Type *to);
 Type *substget(Tysubst *subst, Type *from);
 void substpush(Tysubst *subst);
