@@ -2297,7 +2297,7 @@ static void stabsub(Inferstate *st, Stab *s)
 		if (d->decl.isgeneric)
 			dt = "generic";
 		if (!d->decl.isimport && !d->decl.isextern && !d->decl.init)
-			fatal(d, "non-extern %s \"%s\" has no initializer", ctxstr(st, d));
+			fatal(d, "non-extern %s \"%s\" has no initializer", dt, ctxstr(st, d));
 	}
 	free(k);
 }
