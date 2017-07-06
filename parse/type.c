@@ -724,6 +724,7 @@ int tyeq_rec(Type *a, Type *b, Bitset *visited, int search)
 
 	if (a->tid == b->tid)
 		return 1;
+
 	if (bshas(visited, a->tid) || bshas(visited, b->tid))
 		return 1;
 
@@ -763,15 +764,13 @@ int tyeq_rec(Type *a, Type *b, Bitset *visited, int search)
 		for (i = 0; i < a->narg; i++)
 			if (!tyeq_rec(a->arg[i], b->arg[i], visited, search))
 				return 0;
-		for (i = 0; i < a->nsub; i++)
-			if (!tyeq_rec(a->sub[i], b->sub[i], visited, search))
-				return 0;
 		break;
 	case Tyarray:
 		if (arraysz(a->asize) != arraysz(b->asize))
 			return 0;
 		break;
-	default: break;
+	default:
+		break;
 	}
 	for (i = 0; i < a->nsub; i++)
 		if (!tyeq_rec(a->sub[i], b->sub[i], visited, search))
