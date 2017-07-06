@@ -531,8 +531,8 @@ build(Isel *s)
 	} while(0)
 
 	/* sparse sets are used here because we iterate them. A lot. */
-	livedense = xalloc((maxregid  + 1) * sizeof(regid));
-	livesparse = xalloc((maxregid  + 1) * sizeof(regid));
+	livedense = zalloc((maxregid + 1) * sizeof(regid));
+	livesparse = zalloc((maxregid + 1) * sizeof(regid));
 	for (i = 0; i < nbb; i++) {
 		if (!bb[i])
 			continue;
