@@ -753,8 +753,9 @@ atomicexpr
 		$$ = mkexpr($1->loc, Ocast, $2, NULL);
 		$$->expr.type = $4;
 	}
-	| Tsizeof Toparen type Tcparen
-	{$$ = mkexpr($1->loc, Osize, mkpseudodecl($1->loc, $3), NULL);}
+	| Tsizeof Toparen type Tcparen {
+		$$ = mkexpr($1->loc, Osize, mkpseudodecl($1->loc, $3), NULL);
+	}
 	| Timpl Toparen name Tcomma type Tcparen {
 		$$ = mkexpr($1->loc, Ovar, $3, NULL);
 		$$->expr.param = $5;
