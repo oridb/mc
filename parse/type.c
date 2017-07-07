@@ -727,8 +727,8 @@ int tyeq_rec(Type *a, Type *b, Bitset *avisited, Bitset *bvisited, int search)
 	if (a->tid == b->tid)
 		return 1;
 
-	if (bshas(avisited, a->tid) || bshas(bvisited, b->tid))
-		return bshas(avisited, a->tid) == bshas(bvisited, b->tid);
+	if (bshas(avisited, a->tid) && bshas(bvisited, b->tid))
+		return 1;
 
 	bsput(avisited, a->tid);
 	bsput(bvisited, b->tid);
