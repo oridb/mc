@@ -703,9 +703,11 @@ ulong tyhash(void *ty)
 	return hash;
 }
 
-int tyeq_rec(Type *a, Type *b, Bitset *visited, int search)
+int tyeq_rec(Type *a, Type *b, Bitset *avisited, Bitset *bvisited, int search)
 {
+	Type *x, *y;
 	size_t i;
+	int ret;
 
 	if (!a || !b)
 		return a == b;
@@ -725,82 +727,110 @@ int tyeq_rec(Type *a, Type *b, Bitset *visited, int search)
 	if (a->tid == b->tid)
 		return 1;
 
-	if (bshas(visited, a->tid) || bshas(visited, b->tid))
-		return 1;
+	if (bshas(avisited, a->tid) || bshas(bvisited, b->tid))
+		return bshas(avisited, a->tid) == bshas(bvisited, b->tid);
 
-	bsput(visited, a->tid);
-	bsput(visited, b->tid);
+	bsput(avisited, a->tid);
+	bsput(bvisited, b->tid);
+	ret = 1;
 
 	switch (a->type) {
 	case Typaram:
-		return streq(a->pname, b->pname);
+		ret = streq(a->pname, b->pname);
 		break;
 	case Tyvar:
 		if (a->tid != b->tid)
-			return 0;
+			ret = 0;
 		break;
 	case Tyunres:
 		if (!nameeq(a->name, b->name))
-			return 0;
+			ret = 0;
 	case Tyunion:
 		for (i = 0; i < a->nmemb; i++) {
 			if (!nameeq(a->udecls[i]->name, b->udecls[i]->name))
-				return 0;
-			if (!tyeq_rec(a->udecls[i]->etype, b->udecls[i]->etype, visited, search))
-				return 0;
+				ret = 0;
+			x = a->udecls[i]->etype;
+			y = b->udecls[i]->etype;
+			if (!tyeq_rec(x, y, avisited, bvisited, search))
+				ret = 0;
+			if (!ret)
+				break;
 		}
 		break;
 	case Tystruct:
 		for (i = 0; i < a->nmemb; i++) {
 			if (strcmp(declname(a->sdecls[i]), declname(b->sdecls[i])) != 0)
-				return 0;
-			if (!tyeq_rec(decltype(a->sdecls[i]), decltype(b->sdecls[i]), visited, search))
-				return 0;
+				ret = 0;
+			x = decltype(a->sdecls[i]);
+			y = decltype(b->sdecls[i]);
+			if (!tyeq_rec(x, y, avisited, bvisited, search))
+				ret = 0;
+			if (!ret)
+				break;
 		}
 		break;
 	case Tyname:
 		if (!nameeq(a->name, b->name))
-			return 0;
-		for (i = 0; i < a->narg; i++)
-			if (!tyeq_rec(a->arg[i], b->arg[i], visited, search))
-				return 0;
+			ret = 0;
+		for (i = 0; i < a->narg; i++) {
+			x = a->arg[i];
+			y = b->arg[i];
+			if (!tyeq_rec(x, y, avisited, bvisited, search)) {
+				ret = 0;
+				break;
+			}
+		}
 		break;
 	case Tyarray:
 		if (arraysz(a->asize) != arraysz(b->asize))
-			return 0;
+			ret = 0;
 		break;
 	default:
 		break;
 	}
-	for (i = 0; i < a->nsub; i++)
-		if (!tyeq_rec(a->sub[i], b->sub[i], visited, search))
-			return 0;
-	return 1;
+	if (ret) {
+		for (i = 0; i < a->nsub; i++) {
+			x = a->sub[i];
+			y = b->sub[i];
+			if (!tyeq_rec(x, y, avisited, bvisited, search)) {
+				ret = 0;
+				break;
+			}
+		}
+	}
+	bsdel(avisited, a->tid);
+	bsdel(bvisited, b->tid);
+
+	return ret;
 }
 
 int tystricteq(void *a, void *b)
 {
-	Bitset *bs;
+	Bitset *avisited, *bvisited;
 	int eq;
 
 	if (a == b)
 		return 1;
-	bs = mkbs();
-	eq = tyeq_rec(a, b, bs, 0);
-	bsfree(bs);
+	avisited = mkbs();
+	bvisited = mkbs();
+	eq = tyeq_rec(a, b, avisited, bvisited, 0);
+	bsfree(avisited);
+	bsfree(bvisited);
 	return eq;
 }
 
 int tyeq(void *a, void *b)
 {
-	Bitset *bs;
+	Bitset *avisited, *bvisited;
 	int eq;
 
 	if (a == b)
 		return 1;
-	bs = mkbs();
-	eq = tyeq_rec(a, b, bs, 1);
-	bsfree(bs);
+	avisited = mkbs();
+	bvisited = mkbs();
+	eq = tyeq_rec(a, b, avisited, bvisited, 1);
+	bsfree(avisited);
+	bsfree(bvisited);
 	return eq;
 }
 
