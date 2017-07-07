@@ -229,8 +229,8 @@ toplev	: package
 	| traitdef {
 		size_t i;
 		puttrait(file->file.globls, $1->name, $1);
-		for (i = 0; i < $1->nfuncs; i++)
-			putdcl(file->file.globls, $1->funcs[i]);
+		for (i = 0; i < $1->nproto; i++)
+			putdcl(file->file.globls, $1->proto[i]);
 	}
 	| tydef {
 		puttype(file->file.globls, mkname($1.loc, $1.name), $1.type);
@@ -344,8 +344,8 @@ pkgitem : decl {
 		size_t i;
 		$1->vis = Visexport;
 		puttrait(file->file.globls, $1->name, $1);
-		for (i = 0; i < $1->nfuncs; i++)
-			putdcl(file->file.globls, $1->funcs[i]);
+		for (i = 0; i < $1->nproto; i++)
+			putdcl(file->file.globls, $1->proto[i]);
 	}
 	| implstmt {
 		$1->impl.vis = Visexport;
@@ -380,7 +380,7 @@ typedeclcore
 
 name    : Tident {$$ = mkname($1->loc, $1->id);}
 	| Tident Tdot Tident {
-		$$ = mkname($3->loc, $3->id); setns($$, $1->id);
+		$$ = mknsname($3->loc, $1->id, $3->id);
 	}
 	;
 
@@ -411,7 +411,6 @@ traitdef: Ttrait Tident generictype optauxtypes { /* trait prototype */
 			mkname($2->loc, $2->id), $3,
 			$4.types, $4.ntypes,
 			NULL, 0,
-			NULL, 0,
 			1);
 	}
 	| Ttrait Tident generictype optauxtypes Tasn traitbody Tendblk /* trait definition */ {
@@ -419,7 +418,6 @@ traitdef: Ttrait Tident generictype optauxtypes { /* trait prototype */
 		$$ = mktrait($1->loc,
 			mkname($2->loc, $2->id), $3,
 			$4.types, $4.ntypes,
-			NULL, 0,
 			$6.nl, $6.nn,
 			0);
 		for (i = 0; i < $6.nn; i++) {
@@ -755,8 +753,13 @@ atomicexpr
 		$$ = mkexpr($1->loc, Ocast, $2, NULL);
 		$$->expr.type = $4;
 	}
-	| Tsizeof Toparen type Tcparen
-	{$$ = mkexpr($1->loc, Osize, mkpseudodecl($1->loc, $3), NULL);}
+	| Tsizeof Toparen type Tcparen {
+		$$ = mkexpr($1->loc, Osize, mkpseudodecl($1->loc, $3), NULL);
+	}
+	| Timpl Toparen name Tcomma type Tcparen {
+		$$ = mkexpr($1->loc, Ovar, $3, NULL);
+		$$->expr.param = $5;
+	}
 	;
 
 tupbody : tuphead tuprest

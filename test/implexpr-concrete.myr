@@ -1,0 +1,15 @@
+use std
+
+trait name @a =
+	Name: byte[:]
+;;
+impl name void =
+	Name = "zig"
+;;
+impl name int =
+	Name = "zag"
+;;
+
+const main = {
+	std.put("{}{}\n", impl(Name, void), impl(Name, int))
+}

@@ -231,7 +231,7 @@ static void typickle(FILE *fd, Type *ty)
 			if (i < Ntraits)
 				wrint(fd, i | Builtinmask);
 			else
-				wrint(fd, i);
+				wrint(fd, traittab[i]->uid);
 		}
 	}
 	wrint(fd, ty->nsub);
@@ -288,12 +288,9 @@ static void traitpickle(FILE *fd, Trait *tr)
 	wrint(fd, tr->naux);
 	for (i = 0; i < tr->naux; i++)
 		wrtype(fd, tr->aux[i]);
-	wrint(fd, tr->nmemb);
-	for (i = 0; i < tr->nmemb; i++)
-		wrsym(fd, tr->memb[i]);
-	wrint(fd, tr->nfuncs);
-	for (i = 0; i < tr->nfuncs; i++)
-		wrsym(fd, tr->funcs[i]);
+	wrint(fd, tr->nproto);
+	for (i = 0; i < tr->nproto; i++)
+		wrsym(fd, tr->proto[i]);
 }
 
 static void wrtype(FILE *fd, Type *ty)
@@ -407,13 +404,12 @@ static Type *tyunpickle(FILE *fd)
 Trait *traitunpickle(FILE *fd)
 {
 	Trait *tr;
-	Node *fn;
+	Node *proto;
 	size_t i, n;
 	intptr_t uid;
 
 	/* create an empty trait */
 	tr = mktrait(Zloc, NULL, NULL, 
-		NULL, 0,
 		NULL, 0,
 		NULL, 0,
 		0);
@@ -428,13 +424,10 @@ Trait *traitunpickle(FILE *fd)
 	for (i = 0; i < tr->naux; i++)
 		rdtype(fd, &tr->aux[i]);
 	n = rdint(fd);
-	for (i = 0; i < n; i++)
-		lappend(&tr->memb, &tr->nmemb, rdsym(fd, tr));
-	n = rdint(fd);
 	for (i = 0; i < n; i++) {
-		fn = rdsym(fd, tr);
-		fn->decl.impls = mkht(tyhash, tyeq);
-		lappend(&tr->funcs, &tr->nfuncs, fn);
+		proto = rdsym(fd, tr);
+		proto->decl.impls = mkht(tyhash, tyeq);
+		lappend(&tr->proto, &tr->nproto, proto);
 	}
 	htput(trmap, itop(uid), tr);
 	return tr;
@@ -471,6 +464,9 @@ static void pickle(FILE *fd, Node *n)
 	case Nexpr:
 		wrbyte(fd, n->expr.op);
 		wrtype(fd, n->expr.type);
+		wrbool(fd, n->expr.param != NULL);
+		if (n->expr.param)
+			wrtype(fd, n->expr.param);
 		wrbool(fd, n->expr.isconst);
 		pickle(fd, n->expr.idx);
 		wrint(fd, n->expr.nargs);
@@ -605,6 +601,8 @@ static Node *unpickle(FILE *fd)
 	case Nexpr:
 		n->expr.op = rdbyte(fd);
 		rdtype(fd, &n->expr.type);
+		if (rdbool(fd))
+			rdtype(fd, &n->expr.param);
 		n->expr.isconst = rdbool(fd);
 		n->expr.idx = unpickle(fd);
 		n->expr.nargs = rdint(fd);
@@ -837,8 +835,8 @@ static void protomap(Trait *tr, Type *ty, Node *dcl)
 	Node *proto;
 
 	dclname = declname(dcl);
-	for (i = 0; i < tr->nfuncs; i++) {
-		proto = tr->funcs[i];
+	for (i = 0; i < tr->nproto; i++) {
+		proto = tr->proto[i];
 		protoname = declname(proto);
 		len = strlen(protoname);
 		p = strstr(dclname, protoname);
@@ -962,65 +960,65 @@ foundextlib:
 		case 'F': lappend(&file->file.files, &file->file.nfiles, rdstr(f)); break;
 		case 'G':
 		case 'D':
-			  dcl = rdsym(f, NULL);
-			  dcl->decl.vis = vis;
-			  dcl->decl.isglobl = 1;
-			  putdcl(s, dcl);
-			  break;
+			dcl = rdsym(f, NULL);
+			dcl->decl.vis = vis;
+			dcl->decl.isglobl = 1;
+			putdcl(s, dcl);
+			break;
 		case 'S':
-			  init = unpickle(f);
-			  if (!hthas(initmap, init)) {
-				  htput(initmap, init, init);
-				  lappend(&file->file.init, &file->file.ninit, init);
-			  }
-			  break;
+			init = unpickle(f);
+			if (!hthas(initmap, init)) {
+				htput(initmap, init, init);
+				lappend(&file->file.init, &file->file.ninit, init);
+			}
+			break;
 		case 'R':
-			  tr = traitunpickle(f);
-			  if (!tr->ishidden) {
-				  tr->vis = vis;
-				  puttrait(s, tr->name, tr);
-				  for (i = 0; i < tr->nfuncs; i++) {
-					  putdcl(s, tr->funcs[i]);
-				  }
-			  }
-			  break;
+			tr = traitunpickle(f);
+			if (!tr->ishidden) {
+				tr->vis = vis;
+				puttrait(s, tr->name, tr);
+				for (i = 0; i < tr->nproto; i++) {
+					putdcl(s, tr->proto[i]);
+				}
+			}
+			break;
 		case 'T':
-			  tid = rdint(f);
-			  ty = tyunpickle(f);
-			  if (!ty->ishidden)
-				  ty->vis = vis;
-			  htput(tidmap, itop(tid), ty);
-			  /* fix up types */
-			  if (ty->type == Tyname || ty->type == Tygeneric) {
-				  if (ty->issynth)
-					  break;
-				  if (!streq(s->name, ty->name->name.ns))
-					  ty->ishidden = 1;
-				  if (!gettype(s, ty->name) && !ty->ishidden)
-					  puttype(s, ty->name, ty);
-			  } else if (ty->type == Tyunion) {
-				  for (i = 0; i < ty->nmemb; i++) {
-					  ns = findstab(s, ty->udecls[i]->name->name.ns);
-					  if (getucon(ns, ty->udecls[i]->name))
-						  continue;
-					  if (ty->udecls[i]->synth)
-						  continue;
-					  putucon(ns, ty->udecls[i]);
-				  }
-			  }
-			  break;
+			tid = rdint(f);
+			ty = tyunpickle(f);
+			if (!ty->ishidden)
+				ty->vis = vis;
+			htput(tidmap, itop(tid), ty);
+			/* fix up types */
+			if (ty->type == Tyname || ty->type == Tygeneric) {
+				if (ty->issynth)
+					break;
+				if (!streq(s->name, ty->name->name.ns))
+					ty->ishidden = 1;
+				if (!gettype(s, ty->name) && !ty->ishidden)
+					puttype(s, ty->name, ty);
+			} else if (ty->type == Tyunion) {
+				for (i = 0; i < ty->nmemb; i++) {
+					ns = findstab(s, ty->udecls[i]->name->name.ns);
+					if (getucon(ns, ty->udecls[i]->name))
+						continue;
+					if (ty->udecls[i]->synth)
+						continue;
+					putucon(ns, ty->udecls[i]);
+				}
+			}
+			break;
 		case 'I':
-			  impl = unpickle(f);
-			  impl->impl.isextern = 1;
-			  impl->impl.vis = vis;
-			  /* specialized declarations always go into the global stab */
-			  for (i = 0; i < impl->impl.ndecls; i++) {
-				  impl->impl.decls[i]->decl.isglobl = 1;
-				  putdcl(file->file.globls, impl->impl.decls[i]);
-			  }
-			  break;
+			impl = unpickle(f);
+			impl->impl.isextern = 1;
+			impl->impl.vis = vis;
+			/* specialized declarations always go into the global stab */
+			for (i = 0; i < impl->impl.ndecls; i++) {
+				impl->impl.decls[i]->decl.isglobl = 1;
+				putdcl(file->file.globls, impl->impl.decls[i]);
+			}
+			break;
 		case EOF:
-			  break;
+			break;
 		}
 	}
 	fixtypemappings(s);
@@ -1152,7 +1150,7 @@ void writeuse(FILE *f, Node *file)
 	}
 
 	for (i = 0; i < ntraittab; i++) {
-		if (i < Ntraits)
+		if (i < Ntraits || i != traittab[i]->uid)
 			continue;
 		if (traittab[i]->vis == Visexport || traittab[i]->vis == Vishidden) {
 			wrbyte(f, 'R');

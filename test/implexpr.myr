@@ -1,0 +1,18 @@
+use std
+
+trait favorite @a =
+	Fav : @a
+;;
+impl favorite int =
+	Fav = 12
+;;
+impl favorite char =
+	Fav = 'z'
+;;
+impl favorite byte[:] =
+	Fav = "hello"
+;;
+
+const main = {
+	std.put("{},{},{}\n", impl(Fav, int), impl(Fav, char), impl(Fav, byte[:]))
+}

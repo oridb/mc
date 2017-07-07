@@ -186,6 +186,7 @@ Node *mkfunc(Srcloc loc, Node **args, size_t nargs, Type *ret, Node *body)
 	Node *n;
 	Node *f;
 	size_t i;
+	Stab *st;
 
 	f = mknode(loc, Nfunc);
 	f->func.args = args;
@@ -194,8 +195,9 @@ Node *mkfunc(Srcloc loc, Node **args, size_t nargs, Type *ret, Node *body)
 	f->func.scope = mkstab(1);
 	f->func.type = mktyfunc(loc, args, nargs, ret);
 
+	st = body->block.scope;
 	for (i = 0; i < nargs; i++)
-		putdcl(f->func.scope, args[i]);
+		putdcl(st, args[i]);
 
 	n = mknode(loc, Nlit);
 	n->lit.littype = Lfunc;

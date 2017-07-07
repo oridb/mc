@@ -5,6 +5,11 @@
 defn myrstk()
 {
 	local b
+
+	line = pcline(*SP);
+	file = pcfile(*SP);
+	print(file, ":", line, ":\t", func, "\n");
+
 	b = *BP;
 	while *b do {
 		line = pcline(*(b + 8));

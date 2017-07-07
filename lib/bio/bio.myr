@@ -13,7 +13,7 @@ pkg bio =
 
 		read	: (buf : byte[:] -> std.result(std.size, std.errno))
 		write	: (buf : byte[:] -> std.result(std.size, std.errno))
-		seek	: (idx : std.off -> std.result(std.size, std.errno))
+		seek	: (idx : std.off -> std.result(std.off, std.errno))
 		close	: (-> void)
 
 		/* read buffer */
@@ -29,7 +29,7 @@ pkg bio =
 	type vtab = struct
 		read	: (buf : byte[:] -> std.result(std.size, std.errno))
 		write	: (buf : byte[:] -> std.result(std.size, std.errno))
-		seek	: (idx : std.off -> std.result(std.size, std.errno))
+		seek	: (idx : std.off -> std.result(std.off, std.errno))
 		close	: (-> void)
 	;;
 

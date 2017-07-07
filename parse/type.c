@@ -103,8 +103,6 @@ Type *tydup(Type *t)
 	r->fixed = 0;		/* re-resolving doesn't hurt */
 
 	r->traits = bsdup(t->traits);
-	r->traitlist = memdup(t->traitlist, t->ntraitlist * sizeof(Node *));
-	r->ntraitlist = t->ntraitlist;
 
 	r->arg = memdup(t->arg, t->narg * sizeof(Type *));
 	r->narg = t->narg;
@@ -144,8 +142,7 @@ Type *mktylike(Srcloc loc, Ty like)
 /* steals memb, funcs */
 Trait *mktrait(Srcloc loc, Node *name, Type *param,
 	Type **aux, size_t naux,
-	Node **memb, size_t nmemb,
-	Node **funcs, size_t nfuncs,
+	Node **proto, size_t nproto,
 	int isproto)
 {
 	Trait *t;
@@ -158,12 +155,10 @@ Trait *mktrait(Srcloc loc, Node *name, Type *param,
 	t->vis = Visintern;
 	t->name = name;
 	t->param = param;
-	t->memb = memb;
-	t->nmemb = nmemb;
+	t->proto = proto;
+	t->nproto = nproto;
 	t->aux = aux;
 	t->naux = naux;
-	t->funcs = funcs;
-	t->nfuncs = nfuncs;
 	t->isproto = isproto;
 
 	traittab = xrealloc(traittab, ntraittab * sizeof(Trait *));
@@ -727,9 +722,11 @@ ulong tyhash(void *ty)
 	return hash;
 }
 
-int tyeq_rec(Type *a, Type *b, Bitset *visited, int search)
+int tyeq_rec(Type *a, Type *b, Bitset *avisited, Bitset *bvisited, int search)
 {
+	Type *x, *y;
 	size_t i;
+	int ret;
 
 	if (!a || !b)
 		return a == b;
@@ -748,84 +745,111 @@ int tyeq_rec(Type *a, Type *b, Bitset *visited, int search)
 
 	if (a->tid == b->tid)
 		return 1;
-	if (bshas(visited, a->tid) || bshas(visited, b->tid))
+
+	if (bshas(avisited, a->tid) && bshas(bvisited, b->tid))
 		return 1;
 
-	bsput(visited, a->tid);
-	bsput(visited, b->tid);
+	bsput(avisited, a->tid);
+	bsput(bvisited, b->tid);
+	ret = 1;
 
 	switch (a->type) {
 	case Typaram:
-		return streq(a->pname, b->pname);
+		ret = streq(a->pname, b->pname);
 		break;
 	case Tyvar:
 		if (a->tid != b->tid)
-			return 0;
+			ret = 0;
 		break;
 	case Tyunres:
 		if (!nameeq(a->name, b->name))
-			return 0;
+			ret = 0;
 	case Tyunion:
 		for (i = 0; i < a->nmemb; i++) {
 			if (!nameeq(a->udecls[i]->name, b->udecls[i]->name))
-				return 0;
-			if (!tyeq_rec(a->udecls[i]->etype, b->udecls[i]->etype, visited, search))
-				return 0;
+				ret = 0;
+			x = a->udecls[i]->etype;
+			y = b->udecls[i]->etype;
+			if (!tyeq_rec(x, y, avisited, bvisited, search))
+				ret = 0;
+			if (!ret)
+				break;
 		}
 		break;
 	case Tystruct:
 		for (i = 0; i < a->nmemb; i++) {
 			if (strcmp(declname(a->sdecls[i]), declname(b->sdecls[i])) != 0)
-				return 0;
-			if (!tyeq_rec(decltype(a->sdecls[i]), decltype(b->sdecls[i]), visited, search))
-				return 0;
+				ret = 0;
+			x = decltype(a->sdecls[i]);
+			y = decltype(b->sdecls[i]);
+			if (!tyeq_rec(x, y, avisited, bvisited, search))
+				ret = 0;
+			if (!ret)
+				break;
 		}
 		break;
 	case Tyname:
 		if (!nameeq(a->name, b->name))
-			return 0;
-		for (i = 0; i < a->narg; i++)
-			if (!tyeq_rec(a->arg[i], b->arg[i], visited, search))
-				return 0;
-		for (i = 0; i < a->nsub; i++)
-			if (!tyeq_rec(a->sub[i], b->sub[i], visited, search))
-				return 0;
+			ret = 0;
+		for (i = 0; i < a->narg; i++) {
+			x = a->arg[i];
+			y = b->arg[i];
+			if (!tyeq_rec(x, y, avisited, bvisited, search)) {
+				ret = 0;
+				break;
+			}
+		}
 		break;
 	case Tyarray:
 		if (arraysz(a->asize) != arraysz(b->asize))
-			return 0;
+			ret = 0;
 		break;
-	default: break;
+	default:
+		break;
 	}
-	for (i = 0; i < a->nsub; i++)
-		if (!tyeq_rec(a->sub[i], b->sub[i], visited, search))
-			return 0;
-	return 1;
+	if (ret) {
+		for (i = 0; i < a->nsub; i++) {
+			x = a->sub[i];
+			y = b->sub[i];
+			if (!tyeq_rec(x, y, avisited, bvisited, search)) {
+				ret = 0;
+				break;
+			}
+		}
+	}
+	bsdel(avisited, a->tid);
+	bsdel(bvisited, b->tid);
+
+	return ret;
 }
 
 int tystricteq(void *a, void *b)
 {
-	Bitset *bs;
+	Bitset *avisited, *bvisited;
 	int eq;
 
 	if (a == b)
 		return 1;
-	bs = mkbs();
-	eq = tyeq_rec(a, b, bs, 0);
-	bsfree(bs);
+	avisited = mkbs();
+	bvisited = mkbs();
+	eq = tyeq_rec(a, b, avisited, bvisited, 0);
+	bsfree(avisited);
+	bsfree(bvisited);
 	return eq;
 }
 
 int tyeq(void *a, void *b)
 {
-	Bitset *bs;
+	Bitset *avisited, *bvisited;
 	int eq;
 
 	if (a == b)
 		return 1;
-	bs = mkbs();
-	eq = tyeq_rec(a, b, bs, 1);
-	bsfree(bs);
+	avisited = mkbs();
+	bvisited = mkbs();
+	eq = tyeq_rec(a, b, avisited, bvisited, 1);
+	bsfree(avisited);
+	bsfree(bvisited);
 	return eq;
 }
 
@@ -943,7 +967,7 @@ void iterableinit(Stab *st, Trait *tr)
 	func->decl.isglobl = 1;
 	func->decl.isextern = 1;
 
-	lappend(&tr->funcs, &tr->nfuncs, func);
+	lappend(&tr->proto, &tr->nproto, func);
 	putdcl(st, func);
 
 	/* __iterfin__ : (it : @a#, outval : @b# -> void) */
@@ -963,7 +987,7 @@ void iterableinit(Stab *st, Trait *tr)
 	func->decl.isglobl = 1;
 	func->decl.isextern = 1;
 
-	lappend(&tr->funcs, &tr->nfuncs, func);
+	lappend(&tr->proto, &tr->nproto, func);
 	putdcl(st, func);
 }
 
@@ -979,7 +1003,6 @@ void tyinit(Stab *st)
 #define Tc(c, n) \
 	tr = mktrait(Zloc, \
 		mkname(Zloc, n), NULL, \
-		NULL, 0, \
 		NULL, 0, \
 		NULL, 0, \
 		0); \

@@ -1,4 +1,4 @@
-#define Abiversion 11
+#define Abiversion 13
 
 typedef struct Srcloc Srcloc;
 typedef struct Tysubst Tysubst;
@@ -98,12 +98,12 @@ struct Stab {
 	/* Contents of stab.
 	 * types and values are in separate namespaces. */
 	Htab *dcl;
-	Htab *env;  /* the syms we close over, if we're a function */
-	Htab *ty;   /* types */
-	Htab *tr;   /* traits */
-	Htab *uc;   /* union constructors */
-	Htab *lbl;  /* labels */
-	Htab *impl; /* trait implementations: really a set of implemented traits. */
+	Htab *env;	/* the syms we close over, if we're a function */
+	Htab *ty;	/* types */
+	Htab *tr;	/* traits */
+	Htab *uc;	/* union constructors */
+	Htab *lbl;	/* labels */
+	Htab *impl;	/* trait implementations: really a set of implemented traits. */
 };
 
 struct Type {
@@ -112,47 +112,45 @@ struct Type {
 	Srcloc loc;
 	Vis vis;
 
-	Bitset *traits;	/* the type constraints matched on this type */
-	Node **traitlist;  /* The names of the constraints on the type. Used to fill the bitset */
-	size_t ntraitlist; /* The length of the constraint list above */
+	Bitset *traits;		/* the type constraints matched on this type */
 
-	Type **gparam;  /* Tygeneric: type parameters that match the type args */
-	size_t ngparam; /* Tygeneric: count of type parameters */
-	Type **arg;	 /* Tyname: type arguments instantiated */
-	size_t narg;	/* Tyname: count of type arguments */
-	Type **inst;	/* Tyname: instances created */
-	size_t ninst;   /* Tyname: count of instances created */
+	Type **gparam;		/* Tygeneric: type parameters that match the type args */
+	size_t ngparam;		/* Tygeneric: count of type parameters */
+	Type **arg;		/* Tyname: type arguments instantiated */
+	size_t narg;		/* Tyname: count of type arguments */
+	Type **inst;		/* Tyname: instances created */
+	size_t ninst;		/* Tyname: count of instances created */
 
-	Type **sub;   /* sub-types; shared by all composite types */
-	size_t nsub;  /* For compound types */
-	size_t nmemb; /* for aggregate types (struct, union) */
+	Type **sub;		/* sub-types; shared by all composite types */
+	size_t nsub;		/* For compound types */
+	size_t nmemb;		/* for aggregate types (struct, union) */
 	union {
 		Node *name;	/* Tyname: unresolved name. Tyalias: alias name */
-		Node *asize;   /* array size */
-		char *pname;   /* Typaram: name of type parameter */
-		Node **sdecls; /* Tystruct: decls in struct */
-		Ucon **udecls; /* Tyunion: decls in union */
+		Node *asize;	/* array size */
+		char *pname;	/* Typaram: name of type parameter */
+		Node **sdecls;	/* Tystruct: decls in struct */
+		Ucon **udecls;	/* Tyunion: decls in union */
 	};
 
-	char hasparams;	 /* cache for whether this type has params */
-	char issynth;	 /* Tyname: whether this is synthesized or not */
-	char ishidden;   /* Tyname: whether this is hidden or not */
-	char ispkglocal; /* Tyname: whether this is package local or not */
-	char isimport;   /* Tyname: whether tyis type was imported. */
-	char isreflect;  /* Tyname: whether this type has reflection info */
-	char isemitted;  /* Tyname: whether this type has been emitted */
-	char resolved; /* Have we resolved the subtypes? Prevents infinite recursion. */
-	char fixed;	/* Have we fixed the subtypes? Prevents infinite recursion. */
+	char hasparams;		/* cache for whether this type has params */
+	char issynth;		/* Tyname: whether this is synthesized or not */
+	char ishidden;		/* Tyname: whether this is hidden or not */
+	char ispkglocal;	/* Tyname: whether this is package local or not */
+	char isimport;		/* Tyname: whether tyis type was imported. */
+	char isreflect;		/* Tyname: whether this type has reflection info */
+	char isemitted;		/* Tyname: whether this type has been emitted */
+	char resolved;		/* Have we resolved the subtypes? Prevents infinite recursion. */
+	char fixed;		/* Have we fixed the subtypes? Prevents infinite recursion. */
 
 };
 
 struct Ucon {
 	Srcloc loc;
-	size_t id;   /* tag id */
-	int synth;   /* is it generated? */
-	Node *name;  /* ucon name */
-	Type *utype; /* type of the union this is an element of */
-	Type *etype; /* type for the element */
+	size_t id;	/* tag id */
+	int synth;	/* is it generated? */
+	Node *name;	/* ucon name */
+	Type *utype;	/* type of the union this is an element of */
+	Type *etype;	/* type for the element */
 };
 
 struct Trait {
@@ -160,18 +158,16 @@ struct Trait {
 	Srcloc loc;
 	Vis vis;
 
-	Node *name;  /* the name of the trait */
-	Type *param; /* the type parameter */
+	Node *name;	/* the name of the trait */
+	Type *param;	/* the type parameter */
 	Type **aux;	/* auxiliary parameters */
 	size_t naux;
-	Node **memb; /* type must have these members */
-	size_t nmemb;
-	Node **funcs; /* and declare these funcs */
-	size_t nfuncs;
+	Node **proto;	/* type must implement these prototypes */
+	size_t nproto;
 
-	char isproto;  /* is it a prototype (for exporting purposes) */
-	char ishidden; /* should user code be able to use this? */
-	char isimport; /* have we defined it locally? */
+	char isproto;	/* is it a prototype (for exporting purposes) */
+	char ishidden;	/* should user code be able to use this? */
+	char isimport;	/* have we defined it locally? */
 };
 
 struct Node {
@@ -181,20 +177,20 @@ struct Node {
 	char inferred;
 	union {
 		struct {
-			size_t nfiles; /* file names for location mapping */
+			size_t nfiles;	/* file names for location mapping */
 			char **files;
-			Node **uses; /* use files that we loaded */
+			Node **uses;	/* use files that we loaded */
 			size_t nuses;
-			char **libdeps; /* library dependencies */
+			char **libdeps;	/* library dependencies */
 			size_t nlibdeps;
-			char **extlibs; /* non-myrddin libraries */
+			char **extlibs;	/* non-myrddin libraries */
 			size_t nextlibs;
-			Node **stmts; /* all top level statements */
+			Node **stmts;	/* all top level statements */
 			size_t nstmts;
-			Node **init; /* a list of all __init__ function names of our deps. NB, this
+			Node **init;	/* all __init__ function names of our deps. NB, this
 					   is a Nname, not an Ndecl */
 			size_t ninit;
-			Node *localinit; /* and the local one, if any */
+			Node *localinit;/* and the local one, if any */
 			Stab *globls;	/* global symtab */
 			Stab *builtins;	/* global symtab */
 			Htab *ns;	/* namespaces */
@@ -281,6 +277,7 @@ struct Node {
 			Node *name;
 			Type *type;
 			Node *init;
+
 			/*
 			 If we have a link to a trait, we should only look it up
 			 when specializing, but we should not create a new decl
@@ -289,9 +286,9 @@ struct Node {
 			*/
 			Trait *trait;
 			Htab *impls;
-			Node **gimpl; /* generic impls of this trait */
+			Node **gimpl;	/* generic impls of this trait */
 			size_t ngimpl;
-			Node **gtype; /* generic impls of this trait */
+			Node **gtype;	/* generic impls of this trait */
 			size_t ngtype;
 
 			char vis;
@@ -317,16 +314,6 @@ struct Node {
 		} func;
 
 		struct {
-			Node *name;
-			size_t traitid;
-
-			Node **funcs;
-			size_t nfuncs;
-			Node **membs;
-			size_t nmembs;
-		} trait;
-
-		struct {
 			Node *traitname;
 			Trait *trait;
 			Type *type;
@@ -344,18 +331,18 @@ struct Node {
 /* globals */
 extern Srcloc curloc;
 extern char *filename;
-extern Tok *curtok;  /* the last token we tokenized */
-extern Node *file;   /* the current file we're compiling */
-extern Type **tytab; /* type -> type map used by inference. size maintained by type creation code */
+extern Tok *curtok;	/* the last token we tokenized */
+extern Node *file;	/* the current file we're compiling */
+extern Type **tytab;	/* type -> type map used by inference. size maintained by type creation code */
 extern Type **types;
 extern size_t ntypes;
-extern Trait **traittab; /* int -> trait map */
+extern Trait **traittab;/* int -> trait map */
 extern size_t ntraittab;
-extern Node **impltab; /* int -> impl map */
+extern Node **impltab;	/* int -> impl map */
 extern size_t nimpltab;
-extern Node **decls; /* decl id -> decl map */
+extern Node **decls;	/* decl id -> decl map */
 extern size_t nnodes;
-extern Node **nodes; /* node id -> node map */
+extern Node **nodes;	/* node id -> node map */
 extern size_t ndecls;
 extern Node **exportimpls;
 extern size_t nexportimpls;
@@ -441,8 +428,7 @@ Type *mktyunion(Srcloc l, Ucon **decls, size_t ndecls);
 Trait *mktrait(Srcloc l, Node *name,
 	Type *param,
 	Type **aux, size_t naux,
-	Node **memb, size_t nmemb,
-	Node **funcs, size_t nfuncs,
+	Node **proto, size_t nproto,
 	int isproto);
 Type *mktylike(Srcloc l, Ty ty); /* constrains tyvar t like it was builtin ty */
 Ucon *finducon(Type *t, Node *name);
@@ -518,15 +504,15 @@ int vareq(void *a, void *b);
 Op exprop(Node *n);
 
 /* specialize generics */
-Tysubst *mksubst();
-void substfree();
+Tysubst *mksubst(void);
+void substfree(Tysubst *subst);
 void substput(Tysubst *subst, Type *from, Type *to);
 Type *substget(Tysubst *subst, Type *from);
 void substpush(Tysubst *subst);
 void substpop(Tysubst *subst);
-Node *specializedcl(Node *n, Type *to, Node **name);
+Node *specializedcl(Node *n, Type *param, Type *to, Node **name);
 Type *tyspecialize(Type *t, Tysubst *tymap, Htab *delayed, Htab *tybase);
-Node *genericname(Node *n, Type *t);
+Node *genericname(Node *n, Type *param, Type *t);
 void geninit(Node *file);
 
 /* usefiles */

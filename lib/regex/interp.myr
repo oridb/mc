@@ -387,7 +387,7 @@ const step = {re, thr, curip
 		mstart = std.sldup(thr.mstart)
 		mend = std.sldup(thr.mend)
 		hit(re, thr)
-		fork(re, thr, rip, curip, mstart, mend)
+		fork(re, rip, curip, mstart, mend)
 		if re.debug
 			std.slpush(&re.traces, std.bsdup(re.traces[thr.tid]))
 		;;
@@ -407,7 +407,7 @@ const step = {re, thr, curip
 	-> true
 }
 
-const fork = {re, thr, ip, curip, mstart, mend
+const fork = {re, ip, curip, mstart, mend
 	var thr
 
 	if ip == curip /* loop detection */
