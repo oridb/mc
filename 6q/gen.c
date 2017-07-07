@@ -1231,6 +1231,7 @@ Loc rval(Gen *g, Node *n)
 		assert(exprop(args[1]) == Olit);
 		s = rval(g, args[0]);
 		ty = exprtype(n);
+		o = 0;
 		idx = args[1]->expr.args[0]->lit.intval;
 		for (i = 0; i < ty->nsub; i++) {
 			o = alignto(o, ty->sub[i]);
