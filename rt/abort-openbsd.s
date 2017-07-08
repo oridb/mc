@@ -27,7 +27,7 @@ __rt$abort_oob:
 	movq	$20,%rax 	/* getpid */
 	syscall	
 	movq	%rax, %rdi	/* save pid */
-	movq	$37, %rax	/* kill(pid=%rdi, sig=%rsi) */
+	movq	$122, %rax	/* kill(pid=%rdi, sig=%rsi) */
 	movq	$6, %rsi
 	syscall
 .data
