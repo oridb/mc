@@ -58,7 +58,7 @@ static void tybind(Inferstate *st, Type *t);
 static Type *tyfix(Inferstate *st, Node *ctx, Type *orig, int noerr);
 static void bind(Inferstate *st, Node *n);
 static void tyunbind(Inferstate *st);
-static void unbind(Inferstate *st);
+static void unbind(Inferstate *st, Node *n);
 static Type *unify(Inferstate *st, Node *ctx, Type *a, Type *b);
 static Type *tf(Inferstate *st, Type *t);
 
@@ -776,6 +776,8 @@ static void bind(Inferstate *st, Node *n)
 
 	assert(n->type == Ndecl);
 
+	if(!n->decl.isgeneric)
+		return;
 	st->ingeneric++;
 	bt = mkht(strhash, streq);
 	lappend(&st->tybindings, &st->ntybindings, bt);
@@ -787,8 +789,10 @@ static void bind(Inferstate *st, Node *n)
 
 /* Rolls back the binding of type parameters in
  * the type environment */
-static void unbind(Inferstate *st)
+static void unbind(Inferstate *st, Node *n)
 {
+	if(!n->decl.isgeneric)
+		return;
 	htfree(st->tybindings[st->ntybindings - 1]);
 	lpop(&st->tybindings, &st->ntybindings);
 	st->ingeneric--;
@@ -1881,11 +1885,9 @@ static void inferstab(Inferstate *st, Stab *s)
 	k = htkeys(s->dcl, &n);
 	for (i = 0; i < n; i++) {
 		dcl = htget(s->dcl, k[i]);
-		if (dcl->decl.isgeneric)
-			bind(st, dcl);
+		bind(st, dcl);
 		tf(st, type(st, dcl));
-		if (dcl->decl.isgeneric)
-			unbind(st);
+		unbind(st, dcl);
 	}
 	free(k);
 
@@ -1927,14 +1929,12 @@ static void infernode(Inferstate *st, Node **np, Type *ret, int *sawret)
 		if (debugopt['u'])
 			indentf(st->indentdepth, "--- infer %s ---\n", declname(n));
 		st->indentdepth++;
-		if (n->decl.isgeneric)
-			bind(st, n);
+		bind(st, n);
 		inferdecl(st, n);
 		if (type(st, n)->type == Typaram && !st->ingeneric)
 			fatal(n, "generic type %s in non-generic near %s", tystr(type(st, n)),
 					ctxstr(st, n));
-		if (n->decl.isgeneric)
-			unbind(st);
+		unbind(st, n);
 		st->indentdepth--;
 		if (debugopt['u'])
 			indentf(st->indentdepth, "--- done ---\n");
@@ -2288,7 +2288,9 @@ static void stabsub(Inferstate *st, Stab *s)
 	k = htkeys(s->dcl, &n);
 	for (i = 0; i < n; i++) {
 		d = getdcl(s, k[i]);
+		bind(st, d);
 		d->decl.type = tyfix(st, d, d->decl.type, 0);
+		unbind(st, d);
 		if (!d->decl.isconst && !d->decl.isgeneric)
 			continue;
 		if (d->decl.trait)
@@ -2402,8 +2404,7 @@ static void typesub(Inferstate *st, Node *n, int noerr)
 		popstab();
 		break;
 	case Ndecl:
-		if(n->decl.isgeneric)
-			bind(st, n);
+		bind(st, n);
 		settype(st, n, tyfix(st, n, type(st, n), noerr));
 		if (n->decl.init)
 			typesub(st, n->decl.init, noerr);
@@ -2414,8 +2415,7 @@ static void typesub(Inferstate *st, Node *n, int noerr)
 		if (streq(declname(n), "__init__"))
 			if (!initcompatible(tybase(decltype(n))))
 				fatal(n, "__init__ must be (->void), got %s", tystr(decltype(n)));
-		if (n->decl.isgeneric)
-			unbind(st);
+		unbind(st, n);
 		break;
 	case Nblock:
 		pushstab(n->block.scope);
