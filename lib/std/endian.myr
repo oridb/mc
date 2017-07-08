@@ -1,6 +1,6 @@
 pkg std =
-	generic hosttonet	: (v : @a -> @a)
-	generic nettohost	: (v : @a -> @a)
+	generic hosttonet	: (v : @a::(integral,numeric) -> @a::(integral,numeric))
+	generic nettohost	: (v : @a::(integral,numeric) -> @a::(integral,numeric))
 ;;
 
 /* FIXME: we only support little endian platforms right now,

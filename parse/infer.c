@@ -32,10 +32,6 @@ struct Inferstate {
 	Stab **postcheckscope;
 	size_t npostcheckscope;
 
-	/* type params bound at the current point */
-	Htab **tybindings;
-	size_t ntybindings;
-
 	/* generic declarations to be specialized */
 	Node **genericdecls;
 	size_t ngenericdecls;
@@ -50,17 +46,23 @@ struct Inferstate {
 	Htab *seqbase;
 };
 
+/* type params bound at the current point */
+Htab **tybindings;
+size_t ntybindings;
+
 static void infernode(Inferstate *st, Node **np, Type *ret, int *sawret);
 static void inferexpr(Inferstate *st, Node **np, Type *ret, int *sawret);
 static void inferdecl(Inferstate *st, Node *n);
-static void typesub(Inferstate *st, Node *n, int noerr);
+
+static Type *tf(Inferstate *st, Type *t);
 static void tybind(Inferstate *st, Type *t);
-static Type *tyfix(Inferstate *st, Node *ctx, Type *orig, int noerr);
 static void bind(Inferstate *st, Node *n);
 static void tyunbind(Inferstate *st);
 static void unbind(Inferstate *st, Node *n);
+
 static Type *unify(Inferstate *st, Node *ctx, Type *a, Type *b);
-static Type *tf(Inferstate *st, Type *t);
+static Type *tyfix(Inferstate *st, Node *ctx, Type *orig, int noerr);
+static void typesub(Inferstate *st, Node *n, int noerr);
 
 static void ctxstrcall(char *buf, size_t sz, Inferstate *st, Node *n)
 {
@@ -301,8 +303,8 @@ static int isbound(Inferstate *st, Type *t)
 {
 	ssize_t i;
 
-	for (i = st->ntybindings - 1; i >= 0; i--) {
-		if (htget(st->tybindings[i], t->pname))
+	for (i = ntybindings - 1; i >= 0; i--) {
+		if (htget(tybindings[i], t->pname))
 			return 1;
 	}
 	return 0;
@@ -511,26 +513,48 @@ Type *tysearch(Type *t)
 	return t;
 }
 
+static Type *remapping(Type *t)
+{
+	Stab *ns;
+	Type *lu;
+	int i;
+
+	switch (t->type) {
+	case Tyunres:
+		ns = curstab();
+		if (t->name->name.ns) {
+			ns = getns(file, t->name->name.ns);
+		}
+		if (!ns)
+			fatal(t->name, "could not resolve namespace \"%s\"",
+					t->name->name.ns);
+		if (!(lu = gettype(ns, t->name)))
+			fatal(t->name, "could not resolve type %s", tystr(t));
+		return lu;
+	case Typaram:
+		for (i = ntybindings - 1; i >= 0; i--) {
+			lu = htget(tybindings[i], t->pname);
+			if (lu)
+				return lu;
+		}
+	default:
+		break;
+	}
+	return NULL;
+}
+
 /* Look up the best type to date in the unification table, returning it */
 static Type *tylookup(Type *t)
 {
 	Type *lu;
-	Stab *ns;
 
 	assert(t != NULL);
 	lu = NULL;
 	while (1) {
-		if (!tytab[t->tid] && t->type == Tyunres) {
-			ns = curstab();
-			if (t->name->name.ns) {
-				ns = getns(file, t->name->name.ns);
-			}
-			if (!ns)
-				fatal(t->name, "could not resolve namespace \"%s\"",
-						t->name->name.ns);
-			if (!(lu = gettype(ns, t->name)))
-				fatal(t->name, "could not resolve type %s", tystr(t));
-			tytab[t->tid] = lu;
+		if (!tytab[t->tid]) {
+			lu = remapping(t);
+			if (lu && lu != t)
+				tytab[t->tid] = lu;
 		}
 
 		if (!tytab[t->tid])
@@ -749,7 +773,7 @@ static void tybindall(Inferstate *st, Type *t)
 	Htab *bt;
 
 	bt = mkht(strhash, streq);
-	lappend(&st->tybindings, &st->ntybindings, bt);
+	lappend(&tybindings, &ntybindings, bt);
 	putbindings(st, bt, t);
 }
 
@@ -759,7 +783,7 @@ static void tybind(Inferstate *st, Type *t)
 	size_t i;
 
 	bt = mkht(strhash, streq);
-	lappend(&st->tybindings, &st->ntybindings, bt);
+	lappend(&tybindings, &ntybindings, bt);
 	if (t->type == Tygeneric)
 		for (i = 0; i < t->ngparam; i++)
 			putbindings(st, bt, t->gparam[i]);
@@ -780,7 +804,7 @@ static void bind(Inferstate *st, Node *n)
 		return;
 	st->ingeneric++;
 	bt = mkht(strhash, streq);
-	lappend(&st->tybindings, &st->ntybindings, bt);
+	lappend(&tybindings, &ntybindings, bt);
 
 	putbindings(st, bt, n->decl.type);
 	if (n->decl.init)
@@ -793,15 +817,15 @@ static void unbind(Inferstate *st, Node *n)
 {
 	if(!n->decl.isgeneric)
 		return;
-	htfree(st->tybindings[st->ntybindings - 1]);
-	lpop(&st->tybindings, &st->ntybindings);
+	htfree(tybindings[ntybindings - 1]);
+	lpop(&tybindings, &ntybindings);
 	st->ingeneric--;
 }
 
 static void tyunbind(Inferstate *st)
 {
-	htfree(st->tybindings[st->ntybindings - 1]);
-	lpop(&st->tybindings, &st->ntybindings);
+	htfree(tybindings[ntybindings - 1]);
+	lpop(&tybindings, &ntybindings);
 }
 
 /* Constrains a type to implement the required constraints. On
@@ -2001,10 +2025,10 @@ static void infernode(Inferstate *st, Node **np, Type *ret, int *sawret)
 		break;
 	case Nfunc:
 		setsuper(n->func.scope, curstab());
-		if (st->ntybindings > 0)
+		if (ntybindings > 0)
 			for (i = 0; i < n->func.nargs; i++)
-				putbindings(st, st->tybindings[st->ntybindings - 1],
-						n->func.args[i]->decl.type);
+				putbindings(st, tybindings[ntybindings - 1],
+					n->func.args[i]->decl.type);
 		pushstab(n->func.scope);
 		inferstab(st, n->func.scope);
 		inferfunc(st, n);
@@ -2630,7 +2654,7 @@ void infer(Node *file)
 	postcheck(&st);
 
 	/* and replace type vars with actual types */
-	assert(st.ntybindings == 0);
+	assert(ntybindings == 0);
 	typesub(&st, file, 0);
 	specialize(&st, file);
 	verify(&st, file);
