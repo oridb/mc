@@ -39,7 +39,10 @@ struct Dtree {
 };
 
 Dtree *gendtree(Node *m, Node *val, Node **lbl, size_t nlbl);
-static int addpat(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap, size_t *ncap, Dtree ***end, size_t *nend);
+static int addpat(Node *pat, Node *val,
+		Dtree *start, Dtree *accept,
+		Node ***cap, size_t *ncap,
+		Dtree ***end, size_t *nend);
 void dtreedump(FILE *fd, Dtree *dt);
 
 
@@ -248,9 +251,13 @@ static int acceptall(Dtree *t, Dtree *accept)
 
 static int isnonrecursive(Dtree *dt, Type *ty)
 {
-	return istyprimitive(ty) || ty->type == Tyvoid || ty->type == Tyfunc ||
-	ty->type == Typtr || (ty->type == Tystruct && ty->nmemb == 0) ||
-	(ty->type == Tyarray && fold(ty->asize, 1)->expr.args[0]->lit.intval == 0);
+	if (istyprimitive(ty) || ty->type == Tyvoid || ty->type == Tyfunc || ty->type == Typtr)
+		return 1;
+	if (ty->type == Tystruct)
+		return ty->nmemb == 0;
+	if (ty->type == Tyarray)
+		return fold(ty->asize, 1)->expr.args[0]->lit.intval == 0;
+	return 0;
 }
 
 static int ismatchable(Type *ty)
