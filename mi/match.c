@@ -246,9 +246,11 @@ static int acceptall(Dtree *t, Dtree *accept)
 	return ret;
 }
 
-static int isbasictype(Dtree *dt, Type *ty)
+static int isnonrecursive(Dtree *dt, Type *ty)
 {
-	return istyprimitive(ty) || ty->type == Tyvoid || ty->type == Tyfunc || ty->type == Typtr;
+	return istyprimitive(ty) || ty->type == Tyvoid || ty->type == Tyfunc ||
+	ty->type == Typtr || (ty->type == Tystruct && ty->nmemb == 0) ||
+	(ty->type == Tyarray && fold(ty->asize, 1)->expr.args[0]->lit.intval == 0);
 }
 
 static int ismatchable(Type *ty)
@@ -269,7 +271,7 @@ static int addwildrec(Srcloc loc, Type *ty, Dtree *start, Dtree *accept, Dtree *
 	ty = tybase(ty);
 	if (ty->type == Typtr && start->any && start->any->ptrwalk) {
 		return addwildrec(loc, ty->sub[0], start->any, accept, end, nend);
-	} else if (isbasictype(start, ty)) {
+	} else if (isnonrecursive(start, ty)) {
 		if (start->accept || start == accept)
 			return 0;
 		for (i = 0; i < start->nnext; i++)

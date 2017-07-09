@@ -144,6 +144,7 @@ B strfind	C
 B strjoin	C
 B exporttrait	E	0
 B local-labels	E	10
+B empty-struct	E	21
 F declmismatch
 F infermismatch
 F usedef
