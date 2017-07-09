@@ -1599,11 +1599,11 @@ inferexpr(Node **np, Type *ret, int *sawret)
 	n = checkns(n, np);
 	switch (exprop(n)) {
 		/* all operands are same type */
-	case Oadd: /* @a + @a -> @a */
-	case Osub: /* @a - @a -> @a */
-	case Omul: /* @a * @a -> @a */
-	case Odiv: /* @a / @a -> @a */
-	case Oneg: /* -@a -> @a */
+	case Oadd:	/* @a + @a -> @a */
+	case Osub:	/* @a - @a -> @a */
+	case Omul:	/* @a * @a -> @a */
+	case Odiv:	/* @a / @a -> @a */
+	case Oneg:	/* -@a -> @a */
 	case Oaddeq:	/* @a += @a -> @a */
 	case Osubeq:	/* @a -= @a -> @a */
 	case Omuleq:	/* @a *= @a -> @a */
@@ -1648,7 +1648,7 @@ inferexpr(Node **np, Type *ret, int *sawret)
 		n->expr.isconst = isconst;
 		settype(n, t);
 		break;
-	case Oasn: /* @a = @a -> @a */
+	case Oasn:	/* @a = @a -> @a */
 		infersub(n, ret, sawret, &isconst);
 		t = type(args[0]);
 		for (i = 1; i < nargs; i++)
@@ -1659,14 +1659,14 @@ inferexpr(Node **np, Type *ret, int *sawret)
 		break;
 
 		/* operands same type, returning bool */
-	case Olor:  /* @a || @b -> bool */
-	case Oland: /* @a && @b -> bool */
-	case Oeq:   /* @a == @a -> bool */
-	case One:   /* @a != @a -> bool */
-	case Ogt:   /* @a > @a -> bool */
-	case Oge:   /* @a >= @a -> bool */
-	case Olt:   /* @a < @a -> bool */
-	case Ole:   /* @a <= @b -> bool */
+	case Olor:	/* @a || @b -> bool */
+	case Oland:	/* @a && @b -> bool */
+	case Oeq:	/* @a == @a -> bool */
+	case One:	/* @a != @a -> bool */
+	case Ogt:	/* @a > @a -> bool */
+	case Oge:	/* @a >= @a -> bool */
+	case Olt:	/* @a < @a -> bool */
+	case Ole:	/* @a <= @b -> bool */
 		infersub(n, ret, sawret, &isconst);
 		t = type(args[0]);
 		for (i = 1; i < nargs; i++)
@@ -1674,23 +1674,23 @@ inferexpr(Node **np, Type *ret, int *sawret)
 		settype(n, mktype(Zloc, Tybool));
 		break;
 
-	case Olnot: /* !bool -> bool */
+	case Olnot:	/* !bool -> bool */
 		infersub(n, ret, sawret, &isconst);
 		t = unify(n, type(args[0]), mktype(Zloc, Tybool));
 		settype(n, t);
 		break;
 
 		/* reach into a type and pull out subtypes */
-	case Oaddr: /* &@a -> @a* */
+	case Oaddr:	/* &@a -> @a* */
 		infersub(n, ret, sawret, &isconst);
 		settype(n, mktyptr(n->loc, type(args[0])));
 		break;
-	case Oderef: /* *@a* ->  @a */
+	case Oderef:	/* @a# ->  @a */
 		infersub(n, ret, sawret, &isconst);
 		t = unify(n, type(args[0]), mktyptr(n->loc, mktyvar(n->loc)));
 		settype(n, t->sub[0]);
 		break;
-	case Oidx: /* @a[@b::tcint] -> @a */
+	case Oidx:	/* @a[@b::tcint] -> @a */
 		infersub(n, ret, sawret, &isconst);
 		b = mktyvar(n->loc);
 		t = mktyvar(n->loc);
@@ -1700,7 +1700,7 @@ inferexpr(Node **np, Type *ret, int *sawret)
 		constrain(n, type(args[1]), traittab[Tcint]);
 		settype(n, b);
 		break;
-	case Oslice: /* @a[@b::tcint,@b::tcint] -> @a[,] */
+	case Oslice:	/* @a[@b::tcint,@b::tcint] -> @a[,] */
 		infersub(n, ret, sawret, &isconst);
 		b = mktyvar(n->loc);
 		t = mktyvar(n->loc);
@@ -1712,24 +1712,24 @@ inferexpr(Node **np, Type *ret, int *sawret)
 		break;
 
 		/* special cases */
-	case Omemb: /* @a.Ident -> @b, verify type(@a.Ident)==@b later */
+	case Omemb:	/* @a.Ident -> @b, verify type(@a.Ident)==@b later */
 		infersub(n, ret, sawret, &isconst);
 		settype(n, mktyvar(n->loc));
 		delayedcheck(n, curstab());
 		break;
-	case Osize: /* sizeof(@a) -> size */
+	case Osize:	/* sizeof(@a) -> size */
 		infersub(n, ret, sawret, &isconst);
 		settype(n, mktylike(n->loc, Tyuint));
 		break;
-	case Ocall: /* (@a, @b, @c, ... -> @r)(@a, @b, @c, ...) -> @r */
+	case Ocall:	/* (@a, @b, @c, ... -> @r)(@a, @b, @c, ...) -> @r */
 		infersub(n, ret, sawret, &isconst);
 		unifycall(n);
 		break;
-	case Ocast: /* (@a : @b) -> @b */
+	case Ocast:	/* (@a : @b) -> @b */
 		infersub(n, ret, sawret, &isconst);
 		delayedcheck(n, curstab());
 		break;
-	case Oret: /* -> @a -> void */
+	case Oret:	/* -> @a -> void */
 		infersub(n, ret, sawret, &isconst);
 		if (sawret)
 			*sawret = 1;
@@ -1743,13 +1743,13 @@ inferexpr(Node **np, Type *ret, int *sawret)
 		/* nullary: nothing to infer. */
 		settype(n, mktype(Zloc, Tyvoid));
 		break;
-	case Ojmp: /* goto void* -> void */
+	case Ojmp:	/* goto void* -> void */
 		if (args[0]->type == Nlit && args[0]->lit.littype == Llbl)
 			args[0] = getlbl(curstab(), args[0]->loc, args[0]->lit.lblname);
 		infersub(n, ret, sawret, &isconst);
 		settype(n, mktype(Zloc, Tyvoid));
 		break;
-	case Ovar: /* a:@a -> @a */
+	case Ovar:	/* a:@a -> @a */
 		infersub(n, ret, sawret, &isconst);
 		/* if we created this from a namespaced var, the type should be
 		 * set, and the normal lookup is expected to fail. Since we're
@@ -1766,7 +1766,7 @@ inferexpr(Node **np, Type *ret, int *sawret)
 			fatal(n, "var %s must refer to a trait decl", ctxstr(args[0]));
 		initvar(n, s);
 		break;
-	case Ogap: /* _ -> @a */
+	case Ogap:	/* _ -> @a */
 		if (n->expr.type)
 			return;
 		n->expr.type = mktyvar(n->loc);
@@ -1775,7 +1775,7 @@ inferexpr(Node **np, Type *ret, int *sawret)
 	case Otup:	infertuple(n, &n->expr.isconst);	break;
 	case Ostruct:	inferstruct(n, &n->expr.isconst);	break;
 	case Oarr:	inferarray(n, &n->expr.isconst);	break;
-	case Olit: /* <lit>:@a::tyclass -> @a */
+	case Olit:	/* <lit>:@a::tyclass -> @a */
 		   infersub(n, ret, sawret, &isconst);
 		   switch (args[0]->lit.littype) {
 		   case Lfunc:
@@ -1803,7 +1803,10 @@ inferexpr(Node **np, Type *ret, int *sawret)
 		   settype(n, mktype(n->loc, Tyvoid));
 		   break;
 	case Odef:
-	case Odead:	n->expr.type = mktype(n->loc, Tyvoid);	break;
+	case Odead:
+		   n->expr.type = mktype(n->loc, Tyvoid);
+		   break;
+	/* unexpected in frontend */
 	case Obad:
 	case Ocjmp:
 	case Ovjmp:
@@ -2653,7 +2656,7 @@ specialize(Node *f)
 	}
 }
 
-void
+static void
 applytraits(Node *f)
 {
 	size_t i, j;
