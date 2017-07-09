@@ -15,7 +15,8 @@
 #include "mi.h"
 
 
-static Bb *mkbb(Cfg *cfg)
+static Bb *
+mkbb(Cfg *cfg)
 {
 	Bb *bb;
 
@@ -28,7 +29,8 @@ static Bb *mkbb(Cfg *cfg)
 }
 
 
-static void strlabel(Cfg *cfg, char *lbl, Bb *bb)
+static void
+strlabel(Cfg *cfg, char *lbl, Bb *bb)
 {
 	if (htget(cfg->lblmap, lbl) != bb) {
 		htput(cfg->lblmap, lbl, bb);
@@ -36,12 +38,14 @@ static void strlabel(Cfg *cfg, char *lbl, Bb *bb)
 	}
 }
 
-static void label(Cfg *cfg, Node *lbl, Bb *bb)
+static void
+label(Cfg *cfg, Node *lbl, Bb *bb)
 {
 	strlabel(cfg, lblstr(lbl), bb);
 }
 
-static int isnonretcall(Node *fn)
+static int
+isnonretcall(Node *fn)
 {
 	Node *dcl;
 
@@ -51,7 +55,8 @@ static int isnonretcall(Node *fn)
 	return dcl->decl.isnoret;
 }
 
-static int addnode(Cfg *cfg, Bb *bb, Node *n)
+static int
+addnode(Cfg *cfg, Bb *bb, Node *n)
 {
 	switch (exprop(n)) {
 	case Ojmp:
@@ -74,7 +79,8 @@ static int addnode(Cfg *cfg, Bb *bb, Node *n)
 	return 0;
 }
 
-static int islabel(Node *n)
+static int
+islabel(Node *n)
 {
 	Node *l;
 	if (n->type != Nexpr)
@@ -89,7 +95,8 @@ static int islabel(Node *n)
 	return 1;
 }
 
-static Bb *addlabel(Cfg *cfg, Bb *bb, Node **nl, size_t i, Srcloc loc)
+static Bb *
+addlabel(Cfg *cfg, Bb *bb, Node **nl, size_t i, Srcloc loc)
 {
 	/* if the current block assumes fall-through, insert an explicit jump */
 	if (i > 0 && nl[i - 1]->type == Nexpr) {
@@ -102,7 +109,8 @@ static Bb *addlabel(Cfg *cfg, Bb *bb, Node **nl, size_t i, Srcloc loc)
 	return bb;
 }
 
-void delete(Cfg *cfg, Bb *bb)
+void
+delete(Cfg *cfg, Bb *bb)
 {
 	size_t i, j;
 
@@ -121,7 +129,8 @@ void delete(Cfg *cfg, Bb *bb)
 	cfg->bb[bb->id] = NULL;
 }
 
-void noexit(Cfg *cfg, Bb *bb)
+void
+noexit(Cfg *cfg, Bb *bb)
 {
 	size_t i;
 	for (i = 0; bsiter(bb->succ, &i); i++)
@@ -129,7 +138,8 @@ void noexit(Cfg *cfg, Bb *bb)
 	bsclear(bb->succ);
 }
 
-void trimdead(Cfg *cfg, Bb *bb)
+void
+trimdead(Cfg *cfg, Bb *bb)
 {
 	size_t i;
 
@@ -162,7 +172,8 @@ void trimdead(Cfg *cfg, Bb *bb)
 	}
 }
 
-void trim(Cfg *cfg)
+void
+trim(Cfg *cfg)
 {
 	Bb *bb;
 	size_t i;
@@ -184,7 +195,8 @@ void trim(Cfg *cfg)
 	}
 }
 
-Cfg *mkcfg(Node *fn, Node **nl, size_t nn)
+Cfg *
+mkcfg(Node *fn, Node **nl, size_t nn)
 {
 	Cfg *cfg;
 	Bb *pre, *post;
@@ -265,7 +277,8 @@ Cfg *mkcfg(Node *fn, Node **nl, size_t nn)
 	return cfg;
 }
 
-void dumpbb(Bb *bb, FILE *fd)
+void
+dumpbb(Bb *bb, FILE *fd)
 {
 	size_t i;
 	char *sep;
@@ -305,7 +318,8 @@ void dumpbb(Bb *bb, FILE *fd)
 	fprintf(fd, "\n");
 }
 
-void dumpcfg(Cfg *cfg, FILE *fd)
+void
+dumpcfg(Cfg *cfg, FILE *fd)
 {
 	size_t i;
 

@@ -32,7 +32,8 @@ char *localincpath;
 size_t nincpaths;
 Asmsyntax asmsyntax;
 
-static void usage(char *prog)
+static void
+usage(char *prog)
 {
 	printf("%s [-?|-h] [-o outfile] [-d[dbgopts]] inputs\n", prog);
 	printf("\t-?|-h\tPrint this help\n");
@@ -52,7 +53,8 @@ static void usage(char *prog)
 	printf("\t\tu: log type unifications\n");
 }
 
-static void swapout(char* buf, size_t sz, char* suf) {
+static void
+swapout(char* buf, size_t sz, char* suf) {
 	char* psuffix;
 	psuffix = strrchr(outfile, '.');
 	if (psuffix != NULL)
@@ -61,7 +63,8 @@ static void swapout(char* buf, size_t sz, char* suf) {
 		bprintf(buf, sz, "%s%s", outfile, suf);
 }
 
-static void assemble(char *asmsrc, char *path)
+static void
+assemble(char *asmsrc, char *path)
 {
 	char *asmcmd[] = Asmcmd;
 	char objfile[1024];
@@ -98,7 +101,7 @@ static void assemble(char *asmsrc, char *path)
 		if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
 			die("Couldn't run assembler");
 	}
-	/* 
+	/*
 	We don't want to keep the asm source around, but it's useful
 	for deubgging without mapping to line numbers.
 	*/
@@ -106,7 +109,8 @@ static void assemble(char *asmsrc, char *path)
 		unlink(asmsrc);
 }
 
-static char *dirname(char *path)
+static char *
+dirname(char *path)
 {
 	char *p;
 
@@ -117,7 +121,8 @@ static char *dirname(char *path)
 		return xstrdup(".");
 }
 
-static char *gentempfile(char *buf, size_t bufsz, char *path, char *suffix)
+static char *
+gentempfile(char *buf, size_t bufsz, char *path, char *suffix)
 {
 	char *tmpdir;
 	char *base;
@@ -136,7 +141,8 @@ static char *gentempfile(char *buf, size_t bufsz, char *path, char *suffix)
 	return buf;
 }
 
-static int hasmain(Node *file)
+static int
+hasmain(Node *file)
 {
 	Node *n, *name;
 
@@ -150,7 +156,8 @@ static int hasmain(Node *file)
 	return 1;
 }
 
-static void genuse(char *path)
+static void
+genuse(char *path)
 {
 	FILE *f;
 	char buf[1024];
@@ -174,7 +181,8 @@ static void genuse(char *path)
 	fclose(f);
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	char buf[1024];
 	Stab *globls;

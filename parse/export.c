@@ -18,7 +18,8 @@
 static void tagtype(Stab *st, Type *t, int ingeneric, int hidelocal);
 static void tagnode(Stab *st, Node *n, int ingeneric, int hidelocal);
 
-void tagreflect(Type *t)
+void
+tagreflect(Type *t)
 {
 	size_t i;
 
@@ -46,7 +47,8 @@ void tagreflect(Type *t)
 	}
 }
 
-static void tagtrait(Stab *st, Trait *tr, int ingeneric, int hidelocal)
+static void
+tagtrait(Stab *st, Trait *tr, int ingeneric, int hidelocal)
 {
 	size_t i;
 
@@ -64,7 +66,8 @@ static void tagtrait(Stab *st, Trait *tr, int ingeneric, int hidelocal)
 		tagnode(st, tr->proto[i], ingeneric, hidelocal);
 }
 
-static void tagtype(Stab *st, Type *t, int ingeneric, int hidelocal)
+static void
+tagtype(Stab *st, Type *t, int ingeneric, int hidelocal)
 {
 	size_t i;
 
@@ -100,7 +103,8 @@ static void tagtype(Stab *st, Type *t, int ingeneric, int hidelocal)
 	}
 }
 
-int isexportinit(Node *n)
+int
+isexportinit(Node *n)
 {
 	if (n->decl.isgeneric && !n->decl.trait)
 		return 1;
@@ -110,7 +114,8 @@ int isexportinit(Node *n)
 	return 0;
 }
 
-static void tagnode(Stab *st, Node *n, int ingeneric, int hidelocal)
+static void
+tagnode(Stab *st, Node *n, int ingeneric, int hidelocal)
 {
 	size_t i;
 	Node *d;
@@ -201,7 +206,8 @@ static void tagnode(Stab *st, Node *n, int ingeneric, int hidelocal)
 	}
 }
 
-void tagexports(Node *file, int hidelocal)
+void
+tagexports(Node *file, int hidelocal)
 {
 	size_t i, j, n;
 	Trait *tr;

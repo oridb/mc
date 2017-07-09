@@ -13,7 +13,8 @@
 #include "util.h"
 #include "parse.h"
 
-static int getintlit(Node *n, vlong *v)
+static int
+getintlit(Node *n, vlong *v)
 {
 	Node *l;
 
@@ -26,7 +27,8 @@ static int getintlit(Node *n, vlong *v)
 	return 1;
 }
 
-static int isintval(Node *n, vlong val)
+static int
+isintval(Node *n, vlong val)
 {
 	vlong v;
 
@@ -35,7 +37,8 @@ static int isintval(Node *n, vlong val)
 	return v == val;
 }
 
-static Node *val(Srcloc loc, vlong val, Type *t)
+static Node *
+val(Srcloc loc, vlong val, Type *t)
 {
 	Node *l, *n;
 
@@ -46,7 +49,8 @@ static Node *val(Srcloc loc, vlong val, Type *t)
 	return n;
 }
 
-static int issmallconst(Node *dcl)
+static int
+issmallconst(Node *dcl)
 {
 	Type *t;
 
@@ -60,7 +64,8 @@ static int issmallconst(Node *dcl)
 	return 0;
 }
 
-static Node *foldcast(Node *n)
+static Node *
+foldcast(Node *n)
 {
 	Type *to, *from;
 	Node *sub;
@@ -96,7 +101,8 @@ static Node *foldcast(Node *n)
 	return n;
 }
 
-int idxcmp(const void *pa, const void *pb)
+int
+idxcmp(const void *pa, const void *pb)
 {
 	Node *a, *b;
 	vlong av, bv;
@@ -116,7 +122,8 @@ int idxcmp(const void *pa, const void *pb)
 		return 1;
 }
 
-Node *fold(Node *n, int foldvar)
+Node *
+fold(Node *n, int foldvar)
 {
 	Node **args, *r;
 	Type *t;

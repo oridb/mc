@@ -19,12 +19,14 @@
 
 /* takes a list of nodes, and reduces it (and it's subnodes) to a list
  * following these constraints:
- *      - All nodes are expression nodes
- *      - Nodes with side effects are root nodes
- *      - All nodes operate on machine-primitive types and tuples
+ *      - All nodes are expression node
+ *      - Nodes with side effects are root node
+ *      - All nodes operate on machine-primitive types and tuple
  */
-typedef struct Simp Simp;
-struct Simp {
+typedef
+struct Simp Simp;
+struct
+Simp {
 	int isglobl;
 
 	Node **stmts;
@@ -67,7 +69,8 @@ Type *tyword;
 Type *tyvoid;
 Node *abortoob;
 
-static void append(Simp *s, Node *n)
+static void
+append(Simp *s, Node *n)
 {
 	if (debugopt['S'])
 		dump(n, stdout);
@@ -75,23 +78,27 @@ static void append(Simp *s, Node *n)
 	lappend(&s->stmts, &s->nstmts, n);
 }
 
-static int ispure(Node *n)
+static int
+ispure(Node *n)
 {
 	return opispure[exprop(n)];
 }
 
-size_t alignto(size_t sz, Type *t)
+size_t
+alignto(size_t sz, Type *t)
 {
 	return align(sz, tyalign(t));
 }
 
-static Type *base(Type *t)
+static Type *
+base(Type *t)
 {
 	assert(t->nsub == 1);
 	return t->sub[0];
 }
 
-static Node *add(Node *a, Node *b)
+static Node *
+add(Node *a, Node *b)
 {
 	Node *n;
 
@@ -101,7 +108,8 @@ static Node *add(Node *a, Node *b)
 	return n;
 }
 
-static Node *addk(Node *n, uvlong v)
+static Node *
+addk(Node *n, uvlong v)
 {
 	Node *k;
 
@@ -110,7 +118,8 @@ static Node *addk(Node *n, uvlong v)
 	return add(n, k);
 }
 
-static Node *sub(Node *a, Node *b)
+static Node *
+sub(Node *a, Node *b)
 {
 	Node *n;
 
@@ -119,7 +128,8 @@ static Node *sub(Node *a, Node *b)
 	return n;
 }
 
-static Node *mul(Node *a, Node *b)
+static Node *
+mul(Node *a, Node *b)
 {
 	Node *n;
 
@@ -128,7 +138,8 @@ static Node *mul(Node *a, Node *b)
 	return n;
 }
 
-static int addressable(Simp *s, Node *a)
+static int
+addressable(Simp *s, Node *a)
 {
 	if (a->type == Ndecl || (a->type == Nexpr && exprop(a) == Ovar))
 		return hthas(s->envoff, a) || hthas(s->stkoff, a) || hthas(s->globls, a);
@@ -136,7 +147,8 @@ static int addressable(Simp *s, Node *a)
 		return stacknode(a);
 }
 
-int stacknode(Node *n)
+int
+stacknode(Node *n)
 {
 	if (n->type == Nexpr)
 		return isstacktype(n->expr.type);
@@ -144,7 +156,8 @@ int stacknode(Node *n)
 		return isstacktype(n->decl.type);
 }
 
-int floatnode(Node *n)
+int
+floatnode(Node *n)
 {
 	if (n->type == Nexpr)
 		return istyfloat(n->expr.type);
@@ -152,7 +165,8 @@ int floatnode(Node *n)
 		return istyfloat(n->decl.type);
 }
 
-static void forcelocal(Simp *s, Node *n)
+static void
+forcelocal(Simp *s, Node *n)
 {
 	assert(n->type == Ndecl || (n->type == Nexpr && exprop(n) == Ovar));
 	s->stksz += size(n);
@@ -164,7 +178,8 @@ static void forcelocal(Simp *s, Node *n)
 	htput(s->stkoff, n, itop(s->stksz));
 }
 
-static void declarelocal(Simp *s, Node *n)
+static void
+declarelocal(Simp *s, Node *n)
 {
 	if (stacknode(n))
 		forcelocal(s, n);
@@ -172,7 +187,8 @@ static void declarelocal(Simp *s, Node *n)
 
 /* takes the address of a node, possibly converting it to
  * a pointer to the base type 'bt' */
-static Node *addr(Simp *s, Node *a, Type *bt)
+static Node *
+addr(Simp *s, Node *a, Type *bt)
 {
 	Node *n;
 
@@ -186,7 +202,8 @@ static Node *addr(Simp *s, Node *a, Type *bt)
 	return n;
 }
 
-static Node *load(Node *a)
+static Node *
+load(Node *a)
 {
 	Node *n;
 
@@ -196,7 +213,8 @@ static Node *load(Node *a)
 	return n;
 }
 
-static Node *deref(Node *a, Type *t)
+static Node *
+deref(Node *a, Type *t)
 {
 	Node *n;
 
@@ -209,7 +227,8 @@ static Node *deref(Node *a, Type *t)
 	return n;
 }
 
-static Node *set(Node *a, Node *b)
+static Node *
+set(Node *a, Node *b)
 {
 	Node *n;
 
@@ -223,7 +242,8 @@ static Node *set(Node *a, Node *b)
 	return n;
 }
 
-static void def(Simp *s, Node *var)
+static void
+def(Simp *s, Node *var)
 {
 	Node *d;
 
@@ -232,7 +252,8 @@ static void def(Simp *s, Node *var)
 	append(s, d);
 }
 
-static Node *disp(Srcloc loc, uint v)
+static Node *
+disp(Srcloc loc, uint v)
 {
 	Node *n;
 
@@ -241,7 +262,8 @@ static Node *disp(Srcloc loc, uint v)
 	return n;
 }
 
-static Node *word(Srcloc loc, uint v)
+static Node *
+word(Srcloc loc, uint v)
 {
 	Node *n;
 
@@ -250,7 +272,8 @@ static Node *word(Srcloc loc, uint v)
 	return n;
 }
 
-static Node *temp(Simp *simp, Node *e)
+static Node *
+temp(Simp *simp, Node *e)
 {
 	Node *t, *dcl;
 
@@ -261,7 +284,8 @@ static Node *temp(Simp *simp, Node *e)
 	return t;
 }
 
-static void cjmp(Simp *s, Node *cond, Node *iftrue, Node *iffalse)
+static void
+cjmp(Simp *s, Node *cond, Node *iftrue, Node *iffalse)
 {
 	Node *jmp;
 
@@ -269,13 +293,15 @@ static void cjmp(Simp *s, Node *cond, Node *iftrue, Node *iffalse)
 	append(s, jmp);
 }
 
-static Node *slicelen(Simp *s, Node *sl)
+static Node *
+slicelen(Simp *s, Node *sl)
 {
 	/* *(&sl + sizeof(size_t)) */
 	return load(addk(addr(s, rval(s, sl, NULL), tyintptr), Ptrsz));
 }
 
-Node *loadvar(Simp *s, Node *n, Node *dst)
+Node *
+loadvar(Simp *s, Node *n, Node *dst)
 {
 	Node *p, *f, *r;
 
@@ -293,7 +319,8 @@ Node *loadvar(Simp *s, Node *n, Node *dst)
 	return r;
 }
 
-static Node *seqlen(Simp *s, Node *n, Type *ty)
+static Node *
+seqlen(Simp *s, Node *n, Type *ty)
 {
 	Node *t, *r;
 
@@ -310,7 +337,8 @@ static Node *seqlen(Simp *s, Node *n, Type *ty)
 }
 
 
-static Node *uconid(Simp *s, Node *n)
+static Node *
+uconid(Simp *s, Node *n)
 {
 	Ucon *uc;
 
@@ -322,7 +350,8 @@ static Node *uconid(Simp *s, Node *n)
 	return word(uc->loc, uc->id);
 }
 
-static void simpblk(Simp *s, Node *n)
+static void
+simpblk(Simp *s, Node *n)
 {
 	size_t i;
 
@@ -332,7 +361,8 @@ static void simpblk(Simp *s, Node *n)
 	}
 }
 
-static Node *geninitdecl(Node *init, Type *ty, Node **dcl)
+static Node *
+geninitdecl(Node *init, Type *ty, Node **dcl)
 {
 	Node *n, *d, *r;
 	char lbl[128];
@@ -354,7 +384,8 @@ static Node *geninitdecl(Node *init, Type *ty, Node **dcl)
 	return r;
 }
 
-static Node *simpcode(Simp *s, Node *fn)
+static Node *
+simpcode(Simp *s, Node *fn)
 {
 	Node *r, *d;
 
@@ -364,7 +395,8 @@ static Node *simpcode(Simp *s, Node *fn)
 	return r;
 }
 
-static Node *simpblob(Simp *s, Node *blob)
+static Node *
+simpblob(Simp *s, Node *blob)
 {
 	Node *r, *d;
 
@@ -374,7 +406,8 @@ static Node *simpblob(Simp *s, Node *blob)
 	return r;
 }
 
-static Node *ptrsized(Simp *s, Node *v)
+static Node *
+ptrsized(Simp *s, Node *v)
 {
 	if (size(v) == Ptrsz)
 		return v;
@@ -386,7 +419,8 @@ static Node *ptrsized(Simp *s, Node *v)
 	return v;
 }
 
-static Node *membaddr(Simp *s, Node *n)
+static Node *
+membaddr(Simp *s, Node *n)
 {
 	Node *t, *u, *r;
 	Node **args;
@@ -405,7 +439,8 @@ static Node *membaddr(Simp *s, Node *n)
 	return r;
 }
 
-static void checkidx(Simp *s, Op op, Node *len, Node *idx)
+static void
+checkidx(Simp *s, Op op, Node *len, Node *idx)
 {
 	Node *cmp, *die;
 	Node *ok, *fail;
@@ -427,7 +462,8 @@ static void checkidx(Simp *s, Op op, Node *len, Node *idx)
 	append(s, ok);
 }
 
-static Node *idxaddr(Simp *s, Node *seq, Node *idx)
+static Node *
+idxaddr(Simp *s, Node *seq, Node *idx)
 {
 	Node *a, *t, *u, *v, *w; /* temps */
 	Node *r; /* result */
@@ -456,7 +492,8 @@ static Node *idxaddr(Simp *s, Node *seq, Node *idx)
 	return r;
 }
 
-static Node *slicebase(Simp *s, Node *n, Node *off)
+static Node *
+slicebase(Simp *s, Node *n, Node *off)
 {
 	Node *u, *v;
 	Type *ty;
@@ -481,7 +518,8 @@ static Node *slicebase(Simp *s, Node *n, Node *off)
 	}
 }
 
-static Node *loadidx(Simp *s, Node *arr, Node *idx)
+static Node *
+loadidx(Simp *s, Node *arr, Node *idx)
 {
 	Node *v, *a;
 
@@ -490,7 +528,8 @@ static Node *loadidx(Simp *s, Node *arr, Node *idx)
 	return v;
 }
 
-static Node *lval(Simp *s, Node *n)
+static Node *
+lval(Simp *s, Node *n)
 {
 	Node *r;
 	Node **args;
@@ -517,7 +556,8 @@ static Node *lval(Simp *s, Node *n)
 	return r;
 }
 
-static Node *intconvert(Simp *s, Node *from, Type *to, int issigned)
+static Node *
+intconvert(Simp *s, Node *from, Type *to, int issigned)
 {
 	Node *r;
 	size_t fromsz, tosz;
@@ -537,7 +577,8 @@ static Node *intconvert(Simp *s, Node *from, Type *to, int issigned)
 	return r;
 }
 
-static Node *simpcast(Simp *s, Node *val, Type *to)
+static Node *
+simpcast(Simp *s, Node *val, Type *to)
 {
 	Node *r;
 	Type *t;
@@ -622,7 +663,8 @@ static Node *simpcast(Simp *s, Node *val, Type *to)
 
 /* Simplifies taking a slice of an array, pointer,
  * or other slice down to primitive pointer operations */
-static Node *simpslice(Simp *s, Node *n, Node *dst)
+static Node *
+simpslice(Simp *s, Node *n, Node *dst)
 {
 	Node *t;
 	Node *start, *end, *arg;
@@ -665,7 +707,8 @@ static Node *simpslice(Simp *s, Node *n, Node *dst)
 	return t;
 }
 
-static Node *visit(Simp *s, Node *n)
+static Node *
+visit(Simp *s, Node *n)
 {
 	size_t i;
 	Node *r;
@@ -686,7 +729,8 @@ static Node *visit(Simp *s, Node *n)
 	return r;
 }
 
-static Node *tupget(Simp *s, Node *tup, size_t idx, Node *dst)
+static Node *
+tupget(Simp *s, Node *tup, size_t idx, Node *dst)
 {
 	Node *plv, *prv, *sz, *stor, *dcl;
 	size_t off, i;
@@ -718,7 +762,8 @@ static Node *tupget(Simp *s, Node *tup, size_t idx, Node *dst)
 	return dst;
 }
 
-static Node *assign(Simp *s, Node *lhs, Node *rhs)
+static Node *
+assign(Simp *s, Node *lhs, Node *rhs)
 {
 	Node *t, *u, *v, *r;
 
@@ -747,7 +792,8 @@ static Node *assign(Simp *s, Node *lhs, Node *rhs)
 	return r;
 }
 
-static Node *assignat(Simp *s, Node *r, size_t off, Node *val)
+static Node *
+assignat(Simp *s, Node *r, size_t off, Node *val)
 {
 	Node *pval, *pdst;
 	Node *sz;
@@ -770,7 +816,8 @@ static Node *assignat(Simp *s, Node *r, size_t off, Node *val)
  * value by evaluating the rvalue of each node on the
  * rhs and assigning it to the correct offset from the
  * head of the tuple. */
-static Node *simptup(Simp *s, Node *n, Node *dst)
+static Node *
+simptup(Simp *s, Node *n, Node *dst)
 {
 	Node **args;
 	Node *r;
@@ -790,7 +837,8 @@ static Node *simptup(Simp *s, Node *n, Node *dst)
 	return dst;
 }
 
-static Node *simpucon(Simp *s, Node *n, Node *dst)
+static Node *
+simpucon(Simp *s, Node *n, Node *dst)
 {
 	Node *tmp, *u, *tag, *elt, *sz;
 	Node *r;
@@ -839,7 +887,8 @@ static Node *simpucon(Simp *s, Node *n, Node *dst)
 	return tmp;
 }
 
-static Node *simpuget(Simp *s, Node *n, Node *dst)
+static Node *
+simpuget(Simp *s, Node *n, Node *dst)
 {
 	Node *u, *p, *l;
 	size_t o;
@@ -856,7 +905,8 @@ static Node *simpuget(Simp *s, Node *n, Node *dst)
 
 
 
-static Node *vatypeinfo(Simp *s, Node *n)
+static Node *
+vatypeinfo(Simp *s, Node *n)
 {
 	Node *ti, *tp, *td, *tn;
 	Type *ft, *vt, **st;
@@ -901,7 +951,8 @@ static Node *vatypeinfo(Simp *s, Node *n)
 	return tp;
 }
 
-static Node *capture(Simp *s, Node *n, Node *dst)
+static Node *
+capture(Simp *s, Node *n, Node *dst)
 {
 	Node *fn, *t, *f, *e, *val, *dcl, *fp, *envsz;
 	size_t nenv, nenvt, off, i;
@@ -955,13 +1006,15 @@ static Node *capture(Simp *s, Node *n, Node *dst)
 	return dst;
 }
 
-static Node *getenvptr(Simp *s, Node *n)
+static Node *
+getenvptr(Simp *s, Node *n)
 {
 	assert(tybase(exprtype(n))->type == Tyfunc);
 	return load(addr(s, n, tyintptr));
 }
 
-static Node *getcode(Simp *s, Node *n)
+static Node *
+getcode(Simp *s, Node *n)
 {
 	Node *r, *p, *d;
 	Type *ty;
@@ -980,7 +1033,8 @@ static Node *getcode(Simp *s, Node *n)
 	return r;
 }
 
-static Node *simpcall(Simp *s, Node *n, Node *dst)
+static Node *
+simpcall(Simp *s, Node *n, Node *dst)
 {
 	Node *r, *call, *fn;
 	size_t i, nargs;
@@ -1039,7 +1093,8 @@ static Node *simpcall(Simp *s, Node *n, Node *dst)
 	return r;
 }
 
-static Node *rval(Simp *s, Node *n, Node *dst)
+static Node *
+rval(Simp *s, Node *n, Node *dst)
 {
 	Node *t, *u, *v; /* temporary nodes */
 	Node *r; /* expression result */
@@ -1121,7 +1176,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
 		case Llbl:
 			r = n;
 			break;
-		case Lint: 
+		case Lint:
 			/* we can only have up to 4 byte immediates, but they
 			 * can be moved into 64 bit regs */
 			if ((uint64_t)args[0]->lit.intval < 0x7fffffffULL)
@@ -1176,7 +1231,7 @@ static Node *rval(Simp *s, Node *n, Node *dst)
 		break;
 	case Oneg:
 		if (istyfloat(exprtype(n))) {
-			t = mkfloat(n->loc, -1.0); 
+			t = mkfloat(n->loc, -1.0);
 			u = mkexpr(n->loc, Olit, t, NULL);
 			t->lit.type = n->expr.type;
 			u->expr.type = n->expr.type;
@@ -1218,13 +1273,15 @@ static Node *rval(Simp *s, Node *n, Node *dst)
 	return r;
 }
 
-static void declarearg(Simp *s, Node *n)
+static void
+declarearg(Simp *s, Node *n)
 {
 	assert(n->type == Ndecl || (n->type == Nexpr && exprop(n) == Ovar));
 	lappend(&s->args, &s->nargs, n);
 }
 
-static int islbl(Node *n)
+static int
+islbl(Node *n)
 {
 	Node *l;
 	if (exprop(n) != Olit)
@@ -1233,7 +1290,8 @@ static int islbl(Node *n)
 	return l->type == Nlit && l->lit.littype == Llbl;
 }
 
-static Node *simp(Simp *s, Node *n)
+static Node *
+simp(Simp *s, Node *n)
 {
 	Node *r;
 
@@ -1264,7 +1322,8 @@ static Node *simp(Simp *s, Node *n)
  * and simpler representation, which maps easily and
  * directly to assembly instructions.
  */
-static void simpinit(Simp *s, Node *f)
+static void
+simpinit(Simp *s, Node *f)
 {
 	Node *dcl;
 	Type *ty;
@@ -1295,7 +1354,8 @@ static void simpinit(Simp *s, Node *f)
 	append(s, s->endlbl);
 }
 
-static int isexport(Node *dcl)
+static int
+isexport(Node *dcl)
 {
 	Node *n;
 
@@ -1310,7 +1370,8 @@ static int isexport(Node *dcl)
 	return 0;
 }
 
-static int envcmp(const void *pa, const void *pb)
+static int
+envcmp(const void *pa, const void *pb)
 {
 	const Node *a, *b;
 
@@ -1319,7 +1380,8 @@ static int envcmp(const void *pa, const void *pb)
 	return b->decl.did - a->decl.did;
 }
 
-static void collectenv(Simp *s, Node *fn)
+static void
+collectenv(Simp *s, Node *fn)
 {
 	size_t nenv, i;
 	Node **env;
@@ -1344,7 +1406,8 @@ static void collectenv(Simp *s, Node *fn)
 	free(env);
 }
 
-static Func *simpfn(Simp *s, char *name, Node *dcl)
+static Func *
+simpfn(Simp *s, char *name, Node *dcl)
 {
 	Node *n;
 	size_t i;
@@ -1401,7 +1464,8 @@ static Func *simpfn(Simp *s, char *name, Node *dcl)
 	return fn;
 }
 
-static void extractsub(Simp *s, Node *e)
+static void
+extractsub(Simp *s, Node *e)
 {
 	size_t i;
 	Node *sub;
@@ -1433,7 +1497,8 @@ static void extractsub(Simp *s, Node *e)
 	}
 }
 
-static void simpconstinit(Simp *s, Node *dcl)
+static void
+simpconstinit(Simp *s, Node *dcl)
 {
 	Node *e;
 
@@ -1464,7 +1529,8 @@ static void simpconstinit(Simp *s, Node *dcl)
 	}
 }
 
-void simpglobl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***blob, size_t *nblob)
+void
+simpglobl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***blob, size_t *nblob)
 {
 	Simp s = {0,};
 	char *name;

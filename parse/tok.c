@@ -27,7 +27,8 @@ static int fidx;
 static int fbufsz;
 static char *fbuf;
 
-static int peekn(int n)
+static int
+peekn(int n)
 {
 	if (fidx + n >= fbufsz)
 		return End;
@@ -35,9 +36,14 @@ static int peekn(int n)
 		return fbuf[fidx + n];
 }
 
-static int peek(void) { return peekn(0); }
+static int
+peek(void)
+{
+	return peekn(0);
+}
 
-static int next(void)
+static int
+next(void)
 {
 	int c;
 
@@ -46,7 +52,8 @@ static int next(void)
 	return c;
 }
 
-static void unget(void)
+static void
+unget(void)
 {
 	fidx--;
 	assert(fidx >= 0);
@@ -58,7 +65,8 @@ static void unget(void)
  * returns true if there was a match,
  * false otherwise.
  */
-static int match(char c)
+static int
+match(char c)
 {
 	if (peek() == c) {
 		next();
@@ -68,7 +76,8 @@ static int match(char c)
 	}
 }
 
-static Tok *mktok(int tt)
+static Tok *
+mktok(int tt)
 {
 	Tok *t;
 
@@ -78,11 +87,13 @@ static Tok *mktok(int tt)
 	return t;
 }
 
-static int identchar(int c) {
+static int
+identchar(int c) {
     return isalnum(c) || c == '_' || c == '$';
 }
 
-static void eatcomment(void)
+static void
+eatcomment(void)
 {
 	int depth;
 	int startln;
@@ -121,7 +132,8 @@ static void eatcomment(void)
  * we also consume '\n'. ';' is still
  * accepted as a line ending.
  */
-static void eatspace(void)
+static void
+eatspace(void)
 {
 	int c;
 	int ignorenl;
@@ -157,7 +169,8 @@ static void eatspace(void)
  * token type to use for the
  * identifier.
  */
-static int kwd(char *s)
+static int
+kwd(char *s)
 {
 	static const struct {
 		char *kw;
@@ -211,7 +224,8 @@ static int kwd(char *s)
 	return Tident;
 }
 
-static int identstr(char *buf, size_t sz)
+static int
+identstr(char *buf, size_t sz)
 {
 	size_t i;
 	char c;
@@ -225,7 +239,8 @@ static int identstr(char *buf, size_t sz)
 	return i;
 }
 
-static Tok *kwident(void)
+static Tok *
+kwident(void)
 {
 	char buf[1024];
 	Tok *t;
@@ -237,7 +252,8 @@ static Tok *kwident(void)
 	return t;
 }
 
-static void append(char **buf, size_t *len, size_t *sz, int c)
+static void
+append(char **buf, size_t *len, size_t *sz, int c)
 {
 	if (!*sz) {
 		*sz = 16;
@@ -252,7 +268,8 @@ static void append(char **buf, size_t *len, size_t *sz, int c)
 	(*len)++;
 }
 
-static void encode(char *buf, size_t len, uint32_t c)
+static void
+encode(char *buf, size_t len, uint32_t c)
 {
 	int mark;
 	size_t i;
@@ -273,7 +290,8 @@ static void encode(char *buf, size_t len, uint32_t c)
  * Appends a unicode codepoint 'c' to a growable buffer 'buf',
  * resizing if needed.
  */
-static void appendc(char **buf, size_t *len, size_t *sz, uint32_t c)
+static void
+appendc(char **buf, size_t *len, size_t *sz, uint32_t c)
 {
 	size_t i, charlen;
 	char charbuf[5] = {0};
@@ -294,7 +312,8 @@ static void appendc(char **buf, size_t *len, size_t *sz, uint32_t c)
 		append(buf, len, sz, charbuf[i]);
 }
 
-static int ishexval(char c)
+static int
+ishexval(char c)
 {
 	if (c >= 'a' && c <= 'f')
 		return 1;
@@ -308,7 +327,8 @@ static int ishexval(char c)
 /*
  * Converts a character to its hex value.
  */
-static int hexval(char c)
+static int
+hexval(char c)
 {
 	if (c >= 'a' && c <= 'f')
 		return c - 'a' + 10;
@@ -321,7 +341,8 @@ static int hexval(char c)
 }
 
 /* \u{abc} */
-static int32_t unichar(void)
+static int32_t
+unichar(void)
 {
 	uint32_t v;
 	int c;
@@ -346,7 +367,8 @@ static int32_t unichar(void)
  * shared between strings and characters.
  * Unknown escape codes are ignored.
  */
-static int decode(char **buf, size_t *len, size_t *sz)
+static int
+decode(char **buf, size_t *len, size_t *sz)
 {
 	char c, c1, c2;
 	int32_t v;
@@ -382,7 +404,8 @@ static int decode(char **buf, size_t *len, size_t *sz)
 	return v;
 }
 
-static Tok *strlit(void)
+static Tok *
+strlit(void)
 {
 	Tok *t;
 	int c;
@@ -418,7 +441,8 @@ static Tok *strlit(void)
 	return t;
 }
 
-static uint32_t readutf(char c, char **buf, size_t *buflen, size_t *sz)
+static uint32_t
+readutf(char c, char **buf, size_t *buflen, size_t *sz)
 {
 	size_t i, len;
 	uint32_t val;
@@ -446,7 +470,8 @@ static uint32_t readutf(char c, char **buf, size_t *buflen, size_t *sz)
 	return val;
 }
 
-static Tok *charlit(void)
+static Tok *
+charlit(void)
 {
 	Tok *t;
 	int c;
@@ -479,7 +504,8 @@ static Tok *charlit(void)
 	return t;
 }
 
-static Tok *oper(void)
+static Tok *
+oper(void)
 {
 	int tt;
 	char c;
@@ -623,7 +649,8 @@ static Tok *oper(void)
 	return mktok(tt);
 }
 
-static Tok *number(int base)
+static Tok *
+number(int base)
 {
 	Tok *t;
 	int start;
@@ -694,7 +721,8 @@ static Tok *number(int base)
 		 *   b -> 8 bit
 		 */
 		unsignedval = 0;
-nextsuffix:
+nextsuffix
+:
 		switch (peek()) {
 		case 'u':
 			if (unsignedval == 1)
@@ -741,7 +769,8 @@ nextsuffix:
 	return t;
 }
 
-static Tok *numlit(void)
+static Tok *
+numlit(void)
 {
 	Tok *t;
 
@@ -764,7 +793,8 @@ static Tok *numlit(void)
 	return t;
 }
 
-static Tok *typaram(void)
+static Tok *
+typaram(void)
 {
 	Tok *t;
 	char buf[1024];
@@ -779,7 +809,8 @@ static Tok *typaram(void)
 	return t;
 }
 
-static Tok *toknext(void)
+static Tok *
+toknext(void)
 {
 	Tok *t;
 	int c;
@@ -811,7 +842,8 @@ static Tok *toknext(void)
 	return t;
 }
 
-void tokinit(char *file)
+void
+tokinit(char *file)
 {
 	int fd;
 	int n;
@@ -845,14 +877,16 @@ void tokinit(char *file)
 }
 
 /* Interface to yacc */
-int yylex(void)
+int
+yylex(void)
 {
 	curtok = toknext();
 	yylval.tok = curtok;
 	return curtok->type;
 }
 
-void yyerror(const char *s)
+void
+yyerror(const char *s)
 {
 	fprintf(stderr, "%s:%d: %s", filename, curloc.line, s);
 	if (curtok->id)

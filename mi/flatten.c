@@ -18,9 +18,9 @@
 
 /* takes a list of nodes, and reduces it (and it's subnodes) to a list
  * following these constraints:
- *      - All nodes are expression nodes
- *      - Nodes with side effects are root nodes
- *      - All nodes operate on machine-primitive types and tuples
+ *      - All nodes are expression node
+ *      - Nodes with side effects are root node
+ *      - All nodes operate on machine-primitive types and tuple
  */
 typedef struct Flattenctx Flattenctx;
 struct Flattenctx {
@@ -55,14 +55,16 @@ static Node *rval(Flattenctx *s, Node *n);
 static Node *lval(Flattenctx *s, Node *n);
 static Node *assign(Flattenctx *s, Node *lhs, Node *rhs);
 
-static void append(Flattenctx *s, Node *n)
+static void
+append(Flattenctx *s, Node *n)
 {
 	if (debugopt['F'])
 		dump(n, stdout);
 	lappend(&s->stmts, &s->nstmts, n);
 }
 
-static void cjmp(Flattenctx *s, Node *cond, Node *iftrue, Node *iffalse)
+static void
+cjmp(Flattenctx *s, Node *cond, Node *iftrue, Node *iffalse)
 {
 	Node *jmp;
 
@@ -71,7 +73,8 @@ static void cjmp(Flattenctx *s, Node *cond, Node *iftrue, Node *iffalse)
 	append(s, jmp);
 }
 
-static void jmp(Flattenctx *s, Node *lbl)
+static void
+jmp(Flattenctx *s, Node *lbl)
 {
 	Node *n;
 
@@ -80,7 +83,8 @@ static void jmp(Flattenctx *s, Node *lbl)
 	append(s, n);
 }
 
-static Node *asn(Node *a, Node *b)
+static Node *
+asn(Node *a, Node *b)
 {
 	Node *n;
 
@@ -93,7 +97,8 @@ static Node *asn(Node *a, Node *b)
 	return n;
 }
 
-static int islbl(Node *n)
+static int
+islbl(Node *n)
 {
 	Node *l;
 	if (exprop(n) != Olit)
@@ -102,7 +107,8 @@ static int islbl(Node *n)
 	return l->type == Nlit && l->lit.littype == Llbl;
 }
 
-static Node *temp(Flattenctx *flatten, Node *e)
+static Node *
+temp(Flattenctx *flatten, Node *e)
 {
 	Node *t, *dcl;
 
@@ -111,7 +117,8 @@ static Node *temp(Flattenctx *flatten, Node *e)
 	return t;
 }
 
-static Node *add(Node *a, Node *b)
+static Node *
+add(Node *a, Node *b)
 {
 	Node *n;
 
@@ -120,7 +127,8 @@ static Node *add(Node *a, Node *b)
 	return n;
 }
 
-static Node *addk(Node *n, uvlong v)
+static Node *
+addk(Node *n, uvlong v)
 {
 	Node *k;
 
@@ -129,7 +137,8 @@ static Node *addk(Node *n, uvlong v)
 	return add(n, k);
 }
 
-static Node *sub(Node *a, Node *b)
+static Node *
+sub(Node *a, Node *b)
 {
 	Node *n;
 
@@ -138,7 +147,8 @@ static Node *sub(Node *a, Node *b)
 	return n;
 }
 
-static Node *subk(Node *n, uvlong v)
+static Node *
+subk(Node *n, uvlong v)
 {
 	Node *k;
 
@@ -147,7 +157,8 @@ static Node *subk(Node *n, uvlong v)
 	return sub(n, k);
 }
 
-static Node *seqlen(Flattenctx *s, Node *n, Type *ty)
+static Node *
+seqlen(Flattenctx *s, Node *n, Type *ty)
 {
 	Node *r;
 
@@ -165,7 +176,8 @@ static Node *seqlen(Flattenctx *s, Node *n, Type *ty)
 	return r;
 }
 
-static Node *visit(Flattenctx *s, Node *n)
+static Node *
+visit(Flattenctx *s, Node *n)
 {
 	size_t i;
 	Node *r;
@@ -187,7 +199,8 @@ static Node *visit(Flattenctx *s, Node *n)
 	return r;
 }
 
-static void flattencond(Flattenctx *s, Node *n, Node *ltrue, Node *lfalse)
+static void
+flattencond(Flattenctx *s, Node *n, Node *ltrue, Node *lfalse)
 {
 	Node **args;
 	Node *v, *lnext;
@@ -225,7 +238,8 @@ static void flattencond(Flattenctx *s, Node *n, Node *ltrue, Node *lfalse)
  *              t = false
  *      ;;
  */
-static Node *flattenlazy(Flattenctx *s, Node *n)
+static Node *
+flattenlazy(Flattenctx *s, Node *n)
 {
 	Node *r, *t, *u;
 	Node *ltrue, *lfalse, *ldone;
@@ -261,7 +275,8 @@ static Node *flattenlazy(Flattenctx *s, Node *n)
 	return r;
 }
 
-static Node *destructure(Flattenctx *s, Node *lhs, Node *rhs)
+static Node *
+destructure(Flattenctx *s, Node *lhs, Node *rhs)
 {
 	Node *lv, *rv, *idx;
 	Node **args;
@@ -285,13 +300,15 @@ static Node *destructure(Flattenctx *s, Node *lhs, Node *rhs)
 	return rhs;
 }
 
-static Node *comparecomplex(Flattenctx *s, Node *n, Op op)
+static Node *
+comparecomplex(Flattenctx *s, Node *n, Op op)
 {
 	fatal(n, "Complex comparisons not yet supported\n");
 	return NULL;
 }
 
-static Node *compare(Flattenctx *s, Node *n, int fields)
+static Node *
+compare(Flattenctx *s, Node *n, int fields)
 {
 	const Op cmpmap[Numops][3] = {
 		[Oeq] = {Oeq, Oueq, Ofeq},
@@ -334,7 +351,8 @@ static Node *compare(Flattenctx *s, Node *n, int fields)
 	return r;
 }
 
-static Node *assign(Flattenctx *s, Node *lhs, Node *rhs)
+static Node *
+assign(Flattenctx *s, Node *lhs, Node *rhs)
 {
 	Node *r, *t, *u;
 
@@ -350,7 +368,8 @@ static Node *assign(Flattenctx *s, Node *lhs, Node *rhs)
 	return r;
 }
 
-static Node *rval(Flattenctx *s, Node *n)
+static Node *
+rval(Flattenctx *s, Node *n)
 {
 	Node *t, *u, *v; /* temporary nodes */
 	Node *r; /* expression result */
@@ -456,7 +475,7 @@ static Node *rval(Flattenctx *s, Node *n)
 		case Lchr:
 		case Lbool:
 		case Llbl:
-		case Lint: 
+		case Lint:
 		case Lstr:
 		case Lflt:
 		case Lfunc:
@@ -521,7 +540,8 @@ static Node *rval(Flattenctx *s, Node *n)
 	return r;
 }
 
-static Node *lval(Flattenctx *s, Node *n)
+static Node *
+lval(Flattenctx *s, Node *n)
 {
 	Node *r;
 
@@ -548,7 +568,8 @@ static Node *lval(Flattenctx *s, Node *n)
 	return r;
 }
 
-static void flattenblk(Flattenctx *fc, Node *n)
+static void
+flattenblk(Flattenctx *fc, Node *n)
 {
 	size_t i;
 
@@ -558,7 +579,7 @@ static void flattenblk(Flattenctx *fc, Node *n)
 	}
 }
 
-/* init; while cond; body;; 
+/* init; while cond; body;;
  *    => init
  *       jmp :cond
  *       :body
@@ -569,7 +590,8 @@ static void flattenblk(Flattenctx *fc, Node *n)
  *            cjmp (cond) :body :end
  *       :end
  */
-static void flattenloop(Flattenctx *s, Node *n)
+static void
+flattenloop(Flattenctx *s, Node *n)
 {
 	Node *lbody;
 	Node *lend;
@@ -611,7 +633,8 @@ static void flattenloop(Flattenctx *s, Node *n)
 
 /* if foo; bar; else baz;;
  *      => cjmp (foo) :bar :baz */
-static void flattenif(Flattenctx *s, Node *n, Node *exit)
+static void
+flattenif(Flattenctx *s, Node *n, Node *exit)
 {
 	Node *l1, *l2, *l3;
 	Node *iftrue, *iffalse;
@@ -639,7 +662,7 @@ static void flattenif(Flattenctx *s, Node *n, Node *exit)
 		append(s, s->incqueue[i]);
 	lfree(&s->incqueue, &s->nqueue);
 	/* because lots of bunched up end labels are ugly,
-	 * coalesce them by handling 'elif'-like constructs
+	 * coalesce them by handling 'elif'-like construct
 	 * separately */
 	if (iffalse && iffalse->type == Nifstmt) {
 		flattenif(s, iffalse, exit);
@@ -652,7 +675,8 @@ static void flattenif(Flattenctx *s, Node *n, Node *exit)
 		flatten(s, l3);
 }
 
-static void flattenloopmatch(Flattenctx *s, Node *pat, Node *val, Node *ltrue, Node *lfalse)
+static void
+flattenloopmatch(Flattenctx *s, Node *pat, Node *val, Node *ltrue, Node *lfalse)
 {
 	Node **cap, **out, *lload;
 	size_t i, ncap, nout;
@@ -672,7 +696,7 @@ static void flattenloopmatch(Flattenctx *s, Node *pat, Node *val, Node *ltrue, N
 	jmp(s, ltrue);
 }
 
-/* pat; seq; 
+/* pat; seq;
  *      body;;
  *
  * =>
@@ -692,7 +716,8 @@ static void flattenloopmatch(Flattenctx *s, Node *pat, Node *val, Node *ltrue, N
  *           matchval = load
  *      :end
  */
-static void flattenidxiter(Flattenctx *s, Node *n)
+static void
+flattenidxiter(Flattenctx *s, Node *n)
 {
 	Node *lbody, *lstep, *lcond, *lmatch, *lend;
 	Node *idx, *len, *dcl, *seq, *val, *done;
@@ -745,7 +770,8 @@ static void flattenidxiter(Flattenctx *s, Node *n)
 	s->nloopexit--;
 }
 
-static Node *itertraitfn(Srcloc loc, Trait *tr, char *fn, Type *ty)
+static Node *
+itertraitfn(Srcloc loc, Trait *tr, char *fn, Type *ty)
 {
 	Node *proto, *dcl, *var;
 	char *name;
@@ -783,7 +809,8 @@ static Node *itertraitfn(Srcloc loc, Trait *tr, char *fn, Type *ty)
  * 		...load matches...
  * 	:end
  */
-static void flattentraititer(Flattenctx *s, Node *n)
+static void
+flattentraititer(Flattenctx *s, Node *n)
 {
 	Node *lbody, *lclean, *lstep, *lmatch, *lend;
 	Node *done, *val, *iter, *valptr, *iterptr;
@@ -839,7 +866,8 @@ static void flattentraititer(Flattenctx *s, Node *n)
 	s->nloopexit--;
 }
 
-static void flatteniter(Flattenctx *s, Node *n)
+static void
+flatteniter(Flattenctx *s, Node *n)
 {
 	switch (tybase(exprtype(n->iterstmt.seq))->type) {
 	case Tyarray:	flattenidxiter(s, n);	break;
@@ -847,7 +875,8 @@ static void flatteniter(Flattenctx *s, Node *n)
 	default:	flattentraititer(s, n);	break;
 	}
 }
-static void flattenmatch(Flattenctx *fc, Node *n)
+static void
+flattenmatch(Flattenctx *fc, Node *n)
 {
 	Node *val;
 	Node **match;
@@ -862,7 +891,8 @@ static void flattenmatch(Flattenctx *fc, Node *n)
 		flatten(fc, match[i]);
 }
 
-static void flattenexpr(Flattenctx *fc, Node *n)
+static void
+flattenexpr(Flattenctx *fc, Node *n)
 {
 	Node *r;
 	size_t i;
@@ -880,7 +910,8 @@ static void flattenexpr(Flattenctx *fc, Node *n)
 	lfree(&fc->incqueue, &fc->nqueue);
 }
 
-static Node *flatten(Flattenctx *fc, Node *n)
+static Node *
+flatten(Flattenctx *fc, Node *n)
 {
 	Node *r, *u, *t;
 
@@ -914,7 +945,8 @@ static Node *flatten(Flattenctx *fc, Node *n)
 	return r;
 }
 
-static Node *flatteninit(Node *dcl)
+static Node *
+flatteninit(Node *dcl)
 {
 	Flattenctx fc = {0,};
 	Node *lit, *fn, *blk, *body;
@@ -931,7 +963,8 @@ static Node *flatteninit(Node *dcl)
 	return dcl;
 }
 
-static int ismain(Node *n)
+static int
+ismain(Node *n)
 {
 	n = n->decl.name;
 	if (n->name.ns)
@@ -939,7 +972,8 @@ static int ismain(Node *n)
 	return strcmp(n->name.name, "main") == 0;
 }
 
-Node *flattenfn(Node *dcl)
+Node *
+flattenfn(Node *dcl)
 {
 	if (ismain(dcl))
 		dcl->decl.vis = Vishidden;
@@ -954,7 +988,8 @@ Node *flattenfn(Node *dcl)
 	return dcl;
 }
 
-int isconstfn(Node *n)
+int
+isconstfn(Node *n)
 {
 	Node *d, *e;
 	Type *t;

@@ -14,7 +14,8 @@
 #include "parse.h"
 
 /* outputs a fully qualified name */
-static void outname(Node *n, FILE *fd)
+static void
+outname(Node *n, FILE *fd)
 {
 	if (n->name.ns)
 		fprintf(fd, "%s.", n->name.ns);
@@ -24,7 +25,8 @@ static void outname(Node *n, FILE *fd)
 /* outputs a sym in a one-line short form (ie,
  * the initializer is not printed, and the node is not
  * expressed in indented tree. */
-static void outsym(Node *s, FILE *fd, int depth)
+static void
+outsym(Node *s, FILE *fd, int depth)
 {
 	char buf[1024];
 
@@ -36,9 +38,10 @@ static void outsym(Node *s, FILE *fd, int depth)
 	fprintf(fd, " : %s\n", tyfmt(buf, 1024, s->decl.type));
 }
 
-void dumpsym(Node *s, FILE *fd) { outsym(s, fd, 0); }
+void
+dumpsym(Node *s, FILE *fd) { outsym(s, fd, 0); }
 
-/* Outputs a symbol table, and it's sub-tables
+/* Outputs a symbol table, and it's sub-table
  * recursively, with a sigil describing the symbol
  * type, as follows:
  *      T       type
@@ -47,7 +50,8 @@ void dumpsym(Node *s, FILE *fd) { outsym(s, fd, 0); }
  *
  * Does not print captured variables.
  */
-static void outstab(Stab *st, FILE *fd, int depth)
+static void
+outstab(Stab *st, FILE *fd, int depth)
 {
 	size_t i, n;
 	char *name;
@@ -99,9 +103,14 @@ static void outstab(Stab *st, FILE *fd, int depth)
 	}
 }
 
-void dumpstab(Stab *st, FILE *fd) { outstab(st, fd, 0); }
+void
+dumpstab(Stab *st, FILE *fd)
+{
+	outstab(st, fd, 0);
+}
 
-void dumpfilestabs(Node *file, int depth, FILE *fd)
+void
+dumpfilestabs(Node *file, int depth, FILE *fd)
 {
 	size_t nk, i;
 	void **k;
@@ -113,10 +122,11 @@ void dumpfilestabs(Node *file, int depth, FILE *fd)
 	free(k);
 }
 
-/* Outputs a node in indented tree form. This is
+/* Outputs a node in indented tree form. This i
  * not a full serialization, but mainly an aid for
  * understanding and debugging. */
-static void outnode(Node *n, FILE *fd, int depth)
+static void
+outnode(Node *n, FILE *fd, int depth)
 {
 	size_t i;
 	char *ty;
@@ -255,6 +265,8 @@ static void outnode(Node *n, FILE *fd, int depth)
 	}
 }
 
-void dump(Node *n, FILE *fd) { outnode(n, fd, 0); }
+void
+dump(Node *n, FILE *fd) { outnode(n, fd, 0); }
 
-void dumpn(Node *n) { dump(n, stdout); }
+void
+dumpn(Node *n) { dump(n, stdout); }

@@ -15,7 +15,8 @@
 
 static Node *specializenode(Node *g, Tysubst *tsmap);
 
-Tysubst *mksubst()
+Tysubst *
+mksubst()
 {
 	Tysubst *subst;
 
@@ -24,7 +25,8 @@ Tysubst *mksubst()
 	return subst;
 }
 
-void substfree(Tysubst *subst)
+void
+substfree(Tysubst *subst)
 {
 	size_t i;
 
@@ -33,12 +35,14 @@ void substfree(Tysubst *subst)
 	lfree(&subst->subst, &subst->nsubst);
 }
 
-void substpush(Tysubst *subst)
+void
+substpush(Tysubst *subst)
 {
 	lappend(&subst->subst, &subst->nsubst, mkht(tyhash, tyeq));
 }
 
-void substpop(Tysubst *subst)
+void
+substpop(Tysubst *subst)
 {
 	Htab *ht;
 
@@ -46,12 +50,14 @@ void substpop(Tysubst *subst)
 	htfree(ht);
 }
 
-void substput(Tysubst *subst, Type *from, Type *to)
+void
+substput(Tysubst *subst, Type *from, Type *to)
 {
 	htput(subst->subst[subst->nsubst - 1], from, to);
 }
 
-Type *substget(Tysubst *subst, Type *from)
+Type *
+substget(Tysubst *subst, Type *from)
 {
 	Type *t;
 	size_t i;
@@ -65,7 +71,8 @@ Type *substget(Tysubst *subst, Type *from)
 	return t;
 }
 
-void addtraits(Type *t, Bitset *traits)
+void
+addtraits(Type *t, Bitset *traits)
 {
 	size_t b;
 
@@ -76,14 +83,15 @@ void addtraits(Type *t, Bitset *traits)
 
 /*
  * Duplicates the type 't', with all bound type
- * parameters substituted with the substitions
+ * parameters substituted with the substition
  * described in 'tsmap'
  *
  * Returns a fresh type with all unbound type
  * parameters (type schemes in most literature)
  * replaced with type variables that we can unify
  * against */
-Type *tyspecialize(Type *orig, Tysubst *tsmap, Htab *delayed, Htab *trbase)
+Type *
+tyspecialize(Type *orig, Tysubst *tsmap, Htab *delayed, Htab *trbase)
 {
 	Type *t, *ret, *tmp, *var, *base;
 	Type **arg;
@@ -162,7 +170,7 @@ Type *tyspecialize(Type *orig, Tysubst *tsmap, Htab *delayed, Htab *trbase)
 		if (delayed && hthas(delayed, t)) {
 			tmp = htget(delayed, t);
 			htput(delayed, ret, tyspecialize(tmp, tsmap, delayed, trbase));
-		} 
+		}
 		break;
 	default:
 		if (t->nsub > 0) {
@@ -178,10 +186,11 @@ Type *tyspecialize(Type *orig, Tysubst *tsmap, Htab *delayed, Htab *trbase)
 	return ret;
 }
 
-/* Checks if the type 't' is generic, and if it is
+/* Checks if the type 't' is generic, and if it i
  * substitutes the types. This is here for efficiency,
  * so we don't gratuitously duplicate types */
-static Type *tysubst(Type *t, Tysubst *tsmap)
+static Type *
+tysubst(Type *t, Tysubst *tsmap)
 {
 	if (hasparams(t))
 		return tyspecialize(t, tsmap, NULL, NULL);
@@ -193,7 +202,8 @@ static Type *tysubst(Type *t, Tysubst *tsmap)
  * Fills the substitution map with a mapping from
  * the type parameter 'from' to it's substititon 'to'
  */
-static void fillsubst(Tysubst *tsmap, Type *to, Type *from)
+static void
+fillsubst(Tysubst *tsmap, Type *to, Type *from)
 {
 	size_t i;
 
@@ -216,7 +226,8 @@ static void fillsubst(Tysubst *tsmap, Type *to, Type *from)
  * Fixes up nodes. This involves fixing up the
  * declaration identifiers once we specialize
  */
-static void fixup(Node *n)
+static void
+fixup(Node *n)
 {
 	size_t i;
 	Node *d;
@@ -312,7 +323,8 @@ static void fixup(Node *n)
  * need to be specialized to make it concrete
  * instead of generic, and returns it.
  */
-static Node *specializenode(Node *n, Tysubst *tsmap)
+static Node *
+specializenode(Node *n, Tysubst *tsmap)
 {
 	Node *r;
 	size_t i;
@@ -437,7 +449,8 @@ static Node *specializenode(Node *n, Tysubst *tsmap)
 	return r;
 }
 
-Node *genericname(Node *n, Type *param, Type *t)
+Node *
+genericname(Node *n, Type *param, Type *t)
 {
 	char buf[1024];
 	char *p;
@@ -462,7 +475,8 @@ Node *genericname(Node *n, Type *param, Type *t)
 }
 
 /* this doesn't walk through named types, so it can't recurse infinitely. */
-int matchquality(Type *pat, Type *to)
+int
+matchquality(Type *pat, Type *to)
 {
 	int match, q;
 	size_t i;
@@ -543,7 +557,8 @@ int matchquality(Type *pat, Type *to)
 	return match;
 }
 
-Node *bestimpl(Node *n, Type *to)
+Node *
+bestimpl(Node *n, Type *to)
 {
 	Node **gimpl, **ambig, *match;
 	size_t ngimpl, nambig, i;
@@ -577,10 +592,11 @@ Node *bestimpl(Node *n, Type *to)
 
 /*
  * Takes a generic declaration, and creates a specialized
- * duplicate of it with type 'to'. It also generates
+ * duplicate of it with type 'to'. It also generate
  * a name for this specialized node, and returns it in '*name'.
  */
-Node *specializedcl(Node *gnode, Type *param, Type *to, Node **name)
+Node *
+specializedcl(Node *gnode, Type *param, Type *to, Node **name)
 {
 	extern int stabstkoff;
 	Tysubst *tsmap;
@@ -648,7 +664,8 @@ Node *specializedcl(Node *gnode, Type *param, Type *to, Node **name)
  *      ...
  * }
  */
-static Node *initdecl(Node *file, Node *name, Type *tyvoidfn)
+static Node *
+initdecl(Node *file, Node *name, Type *tyvoidfn)
 {
 	Node *dcl;
 
@@ -665,7 +682,8 @@ static Node *initdecl(Node *file, Node *name, Type *tyvoidfn)
 	return dcl;
 }
 
-static void callinit(Node *block, Node *init, Type *tyvoid, Type *tyvoidfn)
+static void
+callinit(Node *block, Node *init, Type *tyvoid, Type *tyvoidfn)
 {
 	Node *call, *var;
 
@@ -679,7 +697,8 @@ static void callinit(Node *block, Node *init, Type *tyvoid, Type *tyvoidfn)
 	lappend(&block->block.stmts, &block->block.nstmts, call);
 }
 
-void geninit(Node *file)
+void
+geninit(Node *file)
 {
 	Node *name, *decl, *func, *block, *init;
 	Type *tyvoid, *tyvoidfn;

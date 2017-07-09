@@ -39,9 +39,14 @@ char stackness[] = {
 #undef Ty
 };
 
-int isstacktype(Type *t) { return stackness[tybase(t)->type]; }
+int
+isstacktype(Type *t)
+{
+	return stackness[tybase(t)->type];
+}
 
-Type *tydedup(Type *ty)
+Type *
+tydedup(Type *ty)
 {
 	Type *had;
 
@@ -55,7 +60,8 @@ Type *tydedup(Type *ty)
 	return had;
 }
 
-Type *mktype(Srcloc loc, Ty ty)
+Type *
+mktype(Srcloc loc, Ty ty)
 {
 	Type *t;
 	int i;
@@ -91,7 +97,8 @@ Type *mktype(Srcloc loc, Ty ty)
  * Shallowly duplicates a type, so we can frob
  * its internals later
  */
-Type *tydup(Type *t)
+Type *
+tydup(Type *t)
 {
 	Type *r;
 
@@ -125,7 +132,8 @@ Type *tydup(Type *t)
  * Creates a Tyvar with the same
  * constrants as the 'like' type
  */
-Type *mktylike(Srcloc loc, Ty like)
+Type *
+mktylike(Srcloc loc, Ty like)
 {
 	Type *t;
 	int i;
@@ -137,7 +145,8 @@ Type *mktylike(Srcloc loc, Ty like)
 }
 
 /* steals memb, funcs */
-Trait *mktrait(Srcloc loc, Node *name, Type *param,
+Trait *
+mktrait(Srcloc loc, Node *name, Type *param,
 	Type **aux, size_t naux,
 	Node **proto, size_t nproto,
 	int isproto)
@@ -163,7 +172,8 @@ Trait *mktrait(Srcloc loc, Node *name, Type *param,
 	return t;
 }
 
-Type *mktyvar(Srcloc loc)
+Type *
+mktyvar(Srcloc loc)
 {
 	Type *t;
 
@@ -171,7 +181,8 @@ Type *mktyvar(Srcloc loc)
 	return t;
 }
 
-Type *mktyparam(Srcloc loc, char *name)
+Type *
+mktyparam(Srcloc loc, char *name)
 {
 	Type *t;
 
@@ -180,7 +191,8 @@ Type *mktyparam(Srcloc loc, char *name)
 	return t;
 }
 
-Type *mktyunres(Srcloc loc, Node *name, Type **arg, size_t narg)
+Type *
+mktyunres(Srcloc loc, Node *name, Type **arg, size_t narg)
 {
 	Type *t;
 
@@ -192,7 +204,8 @@ Type *mktyunres(Srcloc loc, Node *name, Type **arg, size_t narg)
 	return t;
 }
 
-Type *mktygeneric(Srcloc loc, Node *name, Type **param, size_t nparam, Type *base)
+Type *
+mktygeneric(Srcloc loc, Node *name, Type **param, size_t nparam, Type *base)
 {
 	Type *t;
 
@@ -207,7 +220,8 @@ Type *mktygeneric(Srcloc loc, Node *name, Type **param, size_t nparam, Type *bas
 	return t;
 }
 
-Type *mktyname(Srcloc loc, Node *name, Type *base)
+Type *
+mktyname(Srcloc loc, Node *name, Type *base)
 {
 	Type *t;
 
@@ -220,7 +234,8 @@ Type *mktyname(Srcloc loc, Node *name, Type *base)
 	return t;
 }
 
-Type *mktyarray(Srcloc loc, Type *base, Node *sz)
+Type *
+mktyarray(Srcloc loc, Type *base, Node *sz)
 {
 	Type *t;
 
@@ -234,7 +249,8 @@ Type *mktyarray(Srcloc loc, Type *base, Node *sz)
 	return t;
 }
 
-Type *mktyslice(Srcloc loc, Type *base)
+Type *
+mktyslice(Srcloc loc, Type *base)
 {
 	Type *t;
 
@@ -245,7 +261,8 @@ Type *mktyslice(Srcloc loc, Type *base)
 	return t;
 }
 
-Type *mktyptr(Srcloc loc, Type *base)
+Type *
+mktyptr(Srcloc loc, Type *base)
 {
 	Type *t;
 
@@ -256,7 +273,8 @@ Type *mktyptr(Srcloc loc, Type *base)
 	return t;
 }
 
-Type *mktytuple(Srcloc loc, Type **sub, size_t nsub)
+Type *
+mktytuple(Srcloc loc, Type **sub, size_t nsub)
 {
 	Type *t;
 	size_t i;
@@ -269,7 +287,8 @@ Type *mktytuple(Srcloc loc, Type **sub, size_t nsub)
 	return t;
 }
 
-Type *mktyfunc(Srcloc loc, Node **args, size_t nargs, Type *ret)
+Type *
+mktyfunc(Srcloc loc, Node **args, size_t nargs, Type *ret)
 {
 	Type *t;
 	size_t i;
@@ -283,7 +302,8 @@ Type *mktyfunc(Srcloc loc, Node **args, size_t nargs, Type *ret)
 	return t;
 }
 
-Type *mktystruct(Srcloc loc, Node **decls, size_t ndecls)
+Type *
+mktystruct(Srcloc loc, Node **decls, size_t ndecls)
 {
 	Type *t;
 	Htab *ht;
@@ -307,7 +327,8 @@ Type *mktystruct(Srcloc loc, Node **decls, size_t ndecls)
 	return t;
 }
 
-Type *mktyunion(Srcloc loc, Ucon **decls, size_t ndecls)
+Type *
+mktyunion(Srcloc loc, Ucon **decls, size_t ndecls)
 {
 	Type *t;
 
@@ -317,7 +338,8 @@ Type *mktyunion(Srcloc loc, Ucon **decls, size_t ndecls)
 	return t;
 }
 
-Ucon *finducon(Type *ty, Node *name)
+Ucon *
+finducon(Type *ty, Node *name)
 {
 	size_t i;
 
@@ -328,7 +350,8 @@ Ucon *finducon(Type *ty, Node *name)
 	return NULL;
 }
 
-int istyunsigned(Type *t)
+int
+istyunsigned(Type *t)
 {
 	switch (tybase(t)->type) {
 	case Tybyte:
@@ -343,7 +366,8 @@ int istyunsigned(Type *t)
 	}
 }
 
-int istysigned(Type *t)
+int
+istysigned(Type *t)
 {
 	switch (tybase(t)->type) {
 	case Tyint8:
@@ -355,19 +379,22 @@ int istysigned(Type *t)
 	}
 }
 
-int istyfloat(Type *t)
+int
+istyfloat(Type *t)
 {
 	t = tybase(t);
 	return t->type == Tyflt32 || t->type == Tyflt64;
 }
 
-int istyprimitive(Type *t) { return istysigned(t) || istyunsigned(t) || istyfloat(t); }
+int
+istyprimitive(Type *t) { return istysigned(t) || istyunsigned(t) || istyfloat(t); }
 
 /*
  * Checks if a type contains any type
  * parameers at all (ie, if it generic).
  */
-int hasparamsrec(Type *t, Bitset *visited)
+int
+hasparamsrec(Type *t, Bitset *visited)
 {
 	size_t i;
 
@@ -406,7 +433,8 @@ int hasparamsrec(Type *t, Bitset *visited)
 	return 0;
 }
 
-int hasparams(Type *t)
+int
+hasparams(Type *t)
 {
 	Bitset *visited;
 
@@ -418,7 +446,8 @@ int hasparams(Type *t)
 	return t->hasparams;
 }
 
-Type *tybase(Type *t)
+Type *
+tybase(Type *t)
 {
 	assert(t != NULL);
 	while (t->type == Tyname || t->type == Tygeneric)
@@ -426,7 +455,8 @@ Type *tybase(Type *t)
 	return t;
 }
 
-static int namefmt(char *buf, size_t len, Node *n)
+static int
+namefmt(char *buf, size_t len, Node *n)
 {
 	char *p;
 	char *end;
@@ -439,7 +469,8 @@ static int namefmt(char *buf, size_t len, Node *n)
 	return len - (end - p);
 }
 
-int settrait(Type *t, Trait *c)
+int
+settrait(Type *t, Trait *c)
 {
 	if (!t->traits)
 		t->traits = mkbs();
@@ -447,9 +478,11 @@ int settrait(Type *t, Trait *c)
 	return 1;
 }
 
-int hastrait(Type *t, Trait *c) { return t->traits && bshas(t->traits, c->uid); }
+int
+hastrait(Type *t, Trait *c) { return t->traits && bshas(t->traits, c->uid); }
 
-int traitfmt(char *buf, size_t len, Type *t)
+int
+traitfmt(char *buf, size_t len, Type *t)
 {
 	size_t i;
 	char *p;
@@ -473,7 +506,8 @@ int traitfmt(char *buf, size_t len, Type *t)
 	return p - buf;
 }
 
-static int fmtstruct(char *buf, size_t len, Bitset *visited, Type *t)
+static int
+fmtstruct(char *buf, size_t len, Bitset *visited, Type *t)
 {
 	size_t i;
 	char *end, *p;
@@ -492,7 +526,8 @@ static int fmtstruct(char *buf, size_t len, Bitset *visited, Type *t)
 	return p - buf;
 }
 
-static int fmtunion(char *buf, size_t len, Bitset *visited, Type *t)
+static int
+fmtunion(char *buf, size_t len, Bitset *visited, Type *t)
 {
 	char subbuf[512];
 	char *name, *ns, *sep;
@@ -524,7 +559,8 @@ static int fmtunion(char *buf, size_t len, Bitset *visited, Type *t)
 	return p - buf;
 }
 
-static int fmtlist(char *buf, size_t len, Bitset *visited, Type **arg, size_t narg)
+static int
+fmtlist(char *buf, size_t len, Bitset *visited, Type **arg, size_t narg)
 {
 	char *end, *p, *sep;
 	size_t i;
@@ -542,7 +578,8 @@ static int fmtlist(char *buf, size_t len, Bitset *visited, Type **arg, size_t na
 	return p - buf;
 }
 
-static int tybfmt(char *buf, size_t len, Bitset *visited, Type *t)
+static int
+tybfmt(char *buf, size_t len, Bitset *visited, Type *t)
 {
 	size_t i;
 	char *p;
@@ -658,7 +695,8 @@ static int tybfmt(char *buf, size_t len, Bitset *visited, Type *t)
 	return p - buf;
 }
 
-char *tyfmt(char *buf, size_t len, Type *t)
+char *
+tyfmt(char *buf, size_t len, Type *t)
 {
 	Bitset *bs;
 
@@ -668,21 +706,24 @@ char *tyfmt(char *buf, size_t len, Type *t)
 	return buf;
 }
 
-char *traitstr(Type *t)
+char *
+traitstr(Type *t)
 {
 	char buf[1024];
 	traitfmt(buf, 1024, t);
 	return strdup(buf);
 }
 
-char *tystr(Type *t)
+char *
+tystr(Type *t)
 {
 	char buf[1024];
 	tyfmt(buf, 1024, t);
 	return strdup(buf);
 }
 
-ulong tyhash(void *ty)
+ulong
+tyhash(void *ty)
 {
 	size_t i;
 	Type *t;
@@ -703,7 +744,8 @@ ulong tyhash(void *ty)
 	return hash;
 }
 
-int tyeq_rec(Type *a, Type *b, Bitset *avisited, Bitset *bvisited, int search)
+int
+tyeq_rec(Type *a, Type *b, Bitset *avisited, Bitset *bvisited, int search)
 {
 	Type *x, *y;
 	size_t i;
@@ -804,7 +846,8 @@ int tyeq_rec(Type *a, Type *b, Bitset *avisited, Bitset *bvisited, int search)
 	return ret;
 }
 
-int tystricteq(void *a, void *b)
+int
+tystricteq(void *a, void *b)
 {
 	Bitset *avisited, *bvisited;
 	int eq;
@@ -819,7 +862,8 @@ int tystricteq(void *a, void *b)
 	return eq;
 }
 
-int tyeq(void *a, void *b)
+int
+tyeq(void *a, void *b)
 {
 	Bitset *avisited, *bvisited;
 	int eq;
@@ -834,7 +878,8 @@ int tyeq(void *a, void *b)
 	return eq;
 }
 
-size_t tyidfmt(char *buf, size_t sz, Type *ty)
+size_t
+tyidfmt(char *buf, size_t sz, Type *ty)
 {
 	size_t i;
 	char *p, *end;
@@ -919,7 +964,8 @@ size_t tyidfmt(char *buf, size_t sz, Type *ty)
 	return p - buf;
 }
 
-void iterableinit(Stab *st, Trait *tr)
+void
+iterableinit(Stab *st, Trait *tr)
 {
 	Node *func, *arg, **args;
 	Type *ty;
@@ -942,7 +988,7 @@ void iterableinit(Stab *st, Trait *tr)
 
 	func = mkdecl(Zloc, mkname(Zloc, "__iternext__"), ty);
 	func->decl.trait = tr;
-	func->decl.impls = mkht(tyhash, tyeq); 
+	func->decl.impls = mkht(tyhash, tyeq);
 	func->decl.isgeneric = 1;
 	func->decl.isconst = 1;
 	func->decl.isglobl = 1;
@@ -962,7 +1008,7 @@ void iterableinit(Stab *st, Trait *tr)
 
 	func = mkdecl(Zloc, mkname(Zloc, "__iterfin__"), ty);
 	func->decl.trait = tr;
-	func->decl.impls = mkht(tyhash, tyeq); 
+	func->decl.impls = mkht(tyhash, tyeq);
 	func->decl.isgeneric = 1;
 	func->decl.isconst = 1;
 	func->decl.isglobl = 1;
@@ -972,7 +1018,8 @@ void iterableinit(Stab *st, Trait *tr)
 	putdcl(st, func);
 }
 
-void tyinit(Stab *st)
+void
+tyinit(Stab *st)
 {
 	int i;
 	Type *ty;

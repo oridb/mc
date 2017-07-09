@@ -46,7 +46,8 @@ static int addpat(Node *pat, Node *val,
 void dtreedump(FILE *fd, Dtree *dt);
 
 
-static Node *utag(Node *n)
+static Node *
+utag(Node *n)
 {
 	Node *tag;
 
@@ -55,7 +56,8 @@ static Node *utag(Node *n)
 	return tag;
 }
 
-static Node *uvalue(Node *n, Type *ty)
+static Node *
+uvalue(Node *n, Type *ty)
 {
 	Node *elt;
 
@@ -64,7 +66,8 @@ static Node *uvalue(Node *n, Type *ty)
 	return elt;
 }
 
-static Node *tupelt(Node *n, size_t i)
+static Node *
+tupelt(Node *n, size_t i)
 {
 	Node *idx, *elt;
 
@@ -75,7 +78,8 @@ static Node *tupelt(Node *n, size_t i)
 	return elt;
 }
 
-static Node *arrayelt(Node *n, size_t i)
+static Node *
+arrayelt(Node *n, size_t i)
 {
 	Node *idx, *elt;
 
@@ -86,7 +90,8 @@ static Node *arrayelt(Node *n, size_t i)
 	return elt;
 }
 
-static Node *findmemb(Node *pat, Node *name)
+static Node *
+findmemb(Node *pat, Node *name)
 {
 	Node *n;
 	size_t i;
@@ -99,7 +104,8 @@ static Node *findmemb(Node *pat, Node *name)
 	return NULL;
 }
 
-static Dtree *dtbytag(Dtree *t, Ucon *uc)
+static Dtree *
+dtbytag(Dtree *t, Ucon *uc)
 {
 	uint32_t tagval;
 	Node *taglit;
@@ -115,7 +121,8 @@ static Dtree *dtbytag(Dtree *t, Ucon *uc)
 	return NULL;
 }
 
-static Node *structmemb(Node *n, Node *name, Type *ty)
+static Node *
+structmemb(Node *n, Node *name, Type *ty)
 {
 	Node *elt;
 
@@ -124,7 +131,8 @@ static Node *structmemb(Node *n, Node *name, Type *ty)
 	return elt;
 }
 
-static Node *addcapture(Node *n, Node **cap, size_t ncap)
+static Node *
+addcapture(Node *n, Node **cap, size_t ncap)
 {
 	Node **blk;
 	size_t nblk, i;
@@ -142,7 +150,8 @@ static Node *addcapture(Node *n, Node **cap, size_t ncap)
 	return n;
 }
 
-static Dtree *mkdtree(Srcloc loc, Node *lbl)
+static Dtree *
+mkdtree(Srcloc loc, Node *lbl)
 {
 	static int ndtree;
 	Dtree *t;
@@ -154,7 +163,8 @@ static Dtree *mkdtree(Srcloc loc, Node *lbl)
 	return t;
 }
 
-static Dtree *nextnode(Srcloc loc, size_t idx, size_t count, Dtree *accept)
+static Dtree *
+nextnode(Srcloc loc, size_t idx, size_t count, Dtree *accept)
 {
 	if (idx == count - 1)
 		return accept;
@@ -162,7 +172,8 @@ static Dtree *nextnode(Srcloc loc, size_t idx, size_t count, Dtree *accept)
 		return mkdtree(loc, genlbl(loc));
 }
 
-static size_t nconstructors(Type *t)
+static size_t
+nconstructors(Type *t)
 {
 	if (!t)
 		return 0;
@@ -209,7 +220,8 @@ static size_t nconstructors(Type *t)
 	return 0;
 }
 
-static int verifymatch(Dtree *t)
+static int
+verifymatch(Dtree *t)
 {
 	size_t i;
 	int ret;
@@ -226,7 +238,8 @@ static int verifymatch(Dtree *t)
 	return ret;
 }
 
-static int acceptall(Dtree *t, Dtree *accept)
+static int
+acceptall(Dtree *t, Dtree *accept)
 {
 	size_t i;
 	int ret;
@@ -249,7 +262,8 @@ static int acceptall(Dtree *t, Dtree *accept)
 	return ret;
 }
 
-static int isnonrecursive(Dtree *dt, Type *ty)
+static int
+isnonrecursive(Dtree *dt, Type *ty)
 {
 	if (istyprimitive(ty) || ty->type == Tyvoid || ty->type == Tyfunc || ty->type == Typtr)
 		return 1;
@@ -260,12 +274,14 @@ static int isnonrecursive(Dtree *dt, Type *ty)
 	return 0;
 }
 
-static int ismatchable(Type *ty)
+static int
+ismatchable(Type *ty)
 {
 	return ty->type != Tyfunc && ty->type != Tycode && ty->type != Tyvalist;
 }
 
-static int addwildrec(Srcloc loc, Type *ty, Dtree *start, Dtree *accept, Dtree ***end, size_t *nend)
+static int
+addwildrec(Srcloc loc, Type *ty, Dtree *start, Dtree *accept, Dtree ***end, size_t *nend)
 {
 	Dtree *next, **last, **tail;
 	size_t i, j, nelt, nlast, ntail;
@@ -378,7 +394,8 @@ static int addwildrec(Srcloc loc, Type *ty, Dtree *start, Dtree *accept, Dtree *
 	return ret;
 }
 
-static int addwild(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap, size_t *ncap, Dtree ***end, size_t *nend)
+static int
+addwild(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap, size_t *ncap, Dtree ***end, size_t *nend)
 {
 	Node *asn;
 
@@ -390,7 +407,8 @@ static int addwild(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***ca
 	return addwildrec(pat->loc, exprtype(pat), start, accept, end, nend);
 }
 
-static int addunion(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap, size_t *ncap, Dtree ***end, size_t *nend)
+static int
+addunion(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap, size_t *ncap, Dtree ***end, size_t *nend)
 {
 	Node *tagid;
 	Dtree *next;
@@ -431,7 +449,8 @@ static int addunion(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***c
 	return 1;
 }
 
-static int addstr(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap, size_t *ncap, Dtree ***end, size_t *nend)
+static int
+addstr(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap, size_t *ncap, Dtree ***end, size_t *nend)
 {
 	Dtree **tail, **last, *next;
 	size_t i, j, n, ntail, nlast;
@@ -469,7 +488,7 @@ static int addstr(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap
 		tail = NULL;
 		ntail = 0;
 		next = nextnode(pat->loc, i, n, accept);
-		for (j = 0; j < nlast; j++) 
+		for (j = 0; j < nlast; j++)
 			if (addpat(p, v, last[j], next, NULL, NULL, &tail, &ntail))
 				ret = 1;
 		lfree(&last, &nlast);
@@ -481,7 +500,8 @@ static int addstr(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap
 	return ret;
 }
 
-static int addlit(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap, size_t *ncap, Dtree ***end, size_t *nend)
+static int
+addlit(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap, size_t *ncap, Dtree ***end, size_t *nend)
 {
 	size_t i;
 
@@ -513,7 +533,8 @@ static int addlit(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap
 	}
 }
 
-static int addtup(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap, size_t *ncap, Dtree ***end, size_t *nend)
+static int
+addtup(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap, size_t *ncap, Dtree ***end, size_t *nend)
 {
 	size_t nargs, nlast, ntail, i, j;
 	Dtree *next, **last, **tail;
@@ -531,7 +552,7 @@ static int addtup(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap
 		next = nextnode(args[i]->loc, i, nargs, accept);
 		tail = NULL;
 		ntail = 0;
-		for (j = 0; j < nlast; j++) 
+		for (j = 0; j < nlast; j++)
 			if (addpat(pat->expr.args[i], tupelt(val, i), last[j], next, cap, ncap, &tail, &ntail))
 				ret = 1;
 		lfree(&last, &nlast);
@@ -543,7 +564,8 @@ static int addtup(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap
 	return ret;
 }
 
-static int addarr(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap, size_t *ncap, Dtree ***end, size_t *nend)
+static int
+addarr(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap, size_t *ncap, Dtree ***end, size_t *nend)
 {
 	size_t nargs, nlast, ntail, i, j;
 	Dtree *next, **last, **tail;
@@ -561,7 +583,7 @@ static int addarr(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap
 		next = nextnode(args[i]->loc, i, nargs, accept);
 		tail = NULL;
 		ntail = 0;
-		for (j = 0; j < nlast; j++) 
+		for (j = 0; j < nlast; j++)
 			if (addpat(pat->expr.args[i], arrayelt(val, i), last[j], next, cap, ncap, &tail, &ntail))
 				ret = 1;
 		lfree(&last, &nlast);
@@ -573,7 +595,8 @@ static int addarr(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap
 	return ret;
 }
 
-static int addstruct(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap, size_t *ncap, Dtree ***end, size_t *nend)
+static int
+addstruct(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap, size_t *ncap, Dtree ***end, size_t *nend)
 {
 	Dtree *next, **last, **tail;
 	Node *memb, *name;
@@ -613,7 +636,8 @@ static int addstruct(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***
 	return ret;
 }
 
-static int addderefpat(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap, size_t *ncap, Dtree ***end, size_t *nend)
+static int
+addderefpat(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap, size_t *ncap, Dtree ***end, size_t *nend)
 {
 	Node *deref;
 	Dtree *walk;
@@ -630,7 +654,8 @@ static int addderefpat(Node *pat, Node *val, Dtree *start, Dtree *accept, Node *
 	return addpat(pat->expr.args[0], deref, walk, accept, cap, ncap, end, nend);
 }
 
-static int addpat(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap, size_t *ncap, Dtree ***end, size_t *nend)
+static int
+addpat(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap, size_t *ncap, Dtree ***end, size_t *nend)
 {
 	int ret;
 	Node *dcl;
@@ -678,7 +703,8 @@ static int addpat(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap
 
 
 /* val must be a pure, fully evaluated value */
-Dtree *gendtree(Node *m, Node *val, Node **lbl, size_t nlbl)
+Dtree *
+gendtree(Node *m, Node *val, Node **lbl, size_t nlbl)
 {
 	Dtree *start, *accept, **end;
 	Node **pat, **cap;
@@ -706,7 +732,8 @@ Dtree *gendtree(Node *m, Node *val, Node **lbl, size_t nlbl)
 	return start;
 }
 
-void genmatchcode(Dtree *dt, Node ***out, size_t *nout)
+void
+genmatchcode(Dtree *dt, Node ***out, size_t *nout)
 {
 	Node *jmp, *eq, *fail;
 	int emit;
@@ -752,7 +779,8 @@ void genmatchcode(Dtree *dt, Node ***out, size_t *nout)
 	}
 }
 
-void genonematch(Node *pat, Node *val, Node *iftrue, Node *iffalse, Node ***out, size_t *nout, Node ***cap, size_t *ncap)
+void
+genonematch(Node *pat, Node *val, Node *iftrue, Node *iffalse, Node ***out, size_t *nout, Node ***cap, size_t *ncap)
 {
 	Dtree *start, *accept, *reject, **end;
 	size_t nend;
@@ -771,7 +799,8 @@ void genonematch(Node *pat, Node *val, Node *iftrue, Node *iffalse, Node ***out,
 	genmatchcode(start, out, nout);
 }
 
-void genmatch(Node *m, Node *val, Node ***out, size_t *nout)
+void
+genmatch(Node *m, Node *val, Node ***out, size_t *nout)
 {
 	Node **pat, **lbl, *end, *endlbl;
 	size_t npat, nlbl, i;
@@ -807,7 +836,8 @@ void genmatch(Node *m, Node *val, Node ***out, size_t *nout)
 }
 
 
-void dtreedumplit(FILE *fd, Dtree *dt, Node *n, size_t depth)
+void
+dtreedumplit(FILE *fd, Dtree *dt, Node *n, size_t depth)
 {
 	char *s;
 
@@ -824,7 +854,8 @@ void dtreedumplit(FILE *fd, Dtree *dt, Node *n, size_t depth)
 	}
 }
 
-void dtreedumpnode(FILE *fd, Dtree *dt, size_t depth)
+void
+dtreedumpnode(FILE *fd, Dtree *dt, size_t depth)
 {
 	size_t i;
 
@@ -841,7 +872,8 @@ void dtreedumpnode(FILE *fd, Dtree *dt, size_t depth)
 	}
 }
 
-void dtreedump(FILE *fd, Dtree *dt)
+void
+dtreedump(FILE *fd, Dtree *dt)
 {
 	dtreedumpnode(fd, dt, 0);
 }

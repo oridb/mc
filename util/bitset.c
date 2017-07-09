@@ -17,7 +17,8 @@
  * over both without keeping track of the
  * minimum size.
  */
-static void eqsz(Bitset *a, Bitset *b)
+static void
+eqsz(Bitset *a, Bitset *b)
 {
 	size_t sz;
 	size_t i;
@@ -48,7 +49,8 @@ static void eqsz(Bitset *a, Bitset *b)
 }
 
 /* Creates a new all-zero bit set */
-Bitset *mkbs()
+Bitset *
+mkbs()
 {
 	Bitset *bs;
 
@@ -59,7 +61,8 @@ Bitset *mkbs()
 }
 
 /* Frees a bitset. Safe to call on NULL. */
-void bsfree(Bitset *bs)
+void
+bsfree(Bitset *bs)
 {
 	if (!bs)
 		return;
@@ -68,7 +71,8 @@ void bsfree(Bitset *bs)
 }
 
 /* Duplicates a bitset. NULL is duplicated to NULL. */
-Bitset *bsdup(Bitset *a)
+Bitset *
+bsdup(Bitset *a)
 {
 	Bitset *bs;
 
@@ -82,7 +86,8 @@ Bitset *bsdup(Bitset *a)
 }
 
 /* Zeroes all values in a bit set */
-Bitset *bsclear(Bitset *bs)
+Bitset *
+bsclear(Bitset *bs)
 {
 	size_t i;
 
@@ -94,7 +99,8 @@ Bitset *bsclear(Bitset *bs)
 }
 
 /* Counts the number of values held in a bit set */
-size_t bscount(Bitset *bs)
+size_t
+bscount(Bitset *bs)
 {
 	size_t i, j, n;
 
@@ -106,7 +112,8 @@ size_t bscount(Bitset *bs)
 	return n;
 }
 
-inline static int firstbit(size_t b)
+inline
+static int firstbit(size_t b)
 {
 	int n;
 	static const char bits[] = {
@@ -134,7 +141,7 @@ inline static int firstbit(size_t b)
 	return n;
 }
 
-/* A slightly tricky function to iterate over the contents
+/* A slightly tricky function to iterate over the content
  * of a bitset. It returns true immediately if 'elt' is in
  * the bitset, otherwise it seeks forward to the next value
  * held in the bitset and stores it in elt. If there are no
@@ -151,7 +158,8 @@ inline static int firstbit(size_t b)
  * to prevent the function from returning the same value
  * repeatedly.
  */
-int bsiter(Bitset *bs, size_t *elt)
+int
+bsiter(Bitset *bs, size_t *elt)
 {
 	size_t b, t, i;
 
@@ -175,9 +183,11 @@ int bsiter(Bitset *bs, size_t *elt)
 /* Returns the largest value that the bitset can possibly
  * hold. It's conservative, but scanning the entire bitset
  * is a bit slow. This is mostly an aid to iterate over it. */
-size_t bsmax(Bitset *bs) { return bs->nchunks * Sizetbits; }
+size_t
+bsmax(Bitset *bs) { return bs->nchunks * Sizetbits; }
 
-void bsput(Bitset *bs, size_t elt)
+void
+bsput(Bitset *bs, size_t elt)
 {
 	size_t sz;
 	if (elt >= bs->nchunks * Sizetbits) {
@@ -188,13 +198,15 @@ void bsput(Bitset *bs, size_t elt)
 	bs->chunks[elt / Sizetbits] |= 1ULL << (elt % Sizetbits);
 }
 
-void bsdel(Bitset *bs, size_t elt)
+void
+bsdel(Bitset *bs, size_t elt)
 {
 	if (elt < bs->nchunks * Sizetbits)
 		bs->chunks[elt / Sizetbits] &= ~(1ULL << (elt % Sizetbits));
 }
 
-void bsunion(Bitset *a, Bitset *b)
+void
+bsunion(Bitset *a, Bitset *b)
 {
 	size_t i;
 
@@ -203,7 +215,8 @@ void bsunion(Bitset *a, Bitset *b)
 		a->chunks[i] |= b->chunks[i];
 }
 
-void bsintersect(Bitset *a, Bitset *b)
+void
+bsintersect(Bitset *a, Bitset *b)
 {
 	size_t i;
 
@@ -212,7 +225,8 @@ void bsintersect(Bitset *a, Bitset *b)
 		a->chunks[i] &= b->chunks[i];
 }
 
-void bsdiff(Bitset *a, Bitset *b)
+void
+bsdiff(Bitset *a, Bitset *b)
 {
 	size_t i;
 
@@ -221,7 +235,8 @@ void bsdiff(Bitset *a, Bitset *b)
 		a->chunks[i] &= ~b->chunks[i];
 }
 
-int bseq(Bitset *a, Bitset *b)
+int
+bseq(Bitset *a, Bitset *b)
 {
 	size_t i;
 
@@ -235,7 +250,8 @@ int bseq(Bitset *a, Bitset *b)
 	return 1;
 }
 
-int bsissubset(Bitset *set, Bitset *sub)
+int
+bsissubset(Bitset *set, Bitset *sub)
 {
 	size_t i;
 
@@ -246,7 +262,8 @@ int bsissubset(Bitset *set, Bitset *sub)
 	return 1;
 }
 
-int bsisempty(Bitset *set)
+int
+bsisempty(Bitset *set)
 {
 	size_t i;
 

@@ -59,10 +59,11 @@ struct {
 	[Ofle] = {Icomis, Ijbe, Isetbe},
 };
 
-static Mode tymode(Type *t)
+static Mode
+tymode(Type *t)
 {
 	/* FIXME: What should the mode for, say, structs be when we have no
-	 * intention of loading /through/ the pointer? For now, we'll just say it's
+	 * intention of loading /through/ the pointer? For now, we'll just say it'
 	 * the pointer mode, since we expect to address through the pointer */
 	t = tybase(t);
 	switch (t->type) {
@@ -82,7 +83,8 @@ static Mode tymode(Type *t)
 	return ModeNone;
 }
 
-static Mode mode(Node *n)
+static Mode
+mode(Node *n)
 {
 	if (n->type == Nexpr)
 		return tymode(exprtype(n));
@@ -93,7 +95,8 @@ static Mode mode(Node *n)
 	return ModeNone;
 }
 
-static Loc *varloc(Isel *s, Node *n)
+static Loc *
+varloc(Isel *s, Node *n)
 {
 	ssize_t off;
 	Loc *l, *rip;
@@ -121,7 +124,8 @@ static Loc *varloc(Isel *s, Node *n)
 	return l;
 }
 
-static Loc *loc(Isel *s, Node *n)
+static Loc *
+loc(Isel *s, Node *n)
 {
 	Node *v;
 	Loc *l;
@@ -131,7 +135,7 @@ static Loc *loc(Isel *s, Node *n)
 	} else {
 		switch (exprop(n)) {
 		case Ovar:
-			l = varloc(s, n); 
+			l = varloc(s, n);
 			break;
 		case Olit:
 			v = n->expr.args[0];
@@ -152,7 +156,8 @@ static Loc *loc(Isel *s, Node *n)
 	return l;
 }
 
-static Insn *mkinsnv(AsmOp op, va_list ap)
+static Insn *
+mkinsnv(AsmOp op, va_list ap)
 {
 	Loc *l;
 	Insn *i;
@@ -169,7 +174,8 @@ static Insn *mkinsnv(AsmOp op, va_list ap)
 	return i;
 }
 
-Insn *mkinsn(int op, ...)
+Insn *
+mkinsn(int op, ...)
 {
 	va_list ap;
 	Insn *i;
@@ -180,7 +186,8 @@ Insn *mkinsn(int op, ...)
 	return i;
 }
 
-static void g(Isel *s, int op, ...)
+static void
+g(Isel *s, int op, ...)
 {
 	va_list ap;
 	Insn *i;
@@ -195,7 +202,8 @@ static void g(Isel *s, int op, ...)
 	lappend(&s->curbb->il, &s->curbb->ni, i);
 }
 
-static void movz(Isel *s, Loc *src, Loc *dst)
+static void
+movz(Isel *s, Loc *src, Loc *dst)
 {
 	if (src->mode == dst->mode)
 		g(s, Imov, src, dst, NULL);
@@ -203,7 +211,8 @@ static void movz(Isel *s, Loc *src, Loc *dst)
 		g(s, Imovzx, src, dst, NULL);
 }
 
-static void load(Isel *s, Loc *a, Loc *b)
+static void
+load(Isel *s, Loc *a, Loc *b)
 {
 	Loc *l;
 
@@ -218,7 +227,8 @@ static void load(Isel *s, Loc *a, Loc *b)
 		g(s, Imov, l, b, NULL);
 }
 
-static void stor(Isel *s, Loc *a, Loc *b)
+static void
+stor(Isel *s, Loc *a, Loc *b)
 {
 	Loc *l;
 
@@ -234,7 +244,8 @@ static void stor(Isel *s, Loc *a, Loc *b)
 }
 
 /* ensures that a location is within a reg */
-static Loc *newr(Isel *s, Loc *a)
+static Loc *
+newr(Isel *s, Loc *a)
 {
 	Loc *r;
 
@@ -250,7 +261,8 @@ static Loc *newr(Isel *s, Loc *a)
 	return r;
 }
 
-static Loc *inr(Isel *s, Loc *a)
+static Loc *
+inr(Isel *s, Loc *a)
 {
 	if (a->type == Locreg)
 		return a;
@@ -258,7 +270,8 @@ static Loc *inr(Isel *s, Loc *a)
 }
 
 /* ensures that a location is within a reg or an imm */
-static Loc *inri(Isel *s, Loc *a)
+static Loc *
+inri(Isel *s, Loc *a)
 {
 	if (a->type == Locreg || a->type == Loclit)
 		return a;
@@ -275,7 +288,8 @@ static Loc *inri(Isel *s, Loc *a)
  * multiple tests, we want to eval the children
  * of the first arg, instead of the first arg
  * directly */
-static void selcjmp(Isel *s, Node *n, Node **args)
+static void
+selcjmp(Isel *s, Node *n, Node **args)
 {
 	Loc *a, *b;
 	Loc *l1, *l2;
@@ -308,7 +322,7 @@ static void selcjmp(Isel *s, Node *n, Node **args)
 	g(s, Ijmp, l2, NULL);
 }
 
-/* Generate variable length jump. There are 3 cases
+/* Generate variable length jump. There are 3 case
  * for this:
  *
  * 1) Short list: Simple comparison sequence.
@@ -318,11 +332,13 @@ static void selcjmp(Isel *s, Node *n, Node **args)
  * If a value is not in the jump table, then the 0th
  * value is used.
  */
-static void selvjmp(Isel *s, Node *n, Node **args)
+static void
+selvjmp(Isel *s, Node *n, Node **args)
 {
 }
 
-static Loc *binop(Isel *s, AsmOp op, Node *x, Node *y)
+static Loc *
+binop(Isel *s, AsmOp op, Node *x, Node *y)
 {
 	Loc *a, *b;
 
@@ -346,7 +362,8 @@ static Loc *binop(Isel *s, AsmOp op, Node *x, Node *y)
  *        Omul(reg,
  *             2 || 4 || 8)))
  */
-static int ismergablemul(Node *n, int *r)
+static int
+ismergablemul(Node *n, int *r)
 {
 	int v;
 
@@ -365,7 +382,8 @@ static int ismergablemul(Node *n, int *r)
 	return 1;
 }
 
-static Loc *memloc(Isel *s, Node *e, Mode m)
+static Loc *
+memloc(Isel *s, Node *e, Mode m)
 {
 	Node **args;
 	Loc *l, *b, *o; /* location, base, offset */
@@ -399,13 +417,15 @@ static Loc *memloc(Isel *s, Node *e, Mode m)
 	return l;
 }
 
-static const Mode szmodes[] = {
+static const
+Mode szmodes[] = {
 	[8] = ModeQ,
 	[4] = ModeL,
 	[2] = ModeW,
 	[1] = ModeB
 };
-static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size_t sz, size_t align)
+static void
+blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size_t sz, size_t align)
 {
 	size_t i, modesz;
 	Loc *sp, *dp; /* pointers to src, dst */
@@ -433,7 +453,8 @@ static void blit(Isel *s, Loc *to, Loc *from, size_t dstoff, size_t srcoff, size
 
 }
 
-static void clear(Isel *s, Loc *val, size_t sz, size_t align)
+static void
+clear(Isel *s, Loc *val, size_t sz, size_t align)
 {
 	Loc *dp, *zero, *dst; /* source memory, dst memory */
 	size_t modesz, i;
@@ -453,7 +474,8 @@ static void clear(Isel *s, Loc *val, size_t sz, size_t align)
 	}
 }
 
-static void call(Isel *s, Node *n)
+static void
+call(Isel *s, Node *n)
 {
 	AsmOp op;
 	Node *fn;
@@ -473,7 +495,8 @@ static void call(Isel *s, Node *n)
 	g(s, op, f, NULL);
 }
 
-static size_t countargs(Type *t)
+static size_t
+countargs(Type *t)
 {
 	size_t nargs;
 
@@ -488,7 +511,8 @@ static size_t countargs(Type *t)
 	return nargs;
 }
 
-static Loc *gencall(Isel *s, Node *n)
+static Loc *
+gencall(Isel *s, Node *n)
 {
 	Loc *src, *dst, *arg;	/* values we reduced */
 	size_t argsz, argoff, nargs, vasplit;
@@ -584,7 +608,8 @@ static Loc *gencall(Isel *s, Node *n)
 	return ret;
 }
 
-Loc *selexpr(Isel *s, Node *n)
+Loc *
+selexpr(Isel *s, Node *n)
 {
 	Loc *a, *b, *c, *d, *r;
 	Loc *edx, *cl; /* x86 wants some hard-coded regs */
@@ -768,7 +793,7 @@ Loc *selexpr(Isel *s, Node *n)
 	case Ocallind:
 			 r = gencall(s, n);
 			 break;
-	case Oret: 
+	case Oret:
 			 a = locstrlbl(s->cfg->end->lbls[0]);
 			 g(s, Ijmp, a, NULL);
 			 break;
@@ -858,7 +883,7 @@ Loc *selexpr(Isel *s, Node *n)
 	case Opostdec: case Olor: case Oland: case Oaddeq:
 	case Osubeq: case Omuleq: case Odiveq: case Omodeq: case Oboreq:
 	case Obandeq: case Obxoreq: case Obsleq: case Obsreq: case Omemb:
-	case Oslbase: case Osllen: case Ocast: case Outag: case Oudata: 
+	case Oslbase: case Osllen: case Ocast: case Outag: case Oudata:
 	case Oucon: case Otup: case Oarr: case Ostruct:
 	case Oslice: case Oidx: case Osize: case Otupget:
 	case Obreak: case Ocontinue:
@@ -870,7 +895,8 @@ Loc *selexpr(Isel *s, Node *n)
 	return r;
 }
 
-static void isel(Isel *s, Node *n)
+static void
+isel(Isel *s, Node *n)
 {
 	switch (n->type) {
 	case Nexpr:
@@ -885,12 +911,14 @@ static void isel(Isel *s, Node *n)
 }
 
 /* %rax is for int returns, %xmm0d is for floating returns */
-Reg savedregs[] = {
+Reg
+savedregs[] = {
 	Rr12, Rr13, Rr14, Rr15,
 	Rnone
 };
 
-void addarglocs(Isel *s, Func *fn)
+void
+addarglocs(Isel *s, Func *fn)
 {
 	size_t i, nints, nfloats, nargs;
 	size_t argoff;
@@ -904,7 +932,7 @@ void addarglocs(Isel *s, Func *fn)
 	vararg = 0;
 	nargs = countargs(fn->type);
 	for (i = 0; i < fn->nargs; i++) {
-		arg = fn->args[i]; 
+		arg = fn->args[i];
 		argoff = alignto(argoff, decltype(arg));
 		if (i >= nargs)
 			vararg = 1;
@@ -931,7 +959,8 @@ void addarglocs(Isel *s, Func *fn)
 	}
 }
 
-static void prologue(Isel *s, Func *fn, size_t sz)
+static void
+prologue(Isel *s, Func *fn, size_t sz)
 {
 	Loc *rsp;
 	Loc *rbp;
@@ -963,7 +992,8 @@ static void prologue(Isel *s, Func *fn, size_t sz)
 	s->stksz = stksz; /* need to update if we spill */
 }
 
-static void epilogue(Isel *s)
+static void
+epilogue(Isel *s)
 {
 	Loc *rsp, *rbp;
 	Loc *ret;
@@ -992,7 +1022,8 @@ static void epilogue(Isel *s)
 	g(s, Iret, NULL);
 }
 
-static Asmbb *mkasmbb(Bb *bb)
+static Asmbb *
+mkasmbb(Bb *bb)
 {
 	Asmbb *as;
 
@@ -1007,7 +1038,8 @@ static Asmbb *mkasmbb(Bb *bb)
 	return as;
 }
 
-void selfunc(Isel *is, Func *fn, Htab *globls, Htab *strtab)
+void
+selfunc(Isel *is, Func *fn, Htab *globls, Htab *strtab)
 {
 	int fileid, lastline;
 	Node *n;

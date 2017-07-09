@@ -11,12 +11,13 @@
 #define Initsz 16
 #define Seed 2928213749
 
-ulong murmurhash2(void *key, size_t len);
+static ulong murmurhash2(void *key, size_t len);
 
 /* Creates a new empty hash table, using 'hash' as the
  * hash funciton, and 'cmp' to verify that there are no
  * hash collisions. */
-Htab *mkht(ulong (*hash)(void *key), int (*cmp)(void *k1, void *k2))
+Htab *
+mkht(ulong (*hash)(void *key), int (*cmp)(void *k1, void *k2))
 {
 	Htab *ht;
 
@@ -36,7 +37,8 @@ Htab *mkht(ulong (*hash)(void *key), int (*cmp)(void *k1, void *k2))
 
 /* Frees a hash table. Passing this function
  * NULL is a no-op. */
-void htfree(Htab *ht)
+void
+htfree(Htab *ht)
 {
 	if (!ht)
 		return;
@@ -49,7 +51,8 @@ void htfree(Htab *ht)
 
 /* Offsets the hash so that '0' can be
  * used as a 'no valid value */
-static ulong hash(Htab *ht, void *k)
+static ulong
+hash(Htab *ht, void *k)
 {
 	ulong h;
 	h = ht->hash(k);
@@ -62,7 +65,8 @@ static ulong hash(Htab *ht, void *k)
 /* Resizes the hash table by copying all
  * the old keys into the right slots in a
  * new table. */
-static void grow(Htab *ht, int sz)
+static void
+grow(Htab *ht, int sz)
 {
 	void **oldk;
 	void **oldv;
@@ -96,9 +100,10 @@ static void grow(Htab *ht, int sz)
 }
 
 /* Inserts 'k' into the hash table, possibly
- * killing any previous key that compares
+ * killing any previous key that compare
  * as equal. */
-int htput(Htab *ht, void *k, void *v)
+int
+htput(Htab *ht, void *k, void *v)
 {
 	int i;
 	ulong h;
@@ -120,7 +125,8 @@ int htput(Htab *ht, void *k, void *v)
 		i = (h + di) & (ht->sz - 1);
 	}
 	ht->nelt++;
-conflicted:
+conflicted
+:
 	if (ht->dead[i])
 		ht->ndead--;
 	ht->hashes[i] = h;
@@ -137,7 +143,8 @@ conflicted:
 
 /* Finds the index that we would insert
  * the key into */
-static ssize_t htidx(Htab *ht, void *k)
+static ssize_t
+htidx(Htab *ht, void *k)
 {
 	ssize_t i;
 	ulong h;
@@ -147,7 +154,8 @@ static ssize_t htidx(Htab *ht, void *k)
 	h = hash(ht, k);
 	i = h & (ht->sz - 1);
 	while (ht->hashes[i] && !ht->dead[i] && ht->hashes[i] != h) {
-searchmore:
+searchmore
+:
 		di++;
 		i = (h + di) & (ht->sz - 1);
 	}
@@ -161,9 +169,10 @@ searchmore:
 /* Looks up a key, returning NULL if
  * the value is not present. Note,
  * if NULL is a valid value, you need
- * to check with hthas() to see if it's
+ * to check with hthas() to see if it'
  * not there */
-void *htget(Htab *ht, void *k)
+void *
+htget(Htab *ht, void *k)
 {
 	ssize_t i;
 
@@ -174,7 +183,8 @@ void *htget(Htab *ht, void *k)
 		return ht->vals[i];
 }
 
-void htdel(Htab *ht, void *k)
+void
+htdel(Htab *ht, void *k)
 {
 	ssize_t i;
 
@@ -189,14 +199,16 @@ void htdel(Htab *ht, void *k)
 }
 
 /* Tests for 'k's presence in 'ht' */
-int hthas(Htab *ht, void *k) { return htidx(ht, k) >= 0; }
+int
+hthas(Htab *ht, void *k) { return htidx(ht, k) >= 0; }
 
 /* Returns a list of all keys in the hash
  * table, storing the size of the returned
  * array in 'nkeys'. NB: the value returned
  * is allocated on the heap, and it is the
  * job of the caller to free it */
-void **htkeys(Htab *ht, size_t *nkeys)
+void **
+htkeys(Htab *ht, size_t *nkeys)
 {
 	void **k;
 	size_t i, j;
@@ -210,7 +222,8 @@ void **htkeys(Htab *ht, size_t *nkeys)
 	return k;
 }
 
-ulong strhash(void *_s)
+ulong
+strhash(void *_s)
 {
 	char *s;
 
@@ -220,7 +233,8 @@ ulong strhash(void *_s)
 	return murmurhash2(_s, strlen(_s));
 }
 
-int streq(void *a, void *b)
+int
+streq(void *a, void *b)
 {
 	if (a == b)
 		return 1;
@@ -229,7 +243,8 @@ int streq(void *a, void *b)
 	return !strcmp(a, b);
 }
 
-ulong strlithash(void *_s)
+ulong
+strlithash(void *_s)
 {
 	Str *s;
 
@@ -239,7 +254,8 @@ ulong strlithash(void *_s)
 	return murmurhash2(s->buf, s->len);
 }
 
-int strliteq(void *_a, void *_b)
+int
+strliteq(void *_a, void *_b)
 {
 	Str *a, *b;
 
@@ -254,27 +270,32 @@ int strliteq(void *_a, void *_b)
 	return !memcmp(a->buf, b->buf, a->len);
 }
 
-ulong ptrhash(void *key)
-{ 
+ulong
+ptrhash(void *key)
+{
 	return inthash((uintptr_t)key);
 }
 
-ulong inthash(uint64_t key)
+ulong
+inthash(uint64_t key)
 {
 	return murmurhash2(&key, sizeof key);
 }
 
-int inteq(uint64_t a, uint64_t b)
+int
+inteq(uint64_t a, uint64_t b)
 {
 	return a == b;
 }
 
-int ptreq(void *a, void *b)
+int
+ptreq(void *a, void *b)
 {
 	return a == b;
 }
 
-ulong murmurhash2 (void *ptr, size_t len)
+static ulong
+murmurhash2 (void *ptr, size_t len)
 {
 	uint32_t m = 0x5bd1e995;
 	uint32_t r = 24;

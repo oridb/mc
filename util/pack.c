@@ -14,7 +14,8 @@
 #include "util.h"
 
 /* endian packing */
-void be64(vlong v, byte buf[8])
+void
+be64(vlong v, byte buf[8])
 {
 	buf[0] = (v >> 56) & 0xff;
 	buf[1] = (v >> 48) & 0xff;
@@ -26,7 +27,8 @@ void be64(vlong v, byte buf[8])
 	buf[7] = (v >> 0) & 0xff;
 }
 
-vlong host64(byte buf[8])
+vlong
+host64(byte buf[8])
 {
 	vlong v = 0;
 
@@ -41,7 +43,8 @@ vlong host64(byte buf[8])
 	return v;
 }
 
-void be32(long v, byte buf[4])
+void
+be32(long v, byte buf[4])
 {
 	buf[0] = (v >> 24) & 0xff;
 	buf[1] = (v >> 16) & 0xff;
@@ -49,7 +52,8 @@ void be32(long v, byte buf[4])
 	buf[3] = (v >> 0) & 0xff;
 }
 
-long host32(byte buf[4])
+long
+host32(byte buf[4])
 {
 	int32_t v = 0;
 	v |= ((long)buf[0] << 24);
@@ -59,7 +63,8 @@ long host32(byte buf[4])
 	return v;
 }
 
-void wrbuf(FILE *fd, void *p, size_t sz)
+void
+wrbuf(FILE *fd, void *p, size_t sz)
 {
 	size_t n;
 	char *buf;
@@ -75,7 +80,8 @@ void wrbuf(FILE *fd, void *p, size_t sz)
 	}
 }
 
-void rdbuf(FILE *fd, void *buf, size_t sz)
+void
+rdbuf(FILE *fd, void *buf, size_t sz)
 {
 	size_t n;
 
@@ -89,13 +95,15 @@ void rdbuf(FILE *fd, void *buf, size_t sz)
 	}
 }
 
-void wrbyte(FILE *fd, char val)
+void
+wrbyte(FILE *fd, char val)
 {
 	if (fputc(val, fd) == EOF)
 		die("Unexpected EOF");
 }
 
-char rdbyte(FILE *fd)
+char
+rdbyte(FILE *fd)
 {
 	int c;
 	c = fgetc(fd);
@@ -104,21 +112,24 @@ char rdbyte(FILE *fd)
 	return c;
 }
 
-void wrint(FILE *fd, long val)
+void
+wrint(FILE *fd, long val)
 {
 	byte buf[4];
 	be32(val, buf);
 	wrbuf(fd, buf, 4);
 }
 
-long rdint(FILE *fd)
+long
+rdint(FILE *fd)
 {
 	byte buf[4];
 	rdbuf(fd, buf, 4);
 	return host32(buf);
 }
 
-void wrstr(FILE *fd, char *val)
+void
+wrstr(FILE *fd, char *val)
 {
 	size_t len;
 
@@ -131,7 +142,8 @@ void wrstr(FILE *fd, char *val)
 	}
 }
 
-char *rdstr(FILE *fd)
+char *
+rdstr(FILE *fd)
 {
 	ssize_t len;
 	char *s;
@@ -147,13 +159,15 @@ char *rdstr(FILE *fd)
 	}
 }
 
-void wrlenstr(FILE *fd, Str str)
+void
+wrlenstr(FILE *fd, Str str)
 {
 	wrint(fd, str.len);
 	wrbuf(fd, str.buf, str.len);
 }
 
-void rdlenstr(FILE *fd, Str *str)
+void
+rdlenstr(FILE *fd, Str *str)
 {
 	str->len = rdint(fd);
 	str->buf = xalloc(str->len + 1);
@@ -161,7 +175,8 @@ void rdlenstr(FILE *fd, Str *str)
 	str->buf[str->len] = '\0';
 }
 
-void wrflt(FILE *fd, double val)
+void
+wrflt(FILE *fd, double val)
 {
 	byte buf[8];
 	/* Assumption: We have 'val' in 64 bit IEEE format */
@@ -175,7 +190,8 @@ void wrflt(FILE *fd, double val)
 	wrbuf(fd, buf, 8);
 }
 
-double rdflt(FILE *fd)
+double
+rdflt(FILE *fd)
 {
 	byte buf[8];
 	union {
@@ -188,7 +204,8 @@ double rdflt(FILE *fd)
 	return u.fval;
 }
 
-size_t bprintf(char *buf, size_t sz, char *fmt, ...)
+size_t
+bprintf(char *buf, size_t sz, char *fmt, ...)
 {
 	va_list ap;
 	size_t n;
@@ -202,12 +219,14 @@ size_t bprintf(char *buf, size_t sz, char *fmt, ...)
 	return n;
 }
 
-void wrbool(FILE *fd, int val)
-{ 
+void
+wrbool(FILE *fd, int val)
+{
 	wrbyte(fd, val);
 }
 
-int rdbool(FILE *fd) 
+int
+rdbool(FILE *fd)
 {
-	return rdbyte(fd); 
+	return rdbyte(fd);
 }

@@ -16,11 +16,12 @@
 #include "asm.h"
 
 
-/* we sometimes leave dead code generated after 
+/* we sometimes leave dead code generated after
  * a non-conditional jump. This code scans for
- * the non-conditional exit from the BB, and truncates
+ * the non-conditional exit from the BB, and truncate
  * at that point */
-static void deadcode(Isel *s, Asmbb *bb)
+static void
+deadcode(Isel *s, Asmbb *bb)
 {
 	size_t i;
 
@@ -40,8 +41,9 @@ static void deadcode(Isel *s, Asmbb *bb)
  *      jmp .l1
  *      .l1:
  * TODO: check for jumps over jumps.
- */     
-static void nopjmp(Isel *s, Asmbb *bb, size_t idx)
+ */
+static void
+nopjmp(Isel *s, Asmbb *bb, size_t idx)
 {
 	Insn *jmp;
 	Loc *targ;
@@ -79,7 +81,8 @@ static void nopjmp(Isel *s, Asmbb *bb, size_t idx)
 	}
 }
 
-void peep(Isel *s)
+void
+peep(Isel *s)
 {
 	size_t i;
 

@@ -136,7 +136,8 @@ static int _K[Nclass] = {
 	[Classflt] = 16,
 };
 
-Rclass rclass(Loc *l)
+Rclass
+rclass(Loc *l)
 {
 	switch (l->mode) {
 	case ModeNone:	return Classbad;
@@ -153,7 +154,8 @@ Rclass rclass(Loc *l)
 }
 
 /* %esp, %ebp are not in the allocatable pool */
-static int isfixreg(Loc *l)
+static int
+isfixreg(Loc *l)
 {
 	if (l->reg.colour == Resp)
 		return 1;
@@ -162,14 +164,15 @@ static int isfixreg(Loc *l)
 	return 0;
 }
 
-static size_t uses(Insn *insn, regid *u)
+static size_t
+uses(Insn *insn, regid *u)
 {
 	size_t i, j;
 	int k;
 	Loc *m;
 
 	j = 0;
-	/* Add all the registers used and defined. Duplicates
+	/* Add all the registers used and defined. Duplicate
 	 * in this list are fine, since they're being added to
 	 * a set anyways */
 	for (i = 0; i < Maxarg; i++) {
@@ -205,13 +208,14 @@ static size_t uses(Insn *insn, regid *u)
 	return j;
 }
 
-static size_t defs(Insn *insn, regid *d)
+static size_t
+defs(Insn *insn, regid *d)
 {
 	size_t i, j;
 	int k;
 
 	j = 0;
-	/* Add all the registers dsed and defined. Duplicates
+	/* Add all the registers dsed and defined. Duplicate
 	 * in this list are fine, since they're being added to
 	 * a set anyways */
 	for (i = 0; i < Maxarg; i++) {
@@ -234,7 +238,8 @@ static size_t defs(Insn *insn, regid *d)
 }
 
 /* The uses and defs for an entire BB. */
-static void udcalc(Asmbb *bb)
+static void
+udcalc(Asmbb *bb)
 {
 	regid   u[Nreg], d[Nreg];
 	size_t nu, nd;
@@ -253,12 +258,14 @@ static void udcalc(Asmbb *bb)
 	}
 }
 
-static int istrivial(Isel *s, regid r)
+static int
+istrivial(Isel *s, regid r)
 {
 	return s->degree[r] < _K[rclass(locmap[r])];
 }
 
-static void liveness(Isel *s)
+static void
+liveness(Isel *s)
 {
 	Bitset *old;
 	Asmbb **bb;
@@ -301,21 +308,24 @@ static void liveness(Isel *s)
 }
 
 /* we're only interested in register->register moves */
-static int ismove(Insn *i)
+static int
+ismove(Insn *i)
 {
 	if (i->op != Imov && i->op != Imovs)
 		return 0;
 	return i->args[0]->type == Locreg && i->args[1]->type == Locreg;
 }
 
-static int gbhasedge(Isel *s, size_t u, size_t v)
+static int
+gbhasedge(Isel *s, size_t u, size_t v)
 {
 	size_t i;
 	i = (s->nreg * v) + u;
 	return (s->gbits[i/Sizetbits] & (1ULL <<(i % Sizetbits))) != 0;
 }
 
-static void gbputedge(Isel *s, size_t u, size_t v)
+static void
+gbputedge(Isel *s, size_t u, size_t v)
 {
 	size_t i, j;
 
@@ -326,12 +336,13 @@ static void gbputedge(Isel *s, size_t u, size_t v)
 	assert(gbhasedge(s, u, v) && gbhasedge(s, v, u));
 }
 
-static int wlfind(Loc **wl, size_t nwl, regid v, size_t *idx)
+static int
+wlfind(Loc **wl, size_t nwl, regid v, size_t *idx)
 {
 	size_t i;
 
 	for (i = 0; i < nwl; i++) {
-		if (wl[i]->reg.id == v) { 
+		if (wl[i]->reg.id == v) {
 			*idx = i;
 			return 1;
 		}
@@ -345,7 +356,8 @@ static int wlfind(Loc **wl, size_t nwl, regid v, size_t *idx)
  * we should not increment the degree, since that would
  * be double counting.
  */
-static int degreechange(Isel *s, regid u, regid v)
+static int
+degreechange(Isel *s, regid u, regid v)
 {
 	regid phys, virt, r;
 	size_t i;
@@ -369,7 +381,8 @@ static int degreechange(Isel *s, regid u, regid v)
 	return 1;
 }
 
-static void alputedge(Isel *s, regid u, regid v)
+static void
+alputedge(Isel *s, regid u, regid v)
 {
 	if (s->ngadj[u] == s->gadjsz[u]) {
 		s->gadjsz[u] = s->gadjsz[u]*2 + 1;
@@ -379,26 +392,30 @@ static void alputedge(Isel *s, regid u, regid v)
 	s->ngadj[u]++;
 }
 
-static void wlput(Loc ***wl, size_t *nwl, Loc *l)
+static void
+wlput(Loc ***wl, size_t *nwl, Loc *l)
 {
 	lappend(wl, nwl, l);
 	l->list = wl;
 }
 
-static void wldel(Isel *s, Loc ***wl, size_t *nwl, size_t idx)
+static void
+wldel(Isel *s, Loc ***wl, size_t *nwl, size_t idx)
 {
 	(*wl)[idx]->list = NULL;
 	ldel(wl, nwl, idx);
 }
 
-static void wlputset(Bitset *bs, regid r)
+static void
+wlputset(Bitset *bs, regid r)
 {
 	bsput(bs, r);
 	locmap[r]->list = bs;
 }
 
 
-static void addedge(Isel *s, regid u, regid v)
+static void
+addedge(Isel *s, regid u, regid v)
 {
 	if (u == v || gbhasedge(s, u, v))
 		return;
@@ -423,7 +440,8 @@ static void addedge(Isel *s, regid u, regid v)
 	}
 }
 
-static void gfree(Isel *s)
+static void
+gfree(Isel *s)
 {
 	size_t i;
 
@@ -434,7 +452,8 @@ static void gfree(Isel *s)
 	free(s->ngadj);
 }
 
-static void setup(Isel *s)
+static void
+setup(Isel *s)
 {
 	size_t gchunks;
 	size_t i;
@@ -471,7 +490,8 @@ static void setup(Isel *s)
 		s->degree[i] = 1<<16;
 }
 
-static void build(Isel *s)
+static void
+build(Isel *s)
 {
 	regid u[Nreg], d[Nreg];
 	size_t nu, nd;
@@ -536,7 +556,7 @@ static void build(Isel *s)
 					wlputset(s->initial, d[k]);
 			}
 
-			/* moves get special treatment, since we don't want spurious
+			/* moves get special treatment, since we don't want spuriou
 			 * edges between the src and dest */
 			if (ismove(insn)) {
 				/* live \= uses(i) */
@@ -585,7 +605,8 @@ static void build(Isel *s)
 #undef DEL
 }
 
-static int adjavail(Isel *s, regid r)
+static int
+adjavail(Isel *s, regid r)
 {
 	if (locmap[r]->list == &s->selstk)
 		return 0;
@@ -594,7 +615,8 @@ static int adjavail(Isel *s, regid r)
 	return 1;
 }
 
-static size_t nodemoves(Isel *s, regid n, Insn ***pil)
+static size_t
+nodemoves(Isel *s, regid n, Insn ***pil)
 {
 	size_t i, count;
 	regid rid;
@@ -612,7 +634,8 @@ static size_t nodemoves(Isel *s, regid n, Insn ***pil)
 }
 
 
-static int moverelated(Isel *s, regid n)
+static int
+moverelated(Isel *s, regid n)
 {
 	size_t i;
 
@@ -625,7 +648,8 @@ static int moverelated(Isel *s, regid n)
 	return 0;
 }
 
-static void mkworklist(Isel *s)
+static void
+mkworklist(Isel *s)
 {
 	size_t i;
 
@@ -643,7 +667,8 @@ static void mkworklist(Isel *s)
 	}
 }
 
-static void enablemove(Isel *s, regid n)
+static void
+enablemove(Isel *s, regid n)
 {
 	size_t i, j;
 	Insn **il;
@@ -665,7 +690,8 @@ static void enablemove(Isel *s, regid n)
 	free(il);
 }
 
-static void decdegree(Isel *s, regid m)
+static void
+decdegree(Isel *s, regid m)
 {
 	int before, after;
 	int found;
@@ -715,7 +741,8 @@ static void decdegree(Isel *s, regid m)
 	}
 }
 
-static void simp(Isel *s)
+static void
+simp(Isel *s)
 {
 	Loc *l;
 	regid m;
@@ -730,11 +757,12 @@ static void simp(Isel *s)
 	}
 }
 
-static regid getmappedalias(Loc **aliasmap, size_t nreg, regid id)
+static regid
+getmappedalias(Loc **aliasmap, size_t nreg, regid id)
 {
-	/* 
+	/*
 	 * if we get called from rewrite(), we can get a register that
-	 * we just created, with an id bigger than the number of entries
+	 * we just created, with an id bigger than the number of entrie
 	 * in the alias map. We should just return its id in that case.
 	 */
 	while (id < nreg) {
@@ -745,12 +773,14 @@ static regid getmappedalias(Loc **aliasmap, size_t nreg, regid id)
 	return id;
 }
 
-static regid getalias(Isel *s, regid id)
+static regid
+getalias(Isel *s, regid id)
 {
 	return getmappedalias(s->aliasmap, s->nreg, id);
 }
 
-static void wladd(Isel *s, regid u)
+static void
+wladd(Isel *s, regid u)
 {
 	size_t i;
 
@@ -767,7 +797,8 @@ static void wladd(Isel *s, regid u)
 	wlput(&s->wlsimp, &s->nwlsimp, locmap[u]);
 }
 
-static int conservative(Isel *s, regid u, regid v)
+static int
+conservative(Isel *s, regid u, regid v)
 {
 	int k;
 	size_t i;
@@ -788,12 +819,14 @@ static int conservative(Isel *s, regid u, regid v)
 }
 
 /* FIXME: is this actually correct? */
-static int ok(Isel *s, regid t, regid r)
+static int
+ok(Isel *s, regid t, regid r)
 {
 	return istrivial(s, t) || bshas(s->prepainted, t) || gbhasedge(s, t, r);
 }
 
-static int combinable(Isel *s, regid u, regid v)
+static int
+combinable(Isel *s, regid u, regid v)
 {
 	regid t;
 	size_t i;
@@ -816,7 +849,8 @@ static int combinable(Isel *s, regid u, regid v)
 	return 1;
 }
 
-static void combine(Isel *s, regid u, regid v)
+static void
+combine(Isel *s, regid u, regid v)
 {
 	regid t;
 	size_t idx;
@@ -862,7 +896,8 @@ static void combine(Isel *s, regid u, regid v)
 	}
 }
 
-static int constrained(Isel *s, regid u, regid v)
+static int
+constrained(Isel *s, regid u, regid v)
 {
 	size_t i;
 
@@ -875,7 +910,8 @@ static int constrained(Isel *s, regid u, regid v)
 	return gbhasedge(s, u, v);
 }
 
-static void coalesce(Isel *s)
+static void
+coalesce(Isel *s)
 {
 	Insn *m;
 	regid u, v, tmp;
@@ -909,7 +945,8 @@ static void coalesce(Isel *s)
 	}
 }
 
-static int mldel(Insn ***ml, size_t *nml, Bitset *bs, Insn *m)
+static int
+mldel(Insn ***ml, size_t *nml, Bitset *bs, Insn *m)
 {
 	size_t i;
 	if (bshas(bs, m->uid)) {
@@ -924,7 +961,8 @@ static int mldel(Insn ***ml, size_t *nml, Bitset *bs, Insn *m)
 	return 0;
 }
 
-static void freezemoves(Isel *s, Loc *u)
+static void
+freezemoves(Isel *s, Loc *u)
 {
 	size_t i;
 	Insn **ml;
@@ -956,7 +994,8 @@ static void freezemoves(Isel *s, Loc *u)
 	lfree(&ml, &nml);
 }
 
-static void freeze(Isel *s)
+static void
+freeze(Isel *s)
 {
 	Loc *l;
 
@@ -966,7 +1005,8 @@ static void freeze(Isel *s)
 }
 
 /* Select the spill candidates */
-static void selspill(Isel *s)
+static void
+selspill(Isel *s)
 {
 	size_t i;
 	Loc *m;
@@ -999,7 +1039,8 @@ static void selspill(Isel *s)
  * Selects the colours for registers, spilling to the
  * stack if no free registers can be found.
  */
-static int paint(Isel *s)
+static int
+paint(Isel *s)
 {
 	int taken[Nreg];
 	Loc *n, *w;
@@ -1042,7 +1083,8 @@ static int paint(Isel *s)
 	return spilled;
 }
 
-static Loc *mapfind(Isel *s, Htab *map, Loc *old)
+static Loc *
+mapfind(Isel *s, Htab *map, Loc *old)
 {
 	Loc *new;
 	Loc *base;
@@ -1077,7 +1119,8 @@ static Loc *mapfind(Isel *s, Htab *map, Loc *old)
 	return old;
 }
 
-static Loc *spillslot(Isel *s, regid reg)
+static Loc *
+spillslot(Isel *s, regid reg)
 {
 	size_t stkoff;
 
@@ -1085,7 +1128,8 @@ static Loc *spillslot(Isel *s, regid reg)
 	return locmem(-stkoff, locphysreg(Rrbp), NULL, locmap[reg]->mode);
 }
 
-static void updatelocs(Isel *s, Htab *map, Insn *insn)
+static void
+updatelocs(Isel *s, Htab *map, Insn *insn)
 {
 	size_t i;
 
@@ -1097,10 +1141,11 @@ static void updatelocs(Isel *s, Htab *map, Insn *insn)
 
 /*
  * Takes two tables for remappings, of size Nreg/Nreg,
- * and fills them, storign the number of uses or defs. Returns
+ * and fills them, storign the number of uses or defs. Return
  * whether there are any remappings at all.
  */
-static int remap(Isel *s, Htab *map, Insn *insn, regid *use, size_t nuse, regid *def, size_t ndef)
+static int
+remap(Isel *s, Htab *map, Insn *insn, regid *use, size_t nuse, regid *def, size_t ndef)
 {
 	regid ruse, rdef;
 	int remapped;
@@ -1133,7 +1178,8 @@ static int remap(Isel *s, Htab *map, Insn *insn, regid *use, size_t nuse, regid 
 	return remapped;
 }
 
-static int nopmov(Isel *s, Insn *insn)
+static int
+nopmov(Isel *s, Insn *insn)
 {
 	if (insn->op != Imov)
 		return 0;
@@ -1143,12 +1189,13 @@ static int nopmov(Isel *s, Insn *insn)
 	return insn->args[0]->reg.id == insn->args[1]->reg.id && !bshas(s->prepainted, insn->args[0]->reg.id);
 }
 
-void replacealias(Isel *s, Loc **map, size_t nreg, Insn *insn)
+void
+replacealias(Isel *s, Loc **map, size_t nreg, Insn *insn)
 {
 	size_t i;
 	Loc *l;
 
-	if (!map) 
+	if (!map)
 		return;
 	for (i = 0; i < insn->nargs; i++) {
 		l = insn->args[i];
@@ -1163,7 +1210,8 @@ void replacealias(Isel *s, Loc **map, size_t nreg, Insn *insn)
 	}
 }
 
-static ulong reglochash(void *p)
+static ulong
+reglochash(void *p)
 {
 	Loc *l;
 
@@ -1172,7 +1220,8 @@ static ulong reglochash(void *p)
 }
 
 
-static int regloceq(void *pa, void *pb)
+static int
+regloceq(void *pa, void *pb)
 {
 	Loc *a, *b;
 
@@ -1184,7 +1233,8 @@ static int regloceq(void *pa, void *pb)
  * Rewrite instructions using spilled registers, inserting
  * appropriate loads and stores into the BB
  */
-static void rewritebb(Isel *s, Asmbb *bb, Loc **aliasmap)
+static void
+rewritebb(Isel *s, Asmbb *bb, Loc **aliasmap)
 {
 	regid use[Nreg], def[Nreg];
 	size_t nuse, ndef;
@@ -1249,7 +1299,8 @@ static void rewritebb(Isel *s, Asmbb *bb, Loc **aliasmap)
 	bb->ni = nnew;
 }
 
-static void addspill(Isel *s, Loc *l)
+static void
+addspill(Isel *s, Loc *l)
 {
 	s->stksz->lit += modesize[l->mode];
 	s->stksz->lit = align(s->stksz->lit, modesize[l->mode]);
@@ -1261,9 +1312,9 @@ static void addspill(Isel *s, Loc *l)
 	htput(s->spillslots, itop(l->reg.id), itop(s->stksz->lit));
 }
 
-/* 
- * Rewrites the function code so that it no longer contains
- * references to spilled registers. Every use of spilled regs
+/*
+ * Rewrites the function code so that it no longer contain
+ * references to spilled registers. Every use of spilled reg
  *
  *      insn %rX,%rY
  *
@@ -1273,7 +1324,8 @@ static void addspill(Isel *s, Loc *l)
  *      insn %rZ,%rW
  *      mov %rW,234(%rsp)
  */
-static void rewrite(Isel *s, Loc **aliasmap)
+static void
+rewrite(Isel *s, Loc **aliasmap)
 {
 	size_t i;
 
@@ -1289,7 +1341,7 @@ static void rewrite(Isel *s, Loc **aliasmap)
 	bsclear(s->spilled);
 }
 
-/* 
+/*
  * Coalescing registers leaves a lot
  * of moves that look like
  *
@@ -1297,7 +1349,8 @@ static void rewrite(Isel *s, Loc **aliasmap)
  *
  * This is useless. This deletes them.
  */
-static void delnops(Isel *s)
+static void
+delnops(Isel *s)
 {
 	Insn *insn;
 	Asmbb *bb;
@@ -1325,7 +1378,8 @@ static void delnops(Isel *s)
 		dumpasm(s, stdout);
 }
 
-void regalloc(Isel *s)
+void
+regalloc(Isel *s)
 {
 	int spilled;
 	size_t i;
@@ -1374,7 +1428,8 @@ void regalloc(Isel *s)
 	gfree(s);
 }
 
-void wlprint(FILE *fd, char *name, Loc **wl, size_t nwl)
+void
+wlprint(FILE *fd, char *name, Loc **wl, size_t nwl)
 {
 	size_t i;
 	char *sep;
@@ -1390,7 +1445,8 @@ void wlprint(FILE *fd, char *name, Loc **wl, size_t nwl)
 	fprintf(fd, "]\n");
 }
 
-static void setprint(FILE *fd, Bitset *s)
+static void
+setprint(FILE *fd, Bitset *s)
 {
 	char *sep;
 	size_t i;
@@ -1405,7 +1461,8 @@ static void setprint(FILE *fd, Bitset *s)
 	fprintf(fd, "\n");
 }
 
-static void locsetprint(FILE *fd, Bitset *s)
+static void
+locsetprint(FILE *fd, Bitset *s)
 {
 	char *sep;
 	size_t i;
@@ -1421,7 +1478,8 @@ static void locsetprint(FILE *fd, Bitset *s)
 	fprintf(fd, "\n");
 }
 
-static void printedge(FILE *fd, char *msg, size_t a, size_t b)
+static void
+printedge(FILE *fd, char *msg, size_t a, size_t b)
 {
 	fprintf(fd, "\t%s ", msg);
 	dbglocprint(fd, locmap[a], 'x');
@@ -1430,7 +1488,8 @@ static void printedge(FILE *fd, char *msg, size_t a, size_t b)
 	fprintf(fd, "\n");
 }
 
-void dumpasm(Isel *s, FILE *fd)
+void
+dumpasm(Isel *s, FILE *fd)
 {
 	size_t i, j;
 	char *sep;
