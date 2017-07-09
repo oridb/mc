@@ -264,7 +264,7 @@ static int mergedecl(Node *old, Node *new)
 {
 	Node *e, *g;
 
-	if (old->decl.ishidden || new->decl.ishidden) {
+	if (old->decl.isimport && new->decl.isimport) {
 		old->decl.ishidden = old->decl.ishidden && new->decl.ishidden;
 		return 1;
 	}
