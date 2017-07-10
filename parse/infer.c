@@ -15,38 +15,6 @@
 #include "util.h"
 #include "parse.h"
 
-/* tracking where we are in the inference */
-int ingeneric;
-int inaggr;
-int indentdepth;
-Type *ret;
-Srcloc *usrc;
-size_t nusrc;
-
-/* post-inference checking/unification */
-Htab *delayed;
-Node **postcheck;
-size_t npostcheck;
-Stab **postcheckscope;
-size_t npostcheckscope;
-
-/* generic declarations to be specialized */
-Node **genericdecls;
-size_t ngenericdecls;
-Node **impldecl;
-size_t nimpldecl;
-
-/* specializations of generics */
-Node **specializations;
-size_t nspecializations;
-Stab **specializationscope;
-size_t nspecializationscope;
-Htab *seqbase;
-
-/* type params bound at the current point */
-Htab **tybindings;
-size_t ntybindings;
-
 static void infernode(Node **np, Type *ret, int *sawret);
 static void inferexpr(Node **np, Type *ret, int *sawret);
 static void inferdecl(Node *n);
@@ -60,6 +28,37 @@ static void unbind(Node *n);
 static Type *unify(Node *ctx, Type *a, Type *b);
 static Type *tyfix(Node *ctx, Type *orig, int noerr);
 static void typesub(Node *n, int noerr);
+
+/* tracking where we are in the inference */
+static int ingeneric;
+static int inaggr;
+static int indentdepth;
+static Srcloc *unifysrc;
+static size_t nunifysrc;
+
+/* post-inference checking/unification */
+static Htab *delayed;
+static Node **postcheck;
+static size_t npostcheck;
+static Stab **postcheckscope;
+static size_t npostcheckscope;
+
+/* generic declarations to be specialized */
+static Node **genericdecls;
+static size_t ngenericdecls;
+static Node **impldecl;
+static size_t nimpldecl;
+
+/* specializations of generics */
+static Node **specializations;
+static size_t nspecializations;
+static Stab **specializationscope;
+static size_t nspecializationscope;
+static Htab *seqbase;
+
+/* type params bound at the current point */
+static Htab **tybindings;
+static size_t ntybindings;
 
 static void
 ctxstrcall(char *buf, size_t sz, Node *n)
@@ -122,12 +121,12 @@ static void
 marksrc(Type *t, Srcloc l)
 {
 	t = tf(t);
-	if (t->tid >= nusrc) {
-		usrc = zrealloc(usrc, nusrc*sizeof(Srcloc), (t->tid + 1)*sizeof(Srcloc));
-		nusrc = t->tid + 1;
+	if (t->tid >= nunifysrc) {
+		unifysrc = zrealloc(unifysrc, nunifysrc*sizeof(Srcloc), (t->tid + 1)*sizeof(Srcloc));
+		nunifysrc = t->tid + 1;
 	}
-	if (usrc[t->tid].line <= 0)
-		usrc[t->tid] = l;
+	if (unifysrc[t->tid].line <= 0)
+		unifysrc[t->tid] = l;
 }
 
 static char *
@@ -138,8 +137,8 @@ srcstr(Type *ty)
 	char *s;
 
 	src[0] = 0;
-	if (nusrc > ty->tid && usrc[ty->tid].line > 0) {
-		l = usrc[ty->tid];
+	if (nunifysrc > ty->tid && unifysrc[ty->tid].line > 0) {
+		l = unifysrc[ty->tid];
 		s = tystr(ty);
 		snprintf(src, sizeof src, "\n\t%s from %s:%d", s, fname(l), lnum(l));
 		free(s);
@@ -913,8 +912,8 @@ verifytraits(Node *ctx, Type *a, Type *b)
 		tyfmt(abuf, sizeof abuf, a);
 		tyfmt(bbuf, sizeof bbuf, b);
 		bsrc[0] = 0;
-		if (nusrc > b->tid && usrc[b->tid].line > 0) {
-			l = usrc[b->tid];
+		if (nunifysrc > b->tid && unifysrc[b->tid].line > 0) {
+			l = unifysrc[b->tid];
 			snprintf(bsrc, sizeof asrc, "\n\t%s from %s:%d", bbuf, fname(l), lnum(l));
 		}
 		fatal(ctx, "%s missing traits %s for %s near %s%s%s",

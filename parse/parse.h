@@ -7,6 +7,7 @@ typedef struct Tok Tok;
 typedef struct Node Node;
 typedef struct Ucon Ucon;
 typedef struct Stab Stab;
+typedef struct Tyenv Tyenv;
 
 typedef struct Type Type;
 typedef struct Trait Trait;
