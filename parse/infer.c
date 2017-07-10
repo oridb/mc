@@ -946,14 +946,13 @@ mergetraits(Node *ctx, Type *a, Type *b)
 static int
 tyrank(Type *t)
 {
-	/* plain tyvar */
 	if (t->type == Tyvar) {
+		/* has associated iterator type */
 		if (hthas(seqbase, t))
 			return 1;
 		else
 			return 0;
 	}
-	/* concrete type */
 	return 2;
 }
 
