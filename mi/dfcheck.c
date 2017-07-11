@@ -29,7 +29,8 @@ checkundef(Node *n, Reaching *r, Bitset *reach, Bitset *kill)
 			return;
 		for (j = 0; j < r->ndefs[did]; j++) {
 			t = tybase(exprtype(n));
-			if (t->type == Tystruct || t->type == Tyunion || t->type == Tyarray || t->type == Tytuple || t->type == Tyvoid)
+			if (t->type == Tystruct || t->type == Tyunion || t->type == Tyarray ||
+				t->type == Tytuple || t->type == Tyvoid)
 				continue;
 			if (bshas(kill, r->defs[did][j]))
 				continue;

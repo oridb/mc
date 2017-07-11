@@ -876,18 +876,11 @@ constrain(Node *ctx, Type *a, Trait *c)
 	}
 }
 
-/* does b satisfy all the constraints of a? */
 static int
-checktraits(Type *a, Type *b)
+satisfiestraits(Type *a, Type *b)
 {
-	/* a has no traits to satisfy */
-	if (!a->traits)
+	if (!a->traits || bscount(a->traits) == 0)
 		return 1;
-	/* b satisfies no traits; only valid if a requires none */
-	if (!b->traits)
-		return bscount(a->traits) == 0;
-	/* if a->traits is a subset of b->traits, all of
-	 * a's constraints are satisfied by b. */
 	return bsissubset(a->traits, b->traits);
 }
 
@@ -900,7 +893,7 @@ verifytraits(Node *ctx, Type *a, Type *b)
 	char traitbuf[64], abuf[64], bbuf[64];
 	char asrc[64], bsrc[64];
 
-	if (!checktraits(a, b)) {
+	if (!satisfiestraits(a, b)) {
 		sep = "";
 		n = 0;
 		for (i = 0; bsiter(a->traits, &i); i++) {
@@ -2142,9 +2135,9 @@ tyfix(Node *ctx, Type *orig, int noerr)
 		}
 	}
 	if (t->type == Tyvar) {
-		if (hastrait(t, traittab[Tcint]) && checktraits(t, tyint))
+		if (hastrait(t, traittab[Tcint]) && satisfiestraits(t, tyint))
 			t = tyint;
-		if (hastrait(t, traittab[Tcfloat]) && checktraits(t, tyflt))
+		if (hastrait(t, traittab[Tcfloat]) && satisfiestraits(t, tyflt))
 			t = tyflt;
 	} else if (!t->fixed) {
 		t->fixed = 1;
