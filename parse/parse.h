@@ -67,12 +67,6 @@ typedef enum {
 	Visbuiltin,
 } Vis;
 
-typedef enum {
-	Dclconst = 1 << 0,
-	Dclextern = 1 << 1,
-} Dclflags;
-
-
 struct Tok {
 	int type;
 	Srcloc loc;
