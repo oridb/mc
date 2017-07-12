@@ -538,6 +538,7 @@ int optdone(Optctx *c);
 extern char debugopt[128];
 extern int asmonly;
 extern char *outfile;
+extern char *objdir;
 extern char **incpaths;
 extern size_t nincpaths;
 extern char *localincpath;

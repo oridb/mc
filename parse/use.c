@@ -1078,9 +1078,17 @@ readuse(Node *use, Stab *st, Vis vis)
 	fd = NULL;
 	p = NULL;
 	if (use->use.islocal) {
-		snprintf(buf,sizeof buf, "%s/%s.use", localincpath, use->use.name);
-		p = strdup(buf);
-		fd = fopen(p, "r");
+		fd = NULL;
+		if (objdir) {
+			snprintf(buf,sizeof buf, "%s/%s/%s.use", objdir, localincpath, use->use.name);
+			p = strdup(buf);
+			fd = fopen(p, "r");
+		}
+		if (!fd) {
+			snprintf(buf,sizeof buf, "%s/%s.use", localincpath, use->use.name);
+			p = strdup(buf);
+			fd = fopen(p, "r");
+		}
 		if (!fd) {
 			fprintf(stderr, "could not open usefile %s\n", buf);
 			exit(1);

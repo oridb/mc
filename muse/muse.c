@@ -18,6 +18,7 @@
 /* FIXME: move into one place...? */
 Node *file;
 char *outfile;
+char *objdir;
 char *pkgname;
 int show;
 char debugopt[128];
