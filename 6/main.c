@@ -204,7 +204,7 @@ main(int argc, char **argv)
 	asmsyntax = Defaultasm;
 	while (!optdone(&ctx)) {
 		switch (optnext(&ctx)) {
-		case 'D':
+		case 'O':
 			objdir = ctx.optarg;
 			break;
 		case 'o':
