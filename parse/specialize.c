@@ -619,7 +619,8 @@ specializedcl(Node *gnode, Type *param, Type *to, Node **name)
 	if (gnode->decl.trait) {
 		g = bestimpl(gnode, to);
 		if (!g)
-			fatal(gnode, "type %s does not implement %s:%s", tystr(param), namestr(gnode->decl.name), tystr(to));
+			fatal(gnode, "type %s does not implement %s:%s",
+				tystr(param), namestr(gnode->decl.name), tystr(to));
 	} else {
 		g = gnode;
 	}
