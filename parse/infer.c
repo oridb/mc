@@ -513,37 +513,25 @@ tysearch(Type *t)
 	return t;
 }
 
-static Type *
-remapping(Type *t)
-{
-	Stab *ns;
-	Type *lu;
-
-	if (t->type != Tyunres)
-		return NULL;
-
-	ns = curstab();
-	if (t->name->name.ns)
-		ns = getns(file, t->name->name.ns);
-	if (!ns)
-		fatal(t->name, "no namespace \"%s\"", t->name->name.ns);
-	lu = gettype(ns, t->name);
-	if (!lu)
-		fatal(t->name, "no type %s", tystr(t));
-	return lu;
-}
-
 /* Look up the best type to date in the unification table, returning it */
 static Type *
 tylookup(Type *t)
 {
 	Type *lu;
+	Stab *ns;
 
 	assert(t != NULL);
 	lu = NULL;
 	while (1) {
-		if (!tytab[t->tid]) {
-			lu = remapping(t);
+		if (!tytab[t->tid] && t->type == Tyunres) {
+			ns = curstab();
+			if (t->name->name.ns)
+				ns = getns(file, t->name->name.ns);
+			if (!ns)
+				fatal(t->name, "no namespace \"%s\"", t->name->name.ns);
+			lu = gettype(ns, t->name);
+			if (!lu)
+				fatal(t->name, "no type %s", tystr(t));
 			if (lu && lu != t)
 				tytab[t->tid] = lu;
 		}
