@@ -625,7 +625,7 @@ specializedcl(Node *gnode, Type *param, Type *to, Node **name)
 		g = gnode;
 	}
 	if (debugopt['S'])
-		printf("depth[%d] specializing [%d]%s => %s\n", stabstkoff, g->loc.line,
+		printf("specializing [%d]%s => %s\n", g->loc.line,
 			namestr(g->decl.name), namestr(n));
 	/* namespaced names need to be looked up in their correct
 	 * context. */

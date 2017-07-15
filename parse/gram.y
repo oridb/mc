@@ -477,7 +477,9 @@ typarams: generictype {
 		$$.types = NULL; $$.ntypes = 0;
 		lappend(&$$.types, &$$.ntypes, $1);
 	}
-	| typarams Tcomma generictype {lappend(&$$.types, &$$.ntypes, $3);}
+	| typarams Tcomma generictype {
+		lappend(&$$.types, &$$.ntypes, $3);
+	}
 	;
 
 type    : structdef

@@ -216,10 +216,16 @@ mkfunc(Srcloc loc, Node **args, size_t nargs, Type *ret, Node *body)
 	f->func.body = body;
 	f->func.scope = mkstab(1);
 	f->func.type = mktyfunc(loc, args, nargs, ret);
+	f->func.env = mkenv();
 
 	st = body->block.scope;
 	for (i = 0; i < nargs; i++)
 		putdcl(st, args[i]);
+
+	bindtype(f->func.env, ret);
+	for (i = 0; i < nargs; i++)
+		bindtype(f->func.env, decltype(args[i]));
+
 
 	n = mknode(loc, Nlit);
 	n->lit.littype = Lfunc;
@@ -250,6 +256,10 @@ mkimplstmt(Srcloc loc, Node *name, Type *t, Type **aux, size_t naux, Node **decl
 	n->impl.decls = decls;
 	n->impl.ndecls = ndecls;
 	lappend(&impltab, &nimpltab, n);
+	if (hasparams(t)) {
+		n->impl.env = mkenv();
+		bindtype(n->impl.env, t);
+	}
 	return n;
 }
 
@@ -382,6 +392,11 @@ mkdecl(Srcloc loc, Node *name, Type *ty)
 	n->decl.name = name;
 	n->decl.type = ty;
 	lappend(&decls, &ndecls, n);
+	if (ty && hasparams(ty)) {
+		n->decl.env = mkenv();
+		bindtype(n->decl.env, ty);
+	}
+
 	return n;
 }
 

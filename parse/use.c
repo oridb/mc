@@ -682,7 +682,7 @@ unpickle(FILE *fd)
 		n->block.nstmts = rdint(fd);
 		n->block.stmts = zalloc(sizeof(Node *) * n->block.nstmts);
 		n->block.scope->super = curstab();
-		pushstab(n->func.scope->super);
+		pushstab(n->block.scope->super);
 		for (i = 0; i < n->block.nstmts; i++)
 			n->block.stmts[i] = unpickle(fd);
 		popstab();
@@ -779,8 +779,8 @@ fixtypemappings(Stab *st)
 	/*
 	* merge duplicate definitions.
 	* This allows us to compare named types by id, instead
-	* of doing a deep walk through the type. This ability i
-	* depended on when we do type inference.
+	* of doing a deep walk through the type. This ability I
+	* depend on when we do type inference.
 	*/
 	for (i = 0; i < ntypefix; i++) {
 		t = htget(tidmap, itop(typefix[i].id));
@@ -788,6 +788,7 @@ fixtypemappings(Stab *st)
 			die("Unable to find type for id %zd\n", typefix[i].id);
 		*typefix[i].dest = t;
 	}
+
 	for (i = 0; i < ntypefix; i++) {
 		old = *typefix[i].dest;
 		if (old->type == Tyname || old->type == Tygeneric) {
@@ -907,17 +908,20 @@ fiximplmappings(Stab *st)
 int
 loaduse(char *path, FILE *f, Stab *st, Vis vis)
 {
-	intptr_t tid;
-	size_t i;
-	int v;
-	char *pkg;
+	size_t startdecl, starttype, startimpl;
 	Node *dcl, *impl, *init;
 	Stab *s, *ns;
+	intptr_t tid;
+	size_t i, j;
+	char *pkg;
 	Type *ty;
 	Trait *tr;
 	char *lib;
-	int c;
+	int c, v;
 
+	startdecl = ndecls;
+	starttype = ntypes;
+	startimpl = nimpltab;
 	pushstab(file->file.globls);
 	if (!tydeduptab)
 		tydeduptab = mkht(tyhash, tyeq);
@@ -969,8 +973,7 @@ loaduse(char *path, FILE *f, Stab *st, Vis vis)
 					/* break out of both loop and switch */
 					goto foundlib;
 			lappend(&file->file.libdeps, &file->file.nlibdeps, lib);
-foundlib
-:
+foundlib:
 			break;
 		case 'X':
 			lib = rdstr(f);
@@ -979,8 +982,7 @@ foundlib
 					/* break out of both loop and switch */
 					goto foundextlib;
 			lappend(&file->file.extlibs, &file->file.nextlibs, lib);
-foundextlib
-:
+foundextlib:
 			break;
 		case 'F': lappend(&file->file.files, &file->file.nfiles, rdstr(f)); break;
 		case 'G':
@@ -1050,6 +1052,36 @@ foundextlib
 	fixtraitmappings(s);
 	fiximplmappings(s);
 	htfree(tidmap);
+	for (i = starttype; i < ntypes; i++) {
+		ty = types[i];
+		if (ty->type == Tygeneric || ty->type == Tyname) {
+			if (hasparams(ty) && !ty->env) {
+				ty->env = mkenv();
+				for (j = 0; j < ty->ngparam; j++)
+					bindtype(ty->env, ty->gparam[j]);
+				for (j = 0; j < ty->narg; j++)
+					bindtype(ty->env, ty->arg[j]);
+			}
+			if (ty->sub[0]->env)
+				ty->sub[0]->env->super = ty->env;
+			else
+				ty->sub[0]->env = ty->env;
+		}
+	}
+	for (i = startdecl; i < ndecls; i++) {
+		dcl = decls[i];
+		if (hasparams(dcl->decl.type)) {
+			dcl->decl.env = mkenv();
+			bindtype(dcl->decl.env, dcl->decl.type);
+		}
+	}
+	for (i = startimpl; i < nimpltab; i++) {
+		impl = impltab[i];
+		if (!impl->impl.env) {
+			impl->impl.env = mkenv();
+			bindtype(impl->impl.env, impl->impl.type);
+		}
+	}
 	popstab();
 	return 1;
 }

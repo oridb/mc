@@ -103,10 +103,36 @@ outstab(Stab *st, FILE *fd, int depth)
 	}
 }
 
+static void
+outenv(Tyenv *e, FILE *fd, int depth)
+{
+	size_t n, i;
+	void **k;
+	Type *t;
+	char *s;
+
+	if (e->tab) {
+		k = htkeys(e->tab, &n);
+		for (i = 0; i < n; i++) {
+			t = htget(e->tab, k[i]);
+			s = tystr(t);
+			findentf(fd, depth + 1, "B %s\n", s);
+			free(s);
+		}
+		free(k);
+	}
+}
+
 void
 dumpstab(Stab *st, FILE *fd)
 {
 	outstab(st, fd, 0);
+}
+
+void
+dumpenv(Tyenv *e, FILE *fd)
+{
+	outenv(e, fd, 0);
 }
 
 void

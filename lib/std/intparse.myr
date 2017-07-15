@@ -47,7 +47,7 @@ generic intparsebase = {s, base
 	-> doparse(s, isneg, base)
 }
 
-generic doparse = {s, isneg, base
+generic doparse = {s, isneg, base ->  option(@a::(integral,numeric))
 	var v
 	var cv : int32
 	

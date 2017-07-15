@@ -101,6 +101,11 @@ struct Stab {
 	Htab *impl;	/* trait implementations: really a set of implemented traits. */
 };
 
+struct Tyenv {
+	Tyenv *super;
+	Htab *tab;
+};
+
 struct Type {
 	Ty type;
 	int tid;
@@ -116,6 +121,7 @@ struct Type {
 	Type **inst;		/* Tyname: instances created */
 	size_t ninst;		/* Tyname: count of instances created */
 
+	Tyenv *env;		/* the environment for bound types, may be null */
 	Type **sub;		/* sub-types; shared by all composite types */
 	size_t nsub;		/* For compound types */
 	size_t nmemb;		/* for aggregate types (struct, union) */
@@ -272,6 +278,7 @@ struct Node {
 			Node *name;
 			Type *type;
 			Node *init;
+			Tyenv *env;	/* bound types */
 
 			/*
 			 If we have a link to a trait, we should only look it up
@@ -301,6 +308,7 @@ struct Node {
 		} decl;
 
 		struct {
+			Tyenv *env;
 			Stab *scope;
 			Type *type;
 			size_t nargs;
@@ -313,6 +321,7 @@ struct Node {
 			Trait *trait;
 			Type *type;
 			Type **aux;
+			Tyenv *env;
 			size_t naux;
 			Node **decls;
 			size_t ndecls;
@@ -401,6 +410,15 @@ Node *getlbl(Stab *st, Srcloc loc, char *name);
 Stab *curstab(void);
 void pushstab(Stab *st);
 void popstab(void);
+
+void bindtype(Tyenv *env, Type *t);
+int isbound(Type *t);
+Tyenv *mkenv(void);
+Tyenv *curenv(void);
+void pushenv(Tyenv *e);
+void popenv(Tyenv *e);
+void _tybind(Tyenv *e, Type *t);
+void _bind(Tyenv *e, Node *n);
 
 /* type creation */
 void tyinit(Stab *st); /* sets up built in types */

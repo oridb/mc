@@ -594,7 +594,7 @@ generic intfmt = {sb, opts, signed, bits : @a::(integral,numeric)
 		;;
 	else
 		val = (bits : uint64)
-		val &= ~0 >> (8*(sizeof(uint64)-sizeof(@a)))
+		val &= ~0 >> (8*(sizeof(uint64)-sizeof(@a::(integral,numeric))))
 		isneg = false
 	;;
 

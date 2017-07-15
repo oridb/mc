@@ -11,8 +11,6 @@
 #define Initsz 16
 #define Seed 2928213749
 
-static ulong murmurhash2(void *key, size_t len);
-
 /* Creates a new empty hash table, using 'hash' as the
  * hash funciton, and 'cmp' to verify that there are no
  * hash collisions. */
@@ -294,7 +292,7 @@ ptreq(void *a, void *b)
 	return a == b;
 }
 
-static ulong
+ulong
 murmurhash2 (void *ptr, size_t len)
 {
 	uint32_t m = 0x5bd1e995;

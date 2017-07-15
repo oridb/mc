@@ -67,6 +67,7 @@ void sbputs(Strbuf *sb, char *s);
 void sbputb(Strbuf *sb, char b);
 
 /* bit sets */
+ulong bshash(Bitset *bs);
 Bitset *mkbs(void);
 void bsfree(Bitset *bs);
 Bitset *bsdup(Bitset *bs);
@@ -113,6 +114,7 @@ ulong ptrhash(void *key);
 int ptreq(void *a, void *b);
 ulong inthash(uint64_t key);
 int inteq(uint64_t a, uint64_t b);
+ulong murmurhash2(void *buf, size_t sz);
 
 /* util functions */
 void *zalloc(size_t size);

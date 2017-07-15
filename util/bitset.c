@@ -225,6 +225,15 @@ bsintersect(Bitset *a, Bitset *b)
 		a->chunks[i] &= b->chunks[i];
 }
 
+ulong
+bshash(Bitset *bs)
+{
+	if (!bs)
+		return 14247517;
+	else
+		return murmurhash2(bs->chunks, bs->nchunks * sizeof(size_t));
+}
+
 void
 bsdiff(Bitset *a, Bitset *b)
 {

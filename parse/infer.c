@@ -20,10 +20,6 @@ static void inferexpr(Node **np, Type *ret, int *sawret);
 static void inferdecl(Node *n);
 
 static Type *tf(Type *t);
-static void tybind(Type *t);
-static void bind(Node *n);
-static void tyunbind();
-static void unbind(Node *n);
 
 static Type *unify(Node *ctx, Type *a, Type *b);
 static Type *tyfix(Node *ctx, Type *orig, int noerr);
@@ -55,10 +51,6 @@ static size_t nspecializations;
 static Stab **specializationscope;
 static size_t nspecializationscope;
 static Htab *seqbase;
-
-/* type params bound at the current point */
-static Htab **tybindings;
-static size_t ntybindings;
 
 static void
 ctxstrcall(char *buf, size_t sz, Node *n)
@@ -290,8 +282,21 @@ typeerror(Type *a, Type *b, Node *ctx, char *msg)
 	free(c);
 }
 
-/* Set a scope's enclosing scope up correctly.
- * We don't do this in the parser for some reason. */
+/* Set a scope's enclosing scope up correctly. */
+static void
+setsuperenv(Tyenv *e, Tyenv *super)
+{
+	Tyenv *te;
+
+	/* verify that we don't accidentally create loops */
+	if (!e)
+		return;
+	for (te = super; te; te = te->super)
+		assert(te->super != e);
+	e->super = super;
+}
+
+/* Set a scope's enclosing scope up correctly. */
 static void
 setsuper(Stab *st, Stab *super)
 {
@@ -303,19 +308,6 @@ setsuper(Stab *st, Stab *super)
 	st->super = super;
 }
 
-/* If the current environment binds a type,
- * we return true */
-static int
-isbound(Type *t)
-{
-	ssize_t i;
-
-	for (i = ntybindings - 1; i >= 0; i--) {
-		if (htget(tybindings[i], t->pname))
-			return 1;
-	}
-	return 0;
-}
 
 /* Checks if a type that directly contains itself.
  * Recursive types that contain themselves through
@@ -430,23 +422,21 @@ needfreshen(Type *t)
 
 /* Freshens the type of a declaration. */
 static Type *
-tyfreshen(Tysubst *subst, Type *t)
+tyfreshen(Tysubst *subst, Type *orig)
 {
-	if (!needfreshen(t)) {
-		if (debugopt['u'])
-			indentf(indentdepth, "%s isn't generic: skipping freshen\n", tystr(t));
-		return t;
-	}
+	Type *t;
 
-	tybind(t);
+	if (!needfreshen(orig))
+		return orig;
+	pushenv(orig->env);
 	if (!subst) {
 		subst = mksubst();
-		t = tyspecialize(t, subst, delayed, seqbase);
+		t = tyspecialize(orig, subst, delayed, seqbase);
 		substfree(subst);
 	} else {
-		t = tyspecialize(t, subst, delayed, seqbase);
+		t = tyspecialize(orig, subst, delayed, seqbase);
 	}
-	tyunbind();
+	popenv(orig->env);
 	return t;
 }
 
@@ -466,6 +456,7 @@ tyresolve(Type *t)
 	ingeneric++;
 	t->resolved = 1;
 	/* Walk through aggregate type members */
+	pushenv(t->env);
 	switch (t->type) {
 	case Tystruct:
 		inaggr++;
@@ -494,11 +485,6 @@ tyresolve(Type *t)
 		if (!isbound(t))
 			lfatal(t->loc, "type parameter %s is undefined in generic context", tystr(t));
 		break;
-	case Tyname:
-	case Tygeneric:
-		/* FIXME: this should not include the current type scope in the search. */
-		tybind(t);
-		break;
 	default:
 		break;
 	}
@@ -513,8 +499,7 @@ tyresolve(Type *t)
 		t->traits = bsdup(base->traits);
 	if (occurs(t))
 		lfatal(t->loc, "type %s includes itself", tystr(t));
-	if (t->type == Tygeneric || t->type == Tyname)
-		tyunbind();
+	popenv(t->env);
 	ingeneric--;
 }
 
@@ -533,7 +518,7 @@ remapping(Type *t)
 {
 	Stab *ns;
 	Type *lu;
-	int i;
+	Tyenv *e;
 
 	switch (t->type) {
 	case Tyunres:
@@ -548,8 +533,8 @@ remapping(Type *t)
 			fatal(t->name, "could not resolve type %s", tystr(t));
 		return lu;
 	case Typaram:
-		for (i = ntybindings - 1; i >= 0; i--) {
-			lu = htget(tybindings[i], t->pname);
+		for (e = curenv(); e; e = e->super) {
+			lu = htget(e->tab, t);
 			if (lu)
 				return lu;
 		}
@@ -628,9 +613,9 @@ tf(Type *orig)
 			lfatal(orig->loc, "%s incompatibly specialized with %s, declared on %s:%d",
 					tystr(orig), tystr(t), file->file.files[t->loc.file], t->loc.line);
 		}
-		tybind(t);
+		pushenv(orig->env);
 		t = tysubst(t, orig);
-		tyunbind();
+		popenv(orig->env);
 	}
 	ingeneric -= isgeneric;
 	return t;
@@ -737,127 +722,18 @@ uconresolve(Node *n)
 	return uc;
 }
 
-static void
-putbindingsrec(Htab *bt, Type *t, Bitset *visited)
-{
-	size_t i;
-
-	t = tysearch(t);
-	if (bshas(visited, t->tid))
-		return;
-	bsput(visited, t->tid);
-	switch (t->type) {
-	case Typaram:
-		if (hthas(bt, t->pname))
-			unify(NULL, htget(bt, t->pname), t);
-		else if (!isbound(t))
-			htput(bt, t->pname, t);
-		break;
-	case Tygeneric:
-		for (i = 0; i < t->ngparam; i++)
-			putbindingsrec(bt, t->gparam[i], visited);
-		break;
-	case Tyname:
-		for (i = 0; i < t->narg; i++)
-			putbindingsrec(bt, t->arg[i], visited);
-		break;
-	case Tyunres:
-		for (i = 0; i < t->narg; i++)
-			putbindingsrec(bt, t->arg[i], visited);
-		break;
-	case Tystruct:
-		for (i = 0; i < t->nmemb; i++)
-			putbindingsrec(bt, t->sdecls[i]->decl.type, visited);
-		break;
-	case Tyunion:
-		for (i = 0; i < t->nmemb; i++)
-			if (t->udecls[i]->etype)
-				putbindingsrec(bt, t->udecls[i]->etype, visited);
-		break;
-	default:
-		for (i = 0; i < t->nsub; i++)
-			putbindingsrec(bt, t->sub[i], visited);
-		break;
-	}
-}
-
-/* Binds the type parameters present in the
- * current type into the type environment */
-static void
-putbindings(Htab *bt, Type *t)
-{
-	Bitset *visited;
-
-	if (!t)
-		return;
-	visited = mkbs();
-	putbindingsrec(bt, t, visited);
-	bsfree(visited);
-}
-
-static void
-tybindall(Type *t)
-{
-	Htab *bt;
-
-	bt = mkht(strhash, streq);
-	lappend(&tybindings, &ntybindings, bt);
-	putbindings(bt, t);
-}
-
-static void
-tybind(Type *t)
-{
-	Htab *bt;
-	size_t i;
-
-	bt = mkht(strhash, streq);
-	lappend(&tybindings, &ntybindings, bt);
-	if (t->type == Tygeneric)
-		for (i = 0; i < t->ngparam; i++)
-			putbindings(bt, t->gparam[i]);
-	else if (t->type == Tyname)
-		for (i = 0; i < t->narg; i++)
-			putbindings(bt, t->arg[i]);
-}
-
 /* Binds the type parameters in the
  * declaration into the type environment */
-static void
-bind(Node *n)
+void
+_bind(Tyenv *e, Node *n)
 {
-	Htab *bt;
-
 	assert(n->type == Ndecl);
-
 	if(!n->decl.isgeneric)
 		return;
 	ingeneric++;
-	bt = mkht(strhash, streq);
-	lappend(&tybindings, &ntybindings, bt);
-
-	putbindings(bt, n->decl.type);
+	bindtype(e, n->decl.type);
 	if (n->decl.init)
-		putbindings(bt, n->decl.init->expr.type);
-}
-
-/* Rolls back the binding of type parameters in
- * the type environment */
-static void
-unbind(Node *n)
-{
-	if(!n->decl.isgeneric)
-		return;
-	htfree(tybindings[ntybindings - 1]);
-	lpop(&tybindings, &ntybindings);
-	ingeneric--;
-}
-
-static void
-tyunbind()
-{
-	htfree(tybindings[ntybindings - 1]);
-	lpop(&tybindings, &ntybindings);
+		bindtype(e, n->decl.init->expr.type);
 }
 
 /* Constrains a type to implement the required constraints. On
@@ -1272,16 +1148,16 @@ initvar(Node *n, Node *s)
 	param = n->expr.param;
 	if (s->decl.isgeneric) {
 		subst = mksubst();
-		tybindall(s->decl.type);
 		if (param)
 			substput(subst, s->decl.trait->param, param);
+		pushenv(s->decl.env);
 		t = tysubstmap(subst, tf(s->decl.type), s->decl.type);
+		popenv(s->decl.env);
 		if (s->decl.trait && !param) {
 			param = substget(subst, s->decl.trait->param);
 			if (!param)
 				fatal(n, "ambiguous trait decl %s", ctxstr(s));
 		}
-		tyunbind();
 		substfree(subst);
 	} else {
 		t = s->decl.type;
@@ -1444,7 +1320,7 @@ inferucon(Node *n, int *isconst)
 	 *
 	 * To make it compile, for now, we just bind the types in here.
 	 */
-	tybindall(uc->utype);
+	//tybindall(uc->utype);
 	t = tysubst(tf(uc->utype), uc->utype);
 	uc = tybase(t)->udecls[uc->id];
 	if (uc->etype) {
@@ -1453,7 +1329,7 @@ inferucon(Node *n, int *isconst)
 		*isconst = n->expr.args[1]->expr.isconst;
 	}
 	settype(n, delayeducon(t));
-	tyunbind();
+	//tyunbind();
 }
 
 static void
@@ -1770,9 +1646,9 @@ inferexpr(Node **np, Type *ret, int *sawret)
 		   infersub(n, ret, sawret, &isconst);
 		   switch (args[0]->lit.littype) {
 		   case Lfunc:
-			   tybindall(args[0]->lit.fnval->func.type);
+			   //tybindall(args[0]->lit.fnval->func.type);
 			   infernode(&args[0]->lit.fnval, NULL, NULL);
-			   tyunbind();
+			   //tyunbind();
 
 			   /* FIXME: env capture means this is non-const */
 			   n->expr.isconst = 1;
@@ -1873,6 +1749,7 @@ specializeimpl(Node *n)
 		fatal(n, "%s incompatibly specialized with %zd types instead of %zd types",
 			namestr(n->impl.traitname), n->impl.naux, t->naux);
 	n->impl.type = tf(n->impl.type);
+	pushenv(n->impl.type->env);
 	for (i = 0; i < n->impl.naux; i++)
 		n->impl.aux[i] = tf(n->impl.aux[i]);
 	for (i = 0; i < n->impl.ndecls; i++) {
@@ -1934,6 +1811,7 @@ specializeimpl(Node *n)
 		dcl->decl.vis = t->vis;
 		lappend(&impldecl, &nimpldecl, dcl);
 	}
+	popenv(n->impl.type->env);
 }
 
 static void
@@ -1962,13 +1840,16 @@ inferstab(Stab *s)
 	size_t n, i;
 	Node *dcl;
 	Type *t;
+	void *se;
 
 	k = htkeys(s->dcl, &n);
+	se = curenv();
 	for (i = 0; i < n; i++) {
 		dcl = htget(s->dcl, k[i]);
-		bind(dcl);
+		pushenv(dcl->decl.env);
 		tf(type(dcl));
-		unbind(dcl);
+		popenv(dcl->decl.env);
+		assert(se == curenv());
 	}
 	free(k);
 
@@ -1978,9 +1859,11 @@ inferstab(Stab *s)
 		if (!t)
 			fatal(k[i], "undefined type %s", namestr(k[i]));
 		t = tysearch(t);
-		tybind(t);
+		if (t->env)
+			setsuperenv(t->env, curenv());
+		pushenv(t->env);
 		tyresolve(t);
-		tyunbind();
+		popenv(t->env);
 		updatetype(s, k[i], t);
 	}
 	free(k);
@@ -2010,16 +1893,21 @@ infernode(Node **np, Type *ret, int *sawret)
 	case Ndecl:
 		if (debugopt['u'])
 			indentf(indentdepth, "--- infer %s ---\n", declname(n));
+		if (n->decl.isgeneric)
+			ingeneric++;
 		indentdepth++;
-		bind(n);
+		setsuperenv(n->decl.env, curenv());
+		pushenv(n->decl.env);
 		inferdecl(n);
 		if (type(n)->type == Typaram && !ingeneric)
 			fatal(n, "generic type %s in non-generic near %s", tystr(type(n)),
 					ctxstr(n));
-		unbind(n);
+		popenv(n->decl.env);
 		indentdepth--;
 		if (debugopt['u'])
 			indentf(indentdepth, "--- done ---\n");
+		if (n->decl.isgeneric)
+			ingeneric--;
 		break;
 	case Nblock:
 		setsuper(n->block.scope, curstab());
@@ -2083,13 +1971,12 @@ infernode(Node **np, Type *ret, int *sawret)
 		break;
 	case Nfunc:
 		setsuper(n->func.scope, curstab());
-		if (ntybindings > 0)
-			for (i = 0; i < n->func.nargs; i++)
-				putbindings(tybindings[ntybindings - 1],
-					n->func.args[i]->decl.type);
 		pushstab(n->func.scope);
+		setsuperenv(n->func.env, curenv());
+		pushenv(n->func.env);
 		inferstab(n->func.scope);
 		inferfunc(n);
+		popenv(n->func.env);
 		popstab();
 		break;
 	case Nimpl:
@@ -2378,9 +2265,9 @@ stabsub(Stab *s)
 	k = htkeys(s->dcl, &n);
 	for (i = 0; i < n; i++) {
 		d = getdcl(s, k[i]);
-		bind(d);
+		pushenv(d->decl.env);
 		d->decl.type = tyfix(d, d->decl.type, 0);
-		unbind(d);
+		popenv(d->decl.env);
 		if (!d->decl.isconst && !d->decl.isgeneric)
 			continue;
 		if (d->decl.trait)
@@ -2499,7 +2386,7 @@ typesub(Node *n, int noerr)
 		popstab();
 		break;
 	case Ndecl:
-		bind(n);
+		pushenv(n->decl.env);
 		settype(n, tyfix(n, type(n), noerr));
 		if (n->decl.init)
 			typesub(n->decl.init, noerr);
@@ -2510,7 +2397,7 @@ typesub(Node *n, int noerr)
 		if (streq(declname(n), "__init__"))
 			if (!initcompatible(tybase(decltype(n))))
 				fatal(n, "__init__ must be (->void), got %s", tystr(decltype(n)));
-		unbind(n);
+		popenv(n->decl.env);
 		break;
 	case Nblock:
 		pushstab(n->block.scope);
@@ -2650,7 +2537,7 @@ specialize(Node *f)
 static void
 applytraits(Node *f)
 {
-	size_t i, j;
+	size_t i;
 	Node *impl, *n;
 	Trait *tr;
 	Type *ty;
@@ -2676,17 +2563,13 @@ applytraits(Node *f)
 				fatal(impl, "incompatible implementation of %s: mismatched aux types",
 						namestr(impl->impl.traitname), ctxstr(impl));
 		}
-		tybindall(impl->impl.type);
-		for (j = 0; j < impl->impl.naux; j++)
-			tybindall(impl->impl.aux[j]);
+		pushenv(impl->impl.env);
 		ty = tf(impl->impl.type);
 		settrait(ty, tr);
 		if (tr->uid == Tciter) {
 			htput(seqbase, tf(impl->impl.type), tf(impl->impl.aux[0]));
 		}
-		tyunbind();
-		for (j = 0; j < impl->impl.naux; j++)
-			tyunbind();
+		popenv(impl->impl.env);
 	}
 	popstab();
 }
@@ -2726,7 +2609,6 @@ infer(Node *file)
 	postinfer();
 
 	/* and replace type vars with actual types */
-	assert(ntybindings == 0);
 	typesub(file, 0);
 	specialize(file);
 	verify(file);

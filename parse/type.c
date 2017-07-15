@@ -194,6 +194,7 @@ mktyparam(Srcloc loc, char *name)
 Type *
 mktyunres(Srcloc loc, Node *name, Type **arg, size_t narg)
 {
+	size_t i;
 	Type *t;
 
 	/* resolve it in the type inference stage */
@@ -201,6 +202,9 @@ mktyunres(Srcloc loc, Node *name, Type **arg, size_t narg)
 	t->name = name;
 	t->arg = arg;
 	t->narg = narg;
+	t->env = mkenv();
+	for (i = 0; i < narg; i++)
+		bindtype(t->env, arg[i]);
 	return t;
 }
 
@@ -208,6 +212,7 @@ Type *
 mktygeneric(Srcloc loc, Node *name, Type **param, size_t nparam, Type *base)
 {
 	Type *t;
+	int i;
 
 	t = mktype(loc, Tygeneric);
 	t->name = name;
@@ -217,6 +222,13 @@ mktygeneric(Srcloc loc, Node *name, Type **param, size_t nparam, Type *base)
 	t->sub[0] = base;
 	t->gparam = param;
 	t->ngparam = nparam;
+	t->env = mkenv();
+	for (i = 0; i < nparam; i++)
+		bindtype(t->env, param[i]);
+	if (!base->env)
+		base->env = t->env;
+	else
+		assert(base->env->super == t->env);
 	return t;
 }
 
@@ -297,8 +309,11 @@ mktyfunc(Srcloc loc, Node **args, size_t nargs, Type *ret)
 	t->nsub = nargs + 1;
 	t->sub = xalloc((1 + nargs) * sizeof(Type *));
 	t->sub[0] = ret;
+	t->env = mkenv();
 	for (i = 0; i < nargs; i++)
 		t->sub[i + 1] = nodetype(args[i]);
+	for (i = 0; i < t->nsub; i++)
+		bindtype(t->env, t->sub[i]);
 	return t;
 }
 
@@ -732,10 +747,10 @@ tyhash(void *ty)
 	t = (Type *)ty;
 	switch (t->type) {
 	case Tyvar:	hash = inthash(t->tid);	break;
-	case Typaram:	hash = strhash(t->pname);	break;
 	case Tyunion:	hash = inthash(t->type);	break;
 	case Tystruct:	hash = inthash(t->type);	break;
 	case Tyname:	hash = namehash(t->name);	break;
+	case Typaram:	hash = strhash(t->pname);	break;
 	default: hash = inthash(t->type); break;
 	}
 

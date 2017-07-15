@@ -30,29 +30,11 @@ struct Traitdefn {
 
 #define Maxstabdepth 128
 static Stab *stabstk[Maxstabdepth];
-int stabstkoff;
+static size_t stabstkoff;
 
-/* scope management */
-Stab *
-curstab()
-{
-	assert(stabstkoff > 0);
-	return stabstk[stabstkoff - 1];
-}
+static Tyenv *envstk[Maxstabdepth];
+static size_t envstkoff;
 
-void
-pushstab(Stab *st)
-{
-	assert(stabstkoff < Maxstabdepth);
-	stabstk[stabstkoff++] = st;
-}
-
-void
-popstab(void)
-{
-	assert(stabstkoff > 0);
-	stabstkoff--;
-}
 
 /* name hashing: we want namespaced lookups to find the
  * name even if we haven't set the namespace up, since
@@ -79,22 +61,6 @@ implhash(void *p)
 	h = nsnamehash(n->impl.traitname);
 	h *= tyhash(n->impl.type);
 	return h;
-}
-
-Stab *
-findstab(Stab *st, Node *n)
-{
-	Stab *ns;
-
-	if (n->name.ns) {
-		ns = getns(file, n->name.ns);
-		if (!ns) {
-			ns = mkstab(0);
-			updatens(ns, n->name.ns);
-		}
-		st = ns;
-	}
-	return st;
 }
 
 static int
@@ -125,6 +91,81 @@ mkstab(int isfunc)
 	}
 	st->impl = mkht(implhash, impleq);
 	st->isfunc = isfunc;
+	return st;
+}
+
+Stab *
+curstab()
+{
+	assert(stabstkoff > 0);
+	return stabstk[stabstkoff - 1];
+}
+
+void
+pushstab(Stab *st)
+{
+	assert(stabstkoff < Maxstabdepth);
+	stabstk[stabstkoff++] = st;
+}
+
+void
+popstab()
+{
+	assert(stabstkoff > 0);
+	stabstkoff--;
+}
+
+Tyenv*
+mkenv()
+{
+	Tyenv *e;
+
+	e = malloc(sizeof(Tyenv));
+	e->super = NULL;
+	e->tab = mkht(strhash, streq);
+	return e;
+}
+
+Tyenv*
+curenv()
+{
+	if (!envstkoff)
+		return NULL;
+	else
+		return envstk[envstkoff - 1];
+}
+
+void
+pushenv(Tyenv *env)
+{
+	if (!env)
+		return;
+	assert(envstkoff < Maxstabdepth);
+	envstk[envstkoff++] = env;
+}
+
+void
+popenv(Tyenv *env)
+{
+	if (!env)
+		return;
+	assert(envstkoff > 0);
+	envstkoff--;
+}
+
+Stab *
+findstab(Stab *st, Node *n)
+{
+	Stab *ns;
+
+	if (n->name.ns) {
+		ns = getns(file, n->name.ns);
+		if (!ns) {
+			ns = mkstab(0);
+			updatens(ns, n->name.ns);
+		}
+		st = ns;
+	}
 	return st;
 }
 
@@ -329,6 +370,14 @@ mergedecl(Node *old, Node *new)
 		e->decl.init = g->decl.init;
 	else if (!g->decl.init)
 		g->decl.init = e->decl.init;
+	if (old->decl.env || e->decl.env) {
+		if (!old->decl.env)
+			old->decl.env = e->decl.env;
+		if (!e->decl.env)
+			e->decl.env = old->decl.env;
+		bindtype(e->decl.env, old->decl.type);
+		bindtype(old->decl.env, e->decl.type);
+	}
 
 	/* FIXME: check compatible typing */
 	old->decl.ishidden = e->decl.ishidden || g->decl.ishidden;
@@ -575,4 +624,77 @@ updatens(Stab *st, char *name)
 	for (i = 0; i < nk; i++)
 		setns(k[i], name);
 	free(k);
+}
+
+static void
+bindtype_rec(Tyenv *e, Type *t, Bitset *visited)
+{
+	size_t i;
+	Type *tt;
+
+	t = tysearch(t);
+	if (bshas(visited, t->tid))
+		return;
+	bsput(visited, t->tid);
+	switch (t->type) {
+	case Typaram:
+		tt = htget(e->tab, t->pname);
+		if (tt && tt != t)
+			tytab[t->tid] = tt;
+		else if (!isbound(t))
+			htput(e->tab, t->pname, t);
+		break;
+	case Tygeneric:
+		for (i = 0; i < t->ngparam; i++)
+			bindtype_rec(e, t->gparam[i], visited);
+		break;
+	case Tyname:
+		for (i = 0; i < t->narg; i++)
+			bindtype_rec(e, t->arg[i], visited);
+		break;
+	case Tyunres:
+		for (i = 0; i < t->narg; i++)
+			bindtype_rec(e, t->arg[i], visited);
+		break;
+	case Tystruct:
+		for (i = 0; i < t->nmemb; i++)
+			bindtype_rec(e, t->sdecls[i]->decl.type, visited);
+		break;
+	case Tyunion:
+		for (i = 0; i < t->nmemb; i++)
+			if (t->udecls[i]->etype)
+				bindtype_rec(e, t->udecls[i]->etype, visited);
+		break;
+	default:
+		for (i = 0; i < t->nsub; i++)
+			bindtype_rec(e, t->sub[i], visited);
+		break;
+	}
+}
+
+/* Binds the type parameters present in the
+ * current type into the type environment */
+void
+bindtype(Tyenv *env, Type *t)
+{
+	Bitset *visited;
+
+	if (!t)
+		return;
+	visited = mkbs();
+	bindtype_rec(env, t, visited);
+	bsfree(visited);
+}
+
+/* If the current environment binds a type,
+ * we return true */
+int
+isbound(Type *t)
+{
+
+	Tyenv *e;
+	for (e = curenv(); e; e = e->super)
+		if (htget(e->tab, t->pname))
+			return 1;
+	return 0;
 }
