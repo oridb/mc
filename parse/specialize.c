@@ -598,7 +598,6 @@ bestimpl(Node *n, Type *to)
 Node *
 specializedcl(Node *gnode, Type *param, Type *to, Node **name)
 {
-	extern int stabstkoff;
 	Tysubst *tsmap;
 	Node *g, *d, *n;
 	Stab *st;
