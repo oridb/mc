@@ -122,7 +122,7 @@ mkenv()
 
 	e = malloc(sizeof(Tyenv));
 	e->super = NULL;
-	e->tab = mkht(strhash, streq);
+	e->tab = mkht(tyhash, tyeq);
 	return e;
 }
 
@@ -638,11 +638,11 @@ bindtype_rec(Tyenv *e, Type *t, Bitset *visited)
 	bsput(visited, t->tid);
 	switch (t->type) {
 	case Typaram:
-		tt = htget(e->tab, t->pname);
+		tt = htget(e->tab, t);
 		if (tt && tt != t)
 			tytab[t->tid] = tt;
 		else if (!isbound(t))
-			htput(e->tab, t->pname, t);
+			htput(e->tab, t, t);
 		break;
 	case Tygeneric:
 		for (i = 0; i < t->ngparam; i++)
@@ -694,7 +694,7 @@ isbound(Type *t)
 
 	Tyenv *e;
 	for (e = curenv(); e; e = e->super)
-		if (htget(e->tab, t->pname))
+		if (htget(e->tab, t))
 			return 1;
 	return 0;
 }

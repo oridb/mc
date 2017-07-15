@@ -111,16 +111,14 @@ outenv(Tyenv *e, FILE *fd, int depth)
 	Type *t;
 	char *s;
 
-	if (e->tab) {
-		k = htkeys(e->tab, &n);
-		for (i = 0; i < n; i++) {
-			t = htget(e->tab, k[i]);
-			s = tystr(t);
-			findentf(fd, depth + 1, "B %s\n", s);
-			free(s);
-		}
-		free(k);
+	k = htkeys(e->tab, &n);
+	for (i = 0; i < n; i++) {
+		t = htget(e->tab, k[i]);
+		s = tystr(t);
+		findentf(fd, depth + 1, "B %s\n", s);
+		free(s);
 	}
+	free(k);
 }
 
 void

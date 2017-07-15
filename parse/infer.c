@@ -518,30 +518,19 @@ remapping(Type *t)
 {
 	Stab *ns;
 	Type *lu;
-	Tyenv *e;
 
-	switch (t->type) {
-	case Tyunres:
-		ns = curstab();
-		if (t->name->name.ns) {
-			ns = getns(file, t->name->name.ns);
-		}
-		if (!ns)
-			fatal(t->name, "could not resolve namespace \"%s\"",
-					t->name->name.ns);
-		if (!(lu = gettype(ns, t->name)))
-			fatal(t->name, "could not resolve type %s", tystr(t));
-		return lu;
-	case Typaram:
-		for (e = curenv(); e; e = e->super) {
-			lu = htget(e->tab, t);
-			if (lu)
-				return lu;
-		}
-	default:
-		break;
-	}
-	return NULL;
+	if (t->type != Tyunres)
+		return NULL;
+
+	ns = curstab();
+	if (t->name->name.ns)
+		ns = getns(file, t->name->name.ns);
+	if (!ns)
+		fatal(t->name, "no namespace \"%s\"", t->name->name.ns);
+	lu = gettype(ns, t->name);
+	if (!lu)
+		fatal(t->name, "no type %s", tystr(t));
+	return lu;
 }
 
 /* Look up the best type to date in the unification table, returning it */
