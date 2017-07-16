@@ -15,8 +15,6 @@ use "syssel"
 
 const main = {args : byte[:][:]
 	var b : bld.build#
-	var cleanfirst
-	var dumponly
 	var bintarg
 	var targname
 	var runsrc
@@ -28,8 +26,6 @@ const main = {args : byte[:][:]
 	cmd = std.optparse(args, &[
 		.argdesc = "[inputs...]",
 		.opts = [
-			[.opt='c', .desc="clean before building"],
-			[.opt='T', .desc="list all available targets"],
 			[.opt='t', .arg="tag", .desc="build with specified systag"],
 			[.opt='S', .desc="generate assembly when building"],
 			[.opt='d', .desc="dump debugging information for mbld"],
@@ -47,16 +43,12 @@ const main = {args : byte[:][:]
 	tags = [][:]
 	runsrc = ""
 	targname = ""
-	dumponly = false
-	cleanfirst = false
 	ok = true
 
 	bld.initopts()
 	for opt in cmd.opts
 		match opt
-		| ('T', ""):	dumponly = true
 		| ('S', ""):	bld.opt_genasm = true
-		| ('c', ""):	cleanfirst = true
 		| ('I', arg):	std.slpush(&bld.opt_incpaths, arg)
 		| ('B', arg):	bld.opt_instbase = arg
 		| ('t', tag):	std.slpush(&tags, tag)
@@ -91,29 +83,20 @@ const main = {args : byte[:][:]
 
 	b = mkbuild(tags)
 	if targname.len != 0
-		buildimm(b, targname, cmd.args, bintarg, cleanfirst)
+		buildimm(b, targname, cmd.args, bintarg)
 	elif runsrc.len != 0
 		bld.opt_silent = true
 		tmp = std.mktemppath("runmyr")
-		ok = buildimm(b, tmp, [runsrc][:], true, cleanfirst)
+		ok = buildimm(b, tmp, [runsrc][:], true)
 		if ok
 			ok = runcmd(tmp, cmd.args)
 		;;
 		std.remove(tmp)
-	elif dumponly
-		findproj(b, "bld.proj")
-		bld.load(b)
-		for t in b.all
-			bld.mbldput("{}\n", t)
-		;;
 	else
 		findproj(b, "bld.proj")
 		bld.load(b)
 		/*bld.configure()*/
 		/* default: buildall */
-		if cleanfirst
-			bld.cleanall(b)
-		;;
 		if cmd.args.len == 0
 			bld.buildall(b)
 		else
@@ -136,7 +119,7 @@ const main = {args : byte[:][:]
 	;;
 }
 
-const buildimm = {b, targ, inputs, bintarg, cleanfirst -> bool
+const buildimm = {b, targ, inputs, bintarg -> bool
 	var mt : bld.myrtarg
 
 	mt = [
@@ -146,9 +129,6 @@ const buildimm = {b, targ, inputs, bintarg, cleanfirst -> bool
 		.incpath=bld.opt_incpaths,
 		.libdeps=[][:]
 	]
-	if cleanfirst
-		bld.cleanmyr(b, &mt)
-	;;
 	if bintarg
 		-> bld.buildbin(b, &mt, true)
 	else
