@@ -47,7 +47,7 @@ const findtzoff = {tz, tm -> std.option(date.duration)
 		path = std.sldup("/etc/localtime")
 	else
 		path = ""
-		for z in zonepath
+		for z : zonepath
 			path = std.pathcat(z, tz)
 			if sys.stat(path, &sb) == 0
 				goto found

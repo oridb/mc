@@ -108,10 +108,10 @@ pkg sys =
 
 	type utsname = struct
 		system	: byte[32]
-		node : byte[32] 
-		release : byte[32]
-		version : byte[32]
-		machine : byte[32]
+		node	: byte[32] 
+		release	: byte[32]
+		version	: byte[32]
+		machine	: byte[32]
 	;;
 
 	type sockaddr = struct
@@ -146,9 +146,9 @@ pkg sys =
 	type sockaddr_storage = struct
 		len	: byte
 		fam	: sockfam
-		__pad1  : byte[6]
-		__align : int64
-		__pad2  : byte[112]
+		__pad1	: byte[6]
+		__align	: int64
+		__pad2 	: byte[112]
 	;;	
 	
 	type dirent = struct
@@ -304,25 +304,25 @@ pkg sys =
 	const Maxpathlen	: size = 1024
 
 	/* fcntl constants */
-	const Fdupfd	 : fcntlcmd = 0		/* duplicate file descriptor */
-	const Fgetfd	 : fcntlcmd = 1		/* get file descriptor flags */
-	const Fsetfd	 : fcntlcmd = 2		/* set file descriptor flags */
-	const Fgetfl	 : fcntlcmd = 3		/* get file status flags */
-	const Fsetfl	 : fcntlcmd = 4		/* set file status flags */
-	const Fgetown	 : fcntlcmd = 5		/* get SIGIO/SIGURG proc/pgrp */
-	const Fsetown	 : fcntlcmd = 6		/* set SIGIO/SIGURG proc/pgrp */
-	const Fogetlk	 : fcntlcmd = 7		/* get record locking information */
-	const Fosetlk	 : fcntlcmd = 8		/* set record locking information */
-	const Fosetlkw	 : fcntlcmd = 9		/* F_SETLK; wait if blocked */
-	const Fdup2fd	 : fcntlcmd = 10		/* duplicate file descriptor to arg */
-	const Fgetlk	 : fcntlcmd = 11		/* get record locking information */
-	const Fsetlk	 : fcntlcmd = 12		/* set record locking information */
-	const Fsetlkw	 : fcntlcmd = 13		/* F_SETLK; wait if blocked */
-	const Fsetlk_remote	 : fcntlcmd = 14		/* debugging support for remote locks */
-	const Freadahead	 : fcntlcmd = 15		/* read ahead */
-	const Frdahead	 : fcntlcmd = 16		/* Darwin compatible read ahead */
-	const Fdupfd_cloexec	 : fcntlcmd = 17		/* Like F_DUPFD, but FD_CLOEXEC is set */
-	const Fdup2fd_cloexec	 : fcntlcmd = 18		/* Like F_DUP2FD, but FD_CLOEXEC is set */
+	const Fdupfd	: fcntlcmd = 0		/* duplicate file descriptor */
+	const Fgetfd	: fcntlcmd = 1		/* get file descriptor flags */
+	const Fsetfd	: fcntlcmd = 2		/* set file descriptor flags */
+	const Fgetfl	: fcntlcmd = 3		/* get file status flags */
+	const Fsetfl	: fcntlcmd = 4		/* set file status flags */
+	const Fgetown	: fcntlcmd = 5		/* get SIGIO/SIGURG proc/pgrp */
+	const Fsetown	: fcntlcmd = 6		/* set SIGIO/SIGURG proc/pgrp */
+	const Fogetlk	: fcntlcmd = 7		/* get record locking information */
+	const Fosetlk	: fcntlcmd = 8		/* set record locking information */
+	const Fosetlkw	: fcntlcmd = 9		/* F_SETLK; wait if blocked */
+	const Fdup2fd	: fcntlcmd = 10		/* duplicate file descriptor to arg */
+	const Fgetlk	: fcntlcmd = 11		/* get record locking information */
+	const Fsetlk	: fcntlcmd = 12		/* set record locking information */
+	const Fsetlkw	: fcntlcmd = 13		/* F_SETLK; wait if blocked */
+	const Fsetlk_remote	: fcntlcmd = 14		/* debugging support for remote locks */
+	const Freadahead	: fcntlcmd = 15		/* read ahead */
+	const Frdahead	: fcntlcmd = 16		/* Darwin compatible read ahead */
+	const Fdupfd_cloexec	: fcntlcmd = 17		/* Like F_DUPFD, but FD_CLOEXEC is set */
+	const Fdup2fd_cloexec	: fcntlcmd = 18		/* Like F_DUP2FD, but FD_CLOEXEC is set */
 
 	/* return value for a failed mapping */
 	const Mapbad	: byte# = (-1 : byte#)

@@ -56,7 +56,8 @@ type slab = struct
 	nfree	: size	/* the number of free nodes */
 ;;
 
-type chunk = struct	/* NB: must be smaller than sizeof(slab) */
+/* NB: must be smaller than sizeof(slab) */
+type chunk = struct
 	next	: chunk#	/* the next chunk in the free list */
 ;;
 

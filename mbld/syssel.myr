@@ -63,7 +63,7 @@ generic sysseladdlist = {syssel, base, attrs, val
 	var nmatch, curbest, n, v
 
 	nmatch = 0
-	for a in attrs
+	for a : attrs
 		match std.strfind(a, ":")
 		| `std.Some i:
 			n = a[:i]
@@ -106,7 +106,7 @@ generic sysselfin = {syssel
 
 	keys = std.htkeys(syssel._match)
 	ret = [][:]
-	for k in keys
+	for k : keys
 		nmatch = std.htgetv(syssel._match, k, -1)
 		if nmatch == -1
 			std.fatal("{}:{}: target {}, no applicable file for '{}'\n", \
@@ -192,7 +192,7 @@ const word = {data
 }
 
 const tag  = {sa, tags
-	for t in tags
+	for t : tags
 		std.htput(sa, t, (-1, -1, -1))
 	;;
 }

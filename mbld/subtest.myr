@@ -75,7 +75,7 @@ const showtests = {b, cmd, failed, f, log, ntests
 	curtest = ""
 	nresults = 0
 	mbldput("\n")
-	for ln in bio.byline(f)
+	for ln : bio.byline(f)
 		ln = std.strstrip(ln)
 		match testhead(ln)
 		| `std.None:
@@ -127,7 +127,7 @@ const checktests = {ntests, nresults
 
 const starttest = {curtest, t
 	if curtest#.len != 0
-		std.fatal("malformed input: test {} nested in {}\n", t, curtest)
+		std.fatal("malformed input in test {} nested : {}\n", t, curtest)
 	;;
 	mbldput("\trun {}:\t", std.strstrip(t))
 	curtest# = t

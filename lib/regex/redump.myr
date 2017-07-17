@@ -16,7 +16,7 @@ const main = {args
 			[.opt='v', .desc="dump verbose regex output"]
 		][:],
 	])
-	for opt in cmd.opts
+	for opt : cmd.opts
 		match opt
 		| ('v', _):	verbose = true
 		| _:	std.fatal("Unknown argument")
@@ -43,7 +43,7 @@ const main = {args
 
 const runall = {re, files
 
-	for f in files
+	for f : files
 		match bio.open(f, bio.Rd)
 		| `std.Ok fd:
 			dump(re, fd)
@@ -112,7 +112,7 @@ const showcoverage = {re
 	;;
 
 	std.put("\t")
-	for h in hit
+	for h : hit
 		if h
 			std.put("^")
 		else

@@ -223,7 +223,7 @@ const run = {re, str, idx, wholestr
 	re.runq = mkthread(re, 0)
 	if re.debug
 		/* The last run could have left things here, since we need this info after the run */
-		for bs in re.traces
+		for bs : re.traces
 			std.bsfree(bs)
 		;;
 		std.slfree(re.traces)

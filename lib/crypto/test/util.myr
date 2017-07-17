@@ -8,7 +8,7 @@ const hasheq = {got, expected
 	var sb, str
 
 	sb = std.mksb()
-	for x in got
+	for x : got
 		std.sbfmt(sb, "{p=0,w=2,x}", x)
 	;;
 	str = std.sbfin(sb)

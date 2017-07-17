@@ -154,7 +154,7 @@ const pairfmt = {sb, ap, opts
 
 	x = std.vanext(ap)
 	std.sbfmt(sb, "formatted a pair: [{}, {}]", x.x, x.y)
-	for opt in opts
+	for opt : opts
 		std.sbputc(sb, ' ')
 		match opt
 		| ("x", val):	std.sbfmt(sb, "x={}", val)

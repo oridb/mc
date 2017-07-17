@@ -252,7 +252,7 @@ const bigparse = {str
 	 fit in one digit.
 	 */
 	v = mkbigint(1)
-	for c in std.bychar(str)
+	for c : std.bychar(str)
 		if c == '_'
 			continue
 		;;

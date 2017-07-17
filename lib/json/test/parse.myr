@@ -94,7 +94,7 @@ const filetest = {
 	var dir, data, path
 
 	dir = std.try(std.diropen("test/inputs"))
-	for f in std.byentry(dir)
+	for f : std.byentry(dir)
 		path = std.pathcat("test/inputs", f)
 		data = std.try(std.slurp(path))
 		/* 'n' indicates expected failure, 'y' indicates expected success, 'i' indicates implementation defined */
@@ -104,7 +104,7 @@ const filetest = {
 				[.name=f, .fn={ctx
 					match json.parse(data)
 					| `std.Err e:	/* ok */
-					| `std.Ok r:	testr.fail(ctx, "succeeded in parsing malformed json: {}\n", r)
+					| `std.Ok r:	testr.fail(ctx, "succeeded : parsing malformed json: {}\n", r)
 						std.die("hah")
 					;;
 				}]

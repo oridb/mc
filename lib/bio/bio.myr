@@ -354,7 +354,7 @@ const getc = {f
 }
 
 /* ensures we have enough to read a single codepoint in the buffer */
-const ensurecodepoint : (f : file# -> status(std.size)) = {f
+const ensurecodepoint = {f
 	var b
 	var len
 
@@ -702,7 +702,7 @@ const geterr = {f
 	-> errtype(e)
 }
 
-const errtype : (e : std.errno -> ioerr )= {e : std.errno -> ioerr
+const errtype = {e : std.errno -> ioerr
 	var errno
 
 	errno = (e : std.errno)

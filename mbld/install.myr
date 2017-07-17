@@ -26,7 +26,7 @@ const movetargs = {b, rm
 	var libarchive, libuse
 	var pfx
 
-	for tn in b.all
+	for tn : b.all
 		match gettarg(b.targs, tn)
 		| `Bin bt:
 			if bt.install && !bt.istest
@@ -42,7 +42,7 @@ const movetargs = {b, rm
 				std.slfree(libuse)
 			;;
 		| `Data dt:
-			for blob in dt.blobs
+			for blob : dt.blobs
 				if dt.path.len == 0
 					pfx = std.pathcat(config.Sharepath, dt.name)
 					movefile(b, rm, dt.dir, blob, pfx, 0o644)
@@ -57,7 +57,7 @@ const movetargs = {b, rm
 			/* nothing to do */
 		| `Man mt:
 			/* FIXME: figure out man section by number */
-			for m in mt.pages
+			for m : mt.pages
 				moveman(b, rm, mt.dir, m)
 			;;
 		;;

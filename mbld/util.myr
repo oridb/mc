@@ -51,7 +51,7 @@ const printcmd = {lst
 	if lst.len > 0
 		mbldput("\t")
 		mbldput("{}\t", lst[0])
-		for l in lst[1:]
+		for l : lst[1:]
 			mbldput("{} ", l)
 		;;
 	;;
@@ -111,7 +111,7 @@ const srcswapsuffix = {src, new
 }
 
 const strlistfree = {sl
-	for s in sl
+	for s : sl
 		std.slfree(s)
 	;;
 	std.slfree(sl)

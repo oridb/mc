@@ -7,15 +7,15 @@ const array = [1,2,3,4,5]
 
 const main = {
 	/* expected output 23 */
-	for x in slpart
+	for x : slpart
 		std.put("{}", x)
 	;;
 	/* expected output 12345 */
-	for x in slfull
+	for x : slfull
 		std.put("{}", x)
 	;;
 	/* expected output 678 */
-	for x in slinline
+	for x : slinline
 		std.put("{}", x)
 	;;
 	std.put("\n")

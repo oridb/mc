@@ -43,7 +43,7 @@ const itersects = {
 	ini = std.try(inifile.load("test/test.ini"))
 	somesect=0
 	anothersection=0
-	for k in inifile.bysection(ini)
+	for k : inifile.bysection(ini)
 		match k
 		| "somesect":	somesect++
 		| "another section":	anothersection++

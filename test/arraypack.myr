@@ -8,7 +8,7 @@ const a = [
 ]
 
 const main = {
-	for x in a[:]
+	for x : a[:]
 		std.put("{}", x)
 	;;
 	std.put("\n")

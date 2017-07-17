@@ -14,11 +14,11 @@ const main = {
         var z : foo[0]
         var b : bar = [.baz = [a, a][:], .quux = [z, z, z][:]]
         var c : int = 0
-        for f in b.baz
+        for f : b.baz
                 c += 3
         ;;
 
-        for f in b.quux
+        for f : b.quux
                 c += 5
         ;;
 

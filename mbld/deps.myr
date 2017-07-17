@@ -111,7 +111,7 @@ const swapall = {srcs, suff
 	var sl
 
 	sl = [][:]
-	for s in srcs
+	for s : srcs
 		std.slpush(&sl, srcswapsuffix(s, suff))
 	;;
 	-> sl
@@ -125,8 +125,8 @@ const dumpgraph = {dg
 	;;
 	keys = std.htkeys(dg.deps)
 	mbldput("digraph dg {{\n")
-	for k in keys
-		for v in std.htgetv(dg.deps, k, ["WTFUNKNOWN!"][:])
+	for k : keys
+		for v : std.htgetv(dg.deps, k, ["WTFUNKNOWN!"][:])
 			mbldput("\t\"{}\" -> \"{}\";\n", k, v)
 		;;
 	;;
@@ -143,14 +143,14 @@ const srcdeps = {b, ds, g, path, obj, usefile
 	std.slpush(&ds.depstk, path)
 	if std.htgetv(g.seen, path, false)
 		std.fput(1, "dependency loop involving {}:\n", path)
-		for d in ds.depstk
+		for d : ds.depstk
 			std.fput(1, "\t{}\n", d)
 		;;
 		std.exit(1)
 	;;
 	deps = getdeps(b, ds, path, std.dirname(path))
 	std.htput(g.seen, path, true)
-	for d in deps
+	for d : deps
 		match d
 		| `Lib (lib, lnum):
 			/*
@@ -233,7 +233,7 @@ const getcflags = {ln, cflags, libs
 	| `std.None:
 	| `std.Some m:
 		flags = std.strtok(m[1])
-		for fl in flags
+		for fl : flags
 			std.slpush(&cflags, std.sldup(fl))
 		;;
 		std.slfree(flags)
@@ -244,7 +244,7 @@ const getcflags = {ln, cflags, libs
 	| `std.None:
 	| `std.Some m:
 		flags = std.strtok(m[1])
-		for fl in flags
+		for fl : flags
 			std.slpush(&libs, std.sldup(fl))
 		;;
 		std.slfree(flags)
@@ -358,7 +358,7 @@ const scrapelibs = {dg, lib, incs
 	;;
 	bio.close(f)
 	std.htput(dg.libs, lib, deps)
-	for dep in deps
+	for dep : deps
 		scrapelibs(dg, dep, incs)
 	;;
 }
@@ -366,7 +366,7 @@ const scrapelibs = {dg, lib, incs
 const openlib = {lib, incs
 	var path, libname
 
-	for p in incs
+	for p : incs
 		libname = std.fmt("lib{}.use", lib)
 		path = std.pathjoin([p, libname][:])
 		std.slfree(libname)
@@ -399,7 +399,7 @@ const openlib = {lib, incs
 	;;
 	std.fput(std.Err, "could not find library {}\n", lib)
 	std.fput(std.Err, "search path is:\n")
-	for p in incs
+	for p : incs
 		std.fput(std.Err, "\t{}\n", p)
 	;;
 	std.fput(std.Err, "\t{}\n", config.Libpath)

@@ -43,7 +43,7 @@ const load = {b
 	ok = loadall(b, b.bldfile, "", sel)
 
 	targs = sysselfin(sel)
-	for (name, targ) in targs
+	for (name, targ) : targs
 		std.slpush(&b.all, name)
 		std.htput(b.targs, name, targ)
 	;;
@@ -62,11 +62,11 @@ const loadall = {b, path, dir, sel
 
 	p = mkparser(path, dir, b.basedir, sel)
 	ok = bld.parse(b, p, "")
-	for t in p.targs
+	for t : p.targs
 		setopts(p, t)
 	;;
 
-	for sub in p.subdirs
+	for sub : p.subdirs
 		subbld = std.pathcat(sub, "bld.sub")
 		subproj = std.pathcat(sub, "bld.proj")
 		/*
@@ -115,11 +115,11 @@ const setmyropt = {p, t
 	;;
 
 	std.sljoin(&t.incpath, p.incpath)
-	for l in p.libdeps
+	for l : p.libdeps
 		libdep = libpath(p, l)
 		std.slpush(&t.libdeps, libdep)
 	;;
-	for l in p.tstdeps
+	for l : p.tstdeps
 		tstdep = libpath(p, l)
 		std.slpush(&t.tstdeps, tstdep)
 	;;
@@ -206,7 +206,7 @@ const sortdeps = {b
 	all = [][:]
 	looped = std.mkht(std.strhash, std.streq)
 	marked = std.mkht(std.strhash, std.streq)
-	for dep in b.all
+	for dep : b.all
 		match gettarg(b.targs, dep)
 		| `Bin _:	all = visit(all, b, "all", dep, looped, marked)
 		| `Lib _:	all = visit(all, b, "all", dep, looped, marked)
@@ -226,7 +226,7 @@ const visit = {all, b, parent, targ, looped, marked
 	;;
 
 	std.htput(looped, targ, true)
-	for (dir, lib, dep) in getdeps(b, parent, targ)
+	for (dir, lib, dep) : getdeps(b, parent, targ)
 		all = visit(all, b, targ, dep, looped, marked)
 	;;
 	std.htdel(looped, targ)
@@ -311,7 +311,7 @@ const subtarget = {b, p
 	var subs
 
 	subs = anontarget(p, "sub")
-	for s in subs
+	for s : subs
 		std.slpush(&p.subdirs, std.pathcat(p.fdir, s))
 	;;
 }
@@ -361,7 +361,7 @@ const cmdtarget = {b, p, cmd, iscmd
 	istest = false
 	deplist = [][:]
 	tags = [][:]
-	for elt in attrs
+	for elt : attrs
 		match elt
 		| ("durable", ""):	durable = true
 		| ("test", ""):		istest = true
@@ -384,7 +384,7 @@ const cmdtarget = {b, p, cmd, iscmd
 		.cmd=cmdlist,
 		.tags=tags,
 	])
-	for o in outlist
+	for o : outlist
 		if iscmd
 			addtarg(p, b, o, gt.tags, `Cmd gt)
 		else
@@ -429,7 +429,7 @@ const myrtarget = {b, p, targ
 	match inputlist(p)
 	| `std.Some (wl, libs): 
 		libdeps = libs
-		for w in wl
+		for w : wl
 			sysseladd(fsel, w)
 		;;
 		inputs = sysselfin(fsel)
@@ -449,7 +449,7 @@ const myrtarget = {b, p, targ
 	tags = [][:]
 	istest = false
 	tstdeps = [][:]
-	for elt in attrs
+	for elt : attrs
 		match elt
 		| ("ldscript", lds):	ldscript = std.sldup(lds)
 		| ("runtime", rt):	runtime = std.sldup(rt)
@@ -519,7 +519,7 @@ const datatarget = {b, p, targ
 	;;
 
 	tags = [][:]
-	for elt in attrs
+	for elt : attrs
 		match elt
 		| ("tag", tag):		std.slpush(&tags, tag)
 		| ("path", pathdir):	path = pathdir

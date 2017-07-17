@@ -22,6 +22,7 @@ pkg std =
  a map from service name to a list of (port,proto)
  pairs in order of preference
 */
+
 /* FIXME: implement
 var services : htab(byte[:], [int, byte[:]][:])#
 var inited = false

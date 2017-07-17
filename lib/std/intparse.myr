@@ -52,7 +52,7 @@ generic doparse = {s, isneg, base ->  option(@a::(integral,numeric))
 	var cv : int32
 	
 	v = 0
-	for c in std.bychar(s)
+	for c : std.bychar(s)
 		if c == '_'
 			continue
 		;;

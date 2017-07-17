@@ -14,14 +14,14 @@ pkg bld =
 ;;
 
 const cleanall = {b
-	for tn in b.all
+	for tn : b.all
 		match gettarg(b.targs, tn)
 		| `Bin bt:
 			cleanup(b, bt, bt.inputs)
 		| `Lib lt:
 			cleanup(b, lt, lt.inputs)
 		| `Gen gt:
-			for f in gt.out
+			for f : gt.out
 				if !gt.durable && std.remove(f)
 					mbldput("\tclean {}\n", f)
 				;;
@@ -35,7 +35,7 @@ const cleanall = {b
 }
 
 const clean = {b, targ
-	for tn in b.all
+	for tn : b.all
 		match gettarg(b.targs, tn)
 		| `Bin bt:
 			if std.sleq(bt.name, targ)
@@ -46,7 +46,7 @@ const clean = {b, targ
 				cleanup(b, lt, lt.inputs)
 			;;
 		| `Gen gt:
-			for f in gt.out
+			for f : gt.out
 				if !gt.durable && std.remove(f)
 					mbldput("\tclean {}\n", f)
 				;;
@@ -74,12 +74,12 @@ const cleanup = {b, targ, leaves
 	setdir(b, targ.dir)
 	dg = myrdeps(b, targ, true, true)
 	mchammer_files = std.mkht(std.strhash, std.streq)
-	for l in leaves
+	for l : leaves
 		std.htput(mchammer_files, l, true)
 	;;
 
 	keys = std.htkeys(dg.deps)
-	for k in keys
+	for k : keys
 		if !std.htgetv(mchammer_files, k, false) && std.remove(k)
 			mbldput("\tclean {}\n", k)
 		;;

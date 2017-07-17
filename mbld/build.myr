@@ -16,7 +16,7 @@ pkg bld =
 ;;
 
 const buildall = {b
-	for tn in b.all
+	for tn : b.all
 		if std.hthas(b.built, tn)
 			continue
 		;;
@@ -42,7 +42,7 @@ const buildtarg = {b, targ
 
 	depset = std.mkht(std.strhash, std.streq)
 	addeps(b, targ, depset)
-	for tn in b.all
+	for tn : b.all
 		if std.hthas(b.built, tn) || !std.hthas(depset, tn)
 			continue
 		;;
@@ -75,11 +75,11 @@ const addeps = {b, targ, depset
 	std.htput(depset, targ, true)
 	match gettarg(b.targs, targ)
 	| `Bin bt:
-		for (dir, lib, targname) in bt.libdeps
+		for (dir, lib, targname) : bt.libdeps
 			addeps(b, targname, depset)
 		;;
 	| `Lib lt:
-		for (dir, lib, targname) in lt.libdeps
+		for (dir, lib, targname) : lt.libdeps
 			addeps(b, targname, depset)
 		;;
 	| _:
@@ -87,7 +87,7 @@ const addeps = {b, targ, depset
 }
 
 const genall = {b
-	for tn in b.all
+	for tn : b.all
 		match gettarg(b.targs, tn)
 		| `Gen gt:	runin(b, gt.cmd, gt.dir)
 		| _:	/* skip */
@@ -173,7 +173,7 @@ const buildlib = {b, targ
 
 const genfiles = {b, gt
 	setdir(b, gt.dir)
-	for out in gt.out
+	for out : gt.out
 		if !std.fexists(out) || !allfresh(gt.deps, out)
 			run(gt.cmd)
 			break
@@ -182,7 +182,7 @@ const genfiles = {b, gt
 }
 
 const addincludes = {b, targ
-	for (inc, lib, subtarg) in targ.libdeps
+	for (inc, lib, subtarg) : targ.libdeps
 		if !hasinc(targ.incpath, inc)
 			std.slput(&targ.incpath, 0, inc)
 		;;
@@ -190,7 +190,7 @@ const addincludes = {b, targ
 }
 
 const hasinc = {path, t
-	for e in path
+	for e : path
 		if std.sleq(e, t)
 			-> true
 		;;
@@ -210,7 +210,7 @@ const builddep = {b, dg, out, incs
 
 	match std.htget(dg.deps, out)
 	| `std.Some deps:
-		for d in deps
+		for d : deps
 			if std.sleq(out, d)
 				/*
 				if an input generates itself (eg, object files), we
@@ -259,7 +259,7 @@ const compile = {dg, src, incs
 	cmd = [][:]
 	if std.hassuffix(src, ".myr")
 		std.slpush(&cmd, opt_mc)
-		for inc in incs 
+		for inc : incs 
 			std.slpush(&cmd, "-I")
 			std.slpush(&cmd, inc)
 		;;
@@ -271,7 +271,7 @@ const compile = {dg, src, incs
 		std.slfree(cmd)
 	elif std.hassuffix(src, ".s")
 		o = srcswapsuffix(src, config.Objsuffix)
-		for c in config.Ascmd
+		for c : config.Ascmd
 			std.slpush(&cmd, c)
 		;;
 		std.slpush(&cmd,"-o")
@@ -286,7 +286,7 @@ const compile = {dg, src, incs
 		std.slpush(&cmd,"-o")
 		std.slpush(&cmd, o)
 		std.slpush(&cmd, src)
-		for flg in std.htgetv(dg.cflags, src, [][:])
+		for flg : std.htgetv(dg.cflags, src, [][:])
 			std.slpush(&cmd, flg)
 		;;
 		run(cmd)
@@ -303,7 +303,7 @@ const linkbin = {dg, bin, srcfiles, ldscript, rt, incs, extlibs
 	cmd = [][:]
 
 	/* ld -o bin */
-	for c in config.Linkcmd
+	for c : config.Linkcmd
 		std.slpush(&cmd, std.sldup(c))
 	;;
 	std.slpush(&cmd, std.sldup(bin))
@@ -323,7 +323,7 @@ const linkbin = {dg, bin, srcfiles, ldscript, rt, incs, extlibs
 	;;
 
 	/* input.o list.o... */
-	for f in srcfiles
+	for f : srcfiles
 		std.slpush(&cmd, srcswapsuffix(f, config.Objsuffix))
 	;;
 
@@ -332,7 +332,7 @@ const linkbin = {dg, bin, srcfiles, ldscript, rt, incs, extlibs
 
 
 	/* add extra libs */
-	for l in dg.extlibs
+	for l : dg.extlibs
 		std.slpush(&cmd, std.fmt("-l{}", l))
 	;;
 
@@ -354,11 +354,11 @@ const archivelib = {dg, lib, files, incs
 	var obj
 
 	cmd = [][:]
-	for c in config.Arcmd
+	for c : config.Arcmd
 		std.slpush(&cmd, std.sldup(c))
 	;;
 	std.slpush(&cmd, std.fmt("lib{}.a", lib))
-	for f in files
+	for f : files
 		obj = srcswapsuffix(f, config.Objsuffix)
 		std.slpush(&cmd, obj)
 	;;
@@ -375,14 +375,14 @@ const mergeuse = {dg, lib, files, incs
 	std.slpush(&cmd, std.fmt("lib{}.use", lib))
 	std.slpush(&cmd, std.sldup("-p"))
 	std.slpush(&cmd, std.sldup(lib))
-	for f in files
+	for f : files
 		if std.hassuffix(f, ".myr")
 			std.slpush(&cmd, srcswapsuffix(f, ".use"))
 		elif !std.hassuffix(f, ".s") && !std.hassuffix(f, ".glue.c")
 			std.fatal("unknown file type for {}\n", f)
 		;;
 	;;
-	for l in dg.extlibs
+	for l : dg.extlibs
 		std.slpush(&cmd, std.fmt("-l{}", l))
 	;;
 	run(cmd)
@@ -397,7 +397,7 @@ const addlibs = {cmd, libgraph, incs
 
 	/* -L incpath... */
 	if !config.Directlib
-		for inc in incs
+		for inc : incs
 			std.slpush(&cmd, std.fmt("-L{}", inc))
 		;;
 	;;
@@ -407,7 +407,7 @@ const addlibs = {cmd, libgraph, incs
 	marked = std.mkht(std.strhash, std.streq)
 	head = cmd.len
 
-	for lib in libs
+	for lib : libs
 		cmd = visit(cmd, head, libgraph, lib, looped, marked, incs)
 	;;
 
@@ -422,7 +422,7 @@ const visit = {cmd, head, g, lib, looped, marked, incs
 	;;
 
 	std.htput(looped, lib, true)
-	for dep in std.htgetv(g, lib, [][:])
+	for dep : std.htgetv(g, lib, [][:])
 		cmd = visit(cmd, head, g, dep, looped, marked, incs)
 	;;
 	std.htdel(looped, lib)
@@ -440,7 +440,7 @@ const putlib = {cmd, head, lib, incs
 		| `std.None:
 			mbldput("in path: ")
 			sep = ""
-			for inc in incs
+			for inc : incs
 				mbldput("\t{}{}\n", sep, inc)
 				sep = ", "
 			;;
@@ -456,7 +456,7 @@ const findlib = {lib, incs
 	var sl, p
 
 	sl = std.bfmt(buf[:], "lib{}.a", lib)
-	for i in incs
+	for i : incs
 		p = std.pathcat(i, sl)
 		if std.fexists(p)
 			-> `std.Some p
@@ -476,7 +476,7 @@ const freshlibs = {targ, output, libgraph
 	var libs
 
 	libs = std.htkeys(libgraph)
-	for l in libs
+	for l : libs
 		match findlib(l, targ.incpath)
 		| `std.Some lib:
 			if !isfresh(lib, output)
@@ -487,7 +487,7 @@ const freshlibs = {targ, output, libgraph
 		| `std.None:
 			std.fput(1, "{}: could not find library lib{}.a\n", targ.name, l)
 			std.fput(1, "searched:\n")
-			for inc in targ.incpath
+			for inc : targ.incpath
 				std.fput(1, "\t{}\n", inc)
 			;;
 			std.fput(1, "\t{}/{}\n", opt_instbase, config.Libpath)
@@ -499,7 +499,7 @@ const freshlibs = {targ, output, libgraph
 }
 
 const allfresh = {deps, out
-	for d in deps
+	for d : deps
 		if !isfresh(d, out)
 			-> false
 		;;

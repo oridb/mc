@@ -36,7 +36,7 @@ const main = {
 			std.bsput(bs, 16)
 			std.bsput(bs, 7)
 			std.bsput(bs, 3)
-			for e in std.bybsvalue(bs)
+			for e : std.bybsvalue(bs)
 				testr.check(ctx, e == expected[i], "expected[{}] ({}) != {}", i, e, expected[i])
 				i++
 			;;
@@ -63,7 +63,7 @@ const mkset = {elts
 	var bs
 
 	bs = std.mkbs()
-	for e in elts
+	for e : elts
 		std.bsput(bs, e)
 	;;
 	-> bs

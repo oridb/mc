@@ -67,7 +67,7 @@ const bscount = {bs
 	var n
 
 	n = 0
-	for v in bybsvalue(bs)
+	for v : bybsvalue(bs)
 		n++
 	;;
 	-> n

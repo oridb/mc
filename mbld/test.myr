@@ -27,14 +27,14 @@ const test = {b
 	tests = [][:]
 	buildall(b)
 	setdir(b, "")
-        for tn in b.all
+        for tn : b.all
 		match gettarg(b.targs, tn)
 		| `Bin bt:      std.sljoin(&tests, buildtests(b, bt))
 		| `Lib lt:	std.sljoin(&tests, buildtests(b, lt))
 		| _:	/* nothing */
 		;;
         ;;
-	for tn in b.all
+	for tn : b.all
 		match gettarg(b.targs, tn)
 		| `Bin t:
 			if !t.istest
@@ -58,14 +58,14 @@ const test = {b
 
 	ok = true
 	failed = [][:]
-	for (c, dir) in tests
+	for (c, dir) : tests
 		setdir(b, dir)
 		if !runtest(b, c, &failed)
 			ok = false
 		;;
 
 	;;
-	for (bin, dir) in tests
+	for (bin, dir) : tests
 		freecmd(bin)
 		std.slfree(dir)
 	;;
@@ -74,7 +74,7 @@ const test = {b
 	;;
 
 	printfailed(failed)
-	for f in failed
+	for f : failed
 		std.slfree(f)
 	;;
 	if ok
@@ -90,7 +90,7 @@ const test = {b
 const printfailed = {failed
 	if failed.len > 0
 		mbldput("FAILURES: {}\n", failed.len)
-		for t in failed
+		for t : failed
 			mbldput("\t{}\n", t)
 		;;
 	;;
@@ -100,14 +100,14 @@ const dupcmd = {cmd
 	var ret
 
 	ret = [][:]
-	for c in cmd
+	for c : cmd
 		std.slpush(&ret, std.sldup(c))
 	;;
 	-> ret
 }
 
 const freecmd = {cmd
-	for c in cmd
+	for c : cmd
 		std.slfree(c)
 	;;
 	std.slfree(cmd)
@@ -119,7 +119,7 @@ const buildtests = {b, targ
 
 	tests = [][:]
 	setdir(b, targ.dir)
-	for s in targ.inputs
+	for s : targ.inputs
 		match testpath(s)
 		| `std.None: /* nothing to do */
 		| `std.Some path:
@@ -152,7 +152,7 @@ const runtest = {b, cmd, failed
 	var sub
 
 	mbldput("run")
-	for c in cmd
+	for c : cmd
 		p = std.pathcat(b.curdir, c)
 		mbldput(" {}", p)
 		std.slfree(p)

@@ -19,7 +19,7 @@ const htmlfmt = {sb, ap, args
 	var s : byte[:]
 
 	s = std.vanext(ap)
-	for c in std.bychar(s)
+	for c : std.bychar(s)
 		match c
 		| '&': std.sbputs(sb, "&amp;")
 		| '<': std.sbputs(sb, "&lt;")
