@@ -944,6 +944,8 @@ forstmt : Tfor optexprln loopcond optexprln block
 	{$$ = mkloopstmt($1->loc, $2, $3, $4, $5);}
 	| Tfor expr Tin exprln block
 	{$$ = mkiterstmt($1->loc, $2, $4, $5);}
+	| Tfor expr Tcolon exprln block
+	{$$ = mkiterstmt($1->loc, $2, $4, $5);}
 	| Tfor decl Tendln loopcond optexprln block {
 		//Node *init;
 		if ($2.nn != 1)
