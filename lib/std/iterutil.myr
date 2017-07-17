@@ -38,7 +38,7 @@ pkg std =
 	generic byzip	: (a : @a[:], b : @b[:]	 -> zipiter(@a, @b))
 	generic byenum	: (a : @a[:] -> enumiter(@a))
 	generic byreverse 	: (sl : @a[:] -> reverseiter(@a))
-	generic byref 	: (sl : @a[:] -> reverseiter(@a))
+	generic byref 	: (sl : @a[:] -> refiter(@a))
 	generic bychunk	: (a : @a[:], chunk : size -> chunkiter(@a))
 ;;
 
