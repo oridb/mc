@@ -322,10 +322,8 @@ murmurhash2 (void *ptr, size_t len)
 	case 3:	h ^= p[2] << 16;
 	case 2:	h ^= p[1] << 8;
 	case 1:	h ^= p[0] << 0;
-	default:
-		break;
-	};
-	h *= m;
+		h *= m;
+	}
 
 	h ^= h >> 13;
 	h *= m;

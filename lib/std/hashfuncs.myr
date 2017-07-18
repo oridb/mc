@@ -121,17 +121,19 @@ const murmurhash2 = {data, seed
 	match data.len
 	| 3:
 		h ^= (data[2] : uint32) << 16
-		h ^= (data[1] : uint32) <<8
+		h ^= (data[1] : uint32) << 8
 		h ^= (data[0] : uint32)
+		h *= m
 	| 2:
-		h ^= (data[1] : uint32) <<8
+		h ^= (data[1] : uint32) << 8
 		h ^= (data[0] : uint32)
+		h *= m
 	| 1:
 		h ^= (data[0] : uint32)
+		h *= m
 	| 0:	/* nothing */
 	| _:	die("0 < len < 4 must be true")
 	;;
-	h *= m
 
 	h ^= h >> 13
 	h *= m
