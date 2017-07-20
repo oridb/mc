@@ -1053,10 +1053,15 @@ label   : Tcolon Tident {
 static void setupinit(Node *n)
 {
 	char name[1024];
-	char *p;
+	char *p, *s;
 
 	bprintf(name, sizeof name, "%s$__init__", file->file.files[0]);
-	p = name;
+	s = strrchr(name, '/');
+	if (s)
+		s++;
+	else
+		s = name;
+	p = s;
 	while (*p) {
 		if (!isalnum(*p) && *p != '_')
 			*p = '$';
@@ -1064,7 +1069,7 @@ static void setupinit(Node *n)
 	}
 	n->decl.isinit = 1;
 	n->decl.vis = Vishidden;
-	n->decl.name->name.name = strdup(name);
+	n->decl.name->name.name = strdup(s);
 }
 
 static void addtrait(Type *t, char *str)

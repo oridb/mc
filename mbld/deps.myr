@@ -58,6 +58,7 @@ const myrdeps = {b, mt, doclean, addsrc
 		.extlibs = [][:],
 		.dynamic = false,
 	])
+
 	/* direct dependencies of binary */
 	if mt.islib
 		out = std.fmt("lib{}.a", mt.name)
