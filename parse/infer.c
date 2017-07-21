@@ -2578,7 +2578,6 @@ infer(Node *file)
 	seqbase = mkht(tyhash, tyeq);
 	/* set up the symtabs */
 	loaduses(file);
-	// mergeexports(&st, file);
 
 	/* do the inference */
 	applytraits(file);
