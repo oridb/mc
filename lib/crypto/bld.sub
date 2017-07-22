@@ -21,3 +21,11 @@ lib crypto =
 	lib ../thread:thread
 ;;
 
+
+lib testutil =
+	util.myr
+;;
+
+testdeps =
+	testutil
+;;

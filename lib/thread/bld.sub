@@ -45,3 +45,7 @@ lib thread =
         lib ../sys:sys
         lib ../std:std
 ;;
+
+lib testutil =
+	util.myr
+;;

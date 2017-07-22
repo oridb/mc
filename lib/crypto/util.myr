@@ -1,6 +1,6 @@
 use std
 
-pkg =
+pkg testutil =
 	const hasheq	: (got : byte[:], expected : byte[:] -> void)
 ;;
 

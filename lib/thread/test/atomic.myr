@@ -1,7 +1,7 @@
 use std
 use thread
 
-use "util"
+use testutil
 
 const Nherd = 20
 
@@ -11,7 +11,7 @@ var done : uint32 = 0
 const main = {
 	done = 0
 	val = 0
-	mkherd(Nherd, incvar)
+	testutil.mkherd(Nherd, incvar)
 	while thread.xget(&done) != Nherd
 		/* nothing */
 	;;
