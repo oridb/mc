@@ -152,6 +152,7 @@ const mkbuild = {tags
 	var b
 
 	b = std.zalloc()
+	b.objdir = "obj"
 	b.libs = std.mkht(std.strhash, std.streq)
 	b.proc = std.mkht(std.inthash, std.inteq)
 	b.targs = std.mkht(std.strhash, std.streq)

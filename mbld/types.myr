@@ -4,6 +4,7 @@ pkg bld =
 	type build = struct
 		/* build state */
 		basedir	: byte[:]
+		objdir	: byte[:]
 		tags	: std.htab(byte[:], (int, int, int))#
 		libs	: std.htab(byte[:], libdep#)#
 		deps	: depgraph#

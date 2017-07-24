@@ -58,7 +58,7 @@ const testdeps = {b
 }
 
 const myrdeps = {b, name, mt
-	var p, o, u, n, to, tu
+	var t, p, o, u, n, to, tu
 	var libs, dynlibs
 	var cflags, ll
 	var g, a, deps
@@ -68,8 +68,8 @@ const myrdeps = {b, name, mt
 	if mt.islib
 		u = std.fmt("lib{}.use", mt.name)
 		o = std.fmt("lib{}.a", mt.name)
-		tu = std.pathcat(mt.dir, u)
-		to = std.pathcat(mt.dir, o)
+		tu = std.pathjoin([b.objdir, mt.dir, u][:])
+		to = std.pathjoin([b.objdir, mt.dir, o][:])
 
 		gu = node(g, tu)
 		go = node(g, to)
@@ -90,8 +90,8 @@ const myrdeps = {b, name, mt
 		std.slfree(u)
 	else
 		u = std.fmt("{}.use", mt.name)
-		tu = std.pathcat(mt.dir, u)
-		to = std.pathcat(mt.dir, mt.name)
+		tu = std.pathjoin([b.objdir, mt.dir, u][:])
+		to = std.pathjoin([b.objdir, mt.dir, mt.name][:])
 
 		go = node(g, to)
 		gu = node(g, tu)
@@ -120,8 +120,14 @@ const myrdeps = {b, name, mt
 		p = std.pathcat(mt.dir, f)
 		leaf(g, p)
 		if std.hassuffix(f, ".myr")
-			o = changesuffix(p, config.Objsuffix)
-			u = changesuffix(p, ".use")
+			t = changesuffix(p, config.Objsuffix)
+			o = std.pathcat(b.objdir, t)
+			std.slfree(t)
+
+			t = changesuffix(p, ".use")
+			u = std.pathcat(b.objdir, t)
+			std.slfree(t)
+
 			depends(g, go, o)
 			depends(g, gu, u)
 
@@ -142,16 +148,21 @@ const myrdeps = {b, name, mt
 			myrcmd(b, n, mt, p, false)
 			std.slfree(deps)
 		elif std.hassuffix(f, ".s")
-			o = changesuffix(p, config.Objsuffix)
+			t = changesuffix(p, config.Objsuffix)
+			o = std.pathcat(b.objdir, t)
+			std.slfree(t)
+
 			depends(g, go, o)
 			n = node(g, o)
 			generates(g, n, o)
 			depends(g, n, p)
 			ascmd(b, n, mt, o, p)
 		elif std.hassuffix(f, ".glue.c")
+			t = changesuffix(p, config.Objsuffix)
+			o = std.pathcat(b.objdir, t)
+			std.slfree(t)
+
 			(cflags, ll) = scrapecflags(b, mt, p)
-			std.put("cflags: {}, ll: {}\n", cflags, ll)
-			o = changesuffix(p, config.Objsuffix)
 			depends(g, go, o)
 			n = node(g, o)
 			generates(g, n, o)
@@ -429,17 +440,20 @@ const linkcmd = {b, n, mt, bin, libs, dynlibs, istest
 
 const myrcmd = {b, n, mt, src, istest
 	std.slpush(&n.cmd, opt_mc)
+	if b.objdir.len > 0
+		pushopt(&n.cmd, "-O", b.objdir)
+	;;
 	for inc : mt.incpath[:mt.incpath.len - 1]
-		pushinc(&n.cmd, "-I", inc)
+		pushopt(&n.cmd, "-I", inc)
 	;;
 	if istest
 		for (dir, _, _) : mt.tstdeps
-			pushinc(&n.cmd, "-I", dir)
+			pushopt(&n.cmd, "-I", dir)
 		;;
-		pushinc(&n.cmd, "-I", mt.dir)
+		pushopt(&n.cmd, "-I", mt.dir)
 	;;
 	for (dir, _, _) : mt.libdeps
-		pushinc(&n.cmd, "-I", dir)
+		pushopt(&n.cmd, "-I", dir)
 	;;
 	if opt_genasm
 		std.slpush(&n.cmd, "-S")
@@ -486,7 +500,7 @@ const scrapedeps = {b : build#, mt, path
 				std.slpush(&l, `Xdep p)
 			else
 				/* internal library */
-				p = std.pathcat(mt.dir, uses[3])
+				p = std.pathjoin([b.objdir, mt.dir, uses[3]][:])
 				std.sljoin(&p, ".use")
 				std.slpush(&l, `Ldep p)
 			;;
@@ -531,6 +545,7 @@ const scrapecflags = {b, mt, path
 }
 
 const generates = {g, n, dep
+	std.mkpath(std.dirname(dep))
 	std.slpush(&n.gen, dep)
 	std.htput(g.gen, dep, n)
 }
@@ -575,7 +590,7 @@ const addnode = {g, targ, n
 	std.htput(g.targs, targ, nl)
 }
 
-const pushinc = {lst, pfx, dir
+const pushopt = {lst, pfx, dir
 	std.slpush(lst, std.sldup(pfx))
 	std.slpush(lst, std.pathnorm(dir))
 }
