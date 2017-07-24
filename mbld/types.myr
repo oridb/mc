@@ -4,19 +4,21 @@ pkg bld =
 	type build = struct
 		/* build state */
 		basedir	: byte[:]
-		bldfile	: byte[:]
-		curdir	: byte[:]
-		built	: std.htab(byte[:], bool)#	/* set of targets built in this run */
 		tags	: std.htab(byte[:], (int, int, int))#
+		libs	: std.htab(byte[:], libdep#)#
+		deps	: depgraph#
+
+		/* in flight builds */
+		queue	: node#[:]
+		proc	: std.htab(std.pid, node#)#
 
 		/* build params */
-		all	: byte[:][:]			/* targets in reverse topological order */
-		targs	: std.htab(byte[:], targ)#	/* name => target mapping */
-		tdeps	: std.htab(byte[:], byte[:][:])	/* targname => depname[:][:] */
-		gensrc	: std.htab(byte[:], cmdtarg#)#	/* generated => generator mapping */
+		all	: byte[:][:]
+		targs	: std.htab(byte[:], targ)#
 		prefix	: byte[:]
 		system	: byte[:]
 		arch	: byte[:]
+
 	;;
 
 	type targ = union
@@ -29,32 +31,30 @@ pkg bld =
 	;;
 
 	type myrtarg = struct
-		file	: byte[:]
-		line	: int
-
-		islib	: bool
-		istest	: bool
-		dir	: byte[:]
 		name	: byte[:]
+		dir	: byte[:]
+
 		inputs	: byte[:][:]
 		libdeps	: (byte[:], byte[:], byte[:])[:]	/* dir, lib, targname */
 		tstdeps	: (byte[:], byte[:], byte[:])[:]	/* dir, lib, targname */
-		install	: bool
 		runtime	: byte[:]
 		incpath	: byte[:][:]
 		tags	: byte[:][:]
 		ldscript	: byte[:]
+
+		islib	: bool
+		istest	: bool
+		install	: bool
+
 	;;
 
 	type cmdtarg = struct
 		dir	: byte[:]
-		out	: byte[:][:]
+		gen	: byte[:][:]
 		cmd	: byte[:][:] 
 		deps	: byte[:][:] 
 		tags	: byte[:][:]
 		durable	: bool
-		/* we can have multiple outputs, but we only want to run once for each */
-		done	: bool
 		istest	: bool
 	;;
 
@@ -72,18 +72,49 @@ pkg bld =
 		blobs	: byte[:][:]
 	;;
 
-	type depgraph = struct
-		deps	: std.htab(byte[:], byte[:][:])#
-		libs	: std.htab(byte[:], byte[:][:])#
-		input	: std.htab(byte[:], byte[:])#
-		sources	: std.htab(byte[:], bool)#
-		updated	: std.htab(byte[:], bool)#
-		seen	: std.htab(byte[:], bool)#
-		done	: std.htab(byte[:], bool)#
+	type libdep = struct
+		dir	: byte[:]
+		name	: byte[:]
+		dep	: byte[:][:]
+		dyndep	: byte[:][:]
+		genuse	: byte[:]
+		genar	: byte[:]
+	;;
 
-		/* used for linking C */
-		extlibs	: byte[:][:]
-		cflags	: std.htab(byte[:], byte[:][:])#
-		dynamic	: bool
+	type depgraph = struct
+		/* the edges of the graph from both ends */
+		targs	: std.htab(byte[:], node#[:])#
+		gen	: std.htab(byte[:], node#)#
+
+		nodes	: node#[:]
+		leaves	: node#[:]
+	;;
+
+	type node = struct
+		/* for debugging, "primary output" */
+		lbl	: byte[:]
+
+		/* run this command in this dir to 'execute' the node */
+		cmd	: byte[:][:]
+		wdir	: byte[:]
+
+		/* install info */
+		instdir	: byte[:]
+		instmod	: int64
+
+		/* dependency names */
+		gen	: byte[:][:]
+		dep	: byte[:][:]
+		xdep	: byte[:][:]
+
+		/* resolved dependency nodes */
+		ndep	: node#[:]
+		ngen	: node#[:]
+
+		/* build state */
+		nblock	: int32
+		mtime	: std.time
+		durable	: bool	/* keep outputs when cleaning */
+		want	: bool
 	;;
 ;;

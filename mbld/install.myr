@@ -1,9 +1,7 @@
 use std
 
 use "config"
-use "deps"
 use "opts"
-use "parse"
 use "types"
 use "util"
 use "build"
@@ -14,7 +12,7 @@ pkg bld =
 ;;
 
 const install = {b
-	buildall(b)
+	buildtarg(b, "all")
 	-> movetargs(b, false)
 }
 
@@ -23,54 +21,28 @@ const uninstall = {b
 }
 
 const movetargs = {b, rm
-	var libarchive, libuse
-	var pfx
+	var inst
 
-	for tn : b.all
-		match gettarg(b.targs, tn)
-		| `Bin bt:
-			if bt.install && !bt.istest
-				movefile(b, rm, bt.dir, bt.name, config.Binpath, 0o755)
-			;;
-		| `Lib lt:
-			if lt.install && !lt.istest
-				libuse = std.fmt("lib{}.use", lt.name)
-				movefile(b, rm, lt.dir, libuse, config.Libpath, 0o644)
-				libarchive = std.fmt("lib{}.a", lt.name)
-				movefile(b, rm, lt.dir, libarchive, config.Libpath, 0o644)
-				std.slfree(libarchive)
-				std.slfree(libuse)
-			;;
-		| `Data dt:
-			for blob : dt.blobs
-				if dt.path.len == 0
-					pfx = std.pathcat(config.Sharepath, dt.name)
-					movefile(b, rm, dt.dir, blob, pfx, 0o644)
-					std.slfree(pfx)
-				else
-					movefile(b, rm, dt.dir, blob, dt.path, 0o644)
-				;;
-			;;
-		| `Gen gt:
-			/* nothing to do */
-		| `Cmd ct:
-			/* nothing to do */
-		| `Man mt:
-			/* FIXME: figure out man section by number */
-			for m : mt.pages
-				moveman(b, rm, mt.dir, m)
+	inst = std.htgetv(b.deps.targs, "all", [][:])
+	for n : inst
+		if n.instdir.len == 0
+			continue
+		;;
+		for g : n.gen
+			if !movefile(b, rm, g, n.instdir, n.instmod)
+				-> false
 			;;
 		;;
 	;;
 	-> true
+
 }
 
-const movefile = {b, rm, dir, file, prefix, perm
-	var path
+const movefile = {b, rm, file, prefix, perm
+	var path, ok
 
-	setdir(b, dir)
-	makepath(prefix)
-	path = std.pathjoin([opt_destdir, opt_instbase, prefix, file][:])
+	ok = true
+	path = std.pathjoin([opt_destdir, opt_instbase, prefix, std.basename(file)][:])
 	if rm
 		mbldput("\trm {}\n", path)
 		if !std.remove(path)
@@ -78,42 +50,18 @@ const movefile = {b, rm, dir, file, prefix, perm
 		;;
 	else
 		std.remove(path)
+		std.mkpath(std.dirname(path))
 		match std.slurp(file)
 		| `std.Err m:	std.fatal("could not open {} for reading\n", file)
 		| `std.Ok buf:
-			if std.blat(path, buf, perm)
-				mbldput("\t{} => {}\n", file, path)
-			else
+			mbldput("\t{} => {}\n", file, path)
+			if !std.blat(path, buf, perm)
 				mbldput("could not write {}\n", file)
+				ok = false
 			;;
 		;;
 	;;
 	std.slfree(path)
+	-> ok
 }
 
-const moveman = {b, rm, dir, man
-	var sect, manrel
-
-	match std.strrfind(man, ".")
-	| `std.None:
-		std.fatal("manpage {} has no section\n", man)
-	| `std.Some s:
-		sect = s + 1
-		if s + 1 == man.len
-			std.fatal("manpage {} missing suffix\n", man)
-		;;
-	;;
-
-	manrel = std.fmt("{}{}", config.Manpath, man[sect:])
-	makepath(manrel)
-	movefile(b, rm, dir, man, manrel, 0o644)
-	std.slfree(manrel)
-}
-
-const makepath = {prefix
-	var p
-	
-	p = std.pathjoin([opt_destdir, opt_instbase, prefix][:])
-	std.mkpath(p)
-	std.slfree(p)
-}

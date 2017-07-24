@@ -1,4 +1,5 @@
 use std
+use thread
 
 use "config"
 
@@ -12,6 +13,7 @@ pkg bld =
 	var opt_instbase	: byte[:]
 	var opt_destdir	: byte[:]
 	var opt_outdir	: byte[:]
+	var opt_maxproc : std.size
 	var opt_debug	: bool
 	var opt_silent	: bool
 
@@ -44,6 +46,7 @@ var opt_ld	= "ld"
 var opt_ar	= "ar"
 var opt_genasm  = false
 var opt_silent	= false
+var opt_maxproc = 1
 
 const initopts = {
 	var si
@@ -67,6 +70,7 @@ const initopts = {
 	| unknown:	std.fatal("unknown architecture \"{}\"\n", unknown)
 	;;
 
+	opt_maxproc = 2*(thread.ncpu() : std.size)
 	opt_incpaths = [][:]
 	opt_instbase = config.Instroot
 	opt_destdir = std.getenvv("DESTDIR", "")
@@ -84,7 +88,7 @@ const parseversion = {v
 
 	i = 0
 	a = [0, 0, 0]
-	for e : std.bysplit(v, ".")
+	for e in std.bysplit(v, ".")
 		match std.intparse(e)
 		| `std.Some n:	a[i++] = n
 		| `std.None:	continue

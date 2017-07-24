@@ -1,532 +1,134 @@
 use std
 
 use "config"
-use "deps"
 use "opts"
-use "parse"
 use "types"
 use "util"
 
 pkg bld =
-	const buildall	: (b : build# -> bool)
-	const genall	: (b : build# -> bool)
-	const buildtarg	: (b : build#, target : byte[:] -> bool)
-	const buildbin	: (b : build#, bt : myrtarg#, addsrc : bool -> bool)
-	const buildlib	: (b : build#, lt : myrtarg# -> bool)
+	const buildtarg	: (b : build#, targ : byte[:] -> bool)
+	const clean	: (b : build# -> bool)
 ;;
 
-const buildall = {b
-	for tn : b.all
-		if std.hthas(b.built, tn)
-			continue
-		;;
-		std.htput(b.built, tn, true)
-		match gettarg(b.targs, tn)
-		| `Bin bt:
-			if !bt.istest
-				buildbin(b, bt, false)
-			;;
-		| `Lib lt:	buildlib(b, lt)
-		| `Gen gt:	genfiles(b, gt)
-		| `Data _:	/* nothing needed */
-		| `Man _:	/* nothing needed */
-		| `Cmd _:	/* these are for manual commands or tests */
-		;;
-	;;
-	setdir(b, "")
-	-> true
-}
-
 const buildtarg = {b, targ
-	var depset
+	var g
 
-	depset = std.mkht(std.strhash, std.streq)
-	addeps(b, targ, depset)
-	for tn : b.all
-		if std.hthas(b.built, tn) || !std.hthas(depset, tn)
-			continue
-		;;
-		if std.sleq(tn, targ)
-			break
-		;;
-		std.htput(b.built, tn, true)
-		match gettarg(b.targs, tn)
-		| `Bin bt:
-			if !bt.istest
-				buildbin(b, bt, false)
-			;;
-		| `Lib lt:	buildlib(b, lt)
-		| `Gen gt:	genfiles(b, gt)
-		| `Data _:	/* nothing needed */
-		| `Man _:	/* nothing needed */
-		| `Cmd _:	/* these are for manual commands or tests */
-		;;
+	g = b.deps
+	var outs = std.htgetv(g.targs, targ, [][:])
+	for o : outs
+		mark(b, o)
 	;;
-	build(b, targ)
-	std.htfree(depset)
+	build(b, g)
 	-> true
 }
 
-const addeps = {b, targ, depset
-	if std.hthas(depset, targ)
+const clean = {b
+	for n : b.deps.nodes
+		if n.durable
+			continue
+		;;
+		for g : n.gen
+			if std.remove(g)
+				mbldput("\tclean {}\n", g)
+			;;
+		;;
+	;;
+	-> true
+}
+
+const mark = {b, o
+	if o.want
 		-> void
 	;;
 
-	std.htput(depset, targ, true)
-	match gettarg(b.targs, targ)
-	| `Bin bt:
-		for (dir, lib, targname) : bt.libdeps
-			addeps(b, targname, depset)
-		;;
-	| `Lib lt:
-		for (dir, lib, targname) : lt.libdeps
-			addeps(b, targname, depset)
-		;;
-	| _:
+	o.want = true
+	for n : o.ndep
+		mark(b, n)
 	;;
 }
 
-const genall = {b
-	for tn : b.all
-		match gettarg(b.targs, tn)
-		| `Gen gt:	runin(b, gt.cmd, gt.dir)
-		| _:	/* skip */
+const build = {b, g
+	for n : g.leaves
+		if n.want
+			stale(b, n)
+			unblock(b, n)
 		;;
 	;;
-	/* genfiles will exit if the build fails; always return true */
-	-> true
-}
 
-const build = {b, targ
-	match std.htget(b.targs, targ)
-	| `std.Some (`Bin bt):	buildbin(b, bt, false)
-	| `std.Some (`Lib lt):	buildlib(b, lt)
-	| `std.Some (`Gen gt):	runin(b, gt.cmd, gt.dir)
-	| `std.Some (`Cmd ct):	runin(b, ct.cmd, ct.dir)
-	| `std.Some (`Data _):	/* nothing needed */
-	| `std.Some (`Man _):	/* nothing needed */
-	| `std.None:	std.fatal("invalid target {}\n", targ)
-	;;
-	-> true
-}
-
-const runin = {b, cmd, dir
-	setdir(b, dir)
-	run(cmd)
-}
-
-const buildbin = {b, targ, addsrc
-	var dg, src, path
-	var libpath, incs
-
-	setdir(b, targ.dir)
-	addincludes(b, targ)
-	path = std.pathcat(b.curdir, targ.name)
-	mbldput("{}...\n", path)
-	std.slfree(path)
-	dg = myrdeps(b, targ, false, addsrc)
-	if !std.hthas(dg.deps, targ.name)
-		std.fatal("no input files for {}\n", targ.name)
-	;;
-	if builddep(b, dg, targ.name, targ.incpath) || !freshlibs(targ, targ.name, dg.libs)
-		src = std.htkeys(dg.sources)
-
-		incs = std.sldup(targ.incpath)
-		if opt_instbase.len > 0 && !std.sleq(opt_instbase, "none")
-			libpath = std.pathcat(bld.opt_instbase, config.Libpath)
-			std.slpush(&incs, libpath)
+	while std.htcount(b.proc) != 0 || b.queue.len != 0
+		while std.htcount(b.proc) < opt_maxproc && b.queue.len > 0
+			launch(b, std.slpop(&b.queue))
 		;;
-		linkbin(dg, targ.name, src, targ.ldscript, targ.runtime, incs, targ.libdeps)
-		std.slfree(incs)
-		std.slfree(src)
-	;;
-	-> true
-}
-
-const buildlib = {b, targ
-	var archive, usefile
-	var u, l
-	var dg
-	var lib, src
-
-	setdir(b, targ.dir)
-	addincludes(b, targ)
-	lib = targ.name
-	mbldput("{}/lib{}.a...\n", b.curdir, lib)
-	archive = std.fmt("lib{}.a", lib)
-	usefile = std.fmt("lib{}.use", lib)
-	dg = myrdeps(b, targ, false, false)
-	if !std.hthas(dg.deps, lib)
-		std.fatal("no target declared for {}\n", lib)
-	;;
-	u = builddep(b, dg, usefile, targ.incpath)
-	l = builddep(b, dg, archive, targ.incpath)
-	if  u || l || !freshlibs(targ, usefile, dg.libs)
-		src = std.htkeys(dg.sources)
-		mergeuse(dg, lib, src, targ.incpath)
-		archivelib(dg, lib, src, targ.incpath)
-		std.slfree(src)
-	;;
-	std.slfree(archive)
-	-> true
-}
-
-const genfiles = {b, gt
-	setdir(b, gt.dir)
-	for out : gt.out
-		if !std.fexists(out) || !allfresh(gt.deps, out)
-			run(gt.cmd)
-			break
-		;;
+		wait(b)
 	;;
 }
 
-const addincludes = {b, targ
-	for (inc, lib, subtarg) : targ.libdeps
-		if !hasinc(targ.incpath, inc)
-			std.slput(&targ.incpath, 0, inc)
-		;;
-	;;
-}
+const launch = {b, n
+	var pid
 
-const hasinc = {path, t
-	for e : path
-		if std.sleq(e, t)
-			-> true
-		;;
-	;;
-	-> false
-}
-
-
-const builddep = {b, dg, out, incs
-	var stale
-
-	stale = false
-	/* short circuit walking the dep tree if we've already built this. */
-	if std.htgetv(dg.updated, out, false)
-		-> false
-	;;
-
-	match std.htget(dg.deps, out)
-	| `std.Some deps:
-		for d : deps
-			if std.sleq(out, d)
-				/*
-				if an input generates itself (eg, object files), we
-				shouldn't recurse here, because that would be infinite.
-
-				The generation rule will be invoked from the target that
-				consumes this file.
-				*/
-				continue
-			;;
-			if std.sleq(out, d) || builddep(b, dg, d, incs)
-				stale = true
-			;;
-			match std.htget(b.gensrc, d)
-			| `std.Some gt:	
-				if !std.fexists(d) || !allfresh(gt.deps, d)
-					run(gt.cmd)
-				;;
-			| `std.None:
-				if !std.fexists(d)
-					std.fatal("no input file {}\n", d)
-				;;
-			;;
-			if !isfresh(d, out)
-				stale = true
-			;;
-		;;
-	| `std.None:
-	;;
-
-	match std.htget(dg.input, out)
-	| `std.Some src:
-		if stale
-			compile(dg, src, incs)
-		;;
-		std.htput(dg.updated, out, true)
-	| `std.None:
-	;;
-	-> stale
-}
-
-const compile = {dg, src, incs
-	var o
-	var cmd
-
-	cmd = [][:]
-	if std.hassuffix(src, ".myr")
-		std.slpush(&cmd, opt_mc)
-		for inc : incs 
-			std.slpush(&cmd, "-I")
-			std.slpush(&cmd, inc)
-		;;
-		if opt_genasm
-			std.slpush(&cmd, "-S")
-		;;
-		std.slpush(&cmd, src)
-		run(cmd)
-		std.slfree(cmd)
-	elif std.hassuffix(src, ".s")
-		o = srcswapsuffix(src, config.Objsuffix)
-		for c : config.Ascmd
-			std.slpush(&cmd, c)
-		;;
-		std.slpush(&cmd,"-o")
-		std.slpush(&cmd, o)
-		std.slpush(&cmd, src)
-		run(cmd)
-		std.slfree(o)
-	elif std.hassuffix(src, ".glue.c")
-		o = srcswapsuffix(src, config.Objsuffix)
-		std.slpush(&cmd, "cc")
-		std.slpush(&cmd,"-c")
-		std.slpush(&cmd,"-o")
-		std.slpush(&cmd, o)
-		std.slpush(&cmd, src)
-		for flg : std.htgetv(dg.cflags, src, [][:])
-			std.slpush(&cmd, flg)
-		;;
-		run(cmd)
-	elif std.hassuffix(src, ".o") || std.hassuffix(src, ".6")
-		/* nothing to do with object files*/
+	if stale(b, n)
+		pid = run(n.cmd, "")
+		std.htput(b.proc, pid, n)
 	else
-		std.fatal("Unknown file type for {}\n", src)
+		unblock(b, n)
 	;;
 }
 
-const linkbin = {dg, bin, srcfiles, ldscript, rt, incs, extlibs
-	var cmd
+const wait = {b
+	var pp : std.pid
 
-	cmd = [][:]
-
-	/* ld -o bin */
-	for c : config.Linkcmd
-		std.slpush(&cmd, std.sldup(c))
+	if std.htcount(b.proc) == 0
+		-> void
 	;;
-	std.slpush(&cmd, std.sldup(bin))
-
-	/* [-T script] */
-	if ldscript.len > 0
-		std.slpush(&cmd, std.sldup("-T"))
-		std.slpush(&cmd, std.sldup(ldscript))
-	;;
-
-	if rt.len != 0
-		if !std.sleq(rt, "none")
-			std.slpush(&cmd, std.sldup(rt))
-		;;
-	else
-		std.slpush(&cmd, std.sldup(opt_runtime))
-	;;
-
-	/* input.o list.o... */
-	for f : srcfiles
-		std.slpush(&cmd, srcswapsuffix(f, config.Objsuffix))
-	;;
-
-	/* -L path -l lib... */
-	cmd = addlibs(cmd, dg.libs, incs)
-
-
-	/* add extra libs */
-	for l : dg.extlibs
-		std.slpush(&cmd, std.fmt("-l{}", l))
-	;;
-
-	/* special for OSX: it warns if we don't add this */
-	if std.sleq(opt_sys, "osx")
-		std.slpush(&cmd, std.sldup("-macosx_version_min"))
-		std.slpush(&cmd, std.sldup("10.6"))
-	elif std.sleq(opt_sys, "linux") && dg.dynamic
-		std.slpush(&cmd, std.sldup("-dynamic-linker"))
-		std.slpush(&cmd, std.sldup("/lib64/ld-linux-x86-64.so.2"))
-	;;
-
-	run(cmd)
-	strlistfree(cmd)
-}
-
-const archivelib = {dg, lib, files, incs
-	var cmd
-	var obj
-
-	cmd = [][:]
-	for c : config.Arcmd
-		std.slpush(&cmd, std.sldup(c))
-	;;
-	std.slpush(&cmd, std.fmt("lib{}.a", lib))
-	for f : files
-		obj = srcswapsuffix(f, config.Objsuffix)
-		std.slpush(&cmd, obj)
-	;;
-	run(cmd)
-	strlistfree(cmd)
-}
-
-const mergeuse = {dg, lib, files, incs
-	var cmd
-
-	cmd = [][:]
-	std.slpush(&cmd, std.sldup(opt_muse))
-	std.slpush(&cmd, std.sldup("-o"))
-	std.slpush(&cmd, std.fmt("lib{}.use", lib))
-	std.slpush(&cmd, std.sldup("-p"))
-	std.slpush(&cmd, std.sldup(lib))
-	for f : files
-		if std.hassuffix(f, ".myr")
-			std.slpush(&cmd, srcswapsuffix(f, ".use"))
-		elif !std.hassuffix(f, ".s") && !std.hassuffix(f, ".glue.c")
-			std.fatal("unknown file type for {}\n", f)
-		;;
-	;;
-	for l : dg.extlibs
-		std.slpush(&cmd, std.fmt("-l{}", l))
-	;;
-	run(cmd)
-	strlistfree(cmd)
-}
-
-const addlibs = {cmd, libgraph, incs
-	var looped : std.htab(byte[:], bool)#
-	var marked : std.htab(byte[:], bool)#
-	var libs
-	var head
-
-	/* -L incpath... */
-	if !config.Directlib
-		for inc : incs
-			std.slpush(&cmd, std.fmt("-L{}", inc))
-		;;
-	;;
-
-	libs = std.htkeys(libgraph)
-	looped = std.mkht(std.strhash, std.streq)
-	marked = std.mkht(std.strhash, std.streq)
-	head = cmd.len
-
-	for lib : libs
-		cmd = visit(cmd, head, libgraph, lib, looped, marked, incs)
-	;;
-
-	-> cmd
-}
-
-const visit = {cmd, head, g, lib, looped, marked, incs
-	if std.hthas(looped, lib)
-		std.fatal("cycle in library graph involving \"{}\"\n", lib)
-	elif std.hthas(marked, lib)
-		-> cmd
-	;;
-
-	std.htput(looped, lib, true)
-	for dep : std.htgetv(g, lib, [][:])
-		cmd = visit(cmd, head, g, dep, looped, marked, incs)
-	;;
-	std.htdel(looped, lib)
-	std.htput(marked, lib, true)
-	-> putlib(cmd, head, lib, incs)
-}
-
-const putlib = {cmd, head, lib, incs
-	var sep
-
-	if !config.Directlib
-		-> std.slput(&cmd, head, std.fmt("-l{}", lib))
-	else
-		match findlib(lib, incs)
+	match std.waitany()
+	| (p, `std.Wfailure):	std.fatal("FAIL: {j= }\n", proclbl(b, p))
+	| (p, `std.Wsignalled):	std.fatal("CRASH: {j= }\n", proclbl(b, p))
+	| (p, `std.Waiterror):	std.fatal("WAT: {j= }\n", proclbl(b, p))
+	| (p, `std.Wsuccess):
+		pp = p
+		match std.htget(b.proc, p)
 		| `std.None:
-			mbldput("in path: ")
-			sep = ""
-			for inc : incs
-				mbldput("\t{}{}\n", sep, inc)
-				sep = ", "
-			;;
-			std.fatal("could not find library lib{}.a.\n", lib)
-		| `std.Some p:
-			-> std.slput(&cmd, head, p)
+			std.fatal("followed home by stray pid {}\n", p)
+		| `std.Some n:
+			n.mtime = std.now()
+			std.htdel(b.proc, p)
+			unblock(b, n)
 		;;
 	;;
 }
 
-const findlib = {lib, incs
-	var buf : byte[512]
-	var sl, p
-
-	sl = std.bfmt(buf[:], "lib{}.a", lib)
-	for i : incs
-		p = std.pathcat(i, sl)
-		if std.fexists(p)
-			-> `std.Some p
-		;;
-		std.slfree(p)
+const proclbl = {b, pid
+	match std.htget(b.proc, pid)
+	| `std.Some n:	-> n.cmd
+	| `std.None:	-> std.sldup(["?unknown?"][:])
 	;;
-
-	p = std.pathjoin([opt_instbase, config.Libpath, sl][:])
-	if std.fexists(p)
-		-> `std.Some p
-	;;
-	std.slfree(p)
-	-> `std.None
 }
 
-const freshlibs = {targ, output, libgraph
-	var libs
-
-	libs = std.htkeys(libgraph)
-	for l : libs
-		match findlib(l, targ.incpath)
-		| `std.Some lib:
-			if !isfresh(lib, output)
-				std.slfree(lib)
-				-> false
-			;;
-			std.slfree(lib)
-		| `std.None:
-			std.fput(1, "{}: could not find library lib{}.a\n", targ.name, l)
-			std.fput(1, "searched:\n")
-			for inc : targ.incpath
-				std.fput(1, "\t{}\n", inc)
-			;;
-			std.fput(1, "\t{}/{}\n", opt_instbase, config.Libpath)
-			std.exit(1)
+const unblock = {b, n
+	for g : n.ngen
+		std.assert(g.nblock != 0, "bogus unblock {} from {}\n", g.lbl, n.lbl)
+		g.nblock--
+		if g.nblock == 0 && g.want
+			std.slpush(&b.queue, g)
 		;;
 	;;
-	std.slfree(libs)
-	-> true
+
 }
 
-const allfresh = {deps, out
-	for d : deps
-		if !isfresh(d, out)
-			-> false
+const stale = {b, n
+	var staletime
+
+	staletime = 0
+	for d : n.ndep
+		staletime = std.max(staletime, d.mtime)
+	;;
+
+	n.mtime = std.now()
+	for g : n.gen
+		match std.fmtime(g)
+		| `std.Ok tm:	n.mtime = std.min(n.mtime, tm)
+		| `std.Err e:	n.mtime = 0
 		;;
 	;;
-	-> true
+	-> staletime > n.mtime
 }
-
-const isfresh = {src, dst
-	var srcmt, dstmt
-
-	/*
-	OSX only has single second resolution on modification
-	times. Since most builds happen within one second of each
-	other, if we treat equal times as outdated, we do a lot of
-	spurious rebuilding.
-
-	So, we treat times where both secs and nsecs are equal as
-	up to date.
-	*/
-	match std.fmtime(src)
-	| `std.Ok mt:	srcmt = mt
-	| `std.Err e:	std.fatal("could not stat {}: {}\n", src, e)
-	;;
-	match std.fmtime(dst)
-	| `std.Ok mt:	dstmt = mt
-	| `std.Err e:	-> false
-	;;
-	-> srcmt <= dstmt
-}
-

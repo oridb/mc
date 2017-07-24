@@ -6,9 +6,17 @@ use "config"
 use "opts"
 use "types"
 use "util"
+use "libs"
 
 pkg bld =
-	const myrdeps	: (b : build#, mt : myrtarg#, doclean : bool, addsrc : bool -> depgraph#)
+	const deps	: (b : build# -> void)
+	const testdeps	: (b : build# -> void)
+	const resolve	: (b : build# -> void)
+;;
+
+type dep = union
+	`Xdep	byte[:]
+	`Ldep	byte[:]
 ;;
 
 const Abiversion = 13
@@ -23,413 +31,568 @@ const __init__ = {
 	clibpat = std.try(regex.compile("/\\*\\s*LIBS:\\s*(.*)\\s*\\*/"))
 }
 
+const deps = {b
+	for (name, `Gen gt) : std.byhtkeyvals(b.targs)
+		cmddeps(b, name, gt)
+	;;
+	for name : b.all
+		match gettarg(b.targs, name)
+		| `Bin bt:	myrdeps(b, name, bt)
+		| `Lib lt:	myrdeps(b, name, lt)
+		| `Cmd ct:	cmddeps(b, name, ct)
+		| `Man mt:	mandeps(b, name, mt)
+		| `Data dt:	datdeps(b, name, dt)
+		| `Gen gt:	/* gen was dealt with earlier */
+		;;
+	;;
+}
 
-type dep = union
-	`Local	(byte[:], int)
-	`Lib	(byte[:], int)
-;;
+const testdeps = {b
+	for name : b.all
+		match gettarg(b.targs, name)
+		| `Bin bt:	addtests(b, name, bt)
+		| `Lib lt:	addtests(b, name, lt)
+		| _:		/* skip */
+		;;
+	;;
+}
 
-type depscan = struct
-	doclean	: bool
-	addsrc	: bool
-	tagsel	: std.htab(byte[:], byte[:])#
-	targ	: myrtarg#
-	incs	: byte[:][:]
-	depstk	: byte[:][:]
-;;
+const myrdeps = {b, name, mt
+	var p, o, u, n, to, tu
+	var libs, dynlibs
+	var cflags, ll
+	var g, a, deps
+	var gu, go
 
-const myrdeps = {b, mt, doclean, addsrc
-	var objs, uses, srcs
-	var cflags, libs 
-	var out, useout
-	var dg : depgraph#
-	var ds : depscan
-	var i
-
-	dg = std.mk([
-		.deps = std.mkht(std.strhash, std.streq),
-		.libs = std.mkht(std.strhash, std.streq),
-		.input = std.mkht(std.strhash, std.streq),
-		.sources = std.mkht(std.strhash, std.streq),
-		.updated = std.mkht(std.strhash, std.streq),
-		.seen = std.mkht(std.strhash, std.streq),
-		.done = std.mkht(std.strhash, std.streq),
-		.cflags = std.mkht(std.strhash, std.streq),
-		.extlibs = [][:],
-		.dynamic = false,
-	])
-
-	/* direct dependencies of binary */
+	g = b.deps
 	if mt.islib
-		out = std.fmt("lib{}.a", mt.name)
-		useout = std.sldup(mt.name)
+		u = std.fmt("lib{}.use", mt.name)
+		o = std.fmt("lib{}.a", mt.name)
+		tu = std.pathcat(mt.dir, u)
+		to = std.pathcat(mt.dir, o)
+
+		gu = node(g, tu)
+		go = node(g, to)
+		go.instdir = config.Libpath
+		gu.instdir = config.Libpath
+		go.instmod = 0o644
+		gu.instmod = 0o644
+		generates(g, gu, tu)
+		generates(g, go, to)
+
+		a = std.htgetv(g.targs, "all", [][:])
+		std.slpush(&a, gu)
+		std.slpush(&a, go)
+		std.htput(g.targs, to, std.sldup([gu, go][:]))
+		std.htput(g.targs, "all", a)
+
+		std.slfree(o)
+		std.slfree(u)
 	else
-		out = std.sldup(mt.name)
-		useout = ""
-	;;
+		u = std.fmt("{}.use", mt.name)
+		tu = std.pathcat(mt.dir, u)
+		to = std.pathcat(mt.dir, mt.name)
 
-	ds = [
-		.doclean = doclean,
-		.addsrc = addsrc,
-		.incs = mt.incpath,
-		.targ = mt,
-		.depstk = [][:],
-	]
-	srcs = mt.inputs
-	objs = swapall(srcs, config.Objsuffix)
-	uses = swapall(srcs, ".use")
-	for i = 0; i < srcs.len; i++
-		std.htput(dg.input, objs[i], srcs[i])
-		std.htput(dg.sources, srcs[i], true)
-		pushdep(dg, srcs[i], objs[i])
-		if std.hassuffix(srcs[i], ".myr")
-			std.htput(dg.input, uses[i], srcs[i])
-			pushdep(dg, srcs[i], uses[i])
-		elif std.hassuffix(srcs[i], ".glue.c")
-			(cflags, libs) = scrapecflags(b, dg, srcs[i])
-			std.htput(dg.cflags, srcs[i], cflags)
-			std.sljoin(&dg.extlibs, libs)
-			dg.dynamic = true
+		go = node(g, to)
+		gu = node(g, tu)
+
+		generates(g, go, to)
+		std.htput(g.targs, to, std.sldup([go][:]))
+		if mt.istest
+			n = node(g, mt.name)
+			depends(g, n, to)
+			addnode(g, "test", n)
+
+			n.wdir = std.sldup(mt.dir)
+			std.slpush(&n.cmd, std.fmt("./{}", mt.name))
+		else
+			addnode(g, "all", go)
+			go.instdir = config.Binpath
+			go.instmod = 0o755
 		;;
+
+		std.slfree(u)
 	;;
 
-	for i = 0; i < srcs.len; i++
-		pushdep(dg, objs[i], out)
-		if !std.hassuffix(srcs[i], ".myr")
-			continue
-		;;
-		if mt.islib
-			pushdep(dg, uses[i], useout)
-		;;
-		srcdeps(b, &ds, dg, srcs[i], objs[i], uses[i])
-	;;
-
-	dumpgraph(dg)
-	-> dg
-}
-
-const swapall = {srcs, suff
-	var sl
-
-	sl = [][:]
-	for s : srcs
-		std.slpush(&sl, srcswapsuffix(s, suff))
-	;;
-	-> sl
-}
-
-const dumpgraph = {dg
-	var keys
-
-	if !opt_debug
-		-> void
-	;;
-	keys = std.htkeys(dg.deps)
-	mbldput("digraph dg {{\n")
-	for k : keys
-		for v : std.htgetv(dg.deps, k, ["WTFUNKNOWN!"][:])
-			mbldput("\t\"{}\" -> \"{}\";\n", k, v)
-		;;
-	;;
-	mbldput("}\n")
-}
-
-const srcdeps = {b, ds, g, path, obj, usefile
-	var deps
-
-	if std.hthas(g.done, path)
-		-> void
-	;;
-
-	std.slpush(&ds.depstk, path)
-	if std.htgetv(g.seen, path, false)
-		std.fput(1, "dependency loop involving {}:\n", path)
-		for d : ds.depstk
-			std.fput(1, "\t{}\n", d)
-		;;
-		std.exit(1)
-	;;
-	deps = getdeps(b, ds, path, std.dirname(path))
-	std.htput(g.seen, path, true)
-	for d : deps
-		match d
-		| `Lib (lib, lnum):
-			/*
-			If we're cleaning, we don't care about libraries; at best, this does nothing. At
-			worst, this will cause failure if the library is a local library that gets cleand.
-			*/
-			if !ds.doclean
-				scrapelibs(g, lib, ds.incs)
-			;;
-		| `Local (l, lnum):
-			if !std.hassuffix(l, ".use")
-				std.sljoin(&l, ".use")
-			;;
-			if obj.len != 0
-				pushdep(g, l, obj)
-			;;
-			if usefile.len != 0
-				pushdep(g, l, usefile)
-			;;
-			addusedep(b, ds, g, path, l, lnum)
-		;;
-	;;
-	std.slgrow(&ds.depstk, ds.depstk.len - 1)
-	std.htput(g.seen, path, false)
-	std.htput(g.done, path, true)
-}
-
-const addusedep = {b, ds, g, f, usefile, line
-	var src
-
-	if std.hthas(g.done, usefile)
-		if opt_debug
-			mbldput("already loaded deps for {}\n", usefile)
-		;;
-		-> void
-	;;
-	match std.htget(g.input, usefile)
-	| `std.Some path:
-		src = std.sldup(path)
-	| `std.None:
-		src = swapsuffix(usefile, ".use", ".myr")
-		if ds.addsrc
-			std.htput(g.sources, src, true)
-		elif !std.hthas(g.input, usefile)
-			std.fatal("{}:{}: source file {} not listed in bldfile\n", f, line, src)
-		;;
-	;;
-	pushdep(g, src, usefile)
-	std.htput(g.input, usefile, src)
-	srcdeps(b, ds, g, src, "", usefile)
-	std.htput(g.done, usefile, true)
-}
-
-const scrapecflags = {b, ds, path
-	var cflags, libs, lnum
-	var f
-
-	lnum = 0
-	cflags = [][:]
 	libs = [][:]
-	f = opensrc(b, path)
-	while true
-		lnum++
-		match bio.readln(f)
-		| `bio.Err e:	std.fatal("unable to read {}: {}\n", path, e)
-		| `bio.Eof:	break
-		| `bio.Ok ln:
-			(cflags, libs) = getcflags(ln, cflags, libs)
-			std.slfree(ln)
-		;;
-	;;
-	bio.close(f)
-	-> (cflags, libs)
-}
+	dynlibs = [][:]
+	for f : mt.inputs
+		p = std.pathcat(mt.dir, f)
+		leaf(g, p)
+		if std.hassuffix(f, ".myr")
+			o = changesuffix(p, config.Objsuffix)
+			u = changesuffix(p, ".use")
+			depends(g, go, o)
+			depends(g, gu, u)
 
-const getcflags = {ln, cflags, libs
-	var flags
+			n = node(g, o)
+			generates(g, n, o)
+			generates(g, n, u)
+			depends(g, n, p)
 
-	match regex.exec(cflagpat, ln)
-	| `std.None:
-	| `std.Some m:
-		flags = std.strtok(m[1])
-		for fl : flags
-			std.slpush(&cflags, std.sldup(fl))
-		;;
-		std.slfree(flags)
-		regex.matchfree(m)
-	;;
-
-	match regex.exec(clibpat, ln)
-	| `std.None:
-	| `std.Some m:
-		flags = std.strtok(m[1])
-		for fl : flags
-			std.slpush(&libs, std.sldup(fl))
-		;;
-		std.slfree(flags)
-		regex.matchfree(m)
-	;;
-	-> (cflags, libs)
-}
-
-const getdeps = {b, ds, path, dir
-	var deps, lnum
-	var f
-
-	lnum = 0
-	deps = [][:]
-	f = opensrc(b, path)
-	while true
-		lnum++
-		match bio.readln(f)
-		| `bio.Err e:	std.fatal("unable to read {}: {}\n", path, e)
-		| `bio.Eof:	break
-		| `bio.Ok ln:
-			deps = depname(deps, ln, lnum, dir)
-			std.slfree(ln)
-		;;
-	;;
-	bio.close(f)
-	-> deps
-}
-
-const opensrc = {b, path
-	if !std.fexists(path)
-		match std.htget(b.gensrc, path)
-		| `std.Some gt:	run(gt.cmd)
-		| `std.None:	std.fatal("no input file {}\n", path)
+			deps = scrapedeps(b, mt, p)
+			for `Ldep d : deps
+				depends(g, n, d)
+			;;
+			for `Xdep d : deps
+				scrapelib(b, d, mt.incpath)
+				xdepends(b, g, n, d)
+				std.slpush(&libs, d)
+			;;
+			myrcmd(b, n, mt, p, false)
+			std.slfree(deps)
+		elif std.hassuffix(f, ".s")
+			o = changesuffix(p, config.Objsuffix)
+			depends(g, go, o)
+			n = node(g, o)
+			generates(g, n, o)
+			depends(g, n, p)
+			ascmd(b, n, mt, o, p)
+		elif std.hassuffix(f, ".glue.c")
+			(cflags, ll) = scrapecflags(b, mt, p)
+			std.put("cflags: {}, ll: {}\n", cflags, ll)
+			o = changesuffix(p, config.Objsuffix)
+			depends(g, go, o)
+			n = node(g, o)
+			generates(g, n, o)
+			depends(g, n, p)
+			ccmd(b, n, mt, o, p, cflags)
+			for l : ll
+				std.slpush(&dynlibs, l)
+			;;
+		elif std.hassuffix(f, config.Objsuffix)
+			/* handled by leaf */
+		else
+			std.fatal("don't know how to build {}/{}\n", mt.dir, f)
 		;;
 	;;
 
-	match bio.open(path, bio.Rd)
-	| `std.Err m:	std.fatal("could not open {}: {}\n", path, m)
-	| `std.Ok f:	-> f
+	if mt.islib
+		arcmd(b, go, mt, to)
+		musecmd(b, gu, mt, tu)
+		builtlib(b, mt, libs, dynlibs)
+	else
+		linkcmd(b, go, mt, to, libs, dynlibs, false)
+		std.slfree(libs)
 	;;
 }
 
-const depname = {deps, ln, lnum, dir
-	var p
+const cmddeps = {b, name, ct
+	var n, a, p, gen, pid
+
+	n = node(b.deps, std.strjoin(ct.cmd, " "))
+	n.wdir = std.sldup(ct.dir)
+	n.durable = ct.durable
+
+	for c : ct.cmd
+		std.slpush(&n.cmd, std.sldup(c))
+	;;
+
+	if ct.deps.len == 0
+		std.slpush(&b.deps.leaves, n)
+	else
+		for d : ct.deps
+			leaf(b.deps, d)
+			depends(b.deps, n, d)
+		;;
+	;;
+
+	gen = false
+	for g : ct.gen
+		p = std.pathcat(ct.dir, g)
+		gen = gen || !std.fexists(p)
+		generates(b.deps, n, p)
+	;;
+
+	if ct.istest
+		a = std.htgetv(b.deps.targs, "test", [][:])
+		std.slpush(&a, n)
+		std.htput(b.deps.targs, "test", a)
+	elif gen 
+		pid = run(ct.cmd, ct.dir)
+		match std.wait(pid)
+		| `std.Wfailure:	std.fatal("FAIL: {j= }\n", ct.cmd)
+		| `std.Wsignalled:	std.fatal("CRASH: {j= }\n", ct.cmd)
+		| `std.Waiterror:	std.fatal("WAT: {j= }\n", ct.cmd)
+		| `std.Wsuccess:	/* ok */
+		;;
+	;;
+}
+
+const mandeps = {b, name, mt
+	var p, r, n
+
+	for pg : mt.pages
+		p = std.pathcat(mt.dir, pg)
+		n = leaf(b.deps, p)
+		match std.strfind(pg, ".")
+		| `std.None:	std.fatal("manpage {} missing section\n", pg)
+		| `std.Some i:	r = std.pathcat(config.Manpath, pg[i + 1:])
+		;;
+		n.instdir = r
+		n.instmod = 0o644
+		addnode(b.deps, "all", n)
+	;;
+}
+
+const datdeps = {b, name, dt
+	var p, n
+
+	for db : dt.blobs
+		p = std.pathcat(dt.dir, db)
+		n = leaf(b.deps, p)
+		if dt.path.len == 0
+			n.instdir = config.Sharepath
+		else
+			n.instdir = dt.path
+		;;
+		n.instmod = 0o644
+		addnode(b.deps, "all", n)
+	;;
+}
+
+const addtests = {b, name, mt
+	for f : mt.inputs
+		addtest(b, mt, f)
+	;;
+}
+
+const addtest = {b, mt, f
+	var libs, deps
+	var sp, tp, op
+	var s, t, o
+	var g, n
+	var testinc
 
 	/*
-	the regex pattern does some contortions to either grab
-	an unquoted path and put it into uses[4], or a quoted
-	path, and put it (minus the quotes) into uses[2]
+	change of suffix is to support testing assembly,
+	C glue, and foo+sys.myr forms.
 	*/
-	match regex.exec(usepat, ln)
-	| `std.Some uses:
-		if uses[2].len > 0
-			std.slpush(&deps, `Lib (std.sldup(uses[2]), lnum))
-		else
-			p = std.pathcat(dir, std.sldup(uses[3]))
-			std.slpush(&deps, `Local (p, lnum))
-		;;
-		regex.matchfree(uses)
-	| `std.None:
-		/* nothing to do */
-	;;
-	-> deps
-}
-
-const scrapelibs = {dg, lib, incs
-	var deps, d
-	var f
-	var done
-
-	if std.hthas(dg.libs, lib)
+	g = b.deps
+	s = changesuffix(f, ".myr")
+	sp = std.pathjoin([mt.dir, "test", s][:])
+	std.slfree(s)
+	if !std.fexists(sp)
+		std.slfree(sp)
 		-> void
 	;;
 
-	f = openlib(lib, incs)
-	match bio.getc(f)
-	| `bio.Ok 'U': /* nothing */
-	| `bio.Ok _:	std.fatal("library {}: corrupt or invalid usefile\n", lib)
-	| `bio.Err e:	std.fatal("library {}: could not read usefile: {}\n", lib, e)
-	| `bio.Eof:	std.fatal("library {}: could not read usefile\n", lib)
-	;;
-	match bio.getbe32(f)
-	| `bio.Ok Abiversion:	/* nothing: version matches. */
-	| `bio.Ok v:	
-		if v < Abiversion
-			std.fput(1, "library {}: warning: old abi version {}\n", lib, v)
-		else
-			std.fput(1, "library {}: usefile version {} unknown\n", lib, v)
-		;;
-	| `bio.Err e:	std.fatal("library {}: error reading usefile: {}\n", lib, e)
-	| `bio.Eof:	std.fatal("library {}: corrupt or truncated usefile\n", lib)
-	;;
-	std.slfree(rdstr(f))
+	libs = [][:]
+	leaf(g, sp)
 
-	done = false
-	deps = [][:]
-	while !done
-		match bio.getc(f)
-		| `bio.Ok 'L':
-			d = rdstr(f)
-			std.slpush(&deps, d)
-		| `bio.Ok 'X':
-			d = rdstr(f)
-			std.slpush(&dg.extlibs, d)
-                        dg.dynamic = true
-		| `bio.Ok _:	done = true
-		| `bio.Eof:	done = true
-		| `bio.Err e:	std.fatal("io error reading {}: {}", lib, e)
+	t = changesuffix(f, "")
+	tp = std.pathjoin([mt.dir, "test", t][:])
+	std.slfree(t)
+
+	o = changesuffix(f, config.Objsuffix)
+	op = std.pathjoin([mt.dir, "test", o][:])
+	std.slfree(o)
+
+	n = node(g, sp)
+	generates(g, n, op)
+	depends(g, n, sp)
+	testinc = [][:]
+	std.slpush(&testinc, mt.dir)
+	std.sljoin(&testinc, mt.incpath)
+	deps = scrapedeps(b, mt, sp)
+	for `Ldep d : deps
+		depends(g, n, d)
+	;;
+	for `Xdep d : deps
+		scrapelib(b, d, mt.incpath)
+		xdepends(b, g, n, d)
+		std.slpush(&libs, d)
+	;;
+	myrcmd(b, n, mt, sp, true)
+	std.slfree(mt.incpath)
+
+	n = node(g, tp)
+	generates(g, n, tp)
+	depends(g, n, op)
+	linkcmd(b, n, mt, tp, libs, [][:], true)
+	std.slfree(libs)
+
+	n = node(g, tp)
+	depends(g, n, tp)
+	n.wdir = std.sldup(std.dirname(std.dirname(tp)))
+	std.slpush(&n.cmd, std.fmt("./test/{}", std.basename(tp)))
+
+	addnode(g, "test", n)
+}
+
+const resolve = {b
+	var visited, looped, stk
+	var g
+
+	g = b.deps
+	for n : g.nodes
+		for e : n.dep
+			edge(g, n, e)
+		;;
+	;;
+
+	stk = [][:]
+	visited = std.mkht(std.ptrhash, std.ptreq)
+	looped = std.mkht(std.ptrhash, std.ptreq)
+	for n : g.nodes
+		checkloop(g, n, visited, looped, &stk)
+	;;
+	std.htfree(visited)
+	std.htfree(looped)
+}
+
+const edge = {g, n, e
+	match std.htget(g.gen, e)
+	| `std.None:
+		std.fatal("nothing satisfies {} for {}\n", e, n.lbl)
+	| `std.Some d:	
+		std.slpush(&n.ndep, d)
+		std.slpush(&d.ngen, n)
+		n.nblock++
+	;;
+}
+
+const checkloop = {g, n, visited, looped, stk
+	if std.hthas(looped, n)
+		std.slpush(stk, n.lbl)
+		std.fatal("dependency loop: {j= -> }\n", stk#)
+	;;
+	if std.hthas(visited, n)
+		-> void
+	;;
+	std.slpush(stk, n.lbl)
+	std.htput(visited, n, void)
+	std.htput(looped, n, void)
+	for d : n.ndep
+		checkloop(g, d, visited, looped, stk)
+	;;
+	std.slpop(stk)
+	std.htdel(looped, n)
+}
+
+const musecmd = {b, n, mt, mu
+	std.slpush(&n.cmd, std.sldup(opt_muse))
+	std.slpush(&n.cmd, std.sldup("-o"))
+	std.slpush(&n.cmd, std.sldup(mu))
+	std.slpush(&n.cmd, std.sldup("-p"))
+	std.slpush(&n.cmd, std.sldup(mt.name))
+	for u : n.dep
+		std.slpush(&n.cmd, std.sldup(u))
+	;;
+}
+
+const arcmd = {b, n, mt, ar
+	for c : config.Arcmd
+		std.slpush(&n.cmd, std.sldup(c))
+	;;
+	std.slpush(&n.cmd, std.sldup(ar))
+	for obj : n.dep
+		std.slpush(&n.cmd, std.sldup(obj))
+	;;
+}
+
+const linkcmd = {b, n, mt, bin, libs, dynlibs, istest
+	for c : config.Linkcmd
+		std.slpush(&n.cmd, std.sldup(c))
+	;;
+	std.slpush(&n.cmd, std.sldup(bin))
+	if mt.ldscript.len > 0
+		std.slpush(&n.cmd, std.sldup("-T"))
+		std.slpush(&n.cmd, std.sldup(mt.ldscript))
+	;;
+
+	if mt.runtime.len == 0 || std.sleq(mt.runtime, "none")
+		std.slpush(&n.cmd, std.sldup(opt_runtime))
+	else
+		std.slpush(&n.cmd, std.sldup(mt.runtime))
+	;;
+
+	for o : n.dep
+		std.slpush(&n.cmd, std.sldup(o))
+	;;
+
+	addlibs(b, &n.cmd, libs, mt.incpath)
+	for l : dynlibs
+		std.slpush(&n.cmd, std.fmt("-l{}", l))
+	;;
+
+	/* OSX warns if we don't add a version */
+	if std.sleq(opt_sys, "osx")
+		std.slpush(&n.cmd, std.sldup("-macosx_version_min"))
+		std.slpush(&n.cmd, std.sldup("10.6"))
+	elif std.sleq(opt_sys, "linux") && dynlibs.len != 0
+		std.slpush(&n.cmd, std.sldup("-dynamic-linker"))
+		std.slpush(&n.cmd, std.sldup("/lib64/ld-linux-x86-64.so.2"))
+	;;
+
+}
+
+const myrcmd = {b, n, mt, src, istest
+	std.slpush(&n.cmd, opt_mc)
+	for inc : mt.incpath[:mt.incpath.len - 1]
+		pushinc(&n.cmd, "-I", inc)
+	;;
+	if istest
+		for (dir, _, _) : mt.tstdeps
+			pushinc(&n.cmd, "-I", dir)
+		;;
+		pushinc(&n.cmd, "-I", mt.dir)
+	;;
+	for (dir, _, _) : mt.libdeps
+		pushinc(&n.cmd, "-I", dir)
+	;;
+	if opt_genasm
+		std.slpush(&n.cmd, "-S")
+	;;
+	std.slpush(&n.cmd, src)
+}
+
+const ascmd = {b, n, mt, out, src
+	for c : config.Ascmd
+		std.slpush(&n.cmd, c)
+	;;
+	std.slpush(&n.cmd,"-o")
+	std.slpush(&n.cmd, out)
+	std.slpush(&n.cmd, src)
+}
+
+const ccmd = {b, n, mt, out, src, cflags
+	std.slpush(&n.cmd, "cc")
+	std.slpush(&n.cmd,"-c")
+	std.slpush(&n.cmd,"-o")
+	std.slpush(&n.cmd, out)
+	std.slpush(&n.cmd, src)
+	for flg : cflags
+		std.slpush(&n.cmd, flg)
+	;;
+}
+
+const scrapedeps = {b : build#, mt, path
+	var p, f, l
+
+	match bio.open(path, bio.Rd)
+	| `std.Ok fd:	f = fd
+	| `std.Err e:	std.fatal("error opening {}: {}\n", path, e)
+	;;
+
+	l = [][:]
+	for ln : bio.byline(f)
+		match regex.exec(usepat, ln)
+		| `std.None:
+		| `std.Some uses:
+			if uses[2].len > 0
+				/* external library */
+				p = std.sldup(uses[2])
+				std.slpush(&l, `Xdep p)
+			else
+				/* internal library */
+				p = std.pathcat(mt.dir, uses[3])
+				std.sljoin(&p, ".use")
+				std.slpush(&l, `Ldep p)
+			;;
+			regex.matchfree(uses)
 		;;
 	;;
 	bio.close(f)
-	std.htput(dg.libs, lib, deps)
-	for dep : deps
-		scrapelibs(dg, dep, incs)
-	;;
+	-> l
 }
 
-const openlib = {lib, incs
-	var path, libname
+const scrapecflags = {b, mt, path
+	var f, fl, cflags, libs
 
-	for p : incs
-		libname = std.fmt("lib{}.use", lib)
-		path = std.pathjoin([p, libname][:])
-		std.slfree(libname)
-		if std.fisreg(path)
-			goto found
+	match bio.open(path, bio.Rd)
+	| `std.Ok fd:	f = fd
+	| `std.Err e:	std.fatal("error opening {}: {}\n", path, e)
+	;;
+
+	cflags = [][:]
+	libs = [][:]
+	for ln : bio.byline(f)
+		match regex.exec(cflagpat, ln)
+		| `std.None:	/* skip */
+		| `std.Some m:
+			fl = std.strtok(m[1])
+			for s : fl
+				std.slpush(&cflags, std.sldup(s))
+			;;
+			std.slfree(fl)
 		;;
-		std.slfree(path)
-
-		path = std.pathjoin([p, lib][:])
-		if std.fisreg(path)
-			goto found
+		match regex.exec(clibpat, ln)
+		| `std.None:	/* skip */
+		| `std.Some m:
+			fl = std.strtok(m[1])
+			for s : fl
+				std.slpush(&libs, std.sldup(s))
+			;;
+			std.slfree(fl)
 		;;
-		std.slfree(path)
 	;;
-
-	libname = std.fmt("lib{}.use", lib)
-	path = std.pathjoin([opt_instbase, config.Libpath, libname][:])
-	if !std.fisreg(path)
-		std.slfree(path)
-		path = std.pathjoin([opt_instbase, config.Libpath, lib][:])
-	;;
-
-	std.slfree(libname)
-:found
-	match  bio.open(path, bio.Rd)
-	| `std.Ok file:
-		std.slfree(path)
-		-> file
-	| `std.Err m:
-	;;
-	std.fput(std.Err, "could not find library {}\n", lib)
-	std.fput(std.Err, "search path is:\n")
-	for p : incs
-		std.fput(std.Err, "\t{}\n", p)
-	;;
-	std.fput(std.Err, "\t{}\n", config.Libpath)
-	std.exit(1)
+	-> (cflags, libs)
 }
 
-/* pushes a dep into the dependency list */
-const pushdep = {dg, src, dst
-	var sl
-
-	if opt_debug
-		mbldput("{} <= {}\n", dst, src)
-	;;
-	sl = std.htgetv(dg.deps, dst, [][:])
-	std.slpush(&sl, src)
-	std.htput(dg.deps, dst, sl)
+const generates = {g, n, dep
+	std.slpush(&n.gen, dep)
+	std.htput(g.gen, dep, n)
 }
 
-const rdstr = {f
-	var len
-	var sl
+const depends = {g, n, dep
+	std.slpush(&n.dep, dep)
+}
 
-	match bio.getbe32(f)
-	| `bio.Ok l:
-		len = l
-		sl = std.slalloc(len)
-	| `bio.Eof:	std.fatal("end of file while reading string")
-	| `bio.Err e:	std.fatal("error while reading string: {}", e)
+const xdepends = {b, g, n, dep
+	match std.htget(b.libs, dep)
+	| `std.Some ldep:
+		if ldep.genuse.len != 0
+			depends(g, n, ldep.genuse)
+			depends(g, n, ldep.genar)
+		;;
+		std.slpush(&n.xdep, dep)
+	| `std.None:
+		std.fatal("unknown xdep {} (known: {})\n", dep, std.htkeys(b.libs))
 	;;
-	bio.read(f, sl)
-	-> sl
+}
+
+const leaf = {g, f
+	var nod
+
+	match std.htget(g.gen, f)
+	| `std.Some n:
+		-> n
+	| `std.None:	
+		nod = node(g, f)
+		nod.durable = true
+		generates(g, nod, f)
+		std.slpush(&g.leaves, nod)
+		-> nod
+	;;
+}
+
+const addnode = {g, targ, n
+	var nl
+
+	nl = std.htgetv(g.targs, targ, [][:])
+	std.slpush(&nl, n)
+	std.htput(g.targs, targ, nl)
+}
+
+const pushinc = {lst, pfx, dir
+	std.slpush(lst, std.sldup(pfx))
+	std.slpush(lst, std.pathnorm(dir))
+}
+
+const node = {g, lbl
+	var nod
+
+	nod = std.mk([
+		.lbl=lbl,
+		.cmd=[][:],
+		.gen=[][:],
+		.dep=[][:],
+		.xdep=[][:],
+
+		.nblock=0,
+		.mtime=0,
+	])
+	std.slpush(&g.nodes, nod)
+	-> nod
 }

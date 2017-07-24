@@ -120,83 +120,46 @@ generic sysselfin = {syssel
 }
 
 const addsysattrs = {b, tags
-	var tagfile
-
 	std.htput(b.tags, opt_sys, opt_sysvers)
+
 	match opt_sys
-	| "freebsd":	std.htput(b.tags, "posixy", (-1, -1, -1))
-	| "netbsd":	std.htput(b.tags, "posixy", (-1, -1, -1))
-	| "openbsd":	std.htput(b.tags, "posixy", (-1, -1, -1))
-	| "osx":	std.htput(b.tags, "posixy", (-1, -1, -1))
-	| "linux":	std.htput(b.tags, "posixy", (-1, -1, -1))
+	| "freebsd":	tag(b, "posixy")
+	| "netbsd":	tag(b, "posixy")
+	| "openbsd":	tag(b, "posixy")
+	| "osx":	tag(b, "posixy")
+	| "linux":	tag(b, "posixy")
 	| "plan9":
 	| unknown:	std.fatal("unknown system \"{}\"\n", unknown)
 	;;
 
 	match opt_arch
-	| "x64":	tag(b.tags, ["x64"][:])
+	| "x64":	tag(b, "x64")
 	| unknown:	std.fatal("unknown architecture {}\n", unknown)
 	;;
-	tag(b.tags, tags)
-
-	tagfile = std.pathcat(b.basedir, " bld.tag")
-	if std.fexists(tagfile)
-		loadtagfile(b, tagfile)
+	for t : tags
+		tag(b, t)
 	;;
-	std.slfree(tagfile)
+
+	loadtagfile(b, "bld.tag")
 }
 
 const loadtagfile = {b, tagfile
-	var data, tag
+	var data, sp
 
+	if !std.fexists(tagfile)
+		-> void
+	;;
 	data = std.try(std.slurp(tagfile))
 	while true
-		data = skipspace(data)
-		(tag, data) = word(data) 
-		match tag
-		| `std.Some w:
-			std.htput(b.tags, w, (-1, -1, -1))
-		| `std.None:
-			if data.len > 0
-				std.fatal("junk character near '{}'\n", trailing(data, 10))
-			else
-				break
-			;;
+		sp = std.strtok(data)
+		for t : sp
+			tag(b, t)
 		;;
+		std.slfree(sp)
 	;;
+	std.slfree(data)
 }
 
-const skipspace = {data
-	var c
-
-	c = std.decode(data)
-	while std.isspace(c)
-		data = data[std.charlen(c):]
-	;;
-	-> data
-}
-
-const word = {data
-	var c, split
-
-	split = 0
-	c = std.decode(data[:])
-	while std.isalnum(c) || c == '.' || c == '_' || c == '$'
-		split += std.charlen(c)
-	;;
-	if split > 0
-		-> (`std.Some data[:split], data[split:])
-	else
-		-> (`std.None, data)
-	;;
-}
-
-const tag  = {sa, tags
-	for t : tags
-		std.htput(sa, t, (-1, -1, -1))
-	;;
-}
-
-const trailing = {str, len
-	-> str[:std.min(len, str.len)]
+const tag  = {b, tag
+	std.htput(b.tags, std.sldup(tag), (-1, -1, -1))
 }

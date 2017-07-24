@@ -1,8 +1,8 @@
 use std
 use regex
+use thread
 
 use "build"
-use "clean"
 use "config"
 use "deps"
 use "install"
@@ -18,9 +18,11 @@ const main = {args : byte[:][:]
 	var bintarg
 	var targname
 	var runsrc
+	var path
 	var tmp
 	var cmd 
 	var tags
+	var pid
 	var ok, r
 
 	cmd = std.optparse(args, &[
@@ -35,8 +37,6 @@ const main = {args : byte[:][:]
 			[.opt='b', .arg="bin", .desc="compile binary named 'bin' from inputs"],
 			[.opt='l', .arg="lib", .desc="compile lib named 'lib' from inputs"],
 			[.opt='r', .arg="rt", .desc="link against runtime 'rt' instead of default"],
-			[.opt='C', .arg="mc", .desc="compile with 'mc' instead of the default compiler"],
-			[.opt='M', .arg="mu", .desc="merge uses with 'mu' instead of the default muse"],
 		][:]
 	])
 
@@ -46,7 +46,7 @@ const main = {args : byte[:][:]
 	ok = true
 
 	bld.initopts()
-	for opt : cmd.opts
+	for opt in cmd.opts
 		match opt
 		| ('S', ""):	bld.opt_genasm = true
 		| ('I', arg):	std.slpush(&bld.opt_incpaths, arg)
@@ -70,41 +70,46 @@ const main = {args : byte[:][:]
 		building with an uninstalled compiler.
 		*/
 		| ('d', arg): bld.opt_debug = true
-		| ('C', arg): bld.opt_mc = arg
-		| ('M', arg): bld.opt_muse = arg
 		| _:	std.die("unreachable\n")
 
 		;;
 	;;
+	path = std.pathcat(bld.opt_instbase, config.Libpath)
+	std.slpush(&bld.opt_incpaths, path)
 
-	for (e, v) : config.Env
+	for (e, v) in config.Env
 		std.setenv(e, v)
 	;;
 
 	b = mkbuild(tags)
 	if targname.len != 0
-		buildimm(b, targname, cmd.args, bintarg)
+		buildimm(b, targname, cmd.args)
 	elif runsrc.len != 0
 		bld.opt_silent = true
 		tmp = std.mktemppath("runmyr")
-		ok = buildimm(b, tmp, [runsrc][:], true)
+		ok = buildimm(b, tmp, [runsrc][:])
 		if ok
-			ok = runcmd(tmp, cmd.args)
+			pid = runcmd(tmp, cmd.args)
+			match std.wait(pid)
+			| `std.Wsuccess:	ok = true
+			| _:			ok = false
+			;;
 		;;
 		std.remove(tmp)
 	else
-		findproj(b, "bld.proj")
+		findproj(b)
 		bld.load(b)
+		bld.deps(b)
+		bld.testdeps(b)
+		bld.resolve(b)
 		/*bld.configure()*/
 		/* default: buildall */
 		if cmd.args.len == 0
-			bld.buildall(b)
+			bld.buildtarg(b, "all")
 		else
-			for c : cmd.args
+			for c in cmd.args
 				match c
-				| "all":	r = bld.buildall(b)
-				| "gen":	r = bld.genall(b)
-				| "clean":	r = bld.cleanall(b)
+				| "clean":	r = bld.clean(b)
 				| "install":	r = bld.install(b)
 				| "uninstall":	r = bld.uninstall(b)
 				| "test":	r = bld.test(b)
@@ -119,7 +124,7 @@ const main = {args : byte[:][:]
 	;;
 }
 
-const buildimm = {b, targ, inputs, bintarg -> bool
+const buildimm = {b, targ, inputs
 	var mt : bld.myrtarg
 
 	mt = [
@@ -129,55 +134,51 @@ const buildimm = {b, targ, inputs, bintarg -> bool
 		.incpath=bld.opt_incpaths,
 		.libdeps=[][:]
 	]
-	if bintarg
-		-> bld.buildbin(b, &mt, true)
-	else
-		-> bld.buildlib(b, &mt)
-	;;
+	std.slpush(&b.all, "__out__")
+	std.htput(b.targs, "__out__", `bld.Bin &mt)
+	bld.deps(b)
+	bld.resolve(b)
+	-> bld.buildtarg(b, "all")
 }
 
 const runcmd = {bin, args
 	var sl
 
 	sl = std.sldup([bin][:])
-	-> bld.run(std.sljoin(&sl, args))
+	-> bld.run(std.sljoin(&sl, args), "")
 }
 
 const mkbuild = {tags
 	var b
 
 	b = std.zalloc()
+	b.libs = std.mkht(std.strhash, std.streq)
+	b.proc = std.mkht(std.inthash, std.inteq)
 	b.targs = std.mkht(std.strhash, std.streq)
-	b.gensrc = std.mkht(std.strhash, std.streq)
-	b.built = std.mkht(std.strhash, std.streq)
 	b.tags = std.mkht(std.strhash, std.streq)
+	b.deps = std.mk([
+		.targs = std.mkht(std.strhash, std.streq),
+		.gen = std.mkht(std.strhash, std.streq),
+		.leaves = [][:],
+		.nodes = [][:],
+	])
 	bld.addsysattrs(b, tags)
 	-> b
 }
 
-const findproj = {b, bldfile
-	if !findbase(b, bldfile) || !std.chdir(b.basedir)
-		std.fatal("could not find {}\n", bldfile)
-	;;
-	bld.setdir(b, "")
-}
-
-const findbase = {b, file
-	var p, bld, dir
+const findproj = {b
+	var dir
 
 	dir = std.getcwd()
-	while !std.sleq(dir, "/")
-		bld = std.pathcat(dir, file)
-		if std.fexists(bld)
-			bld.mbldput("project base {}:\n", dir)
+	while dir.len > 0 && !std.sleq(dir, "/")
+		if std.chdir(dir) && std.fexists("bld.proj")
 			b.basedir = dir
-			b.bldfile = bld
-			-> true
+			break
 		;;
-		p = std.pathcat(dir, "..")
-		std.slfree(dir)
-		dir = p
+		dir = std.dirname(dir)
 	;;
-	-> false
+	if dir.len > 0 && std.sleq(b.basedir, "/")
+		std.fatal("could not find bld.proj\n")
+	;;
 }
 
