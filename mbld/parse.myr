@@ -40,7 +40,7 @@ const load = {b
 	var targs
 
 	sel = mksyssel(b, "mbld", 0, "mbld")
-	ok = loadall(b, b.bldfile, "", sel)
+	ok = loadall(b, "bld.proj", "", sel)
 
 	targs = sysselfin(sel)
 	for (name, targ) : targs
@@ -55,6 +55,56 @@ const load = {b
 	-> ok
 }
 
+const sortdeps = {b
+	var looped
+	var marked
+	var all
+
+	all = [][:]
+	looped = std.mkht(std.strhash, std.streq)
+	marked = std.mkht(std.strhash, std.streq)
+	for dep : b.all
+		match gettarg(b.targs, dep)
+		| `Bin _:	all = visit(all, b, "all", dep, looped, marked)
+		| `Lib _:	all = visit(all, b, "all", dep, looped, marked)
+		| targ:		std.slpush(&all, dep)
+		;;
+	;;
+	std.slfree(b.all)
+	b.all = all
+	-> true
+}
+
+const visit = {all, b, parent, targ, looped, marked
+	if std.hthas(looped, targ)
+		std.fatal("cycle in build depgraph involving {}\n", targ)
+	elif std.hthas(marked, targ)
+		-> all
+	;;
+
+	std.htput(looped, targ, true)
+	for (dir, lib, dep) : getdeps(b, parent, targ)
+		all = visit(all, b, targ, dep, looped, marked)
+	;;
+	std.htdel(looped, targ)
+	std.htput(marked, targ, true)
+	-> std.slpush(&all, targ)
+}
+
+const getdeps = {b, parent, targname
+	match std.htget(b.targs, targname)
+	| `std.Some targ:
+		match targ
+		| `Bin t:	-> t.libdeps
+		| `Lib t:	-> t.libdeps
+		| _:	std.fatal("{} depends on non-library target", parent)
+		;;
+	| `std.None:
+		std.fatal("{}: could not find dependency {}\n", parent, targname)
+	;;
+}
+
+/* recursively load all bld.{proj,sub} files in project */
 const loadall = {b, path, dir, sel
 	var p : parser#
 	var subbld, subproj, ok
@@ -62,8 +112,12 @@ const loadall = {b, path, dir, sel
 
 	p = mkparser(path, dir, b.basedir, sel)
 	ok = bld.parse(b, p, "")
-	for t : p.targs
-		setopts(p, t)
+	for targ : p.targs
+		match targ
+		| `Bin t:	setmyropt(p, t)
+		| `Lib t:	setmyropt(p, t)
+		| _:	/* only myr targets have settable defaults so far */
+		;;
 	;;
 
 	for sub : p.subdirs
@@ -95,14 +149,6 @@ const loadall = {b, path, dir, sel
 	-> ok
 }
 
-const setopts = {p, targ
-	match targ
-	| `Bin t:	setmyropt(p, t)
-	| `Lib t:	setmyropt(p, t)
-	| _:	/* only myr targets have settable defaults so far */
-	;;
-}
-
 const setmyropt = {p, t
 	var libdep, tstdep
 
@@ -127,7 +173,6 @@ const setmyropt = {p, t
 
 const parse = {b, p, path
 	while true
-		skipspace(p)
 		if !target(b, p)
 			break
 		;;
@@ -196,55 +241,6 @@ const freeparser = {p
 	std.slfree(p.subdirs)
 	std.slfree(p.data)
 	std.free(p)
-}
-
-const sortdeps = {b
-	var looped
-	var marked
-	var all
-
-	all = [][:]
-	looped = std.mkht(std.strhash, std.streq)
-	marked = std.mkht(std.strhash, std.streq)
-	for dep : b.all
-		match gettarg(b.targs, dep)
-		| `Bin _:	all = visit(all, b, "all", dep, looped, marked)
-		| `Lib _:	all = visit(all, b, "all", dep, looped, marked)
-		| targ:		std.slpush(&all, dep)
-		;;
-	;;
-	std.slfree(b.all)
-	b.all = all
-	-> true
-}
-
-const visit = {all, b, parent, targ, looped, marked
-	if std.hthas(looped, targ)
-		std.fatal("cycle in build depgraph involving {}\n", targ)
-	elif std.hthas(marked, targ)
-		-> all
-	;;
-
-	std.htput(looped, targ, true)
-	for (dir, lib, dep) : getdeps(b, parent, targ)
-		all = visit(all, b, targ, dep, looped, marked)
-	;;
-	std.htdel(looped, targ)
-	std.htput(marked, targ, true)
-	-> std.slpush(&all, targ)
-}
-
-const getdeps = {b, parent, targname
-	match std.htget(b.targs, targname)
-	| `std.Some targ:
-		match targ
-		| `Bin t:	-> t.libdeps
-		| `Lib t:	-> t.libdeps
-		| _:	std.fatal("{} depends on non-library target", parent)
-		;;
-	| `std.None:
-		std.fatal("{}: could not find dependency {}\n", parent, targname)
-	;;
 }
 
 /* <name>: '=' wordlist ';;' */
@@ -332,14 +328,9 @@ const cmdtarget = {b, p, cmd, iscmd
 		outlist = out
 	;;
 
-	skipspace(p)
-	if matchc(p, '{')
-		match attrlist(p)
-		| `std.Some al:	attrs = al
-		| `std.None:	failparse(p, "invalid attr list for {}\n", outlist[0])
-		;;
-	else
-		attrs = [][:]
+	match attrlist(p)
+	| `std.Some al:	attrs = al
+	| `std.None:	failparse(p, "invalid attr list for {}\n", outlist[0])
 	;;
 
 	skipspace(p)
@@ -377,7 +368,7 @@ const cmdtarget = {b, p, cmd, iscmd
 
 	gt = std.mk([
 		.dir=std.sldup(p.fdir),
-		.out=outlist,
+		.gen=outlist,
 		.durable=durable,
 		.istest=istest,
 		.deps=deplist,
@@ -388,7 +379,6 @@ const cmdtarget = {b, p, cmd, iscmd
 		if iscmd
 			addtarg(p, b, o, gt.tags, `Cmd gt)
 		else
-			std.htput(b.gensrc, o, gt)
 			addtarg(p, b, o, gt.tags, `Gen gt)
 		;;
 	;;
@@ -400,8 +390,7 @@ myrtarget: name '=' inputlist ';;'
 */
 const myrtarget = {b, p, targ
 	var ldscript, runtime, install, incpath, tags
-	var libdeps, tstdeps
-	var name, inputs, attrs
+	var libdeps, name, inputs, attrs
 	var istest
 	var fsel
 
@@ -410,14 +399,9 @@ const myrtarget = {b, p, targ
 	| `std.None:	failparse(p, "expected target name after '{}'\n", targ)
 	;;
 
-	skipspace(p)
-	if matchc(p, '{')
-		match attrlist(p)
-		| `std.Some al:	attrs = al
-		| `std.None:	failparse(p, "invalid attr list for {} {}\n", targ, name)
-		;;
-	else
-		attrs = [][:]
+	match attrlist(p)
+	| `std.Some al:	attrs = al
+	| `std.None:	failparse(p, "invalid attr list for {} {}\n", targ, name)
 	;;
 
 	skipspace(p)
@@ -448,7 +432,6 @@ const myrtarget = {b, p, targ
 	incpath = [][:]
 	tags = [][:]
 	istest = false
-	tstdeps = [][:]
 	for elt : attrs
 		match elt
 		| ("ldscript", lds):	ldscript = std.sldup(lds)
@@ -459,11 +442,11 @@ const myrtarget = {b, p, targ
 		| ("noinst", ""):	install = false
 		| ("test", ""):		istest = true
 		| ("notest", ""):	istest = false
-		| (invalid, ""):	std.fatal("{}: got invalid attr '{}'\n", targ, invalid)
-		| (invalid, attr):	std.fatal("{}: got invalid attr '{} = {}'\n", targ, invalid, attr)
+		| (invalid, ""):	std.fatal("{}: invalid attr '{}'\n", targ, invalid)
+		| (invalid, attr):	std.fatal("{}: invalid attr '{} = {}'\n", targ, invalid, attr)
 		;;
 	;;
-	std.sljoin(&incpath, bld.opt_incpaths)
+
 	std.sljoin(&incpath, bld.opt_incpaths)
 	-> std.mk([
 		/* target */
@@ -471,7 +454,6 @@ const myrtarget = {b, p, targ
 		.name=name,
 		.inputs=inputs,
 		.libdeps=libdeps,
-		.tstdeps=tstdeps,
 		.islib=false,
 		.istest=istest,
 		/* attrs */
@@ -493,13 +475,11 @@ const datatarget = {b, p, targ
 	;;
 
 	skipspace(p)
-	if matchc(p, '{')
-		match attrlist(p)
-		| `std.Some al:	attrs = al
-		| `std.None:	failparse(p, "invalid attr list for {} {}\n", targ, name)
-		;;
-	else
-		attrs = [][:]
+	attrs = [][:]
+
+	match attrlist(p)
+	| `std.Some al:	attrs = al
+	| `std.None:	failparse(p, "invalid attr list for {} {}\n", targ, name)
 	;;
 
 	skipspace(p)
@@ -508,14 +488,13 @@ const datatarget = {b, p, targ
 	;;
 
 	match wordlist(p)
-	| `std.Some wl: 
-		blobs = wl
-	| `std.None: failparse(p, "expected list of file names after '{} {}'\n", targ, name)
+	| `std.Some wl:	blobs = wl
+	| `std.None:	failparse(p, "expected file list after '{} {}'\n", targ, name)
 	;;
 
 	skipspace(p)
 	if !matchc(p, ';') || !matchc(p, ';')
-		failparse(p, "expected ';;' terminating input list, got {}\n", peekc(p))
+		failparse(p, "expected ';;' after input list, got {}\n", peekc(p))
 	;;
 
 	tags = [][:]
@@ -523,10 +502,10 @@ const datatarget = {b, p, targ
 		match elt
 		| ("tag", tag):		std.slpush(&tags, tag)
 		| ("path", pathdir):	path = pathdir
-		| (invalid, ""):
-			std.fatal("{}: got invalid attr '{}'\n", targ, invalid)
-		| (invalid, attr):
-			std.fatal("{}: got invalid attr '{} = {}'\n", targ, invalid, attr)
+		| (tag, ""):
+			std.fatal("{}: invalid attr '{}'\n", targ, tag)
+		| (tag, attr):
+			std.fatal("{}: invalid attr '{}={}'\n", targ, tag, attr)
 		;;
 	;;
 
@@ -550,8 +529,8 @@ const anontarget = {p, targ
 	;;
 
 	match wordlist(p)
-	| `std.None:	failparse(p, "expected list of file names after '{}' target\n", targ)
 	| `std.Some wl:	inputs = wl
+	| `std.None:	failparse(p, "expected file list after '{}' target\n", targ)
 	;;
 	skipspace(p)
 	if !matchc(p, ';') || !matchc(p, ';')
@@ -561,7 +540,7 @@ const anontarget = {p, targ
 }
 
 /*
-attrlist: attrs '}'
+attrlist: EMPTY |'{' attrs '}'
 
 attrs	: EMPTY
 	| attrs attr
@@ -573,10 +552,13 @@ const attrlist = {p
 	var al
 
 	al = [][:]
+	skipspace(p)
+	if !matchc(p, '{')
+		-> `std.Some al
+	;;
 	while true
 		match word(p)
 		| `std.Some k:
-			skipspace(p)
 			if matchc(p, '=')
 				match word(p)
 				| `std.Some v:
@@ -661,38 +643,21 @@ const word = {p
 	var start
 
 	skipspace(p)
-
 	c = peekc(p)
-	if c == '"'
-		n = 0
-		getc(p)
-		start = p.rest
-		while p.rest.len > 0
-			c = peekc(p)
-			if c == '"'
-				getc(p)
-				goto done
-			elif c == '\\'
-				c = getc(p)
-			;;
+	n = 0
+	start = p.rest
+	while p.rest.len > 0
+		c = peekc(p)
+		if c == '\\'
+			c = getc(p)
+		;;
+		if wordchar(c)
 			getc(p)
 			n += std.charlen(c)
-		;;
-		failparse(p, "input ended within quoted word\n")
-	else
-		n = 0
-		start = p.rest
-		while p.rest.len > 0
-			c = peekc(p)
-			if wordchar(c)
-				getc(p)
-				n += std.charlen(c)
-			else
-				break
-			;;
+		else
+			break
 		;;
 	;;
-:done
 	if n > 0
 		-> `std.Some std.sldup(start[:n])
 	else
@@ -733,9 +698,7 @@ const skipspace = {p
 const matchc = {p, c
 	var chr, s
 
-	if p.rest.len == 0
-		-> false
-	;;
+	/* safe to use at eof: strstep returns (-1, "") */
 	(chr, s) = std.strstep(p.rest)
 	if c == chr
 		p.rest = s
@@ -770,7 +733,7 @@ const libpath = {p, libpath
 
 	match std.strrfind(libpath, ":")
 	| `std.None:
-		dir = std.sldup(".")
+		dir = std.sldup(p.fdir)
 		lib = std.sldup(libpath)
 		targ = std.fmt("{}:{}", p.fdir, lib)
 	| `std.Some idx:
@@ -779,12 +742,12 @@ const libpath = {p, libpath
 		;;
 		/* absolute path */
 		if std.hasprefix(libpath, "@/") || std.hasprefix(libpath, "@:")
-			dir = std.pathcat(p.basedir, libpath[2:idx])
+			dir = std.sldup(libpath[2:idx])
 			lib = std.sldup(libpath[idx+1:])
 			targ = std.sldup(libpath[2:])
 		/* relative path */
 		else
-			dir = std.sldup(libpath[:idx])
+			dir = std.pathcat(p.fdir, libpath[:idx])
 			lib = std.sldup(libpath[idx+1:])
 			targ = std.pathcat(p.fdir, libpath)
 			if std.hasprefix(targ, "../")

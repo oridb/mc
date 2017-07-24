@@ -4,38 +4,30 @@ use "opts"
 use "types"
 
 pkg bld =
-	const run	: (cmd : byte[:][:] -> bool)
-	const printcmd	: (cmd : byte[:][:] -> void)
+	const run	: (cmd : byte[:][:], dir : byte[:] -> std.pid)
 	const mbldput	: (fmt : byte[:], args : ... -> void)
 	const srcsplit	: (src : byte[:] -> (byte[:], byte[:], byte[:]))
-	const swapsuffix	: (f : byte[:], suff : byte[:], newsuff : byte[:] -> byte[:])
-	const srcswapsuffix	: (f : byte[:], newsuff : byte[:] -> byte[:])
-	const strlistfree	: (sl : byte[:][:] -> void)
+	const changesuffix	: (f : byte[:], newsuff : byte[:] -> byte[:])
 	const gettarg	: (tab : std.htab(byte[:], targ)#, n : byte[:] -> targ)
-	const setdir	: (b : build#, dir : byte[:] -> void)
 ;;
 
-const run = {cmd
+const run = {cmd, dir
 	var pid
 
-	printcmd(cmd)
+	std.assert(cmd.len != 0, "empty command\n")
+	mbldput("\t{j= }\n", cmd);
 	pid = std.fork()
 	if pid == -1
 		std.fatal("could not fork command\n")
-		-> false
 	elif pid == 0
+		if dir.len != 0
+			std.chdir(dir)
+		;;
 		if std.execvp(cmd[0], cmd) < 0
 			std.fatal("failed to exec {}\n", cmd[0])
 		;;
-		-> false
-	else
-		match std.wait(pid)
-		| `std.Wsuccess:	-> true
-		| `std.Wfailure:	std.fatal("FAIL: \"{}\"\n", std.strjoin(cmd, " "))
-		| `std.Wsignalled:	std.fatal("CRASH: \"{}\"\n", std.strjoin(cmd, " "))
-		| `std.Waiterror:	std.fatal("WAT: \"{}\"\n", std.strjoin(cmd, " "))
-		;;
 	;;
+	-> pid
 }
 
 const mbldput = {fmt, args
@@ -45,17 +37,6 @@ const mbldput = {fmt, args
 		ap = std.vastart(&args)
 		std.putv(fmt, &ap)
 	;;
-}
-
-const printcmd = {lst
-	if lst.len > 0
-		mbldput("\t")
-		mbldput("{}\t", lst[0])
-		for l : lst[1:]
-			mbldput("{} ", l)
-		;;
-	;;
-	mbldput("\n")
 }
 
 const srcsplit = {src
@@ -69,31 +50,22 @@ const srcsplit = {src
 	| `std.None:	fbase = 0
 	;;
 	match std.strfind(src[fbase:], ".")
+	| `std.None: /* no suffix to trim */
 	| `std.Some i:
 		suff = src[fbase+i:]
 		src = src[:fbase+i]
-	| `std.None:
-		/* no suffix to trim */
 	;;
 
 	match std.strrfind(src[fbase:], "+")
+	| `std.None: /* no platform to trim */
 	| `std.Some i:
 		platf = src[fbase+i:]
 		src = src[:fbase+i]
-	| `std.None:
-		/* no platform to trim */
 	;;
 	-> (src, platf, suff)
 }
 
-const swapsuffix = {f, suff, newsuff
-	if std.hassuffix(f, suff)
-		f = f[:f.len - suff.len]
-	;;
-	-> std.fmt("{}{}", f, newsuff)
-}
-
-const srcswapsuffix = {src, new
+const changesuffix = {src, new
 	var base, platf, suff
 
 	(base, platf, suff) = srcsplit(src)
@@ -110,30 +82,10 @@ const srcswapsuffix = {src, new
 	;;
 }
 
-const strlistfree = {sl
-	for s : sl
-		std.slfree(s)
-	;;
-	std.slfree(sl)
-}
-
 const gettarg = {tab, n
 	match std.htget(tab, n)
 	| `std.None:	std.fatal("unknown target '{}'\n", n)
 	| `std.Some t:	-> t
-	;;
-}
-
-const setdir = {b, dir
-	var p
-
-	if !std.sleq(b.curdir, dir)
-		p = std.pathcat(b.basedir, dir)
-		if !std.chdir(p)
-			std.fatal("could not cd into {}\n", p)
-		;;
-		b.curdir = dir
-		std.slfree(p)
 	;;
 }
 
