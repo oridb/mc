@@ -270,19 +270,19 @@ generic check = {e : @a::(integral, numeric) -> result(@b, errno)
 }
 
 /* duplicated code to break dependency cycle */
-generic _getle16 = {buf
+generic _getle16 = {buf -> @a::(numeric,integral)
 	-> ((buf[0] : @a::(numeric,integral)) << 0) | \
 		((buf[1] : @a::(numeric,integral)) << 8)
 }
 
-generic _getle32 = {buf
+generic _getle32 = {buf -> @a::(numeric,integral)
 	-> ((buf[0] : @a::(numeric,integral)) << 0) | \
 		((buf[1] : @a::(numeric,integral)) << 8) | \
 		((buf[2] : @a::(numeric,integral)) << 16) | \
 		((buf[3] : @a::(numeric,integral)) << 24)
 }
 
-generic _getle64 = {buf
+generic _getle64 = {buf -> @a::(numeric,integral)
 	-> ((buf[0] : @a::(numeric,integral))  << 0) | \
 		((buf[1] : @a::(numeric,integral))  << 8) | \
 		((buf[2] : @a::(numeric,integral))  << 16) | \
