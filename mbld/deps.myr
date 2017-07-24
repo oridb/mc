@@ -75,8 +75,8 @@ const myrdeps = {b, name, mt
 		go = node(g, to)
 		go.instdir = config.Libpath
 		gu.instdir = config.Libpath
-		go.instmod = 644
-		gu.instmod = 644
+		go.instmod = 0o644
+		gu.instmod = 0o644
 		generates(g, gu, tu)
 		generates(g, go, to)
 
@@ -108,7 +108,7 @@ const myrdeps = {b, name, mt
 		else
 			addnode(g, "all", go)
 			go.instdir = config.Binpath
-			go.instmod = 755
+			go.instmod = 0o755
 		;;
 
 		std.slfree(u)
@@ -230,7 +230,7 @@ const mandeps = {b, name, mt
 		| `std.Some i:	r = std.pathcat(config.Manpath, pg[i + 1:])
 		;;
 		n.instdir = r
-		n.instmod = 644
+		n.instmod = 0o644
 		addnode(b.deps, "all", n)
 	;;
 }
@@ -246,7 +246,7 @@ const datdeps = {b, name, dt
 		else
 			n.instdir = dt.path
 		;;
-		n.instmod = 644
+		n.instmod = 0o644
 		addnode(b.deps, "all", n)
 	;;
 }
