@@ -1,10 +1,11 @@
 #!/bin/rc
 
 rfork e
-
+MYR_MC=../6/6.out
+MYR_MUSE=../muse/6.out
 fn build {
 	rm -f $1 $1^.6 $1^.use
-	../mbld/mbld -b $1 -C../6/6.out -M../muse/6.out -I../lib/std -r../rt/_myrrt.6 $1^.myr
+	../mbld/mbld -b $1 -I../lib/std -I../lib/sys -r../rt/_myrrt.6 $1^.myr
 }
 
 fn pass {
