@@ -248,7 +248,8 @@ const parseparams = {paramstr, optdesc
 			for (opt, hasarg) : optdesc
 				std.put("\t'{}', hasarg={}\n", opt, hasarg)
 			;;
-			std.fatal("invalid option '{}' ", o)
+			std.put("invalid option '{}' ", o)
+			std.die("dying")
 		;;
 	;;
 	slfree(params)
