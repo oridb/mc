@@ -22,10 +22,15 @@ lib crypto =
 ;;
 
 
-lib testutil =
+lib testutil {noinst} =
 	util.myr
+
+	lib ../std:std
+	lib ../sys:sys
+	lib ../thread:thread
 ;;
 
 testdeps =
 	testutil
+	../testr:testr
 ;;

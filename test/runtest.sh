@@ -11,8 +11,8 @@ NPASSES=0
 
 build() {
 	rm -f $1 $1.o $1.s $1.use
-	echo mbld -b $1 -C../6/6m -M../muse/muse -I../lib/std -I../lib/sys -r../rt/_myrrt.o $1.myr
-	../mbld/mbld -b $1 -C../6/6m -M../muse/muse -I../lib/std -I../lib/sys -r../rt/_myrrt.o $1.myr
+	echo mbld -b $1 -I../lib/std -I../lib/sys -r../rt/_myrrt.o $1.myr
+	../mbld/mbld -b $1 -I../lib/std -I../lib/sys -r../rt/_myrrt.o $1.myr
 }
 
 pass() {
