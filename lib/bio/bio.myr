@@ -14,7 +14,7 @@ pkg bio =
 		read	: (buf : byte[:] -> std.result(std.size, std.errno))
 		write	: (buf : byte[:] -> std.result(std.size, std.errno))
 		seek	: (idx : std.off -> std.result(std.off, std.errno))
-		close	: (-> void)
+		close	: (-> bool)
 
 		/* read buffer */
 		rbuf	: byte[:]
@@ -30,7 +30,7 @@ pkg bio =
 		read	: (buf : byte[:] -> std.result(std.size, std.errno))
 		write	: (buf : byte[:] -> std.result(std.size, std.errno))
 		seek	: (idx : std.off -> std.result(std.off, std.errno))
-		close	: (-> void)
+		close	: (-> bool)
 	;;
 
 	type status(@a) = union
@@ -52,7 +52,7 @@ pkg bio =
 	const open	: (path : byte[:], mode : mode	-> std.result(file#, byte[:]))
 	const dial	: (srv	: byte[:], mode : mode	-> std.result(file#, byte[:]))
 	const create	: (path : byte[:], mode : mode, perm : int	-> std.result(file#, byte[:]))
-	const close	: (f : file# -> void)
+	const close	: (f : file# -> bool)
 	const free	: (f : file# -> void)
 
 	/* basic i/o. Returns sub-buffer when applicable. */
@@ -94,10 +94,10 @@ const Small = 512
 /* Creates a file from an fd, opened in the given mode. */
 const mkfile = {fd, mode
 	-> mk(mode, [
-		.read = {buf; -> std.read(fd, buf)},
-		.write = {buf; -> std.write(fd, buf)},
-		.seek = {off; -> std.seek(fd, off, std.Seekset)},
-		.close = {; std.close(fd)},
+		.read	= {buf;	-> std.read(fd, buf)},
+		.write	= {buf;	-> std.write(fd, buf)},
+		.seek	= {off;	-> std.seek(fd, off, std.Seekset)},
+		.close	= {;	-> std.close(fd) >= 0},
 	])
 }
 
@@ -167,9 +167,12 @@ const sysopen = {path, mode, openmode, perm
 
 /* closes a file, flushing it to the output fd */
 const close = {f
-	flush(f)
-	f.close()
+	var ok
+
+	ok = flush(f)
+	ok = ok && f.close()
 	_free(f)
+	-> ok
 }
 
 const free = {f

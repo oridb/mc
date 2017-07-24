@@ -22,7 +22,7 @@ const mkmem = {buf
 		.read = {buf; -> memread(mem, buf)},
 		.write = {buf; -> memwrite(mem, buf)},
 		.seek = {off; -> memseek(mem, off)},
-		.close = {; std.free(mem)},
+		.close = {; std.free(mem); -> true},
 	])
 }
 
