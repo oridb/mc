@@ -1,0 +1,10 @@
+use std
+use sys
+
+pkg thread =
+	const ncpu	: (-> int)
+;;
+
+const ncpu = {
+	-> 1
+}
