@@ -57,7 +57,7 @@ const runtest = {b, n, failed
 	var sub
 
 	dir = std.pathcat(b.basedir, n.wdir)
-	mbldput("run {}:\t", n.lbl)
+	mbldput("run {} in {}:\t", n.lbl, dir)
 	std.chdir(dir)
 	match std.spork(n.cmd)
 	| `std.Err m:
@@ -84,10 +84,10 @@ const runtest = {b, n, failed
 			;;
 		;;
 		if !res
-			std.slpush(failed, n.lbl)
+			std.slpush(failed, std.fmt("{j= } || {}", n.cmd, dir))
 		;;
 	;;
-	std.slfree(dir)
+	//std.slfree(dir)
 	-> res
 }
 

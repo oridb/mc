@@ -28,11 +28,11 @@ const builtlib = {b, mt, dep, dyndep
 	u = std.fmt("lib{}.use", mt.name)
 	ldep = std.mk([
 		.name=mt.name,
-		.dir=std.pathcat(b.objdir, mt.dir),
+		.dir=std.pathcat(opt_objdir, mt.dir),
 		.dep=dep,
 		.dyndep=dyndep,
-		.genuse=std.pathjoin([b.objdir, mt.dir, u][:]),
-		.genar=std.pathjoin([b.objdir, mt.dir, l][:]),
+		.genuse=std.pathjoin([opt_objdir, mt.dir, u][:]),
+		.genar=std.pathjoin([opt_objdir, mt.dir, l][:]),
 	])
 	std.slfree(l)
 	std.slfree(u)

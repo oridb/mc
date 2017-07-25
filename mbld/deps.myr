@@ -68,8 +68,8 @@ const myrdeps = {b, name, mt
 	if mt.islib
 		u = std.fmt("lib{}.use", mt.name)
 		o = std.fmt("lib{}.a", mt.name)
-		tu = std.pathjoin([b.objdir, mt.dir, u][:])
-		to = std.pathjoin([b.objdir, mt.dir, o][:])
+		tu = std.pathjoin([opt_objdir, mt.dir, u][:])
+		to = std.pathjoin([opt_objdir, mt.dir, o][:])
 
 		gu = node(g, tu)
 		go = node(g, to)
@@ -90,8 +90,8 @@ const myrdeps = {b, name, mt
 		std.slfree(u)
 	else
 		u = std.fmt("{}.use", mt.name)
-		tu = std.pathjoin([b.objdir, mt.dir, u][:])
-		to = std.pathjoin([b.objdir, mt.dir, mt.name][:])
+		tu = std.pathjoin([opt_objdir, mt.dir, u][:])
+		to = std.pathjoin([opt_objdir, mt.dir, mt.name][:])
 
 		go = node(g, to)
 		gu = node(g, tu)
@@ -104,7 +104,7 @@ const myrdeps = {b, name, mt
 			addnode(g, "test", n)
 
 			n.wdir = std.sldup(mt.dir)
-			std.slpush(&n.cmd, std.fmt("./{}", mt.name))
+			std.slpush(&n.cmd, std.pathjoin([b.basedir, opt_objdir, mt.dir, mt.name][:]))
 		else
 			addnode(g, "all", go)
 			go.instdir = config.Binpath
@@ -121,11 +121,11 @@ const myrdeps = {b, name, mt
 		leaf(g, p)
 		if std.hassuffix(f, ".myr")
 			t = changesuffix(p, config.Objsuffix)
-			o = std.pathcat(b.objdir, t)
+			o = std.pathcat(opt_objdir, t)
 			std.slfree(t)
 
 			t = changesuffix(p, ".use")
-			u = std.pathcat(b.objdir, t)
+			u = std.pathcat(opt_objdir, t)
 			std.slfree(t)
 
 			depends(g, go, o)
@@ -149,7 +149,7 @@ const myrdeps = {b, name, mt
 			std.slfree(deps)
 		elif std.hassuffix(f, ".s")
 			t = changesuffix(p, config.Objsuffix)
-			o = std.pathcat(b.objdir, t)
+			o = std.pathcat(opt_objdir, t)
 			std.slfree(t)
 
 			depends(g, go, o)
@@ -159,7 +159,7 @@ const myrdeps = {b, name, mt
 			ascmd(b, n, mt, o, p)
 		elif std.hassuffix(f, ".glue.c")
 			t = changesuffix(p, config.Objsuffix)
-			o = std.pathcat(b.objdir, t)
+			o = std.pathcat(opt_objdir, t)
 			std.slfree(t)
 
 			(cflags, ll) = scrapecflags(b, mt, p)
@@ -292,11 +292,11 @@ const addtest = {b, mt, f
 	leaf(g, sp)
 
 	t = changesuffix(f, "")
-	tp = std.pathjoin([mt.dir, "test", t][:])
+	tp = std.pathjoin([opt_objdir, mt.dir, "test", t][:])
 	std.slfree(t)
 
 	o = changesuffix(f, config.Objsuffix)
-	op = std.pathjoin([mt.dir, "test", o][:])
+	op = std.pathjoin([opt_objdir, mt.dir, "test", o][:])
 	std.slfree(o)
 
 	n = node(g, sp)
@@ -325,8 +325,8 @@ const addtest = {b, mt, f
 
 	n = node(g, tp)
 	depends(g, n, tp)
-	n.wdir = std.sldup(std.dirname(std.dirname(tp)))
-	std.slpush(&n.cmd, std.fmt("./test/{}", std.basename(tp)))
+	n.wdir = std.sldup(std.dirname(std.dirname(sp)))
+	std.slpush(&n.cmd, std.pathjoin([b.basedir, opt_objdir, mt.dir, "test", std.basename(tp)][:]))
 
 	addnode(g, "test", n)
 }
@@ -439,21 +439,21 @@ const linkcmd = {b, n, mt, bin, libs, dynlibs, istest
 }
 
 const myrcmd = {b, n, mt, src, istest
-	std.slpush(&n.cmd, opt_mc)
-	if b.objdir.len > 0
-		pushopt(&n.cmd, "-O", b.objdir)
+	std.slpush(&n.cmd, std.sldup(opt_mc))
+	if opt_objdir.len > 0
+		pushopt(&n.cmd, "-O", std.sldup(opt_objdir))
 	;;
 	for inc : mt.incpath[:mt.incpath.len - 1]
-		pushopt(&n.cmd, "-I", inc)
+		pushopt(&n.cmd, "-I", std.pathcat(opt_objdir, inc))
 	;;
 	if istest
 		for (dir, _, _) : mt.tstdeps
-			pushopt(&n.cmd, "-I", dir)
+			pushopt(&n.cmd, "-I", std.pathcat(opt_objdir, dir))
 		;;
-		pushopt(&n.cmd, "-I", mt.dir)
+		pushopt(&n.cmd, "-I", std.pathcat(opt_objdir, mt.dir))
 	;;
 	for (dir, _, _) : mt.libdeps
-		pushopt(&n.cmd, "-I", dir)
+		pushopt(&n.cmd, "-I", std.pathcat(opt_objdir, dir))
 	;;
 	if opt_genasm
 		std.slpush(&n.cmd, "-S")
@@ -500,7 +500,7 @@ const scrapedeps = {b : build#, mt, path
 				std.slpush(&l, `Xdep p)
 			else
 				/* internal library */
-				p = std.pathjoin([b.objdir, mt.dir, uses[3]][:])
+				p = std.pathjoin([opt_objdir, mt.dir, uses[3]][:])
 				std.sljoin(&p, ".use")
 				std.slpush(&l, `Ldep p)
 			;;
