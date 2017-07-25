@@ -22,7 +22,7 @@ lib thread =
 	# netbsd impl of thread primitives
 	#condvar+netbsd.myr
 	#mutex+netbsd.myr
-	#spawn+netbsd.myr
+	spawn+netbsd.myr
 	#ncpu+netbsd.myr
 	#exit+netbsd-x64.s
 

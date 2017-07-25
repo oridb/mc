@@ -7,7 +7,6 @@ echo 	as	-g -o util.o util+posixy-x64.s  && 	as	-g -o util.o util+posixy-x64.s  
 echo 	$pwd/6/6m	syserrno+netbsd.myr  && 	$pwd/6/6m	syserrno+netbsd.myr  &&\
 echo 	$pwd/6/6m	systypes.myr  && 	$pwd/6/6m	systypes.myr  &&\
 echo 	$pwd/6/6m	sys+netbsd-x64.myr  && 	$pwd/6/6m	sys+netbsd-x64.myr  &&\
-echo 	$pwd/6/6m	setup+posixy.myr  && 	$pwd/6/6m	setup+posixy.myr  &&\
 echo 	as	-g -o syscall.o syscall+netbsd-x64.s  && 	as	-g -o syscall.o syscall+netbsd-x64.s  &&\
 echo 	$pwd/6/6m	ifreq+netbsd.myr  && 	$pwd/6/6m	ifreq+netbsd.myr  &&\
 echo 	$pwd/muse/muse	-o libsys.use -p sys ifreq.use setup.use syserrno.use systypes.use sys.use  && 	$pwd/muse/muse	-o libsys.use -p sys ifreq.use setup.use syserrno.use systypes.use sys.use  &&\
