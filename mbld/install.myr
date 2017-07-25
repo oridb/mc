@@ -12,8 +12,7 @@ pkg bld =
 ;;
 
 const install = {b
-	buildtarg(b, "all")
-	-> movetargs(b, false)
+	-> buildtarg(b, "all") && movetargs(b, false)
 }
 
 const uninstall = {b

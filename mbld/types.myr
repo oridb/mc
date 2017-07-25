@@ -12,6 +12,7 @@ pkg bld =
 		/* in flight builds */
 		queue	: node#[:]
 		proc	: std.htab(std.pid, node#)#
+		fail	: bool
 
 		/* build params */
 		all	: byte[:][:]

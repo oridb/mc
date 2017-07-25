@@ -19,7 +19,7 @@ const buildtarg = {b, targ
 		mark(b, o)
 	;;
 	build(b, g)
-	-> true
+	-> !b.fail
 }
 
 const clean = {b
@@ -81,9 +81,9 @@ const wait = {b
 		-> void
 	;;
 	match std.waitany()
-	| (p, `std.Wfailure):	std.fatal("FAIL: {j= }\n", proclbl(b, p))
-	| (p, `std.Wsignalled):	std.fatal("CRASH: {j= }\n", proclbl(b, p))
-	| (p, `std.Waiterror):	std.fatal("WAT: {j= }\n", proclbl(b, p))
+	| (p, `std.Wfailure):	fail(b, p, "FAIL")
+	| (p, `std.Wsignalled):	fail(b, p, "CRASH")
+	| (p, `std.Waiterror):	std.fatal("error waiting: nproc={}\n", std.htcount(b.proc))
 	| (p, `std.Wsuccess):
 		pp = p
 		match std.htget(b.proc, p)
@@ -105,6 +105,9 @@ const proclbl = {b, pid
 }
 
 const unblock = {b, n
+	if b.fail
+		-> void
+	;;
 	for g : n.ngen
 		std.assert(g.nblock != 0, "bogus unblock {} from {}\n", g.lbl, n.lbl)
 		g.nblock--
@@ -131,4 +134,12 @@ const stale = {b, n
 		;;
 	;;
 	-> staletime > n.mtime
+}
+
+const fail = {b, pid, failtype
+	std.fput(std.Err, "{}: {j= }\n", failtype, proclbl(b, pid))
+	std.htdel(b.proc, pid)
+	std.slfree(b.queue)
+	b.queue = [][:]
+	b.fail = true
 }
