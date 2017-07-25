@@ -37,6 +37,7 @@ const main = {args : byte[:][:]
 			[.opt='b', .arg="bin", .desc="compile binary named 'bin' from inputs"],
 			[.opt='l', .arg="lib", .desc="compile lib named 'lib' from inputs"],
 			[.opt='r', .arg="rt", .desc="link against runtime 'rt' instead of default"],
+			[.opt='o', .arg="dir", .desc="output directory"],
 		][:]
 	])
 
@@ -53,6 +54,7 @@ const main = {args : byte[:][:]
 		| ('B', arg):	bld.opt_instbase = arg
 		| ('t', tag):	std.slpush(&tags, tag)
 		| ('R', arg):	runsrc = arg
+		| ('o', arg):	bld.opt_objdir = arg
 		| ('b', arg):
 			targname = arg
 			bintarg = true
@@ -83,7 +85,7 @@ const main = {args : byte[:][:]
 
 	b = mkbuild(tags)
 	if targname.len != 0
-		buildimm(b, targname, cmd.args)
+		ok = buildimm(b, targname, cmd.args)
 	elif runsrc.len != 0
 		bld.opt_silent = true
 		tmp = std.mktemppath("runmyr")
@@ -152,7 +154,6 @@ const mkbuild = {tags
 	var b
 
 	b = std.zalloc()
-	b.objdir = "obj"
 	b.libs = std.mkht(std.strhash, std.streq)
 	b.proc = std.mkht(std.inthash, std.inteq)
 	b.targs = std.mkht(std.strhash, std.streq)
