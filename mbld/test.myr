@@ -16,9 +16,10 @@ const test = {b
 	var failed, ok
 	var tests
 
-	buildtarg(b, "test")
+	if !buildtarg(b, "test")
+		std.exit(1)
+	;;
 	tests = std.htgetv(b.deps.targs, "test", [][:])
-
 	ok = true
 	failed = [][:]
 	for t in tests
