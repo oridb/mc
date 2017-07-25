@@ -56,8 +56,10 @@ const runtest = {b, n, failed
 	var dir, res, log, logfd
 	var sub
 
+	mbldput("run {}: ", n.lbl)
 	dir = std.pathcat(b.basedir, n.wdir)
 	std.chdir(dir)
+	std.slfree(dir)
 	match std.spork(n.cmd)
 	| `std.Err m:
 		std.fatal("\nunable to run test: {}\n", m)
@@ -83,10 +85,9 @@ const runtest = {b, n, failed
 			;;
 		;;
 		if !res
-			std.slpush(failed, std.fmt("{j= } || {}", n.cmd, dir))
+			std.slpush(failed, std.fmt("{j= }", n.cmd))
 		;;
 	;;
-	std.slfree(dir)
 	-> res
 }
 
