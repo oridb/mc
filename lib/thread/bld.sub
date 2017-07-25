@@ -3,6 +3,9 @@ lib thread =
 	hookstd.myr	# install thread hooks
 	mutex.myr	# fallback, for unimplemented platforms
 
+	#generic fallbacks
+	ncpu.myr
+
 	# linux impl of basic thread primitives
 	#condvar+linux.myr
 	mutex+linux.myr
