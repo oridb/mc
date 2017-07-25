@@ -1,0 +1,187 @@
+use std
+use bio
+
+use "config"
+use "opts"
+use "types"
+
+pkg bld =
+	const addlibs	: (b : build#, \
+		sl : byte[:][:]#, \
+		libs : byte[:][:], \
+		incs : byte[:][:] -> void)
+
+	const builtlib	: (b : build#, \
+		lt : myrtarg#, \
+		dep : byte[:][:], \
+		dyndep : byte[:][:] -> void)
+
+	const scrapelib : (b : build#, libs : byte[:], incs : byte[:][:] -> void)
+;;
+
+const Abiversion = 13
+
+const builtlib = {b, mt, dep, dyndep
+	var ldep, l, u
+
+	l = std.fmt("lib{}.a", mt.name)
+	u = std.fmt("lib{}.use", mt.name)
+	ldep = std.mk([
+		.name=mt.name,
+		.dir=mt.dir,
+		.dep=dep,
+		.dyndep=dyndep,
+		.genuse=std.pathjoin([b.objdir, mt.dir, u][:]),
+		.genar=std.pathjoin([b.objdir, mt.dir, l][:]),
+	])
+	std.slfree(l)
+	std.slfree(u)
+	for d : dep
+		scrapelib(b, d, mt.incpath)
+	;;
+	std.htput(b.libs, mt.name, ldep)
+}
+
+const scrapelib = {b, lib, incs
+	var dep, dyndep, ldep
+	var f, dir
+
+	if std.hthas(b.libs, lib)
+		-> void
+	;;
+
+	(f, dir) = openlib(lib, incs)
+	match bio.getc(f)
+	| `bio.Ok 'U':	/* ok */
+	| `bio.Ok _:	std.fput(1, "{}: not a usefile\n", lib)
+	| `bio.Err e:	std.fatal("{}: error reading: {}\n", lib, e)
+	| `bio.Eof:	std.fatal("{}: truncated\n", lib)
+	;;
+	match bio.getbe32(f)
+	| `bio.Ok Abiversion:	/* nothing: version matches. */
+	| `bio.Ok v:	std.fput(1, "{}: mismatched abi {}\n", lib, v)
+	| `bio.Err e:	std.fatal("{}: error reading: {}\n", lib, e)
+	| `bio.Eof:	std.fatal("{}: truncated\n", lib)
+	;;
+	std.slfree(rdstr(f))
+
+	dep = [][:]
+	dyndep = [][:]
+	while true
+		match bio.getc(f)
+		| `bio.Ok 'L':	std.slpush(&dep, rdstr(f))
+		| `bio.Ok 'X':	std.slpush(&dyndep, rdstr(f))
+		| `bio.Err e:	std.fatal("{}: error reading {}", lib, e)
+		| _:		break;
+		;;
+	;;
+	bio.close(f)
+	ldep = std.mk([
+		.name=lib,
+		.dir=dir,
+		.dep=dep,
+		.dyndep=dyndep,
+		.genuse="",
+		.genar="",
+	])
+	std.htput(b.libs, lib, ldep)
+
+	for d : dep
+		scrapelib(b, d, incs)
+	;;
+}
+
+const openlib = {lib, incs : byte[:][:]
+	var path, libname
+
+	path = ""
+	libname = ""
+	for p : incs
+		libname = std.fmt("lib{}.use", lib)
+		path = std.pathjoin([p, libname][:])
+		std.slfree(libname)
+		if std.fisreg(path)
+			match  bio.open(path, bio.Rd)
+			| `std.Ok file:
+				std.slfree(path)
+				-> (file, p)
+			| `std.Err m:
+			;;
+			std.fatal("{} does not exist in {j=, }\n", lib, incs)
+		;;
+		std.slfree(path)
+	;;
+	std.fatal("{} does not exist in {j= }\n", lib, incs)
+}
+
+const addlibs = {b, sl, libs, incs
+	var added, diradded, looped
+	var lo
+
+	added  = std.mkht(std.strhash, std.streq)
+	looped  = std.mkht(std.strhash, std.streq)
+	diradded  = std.mkht(std.strhash, std.streq)
+
+	lo = sl#.len
+	for l : libs
+		addlib(b, sl, l, added, diradded, looped)
+	;;
+	for var i = 0; i < sl#[lo:].len/2; i++
+		std.swap(&sl#[lo+i], &sl#[sl#.len - i - 1])
+	;;
+
+	std.htfree(diradded)
+	std.htfree(looped)
+	std.htfree(added)
+}
+
+const addlib = {b, sl, lib, added, diradded, looped
+	var ar
+
+	if std.hthas(looped, lib)
+		std.fatal("{}: loop in deps\n", lib)
+	;;
+	std.htput(looped, lib, void)
+	match std.htget(b.libs, lib)
+	| `std.None:
+		std.slpush(sl, std.fmt("-l{}", lib))
+	| `std.Some ld:
+		for l : ld.dep
+			addlib(b, sl, l, added, diradded, looped)
+		;;
+		for l : ld.dyndep
+			addlib(b, sl, l, added, diradded, looped)
+		;;
+		if !std.hthas(added, lib)
+			if config.Directlib
+				ar = std.fmt("lib{}.a", lib)
+				std.slpush(sl, std.pathcat(ld.dir, ar))
+				std.slfree(ar)
+			else
+				std.slpush(sl, std.fmt("-l{}", lib))
+			;;
+			std.htput(added, lib, void)
+		;;
+		if !config.Directlib && !std.hthas(diradded, ld.dir)
+			std.htput(diradded, ld.dir, void)
+			std.slpush(sl, std.fmt("-L{}", ld.dir))
+		;;
+	;;
+	std.htdel(looped, lib)
+}
+
+
+const rdstr = {f -> byte[:]
+	var len
+	var sl
+
+	match bio.getbe32(f)
+	| `bio.Ok l:
+		len = l
+		sl = std.slalloc(len)
+	| `bio.Eof:	std.fatal("end of file while reading string")
+	| `bio.Err e:	std.fatal("error while reading string: {}", e)
+	;;
+	bio.read(f, sl)
+	-> sl
+}
