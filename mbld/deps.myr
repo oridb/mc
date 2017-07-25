@@ -83,8 +83,8 @@ const myrdeps = {b, name, mt
 		a = std.htgetv(g.targs, "all", [][:])
 		std.slpush(&a, gu)
 		std.slpush(&a, go)
-		std.htput(g.targs, to, std.sldup([gu, go][:]))
 		std.htput(g.targs, "all", a)
+		std.htput(g.targs, name, std.sldup([gu, go][:]))
 
 		std.slfree(o)
 		std.slfree(u)
@@ -97,7 +97,7 @@ const myrdeps = {b, name, mt
 		gu = node(g, tu)
 
 		generates(g, go, to)
-		std.htput(g.targs, to, std.sldup([go][:]))
+		std.htput(g.targs, name, std.sldup([go][:]))
 		if mt.istest
 			n = node(g, mt.name)
 			depends(g, n, to)
@@ -110,7 +110,6 @@ const myrdeps = {b, name, mt
 			go.instdir = config.Binpath
 			go.instmod = 0o755
 		;;
-
 		std.slfree(u)
 	;;
 
