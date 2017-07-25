@@ -979,12 +979,10 @@ matchstmt: Tmatch exprln optendlns Tbor matches Tendblk
 matches : match {
 		$$.nl = NULL;
 		$$.nn = 0;
-		if ($1)
-			lappend(&$$.nl, &$$.nn, $1);
+		lappend(&$$.nl, &$$.nn, $1);
 	}
 	| matches Tbor match {
-		if ($2)
-			lappend(&$$.nl, &$$.nn, $3);
+		lappend(&$$.nl, &$$.nn, $3);
 	}
 	;
 

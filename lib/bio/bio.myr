@@ -61,7 +61,7 @@ pkg bio =
 	const flush	: (f : file# -> bool)
 
 	/* seeking */
-	const seek	: (f : file#, std.off -> std.result(std.off, ioerr))
+	const seek	: (f : file#, off : std.off -> std.result(std.off, ioerr))
 
 	/* single unit operations */
 	const putb	: (f : file#, b : byte	-> status(std.size))
