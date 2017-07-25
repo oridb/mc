@@ -15,7 +15,6 @@ use "syssel"
 
 const main = {args : byte[:][:]
 	var b : bld.build#
-	var bintarg
 	var targname
 	var runsrc
 	var path
@@ -28,15 +27,15 @@ const main = {args : byte[:][:]
 	cmd = std.optparse(args, &[
 		.argdesc = "[inputs...]",
 		.opts = [
+			[.opt='j', .arg="jobs", .desc="build with at most 'jobs' jobs"],
 			[.opt='t', .arg="tag", .desc="build with specified systag"],
 			[.opt='S', .desc="generate assembly when building"],
 			[.opt='d', .desc="dump debugging information for mbld"],
 			[.opt='I', .arg="inc", .desc="add 'inc' to your include path"],
 			[.opt='R', .arg="runsrc", .desc="source to compile and run"],
 			[.opt='B', .arg="base", .desc="install into 'base'"],
-			[.opt='b', .arg="bin", .desc="compile binary named 'bin' from inputs"],
-			[.opt='l', .arg="lib", .desc="compile lib named 'lib' from inputs"],
-			[.opt='r', .arg="rt", .desc="link against runtime 'rt' instead of default"],
+			[.opt='b', .arg="bin", .desc="compile binary 'bin' from inputs"],
+			[.opt='r', .arg="rt", .desc="link against runtime 'rt'"],
 			[.opt='o', .arg="dir", .desc="output directory"],
 		][:]
 	])
@@ -53,27 +52,12 @@ const main = {args : byte[:][:]
 		| ('I', arg):	std.slpush(&bld.opt_incpaths, arg)
 		| ('B', arg):	bld.opt_instbase = arg
 		| ('t', tag):	std.slpush(&tags, tag)
+		| ('j', arg):	bld.opt_maxproc = std.getv(std.intparse(arg), 1)
 		| ('R', arg):	runsrc = arg
 		| ('o', arg):	bld.opt_objdir = arg
-		| ('b', arg):
-			targname = arg
-			bintarg = true
-		| ('l', arg):
-			targname = arg
-			bintarg = false
-		| ('r', arg):
-			if std.sleq(arg, "none")
-				bld.opt_runtime = ""
-			else
-				bld.opt_runtime = arg
-			;;
-		/*
-		internal undocumented args; used by compiler suite for
-		building with an uninstalled compiler.
-		*/
-		| ('d', arg): bld.opt_debug = true
-		| _:	std.die("unreachable\n")
-
+		| ('b', arg):	targname = arg
+		| ('r', arg):	bld.opt_runtime = arg
+		| _:		std.die("unreachable\n")
 		;;
 	;;
 	path = std.pathcat(bld.opt_instbase, config.Libpath)
@@ -104,7 +88,6 @@ const main = {args : byte[:][:]
 		bld.deps(b)
 		bld.testdeps(b)
 		bld.resolve(b)
-		/*bld.configure()*/
 		/* default: buildall */
 		if cmd.args.len == 0
 			ok = bld.buildtarg(b, "all")
