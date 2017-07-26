@@ -1909,7 +1909,7 @@ TABLE OF CONTENTS:
     6.4. Looping
 
             forstmt:    foriter | foreach
-            foreach:    "for" pattern "in" expr "\n" block
+            foreach:    "for" pattern ":" expr "\n" block
             foriter:    "for" init "\n" cond "\n" step "\n" block
             whilestmt:  "while" cond "\n" block
 
@@ -1926,12 +1926,12 @@ TABLE OF CONTENTS:
             ;;
 
         The second form is the collection iteration form. This form allows
-        for iterating over a collection of values contained within something
-        which is iterable. Currently, only the built in sequences -- arrays
-        and slices -- can be iterated, however, there is work going towards
-        allowing user defined iterables.
+        for iterating over a collection of values contained within
+        something which is iterable. This form of loop can be used on any
+        iterable types. Iterable types are defined as slices, arrays, and any
+        type that implements the builtin iterable trait.
 
-            for pat in expr
+            for pat : expr
                 blockbody()
             ;;
 
