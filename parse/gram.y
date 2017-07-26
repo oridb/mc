@@ -333,7 +333,7 @@ pkgitem : decl {
 	| pkgtydef {
 		/* the type may only be null in a package context, so we
 		can set the type when merging in this case.
-		
+
 		FIXME: clean up the fucking special cases. */
 		if ($1.type)
 			$1.type->vis = Visexport;
@@ -422,7 +422,7 @@ traitdef: Ttrait Tident generictype optauxtypes { /* trait prototype */
 			0);
 		for (i = 0; i < $6.nn; i++) {
 			$6.nl[i]->decl.trait = $$;
-			$6.nl[i]->decl.impls = mkht(tyhash, tyeq); 
+			$6.nl[i]->decl.impls = mkht(tyhash, tyeq);
 			$6.nl[i]->decl.isgeneric = 1;
 		}
 	}
@@ -735,7 +735,7 @@ postfixexpr
 	| atomicexpr
 	;
 
-arglist : expr 
+arglist : expr
 	{$$.nl = NULL; $$.nn = 0; lappend(&$$.nl, &$$.nn, $1);}
 	| arglist Tcomma expr
 	{lappend(&$$.nl, &$$.nn, $3);}
@@ -805,7 +805,7 @@ littok  : strlit	{$$ = $1;}
 strlit : Tstrlit { $$ = mkstr($1->loc, $1->strval); }
 	| strlit Tstrlit {
 		Str merged;
-		
+
 		merged.len = $1->lit.strval.len + $2->strval.len;
 		merged.buf = malloc(merged.len);
 		memcpy(merged.buf, $1->lit.strval.buf, $1->lit.strval.len);
@@ -1173,4 +1173,3 @@ static Op binop(int tt)
 	}
 	return o;
 }
-

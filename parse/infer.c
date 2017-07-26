@@ -886,10 +886,10 @@ basetype(Type *a)
 	Type *t;
 
 	t = htget(seqbase, a);
-        while (!t && a->type == Tyname) {
-            a = a->sub[0];
-            t = htget(seqbase, a);
-        }
+	while (!t && a->type == Tyname) {
+		a = a->sub[0];
+		t = htget(seqbase, a);
+	}
 	if (!t && (a->type == Tyslice || a->type == Tyarray || a->type == Typtr))
 		t = a->sub[0];
 	if (t)
@@ -2421,8 +2421,8 @@ typesub(Node *n, int noerr)
 		}
 		for (i = 0; i < n->expr.nargs; i++)
 			typesub(n->expr.args[i], noerr);
-                if (!noerr)
-                    verifyop(n);
+		if (!noerr)
+			verifyop(n);
 		break;
 	case Nfunc:
 		pushstab(n->func.scope);
