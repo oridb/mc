@@ -15,9 +15,5 @@ else
 	BOOT="./mk/bootstrap/bootstrap+`uname -s`-`uname -m`.sh"
 fi
 
-if [ -f mbld/mbld ]; then
-    ./mbld/mbld $@ || mbld $@ || \
-        (echo "Unable to run mbld $@; have you build successfully"; false)
-else
-    ./mbld/mbld || mbld || $BOOT
-fi
+./obj/mbld/mbld $@ || ./mbld/mbld $@ || mbld $@ || \
+	(echo "Unable to run mbld $@; have you build successfully"; false)
