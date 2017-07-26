@@ -535,7 +535,7 @@ argdefs : typedeclcore {
 		$$.nl = NULL;
 		$$.nn = 0; lappend(&$$.nl, &$$.nn, $1);
 	}
-	| argdefs Tcomma declcore {lappend(&$$.nl, &$$.nn, $3);}
+	| argdefs Tcomma typedeclcore {lappend(&$$.nl, &$$.nn, $3);}
 	| /* empty */ {
 		$$.loc.line = 0;
 		$$.loc.file = 0;
