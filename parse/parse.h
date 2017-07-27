@@ -85,6 +85,13 @@ struct Tysubst {
 	size_t nsubst;
 };
 
+typedef enum {
+	Xcnt,
+	Xbrk,
+	Xret,
+	Nexits
+} Exit;
+
 struct Stab {
 	Stab *super;
 	char *name;
@@ -99,6 +106,11 @@ struct Stab {
 	Htab *uc;	/* union constructors */
 	Htab *lbl;	/* labels */
 	Htab *impl;	/* trait implementations: really a set of implemented traits. */
+
+	Node **autodcl;	/* declarations in dcl marked 'auto' */
+	size_t nautodcl;
+
+	Node *exit[Nexits];
 };
 
 struct Tyenv {
@@ -305,6 +317,7 @@ struct Node {
 			char isnoret;
 			char isexportinit;
 			char isinit;
+			char isauto;
 		} decl;
 
 		struct {

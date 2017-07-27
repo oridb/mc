@@ -15,6 +15,14 @@
 #include "mi.h"
 #include "../config.h"
 
+typedef struct Flattenctx Flattenctx;
+typedef struct Loop Loop;
+
+struct Loop {
+	Node *lcnt;
+	Node *lbrk;
+	Stab *body;
+};
 
 /* takes a list of nodes, and reduces it (and it's subnodes) to a list
  * following these constraints:
@@ -22,27 +30,23 @@
  *      - Nodes with side effects are root node
  *      - All nodes operate on machine-primitive types and tuple
  */
-typedef struct Flattenctx Flattenctx;
 struct Flattenctx {
 	int isglobl;
 
-	/* return handling */
 	Node **stmts;
 	size_t nstmts;
 
 	/* return handling */
-	int hasenv;
-	int isbigret;
+	Node *tret;
 
 	/* pre/postinc handling */
 	Node **incqueue;
 	size_t nqueue;
 
 	/* break/continue handling */
-	Node **loopstep;
-	size_t nloopstep;
-	Node **loopexit;
-	size_t nloopexit;
+	Loop loop;
+	unsigned inloop;
+	Stab *curst;
 
 	/* location handling */
 	Htab *globls;
@@ -197,6 +201,50 @@ visit(Flattenctx *s, Node *n)
 		}
 	}
 	return r;
+}
+
+static Node *
+traitfn(Srcloc loc, Trait *tr, char *fn, Type *ty)
+{
+	Node *proto, *dcl, *var;
+	char *name;
+	size_t i;
+
+	for (i = 0; i < tr->nproto; i++) {
+		name = declname(tr->proto[i]);
+		if (!strcmp(fn, name)) {
+			proto = tr->proto[i];
+			dcl = htget(proto->decl.impls, ty);
+			var = mkexpr(loc, Ovar, dcl->decl.name, NULL);
+			var->expr.type = dcl->decl.type;
+			var->expr.did = dcl->decl.did;
+			return var;
+		}
+	}
+	return NULL;
+}
+
+static void
+dispose(Flattenctx *s, Stab *st)
+{
+	Node *d, *call, *func, *val;
+	Trait *tr;
+	Type *ty;
+	size_t i;
+
+	tr = traittab[Tcdisp];
+	/* dispose in reverse order of declaration */
+	for (i = st->nautodcl; i-- > 0;) {
+		d = st->autodcl[i];
+		ty = decltype(d);
+		val = mkexpr(Zloc, Ovar, d->decl.name, NULL);
+		val->expr.type = ty;
+		val->expr.did = d->decl.did;
+		func = traitfn(Zloc, tr, "__dispose__", ty);
+		call = mkexpr(Zloc, Ocall, func, val, NULL);
+		call->expr.type = mktype(Zloc, Tyvoid);
+		flatten(s, call);
+	}
 }
 
 static void
@@ -368,6 +416,26 @@ assign(Flattenctx *s, Node *lhs, Node *rhs)
 	return r;
 }
 
+/* returns 1 when the exit jump needs to be emitted */
+static int
+exitscope(Flattenctx *s, Stab *stop, Srcloc loc, int x)
+{
+	Stab *st;
+
+	for (st = s->curst;; st = st->super) {
+		if (st->exit[x]) {
+			jmp(s, st->exit[x]);
+			return 0;
+		}
+		st->exit[x] = genlbl(loc);
+		flatten(s, st->exit[x]);
+		dispose(s, st);
+		if ((!stop && st->isfunc) || st == stop) {
+			return 1;
+		}
+	}
+}
+
 static Node *
 rval(Flattenctx *s, Node *n)
 {
@@ -499,22 +567,28 @@ rval(Flattenctx *s, Node *n)
 				append(s, s->incqueue[i]);
 			lfree(&s->incqueue, &s->nqueue);
 		}
-		append(s, mkexpr(n->loc, Oret, t, NULL));
+		if (!s->tret)
+			s->tret = temp(s, v);
+		flatten(s, asn(lval(s, s->tret), t));
+		if (exitscope(s, NULL, Zloc, Xret))
+			append(s, mkexpr(n->loc, Oret, s->tret, NULL));
 		break;
 	case Oasn:
 		r = assign(s, args[0], args[1]);
 		break;
 	case Obreak:
 		r = NULL;
-		if (s->nloopexit == 0)
+		if (s->inloop == 0)
 			fatal(n, "trying to break when not in loop");
-		jmp(s, s->loopexit[s->nloopexit - 1]);
+		if (exitscope(s, s->loop.body, n->loc, Xbrk))
+			jmp(s, s->loop.lbrk);
 		break;
 	case Ocontinue:
 		r = NULL;
-		if (s->nloopstep == 0)
+		if (s->inloop == 0)
 			fatal(n, "trying to continue when not in loop");
-		jmp(s, s->loopstep[s->nloopstep - 1]);
+		if (exitscope(s, s->loop.body, n->loc, Xcnt))
+			jmp(s, s->loop.lcnt);
 		break;
 	case Oeq: case One:
 		r = compare(s, n, 1);
@@ -569,14 +643,20 @@ lval(Flattenctx *s, Node *n)
 }
 
 static void
-flattenblk(Flattenctx *fc, Node *n)
+flattenblk(Flattenctx *s, Node *n)
 {
+	Stab *st;
 	size_t i;
 
+	st = s->curst;
+	s->curst = n->block.scope;
 	for (i = 0; i < n->block.nstmts; i++) {
 		n->block.stmts[i] = fold(n->block.stmts[i], 0);
-		flatten(fc, n->block.stmts[i]);
+		flatten(s, n->block.stmts[i]);
 	}
+	assert(s->curst == n->block.scope);
+	dispose(s, s->curst);
+	s->curst = st;
 }
 
 /* init; while cond; body;;
@@ -593,6 +673,8 @@ flattenblk(Flattenctx *fc, Node *n)
 static void
 flattenloop(Flattenctx *s, Node *n)
 {
+	Stab *b;
+	Loop l;
 	Node *lbody;
 	Node *lend;
 	Node *ldec;
@@ -606,8 +688,14 @@ flattenloop(Flattenctx *s, Node *n)
 	lstep = genlbl(n->loc);
 	lend = genlbl(n->loc);
 
-	lappend(&s->loopstep, &s->nloopstep, lstep);
-	lappend(&s->loopexit, &s->nloopexit, lend);
+
+	b = s->curst;
+	s->curst = n->loopstmt.scope;
+	l = s->loop;
+	s->loop.lcnt = lstep;
+	s->loop.lbrk = lend;
+	s->loop.body = n->loopstmt.scope;
+	s->inloop++;
 
 	flatten(s, n->loopstmt.init);  /* init */
 	jmp(s, lcond);              /* goto test */
@@ -627,8 +715,9 @@ flattenloop(Flattenctx *s, Node *n)
 		append(s, s->incqueue[i]);
 	lfree(&s->incqueue, &s->nqueue);
 
-	s->nloopstep--;
-	s->nloopexit--;
+	s->inloop--;
+	s->loop = l;
+	s->curst = b;
 }
 
 /* if foo; bar; else baz;;
@@ -719,6 +808,7 @@ flattenloopmatch(Flattenctx *s, Node *pat, Node *val, Node *ltrue, Node *lfalse)
 static void
 flattenidxiter(Flattenctx *s, Node *n)
 {
+	Loop l;
 	Node *lbody, *lstep, *lcond, *lmatch, *lend;
 	Node *idx, *len, *dcl, *seq, *val, *done;
 	Node *zero;
@@ -730,8 +820,11 @@ flattenidxiter(Flattenctx *s, Node *n)
 	lmatch = genlbl(n->loc);
 	lend = genlbl(n->loc);
 
-	lappend(&s->loopstep, &s->nloopstep, lstep);
-	lappend(&s->loopexit, &s->nloopexit, lend);
+	s->inloop++;
+	l = s->loop;
+	s->loop.lcnt = lstep;
+	s->loop.lbrk = lend;
+	s->loop.body = n->iterstmt.body->block.scope;
 
         /* FIXME: pass this in from main() */
         idxtype = mktype(n->loc, Tyuint64);
@@ -766,29 +859,8 @@ flattenidxiter(Flattenctx *s, Node *n)
 	jmp(s, lbody);
 	flatten(s, lend);
 
-	s->nloopstep--;
-	s->nloopexit--;
-}
-
-static Node *
-itertraitfn(Srcloc loc, Trait *tr, char *fn, Type *ty)
-{
-	Node *proto, *dcl, *var;
-	char *name;
-	size_t i;
-
-	for (i = 0; i < tr->nproto; i++) {
-		name = declname(tr->proto[i]);
-		if (!strcmp(fn, name)) {
-			proto = tr->proto[i];
-			dcl = htget(proto->decl.impls, ty);
-			var = mkexpr(loc, Ovar, dcl->decl.name, NULL);
-			var->expr.type = dcl->decl.type;
-			var->expr.did = dcl->decl.did;
-			return var;
-		}
-	}
-	return NULL;
+	s->inloop--;
+	s->loop = l;
 }
 
 /* for pat in seq
@@ -812,6 +884,7 @@ itertraitfn(Srcloc loc, Trait *tr, char *fn, Type *ty)
 static void
 flattentraititer(Flattenctx *s, Node *n)
 {
+	Loop l;
 	Node *lbody, *lclean, *lstep, *lmatch, *lend;
 	Node *done, *val, *iter, *valptr, *iterptr;
 	Node *func, *call;
@@ -831,8 +904,12 @@ flattentraititer(Flattenctx *s, Node *n)
 	lstep = genlbl(n->loc);
 	lmatch = genlbl(n->loc);
 	lend = genlbl(n->loc);
-	lappend(&s->loopstep, &s->nloopstep, lstep);
-	lappend(&s->loopexit, &s->nloopexit, lend);
+
+	s->inloop++;
+	l = s->loop;
+	s->loop.lcnt = lstep;
+	s->loop.lbrk = lend;
+	s->loop.body = n->iterstmt.body->block.scope;
 
 	append(s, asn(iter, n->iterstmt.seq));
 	jmp(s, lstep);
@@ -842,14 +919,14 @@ flattentraititer(Flattenctx *s, Node *n)
 	flatten(s, lclean);
 
 	/* call iterator cleanup */
-	func = itertraitfn(n->loc, tr, "__iterfin__", exprtype(iter));
+	func = traitfn(n->loc, tr, "__iterfin__", exprtype(iter));
 	call = mkexpr(n->loc, Ocall, func, iterptr, valptr, NULL);
 	call->expr.type = mktype(n->loc, Tyvoid);
 	append(s, call);
 
 	flatten(s, lstep);
 	/* call iterator step */
-	func = itertraitfn(n->loc, tr, "__iternext__", exprtype(iter));
+	func = traitfn(n->loc, tr, "__iternext__", exprtype(iter));
 	call = mkexpr(n->loc, Ocall, func, iterptr, valptr, NULL);
 	done = gentemp(n->loc, mktype(n->loc, Tybool), NULL);
 	call->expr.type = exprtype(done);
@@ -862,8 +939,8 @@ flattentraititer(Flattenctx *s, Node *n)
 	jmp(s, lbody);
 	flatten(s, lend);
 
-	s->nloopstep--;
-	s->nloopexit--;
+	s->inloop--;
+	s->loop = l;
 }
 
 static void
@@ -954,6 +1031,7 @@ flatteninit(Node *dcl)
 	lit = dcl->decl.init->expr.args[0];
 	fn = lit->lit.fnval;
 	body = fn->func.body;
+	fc.curst = fn->func.scope;
 	flatten(&fc, fn->func.body);
 	blk = mkblock(fn->loc, body->block.scope);
 	blk->block.stmts = fc.stmts;
@@ -1013,4 +1091,3 @@ isconstfn(Node *n)
 		return 0;
 	return 1;
 }
-

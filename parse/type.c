@@ -1034,6 +1034,35 @@ iterableinit(Stab *st, Trait *tr)
 }
 
 void
+disposableinit(Stab *st, Trait *tr)
+{
+	Node *func, *arg, **args;
+	Type *ty;
+	size_t nargs;
+
+	tr->param = mktyparam(Zloc, "a");
+	tr->naux = 0;
+
+	/* __dispose__ : (val : @a -> void) */
+	args = NULL;
+	nargs = 0;
+	arg = mkdecl(Zloc, mkname(Zloc, "val"), mktyparam(Zloc, "a"));
+	lappend(&args, &nargs, arg);
+	ty = mktyfunc(Zloc, args, nargs, mktype(Zloc, Tyvoid));
+
+	func = mkdecl(Zloc, mkname(Zloc, "__dispose__"), ty);
+	func->decl.trait = tr;
+	func->decl.impls = mkht(tyhash, tyeq);
+	func->decl.isgeneric = 1;
+	func->decl.isconst = 1;
+	func->decl.isglobl = 1;
+	func->decl.isextern = 1;
+
+	lappend(&tr->proto, &tr->nproto, func);
+	putdcl(st, func);
+}
+
+void
 tyinit(Stab *st)
 {
 	int i;
@@ -1106,5 +1135,6 @@ tyinit(Stab *st)
 	 * comes last, since this needs both the types and the traits set up
 	 */
 	iterableinit(st, traittab[Tciter]);
+	disposableinit(st, traittab[Tcdisp]);
 
 }
