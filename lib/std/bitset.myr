@@ -38,7 +38,7 @@ pkg std =
 	;;
 
 	impl iterable bsiter -> size
-	generic bybsvalue	: (bs : bitset# -> bsiter)
+	const  bybsvalue	: (bs : bitset# -> bsiter)
 ;;
 
 const mkbs = {
@@ -179,7 +179,7 @@ const eqsz = {a, b
 	ensurelen(b, sz)
 }
 
-generic bybsvalue = {bs
+const bybsvalue = {bs
 	-> [.idx=0, .bs=bs]
 }
 
