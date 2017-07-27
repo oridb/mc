@@ -232,6 +232,24 @@ addspecialization(Node *n, Stab *stab)
 }
 
 static void
+adddispspecialization(Node *n, Stab *stab)
+{
+	Trait *tr;
+	Type *ty;
+
+	tr = traittab[Tcdisp];
+	ty = decltype(n);
+	if (!ty->traits || !bshas(ty->traits, Tcdisp))
+		return;
+	assert(tr->nproto == 1);
+	if (hthas(tr->proto[0]->decl.impls, ty))
+		return;
+	lappend(&specializationscope, &nspecializationscope, stab);
+	lappend(&specializations, &nspecializations, n);
+	lappend(&genericdecls, &ngenericdecls, tr->proto[0]);
+}
+
+static void
 additerspecializations(Node *n, Stab *stab)
 {
 	Trait *tr;
@@ -1876,6 +1894,8 @@ infernode(Node **np, Type *ret, int *sawret)
 		if (hasparams(type(n)) && !ingeneric)
 			fatal(n, "generic type %s in non-generic near %s", tystr(type(n)),
 					ctxstr(n));
+		if (n->decl.isauto)
+			constrain(n, type(n), traittab[Tcdisp]);
 		popenv(n->decl.env);
 		indentdepth--;
 		if (debugopt['u'])
@@ -2371,6 +2391,8 @@ typesub(Node *n, int noerr)
 		if (streq(declname(n), "__init__"))
 			if (!initcompatible(tybase(decltype(n))))
 				fatal(n, "__init__ must be (->void), got %s", tystr(decltype(n)));
+		if (n->decl.isauto)
+			adddispspecialization(n, curstab());
 		popenv(n->decl.env);
 		break;
 	case Nblock:
@@ -2468,7 +2490,7 @@ static void
 specialize(Node *f)
 {
 	Node *d, *n, *name;
-	Type *ty, *it;
+	Type *ty, *it, *dt;
 	size_t i;
 	Trait *tr;
 
@@ -2501,6 +2523,14 @@ specialize(Node *f)
 			it = itertype(n->iterstmt.seq, mktype(n->loc, Tyvoid));
 			d = specializedcl(tr->proto[1], ty, it, &name);
 			htput(tr->proto[1]->decl.impls, ty, d);
+		} else if (n->type == Ndecl && n->decl.isauto) {
+			tr = traittab[Tcdisp];
+			assert(tr->nproto == 1);
+			ty = decltype(n);
+			dt = mktyfunc(n->loc, NULL, 0, mktype(n->loc, Tyvoid));
+			lappend(&dt->sub, &dt->nsub, ty);
+			d = specializedcl(tr->proto[0], ty, dt, &name);
+			htput(tr->proto[0]->decl.impls, ty, d);
 		} else {
 			die("unknown node for specialization\n");
 		}

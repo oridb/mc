@@ -453,6 +453,10 @@ putdcl(Stab *st, Node *s)
 
 	st = findstab(st, s->decl.name);
 	old = htget(st->dcl, s->decl.name);
+	if (s->decl.isauto) {
+		assert(!old);
+		lappend(&st->autodcl, &st->nautodcl, s);
+	}
 	if (!old)
 		forcedcl(st, s);
 	else if (!mergedecl(old, s))

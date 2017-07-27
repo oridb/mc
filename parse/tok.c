@@ -178,6 +178,7 @@ kwd(char *s)
 	} kwmap[] = {
 		{"$noret", Tattr},
 		{"_", Tgap},
+		{"auto", Tauto},
 		{"break", Tbreak},
 		{"const", Tconst},
 		{"continue", Tcontinue},

@@ -6,3 +6,4 @@ Tc(Tcidx,	"indexable")    /* indexable */
 Tc(Tcslice,	"sliceable")    /* sliceable */
 Tc(Tcfunc,	"function")     /* behaves like a function */
 Tc(Tciter,	"iterable")     /* can be iterated over */
+Tc(Tcdisp,	"disposable")   /* automatically disposable */
