@@ -16,6 +16,7 @@
 /* Allows us to look up types/traits by name nodes */
 typedef struct Tydefn Tydefn;
 typedef struct Traitdefn Traitdefn;
+
 struct Tydefn {
 	Srcloc loc;
 	Node *name;
@@ -213,27 +214,6 @@ getclosure(Stab *st, size_t *n)
  * not in the current scope, it is recorded
  * in the scope's closure.
  */
-Node *
-getdcl(Stab *st, Node *n)
-{
-	Node *s;
-	Stab *fn;
-
-	fn = NULL;
-	do {
-		s = htget(st->dcl, n);
-		if (s) {
-			/* record that this is in the closure of this scope */
-			if (fn && !s->decl.isglobl && !s->decl.isgeneric)
-				htput(fn->env, s->decl.name, s);
-			return s;
-		}
-		if (!fn && st->env)
-			fn = st;
-		st = st->super;
-	} while (st);
-	return NULL;
-}
 
 void
 putlbl(Stab *st, char *name, Node *lbl)
@@ -254,29 +234,6 @@ getlbl(Stab *st, Srcloc loc, char *name)
 	return htget(st->lbl, name);
 }
 
-Type *
-gettype_l(Stab *st, Node *n)
-{
-	Tydefn *t;
-
-	if ((t = htget(st->ty, n)))
-		return t->type;
-	return NULL;
-}
-
-Type *
-gettype(Stab *st, Node *n)
-{
-	Tydefn *t;
-
-	do {
-		if ((t = htget(st->ty, n)))
-			return t->type;
-		st = st->super;
-	} while (st);
-	return NULL;
-}
-
 int
 hastype(Stab *st, Node *n)
 {
@@ -288,8 +245,87 @@ hastype(Stab *st, Node *n)
 	return 0;
 }
 
-Ucon *
-getucon(Stab *st, Node *n)
+/* because of function casting rules, it's cleaner to do this as a macro */
+static void*
+getunique(void *(*fn)(Stab *, Node*), char *name, Stab *st, Node *n)
+{
+	size_t i, nk;
+	void *p, *sym;
+	char *foundns;
+	void **k; 
+	Stab *s;
+
+	p = fn(st, n);
+	/* file can be null early on, when initializing the type tables */
+	if (p || n->name.ns || !file)
+		return p;
+
+	/* if a name is globally unique, we can refer to it without a namespace */
+	sym = NULL;
+	k = htkeys(file->file.ns, &nk);
+	for (i = 0; i < nk; i++) {
+		s = htget(file->file.ns, k[i]);
+		p = fn(s, n);
+		if (p) {
+			if (sym)
+				fatal(n, "ambiguous %s %s, defined in %s and %s\n", name, namestr(n), k[i], foundns);
+			foundns = k[i];
+			sym = p;
+		}
+	}
+	return sym;
+}
+
+static void*
+getnstype(Stab *st, Node *n)
+{
+	Tydefn *t;
+
+	do {
+		if ((t = htget(st->ty, n)))
+			return t->type;
+		st = st->super;
+	} while (st);
+	return NULL;
+}
+
+Type*
+gettype(Stab *st, Node *n)
+{
+	return getunique(getnstype, "type", st, n);
+}
+
+void*
+getnsdcl(Stab *st, Node *n)
+{
+	Node *s;
+	Stab *fn;
+
+	fn = NULL;
+	do {
+		s = htget(st->dcl, n);
+		if (s) {
+			/* record that this is in the closure of this scope */
+			if (fn && !s->decl.isglobl && !s->decl.isgeneric)
+				htput(fn->env, s->decl.name, s);
+			return s;
+		}
+		if (!fn && st->env)
+			fn = st;
+		st = st->super;
+	} while (st);
+	return NULL;
+}
+
+
+Node*
+getdcl(Stab *st, Node *n)
+{
+	return getunique(getnsdcl, "decl", st, n);
+}
+
+static void*
+getnsucon(Stab *st, Node *n)
 {
 	Ucon *uc;
 
@@ -301,8 +337,14 @@ getucon(Stab *st, Node *n)
 	return NULL;
 }
 
-Trait *
-gettrait(Stab *st, Node *n)
+Ucon*
+getucon(Stab *st, Node *n)
+{
+	return getunique(getnsucon, "union constructor", st, n);
+}
+
+static void*
+getnstrait(Stab *st, Node *n)
 {
 	Traitdefn *c;
 
@@ -314,6 +356,12 @@ gettrait(Stab *st, Node *n)
 		st = st->super;
 	} while (st);
 	return NULL;
+}
+
+Trait*
+gettrait(Stab *st, Node *n)
+{
+	return getunique(getnstrait, "trait", st, n);
 }
 
 Stab *
