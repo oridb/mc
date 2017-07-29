@@ -500,7 +500,7 @@ tyresolve(Type *t)
 		infernode(&t->asize, NULL, NULL);
 		break;
 	case Typaram:
-		if (!isbound(t))
+		if (!boundtype(t))
 			lfatal(t->loc, "type parameter %s is undefined in generic context", tystr(t));
 		break;
 	default:
@@ -594,7 +594,7 @@ static Type *
 tf(Type *orig)
 {
 	int isgeneric;
-	Type *t;
+	Type *t, *tt;
 
 	assert(orig != NULL);
 	t = tylookup(orig);
@@ -611,6 +611,10 @@ tf(Type *orig)
 		pushenv(orig->env);
 		t = tysubst(t, orig);
 		popenv(orig->env);
+	} else if (orig->type == Typaram) {
+		tt = boundtype(t);
+		if (tt)
+			t = tt;
 	}
 	ingeneric -= isgeneric;
 	return t;
@@ -1892,8 +1896,7 @@ infernode(Node **np, Type *ret, int *sawret)
 		pushenv(n->decl.env);
 		inferdecl(n);
 		if (hasparams(type(n)) && !ingeneric)
-			fatal(n, "generic type %s in non-generic near %s", tystr(type(n)),
-					ctxstr(n));
+			fatal(n, "generic type in non-generic near %s", ctxstr(n));
 		if (n->decl.isauto)
 			constrain(n, type(n), traittab[Tcdisp]);
 		popenv(n->decl.env);
@@ -1993,6 +1996,7 @@ tyfix(Node *ctx, Type *orig, int noerr)
 {
 	static Type *tyint, *tyflt;
 	Type *t, *d, *base;
+	Tyenv *env;
 	char *from, *to;
 	size_t i;
 	char buf[1024];
@@ -2003,6 +2007,9 @@ tyfix(Node *ctx, Type *orig, int noerr)
 		tyflt = mktype(Zloc, Tyflt64);
 
 	t = tysearch(tf(orig));
+	env = t->env;
+	if (env)
+		pushenv(env);
 	base = htget(seqbase, orig);
 	if (orig->type == Tyvar && hthas(delayed, orig)) {
 		d = htget(delayed, orig);
@@ -2060,6 +2067,8 @@ tyfix(Node *ctx, Type *orig, int noerr)
 	}
 	if (base)
 		htput(seqbase, t, base);
+	if (env)
+		popenv(env);
 	return t;
 }
 

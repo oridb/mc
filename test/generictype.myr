@@ -1,7 +1,7 @@
 use std
 
 /* checks that parameterized types work. exits with 0. */
-type option(@a) = union
+type option(@a::(integral,numeric)) = union
 	`Some @a::(integral,numeric)
 	`None
 ;;

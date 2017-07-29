@@ -427,7 +427,7 @@ void pushstab(Stab *st);
 void popstab(void);
 
 void bindtype(Tyenv *env, Type *t);
-int isbound(Type *t);
+Type *boundtype(Type *t);
 Tyenv *mkenv(void);
 Tyenv *curenv(void);
 void pushenv(Tyenv *e);

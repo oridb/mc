@@ -693,7 +693,7 @@ bindtype_rec(Tyenv *e, Type *t, Bitset *visited)
 		tt = htget(e->tab, t);
 		if (tt && tt != t)
 			tytab[t->tid] = tt;
-		else if (!isbound(t))
+		else if (!boundtype(t))
 			htput(e->tab, t, t);
 		break;
 	case Tygeneric:
@@ -740,13 +740,16 @@ bindtype(Tyenv *env, Type *t)
 
 /* If the current environment binds a type,
  * we return true */
-int
-isbound(Type *t)
+Type*
+boundtype(Type *t)
 {
-
 	Tyenv *e;
-	for (e = curenv(); e; e = e->super)
-		if (htget(e->tab, t))
-			return 1;
-	return 0;
+	Type *r;
+
+	for (e = curenv(); e; e = e->super) {
+		r = htget(e->tab, t);
+		if (r)
+			return r;
+	}
+	return NULL;
 }
