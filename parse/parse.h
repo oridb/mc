@@ -419,8 +419,6 @@ Tyenv *mkenv(void);
 Tyenv *curenv(void);
 void pushenv(Tyenv *e);
 void popenv(Tyenv *e);
-void _tybind(Tyenv *e, Type *t);
-void _bind(Tyenv *e, Node *n);
 
 /* type creation */
 void tyinit(Stab *st); /* sets up built in types */

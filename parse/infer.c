@@ -734,7 +734,9 @@ satisfiestraits(Type *a, Type *b)
 {
 	if (!a->traits || bscount(a->traits) == 0)
 		return 1;
-	return bsissubset(a->traits, b->traits);
+	if (b->traits)
+		return bsissubset(a->traits, b->traits);
+	return 0;
 }
 
 static void
@@ -1297,7 +1299,6 @@ inferucon(Node *n, int *isconst)
 	 *
 	 * To make it compile, for now, we just bind the types in here.
 	 */
-	//tybindall(uc->utype);
 	t = tysubst(tf(uc->utype), uc->utype);
 	uc = tybase(t)->udecls[uc->id];
 	if (uc->etype) {
@@ -1306,7 +1307,6 @@ inferucon(Node *n, int *isconst)
 		*isconst = n->expr.args[1]->expr.isconst;
 	}
 	settype(n, delayeducon(t));
-	//tyunbind();
 }
 
 static void
@@ -1623,10 +1623,7 @@ inferexpr(Node **np, Type *ret, int *sawret)
 		   infersub(n, ret, sawret, &isconst);
 		   switch (args[0]->lit.littype) {
 		   case Lfunc:
-			   //tybindall(args[0]->lit.fnval->func.type);
 			   infernode(&args[0]->lit.fnval, NULL, NULL);
-			   //tyunbind();
-
 			   /* FIXME: env capture means this is non-const */
 			   n->expr.isconst = 1;
 			   break;
@@ -1876,7 +1873,7 @@ infernode(Node **np, Type *ret, int *sawret)
 		setsuperenv(n->decl.env, curenv());
 		pushenv(n->decl.env);
 		inferdecl(n);
-		if (type(n)->type == Typaram && !ingeneric)
+		if (hasparams(type(n)) && !ingeneric)
 			fatal(n, "generic type %s in non-generic near %s", tystr(type(n)),
 					ctxstr(n));
 		popenv(n->decl.env);

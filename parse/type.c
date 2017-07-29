@@ -417,7 +417,7 @@ hasparamsrec(Type *t, Bitset *visited)
 		return 0;
 	bsput(visited, t->tid);
 	switch (t->type) {
-	case Typaram:
+	case Typaram:	return 1;
 	case Tygeneric: return 1;
 	case Tyname:
 			for (i = 0; i < t->narg; i++)
