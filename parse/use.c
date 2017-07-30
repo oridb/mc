@@ -36,7 +36,6 @@ static void pickle(FILE *fd, Node *n);
 static Node *unpickle(FILE *fd);
 
 /* type fixup list */
-static Htab *tydeduptab;	/* map from name -> type, contains all Tynames loaded ever */
 static Htab *trdeduptab;	/* map from name -> type, contains all Tynames loaded ever */
 static Htab *tidmap;		/* map from tid -> type */
 static Htab *trmap;		/* map from trait id -> trait */
@@ -774,7 +773,7 @@ static void
 fixtypemappings(Stab *st)
 {
 	size_t i;
-	Type *t, *u, *old;
+	Type *t, *old;
 
 	/*
 	* merge duplicate definitions.
@@ -792,13 +791,7 @@ fixtypemappings(Stab *st)
 	for (i = 0; i < ntypefix; i++) {
 		old = *typefix[i].dest;
 		if (old->type == Tyname || old->type == Tygeneric) {
-			t = htget(tydeduptab, old);
-			if (!t) {
-				t = old;
-				htput(tydeduptab, old, old);
-			}
-			u = tydedup(old);
-			assert(tyeq(t, u));
+			t = tydedup(old);
 			*typefix[i].dest = t;
 		}
 	}
@@ -808,10 +801,10 @@ fixtypemappings(Stab *st)
 		t = htget(tidmap, itop(typefix[i].id));
 		if ((t->type != Tyname && t->type != Tygeneric) || t->issynth)
 			continue;
-		old = htget(tydeduptab, t);
-		if (old && !tyeq(t, old) && !isspecialization(t, old))
-			lfatal(t->loc, "Duplicate definition of type %s on %s:%d", tystr(old),
-					file->file.files[old->loc.file], old->loc.line);
+		old = tydedup(t);
+		if (!tyeq(t, old) && !isspecialization(t, old))
+			lfatal(t->loc, "Duplicate definition of type %s on %s:%d",
+				tystr(old), file->file.files[old->loc.file], old->loc.line);
 	}
 	lfree(&typefix, &ntypefix);
 }
@@ -923,8 +916,6 @@ loaduse(char *path, FILE *f, Stab *st, Vis vis)
 	starttype = ntypes;
 	startimpl = nimpltab;
 	pushstab(file->file.globls);
-	if (!tydeduptab)
-		tydeduptab = mkht(tyhash, tyeq);
 	if (!trdeduptab)
 		trdeduptab = mkht(namehash, nameeq);
 	if (fgetc(f) != 'U')
