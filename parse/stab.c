@@ -116,6 +116,18 @@ popstab()
 	stabstkoff--;
 }
 
+ulong
+paramhash(void *p)
+{
+	return strhash(((Type*)p)->pname);
+}
+
+int
+parameq(void *a, void *b)
+{
+	return streq(((Type*)a)->pname, ((Type*)b)->pname);
+}
+
 Tyenv*
 mkenv()
 {
@@ -123,7 +135,7 @@ mkenv()
 
 	e = malloc(sizeof(Tyenv));
 	e->super = NULL;
-	e->tab = mkht(tyhash, tyeq);
+	e->tab = mkht(paramhash, parameq);
 	return e;
 }
 
