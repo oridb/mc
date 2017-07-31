@@ -117,7 +117,7 @@ const myrdeps = {b, name, mt
 	dynlibs = [][:]
 	for f : mt.inputs
 		p = std.pathcat(mt.dir, f)
-		leaf(g, p)
+		n = leaf(g, p)
 		if std.hassuffix(f, ".myr")
 			t = changesuffix(p, config.Objsuffix)
 			o = std.pathcat(opt_objdir, t)
@@ -171,7 +171,8 @@ const myrdeps = {b, name, mt
 				std.slpush(&dynlibs, l)
 			;;
 		elif std.hassuffix(f, config.Objsuffix)
-			/* handled by leaf */
+			generates(g, n, p)
+			depends(g, go, p)
 		else
 			std.fatal("don't know how to build {}/{}\n", mt.dir, f)
 		;;
