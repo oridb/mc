@@ -30,7 +30,6 @@ const main = {args : byte[:][:]
 			[.opt='j', .arg="jobs", .desc="build with at most 'jobs' jobs"],
 			[.opt='t', .arg="tag", .desc="build with specified systag"],
 			[.opt='S', .desc="generate assembly when building"],
-			[.opt='d', .desc="dump debugging information for mbld"],
 			[.opt='I', .arg="inc", .desc="add 'inc' to your include path"],
 			[.opt='R', .arg="runsrc", .desc="source to compile and run"],
 			[.opt='B', .arg="base", .desc="install into 'base'"],
