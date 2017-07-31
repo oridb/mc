@@ -202,6 +202,7 @@ main(int argc, char **argv)
 
 	optinit(&ctx, "cd:?hSo:I:9G:O:", argv, argc);
 	asmsyntax = Defaultasm;
+	sizefn = size;
 	while (!optdone(&ctx)) {
 		switch (optnext(&ctx)) {
 		case 'O':

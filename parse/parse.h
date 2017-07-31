@@ -573,5 +573,6 @@ extern char *objdir;
 extern char **incpaths;
 extern size_t nincpaths;
 extern char *localincpath;
+extern size_t (*sizefn)(Node *n);
 
 void yyerror(const char *s);

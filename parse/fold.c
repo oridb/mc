@@ -13,6 +13,8 @@
 #include "util.h"
 #include "parse.h"
 
+size_t (*sizefn)(Node *n);
+
 static int
 getintlit(Node *n, vlong *v)
 {
@@ -249,6 +251,10 @@ fold(Node *n, int foldvar)
 		break;
 	case Ocast:
 		r = foldcast(n);
+		break;
+	case Osize:
+		if (sizefn)
+			r = val(n->loc, sizefn(n->expr.args[0]), exprtype(n));
 		break;
 	default:
 		break;

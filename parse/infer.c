@@ -2031,6 +2031,9 @@ tyfix(Node *ctx, Type *orig, int noerr)
 		t->fixed = 1;
 		if (t->type == Tyarray) {
 			typesub(t->asize, noerr);
+			t->asize = fold(t->asize, 1);
+			if (exprop(t->asize) != Olit)
+				fatal(t->asize, "nonconstant array size near %s\n", ctxstr(t->asize));
 		} else if (t->type == Tystruct) {
 			inaggr++;
 			for (i = 0; i < t->nmemb; i++)
