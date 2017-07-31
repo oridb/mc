@@ -50,6 +50,7 @@ const mark = {b, o
 const build = {b, g
 	for n : g.leaves
 		if n.want
+			/* stale() updates the mtime of the leaf node */
 			stale(b, n)
 			unblock(b, n)
 		;;
@@ -133,7 +134,7 @@ const stale = {b, n
 		| `std.Err e:	n.mtime = 0
 		;;
 	;;
-	-> staletime > n.mtime
+	-> staletime >= n.mtime
 }
 
 const fail = {b, pid, failtype
