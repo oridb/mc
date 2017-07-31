@@ -2031,9 +2031,6 @@ tyfix(Node *ctx, Type *orig, int noerr)
 		t->fixed = 1;
 		if (t->type == Tyarray) {
 			typesub(t->asize, noerr);
-			t->asize = fold(t->asize, 1);
-			if (t->asize && exprop(t->asize) != Olit)
-				fatal(t->asize, "nonconstant array size near %s\n", ctxstr(t->asize));
 		} else if (t->type == Tystruct) {
 			inaggr++;
 			for (i = 0; i < t->nmemb; i++)
@@ -2593,6 +2590,7 @@ applytraits(Node *f)
 void
 verify(Node *f)
 {
+	Type *t;
 	Node *n;
 	size_t i;
 
@@ -2606,6 +2604,14 @@ verify(Node *f)
 				fatal(n, "missing implementation for prototype '%s %s'",
 					namestr(n->impl.traitname), tystr(n->impl.type));
 		}
+	}
+	for (i = 0; i < ntypes; i++) {
+		t = types[i];
+		if (t->type != Tyarray)
+			continue;
+		t->asize = fold(t->asize, 1);
+		if (t->asize && exprop(t->asize) != Olit)
+			fatal(t->asize, "nonconstant array size near %s\n", ctxstr(t->asize));
 	}
 }
 
