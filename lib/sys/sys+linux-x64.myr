@@ -242,7 +242,7 @@ pkg sys =
 	const Mprotwr	: mprot = 0x2
 	const Mprotexec	: mprot = 0x4
 	const Mprotrw	: mprot = 0x3 /* convenience */
-	
+
 	/* mmap options */
 	const Mshared	: mopt = 0x1
 	const Mpriv	: mopt = 0x2
@@ -337,7 +337,7 @@ pkg sys =
 	const Epollwakeup	: epollevttype = 1 << 29
 	const Epolloneshot	: epollevttype = 1 << 30
 	const Epolledge	: epollevttype = 1 << 31
-	
+
 	/* futex ops */
 	const Futexwait	: futexop = 0
 	const Futexwake	: futexop = 1
@@ -791,7 +791,7 @@ pkg sys =
 				tls : byte#, \
 				ctid : pid#, \
 				ptreg : byte#, \
-				fn : void# \	/* we need a raw pointer */ 
+				fn : void# \	/* we need a raw pointer */
 				-> pid)
 	const wait4	: (pid:pid, loc:int32#, opt : int64, usage:rusage#	-> int64)
 	const waitpid	: (pid:pid, loc:int32#, opt : int64	-> int64)
@@ -863,6 +863,12 @@ pkg sys =
 	const clock_settime	: (clk : clock, ts : timespec# -> int32)
 	const nanosleep	: (req : timespec#, rem : timespec# -> int32)
 
+	/* user/group management */
+	const getuid : ( -> uint32)
+	const getgid : ( -> uint32)
+	const setuid : (uid : uint32 -> int32)
+	const setgid : (gid : uint32 -> int32)
+
 	/* system information */
 	const uname 	: (buf : utsname# -> int)
 
@@ -870,7 +876,7 @@ pkg sys =
 	extern var __cenvp : byte##
 ;;
 
-/* 
+/*
 wraps a syscall argument, converting it to 64 bits for the syscall function.
 This is the same as casting, but more concise than writing a cast to int64.
 */
@@ -922,7 +928,7 @@ const execve	= {cmd, args, env
 	/*
 	 copy the env.
 	 of course we fucking have to duplicate this code everywhere,
-	 since we want to stack allocate... 
+	 since we want to stack allocate...
 	*/
 	ep = alloca((env.len + 1)*sizeof(byte#))
 	cenv = (ep : byte##)[:env.len]
@@ -1005,6 +1011,12 @@ const clock_getres = {clk, ts;	-> (syscall(Sysclock_getres, clockid(clk), a(ts))
 const clock_gettime = {clk, ts;	-> (syscall(Sysclock_gettime, clockid(clk), a(ts)) : int32)}
 const clock_settime = {clk, ts;	-> (syscall(Sysclock_settime, clockid(clk), a(ts)) : int32)}
 const nanosleep	= {req, rem;	-> (syscall(Sysnanosleep, a(req), a(rem)) : int32)}
+
+/* user/group management */
+const getuid = {; -> (syscall(Sysgetuid) : uint32)}
+const getgid = {; -> (syscall(Sysgetgid) : uint32)}
+const setuid = {uid; -> (syscall(Syssetuid, a(uid)) : int32)}
+const setgid = {gid; -> (syscall(Syssetgid, a(gid)) : int32)}
 
 /* system information */
 const uname	= {buf;	-> (syscall(Sysuname, buf) : int)}
