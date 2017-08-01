@@ -3,5 +3,6 @@ use "types"
 pkg std =
 	pkglocal extern const memblit	: (dst : byte#, src : byte#, len : std.size -> void)
 	pkglocal extern const memfill	: (dst : byte#, val : byte, len : std.size -> void)
+	pkglocal extern const memeq	: (a : byte#, b : byte#, len : std.size -> bool)
 ;;
 

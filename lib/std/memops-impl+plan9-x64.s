@@ -42,3 +42,36 @@ TEXT std$memfill+0(SB),$0
 	ANDQ	$7,CX
 	REP; STOSB 
 	RET
+
+TEXT std$memeq+0(SB),$0
+	MOVQ	DX,R8
+	ANDQ	$~0x7,R8
+	JZ	.dotail
+.nextquad:
+	MOVQ	(DI),R9
+	MOVQ	(SI),R10
+	XORQ	R10,R9
+	JNZ .unequal
+	ADDQ	$8,SI
+	ADDQ	$8,DI
+	SUBQ	$8,R8
+	JNZ .nextquad
+.dotail:
+	ANDQ	$0x7,DX
+	TESTQ	DX,DX
+	JZ .equal
+.nextbyte:
+	MOVBLZX	(DI),R9
+	MOVBLZX	(SI),R10
+	XORL	R10,R9
+	JNZ .unequal
+	ADDQ	$1,SI
+	ADDQ	$1,DI
+	SUBQ	$1,DX
+	JNZ .nextbyte
+.equal:
+	MOVQ	$1,AX
+	RET
+.unequal:
+	MOVQ	$0,AX
+	RET
