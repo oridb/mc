@@ -49,7 +49,7 @@ lib thread =
         lib ../std:std
 ;;
 
-lib testutil {noinst} =
+lib thrtestutil {noinst} =
 	util.myr
 
         lib ../sys:sys

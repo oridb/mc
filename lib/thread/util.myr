@@ -1,7 +1,7 @@
 use std
 use thread
 
-pkg testutil =
+pkg thrtestutil =
 	const mkherd : (n : uint32, fn : (-> void) ->void)
 ;;
 
