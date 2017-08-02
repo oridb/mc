@@ -423,7 +423,7 @@ TABLE OF CONTENTS:
         precision. They are operated on according to the IEEE754 rules.
 
             var x : int         declare x as an int
-            var y : float32     declare y as a 32 bit float
+            var y : flt32       declare y as a 32 bit float
 
 
     4.2. User Defined Types:
@@ -490,7 +490,7 @@ TABLE OF CONTENTS:
 
                 union                       a union containing one of
                     `Thing int              int or char. The values are not
-                    `Other float32          named, but they are tagged.
+                    `Other flt32            named, but they are tagged.
                 ;;
 
         4.2.3. Named Types:
