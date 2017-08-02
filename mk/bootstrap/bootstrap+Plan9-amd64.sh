@@ -7,8 +7,6 @@ echo 	6a -o lib/thread/atomic-impl.6 lib/thread/atomic-impl+plan9-x64.s && 	6a -
 echo 	$pwd/6/6.out -I . -I lib/sys lib/std/endian.myr && 	$pwd/6/6.out -I . -I lib/sys lib/std/endian.myr &&\
 echo 	$pwd/6/6.out -I . -I lib/sys lib/std/result.myr && 	$pwd/6/6.out -I . -I lib/sys lib/std/result.myr &&\
 echo 	6a -o lib/std/sjlj-impl.6 lib/std/sjlj-impl+plan9-x64.s && 	6a -o lib/std/sjlj-impl.6 lib/std/sjlj-impl+plan9-x64.s &&\
-echo 	$pwd/6/6.out -I . -I lib/sys lib/std/sleq.myr && 	$pwd/6/6.out -I . -I lib/sys lib/std/sleq.myr &&\
-echo 	$pwd/6/6.out -I . -I lib/sys lib/std/hassuffix.myr && 	$pwd/6/6.out -I . -I lib/sys lib/std/hassuffix.myr &&\
 echo 	$pwd/6/6.out -I . -I lib/sys lib/std/extremum.myr && 	$pwd/6/6.out -I . -I lib/sys lib/std/extremum.myr &&\
 echo 	$pwd/6/6.out -I . -I lib/sys lib/std/resolve+plan9.myr && 	$pwd/6/6.out -I . -I lib/sys lib/std/resolve+plan9.myr &&\
 echo 	6a -o lib/std/memops-impl.6 lib/std/memops-impl+plan9-x64.s && 	6a -o lib/std/memops-impl.6 lib/std/memops-impl+plan9-x64.s &&\
@@ -32,6 +30,8 @@ echo 	$pwd/6/6.out -I . -I lib/sys lib/std/strfind.myr && 	$pwd/6/6.out -I . -I 
 echo 	$pwd/6/6.out -I . -I lib/sys lib/std/units.myr && 	$pwd/6/6.out -I . -I lib/sys lib/std/units.myr &&\
 echo 	$pwd/6/6.out -I . -I lib/sys lib/std/backtrace+x64.myr && 	$pwd/6/6.out -I . -I lib/sys lib/std/backtrace+x64.myr &&\
 echo 	$pwd/6/6.out -I . -I lib/sys lib/std/memops.myr && 	$pwd/6/6.out -I . -I lib/sys lib/std/memops.myr &&\
+echo 	$pwd/6/6.out -I . -I lib/sys lib/std/sleq.myr && 	$pwd/6/6.out -I . -I lib/sys lib/std/sleq.myr &&\
+echo 	$pwd/6/6.out -I . -I lib/sys lib/std/hassuffix.myr && 	$pwd/6/6.out -I . -I lib/sys lib/std/hassuffix.myr &&\
 echo 	$pwd/6/6.out -I . -I lib/sys lib/std/cstrconv.myr && 	$pwd/6/6.out -I . -I lib/sys lib/std/cstrconv.myr &&\
 echo 	$pwd/6/6.out -I . -I lib/sys lib/std/syswrap-ss+plan9.myr && 	$pwd/6/6.out -I . -I lib/sys lib/std/syswrap-ss+plan9.myr &&\
 echo 	$pwd/6/6.out -I . -I lib/sys lib/std/sleep.myr && 	$pwd/6/6.out -I . -I lib/sys lib/std/sleep.myr &&\
@@ -113,6 +113,7 @@ echo 	$pwd/6/6.out -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread m
 echo 	$pwd/6/6.out -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/syssel.myr && 	$pwd/6/6.out -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/syssel.myr &&\
 echo 	$pwd/6/6.out -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/util.myr && 	$pwd/6/6.out -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/util.myr &&\
 echo 	$pwd/6/6.out -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/parse.myr && 	$pwd/6/6.out -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/parse.myr &&\
+echo 	$pwd/6/6.out -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/clean.myr && 	$pwd/6/6.out -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/clean.myr &&\
 echo 	$pwd/6/6.out -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/build.myr && 	$pwd/6/6.out -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/build.myr &&\
 echo 	$pwd/6/6.out -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/install.myr && 	$pwd/6/6.out -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/install.myr &&\
 echo 	$pwd/6/6.out -I lib/std -I lib/sys lib/bio/bio.myr && 	$pwd/6/6.out -I lib/std -I lib/sys lib/bio/bio.myr &&\
@@ -133,5 +134,5 @@ echo 	$pwd/6/6.out -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread m
 echo 	$pwd/6/6.out -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/subtest.myr && 	$pwd/6/6.out -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/subtest.myr &&\
 echo 	$pwd/6/6.out -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/test.myr && 	$pwd/6/6.out -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/test.myr &&\
 echo 	$pwd/6/6.out -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/main.myr && 	$pwd/6/6.out -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/main.myr &&\
-echo 	6l -lo mbld/mbld $pwd/rt/_myrrt.6 mbld/types.6 mbld/config.6 mbld/build.6 mbld/libs.6 mbld/install.6 mbld/test.6 mbld/util.6 mbld/main.6 mbld/subtest.6 mbld/opts.6 mbld/parse.6 mbld/syssel.6 mbld/deps.6 lib/thread/libthread.a lib/regex/libregex.a lib/bio/libbio.a lib/std/libstd.a lib/sys/libsys.a && 	6l -lo mbld/mbld $pwd/rt/_myrrt.6 mbld/types.6 mbld/config.6 mbld/build.6 mbld/libs.6 mbld/install.6 mbld/test.6 mbld/util.6 mbld/main.6 mbld/subtest.6 mbld/opts.6 mbld/parse.6 mbld/syssel.6 mbld/deps.6 lib/thread/libthread.a lib/regex/libregex.a lib/bio/libbio.a lib/std/libstd.a lib/sys/libsys.a &&\
+echo 	6l -lo mbld/mbld $pwd/rt/_myrrt.6 mbld/types.6 mbld/config.6 mbld/build.6 mbld/libs.6 mbld/install.6 mbld/test.6 mbld/util.6 mbld/main.6 mbld/subtest.6 mbld/clean.6 mbld/opts.6 mbld/parse.6 mbld/syssel.6 mbld/deps.6 lib/thread/libthread.a lib/regex/libregex.a lib/bio/libbio.a lib/std/libstd.a lib/sys/libsys.a && 	6l -lo mbld/mbld $pwd/rt/_myrrt.6 mbld/types.6 mbld/config.6 mbld/build.6 mbld/libs.6 mbld/install.6 mbld/test.6 mbld/util.6 mbld/main.6 mbld/subtest.6 mbld/clean.6 mbld/opts.6 mbld/parse.6 mbld/syssel.6 mbld/deps.6 lib/thread/libthread.a lib/regex/libregex.a lib/bio/libbio.a lib/std/libstd.a lib/sys/libsys.a &&\
 true
