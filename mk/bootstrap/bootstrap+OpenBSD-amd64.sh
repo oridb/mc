@@ -8,18 +8,6 @@ echo 	as -g -o lib/thread/atomic-impl.o lib/thread/atomic-impl+x64.s && 	as -g -
 echo 	$pwd/6/6m -I . -I lib/sys lib/std/endian.myr && 	$pwd/6/6m -I . -I lib/sys lib/std/endian.myr &&\
 echo 	$pwd/6/6m -I . -I lib/sys lib/std/result.myr && 	$pwd/6/6m -I . -I lib/sys lib/std/result.myr &&\
 echo 	as -g -o lib/std/sjlj-impl.o lib/std/sjlj-impl+posixy-x64.s && 	as -g -o lib/std/sjlj-impl.o lib/std/sjlj-impl+posixy-x64.s &&\
-echo 	$pwd/6/6m lib/sys/ifreq+openbsd.myr && 	$pwd/6/6m lib/sys/ifreq+openbsd.myr &&\
-echo 	as -g -o lib/sys/syscall.o lib/sys/syscall+openbsd-x64.s && 	as -g -o lib/sys/syscall.o lib/sys/syscall+openbsd-x64.s &&\
-echo 	$pwd/6/6m lib/sys/systypes.myr && 	$pwd/6/6m lib/sys/systypes.myr &&\
-echo 	$pwd/6/6m lib/sys/sys+openbsd-x64.myr && 	$pwd/6/6m lib/sys/sys+openbsd-x64.myr &&\
-echo 	as -g -o lib/sys/util.o lib/sys/util+posixy-x64.s && 	as -g -o lib/sys/util.o lib/sys/util+posixy-x64.s &&\
-echo 	$pwd/6/6m lib/sys/syserrno+openbsd.myr && 	$pwd/6/6m lib/sys/syserrno+openbsd.myr &&\
-echo 	ar -rcs lib/sys/libsys.a lib/sys/syserrno.o lib/sys/util.o lib/sys/sys.o lib/sys/systypes.o lib/sys/syscall.o lib/sys/ifreq.o && 	ar -rcs lib/sys/libsys.a lib/sys/syserrno.o lib/sys/util.o lib/sys/sys.o lib/sys/systypes.o lib/sys/syscall.o lib/sys/ifreq.o &&\
-echo 	$pwd/muse/muse -o lib/sys/libsys.use -p sys lib/sys/syserrno.use lib/sys/sys.use lib/sys/systypes.use lib/sys/ifreq.use && 	$pwd/muse/muse -o lib/sys/libsys.use -p sys lib/sys/syserrno.use lib/sys/sys.use lib/sys/systypes.use lib/sys/ifreq.use &&\
-echo 	$pwd/6/6m -I . -I lib/sys lib/std/types.myr && 	$pwd/6/6m -I . -I lib/sys lib/std/types.myr &&\
-echo 	$pwd/6/6m -I . -I lib/sys lib/std/memops.myr && 	$pwd/6/6m -I . -I lib/sys lib/std/memops.myr &&\
-echo 	$pwd/6/6m -I . -I lib/sys lib/std/sleq.myr && 	$pwd/6/6m -I . -I lib/sys lib/std/sleq.myr &&\
-echo 	$pwd/6/6m -I . -I lib/sys lib/std/hassuffix.myr && 	$pwd/6/6m -I . -I lib/sys lib/std/hassuffix.myr &&\
 echo 	$pwd/6/6m -I . -I lib/sys lib/std/extremum.myr && 	$pwd/6/6m -I . -I lib/sys lib/std/extremum.myr &&\
 echo 	as -g -o lib/std/memops-impl.o lib/std/memops-impl+posixy-x64.s && 	as -g -o lib/std/memops-impl.o lib/std/memops-impl+posixy-x64.s &&\
 echo 	$pwd/6/6m -I . -I lib/sys lib/std/swap.myr && 	$pwd/6/6m -I . -I lib/sys lib/std/swap.myr &&\
@@ -29,9 +17,21 @@ echo 	$pwd/6/6m -I . -I lib/sys lib/std/sjlj.myr && 	$pwd/6/6m -I . -I lib/sys l
 echo 	$pwd/6/6m -I . -I lib/sys lib/std/fltbits.myr && 	$pwd/6/6m -I . -I lib/sys lib/std/fltbits.myr &&\
 echo 	$pwd/6/6m -I . -I lib/sys lib/std/option.myr && 	$pwd/6/6m -I . -I lib/sys lib/std/option.myr &&\
 echo 	as -g -o lib/std/getbp.o lib/std/getbp+posixy-x64.s && 	as -g -o lib/std/getbp.o lib/std/getbp+posixy-x64.s &&\
+echo 	$pwd/6/6m lib/sys/ifreq+openbsd.myr && 	$pwd/6/6m lib/sys/ifreq+openbsd.myr &&\
+echo 	as -g -o lib/sys/syscall.o lib/sys/syscall+openbsd-x64.s && 	as -g -o lib/sys/syscall.o lib/sys/syscall+openbsd-x64.s &&\
+echo 	$pwd/6/6m lib/sys/systypes.myr && 	$pwd/6/6m lib/sys/systypes.myr &&\
+echo 	$pwd/6/6m lib/sys/sys+openbsd-x64.myr && 	$pwd/6/6m lib/sys/sys+openbsd-x64.myr &&\
+echo 	as -g -o lib/sys/util.o lib/sys/util+posixy-x64.s && 	as -g -o lib/sys/util.o lib/sys/util+posixy-x64.s &&\
+echo 	$pwd/6/6m lib/sys/syserrno+openbsd.myr && 	$pwd/6/6m lib/sys/syserrno+openbsd.myr &&\
+echo 	ar -rcs lib/sys/libsys.a lib/sys/syserrno.o lib/sys/util.o lib/sys/sys.o lib/sys/systypes.o lib/sys/syscall.o lib/sys/ifreq.o && 	ar -rcs lib/sys/libsys.a lib/sys/syserrno.o lib/sys/util.o lib/sys/sys.o lib/sys/systypes.o lib/sys/syscall.o lib/sys/ifreq.o &&\
+echo 	$pwd/muse/muse -o lib/sys/libsys.use -p sys lib/sys/syserrno.use lib/sys/sys.use lib/sys/systypes.use lib/sys/ifreq.use && 	$pwd/muse/muse -o lib/sys/libsys.use -p sys lib/sys/syserrno.use lib/sys/sys.use lib/sys/systypes.use lib/sys/ifreq.use &&\
+echo 	$pwd/6/6m -I . -I lib/sys lib/std/types.myr && 	$pwd/6/6m -I . -I lib/sys lib/std/types.myr &&\
 echo 	$pwd/6/6m -I . -I lib/sys lib/std/strfind.myr && 	$pwd/6/6m -I . -I lib/sys lib/std/strfind.myr &&\
 echo 	$pwd/6/6m -I . -I lib/sys lib/std/units.myr && 	$pwd/6/6m -I . -I lib/sys lib/std/units.myr &&\
 echo 	$pwd/6/6m -I . -I lib/sys lib/std/backtrace+x64.myr && 	$pwd/6/6m -I . -I lib/sys lib/std/backtrace+x64.myr &&\
+echo 	$pwd/6/6m -I . -I lib/sys lib/std/memops.myr && 	$pwd/6/6m -I . -I lib/sys lib/std/memops.myr &&\
+echo 	$pwd/6/6m -I . -I lib/sys lib/std/sleq.myr && 	$pwd/6/6m -I . -I lib/sys lib/std/sleq.myr &&\
+echo 	$pwd/6/6m -I . -I lib/sys lib/std/hassuffix.myr && 	$pwd/6/6m -I . -I lib/sys lib/std/hassuffix.myr &&\
 echo 	$pwd/6/6m -I . -I lib/sys lib/std/cstrconv.myr && 	$pwd/6/6m -I . -I lib/sys lib/std/cstrconv.myr &&\
 echo 	$pwd/6/6m -I . -I lib/sys lib/std/errno.myr && 	$pwd/6/6m -I . -I lib/sys lib/std/errno.myr &&\
 echo 	$pwd/6/6m -I . -I lib/sys lib/std/syswrap+posixy.myr && 	$pwd/6/6m -I . -I lib/sys lib/std/syswrap+posixy.myr &&\
@@ -117,6 +117,7 @@ echo 	$pwd/6/6m -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld
 echo 	$pwd/6/6m -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/syssel.myr && 	$pwd/6/6m -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/syssel.myr &&\
 echo 	$pwd/6/6m -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/util.myr && 	$pwd/6/6m -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/util.myr &&\
 echo 	$pwd/6/6m -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/parse.myr && 	$pwd/6/6m -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/parse.myr &&\
+echo 	$pwd/6/6m -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/clean.myr && 	$pwd/6/6m -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/clean.myr &&\
 echo 	$pwd/6/6m -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/build.myr && 	$pwd/6/6m -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/build.myr &&\
 echo 	$pwd/6/6m -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/install.myr && 	$pwd/6/6m -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/install.myr &&\
 echo 	$pwd/6/6m -I lib/std -I lib/sys lib/bio/bio.myr && 	$pwd/6/6m -I lib/std -I lib/sys lib/bio/bio.myr &&\
@@ -137,5 +138,5 @@ echo 	$pwd/6/6m -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld
 echo 	$pwd/6/6m -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/subtest.myr && 	$pwd/6/6m -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/subtest.myr &&\
 echo 	$pwd/6/6m -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/test.myr && 	$pwd/6/6m -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/test.myr &&\
 echo 	$pwd/6/6m -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/main.myr && 	$pwd/6/6m -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/main.myr &&\
-echo 	ld -static -nopie -o mbld/mbld $pwd/rt/_myrrt.o mbld/types.o mbld/config.o mbld/build.o mbld/libs.o mbld/install.o mbld/test.o mbld/util.o mbld/main.o mbld/subtest.o mbld/opts.o mbld/parse.o mbld/syssel.o mbld/deps.o -Llib/thread -lthread -Llib/regex -lregex -Llib/bio -lbio -Llib/std -lstd -Llib/sys -lsys && 	ld -static -nopie -o mbld/mbld $pwd/rt/_myrrt.o mbld/types.o mbld/config.o mbld/build.o mbld/libs.o mbld/install.o mbld/test.o mbld/util.o mbld/main.o mbld/subtest.o mbld/opts.o mbld/parse.o mbld/syssel.o mbld/deps.o -Llib/thread -lthread -Llib/regex -lregex -Llib/bio -lbio -Llib/std -lstd -Llib/sys -lsys &&\
+echo 	ld -static -nopie -o mbld/mbld $pwd/rt/_myrrt.o mbld/types.o mbld/config.o mbld/build.o mbld/libs.o mbld/install.o mbld/test.o mbld/util.o mbld/main.o mbld/subtest.o mbld/clean.o mbld/opts.o mbld/parse.o mbld/syssel.o mbld/deps.o -Llib/thread -lthread -Llib/regex -lregex -Llib/bio -lbio -Llib/std -lstd -Llib/sys -lsys && 	ld -static -nopie -o mbld/mbld $pwd/rt/_myrrt.o mbld/types.o mbld/config.o mbld/build.o mbld/libs.o mbld/install.o mbld/test.o mbld/util.o mbld/main.o mbld/subtest.o mbld/clean.o mbld/opts.o mbld/parse.o mbld/syssel.o mbld/deps.o -Llib/thread -lthread -Llib/regex -lregex -Llib/bio -lbio -Llib/std -lstd -Llib/sys -lsys &&\
 true
