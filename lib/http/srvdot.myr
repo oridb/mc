@@ -9,7 +9,7 @@ const main = {args
 		.opts = [[.opt='a', .arg="ann", .desc="announce on `ann`"]][:]
 	])
 	ann = "tcp!localhost!8080"
-	for opt in cmd.opts
+	for opt : cmd.opts
 		match opt
 		| ('a', a):	ann = a
 		| _:	std.die("unreachable")

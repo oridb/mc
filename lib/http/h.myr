@@ -23,7 +23,7 @@ const main = {args
 	data = ""
 	hdrs = [][:]
 	out = ""
-	for opt in cmd.opts
+	for opt : cmd.opts
 		match opt
 		| ('m', m):	method = m
 		| ('d', d):	data = d
@@ -34,7 +34,7 @@ const main = {args
 		;;
 	;;
 
-	for url in cmd.args
+	for url : cmd.args
 		if !std.hasprefix(url, "http")
 			url = std.fmt("http://{}", url)
 		;;
@@ -56,7 +56,7 @@ const main = {args
 		| `std.Ok resp:
 			if showhdr
 				std.put("status: {}\n", resp.status)
-				for (k, v) in resp.hdrs
+				for (k, v) : resp.hdrs
 					std.put("{}: {}\n", k, v)
 				;;
 			;;

@@ -59,7 +59,7 @@ const respond = {srv, s, resp
 	bio.put(s.f, "HTTP/1.1 {} {}\r\n", resp.status, statusstr(resp.status))
 	bio.put(s.f, "Content-Length: {}\r\n", resp.body.len)
 	bio.put(s.f, "Encoding: {}\r\n", resp.enc)
-	for (k, v) in resp.hdrs
+	for (k, v) : resp.hdrs
 		bio.put(s.f, "{}: {}\r\n", k, v)
 	;;
 	bio.put(s.f, "\r\n")

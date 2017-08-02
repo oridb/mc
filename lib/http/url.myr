@@ -25,7 +25,7 @@ const urlfmt = {sb, ap, opts
 
 	showhost = true
 	url = std.vanext(ap)
-	for o in opts
+	for o : opts
 		match o
 		| ("p", ""):	showhost = false
 		| _:	std.fatal("unknown param\n")
@@ -52,7 +52,7 @@ const urlfmt = {sb, ap, opts
 
 	if url.params.len > 0
 		sep = '?'
-		for (k, v) in url.params
+		for (k, v) : url.params
 			std.sbfmt(sb, "{}{}={}", sep, k, v)
 			sep = '&'
 		;;
@@ -155,7 +155,7 @@ const parseparams = {url
 	;;
 
 	params = [][:]
-	for sp in std.bysplit(url#, "&")
+	for sp : std.bysplit(url#, "&")
 		if std.bstrsplit(kvp[:], sp, "=").len != 2
 			-> `std.Err `Esyntax
 		;;
@@ -169,7 +169,7 @@ const hostname = {url
 	var len, host
 
 	len = 0
-	for c in std.bychar(url#)
+	for c : std.bychar(url#)
 		match c
 		| ':':	break
 		| '/':	break

@@ -140,7 +140,7 @@ const request = {s, method, r, data
 	| `std.Some d:	ioput(s, "Content-Length: {}\r\n", d.len)
 	| `std.None:	/* nothing to do */
 	;;
-	for (k, v) in r.hdrs
+	for (k, v) : r.hdrs
 		ioput(s, "{}: {}\r\n", k, v)
 	;;
 	ioput(s, "\r\n")
@@ -272,7 +272,7 @@ const fmtmethod = {sb, ap, opt
 }
 
 const freeresp = {r
-	for (k, v) in r.hdrs
+	for (k, v) : r.hdrs
 		std.slfree(k)
 		std.slfree(v)
 	;;
