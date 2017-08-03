@@ -507,8 +507,14 @@ tyresolve(Type *t)
 		break;
 	}
 
-	for (i = 0; i < t->nsub; i++)
+	for (i = 0; i < t->nsub; i++) {
 		t->sub[i] = tf(t->sub[i]);
+		if (t->sub[i] == t) {
+			lfatal(t->loc,
+				"%s occurs within %s, leading to infinite type\n",
+				tystr(t->sub[i]), tystr(t));
+		}
+	}
 	base = tybase(t);
 	/* no-ops if base == t */
 	if (t->traits && base->traits)
