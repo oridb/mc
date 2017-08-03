@@ -807,6 +807,7 @@ pkg sys =
 	const rename	: (from : byte[:], to : byte[:] -> int64)
 	const creat	: (path:byte[:], mode:int64 -> fd)
 	const unlink	: (path:byte[:] -> int)
+	const readlink	: (path:byte[:], buf:byte[:] -> int64)
 	const read	: (fd:fd, buf:byte[:] -> size)
 	const pread	: (fd:fd, buf:byte[:], off : off -> size)
 	const write	: (fd:fd, buf:byte[:] -> size)
@@ -947,6 +948,7 @@ const close	= {fd;			-> syscall(Sysclose, a(fd))}
 const creat	= {path, mode;		-> (syscall(Syscreat, cstring(path), a(mode)) : fd)}
 const rename	= {from, to;		-> syscall(Sysrename, cstring(from), cstring(to))}
 const unlink	= {path;		-> (syscall(Sysunlink, cstring(path)) : int)}
+const readlink	= {path, buf; -> syscall(Sysreadlink, cstring(path), (buf : byte#), a(buf.len))}
 const read	= {fd, buf;		-> (syscall(Sysread, a(fd), (buf : byte#), a(buf.len)) : size)}
 const pread	= {fd, buf, off;	-> (syscall(Syspread64, a(fd), (buf : byte#), a(buf.len), a(off)) : size)}
 const write	= {fd, buf;		-> (syscall(Syswrite, a(fd), (buf : byte#), a(buf.len)) : size)}
