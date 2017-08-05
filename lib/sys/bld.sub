@@ -6,6 +6,7 @@ lib sys =
 	sys+linux-x64.myr
 	sys+osx-x64.myr
 	sys+openbsd-x64.myr
+	sys+openbsd:6.1-x64.myr
 	sys+plan9-x64.myr
 
 	syscall+freebsd-x64.s
