@@ -45,7 +45,7 @@ const main = {args : byte[:][:]
 	ok = true
 
 	bld.initopts()
-	for opt in cmd.opts
+	for opt : cmd.opts
 		match opt
 		| ('S', ""):	bld.opt_genasm = true
 		| ('I', arg):	std.slpush(&bld.opt_incpaths, arg)
@@ -62,7 +62,7 @@ const main = {args : byte[:][:]
 	path = std.pathcat(bld.opt_instbase, config.Libpath)
 	std.slpush(&bld.opt_incpaths, path)
 
-	for (e, v) in config.Env
+	for (e, v) : config.Env
 		std.setenv(e, v)
 	;;
 
@@ -91,7 +91,7 @@ const main = {args : byte[:][:]
 		if cmd.args.len == 0
 			ok = bld.buildtarg(b, "all")
 		else
-			for c in cmd.args
+			for c : cmd.args
 				match c
 				| "clean":	r = bld.clean(b)
 				| "install":	r = bld.install(b)

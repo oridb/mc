@@ -9,7 +9,7 @@ pkg bld =
 		line	: int
 		targ	: byte[:]
 		sysattrs	: std.htab(byte[:], (int, int, int))#
-		_match	: std.htab(byte[:], int)#
+		_match	: std.htab(byte[:], (int, int))#
 		_best	: std.htab(byte[:], @a)#
 	;;
 
@@ -60,9 +60,10 @@ generic sysseladd = {syssel, f
 }
 
 generic sysseladdlist = {syssel, base, attrs, val
-	var nmatch, curbest, n, v
+	var nmatch, vscore, n, v, s
 
 	nmatch = 0
+	vscore = 0
 	for a : attrs
 		match std.strfind(a, ":")
 		| `std.Some i:
@@ -77,26 +78,47 @@ generic sysseladdlist = {syssel, base, attrs, val
 		| `std.None:
 			nmatch = -1
 			break
-		| `std.Some av:
-			if newenough(syssel, av, v)
-				nmatch++
+		| `std.Some have:
+			s = versionscore(syssel, have, v)
+			if s < 0
+				nmatch = -1
+				break
 			;;
+			vscore += s
+			nmatch++
 		;;
 	;;
-	curbest = std.htgetv(syssel._match, base, -1)
-	if curbest < nmatch
-		std.htput(syssel._match, base, nmatch)
-		std.htput(syssel._best, base, val)
+	match std.htgetv(syssel._match, base, (-1, -1))
+	| (curbest, curscore):
+		if curbest < nmatch || (nmatch >= 0 && curbest == nmatch && curscore < vscore)
+			std.htput(syssel._match, base, (nmatch, vscore))
+			std.htput(syssel._best, base, val)
+		;;
 	;;
 }
 
-const newenough = {syssel, attr, vers
-	match (attr, vers)
+const versionscore = {syssel, have, want
+	var s
+
+	s = 0
+	match (have, want)
 	| ((a0, a1, a2), (v0, v1, v2)):
 		if a0 == -1 && a1 == -1 && a2 == -1
-			-> true
+			-> s
+		elif v0 == -1 && v1 == -1 && v2 == -1
+			-> s
 		else
-			-> a0 >= v0 && a1 >= v1 && a2 >= v2
+			s = 1_000_000 * (a0 - v0)
+			if s == 0
+				s += 1_000 * (a1 - v1)
+			;;
+			if s == 0
+				s += (a2 - v2)
+			;;
+			if s >= 0
+				s = 100_000_000 - s
+			;;
+			-> s
 		;;
 	;;
 }
@@ -107,7 +129,7 @@ generic sysselfin = {syssel
 	keys = std.htkeys(syssel._match)
 	ret = [][:]
 	for k : keys
-		nmatch = std.htgetv(syssel._match, k, -1)
+		(nmatch, _) = std.htgetv(syssel._match, k, (-1, -1))
 		if nmatch == -1
 			std.fatal("{}:{}: target {}, no applicable file for '{}'\n", \
 				syssel.file, syssel.line, syssel.targ, k)
