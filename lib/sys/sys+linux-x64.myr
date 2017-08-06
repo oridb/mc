@@ -1,7 +1,15 @@
-use "systypes"
-
+/*
+  generated-ish source
+  stitched for linux arch:x64
+  edit with caution.
+ */
 pkg sys =
-	type scno	= int64	/* syscall */
+	type size	= int64		/* spans entire address space */
+	type usize	= uint64	/* unsigned size */
+	type off	= int64         /* file offsets */
+	type intptr	= uint64	/* can hold any pointer losslessly */
+	type time	= int64		/* milliseconds since epoch */
+	type scno	= int64		/* syscall */
 
 	/* processes/threads */
 	type pid	= int	/* process id */
@@ -68,6 +76,29 @@ pkg sys =
 		mask	: sigset
 	;;
 
+	const Sipadsz = 128
+	type siginfo = struct
+		signo	: int
+		errno	: int
+		code	: int
+
+		_pad	: int[Sipadsz]
+	;;
+
+	/* union { int, void* } */
+	type sigval = struct
+		_pad	: void#
+	;;
+
+	const Sigevmaxsz = 64
+	const Sigevpadsz = Sigevmaxsz / sizeof(int) - 4
+	type sigevent = struct
+		value	: sigval
+		signo	: int
+		notify	: int
+		_pad	: int[Sigevpadsz]
+	;;
+
 	type timespec = struct
 		sec	: uint64
 		nsec	: uint64
@@ -84,22 +115,26 @@ pkg sys =
 		_opaque	: uint64[14]	/* padding (darwin-specific data) */
 	;;
 
+	type sched_param = struct
+		priority	: int
+	;;
+
 	type statbuf = struct
-		 dev	: uint64
-		 ino	: uint64
-		 nlink	: uint64
-		 mode	: filemode
-		 uid	: uint32
-		 gid	: uint32
-		 __pad0	: uint32
-		 rdev	: uint64
-		 size	: uint64
-		 blksz	: uint32
-		 blocks	: uint64
-		 atime	: timespec
-		 mtime	: timespec
-		 ctime	: timespec
-		 __pad1	: uint64[3]
+		dev	: uint64
+		ino	: uint64
+		nlink	: uint64
+		mode	: filemode
+		uid	: uint32
+		gid	: uint32
+		__pad0	: uint32
+		rdev	: uint64
+		size	: uint64
+		blksz	: uint32
+		blocks	: uint64
+		atime	: timespec
+		mtime	: timespec
+		ctime	: timespec
+		__pad1	: uint64[3]
 	;;
 
 	type dirent64 = struct
@@ -138,7 +173,7 @@ pkg sys =
 		scope	: uint32
 	;;
 
-        type sockaddr_un = struct
+	type sockaddr_un = struct
 		fam	: sockfam
 		path	: byte[108]
 	;;
@@ -165,6 +200,15 @@ pkg sys =
 		len	: uint64
 	;;
 
+	type semun = struct
+		__pad	: void#
+	;;
+
+	type msgbuf = struct
+		mtype	: int64
+		buf	: byte[...]
+	;;
+
 	type msghdr = struct
 		name		: sockaddr#
 		namelen		: int32
@@ -175,11 +219,27 @@ pkg sys =
 		flags		: msgflags
 	;;
 
+	type mmsghdr = struct
+		hdr	: msghdr
+		len	: uint32
+	;;
+
 	type cmsghdr = struct
 		len	: uint64
 		level	: sockproto
 		cmtype	: cmsgtype
 		data	: byte[...]
+	;;
+
+	type capuserheader = struct
+		version	: uint32
+		pid	: int
+	;;
+
+	type capuserdata = struct
+		effective	: uint32
+		permitted	: uint32
+		inheritable	: uint32
 	;;
 
 	/* clone options */
@@ -439,7 +499,254 @@ pkg sys =
 	const Mfdcloexec	: mfdflags = 0x01
 	const Mfdallowsealing	: mfdflags = 0x02
 
-	/* syscalls */
+	/* exported values: initialized by start code */
+	extern var __cenvp : byte##
+
+	type ulong = uint64
+	type sigstack = sigaltstack
+	type greg = int64
+	type gregset = greg[23]
+	type fpregset = _libc_fpstate#
+	type uintptr = uint64
+	type loff = int64
+	type fd_mask = int64
+	type key = int
+	type uid = uint
+	type gid = uint
+	type syscall_ulong = uint64
+	type shmatt = syscall_ulong
+	type msgqnum = syscall_ulong
+	type msglen = syscall_ulong
+	type rlim = uint64
+	type kernel_long = int64
+	type kernel_ulong = uint64
+	type u16 = uint16
+	type u32 = uint
+	type dev = uint64
+	type daddr = int
+	type ino = uint64
+	type fsword = int64
+	type fsblkcnt = uint64
+	type fsfilcnt = uint64
+	type clockid = int
+	type timer = void#
+
+	type sigaltstack = struct
+		sp	: void#
+		flags	: int
+		size	: size
+
+	;;
+
+	type _libc_fpxreg = struct
+		significand	: uint16[4]
+		exponent	: uint16
+		padding	: uint16[3]
+
+	;;
+
+	type _libc_xmmreg = struct
+		element	: uint32[4]
+
+	;;
+
+	type _libc_fpstate = struct
+		cwd	: uint16
+		swd	: uint16
+		ftw	: uint16
+		fop	: uint16
+		rip	: uint64
+		rdp	: uint64
+		mxcsr	: uint32
+		mxcr_mask	: uint32
+		_st	: _libc_fpxreg[8]
+		_xmm	: _libc_xmmreg[16]
+		padding	: uint32[24]
+
+	;;
+
+	type mcontext = struct
+		gregs	: gregset
+		fpregs	: fpregset
+		__reserved1	: uint64[8]
+
+	;;
+
+	type ucontext = struct
+		uc_flags	: uint64
+		uc_link	: ucontext#
+		uc_stack	: sigstack
+		uc_mcontext	: mcontext
+		uc_sigmask	: sigset
+		__fpregs_mem	: _libc_fpstate
+
+	;;
+
+	type fdset = struct
+		bits	: fd_mask[16]
+
+	;;
+
+	type ipc_perm = struct
+		__key	: key
+		uid	: uid
+		gid	: gid
+		cuid	: uid
+		cgid	: gid
+		mode	: uint16
+		__pad1	: uint16
+		__seq	: uint16
+		__pad2	: uint16
+		__glibc_reserved1	: syscall_ulong
+		__glibc_reserved2	: syscall_ulong
+
+	;;
+
+	type shmid_ds = struct
+		shm_perm	: ipc_perm
+		shm_segsz	: size
+		shm_atime	: time
+		shm_dtime	: time
+		shm_ctime	: time
+		shm_cpid	: pid
+		shm_lpid	: pid
+		shm_nattch	: shmatt
+		__glibc_reserved4	: syscall_ulong
+		__glibc_reserved5	: syscall_ulong
+
+	;;
+
+	type itimerval = struct
+		interval	: timeval
+		value	: timeval
+
+	;;
+
+	type sembuf = struct
+		num	: uint16
+		op	: int16
+		flg	: int16
+
+	;;
+
+	type msqid_ds = struct
+		msg_perm	: ipc_perm
+		msg_stime	: time
+		msg_rtime	: time
+		msg_ctime	: time
+		__msg_cbytes	: syscall_ulong
+		msg_qnum	: msgqnum
+		msg_qbytes	: msglen
+		msg_lspid	: pid
+		msg_lrpid	: pid
+		__glibc_reserved4	: syscall_ulong
+		__glibc_reserved5	: syscall_ulong
+
+	;;
+
+	type timezone = struct
+		minuteswest	: int
+		dsttime	: int
+
+	;;
+
+	type rlimit = struct
+		cur	: rlim
+		max	: rlim
+
+	;;
+
+	type sysinfo = struct
+		uptime	: kernel_long
+		loads	: kernel_ulong[3]
+		totalram	: kernel_ulong
+		freeram	: kernel_ulong
+		sharedram	: kernel_ulong
+		bufferram	: kernel_ulong
+		totalswap	: kernel_ulong
+		freeswap	: kernel_ulong
+		procs	: u16
+		pad	: u16
+		totalhigh	: kernel_ulong
+		freehigh	: kernel_ulong
+		mem_unit	: u32
+		_f	: byte[0]
+
+	;;
+
+	type tms = struct
+		utime	: clock
+		stime	: clock
+		cutime	: clock
+		cstime	: clock
+
+	;;
+
+	type utimbuf = struct
+		actime	: time
+		modtime	: time
+
+	;;
+
+	type ustat = struct
+		tfree	: daddr
+		tinode	: ino
+		fname	: byte[6]
+		fpack	: byte[6]
+
+	;;
+
+	type fsid = struct
+		__val	: int[2]
+
+	;;
+
+	type statfs = struct
+		kind	: fsword
+		bsize	: fsword
+		blocks	: fsblkcnt
+		bfree	: fsblkcnt
+		bavail	: fsblkcnt
+		files	: fsfilcnt
+		ffree	: fsfilcnt
+		fsid	: fsid
+		namelen	: fsword
+		frsize	: fsword
+		flags	: fsword
+		spare	: fsword[4]
+
+	;;
+
+	type sysctl_args = struct
+		name	: int#
+		nlen	: int
+		oldval	: void#
+		oldlenp	: size#
+		newval	: void#
+		newlen	: size
+		__unused	: uint64[4]
+
+	;;
+
+	type itimerspec = struct
+		interval	: timespec
+		value	: timespec
+
+	;;
+
+	type robust_list = struct
+		next	: robust_list#
+
+	;;
+
+	type robust_list_head = struct
+		list	: robust_list
+		futex_offset	: int64
+		list_op_pending	: robust_list#
+
+	;;
+
+
 	const Sysread			: scno = 0
 	const Syswrite			: scno = 1
 	const Sysopen			: scno = 2
@@ -457,8 +764,8 @@ pkg sys =
 	const Sysrt_sigprocmask		: scno = 14
 	const Sysrt_sigreturn		: scno = 15
 	const Sysioctl			: scno = 16
-	const Syspread64		: scno = 17
-	const Syspwrite64		: scno = 18
+	const Syspread			: scno = 17
+	const Syspwrite			: scno = 18
 	const Sysreadv			: scno = 19
 	const Syswritev			: scno = 20
 	const Sysaccess			: scno = 21
@@ -574,7 +881,6 @@ pkg sys =
 	const Syssigaltstack		: scno = 131
 	const Sysutime			: scno = 132
 	const Sysmknod			: scno = 133
-	const Sysuselib			: scno = 134
 	const Syspersonality		: scno = 135
 	const Sysustat			: scno = 136
 	const Sysstatfs			: scno = 137
@@ -594,9 +900,8 @@ pkg sys =
 	const Sysmlockall		: scno = 151
 	const Sysmunlockall		: scno = 152
 	const Sysvhangup		: scno = 153
-	const Sysmodify_ldt		: scno = 154
 	const Syspivot_root		: scno = 155
-	const Sys_sysctl		: scno = 156
+	const Syssysctl			: scno = 156
 	const Sysprctl			: scno = 157
 	const Sysarch_prctl		: scno = 158
 	const Sysadjtimex		: scno = 159
@@ -606,14 +911,13 @@ pkg sys =
 	const Sysacct			: scno = 163
 	const Syssettimeofday		: scno = 164
 	const Sysmount			: scno = 165
-	const Sysumount2		: scno = 166
+	const Sysumount			: scno = 166
 	const Sysswapon			: scno = 167
 	const Sysswapoff		: scno = 168
 	const Sysreboot			: scno = 169
 	const Syssethostname		: scno = 170
 	const Syssetdomainname		: scno = 171
 	const Sysiopl			: scno = 172
-	const Sysioperm			: scno = 173
 	const Syscreate_module		: scno = 174
 	const Sysinit_module		: scno = 175
 	const Sysdelete_module		: scno = 176
@@ -627,7 +931,6 @@ pkg sys =
 	const Systuxcall		: scno = 184
 	const Syssecurity		: scno = 185
 	const Sysgettid			: scno = 186
-	const Sysreadahead		: scno = 187
 	const Syssetxattr		: scno = 188
 	const Syslsetxattr		: scno = 189
 	const Sysfsetxattr		: scno = 190
@@ -646,12 +949,6 @@ pkg sys =
 	const Syssched_setaffinity	: scno = 203
 	const Syssched_getaffinity	: scno = 204
 	const Sysset_thread_area	: scno = 205
-	const Sysio_setup		: scno = 206
-	const Sysio_destroy		: scno = 207
-	const Sysio_getevents		: scno = 208
-	const Sysio_submit		: scno = 209
-	const Sysio_cancel		: scno = 210
-	const Sysget_thread_area	: scno = 211
 	const Syslookup_dcookie		: scno = 212
 	const Sysepoll_create		: scno = 213
 	const Sysepoll_ctl_old		: scno = 214
@@ -659,7 +956,6 @@ pkg sys =
 	const Sysremap_file_pages	: scno = 216
 	const Sysgetdents64		: scno = 217
 	const Sysset_tid_address	: scno = 218
-	const Sysrestart_syscall	: scno = 219
 	const Syssemtimedop		: scno = 220
 	const Sysfadvise64		: scno = 221
 	const Systimer_create		: scno = 222
@@ -676,7 +972,6 @@ pkg sys =
 	const Sysepoll_ctl		: scno = 233
 	const Systgkill			: scno = 234
 	const Sysutimes			: scno = 235
-	const Sysvserver		: scno = 236
 	const Sysmbind			: scno = 237
 	const Sysset_mempolicy		: scno = 238
 	const Sysget_mempolicy		: scno = 239
@@ -702,7 +997,7 @@ pkg sys =
 	const Sysmknodat		: scno = 259
 	const Sysfchownat		: scno = 260
 	const Sysfutimesat		: scno = 261
-	const Sysnewfstatat		: scno = 262
+	const Sysfstatat		: scno = 262
 	const Sysunlinkat		: scno = 263
 	const Sysrenameat		: scno = 264
 	const Syslinkat			: scno = 265
@@ -723,7 +1018,7 @@ pkg sys =
 	const Sysutimensat		: scno = 280
 	const Sysepoll_pwait		: scno = 281
 	const Syssignalfd		: scno = 282
-	const Systimerfd_create		: scno = 283
+	const Systimerfd		: scno = 283
 	const Syseventfd		: scno = 284
 	const Sysfallocate		: scno = 285
 	const Systimerfd_settime	: scno = 286
@@ -737,7 +1032,7 @@ pkg sys =
 	const Sysinotify_init1		: scno = 294
 	const Syspreadv			: scno = 295
 	const Syspwritev		: scno = 296
-	const Sysrt_tgsigqueueinfo	: scno = 297
+	const Sysrt_tsigqueueinfo	: scno = 297
 	const Sysperf_event_open	: scno = 298
 	const Sysrecvmmsg		: scno = 299
 	const Sysfanotify_init		: scno = 300
@@ -749,58 +1044,33 @@ pkg sys =
 	const Syssyncfs			: scno = 306
 	const Syssendmmsg		: scno = 307
 	const Syssetns			: scno = 308
-	const Sysgetcpu			: scno = 309
-	const Sysprocess_vm_readv	: scno = 310
-	const Sysprocess_vm_writev	: scno = 311
-	const Syskcmp			: scno = 312
-	const Sysfinit_module		: scno = 313
-	const Syssched_setattr		: scno = 314
-	const Syssched_getattr		: scno = 315
-	const Sysrenameat2		: scno = 316
-	const Sysseccomp		: scno = 317
-	const Sysgetrandom		: scno = 318
-	const Sysmemfd_create		: scno = 319
-	const Syskexec_file_load	: scno = 320
-	const Sysbpf			: scno = 321
-	const Sysexecveat		: scno = 322
-	const Sysuserfaultfd		: scno = 323
-	const Sysmembarrier		: scno = 324
-	const Sysmlock2			: scno = 325
-	const Syscopy_file_range	: scno = 326
-	const Syspreadv2		: scno = 327
-	const Syspwritev2		: scno = 328
-	const Syspkey_mprotect		: scno = 329
-	const Syspkey_alloc		: scno = 330
-	const Syspkey_free		: scno = 331
+	const Sysprocess_vm_readv	: scno = 309
+	const Sysprocess_vm_writev	: scno = 310
+	const Syskcmp			: scno = 311
+	const Sysfinit_module		: scno = 312
 
-	/* getting to the os */
+	/* start manual overrides { */
 	extern const syscall	: (sc:scno, args:... -> int64)
 	extern const sigreturn	: (-> void)
-
-	/* process management */
 	const exit	: (status:int -> void)
 	const exit_group	: (status:int -> void)
 	const getpid	: ( -> pid)
 	const kill	: (pid:pid, sig:int64 -> int64)
 	const fork	: (-> pid)
-	/* FIXME: where the fuck is 'struct pt_reg' defined?? */
 	const clone	: (flags : cloneopt, stk : byte#, ptid : pid#, ctid : pid#, ptreg : byte# -> pid)
 	extern const fnclone	: ( flags : cloneopt, \
-				stk : byte#, \
-				ptid : pid#, \
-				tls : byte#, \
-				ctid : pid#, \
-				ptreg : byte#, \
-				fn : void# \	/* we need a raw pointer */
-				-> pid)
+			stk : byte#, \
+			ptid : pid#, \
+			tls : byte#, \
+			ctid : pid#, \
+			ptreg : byte#, \
+			fn : void#  /* we need a raw pointer */ \
+			-> pid)
 	const wait4	: (pid:pid, loc:int32#, opt : int64, usage:rusage#	-> int64)
 	const waitpid	: (pid:pid, loc:int32#, opt : int64	-> int64)
 	const execv	: (cmd : byte[:], args : byte[:][:] -> int64)
 	const execve	: (cmd : byte[:], args : byte[:][:], env : byte[:][:] -> int64)
-	/* wrappers to extract wait status */
 	const waitstatus	: (st : int32 -> waitstatus)
-
-	/* file manipulation */
 	const open	: (path:byte[:], opts:fdopt -> fd)
 	const openmode	: (path:byte[:], opts:fdopt, mode:int64 -> fd)
 	const close	: (fd:fd -> int64)
@@ -824,28 +1094,18 @@ pkg sys =
 	const sendmsg	: (fd:fd, msg:msghdr#, flags:msgflags -> int64)
 	const recvmsg	: (fd:fd, msg:msghdr#, flags:msgflags -> int64)
 	const fallocate : (fd:fd, mode:fallocmode, off:off, len:off -> int64)
-	const memfdcreate	: (name:byte[:], flags:mfdflags -> fd)
-
-	/* signals */
 	const sigaction	: (sig : signo, act : sigaction#, oact : sigaction# -> int)
 	const sigprocmask	: (how : int32, set : sigset#, oset : sigset# -> int)
-
-	/* fd stuff */
 	const pipe	: (fds : fd[2]# -> int64)
 	const dup	: (fd : fd -> fd)
 	const dup2	: (src : fd, dst : fd -> fd)
-
-	/* threading */
 	const futex	: (uaddr : int32#, op : futexop, val : int32, \
-		timeout : timespec#, uaddr2 : int32#, val3 : int32 -> int64)
-
-	/* polling */
+	timeout : timespec#, uaddr2 : int32#, val3 : int32 -> int64)
+	const semctl	:  (semid : int, semnum : int, cmd : int, arg : void# -> int)
 	const epollcreate	: (flg : epollflags	-> fd)	/* actually epoll_create1 */
 	const epollctl	: (epfd : fd, op : int, fd : fd, evt : epollevt# -> int)
 	const epollwait	: (epfd : fd, evts : epollevt[:], timeout : int -> int)
 	const poll	: (pfd	: pollfd[:], timeout : int	-> int)
-
-	/* networking */
 	const socket	: (dom : sockfam, stype : socktype, proto : sockproto	-> fd)
 	const connect	: (sock	: fd, addr : sockaddr#, len : size -> int)
 	const accept	: (sock : fd, addr : sockaddr#, len : size# -> fd)
@@ -853,200 +1113,1210 @@ pkg sys =
 	const bind	: (sock : fd, addr : sockaddr#, len : size -> int)
 	const setsockopt	: (sock : fd, lev : sockproto, opt : sockopt, val : void#, len : size -> int)
 	const getsockopt	: (sock : fd, lev : sockproto, opt : sockopt, val : void#, len : size# -> int)
-
-	/* memory mapping */
 	const munmap	: (addr:byte#, len:size -> int64)
 	const mmap	: (addr:byte#, len:size, prot:mprot, flags:mopt, fd:fd, off:off -> byte#)
-
-	/* time */
 	const clock_getres	: (clk : clock, ts : timespec# -> int32)
 	const clock_gettime	: (clk : clock, ts : timespec# -> int32)
 	const clock_settime	: (clk : clock, ts : timespec# -> int32)
 	const nanosleep	: (req : timespec#, rem : timespec# -> int32)
-
-	/* user/group management */
 	const getuid : ( -> uint32)
 	const getgid : ( -> uint32)
 	const setuid : (uid : uint32 -> int32)
 	const setgid : (gid : uint32 -> int32)
-
-	/* system information */
 	const uname 	: (buf : utsname# -> int)
+	extern const cstring	: (str : byte[:] -> byte#)
+	extern const alloca	: (sz : size	-> byte#)
+	/* } end manual overrides */
 
-	/* exported values: initialized by start code */
-	extern var __cenvp : byte##
+	const mprotect			:  (addr : void#, len : int, prot : int -> int)
+	const brk			:  (dsend : ulong -> int)
+	const rt_sigaction		:  (sig : int, act : sigaction#, oact : sigaction#, sigsetsize : size -> int)
+	const rt_sigprocmask		:  (how : int, mask : sigset#, omask : sigset#, sigsetsize : size -> int)
+	const rt_sigreturn		:  (ucp : ucontext# -> int)
+	const readv			:  (fd : int, iovp : iovec#, iovcnt : uint -> int)
+	const writev			:  (fd : int, iovp : iovec#, iovcnt : uint -> int)
+	const access			:  (path : byte#, amode : int -> int)
+	const select			:  (nfds : int, readfds : fdset#, writefds : fdset#, exceptfds : fdset#, timeout : timeval# -> int)
+	const sched_yield		:  ( -> int)
+	const mremap			:  (addr : ulong, old_len : ulong, new_len : ulong, flags : ulong, new_addr : ulong -> int)
+	const msync			:  (addr : ulong, len : size, fl : int -> int)
+	const mincore			:  (start : ulong, len : size, vec : byte# -> int)
+	const madvise			:  (addr : void#, len : size, behav : int -> int)
+	const shmget			:  (key : key, size : size, shmflg : int -> int)
+	const shmat			:  (shmid : int, shmaddr : byte#, shmflg : int -> int)
+	const shmctl			:  (shmid : int, cmd : int, buf : shmid_ds# -> int)
+	const pause			:  ( -> int)
+	const getitimer			:  (which : int, itv : itimerval# -> int)
+	const alarm			:  (secs : uint -> int)
+	const setitimer			:  (which : int, itv : itimerval#, oitv : itimerval# -> int)
+	const sendfile			:  (out : int, _in : int, offset : int64#, count : size -> int)
+	const sendto			:  (s : int, msg : uintptr, len : int, flags : int, to : uintptr, tolen : int -> int)
+	const recvfrom			:  (s : int, buf : uintptr, len : size, flags : int, from : uintptr, fromlen : uintptr -> int)
+	const shutdown			:  (s : int, how : int -> int)
+	const getsockname		:  (s : int, addr : uintptr, namelen : uintptr -> int)
+	const getpeername		:  (s : int, addr : uintptr, namelen : uintptr -> int)
+	const socketpair		:  (domain : int, kind : int, protocol : int, rsv : uintptr -> int)
+	const vfork			:  ( -> int)
+	const semget			:  (key : key, nsems : int, semflg : int -> int)
+	const semop			:  (semid : int, tsops : sembuf#, nsops : uint -> int)
+	const shmdt			:  (shmaddr : byte# -> int)
+	const msgget			:  (key : key, msgflg : int -> int)
+	const msgsnd			:  (msqid : int, msgp : msgbuf#, msgsz : size, msgflg : int -> int)
+	const msgrcv			:  (msqid : int, msgp : msgbuf#, msgsz : size, msgtyp : int64, msgflg : int -> int)
+	const msgctl			:  (msqid : int, cmd : int, buf : msqid_ds# -> int)
+	const fcntl			:  (fd : uint, cmd : uint, arg : ulong -> int)
+	const flock			:  (fd : int, how : int -> int)
+	const fsync			:  (fd : int -> int)
+	const fdatasync			:  (fd : uint -> int)
+	const truncate			:  (path : byte#, length : ulong -> int)
+	const ftruncate			:  (fd : int, length : int64 -> int)
+	const getdents			:  (fd : uint, dent : void#, count : uint -> int)
+	const fchdir			:  (fd : int -> int)
+	const rmdir			:  (path : byte# -> int)
+	const link			:  (path : byte#, to : byte# -> int)
+	const symlink			:  (path : byte#, to : byte# -> int)
+	const chmod			:  (path : byte#, mode : filemode -> int)
+	const fchmod			:  (fd : int, mode : int -> int)
+	const chown			:  (path : byte#, uid : uid, gid : gid -> int)
+	const fchown			:  (fd : int, uid : int, gid : int -> int)
+	const lchown			:  (path : byte#, uid : uid, gid : gid -> int)
+	const umask			:  (newmask : int -> int)
+	const gettimeofday		:  (tp : timeval#, tzp : timezone# -> int)
+	const getrlimit			:  (resource : uint, rlim : rlimit# -> int)
+	const getrusage			:  (who : int, rusage : rusage# -> int)
+	const sysinfo			:  (info : sysinfo# -> int)
+	const times			:  (buf : tms# -> int)
+	const ptrace			:  (req : int64, pid : int64, addr : int64, data : int64 -> int)
+	const syslog			:  (kind : int, buf : byte#, len : int -> int)
+	const geteuid			:  ( -> int)
+	const getegid			:  ( -> int)
+	const setpgid			:  (pid : int, pgid : int -> int)
+	const getppid			:  ( -> int)
+	const getpgrp			:  ( -> int)
+	const setsid			:  ( -> int)
+	const setreuid			:  (ruid : uid, euid : uid -> int)
+	const setregid			:  (rgid : gid, egid : gid -> int)
+	const getgroups			:  (gidsetsize : int, grouplist : gid# -> int)
+	const setgroups			:  (gidsetsize : int, grouplist : gid# -> int)
+	const setresuid			:  (ruid : uid, euid : uid, suid : uid -> int)
+	const getresuid			:  (ruid : uid#, euid : uid#, suid : uid# -> int)
+	const setresgid			:  (rgid : gid, egid : gid, sgid : gid -> int)
+	const getresgid			:  (rgid : gid#, egid : gid#, sgid : gid# -> int)
+	const getpgid			:  (pid : int -> int)
+	const setfsuid			:  (uid : uid -> int)
+	const setfsgid			:  (gid : gid -> int)
+	const getsid			:  (pid : pid -> int)
+	const capget			:  (hdrp : capuserheader#, datap : capuserdata# -> int)
+	const capset			:  (hdrp : capuserheader#, datap : capuserdata# -> int)
+	const rt_sigpending		:  (set : sigset#, sigsetsize : size -> int)
+	const rt_sigtimedwait		:  (mask : sigset#, ptr : siginfo#, timeout : timeval#, sigsetsize : size -> int)
+	const rt_sigqueueinfo		:  (pid : pid, sig : int, info : siginfo# -> int)
+	const rt_sigsuspend		:  (newset : sigset#, sigsetsize : size -> int)
+	const sigaltstack		:  (uss : sigstack#, uoss : sigstack# -> int)
+	const utime			:  (fname : byte#, times : utimbuf# -> int)
+	const mknod			:  (path : byte#, mode : int, dev : dev -> int)
+	const personality		:  (per : uint -> int)
+	const ustat			:  (dev : dev, ubuf : ustat# -> int)
+	const statfs			:  (path : byte#, buf : statfs# -> int)
+	const fstatfs			:  (fd : uint, buf : statfs# -> int)
+	const sysfs			:  (option : int, arg1 : ulong, arg2 : ulong -> int)
+	const getpriority		:  (which : int, who : int -> int)
+	const setpriority		:  (which : int, who : int, prio : int -> int)
+	const sched_setparam		:  (pid : pid, param : sched_param# -> int)
+	const sched_getparam		:  (pid : pid, param : sched_param# -> int)
+	const sched_setscheduler	:  (pid : pid, policy : int, param : sched_param# -> int)
+	const sched_getscheduler	:  (pid : pid -> int)
+	const sched_get_priority_max	:  (policy : int -> int)
+	const sched_get_priority_min	:  (policy : int -> int)
+	const sched_rr_get_interval	:  (pid : pid, interval : timespec# -> int)
+	const mlock			:  (addr : void#, len : size -> int)
+	const munlock			:  (addr : void#, len : size -> int)
+	const mlockall			:  (how : int -> int)
+	const munlockall		:  ( -> int)
+	const vhangup			:  ( -> int)
+	const pivot_root		:  ( -> int)
+	const sysctl			:  (args : sysctl_args# -> int)
+	const prctl			:  (option : int, arg2 : uintptr, arg3 : uintptr, arg4 : uintptr, arg5 : uintptr -> int)
+	const arch_prctl		:  (code : int, addr : ulong -> int)
+	const adjtimex			:  ( -> int)
+	const setrlimit			:  (resource : uint, rlim : rlimit# -> int)
+	const chroot			:  (path : byte# -> int)
+	const sync			:  ( -> int)
+	const acct			:  (path : byte# -> int)
+	const settimeofday		:  (tv : timeval#, tzp : timezone# -> int)
+	const mount			:  (specialfile : byte#, dir : byte#, filesystemtype : byte#, rwflag : ulong, data : void# -> int)
+	const umount			:  (path : byte#, flags : int -> int)
+	const swapon			:  (name : byte# -> int)
+	const swapoff			:  ( -> int)
+	const reboot			:  (magic1 : int, magic2 : int, cmd : uint, arg : void# -> int)
+	const sethostname		:  (hostname : byte#, len : uint -> int)
+	const setdomainname		:  (name : byte#, len : int -> int)
+	const iopl			:  (level : uint -> int)
+	const create_module		:  ( -> int)
+	const init_module		:  ( -> int)
+	const delete_module		:  ( -> int)
+	const get_kernel_syms		:  ( -> int)
+	const query_module		:  ( -> int)
+	const quotactl			:  ( -> int)
+	const nfsservctl		:  ( -> int)
+	const getpmsg			:  ( -> int)
+	const putpmsg			:  ( -> int)
+	const afs_syscall		:  ( -> int)
+	const tuxcall			:  ( -> int)
+	const security			:  ( -> int)
+	const gettid			:  ( -> int)
+	const setxattr			:  ( -> int)
+	const lsetxattr			:  ( -> int)
+	const fsetxattr			:  ( -> int)
+	const getxattr			:  ( -> int)
+	const lgetxattr			:  ( -> int)
+	const fgetxattr			:  ( -> int)
+	const listxattr			:  ( -> int)
+	const llistxattr		:  ( -> int)
+	const flistxattr		:  ( -> int)
+	const removexattr		:  ( -> int)
+	const lremovexattr		:  ( -> int)
+	const fremovexattr		:  ( -> int)
+	const tkill			:  (tid : int, sig : int -> int)
+	const time			:  (tm : time# -> int)
+	const sched_setaffinity		:  (pid : pid, len : uint, user_mask_ptr : ulong# -> int)
+	const sched_getaffinity		:  (pid : pid, len : uint, user_mask_ptr : ulong# -> int)
+	const set_thread_area		:  ( -> int)
+	const lookup_dcookie		:  ( -> int)
+	const epoll_create		:  (size : int -> int)
+	const epoll_ctl_old		:  ( -> int)
+	const epoll_wait_old		:  ( -> int)
+	const remap_file_pages		:  ( -> int)
+	const set_tid_address		:  (tidptr : int# -> int)
+	const semtimedop		:  ( -> int)
+	const fadvise64			:  (fd : int, offset : loff, len : size, advice : int -> int)
+	const timer_create		:  (clock_id : clockid, evp : sigevent#, timerid : timer# -> int)
+	const timer_settime		:  (timerid : timer, flags : int, new : itimerspec#, old : itimerspec# -> int)
+	const timer_gettime		:  (timerid : timer, setting : itimerspec# -> int)
+	const timer_getoverrun		:  (timerid : timer -> int)
+	const timer_delete		:  (timerid : timer -> int)
+	const clock_nanosleep		:  (which : clockid, flags : int, rqtp : timespec#, rmtp : timespec# -> int)
+	const epoll_wait		:  (epfd : int, events : epollevt#, maxevents : int, timeout : int -> int)
+	const epoll_ctl			:  (epfd : int, op : int, fd : int, event : epollevt# -> int)
+	const tgkill			:  (tgid : int, pid : int, sig : int -> int)
+	const utimes			:  (fname : byte#, tptr : timeval# -> int)
+	const mbind			:  ( -> int)
+	const set_mempolicy		:  ( -> int)
+	const get_mempolicy		:  ( -> int)
+	const mq_open			:  ( -> int)
+	const mq_unlink			:  ( -> int)
+	const mq_timedsend		:  ( -> int)
+	const mq_timedreceive		:  ( -> int)
+	const mq_notify			:  ( -> int)
+	const mq_getsetattr		:  ( -> int)
+	const kexec_load		:  ( -> int)
+	const waitid			:  (idtype : int, id : pid, info : siginfo#, options : int, rusage : rusage# -> int)
+	const add_key			:  ( -> int)
+	const request_key		:  ( -> int)
+	const keyctl			:  ( -> int)
+	const ioprio_set		:  ( -> int)
+	const ioprio_get		:  ( -> int)
+	const inotify_init		:  ( -> int)
+	const inotify_add_watch		:  ( -> int)
+	const inotify_rm_watch		:  ( -> int)
+	const migrate_pages		:  ( -> int)
+	const openat			:  (dfd : int, filename : byte#, flags : int, mode : int -> int)
+	const mkdirat			:  (dfd : int, pathname : byte#, mode : int -> int)
+	const mknodat			:  (dfd : int, filename : byte#, mode : int, dev : uint -> int)
+	const fchownat			:  (dfd : int, filename : byte#, uid : uid, gid : gid, flag : int -> int)
+	const futimesat			:  (dfd : int, filename : byte#, utimes : timeval# -> int)
+	const fstatat			:  (dfd : int, pathname : byte#, statbuf : statbuf#, flag : int -> int)
+	const unlinkat			:  (dfd : int, pathname : byte#, flag : int -> int)
+	const renameat			:  (olddfd : int, oldname : byte#, newdfd : int, newname : byte# -> int)
+	const linkat			:  (olddfd : int, oldname : byte#, newdfd : int, newname : byte#, flag : int -> int)
+	const symlinkat			:  (oldname : byte#, newdfd : int, newname : byte# -> int)
+	const readlinkat		:  (dfd : int, path : byte#, buf : byte#, bufsiz : int -> int)
+	const fchmodat			:  (dfd : int, filename : byte#, mode : filemode -> int)
+	const faccessat			:  (dfd : int, filename : byte#, amode : int -> int)
+	const pselect6			:  (nfds : int, readfds : fdset#, writefds : fdset#, exceptfds : fdset#, tsp : timespec#, sig : uintptr# -> int)
+	const ppoll			:  (fds : pollfd#, nfds : uint32, tsp : timespec#, sset : sigset#, ssize : size -> int)
+	const unshare			:  ( -> int)
+	const set_robust_list		:  (head : robust_list_head#, len : size -> int)
+	const get_robust_list		:  (pid : int, head : robust_list_head##, len : size# -> int)
+	const splice			:  ( -> int)
+	const tee			:  ( -> int)
+	const sync_file_range		:  ( -> int)
+	const vmsplice			:  ( -> int)
+	const move_pages		:  ( -> int)
+	const utimensat			:  (dfd : int, pathname : byte#, times : timespec#, flags : int -> int)
+	const epoll_pwait		:  (epfd : int, events : epollevt#, maxevents : int, timeout : int, mask : sigset# -> int)
+	const signalfd			:  ( -> int)
+	const timerfd			:  ( -> int)
+	const eventfd			:  (initval : uint -> int)
+	const timerfd_settime		:  ( -> int)
+	const timerfd_gettime		:  ( -> int)
+	const accept4			:  (s : int, addr : uintptr, namelen : uintptr, flags : int -> int)
+	const signalfd4			:  ( -> int)
+	const eventfd2			:  (initval : uint, flags : int -> int)
+	const epoll_create1		:  (flags : int -> int)
+	const dup3			:  (oldfd : int, newfd : int, flags : int -> int)
+	const pipe2			:  (pipefds : int#, flags : int -> int)
+	const inotify_init1		:  ( -> int)
+	const preadv			:  ( -> int)
+	const pwritev			:  ( -> int)
+	const rt_tsigqueueinfo		:  ( -> int)
+	const perf_event_open		:  ( -> int)
+	const recvmmsg			:  (s : int, msg : mmsghdr#, vlen : uint, flags : uint, timeout : timespec# -> int)
+	const fanotify_init		:  ( -> int)
+	const fanotify_mark		:  ( -> int)
+	const prlimit64			:  (pid : pid, resource : uint, new : rlimit#, old : rlimit# -> int)
+	const name_to_handle_at		:  ( -> int)
+	const open_by_handle_at		:  ( -> int)
+	const clock_adjtime		:  ( -> int)
+	const syncfs			:  (fd : int -> int)
+	const sendmmsg			:  (s : int, msg : mmsghdr#, vlen : uint, flags : uint -> int)
+	const setns			:  ( -> int)
+	const process_vm_readv		:  ( -> int)
+	const process_vm_writev		:  ( -> int)
+	const kcmp			:  ( -> int)
+	const finit_module		:  ( -> int)
 ;;
 
-/*
-wraps a syscall argument, converting it to 64 bits for the syscall function.
-This is the same as casting, but more concise than writing a cast to int64.
-*/
-generic a = {x : @t; -> (x : uint64)}
+	/* start manual overrides { */
+	/* getting to the os */
 
-/* asm stubs from util.s */
-extern const cstring	: (str : byte[:] -> byte#)
-extern const alloca	: (sz : size	-> byte#)
+	/* process management */
+	/* FIXME: where the fuck is 'struct pt_reg' defined?? */
+	/* wrappers to extract wait status */
 
-/* process management */
-const exit	= {status;		syscall(Sysexit, a(status))}
-const exit_group	= {status;	syscall(Sysexit_group, a(status))}
-const getpid	= {;			-> (syscall(Sysgetpid) : pid)}
-const kill	= {pid, sig;		-> syscall(Syskill, a(pid), a(sig))}
-const fork	= {;			-> (syscall(Sysfork) : pid)}
-const clone	= {flags, stk, ptid, ctid, ptreg;	-> (syscall(Sysclone, a(flags), a(stk), a(ptid), a(ctid), a(ptreg)) : pid)}
-const wait4	= {pid, loc, opt, usage;	-> syscall(Syswait4, a(pid), a(loc), a(opt), a(usage))}
-const waitpid	= {pid, loc, opt;
-	var rusage
-	-> wait4(pid, loc, opt, &rusage)
-}
+	/* file manipulation */
 
-const execv	= {cmd, args
-	var p, cargs, i
+	/* signals */
 
-	/* of course we fucking have to duplicate this code everywhere,
-	* since we want to stack allocate... */
-	p = alloca((args.len + 1)*sizeof(byte#))
-	cargs = (p : byte##)[:args.len + 1]
-	for i = 0; i < args.len; i++
-		cargs[i] = cstring(args[i])
-	;;
-	cargs[args.len] = (0 : byte#)
-	-> syscall(Sysexecve, cstring(cmd), a(p), a(__cenvp))
-}
+	/* fd stuff */
 
-const execve	= {cmd, args, env
-	var cargs, cenv, i
-	var ap, ep
+	/* threading */
 
-	/* copy the args */
-	ap = alloca((args.len + 1)*sizeof(byte#))
-	cargs = (ap : byte##)[:args.len + 1]
-	for i = 0; i < args.len; i++
-		cargs[i] = cstring(args[i])
-	;;
-	cargs[args.len] = (0 : byte#)
+	/* polling */
+
+	/* networking */
+
+	/* memory mapping */
+
+	/* time */
+
+	/* user/group management */
+
+	/* system information */
 
 	/*
-	 copy the env.
-	 of course we fucking have to duplicate this code everywhere,
-	 since we want to stack allocate...
+	wraps a syscall argument, converting it to 64 bits for the syscall function.
+	This is the same as casting, but more concise than writing a cast to int64.
 	*/
-	ep = alloca((env.len + 1)*sizeof(byte#))
-	cenv = (ep : byte##)[:env.len]
-	for i = 0; i < env.len; i++
-		cenv[i] = cstring(env[i])
-	;;
-	cenv[env.len] = (0 : byte#)
+	generic a = {x : @t; -> (x : uint64)}
 
-	-> syscall(Sysexecve, cstring(cmd), a(ap), a(ep))
+	/* asm stubs from util.s */
+
+	/* process management */
+	const exit	= {status;		syscall(Sysexit, a(status))}
+	const exit_group	= {status;	syscall(Sysexit_group, a(status))}
+	const getpid	= {;			-> (syscall(Sysgetpid) : pid)}
+	const kill	= {pid, sig;		-> syscall(Syskill, a(pid), a(sig))}
+	const fork	= {;			-> (syscall(Sysfork) : pid)}
+	const clone	= {flags, stk, ptid, ctid, ptreg;	-> (syscall(Sysclone, a(flags), a(stk), a(ptid), a(ctid), a(ptreg)) : pid)}
+	const wait4	= {pid, loc, opt, usage;	-> syscall(Syswait4, a(pid), a(loc), a(opt), a(usage))}
+	const waitpid	= {pid, loc, opt;
+		var rusage
+		-> wait4(pid, loc, opt, &rusage)
+	}
+
+	const execv	= {cmd, args
+		var p, cargs, i
+
+		/* of course we fucking have to duplicate this code everywhere,
+		* since we want to stack allocate... */
+		p = alloca((args.len + 1)*sizeof(byte#))
+		cargs = (p : byte##)[:args.len + 1]
+		for i = 0; i < args.len; i++
+			cargs[i] = cstring(args[i])
+		;;
+		cargs[args.len] = (0 : byte#)
+		-> syscall(Sysexecve, cstring(cmd), a(p), a(__cenvp))
+	}
+
+	const execve	= {cmd, args, env
+		var cargs, cenv, i
+		var ap, ep
+
+		/* copy the args */
+		ap = alloca((args.len + 1)*sizeof(byte#))
+		cargs = (ap : byte##)[:args.len + 1]
+		for i = 0; i < args.len; i++
+			cargs[i] = cstring(args[i])
+		;;
+		cargs[args.len] = (0 : byte#)
+
+		/*
+		 copy the env.
+		 of course we fucking have to duplicate this code everywhere,
+		 since we want to stack allocate...
+		*/
+		ep = alloca((env.len + 1)*sizeof(byte#))
+		cenv = (ep : byte##)[:env.len]
+		for i = 0; i < env.len; i++
+			cenv[i] = cstring(env[i])
+		;;
+		cenv[env.len] = (0 : byte#)
+
+		-> syscall(Sysexecve, cstring(cmd), a(ap), a(ep))
+	}
+
+	/* file manipulation */
+	const open	= {path, opts;		-> (syscall(Sysopen, cstring(path), a(opts), a(0o777)) : fd)}
+	const openmode	= {path, opts, mode;	-> (syscall(Sysopen, cstring(path), a(opts), a(mode)) : fd)}
+	const close	= {fd;			-> syscall(Sysclose, a(fd))}
+	const creat	= {path, mode;		-> (syscall(Syscreat, cstring(path), a(mode)) : fd)}
+	const rename	= {from, to;		-> syscall(Sysrename, cstring(from), cstring(to))}
+	const unlink	= {path;		-> (syscall(Sysunlink, cstring(path)) : int)}
+	const readlink	= {path, buf; -> syscall(Sysreadlink, cstring(path), (buf : byte#), a(buf.len))}
+	const read	= {fd, buf;		-> (syscall(Sysread, a(fd), (buf : byte#), a(buf.len)) : size)}
+	const pread	= {fd, buf, off;	-> (syscall(Syspread, a(fd), (buf : byte#), a(buf.len), a(off)) : size)}
+	const write	= {fd, buf;		-> (syscall(Syswrite, a(fd), (buf : byte#), a(buf.len)) : size)}
+	const pwrite	= {fd, buf, off;	-> (syscall(Syspwrite, a(fd), (buf : byte#), a(buf.len), a(off)) : size)}
+	const lseek	= {fd, off, whence;	-> syscall(Syslseek, a(fd), a(off), a(whence))}
+	const stat	= {path, sb;		-> syscall(Sysstat, cstring(path), a(sb))}
+	const lstat	= {path, sb;		-> syscall(Syslstat, cstring(path), a(sb))}
+	const fstat	= {fd, sb;		-> syscall(Sysfstat, a(fd), a(sb))}
+	const mkdir	= {path, mode;		-> (syscall(Sysmkdir, cstring(path), a(mode)) : int64)}
+	generic ioctl	= {fd, req, arg;	-> (syscall(Sysioctl, a(fd), a(req), a(arg)) : int64)}
+	const getdents64	= {fd, buf;	-> syscall(Sysgetdents64, a(fd), (buf : byte#), a(buf.len))}
+	const chdir	= {dir;	-> syscall(Syschdir, cstring(dir))}
+	const getcwd	= {buf;	-> syscall(Sysgetcwd, a(buf), a(buf.len))}
+	const sendmsg	= {fd, msg, flags;	-> syscall(Syssendmsg, a(fd), msg, a(flags))}
+	const recvmsg	= {fd, msg, flags;	-> syscall(Sysrecvmsg, a(fd), msg, a(flags))}
+	const fallocate	= {fd, mode, off, len;	-> syscall(Sysfallocate, a(fd), a(mode),  a(off), a(len))}
+
+	/* file stuff */
+	const pipe	= {fds;	-> syscall(Syspipe, a(fds))}
+	const dup 	= {fd;	-> (syscall(Sysdup, a(fd)) : fd)}
+	const dup2 	= {src, dst;	-> (syscall(Sysdup2, a(src), a(dst)) : fd)}
+
+	const sigaction	= {sig, act, oact;
+		if act.restore == (0 : byte#)
+			act.flags |= Sarestorer
+			act.restore = (sys.sigreturn : byte#)
+		;;
+		-> (syscall(Sysrt_sigaction, a(sig), a(act), a(oact), a(sizeof(sigflags))) : int)
+	}
+	const sigprocmask	= {sig, act, oact;	-> (syscall(Sysrt_sigprocmask, a(sig), a(act), a(oact), a(sizeof(sigflags))) : int)}
+
+	/* threading */
+	const futex	= {uaddr, op, val, timeout, uaddr2, val3
+		-> syscall(Sysfutex, a(uaddr), a(op), a(val), a(timeout), a(uaddr2), a(val3))
+	}
+	const semctl	= {semid, semnum, cmd, arg
+		-> (syscall(Syssemctl, a(semnum), a(cmd), a(arg)) : int)
+	}
+
+	/* poll */
+	const poll	= {pfd, timeout;	-> (syscall(Syspoll, (pfd : pollfd#), a(pfd.len), a(timeout)) : int)}
+	const epollctl	= {epfd, op, fd, evt;
+		-> (syscall(Sysepoll_ctl, a(epfd), a(op), a(fd), a(evt)) : int)}
+	const epollwait	= {epfd, evts, timeout;
+		-> (syscall(Sysepoll_wait, a(epfd), (evts : epollevt#), a(evts.len), a(timeout)) : int)}
+	const epollcreate	= {flg;	-> (syscall(Sysepoll_create1, a(flg)) : fd)}
+
+	/* networking */
+	const socket	= {dom, stype, proto;	-> (syscall(Syssocket, a(dom), a(stype), a(proto)) : fd)}
+	const connect	= {sock, addr, len;	-> (syscall(Sysconnect, a(sock), a(addr), a(len)) : int)}
+	const bind	= {sock, addr, len;	-> (syscall(Sysbind, a(sock), a(addr), a(len)) : int)}
+	const listen	= {sock, backlog;	-> (syscall(Syslisten, a(sock), a(backlog)) : int)}
+	const accept	= {sock, addr, lenp;	-> (syscall(Sysaccept, a(sock), a(addr), a(lenp)) : fd)}
+	const setsockopt	= {sock, lev, opt, val, len;	-> (syscall(Syssetsockopt, a(sock), a(lev), a(opt), a(val), a(len)) : int)}
+	const getsockopt	= {sock, lev, opt, val, len;	-> (syscall(Syssetsockopt, a(sock), a(lev), a(opt), a(val), a(len)) : int)}
+
+	/* memory mapping */
+	const munmap	= {addr, len;		-> syscall(Sysmunmap, a(addr), a(len))}
+	const mmap	= {addr, len, prot, flags, fd, off;
+		-> (syscall(Sysmmap, a(addr), a(len), a(prot), a(flags), a(fd), a(off)) : byte#)
+	}
+
+	/* time */
+	const clock_getres = {clk, ts;	-> (syscall(Sysclock_getres, clockid(clk), a(ts)) : int32)}
+	const clock_gettime = {clk, ts;	-> (syscall(Sysclock_gettime, clockid(clk), a(ts)) : int32)}
+	const clock_settime = {clk, ts;	-> (syscall(Sysclock_settime, clockid(clk), a(ts)) : int32)}
+	const nanosleep	= {req, rem;	-> (syscall(Sysnanosleep, a(req), a(rem)) : int32)}
+
+	/* user/group management */
+	const getuid = {; -> (syscall(Sysgetuid) : uint32)}
+	const getgid = {; -> (syscall(Sysgetgid) : uint32)}
+	const setuid = {uid; -> (syscall(Syssetuid, a(uid)) : int32)}
+	const setgid = {gid; -> (syscall(Syssetgid, a(gid)) : int32)}
+
+	/* system information */
+	const uname	= {buf;	-> (syscall(Sysuname, buf) : int)}
+
+	const clockid = {clk
+		match clk
+		| `Clockrealtime:	-> 0
+		| `Clockmonotonic:	-> 1
+		| `Clockproccpu:	-> 2
+		| `Clockthreadcpu:	-> 3
+		| `Clockmonotonicraw:	-> 4
+		| `Clockrealtimecoarse:	-> 5
+		| `Clockmonotoniccoarse:-> 6
+		| `Clockboottime:	-> 7
+		| `Clockrealtimealarm:	-> 8
+		| `Clockboottimealarm:	-> 9
+		;;
+		-> -1
+	}
+
+
+	const waitstatus = {st
+		if st & 0x7f == 0 /* if exited */
+			-> `Waitexit ((st & 0xff00) >> 8)
+		elif ((st & 0xffff)-1) < 0xff /* if signaled */
+			-> `Waitsig ((st) & 0x7f)
+		elif (((st & 0xffff)*0x10001)>>8) > 0x7f00
+			-> `Waitstop ((st & 0xff00) >> 8)
+		;;
+		-> `Waitfail st	/* wait failed to give a result */
+	}
+	/* } end manual overrides */
+const mprotect	= {addr, len, prot
+	 -> (syscall(Sysmprotect, a(len), a(prot)) : int)
 }
-
-/* file manipulation */
-const open	= {path, opts;		-> (syscall(Sysopen, cstring(path), a(opts), a(0o777)) : fd)}
-const openmode	= {path, opts, mode;	-> (syscall(Sysopen, cstring(path), a(opts), a(mode)) : fd)}
-const close	= {fd;			-> syscall(Sysclose, a(fd))}
-const creat	= {path, mode;		-> (syscall(Syscreat, cstring(path), a(mode)) : fd)}
-const rename	= {from, to;		-> syscall(Sysrename, cstring(from), cstring(to))}
-const unlink	= {path;		-> (syscall(Sysunlink, cstring(path)) : int)}
-const readlink	= {path, buf; -> syscall(Sysreadlink, cstring(path), (buf : byte#), a(buf.len))}
-const read	= {fd, buf;		-> (syscall(Sysread, a(fd), (buf : byte#), a(buf.len)) : size)}
-const pread	= {fd, buf, off;	-> (syscall(Syspread64, a(fd), (buf : byte#), a(buf.len), a(off)) : size)}
-const write	= {fd, buf;		-> (syscall(Syswrite, a(fd), (buf : byte#), a(buf.len)) : size)}
-const pwrite	= {fd, buf, off;	-> (syscall(Syspwrite64, a(fd), (buf : byte#), a(buf.len), a(off)) : size)}
-const lseek	= {fd, off, whence;	-> syscall(Syslseek, a(fd), a(off), a(whence))}
-const stat	= {path, sb;		-> syscall(Sysstat, cstring(path), a(sb))}
-const lstat	= {path, sb;		-> syscall(Syslstat, cstring(path), a(sb))}
-const fstat	= {fd, sb;		-> syscall(Sysfstat, a(fd), a(sb))}
-const mkdir	= {path, mode;		-> (syscall(Sysmkdir, cstring(path), a(mode)) : int64)}
-generic ioctl	= {fd, req, arg;	-> (syscall(Sysioctl, a(fd), a(req), a(arg)) : int64)}
-const getdents64	= {fd, buf;	-> syscall(Sysgetdents64, a(fd), (buf : byte#), a(buf.len))}
-const chdir	= {dir;	-> syscall(Syschdir, cstring(dir))}
-const getcwd	= {buf;	-> syscall(Sysgetcwd, a(buf), a(buf.len))}
-const sendmsg	= {fd, msg, flags;	-> syscall(Syssendmsg, a(fd), msg, a(flags))}
-const recvmsg	= {fd, msg, flags;	-> syscall(Sysrecvmsg, a(fd), msg, a(flags))}
-const fallocate	= {fd, mode, off, len;	-> syscall(Sysfallocate, a(fd), a(mode),  a(off), a(len))}
-const memfdcreate	= {name, flags;	-> (syscall(Sysmemfd_create, cstring(name), a(flags)) : fd)}
-
-/* file stuff */
-const pipe	= {fds;	-> syscall(Syspipe, a(fds))}
-const dup 	= {fd;	-> (syscall(Sysdup, a(fd)) : fd)}
-const dup2 	= {src, dst;	-> (syscall(Sysdup2, a(src), a(dst)) : fd)}
-
-const sigaction	= {sig, act, oact;
-	if act.restore == (0 : byte#)
-		act.flags |= Sarestorer
-		act.restore = (sys.sigreturn : byte#)
-	;;
-	-> (syscall(Sysrt_sigaction, a(sig), a(act), a(oact), a(sizeof(sigflags))) : int)
+const brk	= {dsend
+	 -> (syscall(Sysbrk) : int)
 }
-const sigprocmask	= {sig, act, oact;	-> (syscall(Sysrt_sigprocmask, a(sig), a(act), a(oact), a(sizeof(sigflags))) : int)}
-
-/* threading */
-const futex	= {uaddr, op, val, timeout, uaddr2, val3
-	-> syscall(Sysfutex, a(uaddr), a(op), a(val), a(timeout), a(uaddr2), a(val3))}
-
-/* poll */
-const poll	= {pfd, timeout;	-> (syscall(Syspoll, (pfd : pollfd#), a(pfd.len), a(timeout)) : int)}
-const epollctl	= {epfd, op, fd, evt;
-	-> (syscall(Sysepoll_ctl, a(epfd), a(op), a(fd), a(evt)) : int)}
-const epollwait	= {epfd, evts, timeout;
-	-> (syscall(Sysepoll_wait, a(epfd), (evts : epollevt#), a(evts.len), a(timeout)) : int)}
-const epollcreate	= {flg;	-> (syscall(Sysepoll_create1, a(flg)) : fd)}
-
-/* networking */
-const socket	= {dom, stype, proto;	-> (syscall(Syssocket, a(dom), a(stype), a(proto)) : fd)}
-const connect	= {sock, addr, len;	-> (syscall(Sysconnect, a(sock), a(addr), a(len)) : int)}
-const bind	= {sock, addr, len;	-> (syscall(Sysbind, a(sock), a(addr), a(len)) : int)}
-const listen	= {sock, backlog;	-> (syscall(Syslisten, a(sock), a(backlog)) : int)}
-const accept	= {sock, addr, lenp;	-> (syscall(Sysaccept, a(sock), a(addr), a(lenp)) : fd)}
-const setsockopt	= {sock, lev, opt, val, len;	-> (syscall(Syssetsockopt, a(sock), a(lev), a(opt), a(val), a(len)) : int)}
-const getsockopt	= {sock, lev, opt, val, len;	-> (syscall(Syssetsockopt, a(sock), a(lev), a(opt), a(val), a(len)) : int)}
-
-/* memory mapping */
-const munmap	= {addr, len;		-> syscall(Sysmunmap, a(addr), a(len))}
-const mmap	= {addr, len, prot, flags, fd, off;
-	-> (syscall(Sysmmap, a(addr), a(len), a(prot), a(flags), a(fd), a(off)) : byte#)
+const rt_sigaction	= {sig, act, oact, sigsetsize
+	 -> (syscall(Sysrt_sigaction, a(act), a(oact), a(sigsetsize)) : int)
 }
-
-/* time */
-const clock_getres = {clk, ts;	-> (syscall(Sysclock_getres, clockid(clk), a(ts)) : int32)}
-const clock_gettime = {clk, ts;	-> (syscall(Sysclock_gettime, clockid(clk), a(ts)) : int32)}
-const clock_settime = {clk, ts;	-> (syscall(Sysclock_settime, clockid(clk), a(ts)) : int32)}
-const nanosleep	= {req, rem;	-> (syscall(Sysnanosleep, a(req), a(rem)) : int32)}
-
-/* user/group management */
-const getuid = {; -> (syscall(Sysgetuid) : uint32)}
-const getgid = {; -> (syscall(Sysgetgid) : uint32)}
-const setuid = {uid; -> (syscall(Syssetuid, a(uid)) : int32)}
-const setgid = {gid; -> (syscall(Syssetgid, a(gid)) : int32)}
-
-/* system information */
-const uname	= {buf;	-> (syscall(Sysuname, buf) : int)}
-
-const clockid = {clk
-	match clk
-	| `Clockrealtime:	-> 0
-	| `Clockmonotonic:	-> 1
-	| `Clockproccpu:	-> 2
-	| `Clockthreadcpu:	-> 3
-	| `Clockmonotonicraw:	-> 4
-	| `Clockrealtimecoarse:	-> 5
-	| `Clockmonotoniccoarse:-> 6
-	| `Clockboottime:	-> 7
-	| `Clockrealtimealarm:	-> 8
-	| `Clockboottimealarm:	-> 9
-	;;
-	-> -1
+const rt_sigprocmask	= {how, mask, omask, sigsetsize
+	 -> (syscall(Sysrt_sigprocmask, a(mask), a(omask), a(sigsetsize)) : int)
 }
-
-
-const waitstatus = {st
-	if st & 0x7f == 0 /* if exited */
-		-> `Waitexit ((st & 0xff00) >> 8)
-	elif ((st & 0xffff)-1) < 0xff /* if signaled */
-		-> `Waitsig ((st) & 0x7f)
-	elif (((st & 0xffff)*0x10001)>>8) > 0x7f00
-		-> `Waitstop ((st & 0xff00) >> 8)
-	;;
-	-> `Waitfail st	/* wait failed to give a result */
+const rt_sigreturn	= {ucp
+	 -> (syscall(Sysrt_sigreturn) : int)
+}
+const readv	= {fd, iovp, iovcnt
+	 -> (syscall(Sysreadv, a(iovp), a(iovcnt)) : int)
+}
+const writev	= {fd, iovp, iovcnt
+	 -> (syscall(Syswritev, a(iovp), a(iovcnt)) : int)
+}
+const access	= {path, amode
+	 -> (syscall(Sysaccess, a(amode)) : int)
+}
+const select	= {nfds, readfds, writefds, exceptfds, timeout
+	 -> (syscall(Sysselect, a(readfds), a(writefds), a(exceptfds), a(timeout)) : int)
+}
+const sched_yield	= {
+	 -> (syscall(Syssched_yield) : int)
+}
+const mremap	= {addr, old_len, new_len, flags, new_addr
+	 -> (syscall(Sysmremap, a(old_len), a(new_len), a(flags), a(new_addr)) : int)
+}
+const msync	= {addr, len, fl
+	 -> (syscall(Sysmsync, a(len), a(fl)) : int)
+}
+const mincore	= {start, len, vec
+	 -> (syscall(Sysmincore, a(len), a(vec)) : int)
+}
+const madvise	= {addr, len, behav
+	 -> (syscall(Sysmadvise, a(len), a(behav)) : int)
+}
+const shmget	= {key, size, shmflg
+	 -> (syscall(Sysshmget, a(size), a(shmflg)) : int)
+}
+const shmat	= {shmid, shmaddr, shmflg
+	 -> (syscall(Sysshmat, a(shmaddr), a(shmflg)) : int)
+}
+const shmctl	= {shmid, cmd, buf
+	 -> (syscall(Sysshmctl, a(cmd), a(buf)) : int)
+}
+const pause	= {
+	 -> (syscall(Syspause) : int)
+}
+const getitimer	= {which, itv
+	 -> (syscall(Sysgetitimer, a(itv)) : int)
+}
+const alarm	= {secs
+	 -> (syscall(Sysalarm) : int)
+}
+const setitimer	= {which, itv, oitv
+	 -> (syscall(Syssetitimer, a(itv), a(oitv)) : int)
+}
+const sendfile	= {out, _in, offset, count
+	 -> (syscall(Syssendfile, a(_in), a(offset), a(count)) : int)
+}
+const sendto	= {s, msg, len, flags, to, tolen
+	 -> (syscall(Syssendto, a(msg), a(len), a(flags), a(to), a(tolen)) : int)
+}
+const recvfrom	= {s, buf, len, flags, from, fromlen
+	 -> (syscall(Sysrecvfrom, a(buf), a(len), a(flags), a(from), a(fromlen)) : int)
+}
+const shutdown	= {s, how
+	 -> (syscall(Sysshutdown, a(how)) : int)
+}
+const getsockname	= {s, addr, namelen
+	 -> (syscall(Sysgetsockname, a(addr), a(namelen)) : int)
+}
+const getpeername	= {s, addr, namelen
+	 -> (syscall(Sysgetpeername, a(addr), a(namelen)) : int)
+}
+const socketpair	= {domain, kind, protocol, rsv
+	 -> (syscall(Syssocketpair, a(kind), a(protocol), a(rsv)) : int)
+}
+const vfork	= {
+	 -> (syscall(Sysvfork) : int)
+}
+const semget	= {key, nsems, semflg
+	 -> (syscall(Syssemget, a(nsems), a(semflg)) : int)
+}
+const semop	= {semid, tsops, nsops
+	 -> (syscall(Syssemop, a(tsops), a(nsops)) : int)
+}
+const shmdt	= {shmaddr
+	 -> (syscall(Sysshmdt) : int)
+}
+const msgget	= {key, msgflg
+	 -> (syscall(Sysmsgget, a(msgflg)) : int)
+}
+const msgsnd	= {msqid, msgp, msgsz, msgflg
+	 -> (syscall(Sysmsgsnd, a(msgp), a(msgsz), a(msgflg)) : int)
+}
+const msgrcv	= {msqid, msgp, msgsz, msgtyp, msgflg
+	 -> (syscall(Sysmsgrcv, a(msgp), a(msgsz), a(msgtyp), a(msgflg)) : int)
+}
+const msgctl	= {msqid, cmd, buf
+	 -> (syscall(Sysmsgctl, a(cmd), a(buf)) : int)
+}
+const fcntl	= {fd, cmd, arg
+	 -> (syscall(Sysfcntl, a(cmd), a(arg)) : int)
+}
+const flock	= {fd, how
+	 -> (syscall(Sysflock, a(how)) : int)
+}
+const fsync	= {fd
+	 -> (syscall(Sysfsync) : int)
+}
+const fdatasync	= {fd
+	 -> (syscall(Sysfdatasync) : int)
+}
+const truncate	= {path, length
+	 -> (syscall(Systruncate, a(length)) : int)
+}
+const ftruncate	= {fd, length
+	 -> (syscall(Sysftruncate, a(length)) : int)
+}
+const getdents	= {fd, dent, count
+	 -> (syscall(Sysgetdents, a(dent), a(count)) : int)
+}
+const fchdir	= {fd
+	 -> (syscall(Sysfchdir) : int)
+}
+const rmdir	= {path
+	 -> (syscall(Sysrmdir) : int)
+}
+const link	= {path, to
+	 -> (syscall(Syslink, a(to)) : int)
+}
+const symlink	= {path, to
+	 -> (syscall(Syssymlink, a(to)) : int)
+}
+const chmod	= {path, mode
+	 -> (syscall(Syschmod, a(mode)) : int)
+}
+const fchmod	= {fd, mode
+	 -> (syscall(Sysfchmod, a(mode)) : int)
+}
+const chown	= {path, uid, gid
+	 -> (syscall(Syschown, a(uid), a(gid)) : int)
+}
+const fchown	= {fd, uid, gid
+	 -> (syscall(Sysfchown, a(uid), a(gid)) : int)
+}
+const lchown	= {path, uid, gid
+	 -> (syscall(Syslchown, a(uid), a(gid)) : int)
+}
+const umask	= {newmask
+	 -> (syscall(Sysumask) : int)
+}
+const gettimeofday	= {tp, tzp
+	 -> (syscall(Sysgettimeofday, a(tzp)) : int)
+}
+const getrlimit	= {resource, rlim
+	 -> (syscall(Sysgetrlimit, a(rlim)) : int)
+}
+const getrusage	= {who, rusage
+	 -> (syscall(Sysgetrusage, a(rusage)) : int)
+}
+const sysinfo	= {info
+	 -> (syscall(Syssysinfo) : int)
+}
+const times	= {buf
+	 -> (syscall(Systimes) : int)
+}
+const ptrace	= {req, pid, addr, data
+	 -> (syscall(Sysptrace, a(pid), a(addr), a(data)) : int)
+}
+const syslog	= {kind, buf, len
+	 -> (syscall(Syssyslog, a(buf), a(len)) : int)
+}
+const geteuid	= {
+	 -> (syscall(Sysgeteuid) : int)
+}
+const getegid	= {
+	 -> (syscall(Sysgetegid) : int)
+}
+const setpgid	= {pid, pgid
+	 -> (syscall(Syssetpgid, a(pgid)) : int)
+}
+const getppid	= {
+	 -> (syscall(Sysgetppid) : int)
+}
+const getpgrp	= {
+	 -> (syscall(Sysgetpgrp) : int)
+}
+const setsid	= {
+	 -> (syscall(Syssetsid) : int)
+}
+const setreuid	= {ruid, euid
+	 -> (syscall(Syssetreuid, a(euid)) : int)
+}
+const setregid	= {rgid, egid
+	 -> (syscall(Syssetregid, a(egid)) : int)
+}
+const getgroups	= {gidsetsize, grouplist
+	 -> (syscall(Sysgetgroups, a(grouplist)) : int)
+}
+const setgroups	= {gidsetsize, grouplist
+	 -> (syscall(Syssetgroups, a(grouplist)) : int)
+}
+const setresuid	= {ruid, euid, suid
+	 -> (syscall(Syssetresuid, a(euid), a(suid)) : int)
+}
+const getresuid	= {ruid, euid, suid
+	 -> (syscall(Sysgetresuid, a(euid), a(suid)) : int)
+}
+const setresgid	= {rgid, egid, sgid
+	 -> (syscall(Syssetresgid, a(egid), a(sgid)) : int)
+}
+const getresgid	= {rgid, egid, sgid
+	 -> (syscall(Sysgetresgid, a(egid), a(sgid)) : int)
+}
+const getpgid	= {pid
+	 -> (syscall(Sysgetpgid) : int)
+}
+const setfsuid	= {uid
+	 -> (syscall(Syssetfsuid) : int)
+}
+const setfsgid	= {gid
+	 -> (syscall(Syssetfsgid) : int)
+}
+const getsid	= {pid
+	 -> (syscall(Sysgetsid) : int)
+}
+const capget	= {hdrp, datap
+	 -> (syscall(Syscapget, a(datap)) : int)
+}
+const capset	= {hdrp, datap
+	 -> (syscall(Syscapset, a(datap)) : int)
+}
+const rt_sigpending	= {set, sigsetsize
+	 -> (syscall(Sysrt_sigpending, a(sigsetsize)) : int)
+}
+const rt_sigtimedwait	= {mask, ptr, timeout, sigsetsize
+	 -> (syscall(Sysrt_sigtimedwait, a(ptr), a(timeout), a(sigsetsize)) : int)
+}
+const rt_sigqueueinfo	= {pid, sig, info
+	 -> (syscall(Sysrt_sigqueueinfo, a(sig), a(info)) : int)
+}
+const rt_sigsuspend	= {newset, sigsetsize
+	 -> (syscall(Sysrt_sigsuspend, a(sigsetsize)) : int)
+}
+const sigaltstack	= {uss, uoss
+	 -> (syscall(Syssigaltstack, a(uoss)) : int)
+}
+const utime	= {fname, times
+	 -> (syscall(Sysutime, a(times)) : int)
+}
+const mknod	= {path, mode, dev
+	 -> (syscall(Sysmknod, a(mode), a(dev)) : int)
+}
+const personality	= {per
+	 -> (syscall(Syspersonality) : int)
+}
+const ustat	= {dev, ubuf
+	 -> (syscall(Sysustat, a(ubuf)) : int)
+}
+const statfs	= {path, buf
+	 -> (syscall(Sysstatfs, a(buf)) : int)
+}
+const fstatfs	= {fd, buf
+	 -> (syscall(Sysfstatfs, a(buf)) : int)
+}
+const sysfs	= {option, arg1, arg2
+	 -> (syscall(Syssysfs, a(arg1), a(arg2)) : int)
+}
+const getpriority	= {which, who
+	 -> (syscall(Sysgetpriority, a(who)) : int)
+}
+const setpriority	= {which, who, prio
+	 -> (syscall(Syssetpriority, a(who), a(prio)) : int)
+}
+const sched_setparam	= {pid, param
+	 -> (syscall(Syssched_setparam, a(param)) : int)
+}
+const sched_getparam	= {pid, param
+	 -> (syscall(Syssched_getparam, a(param)) : int)
+}
+const sched_setscheduler	= {pid, policy, param
+	 -> (syscall(Syssched_setscheduler, a(policy), a(param)) : int)
+}
+const sched_getscheduler	= {pid
+	 -> (syscall(Syssched_getscheduler) : int)
+}
+const sched_get_priority_max	= {policy
+	 -> (syscall(Syssched_get_priority_max) : int)
+}
+const sched_get_priority_min	= {policy
+	 -> (syscall(Syssched_get_priority_min) : int)
+}
+const sched_rr_get_interval	= {pid, interval
+	 -> (syscall(Syssched_rr_get_interval, a(interval)) : int)
+}
+const mlock	= {addr, len
+	 -> (syscall(Sysmlock, a(len)) : int)
+}
+const munlock	= {addr, len
+	 -> (syscall(Sysmunlock, a(len)) : int)
+}
+const mlockall	= {how
+	 -> (syscall(Sysmlockall) : int)
+}
+const munlockall	= {
+	 -> (syscall(Sysmunlockall) : int)
+}
+const vhangup	= {
+	 -> (syscall(Sysvhangup) : int)
+}
+const pivot_root	= {
+	 -> (syscall(Syspivot_root) : int)
+}
+const sysctl	= {args
+	 -> (syscall(Syssysctl) : int)
+}
+const prctl	= {option, arg2, arg3, arg4, arg5
+	 -> (syscall(Sysprctl, a(arg2), a(arg3), a(arg4), a(arg5)) : int)
+}
+const arch_prctl	= {code, addr
+	 -> (syscall(Sysarch_prctl, a(addr)) : int)
+}
+const adjtimex	= {
+	 -> (syscall(Sysadjtimex) : int)
+}
+const setrlimit	= {resource, rlim
+	 -> (syscall(Syssetrlimit, a(rlim)) : int)
+}
+const chroot	= {path
+	 -> (syscall(Syschroot) : int)
+}
+const sync	= {
+	 -> (syscall(Syssync) : int)
+}
+const acct	= {path
+	 -> (syscall(Sysacct) : int)
+}
+const settimeofday	= {tv, tzp
+	 -> (syscall(Syssettimeofday, a(tzp)) : int)
+}
+const mount	= {specialfile, dir, filesystemtype, rwflag, data
+	 -> (syscall(Sysmount, a(dir), a(filesystemtype), a(rwflag), a(data)) : int)
+}
+const umount	= {path, flags
+	 -> (syscall(Sysumount, a(flags)) : int)
+}
+const swapon	= {name
+	 -> (syscall(Sysswapon) : int)
+}
+const swapoff	= {
+	 -> (syscall(Sysswapoff) : int)
+}
+const reboot	= {magic1, magic2, cmd, arg
+	 -> (syscall(Sysreboot, a(magic2), a(cmd), a(arg)) : int)
+}
+const sethostname	= {hostname, len
+	 -> (syscall(Syssethostname, a(len)) : int)
+}
+const setdomainname	= {name, len
+	 -> (syscall(Syssetdomainname, a(len)) : int)
+}
+const iopl	= {level
+	 -> (syscall(Sysiopl) : int)
+}
+const create_module	= {
+	 -> (syscall(Syscreate_module) : int)
+}
+const init_module	= {
+	 -> (syscall(Sysinit_module) : int)
+}
+const delete_module	= {
+	 -> (syscall(Sysdelete_module) : int)
+}
+const get_kernel_syms	= {
+	 -> (syscall(Sysget_kernel_syms) : int)
+}
+const query_module	= {
+	 -> (syscall(Sysquery_module) : int)
+}
+const quotactl	= {
+	 -> (syscall(Sysquotactl) : int)
+}
+const nfsservctl	= {
+	 -> (syscall(Sysnfsservctl) : int)
+}
+const getpmsg	= {
+	 -> (syscall(Sysgetpmsg) : int)
+}
+const putpmsg	= {
+	 -> (syscall(Sysputpmsg) : int)
+}
+const afs_syscall	= {
+	 -> (syscall(Sysafs_syscall) : int)
+}
+const tuxcall	= {
+	 -> (syscall(Systuxcall) : int)
+}
+const security	= {
+	 -> (syscall(Syssecurity) : int)
+}
+const gettid	= {
+	 -> (syscall(Sysgettid) : int)
+}
+const setxattr	= {
+	 -> (syscall(Syssetxattr) : int)
+}
+const lsetxattr	= {
+	 -> (syscall(Syslsetxattr) : int)
+}
+const fsetxattr	= {
+	 -> (syscall(Sysfsetxattr) : int)
+}
+const getxattr	= {
+	 -> (syscall(Sysgetxattr) : int)
+}
+const lgetxattr	= {
+	 -> (syscall(Syslgetxattr) : int)
+}
+const fgetxattr	= {
+	 -> (syscall(Sysfgetxattr) : int)
+}
+const listxattr	= {
+	 -> (syscall(Syslistxattr) : int)
+}
+const llistxattr	= {
+	 -> (syscall(Sysllistxattr) : int)
+}
+const flistxattr	= {
+	 -> (syscall(Sysflistxattr) : int)
+}
+const removexattr	= {
+	 -> (syscall(Sysremovexattr) : int)
+}
+const lremovexattr	= {
+	 -> (syscall(Syslremovexattr) : int)
+}
+const fremovexattr	= {
+	 -> (syscall(Sysfremovexattr) : int)
+}
+const tkill	= {tid, sig
+	 -> (syscall(Systkill, a(sig)) : int)
+}
+const time	= {tm
+	 -> (syscall(Systime) : int)
+}
+const sched_setaffinity	= {pid, len, user_mask_ptr
+	 -> (syscall(Syssched_setaffinity, a(len), a(user_mask_ptr)) : int)
+}
+const sched_getaffinity	= {pid, len, user_mask_ptr
+	 -> (syscall(Syssched_getaffinity, a(len), a(user_mask_ptr)) : int)
+}
+const set_thread_area	= {
+	 -> (syscall(Sysset_thread_area) : int)
+}
+const lookup_dcookie	= {
+	 -> (syscall(Syslookup_dcookie) : int)
+}
+const epoll_create	= {size
+	 -> (syscall(Sysepoll_create) : int)
+}
+const epoll_ctl_old	= {
+	 -> (syscall(Sysepoll_ctl_old) : int)
+}
+const epoll_wait_old	= {
+	 -> (syscall(Sysepoll_wait_old) : int)
+}
+const remap_file_pages	= {
+	 -> (syscall(Sysremap_file_pages) : int)
+}
+const set_tid_address	= {tidptr
+	 -> (syscall(Sysset_tid_address) : int)
+}
+const semtimedop	= {
+	 -> (syscall(Syssemtimedop) : int)
+}
+const fadvise64	= {fd, offset, len, advice
+	 -> (syscall(Sysfadvise64, a(offset), a(len), a(advice)) : int)
+}
+const timer_create	= {clock_id, evp, timerid
+	 -> (syscall(Systimer_create, a(evp), a(timerid)) : int)
+}
+const timer_settime	= {timerid, flags, new, old
+	 -> (syscall(Systimer_settime, a(flags), a(new), a(old)) : int)
+}
+const timer_gettime	= {timerid, setting
+	 -> (syscall(Systimer_gettime, a(setting)) : int)
+}
+const timer_getoverrun	= {timerid
+	 -> (syscall(Systimer_getoverrun) : int)
+}
+const timer_delete	= {timerid
+	 -> (syscall(Systimer_delete) : int)
+}
+const clock_nanosleep	= {which, flags, rqtp, rmtp
+	 -> (syscall(Sysclock_nanosleep, a(flags), a(rqtp), a(rmtp)) : int)
+}
+const epoll_wait	= {epfd, events, maxevents, timeout
+	 -> (syscall(Sysepoll_wait, a(events), a(maxevents), a(timeout)) : int)
+}
+const epoll_ctl	= {epfd, op, fd, event
+	 -> (syscall(Sysepoll_ctl, a(op), a(fd), a(event)) : int)
+}
+const tgkill	= {tgid, pid, sig
+	 -> (syscall(Systgkill, a(pid), a(sig)) : int)
+}
+const utimes	= {fname, tptr
+	 -> (syscall(Sysutimes, a(tptr)) : int)
+}
+const mbind	= {
+	 -> (syscall(Sysmbind) : int)
+}
+const set_mempolicy	= {
+	 -> (syscall(Sysset_mempolicy) : int)
+}
+const get_mempolicy	= {
+	 -> (syscall(Sysget_mempolicy) : int)
+}
+const mq_open	= {
+	 -> (syscall(Sysmq_open) : int)
+}
+const mq_unlink	= {
+	 -> (syscall(Sysmq_unlink) : int)
+}
+const mq_timedsend	= {
+	 -> (syscall(Sysmq_timedsend) : int)
+}
+const mq_timedreceive	= {
+	 -> (syscall(Sysmq_timedreceive) : int)
+}
+const mq_notify	= {
+	 -> (syscall(Sysmq_notify) : int)
+}
+const mq_getsetattr	= {
+	 -> (syscall(Sysmq_getsetattr) : int)
+}
+const kexec_load	= {
+	 -> (syscall(Syskexec_load) : int)
+}
+const waitid	= {idtype, id, info, options, rusage
+	 -> (syscall(Syswaitid, a(id), a(info), a(options), a(rusage)) : int)
+}
+const add_key	= {
+	 -> (syscall(Sysadd_key) : int)
+}
+const request_key	= {
+	 -> (syscall(Sysrequest_key) : int)
+}
+const keyctl	= {
+	 -> (syscall(Syskeyctl) : int)
+}
+const ioprio_set	= {
+	 -> (syscall(Sysioprio_set) : int)
+}
+const ioprio_get	= {
+	 -> (syscall(Sysioprio_get) : int)
+}
+const inotify_init	= {
+	 -> (syscall(Sysinotify_init) : int)
+}
+const inotify_add_watch	= {
+	 -> (syscall(Sysinotify_add_watch) : int)
+}
+const inotify_rm_watch	= {
+	 -> (syscall(Sysinotify_rm_watch) : int)
+}
+const migrate_pages	= {
+	 -> (syscall(Sysmigrate_pages) : int)
+}
+const openat	= {dfd, filename, flags, mode
+	 -> (syscall(Sysopenat, a(filename), a(flags), a(mode)) : int)
+}
+const mkdirat	= {dfd, pathname, mode
+	 -> (syscall(Sysmkdirat, a(pathname), a(mode)) : int)
+}
+const mknodat	= {dfd, filename, mode, dev
+	 -> (syscall(Sysmknodat, a(filename), a(mode), a(dev)) : int)
+}
+const fchownat	= {dfd, filename, uid, gid, flag
+	 -> (syscall(Sysfchownat, a(filename), a(uid), a(gid), a(flag)) : int)
+}
+const futimesat	= {dfd, filename, utimes
+	 -> (syscall(Sysfutimesat, a(filename), a(utimes)) : int)
+}
+const fstatat	= {dfd, pathname, statbuf, flag
+	 -> (syscall(Sysfstatat, a(pathname), a(statbuf), a(flag)) : int)
+}
+const unlinkat	= {dfd, pathname, flag
+	 -> (syscall(Sysunlinkat, a(pathname), a(flag)) : int)
+}
+const renameat	= {olddfd, oldname, newdfd, newname
+	 -> (syscall(Sysrenameat, a(oldname), a(newdfd), a(newname)) : int)
+}
+const linkat	= {olddfd, oldname, newdfd, newname, flag
+	 -> (syscall(Syslinkat, a(oldname), a(newdfd), a(newname), a(flag)) : int)
+}
+const symlinkat	= {oldname, newdfd, newname
+	 -> (syscall(Syssymlinkat, a(newdfd), a(newname)) : int)
+}
+const readlinkat	= {dfd, path, buf, bufsiz
+	 -> (syscall(Sysreadlinkat, a(path), a(buf), a(bufsiz)) : int)
+}
+const fchmodat	= {dfd, filename, mode
+	 -> (syscall(Sysfchmodat, a(filename), a(mode)) : int)
+}
+const faccessat	= {dfd, filename, amode
+	 -> (syscall(Sysfaccessat, a(filename), a(amode)) : int)
+}
+const pselect6	= {nfds, readfds, writefds, exceptfds, tsp, sig
+	 -> (syscall(Syspselect6, a(readfds), a(writefds), a(exceptfds), a(tsp), a(sig)) : int)
+}
+const ppoll	= {fds, nfds, tsp, sset, ssize
+	 -> (syscall(Sysppoll, a(nfds), a(tsp), a(sset), a(ssize)) : int)
+}
+const unshare	= {
+	 -> (syscall(Sysunshare) : int)
+}
+const set_robust_list	= {head, len
+	 -> (syscall(Sysset_robust_list, a(len)) : int)
+}
+const get_robust_list	= {pid, head, len
+	 -> (syscall(Sysget_robust_list, a(head), a(len)) : int)
+}
+const splice	= {
+	 -> (syscall(Syssplice) : int)
+}
+const tee	= {
+	 -> (syscall(Systee) : int)
+}
+const sync_file_range	= {
+	 -> (syscall(Syssync_file_range) : int)
+}
+const vmsplice	= {
+	 -> (syscall(Sysvmsplice) : int)
+}
+const move_pages	= {
+	 -> (syscall(Sysmove_pages) : int)
+}
+const utimensat	= {dfd, pathname, times, flags
+	 -> (syscall(Sysutimensat, a(pathname), a(times), a(flags)) : int)
+}
+const epoll_pwait	= {epfd, events, maxevents, timeout, mask
+	 -> (syscall(Sysepoll_pwait, a(events), a(maxevents), a(timeout), a(mask)) : int)
+}
+const signalfd	= {
+	 -> (syscall(Syssignalfd) : int)
+}
+const timerfd	= {
+	 -> (syscall(Systimerfd) : int)
+}
+const eventfd	= {initval
+	 -> (syscall(Syseventfd) : int)
+}
+const timerfd_settime	= {
+	 -> (syscall(Systimerfd_settime) : int)
+}
+const timerfd_gettime	= {
+	 -> (syscall(Systimerfd_gettime) : int)
+}
+const accept4	= {s, addr, namelen, flags
+	 -> (syscall(Sysaccept4, a(addr), a(namelen), a(flags)) : int)
+}
+const signalfd4	= {
+	 -> (syscall(Syssignalfd4) : int)
+}
+const eventfd2	= {initval, flags
+	 -> (syscall(Syseventfd2, a(flags)) : int)
+}
+const epoll_create1	= {flags
+	 -> (syscall(Sysepoll_create1) : int)
+}
+const dup3	= {oldfd, newfd, flags
+	 -> (syscall(Sysdup3, a(newfd), a(flags)) : int)
+}
+const pipe2	= {pipefds, flags
+	 -> (syscall(Syspipe2, a(flags)) : int)
+}
+const inotify_init1	= {
+	 -> (syscall(Sysinotify_init1) : int)
+}
+const preadv	= {
+	 -> (syscall(Syspreadv) : int)
+}
+const pwritev	= {
+	 -> (syscall(Syspwritev) : int)
+}
+const rt_tsigqueueinfo	= {
+	 -> (syscall(Sysrt_tsigqueueinfo) : int)
+}
+const perf_event_open	= {
+	 -> (syscall(Sysperf_event_open) : int)
+}
+const recvmmsg	= {s, msg, vlen, flags, timeout
+	 -> (syscall(Sysrecvmmsg, a(msg), a(vlen), a(flags), a(timeout)) : int)
+}
+const fanotify_init	= {
+	 -> (syscall(Sysfanotify_init) : int)
+}
+const fanotify_mark	= {
+	 -> (syscall(Sysfanotify_mark) : int)
+}
+const prlimit64	= {pid, resource, new, old
+	 -> (syscall(Sysprlimit64, a(resource), a(new), a(old)) : int)
+}
+const name_to_handle_at	= {
+	 -> (syscall(Sysname_to_handle_at) : int)
+}
+const open_by_handle_at	= {
+	 -> (syscall(Sysopen_by_handle_at) : int)
+}
+const clock_adjtime	= {
+	 -> (syscall(Sysclock_adjtime) : int)
+}
+const syncfs	= {fd
+	 -> (syscall(Syssyncfs) : int)
+}
+const sendmmsg	= {s, msg, vlen, flags
+	 -> (syscall(Syssendmmsg, a(msg), a(vlen), a(flags)) : int)
+}
+const setns	= {
+	 -> (syscall(Syssetns) : int)
+}
+const process_vm_readv	= {
+	 -> (syscall(Sysprocess_vm_readv) : int)
+}
+const process_vm_writev	= {
+	 -> (syscall(Sysprocess_vm_writev) : int)
+}
+const kcmp	= {
+	 -> (syscall(Syskcmp) : int)
+}
+const finit_module	= {
+	 -> (syscall(Sysfinit_module) : int)
 }
