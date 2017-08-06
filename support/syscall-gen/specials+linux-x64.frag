@@ -1,3 +1,6 @@
+/* syscalls that aren't in freebsd's syscalls.master */
+const Sysmemfd_create           : scno = 319
+
 /* getting to the os */
 extern const syscall	: (sc:scno, args:... -> int64)
 extern const sigreturn	: (-> void)
@@ -49,6 +52,7 @@ const getcwd	: (buf : byte[:] -> int64)
 const sendmsg	: (fd:fd, msg:msghdr#, flags:msgflags -> int64)
 const recvmsg	: (fd:fd, msg:msghdr#, flags:msgflags -> int64)
 const fallocate : (fd:fd, mode:fallocmode, off:off, len:off -> int64)
+const memfdcreate       : (name:byte[:], flags:mfdflags -> fd)
 
 /* signals */
 const sigaction	: (sig : signo, act : sigaction#, oact : sigaction# -> int)
@@ -186,6 +190,7 @@ const getcwd	= {buf;	-> syscall(Sysgetcwd, a(buf), a(buf.len))}
 const sendmsg	= {fd, msg, flags;	-> syscall(Syssendmsg, a(fd), msg, a(flags))}
 const recvmsg	= {fd, msg, flags;	-> syscall(Sysrecvmsg, a(fd), msg, a(flags))}
 const fallocate	= {fd, mode, off, len;	-> syscall(Sysfallocate, a(fd), a(mode),  a(off), a(len))}
+const memfdcreate      = {name, flags; -> (syscall(Sysmemfd_create, cstring(name), a(flags)) : fd)}
 
 /* file stuff */
 const pipe	= {fds;	-> syscall(Syspipe, a(fds))}
