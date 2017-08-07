@@ -1147,7 +1147,7 @@ readuse(Node *use, Stab *st, Vis vis)
 	}
 
 	if (!loaduse(p, fd, st, vis))
-		die("Could not load usefile %s from %s", use->use.name, p);
+		fatal(use, "unable to load %s (full path: %s)", use->use.name, p);
 	free(p);
 }
 
