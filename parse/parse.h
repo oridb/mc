@@ -97,14 +97,13 @@ struct Stab {
 	char *name;
 	char isfunc;
 
-	/* symbols */
-	Htab *dcl;	/* decls */
+	/* Contents of stab.
+	 * types and values are in separate namespaces. */
+	Htab *dcl;
+	Htab *env;	/* the syms we close over, if we're a function */
 	Htab *ty;	/* types */
 	Htab *tr;	/* traits */
 	Htab *uc;	/* union constructors */
-
-	/* not quite symbols */
-	Htab *env;	/* the syms closed over, if this is a function stab */
 	Htab *lbl;	/* labels */
 	Htab *impl;	/* trait implementations: really a set of implemented traits. */
 
@@ -410,16 +409,15 @@ void forcedcl(Stab *st, Node *dcl);
 void putucon(Stab *st, Ucon *uc);
 void putlbl(Stab *st, char *name, Node *lbl);
 
-void *getnsdcl(Stab *st, Node *n);
-Node *getdcl(Stab *st, Node *n);
-Type *gettype(Stab *st, Node *n);
-Trait *gettrait(Stab *st, Node *n);
-Ucon *getucon(Stab *st, Node *n);
-
 Stab *getns(Node *file, char *n);
+Node *getdcl(Stab *st, Node *n);
 Node *getclosed(Stab *st, Node *n);
 Node **getclosure(Stab *st, size_t *n);
+Type *gettype_l(Stab *st, Node *n);
+Type *gettype(Stab *st, Node *n);
 Node *getimpl(Stab *st, Node *impl);
+Trait *gettrait(Stab *st, Node *n);
+Ucon *getucon(Stab *st, Node *n);
 Node *getlbl(Stab *st, Srcloc loc, char *name);
 
 Stab *curstab(void);

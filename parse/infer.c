@@ -1383,7 +1383,7 @@ inferpat(Node **np, Node *val, Node ***bind, size_t *nbind)
 		ns = curstab();
 		if (args[0]->name.ns)
 			ns = getns(file, args[0]->name.ns);
-		s = getnsdcl(ns, args[0]);
+		s = getdcl(ns, args[0]);
 		if (s && !s->decl.ishidden) {
 			if (s->decl.isgeneric)
 				t = tysubst(s->decl.type, s->decl.type);
