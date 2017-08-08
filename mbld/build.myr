@@ -11,12 +11,15 @@ pkg bld =
 ;;
 
 const buildtarg = {b, targ
-	var g
+	var g, targs
 
 	g = b.deps
-	var outs = std.htgetv(g.targs, targ, [][:])
-	for o : outs
-		mark(b, o)
+	match std.htget(g.targs, targ)
+	| `std.Some t:	targs = t
+	| `std.None:	fatal("unknown target: {}\n", targ)
+	;;
+	for t : targs
+		mark(b, t)
 	;;
 	build(b, g)
 	-> !b.fail

@@ -9,17 +9,27 @@ use "subtest"
 use "config"
 
 pkg bld =
-	const test	: (b : build# -> bool)
+	const test	: (b : build#, targs : byte[:][:] -> bool)
 ;;
 
-const test = {b
+const test = {b, targs
 	var failed, ok
 	var tests
 
 	if !buildtarg(b, "test")
 		std.exit(1)
 	;;
-	tests = std.htgetv(b.deps.targs, "test", [][:])
+	if targs.len == 0
+		tests = std.htgetv(b.deps.targs, "test", [][:])
+	else
+		tests = [][:]
+		for t : targs
+			match std.htget(b.deps.targs, t)
+			| `std.Some tl:	std.sljoin(&tests, tl)
+			| `std.None:	std.fatal("unknown test {}\n", t)
+			;;
+		;;
+	;;
 	ok = true
 	failed = [][:]
 	for t in tests

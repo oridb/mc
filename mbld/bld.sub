@@ -1,6 +1,5 @@
 bin mbld =
 	build.myr
-	clean.myr
 	deps.myr
 	libs.myr
 	install.myr

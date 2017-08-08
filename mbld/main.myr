@@ -91,15 +91,17 @@ const main = {args : byte[:][:]
 		if cmd.args.len == 0
 			ok = bld.buildtarg(b, "all")
 		else
-			for c : cmd.args
-				match c
-				| "clean":	r = bld.clean(b)
-				| "install":	r = bld.install(b)
-				| "uninstall":	r = bld.uninstall(b)
-				| "test":	r = bld.test(b)
-				| target:	r = bld.buildtarg(b, target)
+			match cmd.args[0]
+			| "clean":	r = bld.clean(b)
+			| "install":	r = bld.install(b)
+			| "uninstall":	r = bld.uninstall(b)
+			| "test":	r = bld.test(b, cmd.args[1:])
+			| "list":	r = show(b, cmd.args[1:])
+			| _:
+				ok = true
+				for target : cmd.args
+					r = ok && bld.buildtarg(b, target)
 				;;
-				ok = ok && r
 			;;
 		;;
 	;;
@@ -166,3 +168,8 @@ const findproj = {b
 	;;
 }
 
+const show = {b, targs
+	var k = std.htkeys(b.targs)
+	std.put("{j=\n}\n", k)
+	-> true
+}
