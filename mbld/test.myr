@@ -32,7 +32,7 @@ const test = {b, targs
 	;;
 	ok = true
 	failed = [][:]
-	for t in tests
+	for t : tests
 		if !runtest(b, t, &failed)
 			ok = false
 		;;
@@ -56,7 +56,7 @@ const test = {b, targs
 const printfailed = {failed
 	if failed.len > 0
 		mbldput("FAILURES: {}\n", failed.len)
-		for t in failed
+		for t : failed
 			mbldput("\t{}\n", t)
 		;;
 	;;

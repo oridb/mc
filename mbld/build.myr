@@ -16,7 +16,7 @@ const buildtarg = {b, targ
 	g = b.deps
 	match std.htget(g.targs, targ)
 	| `std.Some t:	targs = t
-	| `std.None:	fatal("unknown target: {}\n", targ)
+	| `std.None:	std.fatal("unknown target: {}\n", targ)
 	;;
 	for t : targs
 		mark(b, t)
