@@ -237,7 +237,7 @@ const mandeps = {b, name, mt
 		n = leaf(b.deps, p)
 		match std.strfind(pg, ".")
 		| `std.None:	std.fatal("manpage {} missing section\n", pg)
-		| `std.Some i:	r = std.pathcat(config.Manpath, pg[i + 1:])
+		| `std.Some i:	r = std.strcat(config.Manpath, pg[i + 1:])
 		;;
 		n.instdir = r
 		n.instmod = 0o644
