@@ -393,7 +393,7 @@ compare(Flattenctx *s, Node *n, int fields)
 	} else if (fields) {
 		r = comparecomplex(s, n, exprop(n));
 	} else {
-		fatal(n, "unsupported comparison on values");
+		fatal(n, "unsupported comparison on type %s", tystr(ty));
 	}
 	r->expr.type = mktype(n->loc, Tybool);
 	return r;
