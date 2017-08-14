@@ -86,6 +86,7 @@ B multistr		E	0
 B generic	E	42
 B genericval	E	42
 B trait-builtin	E	42
+B gtrait	P	'`std.Before '
 B emptytrait	E	123
 B traitimpl	P	246,44,meee
 # B compoundimpl	P	intptr,charptr BUGGERED

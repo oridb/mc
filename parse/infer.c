@@ -1740,6 +1740,7 @@ specializeimpl(Node *n)
 	Type *ty;
 	Trait *t;
 	size_t i, j;
+	int generic;
 
 	t = gettrait(curstab(), n->impl.traitname);
 	if (!t)
@@ -1787,6 +1788,10 @@ specializeimpl(Node *n)
 		ty = tyspecialize(type(proto), subst, delayed, NULL);
 		substfree(subst);
 
+		generic = hasparams(ty);
+		if (generic)
+			ingeneric++;
+
 		inferdecl(dcl);
 		unify(n, type(dcl), ty);
 
@@ -1812,6 +1817,9 @@ specializeimpl(Node *n)
 					tystr(ty));
 		dcl->decl.vis = t->vis;
 		lappend(&impldecl, &nimpldecl, dcl);
+
+		if (generic)
+			ingeneric--;
 	}
 	popenv(n->impl.type->env);
 }
