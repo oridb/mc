@@ -763,6 +763,7 @@ int
 tyeq_rec(Type *a, Type *b, Bitset *avisited, Bitset *bvisited, int search)
 {
 	Type *x, *y;
+	int atid, btid;
 	size_t i;
 	int ret;
 
@@ -786,9 +787,13 @@ tyeq_rec(Type *a, Type *b, Bitset *avisited, Bitset *bvisited, int search)
 
 	if (bshas(avisited, a->tid) && bshas(bvisited, b->tid))
 		return 1;
+	if (bshas(bvisited, a->tid) && bshas(avisited, b->tid))
+		return 1;
 
 	bsput(avisited, a->tid);
 	bsput(bvisited, b->tid);
+	atid = a->tid;
+	btid = b->tid;
 	ret = 1;
 
 	switch (a->type) {
