@@ -21,6 +21,7 @@ myrtypes = {
 
     'unsigned char':            'byte',
     'unsigned short':           'uint16',
+    'unsigned':                 'uint',
     'unsigned int':             'uint',
     'unsigned long':            'uint64',
     'unsigned long long':       'uint64',
@@ -61,6 +62,16 @@ myrtypes = {
     'int16':                    'int16',
     'int32':                    'int32',
     'int64':                    'int64',
+
+    'i8':                       'int8',
+    'i16':                      'int16',
+    'i32':                      'int32',
+    'i64':                      'int64',
+
+    'u8':                       'uint8',
+    'u16':                      'uint16',
+    'u32':                      'uint32',
+    'u64':                      'uint64',
 
     '__int64_t':                'int64',
 
@@ -309,9 +320,11 @@ if __name__ == '__main__':
     prehdr = '''
 #define __builtin_va_list int
 #define __inline
+#define __inline__
 #define __restrict
 #define __attribute__(_)
 #define __asm(x)
+#define __asm__(x)
 #define __extension__
 #define __signed__
 #define __extern_inline__
@@ -333,15 +346,24 @@ if __name__ == '__main__':
     # each one ahead of time, and see if it works.
     #
     # if so, we generate a mega-header with all the types.
-
-    for hdr in os.listdir('/usr/include/sys'):
+    syshdr = []
+    if os.path.exists("/usr/include/sys"):
+        syshdr = ["sys/" + h for h in os.listdir('/usr/include/sys')]
+    if os.path.exists("/usr/include/linux"):
+        syshdr = syshdr + ["linux/" + h for h in os.listdir("/usr/include/linux")]
+    # it seems that sys headers can also be stashed here. Shit.
+    if os.path.exists("/usr/include/x86_64-linux-gnu/sys"):
+        syshdr = syshdr + ["linux/" + h for h in os.listdir("/usr/include/linux")]
+    for hdr in syshdr:
         print 'trying {}'.format(hdr)
+        if not hdr.endswith(".h"):
+            continue
         try:
-            include = prehdr + '\n#include <sys/{}>'.format(hdr)
+            include = prehdr + '\n#include <{}>'.format(hdr)
             with open('/tmp/myr-includes.h', 'w') as f:
                 f.write(include)
             pycparser.parse_file('/tmp/myr-includes.h', use_cpp=True)
-            includes.append('#include <sys/{}>'.format(hdr))
+            includes.append('#include <{}>'.format(hdr))
         except Exception:
             print '...skip'
 

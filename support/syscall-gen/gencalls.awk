@@ -11,15 +11,11 @@ BEGIN {
 	print "  edit with caution.";
 	print " */";
 	ARGC=1
-	if (systype =="freebsd" || systype == "linux") {
+	masterfmt = 1
+	if (systype =="freebsd") {
 		Typefield = 3;
 		Protofield = 4;
 		renamings["sys_exit"] = "exit"
-		if (systype == "linux") {
-			strippfx="^(linux_|linux_new)"
-			renamings["mmap2"] = "mmap";
-			renamings["sys_futex"] = "futex";
-		}
 	} else if (systype == "openbsd") {
 		Typefield = 2;
 		Protofield = 3;
@@ -27,6 +23,13 @@ BEGIN {
 	} else if (systype == "netbsd") {
 		Typefield = 2;
 		Protofield = 4;
+	} else if (systype == "linux") {
+		Typefield = 0;
+		Protofield = 4;
+		strippfx="^(linux_|linux_new)"
+		loadtbl()
+		Protofield=2
+		masterfmt = 0
 	} else {
 		print "unknown system " ARGV[1];
 		exit 1;
@@ -66,15 +69,17 @@ END {
 		printf("%s\n", sccall[i])
 }
 
-$Typefield == "STD" || (systype == "linux" && $Typefield == "NOPROTO") {
-	parse();
-	if (length("const Sys") + length(name) < 16)
+$Typefield == "STD" || (!masterfmt && $1 == "asmlinkage") {
+	if (!parse())
+		next;
+	numcst = "const Sys"name
+	if (length(numcst) < 16)
 		tabs="\t\t\t"
-	else if (length("const Sys") + length(name) < 24)
+	else if (length(numcst) < 24)
 		tabs="\t\t"
 	else
 		tabs = "\t"
-	num = sprintf("const Sys%s%s: scno = %d", name, tabs, number);
+	num = sprintf("%s%s: scno = %d", numcst, tabs, numbertab[name]);
 	scnums[nnums++] = num
 
 	if (nocode)
@@ -118,11 +123,13 @@ function err(was, wanted) {
 }
 
 function myrtype(t) {
-	gsub("[[:space:]]", "", t)
+	gsub(" *$", "", t)
 	if (systype == "linux")
 		gsub("^l_", "", t)
 
 	if (t == "char")		t = "byte";
+	if (t == "unsigned char")       t = "byte";
+	if (t == "unsigned")	        t = "uint";
 	if (t == "unsigned int")	t = "uint";
 	if (t == "unsigned long")	t = "uint64";
 	if (t == "long")		t = "int64";
@@ -134,6 +141,9 @@ function myrtype(t) {
 	if (t == "acl_perm_t")		t = "aclperm";
 	if (t == "acl_entry_type_t")	t = "aclenttype";
 	if (t == "mode_t")		t = "filemode"
+	if (t == "umode_t")		t = "filemode"
+	if (t == "aio_context_t")	t = "aiocontext"
+	if (t == "qid_t")		t = "int32"
 	# myrddin sizes are signed
 	if (t == "ssize_t")		t = "size";
 	if (t == "__socklen_t")		t = "int32";
@@ -149,6 +159,11 @@ function myrtype(t) {
 	if (t == "caddr_t")		t = "void#";
 
 	# linux stuff
+	if (t == "u8")			t = "uint64";
+	if (t == "u16")			t = "uint64";
+	if (t == "u32")			t = "uint64";
+	if (t == "u64")			t = "uint64";
+	if (t == "qid_t")		t = "int32";
 	if (t == "times_argv")		t = "tms";
 	if (t == "newstat")		t = "statbuf";
 	if (t == "stat64")		t = "statbuf";
@@ -157,6 +172,12 @@ function myrtype(t) {
 	if (t == "user_cap_data")	t = "capuserdata";
 	if (t == "epoll_event")		t = "epollevt";
 	if (t == "statfs_buf")		t = "statfs";
+	if (t == "user_msghdr")		t = "int32"
+	if (t == "msg")			t = "void#"
+	if (t == "mqd_t")		t = "int"
+	if (t == "bpf_attr")		t = "bpfgattr"
+	if (t == "key_serial_t")	t = "int32"
+	if (t == "linux_dirent64")	t = "dirent64"
 	if (t == "linux_robust_list_head")
 		t = "robust_list_head"
 
@@ -188,37 +209,35 @@ function unkeyword(kw) {
 }
 
 function parse() {
-	number = $1;
 	type = $Typefield;
 
 	argc = 0
 	nocode = 0
-	if ($NF == "}") {
-		funcalias="";
-		argalias="";
+	if (!masterfmt) {
+		end=NF
+	} else if ($NF == "}") {
 		rettype="int";
 		end=NF;
 	} else if ($(NF-1) == "}") {
-		funcalias=$(NF-1);
-		argalias="";
 		end=NF-1;
 	} else {
-		funcalias=$(NF-2);
-		argalias=$(NF-1);
 		rettype=$NF;
 		end=NF-3;
 	}
 
 	f = Protofield; 
-	# openbsd puts flags after the kind of call
-	if (systype == "openbsd" && $f != "{")
-		f++;
-	if ($f != "{")
-		err($f, "{");
-	f++
-	if ($end != "}")
-		err($f, "closing }");
-	end--;
+	if (masterfmt) {
+		numbertab[name] = $1;
+		# openbsd puts flags after the kind of call
+		if (systype == "openbsd" && $f != "{")
+			f++;
+		if ($f != "{")
+			err($f, "{");
+		f++
+		if ($end != "}")
+			err($f, "closing }");
+		end--;
+	}
 	if ($end != ";")
 		err($end, ";");
 	end--;
@@ -235,19 +254,20 @@ function parse() {
 	name=$f;
 	if (strippfx)
 		gsub(strippfx, "", name);
+	if (!masterfmt && !renamings[name])
+		return 0;
 	if (renamings[name])
 		name=renamings[name];
 	if (special[name])
 		nocode = 1
 	f++;
-
 	if ($f != "(")
 		err($f, "(");
 	f++; 
 	if (f == end) {
 		if ($f != "void")
-			parserr($f, "argument definition")
-		return
+			err($f, "argument definition")
+		return 1;
 	}
 
 	while (f <= end) {
@@ -256,29 +276,50 @@ function parse() {
 		while (f < end && $(f+1) != ",") {
 			if ($f == "...")
 				f++;
-			if (argtype[argc] != "" && oldf != "*" && $f != "*")
-				argtype[argc] = argtype[argc]" ";
-			if ($f == "*")
+			if ($f == "const" || $f == "struct" ||
+			    $f == "__restrict" || $f == "volatile" ||
+			    $f == "union" || $f == "__user") {
+				f++;
+				continue;
+			}
+			if ($f == "*") {
+				argtype[argc] = myrtype(argtype[argc]);
 				$f="#"
-			if ($f != "const" && $f != "struct" &&
-			    $f != "__restrict" && $f != "volatile" &&
-			    $f != "union") {
-				argtype[argc] = myrtype(argtype[argc]$f);
-				if ($f != "#" && !knowntypes[myrtype($f)] && !wanttype[$f]) {
-					t = cname($f)
-					wanttype[t] = 1
-					printf("%s\n", t) > "want.txt"
-				}
+			}
+			if ($f == "#") {
+				argtype[argc] = myrtype(argtype[argc])
+			}
+			if (argtype[argc] != "" && oldf != "*" && $f != "#" && $f != ",") {
+				argtype[argc] = argtype[argc]" ";
+			}
+			argtype[argc] = argtype[argc]$f;
+			if ($f != "#" && !knowntypes[myrtype($f)] && !wanttype[$f]) {
+				t = cname($f)
+				wanttype[t] = 1
+				printf("%s\n", t) > "want.txt"
 			}
 			oldf = $f;
 			f++
 		}
-		if (argtype[argc] == "")
-			err($f, "argument definition")
-		argname[argc]=unkeyword($f);
-		f += 2;			# skip name, and any comma
+		# unnamed protos: f(int)
+		if (argtype[argc] == "" || $f == "*") {
+			argname[argc] = "_a"argc
+			if ($f == "*")
+				argtype[argc] = myrtype(argtype[argc])"#"
+			else
+				argtype[argc] = myrtype($f)
+		} else {
+			argname[argc]=unkeyword($f);
+		}
+		argtype[argc] = myrtype(argtype[argc]);
+		# skip name
+		if ($f != ",")
+			f++;
+		# skip comma:
+		f++;
 		argc++
 	}
+	return 1;
 }
 
 function loadtypes() {
@@ -325,4 +366,23 @@ function loadspecials() {
 			specialbody[nspecialbody++] = ln;
 		}
 	}
+}
+
+function loadtbl() {
+	path = "syscalls+"sys"-"arch".tbl";
+	while ((getline ln < path) > 0) {
+		split(ln, sp);
+		if (sp[2] != "common" && sp[2] != "64")
+			continue;
+		gsub("/.*$", "", sp[4])
+		renamings[sp[4]] = sp[3];
+		numbertab[sp[3]] = sp[1];
+	}
+	renamings["sys_mmap_pgoff"] = "mmap";
+	renamings["sys_pread64"] = "pread";
+	renamings["sys_pwrite64"] = "pwrite";
+	renamings["sys_fadvise64"] = "fadvise";
+	renamings["sys_prlimit64"] = "prlimit";
+	# obsoletes
+	renamings["sys_getdents"] = "";
 }

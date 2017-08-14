@@ -1,6 +1,3 @@
-/* syscalls that aren't in freebsd's syscalls.master */
-const Sysmemfd_create           : scno = 319
-
 /* getting to the os */
 extern const syscall	: (sc:scno, args:... -> int64)
 extern const sigreturn	: (-> void)

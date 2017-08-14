@@ -34,10 +34,11 @@ type pollevt	= uint16
 type futexop	= uint32
 type signo	= int32
 type sigflags	= int64
-
 type fallocmode	= uint32
-
 type mfdflags	= uint32
+type aiocontext	= uint64
+type msg	= void#
+
 
 type clock = union
 	`Clockrealtime
@@ -103,6 +104,34 @@ type timeval = struct
 	usec	: uint64
 ;;
 
+type timex = struct
+        modes		: uint     	/* mode selector */
+        offset		: int64 	/* time offset (usec) */
+        freq		: int64		/* frequency offset (scaled ppm) */
+        maxerror	: int64		/* maximum error (usec) */
+        esterror	: int64		/* estimated error (usec) */
+        status		: int             /* clock command/status */
+        constant	: int64		/* pll time constant */
+        precision	: int64		/* clock precision (usec) (read only) */
+        tolerance	: int64		/* clock frequency tolerance (ppm) */
+        time		: timeval	/* (read only, except for ADJ_SETOFFSET) */
+        tick		: int64		/* (modified) usecs between clock ticks */
+
+        ppsfreq		: int64		/* pps frequency (scaled ppm) (ro) */
+        jitter		: int64		/* pps jitter (us) (ro) */
+        shift		: int		/* interval duration (s) (shift) (ro) */
+        stabil		: int64		/* pps stability (scaled ppm) (ro) */
+        jitcnt		: int64		/* jitter limit exceeded (ro) */
+        calcnt		: int64		/* calibration intervals (ro) */
+        errcnt		: int64		/* calibration errors (ro) */
+        stbcnt		: int64		/* stability limit exceeded (ro) */
+
+        tai		: int		/* TAI offset (ro) */
+
+	__pad		: int[11]
+;;
+
+
 type rusage = struct
 	utime	: timeval	/* user time */
 	stime	: timeval	/* system time */
@@ -111,6 +140,24 @@ type rusage = struct
 
 type sched_param = struct
 	priority	: int
+;;
+
+type sched_attr = struct
+        size	: uint32
+        sched_policy	: uint32
+        sched_flags	: uint64
+
+        /* SCHED_NORMAL, SCHED_BATCH */
+        sched_nice	: int32
+
+        /* SCHED_FIFO, SCHED_RR */
+        sched_priority	: uint32
+
+        /* SCHED_DEADLINE */
+        sched_runtime	: uint64
+        sched_deadline	: uint64
+        sched_period	: uint64
+
 ;;
 
 type statbuf = struct
@@ -129,6 +176,28 @@ type statbuf = struct
 	mtime	: timespec
 	ctime	: timespec
 	__pad1	: uint64[3]
+;;
+
+type statfs = struct
+	kind	: uint64
+	bsize	: uint64
+	blocks	: uint64
+	bfree	: uint64
+	bavail	: uint64
+	files	: uint64
+	ffree	: uint64
+	fsid	: int[2]
+	namelen	: uint64
+	frsize	: uint64
+	flags	: uint64
+	spare	: uint64[4]
+;;
+
+type ustat = struct
+ 	tfree	: uint32;		/* Number of free blocks.  */
+    	tinode	: uint64;		/* Number of free inodes.  */
+	fname	: byte[6]
+	fpack	: byte[6]
 ;;
 
 type dirent64 = struct
@@ -178,6 +247,45 @@ type sockaddr_storage = struct
 	__pad	: byte[112]
 ;;
 
+type bpfgattr = void#
+type bpfmapattr = struct
+	maptype	: uint32
+	keysz	: uint32
+	valsz	: uint32
+	mapents	: uint32
+	mapflg	: uint32
+;;
+
+type bpfeltattr = struct
+	fd	: uint32
+	key	: uint64
+	val	: uint64
+	flg	: uint64
+;;
+
+type bpfprogattr = struct
+	kind	: uint32
+	insncnt	: uint32
+	insns	: uint64
+	license	: uint64
+	loglev	: uint32
+	logsz	: uint32
+	logbuf	: uint64
+	kvers	: uint32
+;;
+
+type bpfobjattr = struct
+	path	: uint64
+	fd	: uint32
+;;
+
+type bfpattachattr = struct
+	targfd	: uint32
+	fd	: uint32
+	kind	: uint32
+	flags	: uint32
+;;
+
 type epollevt = struct
 	events	: epollevttype
 	data	: byte[8]
@@ -187,6 +295,12 @@ type pollfd = struct
 	fd	: fd
 	events	: pollevt
 	revents	: pollevt
+;;
+
+type file_handle = struct
+	bytes	: uint
+	kind	: int
+	handle	: byte[...]
 ;;
 
 type iovec = struct
@@ -213,6 +327,31 @@ type msghdr = struct
 	flags		: msgflags
 ;;
 
+type getcpu_cache = struct
+	__opaque	: byte[128]
+;;
+
+type perf_event_attr = struct
+	kind		: uint32
+	size		: uint32
+	config		: uint64
+	timing		: uint64	/* frequency or period */
+	samplekind	: uint64
+	readformat	: uint64
+	flags		: uint64
+	wakeups		: uint32	/* events or watermarks */
+	addr		: uint32	/* can also be extension of config */
+	len		: uint32	/* can also be extension of config1 */
+	brsamplekind	: uint64
+	uregs		: uint64
+	ustack		: uint32
+	clockid		: int32
+	intrregs	: uint64
+	auxwatermark	: uint32
+	samplestack	: uint16
+	reserved	: uint16
+;;
+
 type mmsghdr = struct
 	hdr	: msghdr
 	len	: uint32
@@ -234,6 +373,13 @@ type capuserdata = struct
 	effective	: uint32
 	permitted	: uint32
 	inheritable	: uint32
+;;
+
+type kexec_segment = struct
+	buf	: void#
+	bufsz	: size
+	mem	: void#
+	memsz	: size
 ;;
 
 /* clone options */
