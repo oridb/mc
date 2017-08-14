@@ -1,176 +1,89 @@
 use std
 
 use "build"
-use "clean"
-use "deps"
 use "opts"
-use "parse"
 use "types"
 use "util"
-use "syssel"
 use "subtest"
 
 use "config"
 
 pkg bld =
-	const test	: (b : build# -> bool)
+	const test	: (b : build#, targs : byte[:][:] -> bool)
 ;;
 
-const test = {b
-	var tests : (byte[:][:], byte[:])[:]
+const test = {b, targs
 	var failed, ok
-	var bincmd
+	var tests
 
-	/* build with the test tag */
-	addsysattrs(b, ["test"][:])
-	/* no implicit tests to run */
-	tests = [][:]
-	buildall(b)
-	setdir(b, "")
-        for tn in b.all
-		match gettarg(b.targs, tn)
-		| `Bin bt:      std.sljoin(&tests, buildtests(b, bt))
-		| `Lib lt:	std.sljoin(&tests, buildtests(b, lt))
-		| _:	/* nothing */
-		;;
-        ;;
-	for tn in b.all
-		match gettarg(b.targs, tn)
-		| `Bin t:
-			if !t.istest
-				continue
+	if !buildtarg(b, "test")
+		std.exit(1)
+	;;
+	if targs.len == 0
+		tests = std.htgetv(b.deps.targs, "test", [][:])
+	else
+		tests = [][:]
+		for t : targs
+			match std.htget(b.deps.targs, t)
+			| `std.Some tl:	std.sljoin(&tests, tl)
+			| `std.None:	std.fatal("unknown test {}\n", t)
 			;;
-			if t.incpath.len == 0 || !std.sleq(t.incpath[0], ".")
-				std.slput(&t.incpath, 0, std.sldup("."))
-			;;
-			buildbin(b, t, false)
-			bincmd = std.sldup([std.strcat("./", t.name)][:])
-			std.slpush(&tests, (bincmd, std.sldup(t.dir)))
-		| `Cmd t:
-			if !t.istest
-				continue
-			;;
-			std.slpush(&tests, (dupcmd(t.cmd), std.sldup(t.dir)))
-		| _:
-			/* skip */
 		;;
 	;;
-
 	ok = true
 	failed = [][:]
-	for (c, dir) in tests
-		setdir(b, dir)
-		if !runtest(b, c, &failed)
+	for t : tests
+		if !runtest(b, t, &failed)
 			ok = false
 		;;
+	;;
+	std.chdir(b.basedir)
 
-	;;
-	for (bin, dir) in tests
-		freecmd(bin)
-		std.slfree(dir)
-	;;
 	if tests.len == 0
 		-> true
 	;;
 
 	printfailed(failed)
-	for f in failed
-		std.slfree(f)
-	;;
 	if ok
 		mbldput("TESTS PASSED\n")
 	else
 		mbldput("TESTS FAILED\n")
 	;;
 	std.slfree(failed)
-	std.slfree(tests)
 	-> ok
 }
 
 const printfailed = {failed
 	if failed.len > 0
 		mbldput("FAILURES: {}\n", failed.len)
-		for t in failed
+		for t : failed
 			mbldput("\t{}\n", t)
 		;;
 	;;
 }
 
-const dupcmd = {cmd
-	var ret
-
-	ret = [][:]
-	for c in cmd
-		std.slpush(&ret, std.sldup(c))
-	;;
-	-> ret
-}
-
-const freecmd = {cmd
-	for c in cmd
-		std.slfree(c)
-	;;
-	std.slfree(cmd)
-}
-
-const buildtests = {b, targ
-	var tt, bin, tests, incpath, libdeps
-	var cmd
-
-	tests = [][:]
-	setdir(b, targ.dir)
-	for s in targ.inputs
-		match testpath(s)
-		| `std.None: /* nothing to do */
-		| `std.Some path:
-			bin = srcswapsuffix(path, "")
-			incpath = std.sldup(targ.incpath)
-			libdeps = std.sldup(targ.libdeps)
-			std.sljoin(&libdeps, targ.tstdeps)
-			tt = [
-				.name = bin,
-				.dir = targ.dir,
-				.inputs = [path][:],
-				.install = false,
-				.libdeps = libdeps,
-				.incpath = std.slput(&incpath, 0, "."),
-			]
-
-			buildbin(b, &tt, true)
-			cmd = std.sldup([std.strcat("./", bin)][:])
-			std.slpush(&tests, (cmd, std.sldup(targ.dir)))
-			std.slfree(tt.libdeps)
-			std.slfree(tt.incpath)
-			std.slfree(path)
-		;;
-	;;
-	-> tests
-}
-
-const runtest = {b, cmd, failed
-	var res, log, logfd, p
+const runtest = {b, n, failed
+	var dir, res, log, logfd
 	var sub
 
-	mbldput("run")
-	for c in cmd
-		p = std.pathcat(b.curdir, c)
-		mbldput(" {}", p)
-		std.slfree(p)
-	;;
-	mbldput(":\t")
-	match std.spork(cmd)
+	mbldput("run {}: ", n.lbl)
+	dir = std.pathcat(b.basedir, n.wdir)
+	std.chdir(dir)
+	std.slfree(dir)
+	match std.spork(n.cmd)
 	| `std.Err m:
 		std.fatal("\nunable to run test: {}\n", m)
 	| `std.Ok (pid, infd, outfd):
-		log = std.strcat(cmd[0], ".log")
+		log = std.strcat(std.basename(n.lbl), ".log")
 		logfd = std.try(std.openmode(log, std.Owronly | std.Ocreat, 0o644))
-		sub = showsub(b, cmd[0], outfd, logfd, failed)
+		sub = showsub(b, n.lbl, outfd, logfd, failed)
 		std.slfree(log)
 		std.close(infd)
 		std.close(outfd)
 
 		res = false
 		match std.wait(pid)
+		| `std.Waiterror:	mbldput("FUCK pid {}\n", pid)
 		| `std.Wfailure:	mbldput("FAIL\n")
 		| `std.Wsignalled:	mbldput("CRASH\n")
 		| `std.Wsuccess:
@@ -180,33 +93,11 @@ const runtest = {b, cmd, failed
 			| `std.Some r:	res = r
 			| `std.None:	mbldput("PASS\n")
 			;;
-		| `std.Waiterror:	mbldput("failed waiting for pid {}\n", pid)
 		;;
 		if !res
-			p = std.pathcat(b.curdir, cmd[0])
-			std.slpush(failed, p)
+			std.slpush(failed, std.fmt("{j= }", n.cmd))
 		;;
 	;;
 	-> res
-}
-
-const testpath = {s
-	var path, file
-
-	path = std.pathcat("./test", s)
-	if std.fexists(path)
-		-> `std.Some path
-	;;
-	match std.strfind(s, "+")
-	| `std.None:
-	| `std.Some idx:
-		file = std.strcat(s[:idx], ".myr")
-		path = std.pathcat("./test", file)
-		std.slfree(file)
-		if std.fexists(path)
-			-> `std.Some path
-		;;
-	;;
-	-> `std.None
 }
 

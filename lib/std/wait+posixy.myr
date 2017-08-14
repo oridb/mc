@@ -12,13 +12,27 @@ pkg std =
 	;;
 
 	const wait	: (pid : pid -> waitstatus)
+	const waitany	: (-> (pid, waitstatus))
 ;;
 
+const waitany = {
+	match dowait(-1)
+	| (p, st):	-> ((p : pid), st)
+	;;
+}
+
 const wait = {pid
-	var st
+	match dowait(pid)
+	| (_, st):	-> st
+	;;
+}
+
+const dowait = {pid
+	var st, p
 
 :again
-	if sys.waitpid((pid : sys.pid), &st, 0) > 0
+	p = sys.waitpid((pid : sys.pid), &st, 0)
+	if p > 0
 		match sys.waitstatus(st)
 		/* 
 		when a process stops, eg, if paused by a debugger,
@@ -26,16 +40,12 @@ const wait = {pid
 		a process exits. Loop instead.
 		*/
 		| `sys.Waitstop sig:	goto again
-		| `sys.Waitfail fail:	-> `Waiterror
-		| `sys.Waitsig sig:	-> `Wsignalled
-		| `sys.Waitexit status:
-			if status == 0
-				-> `Wsuccess
-			else
-				-> `Wfailure
-			;;
+		| `sys.Waitfail fail:	-> (p, `Waiterror)
+		| `sys.Waitsig sig:	-> (p, `Wsignalled)
+		| `sys.Waitexit 0:	-> (p, `Wsuccess)
+		| `sys.Waitexit _:	-> (p, `Wfailure)
 		;;
 	;;
-	-> `Waiterror
+	-> (-1, `Waiterror)
 }
 

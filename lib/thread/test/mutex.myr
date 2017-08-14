@@ -1,7 +1,7 @@
 use std
 use thread
 
-use "util"
+use thrtestutil
 
 const Nherd = 20
 
@@ -14,7 +14,7 @@ const main = {
 	val = 0
 
 	mtx = thread.mkmtx()
-	mkherd(Nherd, incvar)
+	thrtestutil.mkherd(Nherd, incvar)
 	while thread.xget(&done) != Nherd
 		/* nothing */
 	;;

@@ -74,7 +74,7 @@ const lasterr = {
 	err = cstrconv(errbuf[:])
 	if strhas(err, "no error")
 		-> Enone
-	elif strhas(err, "already exists")
+	elif strhas(err, "already exists") || strhas(err, "is a directory")
 		-> Eexist
 	elif strhas(err, "read or write too large")
 		-> Erange

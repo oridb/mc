@@ -1,18 +1,14 @@
+use "types"
+use "memops"
+
 pkg std =
 	generic sleq	: (a : @a[:], b : @a[:] -> bool)
 ;;
 
 generic sleq = {a, b
-	var i
-
-	if a.len != b.len
+	if a.len == b.len
+		-> memeq((a : byte#), (b : byte#), a.len)
+	else
 		-> false
 	;;
-
-	for i = 0; i < a.len; i++
-		if a[i] != b[i]
-			-> false
-		;;
-	;;
-	-> true
 }

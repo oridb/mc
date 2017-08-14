@@ -9,7 +9,7 @@ pkg bld =
 		line	: int
 		targ	: byte[:]
 		sysattrs	: std.htab(byte[:], (int, int, int))#
-		_match	: std.htab(byte[:], int)#
+		_match	: std.htab(byte[:], (int, int))#
 		_best	: std.htab(byte[:], @a)#
 	;;
 
@@ -60,10 +60,11 @@ generic sysseladd = {syssel, f
 }
 
 generic sysseladdlist = {syssel, base, attrs, val
-	var nmatch, curbest, n, v
+	var nmatch, vscore, n, v, s
 
 	nmatch = 0
-	for a in attrs
+	vscore = 0
+	for a : attrs
 		match std.strfind(a, ":")
 		| `std.Some i:
 			n = a[:i]
@@ -77,26 +78,47 @@ generic sysseladdlist = {syssel, base, attrs, val
 		| `std.None:
 			nmatch = -1
 			break
-		| `std.Some av:
-			if newenough(syssel, av, v)
-				nmatch++
+		| `std.Some have:
+			s = versionscore(syssel, have, v)
+			if s < 0
+				nmatch = -1
+				break
 			;;
+			vscore += s
+			nmatch++
 		;;
 	;;
-	curbest = std.htgetv(syssel._match, base, -1)
-	if curbest < nmatch
-		std.htput(syssel._match, base, nmatch)
-		std.htput(syssel._best, base, val)
+	match std.htgetv(syssel._match, base, (-1, -1))
+	| (curbest, curscore):
+		if curbest < nmatch || (nmatch >= 0 && curbest == nmatch && curscore < vscore)
+			std.htput(syssel._match, base, (nmatch, vscore))
+			std.htput(syssel._best, base, val)
+		;;
 	;;
 }
 
-const newenough = {syssel, attr, vers
-	match (attr, vers)
+const versionscore = {syssel, have, want
+	var s
+
+	s = 0
+	match (have, want)
 	| ((a0, a1, a2), (v0, v1, v2)):
 		if a0 == -1 && a1 == -1 && a2 == -1
-			-> true
+			-> s
+		elif v0 == -1 && v1 == -1 && v2 == -1
+			-> s
 		else
-			-> a0 >= v0 && a1 >= v1 && a2 >= v2
+			s = 1_000_000 * (a0 - v0)
+			if s == 0
+				s += 1_000 * (a1 - v1)
+			;;
+			if s == 0
+				s += (a2 - v2)
+			;;
+			if s >= 0
+				s = 100_000_000 - s
+			;;
+			-> s
 		;;
 	;;
 }
@@ -106,8 +128,8 @@ generic sysselfin = {syssel
 
 	keys = std.htkeys(syssel._match)
 	ret = [][:]
-	for k in keys
-		nmatch = std.htgetv(syssel._match, k, -1)
+	for k : keys
+		(nmatch, _) = std.htgetv(syssel._match, k, (-1, -1))
 		if nmatch == -1
 			std.fatal("{}:{}: target {}, no applicable file for '{}'\n", \
 				syssel.file, syssel.line, syssel.targ, k)
@@ -120,83 +142,46 @@ generic sysselfin = {syssel
 }
 
 const addsysattrs = {b, tags
-	var tagfile
-
 	std.htput(b.tags, opt_sys, opt_sysvers)
+
 	match opt_sys
-	| "freebsd":	std.htput(b.tags, "posixy", (-1, -1, -1))
-	| "netbsd":	std.htput(b.tags, "posixy", (-1, -1, -1))
-	| "openbsd":	std.htput(b.tags, "posixy", (-1, -1, -1))
-	| "osx":	std.htput(b.tags, "posixy", (-1, -1, -1))
-	| "linux":	std.htput(b.tags, "posixy", (-1, -1, -1))
+	| "freebsd":	tag(b, "posixy")
+	| "netbsd":	tag(b, "posixy")
+	| "openbsd":	tag(b, "posixy")
+	| "osx":	tag(b, "posixy")
+	| "linux":	tag(b, "posixy")
 	| "plan9":
 	| unknown:	std.fatal("unknown system \"{}\"\n", unknown)
 	;;
 
 	match opt_arch
-	| "x64":	tag(b.tags, ["x64"][:])
+	| "x64":	tag(b, "x64")
 	| unknown:	std.fatal("unknown architecture {}\n", unknown)
 	;;
-	tag(b.tags, tags)
-
-	tagfile = std.pathcat(b.basedir, " bld.tag")
-	if std.fexists(tagfile)
-		loadtagfile(b, tagfile)
+	for t : tags
+		tag(b, t)
 	;;
-	std.slfree(tagfile)
+
+	loadtagfile(b, "bld.tag")
 }
 
 const loadtagfile = {b, tagfile
-	var data, tag
+	var data, sp
 
+	if !std.fexists(tagfile)
+		-> void
+	;;
 	data = std.try(std.slurp(tagfile))
 	while true
-		data = skipspace(data)
-		(tag, data) = word(data) 
-		match tag
-		| `std.Some w:
-			std.htput(b.tags, w, (-1, -1, -1))
-		| `std.None:
-			if data.len > 0
-				std.fatal("junk character near '{}'\n", trailing(data, 10))
-			else
-				break
-			;;
+		sp = std.strtok(data)
+		for t : sp
+			tag(b, t)
 		;;
+		std.slfree(sp)
 	;;
+	std.slfree(data)
 }
 
-const skipspace = {data
-	var c
-
-	c = std.decode(data)
-	while std.isspace(c)
-		data = data[std.charlen(c):]
-	;;
-	-> data
-}
-
-const word = {data
-	var c, split
-
-	split = 0
-	c = std.decode(data[:])
-	while std.isalnum(c) || c == '.' || c == '_' || c == '$'
-		split += std.charlen(c)
-	;;
-	if split > 0
-		-> (`std.Some data[:split], data[split:])
-	else
-		-> (`std.None, data)
-	;;
-}
-
-const tag  = {sa, tags
-	for t in tags
-		std.htput(sa, t, (-1, -1, -1))
-	;;
-}
-
-const trailing = {str, len
-	-> str[:std.min(len, str.len)]
+const tag  = {b, tag
+	std.htput(b.tags, std.sldup(tag), (-1, -1, -1))
 }

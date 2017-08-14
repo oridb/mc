@@ -15,6 +15,7 @@ use "syswrap"
 use "utf"
 use "sleq"
 use "fmt"
+use "threadhooks"
 
 pkg std =
 	type waitstatus = union
@@ -25,53 +26,73 @@ pkg std =
 	;;
 
 	const wait	: (pid : pid -> waitstatus)
+	const waitany	: (-> (pid, waitstatus))
 ;;
 
-var statusinit	: bool = false
 var statusmap	: htab(pid, waitstatus)#
+
+const __init__ = {
+	statusmap = mkht(inthash, inteq)
+}
+
+const waitany = {
+	var buf : byte[512]
+	var ret, it
+
+	lock(envlck)
+	if htcount(statusmap) == 0
+		unlock(envlck)
+		match sys.await(buf[:])
+		| -1:	-> (-1, `Waiterror)
+		| n:	-> parsestatus(buf[:n])
+		;;
+	else
+		it = std.byhtkeyvals(statusmap)
+		__iternext__(&it, &ret)
+		unlock(envlck)
+		-> ret
+	;;
+}
 
 const wait = {pid
 	var buf : byte[512]
 	var xpid, status
-	var n
 
-	if !statusinit
-		statusmap = mkht(inthash, inteq)
-		statusinit = true
-	;;
-		
+	lock(envlck)
 	match htget(statusmap, pid)
+	| `None:
 	| `Some st:
+		unlock(envlck)
 		htdel(statusmap, pid)
 		-> st
-	| `None:	/* nothing */
 	;;
+	unlock(envlck)
 
 	while true
-		n = sys.await(buf[:])
-		if n < 0
-			-> `Waiterror
+		match sys.await(buf[:])
+		| -1:	-> `Waiterror
+		| n:	(xpid, status) = parsestatus(buf[:n])
 		;;
-
-		(status, xpid) = parsestatus(buf[:n])
 		if xpid == pid
 			-> status
 		else
-			htput(statusmap, pid, status)
+			lock(envlck)
+			htput(statusmap, xpid, status)
+			unlock(envlck)
 		;;
 	;;
 	/* impossible */
 	-> `Waiterror
 }
 
-const parsestatus = {status	-> (waitstatus, pid)
+const parsestatus = {status	-> (pid, waitstatus)
 	var st : waitstatus
 	var spbuf : byte[:][5]
 	var xpid, sp
 
 	sp = bstrsplit(spbuf[:], status, " ")
 	if sp.len == 0
-		-> (`Wfailure, -1)
+		-> (-1, `Wfailure)
 	;;
 
 	match intparse(sp[0])
@@ -90,7 +111,7 @@ const parsestatus = {status	-> (waitstatus, pid)
 		st = `Waiterror
 	;;
 
-	-> (st, xpid)
+	-> (xpid, st)
 
 }
 

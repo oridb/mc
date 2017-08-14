@@ -36,11 +36,10 @@ static void pickle(FILE *fd, Node *n);
 static Node *unpickle(FILE *fd);
 
 /* type fixup list */
-static Htab *tydeduptab;	/* map from name -> type, contains all Tynames loaded ever */
 static Htab *trdeduptab;	/* map from name -> type, contains all Tynames loaded ever */
-static Htab *tidmap;	/* map from tid -> type */
-static Htab *trmap;	/* map from trait id -> trait */
-static Htab *initmap;	/* map from init name -> int */
+static Htab *tidmap;		/* map from tid -> type */
+static Htab *trmap;		/* map from trait id -> trait */
+static Htab *initmap;		/* map from init name -> int */
 
 #define Builtinmask (1 << 30)
 static Typefix *typefix;	/* list of types we need to replace */
@@ -49,10 +48,11 @@ static size_t ntypefix;		/* size of replacement list */
 static Traitfix *traitfix;	/* list of traits we need to replace */
 static size_t ntraitfix;	/* size of replacement list */
 
-static Node **implfix;	/* list of impls we need to fix up */
+static Node **implfix;		/* list of impls we need to fix up */
 static size_t nimplfix;		/* size of replacement list */
 
-void addextlibs(Node *file, char **libs, size_t nlibs)
+void
+addextlibs(Node *file, char **libs, size_t nlibs)
 {
 	size_t i, j;
 
@@ -65,9 +65,10 @@ void addextlibs(Node *file, char **libs, size_t nlibs)
 }
 
 /* Outputs a symbol table to file in a way that can be
- * read back usefully. Only writes declarations, types
+ * read back usefully. Only writes declarations, type
  * and sub-namespaces. Captured variables are ommitted. */
-static void wrstab(FILE *fd, Stab *val)
+static void
+wrstab(FILE *fd, Stab *val)
 {
 	size_t n, i;
 	void **keys;
@@ -93,7 +94,8 @@ static void wrstab(FILE *fd, Stab *val)
 
 /* Reads a symbol table from file. The converse
  * of wrstab. */
-static Stab *rdstab(FILE *fd, int isfunc)
+static Stab *
+rdstab(FILE *fd, int isfunc)
 {
 	Stab *st;
 	Type *ty;
@@ -118,7 +120,8 @@ static Stab *rdstab(FILE *fd, int isfunc)
 	return st;
 }
 
-static void wrucon(FILE *fd, Ucon *uc)
+static void
+wrucon(FILE *fd, Ucon *uc)
 {
 	wrint(fd, uc->loc.line);
 	wrint(fd, uc->id);
@@ -129,7 +132,8 @@ static void wrucon(FILE *fd, Ucon *uc)
 		wrtype(fd, uc->etype);
 }
 
-static Ucon *rducon(FILE *fd, Type *ut)
+static Ucon *
+rducon(FILE *fd, Type *ut)
 {
 	Type *et;
 	Node *name;
@@ -154,10 +158,11 @@ static Ucon *rducon(FILE *fd, Type *ut)
 }
 
 /* Writes the name and type of a variable,
- * but only writes its intializer for things
+ * but only writes its intializer for thing
  * we want to inline cross-file (currently,
  * the only cross-file inline is generics) */
-static void wrsym(FILE *fd, Node *val)
+static void
+wrsym(FILE *fd, Node *val)
 {
 	/* sym */
 	wrint(fd, val->loc.line);
@@ -177,7 +182,8 @@ static void wrsym(FILE *fd, Node *val)
 		pickle(fd, val->decl.init);
 }
 
-static Node *rdsym(FILE *fd, Trait *ctx)
+static Node *
+rdsym(FILE *fd, Trait *ctx)
 {
 	int line;
 	Node *name;
@@ -209,7 +215,8 @@ static Node *rdsym(FILE *fd, Trait *ctx)
 /* Writes types to a file. Errors on
  * internal only types like Tyvar that
  * will not be meaningful in another file*/
-static void typickle(FILE *fd, Type *ty)
+static void
+typickle(FILE *fd, Type *ty)
 {
 	size_t i;
 
@@ -221,7 +228,7 @@ static void typickle(FILE *fd, Type *ty)
 	wrbyte(fd, ty->vis);
 	/* tid is generated; don't write */
 	/* FIXME: since we only support hardcoded traits, we just write
-	* out the set of them. we should write out the trait list as
+	* out the set of them. we should write out the trait list a
 	* well */
 	if (!ty->traits) {
 		wrint(fd, 0);
@@ -277,7 +284,8 @@ static void typickle(FILE *fd, Type *ty)
 	}
 }
 
-static void traitpickle(FILE *fd, Trait *tr)
+static void
+traitpickle(FILE *fd, Trait *tr)
 {
 	size_t i;
 
@@ -293,7 +301,8 @@ static void traitpickle(FILE *fd, Trait *tr)
 		wrsym(fd, tr->proto[i]);
 }
 
-static void wrtype(FILE *fd, Type *ty)
+static void
+wrtype(FILE *fd, Type *ty)
 {
 	if (ty->tid >= Builtinmask)
 		die("Type id %d for %s too big", ty->tid, tystr(ty));
@@ -303,7 +312,8 @@ static void wrtype(FILE *fd, Type *ty)
 		wrint(fd, ty->tid);
 }
 
-static void rdtype(FILE *fd, Type **dest)
+static void
+rdtype(FILE *fd, Type **dest)
 {
 	uintptr_t tid;
 
@@ -316,7 +326,8 @@ static void rdtype(FILE *fd, Type **dest)
 	}
 }
 
-static void rdtrait(FILE *fd, Trait **dest, Type *ty)
+static void
+rdtrait(FILE *fd, Trait **dest, Type *ty)
 {
 	uintptr_t tid;
 
@@ -335,7 +346,8 @@ static void rdtrait(FILE *fd, Trait **dest, Type *ty)
 /* Writes types to a file. Errors on
  * internal only types like Tyvar that
  * will not be meaningful in another file */
-static Type *tyunpickle(FILE *fd)
+static Type *
+tyunpickle(FILE *fd)
 {
 	size_t i, n;
 	Type *ty;
@@ -401,7 +413,8 @@ static Type *tyunpickle(FILE *fd)
 	return ty;
 }
 
-Trait *traitunpickle(FILE *fd)
+Trait *
+traitunpickle(FILE *fd)
 {
 	Trait *tr;
 	Node *proto;
@@ -409,7 +422,7 @@ Trait *traitunpickle(FILE *fd)
 	intptr_t uid;
 
 	/* create an empty trait */
-	tr = mktrait(Zloc, NULL, NULL, 
+	tr = mktrait(Zloc, NULL, NULL,
 		NULL, 0,
 		NULL, 0,
 		0);
@@ -439,7 +452,8 @@ Trait *traitunpickle(FILE *fd)
  * in-memory representation. Minimal
  * checking is done, so a bad type can
  * crash the compiler */
-static void pickle(FILE *fd, Node *n)
+static void
+pickle(FILE *fd, Node *n)
 {
 	size_t i;
 
@@ -572,7 +586,8 @@ static void pickle(FILE *fd, Node *n)
 /* Unpickles a node from a file. Minimal checking
  * is done. Specifically, no checks are done for
  * sane arities, a bad file can crash the compiler */
-static Node *unpickle(FILE *fd)
+static Node *
+unpickle(FILE *fd)
 {
 	size_t i;
 	Ntype type;
@@ -666,7 +681,7 @@ static Node *unpickle(FILE *fd)
 		n->block.nstmts = rdint(fd);
 		n->block.stmts = zalloc(sizeof(Node *) * n->block.nstmts);
 		n->block.scope->super = curstab();
-		pushstab(n->func.scope->super);
+		pushstab(n->block.scope->super);
 		for (i = 0; i < n->block.nstmts; i++)
 			n->block.stmts[i] = unpickle(fd);
 		popstab();
@@ -722,7 +737,8 @@ static Node *unpickle(FILE *fd)
 	return n;
 }
 
-static Stab *findstab(Stab *st, char *pkg)
+static Stab *
+findstab(Stab *st, char *pkg)
 {
 	Stab *s;
 
@@ -742,7 +758,8 @@ static Stab *findstab(Stab *st, char *pkg)
 	return s;
 }
 
-static int isspecialization(Type *t1, Type *t2)
+static int
+isspecialization(Type *t1, Type *t2)
 {
 	if ((t1->type != Tygeneric || t2->type != Tyname) &&
 			(t1->type != Tyname || t2->type != Tygeneric) &&
@@ -752,16 +769,17 @@ static int isspecialization(Type *t1, Type *t2)
 	return nameeq(t1->name, t2->name);
 }
 
-static void fixtypemappings(Stab *st)
+static void
+fixtypemappings(Stab *st)
 {
 	size_t i;
-	Type *t, *u, *old;
+	Type *t, *old;
 
 	/*
 	* merge duplicate definitions.
 	* This allows us to compare named types by id, instead
-	* of doing a deep walk through the type. This ability is
-	* depended on when we do type inference.
+	* of doing a deep walk through the type. This ability I
+	* depend on when we do type inference.
 	*/
 	for (i = 0; i < ntypefix; i++) {
 		t = htget(tidmap, itop(typefix[i].id));
@@ -769,16 +787,11 @@ static void fixtypemappings(Stab *st)
 			die("Unable to find type for id %zd\n", typefix[i].id);
 		*typefix[i].dest = t;
 	}
+
 	for (i = 0; i < ntypefix; i++) {
 		old = *typefix[i].dest;
 		if (old->type == Tyname || old->type == Tygeneric) {
-			t = htget(tydeduptab, old);
-			if (!t) {
-				t = old;
-				htput(tydeduptab, old, old);
-			}
-			u = tydedup(old);
-			assert(tyeq(t, u));
+			t = tydedup(old);
 			*typefix[i].dest = t;
 		}
 	}
@@ -788,15 +801,16 @@ static void fixtypemappings(Stab *st)
 		t = htget(tidmap, itop(typefix[i].id));
 		if ((t->type != Tyname && t->type != Tygeneric) || t->issynth)
 			continue;
-		old = htget(tydeduptab, t);
-		if (old && !tyeq(t, old) && !isspecialization(t, old))
-			lfatal(t->loc, "Duplicate definition of type %s on %s:%d", tystr(old),
-					file->file.files[old->loc.file], old->loc.line);
+		old = tydedup(t);
+		if (!tyeq(t, old) && !isspecialization(t, old))
+			lfatal(t->loc, "Duplicate definition of type %s on %s:%d",
+				tystr(old), file->file.files[old->loc.file], old->loc.line);
 	}
 	lfree(&typefix, &ntypefix);
 }
 
-static void fixtraitmappings(Stab *st)
+static void
+fixtraitmappings(Stab *st)
 {
 	size_t i;
 	Trait *t, *tr;
@@ -804,7 +818,7 @@ static void fixtraitmappings(Stab *st)
 	/*
 	* merge duplicate definitions.
 	* This allows us to compare named types by id, instead
-	* of doing a deep walk through the type. This ability is
+	* of doing a deep walk through the type. This ability i
 	* depended on when we do type inference.
 	*/
 	for (i = 0; i < ntraitfix; i++) {
@@ -828,7 +842,8 @@ static void fixtraitmappings(Stab *st)
 	ntraitfix = 0;
 }
 
-static void protomap(Trait *tr, Type *ty, Node *dcl)
+static void
+protomap(Trait *tr, Type *ty, Node *dcl)
 {
 	size_t i, len;
 	char *protoname, *dclname, *p;
@@ -852,7 +867,8 @@ static void protomap(Trait *tr, Type *ty, Node *dcl)
 	}
 }
 
-static void fiximplmappings(Stab *st)
+static void
+fiximplmappings(Stab *st)
 {
 	Node *impl;
 	Trait *tr;
@@ -882,22 +898,24 @@ static void fiximplmappings(Stab *st)
  *     D<picled-decl>
  *     G<pickled-decl><pickled-initializer>
  */
-int loaduse(char *path, FILE *f, Stab *st, Vis vis)
+int
+loaduse(char *path, FILE *f, Stab *st, Vis vis)
 {
-	intptr_t tid;
-	size_t i;
-	int v;
-	char *pkg;
+	size_t startdecl, starttype, startimpl;
 	Node *dcl, *impl, *init;
 	Stab *s, *ns;
+	intptr_t tid;
+	size_t i, j;
+	char *pkg;
 	Type *ty;
 	Trait *tr;
 	char *lib;
-	int c;
+	int c, v;
 
+	startdecl = ndecls;
+	starttype = ntypes;
+	startimpl = nimpltab;
 	pushstab(file->file.globls);
-	if (!tydeduptab)
-		tydeduptab = mkht(tyhash, tyeq);
 	if (!trdeduptab)
 		trdeduptab = mkht(namehash, nameeq);
 	if (fgetc(f) != 'U')
@@ -1025,11 +1043,42 @@ foundextlib:
 	fixtraitmappings(s);
 	fiximplmappings(s);
 	htfree(tidmap);
+	for (i = starttype; i < ntypes; i++) {
+		ty = types[i];
+		if (ty->type == Tygeneric || ty->type == Tyname) {
+			if (hasparams(ty) && !ty->env) {
+				ty->env = mkenv();
+				for (j = 0; j < ty->ngparam; j++)
+					bindtype(ty->env, ty->gparam[j]);
+				for (j = 0; j < ty->narg; j++)
+					bindtype(ty->env, ty->arg[j]);
+			}
+			if (ty->sub[0]->env)
+				ty->sub[0]->env->super = ty->env;
+			else
+				ty->sub[0]->env = ty->env;
+		}
+	}
+	for (i = startdecl; i < ndecls; i++) {
+		dcl = decls[i];
+		if (hasparams(dcl->decl.type)) {
+			dcl->decl.env = mkenv();
+			bindtype(dcl->decl.env, dcl->decl.type);
+		}
+	}
+	for (i = startimpl; i < nimpltab; i++) {
+		impl = impltab[i];
+		if (!impl->impl.env) {
+			impl->impl.env = mkenv();
+			bindtype(impl->impl.env, impl->impl.type);
+		}
+	}
 	popstab();
 	return 1;
 }
 
-int hassuffix(char *str, char *suff)
+int
+hassuffix(char *str, char *suff)
 {
 	size_t nstr, nsuff;
 
@@ -1040,7 +1089,8 @@ int hassuffix(char *str, char *suff)
 	return !strcmp(str + nstr - nsuff, suff);
 }
 
-void readuse(Node *use, Stab *st, Vis vis)
+void
+readuse(Node *use, Stab *st, Vis vis)
 {
 	size_t i;
 	FILE *fd;
@@ -1051,9 +1101,17 @@ void readuse(Node *use, Stab *st, Vis vis)
 	fd = NULL;
 	p = NULL;
 	if (use->use.islocal) {
-		snprintf(buf,sizeof buf, "%s/%s.use", localincpath, use->use.name);
-		p = strdup(buf);
-		fd = fopen(p, "r");
+		fd = NULL;
+		if (objdir) {
+			snprintf(buf,sizeof buf, "%s/%s/%s.use", objdir, localincpath, use->use.name);
+			p = strdup(buf);
+			fd = fopen(p, "r");
+		}
+		if (!fd) {
+			snprintf(buf,sizeof buf, "%s/%s.use", localincpath, use->use.name);
+			p = strdup(buf);
+			fd = fopen(p, "r");
+		}
 		if (!fd) {
 			fprintf(stderr, "could not open usefile %s\n", buf);
 			exit(1);
@@ -1089,7 +1147,7 @@ void readuse(Node *use, Stab *st, Vis vis)
 	}
 
 	if (!loaduse(p, fd, st, vis))
-		die("Could not load usefile %s from %s", use->use.name, p);
+		fatal(use, "unable to load %s (full path: %s)", use->use.name, p);
 	free(p);
 }
 
@@ -1102,7 +1160,8 @@ void readuse(Node *use, Stab *st, Vis vis)
  * G<pickled-decl><pickled-initializer>
  * Z
  */
-void writeuse(FILE *f, Node *file)
+void
+writeuse(FILE *f, Node *file)
 {
 	Stab *st;
 	void **k;

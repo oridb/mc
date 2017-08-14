@@ -18,19 +18,19 @@
 
 #define Tdindirect 0x80
 
-static char *insnfmt[] = {
+static char * insnfmt[] = {
 #define Insn(val, gasfmt, p9fmt, use, def) gasfmt,
 #include "insns.def"
 #undef Insn
 };
 
-static char *regnames[] = {
+static char * regnames[] = {
 #define Reg(r, gasname, p9name, mode) gasname,
 #include "regs.def"
 #undef Reg
 };
 
-static char* modenames[] = {
+static char *modenames[] = {
 	[ModeB] = "b",
 	[ModeW] = "w",
 	[ModeL] = "l",
@@ -41,7 +41,8 @@ static char* modenames[] = {
 
 static void locprint(FILE *fd, Loc *l, char spec);
 
-void printmem(FILE *fd, Loc *l, char spec)
+void
+printmem(FILE *fd, Loc *l, char spec)
 {
 	if (l->type == Locmem) {
 		if (l->mem.constdisp)
@@ -66,7 +67,8 @@ void printmem(FILE *fd, Loc *l, char spec)
 	}
 }
 
-static void locprint(FILE *fd, Loc *l, char spec)
+static void
+locprint(FILE *fd, Loc *l, char spec)
 {
 	assert(l->mode);
 	switch (l->type) {
@@ -79,7 +81,7 @@ static void locprint(FILE *fd, Loc *l, char spec)
 		fprintf(fd, "%s", l->lbl);
 		break;
 	case Locreg:
-		assert((spec == 'r' && isintmode(l->mode)) || 
+		assert((spec == 'r' && isintmode(l->mode)) ||
 				(spec == 'f' && isfloatmode(l->mode)) ||
 				spec == 'v' ||
 				spec == 'x' ||
@@ -104,18 +106,20 @@ static void locprint(FILE *fd, Loc *l, char spec)
 	}
 }
 
-static int issubreg(Loc *a, Loc *b)
+static int
+issubreg(Loc *a, Loc *b)
 {
 	return rclass(a) == rclass(b) && a->mode != b->mode;
 }
 
-void iprintf(FILE *fd, Insn *insn)
+void
+iprintf(FILE *fd, Insn *insn)
 {
 	char *p;
 	int i;
 	int idx;
 
-	/* x64 has a quirk; it has no movzlq because mov zero extends. This
+	/* x64 has a quirk; it has no movzlq because mov zero extends. Thi
 	 * means that we need to do a movl when we really want a movzlq. Since
 	 * we don't know the name of the reg to use, we need to sub it in when
 	 * writing... */
@@ -166,7 +170,8 @@ void iprintf(FILE *fd, Insn *insn)
 		/* %-formating */
 		p++;
 		idx = i;
-again:
+again
+:
 		switch (*p) {
 		case '\0':
 			goto done; /* skip the final p++ */
@@ -193,12 +198,14 @@ again:
 			break;
 		}
 	}
-done:
+done
+:
 	return;
 }
 
 
-static void writebytes(FILE *fd, char *p, size_t sz)
+static void
+writebytes(FILE *fd, char *p, size_t sz)
 {
 	size_t i;
 
@@ -217,7 +224,8 @@ static void writebytes(FILE *fd, char *p, size_t sz)
 	}
 }
 
-void genstrings(FILE *fd, Htab *strtab)
+void
+genstrings(FILE *fd, Htab *strtab)
 {
 	void **k;
 	Str *s;
@@ -231,7 +239,8 @@ void genstrings(FILE *fd, Htab *strtab)
 	}
 }
 
-static void writeasm(FILE *fd, Isel *s, Func *fn)
+static void
+writeasm(FILE *fd, Isel *s, Func *fn)
 {
 	size_t i, j;
 
@@ -248,7 +257,8 @@ static void writeasm(FILE *fd, Isel *s, Func *fn)
 	}
 }
 
-static void encodemin(FILE *fd, uvlong val)
+static void
+encodemin(FILE *fd, uvlong val)
 {
 	size_t i, shift;
 	uint8_t b;
@@ -272,7 +282,8 @@ static void encodemin(FILE *fd, uvlong val)
 	}
 }
 
-static void emitonce(FILE *fd, Blob *b)
+static void
+emitonce(FILE *fd, Blob *b)
 {
 	if (asmsyntax == Gnugaself) {
 		fprintf(fd, ".section .text.%s%s,\"aG\",%s%s,comdat\n",
@@ -285,7 +296,8 @@ static void emitonce(FILE *fd, Blob *b)
 	}
 }
 
-static void writeblob(FILE *fd, Blob *b)
+static void
+writeblob(FILE *fd, Blob *b)
 {
 	size_t i;
 
@@ -319,7 +331,8 @@ static void writeblob(FILE *fd, Blob *b)
 /* genfunc requires all nodes in 'nl' to map cleanly to operations that are
  * natively supported, as promised in the output of reduce().  No 64-bit
  * operations on x32, no structures, and so on. */
-static void genfunc(FILE *fd, Func *fn, Htab *globls, Htab *strtab)
+static void
+genfunc(FILE *fd, Func *fn, Htab *globls, Htab *strtab)
 {
 	Isel is = {0,};
 	char cwd[1024];
@@ -344,7 +357,8 @@ static void genfunc(FILE *fd, Func *fn, Htab *globls, Htab *strtab)
 	writeasm(fd, &is, fn);
 }
 
-static void gentype(FILE *fd, Type *ty)
+static void
+gentype(FILE *fd, Type *ty)
 {
 	Blob *b;
 
@@ -360,7 +374,8 @@ static void gentype(FILE *fd, Type *ty)
 	blobfree(b);
 }
 
-static void gentypes(FILE *fd)
+static void
+gentypes(FILE *fd)
 {
 	Type *ty;
 	size_t i;
@@ -377,7 +392,8 @@ static void gentypes(FILE *fd)
 }
 
 
-void genblob(FILE *fd, Node *blob, Htab *globls, Htab *strtab)
+void
+genblob(FILE *fd, Node *blob, Htab *globls, Htab *strtab)
 {
 	char *lbl;
 	Blob *b;
@@ -400,7 +416,8 @@ void genblob(FILE *fd, Node *blob, Htab *globls, Htab *strtab)
 	}
 }
 
-void gengas(Node *file, FILE *fd)
+void
+gengas(Node *file, FILE *fd)
 {
 	Htab *globls, *strtab;
 	Node *n, **blob;
@@ -429,7 +446,7 @@ void gengas(Node *file, FILE *fd)
 	for (i = 0; i < file->file.nstmts; i++) {
 		n = file->file.stmts[i];
 		switch (n->type) {
-		case Nuse: /* nothing to do */ 
+		case Nuse: /* nothing to do */
 		case Nimpl:
 			break;
 		case Ndecl:
@@ -467,12 +484,14 @@ void gengas(Node *file, FILE *fd)
 	fclose(fd);
 }
 
-void dbglocprint(FILE *fd, Loc *l, char spec)
+void
+dbglocprint(FILE *fd, Loc *l, char spec)
 {
 	locprint(fd, l, spec);
 }
 
-void dbgiprintf(FILE *fd, Insn *i)
+void
+dbgiprintf(FILE *fd, Insn *i)
 {
 	iprintf(fd, i);
 }

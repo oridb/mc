@@ -19,7 +19,7 @@ const urlfmt = {sb, ap, args
 	var s : byte[:]
 
 	s = std.vanext(ap)
-	for b in s
+	for b : s
 		match (b : char)
 		| ':':	std.sbfmt(sb, "%{x}", b)
 		| '/':	std.sbfmt(sb, "%{x}", b)

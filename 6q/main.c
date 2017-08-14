@@ -25,6 +25,7 @@ Node *file;
 char debugopt[128];
 int writeasm;
 char *outfile;
+char *objdir;
 char **incpaths;
 char *localincpath;
 size_t nincpaths;
@@ -61,17 +62,20 @@ static void assemble(char *qbesrc, char *asmsrc, char *path)
 	char objfile[1024];
 	char *psuffix;
 	char **p, **cmd;
-	size_t ncmd;
+	size_t ncmd, i;
 	int pid, status;
 
 	if (outfile != NULL)
 		strncpy(objfile, outfile, 1024);
 	else {
 		psuffix = strrchr(path, '+');
+		i = 0;
+		if (objdir)
+			i = bprintf(objfile, sizeof objfile, "%s/", objdir);
 		if (psuffix != NULL)
-			swapsuffix(objfile, 1024, path, psuffix, Objsuffix);
+			swapsuffix(objfile + i, sizeof objfile, path, psuffix, Objsuffix);
 		else
-			swapsuffix(objfile, 1024, path, ".myr", Objsuffix);
+			swapsuffix(objfile + i, sizeof objfile, path, ".myr", Objsuffix);
 	}
 	cmd = NULL;
 	ncmd = 0;
@@ -171,15 +175,19 @@ static void genuse(char *path)
 	FILE *f;
 	char buf[1024];
 	char *psuffix;
+	size_t i;
 
 	if (outfile != NULL)
 		swapout(buf, 1024, ".use");
 	else {
 		psuffix = strrchr(path, '+');
+		i = 0;
+		if (objdir)
+			i = bprintf(buf, sizeof buf, "%s/", objdir);
 		if (psuffix != NULL)
-			swapsuffix(buf, 1024, path, psuffix, ".use");
+			swapsuffix(buf + i, sizeof buf, path, psuffix, ".use");
 		else
-			swapsuffix(buf, 1024, path, ".myr", ".use");
+			swapsuffix(buf + i, sizeof buf, path, ".myr", ".use");
 	}
 	f = fopen(buf, "w");
 	if (!f) {
@@ -203,6 +211,9 @@ int main(int argc, char **argv)
 	optinit(&ctx, "cd:?hSo:I:9G:", argv, argc);
 	while (!optdone(&ctx)) {
 		switch (optnext(&ctx)) {
+		case 'O':
+			objdir = ctx.optarg;
+			break;
 		case 'o':
 			outfile = ctx.optarg;
 			break;

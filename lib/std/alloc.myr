@@ -6,6 +6,7 @@ use "threadhooks"
 use "types"
 use "units"
 use "bytealloc"
+use "memops"
 
 /*
 The allocator implementation here is based on Bonwick's slab allocator.
@@ -142,9 +143,7 @@ generic slgrow = {sl : @a[:]#, len
 
 	new = slalloc(cap)
 	n = min(len, sl#.len)
-	for var i = 0; i < n; i++
-		new[i] = sl#[i]
-	;;
+	memblit((new : byte#), (sl# : byte#), n * sizeof(@a))
 	if sl#.len > 0
 		slfree(sl#)
 	;;

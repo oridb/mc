@@ -18,6 +18,7 @@
 /* FIXME: move into one place...? */
 Node *file;
 char *outfile;
+char *objdir;
 char *pkgname;
 int show;
 char debugopt[128];
@@ -27,7 +28,8 @@ char **extralibs;
 size_t nextralibs;
 char *localincpath;
 
-static void usage(char *prog)
+static void
+usage(char *prog)
 {
 	printf("%s [-hIdos] [-o outfile] [-p pkgname] [-m] inputs\n", prog);
 	printf("\t-h\tprint this help\n");
@@ -37,7 +39,8 @@ static void usage(char *prog)
 	printf("\t-s\tShow the contents of usefiles `inputs`\n");
 }
 
-static void mergeuse(char *path)
+static void
+mergeuse(char *path)
 {
 	FILE *f;
 	Stab *st;
@@ -50,7 +53,8 @@ static void mergeuse(char *path)
 	fclose(f);
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	Optctx ctx;
 	size_t i;

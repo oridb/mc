@@ -90,7 +90,7 @@ pkg sys =
 		mtime	: timespec	/* time of last data modification */
 		ctime	: timespec	/* time of last file status change */
 		btime	: timespec	/* time of creation */
-		size	: uint64	/* file size, in bytes */
+		size	: uint64	/* file size in bytes */
 		blocks	: uint64	/* blocks allocated for file */
 		blksize	: uint32	/* optimal blocksize for I/O */
 		flags	: uint32	/* user defined flags for file */

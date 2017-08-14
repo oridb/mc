@@ -848,7 +848,7 @@ const check = {chk
 	crypto.chacha20keysetup(&st, chk.key)
 	crypto.chacha20ivsetup(&st, chk.iv)
 
-	for (i, s) in std.byenum(chk.state)
+	for (i, s) : std.byenum(chk.state)
 		std.assert(st.input[i] == s, "mismatched state\n")
 	;;
 

@@ -153,7 +153,7 @@ const optdone = {ctx
 }
 
 const optinfo = {ctx, opt
-	for o in ctx.optdef.opts
+	for o : ctx.optdef.opts
 		if o.opt == opt
 			-> `Some (o.arg.len != 0, !o.optional, o.dest)
 		;;
@@ -189,13 +189,13 @@ const optusage = {prog, def
 
 	sb = mksb()
 	std.sbfmt(sb, "usage: {} [-h?", prog)
-	for o in def.opts
+	for o : def.opts
 		if o.arg.len == 0
 			std.sbfmt(sb, "{}", o.opt)
 		;;
 	;;
 	std.sbfmt(sb, "] ")
-	for o in def.opts
+	for o : def.opts
 		if o.arg.len != 0
 			std.sbfmt(sb, "[-{} {}] ", o.opt, o.arg)
 		;;
@@ -203,7 +203,7 @@ const optusage = {prog, def
 	std.sbfmt(sb, "{}\n", def.argdesc)
 	std.sbfmt(sb, "\t-h\tprint this help message\n")
 	std.sbfmt(sb, "\t-?\tprint this help message\n")
-	for o in def.opts
+	for o : def.opts
 		std.sbfmt(sb, "\t-{}{}{}\t{}\n", o.opt, sep(o.arg), o.arg, o.desc)
 	;;
 	s = sbfin(sb)

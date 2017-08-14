@@ -1,0 +1,13 @@
+use std
+
+pkg thread =
+	type tid = uint64
+
+	const spawn : (fn : (-> void) -> std.result(tid, byte[:]))
+;;
+
+const spawn = {fn
+	std.die("unimplemented\n")
+	-> `std.Err "fuck"
+}
+

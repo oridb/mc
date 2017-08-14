@@ -14,7 +14,8 @@
 #include "util.h"
 
 /* Some systems don't have strndup. */
-char *strdupn(char *s, size_t len)
+char *
+strdupn(char *s, size_t len)
 {
 	char *ret;
 
@@ -24,7 +25,8 @@ char *strdupn(char *s, size_t len)
 	return ret;
 }
 
-char *xstrdup(char *s)
+char *
+xstrdup(char *s)
 {
 	char *p;
 
@@ -34,7 +36,8 @@ char *xstrdup(char *s)
 	return p;
 }
 
-char *strjoin(char *u, char *v)
+char *
+strjoin(char *u, char *v)
 {
 	size_t n;
 	char *s;
@@ -45,7 +48,8 @@ char *strjoin(char *u, char *v)
 	return s;
 }
 
-char *swapsuffix(char *buf, size_t sz, char *s, char *suf, char *swap)
+char *
+swapsuffix(char *buf, size_t sz, char *s, char *suf, char *swap)
 {
 	size_t slen, suflen, swaplen;
 
@@ -70,7 +74,8 @@ char *swapsuffix(char *buf, size_t sz, char *s, char *suf, char *swap)
 	return buf;
 }
 
-size_t max(size_t a, size_t b)
+size_t
+max(size_t a, size_t b)
 {
 	if (a > b)
 		return a;
@@ -78,7 +83,8 @@ size_t max(size_t a, size_t b)
 		return b;
 }
 
-size_t min(size_t a, size_t b)
+size_t
+min(size_t a, size_t b)
 {
 	if (a < b)
 		return a;
@@ -86,7 +92,8 @@ size_t min(size_t a, size_t b)
 		return b;
 }
 
-size_t align(size_t sz, size_t a)
+size_t
+align(size_t sz, size_t a)
 {
 	/* align to 0 just returns sz */
 	if (a == 0)
@@ -94,7 +101,8 @@ size_t align(size_t sz, size_t a)
 	return (sz + a - 1) & ~(a - 1);
 }
 
-void indentf(int depth, char *fmt, ...)
+void
+indentf(int depth, char *fmt, ...)
 {
 	va_list ap;
 	va_start(ap, fmt);
@@ -102,7 +110,8 @@ void indentf(int depth, char *fmt, ...)
 	va_end(ap);
 }
 
-void findentf(FILE *fd, int depth, char *fmt, ...)
+void
+findentf(FILE *fd, int depth, char *fmt, ...)
 {
 	va_list ap;
 	va_start(ap, fmt);
@@ -110,7 +119,8 @@ void findentf(FILE *fd, int depth, char *fmt, ...)
 	va_end(ap);
 }
 
-void vfindentf(FILE *fd, int depth, char *fmt, va_list ap)
+void
+vfindentf(FILE *fd, int depth, char *fmt, va_list ap)
 {
 	ssize_t i;
 
@@ -119,7 +129,8 @@ void vfindentf(FILE *fd, int depth, char *fmt, va_list ap)
 	vfprintf(fd, fmt, ap);
 }
 
-static int optinfo(Optctx *ctx, char arg, int *take, int *mand)
+static int
+optinfo(Optctx *ctx, char arg, int *take, int *mand)
 {
 	char *s;
 
@@ -144,7 +155,8 @@ static int optinfo(Optctx *ctx, char arg, int *take, int *mand)
 	return 0;
 }
 
-static int findnextopt(Optctx *ctx)
+static int
+findnextopt(Optctx *ctx)
 {
 	size_t i;
 
@@ -156,13 +168,15 @@ static int findnextopt(Optctx *ctx)
 	}
 	ctx->finished = 1;
 	return 0;
-foundopt:
+foundopt
+:
 	ctx->argidx = i;
 	ctx->curarg = ctx->optargs[i] + 1; /* skip initial '-' */
 	return 1;
 }
 
-void optinit(Optctx *ctx, char *optstr, char **optargs, size_t noptargs)
+void
+optinit(Optctx *ctx, char *optstr, char **optargs, size_t noptargs)
 {
 	ctx->args = NULL;
 	ctx->nargs = 0;
@@ -177,7 +191,8 @@ void optinit(Optctx *ctx, char *optstr, char **optargs, size_t noptargs)
 	findnextopt(ctx);
 }
 
-int optnext(Optctx *ctx)
+int
+optnext(Optctx *ctx)
 {
 	int take, mand;
 	int c;
@@ -208,4 +223,5 @@ int optnext(Optctx *ctx)
 	return c;
 }
 
-int optdone(Optctx *ctx) { return *ctx->curarg == '\0' && ctx->finished; }
+int
+optdone(Optctx *ctx) { return *ctx->curarg == '\0' && ctx->finished; }

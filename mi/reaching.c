@@ -14,7 +14,8 @@
 #include "parse.h"
 #include "mi.h"
 
-Node *assignee(Node *n)
+Node *
+assignee(Node *n)
 {
 	Node *a;
 
@@ -44,7 +45,8 @@ Node *assignee(Node *n)
 	return NULL;
 }
 
-static void collectdefs(Cfg *cfg, size_t **defs, size_t *ndefs)
+static void
+collectdefs(Cfg *cfg, size_t **defs, size_t *ndefs)
 {
 	size_t i, j, did;
 	Node *n;
@@ -66,7 +68,8 @@ static void collectdefs(Cfg *cfg, size_t **defs, size_t *ndefs)
 	}
 }
 
-static void genkill(Bb *bb, size_t **defs, size_t *ndefs, Bitset *gen, Bitset *kill)
+static void
+genkill(Bb *bb, size_t **defs, size_t *ndefs, Bitset *gen, Bitset *kill)
 {
 	size_t i, j, did;
 	Node *n;
@@ -85,7 +88,8 @@ static void genkill(Bb *bb, size_t **defs, size_t *ndefs, Bitset *gen, Bitset *k
 	}
 }
 
-void bsdump(Bitset *bs)
+void
+bsdump(Bitset *bs)
 {
 	size_t i;
 	for (i = 0; bsiter(bs, &i); i++)
@@ -93,14 +97,15 @@ void bsdump(Bitset *bs)
 	printf("\n");
 }
 
-Reaching *reaching(Cfg *cfg)
+Reaching *
+reaching(Cfg *cfg)
 {
 	Bitset **in, **out;
 	Bitset **gen, **kill;
 	Bitset *bbin, *bbout;
 	Reaching *reaching;
 	size_t **defs;        /* mapping from did => [def,list] */
-	size_t *ndefs;      
+	size_t *ndefs;
 	size_t i, j;
 	int changed;
 
@@ -163,7 +168,8 @@ Reaching *reaching(Cfg *cfg)
 	return reaching;
 }
 
-void reachingfree(Reaching *r)
+void
+reachingfree(Reaching *r)
 {
 	size_t i;
 

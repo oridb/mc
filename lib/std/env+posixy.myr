@@ -26,7 +26,7 @@ const getenv = {name
 	var n, env
 
 	envinit()
-	for envp in environ
+	for envp : environ
 		env = cstrconvp(envp)
 		n = min(name.len, env.len)
 		if sleq(name, env[:n]) && sleq(env[n:n+1], "=")
@@ -48,7 +48,7 @@ const setenv = {name, val
 
 	envdup()
 	idx = 0
-	for envp in environ
+	for envp : environ
 		env = cstrconvp(envp)
 		n = min(name.len, env.len)
 		if sleq(name, env[:n]) && sleq(env[n:n+1], "=")

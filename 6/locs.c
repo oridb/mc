@@ -22,17 +22,23 @@ Mode regmodes[] = {
 #undef Reg
 };
 
-int isintmode(Mode m)
+Loc **locmap = NULL;
+size_t maxregid = 0;
+
+int
+isintmode(Mode m)
 {
 	return m == ModeB || m == ModeW || m == ModeL || m == ModeQ;
 }
 
-int isfloatmode(Mode m)
+int
+isfloatmode(Mode m)
 {
 	return m == ModeF || m == ModeD;
 }
 
-Loc *locstrlbl(char *lbl)
+Loc *
+locstrlbl(char *lbl)
 {
 	Loc *l;
 
@@ -43,7 +49,8 @@ Loc *locstrlbl(char *lbl)
 	return l;
 }
 
-Loc *loclitl(char *lbl)
+Loc *
+loclitl(char *lbl)
 {
 	Loc *l;
 
@@ -54,7 +61,8 @@ Loc *loclitl(char *lbl)
 	return l;
 }
 
-Loc *loclbl(Node *e)
+Loc *
+loclbl(Node *e)
 {
 	Node *lbl;
 	assert(e->type == Nexpr);
@@ -64,15 +72,14 @@ Loc *loclbl(Node *e)
 	return locstrlbl(lbl->lit.lblval);
 }
 
-Loc **locmap = NULL;
-size_t maxregid = 0;
-
-void resetregs()
+void
+resetregs()
 {
 	maxregid = Nreg;
 }
 
-static Loc *locregid(regid id, Mode m)
+static Loc *
+locregid(regid id, Mode m)
 {
 	Loc *l;
 
@@ -85,12 +92,14 @@ static Loc *locregid(regid id, Mode m)
 	return l;
 }
 
-Loc *locreg(Mode m)
+Loc *
+locreg(Mode m)
 {
 	return locregid(maxregid++, m);
 }
 
-Loc *locphysreg(Reg r)
+Loc *
+locphysreg(Reg r)
 {
 	static Loc *physregs[Nreg] = {0,};
 
@@ -101,7 +110,8 @@ Loc *locphysreg(Reg r)
 	return physregs[r];
 }
 
-Loc *locmem(long disp, Loc *base, Loc *idx, Mode mode)
+Loc *
+locmem(long disp, Loc *base, Loc *idx, Mode mode)
 {
 	Loc *l;
 
@@ -115,7 +125,8 @@ Loc *locmem(long disp, Loc *base, Loc *idx, Mode mode)
 	return l;
 }
 
-Loc *locmems(long disp, Loc *base, Loc *idx, int scale, Mode mode)
+Loc *
+locmems(long disp, Loc *base, Loc *idx, int scale, Mode mode)
 {
 	Loc *l;
 
@@ -124,7 +135,8 @@ Loc *locmems(long disp, Loc *base, Loc *idx, int scale, Mode mode)
 	return l;
 }
 
-Loc *locmeml(char *disp, Loc *base, Loc *idx, Mode mode)
+Loc *
+locmeml(char *disp, Loc *base, Loc *idx, Mode mode)
 {
 	Loc *l;
 
@@ -138,7 +150,8 @@ Loc *locmeml(char *disp, Loc *base, Loc *idx, Mode mode)
 	return l;
 }
 
-Loc *locmemls(char *disp, Loc *base, Loc *idx, int scale, Mode mode)
+Loc *
+locmemls(char *disp, Loc *base, Loc *idx, int scale, Mode mode)
 {
 	Loc *l;
 
@@ -148,7 +161,8 @@ Loc *locmemls(char *disp, Loc *base, Loc *idx, int scale, Mode mode)
 }
 
 
-Loc *loclit(long val, Mode m)
+Loc *
+loclit(long val, Mode m)
 {
 	Loc *l;
 
@@ -159,7 +173,8 @@ Loc *loclit(long val, Mode m)
 	return l;
 }
 
-Loc *coreg(Reg r, Mode m)
+Loc *
+coreg(Reg r, Mode m)
 {
 	Reg crtab[][Nmode + 1] = {
 		[Ral]  = {Rnone, Ral,  Rax,  Reax, Rrax},

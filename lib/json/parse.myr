@@ -51,11 +51,11 @@ const free = {j
 	| &(`Num _):	/* nothing */
 	| &(`Str s):	std.slfree(s)
 	| &(`Arr a):
-		for e in a
+		for e : a
 			free(e)
 		;;
 	| &(`Obj o):
-		for (k, v) in o
+		for (k, v) : o
 			std.slfree(k)
 			free(v)
 		;;
@@ -124,7 +124,7 @@ const parseobj = {p
 	exit(p)
 	-> `std.Ok std.mk(`Obj membs)
 :error
-	for (k, v) in membs
+	for (k, v) : membs
 		std.slfree(k)
 		free(v)
 	;;
@@ -196,7 +196,7 @@ const parsearr = {p -> std.result(elt#, err)
 	exit(p)
 	-> `std.Ok std.mk(`Arr elts)
 :error
-	for e in elts
+	for e : elts
 		free(e)
 	;;
 	std.slfree(elts)

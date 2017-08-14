@@ -94,6 +94,7 @@ static void setupinit(Node *n);
 %token<tok> Tgoto	/* goto */
 %token<tok> Tbreak	/* break */
 %token<tok> Tcontinue	/* continue */
+%token<tok> Tauto	/* auto */
 
 %token<tok> Tintlit
 %token<tok> Tstrlit
@@ -144,7 +145,7 @@ static void setupinit(Node *n);
 %type<node> littok literal lorexpr landexpr borexpr strlit bandexpr
 %type<node> cmpexpr addexpr mulexpr shiftexpr prefixexpr
 %type<node> postfixexpr funclit seqlit tuplit name block stmt label
-%type<node> use fnparam declbody declcore typedeclcore structent
+%type<node> use fnparam declbody declcore typedeclcore autodecl structent
 %type<node> arrayelt structelt tuphead ifstmt forstmt whilestmt
 %type<node> matchstmt elifs optexprln loopcond optexpr match
 
@@ -333,7 +334,7 @@ pkgitem : decl {
 	| pkgtydef {
 		/* the type may only be null in a package context, so we
 		can set the type when merging in this case.
-		
+
 		FIXME: clean up the fucking special cases. */
 		if ($1.type)
 			$1.type->vis = Visexport;
@@ -366,8 +367,8 @@ pkgtydef: attrs tydef {
 	}
 	;
 
-declbody: declcore Tasn expr {$$ = $1; $1->decl.init = $3;}
-	| declcore
+declbody: autodecl Tasn expr {$$ = $1; $1->decl.init = $3;}
+	| autodecl
 	;
 
 declcore: name {$$ = mkdecl($1->loc, $1, mktyvar($1->loc));}
@@ -376,6 +377,10 @@ declcore: name {$$ = mkdecl($1->loc, $1, mktyvar($1->loc));}
 
 typedeclcore
 	: name Tcolon type {$$ = mkdecl($1->loc, $1, $3);}
+	;
+
+autodecl: Tauto declcore {$$ = $2; $$->decl.isauto = 1;}
+	| declcore
 	;
 
 name    : Tident {$$ = mkname($1->loc, $1->id);}
@@ -422,7 +427,7 @@ traitdef: Ttrait Tident generictype optauxtypes { /* trait prototype */
 			0);
 		for (i = 0; i < $6.nn; i++) {
 			$6.nl[i]->decl.trait = $$;
-			$6.nl[i]->decl.impls = mkht(tyhash, tyeq); 
+			$6.nl[i]->decl.impls = mkht(tyhash, tyeq);
 			$6.nl[i]->decl.isgeneric = 1;
 		}
 	}
@@ -477,7 +482,9 @@ typarams: generictype {
 		$$.types = NULL; $$.ntypes = 0;
 		lappend(&$$.types, &$$.ntypes, $1);
 	}
-	| typarams Tcomma generictype {lappend(&$$.types, &$$.ntypes, $3);}
+	| typarams Tcomma generictype {
+		lappend(&$$.types, &$$.ntypes, $3);
+	}
 	;
 
 type    : structdef
@@ -533,7 +540,7 @@ argdefs : typedeclcore {
 		$$.nl = NULL;
 		$$.nn = 0; lappend(&$$.nl, &$$.nn, $1);
 	}
-	| argdefs Tcomma declcore {lappend(&$$.nl, &$$.nn, $3);}
+	| argdefs Tcomma typedeclcore {lappend(&$$.nl, &$$.nn, $3);}
 	| /* empty */ {
 		$$.loc.line = 0;
 		$$.loc.file = 0;
@@ -733,7 +740,7 @@ postfixexpr
 	| atomicexpr
 	;
 
-arglist : expr 
+arglist : expr
 	{$$.nl = NULL; $$.nn = 0; lappend(&$$.nl, &$$.nn, $1);}
 	| arglist Tcomma expr
 	{lappend(&$$.nl, &$$.nn, $3);}
@@ -803,7 +810,7 @@ littok  : strlit	{$$ = $1;}
 strlit : Tstrlit { $$ = mkstr($1->loc, $1->strval); }
 	| strlit Tstrlit {
 		Str merged;
-		
+
 		merged.len = $1->lit.strval.len + $2->strval.len;
 		merged.buf = malloc(merged.len);
 		memcpy(merged.buf, $1->lit.strval.buf, $1->lit.strval.len);
@@ -857,7 +864,7 @@ params  : fnparam {
 	| /* empty */ {$$.nl = NULL; $$.nn = 0;}
 	;
 
-fnparam : declcore {$$ = $1;}
+fnparam : autodecl {$$ = $1;}
 	| Tgap { $$ = mkpseudodecl($1->loc, mktyvar($1->loc)); }
 	| Tgap Tcolon type { $$ = mkpseudodecl($1->loc, $3); }
 	;
@@ -942,6 +949,8 @@ forstmt : Tfor optexprln loopcond optexprln block
 	{$$ = mkloopstmt($1->loc, $2, $3, $4, $5);}
 	| Tfor expr Tin exprln block
 	{$$ = mkiterstmt($1->loc, $2, $4, $5);}
+	| Tfor expr Tcolon exprln block
+	{$$ = mkiterstmt($1->loc, $2, $4, $5);}
 	| Tfor decl Tendln loopcond optexprln block {
 		//Node *init;
 		if ($2.nn != 1)
@@ -975,12 +984,10 @@ matchstmt: Tmatch exprln optendlns Tbor matches Tendblk
 matches : match {
 		$$.nl = NULL;
 		$$.nn = 0;
-		if ($1)
-			lappend(&$$.nl, &$$.nn, $1);
+		lappend(&$$.nl, &$$.nn, $1);
 	}
 	| matches Tbor match {
-		if ($2)
-			lappend(&$$.nl, &$$.nn, $3);
+		lappend(&$$.nl, &$$.nn, $3);
 	}
 	;
 
@@ -1049,10 +1056,15 @@ label   : Tcolon Tident {
 static void setupinit(Node *n)
 {
 	char name[1024];
-	char *p;
+	char *p, *s;
 
 	bprintf(name, sizeof name, "%s$__init__", file->file.files[0]);
-	p = name;
+	s = strrchr(name, '/');
+	if (s)
+		s++;
+	else
+		s = name;
+	p = s;
 	while (*p) {
 		if (!isalnum(*p) && *p != '_')
 			*p = '$';
@@ -1060,7 +1072,7 @@ static void setupinit(Node *n)
 	}
 	n->decl.isinit = 1;
 	n->decl.vis = Vishidden;
-	n->decl.name->name.name = strdup(name);
+	n->decl.name->name.name = strdup(s);
 }
 
 static void addtrait(Type *t, char *str)
@@ -1166,4 +1178,3 @@ static Op binop(int tt)
 	}
 	return o;
 }
-

@@ -21,7 +21,7 @@ const execvp = {cmd, args
 		-> execv(cmd, args)
 	| `None:
 		paths = getpaths()
-		for p in paths
+		for p : paths
 			binpath = bfmt(buf[:], "{}/{}", p, cmd)
 			execv(binpath, args)
 		;;
@@ -39,7 +39,7 @@ const execvpe = {cmd, args, env
 		-> execve(cmd, args, env)
 	| `None:
 		paths = getpaths()
-		for p in paths
+		for p : paths
 			binpath = bfmt(buf[:], "{}/{}", p, cmd)
 			execve(binpath, args, env)
 		;;

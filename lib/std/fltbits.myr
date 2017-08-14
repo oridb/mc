@@ -24,9 +24,9 @@ const flt64explode = {flt
 	var bits, isneg, mant, exp
 
 	bits = flt64bits(flt)
-	isneg = (bits >> 63) != 0  	/* msb is sign bit */
+	isneg = (bits >> 63) != 0 	/* msb is sign bit */
 	exp = (bits >> 52) & 0x7ff 	/* exp is in bits [52..63] */
-	mant = bits & ((1l << 52) - 1) /* msb is in bits [..51] */
+	mant = bits & ((1l << 52) - 1)	/* msb is in bits [..51] */
 
 	/* add back the implicit bit if this is not a denormal */
 	if exp != 0
@@ -47,9 +47,9 @@ const flt32explode = {flt
 	var bits, isneg, mant, exp
 
 	bits = flt32bits(flt)
-	isneg = (bits >> 31) != 0  	/* msb is sign bit */
-	exp = (bits >> 22) & 0xff 	/* exp is in bits [23..30] */
-	mant = bits & ((1 << 22) - 1) /* msb is in bits [0..22] */
+	isneg = (bits >> 31) != 0 	/* msb is sign bit */
+	exp = (bits >> 22) & 0xff	/* exp is in bits [23..30] */
+	mant = bits & ((1 << 22) - 1)	/* msb is in bits [0..22] */
 
 	/* add back the implicit bit if this is not a denormal */
 	if exp != 0

@@ -18,14 +18,14 @@ const __init__ = {
 	][:])
 }
 
-/* Always formats in proleptic Gregorian format */
+/* Always formats : proleptic Gregorian format */
 const sbfmt = {sb, ap, opts
 	var d : instant
 	var fmt
 
 	d = std.vanext(ap)
 	fmt = Datetimefmt;
-	for o in opts
+	for o : opts
 		match o
 		| ("d", ""):	fmt = Datefmt
 		| ("t", ""):	fmt = Timefmt

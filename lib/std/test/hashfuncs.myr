@@ -15,7 +15,7 @@ const main = {
 	std.assert(std.ptreq(&x, &x), "equal pointers not equal")
 	std.assert(!std.ptreq(&x, &y), "unequal pointers are equal")
 
-	std.assert(std.inthash(123) == 2379201998, "wrong int hash")
+	std.assert(std.inthash(123) == 3497506805, "wrong int hash")
 	std.assert(std.inteq(123, 123), "equal integers not equal")
 	std.assert(!std.inteq(123, 456), "unequal integers are equal")
 

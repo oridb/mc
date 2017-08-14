@@ -36,7 +36,7 @@ const main = {
 			std.bsput(bs, 16)
 			std.bsput(bs, 7)
 			std.bsput(bs, 3)
-			for e in std.bybsvalue(bs)
+			for e : std.bybsvalue(bs)
 				testr.check(ctx, e == expected[i], "expected[{}] ({}) != {}", i, e, expected[i])
 				i++
 			;;
@@ -49,11 +49,11 @@ const main = {
 		}],
 		[.name="hash", .fn={ctx
 			var bs = mkset([][:])
-			testr.check(ctx, std.bshash(bs) == 493832887, "wrong hash, expected {}", std.bshash(bs))
+			testr.check(ctx, std.bshash(bs) == 2580988821, "wrong hash, got {}", std.bshash(bs))
 			std.bsput(bs, 123456)
-			testr.check(ctx, std.bshash(bs) == 746495367, "wrong hash, expected {}", std.bshash(bs))
+			testr.check(ctx, std.bshash(bs) == 2020624217, "wrong hash, got {}", std.bshash(bs))
 			std.bsdel(bs, 123456)
-			testr.check(ctx, std.bshash(bs) == 493832887, "wrong hash, expected {}", std.bshash(bs))
+			testr.check(ctx, std.bshash(bs) == 2580988821, "wrong hash, got {}", std.bshash(bs))
 			std.bsfree(bs)
 		}]
 	][:])
@@ -63,7 +63,7 @@ const mkset = {elts
 	var bs
 
 	bs = std.mkbs()
-	for e in elts
+	for e : elts
 		std.bsput(bs, e)
 	;;
 	-> bs

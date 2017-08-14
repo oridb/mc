@@ -19,7 +19,7 @@ const refmt = {sb, ap, args
 	var s : byte[:]
 
 	s = std.vanext(ap)
-	for c in std.bychar(s)
+	for c : std.bychar(s)
 		match c
 		| '|':	std.sbputs(sb, "\\|")
 		| '*':	std.sbputs(sb, "\\*")

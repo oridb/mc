@@ -85,7 +85,7 @@ const free = {re
 	if re.debug
 		std.htfree(re.astloc)
 		std.slfree(re.pcidx)
-		for bs in re.traces
+		for bs : re.traces
 			std.bsfree(bs)
 		;;
 		std.slfree(re.traces)
@@ -128,7 +128,7 @@ const genranges = {re, sl, ast
 
 	/* generate a trie of ranges */
 	rt = std.zalloc()
-	for r in sl
+	for r : sl
 		/* 
 		encode:
 			lo => bounds[loidx] - 1
@@ -226,7 +226,7 @@ const rtinsert = {rt, lo, hi
 }
 
 const rtfree = {rt
-	for l in rt.link
+	for l : rt.link
 		rtfree(l)
 	;;
 	std.slfree(rt.link)
@@ -270,7 +270,7 @@ const rangeprogsize = {rt
 		sz = 0
 	else
 		sz = 2*rt.ranges.len - 1
-		for l in rt.link
+		for l : rt.link
 			sz += rangeprogsize(l)
 		;;
 	;;
@@ -454,7 +454,7 @@ const dump = {re, t, indent
 		std.put("Chr {}\n", c)
 	| `Ranges rl:
                 std.put("Ranges")
-		for r in rl
+		for r : rl
 			for var i = 0; i < indent + 1; i++
 				std.put("  ")
 			;;
@@ -797,7 +797,7 @@ const negate = {rng
 	neg = [][:]
 	start = 0
 	next = 0 /* if we have no ranges */
-	for r in rng
+	for r : rng
 		(end, next) = (r[0], r[1])
 		std.slpush(&neg, [start, end - 1])
 		start = next + 1
@@ -817,7 +817,7 @@ const merge = {rl
 	ret = [][:]
 	lo = rl[0][0]
 	hi = rl[0][1]
-	for r in rl[1:]
+	for r : rl[1:]
 		/* if it overlaps or abuts, merge */
 		if r[0] <= hi + 1
 			hi = r[1]

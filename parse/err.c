@@ -15,7 +15,8 @@
 #include "parse.h"
 
 /* errors */
-void die(char *msg, ...)
+void
+die(char *msg, ...)
 {
 	va_list ap;
 
@@ -26,7 +27,8 @@ void die(char *msg, ...)
 	abort();
 }
 
-void fatal(Node *n, char *msg, ...)
+void
+fatal(Node *n, char *msg, ...)
 {
 	va_list ap;
 
@@ -35,7 +37,8 @@ void fatal(Node *n, char *msg, ...)
 	va_end(ap);
 }
 
-void lfatal(Srcloc l, char *msg, ...)
+void
+lfatal(Srcloc l, char *msg, ...)
 {
 	va_list ap;
 
@@ -44,7 +47,8 @@ void lfatal(Srcloc l, char *msg, ...)
 	va_end(ap);
 }
 
-void lfatalv(Srcloc l, char *msg, va_list ap)
+void
+lfatalv(Srcloc l, char *msg, va_list ap)
 {
 	fprintf(stdout, "%s:%d: ", fname(l), lnum(l));
 	vfprintf(stdout, msg, ap);

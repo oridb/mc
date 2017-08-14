@@ -1,8 +1,6 @@
 use std
 use crypto
 
-use "util"
-
 const main = {
 	hasheq(crypto.md5("")[:], \
 		"d41d8cd98f00b204e9800998ecf8427e")
@@ -16,3 +14,16 @@ const main = {
 		"3b0bb4c5ece4a6568caa7266e740a140")
 }
 
+const hasheq = {got, expected
+	var sb, str
+
+	sb = std.mksb()
+	for x : got
+		std.sbfmt(sb, "{p=0,w=2,x}", x)
+	;;
+	str = std.sbfin(sb)
+	if (!std.sleq(str, expected))
+		std.fatal("mismatched hashes:\n\tgot:\t{}\n\texpected:\t{}\n", str, expected)
+	;;
+	std.slfree(str)
+}

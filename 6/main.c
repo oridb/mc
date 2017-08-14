@@ -27,16 +27,19 @@ int writeasm;
 int extracheck = 1;
 int p9asm;
 char *outfile;
+char *objdir;
 char **incpaths;
 char *localincpath;
 size_t nincpaths;
 Asmsyntax asmsyntax;
 
-static void usage(char *prog)
+static void
+usage(char *prog)
 {
-	printf("%s [-?|-h] [-o outfile] [-d[dbgopts]] inputs\n", prog);
+	printf("%s [-?|-h] [-o outfile] [-O dir] [-d[dbgopts]] inputs\n", prog);
 	printf("\t-?|-h\tPrint this help\n");
 	printf("\t-o\tOutput to outfile\n");
+	printf("\t-O dir\tOutput to dir\n");
 	printf("\t-S\tGenerate assembly source alongside object code\n");
 	printf("\t-c\tEnable additional (possibly flaky) checking\n");
 	printf("\t-I path\tAdd 'path' to use search path\n");
@@ -52,7 +55,8 @@ static void usage(char *prog)
 	printf("\t\tu: log type unifications\n");
 }
 
-static void swapout(char* buf, size_t sz, char* suf) {
+static void
+swapout(char* buf, size_t sz, char* suf) {
 	char* psuffix;
 	psuffix = strrchr(outfile, '.');
 	if (psuffix != NULL)
@@ -61,23 +65,27 @@ static void swapout(char* buf, size_t sz, char* suf) {
 		bprintf(buf, sz, "%s%s", outfile, suf);
 }
 
-static void assemble(char *asmsrc, char *path)
+static void
+assemble(char *asmsrc, char *path)
 {
 	char *asmcmd[] = Asmcmd;
 	char objfile[1024];
 	char *psuffix;
 	char **p, **cmd;
-	size_t ncmd;
+	size_t ncmd, i;
 	int pid, status;
 
 	if (outfile != NULL)
 		strncpy(objfile, outfile, 1024);
 	else {
 		psuffix = strrchr(path, '+');
+		i = 0;
+		if (objdir)
+			i = bprintf(objfile, sizeof objfile, "%s/", objdir);
 		if (psuffix != NULL)
-			swapsuffix(objfile, 1024, path, psuffix, Objsuffix);
+			swapsuffix(objfile + i, sizeof objfile - i, path, psuffix, Objsuffix);
 		else
-			swapsuffix(objfile, 1024, path, ".myr", Objsuffix);
+			swapsuffix(objfile + i, sizeof objfile - i, path, ".myr", Objsuffix);
 	}
 	cmd = NULL;
 	ncmd = 0;
@@ -98,7 +106,7 @@ static void assemble(char *asmsrc, char *path)
 		if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
 			die("Couldn't run assembler");
 	}
-	/* 
+	/*
 	We don't want to keep the asm source around, but it's useful
 	for deubgging without mapping to line numbers.
 	*/
@@ -106,7 +114,8 @@ static void assemble(char *asmsrc, char *path)
 		unlink(asmsrc);
 }
 
-static char *dirname(char *path)
+static char *
+dirname(char *path)
 {
 	char *p;
 
@@ -117,7 +126,8 @@ static char *dirname(char *path)
 		return xstrdup(".");
 }
 
-static char *gentempfile(char *buf, size_t bufsz, char *path, char *suffix)
+static char *
+gentempfile(char *buf, size_t bufsz, char *path, char *suffix)
 {
 	char *tmpdir;
 	char *base;
@@ -136,7 +146,8 @@ static char *gentempfile(char *buf, size_t bufsz, char *path, char *suffix)
 	return buf;
 }
 
-static int hasmain(Node *file)
+static int
+hasmain(Node *file)
 {
 	Node *n, *name;
 
@@ -150,20 +161,25 @@ static int hasmain(Node *file)
 	return 1;
 }
 
-static void genuse(char *path)
+static void
+genuse(char *path)
 {
 	FILE *f;
 	char buf[1024];
 	char *psuffix;
+	size_t i;
 
 	if (outfile != NULL)
 		swapout(buf, 1024, ".use");
 	else {
 		psuffix = strrchr(path, '+');
+		i = 0;
+		if (objdir)
+			i = bprintf(buf, sizeof buf, "%s/", objdir);
 		if (psuffix != NULL)
-			swapsuffix(buf, 1024, path, psuffix, ".use");
+			swapsuffix(buf + i, sizeof buf - i, path, psuffix, ".use");
 		else
-			swapsuffix(buf, 1024, path, ".myr", ".use");
+			swapsuffix(buf + i, sizeof buf - i, path, ".myr", ".use");
 	}
 	f = fopen(buf, "w");
 	if (!f) {
@@ -174,7 +190,8 @@ static void genuse(char *path)
 	fclose(f);
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	char buf[1024];
 	Stab *globls;
@@ -183,10 +200,14 @@ int main(int argc, char **argv)
 
 	outfile = NULL;
 
-	optinit(&ctx, "cd:?hSo:I:9G:", argv, argc);
+	optinit(&ctx, "cd:?hSo:I:9G:O:", argv, argc);
 	asmsyntax = Defaultasm;
+	sizefn = size;
 	while (!optdone(&ctx)) {
 		switch (optnext(&ctx)) {
+		case 'O':
+			objdir = ctx.optarg;
+			break;
 		case 'o':
 			outfile = ctx.optarg;
 			break;

@@ -29,7 +29,7 @@ static char *regnames[] = {
 #undef Reg
 };
 
-static char* modenames[] = {
+static char *modenames[] = {
 	[ModeB] = "B",
 	[ModeW] = "W",
 	[ModeL] = "L",
@@ -38,9 +38,11 @@ static char* modenames[] = {
 	[ModeD] = "D"
 };
 
-static void locprint(FILE *fd, Loc *l, char spec);
+static void
+locprint(FILE *fd, Loc *l, char spec);
 
-static void printmem(FILE *fd, Loc *l, char spec)
+static void
+printmem(FILE *fd, Loc *l, char spec)
 {
 	if (l->type == Locmem) {
 		if (l->mem.constdisp)
@@ -63,7 +65,8 @@ static void printmem(FILE *fd, Loc *l, char spec)
 	}
 }
 
-static void locprint(FILE *fd, Loc *l, char spec)
+static void
+locprint(FILE *fd, Loc *l, char spec)
 {
 	spec = tolower(spec);
 	assert(l->mode);
@@ -77,7 +80,7 @@ static void locprint(FILE *fd, Loc *l, char spec)
 		fprintf(fd, "%s", l->lbl);
 		break;
 	case Locreg:
-		assert((spec == 'r' && isintmode(l->mode)) || 
+		assert((spec == 'r' && isintmode(l->mode)) ||
 				(spec == 'f' && isfloatmode(l->mode)) ||
 				spec == 'v' ||
 				spec == 'x' ||
@@ -102,18 +105,20 @@ static void locprint(FILE *fd, Loc *l, char spec)
 	}
 }
 
-static int issubreg(Loc *a, Loc *b)
+static int
+issubreg(Loc *a, Loc *b)
 {
 	return rclass(a) == rclass(b) && a->mode != b->mode;
 }
 
-static void iprintf(FILE *fd, Insn *insn)
+static void
+iprintf(FILE *fd, Insn *insn)
 {
 	char *p;
 	int i;
 	int idx;
 
-	/* x64 has a quirk; it has no movzlq because mov zero extends. This
+	/* x64 has a quirk; it has no movzlq because mov zero extends. Thi
 	 * means that we need to do a movl when we really want a movzlq. Since
 	 * we don't know the name of the reg to use, we need to sub it in when
 	 * writing... */
@@ -161,7 +166,8 @@ static void iprintf(FILE *fd, Insn *insn)
 		/* %-formating */
 		p++;
 		idx = i;
-again:
+again
+:
 		switch (*p) {
 		case '\0':
 			goto done; /* skip the final p++ */
@@ -189,12 +195,14 @@ again:
 			break;
 		}
 	}
-done:
+done
+:
 	return;
 }
 
 
-static size_t writebytes(FILE *fd, char *name, size_t off, char *p, size_t sz)
+static size_t
+writebytes(FILE *fd, char *name, size_t off, char *p, size_t sz)
 {
 	size_t i, len;
 
@@ -217,7 +225,8 @@ static size_t writebytes(FILE *fd, char *name, size_t off, char *p, size_t sz)
 	return sz;
 }
 
-static void genstrings(FILE *fd, Htab *strtab)
+static void
+genstrings(FILE *fd, Htab *strtab)
 {
 	void **k;
 	char *lbl;
@@ -235,7 +244,8 @@ static void genstrings(FILE *fd, Htab *strtab)
 	}
 }
 
-static void writeasm(FILE *fd, Isel *s, Func *fn)
+static void
+writeasm(FILE *fd, Isel *s, Func *fn)
 {
 	size_t i, j;
 	char *hidden;
@@ -243,7 +253,7 @@ static void writeasm(FILE *fd, Isel *s, Func *fn)
 	hidden = "";
 	if (fn->isexport)
 		hidden = "";
-	/* we don't use the stack size directive: myrddin handles
+	/* we don't use the stack size directive: myrddin handle
 	 * the stack frobbing on its own */
 	fprintf(fd, "TEXT %s%s+0(SB),2,$0\n", fn->name, hidden);
 	for (j = 0; j < s->cfg->nbb; j++) {
@@ -256,7 +266,8 @@ static void writeasm(FILE *fd, Isel *s, Func *fn)
 	}
 }
 
-static size_t encodemin(FILE *fd, uvlong val, size_t off, char *lbl)
+static size_t
+encodemin(FILE *fd, uvlong val, size_t off, char *lbl)
 {
 	size_t i, shift, n;
 	uint8_t b;
@@ -284,7 +295,8 @@ static size_t encodemin(FILE *fd, uvlong val, size_t off, char *lbl)
 	return i;
 }
 
-static size_t writeblob(FILE *fd, Blob *b, size_t off, char *lbl)
+static size_t
+writeblob(FILE *fd, Blob *b, size_t off, char *lbl)
 {
 	size_t i, n;
 
@@ -339,7 +351,8 @@ static size_t writeblob(FILE *fd, Blob *b, size_t off, char *lbl)
 /* genfunc requires all nodes in 'nl' to map cleanly to operations that are
  * natively supported, as promised in the output of reduce().  No 64-bit
  * operations on x32, no structures, and so on. */
-static void genfunc(FILE *fd, Func *fn, Htab *globls, Htab *strtab)
+static void
+genfunc(FILE *fd, Func *fn, Htab *globls, Htab *strtab)
 {
 	Isel is = {0,};
 
@@ -359,7 +372,8 @@ static void genfunc(FILE *fd, Func *fn, Htab *globls, Htab *strtab)
 	writeasm(fd, &is, fn);
 }
 
-static void gentype(FILE *fd, Type *ty)
+static void
+gentype(FILE *fd, Type *ty)
 {
 	Blob *b;
 	char lbl[1024];
@@ -382,7 +396,8 @@ static void gentype(FILE *fd, Type *ty)
 	writeblob(fd, b, 0, lbl);
 }
 
-static void gentypes(FILE *fd)
+static void
+gentypes(FILE *fd)
 {
 	Type *ty;
 	size_t i;
@@ -399,7 +414,8 @@ static void gentypes(FILE *fd)
 }
 
 
-static void genblob(FILE *fd, Node *blob, Htab *globls, Htab *strtab)
+static void
+genblob(FILE *fd, Node *blob, Htab *globls, Htab *strtab)
 {
 	char *lbl;
 	Blob *b;
@@ -416,7 +432,8 @@ static void genblob(FILE *fd, Node *blob, Htab *globls, Htab *strtab)
 	writeblob(fd, b, 0, lbl);
 }
 
-void genp9(Node *file, FILE *fd)
+void
+genp9(Node *file, FILE *fd)
 {
 	Htab *globls, *strtab;
 	Node *n, **blob;
@@ -444,7 +461,7 @@ void genp9(Node *file, FILE *fd)
 	for (i = 0; i < file->file.nstmts; i++) {
 		n = file->file.stmts[i];
 		switch (n->type) {
-		case Nuse: /* nothing to do */ 
+		case Nuse: /* nothing to do */
 		case Nimpl:
 			break;
 		case Ndecl:

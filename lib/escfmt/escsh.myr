@@ -20,7 +20,7 @@ const shfmt = {sb, ap, args
 
 	s = std.vanext(ap)
 	std.sbputb(sb, ('\'' : byte))
-	for b in s
+	for b : s
 		if b == ('\'' : byte)
 			std.sbputs(sb, "'\\''")
 		else

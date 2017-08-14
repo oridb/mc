@@ -148,7 +148,7 @@ const endtest = {b, cmd, curtest, failed, nresults, pass, msg
 		else
 			mbldput("FAIL\n")
 		;;
-		p = std.pathjoin([b.curdir, cmd, curtest#][:])
+		p = std.pathcat(cmd, curtest#)
 		std.slpush(failed, p)
 	;;
 

@@ -216,7 +216,7 @@ const parseparams = {paramstr, optdesc
 		std.fatal("invalid format options {}\n")
 	;;
 	params = strsplit(paramstr, ",")
-	for p in params
+	for p : params
 		/* parse out the key/value pair */
 		match std.strfind(p, "=")
 		| `std.Some idx:
@@ -231,7 +231,7 @@ const parseparams = {paramstr, optdesc
 
 		found = false
 		/* verify and add the arg */
-		for (opt, hasarg) in optdesc
+		for (opt, hasarg) : optdesc
 			if !std.sleq(opt, o)
 				continue
 			;;
@@ -245,10 +245,11 @@ const parseparams = {paramstr, optdesc
 		;;
 		if !found
 			std.put("options: \n")
-			for (opt, hasarg) in optdesc
+			for (opt, hasarg) : optdesc
 				std.put("\t'{}', hasarg={}\n", opt, hasarg)
 			;;
-			std.fatal("invalid option '{}' ", o)
+			std.put("invalid option '{}' ", o)
+			std.die("dying")
 		;;
 	;;
 	slfree(params)
@@ -427,7 +428,7 @@ const fmtslice = {sb, subap, params
 	][:])
 	join = ", "
 	joined = false
-	for o in opts
+	for o : opts
 		match o
 		| ("j", j):
 			joined = true
@@ -483,7 +484,7 @@ const intparams = {params
 		("x", false),
 		("w", true),
 		("p", true)][:])
-	for o in opts
+	for o : opts
 		match o
 		| ("x", ""):	ip.base = 16
 		| ("w", wid):	ip.padto = getint(wid, "fmt: width must be integer")
@@ -511,7 +512,7 @@ const strfmt = {sb, str, params
 		("e", false),
 	][:])
 
-	for o in opts
+	for o : opts
 		match o
 		| ("w", wid):	w = getint(wid, "fmt: width must be integer")
 		| ("p", pad):	p = decode(pad)
@@ -523,14 +524,14 @@ const strfmt = {sb, str, params
 	iassert(p >= 0, "pad must be >= 0")
 	std.slfree(opts)
 	if raw
-		for b in str
+		for b : str
 			if esc
 				sbputs(sb, "\\x")
 			;;
 			intfmt(sb, [.padto=2, .padfill='0', .base=16], false, b)
 		;;
 	elif esc
-		for b in str
+		for b : str
 			if isprint(b)
 				sbputb(sb, b)
 			else
@@ -594,7 +595,7 @@ generic intfmt = {sb, opts, signed, bits : @a::(integral,numeric)
 		;;
 	else
 		val = (bits : uint64)
-		val &= ~0 >> (8*(sizeof(uint64)-sizeof(@a)))
+		val &= ~0 >> (8*(sizeof(uint64)-sizeof(@a::(integral,numeric))))
 		isneg = false
 	;;
 

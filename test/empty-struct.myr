@@ -1,0 +1,26 @@
+use std
+
+type foo = struct
+;;
+
+type bar = struct
+        baz : foo[:]
+        quux : foo[0][:]
+;;
+
+
+const main = {
+        var a : foo
+        var z : foo[0]
+        var b : bar = [.baz = [a, a][:], .quux = [z, z, z][:]]
+        var c : int = 0
+        for f : b.baz
+                c += 3
+        ;;
+
+        for f : b.quux
+                c += 5
+        ;;
+
+        std.exit(c)
+}

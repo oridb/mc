@@ -14,7 +14,8 @@
 #include "parse.h"
 #include "mi.h"
 
-static void checkundef(Node *n, Reaching *r, Bitset *reach, Bitset *kill)
+static void
+checkundef(Node *n, Reaching *r, Bitset *reach, Bitset *kill)
 {
 	size_t i, j, did;
 	Node *def;
@@ -28,7 +29,8 @@ static void checkundef(Node *n, Reaching *r, Bitset *reach, Bitset *kill)
 			return;
 		for (j = 0; j < r->ndefs[did]; j++) {
 			t = tybase(exprtype(n));
-			if (t->type == Tystruct || t->type == Tyunion || t->type == Tyarray || t->type == Tytuple || t->type == Tyvoid)
+			if (t->type == Tystruct || t->type == Tyunion || t->type == Tyarray ||
+				t->type == Tytuple || t->type == Tyvoid)
 				continue;
 			if (bshas(kill, r->defs[did][j]))
 				continue;
@@ -69,7 +71,8 @@ static void checkundef(Node *n, Reaching *r, Bitset *reach, Bitset *kill)
 	}
 }
 
-static void checkreach(Cfg *cfg)
+static void
+checkreach(Cfg *cfg)
 {
 	Bitset *reach, *kill;
 	size_t i, j, k;
@@ -102,7 +105,8 @@ static void checkreach(Cfg *cfg)
 	reachingfree(r);
 }
 
-static void checkpredret(Cfg *cfg, Bb *bb)
+static void
+checkpredret(Cfg *cfg, Bb *bb)
 {
 	Bb *pred;
 	Op op;
@@ -121,7 +125,8 @@ static void checkpredret(Cfg *cfg, Bb *bb)
 	}
 }
 
-static void checkret(Cfg *cfg)
+static void
+checkret(Cfg *cfg)
 {
 	Type *ft;
 
@@ -133,7 +138,8 @@ static void checkret(Cfg *cfg)
 	checkpredret(cfg, cfg->end);
 }
 
-void check(Cfg *cfg)
+void
+check(Cfg *cfg)
 {
 	checkret(cfg);
 	checkreach(cfg);

@@ -16,7 +16,8 @@
 #include "asm.h"
 #include "../config.h"
 
-void fillglobls(Stab *st, Htab *globls)
+void
+fillglobls(Stab *st, Htab *globls)
 {
 	size_t i, j, nk, nns;
 	void **k, **ns;
@@ -46,7 +47,8 @@ void fillglobls(Stab *st, Htab *globls)
 }
 
 
-void initconsts(Htab *globls)
+void
+initconsts(Htab *globls)
 {
 	Type *ty;
 	Node *name;
@@ -70,7 +72,8 @@ void initconsts(Htab *globls)
 	abortoob->expr.isconst = 1;
 }
 
-Type *codetype(Type *ft)
+Type *
+codetype(Type *ft)
 {
 	ft = tybase(ft);
 	if (ft->type == Tycode)
@@ -81,7 +84,8 @@ Type *codetype(Type *ft)
 	return ft;
 }
 
-Type *closuretype(Type *ft)
+Type *
+closuretype(Type *ft)
 {
 	ft = tybase(ft);
 	if (ft->type == Tyfunc)
@@ -92,7 +96,8 @@ Type *closuretype(Type *ft)
 	return ft;
 }
 
-static int islocal(Node *dcl)
+static int
+islocal(Node *dcl)
 {
 	if (dcl->decl.vis != Visintern)
 		return 0;
@@ -101,7 +106,8 @@ static int islocal(Node *dcl)
 	return 1;
 }
 
-char *genlocallblstr(char *buf, size_t sz)
+char *
+genlocallblstr(char *buf, size_t sz)
 {
 	if (asmsyntax == Plan9)
 		return genlblstr(buf, 128, "<>");
@@ -109,14 +115,15 @@ char *genlocallblstr(char *buf, size_t sz)
 		return genlblstr(buf, 128, "");
 }
 
-/* 
+/*
  * For x86, the assembly names are generated as follows:
  *      local symbols: .name
  *      un-namespaced symbols: <symprefix>name
  *      namespaced symbols: <symprefix>namespace$name
  *      local symbols on plan9 have the file-unique suffix '<>' appended
  */
-char *asmname(Node *dcl)
+char *
+asmname(Node *dcl)
 {
 	char buf[1024];
 	char *vis, *pf, *ns, *name, *sep;
@@ -142,7 +149,8 @@ char *asmname(Node *dcl)
 	return strdup(buf);
 }
 
-char *tydescid(char *buf, size_t bufsz, Type *ty)
+char *
+tydescid(char *buf, size_t bufsz, Type *ty)
 {
 	char *sep, *ns;
 	char *p, *end;
@@ -174,7 +182,8 @@ char *tydescid(char *buf, size_t bufsz, Type *ty)
 	return buf;
 }
 
-void gen(Node *file, char *out)
+void
+gen(Node *file, char *out)
 {
 	FILE *fd;
 

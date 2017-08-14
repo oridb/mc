@@ -32,7 +32,7 @@ const eltfmt = {sb, e, ind
 
 const jstrfmt = {sb, str
 	std.sbputs(sb, "\"")
-	for c in str
+	for c : str
 		match (c : char)
 		| '\x0c':	std.sbputs(sb, "\\f")
 		| '\\':	std.sbputs(sb, "\\\\")
@@ -50,7 +50,7 @@ const arrfmt = {sb, arr, ind
 
 	sep = ""
 	std.sbputs(sb, "[\n")
-	for e in arr
+	for e : arr
 		std.sbputs(sb, sep)
 		indent(sb, ind + 1)
 		eltfmt(sb, e, ind + 1)
@@ -66,7 +66,7 @@ const objfmt = {sb, obj, ind
 
 	sep = ""
 	std.sbputs(sb, "{\n")
-	for (k, v) in obj
+	for (k, v) : obj
 		std.sbputs(sb, sep)
 		indent(sb, ind + 1)
 		jstrfmt(sb, k)

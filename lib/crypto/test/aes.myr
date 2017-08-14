@@ -8,28 +8,28 @@ type aestest = struct
 ;;
 
 const main = {
-	for tc in ECBVarKey128encvecs
+	for tc : ECBVarKey128encvecs
 		enctest(tc)
 	;;
-	for tc in ECBVarKey192encvecs
+	for tc : ECBVarKey192encvecs
 		enctest(tc)
 	;;
-	for tc in ECBVarKey256encvecs
+	for tc : ECBVarKey256encvecs
 		enctest(tc)
 	;;
-	for tc in ECBVarKey128decvecs
+	for tc : ECBVarKey128decvecs
 		dectest(tc)
 	;;
-	for tc in ECBVarKey192decvecs
+	for tc : ECBVarKey192decvecs
 		dectest(tc)
 	;;
-	for tc in ECBVarKey256decvecs
+	for tc : ECBVarKey256decvecs
 		dectest(tc)
 	;;
-	for tc in ECBVarKey128encbigvecs
+	for tc : ECBVarKey128encbigvecs
 		bigenctest(tc)
 	;;
-	for tc in ECBVarKey128decbigvecs
+	for tc : ECBVarKey128decbigvecs
 		bigdectest(tc)
 	;;
 }

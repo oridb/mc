@@ -22,7 +22,7 @@ pkg testr =
 
 const run = {specs
 	std.put("MTEST {}\n", specs.len)
-	for s in specs
+	for s : specs
 		runspec(&s)
 	;;
 }

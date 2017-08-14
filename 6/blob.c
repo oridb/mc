@@ -18,7 +18,8 @@
 
 static size_t blobrec(Blob *b, Htab *globls, Htab *strtab, Node *n);
 
-Blob *mkblobi(Blobtype type, uint64_t ival)
+Blob *
+mkblobi(Blobtype type, uint64_t ival)
 {
 	Blob *b;
 
@@ -28,7 +29,8 @@ Blob *mkblobi(Blobtype type, uint64_t ival)
 	return b;
 }
 
-Blob *mkblobpad(size_t sz)
+Blob *
+mkblobpad(size_t sz)
 {
 	Blob *b;
 
@@ -38,7 +40,8 @@ Blob *mkblobpad(size_t sz)
 	return b;
 }
 
-Blob *mkblobbytes(char *buf, size_t len)
+Blob *
+mkblobbytes(char *buf, size_t len)
 {
 	Blob *b;
 
@@ -49,7 +52,8 @@ Blob *mkblobbytes(char *buf, size_t len)
 	return b;
 }
 
-Blob *mkblobseq(Blob **sub, size_t nsub)
+Blob *
+mkblobseq(Blob **sub, size_t nsub)
 {
 	Blob *b;
 
@@ -60,7 +64,8 @@ Blob *mkblobseq(Blob **sub, size_t nsub)
 	return b;
 }
 
-Blob *mkblobref(char *lbl, size_t off, int isextern)
+Blob *
+mkblobref(char *lbl, size_t off, int isextern)
 {
 	Blob *b;
 
@@ -72,7 +77,8 @@ Blob *mkblobref(char *lbl, size_t off, int isextern)
 	return b;
 }
 
-void blobfree(Blob *b)
+void
+blobfree(Blob *b)
 {
 	size_t i;
 
@@ -93,7 +99,8 @@ void blobfree(Blob *b)
 	free(b);
 }
 
-static size_t getintlit(Node *n, char *failmsg)
+static size_t
+getintlit(Node *n, char *failmsg)
 {
 	if (exprop(n) != Olit)
 		fatal(n, "%s", failmsg);
@@ -103,19 +110,22 @@ static size_t getintlit(Node *n, char *failmsg)
 	return n->lit.intval;
 }
 
-void b(Blob *b, Blob *n)
+void
+b(Blob *b, Blob *n)
 {
 	lappend(&b->seq.sub, &b->seq.nsub, n);
 }
 
-static size_t blobpad(Blob *seq, size_t sz)
+static size_t
+blobpad(Blob *seq, size_t sz)
 {
 	if (sz)
 		b(seq, mkblobpad(sz));
 	return sz;
 }
 
-static size_t bloblit(Blob *seq, Htab *strtab, Node *v, Type *ty)
+static size_t
+bloblit(Blob *seq, Htab *strtab, Node *v, Type *ty)
 {
 	char buf[128];
 	char *lbl;
@@ -172,7 +182,8 @@ static size_t bloblit(Blob *seq, Htab *strtab, Node *v, Type *ty)
 	return sz;
 }
 
-static size_t blobslice(Blob *seq,  Htab *globls, Htab *strtab, Node *n)
+static size_t
+blobslice(Blob *seq,  Htab *globls, Htab *strtab, Node *n)
 {
 	Node *base, *lo, *hi;
 	ssize_t loval, hival, sz;
@@ -183,7 +194,7 @@ static size_t blobslice(Blob *seq,  Htab *globls, Htab *strtab, Node *n)
 	lo = n->expr.args[1];
 	hi = n->expr.args[2];
 
-	/* by this point, all slicing operations should have had their bases
+	/* by this point, all slicing operations should have had their base
 	 * pulled out, and we should have vars with their pseudo-decls in their
 	 * place */
 	loval = getintlit(lo, "lower bound in slice is not constant literal");
@@ -203,7 +214,8 @@ static size_t blobslice(Blob *seq,  Htab *globls, Htab *strtab, Node *n)
 	return 16;
 }
 
-static Node *structmemb(Node *n, char *dcl)
+static Node *
+structmemb(Node *n, char *dcl)
 {
 	size_t i;
 
@@ -213,7 +225,8 @@ static Node *structmemb(Node *n, char *dcl)
 	return NULL;
 }
 
-static size_t blobstruct(Blob *seq, Htab *globls, Htab *strtab, Node *n)
+static size_t
+blobstruct(Blob *seq, Htab *globls, Htab *strtab, Node *n)
 {
 	size_t i, sz, pad, end, ndcl;
 	Node **dcl, *m;
@@ -239,7 +252,8 @@ static size_t blobstruct(Blob *seq, Htab *globls, Htab *strtab, Node *n)
 	return sz;
 }
 
-static size_t blobucon(Blob *seq, Htab *globls, Htab *strtab, Node *n)
+static size_t
+blobucon(Blob *seq, Htab *globls, Htab *strtab, Node *n)
 {
 	size_t sz, pad;
 	Ucon *uc;
@@ -257,7 +271,8 @@ static size_t blobucon(Blob *seq, Htab *globls, Htab *strtab, Node *n)
 }
 
 
-static size_t blobrec(Blob *b, Htab *globls, Htab *strtab, Node *n)
+static size_t
+blobrec(Blob *b, Htab *globls, Htab *strtab, Node *n)
 {
 	size_t i, sz, end;
 
@@ -289,7 +304,8 @@ static size_t blobrec(Blob *b, Htab *globls, Htab *strtab, Node *n)
 	return sz;
 }
 
-Blob *litblob(Htab *globls, Htab *strtab, Node *n)
+Blob *
+litblob(Htab *globls, Htab *strtab, Node *n)
 {
 	Blob *b;
 

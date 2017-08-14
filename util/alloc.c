@@ -15,7 +15,8 @@
 
 /* Some systems don't have strndup. */
 /* malloc wrappers */
-void *zalloc(size_t sz)
+void *
+zalloc(size_t sz)
 {
 	void *mem;
 
@@ -25,7 +26,8 @@ void *zalloc(size_t sz)
 	return mem;
 }
 
-void *xalloc(size_t sz)
+void *
+xalloc(size_t sz)
 {
 	void *mem;
 
@@ -35,7 +37,8 @@ void *xalloc(size_t sz)
 	return mem;
 }
 
-void *zrealloc(void *mem, size_t oldsz, size_t sz)
+void *
+zrealloc(void *mem, size_t oldsz, size_t sz)
 {
 	char *p;
 
@@ -45,7 +48,8 @@ void *zrealloc(void *mem, size_t oldsz, size_t sz)
 	return p;
 }
 
-void *xrealloc(void *mem, size_t sz)
+void *
+xrealloc(void *mem, size_t sz)
 {
 	mem = realloc(mem, sz);
 	if (!mem && sz)
@@ -54,7 +58,8 @@ void *xrealloc(void *mem, size_t sz)
 }
 
 /* lists */
-void lappend(void *l, size_t *len, void *n)
+void
+lappend(void *l, size_t *len, void *n)
 {
 	void ***pl;
 
@@ -64,7 +69,8 @@ void lappend(void *l, size_t *len, void *n)
 	(*len)++;
 }
 
-void *lpop(void *l, size_t *len)
+void *
+lpop(void *l, size_t *len)
 {
 	void ***pl;
 	void *v;
@@ -76,7 +82,8 @@ void *lpop(void *l, size_t *len)
 	return v;
 }
 
-void linsert(void *p, size_t *len, size_t idx, void *v)
+void
+linsert(void *p, size_t *len, size_t idx, void *v)
 {
 	void ***pl, **l;
 
@@ -89,7 +96,8 @@ void linsert(void *p, size_t *len, size_t idx, void *v)
 	(*len)++;
 }
 
-void ldel(void *p, size_t *len, size_t idx)
+void
+ldel(void *p, size_t *len, size_t idx)
 {
 	void ***pl, **l;
 
@@ -102,7 +110,8 @@ void ldel(void *p, size_t *len, size_t idx)
 	*pl = xrealloc(l, *len * sizeof(void *));
 }
 
-void lcat(void *dst, size_t *ndst, void *src, size_t nsrc)
+void
+lcat(void *dst, size_t *ndst, void *src, size_t nsrc)
 {
 	size_t i;
 	void ***d, **s;
@@ -113,7 +122,8 @@ void lcat(void *dst, size_t *ndst, void *src, size_t nsrc)
 		lappend(d, ndst, s[i]);
 }
 
-void lfree(void *l, size_t *len)
+void
+lfree(void *l, size_t *len)
 {
 	void ***pl;
 
@@ -124,7 +134,8 @@ void lfree(void *l, size_t *len)
 	*len = 0;
 }
 
-void *memdup(void *mem, size_t len)
+void *
+memdup(void *mem, size_t len)
 {
 	void *ret;
 

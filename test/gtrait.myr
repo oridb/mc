@@ -1,0 +1,15 @@
+use std
+
+trait comparable @a =
+	cmp	: (a : @a, b : @a -> std.order)
+;;
+
+impl comparable @a::numeric =
+	cmp = {a, b
+		-> std.numcmp(a, b)
+	}
+;;
+
+const main = {
+	std.put("{}", cmp(1, 2))
+}

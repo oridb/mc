@@ -69,11 +69,11 @@ const eq = {ip, expected
 	if !std.sleq(p, e)
 		std.fput(1, "misparsed ip {}\n", ip)
 		std.put("parsed: ")
-		for b in p
+		for b : p
 			std.put("{x}, ", b)
 		;;
 		std.put("\nexpected: ")
-		for b in e
+		for b : e
 			std.put("{x}, ", b)
 		;;
 		std.put("\n")

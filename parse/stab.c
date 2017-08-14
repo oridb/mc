@@ -30,41 +30,29 @@ struct Traitdefn {
 
 #define Maxstabdepth 128
 static Stab *stabstk[Maxstabdepth];
-int stabstkoff;
+static size_t stabstkoff;
 
-/* scope management */
-Stab *curstab()
-{
-	assert(stabstkoff > 0);
-	return stabstk[stabstkoff - 1];
-}
+static Tyenv *envstk[Maxstabdepth];
+static size_t envstkoff;
 
-void pushstab(Stab *st)
-{
-	assert(stabstkoff < Maxstabdepth);
-	stabstk[stabstkoff++] = st;
-}
-
-void popstab(void)
-{
-	assert(stabstkoff > 0);
-	stabstkoff--;
-}
 
 /* name hashing: we want namespaced lookups to find the
  * name even if we haven't set the namespace up, since
  * we can update it after the fact. */
-ulong nsnamehash(void *n)
+ulong
+nsnamehash(void *n)
 {
 	return strhash(namestr(n));
 }
 
-int nsnameeq(void *a, void *b)
+int
+nsnameeq(void *a, void *b)
 {
 	return a == b || !strcmp(namestr(a), namestr(b));
 }
 
-static ulong implhash(void *p)
+static ulong
+implhash(void *p)
 {
 	Node *n;
 	ulong h;
@@ -75,22 +63,8 @@ static ulong implhash(void *p)
 	return h;
 }
 
-Stab *findstab(Stab *st, Node *n)
-{
-	Stab *ns;
-
-	if (n->name.ns) {
-		ns = getns(file, n->name.ns);
-		if (!ns) {
-			ns = mkstab(0);
-			updatens(ns, n->name.ns);
-		}
-		st = ns;
-	}
-	return st;
-}
-
-static int impleq(void *pa, void *pb)
+static int
+impleq(void *pa, void *pb)
 {
 	Node *a, *b;
 
@@ -101,7 +75,8 @@ static int impleq(void *pa, void *pb)
 	return 0;
 }
 
-Stab *mkstab(int isfunc)
+Stab *
+mkstab(int isfunc)
 {
 	Stab *st;
 
@@ -119,7 +94,95 @@ Stab *mkstab(int isfunc)
 	return st;
 }
 
-Node *getclosed(Stab *st, Node *n)
+Stab *
+curstab()
+{
+	assert(stabstkoff > 0);
+	return stabstk[stabstkoff - 1];
+}
+
+void
+pushstab(Stab *st)
+{
+	assert(stabstkoff < Maxstabdepth);
+	stabstk[stabstkoff++] = st;
+}
+
+void
+popstab()
+{
+	assert(stabstkoff > 0);
+	stabstkoff--;
+}
+
+ulong
+paramhash(void *p)
+{
+	return strhash(((Type*)p)->pname);
+}
+
+int
+parameq(void *a, void *b)
+{
+	return streq(((Type*)a)->pname, ((Type*)b)->pname);
+}
+
+Tyenv*
+mkenv()
+{
+	Tyenv *e;
+
+	e = malloc(sizeof(Tyenv));
+	e->super = NULL;
+	e->tab = mkht(paramhash, parameq);
+	return e;
+}
+
+Tyenv*
+curenv()
+{
+	if (!envstkoff)
+		return NULL;
+	else
+		return envstk[envstkoff - 1];
+}
+
+void
+pushenv(Tyenv *env)
+{
+	if (!env)
+		return;
+	assert(envstkoff < Maxstabdepth);
+	envstk[envstkoff++] = env;
+}
+
+void
+popenv(Tyenv *env)
+{
+	if (!env)
+		return;
+	assert(envstkoff > 0);
+	envstkoff--;
+}
+
+Stab *
+findstab(Stab *st, Node *n)
+{
+	Stab *ns;
+
+	if (n->name.ns) {
+		ns = getns(file, n->name.ns);
+		if (!ns) {
+			ns = mkstab(0);
+			updatens(ns, n->name.ns);
+		}
+		st = ns;
+	}
+	return st;
+}
+
+Node *
+getclosed(Stab *st, Node *n)
 {
 	while (st && !st->env)
 		st = st->super;
@@ -128,7 +191,8 @@ Node *getclosed(Stab *st, Node *n)
 	return NULL;
 }
 
-Node **getclosure(Stab *st, size_t *n)
+Node **
+getclosure(Stab *st, size_t *n)
 {
 	size_t nkeys, i;
 	void **keys;
@@ -153,15 +217,16 @@ Node **getclosure(Stab *st, size_t *n)
 
 /*
  * Searches for declarations from current
- * scope, and all enclosing scopes. Does
+ * scope, and all enclosing scopes. Doe
  * not resolve namespaces -- that is the job
  * of the caller of this function.
  *
- * If a resoved name is not global, and is
+ * If a resoved name is not global, and i
  * not in the current scope, it is recorded
  * in the scope's closure.
  */
-Node *getdcl(Stab *st, Node *n)
+Node *
+getdcl(Stab *st, Node *n)
 {
 	Node *s;
 	Stab *fn;
@@ -182,7 +247,8 @@ Node *getdcl(Stab *st, Node *n)
 	return NULL;
 }
 
-void putlbl(Stab *st, char *name, Node *lbl)
+void
+putlbl(Stab *st, char *name, Node *lbl)
 {
 	assert(st && st->isfunc);
 	if (hthas(st->lbl, name))
@@ -190,7 +256,8 @@ void putlbl(Stab *st, char *name, Node *lbl)
 	htput(st->lbl, name, lbl);
 }
 
-Node *getlbl(Stab *st, Srcloc loc, char *name)
+Node *
+getlbl(Stab *st, Srcloc loc, char *name)
 {
 	while (st && !st->isfunc)
 		st = st->super;
@@ -199,7 +266,8 @@ Node *getlbl(Stab *st, Srcloc loc, char *name)
 	return htget(st->lbl, name);
 }
 
-Type *gettype_l(Stab *st, Node *n)
+Type *
+gettype_l(Stab *st, Node *n)
 {
 	Tydefn *t;
 
@@ -208,7 +276,8 @@ Type *gettype_l(Stab *st, Node *n)
 	return NULL;
 }
 
-Type *gettype(Stab *st, Node *n)
+Type *
+gettype(Stab *st, Node *n)
 {
 	Tydefn *t;
 
@@ -220,7 +289,8 @@ Type *gettype(Stab *st, Node *n)
 	return NULL;
 }
 
-int hastype(Stab *st, Node *n)
+int
+hastype(Stab *st, Node *n)
 {
 	do {
 		if (hthas(st->ty, n))
@@ -230,7 +300,8 @@ int hastype(Stab *st, Node *n)
 	return 0;
 }
 
-Ucon *getucon(Stab *st, Node *n)
+Ucon *
+getucon(Stab *st, Node *n)
 {
 	Ucon *uc;
 
@@ -242,7 +313,8 @@ Ucon *getucon(Stab *st, Node *n)
 	return NULL;
 }
 
-Trait *gettrait(Stab *st, Node *n)
+Trait *
+gettrait(Stab *st, Node *n)
 {
 	Traitdefn *c;
 
@@ -256,15 +328,17 @@ Trait *gettrait(Stab *st, Node *n)
 	return NULL;
 }
 
-Stab *getns(Node *file, char *name) {
+Stab *
+getns(Node *file, char *name) {
 	return htget(file->file.ns, name);
 }
 
-static int mergedecl(Node *old, Node *new)
+static int
+mergedecl(Node *old, Node *new)
 {
 	Node *e, *g;
 
-	if (old->decl.ishidden || new->decl.ishidden) {
+	if (old->decl.isimport && new->decl.isimport) {
 		old->decl.ishidden = old->decl.ishidden && new->decl.ishidden;
 		return 1;
 	}
@@ -308,6 +382,14 @@ static int mergedecl(Node *old, Node *new)
 		e->decl.init = g->decl.init;
 	else if (!g->decl.init)
 		g->decl.init = e->decl.init;
+	if (old->decl.env || e->decl.env) {
+		if (!old->decl.env)
+			old->decl.env = e->decl.env;
+		if (!e->decl.env)
+			e->decl.env = old->decl.env;
+		bindtype(e->decl.env, old->decl.type);
+		bindtype(old->decl.env, e->decl.type);
+	}
 
 	/* FIXME: check compatible typing */
 	old->decl.ishidden = e->decl.ishidden || g->decl.ishidden;
@@ -320,19 +402,25 @@ static int mergedecl(Node *old, Node *new)
 	return 1;
 }
 
-void forcedcl(Stab *st, Node *s)
+void
+forcedcl(Stab *st, Node *s)
 {
 	setns(s->decl.name, st->name);
 	htput(st->dcl, s->decl.name, s);
 	assert(htget(st->dcl, s->decl.name) != NULL);
 }
 
-void putdcl(Stab *st, Node *s)
+void
+putdcl(Stab *st, Node *s)
 {
 	Node *old;
 
 	st = findstab(st, s->decl.name);
 	old = htget(st->dcl, s->decl.name);
+	if (s->decl.isauto) {
+		assert(!old);
+		lappend(&st->autodcl, &st->nautodcl, s);
+	}
 	if (!old)
 		forcedcl(st, s);
 	else if (!mergedecl(old, s))
@@ -340,7 +428,8 @@ void putdcl(Stab *st, Node *s)
 				lnum(s->loc));
 }
 
-void updatetype(Stab *st, Node *n, Type *t)
+void
+updatetype(Stab *st, Node *n, Type *t)
 {
 	Tydefn *td;
 
@@ -350,7 +439,8 @@ void updatetype(Stab *st, Node *n, Type *t)
 	td->type = t;
 }
 
-int mergetype(Type *old, Type *new)
+int
+mergetype(Type *old, Type *new)
 {
 	if (!new) {
 		lfatal(old->loc, "double prototyping of %s", tystr(old));
@@ -370,7 +460,8 @@ int mergetype(Type *old, Type *new)
 	return 0;
 }
 
-void puttype(Stab *st, Node *n, Type *t)
+void
+puttype(Stab *st, Node *n, Type *t)
 {
 	Tydefn *td;
 	Type *ty;
@@ -398,7 +489,8 @@ void puttype(Stab *st, Node *n, Type *t)
 	}
 }
 
-void putucon(Stab *st, Ucon *uc)
+void
+putucon(Stab *st, Ucon *uc)
 {
 	Ucon *old;
 
@@ -410,7 +502,8 @@ void putucon(Stab *st, Ucon *uc)
 	htput(st->uc, uc->name, uc);
 }
 
-static int mergetrait(Trait *old, Trait *new)
+static int
+mergetrait(Trait *old, Trait *new)
 {
 	if (old->isproto && !new->isproto)
 		*old = *new;
@@ -421,7 +514,8 @@ static int mergetrait(Trait *old, Trait *new)
 	return 1;
 }
 
-void puttrait(Stab *st, Node *n, Trait *c)
+void
+puttrait(Stab *st, Node *n, Trait *c)
 {
 	Traitdefn *td;
 	Trait *t;
@@ -444,7 +538,8 @@ void puttrait(Stab *st, Node *n, Trait *c)
 	htput(st->tr, td->name, td);
 }
 
-static int mergeimpl(Node *old, Node *new)
+static int
+mergeimpl(Node *old, Node *new)
 {
 	Vis vis;
 
@@ -466,7 +561,8 @@ static int mergeimpl(Node *old, Node *new)
 	return 1;
 }
 
-void putimpl(Stab *st, Node *n)
+void
+putimpl(Stab *st, Node *n)
 {
 	Node *impl;
 
@@ -484,7 +580,8 @@ void putimpl(Stab *st, Node *n)
 	htput(st->impl, n, n);
 }
 
-Node *getimpl(Stab *st, Node *n)
+Node *
+getimpl(Stab *st, Node *n)
 {
 	Node *imp;
 
@@ -496,7 +593,8 @@ Node *getimpl(Stab *st, Node *n)
 	return NULL;
 }
 
-void putns(Node *file, Stab *scope)
+void
+putns(Node *file, Stab *scope)
 {
 	Stab *s;
 
@@ -508,10 +606,11 @@ void putns(Node *file, Stab *scope)
 
 /*
  * Sets the namespace of a symbol table, and
- * changes the namespace of all contained symbols
+ * changes the namespace of all contained symbol
  * to match it.
  */
-void updatens(Stab *st, char *name)
+void
+updatens(Stab *st, char *name)
 {
 	void **k;
 	size_t i, nk;
@@ -541,4 +640,80 @@ void updatens(Stab *st, char *name)
 	for (i = 0; i < nk; i++)
 		setns(k[i], name);
 	free(k);
+}
+
+static void
+bindtype_rec(Tyenv *e, Type *t, Bitset *visited)
+{
+	size_t i;
+	Type *tt;
+
+	t = tysearch(t);
+	if (bshas(visited, t->tid))
+		return;
+	bsput(visited, t->tid);
+	switch (t->type) {
+	case Typaram:
+		tt = htget(e->tab, t);
+		if (tt && tt != t)
+			tytab[t->tid] = tt;
+		else if (!boundtype(t))
+			htput(e->tab, t, t);
+		break;
+	case Tygeneric:
+		for (i = 0; i < t->ngparam; i++)
+			bindtype_rec(e, t->gparam[i], visited);
+		break;
+	case Tyname:
+		for (i = 0; i < t->narg; i++)
+			bindtype_rec(e, t->arg[i], visited);
+		break;
+	case Tyunres:
+		for (i = 0; i < t->narg; i++)
+			bindtype_rec(e, t->arg[i], visited);
+		break;
+	case Tystruct:
+		for (i = 0; i < t->nmemb; i++)
+			bindtype_rec(e, t->sdecls[i]->decl.type, visited);
+		break;
+	case Tyunion:
+		for (i = 0; i < t->nmemb; i++)
+			if (t->udecls[i]->etype)
+				bindtype_rec(e, t->udecls[i]->etype, visited);
+		break;
+	default:
+		for (i = 0; i < t->nsub; i++)
+			bindtype_rec(e, t->sub[i], visited);
+		break;
+	}
+}
+
+/* Binds the type parameters present in the
+ * current type into the type environment */
+void
+bindtype(Tyenv *env, Type *t)
+{
+	Bitset *visited;
+
+	if (!t)
+		return;
+	visited = mkbs();
+	bindtype_rec(env, t, visited);
+	bsfree(visited);
+}
+
+/* If the current environment binds a type,
+ * we return true */
+Type*
+boundtype(Type *t)
+{
+	Tyenv *e;
+	Type *r;
+
+	for (e = curenv(); e; e = e->super) {
+		r = htget(e->tab, t);
+		if (r)
+			return r;
+	}
+	return NULL;
 }

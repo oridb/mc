@@ -7,6 +7,7 @@ typedef struct Tok Tok;
 typedef struct Node Node;
 typedef struct Ucon Ucon;
 typedef struct Stab Stab;
+typedef struct Tyenv Tyenv;
 
 typedef struct Type Type;
 typedef struct Trait Trait;
@@ -66,12 +67,6 @@ typedef enum {
 	Visbuiltin,
 } Vis;
 
-typedef enum {
-	Dclconst = 1 << 0,
-	Dclextern = 1 << 1,
-} Dclflags;
-
-
 struct Tok {
 	int type;
 	Srcloc loc;
@@ -90,6 +85,13 @@ struct Tysubst {
 	size_t nsubst;
 };
 
+typedef enum {
+	Xcnt,
+	Xbrk,
+	Xret,
+	Nexits
+} Exit;
+
 struct Stab {
 	Stab *super;
 	char *name;
@@ -104,6 +106,16 @@ struct Stab {
 	Htab *uc;	/* union constructors */
 	Htab *lbl;	/* labels */
 	Htab *impl;	/* trait implementations: really a set of implemented traits. */
+
+	Node **autodcl;	/* declarations in dcl marked 'auto' */
+	size_t nautodcl;
+
+	Node *exit[Nexits];
+};
+
+struct Tyenv {
+	Tyenv *super;
+	Htab *tab;
 };
 
 struct Type {
@@ -121,6 +133,7 @@ struct Type {
 	Type **inst;		/* Tyname: instances created */
 	size_t ninst;		/* Tyname: count of instances created */
 
+	Tyenv *env;		/* the environment for bound types, may be null */
 	Type **sub;		/* sub-types; shared by all composite types */
 	size_t nsub;		/* For compound types */
 	size_t nmemb;		/* for aggregate types (struct, union) */
@@ -277,6 +290,7 @@ struct Node {
 			Node *name;
 			Type *type;
 			Node *init;
+			Tyenv *env;	/* bound types */
 
 			/*
 			 If we have a link to a trait, we should only look it up
@@ -303,9 +317,11 @@ struct Node {
 			char isnoret;
 			char isexportinit;
 			char isinit;
+			char isauto;
 		} decl;
 
 		struct {
+			Tyenv *env;
 			Stab *scope;
 			Type *type;
 			size_t nargs;
@@ -318,6 +334,7 @@ struct Node {
 			Trait *trait;
 			Type *type;
 			Type **aux;
+			Tyenv *env;
 			size_t naux;
 			Node **decls;
 			size_t ndecls;
@@ -406,6 +423,13 @@ Node *getlbl(Stab *st, Srcloc loc, char *name);
 Stab *curstab(void);
 void pushstab(Stab *st);
 void popstab(void);
+
+void bindtype(Tyenv *env, Type *t);
+Type *boundtype(Type *t);
+Tyenv *mkenv(void);
+Tyenv *curenv(void);
+void pushenv(Tyenv *e);
+void popenv(Tyenv *e);
 
 /* type creation */
 void tyinit(Stab *st); /* sets up built in types */
@@ -544,8 +568,10 @@ int optdone(Optctx *c);
 extern char debugopt[128];
 extern int asmonly;
 extern char *outfile;
+extern char *objdir;
 extern char **incpaths;
 extern size_t nincpaths;
 extern char *localincpath;
+extern size_t (*sizefn)(Node *n);
 
 void yyerror(const char *s);

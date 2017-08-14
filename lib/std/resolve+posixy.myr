@@ -123,7 +123,7 @@ const loadhosts = {
 	;;
 
 	lines = strsplit(h, "\n")
-	for l in lines
+	for l : lines
 		/* trim comment */
 		match strfind(l, "#")
 		| `Some idx:	l = l[:idx]
@@ -190,7 +190,7 @@ const loadresolv = {
 	;;
 
 	lines = strsplit(h, "\n")
-	for l in lines
+	for l : lines
 		match strfind(l, "#")
 		| `Some _idx: l = l[:_idx]
 		| `None:
@@ -247,7 +247,7 @@ const dnsresolve = {host, rt
 		-> `Err (`Badhost)
 	;;
 	/* FIXME: Assumption: nameservers is not modified by other threads */
-	for ns in nameservers
+	for ns : nameservers
 		nsrv = dnsconnect(ns)
 		if nsrv >= 0
 			r = dnsquery(nsrv, host, rt)

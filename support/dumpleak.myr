@@ -25,7 +25,7 @@ const main = {args
 		][:]
 	])
 
-	for opt in cmd.opts
+	for opt : cmd.opts
 		match opt
 		| ('d', depth):
 			match std.intparse(depth)
@@ -39,7 +39,7 @@ const main = {args
 	;;
 
 	stats.tab = std.mkht(std.inthash, std.inteq)
-	for d in cmd.args
+	for d : cmd.args
 		match bio.open(d, bio.Rd)
 		| `std.Ok f:	dump(d, f, &stats)
 		| `std.Err e:	std.fatal("could not open {}: {}\n", d, e)
@@ -100,7 +100,7 @@ const dumptrace = {tab
 	var aggr
 
 	aggr = std.mkht(hashintsl, std.sleq)
-	for (k, (sz, stk)) in std.byhtkeyvals(tab)
+	for (k, (sz, stk)) : std.byhtkeyvals(tab)
 		match std.htget(aggr, stk[:stackaggr])
 		| `std.Some (count, total):	
 			std.htput(aggr, stk[:stackaggr], (count + 1, sz + total))
@@ -109,7 +109,7 @@ const dumptrace = {tab
 		;;
 	;;
 	
-	for (stk, (n, sz)) in std.byhtkeyvals(aggr)
+	for (stk, (n, sz)) : std.byhtkeyvals(aggr)
 		std.put("unfreed: {} (size: {}): {}\n", n, sz, stk)
 	;;
 }
@@ -125,7 +125,7 @@ const hashintsl = {sl
 	var h
 
 	h = 0
-	for i in sl
+	for i : sl
 		h ^= std.inthash(i)
 	;;
 	-> h

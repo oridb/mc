@@ -3,6 +3,9 @@ lib thread =
 	hookstd.myr	# install thread hooks
 	mutex.myr	# fallback, for unimplemented platforms
 
+	#generic fallbacks
+	ncpu.myr
+
 	# linux impl of basic thread primitives
 	#condvar+linux.myr
 	mutex+linux.myr
@@ -19,7 +22,7 @@ lib thread =
 	# netbsd impl of thread primitives
 	#condvar+netbsd.myr
 	#mutex+netbsd.myr
-	#spawn+netbsd.myr
+	spawn+netbsd.myr
 	#ncpu+netbsd.myr
 	#exit+netbsd-x64.s
 
@@ -44,4 +47,12 @@ lib thread =
 
         lib ../sys:sys
         lib ../std:std
+;;
+
+lib thrtestutil {noinst} =
+	util.myr
+
+        lib ../sys:sys
+        lib ../std:std
+        lib thread
 ;;

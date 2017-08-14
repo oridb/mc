@@ -3,7 +3,7 @@ use std
 const Nsamp = 10
 
 const main = {args : byte[:][:]
-	for a in args
+	for a : args
 		time(a)
 	;;
 }
