@@ -71,6 +71,7 @@ const launch = {b, n
 	var pid
 
 	if stale(b, n)
+		mkout(n)
 		pid = run(n.cmd, "")
 		std.htput(b.proc, pid, n)
 	else
@@ -119,7 +120,6 @@ const unblock = {b, n
 			std.slpush(&b.queue, g)
 		;;
 	;;
-
 }
 
 const stale = {b, n
@@ -137,7 +137,13 @@ const stale = {b, n
 		| `std.Err e:	n.mtime = 0
 		;;
 	;;
-	-> staletime >= n.mtime
+	-> staletime > n.mtime
+}
+
+const mkout = {n
+	for g : n.gen
+		std.mkpath(std.dirname(g))
+	;;
 }
 
 const fail = {b, pid, failtype

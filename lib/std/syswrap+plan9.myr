@@ -135,7 +135,7 @@ const fmtime = {path
 	if sys.stat(path, buf[:]) < Stringsoff
 		-> `Err Emisc
 	;;
-	-> `Ok (_getle32(buf[Mtimeoff:Mtimeoff + 8]) : time)
+	-> `Ok ((_getle32(buf[Mtimeoff:Mtimeoff + 8]) : time)*1_000_000)
 }
 
 const fsize = {path
