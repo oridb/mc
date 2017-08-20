@@ -274,7 +274,7 @@ main(int argc, char **argv)
 		/* before we do anything to the parse */
 		if (debugopt['T'])
 			dump(file, stdout);
-		infer(file);
+		infer();
 		if (hasmain(file))
 			geninit(file);
 		tagexports(file, 0);

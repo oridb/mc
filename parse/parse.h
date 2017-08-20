@@ -550,7 +550,7 @@ void addextlibs(Node *file, char **libs, size_t nlibs);
 Node *fold(Node *n, int foldvar);
 
 /* typechecking/inference */
-void infer(Node *file);
+void infer(void);
 Type *tysearch(Type *t);
 
 /* debug */

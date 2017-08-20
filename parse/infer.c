@@ -1134,13 +1134,13 @@ unifyparams(Node *ctx, Type *a, Type *b)
 }
 
 static void
-loaduses(Node *n)
+loaduses(void)
 {
 	size_t i;
 
 	/* uses only allowed at top level. Do we want to keep it this way? */
-	for (i = 0; i < n->file.nuses; i++)
-		readuse(n->file.uses[i], n->file.globls, Visintern);
+	for (i = 0; i < file->file.nuses; i++)
+		readuse(file->file.uses[i], file->file.globls, Visintern);
 }
 
 static Type *
@@ -2510,7 +2510,7 @@ itertype(Node *n, Type *ret)
  * with the type parameters replaced with the
  * specialized types */
 static void
-specialize(Node *f)
+specialize(void)
 {
 	Node *d, *n, *name;
 	Type *ty, *it, *dt;
@@ -2562,7 +2562,7 @@ specialize(Node *f)
 }
 
 static void
-applytraits(Node *f)
+applytraits(void)
 {
 	size_t i;
 	Node *impl, *n;
@@ -2571,7 +2571,7 @@ applytraits(Node *f)
 	Stab *ns;
 
 	tr = NULL;
-	pushstab(f->file.globls);
+	pushstab(file->file.globls);
 	/* for now, traits can only be declared globally */
 	for (i = 0; i < nimpltab; i++) {
 		impl = impltab[i];
@@ -2602,17 +2602,17 @@ applytraits(Node *f)
 }
 
 void
-verify(Node *f)
+verify(void)
 {
 	Type *t;
 	Node *n;
 	size_t i;
 
-	pushstab(f->file.globls);
+	pushstab(file->file.globls);
 	/* for now, traits can only be declared globally */
-	for (i = 0; i < f->file.nstmts; i++) {
-		if (f->file.stmts[i]->type == Nimpl) {
-			n = f->file.stmts[i];
+	for (i = 0; i < file->file.nstmts; i++) {
+		n = file->file.stmts[i];
+		if (n->type == Nimpl) {
 			/* we merge, so we need to get it back again when error checking */
 			if (n->impl.isproto)
 				fatal(n, "missing implementation for prototype '%s %s'",
@@ -2630,21 +2630,20 @@ verify(Node *f)
 }
 
 void
-infer(Node *file)
+infer()
 {
-	assert(file->type == Nfile);
 	delayed = mkht(tyhash, tyeq);
 	seqbase = mkht(tyhash, tyeq);
 	/* set up the symtabs */
-	loaduses(file);
+	loaduses();
 
 	/* do the inference */
-	applytraits(file);
+	applytraits();
 	infernode(&file, NULL, NULL);
 	postinfer();
 
 	/* and replace type vars with actual types */
 	typesub(file, 0);
-	specialize(file);
-	verify(file);
+	specialize();
+	verify();
 }
