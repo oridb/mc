@@ -1638,7 +1638,9 @@ inferexpr(Node **np, Type *ret, int *sawret)
 		htput(seqbase, t, b);
 		unify(n, type(args[0]), t);
 		constrain(n, type(args[1]), traittab[Tcint]);
+		constrain(n, type(args[1]), traittab[Tcnum]);
 		constrain(n, type(args[2]), traittab[Tcint]);
+		constrain(n, type(args[2]), traittab[Tcnum]);
 		settype(n, mktyslice(n->loc, b));
 		break;
 
