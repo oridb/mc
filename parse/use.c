@@ -230,11 +230,11 @@ typickle(FILE *fd, Type *ty)
 	/* FIXME: since we only support hardcoded traits, we just write
 	* out the set of them. we should write out the trait list a
 	* well */
-	if (!ty->traits) {
+	if (!ty->trneed) {
 		wrint(fd, 0);
 	} else {
-		wrint(fd, bscount(ty->traits));
-		for (i = 0; bsiter(ty->traits, &i); i++) {
+		wrint(fd, bscount(ty->trneed));
+		for (i = 0; bsiter(ty->trneed, &i); i++) {
 			if (i < Ntraits)
 				wrint(fd, i | Builtinmask);
 			else
@@ -263,7 +263,7 @@ typickle(FILE *fd, Type *ty)
 	case Tyvar:	die("Attempting to pickle %s. This will not work.\n", tystr(ty));	break;
 	case Tyname:
 		pickle(fd, ty->name);
-		wrbool(fd, ty->issynth);
+		wrbool(fd, 0); /* TRFIX: fixme, compat */
 		wrint(fd, ty->narg);
 		for (i = 0; i < ty->narg; i++)
 			wrtype(fd, ty->arg[i]);
@@ -271,7 +271,7 @@ typickle(FILE *fd, Type *ty)
 		break;
 	case Tygeneric:
 		pickle(fd, ty->name);
-		wrbool(fd, ty->issynth);
+		wrbool(fd, 0);	/* TRFIX: fixme, compat */
 		wrint(fd, ty->ngparam);
 		for (i = 0; i < ty->ngparam; i++)
 			wrtype(fd, ty->gparam[i]);
@@ -335,8 +335,11 @@ rdtrait(FILE *fd, Trait **dest, Type *ty)
 	if (tid & Builtinmask) {
 		if (dest)
 			*dest = traittab[tid & ~Builtinmask];
-		if (ty)
-			settrait(ty, traittab[tid & ~Builtinmask]);
+		if (ty) {
+			if (!ty->trneed)
+				ty->trneed = mkbs();
+			bsput(ty->trneed, traittab[tid & ~Builtinmask]->uid);
+		}
 	} else {
 		traitfix = xrealloc(traitfix, (ntraitfix + 1) * sizeof(traitfix[0]));
 		traitfix[ntraitfix++] = (Traitfix){dest, ty, tid};
@@ -366,8 +369,12 @@ tyunpickle(FILE *fd)
 	if (ty->nsub > 0)
 		ty->sub = zalloc(ty->nsub * sizeof(Type *));
 	switch (ty->type) {
-	case Tyunres:	ty->name = unpickle(fd);	break;
-	case Typaram:	ty->pname = rdstr(fd);	break;
+	case Tyunres:
+		ty->name = unpickle(fd);
+		break;
+	case Typaram:	
+		ty->pname = rdstr(fd);
+		break;
 	case Tystruct:
 		ty->nmemb = rdint(fd);
 		ty->sdecls = zalloc(ty->nmemb * sizeof(Node *));
@@ -389,7 +396,7 @@ tyunpickle(FILE *fd)
 		break;
 	case Tyname:
 		ty->name = unpickle(fd);
-		ty->issynth = rdbool(fd);
+		/*TRFIX: ty->issynth = */ rdbool(fd);
 		ty->narg = rdint(fd);
 		ty->arg = zalloc(ty->narg * sizeof(Type *));
 		for (i = 0; i < ty->narg; i++)
@@ -398,7 +405,7 @@ tyunpickle(FILE *fd)
 		break;
 	case Tygeneric:
 		ty->name = unpickle(fd);
-		ty->issynth = rdbool(fd);
+		/* TRFIX: ty->issynth = */ rdbool(fd);
 		ty->ngparam = rdint(fd);
 		ty->gparam = zalloc(ty->ngparam * sizeof(Type *));
 		for (i = 0; i < ty->ngparam; i++)
@@ -799,7 +806,7 @@ fixtypemappings(Stab *st)
 	/* check for duplicate type definitions */
 	for (i = 0; i < ntypefix; i++) {
 		t = htget(tidmap, itop(typefix[i].id));
-		if ((t->type != Tyname && t->type != Tygeneric) || t->issynth)
+		if ((t->type != Tyname && t->type != Tygeneric))
 			continue;
 		old = tydedup(t);
 		if (!tyeq(t, old) && !isspecialization(t, old))
@@ -834,7 +841,7 @@ fixtraitmappings(Stab *st)
 		if (traitfix[i].dest)
 			*traitfix[i].dest = tr;
 		if (traitfix[i].type)
-			settrait(traitfix[i].type, tr);
+			bsput(traitfix[i].type->trneed, tr->uid);
 	}
 
 	free(traitfix);
@@ -882,7 +889,6 @@ fiximplmappings(Stab *st)
 		if (getimpl(st, impl))
 			continue;
 		putimpl(st, impl);
-		settrait(impl->impl.type, tr);
 		for (j = 0; j < impl->impl.ndecls; j++) {
 			putdcl(file->file.globls, impl->impl.decls[j]);
 			protomap(tr, impl->impl.type, impl->impl.decls[j]);
@@ -1008,8 +1014,6 @@ foundextlib:
 			htput(tidmap, itop(tid), ty);
 			/* fix up types */
 			if (ty->type == Tyname || ty->type == Tygeneric) {
-				if (ty->issynth)
-					break;
 				if (!streq(s->name, ty->name->name.ns))
 					ty->ishidden = 1;
 				if (!gettype(s, ty->name) && !ty->ishidden)

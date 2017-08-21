@@ -124,7 +124,6 @@ struct Type {
 	Srcloc loc;
 	Vis vis;
 
-	Bitset *traits;		/* the type constraints matched on this type */
 
 	Type **gparam;		/* Tygeneric: type parameters that match the type args */
 	size_t ngparam;		/* Tygeneric: count of type parameters */
@@ -137,6 +136,7 @@ struct Type {
 	Type **sub;		/* sub-types; shared by all composite types */
 	size_t nsub;		/* For compound types */
 	size_t nmemb;		/* for aggregate types (struct, union) */
+	Bitset *trneed;		/* traits needed by this Tyvar/Typaram */
 	union {
 		Node *name;	/* Tyname: unresolved name. Tyalias: alias name */
 		Node *asize;	/* array size */
@@ -146,7 +146,6 @@ struct Type {
 	};
 
 	char hasparams;		/* cache for whether this type has params */
-	char issynth;		/* Tyname: whether this is synthesized or not */
 	char ishidden;		/* Tyname: whether this is hidden or not */
 	char ispkglocal;	/* Tyname: whether this is package local or not */
 	char isimport;		/* Tyname: whether tyis type was imported. */
@@ -379,6 +378,7 @@ int litvaleq(Node *a, Node *b);
 ulong tyhash(void *t);
 int tyeq(void *a, void *b);
 int tystricteq(void *a, void *b);
+int tymatchrank(Type *pat, Type *to);
 ulong namehash(void *t);
 int nameeq(void *a, void *b);
 ulong nsnamehash(void *t);
@@ -454,7 +454,6 @@ Trait *mktrait(Srcloc l, Node *name,
 	Type **aux, size_t naux,
 	Node **proto, size_t nproto,
 	int isproto);
-Type *mktylike(Srcloc l, Ty ty); /* constrains tyvar t like it was builtin ty */
 Ucon *finducon(Type *t, Node *name);
 int isstacktype(Type *t);
 int istysigned(Type *t);
@@ -469,8 +468,6 @@ char *tyfmt(char *buf, size_t len, Type *t);
 char *tystr(Type *t);
 size_t tyidfmt(char *buf, size_t len, Type *t);
 
-int hastrait(Type *t, Trait *c);
-int settrait(Type *t, Trait *c);
 int traiteq(Type *t, Trait **traits, size_t len);
 int traitfmt(char *buf, size_t len, Type *t);
 char *traitstr(Type *t);
@@ -531,8 +528,6 @@ Tysubst *mksubst(void);
 void substfree(Tysubst *subst);
 void substput(Tysubst *subst, Type *from, Type *to);
 Type *substget(Tysubst *subst, Type *from);
-void substpush(Tysubst *subst);
-void substpop(Tysubst *subst);
 Node *specializedcl(Node *n, Type *param, Type *to, Node **name);
 Type *tyspecialize(Type *t, Tysubst *tymap, Htab *delayed, Htab *tybase);
 Node *genericname(Node *n, Type *param, Type *t);

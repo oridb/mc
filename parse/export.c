@@ -75,9 +75,9 @@ tagtype(Stab *st, Type *t, int ingeneric, int hidelocal)
 		return;
 	t->vis = Vishidden;
 	/* export the user defined traits */
-	if (t->traits)
-		for (i = Ntraits; bsiter(t->traits, &i); i++)
-			tagtrait(st, traittab[i], ingeneric, hidelocal);
+	//if (t->traits)
+	//	for (i = Ntraits; bsiter(t->traits, &i); i++)
+	//		tagtrait(st, traittab[i], ingeneric, hidelocal);
 	for (i = 0; i < t->nsub; i++)
 		tagtype(st, t->sub[i], ingeneric, hidelocal);
 	switch (t->type) {

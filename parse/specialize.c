@@ -15,33 +15,13 @@
 
 static Node *specializenode(Node *g, Tysubst *tsmap);
 
-Tysubst *
-mksubst()
-{
-	Tysubst *subst;
-
-	subst = zalloc(sizeof(Tysubst));
-	substpush(subst);
-	return subst;
-}
-
-void
-substfree(Tysubst *subst)
-{
-	size_t i;
-
-	for (i = 0; i < subst->nsubst; i++)
-		htfree(subst->subst[i]);
-	lfree(&subst->subst, &subst->nsubst);
-}
-
-void
+static void
 substpush(Tysubst *subst)
 {
 	lappend(&subst->subst, &subst->nsubst, mkht(tyhash, tyeq));
 }
 
-void
+static void
 substpop(Tysubst *subst)
 {
 	Htab *ht;
@@ -71,14 +51,24 @@ substget(Tysubst *subst, Type *from)
 	return t;
 }
 
-void
-addtraits(Type *t, Bitset *traits)
+Tysubst *
+mksubst(void)
 {
-	size_t b;
+	Tysubst *subst;
 
-	if (traits)
-		for (b = 0; bsiter(traits, &b); b++)
-			settrait(t, traittab[b]);
+	subst = zalloc(sizeof(Tysubst));
+	substpush(subst);
+	return subst;
+}
+
+void
+substfree(Tysubst *subst)
+{
+	size_t i;
+
+	for (i = 0; i < subst->nsubst; i++)
+		htfree(subst->subst[i]);
+	lfree(&subst->subst, &subst->nsubst);
 }
 
 /*
@@ -106,7 +96,7 @@ tyspecialize(Type *orig, Tysubst *tsmap, Htab *delayed, Htab *trbase)
 	switch (t->type) {
 	case Typaram:
 		ret = mktyvar(t->loc);
-		addtraits(ret, t->traits);
+		ret->trneed = bsdup(t->trneed);
 		substput(tsmap, t, ret);
 		break;
 	case Tygeneric:
@@ -124,7 +114,6 @@ tyspecialize(Type *orig, Tysubst *tsmap, Htab *delayed, Htab *trbase)
 			substpop(tsmap);
 		ret->arg = arg;
 		ret->narg = narg;
-		ret->traits = bsdup(t->traits);
 		tytab[var->tid] = ret;
 		break;
 	case Tyname:
@@ -135,7 +124,6 @@ tyspecialize(Type *orig, Tysubst *tsmap, Htab *delayed, Htab *trbase)
 		for (i = 0; i < t->narg; i++)
 			lappend(&arg, &narg, tyspecialize(t->arg[i], tsmap, delayed, trbase));
 		ret = mktyname(t->loc, t->name, tyspecialize(t->sub[0], tsmap, delayed, trbase));
-		ret->traits = bsdup(t->traits);
 		ret->arg = arg;
 		ret->narg = narg;
 		if (trbase && hthas(trbase, orig) && !hthas(trbase, ret)) {
@@ -474,90 +462,7 @@ genericname(Node *n, Type *param, Type *t)
 	return name;
 }
 
-/* this doesn't walk through named types, so it can't recurse infinitely. */
-int
-matchquality(Type *pat, Type *to)
-{
-	int match, q;
-	size_t i;
-	Ucon *puc, *tuc;
-
-	if (pat->type == Typaram)
-		return 0;
-	else if (pat->type != to->type)
-		return -1;
-
-	match = 0;
-	switch (pat->type) {
-	case Tystruct:
-		if (pat->nmemb != to->nmemb)
-			return -1;
-		for (i = 0; i < pat->nmemb; i++) {
-			if (!streq(declname(pat->sdecls[i]),declname( to->sdecls[i])))
-				return -1;
-			q = matchquality(decltype(pat->sdecls[i]), decltype(to->sdecls[i]));
-			if (q < 0)
-				return -1;
-			match += q;
-		}
-		break;
-	case Tyunion:
-		if (pat->nmemb != to->nmemb)
-			return -1;
-		for (i = 0; i < pat->nmemb; i++) {
-			if (!nameeq(pat->udecls[i], to->udecls[i]))
-				return -1;
-			puc = pat->udecls[i];
-			tuc = to->udecls[i];
-			if (puc->etype && tuc->etype) {
-				q = matchquality(puc->etype, tuc->etype);
-				if (q < 0)
-					return -1;
-				match += q;
-			} else if (puc->etype != tuc->etype) {
-				return -1;
-			}
-		}
-		break;
-	case Tyname:
-		if (!nameeq(pat->name, to->name))
-			return -1;
-		if (pat->narg != to->narg)
-			return -1;
-		for (i = 0; i < pat->narg; i++) {
-			q = matchquality(pat->arg[i], to->arg[i]);
-			if (q < 0)
-				return -1;
-			match += q;
-		}
-		break;
-	case Tyarray:
-		/* unsized arrays are ok */
-		if (pat->asize && to->asize) {
-			if (!!litvaleq(pat->asize->expr.args[0], to->asize->expr.args[0]))
-				return -1;
-		} else if (pat->asize != to->asize) {
-			return -1;
-		}
-		else return matchquality(pat->sub[0], to->sub[0]);
-		break;
-	default:
-		if (pat->nsub != to->nsub)
-			break;
-		if (pat->type == to->type)
-			match = 1;
-		for (i = 0; i < pat->nsub; i++) {
-			q = matchquality(pat->sub[i], to->sub[i]);
-			if (q < 0)
-				return -1;
-			match += q;
-		}
-		break;
-	}
-	return match;
-}
-
-Node *
+static Node *
 bestimpl(Node *n, Type *to)
 {
 	Node **gimpl, **ambig, *match;
@@ -574,7 +479,7 @@ bestimpl(Node *n, Type *to)
 	gimpl = n->decl.gimpl;
 	ngimpl = n->decl.ngimpl;
 	for (i = 0; i < ngimpl; i++) {
-		score = matchquality(decltype(gimpl[i]), to);
+		score = tymatchrank(decltype(gimpl[i]), to);
 		if (score > best) {
 			lfree(&ambig, &nambig);
 			best = score;

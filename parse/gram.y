@@ -1081,7 +1081,9 @@ static void addtrait(Type *t, char *str)
 
 	for (i = 0; i < ntraittab; i++) {
 		if (!strcmp(namestr(traittab[i]->name), str)) {
-			settrait(t, traittab[i]);
+			if (!t->trneed)
+				t->trneed = mkbs();
+			bsput(t->trneed, i);
 			return;
 		}
 	}

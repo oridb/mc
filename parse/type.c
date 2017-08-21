@@ -15,11 +15,6 @@
 #include "parse.h"
 
 typedef struct Typename Typename;
-struct Typename {
-	Ty ty;
-	char *name;
-};
-
 Type **tytab = NULL;
 Type **types = NULL;
 size_t ntypes;
@@ -30,7 +25,6 @@ size_t nimpltab;
 
 static Htab *tydeduptab;
 /* Built in type constraints */
-static Trait *traits[Ntypes + 1][4];
 static int tybfmt(char *buf, size_t len, Bitset *visted, Type *t);
 
 char stackness[] = {
@@ -64,7 +58,6 @@ Type *
 mktype(Srcloc loc, Ty ty)
 {
 	Type *t;
-	int i;
 
 	/* the first 'n' types will be identity mapped: tytab[Tyint], eg,
 	 * will map to an instantitaion of Tyint.
@@ -87,9 +80,6 @@ mktype(Srcloc loc, Ty ty)
 	if (ty <= Tyvalist) /* the last builtin atomic type */
 		t->vis = Visbuiltin;
 
-	for (i = 0; traits[ty][i]; i++)
-		settrait(t, traits[ty][i]);
-
 	return t;
 }
 
@@ -105,8 +95,6 @@ tydup(Type *t)
 	r = mktype(t->loc, t->type);
 	r->resolved = 0;	/* re-resolving doesn't hurt */
 	r->fixed = 0;		/* re-resolving doesn't hurt */
-
-	r->traits = bsdup(t->traits);
 
 	r->arg = memdup(t->arg, t->narg * sizeof(Type *));
 	r->narg = t->narg;
@@ -126,22 +114,6 @@ tydup(Type *t)
 	default: break;
 	}
 	return r;
-}
-
-/*
- * Creates a Tyvar with the same
- * constrants as the 'like' type
- */
-Type *
-mktylike(Srcloc loc, Ty like)
-{
-	Type *t;
-	int i;
-
-	t = mktyvar(loc);
-	for (i = 0; traits[like][i]; i++)
-		settrait(t, traits[like][i]);
-	return t;
 }
 
 /* steals memb, funcs */
@@ -217,7 +189,6 @@ mktygeneric(Srcloc loc, Node *name, Type **param, size_t nparam, Type *base)
 	t = mktype(loc, Tygeneric);
 	t->name = name;
 	t->nsub = 1;
-	t->traits = bsdup(base->traits);
 	t->sub = xalloc(sizeof(Type *));
 	t->sub[0] = base;
 	t->gparam = param;
@@ -240,7 +211,6 @@ mktyname(Srcloc loc, Node *name, Type *base)
 	t = mktype(loc, Tyname);
 	t->name = name;
 	t->nsub = 1;
-	t->traits = bsdup(base->traits);
 	t->sub = xalloc(sizeof(Type *));
 	t->sub[0] = base;
 	return t;
@@ -485,18 +455,6 @@ namefmt(char *buf, size_t len, Node *n)
 }
 
 int
-settrait(Type *t, Trait *c)
-{
-	if (!t->traits)
-		t->traits = mkbs();
-	bsput(t->traits, c->uid);
-	return 1;
-}
-
-int
-hastrait(Type *t, Trait *c) { return t->traits && bshas(t->traits, c->uid); }
-
-int
 traitfmt(char *buf, size_t len, Type *t)
 {
 	size_t i;
@@ -504,7 +462,7 @@ traitfmt(char *buf, size_t len, Type *t)
 	char *end;
 	char *sep;
 
-	if (!t->traits || !bscount(t->traits))
+	if (!t->trneed || !bscount(t->trneed))
 		return 0;
 
 	p = buf;
@@ -512,11 +470,9 @@ traitfmt(char *buf, size_t len, Type *t)
 
 	p += bprintf(p, end - p, " :: ");
 	sep = "";
-	for (i = 0; i < ntraittab; i++) {
-		if (bshas(t->traits, i)) {
-			p += bprintf(p, end - p, "%s%s", sep, namestr(traittab[i]->name));
-			sep = ",";
-		}
+	for (i = 0; bsiter(t->trneed, &i); i++) {
+		p += bprintf(p, end - p, "%s%s", sep, namestr(traittab[i]->name));
+		sep = ",";
 	}
 	return p - buf;
 }
@@ -895,6 +851,89 @@ tyeq(void *a, void *b)
 	return eq;
 }
 
+/* this doesn't walk through named types, so it can't recurse infinitely. */
+int
+tymatchrank(Type *pat, Type *to)
+{
+	int match, q;
+	size_t i;
+	Ucon *puc, *tuc;
+
+	if (pat->type == Typaram)
+		return 0;
+	else if (pat->type != to->type)
+		return -1;
+
+	match = 0;
+	switch (pat->type) {
+	case Tystruct:
+		if (pat->nmemb != to->nmemb)
+			return -1;
+		for (i = 0; i < pat->nmemb; i++) {
+			if (!streq(declname(pat->sdecls[i]),declname( to->sdecls[i])))
+				return -1;
+			q = tymatchrank(decltype(pat->sdecls[i]), decltype(to->sdecls[i]));
+			if (q < 0)
+				return -1;
+			match += q;
+		}
+		break;
+	case Tyunion:
+		if (pat->nmemb != to->nmemb)
+			return -1;
+		for (i = 0; i < pat->nmemb; i++) {
+			if (!nameeq(pat->udecls[i], to->udecls[i]))
+				return -1;
+			puc = pat->udecls[i];
+			tuc = to->udecls[i];
+			if (puc->etype && tuc->etype) {
+				q = tymatchrank(puc->etype, tuc->etype);
+				if (q < 0)
+					return -1;
+				match += q;
+			} else if (puc->etype != tuc->etype) {
+				return -1;
+			}
+		}
+		break;
+	case Tyname:
+		if (!nameeq(pat->name, to->name))
+			return -1;
+		if (pat->narg != to->narg)
+			return -1;
+		for (i = 0; i < pat->narg; i++) {
+			q = tymatchrank(pat->arg[i], to->arg[i]);
+			if (q < 0)
+				return -1;
+			match += q;
+		}
+		break;
+	case Tyarray:
+		/* unsized arrays are ok */
+		if (pat->asize && to->asize) {
+			if (!!litvaleq(pat->asize->expr.args[0], to->asize->expr.args[0]))
+				return -1;
+		} else if (pat->asize != to->asize) {
+			return -1;
+		}
+		else return tymatchrank(pat->sub[0], to->sub[0]);
+		break;
+	default:
+		if (pat->nsub != to->nsub)
+			break;
+		if (pat->type == to->type)
+			match = 1;
+		for (i = 0; i < pat->nsub; i++) {
+			q = tymatchrank(pat->sub[i], to->sub[i]);
+			if (q < 0)
+				return -1;
+			match += q;
+		}
+		break;
+	}
+	return match;
+}
+
 size_t
 tyidfmt(char *buf, size_t sz, Type *ty)
 {
@@ -1067,7 +1106,6 @@ disposableinit(Stab *st, Trait *tr)
 void
 tyinit(Stab *st)
 {
-	int i;
 	Type *ty;
 	Trait *tr;
 
@@ -1083,41 +1121,6 @@ tyinit(Stab *st)
 	puttrait(st, tr->name, tr);
 #include "trait.def"
 #undef Tc
-
-	/* char::(numeric,integral) */
-	traits[Tychar][0] = traittab[Tcnum];
-	traits[Tychar][1] = traittab[Tcint];
-
-	traits[Tybyte][0] = traittab[Tcnum];
-	traits[Tybyte][1] = traittab[Tcint];
-
-	/* <integer types>::(numeric,integral) */
-	for (i = Tyint8; i < Tyflt32; i++) {
-		traits[i][0] = traittab[Tcnum];
-		traits[i][1] = traittab[Tcint];
-	}
-
-	/* <floats>::(numeric,floating) */
-	traits[Tyflt32][0] = traittab[Tcnum];
-	traits[Tyflt32][1] = traittab[Tcfloat];
-	traits[Tyflt64][0] = traittab[Tcnum];
-	traits[Tyflt64][1] = traittab[Tcfloat];
-
-	/* @a*::(sliceable) */
-	traits[Typtr][0] = traittab[Tcslice];
-
-	/* @a[:]::(indexable,sliceable) */
-	traits[Tyslice][0] = traittab[Tcidx];
-	traits[Tyslice][1] = traittab[Tcslice];
-	traits[Tyslice][2] = traittab[Tciter];
-
-	/* @a[SZ]::(indexable,sliceable) */
-	traits[Tyarray][0] = traittab[Tcidx];
-	traits[Tyarray][1] = traittab[Tcslice];
-	traits[Tyarray][2] = traittab[Tciter];
-
-	/* @a::function */
-	traits[Tyfunc][0] = traittab[Tcfunc];
 
 	/* Definining and registering the types has to go after we define the
 	 * constraints, otherwise they will have no constraints set on them. */
