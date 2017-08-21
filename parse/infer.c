@@ -477,7 +477,6 @@ static void
 tyresolve(Type *t)
 {
 	size_t i;
-	Type *base;
 
 	if (t->resolved)
 		return;
@@ -529,7 +528,6 @@ tyresolve(Type *t)
 				tystr(t->sub[i]), tystr(t));
 		}
 	}
-	base = tybase(t);
 	if (occurs(t))
 		lfatal(t->loc, "type %s includes itself", tystr(t));
 	popenv(t->env);
