@@ -255,8 +255,6 @@ adddispspecialization(Node *n, Stab *stab)
 
 	tr = traittab[Tcdisp];
 	ty = decltype(n);
-	//if (!ty->traits || !bshas(ty->traits, Tcdisp))
-	//	return;
 	assert(tr->nproto == 1);
 	if (hthas(tr->proto[0]->decl.impls, ty))
 		return;
@@ -2603,17 +2601,26 @@ specialize(void)
 		popstab();
 	}
 }
+
+static Traitmap *
+mktraitmap()
+{
+	Traitmap *m;
+
+	m = zalloc(sizeof(Traitmap));
+	m->traits = mkbs();
+	m->name = mkht(namehash, nameeq);
+	return m;
+}
+
 static void
 builtintraits(void)
 {
 	size_t i;
 
 	/* char::(numeric,integral) */
-	for (i = 0; i < Ntypes; i++) {
-		traitmap->sub[i] = zalloc(sizeof(Traitmap));
-		traitmap->sub[i]->traits = mkbs();
-		traitmap->sub[i]->name = mkht(namehash, nameeq);
-	}
+	for (i = 0; i < Ntypes; i++)
+		traitmap->sub[i] = mktraitmap();
 
 	bsput(traitmap->sub[Tychar]->traits, Tcnum);
 	bsput(traitmap->sub[Tychar]->traits, Tcint);
@@ -2680,18 +2687,23 @@ addtraittab(Traitmap *m, Trait *tr, Type *ty)
 {
 	Bitset *bs;
 	Traitmap *mm;
+	size_t i;
 
-	if (!m->sub[ty->type]) {
-		m->sub[ty->type] = zalloc(sizeof(Traitmap));
-		m->sub[ty->type]->traits = mkbs();
-		m->sub[ty->type]->name = mkht(namehash, nameeq);
-	}
+	if (!m->sub[ty->type])
+		m = mktraitmap();
 	mm = m->sub[ty->type];
 	switch (ty->type) {
 	case Tygeneric:
 	case Typaram:
-		lappend(&mm->filter, &m->nfilter, ty);
-		lappend(&mm->filtertr, &m->nfiltertr, tr);
+		for (i = 0; i < Ntypes; i++) {
+			if (i == Typaram)
+				continue;
+			if (!m->sub[i])
+				m->sub[i] = mktraitmap();
+			mm = m->sub[i];
+			lappend(&mm->filter, &mm->nfilter, ty);
+			lappend(&mm->filtertr, &mm->nfiltertr, tr);
+		}
 		break;
 	case Tyname:
 		if (ty->ngparam == 0) {

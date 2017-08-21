@@ -840,8 +840,11 @@ fixtraitmappings(Stab *st)
 		}
 		if (traitfix[i].dest)
 			*traitfix[i].dest = tr;
-		if (traitfix[i].type)
+		if (traitfix[i].type && traitfix[i].type->type == Typaram) {
+			if (!traitfix[i].type->trneed)
+				traitfix[i].type->trneed = mkbs();
 			bsput(traitfix[i].type->trneed, tr->uid);
+		}
 	}
 
 	free(traitfix);
