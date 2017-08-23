@@ -226,25 +226,25 @@ typickle(FILE *fd, Type *ty)
 	}
 	wrbyte(fd, ty->type);
 	wrbyte(fd, ty->vis);
-	/* tid is generated; don't write */
-	/* FIXME: since we only support hardcoded traits, we just write
-	* out the set of them. we should write out the trait list a
-	* well */
-	if (!ty->trneed) {
-		wrint(fd, 0);
-	} else {
-		wrint(fd, bscount(ty->trneed));
-		for (i = 0; bsiter(ty->trneed, &i); i++) {
-			if (i < Ntraits)
-				wrint(fd, i | Builtinmask);
-			else
-				wrint(fd, traittab[i]->uid);
-		}
-	}
 	wrint(fd, ty->nsub);
 	switch (ty->type) {
-	case Tyunres:	pickle(fd, ty->name);	break;
-	case Typaram:	wrstr(fd, ty->pname);	break;
+	case Tyunres:
+		pickle(fd, ty->name);
+		break;
+	case Typaram:
+		/* tid is generated; don't write */
+		if (ty->trneed) {
+			wrint(fd, bscount(ty->trneed));
+			for (i = 0; bsiter(ty->trneed, &i); i++) {
+				if (i < Ntraits)
+					wrint(fd, i | Builtinmask);
+				else
+					wrint(fd, traittab[i]->uid);
+			}
+		} else {
+			wrint(fd, 0);
+		}
+		wrstr(fd, ty->pname);	break;
 	case Tystruct:
 		wrint(fd, ty->nmemb);
 		for (i = 0; i < ty->nmemb; i++)
@@ -263,7 +263,6 @@ typickle(FILE *fd, Type *ty)
 	case Tyvar:	die("Attempting to pickle %s. This will not work.\n", tystr(ty));	break;
 	case Tyname:
 		pickle(fd, ty->name);
-		wrbool(fd, 0); /* TRFIX: fixme, compat */
 		wrint(fd, ty->narg);
 		for (i = 0; i < ty->narg; i++)
 			wrtype(fd, ty->arg[i]);
@@ -271,7 +270,6 @@ typickle(FILE *fd, Type *ty)
 		break;
 	case Tygeneric:
 		pickle(fd, ty->name);
-		wrbool(fd, 0);	/* TRFIX: fixme, compat */
 		wrint(fd, ty->ngparam);
 		for (i = 0; i < ty->ngparam; i++)
 			wrtype(fd, ty->gparam[i]);
@@ -361,10 +359,6 @@ tyunpickle(FILE *fd)
 	ty->isimport = 1;
 	if (rdbyte(fd) == Vishidden)
 		ty->ishidden = 1;
-	/* tid is generated; don't write */
-	n = rdint(fd);
-	for (i = 0; i < n; i++)
-		rdtrait(fd, NULL, ty);
 	ty->nsub = rdint(fd);
 	if (ty->nsub > 0)
 		ty->sub = zalloc(ty->nsub * sizeof(Type *));
@@ -373,6 +367,9 @@ tyunpickle(FILE *fd)
 		ty->name = unpickle(fd);
 		break;
 	case Typaram:	
+		n = rdint(fd);
+		for (i = 0; i < n; i++)
+			rdtrait(fd, NULL, ty);
 		ty->pname = rdstr(fd);
 		break;
 	case Tystruct:
@@ -396,7 +393,6 @@ tyunpickle(FILE *fd)
 		break;
 	case Tyname:
 		ty->name = unpickle(fd);
-		/*TRFIX: ty->issynth = */ rdbool(fd);
 		ty->narg = rdint(fd);
 		ty->arg = zalloc(ty->narg * sizeof(Type *));
 		for (i = 0; i < ty->narg; i++)
@@ -405,7 +401,6 @@ tyunpickle(FILE *fd)
 		break;
 	case Tygeneric:
 		ty->name = unpickle(fd);
-		/* TRFIX: ty->issynth = */ rdbool(fd);
 		ty->ngparam = rdint(fd);
 		ty->gparam = zalloc(ty->ngparam * sizeof(Type *));
 		for (i = 0; i < ty->ngparam; i++)
