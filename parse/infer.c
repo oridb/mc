@@ -33,6 +33,7 @@ struct Traitmap {
 static void infernode(Node **np, Type *ret, int *sawret);
 static void inferexpr(Node **np, Type *ret, int *sawret);
 static void inferdecl(Node *n);
+static int tryconstrain(Type *ty, Trait *tr);
 
 static Type *tf(Type *t);
 
@@ -165,8 +166,12 @@ ctxstr(Node *n)
 	Node **args;
 	char buf[512];
 
+	if (!n)
+		return strdup("???");
 	switch (n->type) {
-	default: s = strdup(nodestr[n->type]); break;
+	default:
+		s = strdup(nodestr[n->type]);
+		break;
 	case Ndecl:
 		 d = declname(n);
 		 t = nodetystr(n);
@@ -749,12 +754,101 @@ _bind(Tyenv *e, Node *n)
 		bindtype(e, n->decl.init->expr.type);
 }
 
-/* Constrains a type to implement the required constraints. On
- * type variables, the constraint is added to the required
- * constraint list. Otherwise, the type is checked to see
- * if it has the required constraint */
-static void
-constrain(Node *ctx, Type *base, Trait *tr)
+/* this doesn't walk through named types, so it can't recurse infinitely. */
+int
+tymatchrank(Type *pat, Type *to)
+{
+	int match, q;
+	size_t i;
+	Ucon *puc, *tuc;
+
+	pat = tysearch(pat);
+	to = tysearch(to);
+	if (pat->type == Typaram) {
+		if (!pat->trneed)
+			return 0;
+		for (i = 0; bsiter(pat->trneed, &i); i++)
+			if (!tryconstrain(to, traittab[i]))
+				return -1;
+		return 0;
+	} else if (pat->type == Tyvar) {
+		return 1;
+	} else if (pat->type != to->type) {
+		return -1;
+	}
+
+	match = 0;
+	switch (pat->type) {
+	case Tystruct:
+		if (pat->nmemb != to->nmemb)
+			return -1;
+		for (i = 0; i < pat->nmemb; i++) {
+			if (!streq(declname(pat->sdecls[i]),declname( to->sdecls[i])))
+				return -1;
+			q = tymatchrank(decltype(pat->sdecls[i]), decltype(to->sdecls[i]));
+			if (q < 0)
+				return -1;
+			match += q;
+		}
+		break;
+	case Tyunion:
+		if (pat->nmemb != to->nmemb)
+			return -1;
+		for (i = 0; i < pat->nmemb; i++) {
+			if (!nameeq(pat->udecls[i], to->udecls[i]))
+				return -1;
+			puc = pat->udecls[i];
+			tuc = to->udecls[i];
+			if (puc->etype && tuc->etype) {
+				q = tymatchrank(puc->etype, tuc->etype);
+				if (q < 0)
+					return -1;
+				match += q;
+			} else if (puc->etype != tuc->etype) {
+				return -1;
+			}
+		}
+		break;
+	case Tyname:
+		if (!nameeq(pat->name, to->name))
+			return -1;
+		if (pat->narg != to->narg)
+			return -1;
+		for (i = 0; i < pat->narg; i++) {
+			q = tymatchrank(pat->arg[i], to->arg[i]);
+			if (q < 0)
+				return -1;
+			match += q;
+		}
+		break;
+	case Tyarray:
+		/* unsized arrays are ok */
+		if (pat->asize && to->asize) {
+			if (!!litvaleq(pat->asize->expr.args[0], to->asize->expr.args[0]))
+				return -1;
+		} else if (pat->asize != to->asize) {
+			return -1;
+		}
+		else return tymatchrank(pat->sub[0], to->sub[0]);
+		break;
+	default:
+		if (pat->nsub != to->nsub)
+			break;
+		if (pat->type == to->type)
+			match = 1;
+		for (i = 0; i < pat->nsub; i++) {
+			q = tymatchrank(pat->sub[i], to->sub[i]);
+			if (q < 0)
+				return -1;
+			match += q;
+		}
+		break;
+	}
+	return match;
+}
+
+static int
+tryconstrain(Type *base, Trait *tr)
 {
 	Traitmap *tm;
 	Bitset *bs;
@@ -766,25 +860,25 @@ constrain(Node *ctx, Type *base, Trait *tr)
 		tm = traitmap->sub[ty->type];
 		while (1) {
 			if (ty->type == Typaram && bshas(ty->trneed, tr->uid))
-				return;
+				return 1;
 			if (ty->type == Tyvar) {
 				if (!ty->trneed)
 					ty->trneed = mkbs();
 				bsput(ty->trneed, tr->uid);
-				return;
+				return 1;
 			} 
 			if (bshas(tm->traits, tr->uid))
-				return;
+				return 1;
 			if (tm->name && ty->type == Tyname) {
 				bs = htget(tm->name, ty->name);
 				if (bs && bshas(bs, tr->uid))
-					return;
+					return 1;
 			}
 			for (i = 0; i < tm->nfilter; i++) {
 				if (tm->filtertr[i]->uid != tr->uid)
 					continue;
 				if (tymatchrank(tm->filter[i], ty) >= 0)
-					return;
+					return 1;
 			}
 			if (!tm->sub[ty->type])
 				break;
@@ -796,7 +890,18 @@ constrain(Node *ctx, Type *base, Trait *tr)
 			break;
 		base = base->sub[0];
 	}
-	fatal(ctx, "%s needs trait %s near %s", tystr(ty), namestr(tr->name), ctxstr(ctx));
+	return 0;
+}
+
+/* Constrains a type to implement the required constraints. On
+ * type variables, the constraint is added to the required
+ * constraint list. Otherwise, the type is checked to see
+ * if it has the required constraint */
+static void
+constrain(Node *ctx, Type *base, Trait *tr)
+{
+	if (!tryconstrain(base, tr))
+		fatal(ctx, "%s needs trait %s near %s", tystr(base), namestr(tr->name), ctxstr(ctx));
 }
 
 static void
