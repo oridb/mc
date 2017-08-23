@@ -272,8 +272,6 @@ additerspecialization(Node *n, Stab *stab)
 
 	tr = traittab[Tciter];
 	ty = exprtype(n->iterstmt.seq);
-	//if (!ty->traits || !bshas(ty->traits, Tciter))
-	//	return;
 	if (ty->type == Tyslice || ty->type == Tyarray || ty->type == Typtr)
 		return;
 	for (i = 0; i < tr->nproto; i++) {
@@ -880,7 +878,6 @@ verifytraits(Node *ctx, Type *a, Type *b)
 static void
 mergetraits(Node *ctx, Type *a, Type *b)
 {
-// TRFIX
 	if (b->type == Tyvar) {
 		/* make sure that if a = b, both have same traits */
 		if (a->trneed && b->trneed)
