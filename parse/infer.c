@@ -2723,8 +2723,8 @@ addtraittab(Traitmap *m, Trait *tr, Type *ty)
 		if (istyprimitive(ty)) {
 			bsput(mm->traits, tr->uid);
 		} else {
-			lappend(&mm->filter, &m->nfilter, ty);
-			lappend(&mm->filtertr, &m->nfiltertr, tr);
+			lappend(&mm->filter, &mm->nfilter, ty);
+			lappend(&mm->filtertr, &mm->nfiltertr, tr);
 		}
 	}
 }

@@ -859,6 +859,8 @@ tymatchrank(Type *pat, Type *to)
 	size_t i;
 	Ucon *puc, *tuc;
 
+	pat = tysearch(pat);
+	to = tysearch(to);
 	if (pat->type == Typaram)
 		return 0;
 	else if (pat->type != to->type)
