@@ -37,13 +37,8 @@ checkundef(Node *n, Reaching *r, Bitset *reach, Bitset *kill)
 			if (!bshas(reach, r->defs[did][j]))
 				continue;
 			def = nodes[r->defs[did][j]];
-			if (exprop(def) == Oundef) {
-				fprintf(stderr, "%s:%d: ", fname(n->loc), lnum(n->loc));
-				fprintf(stderr, "FIXME TEMPORARILY DISABLED: %s used before definition\n", namestr(n->expr.args[0]));
-				/*
+			if (exprop(def) == Oundef)
 				fatal(n, "%s used before definition", namestr(n->expr.args[0]));
-				*/
-			}
 		}
 	} else {
 		switch (exprop(n)) {
