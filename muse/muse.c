@@ -104,7 +104,7 @@ main(int argc, char **argv)
 	tyinit(file->file.globls);
 	for (i = 0; i < ctx.nargs; i++)
 		mergeuse(ctx.args[i]);
-	infer(file);
+	infer();
 	tagexports(file, 1);
 	addextlibs(file, extralibs, nextralibs);
 

@@ -70,9 +70,8 @@ const csdial = {netdir, proto, rem
 	seek(csfd, 0, 0)
 	while true
 		match read(csfd, buf[:])
-		| `std.Ok _:
-		| `std.Err e:
-			break
+		| `std.Ok len:	n = len
+		| `std.Err e:	break
 		;;
 
 		match strfind(buf[:n], " ")
@@ -110,20 +109,22 @@ const call : (a : byte[:], b : byte[:], c : byte[:] -> result(fd, byte[:])) = {c
 	;;
 
 	match read(cfd, namebuf[:])
-	| `Ok fd:	/* nothing */
+	| `Ok len:	n = len
 	| `Err m:	goto cleanup
 	;;
-	fput(cfd, "connect {}", addr)
+
 	name = strstrip(namebuf[:n])
 	match strrfind(c, "/")
 	| `None:	die("there should be a '/' here\n")
 	| `Some i:	base = c[:i]
 	;;
+
 	dpath = bfmt(databuf[:], "{}/{}/data", base, name)
 	match open(dpath, Ordwr)
 	| `Ok fd:	datafd = `Ok fd
 	| `Err m:	datafd = `Err "could not open data"
 	;;
+
 :cleanup
 	close(cfd)
 	slfree(c)
