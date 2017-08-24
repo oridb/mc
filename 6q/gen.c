@@ -283,9 +283,10 @@ loadop(Type *ty)
 	case Tyint16:	op = Qloadsh;	break;
 	case Tyuint16:	op = Qloaduh;	break;
 
-	case Tyint:	op = Qloadsw;	break;
-	case Tyint32:	op = Qloadsw;	break;
 	case Tychar:	op = Qloaduw;	break;
+	case Tyint:	op = Qloadsw;	break;
+	case Tyuint:	op = Qloadsw;	break;
+	case Tyint32:	op = Qloadsw;	break;
 	case Tyuint32:	op = Qloaduw;	break;
 
 	case Tyint64:	op = Qloadl;	break;
@@ -314,14 +315,16 @@ storeop(Type *ty)
 	case Tyint16:	op = Qstoreh;	break;
 	case Tyuint16:	op = Qstoreh;	break;
 
-	case Tyint:	op = Qstorew;	break;
-	case Tyint32:	op = Qstorew;	break;
 	case Tychar:	op = Qstorew;	break;
+	case Tyint:	op = Qstorew;	break;
+	case Tyuint:	op = Qstorew;	break;
+	case Tyint32:	op = Qstorew;	break;
 	case Tyuint32:	op = Qstorew;	break;
 
 	case Tyint64:	op = Qstorel;	break;
 	case Tyuint64:	op = Qstorel;	break;
 	case Typtr:	op = Qstorel;	break;
+
 	case Tyflt32:	op = Qstores;	break;
 	case Tyflt64:	op = Qstored;	break;
 	default:	die("badstore");	break;
@@ -672,13 +675,14 @@ loadvar(Gen *g, Node *var)
 	Loc r, l;
 
 	dcl = decls[var->expr.did];
-	ty = exprtype(var);
+	ty = tybase(exprtype(var));
 	l = qvar(g, dcl);
 	if (isstacktype(ty)) {
 		r = l;
 	} else {
 		r = qtemp(g, l.tag);
-		out(g, loadop(ty), r, l, Zq);
+		if (ty->type != Tyvoid)
+			out(g, loadop(ty), r, l, Zq);
 	}
 	return r;
 }
