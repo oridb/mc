@@ -532,7 +532,7 @@ Type *substget(Tysubst *subst, Type *from);
 Node *specializedcl(Node *n, Type *param, Type *to, Node **name);
 Type *tyspecialize(Type *t, Tysubst *tymap, Htab *delayed, Htab *tybase);
 Node *genericname(Node *n, Type *param, Type *t);
-void geninit(Node *file);
+void geninit(void);
 
 /* usefiles */
 int loaduse(char *path, FILE *f, Stab *into, Vis vis);

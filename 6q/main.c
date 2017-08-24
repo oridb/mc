@@ -30,7 +30,8 @@ char **incpaths;
 char *localincpath;
 size_t nincpaths;
 
-static void usage(char *prog)
+static void
+usage(char *prog)
 {
 	printf("%s [-?|-h] [-o outfile] [-d[dbgopts]] inputs\n", prog);
 	printf("\t-?|-h\tPrint this help\n");
@@ -46,7 +47,8 @@ static void usage(char *prog)
 	printf("\t\tu: log type unifications\n");
 }
 
-static void swapout(char* buf, size_t sz, char* suf) {
+static void
+swapout(char* buf, size_t sz, char* suf) {
 	char* psuffix;
 	psuffix = strrchr(outfile, '.');
 	if (psuffix != NULL)
@@ -55,7 +57,8 @@ static void swapout(char* buf, size_t sz, char* suf) {
 		bprintf(buf, sz, "%s%s", outfile, suf);
 }
 
-static void assemble(char *qbesrc, char *asmsrc, char *path)
+static void
+assemble(char *qbesrc, char *asmsrc, char *path)
 {
 	char *qbecmd[] = {"qbe", "-o", NULL};
 	char *asmcmd[] = Asmcmd;
@@ -127,7 +130,8 @@ static void assemble(char *qbesrc, char *asmsrc, char *path)
 	lfree(&cmd, &ncmd);
 }
 
-static char *dirname(char *path)
+static char *
+dirname(char *path)
 {
 	char *p;
 
@@ -137,7 +141,8 @@ static char *dirname(char *path)
 	else
 		return xstrdup(".");
 }
-static char *gentempfile(char *buf, size_t bufsz, char *path, char *suffix)
+static char *
+gentempfile(char *buf, size_t bufsz, char *path, char *suffix)
 {
 	char *tmpdir;
 	char *base;
@@ -152,11 +157,13 @@ static char *gentempfile(char *buf, size_t bufsz, char *path, char *suffix)
 	else
 		base = path;
 	gettimeofday(&tv, NULL);
-	bprintf(buf, bufsz, "%s/tmp%lx%lx-%s%s", tmpdir, (long)tv.tv_sec, (long)tv.tv_usec, base, suffix);
+	bprintf(buf, bufsz, "%s/tmp%lx%lx-%s%s", 
+		tmpdir, (long)tv.tv_sec, (long)tv.tv_usec, base, suffix);
 	return buf;
 }
 
-static int hasmain(Node *file)
+static int
+hasmain()
 {
 	Node *n, *name;
 
@@ -170,7 +177,8 @@ static int hasmain(Node *file)
 	return 1;
 }
 
-static void genuse(char *path)
+static void
+genuse(char *path)
 {
 	FILE *f;
 	char buf[1024];
@@ -198,7 +206,8 @@ static void genuse(char *path)
 	fclose(f);
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	char qsbuf[256];
 	char asbuf[256];
@@ -263,9 +272,9 @@ int main(int argc, char **argv)
 		/* before we do anything to the parse */
 		if (debugopt['T'])
 			dump(file, stdout);
-		infer(file);
-		if (hasmain(file))
-			geninit(file);
+		infer();
+		if (hasmain())
+			geninit();
 		tagexports(file, 0);
 		/* after all type inference */
 		if (debugopt['t'])

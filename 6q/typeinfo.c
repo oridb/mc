@@ -18,14 +18,17 @@
 
 #define Tdindirect 0x80
 
-Blob *tydescsub(Type *ty);
+Blob *
+tydescsub(Type *ty);
 
-size_t alignto(size_t sz, Type *t)
+size_t 
+alignto(size_t sz, Type *t)
 {
 	return align(sz, tyalign(t));
 }
 
-size_t blobsz(Blob *b)
+size_t 
+blobsz(Blob *b)
 {
 	size_t n;
 	size_t i;
@@ -58,7 +61,8 @@ size_t blobsz(Blob *b)
 	return 0;
 }
 
-void namevec(Blob ***sub, size_t *nsub, Node *n)
+void 
+namevec(Blob ***sub, size_t *nsub, Node *n)
 {
 	char *buf;
 	size_t len;
@@ -76,7 +80,8 @@ void namevec(Blob ***sub, size_t *nsub, Node *n)
 	lappend(sub, nsub, mkblobbytes(buf, len));
 }
 
-static void structmemb(Blob ***sub, size_t *nsub, Node *sdecl)
+static void 
+structmemb(Blob ***sub, size_t *nsub, Node *sdecl)
 {
 	Blob *b;
 
@@ -85,7 +90,8 @@ static void structmemb(Blob ***sub, size_t *nsub, Node *sdecl)
 	lappend(sub, nsub, b);
 }
 
-static void unionmemb(Blob ***sub, size_t *nsub, Ucon *ucon)
+static void 
+unionmemb(Blob ***sub, size_t *nsub, Ucon *ucon)
 {
 	namevec(sub, nsub, ucon->name);
 	if (ucon->etype) {
@@ -96,13 +102,15 @@ static void unionmemb(Blob ***sub, size_t *nsub, Ucon *ucon)
 	}
 }
 
-static void encodetypeinfo(Blob ***sub, size_t *nsub, Type *t)
+static void 
+encodetypeinfo(Blob ***sub, size_t *nsub, Type *t)
 {
 	lappend(sub, nsub, mkblobi(Btimin, tysize(t)));
 	lappend(sub, nsub, mkblobi(Btimin, tyalign(t)));
 }
 
-Blob *tydescsub(Type *ty)
+Blob *
+tydescsub(Type *ty)
 {
 	Blob **sub, *sz, *bt, *b;
 	size_t i, nsub;
@@ -196,7 +204,8 @@ Blob *tydescsub(Type *ty)
 	return b;
 }
 
-Blob *namedesc(Type *ty)
+Blob *
+namedesc(Type *ty)
 {
 	Blob **sub;
 	size_t nsub;
@@ -209,7 +218,8 @@ Blob *namedesc(Type *ty)
 	return mkblobseq(sub, nsub);
 }
 
-Blob *tydescblob(Type *ty)
+Blob *
+tydescblob(Type *ty)
 {
 	char buf[512];
 	Blob *b, *sz, *sub;
@@ -234,7 +244,8 @@ Blob *tydescblob(Type *ty)
 	return b;
 }
 
-size_t tysize(Type *t)
+size_t 
+tysize(Type *t)
 {
 	size_t sz;
 	size_t i;
@@ -314,7 +325,8 @@ size_t tysize(Type *t)
 	return -1;
 }
 
-size_t tyalign(Type *ty)
+size_t 
+tyalign(Type *ty)
 {
 	size_t align, i;
 
@@ -345,7 +357,8 @@ size_t tyalign(Type *ty)
 }
 
 /* gets the byte offset of 'memb' within the aggregate type 'aggr' */
-ssize_t tyoffset(Type *ty, Node *memb)
+ssize_t 
+tyoffset(Type *ty, Node *memb)
 {
 	size_t i;
 	size_t off;
@@ -366,7 +379,8 @@ ssize_t tyoffset(Type *ty, Node *memb)
 	return 0;
 }
 
-size_t size(Node *n)
+size_t 
+size(Node *n)
 {
 	Type *t;
 
@@ -377,12 +391,14 @@ size_t size(Node *n)
 	return tysize(t);
 }
 
-ssize_t offset(Node *aggr, Node *memb)
+ssize_t 
+offset(Node *aggr, Node *memb)
 {
 	return tyoffset(exprtype(aggr), memb);
 }
 
-char *tydescid(char *buf, size_t bufsz, Type *ty)
+char *
+tydescid(char *buf, size_t bufsz, Type *ty)
 {
 	char *sep, *ns;
 	char *p, *end;

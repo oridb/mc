@@ -17,7 +17,8 @@
 #include "../config.h"
 
 
-Blob *mkblobi(Blobtype type, uint64_t ival)
+Blob *
+mkblobi(Blobtype type, uint64_t ival)
 {
 	Blob *b;
 
@@ -27,7 +28,8 @@ Blob *mkblobi(Blobtype type, uint64_t ival)
 	return b;
 }
 
-Blob *mkblobpad(size_t sz)
+Blob *
+mkblobpad(size_t sz)
 {
 	Blob *b;
 
@@ -37,7 +39,8 @@ Blob *mkblobpad(size_t sz)
 	return b;
 }
 
-Blob *mkblobbytes(char *buf, size_t len)
+Blob *
+mkblobbytes(char *buf, size_t len)
 {
 	Blob *b;
 
@@ -48,7 +51,8 @@ Blob *mkblobbytes(char *buf, size_t len)
 	return b;
 }
 
-Blob *mkblobseq(Blob **sub, size_t nsub)
+Blob *
+mkblobseq(Blob **sub, size_t nsub)
 {
 	Blob *b;
 
@@ -59,7 +63,8 @@ Blob *mkblobseq(Blob **sub, size_t nsub)
 	return b;
 }
 
-Blob *mkblobref(char *lbl, size_t off, int isextern)
+Blob *
+mkblobref(char *lbl, size_t off, int isextern)
 {
 	Blob *b;
 
@@ -71,7 +76,8 @@ Blob *mkblobref(char *lbl, size_t off, int isextern)
 	return b;
 }
 
-void blobfree(Blob *b)
+void
+blobfree(Blob *b)
 {
 	size_t i;
 
@@ -92,7 +98,8 @@ void blobfree(Blob *b)
 	free(b);
 }
 
-static size_t getintlit(Node *n, char *failmsg)
+static size_t
+getintlit(Node *n, char *failmsg)
 {
 	if (exprop(n) != Olit)
 		fatal(n, "%s", failmsg);
@@ -102,19 +109,22 @@ static size_t getintlit(Node *n, char *failmsg)
 	return n->lit.intval;
 }
 
-static void b(Blob *b, Blob *n)
+static void
+b(Blob *b, Blob *n)
 {
 	lappend(&b->seq.sub, &b->seq.nsub, n);
 }
 
-static size_t blobpad(Blob *seq, size_t sz)
+static size_t
+blobpad(Blob *seq, size_t sz)
 {
 	if (sz)
 		b(seq, mkblobpad(sz));
 	return sz;
 }
 
-static size_t bloblit(Gen *g, Blob *seq, Node *n, Type *ty)
+static size_t
+bloblit(Gen *g, Blob *seq, Node *n, Type *ty)
 {
 	Blobtype intsz[] = {
 		[1] = Bti8,
@@ -177,7 +187,8 @@ static size_t bloblit(Gen *g, Blob *seq, Node *n, Type *ty)
 	return sz;
 }
 
-static size_t blobslice(Gen *g, Blob *seq, Node *n)
+static size_t
+blobslice(Gen *g, Blob *seq, Node *n)
 {
 	Node *base, *lo, *hi;
 	ssize_t loval, hival, sz;
@@ -208,7 +219,8 @@ static size_t blobslice(Gen *g, Blob *seq, Node *n)
 	return 16;
 }
 
-static Node *structmemb(Node *n, char *dcl)
+static Node *
+structmemb(Node *n, char *dcl)
 {
 	size_t i;
 
@@ -218,7 +230,8 @@ static Node *structmemb(Node *n, char *dcl)
 	return NULL;
 }
 
-static size_t blobstruct(Gen *g, Blob *seq, Node *n)
+static size_t
+blobstruct(Gen *g, Blob *seq, Node *n)
 {
 	size_t i, sz, pad, end, ndcl;
 	Node **dcl, *m;
@@ -244,7 +257,8 @@ static size_t blobstruct(Gen *g, Blob *seq, Node *n)
 	return sz;
 }
 
-static size_t blobucon(Gen *g, Blob *seq, Node *n)
+static size_t
+blobucon(Gen *g, Blob *seq, Node *n)
 {
 	size_t sz, pad;
 	Ucon *uc;
@@ -261,7 +275,8 @@ static size_t blobucon(Gen *g, Blob *seq, Node *n)
 	return sz;
 }
 
-size_t blobrec(Gen *g, Blob *b, Node *n)
+size_t
+blobrec(Gen *g, Blob *b, Node *n)
 {
 	size_t i, sz, end;
 	Type *ty;
@@ -296,7 +311,8 @@ size_t blobrec(Gen *g, Blob *b, Node *n)
 }
 
 
-static void encodemin(Gen *g, uint64_t val)
+static void
+encodemin(Gen *g, uint64_t val)
 {
 	size_t i, shift;
 	uint8_t b;
@@ -320,7 +336,8 @@ static void encodemin(Gen *g, uint64_t val)
 	}
 }
 
-static void outbytes(Gen *g, char *p, size_t sz)
+static void
+outbytes(Gen *g, char *p, size_t sz)
 {
 	size_t i;
 
@@ -339,7 +356,8 @@ static void outbytes(Gen *g, char *p, size_t sz)
 	}
 }
 
-void genblob(Gen *g, Blob *b)
+void
+genblob(Gen *g, Blob *b)
 {
 	size_t i;
 

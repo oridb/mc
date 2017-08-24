@@ -16,22 +16,35 @@
 #include "qasm.h"
 #include "../config.h"
 
-char qtag(Gen *g, Type *ty);
-static void outtypebody(Gen *g, Type *ty);
-static void outqtype(Gen *g, Type *ty);
+char 
+qtag(Gen *g, Type *ty);
+static void 
+outtypebody(Gen *g, Type *ty);
+static void 
+outqtype(Gen *g, Type *ty);
 
-static void out(Gen *g, Qop o, Loc r, Loc a, Loc b);
-static void ocall(Gen *g, Loc fn, Loc ret, Loc env, Loc *args, Type **types, size_t nargs);
-static Loc rval(Gen *g, Node *n);
-static Loc lval(Gen *g, Node *n);
-static Loc seqbase(Gen *g, Node *sl, Node *off);
-static Loc slicelen(Gen *g, Node *n, Type *rty);
-static Loc gencast(Gen *g, Srcloc loc, Loc val, Type *to, Type *from);
+static void 
+out(Gen *g, Qop o, Loc r, Loc a, Loc b);
+static void 
+ocall(Gen *g, Loc fn, Loc ret, Loc env, Loc *args, Type **types, size_t nargs);
+static Loc 
+rval(Gen *g, Node *n);
+static Loc 
+lval(Gen *g, Node *n);
+static Loc 
+seqbase(Gen *g, Node *sl, Node *off);
+static Loc 
+slicelen(Gen *g, Node *n, Type *rty);
+static Loc 
+gencast(Gen *g, Srcloc loc, Loc val, Type *to, Type *from);
 
-static Loc abortoob;
-static Loc ptrsize;
+static Loc 
+abortoob;
+static Loc 
+ptrsize;
 
-static int isexport(Node *dcl)
+static int 
+isexport(Node *dcl)
 {
 	Node *n;
 
@@ -46,7 +59,8 @@ static int isexport(Node *dcl)
 	return 0;
 }
 
-int isstack(Node *n)
+int 
+isstack(Node *n)
 {
 	if (n->type == Nexpr)
 		return isstacktype(n->expr.type);
@@ -54,7 +68,8 @@ int isstack(Node *n)
 		return isstacktype(n->decl.type);
 }
 
-char *asmname(Node *n, char sigil)
+char *
+asmname(Node *n, char sigil)
 {
 	char *ns, *name, *sep;
 
@@ -69,12 +84,14 @@ char *asmname(Node *n, char sigil)
 }
 
 
-static Loc qtemp(Gen *g, char type)
+static Loc 
+qtemp(Gen *g, char type)
 {
 	return (Loc){.kind=Ltemp, .tmp=g->nexttmp++, .tag=type};
 }
 
-static Loc temp(Gen *g, Node *n)
+static Loc 
+temp(Gen *g, Node *n)
 {
 	char type;
 
@@ -85,7 +102,8 @@ static Loc temp(Gen *g, Node *n)
 	return (Loc){.kind=Ltemp, .tmp=g->nexttmp++, .tag=type};
 }
 
-static Loc qvar(Gen *g, Node *n)
+static Loc 
+qvar(Gen *g, Node *n)
 {
 	char tag;
 
@@ -97,27 +115,32 @@ static Loc qvar(Gen *g, Node *n)
 	return (Loc){.kind=Ldecl, .dcl=n->decl.did, .tag=tag};
 }
 
-static Loc qlabelstr(Gen *g, char *lbl)
+static Loc 
+qlabelstr(Gen *g, char *lbl)
 {
 	return (Loc){.kind=Llabel, .lbl=lbl, .tag='l'};
 }
 
-static Loc qlabel(Gen *g, Node *lbl)
+static Loc 
+qlabel(Gen *g, Node *lbl)
 {
 	return (Loc){.kind=Llabel, .lbl=lblstr(lbl), .tag='l'};
 }
 
-static Loc qconst(Gen *g, uint64_t cst, char tag)
+static Loc 
+qconst(Gen *g, uint64_t cst, char tag)
 {
 	return (Loc){.kind=Lconst, .cst=cst, .tag=tag};
 }
 
-static Loc qblob(Gen *g, Blob *b)
+static Loc 
+qblob(Gen *g, Blob *b)
 {
 	return (Loc){.kind=Lblob, .blob=b, .tag='l'};
 }
 
-static void out(Gen *g, Qop op, Loc r, Loc a, Loc b)
+static void 
+out(Gen *g, Qop op, Loc r, Loc a, Loc b)
 {
 	if (g->ninsn == g->insnsz) {
 		g->insnsz += g->insnsz/2 + 1;
@@ -130,7 +153,8 @@ static void out(Gen *g, Qop op, Loc r, Loc a, Loc b)
 	g->ninsn++;
 }
 
-static void ocall(Gen *g, Loc fn, Loc ret, Loc env, Loc *args, Type **types, size_t nargs) 
+static void 
+ocall(Gen *g, Loc fn, Loc ret, Loc env, Loc *args, Type **types, size_t nargs) 
 {
 	if (g->ninsn == g->insnsz) {
 		g->insnsz += g->insnsz/2 + 1;
@@ -146,7 +170,8 @@ static void ocall(Gen *g, Loc fn, Loc ret, Loc env, Loc *args, Type **types, siz
 	g->ninsn++;
 }
 
-Type *codetype(Type *ft)
+Type *
+codetype(Type *ft)
 {
 	ft = tybase(ft);
 	if (ft->type == Tycode)
@@ -157,12 +182,14 @@ Type *codetype(Type *ft)
 	return ft;
 }
 
-static void addlocal(Gen *g, Node *n)
+static void 
+addlocal(Gen *g, Node *n)
 {
 	lappend(&g->local, &g->nlocal, n);
 }
 
-static Loc qstacktemp(Gen *g, Node *e)
+static Loc 
+qstacktemp(Gen *g, Node *e)
 {
 	Node *dcl;
 
@@ -176,7 +203,8 @@ static Loc qstacktemp(Gen *g, Node *e)
 	return qvar(g, dcl); 
 }
 
-static Loc ptrsized(Gen *g, Loc v)
+static Loc 
+ptrsized(Gen *g, Loc v)
 {
 	Loc r;
 
@@ -192,7 +220,8 @@ static Loc ptrsized(Gen *g, Loc v)
 	return r;
 }
 
-char qtag(Gen *g, Type *ty)
+char 
+qtag(Gen *g, Type *ty)
 {
 	switch (ty->type) {
 	case Tybool:	return 'w';	break;
@@ -215,7 +244,8 @@ char qtag(Gen *g, Type *ty)
 	}
 }
 
-char *qtype(Gen *g, Type *ty)
+char *
+qtype(Gen *g, Type *ty)
 {
 	ty = tydedup(ty);
 	switch (ty->type) {
@@ -239,7 +269,8 @@ char *qtype(Gen *g, Type *ty)
 	}
 }
 
-static Qop loadop(Type *ty)
+static Qop 
+loadop(Type *ty)
 {
 	Qop op;
 
@@ -269,7 +300,8 @@ static Qop loadop(Type *ty)
 	return op;
 }
 
-static Qop storeop(Type *ty)
+static Qop 
+storeop(Type *ty)
 {
 	Qop op;
 
@@ -297,7 +329,8 @@ static Qop storeop(Type *ty)
 	return op;
 }
 
-void fillglobls(Stab *st, Htab *globls)
+void 
+fillglobls(Stab *st, Htab *globls)
 {
 	size_t i, j, nk, nns;
 	void **k, **ns;
@@ -329,7 +362,8 @@ void fillglobls(Stab *st, Htab *globls)
 	free(ns);
 }
 
-static void initconsts(Gen *g, Htab *globls)
+static void 
+initconsts(Gen *g, Htab *globls)
 {
 	Type *ty;
 	Node *name;
@@ -350,7 +384,8 @@ static void initconsts(Gen *g, Htab *globls)
 	abortoob = qvar(g, dcl);
 }
 
-static Loc binop(Gen *g, Qop op, Node *a, Node *b)
+static Loc 
+binop(Gen *g, Qop op, Node *a, Node *b)
 {
 	Loc t, l, r;
 	char tag;
@@ -363,7 +398,8 @@ static Loc binop(Gen *g, Qop op, Node *a, Node *b)
 	return t;
 }
 
-static Loc binopk(Gen *g, Qop op, Node *n, uvlong k)
+static Loc 
+binopk(Gen *g, Qop op, Node *n, uvlong k)
 {
 	Loc t, l, r;
 	char tag;
@@ -390,7 +426,8 @@ static Loc binopk(Gen *g, Qop op, Node *n, uvlong k)
 	return r;
 }
 
-static Loc slicelen(Gen *g, Node *n, Type *ty)
+static Loc 
+slicelen(Gen *g, Node *n, Type *ty)
 {
 	Loc sl, lp, r;
 
@@ -403,7 +440,8 @@ static Loc slicelen(Gen *g, Node *n, Type *ty)
 	return r;
 }
 
-Loc cmpop(Gen *g, Op op, Node *ln, Node *rn)
+Loc 
+cmpop(Gen *g, Op op, Node *ln, Node *rn)
 {
 	Qop intcmptab[][2] = {
 		/* signed */
@@ -448,7 +486,8 @@ Loc cmpop(Gen *g, Op op, Node *ln, Node *rn)
 	return t;
 }
 
-static Loc intcvt(Gen *g, Loc v, char to, int sz, int sign)
+static Loc 
+intcvt(Gen *g, Loc v, char to, int sz, int sign)
 {
 	Loc t;
 	Qop op;
@@ -469,7 +508,8 @@ static Loc intcvt(Gen *g, Loc v, char to, int sz, int sign)
 	return t;
 }
 
-static Loc gencast(Gen *g, Srcloc loc, Loc val, Type *to, Type *from)
+static Loc 
+gencast(Gen *g, Srcloc loc, Loc val, Type *to, Type *from)
 {
 	Loc a, r;
 
@@ -551,7 +591,8 @@ static Loc gencast(Gen *g, Srcloc loc, Loc val, Type *to, Type *from)
 	return r;
 }
 
-static Loc simpcast(Gen *g, Node *val, Type *to)
+static Loc 
+simpcast(Gen *g, Node *val, Type *to)
 {
 	Loc l;
 
@@ -560,7 +601,8 @@ static Loc simpcast(Gen *g, Node *val, Type *to)
 }
 
 
-void blit(Gen *g, Loc dst, Loc src, size_t sz, size_t align)
+void 
+blit(Gen *g, Loc dst, Loc src, size_t sz, size_t align)
 {
 	static const Qop ops[][2] = {
 		[8] = {Qloadl, Qstorel},
@@ -586,7 +628,8 @@ void blit(Gen *g, Loc dst, Loc src, size_t sz, size_t align)
 	}
 }
 
-Loc assign(Gen *g, Node *dst, Node* src)
+Loc 
+assign(Gen *g, Node *dst, Node* src)
 {
 	Loc d, s;
 	Type *ty;
@@ -621,7 +664,8 @@ Loc assign(Gen *g, Node *dst, Node* src)
 	out(g, Qlabel, oklbl, Zq, Zq);
 }
 
-static Loc loadvar(Gen *g, Node *var)
+static Loc 
+loadvar(Gen *g, Node *var)
 {
 	Node *dcl;
 	Type *ty;
@@ -639,7 +683,8 @@ static Loc loadvar(Gen *g, Node *var)
 	return r;
 }
 
-static Loc deref(Gen *g, Node *n)
+static Loc 
+deref(Gen *g, Node *n)
 {
 	Loc l, r;
 	Type *ty;
@@ -653,7 +698,8 @@ static Loc deref(Gen *g, Node *n)
 	return r;
 }
 
-static size_t countargs(Type *t)
+static size_t 
+countargs(Type *t)
 {
 	size_t n, i;
 
@@ -668,7 +714,8 @@ static size_t countargs(Type *t)
 	return n;
 }
 
-static Type *vatype(Gen *g, Srcloc l, Node **al, size_t na)
+static Type *
+vatype(Gen *g, Srcloc l, Node **al, size_t na)
 {
 	Type **t;
 	size_t i, nt;
@@ -681,7 +728,8 @@ static Type *vatype(Gen *g, Srcloc l, Node **al, size_t na)
 	return mktytuple(l, t, nt);
 }
 
-static Loc vablob(Gen *g, Srcloc l, Type *t)
+static Loc 
+vablob(Gen *g, Srcloc l, Type *t)
 {
 	Node *d;
 	Type *tt, *tl[2];
@@ -694,7 +742,8 @@ static Loc vablob(Gen *g, Srcloc l, Type *t)
 	return qvar(g, d);
 }
 
-static Loc genvarargs(Gen *g, Srcloc l, Node **al, size_t na, Type **t)
+static Loc 
+genvarargs(Gen *g, Srcloc l, Node **al, size_t na, Type **t)
 {
 	size_t i, sz, a, off;
 	Loc va, s, d;
@@ -737,7 +786,8 @@ static Loc genvarargs(Gen *g, Srcloc l, Node **al, size_t na, Type **t)
 	return va;
 }
 
-static Loc gencall(Gen *g, Node *n)
+static Loc 
+gencall(Gen *g, Node *n)
 {
 	Type **tl, *ft, *vt, *ty;
 	size_t nva, na, i;
@@ -779,11 +829,13 @@ static Loc gencall(Gen *g, Node *n)
 	return ret;
 }
 
-static void checkbounds(Gen *g, Node *n, Loc len)
+static void 
+checkbounds(Gen *g, Node *n, Loc len)
 {
 }
 
-ssize_t memboff(Gen *g, Type *ty, Node *memb)
+ssize_t 
+memboff(Gen *g, Type *ty, Node *memb)
 {
 	size_t i;
 	size_t off;
@@ -804,7 +856,8 @@ ssize_t memboff(Gen *g, Type *ty, Node *memb)
 	return 0;
 }
 
-static Loc membaddr(Gen *g, Node *n)
+static Loc 
+membaddr(Gen *g, Node *n)
 {
 	Type *t;
 	Loc b, r;
@@ -818,7 +871,8 @@ static Loc membaddr(Gen *g, Node *n)
 	return r;
 }
 
-static Loc seqbase(Gen *g, Node *slnode, Node *offnode)
+static Loc 
+seqbase(Gen *g, Node *slnode, Node *offnode)
 {
 	Loc u, v, r;
 	Type *ty;
@@ -849,7 +903,8 @@ static Loc seqbase(Gen *g, Node *slnode, Node *offnode)
 	return r;
 }
 
-static Loc genslice(Gen *g, Node *n)
+static Loc 
+genslice(Gen *g, Node *n)
 {
 	Node *arg, *off, *lim;
 	Loc lo, hi, start, sz;
@@ -894,7 +949,8 @@ static Loc genslice(Gen *g, Node *n)
 	return sl;
 }
 
-static Loc genucon(Gen *g, Node *n)
+static Loc 
+genucon(Gen *g, Node *n)
 {
 	Loc u, tag, dst, elt, align;
 	size_t sz, al;
@@ -926,7 +982,8 @@ static Loc genucon(Gen *g, Node *n)
 	return u;
 }
 
-static Blob *strblob(Gen *g, Str s)
+static Blob *
+strblob(Gen *g, Str s)
 {
 	Blob **v, *d, *b;
 	char buf[128];
@@ -943,7 +1000,8 @@ static Blob *strblob(Gen *g, Str s)
 	return b;
 }
 
-static Loc strlabel(Gen *g, Node *s)
+static Loc 
+strlabel(Gen *g, Node *s)
 {
 	Blob *b;
 
@@ -951,7 +1009,8 @@ static Loc strlabel(Gen *g, Node *s)
 	return qblob(g, b);
 }
 
-static int envcmp(const void *pa, const void *pb)
+static int 
+envcmp(const void *pa, const void *pb)
 {
 	const Node *a, *b;
 
@@ -960,7 +1019,8 @@ static int envcmp(const void *pa, const void *pb)
 	return b->decl.did - a->decl.did;
 }
 
-static Loc code(Gen *g, Node *fn)
+static Loc 
+code(Gen *g, Node *fn)
 {
 	Node *d, *n;
 	char lbl[128];
@@ -977,7 +1037,8 @@ static Loc code(Gen *g, Node *fn)
 	return qvar(g, d);
 }
 
-static Loc capture(Gen *g, Node *n, Node *fn)
+static Loc 
+capture(Gen *g, Node *n, Node *fn)
 {
 	size_t nenv, nenvt, off, i;
 	Loc f, e, s, d, fp;
@@ -1022,7 +1083,8 @@ static Loc capture(Gen *g, Node *n, Node *fn)
 	return fp;
 }
 
-static Loc loadlit(Gen *g, Node *e)
+static Loc 
+loadlit(Gen *g, Node *e)
 {
 	Node *n;
 	char t;
@@ -1043,7 +1105,8 @@ static Loc loadlit(Gen *g, Node *e)
 	return Zq;
 }
 
-Loc rval(Gen *g, Node *n)
+Loc 
+rval(Gen *g, Node *n)
 {
 	Node **args, *a;
 	Type *ty, *ety;
@@ -1292,7 +1355,8 @@ Loc rval(Gen *g, Node *n)
 	return r;
 }
 
-static Loc lval(Gen *g, Node *n)
+static Loc 
+lval(Gen *g, Node *n)
 {
 	Node **args;
 	Loc r;
@@ -1319,7 +1383,8 @@ static Loc lval(Gen *g, Node *n)
 	return r;
 }
 
-void genbb(Gen *g, Cfg *cfg, Bb *bb)
+void 
+genbb(Gen *g, Cfg *cfg, Bb *bb)
 {
 	size_t i;
 
@@ -1342,7 +1407,8 @@ void genbb(Gen *g, Cfg *cfg, Bb *bb)
 	}
 }
 
-void spillargs(Gen *g, Node *fn)
+void 
+spillargs(Gen *g, Node *fn)
 {	
 	Loc arg, val;
 	Type *ty;
@@ -1368,7 +1434,8 @@ void spillargs(Gen *g, Node *fn)
 	}
 }
 
-void declare(Gen *g, Node *n)
+void 
+declare(Gen *g, Node *n)
 {
 	size_t align, size;
 	char *name;
@@ -1385,13 +1452,15 @@ void declare(Gen *g, Node *n)
 	fprintf(g->f, "\t%%%s =l alloc%zd %zd\n", name, align, size);
 }
 
-static const char *insnname[] = {
+static const 
+char *insnname[] = {
 #define Insn(name) #name,
 #include "qbe.def"
 #undef Insn
 };
 
-void emitloc(Gen *g, Loc l, char *sep)
+void 
+emitloc(Gen *g, Loc l, char *sep)
 {
 	Node *d;
 	char *n;
@@ -1413,7 +1482,8 @@ void emitloc(Gen *g, Loc l, char *sep)
 	}
 }
 
-void emitinsn(Gen *g, Insn *insn)
+void 
+emitinsn(Gen *g, Insn *insn)
 {
 	char *sep, *t;
 	size_t i;
@@ -1468,7 +1538,8 @@ void emitinsn(Gen *g, Insn *insn)
 	fprintf(g->f, "\n");
 }
 
-void emitfn(Gen *g, Node *d)
+void 
+emitfn(Gen *g, Node *d)
 {
 	Node *a, *n, *fn;
 	Type *ty, *rtype;
@@ -1519,7 +1590,8 @@ void emitfn(Gen *g, Node *d)
 	fprintf(g->f, "}\n");
 }
 
-void genfn(Gen *g, Node *dcl)
+void 
+genfn(Gen *g, Node *dcl)
 {
 	Node *n, *b, *retdcl;
 	size_t i;
@@ -1571,7 +1643,8 @@ void genfn(Gen *g, Node *dcl)
 	free(g->arg);
 }
 
-void gendata(Gen *g)
+void 
+gendata(Gen *g)
 {
 	size_t i;
 
@@ -1579,7 +1652,8 @@ void gendata(Gen *g)
 		genblob(g, g->blobs[i]);
 }
 
-void gentydesc(Gen *g)
+void 
+gentydesc(Gen *g)
 {
 	Blob *b;
 	Type *ty;
@@ -1600,7 +1674,8 @@ void gentydesc(Gen *g)
 	fprintf(g->f, "\n");
 }
 
-void outarray(Gen *g, Type *ty)
+void 
+outarray(Gen *g, Type *ty)
 {
 	size_t sz;
 
@@ -1611,7 +1686,8 @@ void outarray(Gen *g, Type *ty)
 	fprintf(g->f, "\t%s %zd,\n", qtype(g, ty->sub[0]), sz);
 }
 
-void outstruct(Gen *g, Type *ty)
+void 
+outstruct(Gen *g, Type *ty)
 {
 	size_t i;
 	Type *mty;
@@ -1622,7 +1698,8 @@ void outstruct(Gen *g, Type *ty)
 	}
 }
 
-void outunion(Gen *g, Type *ty)
+void 
+outunion(Gen *g, Type *ty)
 {
 	size_t i;
 	Type *mty;
@@ -1644,7 +1721,8 @@ void outunion(Gen *g, Type *ty)
 	fprintf(g->f, "%zd\n", maxsize);
 }
 
-void outtuple(Gen *g, Type *ty)
+void 
+outtuple(Gen *g, Type *ty)
 {
 	size_t i;
 	Type *mty;
@@ -1656,7 +1734,8 @@ void outtuple(Gen *g, Type *ty)
 	}
 }
 
-void outtypebody(Gen *g, Type *ty)
+void 
+outtypebody(Gen *g, Type *ty)
 {
 	ty = tydedup(ty);
 	switch (ty->type) {
@@ -1699,7 +1778,8 @@ void outtypebody(Gen *g, Type *ty)
 	}
 }
 
-static void outstructtype(Gen *g, Type *ty)
+static void 
+outstructtype(Gen *g, Type *ty)
 {
 	size_t i;
 
@@ -1707,7 +1787,8 @@ static void outstructtype(Gen *g, Type *ty)
 		outqtype(g, decltype(ty->sdecls[i]));
 }
 
-static void outtupletype(Gen *g, Type *ty)
+static void 
+outtupletype(Gen *g, Type *ty)
 {
 	size_t i;
 
@@ -1716,7 +1797,8 @@ static void outtupletype(Gen *g, Type *ty)
 }
 
 
-static void outuniontype(Gen *g, Type *ty)
+static void 
+outuniontype(Gen *g, Type *ty)
 {
 	size_t i;
 	Type *mty;
@@ -1729,7 +1811,8 @@ static void outuniontype(Gen *g, Type *ty)
 	}
 }
 
-static void outqtype(Gen *g, Type *t)
+static void 
+outqtype(Gen *g, Type *t)
 {
 	char buf[1024];
 	Type *ty;
@@ -1770,7 +1853,8 @@ static void outqtype(Gen *g, Type *t)
 }
 
 
-static void genqtypes(Gen *g)
+static void 
+genqtypes(Gen *g)
 {
 	size_t i;
 
@@ -1782,7 +1866,8 @@ static void genqtypes(Gen *g)
 	}
 }
 
-static void genglobl(Gen *g, Node *dcl)
+static void 
+genglobl(Gen *g, Node *dcl)
 {
 	char *s, *x;
 	Node *e;
@@ -1810,7 +1895,8 @@ static void genglobl(Gen *g, Node *dcl)
 	free(s);
 }
 
-void gen(Node *file, char *out)
+void 
+gen(Node *file, char *out)
 {
 	Htab *globls;
 	Node **locals;

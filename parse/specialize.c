@@ -603,7 +603,7 @@ callinit(Node *block, Node *init, Type *tyvoid, Type *tyvoidfn)
 }
 
 void
-geninit(Node *file)
+geninit()
 {
 	Node *name, *decl, *func, *block, *init;
 	Type *tyvoid, *tyvoidfn;
