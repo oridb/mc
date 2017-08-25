@@ -53,15 +53,15 @@ const scrapelib = {b, lib, incs
 	(f, dir) = openlib(lib, incs)
 	match bio.getc(f)
 	| `bio.Ok 'U':	/* ok */
-	| `bio.Ok _:	std.fput(1, "{}: not a usefile\n", lib)
-	| `bio.Err e:	std.fatal("{}: error reading: {}\n", lib, e)
-	| `bio.Eof:	std.fatal("{}: truncated\n", lib)
+	| `bio.Ok _:	std.fput(1, "{}/{}: not a usefile\n", dir, lib)
+	| `bio.Err e:	std.fatal("{}/{}: error reading: {}\n", dir, lib, e)
+	| `bio.Eof:	std.fatal("{}/{}: truncated\n", dir, lib)
 	;;
 	match bio.getbe32(f)
 	| `bio.Ok Abiversion:	/* nothing: version matches. */
-	| `bio.Ok v:	std.fput(1, "{}: mismatched abi {}\n", lib, v)
-	| `bio.Err e:	std.fatal("{}: error reading: {}\n", lib, e)
-	| `bio.Eof:	std.fatal("{}: truncated\n", lib)
+	| `bio.Ok v:	std.fput(1, "{}/{}: mismatched abi {}\n", dir, lib, v)
+	| `bio.Err e:	std.fatal("{}/{}: error reading: {}\n", dir, lib, e)
+	| `bio.Eof:	std.fatal("{}/{}: truncated\n", dir, lib)
 	;;
 	std.slfree(rdstr(f))
 
