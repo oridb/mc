@@ -19,7 +19,7 @@ pkg bld =
 	const scrapelib : (b : build#, libs : byte[:], incs : byte[:][:] -> void)
 ;;
 
-const Abiversion = 13
+const Abiversion = 14
 
 const builtlib = {b, mt, dep, dyndep
 	var ldep, l, u
