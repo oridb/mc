@@ -764,6 +764,7 @@ int
 tyeq_rec(Type *a, Type *b, Bitset *avisited, Bitset *bvisited, int search)
 {
 	Type *x, *y;
+	Typair p;
 	size_t i;
 	int ret;
 
@@ -781,7 +782,8 @@ tyeq_rec(Type *a, Type *b, Bitset *avisited, Bitset *bvisited, int search)
 		return 0;
 	if (a->nmemb != b->nmemb)
 		return 0;
-	if (hthas(eqcache, &(Typair){a->tid, b->tid}))
+	p = (Typair){a->tid, b->tid};
+	if (hthas(eqcache, &p))
 		return 1;
 
 	if (a->tid == b->tid)
