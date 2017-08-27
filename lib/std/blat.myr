@@ -7,7 +7,7 @@ pkg std =
 ;;
 
 const blat = {path, buf, perm
-	match openmode(path, Ocreat|Owronly, perm)
+	match openmode(path, Ocreat|Owrite, perm)
 	| `Ok fd:	-> fblat(fd, buf)
 	| `Err e:	-> false
 	;;

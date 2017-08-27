@@ -149,8 +149,8 @@ const dial = {srv, mode
 /* map from the bio modes to the unix open modes */
 const sysmode = {mode
 	match mode
-	| Rd:	-> std.Ordonly
-	| Wr:	-> std.Owronly
+	| Rd:	-> std.Oread
+	| Wr:	-> std.Owrite
 	| Rw:	-> std.Ordwr
 	| _:	std.fatal("bio: bad file mode")
 	;;

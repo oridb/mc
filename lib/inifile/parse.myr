@@ -18,7 +18,7 @@ type parser = struct
 ;;
 
 const load = {path
-	match std.open(path, std.Ordonly)
+	match std.open(path, std.Oread)
 	| `std.Ok fd:	-> loadf(fd)
 	| `std.Err e:	-> `std.Err `Fileerr
 	;;

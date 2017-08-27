@@ -73,7 +73,7 @@ const __init__ = {
 }
 
 const startalloctrace = {path
-	match openmode(path, Owronly | Ocreat, 0o644)
+	match openmode(path, Owrite | Ocreat, 0o644)
 	| `Ok fd:	tracefd = fd
 	| `Err e:	-> void
 	;;

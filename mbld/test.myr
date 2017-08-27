@@ -75,7 +75,7 @@ const runtest = {b, n, failed
 		std.fatal("\nunable to run test: {}\n", m)
 	| `std.Ok (pid, infd, outfd):
 		log = std.strcat(std.basename(n.lbl), ".log")
-		logfd = std.try(std.openmode(log, std.Owronly | std.Ocreat, 0o644))
+		logfd = std.try(std.openmode(log, std.Owrite | std.Ocreat, 0o644))
 		sub = showsub(b, n.lbl, outfd, logfd, failed)
 		std.slfree(log)
 		std.close(infd)
