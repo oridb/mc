@@ -887,7 +887,7 @@ flattentraititer(Flattenctx *s, Node *n)
 	Loop l;
 	Node *lbody, *lclean, *lstep, *lmatch, *lend;
 	Node *done, *val, *iter, *valptr, *iterptr;
-	Node *func, *call;
+	Node *func, *call, *seq;
 	Trait *tr;
 
 	val = temp(s, n->iterstmt.elt);
@@ -911,7 +911,8 @@ flattentraititer(Flattenctx *s, Node *n)
 	s->loop.lbrk = lend;
 	s->loop.body = n->iterstmt.body->block.scope;
 
-	append(s, asn(iter, n->iterstmt.seq));
+	seq = rval(s, n->iterstmt.seq);
+	append(s, asn(iter, seq));
 	jmp(s, lstep);
 	flatten(s, lbody);
 	/* body */
