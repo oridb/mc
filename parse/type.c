@@ -723,7 +723,7 @@ tyhash(void *ty)
 	return hash;
 }
 
-ulong
+static ulong
 typairhash(void *pp)
 {
 	Typair *p;
@@ -732,7 +732,7 @@ typairhash(void *pp)
 	return inthash(p->atid) ^ inthash(p->btid);
 }
 
-int
+static int
 typaireq(void *a, void *b)
 {
 	Typair *pa, *pb;
@@ -741,7 +741,7 @@ typaireq(void *a, void *b)
 	return pa->atid == pb->atid && pa->btid == pb->btid;
 }
 
-void
+static void
 equate(int32_t ta, int32_t tb)
 {
 	Typair *pa, *pb;
