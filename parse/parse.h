@@ -120,7 +120,7 @@ struct Tyenv {
 
 struct Type {
 	Ty type;
-	int tid;
+	uint32_t tid;
 	Srcloc loc;
 	Vis vis;
 
