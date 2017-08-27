@@ -868,8 +868,8 @@ tyeq_rec(Type *a, Type *b, Bitset *avisited, Bitset *bvisited, int search)
 			}
 		}
 	}
-	if (ret) {
-	}
+	if (ret)
+		equate(a->tid, b->tid);
 	bsdel(avisited, a->tid);
 	bsdel(bvisited, b->tid);
 

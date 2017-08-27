@@ -1117,8 +1117,8 @@ rval(Simp *s, Node *n, Node *dst)
 		u = idxaddr(s, t, n->expr.args[1]);
 		r = load(u);
 		break;
-		/* array.len slice.len are magic 'virtual' members.
-		 * they need to be special cased. */
+	/* array.len slice.len are magic 'virtual' members.
+	* they need to be special cased. */
 	case Omemb:
 		t = membaddr(s, n);
 		r = load(t);
