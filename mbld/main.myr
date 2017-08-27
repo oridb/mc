@@ -120,6 +120,7 @@ const buildimm = {b, targ, inputs
 		.incpath=bld.opt_incpaths,
 		.libdeps=[][:]
 	]
+	bld.opt_objdir = ""
 	std.slpush(&b.all, "__out__")
 	std.htput(b.targs, "__out__", `bld.Bin &mt)
 	bld.deps(b)
