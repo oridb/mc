@@ -26,7 +26,7 @@ const diropen = {p
 	var fd
 	var dir
 
-	match open(p, Ordonly)
+	match open(p, Oread)
 	| `Ok f:	fd = f
 	| `Err e:	-> `Err "couldn't open directory"
 	;;

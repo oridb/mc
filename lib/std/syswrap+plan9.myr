@@ -27,8 +27,8 @@ pkg std =
 
 	const Failmem	: byte#	= (-1 : byte#)
 
-	const Oread  	: fdopt = (sys.Ordonly	: fdopt)
-	const Owrite  	: fdopt = (sys.Owronly	: fdopt)
+	const Oread  	: fdopt = (sys.Oread	: fdopt)
+	const Owrite  	: fdopt = (sys.Owrite	: fdopt)
 	const Ordwr    	: fdopt = (sys.Ordwr	: fdopt)
 	const Otrunc   	: fdopt = (sys.Otrunc	: fdopt)
 	const Ocexec	: fdopt = (sys.Ocexec	: fdopt)
@@ -198,7 +198,7 @@ const chdir	= {path;	-> sys.chdir(path) == 0}
 const mkdir	= {path, mode;
 	var fd
 
-	fd = sys.create(path, sys.Ordonly, sys.Dmdir | (mode : int))
+	fd = sys.create(path, sys.Oread, sys.Dmdir | (mode : int))
 	if fd < 0
 		-> lasterr()
 	;;

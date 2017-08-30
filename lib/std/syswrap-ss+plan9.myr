@@ -22,7 +22,7 @@ const nanosleep = {nsecs
 const bgetcwd = {buf
 	var fd
 
-	fd = sys.open(".", sys.Ordonly)
+	fd = sys.open(".", sys.Oread)
 	if fd < 0
 		-> (fd : errno)
 	;;

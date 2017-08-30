@@ -48,11 +48,14 @@ generic intparsebase = {s, base
 }
 
 generic doparse = {s, isneg, base ->  option(@a::(integral,numeric))
-	var v
+	var c, v, i
 	var cv : int32
 	
 	v = 0
-	for c : std.bychar(s)
+	i = 0
+	while true
+		c = std.decode(s[i:])
+		i += std.charlen(c)
 		if c == '_'
 			continue
 		;;
