@@ -638,26 +638,44 @@ const wordlist = {p
 }
 
 /* word: /wordchar*/
+/* word: /wordchar*/
 const word = {p
 	var c, n
 	var start
 
 	skipspace(p)
+
 	c = peekc(p)
-	n = 0
-	start = p.rest
-	while p.rest.len > 0
-		c = peekc(p)
-		if c == '\\'
-			c = getc(p)
-		;;
-		if wordchar(c)
+	if c == '"'
+		n = 0
+		getc(p)
+		start = p.rest
+		while p.rest.len > 0
+			c = peekc(p)
+			if c == '"'
+				getc(p)
+				goto done
+			elif c == '\\'
+				c = getc(p)
+			;;
 			getc(p)
 			n += std.charlen(c)
-		else
-			break
+		;;
+		failparse(p, "input ended within quoted word\n")
+	else
+		n = 0
+		start = p.rest
+		while p.rest.len > 0
+			c = peekc(p)
+			if wordchar(c)
+				getc(p)
+				n += std.charlen(c)
+			else
+				break
+			;;
 		;;
 	;;
+:done
 	if n > 0
 		-> `std.Some std.sldup(start[:n])
 	else
