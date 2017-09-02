@@ -125,6 +125,9 @@ struct Type {
 	Vis vis;
 
 
+	Node **traits;		/* trait list */
+	size_t ntraits;		/* trait list size */
+
 	Type **gparam;		/* Tygeneric: type parameters that match the type args */
 	size_t ngparam;		/* Tygeneric: count of type parameters */
 	Type **arg;		/* Tyname: type arguments instantiated */

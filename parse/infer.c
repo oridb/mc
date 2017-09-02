@@ -480,6 +480,7 @@ static void
 tyresolve(Type *t)
 {
 	size_t i;
+	Trait *tr;
 
 	if (t->resolved)
 		return;
@@ -521,6 +522,15 @@ tyresolve(Type *t)
 		break;
 	default:
 		break;
+	}
+
+	for (i = 0; i < t->ntraits; i++) {
+		tr = gettrait(curstab(), t->traits[i]);
+		if (!tr)
+			lfatal(t->loc, "trait %s does not exist", ctxstr(t->traits[i]));
+		if (!t->trneed)
+			t->trneed = mkbs();
+		bsput(t->trneed, tr->uid);
 	}
 
 	for (i = 0; i < t->nsub; i++) {
