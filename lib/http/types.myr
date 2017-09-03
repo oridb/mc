@@ -28,15 +28,15 @@ pkg http =
 	;;
 
 	type err = union
-		`Ewat
-		`Eunsupp
-		`Econn
-		`Ehttp int
-		`Ehdr
-		`Eproto
-		`Eshort
-		`Esyntax
-		`Eenc
+		`Ehttp int	/* http error */
+		`Eunsupp	/* unsupported feature */
+		`Econn		/* connection lost */
+		`Ehdr		/* invalid header */
+		`Eproto		/* protocol error */
+		`Eshort		/* truncated response */
+		`Egarbled	/* syntax error */
+		`Eenc		/* encoding error */
+		`Ewat		/* unknown error */
 	;;
 
 	type schema = union

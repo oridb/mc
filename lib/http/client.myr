@@ -7,13 +7,13 @@ use "parse"
 
 pkg http =
 	/* simple versions */
-	const get	: (s : session#, r : byte[:] -> std.result(resp#, err))
-	const head	: (s : session#, r : byte[:] -> std.result(resp#, err))
-	const put	: (s : session#, r : byte[:], data : byte[:] -> std.result(resp#, err))
-	const post	: (s : session#, r : byte[:], data : byte[:] -> std.result(resp#, err))
-	const delete	: (s : session#, r : byte[:] -> std.result(resp#, err))
-	const options	: (s : session#, r : byte[:] -> std.result(resp#, err))
-	const trace	: (s : session#, r : byte[:] -> std.result(resp#, err))
+	const get	: (s : session#, r : url# -> std.result(resp#, err))
+	const head	: (s : session#, r : url# -> std.result(resp#, err))
+	const put	: (s : session#, r : url#, data : byte[:] -> std.result(resp#, err))
+	const post	: (s : session#, r : url#, data : byte[:] -> std.result(resp#, err))
+	const delete	: (s : session#, r : url# -> std.result(resp#, err))
+	const options	: (s : session#, r : url# -> std.result(resp#, err))
+	const trace	: (s : session#, r : url# -> std.result(resp#, err))
 
 	/* request based versions */
 	const getreq	: (s : session#, r : req# -> std.result(resp#, err))
@@ -27,13 +27,13 @@ pkg http =
 	const freeresp	: (r : resp# -> void)
 ;;
 
-const get = {s, path; -> getreq(s, &[.url=&[.path=path]])}
-const head = {s, path; -> headreq(s, &[.url=&[.path=path]])}
-const put = {s, path, data; -> putreq(s, &[.url=&[.path=path]], data)}
-const post = {s, path, data; -> postreq(s, &[.url=&[.path=path]], data)}
-const delete = {s, path; -> deletereq(s, &[.url=&[.path=path]])}
-const options = {s, path; -> optionsreq(s, &[.url=&[.path=path]])}
-const trace = {s, path; -> tracereq(s, &[.url=&[.path=path]])}
+const get = {s, path; -> getreq(s, &[.url=path])}
+const head = {s, path; -> headreq(s, &[.url=path])}
+const put = {s, path, data; -> putreq(s, &[.url=path], data)}
+const post = {s, path, data; -> postreq(s, &[.url=path], data)}
+const delete = {s, path; -> deletereq(s, &[.url=path])}
+const options = {s, path; -> optionsreq(s, &[.url=path])}
+const trace = {s, path; -> tracereq(s, &[.url=path])}
 
 
 const getreq = {s, r
