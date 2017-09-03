@@ -4,8 +4,6 @@ use bio
 pkg http =
 	type status = int
 
-	const Ok	: status = 200
-
 	type session = struct
 		f	: bio.file#
 		host	: byte[:]

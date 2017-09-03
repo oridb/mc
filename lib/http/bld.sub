@@ -17,4 +17,5 @@ lib http =
 	client.myr
 	server.myr
 	session.myr
+	status.myr
 ;;
