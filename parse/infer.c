@@ -639,8 +639,10 @@ tf(Type *orig)
 		popenv(orig->env);
 	} else if (orig->type == Typaram) {
 		tt = boundtype(t);
-		if (tt)
+		if (tt) {
+			tyresolve(tt);
 			t = tt;
+		}
 	}
 	ingeneric -= isgeneric;
 	return t;
@@ -869,8 +871,9 @@ tryconstrain(Type *base, Trait *tr)
 		ty = base;
 		tm = traitmap->sub[ty->type];
 		while (1) {
-			if (ty->type == Typaram && bshas(ty->trneed, tr->uid))
-				return 1;
+			if (ty->type == Typaram)
+				if (ty->trneed && bshas(ty->trneed, tr->uid))
+					return 1;
 			if (ty->type == Tyvar) {
 				if (!ty->trneed)
 					ty->trneed = mkbs();
@@ -1653,7 +1656,7 @@ inferexpr(Node **np, Type *ret, int *sawret)
 	case Odiveq:	/* @a /= @a -> @a */
 		infersub(n, ret, sawret, &isconst);
 		t = type(args[0]);
-		constrain(n, type(args[0]), traittab[Tcnum]);
+		constrain(n, t, traittab[Tcnum]);
 		isconst = args[0]->expr.isconst;
 		for (i = 1; i < nargs; i++) {
 			isconst = isconst && args[i]->expr.isconst;
@@ -1681,8 +1684,8 @@ inferexpr(Node **np, Type *ret, int *sawret)
 	case Obsreq:	/* @a >>= @a -> @a */
 		infersub(n, ret, sawret, &isconst);
 		t = type(args[0]);
-		constrain(n, type(args[0]), traittab[Tcnum]);
-		constrain(n, type(args[0]), traittab[Tcint]);
+		constrain(n, t, traittab[Tcnum]);
+		constrain(n, t, traittab[Tcint]);
 		isconst = args[0]->expr.isconst;
 		for (i = 1; i < nargs; i++) {
 			isconst = isconst && args[i]->expr.isconst;

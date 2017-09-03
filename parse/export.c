@@ -87,12 +87,19 @@ tagtype(Stab *st, Type *t, int ingeneric, int hidelocal)
 				tagtype(st, t->udecls[i]->etype, ingeneric, hidelocal);
 		break;
 	case Tyname:
+	case Tygeneric:
 		tagreflect(t);
 		for (i = 0; i < t->narg; i++)
 			tagtype(st, t->arg[i], ingeneric, hidelocal);
-	case Tygeneric:
 		for (i = 0; i < t->ngparam; i++)
 			tagtype(st, t->gparam[i], ingeneric, hidelocal);
+		for (i = 0; i < t->narg; i++)
+			tagtype(st, t->arg[i], ingeneric, hidelocal);
+		break;
+	case Typaram:
+		if (t->trneed)
+			for (i = 0; bsiter(t->trneed, &i); i++)
+				tagtrait(st, traittab[i], ingeneric, hidelocal);
 		break;
 	default:
 		break;
