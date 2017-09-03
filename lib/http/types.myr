@@ -4,7 +4,7 @@ use bio
 pkg http =
 	type status = int
 
-	const Ok = 200
+	const Ok	: status = 200
 
 	type session = struct
 		f	: bio.file#
@@ -20,20 +20,6 @@ pkg http =
 		lfd	: std.fd
 		quit	: bool
 	;;
-
-	type router = struct
-		paths	: route[:]
-	;;
-
-	type ctx = struct
-		fd	: byte[:]
-	;;
-
-	type route = struct
-		path	: byte[:]
-		render	: (ctx : ctx# -> status)
-	;;
-
 
 	type url = struct
 		schema	: schema

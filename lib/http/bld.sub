@@ -1,10 +1,10 @@
-bin h =
+bin h {noinst}=
 	h.myr
 
 	lib http
 ;;
 
-bin srvdot =
+bin srvdot {noinst}=
 	srvdot.myr
 
 	lib http
