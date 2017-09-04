@@ -1,20 +1,26 @@
 use crypto
 use std
+use testr
 
-const N = 20
+var buf : byte[128*1024*1024]
+
 const main = {
-	var i, b
-	var buf : byte[1024*1024]
+	for var i = 0; i < buf.len; i++
+		buf[i] = (i : byte)
+	;;
+	testr.bench([
+		[.name="sha1-1kb", .fn={ctx; hash(std.KiB)}],
+		[.name="sha1-1mb", .fn={ctx; hash(std.MiB)}],
+		[.name="sha1-16mb", .fn={ctx; hash(16*std.MiB)}],
+		[.name="sha1-128mb", .fn={ctx; hash(128*std.MiB)}],
+	][:])
+}
+
+const hash = {len
 	var st
 
-	b = 0
-	for i = 0; i < buf.len; i++
-		buf[i] = b++
-	;;
-	for i = 0; i < N; i++
-		crypto.sha1init(&st)
-		crypto.sha1add(&st, buf[:])
-		crypto.sha1fin(&st)
-	;;
+	crypto.sha1init(&st)
+	crypto.sha1add(&st, buf[:len])
+	crypto.sha1fin(&st)
 }
 

@@ -1,37 +1,60 @@
 use std
+use testr
 
 type blob = struct
 	x : int[10]
 ;;
 
 const main = {
+	testr.bench([
+		[.name="alloc-one", .fn=alloc_one],
+		[.name="allocmany-fwdfwd", .fn=alloc_fwdfwd],
+		[.name="allocmany-fwdrev", .fn=alloc_fwdrev],
+		[.name="allocmany-fwdrand", .fn=alloc_fwdrand],
+	][:])
+}
+
+const alloc_one = {ctx
+	var a : int#
+	a = std.alloc()
+	std.free(a)
+}
+
+const alloc_fwdfwd = {ctx
 	var a : blob#[10000]
 
-	for var j = 0; j < 100; j++
-		/* alloc forwards, dealloc forwards */
-		for var i = 0; i < a.len; i++
-			a[i] = std.alloc()
-		;;
-		for var i = 0; i < a.len; i++
-			std.free(a[i])
-		;;
+	/* alloc forwards, dealloc forwards */
+	for var i = 0; i < a.len; i++
+		a[i] = std.alloc()
+	;;
+	for var i = 0; i < a.len; i++
+		std.free(a[i])
+	;;
 
-		/* alloc forwards, dealloc backwards */
-		for var i = 0; i < a.len; i++
-			a[i] = std.alloc()
-		;;
-		for var i = a.len; i > 0; i--
-			std.free(a[i - 1])
-		;;
+}
 
-		/* alloc forwards, dealloc randomly */
-		for var i = 0; i < a.len; i++
-			a[i] = std.alloc()
-		;;
-		shuffle(a[:])
-		for var i = a.len; i > 0; i--
-			std.free(a[i - 1])
-		;;
+const alloc_fwdrev = {ctx
+	var a : blob#[10000]
+
+	/* alloc forwards, dealloc backwards */
+	for var i = 0; i < a.len; i++
+		a[i] = std.alloc()
+	;;
+	for var i = a.len; i > 0; i--
+		std.free(a[i - 1])
+	;;
+}
+
+const alloc_fwdrand = {ctx
+	var a : blob#[10000]
+
+	/* alloc forwards, dealloc randomly */
+	for var i = 0; i < a.len; i++
+		a[i] = std.alloc()
+	;;
+	shuffle(a[:])
+	for var i = a.len; i > 0; i--
+		std.free(a[i - 1])
 	;;
 }
 

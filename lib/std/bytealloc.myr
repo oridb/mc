@@ -125,6 +125,7 @@ const writealloctrace = {sl
 const bytealloc = {sz
 	var bkt, p
 
+	sz += 8
 	if sz <= Bktmax
 		bkt = &buckets[bktnum(sz)]
 		lock(memlck)
@@ -144,7 +145,12 @@ const bytealloc = {sz
 /* frees a blob that is 'sz' bytes long. */
 const bytefree = {p, sz
 	var bkt
+	var v
 
+	if p == (0 : byte#)
+		-> void
+	;;
+	v = ((p : size) + sz : uint32#)#
 	if trace
 		lock(memlck)
 		tracefree(p, sz)
@@ -256,6 +262,7 @@ const mkslab = {bkt
 		bkt.cache = s.next
 		bkt.ncache--
 	;;
+
 	/*
 	tricky: we need power of two alignment, so we allocate double the
 	needed size, chop off the unaligned ends, and waste the address
@@ -310,13 +317,12 @@ const bktalloc = {bkt
 	b = s.freehd
 	s.freehd = b.next
 	s.nfree--
-	if s.nfree == 0
+	if s.freehd == Zchunk
 		bkt.slabs = s.next
 		if s.next != Zslab
 			s.next.prev = Zslab
 		;;
 	;;
-
 	-> (b : byte#)
 }
 
@@ -343,21 +349,21 @@ const bktfree = {bkt, m
 		HACK HACK HACK: if we can't unmap, keep an infinite cache per slab size.
 		We should solve this better somehow.
 		*/
+		/* unlink the slab from the list */
+		if s.next != Zslab
+			s.next.prev = s.prev
+		;;
+		if s.prev != Zslab
+			s.prev.next = s.next
+		;;
+		if bkt.slabs == s
+			bkt.slabs = s.next
+		;;
 		if bkt.ncache < Cachemax || !Canunmap
 			s.next = bkt.cache
 			s.prev = Zslab
 			bkt.cache = s
 		else
-			/* unlink the slab from the list */
-			if s.next != Zslab
-				s.next.prev = s.prev
-			;;
-			if s.prev != Zslab
-				s.prev.next = s.next
-			;;
-			if bkt.slabs == s
-				bkt.slabs = s.next
-			;;
 			/* we mapped 2*Slabsz so we could align it,
 			 so we need to unmap the same */
 			freemem(s.head, Slabsz*2)
@@ -435,3 +441,4 @@ be a power of two.
 const mtrunc = {m, align
 	-> ((m : intptr) & ~((align : intptr) - 1) : byte#)
 }
+

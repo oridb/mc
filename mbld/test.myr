@@ -14,14 +14,14 @@ pkg bld =
 ;;
 
 const test = {b, targs
-	-> go(b, targs, "test")
+	-> go(b, targs, "test", false)
 }
 
 const bench = {b, targs
-	-> go(b, targs, "bench")
+	-> go(b, targs, "bench", true)
 }
 
-const go = {b, targs, kind
+const go = {b, targs, kind, isbench
 	var failed, ok
 	var tests
 
@@ -42,7 +42,7 @@ const go = {b, targs, kind
 	ok = true
 	failed = [][:]
 	for t : tests
-		if !runtest(b, t, &failed)
+		if !runtest(b, t, isbench, &failed)
 			ok = false
 		;;
 	;;
@@ -71,7 +71,7 @@ const printfailed = {failed
 	;;
 }
 
-const runtest = {b, n, failed
+const runtest = {b, n, isbench, failed
 	var dir, res, log, logfd
 	var sub
 
@@ -100,7 +100,13 @@ const runtest = {b, n, failed
 			/* if we have subtests, we've already printed the output */
 			match sub
 			| `std.Some r:	res = r
-			| `std.None:	mbldput("PASS\n")
+			| `std.None:
+				if isbench
+					mbldput("MISSING TIMING\n")
+					res = false
+				else
+					mbldput("PASS\n")
+				;;
 			;;
 		;;
 		if !res

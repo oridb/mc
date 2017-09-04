@@ -164,7 +164,10 @@ const cleanup = {re
 		next = thr.next
 		thrfree(re, thr)
 	;;
+	re.runq = Zthr
+	re.expired = Zthr
 	re.nexttid = 0
+	re.nthr = 0
 }
 
 const matchfree = {m

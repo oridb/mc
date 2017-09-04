@@ -1,27 +1,31 @@
 use std
+use testr
+
+var a : uint64[100000]
 
 const main = {
-	var a : uint64[100000]
+	testr.bench([
+		[.name="fwd-independent", .fn=fwd_independent],
+		[.name="rev-independent", .fn=rev_independent],
+		[.name="fwd-dependent", .fn=fwd_dependent],
+		[.name="rev-dependent", .fn=rev_dependent],
+	][:])
+}
 
-	for var j = 0; j < 100; j++
-		/* independent copies forward */
-		for var i = 0; i < 10; i++
-			std.slcp(a[:a.len/2-1], a[a.len/2+1:])
-		;;
-		/* independent copies backward */
-		for var i = 0; i < 10; i++
-			std.slcp(a[:a.len/2-1], a[a.len/2+1:])
-		;;
+const fwd_independent = {ctx
+	std.slcp(a[:a.len/2-1], a[a.len/2+1:])
+}
 
-		/* dependent copies forward */
-		for var i = 0; i < 10; i++
-			std.slcp(a[:a.len/2+1000], a[a.len/2-1000:])
-		;;
-		/* dependent copies backward */
-		for var i = 0; i < 10; i++
-			std.slcp(a[a.len/2-1000:], a[:a.len/2+1000])
-		;;
-	;;
+const rev_independent = {ctx
+	std.slcp(a[:a.len/2-1], a[a.len/2+1:])
+}
+
+const fwd_dependent = {ctx
+	std.slcp(a[:a.len/2+1000], a[a.len/2-1000:])
+}
+
+const rev_dependent = {ctx
+	std.slcp(a[a.len/2-1000:], a[:a.len/2+1000])
 }
 
 
