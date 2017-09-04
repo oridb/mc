@@ -261,6 +261,7 @@ const mkslab = {bkt
 		s = bkt.cache
 		bkt.cache = s.next
 		bkt.ncache--
+		-> s
 	;;
 
 	/*
@@ -345,10 +346,6 @@ const bktfree = {bkt, m
 		s.prev = Zslab
 		bkt.slabs = s
 	elif s.nfree == bkt.nper - 1
-		/*
-		HACK HACK HACK: if we can't unmap, keep an infinite cache per slab size.
-		We should solve this better somehow.
-		*/
 		/* unlink the slab from the list */
 		if s.next != Zslab
 			s.next.prev = s.prev
@@ -359,10 +356,15 @@ const bktfree = {bkt, m
 		if bkt.slabs == s
 			bkt.slabs = s.next
 		;;
+		/*
+		HACK HACK HACK: if we can't unmap, keep an infinite cache per slab size.
+		We should solve this better somehow.
+		*/
 		if bkt.ncache < Cachemax || !Canunmap
 			s.next = bkt.cache
 			s.prev = Zslab
 			bkt.cache = s
+			bkt.ncache++
 		else
 			/* we mapped 2*Slabsz so we could align it,
 			 so we need to unmap the same */
