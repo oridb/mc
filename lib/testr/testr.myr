@@ -99,7 +99,8 @@ const benchspec = {ts
 		if dt == 0.0
 			nsamp = 1000_000
 		else
-			nsamp = (1000_000.0/dt : std.time)
+			nsamp = (100_000.0/dt : int64)
+			nsamp = std.max(10, nsamp)
 		;;
 
 		for var i = 0; i < nsamp; i++
