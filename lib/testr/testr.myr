@@ -13,6 +13,7 @@ pkg testr =
 	;;
 
 	const run	: (specs : spec[:] -> void)
+	const bench	: (specs : spec[:] -> void)
 	const ok	: (ctx : ctx# -> void)
 	const fail	: (ctx : ctx#, msg : byte[:], args : ... -> void)
 	const check	: (ctx : ctx#, cond : bool, msg : byte[:], args : ... -> void)
@@ -20,10 +21,19 @@ pkg testr =
 	const softfail	: (ctx : ctx#, msg : byte[:], args : ... -> void)
 ;;
 
+const Nsamp = 1000;
+
+const bench = {specs
+	std.put("MBENCH {}\n", specs.len)
+	for s : specs
+		benchspec(&s)
+	;;
+}
+
 const run = {specs
 	std.put("MTEST {}\n", specs.len)
 	for s : specs
-		runspec(&s)
+		testspec(&s)
 	;;
 }
 
@@ -64,9 +74,42 @@ const softfailv = {ctx, msg, ap
 	ctx.reason = std.fmtv(msg, ap)
 }
 
-const runspec = {ts
+const benchspec = {ts
+	var avg, m, d, n
+	var start, dt
 	var ctx : ctx
-	var status, reason
+	var jmpbuf
+
+	ctx.ok = true
+	ctx.reason = ""
+	ctx.jmpbuf = &jmpbuf
+
+	avg = 0.0;
+	m = 0.0;
+	n = 0.0;
+	std.put("bench {} <<{{!\n", ts.name)
+	if !std.setjmp(&jmpbuf)
+		for var i = 0; i < Nsamp; i++
+			n +=1.0;
+			start = std.now()
+			ts.fn(&ctx)
+			dt = (std.now() - start : flt64)/1_000_000.0
+			d = (dt - avg);
+			avg = avg + d/n;
+			m = m + d*(dt - avg);
+		;;
+	;;
+
+	if ctx.ok
+		std.put("!}}>> timings {} {} {}\n", Nsamp, avg, m)
+	else
+		std.put("!}}>> fail {}\n", ctx.reason)
+		std.slfree(ctx.reason)
+	;;
+}
+
+const testspec = {ts
+	var ctx : ctx
 	var jmpbuf
 
 	ctx.ok = true
@@ -79,12 +122,9 @@ const runspec = {ts
 	;;
 
 	if ctx.ok
-		status = "ok"
-		reason = ""
+		std.put("!}}>> ok\n")
 	else
-		status = "fail"
-		reason = ctx.reason
+		std.put("!}}>> fail {}\n", ctx.reason)
+		std.slfree(ctx.reason)
 	;;
-	std.put("!}}>> {} {}\n", status, reason)
-	std.slfree(reason)
 }
