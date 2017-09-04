@@ -18,7 +18,7 @@ var footpat
 const __init__ = {
 	planpat = std.try(regex.compile("MTEST\\s+(-?\\d+)\\s*"))
 	headpat = std.try(regex.compile("test\\s+(.*)<<{!\\s*"))
-	footpat = std.try(regex.compile("!}>>\\s*(ok|fail\\s*(.*))\\s*"))
+	footpat = std.try(regex.compile("!}>>\\s*(ok|fail|timing)\\s*(.*)\\s*"))
 }
 
 const showsub = {b, cmd, fd, logfd, failed
@@ -75,7 +75,7 @@ const showtests = {b, cmd, failed, f, log, ntests
 	curtest = ""
 	nresults = 0
 	mbldput("\n")
-	for ln in bio.byline(f)
+	for ln : bio.byline(f)
 		ln = std.strstrip(ln)
 		match testhead(ln)
 		| `std.None:
@@ -87,11 +87,14 @@ const showtests = {b, cmd, failed, f, log, ntests
 
 		match testfoot(ln)
 		| `std.None:
-		| `std.Some `std.Ok _:
-			endtest(b, cmd, &curtest, failed, &nresults, true, "")
+		| `std.Some `Timing (niter, avg, stddev):
+			showbench(b, &curtest, &nresults, niter, avg, stddev)
 			continue
-		| `std.Some `std.Err m:
-			endtest(b, cmd, &curtest, failed, &nresults, false, m)
+		| `std.Some `Pass:
+			passtest(b, &curtest, &nresults)
+			continue
+		| `std.Some `Fail m:
+			failtest(b, cmd, &curtest, failed, &nresults, m)
 			ok = false
 			continue
 		;;
@@ -133,25 +136,50 @@ const starttest = {curtest, t
 	curtest# = t
 }
 
-const endtest = {b, cmd, curtest, failed, nresults, pass, msg
+const passtest = {b, curtest, nresults
+	donetest(b, curtest, nresults)
+	mbldput("PASS\n")
+}
+
+const showbench = {b, curtest, nresults, niter, avg, stddev
+	var scale, unit
+	donetest(b, curtest, nresults)
+	(scale, unit) = displayscale(avg)
+	std.put("BENCH:\t{}{} (σ^2: {})\n", avg*scale, unit, stddev*scale);
+}
+
+const units = [
+	"s",
+	"ms",
+	"μs",
+	"ns",
+]
+const displayscale = {val
+	var scale
+
+	scale = 1.0
+	for var i = 0; i < units.len; i++
+		if val*scale > 1.0
+			-> (scale, units[i])
+		;;
+		scale *= 1000.0
+	;;
+	-> (scale, units[units.len - 1])
+}
+
+const failtest = {b, cmd, curtest, failed, nresults, msg
 	var p
 
+	p = std.pathcat(cmd, curtest#)
+	donetest(b, curtest, nresults)
+	mbldput("FAIL {}\n", msg)
+	std.slpush(failed, p)
+}
+
+const donetest = {b, curtest, nresults
 	if curtest#.len == 0
 		std.fatal("malformed input: test ended without start\n")
 	;;
-
-	if pass
-		mbldput("PASS\n")
-	else
-		if msg.len > 0
-			mbldput("FAIL {}\n", msg)
-		else
-			mbldput("FAIL\n")
-		;;
-		p = std.pathcat(cmd, curtest#)
-		std.slpush(failed, p)
-	;;
-
 	std.slfree(curtest#)
 	curtest# = ""
 	nresults#++
@@ -183,16 +211,44 @@ const testhead = {ln
 	;;
 }
 
-const testfoot : (ln : byte[:] -> std.option(std.result(void, byte[:]))) = {ln
+const testfoot = {ln
 	match regex.exec(footpat, ln)
 	| `std.Some m:
-		if std.sleq(m[1], "ok")
-			-> `std.Some `std.Ok void
-		else
-			-> `std.Some `std.Err std.sldup(m[2])
+		match m[1]
+		| "timing":	-> parsetiming(m[2])
+		| "ok":		-> `std.Some `Pass
+		| "fail":	-> `std.Some `Fail std.sldup(m[2])
+		| junk:		-> `std.Some `Fail std.fmt("garbled : {}", junk)
 		;;
 	| `std.None:
 		-> `std.None
 	;;
+}
+
+const parsetiming = {tm
+	var niter, avg, stddev
+	var sp, buf : byte[:][3]
+
+	sp = std.bstrtok(buf[:], tm)
+	if sp.len != 3
+		-> `std.None
+	;;
+
+	match std.intparse(sp[0])
+	| `std.Some n:	niter = n
+	| `std.None:	-> `std.None
+	;;
+
+	match std.flt64parse(sp[1])
+	| `std.Some n:	avg = n
+	| `std.None:	-> `std.None
+	;;
+
+	match std.flt64parse(sp[2])
+	| `std.Some n:	stddev = n
+	| `std.None:	-> `std.None
+	;;
+
+	-> `std.Some `Timing (niter, avg, stddev)
 }
 

@@ -82,6 +82,12 @@ pkg bld =
 		genar	: byte[:]
 	;;
 
+	type testresult = union
+		`Pass
+		`Fail byte[:]
+		`Timing (int, flt64, flt64)
+	;;
+
 	type depgraph = struct
 		/* the edges of the graph from both ends */
 		targs	: std.htab(byte[:], node#[:])#
