@@ -105,6 +105,13 @@ const myrdeps = {b, name, mt
 
 			n.wdir = std.sldup(mt.dir)
 			std.slpush(&n.cmd, std.pathjoin([b.basedir, opt_objdir, mt.dir, mt.name][:]))
+		elif mt.isbench
+			n = node(g, mt.name)
+			depends(g, n, to)
+			addnode(g, "bench", n)
+
+			n.wdir = std.sldup(mt.dir)
+			std.slpush(&n.cmd, std.pathjoin([b.basedir, opt_objdir, mt.dir, mt.name][:]))
 		else
 			addnode(g, "all", go)
 			go.instdir = config.Binpath
@@ -264,10 +271,19 @@ const datdeps = {b, name, dt
 const addtests = {b, name, mt
 	for f : mt.inputs
 		addtest(b, mt, f)
+		addbench(b, mt, f)
 	;;
 }
 
 const addtest = {b, mt, f
+	addalt(b, mt, "test", f)
+}
+
+const addbench = {b, mt, f
+	addalt(b, mt, "bench", f)
+}
+
+const addalt = {b, mt, kind, f
 	var libs, deps
 	var sp, tp, op
 	var s, t, o
@@ -280,7 +296,7 @@ const addtest = {b, mt, f
 	*/
 	g = b.deps
 	s = changesuffix(f, ".myr")
-	sp = std.pathjoin([mt.dir, "test", s][:])
+	sp = std.pathjoin([mt.dir, kind, s][:])
 	std.slfree(s)
 	if !std.fexists(sp)
 		std.slfree(sp)
@@ -291,11 +307,11 @@ const addtest = {b, mt, f
 	leaf(g, sp)
 
 	t = changesuffix(f, "")
-	tp = std.pathjoin([opt_objdir, mt.dir, "test", t][:])
+	tp = std.pathjoin([opt_objdir, mt.dir, kind, t][:])
 	std.slfree(t)
 
 	o = changesuffix(f, config.Objsuffix)
-	op = std.pathjoin([opt_objdir, mt.dir, "test", o][:])
+	op = std.pathjoin([opt_objdir, mt.dir, kind, o][:])
 	std.slfree(o)
 
 	n = node(g, sp)
@@ -325,9 +341,9 @@ const addtest = {b, mt, f
 	n = node(g, tp)
 	depends(g, n, tp)
 	n.wdir = std.sldup(std.dirname(std.dirname(sp)))
-	std.slpush(&n.cmd, std.pathjoin([b.basedir, opt_objdir, mt.dir, "test", std.basename(tp)][:]))
+	std.slpush(&n.cmd, std.pathjoin([b.basedir, opt_objdir, mt.dir, kind, std.basename(tp)][:]))
 
-	addnode(g, "test", n)
+	addnode(g, kind, n)
 }
 
 const resolve = {b

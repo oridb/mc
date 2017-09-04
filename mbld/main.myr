@@ -96,6 +96,7 @@ const main = {args : byte[:][:]
 			| "install":	r = bld.install(b)
 			| "uninstall":	r = bld.uninstall(b)
 			| "test":	r = bld.test(b, cmd.args[1:])
+			| "bench":	r = bld.bench(b, cmd.args[1:])
 			| "list":	r = show(b, cmd.args[1:])
 			| _:
 				ok = true

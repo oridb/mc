@@ -45,6 +45,7 @@ pkg bld =
 
 		islib	: bool
 		istest	: bool
+		isbench	: bool
 		install	: bool
 
 	;;
@@ -57,6 +58,7 @@ pkg bld =
 		tags	: byte[:][:]
 		durable	: bool
 		istest	: bool
+		isbench	: bool
 	;;
 
 	type mantarg = struct
