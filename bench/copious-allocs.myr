@@ -16,8 +16,11 @@ const main = {
 
 const alloc_one = {ctx
 	var a : int#
-	a = std.alloc()
-	std.free(a)
+
+	for var i = 0; i < 1000; i++
+		a = std.alloc()
+		std.free(a)
+	;;
 }
 
 const alloc_fwdfwd = {ctx
