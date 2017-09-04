@@ -21,8 +21,6 @@ pkg testr =
 	const softfail	: (ctx : ctx#, msg : byte[:], args : ... -> void)
 ;;
 
-const Nsamp = 1000;
-
 const bench = {specs
 	std.put("MTEST {}\n", specs.len)
 	for s : specs
@@ -78,7 +76,7 @@ const softfailv = {ctx, msg, ap
 }
 
 const benchspec = {ts
-	var avg, m, d, n
+	var avg, m, d, n, nsamp
 	var start, dt
 	var ctx : ctx
 	var jmpbuf
@@ -90,9 +88,21 @@ const benchspec = {ts
 	avg = 0.0;
 	m = 0.0;
 	n = 0.0;
+	nsamp = 0
 	std.put("test {} <<{{!\n", ts.name)
 	if !std.setjmp(&jmpbuf)
-		for var i = 0; i < Nsamp; i++
+		/* estimate samples */
+		start = std.now()
+		ts.fn(&ctx)
+		dt = (std.now() - start : flt64)
+
+		if dt == 0.0
+			nsamp = 1000_000
+		else
+			nsamp = (1000_000.0/dt : std.time)
+		;;
+
+		for var i = 0; i < nsamp; i++
 			n +=1.0;
 			start = std.now()
 			ts.fn(&ctx)
@@ -104,7 +114,7 @@ const benchspec = {ts
 	;;
 
 	if ctx.ok
-		std.put("!}}>> timing {} {} {}\n", Nsamp, avg, m)
+		std.put("!}}>> timing {} {} {}\n", nsamp, avg, m)
 	else
 		std.put("!}}>> fail {}\n", ctx.reason)
 		std.slfree(ctx.reason)

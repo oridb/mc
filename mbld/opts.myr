@@ -89,7 +89,7 @@ const parseversion = {v
 
 	i = 0
 	a = [0, 0, 0]
-	for e in std.bysplit(v, ".")
+	for e : std.bysplit(v, ".")
 		match std.intparse(e)
 		| `std.Some n:	a[i++] = n
 		| `std.None:	continue

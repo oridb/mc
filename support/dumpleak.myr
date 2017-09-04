@@ -78,7 +78,7 @@ const tracealloc = {path, f, stats
 	ptr = get64(path, f)
 	sz = get64(path, f)
 	stk = [][:]
-	for var i = 0; i < 10; i++
+	for var i = 0; i < 20; i++
 		std.slpush(&stk, get64(path, f))
 	;;
 	stats.allocs++
