@@ -225,6 +225,10 @@ const cmddeps = {b, name, ct
 		a = std.htgetv(b.deps.targs, "test", [][:])
 		std.slpush(&a, n)
 		std.htput(b.deps.targs, "test", a)
+	elif ct.isbench
+		a = std.htgetv(b.deps.targs, "bench", [][:])
+		std.slpush(&a, n)
+		std.htput(b.deps.targs, "bench", a)
 	elif gen 
 		pid = run(ct.cmd, ct.dir)
 		match std.wait(pid)
