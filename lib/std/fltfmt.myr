@@ -63,12 +63,11 @@ const dragon4 = {sb, isneg, f, e, p, mode, cutoff
 
 	/* initialize */
 	roundup = false
-	r = mkbigint(f)
-	r = bigshli(r, max(e - p, 0))
+	u = mkbigint(0)
+	r = bigshli(mkbigint(f), max(e - p, 0))
 	s = bigshli(mkbigint(1), max(0, -(e - p)))
 	mm = bigshli(mkbigint(1), max((e - p), 0))
 	mp = bigdup(mm)
-	u = mkbigint(0)
 
 	/* fixup: unequal gaps */
 	t = mkbigint(1)
@@ -224,10 +223,16 @@ const dragon4 = {sb, isneg, f, e, p, mode, cutoff
 		;;
 	;;
 	k--
-
 	while k >= -1
 		format(sb, 0, k--)
 	;;
+
+	bigfree(u)
+	bigfree(r)
+	bigfree(s)
+	bigfree(mm)
+	bigfree(mp)
+
 }
 
 const lowdig = {u

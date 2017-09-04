@@ -94,7 +94,7 @@ const zbytealloc = {sz
 }
 
 const tracealloc = {p, sz
-	var stk	: void#[13]	/* [type, addr, sz, 10 stack slots] */
+	var stk	: void#[23]	/* [type, addr, sz, 10 stack slots] */
 
 	slfill(stk[:], (0 : void#))
 	stk[0] = (0 : void#)

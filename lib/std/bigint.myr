@@ -28,6 +28,7 @@ pkg std =
 	const bigdup	: (a : bigint# -> bigint#)
 	const bigassign	: (d : bigint#, s : bigint# -> bigint#)
 	const bigmove	: (d : bigint#, s : bigint# -> bigint#)
+	const bigsteal	: (d : bigint#, s : bigint# -> bigint#)
 	const bigparse	: (s : byte[:] -> option(bigint#))
 	const bigclear	: (a : bigint# -> bigint#)
 	const bigbfmt	: (b : byte[:], a : bigint#, base : int -> size)
@@ -159,6 +160,12 @@ const bigmove = {d, s
 	d# = s#
 	s.dig = [][:]
 	s.sign = 0
+	-> d
+}
+
+const bigsteal = {d, s
+	bigmove(d, s);
+	bigfree(s)
 	-> d
 }
 
@@ -547,7 +554,7 @@ const bigdiv = {a : bigint#, b : bigint# -> bigint#
 
 	(q, r) = bigdivmod(a, b)
 	bigfree(r)
-	-> bigmove(a, q)
+	-> bigsteal(a, q)
 }
 
 const bigmod = {a : bigint#, b : bigint# -> bigint#
@@ -555,7 +562,7 @@ const bigmod = {a : bigint#, b : bigint# -> bigint#
 
 	(q, r) = bigdivmod(a, b)
 	bigfree(q)
-	-> bigmove(a, r)
+	-> bigsteal(a, r)
 }
 
 /* a /= b */
@@ -665,6 +672,7 @@ const bigdivmod = {a : bigint#, b : bigint# -> (bigint#, bigint#)
 	/* undo the biasing for remainder */
 	bigshri(u, shift)
 	trim(q)
+	bigfree(v)
 	-> (trim(q), trim(u))
 }
 
@@ -698,7 +706,7 @@ const bigmodpow = {base, exp, mod
 		bigmul(base, base)
 		bigmod(base, mod)
 	;;
-	-> bigmove(base, r)
+	-> bigsteal(base, r)
 }
 
 /* returns the number of leading zeros */
