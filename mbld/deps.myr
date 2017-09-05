@@ -147,7 +147,7 @@ const myrdeps = {b, name, mt
 				depends(g, n, d)
 			;;
 			for `Xdep d : deps
-				scrapelib(b, d, mt.incpath)
+				scrapelib(b, mt.name, d, mt.incpath)
 				xdepends(b, g, n, d)
 				std.slpush(&libs, d)
 			;;
@@ -329,7 +329,7 @@ const addalt = {b, mt, kind, f
 		depends(g, n, d)
 	;;
 	for `Xdep d : deps
-		scrapelib(b, d, mt.incpath)
+		scrapelib(b, mt.name, d, mt.incpath)
 		xdepends(b, g, n, d)
 		std.slpush(&libs, d)
 	;;

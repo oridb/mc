@@ -16,7 +16,10 @@ pkg bld =
 		dep : byte[:][:], \
 		dyndep : byte[:][:] -> void)
 
-	const scrapelib : (b : build#, libs : byte[:], incs : byte[:][:] -> void)
+	const scrapelib : (b : build#, \
+		targ : byte[:], \
+		libs : byte[:], \
+		incs : byte[:][:] -> void)
 ;;
 
 const Abiversion = 14
@@ -37,12 +40,12 @@ const builtlib = {b, mt, dep, dyndep
 	std.slfree(l)
 	std.slfree(u)
 	for d : dep
-		scrapelib(b, d, mt.incpath)
+		scrapelib(b, mt.name, d, mt.incpath)
 	;;
 	std.htput(b.libs, mt.name, ldep)
 }
 
-const scrapelib = {b, lib, incs
+const scrapelib = {b, targ, lib, incs
 	var dep, dyndep, ldep
 	var f, dir
 
@@ -50,7 +53,7 @@ const scrapelib = {b, lib, incs
 		-> void
 	;;
 
-	(f, dir) = openlib(lib, incs)
+	(f, dir) = openlib(lib, targ, incs)
 	match bio.getc(f)
 	| `bio.Ok 'U':	/* ok */
 	| `bio.Ok _:	std.fput(1, "{}/{}: not a usefile\n", dir, lib)
@@ -87,11 +90,11 @@ const scrapelib = {b, lib, incs
 	std.htput(b.libs, lib, ldep)
 
 	for d : dep
-		scrapelib(b, d, incs)
+		scrapelib(b, targ, d, incs)
 	;;
 }
 
-const openlib = {lib, incs : byte[:][:]
+const openlib = {lib, targ, incs
 	var path, libname
 
 	path = ""
@@ -107,11 +110,11 @@ const openlib = {lib, incs : byte[:][:]
 				-> (file, p)
 			| `std.Err m:
 			;;
-			std.fatal("{} does not exist in {j=, }\n", lib, incs)
+			std.fatal("{}: {} does not exist in {j=, }\n", targ, lib, incs)
 		;;
 		std.slfree(path)
 	;;
-	std.fatal("{} does not exist in {j= }\n", lib, incs)
+	std.fatal("{}: {} does not exist in {j= }\n", targ, lib, incs)
 }
 
 const addlibs = {b, sl, libs, incs
