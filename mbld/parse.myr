@@ -360,6 +360,7 @@ const cmdtarget = {b, p, cmd, iscmd
 
 	durable = false
 	istest = false
+	isbench = false
 	deplist = [][:]
 	tags = [][:]
 	for elt : attrs
@@ -444,6 +445,7 @@ const myrtarget = {b, p, targ
 	incpath = [][:]
 	tags = [][:]
 	istest = false
+	isbench = false
 	for elt : attrs
 		match elt
 		| ("ldscript", lds):	ldscript = std.sldup(lds)
