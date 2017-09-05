@@ -68,8 +68,7 @@ pkg regex =
 		dead	: bool		/* thread died */
 		matched	: bool		/* thread matched */
 
-		mstart	: std.size[:]	/* match starts */
-		mend	: std.size[:]	/* match ends */
+		mgroup	: std.size[2][:]	/* match starts */
 	;;
 
 	pkglocal type reinst = union

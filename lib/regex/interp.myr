@@ -127,7 +127,7 @@ const sbsuball = {sb, re, str, subst
 			std.sbputb(sb, str[i])
 			i++
 		else
-			len = thr.mend[0]
+			len = thr.mgroup[0][1]
 			s = str[i:len + i]
 			dosubst(sb, re, thr, s, subst)
 			i += len
@@ -142,10 +142,10 @@ const dosubst = {sb, re, thr, str, subst
 
 	off = 0
 	for var i = 1; i < re.nmatch; i++
-		if thr.mstart[i] != -1 && thr.mend[i] != -1
-			std.sbputs(sb, str[off:thr.mstart[i]])
+		if thr.mgroup[i][0] != -1 && thr.mgroup[i][1] != -1
+			std.sbputs(sb, str[off:thr.mgroup[i][0]])
 			std.sbputs(sb, subst[i - 1])
-			off = thr.mend[i]
+			off = thr.mgroup[i][1]
 		;;
 	;;
 	std.sbputs(sb, str[off:])
@@ -182,8 +182,8 @@ const getmatches = {re, thr
 	;;
 	ret = std.slalloc(re.nmatch)
 	for var i = 0; i < re.nmatch; i++
-		if thr.mstart[i] != -1 && thr.mend[i] != -1
-			ret[i] = re.str[thr.mstart[i]:thr.mend[i]]
+		if thr.mgroup[i][0] != -1 && thr.mgroup[i][1] != -1
+			ret[i] = re.str[thr.mgroup[i][0]:thr.mgroup[i][1]]
 		else
 			ret[i] = [][:]
 		;;
@@ -200,8 +200,8 @@ const getidxmatches = {re, thr
 	;;
 	ret = std.slalloc(re.nmatch)
 	for var i = 0; i < re.nmatch; i++
-		if thr.mstart[i] != -1 && thr.mend[i] != -1
-			ret[i] = (thr.mstart[i], thr.mend[i])
+		if thr.mgroup[i][0] != -1 && thr.mgroup[i][1] != -1
+			ret[i] = (thr.mgroup[i][0], thr.mgroup[i][1])
 		else
 			ret[i] = (-1, -1)
 		;;
@@ -233,11 +233,10 @@ const run = {re, str, idx, wholestr
 		re.traces = [][:]
 		std.slpush(&re.traces, std.mkbs())
 	;;
-	re.runq.mstart = std.slalloc(re.nmatch)
-	re.runq.mend = std.slalloc(re.nmatch)
+	re.runq.mgroup = std.slalloc(re.nmatch)
 	for var i = 0; i < re.nmatch; i++
-		re.runq.mstart[i] = -1
-		re.runq.mend[i] = -1
+		re.runq.mgroup[i][0] = -1
+		re.runq.mgroup[i][1] = -1
 	;;
 	while re.nthr > 0
 		while re.runq != Zthr
@@ -302,8 +301,7 @@ const run = {re, str, idx, wholestr
 */
 const step = {re, thr, curip
 	var str
-	var mstart
-	var mend
+	var mgroup
 
 	str = re.str
 	match re.prog[thr.ip]
@@ -375,22 +373,21 @@ const step = {re, thr, curip
 	| `Ilbra m:
 		trace(re, thr, "\t{}:\tLbra {}\n", thr.ip, m)
 		trace(re, thr, "\t\tmatch start = {}\n", re.strp)
-		thr.mstart[m] = re.strp
+		thr.mgroup[m][0] = re.strp
 		hit(re, thr)
 		thr.ip++
 		-> false
 	| `Irbra m:
 		trace(re, thr, "\t{}:\tRbra {}\n", thr.ip, m)
-		thr.mend[m] = re.strp
+		thr.mgroup[m][1] = re.strp
 		hit(re, thr)
 		thr.ip++
 		-> false
 	| `Ifork (lip, rip):
 		trace(re, thr, "\t{}:\tFork ({}, {})\n", thr.ip, lip, rip)
-		mstart = std.sldup(thr.mstart)
-		mend = std.sldup(thr.mend)
+		mgroup = std.sldup(thr.mgroup)
 		hit(re, thr)
-		fork(re, rip, curip, mstart, mend)
+		fork(re, rip, curip, mgroup)
 		if re.debug
 			std.slpush(&re.traces, std.bsdup(re.traces[thr.tid]))
 		;;
@@ -410,7 +407,7 @@ const step = {re, thr, curip
 	-> true
 }
 
-const fork = {re, ip, curip, mstart, mend
+const fork = {re, ip, curip, mgroup
 	var thr
 
 	if ip == curip /* loop detection */
@@ -418,8 +415,7 @@ const fork = {re, ip, curip, mstart, mend
 	;;
 	thr = mkthread(re, ip)
 	thr.next = re.runq
-	thr.mstart = mstart
-	thr.mend = mend
+	thr.mgroup = mgroup
 	re.runq = thr
 }
 
@@ -458,8 +454,7 @@ const mkthread = {re, ip
 	thr.dead = false
 	thr.matched = false
 
-	thr.mstart = [][:]
-	thr.mend = [][:]
+	thr.mgroup = [][:]
 
 	re.nthr++
 
@@ -468,8 +463,7 @@ const mkthread = {re, ip
 
 const thrfree = {re, thr
 	trace(re, thr, "\t\tcleanup {}\n", thr.tid)
-	std.slfree(thr.mstart)
-	std.slfree(thr.mend)
+	std.slfree(thr.mgroup)
 	std.free(thr)
 }
 
