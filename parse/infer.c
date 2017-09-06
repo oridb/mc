@@ -921,6 +921,7 @@ static void
 traitsfor(Type *base, Bitset *dst)
 {
 	Traitmap *tm;
+	Bitset *bs;
 	Type *ty;
 	size_t i;
 
@@ -930,7 +931,12 @@ traitsfor(Type *base, Bitset *dst)
 		while (1) {
 			if (ty->type == Tyvar)
 				break;
-			bsunion(dst, tm->traits);
+			if (ty->type == Tyname && ty->ngparam == 0)
+				bs = htget(tm->name, ty->name);
+			else
+				bs = tm->traits;
+			if (bs)
+				bsunion(dst, bs);
 			for (i = 0; i < tm->nfilter; i++) {
 				if (tymatchrank(tm->filter[i], ty) >= 0)
 					bsput(dst, tm->filtertr[i]->uid);
