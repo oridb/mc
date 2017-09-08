@@ -4,7 +4,7 @@ use testr
 const main = {
 	testr.run([
 		[.name="string hash and equality", .fn={ctx
-			testr.check(ctx, std.strhash("abc") == 1241861192, "wrong hash\n")
+			testr.check(ctx, std.strhash("abc") == 0x5dbcfa53aa2007a5, "wrong hash\n")
 			testr.check(ctx, std.streq("abc\0def", "abc\0def"), "equal strings not equal\n")
 			testr.check(ctx, !std.streq("abc\0def", "abcdef"), "unequal strings are equal\n")
 		}],
@@ -20,7 +20,7 @@ const main = {
 			testr.check(ctx, !std.ptreq(&x, &y), "unequal pointers are equal")
 		}],
 		[.name="int hash and equality", .fn={ctx
-			testr.check(ctx, std.inthash(123) == 3497506805, "wrong int hash")
+			testr.check(ctx, std.inthash(123) == 0x5671db246859d5b6, "wrong int hash")
 			testr.check(ctx, std.inteq(123, 123), "equal integers not equal")
 			testr.check(ctx, !std.inteq(123, 456), "unequal integers are equal")
 		}],

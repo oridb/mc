@@ -30,7 +30,7 @@ pkg std =
 	const bsunion	: (a : bitset#, b : bitset# -> void)
 	const bseq	: (a : bitset#, b : bitset# -> bool)
 	const bsissubset	: (a : bitset#, b : bitset# -> bool)
-	const bshash	: (a : bitset# -> uint32)
+	const bshash	: (a : bitset# -> uint64)
 
 	type bsiter = struct
 		idx	: size

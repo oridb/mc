@@ -8,25 +8,25 @@ use "types"
 use "utf"
 
 pkg std =
-	const strhash	: (s : byte[:]	-> uint32)
+	const strhash	: (s : byte[:]	-> uint64)
 	const streq	: (a : byte[:], b : byte[:]	-> bool)
 
-	const strcasehash	: (s : byte[:]	-> uint32)
+	const strcasehash	: (s : byte[:]	-> uint64)
 	const strcaseeq	: (a : byte[:], b : byte[:]	-> bool)
 
-	generic ptrhash	: (p : @a#	-> uint32)
+	generic ptrhash	: (p : @a#	-> uint64)
 	generic ptreq	: (a : @a#, b : @a#	-> bool)
 
-	generic inthash	: (v : @a::(integral,numeric)	-> uint32)
+	generic inthash	: (v : @a::(integral,numeric)	-> uint64)
 	generic inteq	: (a : @a::(integral,numeric), b : @a::(integral,numeric) -> bool)
 
 	const murmurhash2	: (data : byte[:], seed : uint32 -> uint32)
 	const siphash24	: (data : byte[:], seed : byte[16] -> uint64)
 
-	generic slhash	: (sl : @a[:] -> uint32)
+	generic slhash	: (sl : @a[:] -> uint64)
 ;;
 
-const Seed = 1234
+const Seed : byte[16] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
 
 generic slhash = {data : @a[:]
 	-> strhash(slbytes(data))
@@ -40,7 +40,7 @@ generic slbytes = {data : @a[:]
 }
 
 const strhash = {s
-	-> murmurhash2(s, Seed)
+	-> siphash24(s, Seed)
 }
 
 const strcaseeq = {a, b
@@ -68,7 +68,7 @@ const strcasehash = {s
 		(c, s) = std.strstep(s)
 		std.slpush(&chars, std.tolower(c))
 	;;
-	h = murmurhash2(slbytes(chars), Seed)
+	h = siphash24(slbytes(chars), Seed)
 	slfree(chars)
 	-> h
 }
@@ -81,7 +81,7 @@ generic ptrhash = {p : @a#
 	var x
 
 	x = (&p : byte#)
-	-> murmurhash2(x[0:sizeof(@a#)], Seed)
+	-> siphash24(x[0:sizeof(@a#)], Seed)
 }
 
 generic ptreq = {a, b
@@ -92,7 +92,7 @@ generic inthash = {v : @a::(integral,numeric)
 	var p
 
 	p = (&v : byte#)
-	-> murmurhash2(p[0:sizeof(@a)], Seed)
+	-> siphash24(p[0:sizeof(@a)], Seed)
 }
 
 generic inteq = {a, b
