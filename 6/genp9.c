@@ -340,8 +340,6 @@ writeblob(FILE *fd, Blob *b, size_t off, char *lbl)
 			n += writeblob(fd, b->seq.sub[i], off+n, lbl);
 		break;
 	case Btpad:
-		for (i = 0; i < b->npad; i++)
-			fprintf(fd, "\tDATA %s+%llu(SB)/1,$0\n", lbl, (uvlong)off+n+i);
 		n += b->npad;
 		break;
 	}
