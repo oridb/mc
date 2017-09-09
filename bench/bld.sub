@@ -1,3 +1,9 @@
+bench hashit =
+	hashit.myr
+	lib ../lib/std:std
+	lib ../lib/sys:sys
+	lib ../lib/testr:testr
+;;
 bench intsort =
 	intsort.myr
 	lib ../lib/std:std
