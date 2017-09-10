@@ -52,10 +52,10 @@ const dragon4 = {sb, isneg, f, e, p, mode, cutoff
 	var k
 	var a, i
 
-	/* if we have zero for the mantissa, we can return early */
 	if isneg
 		sbputs(sb, "-")
 	;;
+	/* if we have zero for the mantissa, we can return early */
 	if f == 0
 		sbputs(sb, "0.0")
 		-> void
