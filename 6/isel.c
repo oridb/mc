@@ -624,261 +624,261 @@ selexpr(Isel *s, Node *n)
 	switch (exprop(n)) {
 	case Oadd:	r = binop(s, Iadd, args[0], args[1]);	break;
 	case Osub:	r = binop(s, Isub, args[0], args[1]);	break;
-	case Obor:	r = binop(s, Ior,  args[0], args[1]);	break;
 	case Oband:	r = binop(s, Iand, args[0], args[1]);	break;
 	case Obxor:	r = binop(s, Ixor, args[0], args[1]);	break;
+	case Obor:	r = binop(s, Ior,  args[0], args[1]);	break;
 	case Omul:
-			if (size(args[0]) == 1) {
-				a = selexpr(s, args[0]);
-				b = inr(s, selexpr(s, args[1]));
-
-				c = locphysreg(Ral);
-				r = locreg(a->mode);
-				g(s, Imov, a, c, NULL);
-				g(s, Iimul_r, b, NULL);
-				g(s, Imov, c, r, NULL);
-			} else {
-				r = binop(s, Iimul, args[0], args[1]);
-			}
-			break;
-	case Odiv:
-	case Omod:
-			/* these get clobbered by the div insn */
+		if (size(args[0]) == 1) {
 			a = selexpr(s, args[0]);
-			b = selexpr(s, args[1]);
-			b = newr(s, b);
-			c = coreg(Reax, mode(n));
+			b = inr(s, selexpr(s, args[1]));
+
+			c = locphysreg(Ral);
 			r = locreg(a->mode);
 			g(s, Imov, a, c, NULL);
-			if (istysigned(exprtype(args[0]))) {
-				switch (r->mode) {
-				case ModeB:	g(s, Imovsx, c, coreg(Rrax, ModeW), NULL);	break;
-				case ModeW:	g(s, Icwd, NULL);	break;
-				case ModeL:	g(s, Icdq, NULL);	break;
-				case ModeQ:	g(s, Icqo, NULL);	break;
-				default:	die("invalid mode in division"); break;
-				}
-				g(s, Iidiv, b, NULL);
-			} else {
-				if (r->mode == ModeB)
-					g(s, Ixor, locphysreg(Rah), locphysreg(Rah), NULL);
-				else
-					g(s, Ixor, edx, edx, NULL);
-				g(s, Idiv, b, NULL);
+			g(s, Iimul_r, b, NULL);
+			g(s, Imov, c, r, NULL);
+		} else {
+			r = binop(s, Iimul, args[0], args[1]);
+		}
+		break;
+	case Odiv:
+	case Omod:
+		/* these get clobbered by the div insn */
+		a = selexpr(s, args[0]);
+		b = selexpr(s, args[1]);
+		b = newr(s, b);
+		c = coreg(Reax, mode(n));
+		r = locreg(a->mode);
+		g(s, Imov, a, c, NULL);
+		if (istysigned(exprtype(args[0]))) {
+			switch (r->mode) {
+			case ModeB:	g(s, Imovsx, c, coreg(Rrax, ModeW), NULL);	break;
+			case ModeW:	g(s, Icwd, NULL);	break;
+			case ModeL:	g(s, Icdq, NULL);	break;
+			case ModeQ:	g(s, Icqo, NULL);	break;
+			default:	die("invalid mode in division"); break;
 			}
-			if (exprop(n) == Odiv)
-				d = coreg(Reax, mode(n));
-			else if (r->mode != ModeB)
-				d = coreg(Redx, mode(n));
+			g(s, Iidiv, b, NULL);
+		} else {
+			if (r->mode == ModeB)
+				g(s, Ixor, locphysreg(Rah), locphysreg(Rah), NULL);
 			else
-				d = locphysreg(Rah);
-			g(s, Imov, d, r, NULL);
-			break;
+				g(s, Ixor, edx, edx, NULL);
+			g(s, Idiv, b, NULL);
+		}
+		if (exprop(n) == Odiv)
+			d = coreg(Reax, mode(n));
+		else if (r->mode != ModeB)
+			d = coreg(Redx, mode(n));
+		else
+			d = locphysreg(Rah);
+		g(s, Imov, d, r, NULL);
+		break;
 	case Oneg:
-			r = selexpr(s, args[0]);
-			r = newr(s, r);
-			g(s, Ineg, r, NULL);
-			break;
+		r = selexpr(s, args[0]);
+		r = newr(s, r);
+		g(s, Ineg, r, NULL);
+		break;
 
-			/* fp expressions */
+		/* fp expressions */
 	case Ofadd:	r = binop(s, Iadds, args[0], args[1]);	break;
 	case Ofsub:	r = binop(s, Isubs, args[0], args[1]);	break;
 	case Ofmul:	r = binop(s, Imuls, args[0], args[1]);	break;
 	case Ofdiv:	r = binop(s, Idivs, args[0], args[1]);	break;
 	case Ofneg:
-			 r = selexpr(s, args[0]);
-			 r = newr(s, r);
-			 a = NULL;
-			 b = NULL;
-			 if (mode(args[0]) == ModeF) {
-				 a = locreg(ModeF);
-				 b = loclit(1LL << (31), ModeF);
-				 g(s, Imovs, r, a);
-			 } else if (mode(args[0]) == ModeD) {
-				 a = locreg(ModeQ);
-				 b = loclit(1LL << 63, ModeQ);
-				 g(s, Imov, r, a, NULL);
-			 }
-			 g(s, Ixor, b, a, NULL);
-			 g(s, Imov, a, r, NULL);
-			 break;
+		r = selexpr(s, args[0]);
+		r = newr(s, r);
+		a = NULL;
+		b = NULL;
+		if (mode(args[0]) == ModeF) {
+			a = locreg(ModeF);
+			b = loclit(1LL << (31), ModeF);
+			g(s, Imovs, r, a);
+		} else if (mode(args[0]) == ModeD) {
+			a = locreg(ModeQ);
+			b = loclit(1LL << 63, ModeQ);
+			g(s, Imov, r, a, NULL);
+		}
+		g(s, Ixor, b, a, NULL);
+		g(s, Imov, a, r, NULL);
+		break;
 	case Obsl:
 	case Obsr:
-			 a = newr(s, selexpr(s, args[0]));
-			 b = selexpr(s, args[1]);
-			 if (b->type == Loclit) {
-				 d = b;
-			 } else {
-				 c = coreg(Rcl, b->mode);
-				 g(s, Imov, b, c, NULL);
-				 d = cl;
-			 }
-			 if (exprop(n) == Obsr) {
-				 if (istysigned(n->expr.type))
-					 g(s, Isar, d, a, NULL);
-				 else
-					 g(s, Ishr, d, a, NULL);
-			 } else {
-				 g(s, Ishl, d, a, NULL);
-			 }
-			 r = a;
-			 break;
+		a = newr(s, selexpr(s, args[0]));
+		b = selexpr(s, args[1]);
+		if (b->type == Loclit) {
+			d = b;
+		} else {
+			c = coreg(Rcl, b->mode);
+			g(s, Imov, b, c, NULL);
+			d = cl;
+		}
+		if (exprop(n) == Obsr) {
+			if (istysigned(n->expr.type))
+				g(s, Isar, d, a, NULL);
+			else
+				g(s, Ishr, d, a, NULL);
+		} else {
+			g(s, Ishl, d, a, NULL);
+		}
+		r = a;
+		break;
 	case Obnot:
-			 r = selexpr(s, args[0]);
-			 r = newr(s, r);
-			 g(s, Inot, r, NULL);
-			 break;
+		r = selexpr(s, args[0]);
+		r = newr(s, r);
+		g(s, Inot, r, NULL);
+		break;
 
 	case Oderef:
-			 r = memloc(s, args[0], mode(n));
-			 break;
+		r = memloc(s, args[0], mode(n));
+		break;
 
 	case Oaddr:
-			 a = selexpr(s, args[0]);
-			 if (a->type == Loclbl || (a->type == Locmeml && !a->mem.base)) {
-				 r = loclitl(a->lbl);
-			 } else {
-				 r = locreg(ModeQ);
-				 g(s, Ilea, a, r, NULL);
-			 }
-			 break;
+		a = selexpr(s, args[0]);
+		if (a->type == Loclbl || (a->type == Locmeml && !a->mem.base)) {
+			r = loclitl(a->lbl);
+		} else {
+			r = locreg(ModeQ);
+			g(s, Ilea, a, r, NULL);
+		}
+		break;
 
 	case Olnot:
-			 a = newr(s, selexpr(s, args[0]));
-			 b = locreg(ModeB);
-			 r = locreg(mode(n));
-			 /* lnot only valid for integer-like values */
-			 g(s, reloptab[exprop(n)].test, a, a, NULL);
-			 g(s, reloptab[exprop(n)].getflag, b, NULL);
-			 movz(s, b, r);
-			 break;
+		a = newr(s, selexpr(s, args[0]));
+		b = locreg(ModeB);
+		r = locreg(mode(n));
+		/* lnot only valid for integer-like values */
+		g(s, reloptab[exprop(n)].test, a, a, NULL);
+		g(s, reloptab[exprop(n)].getflag, b, NULL);
+		movz(s, b, r);
+		break;
 
 	case Oeq: case One: case Ogt: case Oge: case Olt: case Ole:
 	case Ofeq: case Ofne: case Ofgt: case Ofge: case Oflt: case Ofle:
 	case Oueq: case Oune: case Ougt: case Ouge: case Oult: case Oule:
-			 a = selexpr(s, args[0]);
-			 b = selexpr(s, args[1]);
-			 a = newr(s, a);
-			 c = locreg(ModeB);
-			 r = locreg(mode(n));
-			 g(s, reloptab[exprop(n)].test, b, a, NULL);
-			 g(s, reloptab[exprop(n)].getflag, c, NULL);
-			 movz(s, c, r);
-			 return r;
+		a = selexpr(s, args[0]);
+		b = selexpr(s, args[1]);
+		a = newr(s, a);
+		c = locreg(ModeB);
+		r = locreg(mode(n));
+		g(s, reloptab[exprop(n)].test, b, a, NULL);
+		g(s, reloptab[exprop(n)].getflag, c, NULL);
+		movz(s, c, r);
+		return r;
 
 	case Oasn:  /* relabel */
-			 die("Unimplemented op %s", opstr[exprop(n)]);
-			 break;
+		die("Unimplemented op %s", opstr[exprop(n)]);
+		break;
 	case Oset:
-			 op = exprop(args[0]);
-			 assert(op == Ovar || op == Oderef || op == Ogap);
-			 assert(!stacknode(args[0]));
+		op = exprop(args[0]);
+		assert(op == Ovar || op == Oderef || op == Ogap);
+		assert(!stacknode(args[0]));
 
-			 if (op == Ogap)
-				 break;
+		if (op == Ogap)
+			break;
 
-			 b = selexpr(s, args[1]);
-			 if (exprop(args[0]) == Oderef)
-				 a = memloc(s, args[0]->expr.args[0], mode(n));
-			 else
-				 a = selexpr(s, args[0]);
-			 b = inri(s, b);
-			 if (isfloatmode(b->mode))
-				 g(s, Imovs, b, a, NULL);
-			 else
-				 g(s, Imov, b, a, NULL);
-			 r = b;
-			 break;
+		b = selexpr(s, args[1]);
+		if (exprop(args[0]) == Oderef)
+			a = memloc(s, args[0]->expr.args[0], mode(n));
+		else
+			a = selexpr(s, args[0]);
+		b = inri(s, b);
+		if (isfloatmode(b->mode))
+			g(s, Imovs, b, a, NULL);
+		else
+			g(s, Imov, b, a, NULL);
+		r = b;
+		break;
 	case Ocall:
 	case Ocallind:
-			 r = gencall(s, n);
-			 break;
+		r = gencall(s, n);
+		break;
 	case Oret:
-			 a = locstrlbl(s->cfg->end->lbls[0]);
-			 g(s, Ijmp, a, NULL);
-			 break;
+		a = locstrlbl(s->cfg->end->lbls[0]);
+		g(s, Ijmp, a, NULL);
+		break;
 	case Ojmp:
-			 g(s, Ijmp, loclbl(args[0]), NULL);
-			 break;
+		g(s, Ijmp, loclbl(args[0]), NULL);
+		break;
 	case Ocjmp:
-			 selcjmp(s, n, args);
-			 break;
+		selcjmp(s, n, args);
+		break;
 	case Ovjmp:
-			 selvjmp(s, n, args);
-			 break;
+		selvjmp(s, n, args);
+		break;
 	case Olit:
-			 r = loc(s, n);
-			 break;
+		r = loc(s, n);
+		break;
 	case Ovar:
-			 if (isconstfn(n)) {
-				 r = locreg(ModeQ);
-				 a = loc(s, n);
-				 g(s, Ilea, a, r, NULL);
-			 } else {
-				 r = loc(s, n);
-			 }
-			 break;
+		if (isconstfn(n)) {
+			r = locreg(ModeQ);
+			a = loc(s, n);
+			g(s, Ilea, a, r, NULL);
+		} else {
+			r = loc(s, n);
+		}
+		break;
 	case Ogap:
-			 break;
+		break;
 	case Oblit:
-			 a = selexpr(s, args[0]);
-			 r = selexpr(s, args[1]);
-			 al = alignto(1, args[0]->expr.type->sub[0]);
-			 blit(s, a, r, 0, 0, args[2]->expr.args[0]->lit.intval, al);
-			 break;
+		a = selexpr(s, args[0]);
+		r = selexpr(s, args[1]);
+		al = alignto(1, args[0]->expr.type->sub[0]);
+		blit(s, a, r, 0, 0, args[2]->expr.args[0]->lit.intval, al);
+		break;
 
 	case Oclear:
-			 a = selexpr(s, args[0]);
-			 clear(s, a, args[1]->expr.args[0]->lit.intval, 0);
-			 break;
+		a = selexpr(s, args[0]);
+		clear(s, a, args[1]->expr.args[0]->lit.intval, 0);
+		break;
 
-	/* cast operators that actually modify the values */
+		/* cast operators that actually modify the values */
 	case Otrunc:
-			 a = selexpr(s, args[0]);
-			 a = inr(s, a);
-			 r = locreg(mode(n));
-			 g(s, Imov, a, r, NULL);
-			 break;
+		a = selexpr(s, args[0]);
+		a = inr(s, a);
+		r = locreg(mode(n));
+		g(s, Imov, a, r, NULL);
+		break;
 	case Ozwiden:
-			 a = selexpr(s, args[0]);
-			 a = inr(s, a);
-			 r = locreg(mode(n));
-			 movz(s, a, r);
-			 break;
+		a = selexpr(s, args[0]);
+		a = inr(s, a);
+		r = locreg(mode(n));
+		movz(s, a, r);
+		break;
 	case Oswiden:
-			 a = selexpr(s, args[0]);
-			 a = inr(s, a);
-			 r = locreg(mode(n));
-			 g(s, Imovsx, a, r, NULL);
-			 break;
+		a = selexpr(s, args[0]);
+		a = inr(s, a);
+		r = locreg(mode(n));
+		g(s, Imovsx, a, r, NULL);
+		break;
 	case Oint2flt:
-			 a = selexpr(s, args[0]);
-			 r = locreg(mode(n));
-			 g(s, Icvttsi2sd, a, r, NULL);
-			 break;
+		a = selexpr(s, args[0]);
+		r = locreg(mode(n));
+		g(s, Icvttsi2sd, a, r, NULL);
+		break;
 	case Oflt2int:
-			 a = selexpr(s, args[0]);
-			 r = locreg(mode(n));
-			 g(s, Icvttsd2si, a, r, NULL);
-			 break;
+		a = selexpr(s, args[0]);
+		r = locreg(mode(n));
+		g(s, Icvttsd2si, a, r, NULL);
+		break;
 
 	case Oflt2flt:
-			 a = selexpr(s, args[0]);
-			 r = locreg(mode(n));
-			 if (a->mode == ModeD)
-				 g(s, Icvttsd2ss, a, r, NULL);
-			 else
-				 g(s, Icvttss2sd, a, r, NULL);
-			 break;
+		a = selexpr(s, args[0]);
+		r = locreg(mode(n));
+		if (a->mode == ModeD)
+			g(s, Icvttsd2ss, a, r, NULL);
+		else
+			g(s, Icvttss2sd, a, r, NULL);
+		break;
 	case Odead:
 	case Oundef:
 	case Odef:
-			 /* nothing */
-			 break;
+		/* nothing */
+		break;
 
-			 /* These operators should never show up in the reduced trees,
-			  * since they should have been replaced with more primitive
-			  * expressions by now */
+		/* These operators should never show up in the reduced trees,
+		 * since they should have been replaced with more primitive
+		 * expressions by now */
 	case Obad: case Opreinc: case Opostinc: case Opredec:
 	case Opostdec: case Olor: case Oland: case Oaddeq:
 	case Osubeq: case Omuleq: case Odiveq: case Omodeq: case Oboreq:
@@ -888,9 +888,9 @@ selexpr(Isel *s, Node *n)
 	case Oslice: case Oidx: case Osize: case Otupget:
 	case Obreak: case Ocontinue:
 	case Numops:
-			 dump(n, stdout);
-			 die("Should not see %s in isel", opstr[exprop(n)]);
-			 break;
+		dump(n, stdout);
+		die("Should not see %s in isel", opstr[exprop(n)]);
+		break;
 	}
 	return r;
 }
