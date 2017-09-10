@@ -33,6 +33,13 @@ const main = {
 			;;
 			std.htfree(h)
 		}],
+		[.name="htputmany", .fn={ctx
+			var h = std.mkht(std.inthash, std.inteq)
+			for var i = 0; i < 1000; i++
+				std.htput(h, i, 123)
+			;;
+			std.htfree(h)
+		}],
 	][:])
 }
 
