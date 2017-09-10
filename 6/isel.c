@@ -608,6 +608,54 @@ gencall(Isel *s, Node *n)
 	return ret;
 }
 
+static Loc*
+rolop(Isel *s, Node *n, Node *l, Node *r)
+{
+	int64_t lv, rv;
+	Type *ty;
+
+	ty = tybase(exprtype(n));
+
+	if (!istyunsigned(ty))
+		return NULL;
+	if (exprop(l) != Obsl && exprop(l) != Obsr)
+		return NULL;
+	if (exprop(r) != Obsl && exprop(r) != Obsr)
+		return NULL;
+	if (exprop(r) == exprop(l))
+		return NULL;
+	if (exprop(l->expr.args[0]) != Ovar)
+		return NULL;
+	if (exprop(r->expr.args[0]) != Ovar)
+		return NULL;
+	if (l->expr.args[0]->expr.did != r->expr.args[0]->expr.did)
+		return NULL;
+
+	if (exprop(l->expr.args[1]) != Olit)
+		return NULL;
+	if (l->expr.args[1]->expr.args[0]->type != Nlit)
+		return NULL;
+	if (l->expr.args[1]->expr.args[0]->lit.littype != Lint)
+		return NULL;
+	lv = l->expr.args[1]->expr.args[0]->lit.intval;
+
+	if (exprop(r->expr.args[1]) != Olit)
+		return NULL;
+	if (r->expr.args[1]->expr.args[0]->type != Nlit)
+		return NULL;
+	if (r->expr.args[1]->expr.args[0]->lit.littype != Lint)
+		return NULL;
+	rv = r->expr.args[1]->expr.args[0]->lit.intval;
+
+	if (lv + rv != 8*size(n))
+		return NULL;
+
+	if (exprop(l) == Obsl)
+		return binop(s, Irol, l->expr.args[0], l->expr.args[1]);
+	else
+		return binop(s, Irol, r->expr.args[0], r->expr.args[1]);
+}
+
 Loc *
 selexpr(Isel *s, Node *n)
 {
@@ -626,7 +674,10 @@ selexpr(Isel *s, Node *n)
 	case Osub:	r = binop(s, Isub, args[0], args[1]);	break;
 	case Oband:	r = binop(s, Iand, args[0], args[1]);	break;
 	case Obxor:	r = binop(s, Ixor, args[0], args[1]);	break;
-	case Obor:	r = binop(s, Ior,  args[0], args[1]);	break;
+	case Obor:
+		r = rolop(s, n, args[0], args[1]);
+		if (!r)
+			r = binop(s, Ior,  args[0], args[1]);	break;
 	case Omul:
 		if (size(args[0]) == 1) {
 			a = selexpr(s, args[0]);
