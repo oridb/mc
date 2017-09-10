@@ -34,15 +34,41 @@ const spawn = {fn
 }
 
 const spawnstk = {fn, sz
-	var tid : tid, ret
+	var stk : byte#, tid, ret
+	var szp, f, tos, env, envsz
 
+	stk = getstk(sz)
+	if stk == sys.Mapbad
+		-> `std.Err "couldn't get stack"
+	;;
+	tid = -1
+
+	/* find top of stack */
+	tos = (stk : std.intptr) + (sz : std.intptr)
+
+	/* store the stack size */
+	tos -= sizeof(sys.size)
+	sz -= sizeof(sys.size)
+	szp = (tos : sys.size#)
+	szp# = Stacksz
+
+	/* store the function we call */
+	envsz = std.fnenvsz(fn)
+	tos -= (envsz : std.intptr)
+	sz -= (envsz : sys.size)
+	env = tos
+	tos -= sizeof((->void))
+	sz -= sizeof((->void))
+	f = (tos : (->void)#)
+	f# = std.fnbdup(fn, (env : byte#)[:envsz])
+	var repr = (&fn : int64[2]#)#
 
 	ret = sys.bsdthread_create( \
-		(fn	: void#), \
-		envptr(&fn), \
-		(sz	: void#), \
-		(0	: void#), \
-		0)
+		(tramp	: void#), \	/* start */
+		(tos	: void#), \		/* arg */
+		(tos	: void#), \		/* stack */
+		(0	: void#), \		/* pthread struct */
+		0x01000000)			/* flags (PTHREAD_START_CUSTOM): don't alloc stack in kernel */
 
 	if ret == (-1 : void#)
 		-> `std.Err "couldn't spawn thread"
@@ -50,10 +76,24 @@ const spawnstk = {fn, sz
 	-> `std.Ok (ret : tid)
 }
 
-const envptr = {fn
-	var repr : std.intptr[2]
+const getstk = {sz
+	var p, m
 
-	repr = (fn : std.intptr[2]#)#
-	-> (repr[0] : void#)
+	std.put("allocating stack {x}\n", sz)
+	p = sys.mmap((0 : byte#), sz, sys.Mprotrw, sys.Mpriv | sys.Manon, -1, 0)
+	if p == sys.Mapbad
+		-> p
+	;;
+	m = (p : std.intptr)
+	-> (m : byte#)
 }
 
+/*
+  thread trampoline, called by `start`. We set up the args
+  for the closure and env on the stack, and then we call it
+  from here, doing the cleanup and exit at the end.
+*/
+const tramp = {f : (-> void)#
+	f#()
+	exit()
+}
