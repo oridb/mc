@@ -32,7 +32,7 @@ const flt32bfmt = {sb, val, mode, precision
 	var isneg, exp, mant
 
 	(isneg, mant, exp) = flt32explode(val)
-	dragon4(sb, isneg, (mant : int64), (exp - 52 : int64), Fltbias, mode, precision)
+	dragon4(sb, isneg, (mant : int64), (exp - 23 : int64), Fltbias, mode, precision)
 }
 
 /*
