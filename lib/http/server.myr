@@ -25,18 +25,24 @@ const announce = {ds
 	| `std.Err e:	-> `std.Err `Econn
 	| `std.Ok lfd:
 		std.close(afd)
-		-> `std.Ok std.mk([.lfd=lfd])
+		-> `std.Ok std.mk([
+			.refs=1,
+			.lfd=lfd,
+			.quit=false
+		])
 	;;
 }
 
 const serve = {srv, fn
-	while true
+	while !srv.quit
 		match waitconn(srv)
-		| `std.Ok fd:	
+		| `std.Ok fd:
+			ref(srv)
 			thread.spawn({;communicate(srv, fd, fn)})
 		| `std.Err e:	/* eh? */
 		;;
 	;;
+	unref(srv)
 }
 
 const communicate = {srv, fd, fn
@@ -50,6 +56,7 @@ const communicate = {srv, fd, fn
 		;;
 	;;
 	std.close(fd)
+	unref(srv)
 }
 
 const respond = {srv, s, resp
@@ -78,6 +85,8 @@ const statusstr = {st
 
 const shutdown = {srv
 	std.close(srv.lfd)
+	srv.quit = true
+
 }
 
 
@@ -88,3 +97,14 @@ const waitconn = {srv
 	;;
 }
 
+
+const ref = {srv
+	thread.xadd(&srv.refs, 1)
+}
+
+const unref = {srv
+	thread.xadd(&srv.refs, -1)
+	if thread.xget(&srv.refs) == 0
+		std.free(srv)
+	;;
+}

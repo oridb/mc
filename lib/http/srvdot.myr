@@ -28,6 +28,7 @@ const route = {srv, sess, req
 	std.put("Reading path {}\n", req.url.path)
 	match req.url.path
 	| "/ping":	respond(srv, sess, 200, "pong")
+	| "/quit":	http.shutdown(srv)
 	| fspath:	showfile(srv, sess, req.url.path)
 	;;
 }
