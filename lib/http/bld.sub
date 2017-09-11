@@ -1,0 +1,21 @@
+bin h {noinst}=
+	h.myr
+
+	lib http
+;;
+
+bin srvdot {noinst}=
+	srvdot.myr
+
+	lib http
+;;
+
+lib http =
+	parse.myr
+	types.myr
+	url.myr
+	client.myr
+	server.myr
+	session.myr
+	status.myr
+;;

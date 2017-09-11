@@ -1,0 +1,14 @@
+use std
+use bio
+
+use "types"
+use "parse"
+
+pkg http =
+	const readreq	: (srv	: server#	-> req#)
+;;
+
+
+const readreq = {srv : server#
+	-> req
+}

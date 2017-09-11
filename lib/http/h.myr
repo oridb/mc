@@ -1,0 +1,90 @@
+use std
+use http
+
+const main = {args
+	var data, method, showhdr, hdrs, out
+	var s, u, r
+	var cmd
+
+	cmd = std.optparse(args, &[
+		.argdesc = "url...",
+		.minargs = 1,
+		.opts = [
+			[.opt='m', .arg="method", .desc="http method to use"],
+			[.opt='d', .arg="data", .desc="data to put in request body"],
+			[.opt='o', .arg="out", .desc="output file name"],
+			[.opt='H', .desc="show headers"],
+			[.opt='D', .arg="hdr", .desc="define custom header"]
+		][:]
+	])
+
+	showhdr = false
+	method = "get"
+	data = ""
+	hdrs = [][:]
+	out = ""
+	for opt : cmd.opts
+		match opt
+		| ('m', m):	method = m
+		| ('d', d):	data = d
+		| ('o', o):	out = o
+		| ('H', ""):	showhdr = true
+		| ('D', def):	parsedef(&hdrs, def)
+		| _:	std.die("unreachable")
+		;;
+	;;
+
+	for url : cmd.args
+		if !std.hasprefix(url, "http")
+			url = std.fmt("http://{}", url)
+		;;
+		u = std.try(http.parseurl(url))
+		s = std.try(http.mksession(u.schema, u.host, u.port))
+
+		match method
+		| "get":	r = http.getreq(s, &[.url=u, .hdrs=hdrs])
+		| "head":	r = http.headreq(s, &[.url=u, .hdrs=hdrs])
+		| "delete":	r = http.deletereq(s, &[.url=u, .hdrs=hdrs])
+		| "trace":	r = http.tracereq(s, &[.url=u, .hdrs=hdrs])
+		| "options":	r = http.optionsreq(s, &[.url=u, .hdrs=hdrs])
+		| "put":	r = http.putreq(s, &[.url=u, .hdrs=hdrs], data)
+		| "post":	r = http.postreq(s, &[.url=u, .hdrs=hdrs], data)
+		| unknown:	std.fatal("unknown method '{}'\n", unknown)
+		;;
+
+		match r
+		| `std.Ok resp:
+			if showhdr
+				std.put("status: {}\n", resp.status)
+				for (k, v) : resp.hdrs
+					std.put("{}: {}\n", k, v)
+				;;
+			;;
+			if out.len != 0
+				if !std.blat(out, resp.body, 0o644)
+					std.fatal("could not write output: {}\n", out)
+				;;
+			else
+				std.fblat(std.Out, resp.body)
+			;;
+			http.freeresp(resp)
+		| `std.Err e:
+			std.put("{}\n", e)
+		;;
+		http.urlfree(u)
+	;;
+}
+
+const parsedef = {hdrs, hdr
+	var key, val
+
+	match std.strfind(hdr, ":")
+	| `std.None:
+		std.fatal("bad header string {}\n", hdr)
+	| `std.Some idx:
+		key = std.sldup(std.strstrip(hdr[:idx]))
+		val = std.sldup(std.strstrip(hdr[idx+1:]))
+		std.slpush(hdrs, (key, val))
+	;;
+}
+

@@ -1,0 +1,66 @@
+use std
+use http
+
+const main = {args
+	var srv, ann, cmd
+
+	cmd = std.optparse(args, &[
+		.maxargs=0,
+		.opts = [[.opt='a', .arg="ann", .desc="announce on `ann`"]][:]
+	])
+	ann = "tcp!localhost!8080"
+	for opt : cmd.opts
+		match opt
+		| ('a', a):	ann = a
+		| _:	std.die("unreachable")
+		;;
+	;;
+
+	match http.announce(ann)
+	| `std.Ok s:	srv = s
+	| `std.Err e:	std.fatal("unable to announce: {}\n", e)
+	;;
+
+	http.serve(srv, route)
+}
+
+const route = {srv, sess, req
+	std.put("Reading path {}\n", req.url.path)
+	match req.url.path
+	| "/ping":	respond(srv, sess, 200, "pong")
+	| "/quit":	http.shutdown(srv)
+	| fspath:	showfile(srv, sess, req.url.path)
+	;;
+}
+
+const showfile = {srv, sess, path
+	var eb : byte[128]
+	var p
+
+	p = std.pathcat(".", path)
+	match std.slurp(p)
+	| `std.Ok buf:
+		respond(srv, sess, 200, buf)
+		std.slfree(buf)
+	| `std.Err e:
+		respond(srv, sess, 404, std.bfmt(eb[:], "error reading {}: {}\n", p, e))
+	;;
+	std.slfree(p)
+}
+
+
+const respond = {srv, sess, status, body
+	var resp
+
+	resp = std.mk([
+		.status=status,
+		.hdrs = [][:],
+		.len = 0,
+		.err = `std.None,
+		.reason = "",
+		.body = body,
+		.enc = `http.Length
+	])
+	http.respond(srv, sess, resp)
+	std.free(resp)
+}

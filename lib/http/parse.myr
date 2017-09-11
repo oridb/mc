@@ -1,0 +1,287 @@
+use std
+use bio
+
+use "types"
+
+pkg http =
+	pkglocal const parsereq		: (s : session# -> std.result(req#, err))
+	pkglocal const parseresp	: (s : session#, r : resp# -> bool)
+	pkglocal const parsechunksz	: (s : session# -> std.result(std.size, err))
+	pkglocal const parsenumber	: (str : byte[:]#, base : int -> std.option(int))
+;;
+
+const parsereq = {s
+	var r, err
+
+	r.hdrs = [][:]
+	r.url = std.mk([
+		.schema=`Http,
+		.host=std.sldup(s.host),
+		.port=s.port,
+		.path="",
+		.params=[][:],
+	])
+
+	match bio.readln(s.f)
+	| `bio.Err e:
+		err = `Econn
+		goto error
+	| `bio.Eof:	
+		err = `Econn
+		goto error
+	| `bio.Ok ln:
+		match parsereqstatus(s, r, ln)
+		| `std.Ok void:
+		| `std.Err e:
+			std.slfree(ln)
+			err = e
+			-> `std.Err e
+		;;
+		std.slfree(ln)
+	;;
+
+	while true
+		match bio.readln(s.f)
+		| `bio.Err e:	
+			err = `Econn
+			goto error
+		| `bio.Eof:
+			err = `Econn
+			goto error
+		| `bio.Ok ln:
+			if std.strstrip(ln).len == 0
+				std.slfree(ln)
+				break
+			;;
+			match parsehdr(s, ln)
+			| `std.Ok kvp:
+				std.slpush(&r.hdrs, kvp)
+			| `std.Err e:
+				std.slfree(ln)
+				-> `std.Err e
+			;;
+			std.slfree(ln)
+		;;
+	;;
+	-> `std.Ok std.mk(r)
+:error
+	-> `std.Err err
+}
+
+const parseresp = {s, r : resp#
+	match bio.readln(s.f)
+	| `bio.Err e:	r.err = `std.Some `Econn
+	| `bio.Eof:	r.err = `std.Some `Econn
+	| `bio.Ok ln:
+		if !parserespstatus(s, r, ln)
+			std.slfree(ln)
+			-> false
+		;;
+		std.slfree(ln)
+	;;
+
+	while true
+		match bio.readln(s.f)
+		| `bio.Err e:	r.err = `std.Some `Econn
+		| `bio.Eof:	r.err = `std.Some `Econn
+		| `bio.Ok ln:
+			if std.strstrip(ln).len == 0
+				std.slfree(ln)
+				break
+			;;
+			match parsehdr(s, ln)
+			| `std.Ok kvp:
+				std.slpush(&r.hdrs, kvp)
+			| `std.Err e:
+				r.err = `std.Some e
+				std.slfree(ln)
+				-> false
+			;;
+			std.slfree(ln)
+		;;
+	;;
+
+	match getenc(r)
+	| `std.Ok `Length:
+		r.enc = `Length
+		match getlen(r)
+		| `std.Some n:
+			r.len = n
+		| `std.None:
+			r.err = `std.Some `Eproto
+			-> false
+		;;
+	| `std.Ok enc:
+		r.enc = enc
+	| `std.Err e:
+		r.err = `std.Some e
+		-> false
+	;;
+	-> true
+
+}
+
+const parsereqstatus = {s, r, ln
+	match parseword(&ln)
+	| `std.Some "GET":	r.method = `Get
+	| `std.Some "HEAD":	r.method = `Head
+	| `std.Some "POST":	r.method = `Post
+	| `std.Some "DELETE":	r.method = `Delete
+	| `std.Some "TRACE":	r.method = `Trace
+	| `std.Some "OPTIONS":	r.method = `Options
+	| `std.Some _:	-> `std.Err `Eproto
+	| `std.None:	-> `std.Err `Eproto
+	;;
+
+	match parseword(&ln)
+	| `std.Some w:	r.url.path = std.sldup(w)
+	| `std.None:	-> `std.Err `Eproto
+	;;
+
+	match parseword(&ln)
+	| `std.Some "HTTP/1.1":	/* ok */
+	| `std.Some w:	std.put("warn: http version '{}'\n", w)
+	| `std.None:	-> `std.Err `Eproto
+	;;
+
+	ln = std.strfstrip(ln)
+	-> `std.Ok void
+}
+
+const parserespstatus = {s, r, ln
+	/* HTTP/1.1 */
+	ln = std.strfstrip(ln)
+	if !std.chomp(&ln, "HTTP")
+		r.err = `std.Some `Eproto
+		-> false
+	;;
+	if !std.chomp(&ln, "/1.1")
+		r.err = `std.Some `Eproto
+		-> false
+	;;
+
+	ln = std.strfstrip(ln)
+	match parsenumber(&ln, 10)
+	| `std.Some n:
+		r.status = n
+	| `std.None:
+		r.err = `std.Some `Eproto
+		-> false
+	;;
+
+	ln = std.strfstrip(ln)
+	r.reason = std.sldup(ln)
+	-> true
+}
+
+const parsehdr = {s, ln
+	var key, val
+
+	match std.strfind(ln, ":")
+	| `std.Some idx:
+		key = std.sldup(std.strstrip(ln[:idx]))
+		val = std.sldup(std.strstrip(ln[idx+1:]))
+		-> `std.Ok (key, val)
+	| `std.None:
+		-> `std.Err `Ehdr
+	;;
+}
+
+const getlen = {r
+	match findhdr(r, "Content-Length")
+	| `std.Some v:
+		match std.intparsebase(v, 10)
+		| `std.Some n:	-> `std.Some n
+		| `std.None:	-> `std.None
+		;;
+	| `std.None:
+		-> `std.None
+	;;
+}
+
+const parsechunksz = {s
+	var ret, str
+
+	match bio.readln(s.f)
+	| `bio.Eof:	ret = `std.Err `Econn
+	| `bio.Err e:	ret = `std.Err `Econn
+	| `bio.Ok ln:
+		str = ln
+		match parsenumber(&str, 16)
+		| `std.Some n:	ret = `std.Ok (n : std.size)
+		| `std.None:
+			ret = `std.Err `Eproto
+		;;
+		std.slfree(ln)
+	;;
+	-> ret
+}
+
+const getenc = {r
+	match findhdr(r, "Transfer-Encoding")
+	| `std.None:	-> `std.Ok `Length
+	| `std.Some "chunked":	-> `std.Ok `Chunked
+	| `std.Some "compress":	-> `std.Ok `Compress
+	| `std.Some "deflate":	-> `std.Ok `Deflate
+	| `std.Some "gzip":	-> `std.Ok `Gzip
+	| `std.Some unknown:	-> `std.Err `Eenc
+	;;
+}
+
+const findhdr = {r, name
+	for (k, v) : r.hdrs
+		if std.strcaseeq(k, name)
+			-> `std.Some v
+		;;
+	;;
+	-> `std.None
+}
+
+const parseword = {ln
+	var w, end
+
+	ln# = std.strfstrip(ln#)
+	end = 0
+	for var i = 0; i < ln#.len; i++
+		if i == ln#.len - 1
+			end = i + 1
+		elif std.isspace(std.decode(ln#[i:]))
+			end = i
+			break
+		;;
+	;;
+	if end == 0
+		-> `std.None
+	else
+		w = ln#[:end]
+		ln# = ln#[end:]
+		-> `std.Some w
+	;;
+}
+
+const parsenumber = {ln, base
+	var n, ok
+	var c, s, dig
+
+	n = 0
+	s = ln#
+	ok = false
+	while true
+		(c, s) = std.strstep(s)
+		dig = std.charval(c, base)
+		if dig >= 0 && dig < base
+			ok = true
+			n *= base
+			n += dig
+		else
+			break
+		;;
+	;;
+	ln# = s
+	if ok
+		-> `std.Some n
+	else
+		-> `std.None
+	;;
+}
+
