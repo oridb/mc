@@ -6,7 +6,7 @@ pkg fileutil =
 
 const homedir = {
 	match std.getenv("TMPDIR")
-	| `std.Some h:	-> d
+	| `std.Some d:	-> d
 	| `std.None:	-> "/tmp"
 	;;
 }
