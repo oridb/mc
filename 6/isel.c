@@ -677,7 +677,8 @@ selexpr(Isel *s, Node *n)
 	case Obor:
 		r = rolop(s, n, args[0], args[1]);
 		if (!r)
-			r = binop(s, Ior,  args[0], args[1]);	break;
+			r = binop(s, Ior,  args[0], args[1]);
+		break;
 	case Omul:
 		if (size(args[0]) == 1) {
 			a = selexpr(s, args[0]);
