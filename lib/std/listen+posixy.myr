@@ -17,7 +17,6 @@ use "utf"
 
 pkg std =
 	const announce	: (ds : byte[:] -> result(fd, byte[:]))
-	const listen	: (sock : fd -> result(fd, byte[:]))
 	const accept	: (lfd : fd -> result(fd, byte[:]))
 ;;
 
@@ -80,6 +79,9 @@ const announcesock = {proto, str
 	if sys.bind(sock, sa, sz) < 0
 		-> `Err "failed to bind socket"
 	;;
+	if sys.listen((sock : sys.fd), 10) < 0
+		-> `Err "unable to listen on socket"
+	;;
 	-> `Ok (sock : fd)
 }
 
@@ -108,13 +110,6 @@ const announceunix = {path
 	;;
 	-> `Ok (sock : fd)
 
-}
-
-const listen = {sock : std.fd -> result(fd, byte[:])
-	if sys.listen((sock : sys.fd), 10) < 0
-		-> `Err "unable to listen on socket"
-	;;
-	-> `Ok (sys.dup((sock : sys.fd)) : fd)
 }
 
 const accept = {lfd

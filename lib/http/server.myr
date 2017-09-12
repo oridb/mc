@@ -14,17 +14,9 @@ pkg http =
 ;;
 
 const announce = {ds
-	var afd
-
 	match std.announce(ds)
-	| `std.Ok f:	afd = f
-	| `std.Err e:	-> `std.Err `Econn
-	;;
-
-	match std.listen(afd)
 	| `std.Err e:	-> `std.Err `Econn
 	| `std.Ok lfd:
-		std.close(afd)
 		-> `std.Ok std.mk([
 			.refs=1,
 			.lfd=lfd,
