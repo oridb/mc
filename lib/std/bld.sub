@@ -108,6 +108,7 @@ lib std {inc=.} =
 	env+posixy.myr
 	errno+plan9.myr
 	listen+posixy.myr
+	listen+plan9.myr
 	resolve+plan9.myr
 	resolve+posixy.myr
 	wait+plan9.myr
