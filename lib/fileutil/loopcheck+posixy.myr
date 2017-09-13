@@ -1,0 +1,65 @@
+use std
+use sys
+
+/* plan 9 can't have directory loops, by construction, so this is nops */
+pkg fileutil =
+	type loopcheck = std.htab((int64, int64), void)#
+
+	const mkloopcheck	: (cwd : byte[:] -> loopcheck)
+	const freeloopcheck	: (l : loopcheck -> void)
+	const looped	: (l : loopcheck, p : byte[:] -> bool)
+;;
+
+const mkloopcheck = {cwd
+	var ht : std.htab((int64, int64), void)#
+	var l
+
+	ht = std.mkht(fidhash, fideq)
+	l = (ht : loopcheck)
+	looped(l, cwd)
+	-> l
+}
+
+const freeloopcheck = {l
+	std.htfree((l : std.htab((int64, int64), void)#))
+}
+
+const looped = {l, p
+	var ht, has
+
+	ht = (l : std.htab((int64, int64), void)#)
+	match fid(p)
+	| `std.Err e:
+		-> false
+	| `std.Ok id:
+		has = std.hthas(ht, id)
+		std.htput(ht, id, void)
+		-> has
+	;;
+}
+
+const fid = {p
+	var sb
+
+	if sys.stat(p, &sb) != 0
+		-> `std.Err void
+	else
+		-> `std.Ok ((sb.dev : int64), (sb.ino : int64))
+	;;
+}
+
+const fidhash = {fid
+	var dev, ino
+
+	(dev, ino) = fid
+	-> std.inthash(dev) ^ std.inthash(ino)
+}
+
+const fideq = {a, b
+	var adev, aino
+	var bdev, bino
+
+	(adev, aino) = a
+	(bdev, bino) = b
+	-> adev == bdev && aino == bino
+}

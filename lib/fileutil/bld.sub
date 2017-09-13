@@ -3,6 +3,9 @@ lib fileutil =
 	homedir.myr
 	tmpdir.myr
 
+	loopcheck+posixy.myr
+	loopcheck+plan9.myr
+
 	lib ../sys:sys
 	lib ../std:std
 ;;

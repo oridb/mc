@@ -1,9 +1,12 @@
 use std
 
+use "loopcheck"
+
 pkg fileutil =
 	type walkiter = struct
 		dirstk	: std.dir#[:]
 		curdir	: byte[:][:]
+		loopck	: loopcheck
 	;;
 
 	impl iterable walkiter -> byte[:]
@@ -13,9 +16,16 @@ pkg fileutil =
 const bywalk = {p
 	match std.diropen(p)
 	| `std.Ok d:
-		-> [.dirstk = std.sldup([d][:]), .curdir = std.sldup([std.sldup(p)][:])]
+		-> [
+			.dirstk = std.sldup([d][:]),
+			.curdir = std.sldup([std.sldup(p)][:]),
+			.loopck = mkloopcheck(p),
+		]
 	| `std.Err e:
-		-> [.dirstk = [][:], .curdir = [][:]]
+		-> [
+			.dirstk = [][:],
+			.curdir = [][:]
+		]
 	;;
 }
 
@@ -25,6 +35,7 @@ impl iterable walkiter -> byte[:] =
 
 :nextfile
 		if itp.dirstk.len < 1
+			freeloopcheck(itp.loopck)
 			-> false
 		;;
 		cur = itp.dirstk[itp.dirstk.len - 1]
@@ -33,6 +44,10 @@ impl iterable walkiter -> byte[:] =
 		| `std.Some "..":	goto nextfile
 		| `std.Some ent:
 			p = std.pathcat(itp.curdir[itp.curdir.len - 1], ent)
+			if looped(itp.loopck, p)
+				std.slfree(p)
+				goto nextfile
+			;;
 			if std.fisdir(p)
 				match std.diropen(p)
 				| `std.Ok d:

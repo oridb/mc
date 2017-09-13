@@ -1,0 +1,21 @@
+use std
+
+/* plan 9 can't have directory loops, by construction, so this is nops */
+pkg fileutil =
+	type loopcheck = void
+
+	const mkloopcheck	: (cwd : byte[:] -> loopcheck)
+	const freeloopcheck	: (l : loopcheck -> void)
+	const looped	: (l : loopcheck, p : byte[:] -> bool)
+;;
+
+const mkloopcheck = {cwd
+	-> (void : loopcheck)
+}
+
+const freeloopcheck = {l, l
+}
+
+const looped = {p
+	-> false
+}
