@@ -3,6 +3,8 @@ use bio
 
 const main = {
 	var f
+
+	std.mkpath("tmpout")
 	match bio.create("tmpout/test-unitwr", bio.Wr, 0o644)
 	| `std.Ok bio:	f = bio
 	| `std.Err m:	std.fatal("Unable to open data file: {}\n", m)
