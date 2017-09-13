@@ -1,19 +1,29 @@
 use sys
 
 use "alloc"
+use "cstrconv"
 use "die"
 use "dirname"
 use "fmt"
+use "mk"
 use "option"
 use "result"
+use "sldup"
 use "strfind"
 use "syswrap"
-use "cstrconv"
 use "utf"
 
+
 pkg std =
-	const announce	: (ds : byte[:] -> result(fd, byte[:]))
-	const accept	: (lfd : fd -> result(fd, byte[:]))
+	type announce = struct
+		afd	: fd
+		lpath	: byte[:]
+		netdir	: byte[:]
+	;;
+
+	const announce	: (ds : byte[:] -> result(announce#, byte[:]))
+	const aclose	: (a : announce# -> void)
+	const accept	: (a : announce# -> result(fd, byte[:]))
 ;;
 
 const Maxpath = 256
@@ -21,9 +31,8 @@ const Maxpath = 256
 const announce = {ds
 	var a, abuf : byte[Maxpath]
 	var f, fbuf : byte[Maxpath]
-	var l, lbuf : byte[Maxpath]
 	var nbuf : byte[32]
-	var dir, ctl, lfd, n
+	var dir, ctl, n
 
 	/* announce */
 	match translate(ds, abuf[:], fbuf[:])
@@ -45,50 +54,45 @@ const announce = {ds
 
 	match read(ctl, nbuf[:])
 	| `Err e:	->`Err "unable to read ctl fd"
-	| `Ok nn:	l = bfmt(lbuf[:], "{}/{}/listen", f[:dir], nbuf[:nn])
+	| `Ok nn:
+		n = fput(ctl, "announce {}", a)
+		if n <= 0
+			close(ctl)
+			-> `Err "writing announce"
+		;;
+	
+		-> `std.Ok mk([
+			.afd=ctl,
+			.lpath = fmt("{}/{}/listen", f[:dir], nbuf[:nn]),
+			.netdir = sldup(f[:dir]),
+		])
 	;;
 
-	put("announce {}\n", a)
-	n = fput(ctl, "announce {}", a)
-	if n <= 0
-		close(ctl)
-		-> `Err "writing announce"
-	;;
-
-	/* listen */
-	match open(l, Ordwr)
-	| `Err e:
-		close(ctl)
-		-> `Err "could not open ctl"
-	| `Ok fd:
-		lfd = fd
-	;;
-	close(ctl)
-
-	-> `Ok lfd
 }
 
-const accept = {lfd -> result(fd, byte[:])
-	var dir, dirbuf : byte[40]
-	var num, numbuf : byte[40]
+const aclose = {a
+	slfree(a.netdir)
+	slfree(a.lpath)
+	close(a.afd)
+	free(a)
+}
+
+const accept = {a -> result(fd, byte[:])
+	var num, numbuf : byte[16]
 	var dat, datbuf : byte[Maxpath]
+	var lfd
 
-
+	match open(a.lpath, Ordwr)
+	| `Err e:	-> `Err "could not open ctl"
+	| `Ok fd:	lfd = fd
+	;;
 
 	match read(lfd, numbuf[:])
 	| `Ok n:	num = numbuf[:n]
 	| `Err e:	-> `Err "could not accept"
 	;;
-	fput(lfd, "accept {}", num)
 
-	sys.fd2path((lfd : sys.fd), dirbuf[:])
-	dir = dirname(cstrconv(dirbuf[:]))
-	match strrfind(dir, "/")
-	| `None:	dat = bfmt(datbuf[:], "{}/{}/data", dir, num)
-	| `Some i:	dat = bfmt(datbuf[:], "{}/{}/data", dir[:i], num)
-	;;
-
-	put("data fd: {}\n", dat)
+	dat = bfmt(datbuf[:], "{}/{}/data", a.netdir, num)
 	match open(dat, Ordwr)
 	| `Ok fd:	-> `Ok fd
 	| `Err e:	-> `Err "could not open data fd"

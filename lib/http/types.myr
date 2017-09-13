@@ -15,7 +15,7 @@ pkg http =
 
 
 	type server = struct
-		lfd	: std.fd
+		ann	: std.announce#
 		refs	: uint32
 		quit	: bool
 	;;

@@ -16,10 +16,10 @@ pkg http =
 const announce = {ds
 	match std.announce(ds)
 	| `std.Err e:	-> `std.Err `Econn
-	| `std.Ok lfd:
+	| `std.Ok a:
 		-> `std.Ok std.mk([
 			.refs=1,
-			.lfd=lfd,
+			.ann=a,
 			.quit=false
 		])
 	;;
@@ -76,14 +76,12 @@ const statusstr = {st
 }
 
 const shutdown = {srv
-	std.close(srv.lfd)
+	std.aclose(srv.ann)
 	srv.quit = true
-
 }
 
-
 const waitconn = {srv
-	match std.accept(srv.lfd)
+	match std.accept(srv.ann)
 	| `std.Ok fd:	-> `std.Ok fd
 	| `std.Err e:	-> `std.Err `Econn
 	;;

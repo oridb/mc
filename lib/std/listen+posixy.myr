@@ -5,6 +5,7 @@ use "chartype"
 use "dialparse"
 use "die"
 use "endian"
+use "mk"
 use "option"
 use "resolve"
 use "result"
@@ -16,8 +17,14 @@ use "syswrap"
 use "utf"
 
 pkg std =
-	const announce	: (ds : byte[:] -> result(fd, byte[:]))
-	const accept	: (lfd : fd -> result(fd, byte[:]))
+	type announce = struct
+		lfd	: fd
+	;;
+
+	const announce	: (ds : byte[:] -> result(announce#, byte[:]))
+	const aclose	: (a : announce# -> void)
+
+	const accept	: (a : announce# -> result(fd, byte[:]))
 ;;
 
 const announce = {ds
@@ -28,6 +35,11 @@ const announce = {ds
 	| `Some (proto, str):	-> `Err "unknown protocol"
 	| `None:	-> `Err "missing protocol"
 	;;
+}
+
+const aclose = {a
+	close(a.lfd)
+	free(a)
 }
 
 const announcesock = {proto, str
@@ -82,7 +94,7 @@ const announcesock = {proto, str
 	if sys.listen((sock : sys.fd), 10) < 0
 		-> `Err "unable to listen on socket"
 	;;
-	-> `Ok (sock : fd)
+	-> `Ok mk([.lfd=(sock : fd)])
 }
 
 const announceunix = {path
@@ -108,16 +120,19 @@ const announceunix = {path
 	if sys.bind(sock, (&sa : sys.sockaddr#), sizeof(sys.sockaddr_un)) < 0
 		-> `Err "failed to bind address"
 	;;
-	-> `Ok (sock : fd)
+	if sys.listen((sock : sys.fd), 10) < 0
+		-> `Err "unable to listen on socket"
+	;;
+	-> `Ok mk([.lfd=(sock : fd)])
 
 }
 
-const accept = {lfd
+const accept = {a
 	var sa : sys.sockaddr_storage
 	var len : sys.size
 	var fd
 
-	fd = sys.accept((lfd : sys.fd), (0 : sys.sockaddr#), (0 : sys.size#))
+	fd = sys.accept((a.lfd : sys.fd), (0 : sys.sockaddr#), (0 : sys.size#))
 	if fd < 0
 		-> `Err "unable to accept socket"
 	;;
