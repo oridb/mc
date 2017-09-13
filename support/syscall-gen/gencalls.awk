@@ -79,7 +79,7 @@ $Typefield == "STD" || (!masterfmt && $1 == "asmlinkage") {
 		tabs="\t\t"
 	else
 		tabs = "\t"
-	num = sprintf("%s%s: scno = %d", numcst, tabs, numbertab[name]);
+	num = sprintf("%s%s: scno = %d", numcst, tabs, $1);
 	scnums[nnums++] = num
 
 	if (nocode)
