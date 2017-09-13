@@ -1721,25 +1721,25 @@ pkg sys =
 	}
 	/* } end manual overrides */
 const time	= {tloc
-	 -> (syscall(Systime) : int64)
+	 -> (syscall(Systime, a(tloc)) : int64)
 }
 const gettimeofday	= {tv, tz
-	 -> (syscall(Sysgettimeofday, a(tz)) : int64)
+	 -> (syscall(Sysgettimeofday, a(tv), a(tz)) : int64)
 }
 const settimeofday	= {tv, tz
-	 -> (syscall(Syssettimeofday, a(tz)) : int64)
+	 -> (syscall(Syssettimeofday, a(tv), a(tz)) : int64)
 }
 const adjtimex	= {txc_p
-	 -> (syscall(Sysadjtimex) : int64)
+	 -> (syscall(Sysadjtimex, a(txc_p)) : int64)
 }
 const times	= {tbuf
-	 -> (syscall(Systimes) : int64)
+	 -> (syscall(Systimes, a(tbuf)) : int64)
 }
 const gettid	= {
 	 -> (syscall(Sysgettid) : int64)
 }
 const alarm	= {seconds
-	 -> (syscall(Sysalarm) : int64)
+	 -> (syscall(Sysalarm, a(seconds)) : int64)
 }
 const getppid	= {
 	 -> (syscall(Sysgetppid) : int64)
@@ -1751,187 +1751,187 @@ const getegid	= {
 	 -> (syscall(Sysgetegid) : int64)
 }
 const getresuid	= {ruid, euid, suid
-	 -> (syscall(Sysgetresuid, a(euid), a(suid)) : int64)
+	 -> (syscall(Sysgetresuid, a(ruid), a(euid), a(suid)) : int64)
 }
 const getresgid	= {rgid, egid, sgid
-	 -> (syscall(Sysgetresgid, a(egid), a(sgid)) : int64)
+	 -> (syscall(Sysgetresgid, a(rgid), a(egid), a(sgid)) : int64)
 }
 const getpgid	= {pid
-	 -> (syscall(Sysgetpgid) : int64)
+	 -> (syscall(Sysgetpgid, a(pid)) : int64)
 }
 const getpgrp	= {
 	 -> (syscall(Sysgetpgrp) : int64)
 }
 const getsid	= {pid
-	 -> (syscall(Sysgetsid) : int64)
+	 -> (syscall(Sysgetsid, a(pid)) : int64)
 }
 const getgroups	= {gidsetsize, grouplist
-	 -> (syscall(Sysgetgroups, a(grouplist)) : int64)
+	 -> (syscall(Sysgetgroups, a(gidsetsize), a(grouplist)) : int64)
 }
 const setregid	= {rgid, egid
-	 -> (syscall(Syssetregid, a(egid)) : int64)
+	 -> (syscall(Syssetregid, a(rgid), a(egid)) : int64)
 }
 const setreuid	= {ruid, euid
-	 -> (syscall(Syssetreuid, a(euid)) : int64)
+	 -> (syscall(Syssetreuid, a(ruid), a(euid)) : int64)
 }
 const setresuid	= {ruid, euid, suid
-	 -> (syscall(Syssetresuid, a(euid), a(suid)) : int64)
+	 -> (syscall(Syssetresuid, a(ruid), a(euid), a(suid)) : int64)
 }
 const setresgid	= {rgid, egid, sgid
-	 -> (syscall(Syssetresgid, a(egid), a(sgid)) : int64)
+	 -> (syscall(Syssetresgid, a(rgid), a(egid), a(sgid)) : int64)
 }
 const setfsuid	= {uid
-	 -> (syscall(Syssetfsuid) : int64)
+	 -> (syscall(Syssetfsuid, a(uid)) : int64)
 }
 const setfsgid	= {gid
-	 -> (syscall(Syssetfsgid) : int64)
+	 -> (syscall(Syssetfsgid, a(gid)) : int64)
 }
 const setpgid	= {pid, pgid
-	 -> (syscall(Syssetpgid, a(pgid)) : int64)
+	 -> (syscall(Syssetpgid, a(pid), a(pgid)) : int64)
 }
 const setsid	= {
 	 -> (syscall(Syssetsid) : int64)
 }
 const setgroups	= {gidsetsize, grouplist
-	 -> (syscall(Syssetgroups, a(grouplist)) : int64)
+	 -> (syscall(Syssetgroups, a(gidsetsize), a(grouplist)) : int64)
 }
 const acct	= {name
-	 -> (syscall(Sysacct) : int64)
+	 -> (syscall(Sysacct, a(name)) : int64)
 }
 const capget	= {header, dataptr
-	 -> (syscall(Syscapget, a(dataptr)) : int64)
+	 -> (syscall(Syscapget, a(header), a(dataptr)) : int64)
 }
 const capset	= {header, data
-	 -> (syscall(Syscapset, a(data)) : int64)
+	 -> (syscall(Syscapset, a(header), a(data)) : int64)
 }
 const personality	= {personality
-	 -> (syscall(Syspersonality) : int64)
+	 -> (syscall(Syspersonality, a(personality)) : int64)
 }
 const sigaltstack	= {uss, uoss
-	 -> (syscall(Syssigaltstack, a(uoss)) : int64)
+	 -> (syscall(Syssigaltstack, a(uss), a(uoss)) : int64)
 }
 const getitimer	= {which, value
-	 -> (syscall(Sysgetitimer, a(value)) : int64)
+	 -> (syscall(Sysgetitimer, a(which), a(value)) : int64)
 }
 const setitimer	= {which, value, ovalue
-	 -> (syscall(Syssetitimer, a(value), a(ovalue)) : int64)
+	 -> (syscall(Syssetitimer, a(which), a(value), a(ovalue)) : int64)
 }
 const timer_create	= {which_clock, timer_event_spec, created_timer_id
-	 -> (syscall(Systimer_create, a(timer_event_spec), a(created_timer_id)) : int64)
+	 -> (syscall(Systimer_create, a(which_clock), a(timer_event_spec), a(created_timer_id)) : int64)
 }
 const timer_gettime	= {timer_id, setting
-	 -> (syscall(Systimer_gettime, a(setting)) : int64)
+	 -> (syscall(Systimer_gettime, a(timer_id), a(setting)) : int64)
 }
 const timer_getoverrun	= {timer_id
-	 -> (syscall(Systimer_getoverrun) : int64)
+	 -> (syscall(Systimer_getoverrun, a(timer_id)) : int64)
 }
 const timer_settime	= {timer_id, flags, new_setting, old_setting
-	 -> (syscall(Systimer_settime, a(flags), a(new_setting), a(old_setting)) : int64)
+	 -> (syscall(Systimer_settime, a(timer_id), a(flags), a(new_setting), a(old_setting)) : int64)
 }
 const timer_delete	= {timer_id
-	 -> (syscall(Systimer_delete) : int64)
+	 -> (syscall(Systimer_delete, a(timer_id)) : int64)
 }
 const clock_adjtime	= {which_clock, tx
-	 -> (syscall(Sysclock_adjtime, a(tx)) : int64)
+	 -> (syscall(Sysclock_adjtime, a(which_clock), a(tx)) : int64)
 }
 const clock_nanosleep	= {which_clock, flags, rqtp, rmtp
-	 -> (syscall(Sysclock_nanosleep, a(flags), a(rqtp), a(rmtp)) : int64)
+	 -> (syscall(Sysclock_nanosleep, a(which_clock), a(flags), a(rqtp), a(rmtp)) : int64)
 }
 const sched_setscheduler	= {pid, policy, param
-	 -> (syscall(Syssched_setscheduler, a(policy), a(param)) : int64)
+	 -> (syscall(Syssched_setscheduler, a(pid), a(policy), a(param)) : int64)
 }
 const sched_setparam	= {pid, param
-	 -> (syscall(Syssched_setparam, a(param)) : int64)
+	 -> (syscall(Syssched_setparam, a(pid), a(param)) : int64)
 }
 const sched_setattr	= {pid, attr, flags
-	 -> (syscall(Syssched_setattr, a(attr), a(flags)) : int64)
+	 -> (syscall(Syssched_setattr, a(pid), a(attr), a(flags)) : int64)
 }
 const sched_getscheduler	= {pid
-	 -> (syscall(Syssched_getscheduler) : int64)
+	 -> (syscall(Syssched_getscheduler, a(pid)) : int64)
 }
 const sched_getparam	= {pid, param
-	 -> (syscall(Syssched_getparam, a(param)) : int64)
+	 -> (syscall(Syssched_getparam, a(pid), a(param)) : int64)
 }
 const sched_getattr	= {pid, attr, size, flags
-	 -> (syscall(Syssched_getattr, a(attr), a(size), a(flags)) : int64)
+	 -> (syscall(Syssched_getattr, a(pid), a(attr), a(size), a(flags)) : int64)
 }
 const sched_setaffinity	= {pid, len, user_mask_ptr
-	 -> (syscall(Syssched_setaffinity, a(len), a(user_mask_ptr)) : int64)
+	 -> (syscall(Syssched_setaffinity, a(pid), a(len), a(user_mask_ptr)) : int64)
 }
 const sched_getaffinity	= {pid, len, user_mask_ptr
-	 -> (syscall(Syssched_getaffinity, a(len), a(user_mask_ptr)) : int64)
+	 -> (syscall(Syssched_getaffinity, a(pid), a(len), a(user_mask_ptr)) : int64)
 }
 const sched_yield	= {
 	 -> (syscall(Syssched_yield) : int64)
 }
 const sched_get_priority_max	= {policy
-	 -> (syscall(Syssched_get_priority_max) : int64)
+	 -> (syscall(Syssched_get_priority_max, a(policy)) : int64)
 }
 const sched_get_priority_min	= {policy
-	 -> (syscall(Syssched_get_priority_min) : int64)
+	 -> (syscall(Syssched_get_priority_min, a(policy)) : int64)
 }
 const sched_rr_get_interval	= {pid, interval
-	 -> (syscall(Syssched_rr_get_interval, a(interval)) : int64)
+	 -> (syscall(Syssched_rr_get_interval, a(pid), a(interval)) : int64)
 }
 const setpriority	= {which, who, niceval
-	 -> (syscall(Syssetpriority, a(who), a(niceval)) : int64)
+	 -> (syscall(Syssetpriority, a(which), a(who), a(niceval)) : int64)
 }
 const getpriority	= {which, who
-	 -> (syscall(Sysgetpriority, a(who)) : int64)
+	 -> (syscall(Sysgetpriority, a(which), a(who)) : int64)
 }
 const shutdown	= {_a0, _a1
-	 -> (syscall(Sysshutdown, a(_a1)) : int64)
+	 -> (syscall(Sysshutdown, a(_a0), a(_a1)) : int64)
 }
 const reboot	= {magic1, magic2, cmd, arg
-	 -> (syscall(Sysreboot, a(magic2), a(cmd), a(arg)) : int64)
+	 -> (syscall(Sysreboot, a(magic1), a(magic2), a(cmd), a(arg)) : int64)
 }
 const restart_syscall	= {
 	 -> (syscall(Sysrestart_syscall) : int64)
 }
 const kexec_load	= {entry, nr_segments, segments, flags
-	 -> (syscall(Syskexec_load, a(nr_segments), a(segments), a(flags)) : int64)
+	 -> (syscall(Syskexec_load, a(entry), a(nr_segments), a(segments), a(flags)) : int64)
 }
 const kexec_file_load	= {kernel_fd, initrd_fd, cmdline_len, cmdline_ptr, flags
-	 -> (syscall(Syskexec_file_load, a(initrd_fd), a(cmdline_len), a(cmdline_ptr), a(flags)) : int64)
+	 -> (syscall(Syskexec_file_load, a(kernel_fd), a(initrd_fd), a(cmdline_len), a(cmdline_ptr), a(flags)) : int64)
 }
 const waitid	= {which, pid, infop, options, ru
-	 -> (syscall(Syswaitid, a(pid), a(infop), a(options), a(ru)) : int64)
+	 -> (syscall(Syswaitid, a(which), a(pid), a(infop), a(options), a(ru)) : int64)
 }
 const set_tid_address	= {tidptr
-	 -> (syscall(Sysset_tid_address) : int64)
+	 -> (syscall(Sysset_tid_address, a(tidptr)) : int64)
 }
 const init_module	= {umod, len, uargs
-	 -> (syscall(Sysinit_module, a(len), a(uargs)) : int64)
+	 -> (syscall(Sysinit_module, a(umod), a(len), a(uargs)) : int64)
 }
 const delete_module	= {name_user, flags
-	 -> (syscall(Sysdelete_module, a(flags)) : int64)
+	 -> (syscall(Sysdelete_module, a(name_user), a(flags)) : int64)
 }
 const rt_sigsuspend	= {unewset, sigsetsize
-	 -> (syscall(Sysrt_sigsuspend, a(sigsetsize)) : int64)
+	 -> (syscall(Sysrt_sigsuspend, a(unewset), a(sigsetsize)) : int64)
 }
 const rt_sigaction	= {_a0, _a1, _a2, _a3
-	 -> (syscall(Sysrt_sigaction, a(_a1), a(_a2), a(_a3)) : int64)
+	 -> (syscall(Sysrt_sigaction, a(_a0), a(_a1), a(_a2), a(_a3)) : int64)
 }
 const rt_sigprocmask	= {how, set, oset, sigsetsize
-	 -> (syscall(Sysrt_sigprocmask, a(set), a(oset), a(sigsetsize)) : int64)
+	 -> (syscall(Sysrt_sigprocmask, a(how), a(set), a(oset), a(sigsetsize)) : int64)
 }
 const rt_sigpending	= {set, sigsetsize
-	 -> (syscall(Sysrt_sigpending, a(sigsetsize)) : int64)
+	 -> (syscall(Sysrt_sigpending, a(set), a(sigsetsize)) : int64)
 }
 const rt_sigtimedwait	= {uthese, uinfo, uts, sigsetsize
-	 -> (syscall(Sysrt_sigtimedwait, a(uinfo), a(uts), a(sigsetsize)) : int64)
+	 -> (syscall(Sysrt_sigtimedwait, a(uthese), a(uinfo), a(uts), a(sigsetsize)) : int64)
 }
 const rt_tgsigqueueinfo	= {tgid, pid, sig, uinfo
-	 -> (syscall(Sysrt_tgsigqueueinfo, a(pid), a(sig), a(uinfo)) : int64)
+	 -> (syscall(Sysrt_tgsigqueueinfo, a(tgid), a(pid), a(sig), a(uinfo)) : int64)
 }
 const tgkill	= {tgid, pid, sig
-	 -> (syscall(Systgkill, a(pid), a(sig)) : int64)
+	 -> (syscall(Systgkill, a(tgid), a(pid), a(sig)) : int64)
 }
 const tkill	= {pid, sig
-	 -> (syscall(Systkill, a(sig)) : int64)
+	 -> (syscall(Systkill, a(pid), a(sig)) : int64)
 }
 const rt_sigqueueinfo	= {pid, sig, uinfo
-	 -> (syscall(Sysrt_sigqueueinfo, a(sig), a(uinfo)) : int64)
+	 -> (syscall(Sysrt_sigqueueinfo, a(pid), a(sig), a(uinfo)) : int64)
 }
 const pause	= {
 	 -> (syscall(Syspause) : int64)
@@ -1940,557 +1940,557 @@ const sync	= {
 	 -> (syscall(Syssync) : int64)
 }
 const fsync	= {fd
-	 -> (syscall(Sysfsync) : int64)
+	 -> (syscall(Sysfsync, a(fd)) : int64)
 }
 const fdatasync	= {fd
-	 -> (syscall(Sysfdatasync) : int64)
+	 -> (syscall(Sysfdatasync, a(fd)) : int64)
 }
 const mount	= {dev_name, dir_name, kind, flags, data
-	 -> (syscall(Sysmount, a(dir_name), a(kind), a(flags), a(data)) : int64)
+	 -> (syscall(Sysmount, a(dev_name), a(dir_name), a(kind), a(flags), a(data)) : int64)
 }
 const umount2	= {name, flags
-	 -> (syscall(Sysumount2, a(flags)) : int64)
+	 -> (syscall(Sysumount2, a(name), a(flags)) : int64)
 }
 const truncate	= {path, length
-	 -> (syscall(Systruncate, a(length)) : int64)
+	 -> (syscall(Systruncate, a(path), a(length)) : int64)
 }
 const ftruncate	= {fd, length
-	 -> (syscall(Sysftruncate, a(length)) : int64)
+	 -> (syscall(Sysftruncate, a(fd), a(length)) : int64)
 }
 const statfs	= {path, buf
-	 -> (syscall(Sysstatfs, a(buf)) : int64)
+	 -> (syscall(Sysstatfs, a(path), a(buf)) : int64)
 }
 const fstatfs	= {fd, buf
-	 -> (syscall(Sysfstatfs, a(buf)) : int64)
+	 -> (syscall(Sysfstatfs, a(fd), a(buf)) : int64)
 }
 const ustat	= {dev, ubuf
-	 -> (syscall(Sysustat, a(ubuf)) : int64)
+	 -> (syscall(Sysustat, a(dev), a(ubuf)) : int64)
 }
 const setxattr	= {path, name, value, size, flags
-	 -> (syscall(Syssetxattr, a(name), a(value), a(size), a(flags)) : int64)
+	 -> (syscall(Syssetxattr, a(path), a(name), a(value), a(size), a(flags)) : int64)
 }
 const lsetxattr	= {path, name, value, size, flags
-	 -> (syscall(Syslsetxattr, a(name), a(value), a(size), a(flags)) : int64)
+	 -> (syscall(Syslsetxattr, a(path), a(name), a(value), a(size), a(flags)) : int64)
 }
 const fsetxattr	= {fd, name, value, size, flags
-	 -> (syscall(Sysfsetxattr, a(name), a(value), a(size), a(flags)) : int64)
+	 -> (syscall(Sysfsetxattr, a(fd), a(name), a(value), a(size), a(flags)) : int64)
 }
 const getxattr	= {path, name, value, size
-	 -> (syscall(Sysgetxattr, a(name), a(value), a(size)) : int64)
+	 -> (syscall(Sysgetxattr, a(path), a(name), a(value), a(size)) : int64)
 }
 const lgetxattr	= {path, name, value, size
-	 -> (syscall(Syslgetxattr, a(name), a(value), a(size)) : int64)
+	 -> (syscall(Syslgetxattr, a(path), a(name), a(value), a(size)) : int64)
 }
 const fgetxattr	= {fd, name, value, size
-	 -> (syscall(Sysfgetxattr, a(name), a(value), a(size)) : int64)
+	 -> (syscall(Sysfgetxattr, a(fd), a(name), a(value), a(size)) : int64)
 }
 const listxattr	= {path, list, size
-	 -> (syscall(Syslistxattr, a(list), a(size)) : int64)
+	 -> (syscall(Syslistxattr, a(path), a(list), a(size)) : int64)
 }
 const llistxattr	= {path, list, size
-	 -> (syscall(Sysllistxattr, a(list), a(size)) : int64)
+	 -> (syscall(Sysllistxattr, a(path), a(list), a(size)) : int64)
 }
 const flistxattr	= {fd, list, size
-	 -> (syscall(Sysflistxattr, a(list), a(size)) : int64)
+	 -> (syscall(Sysflistxattr, a(fd), a(list), a(size)) : int64)
 }
 const removexattr	= {path, name
-	 -> (syscall(Sysremovexattr, a(name)) : int64)
+	 -> (syscall(Sysremovexattr, a(path), a(name)) : int64)
 }
 const lremovexattr	= {path, name
-	 -> (syscall(Syslremovexattr, a(name)) : int64)
+	 -> (syscall(Syslremovexattr, a(path), a(name)) : int64)
 }
 const fremovexattr	= {fd, name
-	 -> (syscall(Sysfremovexattr, a(name)) : int64)
+	 -> (syscall(Sysfremovexattr, a(fd), a(name)) : int64)
 }
 const brk	= {brk
-	 -> (syscall(Sysbrk) : int64)
+	 -> (syscall(Sysbrk, a(brk)) : int64)
 }
 const mprotect	= {start, len, prot
-	 -> (syscall(Sysmprotect, a(len), a(prot)) : int64)
+	 -> (syscall(Sysmprotect, a(start), a(len), a(prot)) : int64)
 }
 const mremap	= {addr, old_len, new_len, flags, new_addr
-	 -> (syscall(Sysmremap, a(old_len), a(new_len), a(flags), a(new_addr)) : int64)
+	 -> (syscall(Sysmremap, a(addr), a(old_len), a(new_len), a(flags), a(new_addr)) : int64)
 }
 const remap_file_pages	= {start, size, prot, pgoff, flags
-	 -> (syscall(Sysremap_file_pages, a(size), a(prot), a(pgoff), a(flags)) : int64)
+	 -> (syscall(Sysremap_file_pages, a(start), a(size), a(prot), a(pgoff), a(flags)) : int64)
 }
 const msync	= {start, len, flags
-	 -> (syscall(Sysmsync, a(len), a(flags)) : int64)
+	 -> (syscall(Sysmsync, a(start), a(len), a(flags)) : int64)
 }
 const fadvise	= {fd, offset, len, advice
-	 -> (syscall(Sysfadvise, a(offset), a(len), a(advice)) : int64)
+	 -> (syscall(Sysfadvise, a(fd), a(offset), a(len), a(advice)) : int64)
 }
 const mlock	= {start, len
-	 -> (syscall(Sysmlock, a(len)) : int64)
+	 -> (syscall(Sysmlock, a(start), a(len)) : int64)
 }
 const munlock	= {start, len
-	 -> (syscall(Sysmunlock, a(len)) : int64)
+	 -> (syscall(Sysmunlock, a(start), a(len)) : int64)
 }
 const mlockall	= {flags
-	 -> (syscall(Sysmlockall) : int64)
+	 -> (syscall(Sysmlockall, a(flags)) : int64)
 }
 const munlockall	= {
 	 -> (syscall(Sysmunlockall) : int64)
 }
 const madvise	= {start, len, behavior
-	 -> (syscall(Sysmadvise, a(len), a(behavior)) : int64)
+	 -> (syscall(Sysmadvise, a(start), a(len), a(behavior)) : int64)
 }
 const mincore	= {start, len, vec
-	 -> (syscall(Sysmincore, a(len), a(vec)) : int64)
+	 -> (syscall(Sysmincore, a(start), a(len), a(vec)) : int64)
 }
 const pivot_root	= {new_root, put_old
-	 -> (syscall(Syspivot_root, a(put_old)) : int64)
+	 -> (syscall(Syspivot_root, a(new_root), a(put_old)) : int64)
 }
 const chroot	= {filename
-	 -> (syscall(Syschroot) : int64)
+	 -> (syscall(Syschroot, a(filename)) : int64)
 }
 const mknod	= {filename, mode, dev
-	 -> (syscall(Sysmknod, a(mode), a(dev)) : int64)
+	 -> (syscall(Sysmknod, a(filename), a(mode), a(dev)) : int64)
 }
 const link	= {oldname, newname
-	 -> (syscall(Syslink, a(newname)) : int64)
+	 -> (syscall(Syslink, a(oldname), a(newname)) : int64)
 }
 const symlink	= {old, new
-	 -> (syscall(Syssymlink, a(new)) : int64)
+	 -> (syscall(Syssymlink, a(old), a(new)) : int64)
 }
 const chmod	= {filename, mode
-	 -> (syscall(Syschmod, a(mode)) : int64)
+	 -> (syscall(Syschmod, a(filename), a(mode)) : int64)
 }
 const fchmod	= {fd, mode
-	 -> (syscall(Sysfchmod, a(mode)) : int64)
+	 -> (syscall(Sysfchmod, a(fd), a(mode)) : int64)
 }
 const fcntl	= {fd, cmd, arg
-	 -> (syscall(Sysfcntl, a(cmd), a(arg)) : int64)
+	 -> (syscall(Sysfcntl, a(fd), a(cmd), a(arg)) : int64)
 }
 const pipe2	= {fildes, flags
-	 -> (syscall(Syspipe2, a(flags)) : int64)
+	 -> (syscall(Syspipe2, a(fildes), a(flags)) : int64)
 }
 const dup3	= {oldfd, newfd, flags
-	 -> (syscall(Sysdup3, a(newfd), a(flags)) : int64)
+	 -> (syscall(Sysdup3, a(oldfd), a(newfd), a(flags)) : int64)
 }
 const ioperm	= {from, num, on
-	 -> (syscall(Sysioperm, a(num), a(on)) : int64)
+	 -> (syscall(Sysioperm, a(from), a(num), a(on)) : int64)
 }
 const flock	= {fd, cmd
-	 -> (syscall(Sysflock, a(cmd)) : int64)
+	 -> (syscall(Sysflock, a(fd), a(cmd)) : int64)
 }
 const io_setup	= {nr_reqs, ctx
-	 -> (syscall(Sysio_setup, a(ctx)) : int64)
+	 -> (syscall(Sysio_setup, a(nr_reqs), a(ctx)) : int64)
 }
 const io_destroy	= {ctx
-	 -> (syscall(Sysio_destroy) : int64)
+	 -> (syscall(Sysio_destroy, a(ctx)) : int64)
 }
 const io_getevents	= {ctx_id, min_nr, nr, events, timeout
-	 -> (syscall(Sysio_getevents, a(min_nr), a(nr), a(events), a(timeout)) : int64)
+	 -> (syscall(Sysio_getevents, a(ctx_id), a(min_nr), a(nr), a(events), a(timeout)) : int64)
 }
 const io_submit	= {_a0, _a1, _a2
-	 -> (syscall(Sysio_submit, a(_a1), a(_a2)) : int64)
+	 -> (syscall(Sysio_submit, a(_a0), a(_a1), a(_a2)) : int64)
 }
 const io_cancel	= {ctx_id, iocb, result
-	 -> (syscall(Sysio_cancel, a(iocb), a(result)) : int64)
+	 -> (syscall(Sysio_cancel, a(ctx_id), a(iocb), a(result)) : int64)
 }
 const sendfile	= {out_fd, in_fd, offset, count
-	 -> (syscall(Syssendfile, a(in_fd), a(offset), a(count)) : int64)
+	 -> (syscall(Syssendfile, a(out_fd), a(in_fd), a(offset), a(count)) : int64)
 }
 const access	= {filename, mode
-	 -> (syscall(Sysaccess, a(mode)) : int64)
+	 -> (syscall(Sysaccess, a(filename), a(mode)) : int64)
 }
 const vhangup	= {
 	 -> (syscall(Sysvhangup) : int64)
 }
 const chown	= {filename, user, group
-	 -> (syscall(Syschown, a(user), a(group)) : int64)
+	 -> (syscall(Syschown, a(filename), a(user), a(group)) : int64)
 }
 const lchown	= {filename, user, group
-	 -> (syscall(Syslchown, a(user), a(group)) : int64)
+	 -> (syscall(Syslchown, a(filename), a(user), a(group)) : int64)
 }
 const fchown	= {fd, user, group
-	 -> (syscall(Sysfchown, a(user), a(group)) : int64)
+	 -> (syscall(Sysfchown, a(fd), a(user), a(group)) : int64)
 }
 const utime	= {filename, times
-	 -> (syscall(Sysutime, a(times)) : int64)
+	 -> (syscall(Sysutime, a(filename), a(times)) : int64)
 }
 const utimes	= {filename, utimes
-	 -> (syscall(Sysutimes, a(utimes)) : int64)
+	 -> (syscall(Sysutimes, a(filename), a(utimes)) : int64)
 }
 const readahead	= {fd, offset, count
-	 -> (syscall(Sysreadahead, a(offset), a(count)) : int64)
+	 -> (syscall(Sysreadahead, a(fd), a(offset), a(count)) : int64)
 }
 const readv	= {fd, vec, vlen
-	 -> (syscall(Sysreadv, a(vec), a(vlen)) : int64)
+	 -> (syscall(Sysreadv, a(fd), a(vec), a(vlen)) : int64)
 }
 const writev	= {fd, vec, vlen
-	 -> (syscall(Syswritev, a(vec), a(vlen)) : int64)
+	 -> (syscall(Syswritev, a(fd), a(vec), a(vlen)) : int64)
 }
 const preadv	= {fd, vec, vlen, pos_l, pos_h
-	 -> (syscall(Syspreadv, a(vec), a(vlen), a(pos_l), a(pos_h)) : int64)
+	 -> (syscall(Syspreadv, a(fd), a(vec), a(vlen), a(pos_l), a(pos_h)) : int64)
 }
 const preadv2	= {fd, vec, vlen, pos_l, pos_h, flags
-	 -> (syscall(Syspreadv2, a(vec), a(vlen), a(pos_l), a(pos_h), a(flags)) : int64)
+	 -> (syscall(Syspreadv2, a(fd), a(vec), a(vlen), a(pos_l), a(pos_h), a(flags)) : int64)
 }
 const pwritev	= {fd, vec, vlen, pos_l, pos_h
-	 -> (syscall(Syspwritev, a(vec), a(vlen), a(pos_l), a(pos_h)) : int64)
+	 -> (syscall(Syspwritev, a(fd), a(vec), a(vlen), a(pos_l), a(pos_h)) : int64)
 }
 const pwritev2	= {fd, vec, vlen, pos_l, pos_h, flags
-	 -> (syscall(Syspwritev2, a(vec), a(vlen), a(pos_l), a(pos_h), a(flags)) : int64)
+	 -> (syscall(Syspwritev2, a(fd), a(vec), a(vlen), a(pos_l), a(pos_h), a(flags)) : int64)
 }
 const fchdir	= {fd
-	 -> (syscall(Sysfchdir) : int64)
+	 -> (syscall(Sysfchdir, a(fd)) : int64)
 }
 const rmdir	= {pathname
-	 -> (syscall(Sysrmdir) : int64)
+	 -> (syscall(Sysrmdir, a(pathname)) : int64)
 }
 const lookup_dcookie	= {cookie64, buf, len
-	 -> (syscall(Syslookup_dcookie, a(buf), a(len)) : int64)
+	 -> (syscall(Syslookup_dcookie, a(cookie64), a(buf), a(len)) : int64)
 }
 const quotactl	= {cmd, special, id, addr
-	 -> (syscall(Sysquotactl, a(special), a(id), a(addr)) : int64)
+	 -> (syscall(Sysquotactl, a(cmd), a(special), a(id), a(addr)) : int64)
 }
 const accept4	= {_a0, _a1, _a2, _a3
-	 -> (syscall(Sysaccept4, a(_a1), a(_a2), a(_a3)) : int64)
+	 -> (syscall(Sysaccept4, a(_a0), a(_a1), a(_a2), a(_a3)) : int64)
 }
 const getsockname	= {_a0, _a1, _a2
-	 -> (syscall(Sysgetsockname, a(_a1), a(_a2)) : int64)
+	 -> (syscall(Sysgetsockname, a(_a0), a(_a1), a(_a2)) : int64)
 }
 const getpeername	= {_a0, _a1, _a2
-	 -> (syscall(Sysgetpeername, a(_a1), a(_a2)) : int64)
+	 -> (syscall(Sysgetpeername, a(_a0), a(_a1), a(_a2)) : int64)
 }
 const sendto	= {_a0, _a1, _a2, _a3, _a4, _a5
-	 -> (syscall(Syssendto, a(_a1), a(_a2), a(_a3), a(_a4), a(_a5)) : int64)
+	 -> (syscall(Syssendto, a(_a0), a(_a1), a(_a2), a(_a3), a(_a4), a(_a5)) : int64)
 }
 const sendmmsg	= {fd, msg, vlen, flags
-	 -> (syscall(Syssendmmsg, a(msg), a(vlen), a(flags)) : int64)
+	 -> (syscall(Syssendmmsg, a(fd), a(msg), a(vlen), a(flags)) : int64)
 }
 const recvfrom	= {_a0, _a1, _a2, _a3, _a4, _a5
-	 -> (syscall(Sysrecvfrom, a(_a1), a(_a2), a(_a3), a(_a4), a(_a5)) : int64)
+	 -> (syscall(Sysrecvfrom, a(_a0), a(_a1), a(_a2), a(_a3), a(_a4), a(_a5)) : int64)
 }
 const recvmmsg	= {fd, msg, vlen, flags, timeout
-	 -> (syscall(Sysrecvmmsg, a(msg), a(vlen), a(flags), a(timeout)) : int64)
+	 -> (syscall(Sysrecvmmsg, a(fd), a(msg), a(vlen), a(flags), a(timeout)) : int64)
 }
 const socketpair	= {_a0, _a1, _a2, _a3
-	 -> (syscall(Syssocketpair, a(_a1), a(_a2), a(_a3)) : int64)
+	 -> (syscall(Syssocketpair, a(_a0), a(_a1), a(_a2), a(_a3)) : int64)
 }
 const select	= {n, inp, outp, exp, tvp
-	 -> (syscall(Sysselect, a(inp), a(outp), a(exp), a(tvp)) : int64)
+	 -> (syscall(Sysselect, a(n), a(inp), a(outp), a(exp), a(tvp)) : int64)
 }
 const epoll_create	= {size
-	 -> (syscall(Sysepoll_create) : int64)
+	 -> (syscall(Sysepoll_create, a(size)) : int64)
 }
 const epoll_create1	= {flags
-	 -> (syscall(Sysepoll_create1) : int64)
+	 -> (syscall(Sysepoll_create1, a(flags)) : int64)
 }
 const epoll_ctl	= {epfd, op, fd, event
-	 -> (syscall(Sysepoll_ctl, a(op), a(fd), a(event)) : int64)
+	 -> (syscall(Sysepoll_ctl, a(epfd), a(op), a(fd), a(event)) : int64)
 }
 const epoll_wait	= {epfd, events, maxevents, timeout
-	 -> (syscall(Sysepoll_wait, a(events), a(maxevents), a(timeout)) : int64)
+	 -> (syscall(Sysepoll_wait, a(epfd), a(events), a(maxevents), a(timeout)) : int64)
 }
 const epoll_pwait	= {epfd, events, maxevents, timeout, sigmask, sigsetsize
-	 -> (syscall(Sysepoll_pwait, a(events), a(maxevents), a(timeout), a(sigmask), a(sigsetsize)) : int64)
+	 -> (syscall(Sysepoll_pwait, a(epfd), a(events), a(maxevents), a(timeout), a(sigmask), a(sigsetsize)) : int64)
 }
 const sethostname	= {name, len
-	 -> (syscall(Syssethostname, a(len)) : int64)
+	 -> (syscall(Syssethostname, a(name), a(len)) : int64)
 }
 const setdomainname	= {name, len
-	 -> (syscall(Syssetdomainname, a(len)) : int64)
+	 -> (syscall(Syssetdomainname, a(name), a(len)) : int64)
 }
 const getrlimit	= {resource, rlim
-	 -> (syscall(Sysgetrlimit, a(rlim)) : int64)
+	 -> (syscall(Sysgetrlimit, a(resource), a(rlim)) : int64)
 }
 const setrlimit	= {resource, rlim
-	 -> (syscall(Syssetrlimit, a(rlim)) : int64)
+	 -> (syscall(Syssetrlimit, a(resource), a(rlim)) : int64)
 }
 const prlimit	= {pid, resource, new_rlim, old_rlim
-	 -> (syscall(Sysprlimit, a(resource), a(new_rlim), a(old_rlim)) : int64)
+	 -> (syscall(Sysprlimit, a(pid), a(resource), a(new_rlim), a(old_rlim)) : int64)
 }
 const getrusage	= {who, ru
-	 -> (syscall(Sysgetrusage, a(ru)) : int64)
+	 -> (syscall(Sysgetrusage, a(who), a(ru)) : int64)
 }
 const umask	= {mask
-	 -> (syscall(Sysumask) : int64)
+	 -> (syscall(Sysumask, a(mask)) : int64)
 }
 const msgget	= {key, msgflg
-	 -> (syscall(Sysmsgget, a(msgflg)) : int64)
+	 -> (syscall(Sysmsgget, a(key), a(msgflg)) : int64)
 }
 const msgsnd	= {msqid, msgp, msgsz, msgflg
-	 -> (syscall(Sysmsgsnd, a(msgp), a(msgsz), a(msgflg)) : int64)
+	 -> (syscall(Sysmsgsnd, a(msqid), a(msgp), a(msgsz), a(msgflg)) : int64)
 }
 const msgrcv	= {msqid, msgp, msgsz, msgtyp, msgflg
-	 -> (syscall(Sysmsgrcv, a(msgp), a(msgsz), a(msgtyp), a(msgflg)) : int64)
+	 -> (syscall(Sysmsgrcv, a(msqid), a(msgp), a(msgsz), a(msgtyp), a(msgflg)) : int64)
 }
 const msgctl	= {msqid, cmd, buf
-	 -> (syscall(Sysmsgctl, a(cmd), a(buf)) : int64)
+	 -> (syscall(Sysmsgctl, a(msqid), a(cmd), a(buf)) : int64)
 }
 const semget	= {key, nsems, semflg
-	 -> (syscall(Syssemget, a(nsems), a(semflg)) : int64)
+	 -> (syscall(Syssemget, a(key), a(nsems), a(semflg)) : int64)
 }
 const semop	= {semid, sops, nsops
-	 -> (syscall(Syssemop, a(sops), a(nsops)) : int64)
+	 -> (syscall(Syssemop, a(semid), a(sops), a(nsops)) : int64)
 }
 const semtimedop	= {semid, sops, nsops, timeout
-	 -> (syscall(Syssemtimedop, a(sops), a(nsops), a(timeout)) : int64)
+	 -> (syscall(Syssemtimedop, a(semid), a(sops), a(nsops), a(timeout)) : int64)
 }
 const shmat	= {shmid, shmaddr, shmflg
-	 -> (syscall(Sysshmat, a(shmaddr), a(shmflg)) : int64)
+	 -> (syscall(Sysshmat, a(shmid), a(shmaddr), a(shmflg)) : int64)
 }
 const shmget	= {key, size, flag
-	 -> (syscall(Sysshmget, a(size), a(flag)) : int64)
+	 -> (syscall(Sysshmget, a(key), a(size), a(flag)) : int64)
 }
 const shmdt	= {shmaddr
-	 -> (syscall(Sysshmdt) : int64)
+	 -> (syscall(Sysshmdt, a(shmaddr)) : int64)
 }
 const shmctl	= {shmid, cmd, buf
-	 -> (syscall(Sysshmctl, a(cmd), a(buf)) : int64)
+	 -> (syscall(Sysshmctl, a(shmid), a(cmd), a(buf)) : int64)
 }
 const mq_open	= {name, oflag, mode, attr
-	 -> (syscall(Sysmq_open, a(oflag), a(mode), a(attr)) : int64)
+	 -> (syscall(Sysmq_open, a(name), a(oflag), a(mode), a(attr)) : int64)
 }
 const mq_unlink	= {name
-	 -> (syscall(Sysmq_unlink) : int64)
+	 -> (syscall(Sysmq_unlink, a(name)) : int64)
 }
 const mq_timedsend	= {mqdes, msg_ptr, msg_len, msg_prio, abs_timeout
-	 -> (syscall(Sysmq_timedsend, a(msg_ptr), a(msg_len), a(msg_prio), a(abs_timeout)) : int64)
+	 -> (syscall(Sysmq_timedsend, a(mqdes), a(msg_ptr), a(msg_len), a(msg_prio), a(abs_timeout)) : int64)
 }
 const mq_timedreceive	= {mqdes, msg_ptr, msg_len, msg_prio, abs_timeout
-	 -> (syscall(Sysmq_timedreceive, a(msg_ptr), a(msg_len), a(msg_prio), a(abs_timeout)) : int64)
+	 -> (syscall(Sysmq_timedreceive, a(mqdes), a(msg_ptr), a(msg_len), a(msg_prio), a(abs_timeout)) : int64)
 }
 const mq_notify	= {mqdes, notification
-	 -> (syscall(Sysmq_notify, a(notification)) : int64)
+	 -> (syscall(Sysmq_notify, a(mqdes), a(notification)) : int64)
 }
 const mq_getsetattr	= {mqdes, mqstat, omqstat
-	 -> (syscall(Sysmq_getsetattr, a(mqstat), a(omqstat)) : int64)
+	 -> (syscall(Sysmq_getsetattr, a(mqdes), a(mqstat), a(omqstat)) : int64)
 }
 const prctl	= {option, arg2, arg3, arg4, arg5
-	 -> (syscall(Sysprctl, a(arg2), a(arg3), a(arg4), a(arg5)) : int64)
+	 -> (syscall(Sysprctl, a(option), a(arg2), a(arg3), a(arg4), a(arg5)) : int64)
 }
 const swapon	= {specialfile, swap_flags
-	 -> (syscall(Sysswapon, a(swap_flags)) : int64)
+	 -> (syscall(Sysswapon, a(specialfile), a(swap_flags)) : int64)
 }
 const swapoff	= {specialfile
-	 -> (syscall(Sysswapoff) : int64)
+	 -> (syscall(Sysswapoff, a(specialfile)) : int64)
 }
 const _sysctl	= {args
-	 -> (syscall(Sys_sysctl) : int64)
+	 -> (syscall(Sys_sysctl, a(args)) : int64)
 }
 const sysinfo	= {info
-	 -> (syscall(Syssysinfo) : int64)
+	 -> (syscall(Syssysinfo, a(info)) : int64)
 }
 const sysfs	= {option, arg1, arg2
-	 -> (syscall(Syssysfs, a(arg1), a(arg2)) : int64)
+	 -> (syscall(Syssysfs, a(option), a(arg1), a(arg2)) : int64)
 }
 const syslog	= {kind, buf, len
-	 -> (syscall(Syssyslog, a(buf), a(len)) : int64)
+	 -> (syscall(Syssyslog, a(kind), a(buf), a(len)) : int64)
 }
 const ptrace	= {request, pid, addr, data
-	 -> (syscall(Sysptrace, a(pid), a(addr), a(data)) : int64)
+	 -> (syscall(Sysptrace, a(request), a(pid), a(addr), a(data)) : int64)
 }
 const add_key	= {_type, _description, _payload, plen, destringid
-	 -> (syscall(Sysadd_key, a(_description), a(_payload), a(plen), a(destringid)) : int64)
+	 -> (syscall(Sysadd_key, a(_type), a(_description), a(_payload), a(plen), a(destringid)) : int64)
 }
 const request_key	= {_type, _description, _callout_info, destringid
-	 -> (syscall(Sysrequest_key, a(_description), a(_callout_info), a(destringid)) : int64)
+	 -> (syscall(Sysrequest_key, a(_type), a(_description), a(_callout_info), a(destringid)) : int64)
 }
 const keyctl	= {cmd, arg2, arg3, arg4, arg5
-	 -> (syscall(Syskeyctl, a(arg2), a(arg3), a(arg4), a(arg5)) : int64)
+	 -> (syscall(Syskeyctl, a(cmd), a(arg2), a(arg3), a(arg4), a(arg5)) : int64)
 }
 const ioprio_set	= {which, who, ioprio
-	 -> (syscall(Sysioprio_set, a(who), a(ioprio)) : int64)
+	 -> (syscall(Sysioprio_set, a(which), a(who), a(ioprio)) : int64)
 }
 const ioprio_get	= {which, who
-	 -> (syscall(Sysioprio_get, a(who)) : int64)
+	 -> (syscall(Sysioprio_get, a(which), a(who)) : int64)
 }
 const set_mempolicy	= {mode, nmask, maxnode
-	 -> (syscall(Sysset_mempolicy, a(nmask), a(maxnode)) : int64)
+	 -> (syscall(Sysset_mempolicy, a(mode), a(nmask), a(maxnode)) : int64)
 }
 const migrate_pages	= {pid, maxnode, from, to
-	 -> (syscall(Sysmigrate_pages, a(maxnode), a(from), a(to)) : int64)
+	 -> (syscall(Sysmigrate_pages, a(pid), a(maxnode), a(from), a(to)) : int64)
 }
 const move_pages	= {pid, nr_pages, pages, nodes, status, flags
-	 -> (syscall(Sysmove_pages, a(nr_pages), a(pages), a(nodes), a(status), a(flags)) : int64)
+	 -> (syscall(Sysmove_pages, a(pid), a(nr_pages), a(pages), a(nodes), a(status), a(flags)) : int64)
 }
 const mbind	= {start, len, mode, nmask, maxnode, flags
-	 -> (syscall(Sysmbind, a(len), a(mode), a(nmask), a(maxnode), a(flags)) : int64)
+	 -> (syscall(Sysmbind, a(start), a(len), a(mode), a(nmask), a(maxnode), a(flags)) : int64)
 }
 const get_mempolicy	= {policy, nmask, maxnode, addr, flags
-	 -> (syscall(Sysget_mempolicy, a(nmask), a(maxnode), a(addr), a(flags)) : int64)
+	 -> (syscall(Sysget_mempolicy, a(policy), a(nmask), a(maxnode), a(addr), a(flags)) : int64)
 }
 const inotify_init	= {
 	 -> (syscall(Sysinotify_init) : int64)
 }
 const inotify_init1	= {flags
-	 -> (syscall(Sysinotify_init1) : int64)
+	 -> (syscall(Sysinotify_init1, a(flags)) : int64)
 }
 const inotify_add_watch	= {fd, path, mask
-	 -> (syscall(Sysinotify_add_watch, a(path), a(mask)) : int64)
+	 -> (syscall(Sysinotify_add_watch, a(fd), a(path), a(mask)) : int64)
 }
 const inotify_rm_watch	= {fd, wd
-	 -> (syscall(Sysinotify_rm_watch, a(wd)) : int64)
+	 -> (syscall(Sysinotify_rm_watch, a(fd), a(wd)) : int64)
 }
 const mknodat	= {dfd, filename, mode, dev
-	 -> (syscall(Sysmknodat, a(filename), a(mode), a(dev)) : int64)
+	 -> (syscall(Sysmknodat, a(dfd), a(filename), a(mode), a(dev)) : int64)
 }
 const mkdirat	= {dfd, pathname, mode
-	 -> (syscall(Sysmkdirat, a(pathname), a(mode)) : int64)
+	 -> (syscall(Sysmkdirat, a(dfd), a(pathname), a(mode)) : int64)
 }
 const unlinkat	= {dfd, pathname, flag
-	 -> (syscall(Sysunlinkat, a(pathname), a(flag)) : int64)
+	 -> (syscall(Sysunlinkat, a(dfd), a(pathname), a(flag)) : int64)
 }
 const symlinkat	= {oldname, newdfd, newname
-	 -> (syscall(Syssymlinkat, a(newdfd), a(newname)) : int64)
+	 -> (syscall(Syssymlinkat, a(oldname), a(newdfd), a(newname)) : int64)
 }
 const linkat	= {olddfd, oldname, newdfd, newname, flags
-	 -> (syscall(Syslinkat, a(oldname), a(newdfd), a(newname), a(flags)) : int64)
+	 -> (syscall(Syslinkat, a(olddfd), a(oldname), a(newdfd), a(newname), a(flags)) : int64)
 }
 const renameat	= {olddfd, oldname, newdfd, newname
-	 -> (syscall(Sysrenameat, a(oldname), a(newdfd), a(newname)) : int64)
+	 -> (syscall(Sysrenameat, a(olddfd), a(oldname), a(newdfd), a(newname)) : int64)
 }
 const renameat2	= {olddfd, oldname, newdfd, newname, flags
-	 -> (syscall(Sysrenameat2, a(oldname), a(newdfd), a(newname), a(flags)) : int64)
+	 -> (syscall(Sysrenameat2, a(olddfd), a(oldname), a(newdfd), a(newname), a(flags)) : int64)
 }
 const futimesat	= {dfd, filename, utimes
-	 -> (syscall(Sysfutimesat, a(filename), a(utimes)) : int64)
+	 -> (syscall(Sysfutimesat, a(dfd), a(filename), a(utimes)) : int64)
 }
 const faccessat	= {dfd, filename, mode
-	 -> (syscall(Sysfaccessat, a(filename), a(mode)) : int64)
+	 -> (syscall(Sysfaccessat, a(dfd), a(filename), a(mode)) : int64)
 }
 const fchmodat	= {dfd, filename, mode
-	 -> (syscall(Sysfchmodat, a(filename), a(mode)) : int64)
+	 -> (syscall(Sysfchmodat, a(dfd), a(filename), a(mode)) : int64)
 }
 const fchownat	= {dfd, filename, user, group, flag
-	 -> (syscall(Sysfchownat, a(filename), a(user), a(group), a(flag)) : int64)
+	 -> (syscall(Sysfchownat, a(dfd), a(filename), a(user), a(group), a(flag)) : int64)
 }
 const openat	= {dfd, filename, flags, mode
-	 -> (syscall(Sysopenat, a(filename), a(flags), a(mode)) : int64)
+	 -> (syscall(Sysopenat, a(dfd), a(filename), a(flags), a(mode)) : int64)
 }
 const newfstatat	= {dfd, filename, statbuf, flag
-	 -> (syscall(Sysnewfstatat, a(filename), a(statbuf), a(flag)) : int64)
+	 -> (syscall(Sysnewfstatat, a(dfd), a(filename), a(statbuf), a(flag)) : int64)
 }
 const readlinkat	= {dfd, path, buf, bufsiz
-	 -> (syscall(Sysreadlinkat, a(path), a(buf), a(bufsiz)) : int64)
+	 -> (syscall(Sysreadlinkat, a(dfd), a(path), a(buf), a(bufsiz)) : int64)
 }
 const utimensat	= {dfd, filename, utimes, flags
-	 -> (syscall(Sysutimensat, a(filename), a(utimes), a(flags)) : int64)
+	 -> (syscall(Sysutimensat, a(dfd), a(filename), a(utimes), a(flags)) : int64)
 }
 const unshare	= {unshare_flags
-	 -> (syscall(Sysunshare) : int64)
+	 -> (syscall(Sysunshare, a(unshare_flags)) : int64)
 }
 const splice	= {fd_in, off_in, fd_out, off_out, len, flags
-	 -> (syscall(Syssplice, a(off_in), a(fd_out), a(off_out), a(len), a(flags)) : int64)
+	 -> (syscall(Syssplice, a(fd_in), a(off_in), a(fd_out), a(off_out), a(len), a(flags)) : int64)
 }
 const vmsplice	= {fd, iov, nr_segs, flags
-	 -> (syscall(Sysvmsplice, a(iov), a(nr_segs), a(flags)) : int64)
+	 -> (syscall(Sysvmsplice, a(fd), a(iov), a(nr_segs), a(flags)) : int64)
 }
 const tee	= {fdin, fdout, len, flags
-	 -> (syscall(Systee, a(fdout), a(len), a(flags)) : int64)
+	 -> (syscall(Systee, a(fdin), a(fdout), a(len), a(flags)) : int64)
 }
 const sync_file_range	= {fd, offset, nbytes, flags
-	 -> (syscall(Syssync_file_range, a(offset), a(nbytes), a(flags)) : int64)
+	 -> (syscall(Syssync_file_range, a(fd), a(offset), a(nbytes), a(flags)) : int64)
 }
 const get_robust_list	= {pid, head_ptr, len_ptr
-	 -> (syscall(Sysget_robust_list, a(head_ptr), a(len_ptr)) : int64)
+	 -> (syscall(Sysget_robust_list, a(pid), a(head_ptr), a(len_ptr)) : int64)
 }
 const set_robust_list	= {head, len
-	 -> (syscall(Sysset_robust_list, a(len)) : int64)
+	 -> (syscall(Sysset_robust_list, a(head), a(len)) : int64)
 }
 const getcpu	= {cpu, node, cache
-	 -> (syscall(Sysgetcpu, a(node), a(cache)) : int64)
+	 -> (syscall(Sysgetcpu, a(cpu), a(node), a(cache)) : int64)
 }
 const signalfd	= {ufd, user_mask, sizemask
-	 -> (syscall(Syssignalfd, a(user_mask), a(sizemask)) : int64)
+	 -> (syscall(Syssignalfd, a(ufd), a(user_mask), a(sizemask)) : int64)
 }
 const signalfd4	= {ufd, user_mask, sizemask, flags
-	 -> (syscall(Syssignalfd4, a(user_mask), a(sizemask), a(flags)) : int64)
+	 -> (syscall(Syssignalfd4, a(ufd), a(user_mask), a(sizemask), a(flags)) : int64)
 }
 const timerfd_create	= {clockid, flags
-	 -> (syscall(Systimerfd_create, a(flags)) : int64)
+	 -> (syscall(Systimerfd_create, a(clockid), a(flags)) : int64)
 }
 const timerfd_settime	= {ufd, flags, utmr, otmr
-	 -> (syscall(Systimerfd_settime, a(flags), a(utmr), a(otmr)) : int64)
+	 -> (syscall(Systimerfd_settime, a(ufd), a(flags), a(utmr), a(otmr)) : int64)
 }
 const timerfd_gettime	= {ufd, otmr
-	 -> (syscall(Systimerfd_gettime, a(otmr)) : int64)
+	 -> (syscall(Systimerfd_gettime, a(ufd), a(otmr)) : int64)
 }
 const eventfd	= {count
-	 -> (syscall(Syseventfd) : int64)
+	 -> (syscall(Syseventfd, a(count)) : int64)
 }
 const eventfd2	= {count, flags
-	 -> (syscall(Syseventfd2, a(flags)) : int64)
+	 -> (syscall(Syseventfd2, a(count), a(flags)) : int64)
 }
 const memfd_create	= {uname_ptr, flags
-	 -> (syscall(Sysmemfd_create, a(flags)) : int64)
+	 -> (syscall(Sysmemfd_create, a(uname_ptr), a(flags)) : int64)
 }
 const userfaultfd	= {flags
-	 -> (syscall(Sysuserfaultfd) : int64)
+	 -> (syscall(Sysuserfaultfd, a(flags)) : int64)
 }
 const pselect6	= {_a0, _a1, _a2, _a3, _a4, _a5
-	 -> (syscall(Syspselect6, a(_a1), a(_a2), a(_a3), a(_a4), a(_a5)) : int64)
+	 -> (syscall(Syspselect6, a(_a0), a(_a1), a(_a2), a(_a3), a(_a4), a(_a5)) : int64)
 }
 const ppoll	= {_a0, int, _a2, _a3, _a4
-	 -> (syscall(Sysppoll, a(int), a(_a2), a(_a3), a(_a4)) : int64)
+	 -> (syscall(Sysppoll, a(_a0), a(int), a(_a2), a(_a3), a(_a4)) : int64)
 }
 const fanotify_init	= {flags, event_f_flags
-	 -> (syscall(Sysfanotify_init, a(event_f_flags)) : int64)
+	 -> (syscall(Sysfanotify_init, a(flags), a(event_f_flags)) : int64)
 }
 const fanotify_mark	= {fanotify_fd, flags, mask, fd, pathname
-	 -> (syscall(Sysfanotify_mark, a(flags), a(mask), a(fd), a(pathname)) : int64)
+	 -> (syscall(Sysfanotify_mark, a(fanotify_fd), a(flags), a(mask), a(fd), a(pathname)) : int64)
 }
 const syncfs	= {fd
-	 -> (syscall(Syssyncfs) : int64)
+	 -> (syscall(Syssyncfs, a(fd)) : int64)
 }
 const vfork	= {
 	 -> (syscall(Sysvfork) : int64)
 }
 const perf_event_open	= {attr_uptr, pid, cpu, group_fd, flags
-	 -> (syscall(Sysperf_event_open, a(pid), a(cpu), a(group_fd), a(flags)) : int64)
+	 -> (syscall(Sysperf_event_open, a(attr_uptr), a(pid), a(cpu), a(group_fd), a(flags)) : int64)
 }
 const name_to_handle_at	= {dfd, name, handle, mnt_id, flag
-	 -> (syscall(Sysname_to_handle_at, a(name), a(handle), a(mnt_id), a(flag)) : int64)
+	 -> (syscall(Sysname_to_handle_at, a(dfd), a(name), a(handle), a(mnt_id), a(flag)) : int64)
 }
 const open_by_handle_at	= {mountdirfd, handle, flags
-	 -> (syscall(Sysopen_by_handle_at, a(handle), a(flags)) : int64)
+	 -> (syscall(Sysopen_by_handle_at, a(mountdirfd), a(handle), a(flags)) : int64)
 }
 const setns	= {fd, nstype
-	 -> (syscall(Syssetns, a(nstype)) : int64)
+	 -> (syscall(Syssetns, a(fd), a(nstype)) : int64)
 }
 const process_vm_readv	= {pid, lvec, liovcnt, rvec, riovcnt, flags
-	 -> (syscall(Sysprocess_vm_readv, a(lvec), a(liovcnt), a(rvec), a(riovcnt), a(flags)) : int64)
+	 -> (syscall(Sysprocess_vm_readv, a(pid), a(lvec), a(liovcnt), a(rvec), a(riovcnt), a(flags)) : int64)
 }
 const process_vm_writev	= {pid, lvec, liovcnt, rvec, riovcnt, flags
-	 -> (syscall(Sysprocess_vm_writev, a(lvec), a(liovcnt), a(rvec), a(riovcnt), a(flags)) : int64)
+	 -> (syscall(Sysprocess_vm_writev, a(pid), a(lvec), a(liovcnt), a(rvec), a(riovcnt), a(flags)) : int64)
 }
 const kcmp	= {pid1, pid2, kind, idx1, idx2
-	 -> (syscall(Syskcmp, a(pid2), a(kind), a(idx1), a(idx2)) : int64)
+	 -> (syscall(Syskcmp, a(pid1), a(pid2), a(kind), a(idx1), a(idx2)) : int64)
 }
 const finit_module	= {fd, uargs, flags
-	 -> (syscall(Sysfinit_module, a(uargs), a(flags)) : int64)
+	 -> (syscall(Sysfinit_module, a(fd), a(uargs), a(flags)) : int64)
 }
 const seccomp	= {op, flags, uargs
-	 -> (syscall(Sysseccomp, a(flags), a(uargs)) : int64)
+	 -> (syscall(Sysseccomp, a(op), a(flags), a(uargs)) : int64)
 }
 const getrandom	= {buf, count, flags
-	 -> (syscall(Sysgetrandom, a(count), a(flags)) : int64)
+	 -> (syscall(Sysgetrandom, a(buf), a(count), a(flags)) : int64)
 }
 const bpf	= {cmd, attr, size
-	 -> (syscall(Sysbpf, a(attr), a(size)) : int64)
+	 -> (syscall(Sysbpf, a(cmd), a(attr), a(size)) : int64)
 }
 const execveat	= {dfd, filename, argv, envp, flags
-	 -> (syscall(Sysexecveat, a(filename), a(argv), a(envp), a(flags)) : int64)
+	 -> (syscall(Sysexecveat, a(dfd), a(filename), a(argv), a(envp), a(flags)) : int64)
 }
 const membarrier	= {cmd, flags
-	 -> (syscall(Sysmembarrier, a(flags)) : int64)
+	 -> (syscall(Sysmembarrier, a(cmd), a(flags)) : int64)
 }
 const copy_file_range	= {fd_in, off_in, fd_out, off_out, len, flags
-	 -> (syscall(Syscopy_file_range, a(off_in), a(fd_out), a(off_out), a(len), a(flags)) : int64)
+	 -> (syscall(Syscopy_file_range, a(fd_in), a(off_in), a(fd_out), a(off_out), a(len), a(flags)) : int64)
 }
 const mlock2	= {start, len, flags
-	 -> (syscall(Sysmlock2, a(len), a(flags)) : int64)
+	 -> (syscall(Sysmlock2, a(start), a(len), a(flags)) : int64)
 }
 const pkey_mprotect	= {start, len, prot, pkey
-	 -> (syscall(Syspkey_mprotect, a(len), a(prot), a(pkey)) : int64)
+	 -> (syscall(Syspkey_mprotect, a(start), a(len), a(prot), a(pkey)) : int64)
 }
 const pkey_alloc	= {flags, init_val
-	 -> (syscall(Syspkey_alloc, a(init_val)) : int64)
+	 -> (syscall(Syspkey_alloc, a(flags), a(init_val)) : int64)
 }
 const pkey_free	= {pkey
-	 -> (syscall(Syspkey_free) : int64)
+	 -> (syscall(Syspkey_free, a(pkey)) : int64)
 }
