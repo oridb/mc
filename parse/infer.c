@@ -353,6 +353,7 @@ occurs_rec(Type *sub, Bitset *bs)
 {
 	size_t i;
 
+	sub = tf(sub);
 	if (bshas(bs, sub->tid))
 		return 1;
 	bsput(bs, sub->tid);
@@ -390,8 +391,9 @@ occursin(Type *a, Type *b)
 	int r;
 
 	bs = mkbs();
-	bsput(bs, b->tid);
-	r = occurs_rec(a, bs);
+	a = tf(a);
+	bsput(bs, a->tid);
+	r = occurs_rec(b, bs);
 	bsfree(bs);
 	return r;
 }
