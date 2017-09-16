@@ -53,7 +53,7 @@ const main = {
 	str = "match against this!"
 	match regex.compile(".*")
 	| `std.Ok r:	re = r
-	| `std.Fail m:	std.fatal("couldn't compile regex: {}\n", m)
+	| `std.Err m:	std.fatal("couldn't compile regex: {}\n", m)
 	;;
 	match regex.exec(re, str)
 	| `std.Some _:  std.put("regex matched\n")
