@@ -167,17 +167,18 @@ Space separator unicode property
         use regex
 
         const main = {
-            match regex.compile(pat)
             var i
-            | `std.Success re:
+
+            match regex.compile(pat)
+            | `std.Ok re:
                     match regex.exec(re, text)
                     | `std.Some matches:
                             for i = 0; i < matches.len; i++
-                                std.put("Match %i: %s\n", i, match[i])
+                                std.put("Match {}: {}\n", i, matches[i])
                             ;;
                     | `std.None: std.put("Text did not match\n")
                     ;;
-            | `std.Failure err:
+            | `std.Err err:
                     std.put("failed to compile regex")
             ;;
         }
