@@ -13,9 +13,9 @@ const mkloopcheck = {cwd
 	-> (void : loopcheck)
 }
 
-const freeloopcheck = {l, l
+const freeloopcheck = {l
 }
 
-const looped = {p
+const looped = {l, p
 	-> false
 }
