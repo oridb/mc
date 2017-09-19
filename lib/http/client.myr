@@ -149,7 +149,7 @@ const request = {s, method, r, data
 	match data
 	| `std.None:	/* nothing to do */
 	| `std.Some d:
-		ioput(s, d)
+		iowrite(s, d)
 		ioput(s, "\r\n")
 	;;
 	ioflush(s)

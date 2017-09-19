@@ -55,15 +55,15 @@ const respond = {srv, s, resp
 	var sb
 
 	sb = std.mksb()
-	bio.put(s.f, "HTTP/1.1 {} {}\r\n", resp.status, statusstr(resp.status))
-	bio.put(s.f, "Content-Length: {}\r\n", resp.body.len)
-	bio.put(s.f, "Encoding: {}\r\n", resp.enc)
+	ioput(s, "HTTP/1.1 {} {}\r\n", resp.status, statusstr(resp.status))
+	ioput(s, "Content-Length: {}\r\n", resp.body.len)
+	ioput(s, "Encoding: {}\r\n", resp.enc)
 	for (k, v) : resp.hdrs
-		bio.put(s.f, "{}: {}\r\n", k, v)
+		ioput(s, "{}: {}\r\n", k, v)
 	;;
-	bio.put(s.f, "\r\n")
-	bio.write(s.f, resp.body)
-	bio.flush(s.f)
+	ioput(s, "\r\n")
+	iowrite(s, resp.body)
+	ioflush(s)
 }
 
 const statusstr = {st

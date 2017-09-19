@@ -9,6 +9,7 @@ pkg http =
 	const freesession	: (s : session# -> void)
 
 	pkglocal const ioput	: (s : session#, fmt : byte[:], args : ... -> bool)
+	pkglocal const iowrite	: (s : session#, buf : byte[:] -> bool)
 	pkglocal const ioflush	: (s : session# -> void)
 ;;
 
@@ -57,6 +58,18 @@ const ioput = {s, fmt, args
 	;;
 	ap = std.vastart(&args)
 	match bio.putv(s.f, fmt, &ap)
+	| `bio.Ok _:	/* nothing */
+	| `bio.Err _:	s.err = true
+	| `bio.Eof:	s.err = true
+	;;
+	-> s.err
+}
+
+const iowrite = {s, buf
+	if s.err
+		-> false
+	;;
+	match bio.write(s.f, buf)
 	| `bio.Ok _:	/* nothing */
 	| `bio.Err _:	s.err = true
 	| `bio.Eof:	s.err = true
