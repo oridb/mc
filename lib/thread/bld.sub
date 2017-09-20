@@ -8,16 +8,17 @@ lib thread =
 
 	# linux impl of basic thread primitives
 	#condvar+linux.myr
-	mutex+linux.myr
-	spawn+linux.myr
 	exit+linux-x64.s
+	mutex+linux.myr
+	ncpu+linux.myr
+	spawn+linux.myr
 
 	# freebsd impl of thread primitives
 	#condvar+freebsd.myr
-	mutex+freebsd.myr
-	spawn+freebsd.myr
-	ncpu+freebsd.myr
 	exit+freebsd-x64.s
+	mutex+freebsd.myr
+	ncpu+freebsd.myr
+	spawn+freebsd.myr
 
 	# netbsd impl of thread primitives
 	#condvar+netbsd.myr
@@ -33,14 +34,14 @@ lib thread =
 
 	# 9front impl of thread primitives
 	#condvar+plan9.myr
-	mutex+plan9.myr
-	spawn+plan9.myr
-	ncpu+plan9.myr
 	atomic-impl+plan9-x64.s
+	mutex+plan9.myr
+	ncpu+plan9.myr
+	spawn+plan9.myr
 
 	# openbsd impl of thread primitives
-	spawn+openbsd.myr
 	exit+openbsd-x64.s
+	spawn+openbsd.myr
 
 	atomic-impl+x64.s
 	atomic.myr
