@@ -1,0 +1,30 @@
+use std
+use sys
+
+pkg thread =
+	const ncpu	: (-> int)
+;;
+
+const ncpu = {
+	var cpubuf : uint64[4]
+	var n
+
+	sys.sched_getaffinity(sys.getpid(), sizeof(uint64[4]), (&cpubuf : uint64#))
+	n = 0
+	for b : cpubuf[:]
+		if b != 0
+			n += count(b)
+		;;
+	;;
+	-> n
+}
+
+const count = {b
+	var n = 0
+	for var i = 0; i < 8*sizeof(uint64); i++
+		if b & (1<<i) != 0
+			n++
+		;;
+	;;
+	-> n
+}
