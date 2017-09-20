@@ -33,6 +33,20 @@ sys$syscall:
 	addq $16,%rsp
 	ret
 
+.globl sys$__netbsd_pipe
+sys$__netbsd_pipe:
+	movq $0x2a,%rax
+	syscall
+
+	jae .pipesuccess
+	negq %rax
+
+.pipesuccess:
+	movl %eax,(%rdi)
+	movl %edx,4(%rdi)
+	xorq %rax,%rax
+	ret
+
 /* __tfork_thread(tfp : tforkparams#, sz : size, fn : void#, arg : void#-> tid) */
 .globl sys$__tfork_thread
 sys$__tfork_thread:
