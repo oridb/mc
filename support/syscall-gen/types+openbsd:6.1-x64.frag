@@ -47,7 +47,6 @@ type timeval = struct
 	usec	: uint64
 ;;
 
-
 type pollfd = struct
 	fd      : fd
 	events  : uint16

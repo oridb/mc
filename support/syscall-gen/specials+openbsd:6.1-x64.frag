@@ -154,7 +154,7 @@ const mkdir	= {path, mode;		-> (syscall(Sysmkdir, cstring(path), a(mode)) : int6
 generic ioctl	= {fd, req, arg;	-> (syscall(Sysioctl, a(fd), a(req), a(arg)) : int64)}
 const chdir	= {dir;	-> syscall(Syschdir, cstring(dir))}
 const __getcwd	= {buf;	-> syscall(Sys__getcwd, a(buf), a(buf.len))}
-const getdents	= {fd, buf;		-> (syscall(Sysgetdents, a(buf), a(buf.len)) : int64)}
+const getdents	= {fd, buf;		-> (syscall(Sysgetdents, a(fd), a(buf), a(buf.len)) : int64)}
 
 /* signals */
 const sigaction	= {sig, act, oact;	-> (syscall(Syssigaction, a(sig), a(act), a(oact)) : int)}
