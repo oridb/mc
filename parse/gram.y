@@ -84,7 +84,6 @@ static void setupinit(Node *n);
 
 %token<tok> Ttype	/* type */
 %token<tok> Tfor	/* for */
-%token<tok> Tin		/* in */
 %token<tok> Twhile	/* while */
 %token<tok> Tif		/* if */
 %token<tok> Telse	/* else */
@@ -946,10 +945,6 @@ continue   : Tcontinue
 
 forstmt : Tfor optexprln loopcond optexprln block
 	{$$ = mkloopstmt($1->loc, $2, $3, $4, $5);}
-	| Tfor expr Tin exprln block {
-		$$ = mkiterstmt($1->loc, $2, $4, $5);
-		fprintf(stderr, "%s:%d: deprecated for syntax. use ':' to replace 'in'\n", fname($1->loc), lnum($1->loc));
-	}
 	| Tfor expr Tcolon exprln block
 	{$$ = mkiterstmt($1->loc, $2, $4, $5);}
 	| Tfor decl Tendln loopcond optexprln block {
