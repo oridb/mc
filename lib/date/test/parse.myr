@@ -37,6 +37,15 @@ const main = {
 	| `std.Err m:
 		std.fatal("Failed to parse date: {}", m)
 	;;
+
+	/*Names*/
+	match date.parsefmt("%a, %d %b %Y %H:%M:%S %z", "Thu, 21 Sep 2017 13:55:05 -0400")
+	| `std.Ok d:
+		std.assert(d.actual == 1506016505 * 1_000_000, "wrong timestamp")
+		eq(std.bfmt(buf[:], "{D}", d), "2017-9-21 13:55:05 -0400")
+	| `std.Err m:
+		std.fatal("Failed to parse date: {}", m)
+	;;
 }
 
 const eq = {actual, expected
