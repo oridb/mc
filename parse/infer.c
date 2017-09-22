@@ -895,11 +895,13 @@ tryconstrain(Type *base, Trait *tr)
 				if (tymatchrank(tm->filter[i], ty) >= 0)
 					return 1;
 			}
-			if (!tm->sub[ty->type])
-				break;
 			assert(ty->nsub == 1);
-			tm = tm->sub[ty->type];
+			if (!ty->sub)
+				break;
 			ty = ty->sub[0];
+			tm = tm->sub[ty->type];
+			if (!tm)
+				break;
 		}
 		if (base->type != Tyname)
 			break;
@@ -2813,7 +2815,7 @@ addtraittab(Traitmap *m, Trait *tr, Type *ty)
 	size_t i;
 
 	if (!m->sub[ty->type])
-		m = mktraitmap();
+		m->sub[ty->type] = mktraitmap();
 	mm = m->sub[ty->type];
 	switch (ty->type) {
 	case Tygeneric:

@@ -1,0 +1,13 @@
+use std
+use regex
+
+impl disposable regex.regex# =
+	__dispose__ = {r
+		regex.free(r)
+	}
+;;
+
+const main = {
+	var auto r : regex.regex#
+	r = std.try(regex.compile(".*"))
+}
