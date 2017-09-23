@@ -895,8 +895,7 @@ tryconstrain(Type *base, Trait *tr)
 				if (tymatchrank(tm->filter[i], ty) >= 0)
 					return 1;
 			}
-			assert(ty->nsub == 1);
-			if (!ty->sub)
+			if (!ty->sub || ty->nsub != 1)
 				break;
 			ty = ty->sub[0];
 			tm = tm->sub[ty->type];
