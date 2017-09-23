@@ -597,6 +597,10 @@ pkg sys =
 	;;
 	
 
+	const Futexwait		: int = 1
+	const Futexwake		: int = 2
+	const Futexrequeue	: int = 3
+
 	const Sysexit			: scno = 1
 	const Sysfork			: scno = 2
 	const Sysread			: scno = 3

@@ -21,9 +21,9 @@ set -x
 	as -g -o lib/sys/syscall.o lib/sys/syscall+openbsd-x64.s
 	$pwd/6/6m lib/sys/ifreq+openbsd.myr
 	$pwd/6/6m lib/sys/systypes.myr
-	$pwd/6/6m lib/sys/sys+openbsd-x64.myr
 	as -g -o lib/sys/util.o lib/sys/util+posixy-x64.s
 	$pwd/6/6m lib/sys/syserrno+openbsd.myr
+	$pwd/6/6m lib/sys/sys+openbsd:6.1-x64.myr
 	ar -rcs lib/sys/libsys.a lib/sys/sys.o lib/sys/syserrno.o lib/sys/util.o lib/sys/systypes.o lib/sys/ifreq.o lib/sys/syscall.o
 	$pwd/muse/muse -o lib/sys/libsys.use -p sys lib/sys/sys.use lib/sys/syserrno.use lib/sys/systypes.use lib/sys/ifreq.use
 	$pwd/6/6m -I . -I lib/sys lib/std/errno.myr

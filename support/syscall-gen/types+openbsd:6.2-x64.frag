@@ -17,10 +17,15 @@ type sockfam	= uint8	/* socket family */
 type filemode	= uint32
 type filetype	= uint8
 type fcntlcmd	= int64
-type signo	= int32
+ype signo	= int32
 type sigflags	= int32
 type sigset	= uint32
 type msg	= void
+
+const Futexwait		: int = 1
+const Futexwake		: int = 2
+const Futexrequeue	: int = 3
+
 
 type clock = union
 	`Clockrealtime
