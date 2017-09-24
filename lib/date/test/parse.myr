@@ -24,7 +24,7 @@ const main = {
 	match date.parsefmtz("%Y-%m-%d %H:%M:%S %z", "1969-12-31 16:00:00 -0800", "")
 	| `std.Ok d:
 		std.assert(d.actual == 0, "got wrong date")
-		eq(std.bfmt(buf[:], "{D}", d), "1970-1-01 00:00:00 +0000")
+		eq(std.bfmt(buf[:], "{D}", d), "1970-01-01 00:00:00 +0000")
 	| `std.Err m:
 		std.fatal("failed to parse date: {}\n", m)
 	;;
@@ -42,7 +42,7 @@ const main = {
 	match date.parsefmt("%a, %d %b %Y %H:%M:%S %z", "Thu, 21 Sep 2017 13:55:05 -0400")
 	| `std.Ok d:
 		std.assert(d.actual == 1506016505 * 1_000_000, "wrong timestamp")
-		eq(std.bfmt(buf[:], "{D}", d), "2017-9-21 13:55:05 -0400")
+		eq(std.bfmt(buf[:], "{D}", d), "2017-09-21 13:55:05 -0400")
 	| `std.Err m:
 		std.fatal("Failed to parse date: {}", m)
 	;;
