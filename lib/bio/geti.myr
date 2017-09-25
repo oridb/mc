@@ -21,14 +21,11 @@ pkg bio =
   little endian format
 */
 generic getle = {f, n -> std.result(@a::(numeric,integral), err)
-	var v, i
-
-	v = 0
 	match ensureread(f, n)
-	| `std.Err e:
-		-> `std.Err e
+	| `std.Err e :	-> `std.Err e
 	| `std.Ok _:
-		for i = 0; i < n; i++
+		var v = 0
+		for var i = 0; i < n; i++
 			v |= (f.rbuf[f.rstart++] : uint64) << (8*(i : uint64))
 		;;
 		-> `std.Ok (v : @a::(numeric,integral))
@@ -40,14 +37,11 @@ generic getle = {f, n -> std.result(@a::(numeric,integral), err)
   big endian format
 */
 generic getbe = {f, n -> std.result(@a::(numeric,integral), err)
-	var v, i
-
-	v = 0
 	match ensureread(f, n)
-	| `std.Err e:
-		-> `std.Err e
+	| `std.Err e :	-> `std.Err e
 	| `std.Ok _:
-		for i = 0; i < n; i++
+		var v = 0
+		for var i = 0; i < n; i++
 			v <<= 8
 			v |= (f.rbuf[f.rstart++] : uint64)
 		;;
