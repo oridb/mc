@@ -30,7 +30,7 @@ pkg std =
 
 const Zslab	= (0 : slab#)
 const Zchunk	= (0 : chunk#)
-const Slabsz 	= 4*MiB
+const Slabsz 	= 512*KiB
 const Cachemax	= 4
 const Bktmax	= 128*KiB	/* a balance between wasted space and falling back to mmap */
 const Pagesz	= 4*KiB
