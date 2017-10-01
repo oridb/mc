@@ -53,7 +53,7 @@ const writeini = {f, ini
 
 		val = std.htgetv(ini.elts, (sect, key), "")
 		match bio.put(f, "\t{} = {}\n", key, val)
-		| `bio.Err e: -> false
+		| `std.Err e: -> false
 		| _:
 		;;
 	;;

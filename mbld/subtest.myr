@@ -29,9 +29,11 @@ const showsub = {b, cmd, fd, logfd, failed
 	log = bio.mkfile(logfd, bio.Wr)
 	res = `std.None
 	match bio.readln(f)
-	| `bio.Err e:	std.fatal("error reading subfile: {}\n", e)
-	| `bio.Eof:	-> `std.None
-	| `bio.Ok ln:
+	| `std.Err `bio.Eof:
+		-> `std.None
+	| `std.Err e:
+		std.fatal("error reading subfile: {}\n", e)
+	| `std.Ok ln:
 		match testplan(ln)
 		| `std.None:
 			bio.write(log, ln)

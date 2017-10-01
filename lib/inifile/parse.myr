@@ -54,13 +54,13 @@ const loadf = {fd
 	f = bio.mkfile(fd, bio.Rd)
 	while true
 		match bio.readln(f)
-		| `bio.Eof:
+		| `std.Err `bio.Eof:
 			break
-		| `bio.Ok ln:
+		| `std.Ok ln:
 			if !parseline(p, ini, ln)
 				break
 			;;
-		| `bio.Err e:
+		| `std.Err e:
 			p.err = `std.Some `Fileerr
 			break
 		;;

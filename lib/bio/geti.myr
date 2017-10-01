@@ -4,34 +4,34 @@ use "bio"
 
 pkg bio =
 	/* unsigned big endian */
-	generic getbe8	: (f : file# -> status(@a::(numeric,integral)))
-	generic getbe16	: (f : file# -> status(@a::(numeric,integral)))
-	generic getbe32	: (f : file# -> status(@a::(numeric,integral)))
-	generic getbe64	: (f : file# -> status(@a::(numeric,integral)))
+	generic getbe8	: (f : file# -> std.result(@a::(numeric,integral), err))
+	generic getbe16	: (f : file# -> std.result(@a::(numeric,integral), err))
+	generic getbe32	: (f : file# -> std.result(@a::(numeric,integral), err))
+	generic getbe64	: (f : file# -> std.result(@a::(numeric,integral), err))
 
 	/* signed big endian */
-	generic getle8	: (f : file# -> status(@a::(numeric,integral)))
-	generic getle16	: (f : file# -> status(@a::(numeric,integral)))
-	generic getle32	: (f : file# -> status(@a::(numeric,integral)))
-	generic getle64	: (f : file# -> status(@a::(numeric,integral)))
+	generic getle8	: (f : file# -> std.result(@a::(numeric,integral), err))
+	generic getle16	: (f : file# -> std.result(@a::(numeric,integral), err))
+	generic getle32	: (f : file# -> std.result(@a::(numeric,integral), err))
+	generic getle64	: (f : file# -> std.result(@a::(numeric,integral), err))
 ;;
 
 /*
   reads a single integer-like value to the output stream, in
   little endian format
 */
-generic getle = {f, n -> status(@a::(numeric,integral))
+generic getle = {f, n -> std.result(@a::(numeric,integral), err)
 	var v, i
 
 	v = 0
 	match ensureread(f, n)
-	| `Eof:	-> `Eof
-	| `Err e :	-> `Err e
-	| `Ok _:
+	| `std.Err e:
+		-> `std.Err e
+	| `std.Ok _:
 		for i = 0; i < n; i++
 			v |= (f.rbuf[f.rstart++] : uint64) << (8*(i : uint64))
 		;;
-		-> `Ok (v : @a::(numeric,integral))
+		-> `std.Ok (v : @a::(numeric,integral))
 	;;
 }
 
@@ -39,19 +39,19 @@ generic getle = {f, n -> status(@a::(numeric,integral))
   reads a single integer-like value to the output stream, in
   big endian format
 */
-generic getbe = {f, n -> status(@a::(numeric,integral))
+generic getbe = {f, n -> std.result(@a::(numeric,integral), err)
 	var v, i
 
 	v = 0
 	match ensureread(f, n)
-	| `Eof:	-> `Eof
-	| `Err e :	-> `Err e
-	| `Ok _:
+	| `std.Err e:
+		-> `std.Err e
+	| `std.Ok _:
 		for i = 0; i < n; i++
 			v <<= 8
 			v |= (f.rbuf[f.rstart++] : uint64)
 		;;
-		-> `Ok (v : @a::(numeric,integral))
+		-> `std.Ok (v : @a::(numeric,integral))
 	;;
 }
 

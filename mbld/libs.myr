@@ -55,16 +55,14 @@ const scrapelib = {b, targ, lib, incs
 
 	(f, dir) = openlib(lib, targ, incs)
 	match bio.getc(f)
-	| `bio.Ok 'U':	/* ok */
-	| `bio.Ok _:	std.fput(1, "{}/{}: not a usefile\n", dir, lib)
-	| `bio.Err e:	std.fatal("{}/{}: error reading: {}\n", dir, lib, e)
-	| `bio.Eof:	std.fatal("{}/{}: truncated\n", dir, lib)
+	| `std.Ok 'U':	/* ok */
+	| `std.Ok _:	std.fput(1, "{}/{}: not a usefile\n", dir, lib)
+	| `std.Err e:	std.fatal("{}/{}: error reading: {}\n", dir, lib, e)
 	;;
 	match bio.getbe32(f)
-	| `bio.Ok Abiversion:	/* nothing: version matches. */
-	| `bio.Ok v:	std.fput(1, "{}/{}: mismatched abi {}\n", dir, lib, v)
-	| `bio.Err e:	std.fatal("{}/{}: error reading: {}\n", dir, lib, e)
-	| `bio.Eof:	std.fatal("{}/{}: truncated\n", dir, lib)
+	| `std.Ok Abiversion:	/* nothing: version matches. */
+	| `std.Ok v:	std.fput(1, "{}/{}: mismatched abi {}\n", dir, lib, v)
+	| `std.Err e:	std.fatal("{}/{}: error reading: {}\n", dir, lib, e)
 	;;
 	std.slfree(rdstr(f))
 
@@ -72,10 +70,10 @@ const scrapelib = {b, targ, lib, incs
 	dyndep = [][:]
 	while true
 		match bio.getc(f)
-		| `bio.Ok 'L':	std.slpush(&dep, rdstr(f))
-		| `bio.Ok 'X':	std.slpush(&dyndep, rdstr(f))
-		| `bio.Err e:	std.fatal("{}: error reading {}", lib, e)
-		| _:		break;
+		| `std.Ok 'L':	std.slpush(&dep, rdstr(f))
+		| `std.Ok 'X':	std.slpush(&dyndep, rdstr(f))
+		| `std.Err e:	std.fatal("{}: error reading {}\n", lib, e)
+		| _:		break
 		;;
 	;;
 	bio.close(f)
@@ -179,11 +177,10 @@ const rdstr = {f -> byte[:]
 	var sl
 
 	match bio.getbe32(f)
-	| `bio.Ok l:
+	| `std.Ok l:
 		len = l
 		sl = std.slalloc(len)
-	| `bio.Eof:	std.fatal("end of file while reading string")
-	| `bio.Err e:	std.fatal("error while reading string: {}", e)
+	| `std.Err e:	std.fatal("error while reading string: {}", e)
 	;;
 	bio.read(f, sl)
 	-> sl

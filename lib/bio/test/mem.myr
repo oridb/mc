@@ -7,21 +7,21 @@ const main = {
 
 	f = bio.mkmem("hello world")
 	match bio.read(f, buf[:3])
-	| `bio.Ok "hel":
+	| `std.Ok "hel":
 		/* ok */
 	| _:
 		std.fatal("invalid read from memfile")
 	;;
 
 	match bio.read(f, buf[:])
-	| `bio.Ok "lo world":
+	| `std.Ok "lo world":
 		/* ok */
 	| _:
 		std.fatal("invalid read from memfile")
 	;;
 
 	match bio.read(f, buf[:])
-	| `bio.Eof:
+	| `std.Err `bio.Eof:
 		/* ok */
 	| _:
 		std.fatal("expected eof in memfile")

@@ -58,9 +58,8 @@ const ioput = {s, fmt, args
 	;;
 	ap = std.vastart(&args)
 	match bio.putv(s.f, fmt, &ap)
-	| `bio.Ok _:	/* nothing */
-	| `bio.Err _:	s.err = true
-	| `bio.Eof:	s.err = true
+	| `std.Ok _:	/* nothing */
+	| `std.Err _:	s.err = true
 	;;
 	-> s.err
 }
@@ -70,9 +69,8 @@ const iowrite = {s, buf
 		-> false
 	;;
 	match bio.write(s.f, buf)
-	| `bio.Ok _:	/* nothing */
-	| `bio.Err _:	s.err = true
-	| `bio.Eof:	s.err = true
+	| `std.Ok _:	/* nothing */
+	| `std.Err _:	s.err = true
 	;;
 	-> s.err
 }

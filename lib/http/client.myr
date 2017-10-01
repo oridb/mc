@@ -180,9 +180,8 @@ const readlenbody = {s, r
 
 	buf = std.slalloc(r.len)
 	match bio.read(s.f, buf)
-	| `bio.Err e:	goto shortread
-	| `bio.Eof:	goto shortread
-	| `bio.Ok rd:
+	| `std.Err e:	goto shortread
+	| `std.Ok rd:
 		if rd.len != r.len
 			goto shortread
 		;;
@@ -215,13 +214,10 @@ const readchunkedbody = {s, r
 		| `std.Ok sz:
 			std.slgrow(&buf, buf.len + sz)
 			match bio.read(s.f, buf[len:len + sz])
-			| `bio.Eof:
-				std.slfree(buf)
-				-> `std.Err `Eshort
-			| `bio.Err e:
+			| `std.Err e:
 				std.slfree(buf)
 				-> `std.Err `Econn
-			| `bio.Ok str:
+			| `std.Ok str:
 				if str.len != sz
 					std.slfree(buf)
 					-> `std.Err `Eshort
@@ -243,9 +239,8 @@ const checkendln = {s
 	var r
 
 	match bio.readln(s.f)
-	| `bio.Err e:	r = `std.Err `Econn
-	| `bio.Eof:	r = `std.Err `Econn
-	| `bio.Ok crlf:
+	| `std.Err e:	r = `std.Err `Econn
+	| `std.Ok crlf:
 		if std.strstrip(crlf).len == 0
 			r = `std.Ok void
 		else

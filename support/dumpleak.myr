@@ -50,11 +50,11 @@ const main = {args
 const dump = {path, f, stats
 	while true
 		match bio.getle64(f)
-		| `bio.Ok 0:	tracealloc(path, f, stats)
-		| `bio.Ok 1:	tracefree(path, f, stats)
-		| `bio.Eof:	break
-		| `bio.Ok wat:	std.fatal("unknown action type {x}\n", wat)
-		| `bio.Err e:	std.fatal("failed to read {}: {}\n", path, e)
+		| `std.Err `bio.Eof:	break
+		| `std.Ok 0:		tracealloc(path, f, stats)
+		| `std.Ok 1:		tracefree(path, f, stats)
+		| `std.Ok wat:		std.fatal("unknown action type {x}\n", wat)
+		| `std.Err e:		std.fatal("failed to read {}: {}\n", path, e)
 		;;
 	;;
 	if !summary
@@ -116,7 +116,7 @@ const dumptrace = {tab
 
 const get64 = {path, f
 	match bio.getle64(f)
-	| `bio.Ok v:	-> v
+	| `std.Ok v:	-> v
 	| res:	std.fatal("failed to read {}: {}\n", path, res)
 	;;
 }

@@ -4,16 +4,16 @@ use "bio"
 
 pkg bio =
 	/* unsigned big endian */
-	generic putbe8	: (f : file#, v : @a::(numeric,integral) -> status(std.size))
-	generic putbe16	: (f : file#, v : @a::(numeric,integral) -> status(std.size))
-	generic putbe32	: (f : file#, v : @a::(numeric,integral) -> status(std.size))
-	generic putbe64	: (f : file#, v : @a::(numeric,integral) -> status(std.size))
+	generic putbe8	: (f : file#, v : @a::(numeric,integral) -> std.result(std.size, err))
+	generic putbe16	: (f : file#, v : @a::(numeric,integral) -> std.result(std.size, err))
+	generic putbe32	: (f : file#, v : @a::(numeric,integral) -> std.result(std.size, err))
+	generic putbe64	: (f : file#, v : @a::(numeric,integral) -> std.result(std.size, err))
 
 	/* unsigned little endian */
-	generic putle8	: (f : file#, v : @a::(numeric,integral) -> status(std.size))
-	generic putle16	: (f : file#, v : @a::(numeric,integral) -> status(std.size))
-	generic putle32	: (f : file#, v : @a::(numeric,integral) -> status(std.size))
-	generic putle64	: (f : file#, v : @a::(numeric,integral) -> status(std.size))
+	generic putle8	: (f : file#, v : @a::(numeric,integral) -> std.result(std.size, err))
+	generic putle16	: (f : file#, v : @a::(numeric,integral) -> std.result(std.size, err))
+	generic putle32	: (f : file#, v : @a::(numeric,integral) -> std.result(std.size, err))
+	generic putle64	: (f : file#, v : @a::(numeric,integral) -> std.result(std.size, err))
 ;;
 
 generic putbe8  = {f, v; -> putbe(f, (v : uint64), 1)}
@@ -30,9 +30,9 @@ const putle = {f, v, n
 	var buf : byte[8]
 
 	match ensurewrite(f, n)
-	| `Eof:	-> `Eof
-	| `Err e:	-> `Err e
-	| `Ok _:
+	| `std.Err e:
+		-> `std.Err e
+	| `std.Ok _:
 		buf[0] = ((v >> 0) & 0xff : byte)
 		buf[1] = ((v >> 8) & 0xff : byte)
 		buf[2] = ((v >> 16) & 0xff : byte)
@@ -49,9 +49,9 @@ const putbe = {f, v, n
 	var buf : byte[8]
 
 	match ensurewrite(f, n)
-	| `Eof:	-> `Eof
-	| `Err e:	-> `Err e
-	| `Ok _:
+	| `std.Err e:
+		-> `std.Err e
+	| `std.Ok _:
 		buf[0] = ((v >> 56) & 0xff : byte)
 		buf[1] = ((v >> 48) & 0xff : byte)
 		buf[2] = ((v >> 40) & 0xff : byte)

@@ -23,13 +23,10 @@ const parsereq = {s
 	])
 
 	match bio.readln(s.f)
-	| `bio.Err e:
+	| `std.Err e:
 		err = `Econn
 		goto error
-	| `bio.Eof:	
-		err = `Econn
-		goto error
-	| `bio.Ok ln:
+	| `std.Ok ln:
 		match parsereqstatus(s, r, ln)
 		| `std.Ok void:
 		| `std.Err e:
@@ -42,13 +39,10 @@ const parsereq = {s
 
 	while true
 		match bio.readln(s.f)
-		| `bio.Err e:	
+		| `std.Err e:	
 			err = `Econn
 			goto error
-		| `bio.Eof:
-			err = `Econn
-			goto error
-		| `bio.Ok ln:
+		| `std.Ok ln:
 			if std.strstrip(ln).len == 0
 				std.slfree(ln)
 				break
@@ -70,9 +64,8 @@ const parsereq = {s
 
 const parseresp = {s, r : resp#
 	match bio.readln(s.f)
-	| `bio.Err e:	r.err = `std.Some `Econn
-	| `bio.Eof:	r.err = `std.Some `Econn
-	| `bio.Ok ln:
+	| `std.Err _:	r.err = `std.Some `Econn
+	| `std.Ok ln:
 		if !parserespstatus(s, r, ln)
 			std.slfree(ln)
 			-> false
@@ -82,9 +75,8 @@ const parseresp = {s, r : resp#
 
 	while true
 		match bio.readln(s.f)
-		| `bio.Err e:	r.err = `std.Some `Econn
-		| `bio.Eof:	r.err = `std.Some `Econn
-		| `bio.Ok ln:
+		| `std.Err e:	r.err = `std.Some `Econn
+		| `std.Ok ln:
 			if std.strstrip(ln).len == 0
 				std.slfree(ln)
 				break
@@ -203,9 +195,8 @@ const parsechunksz = {s
 	var ret, str
 
 	match bio.readln(s.f)
-	| `bio.Eof:	ret = `std.Err `Econn
-	| `bio.Err e:	ret = `std.Err `Econn
-	| `bio.Ok ln:
+	| `std.Err e:	ret = `std.Err `Econn
+	| `std.Ok ln:
 		str = ln
 		match parsenumber(&str, 16)
 		| `std.Some n:	ret = `std.Ok (n : std.size)
