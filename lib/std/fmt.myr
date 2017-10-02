@@ -481,11 +481,13 @@ const intparams = {params
 	]
 
 	opts = parseparams(params, [
+		("b", true),
 		("x", false),
 		("w", true),
 		("p", true)][:])
 	for o : opts
 		match o
+		| ("b", bas):	ip.base = getint(bas, "fmt: base must be integer")
 		| ("x", ""):	ip.base = 16
 		| ("w", wid):	ip.padto = getint(wid, "fmt: width must be integer")
 		| ("p", pad):	ip.padfill = decode(pad)
