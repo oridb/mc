@@ -78,10 +78,7 @@ const streq = {a, b
 }
 
 generic ptrhash = {p : @a#
-	var x
-
-	x = (&p : byte#)
-	-> siphash24(x[0:sizeof(@a#)], Seed)
+	-> inthash((p : intptr))
 }
 
 generic ptreq = {a, b
