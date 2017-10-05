@@ -415,6 +415,7 @@ needfreshenrec(Type *t, Bitset *visited)
 {
 	size_t i;
 
+	t = tysearch(t);
 	if (bshas(visited, t->tid))
 		return 0;
 	bsput(visited, t->tid);
@@ -486,7 +487,6 @@ tyresolve(Type *t)
 
 	if (t->resolved)
 		return;
-
 	/* type resolution should never throw errors about non-generic
 	 * showing up within a generic type, so we push and pop a generic
 	 * around resolution */
@@ -1269,7 +1269,6 @@ unifycall(Node *n)
 	Type *ft;
 
 	ft = type(n->expr.args[0]);
-
 	if (ft->type == Tyvar) {
 		/* the first arg is the function itself, so it shouldn't be counted */
 		ft = mktyfunc(n->loc, &n->expr.args[1], n->expr.nargs - 1, mktyvar(n->loc));
