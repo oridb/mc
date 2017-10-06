@@ -402,6 +402,9 @@ const checkloop = {g, n, visited, looped, stk
 
 const musecmd = {b, n, mt, mu
 	std.slpush(&n.cmd, std.sldup(opt_muse))
+	for o : opt_museflags
+		std.slpush(&n.cmd, o)
+	;;
 	std.slpush(&n.cmd, std.sldup("-o"))
 	std.slpush(&n.cmd, std.sldup(mu))
 	std.slpush(&n.cmd, std.sldup("-p"))
@@ -424,6 +427,9 @@ const arcmd = {b, n, mt, ar
 const linkcmd = {b, n, mt, bin, libs, dynlibs, istest
 	for c : config.Linkcmd
 		std.slpush(&n.cmd, std.sldup(c))
+	;;
+	for o : opt_ldflags
+		std.slpush(&n.cmd, o)
 	;;
 	std.slpush(&n.cmd, std.sldup(bin))
 	if mt.ldscript.len > 0
@@ -459,6 +465,9 @@ const linkcmd = {b, n, mt, bin, libs, dynlibs, istest
 
 const myrcmd = {b, n, mt, src, istest
 	std.slpush(&n.cmd, std.sldup(opt_mc))
+	for o : opt_mcflags
+		std.slpush(&n.cmd, o)
+	;;
 	if opt_objdir.len > 0
 		pushopt(&n.cmd, "-O", std.sldup(opt_objdir))
 	;;
