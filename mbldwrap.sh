@@ -18,7 +18,7 @@ if [ -f obj/mbld/mbld ]; then
 elif [ -f mbld/mbld ]; then
 	MBLD=mbld/mbld
 else
-	MBLD=`which mbld`
+	MBLD=$(command -v mbld)
 fi
 
 if [ -z "$MBLD" ]; then
