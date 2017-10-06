@@ -12,18 +12,17 @@ else
 	export MYR_MC=6m
 	export MYR_RT=`pwd`/rt/_myrrt.o
 fi
-BOOT="./mk/bootstrap/bootstrap+`uname -s`-`uname -m`.sh"
 
-MBLD=mbld
 if [ -f obj/mbld/mbld ]; then
 	MBLD=obj/mbld/mbld
 elif [ -f mbld/mbld ]; then
 	MBLD=mbld/mbld
+else
+	MBLD=`which mbld`
 fi
 
-bootstrap() {
-	($BOOT && mbld/mbld $@) || \
-		(echo "Unable to run mbld $@; have you build successfully"; exit 1)
-}
-
-$MBLD $@ || bootstrap $@
+if [ -z "$MBLD" ]; then
+	echo 'could not find mbld: did you run "make bootstrap"?'
+else
+	$MBLD $@
+fi

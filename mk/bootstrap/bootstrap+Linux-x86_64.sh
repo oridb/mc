@@ -116,7 +116,7 @@ set -x
 	ar -rcs lib/bio/libbio.a lib/bio/puti.o lib/bio/geti.o lib/bio/mem.o lib/bio/bio.o lib/bio/iter.o
 	$pwd/muse/muse -o lib/bio/libbio.use -p bio lib/bio/puti.use lib/bio/geti.use lib/bio/mem.use lib/bio/bio.use lib/bio/iter.use
 	$pwd/6/6m -I lib/sys -I lib/std lib/thread/spawn+linux.myr
-	$pwd/6/6m -I lib/sys -I lib/std lib/thread/ncpu.myr
+	$pwd/6/6m -I lib/sys -I lib/std lib/thread/ncpu+linux.myr
 	$pwd/6/6m -I lib/sys -I lib/std lib/thread/common.myr
 	$pwd/6/6m -I lib/sys -I lib/std lib/thread/atomic.myr
 	$pwd/6/6m -I lib/sys -I lib/std lib/thread/mutex+linux.myr

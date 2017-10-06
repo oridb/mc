@@ -22,6 +22,10 @@ bench:
 
 .PHONY: bootstrap
 bootstrap: buildmyr
+	./mk/bootstrap/bootstrap+`uname -s`-`uname -m`.sh
+
+.PHONY: genbootstrap
+genbootstrap: buildmyr
 	./genbootstrap.sh
 
 buildmyr: subdirs
