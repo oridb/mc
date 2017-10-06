@@ -33,7 +33,7 @@ struct Traitmap {
 static void infernode(Node **np, Type *ret, int *sawret);
 static void inferexpr(Node **np, Type *ret, int *sawret);
 static void inferdecl(Node *n);
-static int tryconstrain(Type *ty, Trait *tr);
+static int tryconstrain(Type *ty, Trait *tr, int update);
 
 static Type *tf(Type *t);
 
@@ -782,7 +782,7 @@ tymatchrank(Type *pat, Type *to)
 		if (!pat->trneed)
 			return 0;
 		for (i = 0; bsiter(pat->trneed, &i); i++)
-			if (!tryconstrain(to, traittab[i]))
+			if (!tryconstrain(to, traittab[i], 0))
 				return -1;
 		return 0;
 	} else if (pat->type == Tyvar) {
@@ -862,7 +862,7 @@ tymatchrank(Type *pat, Type *to)
 }
 
 static int
-tryconstrain(Type *base, Trait *tr)
+tryconstrain(Type *base, Trait *tr, int update)
 {
 	Traitmap *tm;
 	Bitset *bs;
@@ -879,7 +879,8 @@ tryconstrain(Type *base, Trait *tr)
 			if (ty->type == Tyvar) {
 				if (!ty->trneed)
 					ty->trneed = mkbs();
-				bsput(ty->trneed, tr->uid);
+				if (update)
+					bsput(ty->trneed, tr->uid);
 				return 1;
 			} 
 			if (bshas(tm->traits, tr->uid))
@@ -916,7 +917,7 @@ tryconstrain(Type *base, Trait *tr)
 static void
 constrain(Node *ctx, Type *base, Trait *tr)
 {
-	if (!tryconstrain(base, tr))
+	if (!tryconstrain(base, tr, 1))
 		fatal(ctx, "%s needs trait %s near %s", tystr(base), namestr(tr->name), ctxstr(ctx));
 }
 
