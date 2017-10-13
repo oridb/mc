@@ -24,7 +24,8 @@ const bywalk = {p
 	| `std.Err e:
 		-> [
 			.dirstk = [][:],
-			.curdir = [][:]
+			.curdir = [][:],
+			.loopck = mkloopcheck(p),
 		]
 	;;
 }
