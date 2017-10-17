@@ -374,7 +374,7 @@ const resolve = {b
 const edge = {g, n, e
 	match std.htget(g.gen, e)
 	| `std.None:
-		std.fatal("nothing satisfies {} for {}\n", e, n.lbl)
+		std.fatal("{}: missing build rule for {}\n", n.lbl, e)
 	| `std.Some d:	
 		std.slpush(&n.ndep, d)
 		std.slpush(&d.ngen, n)
