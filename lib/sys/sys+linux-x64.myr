@@ -10,6 +10,7 @@ pkg sys =
 	type intptr	= uint64	/* can hold any pointer losslessly */
 	type time	= int64		/* milliseconds since epoch */
 	type scno	= int64		/* syscall */
+	type ioctlno	= int64		/* ioctl */
 	
 	/* processes/threads */
 	type pid	= int	/* process id */
@@ -1177,6 +1178,49 @@ pkg sys =
 	const Syspkey_alloc		: scno = 330
 	const Syspkey_free		: scno = 331
 
+	const Tcsetaf		: ioctlno = 0x00005408
+	const Tcsbrk		: ioctlno = 0x00005409
+	const Tcxonc		: ioctlno = 0x0000540A
+	const Tcflsh		: ioctlno = 0x0000540B
+	const Tiocexcl		: ioctlno = 0x0000540C
+	const Tiocnxcl		: ioctlno = 0x0000540D
+	const Tiocsctty		: ioctlno = 0x0000540E
+	const Tiocgpgrp		: ioctlno = 0x0000540F
+	const Tiocspgrp		: ioctlno = 0x00005410
+	const Tiocoutq		: ioctlno = 0x00005411
+	const Tiocsti		: ioctlno = 0x00005412
+	const Tiocgwinsz	: ioctlno = 0x00005413
+	const Tiocswinsz	: ioctlno = 0x00005414
+	const Tiocmget		: ioctlno = 0x00005415
+	const Tiocmbis		: ioctlno = 0x00005416
+	const Tiocmbic		: ioctlno = 0x00005417
+	const Tiocmset		: ioctlno = 0x00005418
+	const Tiocgsoftcar	: ioctlno = 0x00005419
+	const Tiocssoftcar	: ioctlno = 0x0000541A
+	const Fionread		: ioctlno = 0x0000541B
+	const Tiocinq		: ioctlno = 0x0000541B
+	const Tioclinux		: ioctlno = 0x0000541C
+	const Tioccons		: ioctlno = 0x0000541D
+	const Tiocgserial	: ioctlno = 0x0000541E
+	const Tiocsserial	: ioctlno = 0x0000541F
+	const Tiocpkt		: ioctlno = 0x00005420
+	const Fionbio		: ioctlno = 0x00005421
+	const Tiocnotty		: ioctlno = 0x00005422
+	const Tiocsetd		: ioctlno = 0x00005423
+	const Tiocgetd		: ioctlno = 0x00005424
+	const Tcsbrkp		: ioctlno = 0x00005425
+	const Tiocttygstruct	: ioctlno = 0x00005426
+	const Fionclex		: ioctlno = 0x00005450
+	const Fioclex		: ioctlno = 0x00005451
+	const Fioasync		: ioctlno = 0x00005452
+	const Tiocserconfig	: ioctlno = 0x00005453
+	const Tiocsergwild	: ioctlno = 0x00005454
+	const Tiocserswild	: ioctlno = 0x00005455
+	const Tiocglcktrmios	: ioctlno = 0x00005456
+	const Tiocslcktrmios	: ioctlno = 0x00005457
+	const Tiocsergstruct	: ioctlno = 0x00005458
+	const Tiocsergetlsr	: ioctlno = 0x00005459
+
 	/* start manual overrides { */
 	extern const syscall	: (sc:scno, args:... -> int64)
 	extern const sigreturn	: (-> void)
@@ -1215,7 +1259,7 @@ pkg sys =
 	const lstat	: (path:byte[:], sb:statbuf# -> int64)
 	const fstat	: (fd:fd, sb:statbuf# -> int64)
 	const mkdir	: (path : byte[:], mode : int64	-> int64)
-	generic ioctl	: (fd:fd, req : int64, arg:@a# -> int64)
+	generic ioctl	: (fd:fd, req : ioctlno, arg:@a# -> int64)
 	const getdents64	: (fd:fd, buf : byte[:] -> int64)
 	const chdir	: (p : byte[:] -> int64)
 	const getcwd	: (buf : byte[:] -> int64)
