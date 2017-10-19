@@ -856,8 +856,9 @@ protomap(Trait *tr, Type *ty, Node *dcl)
 
 	dclname = declname(dcl);
 	for (i = 0; i < tr->nproto; i++) {
-		proto = tr->proto[i];
-		proto = getdcl(curstab(), proto->decl.name);
+		proto = getdcl(curstab(), tr->proto[i]->decl.name);
+		if (!proto)
+			proto = tr->proto[i];
 		protoname = declname(proto);
 		len = strlen(protoname);
 		p = strstr(dclname, protoname);
