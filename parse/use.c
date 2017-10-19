@@ -857,6 +857,7 @@ protomap(Trait *tr, Type *ty, Node *dcl)
 	dclname = declname(dcl);
 	for (i = 0; i < tr->nproto; i++) {
 		proto = tr->proto[i];
+		proto = getdcl(curstab(), proto->decl.name);
 		protoname = declname(proto);
 		len = strlen(protoname);
 		p = strstr(dclname, protoname);
@@ -996,12 +997,11 @@ foundextlib:
 			break;
 		case 'R':
 			tr = traitunpickle(f);
-			if (!tr->ishidden) {
-				tr->vis = vis;
-				puttrait(s, tr->name, tr);
-				for (i = 0; i < tr->nproto; i++) {
-					putdcl(s, tr->proto[i]);
-				}
+			tr->vis = vis;
+			puttrait(s, tr->name, tr);
+			for (i = 0; i < tr->nproto; i++) {
+				putdcl(s, tr->proto[i]);
+				tr->proto[i]->decl.ishidden = tr->ishidden;
 			}
 			break;
 		case 'T':
@@ -1043,7 +1043,6 @@ foundextlib:
 	}
 	fixtypemappings(s);
 	fixtraitmappings(s);
-	fiximplmappings(s);
 	htfree(tidmap);
 	for (i = starttype; i < ntypes; i++) {
 		ty = types[i];
@@ -1075,6 +1074,7 @@ foundextlib:
 			bindtype(impl->impl.env, impl->impl.type);
 		}
 	}
+	fiximplmappings(s);
 	popstab();
 	return 1;
 }
