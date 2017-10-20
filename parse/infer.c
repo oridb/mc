@@ -1965,6 +1965,7 @@ specializeimpl(Node *n)
 					namestr(t->name), ctxstr(n));
 
 		/* infer and unify types */
+		pushenv(proto->decl.env);
 		verifytraits(n, t->param, n->impl.type);
 		subst = mksubst();
 		substput(subst, t->param, n->impl.type);
@@ -1972,6 +1973,7 @@ specializeimpl(Node *n)
 			substput(subst, t->aux[j], n->impl.aux[j]);
 		ty = tyspecialize(type(proto), subst, delayed, NULL);
 		substfree(subst);
+		popenv(proto->decl.env);
 
 		generic = hasparams(ty);
 		if (generic)
