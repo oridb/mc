@@ -523,9 +523,12 @@ puttrait(Stab *st, Node *n, Trait *c)
 
 	st = findstab(st, n);
 	t = gettrait(st, n);
-	if (t && !mergetrait(t, c))
+	if (t) {
+		if (mergetrait(t, c))
+			return;
 		fatal(n, "trait %s already defined on %s:%d",
 			namestr(n), fname(t->loc), lnum(t->loc));
+	}
 	ty = gettype(st, n);
 	if (ty)
 		fatal(n, "trait %s defined as a type on %s:%d",

@@ -1168,6 +1168,7 @@ writeuse(FILE *f, Node *file)
 {
 	Stab *st;
 	void **k;
+	Trait *tr;
 	Node *s, *u;
 	size_t i, n;
 
@@ -1211,14 +1212,17 @@ writeuse(FILE *f, Node *file)
 		}
 	}
 
-	for (i = 0; i < ntraittab; i++) {
-		if (i < Ntraits || i != traittab[i]->uid)
+	k = htkeys(st->tr, &n);
+	for (i = 0; i < n; i++) {
+		tr = gettrait(st, k[i]);
+		if (tr->uid < Ntraits)
 			continue;
-		if (traittab[i]->vis == Visexport || traittab[i]->vis == Vishidden) {
+		if (tr->vis == Visexport || tr->vis == Vishidden) {
 			wrbyte(f, 'R');
-			traitpickle(f, traittab[i]);
+			traitpickle(f, tr);
 		}
 	}
+	free(k);
 
 	k = htkeys(st->impl, &n);
 	for (i = 0; i < n; i++) {
