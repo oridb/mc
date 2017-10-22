@@ -247,6 +247,7 @@ Node *
 mkimplstmt(Srcloc loc, Node *name, Type *t, Type **aux, size_t naux, Node **decls, size_t ndecls)
 {
 	Node *n;
+	size_t i;
 
 	n = mknode(loc, Nimpl);
 	n->impl.traitname = name;
@@ -256,6 +257,9 @@ mkimplstmt(Srcloc loc, Node *name, Type *t, Type **aux, size_t naux, Node **decl
 	n->impl.decls = decls;
 	n->impl.ndecls = ndecls;
 	lappend(&impltab, &nimpltab, n);
+	if (name->name.ns)
+		for (i = 0; i < ndecls; i++)
+			setns(decls[i]->decl.name, name->name.ns);
 	if (hasparams(t)) {
 		n->impl.env = mkenv();
 		bindtype(n->impl.env, t);
