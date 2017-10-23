@@ -272,7 +272,6 @@ tagexports(Node *file, int hidelocal)
 			tr->aux[i]->vis = tr->vis;
 		for (i = 0; i < tr->nproto; i++) {
 			tr->proto[i]->decl.vis = tr->vis;
-			printf("leaving %s with vis %d\n", declname(tr->proto[i]), tr->vis);
 			tagnode(st, tr->proto[i], 0, hidelocal);
 		}
 	}
