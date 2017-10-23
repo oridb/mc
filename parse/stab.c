@@ -505,12 +505,18 @@ putucon(Stab *st, Ucon *uc)
 static int
 mergetrait(Trait *old, Trait *new)
 {
+	int hidden;
+
+	hidden = old->ishidden && new->ishidden;
 	if (old->isproto && !new->isproto)
 		*old = *new;
 	else if (new->isproto && !old->isproto)
 		*new = *old;
 	else if (!new->isimport && !old->isimport)
-		return new->vis == Vishidden || old->vis == Vishidden;
+		if (new->vis == Vishidden || old->vis == Vishidden)
+			return 0;
+	new->ishidden = hidden;
+	old->ishidden = hidden;
 	return 1;
 }
 

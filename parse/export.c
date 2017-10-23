@@ -272,6 +272,7 @@ tagexports(Node *file, int hidelocal)
 			tr->aux[i]->vis = tr->vis;
 		for (i = 0; i < tr->nproto; i++) {
 			tr->proto[i]->decl.vis = tr->vis;
+			printf("leaving %s with vis %d\n", declname(tr->proto[i]), tr->vis);
 			tagnode(st, tr->proto[i], 0, hidelocal);
 		}
 	}
@@ -287,7 +288,7 @@ tagexports(Node *file, int hidelocal)
                 tr = s->impl.trait;
 		tagtrait(st, tr, 0, hidelocal);
 		for (j = 0; j < tr->naux; j++)
-			tr->aux[j]->vis = Visexport;
+			tr->aux[j]->vis = tr->vis;
 	}
 	free(k);
 

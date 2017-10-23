@@ -553,8 +553,6 @@ nameeq(void *p1, void *p2)
 void
 setns(Node *n, char *ns)
 {
-	assert(!ns || !n->name.ns || !strcmp(n->name.ns, ns));
-
 	if (!ns)
 		return;
 	n->name.ns = strdup(ns);
