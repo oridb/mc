@@ -1,3 +1,5 @@
+use "extremum"
+use "chartype"
 use "die"
 use "types"
 
@@ -12,6 +14,7 @@ pkg std =
 	const decode	: (buf : byte[:] -> char)
 	const strstep	: (str : byte[:] -> (char, byte[:]))
 
+	const strcellwidth : (str : byte[:] -> size)
 ;;
 
 const charlen = {c
@@ -100,4 +103,30 @@ const strstep = {str
 	;;
 
 	-> ((chr : char), str[len:])
+}
+
+const strcellwidth = {str
+	var s : byte[:] = str
+	var c : char = Badchar
+	var n : size = 0
+
+	while s.len > 0
+		(c, s) = strstep(s)
+		if c == Badchar
+			/* Something will probably be printed as U+FFFD */
+			n++
+		elif c < 0x20
+			/* Control characters take 0 cells */
+		elif c < 0x7f
+			/* Bog standard ASCII takes 1 cell */
+			n++
+		elif c == 0x7f
+			/* DEL is like a control character */
+		else
+			/* It's not ASCII, so ask chartype what to do */
+			n += (abs(cellwidth(c)) : size)
+		;;
+	;;
+
+	-> n
 }

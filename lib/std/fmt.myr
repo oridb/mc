@@ -553,7 +553,7 @@ const strfmt = {sb, str, params
 			;;
 		;;
 	else
-		for i = 0; i < w - graphemewidth(str); i++
+		for i = 0; i < w - strcellwidth(str); i++
 			sbputc(sb, p)
 		;;
 		sbputs(sb, str)
@@ -562,14 +562,6 @@ const strfmt = {sb, str, params
 
 const isprint = {b
 	-> b >= (' ' : byte) && b < ('~' : byte)
-}
-
-/*
-Hah. like we're going to put in the work to actually
-count graphemes.
-*/
-const graphemewidth = {str
-	-> str.len
 }
 
 const digitchars = [
