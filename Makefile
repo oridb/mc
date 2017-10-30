@@ -18,11 +18,14 @@ check: all
 
 .PHONY: bench
 bench:
-	mbld -tbench
-	mbld -tbench bench:benchit
+	mbld bench
 
 .PHONY: bootstrap
 bootstrap: buildmyr
+	./mk/bootstrap/bootstrap+`uname -s`-`uname -m`.sh
+
+.PHONY: genbootstrap
+genbootstrap: buildmyr
 	./genbootstrap.sh
 
 buildmyr: subdirs
@@ -38,4 +41,4 @@ uninstallmyr:
 	./mbldwrap.sh uninstall
 
 release:
-	./support/release.sh 0.1.1
+	./support/release.sh 0.2.0

@@ -1,0 +1,23 @@
+use std
+use sys
+
+pkg thread =
+	const ncpu	: (-> int)
+;;
+
+const ncpu = {
+	var mib	: int[2]
+	var ncpu : int
+	var ncpusz
+	var res
+
+	mib[0] = 6 /* CTL_HW */
+	mib[1] = 3 /* HW_NCPU */
+	ncpusz = sizeof(int)
+
+	res = sys.sysctl(mib[:], (&ncpu : void#), &ncpusz, (0 : void#), (0 : sys.size#))
+	if res < 0 || ncpu <= 0
+		-> 1
+	;;
+	-> ncpu
+}

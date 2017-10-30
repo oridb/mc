@@ -7,7 +7,7 @@ pkg crypto =
 var randfd
 
 const __init__ = {
-	randfd = std.try(std.open("/dev/random", std.Ordonly))
+	randfd = std.try(std.open("/dev/random", std.Oread))
 }
 
 const getentropy = {buf

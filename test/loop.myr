@@ -1,5 +1,5 @@
 use std
-/* checks that loops work. exits with 45. */
+/* checks that loops work. */
 const main = {
 	var i
 	var n

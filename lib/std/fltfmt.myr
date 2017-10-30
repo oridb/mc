@@ -32,7 +32,7 @@ const flt32bfmt = {sb, val, mode, precision
 	var isneg, exp, mant
 
 	(isneg, mant, exp) = flt32explode(val)
-	dragon4(sb, isneg, (mant : int64), (exp - 52 : int64), Fltbias, mode, precision)
+	dragon4(sb, isneg, (mant : int64), (exp - 23 : int64), Fltbias, mode, precision)
 }
 
 /*
@@ -52,10 +52,10 @@ const dragon4 = {sb, isneg, f, e, p, mode, cutoff
 	var k
 	var a, i
 
-	/* if we have zero for the mantissa, we can return early */
 	if isneg
 		sbputs(sb, "-")
 	;;
+	/* if we have zero for the mantissa, we can return early */
 	if f == 0
 		sbputs(sb, "0.0")
 		-> void
@@ -63,12 +63,11 @@ const dragon4 = {sb, isneg, f, e, p, mode, cutoff
 
 	/* initialize */
 	roundup = false
-	r = mkbigint(f)
-	r = bigshli(r, max(e - p, 0))
+	u = mkbigint(0)
+	r = bigshli(mkbigint(f), max(e - p, 0))
 	s = bigshli(mkbigint(1), max(0, -(e - p)))
 	mm = bigshli(mkbigint(1), max((e - p), 0))
 	mp = bigdup(mm)
-	u = mkbigint(0)
 
 	/* fixup: unequal gaps */
 	t = mkbigint(1)
@@ -224,10 +223,16 @@ const dragon4 = {sb, isneg, f, e, p, mode, cutoff
 		;;
 	;;
 	k--
-
 	while k >= -1
 		format(sb, 0, k--)
 	;;
+
+	bigfree(u)
+	bigfree(r)
+	bigfree(s)
+	bigfree(mm)
+	bigfree(mp)
+
 }
 
 const lowdig = {u

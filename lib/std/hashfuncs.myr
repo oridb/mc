@@ -1,30 +1,32 @@
 use "alloc"
 use "chartype"
 use "die"
+use "getint"
 use "sleq"
 use "slpush"
 use "types"
 use "utf"
 
 pkg std =
-	const strhash	: (s : byte[:]	-> uint32)
+	const strhash	: (s : byte[:]	-> uint64)
 	const streq	: (a : byte[:], b : byte[:]	-> bool)
 
-	const strcasehash	: (s : byte[:]	-> uint32)
+	const strcasehash	: (s : byte[:]	-> uint64)
 	const strcaseeq	: (a : byte[:], b : byte[:]	-> bool)
 
-	generic ptrhash	: (p : @a#	-> uint32)
+	generic ptrhash	: (p : @a#	-> uint64)
 	generic ptreq	: (a : @a#, b : @a#	-> bool)
 
-	generic inthash	: (v : @a::(integral,numeric)	-> uint32)
+	generic inthash	: (v : @a::(integral,numeric)	-> uint64)
 	generic inteq	: (a : @a::(integral,numeric), b : @a::(integral,numeric) -> bool)
 
 	const murmurhash2	: (data : byte[:], seed : uint32 -> uint32)
+	const siphash24	: (data : byte[:], seed : byte[16] -> uint64)
 
-	generic slhash	: (sl : @a[:] -> uint32)
+	generic slhash	: (sl : @a[:] -> uint64)
 ;;
 
-const Seed = 1234
+const Seed : byte[16] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
 
 generic slhash = {data : @a[:]
 	-> strhash(slbytes(data))
@@ -38,7 +40,7 @@ generic slbytes = {data : @a[:]
 }
 
 const strhash = {s
-	-> murmurhash2(s, Seed)
+	-> siphash24(s, Seed)
 }
 
 const strcaseeq = {a, b
@@ -66,7 +68,7 @@ const strcasehash = {s
 		(c, s) = std.strstep(s)
 		std.slpush(&chars, std.tolower(c))
 	;;
-	h = murmurhash2(slbytes(chars), Seed)
+	h = siphash24(slbytes(chars), Seed)
 	slfree(chars)
 	-> h
 }
@@ -76,10 +78,7 @@ const streq = {a, b
 }
 
 generic ptrhash = {p : @a#
-	var x
-
-	x = (&p : byte#)
-	-> murmurhash2(x[0:sizeof(@a#)], Seed)
+	-> inthash((p : intptr))
 }
 
 generic ptreq = {a, b
@@ -90,7 +89,7 @@ generic inthash = {v : @a::(integral,numeric)
 	var p
 
 	p = (&v : byte#)
-	-> murmurhash2(p[0:sizeof(@a)], Seed)
+	-> siphash24(p[0:sizeof(@a)], Seed)
 }
 
 generic inteq = {a, b
@@ -140,4 +139,60 @@ const murmurhash2 = {data, seed
 	h ^= h >> 15
 
 	-> h
+}
+
+const sipround = {v0, v1, v2, v3 -> (uint64, uint64, uint64, uint64)
+	v0 += v1
+	v1 = (v1 << 13) | (v1 >> 51)
+	v1 ^= v0
+	v0 = (v0 << 32) | (v0 >> 32)
+	v2 += v3
+	v3 = (v3 << 16) | (v3 >> 48)
+	v3 ^= v2
+
+	v2 += v1
+	v1 = (v1 << 17) | (v1 >> 47)
+	v1 ^= v2
+	v2 = (v2 << 32) | (v2 >> 32)
+	v0 += v3
+	v3 = (v3 << 21) | (v3 >> 43)
+	v3 ^= v0
+
+	-> (v0, v1, v2, v3)
+}
+
+const siphash24 = {data, seed
+	var k0, k1, m, v0, v1, v2, v3, w
+	var tail : byte[8] = [0, 0, 0, 0, 0, 0, 0, 0]
+
+	k0 = std.getle64(seed[0:8])
+	k1 = std.getle64(seed[8:16])
+	v0 = k0 ^ 0x736f6d6570736575
+	v1 = k1 ^ 0x646f72616e646f6d
+	v2 = k0 ^ 0x6c7967656e657261
+	v3 = k1 ^ 0x7465646279746573
+	w = (data.len + 8) / 8 - 1
+	for var i = 0; i < w; i++
+		m = std.getle64(data[8 * i:8 * (i + 1)])
+		v3 ^= m
+		(v0, v1, v2, v3) = sipround(v0, v1, v2, v3)
+		(v0, v1, v2, v3) = sipround(v0, v1, v2, v3)
+		v0 ^= m
+	;;
+	for var i = 0; i < data.len % 8; i++
+		tail[i] = data[8 * w + i]
+	;;
+	tail[7] = (data.len % 256 : byte)
+	m = std.getle64(tail[:])
+	v3 ^= m
+	(v0, v1, v2, v3) = sipround(v0, v1, v2, v3)
+	(v0, v1, v2, v3) = sipround(v0, v1, v2, v3)
+	v0 ^= m
+
+	v2 ^= 0xff
+	(v0, v1, v2, v3) = sipround(v0, v1, v2, v3)
+	(v0, v1, v2, v3) = sipround(v0, v1, v2, v3)
+	(v0, v1, v2, v3) = sipround(v0, v1, v2, v3)
+	(v0, v1, v2, v3) = sipround(v0, v1, v2, v3)
+	-> v0 ^ v1 ^ v2 ^ v3
 }

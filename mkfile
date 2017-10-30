@@ -38,8 +38,11 @@ install:V: $SUB config.h
 	}
 	ape/psh mbldwrap.sh install
 
-bootstrap:V:
+genbootstrap:V:
 	ape/psh genbootstrap.sh
+
+bootstrap:V:
+	ape/psh mk/bootstrap/bootstrap+Plan9-amd64.sh
 
 uninstall:V: $SUB config.h
 	for(dir in $SUB)@{
@@ -49,7 +52,7 @@ uninstall:V: $SUB config.h
 	ape/psh mbldwrap.sh uninstall
 
 check:V: all
-	mbld/mbld test
+	obj/mbld/mbld test
 
 config.h:
 	echo '#define Instroot "/amd64"' > config.h

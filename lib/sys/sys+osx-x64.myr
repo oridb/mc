@@ -840,7 +840,7 @@ extern const __osx_fork	: (-> pid)
 extern const __osx_pipe : (fd : fd[2]# -> int64)
 extern const __osx_getpid	: (-> pid)
 extern const __osx_lseek	: (fd:fd, off:off, whence:whence -> off)
-extern const __osx_gettimeofday	: (tv : timeval#, tz : timezone# -> int)
+extern const __osx_gettimeofday	: (tv : timeval#, tz : timezone#, abstime : uint64# -> int)
 /*
 extern const __osx_ptrace
 extern const __osx_signalstack
@@ -988,7 +988,7 @@ const mmap	= {addr, len, prot, flags, fd, off;
 	-> (syscall(Sysmmap, a(addr), a(len), a(prot), a(flags), a(fd), a(off)) : byte#)}
 
 /* time */
-const gettimeofday = {tv, tz;	-> (__osx_gettimeofday(tv, tz) : int)}
+const gettimeofday = {tv, tz;	-> (__osx_gettimeofday(tv, tz, (0 : uint64#)) : int)}
 const settimeofday = {tv, tz;	-> (syscall(Syssettimeofday, a(tv), a(tz)) : int)}
 
 /* faked  with gettimeofday */

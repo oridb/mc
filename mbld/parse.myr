@@ -191,6 +191,7 @@ const target = {b, p
 	| `std.Some "bin":	bintarget(b, p)
 	| `std.Some "lib":	libtarget(b, p)
 	| `std.Some "test":	testtarget(b, p)
+	| `std.Some "bench":	benchtarget(b, p)
 	| `std.Some "gen":	cmdtarget(b, p, "gen", false)
 	| `std.Some "cmd":	cmdtarget(b, p, "cmd", true)
 	| `std.Some "data":	datatarget(b, p, "data")
@@ -291,6 +292,15 @@ const testtarget = {b, p
 	addtarg(p, b, t.name, t.tags, `Bin t)
 }
 
+/* benchtarget: myrtarget */
+const benchtarget = {b, p
+	var t
+	t = myrtarget(b, p, "bench")
+	t.isbench = true
+	t.install = false
+	addtarg(p, b, t.name, t.tags, `Bin t)
+}
+
 /* mantarget: anontarget */
 const mantarget = {b, p
 	var targ
@@ -315,7 +325,7 @@ const subtarget = {b, p
 /* gentarget: wordlist {attrs} = wordlist ;; */
 const cmdtarget = {b, p, cmd, iscmd
 	var outlist, deplist, cmdlist, tags
-	var durable, istest
+	var durable, istest, isbench
 	var attrs
 	var gt
 
@@ -350,12 +360,14 @@ const cmdtarget = {b, p, cmd, iscmd
 
 	durable = false
 	istest = false
+	isbench = false
 	deplist = [][:]
 	tags = [][:]
 	for elt : attrs
 		match elt
 		| ("durable", ""):	durable = true
 		| ("test", ""):		istest = true
+		| ("bench", ""):	isbench = true
 		| ("notest", ""):	istest = false
 		| ("dep", depname):	std.slpush(&deplist, depname)
 		| ("tag", tag):	std.slpush(&tags, tag)
@@ -371,6 +383,7 @@ const cmdtarget = {b, p, cmd, iscmd
 		.gen=outlist,
 		.durable=durable,
 		.istest=istest,
+		.isbench=isbench,
 		.deps=deplist,
 		.cmd=cmdlist,
 		.tags=tags,
@@ -391,7 +404,7 @@ myrtarget: name '=' inputlist ';;'
 const myrtarget = {b, p, targ
 	var ldscript, runtime, install, incpath, tags
 	var libdeps, name, inputs, attrs
-	var istest
+	var istest, isbench
 	var fsel
 
 	match word(p)
@@ -432,6 +445,7 @@ const myrtarget = {b, p, targ
 	incpath = [][:]
 	tags = [][:]
 	istest = false
+	isbench = false
 	for elt : attrs
 		match elt
 		| ("ldscript", lds):	ldscript = std.sldup(lds)
@@ -441,6 +455,7 @@ const myrtarget = {b, p, targ
 		| ("inst", ""):		install = true
 		| ("noinst", ""):	install = false
 		| ("test", ""):		istest = true
+		| ("bench", ""):	isbench = true
 		| ("notest", ""):	istest = false
 		| (invalid, ""):	std.fatal("{}: invalid attr '{}'\n", targ, invalid)
 		| (invalid, attr):	std.fatal("{}: invalid attr '{} = {}'\n", targ, invalid, attr)
@@ -456,6 +471,7 @@ const myrtarget = {b, p, targ
 		.libdeps=libdeps,
 		.islib=false,
 		.istest=istest,
+		.isbench=isbench,
 		/* attrs */
 		.tags=tags,
 		.install=install,
@@ -638,26 +654,44 @@ const wordlist = {p
 }
 
 /* word: /wordchar*/
+/* word: /wordchar*/
 const word = {p
 	var c, n
 	var start
 
 	skipspace(p)
+
 	c = peekc(p)
-	n = 0
-	start = p.rest
-	while p.rest.len > 0
-		c = peekc(p)
-		if c == '\\'
-			c = getc(p)
-		;;
-		if wordchar(c)
+	if c == '"'
+		n = 0
+		getc(p)
+		start = p.rest
+		while p.rest.len > 0
+			c = peekc(p)
+			if c == '"'
+				getc(p)
+				goto done
+			elif c == '\\'
+				c = getc(p)
+			;;
 			getc(p)
 			n += std.charlen(c)
-		else
-			break
+		;;
+		failparse(p, "input ended within quoted word\n")
+	else
+		n = 0
+		start = p.rest
+		while p.rest.len > 0
+			c = peekc(p)
+			if wordchar(c)
+				getc(p)
+				n += std.charlen(c)
+			else
+				break
+			;;
 		;;
 	;;
+:done
 	if n > 0
 		-> `std.Some std.sldup(start[:n])
 	else

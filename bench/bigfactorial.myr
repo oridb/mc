@@ -1,11 +1,13 @@
 use std
+use testr
 
-const N = 600
 const main = {
-	var i
-	for i = 0; i < N; i++
-		std.bigfree(bigfact(i))
-	;;
+	testr.bench([
+		[.name="bigfactorial-1", .fn={ctx; bigfact(1)}],
+		[.name="bigfactorial-100", .fn={ctx; bigfact(100)}],
+		[.name="bigfactorial-1000", .fn={ctx; bigfact(1000)}],
+		[.name="bigfactorial-10000", .fn={ctx; bigfact(10000)}],
+	][:])
 }
 
 const bigfact = {n

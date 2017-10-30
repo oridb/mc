@@ -6,19 +6,19 @@ use "types"
 
 pkg std =
 	type htab(@k, @v) = struct
-		hash	: (k : @k	-> uint32)
+		hash	: (k : @k	-> uint64)
 		eq	: (a : @k, b : @k -> bool)
 
 		nelt	: size
 		ndead	: size
 		keys	: @k[:]
 		vals	: @v[:]
-		hashes	: uint32[:]
+		hashes	: uint64[:]
 		dead	: bool[:]
 	;;
 
-	generic mkht	: (h : (k : @k -> uint32), eq : (a : @k, b : @k -> bool) -> htab(@k, @v)#)
-	generic htinit	: (ht : htab(@k, @v)#, h : (k : @k -> uint32), eq : (a : @k, b : @k -> bool) -> void)
+	generic mkht	: (h : (k : @k -> uint64), eq : (a : @k, b : @k -> bool) -> htab(@k, @v)#)
+	generic htinit	: (ht : htab(@k, @v)#, h : (k : @k -> uint64), eq : (a : @k, b : @k -> bool) -> void)
 	generic htfree	: (ht : htab(@k, @v)# -> void)
 	generic htput	: (ht : htab(@k, @v)#, k : @k, v : @v -> void)
 	generic htdel	: (ht : htab(@k, @v)#, k : @k -> void)

@@ -856,7 +856,9 @@ protomap(Trait *tr, Type *ty, Node *dcl)
 
 	dclname = declname(dcl);
 	for (i = 0; i < tr->nproto; i++) {
-		proto = tr->proto[i];
+		proto = getdcl(curstab(), tr->proto[i]->decl.name);
+		if (!proto)
+			proto = tr->proto[i];
 		protoname = declname(proto);
 		len = strlen(protoname);
 		p = strstr(dclname, protoname);
@@ -996,12 +998,11 @@ foundextlib:
 			break;
 		case 'R':
 			tr = traitunpickle(f);
-			if (!tr->ishidden) {
-				tr->vis = vis;
-				puttrait(s, tr->name, tr);
-				for (i = 0; i < tr->nproto; i++) {
-					putdcl(s, tr->proto[i]);
-				}
+			tr->vis = vis;
+			puttrait(s, tr->name, tr);
+			for (i = 0; i < tr->nproto; i++) {
+				putdcl(s, tr->proto[i]);
+				tr->proto[i]->decl.ishidden = tr->ishidden;
 			}
 			break;
 		case 'T':
@@ -1031,10 +1032,17 @@ foundextlib:
 			impl = unpickle(f);
 			impl->impl.isextern = 1;
 			impl->impl.vis = vis;
-			/* specialized declarations always go into the global stab */
+			/*
+			 * Unfortunately, impls can insert their symbols into whatever
+			 * namespace the trait comes from. This complicates things a bit.
+			 */
 			for (i = 0; i < impl->impl.ndecls; i++) {
-				impl->impl.decls[i]->decl.isglobl = 1;
-				putdcl(file->file.globls, impl->impl.decls[i]);
+				dcl = impl->impl.decls[i];
+				dcl->decl.isglobl = 1;
+				ns = file->file.globls;
+				if (dcl->decl.name->name.ns)
+					ns = findstab(s, dcl->decl.name->name.ns);
+				putdcl(ns, dcl);
 			}
 			break;
 		case EOF:
@@ -1043,7 +1051,6 @@ foundextlib:
 	}
 	fixtypemappings(s);
 	fixtraitmappings(s);
-	fiximplmappings(s);
 	htfree(tidmap);
 	for (i = starttype; i < ntypes; i++) {
 		ty = types[i];
@@ -1075,6 +1082,7 @@ foundextlib:
 			bindtype(impl->impl.env, impl->impl.type);
 		}
 	}
+	fiximplmappings(s);
 	popstab();
 	return 1;
 }
@@ -1167,6 +1175,7 @@ writeuse(FILE *f, Node *file)
 {
 	Stab *st;
 	void **k;
+	Trait *tr;
 	Node *s, *u;
 	size_t i, n;
 
@@ -1211,25 +1220,24 @@ writeuse(FILE *f, Node *file)
 	}
 
 	for (i = 0; i < ntraittab; i++) {
-		if (i < Ntraits || i != traittab[i]->uid)
+		tr = traittab[i];
+		if (tr->uid < Ntraits)
 			continue;
-		if (traittab[i]->vis == Visexport || traittab[i]->vis == Vishidden) {
+		if (tr->vis == Visexport || tr->vis == Vishidden) {
 			wrbyte(f, 'R');
-			traitpickle(f, traittab[i]);
+			traitpickle(f, tr);
 		}
 	}
 
-	k = htkeys(st->impl, &n);
-	for (i = 0; i < n; i++) {
+	for (i = 0; i < nimpltab; i++) {
 		/* merging during inference should remove all protos */
-		s = getimpl(st, k[i]);
+		s = impltab[i];
 		assert(!s->impl.isproto);
 		if (s->impl.vis == Visexport || s->impl.vis == Vishidden) {
 			wrbyte(f, 'I');
 			pickle(f, s);
 		}
 	}
-	free(k);
 
 	k = htkeys(st->dcl, &n);
 	for (i = 0; i < n; i++) {

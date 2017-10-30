@@ -183,8 +183,8 @@ const fallback = {mant, exp, lim
 
 	while true
 		(xprime, rprime) = std.bigdivmod(u, v)
-		std.bigmove(x, xprime)
-		std.bigmove(r, rprime)
+		std.bigsteal(x, xprime)
+		std.bigsteal(r, rprime)
 		if k == lim.minexp 
 			if std.biggei(x, lim.minsig) && std.biglei(x, lim.maxsig)
 				break
@@ -193,7 +193,8 @@ const fallback = {mant, exp, lim
 				goto done
 			;;
 		elif k > lim.maxexp
-			-> std.flt64inf()
+			f = std.flt64inf()
+			goto done
 		;;
 		if std.biglti(x, lim.minsig)
 			std.bigmuli(u, 2)

@@ -1,26 +1,36 @@
 use std
 use regex
+use testr
+
+var str
+var dotstar, hello
 
 const main = {
-	var str, re, i
-
-	str = "€i²æ&±-ŝ€i²æ&±-ŝ€i²æ&±-ŝ€i²æ&±-ŝ€i²æ&±-ŝüüü€i²æ&±-ŝüüü€i²æ&±-ŝü"
+	str = std.sldup("hello world!")
 	str = std.strcat(str, str)
 	str = std.strcat(str, str)
 	str = std.strcat(str, str)
 	str = std.strcat(str, str)
 
-	for i = 0; i < 100; i++
-		match regex.compile(".*")
-		| `std.Ok r:	re = r
-		| `std.Err m:	std.fatal("couldn't compile regex: %s\n", m)
-		;;
+	dotstar = std.try(regex.compile(".*"))
+	hello = std.try(regex.compile("hel*o"))
 
-		match regex.exec(re, str)
-		| `std.Some m:
-		| `std.None:	std.fatal("Didn't match regex\n")
-		;;
+	testr.bench([
+		[.name="matchall", .fn=matchall],
+		[.name="searchhello", .fn=searchhello],
+	][:])
+}
 
-		regex.free(re)
+const matchall = {ctx
+	match regex.exec(dotstar, str)
+	| `std.Some m:	regex.matchfree(m)
+	| `std.None:	std.fatal("Didn't match regex\n")
+	;;
+}
+
+const searchhello = {ctx
+	match regex.search(dotstar, str)
+	| `std.Some m:	regex.matchfree(m)
+	| `std.None:	std.fatal("Didn't match regex\n")
 	;;
 }

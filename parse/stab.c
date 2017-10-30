@@ -505,12 +505,18 @@ putucon(Stab *st, Ucon *uc)
 static int
 mergetrait(Trait *old, Trait *new)
 {
+	int hidden;
+
+	hidden = old->ishidden && new->ishidden;
 	if (old->isproto && !new->isproto)
 		*old = *new;
 	else if (new->isproto && !old->isproto)
 		*new = *old;
 	else if (!new->isimport && !old->isimport)
-		return new->vis == Vishidden || old->vis == Vishidden;
+		if (new->vis == Vishidden || old->vis == Vishidden)
+			return 0;
+	new->ishidden = hidden;
+	old->ishidden = hidden;
 	return 1;
 }
 
@@ -523,9 +529,12 @@ puttrait(Stab *st, Node *n, Trait *c)
 
 	st = findstab(st, n);
 	t = gettrait(st, n);
-	if (t && !mergetrait(t, c))
+	if (t) {
+		if (mergetrait(t, c))
+			return;
 		fatal(n, "trait %s already defined on %s:%d",
 			namestr(n), fname(t->loc), lnum(t->loc));
+	}
 	ty = gettype(st, n);
 	if (ty)
 		fatal(n, "trait %s defined as a type on %s:%d",
@@ -572,6 +581,9 @@ putimpl(Stab *st, Node *n)
 		fatal(n, "trait %s already implemented over %s at %s:%d",
 			namestr(n->impl.traitname), tystr(n->impl.type),
 			fname(n->loc), lnum(n->loc));
+	/* if this is not a duplicate, record it for later export */
+	if (!impl)
+		lappend(&file->file.impl, &file->file.nimpl, n);
 	/*
 	 The impl is not defined in this file, so setting the
 	 trait name would be a bug here.

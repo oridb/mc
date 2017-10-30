@@ -87,10 +87,15 @@ _sys$__osx_gettimeofday:
 
 	jae .gettimeofdaysuccess
 	negq %rax
+	ret
 
 .gettimeofdaysuccess:
-	movq %rax, (%rdi)
+	cmpq $0,%rax
+	je .noreg
+
+	movq %rax,0(%rdi)
 	movl %edx,8(%rdi)
 	xorq %rax,%rax
+.noreg:
 	ret
 

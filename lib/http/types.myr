@@ -1,0 +1,83 @@
+use std
+use bio
+
+pkg http =
+	type status = int
+
+	type session = struct
+		f	: bio.file#
+		host	: byte[:]
+		port	: uint16
+		srvname	: byte[:]
+		ua	: byte[:]
+		err	: bool
+	;;
+
+
+	type server = struct
+		ann	: std.announce#
+		refs	: uint32
+		quit	: bool
+	;;
+
+	type url = struct
+		schema	: schema
+		port	: uint16
+		host	: byte[:]
+		path	: byte[:]
+		params	: (byte[:], byte[:])[:]
+	;;
+
+	type err = union
+		`Ehttp int	/* http error */
+		`Eunsupp	/* unsupported feature */
+		`Econn		/* connection lost */
+		`Ehdr		/* invalid header */
+		`Eproto		/* protocol error */
+		`Eshort		/* truncated response */
+		`Egarbled	/* syntax error */
+		`Eenc		/* encoding error */
+		`Ewat		/* unknown error */
+	;;
+
+	type schema = union
+		`Http
+		`Https
+	;;
+
+	type method = union
+		`Get
+		`Head
+		`Put
+		`Post
+		`Delete
+		`Trace
+		`Options
+	;;
+
+	type encoding = union
+		`Length
+		`Chunked
+		`Compress
+		`Deflate
+		`Gzip
+	;;
+
+	type req = struct
+		url	: url#
+		hdrs	: (byte[:], byte[:])[:]
+		err	: std.option(err)
+		method	: method
+	;;
+
+	type resp = struct
+		status	: int
+		hdrs	: (byte[:], byte[:])[:]
+		len	: std.size
+		err	: std.option(err)
+		reason	: byte[:]
+		body	: byte[:]
+		enc	: encoding
+	;;
+
+;;

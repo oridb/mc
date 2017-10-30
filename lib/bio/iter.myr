@@ -18,9 +18,8 @@ const byline = {f
 impl iterable lineiter -> byte[:] =
 	__iternext__ = {itp, outp
 		match bio.readln((itp# : file#))
-		| `Ok ln:	outp# = ln
-		| `Err _:	-> false
-		| `Eof:		-> false
+		| `std.Ok ln:	outp# = ln
+		| `std.Err _:	-> false
 		;;
 		-> true
 	}
@@ -37,9 +36,8 @@ const bychar = {f
 impl iterable chariter -> char =
 	__iternext__ = {itp, outp : char#
 		match bio.getc((itp# : file#))
-		| `Ok c:	outp# = c
-		| `Err _:	-> false
-		| `Eof:		-> false
+		| `std.Ok c:	outp# = c
+		| `std.Err _:	-> false
 		;;
 		-> true
 	}

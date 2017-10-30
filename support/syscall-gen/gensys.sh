@@ -38,6 +38,7 @@ hdrgen() {
 }
 
 rm -f have.txt want.txt gentypes+$1-$2.frag
+touch have.txt
 
 if [ `uname` = Linux ]; then
 	hdrgen $1 $2

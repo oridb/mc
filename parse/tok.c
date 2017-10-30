@@ -191,7 +191,6 @@ kwd(char *s)
 		{"goto", Tgoto},
 		{"if", Tif},
 		{"impl", Timpl},
-		{"in", Tin},
 		{"match", Tmatch},
 		{"pkg", Tpkg},
 		{"pkglocal", Tattr},

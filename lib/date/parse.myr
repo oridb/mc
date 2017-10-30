@@ -164,9 +164,9 @@ const eatspace = {s
 
 const indexof = {dst, s, set, err
 	for var i = 0; i < set.len; i++
-		if s.len >= set[i].len && std.streq(s, set[i])
+		if s.len >= set[i].len && std.streq(s[:set[i].len], set[i])
 			dst# = i
-			-> s
+			-> s[set[i].len:]
 		;;
 	;;
 	err# = `std.Some `Badname s

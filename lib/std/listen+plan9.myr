@@ -1,0 +1,175 @@
+use sys
+
+use "alloc"
+use "cstrconv"
+use "die"
+use "dirname"
+use "fmt"
+use "mk"
+use "option"
+use "result"
+use "sldup"
+use "strfind"
+use "syswrap"
+use "utf"
+
+
+pkg std =
+	type announce = struct
+		afd	: fd
+		lpath	: byte[:]
+		netdir	: byte[:]
+	;;
+
+	const announce	: (ds : byte[:] -> result(announce#, byte[:]))
+	const aclose	: (a : announce# -> void)
+	const accept	: (a : announce# -> result(fd, byte[:]))
+;;
+
+const Maxpath = 256
+
+const announce = {ds
+	var a, abuf : byte[Maxpath]
+	var f, fbuf : byte[Maxpath]
+	var nbuf : byte[32]
+	var dir, ctl, n
+
+	/* announce */
+	match translate(ds, abuf[:], fbuf[:])
+	| `Err _:	-> `Err "invalid dial string"
+	| `Ok (addr, file):
+		put("addr: {}, file: {}\n", addr, file)
+		a = addr
+		f = file
+		match strrfind(f, "/")
+		| `Some i:	dir = i
+		| `None:	-> `Err "invalid net dir"
+		;;
+	;;
+
+	match open(f, Ordwr)
+	| `Ok fd:	ctl = fd
+	| `Err e:	-> `Err "could not open ctl fd"
+	;;
+
+	match read(ctl, nbuf[:])
+	| `Err e:	->`Err "unable to read ctl fd"
+	| `Ok nn:
+		n = fput(ctl, "announce {}", a)
+		if n <= 0
+			close(ctl)
+			-> `Err "writing announce"
+		;;
+	
+		-> `std.Ok mk([
+			.afd=ctl,
+			.lpath = fmt("{}/{}/listen", f[:dir], nbuf[:nn]),
+			.netdir = sldup(f[:dir]),
+		])
+	;;
+
+}
+
+const aclose = {a
+	slfree(a.netdir)
+	slfree(a.lpath)
+	close(a.afd)
+	free(a)
+}
+
+const accept = {a -> result(fd, byte[:])
+	var num, numbuf : byte[16]
+	var dat, datbuf : byte[Maxpath]
+	var lfd
+
+	match open(a.lpath, Ordwr)
+	| `Err e:	-> `Err "could not open ctl"
+	| `Ok fd:	lfd = fd
+	;;
+
+	match read(lfd, numbuf[:])
+	| `Ok n:	num = numbuf[:n]
+	| `Err e:	-> `Err "could not accept"
+	;;
+
+	dat = bfmt(datbuf[:], "{}/{}/data", a.netdir, num)
+	match open(dat, Ordwr)
+	| `Ok fd:	-> `Ok fd
+	| `Err e:	-> `Err "could not open data fd"
+	;;
+}
+
+const translate = {ds, addrbuf, filebuf
+	var cs, csbuf : byte[Maxpath]
+	var r, rbuf : byte[Maxpath]
+	var netdir, rest
+	var addr, file
+
+	match strfind(ds, "!")
+	| `None:	-> `Err void
+	| `Some sep:
+		if decode(ds[:sep]) == '#' || decode(ds[:sep]) == '/'
+			match strrfind(ds[:sep], "/")
+			| `None:	-> `Err void
+			| `Some idx:
+				netdir = ds[:idx]
+				rest = ds[idx+1:]
+			;;
+		else
+			netdir = "/net"
+			addr = ds
+		;;
+	;;
+
+	cs = bfmt(csbuf[:], "{}/cs", netdir)
+	match open(cs, Ordwr)
+	| `Err e:	-> identtrans(rest, netdir, addrbuf, filebuf)
+	| `Ok fd:
+		match write(fd, addr)
+		| `Err e:
+			close(fd)
+			-> `Err void
+		| `Ok _:
+		;;
+
+		seek(fd, 0, Seekset)
+		match read(fd, rbuf[:])
+		| `Err e:
+			close(fd)
+			-> `Err void
+		| `Ok n:
+			r = rbuf[:n]
+		;;
+		close(fd)
+	;;
+
+	put("cs returned: {}\n", r)
+	match strfind(r, " ")
+	| `None:	-> `Err void
+	| `Some i:
+		addr = bfmt(addrbuf, "{}", r[i+1:])
+		if decode(r) == '/'
+			match strfind(r[:i], "/")
+			| `None:	-> `Err void
+			| `Some 0:	file = bfmt(filebuf, "{}{}", netdir, r[:i])
+			| `Some n:	file = bfmt(filebuf, "{}{}", netdir, r[n+1:])
+			;;
+		else
+			file = bfmt(filebuf, "{}/{}", netdir, r[:i])
+		;;
+	;;
+	-> `Ok (addr, file) 
+}
+
+const identtrans = {ds, netdir, addrbuf, filebuf
+	var a, f
+
+	match strfind(ds, "!")
+	| `None:
+		-> `Err void
+	| `Some sep:
+		a = bfmt(addrbuf, "{}", ds[sep + 1:])
+		f = bfmt(filebuf, "{}/{}/clone", netdir, ds[:sep])
+		-> `Ok (a, f)
+	;;
+}

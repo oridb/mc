@@ -1,0 +1,34 @@
+bin h {noinst}=
+	h.myr
+
+	lib http
+	lib ../sys:sys
+	lib ../std:std
+	lib ../bio:bio
+	lib ../thread:thread
+;;
+
+bin srvdot {noinst}=
+	srvdot.myr
+
+	lib http
+	lib ../sys:sys
+	lib ../std:std
+	lib ../bio:bio
+	lib ../thread:thread
+;;
+
+lib http =
+	parse.myr
+	types.myr
+	url.myr
+	client.myr
+	server.myr
+	session.myr
+	status.myr
+
+	lib ../sys:sys
+	lib ../std:std
+	lib ../bio:bio
+	lib ../thread:thread
+;;

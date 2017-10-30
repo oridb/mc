@@ -10,17 +10,26 @@ use "config"
 
 pkg bld =
 	const test	: (b : build#, targs : byte[:][:] -> bool)
+	const bench	: (b : build#, targs : byte[:][:] -> bool)
 ;;
 
 const test = {b, targs
+	-> go(b, targs, "test", false)
+}
+
+const bench = {b, targs
+	-> go(b, targs, "bench", true)
+}
+
+const go = {b, targs, kind, isbench
 	var failed, ok
 	var tests
 
-	if !buildtarg(b, "test")
+	if !buildtarg(b, kind)
 		std.exit(1)
 	;;
 	if targs.len == 0
-		tests = std.htgetv(b.deps.targs, "test", [][:])
+		tests = std.htgetv(b.deps.targs, kind, [][:])
 	else
 		tests = [][:]
 		for t : targs
@@ -33,7 +42,7 @@ const test = {b, targs
 	ok = true
 	failed = [][:]
 	for t : tests
-		if !runtest(b, t, &failed)
+		if !runtest(b, t, isbench, &failed)
 			ok = false
 		;;
 	;;
@@ -62,7 +71,7 @@ const printfailed = {failed
 	;;
 }
 
-const runtest = {b, n, failed
+const runtest = {b, n, isbench, failed
 	var dir, res, log, logfd
 	var sub
 
@@ -75,7 +84,7 @@ const runtest = {b, n, failed
 		std.fatal("\nunable to run test: {}\n", m)
 	| `std.Ok (pid, infd, outfd):
 		log = std.strcat(std.basename(n.lbl), ".log")
-		logfd = std.try(std.openmode(log, std.Owronly | std.Ocreat, 0o644))
+		logfd = std.try(std.openmode(log, std.Owrite | std.Ocreat, 0o644))
 		sub = showsub(b, n.lbl, outfd, logfd, failed)
 		std.slfree(log)
 		std.close(infd)
@@ -91,7 +100,13 @@ const runtest = {b, n, failed
 			/* if we have subtests, we've already printed the output */
 			match sub
 			| `std.Some r:	res = r
-			| `std.None:	mbldput("PASS\n")
+			| `std.None:
+				if isbench
+					mbldput("MISSING TIMING\n")
+					res = false
+				else
+					mbldput("PASS\n")
+				;;
 			;;
 		;;
 		if !res

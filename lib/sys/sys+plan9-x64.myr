@@ -27,8 +27,8 @@ pkg sys =
 
 	const Maxerr	: size = 128
 
-	const Ordonly	: fdopt = 0
-	const Owronly	: fdopt = 1
+	const Oread	: fdopt = 0
+	const Owrite	: fdopt = 1
 	const Ordwr	: fdopt = 2
 	const Oexec	: fdopt = 3
 

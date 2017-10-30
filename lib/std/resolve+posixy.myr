@@ -333,7 +333,7 @@ const rquery = {srv, host, id
 	pfd = [
 		[.fd=srv, .events=sys.Pollin, .revents=0]
 	][:]
-	r = sys.poll(pfd[:], (std.now() - giveup : int)/1000)
+	r = sys.poll(pfd[:], (giveup - std.now() : int)/1000)
 	if r < 0
 		-> `Err `Badconn
 	elif r == 0

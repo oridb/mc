@@ -67,11 +67,11 @@ const main = {
 
 const readln = {f
 	match bio.readln(f)
-	| `bio.Ok d:	-> d
-	| `bio.Eof:
+	| `std.Ok d:	-> d
+	| `std.Err `bio.Eof:
 		std.put("eof\n")
 		-> [][:]
-	| `bio.Err e:
+	| `std.Err e:
 		std.put("err\n")
 		-> [][:]
 	;;
@@ -79,11 +79,11 @@ const readln = {f
 
 const readto = {f, delim
 	match bio.readto(f, delim)
-	| `bio.Ok d:	-> d
-	| `bio.Eof:
+	| `std.Ok d:	-> d
+	| `std.Err `bio.Eof:
 		std.put("eof\n")
 		-> [][:]
-	| `bio.Err e:
+	| `std.Err e:
 		std.put("err\n")
 		-> [][:]
 	;;

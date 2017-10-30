@@ -1,57 +1,52 @@
-bin intsort {noinst,tag=bench} =
+bench hashit =
+	hashit.myr
+	lib ../lib/std:std
+	lib ../lib/sys:sys
+	lib ../lib/testr:testr
+;;
+bench intsort =
 	intsort.myr
 	lib ../lib/std:std
 	lib ../lib/sys:sys
+	lib ../lib/testr:testr
 ;;
-bin copious-allocs {noinst,tag=bench} =
+bench copious-allocs =
 	copious-allocs.myr
 	lib ../lib/std:std
 	lib ../lib/sys:sys
+	lib ../lib/testr:testr
 ;;
-bin sha1-compute {noinst,tag=bench} =
+bench sha1-compute =
 	sha1-compute.myr
 	lib ../lib/std:std
 	lib ../lib/sys:sys
 	lib ../lib/crypto:crypto
+	lib ../lib/testr:testr
 ;;
-bin bigfactorial {noinst,tag=bench} =
+bench bigfactorial =
 	bigfactorial.myr
 	lib ../lib/std:std
 	lib ../lib/sys:sys
+	lib ../lib/testr:testr
 ;;
-bin mandelbrot {noinst,tag=bench} =
+bench mandelbrot =
 	mandelbrot.myr
 	lib ../lib/std:std
 	lib ../lib/sys:sys
 	lib ../lib/bio:bio
+	lib ../lib/testr:testr
 ;;
-bin regex-match {noinst,tag=bench} =
+bench regex-match =
 	regex-match.myr
 	lib ../lib/std:std
 	lib ../lib/sys:sys
 	lib ../lib/regex:regex
+	lib ../lib/testr:testr
 ;;
 
-bin many-memcpy {noinst,tag=bench} =
+bench many-memcpy =
 	many-memcpy.myr
 	lib ../lib/std:std
 	lib ../lib/sys:sys
-;;
-
-# benchmark runner
-bin runbench {noinst,tag=bench} =
-	runbench.myr
-	lib ../lib/std:std
-	lib ../lib/sys:sys
-;;
-
-cmd benchit {tag=bench} =
-	./runbench
-		intsort
-		copious-allocs 
-		sha1-compute
-		bigfactorial
-		mandelbrot
-		regex-match
-		many-memcpy
+	lib ../lib/testr:testr
 ;;

@@ -87,12 +87,19 @@ tagtype(Stab *st, Type *t, int ingeneric, int hidelocal)
 				tagtype(st, t->udecls[i]->etype, ingeneric, hidelocal);
 		break;
 	case Tyname:
+	case Tygeneric:
 		tagreflect(t);
 		for (i = 0; i < t->narg; i++)
 			tagtype(st, t->arg[i], ingeneric, hidelocal);
-	case Tygeneric:
 		for (i = 0; i < t->ngparam; i++)
 			tagtype(st, t->gparam[i], ingeneric, hidelocal);
+		for (i = 0; i < t->narg; i++)
+			tagtype(st, t->arg[i], ingeneric, hidelocal);
+		break;
+	case Typaram:
+		if (t->trneed)
+			for (i = 0; bsiter(t->trneed, &i); i++)
+				tagtrait(st, traittab[i], ingeneric, hidelocal);
 		break;
 	default:
 		break;
@@ -271,18 +278,14 @@ tagexports(Node *file, int hidelocal)
 	free(k);
 
 	/* tag the impls */
-	k = htkeys(st->impl, &n);
-	for (i = 0; i < n; i++) {
-		s = getimpl(st, k[i]);
+	for (i = 0; i < file->file.nimpl; i++) {
+		s = file->file.impl[i];
 		if (s->impl.vis != Visexport)
 			continue;
 		tagnode(st, s, 0, hidelocal);
                 tr = s->impl.trait;
 		tagtrait(st, tr, 0, hidelocal);
 		for (j = 0; j < tr->naux; j++)
-			tr->aux[j]->vis = Visexport;
+			tr->aux[j]->vis = tr->vis;
 	}
-	free(k);
-
 }
-

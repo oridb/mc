@@ -96,6 +96,7 @@ const main = {args : byte[:][:]
 			| "install":	r = bld.install(b)
 			| "uninstall":	r = bld.uninstall(b)
 			| "test":	r = bld.test(b, cmd.args[1:])
+			| "bench":	r = bld.bench(b, cmd.args[1:])
 			| "list":	r = show(b, cmd.args[1:])
 			| _:
 				ok = true
@@ -120,6 +121,7 @@ const buildimm = {b, targ, inputs
 		.incpath=bld.opt_incpaths,
 		.libdeps=[][:]
 	]
+	bld.opt_objdir = ""
 	std.slpush(&b.all, "__out__")
 	std.htput(b.targs, "__out__", `bld.Bin &mt)
 	bld.deps(b)

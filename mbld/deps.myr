@@ -105,6 +105,13 @@ const myrdeps = {b, name, mt
 
 			n.wdir = std.sldup(mt.dir)
 			std.slpush(&n.cmd, std.pathjoin([b.basedir, opt_objdir, mt.dir, mt.name][:]))
+		elif mt.isbench
+			n = node(g, mt.name)
+			depends(g, n, to)
+			addnode(g, "bench", n)
+
+			n.wdir = std.sldup(mt.dir)
+			std.slpush(&n.cmd, std.pathjoin([b.basedir, opt_objdir, mt.dir, mt.name][:]))
 		else
 			addnode(g, "all", go)
 			go.instdir = config.Binpath
@@ -140,7 +147,7 @@ const myrdeps = {b, name, mt
 				depends(g, n, d)
 			;;
 			for `Xdep d : deps
-				scrapelib(b, d, mt.incpath)
+				scrapelib(b, mt.name, d, mt.incpath)
 				xdepends(b, g, n, d)
 				std.slpush(&libs, d)
 			;;
@@ -218,6 +225,10 @@ const cmddeps = {b, name, ct
 		a = std.htgetv(b.deps.targs, "test", [][:])
 		std.slpush(&a, n)
 		std.htput(b.deps.targs, "test", a)
+	elif ct.isbench
+		a = std.htgetv(b.deps.targs, "bench", [][:])
+		std.slpush(&a, n)
+		std.htput(b.deps.targs, "bench", a)
 	elif gen 
 		pid = run(ct.cmd, ct.dir)
 		match std.wait(pid)
@@ -264,10 +275,19 @@ const datdeps = {b, name, dt
 const addtests = {b, name, mt
 	for f : mt.inputs
 		addtest(b, mt, f)
+		addbench(b, mt, f)
 	;;
 }
 
 const addtest = {b, mt, f
+	addalt(b, mt, "test", f)
+}
+
+const addbench = {b, mt, f
+	addalt(b, mt, "bench", f)
+}
+
+const addalt = {b, mt, kind, f
 	var libs, deps
 	var sp, tp, op
 	var s, t, o
@@ -280,7 +300,7 @@ const addtest = {b, mt, f
 	*/
 	g = b.deps
 	s = changesuffix(f, ".myr")
-	sp = std.pathjoin([mt.dir, "test", s][:])
+	sp = std.pathjoin([mt.dir, kind, s][:])
 	std.slfree(s)
 	if !std.fexists(sp)
 		std.slfree(sp)
@@ -291,11 +311,11 @@ const addtest = {b, mt, f
 	leaf(g, sp)
 
 	t = changesuffix(f, "")
-	tp = std.pathjoin([opt_objdir, mt.dir, "test", t][:])
+	tp = std.pathjoin([opt_objdir, mt.dir, kind, t][:])
 	std.slfree(t)
 
 	o = changesuffix(f, config.Objsuffix)
-	op = std.pathjoin([opt_objdir, mt.dir, "test", o][:])
+	op = std.pathjoin([opt_objdir, mt.dir, kind, o][:])
 	std.slfree(o)
 
 	n = node(g, sp)
@@ -309,7 +329,7 @@ const addtest = {b, mt, f
 		depends(g, n, d)
 	;;
 	for `Xdep d : deps
-		scrapelib(b, d, mt.incpath)
+		scrapelib(b, mt.name, d, mt.incpath)
 		xdepends(b, g, n, d)
 		std.slpush(&libs, d)
 	;;
@@ -325,9 +345,9 @@ const addtest = {b, mt, f
 	n = node(g, tp)
 	depends(g, n, tp)
 	n.wdir = std.sldup(std.dirname(std.dirname(sp)))
-	std.slpush(&n.cmd, std.pathjoin([b.basedir, opt_objdir, mt.dir, "test", std.basename(tp)][:]))
+	std.slpush(&n.cmd, std.pathjoin([b.basedir, opt_objdir, mt.dir, kind, std.basename(tp)][:]))
 
-	addnode(g, "test", n)
+	addnode(g, kind, n)
 }
 
 const resolve = {b
@@ -354,7 +374,7 @@ const resolve = {b
 const edge = {g, n, e
 	match std.htget(g.gen, e)
 	| `std.None:
-		std.fatal("nothing satisfies {} for {}\n", e, n.lbl)
+		std.fatal("{}: missing build rule for {}\n", n.lbl, e)
 	| `std.Some d:	
 		std.slpush(&n.ndep, d)
 		std.slpush(&d.ngen, n)
@@ -382,6 +402,9 @@ const checkloop = {g, n, visited, looped, stk
 
 const musecmd = {b, n, mt, mu
 	std.slpush(&n.cmd, std.sldup(opt_muse))
+	for o : opt_museflags
+		std.slpush(&n.cmd, o)
+	;;
 	std.slpush(&n.cmd, std.sldup("-o"))
 	std.slpush(&n.cmd, std.sldup(mu))
 	std.slpush(&n.cmd, std.sldup("-p"))
@@ -404,6 +427,9 @@ const arcmd = {b, n, mt, ar
 const linkcmd = {b, n, mt, bin, libs, dynlibs, istest
 	for c : config.Linkcmd
 		std.slpush(&n.cmd, std.sldup(c))
+	;;
+	for o : opt_ldflags
+		std.slpush(&n.cmd, o)
 	;;
 	std.slpush(&n.cmd, std.sldup(bin))
 	if mt.ldscript.len > 0
@@ -439,6 +465,9 @@ const linkcmd = {b, n, mt, bin, libs, dynlibs, istest
 
 const myrcmd = {b, n, mt, src, istest
 	std.slpush(&n.cmd, std.sldup(opt_mc))
+	for o : opt_mcflags
+		std.slpush(&n.cmd, o)
+	;;
 	if opt_objdir.len > 0
 		pushopt(&n.cmd, "-O", std.sldup(opt_objdir))
 	;;

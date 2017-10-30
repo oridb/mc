@@ -40,12 +40,12 @@ const main = {
 
 const r = {f, buf
 	match bio.read(f, buf)
-	| `bio.Ok b:
+	| `std.Ok b:
 		-> b
-	| `bio.Eof:
+	| `std.Err `bio.Eof:
 		std.put("eof\n")
 		-> ""
-	| `bio.Err e:
+	| `std.Err e:
 		std.put("err\n")
 		-> ""
 	;;

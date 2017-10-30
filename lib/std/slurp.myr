@@ -15,7 +15,7 @@ const Bufstart = 4096
 
 const slurp = {path
 	var sl
-	match open(path, Ordonly)
+	match open(path, Oread)
 	| `Err e:	-> `Err e
 	| `Ok fd:
 		sl = fslurp(fd)

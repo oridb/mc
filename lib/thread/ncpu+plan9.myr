@@ -5,7 +5,7 @@ pkg thread =
 ;;
 
 const ncpu = {
-	match std.intparse(std.getenvv("NPROC", ""))
+	match std.intparse(std.getenvv("NPROC", "1"))
 	| `std.Some n:	-> n
 	| `std.None:	-> 1
 	;;

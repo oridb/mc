@@ -10,9 +10,11 @@ const mkpath = {p
 
 	for var i = 0; i < p.len; i++
 		if p[i] == ('/' : byte) && i != 0
-			st = mkdir(p[:i], 0o755)
-			if st != 0 && st != Eexist
-				-> st
+			if !fexists(p[:i])
+				st = mkdir(p[:i], 0o755)
+				if st != 0
+					-> st
+				;;
 			;;
 		;;
 	;;

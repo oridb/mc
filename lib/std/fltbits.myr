@@ -48,12 +48,12 @@ const flt32explode = {flt
 
 	bits = flt32bits(flt)
 	isneg = (bits >> 31) != 0 	/* msb is sign bit */
-	exp = (bits >> 22) & 0xff	/* exp is in bits [23..30] */
-	mant = bits & ((1 << 22) - 1)	/* msb is in bits [0..22] */
+	exp = (bits >> 23) & 0xff	/* exp is in bits [23..30] */
+	mant = bits & ((1 << 23) - 1)	/* msb is in bits [0..22] */
 
 	/* add back the implicit bit if this is not a denormal */
 	if exp != 0
-		mant |= 1 << 22
+		mant |= 1 << 23
 	else
 		exp = 1
 	;;

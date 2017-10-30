@@ -49,11 +49,11 @@ const main = {
 		}],
 		[.name="hash", .fn={ctx
 			var bs = mkset([][:])
-			testr.check(ctx, std.bshash(bs) == 2580988821, "wrong hash, got {}", std.bshash(bs))
+			testr.check(ctx, std.bshash(bs) == 0x726fdb47dd0e0e31, "wrong hash, got {}", std.bshash(bs))
 			std.bsput(bs, 123456)
-			testr.check(ctx, std.bshash(bs) == 2020624217, "wrong hash, got {}", std.bshash(bs))
+			testr.check(ctx, std.bshash(bs) == 0x778abc1d7706143b, "wrong hash, got {}", std.bshash(bs))
 			std.bsdel(bs, 123456)
-			testr.check(ctx, std.bshash(bs) == 2580988821, "wrong hash, got {}", std.bshash(bs))
+			testr.check(ctx, std.bshash(bs) == 0x726fdb47dd0e0e31, "wrong hash, got {}", std.bshash(bs))
 			std.bsfree(bs)
 		}]
 	][:])

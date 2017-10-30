@@ -120,10 +120,13 @@ struct Tyenv {
 
 struct Type {
 	Ty type;
-	int tid;
+	uint32_t tid;
 	Srcloc loc;
 	Vis vis;
 
+
+	Node **traits;		/* trait list */
+	size_t ntraits;		/* trait list size */
 
 	Type **gparam;		/* Tygeneric: type parameters that match the type args */
 	size_t ngparam;		/* Tygeneric: count of type parameters */
@@ -202,6 +205,8 @@ struct Node {
 			Node **init;	/* all __init__ function names of our deps. NB, this
 					   is a Nname, not an Ndecl */
 			size_t ninit;
+			Node **impl;	/* impls defined in this file, across all namespaces */
+			size_t nimpl;
 			Node *localinit;/* and the local one, if any */
 			Stab *globls;	/* global symtab */
 			Stab *builtins;	/* global symtab */

@@ -45,6 +45,7 @@ pkg bld =
 
 		islib	: bool
 		istest	: bool
+		isbench	: bool
 		install	: bool
 
 	;;
@@ -57,6 +58,7 @@ pkg bld =
 		tags	: byte[:][:]
 		durable	: bool
 		istest	: bool
+		isbench	: bool
 	;;
 
 	type mantarg = struct
@@ -80,6 +82,12 @@ pkg bld =
 		dyndep	: byte[:][:]
 		genuse	: byte[:]
 		genar	: byte[:]
+	;;
+
+	type testresult = union
+		`Pass
+		`Fail byte[:]
+		`Timing (int, flt64, flt64)
 	;;
 
 	type depgraph = struct

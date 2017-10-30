@@ -1,0 +1,100 @@
+use bio
+use std
+use thread
+
+use "types"
+use "session"
+use "parse"
+
+pkg http =
+	const announce	: (ds : byte[:] -> std.result(server#, err))
+	const shutdown	: (srv : server# -> void)
+	const serve	: (srv : server#, fn : (srv : server#, s : session#, req : req# -> void) -> void)
+	const respond	: (srv : server#, sess : session#, resp : resp# -> void)
+;;
+
+const announce = {ds
+	match std.announce(ds)
+	| `std.Err e:	-> `std.Err `Econn
+	| `std.Ok a:
+		-> `std.Ok std.mk([
+			.refs=1,
+			.ann=a,
+			.quit=false
+		])
+	;;
+}
+
+const serve = {srv, fn
+	while !srv.quit
+		match waitconn(srv)
+		| `std.Ok fd:
+			ref(srv)
+			thread.spawn({;communicate(srv, fd, fn)})
+		| `std.Err e:	/* eh? */
+		;;
+	;;
+	unref(srv)
+}
+
+const communicate = {srv, fd, fn
+	var s
+
+	s = mksrvsession(fd)
+	while !srv.quit
+		match parsereq(s)
+		| `std.Ok req:	fn(srv, s, req)
+		| `std.Err e:	break
+		;;
+	;;
+	std.close(fd)
+	unref(srv)
+}
+
+const respond = {srv, s, resp
+	var sb
+
+	sb = std.mksb()
+	ioput(s, "HTTP/1.1 {} {}\r\n", resp.status, statusstr(resp.status))
+	ioput(s, "Content-Length: {}\r\n", resp.body.len)
+	ioput(s, "Encoding: {}\r\n", resp.enc)
+	for (k, v) : resp.hdrs
+		ioput(s, "{}: {}\r\n", k, v)
+	;;
+	ioput(s, "\r\n")
+	iowrite(s, resp.body)
+	ioflush(s)
+}
+
+const statusstr = {st
+	match st
+	| 200:	-> "OK"
+	| 404:	-> "Not Found"
+	| 503:	-> "Internal Error"
+	| _:	-> "Bad State"
+	;;
+}
+
+const shutdown = {srv
+	std.aclose(srv.ann)
+	srv.quit = true
+}
+
+const waitconn = {srv
+	match std.accept(srv.ann)
+	| `std.Ok fd:	-> `std.Ok fd
+	| `std.Err e:	-> `std.Err `Econn
+	;;
+}
+
+
+const ref = {srv
+	thread.xadd(&srv.refs, 1)
+}
+
+const unref = {srv
+	thread.xadd(&srv.refs, -1)
+	if thread.xget(&srv.refs) == 0
+		std.free(srv)
+	;;
+}

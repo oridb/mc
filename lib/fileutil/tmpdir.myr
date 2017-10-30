@@ -1,0 +1,12 @@
+use std
+
+pkg fileutil =
+	const tmpdir	: (-> byte[:])
+;;
+
+const tmpdir = {
+	match std.getenv("TMPDIR")
+	| `std.Some d:	-> d
+	| `std.None:	-> "/tmp"
+	;;
+}

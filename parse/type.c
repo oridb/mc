@@ -15,6 +15,7 @@
 #include "parse.h"
 
 typedef struct Typename Typename;
+typedef struct Typair Typair;
 Type **tytab = NULL;
 Type **types = NULL;
 size_t ntypes;
@@ -22,6 +23,13 @@ Trait **traittab;
 size_t ntraittab;
 Node **impltab;
 size_t nimpltab;
+Htab *eqcache;
+
+struct Typair {
+	uint32_t atid;
+	uint32_t btid;
+};
+	
 
 static Htab *tydeduptab;
 /* Built in type constraints */
@@ -731,10 +739,48 @@ tyhash(void *ty)
 	return hash;
 }
 
+static ulong
+typairhash(void *pp)
+{
+	Typair *p;
+
+	p = pp;
+	return inthash(p->atid) ^ inthash(p->btid);
+}
+
+static int
+typaireq(void *a, void *b)
+{
+	Typair *pa, *pb;
+	pa = a;
+	pb = b;
+	return pa->atid == pb->atid && pa->btid == pb->btid;
+}
+
+static void
+equate(int32_t ta, int32_t tb)
+{
+	Typair *pa, *pb;
+
+	/*
+	 * unfortunately, we can't negatively cache
+	 * here because tyvars may unify down and
+	 * eventually make the negative result inaccurate.
+	 */
+	pa = zalloc(sizeof(Typair));
+	*pa = (Typair){ta, tb};
+	pb = zalloc(sizeof(Typair));
+	*pb = (Typair){ta, tb};
+
+	htput(eqcache, pa, pa);
+	htput(eqcache, pb, pb);
+}
+
 int
 tyeq_rec(Type *a, Type *b, Bitset *avisited, Bitset *bvisited, int search)
 {
 	Type *x, *y;
+	Typair p;
 	size_t i;
 	int ret;
 
@@ -752,6 +798,9 @@ tyeq_rec(Type *a, Type *b, Bitset *avisited, Bitset *bvisited, int search)
 		return 0;
 	if (a->nmemb != b->nmemb)
 		return 0;
+	p = (Typair){a->tid, b->tid};
+	if (hthas(eqcache, &p))
+		return 1;
 
 	if (a->tid == b->tid)
 		return 1;
@@ -800,16 +849,22 @@ tyeq_rec(Type *a, Type *b, Bitset *avisited, Bitset *bvisited, int search)
 				break;
 		}
 		break;
+	case Tygeneric:
+		if (!nameeq(a->name, b->name))
+			ret = 0;
+		for (i = 0; i < a->ngparam; i++) {
+			ret = ret && tyeq_rec(a->gparam[i], b->gparam[i], avisited, bvisited, search);
+			if (!ret)
+				break;
+		}
+		break;
 	case Tyname:
 		if (!nameeq(a->name, b->name))
 			ret = 0;
 		for (i = 0; i < a->narg; i++) {
-			x = a->arg[i];
-			y = b->arg[i];
-			if (!tyeq_rec(x, y, avisited, bvisited, search)) {
-				ret = 0;
+			ret = ret && tyeq_rec(a->arg[i], b->arg[i], avisited, bvisited, search);
+			if (!ret)
 				break;
-			}
 		}
 		break;
 	case Tyarray:
@@ -829,6 +884,8 @@ tyeq_rec(Type *a, Type *b, Bitset *avisited, Bitset *bvisited, int search)
 			}
 		}
 	}
+	if (ret)
+		equate(a->tid, b->tid);
 	bsdel(avisited, a->tid);
 	bsdel(bvisited, b->tid);
 
@@ -1042,6 +1099,7 @@ tyinit(Stab *st)
 	Type *ty;
 	Trait *tr;
 
+	eqcache = mkht(typairhash, typaireq);
 	tydeduptab = mkht(tyhash, tystricteq);
 	/* this must be done after all the types are created, otherwise we will
 	 * clobber the memoized bunch of types with the type params. */

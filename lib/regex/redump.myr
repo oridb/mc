@@ -57,12 +57,12 @@ const runall = {re, files
 const dump = {re, fd 
 	while true
 		match bio.readln(fd)
-		| `bio.Ok ln:
+		| `std.Ok ln:
 			show(re, ln, regex.exec(re, ln))
 			std.slfree(ln)
-		| `bio.Eof:
+		| `std.Err `bio.Eof:
 			break
-		| `bio.Err e:
+		| `std.Err e:
 			std.put("error reading from input: {}", e)
 			break
 		;;

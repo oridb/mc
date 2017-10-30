@@ -4,6 +4,7 @@ sub =
 	date
 	escfmt
 	fileutil
+	http
 	inifile
 	json
 	regex

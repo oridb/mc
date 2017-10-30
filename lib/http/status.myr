@@ -1,0 +1,67 @@
+use "types"
+
+pkg http =
+	const Continue			: status = 100 /* RFC 7231, 6.2.1*/
+	const SwitchingProtocols	: status = 101 /* RFC 7231, 6.2.2*/
+	const Processing		: status = 102 /* RFC 2518, 10.1*/
+
+	const Ok			: status = 200 /* RFC 7231, 6.3.1*/
+	const Created			: status = 201 /* RFC 7231, 6.3.2*/
+	const Accepted			: status = 202 /* RFC 7231, 6.3.3*/
+	const NonAuthoritativeInfo	: status = 203 /* RFC 7231, 6.3.4*/
+	const NoContent			: status = 204 /* RFC 7231, 6.3.5*/
+	const ResetContent		: status = 205 /* RFC 7231, 6.3.6*/
+	const PartialContent		: status = 206 /* RFC 7233, 4.1*/
+	const Multi			: status = 207 /* RFC 4918, 11.1*/
+	const AlreadyReported		: status = 208 /* RFC 5842, 7.1*/
+	const IMUsed			: status = 226 /* RFC 3229, 10.4.1*/
+
+	const MultipleChoices		: status = 300 /* RFC 7231, 6.4.1*/
+	const MovedPermanently		: status = 301 /* RFC 7231, 6.4.2*/
+	const Found			: status = 302 /* RFC 7231, 6.4.3*/
+	const SeeOther			: status = 303 /* RFC 7231, 6.4.4*/
+	const NotModified		: status = 304 /* RFC 7232, 4.1*/
+	const UseProxy			: status = 305 /* RFC 7231, 6.4.5*/
+	const TemporaryRedirect		: status = 307 /* RFC 7231, 6.4.7*/
+	const PermanentRedirect		: status = 308 /* RFC 7538, 3*/
+
+	const BadRequest		: status = 400 /* RFC 7231, 6.5.1*/
+	const Unauthorized		: status = 401 /* RFC 7235, 3.1*/
+	const PaymentRequired		: status = 402 /* RFC 7231, 6.5.2*/
+	const Forbidden			: status = 403 /* RFC 7231, 6.5.3*/
+	const NotFound			: status = 404 /* RFC 7231, 6.5.4*/
+	const MethodNotAllowed		: status = 405 /* RFC 7231, 6.5.5*/
+	const NotAcceptable		: status = 406 /* RFC 7231, 6.5.6*/
+	const ProxyAuthRequired		: status = 407 /* RFC 7235, 3.2*/
+	const RequestTimeout		: status = 408 /* RFC 7231, 6.5.7*/
+	const Conflict			: status = 409 /* RFC 7231, 6.5.8*/
+	const Gone			: status = 410 /* RFC 7231, 6.5.9*/
+	const LengthRequired		: status = 411 /* RFC 7231, 6.5.10*/
+	const PreconditionFailed	: status = 412 /* RFC 7232, 4.2*/
+	const RequestEntityTooLarge	: status = 413 /* RFC 7231, 6.5.11*/
+	const RequestURITooLong		: status = 414 /* RFC 7231, 6.5.12*/
+	const UnsupportedMediaType	: status = 415 /* RFC 7231, 6.5.13*/
+	const RangeNotSatisfiable	: status = 416 /* RFC 7233, 4.4*/
+	const ExpectationFailed		: status = 417 /* RFC 7231, 6.5.14*/
+	const Teapot			: status = 418 /* RFC 7168, 2.3.3*/
+	const UnprocessableEntity	: status = 422 /* RFC 4918, 11.2*/
+	const Locked			: status = 423 /* RFC 4918, 11.3*/
+	const FailedDependency		: status = 424 /* RFC 4918, 11.4*/
+	const UpgradeRequired		: status = 426 /* RFC 7231, 6.5.15*/
+	const PreconditionRequired	: status = 428 /* RFC 6585, 3*/
+	const TooManyRequests		: status = 429 /* RFC 6585, 4*/
+	const HeaderFieldsTooLarge	: status = 431 /* RFC 6585, 5*/
+	const UnavailableForLegal	: status = 451 /* RFC 7725, 3*/
+
+	const InternalServerError	: status = 500 /* RFC 7231, 6.6.1*/
+	const NotImplemented		: status = 501 /* RFC 7231, 6.6.2*/
+	const BadGateway		: status = 502 /* RFC 7231, 6.6.3*/
+	const ServiceUnavailable	: status = 503 /* RFC 7231, 6.6.4*/
+	const GatewayTimeout		: status = 504 /* RFC 7231, 6.6.5*/
+	const VersionNotSupported	: status = 505 /* RFC 7231, 6.6.6*/
+	const VariantAlsoNegotiates	: status = 506 /* RFC 2295, 8.1*/
+	const InsufficientStorage	: status = 507 /* RFC 4918, 11.5*/
+	const LoopDetected		: status = 508 /* RFC 5842, 7.2*/
+	const NotExtended		: status = 510 /* RFC 2774, 7*/
+	const NetworkAuthRequired	: status = 511 /* RFC 6585, 6*/
+;;

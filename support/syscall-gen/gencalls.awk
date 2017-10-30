@@ -79,7 +79,7 @@ $Typefield == "STD" || (!masterfmt && $1 == "asmlinkage") {
 		tabs="\t\t"
 	else
 		tabs = "\t"
-	num = sprintf("%s%s: scno = %d", numcst, tabs, numbertab[name]);
+	num = sprintf("%s%s: scno = %d", numcst, tabs, $1);
 	scnums[nnums++] = num
 
 	if (nocode)
@@ -107,7 +107,7 @@ $Typefield == "STD" || (!masterfmt && $1 == "asmlinkage") {
 		sep = ", ";
 	}
 	call = call sprintf("\n\t -> (syscall(Sys%s", name)
-	for (i = 1; i < argc; i++) {
+	for (i = 0; i < argc; i++) {
 		call = call sprintf(", a(%s)", argname[i])
 	}
 	call = call sprintf(") : %s)\n}", ret)

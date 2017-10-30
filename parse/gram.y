@@ -31,7 +31,6 @@ int yylex(void);
 static Op binop(int toktype);
 static Node *mkpseudodecl(Srcloc l, Type *t);
 static void installucons(Stab *st, Type *t);
-static void addtrait(Type *t, char *str);
 static void setattrs(Node *dcl, char **attrs, size_t nattrs);
 static void setupinit(Node *n);
 
@@ -85,7 +84,6 @@ static void setupinit(Node *n);
 
 %token<tok> Ttype	/* type */
 %token<tok> Tfor	/* for */
-%token<tok> Tin		/* in */
 %token<tok> Twhile	/* while */
 %token<tok> Tif		/* if */
 %token<tok> Telse	/* else */
@@ -499,13 +497,13 @@ generictype
 	: Ttyparam {$$ = mktyparam($1->loc, $1->id);}
 	| Ttyparam Twith name {
 		$$ = mktyparam($1->loc, $1->id);
-		addtrait($$, $3->name.name);
+		lappend(&$$->traits, &$$->ntraits, $3);
 	}
 	| Ttyparam Twith Toparen typaramlist Tcparen {
 		size_t i;
 		$$ = mktyparam($1->loc, $1->id);
 		for (i = 0; i < $4.nn; i++)
-			addtrait($$, $4.nl[i]->name.name);
+			lappend(&$$->traits, &$$->ntraits, $4.nl[i]);
 	}
 	;
 
@@ -947,8 +945,6 @@ continue   : Tcontinue
 
 forstmt : Tfor optexprln loopcond optexprln block
 	{$$ = mkloopstmt($1->loc, $2, $3, $4, $5);}
-	| Tfor expr Tin exprln block
-	{$$ = mkiterstmt($1->loc, $2, $4, $5);}
 	| Tfor expr Tcolon exprln block
 	{$$ = mkiterstmt($1->loc, $2, $4, $5);}
 	| Tfor decl Tendln loopcond optexprln block {
@@ -1073,21 +1069,6 @@ static void setupinit(Node *n)
 	n->decl.isinit = 1;
 	n->decl.vis = Vishidden;
 	n->decl.name->name.name = strdup(s);
-}
-
-static void addtrait(Type *t, char *str)
-{
-	size_t i;
-
-	for (i = 0; i < ntraittab; i++) {
-		if (!strcmp(namestr(traittab[i]->name), str)) {
-			if (!t->trneed)
-				t->trneed = mkbs();
-			bsput(t->trneed, i);
-			return;
-		}
-	}
-	lfatal(t->loc, "Constraint %s does not exist", str);
 }
 
 static Node *mkpseudodecl(Srcloc l, Type *t)

@@ -1,10 +1,8 @@
 #!/bin/sh
 #set -x
 export PATH=.:$PATH
-export MC=../6/6m
-export MU=../muse/muse
-export AS=AS
-export LD=ld
+export MYR_MC=../6/6m
+export MYR_MUSE=../muse/muse
 ARGS=$*
 NFAILURES=0
 NPASSES=0

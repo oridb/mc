@@ -28,7 +28,7 @@ pkg std =
 
 const Zslab	= (0 : slab#)
 const Zchunk	= (0 : chunk#)
-const Slabsz 	= 4*MiB
+const Slabsz 	= 512*KiB
 const Cachemax	= 4
 const Bktmax	= 128*KiB	/* a balance between wasted space and falling back to mmap */
 const Pagesz	= 4*KiB
@@ -71,7 +71,7 @@ const __init__ = {
 }
 
 const startalloctrace = {path
-	match openmode(path, Owronly | Ocreat, 0o644)
+	match openmode(path, Owrite | Ocreat, 0o644)
 	| `Ok fd:	tracefd = fd
 	| `Err e:	-> void
 	;;
@@ -92,7 +92,7 @@ const zbytealloc = {sz
 }
 
 const tracealloc = {p, sz
-	var stk	: void#[13]	/* [type, addr, sz, 10 stack slots] */
+	var stk	: void#[23]	/* [type, addr, sz, 10 stack slots] */
 
 	slfill(stk[:], (0 : void#))
 	stk[0] = (0 : void#)
@@ -123,6 +123,7 @@ const writealloctrace = {sl
 const bytealloc = {sz
 	var bkt, p
 
+	sz += 8
 	if sz <= Bktmax
 		bkt = &buckets[bktnum(sz)]
 		lock(memlck)
@@ -142,7 +143,12 @@ const bytealloc = {sz
 /* frees a blob that is 'sz' bytes long. */
 const bytefree = {p, sz
 	var bkt
+	var v
 
+	if p == (0 : byte#)
+		-> void
+	;;
+	v = ((p : size) + sz : uint32#)#
 	if trace
 		lock(memlck)
 		tracefree(p, sz)
@@ -253,7 +259,9 @@ const mkslab = {bkt
 		s = bkt.cache
 		bkt.cache = s.next
 		bkt.ncache--
+		-> s
 	;;
+
 	/*
 	tricky: we need power of two alignment, so we allocate double the
 	needed size, chop off the unaligned ends, and waste the address
@@ -308,13 +316,12 @@ const bktalloc = {bkt
 	b = s.freehd
 	s.freehd = b.next
 	s.nfree--
-	if s.nfree == 0
+	if s.freehd == Zchunk
 		bkt.slabs = s.next
 		if s.next != Zslab
 			s.next.prev = Zslab
 		;;
 	;;
-
 	-> (b : byte#)
 }
 
@@ -337,6 +344,16 @@ const bktfree = {bkt, m
 		s.prev = Zslab
 		bkt.slabs = s
 	elif s.nfree == bkt.nper - 1
+		/* unlink the slab from the list */
+		if s.next != Zslab
+			s.next.prev = s.prev
+		;;
+		if s.prev != Zslab
+			s.prev.next = s.next
+		;;
+		if bkt.slabs == s
+			bkt.slabs = s.next
+		;;
 		/*
 		HACK HACK HACK: if we can't unmap, keep an infinite cache per slab size.
 		We should solve this better somehow.
@@ -345,17 +362,8 @@ const bktfree = {bkt, m
 			s.next = bkt.cache
 			s.prev = Zslab
 			bkt.cache = s
+			bkt.ncache++
 		else
-			/* unlink the slab from the list */
-			if s.next != Zslab
-				s.next.prev = s.prev
-			;;
-			if s.prev != Zslab
-				s.prev.next = s.next
-			;;
-			if bkt.slabs == s
-				bkt.slabs = s.next
-			;;
 			/* we mapped 2*Slabsz so we could align it,
 			 so we need to unmap the same */
 			freemem(s.head, Slabsz*2)
@@ -433,3 +441,4 @@ be a power of two.
 const mtrunc = {m, align
 	-> ((m : intptr) & ~((align : intptr) - 1) : byte#)
 }
+
