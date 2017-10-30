@@ -44,8 +44,8 @@ const datefmt = {sb, fmt, d
 		if c == '%'
 			(c, fmt) = std.strstep(fmt)
 			match c
-			| 'a':	std.sbfmt(sb, "{}", _names.abbrevday[d.day])
-			| 'A':	std.sbfmt(sb, "{}", _names.fullday[d.day])
+			| 'a':	std.sbfmt(sb, "{}", _names.abbrevday[d.wday])
+			| 'A':	std.sbfmt(sb, "{}", _names.fullday[d.wday])
 			| 'b':	std.sbfmt(sb, "{}", _names.abbrevmon[d.mon])
 			| 'B':	std.sbfmt(sb, "{}", _names.fullmon[d.mon])
 			| 'c':	datefmt(sb, "%Y-%m-%d %H:%M:%S %z", d)

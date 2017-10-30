@@ -62,6 +62,20 @@ const main = {
 	d = date.addperiod(d, `date.Day 365)
 	eq("1972-12-31 00:00:00 +0000", std.bfmt(buf[:], "{D}", d))
 
+	/* check days */
+	d = date.mkinstant(0, "UTC")
+	eq("Thu",	std.bfmt(buf[:], "{f=%a}", d))
+	eq("Thursday",	std.bfmt(buf[:], "{f=%A}", d))
+
+	d = date.mkinstant(1409396041 * 1_000_000, "UTC")
+	eq("Sat",	std.bfmt(buf[:], "{f=%a}", d))
+	eq("Saturday", 	std.bfmt(buf[:], "{f=%A}", d))
+
+	d = date.mkinstant(1509396041 * 1_000_000, "UTC")
+	eq("Mon",	std.bfmt(buf[:], "{f=%a}", d))
+	eq("Monday", 	std.bfmt(buf[:], "{f=%A}", d))
+
+
 	d = date.mkinstant(12*3601*1_000_000, "")
 	for var i = 0; i < 50; i++
 		d = date.addperiod(d, `date.Day 1)
