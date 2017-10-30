@@ -1431,16 +1431,7 @@ simpfn(Simp *s, char *name, Node *dcl)
 	for (i = 0; i < s->nstmts; i++) {
 		if (s->stmts[i]->type != Nexpr)
 			continue;
-		if (debugopt['f']) {
-			printf("FOLD FROM ----------\n");
-			dump(s->stmts[i], stdout);
-		}
 		s->stmts[i] = fold(s->stmts[i], 0);
-		if (debugopt['f']) {
-			printf("TO ------------\n");
-			dump(s->stmts[i], stdout);
-			printf("DONE ----------------\n");
-		}
 	}
 
 	cfg = mkcfg(dcl, s->stmts, s->nstmts);
