@@ -256,9 +256,9 @@ tagexports(Node *file, int hidelocal)
 				tagtype(st, t->gparam[j], 0, hidelocal);
 		}
 	}
+	free(k);
 
 	/* tag the traits */
-	free(k);
 	tr = NULL;
 	k = htkeys(st->tr, &n);
 	for (j = 0; j < n; j++) {
