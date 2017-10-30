@@ -581,6 +581,9 @@ putimpl(Stab *st, Node *n)
 		fatal(n, "trait %s already implemented over %s at %s:%d",
 			namestr(n->impl.traitname), tystr(n->impl.type),
 			fname(n->loc), lnum(n->loc));
+	/* if this is not a duplicate, record it for later export */
+	if (!impl)
+		lappend(&file->file.impl, &file->file.nimpl, n);
 	/*
 	 The impl is not defined in this file, so setting the
 	 trait name would be a bug here.

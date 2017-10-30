@@ -205,6 +205,8 @@ struct Node {
 			Node **init;	/* all __init__ function names of our deps. NB, this
 					   is a Nname, not an Ndecl */
 			size_t ninit;
+			Node **impl;	/* impls defined in this file, across all namespaces */
+			size_t nimpl;
 			Node *localinit;/* and the local one, if any */
 			Stab *globls;	/* global symtab */
 			Stab *builtins;	/* global symtab */

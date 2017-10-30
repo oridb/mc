@@ -1032,10 +1032,17 @@ foundextlib:
 			impl = unpickle(f);
 			impl->impl.isextern = 1;
 			impl->impl.vis = vis;
-			/* specialized declarations always go into the global stab */
+			/*
+			 * Unfortunately, impls can insert their symbols into whatever
+			 * namespace the trait comes from. This complicates things a bit.
+			 */
 			for (i = 0; i < impl->impl.ndecls; i++) {
-				impl->impl.decls[i]->decl.isglobl = 1;
-				putdcl(file->file.globls, impl->impl.decls[i]);
+				dcl = impl->impl.decls[i];
+				dcl->decl.isglobl = 1;
+				ns = file->file.globls;
+				if (dcl->decl.name->name.ns)
+					ns = findstab(s, dcl->decl.name->name.ns);
+				putdcl(ns, dcl);
 			}
 			break;
 		case EOF:
@@ -1212,9 +1219,8 @@ writeuse(FILE *f, Node *file)
 		}
 	}
 
-	k = htkeys(st->tr, &n);
-	for (i = 0; i < n; i++) {
-		tr = gettrait(st, k[i]);
+	for (i = 0; i < ntraittab; i++) {
+		tr = traittab[i];
 		if (tr->uid < Ntraits)
 			continue;
 		if (tr->vis == Visexport || tr->vis == Vishidden) {
@@ -1222,19 +1228,16 @@ writeuse(FILE *f, Node *file)
 			traitpickle(f, tr);
 		}
 	}
-	free(k);
 
-	k = htkeys(st->impl, &n);
-	for (i = 0; i < n; i++) {
+	for (i = 0; i < nimpltab; i++) {
 		/* merging during inference should remove all protos */
-		s = getimpl(st, k[i]);
+		s = impltab[i];
 		assert(!s->impl.isproto);
 		if (s->impl.vis == Visexport || s->impl.vis == Vishidden) {
 			wrbyte(f, 'I');
 			pickle(f, s);
 		}
 	}
-	free(k);
 
 	k = htkeys(st->dcl, &n);
 	for (i = 0; i < n; i++) {

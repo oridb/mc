@@ -1923,19 +1923,21 @@ specializeimpl(Node *n)
 	Node *dcl, *proto, *name, *sym;
 	Tysubst *subst;
 	Type *ty;
-	Trait *t;
+	Trait *tr;
 	size_t i, j;
 	int generic;
+	char *traitns;
 
-	t = gettrait(curstab(), n->impl.traitname);
-	if (!t)
+	tr = gettrait(curstab(), n->impl.traitname);
+	if (!tr)
 		fatal(n, "no trait %s\n", namestr(n->impl.traitname));
-	n->impl.trait = t;
+	n->impl.trait = tr;
+	traitns = tr->name->name.ns;
 
 	dcl = NULL;
-	if (n->impl.naux != t->naux)
+	if (n->impl.naux != tr->naux)
 		fatal(n, "%s incompatibly specialized with %zd types instead of %zd types",
-			namestr(n->impl.traitname), n->impl.naux, t->naux);
+			namestr(n->impl.traitname), n->impl.naux, tr->naux);
 	n->impl.type = tf(n->impl.type);
 	pushenv(n->impl.type->env);
 	for (i = 0; i < n->impl.naux; i++)
@@ -1953,24 +1955,24 @@ specializeimpl(Node *n)
 		   here.
 		*/
 		if (file->file.globls->name)
-			setns(dcl->decl.name, file->file.globls->name);
-		for (j = 0; j < t->nproto; j++) {
-			if (nsnameeq(dcl->decl.name, t->proto[j]->decl.name)) {
-				proto = t->proto[j];
+			setns(dcl->decl.name, traitns);
+		for (j = 0; j < tr->nproto; j++) {
+			if (nsnameeq(dcl->decl.name, tr->proto[j]->decl.name)) {
+				proto = tr->proto[j];
 				break;
 			}
 		}
 		if (!proto)
 			fatal(n, "declaration %s missing in %s, near %s", namestr(dcl->decl.name),
-					namestr(t->name), ctxstr(n));
+					namestr(tr->name), ctxstr(n));
 
 		/* infer and unify types */
 		pushenv(proto->decl.env);
-		verifytraits(n, t->param, n->impl.type);
+		verifytraits(n, tr->param, n->impl.type);
 		subst = mksubst();
-		substput(subst, t->param, n->impl.type);
-		for (j = 0; j < t->naux; j++)
-			substput(subst, t->aux[j], n->impl.aux[j]);
+		substput(subst, tr->param, n->impl.type);
+		for (j = 0; j < tr->naux; j++)
+			substput(subst, tr->aux[j], n->impl.aux[j]);
 		ty = tyspecialize(type(proto), subst, delayed, NULL);
 		substfree(subst);
 		popenv(proto->decl.env);
@@ -1987,7 +1989,7 @@ specializeimpl(Node *n)
 		sym = getdcl(file->file.globls, name);
 		if (sym)
 			fatal(n, "trait %s already specialized with %s on %s:%d",
-				namestr(t->name), tystr(n->impl.type),
+				namestr(tr->name), tystr(n->impl.type),
 				fname(sym->loc), lnum(sym->loc));
 		dcl->decl.name = name;
 		putdcl(file->file.globls, dcl);
@@ -1998,7 +2000,7 @@ specializeimpl(Node *n)
 			lappend(&proto->decl.gimpl, &proto->decl.ngimpl, dcl);
 			lappend(&proto->decl.gtype, &proto->decl.ngtype, ty);
 		}
-		dcl->decl.vis = t->vis;
+		dcl->decl.vis = tr->vis;
 		lappend(&impldecl, &nimpldecl, dcl);
 
 		if (generic)

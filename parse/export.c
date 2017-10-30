@@ -278,9 +278,8 @@ tagexports(Node *file, int hidelocal)
 	free(k);
 
 	/* tag the impls */
-	k = htkeys(st->impl, &n);
-	for (i = 0; i < n; i++) {
-		s = getimpl(st, k[i]);
+	for (i = 0; i < file->file.nimpl; i++) {
+		s = file->file.impl[i];
 		if (s->impl.vis != Visexport)
 			continue;
 		tagnode(st, s, 0, hidelocal);
@@ -289,7 +288,4 @@ tagexports(Node *file, int hidelocal)
 		for (j = 0; j < tr->naux; j++)
 			tr->aux[j]->vis = tr->vis;
 	}
-	free(k);
-
 }
-
