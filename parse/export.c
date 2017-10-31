@@ -260,26 +260,24 @@ tagexports(Node *file, int hidelocal)
 
 	/* tag the traits */
 	tr = NULL;
-	k = htkeys(st->tr, &n);
-	for (j = 0; j < n; j++) {
-		tr = gettrait(st, k[j]);
+	for (i = 0; i < ntraittab; i++) {
+		tr = traittab[i];
 		if (tr->vis != Visexport)
 			continue;
 		if (hidelocal && tr->ishidden)
 			tr->vis = Vishidden;
 		tr->param->vis = tr->vis;
-		for (i = 0; i < tr->naux; i++)
-			tr->aux[i]->vis = tr->vis;
-		for (i = 0; i < tr->nproto; i++) {
-			tr->proto[i]->decl.vis = tr->vis;
-			tagnode(st, tr->proto[i], 0, hidelocal);
+		for (j = 0; j < tr->naux; j++)
+			tr->aux[j]->vis = tr->vis;
+		for (j = 0; j < tr->nproto; j++) {
+			tr->proto[j]->decl.vis = tr->vis;
+			tagnode(st, tr->proto[j], 0, hidelocal);
 		}
 	}
-	free(k);
 
 	/* tag the impls */
-	for (i = 0; i < file->file.nimpl; i++) {
-		s = file->file.impl[i];
+	for (i = 0; i < nimpltab; i++) {
+		s = impltab[i];
 		if (s->impl.vis != Visexport)
 			continue;
 		tagnode(st, s, 0, hidelocal);
