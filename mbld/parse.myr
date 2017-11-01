@@ -61,8 +61,8 @@ const sortdeps = {b
 	var all
 
 	all = [][:]
-	looped = std.mkht(std.strhash, std.streq)
-	marked = std.mkht(std.strhash, std.streq)
+	looped = std.mkht()
+	marked = std.mkht()
 	for dep : b.all
 		match gettarg(b.targs, dep)
 		| `Bin _:	all = visit(all, b, "all", dep, looped, marked)

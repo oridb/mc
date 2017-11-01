@@ -362,8 +362,8 @@ const resolve = {b
 	;;
 
 	stk = [][:]
-	visited = std.mkht(std.ptrhash, std.ptreq)
-	looped = std.mkht(std.ptrhash, std.ptreq)
+	visited = std.mkht()
+	looped = std.mkht()
 	for n : g.nodes
 		checkloop(g, n, visited, looped, &stk)
 	;;

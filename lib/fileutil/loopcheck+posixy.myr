@@ -14,7 +14,7 @@ const mkloopcheck = {cwd
 	var ht : std.htab((int64, int64), void)#
 	var l
 
-	ht = std.mkht(fidhash, fideq)
+	ht = std.mkht()
 	l = (ht : loopcheck)
 	looped(l, cwd)
 	-> l
@@ -48,18 +48,22 @@ const fid = {p
 	;;
 }
 
-const fidhash = {fid
-	var dev, ino
+impl std.hashable (int64, int64) =
+	hash = {fid
+		var dev, ino
 
-	(dev, ino) = fid
-	-> std.inthash(dev) ^ std.inthash(ino)
-}
+		(dev, ino) = fid
+		-> std.hash(dev) ^ std.hash(ino)
+	}
+;;
 
-const fideq = {a, b
-	var adev, aino
-	var bdev, bino
+impl std.comparable (int64, int64) =
+	cmp = {a, b
+		var adev, aino
+		var bdev, bino
 
-	(adev, aino) = a
-	(bdev, bino) = b
-	-> adev == bdev && aino == bino
-}
+		(adev, aino) = a
+		(bdev, bino) = b
+		-> adev == bdev && aino == bino
+	}
+;;

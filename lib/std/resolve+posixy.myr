@@ -72,8 +72,8 @@ var search	: byte[:][:]
 var nameservers	: netaddr[:]
 
 const __init__ = {
-	hostmap = mkht(strhash, streq)
-	dnscache = mkht(strhash, streq)
+	hostmap = mkht()
+	dnscache = mkht()
 	loadhosts()
 	loadresolv()
 }

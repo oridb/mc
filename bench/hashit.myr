@@ -5,21 +5,21 @@ const main = {
 	testr.bench([
 		[.name="hashstr", .fn={ctx;
 			for var i = 0; i < 1000; i++
-				std.strhash("foobar")
+				std.hash("foobar")
 			;;
 		}],
 		[.name="hashint", .fn={ctx
 			for var i = 0; i < 1000; i++
-				std.inthash(123)
+				std.hash(123)
 			;;
 		}],
 		[.name="hashlongstr", .fn={ctx
 			for var i = 0; i < 1000; i++
-				std.strhash(a)
+				std.hash(a)
 			;;
 		}],
 		[.name="htget", .fn={ctx
-			var h = std.mkht(std.strhash, std.streq)
+			var h = std.mkht()
 			std.htput(h, "foo", 123)
 			for var i = 0; i < 1000; i++
 				std.htget(h, "foo")
@@ -27,14 +27,14 @@ const main = {
 			std.htfree(h)
 		}],
 		[.name="htput", .fn={ctx
-			var h = std.mkht(std.strhash, std.streq)
+			var h = std.mkht()
 			for var i = 0; i < 1000; i++
 				std.htput(h, "foo", 123)
 			;;
 			std.htfree(h)
 		}],
 		[.name="htputmany", .fn={ctx
-			var h = std.mkht(std.inthash, std.inteq)
+			var h = std.mkht()
 			for var i = 0; i < 1000; i++
 				std.htput(h, i, 123)
 			;;

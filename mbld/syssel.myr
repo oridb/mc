@@ -27,8 +27,8 @@ generic mksyssel = {b, file, line, targ
 		.file = file,
 		.line = line,
 		.targ = targ,
-		._match = std.mkht(std.strhash, std.streq),
-		._best = std.mkht(std.strhash, std.streq),
+		._match = std.mkht(),
+		._best = std.mkht(),
 		.sysattrs = b.tags
 	])
 	-> syssel

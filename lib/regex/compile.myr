@@ -46,7 +46,7 @@ const dbgcompile = {pat, trace
 		.nmatch = 1,
 		.debug = true,
 		.trace = trace,
-		.astloc = std.mkht(std.ptrhash, std.ptreq),
+		.astloc = std.mkht(),
 	])
 	res = regexcompile(re, 0)
 	-> res

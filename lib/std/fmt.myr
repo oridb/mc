@@ -21,6 +21,7 @@ use "striter"
 use "strsplit"
 use "syswrap"
 use "syswrap-ss"
+use "traits"
 use "types"
 use "utf"
 use "varargs"
@@ -55,7 +56,7 @@ pkg std =
 ;;
 
 const __init__ = {
-	fmtmap = mkht(strhash, streq)
+	fmtmap = mkht()
 }
 
 type fmtdesc = struct

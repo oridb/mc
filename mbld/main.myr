@@ -140,13 +140,13 @@ const mkbuild = {tags
 	var b
 
 	b = std.zalloc()
-	b.libs = std.mkht(std.strhash, std.streq)
-	b.proc = std.mkht(std.inthash, std.inteq)
-	b.targs = std.mkht(std.strhash, std.streq)
-	b.tags = std.mkht(std.strhash, std.streq)
+	b.libs = std.mkht()
+	b.proc = std.mkht()
+	b.targs = std.mkht()
+	b.tags = std.mkht()
 	b.deps = std.mk([
-		.targs = std.mkht(std.strhash, std.streq),
-		.gen = std.mkht(std.strhash, std.streq),
+		.targs = std.mkht(),
+		.gen = std.mkht(),
 		.leaves = [][:],
 		.nodes = [][:],
 	])

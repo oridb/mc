@@ -2,6 +2,7 @@ use "alloc"
 use "die"
 use "extremum"
 use "option"
+use "traits"
 use "types"
 
 pkg std =
@@ -17,8 +18,8 @@ pkg std =
 		dead	: bool[:]
 	;;
 
-	generic mkht	: (h : (k : @k -> uint64), eq : (a : @k, b : @k -> bool) -> htab(@k, @v)#)
-	generic htinit	: (ht : htab(@k, @v)#, h : (k : @k -> uint64), eq : (a : @k, b : @k -> bool) -> void)
+	generic mkht	: ( -> htab(@k, @v)#)
+	generic htinit	: (ht : htab(@k, @v)# -> void)
 	generic htfree	: (ht : htab(@k, @v)# -> void)
 	generic htput	: (ht : htab(@k, @v)#, k : @k, v : @v -> void)
 	generic htdel	: (ht : htab(@k, @v)#, k : @k -> void)
@@ -38,10 +39,10 @@ pkg std =
 
 const Initsz = 32
 
-generic hash = {ht, k
+generic xhash = {k
 	var h
 
-	h = ht.hash(k)
+	h = hash(k)
 	if h == 0
 		-> 1
 	else
@@ -82,7 +83,7 @@ generic idx = {ht, k
 	var h
 
 	di = 0
-	h = hash(ht, k)
+	h = xhash(k)
 	i = h & (ht.keys.len - 1)
 	while true
 		while ht.hashes[i] != 0 && !ht.dead[i] && ht.hashes[i] != h
@@ -92,7 +93,7 @@ generic idx = {ht, k
 		if ht.hashes[i] == 0
 			-> `None
 		;;
-		if ht.hashes[i] == h && !ht.dead[i] && ht.eq(ht.keys[i], k)
+		if ht.hashes[i] == h && !ht.dead[i] && cmp(ht.keys[i], k)
 			break
 		;;
 		di++
@@ -101,20 +102,16 @@ generic idx = {ht, k
 	-> `Some i
 }
 
-generic mkht = {h, eq
+generic mkht = {
 	var ht
 
 	ht = alloc()
-	htinit(ht, h, eq)
+	htinit(ht)
 
 	-> ht
 }
 
-generic htinit = {ht, h, eq
-
-	ht.hash = h
-	ht.eq = eq
-
+generic htinit = {ht
 	ht.nelt = 0
 	ht.ndead = 0
 	ht.keys = slalloc(Initsz)
@@ -137,11 +134,11 @@ generic htput = {ht, k, v
 	var neltincr
 
 	di = 0
-	h = hash(ht, k)
+	h = xhash(k)
 	i = h & (ht.keys.len - 1)
 	neltincr = 1
 	while ht.hashes[i] != 0 && !ht.dead[i]
-		if ht.hashes[i] == h &&	ht.eq(ht.keys[i], k)
+		if ht.hashes[i] == h &&	cmp(ht.keys[i], k)
 			neltincr = 0
 			break
 		;;
