@@ -10,6 +10,19 @@ pkg http =
 	pkglocal const parsenumber	: (str : byte[:]#, base : int -> std.option(int))
 ;;
 
+const strcaseeq = {a : byte[:], b : byte[:] -> bool
+	var ca, cb
+
+	while a.len == 0 || b.len == 0
+		(ca, a) = std.strstep(a)
+		(cb, b) = std.strstep(b)
+		if std.tolower(ca) != std.tolower(cb)
+			-> false
+		;;
+	;;
+	-> a.len == b.len
+}
+
 const parsereq = {s
 	var r, err
 
@@ -221,7 +234,7 @@ const getenc = {r
 
 const findhdr = {r, name
 	for (k, v) : r.hdrs
-		if std.strcaseeq(k, name)
+		if strcaseeq(k, name)
 			-> `std.Some v
 		;;
 	;;

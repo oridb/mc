@@ -1,12 +1,13 @@
 use "alloc"
 use "die"
 use "extremum"
+use "hashfuncs"
 use "mk"
 use "slcp"
 use "sldup"
 use "slfill"
+use "traits"
 use "types"
-use "hashfuncs"
 
 pkg std =
 	type bitset = struct
@@ -28,9 +29,10 @@ pkg std =
 	const bsdiff	: (a : bitset#, b : bitset# -> void)
 	const bsintersect	: (a : bitset#, b : bitset# -> void)
 	const bsunion	: (a : bitset#, b : bitset# -> void)
-	const bseq	: (a : bitset#, b : bitset# -> bool)
 	const bsissubset	: (a : bitset#, b : bitset# -> bool)
-	const bshash	: (a : bitset# -> uint64)
+
+	impl comparable bitset#
+	impl hashable bitset#
 
 	type bsiter = struct
 		idx	: size
@@ -145,25 +147,29 @@ const bsissubset = {a, b
 	-> true
 }
 
-const bseq = {a, b
-	eqsz(a, b)
-	for var i = 0; i < a.bits.len; i++
-		if a.bits[i] != b.bits[i]
-			-> false
+impl comparable bitset# =
+	cmp = {a, b
+		eqsz(a, b)
+		for var i = 0; i < a.bits.len; i++
+			if a.bits[i] != b.bits[i]
+				-> false
+			;;
 		;;
-	;;
-	-> true
-}
+		-> true
+	}
+;;
 
-const bshash = {a
-	var end : size
+impl hashable bitset# =
+	hash = {a
+		var end : size
 
-	end = a.bits.len
-	while end > 0 && a.bits[end - 1] == 0
-		end--
-	;;
-	-> std.slhash(a.bits[:end])
-}
+		end = a.bits.len
+		while end > 0 && a.bits[end - 1] == 0
+			end--
+		;;
+		-> std.hash(a.bits[:end])
+	}
+;;
 
 const ensurelen = {bs, len
 	if bs.bits.len <= len

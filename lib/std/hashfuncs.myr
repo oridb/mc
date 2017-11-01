@@ -9,22 +9,7 @@ use "types"
 use "utf"
 
 pkg std =
-	const strhash	: (s : byte[:]	-> uint64)
-	const streq	: (a : byte[:], b : byte[:]	-> bool)
-
-	const strcasehash	: (s : byte[:]	-> uint64)
-	const strcaseeq	: (a : byte[:], b : byte[:]	-> bool)
-
-	generic ptrhash	: (p : @a#	-> uint64)
-	generic ptreq	: (a : @a#, b : @a#	-> bool)
-
-	generic inthash	: (v : @a::(integral,numeric)	-> uint64)
-	generic inteq	: (a : @a::(integral,numeric), b : @a::(integral,numeric) -> bool)
-
-	const murmurhash2	: (data : byte[:], seed : uint32 -> uint32)
 	const siphash24	: (data : byte[:], seed : byte[16] -> uint64)
-
-	generic slhash	: (sl : @a[:] -> uint64)
 
 	impl comparable @a[:] =
 		cmp = {a, b
@@ -64,119 +49,6 @@ pkg std =
 ;;
 
 const Seed : byte[16] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-
-generic slhash = {data : @a[:]
-	-> strhash(slbytes(data))
-}
-
-generic slbytes = {data : @a[:]
-	var n
-
-	n = data.len * sizeof(@a)
-	-> (data : byte#)[:n]
-}
-
-const strhash = {s
-	-> siphash24(s, Seed)
-}
-
-const strcaseeq = {a, b
-	var ca, cb
-
-	while true
-		if a.len == 0 || b.len == 0
-			break
-		;;
-		(ca, a) = std.charstep(a)
-		(cb, b) = std.charstep(b)
-		if std.tolower(ca) != std.tolower(cb)
-			-> false
-		;;
-	;;
-	-> a.len == b.len
-}
-
-const strcasehash = {s
-	var chars
-	var c, h
-
-	chars = [][:]
-	while s.len != 0
-		(c, s) = std.charstep(s)
-		std.slpush(&chars, std.tolower(c))
-	;;
-	h = siphash24(slbytes(chars), Seed)
-	slfree(chars)
-	-> h
-}
-
-const streq = {a, b
-	-> sleq(a, b)
-}
-
-generic ptrhash = {p : @a#
-	-> inthash((p : intptr))
-}
-
-generic ptreq = {a, b
-	-> a == b
-}
-
-generic inthash = {v : @a::(integral,numeric)
-	var p
-
-	p = (&v : byte#)
-	-> siphash24(p[0:sizeof(@a)], Seed)
-}
-
-generic inteq = {a, b
-	-> a == b
-}
-
-const murmurhash2 = {data, seed
-	const m = 0x5bd1e995;
-	const r = 24
-	var h, k
-	
-	h = seed ^ data.len
-	while data.len >= 4
-		k = (data[0] : uint32)
-		k |= (data[1] : uint32) << 8
-		k |= (data[2] : uint32) << 16
-		k |= (data[3] : uint32) << 24
-
-		k *= m
-		k ^= k >> r
-		k *= m
-
-		h *= m
-		h ^= k
-		data = data[4:]
-	;;
-
-	match data.len
-	| 3:
-		h ^= (data[2] : uint32) << 16
-		h ^= (data[1] : uint32) << 8
-		h ^= (data[0] : uint32)
-		h *= m
-	| 2:
-		h ^= (data[1] : uint32) << 8
-		h ^= (data[0] : uint32)
-		h *= m
-	| 1:
-		h ^= (data[0] : uint32)
-		h *= m
-	| 0:	/* nothing */
-	| _:	die("0 < len < 4 must be true")
-	;;
-
-	h ^= h >> 13
-	h *= m
-	h ^= h >> 15
-
-	-> h
-}
 
 const sipround = {v0, v1, v2, v3 -> (uint64, uint64, uint64, uint64)
 	v0 += v1

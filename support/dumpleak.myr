@@ -38,7 +38,7 @@ const main = {args
 		;;
 	;;
 
-	stats.tab = std.mkht(std.inthash, std.inteq)
+	stats.tab = std.mkht()
 	for d : cmd.args
 		match bio.open(d, bio.Rd)
 		| `std.Ok f:	dump(d, f, &stats)
@@ -99,7 +99,7 @@ const tracefree = {path, f, stats
 const dumptrace = {tab
 	var aggr
 
-	aggr = std.mkht(hashintsl, std.sleq)
+	aggr = std.mkht()
 	for (k, (sz, stk)) : std.byhtkeyvals(tab)
 		match std.htget(aggr, stk[:stackaggr])
 		| `std.Some (count, total):	
@@ -119,14 +119,4 @@ const get64 = {path, f
 	| `std.Ok v:	-> v
 	| res:	std.fatal("failed to read {}: {}\n", path, res)
 	;;
-}
-
-const hashintsl = {sl
-	var h
-
-	h = 0
-	for i : sl
-		h ^= std.inthash(i)
-	;;
-	-> h
 }

@@ -32,7 +32,7 @@ pkg std =
 var statusmap	: htab(pid, waitstatus)#
 
 const __init__ = {
-	statusmap = mkht(inthash, inteq)
+	statusmap = mkht()
 }
 
 const waitany = {

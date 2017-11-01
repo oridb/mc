@@ -119,9 +119,9 @@ const addlibs = {b, sl, libs, incs
 	var added, diradded, looped
 	var lo
 
-	added  = std.mkht(std.strhash, std.streq)
-	looped  = std.mkht(std.strhash, std.streq)
-	diradded  = std.mkht(std.strhash, std.streq)
+	added  = std.mkht()
+	looped  = std.mkht()
+	diradded  = std.mkht()
 
 	lo = sl#.len
 	for l : libs
