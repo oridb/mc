@@ -4,6 +4,7 @@ use "die"
 use "getint"
 use "sleq"
 use "slpush"
+use "traits"
 use "types"
 use "utf"
 
@@ -24,6 +25,42 @@ pkg std =
 	const siphash24	: (data : byte[:], seed : byte[16] -> uint64)
 
 	generic slhash	: (sl : @a[:] -> uint64)
+
+	impl comparable @a[:] =
+		cmp = {a, b
+			-> sleq(a, b)
+		}
+	;;
+
+	impl hashable @a[:] =
+		hash = {a
+			-> siphash24((a : byte#)[:a.len * sizeof(@a)], Seed)
+		}
+	;;
+
+	impl comparable @a::(integral,numeric) =
+		cmp = {a, b
+			-> a == b
+		}
+	;;
+
+	impl hashable @a::(integral,numeric) =
+		hash = {a
+			-> siphash24((&a : byte#)[:sizeof(@a)], Seed)
+		}
+	;;
+
+	impl comparable @a# =
+		cmp = {a, b
+			-> a == b
+		}
+	;;
+
+	impl hashable @a# =
+		hash = {a
+			-> hash((a : intptr))
+		}
+	;;
 ;;
 
 const Seed : byte[16] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]

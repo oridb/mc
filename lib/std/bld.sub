@@ -75,6 +75,7 @@ lib std {inc=.} =
 	striter.myr
 	swap.myr
 	threadhooks.myr
+	traits.myr
 	try.myr
 	types.myr
 	units.myr
