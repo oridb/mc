@@ -13,7 +13,7 @@ const main = {
 
 	i = 0
 	for sp : std.bysplit("foo+++bar", "++")
-		std.assert(std.streq(splits[i++], sp), "wrong split {}", sp)
+		std.assert(std.cmp(splits[i++], sp), "wrong split {}", sp)
 	;;
 	std.assert(i == splits.len, "wrong split count")
 }
