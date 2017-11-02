@@ -4,28 +4,20 @@ use testr
 const main = {
 	testr.run([
 		[.name="string hash and equality", .fn={ctx
-			testr.check(ctx, std.strhash("abc") == 0x5dbcfa53aa2007a5, "wrong hash\n")
-			testr.check(ctx, std.streq("abc\0def", "abc\0def"), "equal strings not equal\n")
-			testr.check(ctx, !std.streq("abc\0def", "abcdef"), "unequal strings are equal\n")
-		}],
-		[.name="case insensitive hash and equality", .fn={ctx
-			testr.check(ctx, std.strcasehash("abc") == std.strcasehash("AbC"), "wrong case insensitive hash\n")
-			testr.check(ctx, std.strcaseeq("abc", "AbC"), "equal case insensitive strings not equal")
-			testr.check(ctx, !std.strcaseeq("abc", "AbCd"), "unequal case insensitive strings equal")
+			testr.check(ctx, std.hash("abc") == 0x5dbcfa53aa2007a5, "wrong hash\n")
+			testr.check(ctx, std.cmp("abc\0def", "abc\0def"), "equal strings not equal\n")
+			testr.check(ctx, !std.cmp("abc\0def", "abcdef"), "unequal strings are equal\n")
 		}],
 		[.name="pointer equality", .fn={ctx
 			var x, y: int
 			/* can't sanely test ptrhash; it will change every time */
-			testr.check(ctx, std.ptreq(&x, &x), "equal pointers not equal")
-			testr.check(ctx, !std.ptreq(&x, &y), "unequal pointers are equal")
+			testr.check(ctx, std.cmp(&x, &x), "equal pointers not equal")
+			testr.check(ctx, !std.cmp(&x, &y), "unequal pointers are equal")
 		}],
 		[.name="int hash and equality", .fn={ctx
-			testr.check(ctx, std.inthash(123) == 0x5671db246859d5b6, "wrong int hash")
-			testr.check(ctx, std.inteq(123, 123), "equal integers not equal")
-			testr.check(ctx, !std.inteq(123, 456), "unequal integers are equal")
-		}],
-		[.name="murmurhash test", .fn={ctx
-			testr.check(ctx, std.murmurhash2("foobar", 1234) == 2203212445, "wrong murmurhash value")
+			testr.check(ctx, std.hash(123) == 0x5671db246859d5b6, "wrong int hash")
+			testr.check(ctx, std.cmp(123, 123), "equal integers not equal")
+			testr.check(ctx, !std.cmp(123, 456), "unequal integers are equal")
 		}],
 		[.name="siphash test", .fn={ctx
 			siphashreferencetestvector(ctx)

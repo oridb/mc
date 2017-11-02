@@ -28,22 +28,22 @@ const deletion = {
 	var ht
 	var i
 
-	ht = std.mkht(idhash, ideq)
+	ht = std.mkht()
 	/* create a hash table with a few hundred values */
 	for i = 0; i < 4000; i++
-		std.htput(ht, i, i)
+		std.htput(ht, (i : collisionprone), (i : collisionprone))
 	;;
 	for i = 0; i < 200; i++
-		std.htdel(ht, i*2)
+		std.htdel(ht, (i*2 : collisionprone))
 	;;
 	for i = 0; i < 200; i++
-		std.assert(!std.hthas(ht, i*2), "deleted item still present")
+		std.assert(!std.hthas(ht, (i*2 : collisionprone)), "deleted item still present")
 	;;
 	for i = 0; i < 200; i++
-		std.assert(std.hthas(ht, i*2+1), "undeleted item missing")
+		std.assert(std.hthas(ht, (i*2+1 : collisionprone)), "undeleted item missing")
 	;;
 	for i = 400; i < 4000; i++
-		std.assert(std.hthas(ht, i), "undeleted item missing")
+		std.assert(std.hthas(ht, (i : collisionprone)), "undeleted item missing")
 	;;
 
 }
@@ -52,34 +52,34 @@ const collision = {
 	var ht
 	var i
 
-	ht = std.mkht(idhash, ideq)
+	ht = std.mkht()
 	/* insert an element a few hundred times */
 	for i = 0; i < 500; i++
-		std.htput(ht, 0, i)
+		std.htput(ht, 0, (i : collisionprone))
 	;;
-	std.assert(std.hthas(ht, 0), "inserted element not present")
-	std.assert(std.htgetv(ht, 0, -1) == 499, "inserted element has wrong value")
+	std.assert(std.hthas(ht, (0 : collisionprone)), "inserted element not present")
+	std.assert(std.htgetv(ht, (0 : collisionprone), -1) == 499, "inserted element has wrong value")
 	std.htdel(ht, 0)
-	std.assert(!std.hthas(ht, 0), "element left in table")
+	std.assert(!std.hthas(ht, (0 : collisionprone)), "element left in table")
 }
 
 const tombstonefill = {
 	var ht
 	var i
 
-	ht = std.mkht(idhash, ideq)
+	ht = std.mkht()
 	/* 
 	insert an element into each slot in the hash table, and
 	delete it. With direct hashing, this is guaranteed to have
 	put a tombstone into each slot.
 	*/
 	for i = 0; i <= ht.keys.len; i++
-		std.htput(ht, i, i)
-		std.htdel(ht, i)
+		std.htput(ht, (i : collisionprone), i)
+		std.htdel(ht, (i : collisionprone))
 	;;
 	/* make sure we haven't actually got anything in the table */
 	std.assert(ht.nelt == 0, "elements left in hash table")
-	std.assert(!std.hthas(ht, 1), "found phantom element")
+	std.assert(!std.hthas(ht, (1 : collisionprone)), "found phantom element")
 }
 
 const main = {
@@ -95,10 +95,16 @@ const main = {
 	tombstonefill()
 }
 
-const idhash = {x
-	-> x
-}
+type collisionprone = int
 
-const ideq = {a, b
-	-> a == b
-}
+impl std.hashable collisionprone =
+	hash = {x
+		-> (x : uint64)
+	}
+;;
+
+impl std.comparable collisionprone =
+	cmp = {a, b
+		-> a == b
+	}
+;;
