@@ -414,7 +414,7 @@ void forcedcl(Stab *st, Node *dcl);
 void putucon(Stab *st, Ucon *uc);
 void putlbl(Stab *st, char *name, Node *lbl);
 
-Stab *getns(Node *file, char *n);
+Stab *getns(char *n);
 Node *getdcl(Stab *st, Node *n);
 Node *getclosed(Stab *st, Node *n);
 Node **getclosure(Stab *st, size_t *n);

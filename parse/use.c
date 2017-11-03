@@ -751,7 +751,7 @@ findstab(Stab *st, char *pkg)
 			return NULL;
 	}
 
-	s = getns(file, pkg);
+	s = getns(pkg);
 	if (!s) {
 		s = mkstab(0);
 		s->name = strdup(pkg);
