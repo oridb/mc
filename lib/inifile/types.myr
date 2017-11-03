@@ -13,7 +13,7 @@ pkg inifile =
 	;;
 
 	impl std.hashable (byte[:], byte[:])
-	impl std.comparable (byte[:], byte[:])
+	impl std.equatable (byte[:], byte[:])
 ;;
 
 impl std.hashable (byte[:], byte[:]) =
@@ -25,13 +25,13 @@ impl std.hashable (byte[:], byte[:]) =
 	}
 ;;
 
-impl std.comparable (byte[:], byte[:]) =
-	cmp = {a, b
+impl std.equatable (byte[:], byte[:]) =
+	eq = {a, b
 		var s1, k1
 		var s2, k2
 
 		(s1, k1) = a
 		(s2, k2) = a
-		-> std.cmp(s1, s2) && std.cmp(k1, k2)
+		-> std.eq(s1, s2) && std.eq(k1, k2)
 	}
 ;;

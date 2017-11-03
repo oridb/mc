@@ -103,8 +103,8 @@ impl std.hashable collisionprone =
 	}
 ;;
 
-impl std.comparable collisionprone =
-	cmp = {a, b
+impl std.equatable collisionprone =
+	eq = {a, b
 		-> a == b
 	}
 ;;
