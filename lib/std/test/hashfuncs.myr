@@ -5,19 +5,19 @@ const main = {
 	testr.run([
 		[.name="string hash and equality", .fn={ctx
 			testr.check(ctx, std.hash("abc") == 0x5dbcfa53aa2007a5, "wrong hash\n")
-			testr.check(ctx, std.cmp("abc\0def", "abc\0def"), "equal strings not equal\n")
-			testr.check(ctx, !std.cmp("abc\0def", "abcdef"), "unequal strings are equal\n")
+			testr.check(ctx, std.eq("abc\0def", "abc\0def"), "equal strings not equal\n")
+			testr.check(ctx, !std.eq("abc\0def", "abcdef"), "unequal strings are equal\n")
 		}],
 		[.name="pointer equality", .fn={ctx
 			var x, y: int
 			/* can't sanely test ptrhash; it will change every time */
-			testr.check(ctx, std.cmp(&x, &x), "equal pointers not equal")
-			testr.check(ctx, !std.cmp(&x, &y), "unequal pointers are equal")
+			testr.check(ctx, std.eq(&x, &x), "equal pointers not equal")
+			testr.check(ctx, !std.eq(&x, &y), "unequal pointers are equal")
 		}],
 		[.name="int hash and equality", .fn={ctx
 			testr.check(ctx, std.hash(123) == 0x5671db246859d5b6, "wrong int hash")
-			testr.check(ctx, std.cmp(123, 123), "equal integers not equal")
-			testr.check(ctx, !std.cmp(123, 456), "unequal integers are equal")
+			testr.check(ctx, std.eq(123, 123), "equal integers not equal")
+			testr.check(ctx, !std.eq(123, 456), "unequal integers are equal")
 		}],
 		[.name="siphash test", .fn={ctx
 			siphashreferencetestvector(ctx)

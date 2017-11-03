@@ -852,11 +852,16 @@ protomap(Trait *tr, Type *ty, Node *dcl)
 {
 	size_t i, len;
 	char *protoname, *dclname, *p;
-	Node *proto;
+	Node *proto, *n;
+	Stab *st;
 
 	dclname = declname(dcl);
 	for (i = 0; i < tr->nproto; i++) {
-		proto = getdcl(curstab(), tr->proto[i]->decl.name);
+		n = tr->proto[i]->decl.name;
+		st = file->file.globls;
+		if (n->name.ns)
+			st = getns(n->name.ns);
+		proto = getdcl(st, n);
 		if (!proto)
 			proto = tr->proto[i];
 		protoname = declname(proto);

@@ -11,8 +11,8 @@ use "utf"
 pkg std =
 	const siphash24	: (data : byte[:], seed : byte[16] -> uint64)
 
-	impl comparable @a[:] =
-		cmp = {a, b
+	impl equatable @a[:] =
+		eq = {a, b
 			-> sleq(a, b)
 		}
 	;;
@@ -23,8 +23,8 @@ pkg std =
 		}
 	;;
 
-	impl comparable @a::(integral,numeric) =
-		cmp = {a, b
+	impl equatable @a::(integral,numeric) =
+		eq = {a, b
 			-> a == b
 		}
 	;;
@@ -35,8 +35,8 @@ pkg std =
 		}
 	;;
 
-	impl comparable @a# =
-		cmp = {a, b
+	impl equatable @a# =
+		eq = {a, b
 			-> a == b
 		}
 	;;

@@ -1,6 +1,6 @@
 pkg std =
-	trait comparable @a =
-		cmp	: (a : @a, b : @a -> bool)
+	trait equatable @a =
+		eq	: (a : @a, b : @a -> bool)
 	;;
 
 	trait hashable @a =

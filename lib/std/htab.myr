@@ -93,7 +93,7 @@ generic idx = {ht, k
 		if ht.hashes[i] == 0
 			-> `None
 		;;
-		if ht.hashes[i] == h && !ht.dead[i] && cmp(ht.keys[i], k)
+		if ht.hashes[i] == h && !ht.dead[i] && eq(ht.keys[i], k)
 			break
 		;;
 		di++
@@ -138,7 +138,7 @@ generic htput = {ht, k, v
 	i = h & (ht.keys.len - 1)
 	neltincr = 1
 	while ht.hashes[i] != 0 && !ht.dead[i]
-		if ht.hashes[i] == h &&	cmp(ht.keys[i], k)
+		if ht.hashes[i] == h &&	eq(ht.keys[i], k)
 			neltincr = 0
 			break
 		;;

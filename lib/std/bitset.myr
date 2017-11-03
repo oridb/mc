@@ -31,7 +31,7 @@ pkg std =
 	const bsunion	: (a : bitset#, b : bitset# -> void)
 	const bsissubset	: (a : bitset#, b : bitset# -> bool)
 
-	impl comparable bitset#
+	impl equatable bitset#
 	impl hashable bitset#
 
 	type bsiter = struct
@@ -147,8 +147,8 @@ const bsissubset = {a, b
 	-> true
 }
 
-impl comparable bitset# =
-	cmp = {a, b
+impl equatable bitset# =
+	eq = {a, b
 		eqsz(a, b)
 		for var i = 0; i < a.bits.len; i++
 			if a.bits[i] != b.bits[i]

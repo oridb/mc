@@ -164,7 +164,7 @@ const eatspace = {s
 
 const indexof = {dst, s, set, err
 	for var i = 0; i < set.len; i++
-		if s.len >= set[i].len && std.cmp(s[:set[i].len], set[i])
+		if s.len >= set[i].len && std.eq(s[:set[i].len], set[i])
 			dst# = i
 			-> s[set[i].len:]
 		;;
