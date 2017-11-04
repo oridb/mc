@@ -82,6 +82,7 @@ pkg bld =
 		dyndep	: byte[:][:]
 		genuse	: byte[:]
 		genar	: byte[:]
+		mtime	: std.time
 	;;
 
 	type testresult = union
@@ -114,7 +115,7 @@ pkg bld =
 		/* dependency names */
 		gen	: byte[:][:]
 		dep	: byte[:][:]
-		xdep	: byte[:][:]
+		deptime	: std.time
 
 		/* resolved dependency nodes */
 		ndep	: node#[:]

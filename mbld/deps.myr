@@ -589,7 +589,7 @@ const xdepends = {b, g, n, dep
 			depends(g, n, ldep.genuse)
 			depends(g, n, ldep.genar)
 		;;
-		std.slpush(&n.xdep, dep)
+		n.deptime = std.max(n.deptime, ldep.mtime)
 	| `std.None:
 		std.fatal("unknown xdep {} (known: {})\n", dep, std.htkeys(b.libs))
 	;;
@@ -631,7 +631,6 @@ const node = {g, lbl
 		.cmd=[][:],
 		.gen=[][:],
 		.dep=[][:],
-		.xdep=[][:],
 
 		.nblock=0,
 		.mtime=0,

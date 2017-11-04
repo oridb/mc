@@ -46,14 +46,14 @@ const builtlib = {b, mt, dep, dyndep
 }
 
 const scrapelib = {b, targ, lib, incs
-	var dep, dyndep, ldep
+	var path, dep, dyndep, ldep
 	var f, dir
 
 	if std.hthas(b.libs, lib)
 		-> void
 	;;
 
-	(f, dir) = openlib(lib, targ, incs)
+	(f, path, dir) = openlib(lib, targ, incs)
 	match bio.getc(f)
 	| `std.Ok 'U':	/* ok */
 	| `std.Ok _:	std.fput(1, "{}/{}: not a usefile\n", dir, lib)
@@ -84,7 +84,9 @@ const scrapelib = {b, targ, lib, incs
 		.dyndep=dyndep,
 		.genuse="",
 		.genar="",
+		.mtime=std.tryv(std.fmtime(path), 0)
 	])
+	std.slfree(path)
 	std.htput(b.libs, lib, ldep)
 
 	for d : dep
@@ -103,10 +105,8 @@ const openlib = {lib, targ, incs
 		std.slfree(libname)
 		if std.fisreg(path)
 			match  bio.open(path, bio.Rd)
-			| `std.Ok file:
-				std.slfree(path)
-				-> (file, p)
-			| `std.Err m:
+			| `std.Ok file:	-> (file, path, p)
+			| `std.Err m:	/* next */
 			;;
 			std.fatal("{}: {} does not exist in {j=, }\n", targ, lib, incs)
 		;;

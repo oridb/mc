@@ -125,7 +125,7 @@ const unblock = {b, n
 const stale = {b, n
 	var staletime
 
-	staletime = 0
+	staletime = n.deptime
 	for d : n.ndep
 		staletime = std.max(staletime, d.mtime)
 	;;
