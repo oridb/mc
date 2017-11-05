@@ -12,7 +12,8 @@ pkg std =
 	const charlen	: (chr : char -> size)
 	const encode	: (buf : byte[:], chr : char -> size)
 	const decode	: (buf : byte[:] -> char)
-	const strstep	: (str : byte[:] -> (char, byte[:]))
+	const charstep	: (str : byte[:] -> (char, byte[:]))
+	const graphemestep : (str : byte[:] -> (byte[:], byte[:]))
 
 	const strcellwidth : (str : byte[:] -> size)
 ;;
@@ -59,11 +60,35 @@ const decode = {buf
 	var c
 	var b
 
-	(c, b) = strstep(buf)
+	(c, b) = charstep(buf)
 	-> c
 }
 
-const strstep = {str
+const graphemestep = {str
+	var len = 0
+	var rest = str
+	var c
+	var cn
+	var width
+
+	while rest.len > 0
+		(c, rest) = charstep(rest)
+		cn = cellwidth(c)
+
+		if (cn > 0 || c == Badchar) && width > 0
+			-> (str[:len], str[len:])
+		elif c == Badchar
+			-> (str[:1], str[1:])
+		else
+			len += charlen(c)
+			width += cn
+		;;
+	;;
+
+	-> (str[:len], str[len:])
+}
+
+const charstep = {str
 	var len
 	var mask
 	var chr
@@ -111,7 +136,7 @@ const strcellwidth = {str
 	var n : size = 0
 
 	while s.len > 0
-		(c, s) = strstep(s)
+		(c, s) = charstep(s)
 		if c == Badchar
 			/* Something will probably be printed as U+FFFD */
 			n++

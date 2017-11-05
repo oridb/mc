@@ -258,7 +258,7 @@ const parsenumber = {ln, base
 	s = ln#
 	ok = false
 	while true
-		(c, s) = std.strstep(s)
+		(c, s) = std.charstep(s)
 		dig = std.charval(c, base)
 		if dig >= 0 && dig < base
 			ok = true

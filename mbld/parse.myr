@@ -732,8 +732,8 @@ const skipspace = {p
 const matchc = {p, c
 	var chr, s
 
-	/* safe to use at eof: strstep returns (-1, "") */
-	(chr, s) = std.strstep(p.rest)
+	/* safe to use at eof: charstep returns (-1, "") */
+	(chr, s) = std.charstep(p.rest)
 	if c == chr
 		p.rest = s
 		-> true
@@ -749,7 +749,7 @@ const peekc = {p
 const getc = {p
 	var c, s
 
-	(c, s) = std.strstep(p.rest)
+	(c, s) = std.charstep(p.rest)
 	p.rest = s
 	-> c
 }

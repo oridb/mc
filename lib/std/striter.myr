@@ -33,7 +33,7 @@ impl iterable chariter -> char =
 		if ci.rest.len == 0
 			-> false
 		;;
-		(c#, ci.rest) = strstep(ci.rest)
+		(c#, ci.rest) = charstep(ci.rest)
 		-> true
 	}
 

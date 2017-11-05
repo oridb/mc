@@ -50,8 +50,8 @@ const strcaseeq = {a, b
 		if a.len == 0 || b.len == 0
 			break
 		;;
-		(ca, a) = std.strstep(a)
-		(cb, b) = std.strstep(b)
+		(ca, a) = std.charstep(a)
+		(cb, b) = std.charstep(b)
 		if std.tolower(ca) != std.tolower(cb)
 			-> false
 		;;
@@ -65,7 +65,7 @@ const strcasehash = {s
 
 	chars = [][:]
 	while s.len != 0
-		(c, s) = std.strstep(s)
+		(c, s) = std.charstep(s)
 		std.slpush(&chars, std.tolower(c))
 	;;
 	h = siphash24(slbytes(chars), Seed)

@@ -150,7 +150,7 @@ const parseparams = {url
 	;;
 
 	match std.decode(url#)
-	| '?':	(_, url#) = std.strstep(url#)
+	| '?':	(_, url#) = std.charstep(url#)
 	| _:	-> `std.Err `Egarbled
 	;;
 
