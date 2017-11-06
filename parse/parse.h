@@ -404,7 +404,7 @@ void lfatalv(Srcloc l, char *fmt, va_list ap) FATAL;
 /* stab creation */
 Stab *mkstab(int isfunc);
 
-void putns(Node *file, Stab *scope);
+void putns(Stab *scope);
 void puttype(Stab *st, Node *n, Type *ty);
 void puttrait(Stab *st, Node *n, Trait *trait);
 void putimpl(Stab *st, Node *impl);
@@ -414,7 +414,7 @@ void forcedcl(Stab *st, Node *dcl);
 void putucon(Stab *st, Ucon *uc);
 void putlbl(Stab *st, char *name, Node *lbl);
 
-Stab *getns(Node *file, char *n);
+Stab *getns(char *n);
 Node *getdcl(Stab *st, Node *n);
 Node *getclosed(Stab *st, Node *n);
 Node **getclosure(Stab *st, size_t *n);
@@ -521,7 +521,7 @@ char *declname(Node *n);
 Type *decltype(Node * n);
 Type *exprtype(Node *n);
 Type *nodetype(Node *n);
-void addstmt(Node *file, Node *stmt);
+void addstmt(Node *stmt);
 void setns(Node *n, char *ns);
 void updatens(Stab *st, char *ns);
 ulong varhash(void *dcl);
@@ -536,15 +536,15 @@ Type *substget(Tysubst *subst, Type *from);
 Node *specializedcl(Node *n, Type *param, Type *to, Node **name);
 Type *tyspecialize(Type *t, Tysubst *tymap, Htab *delayed, Htab *tybase);
 Node *genericname(Node *n, Type *param, Type *t);
-void geninit(Node *file);
+void geninit(void);
 
 /* usefiles */
 int loaduse(char *path, FILE *f, Stab *into, Vis vis);
 void readuse(Node *use, Stab *into, Vis vis);
 void writeuse(FILE *fd, Node *file);
-void tagexports(Node *file, int hidelocal);
+void tagexports(int hidelocal);
 void tagreflect(Type *t);
-void addextlibs(Node *file, char **libs, size_t nlibs);
+void addextlibs(char **libs, size_t nlibs);
 
 /* expression folding */
 Node *fold(Node *n, int foldvar);

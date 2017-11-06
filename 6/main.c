@@ -276,8 +276,8 @@ main(int argc, char **argv)
 			dump(file, stdout);
 		infer();
 		if (hasmain(file))
-			geninit(file);
-		tagexports(file, 0);
+			geninit();
+		tagexports(0);
 		/* after all type inference */
 		if (debugopt['t'])
 			dump(file, stdout);

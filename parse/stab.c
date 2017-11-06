@@ -171,7 +171,7 @@ findstab(Stab *st, Node *n)
 	Stab *ns;
 
 	if (n->name.ns) {
-		ns = getns(file, n->name.ns);
+		ns = getns(n->name.ns);
 		if (!ns) {
 			ns = mkstab(0);
 			updatens(ns, n->name.ns);
@@ -319,7 +319,7 @@ gettrait(Stab *st, Node *n)
 	Traitdefn *c;
 
 	if (n->name.ns)
-		st = getns(file, n->name.ns);
+		st = getns(n->name.ns);
 	do {
 		if ((c = htget(st->tr, n)))
 			return c->trait;
@@ -329,7 +329,7 @@ gettrait(Stab *st, Node *n)
 }
 
 Stab *
-getns(Node *file, char *name) {
+getns(char *name) {
 	return htget(file->file.ns, name);
 }
 
@@ -606,11 +606,11 @@ getimpl(Stab *st, Node *n)
 }
 
 void
-putns(Node *file, Stab *scope)
+putns(Stab *scope)
 {
 	Stab *s;
 
-	s = getns(file, scope->name);
+	s = getns(scope->name);
 	if (s)
 		lfatal(Zloc, "Namespace %s already defined", scope->name);
 	htput(file->file.ns, scope->name, scope);

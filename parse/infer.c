@@ -572,7 +572,7 @@ tylookup(Type *t)
 		if (!tytab[t->tid] && t->type == Tyunres) {
 			ns = curstab();
 			if (t->name->name.ns)
-				ns = getns(file, t->name->name.ns);
+				ns = getns(t->name->name.ns);
 			if (!ns)
 				fatal(t->name, "no namespace \"%s\"", t->name->name.ns);
 			lu = gettype(ns, t->name);
@@ -741,7 +741,7 @@ uconresolve(Node *n)
 	args = n->expr.args;
 	ns = curstab();
 	if (args[0]->name.ns)
-		ns = getns(file, args[0]->name.ns);
+		ns = getns(args[0]->name.ns);
 	if (!ns)
 		fatal(n, "no namespace %s\n", args[0]->name.ns);
 	uc = getucon(ns, args[0]);
@@ -1397,7 +1397,7 @@ checkns(Node *n, Node **ret)
 	if (args[0]->type != Nexpr || exprop(args[0]) != Ovar)
 		return n;
 	name = args[0]->expr.args[0];
-	stab = getns(file, namestr(name));
+	stab = getns(namestr(name));
 	if (!stab)
 		return n;
 
@@ -1565,7 +1565,7 @@ inferpat(Node **np, Node *val, Node ***bind, size_t *nbind)
 	case Ovar:
 		ns = curstab();
 		if (args[0]->name.ns)
-			ns = getns(file, args[0]->name.ns);
+			ns = getns(args[0]->name.ns);
 		s = getdcl(ns, args[0]);
 		if (s && !s->decl.ishidden) {
 			if (s->decl.isgeneric)
@@ -1815,7 +1815,7 @@ inferexpr(Node **np, Type *ret, int *sawret)
 			return;
 		ns = curstab();
 		if (args[0]->name.ns)
-			ns = getns(file, args[0]->name.ns);
+			ns = getns(args[0]->name.ns);
 		s = getdcl(ns, args[0]);
 		if (!s)
 			fatal(n, "undeclared var %s", ctxstr(args[0]));
@@ -2797,7 +2797,7 @@ findtrait(Node *impl)
 		n = impl->impl.traitname;
 		ns = file->file.globls;
 		if (n->name.ns)
-			ns = getns(file, n->name.ns);
+			ns = getns(n->name.ns);
 		if (ns)
 			tr = gettrait(ns, n);
 		if (!tr)

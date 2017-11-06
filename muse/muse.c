@@ -105,8 +105,8 @@ main(int argc, char **argv)
 	for (i = 0; i < ctx.nargs; i++)
 		mergeuse(ctx.args[i]);
 	infer();
-	tagexports(file, 1);
-	addextlibs(file, extralibs, nextralibs);
+	tagexports(1);
+	addextlibs(extralibs, nextralibs);
 
 	/* generate the usefile */
 	f = fopen(outfile, "w");

@@ -233,7 +233,7 @@ fixup(Node *n)
 		if (n->expr.op == Ovar) {
 			ns = curstab();
 			if (n->expr.args[0]->name.ns)
-				ns = getns(file, n->expr.args[0]->name.ns);
+				ns = getns(n->expr.args[0]->name.ns);
 			if (!ns)
 				fatal(n, "No namespace %s\n", n->expr.args[0]->name.ns);
 			d = getdcl(ns, n->expr.args[0]);
@@ -513,7 +513,7 @@ specializedcl(Node *gnode, Type *param, Type *to, Node **name)
 	n = genericname(gnode, param, to);
 	*name = n;
 	if (n->name.ns)
-		st = getns(file, n->name.ns);
+		st = getns(n->name.ns);
 	else
 		st = file->file.globls;
 	if (!st)
@@ -603,7 +603,7 @@ callinit(Node *block, Node *init, Type *tyvoid, Type *tyvoidfn)
 }
 
 void
-geninit(Node *file)
+geninit(void)
 {
 	Node *name, *decl, *func, *block, *init;
 	Type *tyvoid, *tyvoidfn;

@@ -52,7 +52,7 @@ static Node **implfix;		/* list of impls we need to fix up */
 static size_t nimplfix;		/* size of replacement list */
 
 void
-addextlibs(Node *file, char **libs, size_t nlibs)
+addextlibs(char **libs, size_t nlibs)
 {
 	size_t i, j;
 
@@ -751,11 +751,11 @@ findstab(Stab *st, char *pkg)
 			return NULL;
 	}
 
-	s = getns(file, pkg);
+	s = getns(pkg);
 	if (!s) {
 		s = mkstab(0);
 		s->name = strdup(pkg);
-		putns(file, s);
+		putns(s);
 	}
 	return s;
 }

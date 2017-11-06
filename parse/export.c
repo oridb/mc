@@ -210,7 +210,7 @@ tagnode(Stab *st, Node *n, int ingeneric, int hidelocal)
 }
 
 void
-tagexports(Node *file, int hidelocal)
+tagexports(int hidelocal)
 {
 	size_t i, j, n;
 	Trait *tr;
