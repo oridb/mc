@@ -3,6 +3,7 @@
   is defined by the following macro:
 
 	Insn(enumval, gasfmt, p9fmt, uses, defs)
+
   The format string 'fmt' has the following expansions:
 
 	%r		- int reg
@@ -16,11 +17,12 @@
 			  preceeding it is the operand desired for
 			  the mode.
 
-  The uppercase version of these formats denote the plan 9 variants
-  of the above.
+  The uppercase version of these formats denote the plan 9
+  syntax of the above.
 
-  Because 0 indictates the sentiel value, the indexing on use and def statments
-  is 1-based.
+  Because 0 indictates the sentiel value, the indexing on use
+  and def statments is 1-based.
+
 */
 #define None .l={0},.r={0}
 Insn(Inone,
