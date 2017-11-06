@@ -1,23 +1,26 @@
-/* Table of instructions. Each instruction
-   is defined by the following macro:
-        Insn(enumval, fmt, attr)
-    The format string 'fmt' has the following expansions:
-        %r            - int reg
-        %f            - xmm reg
-        %m            - mem
-        %i            - imm
-        %v            - reg/mem
-        %u            - reg/imm
-        %x            - reg/freg/mem/imm
-        %[1-9]*t      - Mode of an operand. The optional number
-                        preceeding it is the operand desired for
-                        the mode.
-    Currently, there aren't any attrs, because none were needed yet.
-    Eventually, they'll probably include flag setting and so on. The
-    upper case versions of these indicate Plan9 location formatting.
+/* 
+  Table of instructions. Each instruction
+  is defined by the following macro:
 
-    For technical reasons, the indexing on use and def statments is 1-based,
-    instead of 0-based. (0 is the sentinel value).
+	Insn(enumval, gasfmt, p9fmt, uses, defs)
+  The format string 'fmt' has the following expansions:
+
+	%r		- int reg
+	%f		- xmm reg
+	%m		- mem
+	%i		- imm
+	%v		- reg/mem
+	%u		- reg/imm
+	%x		- reg/freg/mem/imm
+	%[1-9]*t	- Mode of an operand. The optional number
+			  preceeding it is the operand desired for
+			  the mode.
+
+  The uppercase version of these formats denote the plan 9 variants
+  of the above.
+
+  Because 0 indictates the sentiel value, the indexing on use and def statments
+  is 1-based.
 */
 #define None .l={0},.r={0}
 Insn(Inone,
