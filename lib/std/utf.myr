@@ -68,14 +68,20 @@ const graphemestep = {str
 	var len = 0
 	var rest = str
 	var c
-	var cn
-	var width
+	var cn = 0
+	var width = 0
 
 	while rest.len > 0
 		(c, rest) = charstep(rest)
 		cn = cellwidth(c)
 
-		if (cn > 0 || c == Badchar) && width > 0
+		if (c == '\r' || c == '\n' || c == '\t')
+			if len == 0
+				-> (str[:1], str[1:])
+			else
+				-> (str[:len], str[len:])
+			;;
+		elif (cn > 0 || c == Badchar) && len > 0
 			-> (str[:len], str[len:])
 		elif c == Badchar
 			-> (str[:1], str[1:])
