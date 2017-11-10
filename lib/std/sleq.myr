@@ -7,7 +7,7 @@ pkg std =
 
 generic sleq = {a, b
 	if a.len == b.len
-		-> memeq((a : byte#), (b : byte#), a.len)
+		-> memeq((a : byte#), (b : byte#), a.len * sizeof(@a))
 	else
 		-> false
 	;;
