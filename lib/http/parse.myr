@@ -14,8 +14,8 @@ const strcaseeq = {a : byte[:], b : byte[:] -> bool
 	var ca, cb
 
 	while a.len == 0 || b.len == 0
-		(ca, a) = std.strstep(a)
-		(cb, b) = std.strstep(b)
+		(ca, a) = std.charstep(a)
+		(cb, b) = std.charstep(b)
 		if std.tolower(ca) != std.tolower(cb)
 			-> false
 		;;
