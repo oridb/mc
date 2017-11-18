@@ -10,13 +10,19 @@ applications, to embedded systems and potentially even kernel development.
 
 ## Build
 
-Compile with ./configure --prefix="/home/wherever/I/want" && make && make install
-The result will be among other things, the binaries 6m and mbld
+If you are building from development then issue `make bootstrap` after the call
+to `./configure`.
+
+* `./configure`
+* `make`
+* `make install`
+
+The result will be, among other things, the binaries 6m and mbld.
 
 ## Usage
 
 Compile and execute:
-`mbld -R test.myr` 
+`mbld -R test.myr`
 
 Compile into a binary:
 `mbld -b binary test.myr`
@@ -67,7 +73,6 @@ More examples and a complete feature list can be found on the website.
 
 ## Status
 ![Solid Engineering](https://myrlang.org/tacoma-narrows.jpg "Solid Engineering")
-
 
 ## Try It Online
 The online playground is a good place to get started with little setup.
