@@ -5,7 +5,7 @@ MYR_MC=../6/6.out
 MYR_MUSE=../muse/6.out
 fn build {
 	rm -f $1 $1^.6 $1^.use
-	../obj/mbld/mbld -o '' -b $1 -I../lib/std -I../lib/sys -r../rt/_myrrt.6 $1^.myr
+	../obj/mbld/mbld -Bnone -o '' -b $1 -I../obj/lib/std -I../obj/lib/sys -I../obj/lib/regex -r../rt/_myrrt.6 $1^.myr
 }
 
 fn pass {
