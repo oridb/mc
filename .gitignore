@@ -3,6 +3,7 @@
 *.use
 *.a
 */.deps
+*.core
 
 # common tool generated scratch files
 tags
@@ -19,6 +20,7 @@ rt/_*.s
 !rt/*-*.s
 
 # outputs
+obj/**
 6/6m
 muse/muse
 mbld/mbld
