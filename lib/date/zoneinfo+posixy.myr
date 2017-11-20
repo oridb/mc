@@ -32,6 +32,11 @@ const zonepath = [
 	"/etc/zoneinfo"
 ]
 
+var zonecache	: std.htab(byte[:], zifile#)#
+const __init__ = {
+	zonecache = std.mkht()
+}
+
 const findtzoff = {tz, tm -> std.option(date.duration)
 	var path
 	var zone
@@ -40,26 +45,32 @@ const findtzoff = {tz, tm -> std.option(date.duration)
 	var ds
 	var i
 
-	/* load zone */
-	if std.sleq(tz, "") || std.sleq(tz, "UTC")
-		-> `std.Some 0
-	elif std.sleq(tz, "local")
-		path = std.sldup("/etc/localtime")
-	else
-		path = ""
-		for z : zonepath
-			path = std.pathcat(z, tz)
-			if sys.stat(path, &sb) == 0
-				goto found
+	match std.htget(zonecache, tz)
+	| `std.Some z:
+		zone = z
+	| `std.None:
+		/* load zone */
+		if std.sleq(tz, "") || std.sleq(tz, "UTC")
+			-> `std.Some 0
+		elif std.sleq(tz, "local")
+			path = std.sldup("/etc/localtime")
+		else
+			path = ""
+			for z : zonepath
+				path = std.pathcat(z, tz)
+				if sys.stat(path, &sb) == 0
+					goto found
+				;;
+				std.slfree(path)
 			;;
 			std.slfree(path)
+			-> `std.None
 		;;
+	:found
+		zone = load(path)
 		std.slfree(path)
-		-> `std.None
+		std.htput(zonecache, std.sldup(tz), zone)
 	;;
-:found
-	zone = load(path)
-	std.slfree(path)
 
 	/* find applicable gmt offset */
 	cur = (tm / 1_000_000 : int32)
@@ -70,28 +81,26 @@ const findtzoff = {tz, tm -> std.option(date.duration)
 		/* nothing */
 	;;
 	ds = zone.ttinfo[zone.timetype[i]].gmtoff
-	free(zone)
 	->  `std.Some ((ds : date.duration) * 1_000_000)
 }
 
 const load = {file
 	var nisgmt, nisstd, nleap, ntime, ntype, nchar
-	var i, f, p
+	var i, f, p, data
 
 	/* check magic */
 	match std.slurp(file)
-	| `std.Ok d:	p = d
-	| `std.Err m:	
-		-> std.zalloc()
+	| `std.Ok d:	data = d
+	| `std.Err m:	-> std.zalloc()
 	;;
 
-	if !std.sleq(p[:4], "TZif")
+	if !std.eq(data[:4], "TZif")
 		std.put("{} is not a zone info file\n", file)
 		-> std.zalloc()
 	;;
 
 	/* skip to data */
-	p = p[20:]
+	p = data[20:]
 	(nisgmt, p) = fetchbe32(p)
 	(nisstd, p) = fetchbe32(p)
 	(nleap, p) = fetchbe32(p)
@@ -136,6 +145,7 @@ const load = {file
 	for i = 0; i < nisgmt; i++
 		(f.isgmt[i], p) = fetchbe8(p)
 	;;
+	std.slfree(data)
 
 	-> f
 }
