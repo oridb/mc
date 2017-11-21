@@ -226,11 +226,13 @@ const bigfree = {p, sz
 			cache[i].sz += sz
 			cache[i].p = p
 			evictidx = -1
+			evictsz = 0
 			break
 		/* merge in behind existing block */
 		elif endblk == p
 			cache[i].sz += sz
 			evictidx = -1
+			evictsz = 0
 			break
 		;;
 		/* evict */
