@@ -171,7 +171,11 @@ const bigalloc = {sz
 	var p
 
 	p = Failmem
-	sz = align(sz, Align)
+	/*
+	 We need to round up to the page size so that unmapping
+	 doesn't end up taking out the tail of another allocation.
+	*/
+	sz = align(sz, Pagesz)
 
 	/* check our cache */
 	lock(memlck)
@@ -180,9 +184,15 @@ const bigalloc = {sz
 			continue
 		;;
 		p = cache[i].p
-		if cache[i].sz - sz >= Bktmax
+		/*
+		  There's no point splitting a chunk if it's smaller than
+		  bktmax, since the allocator will never try using it.
+		 */
+		if sz - cache[i].sz > Bktmax
 			cache[i].sz -= sz
 			cache[i].p = ((p : intptr) + (sz : intptr) : byte#)
+		else
+			cache[i].sz = 0
 		;;
 		break
 	;;
@@ -200,45 +210,50 @@ const bigalloc = {sz
 }
 
 const bigfree = {p, sz
-	var minsz, minp, minidx
+	var evictsz, evictp, evictidx
 	var endp, endblk
 
-	minp = p
-	minidx = -1
-	minsz = align(sz, Align)
+	sz = align(sz, Pagesz)
+	evictp = p
+	evictidx = -1
+	evictsz = sz
 	endp = ((p : intptr) + (sz : intptr) : byte#)
 	lock(memlck)
 	for var i = 0; i < cache.len; i++
 		endblk = ((cache[i].p : intptr) + (sz : intptr) : byte#)
-		/* try to merge with a saved block */
+		/* merge in front of existing block */
 		if cache[i].p == endp
 			cache[i].sz += sz
 			cache[i].p = p
-			minsz = 0
+			evictidx = -1
 			break
+		/* merge in behind existing block */
 		elif endblk == p
 			cache[i].sz += sz
-			minsz = 0
+			evictidx = -1
 			break
 		;;
-		/* check for merges */
-		if cache[i].sz < minsz
-			minsz = cache[i].sz
-			minp = cache[i].p
-			minidx = i
+		/* evict */
+		if cache[i].sz < evictsz
+			evictidx = i
+			evictsz = cache[i].sz
+			evictp = cache[i].p
 		;;
+	;;
+
+	if evictidx != -1
+		cache[evictidx].p = p
+		cache[evictidx].sz = sz
 	;;
 	unlock(memlck)
 
-	/* size of 0 means we found a slot. */
-	if minsz == 0
-		-> void
-	;;
-
-	freemem(minp, minsz)
-	if minidx >= 0
-		cache[minidx].p = p
-		cache[minidx].sz = sz
+	/*
+	  Now that we've removed it, we can
+	  free it. It's not in the cache, so
+	  we don't need the lock held.
+	 */
+	if evictsz > 0
+		freemem(evictp, evictsz)
 	;;
 }
 
