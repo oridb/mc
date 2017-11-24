@@ -97,6 +97,15 @@ muse.
 Links with the runtime $MYR_RT instead of the default of
 prefix/lib/myr/_myrrt.o. 
 
+.TP
+.B DESTDIR
+Specified that when the files installed by
+.I mbld install
+are put into place, the paths are prefixed with
+.I DESTDIR.
+This fits with the conventions of many package systems,
+allowing Myrddin code to be packaged more easily.
+
 .SH FILES
 
 .TP
