@@ -193,6 +193,7 @@ const bigalloc = {sz
 			cache[i].p = ((p : intptr) + (sz : intptr) : byte#)
 		else
 			cache[i].sz = 0
+			cache[i].p = (0 : byte#)
 		;;
 		break
 	;;

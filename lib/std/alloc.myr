@@ -6,6 +6,7 @@ use "threadhooks"
 use "types"
 use "units"
 use "bytealloc"
+use "backtrace"
 use "memops"
 
 /*
