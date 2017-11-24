@@ -21,7 +21,7 @@ bench:
 	mbld bench
 
 .PHONY: bootstrap
-bootstrap: buildmyr
+bootstrap: subdirs
 	./mk/bootstrap/bootstrap+`uname -s`-`uname -m`.sh
 
 .PHONY: genbootstrap
