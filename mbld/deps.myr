@@ -246,7 +246,7 @@ const mandeps = {b, name, mt
 	for pg : mt.pages
 		p = std.pathcat(mt.dir, pg)
 		n = leaf(b.deps, p)
-		match std.strfind(pg, ".")
+		match std.strrfind(pg, ".")
 		| `std.None:	std.fatal("manpage {} missing section\n", pg)
 		| `std.Some i:	r = std.strcat(config.Manpath, pg[i + 1:])
 		;;
