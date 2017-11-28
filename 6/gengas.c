@@ -244,6 +244,17 @@ writeasm(FILE *fd, Isel *s, Func *fn)
 {
 	size_t i, j;
 
+	switch (asmsyntax) {
+	case Gnugaself:
+		fprintf(fd, ".section .text.%s,\"ax\",@progbits\n", fn->name);
+		fprintf(fd, ".type %s, @function\n", fn->name);
+		break;
+	case Gnugasmacho:
+		fprintf(fd, ".section __TEXT,__text,regular\n");
+		break;
+	default:
+		die("unknown target");  break;
+	}
 	if (fn->isexport)
 		fprintf(fd, ".globl %s\n", fn->name);
 	fprintf(fd, "%s:\n", fn->name);
