@@ -12,8 +12,8 @@ check:
 .PHONY: clean install
 clean:
 	@for i in `awk '/^[A-Z]/{print $$2}' tests`; do \
-	    echo rm -f $$i; \
-	    rm -f $$i; \
+	    echo rm -f $$i{,.o,.use}; \
+	    rm -f $$i{,.o,.use}; \
 	done
 
 install:
