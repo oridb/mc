@@ -474,7 +474,7 @@ const myrcmd = {b, n, mt, src, istest
 		pushopt(&n.cmd, "-O", std.sldup(opt_objdir))
 	;;
 	for inc : mt.incpath[:mt.incpath.len - 1]
-		pushopt(&n.cmd, "-I", std.pathcat(opt_objdir, inc))
+		pushopt(&n.cmd, "-I", inc)
 	;;
 	if istest
 		for (dir, _, _) : mt.tstdeps
