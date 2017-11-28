@@ -267,7 +267,7 @@ const fallbackfmt = {sb, params, tyenc, ap : valist# -> void
 	var l_val : int64, ul_val : uint64
 	var z_val : size
 	var p_val : byte#
-        var c_val : char
+	var c_val : char
 	var s_val : byte[:]
 	var f32_val : flt32, f64_val : flt64
 	var i8 : int8, i16: int16, i32 : int32
@@ -380,7 +380,7 @@ const fallbackfmt = {sb, params, tyenc, ap : valist# -> void
 			fmtval(sb, vatype(&subap), &subap, "")
 			if subap.tc.nelt == 1
 				sbfmt(sb, ",")
-			elif i != subap.tc.nelt -1 
+			elif i != subap.tc.nelt -1
 				sbfmt(sb, ", ")
 			;;
 		;;
@@ -395,7 +395,7 @@ const fallbackfmt = {sb, params, tyenc, ap : valist# -> void
 			fmtval(sb, vatype(&subap), &subap, "")
 			if subap.tc.nelt == 1
 				sbfmt(sb, ",")
-			elif i != subap.tc.nelt -1 
+			elif i != subap.tc.nelt -1
 				sbfmt(sb, ", ")
 			;;
 		;;
@@ -411,8 +411,13 @@ const fallbackfmt = {sb, params, tyenc, ap : valist# -> void
 			ncnext(&nc)
 		;;
 		(subname, subenc) = ncnext(&nc)
-		sbfmt(sb, "`{} ", subname)
-		fmtval(sb, subenc, &subap, "")
+		sbfmt(sb, "`{}", subname)
+		match typedesc(subenc)
+		| `Tynone:
+		| _:
+			sbputc(sb, ' ')
+			fmtval(sb, subenc, &subap, "")
+		;;
 		vabytes(ap)
 	| `Tyname (name, desc):
 		subap = vaenter(ap)

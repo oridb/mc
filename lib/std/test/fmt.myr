@@ -72,7 +72,7 @@ const builtins = {
 	check("666.91972", "{}", 666.91972)
 	check("1.0001", "{}", 1.0001)
 	check("0.000101323461002", "{}", 0.000101323461002)
-	check("(1, `Bar 123, `Foo )", "{}", (1, `Bar 123, `Foo))
+	check("(1, `Bar 123, `Foo)", "{}", (1, `Bar 123, `Foo))
 
 	/* tricky cases: min values for integers */
 	check("-128", "{}", (-128 : int8))
@@ -91,7 +91,7 @@ const builtins = {
 	/*check("[.a=foo, .b=123] true", "{} {}", s, true) BUSTED */
 
 	m = `First
-	check("`First  true", "{} {}", m, true)
+	check("`First true", "{} {}", m, true)
 	m = `Second 123
 	check("`Second 123 true", "{} {}", m, true)
 	m = `Third "foo"
