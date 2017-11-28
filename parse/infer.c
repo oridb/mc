@@ -1398,7 +1398,7 @@ checkns(Node *n, Node **ret)
 		return n;
 	name = args[0]->expr.args[0];
 	stab = getns(namestr(name));
-	if (!stab)
+	if (!stab || getdcl(curstab(), name))
 		return n;
 
 	/* substitute the namespaced name */

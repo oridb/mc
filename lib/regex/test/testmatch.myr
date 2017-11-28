@@ -65,10 +65,10 @@ const dbgmatch = {pat, text, expected
 	run(regex.dbgcompile(pat, true), pat, text, expected, false)
 }
 
-const subst = {regex, pat, text, sub, expected, all
+const subst = {restr, pat, text, sub, expected, all
 	var re, r
 
-	re = std.try(regex)
+	re = std.try(restr)
 	if all
 		r = `std.Some regex.suball(re, text, sub)
 	else
@@ -94,11 +94,11 @@ const subst = {regex, pat, text, sub, expected, all
 	;;
 }
 
-const runidx = {regex, pat, text, expected : std.option((std.size, std.size)[:]), search
+const runidx = {restr, pat, text, expected : std.option((std.size, std.size)[:]), search
 	var re, r
 	var lo, elo, hi, ehi
 
-	re = std.try(regex)
+	re = std.try(restr)
 	if search
 		r = regex.isearch(re, text)
 	else
@@ -139,10 +139,10 @@ const runidx = {regex, pat, text, expected : std.option((std.size, std.size)[:])
 	;;
 	regex.free(re)
 }
-const run = {regex, pat, text, expected, search
+const run = {restr, pat, text, expected, search
 	var i, re, r
 
-	re = std.try(regex)
+	re = std.try(restr)
 	if search
 		r = regex.search(re, text)
 	else
