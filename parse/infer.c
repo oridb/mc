@@ -1387,14 +1387,8 @@ checkns(Node *n, Node **ret)
 	Node *s;
 
 	/* check that this is a namespaced declaration */
-	if (n->type != Nexpr)
-		return n;
-	if (exprop(n) != Omemb)
-		return n;
-	if (!n->expr.nargs)
-		return n;
 	args = n->expr.args;
-	if (args[0]->type != Nexpr || exprop(args[0]) != Ovar)
+	if (n->type != Nexpr || exprop(n) != Omemb || exprop(args[0]) != Ovar)
 		return n;
 	name = args[0]->expr.args[0];
 	stab = getns(namestr(name));
