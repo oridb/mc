@@ -431,6 +431,8 @@ const linkcmd = {b, n, mt, bin, libs, dynlibs, istest
 	for o : opt_ldflags
 		std.slpush(&n.cmd, o)
 	;;
+
+	std.slpush(&n.cmd, "-o")
 	std.slpush(&n.cmd, std.sldup(bin))
 	if mt.ldscript.len > 0
 		std.slpush(&n.cmd, std.sldup("-T"))
