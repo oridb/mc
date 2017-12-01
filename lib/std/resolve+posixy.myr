@@ -55,11 +55,12 @@ pkg std =
 		ttl	: uint32
 		addr	: netaddr
 		stale	: time
+		rtype	: rectype
 	;;
 
 	const resolve	: (host : byte[:]	-> result(hostinfo[:], resolveerr))
 	const resolvemx	: (host : byte[:]	-> result(hostinfo[:], resolveerr))
-	const resolverec	: (host : byte[:], t : rectype	-> result(hostinfo[:], resolveerr))
+	const resolverec	: (host : byte[:], t : rectype[:]	-> result(hostinfo[:], resolveerr))
 ;;
 
 const Hostfile = "/etc/hosts"
@@ -74,14 +75,14 @@ var nameservers	: netaddr[:]
 
 const resolve = {host
 	/*TODO: v4 and v6 */
-	-> resolverec(host, `DnsA)
+	-> resolverec(host, [`DnsA, `DnsAAAA][:])
 }
 
 const resolvemx = {host
-	-> resolverec(host, `DnsMX)
+	-> resolverec(host, [`DnsMX][:])
 }
 
-const resolverec = {host, t
+const resolverec = {host, tl
 	if !initdone /*  avoid extra contention */
 		lock(netlck)
 		if !initdone
@@ -93,20 +94,25 @@ const resolverec = {host, t
 		unlock(netlck)
 	;;
 
-	match hostfind(host)
-	| `Some hinf:
-		-> `Ok sldup([hinf][:])
-	| `None:
-		-> dnsresolve(host, rectype(t))
+	for t : tl
+		match findhost(host, rectype(t))
+		| `Some hinf:
+			-> `Ok sldup([hinf][:])
+		| `None:
+			-> dnsresolve(host, rectype(t))
+		;;
 	;;
+	-> `Err `Badquery
 }
 
-const hostfind = {host
+const findhost = {host, t
 	var h
 	lock(netlck)
 	match htget(dnscache, host)
 	| `std.Some inf:
-		if inf.stale > std.now()
+		if rectype(inf.rtype) != t
+			h = `std.None
+		elif inf.stale > std.now()
 			h = `std.Some inf
 		else
 			h = htget(hostmap, host)
@@ -396,7 +402,8 @@ const hosts = {pkt, host, id
 
 		hinf[ni].ttl = ttl
 		hinf[ni].stale = (ttl * 1_000_000 : time) + std.now()
-		match id2type(t)
+		hinf[ni].rtype = id2type(t)
+		match hinf[ni].rtype
 		| `DnsA:
 			/* the thing we're interested in: our IP address */
 			hinf[ni].addr = `Ipv4 [pkt[off], pkt[off+1], pkt[off+2], pkt[off+3]]
