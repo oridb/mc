@@ -66,17 +66,11 @@ const Hostfile = "/etc/hosts"
 const Resolvfile = "/etc/resolv.conf"
 const Timeout = 2_000
 
+var initdone	: bool = false
 var hostmap	: htab(byte[:], hostinfo)#
 var dnscache	: htab(byte[:], hostinfo)#
 var search	: byte[:][:]
 var nameservers	: netaddr[:]
-
-const __init__ = {
-	hostmap = mkht()
-	dnscache = mkht()
-	loadhosts()
-	loadresolv()
-}
 
 const resolve = {host
 	/*TODO: v4 and v6 */
@@ -88,6 +82,17 @@ const resolvemx = {host
 }
 
 const resolverec = {host, t
+	if !initdone /*  avoid extra contention */
+		lock(netlck)
+		if !initdone
+			hostmap = mkht()
+			dnscache = mkht()
+			loadhosts()
+			loadresolv()
+		;;
+		unlock(netlck)
+	;;
+
 	match hostfind(host)
 	| `Some hinf:
 		-> `Ok sldup([hinf][:])
