@@ -272,6 +272,18 @@ blobucon(Blob *seq, Htab *globls, Htab *strtab, Node *n)
 	return sz;
 }
 
+static size_t
+blobvar(Blob *seq, Htab *strtab, Node *var, Type *ty)
+{
+	Node *dcl;
+
+	dcl = decls[var->expr.did];
+	if (tybase(ty)->type != Tyfunc || !dcl->decl.isglobl)
+		fatal(var, "non-constant initializer %s", namestr(var->expr.args[0]));
+	b(seq, mkblobi(Bti64, 0));
+	b(seq, mkblobref(asmname(dcl), 0, 1));
+	return 16;
+}
 
 static size_t
 blobrec(Blob *b, Htab *globls, Htab *strtab, Node *n)
@@ -282,6 +294,7 @@ blobrec(Blob *b, Htab *globls, Htab *strtab, Node *n)
 	case Oucon:	sz = blobucon(b, globls, strtab, n);	break;
 	case Oslice:	sz = blobslice(b, globls, strtab, n);	break;
 	case Ostruct:	sz = blobstruct(b, globls, strtab, n);	break;
+	case Ovar:	sz = blobvar(b, strtab, n, exprtype(n));	break;
 	case Olit:	sz = bloblit(b, strtab, n->expr.args[0], exprtype(n));	break;
 	case Otup:
 	case Oarr:

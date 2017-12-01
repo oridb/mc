@@ -1508,6 +1508,7 @@ simpconstinit(Simp *s, Node *dcl)
 		case Ostruct:
 		case Oslice:
 		case Oucon:
+		case Ovar:
 			extractsub(s, e);
 			lappend(&s->blobs, &s->nblobs, dcl);
 			break;
