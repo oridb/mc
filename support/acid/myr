@@ -8,6 +8,7 @@ defn myrstk()
 
 	line = pcline(*SP);
 	file = pcfile(*SP);
+	func = fmt(*(*BP + 8), 'a');
 	print(file, ":", line, ":\t", func, "\n");
 
 	b = *BP;
