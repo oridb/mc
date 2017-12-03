@@ -18,6 +18,7 @@ use "slpush"
 use "strbuf"
 use "strfind"
 use "striter"
+use "strjoin"
 use "strsplit"
 use "syswrap"
 use "syswrap-ss"
@@ -208,7 +209,15 @@ const fmtval = {sb, ty, ap, params
 	;;
 }
 
+const strreplace = {str, from, to
+        var sparts = std.strsplit(str, from)
+        var sparamstr = std.strjoin(sparts, to)
+        slfree(sparts)
+        -> sparamstr
+}
+
 const parseparams = {paramstr, optdesc
+        const cmask = "_=.-=-_"
 	var params, opts
 	var o, a, ha, gotarg, found
 
@@ -216,13 +225,17 @@ const parseparams = {paramstr, optdesc
 	if optdesc.len == 0 && paramstr.len > 0
 		std.fatal("invalid format options {}\n")
 	;;
-	params = strsplit(paramstr, ",")
+        /* Mask '\\,', so that we can use it in case we need a ',' in a format string, as in: */
+        /* 'std.put("{f=year is %Y\\, the day is %d}\n", date.mkdate(2017, 10, 30, ""))'. */
+        var sparamstr = strreplace(paramstr, "\\,", cmask)
+	params = strsplit(sparamstr, ",")
 	for p : params
 		/* parse out the key/value pair */
 		match std.strfind(p, "=")
 		| `std.Some idx:
 			o = p[:idx]
-			a = p[idx+1:]
+                        /* We can now safely unmask from '\\,' to ',': */
+                        a = strreplace(p[idx+1:], cmask, ",")
 			gotarg = true
 		| `std.None:
 			o = p
