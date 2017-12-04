@@ -49,7 +49,7 @@ const main = {
 }
 
 const eq = {actual, expected
-	if !std.sleq(expected, actual)
+	if !std.eq(expected, actual)
 		std.fatal("expected date {}, got {}\n", expected, actual)
 	;;
 }

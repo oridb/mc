@@ -1,4 +1,6 @@
-use "sleq"
+use "traits"
+use "hashfuncs"
+
 pkg std =
 	const hassuffix	: (s : byte[:], suff : byte[:] -> bool)
 ;;
@@ -8,7 +10,7 @@ const hassuffix = {s, suff
 
 	if suff.len <= s.len
 		tail = s[s.len - suff.len:]
-		-> sleq(tail, suff)
+		-> eq(tail, suff)
 	;;
 	-> false
 }

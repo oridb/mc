@@ -57,7 +57,7 @@ const itersects = {
 const checkval = {ini, sect, key, expected
 	match inifile.get(ini, sect, key)
 	| `std.Some val:
-		if !std.sleq(val, expected)
+		if !std.eq(val, expected)
 			std.fatal("{}.{}: expected {}, got {}\n", sect, key, expected, val)
 		;;
 	| `std.None:

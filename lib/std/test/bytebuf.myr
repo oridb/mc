@@ -3,7 +3,6 @@ use "bytebuf"
 /* support */
 use "die"
 use "fmt"
-use "sleq"
 
 const main = {
 	var bb, v

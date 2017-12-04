@@ -66,7 +66,7 @@ const eq = {ip, expected
 	parsed = std.ipparse(ip)
 	p = ipbytes(parsed)
 	e = ipbytes(expected)
-	if !std.sleq(p, e)
+	if !std.eq(p, e)
 		std.fput(1, "misparsed ip {}\n", ip)
 		std.put("parsed: ")
 		for b : p

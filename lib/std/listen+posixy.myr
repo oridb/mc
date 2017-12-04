@@ -10,10 +10,11 @@ use "option"
 use "resolve"
 use "result"
 use "slcp"
-use "sleq"
 use "strfind"
 use "striter"
 use "syswrap"
+use "traits"
+use "hashfuncs"
 use "utf"
 
 pkg std =
@@ -62,7 +63,7 @@ const announcesock = {proto, str
 	| `None:	-> `Err("invalid port")
 	;;
 
-	if std.sleq(hoststr, "*")
+	if eq(hoststr, "*")
 		sa6=[.fam=sys.Afinet6, .port=hosttonet(port)]
 		sa = (&sa6 : sys.sockaddr#)
 		sz = sizeof(sys.sockaddr_in6)

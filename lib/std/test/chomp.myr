@@ -11,6 +11,6 @@ const check = {sl, pfx, expected
 
 	r = sl
 	std.chomp(&r, pfx)
-	std.assert(std.sleq(r, expected), \
+	std.assert(std.eq(r, expected), \
 		"expected chomp({}, {}) => {}, got {}\n", sl, pfx, expected, r)
 }

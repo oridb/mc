@@ -49,14 +49,14 @@ const norm = {a, b
 	var p
 
 	p = std.pathnorm(a)
-	if !std.sleq(p, b)
+	if !std.eq(p, b)
 		std.fatal("mismatched paths: '{}' => '{}' != '{}'\n", a, p, b)
 	;;
 	std.slfree(p)
 }
 
 const eq = {a, b
-	if !std.sleq(a, b)
+	if !std.eq(a, b)
 		std.fatal("mismatched paths: '{}' != '{}'\n", a, b)
 	;;
 }

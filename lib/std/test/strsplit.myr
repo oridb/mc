@@ -36,7 +36,7 @@ const check = {a, b
 		std.fatal("length mismatch: {} != {}: {}\n", a.len, b.len)
 	;;
 	for var i = 0; i < a.len; i++
-		if !std.sleq(a[i], b[i])
+		if !std.eq(a[i], b[i])
 			std.fatal("element {} mismatched: '{}' != '{}'\n", i, a[i], b[i])
 		;;
 	;;

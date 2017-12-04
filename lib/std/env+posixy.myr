@@ -9,7 +9,8 @@ use "memops"
 use "option"
 use "sldup"
 use "slcp"
-use "sleq"
+use "traits"
+use "hashfuncs"
 
 pkg std =
 	const getenv	: (name : byte[:] -> option(byte[:]))
@@ -29,7 +30,7 @@ const getenv = {name
 	for envp : environ
 		env = cstrconvp(envp)
 		n = min(name.len, env.len)
-		if sleq(name, env[:n]) && sleq(env[n:n+1], "=")
+		if eq(name, env[:n]) && eq(env[n:n+1], "=")
 			-> `Some env[n+1:]
 		;;
 	;;
@@ -51,7 +52,7 @@ const setenv = {name, val
 	for envp : environ
 		env = cstrconvp(envp)
 		n = min(name.len, env.len)
-		if sleq(name, env[:n]) && sleq(env[n:n+1], "=")
+		if eq(name, env[:n]) && eq(env[n:n+1], "=")
 			break
 		;;
 		idx++

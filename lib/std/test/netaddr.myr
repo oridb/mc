@@ -16,7 +16,7 @@ const matches = {ctx, expected, addr, net, port
 	var s
 
 	s = std.netaddr(addr, net, port)
-	testr.check(ctx, std.sleq(expected, s), \
+	testr.check(ctx, std.eq(expected, s), \
 		"mismatch: expected {}, got {} from ({}, {}, {})\n", \
 		expected, s, addr, net, port)
 	std.slfree(s)

@@ -17,7 +17,7 @@ const main = {
 }
 
 const eq = {a, e
-	if !std.sleq(e, a)
+	if !std.eq(e, a)
 		std.fatal("expected '{}', got '{}'\n", e, a)
 	;;
 }

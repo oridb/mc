@@ -13,7 +13,6 @@ use "memops"
 use "option"
 use "result"
 use "sldup"
-use "sleq"
 use "slpush"
 use "strbuf"
 use "strfind"
@@ -233,7 +232,7 @@ const parseparams = {paramstr, optdesc
 		found = false
 		/* verify and add the arg */
 		for (opt, hasarg) : optdesc
-			if !std.sleq(opt, o)
+			if !std.eq(opt, o)
 				continue
 			;;
 			found = true

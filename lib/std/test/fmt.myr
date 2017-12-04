@@ -21,7 +21,7 @@ const check = {expected, fmt, args : ...
 
 	ap = std.vastart(&args)
 	sl = std.bfmtv(buf[:], fmt, &ap)
-	if !std.sleq(expected, sl)
+	if !std.eq(expected, sl)
 		std.fatal("mismatched fmt: got \"{}\", expected \"{}\"\n", sl, expected)
 	;;
 }

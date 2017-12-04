@@ -5,36 +5,36 @@ const main = {
 	var buf : byte[16]
 
 	sb = std.mksb()
-	std.assert(std.sleq(std.sbpeek(sb), ""), "mismatched empty str\n")
+	std.assert(std.eq(std.sbpeek(sb), ""), "mismatched empty str\n")
 	std.sbputs(sb, "hello")
-	std.assert(std.sleq(std.sbpeek(sb), "hello"), "mismatched hello\n")
+	std.assert(std.eq(std.sbpeek(sb), "hello"), "mismatched hello\n")
 	std.sbputs(sb, ", hello")
-	std.assert(std.sleq(std.sbpeek(sb), "hello, hello"), "mismatched double hello\n")
+	std.assert(std.eq(std.sbpeek(sb), "hello, hello"), "mismatched double hello\n")
 	std.sbtrim(sb, 7)
-	std.assert(std.sleq(std.sbpeek(sb), "hello, "), "mismatched trim\n")
+	std.assert(std.eq(std.sbpeek(sb), "hello, "), "mismatched trim\n")
 	std.sbputs(sb, "world")
-	std.assert(std.sleq(std.sbpeek(sb), "hello, world"), "mismatched hello world\n")
+	std.assert(std.eq(std.sbpeek(sb), "hello, world"), "mismatched hello world\n")
 	std.sbtrim(sb, -5)
-	std.assert(std.sleq(std.sbpeek(sb), "hello, "), "mismatched rtrim\n")
+	std.assert(std.eq(std.sbpeek(sb), "hello, "), "mismatched rtrim\n")
 	std.sbputc(sb, '世')
 	std.sbputc(sb, '界')
-	std.assert(std.sleq(std.sbpeek(sb), "hello, 世界"), "mismatched unicode\n")
+	std.assert(std.eq(std.sbpeek(sb), "hello, 世界"), "mismatched unicode\n")
 	std.sbputb(sb, 10)
-	std.assert(std.sleq(std.sbpeek(sb), "hello, 世界\n"), "mismatched byte\n")
+	std.assert(std.eq(std.sbpeek(sb), "hello, 世界\n"), "mismatched byte\n")
 
 	sb = std.mkbufsb(buf[:])
 	std.assert(std.sbputs(sb, "hello"), "failed to add hello\n") /* 5 characters */
 	std.assert(std.sbputs(sb, "hello"), "failed to add hello\n") /* 10 characters */
 	std.assert(std.sbputs(sb, "hello"), "failed to add hello\n") /* 15 characters */
 	std.assert(!std.sbputs(sb, "hello"), "erronous success\n") /* 16 characters */
-	std.assert(std.sleq(std.sbpeek(sb), "hellohellohelloh"), "failed to copy as much as possible\n")
+	std.assert(std.eq(std.sbpeek(sb), "hellohellohelloh"), "failed to copy as much as possible\n")
 	std.sbtrim(sb, -1)
-	std.assert(std.sleq(std.sbpeek(sb), "hellohellohello"), "failed rtrim\n")
+	std.assert(std.eq(std.sbpeek(sb), "hellohellohello"), "failed rtrim\n")
 	std.sbputc(sb, '世')
-	std.assert(std.sleq(std.sbpeek(sb), "hellohellohello"), "modified overflowed putc\n")
+	std.assert(std.eq(std.sbpeek(sb), "hellohellohello"), "modified overflowed putc\n")
 	std.sbtrim(sb, -2)
-	std.assert(std.sleq(std.sbpeek(sb), "hellohellohel"), "failed rtrim\n")
+	std.assert(std.eq(std.sbpeek(sb), "hellohellohel"), "failed rtrim\n")
 	std.sbputc(sb, '世')
-	std.assert(std.sleq(std.sbpeek(sb), "hellohellohel世"), "failed to append with putc\n")
+	std.assert(std.eq(std.sbpeek(sb), "hellohellohel世"), "failed to append with putc\n")
 }
 

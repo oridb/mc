@@ -2,18 +2,22 @@ use "alloc"
 use "chartype"
 use "die"
 use "getint"
-use "sleq"
 use "slpush"
 use "traits"
 use "types"
 use "utf"
+use "memops"
 
 pkg std =
 	const siphash24	: (data : byte[:], seed : byte[16] -> uint64)
 
 	impl equatable @a[:] =
 		eq = {a, b
-			-> sleq(a, b)
+			if a.len == b.len
+				-> memeq((a : byte#), (b : byte#), a.len * sizeof(@a))
+			else
+				-> false
+			;;
 		}
 	;;
 

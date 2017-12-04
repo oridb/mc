@@ -4,15 +4,12 @@ use "fmt"
 use "intparse"
 use "option"
 use "slcp"
-use "sleq"
 use "slfill"
 use "strfind"
 use "striter"
 use "types"
-
- /* FIXME: needed for decls which should be pulled in as hidden */
-use "hasprefix"
-use "utf"
+use "traits"
+use "hashfuncs"
 
 pkg std =
 
@@ -61,7 +58,7 @@ const ip6parse = {ip
 	ok = true
 	expand = false
 	split = 0
-	if ip.len > 2 && std.sleq(ip[:2], "::")
+	if ip.len > 2 && eq(ip[:2], "::")
 		expand = true
 		split = 0
 	;;
@@ -105,8 +102,8 @@ const expandsplit = {ip, split, len
 	var width
 
 	width = 16 - len
-	std.slcp(ip[split:len], ip[split+width:len+width])
-	std.slfill(ip[len:len+width], 0)
+	slcp(ip[split:len], ip[split+width:len+width])
+	slfill(ip[len:len+width], 0)
 }
 
 const delim = {ip, sep, ok
@@ -130,12 +127,12 @@ generic num = {ip, lo, hi, base, sep, ok -> (@a::(numeric,integral), byte[:], bo
 		;;
 	;;
 	match intparsebase(ip[:len], base)
-	| `std.Some v:
+	| `Some v:
 		if v < lo || v > hi
 			-> (0, "", false)
 		;;
 		-> ((v : @a::(numeric,integral)), ip[len:], true)
-	| `std.None:
+	| `None:
 		-> (0, "", false)
 	;;
 }

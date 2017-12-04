@@ -6,22 +6,22 @@ const main = {
 	testr.run([
 		[.name="basic", .fn={ctx
 			var s = std.fmt("{}", escfmt.sh("word"))
-			testr.check(ctx, std.sleq("'word'", s), "mismatched escape")
+			testr.check(ctx, std.eq("'word'", s), "mismatched escape")
 			std.slfree(s)
 		}],
 		[.name="twowords", .fn={ctx
 			var s = std.fmt("{}", escfmt.sh("two words"))
-			testr.check(ctx, std.sleq("'two words'", s), "mismatched escape")
+			testr.check(ctx, std.eq("'two words'", s), "mismatched escape")
 			std.slfree(s)
 		}],
 		[.name="simplequote", .fn={ctx
 			var s = std.fmt("{}", escfmt.sh("two'words"))
-			testr.check(ctx, std.sleq("'two'\\''words'", s), "mismatched escape")
+			testr.check(ctx, std.eq("'two'\\''words'", s), "mismatched escape")
 			std.slfree(s)
 		}],
 		[.name="quotequote", .fn={ctx
 			var s = std.fmt("{}", escfmt.sh("two'\\''words"))
-			testr.check(ctx, std.sleq("'two'\\''\\'\\'''\\''words'", s), "mismatched escape")
+			testr.check(ctx, std.eq("'two'\\''\\'\\'''\\''words'", s), "mismatched escape")
 			std.slfree(s)
 		}]
 	][:])

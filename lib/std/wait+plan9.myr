@@ -13,7 +13,6 @@ use "strsplit"
 use "striter"
 use "syswrap"
 use "utf"
-use "sleq"
 use "fmt"
 use "threadhooks"
 
