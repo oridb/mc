@@ -15,6 +15,8 @@ sys$__cenvp:
  */
 .globl _start
 _start:
+	andq	$-16,%rsp		/* align the stack pointer */
+
 	/* load argc, argv, envp from stack */
 	movq	(%rdi),%rax		/* argc */
 	leaq	8(%rdi),%rbx		/* argv */
