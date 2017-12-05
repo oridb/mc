@@ -1081,7 +1081,9 @@ isconstfn(Node *n)
 		d = n;
 	}
 	t = tybase(decltype(d));
-	if (!d || !d->decl.isconst || !d->decl.isglobl || d->decl.isgeneric)
+	if (!d || !d->decl.isconst || d->decl.isgeneric)
+		return 0;
+	if (!d->decl.isglobl && !d->decl.isextern)
 		return 0;
 	if (t->type != Tyfunc && t->type != Tycode)
 		return 0;
