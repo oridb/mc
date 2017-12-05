@@ -322,11 +322,11 @@ addwildrec(Srcloc loc, Type *ty, Dtree *start, Dtree *accept, Dtree ***end, size
 			for (j = 0; j < nlast; j++)
 				if (addwildrec(loc, ty->sub[i], last[j], next, &tail, &ntail))
 					ret = 1;
-			if (i == ty->nsub - 1)
-				break;
 			lfree(&last, &nlast);
 			last = tail;
 			nlast = ntail;
+			if (i == ty->nsub - 1)
+				break;
 		}
 		break;
 	case Tyarray:
@@ -340,11 +340,11 @@ addwildrec(Srcloc loc, Type *ty, Dtree *start, Dtree *accept, Dtree ***end, size
 			for (j = 0; j < nlast; j++)
 				if (addwildrec(loc, ty->sub[0], last[j], next, &tail, &ntail))
 					ret = 1;
-			if (i == nelt - 1)
-				break;
 			lfree(&last, &nlast);
 			last = tail;
 			nlast = ntail;
+			if (i == nelt - 1)
+				break;
 		}
 		break;
 	case Tystruct:
@@ -356,11 +356,11 @@ addwildrec(Srcloc loc, Type *ty, Dtree *start, Dtree *accept, Dtree ***end, size
 			for (j = 0; j < nlast; j++)
 				if (addwildrec(loc, decltype(ty->sdecls[i]), last[j], next, &tail, &ntail))
 					ret = 1;
-			if (i == ty->nsub - 1)
-				break;
 			lfree(&last, &nlast);
 			last = tail;
 			nlast = ntail;
+			if (i == ty->nsub - 1)
+				break;
 		}
 		break;
 	case Tyunion:

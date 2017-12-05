@@ -1,0 +1,45 @@
+use std
+
+type a = struct
+	x	: int
+	y	: int
+;;
+
+type b = struct
+	u	: a
+	v	: int
+;;
+
+const main = {
+	var v : b
+
+	match ((0, 1), 2)
+	| ((0, 1), 2):	std.put("a")
+	| _:		std.put("f")
+	;;
+
+	match ((0, 1), 2)
+	| (_, 2):	std.put("b")
+	| _:		std.put("f")
+	;;
+
+	v = [.u=[.x=1, .y=2], .v=3]
+	match v
+	| [.u=[.x=1, .y=2], .v=3]:	std.put("c")
+	| _:				std.put("f")
+	;;
+	match v
+	| [.u=_, .v=3]:	std.put("d")
+	| _:		std.put("f")
+	;;
+
+
+	match [[1,2], [3,4]]
+	| [[1,2], [3,4]]:	std.put("e")
+	| _:			std.put("f")
+	;;
+	match [[1,2], [3,4]]
+	| [_, [3,4]]:	std.put("f")
+	| _:		std.put("f")
+	;;
+}
