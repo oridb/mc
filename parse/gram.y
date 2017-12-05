@@ -292,7 +292,7 @@ decllist: declbody {
 		$$.loc = $1->loc; $$.nl = NULL; $$.nn = 0;
 		lappend(&$$.nl, &$$.nn, $1);
 	}
-	| declbody Tcomma decllist {
+	| declbody listsep decllist {
 		linsert(&$3.nl, &$3.nn, 0, $1);
 		$$=$3;
 	}
@@ -480,7 +480,7 @@ typarams: generictype {
 		$$.types = NULL; $$.ntypes = 0;
 		lappend(&$$.types, &$$.ntypes, $1);
 	}
-	| typarams Tcomma generictype {
+	| typarams listsep generictype {
 		lappend(&$$.types, &$$.ntypes, $3);
 	}
 	;
@@ -512,7 +512,7 @@ typaramlist
 		$$.nl = NULL; $$.nn = 0;
 		lappend(&$$.nl, &$$.nn, $1);
 	}
-	| typaramlist Tcomma name {lappend(&$$.nl, &$$.nn, $3);}
+	| typaramlist listsep name {lappend(&$$.nl, &$$.nn, $3);}
 	;
 
 compoundtype
@@ -538,7 +538,7 @@ argdefs : typedeclcore {
 		$$.nl = NULL;
 		$$.nn = 0; lappend(&$$.nl, &$$.nn, $1);
 	}
-	| argdefs Tcomma typedeclcore {lappend(&$$.nl, &$$.nn, $3);}
+	| argdefs listsep typedeclcore {lappend(&$$.nl, &$$.nn, $3);}
 	| /* empty */ {
 		$$.loc.line = 0;
 		$$.loc.file = 0;
@@ -555,7 +555,7 @@ typelist: type {
 		$$.types = NULL; $$.ntypes = 0;
 		lappend(&$$.types, &$$.ntypes, $1);
 	}
-	| typelist Tcomma type
+	| typelist listsep type
 	{lappend(&$$.types, &$$.ntypes, $3);}
 	;
 
@@ -740,7 +740,7 @@ postfixexpr
 
 arglist : expr
 	{$$.nl = NULL; $$.nn = 0; lappend(&$$.nl, &$$.nn, $1);}
-	| arglist Tcomma expr
+	| arglist listsep expr
 	{lappend(&$$.nl, &$$.nn, $3);}
 	| /* empty */
 	{$$.nl = NULL; $$.nn = 0;}
@@ -761,7 +761,7 @@ atomicexpr
 	| Tsizeof Toparen type Tcparen {
 		$$ = mkexpr($1->loc, Osize, mkpseudodecl($1->loc, $3), NULL);
 	}
-	| Timpl Toparen name Tcomma type Tcparen {
+	| Timpl Toparen name listsep type Tcparen {
 		$$ = mkexpr($1->loc, Ovar, $3, NULL);
 		$$->expr.param = $5;
 	}
@@ -772,7 +772,7 @@ tupbody : tuphead tuprest
 	 linsert(&$$.nl, &$$.nn, 0, $1);}
 	;
 
-tuphead : expr Tcomma {$$ = $1;}
+tuphead : expr listsep {$$ = $1;}
 	;
 
 tuprest : /*empty */
@@ -781,7 +781,7 @@ tuprest : /*empty */
 		$$.nl = NULL; $$.nn = 0;
 		lappend(&$$.nl, &$$.nn, $1);
 	}
-	| tuprest Tcomma expr {lappend(&$$.nl, &$$.nn, $3);}
+	| tuprest listsep expr {lappend(&$$.nl, &$$.nn, $3);}
 	;
 
 literal : funclit       {$$ = mkexpr($1->loc, Olit, $1, NULL);}
@@ -858,7 +858,7 @@ params  : fnparam {
 		$$.nn = 0;
 		lappend(&$$.nl, &$$.nn, $1);
 	}
-	| params Tcomma fnparam {lappend(&$$.nl, &$$.nn, $3);}
+	| params listsep fnparam {lappend(&$$.nl, &$$.nn, $3);}
 	| /* empty */ {$$.nl = NULL; $$.nn = 0;}
 	;
 
@@ -888,11 +888,11 @@ arrayelts
 		else
 			lappend(&$$.nl, &$$.nn, mkidxinit($2->loc, mkintlit($2->loc, 0), $2));
 	}
-	| arrayelts Tcomma optendlns arrayelt {
-		if ($4->expr.idx)
-			lappend(&$$.nl, &$$.nn, $4);
+	| arrayelts listsep arrayelt {
+		if ($3->expr.idx)
+			lappend(&$$.nl, &$$.nn, $3);
 		else
-			lappend(&$$.nl, &$$.nn, mkidxinit($4->loc, mkintlit($4->loc, $$.nn), $4));
+			lappend(&$$.nl, &$$.nn, mkidxinit($3->loc, mkintlit($3->loc, $$.nn), $3));
 	}
 	;
 
@@ -908,8 +908,8 @@ structelts
 		$$.nn = 0;
 		lappend(&$$.nl, &$$.nn, $2);
 	}
-	| structelts Tcomma optendlns structelt {
-		lappend(&$$.nl, &$$.nn, $4);
+	| structelts listsep structelt {
+		lappend(&$$.nl, &$$.nn, $3);
 	}
 	;
 
@@ -919,7 +919,11 @@ structelt: Tdot Tident Tasn expr optendlns {
 	}
 	;
 
-optendlns  : /* none */
+listsep	: Tcomma
+	| Tcomma optendlns
+	;
+
+optendlns  : /* empty */
 	| optendlns Tendln
 	;
 
