@@ -181,7 +181,9 @@ forcelocal(Simp *s, Node *n)
 static void
 declarelocal(Simp *s, Node *n)
 {
-	if (isconstfn(n))
+	if (n->type == Nexpr)
+		n = decls[n->decl.did];
+	if (n->decl.isconst && n->decl.isextern)
 		htput(s->globls, n, asmname(n));
 	else if (stacknode(n))
 		forcelocal(s, n);
