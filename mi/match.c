@@ -275,12 +275,6 @@ isnonrecursive(Dtree *dt, Type *ty)
 }
 
 static int
-ismatchable(Type *ty)
-{
-	return ty->type != Tyfunc && ty->type != Tycode && ty->type != Tyvalist;
-}
-
-static int
 addwildrec(Srcloc loc, Type *ty, Dtree *start, Dtree *accept, Dtree ***end, size_t *nend)
 {
 	Dtree *next, **last, **tail;
@@ -659,6 +653,7 @@ addpat(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap, size_t *n
 {
 	int ret;
 	Node *dcl;
+	Type *ty;
 
 	pat = fold(pat, 1);
 	ret = 0;
@@ -666,8 +661,11 @@ addpat(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap, size_t *n
 	case Ovar:
 		dcl = decls[pat->expr.did];
 		if (dcl->decl.isconst) {
-			if (!ismatchable(decltype(dcl)))
-				fatal(dcl, "matching unmatchable type %s", tystr(decltype(dcl)));
+			ty = decltype(dcl);
+			if (ty->type == Tyfunc || ty->type == Tycode || ty->type == Tyvalist)
+				fatal(dcl, "bad pattern %s:%s: unmatchable type", declname(dcl), tystr(ty));
+			if (!dcl->decl.init)
+				fatal(dcl, "bad pattern %s:%s: missing initializer", declname(dcl), tystr(ty));
 			ret = addpat(dcl->decl.init, val, start, accept, cap, ncap, end, nend);
 		} else {
 			ret = addwild(pat, val, start, accept, cap, ncap, end, nend);
