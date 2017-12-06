@@ -121,7 +121,7 @@ B matchargstr	C
 B matchunion_sl	P	foo
 B matchbind	E	8
 B matchptr	P	'worked'
-B matchnest	P	"abcdef"
+B matchnest	P	'abcdef'
 F matchmixed
 B bigliteral	P	34359738368
 B arraylit-ni	E	2
