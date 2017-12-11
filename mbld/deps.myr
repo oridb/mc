@@ -177,6 +177,7 @@ const myrdeps = {b, name, mt
 			for l : ll
 				std.slpush(&dynlibs, l)
 			;;
+			mt.isdyn = true
 		elif std.hassuffix(f, config.Objsuffix)
 			depends(g, go, p)
 		else
@@ -461,7 +462,7 @@ const linkcmd = {b, n, mt, bin, libs, dynlibs, istest
 	if std.sleq(opt_sys, "osx")
 		std.slpush(&n.cmd, std.sldup("-macosx_version_min"))
 		std.slpush(&n.cmd, std.sldup("10.6"))
-	elif std.sleq(opt_sys, "linux") && dynlibs.len != 0
+	elif std.sleq(opt_sys, "linux") && mt.isdyn
 		std.slpush(&n.cmd, std.sldup("-dynamic-linker"))
 		std.slpush(&n.cmd, std.sldup("/lib64/ld-linux-x86-64.so.2"))
 	;;
