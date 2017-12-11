@@ -46,6 +46,7 @@ pkg bld =
 		islib	: bool
 		istest	: bool
 		isbench	: bool
+		isdyn	: bool
 		install	: bool
 
 	;;
