@@ -186,7 +186,7 @@ const myrdeps = {b, name, mt
 
 	if mt.islib
 		arcmd(b, go, mt, to)
-		musecmd(b, gu, mt, tu)
+		musecmd(b, gu, mt, tu, dynlibs)
 		builtlib(b, mt, libs, dynlibs)
 	else
 		linkcmd(b, go, mt, to, libs, dynlibs, false)
@@ -400,10 +400,13 @@ const checkloop = {g, n, visited, looped, stk
 	std.htdel(looped, n)
 }
 
-const musecmd = {b, n, mt, mu
+const musecmd = {b, n, mt, mu, dynlibs
 	std.slpush(&n.cmd, std.sldup(opt_muse))
 	for o : opt_museflags
 		std.slpush(&n.cmd, o)
+	;;
+	for l : dynlibs
+		std.slpush(&n.cmd, std.fmt("-l{}", l))
 	;;
 	std.slpush(&n.cmd, std.sldup("-o"))
 	std.slpush(&n.cmd, std.sldup(mu))
