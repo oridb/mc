@@ -46,12 +46,11 @@ _start:
 	call	cvt
 
 	xorq %rbp,%rbp
-	/* done startup; call kbind */
-	movq	$0,%rdi	/* param */
-	movq	$0,%rsi	/* size */
-	movq	$0,%rdx	/* cookie */
-	movq	$86,%rax /* Syskbind */
-	syscall
+	/*
+	  we're done startup, and we kind of want
+	  to call kbind here, but this breaks
+	  when we dynamically link in libc.
+	 */
 	/* call pre-main initializers */
 	call	__init__
 	/* enter the main program */
