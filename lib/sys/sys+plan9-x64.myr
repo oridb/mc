@@ -162,6 +162,7 @@ pkg sys =
 	const semacquire	: (addr : uint32#, block : int -> int)
 	const tsemacquire	: (addr : uint32#, ms : uint32 -> int)
 	const semrelease	: (addr : uint32#, count : int32 -> int32)
+	const rendezvous	: (tag : void#, val : void# -> void#)
 	
 
 	extern const alloca	: (sz : size	-> byte#)
@@ -259,3 +260,5 @@ const errstr = {eb
 const semacquire	= {addr, block; -> (syscall(Syssemacquire, a(addr), a(block)) : int)}
 const tsemacquire	= {addr, ms; -> (syscall(Systsemacquire, a(addr), a(ms)) : int)}
 const semrelease	= {addr, count; -> (syscall(Syssemrelease, a(addr), a(count)) : int32)}
+const rendezvous	= {tag, val; -> (syscall(Sysrendezvous, a(tag), a(val)) : void#)}
+
