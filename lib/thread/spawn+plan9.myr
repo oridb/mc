@@ -9,7 +9,7 @@ pkg thread =
 
 const spawn = {fn
 	fn = std.fndup(fn)
-	match sys.rfork(sys.Rfproc | sys.Rfmem | sys.Rfnowait)
+	match sys.rfork(sys.Rfproc | sys.Rfmem)
 	| 0:
 		fn()
 		std.fnfree(fn)

@@ -169,7 +169,24 @@ pkg sys =
 
 	extern var tosptr	: tos#
 	extern var curbrk	: byte#
+
+	const atexit		: (fn : (-> void) -> void)
+
+	pkglocal const __fini__	: (-> void)
 ;;
+
+var exitfn : (-> void)[128]
+var nexit : size
+
+const atexit = {fn
+	exitfn[nexit++] = fn
+}
+
+const __fini__ = {
+	for var i = 0; i < nexit; i++
+		exitfn[i]()
+	;;
+}
 
 /* asm stub from syscall.s */
 extern const syscall : (scno : scno, args : ... -> int64)
