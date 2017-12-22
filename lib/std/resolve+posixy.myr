@@ -90,6 +90,7 @@ const resolverec = {host, tl
 			dnscache = mkht()
 			loadhosts()
 			loadresolv()
+			initdone = true
 		;;
 		unlock(netlck)
 	;;
@@ -145,9 +146,7 @@ const loadhosts = {
 		| `Some (ip, rest):
 			match ipparse(ip)
 			| `Some addr:
-				lock(netlck)
 				addhosts(addr, ip, rest)
-				unlock(netlck)
 			| `None:
 				/*
 				invalid addresses are ignored: we don't want to break stuff
@@ -194,7 +193,6 @@ const loadresolv = {
 	var h
 	var lines
 
-	lock(netlck)
 	match slurp(Resolvfile)
 	| `Ok d:	h = d
 	| `Err m:	-> void
@@ -218,7 +216,6 @@ const loadresolv = {
 	;;
 	slfree(lines)
 	slfree(h)
-	unlock(netlck)
 }
 
 const addns = {rest
