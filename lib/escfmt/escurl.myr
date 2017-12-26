@@ -8,7 +8,7 @@ pkg escfmt =
 
 const __init__ = {
 	var s = ("" : escurl)
-	std.fmtinstall(std.typeof(s), urlfmt, [][:])
+	std.fmtinstall(std.typeof(s), urlfmt)
 }
 
 const url = {s

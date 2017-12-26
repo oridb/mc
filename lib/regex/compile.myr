@@ -879,7 +879,7 @@ const fmtfail = {sb, ap, opt
 	match std.vanext(ap)
 	| `Noimpl:	std.sbfmt(sb, "no implementation")
 	| `Incomplete:	std.sbfmt(sb, "regex ended before input fully parsed")
-	| `Unbalanced c:	std.sbfmt(sb, "unbalanced {}", c)
+	| `Unbalanced c:std.sbfmt(sb, "unbalanced {}", c)
 	| `Emptyparen:	std.sbfmt(sb, "empty parentheses")
 	| `Badrep c:	std.sbfmt(sb, "invalid repetition {}", c)
 	| `Badrange s:	std.sbfmt(sb, "invalid range name {}", s)
@@ -899,6 +899,6 @@ const mk = {re, ast, loc
 
 const __init__ = {
 	var e : status
-	std.fmtinstall(std.typeof(e), fmtfail, [][:])
+	std.fmtinstall(std.typeof(e), fmtfail)
 }
 

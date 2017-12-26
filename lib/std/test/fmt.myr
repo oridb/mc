@@ -109,11 +109,8 @@ const installed = {
 
 	x = 0
 	p = [.x=0, .y=0]
-	std.fmtinstall(std.typeof(x), intfmt, [][:])
-	std.fmtinstall(std.typeof(p), pairfmt, [
-		("x", true),
-		("y", false)
-	][:])
+	std.fmtinstall(std.typeof(x), intfmt)
+	std.fmtinstall(std.typeof(p), pairfmt)
 
 	/* single value */
 	check("formatted an int: 0", "{}", 0)

@@ -196,7 +196,7 @@ const __init__ = {
 	var m
 
 	m = `Get
-	std.fmtinstall(std.typeof(m), fmtmethod, [][:])
+	std.fmtinstall(std.typeof(m), fmtmethod)
 }
 
 const readchunkedbody = {s, r

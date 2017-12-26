@@ -10,12 +10,7 @@ pkg date =
 const __init__ = {
 	var d : instant
 
-	std.fmtinstall(std.typeof(d), sbfmt, [
-		("D", false),
-		("d", false),
-		("t", false),
-		("f", true),
-	][:])
+	std.fmtinstall(std.typeof(d), sbfmt)
 }
 
 /* Always formats : proleptic Gregorian format */

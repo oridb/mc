@@ -12,9 +12,7 @@ const __init__ = {
 	var u : url#
 
 	u = u
-	std.fmtinstall(std.typeof(u), urlfmt, [
-		("p", false)
-	][:])
+	std.fmtinstall(std.typeof(u), urlfmt)
 }
 
 const urlfmt = {sb, ap, opts

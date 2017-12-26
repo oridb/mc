@@ -38,7 +38,7 @@ type parsedtz = union
 
 const __init__ = {
 	var fail : parsefail
-	std.fmtinstall(std.typeof(fail), failfmt, [][:])
+	std.fmtinstall(std.typeof(fail), failfmt)
 }
 
 const strparse = {f, s, tz, replace

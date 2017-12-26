@@ -8,7 +8,7 @@ pkg escfmt =
 
 const __init__ = {
 	var s = ("" : eschtml)
-	std.fmtinstall(std.typeof(s), htmlfmt, [][:])
+	std.fmtinstall(std.typeof(s), htmlfmt)
 }
 
 const html = {s

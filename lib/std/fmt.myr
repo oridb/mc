@@ -47,12 +47,17 @@ pkg std =
 
 	/* add a formatter function */
 	const fmtinstall	: (ty : byte[:], \
-		fn : (sb : strbuf#, ap : valist#, opts : (byte[:],byte[:])[:] -> void), \
-		optdesc : (byte[:], bool)[:] \
+		fn : (sb : strbuf#, ap : valist#, opts : (byte[:],byte[:])[:] -> void) \
 		-> void)
 
 	$noret const fatal	: (fmt : byte[:], args : ... -> void)
 	$noret const fatalv	: (fmt : byte[:], ap : valist# -> void)
+;;
+
+type parsestate = union
+	`Copy
+	`ParamOpt
+	`ParamArg
 ;;
 
 const __init__ = {
@@ -61,7 +66,6 @@ const __init__ = {
 
 type fmtdesc = struct
 	fn	: (sb : strbuf#, ap : valist#, opts : (byte[:],byte[:])[:] -> void)
-	optdesc	: (byte[:], bool)[:]
 ;;
 
 /* same as 'put', but exits the program after printing */
@@ -81,10 +85,10 @@ const fatalv = {fmt, ap
 
 var fmtmap : htab(byte[:], fmtdesc)#
 
-const fmtinstall = {ty, fn, optdesc
+const fmtinstall = {ty, fn
 	match std.htget(fmtmap, ty)
 	| `std.Some _:	std.fatal("doubly installed format\n")
-	| `std.None:	htput(fmtmap, ty, [.fn=fn, .optdesc=sldup(optdesc)])
+	| `std.None:	htput(fmtmap, ty, [.fn=fn])
 	;;
 }
 
@@ -157,106 +161,98 @@ const sbfmt = {sb, fmt, args
 }
 
 const sbfmtv = {sb, fmt, ap -> size
-	var nfmt, nparams, orig
-	var c, params
+	var buf : byte[256], param : (byte[:], byte[:])[8]
+	var state, startp, endp, starta, nbuf
+	var nfmt, nvarargs, nparam
+	var c
 
-	orig = fmt
-	nparams = ap.tc.nelt
+	nvarargs = ap.tc.nelt
 	nfmt = 0
+	startp = 0
+	starta = 0
+	nparam = 0
+	nbuf = 0
+	endp = 0
+	state = `Copy
 	while fmt.len != 0
 		(c, fmt) = charstep(fmt)
-		match c
-		| '{':
+		match (state, c)
+		/* raw bytes */
+		| (`Copy, '{'):
 			if decode(fmt) == '{'
 				(c, fmt) = charstep(fmt)
 				sbputc(sb, '{')
 			else
-				(params, fmt) = getparams(fmt)
-				nfmt++
-				if nfmt > nparams
-					die("too few params for fmt\n")
-				;;
-
-				fmtval(sb, vatype(ap), ap, params)
+				state = `ParamOpt
+				nparam = 0
+				startp = 0
+				starta = 0
+				nbuf = 0
 			;;
-		| '}':
+		| (`Copy, '}'):
 			if decode(fmt) == '}'
 				sbputc(sb, '}')
 			;;
-		| chr:
+		| (`Copy, chr):
 			sbputc(sb, chr)
+
+		/* {param */
+		| (`ParamOpt, '='):
+			state = `ParamArg
+			endp = nbuf
+			starta = nbuf
+		| (`ParamOpt, ','):
+			if startp != nbuf
+				param[nparam++] = (buf[startp:nbuf], "")
+			;;
+		| (`ParamOpt, '}'):
+			state = `Copy
+			if startp != nbuf
+				param[nparam++] = (buf[startp:nbuf], "")
+			;;
+			fmtval(sb, vatype(ap), ap, param[:nparam])
+			nfmt++
+		| (`ParamOpt, '\\'):
+			(c, fmt) = charstep(fmt)
+			nbuf += std.encode(buf[nbuf:], c)
+		| (`ParamOpt, chr):
+			nbuf += std.encode(buf[nbuf:], chr)
+
+		/* {param=arg} */
+		| (`ParamArg, ','):
+			state = `ParamOpt
+			param[nparam++] = (buf[startp:endp], buf[starta:nbuf])
+			startp = nbuf
+			endp = nbuf
+		| (`ParamArg, '}'):
+			state = `Copy
+			if startp != nbuf
+				param[nparam++] = (buf[startp:endp], buf[starta:nbuf])
+			;;
+			fmtval(sb, vatype(ap), ap, param[:nparam])
+			nfmt++
+		| (`ParamArg, '\\'):
+			(c, fmt) = charstep(fmt)
+			nbuf += std.encode(buf[nbuf:], c)
+		| (`ParamArg, chr):
+			nbuf += std.encode(buf[nbuf:], chr)
 		;;
 :fmtdone
 	;;
-	if nfmt != nparams
-		write(1, orig)
+	if nfmt != nvarargs
 		die("too many params for fmt\n")
 	;;
 	-> sb.len
 }
 
 const fmtval = {sb, ty, ap, params
-	var pl
-
 	match htget(fmtmap, ty)
 	| `Some f:
-		pl = parseparams(params, f.optdesc)
-		f.fn(sb, ap, pl)
-		std.slfree(pl)
+		f.fn(sb, ap, params)
 	| `None:
 		fallbackfmt(sb, params, ty, ap)
 	;;
 }
-
-const parseparams = {paramstr, optdesc
-	var params, opts
-	var o, a, ha, gotarg, found
-
-	opts = [][:]
-	if optdesc.len == 0 && paramstr.len > 0
-		std.fatal("invalid format options {}\n")
-	;;
-	params = strsplit(paramstr, ",")
-	for p : params
-		/* parse out the key/value pair */
-		match std.strfind(p, "=")
-		| `std.Some idx:
-			o = p[:idx]
-			a = p[idx+1:]
-			gotarg = true
-		| `std.None:
-			o = p
-			a = ""
-			gotarg = false
-		;;
-
-		found = false
-		/* verify and add the arg */
-		for (opt, hasarg) : optdesc
-			if !std.sleq(opt, o)
-				continue
-			;;
-			found = true
-			ha = hasarg
-			if ha == gotarg
-				std.slpush(&opts, (o, a))
-			else
-				std.fatal("invalid arg {} for option {}", a, o)
-			;;
-		;;
-		if !found
-			std.put("options: \n")
-			for (opt, hasarg) : optdesc
-				std.put("\t'{}', hasarg={}\n", opt, hasarg)
-			;;
-			std.put("invalid option '{}' ", o)
-			std.die("dying")
-		;;
-	;;
-	slfree(params)
-	-> opts
-}
-
 
 const fallbackfmt = {sb, params, tyenc, ap : valist# -> void
 	/* value types */
@@ -369,7 +365,7 @@ const fallbackfmt = {sb, params, tyenc, ap : valist# -> void
 		subap = vaenter(ap)
 		sbputs(sb, "[")
 		while subap.tc.nelt != 0
-			fmtval(sb, vatype(&subap), &subap, "")
+			fmtval(sb, vatype(&subap), &subap, [][:])
 			if subap.tc.nelt > 0
 				sbfmt(sb, ", ")
 			;;
@@ -381,7 +377,7 @@ const fallbackfmt = {sb, params, tyenc, ap : valist# -> void
 		subap = vaenter(ap)
 		sbfmt(sb, "(")
 		for var i = 0; i < subap.tc.nelt; i++
-			fmtval(sb, vatype(&subap), &subap, "")
+			fmtval(sb, vatype(&subap), &subap, [][:])
 			if subap.tc.nelt == 1
 				sbfmt(sb, ",")
 			elif i != subap.tc.nelt -1
@@ -396,7 +392,7 @@ const fallbackfmt = {sb, params, tyenc, ap : valist# -> void
 		for var i = 0; i < subap.tc.nelt; i++
 			(subname, subenc) = ncpeek(&subap.tc)
 			sbfmt(sb, ".{}=", subname)
-			fmtval(sb, vatype(&subap), &subap, "")
+			fmtval(sb, vatype(&subap), &subap, [][:])
 			if subap.tc.nelt == 1
 				sbfmt(sb, ",")
 			elif i != subap.tc.nelt -1
@@ -420,7 +416,7 @@ const fallbackfmt = {sb, params, tyenc, ap : valist# -> void
 		| `Tynone:
 		| _:
 			sbputc(sb, ' ')
-			fmtval(sb, subenc, &subap, "")
+			fmtval(sb, subenc, &subap, [][:])
 		;;
 		vabytes(ap)
 	| `Tyname (name, desc):
@@ -431,28 +427,28 @@ const fallbackfmt = {sb, params, tyenc, ap : valist# -> void
 }
 
 const fmtslice = {sb, subap, params
-	var opts, join, joined
+	var join, joined
 
-	opts = parseparams(params, [
-		("j", true),
-	][:])
 	join = ", "
 	joined = false
-	for o : opts
-		match o
+	for p : params
+		match p
 		| ("j", j):
 			joined = true
 			join = j
-		| _:	std.die("unreacahable")
+		| (opt, arg):
+			std.write(2, "fmt: \0")
+			std.write(2, opt)
+			std.write(2, "\0arg: ")
+			std.write(2, arg)
+			std.die("unreacahable")
 		;;
 	;;
-	std.slfree(opts)
-
 	if !joined
 		sbputs(sb, "[")
 	;;
 	while subap.tc.nelt != 0
-		fmtval(sb, vatype(&subap), &subap, "")
+		fmtval(sb, vatype(&subap), &subap, [][:])
 		if subap.tc.nelt > 0
 			sbfmt(sb, join)
 		;;
@@ -460,19 +456,6 @@ const fmtslice = {sb, subap, params
 	if !joined
 		sbputs(sb, "]")
 	;;
-}
-
-const getparams = {fmt
-	var i
-
-	for i = 0; i < fmt.len; i++
-		if fmt[i] == ('}' : byte)
-			goto foundparams
-		;;
-	;;
-	die("invalid format string")
-:foundparams
-	-> (fmt[:i], fmt[i+1:])
 }
 
 type intparams = struct
@@ -483,7 +466,6 @@ type intparams = struct
 
 const intparams = {params
 	var ip : intparams
-	var opts
 
 	ip = [
 		.base = 10,
@@ -491,51 +473,42 @@ const intparams = {params
 		.padto = 0
 	]
 
-	opts = parseparams(params, [
-		("b", true),
-		("x", false),
-		("w", true),
-		("p", true)][:])
-	for o : opts
-		match o
+	for p : params
+		match p
 		| ("b", bas):	ip.base = getint(bas, "fmt: base must be integer")
 		| ("x", ""):	ip.base = 16
 		| ("w", wid):	ip.padto = getint(wid, "fmt: width must be integer")
 		| ("p", pad):	ip.padfill = decode(pad)
-		| _:	std.die("unreachable")
+		| (opt, arg):	
+			std.write(2, "fmt: ")
+			std.write(2, opt)
+			std.write(2, "arg: ")
+			std.write(2, arg)
+			std.die("\nunreachable\n")
 		;;
 	;;
 	iassert(ip.padto >= 0, "pad must be >= 0")
-	std.slfree(opts)
 	-> ip
 }
 
 const strfmt = {sb, str, params
-	var opts
 	var w, p, i, raw, esc
 
 	p = ' '
 	w = 0
 	raw = false
 	esc = false
-	opts = parseparams(params, [
-		("w", true),
-		("p", true),
-		("r", false),
-		("e", false),
-	][:])
 
-	for o : opts
-		match o
+	for pp : params
+		match pp
 		| ("w", wid):	w = getint(wid, "fmt: width must be integer")
 		| ("p", pad):	p = decode(pad)
 		| ("r", ""):	raw = true
 		| ("e", ""):	esc = true
-		| _:	std.die("unreachable")
+		| _:	std.die("unreachable\n")
 		;;
 	;;
 	iassert(p >= 0, "pad must be >= 0")
-	std.slfree(opts)
 	if raw
 		for b : str
 			if esc

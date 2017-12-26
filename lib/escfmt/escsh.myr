@@ -8,7 +8,7 @@ pkg escfmt =
 
 const __init__ = {
 	var s = ("" : escsh)
-	std.fmtinstall(std.typeof(s), shfmt, [][:])
+	std.fmtinstall(std.typeof(s), shfmt)
 }
 
 const sh = {s

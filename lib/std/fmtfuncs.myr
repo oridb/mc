@@ -17,9 +17,9 @@ const __init__ = {
 
 	bigint = mkbigint(0)
 	bitset = mkbs()
-	fmtinstall(typeof(bigint), bigfmt, [][:])
-	fmtinstall(typeof(bitset), bsfmt, [][:])
-	fmtinstall(typeof(ipaddr), ipfmt, [][:])
+	fmtinstall(typeof(bigint), bigfmt)
+	fmtinstall(typeof(bitset), bsfmt)
+	fmtinstall(typeof(ipaddr), ipfmt)
 	bigfree(bigint)
 	bsfree(bitset)
 }

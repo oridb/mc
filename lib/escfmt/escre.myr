@@ -8,7 +8,7 @@ pkg escfmt =
 
 const __init__ = {
 	var s = ("" : escre)
-	std.fmtinstall(std.typeof(s), refmt, [][:])
+	std.fmtinstall(std.typeof(s), refmt)
 }
 
 const re = {s

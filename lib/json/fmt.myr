@@ -8,7 +8,7 @@ pkg json =
 const __init__ = {
 	var j : elt
 
-	std.fmtinstall(std.typeof(&j), jsonfmt, [][:])
+	std.fmtinstall(std.typeof(&j), jsonfmt)
 }
 
 const jsonfmt = {sb, ap, opts
