@@ -39,6 +39,7 @@ const main = {
 const builtins = {
 	var s : blah
 	var m : u
+	var v = [void, void][:]
 
 	/* basic types */
 	check("      abcd", "{w=10}", "abcd")
@@ -103,6 +104,10 @@ const builtins = {
 	check("1,2,3 true", "{j=\\,} {}", [1,2,3][:], true)
 	check("1}2}3 true", "{j=\\}} {}", [1,2,3][:], true)
 	check("1... 2... 3 true", "{j=... } {}", [1,2,3][:], true)
+
+	check("[]", "{}", v[:0])
+	check("[void]", "{}", v[:1])
+	check("[void, void]", "{}", v[:2])
 }
 
 const installed = {
