@@ -164,7 +164,7 @@ const sbfmtv = {sb, fmt, ap -> size
 	var buf : byte[256], param : (byte[:], byte[:])[8]
 	var state, startp, endp, starta, nbuf
 	var nfmt, nvarargs, nparam
-	var c
+	var b, i
 
 	nvarargs = ap.tc.nelt
 	nfmt = 0
@@ -174,14 +174,15 @@ const sbfmtv = {sb, fmt, ap -> size
 	nbuf = 0
 	endp = 0
 	state = `Copy
-	while fmt.len != 0
-		(c, fmt) = charstep(fmt)
-		match (state, c)
+	i = 0
+	while i != fmt.len
+		b = fmt[i++]
+		match (state, (b : char))
 		/* raw bytes */
 		| (`Copy, '{'):
-			if decode(fmt) == '{'
-				(c, fmt) = charstep(fmt)
-				sbputc(sb, '{')
+			if (fmt[i] : char) == '{'
+				b = fmt[i++]
+				sbputb(sb, ('{' : byte))
 			else
 				state = `ParamOpt
 				nparam = 0
@@ -190,11 +191,11 @@ const sbfmtv = {sb, fmt, ap -> size
 				nbuf = 0
 			;;
 		| (`Copy, '}'):
-			if decode(fmt) == '}'
-				sbputc(sb, '}')
+			if i < fmt.len && (fmt[i] : char) == '}'
+				sbputb(sb, ('}' : byte))
 			;;
-		| (`Copy, chr):
-			sbputc(sb, chr)
+		| (`Copy, _):
+			sbputb(sb, b)
 
 		/* {param */
 		| (`ParamOpt, '='):
@@ -213,10 +214,9 @@ const sbfmtv = {sb, fmt, ap -> size
 			fmtval(sb, vatype(ap), ap, param[:nparam])
 			nfmt++
 		| (`ParamOpt, '\\'):
-			(c, fmt) = charstep(fmt)
-			nbuf += std.encode(buf[nbuf:], c)
+			buf[nbuf++] = fmt[i++]
 		| (`ParamOpt, chr):
-			nbuf += std.encode(buf[nbuf:], chr)
+			buf[nbuf++] = b
 
 		/* {param=arg} */
 		| (`ParamArg, ','):
@@ -232,12 +232,10 @@ const sbfmtv = {sb, fmt, ap -> size
 			fmtval(sb, vatype(ap), ap, param[:nparam])
 			nfmt++
 		| (`ParamArg, '\\'):
-			(c, fmt) = charstep(fmt)
-			nbuf += std.encode(buf[nbuf:], c)
+			buf[nbuf++] = fmt[i++]
 		| (`ParamArg, chr):
-			nbuf += std.encode(buf[nbuf:], chr)
+			buf[nbuf++] = b
 		;;
-:fmtdone
 	;;
 	if nfmt != nvarargs
 		die("too many params for fmt\n")
@@ -450,7 +448,7 @@ const fmtslice = {sb, subap, params
 	while subap.tc.nelt != 0
 		fmtval(sb, vatype(&subap), &subap, [][:])
 		if subap.tc.nelt > 0
-			sbfmt(sb, join)
+			sbputs(sb, join)
 		;;
 	;;
 	if !joined

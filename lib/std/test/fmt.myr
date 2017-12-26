@@ -100,6 +100,8 @@ const builtins = {
 	check("[1, 2, 3] true", "{} {}", [1,2,3], true)
 	check("[1, 2, 3] true", "{} {}", [1,2,3][:], true)
 	check("1:2:3 true", "{j=:} {}", [1,2,3][:], true)
+	check("1,2,3 true", "{j=\\,} {}", [1,2,3][:], true)
+	check("1}2}3 true", "{j=\\}} {}", [1,2,3][:], true)
 	check("1... 2... 3 true", "{j=... } {}", [1,2,3][:], true)
 }
 
