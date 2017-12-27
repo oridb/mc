@@ -49,11 +49,11 @@ const search = {re, str
 	for var i = 0; i < str.len; i++
 		thr = run(re, str[i:], 0, false)
 		m = getmatches(re, thr)
+		cleanup(re)
 		match m
 		| `std.Some _:	break
 		| `std.None:	/* nothing */
 		;;
-		cleanup(re)
 	;;
 	->  m
 }
@@ -66,11 +66,11 @@ const isearch = {re, str
 	for var i = 0; i < str.len; i++
 		thr = run(re, str[i:], 0, false)
 		m = getidxmatches(re, thr)
+		cleanup(re)
 		match m
 		| `std.Some _:	break
 		| `std.None:	/* nothing */
 		;;
-		cleanup(re)
 	;;
 	->  m
 }
@@ -180,6 +180,7 @@ const getmatches = {re, thr
 	if thr == Zthr
 		-> `std.None
 	;;
+
 	ret = std.slalloc(re.nmatch)
 	for var i = 0; i < re.nmatch; i++
 		if thr.mgroup[i][0] != -1 && thr.mgroup[i][1] != -1
@@ -189,6 +190,7 @@ const getmatches = {re, thr
 		;;
 	;;
 	thrfree(re, thr)
+
 	-> `std.Some ret
 }
 
@@ -269,6 +271,8 @@ const run = {re, str, idx, wholestr
 					goto done
 				elif !wholestr
 					bestmatch = thr
+				else
+					thrfree(re, thr)
 				;;
 			elif !thr.matched
 				std.bsput(states, thr.ip)
@@ -446,17 +450,15 @@ const mkthread = {re, ip
 	var thr : rethread#
 
 	thr = std.alloc()
-
 	thr.next = Zthr
-
 	thr.ip = ip
 	thr.tid = re.nexttid++
 	thr.dead = false
 	thr.matched = false
-
 	thr.mgroup = [][:]
-
 	re.nthr++
+
+	trace(re, thr, "\tcreated {}", thr.tid)
 
 	-> thr
 }
