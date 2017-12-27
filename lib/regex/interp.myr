@@ -246,8 +246,10 @@ const run = {re, str, idx, wholestr
 			thr = re.runq
 			re.runq = thr.next
 
-			trace(re, thr, "\nrunning tid={}, ip={}, s[{}]={}\n", \
-				thr.tid, thr.ip, re.strp, std.decode(re.str[re.strp:]))
+			if re.trace
+				trace(re, thr, "\nrunning tid={}, ip={}, s[{}]={}\n", \
+					thr.tid, thr.ip, re.strp, std.decode(re.str[re.strp:]))
+			;;
 			ip = thr.ip
 			consumed = step(re, thr, -1)
 			while !consumed
@@ -288,7 +290,6 @@ const run = {re, str, idx, wholestr
 			;;
 		;;
 		std.bsclear(states)
-		trace(re, Zthr, "switch\n")
 		re.runq = re.expired
 		re.expired = Zthr
 		re.expiredtail = Zthr
@@ -458,13 +459,10 @@ const mkthread = {re, ip
 	thr.mgroup = [][:]
 	re.nthr++
 
-	trace(re, thr, "\tcreated {}", thr.tid)
-
 	-> thr
 }
 
 const thrfree = {re, thr
-	trace(re, thr, "\t\tcleanup {}\n", thr.tid)
 	std.slfree(thr.mgroup)
 	std.free(thr)
 }
