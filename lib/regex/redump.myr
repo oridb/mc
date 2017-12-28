@@ -11,7 +11,6 @@ const main = {args
 	cmd = std.optparse(args, &[
 		.argdesc = "regex [inputs...]",
 		.minargs = 1,
-		.maxargs = 1,
 		.opts = [
 			[.opt='v', .desc="dump verbose regex output"]
 		][:],
