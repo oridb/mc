@@ -22,6 +22,7 @@ pkg regex =
 
 /* Ugly: for performance. std.option() should be used instead when unions get faster. */
 const Zthr = (0 : rethread#)
+const Maxfree = 128
 
 const exec = {re, str
 	var thr, m
@@ -164,13 +165,14 @@ const cleanup = {re
 		next = thr.next
 		thrfree(re, thr)
 	;;
-	for thr = re.freed; thr != Zthr; thr = next
+	for thr = re.free; thr != Zthr; thr = next
 		next = thr.next
 		thrfree(re, thr)
 	;;
 	re.runq = Zthr
 	re.expired = Zthr
-	re.freed = Zthr
+	re.free = Zthr
+	re.nfree = 0
 	re.nexttid = 0
 	re.nthr = 0
 }
@@ -445,9 +447,10 @@ const finish = {re, thr
 const mkthread = {re, ip
 	var thr : rethread#
 
-	if re.freed != Zthr
-		thr = re.freed
-		re.freed = thr.next
+	if re.free != Zthr
+		thr = re.free
+		re.free = thr.next
+		re.nfree--
 	else
 		thr = std.alloc()
 	;;
@@ -462,8 +465,13 @@ const mkthread = {re, ip
 }
 
 const thrfree = {re, thr
-	thr.next = re.freed
-	re.freed = thr
+	if re.nfree >= Maxfree
+		std.free(thr)
+	else
+		thr.next = re.free
+		re.free = thr
+		re.nfree++
+	;;
 }
 
 const within = {re, str 
