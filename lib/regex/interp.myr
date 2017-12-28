@@ -164,8 +164,13 @@ const cleanup = {re
 		next = thr.next
 		thrfree(re, thr)
 	;;
+	for thr = re.freed; thr != Zthr; thr = next
+		next = thr.next
+		thrfree(re, thr)
+	;;
 	re.runq = Zthr
 	re.expired = Zthr
+	re.freed = Zthr
 	re.nexttid = 0
 	re.nthr = 0
 }
