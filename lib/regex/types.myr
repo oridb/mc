@@ -27,6 +27,7 @@ pkg regex =
 		nfree	: std.size
 		proglen	: std.size
 		prog	: reinst[:]
+		code	: recode[:]
 		nthr	: std.size
 		str	: byte[:]
 		strp	: std.size
@@ -70,9 +71,24 @@ pkg regex =
 		dead	: bool		/* thread died */
 		matched	: bool		/* thread matched */
 
-		mgroup	: std.size[2][32]	/* match starts */
+		mgroup	: std.size[2][16]	/* match starts */
 	;;
 
+
+	pkglocal type recode = uint64
+
+	/* can have at most up to 0xf ops */
+	const OpByte	: recode = 0x0
+	const OpRange	: recode = 0x1
+	const OpLbra	: recode = 0x2
+	const OpRbra	: recode = 0x3
+	const OpBol	: recode = 0x4
+	const OpEol	: recode = 0x5
+	const OpBow	: recode = 0x6
+	const OpEow	: recode = 0x7
+	const OpFork	: recode = 0x8
+	const OpJmp	: recode = 0x9
+	const OpMatch	: recode = 0xa
 
 	pkglocal type reinst = union
 		/* direct consumers */

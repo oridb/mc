@@ -252,10 +252,6 @@ const run = {re, str, idx, wholestr
 			thr = re.runq
 			re.runq = thr.next
 
-			if re.trace
-				trace(re, thr, "\nrunning tid={}, ip={}, s[{}]={}\n", \
-					thr.tid, thr.ip, re.strp, std.decode(re.str[re.strp:]))
-			;;
 			ip = thr.ip
 			consumed = step(re, thr, -1)
 			while !consumed
@@ -263,13 +259,12 @@ const run = {re, str, idx, wholestr
 			;;
 
 			if std.bshas(states, thr.ip)
-				die(re, thr, "there can be only one")
+				die(re, thr)
 			;;
 
 			if thr.dead
 				thrfree(re, thr)
 			elif thr.matched
-				trace(re, thr, "new bestmatch\n")
 				if bestmatch != Zthr
 					thrfree(re, bestmatch)
 				;;
@@ -311,91 +306,39 @@ const run = {re, str, idx, wholestr
  consumed, false otherwise.
 */
 const step = {re, thr, curip
-	var str
-	var nthr
+	var str, nthr, inst
 
 	str = re.str
-	match re.prog[thr.ip]
+	inst = re.code[thr.ip]
+	if re.trace
+		itrace(re, thr, re.prog[thr.ip])
+	;;
+	if re.debug
+		std.bsput(re.traces[thr.tid], thr.ip)
+	;;
+	match inst & 0xf
 	/* Char matching. Consume exactly one byte from the string. */
-	| `Ibyte b:
-		trace(re, thr, "\t{}:\tByte {} ({})\n", thr.ip, b, (b : char))
+	| OpRange:
+		var lo = (inst >>  4 : byte)
+		var hi = (inst >> 16 : byte)
+		
+		if !within(re, str) || lo > str[re.strp] || hi < str[re.strp]
+			die(re, thr)
+		else
+			thr.ip++
+		;;
+	| OpByte:
+		var b = (inst >> 4 : byte)
 		if !within(re, str)
-			die(re, thr, "end of string")
+			die(re, thr)
 		elif b != str[re.strp]
-			die(re, thr, "not right char")
+			die(re, thr)
 		else
-			hit(re, thr)
-			thr.ip++
-			trace(re, thr, "\t\tmatched {} with {}\n", b, str[re.strp])
-		;;
-	| `Irange (start, end):
-		trace(re, thr, "\t{}:\tRange ({}, {}) /* {} - {} */\n", thr.ip, start, end, (start : char), (end : char))
-		if !within(re, str) || start > str[re.strp] || end < str[re.strp]
-			die(re, thr, "bad range")
-		else
-			hit(re, thr)
 			thr.ip++
 		;;
-	/*
-	  Non-consuming. All of these return false, and expect step to be
-	  called again until exactly one byte is consumed from the string.
-	 */
-	| `Ibol:
-		trace(re, thr, "\t{}:\tBol\n", thr.ip)
-		if re.strp == 0 || str[re.strp - 1] == ('\n' : byte)
-			hit(re, thr)
-			thr.ip++
-			-> false
-		else
-			die(re, thr, "not beginning of line")
-		;;
-	| `Ieol:
-		trace(re, thr, "\t{}:\tEol\n", thr.ip)
-		if re.strp == str.len || str[re.strp] == ('\n' : byte)
-			hit(re, thr)
-			thr.ip++
-			-> false
-		else
-			die(re, thr, "not end of line")
-		;;
-	/* check for word characters */
-	| `Ibow:
-		trace(re, thr, "\t{}:\tBow\n", thr.ip)
-		if iswordchar(str[re.strp:]) && (re.strp == 0 || !iswordchar(prevchar(str, re.strp)))
-			hit(re, thr)
-			thr.ip++
-			-> false
-		else
-			die(re, thr, "not beginning of word")
-		;;
-	| `Ieow:
-		trace(re, thr, "\t{}:\tEow\n", thr.ip)
-		if re.strp == str.len && iswordchar(prevchar(str, re.strp))
-			hit(re, thr)
-			thr.ip++
-			-> false
-		elif re.strp > 0 && !iswordchar(str[re.strp:]) && iswordchar(prevchar(str, re.strp))
-			hit(re, thr)
-			thr.ip++
-			-> false
-		else
-			die(re, thr, "not end of word")
-		;;
-	| `Ilbra m:
-		trace(re, thr, "\t{}:\tLbra {}\n", thr.ip, m)
-		thr.mgroup[m][0] = re.strp
-		hit(re, thr)
-		thr.ip++
-		-> false
-	| `Irbra m:
-		trace(re, thr, "\t{}:\tRbra {}\n", thr.ip, m)
-		thr.mgroup[m][1] = re.strp
-		hit(re, thr)
-		thr.ip++
-		-> false
-	| `Ifork (lip, rip):
-		trace(re, thr, "\t{}:\tFork ({}, {})\n", thr.ip, lip, rip)
-		hit(re, thr)
+	| OpFork:
+		var lip = ((inst >>  4) & 0x3fffffff : std.size)
+		var rip = ((inst >> 34) & 0x3fffffff : std.size)
 		if rip != curip
 			nthr = mkthread(re, rip)
 			nthr.next = re.runq
@@ -407,21 +350,68 @@ const step = {re, thr, curip
 		;;
 		thr.ip = lip
 		-> false
-	| `Ijmp ip:
-		trace(re, thr, "\t{}:\tJmp {}\n", thr.ip, ip)
-		hit(re, thr)
+	/*
+	  Non-consuming. All of these return false, and expect step to be
+	  called again until exactly one byte is consumed from the string.
+	 */
+	| OpJmp:
+		var ip = (inst >> 4 : std.size)
 		thr.ip = ip
 		-> false
-	| `Imatch id:
-		trace(re, thr, "\t{}:\tMatch\n", thr.ip)
+	| OpMatch:
+		var id = (inst >> 4 : std.size)
 		re.lastthr = thr.tid
 		finish(re, thr)
 		-> true
+	| OpLbra:
+		var m = (inst >> 4 : std.size)
+		thr.mgroup[m][0] = re.strp
+		thr.ip++
+		-> false
+	| OpRbra:
+		var m = (inst >> 4 : std.size)
+		thr.mgroup[m][1] = re.strp
+		thr.ip++
+		-> false
+	| OpBol:
+		if re.strp == 0 || str[re.strp - 1] == ('\n' : byte)
+			thr.ip++
+			-> false
+		else
+			die(re, thr)
+		;;
+	| OpEol:
+		if re.strp == str.len || str[re.strp] == ('\n' : byte)
+			thr.ip++
+			-> false
+		else
+			die(re, thr)
+		;;
+	/* check for word characters */
+	| OpBow:
+		if iswordchar(str[re.strp:]) && (re.strp == 0 || !iswordchar(prevchar(str, re.strp)))
+			thr.ip++
+			-> false
+		else
+			die(re, thr)
+		;;
+	| OpEow:
+		if re.strp == str.len && iswordchar(prevchar(str, re.strp))
+			thr.ip++
+			-> false
+		elif re.strp > 0 && !iswordchar(str[re.strp:]) && iswordchar(prevchar(str, re.strp))
+			thr.ip++
+			-> false
+		else
+			die(re, thr)
+		;;
+	| _:
+		std.die("bad match")
 	;;
 	-> true
 }
 
-const die = {re, thr, msg
+const die = {re, thr
         /*
  	  we can have die called on a thread
 	  multiple times, eg, if it has a bad
@@ -429,7 +419,6 @@ const die = {re, thr, msg
 	  thread is in. We should only decrement
 	  the number of threads for that once.
 	 */
-	trace(re, thr, "\t\tdie {}: {}\n", thr.tid, msg)
         if !thr.dead
 		re.nthr--
 	;;
@@ -439,7 +428,6 @@ const die = {re, thr, msg
 }
 
 const finish = {re, thr
-	trace(re, thr, "finish {}\n", thr.tid)
 	thr.matched = true
 	re.nthr--
 }
@@ -478,6 +466,25 @@ const within = {re, str
 	-> re.strp < str.len
 }
 
+const itrace = {re, thr, inst
+	match inst
+	| `Ibyte b:	trace(re, thr, "\t{}: Byte ({})\n", thr.ip, b)
+	| `Irange (lo, hi):	trace(re, thr, "\t{}: Range {}, {}\n", thr.ip, lo, hi)
+	| `Ilbra m:	trace(re, thr, "\t{}: Lbra {}\n", thr.ip, m)
+	| `Irbra m:	trace(re, thr, "\t{}: Rbra {}\n", thr.ip, m)
+	/* anchors */
+	| `Ibol:	trace(re, thr, "\t{}: Bol\n", thr.ip)
+	| `Ieol:	trace(re, thr, "\t{}: Eol\n", thr.ip)
+	| `Ibow:	trace(re, thr, "\t{}: Bow\n", thr.ip)
+	| `Ieow:	trace(re, thr, "\t{}: Eow\n", thr.ip)
+
+	/* control flow */
+	| `Ifork (l, r):	trace(re, thr, "\t{}: Fork {}, {}\n", thr.ip, l, r)
+	| `Ijmp	ip:	trace(re, thr, "\t{}: Jmp {}\n", thr.ip, ip)
+	| `Imatch m:	trace(re, thr, "\t{}: Match {}\n", thr.ip, m)
+	;;
+}
+
 const trace : (re : regex#, thr : rethread#, msg : byte[:], args : ... -> void) = {re, thr, msg, args
 	var ap
 
@@ -491,12 +498,6 @@ const trace : (re : regex#, thr : rethread#, msg : byte[:], args : ... -> void) 
 		;;
 		std.put("^\n")
 	;;
-}
-
-const hit = {re, thr
-        if re.debug
-                std.bsput(re.traces[thr.tid], thr.ip)
-        ;;
 }
 
 /* must be called with i >= 1 */

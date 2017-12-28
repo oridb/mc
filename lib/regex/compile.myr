@@ -73,9 +73,32 @@ const regexcompile = {re, id
 		append(re, `Imatch id, t)
 		idump(re)
 		astfree(t)
+		re.code = convert(re.prog)
 		-> `std.Ok re
 	;;
 	-> `std.Err (`Noimpl)
+}
+
+const convert = {prog
+	var bc
+
+	bc = [][:]
+	for p : prog
+		match p
+		| `Ibyte b:		std.slpush(&bc, OpByte  | ((b : recode) << 4))
+		| `Irange (a, b):	std.slpush(&bc, OpRange | ((a : recode) << 4) | ((b : recode) << 16))
+		| `Ilbra m:		std.slpush(&bc, OpLbra  | ((m : recode) << 4))
+		| `Irbra m:		std.slpush(&bc, OpRbra  | ((m : recode) << 4))
+		| `Ibol:		std.slpush(&bc, OpBol)
+		| `Ieol:		std.slpush(&bc, OpEol)
+		| `Ibow:		std.slpush(&bc, OpBow)
+		| `Ieow:		std.slpush(&bc, OpEow)
+		| `Ijmp d:		std.slpush(&bc, OpJmp   | ((d : recode) << 4))
+		| `Imatch m:		std.slpush(&bc, OpMatch | ((m : recode) << 4))
+		| `Ifork (a, b):	std.slpush(&bc, OpFork  | ((a : recode) << 4) | ((b : recode) << 34))
+		;;
+	;;
+	-> bc
 }
 
 const free = {re
