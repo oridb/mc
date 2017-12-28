@@ -159,15 +159,15 @@ const cleanup = {re
 
 	for thr = re.runq; thr != Zthr; thr = next
 		next = thr.next
-		thrfree(re, thr)
+		std.free(thr)
 	;;
 	for thr = re.expired; thr != Zthr; thr = next
 		next = thr.next
-		thrfree(re, thr)
+		std.free(thr)
 	;;
 	for thr = re.free; thr != Zthr; thr = next
 		next = thr.next
-		thrfree(re, thr)
+		std.free(thr)
 	;;
 	re.runq = Zthr
 	re.expired = Zthr
