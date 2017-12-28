@@ -235,7 +235,6 @@ const run = {re, str, idx, wholestr
 		re.traces = [][:]
 		std.slpush(&re.traces, std.mkbs())
 	;;
-	re.runq.mgroup = std.slalloc(re.nmatch)
 	for var i = 0; i < re.nmatch; i++
 		re.runq.mgroup[i][0] = -1
 		re.runq.mgroup[i][1] = -1
@@ -306,7 +305,7 @@ const run = {re, str, idx, wholestr
 */
 const step = {re, thr, curip
 	var str
-	var mgroup
+	var nthr
 
 	str = re.str
 	match re.prog[thr.ip]
@@ -377,7 +376,6 @@ const step = {re, thr, curip
 		;;
 	| `Ilbra m:
 		trace(re, thr, "\t{}:\tLbra {}\n", thr.ip, m)
-		trace(re, thr, "\t\tmatch start = {}\n", re.strp)
 		thr.mgroup[m][0] = re.strp
 		hit(re, thr)
 		thr.ip++
@@ -390,9 +388,13 @@ const step = {re, thr, curip
 		-> false
 	| `Ifork (lip, rip):
 		trace(re, thr, "\t{}:\tFork ({}, {})\n", thr.ip, lip, rip)
-		mgroup = std.sldup(thr.mgroup)
 		hit(re, thr)
-		fork(re, rip, curip, mgroup)
+		if rip != curip
+			nthr = mkthread(re, rip)
+			nthr.next = re.runq
+			nthr.mgroup = thr.mgroup
+			re.runq = nthr
+		;;
 		if re.debug
 			std.slpush(&re.traces, std.bsdup(re.traces[thr.tid]))
 		;;
@@ -410,18 +412,6 @@ const step = {re, thr, curip
 		-> true
 	;;
 	-> true
-}
-
-const fork = {re, ip, curip, mgroup
-	var thr
-
-	if ip == curip /* loop detection */
-		-> void
-	;;
-	thr = mkthread(re, ip)
-	thr.next = re.runq
-	thr.mgroup = mgroup
-	re.runq = thr
 }
 
 const die = {re, thr, msg
@@ -450,21 +440,25 @@ const finish = {re, thr
 const mkthread = {re, ip
 	var thr : rethread#
 
-	thr = std.alloc()
+	if re.freed != Zthr
+		thr = re.freed
+		re.freed = thr.next
+	else
+		thr = std.alloc()
+	;;
 	thr.next = Zthr
 	thr.ip = ip
 	thr.tid = re.nexttid++
 	thr.dead = false
 	thr.matched = false
-	thr.mgroup = [][:]
 	re.nthr++
 
 	-> thr
 }
 
 const thrfree = {re, thr
-	std.slfree(thr.mgroup)
-	std.free(thr)
+	thr.next = re.freed
+	re.freed = thr
 }
 
 const within = {re, str 

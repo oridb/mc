@@ -23,6 +23,7 @@ pkg regex =
 		runq	: rethread#
 		expired	: rethread#
 		expiredtail	: rethread#
+		freed	: rethread#
 		proglen	: std.size
 		prog	: reinst[:]
 		nthr	: std.size
@@ -68,7 +69,7 @@ pkg regex =
 		dead	: bool		/* thread died */
 		matched	: bool		/* thread matched */
 
-		mgroup	: std.size[2][:]	/* match starts */
+		mgroup	: std.size[2][32]	/* match starts */
 	;;
 
 	pkglocal type reinst = union
