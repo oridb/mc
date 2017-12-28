@@ -29,7 +29,7 @@ const matchall = {ctx
 }
 
 const searchhello = {ctx
-	match regex.search(dotstar, str)
+	match regex.search(hello, str)
 	| `std.Some m:	regex.matchfree(m)
 	| `std.None:	std.fatal("Didn't match regex\n")
 	;;
