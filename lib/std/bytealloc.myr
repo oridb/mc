@@ -279,6 +279,7 @@ const mkslab = {bkt
 		s = bkt.cache
 		bkt.cache = s.next
 		bkt.ncache--
+		s.next = Zslab
 		-> s
 	;;
 
