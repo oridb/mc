@@ -1,0 +1,38 @@
+use std
+
+const main = {
+        var seed : uint32 = 0xe96d7f9c /* (std.now() : uint32) */
+        std.put("seed = 0x{x}\n", seed)
+
+        var r : std.rng# = std.mksrng(seed)
+
+        var m : byte[:][:][:] = std.slalloc(std.rngrand(r, 1, 20))
+        for var j = 0; j < m.len; ++j
+                m[j] = [][:]
+        ;;
+
+        var s : byte[:][:] = std.slalloc(std.rngrand(r, 1, 20))
+        for var j = 0; j < s.len; ++j
+                s[j] = std.slalloc(std.rngrand(r, 2, 34))
+                std.slfill(s[j], ('_' : byte))
+        ;;
+
+	for var i = 0; i < 10_000; i++
+                if std.rngrand(r, 0, 2) == 0
+                        var j = std.rngrand(r, 0, m.len)
+                        var k = std.rngrand(r, 0, s.len)
+
+                        var num_s = std.rngrand(r, 50, 100)
+                        for var l = 0; l < num_s; ++l
+                                std.slpush(&m[j], std.sldup(s[k]))
+                        ;;
+                else
+                        var j = std.rngrand(r, 0, m.len)
+                        for q : m[j]
+                                std.slfree(q)
+                        ;;
+                        std.slfree(m[j])
+                        m[j] = [][:]
+                ;;
+        ;;
+}
