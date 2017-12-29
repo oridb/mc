@@ -203,6 +203,9 @@ const run = {re, str, idx, wholestr
 	;;
 	while re.nthr > 0
 		while re.runq != Zthr
+			if re.trace
+				std.put("switch\n")
+			;;
 			/* set up the next thread */
 			thr = re.runq
 			re.runq = thr.next
@@ -423,35 +426,20 @@ const within = {re, str
 
 const itrace = {re, thr, inst
 	match inst
-	| `Ibyte b:	trace(re, thr, "\t{}: Byte ({})\n", thr.ip, b)
-	| `Irange (lo, hi):	trace(re, thr, "\t{}: Range {}, {}\n", thr.ip, lo, hi)
-	| `Ilbra m:	trace(re, thr, "\t{}: Lbra {}\n", thr.ip, m)
-	| `Irbra m:	trace(re, thr, "\t{}: Rbra {}\n", thr.ip, m)
+	| `Ibyte b:	std.put("\t{}.{}:\tByte ({})\n", thr.tid, thr.ip, thr.tid, thr.ip, b)
+	| `Irange (lo, hi):	std.put("\t{}.{}:\tRange {}, {}\n", thr.tid, thr.ip, lo, hi)
+	| `Ilbra m:	std.put("\t{}.{}:\tLbra {}\n", thr.tid, thr.ip, m)
+	| `Irbra m:	std.put("\t{}.{}:\tRbra {}\n", thr.tid, thr.ip, m)
 	/* anchors */
-	| `Ibol:	trace(re, thr, "\t{}: Bol\n", thr.ip)
-	| `Ieol:	trace(re, thr, "\t{}: Eol\n", thr.ip)
-	| `Ibow:	trace(re, thr, "\t{}: Bow\n", thr.ip)
-	| `Ieow:	trace(re, thr, "\t{}: Eow\n", thr.ip)
+	| `Ibol:	std.put("\t{}.{}:\tBol\n", thr.tid, thr.ip)
+	| `Ieol:	std.put("\t{}.{}:\tEol\n", thr.tid, thr.ip)
+	| `Ibow:	std.put("\t{}.{}:\tBow\n", thr.tid, thr.ip)
+	| `Ieow:	std.put("\t{}.{}:\tEow\n", thr.tid, thr.ip)
 
 	/* control flow */
-	| `Ifork (l, r):	trace(re, thr, "\t{}: Fork {}, {}\n", thr.ip, l, r)
-	| `Ijmp	ip:	trace(re, thr, "\t{}: Jmp {}\n", thr.ip, ip)
-	| `Imatch m:	trace(re, thr, "\t{}: Match {}\n", thr.ip, m)
-	;;
-}
-
-const trace : (re : regex#, thr : rethread#, msg : byte[:], args : ... -> void) = {re, thr, msg, args
-	var ap
-
-	if re.trace && thr != Zthr
-		ap = std.vastart(&args)
-		std.putv(msg, &ap)
-		std.put("\t{}\n", re.pat)
-		std.put("\t")
-		for var i = 0; i < re.pcidx[thr.ip] - 1; i++
-			std.put(" ")
-		;;
-		std.put("^\n")
+	| `Ifork (l, r):	std.put("\t{}.{}:\tFork {}, {}\n", thr.tid, thr.ip, l, r)
+	| `Ijmp	ip:	std.put("\t{}.{}:\tJmp {}\n", thr.tid, thr.ip, ip)
+	| `Imatch m:	std.put("\t{}.{}:\tMatch {}\n", thr.tid, thr.ip, m)
 	;;
 }
 
