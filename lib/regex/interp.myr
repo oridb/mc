@@ -364,7 +364,7 @@ const step = {re, thr, curip
 			die(re, thr)
 		;;
 	| _:
-		std.die("bad match")
+		std.die("corrupt regex bytecode")
 	;;
 	-> true
 }

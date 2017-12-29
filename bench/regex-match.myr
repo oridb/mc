@@ -3,7 +3,7 @@ use regex
 use testr
 
 var str
-var dotstar, hello
+var dotstar, hello, world
 
 const main = {
 	str = std.sldup("hello world!")
@@ -11,13 +11,16 @@ const main = {
 	str = std.strcat(str, str)
 	str = std.strcat(str, str)
 	str = std.strcat(str, str)
+	str = std.strcat(str, "x")
 
 	dotstar = std.try(regex.compile(".*"))
 	hello = std.try(regex.compile("hel*o"))
+	world = std.try(regex.compile("wor*l*d!x"))
 
 	testr.bench([
 		[.name="matchall", .fn=matchall],
 		[.name="searchhello", .fn=searchhello],
+		[.name="searchworld", .fn=searchworld],
 	][:])
 }
 
@@ -30,6 +33,13 @@ const matchall = {ctx
 
 const searchhello = {ctx
 	match regex.search(hello, str)
+	| `std.Some m:	regex.matchfree(m)
+	| `std.None:	std.fatal("Didn't match regex\n")
+	;;
+}
+
+const searchworld = {ctx
+	match regex.search(world, str)
 	| `std.Some m:	regex.matchfree(m)
 	| `std.None:	std.fatal("Didn't match regex\n")
 	;;
