@@ -24,85 +24,55 @@ pkg regex =
 const Zthr = (0 : rethread#)
 const Maxfree = 128
 
-const exec = {re, str
-	var thr, m
+const matchfree = {m
+	std.slfree(m)
+}
 
-	thr = run(re, str, 0, true)
-	m = getmatches(re, thr)
-	cleanup(re)
-	-> m
+const exec = {re, str
+	-> getmatches(re, run(re, str, 0, true))
 }
 
 const iexec = {re, str
-	var thr, m
-
-	thr = run(re, str, 0, true)
-	m = getidxmatches(re, thr)
-	cleanup(re)
-	-> m
+	-> getidxmatches(re, run(re, str, 0, true))
 }
 
 const search = {re, str
-	var thr
-	var m
+	var thr = Zthr
 
-	m = `std.None
 	for var i = 0; i < str.len; i++
 		thr = run(re, str[i:], 0, false)
-		m = getmatches(re, thr)
-		cleanup(re)
-		match m
-		| `std.Some _:	break
-		| `std.None:	/* nothing */
+		if thr != Zthr
+			break
 		;;
 	;;
-	->  m
+	-> getmatches(re, thr)
 }
 
 const isearch = {re, str
-	var thr
-	var m
+	var thr = Zthr
 
-	m = `std.None
 	for var i = 0; i < str.len; i++
 		thr = run(re, str[i:], 0, false)
-		m = getidxmatches(re, thr)
-		cleanup(re)
-		match m
-		| `std.Some _:	break
-		| `std.None:	/* nothing */
+		if thr != Zthr
+			break
 		;;
 	;;
-	->  m
+	-> getidxmatches(re, thr)
 }
 
 const sub = {re, str, subst
 	var sb
 
 	sb = std.mksb()
-	if !sbsub(sb, re, str, subst)
-		-> `std.None
-	else
+	if sbsub(sb, re, str, subst)
 		-> `std.Some std.sbfin(sb)
 	;;
+	-> `std.None
 }
 
 const sbsub = {sb, re, str, subst
-	var thr, m
-
-	/* we always have m[0] as the full match */
-	if re.nmatch != subst.len + 1
-		-> false
-	;;
-
-	thr = run(re, str, 0, true)
-	if thr == Zthr
-		m = false
-	else
-		m = dosubst(sb, re, thr, str, subst)
-	;;
-	cleanup(re)
-	-> m
+	std.assert(re.nmatch == subst.len + 1, "substitution length does not match capture count")
+	-> dosubst(sb, re, run(re, str, 0, true), str, subst)
 }
 
 const suball = {re, str, subst
@@ -114,13 +84,9 @@ const suball = {re, str, subst
 }
 
 const sbsuball = {sb, re, str, subst
-	var thr, len, s, i
+	var thr, len, i
 
-	/* we always have m[0] as the full match */
-	if re.nmatch != subst.len + 1
-		-> void
-	;;
-
+	std.assert(re.nmatch == subst.len + 1, "substitution length does not match capture count")
 	i = 0
 	while i < str.len
 		thr = run(re, str[i:], 0, false)
@@ -129,11 +95,10 @@ const sbsuball = {sb, re, str, subst
 			i++
 		else
 			len = thr.mgroup[0][1]
-			s = str[i:len + i]
-			dosubst(sb, re, thr, s, subst)
+			dosubst(sb, re, thr, str[i:len + i], subst)
 			i += len
 		;;
-		cleanup(re)
+		cleanup(re, thr)
 	;;
 }
 
@@ -141,6 +106,9 @@ const sbsuball = {sb, re, str, subst
 const dosubst = {sb, re, thr, str, subst
 	var off
 
+	if thr == Zthr
+		-> false
+	;;
 	off = 0
 	for var i = 1; i < re.nmatch; i++
 		if thr.mgroup[i][0] != -1 && thr.mgroup[i][1] != -1
@@ -150,25 +118,14 @@ const dosubst = {sb, re, thr, str, subst
 		;;
 	;;
 	std.sbputs(sb, str[off:])
-	thrfree(re, thr)
 	-> true
 }
 
-const cleanup = {re
-	var thr, next
-
-	for thr = re.runq; thr != Zthr; thr = next
-		next = thr.next
-		std.free(thr)
-	;;
-	for thr = re.expired; thr != Zthr; thr = next
-		next = thr.next
-		std.free(thr)
-	;;
-	for thr = re.free; thr != Zthr; thr = next
-		next = thr.next
-		std.free(thr)
-	;;
+const cleanup = {re, result
+	lfree(re.runq)
+	lfree(re.expired)
+	lfree(re.free)
+	std.free(result)
 	re.runq = Zthr
 	re.expired = Zthr
 	re.free = Zthr
@@ -177,27 +134,29 @@ const cleanup = {re
 	re.nthr = 0
 }
 
-const matchfree = {m
-	std.slfree(m)
+const lfree = {thr
+	for var next = thr; thr != Zthr; thr = next
+		next = thr.next
+		std.free(thr)
+	;;
 }
 
 const getmatches = {re, thr
-	var ret
+	var ret, i
 
 	if thr == Zthr
 		-> `std.None
 	;;
 
+	i = 0
 	ret = std.slalloc(re.nmatch)
-	for var i = 0; i < re.nmatch; i++
-		if thr.mgroup[i][0] != -1 && thr.mgroup[i][1] != -1
-			ret[i] = re.str[thr.mgroup[i][0]:thr.mgroup[i][1]]
-		else
-			ret[i] = [][:]
+	for [lo, hi] : thr.mgroup[:re.nmatch]
+		if lo != -1 && hi != -1
+			ret[i] = re.str[lo : hi]
 		;;
+		i++
 	;;
-	thrfree(re, thr)
-
+	cleanup(re, thr)
 	-> `std.Some ret
 }
 
@@ -209,13 +168,9 @@ const getidxmatches = {re, thr
 	;;
 	ret = std.slalloc(re.nmatch)
 	for var i = 0; i < re.nmatch; i++
-		if thr.mgroup[i][0] != -1 && thr.mgroup[i][1] != -1
-			ret[i] = (thr.mgroup[i][0], thr.mgroup[i][1])
-		else
-			ret[i] = (-1, -1)
-		;;
+		ret[i] = (thr.mgroup[i][0], thr.mgroup[i][1])
 	;;
-	thrfree(re, thr)
+	cleanup(re, thr)
 	-> `std.Some ret
 }
 
