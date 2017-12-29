@@ -288,15 +288,6 @@ temp(Simp *simp, Node *e)
 	return t;
 }
 
-static void
-cjmp(Simp *s, Node *cond, Node *iftrue, Node *iffalse)
-{
-	Node *jmp;
-
-	jmp = mkexpr(cond->loc, Ocjmp, cond, iftrue, iffalse, NULL);
-	append(s, jmp);
-}
-
 static Node *
 slicelen(Simp *s, Node *sl)
 {
@@ -446,7 +437,7 @@ membaddr(Simp *s, Node *n)
 static void
 checkidx(Simp *s, Op op, Node *len, Node *idx)
 {
-	Node *cmp, *die;
+	Node *cmp, *die, *jmp;
 	Node *ok, *fail;
 
 	if (!len)
@@ -460,7 +451,8 @@ checkidx(Simp *s, Op op, Node *len, Node *idx)
 	die->expr.type = mktype(len->loc, Tyvoid);
 
 	/* insert them */
-	cjmp(s, cmp, ok, fail);
+	jmp = mkexpr(idx->loc, Ocjmp, cmp, ok, fail, NULL);
+	append(s, jmp);
 	append(s, fail);
 	append(s, die);
 	append(s, ok);

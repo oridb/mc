@@ -105,6 +105,7 @@ const free = {re
 	/* all the threads should be dead,
 	 so we shouldn't have to free any*/
 	std.slfree(re.prog)
+	std.slfree(re.code)
 	if re.debug
 		std.htfree(re.astloc)
 		std.slfree(re.pcidx)
