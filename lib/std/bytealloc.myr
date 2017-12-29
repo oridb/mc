@@ -320,8 +320,7 @@ allocation cannot be satisfied. Will create a new slab
 if there are no slabs on the freelist.
 */
 const bktalloc = {bkt
-	var s
-	var b
+	var s, c
 
 	/* find a slab */
 	s = bkt.slabs
@@ -334,8 +333,8 @@ const bktalloc = {bkt
 	;;
 
 	/* grab the first chunk on the slab */
-	b = s.freehd
-	s.freehd = b.next
+	c = s.freehd
+	s.freehd = c.next
 	s.nfree--
 	if s.freehd == Zchunk
 		bkt.slabs = s.next
@@ -343,7 +342,7 @@ const bktalloc = {bkt
 			s.next.prev = Zslab
 		;;
 	;;
-	-> (b : byte#)
+	-> (c : byte#)
 }
 
 /*
@@ -353,10 +352,10 @@ that was created for bucket 'bkt'. Will crash
 if this is not the case.
 */
 const bktfree = {bkt, m
-	var s, b
+	var s, c
 
 	s = (mtrunc(m, Slabsz) : slab#)
-	b = (m : chunk#)
+	c = (m : chunk#)
 	if s.nfree == 0
 		if bkt.slabs != Zslab
 			bkt.slabs.prev = s
@@ -392,8 +391,8 @@ const bktfree = {bkt, m
 		-> void
 	;;
 	s.nfree++
-	b.next = s.freehd
-	s.freehd = b
+	c.next = s.freehd
+	s.freehd = c
 }
 
 /*
