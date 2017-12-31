@@ -2,11 +2,10 @@ use std
 use iter
 
 const main = {
-	var n, l : int[:]
+	var n
 
 	n = 0
-	l = [3, 2, 1, 0][:]
-	for x : iter.byreverse(l)
+	for x : iter.byreverse([3, 2, 1, 0][:])
 		std.assert(x == n, "invalid reversed value {}, expected {}", x, n)
 		n++
 	;;

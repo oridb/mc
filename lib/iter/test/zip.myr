@@ -2,12 +2,10 @@ use std
 use iter
 
 const main = {
-	var n, la : int[:], lb : int[:]
+	var n
 
 	n = 0
-	la = [0,2,4,6,8][:]
-	lb = [2,4][:]
-	for (a, b) : iter.byzip(la, lb)
+	for (a, b) : iter.byzip([0,2,4,6,8][:], [2,4][:])
 		std.assert(a == n*2, "invalid val from a: {}", a)
 		std.assert(b == n*2 + 2, "invalid val from b: {}", b)
 		n++

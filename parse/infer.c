@@ -754,20 +754,6 @@ uconresolve(Node *n)
 	return uc;
 }
 
-/* Binds the type parameters in the
- * declaration into the type environment */
-void
-_bind(Tyenv *e, Node *n)
-{
-	assert(n->type == Ndecl);
-	if(!n->decl.isgeneric)
-		return;
-	ingeneric++;
-	bindtype(e, n->decl.type);
-	if (n->decl.init)
-		bindtype(e, n->decl.init->expr.type);
-}
-
 /* this doesn't walk through named types, so it can't recurse infinitely. */
 int
 tymatchrank(Type *pat, Type *to)
@@ -2206,8 +2192,8 @@ tyfix(Node *ctx, Type *orig, int noerr)
 			unify(ctx, t, d);
 			t = tf(t);
 		} else if (tybase(t)->type != d->type && !noerr) {
-			fatal(ctx, "type %s not compatible with %s near %s\n", tystr(t),
-					tystr(d), ctxstr(ctx));
+			fatal(ctx, "type %s not compatible with %s near %s\n",
+			    tystr(t), tystr(d), ctxstr(ctx));
 		}
 	}
 	if (t->type == Tyvar && t->trneed) {
@@ -2243,7 +2229,7 @@ tyfix(Node *ctx, Type *orig, int noerr)
 	if (t->type == Tyvar && !noerr)
 		fatal(ctx, "underconstrained type %s near %s", tyfmt(buf, 1024, t), ctxstr(ctx));
 	if (base)
-		htput(seqbase, t, base);
+		htput(seqbase, t, tyfix(ctx, base, noerr));
 	if (env)
 		popenv(env);
 	return t;
