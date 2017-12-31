@@ -33,4 +33,7 @@ lib testutil {noinst} =
 testdeps =
 	testutil
 	../testr:testr
+	../sys:sys
+	../iter:iter
+	../std:std
 ;;

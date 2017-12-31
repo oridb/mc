@@ -1,6 +1,7 @@
 use std
 use testr
 use crypto
+use iter
 
 type check = struct
 	key	: byte[:]
@@ -848,7 +849,7 @@ const check = {chk
 	crypto.chacha20keysetup(&st, chk.key)
 	crypto.chacha20ivsetup(&st, chk.iv)
 
-	for (i, s) : std.byenum(chk.state)
+	for (i, s) : iter.byenum(chk.state)
 		std.assert(st.input[i] == s, "mismatched state\n")
 	;;
 
