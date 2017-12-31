@@ -1,0 +1,54 @@
+use std
+use testr
+
+use iter
+
+const main = {
+	testr.run([
+		[.name = "byperm-01", .fn = byperm01],
+		[.name = "byperm-02", .fn = byperm02],
+		[.name = "byperm-03", .fn = byperm03],
+	][:])
+}
+
+const byperm01 = {c
+	var v : int[:] = [ 0, 2, 1 ][:]
+	var sb : std.strbuf# = std.mksb()
+	std.sbfmt(sb, " ")
+
+	for w : iter.byperm(v, std.numcmp)
+		std.sbfmt(sb, "{} ", w)
+	;;
+
+	var expected : byte[:] = " [0, 1, 2] [0, 2, 1] [1, 0, 2] [1, 2, 0] [2, 0, 1] [2, 1, 0] "
+	var actual : byte[:] = std.sbfin(sb)
+	testr.check(c, std.eq(expected, actual), "expected “{}”, got “{}”", expected, actual)
+}
+
+const byperm02 = {c
+	var v : int[:] = [ 1, 1 ][:]
+	var sb : std.strbuf# = std.mksb()
+	std.sbfmt(sb, " ")
+
+	for w : iter.byperm(v, std.numcmp)
+		std.sbfmt(sb, "{} ", w)
+	;;
+
+	var expected : byte[:] = " [1, 1] "
+	var actual : byte[:] = std.sbfin(sb)
+	testr.check(c, std.eq(expected, actual), "expected “{}”, got “{}”", expected, actual)
+}
+
+const byperm03 = {c
+	var v : int[:] = [ 3, 1, 1 ][:]
+	var sb : std.strbuf# = std.mksb()
+	std.sbfmt(sb, " ")
+
+	for w : iter.byperm(v, std.numcmp)
+		std.sbfmt(sb, "{} ", w)
+	;;
+
+	var expected : byte[:] = " [1, 1, 3] [1, 3, 1] [3, 1, 1] "
+	var actual : byte[:] = std.sbfin(sb)
+	testr.check(c, std.eq(expected, actual), "expected “{}”, got “{}”", expected, actual)
+}

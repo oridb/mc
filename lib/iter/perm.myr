@@ -1,0 +1,77 @@
+use std
+
+pkg iter =
+	type permiter(@a) = struct
+		cmp	: (a : @a, b : @a -> std.order)
+		seq	: @a[:]
+		first	: bool
+	;;
+
+	impl iterable permiter(@a) -> @a[:]
+	generic byperm	: (a : @a[:], cmp : (a : @a, b : @a -> std.order) -> permiter(@a))
+;;
+
+generic byperm = {a, cmp
+	/* start off by backwards-sorting a */
+	std.sort(a, cmp)
+
+	-> [.cmp = cmp, .seq = std.sort(a, cmp), .first = true]
+}
+
+impl iterable permiter(@a) -> @a[:] =
+	__iternext__ = {itp, valp
+		var j : std.size = seq.len - 1
+		var i : std.size = seq.len - 1
+		var seq : @a[:] = itp.seq
+
+		/* We're permuting seq in place */
+		valp# = itp.seq
+
+		if itp.first
+			itp.first = false
+			-> true
+		;;
+
+		/* Find the longest decreasing sequence at end */
+		j = seq.len - 1
+		while true
+			if j == 0
+				-> false
+			;;
+			match itp.cmp(seq[j - 1], seq[j])
+			| `std.After: j--
+			| _: break
+			;;
+		;;
+		j--
+
+			/* Now seq[j+1:] is all decreasing */
+
+			/* Find highest i s.t. seq[j] < seq[i] */
+			i = seq.len - 1
+			while true
+			if i <= j
+				-> false
+			;;
+			match itp.cmp(seq[j], seq[i])
+			| `std.Before: break
+			| _: i--
+			;;
+		;;
+
+		/* First, swap seq[i] and seq[j] */
+		std.swap(&seq[i], &seq[j])
+
+		/* Now reverse seq[j+1:] */
+		i = 1
+		while j + i < seq.len - i
+			std.swap(&seq[j + i], &seq[seq.len - i])
+			i++
+		;;
+
+		-> true
+	}
+
+	__iterfin__ = {itp, valp
+	}
+;;
