@@ -3,8 +3,8 @@ use "alloc"
 use "die"
 
 pkg std =
-	generic slput	: (sl : @a[:]#, idx : size, elt : @a	-> @a[:])
-	generic sldel	: (sl : @a[:]#, idx : size	-> @a[:])
+	generic slput	: (sl : @a[:]#, idx : size, elt : @a -> @a[:])
+	generic sldel	: (sl : @a[:]#, idx : size -> @a[:])
 ;;
 
 generic slput = {sl, idx, elt

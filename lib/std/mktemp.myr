@@ -13,10 +13,10 @@ use "syswrap"
 use "types"
 
 pkg std =
-	const mktemp	: (base : byte[:], opt : fdopt, mode : int64 -> std.result((fd, byte[:]), errno))
-	const mktempat	: (dir : byte[:], base : byte[:], opt : fdopt, mode : int64 -> std.result((fd, byte[:]), errno))
-	const mkdtemp	: (base : byte[:], mode : int64 -> std.result(byte[:], errno))
-	const mkdtempat	: (dir : byte[:], base : byte[:], mode : int64 -> std.result(byte[:], errno))
+	const mktemp		: (base : byte[:], opt : fdopt, mode : int64 -> std.result((fd, byte[:]), errno))
+	const mktempat		: (dir : byte[:], base : byte[:], opt : fdopt, mode : int64 -> std.result((fd, byte[:]), errno))
+	const mkdtemp		: (base : byte[:], mode : int64 -> std.result(byte[:], errno))
+	const mkdtempat		: (dir : byte[:], base : byte[:], mode : int64 -> std.result(byte[:], errno))
 	const mktemppath	: (base : byte[:] -> byte[:])
 ;;
 

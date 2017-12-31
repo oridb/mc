@@ -7,8 +7,8 @@ use "errno"
 use "types"
 
 pkg std =
-	const slurp : (path : byte[:] -> result(byte[:], errno))
-	const fslurp : (path : fd -> result(byte[:], errno))
+	const slurp	: (path : byte[:] -> result(byte[:], errno))
+	const fslurp	: (path : fd -> result(byte[:], errno))
 ;;
 
 const Bufstart = 4096

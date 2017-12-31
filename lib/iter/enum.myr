@@ -1,0 +1,30 @@
+use std
+
+pkg iter =
+	type enumiter(@a) = struct
+		idx	: std.size
+		sl	: @a[:]
+	;;
+
+	impl iterable enumiter(@a) -> (std.size, @a)
+	generic byenum	: (a : @a[:] -> enumiter(@a))
+;;
+
+generic byenum = {a
+	-> [.sl = a, .idx = 0]
+}
+
+impl iterable enumiter(@a) -> (std.size, @a) =
+	__iternext__ = {itp, valp
+		if itp.idx == itp.sl.len
+			-> false
+		;;
+		valp# = (itp.idx, itp.sl[itp.idx])
+		itp.idx++
+		-> true
+	}
+
+	__iterfin__ = {itp, valp
+	}
+;;
+

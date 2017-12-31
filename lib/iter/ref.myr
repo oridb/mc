@@ -1,0 +1,29 @@
+use std
+
+pkg iter =
+	type refiter(@a) = struct
+		idx	: std.size
+		sl	: @a[:]
+	;;
+	impl iterable refiter(@a) -> @a#
+	generic byref 	: (sl : @a[:] -> refiter(@a))
+;;
+
+generic byref = {a
+	-> [.sl = a, .idx = 0]
+}
+
+impl iterable refiter(@a) -> @a# =
+	__iternext__ = {itp, valp
+		if itp.idx == itp.sl.len
+			-> false
+		;;
+		valp# = &itp.sl[itp.idx]
+		itp.idx++
+		-> true
+	}
+
+	__iterfin__ = {itp, valp
+	}
+;;
+

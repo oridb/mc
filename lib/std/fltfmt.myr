@@ -10,7 +10,7 @@ use "utf"
 use "memops"
 
 pkg std =
-	pkglocal const MNormal = 0
+	pkglocal const MNormal	= 0
 	pkglocal const MAbsolute = 1
 	pkglocal const MRelative = 2
 

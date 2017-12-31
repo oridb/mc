@@ -1,0 +1,30 @@
+pkg iter =
+	type zipiter(@a, @b) = struct
+		s1	: @a[:]
+		s2	: @b[:]
+	;;
+
+	impl iterable zipiter(@a, @b) -> (@a, @b)
+	generic byzip	: (a : @a[:], b : @b[:]	 -> zipiter(@a, @b))
+;;
+
+generic byzip = {a, b
+	-> [.s1 = a, .s2 = b]
+}
+
+impl iterable zipiter(@a, @b) -> (@a, @b) =
+	__iternext__ = {itp, valp
+		if itp.s1.len > 0 && itp.s2.len > 0
+			valp# = (itp.s1[0], itp.s2[0])
+			itp.s1 = itp.s1[1:]
+			itp.s2 = itp.s2[1:]
+			-> true
+		else
+			-> false
+		;;
+	}
+
+	__iterfin__ = {itp, valp
+	}
+;;
+

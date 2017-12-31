@@ -23,7 +23,6 @@ pkg std =
 
 	const announce	: (ds : byte[:] -> result(announce#, byte[:]))
 	const aclose	: (a : announce# -> void)
-
 	const accept	: (a : announce# -> result(fd, byte[:]))
 ;;
 

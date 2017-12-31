@@ -1,0 +1,34 @@
+use std
+
+pkg iter =
+	type chunkiter(@a) = struct
+		idx	: std.size
+		blksz	: std.size
+		sl	: @a[:]
+	;;
+
+	impl iterable chunkiter(@a) -> @a[:]
+	generic bychunk	: (a : @a[:], chunk : std.size -> chunkiter(@a))
+;;
+
+generic bychunk = {a, sz
+	-> [.sl = a, .idx = 0, .blksz = sz]
+}
+
+impl iterable chunkiter(@a) -> @a[:] =
+	__iternext__ = {itp, valp
+		var len
+
+		len = std.min(itp.blksz, itp.sl.len - itp.idx)
+		if itp.idx + len == itp.sl.len
+			-> false
+		;;
+		valp# = itp.sl[itp.idx: itp.idx + len]
+		itp.idx += itp.blksz
+		-> true
+	}
+
+	__iterfin__ = {itp, valp
+	}
+;;
+

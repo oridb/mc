@@ -13,8 +13,8 @@ use "resolve"
 
 pkg std =
 	pkglocal const parseport	: (port : byte[:] -> option(uint16))
-	pkglocal const getaddr	: (addr : byte[:] -> result(netaddr, byte[:]))
-	pkglocal const nameseg	: (str : byte[:] -> option((byte[:], byte[:])))
+	pkglocal const getaddr		: (addr : byte[:] -> result(netaddr, byte[:]))
+	pkglocal const nameseg		: (str : byte[:] -> option((byte[:], byte[:])))
 ;;
 
 const parseport = {port

@@ -58,8 +58,8 @@ pkg std =
 		rtype	: rectype
 	;;
 
-	const resolve	: (host : byte[:]	-> result(hostinfo[:], resolveerr))
-	const resolvemx	: (host : byte[:]	-> result(hostinfo[:], resolveerr))
+	const resolve		: (host : byte[:]	-> result(hostinfo[:], resolveerr))
+	const resolvemx		: (host : byte[:]	-> result(hostinfo[:], resolveerr))
 	const resolverec	: (host : byte[:], t : rectype[:]	-> result(hostinfo[:], resolveerr))
 ;;
 

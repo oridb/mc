@@ -15,7 +15,6 @@ use "hasprefix"
 use "utf"
 
 pkg std =
-
 	type netaddr = union
 		`Ipv4	byte[4]
 		`Ipv6	byte[16]

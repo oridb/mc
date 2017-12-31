@@ -6,6 +6,7 @@ sub =
 	fileutil
 	http
 	inifile
+	iter
 	json
 	regex
 	std

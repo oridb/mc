@@ -3,10 +3,10 @@ use "option"
 use "fmt"
 
 pkg std =
-	generic try : (v : result(@a, @b) -> @a)
-	generic tryv : (v : result(@a, @b), d : @a -> @a)
-	generic get : (v : option(@a) -> @a)
-	generic getv : (v : option(@a), d : @a -> @a)
+	generic try	: (v : result(@a, @b) -> @a)
+	generic tryv	: (v : result(@a, @b), d : @a -> @a)
+	generic get	: (v : option(@a) -> @a)
+	generic getv	: (v : option(@a), d : @a -> @a)
 	generic canget	: (o : option(@a) -> bool)
 ;;
 

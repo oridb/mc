@@ -1,0 +1,30 @@
+use std
+
+pkg iter =
+	type reverseiter(@a) = struct
+		sl	: @a[:]
+		idx	: std.size
+	;;
+	impl iterable reverseiter(@a) -> @a
+	generic byreverse 	: (sl : @a[:] -> reverseiter(@a))
+;;
+
+generic byreverse = {sl
+	-> [.sl = sl, .idx = sl.len]
+}
+
+impl iterable reverseiter(@a) -> @a =
+	__iternext__ = {itp, valp
+		if itp.idx > 0
+			valp# = itp.sl[itp.idx - 1]
+			itp.idx--
+			-> true
+		else
+			-> false
+		;;
+	}
+
+	__iterfin__ = {itp, valp
+	}
+;;
+

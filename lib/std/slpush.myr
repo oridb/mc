@@ -7,12 +7,12 @@ pkg std =
 
 generic slpush = {sl, elt
 	/*
-	slpush relies on implementation details
-	of slgrow for efficiency. Because bucket
-	sizes come in powers of two for all buckets
-	<= 32k, and by powers of 1.5 for larger
-	slices, this is effectively growing the
-	slice by powers of two.
+	  slpush relies on implementation details
+	  of slgrow for efficiency. Because bucket
+	  sizes come in powers of two for all buckets
+	  <= 32k, and by powers of 1.5 for larger
+	  slices, this is effectively growing the
+	  slice by powers of two.
 	*/
 	slgrow(sl, sl#.len + 1)
 	sl#[sl#.len - 1] = elt

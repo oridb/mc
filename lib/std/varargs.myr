@@ -6,12 +6,12 @@ use "die"
 pkg std =
 	type valist
 
-	const vastart	: (args : ...# -> valist)
-	const vatype	: (ap : valist# -> byte[:])
-	const vabytes	: (ap : valist# -> byte[:])
-	const vaenter	: (ap : valist# -> valist)
+	const vastart		: (args : ...# -> valist)
+	const vatype		: (ap : valist# -> byte[:])
+	const vabytes		: (ap : valist# -> byte[:])
+	const vaenter		: (ap : valist# -> valist)
 	const vaenterunion	: (ap : valist#, elt : int32 -> valist)
-	generic vanext	: (ap : valist# -> @a)
+	generic vanext		: (ap : valist# -> @a)
 ;;
 
 type valist = struct

@@ -31,15 +31,15 @@ Large allocations are simply satisfied by mmap().
 */
 
 pkg std =
-	generic alloc	: (		-> @a#)
-	generic zalloc	: (		-> @a#)
-	generic free	: (v:@a#	-> void)
+	generic alloc		: ( -> @a#)
+	generic zalloc		: ( -> @a#)
+	generic free		: (v:@a# -> void)
 
-	generic slalloc	: (len : size	-> @a[:])
-	generic slzalloc	: (len : size	-> @a[:])
-	generic slgrow	: (sl : @a[:]#, len : size	-> @a[:])
-	generic slzgrow	: (sl : @a[:]#, len : size	-> @a[:])
-	generic slfree	: (sl : @a[:]	-> void)
+	generic slalloc		: (len : size -> @a[:])
+	generic slzalloc	: (len : size -> @a[:])
+	generic slgrow		: (sl : @a[:]#, len : size -> @a[:])
+	generic slzgrow		: (sl : @a[:]#, len : size -> @a[:])
+	generic slfree		: (sl : @a[:] -> void)
 ;;
 
 type slheader = struct

@@ -1,4 +1,5 @@
 use "sleq"
+
 pkg std =
 	const hassuffix	: (s : byte[:], suff : byte[:] -> bool)
 ;;

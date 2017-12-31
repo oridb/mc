@@ -10,9 +10,9 @@ pkg std =
 		`After
 	;;
 
-	generic numcmp	: (a : @a, b : @a -> order)
-	const strcmp	: (a : byte[:], b : byte[:] -> order)
-	const strncmp	: (a : byte[:], b : byte[:], n : size -> order)
+	generic numcmp		: (a : @a, b : @a -> order)
+	const strcmp		: (a : byte[:], b : byte[:] -> order)
+	const strncmp		: (a : byte[:], b : byte[:], n : size -> order)
 	const strcasecmp	: (a : byte[:], b : byte[:] -> order)
 ;;
 
