@@ -18,13 +18,16 @@ generic byperm = {a, cmp
 	-> [.cmp = cmp, .seq = std.sort(a, cmp), .first = true]
 }
 
+/*
+  Generates all permutations of a sequence in place,
+  mutating the sequence passed in the iterator.
+ */
 impl iterable permiter(@a) -> @a[:] =
 	__iternext__ = {itp, valp
 		var j : std.size = seq.len - 1
 		var i : std.size = seq.len - 1
 		var seq : @a[:] = itp.seq
 
-		/* We're permuting seq in place */
 		valp# = itp.seq
 
 		if itp.first
@@ -32,7 +35,13 @@ impl iterable permiter(@a) -> @a[:] =
 			-> true
 		;;
 
-		/* Find the longest decreasing sequence at end */
+		/*
+		  To generate the next permutation, we need
+		  to increase the sequence by as little as
+		  possible. That means that we start by finding
+		  the longest monotonically decreasing trailing
+		  sequence.
+		 */
 		j = seq.len - 1
 		while true
 			if j == 0
@@ -45,11 +54,14 @@ impl iterable permiter(@a) -> @a[:] =
 		;;
 		j--
 
-			/* Now seq[j+1:] is all decreasing */
-
-			/* Find highest i s.t. seq[j] < seq[i] */
-			i = seq.len - 1
-			while true
+		/* 
+		  Find highest i s.t. seq[j] < seq[i]. This
+		  is the index that will maintain the order of
+		  the suffix, while increasing the value of the
+		  element in the 'pivot'.
+		 */
+		i = seq.len - 1
+		while true
 			if i <= j
 				-> false
 			;;
@@ -59,10 +71,14 @@ impl iterable permiter(@a) -> @a[:] =
 			;;
 		;;
 
-		/* First, swap seq[i] and seq[j] */
+		/*
+		  Then, swap seq[i] and seq[j] and reverse the
+		  sequence. Because the suffix was in decreasing
+		  order, reversing it means that our sequence is
+		  now in increasing order: ie, our most significant
+		  place has the smallest value.
+		 */
 		std.swap(&seq[i], &seq[j])
-
-		/* Now reverse seq[j+1:] */
 		i = 1
 		while j + i < seq.len - i
 			std.swap(&seq[j + i], &seq[seq.len - i])
