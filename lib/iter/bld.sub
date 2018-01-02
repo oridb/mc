@@ -4,4 +4,7 @@ lib iter =
 	ref.myr
 	reverse.myr
 	zip.myr
+
+	lib ../sys:sys
+	lib ../std:std
 ;;
