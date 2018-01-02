@@ -41,7 +41,11 @@ install:V: $SUB config.h
 genbootstrap:V:
 	ape/psh genbootstrap.sh
 
-bootstrap:V:
+bootstrap:V: $SUB config.h
+	for(dir in $SUB)@{
+		cd $dir
+		mk $MKFLAGS
+	}
 	ape/psh mk/bootstrap/bootstrap+Plan9-amd64.sh
 
 uninstall:V: $SUB config.h
