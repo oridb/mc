@@ -317,15 +317,15 @@ traits	: traitvar {
 traitvar
 	: traitlist generictype {
 		$$ = calloc(sizeof(Traitspec), 1);
-		$$->traits = $1.nl;
-		$$->ntraits = $1.nn;
+		$$->trait = $1.nl;
+		$$->ntrait = $1.nn;
 		$$->param = $2;
 		$$->aux = NULL;
 	}
 	| traitlist generictype Tret type {
 		$$ = calloc(sizeof(Traitspec), 1);
-		$$->traits = $1.nl;
-		$$->ntraits = $1.nn;
+		$$->trait = $1.nl;
+		$$->ntrait = $1.nn;
 		$$->param = $2;
 		$$->aux = $4;
 	}

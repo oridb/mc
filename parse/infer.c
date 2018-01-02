@@ -35,6 +35,7 @@ static void inferexpr(Node **np, Type *ret, int *sawret);
 static void inferdecl(Node *n);
 static int tryconstrain(Type *ty, Trait *tr, int update);
 
+static Type *tyfreshen(Tysubst *subst, Type *orig);
 static Type *tf(Type *t);
 
 static Type *unify(Node *ctx, Type *a, Type *b);
@@ -278,6 +279,7 @@ additerspecialization(Node *n, Stab *stab)
 	ty = exprtype(n->iterstmt.seq);
 	if (ty->type == Tyslice || ty->type == Tyarray || ty->type == Typtr)
 		return;
+	ty = tyfreshen(NULL, ty);
 	for (i = 0; i < tr->nproto; i++) {
 		ty = exprtype(n->iterstmt.seq);
 		if (hthas(tr->proto[i]->decl.impls, ty))
@@ -461,20 +463,22 @@ needfreshen(Type *t)
 static Type *
 tyfreshen(Tysubst *subst, Type *orig)
 {
-	Type *t;
+	Type *ty;
 
 	if (!needfreshen(orig))
 		return orig;
 	pushenv(orig->env);
 	if (!subst) {
 		subst = mksubst();
-		t = tyspecialize(orig, subst, delayed, seqbase);
+		ty = tyspecialize(orig, subst, delayed, seqbase);
 		substfree(subst);
 	} else {
-		t = tyspecialize(orig, subst, delayed, seqbase);
+		ty = tyspecialize(orig, subst, delayed, seqbase);
 	}
+	ty->spec = orig->spec;
+	ty->nspec = orig->nspec;
 	popenv(orig->env);
-	return t;
+	return ty;
 }
 
 /* Resolves a type and all its subtypes recursively. */
@@ -526,13 +530,14 @@ tyresolve(Type *t)
 	}
 
 	for (i = 0; i < t->nspec; i++) {
-		for (j = 0; j < t->spec[i]->ntraits; j++) {
-			tr = gettrait(curstab(), t->spec[i]->traits[j]);
+		for (j = 0; j < t->spec[i]->ntrait; j++) {
+			tr = gettrait(curstab(), t->spec[i]->trait[j]);
 			if (!tr)
-				lfatal(t->loc, "trait %s does not exist", ctxstr(t->spec[i]->traits[j]));
+				lfatal(t->loc, "trait %s does not exist", ctxstr(t->spec[i]->trait[j]));
 			if (!t->trneed)
 				t->trneed = mkbs();
 			bsput(t->trneed, tr->uid);
+			htput(seqbase, t, t->spec[i]->aux);
 		}
 	}
 

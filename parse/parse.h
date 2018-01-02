@@ -120,8 +120,8 @@ struct Tyenv {
 };
 
 struct Traitspec {
-	Node **traits;
-	size_t ntraits;
+	Node **trait;
+	size_t ntrait;
 	Type *param;
 	Type *aux;
 };
