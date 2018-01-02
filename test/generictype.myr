@@ -1,8 +1,8 @@
 use std
 
 /* checks that parameterized types work. exits with 0. */
-type option(@a::(integral,numeric)) = union
-	`Some @a::(integral,numeric)
+type option(@a) :: integral,numeric @a = union
+	`Some @a
 	`None
 ;;
 

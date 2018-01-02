@@ -5,23 +5,23 @@ use "types"
 
 pkg bio =
 	/* unsigned big endian */
-	generic getbe8	: (f : file# -> std.result(@a::(numeric,integral), err))
-	generic getbe16	: (f : file# -> std.result(@a::(numeric,integral), err))
-	generic getbe32	: (f : file# -> std.result(@a::(numeric,integral), err))
-	generic getbe64	: (f : file# -> std.result(@a::(numeric,integral), err))
+	generic getbe8	: (f : file# -> std.result(@a, err)) :: numeric,integral @a
+	generic getbe16	: (f : file# -> std.result(@a, err)) :: numeric,integral @a
+	generic getbe32	: (f : file# -> std.result(@a, err)) :: numeric,integral @a
+	generic getbe64	: (f : file# -> std.result(@a, err)) :: numeric,integral @a
 
 	/* signed big endian */
-	generic getle8	: (f : file# -> std.result(@a::(numeric,integral), err))
-	generic getle16	: (f : file# -> std.result(@a::(numeric,integral), err))
-	generic getle32	: (f : file# -> std.result(@a::(numeric,integral), err))
-	generic getle64	: (f : file# -> std.result(@a::(numeric,integral), err))
+	generic getle8	: (f : file# -> std.result(@a, err)) :: numeric,integral @a
+	generic getle16	: (f : file# -> std.result(@a, err)) :: numeric,integral @a
+	generic getle32	: (f : file# -> std.result(@a, err)) :: numeric,integral @a
+	generic getle64	: (f : file# -> std.result(@a, err)) :: numeric,integral @a
 ;;
 
 /*
   reads a single integer-like value to the output stream, in
   little endian format
 */
-generic getle = {f, n -> std.result(@a::(numeric,integral), err)
+generic getle = {f, n -> std.result(@a, err) :: numeric,integral @a
 	match ensureread(f, n)
 	| `std.Err e :	-> `std.Err e
 	| `std.Ok _:
@@ -29,7 +29,7 @@ generic getle = {f, n -> std.result(@a::(numeric,integral), err)
 		for var i = 0; i < n; i++
 			v |= (f.rbuf[f.rstart++] : uint64) << (8*(i : uint64))
 		;;
-		-> `std.Ok (v : @a::(numeric,integral))
+		-> `std.Ok (v : @a)
 	;;
 }
 
@@ -37,7 +37,7 @@ generic getle = {f, n -> std.result(@a::(numeric,integral), err)
   reads a single integer-like value to the output stream, in
   big endian format
 */
-generic getbe = {f, n -> std.result(@a::(numeric,integral), err)
+generic getbe = {f, n -> std.result(@a, err) :: numeric,integral @a
 	match ensureread(f, n)
 	| `std.Err e :	-> `std.Err e
 	| `std.Ok _:
@@ -46,7 +46,7 @@ generic getbe = {f, n -> std.result(@a::(numeric,integral), err)
 			v <<= 8
 			v |= (f.rbuf[f.rstart++] : uint64)
 		;;
-		-> `std.Ok (v : @a::(numeric,integral))
+		-> `std.Ok (v : @a)
 	;;
 }
 

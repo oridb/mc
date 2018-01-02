@@ -8,8 +8,8 @@ use "chacha20"
 pkg crypto =
 	/* designed to mirror std.rand() */
 	const randbytes	: (buf : byte[:] -> void)
-	generic rand	: (lo : @a::(integral,numeric), hi : @a::(integral,numeric) -> @a::(numeric,integral))
-	generic randnum	: (-> @a::(numeric,integral))
+	generic rand	: (lo : @a, hi : @a -> @a) ::numeric,integral @a
+	generic randnum	: (-> @a) :: numeric,integral @a
 ;;
 
 const Stirinterval = 16*std.MiB

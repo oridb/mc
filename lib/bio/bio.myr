@@ -283,7 +283,7 @@ const ensurecodepoint = {f
   writes a single integer-like value to the output stream, in
   little endian format
 */
-generic putle = {f, v : @a::(numeric,integral)
+generic putle = {f, v : @a :: numeric,integral @a
 	for var i = 0; i < sizeof(@a); i++
 		putb(f, (v & 0xff : byte))
 		v >>= 8
@@ -295,7 +295,7 @@ generic putle = {f, v : @a::(numeric,integral)
   writes a single integer-like value to the output stream, in
   big endian format
 */
-generic putbe = {f, v : @a::(numeric,integral)
+generic putbe = {f, v : @a :: numeric,integral @a
 	for var i = sizeof(@a); i != 0; i--
 		putb(f, ((v >> ((i-1)*8)) & 0xff : byte))
 	;;

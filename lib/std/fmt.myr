@@ -537,7 +537,7 @@ const digitchars = [
 	'5','6','7','8','9',
 	'a','b','c','d','e','f'
 ]
-generic intfmt = {sb, opts, signed, bits : @a::(integral,numeric)
+generic intfmt = {sb, opts, signed, bits : @a :: integral,numeric @a
 	var isneg
 	var sval, val
 	var b : char[32]
@@ -557,7 +557,7 @@ generic intfmt = {sb, opts, signed, bits : @a::(integral,numeric)
 		;;
 	else
 		val = (bits : uint64)
-		val &= ~0 >> (8*(sizeof(uint64)-sizeof(@a::(integral,numeric))))
+		val &= ~0 >> (8*(sizeof(uint64)-sizeof(@a)))
 		isneg = false
 	;;
 

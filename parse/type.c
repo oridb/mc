@@ -24,6 +24,7 @@ size_t ntraittab;
 Node **impltab;
 size_t nimpltab;
 Htab *eqcache;
+Htab *seqbase;
 
 struct Typair {
 	uint32_t atid;
@@ -1083,6 +1084,7 @@ tyinit(Stab *st)
 	Type *ty;
 	Trait *tr;
 
+	seqbase = mkht(tyhash, tyeq);
 	eqcache = mkht(typairhash, typaireq);
 	tydeduptab = mkht(tyhash, tystricteq);
 	/* this must be done after all the types are created, otherwise we will

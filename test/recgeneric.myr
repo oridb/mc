@@ -1,6 +1,6 @@
 use std
 
-type o(@a::integral) = union
+type o(@a) :: integral @a = union
 	`S @a
 ;;
 

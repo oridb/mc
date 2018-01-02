@@ -5,10 +5,10 @@ use "slcp"
 use "types"
 
 pkg std =
-	generic fnenvsz	: (fn : @fn::function -> size)
-	generic fndup	: (fn : @fn::function -> @fn::function)
-	generic fnbdup	: (fn : @fn::function, buf : byte[:] -> @fn::function)
-	generic fnfree	: (fn : @fn::function -> void)
+	generic fnenvsz	: (fn : @fn -> size)	:: function @fn
+	generic fndup	: (fn : @fn -> @fn)	:: function @fn
+	generic fnbdup	: (fn : @fn, buf : byte[:] -> @fn)	:: function @fn
+	generic fnfree	: (fn : @fn -> void)	:: function @fn
 ;;
 
 generic fndup = {fn
@@ -27,7 +27,7 @@ generic fnenvsz = {fn
 
 extern const put : (fmt : byte[:], args : ... -> int64)
 
-generic fnbdup = {fn, buf
+generic fnbdup = {fn : @fn, buf	:: function @fn
 	var repr : intptr[2]
 	var env
 
@@ -35,7 +35,7 @@ generic fnbdup = {fn, buf
 	env = envslice(repr[0])
 	slcp(buf[:env.len], env)
 	repr[0] = (buf : intptr)
-	-> (&repr : @fn::function#)#
+	-> (&repr : @fn#)#
 }
 
 generic fnfree = {fn

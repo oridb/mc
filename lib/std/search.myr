@@ -3,8 +3,8 @@ use "option"
 use "types"
 
 pkg std =
-	generic lsearch	: (sl : @t[:], key : @k, cmp : (v : @t, k : @k -> order) -> option(@idx::(integral,numeric)))
-	generic bsearch	: (sl : @t[:], key : @k, cmp : (v : @t, k : @k -> order) -> option(@idx::(integral,numeric)))
+	generic lsearch	: (sl : @t[:], key : @k, cmp : (v : @t, k : @k -> order) -> option(@idx)) :: integral,numeric @idx
+	generic bsearch	: (sl : @t[:], key : @k, cmp : (v : @t, k : @k -> order) -> option(@idx)) :: integral,numeric @idx
 ;;
 
 /* linear search over a list of values */

@@ -7,7 +7,7 @@ comparing to 42 wouldn't work.
 exits with 42.
 */
 
-generic max = {a:@a::numeric, b:@a::numeric
+generic max = {a : @a, b : @a :: numeric @a
 	if a > b
 		-> a
 	else
@@ -15,7 +15,7 @@ generic max = {a:@a::numeric, b:@a::numeric
 	;;
 }
 
-generic intlike_is42 = {a : @a::(numeric,integral)
+generic intlike_is42 = {a : @a :: numeric,integral @a
 	-> a == 42
 }
 

@@ -66,7 +66,6 @@ static Node **specializations;
 static size_t nspecializations;
 static Stab **specializationscope;
 static size_t nspecializationscope;
-static Htab *seqbase;
 static Traitmap *traitmap;
 
 static void
@@ -482,7 +481,7 @@ tyfreshen(Tysubst *subst, Type *orig)
 static void
 tyresolve(Type *t)
 {
-	size_t i;
+	size_t i, j;
 	Trait *tr;
 
 	if (t->resolved)
@@ -526,13 +525,15 @@ tyresolve(Type *t)
 		break;
 	}
 
-	for (i = 0; i < t->ntraits; i++) {
-		tr = gettrait(curstab(), t->traits[i]);
-		if (!tr)
-			lfatal(t->loc, "trait %s does not exist", ctxstr(t->traits[i]));
-		if (!t->trneed)
-			t->trneed = mkbs();
-		bsput(t->trneed, tr->uid);
+	for (i = 0; i < t->nspec; i++) {
+		for (j = 0; j < t->spec[i]->ntraits; j++) {
+			tr = gettrait(curstab(), t->spec[i]->traits[j]);
+			if (!tr)
+				lfatal(t->loc, "trait %s does not exist", ctxstr(t->spec[i]->traits[j]));
+			if (!t->trneed)
+				t->trneed = mkbs();
+			bsput(t->trneed, tr->uid);
+		}
 	}
 
 	for (i = 0; i < t->nsub; i++) {
@@ -2898,7 +2899,6 @@ void
 infer(void)
 {
 	delayed = mkht(tyhash, tyeq);
-	seqbase = mkht(tyhash, tyeq);
 	loaduses();
 	initimpl();
 

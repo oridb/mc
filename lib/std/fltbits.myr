@@ -6,7 +6,7 @@ pkg std =
 	const flt32inf	: (-> flt32)
 	const flt32nan	: (-> flt32)
 
-	generic isnan	: (f : @a::floating -> bool)
+	generic isnan		: (f : @a -> bool) ::floating @a
 	const flt64frombits	: (bits : uint64 -> flt64)
 	const flt32frombits	: (bits : uint32 -> flt32)
 	const flt64explode	: (flt : flt64 -> (bool, int64, int64))

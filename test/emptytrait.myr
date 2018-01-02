@@ -6,7 +6,7 @@ trait fooable @a =
 impl fooable int =
 ;;
 
-generic foo = {x : @a::fooable
+generic foo = {x : @a::fooable @a
 	-> x
 }
 

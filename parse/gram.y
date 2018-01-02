@@ -18,10 +18,11 @@
 #include "parse.h"
 
 
-Stab *curscope;
 #define LBLSTKSZ 64
 static Node **lbls[LBLSTKSZ];
 static size_t nlbls[LBLSTKSZ];
+Stab *curscope;
+
 /* the first time we see a label, we increment to 0 */
 static int lbldepth = -1;
 
@@ -32,6 +33,7 @@ static Op binop(int toktype);
 static Node *mkpseudodecl(Srcloc l, Type *t);
 static void installucons(Stab *st, Type *t);
 static void setattrs(Node *dcl, char **attrs, size_t nattrs);
+static void setwith(Type *ty, Traitspec **spec, size_t nspec);
 static void setupinit(Node *n);
 
 %}
@@ -132,7 +134,9 @@ static void setupinit(Node *n);
 %type <ty> type structdef uniondef tupledef compoundtype functype funcsig
 %type <ty> generictype
 %type <tylist> typelist typarams optauxtypes
-%type <nodelist> typaramlist
+%type <traitspecs> traitspec traits
+%type <traitspec> traitvar
+%type <nodelist> traitlist
 
 %type <tok> asnop cmpop addop mulop shiftop optident obrace
 
@@ -207,6 +211,11 @@ but warnings suck.
 		Type **params;
 		size_t nparams;
 	} tydef;
+	struct {
+		Traitspec **spec;
+		size_t nspec;
+	} traitspecs;
+	Traitspec *traitspec;
 	Trait *trait;
 	Node *node;
 	Tok  *tok;
@@ -254,14 +263,14 @@ toplev	: package
 	| /* empty */
 	;
 
-decl	: attrs Tvar decllist {
+decl	: attrs Tvar decllist traitspec {
 		size_t i;
 
 		for (i = 0; i < $3.nn; i++)
 			setattrs($3.nl[i], $1.str, $1.nstr);
 		$$ = $3;
 	}
-	| attrs Tconst decllist {
+	| attrs Tconst decllist traitspec {
 		size_t i;
 		for (i = 0; i < $3.nn; i++) {
 			setattrs($3.nl[i], $1.str, $1.nstr);
@@ -269,11 +278,12 @@ decl	: attrs Tvar decllist {
 		}
 		$$ = $3;
 	}
-	| attrs Tgeneric decllist {
+	| attrs Tgeneric decllist traitspec {
 		size_t i;
 
 		for (i = 0; i < $3.nn; i++) {
 			setattrs($3.nl[i], $1.str, $1.nstr);
+			setwith($3.nl[i]->decl.type, $4.spec, $4.nspec);
 			$3.nl[i]->decl.isconst = 1;
 			$3.nl[i]->decl.isgeneric = 1;
 		}
@@ -285,6 +295,50 @@ attrs	: /* empty */ {$$.nstr = 0; $$.str = NULL;}
 	| Tattr attrs {
 		$$ = $2;
 		lappend(&$$.str, &$$.nstr, strdup($1->id));
+	}
+	;
+
+traitspec
+	: Twith traits	{$$ = $2;}
+	| /* nothing */ {$$.nspec = 0;}
+	;
+
+traits	: traitvar {
+       		$$.spec = NULL;
+       		$$.nspec = 0;
+		lappend(&$$.spec, &$$.nspec, $1);
+	}
+	| traits listsep traitvar {
+		$$ = $1;
+		lappend(&$$.spec, &$$.nspec, $3);
+	}
+	;
+
+traitvar
+	: traitlist generictype {
+		$$ = calloc(sizeof(Traitspec), 1);
+		$$->traits = $1.nl;
+		$$->ntraits = $1.nn;
+		$$->param = $2;
+		$$->aux = NULL;
+	}
+	| traitlist generictype Tret type {
+		$$ = calloc(sizeof(Traitspec), 1);
+		$$->traits = $1.nl;
+		$$->ntraits = $1.nn;
+		$$->param = $2;
+		$$->aux = $4;
+	}
+	;
+
+traitlist
+	: name {
+		$$.nl = 0;
+		$$.nn = 0;
+		lappend(&$$.nl, &$$.nn, $1);
+	}
+	| traitlist listsep name {
+		lappend(&$$.nl, &$$.nn, $3);
 	}
 	;
 
@@ -388,12 +442,22 @@ name	: Tident {$$ = mkname($1->loc, $1->id);}
 	;
 
 implstmt
-	: Timpl name type optauxtypes {
+	: Timpl name type optauxtypes traitspec {
+		size_t i;
+
 		$$ = mkimplstmt($1->loc, $2, $3, $4.types, $4.ntypes, NULL, 0);
 		$$->impl.isproto = 1;
+		setwith($3, $5.spec, $5.nspec);
+		for (i = 0; i < $4.ntypes; i++)
+			setwith($4.types[i], $5.spec, $5.nspec);
 	}
-	| Timpl name type optauxtypes Tasn Tendln implbody Tendblk {
-		$$ = mkimplstmt($1->loc, $2, $3, $4.types, $4.ntypes, $7.nl, $7.nn);
+	| Timpl name type optauxtypes traitspec Tasn Tendln implbody Tendblk {
+		size_t i;
+
+		$$ = mkimplstmt($1->loc, $2, $3, $4.types, $4.ntypes, $8.nl, $8.nn);
+		setwith($3, $5.spec, $5.nspec);
+		for (i = 0; i < $4.ntypes; i++)
+			setwith($4.types[i], $5.spec, $5.nspec);
 	}
 	;
 
@@ -411,25 +475,32 @@ implbody
 	;
 
 traitdef
-	: Ttrait Tident generictype optauxtypes { /* trait prototype */
+	: Ttrait Tident generictype optauxtypes traitspec { /* trait prototype */
+		size_t i;
 		$$ = mktrait($1->loc,
 			mkname($2->loc, $2->id), $3,
 			$4.types, $4.ntypes,
 			NULL, 0,
 			1);
+		setwith($3, $5.spec, $5.nspec);
+		for (i = 0; i < $4.ntypes; i++)
+			setwith($4.types[i], $5.spec, $5.nspec);
 	}
-	| Ttrait Tident generictype optauxtypes Tasn traitbody Tendblk /* trait definition */ {
+	| Ttrait Tident generictype optauxtypes traitspec Tasn traitbody Tendblk /* trait definition */ {
 		size_t i;
 		$$ = mktrait($1->loc,
 			mkname($2->loc, $2->id), $3,
 			$4.types, $4.ntypes,
-			$6.nl, $6.nn,
+			$7.nl, $7.nn,
 			0);
-		for (i = 0; i < $6.nn; i++) {
-			$6.nl[i]->decl.trait = $$;
-			$6.nl[i]->decl.impls = mkht(tyhash, tyeq);
-			$6.nl[i]->decl.isgeneric = 1;
+		for (i = 0; i < $7.nn; i++) {
+			$7.nl[i]->decl.trait = $$;
+			$7.nl[i]->decl.impls = mkht(tyhash, tyeq);
+			$7.nl[i]->decl.isgeneric = 1;
 		}
+		setwith($3, $5.spec, $5.nspec);
+		for (i = 0; i < $4.ntypes; i++)
+			setwith($4.types[i], $5.spec, $5.nspec);
 	}
 	;
 
@@ -452,14 +523,14 @@ traitbody
 	;
 
 
-tydef	: Ttype typeid {$$ = $2;}
-	| Ttype typeid Tasn type {
+tydef	: Ttype typeid traitspec {$$ = $2;}
+	| Ttype typeid traitspec Tasn type {
 		$$ = $2;
-		if ($$.nparams == 0) {
-			$$.type = mktyname($2.loc, mkname($2.loc, $2.name), $4);
-		} else {
-			$$.type = mktygeneric($2.loc, mkname($2.loc, $2.name), $2.params, $2.nparams, $4);
-		}
+		if ($$.nparams == 0)
+			$$.type = mktyname($2.loc, mkname($2.loc, $2.name), $5);
+		else
+			$$.type = mktygeneric($2.loc, mkname($2.loc, $2.name), $2.params, $2.nparams, $5);
+		setwith($$.type, $3.spec, $3.nspec);
 	}
 	;
 
@@ -498,35 +569,17 @@ type	: structdef
 
 generictype
 	: Ttyparam {$$ = mktyparam($1->loc, $1->id);}
-	| Ttyparam Twith name {
-		$$ = mktyparam($1->loc, $1->id);
-		lappend(&$$->traits, &$$->ntraits, $3);
-	}
-	| Ttyparam Twith Toparen typaramlist Tcparen {
-		size_t i;
-		$$ = mktyparam($1->loc, $1->id);
-		for (i = 0; i < $4.nn; i++)
-			lappend(&$$->traits, &$$->ntraits, $4.nl[i]);
-	}
-	;
-
-typaramlist
-	: name {
-		$$.nl = NULL; $$.nn = 0;
-		lappend(&$$.nl, &$$.nn, $1);
-	}
-	| typaramlist listsep name {lappend(&$$.nl, &$$.nn, $3);}
 	;
 
 compoundtype
-	: functype   {$$ = $1;}
-	| type Tosqbrac Tcolon Tcsqbrac {$$ = mktyslice($2->loc, $1);}
-	| type Tosqbrac expr Tcsqbrac {$$ = mktyarray($2->loc, $1, $3);}
-	| type Tosqbrac Tellipsis Tcsqbrac {$$ = mktyarray($2->loc, $1, NULL);}
-	| name Toparen typelist Tcparen {$$ = mktyunres($1->loc, $1, $3.types, $3.ntypes);}
-	| type Tderef	{$$ = mktyptr($2->loc, $1);}
-	| Tvoidlit	{$$ = mktyunres($1->loc, mkname($1->loc, $1->id), NULL, 0);}
-	| name	{$$ = mktyunres($1->loc, $1, NULL, 0);}
+	: functype   				{$$ = $1;}
+	| type Tosqbrac Tcolon Tcsqbrac		{$$ = mktyslice($2->loc, $1);}
+	| type Tosqbrac expr Tcsqbrac		{$$ = mktyarray($2->loc, $1, $3);}
+	| type Tosqbrac Tellipsis Tcsqbrac 	{$$ = mktyarray($2->loc, $1, NULL);}
+	| name Toparen typelist Tcparen 	{$$ = mktyunres($1->loc, $1, $3.types, $3.ntypes);}
+	| type Tderef				{$$ = mktyptr($2->loc, $1);}
+	| Tvoidlit				{$$ = mktyunres($1->loc, mkname($1->loc, $1->id), NULL, 0);}
+	| name					{$$ = mktyunres($1->loc, $1, NULL, 0);}
 	;
 
 functype: Toparen funcsig Tcparen {$$ = $2;}
@@ -826,11 +879,13 @@ obrace	: Tobrace {
 	}
 	;
 
-funclit : obrace params Tendln blkbody Tcbrace {
+funclit : obrace params traitspec Tendln blkbody Tcbrace {
 		size_t i;
 		Node *fn, *lit;
 
-		$$ = mkfunc($1->loc, $2.nl, $2.nn, mktyvar($3->loc), $4);
+		for (i = 0; i < $2.nn; i++)
+			setwith($2.nl[i]->decl.type, $3.spec, $3.nspec);
+		$$ = mkfunc($1->loc, $2.nl, $2.nn, mktyvar($4->loc), $5);
 		fn = $$->lit.fnval;
 		for (i = 0; i < nlbls[lbldepth]; i++) {
 			lit = lbls[lbldepth][i]->expr.args[0];
@@ -840,11 +895,14 @@ funclit : obrace params Tendln blkbody Tcbrace {
 		assert(lbldepth >= 0);
 		lbldepth--;
 	}
-	| obrace params Tret type Tendln blkbody Tcbrace {
+	| obrace params Tret type traitspec Tendln blkbody Tcbrace {
 		size_t i;
 		Node *fn, *lit;
 
-		$$ = mkfunc($1->loc, $2.nl, $2.nn, $4, $6);
+		setwith($4, $5.spec, $5.nspec);
+		for (i = 0; i < $2.nn; i++)
+			setwith($2.nl[i]->decl.type, $5.spec, $5.nspec);
+		$$ = mkfunc($1->loc, $2.nl, $2.nn, $4, $7);
 		fn = $$->lit.fnval;
 		for (i = 0; i < nlbls[lbldepth]; i++) {
 			lit = lbls[lbldepth][i]->expr.args[0];
@@ -1098,6 +1156,48 @@ static void setattrs(Node *dcl, char **attrs, size_t nattrs)
 			dcl->decl.isnoret = 1;
 		else if (!strcmp(attrs[i], "pkglocal"))
 			dcl->decl.ispkglocal = 1;
+	}
+}
+
+static void setwith(Type *ty, Traitspec **ts, size_t nts)
+{
+	size_t i, j;
+
+	if (!ty)
+		return;
+	for (i = 0; i < nts; i++) {
+		switch (ty->type) {
+		case Typaram:
+			if (tyeq(ty, ts[i]->param))
+				lappend(&ty->spec, &ty->nspec, ts[i]);
+
+			break;
+		case Tyname:
+		case Tyunres:
+			for (j = 0; j < ty->ngparam; j++)
+				setwith(ty->gparam[j], ts, nts);
+			for (j = 0; j < ty->narg; j++)
+				setwith(ty->arg[j], ts, nts);
+			break;
+		case Tystruct:
+			for (j = 0; j < ty->nmemb; j++)
+				setwith(ty->sdecls[j]->decl.type, ts, nts);
+			break;
+		case Tyunion:
+			for (j = 0; j < ty->nmemb; j++)
+				setwith(ty->udecls[j]->etype, ts, nts);
+			break;
+		case Typtr:
+		case Tyarray:
+		case Tyslice:
+		case Tyfunc:
+		case Tytuple:
+			for (j = 0; j < ty->nsub; j++)
+				setwith(ty->sub[j], ts, nts);
+			break;
+		default:
+			break;
+		}
 	}
 }
 

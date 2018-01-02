@@ -22,9 +22,9 @@ pkg std =
 	const bsmax	: (a : bitset# -> size)
 	const bscount	: (a : bitset# -> size)
 
-	generic bsput	: (bs : bitset#, v : @a::(integral,numeric) -> bool)
-	generic bsdel	: (bs : bitset#, v : @a::(integral,numeric) -> bool)
-	generic bshas	: (bs : bitset#, v : @a::(integral,numeric) -> bool)
+	generic bsput	: (bs : bitset#, v : @a -> bool) :: integral,numeric @a
+	generic bsdel	: (bs : bitset#, v : @a -> bool) :: integral,numeric @a
+	generic bshas	: (bs : bitset#, v : @a -> bool) :: integral,numeric @a
 
 	const bsdiff	: (a : bitset#, b : bitset# -> void)
 	const bsintersect	: (a : bitset#, b : bitset# -> void)

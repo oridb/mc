@@ -239,9 +239,8 @@ const matchampm = {d, s, am, err
 		-> s
 	;;
 }
-generic intval = {dst : @a::(numeric,integral)#, s : byte[:], \
-		min : @a::(numeric,integral), max : @a::(numeric,integral), \
-		err : std.option(parsefail)# -> byte[:]
+
+generic intval = {dst : @a#, s : byte[:], min : @a, max : @a, err : std.option(parsefail)# -> byte[:] :: numeric,integral @a
 	var i, c, num
 
 	num = s
