@@ -638,7 +638,9 @@ tf(Type *orig)
 	t = tylookup(orig);
 	isgeneric = t->type == Tygeneric;
 	ingeneric += isgeneric;
+	pushenv(orig->env);
 	tyresolve(t);
+	popenv(orig->env);
 	/* If this is an instantiation of a generic type, we want the params to
 	 * match the instantiation */
 	if (orig->type == Tyunres && t->type == Tygeneric) {
