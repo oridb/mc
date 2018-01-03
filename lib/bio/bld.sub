@@ -3,6 +3,10 @@ lib bio =
 	geti.myr
 	puti.myr
 	iter.myr
+	types.myr
+
+	# backends
+	fd.myr
 	mem.myr
 
         lib ../std:std

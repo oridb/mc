@@ -1,50 +1,9 @@
 use std
+use "types"
 
 pkg bio =
-	type mode = int
-	const Rd	: mode = 1
-	const Wr	: mode = 2
-	const Rw	: mode = 1 | 2
-
-	type file = struct
-		/* backing io ops */
-		mode	: mode
-		lasterr	: std.errno
-
-		read	: (buf : byte[:] -> std.result(std.size, std.errno))
-		write	: (buf : byte[:] -> std.result(std.size, std.errno))
-		seek	: (idx : std.off -> std.result(std.off, std.errno))
-		close	: (-> bool)
-
-		/* read buffer */
-		rbuf	: byte[:]
-		rstart	: std.size
-		rend	: std.size
-
-		/* write buffer */
-		wbuf	: byte[:]
-		wend	: std.size
-	;;
-
-	type vtab = struct
-		read	: (buf : byte[:] -> std.result(std.size, std.errno))
-		write	: (buf : byte[:] -> std.result(std.size, std.errno))
-		seek	: (idx : std.off -> std.result(std.off, std.errno))
-		close	: (-> bool)
-	;;
-
-	type err = union
-		`Eof
-		`Eio
-		`Ebadf
-	;;
-
 	/* creation */
-	const mkfile	: (fd : std.fd, mode : mode	-> file#)
 	const mk	: (mode : mode, vt : vtab	-> file#)
-	const open	: (path : byte[:], mode : mode	-> std.result(file#, byte[:]))
-	const dial	: (srv	: byte[:], mode : mode	-> std.result(file#, byte[:]))
-	const create	: (path : byte[:], mode : mode, perm : int	-> std.result(file#, byte[:]))
 	const close	: (f : file# -> bool)
 	const free	: (f : file# -> void)
 
@@ -85,15 +44,6 @@ const Bufsz = 16*std.KiB
 const Small = 512
 
 /* Creates a file from an fd, opened in the given mode. */
-const mkfile = {fd, mode
-	-> mk(mode, [
-		.read	= {buf;	-> std.read(fd, buf)},
-		.write	= {buf;	-> std.write(fd, buf)},
-		.seek	= {off;	-> std.seek(fd, off, std.Seekset)},
-		.close	= {;	-> std.close(fd) >= 0},
-	])
-}
-
 const mk = {mode, vt
 	var f
 
@@ -116,46 +66,6 @@ const mk = {mode, vt
 		f.wend = 0
 	;;
 	-> f
-}
-
-/* Opens a file with mode provided. */
-const open = {path, mode 
-	-> sysopen(path, mode, sysmode(mode), 0o777)
-}
-
-/*
-   Creates a file for the provided path, with opened in
-   the requested mode, with the requested permissions
-*/
-const create = {path, mode, perm
-	-> sysopen(path, mode, sysmode(mode) | std.Ocreat | std.Otrunc, perm)
-}
-
-/* dial the server, and open a file using the returned fd */
-const dial = {srv, mode
-	match std.dial(srv)
-	| `std.Ok sock:	-> `std.Ok mkfile(sock, mode)
-	| `std.Err m:	-> `std.Err m
-	;;
-}
-
-/* map from the bio modes to the unix open modes */
-const sysmode = {mode
-	match mode
-	| Rd:	-> std.Oread
-	| Wr:	-> std.Owrite
-	| Rw:	-> std.Ordwr
-	| _:	std.fatal("bio: bad file mode")
-	;;
-	-> 0
-}
-
-/* open the file, and return it */
-const sysopen = {path, mode, openmode, perm
-	match std.openmode(path, openmode, (perm : int64))
-	| `std.Ok fd:	-> `std.Ok mkfile(fd, mode)
-	| `std.Err e:	-> `std.Err "could not open fd"
-	;;
 }
 
 /* closes a file, flushing it to the output fd */

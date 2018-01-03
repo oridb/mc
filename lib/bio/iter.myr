@@ -1,5 +1,6 @@
 use std
 use "bio"
+use "types"
 
 pkg bio =
 	type lineiter = file#

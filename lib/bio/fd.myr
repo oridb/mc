@@ -1,0 +1,60 @@
+use std
+
+use "bio"
+use "types"
+
+pkg bio =
+	const mkfile	: (fd : std.fd, mode : mode	-> file#)
+	const open	: (path : byte[:], mode : mode	-> std.result(file#, byte[:]))
+	const dial	: (srv	: byte[:], mode : mode	-> std.result(file#, byte[:]))
+	const create	: (path : byte[:], mode : mode, perm : int	-> std.result(file#, byte[:]))
+;;
+
+const mkfile = {fd, mode
+	-> mk(mode, [
+		.read	= {buf;	-> std.read(fd, buf)},
+		.write	= {buf;	-> std.write(fd, buf)},
+		.seek	= {off;	-> std.seek(fd, off, std.Seekset)},
+		.close	= {;	-> std.close(fd) >= 0},
+	])
+}
+
+/* Opens a file with mode provided. */
+const open = {path, mode 
+	-> sysopen(path, mode, sysmode(mode), 0o777)
+}
+
+/*
+   Creates a file for the provided path, with opened in
+   the requested mode, with the requested permissions
+*/
+const create = {path, mode, perm
+	-> sysopen(path, mode, sysmode(mode) | std.Ocreat | std.Otrunc, perm)
+}
+
+/* dial the server, and open a file using the returned fd */
+const dial = {srv, mode
+	match std.dial(srv)
+	| `std.Ok sock:	-> `std.Ok mkfile(sock, mode)
+	| `std.Err m:	-> `std.Err m
+	;;
+}
+
+/* map from the bio modes to the unix open modes */
+const sysmode = {mode
+	match mode
+	| Rd:	-> std.Oread
+	| Wr:	-> std.Owrite
+	| Rw:	-> std.Ordwr
+	| _:	std.fatal("bio: bad file mode")
+	;;
+	-> 0
+}
+
+/* open the file, and return it */
+const sysopen = {path, mode, openmode, perm
+	match std.openmode(path, openmode, (perm : int64))
+	| `std.Ok fd:	-> `std.Ok mkfile(fd, mode)
+	| `std.Err e:	-> `std.Err "could not open fd"
+	;;
+}

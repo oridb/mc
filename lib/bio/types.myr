@@ -1,0 +1,42 @@
+use std
+
+pkg bio =
+	type mode = int
+	const Rd	: mode = 1
+	const Wr	: mode = 2
+	const Rw	: mode = 1 | 2
+
+	type file = struct
+		/* backing io ops */
+		mode	: mode
+		lasterr	: std.errno
+
+		read	: (buf : byte[:] -> std.result(std.size, std.errno))
+		write	: (buf : byte[:] -> std.result(std.size, std.errno))
+		seek	: (idx : std.off -> std.result(std.off, std.errno))
+		close	: (-> bool)
+
+		/* read buffer */
+		rbuf	: byte[:]
+		rstart	: std.size
+		rend	: std.size
+
+		/* write buffer */
+		wbuf	: byte[:]
+		wend	: std.size
+	;;
+
+	type vtab = struct
+		read	: (buf : byte[:] -> std.result(std.size, std.errno))
+		write	: (buf : byte[:] -> std.result(std.size, std.errno))
+		seek	: (idx : std.off -> std.result(std.off, std.errno))
+		close	: (-> bool)
+	;;
+
+	type err = union
+		`Eof
+		`Eio
+		`Ebadf
+	;;
+;;
+

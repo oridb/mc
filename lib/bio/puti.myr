@@ -1,6 +1,7 @@
 use std
 
 use "bio"
+use "types"
 
 pkg bio =
 	/* unsigned big endian */
