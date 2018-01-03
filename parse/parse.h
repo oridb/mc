@@ -360,7 +360,6 @@ struct Node {
 };
 
 /* globals */
-extern Htab *seqbase;
 extern Srcloc curloc;
 extern char *filename;
 extern Tok *curtok;	/* the last token we tokenized */
@@ -378,6 +377,7 @@ extern Node **nodes;	/* node id -> node map */
 extern size_t ndecls;
 extern Node **exportimpls;
 extern size_t nexportimpls;
+extern Htab *seqbase;
 
 /* property tables */
 extern int opispure[];

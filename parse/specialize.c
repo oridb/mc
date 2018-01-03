@@ -98,6 +98,9 @@ tyspecialize(Type *orig, Tysubst *tsmap, Htab *delayed, Htab *trbase)
 		ret = mktyvar(t->loc);
 		ret->trneed = bsdup(t->trneed);
 		substput(tsmap, t, ret);
+		tmp = htget(seqbase, t);
+		if (tmp)
+			htput(seqbase, ret, tmp);
 		break;
 	case Tygeneric:
 		var = mktyvar(t->loc);

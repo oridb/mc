@@ -37,6 +37,7 @@ static int tryconstrain(Type *ty, Trait *tr, int update);
 
 static Type *tyfreshen(Tysubst *subst, Type *orig);
 static Type *tf(Type *t);
+static Type *basetype(Type *a);
 
 static Type *unify(Node *ctx, Type *a, Type *b);
 static Type *tyfix(Node *ctx, Type *orig, int noerr);
@@ -463,7 +464,7 @@ needfreshen(Type *t)
 static Type *
 tyfreshen(Tysubst *subst, Type *orig)
 {
-	Type *ty;
+	Type *ty, *base;
 
 	if (!needfreshen(orig))
 		return orig;
@@ -477,6 +478,9 @@ tyfreshen(Tysubst *subst, Type *orig)
 	}
 	ty->spec = orig->spec;
 	ty->nspec = orig->nspec;
+	base = basetype(ty);
+	if (base)
+		htput(seqbase, ty, base);
 	popenv(orig->env);
 	return ty;
 }
@@ -2594,7 +2598,8 @@ typesub(Node *n, int noerr)
 		typesub(n->iterstmt.elt, noerr);
 		typesub(n->iterstmt.seq, noerr);
 		typesub(n->iterstmt.body, noerr);
-		additerspecialization(n, curstab());
+		if (!ingeneric)
+			additerspecialization(n, curstab());
 		break;
 	case Nmatchstmt:
 		typesub(n->matchstmt.val, noerr);
@@ -2693,6 +2698,8 @@ specialize(void)
 			tr = traittab[Tciter];
 			assert(tr->nproto == 2);
 			ty = exprtype(n->iterstmt.seq);
+			if (ty->type == Typaram)
+				continue;
 
 			it = itertype(n->iterstmt.seq, mktype(n->loc, Tybool));
 			d = specializedcl(tr->proto[0], ty, it, &name);
@@ -2855,6 +2862,7 @@ initimpl(void)
 	Type *ty;
 
 	pushstab(file->file.globls);
+	seqbase = mkht(tyhash, tyeq);
 	traitmap = zalloc(sizeof(Traitmap));
 	builtintraits();
 	for (i = 0; i < nimpltab; i++) {
