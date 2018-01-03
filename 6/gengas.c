@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include "util.h"
 #include "parse.h"
@@ -471,7 +472,8 @@ gengas(Node *file, FILE *fd)
 	}
 	popstab();
 
-	getcwd(dir, sizeof dir);
+	if (!getcwd(dir, sizeof dir))
+		die("could not get cwd: %s\n", strerror(errno));
 	for (i = 0; i < file->file.nfiles; i++) {
 		path = file->file.files[i];
 		fprintf(fd, ".file %zd \"%s/%s\"\n", i + 1, dir, path);
