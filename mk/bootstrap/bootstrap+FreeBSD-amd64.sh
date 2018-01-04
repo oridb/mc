@@ -108,13 +108,15 @@ set -x
 	$pwd/6/6m -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/types.myr
 	$pwd/6/6m -I lib/sys -I lib/std lib/regex/types.myr
 	$pwd/6/6m -I lib/sys -I lib/std lib/regex/interp.myr
+	$pwd/6/6m -I lib/std -I lib/sys lib/bio/types.myr
 	$pwd/6/6m -I lib/std -I lib/sys lib/bio/bio.myr
 	$pwd/6/6m -I lib/std -I lib/sys lib/bio/iter.myr
 	$pwd/6/6m -I lib/std -I lib/sys lib/bio/mem.myr
+	$pwd/6/6m -I lib/std -I lib/sys lib/bio/fd.myr
 	$pwd/6/6m -I lib/std -I lib/sys lib/bio/geti.myr
 	$pwd/6/6m -I lib/std -I lib/sys lib/bio/puti.myr
-	ar -rcs lib/bio/libbio.a lib/bio/puti.o lib/bio/geti.o lib/bio/mem.o lib/bio/bio.o lib/bio/iter.o
-	$pwd/muse/muse -o lib/bio/libbio.use -p bio lib/bio/puti.use lib/bio/geti.use lib/bio/mem.use lib/bio/bio.use lib/bio/iter.use
+	ar -rcs lib/bio/libbio.a lib/bio/puti.o lib/bio/geti.o lib/bio/fd.o lib/bio/mem.o lib/bio/bio.o lib/bio/types.o lib/bio/iter.o
+	$pwd/muse/muse -o lib/bio/libbio.use -p bio lib/bio/puti.use lib/bio/geti.use lib/bio/fd.use lib/bio/mem.use lib/bio/bio.use lib/bio/types.use lib/bio/iter.use
 	$pwd/6/6m -I lib/sys -I lib/std lib/thread/spawn+freebsd.myr
 	$pwd/6/6m -I lib/sys -I lib/std lib/thread/ncpu+freebsd.myr
 	$pwd/6/6m -I lib/sys -I lib/std lib/thread/common.myr
