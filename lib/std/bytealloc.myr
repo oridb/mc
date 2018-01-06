@@ -180,22 +180,20 @@ const bigalloc = {sz
 	/* check our cache */
 	lock(memlck)
 	for var i = 0; i < bigcache.len; i++
-		if sz > bigcache[i].sz
-			continue
-		;;
-		p = bigcache[i].p
-		/*
-		  There's no point splitting a chunk if it's smaller than
-		  bktmax, since the allocator will never try using it.
-		 */
-		if sz - bigcache[i].sz > Bktmax
+		if sz < bigcache[i].sz
+			/*
+			While the allocator may never use a small chunk, we need
+			to keep it together so when unmapping it in the free call,
+			end up unmapping the whole thing. We can't return a larger
+			size here than requested, because we don't track the size.
+
+			Eviction takes care of freeing it.
+			*/
+			p = bigcache[i].p
 			bigcache[i].sz -= sz
 			bigcache[i].p = ((p : intptr) + (sz : intptr) : byte#)
-		else
-			bigcache[i].sz = 0
-			bigcache[i].p = (0 : byte#)
+			break
 		;;
-		break
 	;;
 	unlock(memlck)
 	if p != Failmem
