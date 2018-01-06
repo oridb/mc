@@ -38,7 +38,7 @@ const Pagesz	= 4*KiB
 var buckets	: bucket[32] /* excessive */
 var trace	: bool
 var tracefd	: std.fd
-var cache	: cacheelt[32]
+var bigcache	: cacheelt[32]
 
 type bucket = struct
 	sz	: size	/* aligned size */
@@ -179,21 +179,21 @@ const bigalloc = {sz
 
 	/* check our cache */
 	lock(memlck)
-	for var i = 0; i < cache.len; i++
-		if sz > cache[i].sz
+	for var i = 0; i < bigcache.len; i++
+		if sz > bigcache[i].sz
 			continue
 		;;
-		p = cache[i].p
+		p = bigcache[i].p
 		/*
 		  There's no point splitting a chunk if it's smaller than
 		  bktmax, since the allocator will never try using it.
 		 */
-		if sz - cache[i].sz > Bktmax
-			cache[i].sz -= sz
-			cache[i].p = ((p : intptr) + (sz : intptr) : byte#)
+		if sz - bigcache[i].sz > Bktmax
+			bigcache[i].sz -= sz
+			bigcache[i].p = ((p : intptr) + (sz : intptr) : byte#)
 		else
-			cache[i].sz = 0
-			cache[i].p = (0 : byte#)
+			bigcache[i].sz = 0
+			bigcache[i].p = (0 : byte#)
 		;;
 		break
 	;;
@@ -220,33 +220,33 @@ const bigfree = {p, sz
 	evictsz = sz
 	endp = ((p : intptr) + (sz : intptr) : byte#)
 	lock(memlck)
-	for var i = 0; i < cache.len; i++
-		endblk = ((cache[i].p : intptr) + (sz : intptr) : byte#)
+	for var i = 0; i < bigcache.len; i++
+		endblk = ((bigcache[i].p : intptr) + (bigcache[i].sz : intptr) : byte#)
 		/* merge in front of existing block */
-		if cache[i].p == endp
-			cache[i].sz += sz
-			cache[i].p = p
+		if bigcache[i].p == endp
+			bigcache[i].sz += sz
+			bigcache[i].p = p
 			evictidx = -1
 			evictsz = 0
 			break
 		/* merge in behind existing block */
 		elif endblk == p
-			cache[i].sz += sz
+			bigcache[i].sz += sz
 			evictidx = -1
 			evictsz = 0
 			break
 		;;
 		/* evict */
-		if cache[i].sz < evictsz
+		if bigcache[i].sz < evictsz
 			evictidx = i
-			evictsz = cache[i].sz
-			evictp = cache[i].p
+			evictsz = bigcache[i].sz
+			evictp = bigcache[i].p
 		;;
 	;;
 
 	if evictidx != -1
-		cache[evictidx].p = p
-		cache[evictidx].sz = sz
+		bigcache[evictidx].p = p
+		bigcache[evictidx].sz = sz
 	;;
 	unlock(memlck)
 

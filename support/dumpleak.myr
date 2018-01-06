@@ -3,13 +3,14 @@ use bio
 
 var stackaggr = 10
 var summary
+var allocstats
 
 type memstats = struct
-	allocs	: uint64
-	allocsz	: uint64
-	frees	: uint64
-	freesz	: uint64
-	tab	: std.htab(uint64, (uint64, uint64[:]))#
+	allocs	: std.size
+	allocsz	: std.size
+	frees	: std.size
+	freesz	: std.size
+	tab	: std.htab(std.size, (std.size, std.size[:]))#
 ;;
 
 
@@ -20,6 +21,7 @@ const main = {args
 	cmd = std.optparse(args, &[
 		.argdesc="dumps...",
 		.opts=[
+			[.opt='a', .arg="", .desc="show all allocations, regardless of frees"],
 			[.opt='d', .arg="depth", .desc="aggregate by at most `depth` stack elements"],
 			[.opt='s', .arg="", .desc="only show a summary of memory activity"],
 		][:]
@@ -27,6 +29,8 @@ const main = {args
 
 	for opt : cmd.opts
 		match opt
+		| ('a',""):
+			allocstats = true
 		| ('d', depth):
 			match std.intparse(depth)
 			| `std.Some d:	stackaggr = d
@@ -34,10 +38,12 @@ const main = {args
 			;;
 		| ('s', ""):
 			summary = true
-		| _:	std.die("unreachable")
+		| _:	
+			std.die("unreachable")
 		;;
 	;;
 
+	std.clear(&stats)
 	stats.tab = std.mkht()
 	for d : cmd.args
 		match bio.open(d, bio.Rd)
@@ -91,8 +97,8 @@ const tracefree = {path, f, stats
 
 	ptr = get64(path, f)
 	sz = get64(path, f)
-	stats.allocs++
-	stats.allocsz += sz
+	stats.frees++
+	stats.freesz += sz
 	std.htdel(stats.tab, ptr)
 }
 
