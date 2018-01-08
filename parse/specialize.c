@@ -14,6 +14,7 @@
 #include "parse.h"
 
 static Node *specializenode(Node *g, Tysubst *tsmap);
+static void fillsubst(Tysubst *tsmap, Type *to, Type *from);
 
 static void
 substpush(Tysubst *subst)
@@ -84,8 +85,9 @@ Type *
 tyspecialize(Type *orig, Tysubst *tsmap, Htab *delayed, Htab *trbase)
 {
 	Type *t, *ret, *tmp, *var, *base;
-	Type **arg;
+	Traitspec *ts;
 	size_t i, narg;
+	Type **arg;
 
 	t = tysearch(orig);
 	tmp = substget(tsmap, t);
@@ -98,9 +100,20 @@ tyspecialize(Type *orig, Tysubst *tsmap, Htab *delayed, Htab *trbase)
 		ret = mktyvar(t->loc);
 		ret->trneed = bsdup(t->trneed);
 		substput(tsmap, t, ret);
+		for (i = 0; i < t->nspec; i++) {
+			ts = zalloc(sizeof(Traitspec));
+			ts->trait = t->spec[i]->trait;
+			ts->ntrait = t->spec[i]->ntrait;
+			ts->param = tyspecialize(t->spec[i]->param, tsmap, delayed, trbase);
+			if (t->spec[i]->aux)
+				ts->aux = tyspecialize(t->spec[i]->aux, tsmap, delayed, trbase);
+			lappend(&ret->spec, &ret->nspec, ts);
+		}
 		tmp = htget(seqbase, t);
-		if (tmp)
-			htput(seqbase, ret, tmp);
+		if (tmp) {
+			tmp = tyspecialize(tmp, tsmap, delayed, trbase);
+			htput(trbase, ret, tmp);
+		}
 		break;
 	case Tygeneric:
 		var = mktyvar(t->loc);
@@ -189,6 +202,26 @@ tysubst(Type *t, Tysubst *tsmap)
 		return t;
 }
 
+static void
+substputspec(Tysubst *tsmap, Type *from, Type *to)
+{
+	size_t ai, aj, bi, bj;
+
+	for (ai = 0; ai < from->nspec; ai++) {
+		for (aj = 0; aj < from->spec[ai]->ntrait; aj++) {
+			for (bi = 0; bi < to->nspec; bi++) {
+				for (bj = 0; bj < to->spec[bi]->ntrait; bj++) {
+					if (nameeq(from->spec[ai]->trait[aj], to->spec[bi]->trait[bj]))
+						fillsubst(tsmap, to->spec[ai]->aux, from->spec[bi]->aux);
+				}
+			}
+			if (nameeq(from->spec[ai]->trait[aj], traittab[Tciter]->name))
+				if (to->type == Tyslice || to->type == Tyarray)
+					fillsubst(tsmap, to->sub[0], from->spec[ai]->aux);
+		}
+	}
+}
+
 /*
  * Fills the substitution map with a mapping from
  * the type parameter 'from' to it's substititon 'to'
@@ -202,6 +235,7 @@ fillsubst(Tysubst *tsmap, Type *to, Type *from)
 		if (debugopt['S'])
 			printf("mapping %s => %s\n", tystr(from), tystr(to));
 		substput(tsmap, from, to);
+		substputspec(tsmap, from, to);
 		return;
 	}
 	assert(to->nsub == from->nsub);
