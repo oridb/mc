@@ -12,7 +12,7 @@ pkg iter =
 ;;
 
 generic bychunk = {a, sz
-	-> [.sl = a, .idx = 0, .blksz = sz]
+	-> [.sl = a, .idx = 0, .blksz = std.max(sz, 1)]
 }
 
 impl iterable chunkiter(@a) -> @a[:] =
@@ -20,7 +20,7 @@ impl iterable chunkiter(@a) -> @a[:] =
 		var len
 
 		len = std.min(itp.blksz, itp.sl.len - itp.idx)
-		if itp.idx + len == itp.sl.len
+		if itp.idx + len > itp.sl.len || itp.idx >= itp.sl.len
 			-> false
 		;;
 		valp# = itp.sl[itp.idx: itp.idx + len]

@@ -1,0 +1,44 @@
+use std
+use testr
+
+use iter
+
+const main = {
+	testr.run([
+		[.name = "bychunk-01", .fn = bychunk01],
+		[.name = "bychunk-02", .fn = bychunk02],
+		[.name = "bychunk-03", .fn = bychunk03],
+		[.name = "bychunk-04", .fn = bychunk04],
+		[.name = "bychunk-05", .fn = bychunk05],
+	][:])
+}
+
+const verify_bychunk = {c, v, n, e
+	var sb : std.strbuf# = std.mksb()
+	std.sbfmt(sb, " ")
+	for w : iter.bychunk(v, n)
+		std.sbfmt(sb, "{} ", w)
+	;;
+	var a : byte[:] = std.sbfin(sb)
+	testr.check(c, std.eq(e, a), "expected “{}”, got “{}”", e, a)
+}
+
+const bychunk01 = {c
+	verify_bychunk(c, [1, 2, 3, 4][:], 1, " [1] [2] [3] [4] ")
+}
+
+const bychunk02 = {c
+	verify_bychunk(c, [1, 2, 3, 4, 5, 6, 7, 8][:], 3, " [1, 2, 3] [4, 5, 6] [7, 8] ")
+}
+
+const bychunk03 = {c
+	verify_bychunk(c, [1, 2, 3, 4][:], 99, " [1, 2, 3, 4] ")
+}
+
+const bychunk04 = {c
+	verify_bychunk(c, [1, 2, 3, 4][:], -2, " [1] [2] [3] [4] ")
+}
+
+const bychunk05 = {c
+	verify_bychunk(c, [][:], 3, " ")
+}
