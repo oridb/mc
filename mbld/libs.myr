@@ -146,6 +146,7 @@ const addlib = {b, sl, lib, added, diradded, looped
 	match std.htget(b.libs, lib)
 	| `std.None:
 		std.slpush(sl, std.fmt("-l{}", lib))
+		b.dynlink = true
 	| `std.Some ld:
 		for l : ld.dep
 			addlib(b, sl, l, added, diradded, looped)
