@@ -525,6 +525,10 @@ const scrapedeps = {b : build#, mt, path
 
 	l = [][:]
 	for ln : bio.byline(f)
+		match std.strfind(ln, "use")
+		| `std.None:	continue
+		| `std.Some _:	/* ok */
+		;;
 		match regex.exec(usepat, ln)
 		| `std.None:
 		| `std.Some uses:
