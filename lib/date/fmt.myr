@@ -26,7 +26,7 @@ const sbfmt = {sb, ap, opts
 		| ("t", ""):	fmt = Timefmt
 		| ("D", ""):	fmt = Datetimefmt
 		| ("f", opt):	fmt = opt
-		| _:	std.fatal("unknown option")
+		| _:	std.die("unknown option\n")
 		;;
 	;;
 	datefmt(sb, fmt, d)
