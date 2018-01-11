@@ -20,9 +20,6 @@ pkg bld =
 		system	: byte[:]
 		arch	: byte[:]
 
-		/* dynmically link */
-		dynlink	: bool
-
 	;;
 
 	type targ = union
