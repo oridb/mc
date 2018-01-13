@@ -429,6 +429,8 @@ const arcmd = {b, n, mt, ar
 }
 
 const linkcmd = {b, n, mt, bin, libs, dynlibs, istest
+	var dynlink
+
 	for c : config.Linkcmd
 		std.slpush(&n.cmd, std.sldup(c))
 	;;
@@ -453,7 +455,7 @@ const linkcmd = {b, n, mt, bin, libs, dynlibs, istest
 		std.slpush(&n.cmd, std.sldup(o))
 	;;
 
-	addlibs(b, &n.cmd, libs, mt.incpath)
+	dynlink = addlibs(b, &n.cmd, libs, mt.incpath)
 	for l : dynlibs
 		std.slpush(&n.cmd, std.fmt("-l{}", l))
 	;;
@@ -462,7 +464,7 @@ const linkcmd = {b, n, mt, bin, libs, dynlibs, istest
 	if std.sleq(opt_sys, "osx")
 		std.slpush(&n.cmd, std.sldup("-macosx_version_min"))
 		std.slpush(&n.cmd, std.sldup("10.6"))
-	elif std.sleq(opt_sys, "linux") && mt.isdyn
+	elif std.sleq(opt_sys, "linux") && (dynlink || mt.isdyn)
 		std.slpush(&n.cmd, std.sldup("-dynamic-linker"))
 		std.slpush(&n.cmd, std.sldup("/lib64/ld-linux-x86-64.so.2"))
 	;;

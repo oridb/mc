@@ -9,7 +9,7 @@ pkg bld =
 	const addlibs	: (b : build#, \
 		sl : byte[:][:]#, \
 		libs : byte[:][:], \
-		incs : byte[:][:] -> void)
+		incs : byte[:][:] -> bool)
 
 	const builtlib	: (b : build#, \
 		lt : myrtarg#, \
@@ -117,6 +117,7 @@ const openlib = {lib, targ, incs
 
 const addlibs = {b, sl, libs, incs
 	var added, diradded, looped
+	var dynlink
 	var lo
 
 	added  = std.mkht()
@@ -124,8 +125,9 @@ const addlibs = {b, sl, libs, incs
 	diradded  = std.mkht()
 
 	lo = sl#.len
+	dynlink = false
 	for l : libs
-		addlib(b, sl, l, added, diradded, looped)
+		dynlink = addlib(b, sl, l, added, diradded, looped, dynlink)
 	;;
 	for var i = 0; i < sl#[lo:].len/2; i++
 		std.swap(&sl#[lo+i], &sl#[sl#.len - i - 1])
@@ -134,9 +136,11 @@ const addlibs = {b, sl, libs, incs
 	std.htfree(diradded)
 	std.htfree(looped)
 	std.htfree(added)
+
+	-> dynlink
 }
 
-const addlib = {b, sl, lib, added, diradded, looped
+const addlib = {b, sl, lib, added, diradded, looped, dl
 	var ar
 
 	if std.hthas(looped, lib)
@@ -146,12 +150,13 @@ const addlib = {b, sl, lib, added, diradded, looped
 	match std.htget(b.libs, lib)
 	| `std.None:
 		std.slpush(sl, std.fmt("-l{}", lib))
+		dl = true
 	| `std.Some ld:
 		for l : ld.dep
-			addlib(b, sl, l, added, diradded, looped)
+			dl = addlib(b, sl, l, added, diradded, looped, dl)
 		;;
 		for l : ld.dyndep
-			addlib(b, sl, l, added, diradded, looped)
+			dl = addlib(b, sl, l, added, diradded, looped, dl)
 		;;
 		if !std.hthas(added, lib)
 			if config.Directlib
@@ -169,6 +174,7 @@ const addlib = {b, sl, lib, added, diradded, looped
 		;;
 	;;
 	std.htdel(looped, lib)
+	-> dl
 }
 
 
