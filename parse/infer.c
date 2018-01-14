@@ -607,9 +607,8 @@ tysubstmap(Tysubst *subst, Type *t, Type *orig)
 {
 	size_t i;
 
-	for (i = 0; i < t->ngparam; i++) {
+	for (i = 0; i < t->ngparam; i++)
 		substput(subst, t->gparam[i], tf(orig->arg[i]));
-	}
 	t = tyfreshen(subst, t);
 	return t;
 }
@@ -2384,7 +2383,9 @@ fixiter(Node *n, Type *ty, Type *base)
 {
 	size_t i, bestidx;
 	int r, bestrank;
-	Type *b, *t;
+	Type *b, *t, *orig;
+	Tysubst *ts;
+	Node *impl;
 
 	ty = tysearch(ty);
 	b = htget(seqbase, ty);
@@ -2402,8 +2403,14 @@ fixiter(Node *n, Type *ty, Type *base)
 		}
 	}
 	if (bestrank >= 0) {
-		t = tf(impltab[bestidx]->impl.aux[0]);
-		t = tyfreshen(NULL, t);
+		impl = impltab[bestidx];
+		orig = impl->impl.type;
+		t = tf(impl->impl.aux[0]);
+		ts = mksubst();
+		for (i = 0; i < ty->narg; i++)
+			substput(ts, tf(orig->arg[i]), ty->arg[i]);
+		t = tyfreshen(ts, t);
+		substfree(ts);
 		unify(n, t, base);
 	}
 }
