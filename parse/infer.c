@@ -2061,7 +2061,7 @@ infernode(Node **np, Type *ret, int *sawret)
 {
 	size_t i, nbound;
 	Node **bound, *n, *pat;
-	Type *t, *b;
+	Type *t, *b, *e;
 
 	n = *np;
 	if (!n)
@@ -2127,12 +2127,14 @@ infernode(Node **np, Type *ret, int *sawret)
 		infernode(&n->iterstmt.seq, NULL, sawret);
 		infernode(&n->iterstmt.body, ret, sawret);
 
-		b = mktyvar(n->loc);
-		t = mktyvar(n->loc);
-		htput(seqbase, t, b);
-		constrain(n, type(n->iterstmt.seq), traittab[Tciter]);
-		unify(n, type(n->iterstmt.seq), t);
-		unify(n, type(n->iterstmt.elt), b);
+		e = type(n->iterstmt.elt);
+		t = type(n->iterstmt.seq);
+		constrain(n, t, traittab[Tciter]);
+		b = basetype(t);
+		if (b)
+			unify(n, e, b);
+		else
+			htput(seqbase, t, e);
 		break;
 	case Nmatchstmt:
 		infernode(&n->matchstmt.val, NULL, sawret);
@@ -2874,9 +2876,6 @@ initimpl(void)
 		pushenv(impl->impl.env);
 		ty = tf(impl->impl.type);
 		addtraittab(traitmap, tr, ty);
-		if (tr->uid == Tciter) {
-			htput(seqbase, tf(impl->impl.type), tf(impl->impl.aux[0]));
-		}
 		popenv(impl->impl.env);
 	}
 	popstab();
