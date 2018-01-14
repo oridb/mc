@@ -71,11 +71,15 @@ tagtype(Stab *st, Type *t, int ingeneric, int hidelocal)
 {
 	size_t i;
 
-	if (t->vis != Visintern)
+	if (!t || t->vis != Visintern)
 		return;
 	t->vis = Vishidden;
 	for (i = 0; i < t->nsub; i++)
 		tagtype(st, t->sub[i], ingeneric, hidelocal);
+	for (i = 0; i < t->nspec; i++) {
+		tagtype(st, t->spec[i]->param, ingeneric, hidelocal);
+		tagtype(st, t->spec[i]->aux, ingeneric, hidelocal);
+	}
 	switch (t->type) {
 	case Tystruct:
 		for (i = 0; i < t->nmemb; i++)
@@ -259,16 +263,18 @@ tagexports(int hidelocal)
 	free(k);
 
 	/* tag the traits */
-	tr = NULL;
 	for (i = 0; i < ntraittab; i++) {
 		tr = traittab[i];
 		if (tr->vis != Visexport)
 			continue;
 		if (hidelocal && tr->ishidden)
 			tr->vis = Vishidden;
+		tagtype(st, tr->param, 0, hidelocal);
 		tr->param->vis = tr->vis;
-		for (j = 0; j < tr->naux; j++)
+		for (j = 0; j < tr->naux; j++) {
+			tagtype(st, tr->aux[j], 0, hidelocal);
 			tr->aux[j]->vis = tr->vis;
+		}
 		for (j = 0; j < tr->nproto; j++) {
 			tr->proto[j]->decl.vis = tr->vis;
 			tagnode(st, tr->proto[j], 0, hidelocal);

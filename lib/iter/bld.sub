@@ -9,3 +9,9 @@ lib iter =
 	lib ../sys:sys
 	lib ../std:std
 ;;
+
+testdeps =
+	../testr:testr
+	../sys:sys
+	../std:std
+;;
