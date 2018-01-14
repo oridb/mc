@@ -1114,7 +1114,8 @@ label	: Tcolon Tident {
 
 %%
 
-static void setupinit(Node *n)
+static void
+setupinit(Node *n)
 {
 	char name[1024];
 	char *p, *s;
@@ -1136,7 +1137,8 @@ static void setupinit(Node *n)
 	n->decl.name->name.name = strdup(s);
 }
 
-static Node *mkpseudodecl(Srcloc l, Type *t)
+static Node *
+mkpseudodecl(Srcloc l, Type *t)
 {
 	static int nextpseudoid;
 	char buf[128];
@@ -1145,7 +1147,8 @@ static Node *mkpseudodecl(Srcloc l, Type *t)
 	return mkdecl(l, mkname(l, buf), t);
 }
 
-static void setattrs(Node *dcl, char **attrs, size_t nattrs)
+static void
+setattrs(Node *dcl, char **attrs, size_t nattrs)
 {
 	size_t i;
 
@@ -1159,7 +1162,8 @@ static void setattrs(Node *dcl, char **attrs, size_t nattrs)
 	}
 }
 
-static void setwith(Type *ty, Traitspec **ts, size_t nts)
+static void
+setwith(Type *ty, Traitspec **ts, size_t nts)
 {
 	size_t i, j;
 
@@ -1201,7 +1205,8 @@ static void setwith(Type *ty, Traitspec **ts, size_t nts)
 	}
 }
 
-static void installucons(Stab *st, Type *t)
+static void
+installucons(Stab *st, Type *t)
 {
 	Type *b;
 	size_t i;
@@ -1227,7 +1232,8 @@ static void installucons(Stab *st, Type *t)
 }
 
 
-static Op binop(int tt)
+static Op
+binop(int tt)
 {
 	Op o;
 
