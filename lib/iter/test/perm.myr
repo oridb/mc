@@ -8,6 +8,7 @@ const main = {
 		[.name = "byperm-01", .fn = byperm01],
 		[.name = "byperm-02", .fn = byperm02],
 		[.name = "byperm-03", .fn = byperm03],
+		[.name = "byperm-04", .fn = byperm04],
 	][:])
 }
 
@@ -51,4 +52,20 @@ const byperm03 = {c
 	var expected : byte[:] = " [1, 1, 3] [1, 3, 1] [3, 1, 1] "
 	var actual : byte[:] = std.sbfin(sb)
 	testr.check(c, std.eq(expected, actual), "expected “{}”, got “{}”", expected, actual)
+}
+
+const byperm04 = {c
+	var v : int[:] = [ 0, 3, 1, 1 ][:]
+	var nperm = 0
+
+	for w : iter.byperm(v, std.numcmp)
+		nperm++
+	;;
+	
+	/*
+	  There are 24 permutations for 4 elements, but we get only
+	  half because two elements are equal.
+	*/
+	const expected = 12
+	testr.check(c, std.eq(expected, nperm), "expected “{}”, got “{}”", expected, nperm)
 }

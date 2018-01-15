@@ -47,12 +47,12 @@ impl iterable permiter(@a) -> @a[:] =
 			if j == 0
 				-> false
 			;;
-			match itp.cmp(seq[j - 1], seq[j])
-			| `std.After: j--
-			| _: break
+			j--
+			match itp.cmp(seq[j], seq[j + 1])
+			| `std.Before: break
+			| _:
 			;;
 		;;
-		j--
 
 		/* 
 		  Find highest i s.t. seq[j] < seq[i]. This
@@ -62,9 +62,12 @@ impl iterable permiter(@a) -> @a[:] =
 		 */
 		i = seq.len - 1
 		while true
-			if i <= j
-				-> false
-			;;
+			/*
+			  By the previous loop, we know that
+			  seq[j] < seg[j + 1], thus, in this loop,
+			  we always have j + 1 <= i, and the array
+			  accesses are always in bounds.
+			*/
 			match itp.cmp(seq[j], seq[i])
 			| `std.Before: break
 			| _: i--
