@@ -109,7 +109,7 @@ tyspecialize(Type *orig, Tysubst *tsmap, Htab *delayed, Htab *trbase)
 				ts->aux = tyspecialize(t->spec[i]->aux, tsmap, delayed, trbase);
 			lappend(&ret->spec, &ret->nspec, ts);
 		}
-		tmp = htget(seqbase, t);
+		tmp = htget(trbase, t);
 		if (tmp) {
 			tmp = tyspecialize(tmp, tsmap, delayed, trbase);
 			htput(trbase, ret, tmp);

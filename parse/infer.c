@@ -69,6 +69,7 @@ static size_t nspecializations;
 static Stab **specializationscope;
 static size_t nspecializationscope;
 static Traitmap *traitmap;
+static Htab *seqbase;
 
 static void
 ctxstrcall(char *buf, size_t sz, Node *n)
