@@ -1930,7 +1930,7 @@ specializeimpl(Node *n)
 		fatal(n, "%s incompatibly specialized with %zd types instead of %zd types",
 			namestr(n->impl.traitname), n->impl.naux, tr->naux);
 	n->impl.type = tf(n->impl.type);
-	pushenv(n->impl.type->env);
+	pushenv(n->impl.env);
 	for (i = 0; i < n->impl.naux; i++)
 		n->impl.aux[i] = tf(n->impl.aux[i]);
 	for (i = 0; i < n->impl.ndecls; i++) {
@@ -1997,7 +1997,7 @@ specializeimpl(Node *n)
 		if (generic)
 			ingeneric--;
 	}
-	popenv(n->impl.type->env);
+	popenv(n->impl.env);
 }
 
 static void

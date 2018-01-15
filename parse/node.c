@@ -264,6 +264,9 @@ mkimplstmt(Srcloc loc, Node *name, Type *t, Type **aux, size_t naux, Node **decl
 		n->impl.env = mkenv();
 		bindtype(n->impl.env, t);
 	}
+	for (i = 0; i < naux; i++)
+		if (hasparams(aux[i]))
+			bindtype(n->impl.env, aux[i]);
 	return n;
 }
 
