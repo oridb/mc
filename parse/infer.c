@@ -117,7 +117,7 @@ nodetystr(Node *n)
 
 	t = NULL;
 	if (n->type == Nexpr && exprtype(n) != NULL)
-		t = tyfix(NULL, exprtype(n), 1);
+		t = tyfix(n, exprtype(n), 1);
 	else if (n->type == Ndecl && decltype(n) != NULL)
 		t = tyfix(n, decltype(n), 1);
 
