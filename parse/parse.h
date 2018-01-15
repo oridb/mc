@@ -1,7 +1,8 @@
-#define Abiversion 14
+#define Abiversion 15
 
 typedef struct Srcloc Srcloc;
 typedef struct Tysubst Tysubst;
+typedef struct Traitspec Traitspec;
 
 typedef struct Tok Tok;
 typedef struct Node Node;
@@ -118,6 +119,13 @@ struct Tyenv {
 	Htab *tab;
 };
 
+struct Traitspec {
+	Node **trait;
+	size_t ntrait;
+	Type *param;
+	Type *aux;
+};
+
 struct Type {
 	Ty type;
 	uint32_t tid;
@@ -125,8 +133,10 @@ struct Type {
 	Vis vis;
 
 
-	Node **traits;		/* trait list */
-	size_t ntraits;		/* trait list size */
+	Traitspec **spec;
+	size_t nspec;
+	//Node **traits;		/* trait list */
+	//size_t ntraits;		/* trait list size */
 
 	Type **gparam;		/* Tygeneric: type parameters that match the type args */
 	size_t ngparam;		/* Tygeneric: count of type parameters */
@@ -367,6 +377,7 @@ extern Node **nodes;	/* node id -> node map */
 extern size_t ndecls;
 extern Node **exportimpls;
 extern size_t nexportimpls;
+extern Htab *seqbase;
 
 /* property tables */
 extern int opispure[];

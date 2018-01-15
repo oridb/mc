@@ -2,95 +2,95 @@ use "die"
 use "memops"
 
 pkg std =
-	generic gethost64	: (buf : byte[:]	-> @a::(numeric,integral))
-	generic getle64		: (buf : byte[:]	-> @a::(numeric,integral))
-	generic getbe64		: (buf : byte[:]	-> @a::(numeric,integral))
-	generic gethost32	: (buf : byte[:]	-> @a::(numeric,integral))
-	generic getle32		: (buf : byte[:]	-> @a::(numeric,integral))
-	generic getbe32		: (buf : byte[:]	-> @a::(numeric,integral))
-	generic gethost16	: (buf : byte[:]	-> @a::(numeric,integral))
-	generic getle16		: (buf : byte[:]	-> @a::(numeric,integral))
-	generic getbe16		: (buf : byte[:]	-> @a::(numeric,integral))
-	generic gethost8	: (buf : byte[:]	-> @a::(numeric,integral))
-	generic getle8		: (buf : byte[:]	-> @a::(numeric,integral))
-	generic getbe8		: (buf : byte[:]	-> @a::(numeric,integral))
+	generic gethost64	: (buf : byte[:]	-> @a) :: numeric,integral @a
+	generic getle64		: (buf : byte[:]	-> @a) :: numeric,integral @a
+	generic getbe64		: (buf : byte[:]	-> @a) :: numeric,integral @a
+	generic gethost32	: (buf : byte[:]	-> @a) :: numeric,integral @a
+	generic getle32		: (buf : byte[:]	-> @a) :: numeric,integral @a
+	generic getbe32		: (buf : byte[:]	-> @a) :: numeric,integral @a
+	generic gethost16	: (buf : byte[:]	-> @a) :: numeric,integral @a
+	generic getle16		: (buf : byte[:]	-> @a) :: numeric,integral @a
+	generic getbe16		: (buf : byte[:]	-> @a) :: numeric,integral @a
+	generic gethost8	: (buf : byte[:]	-> @a) :: numeric,integral @a
+	generic getle8		: (buf : byte[:]	-> @a) :: numeric,integral @a
+	generic getbe8		: (buf : byte[:]	-> @a) :: numeric,integral @a
 ;;
 
-generic gethost64 = {buf -> @a::(numeric,integral)
+generic gethost64 = {buf -> @a :: numeric,integral @a
 	var val : int64
 	iassert(buf.len >= 8, "gethost64: index out of bounds")
 	memblit((&val : byte#), (buf : byte#), 8)
-	-> (val : @a::(numeric,integral))
+	-> (val : @a)
 }
 
-generic getbe64 = {buf -> @a::(numeric,integral)
-	-> ((buf[0] : @a::(numeric,integral)) << 56) | \
-		((buf[1] : @a::(numeric,integral)) << 48) | \
-		((buf[2] : @a::(numeric,integral)) << 40) | \
-		((buf[3] : @a::(numeric,integral)) << 32) | \
-		((buf[4] : @a::(numeric,integral)) << 24) | \
-		((buf[5] : @a::(numeric,integral)) << 16) | \
-		((buf[6] : @a::(numeric,integral)) << 8) | \
-		((buf[7] : @a::(numeric,integral)) << 0)
+generic getbe64 = {buf -> @a :: numeric,integral @a
+	->	((buf[0] : @a) << 56) | \
+		((buf[1] : @a) << 48) | \
+		((buf[2] : @a) << 40) | \
+		((buf[3] : @a) << 32) | \
+		((buf[4] : @a) << 24) | \
+		((buf[5] : @a) << 16) | \
+		((buf[6] : @a) << 8) | \
+		((buf[7] : @a) << 0)
 }
 
 generic getle64 = {buf
-	-> ((buf[0] : @a::(numeric,integral))  << 0) | \
-		((buf[1] : @a::(numeric,integral))  << 8) | \
-		((buf[2] : @a::(numeric,integral))  << 16) | \
-		((buf[3] : @a::(numeric,integral))  << 24) | \
-		((buf[4] : @a::(numeric,integral))  << 32) | \
-		((buf[5] : @a::(numeric,integral))  << 40) | \
-		((buf[6] : @a::(numeric,integral))  << 48) | \
-		((buf[7] : @a::(numeric,integral))  << 56)
+	->	((buf[0] : @a)  << 0) | \
+		((buf[1] : @a)  << 8) | \
+		((buf[2] : @a)  << 16) | \
+		((buf[3] : @a)  << 24) | \
+		((buf[4] : @a)  << 32) | \
+		((buf[5] : @a)  << 40) | \
+		((buf[6] : @a)  << 48) | \
+		((buf[7] : @a)  << 56)
 }
 
-generic gethost32 = {buf -> @a::(numeric,integral)
+generic gethost32 = {buf -> @a :: numeric,integral @a
 	var val : int32
 	iassert(buf.len >= 4, "gethost32: index out of bounds")
 	memblit((&val : byte#), (buf : byte#), 4)
-	-> (val : @a::(numeric,integral))
+	-> (val : @a)
 }
 
-generic getbe32 = {buf
-	-> ((buf[0] : @a::(numeric,integral)) << 24) | \
-		((buf[1] : @a::(numeric,integral)) << 16) | \
-		((buf[2] : @a::(numeric,integral)) << 8) | \
-		((buf[3] : @a::(numeric,integral)) << 0)
+generic getbe32 = {buf -> @a :: numeric, integral @a
+	->	((buf[0] : @a) << 24) | \
+		((buf[1] : @a) << 16) | \
+		((buf[2] : @a) << 8) | \
+		((buf[3] : @a) << 0)
 }
 
-generic getle32 = {buf
-	-> ((buf[0] : @a::(numeric,integral)) << 0) | \
-		((buf[1] : @a::(numeric,integral)) << 8) | \
-		((buf[2] : @a::(numeric,integral)) << 16) | \
-		((buf[3] : @a::(numeric,integral)) << 24)
+generic getle32 = {buf -> @a :: numeric, integral @a
+	-> ((buf[0] : @a) << 0) | \
+		((buf[1] : @a) << 8) | \
+		((buf[2] : @a) << 16) | \
+		((buf[3] : @a) << 24)
 }
 
-generic gethost16 = {buf -> @a::(numeric,integral)
+generic gethost16 = {buf -> @a :: numeric,integral @a
 	var val : int16
 	iassert(buf.len >= 2, "gethost16: index out of bounds")
 	memblit((&val : byte#), (buf : byte#), 4)
-	-> (val : @a::(numeric,integral))
+	-> (val : @a)
 }
 
-generic getbe16 = {buf
-	-> ((buf[0] : @a::(numeric,integral)) << 8) | \
-		((buf[1] : @a::(numeric,integral)) << 0)
+generic getbe16 = {buf -> @a :: numeric,integral @a
+	-> ((buf[0] : @a) << 8) | \
+		((buf[1] : @a) << 0)
 }
 
-generic getle16 = {buf
-	-> ((buf[0] : @a::(numeric,integral)) << 0) | \
-		((buf[1] : @a::(numeric,integral)) << 8)
+generic getle16 = {buf -> @a :: numeric,integral @a
+	-> ((buf[0] : @a) << 0) | \
+		((buf[1] : @a) << 8)
 }
 
-generic gethost8 = {buf
-	-> (buf[0] : @a::(numeric,integral)) << 0
+generic gethost8 = {buf -> @a :: numeric,integral @a
+	-> (buf[0] : @a) << 0
 }
 
-generic getbe8 = {buf
-	-> (buf[0] : @a::(numeric,integral)) << 0
+generic getbe8 = {buf -> @a :: numeric,integral @a
+	-> (buf[0] : @a) << 0
 }
 
-generic getle8 = {buf
-	-> (buf[0] : @a::(numeric,integral)) << 0
+generic getle8 = {buf -> @a :: numeric,integral @a
+	-> (buf[0] : @a) << 0
 }

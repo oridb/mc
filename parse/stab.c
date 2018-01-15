@@ -671,6 +671,9 @@ bindtype_rec(Tyenv *e, Type *t, Bitset *visited)
 			tytab[t->tid] = tt;
 		else if (!boundtype(t))
 			htput(e->tab, t, t);
+		for (i = 0; i < t->nspec; i++)
+			if (t->spec[i]->aux)
+				bindtype_rec(e, t->spec[i]->aux, visited);
 		break;
 	case Tygeneric:
 		for (i = 0; i < t->ngparam; i++)

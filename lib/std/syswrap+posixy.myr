@@ -179,7 +179,7 @@ const fsize = {path
 	;;
 }
 
-generic check = {e : @a::(integral, numeric) -> result(@b, errno)
+generic check = {e : @a -> result(@b, errno) :: integral,numeric @a
 	if e < 0
 		-> `Err (e : errno)
 	else

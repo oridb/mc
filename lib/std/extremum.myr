@@ -1,8 +1,8 @@
 pkg std =
-	generic min	: (a : @a::numeric, b : @a::numeric  -> @a::numeric)
-	generic max	: (a : @a::numeric, b : @a::numeric  -> @a::numeric)
-	generic clamp	: (a : @a::numeric, min : @a::numeric, max : @a::numeric -> @a::numeric)
-	generic abs	: (a : @a::numeric -> @a::numeric)
+	generic min	: (a : @a, b : @a -> @a)		:: numeric @a
+	generic max	: (a : @a, b : @a -> @a)		:: numeric @a
+	generic clamp	: (a : @a, min : @a, max : @a -> @a)	:: numeric @a
+	generic abs	: (a : @a -> @a)			:: numeric @a
 ;;
 
 generic min = {a, b
@@ -31,8 +31,8 @@ generic clamp = {a, min, max
 	;;
 }
 
-generic abs = {a : @a::numeric
-	if a < (0 : @a::numeric)
+generic abs = {a : @a :: numeric @a
+	if a < (0 : @a)
 		-> -a
 	else
 		-> a

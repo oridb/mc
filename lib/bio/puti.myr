@@ -5,16 +5,16 @@ use "types"
 
 pkg bio =
 	/* unsigned big endian */
-	generic putbe8	: (f : file#, v : @a::(numeric,integral) -> std.result(std.size, err))
-	generic putbe16	: (f : file#, v : @a::(numeric,integral) -> std.result(std.size, err))
-	generic putbe32	: (f : file#, v : @a::(numeric,integral) -> std.result(std.size, err))
-	generic putbe64	: (f : file#, v : @a::(numeric,integral) -> std.result(std.size, err))
+	generic putbe8	: (f : file#, v : @a -> std.result(std.size, err)) :: numeric,integral @a
+	generic putbe16	: (f : file#, v : @a -> std.result(std.size, err)) :: numeric,integral @a
+	generic putbe32	: (f : file#, v : @a -> std.result(std.size, err)) :: numeric,integral @a
+	generic putbe64	: (f : file#, v : @a -> std.result(std.size, err)) :: numeric,integral @a
 
 	/* unsigned little endian */
-	generic putle8	: (f : file#, v : @a::(numeric,integral) -> std.result(std.size, err))
-	generic putle16	: (f : file#, v : @a::(numeric,integral) -> std.result(std.size, err))
-	generic putle32	: (f : file#, v : @a::(numeric,integral) -> std.result(std.size, err))
-	generic putle64	: (f : file#, v : @a::(numeric,integral) -> std.result(std.size, err))
+	generic putle8	: (f : file#, v : @a -> std.result(std.size, err)) :: numeric,integral @a
+	generic putle16	: (f : file#, v : @a -> std.result(std.size, err)) :: numeric,integral @a
+	generic putle32	: (f : file#, v : @a -> std.result(std.size, err)) :: numeric,integral @a
+	generic putle64	: (f : file#, v : @a -> std.result(std.size, err)) :: numeric,integral @a
 ;;
 
 generic putbe8  = {f, v; -> putbe(f, (v : uint64), 1)}

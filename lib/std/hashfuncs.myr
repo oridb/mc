@@ -23,13 +23,13 @@ pkg std =
 		}
 	;;
 
-	impl equatable @a::(integral,numeric) =
+	impl equatable @a :: integral,numeric @a =
 		eq = {a, b
 			-> a == b
 		}
 	;;
 
-	impl hashable @a::(integral,numeric) =
+	impl hashable @a :: integral,numeric @a =
 		hash = {a
 			-> siphash24((&a : byte#)[:sizeof(@a)], Seed)
 		}

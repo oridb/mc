@@ -19,8 +19,6 @@ type dep = union
 	`Ldep	byte[:]
 ;;
 
-const Abiversion = 13
-
 var usepat	: regex.regex#
 var cflagpat	: regex.regex#
 var clibpat	: regex.regex#

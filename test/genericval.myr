@@ -1,6 +1,6 @@
 use std
 
-generic Foo : @a::(integral,numeric) = 42
+generic Foo : @a = 42 :: integral,numeric @a
 
 const main = {
 	std.exit(Foo)

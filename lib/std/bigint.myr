@@ -22,7 +22,7 @@ pkg std =
 	;;
 
 	/* administrivia */
-	generic mkbigint	: (v : @a::(numeric,integral) -> bigint#)
+	generic mkbigint	: (v : @a -> bigint#) :: numeric,integral @a
 	const bigfrombytes	: (isneg : bool, v : byte[:] -> bigint#)
 	const bigfree	: (a : bigint# -> void)
 	const bigdup	: (a : bigint# -> bigint#)
@@ -40,7 +40,7 @@ pkg std =
 	const bigiszero	: (a : bigint# -> bool)
 	const bigiseven	: (a : bigint# -> bool)
 	const bigcmp	: (a : bigint#, b : bigint# -> order)
-	generic bigcmpi	: (a : bigint#, b : @a::(numeric,integral) -> order)
+	generic bigcmpi	: (a : bigint#, b : @a -> order) :: numeric,integral @a
 
 	/* shorthand for comparisons */
 	const bigeq	: (a : bigint#, b : bigint# -> bool)
@@ -48,11 +48,11 @@ pkg std =
 	const bigle	: (a : bigint#, b : bigint# -> bool)
 	const biggt	: (a : bigint#, b : bigint# -> bool)
 	const bigge	: (a : bigint#, b : bigint# -> bool)
-	generic bigeqi	: (a : bigint#, b : @a::(numeric,integral) -> bool)
-	generic biglti	: (a : bigint#, b : @a::(numeric,integral) -> bool)
-	generic biglei	: (a : bigint#, b : @a::(numeric,integral) -> bool)
-	generic biggti	: (a : bigint#, b : @a::(numeric,integral) -> bool)
-	generic biggei	: (a : bigint#, b : @a::(numeric,integral) -> bool)
+	generic bigeqi	: (a : bigint#, b : @a -> bool) :: numeric,integral @a
+	generic biglti	: (a : bigint#, b : @a -> bool) :: numeric,integral @a
+	generic biglei	: (a : bigint#, b : @a -> bool) :: numeric,integral @a
+	generic biggti	: (a : bigint#, b : @a -> bool) :: numeric,integral @a
+	generic biggei	: (a : bigint#, b : @a -> bool) :: numeric,integral @a
 
 	/* bigint*bigint -> bigint ops */
 	const bigadd	: (a : bigint#, b : bigint# -> bigint#)
@@ -71,15 +71,15 @@ pkg std =
 
 
 	/* bigint*int -> bigint ops */
-	generic bigaddi	: (a : bigint#, b : @a::(integral,numeric) -> bigint#)
-	generic bigsubi	: (a : bigint#, b : @a::(integral,numeric) -> bigint#)
-	generic bigmuli	: (a : bigint#, b : @a::(integral,numeric) -> bigint#)
-	generic bigdivi	: (a : bigint#, b : @a::(integral,numeric) -> bigint#)
-	generic bigmodi	: (a : bigint#, b : @a::(integral,numeric) -> bigint#)
-	generic bigshli	: (a : bigint#, b : @a::(integral,numeric) -> bigint#)
-	generic bigshri	: (a : bigint#, b : @a::(integral,numeric) -> bigint#)
-	generic bigandi	: (a : bigint#, b : @a::(integral,numeric) -> bigint#)
-	generic bigori	: (a : bigint#, b : @a::(integral,numeric) -> bigint#)
+	generic bigaddi	: (a : bigint#, b : @a -> bigint#) :: integral,numeric @a
+	generic bigsubi	: (a : bigint#, b : @a -> bigint#) :: integral,numeric @a
+	generic bigmuli	: (a : bigint#, b : @a -> bigint#) :: integral,numeric @a
+	generic bigdivi	: (a : bigint#, b : @a -> bigint#) :: integral,numeric @a
+	generic bigmodi	: (a : bigint#, b : @a -> bigint#) :: integral,numeric @a
+	generic bigshli	: (a : bigint#, b : @a -> bigint#) :: integral,numeric @a
+	generic bigshri	: (a : bigint#, b : @a -> bigint#) :: integral,numeric @a
+	generic bigandi	: (a : bigint#, b : @a -> bigint#) :: integral,numeric @a
+	generic bigori	: (a : bigint#, b : @a -> bigint#) :: integral,numeric @a
 
 	//const bigpowi	: (a : bigint#, b : uint64 -> bigint#)
 	//const bigmodpowi	: (b : bigint#, e : bigint#, m : bigint# -> bigint#)
@@ -93,7 +93,7 @@ extern const put : (fmt : byte[:], args : ... -> size)
 
 const Base = 0x100000000ul
 
-generic mkbigint = {v : @a::(integral,numeric)
+generic mkbigint = {v : @a :: integral,numeric @a
 	var a
 	var val
 
@@ -771,7 +771,7 @@ generic bigaddi = {a, b
 	-> a
 }
 
-generic bigsubi = {a, b : @a::(numeric,integral)
+generic bigsubi = {a, b : @a :: numeric,integral @a
 	var bigb : bigint
 	var dig : uint32[2]
 
@@ -811,7 +811,7 @@ generic bigmodi = {a, b
   a << s, with integer arg.
   logical left shift. any other type would be illogical.
  */
-generic bigshli = {a, s : @a::(numeric,integral)
+generic bigshli = {a, s : @a :: numeric,integral @a
 	var off, shift
 	var t, carry
 

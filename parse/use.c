@@ -218,7 +218,7 @@ rdsym(FILE *fd, Trait *ctx)
 static void
 typickle(FILE *fd, Type *ty)
 {
-	size_t i;
+	size_t i, j;
 
 	if (!ty) {
 		die("trying to pickle null type\n");
@@ -226,6 +226,16 @@ typickle(FILE *fd, Type *ty)
 	}
 	wrbyte(fd, ty->type);
 	wrbyte(fd, ty->vis);
+	wrint(fd, ty->nspec);
+	for (i = 0; i < ty->nspec; i++) {
+		wrint(fd, ty->spec[i]->ntrait);
+		for (j = 0; j < ty->spec[i]->ntrait; j++)
+			pickle(fd, ty->spec[i]->trait[j]);
+		wrtype(fd, ty->spec[i]->param);
+		wrbool(fd, ty->spec[i]->aux != NULL);
+		if (ty->spec[i]->aux)
+			wrtype(fd, ty->spec[i]->aux);
+	}
 	wrint(fd, ty->nsub);
 	switch (ty->type) {
 	case Tyunres:
@@ -350,7 +360,7 @@ rdtrait(FILE *fd, Trait **dest, Type *ty)
 static Type *
 tyunpickle(FILE *fd)
 {
-	size_t i, n;
+	size_t i, j, n;
 	Type *ty;
 	Ty t;
 
@@ -359,6 +369,19 @@ tyunpickle(FILE *fd)
 	ty->isimport = 1;
 	if (rdbyte(fd) == Vishidden)
 		ty->ishidden = 1;
+	ty->nspec = rdint(fd);
+	ty->spec = malloc(ty->nspec * sizeof(Traitspec*));
+	for (i = 0; i < ty->nspec; i++) {
+		ty->spec[i] = zalloc(sizeof(Traitspec));
+		n = rdint(fd);
+		ty->spec[i]->ntrait = n;
+		ty->spec[i]->trait = malloc(n * sizeof(Node*));
+		for (j = 0; j < ty->spec[i]->ntrait; j++)
+			ty->spec[i]->trait[j] = unpickle(fd);
+		rdtype(fd, &ty->spec[i]->param);
+		if (rdbool(fd))
+			rdtype(fd, &ty->spec[i]->aux);
+	}
 	ty->nsub = rdint(fd);
 	if (ty->nsub > 0)
 		ty->sub = zalloc(ty->nsub * sizeof(Type *));

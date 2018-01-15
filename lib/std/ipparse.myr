@@ -116,7 +116,7 @@ const delim = {ip, sep, ok
 	;;
 }
 
-generic num = {ip, lo, hi, base, sep, ok -> (@a::(numeric,integral), byte[:], bool)
+generic num = {ip, lo, hi, base, sep, ok -> (@a, byte[:], bool) :: numeric,integral @a
 	var len
 
 	if !ok
@@ -133,7 +133,7 @@ generic num = {ip, lo, hi, base, sep, ok -> (@a::(numeric,integral), byte[:], bo
 		if v < lo || v > hi
 			-> (0, "", false)
 		;;
-		-> ((v : @a::(numeric,integral)), ip[len:], true)
+		-> ((v : @a), ip[len:], true)
 	| `std.None:
 		-> (0, "", false)
 	;;

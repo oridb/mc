@@ -24,6 +24,7 @@ size_t ntraittab;
 Node **impltab;
 size_t nimpltab;
 Htab *eqcache;
+Htab *seqbase;
 
 struct Typair {
 	uint32_t atid;

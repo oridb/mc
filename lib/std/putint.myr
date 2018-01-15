@@ -3,21 +3,21 @@ use "memops"
 use "types"
 
 pkg std =
-	generic puthost64	: (buf : byte[:], v :  @a::(numeric,integral) -> size)
-	generic putle64		: (buf : byte[:], v :  @a::(numeric,integral) -> size)
-	generic putbe64		: (buf : byte[:], v :  @a::(numeric,integral) -> size)
-	generic puthost32	: (buf : byte[:], v :  @a::(numeric,integral) -> size)
-	generic putle32		: (buf : byte[:], v :  @a::(numeric,integral) -> size)
-	generic putbe32		: (buf : byte[:], v :  @a::(numeric,integral) -> size)
-	generic puthost16	: (buf : byte[:], v :  @a::(numeric,integral) -> size)
-	generic putle16		: (buf : byte[:], v :  @a::(numeric,integral) -> size)
-	generic putbe16		: (buf : byte[:], v :  @a::(numeric,integral) -> size)
-	generic puthost8	: (buf : byte[:], v :  @a::(numeric,integral) -> size)
-	generic putle8		: (buf : byte[:], v :  @a::(numeric,integral) -> size)
-	generic putbe8		: (buf : byte[:], v :  @a::(numeric,integral) -> size)
+	generic puthost64	: (buf : byte[:], v :  @a -> size) :: numeric,integral @a
+	generic putle64		: (buf : byte[:], v :  @a -> size) :: numeric,integral @a
+	generic putbe64		: (buf : byte[:], v :  @a -> size) :: numeric,integral @a
+	generic puthost32	: (buf : byte[:], v :  @a -> size) :: numeric,integral @a
+	generic putle32		: (buf : byte[:], v :  @a -> size) :: numeric,integral @a
+	generic putbe32		: (buf : byte[:], v :  @a -> size) :: numeric,integral @a
+	generic puthost16	: (buf : byte[:], v :  @a -> size) :: numeric,integral @a
+	generic putle16		: (buf : byte[:], v :  @a -> size) :: numeric,integral @a
+	generic putbe16		: (buf : byte[:], v :  @a -> size) :: numeric,integral @a
+	generic puthost8	: (buf : byte[:], v :  @a -> size) :: numeric,integral @a
+	generic putle8		: (buf : byte[:], v :  @a -> size) :: numeric,integral @a
+	generic putbe8		: (buf : byte[:], v :  @a -> size) :: numeric,integral @a
 ;;
 
-generic puthost = {buf, val : @a::(integral, numeric)
+generic puthost = {buf, val : @a :: integral, numeric @a
 	iassert(buf.len >= sizeof(@a), "buffer too small")
 	memblit((buf : byte#), (&val : byte#), sizeof(@a))
 	-> sizeof(@a)
