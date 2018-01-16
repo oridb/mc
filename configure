@@ -49,7 +49,8 @@ case $OS in
         echo export INST_MAN=$prefix/share/man/man >> config.mk
         echo 'const Sys = "Linux"' >> mbld/config.myr
         echo 'const Linkcmd = ["ld"]' >> mbld/config.myr
-        echo 'const Dlflags : byte[:][:] = [][:]' >> mbld/config.myr
+        echo 'const Dlflags = ["-dynamic-linker",' \
+            '"/lib64/ld-linux-x86-64.so.2"]' >> mbld/config.myr
         echo "const Manpath = \"share/man/man\"" >> mbld/config.myr
         ;;
     *Darwin*)
