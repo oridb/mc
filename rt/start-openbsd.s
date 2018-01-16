@@ -60,6 +60,18 @@ _start:
 	movq	$1,%rax
 	syscall
 
+/*
+ * provide __guard_local for if we are
+ * linking against libc
+ */
+.section ".openbsd.randomdata", "aw"
+	.global	__guard_local
+	.hidden	__guard_local
+	.type	__guard_local, "object"
+	.p2align	3
+__guard_local:
+	.quad	0
+	.size	__guard_local, 8
 
 .section ".note.openbsd.ident", "a"
         .p2align 2
