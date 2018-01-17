@@ -549,6 +549,7 @@ Node *genericname(Node *n, Type *param, Type *t);
 void geninit(void);
 
 /* usefiles */
+void loaduses(void);
 int loaduse(char *path, FILE *f, Stab *into, Vis vis);
 void readuse(Node *use, Stab *into, Vis vis);
 void writeuse(FILE *fd, Node *file);

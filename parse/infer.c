@@ -1314,16 +1314,6 @@ unifyparams(Node *ctx, Type *a, Type *b)
 		unify(ctx, a->arg[i], b->arg[i]);
 }
 
-static void
-loaduses(void)
-{
-	size_t i;
-
-	/* uses only allowed at top level. Do we want to keep it this way? */
-	for (i = 0; i < file->file.nuses; i++)
-		readuse(file->file.uses[i], file->file.globls, Visintern);
-}
-
 static Type *
 initvar(Node *n, Node *s)
 {
@@ -2957,7 +2947,6 @@ void
 infer(void)
 {
 	delayed = mkht(tyhash, tyeq);
-	loaduses();
 	initimpl();
 
 	/* do the inference */

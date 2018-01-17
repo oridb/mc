@@ -1189,6 +1189,15 @@ readuse(Node *use, Stab *st, Vis vis)
 	free(p);
 }
 
+void
+loaduses(void)
+{
+	size_t i;
+
+	for (i = 0; i < file->file.nuses; i++)
+		readuse(file->file.uses[i], file->file.globls, Visintern);
+}
+
 /* Usefile format:
  * U<pkgname>
  * L<liblist>

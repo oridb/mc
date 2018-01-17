@@ -274,9 +274,10 @@ main(int argc, char **argv)
 		/* before we do anything to the parse */
 		if (debugopt['T'])
 			dump(file, stdout);
-		infer();
+		loaduses();
 		if (hasmain(file))
 			geninit();
+		infer();
 		tagexports(0);
 		/* after all type inference */
 		if (debugopt['t'])
