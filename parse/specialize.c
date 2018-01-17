@@ -649,7 +649,6 @@ geninit(void)
 	name = mkname(Zloc, "__init__");
 	decl = mkdecl(Zloc, name, mktyvar(Zloc));
 	block = mkblock(Zloc, mkstab(0));
-	block->block.scope->super = file->file.globls;
 	tyvoid = mktype(Zloc, Tyvoid);
 	tyvoidfn = mktyfunc(Zloc, NULL, 0, tyvoid);
 
@@ -661,7 +660,6 @@ geninit(void)
 		callinit(block, file->file.localinit, tyvoid, tyvoidfn);
 
 	func = mkfunc(Zloc, NULL, 0, mktype(Zloc, Tyvoid), block);
-	func->expr.type = tyvoidfn;
 	init = mkexpr(Zloc, Olit, func, NULL);
 	init->expr.type = tyvoidfn;
 
@@ -670,6 +668,9 @@ geninit(void)
 	decl->decl.isglobl = 1;
 	decl->decl.type = tyvoidfn;
 	decl->decl.vis = Vishidden;
+
+	func->lit.fnval->func.scope->super = file->file.globls;
+	block->block.scope->super = func->lit.fnval->func.scope->super;
 
 	lappend(&file->file.stmts, &file->file.nstmts, decl);
 }
