@@ -1,6 +1,6 @@
 testdeps = ../testr:testr ;;
 
-lib std {inc=.} =
+lib std =
 	lib ../sys:sys
 
 	# portable files
