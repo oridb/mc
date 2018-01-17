@@ -542,7 +542,8 @@ tyresolve(Type *t)
 			if (!t->trneed)
 				t->trneed = mkbs();
 			bsput(t->trneed, tr->uid);
-			htput(seqbase, t, t->spec[i]->aux);
+			if (nameeq(t->spec[i]->trait[j], traittab[Tciter]->name))
+				htput(seqbase, t, t->spec[i]->aux);
 		}
 	}
 
