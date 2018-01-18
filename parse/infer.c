@@ -69,7 +69,6 @@ static size_t nspecializations;
 static Stab **specializationscope;
 static size_t nspecializationscope;
 static Traitmap *traitmap;
-static Htab *seqbase;
 
 static void
 ctxstrcall(char *buf, size_t sz, Node *n)
@@ -472,16 +471,16 @@ tyfreshen(Tysubst *subst, Type *orig)
 	pushenv(orig->env);
 	if (!subst) {
 		subst = mksubst();
-		ty = tyspecialize(orig, subst, delayed, seqbase);
+		ty = tyspecialize(orig, subst, delayed);
 		substfree(subst);
 	} else {
-		ty = tyspecialize(orig, subst, delayed, seqbase);
+		ty = tyspecialize(orig, subst, delayed);
 	}
 	ty->spec = orig->spec;
 	ty->nspec = orig->nspec;
 	base = basetype(ty);
 	if (base)
-		htput(seqbase, ty, base);
+		ty->seqaux = base;
 	popenv(orig->env);
 	return ty;
 }
@@ -543,7 +542,7 @@ tyresolve(Type *t)
 				t->trneed = mkbs();
 			bsput(t->trneed, tr->uid);
 			if (nameeq(t->spec[i]->trait[j], traittab[Tciter]->name))
-				htput(seqbase, t, t->spec[i]->aux);
+				t->seqaux = t->spec[i]->aux;
 		}
 	}
 
@@ -1027,7 +1026,7 @@ tyrank(Type *t)
 {
 	if (t->type == Tyvar) {
 		/* has associated iterator type */
-		if (hthas(seqbase, t))
+		if (t->seqaux)
 			return 1;
 		else
 			return 0;
@@ -1118,10 +1117,10 @@ basetype(Type *a)
 {
 	Type *t;
 
-	t = htget(seqbase, a);
+	t = a->seqaux;
 	while (!t && a->type == Tyname) {
 		a = a->sub[0];
-		t = htget(seqbase, a);
+		t = a->seqaux;
 	}
 	if (!t && (a->type == Tyslice || a->type == Tyarray || a->type == Typtr))
 		t = a->sub[0];
@@ -1732,7 +1731,7 @@ inferexpr(Node **np, Type *ret, int *sawret)
 		infersub(n, ret, sawret, &isconst);
 		b = mktyvar(n->loc);
 		t = mktyvar(n->loc);
-		htput(seqbase, t, b);
+		t->seqaux = b;
 		unify(n, type(args[0]), t);
 		constrain(n, type(args[0]), traittab[Tcidx]);
 		constrain(n, type(args[1]), traittab[Tcint]);
@@ -1742,7 +1741,7 @@ inferexpr(Node **np, Type *ret, int *sawret)
 		infersub(n, ret, sawret, &isconst);
 		b = mktyvar(n->loc);
 		t = mktyvar(n->loc);
-		htput(seqbase, t, b);
+		t->seqaux = b;
 		unify(n, type(args[0]), t);
 		constrain(n, type(args[1]), traittab[Tcint]);
 		constrain(n, type(args[1]), traittab[Tcnum]);
@@ -1956,7 +1955,7 @@ specializeimpl(Node *n)
 		substput(subst, tr->param, n->impl.type);
 		for (j = 0; j < tr->naux; j++)
 			substput(subst, tr->aux[j], n->impl.aux[j]);
-		ty = tyspecialize(type(proto), subst, delayed, NULL);
+		ty = tyspecialize(type(proto), subst, delayed);
 		substfree(subst);
 		popenv(proto->decl.env);
 
@@ -2125,7 +2124,7 @@ infernode(Node **np, Type *ret, int *sawret)
 		if (b)
 			unify(n, e, b);
 		else
-			htput(seqbase, t, e);
+			t->seqaux = e;
 		delayedcheck(n, curstab());
 		break;
 	case Nmatchstmt:
@@ -2190,7 +2189,7 @@ tyfix(Node *ctx, Type *orig, int noerr)
 	env = t->env;
 	if (env)
 		pushenv(env);
-	base = htget(seqbase, orig);
+	base = orig->seqaux;
 	if (orig->type == Tyvar && hthas(delayed, orig)) {
 		d = htget(delayed, orig);
 		if (t->type == Tyvar) {
@@ -2235,7 +2234,7 @@ tyfix(Node *ctx, Type *orig, int noerr)
 	if (t->type == Tyvar && !noerr)
 		fatal(ctx, "underconstrained type %s near %s", tyfmt(buf, 1024, t), ctxstr(ctx));
 	if (base)
-		htput(seqbase, t, tyfix(ctx, base, noerr));
+		t->seqaux = tyfix(ctx, base, noerr);
 	if (env)
 		popenv(env);
 	return t;
@@ -2380,7 +2379,7 @@ fixiter(Node *n, Type *ty, Type *base)
 	Node *impl;
 
 	ty = tysearch(ty);
-	b = htget(seqbase, ty);
+	b = ty->seqaux;
 	if (!b)
 		return;
 	bestrank = -1;
@@ -2898,7 +2897,6 @@ initimpl(void)
 	Type *ty;
 
 	pushstab(file->file.globls);
-	seqbase = mkht(tyhash, tyeq);
 	traitmap = zalloc(sizeof(Traitmap));
 	builtintraits();
 	for (i = 0; i < nimpltab; i++) {
@@ -2908,9 +2906,8 @@ initimpl(void)
 		pushenv(impl->impl.env);
 		ty = tf(impl->impl.type);
 		addtraittab(traitmap, tr, ty);
-		if (tr->uid == Tciter) {
-			htput(seqbase, tf(impl->impl.type), tf(impl->impl.aux[0]));
-		}
+		if (tr->uid == Tciter)
+			ty->seqaux = tf(impl->impl.aux[0]);
 		popenv(impl->impl.env);
 	}
 	popstab();

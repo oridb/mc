@@ -74,6 +74,7 @@ tagtype(Stab *st, Type *t, int ingeneric, int hidelocal)
 	if (!t || t->vis != Visintern)
 		return;
 	t->vis = Vishidden;
+	tagtype(st, t->seqaux, ingeneric, hidelocal);
 	for (i = 0; i < t->nsub; i++)
 		tagtype(st, t->sub[i], ingeneric, hidelocal);
 	for (i = 0; i < t->nspec; i++) {

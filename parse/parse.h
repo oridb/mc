@@ -1,4 +1,4 @@
-#define Abiversion 15
+#define Abiversion 16
 
 typedef struct Srcloc Srcloc;
 typedef struct Tysubst Tysubst;
@@ -135,8 +135,7 @@ struct Type {
 
 	Traitspec **spec;
 	size_t nspec;
-	//Node **traits;		/* trait list */
-	//size_t ntraits;		/* trait list size */
+	Type *seqaux;
 
 	Type **gparam;		/* Tygeneric: type parameters that match the type args */
 	size_t ngparam;		/* Tygeneric: count of type parameters */
@@ -544,7 +543,7 @@ void substfree(Tysubst *subst);
 void substput(Tysubst *subst, Type *from, Type *to);
 Type *substget(Tysubst *subst, Type *from);
 Node *specializedcl(Node *n, Type *param, Type *to, Node **name);
-Type *tyspecialize(Type *t, Tysubst *tymap, Htab *delayed, Htab *tybase);
+Type *tyspecialize(Type *t, Tysubst *tymap, Htab *delayed);
 Node *genericname(Node *n, Type *param, Type *t);
 void geninit(void);
 

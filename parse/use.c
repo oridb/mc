@@ -236,6 +236,7 @@ typickle(FILE *fd, Type *ty)
 		if (ty->spec[i]->aux)
 			wrtype(fd, ty->spec[i]->aux);
 	}
+	wrtype(fd, ty->seqaux);
 	wrint(fd, ty->nsub);
 	switch (ty->type) {
 	case Tyunres:
@@ -312,6 +313,10 @@ traitpickle(FILE *fd, Trait *tr)
 static void
 wrtype(FILE *fd, Type *ty)
 {
+	if (!ty) {
+		wrint(fd, 0);
+		return;
+	}
 	if (ty->tid >= Builtinmask)
 		die("Type id %d for %s too big", ty->tid, tystr(ty));
 	if (ty->vis == Visbuiltin)
@@ -326,7 +331,9 @@ rdtype(FILE *fd, Type **dest)
 	uintptr_t tid;
 
 	tid = rdint(fd);
-	if (tid & Builtinmask) {
+	if (tid == 0) {
+		return;
+	} else if (tid & Builtinmask) {
 		*dest = mktype(Zloc, tid & ~Builtinmask);
 	} else {
 		typefix = xrealloc(typefix, (ntypefix + 1) * sizeof(typefix[0]));
@@ -382,6 +389,7 @@ tyunpickle(FILE *fd)
 		if (rdbool(fd))
 			rdtype(fd, &ty->spec[i]->aux);
 	}
+	rdtype(fd, &ty->seqaux);
 	ty->nsub = rdint(fd);
 	if (ty->nsub > 0)
 		ty->sub = zalloc(ty->nsub * sizeof(Type *));
