@@ -260,7 +260,7 @@ adddispspecialization(Node *n, Stab *stab)
 	Type *ty;
 
 	tr = traittab[Tcdisp];
-	ty = decltype(n);
+	ty = exprtype(n);
 	assert(tr->nproto == 1);
 	if (hthas(tr->proto[0]->decl.impls, ty))
 		return;
@@ -880,7 +880,7 @@ tryconstrain(Type *base, Trait *tr, int update)
 				if (update)
 					bsput(ty->trneed, tr->uid);
 				return 1;
-			} 
+			}
 			if (bshas(tm->traits, tr->uid))
 				return 1;
 			if (tm->name && ty->type == Tyname) {
@@ -1635,6 +1635,13 @@ inferexpr(Node **np, Type *ret, int *sawret)
 	infernode(&n->expr.idx, NULL, NULL);
 	n = checkns(n, np);
 	switch (exprop(n)) {
+	case Oauto:	/* @a -> @a */
+		infersub(n, ret, sawret, &isconst);
+		t = type(args[0]);
+		constrain(n, t, traittab[Tcdisp]);
+		n->expr.isconst = isconst;
+		settype(n, t);
+		break;
 		/* all operands are same type */
 	case Oadd:	/* @a + @a -> @a */
 	case Osub:	/* @a - @a -> @a */
@@ -2076,8 +2083,6 @@ infernode(Node **np, Type *ret, int *sawret)
 		inferdecl(n);
 		if (hasparams(type(n)) && !ingeneric)
 			fatal(n, "generic type in non-generic near %s", ctxstr(n));
-		if (n->decl.isauto)
-			constrain(n, type(n), traittab[Tcdisp]);
 		popenv(n->decl.env);
 		indentdepth--;
 		if (n->decl.isgeneric)
@@ -2626,8 +2631,6 @@ typesub(Node *n, int noerr)
 		if (streq(declname(n), "__init__"))
 			if (!initcompatible(tybase(decltype(n))))
 				fatal(n, "__init__ must be (->void), got %s", tystr(decltype(n)));
-		if (n->decl.isauto)
-			adddispspecialization(n, curstab());
 		popenv(n->decl.env);
 		break;
 	case Nblock:
@@ -2674,6 +2677,8 @@ typesub(Node *n, int noerr)
 			settype(n->expr.args[0], exprtype(n));
 			settype(n->expr.args[0]->expr.args[0], exprtype(n));
 		}
+		if (exprop(n) == Oauto)
+			adddispspecialization(n, curstab());
 		for (i = 0; i < n->expr.nargs; i++)
 			typesub(n->expr.args[i], noerr);
 		if (!noerr)
@@ -2739,7 +2744,15 @@ specialize(void)
 	for (i = 0; i < nspecializations; i++) {
 		pushstab(specializationscope[i]);
 		n = specializations[i];
-		if (n->type == Nexpr) {
+		if (n->type == Nexpr && exprop(n) == Oauto) {
+			tr = traittab[Tcdisp];
+			assert(tr->nproto == 1);
+			ty = exprtype(n);
+			dt = mktyfunc(n->loc, NULL, 0, mktype(n->loc, Tyvoid));
+			lappend(&dt->sub, &dt->nsub, ty);
+			d = specializedcl(tr->proto[0], ty, dt, &name);
+			htput(tr->proto[0]->decl.impls, ty, d);
+		} else if (n->type == Nexpr && exprop(n) == Ovar) {
 			d = specializedcl(genericdecls[i], n->expr.param, n->expr.type, &name);
 			n->expr.args[0] = name;
 			n->expr.did = d->decl.did;
@@ -2761,14 +2774,6 @@ specialize(void)
 			it = itertype(n->iterstmt.seq, mktype(n->loc, Tyvoid));
 			d = specializedcl(tr->proto[1], ty, it, &name);
 			htput(tr->proto[1]->decl.impls, ty, d);
-		} else if (n->type == Ndecl && n->decl.isauto) {
-			tr = traittab[Tcdisp];
-			assert(tr->nproto == 1);
-			ty = decltype(n);
-			dt = mktyfunc(n->loc, NULL, 0, mktype(n->loc, Tyvoid));
-			lappend(&dt->sub, &dt->nsub, ty);
-			d = specializedcl(tr->proto[0], ty, dt, &name);
-			htput(tr->proto[0]->decl.impls, ty, d);
 		} else {
 			die("unknown node for specialization\n");
 		}

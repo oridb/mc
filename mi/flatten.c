@@ -114,10 +114,10 @@ islbl(Node *n)
 static Node *
 temp(Flattenctx *flatten, Node *e)
 {
-	Node *t, *dcl;
+	Node *t;
 
 	assert(e->type == Nexpr);
-	t = gentemp(e->loc, e->expr.type, &dcl);
+	t = gentemp(e->loc, e->expr.type, NULL);
 	return t;
 }
 
@@ -225,23 +225,20 @@ traitfn(Srcloc loc, Trait *tr, char *fn, Type *ty)
 }
 
 static void
-dispose(Flattenctx *s, Stab *st)
+dispose(Flattenctx *s, Stab *st, size_t n)
 {
-	Node *d, *call, *func, *val;
+	Node *e, *call, *func;
 	Trait *tr;
 	Type *ty;
 	size_t i;
 
 	tr = traittab[Tcdisp];
-	/* dispose in reverse order of declaration */
-	for (i = st->nautodcl; i-- > 0;) {
-		d = st->autodcl[i];
-		ty = decltype(d);
-		val = mkexpr(Zloc, Ovar, d->decl.name, NULL);
-		val->expr.type = ty;
-		val->expr.did = d->decl.did;
+	/* dispose in reverse order of appearance */
+	for (i = st->nautotmp; i-- > n;) {
+		e = st->autotmp[i];
+		ty = exprtype(e);
 		func = traitfn(Zloc, tr, "__dispose__", ty);
-		call = mkexpr(Zloc, Ocall, func, val, NULL);
+		call = mkexpr(Zloc, Ocall, func, e, NULL);
 		call->expr.type = mktype(Zloc, Tyvoid);
 		flatten(s, call);
 	}
@@ -433,18 +430,23 @@ assign(Flattenctx *s, Node *lhs, Node *rhs)
 
 /* returns 1 when the exit jump needs to be emitted */
 static int
-exitscope(Flattenctx *s, Stab *stop, Srcloc loc, int x)
+exitscope(Flattenctx *s, Stab *stop, Srcloc loc, Exit x)
 {
+	Node *exit;
 	Stab *st;
 
 	for (st = s->curst;; st = st->super) {
-		if (st->exit[x]) {
-			jmp(s, st->exit[x]);
+		exit = st->exit[x];
+		if (st->ndisposed[x] < st->nautotmp) {
+			st->exit[x] = genlbl(loc);
+			flatten(s, st->exit[x]);
+			dispose(s, st, st->ndisposed[x]);
+			st->ndisposed[x] = st->nautotmp;
+		}
+		if (exit) {
+			jmp(s, exit);
 			return 0;
 		}
-		st->exit[x] = genlbl(loc);
-		flatten(s, st->exit[x]);
-		dispose(s, st);
 		if ((!stop && st->isfunc) || st == stop) {
 			return 1;
 		}
@@ -476,6 +478,12 @@ rval(Flattenctx *s, Node *n)
 	r = NULL;
 	args = n->expr.args;
 	switch (exprop(n)) {
+	case Oauto:
+		r = rval(s, n->expr.args[0]);
+		t = temp(s, r);
+		r = asn(t, r);
+		lappend(&s->curst->autotmp, &s->curst->nautotmp, t);
+		break;
 	case Osize:
 		r = n;	/* don't touch subexprs; they're a pseudo decl */
 		break;
@@ -666,7 +674,10 @@ flattenblk(Flattenctx *s, Node *n)
 		flatten(s, n->block.stmts[i]);
 	}
 	assert(s->curst == n->block.scope);
-	dispose(s, s->curst);
+	if (st->isfunc)
+		exitscope(s, NULL, Zloc, Xret);
+	else
+		dispose(s, s->curst, 0);
 	s->curst = st;
 }
 

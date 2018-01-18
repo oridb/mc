@@ -8,7 +8,6 @@ impl disposable regex.regex# =
 ;;
 
 const main = {
-	var auto r : regex.regex#
-	r = std.try(regex.compile(".*"))
+	auto std.try(regex.compile(".*"))
 	std.exit(42)
 }
