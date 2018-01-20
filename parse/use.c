@@ -361,9 +361,7 @@ rdtrait(FILE *fd, Trait **dest, Type *ty)
 	}
 }
 
-/* Writes types to a file. Errors on
- * internal only types like Tyvar that
- * will not be meaningful in another file */
+/* Reads types from a file. */
 static Type *
 tyunpickle(FILE *fd)
 {

@@ -631,10 +631,6 @@ lval(Flattenctx *s, Node *n)
 	case Oarr:	r = rval(s, n);	break;
 	case Ogap:	r = temp(s, n);	break;
 
-	/* not actually expressible as lvalues in syntax, but we generate them */
-	case Oudata:	r = rval(s, n);	break;
-	case Outag:	r = rval(s, n);	break;
-	case Otupget:	r = rval(s, n);	break;
 	default:
 			fatal(n, "%s cannot be an lvalue", opstr[exprop(n)]);
 			break;

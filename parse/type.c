@@ -44,7 +44,37 @@ char stackness[] = {
 int
 isstacktype(Type *t)
 {
-	return stackness[tybase(t)->type];
+	t = tybase(t);
+	if (t->type == Tyunion)
+		return !isenum(t);
+	return stackness[t->type];
+}
+
+int
+isenum(Type *t)
+{
+	size_t i;
+	char isenum;
+
+	assert(t->type == Tyunion);
+
+	/* t->isenum is lazily set:
+	 * a value of 0 means that it was not computed,
+	 * a value of 1 means that the type is an enum
+	 * (i.e., it only has nullary constructors)
+	 * a value of 2 means that the type is not an enum
+	 */
+	if (t->isenum == 0) {
+		/* initialize it */
+		isenum = 1;
+		for (i = 0; i < t->nmemb; i++)
+			if (t->udecls[i]->etype) {
+				isenum = 2;
+				break;
+			}
+		t->isenum = isenum;
+	}
+	return t->isenum == 1;
 }
 
 Type *

@@ -63,7 +63,7 @@ static Mode
 tymode(Type *t)
 {
 	/* FIXME: What should the mode for, say, structs be when we have no
-	 * intention of loading /through/ the pointer? For now, we'll just say it'
+	 * intention of loading /through/ the pointer? For now, we'll just say it's
 	 * the pointer mode, since we expect to address through the pointer */
 	t = tybase(t);
 	switch (t->type) {
@@ -128,6 +128,7 @@ static Loc *
 loc(Isel *s, Node *n)
 {
 	Node *v;
+	Ucon *uc;
 	Loc *l;
 
 	if (n->type == Ndecl) {
@@ -136,6 +137,10 @@ loc(Isel *s, Node *n)
 		switch (exprop(n)) {
 		case Ovar:
 			l = varloc(s, n);
+			break;
+		case Oucon:
+			uc = finducon(exprtype(n), n->expr.args[0]);
+			l = loclit(uc->id, mode(n));
 			break;
 		case Olit:
 			v = n->expr.args[0];
@@ -858,6 +863,9 @@ selexpr(Isel *s, Node *n)
 	case Ovjmp:
 		selvjmp(s, n, args);
 		break;
+	case Oucon:
+		assert(isenum(tybase(exprtype(n))));
+		/* fallthrough */
 	case Olit:
 		r = loc(s, n);
 		break;
@@ -936,7 +944,7 @@ selexpr(Isel *s, Node *n)
 	case Osubeq: case Omuleq: case Odiveq: case Omodeq: case Oboreq:
 	case Obandeq: case Obxoreq: case Obsleq: case Obsreq: case Omemb:
 	case Oslbase: case Osllen: case Ocast: case Outag: case Oudata:
-	case Oucon: case Otup: case Oarr: case Ostruct:
+	case Otup: case Oarr: case Ostruct:
 	case Oslice: case Oidx: case Osize: case Otupget:
 	case Obreak: case Ocontinue:
 	case Numops:

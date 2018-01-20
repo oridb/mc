@@ -1,4 +1,4 @@
-#define Abiversion 16
+#define Abiversion 17
 
 typedef struct Srcloc Srcloc;
 typedef struct Tysubst Tysubst;
@@ -158,6 +158,7 @@ struct Type {
 	};
 
 	char hasparams;		/* cache for whether this type has params */
+	char isenum;		/* Tyunion: see isenum(), it is lazily set there */
 	char ishidden;		/* Tyname: whether this is hidden or not */
 	char ispkglocal;	/* Tyname: whether this is package local or not */
 	char isimport;		/* Tyname: whether tyis type was imported. */
@@ -470,6 +471,7 @@ Trait *mktrait(Srcloc l, Node *name,
 	int isproto);
 Ucon *finducon(Type *t, Node *name);
 int isstacktype(Type *t);
+int isenum(Type *t);
 int istysigned(Type *t);
 int istyunsigned(Type *t);
 int istyfloat(Type *t);

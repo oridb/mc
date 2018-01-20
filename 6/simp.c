@@ -338,8 +338,11 @@ uconid(Simp *s, Node *n)
 	Ucon *uc;
 
 	n = rval(s, n, NULL);
-	if (exprop(n) != Oucon)
+	if (exprop(n) != Oucon) {
+		if (isenum(tybase(exprtype(n))))
+			return n;
 		return load(addr(s, n, mktype(n->loc, Tyuint)));
+	}
 
 	uc = finducon(exprtype(n), n->expr.args[0]);
 	return word(uc->loc, uc->id);
@@ -539,12 +542,6 @@ lval(Simp *s, Node *n)
 	case Ostruct:	r = rval(s, n, NULL);	break;
 	case Oucon:	r = rval(s, n, NULL);	break;
 	case Oarr:	r = rval(s, n, NULL);	break;
-	case Ogap:	r = temp(s, n);	break;
-
-			/* not actually expressible as lvalues in syntax, but we generate them */
-	case Oudata:	r = rval(s, n, NULL);	break;
-	case Outag:	r = rval(s, n, NULL);	break;
-	case Otupget:	r = rval(s, n, NULL);	break;
 	default:
 			fatal(n, "%s cannot be an lvalue", opstr[exprop(n)]);
 			break;
@@ -840,17 +837,11 @@ simpucon(Simp *s, Node *n, Node *dst)
 	Node *r;
 	Type *ty;
 	Ucon *uc;
-	size_t i, o;
+	size_t o;
 
 	/* find the ucon we're constructing here */
-	ty = tybase(n->expr.type);
-	uc = NULL;
-	for (i = 0; i < ty->nmemb; i++) {
-		if (!strcmp(namestr(n->expr.args[0]), namestr(ty->udecls[i]->name))) {
-			uc = ty->udecls[i];
-			break;
-		}
-	}
+	ty = tybase(exprtype(n));
+	uc = finducon(ty, n->expr.args[0]);
 	if (!uc)
 		die("Couldn't find union constructor");
 
@@ -858,6 +849,13 @@ simpucon(Simp *s, Node *n, Node *dst)
 		tmp = dst;
 	else
 		tmp = temp(s, n);
+
+	if (isenum(ty)) {
+		/* enums are treated as integers
+		 * by the backend */
+		append(s, set(tmp, n));
+		return tmp;
+	}
 
 	/* Set the tag on the ucon */
 	u = addr(s, tmp, mktype(n->loc, Tyuint));
