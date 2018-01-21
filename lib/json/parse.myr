@@ -54,12 +54,15 @@ const free = {j
 		for e : a
 			free(e)
 		;;
+		std.slfree(a)
 	| &(`Obj o):
 		for (k, v) : o
 			std.slfree(k)
 			free(v)
 		;;
+		std.slfree(o)
 	;;
+	std.free(j)
 }
 
 const parseelt = {p
