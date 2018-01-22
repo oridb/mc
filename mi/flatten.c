@@ -351,7 +351,22 @@ destructure(Flattenctx *s, Node *lhs, Node *rhs)
 static Node *
 comparecomplex(Flattenctx *s, Node *n, Op op)
 {
-	fatal(n, "Complex comparisons not yet supported\n");
+	Type *ty;
+	Node *l, *r, *e;
+
+	/* special case: unions with nullary constructors can be compared easily. */
+	ty = tybase(exprtype(n->expr.args[0]));
+	if (ty->type == Tyunion && isenum(ty)) {
+		l = mkexpr(n->loc, Outag, rval(s, n->expr.args[0]), NULL);
+		r = mkexpr(n->loc, Outag, rval(s, n->expr.args[1]), NULL);
+		l->expr.type = mktype(n->loc, Tyuint32);
+		r->expr.type = mktype(n->loc, Tyuint32);
+		e = mkexpr(n->loc, Oueq, l, r, NULL);
+		e->expr.type = mktype(n->loc, Tybool);
+		return e;
+	}
+	fatal(n, "cannot compare values of type %s for equality\n",
+	    tystr(exprtype(n->expr.args[0]));
 	return NULL;
 }
 
