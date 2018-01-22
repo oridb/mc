@@ -366,7 +366,7 @@ comparecomplex(Flattenctx *s, Node *n, Op op)
 		return e;
 	}
 	fatal(n, "cannot compare values of type %s for equality\n",
-	    tystr(exprtype(n->expr.args[0]));
+	    tystr(exprtype(n->expr.args[0])));
 	return NULL;
 }
 
