@@ -542,6 +542,15 @@ lval(Simp *s, Node *n)
 	case Ostruct:	r = rval(s, n, NULL);	break;
 	case Oucon:	r = rval(s, n, NULL);	break;
 	case Oarr:	r = rval(s, n, NULL);	break;
+
+	/*
+	  not expressible as lvalues in syntax, but
+	  we take their address in matches
+	 */
+	case Oudata:    r = rval(s, n, NULL); break;
+	case Outag:     r = rval(s, n, NULL); break;
+	case Otupget:   r = rval(s, n, NULL); break;
+
 	default:
 			fatal(n, "%s cannot be an lvalue", opstr[exprop(n)]);
 			break;
