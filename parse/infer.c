@@ -2562,16 +2562,34 @@ maincompatible(Type *t)
 static void
 verifyop(Node *n)
 {
-	Type *ty;
+	Type *ty, *bty;
+	Node *a;
+	char *sa, *sb;
+	size_t i, j;
+	int found;
 
 	ty = exprtype(n);
+	bty = tybase(ty);
 	switch (exprop(n)) {
 	case Ostruct:
-		if (tybase(ty)->type != Tystruct)
+		if (bty->type != Tystruct)
 			fatal(n, "wrong type for struct literal: %s\n", tystr(ty));
+		for (i = 0; i < n->expr.nargs; i++) {
+			found = 0;
+			a = n->expr.args[i];
+			for (j = 0; j < bty->nmemb; j++) {
+				sa = namestr(a->expr.idx);
+				sb = declname(bty->sdecls[j]);
+				if (!strcmp(sa, sb))
+					found = 1;
+			}
+			if (!found)
+				fatal(n, "type %s has no member %s",
+				    tystr(ty), namestr(a->expr.idx));
+		}
 		break;
 	case Oarr:
-		if (tybase(ty)->type != Tyarray)
+		if (bty->type != Tyarray)
 			fatal(n, "wrong type for struct literal: %s\n", tystr(ty));
 		break;
 	default:
