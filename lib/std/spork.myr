@@ -22,7 +22,7 @@ const run = {cmd
 		-> `Waiterror
 	elif pid == 0
 		execvp(cmd[0], cmd)
-		die("failed exec\n")
+		suicide()
 	else
 		-> wait(pid)
 	;;
@@ -152,7 +152,7 @@ const sporkfd = {cmd, infds, outfds, errfds
 
 		execvp(cmd[0], cmd)
 		/* if fork succeeds, we never return */
-		die("exec failed")
+		suicide()
 	/* parent */
 	else
 		-> `Ok pid

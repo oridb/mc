@@ -65,7 +65,7 @@ pkg std =
 
 	/* process stuff */
 	const getpid	: ( -> pid)
-	const suicide	: ( -> void)
+	$noret const suicide	: ( -> void)
 	const fork	: (-> pid)
 	const execv	: (cmd : byte[:], args : byte[:][:] -> errno)
 	const execve	: (cmd : byte[:], args : byte[:][:], env : byte[:][:] -> errno)
