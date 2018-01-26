@@ -10,6 +10,7 @@ use "option"
 use "sldup"
 use "slcp"
 use "sleq"
+use "slpush"
 
 pkg std =
 	const getenv	: (name : byte[:] -> option(byte[:]))
@@ -49,6 +50,9 @@ const setenv = {name, val
 	envdup()
 	idx = 0
 	for envp : environ
+		if envp == Zenvp
+			break
+		;;
 		env = cstrconvp(envp)
 		n = min(name.len, env.len)
 		if sleq(name, env[:n]) && sleq(env[n:n+1], "=")
@@ -56,8 +60,8 @@ const setenv = {name, val
 		;;
 		idx++
 	;;
-	if idx == environ.len
-		slgrow(&environ, environ.len + 1)
+	if idx == environ.len - 1
+		slpush(&environ, (0 : byte#))
 	else
 		e = cstrconvp(environ[idx])
 		std.slfree(e)
