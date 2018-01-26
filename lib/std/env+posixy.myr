@@ -28,10 +28,12 @@ const getenv = {name
 
 	envinit()
 	for envp : environ
-		env = cstrconvp(envp)
-		n = min(name.len, env.len)
-		if sleq(name, env[:n]) && sleq(env[n:n+1], "=")
-			-> `Some env[n+1:]
+		if envp != Zenvp
+			env = cstrconvp(envp)
+			n = min(name.len, env.len)
+			if sleq(name, env[:n]) && sleq(env[n:n+1], "=")
+				-> `Some env[n+1:]
+			;;
 		;;
 	;;
 	-> `None
@@ -49,26 +51,23 @@ const setenv = {name, val
 
 	envdup()
 	idx = 0
+	e = fmt("{}={}\0", name, val)
 	for envp : environ
 		if envp == Zenvp
+			slpush(&environ, (0 : byte#))
+			environ[idx] = (e : byte#)
 			break
 		;;
 		env = cstrconvp(envp)
 		n = min(name.len, env.len)
 		if sleq(name, env[:n]) && sleq(env[n:n+1], "=")
+			e = cstrconvp(environ[idx])
+			std.slfree(e)
+			environ[idx] = (e : byte#)
 			break
 		;;
 		idx++
 	;;
-	if idx == environ.len - 1
-		slpush(&environ, (0 : byte#))
-	else
-		e = cstrconvp(environ[idx])
-		std.slfree(e)
-	;;
-
-	e = fmt("{}={}\0", name, val)
-	environ[idx] = (e : byte#)
 	sys.__cenvp = (environ : byte##)
 }
 
@@ -84,7 +83,7 @@ const envinit = {
 		len++
 		environ = sys.__cenvp[:len + 1]
 		if environ[len] == Zenvp
-			environ = sys.__cenvp[:len]
+			environ = sys.__cenvp[:len + 1]
 			break
 		;;
 	;;
@@ -100,14 +99,15 @@ const envdup = {
 	envinit()
 	dup = std.slalloc(environ.len + 1)
 	for var i = 0; i < environ.len; i++
-		s = cstrconvp(environ[i])
-		e = std.slalloc(s.len + 1)
-		slcp(e[:e.len - 1], s)
-		e[e.len - 1] = 0
-
-		dup[i] = (e : byte#)
+		if environ[i] != Zenvp
+			s = cstrconvp(environ[i])
+			e = std.slalloc(s.len + 1)
+			slcp(e[:e.len - 1], s)
+			e[e.len - 1] = 0
+			dup[i] = (e : byte#)
+		;;
 	;;
 	dup[dup.len - 1] = Zenvp
-	environ = dup[:dup.len - 1]
+	environ = dup
 	sys.__cenvp = (environ : byte##)
 }
