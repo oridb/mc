@@ -1,0 +1,30 @@
+use "alloc"
+use "die"
+use "slcp"
+use "strfind"
+use "sljoin"
+use "types"
+use "option"
+
+pkg std =
+	const strreplace	: (haystack : byte[:], needle : byte[:], repl : byte[:] -> byte[:])
+;;
+
+const strreplace = {haystack, needle, repl
+	var ret
+
+	iassert(needle.len > 0, "missing needle")
+	ret = ""
+	while true
+		match std.strfind(haystack, needle)
+		| `None:	break
+		| `Some idx:
+			std.sljoin(&ret, haystack[:idx])
+			std.sljoin(&ret, repl)
+			haystack = haystack[idx + needle.len:]
+		;;
+	;;
+	std.sljoin(&ret, haystack)
+	-> ret
+}
+

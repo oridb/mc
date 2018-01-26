@@ -5,11 +5,11 @@ lib std =
 
 	# portable files
 	alloc.myr
-	bytealloc.myr
 	assert.myr
 	bigint.myr
 	bitset.myr
 	blat.myr
+	bytealloc.myr
 	chartype.myr
 	chomp.myr
 	clear.myr
@@ -17,8 +17,8 @@ lib std =
 	consts.myr
 	cstrconv.myr
 	die.myr
-	dirname.myr
 	diriter.myr
+	dirname.myr
 	endian.myr
 	errno.myr
 	execvp.myr
@@ -26,8 +26,8 @@ lib std =
 	fltbits.myr
 	fltfmt.myr
 	fltparse.myr
-        fmt.myr
 	fmtfuncs.myr
+        fmt.myr
 	fndup.myr
 	getcwd.myr
 	getint.myr
@@ -51,9 +51,9 @@ lib std =
 	readall.myr
 	result.myr
 	search.myr
-	sjlj.myr
 	sjlj-impl+plan9-x64.s
 	sjlj-impl+posixy-x64.s
+	sjlj.myr
 	slcp.myr
 	sldup.myr
 	sleep.myr
@@ -68,10 +68,11 @@ lib std =
 	spork.myr
 	strbuf.myr
 	strfind.myr
+	striter.myr
 	strjoin.myr
+	strreplace.myr
 	strsplit.myr
 	strstrip.myr
-	striter.myr
 	swap.myr
 	threadhooks.myr
 	traits.myr

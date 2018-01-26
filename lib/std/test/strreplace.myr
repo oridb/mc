@@ -1,0 +1,27 @@
+use std
+use testr
+
+const main = {
+	testr.run([
+		[.name="fullstr",
+			.fn={ctx; swap(ctx, "src", "src", "dst", "dst")}],
+		[.name="head",
+			.fn={ctx; swap(ctx, "srcstuff", "src", "dst", "dststuff")}],
+		[.name="tail",
+			.fn={ctx; swap(ctx, "stuffsrc", "src", "dst", "stuffdst")}],
+		[.name="middle",
+			.fn={ctx; swap(ctx, "stusrcff", "src", "dst", "studstff")}],
+		[.name="multi",
+			.fn={ctx; swap(ctx, "srcstusrcffsrc", "src", "dst", "dststudstffdst")}],
+		[.name="overlap",
+			.fn={ctx; swap(ctx, "aaaaa", "aaa", "bbb", "bbbaa")}],
+	][:])
+}
+
+const swap = {ctx, in, src, dst, expected
+	var r
+
+	r = std.strreplace(in, src, dst)
+	testr.check(ctx, std.eq(r, expected), "got {}, expected {}\n", r, expected)
+	std.slfree(r)
+}
