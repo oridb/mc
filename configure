@@ -48,7 +48,7 @@ case $OS in
         echo 'export SYS=linux' >> config.mk
         echo export INST_MAN=$prefix/share/man/man >> config.mk
         echo 'const Sys = "Linux"' >> mbld/config.myr
-        echo 'const Linkcmd = ["ld"]' >> mbld/config.myr
+        echo 'const Linkcmd = ["ld", "--gc-sections"]' >> mbld/config.myr
         echo 'const Dlflags = ["-dynamic-linker",' \
             '"/lib64/ld-linux-x86-64.so.2"]' >> mbld/config.myr
         echo "const Manpath = \"share/man/man\"" >> mbld/config.myr
@@ -73,7 +73,7 @@ case $OS in
         echo 'export SYS=freebsd' >> config.mk
         echo export INST_MAN=$prefix/man/man >> config.mk
         echo 'const Sys = "FreeBSD"' >> mbld/config.myr
-        echo 'const Linkcmd = ["ld"]' >> mbld/config.myr
+        echo 'const Linkcmd = ["ld", "--gc-sections"]' >> mbld/config.myr
         echo 'const Dlflags : byte[:][:] = [][:]' >> mbld/config.myr
         echo "const Manpath = \"man/man\"" >> mbld/config.myr
         ;;
@@ -89,7 +89,7 @@ case $OS in
         echo 'export SYS=openbsd' >> config.mk
         echo export INST_MAN=$prefix/man/man >> config.mk
         echo 'const Sys = "OpenBSD"' >> mbld/config.myr
-        echo 'const Linkcmd = ["ld", "-nopie"]' >> mbld/config.myr
+        echo 'const Linkcmd = ["ld", "-nopie", "--gc-sections"]' >> mbld/config.myr
         echo 'const Dlflags = ["-dynamic-linker",' \
             '"/usr/libexec/ld.so"]' >> mbld/config.myr
         echo "const Manpath = \"man/man\"" >> mbld/config.myr
