@@ -11,6 +11,7 @@ use "sldup"
 use "slcp"
 use "sleq"
 use "slpush"
+use "threadhooks"
 
 pkg std =
 	const getenv	: (name : byte[:] -> option(byte[:]))
@@ -47,67 +48,67 @@ const getenvv = {name, default
 }
 
 const setenv = {name, val
-	var n, e, env, idx
+	var n, e, env, idx, found
 
-	envdup()
+	envinit()
+
 	idx = 0
+	found = false
 	e = fmt("{}={}\0", name, val)
+
+	lock(envlck)
 	for envp : environ
-		if envp == Zenvp
-			slpush(&environ, (0 : byte#))
-			environ[idx] = (e : byte#)
-			break
+		if envp != Zenvp
+			env = cstrconvp(envp)
+			n = min(name.len, env.len - 1)
+			if sleq(name, env[:n]) && env[n] == ('=' : byte)
+				found = true
+				break
+			;;
+			idx++
 		;;
-		env = cstrconvp(envp)
-		n = min(name.len, env.len)
-		if sleq(name, env[:n]) && sleq(env[n:n+1], "=")
-			e = cstrconvp(environ[idx])
-			std.slfree(e)
-			environ[idx] = (e : byte#)
-			break
-		;;
-		idx++
 	;;
+	if !found
+		idx = env.len - 1
+		std.slpush(&environ, Zenvp)
+	;;
+	e = cstrconvp(environ[idx])
 	sys.__cenvp = (environ : byte##)
+	unlock(envlck)
 }
 
 const envinit = {
-	var len
+	var len, e, p
 
+	lock(envlck)
 	if environ.len != 0
+		unlock(envlck)
 		-> void
 	;;
-	environ = sys.__cenvp[:1]
+
+	/* 
+	  Here, we duplicate the environment so we can
+	  modify it. We take progressively bigger slices
+	  as we go, until we find the terminating null.
+
+	  It's a bit ugly, but what do?
+	 */
 	len = 0
+	environ = [][:]
 	while true
-		len++
-		environ = sys.__cenvp[:len + 1]
+		p = sys.__cenvp[:len+1][len]
+		if p != Zenvp
+			e = sldup(cstrconvp(p))
+			slpush(&e, 0)
+			p = (e : byte#)
+		;;
+		std.slpush(&environ, p)
 		if environ[len] == Zenvp
-			environ = sys.__cenvp[:len + 1]
 			break
 		;;
+		len++
 	;;
-}
-
-const envdup = {
-	var e, s, dup
-
-	if envduped
-		-> void
-	;;
-	envduped = true
-	envinit()
-	dup = std.slalloc(environ.len + 1)
-	for var i = 0; i < environ.len; i++
-		if environ[i] != Zenvp
-			s = cstrconvp(environ[i])
-			e = std.slalloc(s.len + 1)
-			slcp(e[:e.len - 1], s)
-			e[e.len - 1] = 0
-			dup[i] = (e : byte#)
-		;;
-	;;
-	dup[dup.len - 1] = Zenvp
-	environ = dup
 	sys.__cenvp = (environ : byte##)
+	unlock(envlck)
 }
+
