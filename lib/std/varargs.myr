@@ -1,6 +1,5 @@
 use "types"
 use "introspect"
-use "sleq"
 use "die"
 
 pkg std =

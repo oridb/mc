@@ -729,20 +729,20 @@ const unicodeclass = {re, neg
 	;;
 	s = s[:n]
 	/* letters */
-	if std.sleq(s, "L") || std.sleq(s, "Letter")
+	if std.eq(s, "L") || std.eq(s, "Letter")
 		tab = _ranges.tabalpha[:]
-	elif std.sleq(s, "Lu") || std.sleq(s, "Uppercase_Letter")
+	elif std.eq(s, "Lu") || std.eq(s, "Uppercase_Letter")
 		tab = _ranges.tabupper[:]
-	elif std.sleq(s, "Ll") || std.sleq(s, "Lowercase_Letter")
+	elif std.eq(s, "Ll") || std.eq(s, "Lowercase_Letter")
 		tab = _ranges.tablower[:]
-	elif std.sleq(s, "Lt") || std.sleq(s, "Titlecase_Letter")
+	elif std.eq(s, "Lt") || std.eq(s, "Titlecase_Letter")
 		tab = _ranges.tablower[:]
 	/* numbers (incomplete) */
-	elif std.sleq(s, "N") || std.sleq(s, "Number")
+	elif std.eq(s, "N") || std.eq(s, "Number")
 		tab = _ranges.tabdigit[:]
-	elif std.sleq(s, "Z") || std.sleq(s, "Separator")
+	elif std.eq(s, "Z") || std.eq(s, "Separator")
 		tab = _ranges.tabspace[:]
-	elif std.sleq(s, "Zs") || std.sleq(s, "Space_Separator")
+	elif std.eq(s, "Zs") || std.eq(s, "Space_Separator")
 		tab = _ranges.tabblank[:]
 	else
 		-> `Err (`Badrange s)

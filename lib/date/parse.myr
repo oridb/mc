@@ -182,9 +182,9 @@ const tzoffset = {dst, s, err
 		err# = `std.Some `Badzone s
 		-> ""
 	;;
-	if std.sleq(s[:1], "-")
+	if std.eq(s[:1], "-")
 		sgn = -1
-	elif std.sleq(s[:1], "+") 
+	elif std.eq(s[:1], "+") 
 		sgn = 1
 	else
 		err# = `std.Some `Badzone s
@@ -216,7 +216,7 @@ const tzstring = {d, s, err
 
 
 const matchstr = {s, str, err
-	if s.len <= str.len || !std.sleq(s[:str.len], str)
+	if s.len <= str.len || !std.eq(s[:str.len], str)
 		err# = `std.Some `Badchar
 		-> s
 	;;
@@ -228,10 +228,10 @@ const matchampm = {d, s, am, err
 		err# = `std.Some `Badampm
 		-> s
 	;;
-	if std.sleq(s[:2], "am") || std.sleq(s[:2], "AM")
+	if std.eq(s[:2], "am") || std.eq(s[:2], "AM")
 		am# = `std.Some true
 		-> s[2:]
-	elif std.sleq(s[:2], "pm") || std.sleq(s[:2], "PM")
+	elif std.eq(s[:2], "pm") || std.eq(s[:2], "PM")
 		am# = `std.Some false
 		-> s[2:]
 	else

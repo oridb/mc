@@ -5,13 +5,14 @@ use "cstrconv"
 use "die"
 use "extremum"
 use "fmt"
+use "sleq"
 use "memops"
 use "option"
-use "sldup"
 use "slcp"
-use "sleq"
+use "sldup"
 use "slpush"
 use "threadhooks"
+use "traits"
 
 pkg std =
 	const getenv	: (name : byte[:] -> option(byte[:]))
@@ -32,7 +33,7 @@ const getenv = {name
 		if envp != Zenvp
 			env = cstrconvp(envp)
 			n = min(name.len, env.len)
-			if sleq(name, env[:n]) && sleq(env[n:n+1], "=")
+			if eq(name, env[:n]) && eq(env[n:n+1], "=")
 				-> `Some env[n+1:]
 			;;
 		;;
@@ -61,7 +62,7 @@ const setenv = {name, val
 		if envp != Zenvp
 			env = cstrconvp(envp)
 			n = min(name.len, env.len - 1)
-			if sleq(name, env[:n]) && env[n] == ('=' : byte)
+			if eq(name, env[:n]) && env[n] == ('=' : byte)
 				found = true
 				break
 			;;

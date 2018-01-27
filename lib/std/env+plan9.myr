@@ -9,7 +9,6 @@ use "option"
 use "result"
 use "slcp"
 use "sldup"
-use "sleq"
 use "slpush"
 use "slurp"
 use "blat"
@@ -27,7 +26,7 @@ var envval	: byte[:][:]
 const envfind = {key
 	lock(envlck)
 	for var i = 0; i < envkey.len; i++
-		if std.sleq(envkey[i], key)
+		if std.eq(envkey[i], key)
 			unlock(envlck)
 			-> `Some envval[i]
 		;;

@@ -45,8 +45,7 @@ const writeini = {f, ini
 
 	oldsect = ""
 	for (sect, key) : keys
-		std.put("sect={}, oldsect={}\n", sect, oldsect)
-		if !std.sleq(sect, oldsect)
+		if !std.eq(sect, oldsect)
 			bio.put(f, "[{}]\n", sect)
 		;;
 		oldsect = sect

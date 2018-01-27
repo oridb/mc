@@ -443,7 +443,7 @@ const linkcmd = {b, n, mt, bin, libs, dynlibs, istest
 		std.slpush(&n.cmd, std.sldup(mt.ldscript))
 	;;
 
-	if mt.runtime.len == 0 || std.sleq(mt.runtime, "none")
+	if mt.runtime.len == 0 || std.eq(mt.runtime, "none")
 		std.slpush(&n.cmd, std.sldup(opt_runtime))
 	else
 		std.slpush(&n.cmd, std.sldup(mt.runtime))
@@ -465,7 +465,7 @@ const linkcmd = {b, n, mt, bin, libs, dynlibs, istest
 	;;
 
 	/* OSX warns if we don't add a version */
-	if std.sleq(opt_sys, "osx")
+	if std.eq(opt_sys, "osx")
 		std.slpush(&n.cmd, std.sldup("-macosx_version_min"))
 		std.slpush(&n.cmd, std.sldup("10.6"))
 	;;

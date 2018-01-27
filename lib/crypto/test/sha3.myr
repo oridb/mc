@@ -9,7 +9,7 @@ const main = {
 
 			ret = crypto.keccak224("")
 			testr.check(ctx, \
-				std.sleq(\
+				std.eq(\
 					ret[:],  \
 					"\xf7\x18\x37\x50\x2b\xa8\xe1\x08\x37\xbd\xd8\xd3\x65\xad" \
 					"\xb8\x55\x91\x89\x56\x02\xfc\x55\x2b\x48\xb7\x39\x0a\xbd"), \
@@ -20,7 +20,7 @@ const main = {
 
 			ret = crypto.keccak256("")
 			testr.check(ctx, \
-				std.sleq(\
+				std.eq(\
 					ret[:],  \
 					"\xC5\xD2\x46\x01\x86\xF7\x23\x3C\x92\x7E\x7D\xB2\xDC\xC7\x03\xC0" \
 					"\xE5\x00\xB6\x53\xCA\x82\x27\x3B\x7B\xFA\xD8\x04\x5D\x85\xA4\x70"), \
@@ -31,7 +31,7 @@ const main = {
 
 			ret = crypto.keccak384("")
 			testr.check(ctx, \
-				std.sleq(\
+				std.eq(\
 					ret[:],  \
 					"\x2C\x23\x14\x6A\x63\xA2\x9A\xCF" \
 					"\x99\xE7\x3B\x88\xF8\xC2\x4E\xAA" \
@@ -46,7 +46,7 @@ const main = {
 
 			ret = crypto.keccak512("")
 			testr.check(ctx, \
-				std.sleq(\
+				std.eq(\
 					ret[:],  \
 					"\x0E\xAB\x42\xDE\x4C\x3C\xEB\x92" \
 					"\x35\xFC\x91\xAC\xFF\xE7\x46\xB2" \
@@ -64,7 +64,7 @@ const main = {
 
 			ret = crypto.keccak224("Keccak-224 Test Hash")
 			testr.check(ctx, \
-				std.sleq(\
+				std.eq(\
 					ret[:],  \
 					"\x30\x04\x5B\x34\x94\x6E\x1B\x2E\x09\x16\x13\x36\x2F\xD2" \
 					"\x2A\xA0\x8E\x2B\xEA\xFE\xC5\xE8\xDA\xEE\x42\xC2\xE6\x65"), \
@@ -75,7 +75,7 @@ const main = {
 
 			ret = crypto.keccak256("Keccak-256 Test Hash")
 			testr.check(ctx, \
-				std.sleq(\
+				std.eq(\
 					ret[:],  \
 					"\xA8\xD7\x1B\x07\xF4\xAF\x26\xA4\xFF\x21\x02\x7F\x62\xFF\x60\x26"  \
 					"\x7F\xF9\x55\xC9\x63\xF0\x42\xC4\x6D\xA5\x2E\xE3\xCF\xAF\x3D\x3C"), \
@@ -86,7 +86,7 @@ const main = {
 
 			ret = crypto.keccak384("Keccak-384 Test Hash")
 			testr.check(ctx, \
-				std.sleq(\
+				std.eq(\
 					ret[:],  \
 					"\xE2\x13\xFD\x74\xAF\x0C\x5F\xF9" \
 					"\x1B\x42\x3C\x8B\xCE\xEC\xD7\x01" \
@@ -101,7 +101,7 @@ const main = {
 
 			ret = crypto.keccak512("Keccak-512 Test Hash")
 			testr.check(ctx, \
-				std.sleq(\
+				std.eq(\
 					ret[:],  \
 					"\x96\xEE\x47\x18\xDC\xBA\x3C\x74" \
 					"\x61\x9B\xA1\xFA\x7F\x57\xDF\xE7" \

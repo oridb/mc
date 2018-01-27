@@ -1,13 +1,14 @@
 use "alloc"
+use "die"
 use "extremum"
+use "fmt"
+use "sleq"
+use "slcp"
+use "sldup"
+use "sljoin"
 use "strjoin"
 use "strsplit"
-use "sleq"
-use "sljoin"
-use "sldup"
-use "slcp"
-use "die"
-use "fmt"
+use "traits"
 
 pkg std =
 	const pathcat	: (a : byte[:], b : byte[:] -> byte[:])
@@ -45,7 +46,7 @@ const pathnorm = {p
 	and remove it later on.
 	*/
 	for i = 0; i < comps.len; i++
-		if sleq(comps[i], ".")
+		if eq(comps[i], ".")
 			comps[i] = ""
 		;;
 	;;
@@ -59,11 +60,11 @@ const pathnorm = {p
 	get mangled.
 	*/
 	for i = 0; i < comps.len; i++
-		if !sleq(comps[i], "..")
+		if !eq(comps[i], "..")
 			continue
 		;;
 		for del = 1; del <= i; del++
-			if comps[i - del].len > 0 && !sleq(comps[i-del], "..")
+			if comps[i - del].len > 0 && !eq(comps[i-del], "..")
 				comps[i - del] = ""
 				comps[i] = ""
 				break
@@ -85,9 +86,9 @@ const pathnorm = {p
 	make it absolute. If we have an empty path, return
 	".". Otherwise, just return the path.
 	*/
-	if p.len > 0 && sleq(p[:1], "/")
+	if p.len > 0 && eq(p[:1], "/")
 		for i = 0; i < comps.len; i++
-			if !sleq(comps[i], "..")
+			if !eq(comps[i], "..")
 				break
 			;;
 		;;

@@ -2,14 +2,15 @@ use "alloc"
 use "chartype"
 use "hasprefix"
 use "intparse"
+use "ipparse"
+use "option"
+use "resolve"
+use "result"
 use "slcp"
 use "sleq"
 use "strfind"
 use "striter"
-use "option"
-use "result"
-use "ipparse"
-use "resolve"
+use "traits"
 
 pkg std =
 	pkglocal const parseport	: (port : byte[:] -> option(uint16))
@@ -22,13 +23,13 @@ const parseport = {port
 	| `Some n:	-> `Some n
 	| `None:
 		/* a small number of hardcoded ports */
-		if sleq(port, "http")
+		if eq(port, "http")
 			-> `Some 80
-		elif sleq(port, "https")
+		elif eq(port, "https")
 			-> `Some 443
-		elif sleq(port, "ircd")
+		elif eq(port, "ircd")
 			-> `Some 6667
-		elif sleq(port, "dns")
+		elif eq(port, "dns")
 			-> `Some 53
 		;;
 	;;

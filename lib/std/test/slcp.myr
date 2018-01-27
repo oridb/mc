@@ -18,7 +18,7 @@ const main = {
 	std.slcp(a[:a.len-2], a[2:])
 	std.slcp(b[2:], b[:b.len-2])
 	std.slcp(c[1:15], c[0:14])
-	std.assert(std.sleq(a[:], a_cped[:]), "slcp of a failed: got {}, wanted {}", a[:], a_cped[:])
-	std.assert(std.sleq(b[:], b_cped[:]), "slcp of b failed: got {}, wanted {}", b[:], b_cped[:])
-	std.assert(std.sleq(c[:], c_cped[:]), "slcp of b failed: got {r}, wanted {r}", c[:], c_cped[:])
+	std.assert(std.eq(a[:], a_cped[:]), "slcp of a failed: got {}, wanted {}", a[:], a_cped[:])
+	std.assert(std.eq(b[:], b_cped[:]), "slcp of b failed: got {}, wanted {}", b[:], b_cped[:])
+	std.assert(std.eq(c[:], c_cped[:]), "slcp of b failed: got {r}, wanted {r}", c[:], c_cped[:])
 }

@@ -1,14 +1,91 @@
 use "types"
+use "traits"
 use "memops"
 
 pkg std =
-	generic sleq	: (a : @a[:], b : @a[:] -> bool)
+	impl equatable @a[:]
+	impl equatable bool[:]
+	impl equatable byte[:]
+	impl equatable char[:]
+	impl equatable int8[:]
+	impl equatable int16[:]
+	impl equatable int[:]
+	impl equatable int32[:]
+	impl equatable int64[:]
+	impl equatable uint8[:]
+	impl equatable uint16[:]
+	impl equatable uint[:]
+	impl equatable uint32[:]
+	impl equatable uint64[:]
+	generic sleq    : (a : @a[:], b : @a[:] -> bool)
 ;;
 
+/* for compatibility */
 generic sleq = {a, b
-	if a.len == b.len
-		-> memeq((a : byte#), (b : byte#), a.len * sizeof(@a))
+	-> eq(a, b)
+}
+
+impl equatable @a[:] =
+	eq = {a, b
+		if a.len == b.len
+			-> false
+		;;
+		/* can't use memeq because of padding */
+		for var i = 0; i < a.len; i++
+			if a[i] != b[i]
+				-> false
+			;;
+		;;
+		-> true
+	}
+;;
+
+impl equatable bool[:] = 
+	eq = {a, b; -> primsleq((a : byte#), (b : byte#), a.len, b.len, sizeof(bool))}
+;;
+impl equatable byte[:] = 
+	eq = {a, b; -> primsleq((a : byte#), (b : byte#), a.len, b.len, sizeof(byte))}
+;;
+impl equatable char[:] = 
+	eq = {a, b; -> primsleq((a : byte#), (b : byte#), a.len, b.len, sizeof(char))}
+;;
+impl equatable int8[:] = 
+	eq = {a, b; -> primsleq((a : byte#), (b : byte#), a.len, b.len, sizeof(int8))}
+;;
+impl equatable int16[:] = 
+	eq = {a, b; -> primsleq((a : byte#), (b : byte#), a.len, b.len, sizeof(int16))}
+;;
+impl equatable int[:] = 
+	eq = {a, b; -> primsleq((a : byte#), (b : byte#), a.len, b.len, sizeof(int))}
+;;
+impl equatable int32[:] = 
+	eq = {a, b; -> primsleq((a : byte#), (b : byte#), a.len, b.len, sizeof(int32))}
+;;
+impl equatable int64[:] = 
+	eq = {a, b; -> primsleq((a : byte#), (b : byte#), a.len, b.len, sizeof(int64))}
+;;
+impl equatable uint8[:] = 
+	eq = {a, b; -> primsleq((a : byte#), (b : byte#), a.len, b.len, sizeof(uint8))}
+;;
+impl equatable uint16[:] = 
+	eq = {a, b; -> primsleq((a : byte#), (b : byte#), a.len, b.len, sizeof(uint16))}
+;;
+impl equatable uint[:] = 
+	eq = {a, b; -> primsleq((a : byte#), (b : byte#), a.len, b.len, sizeof(uint))}
+;;
+impl equatable uint32[:] = 
+	eq = {a, b; -> primsleq((a : byte#), (b : byte#), a.len, b.len, sizeof(uint32))}
+;;
+
+impl equatable uint64[:] = 
+	eq = {a, b; -> primsleq((a : byte#), (b : byte#), a.len, b.len, sizeof(uint64))}
+;;
+
+const primsleq = {a, b, na, nb, sz
+	if na == nb
+		-> memeq((a : byte#), (b : byte#), na * sz)
 	else
 		-> false
 	;;
 }
+

@@ -2,12 +2,13 @@ use "alloc"
 use "die"
 use "extremum"
 use "fmt"
-use "strbuf"
-use "option"
 use "sleq"
+use "option"
 use "slpush"
-use "syswrap-ss"
+use "strbuf"
 use "syswrap"
+use "syswrap-ss"
+use "traits"
 use "types"
 use "utf"
 
@@ -166,7 +167,7 @@ const next = {ctx
 
 	for i = ctx.argidx + 1; i < ctx.optargs.len; i++
 		if !ctx.optdone && decode(ctx.optargs[i]) == '-'
-			if sleq(ctx.optargs[i], "--")
+			if eq(ctx.optargs[i], "--")
 				ctx.optdone = true
 			else
 				goto foundopt

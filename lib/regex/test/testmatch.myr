@@ -79,7 +79,7 @@ const subst = {restr, pat, text, sub, expected, all
 		std.put("res: {}\n", res)
 		match expected
 		| `std.Some e:
-			if !std.sleq(res, e)
+			if !std.eq(res, e)
 				std.fatal("bad subst: expected {}, got {}\n", e, res)
 			;;
 		| `std.None:
@@ -157,7 +157,7 @@ const run = {restr, pat, text, expected, search
 				std.put("\t{}: {}\n", i, res[i])
 			;;
 		| `std.Some exp:
-			if !search && !std.sleq(res[0], text)
+			if !search && !std.eq(res[0], text)
 				std.put("whole match does not match text!\n")
 				std.fatal("failed matching {} over {}\n", pat, text)
 			;;
@@ -167,7 +167,7 @@ const run = {restr, pat, text, expected, search
 				std.fatal("failed matching {} over {}\n", pat, text)
 			;;
 			for i = 0; i < exp.len; i++
-				if !std.sleq(res[i], exp[i])
+				if !std.eq(res[i], exp[i])
 					std.put("mismatch on {}: expected {}, got {}\n", i, exp[i], res[i])
 					std.fatal("failed matching {} over {}\n", pat, text)
 				;;

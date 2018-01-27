@@ -33,7 +33,7 @@ const hasheq = {got, expected
 		std.sbfmt(sb, "{p=0,w=2,x}", x)
 	;;
 	str = std.sbfin(sb)
-	if (!std.sleq(str, expected))
+	if (!std.eq(str, expected))
 		std.fatal("mismatched hashes:\n\tgot:\t{}\n\texpected:\t{}\n", str, expected)
 	;;
 	std.slfree(str)

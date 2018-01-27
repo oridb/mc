@@ -1,3 +1,4 @@
+use "traits"
 use "sleq"
 
 pkg std =
@@ -9,7 +10,7 @@ const hassuffix = {s, suff
 
 	if suff.len <= s.len
 		tail = s[s.len - suff.len:]
-		-> sleq(tail, suff)
+		-> eq(tail, suff)
 	;;
 	-> false
 }

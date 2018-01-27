@@ -854,9 +854,9 @@ const check = {chk
 	;;
 
 	crypto.chacha20encrypt(&st, data[:], result[:])
-	std.assert(std.sleq(result[:], chk.stream0), "mismatched stream0")
+	std.assert(std.eq(result[:], chk.stream0), "mismatched stream0")
 
 	crypto.chacha20encrypt(&st, data[:], result[:])
-	std.assert(std.sleq(result[:], chk.stream1), "mismatched stream1")
+	std.assert(std.eq(result[:], chk.stream1), "mismatched stream1")
 }
 

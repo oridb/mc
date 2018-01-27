@@ -158,14 +158,14 @@ const findproj = {b
 	var dir
 
 	dir = std.getcwd()
-	while dir.len > 0 && !std.sleq(dir, "/")
+	while dir.len > 0 && !std.eq(dir, "/")
 		if std.chdir(dir) && std.fexists("bld.proj")
 			b.basedir = dir
 			break
 		;;
 		dir = std.dirname(dir)
 	;;
-	if dir.len > 0 && std.sleq(b.basedir, "/")
+	if dir.len > 0 && std.eq(b.basedir, "/")
 		std.fatal("could not find bld.proj\n")
 	;;
 }

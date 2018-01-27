@@ -50,9 +50,9 @@ const findtzoff = {tz, tm -> std.option(date.duration)
 		zone = z
 	| `std.None:
 		/* load zone */
-		if std.sleq(tz, "") || std.sleq(tz, "UTC")
+		if std.eq(tz, "") || std.eq(tz, "UTC")
 			-> `std.Some 0
-		elif std.sleq(tz, "local")
+		elif std.eq(tz, "local")
 			path = std.sldup("/etc/localtime")
 		else
 			path = ""

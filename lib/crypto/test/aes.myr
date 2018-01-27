@@ -40,7 +40,7 @@ const enctest = {t : aestest
 
 	crypto.aeskeysched(&ctx, t.key)
 	crypto.aesencrypt(&ctx, t.inp[:], out[:])
-	if !std.sleq(out[:], t.out[:])
+	if !std.eq(out[:], t.out[:])
 		std.fatal("test failed: got {r}, expected {r}\n", out[:], t.out[:])
 	;;
 }
@@ -51,7 +51,7 @@ const dectest = {t : aestest
 
 	crypto.aeskeysched(&ctx, t.key)
 	crypto.aesdecrypt(&ctx, t.inp[:], out[:])
-	if !std.sleq(out[:], t.out[:])
+	if !std.eq(out[:], t.out[:])
 		std.fatal("test failed: got {r}, expected {r}\n", out[:], t.out[:])
 	;;
 }
@@ -61,7 +61,7 @@ const bigenctest = {t : aestest
 
 	crypto.aeskeysched(&ctx, t.key)
 	crypto.aesencrypt(&ctx, t.inp[:], out[:])
-	if !std.sleq(out[:], t.out[:])
+	if !std.eq(out[:], t.out[:])
 		std.fatal("test failed: got {r}, expected {r}\n", out[:], t.out[:])
 	;;
 }
@@ -72,7 +72,7 @@ const bigdectest = {t : aestest
 
 	crypto.aeskeysched(&ctx, t.key)
 	crypto.aesdecrypt(&ctx, t.inp[:], out[:])
-	if !std.sleq(out[:], t.out[:])
+	if !std.eq(out[:], t.out[:])
 		std.fatal("test failed: got {r}, expected {r}\n", out[:], t.out[:])
 	;;
 }

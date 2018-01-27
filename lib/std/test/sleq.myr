@@ -12,14 +12,14 @@ const main = {
 const wide = {c
 	var a : uint[3] = [ 0, 1, 2]
 	var b : uint[3] = [ 0, 1, 3]
-	testr.check(c, !std.sleq(a[:], b[:]), "expected {} != {} as uint[:]", a, b)
+	testr.check(c, !std.eq(a[:], b[:]), "expected {} != {} as uint[:]", a, b)
 }
 
 const slices = {c
 	var a : int8[8] = [ 0, 0, 3, 1, 0, 3, 1, 2 ]
 	var b : int8[3] = [ 1, 0, 3]
-	testr.check(c, std.sleq(a[1:4], a[4:7]), "expected {} = {}", a[1:4], a[4:7])
-	testr.check(c, !std.sleq(a[0:4], a[3:7]), "expected {} = {}", a[0:4], a[3:7])
-	testr.check(c, !std.sleq(a[:], b[:]), "expected {} = {}", a, b)
-	testr.check(c, !std.sleq(a[3:7], b[:]), "expected {} = {}", a[3:7], b)
+	testr.check(c, std.eq(a[1:4], a[4:7]), "expected {} = {}", a[1:4], a[4:7])
+	testr.check(c, !std.eq(a[0:4], a[3:7]), "expected {} = {}", a[0:4], a[3:7])
+	testr.check(c, !std.eq(a[:], b[:]), "expected {} = {}", a, b)
+	testr.check(c, !std.eq(a[3:7], b[:]), "expected {} = {}", a[3:7], b)
 }

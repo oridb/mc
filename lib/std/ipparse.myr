@@ -1,13 +1,14 @@
 use "chartype"
 use "die"
 use "fmt"
+use "sleq"
 use "intparse"
 use "option"
 use "slcp"
-use "sleq"
 use "slfill"
 use "strfind"
 use "striter"
+use "traits"
 use "types"
 
  /* FIXME: needed for decls which should be pulled in as hidden */
@@ -60,7 +61,7 @@ const ip6parse = {ip
 	ok = true
 	expand = false
 	split = 0
-	if ip.len > 2 && std.sleq(ip[:2], "::")
+	if ip.len > 2 && eq(ip[:2], "::")
 		expand = true
 		split = 0
 	;;

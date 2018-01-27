@@ -35,7 +35,7 @@ const main = {
 	std.bigfree(e)
 
 	n = std.bigbfmt(buf[:], a, 0)
-	std.assert(std.sleq(buf[:n], "517347321949036993306"), "simple smoke test failed")
+	std.assert(std.eq(buf[:n], "517347321949036993306"), "simple smoke test failed")
 
 	/* some comparison tests */
 	a = try(std.bigparse("1234_5678_1234_6789_6666_7777_8888"))
@@ -119,7 +119,7 @@ const run = {e : cmd#, res : byte[:]
 
 	v = eval(e)
 	n = std.bigbfmt(buf[:], v, 0)
-	if !std.sleq(buf[:n], res)
+	if !std.eq(buf[:n], res)
 		std.fatal("{} != {}\n", buf[:n], res)
 	;;
 }
