@@ -382,6 +382,8 @@ gentype(FILE *fd, Type *ty)
 	b = tydescblob(ty);
 	if (b->isglobl)
 		b->iscomdat = 1;
+	if (asmsyntax == Gnugaself)
+		fprintf(fd, ".section .data.%s,\"aw\",@progbits\n", b->lbl);
 	writeblob(fd, b);
 	blobfree(b);
 }
@@ -416,6 +418,8 @@ genblob(FILE *fd, Node *blob, Htab *globls, Htab *strtab)
 	lbl = htget(globls, blob);
 	if (blob->decl.vis != Visintern)
 		fprintf(fd, ".globl %s\n", lbl);
+	if (asmsyntax == Gnugaself)
+		fprintf(fd, ".section .data.%s,\"aw\",@progbits\n", lbl);
 	if (blob->decl.init) {
 		fprintf(fd, ".align %zd\n", tyalign(decltype(blob)));
 		fprintf(fd, "%s:\n", lbl);
