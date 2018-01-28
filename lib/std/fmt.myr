@@ -180,6 +180,9 @@ const sbfmtv = {sb, fmt, ap -> size
 		match (state, (b : char))
 		/* raw bytes */
 		| (`Copy, '{'):
+			if nfmt > nvarargs
+				die("too few values for fmt\n")
+			;;
 			if (fmt[i] : char) == '{'
 				b = fmt[i++]
 				sbputb(sb, ('{' : byte))
@@ -238,7 +241,7 @@ const sbfmtv = {sb, fmt, ap -> size
 		;;
 	;;
 	if nfmt != nvarargs
-		die("too many params for fmt\n")
+		die("too many values for fmt\n")
 	;;
 	-> sb.len
 }
@@ -463,7 +466,7 @@ const intparams = {params
 		| ("x", ""):	ip.base = 16
 		| ("w", wid):	ip.padto = getint(wid, "fmt: width must be integer")
 		| ("p", pad):	ip.padfill = decode(pad)
-		| (opt, arg):	
+		| (opt, arg):
 			std.write(2, "fmt: ")
 			std.write(2, opt)
 			std.write(2, "arg: ")
