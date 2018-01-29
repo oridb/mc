@@ -173,7 +173,9 @@ bloblit(Blob *seq, Htab *strtab, Node *v, Type *ty)
 		b(seq, mkblobi(Bti64, v->lit.strval.len));
 		break;
 	case Lfunc:
-		die("Generating this shit ain't ready yet ");
+		lbl = asmname(v);
+		b(seq, mkblobi(Bti64, 0));
+		b(seq, mkblobref(lbl, 0, 0));
 		break;
 	case Llbl:
 		die("Can't generate literal labels, ffs. They're not data.");
@@ -276,9 +278,11 @@ static size_t
 blobvar(Blob *seq, Htab *strtab, Node *var, Type *ty)
 {
 	Node *dcl;
+	Ty tt;
 
 	dcl = decls[var->expr.did];
-	if (tybase(ty)->type != Tyfunc || !dcl->decl.isglobl)
+	tt = tybase(ty)->type;
+	if ((tt != Tyfunc && tt != Tycode)|| !dcl->decl.isglobl)
 		fatal(var, "non-constant initializer %s", namestr(var->expr.args[0]));
 	b(seq, mkblobi(Bti64, 0));
 	b(seq, mkblobref(asmname(dcl), 0, 1));

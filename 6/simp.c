@@ -388,6 +388,8 @@ simpcode(Simp *s, Node *fn)
 	Node *r, *d;
 
 	r = geninitdecl(fn, codetype(exprtype(fn)), &d);
+	r->decl.isconst = 1;
+	r->decl.isglobl = 1;
 	htput(s->globls, d, asmname(d));
 	lappend(&file->file.stmts, &file->file.nstmts, d);
 	return r;
@@ -1500,9 +1502,8 @@ simpconstinit(Simp *s, Node *dcl)
 	e = dcl->decl.init;
 	if (e && exprop(e) == Olit) {
 		if (e->expr.args[0]->lit.littype == Lfunc)
-			simpcode(s, e);
-		else
-			lappend(&s->blobs, &s->nblobs, dcl);
+			dcl->decl.init = simpcode(s, e);
+		lappend(&s->blobs, &s->nblobs, dcl);
 	} else if (!dcl->decl.isconst && !e) {
 		lappend(&s->blobs, &s->nblobs, dcl);
 	} else if (e->expr.isconst) {
