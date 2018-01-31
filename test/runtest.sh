@@ -84,7 +84,7 @@ B() {
 	test="$1"; shift
 	type="$1"; shift
 
-	if ! belongto "$test" "$MTEST_SUBSET"; then
+	if [ -n "$MTEST_SUBSET" ] && ! belongto "$test" "$MTEST_SUBSET"; then
 		return 1
 	fi
 
@@ -106,7 +106,7 @@ B() {
 
 # Should fail
 F() {
-	if ! belongto "$test" "$MTEST_SUBSET"; then
+	if [ -n "$MTEST_SUBSET" ] && ! belongto "$test" "$MTEST_SUBSET"; then
 		return 1
 	fi
 
