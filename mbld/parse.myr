@@ -70,6 +70,8 @@ const sortdeps = {b
 		| targ:		std.slpush(&all, dep)
 		;;
 	;;
+	std.htfree(marked)
+	std.htfree(looped)
 	std.slfree(b.all)
 	b.all = all
 	-> true
