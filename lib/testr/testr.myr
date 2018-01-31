@@ -22,17 +22,25 @@ pkg testr =
 ;;
 
 const bench = {specs
+	var subset
+
+	subset = subtests()
 	std.put("MTEST {}\n", specs.len)
 	for s : specs
-		benchspec(&s)
+		benchspec(&s, subset)
 	;;
+	std.htfree(subset)
 }
 
 const run = {specs
+	var subset
+
+	subset = subtests()
 	std.put("MTEST {}\n", specs.len)
 	for s : specs
-		testspec(&s)
+		testspec(&s, subset)
 	;;
+	std.htfree(subset)
 }
 
 const ok = {ctx
@@ -75,11 +83,11 @@ const softfailv = {ctx, msg, ap
 	;;
 }
 
-const benchspec = {ts
+const benchspec = {ts, sub
+	var ctx : ctx
 	var avg, m, d, n, nsamp
 	var start, dt
-	var ctx : ctx
-	var jmpbuf
+	var dorun, jmpbuf
 
 	ctx.ok = true
 	ctx.reason = ""
@@ -89,8 +97,9 @@ const benchspec = {ts
 	m = 0.0;
 	n = 0.0;
 	nsamp = 0
+	dorun = matchtest(ts.name, sub)
 	std.put("test {} <<{{!\n", ts.name)
-	if !std.setjmp(&jmpbuf)
+	if !std.setjmp(&jmpbuf) && dorun
 		/* estimate samples */
 		start = std.now()
 		ts.fn(&ctx)
@@ -114,7 +123,9 @@ const benchspec = {ts
 		;;
 	;;
 
-	if ctx.ok
+	if !dorun
+		std.put("!}}>> skip filtered\n", nsamp, avg, m)
+	elif ctx.ok
 		std.put("!}}>> timing {} {} {}\n", nsamp, avg, m)
 	else
 		std.put("!}}>> fail {}\n", ctx.reason)
@@ -122,23 +133,46 @@ const benchspec = {ts
 	;;
 }
 
-const testspec = {ts
+const testspec = {ts, sub
 	var ctx : ctx
-	var jmpbuf
+	var dorun, jmpbuf
 
 	ctx.ok = true
 	ctx.reason = ""
 	ctx.jmpbuf = &jmpbuf
+	dorun = matchtest(ts.name, sub)
 
 	std.put("test {} <<{{!\n", ts.name)
-	if !std.setjmp(&jmpbuf)
+	if !std.setjmp(&jmpbuf) && dorun
 		ts.fn(&ctx)
 	;;
 
-	if ctx.ok
+	if !dorun
+		std.put("!}}>> skip filtered\n")
+	elif ctx.ok
 		std.put("!}}>> ok\n")
 	else
 		std.put("!}}>> fail {}\n", ctx.reason)
 		std.slfree(ctx.reason)
 	;;
 }
+
+const subtests = {
+	var subset
+
+	subset = std.mkht()
+	match std.getenv("MTEST_SUBSET")
+	| `std.None:	/* no subtests */
+	| `std.Some "":	/* no subtests */
+	| `std.Some subs:
+		for s : std.bysplit(subs, ",")
+			std.htput(subset, s, true)
+		;;
+	;;
+	-> subset
+}
+
+const matchtest = {name, sub
+	-> std.htcount(sub) == 0 || std.hthas(sub, name)
+}
+
