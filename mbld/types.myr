@@ -36,8 +36,9 @@ pkg bld =
 		dir	: byte[:]
 
 		inputs	: byte[:][:]
-		libdeps	: (byte[:], byte[:], byte[:])[:]	/* dir, lib, targname */
-		tstdeps	: (byte[:], byte[:], byte[:])[:]	/* dir, lib, targname */
+		/* dir, lib, targname */
+		libdeps	: (byte[:], byte[:], byte[:])[:]
+		tstdeps	: (byte[:], byte[:], byte[:])[:]
 		runtime	: byte[:]
 		incpath	: byte[:][:]
 		tags	: byte[:][:]
@@ -87,6 +88,7 @@ pkg bld =
 	;;
 
 	type testresult = union
+		`Skip
 		`Pass
 		`Fail byte[:]
 		`Timing (int, flt64, flt64)

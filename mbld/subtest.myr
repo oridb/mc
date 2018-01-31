@@ -18,7 +18,7 @@ var footpat
 const __init__ = {
 	planpat = std.try(regex.compile("MTEST\\s+(-?\\d+)\\s*"))
 	headpat = std.try(regex.compile("test\\s+(.*)<<{!\\s*"))
-	footpat = std.try(regex.compile("!}>>\\s*(ok|fail|timing)\\s*(.*)\\s*"))
+	footpat = std.try(regex.compile("!}>>\\s*(ok|fail|timing|skip)\\s*(.*)\\s*"))
 }
 
 const showsub = {b, cmd, fd, logfd, failed
@@ -92,6 +92,9 @@ const showtests = {b, cmd, failed, f, log, ntests
 		| `std.Some `Timing (niter, avg, stddev):
 			showbench(b, &curtest, &nresults, niter, avg, stddev)
 			continue
+		| `std.Some `Skip:
+			skiptest(b, &curtest, &nresults)
+			continue
 		| `std.Some `Pass:
 			passtest(b, &curtest, &nresults)
 			continue
@@ -123,11 +126,20 @@ const showtests = {b, cmd, failed, f, log, ntests
 }
 
 const checktests = {ntests, nresults
-	if ntests > 0 && ntests != nresults
-		mbldput("mismatched test count: expected {}, got {}\n", ntests, nresults)
-		-> false
+	/*
+	  FIXME: ugly hack.
+	  we don't currently print subtests all the time, so we don't check
+	  plan count here.
+	 */
+	match std.getenv("MTEST_SUBSET")
+	| `std.Some _:	-> true
+	| `std.None:
+		if ntests > 0 && ntests != nresults
+			mbldput("mismatched test count: expected {}, got {}\n", ntests, nresults)
+			-> false
+		;;
+		-> true
 	;;
-	-> true
 }
 
 const starttest = {curtest, t
@@ -136,6 +148,11 @@ const starttest = {curtest, t
 	;;
 	mbldput("\trun {}:\t", std.strstrip(t))
 	curtest# = t
+}
+
+const skiptest = {b, curtest, nresults
+	donetest(b, curtest, nresults)
+	mbldput("SKIP\n")
 }
 
 const passtest = {b, curtest, nresults
@@ -217,6 +234,7 @@ const testfoot = {ln
 	match regex.exec(footpat, ln)
 	| `std.Some m:
 		match m[1]
+		| "skip":	-> `std.Some `Skip
 		| "timing":	-> parsetiming(m[2])
 		| "ok":		-> `std.Some `Pass
 		| "fail":	-> `std.Some `Fail std.sldup(m[2])
