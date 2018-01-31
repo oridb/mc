@@ -66,10 +66,28 @@ expectfcompare() {
 	fi
 }
 
+belongto() {
+	elem="$1"; shift
+	subset="$1"; shift
+
+	IFS=','
+	for v in $subset; do
+		if [ "$elem" = "$v" ]; then
+			return 0
+		fi
+	done
+	return 1
+}
+
 # Should build and run
 B() {
 	test="$1"; shift
 	type="$1"; shift
+
+	if ! belongto "$test" "$MTEST_SUBSET"; then
+		return 1
+	fi
+
 	if [ $# -gt 0 ]; then
 		res="$1"; shift
 	fi
@@ -88,6 +106,10 @@ B() {
 
 # Should fail
 F() {
+	if ! belongto "$test" "$MTEST_SUBSET"; then
+		return 1
+	fi
+
 	echo "test $1 <<{!"
 	(build $1) > /dev/null 2>1
 	if [ $? -eq '1' ]; then
