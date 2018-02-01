@@ -410,6 +410,8 @@ const readdelim = {f, delim, drop
 		| `std.Err `Eof:
 			if !drop
 				ret = readinto(f, ret, f.rend - f.rstart)
+			else
+				f.rstart += f.rend - f.rstart
 			;;
 			if ret.len > 0
 				-> `std.Ok ret
@@ -428,6 +430,8 @@ const readdelim = {f, delim, drop
 				;;
 				if !drop
 					ret = readinto(f, ret, i - f.rstart)
+				else
+					f.rstart += i - f.rstart
 				;;
 				f.rstart += delim.len
 				-> `std.Ok ret
@@ -436,6 +440,8 @@ const readdelim = {f, delim, drop
 		;;
 		if !drop
 			ret = readinto(f, ret, f.rend - f.rstart)
+		else
+			f.rstart += f.rend - f.rstart
 		;;
 	;;
 	std.die("unreachable")
