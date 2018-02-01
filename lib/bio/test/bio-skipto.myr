@@ -1,0 +1,26 @@
+use std
+use bio
+
+const main = {
+	var buf : byte[16]
+	var f
+
+	/* use the expected write data as read data */
+	f = std.try(bio.open("data/bio-skipto", bio.Rd))
+
+	/* read bar from foobar */
+	bio.skipto(f, "foo")
+	bio.read(f, buf[:3])
+	std.assert(std.eq(buf[:3], "bar"), "did not read bar afer foo")
+
+	/* we're past foobar, read to eof */
+	bio.skipto(f, "foo")
+	match bio.read(f, buf[:3])
+	| `std.Err `bio.Eof:	/* ok */
+	| `std.Ok _:		std.fatal("expected EOF")
+	| `std.Err e:		std.fatal("expected EOF, got {}\n", e)
+	;;
+	
+	std.put("success: all reads matched\n")
+}
+
