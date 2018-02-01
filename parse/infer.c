@@ -2175,15 +2175,22 @@ static Type *
 tyfix(Node *ctx, Type *orig, int noerr)
 {
 	static Type *tyint, *tyflt;
+	static Bitset *intset, *fltset;
 	Type *t, *d, *base;
 	Tyenv *env;
 	size_t i;
 	char buf[1024];
 
-	if (!tyint)
+	if (!tyint) {
 		tyint = mktype(Zloc, Tyint);
-	if (!tyflt)
+		intset = mkbs();
+		traitsfor(tyint, intset);
+	}
+	if (!tyflt) {
 		tyflt = mktype(Zloc, Tyflt64);
+		fltset = mkbs();
+		traitsfor(tyflt, fltset);
+	}
 
 	t = tysearch(tf(orig));
 	env = t->env;
@@ -2202,9 +2209,9 @@ tyfix(Node *ctx, Type *orig, int noerr)
 		}
 	}
 	if (t->type == Tyvar && t->trneed) {
-		if (bshas(t->trneed, Tcint) && bshas(t->trneed, Tcnum))
+		if (bsissubset(t->trneed, intset))
 			t = tyint;
-		else if (bshas(t->trneed, Tcflt) && bshas(t->trneed, Tcnum))
+		else if (bsissubset(t->trneed, fltset))
 			t = tyflt;
 	} else if (!t->fixed) {
 		t->fixed = 1;
@@ -2233,8 +2240,11 @@ tyfix(Node *ctx, Type *orig, int noerr)
 
 	if (t->type == Tyvar && !noerr)
 		fatal(ctx, "underconstrained type %s near %s", tyfmt(buf, 1024, t), ctxstr(ctx));
-	if (base)
-		t->seqaux = tyfix(ctx, base, noerr);
+	if (base) {
+		if (base != orig)
+			base = tyfix(ctx, base, noerr);
+		t->seqaux = base;
+	}
 	if (env)
 		popenv(env);
 	return t;
