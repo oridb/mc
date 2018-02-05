@@ -6,12 +6,11 @@ var str
 var dotstar, hello, world
 
 const main = {
-	str = std.sldup("hello world!")
-	str = std.strcat(str, str)
-	str = std.strcat(str, str)
-	str = std.strcat(str, str)
-	str = std.strcat(str, str)
-	str = std.strcat(str, "x")
+	str = ""
+	for var i = 0; i < 16; i++
+		std.sljoin(&str, "hello world!")
+	;;
+	std.sljoin(&str, "x")
 
 	dotstar = std.try(regex.compile(".*"))
 	hello = std.try(regex.compile("hel*o"))
@@ -22,6 +21,11 @@ const main = {
 		[.name="searchhello", .fn=searchhello],
 		[.name="searchworld", .fn=searchworld],
 	][:])
+
+	regex.free(dotstar)
+	regex.free(hello)
+	regex.free(world)
+	std.slfree(str)
 }
 
 const matchall = {ctx
