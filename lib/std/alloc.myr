@@ -122,7 +122,7 @@ generic slfree	 = {sl
 
 /* Grows a slice */
 generic slgrow = {sl : @a[:]#, len
-	var cap
+	var cap, nel
 	var new
 	var n
 
@@ -131,18 +131,18 @@ generic slgrow = {sl : @a[:]#, len
 	if (sl# : byte#) != Zsliceptr
 		cap = slcap((sl# : byte#))
 	;;
-	if cap >= allocsz(len*sizeof(@a))
+	if cap >= allocsz(len*sizeof(@a)) + align(sizeof(slheader), Align)
 		sl# = (sl# : @a#)[:len]
 		-> sl#
 	;;
 
 	/* grow in factors of 1.5 */
-	cap = max(Align, cap)
-	while cap < len
-		cap += (cap >> 1)
+	nel = sl#.len
+	while nel < len
+		nel = nel * 2 + 2
 	;;
 
-	new = slalloc(cap)
+	new = slalloc(nel)
 	n = min(len, sl#.len)
 	memblit((new : byte#), (sl# : byte#), n * sizeof(@a))
 	if sl#.len > 0
