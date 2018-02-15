@@ -19,7 +19,7 @@ extern const fnclone	: ( flags : cloneopt, \
 			fn : void#  /* we need a raw pointer */ \
 			-> pid)
 const wait4	: (pid:pid, loc:int32#, opt : int64, usage:rusage#	-> int64)
-const waitpid	: (pid:pid, loc:int32#, opt : int64	-> int64)
+const waitpid	: (pid:pid, loc:int32#, opt : int64	-> pid)
 const execv	: (cmd : byte[:], args : byte[:][:] -> int64)
 const execve	: (cmd : byte[:], args : byte[:][:], env : byte[:][:] -> int64)
 /* wrappers to extract wait status */
@@ -119,7 +119,7 @@ const clone	= {flags, stk, ptid, ctid, ptreg;	-> (syscall(Sysclone, a(flags), a(
 const wait4	= {pid, loc, opt, usage;	-> syscall(Syswait4, a(pid), a(loc), a(opt), a(usage))}
 const waitpid	= {pid, loc, opt;
 	var rusage
-	-> wait4(pid, loc, opt, &rusage)
+	-> (wait4(pid, loc, opt, &rusage) : pid)
 }
 
 const execv	= {cmd, args

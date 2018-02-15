@@ -33,14 +33,17 @@ const spork = {cmd
 	var infds : fd[2], outfds : fd[2]
 	var err
 
+	/* init for safe close */
+	infds = [-1, -1]
+	outfds = [-1, -1]
 	/* open up pipes */
 	err = pipe(&infds) 
 	if err != Enone
-		-> `Err err
+		goto sporkerr
 	;;
 	err = pipe(&outfds)
 	if err != Enone
-		-> `Err err
+		goto sporkerr
 	;;
 
 	match sporkfd(cmd, infds, outfds, [-1, 2])
@@ -50,26 +53,37 @@ const spork = {cmd
 		close(outfds[1]);
 		-> `Ok (pid, infds[1], outfds[0])
 	| `Err m:
-		-> `Err m
+		err = m
+		goto sporkerr
 	;;
+:sporkerr
+	close(infds[0])
+	close(infds[1])
+	close(outfds[0])
+	close(outfds[1])
+	-> `Err err
 }
 
 const espork = {cmd
 	var infds : fd[2], outfds : fd[2], errfds : fd[2]
 	var err
 
+	/* init for safe close */
+	infds = [-1, -1]
+	outfds = [-1, -1]
+	errfds = [-1, -1]
 	/* open up pipes */
 	err = pipe(&infds) 
 	if err != Enone
-		-> `Err err
+		goto sporkerr
 	;;
 	err = pipe(&outfds)
 	if err != Enone
-		-> `Err err
+		goto sporkerr
 	;;
 	err = pipe(&errfds)
 	if err != Enone
-		-> `Err err
+		goto sporkerr
 	;;
 
 	match sporkfd(cmd, infds, outfds, errfds)
@@ -80,8 +94,18 @@ const espork = {cmd
 		close(errfds[1]);
 		-> `Ok (pid, infds[1], outfds[0], errfds[0])
 	| `Err m:
-		-> `Err m
+		err = m
+		goto sporkerr
 	;;
+:sporkerr
+	/* close on a bad fd is ok. */
+	close(infds[0])
+	close(infds[1])
+	close(outfds[0])
+	close(outfds[1])
+	close(errfds[0])
+	close(errfds[1])
+	-> `Err err
 }
 
 const filterfd = {fd, cmd
@@ -110,13 +134,20 @@ const sporkfd = {cmd, infds, outfds, errfds
 	pid = fork()
 	/* error  */
 	if pid < 0
-		/* we don't want to leak the pipe fds on error */
-		close(infds[0]);
-		close(infds[1]);
-		close(outfds[0]);
-		close(outfds[1]);
-		close(errfds[0]);
-		close(errfds[1]);
+		/*
+		  so we don't leak fds on error,
+		  close the child's ends. The parent
+		  handles closing its fds.
+		*/
+		if infds[1] != 0
+			close(infds[1]);
+		;;
+		if outfds[0] != 1
+			close(outfds[0]);
+		;;
+		if errfds[0] != 2
+			close(errfds[0]);
+		;;
 		-> `Err (pid : errno)
 	/* child */
 	elif pid == 0
