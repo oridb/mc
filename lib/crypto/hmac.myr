@@ -1,0 +1,75 @@
+use std
+
+use "sha256"
+use "hash"
+
+pkg crypto =
+	type hmac(@h) :: hash @h = struct
+		inner	: @h
+		outer	: @h
+	;;
+
+	const hmacsha256 	: (key : byte[:], msg : byte[:] -> byte[32])
+	const hmacsha224 	: (key : byte[:], msg : byte[:] -> byte[28])
+	generic hmacinit	: (hmac : hmac(@h)#, key : byte[:] -> void)
+	generic hmacadd		: (hmac : hmac(@h)#, msg : byte[:] -> void)
+	generic hmacfin		: (hmac : hmac(@h)#, dst : byte[:] -> void)
+;;
+
+const hmacsha256 = {key, msg
+	var hmac : hmac(sha256)
+	var r : byte[32]
+
+	hmacinit(&hmac, key)
+	hmacadd(&hmac, msg)
+	hmacfin(&hmac, r[:])
+	-> r
+}
+
+const hmacsha224 = {key, msg
+	var hmac : hmac(sha224)
+	var r : byte[28]
+
+	hmacinit(&hmac, key)
+	hmacadd(&hmac, msg)
+	hmacfin(&hmac, r[:])
+	-> r
+}
+
+
+generic hmacinit = {hmac : hmac(@h)#, key :: hash @h
+	/* for now, max block size is 128 bytes */
+	var k : byte[128], ik : byte[128], ok : byte[128]
+	var hashsz, blksz
+
+	hashsz = impl(Hashsz, @h)
+	blksz = impl(Blocksz, @h)
+	std.slfill(k[:blksz], 0)
+	if key.len > blksz
+		/* abuse the inner hasher a bit */
+		hinit(&hmac.inner)
+		hadd(&hmac.inner, key)
+		hfin(&hmac.inner, k[:hashsz])
+	else
+		std.slcp(k[:key.len], key)
+	;;
+	for var i = 0; i < blksz; i++
+		ik[i] = k[i] ^ 0x36
+		ok[i] = k[i] ^ 0x5c
+	;;
+	hinit(&hmac.inner)
+	hinit(&hmac.outer)
+	hadd(&hmac.inner, ik[:blksz])
+	hadd(&hmac.outer, ok[:blksz])
+}
+
+
+generic hmacadd = {hmac, msg
+	hadd(&hmac.inner, msg)
+}
+
+generic hmacfin = {hmac : hmac(@h)#, dst :: hash @h
+	hfin(&hmac.inner, dst)
+	hadd(&hmac.outer, dst)
+	hfin(&hmac.outer, dst)
+}

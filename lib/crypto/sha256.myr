@@ -1,9 +1,14 @@
 use std
+use "hash"
 
 pkg crypto =
 	type sha256
 	type sha224
 
+	impl hash sha256
+	impl hash sha224
+
+	/* for convenience/legacy */
 	const sha256	: (data : byte[:] -> byte[32])
 	const sha256init	: (st : sha256# -> void)
 	const sha256add	: (st : sha256#, data : byte[:] -> void)
@@ -22,70 +27,40 @@ type sha256 = struct
 ;;
 
 const sha256 = {data
-	var st
+	var st : sha256, r : byte[32]
 
-	sha256init(&st)
-	sha256add(&st, data)
-	-> sha256fin(&st)
+	hinit(&st)
+	hadd(&st, data)
+	hfin(&st, r[:])
+	-> r
 }
 
 const sha256init = {st
-	st.x[0] = 0x6A09E667
-	st.x[1] = 0xBB67AE85
-	st.x[2] = 0x3C6EF372
-	st.x[3] = 0xA54FF53A
-	st.x[4] = 0x510e527f
-	st.x[5] = 0x9b05688c
-	st.x[6] = 0x1f83d9ab
-	st.x[7] = 0x5be0cd19
-	st.msglen = 0
+	hinit(st)
 }
 
 const sha256add = {st, data
-	var n, ntail
-
-	ntail = st.msglen % 64
-	st.msglen += data.len
-	if ntail > 0
-		n = std.min(64 - ntail, data.len)
-		std.slcp(st.tail[ntail:ntail + n], data[:n])
-		data = data[n:]
-		if n + ntail < 64
-			-> void
-		;;
-		step(st.x[:], st.tail[:])
-	;;
-
-	while data.len >= 64
-		step(st.x[:], data[:64])
-		data = data[64:]
-	;;
-
-	ntail = st.msglen % 64
-	std.slcp(st.tail[:ntail], data)
+	hadd(st, data)
 }
 
 const sha256fin = {st
 	var r : byte[32]
-
-	tail(st.x[:], st.msglen, st.tail[:])
-
-	pack(r[0:4], st.x[0])
-	pack(r[4:8], st.x[1])
-	pack(r[8:12], st.x[2])
-	pack(r[12:16], st.x[3])
-	pack(r[16:20], st.x[4])
-	pack(r[20:24], st.x[5])
-	pack(r[24:28], st.x[6])
-	pack(r[28:32], st.x[7])
+	hfin(st, r[:])
 	-> r
 }
 
-type sha224 = struct
-	x : uint32[8]
-	tail : byte[64]
-	msglen : uint64
-;;
+const sha224init = {st
+	hinit(st)
+}
+const sha224add = {st, data
+	hadd(st, data)
+}
+
+const sha224fin = {st
+	var r : byte[28]
+	hfin(st, r[:])
+	-> r
+}
 
 const sha224 = {data
 	var st
@@ -95,56 +70,119 @@ const sha224 = {data
 	-> sha224fin(&st)
 }
 
-const sha224init = {st
-	st.x[0] = 0xc1059ed8
-	st.x[1] = 0x367cd507
-	st.x[2] = 0x3070dd17
-	st.x[3] = 0xf70e5939
-	st.x[4] = 0xffc00b31
-	st.x[5] = 0x68581511
-	st.x[6] = 0x64f98fa7
-	st.x[7] = 0xbefa4fa4
-	st.msglen = 0
-}
 
-const sha224add = {st, data
-	var n, ntail
+impl hash sha256 =
+	Blocksz = 64
+	Hashsz = 32
 
-	ntail = st.msglen % 64
-	st.msglen += data.len
-	if ntail > 0
-		n = std.min(64 - ntail, data.len)
-		std.slcp(st.tail[ntail:ntail + n], data[:n])
-		data = data[n:]
-		if n + ntail < 64
-			-> void
+	hinit = {st
+		st.x[0] = 0x6a09e667
+		st.x[1] = 0xbb67ae85
+		st.x[2] = 0x3c6ef372
+		st.x[3] = 0xa54ff53a
+		st.x[4] = 0x510e527f
+		st.x[5] = 0x9b05688c
+		st.x[6] = 0x1f83d9ab
+		st.x[7] = 0x5be0cd19
+		st.msglen = 0
+	}
+
+	hadd = {st, data
+		var n, ntail
+
+		ntail = st.msglen % 64
+		st.msglen += data.len
+		if ntail > 0
+			n = std.min(64 - ntail, data.len)
+			std.slcp(st.tail[ntail:ntail + n], data[:n])
+			data = data[n:]
+			if n + ntail < 64
+				-> void
+			;;
+			step(st.x[:], st.tail[:])
 		;;
-		step(st.x[:], st.tail[:])
-	;;
 
-	while data.len >= 64
-		step(st.x[:], data[:64])
-		data = data[64:]
-	;;
+		while data.len >= 64
+			step(st.x[:], data[:64])
+			data = data[64:]
+		;;
 
-	ntail = st.msglen % 64
-	std.slcp(st.tail[:ntail], data)
-}
+		ntail = st.msglen % 64
+		std.slcp(st.tail[:ntail], data)
+	}
 
-const sha224fin = {st
-	var r : byte[28]
+	hfin = {st, r
+		tail(st.x[:], st.msglen, st.tail[:])
 
-	tail(st.x[:], st.msglen, st.tail[:])
+		pack(r[0:4], st.x[0])
+		pack(r[4:8], st.x[1])
+		pack(r[8:12], st.x[2])
+		pack(r[12:16], st.x[3])
+		pack(r[16:20], st.x[4])
+		pack(r[20:24], st.x[5])
+		pack(r[24:28], st.x[6])
+		pack(r[28:32], st.x[7])
+	}
+;;
 
-	pack(r[0:4], st.x[0])
-	pack(r[4:8], st.x[1])
-	pack(r[8:12], st.x[2])
-	pack(r[12:16], st.x[3])
-	pack(r[16:20], st.x[4])
-	pack(r[20:24], st.x[5])
-	pack(r[24:28], st.x[6])
-	-> r
-}
+type sha224 = struct
+	x : uint32[8]
+	tail : byte[64]
+	msglen : uint64
+;;
+
+impl hash sha224 =
+	Blocksz = 64
+	Hashsz = 28
+
+	hinit = {st
+		st.x[0] = 0xc1059ed8
+		st.x[1] = 0x367cd507
+		st.x[2] = 0x3070dd17
+		st.x[3] = 0xf70e5939
+		st.x[4] = 0xffc00b31
+		st.x[5] = 0x68581511
+		st.x[6] = 0x64f98fa7
+		st.x[7] = 0xbefa4fa4
+		st.msglen = 0
+	}
+
+	hadd = {st, data
+		var n, ntail
+
+		ntail = st.msglen % 64
+		st.msglen += data.len
+		if ntail > 0
+			n = std.min(64 - ntail, data.len)
+			std.slcp(st.tail[ntail:ntail + n], data[:n])
+			data = data[n:]
+			if n + ntail < 64
+				-> void
+			;;
+			step(st.x[:], st.tail[:])
+		;;
+
+		while data.len >= 64
+			step(st.x[:], data[:64])
+			data = data[64:]
+		;;
+
+		ntail = st.msglen % 64
+		std.slcp(st.tail[:ntail], data)
+	}
+
+	hfin = {st, r
+		tail(st.x[:], st.msglen, st.tail[:])
+
+		pack(r[0:4], st.x[0])
+		pack(r[4:8], st.x[1])
+		pack(r[8:12], st.x[2])
+		pack(r[12:16], st.x[3])
+		pack(r[16:20], st.x[4])
+		pack(r[20:24], st.x[5])
+		pack(r[24:28], st.x[6])
+	}
+;;
 
 
 const tail = {x, msglen, tail

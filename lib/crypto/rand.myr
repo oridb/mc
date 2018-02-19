@@ -2,7 +2,6 @@ use std
 use thread
 
 use "entropy"
-use "sha256"
 use "chacha20"
 
 pkg crypto =

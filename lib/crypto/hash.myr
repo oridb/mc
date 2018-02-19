@@ -1,0 +1,12 @@
+use std
+
+pkg crypto =
+	trait hash @a =
+		Blocksz	: std.size
+		Hashsz	: std.size
+
+		hinit	: (h : @a# -> void)
+		hadd	: (h : @a#, msg : byte[:] -> void)
+		hfin	: (h : @a#, dst : byte[:] -> void)
+	;;
+;;

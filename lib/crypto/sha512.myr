@@ -1,9 +1,14 @@
 use std
+use "hash"
 
 pkg crypto =
 	type sha512
 	type sha384
 
+	impl hash sha512
+	impl hash sha384
+
+	/* for convenience/legacy */
 	const sha512	: (data : byte[:] -> byte[64])
 	const sha512init	: (st : sha512# -> void)
 	const sha512add	: (st : sha512#, data : byte[:] -> void)
@@ -29,122 +34,156 @@ type sha384 = struct
 ;;
 
 const sha512 = {data
-	var st
+	var st : sha512 
+	var r : byte[64]
 
-	sha512init(&st)
-	sha512add(&st, data)
-	-> sha512fin(&st)
+	hinit(&st)
+	hadd(&st, data)
+	hfin(&st, r[:])
+	-> r
 }
 
 const sha512init = {st
-	st.x[0] = 0x6a09e667f3bcc908ul
-	st.x[1] = 0xbb67ae8584caa73bul
-	st.x[2] = 0x3c6ef372fe94f82bul
-	st.x[3] = 0xa54ff53a5f1d36f1ul
-	st.x[4] = 0x510e527fade682d1ul
-	st.x[5] = 0x9b05688c2b3e6c1ful
-	st.x[6] = 0x1f83d9abfb41bd6bul
-	st.x[7] = 0x5be0cd19137e2179ul
-	st.msglen = 0
+	hinit(st)
 }
-
-const sha512add = {st, data
-	var n, ntail
-
-	ntail = st.msglen % 128
-	st.msglen += data.len
-	if ntail > 0
-		n = std.min(128 - ntail, data.len)
-		std.slcp(st.tail[ntail:ntail+n], data[:n])
-		data = data[n:]
-		if n + ntail < 128
-			-> void
-		;;
-		step(st.x[:], st.tail[:])
-	;;
-
-	while data.len >= 128
-		step(st.x[:], data[:128])
-		data = data[128:]
-	;;
-
-	ntail = st.msglen % 128
-	std.slcp(st.tail[:ntail], data)
+const sha512add = {st, msg
+	hadd(st, msg)
 }
-
 const sha512fin = {st
 	var r : byte[64]
-
-	tail(st.x[:], st.msglen, st.tail[:])
-
-	pack(r[ 0: 8],	st.x[0])
-	pack(r[ 8:16],	st.x[1])
-	pack(r[16:24],	st.x[2])
-	pack(r[24:32],	st.x[3])
-	pack(r[32:40],	st.x[4])
-	pack(r[40:48],	st.x[5])
-	pack(r[48:56],	st.x[6])
-	pack(r[56:64],	st.x[7])
+	hfin(st, r[:])
 	-> r
 }
 
 const sha384 = {data
-	var st
+	var st : sha384
+	var r : byte[48]
 
-	sha384init(&st)
-	sha384add(&st, data)
-	-> sha384fin(&st)
+	hinit(&st)
+	hadd(&st, data)
+	hfin(&st, r[:])
+	-> r
 }
 
 const sha384init = {st
-	st.x[0] = 0xCBBB9D5DC1059ED8ul
-	st.x[1] = 0x629A292A367CD507ul
-	st.x[2] = 0x9159015A3070DD17ul
-	st.x[3] = 0x152FECD8F70E5939ul
-	st.x[4] = 0x67332667FFC00B31ul
-	st.x[5] = 0x8EB44A8768581511ul
-	st.x[6] = 0xDB0C2E0D64F98FA7ul
-	st.x[7] = 0x47B5481DBEFA4FA4ul
-	st.msglen = 0
+	hinit(st)
 }
 
-const sha384add = {st, data
-	var n, ntail
-
-	ntail = st.msglen % 128
-	st.msglen += data.len
-	if ntail > 0
-		n = std.min(128 - ntail, data.len)
-		std.slcp(st.tail[ntail:ntail+n], data[:n])
-		data = data[n:]
-		if n + ntail < 128
-			-> void
-		;;
-		step(st.x[:], st.tail[:])
-	;;
-
-	while data.len >= 128
-		step(st.x[:], data[:128])
-		data = data[128:]
-	;;
-
-	ntail = st.msglen % 128
-	std.slcp(st.tail[:ntail], data)
+const sha384add = {st, msg
+	hadd(st, msg)
 }
 
 const sha384fin = {st
 	var r : byte[48]
-
-	tail(st.x[:], st.msglen, st.tail[:])
-
-	pack(r[ 0: 8],	st.x[0])
-	pack(r[ 8:16],	st.x[1])
-	pack(r[16:24],	st.x[2])
-	pack(r[24:32],	st.x[3])
-	pack(r[32:40],	st.x[4])
-	pack(r[40:48],	st.x[5])
+	hfin(st, r[:])
 	-> r
 }
+
+impl hash sha512 =
+	Blocksz = 128
+	Hashsz = 64
+
+	hinit = {st
+		st.x[0] = 0x6a09e667f3bcc908ul
+		st.x[1] = 0xbb67ae8584caa73bul
+		st.x[2] = 0x3c6ef372fe94f82bul
+		st.x[3] = 0xa54ff53a5f1d36f1ul
+		st.x[4] = 0x510e527fade682d1ul
+		st.x[5] = 0x9b05688c2b3e6c1ful
+		st.x[6] = 0x1f83d9abfb41bd6bul
+		st.x[7] = 0x5be0cd19137e2179ul
+		st.msglen = 0
+	}
+
+	hadd = {st, data
+		var n, ntail
+
+		ntail = st.msglen % 128
+		st.msglen += data.len
+		if ntail > 0
+			n = std.min(128 - ntail, data.len)
+			std.slcp(st.tail[ntail:ntail+n], data[:n])
+			data = data[n:]
+			if n + ntail < 128
+				-> void
+			;;
+			step(st.x[:], st.tail[:])
+		;;
+
+		while data.len >= 128
+			step(st.x[:], data[:128])
+			data = data[128:]
+		;;
+
+		ntail = st.msglen % 128
+		std.slcp(st.tail[:ntail], data)
+	}
+
+	hfin = {st, r
+		tail(st.x[:], st.msglen, st.tail[:])
+
+		pack(r[ 0: 8],	st.x[0])
+		pack(r[ 8:16],	st.x[1])
+		pack(r[16:24],	st.x[2])
+		pack(r[24:32],	st.x[3])
+		pack(r[32:40],	st.x[4])
+		pack(r[40:48],	st.x[5])
+		pack(r[48:56],	st.x[6])
+		pack(r[56:64],	st.x[7])
+	}
+;;
+
+impl hash sha384 =
+	Blocksz = 128
+	Hashsz = 48
+
+	hinit = {st
+		st.x[0] = 0xCBBB9D5DC1059ED8ul
+		st.x[1] = 0x629A292A367CD507ul
+		st.x[2] = 0x9159015A3070DD17ul
+		st.x[3] = 0x152FECD8F70E5939ul
+		st.x[4] = 0x67332667FFC00B31ul
+		st.x[5] = 0x8EB44A8768581511ul
+		st.x[6] = 0xDB0C2E0D64F98FA7ul
+		st.x[7] = 0x47B5481DBEFA4FA4ul
+		st.msglen = 0
+	}
+
+	hadd = {st, data
+		var n, ntail
+
+		ntail = st.msglen % 128
+		st.msglen += data.len
+		if ntail > 0
+			n = std.min(128 - ntail, data.len)
+			std.slcp(st.tail[ntail:ntail+n], data[:n])
+			data = data[n:]
+			if n + ntail < 128
+				-> void
+			;;
+			step(st.x[:], st.tail[:])
+		;;
+
+		while data.len >= 128
+			step(st.x[:], data[:128])
+			data = data[128:]
+		;;
+
+		ntail = st.msglen % 128
+		std.slcp(st.tail[:ntail], data)
+	}
+
+	hfin = {st, r
+		tail(st.x[:], st.msglen, st.tail[:])
+
+		pack(r[ 0: 8],	st.x[0])
+		pack(r[ 8:16],	st.x[1])
+		pack(r[16:24],	st.x[2])
+		pack(r[24:32],	st.x[3])
+		pack(r[32:40],	st.x[4])
+		pack(r[40:48],	st.x[5])
+	}
+;;
 
 
 const tail = {x, msglen, tail

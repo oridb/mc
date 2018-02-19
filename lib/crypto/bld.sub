@@ -2,11 +2,15 @@ testdeps = ../testr:testr ;;
 
 lib crypto =
 	# hashes
+	hash.myr
 	md5.myr
 	sha1.myr
 	sha256.myr
 	sha512.myr
 	sha3.myr
+
+	# hmac
+	hmac.myr
 
 	# ciphers
 	chacha20.myr
