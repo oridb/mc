@@ -1,13 +1,10 @@
-use "slfill"
+use "memops"
 
 pkg std =
 	generic clear	: (p : @a#	-> void)
 ;;
 
 generic clear = {p : @a#
-	var bp
-
-	bp = (p : byte#)
-	slfill(bp[:sizeof(@a)], 0)
+	memfill((p : byte#), 0, sizeof(@a))
 }
 
