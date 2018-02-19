@@ -1324,6 +1324,8 @@ initvar(Node *n, Node *s)
 		fatal(n, "attempting to refer to hidden decl %s", ctxstr(n));
 
 	param = n->expr.param;
+	if (param)
+		tyresolve(param);
 	if (s->decl.isgeneric) {
 		subst = mksubst();
 		if (param)
