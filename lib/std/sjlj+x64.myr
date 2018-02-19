@@ -1,0 +1,8 @@
+pkg std =
+	type jmpbuf = struct
+		regs	: uint64[9]
+	;;
+
+	extern const setjmp	: (jb : jmpbuf# -> bool)
+	extern const longjmp	: (jb : jmpbuf# -> void)
+;;

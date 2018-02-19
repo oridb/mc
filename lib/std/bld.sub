@@ -53,7 +53,7 @@ lib std =
 	search.myr
 	sjlj-impl+plan9-x64.s
 	sjlj-impl+posixy-x64.s
-	sjlj.myr
+	sjlj+x64.myr
 	slcp.myr
 	sldup.myr
 	sleep.myr
