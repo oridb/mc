@@ -17,6 +17,8 @@ pkg testr =
 	const ok	: (ctx : ctx# -> void)
 	const fail	: (ctx : ctx#, msg : byte[:], args : ... -> void)
 	const check	: (ctx : ctx#, cond : bool, msg : byte[:], args : ... -> void)
+	generic eq	: (ctx : ctx#, a : @t, b : @t -> void) :: std.equatable @t
+	generic neq	: (ctx : ctx#, a : @t, b : @t -> void) :: std.equatable @t
 
 	const softfail	: (ctx : ctx#, msg : byte[:], args : ... -> void)
 ;;
@@ -53,6 +55,18 @@ const check = {ctx, cond, msg, args
 	if !cond
 		ap = std.vastart(&args)
 		failv(ctx, msg, &ap)
+	;;
+}
+
+generic eq = {ctx, a, b
+	if !std.eq(a, b)
+		fail(ctx, "{} != {}\n", a, b)
+	;;
+}
+
+generic neq = {ctx, a, b
+	if std.eq(a, b)
+		fail(ctx, "{} != {}\n", a, b)
 	;;
 }
 
