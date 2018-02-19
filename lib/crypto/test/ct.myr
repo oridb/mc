@@ -1,0 +1,34 @@
+use std
+use testr
+use crypto
+
+const main = {
+	testr.run([
+		[.name="not-0", .fn={ctx; testr.eq(ctx, crypto.not(0ui), 1ui)}],
+		[.name="not-1", .fn={ctx; testr.eq(ctx, crypto.not(1ui), 0ui)}],
+
+		[.name="eq-t", 	.fn={ctx; testr.eq(ctx, crypto.eq(123ui, 123ui), 1)}],
+		[.name="eq-f", 	.fn={ctx; testr.eq(ctx, crypto.eq(124ui, 123ui), 0)}],
+
+		[.name="eq-~0-t", 	.fn={ctx; testr.eq(ctx, crypto.eq(~0ui, ~0ui), 1)}],
+		[.name="eq-~0-t", 	.fn={ctx; testr.eq(ctx, crypto.eq(~0ui, ~0ui - 1), 0)}],
+
+		[.name="gt-ss-1", 	.fn={ctx; testr.eq(ctx, crypto.gt(123ui, 23ui), 1)}],
+		[.name="gt-ss-0", 	.fn={ctx; testr.eq(ctx, crypto.gt(23ui, 123ui), 0)}],
+		[.name="gt-bs-0", 	.fn={ctx; testr.eq(ctx, crypto.gt(~0ui - 1, ~0ui), 0)}],
+		[.name="gt-bs-1", 	.fn={ctx; testr.eq(ctx, crypto.gt(~0ui, 23ui), 1)}],
+
+		[.name="gt-ss-1", 	.fn={ctx; testr.eq(ctx, crypto.gt(123ui, 23ui), 1)}],
+		[.name="gt-ss-0", 	.fn={ctx; testr.eq(ctx, crypto.gt(23ui, 123ui), 0)}],
+		[.name="gt-bs-1", 	.fn={ctx; testr.eq(ctx, crypto.gt(~0ui, 23ui), 1)}],
+		[.name="gt-sb-0", 	.fn={ctx; testr.eq(ctx, crypto.gt(23ui, ~0ui), 0)}],
+		[.name="gt-bb-0", 	.fn={ctx; testr.eq(ctx, crypto.gt(~0ui - 1, ~0ui), 0)}],
+		[.name="gt-bb-1", 	.fn={ctx; testr.eq(ctx, crypto.gt(~0ui, ~0ui - 1), 1)}],
+
+		[.name="lt-ss-1", 	.fn={ctx; testr.eq(ctx, crypto.lt(23ui, 123ui), 1)}],
+		[.name="lt-ss-0", 	.fn={ctx; testr.eq(ctx, crypto.lt(123ui, 23ui), 0)}],
+		[.name="lt-bs-1", 	.fn={ctx; testr.eq(ctx, crypto.lt(23ui, ~0ui), 1)}],
+		[.name="lt-bb-0", 	.fn={ctx; testr.eq(ctx, crypto.lt(~0ui, ~0ui - 1), 0)}],
+		[.name="lt-bb-1", 	.fn={ctx; testr.eq(ctx, crypto.lt(~0ui - 1, ~0ui), 1)}],
+	][:])
+}

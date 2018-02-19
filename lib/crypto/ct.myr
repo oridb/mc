@@ -1,0 +1,59 @@
+use std
+
+pkg crypto =
+	/* These functions require unsigned inputs in order to work correctly */
+	generic not	: (a : @t -> @t)	:: integral,numeric @t
+	generic eq	: (a : @t, b : @t -> @t)	:: integral,numeric @t
+	generic ne	: (a : @t, b : @t -> @t)	:: integral,numeric @t
+	generic gt	: (a : @t, b : @t -> @t)	:: integral,numeric @t
+	generic lt	: (a : @t, b : @t -> @t)	:: integral,numeric @t
+	generic ge	: (a : @t, b : @t -> @t)	:: integral,numeric @t
+	generic le	: (a : @t, b : @t -> @t)	:: integral,numeric @t
+	generic mux	: (x : @t, a : @t, b : @t ->@t)	:: integral,numeric @t
+;;
+
+generic not = {a : @t :: integral,numeric @t
+	-> a ^ 1
+}
+
+generic eq = {a : @t, b : @t :: integral,numeric @t
+	const nshift = 8*sizeof(@t) - 1
+	var q = a ^ b
+	-> ((q | -q) >> nshift)^1
+}
+
+generic gt = {a : @t, b : @t :: integral,numeric @t
+	/* 
+	  3 cases:
+	  - both top bits unset => check if result is -ve (top bit set)
+	  - one top bit set: 	=> one with top bit set is >
+	  - both top bits set:	=> subtract, check if result is -ve
+	*/
+	const nshift = 8*sizeof(@t) - 1
+	var z = (b - a) 
+	-> (z ^ ((a ^ b) & (a ^ z))) >> nshift;
+}
+
+generic ge = {a, b
+	-> lt(a, b) ^ 1
+}
+
+generic lt = {a, b
+	const nshift = 8*sizeof(@t) - 1
+	var z = (a - b) 
+	-> (z ^ ((b ^ a) & (b ^ a))) >> nshift;
+}
+
+generic le = {a, b
+	-> gt(a, b) ^ 1
+}
+
+generic ne = {a, b
+	const nshift = 8*sizeof(@t) - 1
+	var q = a ^ b
+	-> ((q | -q) >> nshift)^1
+}
+
+generic mux = {c, a, b
+	-> b ^ (-c & (a ^ b))
+}
