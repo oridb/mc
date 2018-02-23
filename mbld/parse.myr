@@ -6,6 +6,7 @@ use "opts"
 use "syssel"
 
 pkg bld =
+	const mkbuild	: (tags : byte[:][:], resolve : bool -> build#)
 	const load	: (b : build# -> bool)
 	$noret const failparse : (p : parser#, msg : byte[:], args : ... -> void)
 ;;
@@ -35,23 +36,45 @@ type parser = struct
 	targsel	: syssel((byte[:], targ))#
 ;;
 
+const mkbuild = {tags, resolve
+	var b
+
+	b = std.zalloc()
+	b.libs = std.mkht()
+	b.proc = std.mkht()
+	b.targs = std.mkht()
+	b.tags = std.mkht()
+	b.resolve = resolve
+	b.deps = std.mk([
+		.targs = std.mkht(),
+		.gen = std.mkht(),
+		.leaves = [][:],
+		.nodes = [][:],
+	])
+	bld.addsysattrs(b, tags)
+	-> b
+}
+
 const load = {b
 	var ok, sel
 	var targs
 
 	sel = mksyssel(b, "mbld", 0, "mbld")
-	ok = loadall(b, "bld.proj", "", sel)
+	ok = loadall(b, "bld.proj", "", sel, true)
 
 	targs = sysselfin(sel)
 	for (name, targ) : targs
 		std.slpush(&b.all, name)
+		std.put("targ name: {}\n", name)
 		std.htput(b.targs, name, targ)
 	;;
 
-	if ok
-		ok = sortdeps(b)
+	if b.resolve
+		if ok
+			ok = sortdeps(b)
+		;;
+		std.slfree(targs)
 	;;
-	std.slfree(targs)
 	-> ok
 }
 
@@ -107,7 +130,7 @@ const getdeps = {b, parent, targname
 }
 
 /* recursively load all bld.{proj,sub} files in project */
-const loadall = {b, path, dir, sel
+const loadall = {b, path, dir, sel, isroot
 	var p : parser#
 	var subbld, subproj, ok
 	var curbase
@@ -130,22 +153,42 @@ const loadall = {b, path, dir, sel
 		build root.
 		*/
 		if std.fexists(subbld)
-			loadall(b, subbld, sub, sel)
+			loadall(b, subbld, sub, sel, false)
 		/*
 		bld.proj reroots the project -- @/
 		is relative to the most recent bld.proj
 		in the heirarchy.
 		*/
-		elif std.fexists(sub)
+		elif std.fexists(subproj)
 			curbase = b.basedir
 			b.basedir = sub
-			loadall(b, subproj, sub, sel)
+			loadall(b, subproj, sub, sel, false)
 			b.basedir = curbase
 		else
 			std.fatal("could not open {} or {} \n", subbld, subproj)
 		;;
 		std.slfree(subbld)
 		std.slfree(subproj)
+	;;
+	if isroot
+		match std.diropen(opt_depsdir)
+		| `std.Err _:	/* no deps to load */
+		| `std.Ok depdir:
+			for ent : std.byentry(depdir)
+				subbld = std.pathjoin([opt_depsdir, ent, "bld.sub"][:])
+				subproj = std.pathjoin([opt_depsdir, ent, "bld.proj"][:])
+				if std.fexists(subbld)
+					loadall(b, subbld, std.dirname(subbld), sel, false)
+				elif std.fexists(subproj)
+					curbase = b.basedir
+					b.basedir = std.dirname(subproj)
+					loadall(b, subproj, std.dirname(subproj), sel, false)
+					b.basedir = curbase
+				;;
+				std.slfree(subbld)
+				std.slfree(subproj)
+			;;
+		;;
 	;;
 	freeparser(p)
 	-> ok
@@ -778,7 +821,11 @@ const libpath = {p, libpath
 			std.fatal("libdep {} missing library after ':'\n")
 		;;
 		/* absolute path */
-		if std.hasprefix(libpath, "@/") || std.hasprefix(libpath, "@:")
+		if std.hasprefix(libpath, "@deps/")
+			dir = std.pathcat(opt_depsdir, libpath[6:idx])
+			lib = std.sldup(libpath[idx+1:])
+			targ = std.pathcat(".deps", libpath[6:])
+		elif std.hasprefix(libpath, "@/") || std.hasprefix(libpath, "@:")
 			dir = std.sldup(libpath[2:idx])
 			lib = std.sldup(libpath[idx+1:])
 			targ = std.sldup(libpath[2:])

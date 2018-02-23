@@ -21,6 +21,7 @@ pkg bld =
 	var opt_maxproc 	: std.size
 	var opt_debug		: bool
 	var opt_silent		: bool
+	var opt_depsdir		: byte[:]
 
 	/* undocumented/unsupported opts */
 	var opt_mc	: byte[:]
@@ -60,6 +61,7 @@ var opt_objdir		= "obj"
 var opt_genasm  	= false
 var opt_silent		= false
 var opt_maxproc 	= 1
+var opt_depsdir		= ""
 
 const initopts = {
 	var si
@@ -92,6 +94,8 @@ const initopts = {
 	opt_mc = std.getenvv("MYR_MC", "6m")
 	opt_muse = std.getenvv("MYR_MUSE", "muse")
 	opt_runtime = std.getenvv("MYR_RT", "")
+	opt_depsdir = std.pathcat(std.getcwd(), ".deps")
+
 	match std.getenv("MYR_MCFLAGS")
 	| `std.Some s:	opt_mcflags = std.strtok(s)
 	| `std.None:	/* ok */

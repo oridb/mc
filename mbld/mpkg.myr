@@ -1,0 +1,160 @@
+use std
+use bio
+use regex
+use thread
+use fileutil
+use http
+use bld
+
+const main = {args : byte[:][:]
+	var b, repo, cmd, tags, update
+
+	cmd = std.optparse(args, &[
+		.argdesc = "[inputs...]",
+		.noargs = true,
+		.opts = [
+			[.opt='u', .desc="update all dependencies"],
+			[.opt='t', .arg="tag", .desc="apply specified systag"],
+			[.opt='p', .arg="proj", .desc="fetch packages for project 'proj'"],
+			[.opt='D', .arg="dir", .desc="store deps in 'dir'"],
+		][:]
+	])
+
+	tags = [][:]
+	update = false
+	bld.initopts()
+	for opt : cmd.opts
+		match opt
+		| ('u', ""):	update = true
+		| ('t', tag):	std.slpush(&tags, tag)
+		| ('p', dir):	std.chdir(dir)
+		| ('D', dir):	bld.opt_depsdir = dir
+		| _:		std.die("unreachable\n")
+		;;
+	;;
+	b = bld.mkbuild(tags, false)
+	findproj(b)
+	repo = loadrepo(b)
+	bld.load(b)
+	fetch(b, repo, update)
+}
+
+const fetch = {b, repo, update
+	var deps
+
+	deps = [][:]
+	std.mkdir(".deps", 0o755)
+	for name : b.all
+		match bld.gettarg(b.targs, name)
+		| `bld.Bin bt:	fetchdeps(b, repo, bt, update, &deps)
+		| `bld.Lib lt:	fetchdeps(b, repo, lt, update, &deps)
+		| _:		/* skip */
+		;;
+	;;
+	std.slfree(deps)
+}
+
+const fetchdeps = {b, repo, targ, update, deps
+	for (depdir, dep, _) : targ.libdeps
+		if !std.hasprefix(depdir, ".deps")
+			continue
+		;;
+		std.put("{}: fetch {} => {}\n", targ.name, dep, depdir)
+		std.slpush(deps, dep)
+		match std.htget(repo, dep)
+		| `std.None:			std.fatal("unknown dep {}\n", dep)
+		| `std.Some ("git", url):	getgit(dep, url)
+		| `std.Some ("hg", url):	gethg(dep, url)
+		| `std.Some ("http", url):	gethttp(dep, url)
+		| `std.Some (schema, url):	std.fatal("unknown schema '{}' for '{}'\n", schema, url)
+		;;
+	;;
+}
+
+const findproj = {b
+	var dir
+
+	dir = std.getcwd()
+	while dir.len > 0 && !std.eq(dir, "/")
+		if std.chdir(dir) && std.fexists("bld.proj")
+			b.basedir = dir
+			break
+		;;
+		dir = std.dirname(dir)
+	;;
+	if dir.len > 0 && std.eq(b.basedir, "/")
+		std.fatal("could not find bld.proj\n")
+	;;
+}
+
+const loadrepo = {b
+	var home, repo
+	
+	repo = std.mkht()
+	home = fileutil.homedir()
+	if !readlocalrepo(repo, b.basedir) && !readlocalrepo(repo, home)
+		std.fatal("could not find repo\n")
+	;;
+	-> repo
+}
+
+const readlocalrepo = {repo, dir
+	var sp, spbuf : byte[:][3]
+	var fd, path
+
+	path = std.pathcat(dir, "bld.repo")
+	if !std.fexists(path)
+		std.slfree(path)
+		-> false
+	;;
+
+	match bio.open(path, bio.Rd)
+	| `std.Ok f:	fd = f
+	| `std.Err e:	std.fatal("could not open repo {}: {}\n", path, e)
+	;;
+
+	for ln : bio.byline(fd)
+		ln = std.strstrip(ln)
+		if std.decode(ln) == '#'
+			continue
+		;;
+
+		sp = std.bstrtok(spbuf[:], ln)
+		if sp.len != 3
+			std.fatal("malformed repo line {}\n", ln)
+		;;
+
+		std.htput(repo, std.sldup(sp[0]), (std.sldup(sp[1]), std.sldup(sp[2])))
+	;;
+
+	std.slfree(path)
+	-> true
+}
+
+const getgit = {name, repo
+	var out
+
+	out = std.pathcat(".deps", name)
+	if !std.fexists(out)
+		std.run(["git", "clone", repo, out][:])
+		std.run(["mpkg", "-p", out][:])
+		std.run(["mbld", "-p", out][:])
+	;;
+	std.slfree(out)
+}
+
+const gethg = {name, repo
+	var out
+
+	out = std.pathcat(".deps", name)
+	if !std.fexists(out)
+		std.run(["hg", "clone", repo, out][:])
+		std.run(["mpkg", "-p", out][:])
+		std.run(["mbld", "-p", out][:])
+	;;
+	std.slfree(out)
+}
+
+const gethttp = {name, repo
+	std.fatal("http blobs not yet implemented\n")
+}

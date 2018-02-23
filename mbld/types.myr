@@ -7,6 +7,8 @@ pkg bld =
 		tags	: std.htab(byte[:], (int, int, int))#
 		libs	: std.htab(byte[:], libdep#)#
 		deps	: depgraph#
+		all	: byte[:][:]
+		targs	: std.htab(byte[:], targ)#
 
 		/* in flight builds */
 		queue	: node#[:]
@@ -14,11 +16,10 @@ pkg bld =
 		fail	: bool
 
 		/* build params */
-		all	: byte[:][:]
-		targs	: std.htab(byte[:], targ)#
 		prefix	: byte[:]
 		system	: byte[:]
 		arch	: byte[:]
+		resolve	: bool
 
 	;;
 

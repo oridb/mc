@@ -1,17 +1,5 @@
 bin mbld =
-	build.myr
-	cpufeatures+posixy-x64.s
-	deps.myr
-	libs.myr
-	install.myr
-	main.myr
-	opts.myr
-	parse.myr
-	subtest.myr
-	syssel.myr
-	test.myr
-        types.myr
-	util.myr
+	mbld.myr
 
 	# probed (or hard coded) system config
 	config.myr
@@ -20,6 +8,51 @@ bin mbld =
 	# Currently, mbld doesn't add all deps transitively.
 	# Until this gets fixed, we need to list all dependent
 	# libraries here explicitly.
+	lib bld
+	lib ../lib/sys:sys
+	lib ../lib/std:std
+	lib ../lib/bio:bio
+	lib ../lib/regex:regex
+	lib ../lib/thread:thread
+;;
+
+bin mpkg =
+	mpkg.myr
+
+	# probed (or hard coded) system config
+	config.myr
+	config+plan9-x64.myr
+
+	# See above
+	lib ../mbld:bld
+	lib ../lib/sys:sys
+	lib ../lib/std:std
+	lib ../lib/bio:bio
+	lib ../lib/http:http
+	lib ../lib/regex:regex
+	lib ../lib/thread:thread
+	lib ../lib/fileutil:fileutil
+;;
+
+lib bld =
+	build.myr
+	cpufeatures+posixy-x64.s
+	deps.myr
+	libs.myr
+	install.myr
+	opts.myr
+	parse.myr
+	subtest.myr
+	syssel.myr
+	test.myr
+        types.myr
+	util.myr
+
+	# probed (or hard coded) system config.
+	config.myr
+	config+plan9-x64.myr
+
+	# See above
 	lib ../lib/sys:sys
 	lib ../lib/std:std
 	lib ../lib/bio:bio

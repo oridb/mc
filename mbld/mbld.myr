@@ -1,17 +1,9 @@
 use std
 use regex
 use thread
+use bld
 
-use "build"
 use "config"
-use "deps"
-use "install"
-use "opts"
-use "parse"
-use "test"
-use "types"
-use "util"
-use "syssel"
 
 const main = {args : byte[:][:]
 	var b : bld.build#
@@ -37,6 +29,8 @@ const main = {args : byte[:][:]
 			[.opt='b', .arg="bin", .desc="compile binary 'bin' from inputs"],
 			[.opt='r', .arg="rt", .desc="link against runtime 'rt'"],
 			[.opt='o', .arg="dir", .desc="output directory"],
+			[.opt='p', .arg="proj", .desc="build from project 'proj'"],
+			[.opt='D', .arg="dir", .desc="store deps in 'dir'"],
 		][:]
 	])
 
@@ -58,6 +52,8 @@ const main = {args : byte[:][:]
 		| ('o', arg):	bld.opt_objdir = arg
 		| ('b', arg):	targname = arg
 		| ('r', arg):	bld.opt_runtime = arg
+		| ('p', arg):	std.chdir(arg)
+		| ('D', dir):	bld.opt_depsdir = dir
 		| _:		std.die("unreachable\n")
 		;;
 	;;
@@ -68,7 +64,7 @@ const main = {args : byte[:][:]
 		std.setenv(e, v)
 	;;
 
-	b = mkbuild(tags)
+	b = bld.mkbuild(tags, true)
 	if targname.len != 0
 		ok = buildimm(b, targname, cmd.args)
 	elif runsrc.len != 0
@@ -136,24 +132,6 @@ const runcmd = {bin, args
 
 	sl = std.sldup([bin][:])
 	-> bld.run(std.sljoin(&sl, args), "")
-}
-
-const mkbuild = {tags
-	var b
-
-	b = std.zalloc()
-	b.libs = std.mkht()
-	b.proc = std.mkht()
-	b.targs = std.mkht()
-	b.tags = std.mkht()
-	b.deps = std.mk([
-		.targs = std.mkht(),
-		.gen = std.mkht(),
-		.leaves = [][:],
-		.nodes = [][:],
-	])
-	bld.addsysattrs(b, tags)
-	-> b
 }
 
 const findproj = {b
