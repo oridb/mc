@@ -20,8 +20,9 @@ lib crypto =
 	entropy.myr	# currently assumes a /dev/random
 	rand.myr
 
-	# constant time arithmetic
+	# utilities for subtle bits
 	ct.myr
+	clear.myr
 
 	lib ../std:std
 	lib ../sys:sys

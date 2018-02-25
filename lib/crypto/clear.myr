@@ -1,0 +1,27 @@
+use std
+
+pkg crypto =
+	/* designed to facilitating freeing sensitive data */
+	generic	clear	: (p : @a# -> void)
+	generic	slclear	: (sl : @a[:] -> void)
+	generic free	: (p : @a# -> void)
+	generic slfree	: (sl : @a[:] -> void)
+;;
+
+generic clear = {p : @a#
+	std.memfill(p, 0, sizeof(@a))
+}
+
+generic slclear = {p : @a[:]
+	std.memfill(sl, 0, sizeof(@a)*sl.len)
+}
+
+generic free = {p : @a#
+	clear(p)
+	std.free(p)
+}
+
+generic slfree = {sl : @a[:]
+	slclear(p)
+	std.slfree(p)
+}
