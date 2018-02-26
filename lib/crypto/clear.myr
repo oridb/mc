@@ -9,11 +9,11 @@ pkg crypto =
 ;;
 
 generic clear = {p : @a#
-	std.memfill(p, 0, sizeof(@a))
+	std.memfill((p : byte#), 0, sizeof(@a))
 }
 
-generic slclear = {p : @a[:]
-	std.memfill(sl, 0, sizeof(@a)*sl.len)
+generic slclear = {sl : @a[:]
+	std.memfill((sl : byte#), 0, sizeof(@a)*sl.len)
 }
 
 generic free = {p : @a#
@@ -22,6 +22,6 @@ generic free = {p : @a#
 }
 
 generic slfree = {sl : @a[:]
-	slclear(p)
-	std.slfree(p)
+	slclear(sl)
+	std.slfree(sl)
 }
