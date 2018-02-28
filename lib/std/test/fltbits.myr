@@ -5,6 +5,10 @@ use testr
 const main = {
 	testr.run([
 		[.name = "isnan", .fn = isnan01],
+		[.name = "bits-roundtrip-32", .fn = bitsround32],
+		[.name = "bits-roundtrip-64", .fn = bitsround64],
+		[.name = "flt32bits", .fn = flt32bits],
+		[.name = "flt64bits", .fn = flt64bits],
 	][:])
 }
 
@@ -12,6 +16,83 @@ const isnan01 = {c
 	testr.check(c, std.isnan(std.flt64nan()), "std.flt64nan() should give a NaN")
 	testr.check(c, std.isnan(std.flt32nan()), "std.flt32nan() should give a NaN")
 
+	/*
+	   a NaN should be {any sign bit}, then {8 or 11 exponent
+	   bits, all 1}, then {any non-zero sequence of 23 or 52
+	   bits}
+	 */
 	testr.check(c, std.isnan(std.flt64frombits(0xfff0000500000000ul)), "0xfff0000500000000 should be a NaN")
-	testr.check(c, !std.isnan(std.flt64frombits(0xfff0000000000000ul)), "Infinities should not be NaNs")
+	testr.check(c, std.isnan(std.flt64frombits(0x7ff0000500000000ul)), "0x7ff0000500000000 should be a NaN")
+	testr.check(c, std.isnan(std.flt32frombits(0xff800090)), "0xff800090 should be a NaN")
+	testr.check(c, std.isnan(std.flt32frombits(0x7f800090)), "0x7f800090 should be a NaN")
+
+	/* if the significand bits are all 0, it's an infinity instead */
+	testr.check(c, !std.isnan(std.flt64frombits(0x7ff0000000000000ul)), "Infinities[1] should not be NaNs")
+	testr.check(c, !std.isnan(std.flt64frombits(0xfff0000000000000ul)), "Infinities[2] should not be NaNs")
+	testr.check(c, !std.isnan(std.flt32frombits(0xff800000)), "Infinities[3] should not be NaNs")
+	testr.check(c, !std.isnan(std.flt32frombits(0x7f800000)), "Infinities[4] should not be NaNs")
+}
+
+const bitsround32 = {c
+	for f : [1.0, 0.00001, 123.45, 1111111111111111.2, -1.9, -0.0001][:]
+		var g = std.flt32frombits(std.flt32bits(f))
+		testr.check(c, f == g, "flt -> bits -> flt non-identity: {} != {}", f, g)
+	;;
+
+	for u : [0x7af80000, 0x12ab9800, 0x00000000, 0x00000001, 0x80000000, 0xc8903aa5][:]
+		var v = std.flt32bits(std.flt32frombits(u))
+		testr.check(c, u == v, "bits -> flt -> bits non-identity: {} != {}", u, v)
+	;;
+
+	var nan_f = std.flt32frombits(0xff800090)
+	var nan_g = std.flt32frombits(std.flt32bits(nan_f))
+	testr.check(c, nan_f == nan_g, "flt -> bits -> flt non-identity for nan")
+
+	var inf_f = std.flt32frombits(0x7f800000)
+	var inf_g = std.flt32frombits(std.flt32bits(inf_f))
+	testr.check(c, inf_f == inf_g, "flt -> bits -> flt non-identity for inf")
+}
+
+const bitsround64 = {c
+	for f : [1.0, 0.00001, 123.45, 1111111111111111.2, -1.9, -0.0001][:]
+		var g = std.flt64frombits(std.flt64bits(f))
+		testr.check(c, f == g, "flt -> bits -> flt non-identity: {} != {}", f, g)
+	;;
+
+	for u : [0x7ff3330a00120809, 0x0000000000000000, 0x0000000000000001, 0xffffff0000000001][:]
+		var v = std.flt64bits(std.flt64frombits(u))
+		testr.check(c, u == v, "bits -> flt -> bits non-identity: {} != {}", u, v)
+	;;
+
+	var nan_f = std.flt64frombits(0x7ff000000000a000ul)
+	var nan_g = std.flt64frombits(std.flt64bits(nan_f))
+	testr.check(c, nan_f == nan_g, "flt -> bits -> flt non-identity for nan")
+
+	var inf_f = std.flt64frombits(0xfff0000000000000ul)
+	var inf_g = std.flt64frombits(std.flt64bits(inf_f))
+	testr.check(c, inf_f == inf_g, "flt -> bits -> flt non-identity for inf")
+}
+
+const flt32bits = {c
+	for (f, u) : [
+			(2.0, 0x40000000),
+			(1.0, 0x3f800000),
+			(0.0000123, 0x374e5c19),
+			(-993.83, 0xc478751f),
+		     ][:]
+		var uprime = std.flt32bits(f)
+		testr.check(c, u == uprime, "flt32bits wrong for {}:  0x{x} != 0x{x}", f, u, uprime)
+	;;
+}
+
+const flt64bits = {c
+	for (f, u) : [
+			(2.0, 0x4000000000000000ul),
+			(1.0, 0x3ff0000000000000ul),
+			(0.0000123, 0x3ee9cb8320b15070ul),
+			(-993.83, 0xc08f0ea3d70a3d71ul),
+		     ][:]
+		var uprime = std.flt64bits(f)
+		testr.check(c, u == uprime, "flt64bits wrong for {}:  0x{x} != 0x{x}", f, u, uprime)
+	;;
 }

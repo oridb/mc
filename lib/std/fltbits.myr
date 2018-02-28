@@ -82,8 +82,8 @@ const flt32assem = {sign, mant, exp
 
 	s = (sign : uint32)
 	e = (exp : uint32) & 0xff
-	m = (mant : uint32) & ((1<<22) - 1)
-	-> std.flt32frombits(s << 31 | e << 22 | m)
+	m = (mant : uint32) & ((1<<23) - 1)
+	-> std.flt32frombits(s << 31 | e << 23 | m)
 
 }
 
@@ -92,7 +92,7 @@ generic isnan = {f
 
 	b = flt64bits((f : flt64))
 	-> (b >> 52) & 0x7fful == 0x7fful && \
-		b & ~(0x7fful) != 0
+		b & ~(0xffful << 52) != 0
 }
 
 const flt64inf = {
