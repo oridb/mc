@@ -125,7 +125,7 @@ type lim = struct
 	minsig	: uint64
 	maxsig	: uint64
 	loshift	: uint64
-	nextinc	: int64
+	nextinc	: uint64
 	minexp	: int16
 	maxexp	: int16
 	sigbits	: int16
@@ -265,7 +265,7 @@ const nextfloat = {z, lim
 	var za
 
 	(sign, mant, exp) = std.flt64explode(z)
-	if std.abs(mant - (1l << 52) - 1) < lim.nextinc
+	if std.abs((mant : int64) - (1l << 52) - 1) < (lim.nextinc : int64)
 		mant = 0
 		exp++
 	else

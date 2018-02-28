@@ -1,5 +1,17 @@
 use std
 
+use testr
+
 const main = {
-	std.assert(std.isnan(std.flt64nan()), "isnan(nan) false\n")
+	testr.run([
+		[.name = "isnan", .fn = isnan01],
+	][:])
+}
+
+const isnan01 = {c
+	testr.check(c, std.isnan(std.flt64nan()), "std.flt64nan() should give a NaN")
+	testr.check(c, std.isnan(std.flt32nan()), "std.flt32nan() should give a NaN")
+
+	testr.check(c, std.isnan(std.flt64frombits(0xfff0000500000000ul)), "0xfff0000500000000 should be a NaN")
+	testr.check(c, !std.isnan(std.flt64frombits(0xfff0000000000000ul)), "Infinities should not be NaNs")
 }
