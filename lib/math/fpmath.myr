@@ -1,0 +1,36 @@
+use std
+
+pkg math =
+	trait fpmath @f =
+
+		/* fpmath-trunc-impl */
+		trunc : (f : @f -> @f)
+		ceil  : (f : @f -> @f)
+		floor : (f : @f -> @f)
+
+		/* compute (s, t) with s = round-nearest(a+b), s + t = a + b */
+//		fast2sum : (a : @f, b : @f -> (@f, @f))
+	;;
+
+	impl fpmath flt32
+	impl fpmath flt64
+;;
+
+impl fpmath flt32 =
+	trunc = {f; -> trunc32(f)}
+	floor = {f; -> floor32(f)}
+	ceil  = {f; -> ceil32(f)}
+;;
+
+impl fpmath flt64 =
+	trunc = {f; -> trunc64(f)}
+	floor = {f; -> floor64(f)}
+	ceil  = {f; -> ceil64(f)}
+;;
+
+extern const trunc32 : (f : flt32 -> flt32)
+extern const floor32 : (f : flt32 -> flt32)
+extern const ceil32  : (f : flt32 -> flt32)
+extern const trunc64 : (f : flt64 -> flt64)
+extern const floor64 : (f : flt64 -> flt64)
+extern const ceil64  : (f : flt64 -> flt64)

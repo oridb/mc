@@ -8,6 +8,7 @@ sub =
 	inifile
 	iter
 	json
+	math
 	regex
 	std
 	sys

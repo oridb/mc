@@ -1,0 +1,8 @@
+lib math =
+	fpmath.myr
+
+	# trunc
+	fpmath-trunc-impl.myr
+
+	lib ../std:std
+;;
