@@ -25,8 +25,10 @@ pkg std =
 	pkglocal const zbytealloc	: (sz:size -> byte#)
 	pkglocal const align		: (m : std.size, align : std.size -> std.size)
 	pkglocal const allocsz		: (sz : std.size -> std.size)
-
 ;;
+
+extern const vgalloc	: (p : byte#, sz : size -> void)
+extern const vgfree	: (p : byte#, sz : size -> void)
 
 const Zslab	= (0 : slab#)
 const Zchunk	= (0 : chunk#)
@@ -139,6 +141,7 @@ const bytealloc = {sz
 		tracealloc(p, sz)
 		unlock(memlck)
 	;;
+	vgalloc(p, sz)
 	-> p
 }
 
@@ -165,6 +168,7 @@ const bytefree = {p, sz
 	else
 		bigfree(p, sz)
 	;;
+	vgfree(p, sz)
 }
 
 const bigalloc = {sz

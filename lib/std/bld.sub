@@ -82,6 +82,7 @@ lib std =
 	utf.myr
 	varargs.myr
 	writeall.myr
+	valgrind+x64.s
 
 	# asm optimizations
 	memops.myr

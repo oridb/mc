@@ -277,6 +277,33 @@ flattencond(Flattenctx *s, Node *n, Node *ltrue, Node *lfalse)
 	}
 }
 
+static Node*
+flattentern(Flattenctx *s, Node *n)
+{
+	Node *l1, *l2, *l3;
+	Node *res, *t;
+
+	l1 = genlbl(n->loc);
+	l2 = genlbl(n->loc);
+	l3 = genlbl(n->loc);
+
+	res = temp(s, n);
+	flattencond(s, n->expr.args[0], l1, l2);
+
+	append(s, l1);
+	t = assign(s, res, rval(s, n->expr.args[1]));
+	append(s, t);
+	jmp(s, l3);
+
+	append(s, l2);
+	t = assign(s, res, rval(s, n->expr.args[2]));
+	append(s, t);
+
+	append(s, l3);
+
+	return res;
+}
+
 /* flatten
  *      a || b
  * to
@@ -587,6 +614,9 @@ rval(Flattenctx *s, Node *n)
 		flatten(s, asn(lval(s, s->tret), t));
 		if (exitscope(s, NULL, Zloc, Xret))
 			append(s, mkexpr(n->loc, Oret, s->tret, NULL));
+		break;
+	case Otern:
+		r = flattentern(s, n);
 		break;
 	case Oasn:
 		r = assign(s, args[0], args[1]);

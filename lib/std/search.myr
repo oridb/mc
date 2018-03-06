@@ -32,8 +32,7 @@ generic bsearch  = {sl, key, cmp
 		match cmp(sl[mid], key)
 		| `After:	hi = mid - 1
 		| `Before:	lo = mid + 1
-		| `Equal:	
-			-> `Some (mid : @idx)
+		| `Equal:	-> `Some (mid : @idx)
 		;;
 	;;
 	-> `None

@@ -522,6 +522,7 @@ oper(void)
 	case ',': tt = Tcomma; break;
 	case '`': tt = Ttick; break;
 	case '#': tt = Tderef; break;
+	case '?': tt = Tqmark; break;
 	case ':':
 		  if (match(':'))
 			  tt = Twith;

@@ -83,6 +83,7 @@ static void setupinit(Node *n);
 %token<tok> Tcsqbrac	/* ] */
 %token<tok> Ttick	/* ` */
 %token<tok> Tderef	/* # */
+%token<tok> Tqmark	/* ? */
 
 %token<tok> Ttype	/* type */
 %token<tok> Tfor	/* for */
@@ -145,7 +146,7 @@ static void setupinit(Node *n);
 
 %type<node> exprln retexpr goto continue break expr atomicexpr
 %type<node> littok literal lorexpr landexpr borexpr strlit bandexpr
-%type<node> cmpexpr addexpr mulexpr shiftexpr prefixexpr
+%type<node> cmpexpr addexpr mulexpr shiftexpr prefixexpr ternexpr
 %type<node> postfixexpr funclit seqlit tuplit name block stmt label
 %type<node> use fnparam declbody declcore typedeclcore autodecl structent
 %type<node> arrayelt structelt tuphead ifstmt forstmt whilestmt
@@ -692,9 +693,9 @@ optexprln
 exprln	: expr Tendln
 	;
 
-expr	: lorexpr asnop expr
+expr	: ternexpr asnop expr
 	{$$ = mkexpr($1->loc, binop($2->type), $1, $3, NULL);}
-	| lorexpr
+	| ternexpr
 	;
 
 asnop	: Tasn
@@ -708,6 +709,12 @@ asnop	: Tasn
 	| Tbandeq       /* &= */
 	| Tbsleq        /* <<= */
 	| Tbsreq        /* >>= */
+	;
+
+ternexpr
+	: lorexpr
+	| lorexpr Tqmark lorexpr Tcolon lorexpr
+	{$$ = mkexpr($1->loc, Otern, $1, $3, $5, NULL);}
 	;
 
 lorexpr : lorexpr Tlor landexpr

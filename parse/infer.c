@@ -1772,10 +1772,10 @@ inferexpr(Node **np, Type *ret, int *sawret)
 		break;
 	case Oret:	/* -> @a -> void */
 		infersub(n, ret, sawret, &isconst);
-		if (sawret)
-			*sawret = 1;
 		if (!ret)
 			fatal(n, "returns are not valid near %s", ctxstr(n));
+		if (sawret)
+			*sawret = 1;
 		t = unify(n, ret, type(args[0]));
 		settype(n, t);
 		break;
@@ -1817,70 +1817,46 @@ inferexpr(Node **np, Type *ret, int *sawret)
 	case Ostruct:	inferstruct(n, &n->expr.isconst);	break;
 	case Oarr:	inferarray(n, &n->expr.isconst);	break;
 	case Olit:	/* <lit>:@a::tyclass -> @a */
-		   infersub(n, ret, sawret, &isconst);
-		   switch (args[0]->lit.littype) {
-		   case Lfunc:
-			   infernode(&args[0]->lit.fnval, NULL, NULL);
-			   /* FIXME: env capture means this is non-const */
-			   n->expr.isconst = 1;
-			   break;
-		   case Llbl:
-			   s = getlbl(curstab(), args[0]->loc, args[0]->lit.lblname);
-			   if (!s)
-				   fatal(n, "unable to find label %s in function scope\n", args[0]->lit.lblname);
-			   *np = s;
-			   break;
-		   default:
-			   n->expr.isconst = 1;
-			   break;
-		   }
-		   settype(n, type(args[0]));
-		   break;
+		infersub(n, ret, sawret, &isconst);
+		switch (args[0]->lit.littype) {
+		case Lfunc:
+			infernode(&args[0]->lit.fnval, NULL, NULL);
+			/* FIXME: env capture means this is non-const */
+			n->expr.isconst = 1;
+			break;
+		case Llbl:
+			s = getlbl(curstab(), args[0]->loc, args[0]->lit.lblname);
+			if (!s)
+				fatal(n, "unable to find label %s in function scope\n", args[0]->lit.lblname);
+			*np = s;
+			break;
+		default:
+			n->expr.isconst = 1;
+			break;
+		}
+		settype(n, type(args[0]));
+		break;
+	case Otern:
+		infersub(n, NULL, sawret, &isconst);
+		unify(n, type(args[0]), mktype(n->loc, Tybool));
+		unify(n, type(args[1]), type(args[2]));
+		settype(n, type(args[1]));
+		break;
 	case Oundef:
-		   infersub(n, ret, sawret, &isconst);
-		   settype(n, mktype(n->loc, Tyvoid));
-		   break;
+		infersub(n, ret, sawret, &isconst);
+		settype(n, mktype(n->loc, Tyvoid));
+		break;
 	case Odef:
 	case Odead:
 		   n->expr.type = mktype(n->loc, Tyvoid);
 		   break;
 	/* unexpected in frontend */
-	case Obad:
-	case Ocjmp:
-	case Ovjmp:
-	case Oset:
-	case Oslbase:
-	case Osllen:
-	case Outag:
-	case Ocallind:
-	case Oblit:
-	case Oclear:
-	case Oudata:
-	case Otrunc:
-	case Oswiden:
-	case Ozwiden:
-	case Oint2flt:
-	case Oflt2int:
-	case Oflt2flt:
-	case Ofadd:
-	case Ofsub:
-	case Ofmul:
-	case Ofdiv:
-	case Ofneg:
-	case Ofeq:
-	case Ofne:
-	case Ofgt:
-	case Ofge:
-	case Oflt:
-	case Ofle:
-	case Oueq:
-	case Oune:
-	case Ougt:
-	case Ouge:
-	case Oult:
-	case Oule:
-	case Otupget:
-	case Numops:
+	case Obad: case Ocjmp: case Ovjmp: case Oset: case Oslbase: case Osllen:
+	case Outag: case Ocallind: case Oblit: case Oclear: case Oudata: case Otrunc:
+	case Oswiden: case Ozwiden: case Oint2flt: case Oflt2int: case Oflt2flt:
+	case Ofadd: case Ofsub: case Ofmul: case Ofdiv: case Ofneg: case Ofeq:
+	case Ofne: case Ofgt: case Ofge: case Oflt: case Ofle: case Oueq: case Oune:
+	case Ougt: case Ouge: case Oult: case Oule: case Otupget: case Numops:
 		die("Should not see %s in fe", opstr[exprop(n)]);
 		break;
 	}
