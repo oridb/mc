@@ -131,7 +131,8 @@ generic slgrow = {sl : @a[:]#, len
 	if (sl# : byte#) != Zsliceptr
 		cap = slcap((sl# : byte#))
 	;;
-	if cap >= allocsz(len*sizeof(@a)) + align(sizeof(slheader), Align)
+	if cap >= len*sizeof(@a)
+		/* cast to pointer to work around bounds check */
 		sl# = (sl# : @a#)[:len]
 		-> sl#
 	;;
@@ -139,7 +140,7 @@ generic slgrow = {sl : @a[:]#, len
 	/* grow in factors of 1.5 */
 	nel = sl#.len
 	while nel < len
-		nel = nel * 2 + 2
+		nel += (nel >> 2) + 1
 	;;
 
 	new = slalloc(nel)

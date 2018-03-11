@@ -125,7 +125,6 @@ const writealloctrace = {sl
 const bytealloc = {sz
 	var bkt, p
 
-	sz += 8
 	if sz <= Bktmax
 		bkt = &buckets[bktnum(sz)]
 		lock(memlck)
