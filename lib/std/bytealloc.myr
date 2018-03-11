@@ -54,6 +54,7 @@ type slab = struct
 	prev	: slab#	/* the prev slab on the chain */
 	freehd	: chunk#	/* the nodes we're allocating */
 	nfree	: size	/* the number of free nodes */
+	magic	: size	/* ensure we didn't index into the void */
 ;;
 
 /* NB: must be smaller than sizeof(slab) */
@@ -144,12 +145,10 @@ const bytealloc = {sz
 /* frees a blob that is 'sz' bytes long. */
 const bytefree = {p, sz
 	var bkt
-	var v
 
 	if p == (0 : byte#)
 		-> void
 	;;
-	v = ((p : size) + sz : uint32#)#
 	if trace
 		lock(memlck)
 		tracefree(p, sz)
@@ -298,6 +297,7 @@ const mkslab = {bkt
 	s.nfree = bkt.nper
 	s.next = Zslab
 	s.prev = Zslab
+	s.magic = 0xfee1baff1ed
 	/* skip past the slab header */
 	off = align(sizeof(slab), Align)
 	bnext = nextchunk((s : chunk#), off)
@@ -352,6 +352,7 @@ const bktfree = {bkt, m
 	var s, c
 
 	s = (mtrunc(m, Slabsz) : slab#)
+	iassert(s.magic == 0xfee1baff1ed, "bad free")
 	c = (m : chunk#)
 	if s.nfree == 0
 		if bkt.slabs != Zslab

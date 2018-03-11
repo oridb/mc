@@ -69,7 +69,8 @@ generic slalloc = {len
 		-> [][:]
 	;;
 	sz = len*sizeof(@a) + align(sizeof(slheader), Align)
-	p = bytealloc(sz)
+	sz = allocsz(sz)
+	p = bytealloc(sz + sizeof(size))
 	p = inithdr(p, sz)
 	-> (p : @a#)[0:len]
 }
@@ -81,34 +82,43 @@ generic slzalloc = {len
 		-> [][:]
 	;;
 	sz = len*sizeof(@a) + align(sizeof(slheader), Align)
-	p = zbytealloc(sz)
+	sz = allocsz(sz)
+	p = zbytealloc(sz + sizeof(size))
 	p = inithdr(p, sz)
 	-> (p : @a#)[0:len]
 }
 
 const inithdr = {p, sz
-	var phdr, prest
+	var phdr, pdat, pend
 
 	phdr = (p : slheader#)
-	phdr.cap = allocsz(sz) - align(sizeof(slheader), Align)
-	phdr.magic = (0xdeadbeefbadf00d : size)
+	phdr.cap = sz - align(sizeof(slheader), Align)
 
-	prest = (p : size) + align(sizeof(slheader), Align)
-	-> (prest : byte#)
+	/* add start/end magics */
+	phdr.magic = (0xdeadbeefbadf00d : size)
+	pdat = (p : size) + align(sizeof(slheader), Align)
+	pend = ((pdat : size) + sz - align(sizeof(slheader), Align) : size#)
+	pend# = 0xfee1deadfee1dead
+
+	-> (pdat : byte#)
 }
 
 const checkhdr = {p
-	var phdr, addr
+	var phdr, pend, addr
 
 	addr = (p : size)
 	addr -= align(sizeof(slheader), Align)
+
+	/* check start/end magics */
 	phdr = (addr : slheader#)
 	iassert(phdr.magic == (0xdeadbeefbadf00d : size), "corrupt memory\n")
+	pend = ((p : size) + phdr.cap : size#)
+	iassert(pend# == 0xfee1deadfee1dead, "corrupt memory")
 }
 
 /* Frees a slice */
 generic slfree	 = {sl
-	var head
+	var head, sz
 
 	if (sl : byte#) == Zsliceptr
 		-> void
@@ -117,7 +127,8 @@ generic slfree	 = {sl
 	checkhdr((sl : byte#))
 	head = ((sl : byte#) : size)
 	head -= align(sizeof(slheader), Align)
-	bytefree((head : byte#), slcap((sl : byte#)))
+	sz = slcap((sl : byte#)) + align(sizeof(slheader), Align)
+	bytefree((head : byte#), sz + sizeof(size))
 }
 
 /* Grows a slice */
