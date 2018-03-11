@@ -365,7 +365,7 @@ const readln = {f
 		/* get at least delimiter count of characters */
 		match ensureread(f, 1)
 		| `std.Err `Eof:
-			ret = readinto(f, ret, f.rend - f.rstart)
+			readinto(f, &ret, f.rend - f.rstart)
 			if ret.len > 0
 				-> `std.Ok ret
 			else
@@ -378,7 +378,7 @@ const readln = {f
 		for var i = f.rstart; i < f.rend; i++
 			c = (f.rbuf[i] : char)
 			if c == '\r' || c == '\n'
-				ret = readinto(f, ret, i - f.rstart)
+				readinto(f, &ret, i - f.rstart)
 				f.rstart++
 				/* if we have '\r', we can get '\r\n'. */
 				if c == '\r' && unwrapc(peekc(f), -1) == '\n'
@@ -388,7 +388,7 @@ const readln = {f
 			;;
 :nextitergetln
 		;;
-		ret = readinto(f, ret, f.rend - f.rstart)
+		readinto(f, &ret, f.rend - f.rstart)
 	;;
 	std.die("unreachable")
 }
@@ -409,7 +409,7 @@ const readdelim = {f, delim, drop
 		match ensureread(f, 1)
 		| `std.Err `Eof:
 			if !drop
-				ret = readinto(f, ret, f.rend - f.rstart)
+				readinto(f, &ret, f.rend - f.rstart)
 			else
 				f.rstart += f.rend - f.rstart
 			;;
@@ -429,7 +429,7 @@ const readdelim = {f, delim, drop
 					;;
 				;;
 				if !drop
-					ret = readinto(f, ret, i - f.rstart)
+					readinto(f, &ret, i - f.rstart)
 				else
 					f.rstart += i - f.rstart
 				;;
@@ -439,7 +439,7 @@ const readdelim = {f, delim, drop
 :nextiterread
 		;;
 		if !drop
-			ret = readinto(f, ret, f.rend - f.rstart)
+			readinto(f, &ret, f.rend - f.rstart)
 		else
 			f.rstart += f.rend - f.rstart
 		;;
@@ -476,13 +476,10 @@ const putv = {f, fmt, ap
 reads n bytes from the read buffer onto the heap-allocated slice
 provided.
 */
-const readinto = {f, buf, n
-	var ret
-
+const readinto = {f, bufp, n
 	std.assert(f.rstart + n <= f.rend, "Reading too much from buffer")
-	ret = std.sljoin(&buf, f.rbuf[f.rstart:f.rstart + n])
+	std.sljoin(bufp, f.rbuf[f.rstart:f.rstart + n])
 	f.rstart += n
-	-> ret
 }
 
 /* makes sure we can bufferedly write at least n bytes */
