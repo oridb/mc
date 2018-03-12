@@ -22,7 +22,7 @@ pkg bld =
 		incs : byte[:][:] -> void)
 ;;
 
-const Abiversion = 17
+const Abiversion = 18
 
 const builtlib = {b, mt, dep, dyndep
 	var ldep, l, u
