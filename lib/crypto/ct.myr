@@ -10,6 +10,8 @@ pkg crypto =
 	generic ge	: (a : @t, b : @t -> @t)	:: integral,numeric @t
 	generic le	: (a : @t, b : @t -> @t)	:: integral,numeric @t
 	generic mux	: (x : @t, a : @t, b : @t ->@t)	:: integral,numeric @t
+	generic min	: (a : @t, b : @t -> @t)	:: integral,numeric @t
+	generic max	: (a : @t, b : @t -> @t)	:: integral,numeric @t
 ;;
 
 generic not = {a : @t :: integral,numeric @t
@@ -56,4 +58,18 @@ generic ne = {a, b
 
 generic mux = {c, a, b
 	-> b ^ (-c & (a ^ b))
+}
+
+generic min = {a, b
+	var x
+
+	x = lt(a, b)
+	-> mux(x, a, b)
+}
+
+generic max = {a, b
+	var x
+
+	x = lt(a, b)
+	-> mux(x, b, a)
 }
