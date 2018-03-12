@@ -9,152 +9,95 @@ pkg math =
 	pkglocal const ceil64  : (f : flt64 -> flt64)
 ;;
 
-pkglocal const trunc32 = {f : flt32
-	var u : uint32 = std.flt32bits(f)
-	var e : uint32 = (((u >> 23) & 0xff) : uint32) - 127
-	var e_lt_zero : uint32 = ((e >> 31) : uint32) & 0x1
-	var e_ge_zero : uint32 = 1 - e_lt_zero
-	var e_ge_23 : uint32 = 1 - ((e - 23) >> 31)
-	/*
-	   The significand 1 . m1 m2 ... m23 needs to be
-	   truncated, which corresponds to zeroing all mi
-	   bits where i is beyond the exponent e (they are
-	   the actual sub-integer portion).
-	 */
-	var m : uint32 = ~(((1 << 23) - 1) >> e)
-	m |= (-1 : uint32) * e_ge_23
-	var v_ge_zero : uint32 = (u & m) * e_ge_zero
+const Flt32NegMask : uint32 = (1 << 31)
+const Flt32SigMask : uint32 = (1 << 23) - 1
 
-	/*
-	   On the other hand, if the exponent is < 0, "23
-	   - e" is garbage, and we should just return +/-
-	   zero
-	 */
-	var v_lt_zero : uint32 = (u & (1 << 31)) * e_lt_zero
-
-	/* Try to save a branch */
-	var v : uint32 = v_ge_zero + v_lt_zero
-	-> std.flt32frombits(v)
-}
+const Flt64NegMask : uint64 = (1 << 63)
+const Flt64SigMask : uint64 = (1 << 52) - 1
 
 pkglocal const floor32 = {f : flt32
-	var u : uint32 = std.flt32bits(f)
-	var e : int32 = (((u >> 23) & 0xff) : int32) - 127
-	var shift_e : uint32 = (e : uint32)
+	var n, e, s
+	(n, e, s) = std.flt32explode(f)
 
 	/* Many special cases */
-	if e >= 23 || u == 0x80000000
+	if e >= 23 || f == -0.0
 		-> f
-	elif (e < 0) && (u & (1 << 31) != 0)
-		-> -1.0
 	elif e < 0
-		-> 0.0
-	;;
-
-	if u & (1 << 31) != 0
-		var fractional_mask : uint32 = (((1 << 23) - 1) >> shift_e)
-		var v : uint32 = u & ~fractional_mask
-		if (u & fractional_mask) != 0
-			v += ((1 << 23) >> shift_e)
+		if n
+			-> -1.0
+		else
+			-> 0.0
 		;;
-		-> std.flt32frombits(v)
 	;;
 
-	var m : uint32 = ~(((1 << 23) - 1) >> shift_e)
-	var v : uint32 = u & m
-	-> std.flt32frombits(v)
+	if n
+		var fractional_mask = Flt32SigMask >> (e : uint32)
+		if s & fractional_mask == 0
+			-> f
+		else
+			/* Turns out the packing of exp and sig is useful */
+			var u : uint32 = std.flt32bits(f) & ~fractional_mask
+			u += ((1 << 23) >> (e : uint32))
+			-> std.flt32frombits(u)
+		;;
+	;;
+
+	var m : uint32 = (Flt32SigMask >> (e : uint32))
+	-> std.flt32assem(n, e, s & ~m)
 }
 
-pkglocal const ceil32 = {f;
-	var u : uint32 = std.flt32bits(f)
-	var e : int32 = (((u >> 23) & 0xff) : int32) - 127
-	var shift_e : uint32 = (e : uint32)
-	if e >= 23 || u == 0x0
-		-> f
-	elif (e < 0) && (u & (1 << 31) == 0)
-		-> 1.0
-	elif e < 0
-		-> -0.0
+pkglocal const trunc32 = {f : flt32
+	if std.flt32bits(f) & Flt32NegMask != 0
+		-> -floor32(-f)
+	else
+		-> floor32(f)
 	;;
-
-	if u & (1 << 31) == 0
-		var fractional_mask : uint32 = (((1 << 23) - 1) >> shift_e)
-		var v : uint32 = u & ~fractional_mask
-		if (u & fractional_mask) != 0
-			v += ((1 << 23) >> shift_e)
-		;;
-		-> std.flt32frombits(v)
-	;;
-
-	var m : uint32 = ~(((1 << 23) - 1) >> shift_e)
-	var v : uint32 = u & m
-	-> std.flt32frombits(v)
 }
 
-pkglocal const trunc64 = {f : flt64
-	var u : uint64 = std.flt64bits(f)
-	var e : uint64 = (((u >> 52) & 0x7ff) : uint64) - 1023
-	var e_lt_zero : uint64 = ((e >> 63) : uint64) & 0x1
-	var e_ge_zero : uint64 = 1 - e_lt_zero
-	var e_ge_52 : uint64 = 1 - ((e - 52) >> 63)
-	var m : uint64 = ~(((1 << 52) - 1) >> e)
-	m |= (-1 : uint64) * e_ge_52
-	var v_ge_zero : uint64 = (u & m) * e_ge_zero
-	var v_lt_zero : uint64 = (u & (1 << 63)) * e_lt_zero
-	var v : uint64 = v_ge_zero + v_lt_zero
-	-> std.flt64frombits(v)
+pkglocal const ceil32 = {f : flt32
+	-> -floor32(-f)
 }
 
 pkglocal const floor64 = {f : flt64
-	var u : uint64 = std.flt64bits(f)
-	var e : int64 = (((u >> 52) & 0x7ff) : int64) - 1023
-	var shift_e : uint64 = (e : uint64)
+	var n, e, s
+	(n, e, s) = std.flt64explode(f)
 
-	if e >= 52 || u == 0x8000000000000000ul
+	/* Many special cases */
+	if e >= 52 || f == -0.0
 		-> f
-	elif (e < 0) && (u & (1 << 63) != 0)
+	elif e < 0
+		if n
 			-> -1.0
-	elif e < 0
-		-> 0.0
-	;;
-
-	if u & (1 << 63) != 0
-		var fractional_mask : uint64 = (((1 << 52) - 1) >> shift_e)
-		var v : uint64 = u & ~fractional_mask
-		if (u & fractional_mask) != 0
-			v += ((1 << 52) >> shift_e)
+		else
+			-> 0.0
 		;;
-		-> std.flt64frombits(v)
 	;;
 
-	var m : uint64 = ~(((1 << 52) - 1) >> shift_e)
-	var v : uint64 = u & m
-	-> std.flt64frombits(v)
+	if n
+		var fractional_mask = Flt64SigMask >> (e : uint64)
+		if s & fractional_mask == 0
+			-> f
+		else
+			/* Turns out the packing of exp and sig is useful */
+			var u : uint64 = std.flt64bits(f) & ~fractional_mask
+			u += ((1 << 52) >> (e : uint64))
+			-> std.flt64frombits(u)
+		;;
+	;;
+
+	var m : uint64 = (Flt64SigMask >> (e : uint64))
+	-> std.flt64assem(n, e, s & ~m)
 }
 
-pkglocal const ceil64 = {f;
-	var u : uint64 = std.flt64bits(f)
-	var e : int64 = (((u >> 52) & 0x7ff) : int64) - 1023
-	var shift_e : uint64 = (e : uint64)
-
-	if e >= 52 || u == 0x0ul
-		-> f
-	elif (e < 0) && (u & (1 << 63) == 0)
-			-> 1.0
-	elif e < 0
-		-> -0.0
+pkglocal const trunc64 = {f : flt64
+	if std.flt64bits(f) & Flt64NegMask != 0
+		-> -floor64(-f)
+	else
+		-> floor64(f)
 	;;
-
-	if u & (1 << 63) == 0
-		var fractional_mask : uint64 = (((1 << 52) - 1) >> shift_e)
-		var v : uint64 = u & ~fractional_mask
-		if (u & fractional_mask) != 0
-			v += ((1 << 52) >> shift_e)
-		;;
-		-> std.flt64frombits(v)
-	;;
-
-	var m : uint64 = ~(((1 << 52) - 1) >> shift_e)
-	var v : uint64 = u & m
-	-> std.flt64frombits(v)
 }
+
+pkglocal const ceil64 = {f : flt64
+	-> -floor64(-f)
+}
+
