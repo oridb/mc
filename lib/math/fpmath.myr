@@ -12,8 +12,26 @@ pkg math =
 //		fast2sum : (a : @f, b : @f -> (@f, @f))
 	;;
 
+	impl std.equatable flt32
+	impl std.equatable flt64
 	impl fpmath flt32
 	impl fpmath flt64
+;;
+
+/*
+   We consider two floating-point numbers equal if their bits are
+   equal. This does not treat NaNs specially: two distinct NaNs may
+   compare equal, or they may compare distinct (if they arise from
+   different bit patterns).
+
+   Additionally, +0.0 and -0.0 compare differently.
+ */
+impl std.equatable flt32 =
+	eq = {a : flt32, b : flt32; -> std.flt32bits(a) == std.flt32bits(b)}
+;;
+
+impl std.equatable flt64 =
+	eq = {a : flt64, b : flt64; -> std.flt64bits(a) == std.flt64bits(b)}
 ;;
 
 impl fpmath flt32 =

@@ -13,14 +13,6 @@ const main = {
 	][:])
 }
 
-impl std.equatable flt32 =
-        eq = {a : flt32, b : flt32; -> std.flt32bits(a) == std.flt32bits(b)}
-;;
-
-impl std.equatable flt64 =
-        eq = {a : flt64, b : flt64; -> std.flt64bits(a) == std.flt64bits(b)}
-;;
-
 const trunc01 = {c
 	var flt32s : (flt32, flt32)[:] = [
 		(0.0, 0.0),
