@@ -20,6 +20,9 @@ const flt32bits	= {flt;	-> (&flt : uint32#)#}
 const flt64frombits	= {bits;	-> (&bits : flt64#)#}
 const flt32frombits	= {bits;	-> (&bits : flt32#)#}
 
+const Dblbias = 1023
+const Fltbias = 127
+
 const flt64explode = {flt
 	var bits, isneg, mant, uexp, exp
 
@@ -31,16 +34,10 @@ const flt64explode = {flt
 	/* add back the implicit bit if this is not a denormal */
 	if uexp != 0
 		mant |= 1ul << 52
-		exp = (uexp : int64)
-	else
-		exp = 1
 	;;
-	/*
-	   adjust for exponent bias. nb: because we are
-	   treating the mantissa as m.0 instead of 0.m,
-	   our exponent bias needs to be offset by the
-	   size of m
-	*/
+
+	/* adjust for exponent bias */
+	exp = (uexp : int64) - Dblbias
 	-> (isneg, mant, exp)
 }
 
@@ -55,16 +52,10 @@ const flt32explode = {flt
 	/* add back the implicit bit if this is not a denormal */
 	if uexp != 0
 		mant |= 1 << 23
-		exp = (uexp : int32)
-	else
-		exp = 1
 	;;
-	/*
-	   adjust for exponent bias. nb: because we are
-	   treating the mantissa as m.0 instead of 0.m,
-	   our exponent bias needs to be offset by the
-	   size of m
-	*/
+
+	/* adjust for exponent bias */
+	exp = (uexp : int32) - Fltbias
 	-> (isneg, mant, exp)
 }
 
@@ -72,7 +63,7 @@ const flt64assem = {sign, mant, exp
 	var s, m, e
 
 	s = (sign : uint64)
-	e = (exp : uint64) & 0x7ff
+	e = (exp + Dblbias : uint64) & 0x7ff
 	m = (mant : uint64) & ((1ul<<52) - 1)
 	-> std.flt64frombits((s << 63) | (e << 52) | m)
 }
@@ -81,7 +72,7 @@ const flt32assem = {sign, mant, exp
 	var s, m, e
 
 	s = (sign : uint32)
-	e = (exp : uint32) & 0xff
+	e = (exp + Fltbias : uint32) & 0xff
 	m = (mant : uint32) & ((1<<23) - 1)
 	-> std.flt32frombits(s << 31 | e << 23 | m)
 

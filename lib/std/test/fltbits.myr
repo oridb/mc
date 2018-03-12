@@ -9,6 +9,8 @@ const main = {
 		[.name = "bits-roundtrip-64", .fn = bitsround64],
 		[.name = "flt32bits", .fn = flt32bits],
 		[.name = "flt64bits", .fn = flt64bits],
+		[.name = "explode-roundtrip-32", .fn = exploderound32],
+		[.name = "explode-roundtrip-64", .fn = exploderound64],
 	][:])
 }
 
@@ -96,3 +98,64 @@ const flt64bits = {c
 		testr.check(c, u == uprime, "flt64bits wrong for {}:  0x{x} != 0x{x}", f, u, uprime)
 	;;
 }
+
+const exploderound32 = {c
+	for f : [1.0, 0.00001, 123.45, 1111111111111111.2, -1.9, -0.0001, std.flt32nan()][:]
+		var n, e, s
+		(n, e, s) = std.flt32explode(f)
+		var g = std.flt32assem(n, e, s)
+		testr.check(c, f == g, "assem o explode non-identity: {} != {}", f, g)
+	;;
+
+	/*
+	   The exponents and significands need to be rather specific
+	   in order for flt32assem to work as expected
+	 */
+	for (n, e, s) : [
+			(false, 0, -127),
+			(true, 0, -127),
+			(false, 0x399, -127),
+			(true, 0x23, -127),
+			(false, (1 << 23) | 0x23, 45),
+			(true, (1 << 23) | 0x3a2, -12),
+			(true, (1 << 23) | 0x3a1, -126),
+		][:]
+		var m, f, t
+		(m, f, t) = std.flt32explode(std.flt32assem(n, e, s))
+		testr.check(c, n == m, "explode o assem non-identity: {} != {}", (n, e, s), (m, f, t))
+		testr.check(c, e == f, "explode o assem non-identity: {} != {}", (n, e, s), (m, f, t))
+		testr.check(c, s == t, "explode o assem non-identity: {} != {}", (n, e, s), (m, f, t))
+	;;
+}
+
+const exploderound64 = {c
+	for f : [1.0, 0.00001, 123.45, 1111111111111e+309, -1.9, -0.0001, std.flt64nan()][:]
+		var n, e, s
+		(n, e, s) = std.flt64explode(f)
+		var g = std.flt64assem(n, e, s)
+		testr.check(c, f == g, "assem o explode non-identity: {} != {}", f, g)
+	;;
+
+	/*
+	   The exponents and significands need to be rather specific
+	   in order for flt32assem to work as expected
+	 */
+	for (n, e, s) : [
+			(false, 0, -1023),
+			(true, 0, -1023),
+			(false, 0x399, -1023),
+			(true, 0x23, -1023),
+			(false, (1 << 52) | 0xa33bc, 45),
+			(true, (1 << 52) | 0x3, -12),
+			(true, (1 << 52) | 0x11aabbcc, -200),
+			(true, (1 << 52) | 0x3a1, 543),
+			(true, (1 << 52) | 0x99aa228, 1001),
+		][:]
+		var m, f, t
+		(m, f, t) = std.flt64explode(std.flt64assem(n, e, s))
+		testr.check(c, n == m, "explode o assem non-identity: {} != {}", (n, e, s), (m, f, t))
+		testr.check(c, e == f, "explode o assem non-identity: {} != {}", (n, e, s), (m, f, t))
+		testr.check(c, s == t, "explode o assem non-identity: {} != {}", (n, e, s), (m, f, t))
+	;;
+}
+
