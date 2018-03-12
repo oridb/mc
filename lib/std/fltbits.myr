@@ -9,10 +9,10 @@ pkg std =
 	generic isnan		: (f : @a -> bool) ::floating @a
 	const flt64frombits	: (bits : uint64 -> flt64)
 	const flt32frombits	: (bits : uint32 -> flt32)
-	const flt64explode	: (flt : flt64 -> (bool, uint64, int64))
-	const flt32explode	: (flt : flt32 -> (bool, uint32, int32))
-	const flt64assem	: (sign : bool, mant : uint64, exp : int64 -> flt64)
-	const flt32assem	: (sign : bool, mant : uint32, exp : int32 -> flt32)
+	const flt64explode	: (flt : flt64 -> (bool, int64, uint64))
+	const flt32explode	: (flt : flt32 -> (bool, int32, uint32))
+	const flt64assem	: (sign : bool, exp : int64, mant : uint64 -> flt64)
+	const flt32assem	: (sign : bool, exp : int32, mant : uint32 -> flt32)
 ;;
 
 const flt64bits	= {flt;	-> (&flt : uint64#)#}
@@ -38,7 +38,7 @@ const flt64explode = {flt
 
 	/* adjust for exponent bias */
 	exp = (uexp : int64) - Dblbias
-	-> (isneg, mant, exp)
+	-> (isneg, exp, mant)
 }
 
 const flt32explode = {flt
@@ -56,10 +56,10 @@ const flt32explode = {flt
 
 	/* adjust for exponent bias */
 	exp = (uexp : int32) - Fltbias
-	-> (isneg, mant, exp)
+	-> (isneg, exp, mant)
 }
 
-const flt64assem = {sign, mant, exp
+const flt64assem = {sign, exp, mant
 	var s, m, e
 
 	s = (sign : uint64)
@@ -68,7 +68,7 @@ const flt64assem = {sign, mant, exp
 	-> std.flt64frombits((s << 63) | (e << 52) | m)
 }
 
-const flt32assem = {sign, mant, exp
+const flt32assem = {sign, exp, mant
 	var s, m, e
 
 	s = (sign : uint32)

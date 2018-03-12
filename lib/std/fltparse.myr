@@ -264,14 +264,14 @@ const nextfloat = {z, lim
 	var sign, mant, exp
 	var za
 
-	(sign, mant, exp) = std.flt64explode(z)
+	(sign, exp, mant) = std.flt64explode(z)
 	if std.abs((mant : int64) - (1l << 52) - 1) < (lim.nextinc : int64)
 		mant = 0
 		exp++
 	else
 		mant += lim.nextinc
 	;;
-	za = std.flt64assem(sign, mant, exp)
+	za = std.flt64assem(sign, exp, mant)
 	-> za
 }
 

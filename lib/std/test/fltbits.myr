@@ -112,13 +112,13 @@ const exploderound32 = {c
 	   in order for flt32assem to work as expected
 	 */
 	for (n, e, s) : [
-			(false, 0, -127),
-			(true, 0, -127),
-			(false, 0x399, -127),
-			(true, 0x23, -127),
-			(false, (1 << 23) | 0x23, 45),
-			(true, (1 << 23) | 0x3a2, -12),
-			(true, (1 << 23) | 0x3a1, -126),
+			(false, -127, 0),
+			(true, -127, 0),
+			(false, -127, 0x399),
+			(true, -127, 0x23),
+			(false, 45, (1 << 23) | 0x23),
+			(true, -12, (1 << 23) | 0x3a2),
+			(true, -126, (1 << 23) | 0x3a1),
 		][:]
 		var m, f, t
 		(m, f, t) = std.flt32explode(std.flt32assem(n, e, s))
@@ -141,15 +141,15 @@ const exploderound64 = {c
 	   in order for flt32assem to work as expected
 	 */
 	for (n, e, s) : [
-			(false, 0, -1023),
-			(true, 0, -1023),
-			(false, 0x399, -1023),
-			(true, 0x23, -1023),
-			(false, (1 << 52) | 0xa33bc, 45),
-			(true, (1 << 52) | 0x3, -12),
-			(true, (1 << 52) | 0x11aabbcc, -200),
-			(true, (1 << 52) | 0x3a1, 543),
-			(true, (1 << 52) | 0x99aa228, 1001),
+			(false, -1023, 0),
+			(true, -1023, 0),
+			(false, -1023, 0x399),
+			(true, -1023, 0x23),
+			(false, 45, (1 << 52) | 0xa33bc),
+			(true, -12, (1 << 52) | 0x3),
+			(true, -200, (1 << 52) | 0x11aabbcc),
+			(true, 543, (1 << 52) | 0x3a1),
+			(true, 1001, (1 << 52) | 0x99aa228),
 		][:]
 		var m, f, t
 		(m, f, t) = std.flt64explode(std.flt64assem(n, e, s))
