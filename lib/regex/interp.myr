@@ -130,7 +130,6 @@ const cleanup = {re, result
 	re.expired = Zthr
 	re.free = Zthr
 	re.nfree = 0
-	re.nexttid = 0
 	re.nthr = 0
 }
 
@@ -184,6 +183,7 @@ const run = {re, str, idx, wholestr
 
 	re.str = str
 	re.strp = 0
+	re.nexttid = 0
 
 	bestmatch = Zthr
 	states = std.mkbs()
