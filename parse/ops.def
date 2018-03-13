@@ -1,5 +1,6 @@
 /* operator name, is it pure, pretty name */
 O(Obad,         1,	OTmisc,	"BAD")
+O(Oauto,	1,	OTpre,	"auto")
 O(Oadd,	        1,	OTbin,	"+")
 O(Osub,	        1,	OTbin,	"-")
 O(Omul,	        1,	OTbin,	"*")
@@ -105,4 +106,3 @@ O(Ougt,	        1,	OTmisc, NULL)
 O(Ouge,	        1,	OTmisc, NULL)
 O(Oult,	        1,	OTmisc, NULL)
 O(Oule,	        1,	OTmisc, NULL)
-

@@ -148,7 +148,7 @@ static void setupinit(Node *n);
 %type<node> littok literal lorexpr landexpr borexpr strlit bandexpr
 %type<node> cmpexpr addexpr mulexpr shiftexpr prefixexpr ternexpr
 %type<node> postfixexpr funclit seqlit tuplit name block stmt label
-%type<node> use fnparam declbody declcore typedeclcore autodecl structent
+%type<node> use fnparam declbody declcore typedeclcore structent
 %type<node> arrayelt structelt tuphead ifstmt forstmt whilestmt
 %type<node> matchstmt elifs optexprln loopcond optexpr match
 
@@ -420,8 +420,8 @@ pkgtydef: attrs tydef {
 	}
 	;
 
-declbody: autodecl Tasn expr {$$ = $1; $1->decl.init = $3;}
-	| autodecl
+declbody: declcore Tasn expr {$$ = $1; $1->decl.init = $3;}
+	| declcore
 	;
 
 declcore: name {$$ = mkdecl($1->loc, $1, mktyvar($1->loc));}
@@ -430,10 +430,6 @@ declcore: name {$$ = mkdecl($1->loc, $1, mktyvar($1->loc));}
 
 typedeclcore
 	: name Tcolon type {$$ = mkdecl($1->loc, $1, $3);}
-	;
-
-autodecl: Tauto declcore {$$ = $2; $$->decl.isauto = 1;}
-	| declcore
 	;
 
 name	: Tident {$$ = mkname($1->loc, $1->id);}
@@ -771,7 +767,8 @@ shiftexpr
 shiftop : Tbsl | Tbsr;
 
 prefixexpr
-	: Tinc prefixexpr	{$$ = mkexpr($1->loc, Opreinc, $2, NULL);}
+	: Tauto prefixexpr	{$$ = mkexpr($1->loc, Oauto, $2, NULL);}
+	| Tinc prefixexpr	{$$ = mkexpr($1->loc, Opreinc, $2, NULL);}
 	| Tdec prefixexpr	{$$ = mkexpr($1->loc, Opredec, $2, NULL);}
 	| Tband prefixexpr	{$$ = mkexpr($1->loc, Oaddr, $2, NULL);}
 	| Tlnot prefixexpr	{$$ = mkexpr($1->loc, Olnot, $2, NULL);}
@@ -930,7 +927,7 @@ params	: fnparam {
 	| /* empty */ {$$.nl = NULL; $$.nn = 0;}
 	;
 
-fnparam : autodecl {$$ = $1;}
+fnparam : declcore {$$ = $1;}
 	| Tgap { $$ = mkpseudodecl($1->loc, mktyvar($1->loc)); }
 	| Tgap Tcolon type { $$ = mkpseudodecl($1->loc, $3); }
 	;
