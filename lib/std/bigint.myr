@@ -452,7 +452,7 @@ const uadd = {a, b
 	for i = 0; i < n; i++
 		v = (a.dig[i] : uint64) + carry;
 		if i < b.dig.len
-			v += ((b.dig[i]  : uint64))
+			v += (b.dig[i]  : uint64)
 		;;
 
 		if v >= Base
