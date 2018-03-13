@@ -7,6 +7,7 @@ pkg bld =
 	var opt_arch 		: byte[:]
 	var opt_sys		: byte[:]
 	var opt_sysvers		: (int, int, int)
+	var opt_cpufeatures	: uint64
 	var opt_runtime		: byte[:]
 	var opt_genasm		: bool
 	var opt_incpaths	: byte[:][:]
@@ -30,11 +31,13 @@ pkg bld =
 
 	const initopts	: (-> void)
 	const parseversion	: (v : byte[:] -> (int, int, int))
+	extern const cpufeatures : (-> uint64)
 ;;
 
 var opt_arch 		= ""
 var opt_sys		= ""
 var opt_binname		= ""
+var opt_cpufeatures	= 0ul
 var opt_libname		= ""
 var opt_runtime		= ""
 var opt_incpaths	/* FIXME: taking a constant slice is a nonconstant initializer */
@@ -74,6 +77,9 @@ const initopts = {
 	| "amd64":	opt_arch = "x64"
 	| unknown:	std.fatal("unknown architecture \"{}\"\n", unknown)
 	;;
+
+	/* from cpuid with EAX=1; EDX at top, ECX at bottom */
+	opt_cpufeatures = cpufeatures()
 
 	opt_maxproc = 2*(thread.ncpu() : std.size)
 	opt_incpaths = [][:]

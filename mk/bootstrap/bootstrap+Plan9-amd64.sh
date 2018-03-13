@@ -4,6 +4,7 @@
 pwd=`pwd`
 set -x
 	$pwd/6/6.out -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/config+plan9-x64.myr
+	6a -o mbld/cpufeatures.6 mbld/cpufeatures+x64.s
 	6a -o lib/thread/atomic-impl.6 lib/thread/atomic-impl+plan9-x64.s
 	6a -o lib/std/getbp.6 lib/std/getbp+plan9-x64.s
 	$pwd/6/6.out -I lib/sys lib/std/errno+plan9.myr
@@ -138,5 +139,5 @@ set -x
 	$pwd/6/6.out -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/test.myr
 	$pwd/6/6.out -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/deps.myr
 	$pwd/6/6.out -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/main.myr
-	6l -l -o mbld/mbld $pwd/rt/_myrrt.6 mbld/deps.6 mbld/main.6 mbld/util.6 mbld/libs.6 mbld/syssel.6 mbld/config.6 mbld/opts.6 mbld/subtest.6 mbld/types.6 mbld/test.6 mbld/install.6 mbld/parse.6 mbld/build.6 lib/thread/libthread.a lib/bio/libbio.a lib/regex/libregex.a lib/std/libstd.a lib/sys/libsys.a
+	6l -l -o mbld/mbld $pwd/rt/_myrrt.6 mbld/deps.6 mbld/main.6 mbld/util.6 mbld/cpufeatures.6 mbld/libs.6 mbld/syssel.6 mbld/config.6 mbld/opts.6 mbld/subtest.6 mbld/types.6 mbld/test.6 mbld/install.6 mbld/parse.6 mbld/build.6 lib/thread/libthread.a lib/bio/libbio.a lib/regex/libregex.a lib/std/libstd.a lib/sys/libsys.a
 true
