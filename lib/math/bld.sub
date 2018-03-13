@@ -4,5 +4,8 @@ lib math =
 	# trunc
 	fpmath-trunc-impl.myr
 
+	# summation
+	fpmath-sum-impl.myr
+
 	lib ../std:std
 ;;

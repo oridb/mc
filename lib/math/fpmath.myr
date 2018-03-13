@@ -8,8 +8,9 @@ pkg math =
 		ceil  : (f : @f -> @f)
 		floor : (f : @f -> @f)
 
-		/* compute (s, t) with s = round-nearest(a+b), s + t = a + b */
-//		fast2sum : (a : @f, b : @f -> (@f, @f))
+		/* summation */
+		kahan_sum : (a : @f[:] -> @f)
+		priest_sum : (a : @f[:] -> @f)
 	;;
 
 	impl std.equatable flt32
@@ -38,17 +39,30 @@ impl fpmath flt32 =
 	trunc = {f; -> trunc32(f)}
 	floor = {f; -> floor32(f)}
 	ceil  = {f; -> ceil32(f)}
+
+	kahan_sum = {l; -> kahan_sum32(l) }
+	priest_sum = {l; -> priest_sum32(l) }
 ;;
 
 impl fpmath flt64 =
 	trunc = {f; -> trunc64(f)}
 	floor = {f; -> floor64(f)}
 	ceil  = {f; -> ceil64(f)}
+
+	kahan_sum = {l; -> kahan_sum64(l) }
+	priest_sum = {l; -> priest_sum64(l) }
 ;;
 
 extern const trunc32 : (f : flt32 -> flt32)
 extern const floor32 : (f : flt32 -> flt32)
 extern const ceil32  : (f : flt32 -> flt32)
+
 extern const trunc64 : (f : flt64 -> flt64)
 extern const floor64 : (f : flt64 -> flt64)
 extern const ceil64  : (f : flt64 -> flt64)
+
+extern const kahan_sum32 : (l : flt32[:] -> flt32)
+extern const priest_sum32 : (l : flt32[:] -> flt32)
+
+extern const kahan_sum64 : (l : flt64[:] -> flt64)
+extern const priest_sum64 : (l : flt64[:] -> flt64)
