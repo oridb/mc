@@ -160,9 +160,15 @@ const addsysattrs = {b, tags
 		;;
 
 		match opt_arch
-		| "x64":	tag(b, "x64")
-		| unknown:	std.fatal("unknown architecture {}\n", unknown)
+		| "x64":	
+			tag(b, "x64")
+			if opt_cpufeatures & CpuidSSE4 == CpuidSSE4
+				tag(b, "sse4")
+			;;
+		| unknown:
+			std.fatal("unknown architecture {}\n", unknown)
 		;;
+
 		for t : tags
 			tag(b, t)
 		;;
