@@ -92,6 +92,7 @@ pkg std =
 extern const put : (fmt : byte[:], args : ... -> size)
 
 const Base = 0x100000000ul
+const Kmin = 64
 
 generic mkbigint = {v : @a :: integral,numeric @a
 	var a
@@ -124,7 +125,7 @@ const bigfrombytes = {isneg, v
 	;;
 
 	for i = 0; i + 4 <= v.len; i += 4
-		std.slpush(&a.dig, \
+		slpush(&a.dig, \
 			(v[i + 0] <<  0 : uint32) | \
 			(v[i + 1] <<  8 : uint32) | \
 			(v[i + 2] << 16 : uint32) | \
@@ -135,7 +136,7 @@ const bigfrombytes = {isneg, v
 		off = i & 0x3
 		last |= (v[off] : uint32) << (8 *off)
 	;;
-	std.slpush(&a.dig, last)
+	slpush(&a.dig, last)
 	-> trim(a)
 }
 
@@ -170,7 +171,7 @@ const bigsteal = {d, s
 }
 
 const bigclear = {v
-	std.slfree(v.dig)
+	slfree(v.dig)
 	v.sign = 0
 	v.dig = [][:]
 	-> v
@@ -259,7 +260,7 @@ const bigparse = {str
 	 fit in one digit.
 	 */
 	v = mkbigint(1)
-	for c : std.bychar(str)
+	for c : bychar(str)
 		if c == '_'
 			continue
 		;;
@@ -515,10 +516,7 @@ const usub = {a, b
 
 /* a *= b */
 const bigmul = {a, b
-	var i, j
-	var ai, bj, wij
-	var carry, t
-	var w
+	var s
 
 	if a.sign == 0 || b.sign == 0
 		a.sign = 0
@@ -526,10 +524,83 @@ const bigmul = {a, b
 		a.dig = [][:]
 		-> a
 	elif a.sign != b.sign
-		a.sign = -1
+		s = -1
 	else
-		a.sign = 1
+		s = 1
 	;;
+
+	umul(a, b)
+
+	a.sign = s
+	-> trim(a)
+}
+
+const umul = {a, b
+	var r
+
+	if a.dig.len < Kmin || b.dig.len < 2
+		smallmul(a, b)
+	else
+		r = mkbigint(0)
+		kmul(r, a, b)
+		bigmove(a, r)
+	;;
+}
+
+const kmul = {r, a, b
+	var x0, x1, y0, y1, n
+	var z0, z1, z2, t0
+
+	if a.dig.len < b.dig.len
+		t0 = a
+		a = b
+		b = t0
+	;;
+	n = min(a.dig.len / 2, b.dig.len - 1)
+
+	x0 = [.sign=1, .dig=a.dig[:n]]
+	x1 = [.sign=1, .dig=a.dig[n:]]
+	y0 = [.sign=1, .dig=b.dig[:n]]
+	y1 = [.sign=1, .dig=b.dig[n:]]
+
+	z0 = bigdup(&x0)
+	trim(z0)
+	umul(z0, &y0)
+
+	z2 = bigdup(&x1)
+	trim(z2)
+	umul(z2, &y1)
+
+
+	z1 = bigdup(&x0)
+	trim(z1)
+	bigsub(z1, &x1)
+	t0 = bigdup(&y1)
+	bigsub(t0, &y0)
+
+	umul(z1, t0)
+	bigadd(z1, z0)
+	bigadd(z1, z2)
+
+	bigshli(z1, 32*n)
+	bigshli(z2, 32*2*n)
+
+	bigclear(r)
+	bigadd(r, z0)
+	bigadd(r, z1)
+	bigadd(r, z2)
+
+	bigfree(z0)
+	bigfree(z1)
+	bigfree(z2)
+	bigfree(t0)
+}
+
+const smallmul = {a, b
+	var i, j
+	var ai, bj, wij
+	var carry, t
+	var w
 
 	w  = slzalloc(a.dig.len + b.dig.len)
 	for j = 0; j < b.dig.len; j++
@@ -546,7 +617,6 @@ const bigmul = {a, b
 	;;
 	slfree(a.dig)
 	a.dig = w
-	-> trim(a)
 }
 
 const bigdiv = {a : bigint#, b : bigint# -> bigint#

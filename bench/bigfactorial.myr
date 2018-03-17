@@ -7,6 +7,7 @@ const main = {
 		[.name="bigfactorial-100", .fn={ctx; bigfact(100)}],
 		[.name="bigfactorial-1000", .fn={ctx; bigfact(1000)}],
 		[.name="bigfactorial-10000", .fn={ctx; bigfact(10000)}],
+		[.name="bigfactorial-20000", .fn={ctx; bigfact(20000)}],
 	][:])
 }
 
