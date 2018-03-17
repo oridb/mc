@@ -23,8 +23,8 @@ bench sha1-compute =
 	lib ../lib/crypto:crypto
 	lib ../lib/testr:testr
 ;;
-bench bigfactorial =
-	bigfactorial.myr
+bench bigint =
+	bigint.myr
 	lib ../lib/std:std
 	lib ../lib/sys:sys
 	lib ../lib/testr:testr
