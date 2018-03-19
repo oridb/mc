@@ -538,7 +538,7 @@ const bigmul = {a, b
 const umul = {a, b
 	var r
 
-	if a.dig.len < Kmin || b.dig.len < 2
+	if a.dig.len < Kmin || b.dig.len < Kmin
 		smallmul(a, b)
 	else
 		r = mkbigint(0)
