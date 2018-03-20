@@ -1,0 +1,46 @@
+use std
+use math
+use testr
+
+const main = {
+	testr.run([
+		[.name="fma-01", .fn = fma01],
+		[.name="fma-02", .fn = fma02],
+	][:])
+}
+
+const fma01 = {c
+	/* Put the flt32 tests here */
+}
+
+const fma02 = {c
+	var inputs : (uint64, uint64, uint64, uint64)[:] = [
+		/*
+		   These are mostly obtained by running fpmath-consensus
+		   with seed 1234. Each covers a different corner case.
+		 */
+		(0x0000000000000000, 0x0000000000000000, 0x0100000000000000, 0x0100000000000000),
+		(0x0000000000000000, 0x0000000000000000, 0x0200000000000000, 0x0200000000000000),
+		(0x00000000000009a4, 0x6900000000000002, 0x6834802690008002, 0x6834802690008002),
+		(0x49113e8d334802ab, 0x5c35d8c190aea62e, 0x6c1a8cc212dcb6e2, 0x6c1a8cc212dcb6e2),
+		(0x2b3e04e8f6266d83, 0xae84e20f62f99bda, 0xc9115a1ccea6ce27, 0xc9115a1ccea6ce27),
+		(0xa03ea9e9b09d932c, 0xded7bc19edcbf0c7, 0xbbc4c1f83b3f8f2e, 0x3f26be5f0c7b48e3),
+		(0xa5ec2141c1e6f339, 0xa2d80fc217f57b61, 0x00b3484b473ef1b8, 0x08d526cb86ee748d),
+		(0xccc6600ee88bb67c, 0xc692eeec9b51cf0f, 0xbf5f1ae3486401b0, 0x536a7a30857129db),
+		(0x5f9b9e449db17602, 0xbef22ae5b6a2b1c5, 0x6133e925e6bf8a12, 0x6133e925e6bf823b),
+		(0x7f851249841b6278, 0x3773388e53a375f4, 0x761c27fc2ffa57be, 0x7709506b0e99dc30),
+		(0x7c7cb20f3ca8af93, 0x800fd7f5cfd5baae, 0x14e4c09c9bb1e17e, 0xbc9c6a3fd0e58682),
+		(0xb5e8db2107f4463f, 0x614af740c0d7eb3b, 0xd7e3d25c4daa81e0, 0xd7e3d798d3ccdffb),
+		(0xae62c8be4cb45168, 0x90cc5236f3516c90, 0x0007f8b14f684558, 0x0007f9364eb1a815),
+		(0x5809f53e32a7e1ba, 0xcc647611ccaa5bf4, 0xdfbdb5c345ce7a56, 0xe480990da5526103),
+	][:]
+
+	for (x, y, z, r) : inputs
+		var xf : flt64 = std.flt64frombits(x)
+		var yf : flt64 = std.flt64frombits(y)
+		var zf : flt64 = std.flt64frombits(z)
+		var rf = math.fma(xf, yf, zf)
+		testr.check(c, rf == std.flt64frombits(r),
+			"0x{b=16,w=16,p=0} * 0x{b=16,w=16,p=0} + 0x{b=16,w=16,p=0} should be 0x{b=16,w=16,p=0}, was 0x{b=16,w=16,p=0}", x, y, z, r, std.flt64bits(rf))
+	;;
+}

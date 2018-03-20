@@ -7,5 +7,8 @@ lib math =
 	# summation
 	fpmath-sum-impl.myr
 
+	# fused-multiply-add
+	fpmath-fma-impl.myr
+
 	lib ../std:std
 ;;

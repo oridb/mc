@@ -3,12 +3,15 @@ use std
 pkg math =
 	trait fpmath @f =
 
+		/* fpmath-fma-impl */
+		fma : (x : @f, y : @f, z : @f -> @f)
+
 		/* fpmath-trunc-impl */
 		trunc : (f : @f -> @f)
 		ceil  : (f : @f -> @f)
 		floor : (f : @f -> @f)
 
-		/* summation */
+		/* fpmath-sum-impl */
 		kahan_sum : (a : @f[:] -> @f)
 		priest_sum : (a : @f[:] -> @f)
 	;;
@@ -36,6 +39,8 @@ impl std.equatable flt64 =
 ;;
 
 impl fpmath flt32 =
+	fma = {x, y, z; -> fma32(x, y, z)}
+
 	trunc = {f; -> trunc32(f)}
 	floor = {f; -> floor32(f)}
 	ceil  = {f; -> ceil32(f)}
@@ -45,6 +50,8 @@ impl fpmath flt32 =
 ;;
 
 impl fpmath flt64 =
+	fma = {x, y, z; -> fma64(x, y, z)}
+
 	trunc = {f; -> trunc64(f)}
 	floor = {f; -> floor64(f)}
 	ceil  = {f; -> ceil64(f)}
@@ -52,6 +59,9 @@ impl fpmath flt64 =
 	kahan_sum = {l; -> kahan_sum64(l) }
 	priest_sum = {l; -> priest_sum64(l) }
 ;;
+
+extern const fma32 : (x : flt32, y : flt32, z : flt32 -> flt32)
+extern const fma64 : (x : flt64, y : flt64, z : flt64 -> flt64)
 
 extern const trunc32 : (f : flt32 -> flt32)
 extern const floor32 : (f : flt32 -> flt32)
