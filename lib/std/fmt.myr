@@ -539,7 +539,7 @@ const digitchars = "0123456789abcdef"
 const intfmt = {sb, opts, signed, bits : uint64, nbits
 	var isneg
 	var sval, val
-	var b : byte[32]
+	var b : byte[64]
 	var i, j, npad
 	var base
 
