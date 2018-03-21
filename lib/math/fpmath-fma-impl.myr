@@ -14,20 +14,39 @@ pkglocal const fma32 = {x : flt32, y : flt32, z : flt32
 	var zd : flt64 = flt64fromflt32(z)
 	var prod : flt64 = xd * yd
 	var r : flt64 = prod + zd
-	var r32 : flt32 = flt32fromflt64(r)
-	var rn, re, rs
-	(rn, re, rs) = std.flt64explode(r)
 
-	if re == 1023 || r - prod == zd || rs & 0x1fffffff != 0x10000000
-		-> r32
+	var zn, ze, zs
+	(zn, ze, zs) = std.flt32explode(z)
+	if ze == -127
+		ze = -126
+	;;
+	var pn, pe, ps
+	(pn, pe, ps) = std.flt64explode(prod)
+	if pe == -1023
+		pe = -1022
 	;;
 
-	/*
-           This is a non-infinity, non-NaN, non-exact result, and
-           the bits we cut off in truncating to r32 are exactly a
-           halfway case, so rounding might be difficult.
-	 */
-	-> 0.0
+	var beyond : int64 = 0
+	if pe - 52 > (ze : int64) - 23
+		/*
+		   Identify all the bits of z that were too far
+		   away to be added into the product. If there are
+		   any, they will be used later to influence rounding
+		   away from the halfway mark.
+		 */
+		var shift = std.min((pe - 52) - ((ze : int64) - 23), 64)
+		var zs1 : uint64 = (zs : uint64)
+		if zs1 & shr((-1 : uint64), 64 - shift) != 0
+			if zn == pn
+				beyond = 1
+			else
+				beyond = -1
+			;;
+		;;
+	;;
+
+	var r32 : flt32 = flt32fromflt64(r, beyond)
+	-> r32
 }
 
 const flt64fromflt32 = {f : flt32
@@ -36,47 +55,51 @@ const flt64fromflt32 = {f : flt32
 	var xs : uint64 = (s : uint64)
 	var xe : int64 = (e : int64)
 
-	if e == 127
-		-> std.flt64assem(n, 1023, xs)
+	if e == 128
+		-> std.flt64assem(n, 1024, xs)
 	elif e == -127
 		/*
 		  All subnormals in single precision (except 0.0s)
 		  can be upgraded to double precision, since the
 		  exponent range is so much wider.
 		 */
-		var first1 = find_first1_64(xs, 52)
+		var first1 = find_first1_64(xs, 23)
 		if first1 < 0
 			-> std.flt64assem(n, -1023, 0)
 		;;
 		xs = xs << (52 - (first1 : uint64))
-		xe = -127 + (52 - first1)
+		xe = -126 - (23 - first1)
 		-> std.flt64assem(n, xe, xs)
 	;;
 
-	-> std.flt64assem(n, xe, xs)
+	-> std.flt64assem(n, xe, xs << (52 - 23))
 }
 
-const flt32fromflt64 = {f : flt64
-	var n, e, s
+const flt32fromflt64 = {f : flt64, beyond : int64
+	var n : bool, e : int64, s : uint64
 	(n, e, s) = std.flt64explode(f)
 	var ts : uint32
 	var te : int32 = (e : int32)
 
-	if e >= 127
+	if e >= 128
 		if e == 1023 && s != 0
 			/* NaN */
-			-> std.flt32assem(n, 127, 1)
+			-> std.flt32assem(n, 128, 1)
 		else
 			/* infinity */
-			-> std.flt32assem(n, 127, 0)
+			-> std.flt32assem(n, 128, 0)
 		;;
 	;;
 
 	if e >= -126
 		/* normal */
 		ts = ((s >> (52 - 23)) : uint32)
-		if need_round_away(0, s, 52 - 23)
+		if need_round_away(0, s, 52 - 23, beyond)
 			ts++
+			if ts & (1 << 24) != 0
+				ts >>= 1
+				te++
+			;;
 		;;
 		-> std.flt32assem(n, te, ts)
 	;;
@@ -88,8 +111,10 @@ const flt32fromflt64 = {f : flt64
 
 	/* subnormal (at least, it will be) */
 	te = -127
-	ts = (shr(s, (52 - 23) + (-1022 - e)) : uint32)
-	if need_round_away(0, s, (52 - 23) + (-1022 - e))
+	var shift : int64 = (52 - 23) + (-126 - e)
+	var ts1 = shr(s, shift)
+	ts = (ts1 : uint32)
+	if need_round_away(0, s, shift, beyond)
 		ts++
 	;;
 	-> std.flt32assem(n, te, ts)
@@ -249,7 +274,7 @@ pkglocal const fma64 = {x : flt64, y : flt64, z : flt64
 			res_s |= shl(res_l, -12 + (res_lastbit_e + 64) - (-1022))
 		;;
 
-		if need_round_away(res_h, res_l, res_first1 + (-1074 - res_firstbit_e))
+		if need_round_away(res_h, res_l, res_first1 + (-1074 - res_firstbit_e), 0)
 			res_s++
 		;;
 
@@ -272,13 +297,13 @@ pkglocal const fma64 = {x : flt64, y : flt64, z : flt64
 
 	if res_first1 - 52 >= 64
 		res_s = shr(res_h, (res_first1 : int64) - 64 - 52)
-		if need_round_away(res_h, res_l, res_first1 - 52)
+		if need_round_away(res_h, res_l, res_first1 - 52, 0)
 			res_s++
 		;;
 	elif res_first1 - 52 >= 0
 		res_s = shl(res_h, 64 - (res_first1 - 52))
 		res_s |= shr(res_l, res_first1 - 52)
-		if need_round_away(res_h, res_l, res_first1 - 52)
+		if need_round_away(res_h, res_l, res_first1 - 52, 0)
 			res_s++
 		;;
 	else
@@ -302,7 +327,7 @@ pkglocal const fma64 = {x : flt64, y : flt64, z : flt64
 }
 
 /* >> and <<, but without wrapping when the shift is >= 64 */
-const shr = {u : uint64, s : int64
+const shr : (u : uint64, s : int64 -> uint64) = {u : uint64, s : int64
 	if (s : uint64) >= 64
 		-> 0
 	else
@@ -310,7 +335,7 @@ const shr = {u : uint64, s : int64
 	;;
 }
 
-const shl = {u : uint64, s : int64
+const shl : (u : uint64, s : int64 -> uint64) = {u : uint64, s : int64
 	if (s : uint64) >= 64
 		-> 0
 	else
@@ -450,17 +475,21 @@ const find_first1_64_hl = {h, l, start
 
     - following bitpos_last is a 1, then a zero sequence, and the
       round would be to even
+
+   The beyond parameter indicates whether there is lingering
+   addition/subtraction past the range of l. This adds a bit more
+   information about rounding before we hit round-to-even.
  */
-const need_round_away = {h : uint64, l : uint64, bitpos_last : int64
+const need_round_away = {h : uint64, l : uint64, bitpos_last : int64, beyond : int64
 	var first_omitted_is_1 = false
-	var nonzero_beyond = false
+	var nonzero_beyond = beyond > 0
 	if bitpos_last > 64
 		first_omitted_is_1 = h & shl(1, bitpos_last - 1 - 64) != 0
-		nonzero_beyond = h & shr((-1 : uint64), 2 + 64 - (bitpos_last - 64)) != 0
+		nonzero_beyond = nonzero_beyond || h & shr((-1 : uint64), 2 + 64 - (bitpos_last - 64)) != 0
 		nonzero_beyond = nonzero_beyond || (l != 0)
 	else
 		first_omitted_is_1 = l & shl(1, bitpos_last - 1) != 0
-		nonzero_beyond = l & shr((-1 : uint64), 2 + 64 - bitpos_last) != 0
+		nonzero_beyond = nonzero_beyond || l & shr((-1 : uint64), 1 + 64 - bitpos_last) != 0
 	;;
 
 	if !first_omitted_is_1
@@ -479,5 +508,5 @@ const need_round_away = {h : uint64, l : uint64, bitpos_last : int64
 		hl_is_odd = l & shl(1, bitpos_last) != 0
 	;;
 
-	-> hl_is_odd
+	-> hl_is_odd && (beyond >= 0)
 }
