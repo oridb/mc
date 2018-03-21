@@ -10,6 +10,7 @@ pkg bld =
 	var opt_runtime		: byte[:]
 	var opt_genasm		: bool
 	var opt_incpaths	: byte[:][:]
+	var opt_alltags		: byte[:][:]
 	var opt_mcflags		: byte[:][:]
 	var opt_museflags	: byte[:][:]
 	var opt_ldflags		: byte[:][:]
@@ -48,6 +49,7 @@ var opt_muse		= "muse"
 var opt_mcflags		= [][:]
 var opt_museflags	= [][:]
 var opt_ldflags		= [][:]
+var opt_alltags		= [][:]
 var opt_objdir		= "obj"
 var opt_genasm  	= false
 var opt_silent		= false

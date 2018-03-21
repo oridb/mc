@@ -142,27 +142,32 @@ generic sysselfin = {syssel
 }
 
 const addsysattrs = {b, tags
-	std.htput(b.tags, opt_sys, opt_sysvers)
+	if opt_alltags.len > 0
+		for t : opt_alltags
+			tag(b, t)
+		;;
+	else
+		std.htput(b.tags, opt_sys, opt_sysvers)
 
-	match opt_sys
-	| "freebsd":	tag(b, "posixy")
-	| "netbsd":	tag(b, "posixy")
-	| "openbsd":	tag(b, "posixy")
-	| "osx":	tag(b, "posixy")
-	| "linux":	tag(b, "posixy")
-	| "plan9":
-	| unknown:	std.fatal("unknown system \"{}\"\n", unknown)
-	;;
+		match opt_sys
+		| "freebsd":	tag(b, "posixy")
+		| "netbsd":	tag(b, "posixy")
+		| "openbsd":	tag(b, "posixy")
+		| "osx":	tag(b, "posixy")
+		| "linux":	tag(b, "posixy")
+		| "plan9":
+		| unknown:	std.fatal("unknown system \"{}\"\n", unknown)
+		;;
 
-	match opt_arch
-	| "x64":	tag(b, "x64")
-	| unknown:	std.fatal("unknown architecture {}\n", unknown)
+		match opt_arch
+		| "x64":	tag(b, "x64")
+		| unknown:	std.fatal("unknown architecture {}\n", unknown)
+		;;
+		for t : tags
+			tag(b, t)
+		;;
+		loadtagfile(b, "bld.tag")
 	;;
-	for t : tags
-		tag(b, t)
-	;;
-
-	loadtagfile(b, "bld.tag")
 }
 
 const loadtagfile = {b, tagfile
