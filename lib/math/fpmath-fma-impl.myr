@@ -9,21 +9,30 @@ const exp_mask32 : uint32 = 0xff << 23
 const exp_mask64 : uint64 = 0x7ff << 52
 
 pkglocal const fma32 = {x : flt32, y : flt32, z : flt32
+	var xn, yn
+	(xn, _, _) = std.flt32explode(x)
+	(yn, _, _) = std.flt32explode(y)
 	var xd : flt64 = flt64fromflt32(x)
 	var yd : flt64 = flt64fromflt32(y)
 	var zd : flt64 = flt64fromflt32(z)
 	var prod : flt64 = xd * yd
+	var pn, pe, ps
+	(pn, pe, ps) = std.flt64explode(prod)
+	if pe == -1023
+		pe = -1022
+	;;
+	if pn != (xn != yn)
+		/* In case of NaNs, sign might not have been preserved */
+		pn = (xn != yn)
+		prod = std.flt64assem(pn, pe, ps)
+	;;
+
 	var r : flt64 = prod + zd
 
 	var zn, ze, zs
 	(zn, ze, zs) = std.flt32explode(z)
 	if ze == -127
 		ze = -126
-	;;
-	var pn, pe, ps
-	(pn, pe, ps) = std.flt64explode(prod)
-	if pe == -1023
-		pe = -1022
 	;;
 
 	var beyond : int64 = 0
