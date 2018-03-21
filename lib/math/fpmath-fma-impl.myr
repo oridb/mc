@@ -34,7 +34,7 @@ pkglocal const fma32 = {x : flt32, y : flt32, z : flt32
 		   any, they will be used later to influence rounding
 		   away from the halfway mark.
 		 */
-		var shift = std.min((pe - 52) - ((ze : int64) - 23), 64)
+		var shift = std.min((pe - 52) - ((ze : int64) - 23) - 1, 64)
 		var zs1 : uint64 = (zs : uint64)
 		if zs1 & shr((-1 : uint64), 64 - shift) != 0
 			if zn == pn
