@@ -9,7 +9,90 @@ const exp_mask32 : uint32 = 0xff << 23
 const exp_mask64 : uint64 = 0x7ff << 52
 
 pkglocal const fma32 = {x : flt32, y : flt32, z : flt32
+	var xd : flt64 = flt64fromflt32(x)
+	var yd : flt64 = flt64fromflt32(y)
+	var zd : flt64 = flt64fromflt32(z)
+	var prod : flt64 = xd * yd
+	var r : flt64 = prod + zd
+	var r32 : flt32 = flt32fromflt64(r)
+	var rn, re, rs
+	(rn, re, rs) = std.flt64explode(r)
+
+	if re == 1023 || r - prod == zd || rs & 0x1fffffff != 0x10000000
+		-> r32
+	;;
+
+	/*
+           This is a non-infinity, non-NaN, non-exact result, and
+           the bits we cut off in truncating to r32 are exactly a
+           halfway case, so rounding might be difficult.
+	 */
 	-> 0.0
+}
+
+const flt64fromflt32 = {f : flt32
+	var n, e, s
+	(n, e, s) = std.flt32explode(f)
+	var xs : uint64 = (s : uint64)
+	var xe : int64 = (e : int64)
+
+	if e == 127
+		-> std.flt64assem(n, 1023, xs)
+	elif e == -127
+		/*
+		  All subnormals in single precision (except 0.0s)
+		  can be upgraded to double precision, since the
+		  exponent range is so much wider.
+		 */
+		var first1 = find_first1_64(xs, 52)
+		if first1 < 0
+			-> std.flt64assem(n, -1023, 0)
+		;;
+		xs = xs << (52 - (first1 : uint64))
+		xe = -127 + (52 - first1)
+		-> std.flt64assem(n, xe, xs)
+	;;
+
+	-> std.flt64assem(n, xe, xs)
+}
+
+const flt32fromflt64 = {f : flt64
+	var n, e, s
+	(n, e, s) = std.flt64explode(f)
+	var ts : uint32
+	var te : int32 = (e : int32)
+
+	if e >= 127
+		if e == 1023 && s != 0
+			/* NaN */
+			-> std.flt32assem(n, 127, 1)
+		else
+			/* infinity */
+			-> std.flt32assem(n, 127, 0)
+		;;
+	;;
+
+	if e >= -126
+		/* normal */
+		ts = ((s >> (52 - 23)) : uint32)
+		if need_round_away(0, s, 52 - 23)
+			ts++
+		;;
+		-> std.flt32assem(n, te, ts)
+	;;
+
+	/* subnormal already, will have to go to 0 */
+	if e == -1023
+		-> std.flt32assem(n, -127, 0)
+	;;
+
+	/* subnormal (at least, it will be) */
+	te = -127
+	ts = (shr(s, (52 - 23) + (-1022 - e)) : uint32)
+	if need_round_away(0, s, (52 - 23) + (-1022 - e))
+		ts++
+	;;
+	-> std.flt32assem(n, te, ts)
 }
 
 pkglocal const fma64 = {x : flt64, y : flt64, z : flt64
@@ -155,10 +238,10 @@ pkglocal const fma64 = {x : flt64, y : flt64, z : flt64
 	var res_s = 0
 	if res_firstbit_e <= -1023
 		/* Subnormal case */
-		if res_lastbit_e + 128 < -1022
+		if res_lastbit_e + 128 < 12 - 1022
 			res_s = shr(res_h, 12 - 1022 - (res_lastbit_e + 128))
 			res_s |= shr(res_l, 12 - 1022 - (res_lastbit_e + 64))
-		elif res_lastbit_e + 64 < -1022
+		elif res_lastbit_e + 64 < 12 - 1022
 			res_s = shl(res_h, -12 + (res_lastbit_e + 128) - (-1022))
 			res_s |= shr(res_l, 12 - 1022 - (res_lastbit_e + 64))
 		else
@@ -337,7 +420,7 @@ const compare_hl_z = {h : uint64, l : uint64, hl_firstbit_e : int64, hl_lastbit_
 }
 
 /* Find the first 1 bit in a bitstring */
-const find_first1_64 = {b : uint64, start : int64
+const find_first1_64 : (b : uint64, start : int64 -> int64) = {b : uint64, start : int64
 	for var j = start; j >= 0; --j
 		var m = shl(1, j)
 		if b & m != 0
@@ -359,9 +442,9 @@ const find_first1_64_hl = {h, l, start
 
 /*
    For [ h ][ l ], where bitpos_last is the position of the last
-   bit that was included in the 53-bit wide result (l's last bit
-   has position 0), decide whether rounding up/away is needed. This
-   is true if
+   bit that was included in the truncated result (l's last bit has
+   position 0), decide whether rounding up/away is needed. This is
+   true if
 
     - following bitpos_last is a 1, then a non-zero sequence, or
 

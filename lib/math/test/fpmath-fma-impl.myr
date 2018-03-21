@@ -17,7 +17,8 @@ const fma02 = {c
 	var inputs : (uint64, uint64, uint64, uint64)[:] = [
 		/*
 		   These are mostly obtained by running fpmath-consensus
-		   with seed 1234. Each covers a different corner case.
+		   with seed 1234. Each (mostly) covers a different
+		   corner case.
 		 */
 		(0x0000000000000000, 0x0000000000000000, 0x0100000000000000, 0x0100000000000000),
 		(0x0000000000000000, 0x0000000000000000, 0x0200000000000000, 0x0200000000000000),
@@ -33,6 +34,11 @@ const fma02 = {c
 		(0xb5e8db2107f4463f, 0x614af740c0d7eb3b, 0xd7e3d25c4daa81e0, 0xd7e3d798d3ccdffb),
 		(0xae62c8be4cb45168, 0x90cc5236f3516c90, 0x0007f8b14f684558, 0x0007f9364eb1a815),
 		(0x5809f53e32a7e1ba, 0xcc647611ccaa5bf4, 0xdfbdb5c345ce7a56, 0xe480990da5526103),
+		(0xbb889d7f826438e1, 0x03bdaff82129696d, 0x000000dacab276ae, 0x8000009296c962f8),
+		(0x003d95525e2b057a, 0xbef738ea5717d89a, 0x800000089763d88c, 0x800000b456ed1a9c),
+		(0x0be868cb5a7180c8, 0x3357a30707ed947c, 0x80000050d6b86ac6, 0x000000cfa41cb229),
+		(0xbe535f4f8a7498af, 0x00d24adee12217b8, 0x0000005729e93fb0, 0x800000016d975af3),
+		(0x39d1968eb883f088, 0x856f286e3b268f0e, 0x800000d7cdd0ed70, 0x800001e9cf01a0ae),
 	][:]
 
 	for (x, y, z, r) : inputs
