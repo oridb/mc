@@ -1,7 +1,8 @@
 lib math =
 	fpmath.myr
 
-	# trunc
+	# trunc, floor, ceil
+	fpmath-trunc-impl+posixy-x64-sse4.s
 	fpmath-trunc-impl.myr
 
 	# summation
