@@ -44,11 +44,6 @@ pkglocal const fma32 = {x : flt32, y : flt32, z : flt32
 		-> flt32fromflt64(r)
 	;;
 
-	/* We can check if rounding was performed by undoing */
-	if flt32fromflt64(r - prod) == z
-		-> flt32fromflt64(r)
-	;;
-
 	/*
 	   At this point, there's definitely about to be a rounding
 	   error. To figure out what to do, compute prod + z with
@@ -139,7 +134,7 @@ const flt32fromflt64 = {f : flt64
 		;;
 	;;
 
-	if e >= -126
+	if e >= -127
 		/* normal */
 		ts = ((s >> (52 - 23)) : uint32)
 		if need_round_away(0, s, 52 - 23)
