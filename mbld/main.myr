@@ -29,6 +29,7 @@ const main = {args : byte[:][:]
 		.opts = [
 			[.opt='j', .arg="jobs", .desc="build with at most 'jobs' jobs"],
 			[.opt='t', .arg="tag", .desc="build with specified systag"],
+			[.opt='T', .arg="tag", .desc="build with only the specified systag"],
 			[.opt='S', .desc="generate assembly when building"],
 			[.opt='I', .arg="inc", .desc="add 'inc' to your include path"],
 			[.opt='R', .arg="runsrc", .desc="source to compile and run"],
@@ -51,6 +52,7 @@ const main = {args : byte[:][:]
 		| ('I', arg):	std.slpush(&bld.opt_incpaths, arg)
 		| ('B', arg):	bld.opt_instbase = arg
 		| ('t', tag):	std.slpush(&tags, tag)
+		| ('T', tag):	std.slpush(&bld.opt_alltags, tag)
 		| ('j', arg):	bld.opt_maxproc = std.getv(std.intparse(arg), 1)
 		| ('R', arg):	runsrc = arg
 		| ('o', arg):	bld.opt_objdir = arg

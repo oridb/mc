@@ -7,9 +7,11 @@ pkg bld =
 	var opt_arch 		: byte[:]
 	var opt_sys		: byte[:]
 	var opt_sysvers		: (int, int, int)
+	var opt_cpufeatures	: uint64
 	var opt_runtime		: byte[:]
 	var opt_genasm		: bool
 	var opt_incpaths	: byte[:][:]
+	var opt_alltags		: byte[:][:]
 	var opt_mcflags		: byte[:][:]
 	var opt_museflags	: byte[:][:]
 	var opt_ldflags		: byte[:][:]
@@ -30,14 +32,19 @@ pkg bld =
 
 	const initopts	: (-> void)
 	const parseversion	: (v : byte[:] -> (int, int, int))
+
+	/* not exactly portable, but good enough for now */
+	const CpuidSSE4 : uint64= 0x180000
+	extern const cpufeatures : (-> uint64)
 ;;
 
 var opt_arch 		= ""
 var opt_sys		= ""
 var opt_binname		= ""
+var opt_cpufeatures	= 0ul
 var opt_libname		= ""
 var opt_runtime		= ""
-var opt_incpaths	/* FIXME: taking a constant slice is a nonconstant initializer */
+var opt_incpaths	= [][:]
 var opt_instbase	= ""
 var opt_destdir		= ""
 var opt_sysvers
@@ -48,6 +55,7 @@ var opt_muse		= "muse"
 var opt_mcflags		= [][:]
 var opt_museflags	= [][:]
 var opt_ldflags		= [][:]
+var opt_alltags		= [][:]
 var opt_objdir		= "obj"
 var opt_genasm  	= false
 var opt_silent		= false
@@ -75,8 +83,10 @@ const initopts = {
 	| unknown:	std.fatal("unknown architecture \"{}\"\n", unknown)
 	;;
 
+	/* from cpuid with EAX=1; EDX at top, ECX at bottom */
+	opt_cpufeatures = cpufeatures()
+
 	opt_maxproc = 2*(thread.ncpu() : std.size)
-	opt_incpaths = [][:]
 	opt_instbase = config.Instroot
 	opt_destdir = std.getenvv("DESTDIR", "")
 	opt_mc = std.getenvv("MYR_MC", "6m")

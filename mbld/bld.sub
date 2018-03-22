@@ -1,5 +1,6 @@
 bin mbld =
 	build.myr
+	cpufeatures+x64.s
 	deps.myr
 	libs.myr
 	install.myr
