@@ -35,6 +35,13 @@ pkg bld =
 
 	/* not exactly portable, but good enough for now */
 	const CpuidSSE4 : uint64= 0x180000
+
+	/*
+	   Intel manuals (vol 1, 14.5.3) say AVX, OSXSAVE also
+	   needed. For full portability, XGETBV also needs to be
+	   checked, though it isn't right now.
+	 */
+	const CpuidFMA  : uint64= 0x18001000
 	extern const cpufeatures : (-> uint64)
 ;;
 

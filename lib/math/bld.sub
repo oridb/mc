@@ -9,6 +9,7 @@ lib math =
 	fpmath-sum-impl.myr
 
 	# fused-multiply-add
+	fpmath-fma-impl+posixy-x64-fma.s
 	fpmath-fma-impl.myr
 
 	lib ../std:std

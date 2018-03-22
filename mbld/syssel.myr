@@ -165,6 +165,9 @@ const addsysattrs = {b, tags
 			if opt_cpufeatures & CpuidSSE4 == CpuidSSE4
 				tag(b, "sse4")
 			;;
+			if opt_cpufeatures & CpuidFMA == CpuidFMA
+				tag(b, "fma")
+			;;
 		| unknown:
 			std.fatal("unknown architecture {}\n", unknown)
 		;;
