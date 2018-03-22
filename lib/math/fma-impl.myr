@@ -144,7 +144,9 @@ const flt32fromflt64 = {f : flt64
 				te++
 			;;
 		;;
-		-> std.flt32assem(n, te, ts)
+		if te >= -126
+			-> std.flt32assem(n, te, ts)
+		;;
 	;;
 
 	/* subnormal already, will have to go to 0 */
