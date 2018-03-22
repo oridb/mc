@@ -2,15 +2,15 @@ lib math =
 	fpmath.myr
 
 	# trunc, floor, ceil
-	fpmath-trunc-impl+posixy-x64-sse4.s
-	fpmath-trunc-impl.myr
+	trunc-impl+posixy-x64-sse4.s
+	trunc-impl.myr
 
 	# summation
-	fpmath-sum-impl.myr
+	sum-impl.myr
 
 	# fused-multiply-add
-	fpmath-fma-impl+posixy-x64-fma.s
-	fpmath-fma-impl.myr
+	fma-impl+posixy-x64-fma.s
+	fma-impl.myr
 
 	lib ../std:std
 ;;
