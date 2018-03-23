@@ -1,7 +1,7 @@
 .globl bld$cpufeatures
-.globl bld$_cpufeatures
+.globl _bld$cpufeatures
 bld$cpufeatures:
-bld$_cpufeatures:
+_bld$cpufeatures:
 	mov	$0x1, %eax
 	cpuid
 	mov	%ecx, %eax
