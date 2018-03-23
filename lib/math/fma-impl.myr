@@ -33,63 +33,108 @@ pkglocal const fma32 = {x : flt32, y : flt32, z : flt32
 
 	/*
 	   At this point, r is probably the correct answer. The
-	   only issue is that if truncating r to a flt32 causes
-	   rounding-to-even, and it was obtained by rounding in the
-	   first place, direction, then we'd be over-rounding. The
-	   only way this could possibly be a problem is if the
-	   product step rounded to the halfway point (a 100...0,
-	   with the 1 just outside truncation range).
-         */
+	   only issue is the rounding.
+
+	   Ex 1: If x*y > 0 and z is a tiny, negative number, then
+	   adding z probably does no rounding. However, if
+	   truncating to 23 bits of precision would cause round-to-even,
+	   and that round would be upwards, then we need to remember
+	   those trailing bits of z and cancel the rounding.
+
+	   Ex 2: If x, y, z > 0, and z is small, with
+	                 last bit in flt64 |
+	          last bit in flt32 v      v
+	   x * y = ...............101011..11
+	       z =                          10000...,
+	   then x * y + z will be rounded to
+	           ...............101100..00,
+	   and then as a flt32 it will become
+	           ...............110,
+	   Even though, looking at the original bits, it doesn't
+	   "deserve" the final rounding.
+
+	   These can only happen if r is non-inf, non-NaN, and the
+	   lower 29 bits correspond to "exactly halfway".
+	 */
 	if re == 1024 || rs & 0x1fffffff != 0x10000000
 		-> flt32fromflt64(r)
 	;;
 
 	/*
-	   At this point, there's definitely about to be a rounding
-	   error. To figure out what to do, compute prod + z with
-	   round-to-zero. If we get r again, then it's okay to round
-	   r upwards, because it hasn't been rounded away from zero
-	   yet and we allow ourselves one such rounding.
+	   At this point, a rounding is about to happen. We need
+	   to know what direction that rounding is, so that we can
+	   tell if it's wrong. +1 means "away from 0", -1 means
+	   "towards 0".
 	 */
 	var zn, ze, zs
 	(zn, ze, zs) = std.flt64explode(zd)
-	if ze == -1023
-		ze = -1022
-	;;
-	var rtn, rte, rts
-	if pe >= ze && pn == zn
-		(rtn, rte, rts) = (pn, pe, ps)
-		rts += shr(zs, pe - ze)
-	elif pe > ze || (pe == ze && ps > zs)
-		(rtn, rte, rts) = (pn, pe, ps)
-		rts -= shr(zs, pe - ze)
-		if shr((-1 : uint64), 64 - std.min(64, (pe - ze))) & zs != 0
-			rts--
-		;;
-	elif pe < ze && pn == zn
-		(rtn, rte, rts) = (zn, ze, zs)
-		rts += shr(ps, ze - pe)
+	var round_direction = 0
+	if rs & 0x20000000 == 0
+		round_direction = -1
 	else
-		(rtn, rte, rts) = (zn, ze, zs)
-		rts -= shr(ps, ze - pe)
-		if shr((-1 : uint64), 64 - std.min(64, (ze - pe))) & ps != 0
-			rts--
+		round_direction = 1
+	;;
+
+	var smaller, larger, smaller_e, larger_e
+	if pe > ze || (pe == ze && ps > zs)
+		(smaller, larger, smaller_e, larger_e) = (zs, ps, ze, pe)
+	else
+		(smaller, larger, smaller_e, larger_e) = (ps, zs, pe, ze)
+	;;
+	var mask = shr((-1 : uint64), 64 - std.min(64, larger_e - smaller_e))
+	var prevent_rounding = false
+	if (round_direction > 0 && pn != zn) || (round_direction < 0 && pn == zn)
+		/*
+		   The prospective rounding disagrees with the
+		   signage. We are potentially in the case of Ex
+		   1.
+
+		   Look at the bits (of the smaller flt64) that are
+		   outside the range of r. If there are any such
+		   bits, we need to cancel the rounding.
+
+		   We certainly need to consider bits very far to
+		   the right, but there's an awkwardness concerning
+		   the bit just outside the flt64 range: it governed
+		   round-to-even, so it might have had an effect.
+		   We only care about bits which did not have an
+		   effect. Therefore, we perform the subtraction
+		   using only the bits from smaller that lie in
+		   larger's range, then check whether the result
+		   is susceptible to round-to-even.
+
+		   (Since we only care about the last bit, and the
+		   base is 2, subtraction or addition are equally
+		   useful.)
+		*/
+		if (larger ^ shr(smaller, larger_e - smaller_e)) & 0x1 != 0
+			mask >>= 1
+		;;
+		prevent_rounding = smaller & mask != 0
+	else
+		/*
+		   The prospective rounding agrees with the signage.
+		   We are potentially in the case of Ex 2.
+
+		   We just need to check if r was obtained by
+		   rounding in the addition step. In this case, we
+		   still check the smaller/larger, and we only
+		   care about round-to-even. Any
+		   rounding that happened previously is enough
+		   reason to disqualify this next rounding.
+		*/
+		prevent_rounding = (larger ^ shr(smaller, larger_e - smaller_e)) & 0x1 != 0
+	;;
+
+	if prevent_rounding
+		if round_direction > 0
+			rs--
+		else
+			rs++
 		;;
 	;;
 
-	if rts & (1 << 53) != 0
-		rts >>= 1
-		rte++
-	;;
-
-	if rn == rtn && rs == rts && re == rte
-		rts++
-		if rts & (1 << 53) != 0
-			rts >>= 1
-			rte++
-		;;
-	;;
-	-> flt32fromflt64(std.flt64assem(rtn, rte, rts))
+	-> flt32fromflt64(std.flt64assem(rn, re, rs))
 }
 
 const flt64fromflt32 = {f : flt32
