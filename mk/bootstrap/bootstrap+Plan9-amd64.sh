@@ -4,7 +4,7 @@
 pwd=`pwd`
 set -x
 	$pwd/6/6.out -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/config+plan9-x64.myr
-	6a -o mbld/cpufeatures.6 mbld/cpufeatures+x64.s
+	6a -o mbld/cpufeatures.6 mbld/cpufeatures+plan9-x64.s
 	6a -o lib/thread/atomic-impl.6 lib/thread/atomic-impl+plan9-x64.s
 	6a -o lib/std/getbp.6 lib/std/getbp+plan9-x64.s
 	$pwd/6/6.out -I lib/sys lib/std/errno+plan9.myr

@@ -4,7 +4,7 @@
 pwd=`pwd`
 set -x
 	$pwd/6/6m -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/config.myr
-	as -g -o mbld/cpufeatures.o mbld/cpufeatures+x64.s
+	as -g -o mbld/cpufeatures.o mbld/cpufeatures+posixy-x64.s
 	as -g -o lib/thread/exit.o lib/thread/exit+linux-x64.s
 	as -g -o lib/thread/atomic-impl.o lib/thread/atomic-impl+x64.s
 	as -g -o lib/std/getbp.o lib/std/getbp+posixy-x64.s
