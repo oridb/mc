@@ -21,6 +21,7 @@ type signo	= int32
 type sigflags	= int32
 type sigset	= uint32
 type msg	= void
+type gid	= uint32
 
 const Futexwait		: int = 1
 const Futexwake		: int = 2
