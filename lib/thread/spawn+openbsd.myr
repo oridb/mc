@@ -53,7 +53,7 @@ const spawnstk = {fn, sz
 const getstk = {sz
 	var p, m
 
-	p = sys.mmap((0 : byte#), sz, sys.Mprotrw, sys.Mpriv | sys.Manon, -1, 0)
+	p = sys.mmap((0 : byte#), sz, sys.Mprotrw, sys.Mpriv | sys.Manon | sys.Mstack, -1, 0)
 	if p == sys.Mapbad
 		-> p
 	;;
