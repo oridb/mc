@@ -22,6 +22,7 @@ lib crypto =
 
 	# utilities for subtle bits
 	ct.myr
+	ctbig.myr
 	clear.myr
 
 	lib ../std:std

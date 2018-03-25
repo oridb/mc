@@ -28,21 +28,11 @@ const go = {b, targs, kind, isbench
 	if !buildtarg(b, kind)
 		std.exit(1)
 	;;
-	if targs.len == 0
-		tests = std.htgetv(b.deps.targs, kind, [][:])
-	else
-		tests = [][:]
-		for t : targs
-			match std.htget(b.deps.targs, t)
-			| `std.Some tl:	std.sljoin(&tests, tl)
-			| `std.None:	std.fatal("unknown test {}\n", t)
-			;;
-		;;
-	;;
+	tests = std.htgetv(b.deps.targs, kind, [][:])
 	ok = true
 	failed = [][:]
 	for t : tests
-		if !runtest(b, t, isbench, &failed)
+		if !runtest(b, t, targs, isbench, &failed)
 			ok = false
 		;;
 	;;
@@ -71,10 +61,19 @@ const printfailed = {failed
 	;;
 }
 
-const runtest = {b, n, isbench, failed
+const runtest = {b, n, targs, isbench, failed
 	var dir, res, log, logfd
-	var sub
+	var sub, found
 
+	if targs.len > 0
+		found = false
+		for t : targs
+			found = found || matchtest(n.lbl, t)
+		;;
+		if !found
+			-> true
+		;;
+	;;
 	mbldput("run {}: ", n.lbl)
 	dir = std.pathcat(b.basedir, n.wdir)
 	std.chdir(dir)
@@ -116,3 +115,13 @@ const runtest = {b, n, isbench, failed
 	-> res
 }
 
+const matchtest = {name, pat
+	match std.strfind(pat, ":")
+	| `std.Some i:	pat = pat[:i]
+	| `std.None:	/* ok */
+	;;
+	match std.strfind(name, pat)
+	| `std.Some _:	-> true
+	| `std.None:	-> false
+	;;
+}

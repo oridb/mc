@@ -9,6 +9,8 @@ pkg crypto =
 	;;
 
 	generic mkctbign 	: (v : @a, nbit : std.size -> ctbig#) :: numeric,integral @a
+
+	const ctzero	: (nbit : std.size -> ctbig#)
 	const mkctbigle	: (v : byte[:], nbit : std.size -> ctbig#)
 	//const mkctbigbe	: (v : byte[:], nbit : std.size -> ctbig#)
 
@@ -16,13 +18,13 @@ pkg crypto =
 	const ctbigdup	: (v : ctbig# -> ctbig#)
 	const ctlike	: (v : ctbig# -> ctbig#)
 	const ct2big	: (v : ctbig# -> std.bigint#)
-	const big2ct	: (v : std.bigint#, ndig : std.size -> ctbig#)
+	const big2ct	: (v : std.bigint#, nbit : std.size -> ctbig#)
 
 	const ctadd	: (r : ctbig#, a : ctbig#, b : ctbig# -> void)
 	const ctsub	: (r : ctbig#, a : ctbig#, b : ctbig# -> void)
 	const ctmul	: (r : ctbig#, a : ctbig#, b : ctbig# -> void)
 	//const ctdivmod	: (r : ctbig#, m : ctbig#, a : ctbig#, b : ctbig# -> void)
-	//const ctmodpow	: (r : ctbig#, a : ctbig#, b : ctbig# -> void)
+	const ctmodpow	: (r : ctbig#, a : ctbig#, b : ctbig# -> void)
 
 	const ctiszero	: (v : ctbig# -> bool)
 	const cteq	: (a : ctbig#, b : ctbig# -> bool)
@@ -33,6 +35,7 @@ pkg crypto =
 	const ctle	: (a : ctbig#, b : ctbig# -> bool)
 ;;
 
+const Bits = 32
 const Base = 0x100000000ul
 
 generic mkctbign = {v : @a, nbit : std.size :: integral,numeric @a
@@ -50,7 +53,14 @@ generic mkctbign = {v : @a, nbit : std.size :: integral,numeric @a
 	if nbit > 32
 		a.dig[1] = (val >> 32 : uint32)
 	;;
-	-> a
+	-> clip(a)
+}
+
+const ctzero = {nbit
+	-> std.mk([
+		.nbit=nbit,
+		.dig=std.slalloc(ndig(nbit)),
+	])
 }
 
 const ct2big = {ct
@@ -67,10 +77,10 @@ const big2ct = {ct, nbit
 	l = std.min(n, ct.dig.len)
 	v = std.slzalloc(n)
 	std.slcp(v, ct.dig[:l])
-	-> std.mk([
+	-> clip(std.mk([
 		.nbit=nbit,
 		.dig=v,
-	])
+	]))
 }
 
 const mkctbigle = {v, nbit
@@ -96,7 +106,7 @@ const mkctbigle = {v, nbit
 		last |= (v[off] : uint32) << (8 *off)
 	;;
 	a[o++] = last
-	-> std.mk([.nbit=nbit, .dig=a])
+	-> clip(std.mk([.nbit=nbit, .dig=a]))
 }
 
 const ctlike = {v
@@ -146,6 +156,7 @@ const ctsub = {r, a, b
 		v = mux(borrow, v + Base, v)
 		r.dig[i] = (v  : uint32)
 	;;
+	clip(r)
 }
 
 const ctmul = {r, a, b
@@ -176,17 +187,18 @@ const ctmul = {r, a, b
 		std.slfree(a.dig)
 	;;
 	r.dig = w[:a.dig.len]
+	clip(r)
 }
 
-//const ctmodpow = {res, a, b
-//	/* find rinv, mprime */
-//	
-//	/* convert to monty space */
-//
-//	/* do the modpow */
-//
-//	/* and come back */
-//}
+const ctmodpow = {res, a, b
+	/* find rinv, mprime */
+	
+	/* convert to monty space */
+
+	/* do the modpow */
+
+	/* and come back */
+}
 
 const ctiszero = {a
 	var z, zz
@@ -269,4 +281,14 @@ const ndig = {nbit
 const checksz = {a, b
 	std.assert(a.nbit == b.nbit, "mismatched bit sizes")
 	std.assert(a.dig.len == b.dig.len, "mismatched backing sizes")
+}
+
+const clip = {v
+	var mask, edge
+	
+
+	edge = v.nbit & (Bits - 1)
+	mask = (1 << edge) - 1
+	v.dig[v.dig.len - 1] &= (mask : uint32)
+	-> v
 }
