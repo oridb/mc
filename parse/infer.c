@@ -958,7 +958,7 @@ static void
 verifytraits(Node *ctx, Type *a, Type *b)
 {
 	char traitbuf[64], abuf[64], bbuf[64];
-	char asrc[64], bsrc[64];
+	char asrc[128], bsrc[128];
 	Bitset *abs, *bbs;
 	size_t i, n;
 	Srcloc l;
