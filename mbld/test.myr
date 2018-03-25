@@ -78,6 +78,13 @@ const runtest = {b, n, targs, isbench, failed
 	dir = std.pathcat(b.basedir, n.wdir)
 	std.chdir(dir)
 	std.slfree(dir)
+
+	if targs.len > 0
+		match std.strfind(targs[0], ":")
+		| `std.Some i:	std.setenv("MTEST_SUBSET", targs[0][i+1:])
+		| `std.None:	/* ok */
+		;;
+	;;
 	match std.spork(n.cmd)
 	| `std.Err m:
 		std.fatal("\nunable to run test: {}\n", m)

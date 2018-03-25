@@ -69,11 +69,13 @@ const setenv = {name, val
 			idx++
 		;;
 	;;
-	if !found
+	if found
+		std.slfree(cstrconvp(environ[idx]))
+	else
 		idx = env.len - 1
 		std.slpush(&environ, Zenvp)
 	;;
-	e = cstrconvp(environ[idx])
+	environ[idx] = (e : byte#)
 	sys.__cenvp = (environ : byte##)
 	unlock(envlck)
 }
