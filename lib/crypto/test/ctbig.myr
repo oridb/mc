@@ -1,0 +1,88 @@
+use std
+use crypto
+use testr
+
+const Nbit = 128
+
+const main = {
+	testr.run([
+		[.name="add", .fn={ctx
+			do(ctx, crypto.ctadd,
+				"5192296858610368357189246603769160",
+				"5192296858534810493479828944327220", 
+				"75557863709417659441940")
+		}],
+		[.name="sub", .fn={ctx
+			do(ctx, crypto.ctsub,
+				"5192296858459252629770411284885280",
+				"5192296858534810493479828944327220", 
+				"75557863709417659441940")
+		}],
+		[.name="mul", .fn={ctx
+			do(ctx, crypto.ctmul,
+				"392318858376010676506814412592879878824393346033951606800",
+				"5192296858534810493479828944327220", 
+				"75557863709417659441940")
+		}],
+		[.name="div", .fn={ctx
+			do(ctx, div,
+				"75557863709417659441940",
+				"392318858376010676506814412592879878824393346033951606800",
+				"5192296858534810493479828944327220")
+		}],
+		[.name="mod", .fn={ctx
+			do(ctx, mod,
+				"75557863709417659441940",
+				"392318858376010676506814412592879878824393346033951606800",
+				"5192296858534810493479828944327220")
+		}],
+		//[.name="modpow", .fn={ctx
+		//	r = do(ctx, crypto.ctsub,
+		//		"5192296858459252629770411284885280"
+		//		"5192296858534810493479828944327220", 
+		//		"75557863709417659441940")
+		//}],
+
+	][:])
+}
+
+const div = {r, a, b
+	var z
+
+	z = crypto.ctzero(a.nbit)
+	crypto.ctdivmod(r, z, a, b)
+}
+
+const mod = {r, a, b
+	var z
+
+	z = crypto.ctzero(a.nbit)
+	crypto.ctdivmod(z, r, a, b)
+}
+
+const do = {ctx, op, estr, astr, bstr
+	var r, a, ai, b, bi, e, ei
+
+	r = crypto.ctzero(Nbit)
+	ei = std.get(std.bigparse(estr))
+	ai = std.get(std.bigparse(astr))
+	bi = std.get(std.bigparse(bstr))
+	e = crypto.big2ct(ei, Nbit)
+	a = crypto.big2ct(ai, Nbit)
+	b = crypto.big2ct(bi, Nbit)
+
+	std.bigfree(ei)
+	std.bigfree(ai)
+	std.bigfree(bi)
+
+	op(r, a, b)
+
+	testr.eq(ctx, r, e)
+
+	crypto.ctfree(r)
+	crypto.ctfree(e)
+	crypto.ctfree(a)
+	crypto.ctfree(b)
+}
+
+
