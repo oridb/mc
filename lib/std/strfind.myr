@@ -8,22 +8,16 @@ pkg std =
 ;;
 
 const strfind = {haystack, needle
-	-> strfindin(haystack, needle, 0, haystack.len)
+	-> strfindin(haystack, needle, 0, haystack.len, 1)
 }
 
 const strrfind = {haystack, needle
-	-> strfindin(haystack, needle, haystack.len - 1, -1)
+	-> strfindin(haystack, needle, haystack.len - 1, -1, -1)
 }
 
-const strfindin = {haystack, needle, start, end
-	var inc : size
-
-	inc = 1
-	if start > end
-		inc = -1
-	;;
-	if needle.len == 0
-		-> `None
+const strfindin = {haystack, needle, start, end, inc
+	if haystack.len == 0 && needle.len == 0
+		-> `std.Some 0
 	;;
 	for var i = start; i != end; i += inc
 		/* 
@@ -33,14 +27,12 @@ const strfindin = {haystack, needle, start, end
 		if i + needle.len > haystack.len
 			continue
 		;;
-		if haystack[i] == needle[0]
-			for var j = 0; j < needle.len; j++
-				if haystack[i + j] != needle[j]
-					goto nextiter
-				;;
+		for var j = 0; j < needle.len; j++
+			if haystack[i + j] != needle[j]
+				goto nextiter
 			;;
-			-> `Some i
 		;;
+		-> `Some i
 :nextiter
 	;;
 	-> `None

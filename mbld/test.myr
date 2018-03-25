@@ -124,11 +124,7 @@ const runtest = {b, n, targs, isbench, failed
 
 const matchtest = {name, pat
 	match std.strfind(pat, ":")
-	| `std.Some i:	pat = pat[:i]
-	| `std.None:	/* ok */
-	;;
-	match std.strfind(name, pat)
-	| `std.Some _:	-> true
-	| `std.None:	-> false
+	| `std.Some i:	-> std.strhas(name, pat[:i])
+	| `std.None:	-> std.strhas(name, pat)
 	;;
 }
