@@ -59,20 +59,22 @@ const setenv = {name, val
 
 	lock(envlck)
 	for envp : environ
-		if envp != Zenvp
-			env = cstrconvp(envp)
-			n = min(name.len, env.len - 1)
-			if eq(name, env[:n]) && env[n] == ('=' : byte)
-				found = true
-				break
-			;;
-			idx++
+		if envp == Zenvp
+			break
 		;;
+
+		env = cstrconvp(envp)
+		n = min(name.len, env.len - 1)
+		if eq(name, env[:n]) && env[n] == ('=' : byte)
+			found = true
+			break
+		;;
+		idx++
 	;;
 	if found
 		std.slfree(cstrconvp(environ[idx]))
 	else
-		idx = env.len - 1
+		idx = environ.len - 1
 		std.slpush(&environ, Zenvp)
 	;;
 	environ[idx] = (e : byte#)
