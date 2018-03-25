@@ -22,6 +22,9 @@ const strfindin = {haystack, needle, start, end
 	if start > end
 		inc = -1
 	;;
+	if needle.len == 0
+		-> `None
+	;;
 	for var i = start; i != end; i += inc
 		/* 
 		if we knew the direction we could terminate early,
