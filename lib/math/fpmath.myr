@@ -3,15 +3,15 @@ use std
 pkg math =
 	trait fpmath @f =
 
-		/* fpmath-fma-impl */
+		/* fma-impl */
 		fma : (x : @f, y : @f, z : @f -> @f)
 
-		/* fpmath-trunc-impl */
+		/* trunc-impl */
 		trunc : (f : @f -> @f)
 		ceil  : (f : @f -> @f)
 		floor : (f : @f -> @f)
 
-		/* fpmath-sum-impl */
+		/* sum-impl */
 		kahan_sum : (a : @f[:] -> @f)
 		priest_sum : (a : @f[:] -> @f)
 	;;

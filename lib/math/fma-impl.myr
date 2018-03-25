@@ -107,10 +107,9 @@ pkglocal const fma32 = {x : flt32, y : flt32, z : flt32
 		   base is 2, subtraction or addition are equally
 		   useful.)
 		*/
-		if (larger ^ shr(smaller, larger_e - smaller_e)) & 0x1 != 0
-			mask >>= 1
+		if (larger ^ shr(smaller, larger_e - smaller_e)) & 0x1 == 0
+			prevent_rounding = smaller & mask != 0
 		;;
-		prevent_rounding = smaller & mask != 0
 	else
 		/*
 		   The prospective rounding agrees with the signage.
@@ -206,6 +205,10 @@ const flt32fromflt64 = {f : flt64
 	ts = (ts1 : uint32)
 	if need_round_away(0, s, shift)
 		ts++
+		if ts & (1 << 23) != 0
+			/* false alarm, it's normal again */
+			te++
+		;;
 	;;
 	-> std.flt32assem(n, te, ts)
 }
