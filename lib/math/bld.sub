@@ -1,16 +1,19 @@
 lib math =
 	fpmath.myr
 
+	# fused-multiply-add
+	fma-impl+posixy-x64-fma.s
+	fma-impl.myr
+
+	# sqrt
+	sqrt-impl.myr
+
 	# trunc, floor, ceil
 	trunc-impl+posixy-x64-sse4.s
 	trunc-impl.myr
 
 	# summation
 	sum-impl.myr
-
-	# fused-multiply-add
-	fma-impl+posixy-x64-fma.s
-	fma-impl.myr
 
 	lib ../std:std
 ;;

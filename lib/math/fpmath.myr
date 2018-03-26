@@ -6,6 +6,9 @@ pkg math =
 		/* fma-impl */
 		fma : (x : @f, y : @f, z : @f -> @f)
 
+		/* sqrt-impl */
+		sqrt : (f : @f -> @f)
+
 		/* trunc-impl */
 		trunc : (f : @f -> @f)
 		ceil  : (f : @f -> @f)
@@ -41,6 +44,8 @@ impl std.equatable flt64 =
 impl fpmath flt32 =
 	fma = {x, y, z; -> fma32(x, y, z)}
 
+	sqrt = {f; -> sqrt32(f)}
+
 	trunc = {f; -> trunc32(f)}
 	floor = {f; -> floor32(f)}
 	ceil  = {f; -> ceil32(f)}
@@ -51,6 +56,8 @@ impl fpmath flt32 =
 
 impl fpmath flt64 =
 	fma = {x, y, z; -> fma64(x, y, z)}
+
+	sqrt = {f; -> sqrt64(f)}
 
 	trunc = {f; -> trunc64(f)}
 	floor = {f; -> floor64(f)}
@@ -63,16 +70,20 @@ impl fpmath flt64 =
 extern const fma32 : (x : flt32, y : flt32, z : flt32 -> flt32)
 extern const fma64 : (x : flt64, y : flt64, z : flt64 -> flt64)
 
-extern const trunc32 : (f : flt32 -> flt32)
-extern const floor32 : (f : flt32 -> flt32)
-extern const ceil32  : (f : flt32 -> flt32)
+extern const sqrt32 : (x : flt32 -> flt32)
+extern const sqrt64 : (x : flt64 -> flt64)
 
+extern const trunc32 : (f : flt32 -> flt32)
 extern const trunc64 : (f : flt64 -> flt64)
+
+extern const floor32 : (f : flt32 -> flt32)
 extern const floor64 : (f : flt64 -> flt64)
+
+extern const ceil32  : (f : flt32 -> flt32)
 extern const ceil64  : (f : flt64 -> flt64)
 
 extern const kahan_sum32 : (l : flt32[:] -> flt32)
-extern const priest_sum32 : (l : flt32[:] -> flt32)
-
 extern const kahan_sum64 : (l : flt64[:] -> flt64)
+
+extern const priest_sum32 : (l : flt32[:] -> flt32)
 extern const priest_sum64 : (l : flt64[:] -> flt64)

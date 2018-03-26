@@ -1,5 +1,6 @@
 use std
 
+/* For references, see [Mul+10] section 6.3 */
 pkg math =
 	pkglocal const kahan_sum32 : (l : flt32[:] -> flt32)
 	pkglocal const priest_sum32 : (l : flt32[:] -> flt32)
