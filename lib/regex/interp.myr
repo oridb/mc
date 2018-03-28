@@ -309,7 +309,8 @@ const run = {re, str, idx, wholestr
  * operating over the same characters, and finishing
  * at the same time.
  */
-const step = {re, thr, curip var str, nthr, inst
+const step = {re, thr, curip
+	var str, nthr, inst
 
 	str = re.str
 	inst = re.code[thr.ip]

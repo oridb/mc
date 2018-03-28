@@ -96,7 +96,7 @@ const show = {re, ln, mg
 	| `std.None:
 		std.put("Match failed at {}:\n", re.lastip)
 		std.put("\t{}\n", re.pat)
-		caret(re, re.pcidx[re.lastip])
+		showpos(re, re.pcidx[re.lastip])
 		std.put("\t{}\n", ln)
 		showpos(re, re.strp - 1)
 	;;
