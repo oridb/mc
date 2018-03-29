@@ -333,7 +333,6 @@ const addalt = {b, mt, kind, f
 		std.slpush(&libs, d)
 	;;
 	myrcmd(b, n, mt, sp, true)
-	std.slfree(mt.incpath)
 
 	n = node(g, tp)
 	generates(g, n, tp)
