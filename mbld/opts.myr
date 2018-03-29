@@ -34,6 +34,7 @@ pkg bld =
 	const parseversion	: (v : byte[:] -> (int, int, int))
 
 	/* not exactly portable, but good enough for now */
+	const CpuidSSE2 : uint64= 0x400000000000000
 	const CpuidSSE4 : uint64= 0x180000
 
 	/*

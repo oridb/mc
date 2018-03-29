@@ -6,6 +6,7 @@ lib math =
 	fma-impl.myr
 
 	# sqrt
+	sqrt-impl+posixy-x64-sse2.s
 	sqrt-impl.myr
 
 	# trunc, floor, ceil

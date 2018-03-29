@@ -162,6 +162,9 @@ const addsysattrs = {b, tags
 		match opt_arch
 		| "x64":	
 			tag(b, "x64")
+			if opt_cpufeatures & CpuidSSE2 == CpuidSSE2
+				tag(b, "sse2")
+			;;
 			if opt_cpufeatures & CpuidSSE4 == CpuidSSE4
 				tag(b, "sse4")
 			;;
