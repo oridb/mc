@@ -1,6 +1,7 @@
 bin mbld =
 	build.myr
 	cpufeatures+posixy-x64.s
+	cpufeatures+plan9-x64.s
 	deps.myr
 	libs.myr
 	install.myr
