@@ -3,24 +3,45 @@ use crypto
 use testr
 
 const Nbit = 128
+const Nfunky = 79
 
 const main = {
 	testr.run([
+		/* normal */
 		[.name="add", .fn={ctx
-			do(ctx, crypto.ctadd,
+			do(ctx, crypto.ctadd, Nbit,
 				"5192296858610368357189246603769160",
 				"5192296858534810493479828944327220", 
 				"75557863709417659441940")
 		}],
 		[.name="sub", .fn={ctx
-			do(ctx, crypto.ctsub,
+			do(ctx, crypto.ctsub, Nbit,
 				"5192296858459252629770411284885280",
 				"5192296858534810493479828944327220", 
 				"75557863709417659441940")
 		}],
 		[.name="mul", .fn={ctx
-			do(ctx, crypto.ctmul,
+			do(ctx, crypto.ctmul, Nbit,
 				"392318858376010676506814412592879878824393346033951606800",
+				"5192296858534810493479828944327220", 
+				"75557863709417659441940")
+		}],
+		
+		[.name="addfunky", .fn={ctx
+			do(ctx, crypto.ctadd, Nfunky,
+				"75540728658750274549064",
+				"5192296858534810493479828944327220", 
+				"75557863709417659441940")
+		}],
+		[.name="subfunky", .fn={ctx
+			do(ctx, crypto.ctsub, Nfunky,
+				"528887911047229543018272",
+				"5192296858534810493479828944327220", 
+				"75557863709417659441940")
+		}],
+		[.name="mulfunky", .fn={ctx
+			do(ctx, crypto.ctmul, Nfunky,
+				"434472066238453871708176",
 				"5192296858534810493479828944327220", 
 				"75557863709417659441940")
 		}],
@@ -60,16 +81,16 @@ const main = {
 //	crypto.ctdivmod(z, r, a, b)
 //}
 //
-const do = {ctx, op, estr, astr, bstr
+const do = {ctx, op, nbit, estr, astr, bstr
 	var r, a, ai, b, bi, e, ei
 
-	r = crypto.ctzero(Nbit)
+	r = crypto.ctzero(nbit)
 	ei = std.get(std.bigparse(estr))
 	ai = std.get(std.bigparse(astr))
 	bi = std.get(std.bigparse(bstr))
-	e = crypto.big2ct(ei, Nbit)
-	a = crypto.big2ct(ai, Nbit)
-	b = crypto.big2ct(bi, Nbit)
+	e = crypto.big2ct(ei, nbit)
+	a = crypto.big2ct(ai, nbit)
+	b = crypto.big2ct(bi, nbit)
 
 	std.bigfree(ei)
 	std.bigfree(ai)
