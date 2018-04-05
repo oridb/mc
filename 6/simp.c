@@ -1006,6 +1006,15 @@ capture(Simp *s, Node *n, Node *dst)
 		envsz->expr.type = tyintptr;
 		assignat(s, e, 0, envsz);
 		assignat(s, fp, 0, e);
+	} else {
+		/*
+		 * We need to zero out the environment, so that
+		 * duplicating the function doesn't think we have
+		 * a bogus environment.
+		 */
+		e = mkintlit(n->loc, 0);
+		e->expr.type = tyintptr;
+		assignat(s, fp, 0, e);
 	}
 	assignat(s, fp, Ptrsz, f);
 	return dst;
