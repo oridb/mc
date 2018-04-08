@@ -11,33 +11,33 @@ pkg crypto =
 
 	generic mkctbign 	: (v : @a, nbit : std.size -> ctbig#) :: numeric,integral @a
 
-	const ctzero	: (nbit : std.size -> ctbig#)
-	const mkctbigle	: (v : byte[:], nbit : std.size -> ctbig#)
+	pkglocal const ctzero	: (nbit : std.size -> ctbig#)
+	pkglocal const mkctbigle	: (v : byte[:], nbit : std.size -> ctbig#)
 	//const mkctbigbe	: (v : byte[:], nbit : std.size -> ctbig#)
 
-	const ctfree	: (v : ctbig# -> void)
-	const ctbigdup	: (v : ctbig# -> ctbig#)
-	const ctlike	: (v : ctbig# -> ctbig#)
-	const ct2big	: (v : ctbig# -> std.bigint#)
-	const big2ct	: (v : std.bigint#, nbit : std.size -> ctbig#)
+	pkglocal const ctfree	: (v : ctbig# -> void)
+	pkglocal const ctbigdup	: (v : ctbig# -> ctbig#)
+	pkglocal const ctlike	: (v : ctbig# -> ctbig#)
+	pkglocal const ct2big	: (v : ctbig# -> std.bigint#)
+	pkglocal const big2ct	: (v : std.bigint#, nbit : std.size -> ctbig#)
 
 	/* arithmetic */
-	const ctadd	: (r : ctbig#, a : ctbig#, b : ctbig# -> void)
-	const ctsub	: (r : ctbig#, a : ctbig#, b : ctbig# -> void)
-	const ctmul	: (r : ctbig#, a : ctbig#, b : ctbig# -> void)
-	//const ctdivmod	: (q : ctbig#, u : ctbig#, a : ctbig#, b : ctbig# -> void)
-	const ctmodpow	: (r : ctbig#, a : ctbig#, b : ctbig#, m : ctbig# -> void)
+	pkglocal const ctadd	: (r : ctbig#, a : ctbig#, b : ctbig# -> void)
+	pkglocal const ctsub	: (r : ctbig#, a : ctbig#, b : ctbig# -> void)
+	pkglocal const ctmul	: (r : ctbig#, a : ctbig#, b : ctbig# -> void)
+	//pkglocal const ctdivmod	: (q : ctbig#, u : ctbig#, a : ctbig#, b : ctbig# -> void)
+	pkglocal const ctmodpow	: (r : ctbig#, a : ctbig#, b : ctbig#, m : ctbig# -> void)
 
-	const ctiszero	: (v : ctbig# -> bool)
-	const cteq	: (a : ctbig#, b : ctbig# -> bool)
-	const ctne	: (a : ctbig#, b : ctbig# -> bool)
-	const ctgt	: (a : ctbig#, b : ctbig# -> bool)
-	const ctge	: (a : ctbig#, b : ctbig# -> bool)
-	const ctlt	: (a : ctbig#, b : ctbig# -> bool)
-	const ctle	: (a : ctbig#, b : ctbig# -> bool)
+	pkglocal const ctiszero	: (v : ctbig# -> bool)
+	pkglocal const cteq	: (a : ctbig#, b : ctbig# -> bool)
+	pkglocal const ctne	: (a : ctbig#, b : ctbig# -> bool)
+	pkglocal const ctgt	: (a : ctbig#, b : ctbig# -> bool)
+	pkglocal const ctge	: (a : ctbig#, b : ctbig# -> bool)
+	pkglocal const ctlt	: (a : ctbig#, b : ctbig# -> bool)
+	pkglocal const ctle	: (a : ctbig#, b : ctbig# -> bool)
 
 	/* for testing */
-	const growmod	: (r : ctbig#, a : ctbig#, k : uint32, m : ctbig# -> void)
+	pkglocal const growmod	: (r : ctbig#, a : ctbig#, k : uint32, m : ctbig# -> void)
 
 	impl std.equatable ctbig#
 ;;
