@@ -102,18 +102,6 @@ const main = {
 				"5192296858534810493479828944327220", 
 				"75557863709417659441940")
 		}],
-		//[.name="div", .fn={ctx
-		//	do2(ctx, div,
-		//		"75557863709417659441940",
-		//		"392318858376010676506814412592879878824393346033951606800",
-		//		"5192296858534810493479828944327220")
-		//}],
-		//[.name="mod", .fn={ctx
-		//	do2(ctx, mod,
-		//		"75557863709417659441940",
-		//		"392318858376010676506814412592879878824393346033951606800",
-		//		"5192296858534810493479828944327220")
-		//}],
 		[.name="modpow-nop", .fn={ctx
 			do3(ctx, crypto.ctmodpow, Nbit,
 				"1231231254019581241243091223098123",
@@ -131,25 +119,11 @@ const main = {
 	][:])
 }
 
-//const div = {r, a, b
-//	var z
-//
-//	z = crypto.ctzero(a.nbit)
-//	crypto.ctdivmod(r, z, a, b)
-//}
-//
-//const mod = {r, a, b
-//	var z
-//
-//	z = crypto.ctzero(a.nbit)
-//	crypto.ctdivmod(z, r, a, b)
-//}
-
 const growmod0 = {r, a, b
 	crypto.growmod(r, a, 0, b)
 }
 
-const dobool : (ctx : testr.ctx#, op : (a : crypto.ctbig#, b : crypto.ctbig# -> bool), nbit : std.size, e : bool, astr : byte[:], bstr : byte[:] -> void) = {ctx, op, nbit, e, astr, bstr
+const dobool = {ctx, op, nbit, e, astr, bstr
 	var r, a, ai, b, bi
 
 	r = crypto.ctzero(nbit)
