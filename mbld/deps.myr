@@ -483,6 +483,7 @@ const myrcmd = {b, n, mt, src, istest
 		pushopt(&n.cmd, "-I", inc)
 	;;
 	if istest
+		std.slpush(&n.cmd, "-T")
 		for (dir, _, _) : mt.tstdeps
 			pushopt(&n.cmd, "-I", std.pathcat(opt_objdir, dir))
 		;;

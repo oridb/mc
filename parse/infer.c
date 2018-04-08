@@ -29,6 +29,7 @@ struct Traitmap {
 	size_t nfiltertr;
 };
 
+int allowhidden;
 
 static void infernode(Node **np, Type *ret, int *sawret);
 static void inferexpr(Node **np, Type *ret, int *sawret);
@@ -69,6 +70,7 @@ static size_t nspecializations;
 static Stab **specializationscope;
 static size_t nspecializationscope;
 static Traitmap *traitmap;
+
 
 static void
 ctxstrcall(char *buf, size_t sz, Node *n)
@@ -1320,7 +1322,7 @@ initvar(Node *n, Node *s)
 	Type *t, *param;
 	Tysubst *subst;
 
-	if (s->decl.ishidden)
+	if (s->decl.ishidden && !allowhidden)
 		fatal(n, "attempting to refer to hidden decl %s", ctxstr(n));
 
 	param = n->expr.param;

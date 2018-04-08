@@ -41,6 +41,7 @@ usage(char *prog)
 	printf("\t-o\tOutput to outfile\n");
 	printf("\t-O dir\tOutput to dir\n");
 	printf("\t-S\tGenerate assembly source alongside object code\n");
+	printf("\t-T\tCompile in test mode\n");
 	printf("\t-c\tEnable additional (possibly flaky) checking\n");
 	printf("\t-I path\tAdd 'path' to use search path\n");
 	printf("\t-d\tPrint debug dumps. Recognized options: f r p i\n");
@@ -200,7 +201,7 @@ main(int argc, char **argv)
 
 	outfile = NULL;
 
-	optinit(&ctx, "cd:?hSo:I:9G:O:", argv, argc);
+	optinit(&ctx, "cd:?hSo:I:9G:O:T", argv, argc);
 	asmsyntax = Defaultasm;
 	sizefn = size;
 	while (!optdone(&ctx)) {
@@ -239,6 +240,9 @@ main(int argc, char **argv)
 			break;
 		case 'I':
 			lappend(&incpaths, &nincpaths, ctx.optarg);
+			break;
+		case 'T':
+			allowhidden++;
 			break;
 		default:
 			usage(argv[0]);
