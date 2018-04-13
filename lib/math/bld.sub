@@ -16,5 +16,8 @@ lib math =
 	# summation
 	sum-impl.myr
 
+	# util
+	util.myr
+
 	lib ../std:std
 ;;
