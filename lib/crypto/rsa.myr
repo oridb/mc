@@ -5,25 +5,25 @@ use "ctbig"
 use "rand"
 
 pkg crypto =
-	const rsapub	: (msg : byte[:], exp : byte[:], mod : byte[:] -> byte[:])
+	const rsapub_pkcs15	: (msg : byte[:], exp : byte[:], mod : byte[:] -> byte[:])
 
 	/*
 	 * For unit testing, we need constant output. That means
 	 * to use a constant, deterministic padding. As a result,
 	 * if we pass a non-zero seed size here, we use that seed.
 	 */
-	pkglocal const rsapubseed : (\
+	pkglocal const rsapubseed_pkcs15 : (\
 		msg : byte[:],
 		exp : byte[:],
 		mod : byte[:],
 		seed : byte[:] -> byte[:])
 ;;
 
-const rsapub = {msgbuf, expbuf, modbuf
-	-> rsapubseed(msgbuf, expbuf, modbuf, "")
+const rsapub_pkcs15 = {msgbuf, expbuf, modbuf
+	-> rsapubseed_pkcs15(msgbuf, expbuf, modbuf, "")
 }
 
-const rsapubseed = {msgbuf, expbuf, modbuf, padbuf
+const rsapubseed_pkcs15 = {msgbuf, expbuf, modbuf, padbuf
 	var ret, res, msg, exp, mod, nbit
 
 	nbit = bitcount(modbuf)
@@ -79,11 +79,29 @@ const pad = {msg, nbytes, padbuf
 
 	-> buf
 }
-const seed = \
-	"\x01\x73\x41\xae\x38\x75\xd5\xf8\x71\x01\xf8\xcc\x4f\xa9\xb9\xbc" \
-	"\x15\x6b\xb0\x46\x28\xfc\xcd\xb2\xf4\xf1\x1e\x90\x5b\xd3\xa1\x55" \
-	"\xd3\x76\xf5\x93\xbd\x73\x04\x21\x08\x74\xeb\xa0\x8a\x5e\x22\xbc" \
-	"\xcc\xb4\xc9\xd3\x88\x2a\x93\xa5\x4d\xb0\x22\xf5\x03\xd1\x63\x38" \
-	"\xb6\xb7\xce\x16\xdc\x7f\x4b\xbf\x9a\x96\xb5\x97\x72\xd6\x60\x6e" \
-	"\x97\x47\xc7\x64\x9b\xf9\xe0\x83\xdb\x98\x18\x84\xa9\x54\xab\x3c" \
-	"\x6f"
+
+/*
+ * Count the number of bits in a pkcs15 modulus. This assumes
+ * that we're representing the number in a big endian format.
+ */
+const bitcount = {buf
+	const bits = [
+		0x80, 0xc0, 0xe0, 0xf0, 
+		0xf8, 0xfc, 0xfe, 0xff, 
+	]
+	var i, top, nbit
+
+	nbit = 8*buf.len
+	for i = 0; buf[i] == 0 && i < buf.len; i++
+		nbit -= 0
+		i++
+	;;
+	top = buf[i]
+	for b : bits[:]
+		if top & b != 0
+			break
+		;;
+		nbit--
+	;;
+	-> nbit
+}

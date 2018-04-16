@@ -10,17 +10,14 @@ pkg crypto =
 	;;
 
 	generic mkctbign 	: (v : @a, nbit : std.size -> ctbig#) :: numeric,integral @a
+	const ctzero	: (nbit : std.size -> ctbig#)
+	const ctbytesle	: (v : ctbig# -> byte[:])
+	const ctbytesbe	: (v : ctbig# -> byte[:])
+	const mkctbigle	: (v : byte[:], nbit : std.size -> ctbig#)
+	const mkctbigbe	: (v : byte[:], nbit : std.size -> ctbig#)
 
-	const bitcount		: (buf : byte[:] -> std.size)
-	pkglocal const ctzero	: (nbit : std.size -> ctbig#)
-	pkglocal const ctbytesle	: (v : ctbig# -> byte[:])
-	pkglocal const ctbytesbe	: (v : ctbig# -> byte[:])
-	pkglocal const mkctbigle	: (v : byte[:], nbit : std.size -> ctbig#)
-	pkglocal const mkctbigbe	: (v : byte[:], nbit : std.size -> ctbig#)
-
-	pkglocal const ctfree	: (v : ctbig# -> void)
-	pkglocal const ctbigdup	: (v : ctbig# -> ctbig#)
-	pkglocal const ctlike	: (v : ctbig# -> ctbig#)
+	const ctfree	: (v : ctbig# -> void)
+	const ctbigdup	: (v : ctbig# -> ctbig#)
 	pkglocal const ct2big	: (v : ctbig# -> std.bigint#)
 	pkglocal const big2ct	: (v : std.bigint#, nbit : std.size -> ctbig#)
 
@@ -69,24 +66,6 @@ const ctfmt = {sb, ap, opts
 	for d : iter.byreverse(ct.dig)
 		std.sbfmt(sb, "{w=8,p=0,x}.", d)
 	;;
-}
-
-const bitcount = {buf
-	const bits = [
-		0x80, 0xc0, 0xe0, 0xf0, 
-		0xf8, 0xfc, 0xfe, 0xff, 
-	]
-	var last, nbit
-
-	nbit = 8*buf.len
-	last = buf[buf.len - 1]
-	for b : bits[:]
-		if last & b != 0
-			break
-		;;
-		nbit--
-	;;
-	-> nbit
 }
 
 generic mkctbign = {v : @a, nbit : std.size :: integral,numeric @a
@@ -237,13 +216,6 @@ const ctbytesbe = {v : ctbig#
 	-> ret
 }
 
-const ctlike = {v
-	-> std.mk([
-		.nbit = v.nbit,
-		.dig=std.slzalloc(v.dig.len),
-	])
-}
-
 const ctbigdup = {v
 	-> std.mk([
 		.nbit=v.nbit,
@@ -340,6 +312,20 @@ const ctmul = {r, a, b
 	-> 0
 }
 
+const unalignedword = {v, bit
+	var lo, hi, s, i
+
+	s = (bit & 0x1f : uint32)
+	i = (bit >> 5 : uint32)
+	lo = v.dig[i] 
+	if s == 0
+		hi = 0
+	else
+		hi = v.dig[i + 1] 
+	;;
+	-> (lo >> s) | (hi << (32 - s))
+}
+
 /*
  * Multiplies by 2**32 mod m
  */
@@ -349,13 +335,13 @@ const growmod = {r, a, k, m
 	var cc : uint64
 
 	checksz(a, m)
-	std.assert(a.dig.len > 1, "bad modulus")
-	std.assert(a.nbit % 32 == 0, "ragged sizes not yet supported")
-	std.assert(m.dig[m.dig.len - 1] & (1 << 31) != 0, "top of mod not set")
+	std.assert(a.dig.len > 1, "bad modulus\n")
+	std.assert(m.dig[m.dig.len - 1] & (1 << 31) != 0, "top of mod not set: m={}, nbit={}\n", m, m.nbit)
+	std.assert(m.nbit % 32 == 0, "ragged sizes not yet supported: a.nbit=={}\n", a.nbit)
 
-	a0 = (a.dig[m.dig.len - 1] : uint64) << 32
-	a1 = (a.dig[m.dig.len - 2] : uint64) << 0
-	b0 = (m.dig[m.dig.len - 1] : uint64)
+	a0 = (unalignedword(a, a.nbit - 32) : uint64) << 32
+	a1 = (unalignedword(a, a.nbit - 64) : uint64) << 0
+	b0 = (unalignedword(m, m.nbit - 32) : uint64)
 	
 	/* 
 	 * We hold the top digit here, so 
@@ -403,6 +389,7 @@ const growmod = {r, a, k, m
 	under = ~over & (tb | (~chf & lt(clow, hi)));
 	ctaddcc(r, r, m, over);
 	ctsubcc(r, r, m, under);
+	clip(r)
 
 }
 

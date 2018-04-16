@@ -18,7 +18,7 @@ const main = {
 		testr.run([
 			[.name=case.name, .fn={ctx
 				var ct
-				ct = crypto.rsapubseed(case.msg, case.exp, case.mod, case.seed)
+				ct = crypto.rsapubseed_pkcs15(case.msg, case.exp, case.mod, case.seed)
 				testr.eq(ctx, ct, case.ctext)
 			}],
 		][:])
