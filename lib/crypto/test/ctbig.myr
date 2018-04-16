@@ -21,6 +21,16 @@ const main = {
 			crypto.clip(&v)
 			testr.eq(ctx, v.dig[0], 0x7fffffff)
 		}],
+		[.name="mkbig-le", .fn={ctx
+			docvt(ctx, crypto.mkctbigle, Nbit,
+				"6618611909121",
+				"\x01\x02\x03\x04\x05\x06")
+		}],
+		[.name="mkbig-be", .fn={ctx
+			docvt(ctx, crypto.mkctbigbe, Nbit,
+				"1108152157446",
+				"\x00\x01\x02\x03\x04\x05\x06")
+		}],
 		/* normal */
 		[.name="add", .fn={ctx
 			do2(ctx, crypto.ctadd, Nbit,
@@ -45,59 +55,50 @@ const main = {
 				"259016584597313952181375284077740334036",
 				"137304361882109849168381018424069802644",
 				"279268927326277818181333274586733399084")
-			}
-		],
+		}],
 		/* comparisons */
 		[.name="lt-less", .fn={ctx
 			dobool(ctx, crypto.ctlt, Nbit,
 				true,
 				"137304361882109849168381018424069802644",
 				"279268927326277818181333274586733399084")
-			}
-		],
+		}],
 		[.name="lt-equal", .fn={ctx
 			dobool(ctx, crypto.ctlt, Nbit,
 				false,
 				"137304361882109849168381018424069802644",
 				"137304361882109849168381018424069802644")
-			}
-		],
+		}],
 		[.name="lt-greater", .fn={ctx
 			dobool(ctx, crypto.ctlt, Nbit,
 				false,
 				"279268927326277818181333274586733399084",
 				"137304361882109849168381018424069802644")
-			}
-		],
+		}],
 		[.name="gt-less", .fn={ctx
 			dobool(ctx, crypto.ctgt, Nbit,
 				false,
 				"137304361882109849168381018424069802644",
 				"279268927326277818181333274586733399084")
-			}
-		],
+		}],
 		[.name="gt-equal", .fn={ctx
 			dobool(ctx, crypto.ctgt, Nbit,
 				false,
 				"137304361882109849168381018424069802644",
 				"137304361882109849168381018424069802644")
-			}
-		],
+		}],
 		[.name="gt-greater", .fn={ctx
 			dobool(ctx, crypto.ctgt, Nbit,
 				true,
 				"279268927326277818181333274586733399084",
 				"137304361882109849168381018424069802644")
-			}
-		],
-
+		}],
 		[.name="growmodsmall", .fn={ctx
 			do2(ctx, growmod0, Nbit,
 				"30064771072",
 				"7",
 				"279268927326277818181333274586733399084")
-			}
-		],
+		}],
 		[.name="addfunky", .fn={ctx
 			do2(ctx, crypto.ctadd, Nfunky,
 				"75540728658750274549064",
@@ -159,6 +160,20 @@ const dobool = {ctx, op, nbit, e, astr, bstr
 
 	crypto.ctfree(a)
 	crypto.ctfree(b)
+}
+
+const docvt = {ctx, op, nbit, estr, buf
+	var v, e, ei
+
+	ei = std.get(std.bigparse(estr))
+	e = crypto.big2ct(ei, nbit)
+	std.bigfree(ei)
+
+	v = op(buf, nbit)
+	testr.eq(ctx, v, e)
+
+	crypto.ctfree(e)
+	crypto.ctfree(v)
 }
 
 const do2 = {ctx, op, nbit, estr, astr, bstr

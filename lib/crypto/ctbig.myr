@@ -11,9 +11,11 @@ pkg crypto =
 
 	generic mkctbign 	: (v : @a, nbit : std.size -> ctbig#) :: numeric,integral @a
 
+	const bitcount		: (buf : byte[:] -> std.size)
 	pkglocal const ctzero	: (nbit : std.size -> ctbig#)
+	pkglocal const ctbytes	: (v : ctbig# -> byte[:])
 	pkglocal const mkctbigle	: (v : byte[:], nbit : std.size -> ctbig#)
-	//const mkctbigbe	: (v : byte[:], nbit : std.size -> ctbig#)
+	pkglocal const mkctbigbe	: (v : byte[:], nbit : std.size -> ctbig#)
 
 	pkglocal const ctfree	: (v : ctbig# -> void)
 	pkglocal const ctbigdup	: (v : ctbig# -> ctbig#)
@@ -25,7 +27,6 @@ pkg crypto =
 	pkglocal const ctadd	: (r : ctbig#, a : ctbig#, b : ctbig# -> void)
 	pkglocal const ctsub	: (r : ctbig#, a : ctbig#, b : ctbig# -> void)
 	pkglocal const ctmul	: (r : ctbig#, a : ctbig#, b : ctbig# -> void)
-	//pkglocal const ctdivmod	: (q : ctbig#, u : ctbig#, a : ctbig#, b : ctbig# -> void)
 	pkglocal const ctmodpow	: (r : ctbig#, a : ctbig#, b : ctbig#, m : ctbig# -> void)
 
 	pkglocal const ctiszero	: (v : ctbig# -> bool)
@@ -67,6 +68,24 @@ const ctfmt = {sb, ap, opts
 	for d : iter.byreverse(ct.dig)
 		std.sbfmt(sb, "{w=8,p=0,x}.", d)
 	;;
+}
+
+const bitcount = {buf
+	const bits = [
+		0x80, 0xc0, 0xe0, 0xf0, 
+		0xf8, 0xfc, 0xfe, 0xff, 
+	]
+	var last, nbit
+
+	nbit = 8*buf.len
+	last = buf[buf.len - 1]
+	for b : bits[:]
+		if last & b != 0
+			break
+		;;
+		nbit--
+	;;
+	-> nbit
 }
 
 generic mkctbign = {v : @a, nbit : std.size :: integral,numeric @a
@@ -132,19 +151,66 @@ const mkctbigle = {v, nbit
 	a = std.slzalloc(ndig(nbit))
 	for i = 0; i + 4 <= v.len; i += 4
 		a[o++] = \
-			(v[i + 0] <<  0 : uint32) | \
-			(v[i + 1] <<  8 : uint32) | \
-			(v[i + 2] << 16 : uint32) | \
-			(v[i + 3] << 24 : uint32)
+			((v[i + 0] : uint32) <<  0) | \
+			((v[i + 1] : uint32) <<  8) | \
+			((v[i + 2] : uint32) << 16) | \
+			((v[i + 3] : uint32) << 24)
 	;;
 
-	last = 0
-	for i; i < v.len; i++
-		off = i & 0x3
-		last |= (v[off] : uint32) << (8 *off)
+	if i != v.len
+		last = 0
+		for i; i < v.len; i++
+			off = i & 0x3
+			last |= (v[i] : uint32) << (8 *off)
+		;;
+		a[o++] = last
 	;;
-	a[o++] = last
 	-> clip(std.mk([.nbit=nbit, .dig=a]))
+}
+
+const mkctbigbe = {v, nbit
+	var a, i, o, tail : byte[4]
+
+	/*
+	  It's ok to depend on the length of v here: we can leak the
+	  size of the numbers.
+	 */
+	o = 0
+	a = std.slzalloc(ndig(nbit))
+	for i = v.len ; i >= 4; i -= 4
+		a[o++] = std.getbe32(v[i-4:i])
+	;;
+
+	if i != 0
+		std.slfill(tail[:], 0)
+		std.slcp(tail[4-i:], v[:i])
+		a[o++] = std.getbe32(tail[:])
+	;;
+	-> clip(std.mk([.nbit=nbit, .dig=a]))
+}
+
+const ctbytes = {v
+	var d, i, n, o, ret
+
+	o = 0
+	n = (v.nbit + 7) / 8
+	ret = std.slalloc(n)
+	for i = 0; i * 4  < n; i++
+		d = v.dig[i]
+		ret[o++] = (d >>  0 : byte)
+		ret[o++] = (d >>  8 : byte)
+		ret[o++] = (d >> 16 : byte)
+		ret[o++] = (d >> 24 : byte)
+	;;
+
+	if i * 4 != n
+		d = v.dig[i]
+		for ; i < n; i++
+			ret[o++] = (d : byte)
+			d >>= 8
+		;;
+	;;
+	-> ret
 }
 
 const ctlike = {v

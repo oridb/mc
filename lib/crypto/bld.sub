@@ -12,7 +12,7 @@ lib crypto =
 	# hmac
 	hmac.myr
 
-	# ciphers
+	# symmetric ciphers
 	chacha20.myr
 	aes.myr
 
