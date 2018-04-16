@@ -1,0 +1,89 @@
+use std
+
+use "ct"
+use "ctbig"
+use "rand"
+
+pkg crypto =
+	const rsapub	: (msg : byte[:], exp : byte[:], mod : byte[:] -> byte[:])
+
+	/*
+	 * For unit testing, we need constant output. That means
+	 * to use a constant, deterministic padding. As a result,
+	 * if we pass a non-zero seed size here, we use that seed.
+	 */
+	pkglocal const rsapubseed : (\
+		msg : byte[:],
+		exp : byte[:],
+		mod : byte[:],
+		seed : byte[:] -> byte[:])
+;;
+
+const rsapub = {msgbuf, expbuf, modbuf
+	-> rsapubseed(msgbuf, expbuf, modbuf, "")
+}
+
+const rsapubseed = {msgbuf, expbuf, modbuf, padbuf
+	var ret, res, msg, exp, mod, nbit
+
+	nbit = bitcount(modbuf)
+	res = ctzero(nbit)
+	msg = decodepad(msgbuf, nbit, padbuf)
+	exp = decode(expbuf, nbit)
+	mod = decode(modbuf, nbit)
+
+	ctmodpow(res, msg, exp, mod)
+	ret = ctbytesbe(res)
+
+	ctfree(res)
+	ctfree(msg)
+	ctfree(exp)
+	ctfree(mod)
+	-> ret
+}
+
+const decodepad = {msg, len, padbuf
+	var mpad, m
+
+	mpad = pad(msg, (len + 7) / 8, padbuf)
+	m = mkctbigbe(mpad, len)
+	std.slfree(mpad)
+	-> m
+}
+
+const decode = {msg, len
+	-> mkctbigbe(msg, len)
+}
+
+const pad = {msg, nbytes, padbuf
+	var buf, pslen
+
+	std.assert(msg.len < nbytes - 11, "overlong message")
+	buf = std.slalloc(nbytes)
+
+	buf[0] = 0
+	buf[1] = 2
+	pslen = nbytes - msg.len - 3
+	if padbuf.len > 0
+		std.slcp(buf[2:pslen+2], padbuf)
+	else
+		randbytes(buf[2:pslen+2])
+		for var i = 0; i < pslen; i++
+			while buf[i + 2] == 0
+				randbytes(buf[i+2:i+3])
+			;;
+		;;
+	;;
+	buf[pslen + 2] = 0
+	std.slcp(buf[pslen+3:], msg)
+
+	-> buf
+}
+const seed = \
+	"\x01\x73\x41\xae\x38\x75\xd5\xf8\x71\x01\xf8\xcc\x4f\xa9\xb9\xbc" \
+	"\x15\x6b\xb0\x46\x28\xfc\xcd\xb2\xf4\xf1\x1e\x90\x5b\xd3\xa1\x55" \
+	"\xd3\x76\xf5\x93\xbd\x73\x04\x21\x08\x74\xeb\xa0\x8a\x5e\x22\xbc" \
+	"\xcc\xb4\xc9\xd3\x88\x2a\x93\xa5\x4d\xb0\x22\xf5\x03\xd1\x63\x38" \
+	"\xb6\xb7\xce\x16\xdc\x7f\x4b\xbf\x9a\x96\xb5\x97\x72\xd6\x60\x6e" \
+	"\x97\x47\xc7\x64\x9b\xf9\xe0\x83\xdb\x98\x18\x84\xa9\x54\xab\x3c" \
+	"\x6f"

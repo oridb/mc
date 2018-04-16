@@ -13,7 +13,8 @@ pkg crypto =
 
 	const bitcount		: (buf : byte[:] -> std.size)
 	pkglocal const ctzero	: (nbit : std.size -> ctbig#)
-	pkglocal const ctbytes	: (v : ctbig# -> byte[:])
+	pkglocal const ctbytesle	: (v : ctbig# -> byte[:])
+	pkglocal const ctbytesbe	: (v : ctbig# -> byte[:])
 	pkglocal const mkctbigle	: (v : byte[:], nbit : std.size -> ctbig#)
 	pkglocal const mkctbigbe	: (v : byte[:], nbit : std.size -> ctbig#)
 
@@ -189,7 +190,7 @@ const mkctbigbe = {v, nbit
 	-> clip(std.mk([.nbit=nbit, .dig=a]))
 }
 
-const ctbytes = {v
+const ctbytesle = {v
 	var d, i, n, o, ret
 
 	o = 0
@@ -209,6 +210,29 @@ const ctbytes = {v
 			ret[o++] = (d : byte)
 			d >>= 8
 		;;
+	;;
+	-> ret
+}
+
+const ctbytesbe = {v : ctbig#
+	var d : uint32, i, n, o, ret
+
+	i = v.dig.len - 1
+	o = 0
+	n = (v.nbit + 7) / 8
+	ret = std.slalloc(n)
+	if n & 0x3 != 0
+		d = v.dig[i--]
+		for var j = n & 0x3 + 1; j > 0; j--
+			ret[o++] = (d >> 8*(j - 1 : uint32): byte)
+		;;
+	;;
+	for ; i >= 0 ; i--
+		d = v.dig[i]
+		ret[o++] = (d >> 24 : byte)
+		ret[o++] = (d >> 16 : byte)
+		ret[o++] = (d >>  8 : byte)
+		ret[o++] = (d >>  0 : byte)
 	;;
 	-> ret
 }

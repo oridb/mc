@@ -16,6 +16,9 @@ lib crypto =
 	chacha20.myr
 	aes.myr
 
+	# public key ciphers
+	rsa.myr
+
 	# randomness
 	entropy.myr	# currently assumes a /dev/random
 	rand.myr
