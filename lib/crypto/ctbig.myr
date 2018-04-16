@@ -38,6 +38,7 @@ pkg crypto =
 
 	/* for testing */
 	pkglocal const growmod	: (r : ctbig#, a : ctbig#, k : uint32, m : ctbig# -> void)
+	pkglocal const clip	: (v : ctbig# -> ctbig#)
 
 	impl std.equatable ctbig#
 ;;
@@ -181,6 +182,7 @@ const ctaddcc = {r, a, b, ctl
 		r.dig[i] = mux(ctl, (v  : uint32), r.dig[i])
 		carry = v >> 32
 	;;
+	clip(r)
 }
 
 const ctsub = {r, a, b
@@ -259,7 +261,7 @@ const growmod = {r, a, k, m
 	checksz(a, m)
 	std.assert(a.dig.len > 1, "bad modulus")
 	std.assert(a.nbit % 32 == 0, "ragged sizes not yet supported")
-	//std.assert(a.dig[a.dig.len - 1] & (1 << 31) != 0, "top of mod not set")
+	std.assert(m.dig[m.dig.len - 1] & (1 << 31) != 0, "top of mod not set")
 
 	a0 = (a.dig[m.dig.len - 1] : uint64) << 32
 	a1 = (a.dig[m.dig.len - 2] : uint64) << 0
@@ -391,7 +393,7 @@ const ninv32 = {x
 }
 
 const ctmodpow = {r, a, e, m
-	var t1, t2, m0i, ctl, k, d
+	var t1, t2, m0i, ctl
 	var n = 0
 
 	t1 = ctdup(a)
@@ -402,9 +404,7 @@ const ctmodpow = {r, a, e, m
 	std.slfill(r.dig, 0);
 	r.dig[0] = 1;
 	for var i = 0; i < e.nbit; i++
-		k = (i : uint32)
-		d = e.dig[e.dig.len - (k>>5) - 1]
-		ctl = (d >> (k & 0x1f)) & 1
+		ctl = (e.dig[i>>5] >> (i & 0x1f : uint32)) & 1
 		montymul(t2, r, t1, m, m0i)
 		ccopy(r, t2, ctl);
 		montymul(t2, t1, t1, m, m0i);
@@ -426,14 +426,14 @@ const ctiszero = {a
 }
 
 const cteq = {a, b
-	var ne
+	var nz
 
 	checksz(a, b)
-	ne = 0
+	nz = 0
 	for var i = 0; i < a.dig.len; i++
-		ne = ne | a.dig[i] - b.dig[i]
+		nz = nz | a.dig[i] - b.dig[i]
 	;;
-	-> (not(ne) : bool)
+	-> (eq(nz, 0) : bool)
 }
 
 const ctne = {a, b
@@ -475,10 +475,10 @@ const checksz = {a, b
 }
 
 const clip = {v
-	var mask, edge
+	var mask, edge : uint64
 
-	edge = v.nbit & (Bits - 1)
-	mask = (1 << (32 - edge)) - 1
+	edge = (v.nbit : uint64) & (Bits - 1)
+	mask = mux(edge, (1 << edge) - 1, ~0)
 	v.dig[v.dig.len - 1] &= (mask : uint32)
 	-> v
 }

@@ -7,6 +7,20 @@ const Nfunky = 79
 
 const main = {
 	testr.run([
+		[.name="clip", .fn={ctx
+			var v = [
+				.nbit=32,
+				.dig=[0xffffffff][:]
+			]
+			crypto.clip(&v)
+			testr.eq(ctx, v.dig[0], 0xffffffff)
+			v = [
+				.nbit=31,
+				.dig=[0xffffffff][:]
+			]
+			crypto.clip(&v)
+			testr.eq(ctx, v.dig[0], 0x7fffffff)
+		}],
 		/* normal */
 		[.name="add", .fn={ctx
 			do2(ctx, crypto.ctadd, Nbit,
@@ -107,6 +121,13 @@ const main = {
 				"1231231254019581241243091223098123",
 				"1231231254019581241243091223098123",
 				"1",
+				"238513807008428752753137056878245001837")
+		}],
+		[.name="modpow-small", .fn={ctx
+			do3(ctx, crypto.ctmodpow, Nbit,
+				"190803258902817973474500147337505443108",
+				"1231231254019581241243091223098123",
+				"7",
 				"238513807008428752753137056878245001837")
 		}],
 		[.name="modpow", .fn={ctx
