@@ -667,13 +667,17 @@ bindtype_rec(Tyenv *e, Type *t, Bitset *visited)
 	switch (t->type) {
 	case Typaram:
 		tt = htget(e->tab, t);
-		if (tt && tt != t)
+		if (tt && tt != t) {
 			tytab[t->tid] = tt;
-		else if (!boundtype(t))
+			for (i = 0; i < t->nspec; i++)
+				lappend(&tt->spec, &tt->nspec, t->spec[i]);
+		} else if (!boundtype(t)) {
 			htput(e->tab, t, t);
-		for (i = 0; i < t->nspec; i++)
+		}
+		for (i = 0; i < t->nspec; i++) {
 			if (t->spec[i]->aux)
 				bindtype_rec(e, t->spec[i]->aux, visited);
+		}
 		break;
 	case Tygeneric:
 		for (i = 0; i < t->ngparam; i++)
