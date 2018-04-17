@@ -981,10 +981,11 @@ verifytraits(Node *ctx, Type *a, Type *b)
 		n = 0;
 		*traitbuf = 0;
 		for (i = 0; bsiter(abs, &i); i++) {
-			if (!bshas(bbs, i))
+			if (!bshas(bbs, i)) {
 				n += bprintf(traitbuf + n, sizeof(traitbuf) - n, "%s%s", sep,
-					namestr(traittab[i]->name));
-			sep = ",";
+					     namestr(traittab[i]->name));
+				sep = ",";
+			}
 		}
 		tyfmt(abuf, sizeof abuf, a);
 		tyfmt(bbuf, sizeof bbuf, b);
