@@ -17,7 +17,7 @@ type fltdesc(@f, @u, @i) = struct
 	fma : (x : @f, y : @f, z : @f -> @f)
 	tobits : (f : @f -> @u)
 	frombits : (u : @u -> @f)
-	nan : @f
+	nan : @u
 	emin : @i
 	emax : @i
 	normmask : @u
@@ -60,13 +60,13 @@ const ab64 : (uint64, uint64)[:] = [
 ][:]
 
 const sqrt32 = {f : flt32
-	var d : fltdesc(flt32, uint32, int32) =  [
+	const d : fltdesc(flt32, uint32, int32) =  [
 		.explode = std.flt32explode,
 		.assem = std.flt32assem,
 		.fma = fma32,
 		.tobits = std.flt32bits,
 		.frombits = std.flt32frombits,
-		.nan = std.flt32nan(),
+		.nan = 0x7fc00000,
 		.emin = -127,
 		.emax = 128,
 		.normmask = 1 << 23,
@@ -78,13 +78,13 @@ const sqrt32 = {f : flt32
 }
 
 const sqrt64 = {f : flt64
-	var d : fltdesc(flt64, uint64, int64) =  [
+	const d : fltdesc(flt64, uint64, int64) =  [
 		.explode = std.flt64explode,
 		.assem = std.flt64assem,
 		.fma = fma64,
 		.tobits = std.flt64bits,
 		.frombits = std.flt64frombits,
-		.nan = std.flt64nan(),
+		.nan = 0x7ff8000000000000,
 		.emin = -1023,
 		.emax = 1024,
 		.normmask = 1 << 52,
@@ -96,14 +96,15 @@ const sqrt64 = {f : flt64
 }
 
 generic sqrtgen = {f : @f, d : fltdesc(@f, @u, @i) :: numeric,floating,std.equatable,fpmath @f, numeric,integral @u, numeric,integral @i
-	var n, e, s, e2
+	var n : bool, e : @i, s : @u, e2 : @i
 	(n, e, s) = d.explode(f)
 
 	/* Special cases: +/- 0.0, negative, NaN, and +inf */
 	if e == d.emin && s == 0
 		-> f
 	elif n || std.isnan(f)
-		-> d.nan
+		/* Make sure to return a quiet NaN */
+		-> d.frombits(d.nan)
 	elif e == d.emax
 		-> f
 	;;
@@ -126,8 +127,8 @@ generic sqrtgen = {f : @f, d : fltdesc(@f, @u, @i) :: numeric,floating,std.equat
 		e = 0
 	;;
 
-	var a = d.assem(false, e, s)
-	var au = d.tobits(a)
+	var a : @f = d.assem(false, e, s)
+	var au : @u = d.tobits(a)
 
         /*
            We shall perform iterated Newton-Raphson in order to
@@ -136,7 +137,7 @@ generic sqrtgen = {f : @f, d : fltdesc(@f, @u, @i) :: numeric,floating,std.equat
            it avoids division. (The multiplication by g is built
            into Markstein's r, g, n variables.)
          */
-	var xn = d.frombits(0)
+	var xn : @f = d.frombits(0)
 	for (ai, beta) : d.ab
 		if au <= ai
 			xn = d.frombits(beta)
@@ -145,10 +146,10 @@ generic sqrtgen = {f : @f, d : fltdesc(@f, @u, @i) :: numeric,floating,std.equat
 	;;
 
 	/* split up "x_{n+1} = x_n (3 - ax_n^2)/2" */
-	var epsn = fma(-1.0 * a, xn * xn, 1.0)
-	var rn = 0.5 * epsn
-	var gn = a * xn
-	var hn = 0.5 * xn
+	var epsn : @f = d.fma(-1.0 * a, xn * xn, 1.0)
+	var rn : @f = 0.5 * epsn
+	var gn : @f = a * xn
+	var hn : @f = 0.5 * xn
 	for var j = 0; j < d.iterlim; ++j
 		rn = d.fma(-1.0 * gn, hn, 0.5)
 		gn = d.fma(gn, rn, gn)
@@ -165,17 +166,17 @@ generic sqrtgen = {f : @f, d : fltdesc(@f, @u, @i) :: numeric,floating,std.equat
 	 */
 	(_, e, s) = d.explode(gn)
 	e += (e2 / 2)
-	var r = d.assem(false, e, s)
+	var r : @f = d.assem(false, e, s)
 
 	for var j = 0; j < d.iterlim; ++j
-		var r_plus_ulp = d.frombits(d.tobits(r) + 1)
-		var r_minus_ulp = d.frombits(d.tobits(r) - 1)
+		var r_plus_ulp : @f = d.frombits(d.tobits(r) + 1)
+		var r_minus_ulp : @f = d.frombits(d.tobits(r) - 1)
 
-		var delta_1 = d.fma(r, r_minus_ulp, -1.0 * f)
+		var delta_1 : @f = d.fma(r, r_minus_ulp, -1.0 * f)
 		if d.tobits(delta_1) & d.sgnmask == 0
 			r = r_minus_ulp
 		else
-			var delta_2 = d.fma(r, r_plus_ulp, -1.0 * f)
+			var delta_2 : @f = d.fma(r, r_plus_ulp, -1.0 * f)
 			if d.tobits(delta_2) & d.sgnmask != 0
 				r = r_plus_ulp
 			else
