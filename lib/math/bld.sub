@@ -1,6 +1,10 @@
 lib math =
 	fpmath.myr
 
+	# rounding (to actual integers)
+	round-impl+posixy-x64-sse4.s
+	round-impl.myr
+
 	# fused-multiply-add
 	fma-impl+posixy-x64-fma.s
 	fma-impl.myr
@@ -9,12 +13,12 @@ lib math =
 	sqrt-impl+posixy-x64-sse2.s
 	sqrt-impl.myr
 
+	# summation
+	sum-impl.myr
+
 	# trunc, floor, ceil
 	trunc-impl+posixy-x64-sse4.s
 	trunc-impl.myr
-
-	# summation
-	sum-impl.myr
 
 	# util
 	util.myr
