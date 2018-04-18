@@ -3,11 +3,15 @@ use std
 pkg math =
 	trait fpmath @f =
 
+		/* exp-impl */
+		exp : (f : @f -> @f)
+
 		/* fma-impl */
 		fma : (x : @f, y : @f, z : @f -> @f)
 
 		/* poly-impl */
 		horner_poly : (x : @f, a : @f[:] -> @f)
+		horner_polyu : (x : @f, a : @u[:] -> @f)
 
 		/* sqrt-impl */
 		sqrt : (f : @f -> @f)
@@ -62,7 +66,10 @@ impl roundable flt64 -> int64 =
 impl fpmath flt32 =
 	fma = {x, y, z; -> fma32(x, y, z)}
 
+	exp = {f; -> exp32(f)}
+
 	horner_poly = {f, a; -> horner_poly32(f, a)}
+	horner_polyu = {f, a; -> horner_polyu32(f, a)}
 
 	sqrt = {f; -> sqrt32(f)}
 
@@ -78,7 +85,10 @@ impl fpmath flt32 =
 impl fpmath flt64 =
 	fma = {x, y, z; -> fma64(x, y, z)}
 
+	exp = {f; -> exp64(f)}
+
 	horner_poly = {f, a; -> horner_poly64(f, a)}
+	horner_polyu = {f, a; -> horner_polyu64(f, a)}
 
 	sqrt = {f; -> sqrt64(f)}
 
@@ -93,11 +103,17 @@ impl fpmath flt64 =
 extern const rn32 : (f : flt32 -> int32)
 extern const rn64 : (f : flt64 -> int64)
 
+extern const exp32 : (x : flt32 -> flt32)
+extern const exp64 : (x : flt64 -> flt64)
+
 extern const fma32 : (x : flt32, y : flt32, z : flt32 -> flt32)
 extern const fma64 : (x : flt64, y : flt64, z : flt64 -> flt64)
 
 extern const horner_poly32 : (f : flt32, a : flt32[:] -> flt32)
 extern const horner_poly64 : (f : flt64, a : flt64[:] -> flt64)
+
+extern const horner_polyu32 : (f : flt32, a : uint32[:] -> flt32)
+extern const horner_polyu64 : (f : flt64, a : uint64[:] -> flt64)
 
 extern const sqrt32 : (x : flt32 -> flt32)
 extern const sqrt64 : (x : flt64 -> flt64)

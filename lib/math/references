@@ -13,3 +13,9 @@ Boston: Birkhäuser, 2010. isbn: 9780817647049.
 [Mul16]
 J. M. Muller. Elementary functions : algorithms and implementation.
 Third edition. New York: Birkhäuser, 2016. isbn: 9781489979810.
+
+[Tan89]
+Ping-Tak Peter Tang. “Table-driven Implementation of the Exponential
+Function in IEEE Floating-point Arithmetic”. In: ACM Trans. Math.
+Softw. 15.2 (June 1989), pp. 144–157. issn: 0098-3500.  doi:
+10.1145/63522.214389. url: http://doi.acm.org/10.1145/63522.214389.

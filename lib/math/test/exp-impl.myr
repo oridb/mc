@@ -1,0 +1,43 @@
+use std
+use math
+use testr
+
+const main = {
+	testr.run([
+		[.name="exp-01", .fn = exp01],
+		[.name="exp-02", .fn = exp02],
+	][:])
+}
+
+const exp01 = {c
+	var inputs : (uint32, uint32)[:] = [
+		(0x00000000, 0x3f800000),
+		(0x34000000, 0x3f800001),
+		(0x3c000000, 0x3f810101),
+		(0x42000000, 0x568fa1fe),
+	][:]
+
+	for (x, y) : inputs
+		var xf : flt32 = std.flt32frombits(x)
+		var yf : flt32 = std.flt32frombits(y)
+		var rf = math.exp(xf)
+		testr.check(c, rf == yf,
+			"exp(0x{b=16,w=8,p=0}) should be 0x{b=16,w=8,p=0}, was 0x{b=16,w=8,p=0}",
+			x, y, std.flt32bits(rf))
+	;;
+}
+
+const exp02 = {c
+	var inputs : (uint64, uint64)[:] = [
+		(0x0000000000000000, 0x3ff0000000000000),
+	][:]
+
+	for (x, y) : inputs
+		var xf : flt64 = std.flt64frombits(x)
+		var yf : flt64 = std.flt64frombits(y)
+		var rf = math.exp(xf)
+		testr.check(c, rf == yf,
+			"exp(0x{b=16,w=16,p=0}) should be 0x{b=16,w=16,p=0}, was 0x{b=16,w=16,p=0}",
+			x, y, std.flt64bits(rf))
+	;;
+}

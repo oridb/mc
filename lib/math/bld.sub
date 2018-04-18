@@ -1,6 +1,9 @@
 lib math =
 	fpmath.myr
 
+	# exp
+	exp-impl.myr
+
 	# rounding (to actual integers)
 	round-impl+posixy-x64-sse4.s
 	round-impl.myr
