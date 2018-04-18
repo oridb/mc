@@ -741,7 +741,6 @@ const bigdivmod = {a : bigint#, b : bigint# -> (bigint#, bigint#)
 	;;
 	/* undo the biasing for remainder */
 	bigshri(u, shift)
-	trim(q)
 	bigfree(v)
 	-> (trim(q), trim(u))
 }

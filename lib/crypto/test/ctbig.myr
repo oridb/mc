@@ -1,0 +1,233 @@
+use std
+use crypto
+use testr
+
+const Nbit = 128
+const Nfunky = 79
+
+const main = {
+	testr.run([
+		[.name="clip", .fn={ctx
+			var v = [
+				.nbit=32,
+				.dig=[0xffffffff][:]
+			]
+			crypto.clip(&v)
+			testr.eq(ctx, v.dig[0], 0xffffffff)
+			v = [
+				.nbit=31,
+				.dig=[0xffffffff][:]
+			]
+			crypto.clip(&v)
+			testr.eq(ctx, v.dig[0], 0x7fffffff)
+		}],
+		[.name="mkbig-le", .fn={ctx
+			docvt(ctx, crypto.mkctbigle, Nbit,
+				"6618611909121",
+				"\x01\x02\x03\x04\x05\x06")
+		}],
+		[.name="mkbig-be", .fn={ctx
+			docvt(ctx, crypto.mkctbigbe, Nbit,
+				"1108152157446",
+				"\x00\x01\x02\x03\x04\x05\x06")
+		}],
+		/* normal */
+		[.name="add", .fn={ctx
+			do2(ctx, crypto.ctadd, Nbit,
+				"5192296858610368357189246603769160",
+				"5192296858534810493479828944327220", 
+				"75557863709417659441940")
+		}],
+		[.name="sub", .fn={ctx
+			do2(ctx, crypto.ctsub, Nbit,
+				"5192296858459252629770411284885280",
+				"5192296858534810493479828944327220", 
+				"75557863709417659441940")
+		}],
+		[.name="mul", .fn={ctx
+			do2(ctx, crypto.ctmul, Nbit,
+				"392318858376010676506814412592879878824393346033951606800",
+				"5192296858534810493479828944327220", 
+				"75557863709417659441940")
+		}],
+		[.name="growmod", .fn={ctx
+			do2(ctx, growmod0, Nbit,
+				"259016584597313952181375284077740334036",
+				"137304361882109849168381018424069802644",
+				"279268927326277818181333274586733399084")
+		}],
+		/* comparisons */
+		[.name="lt-less", .fn={ctx
+			dobool(ctx, crypto.ctlt, Nbit,
+				true,
+				"137304361882109849168381018424069802644",
+				"279268927326277818181333274586733399084")
+		}],
+		[.name="lt-equal", .fn={ctx
+			dobool(ctx, crypto.ctlt, Nbit,
+				false,
+				"137304361882109849168381018424069802644",
+				"137304361882109849168381018424069802644")
+		}],
+		[.name="lt-greater", .fn={ctx
+			dobool(ctx, crypto.ctlt, Nbit,
+				false,
+				"279268927326277818181333274586733399084",
+				"137304361882109849168381018424069802644")
+		}],
+		[.name="gt-less", .fn={ctx
+			dobool(ctx, crypto.ctgt, Nbit,
+				false,
+				"137304361882109849168381018424069802644",
+				"279268927326277818181333274586733399084")
+		}],
+		[.name="gt-equal", .fn={ctx
+			dobool(ctx, crypto.ctgt, Nbit,
+				false,
+				"137304361882109849168381018424069802644",
+				"137304361882109849168381018424069802644")
+		}],
+		[.name="gt-greater", .fn={ctx
+			dobool(ctx, crypto.ctgt, Nbit,
+				true,
+				"279268927326277818181333274586733399084",
+				"137304361882109849168381018424069802644")
+		}],
+		[.name="growmodsmall", .fn={ctx
+			do2(ctx, growmod0, Nbit,
+				"30064771072",
+				"7",
+				"279268927326277818181333274586733399084")
+		}],
+		[.name="addfunky", .fn={ctx
+			do2(ctx, crypto.ctadd, Nfunky,
+				"75540728658750274549064",
+				"5192296858534810493479828944327220", 
+				"75557863709417659441940")
+		}],
+		[.name="subfunky", .fn={ctx
+			do2(ctx, crypto.ctsub, Nfunky,
+				"528887911047229543018272",
+				"5192296858534810493479828944327220", 
+				"75557863709417659441940")
+		}],
+		[.name="mulfunky", .fn={ctx
+			do2(ctx, crypto.ctmul, Nfunky,
+				"434472066238453871708176",
+				"5192296858534810493479828944327220", 
+				"75557863709417659441940")
+		}],
+		[.name="modpow-nop", .fn={ctx
+			do3(ctx, crypto.ctmodpow, Nbit,
+				"1231231254019581241243091223098123",
+				"1231231254019581241243091223098123",
+				"1",
+				"238513807008428752753137056878245001837")
+		}],
+		[.name="modpow-small", .fn={ctx
+			do3(ctx, crypto.ctmodpow, Nbit,
+				"190803258902817973474500147337505443108",
+				"1231231254019581241243091223098123",
+				"7",
+				"238513807008428752753137056878245001837")
+		}],
+		[.name="modpow", .fn={ctx
+			do3(ctx, crypto.ctmodpow, Nbit,
+				"134487661739548107356399382114451163287",
+				"1231231254019581241243091223098123",
+				"312312091230",
+				"238513807008428752753137056878245001837")
+		}],
+	][:])
+}
+
+const growmod0 = {r, a, b
+	crypto.growmod(r, a, 0, b)
+}
+
+const dobool = {ctx, op, nbit, e, astr, bstr
+	var r, a, ai, b, bi
+
+	r = crypto.ctzero(nbit)
+	ai = std.get(std.bigparse(astr))
+	bi = std.get(std.bigparse(bstr))
+	a = crypto.big2ct(ai, nbit)
+	b = crypto.big2ct(bi, nbit)
+
+	std.bigfree(ai)
+	std.bigfree(bi)
+	testr.eq(ctx, op(a, b), e)
+
+	crypto.ctfree(a)
+	crypto.ctfree(b)
+}
+
+const docvt = {ctx, op, nbit, estr, buf
+	var v, e, ei
+
+	ei = std.get(std.bigparse(estr))
+	e = crypto.big2ct(ei, nbit)
+	std.bigfree(ei)
+
+	v = op(buf, nbit)
+	testr.eq(ctx, v, e)
+
+	crypto.ctfree(e)
+	crypto.ctfree(v)
+}
+
+const do2 = {ctx, op, nbit, estr, astr, bstr
+	var r, a, ai, b, bi, e, ei
+
+	r = crypto.ctzero(nbit)
+	ei = std.get(std.bigparse(estr))
+	ai = std.get(std.bigparse(astr))
+	bi = std.get(std.bigparse(bstr))
+	e = crypto.big2ct(ei, nbit)
+	a = crypto.big2ct(ai, nbit)
+	b = crypto.big2ct(bi, nbit)
+
+	std.bigfree(ei)
+	std.bigfree(ai)
+	std.bigfree(bi)
+
+	op(r, a, b)
+
+	testr.eq(ctx, r, e)
+
+	crypto.ctfree(r)
+	crypto.ctfree(e)
+	crypto.ctfree(a)
+	crypto.ctfree(b)
+}
+
+
+const do3 = {ctx, op, nbit, estr, astr, bstr, cstr
+	var r, a, ai, b, bi, c, ci, e, ei
+
+	r = crypto.ctzero(nbit)
+	ei = std.get(std.bigparse(estr))
+	ai = std.get(std.bigparse(astr))
+	bi = std.get(std.bigparse(bstr))
+	ci = std.get(std.bigparse(cstr))
+	e = crypto.big2ct(ei, nbit)
+	a = crypto.big2ct(ai, nbit)
+	b = crypto.big2ct(bi, nbit)
+	c = crypto.big2ct(ci, nbit)
+
+	std.bigfree(ei)
+	std.bigfree(ai)
+	std.bigfree(bi)
+
+	op(r, a, b, c)
+
+	testr.eq(ctx, r, e)
+
+	crypto.ctfree(r)
+	crypto.ctfree(e)
+	crypto.ctfree(a)
+	crypto.ctfree(b)
+	crypto.ctfree(c)
+}
+
+

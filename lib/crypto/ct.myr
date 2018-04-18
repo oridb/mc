@@ -53,7 +53,7 @@ generic le = {a, b
 generic ne = {a, b
 	const nshift = 8*sizeof(@t) - 1
 	var q = a ^ b
-	-> ((q | -q) >> nshift)^1
+	-> (q | -q) >> nshift
 }
 
 generic mux = {c, a, b

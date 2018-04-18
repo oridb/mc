@@ -378,6 +378,7 @@ extern Node **nodes;	/* node id -> node map */
 extern size_t ndecls;
 extern Node **exportimpls;
 extern size_t nexportimpls;
+extern int allowhidden;
 
 /* property tables */
 extern int opispure[];

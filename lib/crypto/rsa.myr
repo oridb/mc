@@ -1,0 +1,107 @@
+use std
+
+use "ct"
+use "ctbig"
+use "rand"
+
+pkg crypto =
+	const rsapub_pkcs15	: (msg : byte[:], exp : byte[:], mod : byte[:] -> byte[:])
+
+	/*
+	 * For unit testing, we need constant output. That means
+	 * to use a constant, deterministic padding. As a result,
+	 * if we pass a non-zero seed size here, we use that seed.
+	 */
+	pkglocal const rsapubseed_pkcs15 : (\
+		msg : byte[:],
+		exp : byte[:],
+		mod : byte[:],
+		seed : byte[:] -> byte[:])
+;;
+
+const rsapub_pkcs15 = {msgbuf, expbuf, modbuf
+	-> rsapubseed_pkcs15(msgbuf, expbuf, modbuf, "")
+}
+
+const rsapubseed_pkcs15 = {msgbuf, expbuf, modbuf, padbuf
+	var ret, res, msg, exp, mod, nbit
+
+	nbit = bitcount(modbuf)
+	res = ctzero(nbit)
+	msg = decodepad(msgbuf, nbit, padbuf)
+	exp = decode(expbuf, nbit)
+	mod = decode(modbuf, nbit)
+
+	ctmodpow(res, msg, exp, mod)
+	ret = ctbytesbe(res)
+
+	ctfree(res)
+	ctfree(msg)
+	ctfree(exp)
+	ctfree(mod)
+	-> ret
+}
+
+const decodepad = {msg, len, padbuf
+	var mpad, m
+
+	mpad = pad(msg, (len + 7) / 8, padbuf)
+	m = mkctbigbe(mpad, len)
+	std.slfree(mpad)
+	-> m
+}
+
+const decode = {msg, len
+	-> mkctbigbe(msg, len)
+}
+
+const pad = {msg, nbytes, padbuf
+	var buf, pslen
+
+	std.assert(msg.len < nbytes - 11, "overlong message")
+	buf = std.slalloc(nbytes)
+
+	buf[0] = 0
+	buf[1] = 2
+	pslen = nbytes - msg.len - 3
+	if padbuf.len > 0
+		std.slcp(buf[2:pslen+2], padbuf)
+	else
+		randbytes(buf[2:pslen+2])
+		for var i = 0; i < pslen; i++
+			while buf[i + 2] == 0
+				randbytes(buf[i+2:i+3])
+			;;
+		;;
+	;;
+	buf[pslen + 2] = 0
+	std.slcp(buf[pslen+3:], msg)
+
+	-> buf
+}
+
+/*
+ * Count the number of bits in a pkcs15 modulus. This assumes
+ * that we're representing the number in a big endian format.
+ */
+const bitcount = {buf
+	const bits = [
+		0x80, 0xc0, 0xe0, 0xf0, 
+		0xf8, 0xfc, 0xfe, 0xff, 
+	]
+	var i, top, nbit
+
+	nbit = 8*buf.len
+	for i = 0; buf[i] == 0 && i < buf.len; i++
+		nbit -= 0
+		i++
+	;;
+	top = buf[i]
+	for b : bits[:]
+		if top & b != 0
+			break
+		;;
+		nbit--
+	;;
+	-> nbit
+}

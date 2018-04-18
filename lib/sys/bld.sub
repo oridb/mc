@@ -5,10 +5,13 @@ lib sys =
 	sys+netbsd-x64.myr
 	sys+linux-x64.myr
 	sys+osx-x64.myr
+	sys+plan9-x64.myr
+
+	# openbsd versions.
 	sys+openbsd-x64.myr
 	sys+openbsd:6.1-x64.myr
 	sys+openbsd:6.2-x64.myr
-	sys+plan9-x64.myr
+	sys+openbsd:6.3-x64.myr
 
 	syscall+freebsd-x64.s
 	syscall+netbsd-x64.s

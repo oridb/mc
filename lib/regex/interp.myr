@@ -173,7 +173,13 @@ const getidxmatches = {re, thr
 	-> `std.Some ret
 }
 
-/* returns a matching thread, or Zthr if no threads matched */
+/*
+ * Run manages the virtual machine state, and schedules the
+ * regex threads. Each linear match runs in its own thread.
+ * When a new thread is created, it is carefully scheduled
+ * after the current thread, to ensure that match order is
+ * preserved.
+ */
 const run = {re, str, idx, wholestr
 	var bestmatch
 	var consumed
@@ -189,7 +195,13 @@ const run = {re, str, idx, wholestr
 	states = std.mkbs()
 	re.runq = mkthread(re, 0)
 	if re.debug
-		/* The last run could have left things here, since we need this info after the run */
+		/* 
+		  If we're in debug mode, then we keep
+		  the traces around, so we can show them
+		  to the user. To avoid leaking, we need
+		  to free the traces from the last run
+		  when we start a new one.
+		 */
 		for bs : re.traces
 			std.bsfree(bs)
 		;;
@@ -206,16 +218,34 @@ const run = {re, str, idx, wholestr
 			if re.trace
 				std.put("switch\n")
 			;;
-			/* set up the next thread */
 			thr = re.runq
 			re.runq = thr.next
 
 			ip = thr.ip
+			/* 
+			  Stepping continues until the first
+			  non-consuming operator is seen. This
+			  keeps all the threads in lockstep,
+			  which means that when a match is
+			  encountered, we know all the other
+			  threads have seen what they need
+			  to, and we can terminate them.
+			 */
 			consumed = step(re, thr, -1)
 			while !consumed
 				consumed = step(re, thr, ip)
 			;;
 
+			/*
+			 * Because threads have no memory,
+			 * their ip (and current input
+			 * character, which is the same
+			 * thanks to the above mentioned
+			 * lockstep) uniquely identify them.
+			 * As a result, if we have two
+			 * threads with the same ip, one of
+			 * them can be culled.
+			 */
 			if std.bshas(states, thr.ip)
 				die(re, thr)
 			;;
@@ -259,10 +289,26 @@ const run = {re, str, idx, wholestr
 	-> bestmatch
 }
 
-/* 
- Steps forward one instruction. Returns true if a byte of input was
- consumed, false otherwise.
-*/
+/*
+ * Step executes a single step of the compiled regex.
+ *
+ * Operations fall into two overall categories. Consuming
+ * operators advance the match, and nonconsuming operators
+ * change the state of the regex virtual machine.
+ *
+ * Consuming operators are simple: They check if the current
+ * character matches a criteria, and then advance the regex.
+ *
+ * Nonconsuming operators can do one of several things. They
+ * can fork the vm, record a successful match, or mark a
+ * thread as a failure.
+ *
+ * A thread continues to run forward until a consuming
+ * opcode is encountered, after which it must switch.
+ * This is in order to keep all threads in lockstep
+ * operating over the same characters, and finishing
+ * at the same time.
+ */
 const step = {re, thr, curip
 	var str, nthr, inst
 
@@ -275,7 +321,7 @@ const step = {re, thr, curip
 		std.bsput(re.traces[thr.tid], thr.ip)
 	;;
 	match inst & 0xf
-	/* Char matching. Consume exactly one byte from the string. */
+	/* Consuming opcodes */
 	| OpRange:
 		var lo = (inst >>  4 : byte)
 		var hi = (inst >> 16 : byte)
@@ -308,10 +354,7 @@ const step = {re, thr, curip
 		;;
 		thr.ip = lip
 		-> false
-	/*
-	  Non-consuming. All of these return false, and expect step to be
-	  called again until exactly one byte is consumed from the string.
-	 */
+	/* Non-consuming opcodes. */
 	| OpJmp:
 		var ip = (inst >> 4 : std.size)
 		thr.ip = ip
@@ -345,7 +388,6 @@ const step = {re, thr, curip
 		else
 			die(re, thr)
 		;;
-	/* check for word characters */
 	| OpBow:
 		if iswordchar(str[re.strp:]) && (re.strp == 0 || !iswordchar(prevchar(str, re.strp)))
 			thr.ip++
@@ -443,7 +485,6 @@ const itrace = {re, thr, inst
 	;;
 }
 
-/* must be called with i >= 1 */
 const prevchar = {s, i
 	std.assert(i != 0, "prevchar must be called with i >= 1\n")
 	i--

@@ -149,21 +149,21 @@ const benchspec = {ts, sub
 
 const testspec = {ts, sub
 	var ctx : ctx
-	var dorun, jmpbuf
+	var jmpbuf
 
 	ctx.ok = true
 	ctx.reason = ""
 	ctx.jmpbuf = &jmpbuf
-	dorun = matchtest(ts.name, sub)
+	if !matchtest(ts.name, sub)
+		-> void
+	;;
 
 	std.put("test {} <<{{!\n", ts.name)
-	if !std.setjmp(&jmpbuf) && dorun
+	if !std.setjmp(&jmpbuf)
 		ts.fn(&ctx)
 	;;
 
-	if !dorun
-		std.put("!}}>> skip filtered\n")
-	elif ctx.ok
+	if ctx.ok
 		std.put("!}}>> ok\n")
 	else
 		std.put("!}}>> fail {}\n", ctx.reason)

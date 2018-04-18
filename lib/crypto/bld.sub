@@ -12,9 +12,12 @@ lib crypto =
 	# hmac
 	hmac.myr
 
-	# ciphers
+	# symmetric ciphers
 	chacha20.myr
 	aes.myr
+
+	# public key ciphers
+	rsa.myr
 
 	# randomness
 	entropy.myr	# currently assumes a /dev/random
@@ -22,11 +25,13 @@ lib crypto =
 
 	# utilities for subtle bits
 	ct.myr
+	ctbig.myr
 	clear.myr
 
 	lib ../std:std
 	lib ../sys:sys
 	lib ../thread:thread
+	lib ../iter:iter
 ;;
 
 

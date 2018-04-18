@@ -1,6 +1,6 @@
 /*
   generated-ish source
-  stitched for openbsd:6.2 arch:x64
+  stitched for openbsd:6.3 arch:x64
   edit with caution.
  */
 pkg sys =
@@ -27,6 +27,12 @@ pkg sys =
 	type sigflags	= int32
 	type sigset	= uint32
 	type msg	= void
+	type gid	= uint32
+	
+	const Futexwait		: int = 1
+	const Futexwake		: int = 2
+	const Futexrequeue	: int = 3
+	
 	
 	type clock = union
 		`Clockrealtime
@@ -479,7 +485,6 @@ pkg sys =
 	extern var __cenvp : byte##
 	type dev = int32
 	type uid = uint32
-	type gid = uint32
 	type fd_mask = uint32
 	type uintptr = uint64
 	type clockid = int32
@@ -598,10 +603,6 @@ pkg sys =
 	;;
 	
 
-	const Futexwait		: int = 1
-	const Futexwake		: int = 2
-	const Futexrequeue	: int = 3
-
 	const Sysexit			: scno = 1
 	const Sysfork			: scno = 2
 	const Sysread			: scno = 3
@@ -712,7 +713,6 @@ pkg sys =
 	const Syspselect		: scno = 110
 	const Syssigsuspend		: scno = 111
 	const Syssendsyslog		: scno = 112
-	const Sysfktrace		: scno = 113
 	const Sysgetsockopt		: scno = 118
 	const Systhrkill		: scno = 119
 	const Sysreadv			: scno = 120
@@ -947,12 +947,11 @@ pkg sys =
 	const dup3			:  (from : int, to : int, flags : int -> int)
 	const sigreturn			:  (sigcntxp : sigcontext# -> int)
 	const chflagsat			:  (fd : int, path : byte#, flags : uint, atflags : int -> int)
-	const pledge			:  (request : byte#, paths : byte## -> int)
+	const pledge			:  (promises : byte#, execpromises : byte# -> int)
 	const ppoll			:  (fds : pollfd#, nfds : uint, ts : timespec#, mask : sigset# -> int)
 	const pselect			:  (nd : int, _in : fdset#, ou : fdset#, ex : fdset#, ts : timespec#, mask : sigset# -> int)
 	const sigsuspend		:  (mask : int -> int)
-	const sendsyslog		:  (buf : void#, nbyte : size, flags : int -> int)
-	const fktrace			:  (fd : int, ops : int, facs : int, pid : pid -> int)
+	const sendsyslog		:  (buf : byte#, nbyte : size, flags : int -> int)
 	const thrkill			:  (tid : pid, signum : int, tcb : void# -> int)
 	const fchown			:  (fd : int, uid : uid, gid : gid -> int)
 	const fchmod			:  (fd : int, mode : filemode -> int)
@@ -1488,8 +1487,8 @@ const sigreturn	= {sigcntxp
 const chflagsat	= {fd, path, flags, atflags
 	 -> (syscall(Syschflagsat, a(fd), a(path), a(flags), a(atflags)) : int)
 }
-const pledge	= {request, paths
-	 -> (syscall(Syspledge, a(request), a(paths)) : int)
+const pledge	= {promises, execpromises
+	 -> (syscall(Syspledge, a(promises), a(execpromises)) : int)
 }
 const ppoll	= {fds, nfds, ts, mask
 	 -> (syscall(Sysppoll, a(fds), a(nfds), a(ts), a(mask)) : int)
@@ -1502,9 +1501,6 @@ const sigsuspend	= {mask
 }
 const sendsyslog	= {buf, nbyte, flags
 	 -> (syscall(Syssendsyslog, a(buf), a(nbyte), a(flags)) : int)
-}
-const fktrace	= {fd, ops, facs, pid
-	 -> (syscall(Sysfktrace, a(fd), a(ops), a(facs), a(pid)) : int)
 }
 const thrkill	= {tid, signum, tcb
 	 -> (syscall(Systhrkill, a(tid), a(signum), a(tcb)) : int)

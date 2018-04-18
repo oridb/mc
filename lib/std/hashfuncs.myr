@@ -18,6 +18,12 @@ pkg std =
 		}
 	;;
 
+	impl equatable bool =
+		eq = {a, b
+			-> a == b
+		}
+	;;
+
 	impl equatable @a :: integral,numeric @a =
 		eq = {a, b
 			-> a == b

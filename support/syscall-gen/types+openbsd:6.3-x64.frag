@@ -21,6 +21,7 @@ type signo	= int32
 type sigflags	= int32
 type sigset	= uint32
 type msg	= void
+type gid	= uint32
 
 const Futexwait		: int = 1
 const Futexwake		: int = 2
@@ -347,6 +348,7 @@ const Mpriv	: mopt = 0x2
 const Mfixed	: mopt = 0x10
 const Mfile	: mopt = 0x0
 const Manon	: mopt = 0x1000
+const Mstack    : mopt = 0x4000
 const Mnoreplace	: mopt = 0x0800
 
 /* file types */

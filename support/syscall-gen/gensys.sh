@@ -37,7 +37,7 @@ hdrgen() {
 	' < syscalls+$1.h | tee sysjoined.txt | awk -f gencalls.awk $1 $2 > sys+$1-$2.myr
 }
 
-rm -f have.txt want.txt gentypes+$1-$2.frag
+#rm -f have.txt want.txt gentypes+$1-$2.frag
 touch have.txt
 
 if [ `uname` = Linux ]; then

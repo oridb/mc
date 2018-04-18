@@ -492,7 +492,12 @@ const strfmt = {sb, str, params
 		| ("p", pad):	p = decode(pad)
 		| ("r", ""):	raw = true
 		| ("e", ""):	esc = true
-		| _:	std.die("unreachable\n")
+		| (opt, arg):	
+			std.write(2, "fmt: ")
+			std.write(2, opt)
+			std.write(2, "arg: ")
+			std.write(2, arg)
+			std.die("unreachable\n")
 		;;
 	;;
 	iassert(p >= 0, "pad must be >= 0")

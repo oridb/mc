@@ -68,6 +68,21 @@ const dump = {re, fd
 	;;
 }
 
+/*
+ * Renders a match in a way that's pleasant to read. There are
+ * two cases here.
+ *
+ * 1) The pattern matched. In this case, we want to show the
+ *    regions of the pattern that contributed to the match.
+ *
+ * 2) The pattern did not match. In this case, we want to show
+ *    the location of the failed match.
+ *
+ * In both cases, we render a caret that describes the position
+ * of the match. Unfortunately, for the coverage code we don't
+ * have a great way of mapping whole subranges, so the caret can
+ * be slightly truncated. Fixing this isn't worth hte complexity.
+ */
 const show = {re, ln, mg
 	match mg
 	| `std.Some rl:
@@ -81,13 +96,21 @@ const show = {re, ln, mg
 	| `std.None:
 		std.put("Match failed at {}:\n", re.lastip)
 		std.put("\t{}\n", re.pat)
-		caret(re, re.pcidx[re.lastip])
+		showpos(re, re.pcidx[re.lastip])
 		std.put("\t{}\n", ln)
-		caret(re, re.strp - 1)
+		showpos(re, re.strp - 1)
 	;;
 }
 
-const caret = {re, idx
+/* 
+ * Simple position carets for failures: Draws out
+ * an arrow of the form:
+ *
+ *    ~~~~~^
+ * 
+ * from the start of the line.
+ */
+const showpos = {re, idx
 	std.put("\t")
 	for var i = 0; i < idx; i++
 		std.put("~")
@@ -95,6 +118,13 @@ const caret = {re, idx
 	std.put("^\n")
 }
 
+/*
+ * Coverage carets for success. This tries to output
+ * a '^' for every section of the string that matched.
+ *
+ *   (this|that)
+ *    ^^^^
+ */
 const showcoverage = {re
 	var hit
 	var idx

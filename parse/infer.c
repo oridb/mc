@@ -29,6 +29,7 @@ struct Traitmap {
 	size_t nfiltertr;
 };
 
+int allowhidden;
 
 static void infernode(Node **np, Type *ret, int *sawret);
 static void inferexpr(Node **np, Type *ret, int *sawret);
@@ -69,6 +70,8 @@ static size_t nspecializations;
 static Stab **specializationscope;
 static size_t nspecializationscope;
 static Traitmap *traitmap;
+static Bitset *tytraits[Ntypes];
+
 
 static void
 ctxstrcall(char *buf, size_t sz, Node *n)
@@ -685,7 +688,7 @@ mktylike(Srcloc l, Ty other)
 
 	t = mktyvar(l);
 	/* not perfect in general, but good enough for all places mktylike is used. */
-	t->trneed = bsdup(traitmap->sub[other]->traits);
+	t->trneed = bsdup(tytraits[other]);
 	return t;
 }
 
@@ -958,7 +961,7 @@ static void
 verifytraits(Node *ctx, Type *a, Type *b)
 {
 	char traitbuf[64], abuf[64], bbuf[64];
-	char asrc[64], bsrc[64];
+	char asrc[128], bsrc[128];
 	Bitset *abs, *bbs;
 	size_t i, n;
 	Srcloc l;
@@ -979,10 +982,11 @@ verifytraits(Node *ctx, Type *a, Type *b)
 		n = 0;
 		*traitbuf = 0;
 		for (i = 0; bsiter(abs, &i); i++) {
-			if (!bshas(bbs, i))
+			if (!bshas(bbs, i)) {
 				n += bprintf(traitbuf + n, sizeof(traitbuf) - n, "%s%s", sep,
-					namestr(traittab[i]->name));
-			sep = ",";
+					     namestr(traittab[i]->name));
+				sep = ",";
+			}
 		}
 		tyfmt(abuf, sizeof abuf, a);
 		tyfmt(bbuf, sizeof bbuf, b);
@@ -1320,7 +1324,7 @@ initvar(Node *n, Node *s)
 	Type *t, *param;
 	Tysubst *subst;
 
-	if (s->decl.ishidden)
+	if (s->decl.ishidden && !allowhidden)
 		fatal(n, "attempting to refer to hidden decl %s", ctxstr(n));
 
 	param = n->expr.param;
@@ -2787,41 +2791,47 @@ builtintraits(void)
 
 	/* char::(numeric,integral) */
 	for (i = 0; i < Ntypes; i++)
-		traitmap->sub[i] = mktraitmap();
+		tytraits[i] = mkbs();
 
-	bsput(traitmap->sub[Tychar]->traits, Tcnum);
-	bsput(traitmap->sub[Tychar]->traits, Tcint);
+	bsput(tytraits[Tychar], Tcnum);
+	bsput(tytraits[Tychar], Tcint);
 
-	bsput(traitmap->sub[Tybyte]->traits, Tcnum);
-	bsput(traitmap->sub[Tybyte]->traits, Tcint);
+	bsput(tytraits[Tybyte], Tcnum);
+	bsput(tytraits[Tybyte], Tcint);
 
 	/* <integer types>::(numeric,integral) */
 	for (i = Tyint8; i < Tyflt32; i++) {
-		bsput(traitmap->sub[i]->traits, Tcnum);
-		bsput(traitmap->sub[i]->traits, Tcint);
+		bsput(tytraits[i], Tcnum);
+		bsput(tytraits[i], Tcint);
 	}
 
 	/* <floats>::(numeric,floating) */
-	bsput(traitmap->sub[Tyflt32]->traits, Tcnum);
-	bsput(traitmap->sub[Tyflt32]->traits, Tcflt);
-	bsput(traitmap->sub[Tyflt64]->traits, Tcnum);
-	bsput(traitmap->sub[Tyflt64]->traits, Tcflt);
+	bsput(tytraits[Tyflt32], Tcnum);
+	bsput(tytraits[Tyflt32], Tcflt);
+	bsput(tytraits[Tyflt64], Tcnum);
+	bsput(tytraits[Tyflt64], Tcflt);
 
 	/* @a*::(sliceable) */
-	bsput(traitmap->sub[Typtr]->traits, Tcslice);
+	bsput(tytraits[Typtr], Tcslice);
 
 	/* @a[:]::(indexable,sliceable) */
-	bsput(traitmap->sub[Tyslice]->traits, Tcidx);
-	bsput(traitmap->sub[Tyslice]->traits, Tcslice);
-	bsput(traitmap->sub[Tyslice]->traits, Tciter);
+	bsput(tytraits[Tyslice], Tcidx);
+	bsput(tytraits[Tyslice], Tcslice);
+	bsput(tytraits[Tyslice], Tciter);
 
 	/* @a[SZ]::(indexable,sliceable) */
-	bsput(traitmap->sub[Tyarray]->traits, Tcidx);
-	bsput(traitmap->sub[Tyarray]->traits, Tcslice);
-	bsput(traitmap->sub[Tyarray]->traits, Tciter);
+	bsput(tytraits[Tyarray], Tcidx);
+	bsput(tytraits[Tyarray], Tcslice);
+	bsput(tytraits[Tyarray], Tciter);
 
 	/* @a::function */
-	bsput(traitmap->sub[Tyfunc]->traits, Tcfunc);
+	bsput(tytraits[Tyfunc], Tcfunc);
+
+	for (i = 0; i < Ntypes; i++) {
+		traitmap->sub[i] = mktraitmap();
+		bsunion(traitmap->sub[i]->traits, tytraits[i]);
+	}
+
 }
 
 static Trait*
