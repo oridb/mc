@@ -6,6 +6,9 @@ pkg math =
 		/* fma-impl */
 		fma : (x : @f, y : @f, z : @f -> @f)
 
+		/* poly-impl */
+		horner_poly : (x : @f, a : @f[:] -> @f)
+
 		/* sqrt-impl */
 		sqrt : (f : @f -> @f)
 
@@ -59,6 +62,8 @@ impl roundable flt64 -> int64 =
 impl fpmath flt32 =
 	fma = {x, y, z; -> fma32(x, y, z)}
 
+	horner_poly = {f, a; -> horner_poly32(f, a)}
+
 	sqrt = {f; -> sqrt32(f)}
 
 	kahan_sum = {l; -> kahan_sum32(l) }
@@ -72,6 +77,8 @@ impl fpmath flt32 =
 
 impl fpmath flt64 =
 	fma = {x, y, z; -> fma64(x, y, z)}
+
+	horner_poly = {f, a; -> horner_poly64(f, a)}
 
 	sqrt = {f; -> sqrt64(f)}
 
@@ -88,6 +95,9 @@ extern const rn64 : (f : flt64 -> int64)
 
 extern const fma32 : (x : flt32, y : flt32, z : flt32 -> flt32)
 extern const fma64 : (x : flt64, y : flt64, z : flt64 -> flt64)
+
+extern const horner_poly32 : (f : flt32, a : flt32[:] -> flt32)
+extern const horner_poly64 : (f : flt64, a : flt64[:] -> flt64)
 
 extern const sqrt32 : (x : flt32 -> flt32)
 extern const sqrt64 : (x : flt64 -> flt64)

@@ -1,0 +1,66 @@
+use std
+use math
+use testr
+
+const main = {
+	testr.run([
+		[.name="horner-01", .fn = horner01],
+		[.name="horner-02", .fn = horner02],
+	][:])
+}
+
+const horner01 = {c
+	var inputs : (uint32, uint32[:], uint32)[:] = [
+		(0x00000000, [][:], 0x00000000),
+		(0xbf800000, [0x3f715545, 0x3f715546, 0x3f715544, 0x3f715545][:], 0xb4000000),
+		(0xbf800001, [0x3f715545, 0x3f715546, 0x3f715544, 0x3f715545][:], 0xb4bc5552),
+	][:]
+
+	for (f, a, r) : inputs
+		var f2 = std.flt32frombits(f)
+		var a2 = [][:]
+		for aa : a
+			std.slpush(&a2, std.flt32frombits(aa))
+		;;
+		var sf = math.horner_poly(f2, a2)
+		var s : uint32 = std.flt32bits(sf)
+		testr.eq(c, s, r)
+	;;
+}
+
+const horner02 = {c
+	var inputs : (uint64, uint64[:], uint64)[:] = [
+		(0x0000000000000000, [][:], 0x0000000000000000),
+		(0xc0003d3368ee1111, [
+			0x3ff0000000000000,
+			0x3fe0000000000000,
+			0x3fc5555555555555,
+			0x3fa5555555555555,
+			0x3f81a7b9611a7b96,
+			0x3f59c2d14ee4a102,
+			0x3f3136f054ff42a4,
+			0x3f05902ed525b6ee
+		][:], 0x3fdb64730ab8fa29),
+		(0x40003d3368ee1111, [
+			0x3ff0000000000000,
+			0x3fe0000000000000,
+			0x3fc5555555555555,
+			0x3fa5555555555555,
+			0x3f81a7b9611a7b96,
+			0x3f59c2d14ee4a102,
+			0x3f3136f054ff42a4,
+			0x3f05902ed525b6ee
+		][:], 0x400a331575ee40db),
+	][:]
+
+	for (f, a, r) : inputs
+		var f2 = std.flt64frombits(f)
+		var a2 = [][:]
+		for aa : a
+			std.slpush(&a2, std.flt64frombits(aa))
+		;;
+		var sf = math.horner_poly(f2, a2)
+		var s : uint64 = std.flt64bits(sf)
+		testr.eq(c, s, r)
+	;;
+}

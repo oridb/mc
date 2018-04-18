@@ -9,6 +9,9 @@ lib math =
 	fma-impl+posixy-x64-fma.s
 	fma-impl.myr
 
+	# polynomial evaluation methods
+	poly-impl.myr
+
 	# sqrt
 	sqrt-impl+posixy-x64-sse2.s
 	sqrt-impl.myr
