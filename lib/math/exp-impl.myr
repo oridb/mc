@@ -230,7 +230,10 @@ generic expgen = {f : @f, d : fltdesc(@f, @u, @i) :: numeric,floating,std.equata
 	var S_lo = d.frombits(Su_lo)
 
 	var S = S_hi + S_lo
-	var exp = d.assem(false, M, 0) * (S_hi + (S_lo + (P * S)))
+	var unscaled = S_hi + (S_lo + (P * S))
+	var nu, eu, su
+	(nu, eu, su) = d.explode(unscaled)
+	var exp = d.assem(nu, eu + M, su)
 
 	-> exp
 }

@@ -6,6 +6,8 @@ const main = {
 	testr.run([
 		[.name="exp-01", .fn = exp01],
 		[.name="exp-02", .fn = exp02],
+		[.name="exp-03", .fn = exp03],
+		[.name="exp-04", .fn = exp04],
 	][:])
 }
 
@@ -15,6 +17,8 @@ const exp01 = {c
 		(0x34000000, 0x3f800001),
 		(0x3c000000, 0x3f810101),
 		(0x42000000, 0x568fa1fe),
+		(0xc2b00000, 0x0041edc4),
+		(0xc2b20000, 0x001840fc),
 	][:]
 
 	for (x, y) : inputs
@@ -30,6 +34,7 @@ const exp01 = {c
 const exp02 = {c
 	var inputs : (uint64, uint64)[:] = [
 		(0x0000000000000000, 0x3ff0000000000000),
+		(0x3e50000000000000, 0x3ff0000004000000),
 	][:]
 
 	for (x, y) : inputs
@@ -39,5 +44,58 @@ const exp02 = {c
 		testr.check(c, rf == yf,
 			"exp(0x{b=16,w=16,p=0}) should be 0x{b=16,w=16,p=0}, was 0x{b=16,w=16,p=0}",
 			x, y, std.flt64bits(rf))
+	;;
+}
+
+const exp03 = {c
+	/*
+	   Tang's algorithm has an error of up to 0.77 ulps. This
+	   is not terrible (musl appears to follow it, for example).
+	   Here we quarantine off some known-bad results.
+	 */
+
+	var inputs : (uint32, uint32, uint32)[:] = [
+		(0x42020000, 0x56eccf79, 0x56eccf78),
+		(0x3ec40600, 0x3fbbb54b, 0x3fbbb54c),
+	][:]
+
+	for (x, y_perfect, y_acceptable) : inputs
+		var xf : flt32 = std.flt32frombits(x)
+		var ypf : flt32 = std.flt32frombits(y_perfect)
+		var yaf : flt32 = std.flt32frombits(y_acceptable)
+		var rf = math.exp(xf)
+		if rf != ypf && rf != yaf
+		testr.fail(c, "exp(0x{b=16,w=8,p=0}) was 0x{b=16,w=8,p=0}. It should have been 0x{b=16,w=8,p=0}, although we will also accept 0x{b=16,w=8,p=0}",
+			x, std.flt32bits(rf), y_perfect, y_acceptable)
+		;;
+	;;
+}
+
+const exp04 = {c
+	/*
+	   Tang's algorithm has an error of up to 0.77 ulps. This
+	   is not terrible (musl appears to follow it, for example).
+	   Here we quarantine off some known-bad results.
+	 */
+
+	var inputs : (uint64, uint64, uint64)[:] = [
+		(0x3cda000000000000, 0x3ff0000000000006, 0x3ff0000000000007),
+		(0x3d57020000000000, 0x3ff00000000005c0, 0x3ff00000000005c1),
+		(0x3d58020000000000, 0x3ff0000000000600, 0x3ff0000000000601),
+		(0xc087030000000000, 0x0000000000000c6d, 0x0000000000000c6e),
+		(0xc011070000000000, 0x3f8d039e34c59187, 0x3f8d039e34c59186),
+		(0xbd50070000000000, 0x3feffffffffff7fc, 0x3feffffffffff7fd),
+		(0xbd430e0000000000, 0x3feffffffffffb3c, 0x3feffffffffffb3d),
+	][:]
+
+	for (x, y_perfect, y_acceptable) : inputs
+		var xf : flt64 = std.flt64frombits(x)
+		var ypf : flt64 = std.flt64frombits(y_perfect)
+		var yaf : flt64 = std.flt64frombits(y_acceptable)
+		var rf = math.exp(xf)
+		if rf != ypf && rf != yaf
+		testr.fail(c, "exp(0x{b=16,w=16,p=0}) was 0x{b=16,w=16,p=0}. It should have been 0x{b=16,w=16,p=0}, although we will also accept 0x{b=16,w=16,p=0}",
+			x, std.flt64bits(rf), y_perfect, y_acceptable)
+		;;
 	;;
 }
