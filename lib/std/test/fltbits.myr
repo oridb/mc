@@ -97,6 +97,7 @@ const flt32bits = {c
 			(1.0, 0x3f800000),
 			(0.0000123, 0x374e5c19),
 			(-993.83, 0xc478751f),
+			(0.000000000000000000000000000000000000006054601, 0x0041edc4),
 		     ][:]
 		var uprime = std.flt32bits(f)
 		testr.check(c, u == uprime, "flt32bits wrong for {}:  0x{x} != 0x{x}", f, u, uprime)
@@ -116,7 +117,7 @@ const flt64bits = {c
 }
 
 const exploderound32 = {c
-	for f : [1.0, 0.00001, 123.45, 1111111111111111.2, -1.9, -0.0001, std.flt32nan()][:]
+	for f : [1.0, 0.00001, 123.45, 1111111111111111.2, -1.9, -0.0001, 0.000000000000000000000000000000000000006054601, std.flt32nan()][:]
 		var n, e, s
 		(n, e, s) = std.flt32explode(f)
 		var g = std.flt32assem(n, e, s)
@@ -135,6 +136,7 @@ const exploderound32 = {c
 			(false, 45, (1 << 23) | 0x23),
 			(true, -12, (1 << 23) | 0x3a2),
 			(true, -126, (1 << 23) | 0x3a1),
+			(false, -127, 4320708),
 		][:]
 		var m, f, t
 		(m, f, t) = std.flt32explode(std.flt32assem(n, e, s))

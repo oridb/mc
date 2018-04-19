@@ -62,6 +62,23 @@ const flt32explode = {flt
 const flt64assem = {sign, exp, mant
 	var s, m, e
 
+	if exp <= -Dblbias && (mant & (1ul << 52) != 0)
+		var roundup = false
+		var shift : uint64 = ((1 - Dblbias - exp) : uint64)
+		var firstcut = mant & (1 << shift)
+		var restcut = mant & ((1 << shift) - 1)
+		var lastkept = mant & (1 << (shift + 1))
+		roundup = firstcut != 0 && (lastkept != 0 || restcut != 0)
+		mant >>= shift
+		exp = -Dblbias
+		if roundup
+			mant++
+			if (mant & (1ul << 52) != 0)
+				exp++
+			;;
+		;;
+	;;
+
 	s = (sign : uint64)
 	e = (exp + Dblbias : uint64) & 0x7ff
 	m = (mant : uint64) & ((1ul<<52) - 1)
@@ -70,6 +87,23 @@ const flt64assem = {sign, exp, mant
 
 const flt32assem = {sign, exp, mant
 	var s, m, e
+
+	if exp <= -Fltbias && (mant & (1 << 23) != 0)
+		var roundup = false
+		var shift : uint32 = ((1 - Fltbias - exp) : uint32)
+		var firstcut = mant & (1 << shift)
+		var restcut = mant & ((1 << shift) - 1)
+		var lastkept = mant & (1 << (shift + 1))
+		roundup = firstcut != 0 && (lastkept != 0 || restcut != 0)
+		mant >>= shift
+		exp = -Fltbias
+		if roundup
+			mant++
+			if (mant & (1 << 23) != 0)
+				exp++
+			;;
+		;;
+	;;
 
 	s = (sign : uint32)
 	e = (exp + Fltbias : uint32) & 0xff
