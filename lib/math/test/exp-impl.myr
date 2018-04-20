@@ -8,6 +8,7 @@ const main = {
 		[.name="exp-02", .fn = exp02],
 		[.name="exp-03", .fn = exp03],
 		[.name="exp-04", .fn = exp04],
+		[.name="expm1-01", .fn = expm101],
 	][:])
 }
 
@@ -19,6 +20,15 @@ const exp01 = {c
 		(0x42000000, 0x568fa1fe),
 		(0xc2b00000, 0x0041edc4),
 		(0xc2b20000, 0x001840fc),
+		(0x7f7fffff, 0x7f800000),
+		(0x7f800000, 0x7f800000),
+		(0x7f800001, 0x7fc00000),
+		(0xc2cff1b3, 0x00000001),
+		(0xc2cff1b4, 0x00000001),
+		(0xc2cff1b5, 0000000000),
+		(0x42b17217, 0x7f7fff84),
+		(0x42b17218, 0x7f800000),
+		(0x42b17219, 0x7f800000),
 	][:]
 
 	for (x, y) : inputs
@@ -99,3 +109,28 @@ const exp04 = {c
 		;;
 	;;
 }
+
+const expm101 = {c
+	var inputs : (uint32, uint32)[:] = [
+		(0x00000000, 0x00000000),
+		(0x3f000000, 0x3f261299),
+		(0x34000000, 0x34000000),
+		(0x3c000000, 0x3c008056),
+		(0x42000000, 0x568fa1fe),
+		(0xc2b00000, 0xbf800000),
+		(0xc2b20000, 0xbf800000),
+		(0x01000000, 0x01000000),
+		(0x40000000, 0x40cc7326),
+		(0x42b17200, 0x7f7d7740),
+	][:]
+
+	for (x, y) : inputs
+		var xf : flt32 = std.flt32frombits(x)
+		var yf : flt32 = std.flt32frombits(y)
+		var rf = math.expm1(xf)
+		testr.check(c, rf == yf,
+			"expm1(0x{b=16,w=8,p=0}) should be 0x{b=16,w=8,p=0}, was 0x{b=16,w=8,p=0}",
+			x, y, std.flt32bits(rf))
+	;;
+}
+

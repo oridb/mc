@@ -1,11 +1,20 @@
 use std
 
 use "fpmath"
+use "util"
 
-/* See [Mul16] (6.2.1), and in particular [Tan89] (which this notation follows) */
+/*
+    See [Mul16] (6.2.1), [Tan89], and [Tan92]. While the exp and
+    expm1 functions are similar enough to be in the same file (Tang's
+    algorithms use the same S constants), they are not quite similar
+    enough to be in the same function.
+ */
 pkg math =
 	pkglocal const exp32 : (f : flt32 -> flt32)
 	pkglocal const exp64 : (f : flt64 -> flt64)
+
+	pkglocal const expm132 : (f : flt32 -> flt32)
+	pkglocal const expm164 : (f : flt64 -> flt64)
 ;;
 
 extern const fma32 : (x : flt32, y : flt32, z : flt32 -> flt32)
@@ -22,37 +31,63 @@ type fltdesc(@f, @u, @i) = struct
 	tobits : (f : @f -> @u)
 	frombits : (u : @u -> @f)
 	inf : @u
+	nan : @u
+
+	/* For exp */
 	thresh_1_min : @u
 	thresh_1_max : @u
 	thresh_2 : @u
+	Ai : @u[:]
+
+	/* For expm1 */
+	thresh_tiny : @u
+	thresh_huge_neg : @u
+	Log3_4 : @u
+	Log5_4 : @u
+	Bi : @u[:]
+	exactness_thresh : @u
+
+	/* For both */
+	nabs : @u
 	inv_L : @u
 	L1 : @u
 	L2 : @u
-	nabs : @u
-	Ai : @u[:]
 	S : (@u, @u)[32]
+
 ;;
 
-/* Coefficients for p(t), locally approximating exp1m */
-const Ai32 : uint32[:] = [
-		0x00000000,
-		0x00000000,
+const desc32 : fltdesc(flt32, uint32, int32) = [
+	.explode = std.flt32explode,
+	.assem = std.flt32assem,
+	.fma = fma32,
+	.horner = horner_polyu32,
+	.sgnmask = (1 << 31),
+	.tobits = std.flt32bits,
+	.frombits = std.flt32frombits,
+	.inf = 0x7f800000,
+	.nan = 0x7fc0000,
+	.thresh_1_min = 0xc2cff1b4, /* ln(2^(-127 - 23)) ~= -103.9720770839917 */
+	.thresh_1_max = 0x42b17218, /* ln([2 - 2^(-24)] * 2^127) ~= 88.72283905206 */
+	.inv_L = 0x4238aa3b, /* L = log(2) / 32, this is 1/L in working precision */
+	.L1 = 0x3cb17200, /* L1 and L2 sum to give L in high precision, */
+	.L2 = 0x333fbe8e, /* and L1 has some trailing zeroes. */
+	.nabs = 9, /* L1 has 9 trailing zeroes in binary */
+	.Ai = [ /* Coefficients for approximating expm1 in a tiny range */
 		0x3f000044,
 		0x3e2aaaec,
-	][:]
-
-const Ai64 : uint64[:] = [
-		0x0000000000000000,
-		0x0000000000000000,
-		0x3fe0000000000000,
-		0x3fc5555555548f7c,
-		0x3fa5555555545d4e,
-		0x3f811115b7aa905e,
-		0x3f56c1728d739765,
-	][:]
-
-/* Double-precise expansions of 2^(J/32) */
-const S32 : (uint32, uint32)[32] = [
+	][:],
+	.Log3_4 = 0xbe934b11, /* log(1 - 1/4) < x < log(1 + 1/4) */
+	.Log5_4 = 0x3e647fbf, /* triggers special expm1 case */
+	.thresh_tiny = 0x33000000, /* similar to thresh_1_{min,max}, but for expm1 */
+	.thresh_huge_neg = 0xc18aa122,
+	.Bi = [ /* Coefficients for approximating expm1 between log(3/4) and log(5/4) */
+		0x3e2aaaaa,
+		0x3d2aaaa0,
+		0x3c0889ff,
+		0x3ab64de5,
+		0x394ab327,
+	][:],
+	.S = [ /* Double-precise expansions of 2^(J/32) */
 		(0x3f800000, 0x00000000),
 		(0x3f82cd80, 0x35531585),
 		(0x3f85aac0, 0x34d9f312),
@@ -85,9 +120,49 @@ const S32 : (uint32, uint32)[32] = [
 		(0x3fefe480, 0x36e66f73),
 		(0x3ff52540, 0x36f45492),
 		(0x3ffa8380, 0x36cb6dc9),
-	]
+	],
+	.exactness_thresh = 24, /* threshold to prevent underflow in a S[high] + 2^-m */
+]
 
-const S64 : (uint64, uint64)[32] = [
+const desc64 : fltdesc(flt64, uint64, int64) = [
+	.explode = std.flt64explode,
+	.assem = std.flt64assem,
+	.fma = fma64,
+	.horner = horner_polyu64,
+	.sgnmask = (1 << 63),
+	.tobits = std.flt64bits,
+	.frombits = std.flt64frombits,
+	.inf = 0x7ff0000000000000,
+	.nan = 0x7ff8000000000000,
+	.thresh_1_min = 0xc0874910d52d3052, /* ln(2^(-1023 - 52)) ~= -745.1332191019 */
+	.thresh_1_max = 0x40862e42fefa39ef, /* ln([2 - 2^(-53)] * 2^1023) ~= 709.78271289 */
+	.inv_L = 0x40471547652b82fe, /* below as in exp32 */
+	.L1 = 0x3f962e42fef00000,
+	.L2 = 0x3d8473de6af278ed,
+	.nabs = 20,
+	.Ai = [
+		0x3fe0000000000000,
+		0x3fc5555555548f7c,
+		0x3fa5555555545d4e,
+		0x3f811115b7aa905e,
+		0x3f56c1728d739765,
+	][:],
+	.Log3_4 = 0xbfd269621134db93,
+	.Log5_4 = 0x3fcc8ff7c79a9a22,
+	.thresh_tiny = 0x3c90000000000000,
+	.thresh_huge_neg = 0xc042b708872320e1,
+	.Bi = [
+		0x3fc5555555555549,
+		0x3fa55555555554b6,
+		0x3f8111111111a9f3,
+		0x3f56c16c16ce14c6,
+		0x3f2a01a01159dd2d,
+		0x3efa019f635825c4,
+		0x3ec71e14bfe3db59,
+		0x3e928295484734ea,
+		0x3e5a2836aa646b96,
+	][:],
+	.S = [
 		(0x3ff0000000000000, 0x0000000000000000),
 		(0x3ff059b0d3158540, 0x3d0a1d73e2a475b4),
 		(0x3ff0b5586cf98900, 0x3ceec5317256e308),
@@ -120,52 +195,16 @@ const S64 : (uint64, uint64)[32] = [
 		(0x3ffdfc97337b9b40, 0x3cfeb968cac39ed3),
 		(0x3ffea4afa2a490c0, 0x3cf9858f73a18f5e),
 		(0x3fff50765b6e4540, 0x3c99d3e12dd8a18b),
-	]
+	],
+	.exactness_thresh = 53,
+]
 
 const exp32 = {f : flt32
-	const d : fltdesc(flt32, uint32, int32) = [
-		.explode = std.flt32explode,
-		.assem = std.flt32assem,
-		.fma = fma32,
-		.horner = horner_polyu32,
-		.sgnmask = (1 << 31),
-		.tobits = std.flt32bits,
-		.frombits = std.flt32frombits,
-		.inf = 0x7f800000,
-		.thresh_1_min = 0xc2cff1b4, /* ln(2^(-127 - 23)) ~= -103.9720770839917 */
-		.thresh_1_max = 0x42b17218, /* ln([2 - 2^(-24)] * 2^127) ~= 88.72283905206 */
-		.inv_L = 0x4238aa3b, /* L = log(2) / 32, this is 1/L in working precision */
-		.L1 = 0x3cb17200, /* L1 and L2 sum to give L in high precision, and L1 */
-		.L2 = 0x333fbe8e, /* has some trailing zeroes. */
-		.nabs = 9, /* L1 has 9 trailing zeroes in binary */
-		.Ai = Ai32,
-		.S = S32,
-	]
-
-	-> expgen(f, d)
+	-> expgen(f, desc32)
 }
 
 const exp64 = {f : flt64
-	const d : fltdesc(flt64, uint64, int64) = [
-		.explode = std.flt64explode,
-		.assem = std.flt64assem,
-		.fma = fma64,
-		.horner = horner_polyu64,
-		.sgnmask = (1 << 63),
-		.tobits = std.flt64bits,
-		.frombits = std.flt64frombits,
-		.inf = 0x7ff0000000000000,
-		.thresh_1_min = 0xc0874910d52d3052, /* ln(2^(-1023 - 52)) ~= -745.1332191019 */
-		.thresh_1_max = 0x40862e42fefa39ef, /* ln([2 - 2^(-53)] * 2^1023) ~= 709.78271289 */
-		.inv_L = 0x40471547652b82fe, /* as in exp32 */
-		.L1 = 0x3f962e42fef00000,
-		.L2 = 0x3d8473de6af278ed,
-		.nabs = 20,
-		.Ai = Ai64,
-		.S = S64,
-	]
-
-	-> expgen(f, d)
+	-> expgen(f, desc64)
 }
 
 generic expgen = {f : @f, d : fltdesc(@f, @u, @i) :: numeric,floating,std.equatable @f, numeric,integral @u, numeric,integral @i, roundable @f -> @i
@@ -180,7 +219,7 @@ generic expgen = {f : @f, d : fltdesc(@f, @u, @i) :: numeric,floating,std.equata
 	 */
 	if !n && b >= d.thresh_1_max
 		-> d.frombits(d.inf)
-	elif n && b >= d.thresh_1_min
+	elif n && b > d.thresh_1_min
 		-> (0.0 : @f)
 	;;
 
@@ -191,9 +230,8 @@ generic expgen = {f : @f, d : fltdesc(@f, @u, @i) :: numeric,floating,std.equata
 
 	/* Argument reduction to [ -ln(2)/64, ln(2)/64 ] */
 	var inv_L = d.frombits(d.inv_L)
-	var finv_L = f * inv_L
 
-	var N = rn(finv_L)
+	var N = rn(f * inv_L)
 	var N2  = N % (32 : @i)
 	if N2 < 0
 		N2 += (32 : @i)
@@ -220,7 +258,7 @@ generic expgen = {f : @f, d : fltdesc(@f, @u, @i) :: numeric,floating,std.equata
 
 	/* Compute a polynomial approximation of exp1m */
 	var R = R1 + R2
-	var Q = d.horner(R, d.Ai)
+	var Q = R * R * d.horner(R, d.Ai)
 	var P = R1 + (R2 + Q)
 
 	/* Expand out from reduced range */
@@ -234,6 +272,127 @@ generic expgen = {f : @f, d : fltdesc(@f, @u, @i) :: numeric,floating,std.equata
 	var nu, eu, su
 	(nu, eu, su) = d.explode(unscaled)
 	var exp = d.assem(nu, eu + M, su)
+	if (d.tobits(exp) == 0)
+		/* Make sure we don't quite return 0 */
+		-> d.frombits(1)
+	;;
 
 	-> exp
+}
+
+const expm132 = {f : flt32
+	-> expm1gen(f, desc32)
+}
+
+const expm164 = {f : flt64
+	-> expm1gen(f, desc64)
+}
+
+generic expm1gen = {f : @f, d : fltdesc(@f, @u, @i) :: numeric,floating,std.equatable @f, numeric,integral @u, numeric,integral @i, roundable @f -> @i
+	var b = d.tobits(f)
+	var n, e, s
+	(n, e, s) = d.explode(f)
+
+	/* Special cases: +/- 0, inf, NaN, tiny, and huge */
+	if (b & ~d.sgnmask == 0)
+		-> f
+	elif n && (b & ~d.sgnmask == d.inf)
+		-> (-1.0 : @f)
+	elif (b & ~d.sgnmask == d.inf)
+		-> f
+	elif std.isnan(f)
+		-> d.frombits(d.nan)
+	elif (b & ~d.sgnmask) <= d.thresh_tiny
+		var two_to_large = d.assem(false, 100, 0)
+		var two_to_small = d.assem(false, -100, 0)
+		var abs_f = d.assem(false, e, s)
+		-> (two_to_large * f + abs_f) * two_to_small
+	elif !n && b >= d.thresh_1_max /* exp(x) = oo <=> expm1(x) = oo, as it turns out */
+		-> d.frombits(d.inf)
+	elif n && b >= d.thresh_huge_neg
+		-> (-1.0 : @f)
+	;;
+
+	if ((n && b < d.Log3_4) || (!n && b < d.Log5_4))
+		/* Procedure 2 */
+
+		/* compute x^2  / 2 with extra precision */
+		var u = round(f, d)
+		var v = f - u
+		var y = u * u * (0.5 : @f)
+		var z = v * (f + u) * (0.5 : @f)
+		var q = f * f * f * d.horner(f, d.Bi)
+
+		var yn, ye, ys
+		(yn, ye, ys) = d.explode(y)
+		if (ye >= -7)
+			-> (u + y) + (q + (v  + z))
+		else
+			-> f + (y + (q + z))
+		;;
+	;;
+
+	/* Procedure 1 */
+	var inv_L = d.frombits(d.inv_L)
+
+	var N = rn(f * inv_L)
+	var N2 = N % (32 : @i)
+	if N2 < 0
+		N2 += (32 : @i)
+	;;
+	var N1 = N - N2
+
+	var R1 : @f, R2 : @f
+
+	/*
+	   As in the exp case, R1 + R2 very well approximates f
+	   reduced into [ -ln(2)/64, ln(2)/64 ]
+	 */
+	if std.abs(N) >= (1 << d.nabs)
+		R1 = (f - (N1 : @f) * d.frombits(d.L1)) - ((N2 : @f) * d.frombits(d.L1))
+	else
+		R1 = f - (N : @f) * d.frombits(d.L1)
+	;;
+	R2 = -1.0 * (N : @f) * d.frombits(d.L2)
+
+	var M = (N1 : @i) / 32
+	var J = (N2 : std.size)
+
+	/* Compute a polynomial approximation of exp1m */
+	var R = R1 + R2
+	var Q = R * R * d.horner(R, d.Ai)
+	var P = R1 + (R2 + Q)
+
+	/* Expand out */
+	var Su_hi, Su_lo
+	(Su_hi, Su_lo) = d.S[J]
+	var S_hi = d.frombits(Su_hi)
+	var S_lo = d.frombits(Su_lo)
+	var S = S_hi + S_lo
+
+	/*
+	   Note that [Tan92] includes cases to avoid tripping the
+	   underflow flag when not technically required. We currently
+	   do not care about such flags, so that logic is omitted.
+	 */
+	var two_m = d.assem(false, M, 0)
+	var two_neg_m = d.assem(false, -M, 0)
+	if M >= d.exactness_thresh
+		-> two_m * (S_hi  + (S * P + (S_lo - two_neg_m)))
+	elif M <= -8
+		-> two_m * (S_hi  + (S * P + S_lo)) - (1.0 : @f)
+	;;
+
+	-> two_m * ((S_hi - two_neg_m) + (S_hi * P + S_lo * (P + (1.0 : @f))))
+}
+
+generic round = {f : @f, d : fltdesc(@f, @u, @i) :: numeric,floating,std.equatable @f, numeric,integral @u, numeric,integral @i, roundable @f -> @i
+	var b = d.tobits(f)
+	var n, e, s
+	(n, e, s) = d.explode(f)
+	var mask = ~((1 << d.nabs) - 1)
+	if need_round_away(0, ((s & mask) : uint64), (d.nabs : int64) + 1)
+		-> d.assem(n, e, 1 + s & mask)
+	;;
+	-> d.assem(n, e, s & mask)
 }
