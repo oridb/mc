@@ -272,6 +272,7 @@ pkg sys =
 	const Mfixed	: mopt = 0x10
 	const Mfile	: mopt = 0x0
 	const Manon	: mopt = 0x1000
+	const Mstack	: mopt = 0x4000
 	const Mnoreplace	: mopt = 0x0800
 	
 	/* file types */

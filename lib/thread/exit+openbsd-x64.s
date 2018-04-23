@@ -10,6 +10,13 @@ thread$exit:
 	andq	$~0xfff,%rdi	/* align it */
 	addq	$0x1000,%rdi
 
+	/* 
+	  Because OpenBSD wants a valid stack whenever
+	  we enter the kernel, we need to toss a preallocated
+	  stack pointer into %rsp.
+	 */
+	movq	thread$exitstk,%rsp
+
 	/* munmap(base, size) */
 	movq	$73,%rax	/* munmap */
 	movq	-8(%rdi),%rsi	/* size */

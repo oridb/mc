@@ -21,5 +21,6 @@ const main = {
 	;;
 
 	std.assert(capture == 333, "capture wasn't written to correctly\n")
+	std.usleep(100_000)
 }
 

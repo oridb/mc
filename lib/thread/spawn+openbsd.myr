@@ -5,10 +5,16 @@ pkg thread =
 	type tid = uint64
 
 	const spawn : (fn : (-> void) -> std.result(tid, byte[:]))
+	pkglocal var exitstk : byte#
 ;;
 
 const Stacksz = 8*std.MiB
 extern const exit : (-> void)
+
+var exitstk
+const __init__ = {
+	exitstk = getstk(16)
+}
 
 const spawn = {fn;
 	-> spawnstk(fn, Stacksz)
