@@ -287,7 +287,7 @@ Insn(Ixorp,
 
 /* branch instructions */
 Insn(Icall,
-    "\tcall %v@PLT\n",
+    "\tcall %v\n",
     "\tCALL %V\n",
     Use(.l={1}, .r={
             Rrdi, Rrsi, Rrdx, Rrcx, Rr8, Rr9,
