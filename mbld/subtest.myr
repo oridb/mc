@@ -191,7 +191,7 @@ const failtest = {b, cmd, curtest, failed, nresults, msg
 
 	p = std.pathcat(cmd, curtest#)
 	donetest(b, curtest, nresults)
-	mbldput("FAIL {}\n", msg)
+	mbldput("FAIL {e}\n", msg)
 	std.slpush(failed, p)
 }
 

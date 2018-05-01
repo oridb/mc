@@ -59,14 +59,24 @@ const check = {ctx, cond, msg, args
 }
 
 generic eq = {ctx, a, b
+	var b0 : byte[128]
+	var b1 : byte[128]
+
 	if !std.eq(a, b)
-		fail(ctx, "{} != {}\n", a, b)
+		fail(ctx, "{e} != {e}\n",
+		     std.bfmt(b0[:], "{}", a),
+		     std.bfmt(b1[:], "{}", b))
 	;;
 }
 
 generic neq = {ctx, a, b
+	var b0 : byte[128]
+	var b1 : byte[128]
+
 	if std.eq(a, b)
-		fail(ctx, "{} != {}\n", a, b)
+		fail(ctx, "{e} != {e}\n",
+		     std.bfmt(b0[:], "{}", a),
+		     std.bfmt(b1[:], "{}", b))
 	;;
 }
 
