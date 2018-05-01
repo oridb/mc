@@ -205,7 +205,7 @@ blobslice(Blob *seq,  Htab *globls, Htab *strtab, Node *n)
 		sz = tysize(tybase(exprtype(base))->sub[0]);
 		lbl = htget(globls, base);
 		slbase = mkblobref(lbl, loval*sz, 1);
-	} else if (exprop(base) == Olit) {
+	} else if (exprop(base) == Olit || exprop(base) == Oarr) {
 		slbase = mkblobi(Bti64, getintlit(base, "invalid base expr"));
 	} else {
 		fatal(base, "slice base is not a constant value");

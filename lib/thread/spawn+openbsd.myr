@@ -5,10 +5,20 @@ pkg thread =
 	type tid = uint64
 
 	const spawn : (fn : (-> void) -> std.result(tid, byte[:]))
+	pkglocal var exitstk : byte#
 ;;
 
 const Stacksz = 8*std.MiB
 extern const exit : (-> void)
+
+var exitstk
+const __init__ = {
+	/* 
+	  We need a valid stack at all times, so we allocate one ahead of
+	  time to swap to before we invalidate a stack.
+	 */
+	exitstk = getstk(16)
+}
 
 const spawn = {fn;
 	-> spawnstk(fn, Stacksz)

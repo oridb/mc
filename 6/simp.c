@@ -1479,6 +1479,7 @@ extractsub(Simp *s, Node *e)
 	switch (exprop(e)) {
 	case Oslice:
 		sub = e->expr.args[0];
+		extractsub(s, sub);
 		if (exprop(sub) == Oarr) {
 			if (sub->expr.nargs > 0) {
 				e->expr.args[0] = simpblob(s, e->expr.args[0]);
