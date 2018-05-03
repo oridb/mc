@@ -1,0 +1,95 @@
+use std
+use math
+use testr
+
+const main = {
+	testr.run([
+		[.name = "scale2-01",    .fn = scale201],
+		[.name = "scale2-02",    .fn = scale202],
+		[.name = "scale2-03",    .fn = scale203],
+		[.name = "scale2-04",    .fn = scale204],
+	][:])
+}
+
+const scale201 = {c
+	var inputsf : (flt32, int32, flt32)[:] = [
+		(0.0, 1, 0.0),
+		(-0.0, 2, -0.0),
+		(1.0, 3, 8.0),
+		(1.0, -3, 0.125),
+		(23.0, 2, 92.0),
+		(184.2, 10, 188620.8),
+		(0.00000234, 15, 0.07667712),
+		(1834.2, -31, 0.0000008541159331798554),
+		(4321.22341, 0, 4321.22341),
+	][:]
+
+	for (f, m, g) : inputsf
+		testr.eq(c, math.scale2(f, m), g)
+	;;
+}
+
+const scale202 = {c
+	var inputsf : (flt64, int64, flt64)[:] = [
+		(0.0, 1, 0.0),
+		(-0.0, 2, -0.0),
+		(1.0, 3, 8.0),
+		(1.0, -3, 0.125),
+		(23.0, 2, 92.0),
+		(184.2, 10, 188620.8),
+		(0.00000234, 15, 0.07667712),
+		(1834.2, -31, 0.0000008541159331798554),
+		(4321.22341, 0, 4321.22341),
+	][:]
+
+	for (f, m, g) : inputsf
+		testr.eq(c, math.scale2(f, m), g)
+	;;
+}
+
+const scale203 = {c
+	var inputsb : (uint32, int32, uint32)[:] = [
+		(0x00000000,   1, 0x00000000),
+		(0x7f38aa32,   0, 0x7f38aa32),
+		(0xaaaaaaaa,   0, 0xaaaaaaaa),
+		(0x43000000,  -3, 0x41800000),
+		(0x000030a0,  -8, 0x00000031),
+		(0x002f3030,  -8, 0x00002f30),
+		(0x032f3030, -20, 0x0000015e),
+		(0x032aafff,  -8, 0x00155600),
+		(0x002aafff,   8, 0x03aabffc),
+		(0x0000af31,   2, 0x0002bcc4),
+		(0x0000af31, 260, 0x7eaf3100),
+		(0x0000af31, 266, 0x7f800000),
+	][:]
+
+	for (u, m, v) : inputsb
+		var f = std.flt32frombits(u)
+		var g = math.scale2(f, m)
+		var w = std.flt32bits(g)
+		testr.check(c, v == w, "scale2(0x{w=8,b=16,p=0}, {}) should be 0x{w=8,b=16,p=0}, was 0x{w=8,b=16,p=0}", u, m, v, w)
+	;;
+}
+
+const scale204 = {c
+	var inputsb : (uint64, int64, uint64)[:] = [
+		(0x0000000000000000,     1, 0x0000000000000000),
+		(0x7f83785551aa873c,     0, 0x7f83785551aa873c),
+		(0xc2b00000aabbccdd, -1080, 0x800000400002aaef),
+		(0xc644fa802f33cfbd,    -1, 0xc634fa802f33cfbd),
+		(0x8004fa802f33cfbd,    -1, 0x80027d401799e7de),
+		(0x8004fa8fffffffff,    -1, 0x80027d4800000000),
+		(0x0082aaffffffffff,     8, 0x0102aaffffffffff), 
+		(0x000000ffffffffff,     1, 0x000001fffffffffe),
+		(0x000000ffffffffff,  1000, 0x3dcfffffffffe000),
+		(0x000000ffffffffff,  2000, 0x7c4fffffffffe000),
+		(0x000000ffffffffff,  2400, 0x7ff0000000000000),
+	][:]
+
+	for (u, m, v) : inputsb
+		var f = std.flt64frombits(u)
+		var g = math.scale2(f, m)
+		var w = std.flt64bits(g)
+		testr.check(c, v == w, "scale2(0x{w=16,b=16,p=0}, {}) should be 0x{w=16,b=16,p=0}, was 0x{w=16,b=16,p=0}", u, m, v, w)
+	;;
+}

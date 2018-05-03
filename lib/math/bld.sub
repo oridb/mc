@@ -15,6 +15,9 @@ lib math =
 	# polynomial evaluation methods
 	poly-impl.myr
 
+	# scalb (multiply x by 2^m)
+	scale2-impl.myr
+
 	# sqrt
 	sqrt-impl+posixy-x64-sse2.s
 	sqrt-impl.myr
