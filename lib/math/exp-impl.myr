@@ -45,7 +45,7 @@ type fltdesc(@f, @u, @i) = struct
 	Log3_4 : @u
 	Log5_4 : @u
 	Bi : @u[:]
-	exactness_thresh : @u
+	precision : @u
 
 	/* For both */
 	nabs : @u
@@ -65,7 +65,7 @@ const desc32 : fltdesc(flt32, uint32, int32) = [
 	.tobits = std.flt32bits,
 	.frombits = std.flt32frombits,
 	.inf = 0x7f800000,
-	.nan = 0x7fc0000,
+	.nan = 0x7fc00000,
 	.thresh_1_min = 0xc2cff1b4, /* ln(2^(-127 - 23)) ~= -103.9720770839917 */
 	.thresh_1_max = 0x42b17218, /* ln([2 - 2^(-24)] * 2^127) ~= 88.72283905206 */
 	.inv_L = 0x4238aa3b, /* L = log(2) / 32, this is 1/L in working precision */
@@ -121,7 +121,7 @@ const desc32 : fltdesc(flt32, uint32, int32) = [
 		(0x3ff52540, 0x36f45492),
 		(0x3ffa8380, 0x36cb6dc9),
 	],
-	.exactness_thresh = 24, /* threshold to prevent underflow in a S[high] + 2^-m */
+	.precision = 24, /* threshold to prevent underflow in a S[high] + 2^-m */
 ]
 
 const desc64 : fltdesc(flt64, uint64, int64) = [
@@ -196,7 +196,7 @@ const desc64 : fltdesc(flt64, uint64, int64) = [
 		(0x3ffea4afa2a490c0, 0x3cf9858f73a18f5e),
 		(0x3fff50765b6e4540, 0x3c99d3e12dd8a18b),
 	],
-	.exactness_thresh = 53,
+	.precision = 53,
 ]
 
 const exp32 = {f : flt32
@@ -375,15 +375,13 @@ generic expm1gen = {f : @f, d : fltdesc(@f, @u, @i) :: numeric,floating,std.equa
 	   underflow flag when not technically required. We currently
 	   do not care about such flags, so that logic is omitted.
 	 */
-	var two_m = d.assem(false, M, 0)
-	var two_neg_m = d.assem(false, -M, 0)
-	if M >= d.exactness_thresh
-		-> two_m * (S_hi  + (S * P + (S_lo - two_neg_m)))
+	if M >= d.precision
+		-> scale2(S_hi + (S * P + (S_lo - scale2(1.0, -M))), M)
 	elif M <= -8
-		-> two_m * (S_hi  + (S * P + S_lo)) - (1.0 : @f)
+		-> scale2(S_hi + (S * P + S_lo), M) - (1.0 : @f)
 	;;
 
-	-> two_m * ((S_hi - two_neg_m) + (S_hi * P + S_lo * (P + (1.0 : @f))))
+	-> scale2((S_hi - scale2(1.0, -M)) + (S_hi * P + S_lo * (P + (1.0 : @f))), M)
 }
 
 generic round = {f : @f, d : fltdesc(@f, @u, @i) :: numeric,floating,std.equatable @f, numeric,integral @u, numeric,integral @i, roundable @f -> @i

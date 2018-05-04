@@ -61,6 +61,7 @@ const scale203 = {c
 		(0x0000af31,   2, 0x0002bcc4),
 		(0x0000af31, 260, 0x7eaf3100),
 		(0x0000af31, 266, 0x7f800000),
+		(0x3f7ff404, 128, 0x7f7ff404),
 	][:]
 
 	for (u, m, v) : inputsb

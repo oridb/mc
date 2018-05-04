@@ -2,6 +2,10 @@ use std
 use math
 use testr
 
+/*
+   Note: a major part of the algorithms are the S constants. They
+   are tested extensively in expm101 and expm102.
+ */
 const main = {
 	testr.run([
 		[.name="exp-01", .fn = exp01],
@@ -9,6 +13,9 @@ const main = {
 		[.name="exp-03", .fn = exp03],
 		[.name="exp-04", .fn = exp04],
 		[.name="expm1-01", .fn = expm101],
+		[.name="expm1-02", .fn = expm102],
+		[.name="expm1-03", .fn = expm103],
+		[.name="expm1-04", .fn = expm104],
 	][:])
 }
 
@@ -113,15 +120,60 @@ const exp04 = {c
 const expm101 = {c
 	var inputs : (uint32, uint32)[:] = [
 		(0x00000000, 0x00000000),
+		(0x80000000, 0x80000000),
 		(0x3f000000, 0x3f261299),
-		(0x34000000, 0x34000000),
 		(0x3c000000, 0x3c008056),
 		(0x42000000, 0x568fa1fe),
 		(0xc2b00000, 0xbf800000),
 		(0xc2b20000, 0xbf800000),
 		(0x01000000, 0x01000000),
 		(0x40000000, 0x40cc7326),
-		(0x42b17200, 0x7f7d7740),
+		(0x42b17200, 0x7f7ff404),
+		(0x415a3cf2, 0x494cd0e3),
+		(0x7f800000, 0x7f800000),
+		(0xff800000, 0xbf800000),
+		(0x7a2028b1, 0x7f800000),
+		(0xa201a23a, 0xa201a23a),
+		(0xc0000000, 0xbf5d5aab),
+		(0xbe934b10, 0xbe7fffff),
+		(0xbe934b11, 0xbe800000),
+		(0xbe934b12, 0xbe800001),
+		(0x3e647fbe, 0x3e800000),
+		(0x3e647fbf, 0x3e800000),
+		(0x3e647fc0, 0x3e800001),
+		(0xc0f744f5, 0xbf7fe31e),
+		(0x4210297a, 0x597f31f5), /* J = 0 */
+		(0x3f34c3cd, 0x3f83573d), /* J = 1 */
+		(0x3f3a52b6, 0x3f89087b), /* J = 2 */
+		(0xbf20e72b, 0xbeeee940), /*  ...  */
+		(0x41f4bd2a, 0x558c999f),
+		(0xc02a0418, 0xbf6e07cd),
+		(0xc0293a2a, 0xbf6dcec1),
+		(0x40b62779, 0x4393ca4b),
+		(0x3fc680ac, 0x406dc6a4),
+		(0x3fc9d2c6, 0x4075b516),
+		(0xbfedd645, 0xbf581273),
+		(0x3e70e5d1, 0x3e87cbdb),
+		(0xbeddcacc, 0xbeb3ffd9),
+		(0x3e8beb21, 0x3ea0e776),
+		(0x3e9ded31, 0x3eb8fe1f),
+		(0x40e8503c, 0x44b19ed8),
+		(0x40d265cb, 0x4432f91f),
+		(0xbea0f9bc, 0xbe8a2036),
+		(0x3ec42672, 0x3eef04c4),
+		(0xc140e8cc, 0xbf7fff9f),
+		(0x4117320e, 0x46467e73),
+		(0x3ee8b75d, 0x3f134ef0),
+		(0xc03f51f1, 0xbf731e4e),
+		(0x42733615, 0x6b52d3d4),
+		(0x3f02f2b5, 0x3f2af617),
+		(0xbf5ac925, 0xbf131660),
+		(0x40813277, 0x425eb7ac),
+		(0x41842e94, 0x4b64b1dd),
+		(0x41b0ba81, 0x4f6a0cc1),
+		(0xc061d7c2, 0xbf787d28),
+		(0xc0611682, 0xbf786657),
+		(0x40dcd7e9, 0x447827c5), /* J = 31 */
 	][:]
 
 	for (x, y) : inputs
@@ -134,3 +186,100 @@ const expm101 = {c
 	;;
 }
 
+const expm102 = {c
+	var inputs : (uint64, uint64)[:] = [
+		(0x0000000000000000, 0x0000000000000000),
+		(0x404ef04831cb65ed, 0x45834ac37c44b3d3),
+		(0x7ff0000000000000, 0x7ff0000000000000),
+		(0xfff0000000000000, 0xbff0000000000000),
+		(0x80318a89f290021a, 0x80318a89f290021a),
+		(0xc0180881a9e73af6, 0xbfefebdcaf24d5fe),
+		(0xc020cedaedb028c9, 0xbfeffe2a4ee5ba79),
+		(0xbfe62812ff80cb9e, 0xbfdff9cf6758cc6a), /* J = 0 */
+		(0xbfe526dab7e5054c, 0xbfdef44fe4876d02), /* J = 1 */
+		(0x3ff6ea5c51cbf0f2, 0x400980f836e2c055), /* J = 2 */
+		(0x403f4315360b2cdc, 0x42c12ad5f692ffff), /*  ...  */
+		(0x3fe93f778a9dc013, 0x3ff3381168aca01e),
+		(0x405023f373e01862, 0x45c1aa771de3ba9c),
+		(0xbfff56366f3b92de, 0xbfeb7c693f8bdbb8),
+		(0xc0159bcd07244a34, 0xbfefdb1461286124),
+		(0x40079bbc23a67f90, 0x40322039bbbb5e2e),
+		(0xbffe1933d2c0ed70, 0xbfeb1f6c166582bb),
+		(0xc009ea7d09d84479, 0xbfeebf01fa92741c),
+		(0x405d84f7563a2612, 0x4a946476fb27817e),
+		(0x4045f770a45f8e7f, 0x43e4da111dae0dfb),
+		(0x4070e9a83b352180, 0x585516d4e37bd9f6),
+		(0x3fefcdb2a528c6e8, 0x3ffb39ec926d8a50),
+		(0x3fd52b5e7995f00c, 0x3fd91739183464e0),
+		(0xbfd625845bbaf98f, 0xbfd2b893d222b8f2),
+		(0xbfd43c0407d114d5, 0xbfd15909a4bea38e),
+		(0x3fd93f8288681821, 0x3fdef406a9f7c4b1),
+		(0x3fdaad696fbfea76, 0x3fe08c8035acbd0b),
+		(0x405e9b6f4b4bc7f3, 0x4af8b6ad079946a7),
+		(0x3fdc85cf6b85bfaf, 0x3fe1f811193e5cf5),
+		(0xbfed55f9b317d7eb, 0xbfe334b0378703a0),
+		(0x406ee7f396a46c9b, 0x563a11333c75a10f),
+		(0x4031266dc880810e, 0x417ac458c1525e64),
+		(0xc019905c018b6d96, 0xbfeff243dffe774d),
+		(0x404dc17e83d7ee6b, 0x454cfbf6572d627f),
+		(0xc013dcd6fae06405, 0xbfefc6dfe34e5408),
+		(0x402762d99fa5cfda, 0x40fd3b9a2004f68b),
+		(0xbfe89074f132e353, 0xbfe12602fb3c9806),
+		(0x4077c7ea24627ae7, 0x623ea61f88281bd5),
+		(0xbff6a873237d8072, 0xbfe83c311800b6ee), /* J = 31 */
+	][:]
+
+	for (x, y) : inputs
+		var xf : flt64 = std.flt64frombits(x)
+		var yf : flt64 = std.flt64frombits(y)
+		var rf = math.expm1(xf)
+		testr.check(c, rf == yf,
+			"expm1(0x{b=16,w=16,p=0}) should be 0x{b=16,w=16,p=0}, was 0x{b=16,w=16,p=0}",
+			x, y, std.flt64bits(rf))
+	;;
+}
+
+const expm103 = {c
+	/*
+	   As with exp, there is some accepted error in expm1.
+	 */
+
+	var inputs : (uint32, uint32, uint32)[:] = [
+		(0x34000000, 0x34000001, 0x34000000),
+		(0xbe651dea, 0xbe4d4b4d, 0xbe4d4b4c),
+	][:]
+
+	for (x, y_perfect, y_acceptable) : inputs
+		var xf : flt32 = std.flt32frombits(x)
+		var ypf : flt32 = std.flt32frombits(y_perfect)
+		var yaf : flt32 = std.flt32frombits(y_acceptable)
+		var rf = math.expm1(xf)
+		if rf != ypf && rf != yaf
+		testr.fail(c, "expm1(0x{b=16,w=8,p=0}) was 0x{b=16,w=8,p=0}. It should have been 0x{b=16,w=8,p=0}, although we will also accept 0x{b=16,w=8,p=0}",
+			x, std.flt32bits(rf), y_perfect, y_acceptable)
+		;;
+	;;
+}
+
+const expm104 = {c
+	/*
+	   As with exp, there is some accepted error in expm1.
+	 */
+
+	var inputs : (uint64, uint64, uint64)[:] = [
+		(0xbf9d0b5aadc4d0ac, 0xbf9ca2e5b7bfa859, 0xbf9ca2e5b7bfa85a),
+		(0x3fc2dbb101fe0392, 0x3fc451731cc0e358, 0x3fc451731cc0e359),
+		(0x3fc8a39bc9c32fec, 0x3fcb2b988c3e0b2f, 0x3fcb2b988c3e0b30),
+	][:]
+
+	for (x, y_perfect, y_acceptable) : inputs
+		var xf : flt64 = std.flt64frombits(x)
+		var ypf : flt64 = std.flt64frombits(y_perfect)
+		var yaf : flt64 = std.flt64frombits(y_acceptable)
+		var rf = math.expm1(xf)
+		if rf != ypf && rf != yaf
+		testr.fail(c, "expm1(0x{b=16,w=16,p=0}) was 0x{b=16,w=16,p=0}. It should have been 0x{b=16,w=16,p=0}, although we will also accept 0x{b=16,w=16,p=0}",
+			x, std.flt64bits(rf), y_perfect, y_acceptable)
+		;;
+	;;
+}
