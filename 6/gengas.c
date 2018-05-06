@@ -247,7 +247,7 @@ writeasm(FILE *fd, Isel *s, Func *fn)
 
 	switch (asmsyntax) {
 	case Gnugaself:
-		fprintf(fd, ".section .text.%s,\"ax\",@progbits\n", fn->name);
+		//fprintf(fd, ".section .text.%s,\"ax\",@progbits\n", fn->name);
 		fprintf(fd, ".type %s, @function\n", fn->name);
 		break;
 	case Gnugasmacho:

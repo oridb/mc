@@ -15,6 +15,7 @@ lib crypto =
 	# symmetric ciphers
 	chacha20.myr
 	aes.myr
+	aesgcm.myr
 
 	# public key ciphers
 	rsa.myr

@@ -14,8 +14,9 @@ const writeall = {fd, src
 	sz = src.len
 	while src.len != 0
 		match std.write(fd, src)
-		| `Ok n:	src = src[n:]
 		| `Err e:	-> `std.Err (sz, e)
+		| `Ok 0:	-> `std.Err (sz, 0)
+		| `Ok n:	src = src[n:]
 		;;
 	;;
 	-> `std.Ok sz
