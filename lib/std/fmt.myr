@@ -111,16 +111,17 @@ const fput = {fd, fmt, args
 }
 
 const fputv = {fd, fmt, ap
-	var sb, s
+	var sb, s, nw
 
 	sb = mksb()
 	sbfmtv(sb, fmt, ap)
 	s = sbfin(sb)
 	match writeall(fd, s)
-	| (n, _):
-		slfree(s)
-		-> n
+	| `std.Ok n:		nw += n
+	| `std.Err (n, _):	nw += n
 	;;
+	slfree(s)
+	-> nw
 }
 
 const fmt = {fmt, args
