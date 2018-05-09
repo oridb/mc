@@ -428,7 +428,7 @@ genblob(FILE *fd, Node *blob, Htab *globls, Htab *strtab)
 		writeblob(fd, b);
 		blobfree(b);
 	} else {
-		fprintf(fd, ".comm %s,%zd,5\n", lbl, size(blob));
+		fprintf(fd, ".comm %s,%zd\n", lbl, size(blob));
 	}
 }
 
