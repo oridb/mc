@@ -162,13 +162,13 @@ const addsysattrs = {b, tags
 		match opt_arch
 		| "x64":	
 			tag(b, "x64")
-			if opt_cpufeatures & CpuidSSE2 == CpuidSSE2
+			if supports(CpuidSSE2)
 				tag(b, "sse2")
 			;;
-			if opt_cpufeatures & CpuidSSE4 == CpuidSSE4
+			if supports(CpuidSSE4)
 				tag(b, "sse4")
 			;;
-			if opt_cpufeatures & CpuidFMA == CpuidFMA
+			if supports(CpuidFMA)
 				tag(b, "fma")
 			;;
 		| unknown:
@@ -179,6 +179,15 @@ const addsysattrs = {b, tags
 			tag(b, t)
 		;;
 		loadtagfile(b, "bld.tag")
+	;;
+}
+
+const supports = {feat
+	match (opt_sys, opt_cpufeatures & feat)
+	/* The version of gas that's shipped with openbsd is too old. */
+	| ("openbsd", CpuidSSE4):	-> false
+	| ("openbsd", CpuidFMA):	-> false
+	| (_, f):			-> f == feat
 	;;
 }
 
