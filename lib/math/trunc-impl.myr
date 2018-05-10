@@ -1,12 +1,12 @@
 use std
 
 pkg math =
-	pkglocal const trunc32 : (f : flt32 -> flt32)
-	pkglocal const floor32 : (f : flt32 -> flt32)
-	pkglocal const ceil32  : (f : flt32 -> flt32)
-	pkglocal const trunc64 : (f : flt64 -> flt64)
-	pkglocal const floor64 : (f : flt64 -> flt64)
-	pkglocal const ceil64  : (f : flt64 -> flt64)
+	pkglocal const trunc32 : (x : flt32 -> flt32)
+	pkglocal const floor32 : (x : flt32 -> flt32)
+	pkglocal const ceil32  : (x : flt32 -> flt32)
+	pkglocal const trunc64 : (x : flt64 -> flt64)
+	pkglocal const floor64 : (x : flt64 -> flt64)
+	pkglocal const ceil64  : (x : flt64 -> flt64)
 ;;
 
 const Flt32NegMask : uint32 = (1 << 31)
@@ -15,13 +15,13 @@ const Flt32SigMask : uint32 = (1 << 23) - 1
 const Flt64NegMask : uint64 = (1 << 63)
 const Flt64SigMask : uint64 = (1 << 52) - 1
 
-pkglocal const floor32 = {f : flt32
+pkglocal const floor32 = {x : flt32
 	var n, e, s
-	(n, e, s) = std.flt32explode(f)
+	(n, e, s) = std.flt32explode(x)
 
 	/* Many special cases */
-	if e >= 23 || f == -0.0
-		-> f
+	if e >= 23 || x == -0.0
+		-> x
 	elif e < 0
 		if n
 			-> -1.0
@@ -46,25 +46,25 @@ pkglocal const floor32 = {f : flt32
 	-> std.flt32assem(n, e, s & ~m)
 }
 
-pkglocal const trunc32 = {f : flt32
-	if std.flt32bits(f) & Flt32NegMask != 0
-		-> -floor32(-f)
+pkglocal const trunc32 = {x : flt32
+	if std.flt32bits(x) & Flt32NegMask != 0
+		-> -floor32(-x)
 	else
-		-> floor32(f)
+		-> floor32(x)
 	;;
 }
 
-pkglocal const ceil32 = {f : flt32
-	-> -floor32(-f)
+pkglocal const ceil32 = {x : flt32
+	-> -floor32(-x)
 }
 
-pkglocal const floor64 = {f : flt64
+pkglocal const floor64 = {x : flt64
 	var n, e, s
-	(n, e, s) = std.flt64explode(f)
+	(n, e, s) = std.flt64explode(x)
 
 	/* Many special cases */
-	if e >= 52 || f == -0.0
-		-> f
+	if e >= 52 || x == -0.0
+		-> x
 	elif e < 0
 		if n
 			-> -1.0
@@ -76,10 +76,10 @@ pkglocal const floor64 = {f : flt64
 	if n
 		var fractional_mask = Flt64SigMask >> (e : uint64)
 		if s & fractional_mask == 0
-			-> f
+			-> x
 		else
 			/* Turns out the packing of exp and sig is useful */
-			var u : uint64 = std.flt64bits(f) & ~fractional_mask
+			var u : uint64 = std.flt64bits(x) & ~fractional_mask
 			u += ((1 << 52) >> (e : uint64))
 			-> std.flt64frombits(u)
 		;;
@@ -89,15 +89,15 @@ pkglocal const floor64 = {f : flt64
 	-> std.flt64assem(n, e, s & ~m)
 }
 
-pkglocal const trunc64 = {f : flt64
-	if std.flt64bits(f) & Flt64NegMask != 0
-		-> -floor64(-f)
+pkglocal const trunc64 = {x : flt64
+	if std.flt64bits(x) & Flt64NegMask != 0
+		-> -floor64(-x)
 	else
-		-> floor64(f)
+		-> floor64(x)
 	;;
 }
 
-pkglocal const ceil64 = {f : flt64
-	-> -floor64(-f)
+pkglocal const ceil64 = {x : flt64
+	-> -floor64(-x)
 }
 

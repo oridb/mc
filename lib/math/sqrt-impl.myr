@@ -4,8 +4,8 @@ use "fpmath"
 
 /* See [Mul+10], sections 5.4 and 8.7 */
 pkg math =
-	pkglocal const sqrt32 : (f : flt32 -> flt32)
-	pkglocal const sqrt64 : (f : flt64 -> flt64)
+	pkglocal const sqrt32 : (x : flt32 -> flt32)
+	pkglocal const sqrt64 : (x : flt64 -> flt64)
 ;;
 
 extern const fma32 : (x : flt32, y : flt32, z : flt32 -> flt32)
@@ -59,54 +59,56 @@ const ab64 : (uint64, uint64)[:] = [
 	(0x4010000000000000, 0x3fe0a5989f2dc59a), /* [3.4,  4.0)  -> 0.520214377304159869552790951275 */
 ][:]
 
-const sqrt32 = {f : flt32
-	const d : fltdesc(flt32, uint32, int32) =  [
-		.explode = std.flt32explode,
-		.assem = std.flt32assem,
-		.fma = fma32,
-		.tobits = std.flt32bits,
-		.frombits = std.flt32frombits,
-		.nan = 0x7fc00000,
-		.emin = -127,
-		.emax = 128,
-		.normmask = 1 << 23,
-		.sgnmask = 1 << 31,
-		.ab = ab32,
-		.iterlim = 3,
-	]
-	-> sqrtgen(f, d)
+const desc32 : fltdesc(flt32, uint32, int32) =  [
+	.explode = std.flt32explode,
+	.assem = std.flt32assem,
+	.fma = fma32,
+	.tobits = std.flt32bits,
+	.frombits = std.flt32frombits,
+	.nan = 0x7fc00000,
+	.emin = -127,
+	.emax = 128,
+	.normmask = 1 << 23,
+	.sgnmask = 1 << 31,
+	.ab = ab32,
+	.iterlim = 3,
+]
+
+const desc64 : fltdesc(flt64, uint64, int64) =  [
+	.explode = std.flt64explode,
+	.assem = std.flt64assem,
+	.fma = fma64,
+	.tobits = std.flt64bits,
+	.frombits = std.flt64frombits,
+	.nan = 0x7ff8000000000000,
+	.emin = -1023,
+	.emax = 1024,
+	.normmask = 1 << 52,
+	.sgnmask = 1 << 63,
+	.ab = ab64,
+	.iterlim = 4,
+]
+
+const sqrt32 = {x : flt32
+	-> sqrtgen(x, desc32)
 }
 
-const sqrt64 = {f : flt64
-	const d : fltdesc(flt64, uint64, int64) =  [
-		.explode = std.flt64explode,
-		.assem = std.flt64assem,
-		.fma = fma64,
-		.tobits = std.flt64bits,
-		.frombits = std.flt64frombits,
-		.nan = 0x7ff8000000000000,
-		.emin = -1023,
-		.emax = 1024,
-		.normmask = 1 << 52,
-		.sgnmask = 1 << 63,
-		.ab = ab64,
-		.iterlim = 4,
-	]
-	-> sqrtgen(f, d)
+const sqrt64 = {x : flt64
+	-> sqrtgen(x, desc64)
 }
 
-generic sqrtgen = {f : @f, d : fltdesc(@f, @u, @i) :: numeric,floating,std.equatable @f, numeric,integral @u, numeric,integral @i
+generic sqrtgen = {x : @f, d : fltdesc(@f, @u, @i) :: numeric,floating,std.equatable @f, numeric,integral @u, numeric,integral @i
 	var n : bool, e : @i, s : @u, e2 : @i
-	(n, e, s) = d.explode(f)
+	(n, e, s) = d.explode(x)
 
 	/* Special cases: +/- 0.0, negative, NaN, and +inf */
 	if e == d.emin && s == 0
-		-> f
-	elif n || std.isnan(f)
+		-> x
+	elif n || std.isnan(x)
 		/* Make sure to return a quiet NaN */
 		-> d.frombits(d.nan)
 	elif e == d.emax
-		-> f
+		-> x
 	;;
 
 	/*

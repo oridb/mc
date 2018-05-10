@@ -9,20 +9,20 @@ use "util"
    approach works quite well.
  */
 pkg math =
-	const scale232 : (f : flt32, m : int32 -> flt32)
-	const scale264 : (f : flt64, m : int64 -> flt64)
+	const scale232 : (x : flt32, m : int32 -> flt32)
+	const scale264 : (x : flt64, m : int64 -> flt64)
 ;;
 
-const scale232 = {f : flt32, m : int32
+const scale232 = {x : flt32, m : int32
 	var n, e, s
-	(n, e, s) = std.flt32explode(f)
+	(n, e, s) = std.flt32explode(x)
 	(n, e, s) = scale2gen(n, e, s, -126, 127, 24, m)
 	-> std.flt32assem(n, e, s)
 }
 
-const scale264 = {f : flt64, m : int64
+const scale264 = {x : flt64, m : int64
 	var n, e, s
-	(n, e, s) = std.flt64explode(f)
+	(n, e, s) = std.flt64explode(x)
 	(n, e, s) = scale2gen(n, e, s, -1022, 1023, 53, m)
 	-> std.flt64assem(n, e, s)
 }

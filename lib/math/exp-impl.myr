@@ -10,15 +10,15 @@ use "util"
     enough to be in the same function.
  */
 pkg math =
-	pkglocal const exp32 : (f : flt32 -> flt32)
-	pkglocal const exp64 : (f : flt64 -> flt64)
+	pkglocal const exp32 : (x : flt32 -> flt32)
+	pkglocal const exp64 : (x : flt64 -> flt64)
 
-	pkglocal const expm132 : (f : flt32 -> flt32)
-	pkglocal const expm164 : (f : flt64 -> flt64)
+	pkglocal const expm132 : (x : flt32 -> flt32)
+	pkglocal const expm164 : (x : flt64 -> flt64)
 ;;
 
-extern const horner_polyu32 : (f : flt32, a : uint32[:] -> flt32)
-extern const horner_polyu64 : (f : flt64, a : uint64[:] -> flt64)
+extern const horner_polyu32 : (x : flt32, a : uint32[:] -> flt32)
+extern const horner_polyu64 : (x : flt64, a : uint64[:] -> flt64)
 
 type fltdesc(@f, @u, @i) = struct
 	explode : (f : @f -> (bool, @i, @u))
@@ -50,7 +50,6 @@ type fltdesc(@f, @u, @i) = struct
 	L1 : @u
 	L2 : @u
 	S : (@u, @u)[32]
-
 ;;
 
 const desc32 : fltdesc(flt32, uint32, int32) = [
@@ -194,18 +193,18 @@ const desc64 : fltdesc(flt64, uint64, int64) = [
 	.precision = 53,
 ]
 
-const exp32 = {f : flt32
-	-> expgen(f, desc32)
+const exp32 = {x : flt32
+	-> expgen(x, desc32)
 }
 
-const exp64 = {f : flt64
-	-> expgen(f, desc64)
+const exp64 = {x : flt64
+	-> expgen(x, desc64)
 }
 
-generic expgen = {f : @f, d : fltdesc(@f, @u, @i) :: numeric,floating,std.equatable @f, numeric,integral @u, numeric,integral @i, roundable @f -> @i
-	var b = d.tobits(f)
+generic expgen = {x : @f, d : fltdesc(@f, @u, @i) :: numeric,floating,std.equatable @f, numeric,integral @u, numeric,integral @i, roundable @f -> @i
+	var b = d.tobits(x)
 	var n, e, s
-	(n, e, s) = d.explode(f)
+	(n, e, s) = d.explode(x)
 
 	/*
 	   Detect if exp(f) would round to outside representability.
@@ -226,7 +225,7 @@ generic expgen = {f : @f, d : fltdesc(@f, @u, @i) :: numeric,floating,std.equata
 	/* Argument reduction to [ -ln(2)/64, ln(2)/64 ] */
 	var inv_L = d.frombits(d.inv_L)
 
-	var N = rn(f * inv_L)
+	var N = rn(x * inv_L)
 	var N2  = N % (32 : @i)
 	if N2 < 0
 		N2 += (32 : @i)
@@ -242,9 +241,9 @@ generic expgen = {f : @f, d : fltdesc(@f, @u, @i) :: numeric,floating,std.equata
 	   (very well) f reduced into [ -ln(2)/64, ln(2)/64 ]
 	 */
 	if std.abs(N) >= (1 << d.nabs)
-		R1 = (f - (N1 : @f) * d.frombits(d.L1)) - ((N2 : @f) * d.frombits(d.L1))
+		R1 = (x - (N1 : @f) * d.frombits(d.L1)) - ((N2 : @f) * d.frombits(d.L1))
 	else
-		R1 = f - (N : @f) * d.frombits(d.L1)
+		R1 = x - (N : @f) * d.frombits(d.L1)
 	;;
 	R2 = -1.0 * (N : @f) * d.frombits(d.L2)
 
@@ -275,33 +274,33 @@ generic expgen = {f : @f, d : fltdesc(@f, @u, @i) :: numeric,floating,std.equata
 	-> exp
 }
 
-const expm132 = {f : flt32
-	-> expm1gen(f, desc32)
+const expm132 = {x : flt32
+	-> expm1gen(x, desc32)
 }
 
-const expm164 = {f : flt64
-	-> expm1gen(f, desc64)
+const expm164 = {x : flt64
+	-> expm1gen(x, desc64)
 }
 
-generic expm1gen = {f : @f, d : fltdesc(@f, @u, @i) :: numeric,floating,std.equatable @f, numeric,integral @u, numeric,integral @i, roundable @f -> @i
-	var b = d.tobits(f)
+generic expm1gen = {x : @f, d : fltdesc(@f, @u, @i) :: numeric,floating,std.equatable @f, numeric,integral @u, numeric,integral @i, roundable @f -> @i
+	var b = d.tobits(x)
 	var n, e, s
-	(n, e, s) = d.explode(f)
+	(n, e, s) = d.explode(x)
 
 	/* Special cases: +/- 0, inf, NaN, tiny, and huge */
 	if (b & ~d.sgnmask == 0)
-		-> f
+		-> x
 	elif n && (b & ~d.sgnmask == d.inf)
 		-> (-1.0 : @f)
 	elif (b & ~d.sgnmask == d.inf)
-		-> f
-	elif std.isnan(f)
+		-> x
+	elif std.isnan(x)
 		-> d.frombits(d.nan)
 	elif (b & ~d.sgnmask) <= d.thresh_tiny
 		var two_to_large = d.assem(false, 100, 0)
 		var two_to_small = d.assem(false, -100, 0)
-		var abs_f = d.assem(false, e, s)
-		-> (two_to_large * f + abs_f) * two_to_small
+		var abs_x = d.assem(false, e, s)
+		-> (two_to_large * x + abs_x) * two_to_small
 	elif !n && b >= d.thresh_1_max /* exp(x) = oo <=> expm1(x) = oo, as it turns out */
 		-> d.frombits(d.inf)
 	elif n && b >= d.thresh_huge_neg
@@ -312,25 +311,25 @@ generic expm1gen = {f : @f, d : fltdesc(@f, @u, @i) :: numeric,floating,std.equa
 		/* Procedure 2 */
 
 		/* compute x^2  / 2 with extra precision */
-		var u = round(f, d)
-		var v = f - u
+		var u = round(x, d)
+		var v = x - u
 		var y = u * u * (0.5 : @f)
-		var z = v * (f + u) * (0.5 : @f)
-		var q = f * f * f * d.horner(f, d.Bi)
+		var z = v * (x + u) * (0.5 : @f)
+		var q = x * x * x * d.horner(x, d.Bi)
 
 		var yn, ye, ys
 		(yn, ye, ys) = d.explode(y)
 		if (ye >= -7)
 			-> (u + y) + (q + (v  + z))
 		else
-			-> f + (y + (q + z))
+			-> x + (y + (q + z))
 		;;
 	;;
 
 	/* Procedure 1 */
 	var inv_L = d.frombits(d.inv_L)
 
-	var N = rn(f * inv_L)
+	var N = rn(x * inv_L)
 	var N2 = N % (32 : @i)
 	if N2 < 0
 		N2 += (32 : @i)
@@ -344,9 +343,9 @@ generic expm1gen = {f : @f, d : fltdesc(@f, @u, @i) :: numeric,floating,std.equa
 	   reduced into [ -ln(2)/64, ln(2)/64 ]
 	 */
 	if std.abs(N) >= (1 << d.nabs)
-		R1 = (f - (N1 : @f) * d.frombits(d.L1)) - ((N2 : @f) * d.frombits(d.L1))
+		R1 = (x - (N1 : @f) * d.frombits(d.L1)) - ((N2 : @f) * d.frombits(d.L1))
 	else
-		R1 = f - (N : @f) * d.frombits(d.L1)
+		R1 = x - (N : @f) * d.frombits(d.L1)
 	;;
 	R2 = -1.0 * (N : @f) * d.frombits(d.L2)
 

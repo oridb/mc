@@ -4,8 +4,8 @@ pkg math =
 	trait fpmath @f =
 
 		/* exp-impl */
-		exp : (f : @f -> @f)
-		expm1 : (f : @f -> @f)
+		exp : (x : @f -> @f)
+		expm1 : (x : @f -> @f)
 
 		/* fma-impl */
 		fma : (x : @f, y : @f, z : @f -> @f)
@@ -15,24 +15,24 @@ pkg math =
 		horner_polyu : (x : @f, a : @u[:] -> @f)
 
 		/* scale2-impl */
-		scale2 : (f : @f, m : @i -> @f)
+		scale2 : (x : @f, m : @i -> @f)
 
 		/* sqrt-impl */
-		sqrt : (f : @f -> @f)
+		sqrt : (x : @f -> @f)
 
 		/* sum-impl */
 		kahan_sum : (a : @f[:] -> @f)
 		priest_sum : (a : @f[:] -> @f)
 
 		/* trunc-impl */
-		trunc : (f : @f -> @f)
-		ceil  : (f : @f -> @f)
-		floor : (f : @f -> @f)
+		trunc : (x : @f -> @f)
+		ceil  : (x : @f -> @f)
+		floor : (x : @f -> @f)
 	;;
 
 	trait roundable @f -> @i =
 		/* round-impl */
-		rn : (f : @f -> @i)
+		rn : (x : @f -> @i)
 	;;
 
 	impl std.equatable flt32
@@ -60,58 +60,67 @@ impl std.equatable flt64 =
 ;;
 
 impl roundable flt32 -> int32 =
-	rn = {f : flt32; -> rn32(f) }
+	rn = {x : flt32; -> rn32(x) }
 ;;
 
 impl roundable flt64 -> int64 =
-	rn = {f : flt64; -> rn64(f) }
+	rn = {x : flt64; -> rn64(x) }
 ;;
 
 impl fpmath flt32 =
 	fma = {x, y, z; -> fma32(x, y, z)}
 
-	exp = {f; -> exp32(f)}
-	expm1 = {f; -> expm132(f)}
+	exp = {x; -> exp32(x)}
+	expm1 = {x; -> expm132(x)}
 
-	horner_poly = {f, a; -> horner_poly32(f, a)}
-	horner_polyu = {f, a; -> horner_polyu32(f, a)}
+	log = {x; -> log32(x)}
+	log1p = {x; -> log1p32(x)}
 
-	scale2 = {f, m; -> scale232(f, m)}
+	horner_poly = {x, a; -> horner_poly32(x, a)}
+	horner_polyu = {x, a; -> horner_polyu32(x, a)}
 
-	sqrt = {f; -> sqrt32(f)}
+	scale2 = {x, m; -> scale232(x, m)}
+
+	sqrt = {x; -> sqrt32(x)}
 
 	kahan_sum = {l; -> kahan_sum32(l) }
 	priest_sum = {l; -> priest_sum32(l) }
 
-	trunc = {f; -> trunc32(f)}
-	floor = {f; -> floor32(f)}
-	ceil  = {f; -> ceil32(f)}
+	trunc = {x; -> trunc32(x)}
+	floor = {x; -> floor32(x)}
+	ceil  = {x; -> ceil32(x)}
 
 ;;
 
 impl fpmath flt64 =
 	fma = {x, y, z; -> fma64(x, y, z)}
 
-	exp = {f; -> exp64(f)}
-	expm1 = {f; -> expm164(f)}
+	exp = {x; -> exp64(x)}
+	expm1 = {x; -> expm164(x)}
 
-	horner_poly = {f, a; -> horner_poly64(f, a)}
-	horner_polyu = {f, a; -> horner_polyu64(f, a)}
+	log = {x; -> log64(x)}
+	log1p = {x; -> log1p64(x)}
 
-	scale2 = {f, m; -> scale264(f, m)}
+	horner_poly = {x, a; -> horner_poly64(x, a)}
+	horner_polyu = {x, a; -> horner_polyu64(x, a)}
 
-	sqrt = {f; -> sqrt64(f)}
+	scale2 = {x, m; -> scale264(x, m)}
+
+	sqrt = {x; -> sqrt64(x)}
 
 	kahan_sum = {l; -> kahan_sum64(l) }
 	priest_sum = {l; -> priest_sum64(l) }
 
-	trunc = {f; -> trunc64(f)}
-	floor = {f; -> floor64(f)}
-	ceil  = {f; -> ceil64(f)}
+	trunc = {x; -> trunc64(x)}
+	floor = {x; -> floor64(x)}
+	ceil  = {x; -> ceil64(x)}
 ;;
 
-extern const rn32 : (f : flt32 -> int32)
-extern const rn64 : (f : flt64 -> int64)
+extern const rn32 : (x : flt32 -> int32)
+extern const rn64 : (x : flt64 -> int64)
+
+extern const fma32 : (x : flt32, y : flt32, z : flt32 -> flt32)
+extern const fma64 : (x : flt64, y : flt64, z : flt64 -> flt64)
 
 extern const exp32 : (x : flt32 -> flt32)
 extern const exp64 : (x : flt64 -> flt64)
@@ -119,17 +128,17 @@ extern const exp64 : (x : flt64 -> flt64)
 extern const expm132 : (x : flt32 -> flt32)
 extern const expm164 : (x : flt64 -> flt64)
 
-extern const fma32 : (x : flt32, y : flt32, z : flt32 -> flt32)
-extern const fma64 : (x : flt64, y : flt64, z : flt64 -> flt64)
+extern const log32 : (x : flt32 -> flt32)
+extern const log64 : (x : flt64 -> flt64)
 
-extern const horner_poly32 : (f : flt32, a : flt32[:] -> flt32)
-extern const horner_poly64 : (f : flt64, a : flt64[:] -> flt64)
+extern const horner_poly32 : (x : flt32, a : flt32[:] -> flt32)
+extern const horner_poly64 : (x : flt64, a : flt64[:] -> flt64)
 
-extern const horner_polyu32 : (f : flt32, a : uint32[:] -> flt32)
-extern const horner_polyu64 : (f : flt64, a : uint64[:] -> flt64)
+extern const horner_polyu32 : (x : flt32, a : uint32[:] -> flt32)
+extern const horner_polyu64 : (x : flt64, a : uint64[:] -> flt64)
 
-extern const scale232 : (f : flt32, m : int32 -> flt32)
-extern const scale264 : (f : flt64, m : int64 -> flt64)
+extern const scale232 : (x : flt32, m : int32 -> flt32)
+extern const scale264 : (x : flt64, m : int64 -> flt64)
 
 extern const sqrt32 : (x : flt32 -> flt32)
 extern const sqrt64 : (x : flt64 -> flt64)
@@ -140,11 +149,11 @@ extern const kahan_sum64 : (l : flt64[:] -> flt64)
 extern const priest_sum32 : (l : flt32[:] -> flt32)
 extern const priest_sum64 : (l : flt64[:] -> flt64)
 
-extern const trunc32 : (f : flt32 -> flt32)
-extern const trunc64 : (f : flt64 -> flt64)
+extern const trunc32 : (x : flt32 -> flt32)
+extern const trunc64 : (x : flt64 -> flt64)
 
-extern const floor32 : (f : flt32 -> flt32)
-extern const floor64 : (f : flt64 -> flt64)
+extern const floor32 : (x : flt32 -> flt32)
+extern const floor64 : (x : flt64 -> flt64)
 
-extern const ceil32  : (f : flt32 -> flt32)
-extern const ceil64  : (f : flt64 -> flt64)
+extern const ceil32  : (x : flt32 -> flt32)
+extern const ceil64  : (x : flt64 -> flt64)
