@@ -208,6 +208,15 @@ const loadtagfile = {b, tagfile
 	std.slfree(data)
 }
 
-const tag  = {b, tag
-	std.htput(b.tags, std.sldup(tag), (-1, -1, -1))
+const tag  = {b, t
+	var v
+	match std.strfind(t, ":")
+	| `std.None:
+		std.htput(b.tags, std.sldup(t), (-1, -1, -1))
+	| `std.Some idx:
+		v = parseversion(t[idx+1:])
+		std.put("version: {} : {}\n", t[:idx], v)
+		std.htput(b.tags, std.sldup(t[:idx]), v)
+	;;
+
 }
