@@ -142,5 +142,5 @@ set -x
 	$pwd/6/6m -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/test.myr
 	$pwd/6/6m -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/deps.myr
 	$pwd/6/6m -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/main.myr
-	ld --gc-sections -o mbld/mbld $pwd/rt/_myrrt.o mbld/deps.o mbld/main.o mbld/util.o mbld/cpufeatures.o mbld/libs.o mbld/syssel.o mbld/config.o mbld/opts.o mbld/subtest.o mbld/types.o mbld/test.o mbld/install.o mbld/parse.o mbld/build.o -Llib/thread -lthread -Llib/bio -lbio -Llib/regex -lregex -Llib/std -lstd -Llib/sys -lsys
+	ld -o mbld/mbld $pwd/rt/_myrrt.o mbld/deps.o mbld/main.o mbld/util.o mbld/cpufeatures.o mbld/libs.o mbld/syssel.o mbld/config.o mbld/opts.o mbld/subtest.o mbld/types.o mbld/test.o mbld/install.o mbld/parse.o mbld/build.o -Llib/thread -lthread -Llib/bio -lbio -Llib/regex -lregex -Llib/std -lstd -Llib/sys -lsys
 true

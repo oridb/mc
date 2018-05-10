@@ -24,7 +24,7 @@ set -x
 	$pwd/6/6m lib/sys/systypes.myr
 	as -g -o lib/sys/util.o lib/sys/util+posixy-x64.s
 	$pwd/6/6m lib/sys/syserrno+openbsd.myr
-	$pwd/6/6m lib/sys/sys+openbsd:6.1-x64.myr
+	$pwd/6/6m lib/sys/sys+openbsd:6.2-x64.myr
 	ar -rcs lib/sys/libsys.a lib/sys/sys.o lib/sys/syserrno.o lib/sys/util.o lib/sys/systypes.o lib/sys/ifreq.o lib/sys/syscall.o
 	$pwd/muse/muse -o lib/sys/libsys.use -p sys lib/sys/sys.use lib/sys/syserrno.use lib/sys/systypes.use lib/sys/ifreq.use
 	$pwd/6/6m -I lib/sys lib/std/errno.myr
@@ -123,7 +123,7 @@ set -x
 	$pwd/6/6m -I lib/sys -I lib/std lib/thread/ncpu+openbsd.myr
 	$pwd/6/6m -I lib/sys -I lib/std lib/thread/common.myr
 	$pwd/6/6m -I lib/sys -I lib/std lib/thread/atomic.myr
-	$pwd/6/6m -I lib/sys -I lib/std lib/thread/mutex.myr
+	$pwd/6/6m -I lib/sys -I lib/std lib/thread/mutex+openbsd:6.2.myr
 	$pwd/6/6m -I lib/sys -I lib/std lib/thread/hookstd.myr
 	ar -rcs lib/thread/libthread.a lib/thread/mutex.o lib/thread/atomic.o lib/thread/atomic-impl.o lib/thread/hookstd.o lib/thread/common.o lib/thread/ncpu.o lib/thread/exit.o lib/thread/spawn.o
 	$pwd/muse/muse -o lib/thread/libthread.use -p thread lib/thread/mutex.use lib/thread/atomic.use lib/thread/hookstd.use lib/thread/common.use lib/thread/ncpu.use lib/thread/spawn.use

@@ -162,13 +162,13 @@ const addsysattrs = {b, tags
 		match opt_arch
 		| "x64":	
 			tag(b, "x64")
-			if opt_cpufeatures & CpuidSSE2 == CpuidSSE2
+			if supports(CpuidSSE2)
 				tag(b, "sse2")
 			;;
-			if opt_cpufeatures & CpuidSSE4 == CpuidSSE4
+			if supports(CpuidSSE4)
 				tag(b, "sse4")
 			;;
-			if opt_cpufeatures & CpuidFMA == CpuidFMA
+			if supports(CpuidFMA)
 				tag(b, "fma")
 			;;
 		| unknown:
@@ -179,6 +179,19 @@ const addsysattrs = {b, tags
 			tag(b, t)
 		;;
 		loadtagfile(b, "bld.tag")
+	;;
+}
+
+const supports = {feat
+	match (opt_sys, opt_cpufeatures & feat)
+	/* The version of gas that's shipped with openbsd is too old. */
+	| ("openbsd", CpuidSSE4):	-> false
+	| ("openbsd", CpuidFMA):	-> false
+	| ("freebsd", CpuidSSE4):	-> false
+	| ("freebsd", CpuidFMA):	-> false
+	| ("netbsd", CpuidSSE4):	-> false
+	| ("netbsd", CpuidFMA):	-> false
+	| (_, f):			-> f == feat
 	;;
 }
 
@@ -199,6 +212,15 @@ const loadtagfile = {b, tagfile
 	std.slfree(data)
 }
 
-const tag  = {b, tag
-	std.htput(b.tags, std.sldup(tag), (-1, -1, -1))
+const tag  = {b, t
+	var v
+	match std.strfind(t, ":")
+	| `std.None:
+		std.htput(b.tags, std.sldup(t), (-1, -1, -1))
+	| `std.Some idx:
+		v = parseversion(t[idx+1:])
+		std.put("version: {} : {}\n", t[:idx], v)
+		std.htput(b.tags, std.sldup(t[:idx]), v)
+	;;
+
 }
