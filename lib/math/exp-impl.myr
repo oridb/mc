@@ -17,15 +17,12 @@ pkg math =
 	pkglocal const expm164 : (f : flt64 -> flt64)
 ;;
 
-extern const fma32 : (x : flt32, y : flt32, z : flt32 -> flt32)
-extern const fma64 : (x : flt64, y : flt64, z : flt64 -> flt64)
 extern const horner_polyu32 : (f : flt32, a : uint32[:] -> flt32)
 extern const horner_polyu64 : (f : flt64, a : uint64[:] -> flt64)
 
 type fltdesc(@f, @u, @i) = struct
 	explode : (f : @f -> (bool, @i, @u))
 	assem : (n : bool, e : @i, s : @u -> @f)
-	fma : (x : @f, y : @f, z : @f -> @f)
 	horner : (f : @f, a : @u[:] -> @f)
 	sgnmask : @u
 	tobits : (f : @f -> @u)
@@ -59,7 +56,6 @@ type fltdesc(@f, @u, @i) = struct
 const desc32 : fltdesc(flt32, uint32, int32) = [
 	.explode = std.flt32explode,
 	.assem = std.flt32assem,
-	.fma = fma32,
 	.horner = horner_polyu32,
 	.sgnmask = (1 << 31),
 	.tobits = std.flt32bits,
@@ -127,7 +123,6 @@ const desc32 : fltdesc(flt32, uint32, int32) = [
 const desc64 : fltdesc(flt64, uint64, int64) = [
 	.explode = std.flt64explode,
 	.assem = std.flt64assem,
-	.fma = fma64,
 	.horner = horner_polyu64,
 	.sgnmask = (1 << 63),
 	.tobits = std.flt64bits,
