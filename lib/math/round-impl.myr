@@ -1,0 +1,70 @@
+use std
+
+use "util"
+
+pkg math =
+	const rn64 : (f : flt64 -> int64)
+	const rn32 : (f : flt32 -> int32)
+;;
+
+const rn64 = {f : flt64
+	var n : bool, e : int64, s : uint64
+
+	(n, e, s) = std.flt64explode(f)
+
+	if e >= 63
+		-> -9223372036854775808
+	elif e >= 52
+		var shifted : int64 = (( s << (e - 52 : uint64)) : int64)
+		if n
+			-> -1 * shifted
+		else
+			-> shifted
+		;;
+	elif e < -1
+		-> 0
+	;;
+
+	var integral_s = (s >> (52 - e : uint64) : int64)
+
+	if need_round_away(0, s, 52 - e)
+		integral_s++
+	;;
+
+	if n
+		-> -integral_s
+	else
+		-> integral_s
+	;;
+}
+
+const rn32 = {f : flt32
+	var n : bool, e : int32, s : uint32
+
+	(n, e, s) = std.flt32explode(f)
+
+	if e >= 31
+		-> -2147483648
+	elif e >= 23
+		var shifted : int32 = (( s << (e - 23 : uint32)) : int32)
+		if n
+			->  -1 * shifted
+		else
+			->  shifted
+		;;
+	elif e < -1
+		-> 0
+	;;
+
+	var integral_s = (s >> (23 - e : uint32) : int32)
+
+	if need_round_away(0, (s : uint64), (23 - e : int64))
+		integral_s++
+	;;
+
+	if n
+		-> -integral_s
+	else
+		-> integral_s
+	;;
+}

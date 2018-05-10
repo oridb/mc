@@ -1,0 +1,105 @@
+use std
+
+/* For references, see [Mul+10] section 6.3 */
+pkg math =
+	pkglocal const kahan_sum32 : (l : flt32[:] -> flt32)
+	pkglocal const priest_sum32 : (l : flt32[:] -> flt32)
+
+	pkglocal const kahan_sum64: (l : flt64[:] -> flt64)
+	pkglocal const priest_sum64 : (l : flt64[:] -> flt64)
+;;
+
+type doomed_flt32_arr = flt32[:]
+type doomed_flt64_arr = flt64[:]
+
+impl disposable doomed_flt32_arr =
+	__dispose__ = {a : doomed_flt32_arr; std.slfree((a : flt32[:])) }
+;;
+
+impl disposable doomed_flt64_arr =
+	__dispose__ = {a : doomed_flt64_arr; std.slfree((a : flt64[:])) }
+;;
+
+/*
+   Kahan's compensated summation. Fast and reasonably accurate,
+   although cancellation can cause relative error blowup. For
+   something slower, but more accurate, use something like Priest's
+   doubly compensated sums.
+ */
+pkglocal const kahan_sum32 = {l; -> kahan_sum_gen(l, (0.0 : flt32))}
+pkglocal const kahan_sum64 = {l; -> kahan_sum_gen(l, (0.0 : flt64))}
+
+generic kahan_sum_gen = {l : @f[:], zero : @f :: numeric,floating @f
+	if l.len == 0
+		-> zero
+	;;
+
+	var s = zero
+	var c = zero
+	var y = zero
+	var t = zero
+
+	for x : l
+		y = x - c
+		t = s + y
+		c = (t - s) - y
+		s = t
+	;;
+
+	-> s
+}
+
+/*
+   Priest's doubly compensated summation. Extremely accurate, but
+   relatively slow. For situations in which cancellation is not
+   expected, something like Kahan's compensated summation may be
+   more useful.
+ */
+pkglocal const priest_sum32 = {l : flt32[:]
+	var l2 = std.sldup(l)
+	std.sort(l2, mag_cmp32)
+	auto (l2 : doomed_flt32_arr)
+	-> priest_sum_gen(l2, (0.0 : flt32))
+}
+
+const mag_cmp32 = {f : flt32, g : flt32
+	var u = std.flt32bits(f) & ~(1 << 31)
+	var v = std.flt32bits(g) & ~(1 << 31)
+	-> std.numcmp(v, u)
+}
+
+pkglocal const priest_sum64 = {l : flt64[:]
+	var l2 = std.sldup(l)
+	std.sort(l, mag_cmp64)
+	auto (l2 : doomed_flt64_arr)
+	-> priest_sum_gen(l2, (0.0 : flt64))
+}
+
+const mag_cmp64 = {f : flt64, g : flt64
+	var u = std.flt64bits(f) & ~(1 << 63)
+	var v = std.flt64bits(g) & ~(1 << 63)
+	-> std.numcmp(v, u)
+}
+
+generic priest_sum_gen = {l : @f[:], zero : @f :: numeric,floating @f
+	/* l should be sorted in descending order */
+	if l.len == 0
+		-> zero
+	;;
+
+	var s = zero
+	var c = zero
+
+	for x : l
+		var y = c + x
+		var u = x - (y - c)
+		var t = (y + s)
+		var v = (y - (t - s))
+		var z = u + v
+		s = t + z
+		c = z - (s - t)
+	;;
+
+	-> s
+}
+

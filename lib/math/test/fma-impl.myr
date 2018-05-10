@@ -1,0 +1,104 @@
+use std
+use math
+use testr
+
+const main = {
+	testr.run([
+		[.name="fma-01", .fn = fma01],
+		[.name="fma-02", .fn = fma02],
+	][:])
+}
+
+const fma01 = {c
+	var inputs : (uint32, uint32, uint32, uint32)[:] = [
+		/*
+		   These are mostly obtained by running fpmath-consensus
+		   with seed 1234. Each (mostly) covers a different
+		   corner case.
+		 */
+		(0x000009a4, 0x00000000, 0x00000002, 0x00000002),
+		(0x69000000, 0x90008002, 0x68348026, 0x68348026),
+		(0x334802ab, 0x49113e8d, 0x90aea62e, 0x3ce2f4c3),
+		(0x5c35d8c1, 0x12dcb6e2, 0x6c1a8cc2, 0x6c1a8cc2),
+		(0xf6266d83, 0x2b3e04e8, 0x62f99bda, 0x62bbd79e),
+		(0x7278e907, 0x75f6c0f1, 0xf6f9b8e0, 0x7f800000),
+		(0xd7748eeb, 0x6737b23e, 0x68e3bbc7, 0xff2f7c71),
+		(0x7f373de4, 0x3dcf90f0, 0xd22ac17c, 0x7d9492ca),
+		(0xb50fce04, 0x00cd486d, 0x03800000, 0x03800000),
+		(0xbb600000, 0x43b7161a, 0x8684d442, 0xbfa03357),
+		(0xf26f8a00, 0x4bfac000, 0xc74ba9fc, 0xfeeaa06c),
+		(0x55d1fa60, 0x32f20000, 0x1b1fea3d, 0x49467eaf),
+		(0x29e26c00, 0x62352000, 0xa0e845af, 0x4ca032a9),
+		(0x287650f8, 0x7cd00000, 0x94e85d5e, 0x65c821c9),
+		(0x7689f580, 0x91418000, 0xaa2822ae, 0xc8508e21),
+		(0xbd813cc0, 0x421f0000, 0x9f098e17, 0xc0208977),
+		(0x3745461a, 0x4db9b736, 0xb6d7deff, 0x458f1cd8),
+		(0xa3ccfd37, 0x7f800000, 0xed328e70, 0xff800000),
+		(0xa3790205, 0x5033a3e6, 0xa001fd11, 0xb42ebbd5),
+		(0x83dd6ede, 0x31ddf8e6, 0x01fea4c8, 0x01fea4c7),
+		(0xa4988128, 0x099a41ad, 0x00800000, 0x00800000),
+		(0x1e0479cd, 0x91d5fcb4, 0x00800000, 0x00800000),
+		(0x2f413021, 0x0a3f5a4e, 0x80800483, 0x80800000),
+		(0x144dcd10, 0x12f4aba0, 0x80800000, 0x80800000),
+		(0x0d580b86, 0x435768a8, 0x966c8d6f, 0x966c5ffd),
+		(0xa19e9a6f, 0xb49af3e3, 0xa2468b59, 0xa2468b57),
+		(0xd119e996, 0x8e5ad0e3, 0x247e0028, 0x247e83b7),
+		(0x381adbc6, 0x00ee4f61, 0x005f2aeb, 0x005f2d2c),
+		(0x7008233c, 0x2a9613fb, 0x46affd02, 0x5b1f9e8a),
+		(0xe85018a1, 0x2cbd53ed, 0x3fcffab8, 0xd599e668),
+
+		/* These ones are especially tricky */
+		(0x65dbf098, 0xd5beb8b4, 0x7c23db61, 0x73027654),
+		(0xa4932927, 0xc565bc34, 0x316887af, 0x31688bcf),
+		(0xb080a420, 0x09e2e5ca, 0x807ff1bf, 0x80800000),
+	][:]
+
+	for (x, y, z, r) : inputs
+		var xf : flt32 = std.flt32frombits(x)
+		var yf : flt32 = std.flt32frombits(y)
+		var zf : flt32 = std.flt32frombits(z)
+		var rf = math.fma(xf, yf, zf)
+		testr.check(c, rf == std.flt32frombits(r),
+			"0x{b=16,w=8,p=0} * 0x{b=16,w=8,p=0} + 0x{b=16,w=8,p=0} should be 0x{b=16,w=8,p=0}, was 0x{b=16,w=8,p=0}",
+			x, y, z, r, std.flt32bits(rf))
+	;;
+}
+
+const fma02 = {c
+	var inputs : (uint64, uint64, uint64, uint64)[:] = [
+		/*
+		   These are mostly obtained by running fpmath-consensus
+		   with seed 1234. Each (mostly) covers a different
+		   corner case.
+		 */
+		(0x0000000000000000, 0x0000000000000000, 0x0100000000000000, 0x0100000000000000),
+		(0x0000000000000000, 0x0000000000000000, 0x0200000000000000, 0x0200000000000000),
+		(0x00000000000009a4, 0x6900000000000002, 0x6834802690008002, 0x6834802690008002),
+		(0x49113e8d334802ab, 0x5c35d8c190aea62e, 0x6c1a8cc212dcb6e2, 0x6c1a8cc212dcb6e2),
+		(0x2b3e04e8f6266d83, 0xae84e20f62f99bda, 0xc9115a1ccea6ce27, 0xc9115a1ccea6ce27),
+		(0xa03ea9e9b09d932c, 0xded7bc19edcbf0c7, 0xbbc4c1f83b3f8f2e, 0x3f26be5f0c7b48e3),
+		(0xa5ec2141c1e6f339, 0xa2d80fc217f57b61, 0x00b3484b473ef1b8, 0x08d526cb86ee748d),
+		(0xccc6600ee88bb67c, 0xc692eeec9b51cf0f, 0xbf5f1ae3486401b0, 0x536a7a30857129db),
+		(0x5f9b9e449db17602, 0xbef22ae5b6a2b1c5, 0x6133e925e6bf8a12, 0x6133e925e6bf823b),
+		(0x7f851249841b6278, 0x3773388e53a375f4, 0x761c27fc2ffa57be, 0x7709506b0e99dc30),
+		(0x7c7cb20f3ca8af93, 0x800fd7f5cfd5baae, 0x14e4c09c9bb1e17e, 0xbc9c6a3fd0e58682),
+		(0xb5e8db2107f4463f, 0x614af740c0d7eb3b, 0xd7e3d25c4daa81e0, 0xd7e3d798d3ccdffb),
+		(0xae62c8be4cb45168, 0x90cc5236f3516c90, 0x0007f8b14f684558, 0x0007f9364eb1a815),
+		(0x5809f53e32a7e1ba, 0xcc647611ccaa5bf4, 0xdfbdb5c345ce7a56, 0xe480990da5526103),
+		(0xbb889d7f826438e1, 0x03bdaff82129696d, 0x000000dacab276ae, 0x8000009296c962f8),
+		(0x003d95525e2b057a, 0xbef738ea5717d89a, 0x800000089763d88c, 0x800000b456ed1a9c),
+		(0x0be868cb5a7180c8, 0x3357a30707ed947c, 0x80000050d6b86ac6, 0x000000cfa41cb229),
+		(0xbe535f4f8a7498af, 0x00d24adee12217b8, 0x0000005729e93fb0, 0x800000016d975af3),
+		(0x39d1968eb883f088, 0x856f286e3b268f0e, 0x800000d7cdd0ed70, 0x800001e9cf01a0ae),
+	][:]
+
+	for (x, y, z, r) : inputs
+		var xf : flt64 = std.flt64frombits(x)
+		var yf : flt64 = std.flt64frombits(y)
+		var zf : flt64 = std.flt64frombits(z)
+		var rf = math.fma(xf, yf, zf)
+		testr.check(c, rf == std.flt64frombits(r),
+			"0x{b=16,w=16,p=0} * 0x{b=16,w=16,p=0} + 0x{b=16,w=16,p=0} should be 0x{b=16,w=16,p=0}, was 0x{b=16,w=16,p=0}",
+			x, y, z, r, std.flt64bits(rf))
+	;;
+}

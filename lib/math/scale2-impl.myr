@@ -1,0 +1,73 @@
+use std
+
+use "fpmath"
+use "util"
+
+/*
+   The scaleB function recommended by the 2008 revision of IEEE
+   754. Since only integer exponents are considered, the naive
+   approach works quite well.
+ */
+pkg math =
+	const scale232 : (f : flt32, m : int32 -> flt32)
+	const scale264 : (f : flt64, m : int64 -> flt64)
+;;
+
+const scale232 = {f : flt32, m : int32
+	var n, e, s
+	(n, e, s) = std.flt32explode(f)
+	(n, e, s) = scale2gen(n, e, s, -126, 127, 24, m)
+	-> std.flt32assem(n, e, s)
+}
+
+const scale264 = {f : flt64, m : int64
+	var n, e, s
+	(n, e, s) = std.flt64explode(f)
+	(n, e, s) = scale2gen(n, e, s, -1022, 1023, 53, m)
+	-> std.flt64assem(n, e, s)
+}
+
+generic scale2gen = {n : bool, e : @i, s : @u, emin : @i, emax : @i, p : @u, m : @i :: numeric, integral @i, numeric, integral @u
+	if e < emin && s == 0
+		-> (n, e, s)
+	elif m == 0
+		-> (n, e, s)
+	elif m < 0
+		var sprime = s
+		var eprime = e
+		if e < emin
+			sprime = s >> (-m)
+			if need_round_away(0, (s : uint64), (-m : int64))
+				sprime++
+			;;
+			eprime = emin - 1
+		elif e + m < emin
+			sprime = s >> (emin - m - e)
+			if need_round_away(0, (s : uint64), ((emin - m - e) : int64))
+				sprime++
+			;;
+			eprime = emin - 1
+		else
+			eprime = e + m
+		;;
+		-> (n, eprime, sprime)
+	;;
+
+	if e < emin
+		var first_1 = find_first1_64((s : uint64), (p : int64))
+		var shift = p - (first_1 : @u) - 1
+		if m >= (shift : @i)
+			s = s << shift
+			m -= (shift : @i)
+			e = emin
+		else
+			-> (n, e, s << m)
+		;;
+	;;
+
+	if e + m > emax && s != 0
+		-> (n, emax + 1, 1 << (p - 1))
+	;;
+
+	-> (n, e + m, s)
+}

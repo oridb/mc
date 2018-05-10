@@ -24,14 +24,16 @@ const Fltbias = 127
 const flt64bfmt = {sb, val, mode, precision
 	var isneg, exp, mant
 
-	(isneg, mant, exp) = flt64explode(val)
-	dragon4(sb, isneg, mant, (exp - 52 : int64), Dblbias, mode, precision)
+	(isneg, exp, mant) = flt64explode(val)
+	exp = max(exp, 1 - Dblbias)
+	dragon4(sb, isneg, mant, exp - 52, Dblbias, mode, precision)
 }
 
 const flt32bfmt = {sb, val, mode, precision
 	var isneg, exp, mant
 
-	(isneg, mant, exp) = flt32explode(val)
+	(isneg, exp, mant) = flt32explode(val)
+	exp = (max((exp : int64), 1 - Fltbias) : int32)
 	dragon4(sb, isneg, (mant : uint64), (exp - 23 : int64), Fltbias, mode, precision)
 }
 
@@ -64,9 +66,9 @@ const dragon4 = {sb, isneg, f, e, p, mode, cutoff
 	/* initialize */
 	roundup = false
 	u = mkbigint(0)
-	r = bigshli(mkbigint(f), max(e - p, 0))
-	s = bigshli(mkbigint(1), max(0, -(e - p)))
-	mm = bigshli(mkbigint(1), max((e - p), 0))
+	r = bigshli(mkbigint(f), max(e, 0))
+	s = bigshli(mkbigint(1), max(0, -e))
+	mm = bigshli(mkbigint(1), max(e, 0))
 	mp = bigdup(mm)
 
 	/* fixup: unequal gaps */

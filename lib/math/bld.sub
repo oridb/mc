@@ -1,0 +1,36 @@
+lib math =
+	fpmath.myr
+
+	# exp
+	exp-impl.myr
+
+	# rounding (to actual integers)
+	round-impl+posixy-x64-sse4.s
+	round-impl.myr
+
+	# fused-multiply-add
+	fma-impl+posixy-x64-fma.s
+	fma-impl.myr
+
+	# polynomial evaluation methods
+	poly-impl.myr
+
+	# scalb (multiply x by 2^m)
+	scale2-impl.myr
+
+	# sqrt
+	sqrt-impl+posixy-x64-sse2.s
+	sqrt-impl.myr
+
+	# summation
+	sum-impl.myr
+
+	# trunc, floor, ceil
+	trunc-impl+posixy-x64-sse4.s
+	trunc-impl.myr
+
+	# util
+	util.myr
+
+	lib ../std:std
+;;

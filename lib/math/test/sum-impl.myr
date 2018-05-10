@@ -1,0 +1,36 @@
+use std
+use math
+use testr
+
+const main = {
+	testr.run([
+		[.name = "sums-kahan-01", .fn = sums_kahan_01],
+		[.name = "sums-priest-01", .fn = sums_priest_01],
+	][:])
+}
+
+const sums_kahan_01 = {c
+	var sums : (flt32[:], flt32)[:] = [
+		([1.0, 2.0, 3.0][:], 6.0),
+
+		/* Naive summing gives 1.0, actual answer is 2.0 */
+		([33554432.0, 33554430.0, -16777215.0, -16777215.0, -16777215.0, -16777215.0][:], 3.0)
+	][:]
+
+	for (a, r) : sums
+		var s = math.kahan_sum(a)
+		testr.eq(c, r, s)
+	;;
+}
+
+const sums_priest_01 = {c
+	var sums : (flt32[:], flt32)[:] = [
+		([1.0, 2.0, 3.0][:], 6.0),
+		([33554432.0, 33554430.0, -16777215.0, -16777215.0, -16777215.0, -16777215.0][:], 2.0)
+	][:]
+
+	for (a, r) : sums
+		var s = math.priest_sum(a)
+		testr.eq(c, r, s)
+	;;
+}

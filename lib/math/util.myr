@@ -1,0 +1,174 @@
+use std
+
+pkg math =
+	const flt32fromflt64 : (f : flt64 -> flt32)
+	const flt64fromflt32 : (x : flt32 -> flt64)
+
+	/* For use in various normalizations */
+	const find_first1_64 : (b : uint64, start : int64 -> int64)
+	const find_first1_64_hl : (h : uint64, l : uint64, start : int64 -> int64)
+
+	/* >> and <<, but without wrapping when the shift is >= 64 */
+	const shr : (u : uint64, s : int64 -> uint64)
+	const shl : (u : uint64, s : int64 -> uint64)
+
+	/* Whether RN() requires incrementing after truncating */
+	const need_round_away : (h : uint64, l : uint64, bitpos_last : int64 -> bool)
+;;
+
+const flt64fromflt32 = {f : flt32
+	var n, e, s
+	(n, e, s) = std.flt32explode(f)
+	var xs : uint64 = (s : uint64)
+	var xe : int64 = (e : int64)
+
+	if e == 128
+		-> std.flt64assem(n, 1024, xs)
+	elif e == -127
+		/*
+		  All subnormals in single precision (except 0.0s)
+		  can be upgraded to double precision, since the
+		  exponent range is so much wider.
+		 */
+		var first1 = find_first1_64(xs, 23)
+		if first1 < 0
+			-> std.flt64assem(n, -1023, 0)
+		;;
+		xs = xs << (52 - (first1 : uint64))
+		xe = -126 - (23 - first1)
+		-> std.flt64assem(n, xe, xs)
+	;;
+
+	-> std.flt64assem(n, xe, xs << (52 - 23))
+}
+
+const flt32fromflt64 = {f : flt64
+	var n : bool, e : int64, s : uint64
+	(n, e, s) = std.flt64explode(f)
+	var ts : uint32
+	var te : int32 = (e : int32)
+
+	if e >= 128
+		if e == 1023 && s != 0
+			/* NaN */
+			-> std.flt32assem(n, 128, 1)
+		else
+			/* infinity */
+			-> std.flt32assem(n, 128, 0)
+		;;
+	;;
+
+	if e >= -127
+		/* normal */
+		ts = ((s >> (52 - 23)) : uint32)
+		if need_round_away(0, s, 52 - 23)
+			ts++
+			if ts & (1 << 24) != 0
+				ts >>= 1
+				te++
+			;;
+		;;
+		if te >= -126
+			-> std.flt32assem(n, te, ts)
+		;;
+	;;
+
+	/* subnormal already, will have to go to 0 */
+	if e == -1023
+		-> std.flt32assem(n, -127, 0)
+	;;
+
+	/* subnormal (at least, it will be) */
+	te = -127
+	var shift : int64 = (52 - 23) + (-126 - e)
+	var ts1 = shr(s, shift)
+	ts = (ts1 : uint32)
+	if need_round_away(0, s, shift)
+		ts++
+		if ts & (1 << 23) != 0
+			/* false alarm, it's normal again */
+			te++
+		;;
+	;;
+	-> std.flt32assem(n, te, ts)
+}
+
+/* >> and <<, but without wrapping when the shift is >= 64 */
+const shr = {u : uint64, s : int64
+	if (s : uint64) >= 64
+		-> 0
+	else
+		-> u >> (s : uint64)
+	;;
+}
+
+const shl = {u : uint64, s : int64
+	if (s : uint64) >= 64
+		-> 0
+	else
+		-> u << (s : uint64)
+	;;
+}
+
+/* Find the first 1 bit in a bitstring */
+const find_first1_64 = {b : uint64, start : int64
+	for var j = start; j >= 0; --j
+		var m = shl(1, j)
+		if b & m != 0
+			-> j
+		;;
+	;;
+
+	-> -1
+}
+
+const find_first1_64_hl = {h, l, start
+	var first1_h = find_first1_64(h, start - 64)
+	if first1_h >= 0
+		-> first1_h + 64
+	;;
+
+	-> find_first1_64(l, 63)
+}
+
+/*
+   For [ h ][ l ], where bitpos_last is the position of the last
+   bit that was included in the truncated result (l's last bit has
+   position 0), decide whether rounding up/away is needed. This is
+   true if
+
+    - following bitpos_last is a 1, then a non-zero sequence, or
+
+    - following bitpos_last is a 1, then a zero sequence, and the
+      round would be to even
+ */
+const need_round_away = {h : uint64, l : uint64, bitpos_last : int64
+	var first_omitted_is_1 = false
+	var nonzero_beyond = false
+	if bitpos_last > 64
+		first_omitted_is_1 = h & shl(1, bitpos_last - 1 - 64) != 0
+		nonzero_beyond = nonzero_beyond || h & shr((-1 : uint64), 2 + 64 - (bitpos_last - 64)) != 0
+		nonzero_beyond = nonzero_beyond || (l != 0)
+	else
+		first_omitted_is_1 = l & shl(1, bitpos_last - 1) != 0
+		nonzero_beyond = nonzero_beyond || l & shr((-1 : uint64), 1 + 64 - bitpos_last) != 0
+	;;
+
+	if !first_omitted_is_1
+		-> false
+	;;
+
+	if nonzero_beyond
+		-> true
+	;;
+
+	var hl_is_odd = false
+
+	if bitpos_last >= 64
+		hl_is_odd = h & shl(1, bitpos_last - 64) != 0
+	else
+		hl_is_odd = l & shl(1, bitpos_last) != 0
+	;;
+
+	-> hl_is_odd
+}

@@ -1,0 +1,83 @@
+use std
+use math
+use testr
+
+const main = {
+	testr.run([
+		[.name="sqrt-01", .fn = sqrt01],
+		[.name="sqrt-02", .fn = sqrt02],
+	][:])
+}
+
+const sqrt01 = {c
+	var inputs : (uint32, uint32)[:] = [
+		(0x00000000, 0x00000000),
+		(0x80000000, 0x80000000),
+		(0x80000001, 0x7ff80000),
+		(0x8aaaaaaa, 0x7ff80000),
+		(0x3f800000, 0x3f800000),
+		(0x40800000, 0x40000000),
+		(0x41100000, 0x40400000),
+		(0x3e800000, 0x3f000000),
+		(0x3a3a0000, 0x3cda35fe),
+		(0x017a1000, 0x207d038b),
+		(0x00fc0500, 0x20339b45),
+		(0x160b0000, 0x2abca321),
+		(0x00000800, 0x1d000000),
+		(0x7f690a00, 0x5f743ff8),
+		(0x7f5c0e00, 0x5f6d590c),
+	][:]
+
+	for (x, y) : inputs
+		var xf : flt32 = std.flt32frombits(x)
+		var yf : flt32 = std.flt32frombits(y)
+		var rf = math.sqrt(xf)
+		testr.check(c, rf == yf,
+			"sqrt(0x{b=16,w=8,p=0}) should be 0x{b=16,w=8,p=0}, was 0x{b=16,w=8,p=0}",
+			x, y, std.flt32bits(rf))
+	;;
+}
+
+const sqrt02 = {c
+	var inputs : (uint64, uint64)[:] = [
+		(0x0000000000000000ul, 0x0000000000000000ul),
+		(0x8000000000000000ul, 0x8000000000000000ul),
+		(0x8000000000000001ul, 0x7ff8000000000000ul),
+		(0x8aaaaaaaaaaaaaaaul, 0x7ff8000000000000ul),
+		(0x0606e437817acd16ul, 0x22fb10b36e4ae795ul),
+		(0x3ff0000000000000ul, 0x3ff0000000000000ul),
+		(0x4010000000000000ul, 0x4000000000000000ul),
+		(0x3fd0000000000000ul, 0x3fe0000000000000ul),
+		(0x1bbffa831c8f220eul, 0x2dd69ead9d353d6cul),
+		(0x3f0e0f7339499f0bul, 0x3f7f03d8229c8b81ul),
+		(0x3ca510f548e0f3ecul, 0x3e49f6bcadd1e806ul),
+		(0x044ef24a3cca214bul, 0x221f780430319d58ul),
+		(0x7ab034357a1e0474ul, 0x5d501a0593fd8d49ul),
+		(0x216b2df113b38de7ul, 0x30ad7dcc6f26285aul),
+		(0x2e2de34118496c06ul, 0x370eed0301fdade1ul),
+		(0x155bf26b4fb0b2c8ul, 0x2aa5255cf9bd799cul),
+		(0x4b8004df0ac137aaul, 0x45b6a40fee232f2aul),
+		(0x1acaf23d7b0bf80cul, 0x2d5d5d56beda3392ul),
+		(0x3f97ea4c6399a8e6ul, 0x3fc38fb000d55805ul),
+		(0x78f36ea1656dec48ul, 0x5c71a1fce3f370e4ul),
+		(0x409636d438489edbul, 0x4042da4eeac985aaul),
+		(0x72dfd27869ffd768ul, 0x5966907fc9668f57ul),
+		(0x1f483c585e4f03dcul, 0x2f9bd93c3bd1f884ul),
+		(0x7ade25ea6bb6464eul, 0x5d65f681bdbcdf4eul),
+		(0x24ffe5593b0836dbul, 0x3276973038d3bbddul),
+		(0x03e92ac739ec355eul, 0x21ec60eea1d102e8ul),
+		(0x76b656a961a4f64eul, 0x5b52e7cc1d30f55bul),
+		(0x5bc2fac208381d11ul, 0x4dd8a4f5203ab3d2ul),
+		(0x000578e105ac27aaul, 0x1ff2b6d3204e206eul),
+		(0x00057e1016b7c1edul, 0x1ff2bfae3a8e21bbul),
+	][:]
+
+	for (x, y) : inputs
+		var xf : flt64 = std.flt64frombits(x)
+		var yf : flt64 = std.flt64frombits(y)
+		var rf = math.sqrt(xf)
+		testr.check(c, rf == yf,
+			"sqrt(0x{b=16,w=16,p=0}) should be 0x{b=16,w=16,p=0}, was 0x{b=16,w=16,p=0}",
+			x, y, std.flt64bits(rf))
+	;;
+}
