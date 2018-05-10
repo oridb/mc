@@ -21,7 +21,7 @@ cp obj/mbld/mbld xmbld
 tags(){
 	case `uname` in
 	*Linux*)	echo -Tposixy -Tlinux;;
-	*Darwin*)	echo -Tposixy -Tdarwin;;
+	*Darwin*)	echo -Tposixy -Tosx;;
 	*FreeBSD*)	echo -Tposixy -Tfreebsd;;
 	*NetBSD*)	echo -Tposixy -Tnetbsd;;
 	*OpenBSD*)	echo -Tposixy -Topenbsd:6.2;;
