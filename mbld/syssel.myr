@@ -187,6 +187,10 @@ const supports = {feat
 	/* The version of gas that's shipped with openbsd is too old. */
 	| ("openbsd", CpuidSSE4):	-> false
 	| ("openbsd", CpuidFMA):	-> false
+	| ("freebsd", CpuidSSE4):	-> false
+	| ("freebsd", CpuidFMA):	-> false
+	| ("netbsd", CpuidSSE4):	-> false
+	| ("netbsd", CpuidFMA):	-> false
 	| (_, f):			-> f == feat
 	;;
 }
