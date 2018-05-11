@@ -10,6 +10,10 @@ pkg math =
 		/* fma-impl */
 		fma : (x : @f, y : @f, z : @f -> @f)
 
+		/* log-impl */
+		log : (x : @f -> @f)
+		log1p : (x : @f -> @f)
+
 		/* poly-impl */
 		horner_poly : (x : @f, a : @f[:] -> @f)
 		horner_polyu : (x : @f, a : @u[:] -> @f)
@@ -130,6 +134,9 @@ extern const expm164 : (x : flt64 -> flt64)
 
 extern const log32 : (x : flt32 -> flt32)
 extern const log64 : (x : flt64 -> flt64)
+
+extern const log1p32 : (x : flt32 -> flt32)
+extern const log1p64 : (x : flt64 -> flt64)
 
 extern const horner_poly32 : (x : flt32, a : flt32[:] -> flt32)
 extern const horner_poly64 : (x : flt64, a : flt64[:] -> flt64)

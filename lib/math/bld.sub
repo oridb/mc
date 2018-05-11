@@ -1,7 +1,7 @@
 lib math =
 	fpmath.myr
 
-	# exp
+	# exp and expm1
 	exp-impl.myr
 
 	# rounding (to actual integers)
@@ -11,6 +11,9 @@ lib math =
 	# fused-multiply-add
 	fma-impl+posixy-x64-fma.s
 	fma-impl.myr
+
+	# log and log1p
+	log-impl.myr
 
 	# polynomial evaluation methods
 	poly-impl.myr
