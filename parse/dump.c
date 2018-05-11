@@ -186,7 +186,6 @@ outnode(Node *n, FILE *fd, int depth)
 		findentf(fd, depth + 1, "isimport=%d\n", n->decl.isimport);
 		findentf(fd, depth + 1, "isnoret=%d\n", n->decl.isnoret);
 		findentf(fd, depth + 1, "isexportinit=%d\n", n->decl.isexportinit);
-		findentf(fd, depth + 1, "isauto=%d\n", n->decl.isauto);
 		findentf(fd, depth, ")\n");
 		outsym(n, fd, depth + 1);
 		outnode(n->decl.init, fd, depth + 1);

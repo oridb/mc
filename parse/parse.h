@@ -108,10 +108,12 @@ struct Stab {
 	Htab *lbl;	/* labels */
 	Htab *impl;	/* trait implementations: really a set of implemented traits. */
 
-	Node **autodcl;	/* declarations in dcl marked 'auto' */
-	size_t nautodcl;
+	/* See mi/flatten.c for the following. */
+	Node **autotmp; /* temporaries for 'auto' expressions */
+	size_t nautotmp;
 
 	Node *exit[Nexits];
+	size_t ndisposed[Nexits];
 };
 
 struct Tyenv {
@@ -331,7 +333,6 @@ struct Node {
 			char isnoret;
 			char isexportinit;
 			char isinit;
-			char isauto;
 		} decl;
 
 		struct {

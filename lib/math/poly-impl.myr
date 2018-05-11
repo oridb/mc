@@ -1,0 +1,47 @@
+use std
+
+/* See [Mul16], section 5.1 */
+pkg math =
+        pkglocal const horner_poly32 : (f : flt32, a : flt32[:] -> flt32)
+        pkglocal const horner_poly64 : (f : flt64, a : flt64[:] -> flt64)
+
+        pkglocal const horner_polyu32 : (f : flt32, a : uint32[:] -> flt32)
+        pkglocal const horner_polyu64 : (f : flt64, a : uint64[:] -> flt64)
+;;
+
+extern const fma32 : (x : flt32, y : flt32, z : flt32 -> flt32)
+extern const fma64 : (x : flt64, y : flt64, z : flt64 -> flt64)
+
+const horner_poly32 = {f : flt32, a : flt32[:]
+        var r : flt32 = 0.0
+        for var j = a.len - 1; j >= 0; j--
+                r = fma32(r, f, a[j])
+        ;;
+        -> r
+}
+
+const horner_poly64 = {f : flt64, a : flt64[:]
+        var r : flt64 = 0.0
+        for var j = a.len - 1; j >= 0; j--
+                r = fma64(r, f, a[j])
+        ;;
+        -> r
+}
+
+const horner_polyu32 = {f : flt32, a : uint32[:]
+        var r : flt32 = 0.0
+        for var j = a.len - 1; j >= 0; j--
+                r = fma32(r, f, std.flt32frombits(a[j]))
+        ;;
+        -> r
+}
+
+const horner_polyu64 = {f : flt64, a : uint64[:]
+        var r : flt64 = 0.0
+        for var j = a.len - 1; j >= 0; j--
+                r = fma64(r, f, std.flt64frombits(a[j]))
+        ;;
+        -> r
+}
+
+/* TODO: add Knuth's method */

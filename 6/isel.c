@@ -939,8 +939,8 @@ selexpr(Isel *s, Node *n)
 		/* These operators should never show up in the reduced trees,
 		 * since they should have been replaced with more primitive
 		 * expressions by now */
-	case Obad: case Opreinc: case Opostinc: case Opredec: case Otern:
-	case Opostdec: case Olor: case Oland: case Oaddeq:
+	case Obad: case Oauto: case Opreinc: case Opostinc: case Opredec:
+	case Otern: case Opostdec: case Olor: case Oland: case Oaddeq:
 	case Osubeq: case Omuleq: case Odiveq: case Omodeq: case Oboreq:
 	case Obandeq: case Obxoreq: case Obsleq: case Obsreq: case Omemb:
 	case Oslbase: case Osllen: case Ocast: case Outag: case Oudata:

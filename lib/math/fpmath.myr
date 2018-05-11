@@ -1,0 +1,150 @@
+use std
+
+pkg math =
+	trait fpmath @f =
+
+		/* exp-impl */
+		exp : (f : @f -> @f)
+		expm1 : (f : @f -> @f)
+
+		/* fma-impl */
+		fma : (x : @f, y : @f, z : @f -> @f)
+
+		/* poly-impl */
+		horner_poly : (x : @f, a : @f[:] -> @f)
+		horner_polyu : (x : @f, a : @u[:] -> @f)
+
+		/* scale2-impl */
+		scale2 : (f : @f, m : @i -> @f)
+
+		/* sqrt-impl */
+		sqrt : (f : @f -> @f)
+
+		/* sum-impl */
+		kahan_sum : (a : @f[:] -> @f)
+		priest_sum : (a : @f[:] -> @f)
+
+		/* trunc-impl */
+		trunc : (f : @f -> @f)
+		ceil  : (f : @f -> @f)
+		floor : (f : @f -> @f)
+	;;
+
+	trait roundable @f -> @i =
+		/* round-impl */
+		rn : (f : @f -> @i)
+	;;
+
+	impl std.equatable flt32
+	impl std.equatable flt64
+	impl roundable flt64 -> int64
+	impl roundable flt32 -> int32
+	impl fpmath flt32
+	impl fpmath flt64
+;;
+
+/*
+   We consider two floating-point numbers equal if their bits are
+   equal. This does not treat NaNs specially: two distinct NaNs may
+   compare equal, or they may compare distinct (if they arise from
+   different bit patterns).
+
+   Additionally, +0.0 and -0.0 compare differently.
+ */
+impl std.equatable flt32 =
+	eq = {a : flt32, b : flt32; -> std.flt32bits(a) == std.flt32bits(b)}
+;;
+
+impl std.equatable flt64 =
+	eq = {a : flt64, b : flt64; -> std.flt64bits(a) == std.flt64bits(b)}
+;;
+
+impl roundable flt32 -> int32 =
+	rn = {f : flt32; -> rn32(f) }
+;;
+
+impl roundable flt64 -> int64 =
+	rn = {f : flt64; -> rn64(f) }
+;;
+
+impl fpmath flt32 =
+	fma = {x, y, z; -> fma32(x, y, z)}
+
+	exp = {f; -> exp32(f)}
+	expm1 = {f; -> expm132(f)}
+
+	horner_poly = {f, a; -> horner_poly32(f, a)}
+	horner_polyu = {f, a; -> horner_polyu32(f, a)}
+
+	scale2 = {f, m; -> scale232(f, m)}
+
+	sqrt = {f; -> sqrt32(f)}
+
+	kahan_sum = {l; -> kahan_sum32(l) }
+	priest_sum = {l; -> priest_sum32(l) }
+
+	trunc = {f; -> trunc32(f)}
+	floor = {f; -> floor32(f)}
+	ceil  = {f; -> ceil32(f)}
+
+;;
+
+impl fpmath flt64 =
+	fma = {x, y, z; -> fma64(x, y, z)}
+
+	exp = {f; -> exp64(f)}
+	expm1 = {f; -> expm164(f)}
+
+	horner_poly = {f, a; -> horner_poly64(f, a)}
+	horner_polyu = {f, a; -> horner_polyu64(f, a)}
+
+	scale2 = {f, m; -> scale264(f, m)}
+
+	sqrt = {f; -> sqrt64(f)}
+
+	kahan_sum = {l; -> kahan_sum64(l) }
+	priest_sum = {l; -> priest_sum64(l) }
+
+	trunc = {f; -> trunc64(f)}
+	floor = {f; -> floor64(f)}
+	ceil  = {f; -> ceil64(f)}
+;;
+
+extern const rn32 : (f : flt32 -> int32)
+extern const rn64 : (f : flt64 -> int64)
+
+extern const exp32 : (x : flt32 -> flt32)
+extern const exp64 : (x : flt64 -> flt64)
+
+extern const expm132 : (x : flt32 -> flt32)
+extern const expm164 : (x : flt64 -> flt64)
+
+extern const fma32 : (x : flt32, y : flt32, z : flt32 -> flt32)
+extern const fma64 : (x : flt64, y : flt64, z : flt64 -> flt64)
+
+extern const horner_poly32 : (f : flt32, a : flt32[:] -> flt32)
+extern const horner_poly64 : (f : flt64, a : flt64[:] -> flt64)
+
+extern const horner_polyu32 : (f : flt32, a : uint32[:] -> flt32)
+extern const horner_polyu64 : (f : flt64, a : uint64[:] -> flt64)
+
+extern const scale232 : (f : flt32, m : int32 -> flt32)
+extern const scale264 : (f : flt64, m : int64 -> flt64)
+
+extern const sqrt32 : (x : flt32 -> flt32)
+extern const sqrt64 : (x : flt64 -> flt64)
+
+extern const kahan_sum32 : (l : flt32[:] -> flt32)
+extern const kahan_sum64 : (l : flt64[:] -> flt64)
+
+extern const priest_sum32 : (l : flt32[:] -> flt32)
+extern const priest_sum64 : (l : flt64[:] -> flt64)
+
+extern const trunc32 : (f : flt32 -> flt32)
+extern const trunc64 : (f : flt64 -> flt64)
+
+extern const floor32 : (f : flt32 -> flt32)
+extern const floor64 : (f : flt64 -> flt64)
+
+extern const ceil32  : (f : flt32 -> flt32)
+extern const ceil64  : (f : flt64 -> flt64)

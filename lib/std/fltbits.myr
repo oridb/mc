@@ -9,16 +9,19 @@ pkg std =
 	generic isnan		: (f : @a -> bool) ::floating @a
 	const flt64frombits	: (bits : uint64 -> flt64)
 	const flt32frombits	: (bits : uint32 -> flt32)
-	const flt64explode	: (flt : flt64 -> (bool, uint64, int64))
-	const flt32explode	: (flt : flt32 -> (bool, uint32, int32))
-	const flt64assem	: (sign : bool, mant : uint64, exp : int64 -> flt64)
-	const flt32assem	: (sign : bool, mant : uint32, exp : int32 -> flt32)
+	const flt64explode	: (flt : flt64 -> (bool, int64, uint64))
+	const flt32explode	: (flt : flt32 -> (bool, int32, uint32))
+	const flt64assem	: (sign : bool, exp : int64, mant : uint64 -> flt64)
+	const flt32assem	: (sign : bool, exp : int32, mant : uint32 -> flt32)
 ;;
 
 const flt64bits	= {flt;	-> (&flt : uint64#)#}
 const flt32bits	= {flt;	-> (&flt : uint32#)#}
 const flt64frombits	= {bits;	-> (&bits : flt64#)#}
 const flt32frombits	= {bits;	-> (&bits : flt32#)#}
+
+const Dblbias = 1023
+const Fltbias = 127
 
 const flt64explode = {flt
 	var bits, isneg, mant, uexp, exp
@@ -31,17 +34,11 @@ const flt64explode = {flt
 	/* add back the implicit bit if this is not a denormal */
 	if uexp != 0
 		mant |= 1ul << 52
-		exp = (uexp : int64)
-	else
-		exp = 1
 	;;
-	/*
-	   adjust for exponent bias. nb: because we are
-	   treating the mantissa as m.0 instead of 0.m,
-	   our exponent bias needs to be offset by the
-	   size of m
-	*/
-	-> (isneg, mant, exp)
+
+	/* adjust for exponent bias */
+	exp = (uexp : int64) - Dblbias
+	-> (isneg, exp, mant)
 }
 
 const flt32explode = {flt
@@ -55,33 +52,61 @@ const flt32explode = {flt
 	/* add back the implicit bit if this is not a denormal */
 	if uexp != 0
 		mant |= 1 << 23
-		exp = (uexp : int32)
-	else
-		exp = 1
 	;;
-	/*
-	   adjust for exponent bias. nb: because we are
-	   treating the mantissa as m.0 instead of 0.m,
-	   our exponent bias needs to be offset by the
-	   size of m
-	*/
-	-> (isneg, mant, exp)
+
+	/* adjust for exponent bias */
+	exp = (uexp : int32) - Fltbias
+	-> (isneg, exp, mant)
 }
 
-const flt64assem = {sign, mant, exp
+const flt64assem = {sign, exp, mant
 	var s, m, e
 
+	if exp <= -Dblbias && (mant & (1ul << 52) != 0)
+		var roundup = false
+		var shift : uint64 = ((1 - Dblbias - exp) : uint64)
+		var firstcut = mant & (1 << shift)
+		var restcut = mant & ((1 << shift) - 1)
+		var lastkept = mant & (1 << (shift + 1))
+		roundup = firstcut != 0 && (lastkept != 0 || restcut != 0)
+		mant >>= shift
+		exp = -Dblbias
+		if roundup
+			mant++
+			if (mant & (1ul << 52) != 0)
+				exp++
+			;;
+		;;
+	;;
+
 	s = (sign : uint64)
-	e = (exp : uint64) & 0x7ff
+	e = (exp + Dblbias : uint64) & 0x7ff
 	m = (mant : uint64) & ((1ul<<52) - 1)
 	-> std.flt64frombits((s << 63) | (e << 52) | m)
 }
 
-const flt32assem = {sign, mant, exp
+const flt32assem = {sign, exp, mant
 	var s, m, e
 
+	if exp <= -Fltbias && (mant & (1 << 23) != 0)
+		var roundup = false
+		var shift : uint32 = ((1 - Fltbias - exp) : uint32)
+		var firstcut = mant & (1 << shift)
+		var restcut = mant & ((1 << shift) - 1)
+		var lastkept = mant & (1 << (shift + 1))
+		roundup = firstcut != 0 && (lastkept != 0 || restcut != 0)
+		mant >>= shift
+		exp = -Fltbias
+		if roundup
+			mant++
+			if (mant & (1 << 23) != 0)
+				exp++
+			;;
+		;;
+	;;
+
 	s = (sign : uint32)
-	e = (exp : uint32) & 0xff
+	e = (exp + Fltbias : uint32) & 0xff
 	m = (mant : uint32) & ((1<<23) - 1)
 	-> std.flt32frombits(s << 31 | e << 23 | m)
 

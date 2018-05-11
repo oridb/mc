@@ -19,6 +19,8 @@ const main = {
 		[.name = "bits-roundtrip-64", .fn = bitsround64],
 		[.name = "flt32bits", .fn = flt32bits],
 		[.name = "flt64bits", .fn = flt64bits],
+		[.name = "explode-roundtrip-32", .fn = exploderound32],
+		[.name = "explode-roundtrip-64", .fn = exploderound64],
 	][:])
 }
 
@@ -95,6 +97,7 @@ const flt32bits = {c
 			(1.0, 0x3f800000),
 			(0.0000123, 0x374e5c19),
 			(-993.83, 0xc478751f),
+			(0.000000000000000000000000000000000000006054601, 0x0041edc4),
 		     ][:]
 		var uprime = std.flt32bits(f)
 		testr.check(c, u == uprime, "flt32bits wrong for {}:  0x{x} != 0x{x}", f, u, uprime)
@@ -112,3 +115,65 @@ const flt64bits = {c
 		testr.check(c, u == uprime, "flt64bits wrong for {}:  0x{x} != 0x{x}", f, u, uprime)
 	;;
 }
+
+const exploderound32 = {c
+	for f : [1.0, 0.00001, 123.45, 1111111111111111.2, -1.9, -0.0001, 0.000000000000000000000000000000000000006054601, std.flt32nan()][:]
+		var n, e, s
+		(n, e, s) = std.flt32explode(f)
+		var g = std.flt32assem(n, e, s)
+		testr.check(c, f == g, "assem o explode non-identity: {} != {}", f, g)
+	;;
+
+	/*
+	   The exponents and significands need to be rather specific
+	   in order for flt32assem to work as expected
+	 */
+	for (n, e, s) : [
+			(false, -127, 0),
+			(true, -127, 0),
+			(false, -127, 0x399),
+			(true, -127, 0x23),
+			(false, 45, (1 << 23) | 0x23),
+			(true, -12, (1 << 23) | 0x3a2),
+			(true, -126, (1 << 23) | 0x3a1),
+			(false, -127, 4320708),
+		][:]
+		var m, f, t
+		(m, f, t) = std.flt32explode(std.flt32assem(n, e, s))
+		testr.check(c, n == m, "explode o assem non-identity: {} != {}", (n, e, s), (m, f, t))
+		testr.check(c, e == f, "explode o assem non-identity: {} != {}", (n, e, s), (m, f, t))
+		testr.check(c, s == t, "explode o assem non-identity: {} != {}", (n, e, s), (m, f, t))
+	;;
+}
+
+const exploderound64 = {c
+	for f : [1.0, 0.00001, 123.45, 1111111111111e+309, -1.9, -0.0001, std.flt64nan()][:]
+		var n, e, s
+		(n, e, s) = std.flt64explode(f)
+		var g = std.flt64assem(n, e, s)
+		testr.check(c, f == g, "assem o explode non-identity: {} != {}", f, g)
+	;;
+
+	/*
+	   The exponents and significands need to be rather specific
+	   in order for flt32assem to work as expected
+	 */
+	for (n, e, s) : [
+			(false, -1023, 0),
+			(true, -1023, 0),
+			(false, -1023, 0x399),
+			(true, -1023, 0x23),
+			(false, 45, (1 << 52) | 0xa33bc),
+			(true, -12, (1 << 52) | 0x3),
+			(true, -200, (1 << 52) | 0x11aabbcc),
+			(true, 543, (1 << 52) | 0x3a1),
+			(true, 1001, (1 << 52) | 0x99aa228),
+		][:]
+		var m, f, t
+		(m, f, t) = std.flt64explode(std.flt64assem(n, e, s))
+		testr.check(c, n == m, "explode o assem non-identity: {} != {}", (n, e, s), (m, f, t))
+		testr.check(c, e == f, "explode o assem non-identity: {} != {}", (n, e, s), (m, f, t))
+		testr.check(c, s == t, "explode o assem non-identity: {} != {}", (n, e, s), (m, f, t))
+	;;
+}
+
