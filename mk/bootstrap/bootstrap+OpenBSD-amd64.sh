@@ -4,25 +4,25 @@
 pwd=`pwd`
 set -x
 	$pwd/6/6m -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/config.myr
-	as -o mbld/cpufeatures.o mbld/cpufeatures+posixy-x64.s
-	as -o lib/thread/exit.o lib/thread/exit+openbsd-x64.s
-	as -o lib/thread/atomic-impl.o lib/thread/atomic-impl+x64.s
-	as -o lib/std/getbp.o lib/std/getbp+posixy-x64.s
+	as -g -o mbld/cpufeatures.o mbld/cpufeatures+posixy-x64.s
+	as -g -o lib/thread/exit.o lib/thread/exit+openbsd-x64.s
+	as -g -o lib/thread/atomic-impl.o lib/thread/atomic-impl+x64.s
+	as -g -o lib/std/getbp.o lib/std/getbp+posixy-x64.s
 	$pwd/6/6m -I lib/sys lib/std/option.myr
 	$pwd/6/6m -I lib/sys lib/std/traits.myr
-	as -o lib/std/memops-impl.o lib/std/memops-impl+posixy-x64.s
+	as -g -o lib/std/memops-impl.o lib/std/memops-impl+posixy-x64.s
 	$pwd/6/6m -I lib/sys lib/std/fltbits.myr
-	as -o lib/std/sjlj-impl.o lib/std/sjlj-impl+posixy-x64.s
+	as -g -o lib/std/sjlj-impl.o lib/std/sjlj-impl+posixy-x64.s
 	$pwd/6/6m -I lib/sys lib/std/endian.myr
 	$pwd/6/6m -I lib/sys lib/std/extremum.myr
 	$pwd/6/6m -I lib/sys lib/std/sjlj+x64.myr
 	$pwd/6/6m -I lib/sys lib/std/swap.myr
 	$pwd/6/6m -I lib/sys lib/std/slfill.myr
 	$pwd/6/6m -I lib/sys lib/std/result.myr
-	as -o lib/sys/syscall.o lib/sys/syscall+openbsd-x64.s
+	as -g -o lib/sys/syscall.o lib/sys/syscall+openbsd-x64.s
 	$pwd/6/6m lib/sys/ifreq+openbsd.myr
 	$pwd/6/6m lib/sys/systypes.myr
-	as -o lib/sys/util.o lib/sys/util+posixy-x64.s
+	as -g -o lib/sys/util.o lib/sys/util+posixy-x64.s
 	$pwd/6/6m lib/sys/syserrno+openbsd.myr
 	$pwd/6/6m lib/sys/sys+openbsd:6.2-x64.myr
 	ar -rcs lib/sys/libsys.a lib/sys/sys.o lib/sys/syserrno.o lib/sys/util.o lib/sys/systypes.o lib/sys/ifreq.o lib/sys/syscall.o
@@ -142,5 +142,5 @@ set -x
 	$pwd/6/6m -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/test.myr
 	$pwd/6/6m -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/deps.myr
 	$pwd/6/6m -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/main.myr
-	ld -nopie -o mbld/mbld $pwd/rt/_myrrt.o mbld/deps.o mbld/main.o mbld/util.o mbld/cpufeatures.o mbld/libs.o mbld/syssel.o mbld/config.o mbld/opts.o mbld/subtest.o mbld/types.o mbld/test.o mbld/install.o mbld/parse.o mbld/build.o -Llib/thread -lthread -Llib/bio -lbio -Llib/regex -lregex -Llib/std -lstd -Llib/sys -lsys
+	ld -nopie --gc-sections -o mbld/mbld $pwd/rt/_myrrt.o mbld/deps.o mbld/main.o mbld/util.o mbld/cpufeatures.o mbld/libs.o mbld/syssel.o mbld/config.o mbld/opts.o mbld/subtest.o mbld/types.o mbld/test.o mbld/install.o mbld/parse.o mbld/build.o -Llib/thread -lthread -Llib/bio -lbio -Llib/regex -lregex -Llib/std -lstd -Llib/sys -lsys
 true
