@@ -29,7 +29,6 @@ $(LIB): $(OBJ) $(EXTRADEP) $(DEPS)
 $(BIN): $(OBJ) $(EXTRADEP) $(DEPS)
 	$(CC) -o $@ $(OBJ) $(_LIBSRCHPATHS) $(_LIBPATHS) $(LDFLAGS)
 
-.PHONY: $(DEPS)
 $(DEPS):
 	@cd $(dir $@) && $(MAKE)
 
