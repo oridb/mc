@@ -81,23 +81,24 @@ const aesgcmencrypt = {c, buf, aad, tag
 }
 
 const aesgcmdecrypt = {c, buf, aad, tag
-	var tmp : byte[16]
+	var ctag : byte[16], tmp : byte[16]
 	var L, Y
 
-	ghash(c, aad, Y)
-	ghash(c, buf, Y)
+	L = [0,0,0,0]
+	Y = [0,0,0,0]
+	ghash(c, aad, Y[:])
+	ghash(c, buf, Y[:])
 	L[0] = buf.len << 3
 	L[1] = buf.len >> 29
 	L[2] = aad.len << 3
 	L[3] = aad.len >> 29
-	ghash1(c, L, Y)
-	store128(Y, tmp[:])
-	aesctr(c, tmp[:])
-	if bufeq(tag, tmp[:])
-		-> false
+	ghash1(c, L[:], Y[:])
+	store128(Y[:], ctag[:])
+	for var i = 0; i < 16; i++
+		ctag[i] ^= c.j0[i]
 	;;
 	aesctr(c, buf)
-	-> true
+	-> bufeq(tag, ctag[:])
 }
 
 const ghash = {c, buf, Y
