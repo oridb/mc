@@ -126,6 +126,7 @@ const stale = {b, n
 	var staletime
 
 	staletime = n.deptime
+	staletime = std.max(staletime, b.tctime)
 	for d : n.ndep
 		staletime = std.max(staletime, d.mtime)
 	;;

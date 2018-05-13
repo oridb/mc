@@ -350,7 +350,8 @@ genfunc(FILE *fd, Func *fn, Htab *globls, Htab *strtab)
 	char cwd[1024];
 
 	resetregs();
-	getcwd(cwd, sizeof cwd);
+	if (!getcwd(cwd, sizeof cwd))
+		die("getcwd failed: %s\n", cwd);
 	is.reglocs = mkht(varhash, vareq);
 	is.name = fn->name;
 	is.stkoff = fn->stkoff;

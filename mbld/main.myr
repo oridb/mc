@@ -152,9 +152,42 @@ const mkbuild = {tags
 		.leaves = [][:],
 		.nodes = [][:],
 	])
+	b.tctime = tctime()
 	bld.addsysattrs(b, tags)
 	-> b
 }
+
+const tctime = {
+	var path : byte[1024]
+	var tm
+
+	tm = 0
+	for bin : [bld.opt_muse, bld.opt_mc][:]
+		match which(path[:], bin)
+		| `std.None:
+		| `std.Some p:
+			match std.fmtime(p)
+			| `std.Ok t:	tm = std.max(tm, t)
+			| `std.Err e:	tm = std.now()
+			;;
+		;;
+	;;
+	-> tm
+}
+
+const which = {buf, name
+	var path, f
+
+	path = std.getenvv("PATH", "/bin")
+	for p : std.bysplit(path, ":")
+		f = std.bfmt(buf, "{}/{}", p, name)
+		if std.fexists(f)
+			-> `std.Some f
+		;;
+	;;
+	-> `std.None
+}
+
 
 const findproj = {b
 	var dir

@@ -39,7 +39,6 @@ generic putbe8		= {buf, v;	-> putbe(buf, (v : uint64), 1)}
 const putbe = {buf, val, n
 	var k
 	
-	iassert(buf.len >= n, "buffer too small")
 	for var i = 0; i < n; i++
 		k = val >> (8*(n-i-1))
 		buf[i] = (k & 0xff: byte)
@@ -48,7 +47,6 @@ const putbe = {buf, val, n
 }
 
 const putle = {buf, val, n
-	iassert(buf.len >= n, "buffer too small")
 	for var i = 0; i < n; i++
 		buf[i] = (val & 0xff : byte)
 		val >>= 8

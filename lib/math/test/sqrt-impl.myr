@@ -3,6 +3,7 @@ use math
 use testr
 
 const main = {
+	math.fptrap(false)
 	testr.run([
 		[.name="sqrt-01", .fn = sqrt01],
 		[.name="sqrt-02", .fn = sqrt02],

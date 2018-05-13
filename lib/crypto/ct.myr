@@ -12,6 +12,7 @@ pkg crypto =
 	generic mux	: (x : @t, a : @t, b : @t ->@t)	:: integral,numeric @t
 	generic min	: (a : @t, b : @t -> @t)	:: integral,numeric @t
 	generic max	: (a : @t, b : @t -> @t)	:: integral,numeric @t
+	const bufeq	: (a : byte[:], b : byte[:] -> bool)
 ;;
 
 generic not = {a : @t :: integral,numeric @t
@@ -72,4 +73,15 @@ generic max = {a, b
 
 	x = lt(a, b)
 	-> mux(x, b, a)
+}
+
+const bufeq = {a, b
+	var r, n
+
+	r = 1
+	n = min(a.len, b.len)
+	for var i = 0; i < n; i++
+		r = mux(r, eq(a[i], b[i]), r)
+	;;
+	-> (r : bool)
 }
