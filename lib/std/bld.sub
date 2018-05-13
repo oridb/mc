@@ -1,4 +1,7 @@
-testdeps = ../testr:testr ;;
+testdeps = 
+	../testr:testr
+	../math:math
+;;
 
 lib std =
 	lib ../sys:sys

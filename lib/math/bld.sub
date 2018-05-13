@@ -33,6 +33,7 @@ lib math =
 	util.myr
 	ftrap.myr
 	ftrap-impl+plan9-x64.s
+	ftrap-impl+posixy-x64.s
 
 	lib ../std:std
 ;;

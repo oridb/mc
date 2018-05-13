@@ -1,17 +1,17 @@
 .globl _math$fptrap
 .globl math$fptrap
 _math$fptrap:
-math$fptrap
+math$fptrap:
 	subq	$4,%rsp
 	wait
 	stmxcsr	(%rsp)
-	movl	(%rsp),%rax
-	andl	$~0x1f80,%rax
-	testb	%rdi,%rdi
+	movl	(%rsp),%eax
+	andl	$~0x1f80,%eax
+	testb	%dil,%dil
 	jnz	.apply
-	orl	$0x1f80,%rax
+	orl	$0x1f80,%eax
 .apply:
-	movl	%rax,(rsp)
+	movl	%eax,(%rsp)
 	ldmxcsr	(%rsp)
 	addq	$4,%rsp
 	ret
