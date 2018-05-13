@@ -247,7 +247,7 @@ writeasm(FILE *fd, Isel *s, Func *fn)
 
 	switch (asmsyntax) {
 	case Gnugaself:
-		fprintf(fd, ".section .text.%s,\"ax\",@progbits\n", fn->name);
+		//fprintf(fd, ".section .text.%s,\"ax\",@progbits\n", fn->name);
 		fprintf(fd, ".type %s, @function\n", fn->name);
 		break;
 	case Gnugasmacho:
@@ -428,7 +428,7 @@ genblob(FILE *fd, Node *blob, Htab *globls, Htab *strtab)
 		writeblob(fd, b);
 		blobfree(b);
 	} else {
-		fprintf(fd, ".comm %s,%zd,5\n", lbl, size(blob));
+		fprintf(fd, ".comm %s,%zd\n", lbl, size(blob));
 	}
 }
 

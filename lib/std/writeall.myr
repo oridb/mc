@@ -5,7 +5,7 @@ use "syswrap"
 use "types"
 
 pkg std =
-	const writeall : (fd : fd, src : byte[:] -> (size, option(errno)))
+	const writeall : (fd : fd, src : byte[:] -> std.result(size, (size, errno)))
 ;;
 
 const writeall = {fd, src
@@ -14,9 +14,10 @@ const writeall = {fd, src
 	sz = src.len
 	while src.len != 0
 		match std.write(fd, src)
+		| `Err e:	-> `std.Err (sz, e)
+		| `Ok 0:	-> `std.Err (sz, 0)
 		| `Ok n:	src = src[n:]
-		| `Err e:	-> (sz - src.len, `Some e)
 		;;
 	;;
-	-> (sz, `None)
+	-> `std.Ok sz
 }
