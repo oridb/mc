@@ -3,6 +3,7 @@ use math
 use testr
 
 const main = {
+	math.fptrap(false)
 	testr.run([
 		[.name = "trunc-01",    .fn = trunc01],
 		[.name = "trunc-02",    .fn = trunc02],

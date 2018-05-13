@@ -1,0 +1,14 @@
+TEXT	math$fptrap(SB),$0
+	SUBQ	$4,SP
+	WAIT
+	STMXCSR	(SP)
+	MOVL	(SP),AX
+	ANDL	$~0x1f80,AX
+	TESTB	DI,DI
+	JNZ	.apply
+	ORL	$0x1f80,AX
+.apply:
+	MOVL	AX,(SP)
+	LDMXCSR	(SP)
+	ADDQ	$4,SP
+	RET

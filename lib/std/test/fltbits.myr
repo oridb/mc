@@ -1,18 +1,9 @@
 use std
 use testr
-
-var testnan
+use math
 
 const main = {
-	var si
-
-	/* Floating point mode traps on 9front. */
-	std.getsysinfo(&si)
-	match si.system
-	| "Plan9":	testnan = false
-	| _:		testnan = true
-	;;
-
+	math.fptrap(false)
 	testr.run([
 		[.name = "isnan", .fn = isnan01],
 		[.name = "bits-roundtrip-32", .fn = bitsround32],
@@ -25,26 +16,24 @@ const main = {
 }
 
 const isnan01 = {c
-	if testnan
-		testr.check(c, std.isnan(std.flt64nan()), "std.flt64nan() should give a NaN")
-		testr.check(c, std.isnan(std.flt32nan()), "std.flt32nan() should give a NaN")
-	
-		/*
-		   a NaN should be {any sign bit}, then {8 or 11 exponent
-		   bits, all 1}, then {any non-zero sequence of 23 or 52
-		   bits}
-		 */
-		testr.check(c, std.isnan(std.flt64frombits(0xfff0000500000000ul)), "0xfff0000500000000 should be a NaN")
-		testr.check(c, std.isnan(std.flt64frombits(0x7ff0000500000000ul)), "0x7ff0000500000000 should be a NaN")
-		testr.check(c, std.isnan(std.flt32frombits(0xff800090)), "0xff800090 should be a NaN")
-		testr.check(c, std.isnan(std.flt32frombits(0x7f800090)), "0x7f800090 should be a NaN")
-	
-		/* if the significand bits are all 0, it's an infinity instead */
-		testr.check(c, !std.isnan(std.flt64frombits(0x7ff0000000000000ul)), "Infinities[1] should not be NaNs")
-		testr.check(c, !std.isnan(std.flt64frombits(0xfff0000000000000ul)), "Infinities[2] should not be NaNs")
-		testr.check(c, !std.isnan(std.flt32frombits(0xff800000)), "Infinities[3] should not be NaNs")
-		testr.check(c, !std.isnan(std.flt32frombits(0x7f800000)), "Infinities[4] should not be NaNs")
-	;;
+	testr.check(c, std.isnan(std.flt64nan()), "std.flt64nan() should give a NaN")
+	testr.check(c, std.isnan(std.flt32nan()), "std.flt32nan() should give a NaN")
+
+	/*
+	   a NaN should be {any sign bit}, then {8 or 11 exponent
+	   bits, all 1}, then {any non-zero sequence of 23 or 52
+	   bits}
+	 */
+	testr.check(c, std.isnan(std.flt64frombits(0xfff0000500000000ul)), "0xfff0000500000000 should be a NaN")
+	testr.check(c, std.isnan(std.flt64frombits(0x7ff0000500000000ul)), "0x7ff0000500000000 should be a NaN")
+	testr.check(c, std.isnan(std.flt32frombits(0xff800090)), "0xff800090 should be a NaN")
+	testr.check(c, std.isnan(std.flt32frombits(0x7f800090)), "0x7f800090 should be a NaN")
+
+	/* if the significand bits are all 0, it's an infinity instead */
+	testr.check(c, !std.isnan(std.flt64frombits(0x7ff0000000000000ul)), "Infinities[1] should not be NaNs")
+	testr.check(c, !std.isnan(std.flt64frombits(0xfff0000000000000ul)), "Infinities[2] should not be NaNs")
+	testr.check(c, !std.isnan(std.flt32frombits(0xff800000)), "Infinities[3] should not be NaNs")
+	testr.check(c, !std.isnan(std.flt32frombits(0x7f800000)), "Infinities[4] should not be NaNs")
 }
 
 const bitsround32 = {c
@@ -58,11 +47,9 @@ const bitsround32 = {c
 		testr.check(c, u == v, "bits -> flt -> bits non-identity: {} != {}", u, v)
 	;;
 
-	if testnan
-		var nan_f = std.flt32frombits(0xff800090)
-		var nan_g = std.flt32frombits(std.flt32bits(nan_f))
-		testr.check(c, nan_f == nan_g, "flt -> bits -> flt non-identity for nan")
-	;;
+	var nan_f = std.flt32frombits(0xff800090)
+	var nan_g = std.flt32frombits(std.flt32bits(nan_f))
+	testr.check(c, nan_f == nan_g, "flt -> bits -> flt non-identity for nan")
 
 	var inf_f = std.flt32frombits(0x7f800000)
 	var inf_g = std.flt32frombits(std.flt32bits(inf_f))
@@ -80,11 +67,9 @@ const bitsround64 = {c
 		testr.check(c, u == v, "bits -> flt -> bits non-identity: {} != {}", u, v)
 	;;
 
-	if testnan
-		var nan_f = std.flt64frombits(0x7ff000000000a000ul)
-		var nan_g = std.flt64frombits(std.flt64bits(nan_f))
-		testr.check(c, nan_f == nan_g, "flt -> bits -> flt non-identity for nan")
-	;;
+	var nan_f = std.flt64frombits(0x7ff000000000a000ul)
+	var nan_g = std.flt64frombits(std.flt64bits(nan_f))
+	testr.check(c, nan_f == nan_g, "flt -> bits -> flt non-identity for nan")
 
 	var inf_f = std.flt64frombits(0xfff0000000000000ul)
 	var inf_g = std.flt64frombits(std.flt64bits(inf_f))
@@ -117,7 +102,10 @@ const flt64bits = {c
 }
 
 const exploderound32 = {c
-	for f : [1.0, 0.00001, 123.45, 1111111111111111.2, -1.9, -0.0001, 0.000000000000000000000000000000000000006054601, std.flt32nan()][:]
+	var vals
+	vals = [1.0, 0.00001, 123.45, 1111111111111111.2, -1.9, -0.0001, 0.000000000000000000000000000000000000006054601, std.flt32nan()][:]
+
+	for f : vals
 		var n, e, s
 		(n, e, s) = std.flt32explode(f)
 		var g = std.flt32assem(n, e, s)
