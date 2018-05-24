@@ -13,6 +13,7 @@ const main = {
 
 const scale201 = {c
 	var inputsf : (flt32, int32, flt32)[:] = [
+		(0.000000011971715, -246, 0.0),
 		(0.0, 1, 0.0),
 		(-0.0, 2, -0.0),
 		(1.0, 3, 8.0),
@@ -25,7 +26,9 @@ const scale201 = {c
 	][:]
 
 	for (f, m, g) : inputsf
-		testr.eq(c, math.scale2(f, m), g)
+		var r = math.scale2(f, m)
+		testr.check(c, r == g, "scale2(0x{w=8,b=16,p=0}, {}) should be 0x{w=8,b=16,p=0}, was 0x{w=8,b=16,p=0}",
+		std.flt32bits(f), m, std.flt32bits(g), std.flt32bits(r))
 	;;
 }
 

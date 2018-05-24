@@ -18,6 +18,9 @@ lib math =
 	# polynomial evaluation methods
 	poly-impl.myr
 
+	# x^y
+	powr-impl.myr
+
 	# scalb (multiply x by 2^m)
 	scale2-impl.myr
 

@@ -1,0 +1,76 @@
+use std
+use math
+use testr
+
+const main = {
+	math.fptrap(false)
+	testr.run([
+		[.name="powr-01", .fn = powr01],
+		[.name="powr-02", .fn = powr02],
+		[.name="powr-03", .fn = powr03],
+	][:])
+}
+
+const powr01 = {c
+	var inputs : (uint32, uint32, uint32)[:] = [
+		(0x08a38749, 0x2ffb67c0, 0x3f7fffff),
+		(0x01433ed5, 0x367caeda, 0x3f7feaba),
+		(0x7112fd5b, 0x7509b252, 0x7f800000),
+		(0x22b5f461, 0xc7335035, 0x7f800000),
+		(0x29529847, 0x43c6b361, 0x00000000),
+		(0x3fc1cc03, 0x64eb4c95, 0x7f800000),
+		(0x653f944a, 0xbf7c2388, 0x1a3c784b),
+		(0x545ba67c, 0xc0c7e947, 0x00000000),
+		(0x3fca6b0d, 0x44ff18e0, 0x7f800000),
+		(0x3f74c7a7, 0x44feae20, 0x000265c6),
+		(0x3f7ebd6c, 0xc5587884, 0x4bc9ab07),
+	][:]
+
+	for (x, y, z) : inputs
+		var xf : flt32 = std.flt32frombits(x)
+		var yf : flt32 = std.flt32frombits(y)
+		var zf : flt32 = std.flt32frombits(z)
+		var rf = math.powr(xf, yf)
+		testr.check(c, rf == zf,
+			"powr(0x{b=16,w=8,p=0}, 0x{b=16,w=8,p=0}) should be 0x{b=16,w=8,p=0}, was 0x{b=16,w=8,p=0}",
+			x, y, z, std.flt32bits(rf))
+	;;
+}
+
+const powr02 = {c
+	var inputs : (uint64, uint64, uint64)[:] = [
+		(0x0000000000000000, 0x0000000000000000, 0x0000000000000000),
+	][:]
+
+	for (x, y, z) : inputs
+		var xf : flt64 = std.flt64frombits(x)
+		var yf : flt64 = std.flt64frombits(y)
+		var zf : flt64 = std.flt64frombits(z)
+		var rf = math.powr(xf, yf)
+		testr.check(c, rf == zf,
+			"powr(0x{b=16,w=16,p=0}, 0x{b=16,w=16,p=0}) should be 0x{b=16,w=16,p=0}, was 0x{b=16,w=16,p=0}",
+			x, y, z, std.flt64bits(rf))
+	;;
+}
+
+const powr03 = {c
+	var inputs : (uint32, uint32, uint32, uint32)[:] = [
+		(0x1bd2244e, 0x3a647973, 0x3f7535a1, 0x3f7535a0),
+		(0x3f264a46, 0x423c927a, 0x30c9b8d3, 0x30c9b8d4),
+		(0x61fb73d0, 0xbfd2666c, 0x06c539f6, 0x06c539f7),
+		(0x3bbd11f6, 0x3cc159b1, 0x3f62ac1b, 0x3f62ac1a),
+		(0x3f7ca5b7, 0xc309857a, 0x40c41bbf, 0x40c41bc0),
+		(0x3f6a1a65, 0x43e16065, 0x226731e2, 0x226731e3),
+	][:]
+
+	for (x, y, z_perfect, z_accepted) : inputs
+		var xf : flt32 = std.flt32frombits(x)
+		var yf : flt32 = std.flt32frombits(y)
+		var zf_perfect : flt32 = std.flt32frombits(z_perfect)
+		var zf_accepted : flt32 = std.flt32frombits(z_accepted)
+		var rf = math.powr(xf, yf)
+		testr.check(c, rf == zf_perfect || rf == zf_accepted,
+			"powr(0x{b=16,w=8,p=0}, 0x{b=16,w=8,p=0}) should be 0x{b=16,w=8,p=0}, will also accept 0x{b=16,w=8,p=0}, was 0x{b=16,w=8,p=0}",
+			x, y, z_perfect, z_accepted, std.flt32bits(rf))
+	;;
+}

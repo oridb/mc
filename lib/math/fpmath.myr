@@ -18,6 +18,9 @@ pkg math =
 		horner_poly : (x : @f, a : @f[:] -> @f)
 		horner_polyu : (x : @f, a : @u[:] -> @f)
 
+		/* powr-impl */
+		powr : (x : @f, y : @f -> @f)
+
 		/* scale2-impl */
 		scale2 : (x : @f, m : @i -> @f)
 
@@ -83,6 +86,8 @@ impl fpmath flt32 =
 	horner_poly = {x, a; -> horner_poly32(x, a)}
 	horner_polyu = {x, a; -> horner_polyu32(x, a)}
 
+	powr = {x, y; -> powr32(x, y)}
+
 	scale2 = {x, m; -> scale232(x, m)}
 
 	sqrt = {x; -> sqrt32(x)}
@@ -107,6 +112,8 @@ impl fpmath flt64 =
 
 	horner_poly = {x, a; -> horner_poly64(x, a)}
 	horner_polyu = {x, a; -> horner_polyu64(x, a)}
+
+	powr = {x, y; -> powr64(x, y)}
 
 	scale2 = {x, m; -> scale264(x, m)}
 
@@ -143,6 +150,9 @@ extern const horner_poly64 : (x : flt64, a : flt64[:] -> flt64)
 
 extern const horner_polyu32 : (x : flt32, a : uint32[:] -> flt32)
 extern const horner_polyu64 : (x : flt64, a : uint64[:] -> flt64)
+
+extern const powr32 : (x : flt32, y : flt32 -> flt32)
+extern const powr64 : (x : flt64, y : flt64 -> flt64)
 
 extern const scale232 : (x : flt32, m : int32 -> flt32)
 extern const scale264 : (x : flt64, m : int64 -> flt64)

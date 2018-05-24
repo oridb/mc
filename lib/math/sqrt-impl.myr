@@ -38,7 +38,7 @@ type fltdesc(@f, @u, @i) = struct
 
    In the flt64 case, we need only one more iteration.
  */
-const ab32 : (uint32, uint32)[:] = [
+const ab32 : (uint32, uint32)[7] = [
 	(0x3f800000, 0x3f800000), /* Nothing should ever get normalized to < 1.0 */
 	(0x3fa66666, 0x3f6f30ae), /* [1.0,  1.3 ) -> 0.9343365431 */
 	(0x3fd9999a, 0x3f5173ca), /* [1.3,  1.7 ) -> 0.8181730509 */
@@ -46,9 +46,9 @@ const ab32 : (uint32, uint32)[:] = [
 	(0x40333333, 0x3f215342), /* [2.25, 2.8 ) -> 0.6301766634 */
 	(0x4059999a, 0x3f118e0e), /* [2.8,  3.4 ) -> 0.5685738325 */
 	(0x40800000, 0x3f053049), /* [3.4,  4.0 ) -> 0.520268023  */
-][:]
+]
 
-const ab64 : (uint64, uint64)[:] = [
+const ab64 : (uint64, uint64)[8] = [
 	(0x3ff0000000000000, 0x3ff0000000000000), /* < 1.0 */
 	(0x3ff3333333333333, 0x3fee892ce1608cbc), /* [1.0,  1.2)  -> 0.954245033445111356940060431953 */
 	(0x3ff6666666666666, 0x3fec1513a2184094), /* [1.2,  1.4)  -> 0.877572838393478438234751592972 */
@@ -57,7 +57,7 @@ const ab64 : (uint64, uint64)[:] = [
 	(0x400599999999999a, 0x3fe47717c17cd34f), /* [2.2,  2.7)  -> 0.639537694840876969060161627567 */
 	(0x400b333333333333, 0x3fe258df212a8e9a), /* [2.7,  3.4)  -> 0.573348583963212421465982515656 */
 	(0x4010000000000000, 0x3fe0a5989f2dc59a), /* [3.4,  4.0)  -> 0.520214377304159869552790951275 */
-][:]
+]
 
 const desc32 : fltdesc(flt32, uint32, int32) =  [
 	.explode = std.flt32explode,
@@ -70,7 +70,7 @@ const desc32 : fltdesc(flt32, uint32, int32) =  [
 	.emax = 128,
 	.normmask = 1 << 23,
 	.sgnmask = 1 << 31,
-	.ab = ab32,
+	.ab = ab32[0:7],
 	.iterlim = 3,
 ]
 
@@ -85,7 +85,7 @@ const desc64 : fltdesc(flt64, uint64, int64) =  [
 	.emax = 1024,
 	.normmask = 1 << 52,
 	.sgnmask = 1 << 63,
-	.ab = ab64,
+	.ab = ab64[0:8],
 	.iterlim = 4,
 ]
 
@@ -174,11 +174,11 @@ generic sqrtgen = {x : @f, d : fltdesc(@f, @u, @i) :: numeric,floating,std.equat
 		var r_plus_ulp : @f = d.frombits(d.tobits(r) + 1)
 		var r_minus_ulp : @f = d.frombits(d.tobits(r) - 1)
 
-		var delta_1 = d.fma(r, r_minus_ulp, -1.0 * f)
+		var delta_1 = d.fma(r, r_minus_ulp, -1.0 * x)
 		if d.tobits(delta_1) & d.sgnmask == 0
 			r = r_minus_ulp
 		else
-			var delta_2 = d.fma(r, r_plus_ulp, -1.0 * f)
+			var delta_2 = d.fma(r, r_plus_ulp, -1.0 * x)
 			if d.tobits(delta_2) & d.sgnmask != 0
 				r = r_plus_ulp
 			else

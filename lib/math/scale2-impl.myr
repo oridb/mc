@@ -41,8 +41,11 @@ generic scale2gen = {n : bool, e : @i, s : @u, emin : @i, emax : @i, p : @u, m :
 				sprime++
 			;;
 			eprime = emin - 1
+		elif e + m < emin - p - 2
+			sprime = 0
+			eprime = emin - 1
 		elif e + m < emin
-			sprime = s >> (emin - m - e)
+			sprime = s >> ((emin - m - e) : @u)
 			if need_round_away(0, (s : uint64), ((emin - m - e) : int64))
 				sprime++
 			;;

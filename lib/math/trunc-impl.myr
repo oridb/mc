@@ -33,10 +33,10 @@ pkglocal const floor32 = {x : flt32
 	if n
 		var fractional_mask = Flt32SigMask >> (e : uint32)
 		if s & fractional_mask == 0
-			-> f
+			-> x
 		else
 			/* Turns out the packing of exp and sig is useful */
-			var u : uint32 = std.flt32bits(f) & ~fractional_mask
+			var u : uint32 = std.flt32bits(x) & ~fractional_mask
 			u += ((1 << 23) >> (e : uint32))
 			-> std.flt32frombits(u)
 		;;
