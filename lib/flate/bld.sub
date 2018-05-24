@@ -1,0 +1,13 @@
+lib flate =
+	flate.myr
+	types.myr
+
+	lib ../bio:bio
+	lib ../std:std
+;;
+
+testdeps =
+	../testr:testr
+	../bio:bio
+	../std:std
+;;

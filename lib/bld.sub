@@ -4,6 +4,7 @@ sub =
 	date
 	escfmt
 	fileutil
+	flate
 	http
 	inifile
 	iter
