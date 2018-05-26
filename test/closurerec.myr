@@ -1,0 +1,15 @@
+use std
+
+const main = {
+	const fib = {n
+		if n <= 0
+			-> 0
+		elif n == 1
+			-> 1
+		else
+			-> fib(n - 1) + fib(n - 2)
+		;;
+	}
+	std.exit(fib(8))
+}
+
