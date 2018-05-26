@@ -960,7 +960,7 @@ static Node *
 capture(Simp *s, Node *n, Node *dst)
 {
 	Node *fn, *t, *f, *e, *val, *dcl, *fp, *envsz;
-	size_t nenv, nenvt, off, i;
+	size_t nenv, nenvt, off, sz, i;
 	Type **envt;
 	Node **env;
 
@@ -972,12 +972,15 @@ capture(Simp *s, Node *n, Node *dst)
 		forcelocal(s, dcl);
 	}
 	fp = addr(s, dst, exprtype(dst));
+	assignat(s, fp, Ptrsz, f);
 
 	env = getclosure(fn->func.scope, &nenv);
 	if (env) {
-		/* we need these in a deterministic order so that we can
-		   put them in the right place both when we use them and
-		   when we capture them.  */
+		/*
+		 * we need these in a deterministic order so that we can
+		 * put them in the right place both when we use them and
+		 * when we capture them. 
+		 */
 		qsort(env, nenv, sizeof(Node*), envcmp);
 
 		/* make the tuple that will hold the environment */
@@ -985,12 +988,19 @@ capture(Simp *s, Node *n, Node *dst)
 		nenvt = 0;
 		/* reserve space for size */
 		lappend(&envt, &nenvt, tyintptr);
-		for (i = 0; i < nenv; i++)
+		sz = Ptrsz;
+		for (i = 0; i < nenv; i++) {
 			lappend(&envt, &nenvt, decltype(env[i]));
+			sz += size(env[i]);
+		}
 
 		t = gentemp(n->loc, mktytuple(n->loc, envt, nenvt), &dcl);
 		forcelocal(s, dcl);
 		e = addr(s, t, exprtype(t));
+		envsz = mkintlit(n->loc, sz);
+		envsz->expr.type = tyintptr;
+		assignat(s, e, 0, envsz);
+		assignat(s, fp, 0, e);
 
 		off = Ptrsz;    /* we start with the size of the env */
 		for (i = 0; i < nenv; i++) {
@@ -1002,10 +1012,6 @@ capture(Simp *s, Node *n, Node *dst)
 			off += size(env[i]);
 		}
 		free(env);
-		envsz = mkintlit(n->loc, off);
-		envsz->expr.type = tyintptr;
-		assignat(s, e, 0, envsz);
-		assignat(s, fp, 0, e);
 	} else {
 		/*
 		 * We need to zero out the environment, so that
@@ -1016,7 +1022,6 @@ capture(Simp *s, Node *n, Node *dst)
 		e->expr.type = tyintptr;
 		assignat(s, fp, 0, e);
 	}
-	assignat(s, fp, Ptrsz, f);
 	return dst;
 }
 
