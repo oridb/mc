@@ -1179,9 +1179,9 @@ rval(Simp *s, Node *n, Node *dst)
 		r = simpcast(s, args[0], exprtype(n));
 		break;
 
-		/* ++expr(x)
-		 *  => args[0] = args[0] + 1
-		 *     expr(x) */
+	/* ++expr(x)
+	 *  => args[0] = args[0] + 1
+	 *     expr(x) */
 	case Olit:
 		switch (args[0]->lit.littype) {
 		case Lvoid:
