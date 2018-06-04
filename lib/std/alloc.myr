@@ -120,7 +120,7 @@ const checkhdr = {p
 generic slfree	 = {sl
 	var head, sz
 
-	if (sl : byte#) == Zsliceptr
+	if (sl : byte#) == Zslicep
 		-> void
 	;;
 
@@ -139,7 +139,7 @@ generic slgrow = {sl : @a[:]#, len
 
 	/* if the slice doesn't need a bigger bucket, we don't need to realloc. */
 	cap = 0
-	if (sl# : byte#) != Zsliceptr
+	if (sl# : byte#) != Zslicep
 		cap = slcap((sl# : byte#))
 	;;
 	if cap >= len*sizeof(@a)

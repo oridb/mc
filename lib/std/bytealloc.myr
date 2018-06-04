@@ -15,16 +15,16 @@ pkg std =
 	const startalloctrace	: (f : byte[:] -> void)
 	const endalloctrace	: (-> void)
 
-	/* null pointers. only used internally. */
-	pkglocal const Zsliceptr	= (0 : byte#)
-	pkglocal const Align		= 16	/* minimum allocation alignment */
+	const bytealloc		: (sz:size -> byte#)
+	const zbytealloc	: (sz:size -> byte#)
+	const bytefree		: (m:byte#, sz:size -> void)
 
-	/* exported for testing */
-	const bytealloc			: (sz:size -> byte#)
-	const bytefree			: (m:byte#, sz:size -> void)
-	pkglocal const zbytealloc	: (sz:size -> byte#)
-	pkglocal const align		: (m : std.size, align : std.size -> std.size)
-	pkglocal const allocsz		: (sz : std.size -> std.size)
+	/* null pointers. only used internally. */
+	pkglocal const Zslicep	= (0 : byte#)
+	pkglocal const Align	= 16	/* minimum allocation alignment */
+
+	pkglocal const align	: (m : std.size, align : std.size -> std.size)
+	pkglocal const allocsz	: (sz : std.size -> std.size)
 
 ;;
 
