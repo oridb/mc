@@ -1,0 +1,9 @@
+use sys
+
+pkg std =
+	const pledge	: (promise : byte[:], epromise : byte[:] -> void)
+;;
+
+const pledge = {promise, epromise
+	sys.pledge(sys.cstring(promise), sys.cstring(epromise))
+}

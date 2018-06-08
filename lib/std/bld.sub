@@ -86,6 +86,9 @@ lib std =
 	varargs.myr
 	writeall.myr
 
+	pledge.myr
+	pledge+openbsd.myr
+
 	# asm optimizations
 	memops.myr
 	memops-impl.myr
