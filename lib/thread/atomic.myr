@@ -1,4 +1,5 @@
 use std
+use "common"
 
 pkg thread =
 	trait atomic @a :: integral,numeric @a =
@@ -13,6 +14,11 @@ pkg thread =
 	impl atomic int64
 	impl atomic uint32
 	impl atomic uint64
+
+	generic xgetptr : (p : @a## -> std.option(@a#))
+	generic xsetptr : (p : @a##, v : std.option(@a#) -> void)
+	generic xcasptr : (p : @a##, old : std.option(@a#), new : std.option(@a#) -> std.option(@a#))
+	generic xchgptr : (p : @a##, new : std.option(@a#) -> std.option(@a#))
 ;;
 
 impl atomic int32 =
@@ -56,6 +62,31 @@ impl atomic std.intptr =
 	xcas	= {p, old, new; -> xcasp(p, old, new)}
 	xchg	= {p, v; -> xchgp(p, v)}
 ;;
+
+generic xgetptr = {p
+	match xget((p : std.intptr#))
+	| 0: -> `std.None
+	| n: -> `std.Some (n : @a#)
+	;;
+}
+
+generic xsetptr = {p, v
+	xset((p : std.intptr#), (std.getv(v, Zptr) : std.intptr))
+}
+
+generic xcasptr = {p, old, new
+	match xcas((p : std.intptr#), (std.getv(old, Zptr) : std.intptr), (std.getv(new, Zptr) : std.intptr))
+	| 0: -> `std.None
+	| n: -> `std.Some (n : @a#)
+	;;
+}
+
+generic xchgptr = {p, new
+	match xchg((p : std.intptr#), (std.getv(new, Zptr) : std.intptr))
+	| 0: -> `std.None
+	| n: -> `std.Some (n : @a#)
+	;;
+}
 
 extern const xget32	: (p : uint32# -> uint32)
 extern const xget64	: (p : uint64# -> uint64)
