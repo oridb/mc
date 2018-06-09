@@ -2108,7 +2108,7 @@ infernode(Node **np, Type *ret, int *sawret)
 		t = type(n->iterstmt.seq);
 		constrain(n, t, traittab[Tciter]);
 		b = basetype(t);
-		if (b)
+		if (b && t->type != Typtr)
 			unify(n, e, b);
 		else
 			t->seqaux = e;

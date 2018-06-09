@@ -790,6 +790,7 @@ assign(Simp *s, Node *lhs, Node *rhs)
 		u = addr(s, u, exprtype(lhs));
 		v = disp(lhs->loc, size(lhs));
 		r = mkexpr(lhs->loc, Oblit, t, u, v, NULL);
+		r->expr.type = exprtype(lhs);
 	} else {
 		r = set(t, u);
 	}

@@ -51,10 +51,11 @@ const spawnstk = {fn, sz
 		.tid = &ret,
 		.stk = (tos : byte#),
 	]
-	if sys.__tfork_thread(&tfp, \
-		sizeof(sys.tforkparams), \
-		(startthread : void#), \
-		(0 : void#))  < 0
+	ret = sys.__tfork_thread(&tfp,
+		sizeof(sys.tforkparams),
+		(startthread : void#),
+		(0 : void#))
+	if ret < 0
 		-> `std.Err "couldn't spawn thread"
 	;;
 	-> `std.Ok (ret : tid)
