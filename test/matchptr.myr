@@ -10,6 +10,7 @@ const main = {
 	var y : loop
 	var ok
 
+	ok = false
 	x = `std.Some &(`std.Some 123)
 	match x
 	| `std.Some &(`std.None):	std.put("failed\n")

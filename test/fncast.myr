@@ -6,11 +6,11 @@ const main = {
 	
 	fn = {
 	}
+	ptr = (fn : byte#)
+	ptr = (envfn : byte#)
 	envfn = {
 		ptr = ptr
 	}
-	ptr = (fn : byte#)
-	ptr = (envfn : byte#)
 	std.put("ok\n")
 }
 

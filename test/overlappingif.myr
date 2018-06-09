@@ -7,6 +7,7 @@ const main = {
 
 	v = 0xff
 
+	x = 42
 	if v & 0xff00 != 0
 		x = 1
 	elif v & 0xfff0 != 0
