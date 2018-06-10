@@ -441,14 +441,16 @@ compare(Flattenctx *s, Node *n, int fields)
 static Node *
 assign(Flattenctx *s, Node *lhs, Node *rhs)
 {
-	Node *r, *t, *u;
+	Node *r, *t, *e, *u;
 
 	if (exprop(lhs) == Otup) {
 		r = destructure(s, lhs, rhs);
 	} else if (tybase(exprtype(lhs))->type != Tyvoid) {
 		t = lval(s, lhs);
 		u = rval(s, rhs);
-		r = asn(t, u);
+		e = asn(t, u);
+		append(s, e);
+		r = t;
 	} else {
 		r = rval(s, rhs);
 	}

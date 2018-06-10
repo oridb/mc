@@ -292,6 +292,7 @@ const mkslab = {bkt
 		die("Unable to get memory")
 	;;
 
+	b = Zchunk
 	s = (align((p : size), Slabsz) : slab#)
 	s.head = p
 	s.nfree = bkt.nper

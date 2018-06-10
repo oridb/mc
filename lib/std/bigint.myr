@@ -193,10 +193,6 @@ const bigbfmt = {buf, x, base
 	;;
 
 	n = 0
-	if bigiszero(x)
-		n += encode(buf[n:], '0')
-	;;
-
 	if base == 0
 		b = mkbigint(10)
 	else
