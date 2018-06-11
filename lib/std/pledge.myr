@@ -1,4 +1,6 @@
 use sys
+use "errno"
+use "result"
 
 pkg std =
 	const pledge	: (promise : byte[:], epromise : byte[:] -> void)
