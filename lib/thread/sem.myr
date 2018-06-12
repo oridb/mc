@@ -1,0 +1,66 @@
+use std
+
+use "atomic"
+
+pkg thread =
+	type sem = struct
+		_val : uint32
+	;;
+
+	const mksem : (v : uint32 -> sem)
+	const semwait : (s : sem# -> void)
+	const semtrywait : (s : sem# -> bool)
+	const sempost : (s : sem# -> void)
+;;
+
+const mksem = {v
+	-> [._val = v]
+}
+
+const semwait = {s
+	var v = 0
+
+	for var i = 0; i < 1000; i++
+		if (v = xget(&s._val)) != 0 && xcas(&s._val, v, v - 1) == v
+			-> void
+		;;
+	;;
+
+	for var i = 0; i < 1000; i++
+		if (v = xget(&s._val)) != 0 && xcas(&s._val, v, v - 1) == v
+			-> void
+		;;
+		std.nanosleep(10_000)
+	;;
+
+	for var i = 0; i < 1000; i++
+		if (v = xget(&s._val)) != 0 && xcas(&s._val, v, v - 1) == v
+			-> void
+		;;
+		std.nanosleep(100_000)
+	;;
+
+	for ; ;
+		if (v = xget(&s._val)) != 0 && xcas(&s._val, v, v - 1) == v
+			-> void
+		;;
+		std.nanosleep(1_000_000)
+	;;
+}
+
+const semtrywait = {s
+	for ; ;
+		var v = xget(&s._val)
+		if v == 0
+			-> false
+		;;
+		if xcas(&s._val, v, v - 1) == v
+			-> true
+		;;
+	;;
+	-> false /* Unreachable */
+}
+
+const sempost = {s
+	std.assert(xadd(&s._val, 1) != ~0x0, "error: semaphore overflowed\n")
+}
