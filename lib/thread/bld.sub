@@ -20,6 +20,7 @@ lib thread =
 	exit+freebsd-x64.s
 	mutex+freebsd.myr
 	ncpu+freebsd.myr
+	sem+freebsd.myr
 	spawn+freebsd.myr
 
 	# netbsd impl of thread primitives
@@ -39,6 +40,7 @@ lib thread =
 	atomic-impl+plan9-x64.s
 	mutex+plan9.myr
 	ncpu+plan9.myr
+	sem+plan9.myr
 	spawn+plan9.myr
 
 	# openbsd impl of thread primitives
