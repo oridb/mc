@@ -2,6 +2,7 @@ lib thread =
 	common.myr
 	hookstd.myr	# install thread hooks
 	mutex.myr	# fallback, for unimplemented platforms
+	sem.myr		# fallback, for unimplemented platforms
 
 	#generic fallbacks
 	ncpu.myr
@@ -11,6 +12,7 @@ lib thread =
 	exit+linux-x64.s
 	mutex+linux.myr
 	ncpu+linux.myr
+	sem+linux.myr
 	spawn+linux.myr
 
 	# freebsd impl of thread primitives
@@ -43,6 +45,7 @@ lib thread =
 	exit+openbsd-x64.s
 	mutex+openbsd:6.2.myr
 	ncpu+openbsd.myr
+	sem+openbsd:6.2.myr
 	spawn+openbsd.myr
 
 	atomic-impl+x64.s
