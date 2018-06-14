@@ -42,7 +42,7 @@ const load = {b
 	sel = mksyssel(b, "mbld", 0, "mbld")
 	ok = loadall(b, "bld.proj", "", sel)
 
-	targs = sysselfin(sel)
+	targs = sysselfin(b, sel)
 	for (name, targ) : targs
 		std.slpush(&b.all, name)
 		std.htput(b.targs, name, targ)
@@ -429,9 +429,9 @@ const myrtarget = {b, p, targ
 	| `std.Some (wl, libs): 
 		libdeps = libs
 		for w : wl
-			sysseladd(fsel, w)
+			sysseladd(b, fsel, w)
 		;;
-		inputs = sysselfin(fsel)
+		inputs = sysselfin(b, fsel)
 		std.slfree(wl)
 	| `std.None: failparse(p, "expected list of file names after '{} {}'\n", targ, name)
 	;;
@@ -761,7 +761,7 @@ const addtarg = {p, b, name, tags, targ
 	var tn
 
 	tn = std.fmt("{}:{}", p.fdir, name)
-	sysseladdlist(p.targsel, tn, tags, (tn, targ))
+	sysseladdlist(b, p.targsel, tn, tags, (tn, targ))
 	std.slpush(&p.targs, targ)
 }
 

@@ -1,4 +1,5 @@
 use std
+use bio
 
 use "opts"
 use "types"
@@ -8,15 +9,14 @@ pkg bld =
 		file	: byte[:]
 		line	: int
 		targ	: byte[:]
-		sysattrs	: std.htab(byte[:], (int, int, int))#
 		_match	: std.htab(byte[:], (int, int))#
 		_best	: std.htab(byte[:], @a)#
 	;;
 
 	generic mksyssel	: (b : build#, f : byte[:], line : int, targ : byte[:] -> syssel(@a)#)
-	generic sysseladd	: (syssel : syssel(byte[:])#, file : byte[:] -> void)
-	generic sysseladdlist	: (syssel : syssel(@a)#, base : byte[:], attrs : byte[:][:], val : @a -> void)
-	generic sysselfin	: (syssel : syssel(@a)# -> @a[:])
+	generic sysseladd	: (b : build#, syssel : syssel(byte[:])#, file : byte[:] -> void)
+	generic sysseladdlist	: (b : build#, syssel : syssel(@a)#, base : byte[:], attrs : byte[:][:], val : @a -> void)
+	generic sysselfin	: (b : build#, syssel : syssel(@a)# -> @a[:])
 	const addsysattrs	: (sa : build#, tags : byte[:][:] -> void)
 ;;
 
@@ -29,12 +29,11 @@ generic mksyssel = {b, file, line, targ
 		.targ = targ,
 		._match = std.mkht(),
 		._best = std.mkht(),
-		.sysattrs = b.tags
 	])
 	-> syssel
 }
 
-generic sysseladd = {syssel, f
+generic sysseladd = {b, syssel, f
 	var basename, attrs
 	var attrlist
 
@@ -55,38 +54,23 @@ generic sysseladd = {syssel, f
 	;;
 
 	attrlist = std.strsplit(attrs, "-")
-	sysseladdlist(syssel, basename, attrlist, f)
+	sysseladdlist(b, syssel, basename, attrlist, f)
 	std.slfree(attrlist)
 }
 
-generic sysseladdlist = {syssel, base, attrs, val
-	var nmatch, vscore, n, v, s
+generic sysseladdlist = {b, syssel, base, attrs, val
+	var nmatch, vscore, s
 
 	nmatch = 0
 	vscore = 0
 	for a : attrs
-		match std.strfind(a, ":")
-		| `std.Some i:
-			n = a[:i]
-			v = parseversion(a[i+1:])
-		| `std.None:
-			n = a
-			v = (-1, -1, -1)
-		;;
-
-		match std.htget(syssel.sysattrs, n)
-		| `std.None:
+		s = tagscore(b, a)
+		if s < 0
 			nmatch = -1
 			break
-		| `std.Some have:
-			s = versionscore(syssel, have, v)
-			if s < 0
-				nmatch = -1
-				break
-			;;
-			vscore += s
-			nmatch++
 		;;
+		vscore += s
+		nmatch++
 	;;
 	match std.htgetv(syssel._match, base, (-1, -1))
 	| (curbest, curscore):
@@ -97,7 +81,25 @@ generic sysseladdlist = {syssel, base, attrs, val
 	;;
 }
 
-const versionscore = {syssel, have, want
+const tagscore = {b, tag
+	var n, v
+
+	match std.strfind(tag, ":")
+	| `std.Some i:
+		n = tag[:i]
+		v = parseversion(tag[i+1:])
+	| `std.None:
+		n = tag
+		v = (-1, -1, -1)
+	;;
+
+	match std.htget(b.tags, n)
+	| `std.None:	-> -1
+	| `std.Some cv:	-> versionscore(cv, v)
+	;;
+}
+
+const versionscore = {have, want
 	var s
 
 	s = 0
@@ -123,7 +125,7 @@ const versionscore = {syssel, have, want
 	;;
 }
 
-generic sysselfin = {syssel
+generic sysselfin = {b, syssel
 	var keys, nmatch, ret
 
 	keys = std.htkeys(syssel._match)
@@ -178,7 +180,7 @@ const addsysattrs = {b, tags
 		for t : tags
 			tag(b, t)
 		;;
-		loadtagfile(b, "bld.tag")
+		loadtagfile(b, "bld.tags")
 	;;
 }
 
@@ -196,20 +198,94 @@ const supports = {feat
 }
 
 const loadtagfile = {b, tagfile
-	var data, sp
+	var deptags, tagmap, changed
+	var tf, lnum
 
 	if !std.fexists(tagfile)
 		-> void
 	;;
-	data = std.try(std.slurp(tagfile))
-	while true
-		sp = std.strtok(data)
-		for t : sp
-			tag(b, t)
-		;;
-		std.slfree(sp)
+
+	match bio.open(tagfile, bio.Rd)
+	| `std.Ok f:	tf = f
+	| `std.Err e:	std.fatal("could not open tagfile: {}\n", e)
 	;;
-	std.slfree(data)
+
+	lnum = 0
+	tagmap = std.mkht()
+	/*
+	 * Parse the list of tags. Each line is in the form of
+	 *
+	 *	tag list ":" tag list
+	 * 
+	 * The left hand side of the tag list describes the tags
+	 * that get added if the tags on the right hand side all
+	 * are present.
+	 */
+	for ln : bio.byline(tf)
+		lnum++
+		match std.strfind(ln, ":")
+		| `std.None:
+			for t : std.bytok(ln)
+				tag(b, t)
+			;;
+			continue
+		| `std.Some idx:
+			if std.strstrip(ln[:idx]).len == 0
+				std.fatal("{}:{}: missing tags before ':'\n", tagfile, lnum)
+			;;
+			deptags = [][:]
+			for d : std.bytok(ln[idx+1:])
+				std.slpush(&deptags, std.sldup(d))
+			;;
+			for t : std.bytok(ln[:idx])
+				match std.htget(tagmap, t)
+				| `std.Some v:
+					std.slpush(&v, deptags)
+					std.htput(tagmap, t, v)
+				| `std.None:
+					std.htput(tagmap, std.sldup(t), std.sldup([deptags][:]))
+				;;
+			;;
+		;;
+	;;
+	bio.close(tf)
+	
+	/* 
+	 * Because tags may depend on other tags, we need to iterate
+	 * here until the set of tags reach a fixed point. Each tag
+	 * that we insert may potentially free other tags to be inserted,
+	 * so either we make progress on the finite set of tags, or we
+	 * don't make a change and break out of the loop.
+	 */
+	changed = true
+	while changed
+		changed = false
+		for (k, vss) : std.byhtkeyvals(tagmap)
+			if std.hthas(b.tags, k)
+				continue
+			;;
+			for vs : vss
+				for v : vs
+					if tagscore(b, v) == -1
+						goto next
+					;;
+				;;
+				tag(b, k)
+				changed = true
+:next
+			;;
+		;;
+	;;
+	for (k, vss) : std.byhtkeyvals(tagmap)
+		std.slfree(k)
+		for vs : vss
+			for v : vs
+				std.slfree(v)
+			;;
+			std.slfree(vs)
+		;;
+		std.slfree(vss)
+	;;
 }
 
 const tag  = {b, t
@@ -219,7 +295,6 @@ const tag  = {b, t
 		std.htput(b.tags, std.sldup(t), (-1, -1, -1))
 	| `std.Some idx:
 		v = parseversion(t[idx+1:])
-		std.put("version: {} : {}\n", t[:idx], v)
 		std.htput(b.tags, std.sldup(t[:idx]), v)
 	;;
 
