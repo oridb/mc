@@ -3,6 +3,7 @@ use "types"
 use "utf"
 use "strfind"
 use "option"
+use "chartype"
 
 pkg std =
 	type chariter = struct
@@ -107,7 +108,7 @@ impl iterable tokiter -> byte[:] =
 		lo = it.idx
 		while lo < s.len
 			c = std.decode(s[lo:])
-			if c != ' ' && c != '\t'
+			if !isspace(c)
 				break
 			;;
 			lo += charlen(c)
@@ -115,7 +116,7 @@ impl iterable tokiter -> byte[:] =
 		hi = lo
 		while hi < s.len
 			c = std.decode(s[hi:])
-			if c == ' ' || c == '\t'
+			if isspace(c)
 				break
 			;;
 			hi += charlen(c)
