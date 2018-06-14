@@ -19,13 +19,20 @@ pkg std =
 		split	: byte[:]
 	;;
 
+	type tokiter = struct
+		str	: byte[:]
+		idx	: size
+	;;
+
 	impl iterable chariter	-> char
 	impl iterable charoffiter	-> (char, size)
 	impl iterable splititer -> byte[:]
+	impl iterable tokiter -> byte[:]
 
 	const bychar	: (str : byte[:] -> chariter)
 	const bycharoff	: (str : byte[:] -> charoffiter)
 	const bysplit	: (str : byte[:], split : byte[:] -> splititer)
+	const bytok	: (str : byte[:] -> tokiter)
 ;;
 
 impl iterable chariter -> char =
@@ -90,4 +97,38 @@ impl iterable splititer -> byte[:] =
 
 const bysplit = {str, split
 	-> [.rest = str, .split = split]
+}
+
+impl iterable tokiter -> byte[:] =
+	__iternext__ = {it, sp
+		var s, lo, hi, c
+		
+		s = it.str
+		lo = it.idx
+		while lo < s.len
+			c = std.decode(s[lo:])
+			if c != ' ' && c != '\t'
+				break
+			;;
+			lo += charlen(c)
+		;;
+		hi = lo
+		while hi < s.len
+			c = std.decode(s[hi:])
+			if c == ' ' || c == '\t'
+				break
+			;;
+			hi += charlen(c)
+		;;
+		it.idx = hi
+		sp# = s[lo:hi]
+		-> hi > lo
+	}
+
+	__iterfin__ = {ci, c
+	}
+;;
+
+const bytok = {str
+	-> [.str = str, .idx = 0]
 }
