@@ -67,6 +67,7 @@ const csdial = {netdir, proto, rem
 	slfree(csaddr)
 
 	seek(csfd, 0, 0)
+	ret = -1
 	while true
 		match read(csfd, buf[:])
 		| `std.Ok len:	n = len
@@ -81,14 +82,16 @@ const csdial = {netdir, proto, rem
 		;;
 
 		match call(clone, addr, netdir)
-		| `Ok fd:	break
 		| `Err _:	/* nothing */
+		| `Ok fd:
+			ret = fd
+			break
 		;;
 	;;
 
 	close(csfd)
 	if ret < 0
-		-> `Err "unable to dial"
+		-> `std.Err "could not dial"
 	;;
 	-> `Ok ret
 }
@@ -102,6 +105,7 @@ const call : (a : byte[:], b : byte[:], c : byte[:] -> result(fd, byte[:])) = {c
 
 	datafd = `Err "didn't even try to open shit"
 	c = nsclonestr(clone, netdir)
+	cfd = -1
 	match open(c, Ordwr)
 	| `Err e:	goto cleanup
 	| `Ok fd:	cfd = fd

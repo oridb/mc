@@ -113,11 +113,13 @@ const translate = {ds, addrbuf, filebuf
 			| `None:	-> `Err void
 			| `Some idx:
 				netdir = ds[:idx]
+				addr = ""
 				rest = ds[idx+1:]
 			;;
 		else
 			netdir = "/net"
 			addr = ds
+			rest = ""
 		;;
 	;;
 
@@ -143,7 +145,6 @@ const translate = {ds, addrbuf, filebuf
 		close(fd)
 	;;
 
-	put("cs returned: {}\n", r)
 	match strfind(r, " ")
 	| `None:	-> `Err void
 	| `Some i:
