@@ -1,0 +1,25 @@
+use sys
+
+use "common"
+
+pkg thread =
+	const ftxwait : (uaddr : uint64#, val : uint64, timeout : sys.timespec# -> int)
+	const ftxwake : (uaddr : uint64# -> int)
+;;
+
+const ftxwait = {uaddr, val, timeout
+	if timeout == Zptr
+		-> sys.umtx_op((uaddr : void#), sys.Umtxwaituintpriv, (val : uint64), Zptr, Zptr)
+	;;
+
+	var ut : sys._umtx_time = [
+		._timeout = timeout#
+		._flags = sys.Umtxabstime
+		._clockid = 1 /* CLOCK_MONOTONIC. Not exported from sys. */
+	]
+	-> sys.umtx_op((uaddr : void#), sys.Umtxwaituintpriv, (val : uint64), (sys.sizeof(sys._umtx_time) : void#), &ut)
+}
+
+const ftxwake = {uaddr
+	-> sys.umtx_op((uaddr : void#), sys.Umtxwakepriv, 1, Zptr, Zptr)
+}
