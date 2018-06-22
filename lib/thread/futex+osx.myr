@@ -1,0 +1,44 @@
+use std
+use sys
+
+use "common"
+
+pkg thread =
+	const ftxwait : (uaddr : uint64#, val : uint64, timeout : sys.timespec# -> int)
+	const ftxwake : (uaddr : uint64# -> int)
+;;
+
+/*
+ * The ulock_ functions are undocumented but the relevant source can be found at
+ * https://github.com/apple/darwin-xnu/blob/0a798f6738bc1db01281fc08ae024145e84df927/bsd/kern/sys_ulock.c
+ */
+const ftxwait = {uaddr, val, timeout
+	if timeout == Zptr
+		-> sys.ulock_wait(sys.Ulockcompareandwait, uaddr, val, 0)
+	;;
+
+	var ts
+	var err = sys.clock_gettime(`sys.Clockmonotonic, &ts)
+	std.assert(err == 0, "error: clock_gettime returned {}\n", err)
+
+	var usec = 0
+	if timeout.sec > ts.sec
+		var sec = (timeout.sec - ts.sec) * 1000
+		std.assert(sec <= 0xffffffff, "error: maximum futex timeout exceeded\n")
+		usec = (sec : uint32)
+	;;
+	if timeout.nsec > ts.nsec
+		var nsec = (timeout.nsec - ts.nsec) / 1000
+		std.assert(usec + nsec > usec, "error: maximum futex timeout exceeded\n")
+		usec += nsec
+	;;
+
+	if usec == 0
+		-> (std.Etimedout : int)
+	;;
+	-> sys.ulock_wait(sys.Ulockcompareandwait, uaddr, val, 0)
+}
+
+const ftxwake = {uaddr
+	-> sys.ulock_wake(sys.Ulockcompareandwait, uaddr, 0)
+}

@@ -1,0 +1,55 @@
+use std
+use sys
+
+use "atomic"
+use "common"
+use "futex"
+
+pkg thread =
+	type sem = struct
+		_val : uint64
+	;;
+
+	const mksem : (v : uint32 -> sem)
+	const semwait : (s : sem# -> void)
+	const semtrywait : (s : sem# -> bool)
+	const sempost : (s : sem# -> void)
+;;
+
+const mksem = {v
+	-> [._val = (v : uint64)]
+}
+
+const semwait = {s
+	var v = 0
+
+	for ; ;
+		while (v = s._val) > 0
+			if xcas(&s._val, v, v - 1) == v
+				-> void
+			;;
+		;;
+		ftxwait(&s._val, v, Zptr)
+	;;
+	-> void /* Unreachable */
+}
+
+const semtrywait = {s
+	for ; ;
+		var v = xget(&s._val)
+		if v == 0
+			-> false
+		;;
+		if xcas(&s._val, v, v - 1) == v
+			-> true
+		;;
+	;;
+	-> false /* Unreachable */
+}
+
+const sempost = {s
+	std.assert((xadd(&s._val, 1) : uint32) != ~0x0, "error: semaphore overflowed\n")
+
+	/* Unconditionally wake one waiter */
+	ftxwake(&s._val)
+}

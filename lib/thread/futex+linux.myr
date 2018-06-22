@@ -1,0 +1,16 @@
+use sys
+
+use "common"
+
+pkg thread =
+	const ftxwait : (uaddr : uint64#, val : uint64, timeout : sys.timespec# -> int)
+	const ftxwake : (uaddr : uint64# -> int)
+;;
+
+const ftxwait = {uaddr, val, timeout
+	-> sys.futex((uaddr : int32#), sys.Futexwait | sys.Futexpriv, val, timeout, Zptr, 0)
+}
+
+const ftxwake = {uaddr
+	-> sys.futex((uaddr : int32#), sys.Futexwake | sys.Futexpriv, 1, Zptr, Zptr, 0)
+}

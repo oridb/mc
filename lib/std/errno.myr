@@ -38,4 +38,5 @@ pkg std =
 	const Epipe	: errno = (sys.Epipe	: errno)
 	const Edom	: errno = (sys.Edom	: errno)
 	const Erange	: errno = (sys.Erange	: errno)
+	const Etimedout	: errno = (sys.Etimedout	: errno)
 ;;

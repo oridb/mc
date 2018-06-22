@@ -1,0 +1,54 @@
+use std
+use sys
+
+use "atomic"
+use "common"
+
+pkg thread =
+	type sem = struct
+		_user : int32
+		_kern : int32
+	;;
+
+	const mksem : (v : uint32 -> sem)
+	const semwait : (s : sem# -> void)
+	const semtrywait : (s : sem# -> bool)
+	const sempost : (s : sem# -> void)
+;;
+
+const mksem = {v
+	-> [._user = v, ._kern = 0]
+}
+
+const semwait = {s
+	var u = xadd(&s._user, -1)
+	std.assert(u != 0xffffffff, "error: semaphore underflowed\n")
+
+	/* When the userspace value is negative we fall back on the kernel semaphore */
+	if u <= 0
+		while sys.semacquire((&s._kern : uint32), 1) < 0
+			/* Interrupted, retry */
+		;;
+	;;
+}
+
+const semtrywait = {s
+	for ; ;
+		var u = xget(&s._user)
+		if u <= 0
+			-> false
+		;;
+		if xcas(&s._user, u, u - 1) == u
+			-> true
+		;;
+	;;
+	-> false /* Unreachable */
+}
+
+const sempost = {s
+	var u = xadd(&s._user, 1)
+	std.assert(u != 0x7fffffff, "error: semaphore overflowed\n")
+	if u < 0
+		sys.semrelease((&s._kern : uint32), 1)
+	;;
+}

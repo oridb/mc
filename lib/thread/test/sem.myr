@@ -1,0 +1,42 @@
+use std
+use thread
+
+const Cap = 4
+
+var write : uint32 = 0, read : uint32 = 0
+var lock
+var len
+var cap
+var buf : int[Cap]
+var done : uint32 = 0
+
+const main = {
+	lock = thread.mkmtx()
+	len = thread.mksem(0)
+	cap = thread.mksem(Cap)
+
+	thread.spawn({
+		for var i = 0; i < 100000; i++
+			thread.semwait(&cap)
+			thread.mtxlock(&lock)
+			buf[write++ & (Cap - 1)] = i
+			thread.mtxunlock(&lock)
+			thread.sempost(&len)
+		;;
+	})
+
+	thread.spawn({
+		for var i = 0; i < 100000; i++
+			thread.semwait(&len)
+			thread.mtxlock(&lock)
+			std.assert(i == buf[read++ & (Cap - 1)], "semaphores are broken\n")
+			thread.mtxunlock(&lock)
+			thread.sempost(&cap)
+		;;
+		thread.xset(&done, 1)
+	})
+
+	while thread.xget(&done) == 0
+		std.nanosleep(1_000_000)
+	;;
+}
