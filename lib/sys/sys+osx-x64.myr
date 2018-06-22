@@ -1097,11 +1097,11 @@ const sysctl = {mib, old, oldsz, new, newsz
 }
 
 const ulock_wait = {op, uaddr, val, timeout
-	-> (syscall(Sysulock_wait, op, uaddr, val, timeout) : int)
+	-> (syscall(Sysulock_wait, a(op), uaddr, val, a(timeout)) : int)
 }
 
 const ulock_wake = {op, uaddr, wakeval
-	-> (syscall(Sysulock_wake, op, uaddr, wakeval) : int)
+	-> (syscall(Sysulock_wake, a(op), uaddr, a(wakeval)) : int)
 }
 
 const waitstatus = {st

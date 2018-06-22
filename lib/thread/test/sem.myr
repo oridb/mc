@@ -13,7 +13,7 @@ var done : uint32 = 0
 const main = {
 	lock = thread.mkmtx()
 	len = thread.mksem(0)
-	cap = thread.mksem((Cap : uint64))
+	cap = thread.mksem(Cap)
 
 	thread.spawn({
 		for var i = 0; i < 100000; i++

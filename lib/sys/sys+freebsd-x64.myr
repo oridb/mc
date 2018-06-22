@@ -581,6 +581,13 @@ pkg sys =
 		node				: uint8[_Uuidnodesz];
 	;;
 	
+	const Umtxabstime = 1
+	type _umtx_time = struct
+		_timeout	: timespec
+		_flags		: uint32
+		_clockid	: uint32
+	;;
+	
 	/* open options */
 	const Ordonly  	: fdopt = 0x0
 	const Owronly  	: fdopt = 0x1

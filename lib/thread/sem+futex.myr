@@ -6,7 +6,7 @@ use "common"
 
 pkg thread =
 	type sem = struct
-		_val : uint32
+		_val : uint64
 	;;
 
 	const mksem : (v : uint32 -> sem)
@@ -16,7 +16,7 @@ pkg thread =
 ;;
 
 const mksem = {v
-	-> [._val = v]
+	-> [._val = (v : uint64)]
 }
 
 const semwait = {s
@@ -28,7 +28,7 @@ const semwait = {s
 				-> void
 			;;
 		;;
-		sys.futex(&s._val, sys.Futexwait, 0, Zptr, Zptr)
+		ftxwait(&s._val, v, Zptr)
 	;;
 	-> void /* Unreachable */
 }
@@ -47,8 +47,8 @@ const semtrywait = {s
 }
 
 const sempost = {s
-	std.assert(xadd(&s._val, 1) != ~0x0, "error: semaphore overflowed\n")
+	std.assert((xadd(&s._val, 1) : uint32) != ~0x0, "error: semaphore overflowed\n")
 
 	/* Unconditionally wake one waiter */
-	sys.futex(&s._val, sys.Futexwake, 1, Zptr, Zptr)
+	ftxwake(&s._val)
 }
