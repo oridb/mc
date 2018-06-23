@@ -15,8 +15,6 @@ fi
 
 if [ -f obj/mbld/mbld ]; then
 	MBLD=obj/mbld/mbld
-elif [ -f mbld/mbld ]; then
-	MBLD=mbld/mbld
 else
 	MBLD=$(command -v mbld)
 fi

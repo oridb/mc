@@ -121,10 +121,11 @@ set -x
 	$pwd/6/6.out -I lib/sys -I lib/std lib/thread/ncpu+plan9.myr
 	$pwd/6/6.out -I lib/sys -I lib/std lib/thread/common.myr
 	$pwd/6/6.out -I lib/sys -I lib/std lib/thread/atomic.myr
+	$pwd/6/6.out -I lib/sys -I lib/std lib/thread/sem+plan9.myr
 	$pwd/6/6.out -I lib/sys -I lib/std lib/thread/mutex+plan9.myr
 	$pwd/6/6.out -I lib/sys -I lib/std lib/thread/hookstd.myr
-	ar u lib/thread/libthread.a lib/thread/mutex.6 lib/thread/atomic.6 lib/thread/atomic-impl.6 lib/thread/hookstd.6 lib/thread/common.6 lib/thread/ncpu.6 lib/thread/spawn.6
-	$pwd/muse/6.out -o lib/thread/libthread.use -p thread lib/thread/mutex.use lib/thread/atomic.use lib/thread/hookstd.use lib/thread/common.use lib/thread/ncpu.use lib/thread/spawn.use
+	ar u lib/thread/libthread.a lib/thread/mutex.6 lib/thread/atomic.6 lib/thread/atomic-impl.6 lib/thread/hookstd.6 lib/thread/sem.6 lib/thread/common.6 lib/thread/ncpu.6 lib/thread/spawn.6
+	$pwd/muse/6.out -o lib/thread/libthread.use -p thread lib/thread/mutex.use lib/thread/atomic.use lib/thread/hookstd.use lib/thread/sem.use lib/thread/common.use lib/thread/ncpu.use lib/thread/spawn.use
 	$pwd/6/6.out -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/opts.myr
 	$pwd/6/6.out -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/syssel.myr
 	$pwd/6/6.out -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/libs.myr

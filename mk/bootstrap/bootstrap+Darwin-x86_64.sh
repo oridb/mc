@@ -124,10 +124,12 @@ set -x
 	$pwd/6/6m -I lib/sys -I lib/std lib/thread/ncpu.myr
 	$pwd/6/6m -I lib/sys -I lib/std lib/thread/common.myr
 	$pwd/6/6m -I lib/sys -I lib/std lib/thread/atomic.myr
+	$pwd/6/6m -I lib/sys -I lib/std lib/thread/futex+osx.myr
+	$pwd/6/6m -I lib/sys -I lib/std lib/thread/sem.myr
 	$pwd/6/6m -I lib/sys -I lib/std lib/thread/mutex.myr
 	$pwd/6/6m -I lib/sys -I lib/std lib/thread/hookstd.myr
-	ar -rcs lib/thread/libthread.a lib/thread/mutex.o lib/thread/atomic.o lib/thread/atomic-impl.o lib/thread/hookstd.o lib/thread/common.o lib/thread/ncpu.o lib/thread/start.o lib/thread/spawn.o
-	$pwd/muse/muse -o lib/thread/libthread.use -p thread lib/thread/mutex.use lib/thread/atomic.use lib/thread/hookstd.use lib/thread/common.use lib/thread/ncpu.use lib/thread/spawn.use
+	ar -rcs lib/thread/libthread.a lib/thread/mutex.o lib/thread/atomic.o lib/thread/atomic-impl.o lib/thread/hookstd.o lib/thread/sem.o lib/thread/common.o lib/thread/ncpu.o lib/thread/start.o lib/thread/futex.o lib/thread/spawn.o
+	$pwd/muse/muse -o lib/thread/libthread.use -p thread lib/thread/mutex.use lib/thread/atomic.use lib/thread/hookstd.use lib/thread/sem.use lib/thread/common.use lib/thread/ncpu.use lib/thread/futex.use lib/thread/spawn.use
 	$pwd/6/6m -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/opts.myr
 	$pwd/6/6m -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/syssel.myr
 	$pwd/6/6m -I lib/sys -I lib/std -I lib/bio -I lib/regex -I lib/thread mbld/libs.myr
