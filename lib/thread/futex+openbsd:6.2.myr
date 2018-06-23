@@ -1,5 +1,6 @@
 use sys
 
+use "atomic"
 use "common"
 
 pkg thread =
@@ -26,8 +27,3 @@ impl atomic ftxtag =
 	xchg = {p, v; -> (xchg32((p : uint32#), (v : uint32)) : ftxtag)}
 ;;
 
-extern const xget32 : (p : uint32# -> uint32)
-extern const xset32 : (p : uint32#, v : uint32 -> void)
-extern const xadd32 : (p : uint32#, v : uint32 -> uint32)
-extern const xcas32 : (p : uint32#, old: uint32, new : uint32 -> uint32)
-extern const xchg32 : (p : uint32#, v : uint32 -> uint32)

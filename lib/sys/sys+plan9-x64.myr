@@ -159,9 +159,9 @@ pkg sys =
 	const exec	: (bin : byte[:], args : byte[:][:] -> int64)
 	const brk_	: (endp : byte# -> int64)
 	const nsec	: (-> uint64)
-	const semacquire	: (addr : uint32#, block : int -> int)
-	const tsemacquire	: (addr : uint32#, ms : uint32 -> int)
-	const semrelease	: (addr : uint32#, count : int32 -> int32)
+	const semacquire	: (addr : int32#, block : int -> int)
+	const tsemacquire	: (addr : int32#, ms : int32 -> int)
+	const semrelease	: (addr : int32#, count : int32 -> int32)
 	const rendezvous	: (tag : void#, val : void# -> void#)
 	
 

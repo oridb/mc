@@ -55,9 +55,3 @@ impl atomic ftxtag =
 	xcas = {p, old, new; -> (xcas64((p : uint64#), (old : uint64), (new : uint64)) : ftxtag)}
 	xchg = {p, v; -> (xchg64((p : uint64#), (v : uint64)) : ftxtag)}
 ;;
-
-extern const xget64 : (p : uint64# -> uint64)
-extern const xset64 : (p : uint64#, v : uint64 -> void)
-extern const xadd64 : (p : uint64#, v : uint64 -> uint64)
-extern const xcas64 : (p : uint64#, old: uint64, new : uint64 -> uint64)
-extern const xchg64 : (p : uint64#, v : uint64 -> uint64)

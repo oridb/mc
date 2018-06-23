@@ -1,5 +1,6 @@
 use sys
 
+use "atomic"
 use "common"
 
 pkg thread =
@@ -23,7 +24,7 @@ const ftxwait = {uaddr, val, timeout
 	-> sys.umtx_op((uaddr : void#),
 		sys.Umtxwaituintpriv,
 		(val : uint64),
-		(sys.sizeof(sys._umtx_time) : void#),
+		(sizeof(sys._umtx_time) : void#),
 		(&ut : void#))
 }
 
@@ -38,9 +39,3 @@ impl atomic ftxtag =
 	xcas = {p, old, new; -> (xcas32((p : uint32#), (old : uint32), (new : uint32)) : ftxtag)}
 	xchg = {p, v; -> (xchg32((p : uint32#), (v : uint32)) : ftxtag)}
 ;;
-
-extern const xget32 : (p : uint32# -> uint32)
-extern const xset32 : (p : uint32#, v : uint32 -> void)
-extern const xadd32 : (p : uint32#, v : uint32 -> uint32)
-extern const xcas32 : (p : uint32#, old: uint32, new : uint32 -> uint32)
-extern const xchg32 : (p : uint32#, v : uint32 -> uint32)
