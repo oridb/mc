@@ -6,8 +6,8 @@ use "common"
 
 pkg thread =
 	type sem = struct
-		_user : uint32
-		_kern : uint32
+		_user : int32
+		_kern : int32
 	;;
 
 	const mksem : (v : uint32 -> sem)
