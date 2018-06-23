@@ -13,11 +13,15 @@ const ftxwait = {uaddr, val, timeout
 	;;
 
 	var ut : sys._umtx_time = [
-		._timeout = timeout#
-		._flags = sys.Umtxabstime
+		._timeout = timeout#,
+		._flags = (sys.Umtxabstime : uint32),
 		._clockid = 1 /* CLOCK_MONOTONIC. Not exported from sys. */
 	]
-	-> sys.umtx_op((uaddr : void#), sys.Umtxwaituintpriv, (val : uint64), (sys.sizeof(sys._umtx_time) : void#), &ut)
+	-> sys.umtx_op((uaddr : void#),
+	    sys.Umtxwaituintpriv,
+	    (val : uint64),
+	    (sizeof(sys._umtx_time) : void#),
+	    (&ut : void#))
 }
 
 const ftxwake = {uaddr
