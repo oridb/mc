@@ -7,7 +7,7 @@ use "futex"
 
 pkg thread =
 	type sem = struct
-		_val : uint64
+		_val : ftxtag
 	;;
 
 	const mksem : (v : uint32 -> sem)
@@ -17,7 +17,7 @@ pkg thread =
 ;;
 
 const mksem = {v
-	-> [._val = (v : uint64)]
+	-> [._val = (v : ftxtag)]
 }
 
 const semwait = {s

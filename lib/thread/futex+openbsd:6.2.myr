@@ -3,14 +3,31 @@ use sys
 use "common"
 
 pkg thread =
-	const ftxwait : (uaddr : uint64#, val : uint64, timeout : sys.timespec# -> int)
-	const ftxwake : (uaddr : uint64# -> int)
+	type ftxtag = uint32
+	impl atomic ftxtag
+
+	const ftxwait : (uaddr : ftxtag#, val : ftxtag, timeout : sys.timespec# -> int)
+	const ftxwake : (uaddr : ftxtag# -> int)
 ;;
 
 const ftxwait = {uaddr, val, timeout
-	-> sys.futex((uaddr : uint32#), sys.Futexwait, val, timeout, Zptr)
+	-> sys.futex((uaddr : uint32#), sys.Futexwait, (val : int), timeout, Zptr)
 }
 
 const ftxwake = {uaddr
 	-> sys.futex((uaddr : uint32#), sys.Futexwake, 1, Zptr, Zptr)
 }
+
+impl atomic ftxtag =
+	xget = {p; -> (xget32((p : uint32#)) : ftxtag)}
+	xset = {p, v; xset32((p : uint32#), (v : uint32))}
+	xadd = {p, v; -> (xadd32((p : uint32#), (v : uint32)) : ftxtag)}
+	xcas = {p, old, new; -> (xcas32((p : uint32#), (old : uint32), (new : uint32)) : ftxtag)}
+	xchg = {p, v; -> (xchg32((p : uint32#), (v : uint32)) : ftxtag)}
+;;
+
+extern const xget32 : (p : uint32# -> uint32)
+extern const xset32 : (p : uint32#, v : uint32 -> void)
+extern const xadd32 : (p : uint32#, v : uint32 -> uint32)
+extern const xcas32 : (p : uint32#, old: uint32, new : uint32 -> uint32)
+extern const xchg32 : (p : uint32#, v : uint32 -> uint32)
