@@ -1,12 +1,12 @@
-use std
 use sys
 
 use "atomic"
 use "common"
+use "futex"
 
 pkg thread =
 	type mutex = struct
-		_state	: int32
+		_state	: ftxtag
 	;;	
 
 	const mkmtx	: (-> mutex)
@@ -49,7 +49,7 @@ const mtxlock = {mtx
 	;;
 
 	while c != Unlocked
-		sys.futex(&mtx._state, sys.Futexwait | sys.Futexpriv, Contended, Zptr, Zptr, 0)
+		ftxwait(&mtx._state, Contended, Zptr)
 		c = xchg(&mtx._state, Contended)
 	;;
 }
@@ -71,6 +71,5 @@ const mtxunlock = {mtx
 	;;
 
 	/* wake one thread */
-	sys.futex(&mtx._state, sys.Futexwake | sys.Futexpriv, 1, Zptr, Zptr, 0)
+	ftxwake(&mtx._state)
 }
-

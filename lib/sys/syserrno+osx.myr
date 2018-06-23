@@ -51,4 +51,5 @@ pkg sys =
 	const Eprototype	: errno = -41		/* Protocol wrong type for socket */
 	const Enoprotoopt	: errno = -42		/* Protocol not available */
 	const Eprotonosupport	: errno = -43		/* Protocol not supported */
+	const Etimedout		: errno = -60		/* Operation timed out */
 ;;

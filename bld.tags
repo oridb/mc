@@ -1,0 +1,4 @@
+futex: freebsd
+futex: linux
+futex: openbsd:6.2
+futex: osx
