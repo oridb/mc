@@ -6,7 +6,7 @@ use "futex"
 
 pkg thread =
 	type mutex = struct
-		_state	: uint64
+		_state	: ftxtag
 	;;	
 
 	const mkmtx	: (-> mutex)

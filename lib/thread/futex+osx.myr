@@ -1,11 +1,15 @@
 use std
 use sys
 
+use "atomic"
 use "common"
 
 pkg thread =
-	const ftxwait : (uaddr : uint64#, val : uint64, timeout : sys.timespec# -> int)
-	const ftxwake : (uaddr : uint64# -> int)
+	type ftxtag = uint64
+	impl atomic ftxtag
+
+	const ftxwait : (uaddr : ftxtag#, val : ftxtag, timeout : sys.timespec# -> int)
+	const ftxwake : (uaddr : ftxtag# -> int)
 ;;
 
 /*
@@ -14,19 +18,20 @@ pkg thread =
  */
 const ftxwait = {uaddr, val, timeout
 	if timeout == Zptr
-		-> sys.ulock_wait(sys.Ulockcompareandwait, uaddr, val, 0)
+		-> sys.ulock_wait(sys.Ulockcompareandwait, (uaddr : uint64#), (val : uint64), 0)
 	;;
 
 	var ts
 	var err = sys.clock_gettime(`sys.Clockmonotonic, &ts)
 	std.assert(err == 0, "error: clock_gettime returned {}\n", err)
+	if timeout.sec < ts.sec
+		-> (std.Etimedout : int)
+	;;
 
 	var usec = 0
-	if timeout.sec > ts.sec
-		var sec = (timeout.sec - ts.sec) * 1000
-		std.assert(sec <= 0xffffffff, "error: maximum futex timeout exceeded\n")
-		usec = (sec : uint32)
-	;;
+	var sec = (timeout.sec - ts.sec) * 1000
+	std.assert(sec <= 0xffffffff, "error: maximum futex timeout exceeded\n")
+	usec = (sec : uint32)
 	if timeout.nsec > ts.nsec
 		var nsec = (timeout.nsec - ts.nsec) / 1000
 		std.assert(usec + nsec > usec, "error: maximum futex timeout exceeded\n")
@@ -36,9 +41,23 @@ const ftxwait = {uaddr, val, timeout
 	if usec == 0
 		-> (std.Etimedout : int)
 	;;
-	-> sys.ulock_wait(sys.Ulockcompareandwait, uaddr, val, 0)
+	-> sys.ulock_wait(sys.Ulockcompareandwait, (uaddr : uint64#), (val : uint64), usec)
 }
 
 const ftxwake = {uaddr
-	-> sys.ulock_wake(sys.Ulockcompareandwait, uaddr, 0)
+	-> sys.ulock_wake(sys.Ulockcompareandwait, (uaddr : uint64#), 0)
 }
+
+impl atomic ftxtag =
+	xget = {p; -> (xget64((p : uint64#)) : ftxtag)}
+	xset = {p, v; xset64((p : uint64#), (v : uint64))}
+	xadd = {p, v; -> (xadd64((p : uint64#), (v : uint64)) : ftxtag)}
+	xcas = {p, old, new; -> (xcas64((p : uint64#), (old : uint64), (new : uint64)) : ftxtag)}
+	xchg = {p, v; -> (xchg64((p : uint64#), (v : uint64)) : ftxtag)}
+;;
+
+extern const xget64 : (p : uint64# -> uint64)
+extern const xset64 : (p : uint64#, v : uint64 -> void)
+extern const xadd64 : (p : uint64#, v : uint64 -> uint64)
+extern const xcas64 : (p : uint64#, old: uint64, new : uint64 -> uint64)
+extern const xchg64 : (p : uint64#, v : uint64 -> uint64)
