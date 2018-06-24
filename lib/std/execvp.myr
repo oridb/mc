@@ -1,10 +1,10 @@
 use "alloc"
 use "env"
 use "errno"
-use "fmt"
 use "option"
 use "strfind"
 use "syswrap"
+use "slcp"
 
 pkg std = 
 	const execvp	: (cmd : byte[:], args : byte[:][:] -> errno)
@@ -24,7 +24,7 @@ const execvp = {cmd, args
 		paths = std.getenvv("PATH", "/usr/local/bin:/bin:/usr/bin")
 		while j < paths.len
 			(i, j) = nextpath(paths, j)
-			binpath = bfmt(buf[:], "{}/{}", paths[i:j], cmd)
+			binpath = mkpath(buf[:], paths[i:j], cmd)
 			execv(binpath, args)
 		;;
 	;;
@@ -44,7 +44,7 @@ const execvpe = {cmd, args, env
 		paths = std.getenvv("PATH", "/usr/local/bin:/bin:/usr/bin")
 		while j < paths.len
 			(i, j) = nextpath(paths, j)
-			binpath = bfmt(buf[:], "{}/{}", paths[i:j], cmd)
+			binpath = mkpath(buf[:], paths[i:j], cmd)
 			execve(binpath, args, env)
 		;;
 	;;
@@ -65,3 +65,16 @@ const nextpath = {p, start
 	-> (i, j)
 }
 
+const mkpath = {buf, path, bin
+	var p, b
+
+	p = path.len
+	b = bin.len
+	if buf.len < p + b + 1
+		-> ""
+	;;
+	std.slcp(buf[:p], path)
+	std.slcp(buf[p:p + 1], "/")
+	std.slcp(buf[p + 1:p + b + 1], bin)
+	-> buf[:p + b + 1]
+}
