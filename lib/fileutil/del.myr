@@ -1,0 +1,43 @@
+use std
+
+use "loopcheck"
+
+pkg fileutil =
+	const rmrf	: (dir : byte[:] -> bool)
+;;
+
+const rmrf = {dir
+	var loopck, ok
+	
+	loopck = mkloopcheck(dir)
+	ok = rmrf_rec(dir, loopck)
+	freeloopcheck(loopck)
+	-> ok
+}
+
+const rmrf_rec = {path, loopck
+	var ok, p
+
+	ok = true
+	if std.fisdir(path)
+		match std.diropen(path)
+		| `std.Err e:
+			ok = false
+		| `std.Ok d:
+			for e : std.byentry(d)
+				if std.sleq(e, ".") || std.sleq(e, "..")
+					continue
+				;;
+				p = std.pathcat(path, e)
+				if !looped(loopck, p)
+					ok = ok && rmrf(p)
+				;;
+				std.slfree(p)
+			;;
+			ok = ok && std.remove(path)
+		;;
+	else
+		ok = ok && std.remove(path)
+	;;
+	-> ok
+}
