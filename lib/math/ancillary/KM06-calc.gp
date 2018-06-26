@@ -1,5 +1,7 @@
-# Implementations of some functions from [KM06]. The exact ranges
-# were applied by manual fiddling.
+/*
+ Implementations of some functions from [KM06]. The exact ranges
+ were applied by manual fiddling.
+ */
 
 { betap(amin, amax, p, n) = my(l, s);
         l = amax^(1/p);

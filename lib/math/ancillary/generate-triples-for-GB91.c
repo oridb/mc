@@ -1,4 +1,4 @@
-/* cc -o generate-triples-for-GB91 generate-triples-for-GB91.c -lmpfr */
+/* cc -o generate-triples-for-GB91 generate-triples-for-GB91.c -lmpfr # -fno-strict-aliasing */
 #include <stdint.h>
 #include <stdio.h>
 #include <time.h>
@@ -38,10 +38,11 @@ static int N = 256;
 static int find_triple_64(int i, int min_leeway, int perfect_leeway)
 {
         /*
-           Using mpfr is entirely overkill for this; [Lut95] includes
-           PASCAL fragments that use almost entirely integer
-           arithmetic, and the initial calculation doesn't need to
-           be so precise. No matter.
+           Using mpfr is not entirely overkill for this; [Lut95]
+           includes PASCAL fragments that use almost entirely integer
+           arithmetic... but the error term in that only handles
+           up to 13 extra bits of zeroes or so. We proudly boast
+           at least 16 bits of extra zeroes in all cases.
          */
         mpfr_t xi;
         mpfr_t xip1;
@@ -154,7 +155,8 @@ inc:
 
                 if (sgn < 0) {
                         r++;
-                } else if (r > (1 << 29) || xi_current_u > xip1_u) {
+                } else if (r > (1 << 29) ||
+                           xi_current_u > xip1_u) {
                         /*
                            This is taking too long, give up looking
                            for perfection and take the best we've
@@ -170,7 +172,7 @@ inc:
 
         if (best_l > min_leeway) {
                 printf(
-                        "[ .a = %#018lx, .c = %#018lx, .s = %#018lx ], /* i = %03d, l = %02d, r = %010ld, t = %ld */ \n",
+                        "(%#018lx, %#018lx, %#018lx), /* i = %03d, l = %02d, r = %010ld, t = %ld */ \n",
                         best_xi_u, best_cos_u, best_sin_u, i, best_l, best_r,
                         end -
                         start);
@@ -185,7 +187,18 @@ int main(void)
 {
         for (int i = 190; i <= N; ++i) {
                 if (find_triple_64(i, 11, 20) < 0) {
-                        printf("CANNOT FIND SUITABLE CANDIDATE FOR i = %03d\n", i);
+                        /*
+                           For some reason, i = 190 requires special
+                           handling; drop the range limitations on
+                           r and come back in a week.
+
+                           Other indices (4, 47, 74, &c) also benefit
+                           from this special handling, so the
+                           contents of sin-impl.myr might not exactly
+                           match the output of this particular file.
+                         */
+                        printf("CANNOT FIND SUITABLE CANDIDATE FOR i = %03d\n",
+                               i);
                 }
         }
 
