@@ -60,7 +60,6 @@ const urlfmt = {sb, ap, opts
 const parseurl = {url
 	var schema, host, port, path, params
 
-	std.put("url: {}\n", url)
 	match parseschema(&url)
 	| `std.Ok s:	schema = s
 	| `std.Err e:	-> `std.Err e
