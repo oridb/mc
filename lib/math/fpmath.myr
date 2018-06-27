@@ -24,6 +24,11 @@ pkg math =
 		/* scale2-impl */
 		scale2 : (x : @f, m : @i -> @f)
 
+		/* sin-impl */
+		sin : (x : @f -> @f)
+		cos : (x : @f -> @f)
+		sincos : (x : @f -> (@f, @f))
+
 		/* sqrt-impl */
 		sqrt : (x : @f -> @f)
 
@@ -90,6 +95,10 @@ impl fpmath flt32 =
 
 	scale2 = {x, m; -> scale232(x, m)}
 
+	sin = {x; -> sin32(x)}
+	cos = {x; -> cos32(x)}
+	sincos = {x; -> sincos32(x)}
+
 	sqrt = {x; -> sqrt32(x)}
 
 	kahan_sum = {l; -> kahan_sum32(l) }
@@ -116,6 +125,10 @@ impl fpmath flt64 =
 	powr = {x, y; -> powr64(x, y)}
 
 	scale2 = {x, m; -> scale264(x, m)}
+
+	sin = {x; -> sin64(x)}
+	cos = {x; -> cos64(x)}
+	sincos = {x; -> sincos64(x)}
 
 	sqrt = {x; -> sqrt64(x)}
 
@@ -156,6 +169,15 @@ extern const powr64 : (x : flt64, y : flt64 -> flt64)
 
 extern const scale232 : (x : flt32, m : int32 -> flt32)
 extern const scale264 : (x : flt64, m : int64 -> flt64)
+
+extern const sin32 : (x : flt32 -> flt32)
+extern const sin64 : (x : flt64 -> flt64)
+
+extern const cos32 : (x : flt32 -> flt32)
+extern const cos64 : (x : flt64 -> flt64)
+
+extern const sincos32 : (x : flt32 -> (flt32, flt32))
+extern const sincos64 : (x : flt64 -> (flt64, flt64))
 
 extern const sqrt32 : (x : flt32 -> flt32)
 extern const sqrt64 : (x : flt64 -> flt64)

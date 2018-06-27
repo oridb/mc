@@ -24,6 +24,9 @@ lib math =
 	# scalb (multiply x by 2^m)
 	scale2-impl.myr
 
+	# sin, cos
+	sin-impl.myr
+
 	# sqrt
 	sqrt-impl+posixy-x64-sse2.s
 	sqrt-impl.myr
