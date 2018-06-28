@@ -71,6 +71,7 @@ const sincos02 = {c
 	var inputs : (uint64, uint64, uint64)[:] = [
 		(0x0000000000000000, 0x0000000000000000, 0x3ff0000000000000),
 		(0x4100000000000000, 0xbfeff8bd7b10d6b0, 0x3fa58ced65ec8b50),
+		(0x4b01000000000000, 0xbfe3e9527dc75f12, 0x3fe90cf80997c963),
 	][:]
 
 	for (x, ys, yc) : inputs

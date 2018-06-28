@@ -681,9 +681,9 @@ const huge_reduce_2pi = {x : flt64
 			xc = 0.0
 		else
 			(u1, u2, u3) = R[j - 2]
-			b1 = std.flt64frombits(u1)
-			b2 = std.flt64frombits(u2)
-			b3 = std.flt64frombits(u3)
+			c1 = std.flt64frombits(u1)
+			c2 = std.flt64frombits(u2)
+			c3 = std.flt64frombits(u3)
 			var e3 : int64 = 50*(j - 2 : int64) + 25
 			var xlo = std.flt64frombits(b & ((~0) << (52 + (e3 - e : uint64))))
 			xc = scale2(xlo, -e3)
