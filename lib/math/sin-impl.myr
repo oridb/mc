@@ -635,10 +635,10 @@ const huge_reduce_2pi = {x : flt64
 	   with a heck of a lot of precision.
 	 */
 	var j : uint64 = (e - 25 : uint64) / 50
-	var xa : flt64, xb : flt64, xc : flt64
-	var a1 : flt64, a2 : flt64, a3 : flt64
-	var b1 : flt64, b2 : flt64, b3 : flt64
-	var c1 : flt64, c2 : flt64, c3 : flt64
+	var xa : flt64 = 0.0, xb : flt64 = 0.0, xc : flt64 = 0.0
+	var a1 : flt64 = 0.0, a2 : flt64 = 0.0, a3 : flt64 = 0.0
+	var b1 : flt64 = 0.0, b2 : flt64 = 0.0, b3 : flt64 = 0.0
+	var c1 : flt64 = 0.0, c2 : flt64 = 0.0, c3 : flt64 = 0.0
 	var u1 : uint64, u2 : uint64, u3 : uint64
 	var xcur = x
 
