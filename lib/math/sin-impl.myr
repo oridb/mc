@@ -642,51 +642,39 @@ const huge_reduce_2pi = {x : flt64
 	var u1 : uint64, u2 : uint64, u3 : uint64
 	var xcur = x
 
+	var e1 : int64 = 50*(j : int64) + 25
+	var e2 : int64 = e1 - 50
+	var e3 : int64 = e2 - 50
+	xa = trunc(scale2(x,-e1))
+	xb = trunc(scale2(x,-e2))
+	xc = trunc(scale2(x,-e3))
+	xc -= scale2(xb, 50)
+	xb -= scale2(xa, 50)
+
+	(u1, u2, u3) = R[j]
+	a1 = std.flt64frombits(u1)
+	a2 = std.flt64frombits(u2)
+	a3 = std.flt64frombits(u3)
+
 	if j == 0
-		(u1, u2, u3) = R[0]
-		a1 = std.flt64frombits(u1)
-		a2 = std.flt64frombits(u2)
-		a3 = std.flt64frombits(u3)
-		var xhi = std.flt64frombits(b & ((~0) << (52 + (25 - e : uint64))))
-		xcur -= xhi
-		b = std.flt64bits(xcur)
-		xa = scale2(xhi, -25)
-
-		(b1, b2, b3) = (x - xhi, 0.0, 0.0)
+		(b1, b2, b3) = (x - scale2(xa, e1), 0.0, 0.0)
 		xb = 1.0
+		(c1, c2, c3) = (0.0, 0.0, 0.0)
+		xc = 0.0
 	else
-		(u1, u2, u3) = R[j]
-		a1 = std.flt64frombits(u1)
-		a2 = std.flt64frombits(u2)
-		a3 = std.flt64frombits(u3)
-		var e1 : int64 = 50*(j : int64) + 25
-		var xhi = std.flt64frombits(b & ((~0) << (52 + (e1 - e : uint64))))
-		xcur -= xhi
-		b = std.flt64bits(xcur)
-		xa = scale2(xhi, -e1)
-
-		/* j > 0 in this branch */
 		(u1, u2, u3) = R[j - 1]
 		b1 = std.flt64frombits(u1)
 		b2 = std.flt64frombits(u2)
 		b3 = std.flt64frombits(u3)
-		var e2 : int64 = 50*(j - 1 : int64) + 25
-		var xmi = std.flt64frombits(b & ((~0) << (52 + (e2 - e : uint64))))
-		xcur -= xmi
-		b = std.flt64bits(xcur)
-		xb = scale2(xmi, -e2)
 
 		if j == 1
-			(c1, c2, c3) = (0.0, 0.0, 0.0)
-			xc = 0.0
+			(c1, c2, c3) = (x - scale2(xa, e1) - scale2(xb, e2), 0.0, 0.0)
+			xc = 1.0
 		else
 			(u1, u2, u3) = R[j - 2]
 			c1 = std.flt64frombits(u1)
 			c2 = std.flt64frombits(u2)
 			c3 = std.flt64frombits(u3)
-			var e3 : int64 = 50*(j - 2 : int64) + 25
-			var xlo = std.flt64frombits(b & ((~0) << (52 + (e3 - e : uint64))))
-			xc = scale2(xlo, -e3)
 		;;
 	;;
 
