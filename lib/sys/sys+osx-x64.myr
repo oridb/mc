@@ -839,6 +839,7 @@ pkg sys =
 	const ulock_wait	: (op : ulockop, uaddr : uint64#, val : uint64, timeout : uint32 -> int)
 	const ulock_wake	: (op : ulockop, uaddr : uint64#, wakeval : uint64 -> int)
 
+	extern const cstring : (str : byte[:] -> byte#)
 	/* filled by start code */
 	extern var __cenvp : byte##
 ;;
@@ -865,7 +866,6 @@ extern const __osx_thread_selfid
 extern const __osx_vfork
 */
 
-extern const cstring : (str : byte[:] -> byte#)
 extern const alloca : (sz : size -> byte#)
 
 /* process control */
