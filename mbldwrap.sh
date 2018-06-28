@@ -13,10 +13,12 @@ else
 	export MYR_RT=`pwd`/rt/_myrrt.o
 fi
 
-if [ -f obj/mbld/mbld ]; then
-	MBLD=obj/mbld/mbld
-else
-	MBLD=$(command -v mbld)
+if [ -z "$MBLD" ]; then
+	if [ -f obj/mbld/mbld ]; then
+		MBLD=obj/mbld/mbld
+	else
+		MBLD=$(command -v mbld)
+	fi
 fi
 
 if [ -z "$MBLD" ]; then
