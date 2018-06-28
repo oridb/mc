@@ -37,8 +37,8 @@
         return(abs(f(x) - p_eval(n, v, x)));
 }
 
-{ find_M(f, n, v, a, b) = my(X, gran, l, lnext, len, xprev, xcur, xnext, yprev, ycur, ynext, thisa, thisb, k, j);
-        gran = 100 * n;
+{ find_M(f, n, v, a, b, depth) = my(X, gran, l, lnext, len, xprev, xcur, xnext, yprev, ycur, ynext, thisa, thisb, k, j);
+        gran = 10000 * depth;
         l = listcreate();
 
         xprev = a - (b - a)/gran;
@@ -64,7 +64,7 @@
         );
 
         vecsort(l, 2);
-        if(length(l) < n + 2 || l[1][2] < 2^(-100), return("q"),);
+        if(length(l) < n + 2 || l[1][2] < 2^(-2000), return("q"),);
         len = length(l);
 
         lnext = listcreate();
@@ -111,17 +111,25 @@
         for(j = 1, 100,
                 v = remez_step(f, n, a, b, c);
                 print("v = ", v);
-                c = find_M(f, n, v, a, b);
+                c = find_M(f, n, v, a, b, j);
                 if(c == "q", return,);
                 print("c = ", c);
         );
 }
 
+{ sinoverx(x) =
+        return(if(x == 0, 1, sin(x)/x));
+}
+
 print("\n");
-print("Minimaxing sin(x), degree 7, on [-Pi/(4 * 256), Pi/(4 * 256)]:");
-find_minimax(sin, 7, -Pi/1024, Pi/1024)
+print("Minimaxing sin(x) / x, degree 6, on [-Pi/(4 * 256), Pi/(4 * 256)]:");
+find_minimax(sinoverx, 6, -Pi/1024, Pi/1024)
+print("\n");
+print("(You'll need to add a 0x0 at the beginning to make a degree 7...\n");
+print("\n");
 print("\n");
 print("Minimaxing cos(x), degree 7, on [-Pi/(4 * 256), Pi/(4 * 256)]:");
 find_minimax(cos, 7, -Pi/1024, Pi/1024)
 print("\n");
-
+print("\n");
+print("Remember that there's that extra, ugly E term at the end of the vector that you want to lop off.\n");

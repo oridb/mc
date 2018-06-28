@@ -1,0 +1,106 @@
+use std
+use math
+use testr
+
+const main = {
+	math.fptrap(false)
+	testr.run([
+		[.name="sin-cos-01", .fn = sincos01], /* flt32 */
+		[.name="sin-cos-02", .fn = sincos02], /* flt64 */
+		[.name="sin-cos-03", .fn = sincos03], /* off-by-1-ulp quarantine */
+		[.name="sin-cos-04", .fn = sincos04], /* exhaustively test C */
+		[.name="sin-cos-05", .fn = sincos05], /* NaN handling */
+	][:])
+}
+
+const same32 = {a, b
+	if a == b
+		-> true
+	;;
+
+	if std.isnan(std.flt32frombits(a)) && std.isnan(std.flt32frombits(b))
+		-> true
+	;;
+
+	-> false
+}
+
+const same64 = {a, b
+	if a == b
+		-> true
+	;;
+
+	if std.isnan(std.flt64frombits(a)) && std.isnan(std.flt64frombits(b))
+		-> true
+	;;
+
+	-> false
+}
+
+const sincos01 = {c
+	var inputs : (uint32, uint32, uint32)[:] = [
+		(0x00000000, 0x00000000, 0x3f800000),
+		(0x3f000000, 0x3ef57744, 0x3f60a940),
+		(0x6e000000, 0xbec002e4, 0xbf6d50ea),
+	][:]
+
+	for (x, ys, yc) : inputs
+		var xf : flt32 = std.flt32frombits(x)
+		var rsf1, rcf1, rsf2, rcf2
+		(rsf1, rcf1) = math.sincos(xf)
+		rsf2 = math.sin(xf)
+		rcf2 = math.cos(xf)
+
+		var rsu1 = std.flt32bits(rsf1)
+		var rcu1 = std.flt32bits(rcf1)
+		var rsu2 = std.flt32bits(rsf2)
+		var rcu2 = std.flt32bits(rcf2)
+
+
+		testr.check(c, rsf1 == rsf2 && rcf1 == rcf2,
+			"sincos(0x{b=16,w=8,p=0}) is (0x{b=16,w=8,p=0}, 0x{b=16,w=8,p=0}), individual results (0x{b=16,w=8,p=0}, 0x{b=16,w=8,p=0})",
+			x, rsu1, rcu1, rsu2, rcu2)
+
+		testr.check(c, same32(rsu1, ys) && same32(rcu1, yc),
+			"sincos(0x{b=16,w=8,p=0}) should be (0x{b=16,w=8,p=0}, 0x{b=16,w=8,p=0}), was (0x{b=16,w=8,p=0}, 0x{b=16,w=8,p=0})",
+			x, ys, yc, rsu1, rcu1)
+	;;
+}
+
+const sincos02 = {c
+	var inputs : (uint64, uint64, uint64)[:] = [
+		(0x0000000000000000, 0x0000000000000000, 0x3ff0000000000000),
+		(0x4100000000000000, 0xbfeff8bd7b10d6b0, 0x3fa58ced65ec8b50),
+	][:]
+
+	for (x, ys, yc) : inputs
+		var xf : flt64 = std.flt64frombits(x)
+		var rsf1, rcf1, rsf2, rcf2
+		(rsf1, rcf1) = math.sincos(xf)
+		rsf2 = math.sin(xf)
+		rcf2 = math.cos(xf)
+
+		var rsu1 = std.flt64bits(rsf1)
+		var rcu1 = std.flt64bits(rcf1)
+		var rsu2 = std.flt64bits(rsf2)
+		var rcu2 = std.flt64bits(rcf2)
+
+
+		testr.check(c, rsf1 == rsf2 && rcf1 == rcf2,
+			"sincos(0x{b=16,w=16,p=0}) is (0x{b=16,w=16,p=0}, 0x{b=16,w=16,p=0}), individual results (0x{b=16,w=16,p=0}, 0x{b=16,w=16,p=0})",
+			x, rsu1, rcu1, rsu2, rcu2)
+
+		testr.check(c, same64(rsu1, ys) && same64(rcu1, yc),
+			"sincos(0x{b=16,w=16,p=0}) should be (0x{b=16,w=16,p=0}, 0x{b=16,w=16,p=0}), was (0x{b=16,w=16,p=0}, 0x{b=16,w=16,p=0})",
+			x, ys, yc, rsu1, rcu1)
+	;;
+}
+
+const sincos03 = {c
+}
+
+const sincos04 = {c
+}
+
+const sincos05 = {c
+}
