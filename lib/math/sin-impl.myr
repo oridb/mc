@@ -58,6 +58,14 @@ const pi_over_2 : uint64[4] = [
 	0x35b4cf98e804177d,
 ]
 
+/* Pi/4 in lots of detail */
+const pi_over_4 : uint64[4] = [
+	0x3fe921fb54442d18,
+	0x3c81a62633145c07,
+	0xb90f1976b7ed8fbc,
+	0x35a4cf98e804177d,
+]
+
 /* Pre-computed inverses */
 const two_over_pi : uint64 = 0x3fe45f306dc9c883 /* 1/(pi/2) */
 const oneohtwofour_over_pi : uint64 = 0x40745f306dc9c883 /* 1/(pi/(4 * 256)) */
@@ -584,6 +592,10 @@ const reduce = {x : flt64
 	var pi_o_2_1 : flt64 = std.flt64frombits(pi_over_2[1])
 	var pi_o_2_2 : flt64 = std.flt64frombits(pi_over_2[2])
 	var pi_o_2_3 : flt64 = std.flt64frombits(pi_over_2[3])
+	var pi_o_4_0 : flt64 = std.flt64frombits(pi_over_4[0])
+	var pi_o_4_1 : flt64 = std.flt64frombits(pi_over_4[1])
+	var pi_o_4_2 : flt64 = std.flt64frombits(pi_over_4[2])
+	var pi_o_4_3 : flt64 = std.flt64frombits(pi_over_4[3])
 
 	var total_N = 0
 	var q : flt64[11]
@@ -598,8 +610,8 @@ const reduce = {x : flt64
 		(x1, x2, x3) = triple_compensate_sum(q[:])
 		total_N += (N % 4)
 
-		if le_33(x1, x2, x3, pi_o_2_0, pi_o_2_1, pi_o_2_2) && \
-		   le_33(-pi_o_2_0, -pi_o_2_1, -pi_o_2_2, x1, x2, x3)
+		if le_33(x1, x2, x3, pi_o_4_0, pi_o_4_1, pi_o_4_2) && \
+		   le_33(-pi_o_4_0, -pi_o_4_1, -pi_o_4_2, x1, x2, x3)
 			break
 		;;
 	;;

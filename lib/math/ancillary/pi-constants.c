@@ -60,6 +60,19 @@ int main(void)
         }
 
         printf("\n");
+        printf("1000 bits of pi/4:\n");
+        mpfr_const_pi(pi, MPFR_RNDN);
+        mpfr_div_si(pi, pi, 4, MPFR_RNDN);
+
+        for (int bits_obtained = 0; bits_obtained < 1000; bits_obtained += 53) {
+                d = mpfr_get_d(pi, MPFR_RNDN);
+                u = FLT64_TO_UINT64(d);
+                printf("%#018lx\n", u);
+                mpfr_set_d(t, d, MPFR_RNDN);
+                mpfr_sub(pi, pi, t, MPFR_RNDN);
+        }
+
+        printf("\n");
         printf("Pre-computed 2/pi:\n");
         mpfr_const_pi(pi, MPFR_RNDN);
         mpfr_set_si(t, 2, MPFR_RNDN);
