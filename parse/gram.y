@@ -35,6 +35,7 @@ static void installucons(Stab *st, Type *t);
 static void setattrs(Node *dcl, char **attrs, size_t nattrs);
 static void setwith(Type *ty, Traitspec **spec, size_t nspec);
 static void setupinit(Node *n);
+static void addinit(Node *blk, Node *dcl);
 
 %}
 
@@ -1064,19 +1065,11 @@ block	: blkbody Tendblk
 
 blkbody : decl {
 		size_t i;
-		Node *n, *d, *u;
 
 		$$ = mkblock($1.loc, mkstab(0));
 		for (i = 0; i < $1.nn; i++) {
-			d = $1.nl[i];
-			putdcl($$->block.scope, d);
-			if (!d->decl.init) {
-				n = mkexpr(d->loc, Ovar, d->decl.name, NULL);
-				u = mkexpr(n->loc, Oundef, n, NULL);
-				n->expr.did = d->decl.did;
-				lappend(&$$->block.stmts, &$$->block.nstmts, u);
-			}
-			lappend(&$$->block.stmts, &$$->block.nstmts, d);
+			putdcl($$->block.scope, $1.nl[i]);
+			addinit($$, $1.nl[i]);
 		}
 	}
 	| stmt {
@@ -1098,7 +1091,7 @@ blkbody : decl {
 		size_t i;
 		for (i = 0; i < $3.nn; i++){
 			putdcl($$->block.scope, $3.nl[i]);
-			lappend(&$1->block.stmts, &$1->block.nstmts, $3.nl[i]);
+			addinit($$, $3.nl[i]);
 		}
 	}
 	| blkbody Tendln tydef {
@@ -1117,6 +1110,19 @@ label	: Tcolon Tident {
 	;
 
 %%
+
+static void
+addinit(Node *blk, Node *dcl)
+{
+	Node *n, *u;
+	if (!dcl->decl.init) {
+		n = mkexpr(dcl->loc, Ovar, dcl->decl.name, NULL);
+		u = mkexpr(n->loc, Oundef, n, NULL);
+		n->expr.did = dcl->decl.did;
+		lappend(&blk->block.stmts, &blk->block.nstmts, u);
+	}
+	lappend(&blk->block.stmts, &blk->block.nstmts, dcl);
+}
 
 static void
 setupinit(Node *n)

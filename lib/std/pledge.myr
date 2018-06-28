@@ -1,0 +1,11 @@
+use sys
+use "errno"
+use "result"
+
+pkg std =
+	const pledge	: (promise : byte[:], epromise : byte[:] -> result(void, errno))
+;;
+
+const pledge = {promise, epromise
+	-> `std.Ok void
+}

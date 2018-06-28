@@ -1,0 +1,18 @@
+use sys
+use "errno"
+use "result"
+
+pkg std =
+	const pledge	: (promise : byte[:], epromise : byte[:] -> result(void, errno))
+;;
+
+const pledge = {promise, epromise
+	var r
+
+	r = sys.pledge(sys.cstring(promise), sys.cstring(epromise))
+	if r < 0
+		-> `std.Err (r : errno)
+	else
+		-> `std.Ok void
+	;;
+}

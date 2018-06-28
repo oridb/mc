@@ -282,7 +282,11 @@ const expm164 = {x : flt64
 	-> expm1gen(x, desc64)
 }
 
-generic expm1gen = {x : @f, d : fltdesc(@f, @u, @i) :: numeric,floating,std.equatable @f, numeric,integral @u, numeric,integral @i, roundable @f -> @i
+generic expm1gen = {x : @f, d : fltdesc(@f, @u, @i) :: \
+    numeric,floating,std.equatable @f,
+    numeric,integral @u,
+    numeric,integral @i,
+    roundable @f -> @i
 	var b = d.tobits(x)
 	var n, e, s
 	(n, e, s) = d.explode(x)

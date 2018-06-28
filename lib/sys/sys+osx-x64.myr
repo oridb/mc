@@ -18,6 +18,7 @@ pkg sys =
 	type machport	= int32
 	type signo	= int32
 	type sigflags	= int32
+	type ulockop	= uint32
 
 	type fdset = struct
 		bits	: int32[1024/4]
@@ -388,6 +389,14 @@ pkg sys =
 	const Sigusr1	: signo = 30	/* user defined signal 1 */
 	const Sigusr2	: signo = 31	/* user defined signal 2 */
 
+	/* ulock ops */
+	const Ulockcompareandwait		: ulockop = 0x00000001
+	const Ulockunfairlock			: ulockop = 0x00000002
+	const Ulockulfwakeall			: ulockop = 0x00000100
+	const Ulockulfwakethread		: ulockop = 0x00000200
+	const Ulockwaitworkqdatacontention	: ulockop = 0x00010000
+	const Ulocknoerrno			: ulockop = 0x01000000
+
 	/* syscalls.
 	note, creat() implemented as open(path, Creat|Trunc|Wronly) */
 	const Syssyscall	: scno = 0x2000000
@@ -737,6 +746,8 @@ pkg sys =
 	const Syspid_resume		: scno = 0x20001af
 	const Sysfileport_makeport	: scno = 0x20001b0
 	const Sysfileport_makefd	: scno = 0x20001b1
+	const Sysulock_wait		: scno = 0x2000203
+	const Sysulock_wake		: scno = 0x2000204
 
 	extern const syscall : (sc:scno, args:... -> int64)
 
@@ -762,6 +773,7 @@ pkg sys =
 	const rename	: (from : byte[:], to : byte[:] -> int64)
 	const creat	: (path:byte[:], mode:int64 -> fd)
 	const unlink	: (path:byte[:] -> int)
+	const rmdir	: (path:byte# -> int)
 	const read	: (fd:fd, buf:byte[:] -> size)
 	const pread	: (fd:fd, buf:byte[:], off : off -> size)
 	const write	: (fd:fd, buf:byte[:] -> size)
@@ -822,6 +834,10 @@ pkg sys =
 		old : void#, oldsz : size#, \
 		new : void#, newsz : size# \
 		-> int)
+
+	/* ulock */
+	const ulock_wait	: (op : ulockop, uaddr : uint64#, val : uint64, timeout : uint32 -> int)
+	const ulock_wake	: (op : ulockop, uaddr : uint64#, wakeval : uint64 -> int)
 
 	/* filled by start code */
 	extern var __cenvp : byte##
@@ -930,6 +946,7 @@ const close	= {fd;			-> syscall(Sysclose, a(fd))}
 const rename	= {from, to;		-> syscall(Sysrename, cstring(from), cstring(to))}
 const creat	= {path, mode;		-> (openmode(path, Ocreat | Otrunc | Owronly, mode) : fd)}
 const unlink	= {path;		-> (syscall(Sysunlink, cstring(path)) : int)}
+const rmdir	= {path;		-> (syscall(Sysunlink, a(path)) : int)}
 const read	= {fd, buf;		-> (syscall(Sysread, a(fd), (buf : byte#), a(buf.len)) : size)}
 const pread	= {fd, buf, off;	-> (syscall(Syspread, a(fd), (buf : byte#), a(buf.len), a(off)) : size)}
 const write	= {fd, buf;		-> (syscall(Syswrite, a(fd), (buf : byte#), a(buf.len)) : size)}
@@ -1079,6 +1096,14 @@ const sysctl = {mib, old, oldsz, new, newsz
 	/* all args already passed through a() or ar  ptrs */
 	-> (syscall(Sys__sysctl, \
 		(mib : int#), a(mib.len), old, oldsz, new, newsz) : int)
+}
+
+const ulock_wait = {op, uaddr, val, timeout
+	-> (syscall(Sysulock_wait, a(op), uaddr, val, a(timeout)) : int)
+}
+
+const ulock_wake = {op, uaddr, wakeval
+	-> (syscall(Sysulock_wake, a(op), uaddr, a(wakeval)) : int)
 }
 
 const waitstatus = {st

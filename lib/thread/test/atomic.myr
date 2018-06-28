@@ -16,6 +16,8 @@ const main = {
 		/* nothing */
 	;;
 	std.assert(val == 2_000_000, "atomics are broken\n")
+
+	testintptr()
 }
 
 const incvar = {
@@ -27,3 +29,16 @@ const incvar = {
 	thread.xadd(&done, 1)
 }
 
+const testintptr = {
+	var i = 123
+	var j = 456
+	var p = &i
+
+	std.assert(std.get(thread.xgetptr(&p))# == 123, "xgetptr is broken\n")
+	thread.xsetptr(&p, `std.Some &j)
+	std.assert(p# == 456, "xsetptr is broken\n")
+	std.assert(std.get(thread.xcasptr(&p, `std.Some &j, `std.Some &i)) == &j, "xcasptr is broken\n")
+	std.assert(p# == 123, "xcasptr is broken\n")
+	std.assert(std.get(thread.xchgptr(&p, `std.None)) == &i, "xchgptr is broken\n")
+	std.assert((p : std.intptr) == 0, "xchgptr is broken\n")
+}

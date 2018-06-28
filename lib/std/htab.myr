@@ -131,23 +131,25 @@ generic htfree = {ht
 generic htput = {ht, k, v
 	var i, di
 	var h
-	var neltincr
+	var found
 
 	di = 0
 	h = xhash(k)
 	i = h & (ht.keys.len - 1)
-	neltincr = 1
+	found = false
 	while ht.hashes[i] != 0 && !ht.dead[i]
 		if ht.hashes[i] == h &&	eq(ht.keys[i], k)
-			neltincr = 0
+			found = true
 			break
 		;;
 		di++
 		i = (h + di) & (ht.keys.len - 1)
 	;;
-	ht.nelt += neltincr
+	if !found
+		ht.keys[i] = k
+		ht.nelt++
+	;;
 	ht.hashes[i] = h
-	ht.keys[i] = k
 	ht.vals[i] = v
 	ht.dead[i] = false
 	if ht.keys.len < ht.nelt * 2

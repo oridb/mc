@@ -853,6 +853,7 @@ pkg sys =
 	const close	: (fd:fd -> int64)
 	const creat	: (path:byte[:], mode:int64 -> fd)
 	const unlink	: (path:byte[:] -> int)
+	const rmdir	: (path:byte# -> int)
 	const read	: (fd:fd, buf:byte[:] -> size)
 	const pread	: (fd:fd, buf:byte[:], off : off -> size)
 	const readv	: (fd:fd, iov:iovec[:] -> size)
@@ -907,6 +908,7 @@ pkg sys =
 		new : void#, newsz : size# \
 		-> int)
 
+	extern const cstring	: (str : byte[:] -> byte#)
 	/* filled by start code */
 	extern var __cenvp : byte##
 ;;
@@ -917,7 +919,6 @@ the same as casting, but more concise than (writing : int64)
 */
 generic a = {x : @t; -> (x : uint64)}
 
-extern const cstring	: (str : byte[:] -> byte#)
 extern const alloca	: (sz : size	-> byte#)
 
 /* process management */
@@ -985,6 +986,7 @@ const openmode	= {path, opts, mode;	-> (syscall(Sysopen, cstring(path), a(opts),
 const close	= {fd;			-> syscall(Sysclose, a(fd))}
 const creat	= {path, mode;		-> (openmode(path, Ocreat | Otrunc | Owronly, mode) : fd)}
 const unlink	= {path;		-> (syscall(Sysunlink, cstring(path)) : int)}
+const rmdir	= {path;		-> (syscall(Sysunlink, a(path)) : int)}
 const read	= {fd, buf;		-> (syscall(Sysread, a(fd), (buf : byte#), a(buf.len)) : size)}
 const pread	= {fd, buf, off;	-> (syscall(Syspread, a(fd), (buf : byte#), a(buf.len), a(off)) : size)}
 const readv	= {fd, vec;		-> (syscall(Sysreadv, a(fd), (vec : iovec#), a(vec.len)) : size)}

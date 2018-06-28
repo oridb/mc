@@ -10,7 +10,8 @@ pkg std =
 	const run	: (cmd : byte[:][:]	-> waitstatus)
 	const spork	: (cmd : byte[:][:]	-> result((pid, fd, fd), errno))
 	const espork	: (cmd : byte[:][:]	-> result((pid, fd, fd, fd), errno))
-	const filterfd	: (fd : fd, cmd  : byte[:][:] -> result(pid, errno))
+	const sporkdir	: (cmd : byte[:][:], dir : byte[:]	-> result((pid, fd, fd), errno))
+	const esporkdir	: (cmd : byte[:][:], dir : byte[:]	-> result((pid, fd, fd, fd), errno))
 ;;
 
 const run = {cmd
@@ -28,8 +29,15 @@ const run = {cmd
 	;;
 }
 
-
 const spork = {cmd
+	-> sporkdir(cmd, "")
+}
+
+const espork = {cmd
+	-> esporkdir(cmd, "")
+}
+
+const sporkdir = {cmd, dir
 	var infds : fd[2], outfds : fd[2]
 	var err
 
@@ -46,7 +54,7 @@ const spork = {cmd
 		goto sporkerr
 	;;
 
-	match sporkfd(cmd, infds, outfds, [-1, 2])
+	match sporkfd(cmd, dir, infds, outfds, [-1, 2])
 	| `Ok pid:
 		/* close unused fd ends */
 		close(infds[0]);
@@ -64,7 +72,7 @@ const spork = {cmd
 	-> `Err err
 }
 
-const espork = {cmd
+const esporkdir = {cmd, dir
 	var infds : fd[2], outfds : fd[2], errfds : fd[2]
 	var err
 
@@ -86,7 +94,7 @@ const espork = {cmd
 		goto sporkerr
 	;;
 
-	match sporkfd(cmd, infds, outfds, errfds)
+	match sporkfd(cmd, dir, infds, outfds, errfds)
 	| `Ok pid:
 		/* close unused fd ends */
 		close(infds[0]);
@@ -108,27 +116,7 @@ const espork = {cmd
 	-> `Err err
 }
 
-const filterfd = {fd, cmd
-	var outfds : fd[2]
-	var err
-
-	err = pipe(&outfds)
-	if err != Enone
-		-> `Err err
-	;;
-
-	match sporkfd(cmd, [fd, -1], outfds, [-1, 2])
-	| `Ok pid:
-		dup2(outfds[0], fd)
-		close(outfds[0]);
-		close(outfds[1]);
-		-> `Ok pid
-	| `Err e:
-		-> `Err e
-	;;
-}
-
-const sporkfd = {cmd, infds, outfds, errfds
+const sporkfd = {cmd, dir, infds, outfds, errfds
 	var pid
 
 	pid = fork()
@@ -181,6 +169,9 @@ const sporkfd = {cmd, infds, outfds, errfds
 		close(outfds[0])
 		close(errfds[0])
 
+		if dir.len != 0 && !chdir(dir)
+			std.die("could not chdir")
+		;;
 		execvp(cmd[0], cmd)
 		/* if fork succeeds, we never return */
 		suicide()

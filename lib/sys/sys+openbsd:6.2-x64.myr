@@ -947,7 +947,7 @@ pkg sys =
 	const dup3			:  (from : int, to : int, flags : int -> int)
 	const sigreturn			:  (sigcntxp : sigcontext# -> int)
 	const chflagsat			:  (fd : int, path : byte#, flags : uint, atflags : int -> int)
-	const pledge			:  (request : byte#, paths : byte## -> int)
+	const pledge			:  (request : byte#, paths : byte# -> int)
 	const ppoll			:  (fds : pollfd#, nfds : uint, ts : timespec#, mask : sigset# -> int)
 	const pselect			:  (nd : int, _in : fdset#, ou : fdset#, ex : fdset#, ts : timespec#, mask : sigset# -> int)
 	const sigsuspend		:  (mask : int -> int)

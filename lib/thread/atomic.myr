@@ -1,4 +1,5 @@
 use std
+use "common"
 
 pkg thread =
 	trait atomic @a :: integral,numeric @a =
@@ -13,6 +14,31 @@ pkg thread =
 	impl atomic int64
 	impl atomic uint32
 	impl atomic uint64
+
+	generic xgetptr : (p : @a## -> std.option(@a#))
+	generic xsetptr : (p : @a##, v : std.option(@a#) -> void)
+	generic xcasptr : (p : @a##, old : std.option(@a#), new : std.option(@a#) -> std.option(@a#))
+	generic xchgptr : (p : @a##, new : std.option(@a#) -> std.option(@a#))
+
+	pkglocal extern const xget32	: (p : uint32# -> uint32)
+	pkglocal extern const xget64	: (p : uint64# -> uint64)
+	pkglocal extern const xgetp	: (p : std.intptr# -> std.intptr)
+
+	pkglocal extern const xset32	: (p : uint32#, v : uint32 -> void)
+	pkglocal extern const xset64	: (p : uint64#, v : uint64 -> void)
+	pkglocal extern const xsetp	: (p : std.intptr#, v : std.intptr -> void)
+
+	pkglocal extern const xadd32	: (p : uint32#, v : uint32 -> uint32)
+	pkglocal extern const xadd64	: (p : uint64#, v : uint64 -> uint64)
+	pkglocal extern const xaddp	: (p : std.intptr#, v : std.intptr -> std.intptr)
+
+	pkglocal extern const xcas32	: (p : uint32#, old: uint32, new : uint32 -> uint32)
+	pkglocal extern const xcas64	: (p : uint64#, old: uint64, new : uint64 -> uint64)
+	pkglocal extern const xcasp	: (p : std.intptr#, old: std.intptr, new : std.intptr -> std.intptr)
+
+	pkglocal extern const xchg32	: (p : uint32#, v : uint32 -> uint32)
+	pkglocal extern const xchg64	: (p : uint64#, v : uint64 -> uint64)
+	pkglocal extern const xchgp	: (p : std.intptr#, v : std.intptr -> std.intptr)
 ;;
 
 impl atomic int32 =
@@ -57,22 +83,28 @@ impl atomic std.intptr =
 	xchg	= {p, v; -> xchgp(p, v)}
 ;;
 
-extern const xget32	: (p : uint32# -> uint32)
-extern const xget64	: (p : uint64# -> uint64)
-extern const xgetp	: (p : std.intptr# -> std.intptr)
+generic xgetptr = {p
+	match xget((p : std.intptr#))
+	| 0: -> `std.None
+	| n: -> `std.Some (n : @a#)
+	;;
+}
 
-extern const xset32	: (p : uint32#, v : uint32 -> void)
-extern const xset64	: (p : uint64#, v : uint64 -> void)
-extern const xsetp	: (p : std.intptr#, v : std.intptr -> void)
+generic xsetptr = {p, v
+	xset((p : std.intptr#), (std.getv(v, Zptr) : std.intptr))
+}
 
-extern const xadd32	: (p : uint32#, v : uint32 -> uint32)
-extern const xadd64	: (p : uint64#, v : uint64 -> uint64)
-extern const xaddp	: (p : std.intptr#, v : std.intptr -> std.intptr)
+generic xcasptr = {p, old, new
+	match xcas((p : std.intptr#), (std.getv(old, Zptr) : std.intptr), (std.getv(new, Zptr) : std.intptr))
+	| 0: -> `std.None
+	| n: -> `std.Some (n : @a#)
+	;;
+}
 
-extern const xcas32	: (p : uint32#, old: uint32, new : uint32 -> uint32)
-extern const xcas64	: (p : uint64#, old: uint64, new : uint64 -> uint64)
-extern const xcasp	: (p : std.intptr#, old: std.intptr, new : std.intptr -> std.intptr)
+generic xchgptr = {p, new
+	match xchg((p : std.intptr#), (std.getv(new, Zptr) : std.intptr))
+	| 0: -> `std.None
+	| n: -> `std.Some (n : @a#)
+	;;
+}
 
-extern const xchg32	: (p : uint32#, v : uint32 -> uint32)
-extern const xchg64	: (p : uint64#, v : uint64 -> uint64)
-extern const xchgp	: (p : std.intptr#, v : std.intptr -> std.intptr)

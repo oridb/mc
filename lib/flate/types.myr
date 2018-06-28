@@ -1,0 +1,8 @@
+use bio
+
+pkg flate =
+	type err = union
+		`Io bio.err
+		`Format byte[:]
+	;;
+;;

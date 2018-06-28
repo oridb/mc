@@ -2,6 +2,7 @@ lib fileutil =
 	walk.myr
 	homedir.myr
 	tmpdir.myr
+	del.myr
 
 	loopcheck+posixy.myr
 	loopcheck+plan9.myr

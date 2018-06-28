@@ -25,10 +25,13 @@ const Zenvp = (0 : byte#)
 var envduped	: bool = false
 var environ	: byte#[:]
 
+const __init__ = {
+	envinit()
+}
+
 const getenv = {name
 	var n, env
 
-	envinit()
 	for envp : environ
 		if envp != Zenvp
 			env = cstrconvp(envp)
@@ -50,8 +53,6 @@ const getenvv = {name, default
 
 const setenv = {name, val
 	var n, e, env, idx, found
-
-	envinit()
 
 	idx = 0
 	found = false

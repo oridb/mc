@@ -46,3 +46,10 @@ lib math =
 
 	lib ../std:std
 ;;
+
+testdeps =
+	math
+	../testr:testr
+	../sys:sys
+	../std:std
+;;

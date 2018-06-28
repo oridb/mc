@@ -1,0 +1,41 @@
+use sys
+
+use "atomic"
+use "common"
+
+pkg thread =
+	type ftxtag = uint32
+	impl atomic ftxtag
+
+	const ftxwait : (uaddr : ftxtag#, val : ftxtag, timeout : sys.timespec# -> int)
+	const ftxwake : (uaddr : ftxtag# -> int)
+;;
+
+const ftxwait = {uaddr, val, timeout
+	if timeout == Zptr
+		-> sys.umtx_op((uaddr : void#), sys.Umtxwaituintpriv, (val : uint64), Zptr, Zptr)
+	;;
+
+	var ut : sys._umtx_time = [
+		._timeout = timeout#,
+		._flags = (sys.Umtxabstime : uint32),
+		._clockid = 1, /* CLOCK_MONOTONIC. Not exported from sys. */
+	]
+	-> sys.umtx_op((uaddr : void#),
+		sys.Umtxwaituintpriv,
+		(val : uint64),
+		(sizeof(sys._umtx_time) : void#),
+		(&ut : void#))
+}
+
+const ftxwake = {uaddr
+	-> sys.umtx_op((uaddr : void#), sys.Umtxwakepriv, 1, Zptr, Zptr)
+}
+
+impl atomic ftxtag =
+	xget = {p; -> (xget32((p : uint32#)) : ftxtag)}
+	xset = {p, v; xset32((p : uint32#), (v : uint32))}
+	xadd = {p, v; -> (xadd32((p : uint32#), (v : uint32)) : ftxtag)}
+	xcas = {p, old, new; -> (xcas32((p : uint32#), (old : uint32), (new : uint32)) : ftxtag)}
+	xchg = {p, v; -> (xchg32((p : uint32#), (v : uint32)) : ftxtag)}
+;;

@@ -35,4 +35,5 @@ pkg sys =
 	const Epipe	: errno =	-32	/* Broken pipe */
 	const Edom	: errno =	-33	/* Math argument out of domain of func */
 	const Erange	: errno =	-34	/* Math result not representable */
+	const Etimedout	: errno =	-110	/* Operation timed out */
 ;;

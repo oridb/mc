@@ -7,8 +7,8 @@ use "common"
 
 pkg thread =
 	type mutex = struct
-		_state	: uint32
-		_sem	: uint32
+		_state	: int32
+		_sem	: int32
 	;;	
 
 	const mkmtx	: (-> mutex)

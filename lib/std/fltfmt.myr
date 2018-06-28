@@ -65,6 +65,8 @@ const dragon4 = {sb, isneg, f, e, p, mode, cutoff
 
 	/* initialize */
 	roundup = false
+	low = false
+	high = false
 	u = mkbigint(0)
 	r = bigshli(mkbigint(f), max(e, 0))
 	s = bigshli(mkbigint(1), max(0, -e))

@@ -236,8 +236,8 @@ mktygeneric(Srcloc loc, Node *name, Type **param, size_t nparam, Type *base)
 		bindtype(t->env, param[i]);
 	if (!base->env)
 		base->env = t->env;
-	else
-		assert(base->env->super == t->env);
+	else 
+		assert(base->env->super == t->env || base->narg > 0);
 	return t;
 }
 

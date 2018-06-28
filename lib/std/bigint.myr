@@ -192,16 +192,12 @@ const bigbfmt = {buf, x, base
 		die("invalid base in bigbfmt\n")
 	;;
 
-	if bigiszero(x)
-		n
-	;;
-
+	n = 0
 	if base == 0
 		b = mkbigint(10)
 	else
 		b = mkbigint(base)
 	;;
-	n = 0
 	val = bigdup(x)
 	/* generate the digits in reverse order */
 	while !bigiszero(val)

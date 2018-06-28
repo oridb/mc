@@ -92,7 +92,13 @@ const dup2	= {ofd, nfd;	-> check((sys.dup2((ofd : sys.fd), (nfd : sys.fd)) : fd)
 /* path manipulation */
 const mkdir	= {path, mode;	-> (sys.mkdir(path, mode) : errno)}
 const chdir	= {path;	-> sys.chdir(path) == 0}
-const remove	= {path;	-> sys.unlink(path) == 0}
+const remove	= {path;	
+	if std.fisdir(path)
+		-> sys.rmdir(sys.cstring(path)) == 0
+	else
+		-> sys.unlink(path) == 0
+	;;
+}
 
 /* useful/portable bits of uname */
 const getsysinfo = {si
