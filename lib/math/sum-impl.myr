@@ -3,10 +3,13 @@ use std
 /* For references, see [Mul+10] section 6.3 */
 pkg math =
 	pkglocal const kahan_sum32 : (l : flt32[:] -> flt32)
-	pkglocal const priest_sum32 : (l : flt32[:] -> flt32)
+	pkglocal const kahan_sum64 : (l : flt64[:] -> flt64)
 
-	pkglocal const kahan_sum64: (l : flt64[:] -> flt64)
+	pkglocal const priest_sum32 : (l : flt32[:] -> flt32)
 	pkglocal const priest_sum64 : (l : flt64[:] -> flt64)
+
+	/* Backend for priest_sum; currently not useful enough to expose */
+	pkglocal generic double_compensated_sum : (l : @f[:] -> (@f, @f)) :: numeric,floating @f
 ;;
 
 type doomed_flt32_arr = flt32[:]
@@ -26,18 +29,18 @@ impl disposable doomed_flt64_arr =
    something slower, but more accurate, use something like Priest's
    doubly compensated sums.
  */
-pkglocal const kahan_sum32 = {l; -> kahan_sum_gen(l, (0.0 : flt32))}
-pkglocal const kahan_sum64 = {l; -> kahan_sum_gen(l, (0.0 : flt64))}
+pkglocal const kahan_sum32 = {l; -> kahan_sum_gen(l)}
+pkglocal const kahan_sum64 = {l; -> kahan_sum_gen(l)}
 
-generic kahan_sum_gen = {l : @f[:], zero : @f :: numeric,floating @f
+generic kahan_sum_gen = {l : @f[:] :: numeric,floating @f
 	if l.len == 0
-		-> zero
+		-> (0.0 : @f)
 	;;
 
-	var s = zero
-	var c = zero
-	var y = zero
-	var t = zero
+	var s = (0.0 : @f)
+	var c = (0.0 : @f)
+	var y = (0.0 : @f)
+	var t = (0.0 : @f)
 
 	for x : l
 		y = x - c
@@ -59,7 +62,9 @@ pkglocal const priest_sum32 = {l : flt32[:]
 	var l2 = std.sldup(l)
 	std.sort(l2, mag_cmp32)
 	auto (l2 : doomed_flt32_arr)
-	-> priest_sum_gen(l2, (0.0 : flt32))
+	var s, c
+	(s, c) = double_compensated_sum(l2)
+	-> s
 }
 
 const mag_cmp32 = {f : flt32, g : flt32
@@ -72,7 +77,9 @@ pkglocal const priest_sum64 = {l : flt64[:]
 	var l2 = std.sldup(l)
 	std.sort(l, mag_cmp64)
 	auto (l2 : doomed_flt64_arr)
-	-> priest_sum_gen(l2, (0.0 : flt64))
+	var s, c
+	(s, c) = double_compensated_sum(l2)
+	-> s
 }
 
 const mag_cmp64 = {f : flt64, g : flt64
@@ -81,14 +88,14 @@ const mag_cmp64 = {f : flt64, g : flt64
 	-> std.numcmp(v, u)
 }
 
-generic priest_sum_gen = {l : @f[:], zero : @f :: numeric,floating @f
+generic double_compensated_sum = {l : @f[:] :: numeric,floating @f
 	/* l should be sorted in descending order */
 	if l.len == 0
-		-> zero
+		-> ((0.0 : @f), (0.0 : @f))
 	;;
 
-	var s = zero
-	var c = zero
+	var s = (0.0 : @f)
+	var c = (0.0 : @f)
 
 	for x : l
 		var y = c + x
@@ -100,6 +107,5 @@ generic priest_sum_gen = {l : @f[:], zero : @f :: numeric,floating @f
 		c = z - (s - t)
 	;;
 
-	-> s
+	-> (s, c)
 }
-

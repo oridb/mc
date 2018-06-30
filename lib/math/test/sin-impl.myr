@@ -79,6 +79,7 @@ const sincos02 = {c
 		(0xbfeff57020000000, 0xbfeae79e2eb87020, 0x3fe1530a59ef0400),
 		(0x44f5248560000000, 0xbfeff57010000001, 0xbfa9fdc6fcf27758),
 		(0xc3e3170f00000000, 0xbfb5ac1ed995c7c4, 0x3fefe29770000000),
+		(0x41bb951f1572eba5, 0xbc8f54f5227a4e84, 0x3ff0000000000000), /* [GB91]'s "Xhard" */
 	][:]
 
 	for (x, ys, yc) : inputs

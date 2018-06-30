@@ -3,6 +3,7 @@ use std
 use "fpmath"
 use "fma-impl"
 use "scale2-impl"
+use "sum-impl"
 use "util"
 
 /*
@@ -512,9 +513,9 @@ const w64 = {x : flt64, want_sin : bool, want_cos : bool
 	   This also gives that |delta2| < 2^(-60), vanishing quickly
 	   in the polynomial approximations.
 	 */
-	/* TODO: inline this, use double-compensated */
-	var delta1, delta2
-	(delta1, delta2, _) = triple_compensate_sum([-std.flt64frombits(xi), x1, x2, x3][:])
+	var delta1, delta2, deltat
+	(delta1, deltat) = fast2sum(-std.flt64frombits(xi), x1)
+	(delta2, _) = fast2sum(deltat, x2)
 
 	/*
 	   sin(delta); the degree 2 coefficient is near 0, so delta_2
@@ -537,7 +538,7 @@ const w64 = {x : flt64, want_sin : bool, want_cos : bool
 		std.sort(q[:], fltabscmp)
 
 		/* TODO: use double-compensation instead */
-		(sin_ret, sin_ret2, _) = triple_compensate_sum(q[:])
+		(sin_ret, sin_ret2) = double_compensated_sum(q[:])
 	;;
 
 	if (want_cos && !swap_sin_cos) || (want_sin && swap_sin_cos)
@@ -548,7 +549,7 @@ const w64 = {x : flt64, want_sin : bool, want_cos : bool
 		std.sort(q[:], fltabscmp)
 
 		/* TODO: use double-compensation instead */
-		(cos_ret, cos_ret2, _) = triple_compensate_sum(q[:])
+		(cos_ret, cos_ret2) = double_compensated_sum(q[:])
 	;;
 
 	if first_negate_sin
