@@ -42,6 +42,10 @@ const sincos01 = {c
 		(0x00000000, 0x00000000, 0x3f800000),
 		(0x3f000000, 0x3ef57744, 0x3f60a940),
 		(0x6e000000, 0xbec002e4, 0xbf6d50ea),
+		(0xeca5b501, 0x3f6e879c, 0x3eb9e60c),
+		(0x67a9242b, 0xbf7fab81, 0xbd4fee38),
+		(0xdf18b878, 0xbdad60f7, 0x3f7f14bb),
+		(0x5f18b878, 0x3dad60f7, 0x3f7f14bb),
 	][:]
 
 	for (x, ys, yc) : inputs
@@ -70,9 +74,11 @@ const sincos02 = {c
 	var inputs : (uint64, uint64, uint64)[:] = [
 		(0x0000000000000000, 0x0000000000000000, 0x3ff0000000000000),
 		(0x4100000000000000, 0xbfeff8bd7b10d6b0, 0x3fa58ced65ec8b50),
-		(0x4b01000000000000, 0xbfe3e9527dc75f12, 0x3fe90cf80997c963),
 		(0x4b11000000000000, 0xbfef2cb48ed49aa6, 0x3fcce246843789ad),
 		(0x020400000a0c0000, 0x020400000a0c0000, 0x3ff0000000000000),
+		(0xbfeff57020000000, 0xbfeae79e2eb87020, 0x3fe1530a59ef0400),
+		(0x44f5248560000000, 0xbfeff57010000001, 0xbfa9fdc6fcf27758),
+		(0xc3e3170f00000000, 0xbfb5ac1ed995c7c4, 0x3fefe29770000000),
 	][:]
 
 	for (x, ys, yc) : inputs
@@ -100,6 +106,8 @@ const sincos02 = {c
 const sincos03 = {c
 	var inputs : (uint64, uint64, uint64, uint64, uint64)[:] = [
 		(0x5101000000000000, 0x3fe9706123d509f1, 0xbfe369af9695aba1, 0x3fe9706123d509f0, 0xbfe369af9695aba0),
+		(0xf83b13a6a142b6d5, 0xbf5a86f4edeb02f2, 0x3feffffd404efc20, 0xbf5a86f4edeb02f1, 0x3feffffd404efc20),
+		(0x4b01000000000000, 0xbfe3e9527dc75f12, 0x3fe90cf80997c963, 0xbfe3e9527dc75f13, 0x3fe90cf80997c964),
 	][:]
 
 	for (x, ys_perfect, yc_perfect, ys_acceptable, yc_acceptable) : inputs

@@ -481,10 +481,27 @@ const w64 = {x : flt64, want_sin : bool, want_cos : bool
 
 	/* Figure out where in the C table x lies */
 	var j = (rn(x1 * std.flt64frombits(oneohtwofour_over_pi)) : uint64)
-	if j < 0
-		j = 0
-	elif j > 256
-		j = 256
+	var x1u = std.flt64bits(x1)
+	var guess_xi
+	var test_xi
+
+	/* Adjust j up or down if necessary. */
+	j = std.max(std.min(j, 256), 0)
+
+	(guess_xi, _, _) = C[j]
+	if j > 0
+		(test_xi, _, _) = C[j - 1]
+		if std.abs(x1u - test_xi) < std.abs(x1u - guess_xi)
+			j--
+			guess_xi = test_xi
+		;;
+	;;
+
+	if j < 256
+		(test_xi, _, _) = C[j + 1]
+		if std.abs(x1u - test_xi) < std.abs(x1u - guess_xi)
+			j++
+		;;
 	;;
 
 	var xi, sin_xi, cos_xi, sin_delta, cos_delta
