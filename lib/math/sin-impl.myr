@@ -7,11 +7,15 @@ use "sum-impl"
 use "util"
 
 /*
-   This implmentation of sin and cos uses the "Highly Accurate
-   Tables" method of [GB91]. The idea is to tabulate [0, pi/4] at
-   256 slightly irregular intervals xi, with the lucky property
-   that the infinite binary expansions of significands of sin(xi)
-   and cos(xi) look like
+   This implementation of sin and cos uses the "Highly Accurate
+   Tables" method of [GB91]. It's not as fast as it could be (the
+   sorting and excessive summation really takes a toll), however
+   we seem to be consistently within +/-1 ulp of the correct result
+   in flt64 case. In flt32 case we are correctly rounded.
+
+   The idea is to tabulate [0, pi/4] at 256 slightly irregular
+   intervals xi, with the lucky property that the infinite binary
+   expansions of significands of sin(xi) and cos(xi) look like
 
       / 53 bits \  / many '0's \  / noise \
      1.bbbbbb...bb00000000000...0???????????...
