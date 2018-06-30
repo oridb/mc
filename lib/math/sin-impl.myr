@@ -624,23 +624,32 @@ const reduce = {x : flt64
 	/* Compute initial reduction -- this might not be sufficient. */
 	total_N = rn(x1 * std.flt64frombits(two_over_pi))
 	Nf = (-total_N : flt64)
-	(q[0], q[ 1], q[2]) = (x1, x2, x3)
-	(q[3], q[ 4]) = two_by_two(Nf, pi_o_2_0)
-	(q[5], q[ 6]) = two_by_two(Nf, pi_o_2_1)
+	(q[0], q[ 4], q[5]) = (x1, x2, x3)
+	(q[1], q[ 3]) = two_by_two(Nf, pi_o_2_0)
+	(q[2], q[ 6]) = two_by_two(Nf, pi_o_2_1)
 	(q[7], q[ 8]) = two_by_two(Nf, pi_o_2_2)
 	(q[9], q[10]) = two_by_two(Nf, pi_o_2_3)
-	std.sort(q[:], fltabscmp)
+
+	/*
+	  Sorting is very slow, but it's only the top five or so
+	  that are in question
+	 */
+	std.sort(q[0:5], fltabscmp)
 	(x1, x2) = double_compensated_sum(q[:])
 
 	while !(le_22(x1, x2, pi_o_4_0, pi_o_4_1) && le_22(-pi_o_4_0, -pi_o_4_1, x1, x2))
 		N = rn(x1 * std.flt64frombits(two_over_pi))
 		Nf = (-N : flt64)
-		(q[0], q[1]) = (x1, x2)
-		(q[2], q[3]) = two_by_two(Nf, pi_o_2_0)
+
+		/*
+		   Sorting is slow. We know that x1 is roughly
+		   cancelled by Nf * pi_o_2_0, so line those up.
+		 */
+		(q[0], q[2]) = (x1, x2)
+		(q[1], q[3]) = two_by_two(Nf, pi_o_2_0)
 		(q[4], q[5]) = two_by_two(Nf, pi_o_2_1)
 		(q[6], q[7]) = two_by_two(Nf, pi_o_2_2)
 		(q[8], q[9]) = two_by_two(Nf, pi_o_2_3)
-		std.sort(q[0:10], fltabscmp)
 		(x1, x2) = double_compensated_sum(q[0:10])
 		total_N += (N % 4)
 	;;
@@ -737,11 +746,10 @@ const huge_reduce_2pi = {x : flt64
 	(q[14], q[15]) = two_by_two(xc, c2)
 	(q[16], q[17]) = two_by_two(xc, c3)
 
-	-> triple_compensate_sum(q[:])
+	-> triple_compensated_sum(q[:])
 }
 
-/* TODO: move to sum-impl.myr, figure out a good API to allow optional sorting */
-const triple_compensate_sum = {q : flt64[:]
+const triple_compensated_sum = {q : flt64[:]
 	/* TODO: verify, with GAPPA or something, that this is correct. */
 	std.sort(q, fltabscmp)
 	var s1 : flt64, s2 : flt64, s3
@@ -788,7 +796,6 @@ const two_by_two = {x : flt64, y : flt64
 	var a4 : flt64 = xl * yl
 
 	/* By-hand compensated summation */
-	/* TODO: convert to normal compensated summation, move to sum-impl.myr */
 	var yy, u, t, v, z, s, c
 	if a2 < a3
 		std.swap(&a3, &a2)
