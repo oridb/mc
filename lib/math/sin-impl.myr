@@ -403,48 +403,53 @@ const R : (uint64, uint64, uint64)[20] = [
 ]
 
 const sin32 = {x : flt32
-	var r = sin64((x : flt64))
-	-> (r : flt32)
+	var s, s2
+	(s, s2, _, _) = w64((x : flt64), true, false)
+	-> round_down(s, s2)
 }
 
 const sin64 = {x : flt64
 	var s
-	(s, _) = w64(x, true, false)
+	(s, _, _, _) = w64(x, true, false)
 	-> s
 }
 
 const cos32 = {x : flt32
-	var r : flt64 = cos64((x : flt64))
-	-> (r : flt32)
+	var c, c2
+	(_, _, c, c2) = w64((x : flt64), false, true)
+	-> round_down(c, c2)
 }
 
 const cos64 = {x : flt64
 	var c
-	(_, c) = w64(x, false, true)
+	(_, _, c, _) = w64(x, false, true)
 	-> c
 }
 
 const sincos32 = {x : flt32
-	var r1 : flt64
-	var r2 : flt64
-	(r1, r2) = sincos64((x : flt64))
-	-> ((r1 : flt32), (r2 : flt32))
+	var s : flt64, s2 : flt64, c : flt64, c2 : flt64
+	(s, s2, c, c2) = w64((x : flt64), true, true)
+	-> (round_down(s, s2), round_down(c, c2))
 }
 
 const sincos64 = {x : flt64
-	-> w64(x, true, true)
+	var s, c
+	(s, _, c, _) = w64(x, true, true)
+	-> (s, c)
 }
 
 /* Calculate sin and/or cos */
 const w64 = {x : flt64, want_sin : bool, want_cos : bool
 	var sin_ret : flt64 = 0.0
 	var cos_ret : flt64 = 0.0
+	var sin_ret2 : flt64 = 0.0
+	var cos_ret2 : flt64 = 0.0
 
 	var e : int64
 	(_, e, _) = std.flt64explode(x)
 
 	if e == 1024
-		-> (std.flt64nan(), std.flt64nan())
+		-> (std.flt64nan(), 0.0, std.flt64nan(), 0.0)
 	;;
 
 	var N : int64
@@ -542,7 +547,7 @@ const w64 = {x : flt64, want_sin : bool, want_cos : bool
 		std.sort(q[:], fltabscmp)
 
 		/* TODO: use double-compensation instead */
-		(sin_ret, _, _) = triple_compensate_sum(q[:])
+		(sin_ret, sin_ret2, _) = triple_compensate_sum(q[:])
 	;;
 
 	if (want_cos && !swap_sin_cos) || (want_sin && swap_sin_cos)
@@ -553,26 +558,30 @@ const w64 = {x : flt64, want_sin : bool, want_cos : bool
 		std.sort(q[:], fltabscmp)
 
 		/* TODO: use double-compensation instead */
-		(cos_ret, _, _) = triple_compensate_sum(q[:])
+		(cos_ret, cos_ret2, _) = triple_compensate_sum(q[:])
 	;;
 
 	if first_negate_sin
 		sin_ret = -sin_ret
+		sin_ret2 = -sin_ret2
 	;;
 
 	if swap_sin_cos
 		std.swap(&sin_ret, &cos_ret)
+		std.swap(&sin_ret2, &cos_ret2)
 	;;
 
 	if then_negate_sin
 		sin_ret = -sin_ret
+		sin_ret2 = -sin_ret2
 	;;
 
 	if then_negate_cos
 		cos_ret = -cos_ret
+		cos_ret2 = -cos_ret2
 	;;
 
-	-> (sin_ret, cos_ret)
+	-> (sin_ret, sin_ret2, cos_ret, cos_ret2)
 }
 
 /* Reduce x to N*(pi/4) + x', with x' in [-pi/4, pi/4] */
@@ -834,4 +843,22 @@ const fast2sum = {a : flt64, b : flt64
 	var t : flt64 = b - z
 	-> (s, t)
 	
+}
+
+/*
+   Round a + b to a flt32. Only notable if round(a) is a rounding
+   tie, and b is non-zero
+ */
+const round_down = {a : flt64, b : flt64
+	var au : uint64 = std.flt64bits(a)
+	if au & 0x0000000070000000 == 0x0000000070000000
+		if b > 0.0
+			au++
+		elif b < 0.0
+			au--
+		;;
+		-> (std.flt64frombits(au) : flt32)
+	;;
+
+	-> (a : flt32)
 }
