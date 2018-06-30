@@ -455,7 +455,7 @@ const w64 = {x : flt64, want_sin : bool, want_cos : bool
 
 	var N : int64
 	var x1 : flt64, x2 : flt64, x3 : flt64
-	(N, x1, x2, x3) = reduce(x)
+	(N, x1, x2) = reduce(x)
 
 	/* Handle multiples of pi/2 */
 	var swap_sin_cos : bool = false
@@ -481,7 +481,6 @@ const w64 = {x : flt64, want_sin : bool, want_cos : bool
 	if x1 < 0.0
 		x1 = -x1
 		x2 = -x2
-		x3 = -x3
 		first_negate_sin = true
 	;;
 
@@ -621,26 +620,33 @@ const reduce = {x : flt64
 
 	var total_N = 0
 	var q : flt64[11]
-	while true
+
+	/* Compute initial reduction -- this might not be sufficient. */
+	total_N = rn(x1 * std.flt64frombits(two_over_pi))
+	Nf = (-total_N : flt64)
+	(q[0], q[ 1], q[2]) = (x1, x2, x3)
+	(q[3], q[ 4]) = two_by_two(Nf, pi_o_2_0)
+	(q[5], q[ 6]) = two_by_two(Nf, pi_o_2_1)
+	(q[7], q[ 8]) = two_by_two(Nf, pi_o_2_2)
+	(q[9], q[10]) = two_by_two(Nf, pi_o_2_3)
+	std.sort(q[:], fltabscmp)
+	(x1, x2) = double_compensated_sum(q[:])
+
+	while !(le_22(x1, x2, pi_o_4_0, pi_o_4_1) && le_22(-pi_o_4_0, -pi_o_4_1, x1, x2))
 		N = rn(x1 * std.flt64frombits(two_over_pi))
 		Nf = (-N : flt64)
-		(q[0], q[1], q[2]) = (x1, x2, x3)
-		(q[3], q[ 4]) = two_by_two(Nf, pi_o_2_0)
-		(q[5], q[ 6]) = two_by_two(Nf, pi_o_2_1)
-		(q[7], q[ 8]) = two_by_two(Nf, pi_o_2_2)
-		(q[9], q[10]) = two_by_two(Nf, pi_o_2_3)
-		(x1, x2, x3) = triple_compensate_sum(q[:])
+		(q[0], q[1]) = (x1, x2)
+		(q[2], q[3]) = two_by_two(Nf, pi_o_2_0)
+		(q[4], q[5]) = two_by_two(Nf, pi_o_2_1)
+		(q[6], q[7]) = two_by_two(Nf, pi_o_2_2)
+		(q[8], q[9]) = two_by_two(Nf, pi_o_2_3)
+		std.sort(q[0:10], fltabscmp)
+		(x1, x2) = double_compensated_sum(q[0:10])
 		total_N += (N % 4)
-
-		if le_33(x1, x2, x3, pi_o_4_0, pi_o_4_1, pi_o_4_2) && \
-		   le_33(-pi_o_4_0, -pi_o_4_1, -pi_o_4_2, x1, x2, x3)
-			break
-		;;
 	;;
 
-	-> (((total_N % 4) + 4) % 4, x1, x2, x3)
+	-> (((total_N % 4) + 4) % 4, x1, x2)
 }
-
 
 const huge_reduce_2pi = {x : flt64
 	var e : int64
@@ -810,22 +816,16 @@ const two_by_two = {x : flt64, y : flt64
 }
 
 /*
-   Return true iff (a1 + a2 + a3) <= (b1 + b2 + b3)
+   Return true iff (a1 + a2) <= (b1 + b2)
  */
-const le_33 = { a1, a2, a3, b1, b2, b3
+const le_22 = { a1, a2, b1, b2
 	if a1 < b1
 		-> true
 	elif a1 > b1
 		-> false
 	;;
 
-	if a2 < b2
-		-> true
-	elif a2 > b2
-		-> false
-	;;
-
-	if a3 > b3
+	if a2 > b2
 		-> false
 	;;
 
