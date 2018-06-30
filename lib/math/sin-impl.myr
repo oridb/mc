@@ -521,7 +521,8 @@ const w64 = {x : flt64, want_sin : bool, want_cos : bool
 	   sin(delta); the degree 2 coefficient is near 0, so delta_2
 	   only shows up in deg 1
 	 */
-	sin_delta = horner_polyu(delta1, sin_coeff[:]) + delta2 * std.flt64frombits(sin_coeff[1])
+	sin_delta = horner_polyu(delta1, sin_coeff[:])
+	sin_delta += delta2 * std.flt64frombits(sin_coeff[1])
 
 	/*
 	   cos(delta); delta_2 shows up in deg 1 and 2; the term
@@ -537,7 +538,6 @@ const w64 = {x : flt64, want_sin : bool, want_cos : bool
 		(q[2], q[3]) = two_by_two(std.flt64frombits(cos_xi), sin_delta)
 		std.sort(q[:], fltabscmp)
 
-		/* TODO: use double-compensation instead */
 		(sin_ret, sin_ret2) = double_compensated_sum(q[:])
 	;;
 
@@ -546,9 +546,14 @@ const w64 = {x : flt64, want_sin : bool, want_cos : bool
 		(q[2], q[3]) = two_by_two(std.flt64frombits(sin_xi), sin_delta)
 		q[2] = -q[2]
 		q[3] = -q[3]
-		std.sort(q[:], fltabscmp)
 
-		/* TODO: use double-compensation instead */
+		/*
+		   No need to sort; cos_xi and sin_xi are in [0,1],
+		   cos_delta is close to 1, sin_delta is close to
+		   0.
+		*/
+		std.swap(&q[1], &q[2])
+
 		(cos_ret, cos_ret2) = double_compensated_sum(q[:])
 	;;
 
