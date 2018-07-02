@@ -386,7 +386,12 @@ comparecomplex(Flattenctx *s, Node *n, Op op)
 		r = mkexpr(n->loc, Outag, rval(s, n->expr.args[1]), NULL);
 		l->expr.type = mktype(n->loc, Tyuint32);
 		r->expr.type = mktype(n->loc, Tyuint32);
-		e = mkexpr(n->loc, Oueq, l, r, NULL);
+		if (op == Oeq)
+			e = mkexpr(n->loc, Oueq, l, r, NULL);
+		else if (op == One)
+			e = mkexpr(n->loc, Oune, l, r, NULL);
+		else
+			fatal(n, "unsupported operator %s for enum union", opstr[op]);
 		e->expr.type = mktype(n->loc, Tybool);
 		return e;
 	}
