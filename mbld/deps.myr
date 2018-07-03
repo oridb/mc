@@ -71,8 +71,10 @@ const myrdeps = {b, name, mt
 
 		gu = node(g, tu)
 		go = node(g, to)
-		go.instdir = config.Libpath
-		gu.instdir = config.Libpath
+		if mt.install
+			go.instdir = config.Libpath
+			gu.instdir = config.Libpath
+		;;
 		go.instmod = 0o644
 		gu.instmod = 0o644
 		generates(g, gu, tu)
@@ -112,8 +114,10 @@ const myrdeps = {b, name, mt
 			std.slpush(&n.cmd, std.pathjoin([b.basedir, opt_objdir, mt.dir, mt.name][:]))
 		else
 			addnode(g, "all", go)
-			go.instdir = config.Binpath
-			go.instmod = 0o755
+			if mt.install
+				go.instdir = config.Binpath
+				go.instmod = 0o755
+			;;
 		;;
 		std.slfree(u)
 	;;
@@ -261,10 +265,9 @@ const datdeps = {b, name, dt
 	for db : dt.blobs
 		p = std.pathcat(dt.dir, db)
 		n = leaf(b.deps, p)
+		n.instdir = dt.path
 		if dt.path.len == 0
 			n.instdir = config.Sharepath
-		else
-			n.instdir = dt.path
 		;;
 		n.instmod = 0o644
 		addnode(b.deps, "all", n)
