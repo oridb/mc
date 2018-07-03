@@ -1,0 +1,21 @@
+# http examples
+bin h {noinst} =
+	h.myr
+
+	lib @/lib/sys:sys
+	lib @/lib/std:std
+	lib @/lib/bio:bio
+	lib @/lib/http:http
+	lib @/lib/thread:thread
+;;
+
+bin srvdot {noinst} =
+	srvdot.myr
+
+	lib @/lib/sys:sys
+	lib @/lib/std:std
+	lib @/lib/bio:bio
+	lib @/lib/http:http
+	lib @/lib/thread:thread
+;;
+
