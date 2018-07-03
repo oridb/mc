@@ -47,6 +47,7 @@ pkg std =
 	const seek	: (fd : fd, delta : off, whence : whence -> result(off, errno))
 	const pipe	: (fds : fd[2]# -> errno)
 	const dup2	: (ofd : fd, nfd : fd -> result(fd, errno))
+	const nopipe	: (-> void)
 
 	/* useful/portable bits of stat */
 	const fmtime	: (f : byte[:]	-> result(time, errno))
@@ -121,6 +122,8 @@ const openmode	= {path, opts, mode;
 	-> check(fd)
 }
 
+const nopipe = {
+}
 
 /* useful/portable bits of stat */
 const fexists = {path

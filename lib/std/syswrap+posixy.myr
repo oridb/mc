@@ -46,6 +46,7 @@ pkg std =
 	const pipe	: (fds : fd[2]# -> errno)
 	const seek	: (fd : fd, delta : off, whence : whence -> result(off, errno))
 	const dup2	: (ofd : fd, nfd : fd -> result(fd, errno))
+	const nopipe	: (-> void)
 
 	/* useful/portable bits of stat */
 	const fmtime	: (f : byte[:]	-> result(time, errno))
@@ -88,6 +89,17 @@ const pwrite	= {fd, buf,off;	-> check(sys.pwrite((fd : sys.fd), buf, (off : sys.
 const pipe	= {fds;		-> (sys.pipe((fds : sys.fd[2]#)) : errno)}
 const seek	= {fd, delta, whence;	-> check(sys.lseek((fd : sys.fd), (delta : sys.off), (whence : sys.whence)))}
 const dup2	= {ofd, nfd;	-> check((sys.dup2((ofd : sys.fd), (nfd : sys.fd)) : fd))}
+
+const nopipe = {
+	var sa, osa
+
+	/* is there ever a time we care about sigpipe? */
+	sa = [
+		.handler = ({;} : byte#),
+		.flags = sys.Sarestart,
+	]
+	sys.sigaction(sys.Sigpipe, &sa, &osa)
+}
 
 /* path manipulation */
 const mkdir	= {path, mode;	-> (sys.mkdir(path, mode) : errno)}
