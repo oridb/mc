@@ -120,9 +120,9 @@ nodetystr(Node *n)
 
 	t = NULL;
 	if (n->type == Nexpr && exprtype(n) != NULL)
-		t = tyfix(n, exprtype(n), 1);
+		t = tysearch(exprtype(n));
 	else if (n->type == Ndecl && decltype(n) != NULL)
-		t = tyfix(n, decltype(n), 1);
+		t = tysearch(decltype(n));
 
 	if (t && tybase(t)->type != Tyvar)
 		return tystr(t);
