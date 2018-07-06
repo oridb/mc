@@ -134,7 +134,7 @@ const gen = {re, t
 
 	/* meta */
 	|`Bol:	append(re, `Ibol, t)
-	|`Eol:	append(re, `Ibol, t)
+	|`Eol:	append(re, `Ieol, t)
 	|`Bow:	append(re, `Ibow, t)
 	|`Eow:	append(re, `Ieow, t)
 	|`Cap	(m, a):
