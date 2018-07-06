@@ -537,9 +537,8 @@ rval(Flattenctx *s, Node *n)
 	args = n->expr.args;
 	switch (exprop(n)) {
 	case Oauto:
-		r = rval(s, n->expr.args[0]);
-		t = temp(s, r);
-		r = asn(t, r);
+		t = temp(s, n);
+		r = assign(s, t, n->expr.args[0]);
 		lappend(&s->curst->autotmp, &s->curst->nautotmp, t);
 		break;
 	case Osize:
