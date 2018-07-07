@@ -110,6 +110,7 @@ B sizeof	E	4
 B gsizeof	E	5
 B matchint	E	84
 B matchconst	E	88
+B matchoverwild	E	0
 B matchnsconst	P	'matched badchar'
 B matchunion	E	84
 B matchtup	E	42
@@ -148,6 +149,7 @@ B strfind	C
 B strjoin	C
 B exporttrait	E	0
 B local-labels	E	10
+B empty-struct	E	21
 B empty-struct	E	21
 F declmismatch
 F infermismatch

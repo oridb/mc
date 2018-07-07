@@ -1,0 +1,43 @@
+use std
+
+type ast = struct
+	body : op[:]
+;;
+type op = union
+	`Go int
+	`Set int
+	`Add int
+	`Mul (int, int)
+	`Read
+	`Write
+	`Loop ast
+;;
+
+const combine = {lhs : op, rhs : op
+	match (lhs, rhs)
+	| (`Add x, `Add y): -> `std.Some `Add (x + y)
+	| (`Go x, `Go y): -> `std.Some `Go (x + y)
+	| (`Go 0, _): -> `std.Some rhs
+	| (`Set x, `Add y): -> `std.Some `Set(x + y)
+	| (`Add _, `Set y): -> `std.Some rhs
+	| (`Add _, `Read): -> `std.Some rhs
+	| (`Set _, `Read): -> `std.Some rhs
+	| (`Loop _, `Loop _): -> `std.Some lhs
+	| _: -> `std.None
+	;;
+}
+
+const main = {
+	match combine(`Add 123, `Set 246)
+	| `std.Some `Set 246:
+		/* ok */
+	| r:
+		std.fatal("bad combine {}\n", r)
+	;;
+	match combine(`Add 123, `Add 246)
+	| `std.Some `Add 369:
+		/* ok */
+	| r:
+		std.fatal("bad combine {}\n", r)
+	;;
+}
