@@ -724,6 +724,8 @@ gendtree(Node *m, Node *val, Node **lbl, size_t nlbl)
 			fatal(pat[i], "pattern matched by earlier case");
 		addcapture(pat[i]->match.block, cap, ncap);
 	}
+	if (debugopt['M'])
+		dtreedump(stdout, start);
 	if (!verifymatch(start))
 		fatal(m, "nonexhaustive pattern set in match statement");
 	return start;
