@@ -16,7 +16,7 @@ impl frobable char# =
 	}
 ;;
 
-generic foo = {x : @a::frobable
+generic foo = {x : @a :: frobable @a
 	frob(x)
 }
 
