@@ -25,8 +25,8 @@ const showsub = {b, cmd, fd, logfd, failed
 	var f, log
 	var res
 
-	f = bio.mkfile(fd, bio.Rd)
-	log = bio.mkfile(logfd, bio.Wr)
+	f = auto bio.mkfile(fd, bio.Rd)
+	log = auto bio.mkfile(logfd, bio.Wr)
 	res = `std.None
 	match bio.readln(f)
 	| `std.Err `bio.Eof:
@@ -45,8 +45,6 @@ const showsub = {b, cmd, fd, logfd, failed
 
 		std.slfree(ln)
 	;;
-	bio.close(f)
-	bio.close(log)
 	-> res
 }
 
