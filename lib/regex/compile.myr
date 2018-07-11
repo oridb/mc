@@ -7,7 +7,12 @@ pkg regex =
 	const parse	: (re : byte[:]	-> std.result(ast#, status))
 	const compile	: (re : byte[:] -> std.result(regex#, status))
 	const dbgcompile	: (re : byte[:], trace : bool -> std.result(regex#, status))
+
 	const free	: (re : regex# -> void)
+	const astfree	: (re : ast# -> void)
+
+	impl disposable regex#
+	impl disposable ast#
 ;;
 
 type parseresult = union
@@ -20,6 +25,18 @@ type parseresult = union
 const compile = {pat
 	-> regexcompile(std.mk([.pat = pat, .nmatch = 1]), 0)
 }
+
+impl disposable regex# =
+	__dispose__ = {re
+		free(re)
+	}
+;;
+
+impl disposable ast# =
+	__dispose__ = {ast
+		astfree(ast)
+	}
+;;
 
 const parse = {pat
 	var re

@@ -38,10 +38,18 @@ pkg bio =
 	/* pkg funcs */
 	pkglocal const ensureread	: (f : file#, n : std.size -> std.result(std.size, err))
 	pkglocal const ensurewrite	: (f : file#, n : std.size -> std.result(std.size, err))
+
+	impl disposable file#
 ;;
 
 const Bufsz = 16*std.KiB
 const Small = 512
+
+impl disposable file# =
+	__dispose__ = {f
+		close(f)
+	}
+;;
 
 /* Creates a file from an fd, opened in the given mode. */
 const mk = {mode, vt
