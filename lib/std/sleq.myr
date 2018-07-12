@@ -28,7 +28,7 @@ generic sleq = {a, b
 
 impl equatable @a[:] =
 	eq = {a, b
-		if a.len == b.len
+		if a.len != b.len
 			-> false
 		;;
 		/* can't use memeq because of padding */
