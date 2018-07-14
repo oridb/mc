@@ -1509,7 +1509,7 @@ inferucon(Node *n, int *isconst)
 		unify(n, uc->etype, type(n->expr.args[1]));
 		*isconst = n->expr.args[1]->expr.isconst;
 	}
-	settype(n, delayeducon(t));
+	settype(n, delayeducon(uc->utype));
 }
 
 static void
