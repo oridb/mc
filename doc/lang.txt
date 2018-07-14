@@ -1,6 +1,6 @@
                     The Myrddin Programming Language
                               Jul 2012
-                          Updated Feb 2017
+                          Updated Jul 2018
                             Ori Bernstein
 
 TABLE OF CONTENTS:
@@ -784,6 +784,16 @@ TABLE OF CONTENTS:
             with type $t :: numeric $t, integral $t is replaced with int. An
             unconstrained type with $t :: numeric $t, floating $t is replaced with
             flt64.
+
+	    As a special case, a union type declared with the form
+
+	        type u = union
+                    `Foo
+		;;
+
+            will have the default type set to the named type, and not the
+            union itself. This is slightly inconsistent, but it makes the
+            behavior less surprising.
 
     4.6. Built In Traits:
 

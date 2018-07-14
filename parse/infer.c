@@ -514,7 +514,7 @@ tyresolve(Type *t)
 	case Tyunion:
 		inaggr++;
 		for (i = 0; i < t->nmemb; i++) {
-			t->udecls[i]->utype = t;
+			assert(t->udecls[i]->utype);
 			t->udecls[i]->utype = tf(t->udecls[i]->utype);
 			if (t->udecls[i]->etype) {
 				tyresolve(t->udecls[i]->etype);
@@ -1498,7 +1498,11 @@ inferucon(Node *n, int *isconst)
 	 *
 	 * To make it compile, for now, we just bind the types in here.
 	 */
-	t = tysubst(tf(uc->utype), uc->utype);
+	t = uc->utype;
+	if (t->type != Tyunion)
+		t = t->sub[0];
+	assert(t->type == Tyunion);
+	t = tysubst(tf(t), t);
 	uc = tybase(t)->udecls[uc->id];
 	if (uc->etype) {
 		inferexpr(&n->expr.args[1], NULL, NULL);

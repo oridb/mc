@@ -36,6 +36,7 @@ static void setattrs(Node *dcl, char **attrs, size_t nattrs);
 static void setwith(Type *ty, Traitspec **spec, size_t nspec);
 static void setupinit(Node *n);
 static void addinit(Node *blk, Node *dcl);
+static void setuname(Type *ty);
 
 %}
 
@@ -528,6 +529,7 @@ tydef	: Ttype typeid traitspec {$$ = $2;}
 			$$.type = mktyname($2.loc, mkname($2.loc, $2.name), $5);
 		else
 			$$.type = mktygeneric($2.loc, mkname($2.loc, $2.name), $2.params, $2.nparams, $5);
+		setuname($$.type);
 		setwith($$.type, $3.spec, $3.nspec);
 	}
 	;
@@ -1147,6 +1149,17 @@ setupinit(Node *n)
 	n->decl.name->name.name = strdup(s);
 }
 
+static void
+setuname(Type *ty)
+{
+	size_t i;
+
+	if (ty->sub[0]->type != Tyunion)
+		return;
+	for (i = 0; i < ty->sub[0]->nmemb; i++)
+		ty->sub[0]->udecls[i]->utype = ty;
+}
+
 static Node *
 mkpseudodecl(Srcloc l, Type *t)
 {
@@ -1231,7 +1244,8 @@ installucons(Stab *st, Type *t)
 		break;
 	case Tyunion:
 		for (i = 0; i < b->nmemb; i++) {
-			b->udecls[i]->utype = b;
+			if (!b->udecls[i]->utype)
+				b->udecls[i]->utype = b;
 			b->udecls[i]->id = i;
 			putucon(st, b->udecls[i]);
 		}
