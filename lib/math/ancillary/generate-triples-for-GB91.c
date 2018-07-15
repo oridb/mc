@@ -1,7 +1,11 @@
 /* cc -o generate-triples-for-GB91 generate-triples-for-GB91.c -lmpfr # -fno-strict-aliasing */
+#include <errno.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <time.h>
+#include <unistd.h>
 
 #include <mpfr.h>
 
@@ -11,10 +15,9 @@
    of calculating these, which we don't follow.
 
    The idea is that, by good fortune (or more persuasive arguments),
-   there exist floating-point numbers xi that are very close to
-   numbers of the form (i/N)(π/4). They are so close, in fact, that
-   the exact binary expansion of (i/N)(π/4) is xi, followed by a
-   bunch of zeroes, then the irrational, unpredictable part.
+   there exist floating-point numbers xi that are close to numbers
+   of the form (i/N)(π/4), such that, letting f(xi) = yi, the binary
+   expansion of yi has a bunch of zeroes after the 53rd bit.
 
    Then, when we discretize the input for sin(x) to some xi + delta,
    the precomputed sin(xi) and cos(xi) can be stored as single
@@ -32,10 +35,13 @@
 
 #define EXP_OF_FLT64(f) (((FLT64_TO_UINT64(f)) >> 52) & 0x7ff)
 
+typedef int (*mpfr_fn)(mpfr_ptr, mpfr_srcptr, mpfr_rnd_t);
+
 static int N = 256;
 
 /* Returns >= zero iff successful */
-static int find_triple_64(int i, int min_leeway, int perfect_leeway)
+static int find_triple_64(int i, int min_leeway, int perfect_leeway, mpfr_fn
+                          sin_fn, mpfr_fn cos_fn)
 {
         /*
            Using mpfr is not entirely overkill for this; [Lut95]
@@ -93,7 +99,7 @@ static int find_triple_64(int i, int min_leeway, int perfect_leeway)
                 mpfr_set_d(xi, xi_current, MPFR_RNDN);
 
                 /* Test if cos(xi) has enough zeroes */
-                mpfr_cos(cos, xi, MPFR_RNDN);
+                cos_fn(cos, xi, MPFR_RNDN);
                 t = mpfr_get_d(cos, MPFR_RNDN);
                 cos_u = FLT64_TO_UINT64(t);
                 e1 = EXP_OF_FLT64(t);
@@ -114,7 +120,7 @@ static int find_triple_64(int i, int min_leeway, int perfect_leeway)
                 ml = xmax(min_leeway, e1 - e2 - 52);
 
                 /* Test if sin(xi) has enough zeroes */
-                mpfr_sin(sin, xi, MPFR_RNDN);
+                sin_fn(sin, xi, MPFR_RNDN);
                 t = mpfr_get_d(sin, MPFR_RNDN);
                 sin_u = FLT64_TO_UINT64(t);
                 e1 = EXP_OF_FLT64(t);
@@ -183,19 +189,104 @@ inc:
         }
 }
 
-int main(void)
+static void usage(void)
 {
-        for (int i = 190; i <= N; ++i) {
-                if (find_triple_64(i, 11, 20) < 0) {
-                        /*
-                           For some reason, i = 190 requires special
-                           handling; drop the range limitations on
-                           r and come back in a week.
+        printf("generate-triples-for-GB91\n");
+        printf("                          [-i start_idx]\n");
+        printf("                          [-j end_idx]\n");
+        printf("                          -f sin|tan\n");
+}
 
-                           Other indices (4, 47, 74, &c) also benefit
-                           from this special handling, so the
-                           contents of sin-impl.myr might not exactly
-                           match the output of this particular file.
+int main(int argc, char **argv)
+{
+        int c = 0;
+        long i_start_arg = 1;
+        long i_end_arg = N;
+        int i_start = 1;
+        int i_end = N;
+        mpfr_fn sin_fn = 0;
+        mpfr_fn cos_fn = 0;
+
+        for (int k = 0; k < argc; ++k) {
+                printf("%s ", argv[k]);
+        }
+
+        printf("\n");
+
+        while ((c = getopt(argc, argv, "i:j:f:")) != -1) {
+                switch (c) {
+                case 'i':
+                        errno = 0;
+                        i_start_arg = strtoll(optarg, 0, 0);
+
+                        if (errno) {
+                                fprintf(stderr, "bad start index %s\n", optarg);
+
+                                return 1;
+                        }
+
+                        break;
+                case 'j':
+                        errno = 0;
+                        i_end_arg = strtoll(optarg, 0, 0);
+
+                        if (errno) {
+                                fprintf(stderr, "bad end index %s\n", optarg);
+
+                                return 1;
+                        }
+
+                        break;
+                case 'f':
+
+                        if (!strcmp(optarg, "sin")) {
+                                sin_fn = mpfr_sin;
+                                cos_fn = mpfr_cos;
+                        } else if (!strcmp(optarg, "tan")) {
+                                sin_fn = mpfr_tan;
+                                cos_fn = mpfr_cot;
+                        } else {
+                                fprintf(stderr, "unknown function %s\n",
+                                        optarg);
+
+                                return 1;
+                        }
+
+                        break;
+                default:
+                        usage();
+                        break;
+                }
+        }
+
+        if (i_start_arg <= 0 ||
+            i_end_arg > N) {
+                printf("truncating start to (0, %d]\n", N);
+                i_start_arg = xmin(xmax(i_start_arg, 1), N);
+        }
+
+        if (i_end_arg <= 0 ||
+            i_end_arg > N) {
+                printf("truncating end to (0, %d]\n", N);
+                i_end_arg = xmin(xmax(i_end_arg, 1), N);
+        }
+
+        i_start = i_start_arg;
+        i_end = i_end_arg;
+
+        if (!sin_fn ||
+            !cos_fn) {
+                fprintf(stderr, "-f required\n");
+
+                return 1;
+        }
+
+        for (int i = i_start; i <= i_end; ++i) {
+                if (find_triple_64(i, 11, 20, sin_fn, cos_fn) < 0) {
+                        /*
+                           This indicates you should drop the range
+                           limitations on r, re-run, and come back
+                           in a week.
                          */
                         printf("CANNOT FIND SUITABLE CANDIDATE FOR i = %03d\n",
                                i);
