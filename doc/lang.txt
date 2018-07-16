@@ -1149,6 +1149,7 @@ TABLE OF CONTENTS:
 
             Precedence 11:
                     x.name          Member lookup
+                    x.N             Tuple component access
                     x++             Postincrement
                     x--             Postdecremendoc/libstd/varargst
                     x#              Dereference
@@ -1256,10 +1257,10 @@ TABLE OF CONTENTS:
 
             Atomic expressions are the building blocks of expressions, and
             are either parenthesized expressions or directly represent
-            literals. Literals are covered in depth in section 4.2.
+            literals. Literals are covered in depth in section 5.1.
 
             An identifier specifies a variable, and are looked up via
-            the scoping rules specified in section 4.9.
+            the scoping rules specified in section 3.5.
 
             Gap expressions (`_`) represent an anonymous sink value. Anything
             can be assigned to a gap, and it may be used in pattern matching.
@@ -1642,7 +1643,20 @@ TABLE OF CONTENTS:
                 (expr : <seq>).len : @idx
                 :: integral @a, numeric @a
 
-        5.2.22: Index:
+        5.2.22: Tuple Component Access
+
+                expr.N
+
+            Tuple component access operates on tuples. N must be a natural
+            number (i.e., 0, 1, 2, ...) and the type of `expr` must be a tuple
+            type with at least `N+1` components. The result of the expression
+            is an lvalue of the type of the `N+1`th component.
+
+            Type:
+
+                (expr : (@a0, ..., @aN, ...)).N : @aN
+
+        5.2.23: Index:
 
                 expr[idx]
 
@@ -1659,7 +1673,7 @@ TABLE OF CONTENTS:
                 (expr : @a[:])[(idx : @idx)] : @a
                 :: integral, numeric @idx
 
-        5.2.23: Slice:
+        5.2.24: Slice:
 
                 expr[lo:hi], expr[:hi], expr[lo:], expr[:]
 
@@ -1681,7 +1695,7 @@ TABLE OF CONTENTS:
                 (expr : @#)[(lo : @lo) : (hi : @hi)] : @a[:]
                 :: integral, numeric @lo, integral, numeric @hi
 
-        5.2.24: Call:
+        5.2.25: Call:
 
                 expr()
                 expr(arg1, arg2)
