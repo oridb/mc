@@ -349,7 +349,7 @@ tyalign(Type *ty)
 	return min(align, Ptrsz);
 }
 
-/* gets the byte offset of 'memb' within the aggregate type 'aggr' */
+/* gets the byte offset of 'memb' within the aggregate type 'ty' */
 ssize_t
 tyoffset(Type *ty, Node *memb)
 {
@@ -360,16 +360,31 @@ tyoffset(Type *ty, Node *memb)
 	if (ty->type == Typtr)
 		ty = tybase(ty->sub[0]);
 
-	assert(ty->type == Tystruct);
-	off = 0;
-	for (i = 0; i < ty->nmemb; i++) {
-		off = alignto(off, decltype(ty->sdecls[i]));
-		if (!strcmp(namestr(memb), declname(ty->sdecls[i])))
-			return off;
-		off += size(ty->sdecls[i]);
+	switch (memb->type) {
+	case Nname:
+		assert(ty->type == Tystruct);
+		off = 0;
+		for (i = 0; i < ty->nmemb; i++) {
+			off = alignto(off, decltype(ty->sdecls[i]));
+			if (!strcmp(namestr(memb), declname(ty->sdecls[i])))
+				return off;
+			off += size(ty->sdecls[i]);
+		}
+		die("bad offset");
+		return 0;
+	case Nlit:
+		assert(ty->type == Tytuple);
+		assert(memb->lit.intval < ty->nsub);
+		off = 0;
+		for (i = 0; i < memb->lit.intval; i++) {
+			off += tysize(ty->sub[i]);
+			off = alignto(off, ty->sub[i+1]);
+		}
+		return off;
+	default:
+		die("bad offset node type");
+		return 0;
 	}
-	die("bad offset");
-	return 0;
 }
 
 size_t

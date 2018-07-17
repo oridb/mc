@@ -560,8 +560,9 @@ rval(Flattenctx *s, Node *n)
 		if (ty->type == Tyslice || ty->type == Tyarray) {
 			r = seqlen(s, args[0], exprtype(n));
 		} else {
+	case Otupmemb:
 			t = rval(s, args[0]);
-			r = mkexpr(n->loc, Omemb, t, args[1], NULL);
+			r = mkexpr(n->loc, exprop(n), t, args[1], NULL);
 			r->expr.type = n->expr.type;
 		}
 		break;
@@ -696,6 +697,7 @@ lval(Flattenctx *s, Node *n)
 	case Ovar:	r = n;	break;
 	case Oidx:	r = rval(s, n);	break;
 	case Oderef:	r = rval(s, n);	break;
+	case Otupmemb:	r = rval(s, n); break;
 	case Omemb:	r = rval(s, n);	break;
 	case Ostruct:	r = rval(s, n);	break;
 

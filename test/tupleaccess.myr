@@ -1,0 +1,14 @@
+use std
+
+const foo = {
+	-> (1, 2, (3, 4))
+}
+
+const main = {
+	match foo()
+	| x:
+		x.0 = 0
+		(x.2).1 = 5
+		std.put("a: {}, b: {}, c: {}\n", x.0, x.2.1, foo().1)
+	;;
+}

@@ -540,6 +540,7 @@ lval(Simp *s, Node *n)
 	case Ovar:	r = loadvar(s, n, NULL);	break;
 	case Oidx:	r = loadidx(s, args[0], args[1]);	break;
 	case Oderef:	r = deref(rval(s, args[0], NULL), NULL);	break;
+	case Otupmemb:	r = rval(s, n, NULL);	break;
 	case Omemb:	r = rval(s, n, NULL);	break;
 	case Ostruct:	r = rval(s, n, NULL);	break;
 	case Oucon:	r = rval(s, n, NULL);	break;
@@ -1137,8 +1138,7 @@ rval(Simp *s, Node *n, Node *dst)
 		u = idxaddr(s, t, n->expr.args[1]);
 		r = load(u);
 		break;
-	/* array.len slice.len are magic 'virtual' members.
-	* they need to be special cased. */
+	case Otupmemb:
 	case Omemb:
 		t = membaddr(s, n);
 		r = load(t);

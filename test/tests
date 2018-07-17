@@ -135,6 +135,7 @@ B arraylit	E	3
 B structlit	E	42
 B livestructlit	E	21
 B tuple		E	42
+B tupleaccess	P	'a: 0, b: 5, c: 2'
 B slgrow        E       42
 B tyrec		E	42
 B infer-named   E       99

@@ -786,6 +786,8 @@ prefixexpr
 postfixexpr
 	: postfixexpr Tdot Tident
 	{$$ = mkexpr($1->loc, Omemb, $1, mkname($3->loc, $3->id), NULL);}
+	| postfixexpr Tdot Tintlit
+	{$$ = mkexpr($1->loc, Otupmemb, $1, mkint($3->loc, $3->intval), NULL);}
 	| postfixexpr Tinc
 	{$$ = mkexpr($1->loc, Opostinc, $1, NULL);}
 	| postfixexpr Tdec

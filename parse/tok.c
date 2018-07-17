@@ -657,6 +657,7 @@ number(int base)
 	int start;
 	int c;
 	int isfloat;
+	int maybefloat;
 	int unsignedval;
 	/* because we allow '_' in numbers, and strtod/stroull don't, we
 	 * need a buffer that holds the number without '_'.
@@ -669,7 +670,12 @@ number(int base)
 	isfloat = 0;
 	start = fidx;
 	nbuf = 0;
-	for (c = peek(); isxdigit(c) || c == '.' || c == '_'; c = peek()) {
+	/* allow floating point literals only if the previous token was
+	 * not a dot; this lets the user write "foo.1.2" to access nested
+	 * tuple fields.
+	 */
+	maybefloat = !curtok || (curtok->type != Tdot);
+	for (c = peek(); isxdigit(c) || (maybefloat && c == '.') || c == '_'; c = peek()) {
 		next();
 		if (c == '_')
 			continue;
