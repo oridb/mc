@@ -514,7 +514,8 @@ tyresolve(Type *t)
 	case Tyunion:
 		inaggr++;
 		for (i = 0; i < t->nmemb; i++) {
-			assert(t->udecls[i]->utype);
+			if (!t->udecls[i]->utype)
+				t->udecls[i]->utype = t;
 			t->udecls[i]->utype = tf(t->udecls[i]->utype);
 			if (t->udecls[i]->etype) {
 				tyresolve(t->udecls[i]->etype);
