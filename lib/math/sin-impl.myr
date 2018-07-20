@@ -40,20 +40,25 @@ use "util"
 
    See files pi-constants.c, generate-triples-for-GB91.c, and
    generate-minimax-by-Remez.gp for where the constants come from.
+
+   Note that in a departure from [GB91], we use the smaller degree
+   polynomials over a smaller range for the input. This requires
+   that we store more C-values for smaller xi values, but makes
+   the implementation a bit simpler to read.
  */
 pkg math =
-        pkglocal const sin32 : (x : flt32 -> flt32)
-        pkglocal const sin64 : (x : flt64 -> flt64)
+	pkglocal const sin32 : (x : flt32 -> flt32)
+	pkglocal const sin64 : (x : flt64 -> flt64)
 
-        pkglocal const cos32 : (x : flt32 -> flt32)
-        pkglocal const cos64 : (x : flt64 -> flt64)
+	pkglocal const cos32 : (x : flt32 -> flt32)
+	pkglocal const cos64 : (x : flt64 -> flt64)
 
-        pkglocal const sincos32 : (x : flt32 -> (flt32, flt32))
-        pkglocal const sincos64 : (x : flt64 -> (flt64, flt64))
+	pkglocal const sincos32 : (x : flt32 -> (flt32, flt32))
+	pkglocal const sincos64 : (x : flt64 -> (flt64, flt64))
+
+	pkglocal const trig_reduce : (x : flt64 -> (int64, flt64, flt64))
+	pkglocal const trig_table_approx : (x1 : flt64, C : (uint64, uint64, uint64)[257] -> (uint64, uint64, uint64))
 ;;
-
-/* Split precision down the middle */
-const twentysix_bits_mask = (0xffffffffffffffff << 27)
 
 /* Pi/2 in lots of detail, for range reducing sin(2^18) or so */
 const pi_over_2 : uint64[4] = [
@@ -458,8 +463,8 @@ const w64 = {x : flt64, want_sin : bool, want_cos : bool
 	;;
 
 	var N : int64
-	var x1 : flt64, x2 : flt64, x3 : flt64
-	(N, x1, x2) = reduce(x)
+	var x1 : flt64, x2 : flt64
+	(N, x1, x2) = trig_reduce(x)
 
 	/* Handle multiples of pi/2 */
 	var swap_sin_cos : bool = false
@@ -489,22 +494,8 @@ const w64 = {x : flt64, want_sin : bool, want_cos : bool
 	;;
 
 	/* Figure out where in the C table x lies */
-	var j = (rn(x1 * std.flt64frombits(oneohtwofour_over_pi)) : uint64)
-	var x1u = std.flt64bits(x1)
-	var xi, sin_xi, cos_xi, sin_delta, cos_delta
-
-	/* We either want j or j - 1. */
-	j = std.max(std.min(j, 256), 0)
-
-	(xi, cos_xi, sin_xi) = C[j]
-	if j > 0
-		var test_xi
-		(test_xi, _, _) = C[j - 1]
-		if std.abs(x1u - test_xi) < std.abs(x1u - xi)
-			(xi, cos_xi, sin_xi) = C[j - 1]
-			j--
-		;;
-	;;
+	var xi : uint64, sin_xi : uint64, cos_xi : uint64, sin_delta, cos_delta
+	(xi, cos_xi, sin_xi) = trig_table_approx(x1, C)
 
 	/*
 	   Compute x - xi with compensated summation. Because xi
@@ -583,8 +574,8 @@ const w64 = {x : flt64, want_sin : bool, want_cos : bool
 	-> (sin_ret, sin_ret2, cos_ret, cos_ret2)
 }
 
-/* Reduce x to N*(pi/4) + x', with x' in [-pi/4, pi/4] */
-const reduce = {x : flt64
+/* Reduce x to N*(pi/2) + x', with x' in [-pi/4, pi/4] */
+const trig_reduce = {x : flt64
 	var N : int64 = 0
 	var Nf : flt64
 
@@ -753,6 +744,26 @@ const huge_reduce_2pi = {x : flt64
 	-> triple_compensated_sum(q[:])
 }
 
+const trig_table_approx = {x1 : flt64, C : (uint64, uint64, uint64)[257]
+	var j = (rn(x1 * std.flt64frombits(oneohtwofour_over_pi)) : uint64)
+	var x1u = std.flt64bits(x1)
+	var xi, sin_xi, cos_xi, test_cos_xi, test_sin_xi
+
+	/* We either want j or j - 1. */
+	j = std.max(std.min(j, 256), 0)
+
+	(xi, cos_xi, sin_xi) = C[j]
+	if j > 0
+		var test_xi
+		(test_xi, test_cos_xi, test_sin_xi) = C[j - 1]
+		if std.abs(x1u - test_xi) < std.abs(x1u - xi)
+			-> (test_xi, test_cos_xi, test_sin_xi)
+		;;
+	;;
+
+	-> (xi, cos_xi, sin_xi)
+}
+
 const triple_compensated_sum = {q : flt64[:]
 	/* TODO: verify, with GAPPA or something, that this is correct. */
 	std.sort(q, fltabscmp)
@@ -785,48 +796,6 @@ const fltabscmp = {x : flt64, y : flt64
 }
 
 /*
-   Perform high-prec multiplication: x * y = z1 + z2.
- */
-const two_by_two = {x : flt64, y : flt64
-	var xh : flt64 = std.flt64frombits(std.flt64bits(x) & twentysix_bits_mask)
-	var xl : flt64 = x - xh
-	var yh : flt64 = std.flt64frombits(std.flt64bits(y) & twentysix_bits_mask)
-	var yl : flt64 = y - yh
-
-	/* Multiply out */
-	var a1 : flt64 = xh * yh
-	var a2 : flt64 = xh * yl
-	var a3 : flt64 = xl * yh
-	var a4 : flt64 = xl * yl
-
-	/* By-hand compensated summation */
-	var yy, u, t, v, z, s, c
-	if a2 < a3
-		std.swap(&a3, &a2)
-	;;
-
-	s = a1
-	c = 0.0
-
-	/* a2 */
-	(s, c) = fast2sum(s, a2)
-
-	/* a3 */
-	(yy, u) = fast2sum(c, a3)
-	(t, v) = fast2sum(s, yy)
-	z = u + v
-	(s, c) = fast2sum(t, z)
-
-	/* a4 */
-	(yy, u) = fast2sum(c, a4)
-	(t, v) = fast2sum(s, yy)
-	z = u + v
-	(s, c) = fast2sum(t, z)
-
-	-> (s, c)
-}
-
-/*
    Return true iff (a1 + a2) <= (b1 + b2)
  */
 const le_22 = { a1, a2, b1, b2
@@ -841,31 +810,4 @@ const le_22 = { a1, a2, b1, b2
 	;;
 
 	-> true
-}
-
-/* Return (s, t) such that s + t = a + b, with s = rn(a + b). */
-const fast2sum = {a : flt64, b : flt64
-	var s : flt64 = a + b
-	var z : flt64 = s - a
-	var t : flt64 = b - z
-	-> (s, t)
-	
-}
-
-/*
-   Round a + b to a flt32. Only notable if round(a) is a rounding
-   tie, and b is non-zero
- */
-const round_down = {a : flt64, b : flt64
-	var au : uint64 = std.flt64bits(a)
-	if au & 0x0000000070000000 == 0x0000000070000000
-		if b > 0.0
-			au++
-		elif b < 0.0
-			au--
-		;;
-		-> (std.flt64frombits(au) : flt32)
-	;;
-
-	-> (a : flt32)
 }

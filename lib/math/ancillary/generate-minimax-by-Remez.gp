@@ -121,15 +121,39 @@
         return(if(x == 0, 1, sin(x)/x));
 }
 
+{ tanoverx(x) =
+        return(if(x == 0, 1, tan(x)/x));
+}
+
+{ cotx(x) =
+        return(1/tanoverx(x));
+}
+
 print("\n");
 print("Minimaxing sin(x) / x, degree 6, on [-Pi/(4 * 256), Pi/(4 * 256)]:");
 find_minimax(sinoverx, 6, -Pi/1024, Pi/1024)
 print("\n");
 print("(You'll need to add a 0x0 at the beginning to make a degree 7...\n");
 print("\n");
+print("---\n");
 print("\n");
 print("Minimaxing cos(x), degree 7, on [-Pi/(4 * 256), Pi/(4 * 256)]:");
 find_minimax(cos, 7, -Pi/1024, Pi/1024)
 print("\n");
+print("---\n");
+print("\n");
+print("Minmimaxing tan(x) / x, degree 6, on [-Pi/(4 * 256), Pi/(4 * 256)]:");
+find_minimax(tanoverx, 6, -Pi/1024, Pi/1024)
+print("\n");
+print("(You'll need to add a 0x0 at the beginning to make a degree 7...\n");
+print("\n");
+print("---\n");
+print("\n");
+print("Minmimaxing x*cot(x), degree 8, on [-Pi/(4 * 256), Pi/(4 * 256)]:");
+find_minimax(cotx, 8, -Pi/1024, Pi/1024)
+print("\n");
+print("(Take the first v, and remember to divide by x)\n");
+print("\n");
+print("---\n");
 print("\n");
 print("Remember that there's that extra, ugly E term at the end of the vector that you want to lop off.\n");

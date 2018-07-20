@@ -38,6 +38,9 @@ lib math =
 	trunc-impl+posixy-x64-sse4.s
 	trunc-impl.myr
 
+	# tan, cot
+	tan-impl.myr
+
 	# util
 	util.myr
 	ftrap.myr

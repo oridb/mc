@@ -14,7 +14,19 @@ pkg math =
 
 	/* Whether RN() requires incrementing after truncating */
 	const need_round_away : (h : uint64, l : uint64, bitpos_last : int64 -> bool)
+
+	/* Multiply x * y to z1 + z2 */
+	const two_by_two : (x : flt64, y : flt64 -> (flt64, flt64))
+
+	/* Return (s, t) such that s + t = a + b, with s = rn(a + b). */
+	generic fast2sum : (x : @f, y : @f -> (@f, @f)) :: floating, numeric @f
+
+	/* Rounds a + b (as flt64s) to a flt32. */
+	const round_down : (a : flt64, b : flt64 -> flt32)
 ;;
+
+/* Split precision down the middle */
+const twentysix_bits_mask = (0xffffffffffffffff << 27)
 
 const flt64fromflt32 = {f : flt32
 	var n, e, s
@@ -171,4 +183,72 @@ const need_round_away = {h : uint64, l : uint64, bitpos_last : int64
 	;;
 
 	-> hl_is_odd
+}
+
+/*
+   Perform high-prec multiplication: x * y = z1 + z2.
+ */
+const two_by_two = {x : flt64, y : flt64
+	var xh : flt64 = std.flt64frombits(std.flt64bits(x) & twentysix_bits_mask)
+	var xl : flt64 = x - xh
+	var yh : flt64 = std.flt64frombits(std.flt64bits(y) & twentysix_bits_mask)
+	var yl : flt64 = y - yh
+
+	/* Multiply out */
+	var a1 : flt64 = xh * yh
+	var a2 : flt64 = xh * yl
+	var a3 : flt64 = xl * yh
+	var a4 : flt64 = xl * yl
+
+	/* By-hand compensated summation */
+	var yy, u, t, v, z, s, c
+	if a2 < a3
+		std.swap(&a3, &a2)
+	;;
+
+	s = a1
+	c = 0.0
+
+	/* a2 */
+	(s, c) = fast2sum(s, a2)
+
+	/* a3 */
+	(yy, u) = fast2sum(c, a3)
+	(t, v) = fast2sum(s, yy)
+	z = u + v
+	(s, c) = fast2sum(t, z)
+
+	/* a4 */
+	(yy, u) = fast2sum(c, a4)
+	(t, v) = fast2sum(s, yy)
+	z = u + v
+	(s, c) = fast2sum(t, z)
+
+	-> (s, c)
+}
+
+/* Return (s, t) such that s + t = a + b, with s = rn(a + b). */
+generic fast2sum = {a : @f, b : @f :: floating, numeric @f
+	var s = a + b
+	var z = s - a
+	var t = b - z
+	-> (s, t)
+}
+
+/*
+   Round a + b to a flt32. Only notable if round(a) is a rounding
+   tie, and b is non-zero
+ */
+const round_down = {a : flt64, b : flt64
+	var au : uint64 = std.flt64bits(a)
+	if au & 0x0000000070000000 == 0x0000000070000000
+		if b > 0.0
+			au++
+		elif b < 0.0
+			au--
+		;;
+		-> (std.flt64frombits(au) : flt32)
+	;;
+
+	-> (a : flt32)
 }
