@@ -382,8 +382,15 @@ const cot64 = {x : flt64
 }
 
 const tanorcot = {x : flt64, want_tan : bool
+	var e : int64
+	(_, e, _) = std.flt64explode(x)
+	if e == 1024
+		-> (std.flt64nan(), 0.0)
+	;;
+
 	var N : int64
 	var x1 : flt64, x2 : flt64
+
 	(N, x1, x2) = trig_reduce(x)
 
 	var then_negate : bool = false

@@ -1,0 +1,152 @@
+use std
+use math
+use testr
+
+const main = {
+	math.fptrap(false)
+	testr.run([
+		[.name="tan-cot-01", .fn = tancot01], /* flt32 */
+		[.name="tan-cot-02", .fn = tancot02], /* flt64 */
+		[.name="tan-cot-03", .fn = tancot03], /* off-by-1-ulp quarantine */
+		[.name="tan-cot-04", .fn = tancot04], /* exhaustively test C */
+		[.name="tan-cot-05", .fn = tancot05], /* NaN handling */
+	][:])
+}
+
+const same32 = {a, b
+	if a == b
+		-> true
+	;;
+
+	if std.isnan(std.flt32frombits(a)) && std.isnan(std.flt32frombits(b))
+		-> true
+	;;
+
+	-> false
+}
+
+const same64 = {a, b
+	if a == b
+		-> true
+	;;
+
+	if std.isnan(std.flt64frombits(a)) && std.isnan(std.flt64frombits(b))
+		-> true
+	;;
+
+	-> false
+}
+
+const tancot01 = {c
+	var inputs : (uint32, uint32, uint32)[:] = [
+		(0x00000000, 0x00000000, 0x7f800000),
+	][:]
+
+	for (x, yt, yc) : inputs
+		var xf : flt32 = std.flt32frombits(x)
+		var rtf, rcf
+		rtf = math.tan(xf)
+		rcf = math.cot(xf)
+
+		var rtu = std.flt32bits(rtf)
+		var rcu = std.flt32bits(rcf)
+
+		testr.check(c, same32(rtu, yt),
+			"tan(0x{b=16,w=8,p=0}) should be 0x{b=16,w=8,p=0}, was 0x{b=16,w=8,p=0}",
+			x, yt, rtu)
+
+		testr.check(c, same32(rcu, yc),
+			"cot(0x{b=16,w=8,p=0}) should be 0x{b=16,w=8,p=0}, was 0x{b=16,w=8,p=0}",
+			x, yc, rcu)
+	;;
+}
+
+const tancot02 = {c
+	var inputs : (uint64, uint64, uint64)[:] = [
+		(0x0000000000000000, 0x0000000000000000, 0x7ff0000000000000),
+		(0x41bb951f1572eba5, 0xbc8f54f5227a4e84, 0x3ff0000000000000), /* [GB91]'s "Xhard" */
+	][:]
+
+	for (x, yt, yc) : inputs
+		var xf : flt64 = std.flt64frombits(x)
+		var rtf, rcf
+		rtf = math.tan(xf)
+		rcf = math.cot(xf)
+
+		var rtu = std.flt64bits(rtf)
+		var rcu = std.flt64bits(rcf)
+
+		testr.check(c, same64(rtu, yt),
+			"tan(0x{b=16,w=16,p=0}) should be 0x{b=16,w=16,p=0}, was 0x{b=16,w=16,p=0}",
+			x, yt, rtu)
+
+		testr.check(c, same64(rcu, yc),
+			"cot(0x{b=16,w=16,p=0}) should be (0x{b=16,w=16,p=0}, 0x{b=16,w=16,p=0}), was (0x{b=16,w=16,p=0}, 0x{b=16,w=16,p=0})",
+			x, yc, rcu)
+	;;
+}
+
+const tancot03 = {c
+	var inputs : (uint64, uint64, uint64, uint64, uint64)[:] = [
+		(0x5101000000000000, 0x3fe9706123d509f1, 0xbfe369af9695aba1, 0x3fe9706123d509f0, 0xbfe369af9695aba0),
+		(0xf83b13a6a142b6d5, 0xbf5a86f4edeb02f2, 0x3feffffd404efc20, 0xbf5a86f4edeb02f1, 0x3feffffd404efc20),
+		(0x4b01000000000000, 0xbfe3e9527dc75f12, 0x3fe90cf80997c963, 0xbfe3e9527dc75f13, 0x3fe90cf80997c964),
+	][:]
+
+	for (x, yt_perfect, yc_perfect, yt_acceptable, yc_acceptable) : inputs
+		var xf : flt64 = std.flt64frombits(x)
+		var rtf, rcf
+		rtf = math.tan(xf)
+		rcf = math.cot(xf)
+
+		var rtu = std.flt64bits(rtf)
+		var rcu = std.flt64bits(rcf)
+
+		testr.check(c, (same64(rtu, yt_perfect) || same64(rtu, yt_acceptable)),
+			"tan(0x{b=16,w=16,p=0}) should be 0x{b=16,w=16,p=0}, will also accept 0x{b=16,w=16,p=0}, was 0x{b=16,w=16,p=0}",
+			x, yt_perfect, yt_acceptable, rtu)
+
+		testr.check(c, (same64(rcu, yc_perfect) || same64(rcu, yc_acceptable)),
+			"tan(0x{b=16,w=16,p=0}) should be 0x{b=16,w=16,p=0}, will also accept 0x{b=16,w=16,p=0}, was 0x{b=16,w=16,p=0}",
+			x, yc_perfect, yc_acceptable, rcu)
+	;;
+}
+
+const tancot04 = {c
+	/*
+	   There should be one of these for each j, each corresponding
+	   to the appropriate xi. This should ensure that, when
+	   upgrading the C tables, things don't get too terribly
+	   broken.
+	 */
+	var inputs : (uint64, uint64, uint64)[:] = [
+	][:]
+
+	testr.fail(c, "You need to fill out the 256 C entries in tancot04")
+
+	for (x, yt, yc) : inputs
+		var xf : flt64 = std.flt64frombits(x)
+		var rtf, rcf
+		rtf = math.tan(xf)
+		rcf = math.cot(xf)
+
+		var rtu = std.flt64bits(rtf)
+		var rcu = std.flt64bits(rcf)
+
+		testr.check(c, same64(rtu, yt),
+			"tan(0x{b=16,w=16,p=0}) should be 0x{b=16,w=16,p=0}, was 0x{b=16,w=16,p=0}",
+			x, yt, rtu)
+
+		testr.check(c, same64(rcu, yc),
+			"cot(0x{b=16,w=16,p=0}) should be (0x{b=16,w=16,p=0}, 0x{b=16,w=16,p=0}), was (0x{b=16,w=16,p=0}, 0x{b=16,w=16,p=0})",
+			x, yc, rcu)
+	;;
+
+}
+
+const tancot05 = {c
+	testr.check(c, std.isnan(math.cot(std.flt64nan())), "cot(NaN64) should be NaN")
+	testr.check(c, std.isnan(math.tan(std.flt64nan())), "tan(NaN64) should be NaN")
+	testr.check(c, std.isnan(math.cot(std.flt32nan())), "cot(NaN32) should be NaN")
+	testr.check(c, std.isnan(math.tan(std.flt32nan())), "tan(NaN32) should be NaN")
+}
