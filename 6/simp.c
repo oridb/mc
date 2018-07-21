@@ -994,6 +994,7 @@ capture(Simp *s, Node *n, Node *dst)
 		for (i = 0; i < nenv; i++) {
 			lappend(&envt, &nenvt, decltype(env[i]));
 			sz += size(env[i]);
+			sz = alignto(sz, decltype(env[i]));
 		}
 
 		t = gentemp(n->loc, mktytuple(n->loc, envt, nenvt), &dcl);
