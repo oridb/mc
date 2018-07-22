@@ -298,7 +298,7 @@ slicelen(Simp *s, Node *sl)
 Node *
 loadvar(Simp *s, Node *n, Node *dst)
 {
-	Node *p, *f, *r;
+	Node *p, *f, *r, *e;
 
 	if (isconstfn(n)) {
 		if (dst)
@@ -308,6 +308,9 @@ loadvar(Simp *s, Node *n, Node *dst)
 		f = getcode(s, n);
 		p = addr(s, r, exprtype(n));
 		assignat(s, p, Ptrsz, f);
+		e = mkintlit(n->loc, 0);
+		e->expr.type = tyintptr;
+		assignat(s, p, 0, e);
 	} else {
 		r = n;
 	}
