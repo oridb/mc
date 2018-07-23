@@ -423,9 +423,12 @@ const tanorcot = {x : flt64, want_tan : bool
 	var p1, p2
 
 	/*
-	   Since cot() can blow up close to 0, just fall back to polynomial approximation
+	   Since cot() can blow up close to 0, just fall back to
+	   polynomial approximation. We use a stricter cutoff than
+	   given in [GB91] since our C table is more accurate than
+	   theirs, meaning we're safe to use it closer to 0.
 	 */
-	if x1 < 0.060546875
+	 if x1 < 0.03
 		var s = x1 * x1
 		p1 = x1 * horner_polyu(s, tan_coeff_good[:])
 		p2 = x2 + 3.0*s*x2
