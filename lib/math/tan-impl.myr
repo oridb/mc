@@ -358,11 +358,24 @@ const cot64 = {x : flt64
 }
 
 const tanorcot = {x : flt64, want_tan : bool
-	var e : int64
-	(_, e, _) = std.flt64explode(x)
+	var n : bool, e : int64, s : uint64
+	(n, e, s) = std.flt64explode(x)
+
 	if e == 1024
 		-> (std.flt64nan(), 0.0)
 	;;
+
+	if e == -1023 && s == 0x0
+		/* Special handling for +/-0.0 */
+		match (n, want_tan)
+		| (false, false): -> (std.flt64frombits(0x7ff0000000000000), 0.0)
+		| (false, true ): -> (std.flt64frombits(0x0000000000000000), 0.0)
+		| (true , false): -> (std.flt64frombits(0xfff0000000000000), 0.0)
+		| (true , true ): -> (std.flt64frombits(0x8000000000000000), 0.0)
+		;;
+	;;
+
+
 
 	var N : int64
 	var x1 : flt64, x2 : flt64
@@ -410,7 +423,7 @@ const tanorcot = {x : flt64, want_tan : bool
 	var p1, p2
 
 	/*
-	  Since cot() can blow up close to 0, just fall back to polynomial approximation
+	   Since cot() can blow up close to 0, just fall back to polynomial approximation
 	 */
 	if x1 < 0.060546875
 		var s = x1 * x1
