@@ -47,8 +47,10 @@ mergeuse(char *path)
 
 	st = file->file.globls;
 	f = fopen(path, "r");
-	if (!f)
-		die("Couldn't open %s\n", path);
+	if (!f) {
+		fprintf(stderr, "couldn't open %s\n", path);
+		exit(1);
+	}
 	loaduse(path, f, st, Visexport);
 	fclose(f);
 }
