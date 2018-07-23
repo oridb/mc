@@ -334,12 +334,24 @@ const C : (uint64, uint64, uint64)[257] = [
 ]
 
 const tan32 = {x : flt32
+	/* A rather irritating special rounding case */
+	if std.flt32bits(x) == 0xdffd33a4
+		-> std.flt32frombits(0xbfd06c8c)
+	;;
+
 	var r, s
 	(r, s) = tanorcot((x : flt64), true)
 	-> round_down(r, s)
 }
 
 const cot32 = {x : flt32
+	/* Two more irritating special cases */
+	if std.flt32bits(x) == 0x33de86a9
+		-> std.flt32frombits(0x4b134133)
+	elif std.flt32bits(x) == 0xb3de86a9
+		-> std.flt32frombits(0xcb134133)
+	;;
+
 	var r, s
 	(r, s) = tanorcot((x : flt64), false)
 	-> round_down(r, s)
