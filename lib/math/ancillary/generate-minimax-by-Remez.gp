@@ -156,4 +156,10 @@ print("(Take the first v, and remember to divide by x)\n");
 print("\n");
 print("---\n");
 print("\n");
+print("Minmimaxing tan(x) / x, degree 10, on [0, 15.5/256]:");
+find_minimax(tanoverx, 10, 0, 15.5/256)
+print("\n");
+print("(You'll need to add a 0x0 at the beginning to make a degree 11...\n");
+print("\n");
+print("---\n");
 print("Remember that there's that extra, ugly E term at the end of the vector that you want to lop off.\n");

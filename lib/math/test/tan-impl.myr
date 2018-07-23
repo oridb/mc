@@ -40,6 +40,7 @@ const same64 = {a, b
 const tancot01 = {c
 	var inputs : (uint32, uint32, uint32)[:] = [
 		(0x00000000, 0x00000000, 0x7f800000),
+		(0x01000000, 0x01000000, 0x7e000000),
 	][:]
 
 	for (x, yt, yc) : inputs
@@ -64,10 +65,14 @@ const tancot01 = {c
 const tancot02 = {c
 	var inputs : (uint64, uint64, uint64)[:] = [
 		(0x0000000000000000, 0x0000000000000000, 0x7ff0000000000000),
-		(0x41bb951f1572eba5, 0xbc8f54f5227a4e84, 0x3ff0000000000000), /* [GB91]'s "Xhard" */
+		(0x5101000000000000, 0xbff4f77bbc53c8f9, 0xbfe86b6d64c43ec0),
+		(0x4b01000000000000, 0xbfe96f60bbc6c837, 0xbff421332f057cb5),
+		(0x41bb951f1572eba5, 0xbc8f54f5227a4e84, 0xc35057584c429b3a), /* [GB91]'s "Xhard" */
 	][:]
 
+var n = 0
 	for (x, yt, yc) : inputs
+n++
 		var xf : flt64 = std.flt64frombits(x)
 		var rtf, rcf
 		rtf = math.tan(xf)
@@ -81,16 +86,14 @@ const tancot02 = {c
 			x, yt, rtu)
 
 		testr.check(c, same64(rcu, yc),
-			"cot(0x{b=16,w=16,p=0}) should be (0x{b=16,w=16,p=0}, 0x{b=16,w=16,p=0}), was (0x{b=16,w=16,p=0}, 0x{b=16,w=16,p=0})",
+			"cot(0x{b=16,w=16,p=0}) should be 0x{b=16,w=16,p=0}, was 0x{b=16,w=16,p=0}",
 			x, yc, rcu)
 	;;
 }
 
 const tancot03 = {c
 	var inputs : (uint64, uint64, uint64, uint64, uint64)[:] = [
-		(0x5101000000000000, 0x3fe9706123d509f1, 0xbfe369af9695aba1, 0x3fe9706123d509f0, 0xbfe369af9695aba0),
-		(0xf83b13a6a142b6d5, 0xbf5a86f4edeb02f2, 0x3feffffd404efc20, 0xbf5a86f4edeb02f1, 0x3feffffd404efc20),
-		(0x4b01000000000000, 0xbfe3e9527dc75f12, 0x3fe90cf80997c963, 0xbfe3e9527dc75f13, 0x3fe90cf80997c964),
+		(0xf83b13a6a142b6d5, 0xbf5a86f73542c78a, 0xc0834d0a344cbe85, 0xbf5a86f73542c789, 0xc0834d0a344cbe85),
 	][:]
 
 	for (x, yt_perfect, yc_perfect, yt_acceptable, yc_acceptable) : inputs
