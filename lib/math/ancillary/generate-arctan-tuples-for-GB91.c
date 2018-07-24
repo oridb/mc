@@ -162,13 +162,13 @@ static void invert_poorly(mpfr_t A[][N + 2], mpfr_t Ainv[][N + 2])
         }
 }
 
-static int find_tuple(int ii, int min_leeway_0)
+static int find_tuple(int ii, int min_leeway)
 {
         int64_t r = 0;
         double xi_orig_d = ii / 256.0;
         uint64_t xi_orig = FLT64_TO_UINT64(xi_orig_d);
-        double range_a = xi_orig_d - 1 / 512.0;
-        double range_b = xi_orig_d + 1 / 512.0;
+        double range_a = -1 / 512.0;
+        double range_b = 1 / 512.0;
         uint64_t xi;
         double xi_d;
         mpfr_t xi_m;
@@ -244,7 +244,7 @@ static int find_tuple(int ii, int min_leeway_0)
         /* Compute (xij)^(-1) */
         invert_poorly(xij, xijinv);
 
-        while (r < (1 << 20)) {
+        while (r < (1 << 26)) {
                 xi = xi_orig + r;
                 xi_d = UINT64_TO_FLT64(xi);
                 mpfr_set_d(xi_m, xi_d, MPFR_RNDN);
@@ -265,24 +265,40 @@ static int find_tuple(int ii, int min_leeway_0)
                         }
                 }
 
+                /*
+                   If the error term isn't within close to 0, we
+                   should, by all rights, try a few more iterations
+                   of Remez. But that's incredibly slow, and we're
+                   in a tight loop, so let's just bail.
+                 */
+                double e = mpfr_get_d(bi[N + 1], MPFR_RNDN);
+
+                if (FLT64_TO_UINT64(e) & 0x7fffffffffffffff > 0x08) {
+                        goto next_r;
+                }
+
                 /* Test if b[0] and b[1] are very precise */
-                int lee_0 = leeway_of(t[0], bi[0]);
+                int leeA = leeway_of(t[0], bi[0]);
+                int leeB = 0;
+                int lee = 0;
 
-                if (lee_0 <= best_lee) {
+                if (leeA <= min_leeway) {
                         goto next_r;
                 }
 
-                if (lee_0 <= min_leeway_0) {
+                leeB = leeway_of(t[0], bi[1]);
+
+                if (leeB + 4 <= min_leeway) {
                         goto next_r;
                 }
 
-                int lee_1 = leeway_of(t[0], bi[1]);
+                lee = xmin(leeA, leeB + 4);
 
-                if (lee_1 + 4 <= lee_0) {
+                if (lee <= best_lee) {
                         goto next_r;
                 }
 
-                best_lee = lee_0;
+                best_lee = lee;
                 best_r = r;
                 mpfr_set(best_xi, xi_m, MPFR_RNDN);
 
@@ -302,20 +318,21 @@ next_r:
 
         end = time(0);
 
-        if (best_lee < min_leeway_0) {
+        if (best_lee < min_leeway) {
                 return -1;
         }
 
+        /* Recall the N+1 entry in output is the error, which we don't care about */
         t_d = mpfr_get_d(best_xi, MPFR_RNDN);
         t_u = FLT64_TO_UINT64(t_d);
         printf("(%#018lx, ", t_u);
 
-        for (int i = 0; i < (N + 1); ++i) {
+        for (int i = 0; i < N; ++i) {
                 t_d = mpfr_get_d(best_bi[i], MPFR_RNDN);
                 printf("%#018lx, ", FLT64_TO_UINT64(t_d));
         }
 
-        t_d = mpfr_get_d(best_bi[N + 1], MPFR_RNDN);
+        t_d = mpfr_get_d(best_bi[N], MPFR_RNDN);
         t_u = FLT64_TO_UINT64(t_d);
         printf("%#018lx), ", t_u);
         printf("/* i = %03d, l = %02d, r = %010ld, t = %ld */\n", ii, best_lee,
@@ -376,7 +393,7 @@ int main(int argc, char **argv)
         }
 
         if (i_start_arg <= 0 ||
-            i_end_arg > 256) {
+            i_start_arg > 256) {
                 printf("truncating start to (0, %d]\n", 256);
                 i_start_arg = xmin(xmax(i_start_arg, 1), 256);
         }
@@ -391,7 +408,7 @@ int main(int argc, char **argv)
         i_end = i_end_arg;
 
         for (int i = i_start; i <= i_end; ++i) {
-                if (find_tuple(i, 18) < 0) {
+                if (find_tuple(i, 1) < 0) {
                         printf("CANNOT FIND SUITABLE CANDIDATE FOR i = %03d\n",
                                i);
                 }
