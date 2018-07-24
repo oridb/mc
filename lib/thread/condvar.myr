@@ -1,0 +1,87 @@
+use "atomic"
+use "common"
+use "mutex"
+use "sem"
+
+pkg thread =
+	type cond = struct
+		_mtx	: mutex#
+		_waitq	: condwaiter#
+		_lock	: mutex
+	;;
+
+	const mkcond	: (mtx : mutex# -> cond)
+	const condwait	: (cond : cond# -> void)
+	const condsignal	: (cond : cond# -> void)
+	const condbroadcast	: (cond : cond# -> void)
+;;
+
+/*
+The waitqueue is a doubly-linked list because we'll need to remove waiters from
+anywhere in the list when we add timeout support.
+
+`cond._waitq.prev` is the tail of the queue.
+*/
+type condwaiter = struct
+	next : condwaiter#
+	prev : condwaiter#
+	sem : sem
+;;
+
+const mkcond = {mtx
+	-> [._mtx = mtx, ._lock = mkmtx()]
+}
+
+const condwait = {cond
+	var mtx = cond._mtx
+	var lock = &cond._lock
+	var waiter = [.sem = mksem(0)]
+
+	mtxlock(lock)
+	match cond._waitq
+	| Zptr:
+		waiter.prev = &waiter
+		cond._waitq = &waiter
+	| q:
+		waiter.prev = q.prev
+		waiter.prev.next = &waiter
+		q.prev = &waiter
+	;;
+
+	mtxunlock(lock)
+	mtxunlock(mtx)
+	semwait(&waiter.sem)
+
+	mtxlock(mtx)
+}
+
+const condsignal = {cond
+	var lock = &cond._lock
+
+	mtxlock(lock)
+	var head = cond._waitq
+	if head != Zptr
+		if head.next != Zptr
+			head.next.prev = head.prev
+		;;
+		cond._waitq = head.next
+		sempost(&head.sem)
+	;;
+	mtxunlock(lock)
+}
+
+/*
+Yes, this invites the thundering herd but that's what you get for not
+supporting futexes at all.
+*/
+const condbroadcast = {cond
+	var lock = &cond._lock
+	var head = Zptr
+
+	mtxlock(lock)
+	while (head = cond._waitq) != Zptr
+		cond._waitq = head.next
+		sempost(&head.sem)
+	;;
+	mtxunlock(lock)
+}

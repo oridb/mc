@@ -44,9 +44,8 @@ const condsignal = {cond : cond#
 }
 
 /*
-`umtx_op` fully supports implementing condvars efficiently but also requires
-condvars to be implemented in a specific way. For now we'll just invite the
-thundering herd.
+Yes, this invites the thundering herd but that's what OS X gets for not having
+a requeue operation.
 */
 const condbroadcast = {cond : cond#
 	xadd(&cond._seq, 1)

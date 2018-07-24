@@ -1,14 +1,14 @@
 use std
+use sys
 
 use "atomic"
 use "common"
 use "mutex"
-use "futex"
 
 pkg thread =
 	type cond = struct
 		_mtx	: mutex#
-		_seq	: ftxtag
+		_seq	: uint32
 	;;
 
 	const mkcond	: (mtx : mutex# -> cond)
@@ -30,25 +30,27 @@ const condwait = {cond
 	mtxunlock(mtx)
 
 	/*
-	FIXME?: `ftxwait` can be interrupted but `condwait` should always be
-	done in a loop anyway.
+	FIXME?: `futex` can be interrupted but `condwait` should always be done
+	in a loop anyway.
 	*/
-	ftxwait(&cond._seq, seq, Zptr)
+	sys.futex(&cond._seq, sys.Futexwait, seq, Zptr, Zptr)
 
-	mtxlock(mtx)
+	/*
+	We need to atomically set the mutex to contended. This allows us to
+	pass responsibility for waking up the potential other waiters on to the
+	unlocker of the mutex.
+	*/
+	mtxcontended(mtx)
 }
 
 const condsignal = {cond : cond#
 	xadd(&cond._seq, 1)
-	ftxwake(&cond._seq)
+	sys.futex(&cond._seq, sys.Futexwake, 1, Zptr, Zptr)
 }
 
-/*
-`umtx_op` fully supports implementing condvars efficiently but also requires
-condvars to be implemented in a specific way. For now we'll just invite the
-thundering herd.
-*/
 const condbroadcast = {cond : cond#
 	xadd(&cond._seq, 1)
-	ftxwakeall(&cond._seq)
+	sys.futex(&cond._seq, sys.Futexrequeue, 1,
+		(0x7fffffff : sys.timespec#),
+		(&cond._mtx._state : uint32#))
 }

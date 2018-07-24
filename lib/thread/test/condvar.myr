@@ -1,55 +1,44 @@
 use std
 use thread
 
-use "util"
+use thrtestutil
 
 const Nwakes = 1000
 
 var cv
+var cv1
 var mtx
 var val
 
-var done : int32
+var ready
 var nwoken : int32
-var nready : int32
-var locked : int32
 
 const main = {
-	done = 0
+	ready = thread.mkwg(2)
 	val = 123
 
 	mtx = thread.mkmtx()
 	cv = thread.mkcond(&mtx)
+	cv1 = thread.mkcond(&mtx)
 	thread.spawn(cvwait)
 	thread.spawn(cvwake)
-	while done == 0
-		/* nothing */
-	;;
+	thread.wgwait(&ready)
 	std.assert(nwoken == Nwakes, "wrong number of wakes")
-	std.assert(val == 123, "wrong val after all are done")
 
+	ready = thread.mkwg(100)
 	nwoken = 0
-	nready = 0
-	mkherd(100, cvwaitonce)
+	thrtestutil.mkherd(100, cvwaitonce)
 
-	/* wait until the herd is ready */
-	while nready != 100	/* 0 to 99 */
-		/* nothing */
-	;;
-	while locked == 0
-		/* nothing */
-	;;
-	thread.condbroadcast(&cv)
+	thread.wgwait(&ready)
 	while nwoken != 100
-		/* nothing */
+		thread.condbroadcast(&cv)
 	;;
-	std.assert(nwoken == 100, "wrong thread count woken")
-
 }
 
 const cvwait = {
 	for var i = 0; i < Nwakes; i++
 		thread.mtxlock(&mtx)
+		thread.condsignal(&cv1)
 		thread.condwait(&cv)
 		std.assert(val == 456, "wrong val after signal\n")
 		val = 123
@@ -57,29 +46,28 @@ const cvwait = {
 
 		thread.xadd(&nwoken, 1)
 	;;
-	val = 123
-	thread.xadd(&done, 1)
-
+	thread.condsignal(&cv1)
+	thread.wgpost(&ready)
 }
 
 const cvwake = {
 	while true
 		thread.mtxlock(&mtx)
 		val = 456
+		thread.condsignal(&cv)
+		thread.condwait(&cv1)
 		thread.mtxunlock(&mtx)
 
-		thread.condsignal(&cv)
 		if nwoken >= Nwakes
 			break
 		;;
 	;;
+	thread.wgpost(&ready)
 }
 
 const cvwaitonce = {
-	thread.xadd(&nready, 1)
-
 	thread.mtxlock(&mtx)
-	thread.xadd(&locked, 1)
+	thread.wgpost(&ready)
 	thread.condwait(&cv)
 	thread.mtxunlock(&mtx)
 

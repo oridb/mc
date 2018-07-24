@@ -12,10 +12,12 @@ pkg thread =
 	const mtxtrylock	: (mtx : mutex# -> bool)
 	const mtxunlock	: (mtx : mutex# -> void)
 
-	pkglocal const Unlocked = 0
-	pkglocal const Locked = 1
-	pkglocal const Contended = 2
+	pkglocal const mtxcontended	: (mtx : mutex# -> void)
 ;;
+
+const Unlocked = 0
+const Locked = 1
+const Contended = 2
 
 var nspin = 10	/* FIXME: pick a sane number, based on CPU count */
 
@@ -38,9 +40,9 @@ const mtxlock = {mtx
 	;;
 
 	/*
-	Contended case: we set the lock state to Contended. This indicates that there
-	the lock is locked, and we potentially have threads waiting on it, which means
-	that we will need to wake them up.
+	Contended case: we set the lock state to Contended. This indicates that
+	the lock is locked, and we potentially have threads waiting on it,
+	which means that we will need to wake them up.
 	*/
 	if c == Locked
 		c = xchg(&mtx._state, Contended)
@@ -70,4 +72,10 @@ const mtxunlock = {mtx
 
 	/* wake one thread */
 	ftxwake(&mtx._state)
+}
+
+const mtxcontended = {mtx
+	while xchg(&mtx._state, Contended) != Unlocked
+		ftxwait(&mtx._state, Contended, Zptr)
+	;;
 }
