@@ -1,5 +1,4 @@
 use std
-use sys
 
 use "atomic"
 use "common"
@@ -31,7 +30,6 @@ const semwait = {s
 		;;
 		ftxwait(&s._val, v, Zptr)
 	;;
-	-> void /* Unreachable */
 }
 
 const semtrywait = {s

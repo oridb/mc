@@ -9,6 +9,7 @@ pkg thread =
 
 	const ftxwait : (uaddr : ftxtag#, val : ftxtag, timeout : sys.timespec# -> int)
 	const ftxwake : (uaddr : ftxtag# -> int)
+	const ftxwakeall : (uaddr : ftxtag# -> int)
 ;;
 
 const ftxwait = {uaddr, val, timeout
@@ -22,6 +23,10 @@ const ftxwait = {uaddr, val, timeout
 
 const ftxwake = {uaddr
 	-> (sys.futex((uaddr : int32#), sys.Futexwake | sys.Futexpriv, 1, Zptr, Zptr, 0) : int)
+}
+
+const ftxwakeall = {uaddr
+	-> (sys.futex((uaddr : int32#), sys.Futexwake | sys.Futexpriv, 0x7fffffff, Zptr, Zptr, 0) : int)
 }
 
 impl atomic ftxtag =

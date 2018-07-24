@@ -3,8 +3,10 @@ lib thread =
 	hookstd.myr	# install thread hooks
 	mutex+futex.myr
 	sem+futex.myr
+	waitgrp+futex.myr
 	mutex.myr	# fallback, for unimplemented platforms
 	sem.myr		# fallback, for unimplemented platforms
+	waitgrp.myr	# fallback, for unimplemented platforms
 
 	#generic fallbacks
 	ncpu.myr

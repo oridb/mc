@@ -1,0 +1,19 @@
+use std
+use thread
+
+const Threadc = 8
+
+var wg
+
+const main = {
+	wg = thread.mkwg(Threadc)
+
+	for var i = 0; i < Threadc; i++
+		thread.spawn({
+			std.usleep(3_000_000)
+			thread.wgpost(&wg)
+			thread.wgwait(&wg)
+		})
+	;;
+	thread.wgwait(&wg)
+}

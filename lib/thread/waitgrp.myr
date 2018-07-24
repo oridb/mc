@@ -1,0 +1,50 @@
+use std
+
+use "atomic"
+
+pkg thread =
+	type waitgrp = struct
+		_val : uint32
+	;;
+
+	const mkwg : (v : uint32 -> waitgrp)
+	const wgwait : (w : waitgrp# -> void)
+	const wgpost : (w : waitgrp# -> void)
+;;
+
+const mkwg = {v
+	-> [._val = v]
+}
+
+const wgwait = {w
+	for var i = 0; i < 1000; i++
+		if xget(&w._val) == 0
+			-> void
+		;;
+	;;
+
+	for var i = 0; i < 1000; i++
+		if xget(&w._val) == 0
+			-> void
+		;;
+		std.nanosleep(10_000)
+	;;
+
+	for var i = 0; i < 1000; i++
+		if xget(&w._val) == 0
+			-> void
+		;;
+		std.nanosleep(100_000)
+	;;
+
+	for ; ;
+		if xget(&w._val) == 0
+			-> void
+		;;
+		std.nanosleep(1_000_000)
+	;;
+}
+
+const wgpost = {w
+	std.assert(xadd(&w._val, -1) > 0, "error: waitgroup underflowed\n")
+}

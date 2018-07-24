@@ -1,0 +1,37 @@
+use std
+
+use "atomic"
+use "common"
+use "futex"
+
+pkg thread =
+	type waitgrp = struct
+		_val : ftxtag
+	;;
+
+	const mkwg : (v : uint32 -> waitgrp)
+	const wgwait : (w : waitgrp# -> void)
+	const wgpost : (w : waitgrp# -> void)
+;;
+
+const mkwg = {v
+	-> [._val = (v : ftxtag)]
+}
+
+const wgwait = {w
+	var v = 0
+
+	while (v = xget(&w._val)) != 0
+		ftxwait(&w._val, v, Zptr)
+	;;
+}
+
+const wgpost = {w
+	var v = xadd(&w._val, -1)
+
+	if v == 1
+		ftxwakeall(&w._val)
+		-> void
+	;;
+	std.assert(v > 0, "error: waitgroup underflowed\n")
+}
