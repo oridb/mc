@@ -1,6 +1,8 @@
 /*
   Attempts to find a minimax polynomial of degree n for f via Remez
-  algorithm.
+  algorithm. The Remez algorithm appears to be slightly shot, but
+  the initial step of approximating by Chebyshev nodes works, and
+  is usually good enough.
  */
 
 { chebyshev_node(a, b, k, n) = my(p, m, c);
