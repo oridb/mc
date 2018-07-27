@@ -17,7 +17,7 @@ pkg thread =
 ;;
 
 const mksem = {v
-	std.assert((v : int32) > 0, "semaphore overflowed")
+	std.assert((v : int32) >= 0, "error: invalid initial semaphore value\n")
 	-> [._user = (v : int32), ._kern = 0]
 }
 
