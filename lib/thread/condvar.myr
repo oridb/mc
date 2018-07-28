@@ -1,3 +1,5 @@
+use std
+
 use "atomic"
 use "common"
 use "mutex"
@@ -35,23 +37,23 @@ const mkcond = {mtx
 const condwait = {cond
 	var mtx = cond._mtx
 	var lock = &cond._lock
-	var waiter = [.sem = mksem(0)]
+	var waiter = std.mk([.sem = mksem(0)])
 
 	mtxlock(lock)
 	match cond._waitq
 	| Zptr:
-		waiter.prev = &waiter
-		cond._waitq = &waiter
+		waiter.prev = waiter
+		cond._waitq = waiter
 	| q:
 		waiter.prev = q.prev
-		waiter.prev.next = &waiter
-		q.prev = &waiter
+		waiter.prev.next = waiter
+		q.prev = waiter
 	;;
 
 	mtxunlock(lock)
 	mtxunlock(mtx)
 	semwait(&waiter.sem)
-
+	std.free(waiter)
 	mtxlock(mtx)
 }
 
