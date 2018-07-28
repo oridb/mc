@@ -22,7 +22,7 @@ const mkcond = {mtx
 }
 
 const condwait = {cond
-	var seq
+	var seq : uint32
 	var mtx
 
 	mtx = cond._mtx
@@ -33,7 +33,7 @@ const condwait = {cond
 	FIXME?: `futex` can be interrupted but `condwait` should always be done
 	in a loop anyway.
 	*/
-	sys.futex(&cond._seq, sys.Futexwait, seq, Zptr, Zptr)
+	sys.futex(&cond._seq, sys.Futexwait, (seq : int), Zptr, Zptr)
 
 	/*
 	We need to atomically set the mutex to contended. This allows us to
