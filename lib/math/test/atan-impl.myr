@@ -47,6 +47,10 @@ const atan01 = {c
 		(0x4c120000, 0x3fc90fda),
 		(0x0c010000, 0x0c010000),
 		(0xc0070000, 0xbf9065b4),
+		(0x3d8d6b23, 0x3d8d31c3),
+		(0xbd8d6b23, 0xbd8d31c3),
+		(0xbf000000, 0xbeed6338),
+		(0xc1010000, 0xbfb94442),
 	][:]
 
 	for (x, y) : inputs
@@ -67,18 +71,92 @@ const atan01 = {c
 }
 
 const atan02 = {c
+	testr.fail(c, "WRITE THIS")
 }
 
 const atan03 = {c
+	var inputs : (uint32, uint32, uint32)[:] = [
+		(0x00000000, 0x80000000, 0x40490fdb), /* atan2(+0, -0) = +Pi */
+		(0x80000000, 0x80000000, 0xc0490fdb), /* atan2(-0, -0) = -Pi */
+		(0x00000000, 0x00000000, 0x00000000), /* atan2(+0, +0) = +0 */
+		(0x80000000, 0x00000000, 0x80000000), /* atan2(-0, +0) = -0 */
+		(0x00000000, 0xc5a33ab8, 0x40490fdb), /* atan2(+0, x < 0) = +Pi */
+		(0x00000000, 0x80000002, 0x40490fdb),
+		(0x00000000, 0xdddddddd, 0x40490fdb),
+		(0x80000000, 0xc5a33ab8, 0xc0490fdb), /* atan2(-0, x < 0) = -Pi */
+		(0x80000000, 0x80000002, 0xc0490fdb),
+		(0x80000000, 0xdddddddd, 0xc0490fdb),
+		(0x00000000, 0x35a33ab8, 0x00000000), /* atan2(+0, x > 0) = +0 */
+		(0x00000000, 0x00000002, 0x00000000),
+		(0x00000000, 0x4ddddddd, 0x00000000),
+		(0x80000000, 0x35a33ab8, 0x80000000), /* atan2(-0, x > 0) = -0 */
+		(0x80000000, 0x00000002, 0x80000000),
+		(0x80000000, 0x4ddddddd, 0x80000000),
+		(0xdddddddd, 0x00000000, 0xbfc90fdb), /* atan2(y < 0, 0) = -Pi/2 */
+		(0xc5a33ab8, 0x00000000, 0xbfc90fdb),
+		(0x80000002, 0x00000000, 0xbfc90fdb),
+		(0x4ddddddd, 0x00000000, 0x3fc90fdb), /* atan2(y > 0, 0) = +Pi/2 */
+		(0x35a33ab8, 0x00000000, 0x3fc90fdb),
+		(0x00000002, 0x00000000, 0x3fc90fdb),
+		(0x7f800000, 0xff800000, 0x4016cbe4), /* atan2(+Inf, -Inf) = +3*Pi/4 */
+		(0xff800000, 0xff800000, 0xc016cbe4), /* atan2(-Inf, -Inf) = -3*Pi/4 */
+		(0x7f800000, 0x7f800000, 0x3f490fdb), /* atan2(+Inf, +Inf) = +Pi/4 */
+		(0xff800000, 0x7f800000, 0xbf490fdb), /* atan2(-Inf, +Inf) = -Pi/4 */
+		(0x7f800000, 0x4ddddddd, 0x3fc90fdb), /* atan2(+Inf, finite) = +Pi/2 */
+		(0x7f800000, 0x00000001, 0x3fc90fdb),
+		(0x7f800000, 0x80000004, 0x3fc90fdb),
+		(0x7f800000, 0xfedcba87, 0x3fc90fdb),
+		(0xff800000, 0x4ddddddd, 0xbfc90fdb), /* atan2(-Inf, finite) = -Pi/2 */
+		(0xff800000, 0x00000001, 0xbfc90fdb),
+		(0xff800000, 0x80000004, 0xbfc90fdb),
+		(0xff800000, 0xfedcba87, 0xbfc90fdb),
+		(0x6a520b4c, 0xff800000, 0x40490fdb), /* atan2(finite > 0, -Inf) = +Pi */
+		(0x35a33ab8, 0xff800000, 0x40490fdb),
+		(0x55a33ab8, 0xff800000, 0x40490fdb),
+		(0xea520b4c, 0xff800000, 0xc0490fdb), /* atan2(finite < 0, -Inf) = -Pi */
+		(0x95a33ab8, 0xff800000, 0xc0490fdb),
+		(0xc5a33ab8, 0xff800000, 0xc0490fdb),
+		(0x6a520b4c, 0x7f800000, 0x00000000), /* atan2(finite > 0, +Inf) = +0 */
+		(0x35a33ab8, 0x7f800000, 0x00000000),
+		(0x55a33ab8, 0x7f800000, 0x00000000),
+		(0xea520b4c, 0x7f800000, 0x80000000), /* atan2(finite < 0, +Inf) = -0 */
+		(0x95a33ab8, 0x7f800000, 0x80000000),
+		(0xc5a33ab8, 0x7f800000, 0x80000000),
+		(0x1aae129e, 0xde263fa8, 0x40490fdb), /* misc */
+		(0xb76e98b6, 0xdbeb6637, 0xc0490fdb),
+		(0x7112fd5b, 0x7509b252, 0x3b88a34d),
+		(0xe53215fe, 0xcd0f08fc, 0xbfc90fdb),
+		(0xcd47c963, 0x85268f36, 0xbfc90fdb),
+		(0xfacd1adc, 0x79fd5d79, 0xbfa2b8c8),
+		(0xfa3f79f2, 0xf5f06269, 0xbfc96033),
+		(0xddc7b749, 0x5f3d9db0, 0xbe060c09),
+		(0x63c8ee47, 0x792ac38f, 0x2a169cbe),
+		(0xe3c24a4f, 0xe0f9b02f, 0xbfcba1c1),
+		(0xe1f9385d, 0xe317764d, 0xc03c145d)
+	][:]
+
+	for (y, x, z_exp) : inputs
+		var xf : flt32 = std.flt32frombits(x)
+		var yf : flt32 = std.flt32frombits(y)
+		var zf_act : flt32 = math.atan2(yf, xf)
+		var z_act : uint32 = std.flt32bits(zf_act)
+
+		testr.check(c, same32(z_act, z_exp),
+			"atan(0x{b=16,w=8,p=0}, 0x{b=16,w=8,p=0}) = 0x{b=16,w=8,p=0}, should be 0x{b=16,w=8,p=0}",
+			y, x, z_act, z_exp)
+	;;
 }
 
 const atan04 = {c
+	testr.fail(c, "WRITE THIS")
 }
 
 const atan05 = {c
+	testr.fail(c, "WRITE THIS")
 }
 
 const atan06 = {c
+	testr.fail(c, "WRITE THIS")
 }
 
 const atan07 = {c

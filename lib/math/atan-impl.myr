@@ -317,6 +317,18 @@ const C : (uint64, uint64, uint64, uint64, uint64, uint64, uint64)[257] = [
 ]
 
 const atan32 = {x
+	/*
+	   Irritating special rounding cases that would require
+	   more extra accuracy than they're worth to correctly round
+	   back from 64 to 32 bits.
+	 */
+	var xb = std.flt32bits(x)
+	if xb == 0x3d8d6b23
+		-> std.flt32frombits(0x3d8d31c3)
+	elif xb == 0xbd8d6b23
+		-> std.flt32frombits(0xbd8d31c3)
+	;;
+
 	var r = atan264((x : flt64), 1.0)
 	-> (r : flt32)
 }
@@ -326,6 +338,16 @@ const atan64 = {x
 }
 
 const atan232 = {y, x
+	/* Handle the special cases of atan32 for consistency */
+	if x == 1.0
+		var yb = std.flt32bits(y)
+		if yb == 0x3d8d6b23
+			-> std.flt32frombits(0x3d8d31c3)
+		elif yb == 0xbd8d6b23
+			-> std.flt32frombits(0xbd8d31c3)
+		;;
+	;;
+
 	var r = atan264((y : flt64), (x : flt64))
 	-> (r : flt32)
 }
@@ -335,36 +357,79 @@ const atan264 = {y, x
 		-> std.flt64nan()
 	;;
 
-	var xabs = std.flt64frombits(std.flt64bits(x) & (~(0 : uint64)) >> 1)
-	var yabs = std.flt64frombits(std.flt64bits(y) & (~(0 : uint64)) >> 1)
-
-	var then_negate = false
-	if (xabs == x) != (yabs == y)
-		then_negate = true
-	;;
-	x = xabs
-	y = yabs
-
 	var xb = std.flt64bits(x)
-	if xb == 0x0
-		if then_negate
+	var yb = std.flt64bits(y)
+	var xpos, xe, ypos, ye
+	(xpos, xe, _) = std.flt64explode(x)
+	(ypos, ye, _) = std.flt64explode(y)
+	xpos = !xpos
+	ypos = !ypos
+
+	/* All the special cases */
+	if yb == 0x0000000000000000
+		if xpos
+			-> 0.0
+		else
+			-> std.flt64frombits(0x400921fb54442d18)
+		;;
+	elif yb == 0x8000000000000000
+		if xpos
+			-> std.flt64frombits(0x8000000000000000)
+		else
+			-> std.flt64frombits(0xc00921fb54442d18)
+		;;
+	elif xb == 0x0000000000000000 || xb == 0x8000000000000000
+		if ypos
 			-> std.flt64frombits(0x3ff921fb54442d18)
 		else
 			-> std.flt64frombits(0xbff921fb54442d18)
 		;;
 	;;
 
+	var xinf = (xe == 1024)
+	var yinf = (ye == 1024)
+
+	match (yinf, ypos, xinf, xpos)
+	| (true,  true,  true,  false): -> std.flt64frombits(0x4002d97c7f3321d2)
+	| (true,  false, true,  false): -> std.flt64frombits(0xc002d97c7f3321d2)
+	| (true,  true,  true,  true ): -> std.flt64frombits(0x3fe921fb54442d18)
+	| (true,  false, true,  true ): -> std.flt64frombits(0xbfe921fb54442d18)
+	| (true,  true,  false, _    ): -> std.flt64frombits(0x3ff921fb54442d18)
+	| (true,  false, false, _    ): -> std.flt64frombits(0xbff921fb54442d18)
+	| (false, true,  true,  false): -> std.flt64frombits(0x400921fb54442d18)
+	| (false, false, true,  false): -> std.flt64frombits(0xc00921fb54442d18)
+	| (false, true,  true,  true ): -> std.flt64frombits(0x0000000000000000)
+	| (false, false, true,  true ): -> std.flt64frombits(0x8000000000000000)
+	| _:
+	;;
+
+	/* Normal case. Here we just reduce y/x to [0, 1] */
+	var xabs = std.flt64frombits(std.flt64bits(x) & (~(0 : uint64)) >> 1)
+	var yabs = std.flt64frombits(std.flt64bits(y) & (~(0 : uint64)) >> 1)
+
+	var then_negate = !ypos
+	var then_subtract_from_pi = !xpos
+
+	x = xabs
+	y = yabs
+
+
 	var then_reverse = false
-	if yabs > xabs
+	if y > x
 		then_reverse = true
 		std.swap(&x, &y)
 	;;
 
-	/* Compute y/x = u + du; du is one Newton's iteration of division */
+	/* Compute y/x = u + du */
 	var u = y / x
-	var t1, t2
-	(t1, t2) = two_by_two(u, x)
-	var du = y * ((y - t1) - t2)/x
+	var du
+	if u * x == y
+		du = 0.0
+	else
+		var t1, t2
+		(t1, t2) = two_by_two(u, x)
+		du = ((y - t1) - t2)/x
+	;;
 
 	var ret = atan_reduced(u, du)
 
@@ -373,6 +438,12 @@ const atan264 = {y, x
 		var po2_hi = std.flt64frombits(pi_over_2[0])
 		var po2_lo = std.flt64frombits(pi_over_2[1])
 		ret = (po2_hi - ret) + po2_lo
+	;;
+	if then_subtract_from_pi
+		/* Compute pi - ret, or maybe -pi - ret */
+		var pi_hi = scale2(std.flt64frombits(pi_over_2[0]), 1)
+		var pi_lo = scale2(std.flt64frombits(pi_over_2[1]), 1)
+		ret = (pi_hi - ret) + pi_lo
 	;;
 
 	if then_negate
