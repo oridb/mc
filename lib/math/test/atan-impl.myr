@@ -43,6 +43,10 @@ const atan01 = {c
 	var inputs : (uint32, uint32)[:] = [
 		(0x00000000, 0x00000000),
 		(0xec0c0000, 0xbfc90fdb),
+		(0xd30d0000, 0xbfc90fdb),
+		(0x4c120000, 0x3fc90fda),
+		(0x0c010000, 0x0c010000),
+		(0xc0070000, 0xbf9065b4),
 	][:]
 
 	for (x, y) : inputs

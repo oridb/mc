@@ -21,6 +21,9 @@
    coefficients cij for pi such that ci0 and ci1, in perfect accuracy,
    have a bunch of zeroes in the binary expansion after the 53rd
    bit. This gives the stored cij a bit more accuracy for free.
+
+   Note that there's a sign flip somewhere: so the even-degree
+   elements need to be negated for use in atan-impl.myr.
  */
 
 /* Something something -fno-strict-aliasing */
