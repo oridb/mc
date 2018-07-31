@@ -338,9 +338,16 @@ const atan264 = {y, x
 	var xabs = std.flt64frombits(std.flt64bits(x) & (~(0 : uint64)) >> 1)
 	var yabs = std.flt64frombits(std.flt64bits(y) & (~(0 : uint64)) >> 1)
 
+	var then_negate = false
+	if (xabs == x) != (yabs == y)
+		then_negate = true
+	;;
+	x = xabs
+	y = yabs
+
 	var xb = std.flt64bits(x)
-	if xb == 0x0 || xb == 0x8000000000000000
-		if (y >= 0.0) == (x >= 0.0)
+	if xb == 0x0
+		if then_negate
 			-> std.flt64frombits(0x3ff921fb54442d18)
 		else
 			-> std.flt64frombits(0xbff921fb54442d18)
@@ -368,19 +375,16 @@ const atan264 = {y, x
 		ret = (po2_hi - ret) + po2_lo
 	;;
 
+	if then_negate
+		ret = -1.0 * ret
+	;;
+
 	-> ret
 }
 
-/* Handle arctan(z) with z in (-1, 1) */
+/* Handle arctan(z) with z in [0, 1] */
 const atan_reduced = {u : flt64, du : flt64
-	var then_negate : bool = false
 	var ret : flt64
-
-	if u < 0.0
-		then_negate = true
-		u = -1.0 * u
-		du = -1.0 * du
-	;;
 
 	/*
 	   If u is less than 1/16, [GB91] uses a single polynomial
@@ -392,8 +396,7 @@ const atan_reduced = {u : flt64, du : flt64
 	if u <  0.0625
 		var s = u * u
 		var p = horner_polyu(s, atan_coeffs[:])
-		ret = u*p + du
-		goto have_result
+		-> u*p + du
 	;;
 
 	/*
@@ -410,13 +413,5 @@ const atan_reduced = {u : flt64, du : flt64
 	(xi_u, c[0], c[1], c[2], c[3], c[4], c[5]) = C[j]
 	var xi : flt64 = std.flt64frombits(xi_u)
 
-	ret = horner_polyu((u - xi) + du, c[:])
-
-:have_result
-
-	if then_negate
-		ret = -1.0 * ret
-	;;
-
-	-> ret
+	-> horner_polyu((u - xi) + du, c[:])
 }

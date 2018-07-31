@@ -1,0 +1,88 @@
+use std
+use math
+use testr
+
+const main = {
+	math.fptrap(false)
+	testr.run([
+		[.name="atan-01", .fn = atan01], /* atan, flt32 */
+		[.name="atan-02", .fn = atan02], /* atan, flt64 */
+		[.name="atan-03", .fn = atan03], /* atan2, flt32 */
+		[.name="atan-04", .fn = atan04], /* atan2, flt64 */
+		[.name="atan-05", .fn = atan05], /* off-by-1-ulp quarantine */
+		[.name="atan-06", .fn = atan06], /* exhaustively test C */
+		[.name="atan-07", .fn = atan07], /* NaN handling */
+	][:])
+}
+
+const same32 = {a, b
+	if a == b
+		-> true
+	;;
+
+	if std.isnan(std.flt32frombits(a)) && std.isnan(std.flt32frombits(b))
+		-> true
+	;;
+
+	-> false
+}
+
+const same64 = {a, b
+	if a == b
+		-> true
+	;;
+
+	if std.isnan(std.flt64frombits(a)) && std.isnan(std.flt64frombits(b))
+		-> true
+	;;
+
+	-> false
+}
+
+const atan01 = {c
+	var inputs : (uint32, uint32)[:] = [
+		(0x00000000, 0x00000000),
+		(0xec0c0000, 0xbfc90fdb),
+	][:]
+
+	for (x, y) : inputs
+		var xf : flt32 = std.flt32frombits(x)
+		var yf : flt32 = std.flt32frombits(y)
+		var a1f : flt32 = math.atan(xf)
+		var a2f : flt32 = math.atan2(xf, 1.0)
+		var a1u : uint32 = std.flt32bits(a1f)
+		var a2u : uint32 = std.flt32bits(a2f)
+		testr.check(c, same32(a1u, a2u),
+			"atan(0x{b=16,w=8,p=0}) = 0x{b=16,w=8,p=0}, but atan2(0x{b=16,w=8,p=0}, 1.0) = 0x{b=16,w=8,p=0}",
+			x, a1u, x, a2u)
+
+		testr.check(c, same32(a1u, y),
+			"atan(0x{b=16,w=8,p=0}) = 0x{b=16,w=8,p=0}, should be 0x{b=16,w=8,p=0}",
+			x, a1u, y)
+	;;
+}
+
+const atan02 = {c
+}
+
+const atan03 = {c
+}
+
+const atan04 = {c
+}
+
+const atan05 = {c
+}
+
+const atan06 = {c
+}
+
+const atan07 = {c
+	testr.check(c, std.isnan(math.atan(std.flt64nan())), "atan(NaN64) should be NaN")
+	testr.check(c, std.isnan(math.atan(std.flt32nan())), "atan(NaN32) should be NaN")
+
+	testr.check(c, std.isnan(math.atan2(std.flt64nan(), 3.0)), "atan2(NaN64, 3.0) should be NaN")
+	testr.check(c, std.isnan(math.atan2(std.flt32nan(), -2.0)), "atan2(NaN32, -2.0) should be NaN")
+	testr.check(c, std.isnan(math.atan2(6.0, std.flt64nan())), "atan2(6.0, NaN64) should be NaN")
+	testr.check(c, std.isnan(math.atan2(4.0, std.flt32nan())), "atan2(4.0, NaN32) should be NaN")
+}
