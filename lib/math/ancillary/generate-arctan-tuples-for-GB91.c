@@ -1,4 +1,5 @@
 /* cc -o generate-arctan-tuples-for-GB91 generate-arctan-tuples-for-GB91.c -lmpfr # -fno-strict-aliasing */
+/* cc -static -std=c99 -D_POSIX_C_SOURCE=999999999 -fno-strict-aliasing -O2 -o generate-arctan-tuples-for-GB91 generate-arctan-tuples-for-GB91.c -lmpfr -lgmp */
 #include <errno.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -244,7 +245,7 @@ static int find_tuple(int ii, int min_leeway)
         /* Compute (xij)^(-1) */
         invert_poorly(xij, xijinv);
 
-        while (r < (1 << 26)) {
+        while (r < (1 << 28)) {
                 xi = xi_orig + r;
                 xi_d = UINT64_TO_FLT64(xi);
                 mpfr_set_d(xi_m, xi_d, MPFR_RNDN);

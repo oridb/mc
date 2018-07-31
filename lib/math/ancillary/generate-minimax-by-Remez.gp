@@ -127,6 +127,10 @@
         return(if(x == 0, 1, tan(x)/x));
 }
 
+{ atanxoverx(x) =
+        return(if(x == 0, 1, atan(x)/x));
+}
+
 { cotx(x) =
         return(1/tanoverx(x));
 }
@@ -162,6 +166,13 @@ print("Minmimaxing tan(x) / x, degree 10, on [0, 15.5/256]:");
 find_minimax(tanoverx, 10, 0, 15.5/256)
 print("\n");
 print("(You'll need to add a 0x0 at the beginning to make a degree 11...\n");
+print("\n");
+print("---\n");
+print("\n");
+print("Minmimaxing atan(x) / x, degree 12, on [0, 15.5/256]:");
+find_minimax(atanxoverx, 12, 0, 1/16)
+print("\n");
+print("(You'll need to add a 0x0 at the beginning to make a degree 13...\n");
 print("\n");
 print("---\n");
 print("Remember that there's that extra, ugly E term at the end of the vector that you want to lop off.\n");

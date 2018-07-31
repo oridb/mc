@@ -58,10 +58,12 @@ pkg math =
 
 	pkglocal const trig_reduce : (x : flt64 -> (int64, flt64, flt64))
 	pkglocal const trig_table_approx : (x1 : flt64, C : (uint64, uint64, uint64)[257] -> (uint64, uint64, uint64))
+
+	pkglocal const pi_over_2 : uint64[4]
 ;;
 
 /* Pi/2 in lots of detail, for range reducing sin(2^18) or so */
-const pi_over_2 : uint64[4] = [
+const pi_over_2 = [
 	0x3ff921fb54442d18,
 	0x3c91a62633145c07,
 	0xb91f1976b7ed8fbc,

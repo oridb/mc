@@ -3,6 +3,10 @@ use std
 pkg math =
 	trait fpmath @f =
 
+		/* atan-impl */
+		atan : (x : @f -> @f)
+		atan2 : (y : @f, x : @f -> @f)
+
 		/* exp-impl */
 		exp : (x : @f -> @f)
 		expm1 : (x : @f -> @f)
@@ -84,6 +88,9 @@ impl roundable flt64 -> int64 =
 ;;
 
 impl fpmath flt32 =
+	atan = {x; -> atan32(x)}
+	atan2 = {y, x; -> atan232(y, x)}
+
 	fma = {x, y, z; -> fma32(x, y, z)}
 
 	exp = {x; -> exp32(x)}
@@ -118,6 +125,9 @@ impl fpmath flt32 =
 ;;
 
 impl fpmath flt64 =
+	atan = {x; -> atan64(x)}
+	atan2 = {y, x; -> atan264(y, x)}
+
 	fma = {x, y, z; -> fma64(x, y, z)}
 
 	exp = {x; -> exp64(x)}
@@ -152,6 +162,12 @@ impl fpmath flt64 =
 
 extern const rn32 : (x : flt32 -> int32)
 extern const rn64 : (x : flt64 -> int64)
+
+extern const atan32 : (x : flt32 -> flt32)
+extern const atan64 : (x : flt64 -> flt64)
+
+extern const atan232 : (y : flt32, x : flt32 -> flt32)
+extern const atan264 : (y : flt64, x : flt64 -> flt64)
 
 extern const fma32 : (x : flt32, y : flt32, z : flt32 -> flt32)
 extern const fma64 : (x : flt64, y : flt64, z : flt64 -> flt64)
