@@ -396,7 +396,7 @@ const atan_reduced = {u : flt64, du : flt64
 	if u <  0.0625
 		var s = u * u
 		var p = horner_polyu(s, atan_coeffs[:])
-		-> u*p + du
+		-> u*p + u*du
 	;;
 
 	/*
