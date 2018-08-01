@@ -1,0 +1,406 @@
+use std
+
+use "fpmath"
+use "log-impl"
+use "util"
+
+/*
+   This is an implementation of powr, not pow, so the special cases
+   are tailored more closely to the mathematical x^y = e^(y * log(x))
+   than to historical C implementations (pow was aligned to the C99
+   standard, which was aligned to codify existing practice).
+
+   Even then, some parts of the powr specification are unclear. For
+   example, IEEE 754-2008 does not specify what powr(infty, y) must
+   return when y is not 0.0 (an erratum was planned in 2010, but
+   does not appear to have been released as of 2018).
+
+   As a note: unlike many other functions in this library, there
+   has been no serious analysis of the accuracy and speed of this
+   particular implementation. Interested observers wishing to improve
+   this library will probably find this file goldmine of mistakes,
+   both theoretical and practical.
+ */
+pkg math =
+	pkglocal const powr32 : (x : flt32, y : flt32 -> flt32)
+	pkglocal const powr64 : (x : flt64, y : flt64 -> flt64)
+;;
+
+type fltdesc(@f, @u, @i) = struct
+	explode : (f : @f -> (bool, @i, @u))
+	assem : (n : bool, e : @i, s : @u -> @f)
+	tobits : (f : @f -> @u)
+	frombits : (u : @u -> @f)
+	nan : @u
+	inf : @u
+	expmask : @u
+	precision : @u
+	emax : @i
+	emin : @i
+	sgnmask : @u
+	sig8mask : @u
+	sig8last : @u
+	split_prec_mask : @u
+	split_prec_mask2 : @u
+	C : (@u, @u)[:]
+	eps_inf_border : @u
+	eps_zero_border : @u
+	exp_inf_border : @u
+	exp_zero_border : @u
+	exp_subnormal_border : @u
+	itercount : @u
+;;
+
+const desc32 : fltdesc(flt32, uint32, int32) =  [
+	.explode = std.flt32explode,
+	.assem = std.flt32assem,
+	.tobits = std.flt32bits,
+	.frombits = std.flt32frombits,
+	.nan = 0x7fc00000,
+	.inf = 0x7f800000,
+	.expmask = 0x7f800000, /* mask to detect inf or NaN (inf, repeated for clarity) */
+	.precision = 24,
+	.emax = 127,
+	.emin = -126,
+	.sgnmask = 1 << 31,
+	.sig8mask = 0xffff0000, /* Mask to get 8 significant bits */
+	.sig8last = 16, /* Last bit kept when masking */
+	.split_prec_mask = 0xffff0000, /* 16 trailing zeros */
+	.split_prec_mask2 = 0xfffff000, /* 12 trailing zeros */
+	.C = accurate_logs32[0:130], /* See log-impl.myr */
+	.eps_inf_border = 0x4eb00f34, /* maximal y st. (1.00..1)^y < oo */
+	.eps_zero_border = 0x4ecff1b4, /* minimal y st. (0.99..9)^y > 0 */
+	.exp_inf_border = 0x42b17218, /* maximal y such that e^y < oo */
+	.exp_zero_border = 0xc2cff1b4, /* minimal y such that e^y > 0 */
+	.exp_subnormal_border = 0xc2aeac50, /* minimal y such that e^y is normal */
+	.itercount = 4, /* How many iterations of Taylor series for (1 + f)^y' */
+]
+
+const desc64 : fltdesc(flt64, uint64, int64) =  [
+	.explode = std.flt64explode,
+	.assem = std.flt64assem,
+	.tobits = std.flt64bits,
+	.frombits = std.flt64frombits,
+	.nan = 0x7ff8000000000000,
+	.inf = 0x7ff0000000000000,
+	.expmask = 0x7ff0000000000000,
+	.precision = 53,
+	.emax = 1023,
+	.emin = -1022,
+	.sgnmask = 1 << 63,
+	.sig8mask = 0xffffe00000000000, /* Mask to get 8 significant bits */
+	.sig8last = 45, /* Last bit kept when masking */
+	.split_prec_mask = 0xffffff0000000000, /* 40 trailing zeroes */
+	.split_prec_mask2 = 0xfffffffffffc0000, /* 18 trailing zeroes */
+	.C = accurate_logs64[0:130], /* See log-impl.myr */
+	.eps_inf_border = 0x43d628b76e3a7b61, /* maximal y st. (1.00..1)^y < oo */
+	.eps_zero_border = 0x43d74e9c65eceee0, /*  minimal y st. (0.99..9)^y > 0 */
+	.exp_inf_border = 0x40862e42fefa39ef, /* maximal y such that e^y < oo */
+	.exp_zero_border = 0xc0874910d52d3052, /* minimal y such that e^y > 0 */
+	.exp_subnormal_border = 0xc086232bdd7abcd2, /* minimal y such that e^y is normal */
+	.itercount = 8,
+]
+
+const powr32 = {x : flt32, y : flt32
+	-> powrgen(x, y, desc32)
+}
+
+const powr64 = {x : flt64, y : flt64
+	-> powrgen(x, y, desc64)
+}
+
+generic powrgen = {x : @f, y : @f, d : fltdesc(@f, @u, @i) :: numeric,floating,std.equatable @f, numeric,integral @u, numeric,integral @i
+	var xb, yb
+	xb = d.tobits(x)
+	yb = d.tobits(y)
+
+	var xn : bool, xe : @i, xs : @u
+	var yn : bool, ye : @i, ys : @u
+	(xn, xe, xs) = d.explode(x)
+	(yn, ye, ys) = d.explode(y)
+
+	/*
+	   Special cases. Note we do not follow IEEE exceptions.
+	 */
+	if std.isnan(x) || std.isnan(y)
+		/* Propagate NaN */
+		-> d.frombits(d.nan)
+	elif (xb & ~d.sgnmask == 0)
+		if (yb & ~d.sgnmask == 0)
+			/* 0^0 is undefined. */
+			-> d.frombits(d.nan)
+		elif yn
+			/* 0^(< 0) is infinity */
+			-> d.frombits(d.inf)
+		else
+			/* otherwise, 0^y = 0. */
+			-> (0.0 : @f)
+		;;
+	elif xn
+		/*
+		   (< 0)^(anything) is undefined. This comes from
+		   thinking of floating-point numbers as representing
+		   small ranges of real numbers. If you really want
+		   to compute (-1.23)^5, use pown.
+		 */
+		-> d.frombits(d.nan)
+	elif (xb & ~d.sgnmask == d.inf)
+		if (yb & ~d.sgnmask == 0)
+			/* oo^0 is undefined */
+			-> d.frombits(d.nan)
+		elif yn
+			/* +/-oo^(< 0) is +/-0 */
+			-> d.assem(xn, 0, 0)
+		elif xn
+			/* (-oo)^(anything) is undefined */
+			-> d.frombits(d.nan)
+		else
+			/* oo^(> 0) is oo */
+			-> d.frombits(d.inf)
+		;;
+	elif std.eq(y, (1.0 : @f))
+		/* x^1 = x */
+		-> x
+	elif yb & ~d.sgnmask == 0
+		/* (finite, positive)^0 = 1 */
+		-> (1.0 : @f)
+	elif std.eq(x, (1.0 : @f))
+		if yb & ~d.sgnmask == d.inf
+			/* 1^oo is undefined */
+			-> d.frombits(d.nan)
+		else
+			/* 1^(finite, positive) = 1 */
+			-> (1.0 : @f)
+		;;
+	elif yb & ~d.sgnmask == d.inf
+		if xe < 0
+			/* (0 < x < 1)^oo = 0 */
+			-> (0.0 : @f)
+		else
+			/* (x > 1)^oo = oo */
+			-> d.frombits(d.inf)
+		;;
+	;;
+
+	/* Normalize x and y */
+	if xe < d.emin
+		var first_1 = find_first1_64((xs : uint64), (d.precision : int64))
+		var offset = (d.precision : @u) - 1 - (first_1 : @u)
+		xs = xs << offset
+		xe = d.emin - offset
+	;;
+
+	if ye < d.emin
+		var first_1 = find_first1_64((ys : uint64), (d.precision : int64))
+		var offset = (d.precision : @u) - 1 - (first_1 : @u)
+		ys = ys << offset
+		ye = d.emin - offset
+	;;
+
+	/*
+           Split x into 2^N * F * (1 + f), with F = 1 + j/128 (some
+           j) and f tiny. Compute F naively by truncation. Compute
+           f via f = (x' - 1 - F)/(1 + F), where 1/(1 + F) is
+           precomputed and x' is x/2^N. 128 is chosen so that we
+           can borrow some constants from log-impl.myr.
+
+           [Tan90] hints at a method of computing x^y which may be
+           comparable to this approach, but which is unfortunately
+           has not been elaborated on (as far as I can discover).
+	 */
+	var N = xe
+	var j, F, Fn, Fe, Fs
+	var xprime = d.assem(false, 0, xs)
+
+	if need_round_away(0, (xs : uint64), (d.sig8last : int64))
+		F = d.frombits((d.tobits(xprime) & d.sig8mask) + (1 << d.sig8last))
+	else
+		F = d.frombits(d.tobits(xprime) & d.sig8mask)
+	;;
+
+	(Fn, Fe, Fs) = d.explode(F)
+
+	if Fe != 0
+		j = 128
+	else
+		j = 0x7f & ((d.sig8mask & Fs) >> d.sig8last)
+	;;
+
+	var f = (xprime - F)/F
+
+	/*
+	   y could actually be above integer infinity, in which
+	   case x^y is most certainly infinity of 0. More importantly,
+	   we can't safely compute M (below).
+	 */
+	if x > (1.0 : @f)
+		if y > d.frombits(d.eps_inf_border)
+			-> d.frombits(d.inf)
+		elif -y > d.frombits(d.eps_inf_border)
+			-> (0.0 : @f)
+		;;
+	elif x < (1.0 : @f)
+		if y > d.frombits(d.eps_zero_border) && x < (1.0 : @f)
+			-> (0.0 : @f)
+		elif -y > d.frombits(d.eps_zero_border) && x < (1.0 : @f)
+			-> d.frombits(d.inf)
+		;;
+	;;
+
+	/* Split y into M + y', with |y'| <= 0.5 and M an integer */
+	var M = floor(y)
+	var yprime = y - M
+	if yprime > (0.5 : @f)
+		M += (1.0 : @f)
+		yprime = y - M
+	elif yprime < (-0.5 : @f)
+		M -= (1.0: @f)
+		yprime = y - M
+	;;
+
+	/*
+	   We'll multiply y' by log(2) and try to keep extra
+	   precision, so we need to split y'. Since the high word
+	   of C has 24 - 10 = 14 significant bits (53 - 16 = 37 in
+	   flt64 case), we ensure 15 (39) trailing zeroes in
+	   yprime_hi.  (We also need this for y'*N, M, &c).
+	 */
+	var yprime_hi = d.frombits(d.tobits(yprime) & d.split_prec_mask)
+	var yprime_lo = yprime - yprime_hi
+	var yprimeN_hi = d.frombits(d.tobits((N : @f) * yprime) & d.split_prec_mask)
+	var yprimeN_lo = fma((N : @f),  yprime, -yprimeN_hi)
+	var M_hi = d.frombits(d.tobits(M) & d.split_prec_mask)
+	var M_lo = M - M_hi
+
+	/* 
+	   At this point, we've built out
+	   
+	       x^y = [ 2^N * F * (1 + f) ]^(M + y')
+	
+	   where N, M are integers, F is well-known, and f, y' are
+	   tiny. So we can get to computing
+
+	        /-1-\     /-------------------2--------------------------\     /-3--\
+	       2^(N*M) * exp(log(F)*y' + log2*N*y' + log(F)*M + M*log(1+f)) * (1+f)^y'
+
+	   where 1 can be handled by scale2, 2 we can mostly fake
+	   by sticking high-precision values for log(F) and log(2)
+	   through exp(), and 3 is composed of small numbers,
+	   therefore can be reasonably approximated by a Taylor
+	   expansion.
+	 */
+
+	/* t2 */
+	var log2_lo, log2_hi, Cu_hi, Cu_lo
+	(log2_hi, log2_lo) = d.C[128]
+	(Cu_hi, Cu_lo) = d.C[j]
+
+	var es : @f[20]
+	std.slfill(es[:], (0.0 : @f))
+
+	/* log(F) * y' */
+	es[0] = d.frombits(Cu_hi) * yprime_hi
+	es[1] = d.frombits(Cu_lo) * yprime_hi
+	es[2] = d.frombits(Cu_hi) * yprime_lo
+	es[3] = d.frombits(Cu_lo) * yprime_lo
+
+	/* log(2) * N * y' */
+	es[4] = d.frombits(log2_hi) * yprimeN_hi
+	es[5] = d.frombits(log2_lo) * yprimeN_hi
+	es[6] = d.frombits(log2_hi) * yprimeN_lo
+	es[7] = d.frombits(log2_lo) * yprimeN_lo
+
+	/* log(F) * M */
+	es[8] = d.frombits(Cu_hi) * M_hi
+	es[9] = d.frombits(Cu_lo) * M_hi
+	es[10] = d.frombits(Cu_hi) * M_lo
+	es[11] = d.frombits(Cu_lo) * M_lo
+
+	/* log(1 + f) * M */
+	var lf = log1p(f)
+	var lf_hi = d.frombits(d.tobits(lf) & d.split_prec_mask)
+	var lf_lo = lf - lf_hi
+	es[12] = lf_hi * M_hi
+	es[13] = lf_lo * M_hi
+	es[14] = lf_hi * M_lo
+	es[15] = lf_lo * M_lo
+
+	/*
+	   The correct way to handle this would be to compare
+	   magnitudes of eis and parenthesize the additions correctly.
+	   We take the cheap way out.
+	 */
+	var exp_hi = priest_sum(es[0:16])
+
+	/*
+	   We would like to just compute exp(exp_hi) * exp(exp_lo).
+	   However, if that takes us into subnormal territory, yet
+	   N * M is large, that will throw away a few bits of
+	   information. We can correct for this by adding in a few
+	   copies of P*log(2), then subtract off P when we compute
+	   scale2() at the end.
+
+	   We also have to be careful that P doesn't have too many
+	   significant bits, otherwise we throw away some information
+	   of log2_hi.
+	 */
+	var P = -rn(exp_hi / d.frombits(log2_hi))
+	var P_f = (P : @f)
+	P_f = d.frombits(d.tobits(P_f) & d.split_prec_mask2)
+	P = rn(P_f)
+
+	es[16] = P_f * d.frombits(log2_hi)
+	es[17] = P_f * d.frombits(log2_lo)
+	exp_hi = priest_sum(es[0:18])
+	es[18] = -exp_hi
+	var exp_lo = priest_sum(es[0:19])
+
+
+	var t2 = exp(exp_hi) * exp(exp_lo)
+
+	/*
+	   t3: Abbreviated Taylor expansion for (1 + f)^y' - 1.
+	   Since f is on the order of 2^-7 (and y' is on the order
+	   of 2^-1), we need to go up to f^3 for single-precision,
+	   and f^7 for double. We can then compute (1 + t3) * t2
+
+	   The expansion is \Sum_{k=1}^{\infty} {y' \choose k} x^k
+	 */
+	var terms : @f[10] = [
+		(0.0 : @f),  (0.0 : @f),  (0.0 : @f),  (0.0 : @f),  (0.0 : @f),
+		(0.0 : @f),  (0.0 : @f),  (0.0 : @f),  (0.0 : @f),  (0.0 : @f),
+	]
+	var current = (1.0 : @f)
+	for var j = 0; j <= d.itercount; ++j
+		current = current * f * (yprime - (j : @f)) / ((j : @f) + (1.0 : @f))
+		terms[j] = current
+	;;
+	var t3 = priest_sum(terms[0:d.itercount + 1])
+
+	var total_exp_f = (N : @f) * M - (P : @f)
+	if total_exp_f > ((d.emax - d.emin + d.precision + 1) : @f)
+		-> d.frombits(d.inf)
+	elif total_exp_f < -((d.emax - d.emin + d.precision + 1) : @f)
+		-> (0.0 : @f)
+	;;
+
+	/*
+	   Pull t2's exponent out so that we don't hit subnormal
+	   calculation with the t3 multiplication
+	 */
+	var t2n, t2e, t2s
+	(t2n, t2e, t2s) = d.explode(t2)
+
+	if t2e < d.emin
+		var t2_first_1 = find_first1_64((t2s : uint64), (d.precision : int64))
+		var t2_offset = (d.precision : @u) - 1 - (t2_first_1 : @u)
+		t2s = t2s << t2_offset
+		t2e = d.emin - (t2_offset : @i)
+	;;
+
+	t2 = d.assem(t2n, 0, t2s)
+	P -= t2e
+
+	var base = fma(t2, t3, t2)
+	-> scale2(base, N * rn(M) - P)
+}

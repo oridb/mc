@@ -1,0 +1,4 @@
+The files in this directory are only useful for understanding
+derivation of constants. If you wish to improve a file like
+sqrt-impl.myr, and are curious as to how certain constants were
+derived, this might hold some answers.

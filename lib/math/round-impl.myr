@@ -3,14 +3,14 @@ use std
 use "util"
 
 pkg math =
-	const rn64 : (f : flt64 -> int64)
-	const rn32 : (f : flt32 -> int32)
+	const rn64 : (x : flt64 -> int64)
+	const rn32 : (x : flt32 -> int32)
 ;;
 
-const rn64 = {f : flt64
+const rn64 = {x : flt64
 	var n : bool, e : int64, s : uint64
 
-	(n, e, s) = std.flt64explode(f)
+	(n, e, s) = std.flt64explode(x)
 
 	if e >= 63
 		-> -9223372036854775808
@@ -38,10 +38,10 @@ const rn64 = {f : flt64
 	;;
 }
 
-const rn32 = {f : flt32
+const rn32 = {x : flt32
 	var n : bool, e : int32, s : uint32
 
-	(n, e, s) = std.flt32explode(f)
+	(n, e, s) = std.flt32explode(x)
 
 	if e >= 31
 		-> -2147483648

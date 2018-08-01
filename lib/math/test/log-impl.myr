@@ -1,0 +1,742 @@
+use std
+use math
+use testr
+
+/*
+   Note: a major part of the algorithms are the C constants. They
+   are tested extensively in log{,1p}0{1,2}
+ */
+const main = {
+	testr.run([
+		[.name="log-01", .fn = log01],
+		[.name="log-02", .fn = log02],
+		[.name="log-03", .fn = log03],
+		[.name="log-04", .fn = log04],
+		[.name="log1p-01", .fn = log1p01],
+		[.name="log1p-02", .fn = log1p02],
+		[.name="log1p-03", .fn = log1p03],
+		[.name="log1p-04", .fn = log1p04],
+	][:])
+}
+
+const log01 = {c
+	var inputs : (uint32, uint32)[:] = [
+		(0x00000000, 0xff800000),
+		(0x01000000, 0xc2ad496b),
+		(0x3f060000, 0xbf25b7eb),
+		(0x3f871b00, 0x3d5d49cd),
+		(0x3f710000, 0xbd77518e),
+		(0x4effac00, 0x41abe3e7),
+		(0x477fb7b6, 0x41316d93),
+		(0x41ff8653, 0x405db02b),
+		(0x7f800000, 0x7f800000),
+		(0x3f800000, 0x00000000),
+		(0x000009a4, 0xc2beef7f),
+		(0x00000002, 0xc2cd2bec), /* C[0] */
+		(0x61017aaf, 0x4239cf35), /* C[1] */
+		(0x5702333f, 0x4202613d), /* C[2] */
+		(0x27837177, 0xc204fa63), /* ...  */
+		(0x3603beba, 0xc152415d),
+		(0x6c04905b, 0x4276e689),
+		(0x4805d58d, 0x413d3fca),
+		(0x3e0692bf, 0xc001e117),
+		(0x4f08632d, 0x41ac6883),
+		(0x4b88da49, 0x41859e88),
+		(0x0389bcca, 0xc2a6356c),
+		(0x720b6590, 0x428c2fb3),
+		(0x1c0c5e59, 0xc2447c1e),
+		(0x7b0cf7a7, 0x42a5297b),
+		(0x488e1f1c, 0x41494d03),
+		(0x7a8f5038, 0x42a3cf0a),
+		(0x35905a30, 0xc15be22b),
+		(0x49113e8d, 0x4154bd2b),
+		(0x5811f2be, 0x420861b9),
+		(0x73129cb1, 0x428f0f52),
+		(0x6f93b5c4, 0x42855ee6),
+		(0x5894d094, 0x420b3b6c),
+		(0x08967e92, 0xc2982b29),
+		(0x3396e716, 0xc183c476),
+		(0x68981c93, 0x42640ae9),
+		(0x6718afeb, 0x425bbd6e),
+		(0x000009a4, 0xc2beef7f),
+		(0x6c1a8cc2, 0x427783ac),
+		(0x609bff02, 0x4237c835),
+		(0x229d097e, 0xc21ffe0a),
+		(0x031e0ed1, 0xc2a751dc),
+		(0x491e82ab, 0x4156232c),
+		(0x629fabc8, 0x4242f72e),
+		(0x7b2155b9, 0x42a56e93),
+		(0x36a205aa, 0xc143daeb),
+		(0x2322aae2, 0xc21d142f),
+		(0x1fa46ee3, 0xc230719c),
+		(0x3ba4c8ff, 0xc0a95cb2),
+		(0x0e26770d, 0xc288b7b7),
+		(0x1d273361, 0xc23e3d6e),
+		(0x01283d1c, 0xc2acbd76),
+		(0x5d2967a1, 0x4224b42b),
+		(0x2c29e575, 0xc1d5ff25),
+		(0x12ab16d1, 0xc2785f53),
+		(0x39ac732d, 0xc10050a6),
+		(0x41ad00fe, 0x4044ba54),
+		(0x522da14e, 0x41cf9c59),
+		(0x6caf1807, 0x427ac941),
+		(0x6a30133d, 0x426cf210),
+		(0x4b309bc3, 0x41821d44),
+		(0x043197b1, 0xc2a45069),
+		(0x00b3484b, 0xc2adffcd),
+		(0x6d347bde, 0x427dae16),
+		(0x68348026, 0x4261f45a),
+		(0x5c35d8c1, 0x421f712d),
+		(0x0c372300, 0xc28e1269),
+		(0x6737b23e, 0x425c7ac2),
+		(0x5c38b8d6, 0x421f813d),
+		(0x753a038d, 0x429514c2),
+		(0x0abac215, 0xc292310f),
+		(0x333bad9e, 0xc187915f),
+		(0x623cc68a, 0x4240dcdc),
+		(0x2b3e04e8, 0xc1e03107),
+		(0x473ef1b8, 0x412cc12a),
+		(0x3b3f8f2e, 0xc0bab99c),
+		(0x7140973b, 0x428a0f6a),
+		(0x44c1d017, 0x40eb152c),
+		(0x2ec2d4dc, 0xc1b92cda),
+		(0x6bc47734, 0x4275b39e),
+		(0x5cc54778, 0x42228a5e),
+		(0x78463aba, 0x429d86ab),
+		(0x1a46981f, 0xc24e2fee),
+		(0x334802ab, 0xc1870f08),
+		(0x68c97d24, 0x42652ac6),
+		(0x464a3cc7, 0x41177e43),
+		(0x48cb418c, 0x414f067e),
+		(0x71cc037f, 0x428b8fcf),
+		(0x2d4d0ef7, 0xc1c966c5),
+		(0x6cce3dc1, 0x427b70e9),
+		(0x2e4f6e9c, 0xc1be3812),
+		(0x32cf8b91, 0xc18c4edd),
+		(0x0d515df5, 0xc28b0818),
+		(0x1cd1e03f, 0xc2401a70),
+		(0x75535300, 0x42955613),
+		(0x0cd3dd45, 0xc28c64ea),
+		(0x1cd566e5, 0xc2400960),
+		(0x57d628d5, 0x4207249d),
+		(0x75d75209, 0x4296c28e),
+		(0x0fd8044a, 0xc28409a1),
+		(0x0358fcb6, 0xc2a6af9e),
+		(0x4d5a2f36, 0x4199fc7c),
+		(0x3adb5dff, 0xc0cc9173),
+		(0x0bdc4079, 0xc28f16d1),
+		(0x12dcb6e2, 0xc2775a87),
+		(0x175e379b, 0xc25e5f89),
+		(0x38df6a31, 0xc1125a5c),
+		(0x3d601f07, 0xc039f502),
+		(0x4ae113c3, 0x417d04b7),
+		(0x77e22cfa, 0x429c674e),
+		(0x6fe31066, 0x42863b0d),
+		(0x486401b0, 0x4145c607),
+		(0x0f653fb1, 0xc2854e14),
+		(0x39659200, 0xc106d3e7),
+		(0x51e6f204, 0x41cc58fc),
+		(0x13e7d980, 0xc2719c90),
+		(0x5f691614, 0x42311213),
+		(0x68ea445b, 0x4265c51f),
+		(0x1c6b20bf, 0xc2426be1),
+		(0x7b6b9715, 0x42a6306d),
+		(0x606d0172, 0x4236aeb7),
+		(0x3a6dea49, 0xc0e026ca),
+		(0x0beecc4f, 0xc28eed6d),
+		(0x056fdd5a, 0xc2a0f0bb),
+		(0x4df0dd4c, 0x41a05296),
+		(0x3c71cfbc, 0xc086e8ac),
+		(0x5e736a8a, 0x422bb2ea),
+		(0x47f3e7ff, 0x413bc301),
+		(0x17f57b61, 0xc25b33cc),
+		(0x3675ceb6, 0xc14846c5),
+		(0x75f6c0f1, 0x42970853),
+		(0x1077f9f5, 0xc2826017),
+		(0x7278e907, 0x428d588a),
+		(0x62f99bda, 0x4244c0af),
+		(0x407af5c4, 0x3faee68b),
+		(0x067c2ef4, 0xc29e114e),
+		(0x7f7d456e, 0x42b16c9b),
+		(0x4ffe543f, 0x41b6f03f),
+		(0x4efebc08, 0x41abdc61),
+		(0x2f7ffc46, 0xc1b17236), /* C[128] */
+	][:]
+
+	for (x, y) : inputs
+		var xf : flt32 = std.flt32frombits(x)
+		var yf : flt32 = std.flt32frombits(y)
+		var rf = math.log(xf)
+		testr.check(c, rf == yf,
+			"log(0x{b=16,w=8,p=0}) should be 0x{b=16,w=8,p=0}, was 0x{b=16,w=8,p=0}",
+			x, y, std.flt32bits(rf))
+	;;
+
+	for nan : [ 0x7fc00000, 0x7fd00000, 0x7fffffff, 0xc147a5e3 ][:]
+	testr.check(c, std.isnan(math.log(std.flt32frombits(nan))),
+		"log(0x{b=16,w=8,p=0}) should be NaN", nan)
+	;;
+}
+
+const log02 = {c
+	var inputs : (uint64, uint64)[:] = [
+		(0x0000000000000000, 0xfff0000000000000),
+		(0x4000000000000000, 0x3fe62e42fefa39ef),
+		(0x7ff0000000000000, 0x7ff0000000000000),
+		(0x3ff0000000000000, 0x0000000000000000),
+		(0x3fee0fabffc702a3, 0xbfafffffbbdf52b4),
+		(0x6834802690008002, 0x407bea2785dd467d),
+		(0x00000000000009a4, 0xc08705080132de98),
+		(0x49113e8d334802ab, 0x4059518f80c8b520),
+		(0x70fffac8f637436f, 0x408100f58e19ab8f),
+		(0x6900000000000002, 0x407c765cf8301757), /* C[0] */
+		(0x6a30133d035de442, 0x407d4927a622132e), /* C[1] */
+		(0x248037d89731238d, 0xc0730472f99e1f4a), /* C[2] */
+		(0x0ab05ff44dd62adb, 0xc082744e51a6f0b5), /* ...  */
+		(0x2b108aea88779bcb, 0xc06cef4a2f1c6596),
+		(0x4b309bc3b92e2dfc, 0x405f3371b7645f6c),
+		(0x1990c9fa6a4c0713, 0xc07a98b52fca339e),
+		(0x0740d2f4341bcac4, 0xc083a512fd9739f7),
+		(0x2c4100ab8cb78c63, 0xc06b48fa89cd7e6c),
+		(0x4ae113c3a6bc3a99, 0x405e576b1bac2f98),
+		(0x49113e8d334802ab, 0x4059518f80c8b520),
+		(0x54815a632f7ffc46, 0x406c840d22b38727),
+		(0x482175028dd2b016, 0x4056b8ec87c62e57),
+		(0x3f7197c085acb2f4, 0xc015cd158b41fb6a),
+		(0x4651b338cfcc7ad5, 0x4051b353db2b8859),
+		(0x1cd1e03f717eff79, 0xc07857016bce40ea),
+		(0x0261f48674017371, 0xc0855513d4bd24c2),
+		(0x7b922a8c7d7b8896, 0x4084ab1d75ac1cd5),
+		(0x3fb23d2c3bf35ec8, 0xc0052208742a9d29),
+		(0x5f92651d0e7b356e, 0x4075edf38e954d24),
+		(0x7f7285f6b3e07dfa, 0x4086031261f39110),
+		(0x2322aae2d2150337, 0xc073f62fbbbec476),
+		(0x7eb2bb6da1727619, 0x4085c09e8f1dadd9),
+		(0x71d2e2eb43d8256d, 0x40814a60e0b279cb),
+		(0x74630f734df0dd4c, 0x40822dcdd6310ba8),
+		(0x6fe31066fa71ca7a, 0x40809e8d868734a7),
+		(0x00000000000009a4, 0xc08705080132de98),
+		(0x5e736a8abf6dda11, 0x40752730815a6166),
+		(0x6903781bd44c88f2, 0x407c7980c8a083ab),
+		(0x28b3963c1648a637, 0xc0701a602dded579),
+		(0x6f93b5c49bb1bad3, 0x40808317f139e8e2),
+		(0x6133e925e6bf8a12, 0x40770f91495b0b5f),
+		(0x3c44077c04158248, 0xc04455e5edbac018),
+		(0x6e042c14d7b5903c, 0x407ff14c8c3b9be2),
+		(0x0dc44db612e4d131, 0xc08162df301e5813),
+		(0x4f646b7b7f44f304, 0x40656e70d305a121),
+		(0x6834802690008002, 0x407bea2785dd467d),
+		(0x43d4a2bb177f4778, 0x40459d6223a7d41b),
+		(0x6634cc7aab4228cc, 0x407a877e7a78169b),
+		(0x5894d0947b2155b9, 0x407115cf1b30a32d),
+		(0x5624f4404ffe543f, 0x406ecac8a9c25223),
+		(0x58751ddd6052330d, 0x4070ffdbd350379f),
+		(0x7f75348c0f5498fb, 0x408604275047d724),
+		(0x7265517fa66418ae, 0x40817d410871254b),
+		(0x08158bfe5ae12b55, 0xc0835b01ec0d209d),
+		(0x39659200fba6c321, 0xc0521ed4910ed7c0),
+		(0x7635cba6522da14e, 0x4082cfafdb79820f),
+		(0x5c35d8c190aea62e, 0x407399d2e3f6c83c),
+		(0x36f6035fd99d5091, 0xc058dfa002d358b7),
+		(0x57d628d547f3e7ff, 0x407091b9f622cd4e),
+		(0x78463abad2eed0c7, 0x408386d5e3383f6b),
+		(0x4b76524c54f71c43, 0x405ff7cf887ecb05),
+		(0x524675375aaefb86, 0x40696dcc32c58d99),
+		(0x1806909d6b4d344f, 0xc07ba93c617cc0e8),
+		(0x7306c0360b296d7a, 0x4081b539dff3fe2b),
+		(0x3396e71654ada984, 0xc0611c4da154c729),
+		(0x51e6f204333bad9e, 0x4068e9668d521be8),
+		(0x1af71f4d0ff0979d, 0xc0799f9949497468),
+		(0x1d273361f32be48e, 0xc0781b61d584de4f),
+		(0x05776dbf84a723dc, 0xc084433c2faca744),
+		(0x541784f5f4f77091, 0x406bf2841f114315),
+		(0x2577a13952a873f2, 0xc07258125f58596d),
+		(0x01e7b0ed0c372300, 0xc0857f389ab75fb2),
+		(0x13e7d98039ac732d, 0xc07e8450364cae3a),
+		(0x1077f9f5782403b6, 0xc08073195883aa08),
+		(0x62e813931fa46ee3, 0x40783e0bf5cda73d),
+		(0x131831ae8a34c781, 0xc07f14422da7ff1f),
+		(0x4f08632da9f79134, 0x4064ef09d28eeda0),
+		(0x1eb87975b31b171e, 0xc0770544a50ec830),
+		(0x11989fbebae2eb0f, 0xc0800f1295e3f21e),
+		(0x5c38b8d6d96e1ffe, 0x40739bcd56c393a8),
+		(0x7278e907f500a3f8, 0x4081840b7f2ad445),
+		(0x73f90e51c4166808, 0x4082092d01e05c94),
+		(0x7a7927863ba4c8ff, 0x408449e7d7ea5790),
+		(0x504943add8ae6c70, 0x4066abc8767dbc43),
+		(0x481953e382eee069, 0x4056a4615edb9861),
+		(0x3e297530d3b5006a, 0xc033a307aa45595f),
+		(0x71799aa6bce3b976, 0x40812b8ab6921ace),
+		(0x28f9c062122d4255, 0xc06fd345b377c762),
+		(0x2c29e575a79ea752, 0xc06b67e06908d1f4),
+		(0x753a038d35905a30, 0x4082786127c0c498),
+		(0x3d9a1e1a1f21c1bc, 0xc039d97d98b10ccb),
+		(0x156a3759cb620ff3, 0xc07d78a18c7ae709),
+		(0x1bea5f7f0998cd3b, 0xc078f72383135970),
+		(0x6c1a8cc212dcb6e2, 0x407e9de4bd07d597),
+		(0x089a9e5f347220f2, 0xc0832cf47cf5e0f7),
+		(0x5c1abf7963c10a0c, 0x407386e1b0c37460),
+		(0x0f1ae87bb321fb89, 0xc080ec2b87d49467),
+		(0x407af5c43978f008, 0x4018448cf475c732),
+		(0x12ab16d1692d6449, 0xc07f601524bb16d3),
+		(0x48cb418c32cf8b91, 0x4058910d56870021),
+		(0x720b6590a8e3f54c, 0x40815dfd6485181b),
+		(0x46eb81a434b9f620, 0x40535ecb7294cc14),
+		(0x7b6b9715161c2442, 0x40849dd29d738baf),
+		(0x4eebb8fcb686a19f, 0x4064c6c75b7c96b0),
+		(0x4cfbe7fe8242657f, 0x4062176353551bf1),
+		(0x609bff020bdc4079, 0x4076a61dec83f7c3),
+		(0x0f5c17c620a239e8, 0xc080d5a506dd57ea),
+		(0x4f1c3cfb0a12764c, 0x406509e91a2092fc),
+		(0x2fac53e44bfddb93, 0xc0668ae29cc4834f),
+		(0x371c7eaeb3110aa5, 0xc05876628c3c6820),
+		(0x56fcaa4913caa832, 0x406ff52903fd288b),
+		(0x623cc68a255eedf9, 0x4077c6e7cd2766f5),
+		(0x4bfcde0e60de47ad, 0x4060b5948be5f1a9),
+		(0x285cf7151c6b20bf, 0xc07056a876ed47dd),
+		(0x44bd10aeecadc14d, 0x404aa358796a4dca),
+		(0x7f7d456ec4df8ff2, 0x408606bb7f61f92f),
+		(0x395d6841a6821a8a, 0xc052375b513417c1),
+		(0x33ed717b73129cb1, 0xc060a55c64cbc4e9),
+		(0x667dad261da3f8f5, 0x407ab98af553a20c),
+		(0x42cdc8a5274640b7, 0x403fd020a35da739),
+		(0x3a6dea498fa485ba, 0xc04e883bb08ae507),
+		(0x2b3e04e8f6266d83, 0xc06cafdc166f9da3),
+		(0x488e1f1c6db084f8, 0x4057e601112df1ff),
+		(0x6cce3dc1ca42a083, 0x407f19f86830564f),
+		(0x697e599a1e4afd5f, 0x407cce3d2d79ec2e),
+		(0x491e82abf353e79c, 0x40597613f67eb37a),
+		(0x169eabc19e6f453d, 0xc07ca3673fa3d24d),
+		(0x4efebc0847e20599, 0x4064e04285d5e27e),
+		(0x544eeb58043197b1, 0x406c3dcfe12bf3bb),
+		(0x27aeff1996633c47, 0xc070cf914713d900),
+		(0x6caf1807e61b6f03, 0x407f043c0805dba1),
+		(0x3aef3641195d57ab, 0xc04bbd04d4b5e1f2),
+		(0x2e4f6e9cea0e6903, 0xc0686f887e310813),
+		(0x4f5f7177b7abc69e, 0x40656612da92283f),
+		(0x629fabc84d5a2f36, 0x40780afb4bbfbe4c),
+		(0x418fce8b9cdac427, 0x40320409991d5e65),
+		(0x056fdd5a05ee0cf9, 0xc0844651eb4324d0),
+		(0x70fffac8f637436f, 0x408100f58e19ab8f), /* C[128] */
+	][:]
+
+	for (x, y) : inputs
+		var xf : flt64 = std.flt64frombits(x)
+		var yf : flt64 = std.flt64frombits(y)
+		var rf = math.log(xf)
+		testr.check(c, rf == yf,
+			"log(0x{b=16,w=16,p=0}) should be 0x{b=16,w=16,p=0}, was 0x{b=16,w=16,p=0}",
+			x, y, std.flt64bits(rf))
+	;;
+
+	for nan : [
+		0x7ff8000000000000,
+		0x7ff9000000000000,
+		0x7fffffffffffffff,
+		0xc147a5e354789328,
+	][:]
+	testr.check(c, std.isnan(math.log(std.flt64frombits(nan))),
+		"log(0x{b=16,w=16,p=0}) should be NaN", nan)
+	;;
+}
+
+const log03 = {c
+	/*
+	   The [Tan90], steps 1-3' implementation have error bounds
+	   of about 0.6 ulps, so we do not obtain last-bit accuracy.
+	   Here are some known-bad results.
+	 */
+
+	var inputs : (uint32, uint32, uint32)[:] = [
+		(0x3f610400, 0xbe041a91, 0xbe041a92),
+		(0x3fc70700, 0x3ee200bf, 0x3ee200c0),
+		(0x3f610400, 0xbe041a91, 0xbe041a92),
+		(0x3e360700, 0xbfdd18a7, 0xbfdd18a8),
+	][:]
+
+	for (x, y_perfect, y_acceptable) : inputs
+		var xf : flt32 = std.flt32frombits(x)
+		var ypf : flt32 = std.flt32frombits(y_perfect)
+		var yaf : flt32 = std.flt32frombits(y_acceptable)
+		var rf = math.log(xf)
+		if rf != ypf && rf != yaf
+		testr.fail(c, "log(0x{b=16,w=8,p=0}) was 0x{b=16,w=8,p=0}. It should have been 0x{b=16,w=8,p=0}, although we will also accept 0x{b=16,w=8,p=0}",
+			x, std.flt32bits(rf), y_perfect, y_acceptable)
+		;;
+	;;
+}
+
+const log04 = {c
+	/*
+	   The [Tan90], steps 1-3' implementation have error bounds
+	   of about 0.6 ulps, so we do not obtain last-bit accuracy.
+	   Here are some known-bad results.
+	 */
+
+	var inputs : (uint64, uint64, uint64)[:] = [
+		(0x3c71cfbc354934ae, 0xc0435ac0222f1703, 0xc0435ac0222f1704),
+		(0x35f0681e2059a1bb, 0xc05bb8387abe5fcf, 0xc05bb8387abe5fd0),
+		(0x40d268e6c4ad9588, 0x4023b04f15e91586, 0x4023b04f15e91585),
+	][:]
+
+	for (x, y_perfect, y_acceptable) : inputs
+		var xf : flt64 = std.flt64frombits(x)
+		var ypf : flt64 = std.flt64frombits(y_perfect)
+		var yaf : flt64 = std.flt64frombits(y_acceptable)
+		var rf = math.log(xf)
+		if rf != ypf && rf != yaf
+		testr.fail(c, "log(0x{b=16,w=16,p=0}) was 0x{b=16,w=16,p=0}. It should have been 0x{b=16,w=16,p=0}, although we will also accept 0x{b=16,w=16,p=0}",
+			x, std.flt64bits(rf), y_perfect, y_acceptable)
+		;;
+	;;
+}
+
+const log1p01 = {c
+	var inputs : (uint32, uint32)[:] = [
+		(0x00000000, 0x00000000),
+		(0xbf700700, 0xc0318e1e),
+		(0x69000000, 0x42661ff7), /* C[0] */
+		(0x61017aaf, 0x4239cf35), /* C[1] */
+		(0x5702333f, 0x4202613d), /* C[2] */
+		(0x6e030844, 0x4280f8e2), /* ...  */
+		(0xbf5f1ae3, 0xc00351a2),
+		(0x6c04905b, 0x4276e689),
+		(0x4805d58d, 0x413d3fd2),
+		(0x7c06e112, 0x42a7d8a8),
+		(0x4f08632d, 0x41ac6883),
+		(0x4b88da49, 0x41859e88),
+		(0x6b898457, 0x42744651),
+		(0x720b6590, 0x428c2fb3),
+		(0x5c0c2c03, 0x421e66a2),
+		(0x7b0cf7a7, 0x42a5297b),
+		(0x488e1f1c, 0x41494d06),
+		(0x7a8f5038, 0x42a3cf0a),
+		(0x768fe527, 0x4298b9fb),
+		(0x49113e8d, 0x4154bd2d),
+		(0x5811f2be, 0x420861b9),
+		(0x73129cb1, 0x428f0f52),
+		(0x6f93b5c4, 0x42855ee6),
+		(0x5894d094, 0x420b3b6c),
+		(0x3facbad0, 0x3f5aaba7),
+		(0x6f16daf7, 0x428406cc),
+		(0x68981c93, 0x42640ae9),
+		(0x6718afeb, 0x425bbd6e),
+		(0x4b19a1ed, 0x4180ffd5),
+		(0x6c1a8cc2, 0x427783ac),
+		(0x609bff02, 0x4237c835),
+		(0x407af5c4, 0x3fcbf9dc),
+		(0x459de4ba, 0x41087217),
+		(0x491e82ab, 0x4156232d),
+		(0x629fabc8, 0x4242f72e),
+		(0x7b2155b9, 0x42a56e93),
+		(0x7ba20272, 0x42a6d39a),
+		(0x44229f49, 0x40cf561a),
+		(0x782403b6, 0x429d25a9),
+		(0x5624f440, 0x41fb8fe5),
+		(0x7e263c63, 0x42adcf3f),
+		(0x6026873d, 0x42354554),
+		(0x52a873f2, 0x41d4e9ec),
+		(0x5d2967a1, 0x4224b42b),
+		(0x41a1dbe2, 0x40438dc0),
+		(0x52ab609c, 0x41d50d2b),
+		(0x632ba15e, 0x424606ed),
+		(0x692d6449, 0x426756c6),
+		(0x522da14e, 0x41cf9c59),
+		(0x6caf1807, 0x427ac941),
+		(0x6a30133d, 0x426cf210),
+		(0x4b309bc3, 0x41821d44),
+		(0x47b19da7, 0x4136aff5),
+		(0x7eb2bb6d, 0x42af573f),
+		(0x6d347bde, 0x427dae16),
+		(0x68348026, 0x4261f45a),
+		(0x5c35d8c1, 0x421f712d),
+		(0x4fb68eb5, 0x41b44934),
+		(0x6737b23e, 0x425c7ac2),
+		(0x5c38b8d6, 0x421f813d),
+		(0x753a038d, 0x429514c2),
+		(0x733b43e1, 0x428f8ca0),
+		(0x613c001e, 0x423b4d15),
+		(0x623cc68a, 0x4240dcdc),
+		(0x6e3e4d6b, 0x4281b7f2),
+		(0x473ef1b8, 0x412cc13f),
+		(0x50c01f91, 0x41bfc8ef),
+		(0x7140973b, 0x428a0f6a),
+		(0x44c1d017, 0x40eb1a74),
+		(0x7d42efec, 0x42ab5b02),
+		(0x6bc47734, 0x4275b39e),
+		(0x5cc54778, 0x42228a5e),
+		(0x78463aba, 0x429d86ab),
+		(0x50473690, 0x41ba8795),
+		(0x4fc7e753, 0x41b5031a),
+		(0x68c97d24, 0x42652ac6),
+		(0x464a3cc7, 0x41177e94),
+		(0x48cb418c, 0x414f0681),
+		(0x71cc037f, 0x428b8fcf),
+		(0x6b4d344f, 0x42731a66),
+		(0x6cce3dc1, 0x427b70e9),
+		(0xbe43ff34, 0xbe598dc6),
+		(0x42cdc8a5, 0x40949654),
+		(0x5450d14b, 0x41e74489),
+		(0x6052330d, 0x423633cf),
+		(0x75535300, 0x42955613),
+		(0x67d3bac5, 0x425fd1fa),
+		(0x43d4a2bb, 0x40c1c32f),
+		(0x57d628d5, 0x4207249d),
+		(0x75d75209, 0x4296c28e),
+		(0x65d79618, 0x4254cd54),
+		(0x665934fc, 0x42579ac8),
+		(0x4d5a2f36, 0x4199fc7c),
+		(0x4e5b5517, 0x41a51e5d),
+		(0x51dba523, 0x41cbf23d),
+		(0x51dd3656, 0x41cc00cd),
+		(0x3f3b4d9e, 0x3f0c9047),
+		(0x745f3fc3, 0x4292ac65),
+		(0x43dfe6db, 0x40c36926),
+		(0x4ae113c3, 0x417d04b7),
+		(0x77e22cfa, 0x429c674e),
+		(0xbf6399e7, 0xc00cb9a1),
+		(0x486401b0, 0x4145c60b),
+		(0x76e50770, 0x4299a7f1),
+		(0x53661704, 0x41dcf415),
+		(0x51e6f204, 0x41cc58fc),
+		(0x62e81393, 0x4244761b),
+		(0x5f691614, 0x42311213),
+		(0x68ea445b, 0x4265c51f),
+		(0x4beb7a84, 0x4189f603),
+		(0x7b6b9715, 0x42a6306d),
+		(0x606d0172, 0x4236aeb7),
+		(0x6a6d8093, 0x426e2483),
+		(0x4aef46b9, 0x417dff4a),
+		(0x40cff51e, 0x4000f145),
+		(0x4df0dd4c, 0x41a05296),
+		(0x6771f0ee, 0x425d94c7),
+		(0x5e736a8a, 0x422bb2ea),
+		(0x47f3e7ff, 0x413bc30a),
+		(0x58751ddd, 0x420a74a6),
+		(0x6675ba2a, 0x4258191d),
+		(0x75f6c0f1, 0x42970853),
+		(0x6d77f9a2, 0x427ef365),
+		(0x7278e907, 0x428d588a),
+		(0x62f99bda, 0x4244c0af),
+		(0x5b7b5415, 0x421b30f9),
+		(0x4cfbe7fe, 0x41959740),
+		(0x3f79f629, 0x3f2e6894),
+		(0x4ffe543f, 0x41b6f03f),
+		(0x4efebc08, 0x41abdc61),
+		(0x70fffac8, 0x42893e34), /* C[128] */
+	][:]
+
+	for (x, y) : inputs
+		var xf : flt32 = std.flt32frombits(x)
+		var yf : flt32 = std.flt32frombits(y)
+		var rf = math.log1p(xf)
+		testr.check(c, rf == yf,
+			"log1p(0x{b=16,w=8,p=0}) should be 0x{b=16,w=8,p=0}, was 0x{b=16,w=8,p=0}",
+			x, y, std.flt32bits(rf))
+	;;
+}
+
+const log1p02 = {c
+	var inputs : (uint64, uint64)[:] = [
+		(0x0000000000000000, 0x0000000000000000),
+		(0x6900000000000002, 0x407c765cf8301757), /* C[0] */
+		(0x6a30133d035de442, 0x407d4927a622132e), /* C[1] */
+		(0x545031c8b889228e, 0x406c3f4c487ae367), /* C[2] */
+		(0xbfdf2f686343ab7f, 0xbfe56047e9fe5abe), /* ...  */
+		(0x52b08a1d750f04ff, 0x4069ff462f9f1cbc),
+		(0x4b309bc3b92e2dfc, 0x405f3371b7645f6c),
+		(0x5580cc2d69e348b5, 0x406de5e6ca65b1cd),
+		(0x4fe0e879a2736200, 0x406619d8f80fa200),
+		(0x4ad0fbf9d10cd8a2, 0x405e2ab53092727b),
+		(0x4ae113c3a6bc3a99, 0x405e576b1bac2f98),
+		(0x49113e8d334802ab, 0x4059518f80c8b520),
+		(0x54815a632f7ffc46, 0x406c840d22b38727),
+		(0x482175028dd2b016, 0x4056b8ec87c62e57),
+		(0x46719e36e5f0da58, 0x40520bc0c4781e1f),
+		(0x4651b338cfcc7ad5, 0x4051b353db2b8859),
+		(0x41a1dbe267002305, 0x4032d32be3bb9cb9),
+		(0x5811f2beb37f6007, 0x4070bab72614d157),
+		(0x7b922a8c7d7b8896, 0x4084ab1d75ac1cd5),
+		(0x74a2309e5aa7b2e9, 0x4082439c5e5fec3b),
+		(0x40d268e6c4ad9588, 0x4023b05609c9a18b),
+		(0x7f7285f6b3e07dfa, 0x4086031261f39110),
+		(0x54f29bb41ec2d2b9, 0x406d218d0b1c6484),
+		(0x7eb2bb6da1727619, 0x4085c09e8f1dadd9),
+		(0x71d2e2eb43d8256d, 0x40814a60e0b279cb),
+		(0x74630f734df0dd4c, 0x40822dcdd6310ba8),
+		(0x6fe31066fa71ca7a, 0x40809e8d868734a7),
+		(0x50e345290de2dd6c, 0x406780ec610f0c26),
+		(0x5e736a8abf6dda11, 0x40752730815a6166),
+		(0x6903781bd44c88f2, 0x407c7980c8a083ab),
+		(0x78b39b662df2692e, 0x4083aca5c3801c1c),
+		(0x6f93b5c49bb1bad3, 0x40808317f139e8e2),
+		(0x6133e925e6bf8a12, 0x40770f91495b0b5f),
+		(0x5a63fa758c92398a, 0x407256c5e940a2db),
+		(0x6e042c14d7b5903c, 0x407ff14c8c3b9be2),
+		(0x5f7445e6b0eee22e, 0x4075d9537ce0389b),
+		(0x4f646b7b7f44f304, 0x40656e70d305a121),
+		(0x6834802690008002, 0x407bea2785dd467d),
+		(0x43d4a2bb177f4778, 0x40459d6223a7d41b),
+		(0x6634cc7aab4228cc, 0x407a877e7a78169b),
+		(0x5894d0947b2155b9, 0x407115cf1b30a32d),
+		(0x5624f4404ffe543f, 0x406ecac8a9c25223),
+		(0x58751ddd6052330d, 0x4070ffdbd350379f),
+		(0x7f75348c0f5498fb, 0x408604275047d724),
+		(0x7265517fa66418ae, 0x40817d410871254b),
+		(0x7515838bfa241f5a, 0x40826bc50abc4fa5),
+		(0x45459662ae3323f5, 0x404d9bc7c072e470),
+		(0x7635cba6522da14e, 0x4082cfafdb79820f),
+		(0x5c35d8c190aea62e, 0x407399d2e3f6c83c),
+		(0x4555f61f1c0c5e59, 0x404df6b397ade3ba),
+		(0x57d628d547f3e7ff, 0x407091b9f622cd4e),
+		(0x78463abad2eed0c7, 0x408386d5e3383f6b),
+		(0x4b76524c54f71c43, 0x405ff7cf887ecb05),
+		(0x524675375aaefb86, 0x40696dcc32c58d99),
+		(0x68569f0d424db12a, 0x407c01e8fcc54a3b),
+		(0x7306c0360b296d7a, 0x4081b539dff3fe2b),
+		(0x4ad6e0cb2febd13d, 0x405e3dc5d9b757f7),
+		(0x51e6f204333bad9e, 0x4068e9668d521be8),
+		(0x4097178f382d0b5a, 0x401d32395ff3dc65),
+		(0x7f373de46ebc9a27, 0x4085eeb4db53f788),
+		(0x66d76e22a34e58cd, 0x407af84dc23a7f99),
+		(0x541784f5f4f77091, 0x406bf2841f114315),
+		(0x627797a59dd57660, 0x4077f016d94fac5c),
+		(0x7ab7bb38889422cf, 0x40845f9ed64c4859),
+		(0x4fc7e75368981c93, 0x4065f890d0df7af1),
+		(0x75d8018df3774adb, 0x4082af304ec36d3f),
+		(0x62e813931fa46ee3, 0x40783e0bf5cda73d),
+		(0x75984e941fdcceb2, 0x4082991b8dfdda1c),
+		(0x4f08632da9f79134, 0x4064ef09d28eeda0),
+		(0x4ee87d4f36b08d11, 0x4064c2cf83f46cf4),
+		(0x46a8931cf6708831, 0x4052a622d2cf5019),
+		(0x5c38b8d6d96e1ffe, 0x40739bcd56c393a8),
+		(0x7278e907f500a3f8, 0x4081840b7f2ad445),
+		(0x73f90e51c4166808, 0x4082092d01e05c94),
+		(0x7a7927863ba4c8ff, 0x408449e7d7ea5790),
+		(0x504943add8ae6c70, 0x4066abc8767dbc43),
+		(0x481953e382eee069, 0x4056a4615edb9861),
+		(0x6b8984577920fba9, 0x407e397207c69605),
+		(0x71799aa6bce3b976, 0x40812b8ab6921ace),
+		(0x6019b68e88bc2e04, 0x40764c0873609927),
+		(0x4bf9d05bd54aa5c3, 0x4060b200ae465dfa),
+		(0x753a038d35905a30, 0x4082786127c0c498),
+		(0x617a151591b1b79f, 0x4077403fbb1aa8c9),
+		(0x503a33bad761d1c1, 0x406696c4be84ff41),
+		(0x4d2a6cc069c8de6f, 0x4062582f440da781),
+		(0x6c1a8cc212dcb6e2, 0x407e9de4bd07d597),
+		(0x6b5a9349dd94a791, 0x407e18d31a0f5866),
+		(0x5c1abf7963c10a0c, 0x407386e1b0c37460),
+		(0x4d2ad7c63e651a60, 0x406258afdaa5e19a),
+		(0x407af5c43978f008, 0x401846ebf755d962),
+		(0x73cb2d9a04724837, 0x4081f930d140b8b3),
+		(0x48cb418c32cf8b91, 0x4058910d56870021),
+		(0x720b6590a8e3f54c, 0x40815dfd6485181b),
+		(0x46eb81a434b9f620, 0x40535ecb7294cc14),
+		(0x7b6b9715161c2442, 0x40849dd29d738baf),
+		(0x4eebb8fcb686a19f, 0x4064c6c75b7c96b0),
+		(0x4cfbe7fe8242657f, 0x4062176353551bf1),
+		(0x609bff020bdc4079, 0x4076a61dec83f7c3),
+		(0x7b9c14acd61754cb, 0x4084ae996873a75c),
+		(0x4f1c3cfb0a12764c, 0x406509e91a2092fc),
+		(0x6cfc6da63a428918, 0x407f3a4094ee1891),
+		(0x74ec84ae3e4aeb42, 0x40825d639229d899),
+		(0x56fcaa4913caa832, 0x406ff52903fd288b),
+		(0x623cc68a255eedf9, 0x4077c6e7cd2766f5),
+		(0x4bfcde0e60de47ad, 0x4060b5948be5f1a9),
+		(0x7b0cf7a77eff4d34, 0x40847cf0fbe4ff93),
+		(0x44bd10aeecadc14d, 0x404aa358796a4dca),
+		(0x7f7d456ec4df8ff2, 0x408606bb7f61f92f),
+		(0x7b8d69195829f3f8, 0x4084a96c99b76f20),
+		(0x7f6d78ed8101a55a, 0x4086013df53b153f),
+		(0x667dad261da3f8f5, 0x407ab98af553a20c),
+		(0x42cdc8a5274640b7, 0x403fd020a35da73e),
+		(0x5a6de65a705a667d, 0x40725d396e1dd345),
+		(0x795dfa770c749b2c, 0x4083e77ef991f95a),
+		(0x488e1f1c6db084f8, 0x4057e601112df1ff),
+		(0x6cce3dc1ca42a083, 0x407f19f86830564f),
+		(0x697e599a1e4afd5f, 0x407cce3d2d79ec2e),
+		(0x491e82abf353e79c, 0x40597613f67eb37a),
+		(0x722ea4ce7f96d2ff, 0x408169f9e9352797),
+		(0x4efebc0847e20599, 0x4064e04285d5e27e),
+		(0x544eeb58043197b1, 0x406c3dcfe12bf3bb),
+		(0x46ff046b11b6e7e0, 0x405392d817dda2d2),
+		(0x6caf1807e61b6f03, 0x407f043c0805dba1),
+		(0x50ef387e0fc4a5e1, 0x4067905d34c36a51),
+		(0x4cbf6bd74d8f3edf, 0x4061c276224e5d71),
+		(0x4f5f7177b7abc69e, 0x40656612da92283f),
+		(0x629fabc84d5a2f36, 0x40780afb4bbfbe4c),
+		(0x418fce8b9cdac427, 0x40320409995dc1e7),
+		(0x46cfe9b12985df6e, 0x40530f94e5ddae5e),
+		(0x70fffac8f637436f, 0x408100f58e19ab8f), /* C[128] */
+	][:]
+
+	for (x, y) : inputs
+		var xf : flt64 = std.flt64frombits(x)
+		var yf : flt64 = std.flt64frombits(y)
+		var rf = math.log1p(xf)
+		testr.check(c, rf == yf,
+			"log1p(0x{b=16,w=16,p=0}) should be 0x{b=16,w=16,p=0}, was 0x{b=16,w=16,p=0}",
+			x, y, std.flt64bits(rf))
+	;;
+}
+
+const log1p03 = {c
+	/*
+	   As with log, there is some accepted error in log1p.
+	 */
+
+	var inputs : (uint32, uint32, uint32)[:] = [
+		(0x49c68d15, 0x4164d4d5, 0x4164d4d4),
+		(0x3d86912c, 0x3d8254a9, 0x3d8254a8),
+		(0x3dd7210e, 0x3dcc905b, 0x3dcc905c),
+		(0x3d986e71, 0x3d93067e, 0x3d93067f),
+		(0xbe1eefcb, 0xbe2cb799, 0xbe2cb798),
+		(0x3e057287, 0x3dfae18d, 0x3dfae18c),
+		(0x424d8fe0, 0x407d5bc1, 0x407d5bc2),
+		(0xb95cb5e9, 0xb95cbbdb, 0xb95cbbdc),
+		(0x3de66745, 0x3dda56fd, 0x3dda56fc),
+	][:]
+
+	for (x, y_perfect, y_acceptable) : inputs
+		var xf : flt32 = std.flt32frombits(x)
+		var ypf : flt32 = std.flt32frombits(y_perfect)
+		var yaf : flt32 = std.flt32frombits(y_acceptable)
+		var rf = math.log1p(xf)
+		if rf != ypf && rf != yaf
+		testr.fail(c, "log1p(0x{b=16,w=8,p=0}) was 0x{b=16,w=8,p=0}. It should have been 0x{b=16,w=8,p=0}, although we will also accept 0x{b=16,w=8,p=0}",
+			x, std.flt32bits(rf), y_perfect, y_acceptable)
+		;;
+	;;
+}
+
+const log1p04 = {c
+	/*
+	   As with log, there is some accepted error in log1p.
+	 */
+
+	var inputs : (uint64, uint64, uint64)[:] = [
+		(0xbf8d2fb5e91b21dc, 0xbf8d65764edb0cd6, 0xbf8d65764edb0cd5),
+		(0x3fc855690a4a67e1, 0x3fc64708ed6e9abb, 0x3fc64708ed6e9aba),
+		(0xbfafb59aa6bb5f14, 0xbfb05dee438595dd, 0xbfb05dee438595de),
+		(0x3f896e0154c1be37, 0x3f8945eb78442aa1, 0x3f8945eb78442aa0),
+		(0x3fb09ef0bcfe6932, 0x3fb01a8404c5051a, 0x3fb01a8404c50519),
+		(0x3fa071dec13893e8, 0x3fa02fad06dc3334, 0x3fa02fad06dc3335),
+		(0x4000d2445e953eb4, 0x3ff21dbfa8f28f5d, 0x3ff21dbfa8f28f5c),
+		(0xbfe37c5eda902f8d ,0xbfee0b40d5f061d7, 0xbfee0b40d5f061d6),
+		(0x400dd2fe516cced3, 0x3ff8db2a8f466eeb, 0x3ff8db2a8f466eea),
+		(0xbfb5d9612ba5b9bf, 0xbfb6d6962ad7508b, 0xbfb6d6962ad7508c),
+		(0x40c512345c72e7f9, 0x4022929892b71a96, 0x4022929892b71a95),
+		(0x47409b795894785f, 0x405448ab9f468935, 0x405448ab9f468936),
+	][:]
+
+	for (x, y_perfect, y_acceptable) : inputs
+		var xf : flt64 = std.flt64frombits(x)
+		var ypf : flt64 = std.flt64frombits(y_perfect)
+		var yaf : flt64 = std.flt64frombits(y_acceptable)
+		var rf = math.log1p(xf)
+		if rf != ypf && rf != yaf
+		testr.fail(c, "log1p(0x{b=16,w=16,p=0}) was 0x{b=16,w=16,p=0}. It should have been 0x{b=16,w=16,p=0}, although we will also accept 0x{b=16,w=16,p=0}",
+			x, std.flt64bits(rf), y_perfect, y_acceptable)
+		;;
+	;;
+}
