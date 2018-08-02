@@ -60,17 +60,19 @@ const mtxtrylock = {mtx
 
 const mtxunlock = {mtx
 	/*
+	Either the lock is contended or it's uncontended. Any other
+	state is a bug.
+
 	Uncontended case: If the mutex state is not contended, and we still
 	are uncontended by the xchg() call, then it's safe to simply return;
 	nobody was waiting for us.
 	*/
-	if mtx._state == Contended
-		mtx._state = Unlocked
-	elif xchg(&mtx._state, Unlocked) == Locked
+	if xcas(&mtx._state, Locked, Unlocked) == Locked
 		-> void
 	;;
 
-	/* wake one thread */
+	/* Contended case: set the state to unlocked and wake one thread */
+	mtx._state = Unlocked
 	ftxwake(&mtx._state)
 }
 
