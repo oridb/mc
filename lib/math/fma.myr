@@ -1,0 +1,4 @@
+pkg math =
+	pkglocal extern const fma32 : (x : flt32, y : flt32, z : flt32 -> flt32)
+	pkglocal extern const fma64 : (x : flt64, y : flt64, z : flt64 -> flt64)
+;;

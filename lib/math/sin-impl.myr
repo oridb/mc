@@ -1,7 +1,7 @@
 use std
 
 use "fpmath"
-use "fma-impl"
+use "fma"
 use "scale2-impl"
 use "sum-impl"
 use "util"
