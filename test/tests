@@ -64,6 +64,7 @@ B callbig	E	42
 B nestfn	E	42
 B foldidx	P	123,456
 B closure	P	111555333666
+B nestclosure	P	1
 B closurerec	E	21
 B fncast	P	ok
 B loop		P	0123401236789

@@ -1,0 +1,11 @@
+use std
+
+const main = {
+	var a = 1
+	var f = std.fndup({
+		{
+			std.put("{}\n", a)
+		}()
+	})
+	f()
+}

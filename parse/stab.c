@@ -215,6 +215,16 @@ getclosure(Stab *st, size_t *n)
 	return vals;
 }
 
+static void
+envclose(Stab *start, Stab *found, Stab *fn, Node *s)
+{
+	Stab *st;
+
+	for (st = start; st != found; st = st->super)
+		if (st->env && !s->decl.isglobl && !s->decl.isgeneric)
+			htput(st->env, s->decl.name, s);
+}
+
 /*
  * Searches for declarations from current
  * scope, and all enclosing scopes. Doe
@@ -226,18 +236,17 @@ getclosure(Stab *st, size_t *n)
  * in the scope's closure.
  */
 Node *
-getdcl(Stab *st, Node *n)
+getdcl(Stab *start, Node *n)
 {
+	Stab *st, *fn;
 	Node *s;
-	Stab *fn;
 
 	fn = NULL;
+	st = start;
 	do {
 		s = htget(st->dcl, n);
 		if (s) {
-			/* record that this is in the closure of this scope */
-			if (fn && !s->decl.isglobl && !s->decl.isgeneric)
-				htput(fn->env, s->decl.name, s);
+			envclose(start, st, fn, s);
 			return s;
 		}
 		if (!fn && st->env)
