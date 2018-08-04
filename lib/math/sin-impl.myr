@@ -1,9 +1,8 @@
 use std
 
 use "fpmath"
-use "fma"
-use "scale2-impl"
-use "sum-impl"
+use "impls"
+use "sum-impl" /* we use generics from here */
 use "util"
 
 /*

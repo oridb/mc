@@ -1,4 +1,5 @@
 use std
+use "impls"
 
 pkg math =
 	trait fpmath @f =
@@ -159,72 +160,3 @@ impl fpmath flt64 =
 	floor = {x; -> floor64(x)}
 	ceil  = {x; -> ceil64(x)}
 ;;
-
-extern const rn32 : (x : flt32 -> int32)
-extern const rn64 : (x : flt64 -> int64)
-
-extern const atan32 : (x : flt32 -> flt32)
-extern const atan64 : (x : flt64 -> flt64)
-
-extern const atan232 : (y : flt32, x : flt32 -> flt32)
-extern const atan264 : (y : flt64, x : flt64 -> flt64)
-
-extern const fma32 : (x : flt32, y : flt32, z : flt32 -> flt32)
-extern const fma64 : (x : flt64, y : flt64, z : flt64 -> flt64)
-
-extern const exp32 : (x : flt32 -> flt32)
-extern const exp64 : (x : flt64 -> flt64)
-
-extern const expm132 : (x : flt32 -> flt32)
-extern const expm164 : (x : flt64 -> flt64)
-
-extern const log32 : (x : flt32 -> flt32)
-extern const log64 : (x : flt64 -> flt64)
-
-extern const log1p32 : (x : flt32 -> flt32)
-extern const log1p64 : (x : flt64 -> flt64)
-
-extern const horner_poly32 : (x : flt32, a : flt32[:] -> flt32)
-extern const horner_poly64 : (x : flt64, a : flt64[:] -> flt64)
-
-extern const horner_polyu32 : (x : flt32, a : uint32[:] -> flt32)
-extern const horner_polyu64 : (x : flt64, a : uint64[:] -> flt64)
-
-extern const powr32 : (x : flt32, y : flt32 -> flt32)
-extern const powr64 : (x : flt64, y : flt64 -> flt64)
-
-extern const scale232 : (x : flt32, m : int32 -> flt32)
-extern const scale264 : (x : flt64, m : int64 -> flt64)
-
-extern const sin32 : (x : flt32 -> flt32)
-extern const sin64 : (x : flt64 -> flt64)
-
-extern const cos32 : (x : flt32 -> flt32)
-extern const cos64 : (x : flt64 -> flt64)
-
-extern const sincos32 : (x : flt32 -> (flt32, flt32))
-extern const sincos64 : (x : flt64 -> (flt64, flt64))
-
-extern const sqrt32 : (x : flt32 -> flt32)
-extern const sqrt64 : (x : flt64 -> flt64)
-
-extern const kahan_sum32 : (l : flt32[:] -> flt32)
-extern const kahan_sum64 : (l : flt64[:] -> flt64)
-
-extern const priest_sum32 : (l : flt32[:] -> flt32)
-extern const priest_sum64 : (l : flt64[:] -> flt64)
-
-extern const tan32 : (x : flt32 -> flt32)
-extern const tan64 : (x : flt64 -> flt64)
-
-extern const cot32 : (x : flt32 -> flt32)
-extern const cot64 : (x : flt64 -> flt64)
-
-extern const trunc32 : (x : flt32 -> flt32)
-extern const trunc64 : (x : flt64 -> flt64)
-
-extern const floor32 : (x : flt32 -> flt32)
-extern const floor64 : (x : flt64 -> flt64)
-
-extern const ceil32  : (x : flt32 -> flt32)
-extern const ceil64  : (x : flt64 -> flt64)
