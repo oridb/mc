@@ -62,7 +62,6 @@ const ab64 : (uint64, uint64)[8] = [
 const desc32 : fltdesc(flt32, uint32, int32) =  [
 	.explode = std.flt32explode,
 	.assem = std.flt32assem,
-	.fma = fma32,
 	.tobits = std.flt32bits,
 	.frombits = std.flt32frombits,
 	.nan = 0x7fc00000,
@@ -77,7 +76,6 @@ const desc32 : fltdesc(flt32, uint32, int32) =  [
 const desc64 : fltdesc(flt64, uint64, int64) =  [
 	.explode = std.flt64explode,
 	.assem = std.flt64assem,
-	.fma = fma64,
 	.tobits = std.flt64bits,
 	.frombits = std.flt64frombits,
 	.nan = 0x7ff8000000000000,
@@ -148,14 +146,14 @@ generic sqrtgen = {x : @f, d : fltdesc(@f, @u, @i) :: numeric,floating,std.equat
 	;;
 
 	/* split up "x_{n+1} = x_n (3 - ax_n^2)/2" */
-	var epsn = d.fma(-1.0 * a, xn * xn, 1.0)
+	var epsn = fma(-1.0 * a, xn * xn, 1.0)
 	var rn = 0.5 * epsn
 	var gn = a * xn
 	var hn = 0.5 * xn
 	for var j = 0; j < d.iterlim; ++j
-		rn = d.fma(-1.0 * gn, hn, 0.5)
-		gn = d.fma(gn, rn, gn)
-		hn = d.fma(hn, rn, hn)
+		rn = fma(-1.0 * gn, hn, 0.5)
+		gn = fma(gn, rn, gn)
+		hn = fma(hn, rn, hn)
 	;;
 
 	/*
@@ -174,11 +172,11 @@ generic sqrtgen = {x : @f, d : fltdesc(@f, @u, @i) :: numeric,floating,std.equat
 		var r_plus_ulp : @f = d.frombits(d.tobits(r) + 1)
 		var r_minus_ulp : @f = d.frombits(d.tobits(r) - 1)
 
-		var delta_1 = d.fma(r, r_minus_ulp, -1.0 * x)
+		var delta_1 = fma(r, r_minus_ulp, -1.0 * x)
 		if d.tobits(delta_1) & d.sgnmask == 0
 			r = r_minus_ulp
 		else
-			var delta_2 = d.fma(r, r_plus_ulp, -1.0 * x)
+			var delta_2 = fma(r, r_plus_ulp, -1.0 * x)
 			if d.tobits(delta_2) & d.sgnmask != 0
 				r = r_plus_ulp
 			else
