@@ -1,7 +1,6 @@
 use std
 
 use "fpmath"
-use "impls"
 use "sum-impl" /* we use generics from here */
 use "util"
 
@@ -524,7 +523,7 @@ const w64 = {x : flt64, want_sin : bool, want_cos : bool
 	   we care about is a1*d2 + 2*a2*d1*d2
 	 */
 	cos_delta = horner_polyu(delta1, cos_coeff[:])
-	cos_delta += delta2 * fma64(delta1, 2.0*std.flt64frombits(cos_coeff[2]), std.flt64frombits(cos_coeff[1]))
+	cos_delta += delta2 * fma(delta1, 2.0*std.flt64frombits(cos_coeff[2]), std.flt64frombits(cos_coeff[1]))
 
 	var q : flt64[4]
 
