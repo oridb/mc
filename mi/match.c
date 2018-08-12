@@ -248,14 +248,11 @@ acceptall(Dtree *t, Dtree *accept)
 	if (t->accept || t->any == accept)
 		return 0;
 
-	ret = 0;
-	if (t->any) {
-		if (acceptall(t->any, accept))
-			ret = 1;
-	} else {
+	ret = 1;
+	if (t->any)
+		ret = acceptall(t->any, accept);
+	else
 		t->any = accept;
-		ret = 1;
-	}
 
 	for (i = 0; i < t->nnext; i++)
 		if (acceptall(t->next[i], accept))
@@ -320,8 +317,6 @@ addwildrec(Srcloc loc, Type *ty, Dtree *start, Dtree *accept, Dtree ***end, size
 			lfree(&last, &nlast);
 			last = tail;
 			nlast = ntail;
-			if (i == ty->nsub - 1)
-				break;
 		}
 		break;
 	case Tyarray:
@@ -338,8 +333,6 @@ addwildrec(Srcloc loc, Type *ty, Dtree *start, Dtree *accept, Dtree ***end, size
 			lfree(&last, &nlast);
 			last = tail;
 			nlast = ntail;
-			if (i == nelt - 1)
-				break;
 		}
 		break;
 	case Tystruct:
@@ -354,8 +347,6 @@ addwildrec(Srcloc loc, Type *ty, Dtree *start, Dtree *accept, Dtree ***end, size
 			lfree(&last, &nlast);
 			last = tail;
 			nlast = ntail;
-			if (i == ty->nsub - 1)
-				break;
 		}
 		break;
 	case Tyunion:
