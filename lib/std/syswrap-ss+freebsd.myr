@@ -16,8 +16,8 @@ const nanosleep	= {nsecs
 	var req, rem
 	var s, ns
 
-	s = nsecs / 1_000_000_000
-	ns = nsecs % 1_000_000_000
+	s = (nsecs / 1_000_000_000 : int64)
+	ns = (nsecs % 1_000_000_000 : int64)
 	req = [.sec = s, .nsec = ns]
 
 	-> (sys.nanosleep(&req, &rem) : errno)

@@ -17,8 +17,8 @@ extern const put	: (fmt : byte[:], args : ... -> int64)
 const nanosleep	= {nsecs
 	var s, us
 
-	s = nsecs / 1_000_000_000
-	us = (nsecs % 1_000_000_000 / 1000 : uint32)
+	s = (nsecs / 1_000_000_000 : int64)
+	us = (nsecs % 1_000_000_000 / 1000 : int32)
 	-> (sys.select( \
 		0, \
 		(0 : sys.fdset#), \

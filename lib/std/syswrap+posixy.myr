@@ -139,7 +139,7 @@ const curtime = {
 
 	if sys.clock_gettime(`sys.Clockrealtime, &tm) == 0
 		sec = tm.sec
-		nsec = (tm.nsec : uint64)
+		nsec = tm.nsec
 		-> ((sec*1_000_000 + nsec/1000) : time)
 	else
 		-> -1

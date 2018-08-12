@@ -190,7 +190,7 @@ const clock_settime = {clk, ts;	-> (syscall(Sysclock_settime, clockid(clk), a(ts
 
 const sleep = {time
 	var req, rem
-	req = [.sec = time, .nsec = 0]
+	req = [.sec = (time : int64), .nsec = 0]
 	-> nanosleep(&req, &rem)
 }
 

@@ -49,13 +49,13 @@ pkg sys =
 	;;
 	
 	type timespec = struct
-		sec	: uint64
-		nsec	: uint64 
+		sec	: int64
+		nsec	: int64
 	;;
 	
 	type timeval = struct
-		sec	: uint64
-		usec	: uint64
+		sec	: int64
+		usec	: int64
 	;;
 	
 	type timezone = struct
@@ -1174,7 +1174,7 @@ pkg sys =
 	
 	const sleep = {time
 		var req, rem
-		req = [.sec = time, .nsec = 0]
+		req = [.sec = (time : int64), .nsec = 0]
 		-> nanosleep(&req, &rem)
 	}
 	

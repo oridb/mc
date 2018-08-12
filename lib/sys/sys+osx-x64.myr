@@ -25,13 +25,13 @@ pkg sys =
 	;;
 
 	type timespec = struct
-		sec	: uint64
-		nsec	: uint32
+		sec	: int64
+		nsec	: int64
 	;;
 
 	type timeval = struct
-		sec	: uint64
-		usec	: uint32
+		sec	: int64
+		usec	: int32
 	;;
 
 	type timezone = struct
@@ -825,7 +825,6 @@ pkg sys =
 	const clock_getres	: (clk : clock, ts : timespec# -> int)
 	const clock_gettime	: (clk : clock, ts : timespec# -> int)
 	const clock_settime	: (clk : clock, ts : timespec# -> int)
-	/* FIXME: HACK HACK HACK -- does nothing */
 	const sleep	: (time : uint64 -> int32)
 
 	/* system information */
@@ -896,7 +895,15 @@ const bsdthread_terminate	= {stk , len , port , sem
 	-> (syscall(Sysbsdthread_terminate, a(stk), a(len), a(port), a(sem)) : int)
 }
 
-const sleep = {time;	-> 0}
+const sleep = {time
+	-> sys.select( \
+		0, \
+		(0 : sys.fdset#), \
+		(0 : sys.fdset#), \
+		(0 : sys.fdset#), \
+		&[.sec = (time : int64), .usec = 0] \
+	)
+}
 
 const execv	= {cmd, args
 	var p, cargs, i
@@ -1021,7 +1028,7 @@ const clock_gettime = {clk, ts
 
 	ret = gettimeofday(&tv, (0 : timezone#))
 	ts.sec = tv.sec
-	ts.nsec = tv.usec * 1000
+	ts.nsec = (tv.usec * 1000 : int64)
 	-> ret
 }
 
@@ -1029,7 +1036,7 @@ const clock_settime = {clk, ts
 	var tv
 
 	tv.sec = ts.sec
-	tv.usec = ts.nsec / 1000
+	tv.usec = (ts.nsec / 1000 : int32)
 	-> settimeofday(&tv, (0 : timezone#))
 }
 
