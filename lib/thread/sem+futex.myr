@@ -5,13 +5,14 @@ use "futex"
 
 pkg thread =
 	type sem = struct
-		_val : ftxtag
+		_val      : ftxtag
+		_nwaiters : uint32
 	;;
 
-	const mksem : (v : uint32 -> sem)
-	const semwait : (s : sem# -> void)
+	const mksem      : (v : uint32 -> sem)
+	const semwait    : (s : sem# -> void)
 	const semtrywait : (s : sem# -> bool)
-	const sempost : (s : sem# -> void)
+	const sempost    : (s : sem# -> void)
 ;;
 
 const mksem = {v
@@ -21,9 +22,11 @@ const mksem = {v
 const semwait = {s
 	var v = 0
 
+	xadd(&s._nwaiters, 1)
 	for ; ;
 		while (v = s._val) > 0
 			if xcas(&s._val, v, v - 1) == v
+				xadd(&s._nwaiters, -1)
 				-> void
 			;;
 		;;
@@ -47,6 +50,7 @@ const semtrywait = {s
 const sempost = {s
 	std.assert((xadd(&s._val, 1) : uint32) != ~0x0, "error: semaphore overflowed\n")
 
-	/* Unconditionally wake one waiter */
-	ftxwake(&s._val)
+	if xget(&s._nwaiters) > 0
+		ftxwake(&s._val)
+	;;
 }
