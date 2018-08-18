@@ -2,7 +2,6 @@ use std
 use sys
 
 use "atomic"
-use "common"
 
 pkg thread =
 	type sem = struct

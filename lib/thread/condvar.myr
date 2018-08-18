@@ -8,7 +8,8 @@ use "sem"
 pkg thread =
 	type cond = struct
 		_mtx	: mutex#
-		_waitq	: condwaiter#
+		_head	: condwaiter#
+		_tail	: condwaiter#
 		_lock	: mutex
 	;;
 
@@ -18,15 +19,8 @@ pkg thread =
 	const condbroadcast	: (cond : cond# -> void)
 ;;
 
-/*
-The waitqueue is a doubly-linked list because we'll need to remove waiters from
-anywhere in the list when we add timeout support.
-
-`cond._waitq.prev` is the tail of the queue.
-*/
 type condwaiter = struct
 	next : condwaiter#
-	prev : condwaiter#
 	sem : sem
 ;;
 
@@ -40,14 +34,9 @@ const condwait = {cond
 	var waiter = std.mk([.sem = mksem(0)])
 
 	mtxlock(lock)
-	match cond._waitq
-	| Zptr:
-		waiter.prev = waiter
-		cond._waitq = waiter
-	| q:
-		waiter.prev = q.prev
-		waiter.prev.next = waiter
-		q.prev = waiter
+	match cond._tail
+	| Zptr: cond._head = cond._tail = waiter
+	| tail: cond._tail = tail.next = waiter
 	;;
 
 	mtxunlock(lock)
@@ -61,13 +50,13 @@ const condsignal = {cond
 	var lock = &cond._lock
 
 	mtxlock(lock)
-	var head = cond._waitq
+	var head = cond._head
 	if head != Zptr
-		if head.next != Zptr
-			head.next.prev = head.prev
-		;;
-		cond._waitq = head.next
+		cond._head = head.next
 		sempost(&head.sem)
+		if cond._head == Zptr
+			cond._tail = Zptr
+		;;
 	;;
 	mtxunlock(lock)
 }
@@ -81,9 +70,10 @@ const condbroadcast = {cond
 	var head = Zptr
 
 	mtxlock(lock)
-	while (head = cond._waitq) != Zptr
-		cond._waitq = head.next
+	while (head = cond._head) != Zptr
+		cond._head = head.next
 		sempost(&head.sem)
 	;;
+	cond._tail = Zptr
 	mtxunlock(lock)
 }

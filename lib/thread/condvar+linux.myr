@@ -3,12 +3,13 @@ use sys
 
 use "atomic"
 use "common"
+use "futex"
 use "mutex"
 
 pkg thread =
 	type cond = struct
 		_mtx	: mutex#
-		_seq	: int32
+		_seq	: ftxtag
 	;;
 
 	const mkcond	: (mtx : mutex# -> cond)
@@ -22,30 +23,24 @@ const mkcond = {mtx
 }
 
 const condwait = {cond
-	var seq
-	var mtx
+	var mtx = cond._mtx
+	var seq = xget(&cond._seq)
 
-	mtx = cond._mtx
-	seq = cond._seq
 	mtxunlock(mtx)
+	ftxwait(&cond._seq, seq, -1)
 
 	/*
-	FIXME?: `futex` can be interrupted but `condwait` should always be done
-	in a loop anyway.
-	*/
-	sys.futex(&cond._seq, sys.Futexwait | sys.Futexpriv, seq, Zptr, Zptr, 0)
-
-	/*
-	We need to atomically set the mutex to contended. This allows us to
-	pass responsibility for waking up the potential other waiters on to the
-	unlocker of the mutex.
+	In the event of a broadcast, we need to atomically set the mutex to
+	contended. This allows us to pass responsibility for waking up the
+	potential other waiters from the requeue operation on to the unlocker
+	of the mutex.
 	*/
 	mtxcontended(mtx)
 }
 
 const condsignal = {cond : cond#
 	xadd(&cond._seq, 1)
-	sys.futex(&cond._seq, sys.Futexwake | sys.Futexpriv, 1, Zptr, Zptr, 0)
+	ftxwake(&cond._seq)
 }
 
 const condbroadcast = {cond : cond#
@@ -55,7 +50,7 @@ const condbroadcast = {cond : cond#
 	used for the number of threads to move, and is not ignored when
 	requeueing
 	*/
-	sys.futex(&cond._seq, sys.Futexrequeue | sys.Futexpriv,
+	sys.futex((&cond._seq : int32#), sys.Futexrequeue | sys.Futexpriv,
 		1, (0x7fffffff : sys.timespec#),
 		(&cond._mtx._state : int32#), 0)
 }

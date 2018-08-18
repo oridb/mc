@@ -575,6 +575,13 @@ type uuid = struct
 	node				: uint8[_Uuidnodesz];
 ;;
 
+const Umtxabstime = 1
+type umtx_time = struct
+	timeout	: timespec
+	flags	: uint32
+	clockid	: uint32
+;;
+
 /* open options */
 const Ordonly  	: fdopt = 0x0
 const Owronly  	: fdopt = 0x1

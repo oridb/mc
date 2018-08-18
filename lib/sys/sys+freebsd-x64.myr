@@ -582,10 +582,10 @@ pkg sys =
 	;;
 	
 	const Umtxabstime = 1
-	type _umtx_time = struct
-		_timeout	: timespec
-		_flags		: uint32
-		_clockid	: uint32
+	type umtx_time = struct
+		timeout	: timespec
+		flags	: uint32
+		clockid	: uint32
 	;;
 	
 	/* open options */
@@ -1192,6 +1192,7 @@ pkg sys =
 		const getsockopt	: (sock : fd, lev : sockproto, opt : sockopt, val : void#, len : size# -> int)
 		const munmap	: (addr:byte#, len:size -> int64)
 		const mmap	: (addr:byte#, len:size, prot:mprot, flags:mopt, fd:fd, off:off -> byte#)
+		const clockid		: (clk : clock -> uint64)
 		const clock_getres	: (clk : clock, ts : timespec# -> int32)
 		const clock_gettime	: (clk : clock, ts : timespec# -> int32)
 		const clock_settime	: (clk : clock, ts : timespec# -> int32)

@@ -1,3 +1,4 @@
+use std
 use sys
 
 use "atomic"
@@ -7,21 +8,78 @@ pkg thread =
 	type ftxtag = uint32
 	impl atomic ftxtag
 
-	const ftxwait : (uaddr : ftxtag#, val : ftxtag, timeout : sys.timespec# -> int)
-	const ftxwake : (uaddr : ftxtag# -> int)
-	const ftxwakeall : (uaddr : ftxtag# -> int)
+	const ftxwait : (uaddr : ftxtag#, val : ftxtag, tmout : std.time -> sys.errno)
+	const ftxwake : (uaddr : ftxtag# -> void)
+	const ftxwakeall : (uaddr : ftxtag# -> void)
 ;;
 
-const ftxwait = {uaddr, val, timeout
-	-> sys.futex((uaddr : uint32#), sys.Futexwait, (val : int), timeout, Zptr)
+const ftxwait = {uaddr, val, tmout
+	var rc
+
+	if tmout < 0
+		while (rc = (sys.futex((uaddr : uint32#),
+				sys.Futexwait,
+				(val : int),
+				Zptr,
+				Zptr) : sys.errno)) == sys.Eintr
+		;;
+	else
+		var t = (tmout : int64)
+		var start
+		std.assert(sys.clock_gettime(`sys.Clockmonotonic, &start) == 0,
+			"error: clock_gettime returned -1\n")
+		var ts = [
+			.sec = t / 1_000_000,
+			.nsec = (t % 1_000_000) * 1000,
+		]
+
+		while (rc = (sys.futex((uaddr : uint32#),
+				sys.Futexwait,
+				(val : int),
+				&ts,
+				Zptr) : sys.errno)) == sys.Eintr
+			var now
+			std.assert(sys.clock_gettime(`sys.Clockmonotonic, &now) == 0,
+				"error: clock_gettime returned -1\n")
+			var t1 = t - ((now.sec - start.sec) * 1_000_000)
+			var nsec = now.nsec - start.nsec
+			if nsec >= 0
+				t1 -= nsec / 1000
+			else
+				t1 -= (1_000_000_000 + nsec) / 1000
+			;;
+
+			if t1 > t
+				-> sys.Etimedout
+			;;
+			ts.sec = t1 / 1_000_000
+			ts.nsec = (t1 % 1_000_000) * 1000
+			t = t1
+		;;
+	;;
+
+	/* 
+	 * Since Myrddin uses the convention that negative
+	 * values flag an error, but futexes just return a
+	 * positive, non-errno value, we need to match against
+	 * the positive value.
+	 */
+	match rc
+	| 0: -> 0
+	| -sys.Eagain:	-> sys.Eagain
+	| -sys.Etimedout: -> sys.Etimedout
+	| err:
+		std.fput(2, "error: futex returned {}\n", err)
+		std.suicide()
+	;;
 }
 
 const ftxwake = {uaddr
-	-> sys.futex((uaddr : uint32#), sys.Futexwake, 1, Zptr, Zptr)
+	sys.futex((uaddr : uint32#), sys.Futexwake, 1, Zptr, Zptr)
 }
 
 const ftxwakeall = {uaddr
-	-> sys.futex((uaddr : uint32#), sys.Futexwake, 0x7fffffff, Zptr, Zptr)
+	sys.futex((uaddr : uint32#), sys.Futexwake, 0x7fffffff, Zptr, Zptr)
 }
 
 impl atomic ftxtag =

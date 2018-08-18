@@ -1,7 +1,6 @@
 use std
 
 use "atomic"
-use "common"
 use "futex"
 
 pkg thread =
@@ -28,7 +27,7 @@ const semwait = {s
 				-> void
 			;;
 		;;
-		ftxwait(&s._val, v, Zptr)
+		ftxwait(&s._val, v, -1)
 	;;
 }
 

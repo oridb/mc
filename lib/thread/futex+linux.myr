@@ -1,3 +1,4 @@
+use std
 use sys
 
 use "atomic"
@@ -7,26 +8,60 @@ pkg thread =
 	type ftxtag = uint32
 	impl atomic ftxtag
 
-	const ftxwait : (uaddr : ftxtag#, val : ftxtag, timeout : sys.timespec# -> int)
-	const ftxwake : (uaddr : ftxtag# -> int)
-	const ftxwakeall : (uaddr : ftxtag# -> int)
+	const ftxwait : (uaddr : ftxtag#, val : ftxtag, tmout : std.time -> sys.errno)
+	const ftxwake : (uaddr : ftxtag# -> void)
+	const ftxwakeall : (uaddr : ftxtag# -> void)
 ;;
 
-const ftxwait = {uaddr, val, timeout
-	-> (sys.futex((uaddr : int32#),
-		sys.Futexwait | sys.Futexpriv,
-		(val : int32),
-		timeout,
-		Zptr,
-		0) : int)
+const ftxwait = {uaddr, val, tmout
+	var rc
+
+	if tmout < 0
+		while (rc = (sys.futex((uaddr : int32#),
+				sys.Futexwait | sys.Futexpriv,
+				(val : int32),
+				Zptr,
+				Zptr,
+				0) : sys.errno)) == sys.Eintr
+		;;
+	else
+		var t = (tmout : int64)
+		var ts
+		std.assert(sys.clock_gettime(`sys.Clockmonotonic, &ts) == 0,
+			"error: clock_gettime returned -1\n")
+		ts.nsec += (t % 1_000_000) * 1000
+		ts.sec += (ts.nsec / 1_000_000_000) + (t / 1_000_000)
+		ts.nsec %= 1_000_000_000
+
+		/*
+		Futexwaitbitset + Futexbitsetmatchany causes the timeout to be
+		treated as absolute rather than relative.
+		*/
+		while (rc = (sys.futex((uaddr : int32#),
+				sys.Futexwaitbitset | sys.Futexpriv,
+				(val : int32),
+				&ts,
+				Zptr,
+				sys.Futexbitsetmatchany) : sys.errno)) == sys.Eintr
+		;;
+	;;
+
+	match rc
+	| 0: -> 0
+	| sys.Eagain: -> sys.Eagain
+	| sys.Etimedout: -> sys.Etimedout
+	| err:
+		std.fput(2, "error: futex returned {}\n", err)
+		std.suicide()
+	;;
 }
 
 const ftxwake = {uaddr
-	-> (sys.futex((uaddr : int32#), sys.Futexwake | sys.Futexpriv, 1, Zptr, Zptr, 0) : int)
+	sys.futex((uaddr : int32#), sys.Futexwake | sys.Futexpriv, 1, Zptr, Zptr, 0)
 }
 
 const ftxwakeall = {uaddr
-	-> (sys.futex((uaddr : int32#), sys.Futexwake | sys.Futexpriv, 0x7fffffff, Zptr, Zptr, 0) : int)
+	sys.futex((uaddr : int32#), sys.Futexwake | sys.Futexpriv, 0x7fffffff, Zptr, Zptr, 0)
 }
 
 impl atomic ftxtag =

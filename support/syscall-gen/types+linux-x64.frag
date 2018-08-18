@@ -556,6 +556,8 @@ const Futexcmprequeuepi	: futexop = 12
 const Futexpriv	: futexop = 128
 const Futexclockrt	: futexop = 256
 
+const Futexbitsetmatchany : int32 = -1
+
 /* poll events : posix */
 const Pollin	: pollevt = 0x001	/* There is data to read.  */
 const Pollpri	: pollevt = 0x002	/* There is urgent data to read.  */

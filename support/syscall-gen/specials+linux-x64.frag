@@ -62,7 +62,7 @@ const dup2	: (src : fd, dst : fd -> fd)
 
 /* threading */
 const futex	: (uaddr : int32#, op : futexop, val : int32, \
-	timeout : timespec#, uaddr2 : int32#, val3 : int32 -> int64)
+	timeout : timespec#, uaddr2 : int32#, val3 : int32 -> int)
 const semctl	:  (semid : int, semnum : int, cmd : int, arg : void# -> int)
 
 /* polling */
@@ -205,7 +205,7 @@ const sigprocmask	= {sig, act, oact;	-> (syscall(Sysrt_sigprocmask, a(sig), a(ac
 
 /* threading */
 const futex	= {uaddr, op, val, timeout, uaddr2, val3
-	-> syscall(Sysfutex, a(uaddr), a(op), a(val), a(timeout), a(uaddr2), a(val3))
+	-> (syscall(Sysfutex, a(uaddr), a(op), a(val), a(timeout), a(uaddr2), a(val3)) : int)
 }
 const semctl	= {semid, semnum, cmd, arg
 	-> (syscall(Syssemctl, a(semnum), a(cmd), a(arg)) : int)

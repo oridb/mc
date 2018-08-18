@@ -65,6 +65,7 @@
 	const mmap	: (addr:byte#, len:size, prot:mprot, flags:mopt, fd:fd, off:off -> byte#)
 
 	/* time - doublecheck if this is right */
+	const clockid		: (clk : clock -> uint64)
 	const clock_getres	: (clk : clock, ts : timespec# -> int32)
 	const clock_gettime	: (clk : clock, ts : timespec# -> int32)
 	const clock_settime	: (clk : clock, ts : timespec# -> int32)

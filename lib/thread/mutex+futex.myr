@@ -1,5 +1,4 @@
 use "atomic"
-use "common"
 use "futex"
 
 pkg thread =
@@ -28,12 +27,12 @@ const mkmtx = {
 const mtxlock = {mtx
 	var c
 
-	/* 
+	/*
 	Uncontended case: we get an unlocked mutex, and we lock it.
 	*/
-        c = Locked
+	c = Locked
 	for var i = 0; i < nspin; i++
-		c = xcas(&mtx._state, Unlocked, Locked) 
+		c = xcas(&mtx._state, Unlocked, Locked)
 		if c == Unlocked
 			-> void
 		;;
@@ -49,7 +48,7 @@ const mtxlock = {mtx
 	;;
 
 	while c != Unlocked
-		ftxwait(&mtx._state, Contended, Zptr)
+		ftxwait(&mtx._state, Contended, -1)
 		c = xchg(&mtx._state, Contended)
 	;;
 }
@@ -74,6 +73,6 @@ const mtxunlock = {mtx
 
 const mtxcontended = {mtx
 	while xchg(&mtx._state, Contended) != Unlocked
-		ftxwait(&mtx._state, Contended, Zptr)
+		ftxwait(&mtx._state, Contended, -1)
 	;;
 }

@@ -1,7 +1,6 @@
 use std
 
 use "atomic"
-use "common"
 use "futex"
 
 pkg thread =
@@ -22,7 +21,7 @@ const wgwait = {w
 	var v = 0
 
 	while (v = xget(&w._val)) != 0
-		ftxwait(&w._val, v, Zptr)
+		ftxwait(&w._val, v, -1)
 	;;
 }
 

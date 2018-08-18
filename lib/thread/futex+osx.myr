@@ -8,49 +8,72 @@ pkg thread =
 	type ftxtag = uint64
 	impl atomic ftxtag
 
-	const ftxwait : (uaddr : ftxtag#, val : ftxtag, timeout : sys.timespec# -> int)
-	const ftxwake : (uaddr : ftxtag# -> int)
-	const ftxwakeall : (uaddr : ftxtag# -> int)
+	const ftxwait : (uaddr : ftxtag#, val : ftxtag, tmout : std.time -> sys.errno)
+	const ftxwake : (uaddr : ftxtag# -> void)
+	const ftxwakeall : (uaddr : ftxtag# -> void)
 ;;
 
 /*
  * The ulock_ functions are undocumented but the relevant source can be found at
  * https://github.com/apple/darwin-xnu/blob/0a798f6738bc1db01281fc08ae024145e84df927/bsd/kern/sys_ulock.c
  */
-const ftxwait = {uaddr, val, timeout
-	if timeout == Zptr
-		-> sys.ulock_wait(sys.Ulockcompareandwait, (uaddr : uint64#), (val : uint64), 0)
+const ftxwait = {uaddr, val, tmout
+	var rc
+
+	if tmout < 0
+		while (rc = (sys.ulock_wait(sys.Ulockcompareandwait,
+				(uaddr : uint64#),
+				(val : uint64),
+				0) : sys.errno)) == sys.Eintr
+		;;
+	else
+		var start, t
+		std.assert(tmout <= 0xffffffff, "error: maximum os x futex timeout exceeded\n")
+		std.assert(sys.clock_gettime(`sys.Clockmonotonic, &start) == 0,
+			"error: clock_gettime returned -1\n")
+		t = (tmout : uint32)
+
+		while (rc = (sys.ulock_wait(sys.Ulockcompareandwait,
+				(uaddr : uint64#),
+				(val : uint64),
+				t) : sys.errno)) == sys.Eintr
+			var now
+			std.assert(sys.clock_gettime(`sys.Clockmonotonic, &now) == 0,
+				"error: clock_gettime returned -1\n")
+			var t1 = t - (((now.sec - start.sec) * 1_000_000) : uint32)
+			var nsec = now.nsec - start.nsec
+			if nsec >= 0
+				t1 -= (nsec / 1000 : uint32)
+			else
+				t1 -= ((1_000_000_000 + nsec) / 1000 : uint32)
+			;;
+
+			if t1 > t
+				-> sys.Etimedout
+			;;
+			t = t1
+		;;
 	;;
 
-	var ts
-	var err = sys.clock_gettime(`sys.Clockmonotonic, &ts)
-	std.assert(err == 0, "error: clock_gettime returned {}\n", err)
-	if timeout.sec < ts.sec
-		-> (std.Etimedout : int)
+	match rc
+	| 0: -> 0
+	| sys.Eagain: -> sys.Eagain
+	| sys.Etimedout: -> sys.Etimedout
+	| err:
+		if err > 0
+			-> 0
+		;;
+		std.fput(2, "error: ulock_wait returned {}\n", err)
+		std.suicide()
 	;;
-
-	var usec = 0
-	var sec = (timeout.sec - ts.sec) * 1000
-	std.assert(sec <= 0xffffffff, "error: maximum futex timeout exceeded\n")
-	usec = (sec : uint32)
-	if timeout.nsec > ts.nsec
-		var nsec = (timeout.nsec - ts.nsec) / 1000
-		std.assert(usec + nsec > usec, "error: maximum futex timeout exceeded\n")
-		usec += nsec
-	;;
-
-	if usec == 0
-		-> (std.Etimedout : int)
-	;;
-	-> sys.ulock_wait(sys.Ulockcompareandwait, (uaddr : uint64#), (val : uint64), usec)
 }
 
 const ftxwake = {uaddr
-	-> sys.ulock_wake(sys.Ulockcompareandwait, (uaddr : uint64#), 0)
+	sys.ulock_wake(sys.Ulockcompareandwait, (uaddr : uint64#), 0)
 }
 
 const ftxwakeall = {uaddr
-	-> sys.ulock_wake(sys.Ulockcompareandwait | sys.Ulockulfwakeall, (uaddr : uint64#), 0)
+	sys.ulock_wake(sys.Ulockcompareandwait | sys.Ulockulfwakeall, (uaddr : uint64#), 0)
 }
 
 impl atomic ftxtag =

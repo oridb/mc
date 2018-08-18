@@ -1,9 +1,7 @@
 use std
 use sys
 
-
 use "atomic"
-use "common"
 
 pkg thread =
 	type mutex = struct

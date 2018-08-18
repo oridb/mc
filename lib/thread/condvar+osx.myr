@@ -1,7 +1,6 @@
 use std
 
 use "atomic"
-use "common"
 use "mutex"
 use "futex"
 
@@ -22,19 +21,17 @@ const mkcond = {mtx
 }
 
 const condwait = {cond
-	var seq
-	var mtx
+	var mtx = cond._mtx
+	var seq = xget(&cond._seq)
 
-	mtx = cond._mtx
-	seq = cond._seq
 	mtxunlock(mtx)
+	ftxwait(&cond._seq, seq, -1)
 
 	/*
-	FIXME?: `ftxwait` can be interrupted but `condwait` should always be
-	done in a loop anyway.
+	In the event of a broadcast, we aren't requeueing waiters from the
+	condvar's futex to the mutex's futex so we can just reacquire the mutex
+	normally.
 	*/
-	ftxwait(&cond._seq, seq, Zptr)
-
 	mtxlock(mtx)
 }
 
