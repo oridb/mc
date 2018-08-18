@@ -256,13 +256,13 @@ type timezone = struct
 ;;
 
 type timespec = struct
-	sec	: uint64
-	nsec	: uint64 
+	sec	: int64
+	nsec	: int64
 ;;
 
 type timeval = struct
-	sec	: uint64
-	usec	: uint64
+	sec	: int64
+	usec	: int64
 ;;
 
 type itimerval = struct
