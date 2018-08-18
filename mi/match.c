@@ -16,7 +16,6 @@
 typedef struct Dtree Dtree;
 struct Dtree {
 	int id;
-	int obscured;
 	Srcloc loc;
 
 	/* values for matching */
@@ -353,13 +352,14 @@ addwildrec(Srcloc loc, Type *ty, Dtree *start, Dtree *accept, Dtree ***end, size
 		for (i = 0; i < ty->nmemb; i++) {
 			uc = ty->udecls[i];
 			next = dtbytag(start, uc);
-			if (!next)
-				continue;
-
-			if (uc->etype && addwildrec(loc, uc->etype, next, accept, end, nend))
-				ret = 1;
-			else
-				lappend(end, nend, next);
+			if (next) {
+				if (uc->etype) {
+					if (addwildrec(loc, uc->etype, next, accept, end, nend))
+						ret = 1;
+				} else {
+					lappend(end, nend, next);
+				}
+			}
 		}
 		if (!start->any) {
 			start->any = accept;
@@ -399,8 +399,10 @@ addunion(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap, size_t 
 	Dtree *next;
 	Ucon *uc;
 
-	if (start->any)
+	if (start->any) {
 		lappend(end, nend, start->any);
+		return 0;
+	}
 
 	uc = finducon(tybase(exprtype(pat)), pat->expr.args[0]);
 	next = dtbytag(start, uc);
@@ -423,15 +425,13 @@ addunion(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap, size_t 
 	lappend(&start->pat, &start->npat, tagid);
 	if (uc->etype) {
 		next = mkdtree(pat->loc, genlbl(pat->loc));
-		next->obscured = (start->obscured || start->any != NULL);
 		lappend(&start->next, &start->nnext, next);
 		addpat(pat->expr.args[1], uvalue(val, uc->etype), next, accept, cap, ncap, end, nend);
 	} else {
-		accept->obscured = (start->obscured || start->any != NULL);
 		lappend(&start->next, &start->nnext, accept);
 		lappend(end, nend, accept);
 	}
-	return !start->obscured && start->any == NULL;
+	return 1;
 }
 
 static int
@@ -493,10 +493,12 @@ addlit(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap, size_t *n
 	if (pat->expr.args[0]->lit.littype == Lstr) {
 		return addstr(pat, val, start, accept, cap, ncap, end, nend);
 	} else {
-		if (start->any)
-			lappend(end, nend, start->any);
-
 		/* if we already have a match, we're not adding a new node */
+		if (start->any) {
+			lappend(end, nend, start->any);
+			return 0;
+		}
+
 		for (i = 0; i < start->npat; i++) {
 			if (liteq(start->pat[i]->expr.args[0], pat->expr.args[0])) {
 				lappend(end, nend, start->next[i]);
@@ -509,11 +511,10 @@ addlit(Node *pat, Node *val, Dtree *start, Dtree *accept, Node ***cap, size_t *n
 			start->load = val;
 			start->nconstructors = nconstructors(exprtype(pat));
 		}
-		accept->obscured = (start->obscured || start->any != NULL);
 		lappend(&start->pat, &start->npat, pat);
 		lappend(&start->next, &start->nnext, accept);
 		lappend(end, nend, accept);
-		return !start->obscured && start->any == NULL;
+		return 1;
 	}
 }
 
