@@ -6,19 +6,16 @@ use thrtestutil
 const Nherd = 20
 
 var val : uint64 = 0
-var done : uint32 = 0
 var mtx : thread.mutex
+var done
 
 const main = {
-	done = 0
-	val = 0
-
 	mtx = thread.mkmtx()
+	done = thread.mkwg(Nherd)
+
 	thrtestutil.mkherd(Nherd, incvar)
-	while thread.xget(&done) != Nherd
-		/* nothing */
-	;;
-	if val != 1000 * 20
+	thread.wgwait(&done)
+	if val != 1000 * (Nherd : uint64)
 		std.fatal("mutexes are broken, got {}\n", val)
 	;;
 }
@@ -29,5 +26,5 @@ const incvar = {
 		val++
 		thread.mtxunlock(&mtx)
 	;;
-	thread.xadd(&done, 1)
+	thread.wgpost(&done)
 }

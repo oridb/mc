@@ -1,0 +1,78 @@
+use "mutex"
+
+pkg thread =
+	/*
+	`_lock` grants exclusive access to either n readers or one writer.
+
+	`_rlock` protects `_rcount` and allows the first reader to attempt to
+	lock `_lockk` without letting other readers in.
+	*/
+	type rwlock = struct
+		_lock   : mutex
+		_rlock  : mutex
+		_rcount : uint32
+	;;
+
+	const mkrwlock  : (-> rwlock)
+	const rdlock    : (rw : rwlock# -> void)
+	const wrlock    : (rw : rwlock# -> void)
+	const tryrdlock : (rw : rwlock# -> bool)
+	const trywrlock : (rw : rwlock# -> bool)
+	const rdunlock  : (rw : rwlock# -> void)
+	const wrunlock  : (rw : rwlock# -> void)
+;;
+
+const mkrwlock = {
+	-> [._lock = mkmtx(), ._rlock = mkmtx()]
+}
+
+const rdlock = {rw
+	mtxlock(&rw._rlock)
+
+	/*
+	The first reader either successfully acquires `_lock`, locking out all
+	writers, or blocks while holding `_rlock`, locking out all other
+	readers until it is able to acquire `_lock`, meaning that a writer has
+	released it.
+	*/
+	if rw._rcount++ == 0
+		mtxlock(&rw._lock)
+	;;
+	mtxunlock(&rw._rlock)
+}
+
+const wrlock = {rw
+	mtxlock(&rw._lock)
+}
+
+const tryrdlock = {rw
+	var rc = true
+	mtxlock(&rw._rlock)
+	if rw._rcount++ == 0
+		if !mtxtrylock(&rw._lock)
+			rw._rcount--
+			rc = false
+		;;
+	;;
+	mtxunlock(&rw._rlock)
+	-> rc
+}
+
+const trywrlock = {rw
+	-> mtxtrylock(&rw._lock)
+}
+
+const rdunlock = {rw
+	mtxlock(&rw._rlock)
+
+	/* `_lock` is not released until the last reader releases the lock. */
+	if --rw._rcount == 0
+		mtxunlock(&rw._lock)
+	;;
+	mtxunlock(&rw._rlock)
+
+}
+
+const wrunlock = {rw
+	mtxunlock(&rw._lock)
+}

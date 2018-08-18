@@ -1,0 +1,49 @@
+use std
+use thread
+
+use thrtestutil
+
+const Nherd = 20
+const Nloops = 100_000
+
+var val : uint64
+var nreaders : uint32
+var nwriters : uint32
+var rw
+var done
+
+const main = {
+	rw = thread.mkrwlock()
+	done = thread.mkwg(Nherd)
+
+	thrtestutil.mkherd(Nherd, read)
+	thrtestutil.mkherd(Nherd, incvar)
+	thread.wgwait(&done)
+	if val != Nloops * (Nherd : uint64)
+		std.fatal("rwlocks are broken, got {}\n", val)
+	;;
+}
+
+const incvar = {
+	for var i = 0; i < Nloops; i++
+		thread.wrlock(&rw)
+		thread.xadd(&nwriters, 1)
+		std.assert(thread.xget(&nreaders) == 0, "incvar: rwlocks are broken\n")
+		val++
+		thread.xadd(&nwriters, -1)
+		thread.wrunlock(&rw)
+	;;
+	thread.wgpost(&done)
+}
+
+const read = {
+	/* Linux seems to not want to end the process when there are still running threads. */
+	while thread.xget(&done._val) != 0
+		thread.rdlock(&rw)
+		thread.xadd(&nreaders, 1)
+		std.assert(thread.xget(&nwriters) == 0, "read: rwlocks are broken\n")
+		thread.xadd(&nreaders, -1)
+		thread.rdunlock(&rw)
+		std.usleep(1000)
+	;;
+}

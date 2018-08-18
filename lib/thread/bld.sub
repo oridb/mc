@@ -6,11 +6,13 @@ lib thread =
 	condvar.myr
 	mutex.myr
 	ncpu.myr
+	rwlock.myr
 	sem.myr
 	waitgrp.myr
 
 	# futex-based impls
 	mutex+futex.myr
+	rwlock+futex.myr
 	sem+futex.myr
 	waitgrp+futex.myr
 
