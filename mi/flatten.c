@@ -58,7 +58,7 @@ static Node *flatten(Flattenctx *s, Node *n);
 static Node *rval(Flattenctx *s, Node *n);
 static Node *lval(Flattenctx *s, Node *n);
 static Node *assign(Flattenctx *s, Node *lhs, Node *rhs);
-static Node *draininc(Flattenctx *c, Node *protect, int free);
+static void draininc(Flattenctx *c);
 
 static void
 append(Flattenctx *s, Node *n)
@@ -467,24 +467,14 @@ assign(Flattenctx *s, Node *lhs, Node *rhs)
  * If protect is not null, returns a node with the
  * unmodified value.
  */
-static Node*
-draininc(Flattenctx *fc, Node *protect, int free)
+static void
+draininc(Flattenctx *fc)
 {
-	Node *tmp;
 	size_t i;
 
-	tmp = NULL;
-	if (!fc->nqueue)
-		return protect;
-	if (protect) {
-		tmp = temp(fc, protect);
-		append(fc, assign(fc, tmp, protect));
-	}
 	for (i = 0; i < fc->nqueue; i++)
 		append(fc, fc->incqueue[i]);
-	if (free)
-		lfree(&fc->incqueue, &fc->nqueue);
-	return tmp;
+	lfree(&fc->incqueue, &fc->nqueue);
 }
 
 /* returns 1 when the exit jump needs to be emitted */
@@ -637,10 +627,10 @@ rval(Flattenctx *s, Node *n)
 		break;;
 	case Oret:
 		v = rval(s, args[0]);
-		t = draininc(s, v, 1);
 		if (!s->tret)
 			s->tret = temp(s, v);
-		flatten(s, asn(lval(s, s->tret), t));
+		flatten(s, asn(lval(s, s->tret), v));
+		draininc(s);
 		if (exitscope(s, NULL, Zloc, Xret))
 			append(s, mkexpr(n->loc, Oret, s->tret, NULL));
 		break;
@@ -779,10 +769,10 @@ flattenloop(Flattenctx *s, Node *n)
 	flatten(s, lcond);             /* test lbl */
 	flattencond(s, n->loopstmt.cond, ldec, lend);    /* repeat? */
 	flatten(s, ldec);        	/* drain decrements */
-	draininc(s, NULL, 0);
+	draininc(s);
 	jmp(s, lbody);              	/* goto test */
 	flatten(s, lend);             	/* exit */
-	draininc(s, NULL, 1);
+	draininc(s);
 
 	s->inloop--;
 	s->loop = l;
@@ -795,7 +785,7 @@ static void
 flattenif(Flattenctx *s, Node *n, Node *exit)
 {
 	Node *l1, *l2, *l3;
-	Node *iftrue, *iffalse;
+	Node *cond, *iftrue, *iffalse, *t;
 
 	l1 = genlbl(n->loc);
 	l2 = genlbl(n->loc);
@@ -804,17 +794,24 @@ flattenif(Flattenctx *s, Node *n, Node *exit)
 	else
 		l3 = genlbl(n->loc);
 
+	cond = rval(s, n->ifstmt.cond);
 	iftrue = n->ifstmt.iftrue;
 	iffalse = n->ifstmt.iffalse;
+	if (s->incqueue) {
+		t = temp(s, cond);
+		flatten(s, asn(t, cond));
+		draininc(s);
+		cond = t;
+	}
 
-	flattencond(s, n->ifstmt.cond, l1, l2);
+	flattencond(s, cond, l1, l2);
 	flatten(s, l1);
-	draininc(s, NULL, 0);
+	draininc(s);
 	/* goto test */
 	flatten(s, iftrue);
 	jmp(s, l3);
 	flatten(s, l2);
-	draininc(s, NULL, 1);
+	draininc(s);
 	/* because lots of bunched up end labels are ugly,
 	 * coalesce them by handling 'elif'-like construct
 	 * separately */
@@ -1022,15 +1019,17 @@ flatteniter(Flattenctx *s, Node *n)
 static void
 flattenmatch(Flattenctx *fc, Node *n)
 {
-	Node *val, **match;
+	Node *v, *r, **match;
 	size_t i, nmatch;
 
-	val = rval(fc, n->matchstmt.val);
-	val = draininc(fc, val, 1);
+	r = rval(fc, n->matchstmt.val);
+	v = temp(fc, r);
+	flatten(fc, asn(v, r));
+	draininc(fc);
 
 	match = NULL;
 	nmatch = 0;
-	genmatch(n, val, &match, &nmatch);
+	genmatch(n, v, &match, &nmatch);
 	for (i = 0; i < nmatch; i++)
 		flatten(fc, match[i]);
 }
@@ -1047,7 +1046,7 @@ flattenexpr(Flattenctx *fc, Node *n)
 	r = rval(fc, n);
 	if (r)
 		append(fc, r);
-	draininc(fc, NULL, 1);
+	draininc(fc);
 }
 
 static Node *
