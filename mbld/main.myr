@@ -37,6 +37,7 @@ const main = {args : byte[:][:]
 			[.opt='b', .arg="bin", .desc="compile binary 'bin' from inputs"],
 			[.opt='r', .arg="rt", .desc="link against runtime 'rt'"],
 			[.opt='o', .arg="dir", .desc="output directory"],
+			[.opt='v', .desc="increase build verbosity"],
 		][:]
 	])
 
@@ -58,6 +59,7 @@ const main = {args : byte[:][:]
 		| ('o', arg):	bld.opt_objdir = arg
 		| ('b', arg):	targname = arg
 		| ('r', arg):	bld.opt_runtime = arg
+		| ('v', _):	bld.opt_verbosity++
 		| _:		std.die("unreachable\n")
 		;;
 	;;
@@ -72,7 +74,7 @@ const main = {args : byte[:][:]
 	if targname.len != 0
 		ok = buildimm(b, targname, cmd.args)
 	elif runsrc.len != 0
-		bld.opt_silent = true
+		bld.opt_verbosity = -1
 		tmp = std.mktemppath("runmyr")
 		ok = buildimm(b, tmp, [runsrc][:])
 		if ok

@@ -33,7 +33,7 @@ const run = {cmd, dir
 const mbldput = {fmt, args
 	var ap
 
-	if !opt_silent
+	if opt_verbosity >= 0
 		ap = std.vastart(&args)
 		std.putv(fmt, &ap)
 	;;

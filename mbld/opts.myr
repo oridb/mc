@@ -20,7 +20,7 @@ pkg bld =
 	var opt_objdir		: byte[:]
 	var opt_maxproc 	: std.size
 	var opt_debug		: bool
-	var opt_silent		: bool
+	var opt_verbosity	: int
 
 	/* undocumented/unsupported opts */
 	var opt_mc	: byte[:]
@@ -66,7 +66,7 @@ var opt_ldflags		= [][:]
 var opt_alltags		= [][:]
 var opt_objdir		= "obj"
 var opt_genasm  	= false
-var opt_silent		= false
+var opt_verbosity	= 0
 var opt_maxproc 	= 1
 
 const initopts = {

@@ -4,6 +4,7 @@ use regex
 
 use "types"
 use "util"
+use "opts"
 
 pkg bld =
 	const showsub	: (b : build#, cmd : byte[:], \
@@ -27,6 +28,10 @@ const showsub = {b, cmd, fd, logfd, failed
 
 	f = auto bio.mkfile(fd, bio.Rd)
 	log = auto bio.mkfile(logfd, bio.Wr)
+	/* Pretty up the output a bit */
+	if opt_verbosity >= 1
+		bio.write(log, "\n")
+	;;
 	res = `std.None
 	match bio.readln(f)
 	| `std.Err `bio.Eof:
@@ -36,7 +41,7 @@ const showsub = {b, cmd, fd, logfd, failed
 	| `std.Ok ln:
 		match testplan(ln)
 		| `std.None:
-			bio.write(log, ln)
+			bio.put(log, "{}\n", ln)
 			showraw(fd, logfd)
 		| `std.Some ntests:
 			res = `std.Some showtests(b, cmd, failed, \
@@ -115,7 +120,7 @@ const showtests = {b, cmd, failed, f, log, ntests
 			;;
 		;;
 
-		bio.put(log, "\t{}\n", ln)
+		bio.put(log, "{}\n", ln)
 	;;
 	if !checktests(ntests, nresults)
 		ok = false

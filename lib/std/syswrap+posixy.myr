@@ -45,6 +45,7 @@ pkg std =
 	const pwrite	: (fd : fd, buf : byte[:], off : off -> result(size, errno))
 	const pipe	: (fds : fd[2]# -> errno)
 	const seek	: (fd : fd, delta : off, whence : whence -> result(off, errno))
+	const dup	: (ofd : fd -> result(fd, errno))
 	const dup2	: (ofd : fd, nfd : fd -> result(fd, errno))
 	const nopipe	: (-> void)
 
@@ -88,6 +89,7 @@ const write	= {fd, buf;	-> check(sys.write((fd : sys.fd), buf))}
 const pwrite	= {fd, buf,off;	-> check(sys.pwrite((fd : sys.fd), buf, (off : sys.off)))}
 const pipe	= {fds;		-> (sys.pipe((fds : sys.fd[2]#)) : errno)}
 const seek	= {fd, delta, whence;	-> check(sys.lseek((fd : sys.fd), (delta : sys.off), (whence : sys.whence)))}
+const dup	= {ofd;	-> check((sys.dup((ofd : sys.fd)) : fd))}
 const dup2	= {ofd, nfd;	-> check((sys.dup2((ofd : sys.fd), (nfd : sys.fd)) : fd))}
 
 const nopipe = {

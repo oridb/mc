@@ -46,6 +46,7 @@ pkg std =
 	const pwrite	: (fd : fd, buf : byte[:], off : off -> result(size, errno))
 	const seek	: (fd : fd, delta : off, whence : whence -> result(off, errno))
 	const pipe	: (fds : fd[2]# -> errno)
+	const dup	: (ofd : fd -> result(fd, errno))
 	const dup2	: (ofd : fd, nfd : fd -> result(fd, errno))
 	const nopipe	: (-> void)
 
@@ -193,6 +194,7 @@ const write	= {fd, buf;	-> check(sys.pwrite((fd : sys.fd), buf, -1))}
 const pwrite	= {fd, buf,off;	-> check(sys.pwrite((fd : sys.fd), buf, (off : sys.off)))}
 const seek	= {fd, off, whence; 	-> check(sys.seek((fd : sys.fd), (off : sys.off), (whence : int64)))}
 const pipe	= {fds;		-> (sys.pipe((fds : sys.fd[2]#)) : errno)}
+const dup	= {ofd;	-> check((sys.dup(-1, (ofd : sys.fd)) : fd))}
 const dup2	= {ofd, nfd;	-> check(sys.dup((ofd : sys.fd), (nfd : sys.fd)))}
 
 /* path manipulation */

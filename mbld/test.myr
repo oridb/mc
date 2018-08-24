@@ -89,8 +89,13 @@ const runtest = {b, n, targs, isbench, failed
 	| `std.Err m:
 		std.fatal("\nunable to run test: {}\n", m)
 	| `std.Ok (pid, infd, outfd):
-		log = std.strcat(std.basename(n.lbl), ".log")
-		logfd = std.try(std.openmode(log, std.Owrite | std.Ocreat, 0o644))
+		if opt_verbosity >= 1
+			log = ""
+			logfd = std.try(std.dup(std.Out))
+		else
+			log = std.strcat(std.basename(n.lbl), ".log")
+			logfd = std.try(std.openmode(log, std.Owrite | std.Ocreat, 0o644))
+		;;
 		sub = showsub(b, n.lbl, outfd, logfd, failed)
 		std.slfree(log)
 		std.close(infd)
@@ -118,6 +123,7 @@ const runtest = {b, n, targs, isbench, failed
 		if !res
 			std.slpush(failed, std.fmt("{j= }", n.cmd))
 		;;
+		std.close(logfd)
 	;;
 	-> res
 }
