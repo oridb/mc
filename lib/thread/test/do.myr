@@ -1,0 +1,30 @@
+use std
+use thread
+
+const main = {
+	match std.espork(["echo", "hello"][:])
+	| `std.Err e:
+		std.fatal("could not spork\n")
+	| `std.Ok (pid, in, out, err):
+		std.close(in)
+		var w = thread.do({;-> std.wait(pid)})
+		var o = thread.do({;-> std.fslurp(out)})
+		var e = thread.do({;-> std.fslurp(err)})
+
+		match thread.futget(w)
+		| `std.Wsuccess:	/* ok */
+		| bad:	std.fatal("bad wait: {}\n", bad)
+		;;
+
+		match thread.futget(o)
+		| `std.Ok "hello\n":	/* ok */
+		| bad:	std.fatal("bad out: {}\n", bad)
+		;;
+
+		match thread.futget(e)
+		| `std.Ok "":	/* ok */
+		| bad:	std.fatal("bad err: {}\n", bad)
+		;;
+	;;
+}
+

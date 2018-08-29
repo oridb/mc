@@ -1,3 +1,10 @@
+# get variants
+.globl thread$xget8
+.globl _thread$xget8
+thread$xget8:
+_thread$xget8:
+	movb	(%rdi), %al
+	ret
 .globl thread$xget32
 .globl _thread$xget32
 thread$xget32:
@@ -15,6 +22,13 @@ _thread$xgetp:
 	movq	(%rdi), %rax
 	ret
 
+# set variants
+.globl thread$xset8
+.globl _thread$xset8
+thread$xset8:
+_thread$xset8:
+	movl	%esi, (%rdi)
+	ret
 .globl thread$xset32
 .globl _thread$xset32
 thread$xset32:
@@ -32,6 +46,14 @@ _thread$xsetp:
 	movq	%rsi, (%rdi)
 	ret
 
+# add variants
+.globl thread$xadd8
+.globl _thread$xadd8
+thread$xadd8:
+_thread$xadd8:
+	lock xaddb	%sil, (%rdi)
+	movb %sil,%al
+	ret
 .globl thread$xadd32
 .globl _thread$xadd32
 thread$xadd32:
@@ -51,6 +73,14 @@ _thread$xaddp:
 	movq %rsi,%rax
 	ret
 
+# cas variants 
+.globl thread$xcas8
+.globl _thread$xcas8
+thread$xcas8:
+_thread$xcas8:
+	movb	%sil, %al
+	lock cmpxchgb	%dl, (%rdi)
+	ret
 .globl thread$xcas32
 .globl _thread$xcas32
 thread$xcas32:
@@ -66,10 +96,18 @@ thread$xcas64:
 thread$xcasp:
 _thread$xcas64:
 _thread$xcasp:
-	movq	%rsi, %rax
+	movq		%rsi, %rax
 	lock cmpxchgq	%rdx, (%rdi)
 	ret
 
+# xchg variants
+.globl thread$xchg8
+.globl _thread$xchg8
+thread$xchg8:
+_thread$xchg8:
+	movb		%sil, %al
+	lock xchgb	(%rdi), %al
+	ret
 .globl thread$xchg32
 .globl _thread$xchg32
 thread$xchg32:

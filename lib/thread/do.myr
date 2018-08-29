@@ -1,0 +1,17 @@
+use std
+
+use "future"
+use "spawn"
+
+pkg thread =
+	generic do	: (fn : (-> @a) -> future(@a)#)
+;;
+
+generic do = {fn
+	var r
+
+	r = mkfut()
+	spawn({; futput(r, fn()) })
+	-> r
+}
+

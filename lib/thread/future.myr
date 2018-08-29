@@ -1,63 +1,55 @@
 use std
 
 use "mutex"
+use "condvar"
+use "atomic"
 
 pkg thread =
 	type future(@a) = struct
 		mtx	: mutex
+		cv	: cond
 		set	: bool
 		val	: @a
 	;;
 
-	generic mkfut	: (-> future(@a))
-	generic futset	: (fut : future(@a)#, val : @a -> bool)
+	generic mkfut	: (-> future(@a)#)
+	generic futput	: (fut : future(@a)#, val : @a -> void)
 	generic futget	: (fut : future(@a)# -> @a)
-	generic futtryget	: (fut : future(@a)# -> std.option(@a))
-	generic futclear	: (fut : future(@a)# -> void)
+	generic futpeek	: (fut : future(@a)# -> @a)
 ;;
-
-const Unset = 0
-const Waiting = 1
-const Set = 2
 
 generic mkfut = {
 	var fut
 
-	fut = [.mtx = mkmtx() ]
-	mtxlock(&fut.mtx)
+	fut = std.alloc()
+	fut.mtx = mkmtx()
+	fut.cv = mkcond(&fut.mtx)
+	fut.set = false
 	-> fut
 }
 
-generic futset = {fut, val
-	if fut.set
-		-> false
-	;;
-	/* compiler doesn't reorder shit */
+generic futput = {fut, val
 	fut.val = val
-	fut.set = true
-	mtxunlock(&fut.mtx)
-	-> true
-}
-
-generic futtryget = {fut
-	var val
-
-	if !fut.set
-		-> `std.None
-	;;
-	mtxlock(&fut.mtx)
-	val = fut.val
-	mtxunlock(&fut.mtx)
-	-> `std.Some val
+	xset(&fut.set, true)
+	condsignal(&fut.cv)
 }
 
 generic futget = {fut
 	var val
-
-	mtxlock(&fut.mtx)
-	val = fut.val
-	mtxunlock(&fut.mtx)
+	
+	val = futpeek(fut)
+	std.free(fut)
 	-> val
 }
 
+generic futpeek = {fut
+	if !xget(&fut.set)
+		mtxlock(&fut.mtx)
+		if !xget(&fut.set)
+			condwait(&fut.cv)
+		;;
+		mtxunlock(&fut.mtx)
+	;;
+	-> fut.val
+}
 

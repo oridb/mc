@@ -2,6 +2,10 @@ lib thread =
 	common.myr
 	hookstd.myr	# install thread hooks
 
+	# higher level apis
+	future.myr
+	do.myr
+
 	# generic fallbacks
 	condvar.myr
 	mutex.myr

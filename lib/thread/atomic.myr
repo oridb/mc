@@ -10,6 +10,7 @@ pkg thread =
 		xchg	: (p : @a#, new : @a -> @a)
 	;;
 
+	impl atomic bool
 	impl atomic int32
 	impl atomic int64
 	impl atomic uint32
@@ -20,25 +21,38 @@ pkg thread =
 	generic xcasptr : (p : @a##, old : std.option(@a#), new : std.option(@a#) -> std.option(@a#))
 	generic xchgptr : (p : @a##, new : std.option(@a#) -> std.option(@a#))
 
+	pkglocal extern const xget8	: (p : uint8# -> uint8)
 	pkglocal extern const xget32	: (p : uint32# -> uint32)
 	pkglocal extern const xget64	: (p : uint64# -> uint64)
 	pkglocal extern const xgetp	: (p : std.intptr# -> std.intptr)
 
+	pkglocal extern const xset8	: (p : uint8#, v : uint8 -> void)
 	pkglocal extern const xset32	: (p : uint32#, v : uint32 -> void)
 	pkglocal extern const xset64	: (p : uint64#, v : uint64 -> void)
 	pkglocal extern const xsetp	: (p : std.intptr#, v : std.intptr -> void)
 
+	pkglocal extern const xadd8	: (p : uint8#, v : uint8 -> uint8)
 	pkglocal extern const xadd32	: (p : uint32#, v : uint32 -> uint32)
 	pkglocal extern const xadd64	: (p : uint64#, v : uint64 -> uint64)
 	pkglocal extern const xaddp	: (p : std.intptr#, v : std.intptr -> std.intptr)
 
+	pkglocal extern const xcas8	: (p : uint8#, old: uint8, new : uint8 -> uint8)
 	pkglocal extern const xcas32	: (p : uint32#, old: uint32, new : uint32 -> uint32)
 	pkglocal extern const xcas64	: (p : uint64#, old: uint64, new : uint64 -> uint64)
 	pkglocal extern const xcasp	: (p : std.intptr#, old: std.intptr, new : std.intptr -> std.intptr)
 
+	pkglocal extern const xchg8	: (p : uint8#, v : uint8 -> uint8)
 	pkglocal extern const xchg32	: (p : uint32#, v : uint32 -> uint32)
 	pkglocal extern const xchg64	: (p : uint64#, v : uint64 -> uint64)
 	pkglocal extern const xchgp	: (p : std.intptr#, v : std.intptr -> std.intptr)
+;;
+
+impl atomic bool =
+	xget	= {p; -> (xget8((p : uint8#)) : bool)}
+	xset	= {p, v; xset8((p : uint8#), (v : uint8))}
+	xadd	= {p, v; -> (xadd8((p : uint8#), (v : uint8)) : bool)}
+	xcas	= {p, old, new; -> (xcas8((p : uint8#), (old : uint8), (new : uint8)) : bool)}
+	xchg	= {p, v; -> (xchg8((p : uint8#), (v : uint8)) : bool)}
 ;;
 
 impl atomic int32 =
