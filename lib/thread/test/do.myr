@@ -2,16 +2,16 @@ use std
 use thread
 
 const main = {
-	match std.espork(["echo", "hello"][:])
+	match std.espork(["/bin/echo", "hello"][:])
 	| `std.Err e:
 		std.fatal("could not spork\n")
 	| `std.Ok (pid, in, out, err):
 		std.close(in)
-		var w = thread.do({;-> std.wait(pid)})
 		var o = thread.do({;-> std.fslurp(out)})
 		var e = thread.do({;-> std.fslurp(err)})
+		var w = std.wait(pid)
 
-		match thread.futget(w)
+		match w
 		| `std.Wsuccess:	/* ok */
 		| bad:	std.fatal("bad wait: {}\n", bad)
 		;;
