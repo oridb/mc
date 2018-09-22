@@ -123,8 +123,7 @@ htput(Htab *ht, void *k, void *v)
 		i = (h + di) & (ht->sz - 1);
 	}
 	ht->nelt++;
-conflicted
-:
+conflicted:
 	if (ht->dead[i])
 		ht->ndead--;
 	ht->hashes[i] = h;
@@ -152,8 +151,7 @@ htidx(Htab *ht, void *k)
 	h = hash(ht, k);
 	i = h & (ht->sz - 1);
 	while (ht->hashes[i] && !ht->dead[i] && ht->hashes[i] != h) {
-searchmore
-:
+searchmore:
 		di++;
 		i = (h + di) & (ht->sz - 1);
 	}

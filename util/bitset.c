@@ -112,8 +112,8 @@ bscount(Bitset *bs)
 	return n;
 }
 
-inline
-static int firstbit(size_t b)
+static inline int
+firstbit(uint64_t b)
 {
 	int n;
 	static const char bits[] = {
