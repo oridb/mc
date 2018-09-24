@@ -80,7 +80,7 @@ const initopts = {
 	| "NetBSD":	opt_sys = "netbsd"
 	| "OpenBSD":	opt_sys = "openbsd"
 	| "Plan9":	opt_sys = "plan9"
-	| unknown:	std.fatal("unknown systemy \"{}\"\n", unknown)
+	| unknown:	std.fatal("unknown system \"{}\"\n", unknown)
 	;;
 
 	opt_sysvers = parseversion(si.release)
