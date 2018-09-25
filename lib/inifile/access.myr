@@ -8,7 +8,11 @@ pkg inifile =
 		ini : inifile#
 		idx : int
 	;;
+	type inikviter = struct
+		iter	: std.htkviter((byte[:], byte[:]), byte[:])
+	;;
 	impl iterable inisectiter -> byte[:]
+	impl iterable inikviter -> (byte[:], byte[:], byte[:])
 
 	/* key getting/setting */
 	const get	: (ini : inifile#, sect : byte[:], key : byte[:]	-> std.option(byte[:]))
@@ -17,6 +21,7 @@ pkg inifile =
 	const put	: (ini : inifile#, sect : byte[:], key : byte[:], val : byte[:]	-> void)
 
 	const bysection	: (ini : inifile# -> inisectiter)
+	const bykeyval	: (ini : inifile# -> inikviter)
 ;;
 
 const get = {ini, sect, key
@@ -44,6 +49,24 @@ const put = {ini, sect, key, val
 const bysection = {ini
 	-> [.ini=ini, .idx=0]
 }
+
+const bykeyval = {ini
+	-> [.iter = std.byhtkeyvals(ini.elts)]
+}
+
+
+impl iterable inikviter -> (byte[:], byte[:], byte[:]) =
+	__iternext__ = {itp, valp
+		var s, k, v, p, r
+		r = __iternext__(&itp.iter, &p)
+		((s, k), v) = p
+		valp# = (s, k, v)
+		-> r
+	}
+
+	__iterfin__ = {itp, valp
+	}
+;;
 
 impl iterable inisectiter -> byte[:] =
 	__iternext__ = {itp, valp : byte[:]#
