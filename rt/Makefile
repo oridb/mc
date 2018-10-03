@@ -22,4 +22,4 @@ uninstall:
 	rm -f $(abspath $(DESTDIR)/$(INST_ROOT)/lib/myr/_myrrt.o)
 
 clean:
-	rm -f _myrrt.o _myrrt.s start.s
+	rm -f _myrrt.o _myrrt.s start.s abort.s
