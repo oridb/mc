@@ -3,15 +3,15 @@ use crypto
 
 const main = {
 	hasheq(crypto.sha1("")[:], \
-		"da39a3ee5e6b4b0d3255bfef60951890d8af0709")
+		"da39a3ee5e6b4b0d3255bfef95601890afd80709")
 	hasheq(crypto.sha1("h")[:], \
-		"27d5482eebd075de44389774e2fc8c695cf48a75")
+		"27d5482eebd075de44389774fce28c69f45c8a75")
 	/* 64 byte block */
 	hasheq(crypto.sha1("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")[:], \
-		"0098ba824b5c16427bd7a1125a2a442aec25644d")
+		"0098ba824b5c16427bd7a1122a5a442a25ec644d")
 	/* tail spanning */
 	hasheq(crypto.sha1("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbb")[:], \
-		"4eb17e52bb55910b037869438f69d9c87643d75a")
+		"4eb17e52bb55910b03786943698fd9c84376d75a")
 }
 
 const hasheq = {got, expected
