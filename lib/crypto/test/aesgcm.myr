@@ -69,6 +69,7 @@ const testenc = {tc, g, c
 	std.slfree(iv)
 	std.slfree(pt)
 	std.slfree(ect)
+	std.slfree(etag)
 }
 
 const testdec = {tc, g, c
@@ -97,6 +98,7 @@ const testdec = {tc, g, c
 	std.slfree(iv)
 	std.slfree(ct)
 	std.slfree(ept)
+	std.slfree(etag)
 }
 
 const unhex = {s
