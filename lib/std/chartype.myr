@@ -1622,7 +1622,7 @@ const isupper = {c
 }
 
 const istitle = {c
-	-> isupper(c) && islower(c)
+	-> isupper(c) && !islower(c)
 }
 
 const isascii = {c
