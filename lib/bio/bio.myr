@@ -413,37 +413,36 @@ const readdelim = {f, delim, drop
 
 	ret = [][:]
 	while true
-		/* get at least delimiter count of characters */
-		match ensureread(f, 1)
+		match ensureread(f, delim.len)
 		| `std.Err `Eof:
-			if !drop
-				readinto(f, &ret, f.rend - f.rstart)
-			else
-				f.rstart += f.rend - f.rstart
-			;;
-			if ret.len > 0
-				-> `std.Ok ret
-			else
-				-> `std.Err `Eof
+			/* 
+			 * We tried to get a delimiter, but came short.
+			 * Return the whole end of the buffer as the
+			 * read value, as though there was a terminating
+			 * delimiter at the end. If we're at 0 bytes even
+			 * then, return an eof.
+			 */
+			readinto(f, &ret, f.rend - f.rstart)
+			match ret.len
+			| 0:	-> `std.Err `Eof
+			| _:	-> `std.Ok ret
 			;;
 		| `std.Err e:	-> `std.Err e
-		| `std.Ok _:
+		| `std.Ok _:	/* nothing: scan the buffer */
 		;;
-		for var i = f.rstart; i < f.rend; i++
-			if f.rbuf[i] == delim[0]
-				for var j = 0; j < delim.len; j++
-					if f.rbuf[i + j] != delim[j]
-						goto nextiterread
-					;;
+		for var i = f.rstart; i < f.rend - delim.len; i++
+			for var j = 0; j < delim.len; j++
+				if f.rbuf[i + j] != delim[j]
+					goto nextiterread
 				;;
-				if !drop
-					readinto(f, &ret, i - f.rstart)
-				else
-					f.rstart += i - f.rstart
-				;;
-				f.rstart += delim.len
-				-> `std.Ok ret
 			;;
+			if !drop
+				readinto(f, &ret, i - f.rstart)
+			else
+				f.rstart += i - f.rstart
+			;;
+			f.rstart += delim.len
+			-> `std.Ok ret
 :nextiterread
 		;;
 		if !drop
