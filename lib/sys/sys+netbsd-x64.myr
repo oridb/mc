@@ -18,6 +18,7 @@ pkg sys =
 	type umtxop	= int32
 	type signo	= int32
 	type sigflags	= int32
+	type sysarchop	= int64
 
 	type clock = union
 		`Clockrealtime
@@ -343,6 +344,21 @@ pkg sys =
 	const Umtxnwakepriv	: umtxop = 21
 	const Umtxmtxwake2	: umtxop = 22
 	const Umtxmax	: umtxop = 23
+
+	/* sysarch ops */
+	const X8664getldt    : sysarchop = 0
+	const X8664setldt    : sysarchop = 1
+	const X8664iopl      : sysarchop = 2
+	const X8664getioperm : sysarchop = 3
+	const X8664setioperm : sysarchop = 4
+	const X8664oldvm86   : sysarchop = 5
+	const X8664getmtrr   : sysarchop = 11
+	const X8664setmtrr   : sysarchop = 12
+	const X8664vm86      : sysarchop = 13
+	const X8664getgsbase : sysarchop = 14
+	const X8664getfsbase : sysarchop = 15
+	const X8664setgsbase : sysarchop = 16
+	const X8664setfsbase : sysarchop = 17
 
 	/* signal actions */
 	const Saonstack		: sigflags = 0x0001	/* take signal on signal stack */
@@ -908,6 +924,9 @@ pkg sys =
 		new : void#, newsz : size# \
 		-> int)
 
+	/* misc */
+	const sysarch	: (op : sysarchop, args : void## -> int)
+
 	extern const cstring	: (str : byte[:] -> byte#)
 	/* filled by start code */
 	extern var __cenvp : byte##
@@ -1100,6 +1119,10 @@ const sysctl = {mib, old, oldsz, new, newsz
 	/* all args already passed through a() or ar  ptrs */
 	-> (syscall(Sys__sysctl, \
 		(mib : int#), a(mib.len), old, oldsz, new, newsz) : int)
+}
+
+const sysarch = {op, args
+	-> (syscall(Syssysarch, op, args) : int)
 }
 
 const clockid = {clk

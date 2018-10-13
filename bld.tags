@@ -1,3 +1,7 @@
+fsbase: freebsd
+fsbase: linux
+fsbase: netbsd
+fsbase: openbsd
 futex: freebsd
 futex: linux
 futex: openbsd:6.2

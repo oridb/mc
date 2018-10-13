@@ -38,6 +38,7 @@ pkg sys =
 	type cpulevel	= int
 	type cpusetid	= int
 	type idtype	= int
+	type sysarchop	= int64
 	
 	type acltype	= int
 	type acltag	= uint32
@@ -802,6 +803,13 @@ pkg sys =
 	const Siglwp	: signo = Sigthr
 	const Siglibrt	: signo = 33	/* reserved by real-time library. */
 	
+	/* sysarch ops */
+	const Archamd64getfs   : sysarchop = 128
+	const Archamd64setfs   : sysarchop = 129
+	const Archamd64getgs   : sysarchop = 130
+	const Archamd64setgs   : sysarchop = 131
+	const Archamd64getxfpu : sysarchop = 132
+	
 	extern const syscall : (sc:scno, args:... -> int64)
 	extern var __cenvp : byte##
 	
@@ -1285,7 +1293,7 @@ pkg sys =
 	const quotactl			:  (path : byte#, cmd : int, uid : int, arg : void# -> int)
 	const lgetfh			:  (fname : byte#, fhp : fhandle# -> int)
 	const getfh			:  (fname : byte#, fhp : fhandle# -> int)
-	const sysarch			:  (op : int, parms : byte# -> int)
+	const sysarch			:  (op : sysarchop, parms : void## -> int)
 	const rtprio			:  (function : int, pid : pid, rtp : rtprio# -> int)
 	const setfib			:  (fibnum : int -> int)
 	const ntp_adjtime		:  (tp : timex# -> int)
@@ -1969,7 +1977,7 @@ const getfh	= {fname, fhp
 	 -> (syscall(Sysgetfh, a(fname), a(fhp)) : int)
 }
 const sysarch	= {op, parms
-	 -> (syscall(Syssysarch, a(op), a(parms)) : int)
+	 -> (syscall(Syssysarch, op, a(parms)) : int)
 }
 const rtprio	= {function, pid, rtp
 	 -> (syscall(Sysrtprio, a(function), a(pid), a(rtp)) : int)

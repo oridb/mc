@@ -2,6 +2,8 @@ use std
 
 use "atomic"
 use "futex"
+use "tls"
+use "types"
 
 pkg thread =
 	/*
@@ -13,6 +15,7 @@ pkg thread =
 	*/
 	type rwlock = struct
 		_state : ftxtag
+		_owner : tid
 	;;
 
 	const mkrwlock  : (-> rwlock)
@@ -28,7 +31,7 @@ const Nrmask  = 0x7fffffff
 const Waitbit = 0x80000000
 
 const mkrwlock = {
-	-> [._state = 0]
+	-> [._state = 0, ._owner = -1]
 }
 
 const rdlock = {rw
@@ -61,6 +64,13 @@ const rdlock = {rw
 
 const wrlock = {rw
 	for ; ;
+		if rw._owner == tid()
+			std.fput(std.Err,
+				"error: thread {} attempted to relock an rwlock it already holds\n",
+				tid())
+			std.suicide()
+		;;
+
 		/*
 		`_state` must be 0 for a writer to acquire the lock. Anything
 		else means the lock is either held or in the process of being
@@ -68,6 +78,7 @@ const wrlock = {rw
 		 */
 		var s = xcas(&rw._state, 0, Nrmask)
 		if s == 0
+			rw._owner = tid()
 			-> void
 		;;
 
@@ -98,7 +109,11 @@ const tryrdlock = {rw
 }
 
 const trywrlock = {rw
-	-> xcas(&rw._state, 0, Nrmask) == 0
+	if xcas(&rw._state, 0, Nrmask) == 0
+		rw._owner = tid()
+		-> true
+	;;
+	-> false
 }
 
 const rdunlock = {rw
@@ -122,6 +137,14 @@ const rdunlock = {rw
 }
 
 const wrunlock = {rw
+	if rw._owner != tid()
+		std.fput(std.Err,
+			"error: thread {} attempted to unlock an rwlock last held by {}\n",
+			tid(), rw._owner)
+		std.suicide()
+	;;
+	rw._owner = -1
+
 	/*
 	If the wait bit was set then there are one or more waiting readers,
 	writers, or both. In the first and third cases, we need to wake

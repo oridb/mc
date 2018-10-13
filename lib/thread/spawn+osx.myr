@@ -1,9 +1,10 @@
 use sys
 use std
 
-pkg thread =
-	type tid = uint64
+use "tls"
+use "types"
 
+pkg thread =
 	const spawn : (fn : (-> void) -> std.result(tid, byte[:]))
 ;;
 
@@ -34,34 +35,13 @@ const spawn = {fn
 }
 
 const spawnstk = {fn, sz
-	var stk : byte#, tid, ret
-	var szp, f, tos, env, envsz
+	var stk, tos, ret
 
-	stk = getstk(sz)
+	stk = sys.mmap((0 : byte#), sz, sys.Mprotrw, sys.Mpriv | sys.Manon, -1, 0)
 	if stk == sys.Mapbad
 		-> `std.Err "couldn't get stack"
 	;;
-	tid = -1
-
-	/* find top of stack */
-	tos = (stk : std.intptr) + (sz : std.intptr)
-
-	/* store the stack size */
-	tos -= sizeof(sys.size)
-	sz -= sizeof(sys.size)
-	szp = (tos : sys.size#)
-	szp# = Stacksz
-
-	/* store the function we call */
-	envsz = std.fnenvsz(fn)
-	tos -= (envsz : std.intptr)
-	sz -= (envsz : sys.size)
-	env = tos
-	tos -= sizeof((->void))
-	sz -= sizeof((->void))
-	f = (tos : (->void)#)
-	f# = std.fnbdup(fn, (env : byte#)[:envsz])
-	var repr = (&fn : int64[2]#)#
+	tos = initstk(stk, fn, sz)
 
 	ret = sys.bsdthread_create( \
 		(tramp	: void#), \	/* start */
@@ -70,21 +50,37 @@ const spawnstk = {fn, sz
 		(0	: void#), \		/* pthread struct */
 		0x01000000)			/* flags (PTHREAD_START_CUSTOM): don't alloc stack in kernel */
 
-	if ret == (-1 : void#)
+	if (ret : std.size) < 0
+		sys.munmap(stk, sz)
 		-> `std.Err "couldn't spawn thread"
 	;;
-	-> `std.Ok (ret : tid)
+	-> `std.Ok (stk : tid)
 }
 
-const getstk = {sz
-	var p, m
+const initstk = {stk, fn, sz
+	var len, tos, hdr, fp, env, envsz
 
-	p = sys.mmap((0 : byte#), sz, sys.Mprotrw, sys.Mpriv | sys.Manon, -1, 0)
-	if p == sys.Mapbad
-		-> p
-	;;
-	m = (p : std.intptr)
-	-> (m : byte#)
+	len = tlslen()
+	tos = (stk : std.intptr) + (sz : std.intptr)
+	tos -= (sizeof(tlshdr) + ((len : std.intptr) * sizeof(void#)) + 0xf) & ~0xf
+	hdr = (tos : tlshdr#)
+	hdr.tid = (stk : tid)
+	hdr.len = len
+	hdr.base = stk
+	hdr.stksz = sz
+
+	var fn1 = {
+		setgsbase(hdr)
+		fn()
+	}
+
+	envsz = std.fnenvsz(fn1)
+	tos -= (envsz : std.intptr)
+	env = tos
+	tos -= sizeof((->void))
+	fp = (tos : (->void)#)
+	fp# = std.fnbdup(fn1, (env : byte#)[:envsz])
+	-> (tos : byte#)
 }
 
 /*

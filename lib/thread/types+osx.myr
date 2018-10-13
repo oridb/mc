@@ -1,0 +1,20 @@
+use sys
+
+pkg thread =
+	type tid        = sys.pid /* 64 bits */
+	type tlskey(@a) = uint64
+
+	/*
+	XXX: Be sure to update tls-impl+osx.s and rt/start-osx.s if any changes
+	are made to the size of this struct and/or the offsets of any of its
+	members.
+	 */
+	pkglocal type tlshdr = struct
+		tid   : tid
+		len   : tlskey(void)
+		base  : byte#
+		stksz : sys.size
+		self  : tlshdr#
+		slots : void#[...]
+	;;
+;;

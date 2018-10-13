@@ -38,6 +38,7 @@ type fallocmode	= uint32
 type mfdflags	= uint32
 type aiocontext	= uint64
 type msg	= void#
+type arch_prctlop	= uint64
 
 
 type clock = union
@@ -583,6 +584,12 @@ const Seekend	: whence = 2
 
 /* return value for a failed mapping */
 const Mapbad	: byte# = (-1 : byte#)
+
+/* arch_prctl ops */
+const Archsetgs : arch_prctlop = 0x1001
+const Archsetfs : arch_prctlop = 0x1002
+const Archgetfs : arch_prctlop = 0x1003
+const Archgetgs : arch_prctlop = 0x1004
 
 /* signal flags */
 const Sanocldstop	: sigflags = 0x00000001

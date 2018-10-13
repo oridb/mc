@@ -1,5 +1,3 @@
-use std
-
-pkg thread = 
+pkg thread =
 	pkglocal generic Zptr : @a#  = (0 : @a#)
 ;;

@@ -32,6 +32,7 @@ type id		= int64
 type cpulevel	= int
 type cpusetid	= int
 type idtype	= int
+type sysarchop	= int
 
 type acltype	= int
 type acltag	= uint32
@@ -795,6 +796,13 @@ const Sigusr2	: signo = 31	/* user defined signal 2 */
 const Sigthr	: signo = 32	/* reserved by thread library. */
 const Siglwp	: signo = Sigthr
 const Siglibrt	: signo = 33	/* reserved by real-time library. */
+
+/* sysarch ops */
+const Archamd64getfs   : sysarchop = 128
+const Archamd64setfs   : sysarchop = 129
+const Archamd64getgs   : sysarchop = 130
+const Archamd64setgs   : sysarchop = 131
+const Archamd64getxfpu : sysarchop = 131
 
 extern const syscall : (sc:scno, args:... -> int64)
 extern var __cenvp : byte##

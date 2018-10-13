@@ -4,6 +4,10 @@
 sys$__cenvp:
     .quad 0
 
+.globl thread$__tls
+thread$__tls:
+    .fill 88 /* sizeof(tlshdr) + (8 * sizeof(void#)) = 24 + 64 */
+
 .text
 /*
  * The entry point for the whole program.
@@ -11,6 +15,7 @@ sys$__cenvp:
  *  - Sets up all argc entries as slices
  *  - Converts argc/argv to a slice
  *  - Stashes a raw envp copy in __cenvp (for syscalls to use)
+ *  - Sets up thread local storage for the main thread
  *  - Calls main()
  */
 .globl _start
@@ -34,6 +39,16 @@ _start:
 	pushq	%rax
 	pushq	%rcx
 	call	cvt
+
+	/* set up the intial tls region for the main thread */
+	subq	$0x10,%rsp
+	movq	$165,%rax		/* sysarch */
+	movq	$129,%rdi		/* Archamd64setfs */
+	leaq	thread$__tls(%rip),%rsi
+	movq	%rsi,(%rsp)
+	movq	%rsp,%rsi
+	syscall
+	addq	$0x10,%rsp
 
 	xorq %rbp,%rbp
 	/* call pre-main initializers */

@@ -1,72 +1,67 @@
 use sys
 use std
 
-pkg thread =
-	type tid = sys.pid
+use "common"
+use "tls"
+use "types"
 
+pkg thread =
 	const spawn : (fn : (-> void) -> std.result(tid, byte[:]))
 ;;
 
+const Stacksz = 8*std.MiB
 extern const exit : (-> void)
 
 /* Holy shit flag mania. */
-const Thrflag = sys.Clonevm | sys.Clonefs | sys.Clonefiles  | \
-	sys.Clonesighand | sys.Clonethread |sys.Clonesysvsem | \
-	sys.Clonesettls | sys.Cloneparentsettid | sys.Clonechildcleartid
-
-const Stacksz = 8*std.MiB
+const Thrflag = sys.Clonevm | sys.Clonefs | sys.Clonefiles | \
+	sys.Clonesighand | sys.Clonethread | sys.Clonesettls | \
+	sys.Clonechildsettid
 
 const spawn = {fn
 	-> spawnstk(fn, Stacksz)
 }
 
 const spawnstk = {fn, sz
-	var stk : byte#, tid, ctid, ret
+	var stk, tos, hdr, ret
 
-	stk = getstk(sz)
+	stk = sys.mmap((0 : byte#), sz, sys.Mprotrw, sys.Mpriv | sys.Manon, -1, 0)
 	if stk == sys.Mapbad
 		-> `std.Err "couldn't get stack"
 	;;
-	stk = initstack(stk, fn, Stacksz)
+	(tos, hdr) = initstk(stk, fn, sz)
 
-	ret = sys.fnclone(Thrflag, \
-		(stk : byte#),\
-		&tid, (0 : byte#), \
-		&ctid, (0 : byte#), \
+	ret = sys.fnclone(Thrflag,
+		tos,
+		Zptr,
+		(hdr : byte#),
+		(&hdr.tid : sys.pid#),
+		Zptr,
 		(startthread : void#))
 	if ret < 0
+		sys.munmap(stk, sz)
 		-> `std.Err "couldn't spawn thread"
 	;;
 	-> `std.Ok (ret : tid)
 }
 
-const initstack = {stk, fn, sz
-	var tos, szp, fp, env, envsz
+const initstk = {stk, fn, sz
+	var len, tos, hdr, fp, env, envsz
+
+	len = tlslen()
+	tos = (stk : std.intptr) + (sz : std.intptr)
+	tos -= (sizeof(tlshdr) + ((len : std.intptr) * sizeof(void#)) + 0xf) & ~0xf
+	hdr = (tos : tlshdr#)
+	hdr.len = len
+	hdr.base = stk
+	hdr.stksz = sz
 
 	envsz = std.fnenvsz(fn)
-	tos = (stk : std.intptr)
-	tos -= sizeof(int64)
-	szp = (tos : sys.size#)
-	szp# = sz
 	tos -= (envsz : std.intptr)
 	env = tos
 	tos -= sizeof((->void))
 	fp = (tos : (->void)#)
 	fp# = std.fnbdup(fn, (env : byte#)[:envsz])
-	-> (tos : byte#)
-}
-
-const getstk = {sz
-	var p, m
-
-	p = sys.mmap((0 : byte#), sz, sys.Mprotrw, sys.Mpriv | sys.Manon, -1, 0)
-	if p == sys.Mapbad
-		-> p
-	;;
-	/* stack starts at the top of memory and grows down. */
-	m = (p : std.intptr)
-	m += (sz : std.intptr)
-	-> (m : byte#)
+	-> ((tos : byte#), hdr)
 }
 
 const startthread = {fn : (-> void)

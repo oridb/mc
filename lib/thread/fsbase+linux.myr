@@ -1,0 +1,28 @@
+use std
+use sys
+
+use "types"
+
+pkg thread =
+	pkglocal const setfsbase : (h : tlshdr# -> void)
+	pkglocal const getfsbase : (-> tlshdr#)
+;;
+
+const setfsbase = {h
+	match sys.arch_prctl(sys.Archsetfs, (h : void#))
+	| 0:
+	| err:
+		std.fput(std.Err, "error: arch_prctl returned {}\n", err)
+		std.suicide()
+	;;
+}
+
+const getfsbase = {
+	var h : tlshdr#
+	match sys.arch_prctl(sys.Archgetfs, (&h : void#))
+	| 0: -> h
+	| err:
+		std.fput(std.Err, "error: arch_prctl returned {}\n", err)
+		std.suicide()
+	;;
+}

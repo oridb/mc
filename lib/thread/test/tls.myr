@@ -1,0 +1,49 @@
+use std
+use sys
+use thread
+
+const Nelt = 100
+const Nthr = 100
+
+var elts : thread.tid[Nelt]
+var start
+var wg
+
+const setget = {
+	var tid = thread.tid()
+	var localelts : thread.tid[Nelt]
+	for var i = 0; i < Nelt; i++
+		localelts[i] = elts[i] + tid
+	;;
+
+	var k = start
+	for var i = 0; i < Nelt; i++
+		thread.tlsset(k, &localelts[i])
+		k++
+	;;
+	k = start
+	for var i = 0; i < Nelt; i++
+		std.assert(thread.tlsget(k)# == localelts[i], "tls is broken\n")
+		k++
+	;;
+	thread.wgpost(&wg)
+}
+
+const main = {
+	for var i = 0; i < Nelt; i++
+		elts[i] = std.randnum()
+	;;
+
+	start = thread.tlsalloc()
+	for var i = 1; i < Nelt; i++
+		var k : thread.tlskey(thread.tid#) = thread.tlsalloc()
+	;;
+
+	wg = thread.mkwg(Nthr)
+	for var i = 1; i < 100; i++
+		thread.spawn(setget)
+	;;
+	setget()
+
+	thread.wgwait(&wg)
+}

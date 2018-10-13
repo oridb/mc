@@ -1,0 +1,19 @@
+use sys
+
+pkg thread =
+	type tid        = sys.pid /* 32 bits on all of the fsbase platforms */
+	type tlskey(@a) = uint32
+
+	/*
+	XXX: Be sure to update tls-impl+fsbase.s and
+	rt/start-{freebsd,linux,netbsd,openbsd}.s if any changes are made to
+	the size of this struct and/or the offsets of any of its members.
+	 */
+	pkglocal type tlshdr = struct
+		tid   : tid
+		len   : tlskey(void)
+		base  : byte#
+		stksz : sys.size
+		slots : void#[...]
+	;;
+;;

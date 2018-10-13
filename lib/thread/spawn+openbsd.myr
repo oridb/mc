@@ -1,9 +1,11 @@
 use std
 use sys
 
-pkg thread =
-	type tid = uint64
+use "common"
+use "tls"
+use "types"
 
+pkg thread =
 	const spawn : (fn : (-> void) -> std.result(tid, byte[:]))
 	pkglocal var exitstk : byte#
 ;;
@@ -18,6 +20,7 @@ const __init__ = {
 	  time to swap to before we invalidate a stack.
 	 */
 	exitstk = getstk(16)
+	std.assert(exitstk != sys.Mapbad, "error: failed to mmap exitstk\n")
 }
 
 const spawn = {fn;
@@ -25,30 +28,17 @@ const spawn = {fn;
 }
 
 const spawnstk = {fn, sz
-	var stk, szp, fp, tos, tfp, env, envsz
-	var ret
+	var stk, tos, hdr, tfp, ret
 
 	stk = getstk(sz)
 	if stk == sys.Mapbad
 		-> `std.Err "couldn't get stack"
 	;;
-	/* store size */
-	tos = (stk : std.intptr)
-	tos -= sizeof(int64)
-	szp = (tos : sys.size#)
-	szp# = Stacksz
-
-	/* store func */
-	envsz = std.fnenvsz(fn)
-	tos -= (envsz : std.intptr)
-	env = tos
-	tos -= sizeof((->void))
-	fp = (tos : (->void)#)
-	fp# = std.fnbdup(fn, (env : byte#)[:envsz])
+	(tos, hdr) = initstk(stk, fn, sz)
 
 	tfp = [
-		.tcb = (0 : void#),
-		.tid = &ret,
+		.tcb = (hdr : void#),
+		.tid = (&hdr.tid : sys.pid#),
 		.stk = (tos : byte#),
 	]
 	ret = sys.__tfork_thread(&tfp,
@@ -56,22 +46,34 @@ const spawnstk = {fn, sz
 		(startthread : void#),
 		(0 : void#))
 	if ret < 0
+		sys.munmap(stk, sz)
 		-> `std.Err "couldn't spawn thread"
 	;;
 	-> `std.Ok (ret : tid)
 }
 
-const getstk = {sz
-	var p, m
+const initstk = {stk, fn, sz
+	var len, tos, hdr, fp, env, envsz
 
-	p = sys.mmap((0 : byte#), sz, sys.Mprotrw, sys.Mpriv | sys.Manon | sys.Mstack, -1, 0)
-	if p == sys.Mapbad
-		-> p
-	;;
-	/* stack starts at the top of memory and grows down. */
-	m = (p : std.intptr)
-	m += (sz : std.intptr)
-	-> (m : byte#)
+	len = tlslen()
+	tos = (stk : std.intptr) + (sz : std.intptr)
+	tos -= (sizeof(tlshdr) + ((len : std.intptr) * sizeof(void#)) + 0xf) & ~0xf
+	hdr = (tos : tlshdr#)
+	hdr.len = len
+	hdr.base = stk
+	hdr.stksz = sz
+
+	envsz = std.fnenvsz(fn)
+	tos -= (envsz : std.intptr)
+	env = tos
+	tos -= sizeof((->void))
+	fp = (tos : (->void)#)
+	fp# = std.fnbdup(fn, (env : byte#)[:envsz])
+	-> ((tos : byte#), hdr)
+}
+
+const getstk = {sz
+	-> sys.mmap((0 : byte#), sz, sys.Mprotrw, sys.Mpriv | sys.Manon, -1, 0)
 }
 
 const startthread = {fn : (-> void)
