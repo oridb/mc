@@ -27,10 +27,3 @@ mbld/mbld
 support/mdumpleak
 myrbuild/myrbuild
 lib/regex/redump
-
-# test outputs
-*.log
-**/test/*
-!**/test/data/*
-!**/test/*.myr
-!**/test/runtest.sh

@@ -21,6 +21,18 @@ const main = {
 	| `std.Err e:		std.fatal("expected EOF, got {}\n", e)
 	;;
 	
+	/* Ensure we find a delimiter if it spans a 16k boundary */
+	f = std.try(bio.open("data/bio-skipto-16kspan", bio.Rd))
+	if !bio.skipto(f, "ABCDE")
+		std.fatal("failed to find ABCDE spanning boundary")
+	;;
+
+	/* Ensure we find a delimiter if it ends on a 16k boundary */
+	f = std.try(bio.open("data/bio-skipto-16kbound", bio.Rd))
+	if !bio.skipto(f, "ABCDE")
+		std.fatal("failed to find ABCDE at end of buffer")
+	;;
+	
 	std.put("success: all reads matched\n")
 }
 

@@ -409,9 +409,11 @@ const unwrapc = {cc, v
 }
 
 const readdelim = {f, delim, drop
-	var ret
+	var ret, i, j
+	var pr
 
 	ret = [][:]
+	pr = false
 	while true
 		match ensureread(f, delim.len)
 		| `std.Err `Eof:
@@ -434,25 +436,27 @@ const readdelim = {f, delim, drop
 		| `std.Err e:	-> `std.Err e
 		| `std.Ok _:	/* nothing: scan the buffer */
 		;;
-		for var i = f.rstart; i < f.rend - delim.len; i++
-			for var j = 0; j < delim.len; j++
+		for i = f.rstart; i <= f.rend - delim.len; i++
+			for j = 0; j < delim.len; j++
 				if f.rbuf[i + j] != delim[j]
-					goto nextiterread
+					goto notfound
 				;;
 			;;
+			/* If we found it, return that information */
 			if !drop
 				readinto(f, &ret, i - f.rstart)
 			else
-				f.rstart += i - f.rstart
+				f.rstart = i
 			;;
 			f.rstart += delim.len
 			-> `std.Ok ret
-:nextiterread
+:notfound
+			f.rstart = i
 		;;
 		if !drop
 			readinto(f, &ret, f.rend - f.rstart)
 		else
-			f.rstart += f.rend - f.rstart
+			f.rstart = i
 		;;
 	;;
 	std.die("unreachable")
@@ -520,7 +524,7 @@ const ensureread = {f, n
 		match fill(f, n)
 		| `std.Err e:	-> `std.Err e
 		| `std.Ok len:
-			if len >= n
+			if held + len >= n
 				-> `std.Ok len
 			else
 				-> `std.Err `Eof
