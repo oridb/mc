@@ -44,6 +44,11 @@ pkg bio =
 
 const Bufsz = 16*std.KiB
 const Small = 512
+type skipmode = union
+	`Drop
+	`Read
+	`Keep
+;;
 
 impl disposable file# =
 	__dispose__ = {f
@@ -134,6 +139,7 @@ const read = {f, dst
 	var count, cap : std.size
 	var d : byte[:]
 
+	std.assert(f.mode & Rd != 0, "File is not in read mode")
 	/* Clear the error state so we can retry */
 	if f.lasterr != 0
 		-> `std.Err geterr(f)
@@ -148,7 +154,6 @@ const read = {f, dst
 	if dst.len == 0
 		-> `std.Ok dst
 	;;
-	std.assert(f.mode & Rd != 0, "File is not in read mode")
 	/* 
 	small reads should try to fill, so we don't have to make a
 	syscall for every read
@@ -219,6 +224,7 @@ const seek = {f, off
 
 /* writes a single byte to the output stream */
 const putb = {f, b
+	std.assert(f.mode & Wr != 0, "File is not in write mode")
 	match ensurewrite(f, 1)
 	| `std.Err e:	-> `std.Err e
 	| `std.Ok n:
@@ -231,6 +237,7 @@ const putb = {f, b
 const putc = {f, c
 	var sz
 	
+	std.assert(f.mode & Wr != 0, "File is not in write mode")
 	sz = std.charlen(c)
 	match ensurewrite(f, sz)
 	| `std.Err e:	-> `std.Err e
@@ -243,6 +250,7 @@ const putc = {f, c
 
 /* reads a single byte from the input stream */
 const getb = {f
+	std.assert(f.mode & Rd != 0, "File is not in read mode")
 	match ensureread(f, 1)
 	| `std.Err e:	-> `std.Err e
 	| `std.Ok n:
@@ -254,6 +262,7 @@ const getb = {f
 const getc = {f
 	var c
 
+	std.assert(f.mode & Rd != 0, "File is not in read mode")
 	match ensurecodepoint(f)
 	| `std.Err e:	-> `std.Err e
 	| `std.Ok n:
@@ -287,30 +296,6 @@ const ensurecodepoint = {f
 	;;
 }
 
-/*
-  writes a single integer-like value to the output stream, in
-  little endian format
-*/
-generic putle = {f, v : @a :: numeric,integral @a
-	for var i = 0; i < sizeof(@a); i++
-		putb(f, (v & 0xff : byte))
-		v >>= 8
-	;;
-	-> sizeof(@a)
-}
-
-/*
-  writes a single integer-like value to the output stream, in
-  big endian format
-*/
-generic putbe = {f, v : @a :: numeric,integral @a
-	for var i = sizeof(@a); i != 0; i--
-		putb(f, ((v >> ((i-1)*8)) & 0xff : byte))
-	;;
-	-> sizeof(@a)
-}
-
-
 /* peeks a single byte from an input stream */
 const peekb = {f
 	match ensureread(f, 1)
@@ -330,8 +315,8 @@ const peekc = {f
 }
 
 /*
-  reads up to a single character delimiter. drops the delimiter
-  from the input stream. EOF always counts as a delimiter.
+  Reads up to a delimiter string. Drops the delimiter from
+  the input stream. EOF always counts as a delimiter.
   
   Eg, with the input "foo,bar\n"
 
@@ -339,14 +324,14 @@ const peekc = {f
   	bio.readto(f, ',')	-> "bar\n"
 */
 const readto = {f, delim
-	-> readdelim(f, delim, false)
+	-> readdelim(f, delim, `Read)
 }
 
 /* same as readto, but drops the read data. */
 const skipto = {f, delim
-	match readdelim(f, delim, true)
-	| `std.Ok ign:	-> true
-	| `std.Err _:		-> false
+	match readdelim(f, delim, `Drop)
+	| `std.Ok _:	-> true
+	| `std.Err _:	-> false
 	;;
 }
 
@@ -408,12 +393,15 @@ const unwrapc = {cc, v
 	;;
 }
 
-const readdelim = {f, delim, drop
+const readdelim = {f, delim, mode
 	var ret, i, j
 	var pr
 
 	ret = [][:]
 	pr = false
+	if delim.len == 0
+		-> `std.Ok ret
+	;;
 	while true
 		match ensureread(f, delim.len)
 		| `std.Err `Eof:
@@ -424,10 +412,10 @@ const readdelim = {f, delim, drop
 			 * delimiter at the end. If we're at 0 bytes even
 			 * then, return an eof.
 			 */
-			if drop
-				f.rstart += f.rend - f.rstart
-			else
-				readinto(f, &ret, f.rend - f.rstart)
+			match mode
+			| `Drop:	f.rstart += f.rend - f.rstart
+			| `Read:	readinto(f, &ret, f.rend - f.rstart)
+			| `Keep:
 			;;
 			match ret.len
 			| 0:	-> `std.Err `Eof
@@ -443,20 +431,20 @@ const readdelim = {f, delim, drop
 				;;
 			;;
 			/* If we found it, return that information */
-			if !drop
-				readinto(f, &ret, i - f.rstart)
-			else
-				f.rstart = i
+			match mode
+			| `Drop:	f.rstart = i
+			| `Read:	readinto(f, &ret, i - f.rstart)
+			| `Keep:	
 			;;
 			f.rstart += delim.len
 			-> `std.Ok ret
 :notfound
 			f.rstart = i
 		;;
-		if !drop
-			readinto(f, &ret, f.rend - f.rstart)
-		else
-			f.rstart = i
+		match mode
+		| `Drop:	f.rstart = i
+		| `Read:	readinto(f, &ret, f.rend - f.rstart)
+		| `Keep:
 		;;
 	;;
 	std.die("unreachable")
