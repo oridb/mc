@@ -562,6 +562,7 @@ void addextlibs(char **libs, size_t nlibs);
 
 /* expression folding */
 Node *fold(Node *n, int foldvar);
+int getintlit(Node *lit, vlong *val);
 
 /* typechecking/inference */
 void infer(void);

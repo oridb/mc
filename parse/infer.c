@@ -2174,6 +2174,7 @@ tyfix(Node *ctx, Type *orig, int noerr)
 	static Bitset *intset, *fltset;
 	Type *t, *d, *base;
 	Tyenv *env;
+	vlong val;
 	size_t i;
 	char buf[1024];
 
@@ -2193,6 +2194,7 @@ tyfix(Node *ctx, Type *orig, int noerr)
 	if (env)
 		pushenv(env);
 	base = orig->seqaux;
+	/* Process delayed type mappings. */
 	if (orig->type == Tyvar && hthas(delayed, orig)) {
 		d = htget(delayed, orig);
 		if (t->type == Tyvar) {
@@ -2204,21 +2206,32 @@ tyfix(Node *ctx, Type *orig, int noerr)
 			    tystr(t), tystr(d), ctxstr(ctx));
 		}
 	}
+
+	/* Default the type */
 	if (t->type == Tyvar && t->trneed) {
 		if (bsissubset(t->trneed, intset))
 			t = tyint;
 		else if (bsissubset(t->trneed, fltset))
 			t = tyflt;
-	} else if (!t->fixed) {
+	}
+
+	if (!t->fixed) {
 		t->fixed = 1;
-		if (t->type == Tyarray) {
+		switch(t->type) {
+		case Tyarray:
+			if (t->type == Tyarray && t->asize)
+				t->asize = fold(t->asize, 1);
+			if (getintlit(t->asize, &val) && val < 0)
+				fatal(t->asize, "negative array size %lld\n", val);
 			typesub(t->asize, noerr);
-		} else if (t->type == Tystruct) {
+			break;
+		case Tystruct:
 			inaggr++;
 			for (i = 0; i < t->nmemb; i++)
 				typesub(t->sdecls[i], noerr);
 			inaggr--;
-		} else if (t->type == Tyunion) {
+			break;
+		case Tyunion:
 			for (i = 0; i < t->nmemb; i++) {
 				if (t->udecls[i]->etype) {
 					tyresolve(t->udecls[i]->etype);
@@ -2226,13 +2239,18 @@ tyfix(Node *ctx, Type *orig, int noerr)
 						tyfix(ctx, t->udecls[i]->etype, noerr);
 				}
 			}
-		} else if (t->type == Tyname) {
+			break;
+		case Tyname:
 			for (i = 0; i < t->narg; i++)
 				t->arg[i] = tyfix(ctx, t->arg[i], noerr);
+			break;
+		default:
+			break;
 		}
-		for (i = 0; i < t->nsub; i++)
-			t->sub[i] = tyfix(ctx, t->sub[i], noerr);
 	}
+
+	for (i = 0; i < t->nsub; i++)
+		t->sub[i] = tyfix(ctx, t->sub[i], noerr);
 
 	if (t->type == Tyvar && !noerr)
 		fatal(ctx, "underconstrained type %s near %s", tyfmt(buf, 1024, t), ctxstr(ctx));

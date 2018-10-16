@@ -99,17 +99,6 @@ blobfree(Blob *b)
 	free(b);
 }
 
-static size_t
-getintlit(Node *n, char *failmsg)
-{
-	if (exprop(n) != Olit)
-		fatal(n, "%s", failmsg);
-	n = n->expr.args[0];
-	if (n->lit.littype != Lint)
-		fatal(n, "%s", failmsg);
-	return n->lit.intval;
-}
-
 void
 b(Blob *b, Blob *n)
 {
@@ -188,7 +177,7 @@ static size_t
 blobslice(Blob *seq,  Htab *globls, Htab *strtab, Node *n)
 {
 	Node *base, *lo, *hi;
-	ssize_t loval, hival, sz;
+	vlong loval, hival, baseval, sz;
 	Blob *slbase;
 	char *lbl;
 
@@ -199,14 +188,18 @@ blobslice(Blob *seq,  Htab *globls, Htab *strtab, Node *n)
 	/* by this point, all slicing operations should have had their base
 	 * pulled out, and we should have vars with their pseudo-decls in their
 	 * place */
-	loval = getintlit(lo, "lower bound in slice is not constant literal");
-	hival = getintlit(hi, "upper bound in slice is not constant literal");
+	if (!getintlit(lo, &loval))
+		fatal(lo, "lower bound in slice is not constant literal");
+	if (!getintlit(hi, &hival))
+		fatal(hi, "upper bound in slice is not constant literal");
 	if (exprop(base) == Ovar && base->expr.isconst) {
 		sz = tysize(tybase(exprtype(base))->sub[0]);
 		lbl = htget(globls, base);
 		slbase = mkblobref(lbl, loval*sz, 1);
 	} else if (exprop(base) == Olit || exprop(base) == Oarr) {
-		slbase = mkblobi(Bti64, getintlit(base, "invalid base expr"));
+		if (!getintlit(base, &baseval))
+			fatal(base, "invalid base expr");
+		slbase = mkblobi(Bti64, baseval);
 	} else {
 		fatal(base, "slice base is not a constant value");
 	}

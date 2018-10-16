@@ -15,7 +15,7 @@
 
 size_t (*sizefn)(Node *n);
 
-static int
+int
 getintlit(Node *n, vlong *v)
 {
 	Node *l;
