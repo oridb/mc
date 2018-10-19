@@ -73,7 +73,7 @@ const initstk = {stk, fn, sz
 }
 
 const getstk = {sz
-	-> sys.mmap((0 : byte#), sz, sys.Mprotrw, sys.Mpriv | sys.Manon, -1, 0)
+	-> sys.mmap((0 : byte#), sz, sys.Mprotrw, sys.Mpriv | sys.Manon | sys.Mstack, -1, 0)
 }
 
 const startthread = {fn : (-> void)
