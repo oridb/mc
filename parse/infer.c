@@ -2221,7 +2221,7 @@ tyfix(Node *ctx, Type *orig, int noerr)
 		case Tyarray:
 			if (t->type == Tyarray && t->asize)
 				t->asize = fold(t->asize, 1);
-			if (getintlit(t->asize, &val) && val < 0)
+			if (t->asize && getintlit(t->asize, &val) && val < 0)
 				fatal(t->asize, "negative array size %lld\n", val);
 			typesub(t->asize, noerr);
 			break;
