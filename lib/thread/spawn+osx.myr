@@ -68,10 +68,12 @@ const initstk = {stk, fn, sz
 	hdr.len = len
 	hdr.base = stk
 	hdr.stksz = sz
+	fn = std.fndup(fn)
 
 	var fn1 = {
 		setgsbase(hdr)
 		fn()
+		std.fnfree(fn)
 	}
 
 	envsz = std.fnenvsz(fn1)

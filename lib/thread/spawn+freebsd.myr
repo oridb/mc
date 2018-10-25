@@ -55,6 +55,7 @@ const initstk = {stk, fn, sz
 	hdr = (tos : tlshdr#)
 	hdr.base = stk
 	hdr.stksz = sz
+	fn = std.fndup(fn)
 
 	var fn1 = {
 		/*
@@ -65,6 +66,7 @@ const initstk = {stk, fn, sz
 		hdr.len = len
 		setfsbase(hdr)
 		fn()
+		std.fnfree(fn)
 	}
 
 	envsz = std.fnenvsz(fn1)
