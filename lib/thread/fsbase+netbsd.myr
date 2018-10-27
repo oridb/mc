@@ -1,0 +1,28 @@
+use std
+use sys
+
+use "types"
+
+pkg thread =
+	pkglocal const setfsbase : (h : tlshdr# -> void)
+	pkglocal const getfsbase : (-> tlshdr#)
+;;
+
+const setfsbase = {h
+	match sys.sysarch(sys.X8664setfsbase, &(h : void#))
+	| 0:
+	| err:
+		std.fput(std.Err, "error: sysarch returned: {}\n", err)
+		std.suicide()
+	;;
+}
+
+const getfsbase = {
+	var h
+	match sys.sysarch(sys.X8664getfsbase, &h)
+	| 0: -> (h : tlshdr#)
+	| err:
+		std.fput(std.Err, "error: sysarch returned: {}\n", err)
+		std.suicide()
+	;;
+}

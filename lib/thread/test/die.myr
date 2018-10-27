@@ -1,0 +1,8 @@
+use thread
+
+const main = {
+	var m = thread.mkmtx()
+	thread.mtxlock(&m)
+	thread.mtxunlock(&m)
+	thread.mtxunlock(&m)
+}

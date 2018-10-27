@@ -45,6 +45,7 @@ pkg sys =
 	type mfdflags	= uint32
 	type aiocontext	= uint64
 	type msg	= void#
+	type arch_prctlop	= uint64
 	
 	
 	type clock = union
@@ -590,6 +591,12 @@ pkg sys =
 	
 	/* return value for a failed mapping */
 	const Mapbad	: byte# = (-1 : byte#)
+
+	/* arch_prctl ops */
+	const Archsetgs : arch_prctlop = 0x1001
+	const Archsetfs : arch_prctlop = 0x1002
+	const Archgetfs : arch_prctlop = 0x1003
+	const Archgetgs : arch_prctlop = 0x1004
 	
 	/* signal flags */
 	const Sanocldstop	: sigflags = 0x00000001
@@ -1097,6 +1104,7 @@ pkg sys =
 	const Sysmq_notify		: scno = 244
 	const Sysmq_getsetattr		: scno = 245
 	const Sysprctl			: scno = 157
+	const Sysarch_prctl		: scno = 158
 	const Sysswapon			: scno = 167
 	const Sysswapoff		: scno = 168
 	const Sys_sysctl		: scno = 156
@@ -1308,7 +1316,7 @@ pkg sys =
 	const settimeofday		:  (tv : timeval#, tz : timezone# -> int64)
 	const adjtimex			:  (txc_p : timex# -> int64)
 	const times			:  (tbuf : tms# -> int64)
-	const gettid			:  ( -> int64)
+	const gettid			:  ( -> pid)
 	const alarm			:  (seconds : uint -> int64)
 	const getppid			:  ( -> int64)
 	const geteuid			:  ( -> int64)
@@ -1484,6 +1492,7 @@ pkg sys =
 	const mq_notify			:  (mqdes : int, notification : sigevent# -> int64)
 	const mq_getsetattr		:  (mqdes : int, mqstat : mq_attr#, omqstat : mq_attr# -> int64)
 	const prctl			:  (option : int, arg2 : uint64, arg3 : uint64, arg4 : uint64, arg5 : uint64 -> int64)
+	const arch_prctl		:  (op : arch_prctlop, addr : void# -> int64)
 	const swapon			:  (specialfile : byte#, swap_flags : int -> int64)
 	const swapoff			:  (specialfile : byte# -> int64)
 	const _sysctl			:  (args : sysctl_args# -> int64)
@@ -1782,7 +1791,7 @@ const times	= {tbuf
 	 -> (syscall(Systimes, a(tbuf)) : int64)
 }
 const gettid	= {
-	 -> (syscall(Sysgettid) : int64)
+	 -> (syscall(Sysgettid) : pid)
 }
 const alarm	= {seconds
 	 -> (syscall(Sysalarm, a(seconds)) : int64)
@@ -2308,6 +2317,9 @@ const mq_getsetattr	= {mqdes, mqstat, omqstat
 }
 const prctl	= {option, arg2, arg3, arg4, arg5
 	 -> (syscall(Sysprctl, a(option), a(arg2), a(arg3), a(arg4), a(arg5)) : int64)
+}
+const arch_prctl	= {op, addr
+	 -> syscall(Sysarch_prctl, op, addr)
 }
 const swapon	= {specialfile, swap_flags
 	 -> (syscall(Sysswapon, a(specialfile), a(swap_flags)) : int64)

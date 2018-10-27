@@ -1,0 +1,59 @@
+use std
+
+use "common"
+use "fsbase"
+use "types"
+
+pkg thread =
+	generic      tlsalloc : (-> tlskey(@a#))
+	generic      tlsset   : (k : tlskey(@a#), v : @a# -> void)
+	generic      tlsget   : (k : tlskey(@a#) -> @a#)
+	extern const tid      : (-> tid)
+
+	pkglocal const        tlsoob : (k : tlskey(void) -> void)
+	pkglocal extern const tlslen : (-> tlskey(void))
+;;
+
+const Staticcap = 8
+
+var _hdr
+var _cap = Staticcap
+
+generic tlsalloc = {
+	std.assert(tid() == 0, "error: tlsalloc must be called from main thread\n")
+	if _hdr == Zptr
+		/* `_hdr` is lazily initialized here since we can't set it in start.s */
+		_hdr = getfsbase()
+	;;
+
+	if _hdr.len++ == _cap
+		std.assert(_cap < 0x8000_0000, "error: max tls slots exceeded\n")
+		var l = sizeof(tlshdr) + ((_cap : std.size) * sizeof(void#))
+		var h = std.bytealloc(sizeof(tlshdr) + ((_cap *= 2 : std.size) * sizeof(void#)))
+
+		std.memblit(h, (_hdr : byte#), l)
+		setfsbase((h : tlshdr#))
+		/* this is ugly... the initial tls region is statically allocated */
+		if _cap != Staticcap * 2
+			std.bytefree((_hdr : byte#), l)
+		;;
+		_hdr = (h : tlshdr#)
+	;;
+	-> (_hdr.len - 1 : tlskey(@a#))
+}
+
+generic tlsset = {k, v
+	_tlsset((k : tlskey(void)), (v : void#))
+}
+
+generic tlsget = {k
+	-> (_tlsget((k : tlskey(void))) : @a#)
+}
+
+const tlsoob = {k
+	std.fput(std.Err, "error: tlskey {} out of bounds {}\n", k, tlslen())
+	std.suicide()
+}
+
+extern const _tlsset : (k : tlskey(void), v : void# -> void)
+extern const _tlsget : (k : tlskey(void) -> void#)

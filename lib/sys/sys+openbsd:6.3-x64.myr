@@ -1036,7 +1036,7 @@ pkg sys =
 	const symlinkat			:  (path : byte#, fd : int, link : byte# -> int)
 	const unlinkat			:  (fd : int, path : byte#, flag : int -> int)
 	const __set_tcb			:  (tcb : void# -> void)
-	const __get_tcb			:  ( -> void)
+	const __get_tcb			:  ( -> void#)
 ;;
 
 	/* start manual overrides { */
@@ -1755,5 +1755,5 @@ const __set_tcb	= {tcb
 	 -> (syscall(Sys__set_tcb, a(tcb)) : void)
 }
 const __get_tcb	= {
-	 -> (syscall(Sys__get_tcb) : void)
+	 -> (syscall(Sys__get_tcb) : void#)
 }

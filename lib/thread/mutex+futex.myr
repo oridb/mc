@@ -1,9 +1,14 @@
+use std
+
 use "atomic"
 use "futex"
+use "tls"
+use "types"
 
 pkg thread =
 	type mutex = struct
 		_state	: ftxtag
+		_owner	: tid
 	;;	
 
 	const mkmtx	: (-> mutex)
@@ -21,11 +26,18 @@ const Contended = 2
 var nspin = 10	/* FIXME: pick a sane number, based on CPU count */
 
 const mkmtx = {
-	-> [._state = Unlocked]
+	-> [._state = Unlocked, ._owner = -1]
 }
 
 const mtxlock = {mtx
 	var c
+
+	if mtx._owner == tid()
+		std.fput(std.Err,
+			"error: thread {} attempted to relock a mutex it already holds\n",
+			tid())
+		std.suicide()
+	;;
 
 	/*
 	Uncontended case: we get an unlocked mutex, and we lock it.
@@ -34,6 +46,7 @@ const mtxlock = {mtx
 	for var i = 0; i < nspin; i++
 		c = xcas(&mtx._state, Unlocked, Locked)
 		if c == Unlocked
+			mtx._owner = tid()
 			-> void
 		;;
 	;;
@@ -51,13 +64,31 @@ const mtxlock = {mtx
 		ftxwait(&mtx._state, Contended, -1)
 		c = xchg(&mtx._state, Contended)
 	;;
+	mtx._owner = tid()
 }
 
 const mtxtrylock = {mtx
-	-> xcas(&mtx._state, Unlocked, Locked) == Unlocked
+	if xcas(&mtx._state, Unlocked, Locked) == Unlocked
+		mtx._owner = tid()
+		-> true
+	;;
+	-> false
 }
 
 const mtxunlock = {mtx
+	/*
+	Nonatomically loading mtx._owner may produce false negatives on
+	weakly-ordered architectures but having to atomically store and load
+	mtx._owner doesn't seem worth it.
+	*/
+	if mtx._owner != tid()
+		std.fput(std.Err,
+			"error: thread {} attempted to unlock a mutex last held by {}\n",
+			tid(), mtx._owner)
+		std.suicide()
+	;;
+	mtx._owner = -1
+
 	/*
 	Either the lock is contended or it's uncontended. Any other
 	state is a bug.
@@ -72,7 +103,15 @@ const mtxunlock = {mtx
 }
 
 const mtxcontended = {mtx
+	if mtx._owner == tid()
+		std.fput(std.Err,
+			"error: thread {} attempted to relock a mutex it already holds\n",
+			tid())
+		std.suicide()
+	;;
+
 	while xchg(&mtx._state, Contended) != Unlocked
 		ftxwait(&mtx._state, Contended, -1)
 	;;
+	mtx._owner = tid()
 }

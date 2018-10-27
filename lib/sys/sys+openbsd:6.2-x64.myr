@@ -348,7 +348,7 @@ pkg sys =
 	const Mfixed	: mopt = 0x10
 	const Mfile	: mopt = 0x0
 	const Manon	: mopt = 0x1000
-	const Mstack	: mopt = 0x4000
+	const Mstack	: mopt = 0x0
 	const Mnoreplace	: mopt = 0x0800
 	
 	/* file types */
@@ -1037,7 +1037,7 @@ pkg sys =
 	const symlinkat			:  (path : byte#, fd : int, link : byte# -> int)
 	const unlinkat			:  (fd : int, path : byte#, flag : int -> int)
 	const __set_tcb			:  (tcb : void# -> void)
-	const __get_tcb			:  ( -> void)
+	const __get_tcb			:  ( -> void#)
 ;;
 
 	/* start manual overrides { */
@@ -1759,5 +1759,5 @@ const __set_tcb	= {tcb
 	 -> (syscall(Sys__set_tcb, a(tcb)) : void)
 }
 const __get_tcb	= {
-	 -> (syscall(Sys__get_tcb) : void)
+	 -> (syscall(Sys__get_tcb) : void#)
 }

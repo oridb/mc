@@ -1,0 +1,16 @@
+use sys
+
+use "types"
+
+pkg thread =
+	pkglocal const setfsbase : (h : tlshdr# -> void)
+	pkglocal const getfsbase : (-> tlshdr#)
+;;
+
+const setfsbase = {h
+	sys.__set_tcb((h : void#))
+}
+
+const getfsbase = {
+	-> (sys.__get_tcb() : tlshdr#)
+}

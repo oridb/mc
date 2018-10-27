@@ -1,9 +1,12 @@
 use sys
 use std
 
-pkg thread =
-	type tid = uint64
+use "common"
+use "fsbase"
+use "tls"
+use "types"
 
+pkg thread =
 	const spawn : (fn : (-> void) -> std.result(tid, byte[:]))
 ;;
 
@@ -16,60 +19,65 @@ const spawn = {fn
 }
 
 const spawnstk = {fn, sz
-	var stk : byte#, tid, ctid, ret
-	var szp, f, tos, env, envsz
+	var stk, tos, stksz, hdr, tid = -1, ret
 
-	stk = getstk(sz)
+	stk = sys.mmap((0 : byte#), sz, sys.Mprotrw, sys.Mpriv | sys.Manon, -1, 0)
 	if stk == sys.Mapbad
 		-> `std.Err "couldn't get stack"
 	;;
-	tid = -1
-	/* find top of stack */
-	tos = (stk : std.intptr) + (sz : std.intptr)
-
-	/* store the stack size */
-	tos -= sizeof(sys.size)
-	sz -= sizeof(sys.size)
-	szp = (tos : sys.size#)
-	szp# = Stacksz
-
-	/* store the function we call */
-	envsz = std.fnenvsz(fn)
-	tos -= (envsz : std.intptr)
-	sz -= (envsz : sys.size)
-	env = tos
-	tos -= sizeof((->void))
-	sz -= sizeof((->void))
-	f = (tos : (->void)#)
-	f# = std.fnbdup(fn, (env : byte#)[:envsz])
-	var repr = (&fn : int64[2]#)#
+	(tos, stksz, hdr) = initstk(stk, fn, sz)
 
 	ret = sys.thr_new(&[
 		.startfn = (startthread : void#),
 		.arg = (tos : void#),
 		.stkbase = (stk : byte#),
-		.stksz = sz,
-		.tid = &ctid,
+		.stksz = stksz,
+		.tid = (&hdr.tid : uint64#),
 		.ptid = &tid,
 		.flags = 2,
-		.rtp = (0 : sys.rtprio#)
+		.rtp = Zptr,
 	], sizeof(sys.thrparam))
 
 	if ret < 0
+		sys.munmap(stk, sz)
 		-> `std.Err "couldn't spawn thread"
 	;;
 	-> `std.Ok (tid : tid)
 }
 
-const getstk = {sz
-	var p, m
+const initstk = {stk, fn, sz
+	var stksz, len, tos, hdr, fp, env, envsz
 
-	p = sys.mmap((0 : byte#), sz, sys.Mprotrw, sys.Mpriv | sys.Manon, -1, 0)
-	if p == sys.Mapbad
-		-> p
-	;;
-	m = (p : std.intptr)
-	-> (m : byte#)
+	stksz = sz
+	len = tlslen()
+	stksz -= (sizeof(tlshdr) + ((len : sys.size) * sizeof(void#)) + 0xf) & ~0xf
+	tos = (stk : std.intptr) + (stksz : std.intptr)
+	hdr = (tos : tlshdr#)
+	hdr.base = stk
+	hdr.stksz = sz
+	fn = std.fndup(fn)
+
+	var fn1 = {
+		/*
+		We write `hdr.len` here because it follows `hdr.tid` so it gets
+		overwritten by the kernel in `thr_new`. Even though `sys.pid`
+		is 32 bits, `thr_param.tid` is a `uint64#` for legacy reasons.
+		*/
+		hdr.len = len
+		setfsbase(hdr)
+		fn()
+		std.fnfree(fn)
+	}
+
+	envsz = std.fnenvsz(fn1)
+	tos -= (envsz : std.intptr)
+	stksz -= (envsz : sys.size)
+	env = tos
+	tos -= sizeof((->void))
+	stksz -= sizeof((->void))
+	fp = (tos : (->void)#)
+	fp# = std.fnbdup(fn1, (env : byte#)[:envsz])
+	-> ((tos : byte#), stksz, hdr)
 }
 
 const startthread = {f : (-> void)#
