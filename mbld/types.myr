@@ -3,6 +3,7 @@ use std
 pkg bld =
 	type build = struct
 		/* build state */
+		rootdir	: byte[:]
 		basedir	: byte[:]
 		tags	: std.htab(byte[:], (int, int, int))#
 		libs	: std.htab(byte[:], libdep#)#

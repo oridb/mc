@@ -22,7 +22,7 @@ const bench = {b, targs
 }
 
 const go = {b, targs, kind, isbench
-	var failed, ok
+	var logdir, failed, ok
 	var tests
 
 	if !buildtarg(b, kind)
@@ -32,9 +32,12 @@ const go = {b, targs, kind, isbench
 	ok = true
 	failed = [][:]
 	for t : tests
-		if !runtest(b, t, targs, isbench, &failed)
+		logdir = std.fmt("{}/{}/{}", b.basedir, opt_objdir, t.wdir)
+		std.mkpath(logdir)
+		if !runtest(b, t, targs, logdir, isbench, &failed)
 			ok = false
 		;;
+		std.slfree(logdir)
 	;;
 	std.chdir(b.basedir)
 
@@ -61,7 +64,7 @@ const printfailed = {failed
 	;;
 }
 
-const runtest = {b, n, targs, isbench, failed
+const runtest = {b, n, targs, logdir, isbench, failed
 	var dir, res, log, logfd
 	var sub, found
 
@@ -93,7 +96,7 @@ const runtest = {b, n, targs, isbench, failed
 			log = ""
 			logfd = std.try(std.dup(std.Out))
 		else
-			log = std.strcat(std.basename(n.lbl), ".log")
+			log = std.fmt("{}/{}.log", logdir, std.basename(n.lbl))
 			logfd = std.try(std.openmode(log, std.Owrite | std.Ocreat, 0o644))
 		;;
 		sub = showsub(b, n.lbl, outfd, logfd, failed)

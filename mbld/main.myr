@@ -15,13 +15,8 @@ use "syssel"
 
 const main = {args : byte[:][:]
 	var b : bld.build#
-	var targname
-	var runsrc
-	var path
-	var tmp
-	var cmd 
-	var tags
-	var pid
+	var runsrc, objdir, path, tmp, cmd
+	var targname, tags, pid
 	var ok, r
 
 	cmd = std.optparse(args, &[
@@ -56,7 +51,7 @@ const main = {args : byte[:][:]
 		| ('T', tag):	std.slpush(&bld.opt_alltags, tag)
 		| ('j', arg):	bld.opt_maxproc = std.getv(std.intparse(arg), 1)
 		| ('R', arg):	runsrc = arg
-		| ('o', arg):	bld.opt_objdir = arg
+		| ('o', arg):	objdir = arg
 		| ('b', arg):	targname = arg
 		| ('r', arg):	bld.opt_runtime = arg
 		| ('v', _):	bld.opt_verbosity++
@@ -72,11 +67,13 @@ const main = {args : byte[:][:]
 
 	b = mkbuild(tags)
 	if targname.len != 0
-		ok = buildimm(b, targname, cmd.args, bld.opt_objdir)
+		bld.opt_objdir = objdir
+		ok = buildimm(b, targname, cmd.args)
 	elif runsrc.len != 0
+		bld.opt_objdir = objdir
 		bld.opt_verbosity = -1
 		tmp = std.mktemppath("runmyr")
-		ok = buildimm(b, tmp, [runsrc][:], bld.opt_objdir)
+		ok = buildimm(b, tmp, [runsrc][:])
 		if ok
 			pid = runcmd(tmp, cmd.args)
 			match std.wait(pid)
@@ -86,6 +83,9 @@ const main = {args : byte[:][:]
 		;;
 		std.remove(tmp)
 	else
+		if objdir.len > 0
+			bld.opt_objdir = objdir
+		;;
 		findproj(b)
 		bld.load(b)
 		bld.deps(b)
@@ -115,7 +115,7 @@ const main = {args : byte[:][:]
 	;;
 }
 
-const buildimm = {b, targ, inputs, objdir
+const buildimm = {b, targ, inputs
 	var mt : bld.myrtarg
 
 	mt = [
@@ -125,7 +125,6 @@ const buildimm = {b, targ, inputs, objdir
 		.incpath=bld.opt_incpaths,
 		.libdeps=[][:]
 	]
-	bld.opt_objdir = objdir
 	std.slpush(&b.all, "__out__")
 	std.htput(b.targs, "__out__", `bld.Bin &mt)
 	bld.deps(b)
@@ -198,6 +197,7 @@ const findproj = {b
 	while dir.len > 0 && !std.eq(dir, "/")
 		if std.chdir(dir) && std.fexists("bld.proj")
 			b.basedir = dir
+			b.rootdir = dir
 			break
 		;;
 		dir = std.dirname(dir)
