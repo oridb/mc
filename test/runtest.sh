@@ -1,5 +1,4 @@
 #!/bin/sh
-#set -x
 export PATH=.:$PATH
 export MYR_MC=../6/6m
 export MYR_MUSE=../muse/muse
@@ -8,8 +7,9 @@ NFAILURES=0
 NPASSES=0
 
 build() {
-	rm -f $1 $1.o $1.s $1.use
-	../obj/mbld/mbld -Bnone -o '' -b $1 -I../obj/lib/std -I../obj/lib/sys -I../obj/lib/regex -r../rt/_myrrt.o $1.myr
+	rm -f out/$1 out/$1.o out/$1.s out/$1.use
+	mkdir -p out
+	../obj/mbld/mbld -Bnone -o 'out' -b $1 -I../obj/lib/std -I../obj/lib/sys -I../obj/lib/regex -r../rt/_myrrt.o $1.myr
 }
 
 pass() {
@@ -25,7 +25,7 @@ fail() {
 }
 
 expectstatus() {
-	./$1 $3
+	./out/$1 $3
 	if [ $? -eq $2 ]; then
 		pass $1
 		return
@@ -35,7 +35,7 @@ expectstatus() {
 }
 
 expectprint() {
-	if [ "`./$1 $3`" != "$2" ]; then
+	if [ "`./out/$1 $3`" != "$2" ]; then
 		fail $1
 	else
 		pass $1
@@ -48,7 +48,7 @@ expectcompare() {
 	else
 		t=/tmp/myrtest-$1-$RANDOM
 	fi
-	./$1 $3 > $t
+	./out/$1 $3 > $t
 	if cmp $t data/$1-expected; then
 		pass $1
 	else
@@ -58,7 +58,7 @@ expectcompare() {
 }
 
 expectfcompare() {
-	./$1 $3
+	./out/$1 $3
 	if cmp data/$1-expected $2; then
 		pass $1
 	else

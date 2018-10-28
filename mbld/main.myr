@@ -72,11 +72,11 @@ const main = {args : byte[:][:]
 
 	b = mkbuild(tags)
 	if targname.len != 0
-		ok = buildimm(b, targname, cmd.args)
+		ok = buildimm(b, targname, cmd.args, bld.opt_objdir)
 	elif runsrc.len != 0
 		bld.opt_verbosity = -1
 		tmp = std.mktemppath("runmyr")
-		ok = buildimm(b, tmp, [runsrc][:])
+		ok = buildimm(b, tmp, [runsrc][:], bld.opt_objdir)
 		if ok
 			pid = runcmd(tmp, cmd.args)
 			match std.wait(pid)
@@ -115,7 +115,7 @@ const main = {args : byte[:][:]
 	;;
 }
 
-const buildimm = {b, targ, inputs
+const buildimm = {b, targ, inputs, objdir
 	var mt : bld.myrtarg
 
 	mt = [
@@ -125,7 +125,7 @@ const buildimm = {b, targ, inputs
 		.incpath=bld.opt_incpaths,
 		.libdeps=[][:]
 	]
-	bld.opt_objdir = ""
+	bld.opt_objdir = objdir
 	std.slpush(&b.all, "__out__")
 	std.htput(b.targs, "__out__", `bld.Bin &mt)
 	bld.deps(b)

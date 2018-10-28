@@ -21,6 +21,7 @@ rt/_*.s
 
 # outputs
 obj/**
+test/obj/**
 6/6m
 muse/muse
 mbld/mbld

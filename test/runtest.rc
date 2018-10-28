@@ -5,7 +5,7 @@ MYR_MC=../6/6.out
 MYR_MUSE=../muse/6.out
 fn build {
 	rm -f $1 $1^.6 $1^.use
-	../obj/mbld/mbld -Bnone -o '' -b $1 -I../obj/lib/std -I../obj/lib/sys -I../obj/lib/regex -r../rt/_myrrt.6 $1^.myr
+	../obj/mbld/mbld -Bnone -o 'out' -b $1 -I../obj/lib/std -I../obj/lib/sys -I../obj/lib/regex -r../rt/_myrrt.6 $1^.myr
 }
 
 fn pass {
@@ -20,7 +20,7 @@ fn expectstatus {
 	st='*'^$2
 	if(~ $2 0)
 		st=''''''
-	./$1 $3
+	./out/$1 $3
 	if(eval '~ $status '$st)
 		pass $1
 	if not
@@ -30,7 +30,7 @@ fn expectstatus {
 fn expectprint {
 	ifs='
 '
-	if(~ `{./$1 $3} $2)
+	if(~ `{./out/$1 $3} $2)
 		pass $1
 	if not
 		fail $1
@@ -39,7 +39,7 @@ fn expectprint {
 fn expectcmp {
 	t=/tmp/myrtest-^$1
 	rm -f $t
-	./$1 $3 > $t
+	./out/$1 $3 > $t
 	if (cmp $t data/$1-expected)
 		pass $1
 	if not
@@ -49,7 +49,7 @@ fn expectcmp {
 fn expectfcmp {
 	t=/tmp/myrtest-^$1
 	rm -f $t
-	./$1 $3
+	./out/$1 $3
 	if (cmp $2 data/$1-expected)
 		pass $1
 	if not
