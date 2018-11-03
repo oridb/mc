@@ -1,0 +1,46 @@
+use std
+use thread
+use testr
+
+const Nproduced = 100
+
+const main = {
+	testr.run([
+		[.name="simple-singlethreaded", .fn=simple],
+		[.name="slow-producer", .fn={ctx; producerconsumer(ctx, 100, 100)}],
+		[.name="fast-producer", .fn={ctx; producerconsumer(ctx, 10_000, 0)}],
+	][:])
+}
+
+const simple = {ctx
+	var q
+	
+	/* simple test */
+	thread.qinit(&q)
+	thread.qput(&q, 123)
+	thread.qput(&q, 246)
+
+	testr.check(ctx, thread.qget(&q) == 123, "expected 123")
+	testr.check(ctx, thread.qget(&q) == 246, "expected 246")
+}
+
+const producerconsumer = {ctx, count, delay
+	var qp
+
+	qp = std.alloc()
+	thread.qinit(qp)
+	thread.spawn({; producer(qp, count, delay)})
+
+	for var i = 0; i < count; i++
+		testr.check(ctx, thread.qget(qp) == i, "expected {}\n", i)
+	;;
+}
+
+const producer = {qp, count, delay
+	for var i = 0; i < count; i++
+		thread.qput(qp, i)
+		if delay > 0
+			std.usleep(delay)
+		;;
+	;;
+}

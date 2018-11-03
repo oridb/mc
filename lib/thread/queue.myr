@@ -1,0 +1,65 @@
+use std
+use "mutex"
+use "condvar"
+
+pkg thread =
+	type queue(@a) = struct
+		hd	: qnode(@a)#
+		tl	: qnode(@a)#
+		mtx	: mutex
+		cv	: cond
+	;;
+
+	type qnode(@a) = struct
+		v	: @a
+		next	: qnode(@a)#
+	;;
+
+	generic qinit	: (q : queue(@a)# -> void)
+	generic qget	: (q : queue(@a)# -> @a)
+	generic qput	: (q : queue(@a)#, v : @a -> void)
+;;
+
+generic Znode = (0 : qnode(@a)#)
+
+generic qinit = {q
+	q.hd = Znode
+	q.tl = Znode
+	q.mtx = mkmtx()
+	q.cv = mkcond(&q.mtx)
+}
+
+
+generic qput = {q, v : @a
+	var n : qnode(@a)#
+
+	n = std.mk([.next=Znode, .v=v])
+	mtxlock(&q.mtx)
+	if q.hd == Znode
+		q.hd = n
+		q.tl = n
+	else
+		q.tl.next = n
+		q.tl = n
+	;;
+	condsignal(&q.cv)
+	mtxunlock(&q.mtx)
+}
+
+generic qget = {q
+	var n, v
+
+	mtxlock(&q.mtx)
+:again
+	if q.hd == Znode
+		condwait(&q.cv)
+		goto again
+	else
+		n = q.hd
+		q.hd = q.hd.next
+	;;
+	mtxunlock(&q.mtx)
+	v = n.v
+	std.free(n)
+	-> v
+}

@@ -5,6 +5,7 @@ lib thread =
 	# higher level apis
 	future.myr
 	do.myr
+	queue.myr
 
 	# generic fallbacks
 	condvar.myr
