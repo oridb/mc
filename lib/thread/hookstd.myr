@@ -1,5 +1,6 @@
 use std
 use "mutex"
+use "tls"
 
 pkg thread =
 ;;
@@ -7,17 +8,21 @@ pkg thread =
 var memlck
 var netlck
 var envlck
+var stdtls
 
 const __init__ = {
 	memlck = mkmtx()
 	netlck = mkmtx()
 	envlck = mkmtx()
+	stdtls = tlsalloc()
 	std.__lockinit( \
 		(&memlck : void#), \
 		(&netlck : void#), \
 		(&envlck : void#), \
 		{mtx; mtxlock((mtx : mutex#))}, \
-		{mtx; mtxunlock((mtx : mutex#))} \
+		{mtx; mtxunlock((mtx : mutex#))}, \
+		{; -> tlsget(stdtls)}, \
+		{val; tlsset(stdtls, val)} \
 	)
 }
 
