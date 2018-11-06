@@ -1,0 +1,73 @@
+use sys
+use std
+
+use "common"
+use "types"
+
+pkg thread =
+	generic tlsalloc	: (-> tlskey(@a#))
+	generic tlsset		: (k : tlskey(@a#), v : @a# -> void)
+	generic tlsget		: (k : tlskey(@a#) -> @a#)
+	const tid		: (-> tid)
+
+	pkglocal const getpriv	: (-> void#[:])
+
+	pkglocal var ntlsslots : std.size
+	pkglocal const Staticcap : std.size
+;;
+
+var ntlsslots
+const Staticcap = (sys.Npriv : std.size)
+
+const getpriv = {
+	var p
+
+	p = (sys.tosptr : std.size)
+	p -= sizeof(sys.tos)
+	-> (p : void##)[:sys.Npriv]
+}
+	
+
+generic tlsalloc = { -> tlskey(@a#)
+	var s, p
+
+	p = getpriv()
+	if ntlsslots == Staticcap
+		s = std.sldup(p[:sys.Npriv])
+		p[0] = (s : void#)
+	elif ntlsslots > Staticcap
+		s = (p[0] : void##)[:ntlsslots]
+		std.slpush(&s, Zptr)
+		p[0] = (s : void#)
+	;;
+	ntlsslots++
+	-> (ntlsslots - 1 : tlskey(@a#))
+}
+
+generic tlsset = {k : tlskey(@a#), v : @a#
+	var s, p
+
+	s = getpriv()
+	if ntlsslots < 8
+		s[k] = (v : void#)
+	else
+		p = (s[0] : void##)[:ntlsslots]
+		p[k] = (v : void#)
+	;;
+}
+
+generic tlsget = {k
+	var s, p
+
+	p = getpriv()
+	if ntlsslots < 8
+		-> (s[k] : @a#)
+	else
+		s = (p[0] : void##)[:ntlsslots]
+		-> (s[k] : @a#)
+	;;	
+}
+
+const tid = {
+	-> (sys.tosptr.pid : tid)
+}

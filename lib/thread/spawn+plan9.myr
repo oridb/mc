@@ -1,5 +1,6 @@
 use std
 use sys
+use "tls"
 
 pkg thread =
 	type tid = uint64
@@ -8,11 +9,23 @@ pkg thread =
 ;;
 
 const spawn = {fn
+	var p, s
+
 	fn = std.fndup(fn)
 	match sys.rfork(sys.Rfproc | sys.Rfmem)
 	| 0:
+		if ntlsslots > Staticcap
+			p = getpriv()
+			s = std.slalloc(ntlsslots)
+			p[0] = (s : void#)
+		;;
 		fn()
 		std.fnfree(fn)
+		if ntlsslots > Staticcap
+			p = getpriv()
+			s = (p[0] : void##)[:ntlsslots]
+			std.slfree(s)
+		;;
 		std.exit(0)
 	| -1:	
 		std.fnfree(fn)

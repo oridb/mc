@@ -1,0 +1,6 @@
+use sys
+
+pkg thread =
+	type tid        = uint32
+	type tlskey(@a) = uint32
+;;
