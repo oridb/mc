@@ -67,11 +67,26 @@ swapout(char* buf, size_t sz, char* suf) {
 }
 
 static void
+mkpath(char *p)
+{
+	char *e, path[256];
+
+	e = p;
+	assert(strlen(p) < sizeof(path));
+	while ((e = strstr(e, "/")) != NULL) {
+		memcpy(path, p, (e - p));
+		path[e - p] = 0;
+		mkdir(path, 0755);
+		e++;
+	}
+}
+
+static void
 assemble(char *asmsrc, char *path)
 {
 	char *asmcmd[] = Asmcmd;
-	char objfile[256], dirpath[256];
-	char *psuffix, *e;
+	char objfile[256];
+	char *psuffix;
 	char **p, **cmd;
 	size_t ncmd, i;
 	int pid, status;
@@ -88,12 +103,7 @@ assemble(char *asmsrc, char *path)
 		else
 			swapsuffix(objfile + i, sizeof objfile - i, path, ".myr", Objsuffix);
 	}
-	e = objfile;
-	while ((e = strstr(e, "/")) != NULL) {
-		memcpy(dirpath, objfile, (e - objfile));
-		mkdir(dirpath, 0755);
-		e++;
-	}
+	mkpath(objfile);
 
 	cmd = NULL;
 	ncmd = 0;
@@ -173,7 +183,7 @@ static void
 genuse(char *path)
 {
 	FILE *f;
-	char buf[1024];
+	char buf[256];
 	char *psuffix;
 	size_t i;
 
@@ -189,6 +199,7 @@ genuse(char *path)
 		else
 			swapsuffix(buf + i, sizeof buf - i, path, ".myr", ".use");
 	}
+	mkpath(buf);
 	f = fopen(buf, "w");
 	if (!f) {
 		fprintf(stderr, "could not open path %s\n", buf);
