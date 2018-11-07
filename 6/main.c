@@ -70,8 +70,8 @@ static void
 assemble(char *asmsrc, char *path)
 {
 	char *asmcmd[] = Asmcmd;
-	char objfile[1024];
-	char *psuffix;
+	char objfile[256], dirpath[256];
+	char *psuffix, *e;
 	char **p, **cmd;
 	size_t ncmd, i;
 	int pid, status;
@@ -88,6 +88,13 @@ assemble(char *asmsrc, char *path)
 		else
 			swapsuffix(objfile + i, sizeof objfile - i, path, ".myr", Objsuffix);
 	}
+	e = objfile;
+	while ((e = strstr(e, "/")) != NULL) {
+		memcpy(dirpath, objfile, (e - objfile));
+		mkdir(dirpath, 0755);
+		e++;
+	}
+
 	cmd = NULL;
 	ncmd = 0;
 	for (p = asmcmd; *p != NULL; p++)
@@ -184,7 +191,7 @@ genuse(char *path)
 	}
 	f = fopen(buf, "w");
 	if (!f) {
-		fprintf(stderr, "Could not open path %s\n", buf);
+		fprintf(stderr, "could not open path %s\n", buf);
 		exit(1);
 	}
 	writeuse(f, file);

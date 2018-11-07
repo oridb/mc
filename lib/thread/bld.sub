@@ -66,6 +66,8 @@ lib thread =
 	ncpu+plan9.myr
 	sem+plan9.myr
 	spawn+plan9.myr
+	tls+plan9.myr
+	types+plan9.myr
 
 	# openbsd impl of thread primitives
 	condvar+openbsd:6.2.myr
