@@ -20,11 +20,11 @@ cp obj/mbld/mbld xmbld
 
 tags(){
 	case `uname` in
-	*Linux*)	echo -Tposixy -Tlinux -Tfsbase;;
-	*Darwin*)	echo -Tposixy -Tosx;;
-	*FreeBSD*)	echo -Tposixy -Tfreebsd -Tfsbase;;
+	*Linux*)	echo -Tposixy -Tlinux -Tfsbase -Tfutex;;
+	*Darwin*)	echo -Tposixy -Tosx -Tfutex;;
+	*FreeBSD*)	echo -Tposixy -Tfreebsd -Tfsbase -Tfutex;;
 	*NetBSD*)	echo -Tposixy -Tnetbsd;;
-	*OpenBSD*)	echo -Tposixy -Topenbsd:6.3 -Tfsbase;;
+	*OpenBSD*)	echo -Tposixy -Topenbsd:6.3 -Tfsbase -Tfutex;;
 	*Plan9*)	echo -Tplan9;;
 	esac
 	case `uname -m` in

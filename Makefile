@@ -23,8 +23,8 @@ bench:
 .PHONY: bootstrap
 bootstrap: subdirs
 	./mk/bootstrap/bootstrap+`uname -s`-`uname -m`.sh
-	MBLD=mbld/mbld ./mbldwrap.sh
-	obj/mbld/mbld -o '' clean
+	cp obj/mbld/mbld xmbld
+	MBLD=./xmbld ./mbldwrap.sh
 
 .PHONY: genbootstrap
 genbootstrap: buildmyr
