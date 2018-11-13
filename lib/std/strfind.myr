@@ -8,34 +8,39 @@ pkg std =
 ;;
 
 const strfind = {haystack, needle
-	-> strfindin(haystack, needle, 0, haystack.len, 1)
+	if needle.len > haystack.len
+		-> `std.None
+	elif needle.len == 0 && haystack.len == 0
+		-> `std.Some 0
+	;;
+	for var i = 0; i <= haystack.len - needle.len; i++
+		for var j = 0; j < needle.len; j++
+			if haystack[i + j] != needle[j]
+				goto next
+			;;
+		;;
+		-> `std.Some i
+:next
+	;;
+	-> `std.None
 }
 
 const strrfind = {haystack, needle
-	-> strfindin(haystack, needle, haystack.len - 1, -1, -1)
-}
-
-const strfindin = {haystack, needle, start, end, inc
-	if haystack.len == 0 && needle.len == 0
+	if needle.len > haystack.len
+		-> `std.None
+	elif needle.len == 0 && haystack.len == 0
 		-> `std.Some 0
 	;;
-	for var i = start; i != end; i += inc
-		/* 
-		if we knew the direction we could terminate early,
-		but we allow the start and end to be passed in.
-		*/
-		if i + needle.len > haystack.len
-			continue
-		;;
+	for var i = haystack.len - haystack.len; i > 0; i --
 		for var j = 0; j < needle.len; j++
 			if haystack[i + j] != needle[j]
-				goto nextiter
+				goto next
 			;;
 		;;
-		-> `Some i
-:nextiter
+		-> `std.Some i
+:next
 	;;
-	-> `None
+	-> `std.None
 }
 
 const strhas = {haystack, needle
