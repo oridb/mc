@@ -31,7 +31,7 @@ const strrfind = {haystack, needle
 	elif needle.len == 0 && haystack.len == 0
 		-> `std.Some 0
 	;;
-	for var i = haystack.len - haystack.len; i > 0; i --
+	for var i = haystack.len - needle.len; i >= 0; i--
 		for var j = 0; j < needle.len; j++
 			if haystack[i + j] != needle[j]
 				goto next

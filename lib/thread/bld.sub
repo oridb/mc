@@ -91,3 +91,7 @@ lib thrtestutil {noinst} =
         lib ../std:std
         lib thread
 ;;
+
+testdeps =
+	../testr:testr
+;;
