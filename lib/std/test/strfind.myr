@@ -13,6 +13,18 @@ const main = {
 		[.name="reverse-fullmatch", .fn={ctx; revfindat(ctx, 1, "abc", "bc")}],
 		[.name="reverse-dup-1c", .fn={ctx; revfindat(ctx, 3, "abcabc", "a")}],
 		[.name="reverse-dup-2c", .fn={ctx; revfindat(ctx, 3, "abcabc", "ab")}],
+		[.name="long-needle", .fn={ctx
+			match std.strfind("ab", "abcabc")
+			| `std.Some _:	testr.fail(ctx, "found something we shouldn't")
+			| `std.None:	testr.ok(ctx)
+			;;
+		}],
+		[.name="fail-find", .fn={ctx
+			match std.strfind("abcabc", "abd")
+			| `std.Some _:	testr.fail(ctx, "found something we shouldn't")
+			| `std.None:	testr.ok(ctx)
+			;;
+		}],
 	][:])
 }
 
