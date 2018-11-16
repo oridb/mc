@@ -1,0 +1,43 @@
+use std
+use testr
+
+const main = {
+	testr.run([
+		[.name="forward-head-1c", .fn={ctx; fwdfindat(ctx, 0, "abc", "a")}],
+		[.name="forward-head-2c", .fn={ctx; fwdfindat(ctx, 0, "abc", "ab")}],
+		[.name="forward-fullmatch", .fn={ctx; fwdfindat(ctx, 1, "abc", "bc")}],
+		[.name="forward-dup-1c", .fn={ctx; fwdfindat(ctx, 0, "abcabc", "a")}],
+		[.name="forward-dup-2c", .fn={ctx; fwdfindat(ctx, 0, "abcabc", "ab")}],
+		[.name="reverse-head-1c", .fn={ctx; revfindat(ctx, 0, "abc", "a")}],
+		[.name="reverse-head-2c", .fn={ctx; revfindat(ctx, 0, "abc", "ab")}],
+		[.name="reverse-fullmatch", .fn={ctx; revfindat(ctx, 1, "abc", "bc")}],
+		[.name="reverse-dup-1c", .fn={ctx; revfindat(ctx, 3, "abcabc", "a")}],
+		[.name="reverse-dup-2c", .fn={ctx; revfindat(ctx, 3, "abcabc", "ab")}],
+	][:])
+}
+
+const fwdfindat = {ctx, idx, h, n
+	match std.strfind(h, n)
+	| `std.Some i:
+		if i == idx
+			testr.ok(ctx)
+		else
+			testr.fail(ctx, "wrong location {} != {} ('{}' in '{}')", i, idx, n, h)
+		;;
+	| `std.None:
+		testr.fail(ctx, "'{}' not in '{}'\n",  n, h)
+	;;
+}
+
+const revfindat = {ctx, idx, h, n
+	match std.strrfind(h, n)
+	| `std.Some i:
+		if i == idx
+			testr.ok(ctx)
+		else
+			testr.fail(ctx, "wrong location {} != {} ('{}' in '{}')", i, idx, n, h)
+		;;
+	| `std.None:
+		testr.fail(ctx, "'{}' not in '{}'\n",  n, h)
+	;;
+}
