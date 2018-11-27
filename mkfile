@@ -47,7 +47,7 @@ bootstrap:V: $SUB config.h
 		mk $MKFLAGS
 	}
 	ape/psh mk/bootstrap/bootstrap+Plan9-amd64.sh
-	MBLD=mbld/mbld ape/psh ./mbldwrap.sh
+	ape/psh ./mbldwrap.sh
 	obj/mbld/mbld -o '' clean
 
 uninstall:V: $SUB config.h
