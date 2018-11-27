@@ -47,8 +47,8 @@ bootstrap:V: $SUB config.h
 		mk $MKFLAGS
 	}
 	ape/psh mk/bootstrap/bootstrap+Plan9-amd64.sh
-	ape/psh ./mbldwrap.sh
-	obj/mbld/mbld -o '' clean
+	cp obj/mbld/mbld xmbld
+	MBLD=./xmbld ape/psh ./mbldwrap.sh
 
 uninstall:V: $SUB config.h
 	for(dir in $SUB)@{
