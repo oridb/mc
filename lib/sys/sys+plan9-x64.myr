@@ -25,6 +25,7 @@ pkg sys =
 		what	: uint32	/* plink */
 	;;
 
+	const Npriv	: size = 16	/* must be kept in sync with _myrrt+plan9.s */
 	const Maxerr	: size = 128
 
 	const Oread	: fdopt = 0
