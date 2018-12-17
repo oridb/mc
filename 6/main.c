@@ -92,7 +92,7 @@ assemble(char *asmsrc, char *path)
 	int pid, status;
 
 	if (outfile != NULL)
-		strncpy(objfile, outfile, 1024);
+		strncpy(objfile, outfile, sizeof(objfile));
 	else {
 		psuffix = strrchr(path, '+');
 		i = 0;
