@@ -880,6 +880,15 @@ tokinit(char *file)
 	curloc.line = 1;
 	curloc.file = 0;
 	close(fd);
+	if(fbufsz > 2 && fbuf[0] == '#' && fbuf[1] == '!') {
+		for (fidx = 0; fidx < fbufsz; fidx++)  {
+			if(fbuf[fidx] == '\n') {
+				curloc.line++;
+				fidx++;
+				break;
+			}
+		}
+	}
 	filename = strdup(file);
 }
 
