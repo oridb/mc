@@ -3,6 +3,18 @@ use std
 const main = {
 	var chars = ['a', 'b', 'c']
 	var splits = ["foo", "+bar"]
+	var graphemes = [
+		[0x300][:],
+		[0x61][:],
+		[0x53f2][:],
+		[0x63][:],
+		[0x9][:],
+		[0x42f][:],
+		[0x78, 0x300, 0x300, 0x300, 0x300, 0x300][:],
+		[0xa][:],
+		[0x7a, 0x309][:]
+	]
+
 	var i
 
 	i = 0
@@ -16,4 +28,10 @@ const main = {
 		std.assert(std.eq(splits[i++], sp), "wrong split {}", sp)
 	;;
 	std.assert(i == splits.len, "wrong split count")
+
+	i = 0
+	for g : std.bygrapheme("̀a史c\tЯx̀̀̀̀̀\nz̉")
+		std.assert(std.eq(g, graphemes[i++]), "mismatched grapheme cluster\n")
+	;;
+	std.assert(i == graphemes.len, "wrong grapheme set length")
 }

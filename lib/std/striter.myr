@@ -4,9 +4,15 @@ use "utf"
 use "strfind"
 use "option"
 use "chartype"
+use "slpush"
+use "alloc"
 
 pkg std =
 	type chariter = struct
+		rest	: byte[:]
+	;;
+
+	type graphemeiter = struct
 		rest	: byte[:]
 	;;
 
@@ -25,17 +31,24 @@ pkg std =
 		idx	: size
 	;;
 
-	impl iterable chariter	-> char
+	impl iterable chariter		-> char
+	impl iterable graphemeiter	-> char[:]
 	impl iterable charoffiter	-> (char, size)
-	impl iterable splititer -> byte[:]
-	impl iterable tokiter -> byte[:]
+	impl iterable splititer		-> byte[:]
+	impl iterable tokiter		-> byte[:]
 
-	const bychar	: (str : byte[:] -> chariter)
-	const bycharoff	: (str : byte[:] -> charoffiter)
-	const bysplit	: (str : byte[:], split : byte[:] -> splititer)
-	const bytok	: (str : byte[:] -> tokiter)
+	const bychar		: (str : byte[:] -> chariter)
+	const bygrapheme	: (str : byte[:] -> graphemeiter)
+	const bycharoff		: (str : byte[:] -> charoffiter)
+	const bysplit		: (str : byte[:], split : byte[:] -> splititer)
+	const bytok		: (str : byte[:] -> tokiter)
 ;;
 
+/*
+ * Iterate through a string char by char,
+ * decoding the utf8 bytes into a single
+ * codepoint.
+ */
 impl iterable chariter -> char =
 	__iternext__ = {ci, c
 		if ci.rest.len == 0
@@ -53,7 +66,50 @@ const bychar = {str
 	-> [.rest = str]
 }
 
+/* 
+ * Iterate through a string grapheme by grapheme,
+ * returning a slice of characters composing the
+ * grapheme.
+ */
+impl iterable graphemeiter -> char[:] =
+	__iternext__ = {ci, g : char[:]#
+		var gb, gc : char[:]
+		if ci.rest.len == 0
+			-> false
+		;;
+		(gb, ci.rest) = graphemestep(ci.rest)
 
+		/* 
+		 * Graphemestep returns bytes, but we
+		 * want to a slice of chars.
+		 */
+		gc = [][:]
+		for c : std.bychar(gb)
+			std.slpush(&gc, c)
+		;;
+		g# = gc
+		-> true
+	}
+
+	__iterfin__ = {ci, g
+		std.slfree(g#)
+	}
+;;
+
+const bygrapheme = {str
+	-> [.rest = str]
+}
+
+
+/*
+ * Iterates through a string character by
+ * character, similar to chariter, but returns
+ * the offset into the string of the codepoint.
+ * For example,
+ *     "ὐbὐc
+ * would return the sequence:
+ * 	(ὐ, 0), (b, 3), (ὐ, 4), (c, 7)
+ */
 impl iterable charoffiter -> (char, size) = 
 	__iternext__ = {ci, cv
 		var c
@@ -75,6 +131,10 @@ const bycharoff = {s
 	-> [.str=s, .idx=0]
 }
 
+/*
+ * Iterates through the splits of a string by a
+ * delimiter, skippin gthe delimiter.
+ */
 impl iterable splititer -> byte[:] =
 	__iternext__ = {si, sp
 		match std.strfind(si.rest, si.split)
@@ -100,6 +160,10 @@ const bysplit = {str, split
 	-> [.rest = str, .split = split]
 }
 
+/*
+ * Tokenizes a string by spaces, iterating over
+ * the results.
+ */
 impl iterable tokiter -> byte[:] =
 	__iternext__ = {it, sp
 		var s, lo, hi, c
