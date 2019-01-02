@@ -72,8 +72,6 @@ set -x
 	$pwd/6/6.out -O obj -I obj/lib/sys lib/std/search.myr
 	$pwd/6/6.out -O obj -I obj/lib/sys lib/std/hasprefix.myr
 	$pwd/6/6.out -O obj -I obj/lib/sys lib/std/chomp.myr
-	$pwd/6/6.out -O obj -I obj/lib/sys lib/std/striter.myr
-	$pwd/6/6.out -O obj -I obj/lib/sys lib/std/intparse.myr
 	$pwd/6/6.out -O obj -I obj/lib/sys lib/std/strstrip.myr
 	$pwd/6/6.out -O obj -I obj/lib/sys lib/std/introspect.myr
 	$pwd/6/6.out -O obj -I obj/lib/sys lib/std/varargs.myr
@@ -85,6 +83,8 @@ set -x
 	$pwd/6/6.out -O obj -I obj/lib/sys lib/std/slput.myr
 	$pwd/6/6.out -O obj -I obj/lib/sys lib/std/htab.myr
 	$pwd/6/6.out -O obj -I obj/lib/sys lib/std/slpush.myr
+	$pwd/6/6.out -O obj -I obj/lib/sys lib/std/striter.myr
+	$pwd/6/6.out -O obj -I obj/lib/sys lib/std/intparse.myr
 	$pwd/6/6.out -O obj -I obj/lib/sys lib/std/strsplit.myr
 	$pwd/6/6.out -O obj -I obj/lib/sys lib/std/strbuf.myr
 	$pwd/6/6.out -O obj -I obj/lib/sys lib/std/sldup.myr
