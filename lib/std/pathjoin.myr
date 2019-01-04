@@ -2,6 +2,8 @@ use "alloc"
 use "die"
 use "extremum"
 use "fmt"
+use "hasprefix"
+use "getcwd"
 use "sleq"
 use "slcp"
 use "sldup"
@@ -14,6 +16,7 @@ pkg std =
 	const pathcat	: (a : byte[:], b : byte[:] -> byte[:])
 	const pathjoin	: (p : byte[:][:] -> byte[:])
 	const pathnorm	: (p : byte[:] -> byte[:])
+	const pathabs	: (p : byte[:] -> byte[:])
 ;;
 
 const pathcat = {a, b
@@ -104,3 +107,10 @@ const pathnorm = {p
 	-> ret
 }
 
+const pathabs = {p
+	if hasprefix(p, "/")
+		-> pathnorm(p)
+	else
+		-> pathnorm(pathjoin([getcwd(), p][:]))
+	;;
+}
