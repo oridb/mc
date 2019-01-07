@@ -998,7 +998,7 @@ TABLE OF CONTENTS:
                 tuplit:     "(" tuplelts ")"
 
                 structelts: ("." ident "=" expr)+
-                arrayelts:  (expr ":" expr | expr)*
+                arrayelts:  ("." "[" expr "]" "=" expr | expr)*
                 tupelts:    expr ("," expr)* [","]
 
             Sequence literals are used to initialize either a structure
@@ -1026,7 +1026,7 @@ TABLE OF CONTENTS:
 
             An unindexed initializer sequence is simply a comma separated
             list of values. An indexed initializer sequence contains a
-            '#number=value' comma separated sequence, which indicates the
+            '.[index]=value' comma separated sequence, which indicates the
             index of the array into which the value is inserted. A named
             initializer sequence contains a comma separated list of
             '.name=value' pairs.
@@ -1039,7 +1039,7 @@ TABLE OF CONTENTS:
                 [.a = 42, .b="str"]
 
             Example: Array literal:
-                [1,2,3], [2:3, 1:2, 0:1], []
+                [1,2,3], [.[2] = 3, .[1] = 2, .[0] = 1], []
 
             Example: Tuple literals:
                 (1,), (1,'b',"three")

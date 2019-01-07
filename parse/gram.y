@@ -963,8 +963,8 @@ arrayelts
 	;
 
 arrayelt: expr optendlns {$$ = $1;}
-	| expr Tcolon expr optendlns {
-		$$ = mkidxinit($2->loc, $1, $3);
+	| Tdot Tosqbrac expr Tcsqbrac Tasn expr optendlns {
+		$$ = mkidxinit($1->loc, $3, $6);
 	}
 	;
 

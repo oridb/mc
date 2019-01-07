@@ -477,14 +477,14 @@ const fmonty = {x2, z2, x3, z3, x, z, xprime, zprime, qmqp
  *   q: a point of the curve (short form)
  */
 const cmult = {resultx, resultz, n, q
-	var a : felem[19] = [0:0, 18:0]
-	var b : felem[19] = [0:1, 18:0]
-	var c : felem[19] = [0:1, 18:0]
-	var d : felem[19] = [0:0, 18:0]
-	var e : felem[19] = [0:0, 18:0]
-	var f : felem[19] = [0:1, 18:0]
-	var g : felem[19] = [0:0, 18:0]
-	var h : felem[19] = [0:1, 18:0]
+	var a : felem[19] = [.[0] = 0, .[18] = 0]
+	var b : felem[19] = [.[0] = 1, .[18] = 0]
+	var c : felem[19] = [.[0] = 1, .[18] = 0]
+	var d : felem[19] = [.[0] = 0, .[18] = 0]
+	var e : felem[19] = [.[0] = 0, .[18] = 0]
+	var f : felem[19] = [.[0] = 1, .[18] = 0]
+	var g : felem[19] = [.[0] = 0, .[18] = 0]
+	var h : felem[19] = [.[0] = 1, .[18] = 0]
 	var nqpqx = a[:]
 	var nqpqz = b[:]
 	var nqx = c[:]
