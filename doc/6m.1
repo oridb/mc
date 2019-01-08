@@ -1,11 +1,13 @@
-.TH MC 1
+.TH 6m 1
 .SH NAME
 6m
 .SH SYNOPSIS
 .B 6m
-.I -[?hioSG9d]
-.I [file...]
-.br
+[
+.B -?hioSG9d
+] [
+.I file ...
+]
 .SH DESCRIPTION
 .PP
 The ?m compiler family compiles Myrddin source into object files
@@ -13,90 +15,77 @@ for the corresponding architecture. Each architecture gets its own
 compler. Unless otherwise specified, if the input file is named
 .I filename.myr
 then the the object file that is generated will be named
-.I filename.o.
+.IR filename.o .
 .PP
 Any text between the first '+' in the file name and the suffix are
 stripped. This functionality is used to specify system tags for
-tools like 'mbld'.
+tools like
+.IR mbld .
 .PP
 If the filename does not end with the suffix
 .I .myr
 then the object suffix
 .I .o
 will simply be appended to it.
-
 .PP
 The following architectures are currently supported:
 .TP
 6m
 x86-64
-
 .PP
 The compiler options are:
-
+.TP
+.BR -h\  |\  -?
+Print a summary of the available options.
 .TP
 .B -d [flTriu]
 Print debugging dumps. Additional options may be given to give more
 debugging information for specific intermediate states of the compilation.
-
 .TP
-.B -h, -?
-Print a summary of the available options.
-
-.TP
-.B -I path
+.BI -I\  path
 Add 'path' to the search path for unquoted use statments. This option
 does not affect the search path for local usefiles, which are always
 searched relative to the directory containing the output file. Without
 any options, the search path defaults to /usr/include/myr.
-
 .TP
-.B -o output-file
+.BI -o\  output-file
 Specify that the generated code should be placed in
 .I output-file
 instead of the default location.
-
 .TP
 .B -S
 Generate assembly code along with the object file.
-
 .TP
 .B -G
 Generate assembly in the Gnu As syntax.
-
 .TP
-.B -O out
+.BI -O\  out
 Output code to output path 'out'
-
 .TP
 .B -T
 Compile in test mode. This implies that pkglocal functions are
 available.
-
 .TP
 .B -9
 Generate assembly in the Plan 9 syntax.
-
 .SH EXAMPLE
+.IP
 .EX
-    6m foo.myr
-    6m bar.myr
-    ld -o foobar foo.o bar.o
+6m foo.myr
+6m bar.myr
+ld -o foobar foo.o bar.o
 .EE
-
+.LP
 .SH FILES
 The source code for this compiler is available from
 .B git://git.eigenstate.org/git/ori/mc.git
-
 .SH SEE ALSO
-.IR muse(1)
-.IR ld(1)
-.IR as(1)
-
+.IR muse (1),
+.IR 2l (1),
+.IR 2a (1),
+.IR ld (1),
+.IR as (1)
 .SH BUGS
-.PP
-The language is not yet complete, and the compilers often omit useful
-constructs in spite of their desirability.
 .PP
 There are virtually no optimizations done, and the generated source is
 often very poorly performing.

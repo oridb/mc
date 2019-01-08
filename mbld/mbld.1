@@ -3,108 +3,141 @@
 mbld
 .SH SYNOPSIS
 .B mbld
-.RB [-?hcfrSs]
-.RB [-b\ bin]
-.RB [-l\ lib]
-.RB [-R\ src]
-.RB [-I\ inc]
-.RB [-B\ base]
-.RB [-r\ runtime]
-.RB [all\ |\ clean\ |\ install\ |\ uninstall\ |\ test\ |\ file...\ |\ target...]
+[
+.B -?hcfrSs
+]
+[
+.B -b
+.I bin
+]
+[
+.B -l
+.I lib
+]
+[
+.B -R
+.I src
+]
+[
+.B -I
+.I inc
+]
+[
+.B -B
+.I base
+]
+[
+.B -r
+.I runtime
+]
+[
+.I all
+|
+.I clean
+|
+.I install
+|
+.I uninstall
+|
+.I test
+|
+.I file ...
+|
+.I target ...
+]
 .br
 .SH DESCRIPTION
 .PP
-The 'mbld' tool takes as input a list of Myrddin or assembly sources,
-and compiles them in the correct dependency order into either a library or
-an executable. 
-
+The
+.I mbld
+tool takes as input a list of Myrddin or assembly sources,
+and compiles them in the correct dependency order into either a library,
+or an executable.
 .PP
-By default, it reads from an input file called 'bld.proj', but if given the
-option 
-.I -b
-or 
-.IR -l ,
+By default, it reads from an input file called
+.IR bld.proj ,
+but if given the option
+.B -b
+or
+.BR -l ,
 it will build a binary or library, respectively, from
 the arguments specified on the command lines.
-
 .PP
-Mbld will default to building for the current architecture and operating
+.I Mbld
+will default to building for the current architecture and operating
 system.
-
 .SH OPTIONS
-
 .TP
-.B -h | -?
+.BR -h\  |\ -?
 Print a summary of the available options.
-
 .TP
-.B -b \fIbinname\fP
-Compile source into a binary named 'name'. If neither this option nor
-the 
-.I -l
-option are given, mbld will create a binary called 
+.BI -b\  binname
+Compile source into a binary named
+.IR name .
+If neither this option nor the
+.B -l
+option are given, mbld will create a binary called
 .IR a.out .
-
 .TP
-.B -I \fIpath\fP
-Add 'path' to the search path for unquoted use statments. This option
+.BI -I\  path
+Add
+.I path
+to the search path for unquoted use statments. This option
 does not affect the search path for local usefiles, which are always
 searched relative to the compiler's current working directory. Without
-any options, the search path defaults to 
+any options, the search path defaults to
 .IR /usr/include/myr .
-
 .TP
-.B -l \fIlibname\fP
-Compile source given into a library called 'lib\fIname\fP.a' (or the equivalent
-for the target platform), and a matching usefile called 'name'. Only static
-libraries are currently supported. Ignores the contents of \fIbld.proj\fP
-and \fIbld.sub\fP if they exist.
-
+.BI -l\  libname
+Compile source given into a library called
+.I libname.a
+(or the equivalent
+for the target platform), and a matching usefile called
+.IR name .
+Only static
+libraries are currently supported. Ignores the contents of
+.I bld.proj
+and
+.I bld.sub
+if they exist.
 .TP
-.B -R \fIsrc\fP
+.BI -R\  src
 Compile source given into a binary in temporary storage, and then execute it
 with the command line arguments passed in.
-
 .TP
 .B -S
 Tell the toolchain to generate assembly for the code being compiled as well
 as the .o files, as though
-.I -S
-was passed to 6m.
-
+.B -S
+was passed to
+.IR 6m .
 .TP
-.B -r \fIruntime\fP
-Compile a binary using the runtime 
-.IR rt .
-If the runtime name given
-is 
+.BI -r\  runtime
+Compile a binary using the given runtime.
+If the runtime name given is
 .IR none ,
 then no runtime will be linked. If this option is not provided,
-then the default runtime in 
-.I $INSTALL_ROOT/myr/lib/_myrrt.o
+then the default runtime in
+.B $INSTALL_ROOT/myr/lib/_myrrt.o
 will be used.
-
 .SH ACTIONS
-
-Mbld already knows how to do most of the common commands. Given a file
+.I Mbld
+already knows how to do most of the common commands. Given a file
 describing your project, it can build, test, clean, install, uninstall,
 and benchmark your code.
-
 .TP
 .B all
-The 
+The
 .I all
 action will build all the non-test targets specified in the build file.
 If there are generated files included in the build, then their generation
 commands will be run.
-
 .TP
 .B clean
 The
 .I clean
 action will remove all compiled files and non-durable generated inputs
 from the build directories.
-
 .TP
 .B install
 The
@@ -112,10 +145,9 @@ The
 action will copy the generated sources, manpages, data files, and anything
 else installable into the appropriate directories for the current system.
 If the
-.I DESTDIR
+.B $DESTDIR
 environment variable is set, then its contexts will be prepended to the
 install path.
-
 .TP
 .B uninstall
 The
@@ -123,7 +155,6 @@ The
 action will remove the files installed by the
 .I install
 action.
-
 .TP
 .B test
 The
@@ -132,7 +163,6 @@ action will build the test cases, and run them. If the test case
 exits with a non-zero status, that is counted as a failure. If a
 test outputs subtest data, then this target will show the output
 in a pretty format.
-
 .TP
 .B bench
 The
@@ -140,19 +170,15 @@ The
 action will build the benchmarks and run them. At the end of the
 run, the run statistics are shown. Benchmarks must generate output
 in the subtest format.
-
 .TP
 .B list
 The
 .I list
 action lists all available targets for the build.
-
 .SH BUILD FILES
-
 Build files contain lists of targets. Targets generally
 consist of a target type. This is usually followed by
 target name, an attribute list, and the list of inputs.
-
 Each Myrddin source file may have a corresponding implicit
 test. If a source file
 .I foo.myr
@@ -161,79 +187,87 @@ is built, then the corresponding
 is used as the testcase for
 .I foo.myr
 if it exists.
-
-A typical build file may look something like:
-
-.EX
-  bin foo = main.myr gen-foo.myr ;;
-  man = foo.1 ;;
-  gen gen-foo.myr = sh -c "echo $FOO > gen-foo.myr" ;;
-  lib foothing = lib.myr ;;
-.EE
-
-The full grammar is listed below:
-
-.EX
-  bldfile	: bldent+
-  bldent
-	: "bin" target
-  	| "lib" target
-  	| "test" target
-  	| "bench" target
-  	| "gen" target
-  	| "cmd" target
-  	| "data" flist
-  	| "man" flist
-  	| "sub" flist
-  	| option
-  option
-	: "incpath" "=" list
-  	| "libdeps" "=" list
-  	| "testdeps" "=" list
-  	| "runtime" word
-  	| "noinst"
-  target	: name [attrs] "=" list
-  flist	: [attrs] "=" list
-  list	: name+ ";;"
-  attrs	: "{" (key [ "=" value])* "}"
-  name	: <nonspace> | <quoted word>
-.EE
-
 .PP
-Bin, test, and bench targets all behave in a
+A typical build file may look something like:
+.IP
+.EX
+bin foo = main.myr gen-foo.myr ;;
+man = foo.1 ;;
+gen gen-foo.myr = sh -c "echo $FOO > gen-foo.myr" ;;
+lib foothing = lib.myr ;;
+.EE
+.LP
+The full grammar is listed below:
+.IP
+.EX
+bldfile : bldent+
+bldent  : "bin" target
+        | "lib" target
+        | "test" target
+        | "bench" target
+        | "gen" target
+        | "cmd" target
+        | "data" flist
+        | "man" flist
+        | "sub" flist
+        | option
+option  : "incpath" "=" list
+        | "libdeps" "=" list
+        | "testdeps" "=" list
+        | "runtime" word
+        | "noinst"
+target  : name [attrs] "=" list
+flist   : [attrs] "=" list
+list    : name+ ";;"
+attrs   : "{" (key [ "=" value])* "}"
+name    : <nonspace> | <quoted word>
+.EE
+.LP
+.PP
+.IR Bin ,
+.IR test ,
+and
+.I bench
+targets all behave in a
 very similar way. They all produce a single binary
 from a list of Myrddin sources, scraping the appropriate
 library dependencies and building any libraries from
-the local source directories. Bin targets are installed
-to 
-.I ${BASEDIR}/bin
+the local source directories.
+.I Bin
+targets are installed to
+.B $BASEDIR/bin
 when invoking
 .IR mbld\ install .
-Test and bench targets built and run
+.I Test
+and
+.I bench
+targets built and run
 when invoking
-.IR mbld bench .
-Tests are run with the
-.I cwd
-set to the directory that contains
-the test source
-
+.I mbld
+.IR bench .
+Tests are run with the working directory set to the directory
+that contains the test source
 .PP
-Lib targets also resemble bin targets, but instead of
-producing a binary, they produce a
+.I Lib
+targets also resemble
+.I bin
+targets, but instead of producing a binary, they produce a
 .I .use
 and
 .I .a
 file pair. These files are installed to
-.I ${BASEDIR}/lib/myr
+.B $BASEDIR/lib/myr
 when invoking
-.IR mbld install .
-
+.IR mbld\ install .
 .PP
-Gen and cmd targets are also similar to each other,
+.I Gen
+and
+.I cmd
+targets are also similar to each other,
 varying largely in when and how they are invoked.
-Gen targets specify an output file, and are run in
+.I Gen
+targets specify an output file, and are run in
 response to a target requiring their output.
-
 .PP
 On the other targets are not invoked implicitly at all,
 unless they have an attribute such as
@@ -243,7 +277,6 @@ or
 Instead, they are invoked explicitly by the user, bundling
 up some useful command or another, possibly providing system
 specific variants.
-
 .PP
 Data targets allow the specification of bundled static data.
 This data may be generated from a
@@ -251,78 +284,65 @@ This data may be generated from a
 target, or may simply be shipped as a file. The data is
 installed to the system specific share directory. For example,
 on Unix, this may be
-.IR ${BASEDIR}/share .
-
+.BR $BASEDIR/share .
 .PP
 Man targets are installed to the system-appropriate manual
 directory. The section is determined by the manpage suffix.
 For example
 .I foo.1
 would be installed into section 1 of the manual.
-
 .PP
-Sub targets include a
+.I Sub
+targets include a
 .I bld.sub
 or
 .I bld.proj
 from a subdirectory. If the file in the subdirectory is
 .I bld.proj
 then the root of the project is changed for that subbuild.
-
 .SH ATTRIBUTES
-
 Many targets support attributes. These are the valid
 attributes allowed in the targets.
-
 .TP
 .B ldscript
 Link the target using an ldscript. This is a system
 dependent option, and should be avoided. Valid on binary
 targets.
-
 .TP
 .B runtime
 Link the target using a custom runtime. Valid on binary
 targets
-
 .TP
 .B inc=path
 Add a path to the include
 .IR path .
 Valid on binary targets.
-
 .TP
 .B tag=tagname
 Build this target only when the build tag
-.I tag
+.I tagname
 is specified.
-
 .TP
 .B inst
 Install this target. This is the default for all non-test
 targets.
-
 .TP
 .B noinst
 Do not install this target when running
 .IR mbld\ install .
-
 .TP
 .B test
 This target should run as a test. This is how command targets
 are turned into test runners.
-
 .TP
 .B bench
 This target is run as a benchmark. This is how command targets
 are turned into benchmark runners.
-
 .TP
 .B notest
 This target is not to be run as a benchmark. It's particularly
 fun to use in conjunction with test targets, in spite of being
 spectacularly useless.
-
 .TP
 .B durable
 The file generated by this
@@ -333,7 +353,6 @@ target should not be removed with
 .IR mbld\ clean .
 This is useful for keeping around files where the user may not
 have or want to run the generation code.
-
 .TP
 .B dep=path
 Specifies that a
@@ -341,87 +360,75 @@ Specifies that a
 or
 .I cmd
 target should be re-run when the argument changes.
-
 .TP
 .B path=path
 When specified on a data target, provides the desired
 installation directory. Defaults to
-.IR ${BASEDIR}/share \.
-
+.BR $BASEDIR/share .
 .SH FILES
-
 .TP
 .I bld.proj
 The root project file. All paths in bldfiles are relative
 to the most recent one in the directory heirarchy.
-
 .TP
 .I bld.sub
 A sub build. This contains targets, and may specify dependencies
 on other targets within the same project.
-
 .SH EXAMPLE
 .EX
-    mbld
+mbld
 .EE
-
 .PP
 The command above will load bld.proj and all associated sub builds,
 and run the commands to incrementally rebuild the code.
-
 .EX
-    mbld -l foo bar.myr baz.myr
+mbld -l foo bar.myr baz.myr
 .EE
-
 .PP
-The command above will ignore bld.proj and produce a library
-named \fIlibfoo.a\fP, consisting of the files \fIbar.myr\fP
-and \fIbaz.myr\fP
-
-
+The command above will ignore bld.proj and produce a library named
+.IR libfoo.a ,
+consisting of the files
+.I bar.myr
+and
+.IR baz.myr .
 .SH ENVIRONMENT VARIABLES
-
 .TP
 .B DESTDIR
-prepends $DESTDIR to the path to install to. For example, if the installgg
-prefix is /usr, the binary path is bin/, then binaries will get copied
-to 
-.I $DESTDIR/usr/bin
-on 
-.B mbld install
-
+Prepends
+.B $DESTDIR
+to the installation path. For example, if the installation prefix is
+/amd64 and the binary path is /bin, the resulting binaries will be
+copied to
+.B $DESTDIR/amd64/bin
+on
+.IR mbld\ install .
 .TP
 .B MYR_MC
-Compiles the binaries with 
-.I $MYR_MC
+Compiles the binaries with
+.B $MYR_MC
 instead of the default value,
 .IR 6m .
-
 .TP
 .B MYR_MUSE
-Merges usefiles with 
-.I $MYR_MUSE
-instead of hte default value
+Merges usefiles with
+.B $MYR_MUSE
+instead of the default value
 .IR muse .
-
 .TP
 .B MYR_RT
 Links with the runtime $MYR_RT instead of the default
-.IR ${BASEDIR}/lib/myr/_myrrt.o . 
-
+.BR $BASEDIR/lib/myr/_myrrt.o .
 .SH SOURCES
 The source for mbld is available from
 .B git://git.eigenstate.org/git/ori/mc.git
 and lives in the
-.I mbld/
+.I mbld
 directory within the source tree.
-
 .SH SEE ALSO
-.IR 6m(1)
-.IR muse(1)
-.IR ld(1)
-.IR as(1)
-
+.IR 6m (1),
+.IR muse (1),
+.IR make (1),
+.IR mk (1)
 .SH BUGS
 .PP
 None known.

@@ -50,7 +50,7 @@
 use std
 
 pkg crypto =
-	const fdiff : (out : felem[:], in : felem[:] -> void)
+	const x25519	: (out : byte[:], inu : byte[:], inpt : byte[:] -> void)
 ;;
 
 type felem = uint64
@@ -639,4 +639,7 @@ const curve25519 = {pub : byte[:/*32*/], secret : byte[:/*32*/], basepoint : byt
 	crecip(zmone[:], z[:])
 	fmul(z[:], x[:], zmone[:])
 	fcontract(pub[:], z[:])
+}
+
+const x25519 = {out, inu, inscalar
 }

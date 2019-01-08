@@ -3,76 +3,95 @@
 muse
 .SH SYNOPSIS
 .B muse
-.I -o out -p pkg [-h] [-d dbg] [-l libs]
-.I [file...]
-.br
+.B -o
+.I out
+.B -p
+.I pkg
+[
+.B -h
+] [
+.B -d
+.I dbg
+] [
+.B -l
+.I libs
+] [
+.I file ...
+]
 .SH DESCRIPTION
 .PP
-The muse tool acts as a linker for
+The
+.I muse
+tool acts as a linker for
 .I .use
 files. It reads all of the usefiles provided to it on the
 command line, filters them by package, and outputs a new
 usefile with the merged set of symbols. Both the
-.I -o out.use
+.B -o
+.I out.use
 and the
-.I -p pkg
+.B -p
+.I pkg
 options are mandatory.
-
 .PP
-The output of muse is architecture-independent. However, the format of the
+The output of
+.I muse
+is architecture-independent. However, the format of the
 generated file is not stable, and is not guaranteed to work across
 different compiler versions.
-
 .PP
-The muse options are:
-
+The
+.I muse
+options are:
+.TP
+.B -h
+Print a summary of the available options.
 .TP
 .B -d [flTri]
 Print debugging dumps. Additional options may be given to give more
 debugging information for specific intermediate states of the compilation.
-
 .TP
-.B -h
-Print a summary of the available options.
-
-.TP
-.B -p package
+.BI -p\  package
 Take the symbols that match
 .I package
 and their dependencies, and merge them into a single package. Only symbols
 matching the package name will be reexported.
-
 .TP
-.B -o output-file
+.BI -o\  output-file
 Specify that the generated usefile should be named 
 .I output-file.
 By convention,
 .I output-file
 should match up with the package name given to the
-.I -p
+.B -p
 option.
-
 .SH EXAMPLE
+.IP
 .EX
     muse -o library.use -p library foo.use bar.use
 .EE
-
+.LP
 .SH FILES
-The source for muse is available from
+The source for
+.I muse
+is available from
 .B git://git.eigenstate.org/git/ori/mc.git
 and lives in the
-.I muse/ 
+.I muse 
 directory within the source tree.
-
 .SH SEE ALSO
-.IR 6m(1)
-.IR ld(1)
-.IR as(1)
-
+.IR 6m (1),
+.IR 2l (1),
+.IR 2a (1)
 .SH BUGS
 .PP
 There is insufficient checking and validation done on usefiles.
 .PP
 The file format is in flux, and in current iterations, it is not at all compact.
 .PP
-The file format is not closed under concatentation.
+There is no versioning on the usefiles as it stands. If you use the wrong
+version with the wrong compiler, a mysterious error or even segfault is
+likely.
+.PP
+This utility should not exist. Instead, the compiler should put the
+exported symbol information into the object file or library directly.
