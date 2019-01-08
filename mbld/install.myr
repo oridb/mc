@@ -20,7 +20,7 @@ const uninstall = {b
 }
 
 const movetargs = {b, rm
-	var inst
+	var inst, name
 
 	inst = std.htgetv(b.deps.targs, "all", [][:])
 	for n : inst
@@ -28,7 +28,11 @@ const movetargs = {b, rm
 			continue
 		;;
 		for g : n.gen
-			if !movefile(b, rm, g, n.instdir, n.instmod)
+			name = n.instname
+			if name.len == 0
+				name = std.basename(g)
+			;;
+			if !movefile(b, rm, g, n.instdir, name, n.instmode)
 				-> false
 			;;
 		;;
@@ -37,11 +41,11 @@ const movetargs = {b, rm
 
 }
 
-const movefile = {b, rm, file, prefix, perm
+const movefile = {b, rm, file, prefix, instname, perm
 	var path, ok
 
 	ok = true
-	path = std.pathjoin([opt_destdir, opt_instbase, prefix, std.basename(file)][:])
+	path = std.pathjoin([opt_destdir, opt_instbase, prefix, instname][:])
 	if rm
 		mbldput("\trm {}\n", path)
 		if !std.remove(path)

@@ -15,10 +15,11 @@ lib crypto =
 	# symmetric ciphers
 	chacha20.myr
 	aes.myr
-	aesgcm.myr
+	#aesgcm.myr
 
 	# public key ciphers
 	rsa.myr
+	x25519.myr
 
 	# randomness
 	entropy.myr	# currently assumes a /dev/random

@@ -75,8 +75,8 @@ const myrdeps = {b, name, mt
 			go.instdir = config.Libpath
 			gu.instdir = config.Libpath
 		;;
-		go.instmod = 0o644
-		gu.instmod = 0o644
+		go.instmode = 0o644
+		gu.instmode = 0o644
 		generates(g, gu, tu)
 		generates(g, go, to)
 
@@ -116,7 +116,7 @@ const myrdeps = {b, name, mt
 			addnode(g, "all", go)
 			if mt.install
 				go.instdir = config.Binpath
-				go.instmod = 0o755
+				go.instmode = 0o755
 			;;
 		;;
 		std.slfree(u)
@@ -251,10 +251,14 @@ const mandeps = {b, name, mt
 		n = leaf(b.deps, p)
 		match std.strrfind(pg, ".")
 		| `std.None:	std.fatal("manpage {} missing section\n", pg)
-		| `std.Some i:	r = std.strcat(config.Manpath, pg[i + 1:])
+		| `std.Some i:
+			r = std.strcat(config.Manpath, pg[i + 1:])
+			if config.Stripman
+				n.instname = std.sldup(pg[:i])
+			;;
 		;;
 		n.instdir = r
-		n.instmod = 0o644
+		n.instmode = 0o644
 		addnode(b.deps, "all", n)
 	;;
 }
@@ -269,7 +273,7 @@ const datdeps = {b, name, dt
 		if dt.path.len == 0
 			n.instdir = config.Sharepath
 		;;
-		n.instmod = 0o644
+		n.instmode = 0o644
 		addnode(b.deps, "all", n)
 	;;
 }

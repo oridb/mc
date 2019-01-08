@@ -126,6 +126,7 @@ echo "const Runtime = \"_myrrt.o\"" >> mbld/config.myr
 echo "const Sharepath = \"share\"" >> mbld/config.myr
 echo "const Binpath = \"bin\"" >> mbld/config.myr
 echo "const Libpath = \"lib/myr\"" >> mbld/config.myr
+echo "const Stripman = false" >> mbld/config.myr
 echo "const Env : (byte[:], byte[:])[:] = $env" >> mbld/config.myr
 
 

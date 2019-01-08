@@ -115,7 +115,8 @@ pkg bld =
 
 		/* install info */
 		instdir	: byte[:]
-		instmod	: int64
+		instname: byte[:]
+		instmode: int64
 
 		/* dependency names */
 		gen	: byte[:][:]
