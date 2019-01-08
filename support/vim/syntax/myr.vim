@@ -6,27 +6,28 @@ if exists("b:current_syntax")
     finish
 endif
 
-syn region myrComment start=+/\*+ end=+\*/+
+syn region myrComment start=+/\*+ end=+\*/+ contains=myrComment
 syn region myrComment start=+//+ end=+$+
 syn match myrSpecial display contained "\\\(x\x\+\|\o\{1,3}\|u{[a-zA-Z0-9_]*}\|.\|$\)"
-syn match myrFormat display "{[^}]*}"
+syn match myrFormat display contained "{[^}]*}"
 syn region myrString start=+"+ skip=+\\"+ end=+"+ contains=myrSpecial,myrFormat extend
 syn region myrChar start=+'+ skip=+\\'+ end=+'+ contains=myrSpecial,myrFormat extend
-syn keyword myrKeyword castto
+syn keyword myrKeyword auto
+                     \ break
                      \ const
-                     \ default
+                     \ continue
                      \ elif
                      \ else
-                     \ export
                      \ extern
                      \ false
                      \ for
                      \ generic
                      \ goto
                      \ if
+                     \ impl
                      \ match
                      \ pkg
-                     \ protect
+                     \ pkglocal
                      \ sizeof
                      \ struct
                      \ trait
