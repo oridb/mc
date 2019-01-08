@@ -124,11 +124,7 @@ assemble(char *asmsrc, char *path)
 		if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
 			die("Couldn't run assembler");
 	}
-	/*
-	We don't want to keep the asm source around, but it's useful
-	for deubgging without mapping to line numbers.
-	*/
-	if (asmsyntax != Plan9 && !writeasm)
+	if (!writeasm)
 		unlink(asmsrc);
 }
 
