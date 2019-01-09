@@ -1124,6 +1124,7 @@ rval(Simp *s, Node *n, Node *dst)
 	Node *t, *u, *v; /* temporary nodes */
 	Node *r; /* expression result */
 	Node **args;
+	vlong idx, nelt;
 	size_t i;
 	Type *ty;
 
@@ -1165,9 +1166,22 @@ rval(Simp *s, Node *n, Node *dst)
 	case Oarr:
 		if (!dst)
 			dst = temp(s, n);
+		ty = exprtype(dst);
 		t = addr(s, dst, exprtype(dst));
-		for (i = 0; i < n->expr.nargs; i++)
-			assignat(s, t, size(n->expr.args[i])*i, rval(s, n->expr.args[i], NULL));
+		if (!getintlit(ty->asize, &nelt))
+			die("array missing size");
+		/* we only need to clear if we don't have things fully initialized */
+		idx = 0;
+		if (nelt != n->expr.nargs)
+			append(s, mkexpr(n->loc, Oclear, t, mkintlit(n->loc, size(n)), NULL));
+		for (i = 0; i < n->expr.nargs; i++) {
+			if (!args[i]->expr.idx)
+				idx++;
+			else if (!getintlit(args[i]->expr.idx, &idx))
+				die("non-numeric array size");
+			assert(idx < nelt);
+			assignat(s, t, size(args[i])*idx, rval(s, args[i], NULL));
+		}
 		r = dst;
 		break;
 	case Ostruct:
@@ -1182,7 +1196,7 @@ rval(Simp *s, Node *n, Node *dst)
 		if (tybase(ty)->nmemb != n->expr.nargs)
 			append(s, mkexpr(n->loc, Oclear, t, mkintlit(n->loc, size(n)), NULL));
 		for (i = 0; i < n->expr.nargs; i++)
-			assignat(s, t, offset(n, n->expr.args[i]->expr.idx), rval(s, n->expr.args[i], NULL));
+			assignat(s, t, offset(n, args[i]->expr.idx), rval(s, args[i], NULL));
 		r = dst;
 		break;
 	case Ocast:

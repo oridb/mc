@@ -286,6 +286,8 @@ static size_t
 blobrec(Blob *b, Htab *globls, Htab *strtab, Node *n)
 {
 	size_t i, sz, end;
+	vlong nelt, idx, last;
+	Type *ty;
 
 	switch(exprop(n)) {
 	case Oucon:	sz = blobucon(b, globls, strtab, n);	break;
@@ -294,7 +296,6 @@ blobrec(Blob *b, Htab *globls, Htab *strtab, Node *n)
 	case Ovar:	sz = blobvar(b, strtab, n, exprtype(n));	break;
 	case Olit:	sz = bloblit(b, strtab, n->expr.args[0], exprtype(n));	break;
 	case Otup:
-	case Oarr:
 		/* Assumption: We sorted this while folding */
 		sz = 0;
 		if (!n->expr.args)
@@ -303,6 +304,28 @@ blobrec(Blob *b, Htab *globls, Htab *strtab, Node *n)
 			end = alignto(sz, exprtype(n->expr.args[i]));
 			sz += blobpad(b, end - sz);
 			sz += blobrec(b, globls, strtab, n->expr.args[i]);
+		}
+		/* if we need padding at the end.. */
+		end = alignto(sz, exprtype(n));
+		sz += blobpad(b, end - sz);
+		break;
+	case Oarr:
+		sz = 0;
+		idx = 0;
+		last = 0;
+		ty = exprtype(n);
+		if (!n->expr.args)
+			break;
+		if (!getintlit(ty->asize, &nelt))
+			die("array missing size");
+		/* We sorted this while folding, so elements are in order */
+		for (i = 0; i < n->expr.nargs; i++) {
+			if (!getintlit(n->expr.args[i]->expr.idx, &idx))
+				die("non-numeric array size");
+			if (idx != last + 1)
+				sz += blobpad(b, (idx - last)*size(n->expr.args[i]));
+			sz += blobrec(b, globls, strtab, n->expr.args[i]);
+			last = idx + 1;
 		}
 		/* if we need padding at the end.. */
 		end = alignto(sz, exprtype(n));
