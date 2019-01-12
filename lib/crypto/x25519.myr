@@ -50,7 +50,7 @@
 use std
 
 pkg crypto =
-	const x25519	: (out : byte[:], inu : byte[:], inpt : byte[:] -> void)
+	const curve25519 : (pub : byte[:/*32*/], secret : byte[:/*32*/], basepoint : byte[:/*32*/] -> void)
 ;;
 
 type felem = uint64
@@ -237,7 +237,7 @@ const fmul = {out, in, in2
 	fproduct(t[:], in, in2)
 	freducedegree(t[:])
 	freducecoeff(t[:])
-	std.slcp(out, t[:10])
+	std.slcp(out[:10], t[:10])
 }
 
 const fsquareinner = {out, in
@@ -302,10 +302,11 @@ const fsquareinner = {out, in
 
 const fsquare = {out, in
 	var t : felem[19]
+
 	fsquareinner(t[:], in)
 	freducedegree(t[:])
 	freducecoeff(t[:])
-	std.slcp(out, t[:10])
+	std.slcp(out[:10], t[:10])
 }
 
 /* Take a little-endian, 32-byte number and expand it into polynomial form */
@@ -430,11 +431,11 @@ const fmonty = {x2, z2, x3, z3, x, z, xprime, zprime, qmqp
 	var zzzprime : felem[19]
 	var xxxprime : felem[19]
 
-	std.slcp(origx[:], x[:10])
+	std.slcp(origx[:10], x[:10])
 	fsum(x, z)
 	fdiff(z, origx[:]);  // does x - z
 
-	std.slcp(origxprime[:], xprime[:10])
+	std.slcp(origxprime[:10], xprime[:10])
 	fsum(xprime, zprime)
 	fdiff(zprime, origxprime[:])
 	fproduct(xxprime[:], xprime, z)
@@ -443,7 +444,7 @@ const fmonty = {x2, z2, x3, z3, x, z, xprime, zprime, qmqp
 	freducecoeff(xxprime[:])
 	freducedegree(zzprime[:])
 	freducecoeff(zzprime[:])
-	std.slcp(origxprime[:], xxprime[:10])
+	std.slcp(origxprime[:10], xxprime[:10])
 	fsum(xxprime[:], zzprime[:])
 	fdiff(zzprime[:], origxprime[:])
 	fsquare(xxxprime[:], xxprime[:])
@@ -451,8 +452,8 @@ const fmonty = {x2, z2, x3, z3, x, z, xprime, zprime, qmqp
 	fproduct(zzprime[:], zzzprime[:], qmqp)
 	freducedegree(zzprime[:])
 	freducecoeff(zzprime[:])
-	std.slcp(x3, xxxprime[:10])
-	std.slcp(z3, zzprime[:10])
+	std.slcp(x3[:10], xxxprime[:10])
+	std.slcp(z3[:10], zzprime[:10])
 
 	fsquare(xx[:], x)
 	fsquare(zz[:], z)
@@ -530,8 +531,8 @@ const cmult = {resultx, resultz, n, q
 		;;
 	;;
 
-	std.slcp(resultx, nqx[:10])
-	std.slcp(resultz, nqz[:10])
+	std.slcp(resultx[:10], nqx[:10])
+	std.slcp(resultz[:10], nqz[:10])
 }
 
 // -----------------------------------------------------------------------------
@@ -641,5 +642,3 @@ const curve25519 = {pub : byte[:/*32*/], secret : byte[:/*32*/], basepoint : byt
 	fcontract(pub[:], z[:])
 }
 
-const x25519 = {out, inu, inscalar
-}
