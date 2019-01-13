@@ -888,7 +888,7 @@ const bsdthread_register = {start, wqthread, sz, dummy, targetconc, queueoff
 }
 
 const bsdthread_create	= {func , arg , stk , pthr , flags
-	-> (syscall(Sysbsdthread_create, a(func), a(arg), a(stk), a(pthr)) : void#)
+	-> (syscall(Sysbsdthread_create, a(func), a(arg), a(stk), a(pthr), a(flags)) : void#)
 }
 
 const bsdthread_terminate	= {stk , len , port , sem

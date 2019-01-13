@@ -45,10 +45,10 @@ const spawnstk = {fn, sz
 
 	ret = sys.bsdthread_create( \
 		(tramp	: void#), \	/* start */
-		(tos	: void#), \		/* arg */
-		(tos	: void#), \		/* stack */
-		(0	: void#), \		/* pthread struct */
-		0x01000000)			/* flags (PTHREAD_START_CUSTOM): don't alloc stack in kernel */
+		(tos	: void#), \	/* arg */
+		(tos	: void#), \	/* stack */
+		(0	: void#), \	/* pthread struct */
+		0x01000000)		/* flags (PTHREAD_START_CUSTOM): don't alloc stack in kernel */
 
 	if (ret : std.size) < 0
 		sys.munmap(stk, sz)
