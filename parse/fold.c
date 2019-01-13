@@ -23,9 +23,13 @@ getintlit(Node *n, vlong *v)
 	if (exprop(n) != Olit)
 		return 0;
 	l = n->expr.args[0];
-	if (l->lit.littype != Lint)
+	/* It's up to type checking to make sure this is ok */
+	if (l->lit.littype == Lint)
+		*v = l->lit.intval;
+	else if (l->lit.littype == Lchr)
+		*v = l->lit.chrval;
+	else
 		return 0;
-	*v = l->lit.intval;
 	return 1;
 }
 
