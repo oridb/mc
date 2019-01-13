@@ -21,6 +21,7 @@ const main = {args
 	| `std.Err e:	std.fatal("unable to announce: {}\n", e)
 	;;
 
+	std.put("serving on {}\n", ann)
 	http.serve(srv, route)
 }
 
