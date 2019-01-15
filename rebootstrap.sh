@@ -42,14 +42,16 @@ build()
 	linux|macos)
 		makeprg=make
 		vcs=git
-		buildcmd="cd '$wrkdir/mc' && $setpath && ./configure --prefix=$wrkdir/root
-			$makeprg bootstrap && $makeprg install && $makeprg clean && git pull &&
+		buildcmd="cd '$wrkdir/mc' && $setpath && git reset --hard &&
+			./configure --prefix=$wrkdir/root &&
+			$makeprg bootstrap && $makeprg install && git pull &&
 			$makeprg genbootstrap && $vcs diff > update.patch"
 
 		;;
 	*)
-		buildcmd="cd '$wrkdir/mc' && $setpath && ./configure --prefix=$wrkdir/root
-			$makeprg bootstrap && $makeprg install && $makeprg clean && git pull &&
+		buildcmd="cd '$wrkdir/mc' && $setpath && git reset --hard &&
+			./configure --prefix=$wrkdir/root &&
+			$makeprg bootstrap && $makeprg install && git pull &&
 			$makeprg genbootstrap && $vcs diff > update.patch"
 		;;
 	esac
