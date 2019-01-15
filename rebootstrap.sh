@@ -18,7 +18,7 @@ build()
 	vcs=git
 	remotecmd="ssh $host"
 	setpath="mkdir -p $wrkdir/root/bin && export PATH=$PATH:$wrkdir/root/bin"
-	showpatch="cd '$wrkdir/mc' && cat update.patch && rm -f update.patch"
+	showpatch="cd '$wrkdir/mc' && cat update.patch"
 	case $os in
 	plan9)
 		if echo $host | grep '@' > /dev/null; then
@@ -54,8 +54,9 @@ build()
 		;;
 	esac
 
+	$remotecmd "rm -f $wrkdir/mc/update.patch"
 	$remotecmd "$buildcmd"
-	$remotecmd "$showpatch" | patch -p1
+	$remotecmd "$showpatch" | patch -p1 || true
 }
 
 while IFS= read -r desc; do
