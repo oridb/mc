@@ -1,0 +1,707 @@
+/* Copyright 2008, Google Inc.
+ * Translated to Myrddin by Ori Bernstein in 2018
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above
+ * copyright notice, this list of conditions and the following disclaimer
+ * in the documentation and/or other materials provided with the
+ * distribution.
+ *     * Neither the name of Google Inc. nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * curve25519: Curve25519 elliptic curve, public key function
+ *
+ * http://code.google.com/p/curve25519-donna/
+ *
+ * Adam Langley <agl@imperialviolet.org>
+ *
+ * Derived from public domain C code by Daniel J. Bernstein <djb@cr.yp.to>
+ *
+ * More information about curve25519 can be found here
+ *   http://cr.yp.to/ecdh.html
+ *
+ * djb's sample implementation of curve25519 is written in a special assembly
+ * language called qhasm and uses the floating point registers.
+ *
+ * This is, almost, a clean room reimplementation from the curve25519 paper. It
+ * uses many of the tricks described therein. Only the crecip function is taken
+ * from the sample implementation.
+ */
+
+use std
+
+pkg =
+	const curve25519 : (pub : byte[:/*32*/], secret : byte[:/*32*/], basepoint : byte[:/*32*/] -> void)
+;;
+
+/* Sum two numbers: out += in */
+const fsum = {out, in
+	for var i = 0; i < 10; i += 2
+		out[0 + i] = out[0 + i] + in[0 + i]
+		out[1 + i] = out[1 + i] + in[1 + i]
+	;;
+}
+
+/* Find the difference of two numbers: out = in - out
+ * (note the order of the arguments!)
+ */
+const fdiff = {out, in
+	for var i = 0; i < 10; i++
+		out[i] = (in[i] - out[i])
+	;;
+}
+
+/* Multiply a number my a scalar: out = in * scalar */
+const fscalarproduct = {out, in, scalar
+	for var i = 0; i < 10; i++
+		out[i] = in[i] * scalar
+	;;
+}
+
+/* Multiply two numbers: out = in2 * in
+ *
+ * out must be distinct to both ins. The ins are reduced coefficient
+ * form, the out is not.
+ */
+const fproduct = {output, in2, in
+	output[0] =      in2[0] * in[0]
+	output[1] =      in2[0] * in[1] + \
+	                 in2[1] * in[0]
+	output[2] =  2 * in2[1] * in[1] + \
+	                 in2[0] * in[2] + \
+	                 in2[2] * in[0]
+	output[3] =      in2[1] * in[2] + \
+	                 in2[2] * in[1] + \
+	                 in2[0] * in[3] + \
+	                 in2[3] * in[0]
+	output[4] =      in2[2] * in[2] + \
+	             2 * (in2[1] * in[3] + \
+	                  in2[3] * in[1]) + \
+	                 in2[0] * in[4] + \
+	                 in2[4] * in[0]
+	output[5] =      in2[2] * in[3] + \
+	                 in2[3] * in[2] + \
+	                 in2[1] * in[4] + \
+	                 in2[4] * in[1] + \
+	                 in2[0] * in[5] + \
+	                 in2[5] * in[0]
+	output[6] =  2 * (in2[3] * in[3] + \
+	                  in2[1] * in[5] + \
+	                  in2[5] * in[1]) + \
+	                 in2[2] * in[4] + \
+	                 in2[4] * in[2] + \
+	                 in2[0] * in[6] + \
+	                 in2[6] * in[0]
+	output[7] =      in2[3] * in[4] + \
+	                 in2[4] * in[3] + \
+	                 in2[2] * in[5] + \
+	                 in2[5] * in[2] + \
+	                 in2[1] * in[6] + \
+	                 in2[6] * in[1] + \
+	                 in2[0] * in[7] + \
+	                 in2[7] * in[0]
+	output[8] =      in2[4] * in[4] + \
+	             2 * (in2[3] * in[5] + \
+	                  in2[5] * in[3] + \
+	                  in2[1] * in[7] + \
+	                  in2[7] * in[1]) + \
+	                 in2[2] * in[6] + \
+	                 in2[6] * in[2] + \
+	                 in2[0] * in[8] + \
+	                 in2[8] * in[0]
+	output[9] =      in2[4] * in[5] + \
+	                 in2[5] * in[4] + \
+	                 in2[3] * in[6] + \
+	                 in2[6] * in[3] + \
+	                 in2[2] * in[7] + \
+	                 in2[7] * in[2] + \
+	                 in2[1] * in[8] + \
+	                 in2[8] * in[1] + \
+	                 in2[0] * in[9] + \
+	                 in2[9] * in[0]
+	output[10] = 2 * (in2[5] * in[5] + \
+	                  in2[3] * in[7] + \
+	                  in2[7] * in[3] + \
+	                  in2[1] * in[9] + \
+	                  in2[9] * in[1]) + \
+	                 in2[4] * in[6] + \
+	                 in2[6] * in[4] + \
+	                 in2[2] * in[8] + \
+	                 in2[8] * in[2]
+	output[11] =     in2[5] * in[6] + \
+	                 in2[6] * in[5] + \
+	                 in2[4] * in[7] + \
+	                 in2[7] * in[4] + \
+	                 in2[3] * in[8] + \
+	                 in2[8] * in[3] + \
+	                 in2[2] * in[9] + \
+	                 in2[9] * in[2]
+	output[12] =     in2[6] * in[6] + \
+	             2 * (in2[5] * in[7] + \
+	                  in2[7] * in[5] + \
+	                  in2[3] * in[9] + \
+	                  in2[9] * in[3]) + \
+	                 in2[4] * in[8] + \
+	                 in2[8] * in[4]
+	output[13] =     in2[6] * in[7] + \
+	                 in2[7] * in[6] + \
+	                 in2[5] * in[8] + \
+	                 in2[8] * in[5] + \
+	                 in2[4] * in[9] + \
+	                 in2[9] * in[4]
+	output[14] = 2 * (in2[7] * in[7] + \
+	                  in2[5] * in[9] + \
+	                  in2[9] * in[5]) + \
+	                 in2[6] * in[8] + \
+	                 in2[8] * in[6]
+	output[15] =     in2[7] * in[8] + \
+	                 in2[8] * in[7] + \
+	                 in2[6] * in[9] + \
+	                 in2[9] * in[6]
+	output[16] =     in2[8] * in[8] + \
+	             2 * (in2[7] * in[9] + \
+	                  in2[9] * in[7])
+	output[17] =     in2[8] * in[9] + \
+	                 in2[9] * in[8]
+	output[18] = 2 * in2[9] * in[9]
+}
+
+
+/* Reduce a long form to a short form by taking the input mod 2^255 - 19. */
+const freducedegree= {out
+	out[8] += 19 * out[18];
+	out[7] += 19 * out[17];
+	out[6] += 19 * out[16];
+	out[5] += 19 * out[15];
+	out[4] += 19 * out[14];
+	out[3] += 19 * out[13];
+	out[2] += 19 * out[12];
+	out[1] += 19 * out[11];
+	out[0] += 19 * out[10];
+}
+
+/* Reduce all coeff of the short form in to be -2**25 <= x <= 2**25
+ */
+const freducecoeff = {out
+	var over, over32
+	var hi, sgn, round
+
+	out[10] = 0;
+	for var i = 0; i < 10; i += 2
+		/* out[i]/2^26, constant time */
+		hi = ((out[i] : uint64) >> 32 : uint32)
+		sgn = (hi : int32) >> 31
+		round = (sgn : uint32) >> 6;
+		/* Should return v / (1<<26) */
+		over = (out[i] + (round : int64)) >> 26
+
+		out[i] -= over << 26;
+		out[i+1] += over;
+		hi = ((out[i + 1] : uint64) >> 32 : uint32)
+		sgn = (hi : int32) >> 31
+		round = (sgn : uint32) >> 7
+		/* Should return v / (1<<26) */
+		over = (out[i+1] + (round : int64)) >> 25
+		out[i+1] -= over << 25;
+		out[i+2] += over;
+	;;
+	/* Now |out[10]| < 2 ^ 38 and all other coefficients are reduced. */
+	out[0] += out[10] << 4
+	out[0] += out[10] << 1
+	out[0] += out[10];
+
+	out[10] = 0
+
+	/*
+	 * Now out[1..9] are reduced, and |out[0]| < 2^26 + 19 * 2^38
+	 * So |over| will be no more than 77825
+	 */
+	/* out[i]/2^26, constant time */
+	hi = ((out[0] : uint64) >> 32 : uint32)
+	sgn = (hi : int32) >> 31
+	round = (sgn : uint32) >> 6;
+	/* Should return v / (1<<26) */
+	over = (out[0] + (round : int64)) >> 26
+	out[0] -= over << 26;
+	out[1] += over;
+
+	/*
+	 * Now out[0,2..9] are reduced, and |out[1]| < 2^25 + 77825
+	 * So |over| will be no more than 1.
+	 * out[1] fits in 32 bits, so we can use div_s32_by_2_25 here.
+	 */
+	round = ((out[1] : int32) >> 31 : uint32) >> 7
+	over32 = (((out[1] : int32) + (round : int32)) >> 25 : int64)
+	out[1] -= over32 << 25
+	out[2] += over32
+
+	/*
+	 * Finally, out[0,1,3..9] are reduced, and out[2] is "nearly reduced":
+	 * we have |out[2]| <= 2^26.  This is good enough for all of our math,
+	 * but it will require an extra freduce_coefficients before fcontract.
+	 */
+}
+
+/* A helpful wrapper around fproduct: out = in * in2.
+ *
+ * out must be distinct to both ins. The out is reduced degree and
+ * reduced coefficient.
+ */
+const fmul = {out, in, in2
+	var t : int64[19]
+
+	fproduct(t[:], in, in2)
+	freducedegree(t[:])
+	freducecoeff(t[:])
+	std.slcp(out[:10], t[:10])
+}
+
+const fsquareinner = {out, in
+	var tmp : int64
+
+	out[0] =	in[0] * in[0]
+	out[1] =	2 * in[0] * in[1]
+	out[2] =	2 * (in[1] * in[1] + \
+			     in[0] * in[2])
+	out[3] =	2 * (in[1] * in[2] + \
+			     in[0] * in[3])
+	out[4] =	in[2] * in[2] + \
+			4 * in[1] * in[3] + \
+			2 * in[0] * in[4]
+	out[5] =	2 * (in[2] * in[3] + \
+			     in[1] * in[4] + \
+			     in[0] * in[5])
+	out[6] =	2 * (in[3] * in[3] + \
+			     in[2] * in[4] + \
+			     in[0] * in[6] + \
+			     2 * in[1] * in[5])
+	out[7] =	2 * (in[3] * in[4] + \
+			     in[2] * in[5] + \
+		     	in[1] * in[6] + \
+		     	in[0] * in[7])
+	tmp = in[1] * in[7] + in[3] * in[5]
+	out[8] =	in[4] * in[4] + \
+			2 * (in[2] * in[6] + \
+		     	     in[0] * in[8] + \
+		     	     2 * tmp)
+	out[9] =	2 * (in[4] * in[5] + \
+		     	in[3] * in[6] + \
+		     	in[2] * in[7] + \
+		     	in[1] * in[8] + \
+		     	in[0] * in[9])
+	tmp = 		in[3] * in[7] + in[1] * in[9]
+	out[10] =	2 * (in[5] * in[5] + \
+		             in[4] * in[6] + \
+		             in[2] * in[8] + \
+			     2 * tmp)
+	out[11] =	2 * (in[5] * in[6] + \
+		    	     in[4] * in[7] + \
+		     	     in[3] * in[8] + \
+			     in[2] * in[9])
+	out[12] =	in[6] * in[6] + \
+			2 * (in[4] * in[8] + \
+			     2 * (in[5] * in[7] + \
+		     	          in[3] * in[9]))
+	out[13] = 	2 * (in[6] * in[7] + \
+			     in[5] * in[8] + \
+			     in[4] * in[9])
+	out[14] =	2 * (in[7] * in[7] + \
+			in[6] * in[8] + \
+			2 * in[5] * in[9])
+	out[15] =	2 * (in[7] * in[8] + \
+			in[6] * in[9])
+	out[16] =	in[8] * in[8] + \
+			4 * in[7] * in[9]
+	out[17] =	2 * in[8] * in[9]
+	out[18] =	2 * in[9] * in[9]
+}
+
+const fsquare = {out, in
+	var t : int64[19]
+
+	fsquareinner(t[:], in)
+	freducedegree(t[:])
+	freducecoeff(t[:])
+	std.slcp(out[:10], t[:10])
+}
+
+/* Take a little-endian, 32-byte number and expand it into polynomial form */
+const fexpand = {out, in
+	/*
+	 * #define F(n,start,shift,mask) \
+	 * 	out[n] = (((in[start + 0] : int64) | \
+	 * 		(in[start + 1] : int64) << 8 | \
+	 * 		(in[start + 2] : int64) << 16 | \
+	 * 		(in[start + 3] : int64) << 24) >> shift) & mask
+	 * 	F(0, 0, 0, 0x3ffffff)
+	 * 	F(1, 3, 2, 0x1ffffff)
+	 * 	F(2, 6, 3, 0x3ffffff)
+	 * 	F(3, 9, 5, 0x1ffffff)
+	 * 	F(4, 12, 6, 0x3ffffff)
+	 * 	F(5, 16, 0, 0x1ffffff)
+	 * 	F(6, 19, 1, 0x3ffffff()
+	 * 	F(7, 22, 3, 0x1ffffff)
+	 * 	F(8, 25, 4, 0x3ffffff)
+	 * 	F(9, 28, 6, 0x1ffffff)
+	 * #undef F
+	 */
+	out[0] = (((in[0 + 0] : int64) | (in[0 + 1] : int64) << 8 | (in[0 + 2] : int64) << 16 | (in[0 + 3] : int64) << 24) >> 0) & 0x3ffffff
+	out[1] = (((in[3 + 0] : int64) | (in[3 + 1] : int64) << 8 | (in[3 + 2] : int64) << 16 | (in[3 + 3] : int64) << 24) >> 2) & 0x1ffffff
+	out[2] = (((in[6 + 0] : int64) | (in[6 + 1] : int64) << 8 | (in[6 + 2] : int64) << 16 | (in[6 + 3] : int64) << 24) >> 3) & 0x3ffffff
+	out[3] = (((in[9 + 0] : int64) | (in[9 + 1] : int64) << 8 | (in[9 + 2] : int64) << 16 | (in[9 + 3] : int64) << 24) >> 5) & 0x1ffffff
+	out[4] = (((in[12 + 0] : int64) | (in[12 + 1] : int64) << 8 | (in[12 + 2] : int64) << 16 | (in[12 + 3] : int64) << 24) >> 6) & 0x3ffffff
+	out[5] = (((in[16 + 0] : int64) | (in[16 + 1] : int64) << 8 | (in[16 + 2] : int64) << 16 | (in[16 + 3] : int64) << 24) >> 0) & 0x1ffffff
+	out[6] = (((in[19 + 0] : int64) | (in[19 + 1] : int64) << 8 | (in[19 + 2] : int64) << 16 | (in[19 + 3] : int64) << 24) >> 1) & 0x3ffffff
+	out[7] = (((in[22 + 0] : int64) | (in[22 + 1] : int64) << 8 | (in[22 + 2] : int64) << 16 | (in[22 + 3] : int64) << 24) >> 3) & 0x1ffffff
+	out[8] = (((in[25 + 0] : int64) | (in[25 + 1] : int64) << 8 | (in[25 + 2] : int64) << 16 | (in[25 + 3] : int64) << 24) >> 4) & 0x3ffffff
+	out[9] = (((in[28 + 0] : int64) | (in[28 + 1] : int64) << 8 | (in[28 + 2] : int64) << 16 | (in[28 + 3] : int64) << 24) >> 6) & 0x1ffffff
+
+}
+
+/* Take a fully reduced polynomial form number and contract it into a
+ * little-endian, 32-byte array
+ */
+const fcontract = {out : byte[:], in : int64[:]
+	var mask, carry
+	for var j = 0; j < 2; j++
+		for var i = 0; i < 9; i++
+			if (i & 1) == 1
+			 	/* This calculation is a time-invariant way to make in[i] positive
+			 	 * by borrowing from the next-larger int64_t.
+			 	 */
+				mask = (in[i] : int32) >> 31
+				carry = -(((in[i] : int32) & mask) >> 25)
+				in[i+0] = ((in[i] : int32) + (carry << 25) : int64)
+				in[i+1] = ((in[i+1] : int32) - carry : int64)
+			else
+				mask = (in[i] : int32) >> 31
+				carry = -(((in[i] : int32) & mask) >> 26)
+				in[i+0] = ((in[i] : int32) + (carry << 26) : int64)
+				in[i+1] = ((in[i+1] : int32) - carry : int64)
+			;;
+		;;
+		mask = (in[9] : int32) >> 31
+		carry = -(((in[9] : int32) & mask) >> 25)
+		in[9] = ((in[9] : int32) + (carry << 25) : int64)
+		in[0] = ((in[0] : int32) - (carry * 19) : int64)
+	;;
+
+	/* The first borrow-propagation pass above ended with every int64_t
+	   except (possibly) in[0] non-negative.
+	
+	   Since each in int64_t except in[0] is decreased by at most 1
+	   by a borrow-propagation pass, the second borrow-propagation pass
+	   could only have wrapped around to decrease in[0] again if the
+	   first pass left in[0] negative *and* in[1] through in[9]
+	   were all zero.  In that case, in[1] is now 2^25 - 1, and this
+	   last borrow-propagation step will leave in[1] non-negative.
+	*/
+	mask = (in[0] : int32) >> 31
+	carry = -(((in[0] : int32) & mask) >> 26)
+	in[0] = ((in[0] : int32) + (carry << 26) : int64)
+	in[1] = ((in[1] : int32) - carry : int64)
+	
+	/* Both passes through the above loop, plus the last 0-to-1 step, are
+	   necessary: if in[9] is -1 and in[0] through in[8] are 0,
+	   negative values will remain in the array until the end.
+	 */
+	in[1] <<= 2
+	in[2] <<= 3
+	in[3] <<= 5
+	in[4] <<= 6
+	in[6] <<= 1
+	in[7] <<= 3
+	in[8] <<= 4
+	in[9] <<= 6
+	out[0] = 0
+	out[16] = 0
+	out[ 0+0] |= (in[0] & 0xff : byte); out[ 0+1] = ((in[0] >> 8) & 0xff : byte); out[ 0+2] = ((in[0] >> 16) & 0xff : byte); out[ 0+3] = ((in[0] >> 24) & 0xff : byte)
+	out[ 3+0] |= (in[1] & 0xff : byte); out[ 3+1] = ((in[1] >> 8) & 0xff : byte); out[ 3+2] = ((in[1] >> 16) & 0xff : byte); out[ 3+3] = ((in[1] >> 24) & 0xff : byte)
+	out[ 6+0] |= (in[2] & 0xff : byte); out[ 6+1] = ((in[2] >> 8) & 0xff : byte); out[ 6+2] = ((in[2] >> 16) & 0xff : byte); out[ 6+3] = ((in[2] >> 24) & 0xff : byte)
+	out[ 9+0] |= (in[3] & 0xff : byte); out[ 9+1] = ((in[3] >> 8) & 0xff : byte); out[ 9+2] = ((in[3] >> 16) & 0xff : byte); out[ 9+3] = ((in[3] >> 24) & 0xff : byte)
+	out[12+0] |= (in[4] & 0xff : byte); out[12+1] = ((in[4] >> 8) & 0xff : byte); out[12+2] = ((in[4] >> 16) & 0xff : byte); out[12+3] = ((in[4] >> 24) & 0xff : byte)
+	out[16+0] |= (in[5] & 0xff : byte); out[16+1] = ((in[5] >> 8) & 0xff : byte); out[16+2] = ((in[5] >> 16) & 0xff : byte); out[16+3] = ((in[5] >> 24) & 0xff : byte)
+	out[19+0] |= (in[6] & 0xff : byte); out[19+1] = ((in[6] >> 8) & 0xff : byte); out[19+2] = ((in[6] >> 16) & 0xff : byte); out[19+3] = ((in[6] >> 24) & 0xff : byte)
+	out[22+0] |= (in[7] & 0xff : byte); out[22+1] = ((in[7] >> 8) & 0xff : byte); out[22+2] = ((in[7] >> 16) & 0xff : byte); out[22+3] = ((in[7] >> 24) & 0xff : byte)
+	out[25+0] |= (in[8] & 0xff : byte); out[25+1] = ((in[8] >> 8) & 0xff : byte); out[25+2] = ((in[8] >> 16) & 0xff : byte); out[25+3] = ((in[8] >> 24) & 0xff : byte)
+	out[28+0] |= (in[9] & 0xff : byte); out[28+1] = ((in[9] >> 8) & 0xff : byte); out[28+2] = ((in[9] >> 16) & 0xff : byte); out[28+3] = ((in[9] >> 24) & 0xff : byte)
+}
+
+/* Input: Q, Q', Q-Q'
+ * Output: 2Q, Q+Q'
+ *
+ *   x2 z3: long form, out 2Q
+ *   x3 z3: long form, out Q + Q'
+ *   x z: short form, destroyed, in Q
+ *   xprime zprime: short form, destroyed, in Q'
+ *   qmqp: short form, preserved, in Q - Q'
+ */
+const fmonty = {x2, z2, x3, z3, x, z, xprime, zprime, qmqp
+	var origx : int64[10]
+	var origxprime : int64[10]
+	var zzz : int64 [19]
+	var xx : int64[19]
+	var zz : int64[19]
+	var xxprime : int64[19]
+	var zzprime : int64[19]
+	var zzzprime : int64[19]
+	var xxxprime : int64[19]
+
+	std.clear(&origx);
+	std.clear(&origxprime);
+	std.clear(&zzz);
+	std.clear(&xx);
+	std.clear(&zz);
+	std.clear(&xxprime);
+	std.clear(&zzprime);
+	std.clear(&zzzprime);
+	std.clear(&xxxprime);
+	std.clear(&origx);
+
+	std.slcp(origx[:10], x[:10])
+	fsum(x, z)
+	fdiff(z, origx[:]);  // does x - z
+
+	std.slcp(origxprime[:10], xprime[:10])
+	fsum(xprime, zprime)
+	fdiff(zprime, origxprime[:])
+	fproduct(xxprime[:], xprime, z)
+	fproduct(zzprime[:], x, zprime)
+	freducedegree(xxprime[:])
+	freducecoeff(xxprime[:])
+	freducedegree(zzprime[:])
+	freducecoeff(zzprime[:])
+	std.slcp(origxprime[:10], xxprime[:10])
+	fsum(xxprime[:], zzprime[:])
+	fdiff(zzprime[:], origxprime[:])
+	fsquare(xxxprime[:], xxprime[:])
+	fsquare(zzzprime[:], zzprime[:])
+	fproduct(zzprime[:], zzzprime[:], qmqp)
+	freducedegree(zzprime[:])
+	freducecoeff(zzprime[:])
+	std.slcp(x3[:10], xxxprime[:10])
+	std.slcp(z3[:10], zzprime[:10])
+
+	fsquare(xx[:], x)
+	fsquare(zz[:], z)
+	fproduct(x2, xx[:], zz[:])
+	freducedegree(x2)
+	freducecoeff(x2)
+	fdiff(zz[:], xx[:]);  // does zz = xx - zz
+	std.slfill(zzz[10:], 0)
+	fscalarproduct(zzz[:], zz[:], 121665)
+	/* No need to call freduce_degree here:
+	   fscalar_product doesn't increase the degree of its input. */
+	freducedegree(zzz[:])
+	freducecoeff(zzz[:])
+	fsum(zzz[:], xx[:])
+	fproduct(z2, zz[:], zzz[:])
+	freducedegree(z2)
+	freducecoeff(z2)
+}
+
+const cswap = {a, b, swap
+	var s, x
+
+	s = (-swap : int32)
+	for var i = 0; i < 10; i++
+		x = s & ((a[i] : int32) ^ (b[i] : int32))
+		a[i] = ((a[i] : int32) ^ x : int64)
+		b[i] = ((b[i] : int32) ^ x : int64)
+	;;
+}
+
+/* Calculates nQ where Q is the x-coordinate of a point on the curve
+ *
+ *   resultx/resultz: the x coordinate of the resulting curve point (short form)
+ *   n: a little endian, 32-byte number
+ *   q: a point of the curve (short form)
+ */
+const cmult = {resultx, resultz, n, q
+	var a : int64[19] = [.[0] = 0, .[18] = 0]
+	var b : int64[19] = [.[0] = 1, .[18] = 0]
+	var c : int64[19] = [.[0] = 1, .[18] = 0]
+	var d : int64[19] = [.[0] = 0, .[18] = 0]
+	var e : int64[19] = [.[0] = 0, .[18] = 0]
+	var f : int64[19] = [.[0] = 1, .[18] = 0]
+	var g : int64[19] = [.[0] = 0, .[18] = 0]
+	var h : int64[19] = [.[0] = 1, .[18] = 0]
+	var nqpqx = a[:]
+	var nqpqz = b[:]
+	var nqx = c[:]
+	var nqz = d[:]
+	var nqpqx2 = e[:]
+	var nqpqz2 = f[:]
+	var nqx2 = g[:]
+	var nqz2 = h[:]
+	var byte
+	var t
+
+	std.slcp(nqpqx[:10], q[:10])
+	for var i = 0; i < 32; ++i
+		byte = n[31 - i]
+		for var j = 0; j < 8; ++j
+			var bit = (byte >> 7 : int64)
+			cswap(nqx, nqpqx, bit)
+			cswap(nqz, nqpqz, bit)
+			fmonty(nqx2, nqz2,
+			    nqpqx2, nqpqz2,
+			    nqx, nqz,
+			    nqpqx, nqpqz,
+			    q)
+
+		        cswap(nqx2, nqpqx2, bit);
+			cswap(nqz2, nqpqz2, bit);
+
+			t = nqx
+			nqx = nqx2
+			nqx2 = t
+			t = nqz
+			nqz = nqz2
+			nqz2 = t
+			t = nqpqx
+			nqpqx = nqpqx2
+			nqpqx2 = t
+			t = nqpqz
+			nqpqz = nqpqz2
+			nqpqz2 = t
+
+			byte <<= 1
+		;;
+	;;
+
+	std.slcp(resultx[:10], nqx[:10])
+	std.slcp(resultz[:10], nqz[:10])
+}
+
+// -----------------------------------------------------------------------------
+// Shamelessly copied from djb's code
+// -----------------------------------------------------------------------------
+const crecip = {out, z
+	var z2 : int64[10]
+	var z9 : int64[10]
+	var z11 : int64[10]
+	var z2_5_0 : int64[10]
+	var z2_10_0 : int64[10]
+	var z2_20_0 : int64[10]
+	var z2_50_0 : int64[10]
+	var z2_100_0 : int64[10]
+	var t0 : int64[10]
+	var t1 : int64[10]
+	var i
+
+	/* 2 */ fsquare(z2[:], z[:])
+	/* 4 */ fsquare(t1[:], z2[:])
+	/* 8 */ fsquare(t0[:], t1[:])
+	/* 9 */ fmul(z9[:] ,t0[:], z[:])
+	/* 11 */ fmul(z11[:], z9[:], z2[:])
+	/* 22 */ fsquare(t0[:], z11[:])
+	/* 2^5 - 2^0 = 31 */ fmul(z2_5_0[:], t0[:], z9[:])
+
+	/* 2^6 - 2^1 */ fsquare(t0[:], z2_5_0[:])
+	/* 2^7 - 2^2 */ fsquare(t1[:], t0[:])
+	/* 2^8 - 2^3 */ fsquare(t0[:], t1[:])
+	/* 2^9 - 2^4 */ fsquare(t1[:], t0[:])
+	/* 2^10 - 2^5 */ fsquare(t0[:],t1[:])
+	/* 2^10 - 2^0 */ fmul(z2_10_0[:], t0[:], z2_5_0[:])
+
+	/* 2^11 - 2^1 */ fsquare(t0[:], z2_10_0[:])
+	/* 2^12 - 2^2 */ fsquare(t1[:], t0[:])
+	/* 2^20 - 2^10 */
+	for i = 2;i < 10;i += 2
+		fsquare(t0[:],t1[:])
+		fsquare(t1[:],t0[:])
+	;;
+	/* 2^20 - 2^0 */ fmul(z2_20_0[:], t1[:], z2_10_0[:])
+
+	/* 2^21 - 2^1 */ fsquare(t0[:], z2_20_0[:])
+	/* 2^22 - 2^2 */ fsquare(t1[:], t0[:])
+	/* 2^40 - 2^20 */
+	for var i = 2;i < 20;i += 2
+		fsquare(t0[:], t1[:])
+		fsquare(t1[:], t0[:])
+	;;
+	/* 2^40 - 2^0 */ fmul(t0[:], t1[:], z2_20_0[:])
+
+	/* 2^41 - 2^1 */ fsquare(t1[:],t0[:])
+	/* 2^42 - 2^2 */ fsquare(t0[:],t1[:])
+	/* 2^50 - 2^10 */
+	for var i = 2;i < 10;i += 2
+		fsquare(t1[:],t0[:])
+		fsquare(t0[:],t1[:])
+	;;
+	/* 2^50 - 2^0 */ fmul(z2_50_0[:], t0[:], z2_10_0[:])
+
+	/* 2^51 - 2^1 */ fsquare(t0[:], z2_50_0[:])
+	/* 2^52 - 2^2 */ fsquare(t1[:], t0[:])
+	/* 2^100 - 2^50 */
+	for i = 2;i < 50;i += 2
+		fsquare(t0[:],t1[:])
+		fsquare(t1[:],t0[:])
+	;;
+	/* 2^100 - 2^0 */ fmul(z2_100_0[:], t1[:], z2_50_0[:])
+
+	/* 2^101 - 2^1 */ fsquare(t1[:], z2_100_0[:])
+	/* 2^102 - 2^2 */ fsquare(t0[:], t1[:])
+	/* 2^200 - 2^100 */
+	for i = 2;i < 100;i += 2
+		fsquare(t1[:],t0[:])
+		fsquare(t0[:],t1[:])
+	;;
+	/* 2^200 - 2^0 */ fmul(t1[:],t0[:], z2_100_0[:])
+
+	/* 2^201 - 2^1 */ fsquare(t0[:], t1[:])
+	/* 2^202 - 2^2 */ fsquare(t1[:], t0[:])
+	/* 2^250 - 2^50 */
+	for i = 2;i < 50;i += 2
+		fsquare(t0[:], t1[:])
+		fsquare(t1[:], t0[:])
+	;;
+	/* 2^250 - 2^0 */ fmul(t0[:], t1[:], z2_50_0[:])
+
+	/* 2^251 - 2^1 */ fsquare(t1[:], t0[:])
+	/* 2^252 - 2^2 */ fsquare(t0[:], t1[:])
+	/* 2^253 - 2^3 */ fsquare(t1[:], t0[:])
+	/* 2^254 - 2^4 */ fsquare(t0[:], t1[:])
+	/* 2^255 - 2^5 */ fsquare(t1[:], t0[:])
+	/* 2^255 - 21 */ fmul(out,t1[:], z11[:])
+}
+
+const curve25519 = {pub : byte[:/*32*/], secret : byte[:/*32*/], basepoint : byte[:/*32*/]
+	var bp : int64[10]
+	var x : int64[10]
+	var z : int64[11]	/* one extra for reduced coefficients */
+	var zmone : int64[10]
+
+	secret[0] &= 248
+	secret[31] &= 127
+	secret[31] |= 64
+
+	std.assert(pub.len == 32 && secret.len == 32 && basepoint.len == 32, "wrong key sizes")
+	fexpand(bp[:], basepoint[:])
+	cmult(x[:], z[:], secret[:], bp[:])
+	crecip(zmone[:], z[:])
+	fmul(z[:], x[:], zmone[:])
+	freducecoeff(z[:])
+	fcontract(pub[:], z[:])
+}
+

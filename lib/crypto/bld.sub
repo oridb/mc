@@ -19,7 +19,7 @@ lib crypto =
 
 	# public key ciphers
 	rsa.myr
-	x25519.myr
+	curve25519.myr
 
 	# randomness
 	entropy.myr	# currently assumes a /dev/random
