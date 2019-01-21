@@ -49,7 +49,7 @@
 
 use std
 
-pkg =
+pkg crypto =
 	const curve25519 : (pub : byte[:/*32*/], secret : byte[:/*32*/], basepoint : byte[:/*32*/] -> void)
 ;;
 
