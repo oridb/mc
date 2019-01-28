@@ -478,12 +478,12 @@ const bigsub = {a, b
 	else
 		match bigcmp(a, b)
 		| `Before: /* a is negative */
-		    a.sign = b.sign
-		    -> usub(b, a)
+			a.sign = b.sign
+			-> usub(b, a)
 		| `After: /* b is negative */
-		    -> usub(a, b)
+			-> usub(a, b)
 		| `Equal:
-		    -> bigclear(a)
+			-> bigclear(a)
 		;;
 	;;
 	-> a
@@ -762,7 +762,7 @@ const bigmodpow = {base, exp, mod
 
 	r = mkbigint(1)
 	n = 0
-    	while !bigiszero(exp)
+	while !bigiszero(exp)
 		if (exp.dig[0] & 1) != 0
 			bigmul(r, base)
 			bigmod(r, mod)
