@@ -50,8 +50,15 @@
 use std
 
 pkg crypto =
-	const curve25519 : (pub : byte[:/*32*/], secret : byte[:/*32*/], basepoint : byte[:/*32*/] -> void)
+	const Nine		: byte[:]
+	const curve25519	: (pub : byte[:/*32*/], secret : byte[:/*32*/], basepoint : byte[:/*32*/] -> void)
 ;;
+
+const Nine =  \
+	"\x09\x00\x00\x00\x00\x00\x00\x00" \
+	"\x00\x00\x00\x00\x00\x00\x00\x00" \
+	"\x00\x00\x00\x00\x00\x00\x00\x00" \
+	"\x00\x00\x00\x00\x00\x00\x00\x00"
 
 /* Sum two numbers: out += in */
 const fsum = {out, in
@@ -692,11 +699,14 @@ const curve25519 = {pub : byte[:/*32*/], secret : byte[:/*32*/], basepoint : byt
 	var z : int64[11]	/* one extra for reduced coefficients */
 	var zmone : int64[10]
 
+	std.assert(pub.len == 32 , "wrong pubkey size\n")
+	std.assert(secret.len == 32 , "wrong secret size\n")
+	std.assert(basepoint.len == 32 , "wrong basepoint size\n")
+
 	secret[0] &= 248
 	secret[31] &= 127
 	secret[31] |= 64
 
-	std.assert(pub.len == 32 && secret.len == 32 && basepoint.len == 32, "wrong key sizes")
 	fexpand(bp[:], basepoint[:])
 	cmult(x[:], z[:], secret[:], bp[:])
 	crecip(zmone[:], z[:])
