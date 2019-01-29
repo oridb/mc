@@ -343,6 +343,9 @@ tyalign(Type *ty)
 		for (i = 0; i < ty->nmemb; i++)
 			align = max(align, tyalign(decltype(ty->sdecls[i])));
 		break;
+	case Tyslice:
+		align = 8;
+		break;
 	default:
 		align = max(align, tysize(ty));
 	}
