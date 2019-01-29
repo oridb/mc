@@ -147,11 +147,18 @@ const addp = {p, k
 	-> ((p : intptr) + k  : byte#)
 }
 
-const sliceptr = {p
+const sliceptr = {pp
+	var p
+
+	p = (pp : intptr)
+	p = (p + 0x7) & ~0x7
 	-> (p : byte##)#
 }
 
-const slicelen = {p
-	p = addp(p, sizeof(intptr))
+const slicelen = {pp
+	var p
+
+	p = (pp : intptr)
+	p = (p + 0xf) & ~0x7
 	-> (p : size#)#
 }
