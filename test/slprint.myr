@@ -1,0 +1,5 @@
+use std
+
+const main = {
+        std.put("{}          {}\n", (1 : uint32), [2][:]) /* !!! */
+}
