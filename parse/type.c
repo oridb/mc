@@ -419,6 +419,7 @@ hasparamsrec(Type *t, Bitset *visited)
 {
 	size_t i;
 
+	t = tysearch(t);
 	if (bshas(visited, t->tid))
 		return 0;
 	bsput(visited, t->tid);
