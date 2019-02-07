@@ -427,30 +427,30 @@ hasparamsrec(Type *t, Bitset *visited)
 	case Typaram:	return 1;
 	case Tygeneric: return 1;
 	case Tyname:
-			for (i = 0; i < t->narg; i++)
-				if (hasparamsrec(t->arg[i], visited))
-					return 1;
-			return hasparamsrec(t->sub[0], visited);
+		for (i = 0; i < t->narg; i++)
+			if (hasparamsrec(t->arg[i], visited))
+				return 1;
+		return hasparamsrec(t->sub[0], visited);
 	case Tyunres:
-			for (i = 0; i < t->narg; i++)
-				if (hasparamsrec(t->arg[i], visited))
-					return 1;
-			break;
+		for (i = 0; i < t->narg; i++)
+			if (hasparamsrec(t->arg[i], visited))
+				return 1;
+		break;
 	case Tystruct:
-			for (i = 0; i < t->nmemb; i++)
-				if (hasparamsrec(t->sdecls[i]->decl.type, visited))
-					return 1;
-			break;
+		for (i = 0; i < t->nmemb; i++)
+			if (hasparamsrec(t->sdecls[i]->decl.type, visited))
+				return 1;
+		break;
 	case Tyunion:
-			for (i = 0; i < t->nmemb; i++)
-				if (t->udecls[i]->etype && hasparamsrec(t->udecls[i]->etype, visited))
-					return 1;
-			break;
+		for (i = 0; i < t->nmemb; i++)
+			if (t->udecls[i]->etype && hasparamsrec(t->udecls[i]->etype, visited))
+				return 1;
+		break;
 	default:
-			for (i = 0; i < t->nsub; i++)
-				if (hasparamsrec(t->sub[i], visited))
-					return 1;
-			break;
+		for (i = 0; i < t->nsub; i++)
+			if (hasparamsrec(t->sub[i], visited))
+				return 1;
+		break;
 	}
 	return 0;
 }
