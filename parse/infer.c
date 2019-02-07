@@ -2819,7 +2819,7 @@ specialize(void)
 }
 
 static Traitmap *
-mktraitmap()
+mktraitmap(void)
 {
 	Traitmap *m;
 
