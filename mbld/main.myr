@@ -73,9 +73,6 @@ const main = {args : byte[:][:]
 		bld.opt_objdir = objdir
 		ok = buildimm(b, targname, cmd.args)
 	elif runsrc.len != 0
-		if cmd.args.len == 0
-			std.fatal("nothing to run\n")
-		;;
 		bld.opt_objdir = objdir
 		bld.opt_verbosity = -1
 		tmp = std.mktemppath("runmyr")
