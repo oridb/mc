@@ -14,10 +14,8 @@ use "util"
 use "syssel"
 
 const main = {args : byte[:][:]
-	var b : bld.build#
-	var runsrc, objdir, path, tmp, cmd
-	var targname, tags, pid
-	var ok, r
+	var b, runsrc, objdir, path, cmd
+	var targname, tags, pid, ok, r
 
 	cmd = std.optparse(args, &[
 		.argdesc = "[inputs...]",
@@ -27,7 +25,7 @@ const main = {args : byte[:][:]
 			[.opt='T', .arg="tag", .desc="build with only the specified systag"],
 			[.opt='S', .desc="generate assembly when building"],
 			[.opt='I', .arg="inc", .desc="add 'inc' to your include path"],
-			[.opt='R', .arg="runsrc", .desc="source to compile and run"],
+			[.opt='R', .desc="source to compile and run"],
 			[.opt='B', .arg="base", .desc="install into 'base'"],
 			[.opt='b', .arg="bin", .desc="compile binary 'bin' from inputs"],
 			[.opt='r', .arg="rt", .desc="link against runtime 'rt'"],
@@ -37,9 +35,10 @@ const main = {args : byte[:][:]
 	])
 
 	tags = [][:]
-	runsrc = ""
+	runsrc = false
 	targname = ""
 	ok = true
+	objdir = ""
 
 	bld.initopts()
 	for opt : cmd.opts
@@ -50,12 +49,23 @@ const main = {args : byte[:][:]
 		| ('t', tag):	std.slpush(&tags, tag)
 		| ('T', tag):	std.slpush(&bld.opt_alltags, tag)
 		| ('j', arg):	bld.opt_maxproc = std.getv(std.intparse(arg), 1)
-		| ('R', arg):	runsrc = arg
 		| ('o', arg):	objdir = arg
-		| ('b', arg):	targname = arg
 		| ('r', arg):	bld.opt_runtime = arg
 		| ('v', _):	bld.opt_verbosity++
-		| _:		std.die("unreachable\n")
+		| ('b', arg):
+			if targname.len != 0
+				std.fatal("at most one -b and -R may be specified\n")
+			;;
+			targname = arg
+		| ('R', arg):
+			if targname.len != 0
+				std.fatal("at most one -b and -R may be specified\n")
+			;;
+			bld.opt_verbosity = -1
+			runsrc = true
+			targname = std.mktemppath("runmyr")
+		| _:	
+			std.die("unreachable\n")
 		;;
 	;;
 	path = std.pathcat(bld.opt_instbase, config.Libpath)
@@ -72,19 +82,14 @@ const main = {args : byte[:][:]
 		;;
 		bld.opt_objdir = objdir
 		ok = buildimm(b, targname, cmd.args)
-	elif runsrc.len != 0
-		bld.opt_objdir = objdir
-		bld.opt_verbosity = -1
-		tmp = std.mktemppath("runmyr")
-		ok = buildimm(b, tmp, [runsrc][:])
-		if ok
-			pid = runcmd(tmp, cmd.args)
+		if runsrc && ok
+			pid = runcmd(targname, cmd.args)
 			match std.wait(pid)
 			| `std.Wsuccess:	ok = true
 			| _:			ok = false
 			;;
+			std.remove(targname)
 		;;
-		std.remove(tmp)
 	else
 		if objdir.len > 0
 			bld.opt_objdir = objdir
@@ -106,16 +111,13 @@ const main = {args : byte[:][:]
 			| "bench":	r = bld.bench(b, cmd.args[1:])
 			| "list":	r = show(b, cmd.args[1:])
 			| _:
-				ok = true
 				for target : cmd.args
 					r = ok && bld.buildtarg(b, target)
 				;;
 			;;
 		;;
 	;;
-	if !ok
-		std.exit(1)
-	;;
+	std.exit(ok ? 0 : 1)
 }
 
 const buildimm = {b, targ, inputs
