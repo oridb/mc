@@ -792,7 +792,7 @@ equate(int32_t ta, int32_t tb)
 int
 tyeq_rec(Type *a, Type *b, Bitset *avisited, Bitset *bvisited, int search)
 {
-	Type *x, *y;
+	Type *x, *y, *t;
 	Typair p;
 	size_t i;
 	int ret;
@@ -802,6 +802,10 @@ tyeq_rec(Type *a, Type *b, Bitset *avisited, Bitset *bvisited, int search)
 	if (search) {
 		a = tysearch(a);
 		b = tysearch(b);
+		if ((t = boundtype(a)) != NULL)
+			a = tysearch(t);
+		if ((t = boundtype(b)) != NULL)
+			b = tysearch(t);
 	}
 	if (a->type != b->type)
 		return 0;
@@ -829,7 +833,9 @@ tyeq_rec(Type *a, Type *b, Bitset *avisited, Bitset *bvisited, int search)
 
 	switch (a->type) {
 	case Typaram:
-		ret = streq(a->pname, b->pname);
+		ret = (a == b);
+		/* FIXME: this streq check needs to go */
+		ret = ret || streq(a->pname, b->pname);
 		break;
 	case Tyvar:
 		if (a->tid != b->tid)

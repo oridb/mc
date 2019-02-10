@@ -647,6 +647,8 @@ tf(Type *orig)
 	ingeneric += isgeneric;
 	pushenv(orig->env);
 	tyresolve(t);
+	if ((tt = boundtype(t)) != NULL)
+		t = tt;
 	popenv(orig->env);
 	/* If this is an instantiation of a generic type, we want the params to
 	 * match the instantiation */

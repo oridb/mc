@@ -1197,7 +1197,8 @@ setwith(Type *ty, Traitspec **ts, size_t nts)
 	for (i = 0; i < nts; i++) {
 		switch (ty->type) {
 		case Typaram:
-			if (tyeq(ty, ts[i]->param))
+			assert(ts[i]->param->type == Typaram);
+			if (streq(ty->pname, ts[i]->param->pname))
 				lappend(&ty->spec, &ty->nspec, ts[i]);
 
 			break;
