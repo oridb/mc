@@ -734,6 +734,8 @@ boundtype(Type *t)
 	Tyenv *e;
 	Type *r;
 
+	if (t->type != Typaram)
+		return NULL;
 	for (e = curenv(); e; e = e->super) {
 		r = htget(e->tab, t);
 		if (r)
