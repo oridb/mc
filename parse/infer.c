@@ -2735,14 +2735,19 @@ typesub(Node *n, int noerr)
 		settype(n, tyfix(n, type(n), 0));
 		switch (n->lit.littype) {
 		case Lfunc:	typesub(n->lit.fnval, noerr);	break;
-		case Lint:	checkrange(n);
-		default: break;
+		case Lint:	checkrange(n);			break;
+		default: 					break;
 		}
 		break;
-	case Nimpl: putimpl(curstab(), n);
-	case Nname:
-	case Nuse: break;
-	case Nnone:	die("Nnone should not be seen as node type!");	break;
+	case Nimpl:
+		pushenv(n->impl.env);
+		putimpl(curstab(), n);
+		popenv(n->impl.env);
+	case Nname: case Nuse:
+		break;
+	case Nnone:
+		die("Nnone should not be seen as node type!");
+		break;
 	}
 }
 
