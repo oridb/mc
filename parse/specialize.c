@@ -430,6 +430,7 @@ specializenode(Node *n, Tysubst *tsmap)
 	case Ndecl:
 		r->decl.did = ndecls;
 		/* sym */
+		r->decl.env = n->decl.env;
 		r->decl.name = specializenode(n->decl.name, tsmap);
 		r->decl.type = tysubst(n->decl.type, tsmap);
 
@@ -442,19 +443,24 @@ specializenode(Node *n, Tysubst *tsmap)
 			putdcl(curstab(), r);
 
 		/* init */
+		pushenv(r->decl.env);
 		r->decl.init = specializenode(n->decl.init, tsmap);
+		popenv(r->decl.env);
 		lappend(&decls, &ndecls, r);
 		break;
 	case Nfunc:
 		r->func.scope = mkstab(1);
 		r->func.scope->super = curstab();
+		r->func.env = n->func.env;
 		pushstab(r->func.scope);
+		pushenv(r->func.env);
 		r->func.type = tysubst(n->func.type, tsmap);
 		r->func.nargs = n->func.nargs;
 		r->func.args = xalloc(sizeof(Node *) * n->func.nargs);
 		for (i = 0; i < n->func.nargs; i++)
 			r->func.args[i] = specializenode(n->func.args[i], tsmap);
 		r->func.body = specializenode(n->func.body, tsmap);
+		popenv(r->func.env);
 		popstab();
 		break;
 	case Nimpl:

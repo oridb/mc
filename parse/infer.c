@@ -16,7 +16,7 @@
 #include "parse.h"
 
 typedef struct Traitmap Traitmap;
-typedef struct Enttype Enttype;
+typedef struct Postcheck Postcheck;
 
 struct Traitmap {
 	Bitset *traits;
@@ -28,6 +28,13 @@ struct Traitmap {
 	Trait **filtertr;
 	size_t nfiltertr;
 };
+
+struct Postcheck {
+	Node *node;
+	Stab *stab;
+	Tyenv *env;
+};
+
 
 int allowhidden;
 
@@ -53,10 +60,8 @@ static size_t nunifysrc;
 
 /* post-inference checking/unification */
 static Htab *delayed;
-static Node **postcheck;
+static Postcheck **postcheck;
 static size_t npostcheck;
-static Stab **postcheckscope;
-static size_t npostcheckscope;
 
 /* generic declarations to be specialized */
 static Node **genericdecls;
@@ -298,10 +303,15 @@ additerspecialization(Node *n, Stab *stab)
 }
 
 static void
-delayedcheck(Node *n, Stab *s)
+delayedcheck(Node *n)
 {
-	lappend(&postcheck, &npostcheck, n);
-	lappend(&postcheckscope, &npostcheckscope, s);
+	Postcheck *pc;
+
+	pc = xalloc(sizeof(Postcheck));
+	pc->node = n;
+	pc->stab = curstab();
+	pc->env = curenv();
+	lappend(&postcheck, &npostcheck, pc);
 }
 
 static void
@@ -1356,14 +1366,14 @@ initvar(Node *n, Node *s)
 	n->expr.isconst = s->decl.isconst;
 	if (param) {
 		n->expr.param = param;
-		delayedcheck(n, curstab());
+		delayedcheck(n);
 	}
 	if (s->decl.isgeneric && !ingeneric) {
 		t = tyfreshen(NULL, t);
 		addspecialization(n, curstab());
 		if (t->type == Tyvar) {
 			settype(n, mktyvar(n->loc));
-			delayedcheck(n, curstab());
+			delayedcheck(n);
 		} else {
 			settype(n, t);
 		}
@@ -1414,7 +1424,7 @@ inferstruct(Node *n, int *isconst)
 
 	*isconst = 1;
 	/* we want to check outer nodes before inner nodes when unifying nested structs */
-	delayedcheck(n, curstab());
+	delayedcheck(n);
 	for (i = 0; i < n->expr.nargs; i++) {
 		infernode(&n->expr.args[i], NULL, NULL);
 		if (!n->expr.args[i]->expr.isconst)
@@ -1778,7 +1788,7 @@ inferexpr(Node **np, Type *ret, int *sawret)
 	case Omemb:	/* @a.Ident -> @b, verify type(@a.Ident)==@b later */
 		infersub(n, ret, sawret, &isconst);
 		settype(n, mktyvar(n->loc));
-		delayedcheck(n, curstab());
+		delayedcheck(n);
 		break;
 	case Osize:	/* sizeof(@a) -> size */
 		infersub(n, ret, sawret, &isconst);
@@ -1790,7 +1800,7 @@ inferexpr(Node **np, Type *ret, int *sawret)
 		break;
 	case Ocast:	/* (@a : @b) -> @b */
 		infersub(n, ret, sawret, &isconst);
-		delayedcheck(n, curstab());
+		delayedcheck(n);
 		break;
 	case Oret:	/* -> @a -> void */
 		infersub(n, ret, sawret, &isconst);
@@ -1827,7 +1837,9 @@ inferexpr(Node **np, Type *ret, int *sawret)
 			fatal(n, "undeclared var %s", ctxstr(args[0]));
 		if (n->expr.param && !s->decl.trait)
 			fatal(n, "var %s must refer to a trait decl", ctxstr(args[0]));
+		pushenv(s->decl.env);
 		initvar(n, s);
+		popenv(s->decl.env);
 		break;
 	case Ogap:	/* _ -> @a */
 		if (n->expr.type)
@@ -2123,7 +2135,7 @@ infernode(Node **np, Type *ret, int *sawret)
 			unify(n, e, b);
 		else
 			t->seqaux = e;
-		delayedcheck(n, curstab());
+		delayedcheck(n);
 		break;
 	case Nmatchstmt:
 		infernode(&n->matchstmt.val, NULL, sawret);
@@ -2267,23 +2279,21 @@ tyfix(Node *ctx, Type *orig, int noerr)
 }
 
 static void
-checkcast(Node *n, Node ***rem, size_t *nrem, Stab ***remscope, size_t *nremscope)
+checkcast(Node *n, Postcheck ***pc, size_t *npc)
 {
 	/* FIXME: actually verify the casts. Right now, it's ok to leave thi
 	 * unimplemented because bad casts get caught by the backend. */
 }
 
 static void
-infercompn(Node *n, Node ***rem, size_t *nrem, Stab ***remscope, size_t *nremscope)
+infercompn(Node *n, Postcheck ***post, size_t *npost)
 {
-	Node *aggr;
-	Node *memb;
-	Node **nl;
-	Type *t;
-	size_t i;
-	int found;
-	int ismemb;
+	Node *aggr, *memb, **nl;
+	int found, ismemb;
+	Postcheck *pc;
 	uvlong idx;
+	size_t i;
+	Type *t;
 
 	aggr = n->expr.args[0];
 	memb = n->expr.args[1];
@@ -2302,11 +2312,11 @@ infercompn(Node *n, Node ***rem, size_t *nrem, Stab ***remscope, size_t *nremsco
 		if (tybase(t)->type == Typtr)
 			t = tybase(tf(t->sub[0]));
 		if (tybase(t)->type == Tyvar) {
-			if (!rem)
-				fatal(n, "underspecified type defined on %s:%d used near %s",
-						fname(t->loc), lnum(t->loc), ctxstr(n));
-			lappend(rem, nrem, n);
-			lappend(remscope, nremscope, curstab());
+			pc = xalloc(sizeof(Postcheck));
+			pc->node = n;
+			pc->stab = curstab();
+			pc->env = curenv();
+			lappend(post, npost, pc);
 			return;
 		}
 		if (ismemb) {
@@ -2349,11 +2359,12 @@ infercompn(Node *n, Node ***rem, size_t *nrem, Stab ***remscope, size_t *nremsco
 }
 
 static void
-checkstruct(Node *n, Node ***rem, size_t *nrem, Stab ***remscope, size_t *nremscope)
+checkstruct(Node *n, Postcheck ***post, size_t *npost)
 {
 	Type *t, *et;
 	Node *val, *name;
 	size_t i, j;
+	Postcheck *pc;
 
 	t = tybase(tf(n->lit.type));
 	/*
@@ -2379,23 +2390,22 @@ checkstruct(Node *n, Node ***rem, size_t *nrem, Stab ***remscope, size_t *nremsc
 			}
 		}
 
-		if (!et) {
-			if (rem) {
-				lappend(rem, nrem, n);
-				lappend(remscope, nremscope, curstab());
-				return;
-			} else {
-				fatal(n, "could not find member %s in struct %s, near %s",
-						namestr(name), tystr(t), ctxstr(n));
-			}
+		if (et) {
+			unify(val, et, type(val));
+		} else {
+			assert(post != NULL);
+			pc = xalloc(sizeof(Postcheck));
+			pc->node = n;
+			pc->stab = curstab();
+			pc->env = curenv();
+			lappend(post, npost, pc);
+			return;
 		}
-
-		unify(val, et, type(val));
 	}
 }
 
 static void
-checkvar(Node *n, Node ***rem, size_t *nrem, Stab ***remscope, size_t *nremscope)
+checkvar(Node *n, Postcheck ***post, size_t *npost)
 {
 	Node *proto, *dcl;
 	Type *ty;
@@ -2403,6 +2413,7 @@ checkvar(Node *n, Node ***rem, size_t *nrem, Stab ***remscope, size_t *nremscope
 	proto = decls[n->expr.did];
 	ty = NULL;
 	dcl = NULL;
+	pushenv(proto->decl.env);
 	if (n->expr.param)
 		dcl = htget(proto->decl.impls, tf(n->expr.param));
 	if (dcl)
@@ -2410,6 +2421,7 @@ checkvar(Node *n, Node ***rem, size_t *nrem, Stab ***remscope, size_t *nremscope
 	if (!ty)
 		ty = tyfreshen(NULL, type(proto));
 	unify(n, type(n), ty);
+	popenv(proto->decl.env);
 }
 
 static void
@@ -2450,26 +2462,30 @@ fixiter(Node *n, Type *ty, Type *base)
 }
 
 static void
-postcheckpass(Node ***rem, size_t *nrem, Stab ***remscope, size_t *nremscope)
+postcheckpass(Postcheck ***post, size_t *npost)
 {
 	size_t i;
 	Node *n;
 
 	for (i = 0; i < npostcheck; i++) {
-		n = postcheck[i];
-		pushstab(postcheckscope[i]);
+		n = postcheck[i]->node;
+		pushstab(postcheck[i]->stab);
+		pushenv(postcheck[i]->env);
 		if (n->type == Nexpr) {
 			switch (exprop(n)) {
 			case Otupmemb:
-			case Omemb:	infercompn(n, rem, nrem, remscope, nremscope);	break;
-			case Ocast:	checkcast(n, rem, nrem, remscope, nremscope);	break;
-			case Ostruct:	checkstruct(n, rem, nrem, remscope, nremscope);	break;
-			case Ovar:	checkvar(n, rem, nrem, remscope, nremscope);	break;
-			default:	die("should not see %s in postcheck\n", opstr[exprop(n)]);
+			case Omemb:	infercompn(n, post, npost);	break;
+			case Ocast:	checkcast(n, post, npost);	break;
+			case Ostruct:	checkstruct(n, post, npost);	break;
+			case Ovar:	checkvar(n, post, npost);	break;
+			default:
+				die("should not see %s in postcheck\n", opstr[exprop(n)]);
+				break;
 			}
 		} else if (n->type == Niterstmt) {
 			fixiter(n, type(n->iterstmt.seq), type(n->iterstmt.elt));
 		}
+		popenv(postcheck[i]->env);
 		popstab();
 	}
 }
@@ -2477,23 +2493,20 @@ postcheckpass(Node ***rem, size_t *nrem, Stab ***remscope, size_t *nremscope)
 static void
 postinfer(void)
 {
-	size_t nrem, nremscope;
-	Stab **remscope;
-	Node **rem;
+	Postcheck **post, **last;
+	size_t npost, nlast;
 
+	/* Iterate until we reach a fixpoint. */
+	nlast = 0;
 	while (1) {
-		remscope = NULL;
-		nremscope = 0;
-		rem = NULL;
-		nrem = 0;
-		postcheckpass(&rem, &nrem, &remscope, &nremscope);
-		if (nrem == npostcheck) {
+		post = NULL;
+		npost = 0;
+		postcheckpass(&post, &npost);
+		if (npost == nlast) {
 			break;
 		}
-		postcheck = rem;
-		npostcheck = nrem;
-		postcheckscope = remscope;
-		npostcheckscope = nremscope;
+		last = post;
+		nlast = npost;
 	}
 }
 

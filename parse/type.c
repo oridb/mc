@@ -834,7 +834,6 @@ tyeq_rec(Type *a, Type *b, Bitset *avisited, Bitset *bvisited, int search)
 	switch (a->type) {
 	case Typaram:
 		ret = (a == b);
-		/* FIXME: this streq check needs to go */
 		ret = ret || streq(a->pname, b->pname);
 		break;
 	case Tyvar:
