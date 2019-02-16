@@ -835,6 +835,8 @@ tyeq_rec(Type *a, Type *b, Bitset *avisited, Bitset *bvisited, int search)
 	case Typaram:
 		ret = (a == b);
 		ret = ret || streq(a->pname, b->pname);
+		//if (ret != streq(a->pname, b->pname))
+		//	die("wat");
 		break;
 	case Tyvar:
 		if (a->tid != b->tid)

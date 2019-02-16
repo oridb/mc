@@ -567,8 +567,8 @@ tyresolve(Type *t)
 		t->sub[i] = tf(t->sub[i]);
 		if (t->sub[i] == t) {
 			lfatal(t->loc,
-				"%s occurs within %s, leading to infinite type\n",
-				tystr(t->sub[i]), tystr(t));
+			     "%s occurs within %s, leading to infinite type\n",
+			     tystr(t->sub[i]), tystr(t));
 		}
 	}
 	if (occurs(t))
@@ -657,8 +657,10 @@ tf(Type *orig)
 	ingeneric += isgeneric;
 	pushenv(orig->env);
 	tyresolve(t);
-	if ((tt = boundtype(t)) != NULL)
+	if ((tt = boundtype(t)) != NULL) {
 		t = tt;
+		tyresolve(t);
+	}
 	popenv(orig->env);
 	/* If this is an instantiation of a generic type, we want the params to
 	 * match the instantiation */
@@ -670,12 +672,6 @@ tf(Type *orig)
 		pushenv(orig->env);
 		t = tysubst(t, orig);
 		popenv(orig->env);
-	} else if (orig->type == Typaram) {
-		tt = boundtype(t);
-		if (tt) {
-			tyresolve(tt);
-			t = tt;
-		}
 	}
 	ingeneric -= isgeneric;
 	return t;
