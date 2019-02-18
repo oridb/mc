@@ -2489,7 +2489,7 @@ postcheckpass(Postcheck ***post, size_t *npost)
 static void
 postinfer(void)
 {
-	Postcheck **post, **last;
+	Postcheck **post;
 	size_t npost, nlast;
 
 	/* Iterate until we reach a fixpoint. */
@@ -2501,7 +2501,6 @@ postinfer(void)
 		if (npost == nlast) {
 			break;
 		}
-		last = post;
 		nlast = npost;
 	}
 }
