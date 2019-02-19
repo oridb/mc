@@ -1,4 +1,5 @@
 use std
+use testr
 
 type cmd = union
 	`Add (cmd#, cmd#)
@@ -13,6 +14,16 @@ type cmd = union
 ;;
 
 const main = {
+	testr.run([
+		[.name = "smoke-test", .fn = smoketest],
+		[.name = "comparisons", .fn = comparisons],
+		[.name = "format-zero", .fn = fmtzero],
+		[.name = "division", .fn = smokediv],
+		[.name = "modulo", .fn = smokemod],
+	][:])
+}
+
+const smoketest = {ct
 	var a, b, c, d, e
 	var buf : byte[64], n
 
@@ -35,77 +46,78 @@ const main = {
 	std.bigfree(e)
 
 	n = std.bigbfmt(buf[:], a, 0)
-	std.assert(std.eq(buf[:n], "517347321949036993306"), "simple smoke test failed")
+	testr.check(ct, std.eq(buf[:n], "517347321949036993306"), "simple smoke test failed")
+}
 
+const comparisons = {c
 	/* some comparison tests */
-	a = try(std.bigparse("1234_5678_1234_6789_6666_7777_8888"))
-	b = try(std.bigparse("2234_5678_1234_6789_6666_7777_8888"))
-	match std.bigcmp(a, b)
-	| `std.Before:	/* everything is as it should be */
-	| `std.Equal:	std.fatal("{} == {}\n", a, b)
-	| `std.After:	std.fatal("lies: {} > {}\n", a, b)
-	;;
+	var a = try(std.bigparse("1234_5678_1234_6789_6666_7777_8888"))
+	var b = try(std.bigparse("2234_5678_1234_6789_6666_7777_8888"))
+	testr.check(c, std.bigcmp(a, b) == `std.Before, "{} should be < {}", a, b)
 	std.bigfree(a)
 	std.bigfree(b)
 
 	a = try(std.bigparse("36028797018963964"))
 	b = try(std.bigparse("36028797018963958"))
-	match std.bigcmp(a, b)
-	| `std.Before:	std.fatal("lies: {} < {}\n", a, b)
-	| `std.Equal:	std.fatal("lies: {} == {}\n", a, b)
-	| `std.After:	/* everything is as it should be */
-	;;
+	testr.check(c, std.bigcmp(a, b) == `std.After, "{} should be > {}", a, b)
 	std.bigfree(a)
 	std.bigfree(b)
+}
 
+const fmtzero = {c
 	/* make sure we format '0' correctly */
-	run(std.mk(`Val "0"), "0")
+	run(c, std.mk(`Val "0"), "0")
+}
+
+const smokediv = {c
 	/* smoke test for division */
-	run(std.mk(`Div (\
+	run(c, std.mk(`Div (\
 		std.mk(`Val "1234_5678_1234_6789_6666_7777_8888"), \
 		std.mk(`Val "1234_5678_1234_6789_6666_7777"))), \
 		"10000")
-	run(std.mk(`Div (\
+	run(c, std.mk(`Div (\
 		std.mk(`Val "0xffff_1234_1234_1234_1234"), \
 		std.mk(`Val "0xf010_1234_2314"))), \
 		"4580035496")
-	run(std.mk(`Div (\
+	run(c, std.mk(`Div (\
 		std.mk(`Val "5192296858534810493479828944327220"), \
 		std.mk(`Val "75557863709417659441940"))), \
 		"68719476751")
-	run(std.mk(`Div (\
+	run(c, std.mk(`Div (\
 		std.mk(`Val "75557863709417659441940"), \
 		std.mk(`Val "5192296858534810493479828944327220"))), \
 		"0")
+}
 
+const smokemod = {c
 	/* smoke test for mod */
-	run(std.mk(`Mod (\
+	run(c, std.mk(`Mod (\
 		std.mk(`Val "5192296858534810493479828944327220"), \
 		std.mk(`Val "75557863709417659441940"))),\
 		"257025710597479990280")
 
-	run(std.mk(`Modpow (\
+	run(c, std.mk(`Modpow (\
 		std.mk(`Val "1"), \
 		std.mk(`Val "3"), \
 		std.mk(`Val "2"))), \
 		"1")
 
-	run(std.mk(`Modpow (\
+	run(c, std.mk(`Modpow (\
 		std.mk(`Val "5192296858534810493479828944327220"), \
 		std.mk(`Val "75557863709417659441940"), \
 		std.mk(`Val "755578"))), \
 		"49054")
-	run(std.mk(`Modpow (\
+	run(c, std.mk(`Modpow (\
 		std.mk(`Val "2393"), \
 		std.mk(`Val "2"), \
 		std.mk(`Val "6737"))), \
 		"6736")
-	run(std.mk(`Modpow (\
+	run(c, std.mk(`Modpow (\
 		std.mk(`Val "6193257528475266832463188301662235"), \
 		std.mk(`Val "6157075615645799356061575607567581"), \
 		std.mk(`Val "12314151231291598712123151215135163"))), \
 		"1540381241336817586803754632242117")
-	run(std.mk(`Modpow (\
+	run(c, std.mk(`Modpow (\
 		std.mk(`Val "7220"), \
 		std.mk(`Val "755578"), \
 		std.mk(`Val "75557863709417659441940"))), \
@@ -113,15 +125,13 @@ const main = {
 
 }
 
-const run = {e : cmd#, res : byte[:]
+const run = {c : testr.ctx#, e : cmd#, res : byte[:]
 	var buf : byte[4096]
 	var v, n
 
 	v = eval(e)
 	n = std.bigbfmt(buf[:], v, 0)
-	if !std.eq(buf[:n], res)
-		std.fatal("{} != {}\n", buf[:n], res)
-	;;
+	testr.check(c, std.eq(buf[:n], res), "{} != {}", buf[:n], res)
 }
 
 const eval = {e : cmd#
