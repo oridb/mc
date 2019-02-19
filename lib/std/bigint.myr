@@ -234,6 +234,12 @@ const bigparse = {str
 	var val : int, base
 	var v, b
 	var a
+	var s = 1
+
+	if hasprefix(str, "-")
+		s = -1
+		str = str[1:]
+	;;
 
 	if hasprefix(str, "0x") || hasprefix(str, "0X")
 		base = 16
@@ -271,7 +277,7 @@ const bigparse = {str
 		if val == 0
 			v.sign = 0
 		else
-			v.sign = 1
+			v.sign = s
 		;;
 		bigmul(a, b)
 		bigadd(a, v)
