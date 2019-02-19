@@ -16,10 +16,13 @@ type cmd = union
 const main = {
 	testr.run([
 		[.name = "smoke-test", .fn = smoketest],
+		[.name = "matches-small", .fn = matchsmall],
 		[.name = "comparisons", .fn = comparisons],
 		[.name = "format-zero", .fn = fmtzero],
 		[.name = "division", .fn = smokediv],
 		[.name = "modulo", .fn = smokemod],
+		[.name = "add-negatives", .fn = addneg],
+		[.name = "sub-negatives", .fn = subneg],
 	][:])
 }
 
@@ -47,6 +50,55 @@ const smoketest = {ct
 
 	n = std.bigbfmt(buf[:], a, 0)
 	testr.check(ct, std.eq(buf[:n], "517347321949036993306"), "simple smoke test failed")
+}
+
+const matchsmall = {c
+	var nums = [ -5, -3, -2, -1, 0, 1, 2, 4, 8, 10 ][:]
+	for a : nums
+		for b : nums
+			var p = std.mkbigint(a)
+			var q = std.mkbigint(b)
+
+			var radd = std.mkbigint(a + b)
+			var sadd = std.bigdup(p)
+			std.bigadd(sadd, q)
+			testr.check(c, std.bigeq(radd, sadd), "{} + {} != {} (was {})", a, b, a + b, sadd)
+
+			var rsub = std.mkbigint(a - b)
+			var ssub = std.bigdup(p)
+			std.bigsub(ssub, q)
+			testr.check(c, std.bigeq(rsub, ssub), "{} - {} != {} (was {})", a, b, a - b, ssub)
+
+			var rmul = std.mkbigint(a * b)
+			var smul = std.bigdup(p)
+			std.bigmul(smul, q)
+			testr.check(c, std.bigeq(rmul, smul), "{} * {} != {} (was {})", a, b, a * b, smul)
+
+
+			if b != 0
+				if a > 0 && b > 0
+					var rmod = std.mkbigint(a % b)
+					var smod = std.bigdup(p)
+					std.bigmod(smod, q)
+					testr.check(c, std.bigeq(rmod, smod), "{} % {} != {} (was {})", a, b, a % b, smod)
+					std.bigfree(rmod)
+				;;
+
+				var rdiv = std.mkbigint(a / b)
+				var sdiv = std.bigdup(p)
+				std.bigdiv(sdiv, q)
+				testr.check(c, std.bigeq(rdiv, sdiv), "{} / {} != {} (was {})", a, b, a / b, sdiv)
+
+				std.bigfree(rdiv)
+			;;
+
+			std.bigfree(p)
+			std.bigfree(q)
+			std.bigfree(radd)
+			std.bigfree(rsub)
+			std.bigfree(rmul)
+		;;
+	;;
 }
 
 const comparisons = {c
@@ -122,7 +174,90 @@ const smokemod = {c
 		std.mk(`Val "755578"), \
 		std.mk(`Val "75557863709417659441940"))), \
 		"27076504425474791131220")
+}
 
+const addneg = {c
+	run(c, std.mk(`Add (\
+		std.mk(`Val "-1"), \
+		std.mk(`Val "1"))), \
+		"0")
+
+	run(c, std.mk(`Add (\
+		std.mk(`Val "4"), \
+		std.mk(`Val "-2"))), \
+		"2")
+
+	run(c, std.mk(`Add (\
+		std.mk(`Val "3"), \
+		std.mk(`Val "-6"))), \
+		"-3")
+
+	run(c, std.mk(`Add (\
+		std.mk(`Val "-4"), \
+		std.mk(`Val "8"))), \
+		"4")
+
+	run(c, std.mk(`Add (\
+		std.mk(`Val "-10"), \
+		std.mk(`Val "5"))), \
+		"-5")
+
+	run(c, std.mk(`Add (\
+		std.mk(`Val "-6"), \
+		std.mk(`Val "-12"))), \
+		"-18")
+
+	run(c, std.mk(`Add (\
+		std.mk(`Val "7"), \
+		std.mk(`Val "-7"))), \
+		"0")
+}
+
+const subneg = {c
+	run(c, std.mk(`Sub (\
+		std.mk(`Val "-1"), \
+		std.mk(`Val "1"))), \
+		"-2")
+
+	run(c, std.mk(`Sub (\
+		std.mk(`Val "1"), \
+		std.mk(`Val "-1"))), \
+		"2")
+
+	run(c, std.mk(`Sub (\
+		std.mk(`Val "4"), \
+		std.mk(`Val "-2"))), \
+		"6")
+
+	run(c, std.mk(`Sub (\
+		std.mk(`Val "3"), \
+		std.mk(`Val "-6"))), \
+		"9")
+
+	run(c, std.mk(`Sub (\
+		std.mk(`Val "-4"), \
+		std.mk(`Val "8"))), \
+		"-12")
+
+	run(c, std.mk(`Sub (\
+		std.mk(`Val "-10"), \
+		std.mk(`Val "5"))), \
+		"-15")
+
+	run(c, std.mk(`Sub (\
+		std.mk(`Val "-6"), \
+		std.mk(`Val "-12"))), \
+		"6")
+
+	run(c, std.mk(`Sub (\
+		std.mk(`Val "-14"), \
+		std.mk(`Val "-7"))), \
+		"-7")
+
+	run(c, std.mk(`Sub (\
+		std.mk(`Val "-8"), \
+		std.mk(`Val "-8"))), \
+		"0")
 }
 
 const run = {c : testr.ctx#, e : cmd#, res : byte[:]

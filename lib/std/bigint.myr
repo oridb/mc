@@ -40,6 +40,7 @@ pkg std =
 	const bigiszero	: (a : bigint# -> bool)
 	const bigiseven	: (a : bigint# -> bool)
 	const bigcmp	: (a : bigint#, b : bigint# -> order)
+	const bigcmpabs	: (a : bigint#, b : bigint# -> order)
 	generic bigcmpi	: (a : bigint#, b : @a -> order) :: numeric,integral @a
 
 	/* shorthand for comparisons */
@@ -412,6 +413,23 @@ const bigcmp = {a, b
 	-> `Equal
 }
 
+const bigcmpabs = {a, b
+	if a.dig.len < b.dig.len
+		-> `Before
+	elif a.dig.len > b.dig.len
+		-> `After
+	else
+		for var i = a.dig.len; i > 0; i--
+			var da = (a.dig[i - 1]  : int64)
+			var db = (b.dig[i - 1]  : int64)
+			if da != db
+				-> signedorder(da - db)
+			;;
+		;;
+	;;
+	-> `Equal
+}
+
 const signedorder = {sign
 	if sign < 0
 		-> `Before 
@@ -430,14 +448,16 @@ const bigadd = {a, b
 	elif b.sign == 0
 		-> a
 	else
-		match bigcmp(a, b)
-		| `Before: /* a is negative */
+		match bigcmpabs(a, b)
+		| `Before: /* (1) + (-2) or (-1) + (2) */
 			a.sign = b.sign
-			-> usub(b, a)
-		| `After: /* b is negative */
+			var r = bigdup(b)
+			usub(r, a)
+			-> bigsteal(a, r)
+		| `After: /* (2) + (-1) or (-2) + (1) */
 			-> usub(a, b)
 		| `Equal:
-			die("Impossible. Equal vals with different sign.")
+			-> bigclear(a)
 		;;
 	;;
 }
@@ -482,11 +502,13 @@ const bigsub = {a, b
 	elif a.sign != b.sign
 		-> uadd(a, b)
 	else
-		match bigcmp(a, b)
-		| `Before: /* a is negative */
-			a.sign = b.sign
-			-> usub(b, a)
-		| `After: /* b is negative */
+		match bigcmpabs(a, b)
+		| `Before: /* (-1) - (-2) or (1) - (2) */
+			var r = bigdup(b)
+			usub(r, a)
+			r.sign = -1 * b.sign
+			-> bigsteal(a, r)
+		| `After: /* (-2) - (-1) or (2) - (1) */
 			-> usub(a, b)
 		| `Equal:
 			-> bigclear(a)
