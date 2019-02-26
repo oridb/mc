@@ -39,7 +39,7 @@ static Node *unpickle(FILE *fd);
 static Htab *trdeduptab;	/* map from name -> type, contains all Tynames loaded ever */
 static Htab *tidmap;		/* map from tid -> type */
 static Htab *trmap;		/* map from trait id -> trait */
-static Htab *initmap;		/* map from init name -> int */
+static Htab *autocallmap;	/* map from autocall name -> int */
 
 #define Builtinmask (1 << 30)
 static Typefix *typefix;	/* list of types we need to replace */
@@ -176,9 +176,10 @@ wrsym(FILE *fd, Node *val)
 	wrbool(fd, val->decl.isextern);
 	wrbool(fd, val->decl.ispkglocal);
 	wrbool(fd, val->decl.isnoret);
-	wrbool(fd, val->decl.isexportinit);
-	wrbool(fd, val->decl.isinit);
-	if (val->decl.isexportinit)
+	wrbool(fd, val->decl.isexportval);
+	wrbyte(fd, val->decl.isinit);
+	wrbyte(fd, val->decl.isfini);
+	if (val->decl.isexportval)
 		pickle(fd, val->decl.init);
 }
 
@@ -205,9 +206,10 @@ rdsym(FILE *fd, Trait *ctx)
 	n->decl.ispkglocal = rdbool(fd);
 	n->decl.isnoret = rdbool(fd);
 	n->decl.isimport = 1;
-	n->decl.isexportinit = rdbool(fd);
+	n->decl.isexportval = rdbool(fd);
 	n->decl.isinit = rdbool(fd);
-	if (n->decl.isexportinit)
+	n->decl.isfini = rdbool(fd);
+	if (n->decl.isexportval)
 		n->decl.init = unpickle(fd);
 	return n;
 }
@@ -942,7 +944,7 @@ int
 loaduse(char *path, FILE *f, Stab *st, Vis vis)
 {
 	size_t startdecl, starttype, startimpl;
-	Node *dcl, *impl, *init;
+	Node *dcl, *impl, *fn;
 	Stab *s, *ns;
 	intptr_t tid;
 	size_t i, j;
@@ -990,8 +992,8 @@ loaduse(char *path, FILE *f, Stab *st, Vis vis)
 	}
 	tidmap = mkht(ptrhash, ptreq);
 	trmap = mkht(ptrhash, ptreq);
-	if (!initmap)
-		initmap = mkht(namehash, nameeq);
+	if (!autocallmap)
+		autocallmap = mkht(namehash, nameeq);
 	/* builtin traits */
 	for (i = 0; i < Ntraits; i++)
 		htput(trmap, itop(i), traittab[i]);
@@ -1024,11 +1026,15 @@ foundextlib:
 			putdcl(s, dcl);
 			break;
 		case 'S':
-			init = unpickle(f);
-			if (!hthas(initmap, init)) {
-				htput(initmap, init, init);
-				lappend(&file->file.init, &file->file.ninit, init);
-			}
+		case 'E':
+			fn = unpickle(f);
+			if (hthas(autocallmap, fn))
+				break;
+			htput(autocallmap, fn, fn);
+			if (c == 'S')
+				lappend(&file->file.init, &file->file.ninit, fn);
+			else
+				lappend(&file->file.fini, &file->file.nfini, fn);
 			break;
 		case 'R':
 			tr = traitunpickle(f);
@@ -1289,7 +1295,7 @@ writeuse(FILE *f, Node *file)
 		if (s->decl.vis == Visintern || s->decl.vis == Visbuiltin)
 			continue;
 		/* trait functions get written out with their traits */
-		if (s->decl.trait || s->decl.isinit)
+		if (s->decl.trait || s->decl.isinit || s->decl.isfini)
 			continue;
 		else if (s->decl.isgeneric)
 			wrbyte(f, 'G');
@@ -1304,6 +1310,14 @@ writeuse(FILE *f, Node *file)
 	if (file->file.localinit) {
 		wrbyte(f, 'S');
 		pickle(f, file->file.localinit->decl.name);
+	}
+	for (i = 0; i < file->file.nfini; i++) {
+		wrbyte(f, 'E');
+		pickle(f, file->file.fini[i]);
+	}
+	if (file->file.localfini) {
+		wrbyte(f, 'E');
+		pickle(f, file->file.localfini->decl.name);
 	}
 	free(k);
 }

@@ -29,14 +29,14 @@ static int lbldepth = -1;
 void yyerror(const char *s);
 int yylex(void);
 
-static Op binop(int toktype);
-static Node *mkpseudodecl(Srcloc l, Type *t);
-static void installucons(Stab *st, Type *t);
-static void setattrs(Node *dcl, char **attrs, size_t nattrs);
-static void setwith(Type *ty, Traitspec **spec, size_t nspec);
-static void setupinit(Node *n);
-static void addinit(Node *blk, Node *dcl);
-static void setuname(Type *ty);
+static Op binop(int);
+static Node *mkpseudodecl(Srcloc, Type *);
+static void installucons(Stab *, Type *);
+static void setattrs(Node *, char **attrs, size_t);
+static void setwith(Type *, Traitspec **, size_t);
+static void mangleautocall(Node *, char *);
+static void addinit(Node *, Node *);
+static void setuname(Type *);
 
 %}
 
@@ -249,18 +249,20 @@ toplev	: package
 	}
 	| decl {
 		size_t i;
-		Node *n;
+		Node *n, *d;
 
 		for (i = 0; i < $1.nn; i++) {
-			if (!strcmp(declname($1.nl[i]), "__init__"))
-				setupinit($1.nl[i]);
+			d = $1.nl[i];
 			/* putdcl can merge, so we need to getdcl after */
-			putdcl(file->file.globls, $1.nl[i]);
-			n = getdcl(file->file.globls, $1.nl[i]->decl.name);
+			mangleautocall(d, declname(d));
+			putdcl(file->file.globls, d);
+			n = getdcl(file->file.globls, d->decl.name);
 			lappend(&file->file.stmts, &file->file.nstmts, n);
-			$1.nl[i]->decl.isglobl = 1;
-			if ($1.nl[i]->decl.isinit)
-				file->file.localinit = $1.nl[i];
+			d->decl.isglobl = 1;
+			if (d->decl.isinit)
+				file->file.localinit = d;
+			if (d->decl.isfini)
+				file->file.localfini = d;
 		}
 	}
 	| /* empty */
@@ -1129,24 +1131,26 @@ addinit(Node *blk, Node *dcl)
 }
 
 static void
-setupinit(Node *n)
+mangleautocall(Node *n, char *fn)
 {
 	char name[1024];
 	char *p, *s;
 
-	bprintf(name, sizeof name, "%s$__init__", file->file.files[0]);
-	s = strrchr(name, '/');
-	if (s)
+	if (strcmp(fn, "__init__") == 0)
+		n->decl.isinit = 1;
+	else if (strcmp(fn, "__fini__") == 0)
+		n->decl.isfini = 1;
+	else
+		return;
+
+	bprintf(name, sizeof name, "%s$%s", file->file.files[0], fn);
+	if ((s = strrchr(name, '/')) != NULL)
 		s++;
 	else
 		s = name;
-	p = s;
-	while (*p) {
+	for(p = s; *p; p++)
 		if (!isalnum(*p) && *p != '_')
 			*p = '$';
-		p++;
-	}
-	n->decl.isinit = 1;
 	n->decl.vis = Vishidden;
 	n->decl.name->name.name = strdup(s);
 }

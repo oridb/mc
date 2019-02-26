@@ -61,10 +61,11 @@ _start:
 	  to call kbind here, but this breaks
 	  when we dynamically link in libc.
 	 */
-	/* call pre-main initializers */
+
 	call	__init__
-	/* enter the main program */
 	call	main
+	call	__init__
+
 	/* exit(0) */
 	xorq	%rdi,%rdi
 	movq	$1,%rax

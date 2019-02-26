@@ -48,9 +48,11 @@ start:
 	syscall
 
 	xorq %rbp,%rbp
+
 	call	___init__
-	/* enter the main program */
 	call	_main
+	call	___fini__
+
 	/* exit */
 	xorq	%rdi,%rdi
 	movq	$0x2000001,%rax

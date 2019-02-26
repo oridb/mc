@@ -22,7 +22,8 @@ pkg bld =
 		incs : byte[:][:] -> void)
 ;;
 
-const Abiversion = 20
+/* Keep in sync with parse/parse.h */
+const Abiversion = 21
 
 const builtlib = {b, mt, dep, dyndep
 	var ldep, l, u

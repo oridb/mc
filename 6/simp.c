@@ -1403,7 +1403,7 @@ isexport(Node *dcl)
 	n = dcl->decl.name;
 	if (!n->name.ns && streq(n->name.name, "main"))
 		return 1;
-	if (streq(n->name.name, "__init__"))
+	if (streq(n->name.name, "__init__") || streq(n->name.name, "__fini__"))
 		return 1;
 	return 0;
 }

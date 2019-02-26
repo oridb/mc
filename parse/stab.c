@@ -404,7 +404,7 @@ mergedecl(Node *old, Node *new)
 	old->decl.ishidden = e->decl.ishidden || g->decl.ishidden;
 	old->decl.isimport = e->decl.isimport || g->decl.isimport;
 	old->decl.isnoret = e->decl.isnoret || g->decl.isnoret;
-	old->decl.isexportinit = e->decl.isexportinit || g->decl.isexportinit;
+	old->decl.isexportval = e->decl.isexportval || g->decl.isexportval;
 	old->decl.isglobl = e->decl.isglobl || g->decl.isglobl;
 	old->decl.ispkglocal = e->decl.ispkglocal || g->decl.ispkglocal;
 	old->decl.isextern = e->decl.isextern || g->decl.isextern;

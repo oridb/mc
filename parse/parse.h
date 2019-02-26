@@ -1,4 +1,4 @@
-#define Abiversion 20
+#define Abiversion 21
 
 typedef struct Srcloc Srcloc;
 typedef struct Tysubst Tysubst;
@@ -217,9 +217,13 @@ struct Node {
 			Node **init;	/* all __init__ function names of our deps. NB, this
 					   is a Nname, not an Ndecl */
 			size_t ninit;
+			Node **fini;	/* all __fini__ function names of our deps. NB, this
+					   is a Nname, not an Ndecl */
+			size_t nfini;
 			Node **impl;	/* impls defined in this file, across all namespaces */
 			size_t nimpl;
 			Node *localinit;/* and the local one, if any */
+			Node *localfini;/* and the local one, if any */
 			Stab *globls;	/* global symtab */
 			Stab *builtins;	/* global symtab */
 			Htab *ns;	/* namespaces */
@@ -331,8 +335,9 @@ struct Node {
 			char ishidden;
 			char isimport;
 			char isnoret;
-			char isexportinit;
+			char isexportval;
 			char isinit;
+			char isfini;
 		} decl;
 
 		struct {
@@ -549,7 +554,7 @@ Type *substget(Tysubst *subst, Type *from);
 Node *specializedcl(Node *n, Type *param, Type *to, Node **name);
 Type *tyspecialize(Type *t, Tysubst *tymap, Htab *delayed);
 Node *genericname(Node *n, Type *param, Type *t);
-void geninit(void);
+void genautocall(Node **, size_t, Node *, char *);
 
 /* usefiles */
 void loaduses(void);

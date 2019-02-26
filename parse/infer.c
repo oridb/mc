@@ -2654,6 +2654,7 @@ verifyop(Node *n)
 static void
 typesub(Node *n, int noerr)
 {
+	char *name;
 	size_t i;
 
 	if (!n)
@@ -2675,9 +2676,10 @@ typesub(Node *n, int noerr)
 			if (!maincompatible(tybase(decltype(n))))
 				fatal(n, "main must be (->void) or (byte[:][:] -> void), got %s",
 						tystr(decltype(n)));
-		if (streq(declname(n), "__init__"))
+		name = declname(n);
+		if (streq(name, "__init__") || streq(name, "__fini__"))
 			if (!initcompatible(tybase(decltype(n))))
-				fatal(n, "__init__ must be (->void), got %s", tystr(decltype(n)));
+				fatal(n, "%s must be (->void), got %s", name, tystr(decltype(n)));
 		popenv(n->decl.env);
 		break;
 	case Nblock:

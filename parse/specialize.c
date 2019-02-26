@@ -639,24 +639,24 @@ callinit(Node *block, Node *init, Type *tyvoid, Type *tyvoidfn)
 }
 
 void
-geninit(void)
+genautocall(Node **call, size_t ncall, Node *local, char *fn)
 {
 	Node *name, *decl, *func, *block, *init;
 	Type *tyvoid, *tyvoidfn;
 	size_t i;
 
-	name = mkname(Zloc, "__init__");
+	name = mkname(Zloc, fn);
 	decl = mkdecl(Zloc, name, mktyvar(Zloc));
 	block = mkblock(Zloc, mkstab(0));
 	tyvoid = mktype(Zloc, Tyvoid);
 	tyvoidfn = mktyfunc(Zloc, NULL, 0, tyvoid);
 
-	for (i = 0; i < file->file.ninit; i++) {
-		init = initdecl(file, file->file.init[i], tyvoidfn);
+	for (i = 0; i < ncall; i++) {
+		init = initdecl(file, call[i], tyvoidfn);
 		callinit(block, init, tyvoid, tyvoidfn);
 	}
-	if (file->file.localinit)
-		callinit(block, file->file.localinit, tyvoid, tyvoidfn);
+	if (local)
+		callinit(block, local, tyvoid, tyvoidfn);
 
 	func = mkfunc(Zloc, NULL, 0, mktype(Zloc, Tyvoid), block);
 	init = mkexpr(Zloc, Olit, func, NULL);

@@ -293,8 +293,12 @@ main(int argc, char **argv)
 		if (debugopt['T'])
 			dump(file, stdout);
 		loaduses();
-		if (hasmain(file))
-			geninit();
+		if (hasmain(file)) {
+			genautocall(file->file.init, file->file.ninit,
+			    file->file.localinit, "__init__");
+			genautocall(file->file.fini, file->file.nfini,
+			    file->file.localfini, "__fini__");
+		}
 		infer();
 		tagexports(0);
 		/* after all type inference */

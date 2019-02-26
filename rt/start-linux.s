@@ -48,10 +48,10 @@ _start:
 	syscall
 
 	xorq %rbp,%rbp
-	/* call pre-main initializers */
 	call	__init__
-	/* enter the main program */
 	call	main
+	call	__fini__
+
 	/* exit(0) */
 	xorq	%rdi,%rdi
 	movq	$60,%rax
