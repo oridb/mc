@@ -173,7 +173,6 @@ pkg sys =
 
 	const atexit		: (fn : (-> void) -> void)
 
-	pkglocal const __fini__	: (-> void)
 ;;
 
 var exitfn : (-> void)[128]

@@ -58,7 +58,7 @@ TEXT	_main(SB), 1, $(72+NPRIVATES*8)
 	CALL	main(SB)
 	POPQ	DX
 	POPQ	R13
-	CALL	sys$__fini__(SB)
+	CALL	__fini__(SB)
 
 exitloop:
 	MOVQ	$0,8(SP)
