@@ -822,7 +822,7 @@ genmatch(Node *m, Node *val, Node ***out, size_t *nout)
 	if (debugopt['m']) {
 		dtreedump(stdout, dt);
 		for (i = 0; i < *nout; i++)
-			dump((*out)[i], stdout);
+			dumpn((*out)[i], stdout);
 	}
 }
 

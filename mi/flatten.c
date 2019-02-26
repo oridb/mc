@@ -64,7 +64,7 @@ static void
 append(Flattenctx *s, Node *n)
 {
 	if (debugopt['F'])
-		dump(n, stdout);
+		dumpn(n, stdout);
 	lappend(&s->stmts, &s->nstmts, n);
 }
 
@@ -1077,7 +1077,7 @@ flatten(Flattenctx *fc, Node *n)
 		}
 		break;
 	default:
-		dump(n, stderr);
+		dumpn(n, stderr);
 		die("bad node passsed to flatten()");
 		break;
 	}

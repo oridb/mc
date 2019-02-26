@@ -134,17 +134,17 @@ dumpenv(Tyenv *e, FILE *fd)
 }
 
 void
-dumpfilestabs(Node *file, int depth, FILE *fd)
+dumpfilestabs(int depth, FILE *fd)
 {
 	size_t nk, i;
 	void **k;
 
-	k = htkeys(file->file.ns, &nk);
-	for (i = 0; i < nk; i++) {
-		outstab(htget(file->file.ns, k[i]), fd, depth);
-	}
+	k = htkeys(file.ns, &nk);
+	for (i = 0; i < nk; i++)
+		outstab(htget(file.ns, k[i]), fd, depth);
 	free(k);
 }
+
 
 /* Outputs a node in indented tree form. This i
  * not a full serialization, but mainly an aid for
@@ -164,14 +164,6 @@ outnode(Node *n, FILE *fd, int depth)
 	}
 	findentf(fd, depth, "%s.%zd@%i", nodestr[n->type], n->nid, lnum(n->loc));
 	switch (n->type) {
-	case Nfile:
-		fprintf(fd, "(name = %s)\n", n->file.files[0]);
-		dumpfilestabs(file, depth + 1, fd);
-		for (i = 0; i < n->file.nuses; i++)
-			outnode(n->file.uses[i], fd, depth + 1);
-		for (i = 0; i < n->file.nstmts; i++)
-			outnode(n->file.stmts[i], fd, depth + 1);
-		break;
 	case Ndecl:
 		tr = "";
 		if (n->decl.trait)
@@ -290,7 +282,20 @@ outnode(Node *n, FILE *fd, int depth)
 }
 
 void
-dump(Node *n, FILE *fd) { outnode(n, fd, 0); }
+dump(FILE *fd)
+{
+	size_t i;
+
+	fprintf(fd, "(name = %s)\n", file.files[0]);
+	dumpfilestabs(1, fd);
+	for (i = 0; i < file.nuses; i++)
+		outnode(file.uses[i], fd, 1);
+	for (i = 0; i < file.nstmts; i++)
+		outnode(file.stmts[i], fd, 1);
+}
 
 void
-dumpn(Node *n) { dump(n, stdout); }
+dumpn(Node *n, FILE *fd) {
+	outnode(n, fd, 0);
+}
+

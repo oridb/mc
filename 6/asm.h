@@ -256,9 +256,9 @@ void initconsts(Htab *globls);
 void fillglobls(Stab *st, Htab *globls);
 void simpglobl(Node *dcl, Htab *globls, Func ***fn, size_t *nfn, Node ***blob, size_t *nblob);
 void selfunc(Isel *is, Func *fn, Htab *globls, Htab *strtab);
-void gen(Node *file, char *out);
-void gengas(Node *file, FILE *fd);
-void genp9(Node *file, FILE *fd);
+void gen(char *out);
+void gengas(FILE *fd);
+void genp9(FILE *fd);
 
 /* blob stuff */
 Blob *mkblobpad(size_t sz);

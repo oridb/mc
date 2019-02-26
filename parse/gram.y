@@ -233,19 +233,19 @@ file	: toplev
 	;
 
 toplev	: package
-	| use {lappend(&file->file.uses, &file->file.nuses, $1);}
+	| use {lappend(&file.uses, &file.nuses, $1);}
 	| implstmt {
-		lappend(&file->file.stmts, &file->file.nstmts, $1);
+		lappend(&file.stmts, &file.nstmts, $1);
 	}
 	| traitdef {
 		size_t i;
-		puttrait(file->file.globls, $1->name, $1);
+		puttrait(file.globls, $1->name, $1);
 		for (i = 0; i < $1->nproto; i++)
-			putdcl(file->file.globls, $1->proto[i]);
+			putdcl(file.globls, $1->proto[i]);
 	}
 	| tydef {
-		puttype(file->file.globls, mkname($1.loc, $1.name), $1.type);
-		installucons(file->file.globls, $1.type);
+		puttype(file.globls, mkname($1.loc, $1.name), $1.type);
+		installucons(file.globls, $1.type);
 	}
 	| decl {
 		size_t i;
@@ -255,14 +255,14 @@ toplev	: package
 			d = $1.nl[i];
 			/* putdcl can merge, so we need to getdcl after */
 			mangleautocall(d, declname(d));
-			putdcl(file->file.globls, d);
-			n = getdcl(file->file.globls, d->decl.name);
-			lappend(&file->file.stmts, &file->file.nstmts, n);
+			putdcl(file.globls, d);
+			n = getdcl(file.globls, d->decl.name);
+			lappend(&file.stmts, &file.nstmts, n);
 			d->decl.isglobl = 1;
 			if (d->decl.isinit)
-				file->file.localinit = d;
+				file.localinit = d;
 			if (d->decl.isfini)
-				file->file.localfini = d;
+				file.localfini = d;
 		}
 	}
 	| /* empty */
@@ -366,10 +366,10 @@ optident: Tident      {$$ = $1;}
 	;
 
 package : Tpkg optident Tasn pkgbody Tendblk {
-		if (file->file.globls->name)
+		if (file.globls->name)
 			lfatal($1->loc, "Package already declared\n");
 		if ($2) {
-			updatens(file->file.globls, $2->id);
+			updatens(file.globls, $2->id);
 		}
 	}
 	;
@@ -383,9 +383,9 @@ pkgitem : decl {
 		for (i = 0; i < $1.nn; i++) {
 			$1.nl[i]->decl.vis = Visexport;
 			$1.nl[i]->decl.isglobl = 1;
-			putdcl(file->file.globls, $1.nl[i]);
+			putdcl(file.globls, $1.nl[i]);
 			if ($1.nl[i]->decl.init)
-				lappend(&file->file.stmts, &file->file.nstmts, $1.nl[i]);
+				lappend(&file.stmts, &file.nstmts, $1.nl[i]);
 		}
 	}
 	| pkgtydef {
@@ -395,19 +395,19 @@ pkgitem : decl {
 		FIXME: clean up the fucking special cases. */
 		if ($1.type)
 			$1.type->vis = Visexport;
-		puttype(file->file.globls, mkname($1.loc, $1.name), $1.type);
-		installucons(file->file.globls, $1.type);
+		puttype(file.globls, mkname($1.loc, $1.name), $1.type);
+		installucons(file.globls, $1.type);
 	}
 	| traitdef {
 		size_t i;
 		$1->vis = Visexport;
-		puttrait(file->file.globls, $1->name, $1);
+		puttrait(file.globls, $1->name, $1);
 		for (i = 0; i < $1->nproto; i++)
-			putdcl(file->file.globls, $1->proto[i]);
+			putdcl(file.globls, $1->proto[i]);
 	}
 	| implstmt {
 		$1->impl.vis = Visexport;
-		lappend(&file->file.stmts, &file->file.nstmts, $1);
+		lappend(&file.stmts, &file.nstmts, $1);
 	}
 	| /* empty */
 	;
@@ -1143,7 +1143,7 @@ mangleautocall(Node *n, char *fn)
 	else
 		return;
 
-	bprintf(name, sizeof name, "%s$%s", file->file.files[0], fn);
+	bprintf(name, sizeof name, "%s$%s", file.files[0], fn);
 	if ((s = strrchr(name, '/')) != NULL)
 		s++;
 	else

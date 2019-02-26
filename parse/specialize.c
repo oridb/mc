@@ -254,7 +254,6 @@ fixup(Node *n)
 	if (!n)
 		return;
 	switch (n->type) {
-	case Nfile:
 	case Nuse:	die("Node %s not allowed here\n", nodestr[n->type]);	break;
 	case Nexpr:
 		fixup(n->expr.idx);
@@ -351,7 +350,6 @@ specializenode(Node *n, Tysubst *tsmap)
 		return NULL;
 	r = mknode(n->loc, n->type);
 	switch (n->type) {
-	case Nfile:
 	case Nuse:
 		die("Node %s not allowed here\n", nodestr[n->type]);
 		break;
@@ -551,7 +549,7 @@ specializedcl(Node *gnode, Type *param, Type *to, Node **name)
 	if (n->name.ns)
 		st = getns(n->name.ns);
 	else
-		st = file->file.globls;
+		st = file.globls;
 	if (!st)
 		fatal(n, "Can't find symbol table for %s.%s", n->name.ns, n->name.name);
 	d = getdcl(st, n);
@@ -586,7 +584,7 @@ specializedcl(Node *gnode, Type *param, Type *to, Node **name)
 
 	fixup(d);
 
-	lappend(&file->file.stmts, &file->file.nstmts, d);
+	lappend(&file.stmts, &file.nstmts, d);
 	if (d->decl.name->name.ns)
 		popstab();
 	substfree(tsmap);
@@ -606,11 +604,11 @@ specializedcl(Node *gnode, Type *param, Type *to, Node **name)
  * }
  */
 static Node *
-initdecl(Node *file, Node *name, Type *tyvoidfn)
+initdecl(Node *name, Type *tyvoidfn)
 {
 	Node *dcl;
 
-	dcl = getdcl(file->file.globls, name);
+	dcl = getdcl(file.globls, name);
 	if (!dcl) {
 		dcl = mkdecl(Zloc, name, tyvoidfn);
 		dcl->decl.isconst = 1;
@@ -618,7 +616,7 @@ initdecl(Node *file, Node *name, Type *tyvoidfn)
 		dcl->decl.isinit = 1;
 		dcl->decl.isextern = 1;
 		dcl->decl.ishidden = 1;
-		putdcl(file->file.globls, dcl);
+		putdcl(file.globls, dcl);
 	}
 	return dcl;
 }
@@ -652,7 +650,7 @@ genautocall(Node **call, size_t ncall, Node *local, char *fn)
 	tyvoidfn = mktyfunc(Zloc, NULL, 0, tyvoid);
 
 	for (i = 0; i < ncall; i++) {
-		init = initdecl(file, call[i], tyvoidfn);
+		init = initdecl(call[i], tyvoidfn);
 		callinit(block, init, tyvoid, tyvoidfn);
 	}
 	if (local)
@@ -668,8 +666,8 @@ genautocall(Node **call, size_t ncall, Node *local, char *fn)
 	decl->decl.type = tyvoidfn;
 	decl->decl.vis = Vishidden;
 
-	func->lit.fnval->func.scope->super = file->file.globls;
+	func->lit.fnval->func.scope->super = file.globls;
 	block->block.scope->super = func->lit.fnval->func.scope->super;
 
-	lappend(&file->file.stmts, &file->file.nstmts, decl);
+	lappend(&file.stmts, &file.nstmts, decl);
 }

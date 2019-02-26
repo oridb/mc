@@ -16,7 +16,7 @@
 #include "../config.h"
 
 /* FIXME: move into one place...? */
-Node *file;
+File file;
 char *outfile;
 char *objdir;
 char *pkgname;
@@ -45,7 +45,7 @@ mergeuse(char *path)
 	FILE *f;
 	Stab *st;
 
-	st = file->file.globls;
+	st = file.globls;
 	f = fopen(path, "r");
 	if (!f) {
 		fprintf(stderr, "couldn't open %s\n", path);
@@ -100,10 +100,11 @@ main(int argc, char **argv)
 	}
 
 	/* read and parse the file */
-	file = mkfile("internal");
-	file->file.globls = mkstab(0);
-	updatens(file->file.globls, pkgname);
-	tyinit(file->file.globls);
+	file.ns = mkht(strhash, streq);
+	file.globls = mkstab(0);
+	lappend(&file.files, &file.nfiles, "internal");
+	updatens(file.globls, pkgname);
+	tyinit(file.globls);
 	for (i = 0; i < ctx.nargs; i++)
 		mergeuse(ctx.args[i]);
 	loaduses();
@@ -113,7 +114,7 @@ main(int argc, char **argv)
 
 	/* generate the usefile */
 	f = fopen(outfile, "w");
-	writeuse(f, file);
+	writeuse(f);
 	fclose(f);
 	return 0;
 }

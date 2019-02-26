@@ -5,6 +5,7 @@ typedef struct Tysubst Tysubst;
 typedef struct Traitspec Traitspec;
 
 typedef struct Tok Tok;
+typedef struct File File;
 typedef struct Node Node;
 typedef struct Ucon Ucon;
 typedef struct Stab Stab;
@@ -197,38 +198,38 @@ struct Trait {
 	char isimport;	/* have we defined it locally? */
 };
 
+struct File {
+	size_t nfiles;	/* file names for location mapping */
+	char **files;
+	Node **uses;	/* use files that we loaded */
+	size_t nuses;
+	char **libdeps;	/* library dependencies */
+	size_t nlibdeps;
+	char **extlibs;	/* non-myrddin libraries */
+	size_t nextlibs;
+	Node **stmts;	/* all top level statements */
+	size_t nstmts;
+	Node **init;	/* all __init__ function names of our deps. NB, this
+			   is a Nname, not an Ndecl */
+	size_t ninit;
+	Node **fini;	/* all __fini__ function names of our deps. NB, this
+			   is a Nname, not an Ndecl */
+	size_t nfini;
+	Node **impl;	/* impls defined in this file, across all namespaces */
+	size_t nimpl;
+	Node *localinit;/* and the local one, if any */
+	Node *localfini;/* and the local one, if any */
+	Stab *globls;	/* global symtab */
+	Stab *builtins;	/* global symtab */
+	Htab *ns;	/* namespaces */
+};
+
 struct Node {
 	Srcloc loc;
 	Ntype type;
 	int nid;
 	char inferred;
 	union {
-		struct {
-			size_t nfiles;	/* file names for location mapping */
-			char **files;
-			Node **uses;	/* use files that we loaded */
-			size_t nuses;
-			char **libdeps;	/* library dependencies */
-			size_t nlibdeps;
-			char **extlibs;	/* non-myrddin libraries */
-			size_t nextlibs;
-			Node **stmts;	/* all top level statements */
-			size_t nstmts;
-			Node **init;	/* all __init__ function names of our deps. NB, this
-					   is a Nname, not an Ndecl */
-			size_t ninit;
-			Node **fini;	/* all __fini__ function names of our deps. NB, this
-					   is a Nname, not an Ndecl */
-			size_t nfini;
-			Node **impl;	/* impls defined in this file, across all namespaces */
-			size_t nimpl;
-			Node *localinit;/* and the local one, if any */
-			Node *localfini;/* and the local one, if any */
-			Stab *globls;	/* global symtab */
-			Stab *builtins;	/* global symtab */
-			Htab *ns;	/* namespaces */
-		} file;
-
 		struct {
 			Op op;
 			Type *type;
@@ -366,10 +367,10 @@ struct Node {
 };
 
 /* globals */
+extern File file;	/* the current file we're compiling */
 extern Srcloc curloc;
 extern char *filename;
 extern Tok *curtok;	/* the last token we tokenized */
-extern Node *file;	/* the current file we're compiling */
 extern Type **tytab;	/* type -> type map used by inference. size maintained by type creation code */
 extern Type **types;
 extern size_t ntypes;
@@ -497,7 +498,6 @@ char *traitstr(Type *t);
 
 /* node creation */
 Node *mknode(Srcloc l, Ntype nt);
-Node *mkfile(char *name);
 Node *mkuse(Srcloc l, char *use, int islocal);
 Node *mksliceexpr(Srcloc l, Node *sl, Node *base, Node *off);
 Node *mkexprl(Srcloc l, Op op, Node **args, size_t nargs);
@@ -560,7 +560,7 @@ void genautocall(Node **, size_t, Node *, char *);
 void loaduses(void);
 int loaduse(char *path, FILE *f, Stab *into, Vis vis);
 void readuse(Node *use, Stab *into, Vis vis);
-void writeuse(FILE *fd, Node *file);
+void writeuse(FILE *fd);
 void tagexports(int hidelocal);
 void tagreflect(Type *t);
 void addextlibs(char **libs, size_t nlibs);
@@ -574,9 +574,10 @@ void infer(void);
 Type *tysearch(Type *t);
 
 /* debug */
-void dump(Node *t, FILE *fd);
-void dumpsym(Node *s, FILE *fd);
-void dumpstab(Stab *st, FILE *fd);
+void dump(FILE *);
+void dumpn(Node *, FILE *);
+void dumpsym(Node *, FILE *);
+void dumpstab(Stab *, FILE *);
 
 /* option parsing */
 void optinit(Optctx *ctx, char *optstr, char **optargs, size_t noptargs);

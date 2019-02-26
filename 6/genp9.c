@@ -431,7 +431,7 @@ genblob(FILE *fd, Node *blob, Htab *globls, Htab *strtab)
 }
 
 void
-genp9(Node *file, FILE *fd)
+genp9(FILE *fd)
 {
 	Htab *globls, *strtab;
 	Node *n, **blob;
@@ -453,11 +453,11 @@ genp9(Node *file, FILE *fd)
 	initconsts(globls);
 
 	/* We need to define all global variables before use */
-	fillglobls(file->file.globls, globls);
+	fillglobls(file.globls, globls);
 
-	pushstab(file->file.globls);
-	for (i = 0; i < file->file.nstmts; i++) {
-		n = file->file.stmts[i];
+	pushstab(file.globls);
+	for (i = 0; i < file.nstmts; i++) {
+		n = file.stmts[i];
 		switch (n->type) {
 		case Nuse: /* nothing to do */
 		case Nimpl:

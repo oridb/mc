@@ -57,10 +57,10 @@ addextlibs(char **libs, size_t nlibs)
 	size_t i, j;
 
 	for (i = 0; i < nlibs; i++) {
-		for (j = 0; j < file->file.nextlibs; j++)
-			if (!strcmp(file->file.extlibs[j], libs[i]))
+		for (j = 0; j < file.nextlibs; j++)
+			if (!strcmp(file.extlibs[j], libs[i]))
 				continue;
-		lappend(&file->file.extlibs, &file->file.nextlibs, libs[i]);
+		lappend(&file.extlibs, &file.nextlibs, libs[i]);
 	}
 }
 
@@ -149,7 +149,7 @@ rducon(FILE *fd, Type *ut)
 	name = unpickle(fd);
 	uc = mkucon(Zloc, name, ut, et);
 	uc->loc.line = line;
-	uc->loc.file = file->file.nfiles - 1;
+	uc->loc.file = file.nfiles - 1;
 	if (rdbool(fd))
 		rdtype(fd, &uc->etype);
 	uc->id = id;
@@ -194,7 +194,7 @@ rdsym(FILE *fd, Trait *ctx)
 	name = unpickle(fd);
 	n = mkdecl(Zloc, name, NULL);
 	n->loc.line = line;
-	n->loc.file = file->file.nfiles - 1;
+	n->loc.file = file.nfiles - 1;
 	rdtype(fd, &n->decl.type);
 
 	if (rdint(fd) == Vishidden)
@@ -497,17 +497,6 @@ pickle(FILE *fd, Node *n)
 	wrbyte(fd, n->type);
 	wrint(fd, n->loc.line);
 	switch (n->type) {
-	case Nfile:
-		wrstr(fd, n->file.files[0]);
-		wrint(fd, n->file.nuses);
-		for (i = 0; i < n->file.nuses; i++)
-			pickle(fd, n->file.uses[i]);
-		wrint(fd, n->file.nstmts);
-		for (i = 0; i < n->file.nstmts; i++)
-			pickle(fd, n->file.stmts[i]);
-		wrstab(fd, n->file.globls);
-		break;
-
 	case Nexpr:
 		wrbyte(fd, n->expr.op);
 		wrtype(fd, n->expr.type);
@@ -631,21 +620,8 @@ unpickle(FILE *fd)
 		return NULL;
 	n = mknode(Zloc, type);
 	n->loc.line = rdint(fd);
-	n->loc.file = file->file.nfiles - 1;
+	n->loc.file = file.nfiles - 1;
 	switch (n->type) {
-	case Nfile:
-		lappend(&n->file.files, &n->file.nfiles, rdstr(fd));
-		n->file.nuses = rdint(fd);
-		n->file.uses = zalloc(sizeof(Node *) * n->file.nuses);
-		for (i = 0; i < n->file.nuses; i++)
-			n->file.uses[i] = unpickle(fd);
-		n->file.nstmts = rdint(fd);
-		n->file.stmts = zalloc(sizeof(Node *) * n->file.nstmts);
-		for (i = 0; i < n->file.nstmts; i++)
-			n->file.stmts[i] = unpickle(fd);
-		n->file.globls = rdstab(fd, 0);
-		break;
-
 	case Nexpr:
 		n->expr.op = rdbyte(fd);
 		rdtype(fd, &n->expr.type);
@@ -837,7 +813,7 @@ fixtypemappings(Stab *st)
 		old = tydedup(t);
 		if (!tyeq(t, old) && !isspecialization(t, old))
 			lfatal(t->loc, "Duplicate definition of type %s on %s:%d",
-				tystr(old), file->file.files[old->loc.file], old->loc.line);
+				tystr(old), file.files[old->loc.file], old->loc.line);
 	}
 	lfree(&typefix, &ntypefix);
 }
@@ -889,7 +865,7 @@ protomap(Trait *tr, Type *ty, Node *dcl)
 	dclname = declname(dcl);
 	for (i = 0; i < tr->nproto; i++) {
 		n = tr->proto[i]->decl.name;
-		st = file->file.globls;
+		st = file.globls;
 		if (n->name.ns)
 			st = getns(n->name.ns);
 		proto = getdcl(st, n);
@@ -926,7 +902,7 @@ fiximplmappings(Stab *st)
 			continue;
 		putimpl(st, impl);
 		for (j = 0; j < impl->impl.ndecls; j++) {
-			putdcl(file->file.globls, impl->impl.decls[j]);
+			putdcl(file.globls, impl->impl.decls[j]);
 			protomap(tr, impl->impl.type, impl->impl.decls[j]);
 		}
 	}
@@ -957,7 +933,7 @@ loaduse(char *path, FILE *f, Stab *st, Vis vis)
 	startdecl = ndecls;
 	starttype = ntypes;
 	startimpl = nimpltab;
-	pushstab(file->file.globls);
+	pushstab(file.globls);
 	if (!trdeduptab)
 		trdeduptab = mkht(namehash, nameeq);
 	if (fgetc(f) != 'U')
@@ -1001,23 +977,23 @@ loaduse(char *path, FILE *f, Stab *st, Vis vis)
 		switch (c) {
 		case 'L':
 			lib = rdstr(f);
-			for (i = 0; i < file->file.nlibdeps; i++)
-				if (!strcmp(file->file.libdeps[i], lib))
+			for (i = 0; i < file.nlibdeps; i++)
+				if (!strcmp(file.libdeps[i], lib))
 					/* break out of both loop and switch */
 					goto foundlib;
-			lappend(&file->file.libdeps, &file->file.nlibdeps, lib);
+			lappend(&file.libdeps, &file.nlibdeps, lib);
 foundlib:
 			break;
 		case 'X':
 			lib = rdstr(f);
-			for (i = 0; i < file->file.nextlibs; i++)
-				if (!strcmp(file->file.extlibs[i], lib))
+			for (i = 0; i < file.nextlibs; i++)
+				if (!strcmp(file.extlibs[i], lib))
 					/* break out of both loop and switch */
 					goto foundextlib;
-			lappend(&file->file.extlibs, &file->file.nextlibs, lib);
+			lappend(&file.extlibs, &file.nextlibs, lib);
 foundextlib:
 			break;
-		case 'F': lappend(&file->file.files, &file->file.nfiles, rdstr(f)); break;
+		case 'F': lappend(&file.files, &file.nfiles, rdstr(f)); break;
 		case 'G':
 		case 'D':
 			dcl = rdsym(f, NULL);
@@ -1032,9 +1008,9 @@ foundextlib:
 				break;
 			htput(autocallmap, fn, fn);
 			if (c == 'S')
-				lappend(&file->file.init, &file->file.ninit, fn);
+				lappend(&file.init, &file.ninit, fn);
 			else
-				lappend(&file->file.fini, &file->file.nfini, fn);
+				lappend(&file.fini, &file.nfini, fn);
 			break;
 		case 'R':
 			tr = traitunpickle(f);
@@ -1079,7 +1055,7 @@ foundextlib:
 			for (i = 0; i < impl->impl.ndecls; i++) {
 				dcl = impl->impl.decls[i];
 				dcl->decl.isglobl = 1;
-				ns = file->file.globls;
+				ns = file.globls;
 				if (dcl->decl.name->name.ns)
 					ns = findstab(s, dcl->decl.name->name.ns);
 				putdcl(ns, dcl);
@@ -1206,8 +1182,8 @@ loaduses(void)
 {
 	size_t i;
 
-	for (i = 0; i < file->file.nuses; i++)
-		readuse(file->file.uses[i], file->file.globls, Visintern);
+	for (i = 0; i < file.nuses; i++)
+		readuse(file.uses[i], file.globls, Visintern);
 }
 
 /* Usefile format:
@@ -1220,7 +1196,7 @@ loaduses(void)
  * Z
  */
 void
-writeuse(FILE *f, Node *file)
+writeuse(FILE *f)
 {
 	Stab *st;
 	void **k;
@@ -1228,8 +1204,7 @@ writeuse(FILE *f, Node *file)
 	Node *s, *u;
 	size_t i, n;
 
-	assert(file->type == Nfile);
-	st = file->file.globls;
+	st = file.globls;
 
 	/* usefile name */
 	wrbyte(f, 'U');
@@ -1240,25 +1215,25 @@ writeuse(FILE *f, Node *file)
 		wrstr(f, NULL);
 
 	/* library deps */
-	for (i = 0; i < file->file.nuses; i++) {
-		u = file->file.uses[i];
+	for (i = 0; i < file.nuses; i++) {
+		u = file.uses[i];
 		if (!u->use.islocal) {
 			wrbyte(f, 'L');
 			wrstr(f, u->use.name);
 		}
 	}
-	for (i = 0; i < file->file.nlibdeps; i++) {
+	for (i = 0; i < file.nlibdeps; i++) {
 		wrbyte(f, 'L');
-		wrstr(f, file->file.libdeps[i]);
+		wrstr(f, file.libdeps[i]);
 	}
-	for (i = 0; i < file->file.nextlibs; i++) {
+	for (i = 0; i < file.nextlibs; i++) {
 		wrbyte(f, 'X');
-		wrstr(f, file->file.extlibs[i]);
+		wrstr(f, file.extlibs[i]);
 	}
 
 	/* source file name */
 	wrbyte(f, 'F');
-	wrstr(f, file->file.files[0]);
+	wrstr(f, file.files[0]);
 
 	for (i = 0; i < ntypes; i++) {
 		if (types[i]->vis == Visexport || types[i]->vis == Vishidden) {
@@ -1303,21 +1278,21 @@ writeuse(FILE *f, Node *file)
 			wrbyte(f, 'D');
 		wrsym(f, s);
 	}
-	for (i = 0; i < file->file.ninit; i++) {
+	for (i = 0; i < file.ninit; i++) {
 		wrbyte(f, 'S');
-		pickle(f, file->file.init[i]);
+		pickle(f, file.init[i]);
 	}
-	if (file->file.localinit) {
+	if (file.localinit) {
 		wrbyte(f, 'S');
-		pickle(f, file->file.localinit->decl.name);
+		pickle(f, file.localinit->decl.name);
 	}
-	for (i = 0; i < file->file.nfini; i++) {
+	for (i = 0; i < file.nfini; i++) {
 		wrbyte(f, 'E');
-		pickle(f, file->file.fini[i]);
+		pickle(f, file.fini[i]);
 	}
-	if (file->file.localfini) {
+	if (file.localfini) {
 		wrbyte(f, 'E');
-		pickle(f, file->file.localfini->decl.name);
+		pickle(f, file.localfini->decl.name);
 	}
 	free(k);
 }

@@ -332,7 +332,7 @@ blobrec(Blob *b, Htab *globls, Htab *strtab, Node *n)
 		sz += blobpad(b, end - sz);
 		break;
 	default:
-		dump(n, stdout);
+		dumpn(n, stdout);
 		die("Nonliteral initializer for global");
 		break;
 	}

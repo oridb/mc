@@ -21,7 +21,7 @@ size_t ndecls;
 char *
 fname(Srcloc l)
 {
-	return file->file.files[l.file];
+	return file.files[l.file];
 }
 
 int
@@ -61,17 +61,6 @@ mknode(Srcloc loc, Ntype nt)
 	n->type = nt;
 	n->loc = loc;
 	lappend(&nodes, &nnodes, n);
-	return n;
-}
-
-Node *
-mkfile(char *name)
-{
-	Node *n;
-
-	n = mknode(Zloc, Nfile);
-	n->file.ns = mkht(strhash, streq);
-	lappend(&n->file.files, &n->file.nfiles, strdup(name));
 	return n;
 }
 
@@ -596,7 +585,7 @@ did(Node *n)
 		assert(exprop(n) == Ovar);
 		return n->expr.did;
 	}
-	dump(n, stderr);
+	dumpn(n, stderr);
 	die("Can't get did");
 	return 0;
 }

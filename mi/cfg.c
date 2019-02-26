@@ -314,7 +314,7 @@ dumpbb(Bb *bb, FILE *fd)
 	fprintf(fd, "\n");
 
 	for (i = 0; i < bb->nnl; i++)
-		dump(bb->nl[i], fd);
+		dumpn(bb->nl[i], fd);
 	fprintf(fd, "\n");
 }
 

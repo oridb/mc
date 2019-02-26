@@ -73,7 +73,7 @@ static void
 append(Simp *s, Node *n)
 {
 	if (debugopt['S'])
-		dump(n, stdout);
+		dumpn(n, stdout);
         assert(n->type != Ndecl);
 	lappend(&s->stmts, &s->nstmts, n);
 }
@@ -172,7 +172,7 @@ forcelocal(Simp *s, Node *n)
 	s->stksz += size(n);
 	s->stksz = align(s->stksz, min(size(n), Ptrsz));
 	if (debugopt['i']) {
-		dump(n, stdout);
+		dumpn(n, stdout);
 		printf("declared at %zd, size = %zd\n", s->stksz, size(n));
 	}
 	htput(s->stkoff, n, itop(s->stksz));
@@ -394,7 +394,7 @@ simpcode(Simp *s, Node *fn)
 	r->decl.isconst = 1;
 	r->decl.isglobl = 1;
 	htput(s->globls, d, asmname(d));
-	lappend(&file->file.stmts, &file->file.nstmts, d);
+	lappend(&file.stmts, &file.nstmts, d);
 	return r;
 }
 
@@ -1348,7 +1348,7 @@ simp(Simp *s, Node *n)
 			append(s, r);
 		break;
 	default:
-		dump(n, stderr);
+		dumpn(n, stderr);
 		die("bad node passsed to simp()");
 		break;
 	}
@@ -1465,7 +1465,7 @@ simpfn(Simp *s, char *name, Node *dcl)
 
 	if (debugopt['f'] || debugopt['F'])
 		for (i = 0; i < s->nstmts; i++)
-			dump(s->stmts[i], stdout);
+			dumpn(s->stmts[i], stdout);
 	for (i = 0; i < s->nstmts; i++) {
 		if (s->stmts[i]->type != Nexpr)
 			continue;

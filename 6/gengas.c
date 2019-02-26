@@ -433,7 +433,7 @@ genblob(FILE *fd, Node *blob, Htab *globls, Htab *strtab)
 }
 
 void
-gengas(Node *file, FILE *fd)
+gengas(FILE *fd)
 {
 	Htab *globls, *strtab;
 	Node *n, **blob;
@@ -456,11 +456,11 @@ gengas(Node *file, FILE *fd)
 	initconsts(globls);
 
 	/* We need to define all global variables before use */
-	fillglobls(file->file.globls, globls);
+	fillglobls(file.globls, globls);
 
-	pushstab(file->file.globls);
-	for (i = 0; i < file->file.nstmts; i++) {
-		n = file->file.stmts[i];
+	pushstab(file.globls);
+	for (i = 0; i < file.nstmts; i++) {
+		n = file.stmts[i];
 		switch (n->type) {
 		case Nuse: /* nothing to do */
 		case Nimpl:
@@ -478,8 +478,8 @@ gengas(Node *file, FILE *fd)
 
 	if (!getcwd(dir, sizeof dir))
 		die("could not get cwd: %s\n", strerror(errno));
-	for (i = 0; i < file->file.nfiles; i++) {
-		path = file->file.files[i];
+	for (i = 0; i < file.nfiles; i++) {
+		path = file.files[i];
 		fprintf(fd, ".file %zd \"%s/%s\"\n", i + 1, dir, path);
 	}
 

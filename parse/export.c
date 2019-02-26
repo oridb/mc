@@ -207,7 +207,6 @@ tagnode(Stab *st, Node *n, int ingeneric, int hidelocal)
 	case Nuse:
 	case Nname:
 		break;
-	case Nfile:
 	case Nnone:
 		die("Invalid node for type export\n");
 		break;
@@ -224,17 +223,17 @@ tagexports(int hidelocal)
 	Node *s;
 	Type *t;
 
-	st = file->file.globls;
+	st = file.globls;
 
 	/* tag the initializers */
-	for (i = 0; i < file->file.ninit; i++)
-		tagnode(st, file->file.init[i], 0, hidelocal);
-	for (i = 0; i < file->file.nfini; i++)
-		tagnode(st, file->file.fini[i], 0, hidelocal);
-	if (file->file.localinit)
-		tagnode(st, file->file.localinit, 0, hidelocal);
-	if (file->file.localfini)
-		tagnode(st, file->file.localfini, 0, hidelocal);
+	for (i = 0; i < file.ninit; i++)
+		tagnode(st, file.init[i], 0, hidelocal);
+	for (i = 0; i < file.nfini; i++)
+		tagnode(st, file.fini[i], 0, hidelocal);
+	if (file.localinit)
+		tagnode(st, file.localinit, 0, hidelocal);
+	if (file.localfini)
+		tagnode(st, file.localfini, 0, hidelocal);
 
 	/* tag the exported nodes */
 	k = htkeys(st->dcl, &n);

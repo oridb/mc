@@ -667,7 +667,7 @@ tf(Type *orig)
 	if (orig->type == Tyunres && t->type == Tygeneric) {
 		if (t->ngparam != orig->narg) {
 			lfatal(orig->loc, "%s incompatibly specialized with %s, declared on %s:%d",
-					tystr(orig), tystr(t), file->file.files[t->loc.file], t->loc.line);
+					tystr(orig), tystr(t), file.files[t->loc.file], t->loc.line);
 		}
 		pushenv(orig->env);
 		t = tysubst(t, orig);
@@ -1944,7 +1944,7 @@ specializeimpl(Node *n)
 		   comparisons for specializing, we need to set the namespace
 		   here.
 		*/
-		if (file->file.globls->name)
+		if (file.globls->name)
 			setns(dcl->decl.name, traitns);
 		for (j = 0; j < tr->nproto; j++) {
 			if (nsnameeq(dcl->decl.name, tr->proto[j]->decl.name)) {
@@ -1976,13 +1976,13 @@ specializeimpl(Node *n)
 
 		/* and put the specialization into the global stab */
 		name = genericname(proto, n->impl.type, ty);
-		sym = getdcl(file->file.globls, name);
+		sym = getdcl(file.globls, name);
 		if (sym)
 			fatal(n, "trait %s already specialized with %s on %s:%d",
 				namestr(tr->name), tystr(n->impl.type),
 				fname(sym->loc), lnum(sym->loc));
 		dcl->decl.name = name;
-		putdcl(file->file.globls, dcl);
+		putdcl(file.globls, dcl);
 		htput(proto->decl.impls, n->impl.type, dcl);
 		dcl->decl.isconst = 1;
 		if (ty->type == Tygeneric || hasparams(ty)) {
@@ -2068,13 +2068,6 @@ infernode(Node **np, Type *ret, int *sawret)
 		return;
 	n->inferred = 1;
 	switch (n->type) {
-	case Nfile:
-		pushstab(n->file.globls);
-		inferstab(n->file.globls);
-		for (i = 0; i < n->file.nstmts; i++)
-			infernode(&n->file.stmts[i], NULL, sawret);
-		popstab();
-		break;
 	case Ndecl:
 		if (n->decl.isgeneric)
 			ingeneric++;
@@ -2660,13 +2653,6 @@ typesub(Node *n, int noerr)
 	if (!n)
 		return;
 	switch (n->type) {
-	case Nfile:
-		pushstab(n->file.globls);
-		stabsub(n->file.globls);
-		for (i = 0; i < n->file.nstmts; i++)
-			typesub(n->file.stmts[i], noerr);
-		popstab();
-		break;
 	case Ndecl:
 		pushenv(n->decl.env);
 		settype(n, tyfix(n, type(n), noerr));
@@ -2791,7 +2777,7 @@ specialize(void)
 
 	for (i = 0; i < nimpldecl; i++) {
 		d = impldecl[i];
-		lappend(&file->file.stmts, &file->file.nstmts, d);
+		lappend(&file.stmts, &file.nstmts, d);
 		typesub(d, 0);
 	}
 
@@ -2906,7 +2892,7 @@ findtrait(Node *impl)
 	tr = impl->impl.trait;
 	if (!tr) {
 		n = impl->impl.traitname;
-		ns = file->file.globls;
+		ns = file.globls;
 		if (n->name.ns)
 			ns = getns(n->name.ns);
 		if (ns)
@@ -2979,7 +2965,7 @@ initimpl(void)
 	Trait *tr;
 	Type *ty;
 
-	pushstab(file->file.globls);
+	pushstab(file.globls);
 	traitmap = zalloc(sizeof(Traitmap));
 	builtintraits();
 	for (i = 0; i < nimpltab; i++) {
@@ -3003,10 +2989,10 @@ verify(void)
 	Node *n;
 	size_t i;
 
-	pushstab(file->file.globls);
+	pushstab(file.globls);
 	/* for now, traits can only be declared globally */
-	for (i = 0; i < file->file.nstmts; i++) {
-		n = file->file.stmts[i];
+	for (i = 0; i < file.nstmts; i++) {
+		n = file.stmts[i];
 		if (n->type == Nimpl) {
 			/* we merge, so we need to get it back again when error checking */
 			if (n->impl.isproto)
@@ -3027,15 +3013,25 @@ verify(void)
 void
 infer(void)
 {
+	size_t i;
+
 	delayed = mkht(tyhash, tyeq);
 	initimpl();
 
 	/* do the inference */
-	infernode(&file, NULL, NULL);
+	pushstab(file.globls);
+	inferstab(file.globls);
+	for (i = 0; i < file.nstmts; i++)
+		infernode(&file.stmts[i], NULL, 0);
+	popstab();
 	postinfer();
 
 	/* and replace type vars with actual types */
-	typesub(file, 0);
+	pushstab(file.globls);
+	stabsub(file.globls);
+	for (i = 0; i < file.nstmts; i++)
+		typesub(file.stmts[i], 0);
+	popstab();
 	specialize();
 	verify();
 }

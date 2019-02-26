@@ -33,9 +33,9 @@ fillglobls(Stab *st, Htab *globls)
 	}
 	free(k);
 
-	ns = htkeys(file->file.ns, &nns);
+	ns = htkeys(file.ns, &nns);
 	for (j = 0; j < nns; j++) {
-		stab = htget(file->file.ns, ns[j]);
+		stab = htget(file.ns, ns[j]);
 		k = htkeys(stab->dcl, &nk);
 		for (i = 0; i < nk; i++) {
 			s = htget(stab->dcl, k[i]);
@@ -173,8 +173,8 @@ tydescid(char *buf, size_t bufsz, Type *ty)
 		for (i = 0; i < ty->narg; i++)
 			p += tyidfmt(p, end - p, ty->arg[i]);
 	} else {
-		if (file->file.globls->name) {
-			ns = file->file.globls->name;
+		if (file.globls->name) {
+			ns = file.globls->name;
 			sep = "$";
 		}
 		bprintf(buf, bufsz, "_tydesc%s%s$%d",sep, ns, ty->tid);
@@ -183,7 +183,7 @@ tydescid(char *buf, size_t bufsz, Type *ty)
 }
 
 void
-gen(Node *file, char *out)
+gen(char *out)
 {
 	FILE *fd;
 
@@ -193,11 +193,11 @@ gen(Node *file, char *out)
 
 	switch (asmsyntax) {
 	case Plan9:
-		genp9(file, fd);
+		genp9(fd);
 		break;
 	case Gnugaself:
 	case Gnugasmacho:
-		gengas(file, fd);
+		gengas(fd);
 		break;
 	default:
 		die("unknown target");  break;

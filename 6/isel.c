@@ -948,7 +948,7 @@ selexpr(Isel *s, Node *n)
 	case Oslice: case Oidx: case Osize: case Otupget: case Otupmemb:
 	case Obreak: case Ocontinue:
 	case Numops:
-		dump(n, stdout);
+		dumpn(n, stdout);
 		die("Should not see %s in isel", opstr[exprop(n)]);
 		break;
 	}
@@ -1116,7 +1116,7 @@ selfunc(Isel *is, Func *fn, Htab *globls, Htab *strtab)
 
 	fileid = fn->loc.file;
 	if (fileid >= 0 && fn->loc.line > 0) {
-		path = file->file.files[fileid];
+		path = file.files[fileid];
 		bprintf(buf, sizeof buf, "%s/%s:%d", is->cwd, path, fn->loc.line);
 		g(is, Icomment, locstrlbl(buf), NULL);
 		bprintf(buf, sizeof buf, "%zd %d", fileid + 1, fn->loc.line);
@@ -1136,7 +1136,7 @@ selfunc(Isel *is, Func *fn, Htab *globls, Htab *strtab)
 			fileid = n->loc.file;
 			if (n->loc.file >= 0 && n->loc.line != -1 && n->loc.line != lastline) {
 				lastline = n->loc.line;
-				path = file->file.files[fileid];
+				path = file.files[fileid];
 				bprintf(buf, sizeof buf, "%s/%s:%d", is->cwd, path, n->loc.line);
 				g(is, Icomment, locstrlbl(buf), NULL);
 				bprintf(buf, sizeof buf, "%zd %d", fileid + 1, n->loc.line);
