@@ -64,7 +64,7 @@ _start:
 
 	call	__init__
 	call	main
-	call	__init__
+	call	__fini__
 
 	/* exit(0) */
 	xorq	%rdi,%rdi
