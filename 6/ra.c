@@ -45,10 +45,14 @@ Usemap deftab[] = {
 #undef Use
 };
 
-/* A map of which registers interfere */
-#define Northogonal 32
+/*
+ * A map of which registers interfere. A write to
+ * any entry in regmap[colormap[reg]] will clobber
+ * any of the other values in that row of regmap.
+ */
+#define Northogonal (32 - 2)
 Reg regmap[Northogonal][Nmode] = {
-	/* None,   ModeB, ModeW, ModeL, ModeQ, ModeF, ModeD */
+		/* None,   ModeB, ModeW, ModeL, ModeQ, ModeF, ModeD */
 	[0]	= {Rnone, Ral,   Rax,   Reax,  Rrax,  Rnone,  Rnone},
 	[1]	= {Rnone, Rcl,   Rcx,   Recx,  Rrcx,  Rnone,  Rnone},
 	[2]	= {Rnone, Rdl,   Rdx,   Redx,  Rrdx,  Rnone,  Rnone},
@@ -63,24 +67,22 @@ Reg regmap[Northogonal][Nmode] = {
 	[11]	= {Rnone, Rr13b, Rr13w, Rr13d, Rr13,  Rnone,  Rnone},
 	[12]	= {Rnone, Rr14b, Rr14w, Rr14d, Rr14,  Rnone,  Rnone},
 	[13]	= {Rnone, Rr15b, Rr15w, Rr15d, Rr15,  Rnone,  Rnone},
-	[14]	= {Rnone, Rnone, Rnone, Rnone, Rnone, Rnone,  Rnone},
-	[15]	= {Rnone, Rnone, Rnone, Rnone, Rnone, Rnone,  Rnone},
-	[16]	= {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm0f, Rxmm0d},
-	[17]	= {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm1f, Rxmm1d},
-	[18]	= {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm2f, Rxmm2d},
-	[19]	= {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm3f, Rxmm3d},
-	[20]	= {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm4f, Rxmm4d},
-	[21]	= {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm5f, Rxmm5d},
-	[22]	= {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm6f, Rxmm6d},
-	[23]	= {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm7f, Rxmm7d},
-	[24]	= {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm8f, Rxmm8d},
-	[25]	= {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm9f, Rxmm9d},
-	[26]	= {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm10f, Rxmm10d},
-	[27]	= {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm11f, Rxmm11d},
-	[28]	= {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm12f, Rxmm12d},
-	[29]	= {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm13f, Rxmm13d},
-	[30]	= {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm14f, Rxmm14d},
-	[31]	= {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm15f, Rxmm15d},
+	[14]	= {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm0f, Rxmm0d},
+	[15]	= {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm1f, Rxmm1d},
+	[16]	= {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm2f, Rxmm2d},
+	[17]	= {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm3f, Rxmm3d},
+	[18]	= {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm4f, Rxmm4d},
+	[19]	= {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm5f, Rxmm5d},
+	[20]	= {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm6f, Rxmm6d},
+	[21]	= {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm7f, Rxmm7d},
+	[22]	= {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm8f, Rxmm8d},
+	[23]	= {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm9f, Rxmm9d},
+	[24]	= {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm10f, Rxmm10d},
+	[25]	= {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm11f, Rxmm11d},
+	[26]	= {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm12f, Rxmm12d},
+	[27]	= {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm13f, Rxmm13d},
+	[28]	= {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm14f, Rxmm14d},
+	[29]	= {Rnone, Rnone, Rnone, Rnone, Rnone, Rxmm15f, Rxmm15d},
 };
 
 /* Which regmap entry a register maps to */
@@ -100,24 +102,25 @@ int colourmap[Nreg] = {
 	[Rr13b]	= 11, [Rr13w]	= 11, [Rr13d]	= 11, [Rr13]	= 11,
 	[Rr14b]	= 12, [Rr14w]	= 12, [Rr14d]	= 12, [Rr14]	= 12,
 	[Rr15b]	= 13, [Rr15w]	= 13, [Rr15d]	= 13, [Rr15]	= 13,
+	[Rrsp]	= 14, [Rrbp]	= 15,
 
 	/* float */
-	[Rxmm0f]	= 16,  [Rxmm0d]	= 16,
-	[Rxmm1f]	= 17,  [Rxmm1d]	= 17,
-	[Rxmm2f]	= 18,  [Rxmm2d]	= 18,
-	[Rxmm3f]	= 19,  [Rxmm3d]	= 19,
-	[Rxmm4f]	= 20,  [Rxmm4d]	= 20,
-	[Rxmm5f]	= 21,  [Rxmm5d]	= 21,
-	[Rxmm6f]	= 22,  [Rxmm6d]	= 22,
-	[Rxmm7f]	= 23,  [Rxmm7d]	= 23,
-	[Rxmm8f]	= 24,  [Rxmm8d]	= 24,
-	[Rxmm9f]	= 25,  [Rxmm9d]	= 25,
-	[Rxmm10f]	= 26,  [Rxmm10d]	= 26,
-	[Rxmm11f]	= 27,  [Rxmm11d]	= 27,
-	[Rxmm12f]	= 28,  [Rxmm12d]	= 28,
-	[Rxmm13f]	= 29,  [Rxmm13d]	= 29,
-	[Rxmm14f]	= 30,  [Rxmm14d]	= 30,
-	[Rxmm15f]	= 31,  [Rxmm15d]	= 31,
+	[Rxmm0f]	= 14,  [Rxmm0d]		= 14,
+	[Rxmm1f]	= 15,  [Rxmm1d]		= 15,
+	[Rxmm2f]	= 16,  [Rxmm2d]		= 16,
+	[Rxmm3f]	= 17,  [Rxmm3d]		= 17,
+	[Rxmm4f]	= 18,  [Rxmm4d]		= 18,
+	[Rxmm5f]	= 19,  [Rxmm5d]		= 19,
+	[Rxmm6f]	= 20,  [Rxmm6d]		= 20,
+	[Rxmm7f]	= 21,  [Rxmm7d]		= 21,
+	[Rxmm8f]	= 22,  [Rxmm8d]		= 22,
+	[Rxmm9f]	= 23,  [Rxmm9d]		= 23,
+	[Rxmm10f]	= 24,  [Rxmm10d]	= 24,
+	[Rxmm11f]	= 25,  [Rxmm11d]	= 25,
+	[Rxmm12f]	= 26,  [Rxmm12d]	= 26,
+	[Rxmm13f]	= 27,  [Rxmm13d]	= 27,
+	[Rxmm14f]	= 28,  [Rxmm14d]	= 28,
+	[Rxmm15f]	= 29,  [Rxmm15d]	= 29,
 };
 
 size_t modesize[Nmode] = {
