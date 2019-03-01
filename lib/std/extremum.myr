@@ -31,7 +31,7 @@ generic clamp = {a, min, max
 	;;
 }
 
-generic abs = {a : @a :: numeric @a
+generic abs = {a
 	if a < (0 : @a)
 		-> -a
 	else

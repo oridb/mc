@@ -1787,8 +1787,9 @@ inferexpr(Node **np, Type *ret, int *sawret)
 		delayedcheck(n);
 		break;
 	case Osize:	/* sizeof(@a) -> size */
-		infersub(n, ret, sawret, &isconst);
 		settype(n, mktylike(n->loc, Tyuint));
+		inferdecl(args[0]);
+		n->expr.isconst = 1;
 		break;
 	case Ocall:	/* (@a, @b, @c, ... -> @r)(@a, @b, @c, ...) -> @r */
 		infersub(n, ret, sawret, &isconst);

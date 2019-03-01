@@ -52,7 +52,7 @@ generic alloc = {-> @a#
 	-> (bytealloc(sizeof(@a)) : @a#)
 }
 
-generic zalloc = {-> @a#
+generic zalloc = {
 	-> (zbytealloc(sizeof(@a)) : @a#)
 }
 
