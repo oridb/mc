@@ -207,14 +207,10 @@ mkfunc(Srcloc loc, Node **args, size_t nargs, Type *ret, Node *body)
 	f->func.type = mktyfunc(loc, args, nargs, ret);
 	f->func.env = mkenv();
 
+	bindtype(f->func.env, f->func.type);
 	st = body->block.scope;
 	for (i = 0; i < nargs; i++)
 		putdcl(st, args[i]);
-
-	bindtype(f->func.env, ret);
-	for (i = 0; i < nargs; i++)
-		bindtype(f->func.env, decltype(args[i]));
-
 
 	n = mknode(loc, Nlit);
 	n->lit.littype = Lfunc;

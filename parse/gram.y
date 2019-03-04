@@ -34,6 +34,7 @@ static Node *mkpseudodecl(Srcloc, Type *);
 static void installucons(Stab *, Type *);
 static void setattrs(Node *, char **attrs, size_t);
 static void setwith(Type *, Traitspec **, size_t);
+static void mergeenv(Node *, Node *);
 static void mangleautocall(Node *, char *);
 static void addinit(Node *, Node *);
 static void setuname(Type *);
@@ -424,8 +425,12 @@ pkgtydef: attrs tydef {
 	}
 	;
 
-declbody: declcore Tasn expr {$$ = $1; $1->decl.init = $3;}
-	| declcore
+declbody: declcore
+	| declcore Tasn expr {
+		$$ = $1;
+		$1->decl.init = $3;
+		mergeenv($1, $3);
+	}
 	;
 
 declcore: name {$$ = mkdecl($1->loc, $1, mktyvar($1->loc));}
@@ -471,6 +476,7 @@ implbody
 		d->decl.init = $4;
 		d->decl.isconst = 1;
 		d->decl.isglobl = 1;
+		mergeenv(d, $4);
 		lappend(&$$.nl, &$$.nn, d);
 	}
 	;
@@ -1024,7 +1030,6 @@ forstmt : Tfor optexprln loopcond optexprln block
 	| Tfor expr Tcolon exprln block
 	{$$ = mkiterstmt($1->loc, $2, $4, $5);}
 	| Tfor decl Tendln loopcond optexprln block {
-		//Node *init;
 		if ($2.nn != 1)
 			lfatal($1->loc, "only one declaration is allowed in for loop");
 		$$ = mkloopstmt($1->loc, $2.nl[0], $4, $5, $6);
@@ -1234,6 +1239,21 @@ setwith(Type *ty, Traitspec **ts, size_t nts)
 		}
 	}
 }
+
+static void
+mergeenv(Node *dcl, Node *init)
+{
+	Node *f;
+
+	if (init->type != Nexpr || exprop(init) != Olit)
+		return;
+	if (init->lit.littype != Lfunc)
+		return;
+	f = init->lit.fnval;
+	f->func.env = dcl->decl.env;
+	bindtype(dcl->decl.env, f->func.type);
+}
+
 
 static void
 installucons(Stab *st, Type *t)
