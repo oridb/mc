@@ -1176,9 +1176,12 @@ mkpseudodecl(Srcloc l, Type *t)
 {
 	static int nextpseudoid;
 	char buf[128];
+	Node *d;
 
 	bprintf(buf, 128, ".pdecl%d", nextpseudoid++);
-	return mkdecl(l, mkname(l, buf), t);
+	d = mkdecl(l, mkname(l, buf), t);
+	d->decl.env = NULL;
+	return d;
 }
 
 static void
