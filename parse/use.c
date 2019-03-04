@@ -1019,6 +1019,8 @@ foundextlib:
 			for (i = 0; i < tr->nproto; i++) {
 				putdcl(s, tr->proto[i]);
 				tr->proto[i]->decl.ishidden = tr->ishidden;
+				if (tr->proto[i]->decl.env)
+					tr->proto[i]->decl.env->super = tr->env;
 			}
 			break;
 		case 'T':

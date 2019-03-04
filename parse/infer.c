@@ -339,14 +339,8 @@ typeerror(Type *a, Type *b, Node *ctx, char *msg)
 static void
 setsuperenv(Tyenv *e, Tyenv *super)
 {
-	Tyenv *te;
-
-	/* verify that we don't accidentally create loops */
-	if (!e)
-		return;
-	for (te = super; te; te = te->super)
-		assert(te->super != e);
-	e->super = super;
+	if (e)
+		e->super = super;
 }
 
 /* Set a scope's enclosing scope up correctly. */
@@ -1333,7 +1327,7 @@ unifyparams(Node *ctx, Type *a, Type *b)
 static Type *
 initvar(Node *n, Node *s)
 {
-	Type *t, *param;
+	Type *t, *u, *param;
 	Tysubst *subst;
 
 	if (s->decl.ishidden && !allowhidden)
@@ -1348,12 +1342,13 @@ initvar(Node *n, Node *s)
 			substput(subst, s->decl.trait->param, param);
 		pushenv(s->decl.env);
 		t = tysubstmap(subst, tf(s->decl.type), s->decl.type);
-		popenv(s->decl.env);
 		if (s->decl.trait && !param) {
-			param = substget(subst, s->decl.trait->param);
+			u = tf(s->decl.trait->param);
+			param = substget(subst, u);
 			if (!param)
 				fatal(n, "ambiguous trait decl %s", ctxstr(s));
 		}
+		popenv(s->decl.env);
 		substfree(subst);
 	} else {
 		t = s->decl.type;
@@ -2045,8 +2040,7 @@ inferstab(Stab *s)
 		if (!t)
 			fatal(k[i], "undefined type %s", namestr(k[i]));
 		t = tysearch(t);
-		if (t->env)
-			setsuperenv(t->env, curenv());
+		setsuperenv(t->env, curenv());
 		pushenv(t->env);
 		tyresolve(t);
 		popenv(t->env);

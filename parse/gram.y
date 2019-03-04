@@ -1250,10 +1250,11 @@ mergeenv(Node *dcl, Node *init)
 
 	if (init->type != Nexpr || exprop(init) != Olit)
 		return;
-	if (init->lit.littype != Lfunc)
+	if (init->expr.args[0]->lit.littype != Lfunc)
 		return;
-	f = init->lit.fnval;
-	f->func.env = dcl->decl.env;
+	f = init->expr.args[0]->lit.fnval;
+	if (!dcl->decl.env)
+		dcl->decl.env = mkenv();
 	bindtype(dcl->decl.env, f->func.type);
 }
 

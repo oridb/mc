@@ -719,7 +719,7 @@ bindtype(Tyenv *env, Type *t)
 {
 	Bitset *visited;
 
-	if (!t)
+	if (!t || !env)
 		return;
 	visited = mkbs();
 	bindtype_rec(env, t, visited);
