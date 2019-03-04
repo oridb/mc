@@ -192,6 +192,7 @@ struct Trait {
 	size_t naux;
 	Node **proto;	/* type must implement these prototypes */
 	size_t nproto;
+	Tyenv *env;
 
 	char isproto;	/* is it a prototype (for exporting purposes) */
 	char ishidden;	/* should user code be able to use this? */
