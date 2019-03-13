@@ -427,7 +427,7 @@ const readdelim = {f, delim, mode
 		for i = f.rstart; i <= f.rend - delim.len; i++
 			for j = 0; j < delim.len; j++
 				if f.rbuf[i + j] != delim[j]
-					goto notfound
+					goto nextiter
 				;;
 			;;
 			/* If we found it, return that information */
@@ -438,12 +438,11 @@ const readdelim = {f, delim, mode
 			;;
 			f.rstart += delim.len
 			-> `std.Ok ret
-:notfound
-			f.rstart = i
+:nextiter
 		;;
 		match mode
 		| `Drop:	f.rstart = i
-		| `Read:	readinto(f, &ret, f.rend - f.rstart)
+		| `Read:	readinto(f, &ret, i - f.rstart)
 		| `Keep:
 		;;
 	;;
