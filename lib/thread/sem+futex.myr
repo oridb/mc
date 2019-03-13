@@ -4,6 +4,10 @@ use "atomic"
 use "futex"
 
 pkg thread =
+	/*
+	We want to be able to read both members in the same atomic operation
+	and this implementation assumes `ftxtag` is 32 bits.
+	*/
 	type sem = struct
 		_val      : ftxtag
 		_nwaiters : uint32
@@ -48,9 +52,20 @@ const semtrywait = {s
 }
 
 const sempost = {s
-	std.assert((xadd(&s._val, 1) : uint32) != ~0x0, "error: semaphore overflowed\n")
+	/*
+	It's possible for the semaphore to be deallocated at any time after
+	`_val` is incremented so we must not dereference `s` a second time. We
+	work around this by also reading the value of `_nwaiters` during the
+	atomic fetch and add.
+	*/
+	var state = xadd((s : uint64#), 1)
+	std.assert((state : uint32) != ~0x0, "error: semaphore overflowed\n")
 
-	if xget(&s._nwaiters) > 0
+	if (state >> 32) > 0
+		/*
+		However, it is both legal and expected to pass a potentially
+		invalid address to `ftxwake`.
+		*/
 		ftxwake(&s._val)
 	;;
 }

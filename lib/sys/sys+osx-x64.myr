@@ -835,8 +835,8 @@ pkg sys =
 		-> int)
 
 	/* ulock */
-	const ulock_wait	: (op : ulockop, uaddr : uint64#, val : uint64, timeout : uint32 -> int)
-	const ulock_wake	: (op : ulockop, uaddr : uint64#, wakeval : uint64 -> int)
+	const ulock_wait	: (op : ulockop, uaddr : void#, val : uint64, timeout : uint32 -> int)
+	const ulock_wake	: (op : ulockop, uaddr : void#, wakeval : uint64 -> int)
 
 	extern const cstring : (str : byte[:] -> byte#)
 	/* filled by start code */
@@ -1110,7 +1110,7 @@ const ulock_wait = {op, uaddr, val, timeout
 }
 
 const ulock_wake = {op, uaddr, wakeval
-	-> (syscall(Sysulock_wake, a(op), uaddr, a(wakeval)) : int)
+	-> (syscall(Sysulock_wake, a(op), uaddr, wakeval) : int)
 }
 
 const waitstatus = {st

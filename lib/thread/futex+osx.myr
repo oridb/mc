@@ -4,8 +4,13 @@ use sys
 use "atomic"
 use "common"
 
+/*
+The `ulock_` functions are undocumented but the relevant source can be found at
+https://github.com/apple/darwin-xnu/blob/0a798f6738bc1db01281fc08ae024145e84df927/bsd/kern/sys_ulock.c
+*/
 pkg thread =
-	type ftxtag = uint64
+	/* `UL_COMPARE_AND_WAIT` only uses 32 bits of the value (line 407) */
+	type ftxtag = uint32
 	impl atomic ftxtag
 
 	const ftxwait : (uaddr : ftxtag#, val : ftxtag, tmout : std.time -> sys.errno)
@@ -13,16 +18,12 @@ pkg thread =
 	const ftxwakeall : (uaddr : ftxtag# -> void)
 ;;
 
-/*
- * The ulock_ functions are undocumented but the relevant source can be found at
- * https://github.com/apple/darwin-xnu/blob/0a798f6738bc1db01281fc08ae024145e84df927/bsd/kern/sys_ulock.c
- */
 const ftxwait = {uaddr, val, tmout
 	var rc
 
 	if tmout < 0
 		while (rc = (sys.ulock_wait(sys.Ulockcompareandwait,
-				(uaddr : uint64#),
+				(uaddr : void#),
 				(val : uint64),
 				0) : sys.errno)) == sys.Eintr
 		;;
@@ -34,7 +35,7 @@ const ftxwait = {uaddr, val, tmout
 		t = (tmout : uint32)
 
 		while (rc = (sys.ulock_wait(sys.Ulockcompareandwait,
-				(uaddr : uint64#),
+				(uaddr : void#),
 				(val : uint64),
 				t) : sys.errno)) == sys.Eintr
 			var now
@@ -69,17 +70,17 @@ const ftxwait = {uaddr, val, tmout
 }
 
 const ftxwake = {uaddr
-	sys.ulock_wake(sys.Ulockcompareandwait, (uaddr : uint64#), 0)
+	sys.ulock_wake(sys.Ulockcompareandwait, (uaddr : void#), 0)
 }
 
 const ftxwakeall = {uaddr
-	sys.ulock_wake(sys.Ulockcompareandwait | sys.Ulockulfwakeall, (uaddr : uint64#), 0)
+	sys.ulock_wake(sys.Ulockcompareandwait | sys.Ulockulfwakeall, (uaddr : void#), 0)
 }
 
 impl atomic ftxtag =
-	xget = {p; -> (xget64((p : uint64#)) : ftxtag)}
-	xset = {p, v; xset64((p : uint64#), (v : uint64))}
-	xadd = {p, v; -> (xadd64((p : uint64#), (v : uint64)) : ftxtag)}
-	xcas = {p, old, new; -> (xcas64((p : uint64#), (old : uint64), (new : uint64)) : ftxtag)}
-	xchg = {p, v; -> (xchg64((p : uint64#), (v : uint64)) : ftxtag)}
+	xget = {p; -> (xget32((p : uint32#)) : ftxtag)}
+	xset = {p, v; xset32((p : uint32#), (v : uint32))}
+	xadd = {p, v; -> (xadd32((p : uint32#), (v : uint32)) : ftxtag)}
+	xcas = {p, old, new; -> (xcas32((p : uint32#), (old : uint32), (new : uint32)) : ftxtag)}
+	xchg = {p, v; -> (xchg32((p : uint32#), (v : uint32)) : ftxtag)}
 ;;
