@@ -395,10 +395,8 @@ const unwrapc = {cc, v
 
 const readdelim = {f, delim, mode
 	var ret, i, j
-	var pr
 
 	ret = [][:]
-	pr = false
 	if delim.len == 0
 		-> `std.Ok ret
 	;;
@@ -421,7 +419,9 @@ const readdelim = {f, delim, mode
 			| 0:	-> `std.Err `Eof
 			| _:	-> `std.Ok ret
 			;;
-		| `std.Err e:	-> `std.Err e
+		| `std.Err e:
+			std.slfree(ret)
+			-> `std.Err e
 		| `std.Ok _:	/* nothing: scan the buffer */
 		;;
 		for i = f.rstart; i <= f.rend - delim.len; i++
