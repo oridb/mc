@@ -1102,15 +1102,15 @@ const uname	= {buf;
 const sysctl = {mib, old, oldsz, new, newsz
 	/* all args already passed through a() or ar  ptrs */
 	-> (syscall(Sys__sysctl, \
-		(mib : int#), a(mib.len), old, oldsz, new, newsz) : int)
+		(mib : int#), a(mib.len), a(old), a(oldsz), a(new), a(newsz)) : int)
 }
 
 const ulock_wait = {op, uaddr, val, timeout
-	-> (syscall(Sysulock_wait, a(op), uaddr, val, a(timeout)) : int)
+	-> (syscall(Sysulock_wait, a(op), a(uaddr), a(val), a(timeout)) : int)
 }
 
 const ulock_wake = {op, uaddr, wakeval
-	-> (syscall(Sysulock_wake, a(op), uaddr, wakeval) : int)
+	-> (syscall(Sysulock_wake, a(op), a(uaddr), a(wakeval)) : int)
 }
 
 const waitstatus = {st
