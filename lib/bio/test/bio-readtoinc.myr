@@ -1,0 +1,30 @@
+use std
+use bio
+
+const main = {
+	var f
+
+	f = std.try(bio.open("data/bio-readtoinc", bio.Rd))
+
+	readtoinc(f, ";")
+	readtoinc(f, "]]]")
+	readtoinc(f, "\n")
+	readtoinc(f, ",")
+	readtoinc(f, ",")
+	readtoinc(f, ",")
+	readtoinc(f, "the end")
+
+	bio.close(f)
+}
+
+const readtoinc = {f, d
+	match bio.readtoinc(f, d)
+	| `std.Ok s:
+		std.put("{}\n", s)
+		std.slfree(s)
+	| `std.Err `bio.Eof:
+		std.put("eof\n")
+	| `std.Err _:
+		std.put("err\n")
+	;;
+}

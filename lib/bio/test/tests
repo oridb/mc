@@ -24,6 +24,7 @@ B bio-create    F	tmpout/test-create
 B bio-read	C
 B bio-write	F	tmpout/test-write
 B bio-delim	C
+B bio-readtoinc	C
 B bio-endianwr	F	tmpout/test-endianwr
 B bio-endianrd	C
 B bio-unitwr	F	tmpout/test-unitwr
