@@ -14,16 +14,16 @@ TEXT thread$xgetp+0(SB),1,$0
 
 // set variants
 TEXT thread$xset8+0(SB),1,$0
-	MOVB	SI, (DI)
+	LOCK; XCHGB	(DI), SI
 	RET
 TEXT thread$xset32+0(SB),1,$0
-	MOVL	SI, (DI)
+	LOCK; XCHGL	(DI), SI
 	RET
 TEXT thread$xset64+0(SB),1,$0
-	MOVQ	SI, (DI)
+	LOCK; XCHGQ	(DI), SI
 	RET
 TEXT thread$xsetp+0(SB),1,$0
-	MOVQ	SI, (DI)
+	LOCK; XCHGQ	(DI), SI
 	RET
 
 // add variants

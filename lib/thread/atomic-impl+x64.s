@@ -27,13 +27,13 @@ _thread$xgetp:
 .globl _thread$xset8
 thread$xset8:
 _thread$xset8:
-	movl	%esi, (%rdi)
+	lock xchgb	(%rdi), %sil
 	ret
 .globl thread$xset32
 .globl _thread$xset32
 thread$xset32:
 _thread$xset32:
-	movl	%esi, (%rdi)
+	lock xchgl	(%rdi), %esi
 	ret
 .globl thread$xset64
 .globl thread$xsetp
@@ -43,7 +43,7 @@ thread$xset64:
 thread$xsetp:
 _thread$xset64:
 _thread$xsetp:
-	movq	%rsi, (%rdi)
+	lock xchgq	(%rdi), %rsi
 	ret
 
 # add variants
