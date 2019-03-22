@@ -14,6 +14,14 @@ bin delim {test} =
         lib @/lib/bio:bio
 ;;
 
+bin term {test} =
+	bio-readterm.myr
+
+        lib @/lib/std:std
+        lib @/lib/sys:sys
+        lib @/lib/bio:bio
+;;
+
 bin endianrd {test} =
 	bio-endianrd.myr
 	lib @/lib/std:std

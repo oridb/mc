@@ -28,7 +28,7 @@ pkg bio =
 	/* delimited read; returns freshly allocated buffer. */
 	const readln	: (f : file#	-> std.result(byte[:], err))
 	const readto	: (f : file#, delim : byte[:]	-> std.result(byte[:], err))
-	const readtoinc	: (f: file#, delim : byte[:]	-> std.result(byte[:], err))
+	const readterm	: (f : file#, delim : byte[:]	-> std.result(byte[:], err))
 	const skipto	: (f : file#, delim : byte[:]	-> bool)
 	const skipspace	: (f : file# -> bool)
 
@@ -329,7 +329,7 @@ const readto = {f, delim
 }
 
 /* same as readto, but includes the delimiter if it was found */
-const readtoinc = {f, delim
+const readterm = {f, delim
 	-> readdelim(f, delim, `Keep)
 }
 

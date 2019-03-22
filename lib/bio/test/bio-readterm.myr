@@ -1,0 +1,30 @@
+use std
+use bio
+
+const main = {
+	var f
+
+	f = std.try(bio.open("data/bio-readterm", bio.Rd))
+
+	readterm(f, ";")
+	readterm(f, "]]]")
+	readterm(f, "\n")
+	readterm(f, ",")
+	readterm(f, ",")
+	readterm(f, ",")
+	readterm(f, "the end")
+
+	bio.close(f)
+}
+
+const readterm = {f, d
+	match bio.readterm(f, d)
+	| `std.Ok s:
+		std.put("{}\n", s)
+		std.slfree(s)
+	| `std.Err `bio.Eof:
+		std.put("eof\n")
+	| `std.Err _:
+		std.put("err\n")
+	;;
+}
