@@ -498,6 +498,7 @@ int traitfmt(char *buf, size_t len, Type *t);
 char *traitstr(Type *t);
 
 /* node creation */
+void initfile(File *f, char *path);
 Node *mknode(Srcloc l, Ntype nt);
 Node *mkuse(Srcloc l, char *use, int islocal);
 Node *mksliceexpr(Srcloc l, Node *sl, Node *base, Node *off);

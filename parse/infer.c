@@ -554,6 +554,7 @@ tyresolve(Type *t)
 			bsput(t->trneed, tr->uid);
 			if (nameeq(t->spec[i]->trait[j], traittab[Tciter]->name))
 				t->seqaux = t->spec[i]->aux;
+			t->spec[i]->trait[j] = tr->name;
 		}
 	}
 
@@ -2800,7 +2801,7 @@ specialize(void)
 			assert(tr->nproto == 2);
 			ty = exprtype(n->iterstmt.seq);
 			if (ty->type == Typaram)
-				continue;
+				goto enditer;
 
 			it = itertype(n->iterstmt.seq, mktype(n->loc, Tybool));
 			d = specializedcl(tr->proto[0], ty, it, &name);
@@ -2812,6 +2813,7 @@ specialize(void)
 		} else {
 			die("unknown node for specialization\n");
 		}
+enditer:
 		popstab();
 	}
 }
@@ -3027,6 +3029,7 @@ infer(void)
 	for (i = 0; i < file.nstmts; i++)
 		typesub(file.stmts[i], 0);
 	popstab();
+
 	specialize();
 	verify();
 }

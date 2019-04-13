@@ -209,7 +209,6 @@ int
 main(int argc, char **argv)
 {
 	char buf[1024];
-	Stab *globls;
 	Optctx ctx;
 	size_t i;
 
@@ -282,12 +281,8 @@ main(int argc, char **argv)
 		else
 			localincpath = dirname(ctx.args[i]);
 
-		globls = mkstab(0);
-		tyinit(globls);
+		initfile(&file, ctx.args[0]);
 		tokinit(ctx.args[i]);
-		file.ns = mkht(strhash, streq);
-		file.globls = globls;
-		lappend(&file.files, &file.nfiles, ctx.args[i]);
 		yyparse();
 
 		/* before we do anything to the parse */

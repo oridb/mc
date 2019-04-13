@@ -566,10 +566,8 @@ specializedcl(Node *gnode, Type *param, Type *to, Node **name)
 	if (debugopt['S'])
 		printf("specializing [%d]%s => %s\n", g->loc.line,
 			namestr(g->decl.name), namestr(n));
-	/* namespaced names need to be looked up in their correct
-	 * context. */
-	if (n->name.ns)
-		pushstab(st);
+	/* namespaced names need to be looked up in context. */
+	pushstab(st);
 
 	/* specialize */
 	tsmap = mksubst();
@@ -585,9 +583,8 @@ specializedcl(Node *gnode, Type *param, Type *to, Node **name)
 	fixup(d);
 
 	lappend(&file.stmts, &file.nstmts, d);
-	if (d->decl.name->name.ns)
-		popstab();
 	substfree(tsmap);
+	popstab();
 	return d;
 }
 

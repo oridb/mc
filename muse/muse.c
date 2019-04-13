@@ -100,11 +100,8 @@ main(int argc, char **argv)
 	}
 
 	/* read and parse the file */
-	file.ns = mkht(strhash, streq);
-	file.globls = mkstab(0);
-	lappend(&file.files, &file.nfiles, "internal");
+	initfile(&file, outfile);
 	updatens(file.globls, pkgname);
-	tyinit(file.globls);
 	for (i = 0; i < ctx.nargs; i++)
 		mergeuse(ctx.args[i]);
 	loaduses();

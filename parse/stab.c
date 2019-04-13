@@ -631,6 +631,7 @@ updatens(Stab *st, char *name)
 {
 	void **k;
 	size_t i, nk;
+	Traitdefn *tr;
 	Tydefn *td;
 
 	if (st->name)
@@ -650,6 +651,13 @@ updatens(Stab *st, char *name)
 		td = htget(st->ty, k[i]);
 		if (td->type && (td->type->type == Tyname || td->type->type == Tygeneric))
 			setns(td->type->name, name);
+	}
+	free(k);
+
+	k = htkeys(st->tr, &nk);
+	for (i = 0; i < nk; i++) {
+		tr = htget(st->tr, k[i]);
+		setns(tr->name, name);
 	}
 	free(k);
 

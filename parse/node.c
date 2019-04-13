@@ -30,6 +30,18 @@ lnum(Srcloc l)
 	return l.line;
 }
 
+void
+initfile(File *f, char *name)
+{
+	memset(f, 0, sizeof(*f));
+	f->builtins = mkstab(0);
+	f->globls = mkstab(0);
+	f->globls->super = file.builtins;
+	f->ns = mkht(strhash, streq);
+	lappend(&f->files, &f->nfiles, name);
+	tyinit(f->builtins);
+}
+
 /*
  * Bah, this is going to need to know how to fold things.
  * FIXME: teach it.
