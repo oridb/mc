@@ -127,6 +127,7 @@ B matchnest	P	'abcdef'
 F matchmixed
 F matchoverlap
 B bigliteral	P	34359738368
+B fltabs	P	'42.0'
 B arraylit-ni	E	2
 B arraypack	P	'(1, foo)(2, bar)(3, baz)'
 B arraypass	P	1

@@ -1,0 +1,5 @@
+use std
+
+const main = {
+	std.put("{}\n", std.abs(-42.0))
+}
