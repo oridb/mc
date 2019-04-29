@@ -913,11 +913,13 @@ selexpr(Isel *s, Node *n)
 		break;
 	case Oint2flt:
 		a = selexpr(s, args[0]);
+		a = inr(s ,a);
 		r = locreg(mode(n));
 		g(s, Icvttsi2sd, a, r, NULL);
 		break;
 	case Oflt2int:
 		a = selexpr(s, args[0]);
+		a = inr(s ,a);
 		r = locreg(mode(n));
 		g(s, Icvttsd2si, a, r, NULL);
 		break;

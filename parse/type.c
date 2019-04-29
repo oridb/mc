@@ -412,6 +412,13 @@ istysigned(Type *t)
 }
 
 int
+istyint(Type *t)
+{
+	return istysigned(t) || istyunsigned(t);
+}
+
+
+int
 istyfloat(Type *t)
 {
 	t = tybase(t);

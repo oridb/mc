@@ -2645,6 +2645,7 @@ typesub(Node *n, int noerr)
 {
 	char *name;
 	size_t i;
+	Node *l;
 
 	if (!n)
 		return;
@@ -2703,10 +2704,12 @@ typesub(Node *n, int noerr)
 		if (n->expr.param)
 			n->expr.param = tyfix(n, n->expr.param, 0);
 		typesub(n->expr.idx, noerr);
-		if (exprop(n) == Ocast && exprop(n->expr.args[0]) == Olit &&
-				n->expr.args[0]->expr.args[0]->lit.littype == Lint) {
-			settype(n->expr.args[0], exprtype(n));
-			settype(n->expr.args[0]->expr.args[0], exprtype(n));
+		if (exprop(n) == Ocast && exprop(n->expr.args[0]) == Olit) {
+			l = n->expr.args[0]->expr.args[0];
+			if(l->lit.littype == Lint && istyint(exprtype(n))) {
+				settype(n->expr.args[0], exprtype(n));
+				settype(n->expr.args[0]->expr.args[0], exprtype(n));
+			}
 		}
 		if (exprop(n) == Oauto)
 			adddispspecialization(n, curstab());

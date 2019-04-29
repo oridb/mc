@@ -482,6 +482,7 @@ Ucon *finducon(Type *t, Node *name);
 int isstacktype(Type *t);
 int isenum(Type *t);
 int istysigned(Type *t);
+int istyint(Type *t);
 int istyunsigned(Type *t);
 int istyfloat(Type *t);
 int istyprimitive(Type *t);
