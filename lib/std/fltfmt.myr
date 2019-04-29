@@ -24,7 +24,22 @@ const Fltbias = 127
 const flt64bfmt = {sb, val, mode, precision
 	var isneg, exp, mant
 
+	if isnan(val)
+		sbputs(sb, "NaN")
+		-> void
+	;;
+
 	(isneg, exp, mant) = flt64explode(val)
+
+	if exp > Dblbias
+		if isneg
+			std.sbputs(sb, "-Inf")
+		else
+			std.sbputs(sb, "Inf")
+		;;
+		-> void
+	;;
+
 	exp = max(exp, 1 - Dblbias)
 	dragon4(sb, isneg, mant, exp - 52, Dblbias, mode, precision)
 }
@@ -32,7 +47,22 @@ const flt64bfmt = {sb, val, mode, precision
 const flt32bfmt = {sb, val, mode, precision
 	var isneg, exp, mant
 
+	if isnan(val)
+		sbputs(sb, "NaN")
+		-> void
+	;;
+
 	(isneg, exp, mant) = flt32explode(val)
+
+	if (exp : int64) > Fltbias
+		if isneg
+			std.sbputs(sb, "-Inf")
+		else
+			std.sbputs(sb, "Inf")
+		;;
+		-> void
+	;;
+
 	exp = (max((exp : int64), 1 - Fltbias) : int32)
 	dragon4(sb, isneg, (mant : uint64), (exp - 23 : int64), Fltbias, mode, precision)
 }

@@ -1,0 +1,38 @@
+use std
+use testr
+use math
+
+const main = {
+	math.fptrap(false)
+	testr.run([
+		[.name = "put0", .fn = put0],
+		[.name = "putNaN", .fn = putNaN],
+		[.name = "putInf", .fn = putInf],
+	][:])
+}
+
+const put0 = {c
+        var f : flt32 = 0.0
+        var g : flt64 = 0.0
+	testr.check(c, std.eq(std.fmt("f is {}", f), "f is 0.0"), "0.0 should format to \"0.0\"")
+	testr.check(c, std.eq(std.fmt("g is {}", g), "g is 0.0"), "0.0 should format to \"0.0\"")
+}
+
+const putNaN = {c
+        var f : flt32 = std.flt32nan()
+        var g : flt64 = std.flt64nan()
+        var f2 : flt32 = std.flt32frombits(0x7fc00ab0)
+        var g2 : flt64 = std.flt64frombits(0x7ff800000000abc0)
+	testr.check(c, std.eq(std.fmt("f is {}", f), "f is NaN"), "NaN should format to \"NaN\"")
+	testr.check(c, std.eq(std.fmt("g is {}", g), "g is NaN"), "NaN should format to \"NaN\"")
+	testr.check(c, std.eq(std.fmt("f2 is {}", f2), "f2 is NaN"), "alt NaN should format to \"NaN\"")
+	testr.check(c, std.eq(std.fmt("g2 is {}", g2), "g2 is NaN"), "alt NaN should format to \"NaN\"")
+}
+
+const putInf = {c
+        var f : flt32 = std.flt32inf()
+        var g : flt64 = std.flt64inf()
+	testr.check(c, std.eq(std.fmt("f is {}", f), "f is Inf"), "Inf should format to \"Inf\"")
+	testr.check(c, std.eq(std.fmt("g is {}", g), "g is Inf"), "Inf should format to \"Inf\"")
+}
+
