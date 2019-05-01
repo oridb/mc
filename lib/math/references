@@ -35,6 +35,12 @@ computing exponentials and logarithms”. In: Lecture Notes in Computer
 Science. Springer Berlin Heidelberg, 1996, pp. 165–174. doi:
 10.1007/bfb0024699.
 
+[PEB04]
+J.-A. Piñeiro, M. D. Ercegovac, and J. D. Bruguera. “Algorithm and
+Architecture for Logarithm, Exponential, and Powering Computation”. In:
+IEEE Trans. Comput. 53.9 (Sept. 2004), pp. 1085–1096. issn: 0018-9340.
+doi: 10.1109/TC.2004.53.
+
 [Tan89]
 Ping-Tak Peter Tang. “Table-driven Implementation of the Exponential
 Function in IEEE Floating-point Arithmetic”. In: ACM Trans. Math.
