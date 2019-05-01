@@ -24,6 +24,7 @@ lib math =
 
 	# x^n
 	log-overkill.myr
+	pown-impl.myr
 
 	# x^y
 	powr-impl.myr

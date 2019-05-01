@@ -23,6 +23,9 @@ pkg math =
 		horner_poly : (x : @f, a : @f[:] -> @f)
 		horner_polyu : (x : @f, a : @u[:] -> @f)
 
+		/* pown-impl */
+		pown : (x : @f, n : @i -> @f)
+
 		/* powr-impl */
 		powr : (x : @f, y : @f -> @f)
 
@@ -103,6 +106,8 @@ impl fpmath flt32 =
 	horner_poly = {x, a; -> horner_poly32(x, a)}
 	horner_polyu = {x, a; -> horner_polyu32(x, a)}
 
+	pown = {x, n; -> pown32(x, n)}
+
 	powr = {x, y; -> powr32(x, y)}
 
 	scale2 = {x, m; -> scale232(x, m)}
@@ -139,6 +144,8 @@ impl fpmath flt64 =
 
 	horner_poly = {x, a; -> horner_poly64(x, a)}
 	horner_polyu = {x, a; -> horner_polyu64(x, a)}
+
+	pown = {x, n; -> pown64(x, n)}
 
 	powr = {x, y; -> powr64(x, y)}
 

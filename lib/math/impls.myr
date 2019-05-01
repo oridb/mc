@@ -29,6 +29,9 @@ pkg math =
 	pkglocal extern const horner_polyu32 : (x : flt32, a : uint32[:] -> flt32)
 	pkglocal extern const horner_polyu64 : (x : flt64, a : uint64[:] -> flt64)
 
+	pkglocal extern const pown32 : (x : flt32, n : int32 -> flt32)
+	pkglocal extern const pown64 : (x : flt64, n : int64 -> flt64)
+
 	pkglocal extern const powr32 : (x : flt32, y : flt32 -> flt32)
 	pkglocal extern const powr64 : (x : flt64, y : flt64 -> flt64)
 
