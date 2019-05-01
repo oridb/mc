@@ -38,7 +38,7 @@ use "util"
        l'_{n + 1} = 2 l'_{n} (1 + d_n 2^{-n}) + 2 d_n
 
    The nice thing about this is that we can pick d_n easily based on
-   truncating l'_n to the first fractional digit: [l'_n]. Then
+   comparing l'_n to some easy constants:
 
              { +1  if [l'_n] <= -1/2
        d_n = {  0  if [l'_n] = 0 or 1/2
@@ -46,7 +46,7 @@ use "util"
  */
 pkg math =
 	pkglocal const logoverkill32 : (x : flt32 -> (flt32, flt32))
-	/*pkglocal*/ const logoverkill64 : (x : flt64 -> (flt64, flt64))
+	pkglocal const logoverkill64 : (x : flt64 -> (flt64, flt64))
 ;;
 
 /*
