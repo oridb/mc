@@ -508,8 +508,8 @@ const w64 = {x : flt64, want_sin : bool, want_cos : bool
 	   in the polynomial approximations.
 	 */
 	var delta1, delta2, deltat
-	(delta1, deltat) = fast2sum(-std.flt64frombits(xi), x1)
-	(delta2, _) = fast2sum(deltat, x2)
+	(delta1, deltat) = slow2sum(-std.flt64frombits(xi), x1)
+	(delta2, _) = slow2sum(deltat, x2)
 
 	/*
 	   sin(delta); the degree 2 coefficient is near 0, so delta_2
@@ -528,16 +528,16 @@ const w64 = {x : flt64, want_sin : bool, want_cos : bool
 	var q : flt64[4]
 
 	if (want_sin && !swap_sin_cos) || (want_cos && swap_sin_cos)
-		(q[0], q[1]) = two_by_two(std.flt64frombits(sin_xi), cos_delta)
-		(q[2], q[3]) = two_by_two(std.flt64frombits(cos_xi), sin_delta)
-		std.sort(q[:], fltabscmp)
+		(q[0], q[1]) = two_by_two64(std.flt64frombits(sin_xi), cos_delta)
+		(q[2], q[3]) = two_by_two64(std.flt64frombits(cos_xi), sin_delta)
+		std.sort(q[:], mag_cmp64)
 
 		(sin_ret, sin_ret2) = double_compensated_sum(q[:])
 	;;
 
 	if (want_cos && !swap_sin_cos) || (want_sin && swap_sin_cos)
-		(q[0], q[1]) = two_by_two(std.flt64frombits(cos_xi), cos_delta)
-		(q[2], q[3]) = two_by_two(std.flt64frombits(sin_xi), sin_delta)
+		(q[0], q[1]) = two_by_two64(std.flt64frombits(cos_xi), cos_delta)
+		(q[2], q[3]) = two_by_two64(std.flt64frombits(sin_xi), sin_delta)
 		q[2] = -q[2]
 		q[3] = -q[3]
 
@@ -620,16 +620,16 @@ const trig_reduce = {x : flt64
 	total_N = rn(x1 * std.flt64frombits(two_over_pi))
 	Nf = (-total_N : flt64)
 	(q[0], q[ 4], q[5]) = (x1, x2, x3)
-	(q[1], q[ 3]) = two_by_two(Nf, pi_o_2_0)
-	(q[2], q[ 6]) = two_by_two(Nf, pi_o_2_1)
-	(q[7], q[ 8]) = two_by_two(Nf, pi_o_2_2)
-	(q[9], q[10]) = two_by_two(Nf, pi_o_2_3)
+	(q[1], q[ 3]) = two_by_two64(Nf, pi_o_2_0)
+	(q[2], q[ 6]) = two_by_two64(Nf, pi_o_2_1)
+	(q[7], q[ 8]) = two_by_two64(Nf, pi_o_2_2)
+	(q[9], q[10]) = two_by_two64(Nf, pi_o_2_3)
 
 	/*
 	  Sorting is very slow, but it's only the top five or so
 	  that are in question
 	 */
-	std.sort(q[0:5], fltabscmp)
+	std.sort(q[0:5], mag_cmp64)
 	(x1, x2) = double_compensated_sum(q[:])
 
 	while !(le_22(x1, x2, pi_o_4_0, pi_o_4_1) && le_22(-pi_o_4_0, -pi_o_4_1, x1, x2))
@@ -641,10 +641,10 @@ const trig_reduce = {x : flt64
 		   cancelled by Nf * pi_o_2_0, so line those up.
 		 */
 		(q[0], q[2]) = (x1, x2)
-		(q[1], q[3]) = two_by_two(Nf, pi_o_2_0)
-		(q[4], q[5]) = two_by_two(Nf, pi_o_2_1)
-		(q[6], q[7]) = two_by_two(Nf, pi_o_2_2)
-		(q[8], q[9]) = two_by_two(Nf, pi_o_2_3)
+		(q[1], q[3]) = two_by_two64(Nf, pi_o_2_0)
+		(q[4], q[5]) = two_by_two64(Nf, pi_o_2_1)
+		(q[6], q[7]) = two_by_two64(Nf, pi_o_2_2)
+		(q[8], q[9]) = two_by_two64(Nf, pi_o_2_3)
 		(x1, x2) = double_compensated_sum(q[0:10])
 		total_N += (N % 4)
 	;;
@@ -731,15 +731,15 @@ const huge_reduce_2pi = {x : flt64
 	   since xc is so small.
 	 */
 	var q : flt64[18]
-	(q[ 0], q[ 1]) = two_by_two(xa, a1)
-	(q[ 2], q[ 3]) = two_by_two(xa, a2)
-	(q[ 4], q[ 5]) = two_by_two(xa, a3)
-	(q[ 6], q[ 7]) = two_by_two(xb, b1)
-	(q[ 8], q[ 9]) = two_by_two(xb, b2)
-	(q[10], q[11]) = two_by_two(xb, b3)
-	(q[12], q[13]) = two_by_two(xc, c1)
-	(q[14], q[15]) = two_by_two(xc, c2)
-	(q[16], q[17]) = two_by_two(xc, c3)
+	(q[ 0], q[ 1]) = two_by_two64(xa, a1)
+	(q[ 2], q[ 3]) = two_by_two64(xa, a2)
+	(q[ 4], q[ 5]) = two_by_two64(xa, a3)
+	(q[ 6], q[ 7]) = two_by_two64(xb, b1)
+	(q[ 8], q[ 9]) = two_by_two64(xb, b2)
+	(q[10], q[11]) = two_by_two64(xb, b3)
+	(q[12], q[13]) = two_by_two64(xc, c1)
+	(q[14], q[15]) = two_by_two64(xc, c2)
+	(q[16], q[17]) = two_by_two64(xc, c3)
 
 	-> triple_compensated_sum(q[:])
 }
@@ -762,37 +762,6 @@ const trig_table_approx = {x1 : flt64, C : (uint64, uint64, uint64)[257]
 	;;
 
 	-> (xi, cos_xi, sin_xi)
-}
-
-const triple_compensated_sum = {q : flt64[:]
-	/* TODO: verify, with GAPPA or something, that this is correct. */
-	std.sort(q, fltabscmp)
-	var s1 : flt64, s2 : flt64, s3
-	var t1 : flt64, t2 : flt64, t3 : flt64, t4 : flt64, t5 : flt64, t6
-	s1 = q[0]
-	s2 = 0.0
-	s3 = 0.0
-	for qq : q[1:]
-		(t5, t6) = fast2sum(s3, qq)
-		(t3, t4) = fast2sum(s2, t5)
-		(t1, t2) = fast2sum(s1, t3)
-		s1 = t1
-		(s2, s3) = fast2sum(t2, t4 + t6)
-	;;
-
-	-> (s1, s2, s3)
-}
-
-const fltabscmp = {x : flt64, y : flt64
-	var xb = std.flt64bits(x) & ~(1 << 63)
-	var yb = std.flt64bits(y) & ~(1 << 63)
-	if xb == yb
-		-> `std.Equal
-	elif xb > yb
-		-> `std.Before
-	else
-		-> `std.After
-	;;
 }
 
 /*

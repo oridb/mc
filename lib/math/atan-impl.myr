@@ -427,7 +427,7 @@ const atan264 = {y, x
 		du = 0.0
 	else
 		var t1, t2
-		(t1, t2) = two_by_two(u, x)
+		(t1, t2) = two_by_two64(u, x)
 		du = ((y - t1) - t2)/x
 	;;
 

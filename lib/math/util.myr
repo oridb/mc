@@ -16,10 +16,19 @@ pkg math =
 	const need_round_away : (h : uint64, l : uint64, bitpos_last : int64 -> bool)
 
 	/* Multiply x * y to z1 + z2 */
-	const two_by_two : (x : flt64, y : flt64 -> (flt64, flt64))
+	const two_by_two64 : (x : flt64, y : flt64 -> (flt64, flt64))
+	const two_by_two32 : (x : flt32, y : flt32 -> (flt32, flt32))
+
+	/* Compare by magnitude */
+	const mag_cmp32 : (f : flt32, g : flt32 -> std.order)
+	const mag_cmp64 : (f : flt64, g : flt64 -> std.order)
 
 	/* Return (s, t) such that s + t = a + b, with s = rn(a + b). */
 	generic fast2sum : (x : @f, y : @f -> (@f, @f)) :: floating, numeric @f
+	generic slow2sum : (x : @f, y : @f -> (@f, @f)) :: floating, numeric @f
+
+	/* return (a, b, c), a decent sum for q */
+	const triple_compensated_sum : (q : flt64[:] -> (flt64, flt64, flt64))
 
 	/* Rounds a + b (as flt64s) to a flt32. */
 	const round_down : (a : flt64, b : flt64 -> flt32)
@@ -188,7 +197,7 @@ const need_round_away = {h : uint64, l : uint64, bitpos_last : int64
 /*
    Perform high-prec multiplication: x * y = z1 + z2.
  */
-const two_by_two = {x : flt64, y : flt64
+const two_by_two64 = {x : flt64, y : flt64
 	var xh : flt64 = std.flt64frombits(std.flt64bits(x) & twentysix_bits_mask)
 	var xl : flt64 = x - xh
 	var yh : flt64 = std.flt64frombits(std.flt64bits(y) & twentysix_bits_mask)
@@ -213,13 +222,13 @@ const two_by_two = {x : flt64, y : flt64
 	(s, c) = fast2sum(s, a2)
 
 	/* a3 */
-	(yy, u) = fast2sum(c, a3)
+	(yy, u) = slow2sum(c, a3)
 	(t, v) = fast2sum(s, yy)
 	z = u + v
 	(s, c) = fast2sum(t, z)
 
 	/* a4 */
-	(yy, u) = fast2sum(c, a4)
+	(yy, u) = slow2sum(c, a4)
 	(t, v) = fast2sum(s, yy)
 	z = u + v
 	(s, c) = fast2sum(t, z)
@@ -227,12 +236,69 @@ const two_by_two = {x : flt64, y : flt64
 	-> (s, c)
 }
 
+/*
+   The same, for flt32s
+ */
+const two_by_two32 = {x : flt32, y : flt32
+	var xL : flt64 = (x : flt64)
+	var yL : flt64 = (y : flt64)
+	var zL : flt64 = xL * yL
+	var s  : flt32 = (zL : flt32)
+	var sL : flt64 = (s : flt64)
+	var cL : flt64 = zL - sL
+	var c  : flt32 = (cL : flt32)
+
+	-> (s, c)
+}
+
+const mag_cmp32 = {f : flt32, g : flt32
+	var u = std.flt32bits(f) & ~(1 << 31)
+	var v = std.flt32bits(g) & ~(1 << 31)
+	-> std.numcmp(v, u)
+}
+
+const mag_cmp64 = {f : flt64, g : flt64
+	var u = std.flt64bits(f) & ~(1 << 63)
+	var v = std.flt64bits(g) & ~(1 << 63)
+	-> std.numcmp(v, u)
+}
+
 /* Return (s, t) such that s + t = a + b, with s = rn(a + b). */
+generic slow2sum = {a : @f, b : @f :: floating, numeric @f
+	var s = a + b
+	var aa = s - b
+	var bb = s - aa
+	var da = a - aa
+	var db = b - bb
+	var t = da + db
+	-> (s, t)
+}
+
+/* Return (s, t) such that s + t = a + b, with s = rn(a + b), when you KNOW |a| > |b|. */
 generic fast2sum = {a : @f, b : @f :: floating, numeric @f
 	var s = a + b
 	var z = s - a
 	var t = b - z
 	-> (s, t)
+}
+
+const triple_compensated_sum = {q : flt64[:]
+	/* TODO: verify, with GAPPA or something, that this is correct. */
+	std.sort(q, mag_cmp64)
+	var s1 : flt64, s2 : flt64, s3
+	var t1 : flt64, t2 : flt64, t3 : flt64, t4 : flt64, t5 : flt64, t6
+	s1 = q[0]
+	s2 = 0.0
+	s3 = 0.0
+	for qq : q[1:]
+		(t5, t6) = slow2sum(s3, qq)
+		(t3, t4) = slow2sum(s2, t5)
+		(t1, t2) = slow2sum(s1, t3)
+		s1 = t1
+		(s2, s3) = slow2sum(t2, t4 + t6)
+	;;
+
+	-> (s1, s2, s3)
 }
 
 /*

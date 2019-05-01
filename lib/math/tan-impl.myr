@@ -430,8 +430,8 @@ const tanorcot = {x : flt64, want_tan : bool
 	;;
 
 	var delta1, delta2, deltat
-	(delta1, deltat) = fast2sum(-std.flt64frombits(xi), x1)
-	(delta2, _) = fast2sum(deltat, x2)
+	(delta1, deltat) = slow2sum(-std.flt64frombits(xi), x1)
+	(delta2, _) = slow2sum(deltat, x2)
 	var p1, p2
 
 	/*
@@ -459,7 +459,7 @@ const tanorcot = {x : flt64, want_tan : bool
 		var u1 = std.flt64frombits(std.flt64bits(u0) & split_mask)
 		var u2 = u0 - u1
 
-		(ret1, ret2) = fast2sum(u0 - u0*u0*g, u0*((1.0 - u1*f) - u2*f))
+		(ret1, ret2) = slow2sum(u0 - u0*u0*g, u0*((1.0 - u1*f) - u2*f))
 		goto have_result
 	;;
 
@@ -499,12 +499,12 @@ const ptan = {x1 : flt64, x2 : flt64
 	var s : flt64 = x1 * x1
 	var p : flt64 = horner_polyu(s, tan_coeff[:])
 	var r1, r2
-	(r1, r2) = two_by_two(p, x1)
+	(r1, r2) = two_by_two64(p, x1)
 	-> fast2sum(r1, r2 + x2)
 }
 
 const pcot = {x1 : flt64, x2 : flt64
 	var s : flt64 = x1 * x1
 	var p : flt64 = horner_polyu(s, cot_coeff[:])
-	-> fast2sum(p/x1, std.flt64frombits(0x3fd5555555555555)*x2)
+	-> slow2sum(p/x1, std.flt64frombits(0x3fd5555555555555)*x2)
 }

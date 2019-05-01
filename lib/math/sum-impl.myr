@@ -1,5 +1,7 @@
 use std
 
+use "util"
+
 /* For references, see [Mul+10] section 6.3 */
 pkg math =
 	pkglocal const kahan_sum32 : (l : flt32[:] -> flt32)
@@ -67,12 +69,6 @@ pkglocal const priest_sum32 = {l : flt32[:]
 	-> s
 }
 
-const mag_cmp32 = {f : flt32, g : flt32
-	var u = std.flt32bits(f) & ~(1 << 31)
-	var v = std.flt32bits(g) & ~(1 << 31)
-	-> std.numcmp(v, u)
-}
-
 pkglocal const priest_sum64 = {l : flt64[:]
 	var l2 = std.sldup(l)
 	std.sort(l, mag_cmp64)
@@ -80,12 +76,6 @@ pkglocal const priest_sum64 = {l : flt64[:]
 	var s, c
 	(s, c) = double_compensated_sum(l2)
 	-> s
-}
-
-const mag_cmp64 = {f : flt64, g : flt64
-	var u = std.flt64bits(f) & ~(1 << 63)
-	var v = std.flt64bits(g) & ~(1 << 63)
-	-> std.numcmp(v, u)
 }
 
 generic double_compensated_sum = {l : @f[:] :: numeric,floating @f
