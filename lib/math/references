@@ -29,6 +29,12 @@ Boston: Birkhäuser, 2010. isbn: 9780817647049.
 J. M. Muller. Elementary functions : algorithms and implementation.
 Third edition. New York: Birkhäuser, 2016. isbn: 9781489979810.
 
+[NM96]
+Asger Munk Nielsen and Jean-Michel Muller. “On-line algorithms for
+computing exponentials and logarithms”. In: Lecture Notes in Computer
+Science. Springer Berlin Heidelberg, 1996, pp. 165–174. doi:
+10.1007/bfb0024699.
+
 [Tan89]
 Ping-Tak Peter Tang. “Table-driven Implementation of the Exponential
 Function in IEEE Floating-point Arithmetic”. In: ACM Trans. Math.
