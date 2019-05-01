@@ -22,7 +22,7 @@ lib math =
 	# polynomial evaluation methods
 	poly-impl.myr
 
-	# x^n
+	# x^n and x^1/q
 	log-overkill.myr
 	pown-impl.myr
 

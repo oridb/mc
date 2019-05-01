@@ -25,6 +25,7 @@ pkg math =
 
 		/* pown-impl */
 		pown : (x : @f, n : @i -> @f)
+		rootn : (x : @f, n : @u -> @f)
 
 		/* powr-impl */
 		powr : (x : @f, y : @f -> @f)
@@ -107,6 +108,7 @@ impl fpmath flt32 =
 	horner_polyu = {x, a; -> horner_polyu32(x, a)}
 
 	pown = {x, n; -> pown32(x, n)}
+	rootn = {x, q; -> rootn32(x, q)}
 
 	powr = {x, y; -> powr32(x, y)}
 
@@ -146,6 +148,7 @@ impl fpmath flt64 =
 	horner_polyu = {x, a; -> horner_polyu64(x, a)}
 
 	pown = {x, n; -> pown64(x, n)}
+	rootn = {x, q; -> rootn64(x, q)}
 
 	powr = {x, y; -> powr64(x, y)}
 

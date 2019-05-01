@@ -35,6 +35,9 @@ pkg math =
 	pkglocal extern const powr32 : (x : flt32, y : flt32 -> flt32)
 	pkglocal extern const powr64 : (x : flt64, y : flt64 -> flt64)
 
+	pkglocal extern const rootn32 : (x : flt32, q : uint32 -> flt32)
+	pkglocal extern const rootn64 : (x : flt64, q : uint64 -> flt64)
+
 	pkglocal extern const scale232 : (x : flt32, m : int32 -> flt32)
 	pkglocal extern const scale264 : (x : flt64, m : int64 -> flt64)
 
