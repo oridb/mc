@@ -1,0 +1,29 @@
+use std
+use math
+use testr
+
+const main = {
+	math.fptrap(false)
+	testr.run([
+		[.name="slow2sum-01", .fn = slow2sum01],
+	][:])
+}
+
+const slow2sum01 = {c
+	var inputs : (uint64, uint64, uint64, uint64)[:] = [
+		(0xbc29505efc367580, 0xc000000000000000, 0xc000000000000000, 0xbc29505efc367580)
+	][:]
+
+	for (x, y, s, t) : inputs
+		var xf : flt64 = std.flt64frombits(x)
+		var yf : flt64 = std.flt64frombits(y)
+		var r1, r2
+		(r1, r2) = math.slow2sum(xf, yf)
+		var r1u = std.flt64bits(r1)
+		var r2u = std.flt64bits(r2)
+		testr.check(c, r1u == s && r2u == t,
+			"2sum(0x{b=16,w=16,p=0}, 0x{b=16,w=16,p=0) is (0x{b=16,w=16,p=0}, 0x{b=16,w=16,p=0}), should be (0x{b=16,w=16,p=0}, 0x{b=16,w=16,p=0})",
+			x, y, r1u, r2u, s, t)
+
+	;;
+}
