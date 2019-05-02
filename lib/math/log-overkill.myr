@@ -252,13 +252,19 @@ const get_C_plus = {k : int64
 		var t1, t2, t3
 		(t1, t2, t3) = C_plus[k]
 		-> (std.flt64frombits(t1), std.flt64frombits(t2), std.flt64frombits(t3))
-	elif k < 54
+	elif k < 36
 		var t1 = std.flt64assem(false, -k, 1 << 53)             /* x [ = 2^-k ] */
 		var t2 = std.flt64assem(true, -2*k - 1, 1 << 53)        /* -x^2 / 2     */
 		var t3 = std.flt64assem(false, -3*k - 2, one_third_sig) /*  x^3 / 3     */
 		var t4 = std.flt64assem(true, -4*k - 2, 1 << 53)        /* -x^4 / 4     */
 		var t5 = std.flt64assem(false, -5*k - 3, one_fifth_sig) /*  x^5 / 5     */
-		-> triple_compensated_sum([t1, t2, t3, t4, t5][:])
+		-> fast_fivesum(t1, t2, t3, t4, t5)
+	elif k < 54
+		var t1 = std.flt64assem(false, -k, 1 << 53)             /* x [ = 2^-k ] */
+		var t2 = std.flt64assem(true, -2*k - 1, 1 << 53)        /* -x^2 / 2     */
+		var t3 = std.flt64assem(false, -3*k - 2, one_third_sig) /*  x^3 / 3     */
+		var t4 = std.flt64assem(true, -4*k - 2, 1 << 53)        /* -x^4 / 4     */
+		-> fast_foursum(t1, t2, t3, t4)
 	else
 		var t1 = std.flt64assem(false, -k, 1 << 53)             /* x [ = 2^-k ] */
 		var t2 = std.flt64assem(true, -2*k - 1, 1 << 53)        /* -x^2 / 2     */
@@ -274,13 +280,19 @@ const get_C_minus = {k : int64
 		var t1, t2, t3
 		(t1, t2, t3) = C_minus[k]
 		-> (std.flt64frombits(t1), std.flt64frombits(t2), std.flt64frombits(t3))
-	elif k < 54
+	elif k < 36
 		var t1 = std.flt64assem(true, -k, 1 << 53)              /* x [ = 2^-k ] */
 		var t2 = std.flt64assem(true, -2*k - 1, 1 << 53)        /* -x^2 / 2     */
 		var t3 = std.flt64assem(true, -3*k - 2, one_third_sig)  /*  x^3 / 3     */
 		var t4 = std.flt64assem(true, -4*k - 2, 1 << 53)        /* -x^4 / 4     */
 		var t5 = std.flt64assem(true, -5*k - 3, one_fifth_sig)  /*  x^5 / 5     */
-		-> triple_compensated_sum([t1, t2, t3, t4, t5][:])
+		-> fast_fivesum(t1, t2, t3, t4, t5)
+	elif k < 54
+		var t1 = std.flt64assem(true, -k, 1 << 53)              /* x [ = 2^-k ] */
+		var t2 = std.flt64assem(true, -2*k - 1, 1 << 53)        /* -x^2 / 2     */
+		var t3 = std.flt64assem(true, -3*k - 2, one_third_sig)  /*  x^3 / 3     */
+		var t4 = std.flt64assem(true, -4*k - 2, 1 << 53)        /* -x^4 / 4     */
+		-> fast_foursum(t1, t2, t3, t4)
 	else
 		var t1 = std.flt64assem(true, -k, 1 << 53)              /* x [ = 2^-k ] */
 		var t2 = std.flt64assem(true, -2*k - 1, 1 << 53)        /* -x^2 / 2     */
@@ -299,4 +311,33 @@ const foursum = {a1 : flt64, a2 : flt64, a3 : flt64, x : flt64
 	(s1, s2) = slow2sum(t2, s3)
 
 	-> (t1, s1, s2 + s4)
+}
+
+/*
+   Specifically for use in get_C_{plus,minus}, in which we know the
+   magnitude orders of the ais.
+ */
+const fast_foursum = {a1 : flt64, a2 : flt64, a3 : flt64, a4 : flt64
+	(a3, a4) = fast2sum(a3, a4)
+	(a2, a3) = fast2sum(a2, a3)
+	(a1, a2) = fast2sum(a1, a2)
+
+	(a3, a4) = slow2sum(a3, a4)
+	(a2, a3) = slow2sum(a2, a3)
+
+	-> (a1, a2, a3 + a4)
+}
+
+const fast_fivesum = {a1 : flt64, a2 : flt64, a3 : flt64, a4 : flt64, a5 : flt64
+	(a4, a5) = fast2sum(a4, a5)
+	(a3, a4) = fast2sum(a3, a4)
+	(a2, a3) = fast2sum(a2, a3)
+	(a1, a2) = fast2sum(a1, a2)
+
+	(a4, a5) = slow2sum(a4, a5)
+	(a3, a4) = slow2sum(a3, a4)
+	(a2, a3) = slow2sum(a2, a3)
+
+	(a4, a5) = slow2sum(a4, a5)
+	-> (a1, a2, a3 + a4)
 }
