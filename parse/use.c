@@ -1026,10 +1026,8 @@ foundextlib:
 		case 'T':
 			tid = rdint(f);
 			ty = tyunpickle(f);
-			if (!ty->ishidden) {
-				tagtype(ty);
+			if (!ty->ishidden)
 				ty->vis = vis;
-			}
 			htput(tidmap, itop(tid), ty);
 			/* fix up types */
 			if (ty->type == Tyname || ty->type == Tygeneric) {
