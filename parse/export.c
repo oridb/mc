@@ -15,8 +15,8 @@
 #include "util.h"
 #include "parse.h"
 
-static void tagtype(Stab *st, Type *t, int ingeneric, int hidelocal);
 static void tagnode(Stab *st, Node *n, int ingeneric, int hidelocal);
+static void tagtype(Stab *st, Type *t, int ingeneric, int hidelocal);
 
 void
 tagreflect(Type *t)
@@ -71,9 +71,10 @@ tagtype(Stab *st, Type *t, int ingeneric, int hidelocal)
 {
 	size_t i;
 
-	if (!t || t->vis != Visintern)
+	if (!t || t->tagged)
 		return;
-	t->vis = Vishidden;
+	t->tagged = 1;
+	t->vis = (t->vis == Visintern) ? Vishidden : t->vis;
 	tagtype(st, t->seqaux, ingeneric, hidelocal);
 	for (i = 0; i < t->nsub; i++)
 		tagtype(st, t->sub[i], ingeneric, hidelocal);

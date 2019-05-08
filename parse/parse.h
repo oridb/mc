@@ -169,6 +169,7 @@ struct Type {
 	char isemitted;		/* Tyname: whether this type has been emitted */
 	char resolved;		/* Have we resolved the subtypes? Prevents infinite recursion. */
 	char fixed;		/* Have we fixed the subtypes? Prevents infinite recursion. */
+	char tagged;		/* Have we tagged the type for export? */
 
 };
 
