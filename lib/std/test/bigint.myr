@@ -27,7 +27,7 @@ const main = {
 }
 
 const smoketest = {ct
-	var a, b, c, d, e
+	var a, b, c, d, e, f
 	var buf : byte[64], n
 
 	/* a few combined ops */
@@ -36,6 +36,7 @@ const smoketest = {ct
 	c = std.mkbigint(7919)
 	d = std.mkbigint(113051)
 	e = std.mkbigint(11)
+	f = std.mkbigint((4294967296 : int64))
 
 	std.bigmul(a, b)
 	std.bigmul(a, b)
@@ -50,6 +51,9 @@ const smoketest = {ct
 
 	n = std.bigbfmt(buf[:], a, 0)
 	testr.check(ct, std.eq(buf[:n], "517347321949036993306"), "simple smoke test failed")
+
+	n = std.bigbfmt(buf[:], f, 0)
+	testr.check(ct, std.eq(buf[:n], "4294967296"), "smoke test failed for 2^32 case")
 }
 
 const matchsmall = {c
