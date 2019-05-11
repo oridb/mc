@@ -1,8 +1,6 @@
 /*
   Attempts to find a minimax polynomial of degree n for f via Remez
-  algorithm. The Remez algorithm appears to be slightly shot, but
-  the initial step of approximating by Chebyshev nodes works, and
-  is usually good enough.
+  algorithm.
  */
 
 { chebyshev_node(a, b, k, n) = my(p, m, c);
@@ -62,19 +60,21 @@
                 xnext = a + k*(b - a)/gran;
                 ynext = err(f, n, v, xnext);
 
-                if(ycur > yprev && ycur > ynext, listput(l, [xcur, abs(ycur)]),);
+                if(ycur > yprev && ycur > ynext, listput(l, [xcur, ycur]),);
         );
 
         vecsort(l, 2);
         if(length(l) < n + 2 || l[1][2] < 2^(-2000), return("q"),);
         len = length(l);
 
-        lnext = listcreate();
+        X = vector(n + 2);
+
         for(j = 1, n + 2,
+                lnext = listcreate();
                 thisa = l[j][1] - (b-a)/gran;
                 thisb = l[j][1] + (b-a)/gran;
 
-                xprev = thisa - (thisb - a)/gran;
+                xprev = thisa - (thisb - thisa)/gran;
                 yprev = err(f, n, v, xprev);
 
                 xcur = thisa;
@@ -93,14 +93,15 @@
                         xnext = thisa + k*(thisb - thisa)/gran;
                         ynext = abs(f(xnext) - p_eval(n, v, xnext));
 
-                        if(ycur > yprev && ycur > ynext, listput(lnext, xcur),);
+                        if(ycur > yprev && ycur > ynext, listput(lnext, [xcur, ycur]),);
                 );
+
+                vecsort(lnext, 2);
+                if(length(lnext) < 1, return("q"),);
+                X[j] = lnext[1][1];
+                listkill(lnext);
         );
-        vecsort(lnext, cmp);
         listkill(l);
-        X = vector(n + 2);
-        for (k = 1, min(n + 2, length(lnext)), X[k] = lnext[k]);
-        listkill(lnext);
         vecsort(X);
         return(X);
 }
@@ -158,7 +159,7 @@ print("\n");
 print("Minmimaxing x*cot(x), degree 8, on [-Pi/(4 * 256), Pi/(4 * 256)]:");
 find_minimax(cotx, 8, -Pi/1024, Pi/1024)
 print("\n");
-print("(Take the first v, and remember to divide by x)\n");
+print("(Remember to divide by x)\n");
 print("\n");
 print("---\n");
 print("\n");
