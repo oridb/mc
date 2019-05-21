@@ -23,7 +23,9 @@ lib math =
 	poly-impl.myr
 
 	# x^n and x^1/q
+	log-overkill+posixy-x64-sse2.s
 	log-overkill.myr
+	pown-impl+posixy-x64-sse2.s
 	pown-impl.myr
 
 	# x^y

@@ -136,6 +136,10 @@
         return(1/tanoverx(x));
 }
 
+{ log2xoverx(x) =
+        return(if(x == 1,1,log(x)/(x-1))/log(2));
+}
+
 print("\n");
 print("Minimaxing sin(x) / x, degree 6, on [-Pi/(4 * 256), Pi/(4 * 256)]:");
 find_minimax(sinoverx, 6, -Pi/1024, Pi/1024)
@@ -175,5 +179,11 @@ find_minimax(atanxoverx, 12, 0, 1/16)
 print("\n");
 print("(You'll need to add a 0x0 at the beginning to make a degree 13...\n");
 print("\n");
+print("---\n");
+print("Minmimaxing log_2(x) / (x - 1), degree 7, on [1, 2^(1/8)]:");
+find_minimax(log2xoverx, 7, 1, 2^(1/8))
+print("\n");
+/* print("(You'll need to add a 0x0 at the beginning to make a degree 13...\n"); */
+/* print("\n"); */
 print("---\n");
 print("Remember that there's that extra, ugly E term at the end of the vector that you want to lop off.\n");

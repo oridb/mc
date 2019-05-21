@@ -109,7 +109,7 @@ generic powngen = {x : @f, n : @i, d : fltdesc(@f, @u, @i) :: numeric,floating,s
 		/* Propagate NaN (why doesn't this come first? Ask IEEE.) */
 		-> d.frombits(d.nan)
 	elif (x == 0.0 || x == -0.0)
-		if n < 0 && (n % 2 == 1) && xn
+		if n < 0 && (n % 2 == -1) && xn
 			/* (+/- 0)^n = +/- oo */
 			-> d.frombits(d.neginf)
 		elif n < 0
