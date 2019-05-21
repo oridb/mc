@@ -181,9 +181,6 @@ const sbfmtv = {sb, fmt, ap -> size
 		match (state, (b : char))
 		/* raw bytes */
 		| (`Copy, '{'):
-			if nfmt > nvarargs
-				die("too few values for fmt\n")
-			;;
 			if (fmt[i] : char) == '{'
 				b = fmt[i++]
 				sbputb(sb, ('{' : byte))
@@ -217,8 +214,11 @@ const sbfmtv = {sb, fmt, ap -> size
 			if startp != nbuf
 				param[nparam++] = (buf[startp:nbuf], "")
 			;;
-			fmtval(sb, vatype(ap), ap, param[:nparam])
 			nfmt++
+			if nfmt > nvarargs
+				die("too few values for fmt\n")
+			;;
+			fmtval(sb, vatype(ap), ap, param[:nparam])
 		| (`ParamOpt, '\\'):
 			buf[nbuf++] = fmt[i++]
 		| (`ParamOpt, chr):
