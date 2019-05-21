@@ -142,7 +142,10 @@ const log02 = {c
 		(0x3f974b5311aeae57, 0xc00e4420e231d7f0, 0xbc9d614ed9b94484),
 		(0x3fe28aed659dab73, 0xbfe1760d162fed7e, 0xbc64a0ff30250148),
 		(0x403273d9892e62d3, 0x40075255633e0533, 0xbc91eb9834046d7b),
+
+		/* This one catches naive catastrophic cancellation */
 		(0x3fee1d239d2061d7, 0xbfaf1ad3961ab8ba, 0xbbc9bff82ae3fde7),
+
 		(0x3fbc0666ebc60265, 0xc001b257198142d0, 0xbca1cf93360a27f6),
 		(0x3f53267a24ceab6a, 0xc01b01c8ad09c3c1, 0xbca0d85af74df975),
 		(0x3fd2005446cb268e, 0xbff44b879f2ec561, 0x3c66e8eff64f40a1),

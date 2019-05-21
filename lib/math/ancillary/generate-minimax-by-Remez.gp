@@ -140,6 +140,10 @@
         return(if(x == 1,1,log(x)/(x-1))/log(2));
 }
 
+{ log1p(x) =
+        return(log(1 + x));
+}
+
 print("\n");
 print("Minimaxing sin(x) / x, degree 6, on [-Pi/(4 * 256), Pi/(4 * 256)]:");
 find_minimax(sinoverx, 6, -Pi/1024, Pi/1024)
@@ -182,6 +186,12 @@ print("\n");
 print("---\n");
 print("Minmimaxing log_2(x) / (x - 1), degree 7, on [1, 2^(1/8)]:");
 find_minimax(log2xoverx, 7, 1, 2^(1/8))
+print("\n");
+/* print("(You'll need to add a 0x0 at the beginning to make a degree 13...\n"); */
+/* print("\n"); */
+print("---\n");
+print("Minmimaxing log(1 + x), degree 5, on [0, 2^-20) [it's just going to give the Taylor expansion]:");
+find_minimax(log1p, 5, 0, 2^-20)
 print("\n");
 /* print("(You'll need to add a 0x0 at the beginning to make a degree 13...\n"); */
 /* print("\n"); */
