@@ -109,7 +109,7 @@ generic mkbigint = {v : @a :: integral,numeric @a
 	;;
 	val = (v : uint64)
 	slpush(&a.dig, (val : uint32))
-	if val > Base
+	if val >= Base
 		slpush(&a.dig, (val/Base : uint32))
 	;;
 	-> trim(a)
