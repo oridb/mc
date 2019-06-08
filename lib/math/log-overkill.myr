@@ -203,8 +203,6 @@ const logoverkill64 = {x : flt64
 	var tn, te, ts
 	var t1, t2
 
-var DEBUG=(xb==0x3fe26c01523f67a8)
-
 	/* Special cases */
 	if std.isnan(x)
 		-> (std.flt64frombits(0x7ff8000000000000), std.flt64frombits(0x7ff8000000000000))
@@ -217,10 +215,6 @@ var DEBUG=(xb==0x3fe26c01523f67a8)
 		/* log(-anything) is NaN */
 		-> (std.flt64frombits(0x7ff8000000000000), std.flt64frombits(0x7ff8000000000000))
 	;;
-
-if DEBUG; std.put("x = flt64fromuint64(0x{w=16,p=0,x});\n", xb) ;;
-if DEBUG; std.put("xe = {};\n", xe) ;;
-if DEBUG; std.put("xs = flt64fromuint64(0x{w=16,p=0,x});\n", std.flt64bits(std.flt64assem(false, 0, xs))) ;;
 
 	var shift = 0
 	var then_invert = false
@@ -239,30 +233,17 @@ if DEBUG; std.put("xs = flt64fromuint64(0x{w=16,p=0,x});\n", std.flt64bits(std.f
 		   by cancelling. But here, we compute 1/x, proceed (with exponent 0), and
 		   flip all the signs at the end.
 		 */
-if DEBUG; std.put("/* inversion case */\n") ;;
 		xe = 0
-if DEBUG; std.put("xe = {};\n", xe) ;;
 		var xinv_hi = 1.0 / x
 		var xinv_lo = fma64(-1.0 * xinv_hi, x, 1.0) / x
-if DEBUG; std.put("xinv_hi = flt64fromuint64(0x{w=16,p=0,x});\n", std.flt64bits(xinv_hi)) ;;
-if DEBUG; std.put("xinv_lo = flt64fromuint64(0x{w=16,p=0,x});\n", std.flt64bits(xinv_lo)) ;;
 		(tn, te, ts) = std.flt64explode(xinv_hi)
 		shift = ((47 >= te) : uint64) * ((47 - te) : uint64) + ((47 < te) : uint64) * 64
-if DEBUG; std.put("shift = {};\n", shift) ;;
-if DEBUG; std.put("ts = 0b{w=64,p=0,b=2};\n", ts) ;;
 		j1 = (ts >> shift) & 0x1f
-if DEBUG; std.put("j1 = {};\n", j1) ;;
 		var F1m1 = scale2((j1 : flt64), -5)
 		F1 = 1.0 + F1m1
-if DEBUG; std.put("F1 = flt64fromuint64(0x{w=16,p=0,x});\n", std.flt64bits(F1)) ;;
 		var f1_hi, f1_lo
 		(f1_hi, f1_lo) = fast2sum(xinv_hi - F1, xinv_lo)
-if DEBUG; std.put("f1    = 0.0;\n") ;;
-if DEBUG; std.put("f1_hi = flt64fromuint64(0x{w=16,p=0,x});\n", std.flt64bits(f1_hi)) ;;
-if DEBUG; std.put("f1_lo = flt64fromuint64(0x{w=16,p=0,x});\n", std.flt64bits(f1_lo)) ;;
 		(logF1_hi, logF1_lo, F1_inv_hi, F1_inv_lo) = C1[j1]
-if DEBUG; std.put("logF1_hi = flt64fromuint64(0x{w=16,p=0,x});\n", logF1_hi) ;;
-if DEBUG; std.put("logF1_lo = flt64fromuint64(0x{w=16,p=0,x});\n", logF1_lo) ;;
 
 		/* Compute 1 + f1/F1 */
 		(fF1_hi, fF1_lo) = two_by_two64(f1_hi, std.flt64frombits(F1_inv_hi))
@@ -271,48 +252,28 @@ if DEBUG; std.put("logF1_lo = flt64fromuint64(0x{w=16,p=0,x});\n", logF1_lo) ;;
 		(fF1_hi, fF1_lo) = fast2sum(fF1_hi, fF1_lo + (t1 + t2))
 		then_invert = true
 	else
-if DEBUG; std.put("/* normal case */\n") ;;
 		j1 = (xs & 0x000f800000000000) >> 47
-if DEBUG; std.put("j1 = {};\n", j1) ;;
 		F1 = std.flt64assem(false, 0, xs & 0xffff800000000000)
-if DEBUG; std.put("F1 = flt64fromuint64(0x{w=16,p=0,x});\n", std.flt64bits(F1)) ;;
 		f1 = xsf - F1
-if DEBUG; std.put("f1     = flt64fromuint64(0x{w=16,p=0,x});\n", std.flt64bits(f1)) ;;
-if DEBUG; std.put("f1_hi = 0.0;\n") ;;
-if DEBUG; std.put("f1_lo = 0.0;\n") ;;
 		(logF1_hi, logF1_lo, F1_inv_hi, F1_inv_lo) = C1[j1]
-if DEBUG; std.put("logF1_hi = flt64fromuint64(0x{w=16,p=0,x});\n", logF1_hi) ;;
-if DEBUG; std.put("logF1_lo = flt64fromuint64(0x{w=16,p=0,x});\n", logF1_lo) ;;
-if DEBUG; std.put("F1_inv_hi = flt64fromuint64(0x{w=16,p=0,x});\n", F1_inv_hi) ;;
-if DEBUG; std.put("F1_inv_lo = flt64fromuint64(0x{w=16,p=0,x});\n", F1_inv_lo) ;;
 
 		/* Compute 1 + f1/F1 */
 		(fF1_hi, fF1_lo) = two_by_two64(f1, std.flt64frombits(F1_inv_hi))
 		(fF1_lo, t1) = slow2sum(fF1_lo, f1 * std.flt64frombits(F1_inv_lo))
 		(fF1_hi, fF1_lo) = fast2sum(fF1_hi, fF1_lo)
 		fF1_lo += t1
-if DEBUG; std.put("fF1_hi = flt64fromuint64(0x{w=16,p=0,x});\n", std.flt64bits(fF1_hi)) ;;
-if DEBUG; std.put("fF1_lo = flt64fromuint64(0x{w=16,p=0,x});\n", std.flt64bits(fF1_lo)) ;;
 	;;
 
 	/* F2 */
 	(tn, te, ts) = std.flt64explode(fF1_hi)
-if DEBUG; std.put("te = {};\n", te) ;;
-if DEBUG; std.put("ts = 0b{w=62,p=0,b=2};\n", ts) ;;
 	shift = ((42 >= te) : uint64) * ((42 - te) : uint64) + ((42 < te) : uint64) * 64
 	var j2 = (ts >> shift) & 0x1f
-if DEBUG; std.put("j2 = {};\n", j2) ;;
 	var F2m1 = scale2((j2 : flt64), -10)
 	var F2 = 1.0 + F2m1
-if DEBUG; std.put("F2 = flt64fromuint64(0x{w=16,p=0,x});\n", std.flt64bits(F2)) ;;
 	var f2_hi, f2_lo
 	(f2_hi, f2_lo) = fast2sum(fF1_hi - F2m1, fF1_lo)
-if DEBUG; std.put("f2_hi = flt64fromuint64(0x{w=16,p=0,x});\n", std.flt64bits(f2_hi)) ;;
-if DEBUG; std.put("f2_lo = flt64fromuint64(0x{w=16,p=0,x});\n", std.flt64bits(f2_lo)) ;;
 	var logF2_hi, logF2_lo, F2_inv_hi, F2_inv_lo
 	(logF2_hi, logF2_lo, F2_inv_hi, F2_inv_lo) = C2[j2]
-if DEBUG; std.put("logF2_hi = flt64fromuint64(0x{w=16,p=0,x});\n", logF2_hi) ;;
-if DEBUG; std.put("logF2_lo = flt64fromuint64(0x{w=16,p=0,x});\n", logF2_lo) ;;
 
 	/* Compute 1 + f2/F2 */
 	var fF2_hi, fF2_lo
@@ -320,8 +281,6 @@ if DEBUG; std.put("logF2_lo = flt64fromuint64(0x{w=16,p=0,x});\n", logF2_lo) ;;
 	(fF2_lo, t1) = slow2sum(fF2_lo, f2_lo * std.flt64frombits(F2_inv_hi))
 	(fF2_lo, t2) = slow2sum(fF2_lo, f2_hi * std.flt64frombits(F2_inv_lo))
 	(fF2_hi, fF2_lo) = fast2sum(fF2_hi, fF2_lo + (t1 + t2))
-if DEBUG; std.put("fF2_hi = flt64fromuint64(0x{w=16,p=0,x});\n", std.flt64bits(fF2_hi)) ;;
-if DEBUG; std.put("fF2_lo = flt64fromuint64(0x{w=16,p=0,x});\n", std.flt64bits(fF2_lo)) ;;
 
 	/* F3 (just like F2) */
 	(tn, te, ts) = std.flt64explode(fF2_hi)
@@ -329,15 +288,10 @@ if DEBUG; std.put("fF2_lo = flt64fromuint64(0x{w=16,p=0,x});\n", std.flt64bits(f
 	var j3 = (ts >> shift) & 0x1f
 	var F3m1 = scale2((j3 : flt64), -15)
 	var F3 = 1.0 + F3m1
-if DEBUG; std.put("F3 = flt64fromuint64(0x{w=16,p=0,x});\n", std.flt64bits(F3)) ;;
 	var f3_hi, f3_lo
 	(f3_hi, f3_lo) = fast2sum(fF2_hi - F3m1, fF2_lo)
-if DEBUG; std.put("f3_hi = flt64fromuint64(0x{w=16,p=0,x});\n", std.flt64bits(f3_hi)) ;;
-if DEBUG; std.put("f3_lo = flt64fromuint64(0x{w=16,p=0,x});\n", std.flt64bits(f3_lo)) ;;
 	var logF3_hi, logF3_lo, F3_inv_hi, F3_inv_lo
 	(logF3_hi, logF3_lo, F3_inv_hi, F3_inv_lo) = C3[j3]
-if DEBUG; std.put("logF3_hi = flt64fromuint64(0x{w=16,p=0,x});\n", logF3_hi) ;;
-if DEBUG; std.put("logF3_lo = flt64fromuint64(0x{w=16,p=0,x});\n", logF3_lo) ;;
 
 	/* Compute 1 + f3/F3 */
 	var fF3_hi, fF3_lo
@@ -345,8 +299,6 @@ if DEBUG; std.put("logF3_lo = flt64fromuint64(0x{w=16,p=0,x});\n", logF3_lo) ;;
 	(fF3_lo, t1) = slow2sum(fF3_lo, f3_lo * std.flt64frombits(F3_inv_hi))
 	(fF3_lo, t2) = slow2sum(fF3_lo, f3_hi * std.flt64frombits(F3_inv_lo))
 	(fF3_hi, fF3_lo) = fast2sum(fF3_hi, fF3_lo + (t1 + t2))
-if DEBUG; std.put("fF3_hi = flt64fromuint64(0x{w=16,p=0,x});\n", std.flt64bits(fF3_hi)) ;;
-if DEBUG; std.put("fF3_lo = flt64fromuint64(0x{w=16,p=0,x});\n", std.flt64bits(fF3_lo)) ;;
 
 	/* F4 (just like F2) */
 	(tn, te, ts) = std.flt64explode(fF3_hi)
@@ -354,15 +306,10 @@ if DEBUG; std.put("fF3_lo = flt64fromuint64(0x{w=16,p=0,x});\n", std.flt64bits(f
 	var j4 = (ts >> shift) & 0x1f
 	var F4m1 = scale2((j4 : flt64), -20)
 	var F4 = 1.0 + F4m1
-if DEBUG; std.put("F4 = flt64fromuint64(0x{w=16,p=0,x});\n", std.flt64bits(F4)) ;;
 	var f4_hi, f4_lo
 	(f4_hi, f4_lo) = fast2sum(fF3_hi - F4m1, fF3_lo)
-if DEBUG; std.put("f4_hi = flt64fromuint64(0x{w=16,p=0,x});\n", std.flt64bits(f4_hi)) ;;
-if DEBUG; std.put("f4_lo = flt64fromuint64(0x{w=16,p=0,x});\n", std.flt64bits(f4_lo)) ;;
 	var logF4_hi, logF4_lo, F4_inv_hi, F4_inv_lo
 	(logF4_hi, logF4_lo, F4_inv_hi, F4_inv_lo) = C4[j4]
-if DEBUG; std.put("logF4_hi = flt64fromuint64(0x{w=16,p=0,x});\n", logF4_hi) ;;
-if DEBUG; std.put("logF4_lo = flt64fromuint64(0x{w=16,p=0,x});\n", logF4_lo) ;;
 
 	/* Compute 1 + f4/F4 */
 	var fF4_hi, fF4_lo
@@ -370,8 +317,6 @@ if DEBUG; std.put("logF4_lo = flt64fromuint64(0x{w=16,p=0,x});\n", logF4_lo) ;;
 	(fF4_lo, t1) = slow2sum(fF4_lo, f4_lo * std.flt64frombits(F4_inv_hi))
 	(fF4_lo, t2) = slow2sum(fF4_lo, f4_hi * std.flt64frombits(F4_inv_lo))
 	(fF4_hi, fF4_lo) = fast2sum(fF4_hi, fF4_lo + (t1 + t2))
-if DEBUG; std.put("fF4_hi = flt64fromuint64(0x{w=16,p=0,x});\n", std.flt64bits(fF4_hi)) ;;
-if DEBUG; std.put("fF4_lo = flt64fromuint64(0x{w=16,p=0,x});\n", std.flt64bits(fF4_lo)) ;;
 
 	/*
 	   L = log(1 + f4/F4); we'd like to use horner_polyu, but since we have
@@ -409,8 +354,6 @@ if DEBUG; std.put("fF4_lo = flt64fromuint64(0x{w=16,p=0,x});\n", std.flt64bits(f
 	L_lo += t2
 	/* r = r · x */
 	(L_hi, L_lo) = hl_mult(L_hi, L_lo, fF4_hi, fF4_lo)
-if DEBUG; std.put("L_hi = flt64fromuint64(0x{w=16,p=0,x});\n", std.flt64bits(L_hi)) ;;
-if DEBUG; std.put("L_lo = flt64fromuint64(0x{w=16,p=0,x});\n", std.flt64bits(L_lo)) ;;
 
 	/*
 	   Finally, compute log(F1) + log(F2) + log(F3) + log(F4) + L. We may
@@ -428,22 +371,16 @@ if DEBUG; std.put("L_lo = flt64fromuint64(0x{w=16,p=0,x});\n", std.flt64bits(L_l
 	(lsig_hi, lsig_lo) = hl_add(std.flt64frombits(logF3_hi), std.flt64frombits(logF3_lo), lsig_hi, lsig_lo + (t1 + t2))
 	(lsig_hi, lsig_lo) = hl_add(std.flt64frombits(logF2_hi), std.flt64frombits(logF2_lo), lsig_hi, lsig_lo)
 	(lsig_hi, lsig_lo) = hl_add(std.flt64frombits(logF1_hi), std.flt64frombits(logF1_lo), lsig_hi, lsig_lo)
-if DEBUG; std.put("lsig_hi = flt64fromuint64(0x{w=16,p=0,x});\n", std.flt64bits(lsig_hi)) ;;
-if DEBUG; std.put("lsig_lo = flt64fromuint64(0x{w=16,p=0,x});\n", std.flt64bits(lsig_lo)) ;;
 
 	/* Oh yeah, and we need xe * log(2) */
 	var xel2_hi, xel2_lo, lx_hi, lx_lo
 	(xel2_hi, xel2_lo) = hl_mult((xe : flt64), 0.0, std.flt64frombits(0x3fe62e42fefa39ef), std.flt64frombits(0x3c7abc9e3b39803f))
-if DEBUG; std.put("xel2_hi = flt64fromuint64(0x{w=16,p=0,x});\n", std.flt64bits(xel2_hi)) ;;
-if DEBUG; std.put("xel2_lo = flt64fromuint64(0x{w=16,p=0,x});\n", std.flt64bits(xel2_lo)) ;;
 
 
 	(t1, t2) = slow2sum(xel2_lo, lsig_lo)
 	(lx_lo, t1) = slow2sum(lsig_hi, t1)
 	(lx_hi, lx_lo) = slow2sum(xel2_hi, lx_lo)
 	(lx_hi, lx_lo) = slow2sum(lx_hi, lx_lo + (t1 + t2))
-if DEBUG; std.put("lx_hi = flt64fromuint64(0x{w=16,p=0,x});\n", std.flt64bits(lx_hi)) ;;
-if DEBUG; std.put("lx_lo = flt64fromuint64(0x{w=16,p=0,x});\n", std.flt64bits(lx_lo)) ;;
 
 	if then_invert
 		-> (-1.0 * lx_hi, -1.0 * lx_lo)
