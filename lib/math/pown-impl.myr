@@ -38,6 +38,8 @@ type fltdesc(@f, @u, @i) = struct
 	floor : (x : @f -> @f)
 	log_overkill : (x : @f -> (@f, @f))
 	precision : @i
+	nosgn_mask : @u
+	implicit_bit : @u
 	emin : @i
 	emax : @i
 	imax : @i
@@ -62,6 +64,8 @@ const desc32 : fltdesc(flt32, uint32, int32) =  [
 	.floor = floor32,
 	.log_overkill = logoverkill32,
 	.precision = 24,
+	.nosgn_mask = 0x7fffffff,
+	.implicit_bit = 23,
 	.emin = -126,
 	.emax = 127,
 	.imax = 2147483647, /* For detecting overflow in final exponent */
@@ -86,6 +90,8 @@ const desc64 : fltdesc(flt64, uint64, int64) =  [
 	.floor = floor64,
 	.log_overkill = logoverkill64,
 	.precision = 53,
+	.nosgn_mask = 0x7fffffffffffffff,
+	.implicit_bit = 52,
 	.emin = -1022,
 	.emax = 1023,
 	.imax = 9223372036854775807,
@@ -181,6 +187,9 @@ generic powngen = {x : @f, n : @i, d : fltdesc(@f, @u, @i) :: numeric,floating,s
 		   But first: do some rough calculations: if we can show n*log(xs) has the
 		   same sign as n*e, and n*e would cause overflow, then we might as well
 		   return right now.
+
+		   This also takes care of subnormals very nicely, so we don't have to do
+		   any special handling to reconstitute xs "right", as we do in rootn.
 		 */
 		var exp_rough_estimate = n * xe
 		if n > 0 && (exp_rough_estimate > d.emax + 1 || (exp_rough_estimate / n != xe))
@@ -286,12 +295,52 @@ generic rootngen = {x : @f, q : @u, d : fltdesc(@f, @u, @i) :: numeric,floating,
 	elif q == 1
 		/* Anything^1/1 is itself */
 		-> x
+	elif xe < d.emin
+		/*
+		   Subnormals are actually a problem. If we naively reconstitute xs, it
+		   will be wildly wrong and won't match up with the exponent. So let's
+		   pretend we have unbounded exponent range. We know the loop terminates
+		   because we covered the +/-0.0 case above.
+		 */
+		xe++
+		var check = 1 << d.implicit_bit
+		while xs & check == 0
+			xs <<= 1
+			xe--
+		;;
 	;;
 
 	/* As in pown */
 	var ult_sgn = 1.0
 	if xn && (q % 2 == 1)
 		ult_sgn = -1.0
+	;;
+
+	/*
+	   If we're looking at (1 + 2^-h)^1/q, and the answer will be 1 + e, with
+	   (1 + e)^q = 1 + 2^-h, then for q and h large enough, e might be below
+	   the representable range. Specifically,
+
+	     (1 + e)^q ≅ 1 + qe + (q choose 2)e^2 + ...
+
+	  So (using single-precision as the example)
+
+	    (1 + 2^-23)^q ≅ 1 + q 2^-23 + (absolutely tiny terms)
+
+	  And anything in [1, 1 + q 2^-24) will just truncate to 1.0 when
+	  calculated.
+	 */
+	if xe == 0
+		var cutoff = scale2(qf, -1 * d.precision - 1) + 1.0
+		if (xb & d.nosgn_mask) < d.tobits(cutoff)
+			-> 1.0
+		;;
+	elif xe == -1
+		/* Something similar for (1 - e)^q */
+		var cutoff = 1.0 - scale2(qf, -1 * d.precision - 1)
+		if (xb & d.nosgn_mask) > d.tobits(cutoff)
+			-> 1.0
+		;;
 	;;
 
 	/* Similar to pown. Let e/q = E + psi, with E an integer.
@@ -307,14 +356,13 @@ generic rootngen = {x : @f, q : @u, d : fltdesc(@f, @u, @i) :: numeric,floating,
 	 */
 
 	/* Calculate 1/q in very high precision */
-	var r1 = 1.0 / qf
-	var r2 = -math.fma(r1, qf, -1.0) / qf
+	var qinv_hi = 1.0 / qf
+	var qinv_lo = -math.fma(qinv_hi, qf, -1.0) / qf
 	var ln_xs_hi, ln_xs_lo
 	(ln_xs_hi, ln_xs_lo) = d.log_overkill(d.assem(false, 0, xs))
-	var ls1 : @f[12]
-	(ls1[0], ls1[1]) = d.two_by_two(ln_xs_hi, r1)
-	(ls1[2], ls1[3]) = d.two_by_two(ln_xs_hi, r2)
-	(ls1[4], ls1[5]) = d.two_by_two(ln_xs_lo, r1)
+
+	var G1, G2
+	(G1, G2) = d.split_mul(ln_xs_hi, ln_xs_lo, qinv_hi, qinv_lo)
 
 	var E : @i
 	if q > std.abs(xe)
@@ -328,15 +376,20 @@ generic rootngen = {x : @f, q : @u, d : fltdesc(@f, @u, @i) :: numeric,floating,
 	var psi_lo = -math.fma(psi_hi, qf, -(qpsi : @f)) / qf
 	var log2_hi, log2_lo
 	(log2_hi, log2_lo) = d.C[128]
-	(ls1[ 6], ls1[ 7]) = d.two_by_two(psi_hi, d.frombits(log2_hi))
-	(ls1[ 8], ls1[ 9]) = d.two_by_two(psi_hi, d.frombits(log2_lo))
-	(ls1[10], ls1[11]) = d.two_by_two(psi_lo, d.frombits(log2_hi))
+	var H1, H2
+	(H1, H2) = d.split_mul(psi_hi, psi_lo, d.frombits(log2_hi), d.frombits(log2_lo))
 
-	var G1, G2
-	(G1, G2) = double_compensated_sum(ls1[0:12])
-	/* G1 + G2 approximates log(xs)/q + log(2)*psi */
+	var J1, J2, t1, t2
+	/*
+	   We can't use split_add; we don't kow the relative magitudes of G and H
+	 */
+	(t1, t2) = slow2sum(G2, H2)
+	(J2, t1) = slow2sum(H1, t1)
+	(J1, J2) = slow2sum(G1, J2)
+	J2 = J2 + (t1 + t2)
 
-	var base = exp(G1) + G2
+	/* J1 + J2 approximates log(xs)/q + log(2)*psi */
+	var base = exp(J1) + J2
 
 	-> ult_sgn * scale2(base, E)
 }

@@ -40,8 +40,6 @@ pkg math =
 	pkglocal const logoverkill64 : (x : flt64 -> (flt64, flt64))
 ;;
 
-
-
 /*
    Ci is a table such that, for Ci[j] = (L1, L2, I1, I2),
      L1, L2 are log(1 + j·2^-(5i))
