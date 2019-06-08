@@ -227,6 +227,9 @@ const log02 = {c
 		(0x4014a5ce06d7df05, 0x3ffa42cc8df38d10, 0xbc5e54e0ca2ed44c),
 		(0x3f68d1447d5a29e8, 0xc017328d1195bac4, 0x3cb4fd5db024d1da),
 		(0x404963f9a80919eb, 0x400f6b9160b05ec4, 0x3c4526374db12c53),
+		(0x3fe78000b3cf1a39, 0xbfd3c2508d81ebf9, 0x3c7d6df43454d213),
+		(0x7fe6c53d8cef3d27, 0x40862b8a1ec909c8, 0x3cf9a8752da53a7e),
+		(0x000342cdeeb18fc9, 0xc0862fe5598ee7e6, 0xbd2bf7df7d1e9517),
 	][:]
 
 	for (x, y1, y2) : inputs
