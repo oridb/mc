@@ -230,7 +230,7 @@ generic powrgen = {x : @f, y : @f, d : fltdesc(@f, @u, @i) :: numeric,floating,s
 
 	/*
 	   y could actually be above integer infinity, in which
-	   case x^y is most certainly infinity of 0. More importantly,
+	   case x^y is most certainly infinity or 0. More importantly,
 	   we can't safely compute M (below).
 	 */
 	if x > (1.0 : @f)
