@@ -8,6 +8,7 @@ const main = {
 		[.name="powr-01", .fn = powr01],
 		[.name="powr-02", .fn = powr02],
 		[.name="powr-03", .fn = powr03],
+		[.name="powr-04", .fn = powr04],
 	][:])
 }
 
@@ -30,7 +31,7 @@ const powr01 = {c
 		var zf : flt32 = std.flt32frombits(z)
 		var rf = math.powr(xf, yf)
 		testr.check(c, rf == zf,
-			"powr(0x{b=16,w=8,p=0}, 0x{b=16,w=8,p=0}) should be 0x{b=16,w=8,p=0}, was 0x{b=16,w=8,p=0}",
+			"powr(0x{w=8,p=0,x}, 0x{w=8,p=0,x}) should be 0x{w=8,p=0,x}, was 0x{w=8,p=0,x}",
 			x, y, z, std.flt32bits(rf))
 	;;
 }
@@ -46,8 +47,121 @@ const powr02 = {c
 		(0x7fe087a9112a21d8, 0x0f2b7a9584736b41, 0x3ff0000000000000),
 		(0x7fe5d78f049c0918, 0xd3a145ba5b0fdb9b, 0x0000000000000000),
 		(0x7febb342860b3386, 0xe758bd2af063aec2, 0x0000000000000000),
-
 		(0x000342cdeeb18fc9, 0xbe645d513ed4670d, 0x3ff0001c3d5eaa62),
+		(0x3e086c8c9160ccfe, 0xc027b2f7021e0508, 0x567134b75886e1ce),
+		(0x3d799a9014c5c710, 0xc0294dc8ea46772e, 0x5f068df47efc8583),
+
+		/* x in (-0.1, 0.1), y in (-50, 50) */
+		(0x85c8e7c348119f30, 0x895b661cd3f6bf12, 0xfff8000000000000),
+		(0x3ddec142f9c6c4ab, 0xb5eb602a73c886a4, 0x3ff0000000000000),
+		(0x808f2728666a17cc, 0x2034c24921d546bc, 0xfff8000000000000),
+		(0x19d8ae8ebf85e0e8, 0x3f07eb136357cb57, 0x3fef63a7defaa877),
+		(0x26e70f36e0237155, 0xaa4492e648bc196b, 0x3ff0000000000000),
+
+		/* x in (0, 0.001), y in (-50, 50) */
+		(0x3a8c503f997b1d9e, 0x9130be1b1bddafac, 0x3ff0000000000000),
+		(0x26bbb433c53c87cc, 0x3cea3bfe4404e194, 0x3fefffffffffe35c),
+		(0x1bfde85e7bef5604, 0x3cb5719f71329990, 0x3feffffffffffbd3),
+		(0x277cfd17030c8328, 0x2a74030781333076, 0x3ff0000000000000),
+		(0x19d8ae8ebf85e0e8, 0x3f07eb136357cb57, 0x3fef63a7defaa877),
+		(0x1ef50bc4cddd2717, 0xbee4389ff84a8f05, 0x3ff00e780c600a2f),
+		(0x01f66f97fb1a8dbb, 0x3d44ec5cc95c9f87, 0x3feffffffff1f50b),
+
+		/* x in (1e5, 1e9), y in (0.001, 0.2) */
+		(0x414d7781220eed89, 0x3f8e612e27ccef27, 0x3ff4096a3251e2a2),
+		(0x4151aeaf0db9e5e1, 0x3f75fc2b0f18576c, 0x3ff15fbe532b3ad6),
+		(0x41524b52b1ee2ea5, 0x7ff33dad40d7b286, 0xfff8000000000000),
+		(0xfffe3ddc1a7f09a7, 0x3f845a6294f3a890, 0xfff8000000000000),
+		(0x41477fe19e4e0642, 0xfff07c620f9b4061, 0xfff8000000000000),
+		(0x4130cad83460ac8d, 0x3f88f49d9474e1b7, 0x3ff2f4a5838051aa),
+		(0x4190c048c037d848, 0x3fc5f01bff5f120e, 0x40361f86b9ec8c03),
+		(0x4122532606cab2c2, 0x3f8c598493e15271, 0x3ff33c5ae51249f2),
+		(0x40ff7a13e85cc78c, 0x3f6e18c00e65b64d, 0x3ff0b4f518ad7a02),
+		(0x412aee1389285ddb, 0x3f56e92836547637, 0x3ff04f2b8a876442),
+		(0xfff7ceefbe9fcc65, 0x3faa28ac719649eb, 0xfff8000000000000),
+		(0x417113d63f0c2c95, 0x3f9c349235da5418, 0x3ff9586d156467dc),
+		(0x416e11f180357015, 0x3fa36745e43f0a12, 0x3ffdfbf8fdbce7b0),
+		(0x41cb75c7b1047ff0, 0x3f8e735375e7a550, 0x3ff5bf54bad30bd9),
+		(0x41bf0008e5b87821, 0x3fbb4108f504a250, 0x4020f10b4cd6005e),
+		(0x41cbe5fe5c674130, 0x3fa3e99fb287ea63, 0x4001dd6b2714c7b8),
+		(0x4174c2a767af0aff, 0x3f9d5bfb33b9c6f9, 0x3ff9f8d15a26d76f),
+		(0x41a51631969c7dc9, 0x3f92d1ce6076d806, 0x3ff6aed7a9d9b770),
+		(0x41101c4bb112bd60, 0x3fa24751eb557f8b, 0x3ff8fc0821e9cc12),
+		(0x41537e074bb931da, 0x7ff77c70e127f089, 0xfff8000000000000),
+		(0x412de8565421cfeb, 0x3fb3561b7eeae244, 0x4006add19c50cb4a),
+		(0x41aa670479d6802f, 0x3f9b9492b7c63280, 0x3ffad8c8dd5f6602),
+		(0x4166c5a1e9dd6276, 0x3fc0b0d8d4896f0a, 0x4020be53d9626333),
+		(0x41aee3dafeb3da8f, 0x3f88813f6c025f4b, 0x3ff42c84ca07e6dd),
+
+		/* x in (1e5, 1e9), y in (-100, -0.1) */
+		(0x417460e6ed428d99, 0xc04da3a1370b5e66, 000000000000000000),
+		(0x4186804e4380d00b, 0xbff51daac36e8cbd, 0x3dd47ebddadb4770),
+		(0x415c4dbac0e0621b, 0xbfff189d3f3bd269, 0x3d28fe34109afe0b),
+		(0x41477fe19e4e0642, 0xfff07c620f9b4061, 0xfff8000000000000),
+		(0x419ecd479467fb54, 0xbff4cd29a369ac90, 0x3dbf52e03dcc6f2f),
+		(0x41ac20c06ee35e4f, 0xbfdbcc358bb0fb18, 0x3f2e427c8b80ed9c),
+		(0xfff4326b9f6b3410, 0xc03d77ad8d9dd6b1, 0xfff8000000000000),
+		(0x4197910978aa8b96, 0xc03b9cd283f1294a, 0x12190b7d6c88576b),
+		(0x41094a4327327bff, 0xc011131c033fdfd5, 0x3b3879e23ee63805),
+		(0x40f8a138d93dfa6f, 0xc001413283b35d5f, 0x3db1bbb215bf42ae),
+		(0x414539311cf511ff, 0xbfbca848c2d205ed, 0x3fc84fc70f28d73e),
+		(0x417c6bc9e89d9c1d, 0xc01992c87dc70f2c, 0x36032a3faeb94526),
+		(0xfff3bc381986a30c, 0xbfdca95e011cebe9, 0xfff8000000000000),
+		(0x41c7ac7f3f65ea65, 0xc01e7dbcfb5c724c, 0x31d8c5031b0424e3),
+		(0x412e44a5346a1be6, 0xbffdcb72cdad7356, 0x3d9dfbadec90e3fa),
+		(0x418e5e64d3edf4c6, 0xc01674baa108856c, 0x36d602089075174d),
+		(0x416b58e89ad71a84, 0xbfca78a8fcb854b3, 0x3fa0f412b7918686),
+
+		/* x and y both in (0, 10) */
+		(0x7ff693c2af30864a, 0x3fa16af316e2d88c, 0xfff8000000000000),
+		(0x3fdde3d0f357d227, 0x3fd4e93bd57a2981, 0x3fe8f3d387c3cfe2),
+		(0x3fa351c48c3746ce, 0x3fe729ab4b99e801, 0x3fb7e116428f44c0),
+		(0x3fea1f57254b2d12, 0x3ff33aaf58690aa3, 0x3fe912f746775394),
+		(0x3fd19a840c634304, 0x3fba064281d93290, 0x3fec1099957576a6),
+		(0x3fce944eca01df35, 0x3f746940bfb8cacf, 0x3fefc5c3319cd7dd),
+		(0x3fa0030cd217ac73, 0x3fff10ee29f4ba92, 0x3f539d8ddb010192),
+		(0x3f748b091924c15d, 0x3fbb4ab930d8139f, 0x3fe2323de643196b),
+		(0x3f74b789b403b8f1, 0x3f5a0719b998a149, 0x3fefbb7c7865b589),
+		(0x4008bdfdc4bdf83c, 0x3fa84fdf9bbc5ad1, 0x3ff0e197a48356a8),
+		(0x3f707ab79cd549eb, 0x3fc776bf069fbf9f, 0x3fd748e843888881),
+		(0x40215d0d73f3daaf, 0x3f6909363b8c583a, 0x3ff01b24ca035345),
+		(0x400a5fe7abf90e94, 0x400552a0bcbf22fb, 0x403809d5d2eaca93),
+		(0x3fd48e701b8afa9a, 0xfffdf7de16212166, 0xfff8000000000000),
+		(0x3fdbed39bc744363, 0x401da621f6a5f1cc, 0x3f6187c614da505b),
+		(0x3ffd74273040c698, 0x3f9a6c6d49dd529c, 0x3ff0410227112c44),
+		(0x3faaeac0f7d4763a, 0xfff0a23bbb29b144, 0xfff8000000000000),
+		(0x7ff4035e90ccdb5d, 0x3fe19bd7bfc5fc57, 0xfff8000000000000),
+		(0x3fdf5a05d19f39f8, 0x3f5d97918fcfa553, 0x3feff572b799a75e),
+		(0x40139fa494d5c102, 0x3fff9e51a66d6c9c, 0x40372c0ec85cdb67),
+		(0x3fb64cb543db5008, 0x3fb6e061cb1f1a13, 0x3fe9bac3bc838dff),
+		(0x4002619e676678da, 0x3ff78e803ae2b8ec, 0x400b3a4285ab2635),
+		(0x3fe318b748070dba, 0x3fb7f9f73d9ab7fd, 0x3fee7d592f800221),
+		(0x3feb56ee622481b8, 0x3f7c19c1249a1d42, 0x3feff7289e9534f9),
+		(0x3f6d1ed0f9c04a9f, 0x3f62ffb9e40680c7, 0x3fef958dbae35a0f),
+		(0xfffe3ddc1a7f09a7, 0x3f845a6294f3a890, 0xfff8000000000000),
+		(0x3ff041e289ac5b8c, 0x3f57490a9fd58f95, 0x3ff00017c7d7ad4b),
+		(0x3fc9ffe250089ea1, 0x3ff88bf79a9dc33c, 0x3fb63170e54074b8),
+		(0x4020bc3c2d25bb94, 0xfff903dc5ef7b5da, 0xfff8000000000000),
+		(0x4003d467c525071c, 0x3f98c1fe89a5ecc4, 0x3ff05ae362b9a84a),
+		(0x3fc238b70f4e7216, 0x3f8a75e2fd6e64f4, 0x3fef343ee42df045),
+		(0x3fe001d1da500969, 0x400ff32df1b36945, 0x3fb0191d9c03801f),
+		(0x3f55ee3142fec6bf, 0x401cdc101b6b2276, 0x3ba18abf782d7bc4),
+		(0x3ffb954dbc226673, 0x400408855a1fc270, 0x400f49e30f335764),
+		(0x400bb9f936dad207, 0xfffb58709426aaec, 0xfff8000000000000),
+		(0x3f7bbe6db78c8014, 0xfff26b1c8b0746a0, 0xfff8000000000000),
+		(0x3f6a3223e6ed8897, 0x3f5fdcdd7023700e, 0x3fefa4fa8d17ce4d),
+		(0x3fa7156dd9119631, 0x3fbe50c7d9ea5796, 0x3fe62b747aab2686),
+
+		/* x and y both in (10, 1000) */
+		(0x4041c47b9cc539bc, 0x406e00257d16c8da, 0x7ff0000000000000),
+		(0x40633d5af37862b4, 0x402b00f8698b8065, 0x46113505e72b8731),
+		(0xfff31fb18f68c667, 0x7ffd331caa2b7f2c, 0xfff8000000000000),
+		(0x405104222d3cd0f1, 0x4060abf88a1f4bfd, 0x72b10f2bdd0d952d),
+		(0x406868520ca4881f, 0x408785f3d85e41e2, 0x7ff0000000000000),
+		(0x4087586e5fc62ee6, 0xfff0f261e9e9c83d, 0xfff8000000000000),
+		(0x4024634aeecdfa76, 0x7ff10c2e3cf5cee6, 0xfff8000000000000),
+		(0x40410a0b21390465, 0x7ffef5998f6203e6, 0xfff8000000000000),
+		(0xfff6ddae433e1801, 0x403064702d5f4ed8, 0xfff8000000000000),
 	][:]
 
 	for (x, y, z) : inputs
@@ -56,7 +170,7 @@ const powr02 = {c
 		var zf : flt64 = std.flt64frombits(z)
 		var rf = math.powr(xf, yf)
 		testr.check(c, rf == zf,
-			"powr(0x{b=16,w=16,p=0}, 0x{b=16,w=16,p=0}) should be 0x{b=16,w=16,p=0}, was 0x{b=16,w=16,p=0}",
+			"powr(0x{w=16,p=0,x}, 0x{w=16,p=0,x}) should be 0x{w=16,p=0,x}, was 0x{w=16,p=0,x}",
 			x, y, z, std.flt64bits(rf))
 	;;
 }
@@ -78,7 +192,38 @@ const powr03 = {c
 		var zf_accepted : flt32 = std.flt32frombits(z_accepted)
 		var rf = math.powr(xf, yf)
 		testr.check(c, rf == zf_perfect || rf == zf_accepted,
-			"powr(0x{b=16,w=8,p=0}, 0x{b=16,w=8,p=0}) should be 0x{b=16,w=8,p=0}, will also accept 0x{b=16,w=8,p=0}, was 0x{b=16,w=8,p=0}",
+			"powr(0x{w=8,p=0,x}, 0x{w=8,p=0,x}) should be 0x{w=8,p=0,x}, will also accept 0x{w=8,p=0,x}, was 0x{w=8,p=0,x}",
 			x, y, z_perfect, z_accepted, std.flt32bits(rf))
+	;;
+}
+
+const powr04 = {c
+	var inputs : (uint64, uint64, uint64, uint64)[:] = [
+		(0x3f8627bbf0b2534e, 0x3fab532501422efb, 0x3fe921e86671e519, 0x3fe921e86671e518),
+		(0x3fca93f7f9ca25b6, 0x3ff5847df0338da2, 0x3fbee98550a085a0, 0x3fbee98550a085a1),
+		(0x3fabb5869cd3c59e, 0x3ff36f822e577f69, 0x3f9da0409e2f391c, 0x3f9da0409e2f391b),
+		(0x3f77f7f7131769cb, 0x3feaf3f718dd7ebe, 0x3f8af6517cbfdc36, 0x3f8af6517cbfdc35),
+		(0x3fcac3d4060de9e2, 0x4005f5e897c9aeb8, 0x3f8be74e7fa8bdd6, 0x3f8be74e7fa8bdd5),
+		(0x406f0b978c302c5e, 0x4035705781be3d35, 0x4a97d0db24be1855, 0x4a97d0db24be1854),
+		(0x40644d87e8676e6c, 0x404b0add51b6a1db, 0x58c21ad2028c4bcc, 0x58c21ad2028c4bcd),
+		(0x4196f9c67efe9a1f, 0x3fbb8bebec6ccd29, 0x401ceae1ef1736e2, 0x401ceae1ef1736e1),
+		(0x41c84ac138a030ef, 0x3f91da7f2b3e4605, 0x3ff6e1b47e9ed782, 0x3ff6e1b47e9ed781),
+		(0x41ca9d0efec9e036, 0x3fa8f2f672d68769, 0x4005d70b6fe1084b, 0x4005d70b6fe1084a),
+		(0x40f949e1394ba90c, 0x3fb52c7ac7e9fb25, 0x4004cad8a0151dff, 0x4004cad8a0151e00),
+		(0x41341d6a23c92414, 0xc00943b1e82bb55e, 0x3bebc88b57f77f8f, 0x3bebc88b57f77f8e),
+		(0x41242aa370d444b6, 0xbff214c0dfc7a867, 0x3e91c53dfd314590, 0x3e91c53dfd31458f),
+		(0x418f00a1df7a23d0, 0xc033fc3dd88f7505, 0x1f83a0afed046038, 0x1f83a0afed046039),
+		(0x4169769b9e71e521, 0xc00ddf0ecaa33de6, 0x3a6889acb36be574, 0x3a6889acb36be573),
+][:]
+
+	for (x, y, z_perfect, z_accepted) : inputs
+		var xf : flt64 = std.flt64frombits(x)
+		var yf : flt64 = std.flt64frombits(y)
+		var zf_perfect : flt64 = std.flt64frombits(z_perfect)
+		var zf_accepted : flt64 = std.flt64frombits(z_accepted)
+		var rf = math.powr(xf, yf)
+		testr.check(c, rf == zf_perfect || rf == zf_accepted,
+			"powr(0x{w=16,p=0,x}, 0x{w=16,p=0,x}) should be 0x{w=16,p=0,x}, will also accept 0x{w=16,p=0,x}, was 0x{w=16,p=0,x}",
+			x, y, z_perfect, z_accepted, std.flt64bits(rf))
 	;;
 }
