@@ -1,6 +1,7 @@
 use std
 
 use "fpmath"
+use "impls"
 use "log-impl"
 use "log-overkill"
 use "util"
@@ -34,6 +35,7 @@ type fltdesc(@f, @u, @i) = struct
 	emin : @i
 	sgnmask : @u
 	log_overkill : (x : @f -> (@f, @f))
+	fma : (x : @f, y : @f, z : @f -> @f)
 	split_mul : (x_h : @f, x_l : @f, y_h : @f, y_l : @f -> (@f, @f))
 	exp_zero_border : @u
 ;;
@@ -51,6 +53,7 @@ const desc32 : fltdesc(flt32, uint32, int32) =  [
 	.emin = -126,
 	.sgnmask = 1 << 31,
 	.log_overkill = logoverkill32,
+	.fma = fma32,
 	.split_mul = split_mul32,
 	.exp_zero_border = 0xc2cff1b4, /* minimal y such that e^y > 0 */
 ]
@@ -68,6 +71,7 @@ const desc64 : fltdesc(flt64, uint64, int64) =  [
 	.emin = -1022,
 	.sgnmask = 1 << 63,
 	.log_overkill = logoverkill64,
+	.fma = fma64,
 	.split_mul = hl_mult,
 	.exp_zero_border = 0xc0874910d52d3052, /* minimal y such that e^y > 0 */
 ]
@@ -198,5 +202,5 @@ generic powrgen = {x : @f, y : @f, d : fltdesc(@f, @u, @i) :: numeric,floating,s
 		-> z_hi
 	;;
 
-	-> z_hi * (1.0 + final_exp_lo)
+	-> d.fma(z_hi, final_exp_lo, z_hi)
 }
