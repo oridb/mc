@@ -21,7 +21,20 @@ const int64fromuint64 = {b; -> (&b : int64#)#}
 const pown01 = {c
 	var inputs : (uint32, uint32, uint32)[:] = [
 		(0x000000f6, 0x00000000, 0x3f800000),
+		(0x7fc00000, 0x00000001, 0x7fc00000),
+		(0x7fc00000, 0x00000021, 0x7fc00000),
+		(0x7fc00000, 0x00030021, 0x7fc00000),
+		(0x7fc00000, 0xfacecafe, 0x7fc00000),
 		(0x00000000, 0x3d800000, 0x00000000),
+		(0x80000000, 0x00000124, 0x00000000),
+		(0x80000000, 0x00000123, 0x80000000),
+		(0x00000000, 0x00000124, 0x00000000),
+		(0x00000000, 0x00000123, 0x00000000),
+		(0x00000000, 0xad800001, 0x7f800000),
+		(0x80000000, 0x80000123, 0xff800000),
+		(0x80000000, 0x80000122, 0x7f800000),
+		(0x00000000, 0x80000127, 0x7f800000),
+		(0x00000000, 0x80000128, 0x7f800000),
 		(0x946fc13b, 0x3b21efc7, 0x80000000),
 		(0xb76e98b6, 0xdbeb6637, 0xff800000),
 		(0xc04825b7, 0x53cdd772, 0x7f800000),
@@ -52,11 +65,11 @@ const pown01 = {c
 	for (x, y, z) : inputs
 		var xf : flt32 = std.flt32frombits(x)
 		var yi : int32 = int32fromuint32(y)
-		var zf : flt32 = std.flt32frombits(z)
 		var rf = math.pown(xf, yi)
-		testr.check(c, rf == zf,
+		var ru : uint32 = std.flt32bits(rf)
+		testr.check(c, ru == z,
 			"pown(0x{b=16,w=8,p=0}, {}) should be 0x{b=16,w=8,p=0}, was 0x{b=16,w=8,p=0}",
-			x, yi, z, std.flt32bits(rf))
+			x, yi, z, ru)
 	;;
 }
 
@@ -87,16 +100,24 @@ const pown02 = {c
 		(0xc017043172d0152b, 0x00000000000000e9, 0xe4b2c1666379afdc),
 		(0xc0325800cfeffb8e, 0x00000000000000d8, 0x78983c24a5e29e19),
 		(0xbfee2ae3cd3208ec, 0x00000000000006b7, 0xb6cb06585f39893d),
+		(0x3f7dd2994731f21f, 0x0000000000000097, 0x0000000000000003),
+		(0x61696e53830d02af, 0xfffffffffffffffe, 0x0000000000000006),
+		(0xc0e60abfce171c2e, 0xffffffffffffffbb, 0x800000000000008a),
+		(0x32dbf16a23293407, 0x0000000000000005, 0x00000000103f2cd6),
+		(0xb95741e695eb8ab2, 0x000000000000000a, 0x00000000000a873c),
+		(0x000aa88b5c2dd078, 0xffffffffffffffff, 0x7fd804c764025003),
+		(0x800cd2d56c4a4074, 0xffffffffffffffff, 0xffd3f696f65f6596),
+		(0x8000d6838a5a8463, 0xffffffffffffffff, 0xfff0000000000000),
 	][:]
 
 	for (x, y, z) : inputs
 		var xf : flt64 = std.flt64frombits(x)
 		var yi : int64 = int64fromuint64(y)
-		var zf : flt64 = std.flt64frombits(z)
-		var rf = math.pown(xf, yi)
-		testr.check(c, rf == zf,
+		var rf : flt64 = math.pown(xf, yi)
+		var ru : uint64 = std.flt64bits(rf)
+		testr.check(c, ru == z,
 			"pown(0x{b=16,w=16,p=0}, {}) should be 0x{b=16,w=16,p=0}, was 0x{b=16,w=16,p=0}",
-			x, yi, z, std.flt64bits(rf))
+			x, yi, z, ru)
 	;;
 }
 
@@ -112,12 +133,11 @@ const pown03 = {c
 	for (x, y, z_perfect, z_accepted) : inputs
 		var xf : flt32 = std.flt32frombits(x)
 		var yi : int32 = int32fromuint32(y)
-		var zf_perfect : flt32 = std.flt32frombits(z_perfect)
-		var zf_accepted : flt32 = std.flt32frombits(z_accepted)
-		var rf = math.pown(xf, yi)
-		testr.check(c, rf == zf_perfect || rf == zf_accepted,
+		var rf : flt32 = math.pown(xf, yi)
+		var ru : uint32 = std.flt32bits(rf)
+		testr.check(c, ru == z_perfect || ru == z_accepted,
 			"pown(0x{b=16,w=8,p=0}, {}) should be 0x{b=16,w=8,p=0}, will also accept 0x{b=16,w=8,p=0}, was 0x{b=16,w=8,p=0}",
-			x, yi, z_perfect, z_accepted, std.flt32bits(rf))
+			x, yi, z_perfect, z_accepted, ru)
 	;;
 }
 
@@ -279,10 +299,11 @@ const rootn01 = {c
 	for (x, y, z) : inputs
 		var xf : flt32 = std.flt32frombits(x)
 		var zf : flt32 = std.flt32frombits(z)
-		var rf = math.rootn(xf, y)
-		testr.check(c, rf == zf,
+		var rf : flt32 = math.rootn(xf, y)
+		var ru : uint32 = std.flt32bits(rf)
+		testr.check(c, ru == z,
 			"rootn(0x{b=16,w=8,p=0}, {}) should be 0x{b=16,w=8,p=0}, was 0x{b=16,w=8,p=0}",
-			x, y, z, std.flt32bits(rf))
+			x, y, z, ru)
 	;;
 }
 
@@ -436,15 +457,22 @@ const rootn02 = {c
 		(0xe0bc4cbf6bd74d8f, 0x000000000000bd8b, 0xbff01ed2c4e821fc),
 		(0x31d4f2baa91a9e8e, 0x000000000000244d, 0x3fef774c954b40bf),
 		(0x01283d1c679f5652, 0x0000000000008647, 0x3fef5bc18f5e292f),
+		(0x80003d8a341ee060, 0x0000000000009c71, 0xbfef6f873f76b7cd),
+		(0xbfecf0fc4dc97b93, 0x0000000000005f4b, 0xbfeffff75d0a25fe),
+		(0xbfe2fb84944a35ee, 0x000000000000e947, 0xbfefffeda94c6d07),
+		(0xbfe0ef0c05bd84ab, 0x0000000000007165, 0xbfefffd205e2a1c8),
+		(0xbfe7354e962bdcb3, 0x000000000000076b, 0xbfeffe9d4844aad6),
+		(0xbfea556dd1eb1e58, 0x00000000000095cb, 0xbfeffff557890356),
 	][:]
 
 	for (x, y, z) : inputs
 		var xf : flt64 = std.flt64frombits(x)
 		var zf : flt64 = std.flt64frombits(z)
-		var rf = math.rootn(xf, y)
-		testr.check(c, rf == zf,
+		var rf : flt64 = math.rootn(xf, y)
+		var ru : uint64 = std.flt64bits(rf)
+		testr.check(c, ru == z,
 			"rootn(0x{b=16,w=16,p=0}, {}) should be 0x{b=16,w=16,p=0}, was 0x{b=16,w=16,p=0}",
-			x, y, z, std.flt64bits(rf))
+			x, y, z, ru)
 	;;
 }
 

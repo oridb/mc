@@ -1,8 +1,6 @@
 /*
   Attempts to find a minimax polynomial of degree n for f via Remez
-  algorithm. The Remez algorithm appears to be slightly shot, but
-  the initial step of approximating by Chebyshev nodes works, and
-  is usually good enough.
+  algorithm.
  */
 
 { chebyshev_node(a, b, k, n) = my(p, m, c);
@@ -62,19 +60,21 @@
                 xnext = a + k*(b - a)/gran;
                 ynext = err(f, n, v, xnext);
 
-                if(ycur > yprev && ycur > ynext, listput(l, [xcur, abs(ycur)]),);
+                if(ycur > yprev && ycur > ynext, listput(l, [xcur, ycur]),);
         );
 
         vecsort(l, 2);
         if(length(l) < n + 2 || l[1][2] < 2^(-2000), return("q"),);
         len = length(l);
 
-        lnext = listcreate();
+        X = vector(n + 2);
+
         for(j = 1, n + 2,
+                lnext = listcreate();
                 thisa = l[j][1] - (b-a)/gran;
                 thisb = l[j][1] + (b-a)/gran;
 
-                xprev = thisa - (thisb - a)/gran;
+                xprev = thisa - (thisb - thisa)/gran;
                 yprev = err(f, n, v, xprev);
 
                 xcur = thisa;
@@ -93,14 +93,15 @@
                         xnext = thisa + k*(thisb - thisa)/gran;
                         ynext = abs(f(xnext) - p_eval(n, v, xnext));
 
-                        if(ycur > yprev && ycur > ynext, listput(lnext, xcur),);
+                        if(ycur > yprev && ycur > ynext, listput(lnext, [xcur, ycur]),);
                 );
+
+                vecsort(lnext, 2);
+                if(length(lnext) < 1, return("q"),);
+                X[j] = lnext[1][1];
+                listkill(lnext);
         );
-        vecsort(lnext, cmp);
         listkill(l);
-        X = vector(n + 2);
-        for (k = 1, min(n + 2, length(lnext)), X[k] = lnext[k]);
-        listkill(lnext);
         vecsort(X);
         return(X);
 }
@@ -135,6 +136,14 @@
         return(1/tanoverx(x));
 }
 
+{ log2xoverx(x) =
+        return(if(x == 1,1,log(x)/(x-1))/log(2));
+}
+
+{ log1p(x) =
+        return(log(1 + x));
+}
+
 print("\n");
 print("Minimaxing sin(x) / x, degree 6, on [-Pi/(4 * 256), Pi/(4 * 256)]:");
 find_minimax(sinoverx, 6, -Pi/1024, Pi/1024)
@@ -158,7 +167,7 @@ print("\n");
 print("Minmimaxing x*cot(x), degree 8, on [-Pi/(4 * 256), Pi/(4 * 256)]:");
 find_minimax(cotx, 8, -Pi/1024, Pi/1024)
 print("\n");
-print("(Take the first v, and remember to divide by x)\n");
+print("(Remember to divide by x)\n");
 print("\n");
 print("---\n");
 print("\n");
@@ -174,5 +183,17 @@ find_minimax(atanxoverx, 12, 0, 1/16)
 print("\n");
 print("(You'll need to add a 0x0 at the beginning to make a degree 13...\n");
 print("\n");
+print("---\n");
+print("Minmimaxing log_2(x) / (x - 1), degree 7, on [1, 2^(1/8)]:");
+find_minimax(log2xoverx, 7, 1, 2^(1/8))
+print("\n");
+/* print("(You'll need to add a 0x0 at the beginning to make a degree 13...\n"); */
+/* print("\n"); */
+print("---\n");
+print("Minmimaxing log(1 + x), degree 5, on [0, 2^-20) [it's just going to give the Taylor expansion]:");
+find_minimax(log1p, 5, 0, 2^-20)
+print("\n");
+/* print("(You'll need to add a 0x0 at the beginning to make a degree 13...\n"); */
+/* print("\n"); */
 print("---\n");
 print("Remember that there's that extra, ugly E term at the end of the vector that you want to lop off.\n");

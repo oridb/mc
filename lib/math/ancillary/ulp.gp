@@ -31,7 +31,7 @@
         e = bitand(a, 0x7f800000) >> 23;
         s = bitand(a, 0x007fffff);
 
-        if(e != 0, s = bitor(s, 0x00800000),);
+        if(e != 0, s = bitor(s, 0x00800000), s = 2.0 * s);
         s = s * 2.0^(-23);
         e = e - 127;
         return((-1)^n * s * 2^(e));
@@ -42,7 +42,7 @@
         e = bitand(a, 0x7ff0000000000000) >> 52;
         s = bitand(a, 0x000fffffffffffff);
 
-        if(e != 0, s = bitor(s, 0x0010000000000000),);
+        if(e != 0, s = bitor(s, 0x0010000000000000), s = 2.0 * s);
         s = s * 2.0^(-52);
         e = e - 1023;
         return((-1)^n * 2^(e) * s);

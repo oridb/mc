@@ -1,8 +1,9 @@
 use std
 
 use "fpmath"
-use "log-impl"
+use "impls"
 use "log-overkill"
+use "log-impl"
 use "sum-impl"
 use "util"
 
@@ -32,7 +33,13 @@ type fltdesc(@f, @u, @i) = struct
 	neginf : @u
 	magcmp : (f : @f, g : @f -> std.order)
 	two_by_two : (x : @f, y : @f -> (@f, @f))
+	split_add : (x_h : @f, x_l : @f, y_h : @f, y_l : @f -> (@f, @f))
+	split_mul : (x_h : @f, x_l : @f, y_h : @f, y_l : @f -> (@f, @f))
+	floor : (x : @f -> @f)
 	log_overkill : (x : @f -> (@f, @f))
+	precision : @i
+	nosgn_mask : @u
+	implicit_bit : @u
 	emin : @i
 	emax : @i
 	imax : @i
@@ -52,7 +59,13 @@ const desc32 : fltdesc(flt32, uint32, int32) =  [
 	.neginf = 0xff800000,
 	.magcmp = mag_cmp32,
 	.two_by_two = two_by_two32,
+	.split_add = split_add32,
+	.split_mul = split_mul32,
+	.floor = floor32,
 	.log_overkill = logoverkill32,
+	.precision = 24,
+	.nosgn_mask = 0x7fffffff,
+	.implicit_bit = 23,
 	.emin = -126,
 	.emax = 127,
 	.imax = 2147483647, /* For detecting overflow in final exponent */
@@ -72,12 +85,36 @@ const desc64 : fltdesc(flt64, uint64, int64) =  [
 	.neginf = 0xfff0000000000000,
 	.magcmp = mag_cmp64,
 	.two_by_two = two_by_two64,
+	.split_add = hl_add,
+	.split_mul = hl_mult,
+	.floor = floor64,
 	.log_overkill = logoverkill64,
+	.precision = 53,
+	.nosgn_mask = 0x7fffffffffffffff,
+	.implicit_bit = 52,
 	.emin = -1022,
 	.emax = 1023,
 	.imax = 9223372036854775807,
 	.imin = -9223372036854775808,
 ]
+
+const split_add32 = {x_h : flt32, x_l : flt32, y_h : flt32, y_l : flt32
+	var x : flt64 = (x_h : flt64) + (x_l : flt64)
+	var y : flt64 = (y_h : flt64) + (y_l : flt64)
+	var z = x + y
+	var z_h : flt32 = (z : flt32)
+	var z_l : flt32 = ((z - (z_h : flt64)) : flt32)
+	-> (z_h, z_l)
+}
+
+const split_mul32 = {x_h : flt32, x_l : flt32, y_h : flt32, y_l : flt32
+	var x : flt64 = (x_h : flt64) + (x_l : flt64)
+	var y : flt64 = (y_h : flt64) + (y_l : flt64)
+	var z = x * y
+	var z_h : flt32 = (z : flt32)
+	var z_l : flt32 = ((z - (z_h : flt64)) : flt32)
+	-> (z_h, z_l)
+}
 
 const pown32 = {x : flt32, n : int32
 	-> powngen(x, n, desc32)
@@ -109,7 +146,7 @@ generic powngen = {x : @f, n : @i, d : fltdesc(@f, @u, @i) :: numeric,floating,s
 		/* Propagate NaN (why doesn't this come first? Ask IEEE.) */
 		-> d.frombits(d.nan)
 	elif (x == 0.0 || x == -0.0)
-		if n < 0 && (n % 2 == 1) && xn
+		if n < 0 && (n % 2 == -1) && xn
 			/* (+/- 0)^n = +/- oo */
 			-> d.frombits(d.neginf)
 		elif n < 0
@@ -123,6 +160,9 @@ generic powngen = {x : @f, n : @i, d : fltdesc(@f, @u, @i) :: numeric,floating,s
 	elif n == 1
 		/* Anything^1 is itself */
 		-> x
+	elif n == -1
+		/* The CPU is probably better at division than we are at pow(). */
+		-> 1.0/x
 	;;
 
 	/* (-f)^n = (-1)^n * (f)^n. Figure this out now, then pretend f >= 0.0 */
@@ -142,62 +182,58 @@ generic powngen = {x : @f, n : @i, d : fltdesc(@f, @u, @i) :: numeric,floating,s
 	   Since n and e, and I are all integers, we can get the last part from
 	   scale2. The hard part is computing I and F, and then computing 2^F.
 	 */
+	if xe > 0
+		/*
+		   But first: do some rough calculations: if we can show n*log(xs) has the
+		   same sign as n*e, and n*e would cause overflow, then we might as well
+		   return right now.
+
+		   This also takes care of subnormals very nicely, so we don't have to do
+		   any special handling to reconstitute xs "right", as we do in rootn.
+		 */
+		var exp_rough_estimate = n * xe
+		if n > 0 && (exp_rough_estimate > d.emax + 1 || (exp_rough_estimate / n != xe))
+			-> ult_sgn * d.frombits(d.inf)
+		elif n < 0 && (exp_rough_estimate < d.emin - d.precision - 1 || (exp_rough_estimate / n != xe))
+			-> ult_sgn * 0.0
+		;;
+	elif xe < 0
+		/*
+		   Also, if consider xs/2 and xe + 1, we can analyze the case in which
+		   n*log(xs) has a different sign from n*e.
+	         */
+		var exp_rough_estimate = n * (xe + 1)
+		if n > 0 && (exp_rough_estimate < d.emin - d.precision - 1 || (exp_rough_estimate / n != (xe + 1)))
+			-> ult_sgn * 0.0
+		elif n < 0 && (exp_rough_estimate > d.emax + 1 || (exp_rough_estimate / n != (xe + 1)))
+			-> ult_sgn * d.frombits(d.inf)
+		;;
+	;;
+
 	var ln_xs_hi, ln_xs_lo
 	(ln_xs_hi, ln_xs_lo) = d.log_overkill(d.assem(false, 0, xs))
 
 	/* Now x^n = 2^(n * [ ln_xs / ln(2) ]) * 2^(n + e) */
-
-	var ls1 : @f[8]
-	(ls1[0], ls1[1]) = d.two_by_two(ln_xs_hi, d.frombits(d.one_over_ln2_hi))
-	(ls1[2], ls1[3]) = d.two_by_two(ln_xs_hi, d.frombits(d.one_over_ln2_lo))
-	(ls1[4], ls1[5]) = d.two_by_two(ln_xs_lo, d.frombits(d.one_over_ln2_hi))
-	(ls1[6], ls1[7]) = d.two_by_two(ln_xs_lo, d.frombits(d.one_over_ln2_lo))
+	var E1, E2
+	(E1, E2) = d.split_mul(ln_xs_hi, ln_xs_lo, d.frombits(d.one_over_ln2_hi), d.frombits(d.one_over_ln2_lo))
 
 	/*
-	   Now log2(xs) = Sum(ls1), so
+	   Now log2(xs) = E1 + E2, so
 
-	     x^n = 2^(n * Sum(ls1)) * 2^(n * e)
+	     x^n = 2^(n * E1 + E2) * 2^(n * e)
 	 */
-	var E1, E2
-	(E1, E2) = double_compensated_sum(ls1[0:8])
-	var ls2 : @f[5]
-	var ls2s : @f[5]
-	var I = 0
-	(ls2[0], ls2[1]) = d.two_by_two(E1, nf)
-	(ls2[2], ls2[3]) = d.two_by_two(E2, nf)
-	ls2[4] = 0.0
-
-	/* Now x^n = 2^(Sum(ls2)) * 2^(n + e) */
-
-	for var j = 0; j < 5; ++j
-		var i = rn(ls2[j])
-		I += i
-		ls2[j] -= (i : @f)
-	;;
 
 	var F1, F2
-	std.slcp(ls2s[0:5], ls2[0:5])
-	std.sort(ls2s[0:5], d.magcmp)
-	(F1, F2) = double_compensated_sum(ls2s[0:5])
+	(F1, F2) = d.split_mul(E1, E2, nf, 0.0)
 
-	if (F1 < 0.0 || F1 > 1.0)
-		var i = rn(F1)
-		I += i
-		ls2[4] -= (i : @f)
-		std.slcp(ls2s[0:5], ls2[0:5])
-		std.sort(ls2s[0:5], d.magcmp)
-		(F1, F2) = double_compensated_sum(ls2s[0:5])
-	;;
+	var I = rn(F1)
+	(F1, F2) = d.split_add(-1.0 * (I : @f), 0.0, F1, F2)
 
 	/* Now, x^n = 2^(F1 + F2) * 2^(I + n*e). */
-	var ls3 : @f[6]
 	var log2_hi, log2_lo
 	(log2_hi, log2_lo) = d.C[128]
-	(ls3[0], ls3[1]) = d.two_by_two(F1, d.frombits(log2_hi))
-	(ls3[2], ls3[3]) = d.two_by_two(F1, d.frombits(log2_lo))
-	(ls3[4], ls3[5]) = d.two_by_two(F2, d.frombits(log2_hi))
 	var G1, G2
-	(G1, G2) = double_compensated_sum(ls3[0:6])
+	(G1, G2) = d.split_mul(F1, F2, d.frombits(log2_hi), d.frombits(log2_lo))
 
 	var base = exp(G1) + G2
 	var pow_xen = xe * n
@@ -259,12 +295,52 @@ generic rootngen = {x : @f, q : @u, d : fltdesc(@f, @u, @i) :: numeric,floating,
 	elif q == 1
 		/* Anything^1/1 is itself */
 		-> x
+	elif xe < d.emin
+		/*
+		   Subnormals are actually a problem. If we naively reconstitute xs, it
+		   will be wildly wrong and won't match up with the exponent. So let's
+		   pretend we have unbounded exponent range. We know the loop terminates
+		   because we covered the +/-0.0 case above.
+		 */
+		xe++
+		var check = 1 << d.implicit_bit
+		while xs & check == 0
+			xs <<= 1
+			xe--
+		;;
 	;;
 
 	/* As in pown */
 	var ult_sgn = 1.0
 	if xn && (q % 2 == 1)
 		ult_sgn = -1.0
+	;;
+
+	/*
+	   If we're looking at (1 + 2^-h)^1/q, and the answer will be 1 + e, with
+	   (1 + e)^q = 1 + 2^-h, then for q and h large enough, e might be below
+	   the representable range. Specifically,
+
+	     (1 + e)^q ≅ 1 + qe + (q choose 2)e^2 + ...
+
+	  So (using single-precision as the example)
+
+	    (1 + 2^-23)^q ≅ 1 + q 2^-23 + (absolutely tiny terms)
+
+	  And anything in [1, 1 + q 2^-24) will just truncate to 1.0 when
+	  calculated.
+	 */
+	if xe == 0
+		var cutoff = scale2(qf, -1 * d.precision - 1) + 1.0
+		if (xb & d.nosgn_mask) < d.tobits(cutoff)
+			-> 1.0
+		;;
+	elif xe == -1
+		/* Something similar for (1 - e)^q */
+		var cutoff = 1.0 - scale2(qf, -1 * d.precision - 1)
+		if (xb & d.nosgn_mask) > d.tobits(cutoff)
+			-> 1.0
+		;;
 	;;
 
 	/* Similar to pown. Let e/q = E + psi, with E an integer.
@@ -280,14 +356,13 @@ generic rootngen = {x : @f, q : @u, d : fltdesc(@f, @u, @i) :: numeric,floating,
 	 */
 
 	/* Calculate 1/q in very high precision */
-	var r1 = 1.0 / qf
-	var r2 = -math.fma(r1, qf, -1.0) / qf
+	var qinv_hi = 1.0 / qf
+	var qinv_lo = -math.fma(qinv_hi, qf, -1.0) / qf
 	var ln_xs_hi, ln_xs_lo
 	(ln_xs_hi, ln_xs_lo) = d.log_overkill(d.assem(false, 0, xs))
-	var ls1 : @f[12]
-	(ls1[0], ls1[1]) = d.two_by_two(ln_xs_hi, r1)
-	(ls1[2], ls1[3]) = d.two_by_two(ln_xs_hi, r2)
-	(ls1[4], ls1[5]) = d.two_by_two(ln_xs_lo, r1)
+
+	var G1, G2
+	(G1, G2) = d.split_mul(ln_xs_hi, ln_xs_lo, qinv_hi, qinv_lo)
 
 	var E : @i
 	if q > std.abs(xe)
@@ -301,15 +376,20 @@ generic rootngen = {x : @f, q : @u, d : fltdesc(@f, @u, @i) :: numeric,floating,
 	var psi_lo = -math.fma(psi_hi, qf, -(qpsi : @f)) / qf
 	var log2_hi, log2_lo
 	(log2_hi, log2_lo) = d.C[128]
-	(ls1[ 6], ls1[ 7]) = d.two_by_two(psi_hi, d.frombits(log2_hi))
-	(ls1[ 8], ls1[ 9]) = d.two_by_two(psi_hi, d.frombits(log2_lo))
-	(ls1[10], ls1[11]) = d.two_by_two(psi_lo, d.frombits(log2_hi))
+	var H1, H2
+	(H1, H2) = d.split_mul(psi_hi, psi_lo, d.frombits(log2_hi), d.frombits(log2_lo))
 
-	var G1, G2
-	(G1, G2) = double_compensated_sum(ls1[0:12])
-	/* G1 + G2 approximates log(xs)/q + log(2)*psi */
+	var J1, J2, t1, t2
+	/*
+	   We can't use split_add; we don't kow the relative magitudes of G and H
+	 */
+	(t1, t2) = slow2sum(G2, H2)
+	(J2, t1) = slow2sum(H1, t1)
+	(J1, J2) = slow2sum(G1, J2)
+	J2 = J2 + (t1 + t2)
 
-	var base = exp(G1) + G2
+	/* J1 + J2 approximates log(xs)/q + log(2)*psi */
+	var base = exp(J1) + J2
 
 	-> ult_sgn * scale2(base, E)
 }
