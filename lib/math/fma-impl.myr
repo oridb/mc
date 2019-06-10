@@ -180,11 +180,20 @@ pkglocal const fma64 = {x : flt64, y : flt64, z : flt64
 	var t_m : uint64 = xs_l * ys_h + xs_h * ys_l
 	var t_h : uint64 = xs_h * ys_h
 
+
 	var prod_l : uint64 = t_l + (t_m << 32)
 	var prod_h : uint64 = t_h + (t_m >> 32)
 	if t_l > prod_l
 		prod_h++
 	;;
+
+	/*
+	   At this point, we should have
+
+	   xs * ys = (2^32 * xs_h + xs_l) * (2^32 * ys_h + ys_l)
+	           = (2^64 * t_h) + (2^32 * t_m) + (t_l)
+	           = (2^64 * prod_h) + (prod_l)
+	 */
 
 	var prod_n = xn != yn
 	var prod_lastbit_e = (xe - 52) + (ye - 52)
@@ -254,12 +263,12 @@ pkglocal const fma64 = {x : flt64, y : flt64, z : flt64
 		match compare_hl_z(prod_h, prod_l, prod_firstbit_e, prod_lastbit_e, zs, z_firstbit_e, z_lastbit_e)
 		| `std.Equal: -> 0.0
 		| `std.Before:
-			/* prod > z */
+			/* |prod| > |z| */
 			res_n = prod_n
 			res_lastbit_e = prod_lastbit_e
 			(res_h, res_l) = sub_shifted(prod_h, prod_l, zs, z_lastbit_e - prod_lastbit_e)
 		| `std.After:
-			/* z > prod */
+			/* |z| > |prod| */
 			res_n = zn
 			res_lastbit_e = z_lastbit_e - 64
 			(res_h, res_l) = sub_shifted(zs, 0, prod_h, prod_lastbit_e + 64 - (z_lastbit_e - 64))
@@ -325,7 +334,7 @@ pkglocal const fma64 = {x : flt64, y : flt64, z : flt64
 			res_s++
 		;;
 	else
-		res_s = shl(res_h, res_first1 - 52)
+		res_s = shl(res_l, 52 - res_first1)
 	;;
 
 	/* The res_s++s might have messed everything up */
