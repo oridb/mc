@@ -284,6 +284,8 @@ const bigparse = {str
 		bigadd(a, v)
 
 	;;
+	bigfree(b)
+	bigfree(v)
 	-> `Some a
 }
 
