@@ -945,18 +945,22 @@ generic bigshri = {a, s
 	off = (s : uint64) / 32
 	shift = (s : uint64) % 32
 
-	/* blit over the base values */
-	for var i = 0; i < a.dig.len - off; i++
-		a.dig[i] = a.dig[i + off]
-	;;
-	a.dig = a.dig[:a.dig.len - off]
-
-	/* and shift over by the remainder */
-	carry = 0
-	for var i = a.dig.len; i > 0; i--
-		t = ((a.dig[i - 1]  : uint64))
-		a.dig[i - 1] = (carry | (t >> shift): uint32)
-		carry = t << (32 - shift)
+	if off > a.dig.len
+		a.dig = a.dig[:0]
+	else
+		/* blit over the base values */
+		for var i = 0; i < a.dig.len - off; i++
+			a.dig[i] = a.dig[i + off]
+		;;
+		a.dig = a.dig[:a.dig.len - off]
+	
+		/* and shift over by the remainder */
+		carry = 0
+		for var i = a.dig.len; i > 0; i--
+			t = ((a.dig[i - 1]  : uint64))
+			a.dig[i - 1] = (carry | (t >> shift): uint32)
+			carry = t << (32 - shift)
+		;;
 	;;
 	-> trim(a)
 }

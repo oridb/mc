@@ -21,6 +21,7 @@ const main = {
 		[.name = "format-zero", .fn = fmtzero],
 		[.name = "division", .fn = smokediv],
 		[.name = "modulo", .fn = smokemod],
+		[.name = "shift", .fn = shiftoff],
 		[.name = "add-negatives", .fn = addneg],
 		[.name = "sub-negatives", .fn = subneg],
 	][:])
@@ -261,6 +262,13 @@ const subneg = {c
 	run(c, std.mk(`Sub (\
 		std.mk(`Val "-8"), \
 		std.mk(`Val "-8"))), \
+		"0")
+}
+
+const shiftoff = {c
+	run(c, std.mk(`Shr ( \
+		std.mk(`Val "1"), \
+		std.mk(`Val "65"))), \
 		"0")
 }
 
