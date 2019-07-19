@@ -449,7 +449,7 @@ TABLE OF CONTENTS:
             a struct, which do not contribute to the size of the struct. When
             allocating a struct on the heap, extra space may be reserved for
             the array, allowing variable sizes of trailing data. This is not
-            used commonly, but turns out to be useful for C ABI comatibility.
+            used commonly, but turns out to be useful for C ABI compatibility.
 
             Flexible arrays can also be used another way when emulating the C
             ABI. Myrddin has no tagless unions, but because runs of flexible
@@ -537,7 +537,7 @@ TABLE OF CONTENTS:
         defined in section 4.5.
 
         A typaram ("@ident") is a type parameter. It is introduced as either a
-        parameter of a generic declaration, or as a type paramter in a
+        parameter of a generic declaration, or as a type parameter in a
         defined type. It can be constrained by any number of traits, as
         described in section 4.6.
 
@@ -641,7 +641,7 @@ TABLE OF CONTENTS:
                 - Union tags are registered for delayed unification, with the type
                 for unions being the declaration type of the variable.
 
-            Note that a generic declaration must *not* have its type unfied with
+            Note that a generic declaration must *not* have its type unified with
             its use until after it has been freshened. This may imply that the
             type of a generic must be registered for delayed unification.
 
@@ -661,7 +661,7 @@ TABLE OF CONTENTS:
                   must be satisfied.
 
                 - If both types are compatible concrete types, then
-                  all subtypes are unfied recursively.
+                  all subtypes are unified recursively.
 
                 - If both types are incompatible concrete types, a
                   type error is flagged.
@@ -711,7 +711,7 @@ TABLE OF CONTENTS:
 
                 If t1 is a type variable, and t2 is not a type variable, then
                 t1 is checked for recursive inclusions and trait
-                incompatility.
+                incompatibility.
                 
                 If t2 refers to t1 by value, then the type would be infinitely
                 sized, and therefore the program must be rejected with a type
@@ -742,7 +742,7 @@ TABLE OF CONTENTS:
 
                     - If the types are equivalent at the root (ie, $1# and
                       int# are both pointers at the root), then all subtypes
-                      are recursively unfied. The number of subtypes for both
+                      are recursively unified. The number of subtypes for both
                       types must be the same. If the types are not equivalent
                       at the root, then the program must be rejected with a
                       type error.
@@ -1073,7 +1073,7 @@ TABLE OF CONTENTS:
             does not refer to any of its enclosing stack variables, then
             this environment will not be created or accessed by the function.
 
-            This environment must be transferrable to the heap in an
+            This environment must be transferable to the heap in an
             implementation specific manner.
 
             Example: Empty function literal:
@@ -1092,7 +1092,7 @@ TABLE OF CONTENTS:
                 }
 
             A function literal's arity is the same as the number of arguments
-            it takes. The type of the funciton argument list is derived from
+            it takes. The type of the function argument list is derived from
             the type of the arguments. The return type may be provided, or
             can be left to type inference.
 
@@ -1122,7 +1122,7 @@ TABLE OF CONTENTS:
                 prefixexpr:        atomicexpr <unaryop>
 
             Myrddin expressions should be fairly familiar to most programmers.
-            Expressions are represented by a precedence sorted heirarchy of
+            Expressions are represented by a precedence sorted hierarchy of
             binary operators. These operators operate on prefix expressions,
             which in turn operate on postfix expressions. And postfix
             expressions operate on parenthesized expressions, literals, or
@@ -1278,7 +1278,7 @@ TABLE OF CONTENTS:
             match.
 
             An impl expression chooses the implementation of the given trait
-            declaration for the given type. It is useful for refering to trait
+            declaration for the given type. It is useful for referring to trait
             declarations in a generic context. It also allows you to
             disambiguate a trait declaration whose type does not refer to the
             trait parameter.
@@ -2004,7 +2004,7 @@ TABLE OF CONTENTS:
     unionbody:	("`" ident [type])*
     tupledef:   "(" type ("," type)* ")"
     generic:    typaram
-    constructed: functype | sicetype | arraytype | ptrtype | void | name
+    constructed: functype | slicetype | arraytype | ptrtype | void | name
     functype:   "(" arglist "->" type ")"
     arglist:    [arg ("," arg)*]
     arg:        name ":" type
