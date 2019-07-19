@@ -772,7 +772,13 @@ const bigdivmod = {a : bigint#, b : bigint# -> (bigint#, bigint#)
 }
 
 const bigand = {a, b
-	for var i = 0; i < min(a.dig.len, b.dig.len); i++
+   if a.dig.len > b.dig.len
+      slzgrow(&b.dig, a.dig.len)
+   ;;
+   if b.dig.len > a.dig.len
+      slzgrow(&a.dig, b.dig.len)
+   ;;
+	for var i = 0; i < a.dig.len; i++
 		a.dig[i] &= b.dig[i]
 	;;
 	-> trim(a)
@@ -780,7 +786,7 @@ const bigand = {a, b
 
 const bigor = {a, b
 	slzgrow(&a.dig, max(a.dig.len, b.dig.len))
-	for var i = 0; i < a.dig.len; i++
+	for var i = 0; i < min(a.dig.len, b.dig.len); i++
 		a.dig[i] |= b.dig[i]
 	;;
 	-> trim(a)
