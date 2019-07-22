@@ -15,7 +15,19 @@ pkg std =
 const exit	= {status;	sys.exit(status)}
 
 const bgetcwd	= {buf
-	-> (sys.__getcwd(buf) - 1 : errno)
+	var res = (sys.__getcwd(buf) : errno)
+
+	if res == 0
+		/* openbsd > 6.5 returns 0 on success */
+		-> (cstrlen(buf) : errno)
+	elif res > 0
+		/* openbsd <= 6.5 returns the length including nul byte */
+		-> res - 1
+	elif res == Enomem
+		-> Erange
+	else
+		-> res
+	;;
 }
 
 const nanosleep	= {nsecs
