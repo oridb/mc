@@ -44,7 +44,7 @@ set -x
 	$pwd/6/6m -O obj lib/sys/systypes.myr
 	as -g -o obj/lib/sys/util.o lib/sys/util+posixy-x64.s
 	$pwd/6/6m -O obj lib/sys/syserrno+openbsd.myr
-	$pwd/6/6m -O obj lib/sys/sys+openbsd:6.3-x64.myr
+	$pwd/6/6m -O obj lib/sys/sys+openbsd:6.4-x64.myr
 	ar -rcs obj/lib/sys/libsys.a obj/lib/sys/sys.o obj/lib/sys/syserrno.o obj/lib/sys/util.o obj/lib/sys/systypes.o obj/lib/sys/ifreq.o obj/lib/sys/syscall.o
 	$pwd/muse/muse -o obj/lib/sys/libsys.use -p sys obj/lib/sys/sys.use obj/lib/sys/syserrno.use obj/lib/sys/systypes.use obj/lib/sys/ifreq.use
 	$pwd/6/6m -O obj -I obj/lib/sys -I obj/lib/std lib/thread/types+fsbase.myr

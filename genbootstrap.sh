@@ -24,7 +24,7 @@ tags(){
 	*Darwin*)	echo -Tposixy -Tosx -Tfutex;;
 	*FreeBSD*)	echo -Tposixy -Tfreebsd -Tfsbase -Tfutex;;
 	*NetBSD*)	echo -Tposixy -Tnetbsd;;
-	*OpenBSD*)	echo -Tposixy -Topenbsd:6.3 -Tfsbase -Tfutex;;
+	*OpenBSD*)	echo -Tposixy -Topenbsd:6.4 -Tfsbase -Tfutex;;
 	*Plan9*)	echo -Tplan9;;
 	esac
 	case `uname -m` in
